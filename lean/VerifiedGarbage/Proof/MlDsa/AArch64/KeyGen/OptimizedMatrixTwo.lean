@@ -35,7 +35,7 @@ theorem matrixTwo_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
   have L := h.ks.k1.kc.lay hF hp
   refine WP.seq (WP.mono (rej2At_ok hS C L
-    (seed := sc oSA4) (a := aP (e)) (ss := sc (oR4 p)) (by unfold rej2Chk; lay))
+    (seed := sc oSA4) (a := aP (e)) (ss := sc (oR4 p)) (by unfold rej2Chk; layd))
     fun s2 ⟨hP2,h24,hred,hout⟩ => ?_)
   have L2 := L.post hP2
   have hr01 : (s2.gpr .x0).setWidth 32 = 0 ∨ (s2.gpr .x0).setWidth 32 = 1 := by
@@ -47,11 +47,11 @@ theorem matrixTwo_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
   have L20 := L2.post hP20
   have hr20 : (s20.gpr .x0).setWidth 32 = 0 ∨ (s20.gpr .x0).setWidth 32 = 1 := by
     rw [h20.get .x0]; exact hr01
-  refine WP.mono (VG.Proof.MlDsa.AArch64.Optimized.MatrixMask.mask_ok L20 (a := aP (e)) (N := 32) (by decide) (by decide) (by lay) (by lay) hr20)
+  refine WP.mono (VG.Proof.MlDsa.AArch64.Optimized.MatrixMask.mask_ok L20 (a := aP (e)) (N := 32) (by decide) (by decide) (by layd) (by layd) hr20)
     fun s3 ⟨hP3,k3,hco⟩ => ?_
   have hP23 := PPostB.app hP20 hP3 (sc_bases _ (by simp))
   have hP13 := PPostB.app hP2 hP23 (sc_bases _ (by simp))
-  refine ⟨?_,hr.keep L hP13 (fun k hk => by lay)⟩
+  refine ⟨?_,hr.keep L hP13 (fun k hk => by layd)⟩
   have e2 : pa s2 (aP (e)) = pa s (aP (e)) := sc_pa hP2 _
   have e20 : pa s20 (aP (e)) = pa s2 (aP (e)) := sc_pa hP20 _
   rw [h20.get .x0,e20,e2,h20.mem] at hco
@@ -63,7 +63,7 @@ theorem matrixTwo_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
   obtain ⟨A,S',hA,_,hG⟩ := h.ks.ex
   have h24' : s3.gpr .x24 = if s.gpr .x24 = 1 ∧ (s2.gpr .x0).setWidth 32 = 1 then 1 else 0 := by
     rw [k3.get .x24,e24,h24,Proof.MlDsa.KeyGen.and01 (good_01 hG) hr01]
-  refine ⟨h.ks.k1.step hF hp hP13 (by unfold k1Chk kcChk; lay),
+  refine ⟨h.ks.k1.step hF hp hP13 (by unfold k1Chk kcChk; layd),
     fun e' => if e' < e then A e' else polyAt s3.mem (pa s3 (aP e')),S',
     fun e' he' => ?_,fun _ h => False.elim (Nat.not_lt_zero _ h),?_⟩
   · dsimp only

@@ -73,27 +73,27 @@ theorem expA_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
   have hq : e / p.ℓ < p.k := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; exact he)
   have hr : e % p.ℓ < p.ℓ := Nat.mod_lt _ (by omega)
   unfold expA sampled
-  refine WP.seq (WP.mono (setTwo_ok L (o := oSA + 32) (a := e % p.ℓ) (b := e / p.ℓ) (by decide) (by lay) (by lay))
+  refine WP.seq (WP.mono (setTwo_ok L (o := oSA + 32) (a := e % p.ℓ) (b := e / p.ℓ) (by decide) (by layd) (by layd))
     fun s₁ ⟨hP₁, k₁, hb₁⟩ => ?_)
   have h₁ : KSamp p σ e 0 s₁ :=
-    h.keep hF hp hP₁ (by unfold k1Chk kcChk; lay) (fun e' he' => by lay) (fun _ h => absurd h (Nat.not_lt_zero _))
+    h.keep hF hp hP₁ (by unfold k1Chk kcChk; layd) (fun e' he' => by layd) (fun _ h => absurd h (Nat.not_lt_zero _))
       (k₁.get .x24)
   have L₁ := h₁.k1.kc.lay hF hp
   have hseed : bytesAt s₁.mem (pa s₁ (sc oSA)) 34 = seedA (rhoOf p σ) (e / p.ℓ) (e % p.ℓ) := by
     rw [bytes34, h₁.k1.sa, sc_add, sc_pa hP₁, hb₁, Proof.MlDsa.KeyGen.seedA_eq]
   refine WP.seq (WP.mono (rejNttInline_ok hP.s64 hP.rejNtt L₁ (seed := sc oSA) (a := aP e) (ss := sc oSS)
-    (by unfold rejNttChk; lay)) fun s₂ ⟨hP₂, x₂, hred, hout⟩ => ?_)
+    (by unfold rejNttChk; layd)) fun s₂ ⟨hP₂, x₂, hred, hout⟩ => ?_)
   rw [hseed] at hout
   have L₂ := L₁.post hP₂
   have hr01 := Proof.MlDsa.KeyGen.outcome_01 hout
-  refine WP.mono (tail_ok L₂ (a := aP e) (by lay) (by lay) hr01) fun s₃ ⟨hP₃, x₃, hco⟩ => ?_
+  refine WP.mono (tail_ok L₂ (a := aP e) (by layd) (by layd) hr01) fun s₃ ⟨hP₃, x₃, hco⟩ => ?_
   have hP₁₃ := PPostB.app hP₂ hP₃ (sc_bases _ (by simp))
   have e₂ : pa s₂ (aP e) = pa s₁ (aP e) := sc_pa hP₂ _
   have e₃ : pa s₃ (aP e) = pa s₂ (aP e) := sc_pa hP₃ _
   rw [e₂] at hco
   obtain ⟨A, S', hA, _, hG⟩ := h₁.ex
   rw [x₂, Proof.MlDsa.KeyGen.and01 (good_01 hG) hr01] at x₃
-  refine ⟨h₁.k1.step hF hp hP₁₃ (by unfold k1Chk kcChk; lay), fun e' => if e' = e then polyAt s₃.mem (pa s₃ (aP e))
+  refine ⟨h₁.k1.step hF hp hP₁₃ (by unfold k1Chk kcChk; layd), fun e' => if e' = e then polyAt s₃.mem (pa s₃ (aP e))
     else A e', S', fun e' he' => ?_, fun _ h => absurd h (Nat.not_lt_zero _), ?_⟩
   · dsimp only
     rcases (by omega : e' < e ∨ e' = e) with he' | rfl
@@ -172,13 +172,13 @@ theorem expA_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
       BitVec.ofNat 8 (e / p.ℓ)]
   have hF1 : ∀ x, Lay S kgR (kgW p) x →
       WP isa (.block (setB (sc (oSA + 32)) (e % p.ℓ) ++ setB (sc (oSA + 33)) (e / p.ℓ))) x (F x) := fun x L =>
-    WP.mono (setTwo_ok L (o := oSA + 32) (a := e % p.ℓ) (b := e / p.ℓ) (by decide) (by lay) (by lay))
-      fun x' ⟨hP₁, _, hb⟩ => ⟨⟨_, hP₁⟩, by rw [bytes34, L.keepBytes hP₁ (by lay), sc_add, sc_pa hP₁, hb]⟩
+    WP.mono (setTwo_ok L (o := oSA + 32) (a := e % p.ℓ) (b := e / p.ℓ) (by decide) (by layd) (by layd))
+      fun x' ⟨hP₁, _, hb⟩ => ⟨⟨_, hP₁⟩, by rw [bytes34, L.keepBytes hP₁ (by layd), sc_add, sc_pa hP₁, hb]⟩
   refine RelCT.seq (RelCT.postDep (taintRel [.x28] (fun x y h => h.1.x28) (setIJ_taint _ (by omega) _ (by omega)))
     (F := F) (fun x y h => ⟨hF1 x h.1.lx, hF1 y h.1.ly⟩)
     (Q := fun x y => Two p S x y ∧ bytesAt x.mem (pa x (sc oSA)) 34 = bytesAt y.mem (pa y (sc oSA)) 34)
     fun x y x' y' ⟨T, e32⟩ ⟨⟨_, hx⟩, bx⟩ ⟨⟨_, hy⟩, by'⟩ => ⟨T.post hx hy, by rw [bx, by', e32]⟩) ?_
-  have hc : rejNttChk kgR (kgW p) (sc oSA) (aP e) (sc oSS) = true := by unfold rejNttChk; lay
+  have hc : rejNttChk kgR (kgW p) (sc oSA) (aP e) (sc oSS) = true := by unfold rejNttChk; layd
   have ok := fun x (L : Lay S kgR (kgW p) x) => WP.mono (rejNttInline_ok hP.s64 hP.rejNtt L hc)
     fun _ h => (⟨_, h.1⟩ : ∃ W, PostB S x _ W)
   exact RelCT.seq (RelCT.two (fun _ _ h => h.1) (rejNttInline_tr hP.rejNtt (kgOk p) hc fun x y h =>
@@ -215,29 +215,29 @@ theorem expS_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
   have L := h.k1.kc.lay hF hp
   unfold expS sampled
-  refine WP.seq (WP.mono (setB_ok L (p := sc (oSB + 64)) (v := r) (by decide) (by lay)
+  refine WP.seq (WP.mono (setB_ok L (p := sc (oSB + 64)) (v := r) (by decide) (by layd)
     (show Reg.x28 ∈ keptRegs by decide)) fun s₁ ⟨hP₁, k₁, hb₁⟩ => ?_)
   have h₁ : KSamp p σ (p.k * p.ℓ) r s₁ :=
-    h.keep hF hp hP₁ (by unfold k1Chk kcChk; lay) (fun e' he' => by lay) (fun r' hr' => by lay) (k₁.get .x24)
+    h.keep hF hp hP₁ (by unfold k1Chk kcChk; layd) (fun e' he' => by layd) (fun r' hr' => by layd) (k₁.get .x24)
   have L₁ := h₁.k1.kc.lay hF hp
   have hseed := sbSeed L (by omega) hP₁ hb₁ h.k1.sb h.k1.z
   refine WP.seq (WP.mono (rejBAt_ok hP.s64 hP.rejBounded L₁ (seed := sc oSB) (a := sP p r) (ss := sc oSS)
-    (by unfold rejBChk; lay) (eta_of hF)) fun s₂ ⟨hP₂, x₂, hred, hout⟩ => ?_)
+    (by unfold rejBChk; layd) (eta_of hF)) fun s₂ ⟨hP₂, x₂, hred, hout⟩ => ?_)
   rw [hseed] at hout
   have L₂ := L₁.post hP₂
   have hr01 := Proof.MlDsa.KeyGen.outcome_01 hout
-  refine WP.mono (tail_ok L₂ (a := sP p r) (by lay) (by lay) hr01) fun s₃ ⟨hP₃, x₃, hco⟩ => ?_
+  refine WP.mono (tail_ok L₂ (a := sP p r) (by layd) (by layd) hr01) fun s₃ ⟨hP₃, x₃, hco⟩ => ?_
   have hP₁₃ := PPostB.app hP₂ hP₃ (sc_bases _ (by simp))
   have e₂ : pa s₂ (sP p r) = pa s₁ (sP p r) := sc_pa hP₂ _
   have e₃ : pa s₃ (sP p r) = pa s₂ (sP p r) := sc_pa hP₃ _
   rw [e₂] at hco
   obtain ⟨A, S', hA, hS, hG⟩ := h₁.ex
   rw [x₂, Proof.MlDsa.KeyGen.and01 (good_01 hG) hr01] at x₃
-  have k1 := h₁.k1.step hF hp hP₁₃ (by unfold k1Chk kcChk; lay)
+  have k1 := h₁.k1.step hF hp hP₁₃ (by unfold k1Chk kcChk; layd)
   have kA : ∀ e' < p.k * p.ℓ, PolyIs s₃.mem (pa s₃ (aP e')) (A e') := fun e' he' =>
     L₁.keepPoly hP₁₃ (by lay) (hA e' he')
   have kS : ∀ r' < r, PolyIs s₃.mem (pa s₃ (sP p r')) (toRq (S' r')) ∧ Small p.η (S' r') := fun r' hr' =>
-    ⟨L₁.keepPoly hP₁₃ (by lay) (hS r' hr').1, (hS r' hr').2⟩
+    ⟨L₁.keepPoly hP₁₃ (by layd) (hS r' hr').1, (hS r' hr').2⟩
   by_cases ho : (s₂.gpr .x0).setWidth 32 = 1
   · -- The sampler succeeded.
     obtain ⟨b', hb'⟩ : ∃ b' : Bounds, (rejBoundedPoly p.η b'.rejBounded (seedS (rho'Of p σ) r)).map toRq =
@@ -297,7 +297,7 @@ theorem expS_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
   let F := fun (x x' : State) => (∃ W, PostB S x x' W) ∧ ∀ ρ' : List Byte, bytesAt x.mem (pa x (sc oSB)) 64 = ρ' →
     bytesAt x.mem (pa x (sc (oSB + 65))) 1 = [0] → bytesAt x'.mem (pa x' (sc oSB)) 66 = seedS ρ' r
   have hF1 : ∀ x, Lay S kgR (kgW p) x → WP isa (.block (setB (sc (oSB + 64)) r)) x (F x) := fun x L =>
-    WP.mono (setB_ok L (p := sc (oSB + 64)) (v := r) (by decide) (by lay) (show Reg.x28 ∈ keptRegs by decide))
+    WP.mono (setB_ok L (p := sc (oSB + 64)) (v := r) (by decide) (by layd) (show Reg.x28 ∈ keptRegs by decide))
       fun x' ⟨hP₁, _, hb⟩ => ⟨⟨_, hP₁⟩, fun _ h64 h65 => sbSeed L (by omega) hP₁ hb h64 h65⟩
   refine RelCT.seq (RelCT.postDep (taintRel [.x28] (fun x y h => h.1.x28) (setS_taint _ (by omega)))
     (F := F) (fun x y h => ⟨hF1 x h.1.lx, hF1 y h.1.ly⟩)
@@ -305,7 +305,7 @@ theorem expS_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
       Spec.MlDsa.rejBoundedLeak p.η (bytesAt y.mem (pa y (sc oSB)) 66))
     fun x y x' y' ⟨T, _, _, a1, a2, a3, a4, a5⟩ ⟨⟨_, hx⟩, bx⟩ ⟨⟨_, hy⟩, by'⟩ =>
       ⟨T.post hx hy, by rw [bx _ a1 a2, by' _ a3 a4, a5]⟩) ?_
-  have hc : rejBChk kgR (kgW p) (sc oSB) (sP p r) (sc oSS) = true := by unfold rejBChk; lay
+  have hc : rejBChk kgR (kgW p) (sc oSB) (sP p r) (sc oSS) = true := by unfold rejBChk; layd
   have ok := fun x (L : Lay S kgR (kgW p) x) => WP.mono (rejBAt_ok hP.s64 hP.rejBounded L hc (eta_of hF))
     fun _ h => (⟨_, h.1⟩ : ∃ W, PostB S x _ W)
   exact RelCT.seq (RelCT.two (fun _ _ h => h.1) (rejBAt_tr hP.rejBounded (kgOk p) hc (eta_of hF) fun x y h =>

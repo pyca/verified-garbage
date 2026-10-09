@@ -16,8 +16,8 @@ theorem nttSecret_ok {S' : Nat} {p : Params} (hF : PFacts p) {σ : State}
   have L := h.kc.lay hF hp
   have hS := h.s1 j hj
   rw [ifn (Nat.lt_irrefl j)] at hS
-  have hr : inB (kgR++kgW p) (sP p j) 1024=true := by lay
-  have hw : inB (kgW p) (sP p j) 1024=true := by lay
+  have hr : inB (kgR++kgW p) (sP p j) 1024=true := by layd
+  have hw : inB (kgW p) (sP p j) 1024=true := by layd
   refine WP.mono_syms (Sign.positiveNttAt_layout L hr hw
     ⟨roots.nttTableAt (L.inW hw),roots.forward.readable⟩ hS.1)
     fun s' ⟨hP',x',hb⟩ hy => ?_
@@ -25,9 +25,9 @@ theorem nttSecret_ok {S' : Nat} {p : Params} (hF : PFacts p) {σ : State}
     obtain rfl := List.mem_singleton.mp hw'
     exact hw)⟩
   have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
-  exact ⟨h.kc.step hF hp hP' (by unfold kcChk; lay [hF.pk, hF.sk]), x'.trans h.x24, h.good,
-    h.small, fun e he => L.keepPoly hP' (by lay [hF.pk, hF.sk]) (h.aS e he),
-    fun i hi => L.keepPoly hP' (by lay [hF.pk, hF.sk]) (h.s2 i hi),
+  exact ⟨h.kc.step hF hp hP' (by unfold kcChk; layd), x'.trans h.x24, h.good,
+    h.small, fun e he => L.keepPoly hP' (by layd) (h.aS e he),
+    fun i hi => L.keepPoly hP' (by layd) (h.s2 i hi),
     fun j' hj' => if e : j' = j then by
         subst e; rw [ifp (Nat.lt_succ_self j'), hP'.pa (p := sP p j') (show Reg.x28 ∈ keptRegs by decide), ← hS.2]
         exact hb
@@ -36,13 +36,13 @@ theorem nttSecret_ok {S' : Nat} {p : Params} (hF : PFacts p) {σ : State}
         by_cases hlt : j' < j
         · simp only [ite_eq_left hlt] at hv
           simp only [ite_eq_left (show j' < j+1 by omega)]
-          exact Sign.keepPosPoly L hP' (by lay [hF.pk,hF.sk]) hv
+          exact Sign.keepPosPoly L hP' (by layd) hv
         · simp only [ite_eq_right hlt] at hv
           simp only [ite_eq_right (show ¬ j' < j+1 by omega)]
-          exact L.keepPoly hP' (by lay [hF.pk,hF.sk]) hv,
-    by rw [L.keepBytes hP' (by lay [hF.pk, hF.sk])]; exact h.pk0,
-    by rw [L.keepBytes hP' (by lay [hF.pk, hF.sk])]; exact h.sk0,
-    by rw [L.keepBytes hP' (by lay [hF.pk, hF.sk])]; exact h.sk1,
+          exact L.keepPoly hP' (by layd) hv,
+    by rw [L.keepBytes hP' (by layd)]; exact h.pk0,
+    by rw [L.keepBytes hP' (by layd)]; exact h.sk0,
+    by rw [L.keepBytes hP' (by layd)]; exact h.sk1,
     fun r hr => by
       have : lenS p * r + lenS p ≤ lenS p * (p.ℓ + p.k) := by
         rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega)
