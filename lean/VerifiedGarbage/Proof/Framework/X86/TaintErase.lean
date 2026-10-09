@@ -150,7 +150,7 @@ theorem stepKD_noBases (hn : noBases τ = true) {i : Instr} {τ' : T} (hs : step
   | mul r =>
     cases hs
     refine noBases_iff.mpr ⟨?_, ha⟩
-    simp only [mulStep, kill, h, List.filter_nil]
+    simp only [mulStepKD_eq, mulStep, kill, h, List.filter_nil]
   | _ => cases hs
 
 end

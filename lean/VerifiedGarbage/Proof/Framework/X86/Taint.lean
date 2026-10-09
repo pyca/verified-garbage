@@ -2434,8 +2434,22 @@ def storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat ×
   | none => bif p then τ.slots else []
 
 def storeStepKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) (nb : List Nat) : Option T :=
-  bif pub τ m.base then some { τ with slots := storeSlotsKD τ m w p, wbases := storeWbasesK τ m w nb }
-  else none
+  match τ with
+  | ⟨rg, f, l, b, _, _, al, ab, st, ro⟩ =>
+    bif pub τ m.base then some ⟨rg, f, l, b, storeSlotsKD τ m w p, storeWbasesK τ m w nb, al, ab, st, ro⟩
+    else none
+
+def mulStepKD (τ : T) (r : Reg) : T :=
+  match τ with
+  | ⟨rg, _, l, _, s, w, al, ab, st, ro⟩ =>
+    let p := pub τ .eax && pub τ r
+    ⟨bif p then (rg.insert .eax).insert .edx else (rg.erase .eax).erase .edx, p, l,
+      filter (fun q => !regEq q.1 .edx) (killK τ .eax), s, w, al, ab, st, ro⟩
+
+theorem mulStepKD_eq : mulStepKD = mulStep := by
+  funext τ r
+  obtain ⟨rg, f, l, b, s, w, al, ab, st, ro⟩ := τ
+  simp only [mulStepKD, mulStep, killK_eq, KList.filter_eq, regEq_eq, Bool.cond_eq_ite, bne]
 
 /-- An instruction transfer function, independent of the incoming taint. -/
 structure Step where
@@ -2445,24 +2459,30 @@ structure Step where
 kernel can share the classification between checks from different taints.
 Stores retain the duplicate-slot optimization of `storeStepKD`. -/
 def stepKDFn : Instr → Step
-  | .mov d src => ⟨fun τ =>
+  | .mov d src => ⟨fun τ => match τ with
+    | ⟨_, f, l, _, s, w, al, ab, st, ro⟩ =>
     bif !regEq d .esp && srcOkK τ src then
-      some { τ with regs := setK τ d (srcPub τ src || loadPubK τ src), bases := movBasesK τ d src }
+      some ⟨setK τ d (srcPub τ src || loadPubK τ src), f, l, movBasesK τ d src, s, w, al, ab, st, ro⟩
     else none⟩
   | .store m r => ⟨fun τ => storeStepKD τ m 4 (pub τ r) (regBasesK τ r)⟩
-  | .alu op d src => ⟨fun τ =>
+  | .alu op d src => ⟨fun τ => match τ with
+    | ⟨rg, f, l, _, s, w, al, ab, st, ro⟩ =>
     bif !regEq d .esp && srcOkK τ src then
-      let p := pub τ d && srcPub τ src && (!usesCarry op || τ.flags)
-      some { τ with regs := bif writes op then setK τ d p else τ.regs, flags := p, bases := killK τ d }
+      let p := pub τ d && srcPub τ src && (!usesCarry op || f)
+      some ⟨bif writes op then setK τ d p else rg, p, l, killK τ d, s, w, al, ab, st, ro⟩
     else none⟩
-  | .shift _ d _ => ⟨fun τ =>
-    bif !regEq d .esp then some { τ with flags := τ.flags && pub τ d, bases := killK τ d } else none⟩
-  | .bswap d => ⟨fun τ => bif !regEq d .esp then some { τ with bases := killK τ d } else none⟩
-  | .movzx8 d m => ⟨fun τ =>
-    bif !regEq d .esp && pub τ m.base then some { τ with regs := setK τ d false, bases := killK τ d }
+  | .shift _ d _ => ⟨fun τ => match τ with
+    | ⟨rg, f, l, _, s, w, al, ab, st, ro⟩ =>
+    bif !regEq d .esp then some ⟨rg, f && pub τ d, l, killK τ d, s, w, al, ab, st, ro⟩ else none⟩
+  | .bswap d => ⟨fun τ => match τ with
+    | ⟨rg, f, l, _, s, w, al, ab, st, ro⟩ =>
+    bif !regEq d .esp then some ⟨rg, f, l, killK τ d, s, w, al, ab, st, ro⟩ else none⟩
+  | .movzx8 d m => ⟨fun τ => match τ with
+    | ⟨_, f, l, _, s, w, al, ab, st, ro⟩ =>
+    bif !regEq d .esp && pub τ m.base then some ⟨setK τ d false, f, l, killK τ d, s, w, al, ab, st, ro⟩
     else none⟩
   | .store8 m r => ⟨fun τ => storeStepKD τ m 1 (pub τ r.reg) []⟩
-  | .mul r => ⟨fun τ => some (mulStep τ r)⟩
+  | .mul r => ⟨fun τ => some (mulStepKD τ r)⟩
   | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms => ⟨fun _ => none⟩
 
 /-- Apply the preclassified instruction to the incoming taint. -/
@@ -2537,6 +2557,7 @@ theorem stepKD_spec (τ : T) (i : Instr) :
       rw [← regBasesK_eq]; rfl
     rw [e]; exact st m 4 _ _
   case store8 m r => exact st m 1 _ []
+  case mul r => exact other (by rw [stepKD, stepKDFn, stepK, mulStepKD_eq])
   all_goals exact other rfl
 
 end VG.X86.Taint
