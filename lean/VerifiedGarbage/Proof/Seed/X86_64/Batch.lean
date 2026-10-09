@@ -64,10 +64,11 @@ theorem ofNat_zero_add (p : Addr) : p + BitVec.ofNat 64 0 = p := BitVec.add_zero
 /-! ## Blocks and lanes -/
 
 theorem roundsN_congr {k₁ k₂ : Nat → Spec.Seed.Word × Spec.Seed.Word} :
-    ∀ (n : Nat) (q : Quad), (∀ j < n, k₁ j = k₂ j) → roundsN k₁ n q = roundsN k₂ n q
-  | 0, _, _ => rfl
-  | n + 1, q, h => by
-    rw [roundsN_succ, roundsN_succ, h n (by omega), roundsN_congr n q fun j hj => h j (by omega)]
+    ∀ (n : Nat) (q : Quad), (∀ j < n, k₁ j = k₂ j) → roundsN k₁ n q = roundsN k₂ n q := by
+  intro n q h
+  induction n with
+  | zero => exact (rfl : roundsN k₁ 0 q = q).trans (rfl : q = roundsN k₂ 0 q)
+  | succ n ih => rw [roundsN_succ, roundsN_succ, h n (by omega), ih fun j hj => h j (by omega)]
 
 theorem crypt_congr {k₁ k₂ : Nat → Spec.Seed.Word × Spec.Seed.Word} (h : ∀ j < 16, k₁ j = k₂ j)
     (b : Spec.Seed.Block) : Spec.Seed.crypt k₁ b = Spec.Seed.crypt k₂ b := by
