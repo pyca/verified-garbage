@@ -25,7 +25,8 @@ structure Callee where
 
 /-- The baseline computes one block at a time: nothing to gain. -/
 def Callee.scalar : Callee := ⟨"vg_chacha20_xor", Xor.xor, 0⟩
-/-- Up to 256 bytes in one computation of four blocks (`Avx2Tail.last`). -/
+/-- Up to 512 bytes in one call: up to 384 in one computation of at most six
+blocks (`Avx2Tail.last3`), 512 in one of eight (the loop). -/
 def Callee.avx2 : Callee := ⟨"vg_chacha20_xor_avx2", Avx2.xor, 448⟩
 /-- Up to 1024 bytes in one computation of sixteen blocks (the loop, or `Avx512.last16`). -/
 def Callee.avx512 : Callee := ⟨"vg_chacha20_xor_avx512", Avx512.xor, 960⟩
