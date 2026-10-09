@@ -242,13 +242,13 @@ def bigS (x : Impl.ChaCha20.X86_64.Callee) : Prog isa :=
 def iteS (x : Impl.ChaCha20.X86_64.Callee) : Prog isa := .ite .b smallS (bigS x)
 
 /-- `sealStitched` after the branch. -/
-def postS (fold : Nat) (b : Impl.Poly1305.X86_64.Blocks) : Prog isa :=
-  .seq (wipe fold) (.seq (macPadLengths b .rbx .rbp) (.seq finalizeTag (.block restore)))
+def postS (fold pass : Nat) (b : Impl.Poly1305.X86_64.Blocks) : Prog isa :=
+  .seq (wipe fold pass) (.seq (macPadLengths b .rbx .rbp) (.seq finalizeTag (.block restore)))
 
 theorem sealS_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks} {s s' : State}
     {t : List Leak} (h : Exec isa (sealStitched x b) s t s') :
-    Exec isa (.seq (.block entry) (.seq (prologueA x.fold) (.seq (.call x.name x.code)
-      (.seq (sealMid x.fold b) (.seq (iteS x) (postS x.fold b)))))) s t s' := by
+    Exec isa (.seq (.block entry) (.seq (prologueA x.fold x.pass) (.seq (.call x.name x.code)
+      (.seq (sealMid x.fold b) (.seq (iteS x) (postS x.fold x.pass b)))))) s t s' := by
   cases h with | seq e₀ h => cases h with | seq hP h => cases hP with | seq ePA hP => cases hP with
   | seq eC ePB => cases h with | seq eMA h => cases h with | seq eLEN h => cases h with | seq hC h =>
   cases hC with | seq eCMP hC => cases hC with | seq eITE hC => cases hC with | seq eANC hC =>
@@ -263,13 +263,13 @@ theorem sealS_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.B
 /-! ## What holds where -/
 
 /-- At the branch on the length: as `AtIte`, and what `cryptS_ok` needs. -/
-def AtIteS (fold : Nat) (s₀ s : State) : Prop :=
-  AtIte fold s₀ s ∧ stateAt s.mem (off (cx s₀) 64) = initState (K s₀) 0 (N s₀) ∧
+def AtIteS (fold pass : Nat) (s₀ s : State) : Prop :=
+  AtIte fold pass s₀ s ∧ stateAt s.mem (off (cx s₀) 64) = initState (K s₀) 0 (N s₀) ∧
     ∃ key msg, Repr s.mem (off (cx s₀) 448) key msg
 
-theorem sealMidS_ok {fold : Nat} (hf : fold ≤ 960) (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State}
-    (hp : APre e s₀) {s : State} (h : AfterF fold s₀ s) : WP isa (sealMid fold b) s (AtIteS fold s₀) := by
-  have hM := Nat.le_trans (mOf_le fold (L s₀)) hf
+theorem sealMidS_ok {fold pass : Nat} (hf : fold ≤ 960) (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State}
+    (hp : APre e s₀) {s : State} (h : AfterF fold pass s₀ s) : WP isa (sealMid fold b) s (AtIteS fold pass s₀) := by
+  have hM := Nat.le_trans (mOf_le fold pass (L s₀)) hf
   refine WP.seq (WP.mono (prologueB_ok hf hp h) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (macPad_ok b hp (p := .rbx) (n := .rbp) ⟨.inl rfl, .inl rfl⟩ (srcA hp) h₁.inv.r15
     h₁.inv.rsp h₁.inv.rd h₁.inv.wr h₁.rbx (by rw [h₁.rbp]; exact hRDX s₀))
@@ -313,8 +313,8 @@ structure AfterS (s₀ s : State) : Prop where
   rbp : s.gpr .rbp = BitVec.ofNat 64 (L s₀ - aOf (L s₀))
   wr : s.wr = s₀.wr
 
-theorem smallS_ok {fold : Nat} (hf : fold ≤ 960) {s₀ : State} (hp : APre e s₀) {s : State}
-    (h : AtIte fold s₀ s) (hle : L s₀ ≤ fold) : WP isa smallS s (AfterS s₀) := by
+theorem smallS_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp : APre e s₀) {s : State}
+    (h : AtIte fold pass s₀ s) (hle : L s₀ ≤ fold) : WP isa smallS s (AfterS s₀) := by
   unfold smallS
   apply seq3
   refine WP.mono (cryptSmall_ok hf hp h.inv hle h.ks) fun s₃ c₃ => ?_
@@ -448,9 +448,9 @@ theorem argsS_taint :
 theorem whole_taint : ∃ h, (taintS.check (τR []) (.block whole) h).isSome = true := by
   taint_decide_sum []
 
-theorem postS_taint {fold : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold b) :
-    ∃ h, (taintS.check (τ₁S true) (postS fold b) h).isSome = true := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
+theorem postS_taint {fold pass : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass b) :
+    ∃ h, (taintS.check (τ₁S true) (postS fold pass b) h).isSome = true := by
+  rcases h with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
     taint_decide_sum [blocksBigS, blocksBigAvx2S, blocksBigAvx512S, blocksSmallS, blocksSmallAvx2S,
       blocksSmallAvx512S, finalizeSumS]
 
@@ -476,8 +476,8 @@ theorem bulk_bp {s₀ : State} {σ s : State} (ha : Args s₀ σ s) (hi : Inv s�
        rw [State.withRegions_mem, ha.mem, ← off_eq]; exact args_repr hrep⟩
 
 /-- What the branch with whole chunks starts from, in one run. -/
-def AtArgs (fold : Nat) (s₀ s : State) : Prop :=
-  ∃ σ, AtIteS fold s₀ σ ∧ Args s₀ σ s ∧ s.cf = some (decide (L s₀ < 512))
+def AtArgs (fold pass : Nat) (s₀ s : State) : Prop :=
+  ∃ σ, AtIteS fold pass s₀ σ ∧ Args s₀ σ s ∧ s.cf = some (decide (L s₀ < 512))
 
 section
 variable (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ s₀' : State} (hp : APre true s₀) (hp' : APre true s₀')
@@ -485,7 +485,7 @@ variable (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ s₀' : State} (hp : APre tru
 include hp hp' hq
 
 theorem bigS_rel :
-    RelCT isa (fun s₁ s₂ => (AtIteS v.callee.fold s₀ s₁ ∧ AtIteS v.callee.fold s₀' s₂) ∧
+    RelCT isa (fun s₁ s₂ => (AtIteS v.callee.fold v.callee.pass s₀ s₁ ∧ AtIteS v.callee.fold v.callee.pass s₀' s₂) ∧
       isa.eval .b s₁ = some false) (bigS v.callee) fun s₁ s₂ => AfterS s₀ s₁ ∧ AfterS s₀' s₂ := by
   have hq' := hq
   obtain ⟨-, -, -, -, p5, p6, p7, -, p9⟩ := hq'
@@ -494,31 +494,31 @@ theorem bigS_rel :
   have ed : dp s₀' = dp s₀ := by simp only [dp, p5]
   obtain ⟨_, hA⟩ := argsS_taint
   obtain ⟨_, hW⟩ := whole_taint
-  have argsOk : ∀ {σ₀ s}, APre true σ₀ → AtIteS v.callee.fold σ₀ s →
-      WP isa (.block (cryptArgs ++ ([.alu .cmp .rdx (.imm 512)] : List Instr))) s (AtArgs v.callee.fold σ₀) :=
+  have argsOk : ∀ {σ₀ s}, APre true σ₀ → AtIteS v.callee.fold v.callee.pass σ₀ s →
+      WP isa (.block (cryptArgs ++ ([.alu .cmp .rdx (.imm 512)] : List Instr))) s (AtArgs v.callee.fold v.callee.pass σ₀) :=
     fun hp h => WP.mono (argsCmp_ok hp h.1.inv) fun _ ⟨ha, cf⟩ => ⟨_, h, ha, cf⟩
-  have args := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => (AtIteS v.callee.fold s₀ s₁ ∧
-      AtIteS v.callee.fold s₀' s₂) ∧ isa.eval .b s₁ = some false) (τS true)
+  have args := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => (AtIteS v.callee.fold v.callee.pass s₀ s₁ ∧
+      AtIteS v.callee.fold v.callee.pass s₀' s₂) ∧ isa.eval .b s₁ = some false) (τS true)
       (fun _ _ h => agreeS hp hp' hq h.1.1.1 h.1.2.1) hA).wp
-    (F₁ := AtArgs v.callee.fold s₀) (F₂ := AtArgs v.callee.fold s₀') fun _ _ h =>
+    (F₁ := AtArgs v.callee.fold v.callee.pass s₀) (F₂ := AtArgs v.callee.fold v.callee.pass s₀') fun _ _ h =>
       ⟨argsOk hp h.1.1, argsOk hp' h.1.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
-  have wholeOk : ∀ {σ₀ s}, APre true σ₀ → AtArgs v.callee.fold σ₀ s → isa.eval .b s = some true →
+  have wholeOk : ∀ {σ₀ s}, APre true σ₀ → AtArgs v.callee.fold v.callee.pass σ₀ s → isa.eval .b s = some true →
       WP isa (.block whole) s (MidS σ₀) := fun hp ⟨σ, ⟨hi, hst, key, msg, hrep⟩, ha, cf⟩ hb => by
     simp only [eval, cf, Option.some.injEq, decide_eq_true_eq] at hb
     exact WP.mono (whole_mid hp ha hb hst hrep) fun _ hm => ⟨σ, key, msg, 0, 0, hi.inv, hm⟩
-  have wh := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => (AtArgs v.callee.fold s₀ s₁ ∧
-      AtArgs v.callee.fold s₀' s₂) ∧ isa.eval .b s₁ = some true) (τR [])
+  have wh := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => (AtArgs v.callee.fold v.callee.pass s₀ s₁ ∧
+      AtArgs v.callee.fold v.callee.pass s₀' s₂) ∧ isa.eval .b s₁ = some true) (τR [])
       (fun _ _ _ => agree_regs [] fun _ h => by simp at h) hW).wp
     (F₁ := MidS s₀) (F₂ := MidS s₀') fun _ _ h => ⟨wholeOk hp h.1.1 h.2,
       wholeOk hp' h.1.2 (by
         rw [← h.2]; obtain ⟨⟨_, -, -, c₁⟩, ⟨_, -, -, c₂⟩⟩ := h.1; simp only [eval, c₁, c₂, eL])⟩).mono (fun _ _ h => h) fun _ _ h => h.2
-  have bulkOk : ∀ {σ₀ s}, APre true σ₀ → AtArgs v.callee.fold σ₀ s → isa.eval .b s = some false →
+  have bulkOk : ∀ {σ₀ s}, APre true σ₀ → AtArgs v.callee.fold v.callee.pass σ₀ s → isa.eval .b s = some false →
       WP isa bulk s (MidS σ₀) := fun hp ⟨σ, ⟨hi, hst, key, msg, hrep⟩, ha, cf⟩ hb => by
     simp only [eval, cf, Option.some.injEq, decide_eq_false_iff_not] at hb
     exact WP.mono (bulk_mid hp hi.inv.wr ha (by omega) hst hrep) fun _ ⟨E, a, hm⟩ => ⟨σ, key, msg, E, a, hi.inv, hm⟩
   have hl : Lay (cx s₀) (dp s₀) (L s₀) :=
     ⟨(s₀.gpr .r9).isLt, hp.wrap_d, hp.c_d.sub_left (Region.sub_prefix (by decide))⟩
-  have bk : RelCT isa (fun s₁ s₂ => (AtArgs v.callee.fold s₀ s₁ ∧ AtArgs v.callee.fold s₀' s₂) ∧
+  have bk : RelCT isa (fun s₁ s₂ => (AtArgs v.callee.fold v.callee.pass s₀ s₁ ∧ AtArgs v.callee.fold v.callee.pass s₀' s₂) ∧
       isa.eval .b s₁ = some false) bulk fun s₁ s₂ => MidS s₀ s₁ ∧ MidS s₀' s₂ := by
     by_cases hge : 512 ≤ L s₀
     · refine ((relCT_narrow (c := bulk) (fun _ => bulkWr (cx s₀) (dp s₀) (L s₀)) ?_
@@ -573,20 +573,20 @@ theorem sealS_rel (h₀ : preX86_64 true s₀) (h₀' : preX86_64 true s₀') (h
   obtain ⟨_, hpost⟩ := postS_taint v.fold_poly
   have pA := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => s₁ = entryS s₀ ∧ s₂ = entryS s₀') (τ₀ true)
     (fun _ _ h => by rw [h.1, h.2]; exact agree₀ hp hp' hq) hA).wp
-    (F₁ := FArgs v.callee.fold s₀) (F₂ := FArgs v.callee.fold s₀') fun _ _ h =>
-    ⟨by rw [h.1]; exact prologueA_ok hfl hp, by rw [h.2]; exact prologueA_ok hfl hp'⟩).mono
+    (F₁ := FArgs v.callee.fold v.callee.pass s₀) (F₂ := FArgs v.callee.fold v.callee.pass s₀') fun _ _ h =>
+    ⟨by rw [h.1]; exact prologueA_ok hfl (pass_of v) hp, by rw [h.2]; exact prologueA_ok hfl (pass_of v) hp'⟩).mono
     (fun _ _ h => h) fun _ _ h => h.2
   have mid := ((RelCT.taint (A := taintS)
-    (P := fun s₁ s₂ => AfterF v.callee.fold s₀ s₁ ∧ AfterF v.callee.fold s₀' s₂) (τA true)
-    (fun _ _ h => agreeA hp hp' hq h.1 h.2) hmid).wp (F₁ := AtIteS v.callee.fold s₀)
-    (F₂ := AtIteS v.callee.fold s₀') fun _ _ h =>
+    (P := fun s₁ s₂ => AfterF v.callee.fold v.callee.pass s₀ s₁ ∧ AfterF v.callee.fold v.callee.pass s₀' s₂) (τA true)
+    (fun _ _ h => agreeA hp hp' hq h.1 h.2) hmid).wp (F₁ := AtIteS v.callee.fold v.callee.pass s₀)
+    (F₂ := AtIteS v.callee.fold v.callee.pass s₀') fun _ _ h =>
       ⟨sealMidS_ok hfl v.poly hp h.1, sealMidS_ok hfl v.poly hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
-  have hc : ∀ s₁ s₂, (AtIteS v.callee.fold s₀ s₁ ∧ AtIteS v.callee.fold s₀' s₂) →
+  have hc : ∀ s₁ s₂, (AtIteS v.callee.fold v.callee.pass s₀ s₁ ∧ AtIteS v.callee.fold v.callee.pass s₀' s₂) →
       isa.eval .b s₁ = isa.eval .b s₂ := fun s₁ s₂ h => by
     have : L s₀ = L s₀' := by simp only [L, hq.2.2.2.2.2.1]
     simp [eval, h.1.1.cf, h.2.1.cf, this]
   have small := (RelCT.taint (A := taintS)
-    (P := fun s₁ s₂ => (AtIteS v.callee.fold s₀ s₁ ∧ AtIteS v.callee.fold s₀' s₂) ∧ isa.eval .b s₁ = some true)
+    (P := fun s₁ s₂ => (AtIteS v.callee.fold v.callee.pass s₀ s₁ ∧ AtIteS v.callee.fold v.callee.pass s₀' s₂) ∧ isa.eval .b s₁ = some true)
     (τS true) (fun _ _ h => agreeS hp hp' hq h.1.1.1 h.1.2.1) hS).wp (F₁ := AfterS s₀) (F₂ := AfterS s₀')
     fun s₁ s₂ h => by
       have e₁ := h.2
@@ -618,8 +618,8 @@ open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64 VG.Impl.ChaCha20Poly1305.X86_6
 
 theorem sealS_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     (sealStitched v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases v.fold_poly with ⟨hf, hb⟩ | ⟨hf, hb⟩ | ⟨hf, hb⟩ <;>
-    (simp only [sealStitched, prologue, cryptS, Code.all, v.spSafe, hf, hb]; decide +kernel)
+  rcases v.fold_poly with ⟨hf, hpass, hb⟩ | ⟨hf, hpass, hb⟩ | ⟨hf, hpass, hb⟩ <;>
+    (simp only [sealStitched, prologue, cryptS, Code.all, v.spSafe, hf, hpass, hb]; decide +kernel)
 
 theorem sealS_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : sealX86_64.pre s) :
     ∃ t s', Exec isa (sealStitched v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' :=
@@ -645,7 +645,8 @@ theorem sealS_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
   simp only [sealStitched, prologue, prologueA, prologueB, foldM, zeroKs, macPad, macPadLengths, wholeBlocks,
-    padTail, cryptS, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth, xorBuf_xdepth, init_xdepth,
+    padTail, cryptS, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth, xorBuf_xdepth, splitM_xdepth,
+    init_xdepth,
     finalize_xdepth, bulk_xdepth, Nat.max_le]
   omega
 

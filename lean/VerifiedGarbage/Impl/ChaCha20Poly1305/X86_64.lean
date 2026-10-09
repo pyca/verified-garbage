@@ -34,13 +34,17 @@ The working space (`workLen` = 1696 bytes, called the context below):
   first `m` bytes of the data.
 
 `m` is the length of the data if it is at most the implementation's `fold`
-(`Callee.fold`), and 0 otherwise. The prologue zeros the first `64 + m`
-bytes of `ctx[672, 1696)` and XORs the keystream from counter 0 into them
-(one call of `vg_chacha20_xor`, which computes them in one pass): the block
-with counter 0, whose first 32 bytes are the one-time key, and the keystream
-of the first `m` bytes of the data. `crypt` XORs those into the data
-(`XorBuf.xorBuf`), and the rest of the data (none, or all of it) by a second
-call of `vg_chacha20_xor`, from counter 1. Then it zeros those `64 + m`
+(`Callee.fold`). Otherwise it is 0, unless the implementation's bulk passes
+take `pass` bytes at once (`Callee.pass`): then `m` is the bytes past the
+last multiple of `pass`, rounded up to a block, if that is at most `fold`
+(so a TLS record of `n · 1024 + 1` bytes leaves whole passes after its first
+64). The prologue zeros the first `64 + m` bytes of `ctx[672, 1696)` and
+XORs the keystream from counter 0 into them (one call of `vg_chacha20_xor`,
+which computes them in one pass): the block with counter 0, whose first 32
+bytes are the one-time key, and the keystream of the first `m` bytes of the
+data. `crypt` XORs those into the data (`XorBuf.xorBuf`), and the rest of
+the data (none, or all but the first `m` bytes) by a second call of
+`vg_chacha20_xor`, from counter `1 + m / 64`. Then it zeros those `64 + m`
 bytes again, as the wrapper zeroes only `ctx[0, 672)`, and nothing else is
 written after it.
 
@@ -118,11 +122,22 @@ def moves : List Instr :=
   [.mov .r15 (.reg .rax), .mov .r12 (.reg .r11), .mov .rbx (.reg .rdx), .mov .rbp (.reg .rcx),
     .mov .r14 (.reg .r8), .mov .r13 (.reg .r9)]
 
+/-- For more than `fold` bytes of data (in `r13`), `rdx = m`: if `pass` is
+not 0, the bytes past the last multiple of `pass` rounded up to a multiple of
+64 (`pass` a power of two), if that is at most `fold`; else (or if `pass` is
+0, adding no code) `rdx` stays 0. -/
+def splitM (fold pass : Nat) : Prog isa :=
+  if pass = 0 then .block [] else
+  .seq (.block [.mov .rdx (.reg .r13), .alu .and .rdx (.imm (BitVec.ofNat 32 (pass - 1))),
+    .alu .add .rdx (.imm 63), .alu .and .rdx (.imm (BitVec.ofInt 32 (-64))),
+    .alu .cmp .rdx (.imm (BitVec.ofNat 32 (fold + 1)))])
+    (.ite .b (.block []) (.block [.mov32 .rdx (.imm 0)]))
+
 /-- `rdx = m`: the length of the data (in `r13`) if it is at most `fold`,
-else 0. -/
-def foldM (fold : Nat) : Prog isa :=
+else as `splitM`. -/
+def foldM (fold pass : Nat) : Prog isa :=
   .seq (.block [.mov32 .rdx (.imm 0), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (fold + 1)))])
-    (.ite .b (.block [.mov .rdx (.reg .r13)]) (.block []))
+    (.ite .b (.block [.mov .rdx (.reg .r13)]) (splitM fold pass))
 
 /-- `[r15 + rcx + 672]`. -/
 def zeroQ : MemOp := { base := .r15, index := some .rcx, disp := 672 }
@@ -137,9 +152,9 @@ def zeroKs : Prog isa :=
 moves the arguments, builds the ChaCha20 state twice (the copy for the call), zeros the first
 `64 + m` bytes of `ctx[672, 1696)` (rounded up to quadwords) and sets up the
 call's arguments, the copy of the state and those bytes. -/
-def prologueA (fold : Nat) : Prog isa :=
+def prologueA (fold pass : Nat) : Prog isa :=
   .seq (.block (save ++ moves ++ initStateQ 64 ++ initStateQ 608))
-  (.seq (foldM fold)
+  (.seq (foldM fold pass)
   (.seq (.block [.alu .add .rdx (.imm 64)])
   (.seq zeroKs
     (.block (ptr .rdi .r15 608 ++ ptr .rsi .r15 672 ++ ptr .rcx .r15 128)))))
@@ -155,7 +170,7 @@ def prologueB : Prog isa :=
 bytes by the implementation `x` of `vg_chacha20_xor`, and the Poly1305 state
 for the one-time key. -/
 def prologue (x : ChaCha20.X86_64.Callee) : Prog isa :=
-  .seq (prologueA x.fold) (.seq (.call x.name x.code) prologueB)
+  .seq (prologueA x.fold x.pass) (.seq (.call x.name x.code) prologueB)
 
 /-- `[rsi + rcx]` and `[r15 + rcx + 576]`. -/
 def tailByte : MemOp := { base := .rsi, index := some .rcx }
@@ -208,6 +223,13 @@ def cryptArgs : List Instr :=
   [.mov32 .rax (.imm 1), .store32 (at_ .r15 112) .rax] ++ ptr .rdi .r15 64 ++
     [.mov .rsi (.reg .r14), .mov .rdx (.reg .r13)] ++ ptr .rcx .r15 128
 
+/-- As `cryptArgs`, after the first `m` bytes (`m` in `rdx`): the counter
+set to `1 + m / 64`, and the data after its first `m` bytes. -/
+def cryptArgsM : List Instr :=
+  [.mov .rax (.reg .rdx), .shift .shr .rax 6, .alu .add .rax (.imm 1), .store32 (at_ .r15 112) .rax,
+   .mov .rsi (.reg .r14), .alu .add .rsi (.reg .rdx), .mov .rax (.reg .r13), .alu .sub .rax (.reg .rdx),
+   .mov .rdx (.reg .rax)] ++ ptr .rdi .r15 64 ++ ptr .rcx .r15 128
+
 /-- XOR the 16 bytes at `rsi + rcx` into those at `d + rcx`, through `xmm0`
 and `xmm1`. -/
 def xBody (d : Reg) : List Instr :=
@@ -226,18 +248,31 @@ def xorBufX (d : Reg) : Prog isa :=
     .alu .sub .rdx (.reg .rcx)])
     (ChaCha20.X86_64.XorBuf.xorBuf .rdi .rsi)))
 
+/-- More than `fold` bytes, up to the second call of `vg_chacha20_xor`: the
+first `m` (`foldM`; a multiple of 64, maybe 0) by XORing the keystream in
+`ctx[736, 736 + m)` into them, and the arguments of the call for the rest
+(`cryptArgsM`). -/
+def cryptPre (fold pass : Nat) : Prog isa :=
+  .seq (foldM fold pass) (.seq (.block [.alu .test .rdx (.reg .rdx)])
+  (.seq (.ite .e (.block []) (.seq (.block (ptr .rsi .r15 736)) (xorBufX .r14)))
+  (.seq (foldM fold pass) (.block cryptArgsM))))
+
+/-- More than `fold` bytes: `cryptPre`, then the rest by the implementation
+`x` of `vg_chacha20_xor`, from counter `1 + m / 64`. -/
+def cryptBig (x : ChaCha20.X86_64.Callee) : Prog isa :=
+  .seq (cryptPre x.fold x.pass) (.call x.name x.code)
+
 /-- The data encrypted or decrypted, then the keystream wiped. If its length
 is at most `fold`, by XORing the keystream in `ctx[736, 736 + len)` into it;
-otherwise by the implementation `x` of `vg_chacha20_xor`, from counter 1.
-Either way `rsi` then points at `ctx + 128`. -/
+otherwise by `cryptBig`. Either way `rsi` then points at `ctx + 128`. -/
 def crypt (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (x.fold + 1)))])
   (.seq (.ite .b
     (.seq (.block (ptr .rsi .r15 736 ++ [.mov .rdx (.reg .r13)]))
       (.seq (xorBufX .r14) (.block (ptr .rsi .r15 128))))
-    (.seq (.block cryptArgs) (.call x.name x.code)))
+    (cryptBig x))
   (.seq (.block (anchor .rsi 128))
-  (.seq (foldM x.fold)
+  (.seq (foldM x.fold x.pass)
   (.seq (.block [.alu .add .rdx (.imm 64)]) zeroKs))))
 
 /-- The lengths block. -/

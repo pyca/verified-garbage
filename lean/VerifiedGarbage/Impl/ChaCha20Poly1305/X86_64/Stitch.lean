@@ -130,7 +130,7 @@ def cryptS (x : ChaCha20.X86_64.Callee) : Prog isa :=
     (.seq (.block (cryptArgs ++ [.alu .cmp .rdx (.imm 512)]))
       (.seq (.ite .b (.block whole) bulk) (.call x.name x.code))))
   (.seq (.block (anchor .rsi 128))
-  (.seq (foldM x.fold)
+  (.seq (foldM x.fold x.pass)
   (.seq (.block [.alu .add .rdx (.imm 64)]) zeroKs))))
 
 /-- `seal`, with Poly1305 inside the kernel for the whole chunks. -/
