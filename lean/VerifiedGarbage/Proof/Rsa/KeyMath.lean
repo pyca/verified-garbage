@@ -394,6 +394,53 @@ theorem divIter_inv {D K N : Nat} (hD : 0 < D) (hN : N < 2 ^ K) :
     · rw [h3, Nat.mod_mod_of_dvd _ (by rw [eP]; exact Nat.dvd_mul_left _ _), Nat.pow_succ]
       grind
 
+/-- `divIter_inv` from a remainder `R₀ < D` already in place: after `k` steps
+the remainder is that of `R₀ 2^k` plus the `k` bits shifted out of `N`. -/
+theorem divIter_from {D K R₀ N : Nat} (hR₀ : R₀ < D) (hN : N < 2 ^ K) :
+    ∀ k ≤ K, ∃ q, (divIter D K k (R₀, N)).1 < D ∧
+      (divIter D K k (R₀, N)).1 + D * q = R₀ * 2 ^ k + N / 2 ^ (K - k) ∧
+      (divIter D K k (R₀, N)).2 = N % 2 ^ (K - k) * 2 ^ k + q ∧ q < 2 ^ k
+  | 0, _ => ⟨0, hR₀, by simp [divIter, Nat.div_eq_of_lt hN], by simp [divIter, Nat.mod_eq_of_lt hN], by simp⟩
+  | k + 1, hk => by
+    obtain ⟨q, hR, hx, hQ, hq⟩ := divIter_from hR₀ hN k (by omega)
+    have eP : 2 ^ (K - k) = 2 * 2 ^ (K - (k + 1)) := by
+      rw [show K - k = K - (k + 1) + 1 by omega, Nat.pow_succ, Nat.mul_comm]
+    have hL : N % 2 ^ (K - k) < 2 * 2 ^ (K - (k + 1)) := eP ▸ Nat.mod_lt _ (Nat.two_pow_pos _)
+    have hK1 : 2 ^ (K - 1) = 2 ^ k * 2 ^ (K - (k + 1)) := by rw [← Nat.pow_add]; congr 1; omega
+    have hK : 2 ^ K = 2 * (2 ^ k * 2 ^ (K - (k + 1))) := by
+      rw [← Nat.pow_add, ← Nat.pow_succ']; congr 1; omega
+    obtain ⟨q', h1, h2, h3, h4⟩ := divStep_inv hR hx hQ hq hL hK1 hK (Nat.two_pow_pos _)
+    have es : divIter D K (k + 1) (R₀, N) =
+        divStep D K ((divIter D K k (R₀, N)).1, (divIter D K k (R₀, N)).2) := rfl
+    rw [es]
+    refine ⟨q', h1, ?_, ?_, by rw [Nat.pow_succ]; omega⟩
+    · rw [h2]
+      have e := Nat.div_add_mod N (2 ^ (K - k))
+      generalize 2 ^ (K - (k + 1)) = P at eP ⊢
+      rw [eP] at e ⊢
+      have hP : 0 < P := by have := Nat.two_pow_pos (K - k); omega
+      have e2 : N / P = 2 * (N / (2 * P)) + N % (2 * P) / P := by
+        conv_lhs => rw [← e]
+        rw [show 2 * P * (N / (2 * P)) + N % (2 * P) = N % (2 * P) + P * (2 * (N / (2 * P))) by grind,
+          Nat.add_mul_div_left _ _ hP]
+        omega
+      rw [e2, Nat.pow_succ]
+      grind
+    · rw [h3, Nat.mod_mod_of_dvd _ (by rw [eP]; exact Nat.dvd_mul_left _ _), Nat.pow_succ]
+      grind
+
+/-- `c` steps from `R₀ < D` with the low `c` bits `L` of the dividend at the
+top of the `K`-bit register: the remainder of `R₀ 2^c + L`. -/
+theorem divIter_top {D K R₀ L c : Nat} (hR₀ : R₀ < D) (hc : c ≤ K) (hL : L < 2 ^ c) :
+    (divIter D K c (R₀, L * 2 ^ (K - c))).1 = (R₀ * 2 ^ c + L) % D := by
+  have hN : L * 2 ^ (K - c) < 2 ^ K := by
+    have : L * 2 ^ (K - c) < 2 ^ c * 2 ^ (K - c) :=
+      Nat.mul_lt_mul_of_pos_right hL (Nat.two_pow_pos _)
+    rwa [← Nat.pow_add, Nat.add_sub_cancel' hc] at this
+  obtain ⟨q, hR, hx, -, -⟩ := divIter_from hR₀ hN c hc
+  rw [Nat.mul_div_cancel _ (Nat.two_pow_pos _)] at hx
+  rw [← hx, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hR]
+
 /-- After `K` steps from `(0, N)`: the remainder and the quotient. -/
 theorem divIter_done {D K N : Nat} (hD : 0 < D) (hN : N < 2 ^ K) : divIter D K K (0, N) = (N % D, N / D) := by
   obtain ⟨q, hR, hx, hQ, hq⟩ := divIter_inv hD hN K (Nat.le_refl _)
