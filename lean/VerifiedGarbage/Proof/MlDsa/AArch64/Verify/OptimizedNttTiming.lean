@@ -27,8 +27,8 @@ theorem nttZ_tr {p : Params} (hF : VFacts p) {S i : Nat} (hi : i<p.ℓ) :
   obtain ⟨⟨σ,τ,hσ,hτ,pub,⟨h,A,c,q,hx⟩,⟨h',A',c',q',hy⟩⟩,et⟩ := hh
   have H := vc_two hF hσ hτ pub hx.vc hy.vc
   have hk:=hF.k;have hl:=hF.l;have hkl:=hF.kl;have hsc:=hF.scr
-  have hr : inB (vR p++vW p) (zP p i) 1024=true := by vlay
-  have hw : inB (vW p) (zP p i) 1024=true := by vlay
+  have hr : inB (vR p++vW p) (zP p i) 1024=true := by vlayd
+  have hw : inB (vW p) (zP p i) 1024=true := by vlayd
   have red {σ s : State} {h A c q} (hs : SC p S σ h A c q i false 0 s) :
       Reduced s.mem (pa s (zP p i)) := by
     have hz:=hs.z i hi
@@ -49,8 +49,8 @@ theorem nttC_tr {p : Params} (hF : VFacts p) {S : Nat} :
   obtain ⟨⟨σ,τ,hσ,hτ,pub,⟨h,A,c,q,hx⟩,⟨h',A',c',q',hy⟩⟩,et⟩ := hh
   have H := vc_two hF hσ hτ pub hx.vc hy.vc
   have hk:=hF.k;have hl:=hF.l;have hkl:=hF.kl;have hsc:=hF.scr
-  have hr : inB (vR p++vW p) (cP p) 1024=true := by vlay
-  have hw : inB (vW p) (cP p) 1024=true := by vlay
+  have hr : inB (vR p++vW p) (cP p) 1024=true := by vlayd
+  have hw : inB (vW p) (cP p) 1024=true := by vlayd
   exact ⟨forward_ready hF hσ hx.vc hx.roots hr hw hx.c.1,
     forward_ready hF hτ hy.vc hy.roots hr hw hy.c.1,
     H.same.pa (show Reg.x28∈bases from by decide),H.same.2,et.1⟩

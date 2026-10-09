@@ -22,7 +22,7 @@ theorem unpack_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VF
   refine WP.mono_syms (t1At_ok hP.s64 hP.unpackT1 L hc) fun t ⟨hb,h24,hv⟩ hy=>?_
   refine ⟨hs.keep hF hp hb (by scchks hF (Nat.le_of_lt hr)) hy
     (fun w hm=>by obtain rfl:=List.mem_singleton.mp hm;vlay) h24,
-    L.keepPoly hb (by vlay) hw,?_⟩
+    L.keepPoly hb (by vlayd) hw,?_⟩
   rw [hs.vc.pkSlice (by rw [hF.pk];omega)] at hv
   rw [hb.pa (show Reg.x28∈keptRegs by decide)]
   exact hv
@@ -36,14 +36,14 @@ theorem nttT_ok {p : Params} (hF : VFacts p) {S : Nat} {σ s : State} (hp : vPre
       PosPolyIs t.mem (pa t (tmP p)) (Proof.MlDsa.Verify.t1Hat (vPk p σ) r) := by
   have L:=hs.vc.lay hF hp
   have hk:=hF.k;have hl:=hF.l;have hkl:=hF.kl;have hsc:=hF.scr
-  have rd : inB (vR p++vW p) (tmP p) 1024=true := by vlay
-  have wr : inB (vW p) (tmP p) 1024=true := by vlay
+  have rd : inB (vR p++vW p) (tmP p) 1024=true := by vlayd
+  have wr : inB (vW p) (tmP p) 1024=true := by vlayd
   refine WP.mono_syms (Sign.positiveNttAt_layout L rd wr
     ⟨hs.roots.nttTableAt (L.inW wr),hs.roots.forward.readable⟩ ht.1)
     fun t ⟨hb,h24,hv⟩ hy=>?_
   refine ⟨hs.keep hF hp hb (by scchks hF (Nat.le_of_lt hr)) hy
     (fun w hm=>by obtain rfl:=List.mem_singleton.mp hm;exact wr) h24,
-    L.keepPoly hb (by vlay) hw,?_⟩
+    L.keepPoly hb (by vlayd) hw,?_⟩
   rw [hb.pa (show Reg.x28∈keptRegs by decide)]
   rw [ht.2] at hv
   exact hv
