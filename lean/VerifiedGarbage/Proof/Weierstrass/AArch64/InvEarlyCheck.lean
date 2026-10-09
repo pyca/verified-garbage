@@ -1,4 +1,3 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyFinish
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 
 namespace VG.Proof.Weierstrass.AArch64
@@ -56,22 +55,5 @@ theorem earlyCheck_ok {s : State} {base : Addr} {size n a : Nat} (hs : Scr s bas
   · intro h
     exact ⟨by simpa using h 0 hn,fun j hj => h (j+1) (by omega)⟩
 
-/-- A zero word representation cannot hide a nonzero signed remainder in range. -/
-theorem IInv.g_zero_of_words {P : InvCfg} {base : Addr} {I : Divstep.IState} {s : State}
-    (hI : IInv P base I s) (hg : |I.g| < (2 ^ (64 * P.L) : Nat))
-    (hz : wordsVal s.mem base P.sG P.L=0) : I.g=0 := by
-  have h := hI.g
-  rw [hz, Nat.cast_zero, Int.zero_emod] at h
-  have hd := Int.dvd_of_emod_eq_zero h.symm
-  obtain ⟨k,hk⟩ := hd
-  have hpos : (0 : Int) < (2 ^ (64 * P.L) : Nat) := by positivity
-  rw [abs_lt] at hg
-  rcases lt_trichotomy k 0 with hk0 | hk0 | hk0
-  · have : k≤-1 := by omega
-    nlinarith
-  · simp only [hk0,mul_zero] at hk
-    exact hk
-  · have : 1≤k := by omega
-    nlinarith
 
 end VG.Proof.Weierstrass.AArch64

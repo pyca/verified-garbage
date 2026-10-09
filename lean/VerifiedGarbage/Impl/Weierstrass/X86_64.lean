@@ -143,7 +143,7 @@ def storeBE (n : Nat) (dst : Reg) (d a : Nat) : List Instr :=
       .store { base := dst, disp := ((d + 8 * (n - 1 - j) : Nat) : Int) } .rax]
 
 /-- `[rdi + o] = ` the `len`-byte big-endian number at `[src]`, in `n` words
-(`8 (n - 1) < len ≤ 8 n`, and `8 ≤ len`): word `j` is the byte reversal of
+(`8 (n - 1) ≤ len ≤ 8 n`, and `8 ≤ len`): word `j` is the byte reversal of
 the word at `src + len - 8 (j + 1)`, and a top word of fewer bytes `t` the
 first eight bytes' reversal shifted right by `8 (8 - t)` bits. For
 `len = 8 n`, it is `loadBE n o src`. -/
@@ -152,6 +152,8 @@ def loadBytes (len n : Nat) (o : Nat) (src : Reg) : List Instr :=
     if 8 * (j + 1) ≤ len then
       [.mov .rax (.mem { base := src, disp := ((len - 8 * (j + 1) : Nat) : Int) }), .bswap .rax,
         .store (sc (o + 8 * j)) .rax]
+    else if len ≤ 8 * j then
+      [.mov .rax (.imm 0), .store (sc (o + 8 * j)) .rax]
     else
       [.mov .rax (.mem { base := src, disp := ((0 : Nat) : Int) }), .bswap .rax,
         .shift .shr .rax (8 * (8 * (j + 1) - len)), .store (sc (o + 8 * j)) .rax]
@@ -169,7 +171,7 @@ def shrWords (n o sh : Nat) : List Instr :=
     [.store (sc (o + 8 * j)) .rax]
 
 /-- `[dst + d] = ` the `n`-word number at `[rdi + a]` masked with `rcx`,
-big-endian in `len` bytes (`8 (n - 1) < len ≤ 8 n`): word `j` byte-reversed
+big-endian in `len` bytes (`8 (n - 1) ≤ len ≤ 8 n`): word `j` byte-reversed
 at `dst + d + len - 8 (j + 1)`, and a top word of fewer bytes `t` a byte at a
 time (through `rdx`). For `len = 8 n`, it is `storeBE n dst d a`. -/
 def storeBytes (len n : Nat) (dst : Reg) (d a : Nat) : List Instr :=

@@ -87,9 +87,9 @@ theorem sizes : P.H.S ≤ 192 ∧ P.H.P.N + P.H.P.B ≤ 192 ∧ 8 * P.H.W ≤ 18
     rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> simp only [h, h'] <;> omega
 
 /-- The sizes of the scalars, as the proofs use them. -/
-theorem wsizes : 4 ≤ P.w ∧ P.w ≤ 9 ∧ 8 ≤ P.Q ∧ P.Q ≤ P.H.D + 8 ∧ P.Q ≤ 8 * P.w ∧ 8 * P.w < P.Q + 8 ∧
+theorem wsizes : 4 ≤ P.w ∧ P.w ≤ 9 ∧ 8 ≤ P.Q ∧ P.Q ≤ P.H.D + 8 ∧ P.Q ≤ 8 * P.w ∧ 8 * P.w ≤ P.Q + 8 ∧
     P.e ≤ 144 := by
-  have hw : 8 ≤ P.Q ∧ 8 * P.w < P.Q + 8 ∧ P.Q ≤ 8 * P.w := P.R.len_words
+  have hw : 8 ≤ P.Q ∧ 8 * P.w ≤ P.Q + 8 ∧ P.Q ≤ 8 * P.w := P.R.len_words
   have hQD : P.Q ≤ P.H.D + 8 := by
     have hQ := P.hQ
     cases hW : P.R.wide
@@ -100,9 +100,9 @@ theorem wsizes : 4 ≤ P.w ∧ P.w ≤ 9 ∧ 8 ≤ P.Q ∧ P.Q ≤ P.H.D + 8 ∧
   exact ⟨P.R.n4, P.R.n9, hw.1, hQD, hw.2.2, hw.2.1, by
     simp only [e, Impl.Ecdsa.Rfc6979.AArch64.extra]; split <;> omega⟩
 
-/-- Unless `wide`, the scalars are `8 w` bytes (or 28 in 4 words), at most
+/-- Unless `wide`, the scalars are `8 w` bytes (or 24 or 28 in 4 words), at most
 6 words, and no longer than the digest. -/
-theorem sizesA (h : P.R.wide = false) : (P.Q = 8 * P.w ∨ P.w = 4 ∧ P.Q = 28) ∧ P.w ≤ 6 ∧ P.Q ≤ P.H.D := by
+theorem sizesA (h : P.R.wide = false) : (P.Q = 8 * P.w ∨ P.w = 4 ∧ (P.Q = 28 ∨ P.Q = 24)) ∧ P.w ≤ 6 ∧ P.Q ≤ P.H.D := by
   have hQ := P.hQ
   have := P.R.sizesA h
   rw [h] at hQ
@@ -110,7 +110,7 @@ theorem sizesA (h : P.R.wide = false) : (P.Q = 8 * P.w ∨ P.w = 4 ∧ P.Q = 28)
   rcases this.1 with h' | h' <;> simp only [Q, w] <;> omega
 
 /-- Unless `wide`, the scalars are 32, 48 or 28 bytes. -/
-theorem sizesQ (h : P.R.wide = false) : P.Q = 32 ∨ P.Q = 48 ∨ P.Q = 28 := by
+theorem sizesQ (h : P.R.wide = false) : P.Q = 32 ∨ P.Q = 48 ∨ P.Q = 28 ∨ P.Q = 24 := by
   have := P.R.sizesA h
   rcases this.1 with hn | hn <;> simp only [Q] <;> omega
 

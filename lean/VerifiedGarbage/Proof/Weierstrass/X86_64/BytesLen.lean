@@ -17,13 +17,19 @@ namespace VG.Proof.Weierstrass.X86_64
 
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Proof.Mont.X86_64 VG.Proof.Mont
 
-/-! ## Loads -/
+/-! ## Loads
+
+A top word beyond the encoding is zero, allowing P-192’s 24-byte values
+to use four-word arithmetic.
+-/
 
 /-- One word of `loadBytes`. -/
 def ldStepL (len o : Nat) (src : Reg) (j : Nat) : List Instr :=
   if 8 * (j + 1) ≤ len then
     [.mov .rax (.mem { base := src, disp := ((len - 8 * (j + 1) : Nat) : Int) }), .bswap .rax,
       .store (sc (o + 8 * j)) .rax]
+  else if len ≤ 8 * j then
+    [.mov .rax (.imm 0), .store (sc (o + 8 * j)) .rax]
   else
     [.mov .rax (.mem { base := src, disp := ((0 : Nat) : Int) }), .bswap .rax,
       .shift .shr .rax (8 * (8 * (j + 1) - len)), .store (sc (o + 8 * j)) .rax]
@@ -37,7 +43,7 @@ def ldWord (m : Mem) (p : Addr) (len j : Nat) : BitVec 64 :=
   else byteRev64 (m.readW p 64) >>> (8 * (8 * (j + 1) - len))
 
 theorem ldStepsL_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {len n o : Nat}
-    {src : Reg} (hsrc : src ≠ .rax) (ho : o + 8 * n ≤ size) (h8 : 8 ≤ len) (hlo : 8 * n < len + 8)
+    {src : Reg} (hsrc : src ≠ .rax) (ho : o + 8 * n ≤ size) (h8 : 8 ≤ len) (hlo : 8 * n ≤ len + 8)
     (hhi : len ≤ 8 * n)
     (hr : ∀ d, d + 8 ≤ len → InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 d) 8)
     (hd : Region.Disjoint ⟨s.gpr src, len⟩ ⟨off base o, 8 * n⟩) : ∀ k, k ≤ n →
@@ -81,36 +87,57 @@ theorem ldStepsL_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
       · obtain rfl : j = k := by omega
         rw [m₂, word_writeW_self, hp₁, hkeep _ (by omega), ldWord, ite_eq_left_of_eq_true _ _ (eq_true hc)]
         rfl
-    · have hr₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr src + BitVec.ofNat 64 0) 8 := by
-        rw [k₁.rd, k₁.wr, hp₁]; exact hr _ (by omega)
-      have hsh : 1 ≤ 8 * (8 * (k + 1) - len) ∧ 8 * (8 * (k + 1) - len) ≤ 63 := ⟨by omega, by omega⟩
-      refine WP.mono (show WP isa (.block (ldStepL len o src k)) s₁ (fun s₂ =>
-          s₂.mem = s₁.mem.writeW (off base (o + 8 * k))
-            (bswap64 (s₁.mem.readW (s₁.gpr src + BitVec.ofNat 64 0) 64) >>> (8 * (8 * (k + 1) - len))) ∧
-            KeepRegs [.rax] s₁ s₂) by
-        apply WP.of_runBlock
-        simp only [ldStepL, hc, ite_false, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-          execShift, hsh, ite_true, Option.map_some, State.load64, State.store64, ea_disp, ea_sc, hr₁,
-          RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.wr_setReg, RegUpd.wr_setFlags, RegUpd.mem_setReg,
-          RegUpd.mem_setFlags, reduceCtorEq, hs₁.rdi, hst, and_self, Option.some.injEq, exists_eq_left']
-        refine ⟨trivial, ⟨fun r hr => ?_, rfl, rfl⟩⟩
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false]) fun s₂ ⟨m₂, k₂⟩ => ?_
-      have O₂ : Outside base (o + 8 * k) 8 s₁.mem s₂.mem := by
-        rw [m₂]; exact writeW_outside _ _ _ (by omega)
-      refine ⟨fun j hj => ?_, k₁.trans k₂,
-        (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
-      rcases Nat.lt_or_ge j k with h | h
-      · rw [O₂.word (by omega) (by omega), e₁ j h]
-      · obtain rfl : j = k := by omega
-        rw [m₂, word_writeW_self, hp₁, hkeep _ (by omega), ldWord, ite_eq_right_of_eq_false _ _ (eq_false hc),
-          BitVec.add_zero]
-        rfl
+    · by_cases hz : len ≤ 8 * k
+      · have hshift : 8 * (8 * (k + 1) - len) = 64 := by omega
+        refine WP.mono (show WP isa (.block (ldStepL len o src k)) s₁ (fun s₂ =>
+            s₂.mem = s₁.mem.writeW (off base (o + 8 * k)) (0 : BitVec 64) ∧
+              KeepRegs [.rax] s₁ s₂) by
+          apply WP.of_runBlock
+          simp only [ldStepL, hc, hz, ite_false, ite_true, runBlock_cons, runStep_some,
+            runBlock_nil, exec, readSrc, Option.map_some, State.store64, ea_sc,
+            RegUpd.gpr_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, reduceCtorEq, hs₁.rdi, hst,
+            Option.some.injEq, exists_eq_left']
+          refine ⟨rfl, ⟨fun r hr => ?_, rfl, rfl⟩⟩
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s₂ ⟨m₂, k₂⟩ => ?_
+        have O₂ : Outside base (o + 8 * k) 8 s₁.mem s₂.mem := by
+          rw [m₂]; exact writeW_outside _ _ _ (by omega)
+        refine ⟨fun j hj => ?_, k₁.trans k₂,
+          (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
+        rcases Nat.lt_or_ge j k with h | h
+        · rw [O₂.word (by omega) (by omega), e₁ j h]
+        · obtain rfl : j = k := by omega
+          simp [m₂, word_writeW_self, ldWord, hc, hshift, BitVec.ushiftRight_eq_zero (Nat.le_refl 64)]
+      · have hr₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr src + BitVec.ofNat 64 0) 8 := by
+          rw [k₁.rd, k₁.wr, hp₁]; exact hr _ (by omega)
+        have hsh : 1 ≤ 8 * (8 * (k + 1) - len) ∧ 8 * (8 * (k + 1) - len) ≤ 63 := ⟨by omega, by omega⟩
+        refine WP.mono (show WP isa (.block (ldStepL len o src k)) s₁ (fun s₂ =>
+            s₂.mem = s₁.mem.writeW (off base (o + 8 * k))
+              (bswap64 (s₁.mem.readW (s₁.gpr src + BitVec.ofNat 64 0) 64) >>> (8 * (8 * (k + 1) - len))) ∧
+              KeepRegs [.rax] s₁ s₂) by
+          apply WP.of_runBlock
+          simp only [ldStepL, hc, hz, ite_false, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+            execShift, hsh, ite_true, Option.map_some, State.load64, State.store64, ea_disp, ea_sc, hr₁,
+            RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.wr_setReg, RegUpd.wr_setFlags, RegUpd.mem_setReg,
+            RegUpd.mem_setFlags, reduceCtorEq, hs₁.rdi, hst, and_self, Option.some.injEq, exists_eq_left']
+          refine ⟨trivial, ⟨fun r hr => ?_, rfl, rfl⟩⟩
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false]) fun s₂ ⟨m₂, k₂⟩ => ?_
+        have O₂ : Outside base (o + 8 * k) 8 s₁.mem s₂.mem := by
+          rw [m₂]; exact writeW_outside _ _ _ (by omega)
+        refine ⟨fun j hj => ?_, k₁.trans k₂,
+          (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
+        rcases Nat.lt_or_ge j k with h | h
+        · rw [O₂.word (by omega) (by omega), e₁ j h]
+        · obtain rfl : j = k := by omega
+          rw [m₂, word_writeW_self, hp₁, hkeep _ (by omega), ldWord, ite_eq_right_of_eq_false _ _ (eq_false hc),
+            BitVec.add_zero]
+          rfl
 
-/-- `[o] = ` the `len` bytes at `src`, big-endian (`8 (n - 1) < len ≤ 8 n`,
+/-- `[o] = ` the `len` bytes at `src`, big-endian (`8 (n - 1) ≤ len ≤ 8 n`,
 `8 ≤ len`). -/
 theorem loadBytes_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {len n o : Nat}
-    {src : Reg} (hsrc : src ≠ .rax) (ho : o + 8 * n ≤ size) (h8 : 8 ≤ len) (hlo : 8 * n < len + 8)
+    {src : Reg} (hsrc : src ≠ .rax) (ho : o + 8 * n ≤ size) (h8 : 8 ≤ len) (hlo : 8 * n ≤ len + 8)
     (hhi : len ≤ 8 * n)
     (hr : ∀ d, d + 8 ≤ len → InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 d) 8)
     (hd : Region.Disjoint ⟨s.gpr src, len⟩ ⟨off base o, 8 * n⟩) :
@@ -373,12 +400,12 @@ theorem flatMap_range_congr {α : Type} {f g : Nat → List α} : ∀ (k : Nat),
     rw [List.range_succ, List.flatMap_append, List.flatMap_append, flatMap_range_congr k fun j hj => h j (by omega),
       List.flatMap_singleton, List.flatMap_singleton, h k (by omega)]
 
-/-- The `len` bytes at `dst + d` (`8 (n - 1) < len ≤ 8 n`) are `[a]`
+/-- The `len` bytes at `dst + d` (`8 (n - 1) ≤ len ≤ 8 n`) are `[a]`
 big-endian if the mask `rcx` is all ones (`c`), zeros if it is zero. -/
 theorem storeBytes_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {len n d a : Nat}
     {dst : Reg} (hdst : dst ≠ .rax) (hdst' : dst ≠ .rdx) (c : Bool)
     (hc : s.gpr .rcx = (if c then BitVec.allOnes 64 else 0)) (ha : a + 8 * n ≤ size) (hpos : 0 < len)
-    (hlo : 8 * n < len + 8)
+    (hlo : 8 * n ≤ len + 8)
     (hhi : len ≤ 8 * n) (hq : (s.gpr dst + BitVec.ofNat 64 d).toNat + len ≤ 2 ^ 64)
     (hw : ∀ e m, e + m ≤ len → InRegions s.wr (s.gpr dst + BitVec.ofNat 64 d + BitVec.ofNat 64 e) m)
     (hd : Region.Disjoint ⟨off base a, 8 * n⟩ ⟨s.gpr dst + BitVec.ofNat 64 d, len⟩) :

@@ -82,11 +82,11 @@ structure RfcCurve where
   /-- Whether the scalars are longer than any hash function's output, so
   that two `V`s make a candidate (`Impl.Ecdsa.Rfc6979.AArch64.Cfg.wide`). -/
   wide : Bool
-  /-- Scalars of 4 or 6 words, `8 n` bytes (or 28 in 4 words), and `n` of
+  /-- Scalars of 4 or 6 words, `8 n` bytes (or 24 or 28 in 4 words), and `n` of
   exactly `8 len` bits, with `2^(8 len) < 2 n`; or, if `wide`, of 9 words and
   66 bytes, and `n` of 521 bits. -/
   sizes : if wide then E.n = 9 ∧ E.C.len = 66 ∧ nBits E.C = 521
-    else (E.n = 4 ∨ E.n = 6) ∧ (E.C.len = 8 * E.n ∨ E.n = 4 ∧ E.C.len = 28) ∧ nBits E.C = 8 * E.C.len ∧
+    else (E.n = 4 ∨ E.n = 6) ∧ (E.C.len = 8 * E.n ∨ E.n = 4 ∧ (E.C.len = 28 ∨ E.C.len = 24)) ∧ nBits E.C = 8 * E.C.len ∧
       2 ^ (8 * E.C.len) < 2 * E.C.n
   n_lt : E.C.n < 2 ^ (64 * E.n)
   /-- The bits the signature drops from its digest, `8 len - nBits`. -/
@@ -113,7 +113,7 @@ namespace RfcCurve
 variable (R : RfcCurve)
 
 theorem sizesA (h : R.wide = false) :
-    (R.E.n = 4 ∨ R.E.n = 6) ∧ (R.E.C.len = 8 * R.E.n ∨ R.E.n = 4 ∧ R.E.C.len = 28) ∧
+    (R.E.n = 4 ∨ R.E.n = 6) ∧ (R.E.C.len = 8 * R.E.n ∨ R.E.n = 4 ∧ (R.E.C.len = 28 ∨ R.E.C.len = 24)) ∧
       nBits R.E.C = 8 * R.E.C.len ∧ 2 ^ (8 * R.E.C.len) < 2 * R.E.C.n := by
   have := R.sizes; rw [h] at this; exact this
 
@@ -130,8 +130,8 @@ theorem n9 : R.E.n ≤ 9 := by
   · rcases (R.sizesA h).1 with h | h <;> omega
   · rw [(R.sizesW h).1]
 
-/-- The scalars' bytes fill their words, the last at least in part. -/
-theorem len_words : 8 ≤ R.E.C.len ∧ 8 * R.E.n < R.E.C.len + 8 ∧ R.E.C.len ≤ 8 * R.E.n := by
+/-- The scalars' bytes fill their words, the last possibly zero. -/
+theorem len_words : 8 ≤ R.E.C.len ∧ 8 * R.E.n ≤ R.E.C.len + 8 ∧ R.E.C.len ≤ 8 * R.E.n := by
   cases h : R.wide
   · have := R.sizesA h; have := R.n4; omega
   · have := R.sizesW h; omega

@@ -100,7 +100,7 @@ theorem blks (P : RfcHash) : Blks P.w P.Q P.H.D P.H.P.B P.R.wide := by
   have hw' : P.w = P.R.E.n := rfl
   cases hw : P.R.wide
   · obtain ⟨hQ8, -, hQD⟩ := P.sizesA hw
-    rcases (P.R.sizesA hw).1 with hn | hn <;> rcases P.sizesQ hw with hq | hq | hq <;>
+    rcases (P.R.sizesA hw).1 with hn | hn <;> rcases P.sizesQ hw with hq | hq | hq | hq <;>
       rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
       first
       | (exfalso; omega)

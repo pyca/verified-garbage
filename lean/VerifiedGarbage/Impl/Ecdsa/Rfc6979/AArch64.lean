@@ -195,10 +195,10 @@ def copyV (D : Nat) : List Instr :=
   else [.addImm .x .x13 .x15 fV, .addImm .x .x14 .x9 sMsg] ++ copyBytes D .x13 .x14
 
 /-- `d` (from `x10`) and `h` (from the frame, in `x15`), `Q` bytes each, to
-`x12`: `w` words each, or, if `Q` is not a multiple of 8, `copyBytes`
+`x12`: `w` words each when the encoding fills them, otherwise `copyBytes`
 (`h`'s through `x13` and `x14`). -/
 def copyDH (w Q : Nat) : List Instr :=
-  if Q % 8 = 0 then copyN w .x10 0 .x12 0 ++ copyN w .x15 fH .x12 (8 * w)
+  if Q % 8 = 0 ∧ Q = 8 * w then copyN w .x10 0 .x12 0 ++ copyN w .x15 fH .x12 (8 * w)
   else copyBytes Q .x10 .x12 ++ [.addImm .x .x13 .x15 fH, .addImm .x .x14 .x12 Q] ++ copyBytes Q .x13 .x14
 
 /-- The message `V ‖ b` (and `‖ d ‖ h` if `full`, `Q` bytes each) at
@@ -267,6 +267,7 @@ def hBase : Reg := if c.len % 8 = 0 then .x15 else .x14
 top word of four bytes (`Q % 8 = 4`), of the first four, zero-extended. -/
 def loadWord (j : Nat) : List Instr :=
   if 8 * (j + 1) ≤ c.len then [.ldr .x .x8 c.dgBase (c.len - c.len % 8 - 8 * (j + 1)), .rev .x8 .x8]
+  else if c.len ≤ 8 * j then [.movz .x .x8 0 0]
   else [.ldr .w .x8 .x1 0, .rev32 .x8 .x8]
 
 /-- Word `j` of the number at `digest` (in `x1`), least significant first,

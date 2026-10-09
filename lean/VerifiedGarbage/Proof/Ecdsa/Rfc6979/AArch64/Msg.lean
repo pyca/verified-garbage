@@ -258,7 +258,7 @@ theorem head_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h9 : t.gpr .x9 = 
 multiple of 8, `copyBytes`. -/
 theorem tail_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h9 : u.gpr .x9 = L.scr) (h10 : u.gpr .x10 = L.d)
     (h15 : u.gpr .x15 = L.B + BitVec.ofNat 64 16) {D : Nat} (hD : D ≤ 64) {w Q : Nat} (h8 : 8 ≤ Q)
-    (hQ : Q ≤ 48) (hw : Q % 8 = 0 → Q = 8 * w) (hq : Q ≤ L.q) :
+    (hQ : Q ≤ 48) (hq : Q ≤ L.q) :
     WP isa (.block (.addImm .x .x12 .x9 (sMsg + D + 1) :: Cfg.copyDH w Q)) u
       fun u' => Ctx L g m₀ u' ∧ Frame [⟨L.scr + BitVec.ofNat 64 (2256 + D + 1), 2 * Q⟩] u.mem u'.mem ∧
         Spec.Sha256.bytesAt u'.mem (L.scr + BitVec.ofNat 64 (2256 + D + 1)) (2 * Q) =
@@ -290,9 +290,9 @@ theorem tail_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h9 : u.gpr .x9 = 
       bytesAt_frame f₂ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by omega)]
-  by_cases hQ8 : Q % 8 = 0
-  · obtain rfl := hw hQ8
-    simp only [Cfg.copyDH, hQ8, ite_true, fH]
+  by_cases hQ8 : Q % 8 = 0 ∧ Q = 8 * w
+  · obtain rfl := hQ8.2
+    simp only [Cfg.copyDH, hQ8, and_self, ite_true, fH]
     rw [WP.block_append_iff]
     refine WP.mono (copy_ok hL h₁.ctx (u := u₁) (src := .x10) (by rw [h₁.keep _ (by decide), h10]) (by decide)
       (dst := .x12) (by decide) (e := 2256 + D + 1) h₁.val (so := 0) (d := 0) (K := w) (by omega)
@@ -337,7 +337,7 @@ theorem tail_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h9 : u.gpr .x9 = 
 `scratch + 2256`, for `V` of `D` bytes. -/
 theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h9 : t.gpr .x9 = L.scr) (h10 : t.gpr .x10 = L.d)
     (h15 : t.gpr .x15 = L.B + BitVec.ofNat 64 16) (b : Nat) (full : Bool) {D w Q : Nat} (hD : D ≤ 64)
-    (h8 : 8 ≤ D) (hwq : full = true → 8 ≤ Q ∧ Q ≤ 48 ∧ (Q % 8 = 0 → Q = 8 * w) ∧ Q ≤ L.q) :
+    (h8 : 8 ≤ D) (hwq : full = true → 8 ≤ Q ∧ Q ≤ 48 ∧ Q ≤ L.q) :
     WP isa (.block (Cfg.msg w Q D b full false)) t fun t' => Ctx L g m₀ t' ∧
       Frame [⟨L.scr + BitVec.ofNat 64 2256, D + 2 * Q + 1⟩] t.mem t'.mem ∧
       Spec.Sha256.bytesAt t'.mem (L.scr + BitVec.ofNat 64 2256) (if full then D + 2 * Q + 1 else D + 1) =
@@ -351,13 +351,13 @@ theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h9 : t.gpr .x9 = L
       ⟨hcu, hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩, hb⟩
     simp only [List.mem_singleton] at hr; subst hr
     exact Region.sub_prefix (by omega)
-  · obtain ⟨hQ8, hQ, hw, hq⟩ := hwq rfl
+  · obtain ⟨hQ8, hQ, hq⟩ := hwq rfl
     simp only [Cfg.msg, ite_true, Bool.false_eq_true, ite_false]
     rw [WP.block_append_iff]
     refine WP.mono (head_ok hL hc h9 h15 b hD h8) fun u ⟨hcu, hg, hf, hb⟩ =>
       WP.mono (tail_ok hL hcu ((hg _ (by decide) (by decide) (by decide)).trans h9)
         ((hg _ (by decide) (by decide) (by decide)).trans h10)
-        ((hg _ (by decide) (by decide) (by decide)).trans h15) hD hQ8 hQ hw hq)
+        ((hg _ (by decide) (by decide) (by decide)).trans h15) hD hQ8 hQ hq)
       fun u' ⟨hcu', hf', hb'⟩ => ⟨hcu', ?_, ?_⟩
     · refine (hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).trans
         (hf'.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)

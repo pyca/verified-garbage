@@ -134,7 +134,7 @@ def bits (src dst nbytes : Nat) : Prog isa :=
 /-! ## Numbers as bytes -/
 
 /-- `[x0 + o] = ` the `len`-byte big-endian number at `[src]`, `n` words
-(`8 (n - 1) < len ≤ 8 n`, `8 ≤ len`), through `x5` (and `x17`): word `j` the
+(`8 (n - 1) ≤ len ≤ 8 n`, `8 ≤ len`), through `x5` (and `x17`): word `j` the
 byte reversal of the eight bytes at `src + len - 8 (j + 1)` (through
 `x17 = ` that address unless `len` is a multiple of 8, as `ldr` needs), and a
 top word of fewer bytes `t` the first eight bytes' reversal shifted right by
@@ -144,6 +144,7 @@ def loadBytes (len n o : Nat) (src : Reg) : List Instr :=
     if 8 * (j + 1) ≤ len then
       if len % 8 = 0 then [.ldr .x .x5 src (len - 8 * (j + 1)), .rev .x5 .x5, st .x5 (o + 8 * j)]
       else [.addImm .x .x17 src (len - 8 * (j + 1)), .ldr .x .x5 .x17 0, .rev .x5 .x5, st .x5 (o + 8 * j)]
+    else if len ≤ 8 * j then const64 .x5 0 ++ [st .x5 (o + 8 * j)]
     else [.ldr .x .x5 src 0, .rev .x5 .x5, .lsr .x .x5 .x5 (8 * (8 * (j + 1) - len)), st .x5 (o + 8 * j)]
 
 /-- `[x0 + o] = [x0 + o] >> sh`, `n` words (`0 < sh < 64`), through `x1` and
@@ -156,7 +157,7 @@ def shrWords (n o sh : Nat) : List Instr :=
     [st .x1 (o + 8 * j)]
 
 /-- `[dst + d] = ` the `n`-word number at `[x0 + a]` masked with `x3`, in
-`len` bytes big-endian (`8 (n - 1) < len ≤ 8 n`), through `x1`, `x2` (and
+`len` bytes big-endian (`8 (n - 1) ≤ len ≤ 8 n`), through `x1`, `x2` (and
 `x17`): its whole words byte-reversed to `dst + d + len - 8 (j + 1)`
 (through `x17 = ` that address unless `d + len` is a multiple of 8), and a
 top word of fewer bytes a byte at a time. -/

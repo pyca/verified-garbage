@@ -61,7 +61,7 @@ structure BaseCfgOk (c : Cfg) : Prop where
   red_n : c.MN'.ok c.C.n = true
   n2 : c.n % 2 = 0 ∨ c.n = 9
   len8 : 8 ≤ c.C.len
-  len_lo : 8 * c.n < c.C.len + 8
+  len_lo : 8 * c.n ≤ c.C.len + 8
   len_hi : c.C.len ≤ 8 * c.n
   sh : c.sh < 64
   n4 : 4 ≤ c.n

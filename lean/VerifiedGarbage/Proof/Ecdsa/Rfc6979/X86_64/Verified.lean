@@ -45,7 +45,7 @@ theorem sign_mx : (cfgOf P).sign.allInstrs (fun i => !loadsMxcsr i) = true := by
       Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, initCnt_eq, cfgOf_H, coreC_eq,
       Bool.false_eq_true, ite_false, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreMx] at hR ⊢
     simp only [hR, Bool.true_and]
-    rcases P.sizesQ hw with hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
+    rcases P.sizesQ hw with hq | hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
       first
       | (exfalso; rw [hq, h] at hQD; omega)
       | (simp only [hq, h, h']; decide +kernel)
@@ -71,7 +71,7 @@ theorem sign_spSafe : (cfgOf P).sign.all (fun i => !isa.writesSp i) = true := by
       Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, initCnt_eq, cfgOf_H, coreC_eq,
       Bool.false_eq_true, ite_false, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreSp] at hR ⊢
     simp only [hR, Bool.true_and]
-    rcases P.sizesQ hw with hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
+    rcases P.sizesQ hw with hq | hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
       first
       | (exfalso; rw [hq, h] at hQD; omega)
       | (simp only [hq, h, h']; decide +kernel)
