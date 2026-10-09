@@ -25,7 +25,7 @@ theorem mulQJP256x_ok (hI : Weierstrass.X86_64.InvSounds) (hL : Weierstrass.Law 
 theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P256.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP256Adx s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' :=
-  ecdh_x86_of (p256x_ok hI) hL (mulQJP256x_ok hI hL hO) (mulQJ_w (p256x_ok hI))
+  ecdh_x86_of (code := exchangeP256Adx) (p256x_ok hI) hL (mulQJP256x_ok hI hL hO) (mulQJ_w (p256x_ok hI))
     (fun _ h => { pre_of h with }) (fun _ _ => post_of) rfl (by lit_decide) (by lit_decide) (by lit_decide) s hs
 
 theorem ecdh_ct_adx : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP256Adx :=
