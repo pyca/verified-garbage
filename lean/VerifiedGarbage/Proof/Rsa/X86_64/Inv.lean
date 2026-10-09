@@ -114,7 +114,7 @@ theorem invSwap_ok {s : State} {B : Addr} {Z w : Nat} {iU iV iX₁ iX₂ : Nat} 
     refine WP.mono (base_ok iX₁ (r := .rbx) (by decide) ((k07.gpr (by decide)).trans hdi)
       ((k07.gpr (by decide)).trans h9)) fun t₁ ⟨e₁, n₁, j₁⟩ => WP.mono (base_ok iX₂ (r := .r10) (by decide)
         (((k07.trans j₁).gpr (by decide)).trans hdi) (((k07.trans j₁).gpr (by decide)).trans h9))
-        fun t₂ ⟨e₂, n₂, j₂⟩ => ⟨(j₂.gpr (by decide)).trans e₁, e₂, n₂.trans n₁, (j₁.trans j₂).mono (by simp)⟩
+        fun t₂ ⟨e₂, n₂, j₂⟩ => ⟨(j₂.gpr (by decide)).trans e₁, e₂, n₂.trans n₁, (j₁.trans j₂).mono (by decide)⟩
   obtain ⟨hbx₈, h10₈, m₈, k₈⟩ := h
   -- The swap of `X₁` and `X₂`.
   refine WP.mono (cswap_ok (hs.congr (k07.trans k₈).2.2) hbx₈ h10₈ ((k₇.trans k₈).gpr (by decide) |>.trans h15)
@@ -141,7 +141,7 @@ theorem invSwap_ok {s : State} {B : Addr} {Z w : Nat} {iU iV iX₁ iX₂ : Nat} 
       (by have := Nat.le_trans (slot_lt (w := w) hi') hZ; omega_arith)
   refine ⟨?_, by rw [hUt iU (.inl rfl)]; exact hU₇, by rw [hUt iV (.inr rfl)]; exact hV₇,
     by rw [hX₁t, fx iX₁ (.inl rfl), fx iX₂ (.inr rfl), hx₁, hx₂],
-    by rw [hX₂t, fx iX₁ (.inl rfl), fx iX₂ (.inr rfl), hx₁, hx₂], ?_, ((k07.trans k₈).trans k₉).mono (by simp)⟩
+    by rw [hX₂t, fx iX₁ (.inl rfl), fx iX₂ (.inr rfl), hx₁, hx₂], ?_, ((k07.trans k₈).trans k₉).mono (by decide)⟩
   · have e₁ : word t.mem B (8 * sMo) = word s₇.mem B (8 * sMo) :=
       f₉.word_eq (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -199,7 +199,7 @@ theorem invSubU_ok {s : State} {B : Addr} {Z w : Nat} {iU iV : Nat} (hs : Scr s 
   have v0 := wv_lt s.mem B (slot w iV) w
   have u0 := wv_lt s.mem B (slot w iU) w
   have hb1 := Bool.toNat_le b₁
-  refine ⟨?_, (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans h15₀), o, (k01.trans k₂).mono (by simp)⟩
+  refine ⟨?_, (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans h15₀), o, (k01.trans k₂).mono (by decide)⟩
   cases odd <;> simp only [Bool.false_eq_true, ite_false, ite_true, false_and, true_and] at hv ⊢
   · cases b₁ <;> simp only [Bool.toNat_false, Bool.toNat_true] at hv <;> omega_arith
   · split <;> rename_i h <;> cases b₁ <;> simp only [Bool.toNat_false, Bool.toNat_true] at hv <;> omega_arith
@@ -259,7 +259,7 @@ theorem invSubX_ok {s : State} {B : Addr} {Z w : Nat} {iX₁ iX₂ iM iT : Nat} 
   have x10 := wv_lt s.mem B (slot w iX₁) w
   have hb2 := Bool.toNat_le b₂
   have hc := Bool.toNat_le c
-  refine ⟨fun h1 h2 => ?_, ?_, (k07.trans kt).mono (by simp)⟩
+  refine ⟨fun h1 h2 => ?_, ?_, (k07.trans kt).mono (by decide)⟩
   · clear hn sX₁ sX₂ sM sT p9 p10 p11 p12 p13
     unfold subMod
     cases odd <;> simp only [Bool.false_eq_true, ite_false, ite_true] at hv₅ ⊢
@@ -303,7 +303,7 @@ theorem invHalfU_ok {s : State} {B : Addr} {Z w : Nat} {iU : Nat} (hs : Scr s B 
     (by omega_arith) (Or.inl (Nat.le_refl _))) fun t ⟨hv, o, k₂⟩ => ?_
   rw [m₁, h0, ← wv_mod64 _ _ _ hw1, Nat.mod_mod_of_dvd _ (by decide)] at hv
   rw [m₁] at o
-  refine ⟨?_, o, (k₁.trans k₂).mono (by simp)⟩
+  refine ⟨?_, o, (k₁.trans k₂).mono (by decide)⟩
   simp only [show (0 : BitVec 64).toNat = 0 from rfl, Nat.zero_mod, Nat.mul_zero, Nat.add_zero] at hv
   omega_arith
 
@@ -374,7 +374,7 @@ theorem invHalfX_ok {s : State} {B : Addr} {Z w : Nat} {iX₁ iM iT : Nat} (hs :
   have hcl := Bool.toNat_le c
   rw [hT₆, hTw, hT0, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show c.toNat < 2 ^ 64 by omega_arith),
     Nat.mod_eq_of_lt (show c.toNat < 2 by omega_arith)] at hv
-  refine ⟨?_, ?_, (k06.trans k₇).mono (by simp)⟩
+  refine ⟨?_, ?_, (k06.trans k₇).mono (by decide)⟩
   · unfold halfMod
     rcases Nat.mod_two_eq_zero_or_one (wv s.mem B (slot w iX₁) w) with h | h
     · rw [show decide (wv s.mem B (slot w iX₁) w % 2 = 1) = false by simp [h]] at hv₄
@@ -469,7 +469,7 @@ theorem invFirst_ok {s : State} {B : Addr} {Z w : Nat} {iU iV iX₁ iX₂ iM iT 
     · have := slot_far (w := w) dX₂T; omega_arith) (by omega_arith)
   rw [eX₁₂, eX₂₂, eM₂, eM₁, hX₁₁, hX₂₁] at hX₁t
   rw [hV₁, hU₁] at hU₂
-  refine ⟨fun hx₁ hx₂ => ?_, ?_, ((k12.trans k₃)).mono (by simp)⟩
+  refine ⟨fun hx₁ hx₂ => ?_, ?_, ((k12.trans k₃)).mono (by decide)⟩
   · rw [eU₃, eV₃, eX₂₃, eV₂, eX₂₂, hV₁, hX₂₁]
     have := hX₁t (by split <;> omega_arith) (by split <;> omega_arith)
     rw [this]
@@ -580,7 +580,7 @@ theorem invStepCode_ok {s : State} {B : Addr} {Z w k : Nat} {iU iV iX₁ iX₂ i
     xrun [(k13.gpr (by decide) : s₃.gpr .r13 = _), h13, (k13.gpr (by decide) : s₃.gpr .r11 = _), h11, ofNat_add_one,
       ofNat_sub_beq (show k + 1 < 2 ^ 64 by omega_arith) (show 128 * w < 2 ^ 64 by omega_arith)]) rfl)
     fun t ⟨⟨hz, h13t, mt⟩, k₄⟩ => ⟨hz, h13t, (k₄.gpr (by decide)).trans ((k13.gpr (by decide)).trans h12), ?_,
-      (k13.trans k₄).mono (by simp [stepRegs]), fun hx₁ hx₂ => ?_⟩
+      (k13.trans k₄).mono (by decide), fun hx₁ hx₂ => ?_⟩
   · intro x hx
     have a := hx (slot w iU, 8 * w) (by simp)
     have b := hx (slot w iV, 8 * w) (by simp)
@@ -687,7 +687,7 @@ theorem inverse_ok {s : State} {B : Addr} {Z w : Nat} {iU iV iX₁ iX₂ iM iT :
     have kk := ((k₁.trans k₃).trans k₄).trans k₅
     exact ⟨(kk.gpr (by decide)).trans hdi, ((k₃.trans k₄).trans k₅ |>.gpr (by decide)).trans h12,
       ((k₃.trans k₄).trans k₅ |>.gpr (by decide)).trans h9, (k₅.gpr (by decide)).trans h11', h13,
-      by rw [m₅, m₄, m₃, m₁], kk.mono (by simp)⟩
+      by rw [m₅, m₄, m₃, m₁], kk.mono (by decide)⟩
   refine WP.seq (WP.mono e₁ fun s₁ ⟨hdi₁, h12₁, h9₁, h11₁, h13₁, m₁, k₁⟩ => ?_)
   have fM : ∀ {t : State}, Frm B [(slot w iU, 8 * w), (slot w iV, 8 * w), (slot w iX₁, 8 * w), (slot w iX₂, 8 * w),
       ar w iT, (8 * sMo, 8)] s.mem t.mem → wv t.mem B (slot w iM) w = wv s.mem B (slot w iM) w := fun f =>
@@ -703,12 +703,12 @@ theorem inverse_ok {s : State} {B : Addr} {Z w : Nat} {iU iV iX₁ iX₂ iM iT :
   refine wp_upto (a := 0) (N := 128 * w) (by omega_arith)
     (InvInv s B Z w iU iV iX₁ iX₂ iT (wv s.mem B (slot w iU) w) (wv s.mem B (slot w iM) w))
     (fun j _ hj t hI => ?_) (fun t hI => ⟨hI.rdi, hI.frm, hI.keep, fun hodd h1 => ?_⟩)
-    ⟨hs.congr k₁.2.2, hdi₁, h12₁, h9₁, h13₁, h11₁, by rw [m₁]; exact Frm.refl _ _ _, k₁.mono (by simp [stepRegs]),
+    ⟨hs.congr k₁.2.2, hdi₁, h12₁, h9₁, h13₁, h11₁, by rw [m₁]; exact Frm.refl _ _ _, k₁.mono (by decide),
       by rw [m₁]; exact hU0, fun _ _ => by rw [m₁, hVM, hX1, hX2]; rfl⟩
   · refine WP.mono (invStepCode_ok hI.scr hI.rdi hI.r12 hI.r9 hI.r13 hI.r11 hw1 hw hj hZ hU hV hX₁ hX₂ hM hT dUV dUX₁
       dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T dX₂M dX₂T dMT hI.u0) fun t' ⟨hz, h13', h12', f', k', hv'⟩ =>
       ⟨hz, hI.scr.congr k'.2.2, (k'.gpr (by decide)).trans hI.rdi, h12', (k'.gpr (by decide)).trans hI.r9, h13',
-        (k'.gpr (by decide)).trans hI.r11, hI.frm.trans f', (hI.keep.trans k').mono (by simp [stepRegs]), ?_,
+        (k'.gpr (by decide)).trans hI.r11, hI.frm.trans f', (hI.keep.trans k').mono (by decide), ?_,
         fun hodd h1 => ?_⟩
     · rw [f'.word_eq (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
