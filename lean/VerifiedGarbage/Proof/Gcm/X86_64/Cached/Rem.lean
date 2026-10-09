@@ -393,6 +393,59 @@ theorem rem_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf :
       m₁, Mem.readW_writeW_sep ((hp.p_c.sub_left (Offset.sub_base _ (by omega))).sep
           (Region.contains_self _ _) cw) (by decide)]
     exact hI.pw _ (by omega) _ (by omega)
-  sorry
+  have yD : ∀ k < nb s₀, Region.Disjoint ⟨bAddr s₀ k, 16⟩ (yR s₀) := fun k hk =>
+    hp.d_y.sub_left (Offset.sub_base _ (by omega))
+  have hb : ∀ k < nb s₀, blockAt s₆.mem (bAddr s₀ k) = ctb s₀ k := fun k hk => by
+    rw [m₆, show yp s₀ = (yR s₀).base from rfl, blockAt_writeW_sep' (yD k hk) rfl, hb₄ k hk]
+  have fA : ∀ R : Region, R.Disjoint (dR s₀) → ∀ r' ∈ [(⟨E.A, 16 * E.r⟩ : Region)], R.Disjoint r' :=
+    fun R hR r' hr' => by
+      simp only [List.mem_singleton] at hr'; subst hr'
+      exact hR.sub_right (Offset.sub_base _ (by show 16 * (16 * e) + 16 * r ≤ 16 * nb s₀; omega))
+  refine ⟨blocks_ctr32 hb, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · show blockAt s₆.mem (cp s₀) = _
+    rw [m₆, show yp s₀ = (yR s₀).base from rfl, blockAt_writeW_sep' hp.c_y rfl,
+      blockAt_frame hI₄.frame (fA _ hp.d_c.symm), show E.m = s₃.mem from rfl, m₃,
+      blockAt_frame f₂ (fun r' hr' => by
+        simp only [List.mem_singleton] at hr'; subst hr'
+        exact hp.p_c.symm.sub_right (Offset.sub_base _ (by omega))),
+      m₁, VG.Proof.Gcm.X86_64.blockAt_store, ← State.zlane_lt2 _ _ (by decide), hI.a.ctr 0 (by decide),
+      Nat.add_zero, VG.Proof.Aes.X86_64.AesNi.rep_add, hnb]
+  · show blockAt s₆.mem (yp s₀) = ghashFrom (hk s₀) (y₀ s₀) (blocksAt s₆.mem (dp s₀) (nb s₀))
+    have hbl : blocksAt s₆.mem (dp s₀) (nb s₀) = (List.range (nb s₀)).map (ctb s₀) := by
+      simp only [blocksAt]
+      exact List.map_congr_left fun k hk => hb k (by simpa using hk)
+    rw [hbl, m₆, VG.Proof.Gcm.X86_64.blockAt_store, y₅, hI₄.prod, accR_congr _ r hX hT, hr r hr1 hr15,
+      show E.y = s₃.lane .xmm2 0 from rfl, l₃ _ (by decide) (by decide) (by decide), hY₂, hnb,
+      List.range_add, List.map_append, List.map_map]
+    simp only [ghashFrom, List.foldl_append]
+    rfl
+  · show Frame _ s₀.mem s₆.mem
+    have F0 : Frame [cR s₀, yR s₀, dR s₀, pR s₀] s₀.mem s.mem := hI.a.frame.sub fun r' hr' => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
+      rcases hr' with rfl | rfl
+      · exact ⟨_, by simp, fun _ h => h⟩
+      · exact ⟨_, by simp, fun _ h => h⟩
+    have F1 : Frame [cR s₀, yR s₀, dR s₀, pR s₀] s.mem s₁.mem := by
+      rw [m₁]; exact (Frame.refl _ _).writeW (by simp) _ cw
+    have F2 : Frame [cR s₀, yR s₀, dR s₀, pR s₀] s₁.mem s₃.mem := by
+      rw [m₃]
+      exact f₂.sub fun r' hr' => by
+        simp only [List.mem_singleton] at hr'; subst hr'
+        exact ⟨pR s₀, by simp, Offset.sub_base _ (by omega)⟩
+    have F3 : Frame [cR s₀, yR s₀, dR s₀, pR s₀] s₃.mem s₄.mem := hI₄.frame.sub fun r' hr' => by
+      simp only [List.mem_singleton] at hr'; subst hr'
+      exact ⟨dR s₀, by simp, Offset.sub_base _ (by show 16 * (16 * e) + 16 * r ≤ 16 * nb s₀; omega)⟩
+    rw [m₆]
+    exact (((F0.trans F1).trans F2).trans F3).writeW (by simp) _ (Region.contains_self _ _)
+  · intro q h1 h2 h3 h4
+    show s₆.gpr q = _
+    rw [g₆, f₅.gpr, hI₄.gpr q h3 h4]
+    show s₃.gpr q = _
+    rw [gk₃ q h2 h4 h1]
+    exact hI.gpr q h1 h2 h3 h4
+  · show s₆.rd = _
+    rw [rd₆, f₅.rd, hI₄.rd]; exact hrd₃
+  · show s₆.wr = _
+    rw [wr₆, f₅.wr, hI₄.wr]; exact hwr₃
 
 end VG.Proof.Gcm.X86_64.StitchZH
