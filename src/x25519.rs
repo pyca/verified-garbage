@@ -40,7 +40,8 @@ use crate::arch::x25519::{
     vg_x25519_ifma,
 };
 use crate::cpu::{Features, detected};
-use crate::zeroize::zeroize;
+use crate::zeroize::{zeroize, zeroize_raw};
+use core::mem::{MaybeUninit, size_of};
 
 /// The implementations of `vg_x25519`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -104,7 +105,9 @@ pub const BASE_POINT: [u8; 32] = {
 /// `X25519(scalar, u)` (RFC 7748 §5), which may be all zero.
 pub fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
     let mut out = [0u8; 32];
-    let mut scratch = [0u64; 512];
+    // Uninitialized: the function's contract holds whatever the scratch
+    // holds, so filling it with zeros first would only cost time.
+    let mut scratch = MaybeUninit::<[u64; 512]>::uninit();
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_x25519,
         // `select` chose it because the CPU has the features it needs.
@@ -118,8 +121,9 @@ pub fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
     // distinct Rust objects, so they do not overlap each other or the stack,
     // or wrap around the end of the address space; and the CPU has the
     // features of the function `select` chose.
-    unsafe { f(&mut out, scalar, u, &mut scratch) };
-    zeroize(&mut scratch);
+    unsafe { f(&mut out, scalar, u, scratch.as_mut_ptr()) };
+    // SAFETY: `scratch` is writable for its whole length.
+    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), size_of::<[u64; 512]>()) };
     out
 }
 
@@ -127,7 +131,8 @@ pub fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
 #[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
 fn base(scalar: &[u8; 32]) -> [u8; 32] {
     let mut out = [0u8; 32];
-    let mut scratch = [0u64; 1024];
+    // Uninitialized, as in `x25519`.
+    let mut scratch = MaybeUninit::<[u64; 1024]>::uninit();
     #[cfg(target_arch = "x86_64")]
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_x25519_base,
@@ -141,8 +146,9 @@ fn base(scalar: &[u8; 32]) -> [u8; 32] {
     // disjoint from each other and from the input. No buffer overlaps the
     // callee's stack or wraps around the address space. The selected backend
     // has the required CPU features.
-    unsafe { f(&mut out, scalar, &mut scratch) };
-    zeroize(&mut scratch);
+    unsafe { f(&mut out, scalar, scratch.as_mut_ptr()) };
+    // SAFETY: `scratch` is writable for its whole length.
+    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
     out
 }
 
