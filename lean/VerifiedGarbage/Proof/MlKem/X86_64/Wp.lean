@@ -154,20 +154,56 @@ def allRegs : List Reg :=
 
 theorem mem_allRegs (r : Reg) : r ∈ allRegs := by cases r <;> decide
 
+/-- Whether the registers `i` writes (`Taint.clobbers`) are all in `rs`: one
+look at the instruction, rather than one per register. -/
+def writesIn (rs : List Reg) (i : Instr) : Bool :=
+  match i with
+  | .mul _ => rs.contains .rax && rs.contains .rdx
+  | .mulx hi lo _ => rs.contains hi && rs.contains lo
+  | .push _ | .alloc _ | .free _ => rs.contains .rsp
+  | .pop d _ => rs.contains .rsp && rs.contains d
+  | _ => match Taint.dstOf i with
+    | some r => rs.contains r
+    | none => true
+
+theorem writesIn_sound {rs : List Reg} {i : Instr} (h : writesIn rs i = true) {r : Reg}
+    (hr : Taint.clobbers i r = true) : r ∈ rs := by
+  rw [← List.contains_iff_mem]
+  unfold writesIn at h
+  unfold Taint.clobbers at hr
+  split at hr <;> simp only [Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq] at h hr
+  · rcases hr with rfl | rfl
+    exacts [h.1, h.2]
+  · rcases hr with rfl | rfl
+    exacts [h.1, h.2]
+  · subst hr; exact h
+  · subst hr; exact h
+  · subst hr; exact h
+  · rcases hr with rfl | rfl
+    exacts [h.1, h.2]
+  · split at h
+    · rename_i hd; rw [hr] at hd; cases hd; exact h
+    · rename_i hd; rw [hr] at hd; cases hd
+
 /-- Whether no instruction of `c` writes a register outside `rs`. -/
 def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
-  c.allInstrs fun i => allRegs.all fun r => rs.contains r || !Taint.clobbers i r
+  c.allInstrs (writesIn rs)
+
+/-- An instruction of code that writes only `rs` writes only `rs`. -/
+theorem writesOnly_sound {rs : List Reg} {c : Prog isa} (hc : writesOnly rs c = true) {i : Instr}
+    (hi : i ∈ instrs c) {r : Reg} (hr : Taint.clobbers i r = true) : r ∈ rs := by
+  unfold writesOnly at hc
+  rw [Code.allInstrs_eq, List.all_eq_true] at hc
+  exact writesIn_sound (hc i hi) hr
 
 /-- A register that no instruction writes keeps its value. -/
 theorem WP.keep {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg) (h : WP isa c s Q)
     (hc : writesOnly rs c = true) : WP isa c s fun s' => Q s' ∧ Keep rs s s' := by
   obtain ⟨t, s', he, hq⟩ := h
   refine ⟨t, s', he, hq, fun r hr => Exec.gpr (fun i hi => ?_) he, (Exec.rdwr he).1, (Exec.rdwr he).2⟩
-  unfold writesOnly at hc
-  rw [Code.allInstrs_eq, List.all_eq_true] at hc
-  have := List.all_eq_true.mp (hc i hi) r (mem_allRegs r)
-  simp only [Bool.or_eq_true, List.contains_iff_mem, hr, false_or, Bool.not_eq_true'] at this
-  exact this
+  cases hcl : Taint.clobbers i r
+  · rfl
+  · exact absurd (writesOnly_sound hc hi hcl) hr
 
 /-- The calling-convention obligations of code that writes only the
 registers `rs`, none callee-saved, and memory only within regions `ws`
