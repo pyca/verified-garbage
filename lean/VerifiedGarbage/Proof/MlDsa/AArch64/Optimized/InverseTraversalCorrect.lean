@@ -6,10 +6,10 @@ namespace VG.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 open VG.Spec.MlDsa VG.Proof.MlDsa.Arith
 
 theorem local_run (w : Poly) : run localSchedule w=run standardLocal w :=
-  (normalize_run local_checked w).symm
+  (Schedule.check_run (fun _ _ h => mask_comm h) local_checked w).symm
 
 theorem strided_run (w : Poly) : run stridedSchedule w=run standardStrided w :=
-  (normalize_run strided_checked w).symm
+  (Schedule.check_run (fun _ _ h => mask_comm h) strided_checked w).symm
 
 /-- Independent local five-layer blocks followed by strided three-layer slices
 are Algorithm 42, before its final coefficient scaling. -/

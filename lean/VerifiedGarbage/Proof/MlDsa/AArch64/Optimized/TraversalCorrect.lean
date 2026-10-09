@@ -5,10 +5,10 @@ namespace VG.Proof.MlDsa.AArch64.Optimized.Traversal
 open VG.Spec.MlDsa VG.Proof.MlDsa.Arith
 
 theorem outer_run (w : Poly) : run outerSchedule w=run standardOuter w :=
-  (normalize_run outer_checked w).symm
+  (Schedule.check_run (fun _ _ h => mask_comm h) outer_checked w).symm
 
 theorem inner_run (w : Poly) : run innerSchedule w=run standardInner w :=
-  (normalize_run inner_checked w).symm
+  (Schedule.check_run (fun _ _ h => mask_comm h) inner_checked w).symm
 
 /-- The selected three-layer strided pass followed by five-layer contiguous
 passes is exactly the standard forward transform. -/
