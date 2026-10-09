@@ -38,7 +38,7 @@ theorem ctr_ct (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (hn : n < 256 ^ (15 - nl)) (hn4
       ⟨nonce, hl, by rw [k₁.mem]; exact hc⟩, hD.of_eq k₁.rd k₁.wr, h4, h5⟩
   refine CT.seq (J := CrI k w sp R nl D n) (ctrWhole_ct L hR h7 h13 hn4) (fun s ⟨he, ⟨nonce, hl, hc⟩, hD, h4, h5⟩ => ?_)
     (ctrTail_ct L hR h7 h13 hn hn4)
-  refine WP.mono (ctrWhole_ok L he hR (nonce := nonce) (by omega) (by omega) hc hD (by rw [hl]; exact hn) hn4 h4 h5)
+  refine WP.mono (ctrWhole_ok L he hR (nonce := nonce) (by omega_arith) (by omega_arith) hc hD (by rw [hl]; exact hn) hn4 h4 h5)
     fun s' ⟨he', rd, wr, g, f, _⟩ => ⟨he', ⟨nonce, hl, ?_⟩, hD.of_eq rd wr, by rw [g _ (by decide) (by decide), h4],
       by rw [g _ (by decide) (by decide), h5]⟩
   rw [bytesAt_frame f (fun r hr => by
@@ -130,7 +130,7 @@ theorem tag_wpI {y : Nat} (hy : y = 0 ∨ y = 112) {s : State} (h : MacI k w sp 
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact w_mut (.inl (by decide))
-    · exact w_mut (.inl (by omega))
+    · exact w_mut (.inl (by omega_arith))
     · exact w_mut (.inr ⟨by decide, by decide⟩)
     · exact blw_mut
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

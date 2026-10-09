@@ -189,7 +189,7 @@ structure UPost (s : State) (W C D S : Addr) (R n : Nat) (s' : State) : Prop whe
 theorem UArgs.pre {s : State} {W C D S : Addr} {R n : Nat} (h : UArgs s W C D S R n) :
     updateX86_64.pre (s.callEntry.withRegions [⟨W, 240⟩, ⟨D, 16 * n⟩] [⟨C, 16⟩, ⟨S, 2176⟩]) := by
   have hR := toNat_rounds h.rounds
-  have hN := toNat_ofNat (n := n) (by have := h.hn; omega)
+  have hN := toNat_ofNat (n := n) (by have := h.hn; omega_arith)
   simp only [updateX86_64, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
@@ -203,19 +203,19 @@ theorem upd_call (v : UpdateImpl) {s : State} {W C D S : Addr} {R n : Nat}
     (h : UArgs s W C D S R n) :
     WP isa (.call v.callee.name v.callee.code) s (UPost s W C D S R n) := by
   have hR := toNat_rounds h.rounds
-  have hN := toNat_ofNat (n := n) (by have := h.hn; omega)
+  have hN := toNat_ofNat (n := n) (by have := h.hn; omega_arith)
   have hd := v.depth
-  refine WP.call (k := updateX86_64) v.ok v.nosp (by omega) h.pre h.reads h.writes ?_
+  refine WP.call (k := updateX86_64) v.ok v.nosp (by omega_arith) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
-  refine ⟨hrd, hwr, hcs, by simpa using Frame.below_mono hf (b := 16) (by omega) (by decide), ?_⟩
+  refine ⟨hrd, hwr, hcs, by simpa using Frame.below_mono hf (b := 16) (by omega_arith) (by decide), ?_⟩
   simp only [updateX86_64, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, h.r8, hR, hN] at hpost
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_arith
   rw [← hm₂, hpost, X86_64.ciphAt, Proof.Cmac.Stream.blocksAt_eq, Proof.Cmac.Stream.blocksAt_eq,
-    callEntry_bytes s (h.stkW.sub_right (Region.sub_prefix hRb)) (by omega),
-    callEntry_bytes s h.stkC (by decide), callEntry_bytes s h.stkD (by have := h.hn; omega)]
+    callEntry_bytes s (h.stkW.sub_right (Region.sub_prefix hRb)) (by omega_arith),
+    callEntry_bytes s h.stkC (by decide), callEntry_bytes s h.stkD (by have := h.hn; omega_arith)]
 
 theorem upd_rel (v : UpdateImpl) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ W C D S : Addr, ∃ R n : Nat,
@@ -293,8 +293,8 @@ theorem sub_call (v : Ctr32Impl) (nm : String) {s : State} {W K S : Addr} {R : N
   simp only [subkeysX86_64, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), h.rdi, h.rsi, h.rdx, hR] at hpost
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega
-  rw [← hm₂, hpost, X86_64.ciphAt, callEntry_bytes s (h.stkW.sub_right (Region.sub_prefix hRb)) (by omega)]
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_arith
+  rw [← hm₂, hpost, X86_64.ciphAt, callEntry_bytes s (h.stkW.sub_right (Region.sub_prefix hRb)) (by omega_arith)]
 
 theorem sub_rel (v : Ctr32Impl) (nm : String) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ W K S : Addr, ∃ R : Nat,
@@ -365,7 +365,7 @@ structure FPost (s : State) (K St P S : Addr) (L R : Nat) (s' : State) : Prop wh
 theorem FArgs.pre {s : State} {K St P S : Addr} {L R : Nat} (h : FArgs s K St P S L R) :
     finalizeX86_64.pre (s.callEntry.withRegions [⟨K, 272⟩, ⟨P, L⟩] [⟨St, 16⟩, ⟨S, 2176⟩]) := by
   have hR := toNat_rounds h.rounds
-  have hL := toNat_ofNat (n := L) (by have := h.len; omega)
+  have hL := toNat_ofNat (n := L) (by have := h.len; omega_arith)
   simp only [finalizeX86_64, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
@@ -380,7 +380,7 @@ theorem fin_call (v : Ctr32Impl) (nm : String) {s : State} {K St P S : Addr} {L 
     (h : FArgs s K St P S L R) :
     WP isa (.call nm (Impl.CmacAes.X86_64.finalize v.callee)) s (FPost s K St P S L R) := by
   have hR := toNat_rounds h.rounds
-  have hL := toNat_ofNat (n := L) (by have := h.len; omega)
+  have hL := toNat_ofNat (n := L) (by have := h.len; omega_arith)
   refine WP.call (k := finalizeX86_64) (finalize_correct v) (finalize_nosp v)
     (by rw [finalize_depth]; decide) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
@@ -390,13 +390,13 @@ theorem fin_call (v : Ctr32Impl) (nm : String) {s : State} {K St P S : Addr} {L 
     State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, h.r8, hR, hL] at hpost
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_arith
   have eK : Spec.Aes.bytesAt s.callEntry.mem K (16 * (R + 1)) = Spec.Aes.bytesAt s.mem K (16 * (R + 1)) :=
-    callEntry_bytes s (h.stkK.sub_right (Region.sub_prefix (by omega))) (by omega)
+    callEntry_bytes s (h.stkK.sub_right (Region.sub_prefix (by omega_arith))) (by omega_arith)
   have eK2 : Spec.Aes.bytesAt s.callEntry.mem (K + 240) 32 = Spec.Aes.bytesAt s.mem (K + 240) 32 :=
     callEntry_bytes s (h.stkK.sub_right (Offset.sub_base K (d := 240) (n := 32) (by decide))) (by decide)
   have eSt := callEntry_bytes s h.stkSt (by decide)
-  have eP := callEntry_bytes s h.stkP (by omega)
+  have eP := callEntry_bytes s h.stkP (by omega_arith)
   intro _ _ hk msg hm hne hst
   simp only [X86_64.ciphAt, eK, eK2, eSt, eP] at hpost
   rw [← hm₂]
@@ -446,7 +446,7 @@ structure EPost (s : State) (Kp W S : Addr) (KL : Nat) (s' : State) : Prop where
 
 theorem EArgs.pre {s : State} {Kp W S : Addr} {KL : Nat} (h : EArgs s Kp W S KL) :
     Proof.Aes.expandKeyX86_64.pre (s.callEntry.withRegions [⟨Kp, KL⟩] [⟨W, 240⟩, ⟨S, 512⟩]) := by
-  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h | h <;> omega)
+  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h | h <;> omega_arith)
   simp only [Proof.Aes.expandKeyX86_64, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
@@ -456,7 +456,7 @@ theorem EArgs.pre {s : State} {Kp W S : Addr} {KL : Nat} (h : EArgs s Kp W S KL)
 
 theorem ek_call (v : Ctr32Impl) {s : State} {Kp W S : Addr} {KL : Nat} (h : EArgs s Kp W S KL) :
     WP isa (.call v.expand.name v.expand.code) s (EPost s Kp W S KL) := by
-  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h | h <;> omega)
+  have hK := toNat_ofNat (n := KL) (by rcases h.klen with h | h | h <;> omega_arith)
   refine WP.call (k := Proof.Aes.expandKeyX86_64) v.expandOk v.expandNosp
     (by rw [v.expandDepth]; decide) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
@@ -465,7 +465,7 @@ theorem ek_call (v : Ctr32Impl) {s : State} {Kp W S : Addr} {KL : Nat} (h : EArg
   simp only [Proof.Aes.expandKeyX86_64, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), h.rdi, h.rsi, h.rdx, hK] at hpost
-  rw [← hm₂, hpost, callEntry_bytes s h.stkK (by rcases h.klen with h | h | h <;> omega)]
+  rw [← hm₂, hpost, callEntry_bytes s h.stkK (by rcases h.klen with h | h | h <;> omega_arith)]
 
 theorem ek_rel (v : Ctr32Impl) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ Kp W S : Addr, ∃ KL : Nat,

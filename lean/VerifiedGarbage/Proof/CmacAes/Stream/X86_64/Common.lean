@@ -29,12 +29,12 @@ theorem and15 (x : BitVec 64) : (x &&& 15).toNat = x.toNat % 16 := by
 theorem held_bv (c : BitVec 64) (h : c ≠ 0) :
     ((c - 1) &&& 15) + 1 = BitVec.ofNat 64 (held c.toNat) := by
   have hc : c.toNat ≠ 0 := fun e => h (BitVec.eq_of_toNat_eq (by simpa using e))
-  rw [held_pos (by omega)]
+  rw [held_pos (by omega_arith)]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, and15, BitVec.toNat_sub]
   simp only [BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
   have := c.isLt
-  omega
+  omega_arith
 
 theorem beq_zero_iff (c : BitVec 64) : (c == 0) = decide (c.toNat = 0) := by
   by_cases h : c = 0
@@ -44,12 +44,12 @@ theorem beq_zero_iff (c : BitVec 64) : (c == 0) = decide (c.toNat = 0) := by
 
 theorem toNat_add_lt (p : Addr) {d k : Nat} (h : p.toNat + k ≤ 2 ^ 64) (hd : d < k) :
     (p + BitVec.ofNat 64 d).toNat = p.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 64)]
-  exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith : d < 2 ^ 64)]
+  exact Nat.mod_eq_of_lt (by omega_arith)
 
 theorem rsi_ofNat {s₀ : State} {R : Nat} (h : (s₀.gpr .rsi).toNat = R) (_hR : R = 10 ∨ R = 12 ∨ R = 14) :
     s₀.gpr .rsi = BitVec.ofNat 64 R :=
-  BitVec.eq_of_toNat_eq (by rw [h, toNat_ofNat (by omega)])
+  BitVec.eq_of_toNat_eq (by rw [h, toNat_ofNat (by omega_arith)])
 
 /-! ## Copying a block a word at a time -/
 
@@ -88,19 +88,19 @@ theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) {xs : List Byte} (h : xs.le
   apply List.ext_getElem (by simp [Spec.Aes.bytesAt])
   intro i h1 _
   simp only [Spec.Aes.bytesAt, List.length_map, List.length_range] at h1
-  simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, writeBytes_at m q xs (by omega : i < 2 ^ 64),
+  simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, writeBytes_at m q xs (by omega_arith : i < 2 ^ 64),
     h1, ↓reduceIte, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h1, Option.getD_some]
 
 /-- Bytes `[0, r)` from `p` stay, and the bytes `xs` follow them. -/
 theorem bytesAt_writeBytes (m : Mem) (p : Addr) (r : Nat) (xs : List Byte) (h : r + xs.length < 2 ^ 64) :
     Spec.Aes.bytesAt (writeBytes m (p + BitVec.ofNat 64 r) xs) p (r + xs.length) =
       Spec.Aes.bytesAt m p r ++ xs := by
-  rw [Proof.Cmac.Stream.bytesAt_append, bytesAt_writeBytes_self _ _ (by omega)]
+  rw [Proof.Cmac.Stream.bytesAt_append, bytesAt_writeBytes_self _ _ (by omega_arith)]
   congr 1
   simp only [Spec.Aes.bytesAt]
   apply List.map_congr_left
   intro i hi
-  exact writeBytes_before m p xs (List.mem_range.mp hi) (by omega)
+  exact writeBytes_before m p xs (List.mem_range.mp hi) (by omega_arith)
 
 end
 

@@ -71,7 +71,7 @@ theorem header_ok {s : State} (he : Env k w sp R q1 s) {a : Nat} (ha0 : 0 < a) (
   have w₁ := he₂.perm.wW (show 36 + 4 ≤ 2560 by decide)
   have cB : ∀ d n, 32 ≤ d → d + n ≤ 48 →
       (⟨State.addr w + BitVec.ofNat 64 32, 16⟩ : Region).Contains (State.addr w + BitVec.ofNat 64 d) n :=
-    fun d n h₁ h₂ => Offset.contains _ h₁ (by omega) (by decide)
+    fun d n h₁ h₂ => Offset.contains _ h₁ (by omega_arith) (by decide)
   have kg : ∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r6 → r ≠ .r12 → s₂.gpr r = s.gpr r := fun r a b c d e => by
     rw [g₂ r a e, g₁ r a]
   refine WP.seq (WP.of_runBlock ⟨s₂, by
@@ -82,7 +82,7 @@ theorem header_ok {s : State} (he : Env k w sp R q1 s) {a : Nat} (ha0 : 0 < a) (
   have hrev := le4_rev_ofNat ha
   refine WP.ite (!decide (65280 ≤ a)) (eval_eq' hz₂) (fun ht => ?_) (fun hf => ?_)
   · -- `[a]₁₆`.
-    have h₁ : a < 2 ^ 16 - 2 ^ 8 := by simp at ht; omega
+    have h₁ : a < 2 ^ 16 - 2 ^ 8 := by simp at ht; omega_arith
     refine WP.of_runBlock ⟨_, by simp only [bO]; arun [h11, e32, w₀], ?_⟩
     refine ⟨he₂.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -94,10 +94,10 @@ theorem header_ok {s : State} (he : Env k w sp R q1 s) {a : Nat} (ha0 : 0 < a) (
       exact fz.writeW (List.mem_singleton_self _) _ (cB 32 4 (by decide) (by decide))
     · simp only [mem_store, gpr_store, mem_setReg, gpr_setReg, ite_true, ite_false, reduceCtorEq, h5₂]
       rw [bytesAt_writeW32_base _ _ _ (by decide) (by decide), hz, le4_shr16, hrev,
-        be_split (q := 2) (by decide) (by omega), encodeLen_lo h₁, show hdrLen a = 2 by simp [hdrLen, h₁]]
+        be_split (q := 2) (by decide) (by omega_arith), encodeLen_lo h₁, show hdrLen a = 2 by simp [hdrLen, h₁]]
       simp [Spec.Ccm.zeros, List.drop_append_of_le_length, length_be]
   · -- `0xff ‖ 0xfe ‖ [a]₃₂`.
-    have h₁ : ¬ a < 2 ^ 16 - 2 ^ 8 := by simp at hf; omega
+    have h₁ : ¬ a < 2 ^ 16 - 2 ^ 8 := by simp at hf; omega_arith
     refine WP.of_runBlock ⟨_, by simp only [bO]; arun [h11, e32, e36, w₀, w₁], ?_⟩
     refine ⟨he₂.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

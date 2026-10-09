@@ -75,7 +75,7 @@ theorem copy_ok (s : State) {P C : Addr} {L : Nat} (hL : L < 2 ^ 64) (hc : s.gpr
     (fun (n : Nat) (t : State) => ∃ i, n = L - i ∧ i < L ∧ t.gpr .r10 = BitVec.ofNat 64 i ∧
       t.mem = writeBytes s.mem C (Spec.Aes.bytesAt s.mem P i) ∧
       (∀ r, r ≠ .rax → r ≠ .r10 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ (L - 0) _
-    ⟨0, rfl, by omega, r10₁, by rw [m₁]; simp [Spec.Aes.bytesAt, writeBytes_nil],
+    ⟨0, rfl, by omega_arith, r10₁, by rw [m₁]; simp [Spec.Aes.bytesAt, writeBytes_nil],
       fun r _ h₂ => g₁ r h₂, rd₁, wr₁⟩
   rintro n t ⟨i, rfl, hi, r10, mem, g, rd, wr⟩
   obtain ⟨t', run', mem', r10', zf', g', rd', wr'⟩ := copyStep_ok t
@@ -88,18 +88,18 @@ theorem copy_ok (s : State) {P C : Addr} {L : Nat} (hL : L < 2 ^ 64) (hc : s.gpr
     (writeBytes_frame s.mem C _ (R := ⟨C, i⟩) (by rw [hlen]; exact Region.contains_self _ _)) _
       fun r hr hcon => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact hdis _ (Offset.contains_base P (by omega) (by omega)) (Region.sub_prefix (by omega) _ hcon)
+        exact hdis _ (Offset.contains_base P (by omega_arith) (by omega_arith)) (Region.sub_prefix (by omega_arith) _ hcon)
   have hmem : t'.mem = writeBytes s.mem C (Spec.Aes.bytesAt s.mem P (i + 1)) := by
     rw [mem', mem, hx, bytesAt_succ, writeBytes_snoc s.mem C (Spec.Aes.bytesAt s.mem P i)
-      (s.mem (P + BitVec.ofNat 64 i)) (by rw [hlen]; omega), hlen]
+      (s.mem (P + BitVec.ofNat 64 i)) (by rw [hlen]; omega_arith), hlen]
   have hz : t'.zf = some (decide (i + 1 = L)) := by
-    rw [zf', succ_ofNat, Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
+    rw [zf', succ_ofNat, Offset.ofNat_sub_ofNat_beq (by omega_arith) (by omega_arith)]
   have gg : ∀ r, r ≠ .rax → r ≠ .r10 → t'.gpr r = s.gpr r := fun r h₁ h₂ => by rw [g' r h₁ h₂, g r h₁ h₂]
   by_cases he : i + 1 = L
   · left
     exact ⟨by simp [eval, hz, he], by rw [hmem, he], gg, by rw [rd', rd], by rw [wr', wr]⟩
   · right
-    refine ⟨by simp [eval, hz, he], L - (i + 1), by omega, i + 1, rfl, by omega, by rw [r10', succ_ofNat], hmem, gg,
+    refine ⟨by simp [eval, hz, he], L - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, by rw [r10', succ_ofNat], hmem, gg,
       by rw [rd', rd], by rw [wr', wr]⟩
 
 end VG.Proof.CmacAes.Stream.X86_64

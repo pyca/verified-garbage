@@ -73,7 +73,7 @@ theorem entry_ok {K W SP : Addr} {s : State} (P : Perm K W s) {R : Nat} {N A D :
       s₁.mem.readW (W + BitVec.ofNat 64 192) 64 = D ∧
       s₁.mem.readW (W + BitVec.ofNat 64 200) 64 = BitVec.ofNat 64 n := by
     have cE : ∀ d, 112 ≤ d → d + 8 ≤ 240 → (entryR W).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₁ h₂ => Offset.contains W h₁ (by omega) (by decide)
+      fun d h₁ h₂ => Offset.contains W h₁ (by omega_arith) (by decide)
     refine ⟨_, by crun [save, saved, List.map_cons, List.map_nil, hW, hsp, hD, hn, a₈, a₁₆, a₄₀, w₁, w₂, w₃, w₄,
       w₅, w₆, w₇, w₈, w₉, w₁₀, w₁₁, w₁₂, w₁₄], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq, hsp]
@@ -109,13 +109,13 @@ theorem entry_ok {K W SP : Addr} {s : State} (P : Perm K W s) {R : Nat} {N A D :
     all_goals rfl
   have k : ∀ {d}, (d + 8 ≤ 208 ∨ 216 ≤ d) → d + 8 ≤ 2 ^ 64 →
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun h₁ h₂ => by
-    rw [hm₂, readW_writeW_off _ (by omega) h₂ (by decide)]
+    rw [hm₂, readW_writeW_off _ (by omega_arith) h₂ (by decide)]
   refine ⟨s₂, ?_, ⟨by rw [hg₂ _ (by decide), h13], by rw [hg₂ _ (by decide), h15], by rw [hg₂ _ (by decide), hsp₁],
     P.of_eq (by rw [hrd₂, hrd₁]) (by rw [hwr₂, hwr₁])⟩,
-    ⟨by rw [k (by omega) (by decide), s232], by rw [k (by omega) (by decide), s160],
-      by rw [k (by omega) (by decide), s168], by rw [k (by omega) (by decide), s176],
-      by rw [k (by omega) (by decide), s184], by rw [k (by omega) (by decide), s192],
-      by rw [k (by omega) (by decide), s200], by rw [hm₂, Mem.readW_writeW_self64]⟩,
+    ⟨by rw [k (by omega_arith) (by decide), s232], by rw [k (by omega_arith) (by decide), s160],
+      by rw [k (by omega_arith) (by decide), s168], by rw [k (by omega_arith) (by decide), s176],
+      by rw [k (by omega_arith) (by decide), s184], by rw [k (by omega_arith) (by decide), s192],
+      by rw [k (by omega_arith) (by decide), s200], by rw [hm₂, Mem.readW_writeW_self64]⟩,
     fun p hp => ?_, ?_, by rw [hrd₂, hrd₁], by rw [hwr₂, hwr₁]⟩
   · rw [show entry = ([.mov .rax (.mem (at_ .rsp 40)), .mov .r10 (.mem (at_ .rsp 8)),
         .mov .r11 (.mem (at_ .rsp 16))] ++ save .rax ++

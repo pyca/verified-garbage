@@ -33,7 +33,7 @@ theorem ctrAt_ok {s : State} (he : Env k w sp R q1 s) {nonce : List Byte} (h7 : 
       (∀ r, r ≠ .r0 → r ≠ .r1 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   have h11 := he.r11
   have hi4 : i < 2 ^ 32 := Nat.lt_of_lt_of_le hi (by
-    rw [show (2 : Nat) ^ 32 = 256 ^ 4 from rfl]; exact Nat.pow_le_pow_right (by decide) (by omega))
+    rw [show (2 : Nat) ^ 32 = 256 ^ 4 from rfl]; exact Nat.pow_le_pow_right (by decide) (by omega_arith))
   have r₀ := he.perm.wR (show 48 + 4 ≤ 2560 by decide)
   have r₁ := he.perm.wR (show 52 + 4 ≤ 2560 by decide)
   have r₂ := he.perm.wR (show 56 + 4 ≤ 2560 by decide)
@@ -44,7 +44,7 @@ theorem ctrAt_ok {s : State} (he : Env k w sp R q1 s) {nonce : List Byte} (h7 : 
   have w₃ := he.perm.wW (show 76 + 4 ≤ 2560 by decide)
   have q : ∀ a d, a + 4 ≤ d → d + 4 ≤ 2560 →
       (⟨State.addr w + BitVec.ofNat 64 a, 4⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 d, 4⟩ :=
-    fun a d h₁ h₂ => L.w_w (.inl h₁) (by omega) h₂
+    fun a d h₁ h₂ => L.w_w (.inl h₁) (by omega_arith) h₂
   have p₁ := fun m v => sepW (m := m) (v := v) (q 52 64 (by decide) (by decide))
   have p₂ := fun m v => sepW (m := m) (v := v) (q 56 64 (by decide) (by decide))
   have p₃ := fun m v => sepW (m := m) (v := v) (q 56 68 (by decide) (by decide))

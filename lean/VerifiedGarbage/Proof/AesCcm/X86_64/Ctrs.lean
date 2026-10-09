@@ -22,7 +22,7 @@ theorem sub_low_byte {nl : Nat} (h : nl ≤ 14) :
     ((BitVec.ofNat 64 14 - BitVec.ofNat 64 nl).setWidth 8 : Byte) = BitVec.ofNat 8 (15 - nl - 1) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- `Ctr₀`, from the nonce `N` of `nl` bytes. -/
 theorem ctrs_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A D : Addr}
@@ -49,7 +49,7 @@ theorem ctrs_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A D 
       (∀ r, r ≠ .rax → r ≠ .rsi → r ≠ .rdi → r ≠ .rcx → s₁.gpr r = s.gpr r) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
     refine ⟨_, by crun [zero16, h15, w₁, w₂, w₃, r₁, r₂, add_ofNat_assoc], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [mem_setReg, mem_arithFlags]
-      rw [hnl, sub_low_byte (show nl ≤ 14 by omega)]
+      rw [hnl, sub_low_byte (show nl ≤ 14 by omega_arith)]
       rfl
     · simp [gpr_setReg, hNp]
     · simp [gpr_setReg]
@@ -60,9 +60,9 @@ theorem ctrs_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A D 
   have E₁ : Env K W SP s₁ := E.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide) (by decide)) hrd₁ hwr₁
-  have dNW : (⟨N, nl⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 49, nl⟩ := hN.w.sub_right (Lay.wSub (by omega))
+  have dNW : (⟨N, nl⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 49, nl⟩ := hN.w.sub_right (Lay.wSub (by omega_arith))
   have lp : LoopPre s₁ N (W + BitVec.ofNat 64 49) nl :=
-    ⟨hsi, hdi, hcx, by omega, by omega, by rw [hrd₁, hwr₁]; exact hN.rd, E₁.perm.wC (by omega), dNW⟩
+    ⟨hsi, hdi, hcx, by omega_arith, by omega_arith, by rw [hrd₁, hwr₁]; exact hN.rd, E₁.perm.wC (by omega_arith), dNW⟩
   refine WP.mono (copyLoop_ok s₁ lp) fun s₂ ⟨hm₂, hg₂, hrd₂, hwr₂⟩ => ?_
   have hfz : Frame [⟨W + BitVec.ofNat 64 48, 16⟩] s.mem s₁.mem := by
     rw [hm₁]
@@ -75,7 +75,7 @@ theorem ctrs_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A D 
   have hNs : bytesAt s₁.mem N nl = bytesAt s.mem N nl :=
     bytesAt_frame hfz (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hN.w.sub_right (Lay.wSub (by decide))) (by omega)
+      exact hN.w.sub_right (Lay.wSub (by decide))) (by omega_arith)
   refine ⟨E₁.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide)) hrd₂ hwr₂, ?_, ?_,
@@ -84,7 +84,7 @@ theorem ctrs_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A D 
     rw [hm₂]
     exact writeBytes_frame _ _ _ (by
       rw [length_bytesAt]
-      exact Offset.contains W (d := 49) (n := nl) (e := 48) (k := 16) (by decide) (by omega) (by decide))
+      exact Offset.contains W (d := 49) (n := nl) (e := 48) (k := 16) (by decide) (by omega_arith) (by decide))
   · -- The bytes of the block.
     have e56 : W + BitVec.ofNat 64 56 = W + BitVec.ofNat 64 48 + BitVec.ofNat 64 8 := by rw [add_ofNat_assoc]
     have hz : bytesAt s₁.mem (W + BitVec.ofNat 64 48) 16 = BitVec.ofNat 8 (15 - nl - 1) :: Spec.Ccm.zeros 15 := by
@@ -93,8 +93,8 @@ theorem ctrs_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A D 
       rfl
     have hl := length_bytesAt s.mem N nl
     rw [hm₂, show W + BitVec.ofNat 64 49 = W + BitVec.ofNat 64 48 + BitVec.ofNat 64 1 by rw [add_ofNat_assoc],
-      bytesAt_writeBytes_at _ _ _ (by rw [length_bytesAt]; omega) (by decide), length_bytesAt, hz, hNs,
-      Spec.Ccm.ctrBlock, hl, be_zero, show 1 + nl = nl + 1 by omega]
+      bytesAt_writeBytes_at _ _ _ (by rw [length_bytesAt]; omega_arith) (by decide), length_bytesAt, hz, hNs,
+      Spec.Ccm.ctrBlock, hl, be_zero, show 1 + nl = nl + 1 by omega_arith]
     simp only [Spec.Ccm.zeros, List.take_succ_cons, List.take_zero, List.drop_succ_cons, List.drop_replicate,
       List.cons_append, List.nil_append]
 

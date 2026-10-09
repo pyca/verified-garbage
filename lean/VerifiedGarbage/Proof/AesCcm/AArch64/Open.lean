@@ -95,7 +95,7 @@ theorem open_wp' (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} {N : Addr} {s :
   have k₄ : Spec.Ccm.ctxCiph s₄.mem c.K c.R = Spec.Ccm.ctxCiph s.mem c.K c.R := by rw [ciph_mut L f₁₄, k₁]
   have hd₂ : bytesAt s₂.mem c.D c.n = bytesAt s.mem c.D c.n := by
     rw [Proof.AesGcm.AArch64.bytesAt_frame f₂ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by have := L.n_lt; omega),
+      simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by have := L.n_lt; omega_arith),
       entry_buf En.frame (L.bufD Ar.perm)]
   have ha₃ : bytesAt s₃.mem c.A c.al = bytesAt s.mem c.A c.al := by
     rw [aad_mut L f₁₃, entry_buf En.frame (L.bufA Ar.perm)]
@@ -104,14 +104,14 @@ theorem open_wp' (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} {N : Addr} {s :
     rw [h₃, k₂, hd₂, crypt_eq (hBC _)]
   have hd₇ : bytesAt s₇.mem c.D c.n = bytesAt s₃.mem c.D c.n := by
     rw [hm₇, Proof.AesGcm.AArch64.bytesAt_frame f₆ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by have := L.n_lt; omega),
+        simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by have := L.n_lt; omega_arith),
       Proof.AesGcm.AArch64.bytesAt_frame f₅ (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> exact L.d_w' (by decide)) (by have := L.n_lt; omega),
+        rcases hr with rfl | rfl | rfl <;> exact L.d_w' (by decide)) (by have := L.n_lt; omega_arith),
       buf_macR (L.bufD M.env.perm) (by decide) M.frame]
   have hrecv : bytesAt s₅.mem c.T c.tl = bytesAt s.mem c.T c.tl := by
     rw [tag_mut L f₁₅ ht16, Proof.AesGcm.AArch64.bytesAt_frame En.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.t_w.sub_right (Lay.wSub (by decide))) (by omega)]
+      simp only [List.mem_singleton] at hr; subst hr; exact L.t_w.sub_right (Lay.wSub (by decide))) (by omega_arith)]
   have hY := congrArg List.length h₅
   rw [length_bytesAt, length_xorFrom] at hY
   have hcomp : bytesAt s₅.mem (c.W + BitVec.ofNat 64 96) c.tl =
@@ -119,13 +119,13 @@ theorem open_wp' (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} {N : Addr} {s :
         (Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl) (bytesAt s.mem c.A c.al)
           (Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem c.K c.R) (bytesAt s.mem N c.nl) (bytesAt s.mem c.D c.n))) := by
     rw [show c.W + BitVec.ofNat 64 96 = c.W + BitVec.ofNat 64 uO from rfl, Proof.AesCcm.bytesAt_prefix s₅.mem _ L.t16, h₅, k₄, take_xorFrom_zero (hBC _) _ hY.symm L.t16, M.out, k₃,
-      ha₃, hpt, ← mac_eq _ _ (by rw [hnl]; have := L.h13; omega)]
+      ha₃, hpt, ← mac_eq _ _ (by rw [hnl]; have := L.h13; omega_arith)]
   have hmlen : (Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl) (bytesAt s.mem c.A c.al)
       (Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem c.K c.R) (bytesAt s.mem N c.nl) (bytesAt s.mem c.D c.n))).length =
       c.tl := by
-    rw [mac_eq _ _ (by rw [hnl]; have := L.h13; omega), List.length_take,
+    rw [mac_eq _ _ (by rw [hnl]; have := L.h13; omega_arith), List.length_take,
       length_chain (hBC _) _ _ (by simp [Spec.Cmac.zeros])]
-    omega
+    omega_arith
   have hiff := cryptTag_eq_iff (hBC s.mem) L.t16 (bytesAt s.mem N c.nl) hmlen (length_bytesAt s.mem c.T c.tl)
   simp only [openOut, Spec.Ccm.decryptWith]
   rw [hcomp, hrecv] at hd₈ x0₇

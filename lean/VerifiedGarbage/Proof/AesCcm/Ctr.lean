@@ -52,8 +52,8 @@ theorem beVal_lt : ∀ bs : List Byte, beVal bs < 256 ^ bs.length
     have := beVal_lt bs
     have := b.isLt
     have : b.toNat * 256 ^ bs.length + 256 ^ bs.length ≤ 256 ^ bs.length * 256 := by
-      rw [← Nat.succ_mul, Nat.mul_comm]; exact Nat.mul_le_mul_left _ (by omega)
-    omega
+      rw [← Nat.succ_mul, Nat.mul_comm]; exact Nat.mul_le_mul_left _ (by omega_arith)
+    omega_arith
 
 theorem be_succ (k x : Nat) : Ccm.be (k + 1) x = BitVec.ofNat 8 (x / 256 ^ k) :: Ccm.be k x := by
   simp only [Ccm.be, List.range_succ_eq_map, List.map_cons, List.map_map, Nat.sub_zero, Nat.add_sub_cancel]
@@ -61,7 +61,7 @@ theorem be_succ (k x : Nat) : Ccm.be (k + 1) x = BitVec.ofNat 8 (x / 256 ^ k) ::
   apply List.map_congr_left
   intro a ha
   simp only [Function.comp, List.mem_range] at ha ⊢
-  rw [show k - (a + 1) = k - 1 - a by omega]
+  rw [show k - (a + 1) = k - 1 - a by omega_arith]
 
 theorem beVal_be (k x : Nat) : beVal (Ccm.be k x) = x % 256 ^ k := by
   induction k with
@@ -77,7 +77,7 @@ theorem ofBytes_eq (bs : List Byte) : Gcm.ofBytes bs = BitVec.ofNat 128 (beVal b
 
 theorem length_ctrBlock {nonce : List Byte} (hn : nonce.length ≤ 15) (i : Nat) :
     (Ccm.ctrBlock nonce i).length = 16 := by
-  simp only [Ccm.ctrBlock, List.cons_append, List.length_cons, List.length_append, length_be]; omega
+  simp only [Ccm.ctrBlock, List.cons_append, List.length_cons, List.length_append, length_be]; omega_arith
 
 /-- `Ctrᵢ` as a big-endian integer. -/
 theorem beVal_ctrBlock (nonce : List Byte) {i : Nat} (hi : i < 256 ^ (15 - nonce.length)) :
@@ -96,7 +96,7 @@ theorem toNat_inc32 (x : Gcm.Block) :
     Nat.shiftRight_eq_div_pow]
   have hx := x.isLt
   rw [← Nat.shiftLeft_add_eq_or_of_lt (Nat.mod_lt _ (by decide)), Nat.shiftLeft_eq, Nat.pow_zero, Nat.div_one,
-    Nat.mod_eq_of_lt (a := x.toNat / 2 ^ 32) (by omega)]
+    Nat.mod_eq_of_lt (a := x.toNat / 2 ^ 32) (by omega_arith)]
   rfl
 
 /-- `inc₃₂` adds 1 to `Ctrᵢ` unless the low 32 bits of `i + 1` are zero. -/
@@ -104,12 +104,12 @@ theorem inc32_ctrBlock {nonce : List Byte} (hn₁ : 7 ≤ nonce.length) (hn₂ :
     (hi : i + 1 < 256 ^ (15 - nonce.length)) (hw : (i + 1) % 2 ^ 32 ≠ 0) :
     Gcm.inc32 (Gcm.ofBytes (Ccm.ctrBlock nonce i)) = Gcm.ofBytes (Ccm.ctrBlock nonce (i + 1)) := by
   apply BitVec.eq_of_toNat_eq
-  rw [toNat_inc32, toNat_ofBytes (length_ctrBlock (by omega) _), toNat_ofBytes (length_ctrBlock (by omega) _),
-    beVal_ctrBlock nonce (by omega), beVal_ctrBlock nonce hi]
+  rw [toNat_inc32, toNat_ofBytes (length_ctrBlock (by omega_arith) _), toNat_ofBytes (length_ctrBlock (by omega_arith) _),
+    beVal_ctrBlock nonce (by omega_arith), beVal_ctrBlock nonce hi]
   generalize beVal (BitVec.ofNat 8 (15 - nonce.length - 1) :: nonce) = A
   generalize hq : 15 - nonce.length = q at hi
-  have : q = 2 ∨ q = 3 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7 ∨ q = 8 := by omega
-  rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Nat.reducePow] at hi ⊢ <;> omega
+  have : q = 2 ∨ q = 3 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7 ∨ q = 8 := by omega_arith
+  rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Nat.reducePow] at hi ⊢ <;> omega_arith
 
 /-- `vg_aes_ctr32`'s counter blocks from `Ctrⱼ`, `k` of them, are
 `Ctrⱼ, …, Ctrⱼ₊ₖ₋₁` if the low 32 bits do not wrap around. -/
@@ -121,8 +121,8 @@ theorem repeat_inc32_ctrBlock {nonce : List Byte} (hn₁ : 7 ≤ nonce.length) (
   induction i with
   | zero => rfl
   | succ i ih =>
-    rw [Nat.repeat, ih (by omega), ← Nat.add_assoc]
-    exact inc32_ctrBlock hn₁ hn₂ (by omega) (by omega)
+    rw [Nat.repeat, ih (by omega_arith), ← Nat.add_assoc]
+    exact inc32_ctrBlock hn₁ hn₂ (by omega_arith) (by omega_arith)
 
 /-! ## The keystream, byte by byte -/
 
@@ -155,8 +155,8 @@ theorem xorFrom_append (ciph : Ccm.Cipher) (nonce : List Byte) (j : Nat) {d e : 
     simp [List.getD_eq_getElem?_getD, List.getElem?_append_left this]
   · refine List.map_congr_left fun i _ => ?_
     simp only [Function.comp, List.getD_eq_getElem?_getD, ksb]
-    rw [List.getElem?_append_right (by omega), Nat.add_sub_cancel_left, hd,
-      show (16 * a + i) / 16 = a + i / 16 by omega, show (16 * a + i) % 16 = i % 16 by omega, Nat.add_assoc]
+    rw [List.getElem?_append_right (by omega_arith), Nat.add_sub_cancel_left, hd,
+      show (16 * a + i) / 16 = a + i / 16 by omega_arith, show (16 * a + i) % 16 = i % 16 by omega_arith, Nat.add_assoc]
 
 /-- `CIPH_K` gives blocks. -/
 def BlockCipher (ciph : Ccm.Cipher) : Prop := ∀ x, (ciph x).length = 16
@@ -169,18 +169,18 @@ theorem length_keystream {ciph : Ccm.Cipher} (hc : BlockCipher ciph) (nonce : Li
     (Ccm.keystream ciph nonce m).length = 16 * m := by
   induction m with
   | zero => rfl
-  | succ m ih => rw [keystream_succ, List.length_append, ih, hc]; omega
+  | succ m ih => rw [keystream_succ, List.length_append, ih, hc]; omega_arith
 
 /-- §6.1 steps 5–8: CCM's encryption is the XOR with the keystream from
 `Ctr₁`. -/
 theorem crypt_eq {ciph : Ccm.Cipher} (hc : BlockCipher ciph) (nonce x : List Byte) :
     Ccm.crypt ciph nonce x = xorFrom ciph nonce 1 x := by
   have hl := length_keystream hc nonce ((x.length + 15) / 16)
-  refine Gcm.list_ext (by simp [Ccm.crypt, Ccm.xor, length_xorFrom, hl]; omega) fun i hi => ?_
+  refine Gcm.list_ext (by simp [Ccm.crypt, Ccm.xor, length_xorFrom, hl]; omega_arith) fun i hi => ?_
   simp only [Ccm.crypt, Ccm.xor, List.length_zipWith, hl] at hi
-  have hix : i < x.length := by omega
+  have hix : i < x.length := by omega_arith
   rw [getD_xorFrom _ _ _ _ hix, Ccm.crypt, Ccm.xor, List.getD_eq_getElem?_getD, List.getElem?_zipWith,
-    List.getElem?_eq_getElem hix, List.getElem?_eq_getElem (by omega)]
+    List.getElem?_eq_getElem hix, List.getElem?_eq_getElem (by omega_arith)]
   simp only [Option.getD_some]
   congr 1
   · simp [List.getD_eq_getElem?_getD, hix]
@@ -195,11 +195,11 @@ theorem crypt_eq {ciph : Ccm.Cipher} (hc : BlockCipher ciph) (nonce x : List Byt
         have hlm := length_keystream hc nonce m
         rw [keystream_succ, List.getD_eq_getElem?_getD]
         by_cases h : i < 16 * m
-        · rw [List.getElem?_append_left (by omega), ← List.getD_eq_getElem?_getD, ih i h]
-        · rw [List.getElem?_append_right (by omega), hlm, ← List.getD_eq_getElem?_getD,
-            show i / 16 = m by omega, show i - 16 * m = i % 16 by omega]
-    have := key ((x.length + 15) / 16) i (by omega)
-    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some] at this
+        · rw [List.getElem?_append_left (by omega_arith), ← List.getD_eq_getElem?_getD, ih i h]
+        · rw [List.getElem?_append_right (by omega_arith), hlm, ← List.getD_eq_getElem?_getD,
+            show i / 16 = m by omega_arith, show i - 16 * m = i % 16 by omega_arith]
+    have := key ((x.length + 15) / 16) i (by omega_arith)
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega_arith), Option.getD_some] at this
     rw [this, ksb, Nat.add_comm 1]
 
 /-- What `vg_aes_ctr32` XORs in, from a counter block whose `k` blocks are
@@ -213,7 +213,7 @@ theorem xorKs_eq {G : Gcm.Block → Gcm.Block} {ciph : Ccm.Cipher}
   refine Gcm.list_ext (by simp [Gcm.length_xorKs, length_xorFrom]) fun i hi => ?_
   simp only [Gcm.length_xorKs] at hi
   rw [Gcm.getD_xorKs _ _ _ _ hi, getD_xorFrom _ _ _ _ hi, Nat.zero_add, Gcm.ksByte, ksb,
-    hinc (i / 16) (by omega), hG _ (length_ctrBlock hn _)]
+    hinc (i / 16) (by omega_arith), hG _ (length_ctrBlock hn _)]
 
 /-- The last bytes, XORed with the first bytes of `CIPH_K(Ctrⱼ)`. -/
 theorem xorFrom_tail {ciph : Ccm.Cipher} (nonce : List Byte) (j : Nat) {d : List Byte} (hd : d.length ≤ 16) :
@@ -221,14 +221,14 @@ theorem xorFrom_tail {ciph : Ccm.Cipher} (nonce : List Byte) (j : Nat) {d : List
       (ciph (Ccm.ctrBlock nonce j)).length < d.length := by
   by_cases hl : d.length ≤ (ciph (Ccm.ctrBlock nonce j)).length
   · left
-    refine Gcm.list_ext (by simp [length_xorFrom]; omega) fun i hi => ?_
+    refine Gcm.list_ext (by simp [length_xorFrom]; omega_arith) fun i hi => ?_
     simp only [List.length_zipWith, List.length_take] at hi
-    rw [getD_xorFrom _ _ _ _ (by omega), ksb, Nat.div_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega),
-      Nat.add_zero, List.getD_eq_getElem?_getD, List.getElem?_zipWith, List.getElem?_eq_getElem (by omega),
-      List.getElem?_eq_getElem (by simp; omega)]
-    simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show i < d.length by omega),
-      List.getElem?_eq_getElem (show i < (ciph (Ccm.ctrBlock nonce j)).length by omega)]
-  · exact .inr (by omega)
+    rw [getD_xorFrom _ _ _ _ (by omega_arith), ksb, Nat.div_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith),
+      Nat.add_zero, List.getD_eq_getElem?_getD, List.getElem?_zipWith, List.getElem?_eq_getElem (by omega_arith),
+      List.getElem?_eq_getElem (by simp; omega_arith)]
+    simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (show i < d.length by omega_arith),
+      List.getElem?_eq_getElem (show i < (ciph (Ccm.ctrBlock nonce j)).length by omega_arith)]
+  · exact .inr (by omega_arith)
 
 /-- The first `t` bytes of a block XORed with CCM's keystream from `Ctr₀`:
 the first `t` bytes of the block encrypted as a MAC (§6.1 step 8). -/
@@ -238,11 +238,11 @@ theorem take_xorFrom_zero {ciph : Ccm.Cipher} (hc : BlockCipher ciph) (nonce : L
   have hl := hc (Ccm.ctrBlock nonce 0)
   refine Gcm.list_ext (by simp [length_xorFrom, Ccm.cryptTag, Ccm.xor, hY, hl]) fun i hi => ?_
   simp only [List.length_take, length_xorFrom, hY] at hi
-  rw [List.getD_eq_getElem?_getD, List.getElem?_take_of_lt (by omega), ← List.getD_eq_getElem?_getD,
-    getD_xorFrom _ _ _ _ (by omega), ksb, Nat.div_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.add_zero]
+  rw [List.getD_eq_getElem?_getD, List.getElem?_take_of_lt (by omega_arith), ← List.getD_eq_getElem?_getD,
+    getD_xorFrom _ _ _ _ (by omega_arith), ksb, Nat.div_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith), Nat.add_zero]
   simp only [Ccm.cryptTag, Ccm.xor, List.getD_eq_getElem?_getD, List.getElem?_zipWith, List.getElem?_take_of_lt
-    (show i < t by omega), List.getElem?_eq_getElem (show i < Y.length by omega),
-    List.getElem?_eq_getElem (show i < (ciph (Ccm.ctrBlock nonce 0)).length by omega), Option.getD_some]
+    (show i < t by omega_arith), List.getElem?_eq_getElem (show i < Y.length by omega_arith),
+    List.getElem?_eq_getElem (show i < (ciph (Ccm.ctrBlock nonce 0)).length by omega_arith), Option.getD_some]
 
 /-! ## `vg_aes_ctr32` on memory -/
 
@@ -255,14 +255,14 @@ theorem ctr32_bytes {m m' : Mem} {C D : Addr} {G : Gcm.Block → Gcm.Block} {nb 
   simp only [Cmac.bytesAt_length] at hk
   rw [Gcm.getD_xorKs _ _ _ _ (by rw [Cmac.bytesAt_length]; exact hk), Gcm.getD_bytesAt' _ _ hk,
     Gcm.getD_bytesAt' _ _ hk]
-  have hq : k / 16 < nb := by omega
+  have hq : k / 16 < nb := by omega_arith
   have e₁ := congrArg (fun L => L.getD (k / 16) 0) hd
   rw [Gcm.ctr32_getD _ _ _ (by rw [Gcm.length_blocksAt]; exact hq), Gcm.blocksAt_getD _ _ _ hq,
     Gcm.blocksAt_getD _ _ _ hq] at e₁
   have ea : D + BitVec.ofNat 64 k = D + BitVec.ofNat 64 (16 * (k / 16)) + BitVec.ofNat 64 (k % 16) := by
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
-  rw [ea, Gcm.bytes_toBytes_blockAt m' _ (by omega), Gcm.bytes_toBytes_blockAt m _ (by omega), e₁,
-    Proof.Aes.toBytes_xor _ _ (by omega), Gcm.ksByte, Nat.zero_add]
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_arith
+  rw [ea, Gcm.bytes_toBytes_blockAt m' _ (by omega_arith), Gcm.bytes_toBytes_blockAt m _ (by omega_arith), e₁,
+    Proof.Aes.toBytes_xor _ _ (by omega_arith), Gcm.ksByte, Nat.zero_add]
 
 /-- `vg_aes_ctr32` from `Ctrⱼ` over `k` blocks whose counters do not wrap
 around: CCM's keystream from `Ctrⱼ`. -/
@@ -288,7 +288,7 @@ theorem xorFrom_zeros {ciph : Ccm.Cipher} (hc : BlockCipher ciph) (nonce : List 
 theorem cryptTag_cryptTag {ciph : Ccm.Cipher} (hc : BlockCipher ciph) {t : Nat} (ht : t ≤ 16) (nonce : List Byte)
     {x : List Byte} (hx : x.length = t) : Ccm.cryptTag ciph t nonce (Ccm.cryptTag ciph t nonce x) = x := by
   have hl := hc (Ccm.ctrBlock nonce 0)
-  apply List.ext_getElem (by simp [Ccm.cryptTag, Ccm.xor, hx, hl]; omega)
+  apply List.ext_getElem (by simp [Ccm.cryptTag, Ccm.xor, hx, hl]; omega_arith)
   intro i h₁ h₂
   simp only [Ccm.cryptTag, Ccm.xor, List.getElem_zipWith, List.getElem_take]
   rw [BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]

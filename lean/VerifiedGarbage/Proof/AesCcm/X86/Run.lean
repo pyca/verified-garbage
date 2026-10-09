@@ -24,7 +24,7 @@ open VG.Proof.AesGcm.X86 (store32_eq store8_eq gpr_setMem mem_setMem rd_setMem w
 theorem readW_writeB_off (m : Mem) (p : Addr) (v : BitVec 8) {a b : Nat} (h : a + 4 ≤ b ∨ b + 1 ≤ a)
     (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
     (m.writeW (p + BitVec.ofNat 64 b) v).readW (p + BitVec.ofNat 64 a) 32 = m.readW (p + BitVec.ofNat 64 a) 32 :=
-  Mem.readW_writeW_sep (Offset.sep _ h (by omega) (by omega)) (by decide)
+  Mem.readW_writeW_sep (Offset.sep _ h (by omega_arith) (by omega_arith)) (by decide)
 
 theorem add_ofNat_assoc (p : Addr) (a b : Nat) :
     p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by
@@ -33,7 +33,7 @@ theorem add_ofNat_assoc (p : Addr) (a b : Nat) :
 /-- Runs a block of the instructions the AES-CCM code uses. The facts given
 rewrite the addresses and discharge the permissions. -/
 macro "crun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp (disch := first | decide | omega) only [runBlock_cons, runStep_some,
+  simp (disch := first | decide | omega_arith) only [runBlock_cons, runStep_some,
     runBlock_nil, exec, readSrc, execAlu, execShift, State.load32, store32_eq, State.load8, store8_eq,
     State.ea, at_, imm, slot, argOp, blkO, c0O, c1O, ksO, uO, ctxO, roundsO, nonceO, nlenO, aadO, alenO, dataO,
     lenO, okO, scrO, tglO, rO, vO, tpO, dO, nO, bO, List.cons_append, List.nil_append, List.append_assoc,
@@ -52,7 +52,7 @@ macro "cregs" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
 
 /-- Reads the memory, flags and permissions through the writes of a block. -/
 macro "cmems" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp (disch := first | decide | omega) only [mem_setMem, mem_setReg, mem_arithFlags, mem_setFlags,
+  simp (disch := first | decide | omega_arith) only [mem_setMem, mem_setReg, mem_arithFlags, mem_setFlags,
     rd_setMem, rd_setReg, rd_arithFlags, rd_setFlags, wr_setMem, wr_setReg, wr_arithFlags, wr_setFlags,
     zf_setMem, zf_setReg, zf_arithFlags, cf_setMem, cf_setReg, cf_arithFlags, gpr_setMem, gpr_setReg_self,
     gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags, Mem.readW_writeW_self32, readW_writeW_off, readW_writeB_off, blkO, c0O, c1O,

@@ -38,7 +38,7 @@ theorem updArgsBlk_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W 
   have h15 := E.r15
   have h13 := E.r13
   have r₁ := E.perm.wR (show 232 + 8 ≤ 2560 by decide)
-  have hy' : y < 2 ^ 31 := by omega
+  have hy' : y < 2 ^ 31 := by omega_arith
   obtain ⟨s₁, run₁, hm₁, hdi, hsi, hdx, hcx, hr8, hr9, hg₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
       (updArgs y ++ ptr .rcx .r15 bO ++ [.mov32 .r8 (imm 1)]) s = some s₁ ∧ s₁.mem = s.mem ∧
       s₁.gpr .rdi = K ∧ s₁.gpr .rsi = BitVec.ofNat 64 R ∧ s₁.gpr .rdx = W + BitVec.ofNat 64 y ∧
@@ -62,7 +62,7 @@ theorem updArgsBlk_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W 
     rcases hy with rfl | rfl
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
     · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  exact WP.of_runBlock ⟨s₁, run₁, uargs L E₁ hR (by omega) hq hqy (by decide) hdi hsi hdx hcx hr8 hr9, E₁.rsp⟩
+  exact WP.of_runBlock ⟨s₁, run₁, uargs L E₁ hR (by omega_arith) hq hqy (by decide) hdi hsi hdx hcx hr8 hr9, E₁.rsp⟩
 
 theorem updArgs_check {y : Nat} (hy : y = 0 ∨ y = 96) :
     ∃ hc, (taint.check (ccmT []) (.block (updArgs y ++ ptr .rcx .r15 bO ++ ([.mov32 .r8 (imm 1)] : List Instr))) hc).isSome = true := by
@@ -118,7 +118,7 @@ theorem b0_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A 
     (hn' : n < 256 ^ (15 - nl)) {y : Nat} (hy : y = 0 ∨ y = 96) {P : State → State → Prop}
     (hP : ∀ s₁ s₂, P s₁ s₂ → Both K W SP R N A D nl al n tl [] s₁ s₂ ∧ C0 W nl s₁ ∧ C0 W nl s₂) :
     RelCT isa P (b0 v.callee y) fun _ _ => True := by
-  have hy16 : y + 16 ≤ 112 := by omega
+  have hy16 : y + 16 ≤ 112 := by omega_arith
   have pre : ∀ s, Both K W SP R N A D nl al n tl [] s s → C0 W nl s → WP isa _ s fun s' =>
       Env K W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Frame [⟨W + BitVec.ofNat 64 32, 16⟩, ⟨W + BitVec.ofNat 64 y, 16⟩] s.mem s'.mem := fun s hb ⟨nonce, hl, hc⟩ =>
@@ -170,7 +170,7 @@ theorem absorbWArgs_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W
   have h15 := E.r15
   have h13 := E.r13
   have r₁ := E.perm.wR (show 232 + 8 ≤ 2560 by decide)
-  have hy' : y < 2 ^ 31 := by omega
+  have hy' : y < 2 ^ 31 := by omega_arith
   obtain ⟨s₂, run₂, hdi, hsi, hdx, hcx, hr8₂, hr9, hg₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa
       (updArgs y ++ [.mov .rcx (.reg .r12)]) s = some s₂ ∧
       s₂.gpr .rdi = K ∧ s₂.gpr .rsi = BitVec.ofNat 64 R ∧ s₂.gpr .rdx = W + BitVec.ofNat 64 y ∧
@@ -190,8 +190,8 @@ theorem absorbWArgs_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W
   have hb : 16 * (len / 16) ≤ len := Nat.mul_div_le len 16
   have hq := srcBuf ((hP.take hb).of_eq (s' := s₂) hrd₂ hwr₂)
   have hqy : (⟨P, 16 * (len / 16)⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 y, 16⟩ :=
-    (hP.w.sub_left (Region.sub_prefix hb)).sub_right (Lay.wSub (by omega))
-  exact WP.of_runBlock ⟨s₂, run₂, uargs L E₂ hR (by omega) hq hqy (by omega) hdi hsi hdx hcx hr8₂ hr9, E₂.rsp⟩
+    (hP.w.sub_left (Region.sub_prefix hb)).sub_right (Lay.wSub (by omega_arith))
+  exact WP.of_runBlock ⟨s₂, run₂, uargs L E₂ hR (by omega_arith) hq hqy (by omega_arith) hdi hsi hdx hcx hr8₂ hr9, E₂.rsp⟩
 
 theorem absorbT1_ok {s : State} {len : Nat} (hbp : s.gpr .rbp = BitVec.ofNat 64 len) (hl : len < 2 ^ 64) :
     WP isa (.block [.mov .rcx (.reg .rbp), .alu .and .rcx (imm 15), .alu .test .rcx (.reg .rcx)]) s fun s₁ =>
@@ -204,7 +204,7 @@ theorem absorbT1_ok {s : State} {len : Nat} (hbp : s.gpr .rbp = BitVec.ofNat 64 
   · rfl
   · rfl
   · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, hbp, and15', toNat_ofNat_of_lt hl,
-      and_self_beq (show len % 16 < 2 ^ 64 by omega)]
+      and_self_beq (show len % 16 < 2 ^ 64 by omega_arith)]
 
 theorem absorbT2_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {P : Addr} {len : Nat}
     (hP : Buf K W SP s P len) (h12 : s.gpr .r12 = P) (hbp : s.gpr .rbp = BitVec.ofNat 64 len)
@@ -227,7 +227,7 @@ theorem absorbT2_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {P : Addr} {l
     refine ⟨_, by crun [zero16, h15, w₁, w₂, add_ofNat_assoc], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [mem_setReg, mem_arithFlags]; rfl
     · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hbp, h12, hcx]
-      rw [ofNat_sub (by omega) hl, BitVec.add_comm, show len - len % 16 = 16 * (len / 16) by omega]
+      rw [ofNat_sub (by omega_arith) hl, BitVec.add_comm, show len - len % 16 = 16 * (len / 16) by omega_arith]
     · simp [gpr_setReg, h15]
     · simp [gpr_setReg, hcx]
     · intro r a b c; simp [gpr_setReg, gpr_arithFlags, a, b, c]
@@ -236,9 +236,9 @@ theorem absorbT2_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {P : Addr} {l
   have E₂ : Env K W SP s₂ := E.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide) (by decide)) hrd₂ hwr₂
-  have hT := (hP.slice (a := 16 * (len / 16)) (k := len % 16) (by omega)).of_eq (s' := s₂) hrd₂ hwr₂
+  have hT := (hP.slice (a := 16 * (len / 16)) (k := len % 16) (by omega_arith)).of_eq (s' := s₂) hrd₂ hwr₂
   have lp : LoopPre s₂ (P + BitVec.ofNat 64 (16 * (len / 16))) (W + BitVec.ofNat 64 32) (len % 16) :=
-    ⟨hsi, hdi, hcx₂, by omega, by omega, hT.rd, E₂.perm.wC (by omega), hT.w.sub_right (Lay.wSub (by omega))⟩
+    ⟨hsi, hdi, hcx₂, by omega_arith, by omega_arith, hT.rd, E₂.perm.wC (by omega_arith), hT.w.sub_right (Lay.wSub (by omega_arith))⟩
   refine WP.mono (copyLoop_ok s₂ lp) fun s₃ ⟨hm₃, hg₃, hrd₃, hwr₃⟩ => ⟨E₂.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> exact hg₃ _ (by decide) (by decide)) hrd₃ hwr₃, ?_,
@@ -253,7 +253,7 @@ theorem absorbT2_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {P : Addr} {l
   rw [hm₃]
   exact writeBytes_frame _ _ _ (by
     rw [length_bytesAt]
-    exact Offset.contains W (d := 32) (n := len % 16) (e := 32) (k := 16) (by decide) (by omega) (by decide))
+    exact Offset.contains W (d := 32) (n := len % 16) (e := 32) (k := 16) (by decide) (by omega_arith) (by decide))
 
 /-- What a run of `absorbPad` needs: the `len` bytes at `P` in `r12`, `rbp`. -/
 structure AbsPre (K W SP : Addr) (P : Addr) (len : Nat) (s : State) : Prop where
@@ -443,7 +443,7 @@ theorem absorbPad_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat
     (hQ : ∀ s₁ s₂, Q s₁ s₂ → One K W SP R N A D nl al n tl s₁ ∧ One K W SP R N A D nl al n tl s₂ ∧
       AbsPre K W SP P len s₁ ∧ AbsPre K W SP P len s₂) :
     RelCT isa Q (absorbPad v.callee y) fun _ _ => True := by
-  have hy16 : y + 16 ≤ 112 := by omega
+  have hy16 : y + 16 ≤ 112 := by omega_arith
   have r₁ := (absorbWhole_rel v L hR hDW hn hy hQ).wpDep
     (F := fun (σ s' : State) => One K W SP R N A D nl al n tl σ ∧ AbsPre K W SP P len σ ∧
       ∃ Y, @Absorbed K W SP σ y P len Y s')
@@ -524,7 +524,7 @@ theorem aad_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A
     (hQ : ∀ s₁ s₂, Q s₁ s₂ → One K W SP R N A D nl al n tl s₁ ∧ One K W SP R N A D nl al n tl s₂ ∧
       Buf K W SP s₁ A al ∧ Buf K W SP s₂ A al) :
     RelCT isa Q (aad v.callee y) fun _ _ => True := by
-  have hy16 : y + 16 ≤ 112 := by omega
+  have hy16 : y + 16 ≤ 112 := by omega_arith
   have r₁ := (rel_flagsC [] hDW hn (fun s₁ s₂ (h : Q s₁ s₂) => by
     obtain ⟨o₁, o₂, -, -⟩ := hQ _ _ h; exact Both.of o₁ o₂ fun _ h => nomatch h) aadBlk_check).wpDep
     (F := fun (σ s' : State) => One K W SP R N A D nl al n tl σ ∧ Buf K W SP σ A al ∧
@@ -554,8 +554,8 @@ theorem aad_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A
       · rw [show isa.eval .e s₁ = s₁.zf from rfl, z₁, h0] at he; cases he
       · exact h0
   rcases Nat.eq_zero_or_pos al with h0 | h0
-  · exact RelCT.of_false fun s₁ s₂ h => by have := (hA s₁ s₂ h).2.2; omega
-  have hl : headLen al ≤ al := by unfold headLen; have := Proof.AesCcm.hdrLen_le al; omega
+  · exact RelCT.of_false fun s₁ s₂ h => by have := (hA s₁ s₂ h).2.2; omega_arith
+  have hl : headLen al ≤ al := by unfold headLen; have := Proof.AesCcm.hdrLen_le al; omega_arith
   have r₂ := (aadHead_rel v L hR hDW hn hy h0 (P := A) (A := A) (N := N) (nl := nl) (tl := tl)
     fun s₁ s₂ h => by obtain ⟨⟨o₁, a₁⟩, ⟨o₂, a₂⟩, -⟩ := hA s₁ s₂ h; exact ⟨o₁, o₂, a₁, a₂⟩).wpDep
     (F := fun (σ s' : State) => One K W SP R N A D nl al n tl σ ∧ AbsPre K W SP A al σ ∧
@@ -602,7 +602,7 @@ theorem mac_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A
     (hQ : ∀ s₁ s₂, Q s₁ s₂ → (One K W SP R N A D nl al n tl s₁ ∧ C0 W nl s₁ ∧ Buf K W SP s₁ A al ∧
       Buf K W SP s₁ D n) ∧ (One K W SP R N A D nl al n tl s₂ ∧ C0 W nl s₂ ∧ Buf K W SP s₂ A al ∧ Buf K W SP s₂ D n)) :
     RelCT isa Q (mac v.callee y) fun _ _ => True := by
-  have hy16 : y + 16 ≤ 112 := by omega
+  have hy16 : y + 16 ≤ 112 := by omega_arith
   have r₁ := (b0_rel v L hR hDW hn h7 h13 ht4 ht16 hte hal hn' hy (P := Q) fun s₁ s₂ h => by
     obtain ⟨⟨o₁, c₁, -⟩, ⟨o₂, c₂, -⟩⟩ := hQ _ _ h
     exact ⟨Both.of o₁ o₂ (fun _ h => nomatch h), c₁, c₂⟩).wpDep
@@ -684,8 +684,8 @@ theorem tag_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A 
       s.gpr .rsp = SP)
     fun s₁ s₂ h => by
       obtain ⟨⟨o₁, _, l₁, c₁⟩, ⟨o₂, _, l₂, c₂⟩⟩ := hQ _ _ h
-      exact ⟨WP.mono (tagArgs_ok L o₁.env hR o₁.sl.rounds (by omega) (by omega) c₁ hy) fun _ q => ⟨q.2.1, q.1.rsp⟩,
-        WP.mono (tagArgs_ok L o₂.env hR o₂.sl.rounds (by omega) (by omega) c₂ hy) fun _ q => ⟨q.2.1, q.1.rsp⟩⟩
+      exact ⟨WP.mono (tagArgs_ok L o₁.env hR o₁.sl.rounds (by omega_arith) (by omega_arith) c₁ hy) fun _ q => ⟨q.2.1, q.1.rsp⟩,
+        WP.mono (tagArgs_ok L o₂.env hR o₂.sl.rounds (by omega_arith) (by omega_arith) c₂ hy) fun _ q => ⟨q.2.1, q.1.rsp⟩⟩
   exact RelCT.seq a (ctr_rel v fun s₁ s₂ h => ⟨_, _, _, _, _, _, h.2.1.1, h.2.2.1, by rw [h.2.1.2, h.2.2.2]⟩)
 
 end VG.Proof.AesCcm.X86_64

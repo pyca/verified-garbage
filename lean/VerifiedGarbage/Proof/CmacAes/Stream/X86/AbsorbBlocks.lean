@@ -42,12 +42,12 @@ def nbOf (c L : Nat) : Nat := if leftOf c L = 0 then 0 else (leftOf c L - 1) / 1
 def restOf (c L : Nat) : Nat := leftOf c L - 16 * nbOf c L
 
 theorem f_le (c L : Nat) : fOf c L ≤ L ∧ fOf c L + held c ≤ 16 := by
-  have := held_le c; unfold fOf; omega
+  have := held_le c; unfold fOf; omega_arith
 
 theorem nb_le (c L : Nat) : fOf c L + 16 * nbOf c L + restOf c L = L := by
-  have := f_le c L; unfold restOf nbOf leftOf; split <;> omega
+  have := f_le c L; unfold restOf nbOf leftOf; split <;> omega_arith
 
-theorem rest_le (c L : Nat) : restOf c L ≤ 16 := by unfold restOf nbOf leftOf; split <;> omega
+theorem rest_le (c L : Nat) : restOf c L ≤ 16 := by unfold restOf nbOf leftOf; split <;> omega_arith
 
 theorem rest_zero {c L : Nat} (h : leftOf c L = 0) : restOf c L = 0 := by simp [restOf, nbOf, h]
 
@@ -58,15 +58,15 @@ theorem nb16_bv {x : Nat} (hx : 0 < x) (hx' : x < 2 ^ 32) :
     BitVec.ofNat 32 x - 1 - ((BitVec.ofNat 32 x - 1) &&& 15) = BitVec.ofNat 32 (16 * ((x - 1) / 16)) := by
   apply BitVec.eq_of_toNat_eq
   have e : (BitVec.ofNat 32 x - 1).toNat = x - 1 := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]; omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]; omega_arith
   rw [BitVec.toNat_sub, and15, e, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem shr4 {n : Nat} (hn : 16 * n < 2 ^ 32) :
     BitVec.ofNat 32 (16 * n) >>> 4 = BitVec.ofNat 32 n := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 /-! ## The precondition -/
 
@@ -124,7 +124,7 @@ theorem b_st : (below (aE s₀) 56).Disjoint (astR s₀) := by rw [below_eq hp.e
 theorem b_d : (below (aE s₀) 56).Disjoint (adR s₀) := by rw [below_eq hp.esp56]; exact hp.b_d'
 theorem b_s : (below (aE s₀) 56).Disjoint (ascR s₀) := by rw [below_eq hp.esp56]; exact hp.b_s'
 
-theorem fit : (s₀.gpr .esp).toNat + 4 + 4 * 7 ≤ 2 ^ 32 := by have := hp.espfit; omega
+theorem fit : (s₀.gpr .esp).toNat + 4 + 4 * 7 ≤ 2 ^ 32 := by have := hp.espfit; omega_arith
 
 theorem arg_in {i : Nat} (hi : i < 7) : InRegions (s₀.rd ++ s₀.wr) (argAddr s₀ i) 4 :=
   ⟨aaR s₀, by simp [hp.rd], arg_contains hp.fit hi⟩
@@ -140,12 +140,12 @@ theorem keep {m : Mem} (hf : Frame (ABig s₀) s₀.mem m) {i : Nat} (hi : i < 7
     · exact (args_below hp.fit (by decide) hp.esp56).symm.sub_left (arg_sub hp.fit hi)
 
 theorem argsOut : ArgsOut 7 s₀ := by
-  refine ⟨by have := hp.espfit; omega, ?_⟩
+  refine ⟨by have := hp.espfit; omega_arith, ?_⟩
   rw [hp.wr]
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
-  · exact VG.X86.Taint.frame_disjoint (n := 28) (by have := hp.espfit; omega) hp.ret_st hp.a_st
-  · exact VG.X86.Taint.frame_disjoint (n := 28) (by have := hp.espfit; omega) hp.ret_s hp.a_s
+  · exact VG.X86.Taint.frame_disjoint (n := 28) (by have := hp.espfit; omega_arith) hp.ret_st hp.a_st
+  · exact VG.X86.Taint.frame_disjoint (n := 28) (by have := hp.espfit; omega_arith) hp.ret_s hp.a_s
 
 end APre
 
@@ -212,7 +212,7 @@ theorem fill_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
   have edx₄ : s₄.gpr .edx = BitVec.ofNat 32 (aL s₀) := by rw [f₄.gpr, u₃.gpr]; exact arg_ofNat s₀ 5
   have c₄ := c₃.fupd f₄
   have cf : s₄.cf = some (decide (aL s₀ < 16 - held (aC s₀))) := by
-    rw [cf₄, u₃.gpr, u₃.other _ (by decide), ecx₂, toNat_ofNat32 (by omega)]
+    rw [cf₄, u₃.gpr, u₃.other _ (by decide), ecx₂, toNat_ofNat32 (by omega_arith)]
   have eax₄ : s₄.gpr .eax = s.gpr .eax := by
     rw [f₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
   have m₄ : s₄.mem = s.mem := by rw [f₄.mem, u₃.mem, u₂.mem, u₁.mem]
@@ -222,10 +222,10 @@ theorem fill_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
       show VG.X86.eval .b s₄ = _; rw [eval_b, cf]
     by_cases hl : aL s₀ < 16 - held (aC s₀)
     · refine WP.ite true (by rw [ev]; simp [hl]) (fun _ => wp_mov fun s₅ u₅ => WP.block_nil ?_) (fun h => by cases h)
-      exact ⟨c₄.upd u₅ (by decide), by rw [u₅.mem, m₄], by rw [u₅.gpr, edx₄, fOf, Nat.min_eq_left (by omega)],
+      exact ⟨c₄.upd u₅ (by decide), by rw [u₅.mem, m₄], by rw [u₅.gpr, edx₄, fOf, Nat.min_eq_left (by omega_arith)],
         by rw [u₅.other _ (by decide), eax₄]⟩
     · refine WP.ite false (by rw [ev]; simp [hl]) (fun h => by cases h) fun _ => WP.block_nil ?_
-      exact ⟨c₄, m₄, by rw [ecx₄, fOf, Nat.min_eq_right (by omega)], eax₄⟩
+      exact ⟨c₄, m₄, by rw [ecx₄, fOf, Nat.min_eq_right (by omega_arith)], eax₄⟩
   · obtain ⟨c₅, m₅, ecx₅, eax₅⟩ := h₅
     refine wp_mov fun s₆ u₆ => (c₅.upd u₆ (by decide)).wp_arg hp (by decide) (by decide) fun s₇ u₇ c₇ =>
       c₇.wp_arg hp (by decide) (by decide) fun s₈ u₈ c₈ => wp_addi fun s₉ u₉ => wp_add fun s₁₀ u₁₀ => WP.block_nil ?_
@@ -258,13 +258,13 @@ theorem APre.uargs {s₀ s : State} (hp : APre s₀) {Dd : BitVec 32} {n : Nat}
   have fSt : (aSt s₀).toNat + 304 ≤ 2 ^ 32 := hp.fSt
   have fS : (aSc s₀).toNat + 2304 ≤ 2 ^ 32 := hp.fS
   have p272 : (aSt s₀ + BitVec.ofNat 32 272).setWidth 64 = (aSt s₀).setWidth 64 + BitVec.ofNat 64 272 :=
-    add_setWidth (by omega)
+    add_setWidth (by omega_arith)
   have c272 : Region.Sub ⟨(aSt s₀ + BitVec.ofNat 32 272).setWidth 64, 16⟩ (astR s₀) := by
     rw [p272]; exact Offset.sub_base _ (by decide)
   exact
   { eax := heax, ecx := hecx, edx := hedx, ebx := hebx, esi := hesi, edi := hedi, rounds := hp.rounds, hn := hn
     esp := by rw [hesp]; exact hp.esp56
-    wc := by rw [p272]; exact Offset.base_disjoint _ (by decide) (by omega)
+    wc := by rw [p272]; exact Offset.base_disjoint _ (by decide) (by omega_arith)
     ws := (hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide))
     dc := by rw [p272]; exact hdc
     ds := hds
@@ -273,10 +273,10 @@ theorem APre.uargs {s₀ s : State} (hp : APre s₀) {Dd : BitVec 32} {n : Nat}
     bD := by rw [hesp]; exact hstk
     bC := by rw [hesp]; exact hp.b_st.sub_right c272
     bS := by rw [hesp]; exact hp.b_s.sub_right (Region.sub_prefix (by decide))
-    fW := by omega
-    fC := by rw [add_toNat (by omega)]; omega
+    fW := by omega_arith
+    fC := by rw [add_toNat (by omega_arith)]; omega_arith
     fD := hfD
-    fS := by omega
+    fS := by omega_arith
     reads := by
       rw [hrd, hwr]
       refine Covers.of_sub fun r hr => ?_
@@ -311,7 +311,7 @@ theorem chain1_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
   have c₃ := c₂.upd u₃ (by decide)
   have z : s₃.zf = some (decide (leftOf (aC s₀) (aL s₀) = 0)) := by
     rw [z₃, u₂.gpr, u₂.other _ (by decide), u₁.other _ (by decide), hbp, arg_ofNat s₀ 5, sub_ofNat hfL,
-      ofNat_beq_zero (by omega)]; rfl
+      ofNat_beq_zero (by omega_arith)]; rfl
   have ebp₃ : s₃.gpr .ebp = s.gpr .ebp := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
   have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
@@ -333,14 +333,14 @@ theorem chain1_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
     have eax₁₁ : s₁₁.gpr .eax = aSt s₀ := by
       rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide),
         u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr]
-    have hb1 : 16 * b1Of (aC s₀) (aL s₀) ≤ 16 := by unfold b1Of; split <;> omega
+    have hb1 : 16 * b1Of (aC s₀) (aL s₀) ≤ 16 := by unfold b1Of; split <;> omega_arith
     have p288 : (aSt s₀ + BitVec.ofNat 32 288).setWidth 64 = (aSt s₀).setWidth 64 + BitVec.ofNat 64 288 :=
-      add_setWidth (by omega)
+      add_setWidth (by omega_arith)
     have c288 : Region.Sub ⟨(aSt s₀ + BitVec.ofNat 32 288).setWidth 64, 16 * b1Of (aC s₀) (aL s₀)⟩ (astR s₀) := by
-      rw [p288]; exact Offset.sub_base _ (by omega)
-    refine ⟨hp.uargs eax₁₁ ?_ ?_ ?_ ?_ u₁₁.gpr c₁₁.esp c₁₁.rd c₁₁.wr (by omega) ?_
+      rw [p288]; exact Offset.sub_base _ (by omega_arith)
+    refine ⟨hp.uargs eax₁₁ ?_ ?_ ?_ ?_ u₁₁.gpr c₁₁.esp c₁₁.rd c₁₁.wr (by omega_arith) ?_
       ((hp.st_s.sub_left c288).sub_right (Region.sub_prefix (by decide))) (hp.b_st.sub_right c288)
-      (by rw [add_toNat (by omega)]; omega) ⟨astR s₀, by simp [hp.wr], 288, p288, by simp; omega⟩,
+      (by rw [add_toNat (by omega_arith)]; omega_arith) ⟨astR s₀, by simp [hp.wr], 288, p288, by simp; omega_arith⟩,
       c₁₁, ?_, ?_⟩
     · rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide),
         u₇.other _ (by decide), u₆.gpr]; exact arg_ofNat s₀ 1
@@ -350,7 +350,7 @@ theorem chain1_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
         u₆.other _ (by decide), u₅.gpr]; rfl
     · rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide),
         u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), esi₄]
-    · rw [p288]; exact Offset.disjoint _ (by omega) (by omega) (by omega)
+    · rw [p288]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
     · rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide),
         u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), ebp₄]
     · rw [u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, m₄]
@@ -388,7 +388,7 @@ theorem chain2_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
     rw [u₅.gpr, u₄.gpr, ebp₄, hbp, arg_ofNat s₀ 5, sub_ofNat hfL]; rfl
   have z : s₅.zf = some (decide (leftOf (aC s₀) (aL s₀) = 0)) := by
     rw [z₅, u₄.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
-      u₁.other _ (by decide), hbp, arg_ofNat s₀ 5, sub_ofNat hfL, ofNat_beq_zero (by omega)]; rfl
+      u₁.other _ (by decide), hbp, arg_ofNat s₀ 5, sub_ofNat hfL, ofNat_beq_zero (by omega_arith)]; rfl
   have ecx₅ : s₅.gpr .ecx = BitVec.ofNat 32 0 := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr]; rfl
   have ebx₅ : s₅.gpr .ebx = aSt s₀ + BitVec.ofNat 32 288 := by
@@ -415,12 +415,12 @@ theorem chain2_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
         have eax₉ : s₉.gpr .eax = s₇.gpr .ecx &&& 15 := by rw [u₉.gpr, u₈.gpr]
         rw [u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.gpr, ecx₉, eax₉, ecx₇]
         simp only [nbOf, h0, ↓reduceIte]
-        exact nb16_bv (by omega) (by unfold leftOf; omega)
+        exact nb16_bv (by omega_arith) (by unfold leftOf; omega_arith)
       · rw [u₁₂.gpr, u₁₁.gpr, u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide),
           u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), ebp₅, hbp]
         simp only [d2Of, h0, ↓reduceIte]
   · obtain ⟨c₆, m₆, ebp₆, ecx₆, ebx₆⟩ := h₆
-    have hn16 : 16 * nbOf (aC s₀) (aL s₀) < 2 ^ 32 := by omega
+    have hn16 : 16 * nbOf (aC s₀) (aL s₀) < 2 ^ 32 := by omega_arith
     refine wp_mov fun s₇ u₇ => wp_shr (by decide) fun s₈ u₈ => wp_add fun s₉ u₉ =>
       (((c₆.upd u₇ (by decide)).upd u₈ (by decide)).upd u₉ (by decide)).wp_arg hp (by decide) (by decide)
         fun s₁₀ u₁₀ c₁₀ => c₁₀.wp_arg hp (by decide) (by decide) fun s₁₁ u₁₁ c₁₁ => wp_mov fun s₁₂ u₁₂ =>
@@ -430,7 +430,7 @@ theorem chain2_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
       rw [u₁₄.other _ (by decide), u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide),
         u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), ebx₆]
     have hnb : nbOf (aC s₀) (aL s₀) = 0 ∨ 0 < leftOf (aC s₀) (aL s₀) := by
-      unfold nbOf; split <;> omega
+      unfold nbOf; split <;> omega_arith
     -- The data the call reads.
     have hn0 : leftOf (aC s₀) (aL s₀) = 0 → nbOf (aC s₀) (aL s₀) = 0 := fun h => by simp [nbOf, h]
     have hd2 : ((d2Of s₀).setWidth 64 = (aSt s₀).setWidth 64 + BitVec.ofNat 64 288 ∧ nbOf (aC s₀) (aL s₀) = 0) ∨
@@ -438,11 +438,11 @@ theorem chain2_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
           0 < leftOf (aC s₀) (aL s₀)) := by
       unfold d2Of
       split
-      · exact .inl ⟨add_setWidth (by omega), hn0 (by assumption)⟩
-      · exact .inr ⟨add_setWidth (by unfold leftOf at *; omega), by omega⟩
+      · exact .inl ⟨add_setWidth (by omega_arith), hn0 (by assumption)⟩
+      · exact .inr ⟨add_setWidth (by unfold leftOf at *; omega_arith), by omega_arith⟩
     have dD : 0 < leftOf (aC s₀) (aL s₀) →
         Region.Sub ⟨(aD s₀).setWidth 64 + BitVec.ofNat 64 (fOf (aC s₀) (aL s₀)), 16 * nbOf (aC s₀) (aL s₀)⟩
-          (adR s₀) := fun _ => Offset.sub_base _ (by omega)
+          (adR s₀) := fun _ => Offset.sub_base _ (by omega_arith)
     refine ⟨hp.uargs ?_ ?_ ?_ ebx₁₄ ?_ u₁₄.gpr c₁₄.esp c₁₄.rd c₁₄.wr hn16 ?_ ?_ ?_ ?_ ?_, c₁₄, ?_, ?_⟩
     · rw [u₁₄.other _ (by decide), u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide),
         u₁₀.gpr]
@@ -453,21 +453,21 @@ theorem chain2_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
         u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.gpr, u₇.gpr, ecx₆]
       exact shr4 hn16
     · rcases hd2 with ⟨e, hn⟩ | ⟨e, hl⟩ <;> rw [e]
-      · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
       · exact (hp.st_d.sub_left (Offset.sub_base _ (by decide))).symm.sub_left (dD hl)
     · rcases hd2 with ⟨e, hn⟩ | ⟨e, hl⟩ <;> rw [e]
-      · exact (hp.st_s.sub_left (Offset.sub_base _ (by omega))).sub_right (Region.sub_prefix (by decide))
+      · exact (hp.st_s.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Region.sub_prefix (by decide))
       · exact (hp.d_s.sub_left (dD hl)).sub_right (Region.sub_prefix (by decide))
     · rcases hd2 with ⟨e, hn⟩ | ⟨e, hl⟩ <;> rw [e]
-      · exact hp.b_st.sub_right (Offset.sub_base _ (by omega))
+      · exact hp.b_st.sub_right (Offset.sub_base _ (by omega_arith))
       · exact hp.b_d.sub_right (dD hl)
     · unfold d2Of
       split
-      · rw [add_toNat (by omega)]; omega
-      · rw [add_toNat (by unfold leftOf at *; omega)]; omega
+      · rw [add_toNat (by omega_arith)]; omega_arith
+      · rw [add_toNat (by unfold leftOf at *; omega_arith)]; omega_arith
     · rcases hd2 with ⟨e, hn⟩ | ⟨e, hl⟩ <;> rw [e]
-      · exact ⟨astR s₀, by simp [hp.wr], 288, rfl, by simp; omega⟩
-      · exact ⟨adR s₀, by simp [hp.rd], fOf (aC s₀) (aL s₀), rfl, by simp; omega⟩
+      · exact ⟨astR s₀, by simp [hp.wr], 288, rfl, by simp; omega_arith⟩
+      · exact ⟨adR s₀, by simp [hp.rd], fOf (aC s₀) (aL s₀), rfl, by simp; omega_arith⟩
     · have ebp₈ : s₈.gpr .ebp = s.gpr .ebp := by
         rw [u₈.other _ (by decide), u₇.other _ (by decide), ebp₆]
       have ecx₈ : s₈.gpr .ecx = BitVec.ofNat 32 (16 * nbOf (aC s₀) (aL s₀)) := by
@@ -501,7 +501,7 @@ theorem rest_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
       u₁.gpr, u₁.other _ (by decide), hbp]
   · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.gpr]; rfl
   · rw [u₆.gpr, u₅.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
-      u₂.other _ (by decide), u₁.other _ (by decide), hbp, arg_ofNat s₀ 5, sub_ofNat (by omega)]
-    congr 1; unfold restOf leftOf; omega
+      u₂.other _ (by decide), u₁.other _ (by decide), hbp, arg_ofNat s₀ 5, sub_ofNat (by omega_arith)]
+    congr 1; unfold restOf leftOf; omega_arith
 
 end VG.Proof.CmacAes.Stream.X86

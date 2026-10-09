@@ -55,7 +55,7 @@ theorem openCmp_one {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr} 
     WP isa (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))]) (.seq recv
       (.seq (cmp uO) (.block [.store (at_ .r15 okO) .rax])))) s (One K W SP R N A D nl al n tl) := by
   obtain ⟨o, -, -, hD, hA⟩ := h
-  refine WP.mono (openCmp_ok L o.env o.sl (by omega) ht16 hA.val hA.rd hT.1 hT.2) fun s₄ ⟨E₄, _, wr₄, f₄, _⟩ => ?_
+  refine WP.mono (openCmp_ok L o.env o.sl (by omega_arith) ht16 hA.val hA.rd hT.1 hT.2) fun s₄ ⟨E₄, _, wr₄, f₄, _⟩ => ?_
   refine ⟨E₄, slots_mut L hD.w (f₄.sub fun r hr => ?_) o.sl, wr₄.trans o.wr⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl

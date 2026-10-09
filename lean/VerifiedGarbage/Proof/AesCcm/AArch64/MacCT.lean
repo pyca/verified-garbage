@@ -75,7 +75,7 @@ theorem absorbPad_rel {P : Addr} {len : Nat} (hP₁ : Buf c σ₁ P len) (hP₂ 
     fun κ₁ κ₂ ⟨x13₁, og₁, _, sp₁, rd₁', wr₁'⟩ ⟨x13₂, og₂, _, sp₂, rd₂', wr₂'⟩ => ?_
   have H₁ : Env c κ₁ := G₁.others og₁ (by decide) sp₁ rd₁' wr₁'
   have H₂ : Env c κ₂ := G₂.others og₂ (by decide) sp₂ rd₂' wr₂'
-  refine rel_ite (eval_zero x13₁ (by omega)) (eval_zero x13₂ (by omega)) (fun _ => ?_) (fun hf => ?_)
+  refine rel_ite (eval_zero x13₁ (by omega_arith)) (eval_zero x13₂ (by omega_arith)) (fun _ => ?_) (fun hf => ?_)
   · exact rel_env [] H₁ H₂ (by simp) ⟨_, by taint_decide⟩
   · exact absTail_rel v L H₁ H₂ hy (B₁.of_eq rd₁' wr₁') (B₂.of_eq rd₂' wr₂')
       (by rw [og₁ _ (by decide), x23₁]) (by rw [og₂ _ (by decide), x23₂])
@@ -101,10 +101,10 @@ theorem aadPart_rel (h23₁ : σ₁.gpr .x23 = c.A) (h23₂ : σ₂.gpr .x23 = c
   have h0 : c.al ≠ 0 := of_decide_eq_false hf
   have hA₁ := L.bufA E₁.perm
   have hA₂ := L.bufA E₂.perm
-  refine rel_seq (aadHead_rel v L E₁ E₂ hy hA₁ hA₂ (by omega) h23₁ h23₂ h24₁ h24₂)
-    (aadHead_ok v L E₁ hy hA₁ (by omega) h23₁ h24₁) (aadHead_ok v L E₂ hy hA₂ (by omega) h23₂ h24₂)
+  refine rel_seq (aadHead_rel v L E₁ E₂ hy hA₁ hA₂ (by omega_arith) h23₁ h23₂ h24₁ h24₂)
+    (aadHead_ok v L E₁ hy hA₁ (by omega_arith) h23₁ h24₁) (aadHead_ok v L E₂ hy hA₂ (by omega_arith) h23₂ h24₂)
     fun τ₁ τ₂ A₁ A₂ => ?_
-  have hn1 : headLen c.al ≤ c.al := by unfold headLen; omega
+  have hn1 : headLen c.al ≤ c.al := by unfold headLen; omega_arith
   exact absorbPad_rel v L A₁.env A₂.env hy ((hA₁.drop hn1).of_eq A₁.rd A₁.wr) ((hA₂.drop hn1).of_eq A₂.rd A₂.wr)
     A₁.x23 A₂.x23 A₁.x24 A₂.x24
 

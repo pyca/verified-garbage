@@ -37,7 +37,7 @@ theorem zero_iff (x : BitVec 32) : x = 0#32 ↔ x.toNat = 0 :=
 theorem count_zero (hi lo : BitVec 32) : (hi ||| lo == 0) = decide ((hi ++ lo).toNat = 0) := by
   rw [toNat_count]
   have e : hi ||| lo = 0#32 ↔ hi.toNat * 2 ^ 32 + lo.toNat = 0 := by
-    rw [BitVec.or_eq_zero_iff, zero_iff hi, zero_iff lo]; omega
+    rw [BitVec.or_eq_zero_iff, zero_iff hi, zero_iff lo]; omega_arith
   by_cases h : hi.toNat * 2 ^ 32 + lo.toNat = 0
   · simp only [h, decide_true, beq_iff_eq]; exact e.mpr h
   · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]; exact fun h' => h (e.mp h')
@@ -49,19 +49,19 @@ theorem and15 (x : BitVec 32) : (x &&& 15).toNat = x.toNat % 16 := by
 as `sub 1; and 15; add 1` computes it. -/
 theorem held_lo {hi lo : BitVec 32} (h : (hi ++ lo).toNat ≠ 0) :
     ((lo - 1) &&& 15) + 1 = BitVec.ofNat 32 (held (hi ++ lo).toNat) := by
-  rw [held_pos (by omega)]
+  rw [held_pos (by omega_arith)]
   rw [toNat_count] at h ⊢
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, and15, BitVec.toNat_sub]
   simp only [BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
   have := lo.isLt
-  omega
+  omega_arith
 
 /-- For `count` 0, its low word is 0. -/
 theorem held_lo0 {hi lo : BitVec 32} (h : (hi ++ lo).toNat = 0) : lo = BitVec.ofNat 32 (held (hi ++ lo).toNat) := by
   rw [h, held_zero]
   rw [toNat_count] at h
-  exact (zero_iff lo).mpr (by omega)
+  exact (zero_iff lo).mpr (by omega_arith)
 
 theorem toNat_ofNat32 {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).toNat = n := by
   rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
@@ -142,12 +142,12 @@ theorem copyLoop_wp {s : State} {p c : BitVec 32} {L : Nat} (hL₀ : 0 < L) (hL 
     ⟨0, rfl, hL₀, by rw [hsi, add0'], by rw [hdi, add0'], by rw [hcx, Nat.sub_zero],
       by simp [Spec.Aes.bytesAt, writeBytes_nil], fun _ _ _ _ _ => rfl, rfl, rfl⟩
   rintro n t ⟨i, rfl, hi, xsi, xdi, xcx, mem, g, rd, wr⟩
-  refine wp_movzx8 (a := p.setWidth 64 + BitVec.ofNat 64 i) (by rw [ea_at', xsi]; exact addr_at (by omega))
-    (by rw [rd, wr]; exact hr _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩)
+  refine wp_movzx8 (a := p.setWidth 64 + BitVec.ofNat 64 i) (by rw [ea_at', xsi]; exact addr_at (by omega_arith))
+    (by rw [rd, wr]; exact hr _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
     fun t₁ u₁ => ?_
   refine wp_store8 (a := c.setWidth 64 + BitVec.ofNat 64 i)
-    (by rw [ea_at', u₁.other _ (by decide), xdi]; exact addr_at (by omega))
-    (by rw [u₁.wr, wr]; exact hw _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩)
+    (by rw [ea_at', u₁.other _ (by decide), xdi]; exact addr_at (by omega_arith))
+    (by rw [u₁.wr, wr]; exact hw _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
     fun t₂ v₂ => ?_
   refine wp_addi fun t₃ u₃ => wp_addi fun t₄ u₄ => wp_subi fun t₅ u₅ z₅ => WP.block_nil ?_
   have hlen : (Spec.Aes.bytesAt s.mem (p.setWidth 64) i).length = i := Proof.Cmac.bytesAt_length _ _ _
@@ -156,19 +156,19 @@ theorem copyLoop_wp {s : State} {p c : BitVec 32} {L : Nat} (hL₀ : 0 < L) (hL 
     (writeBytes_frame s.mem (c.setWidth 64) _ (R := ⟨c.setWidth 64, i⟩) (by rw [hlen]; exact Region.contains_self _ _)) _
       fun r hr hcon => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact hd _ (Offset.contains_base _ (by omega) (by omega)) (Region.sub_prefix (by omega) _ hcon)
+        exact hd _ (Offset.contains_base _ (by omega_arith) (by omega_arith)) (Region.sub_prefix (by omega_arith) _ hcon)
   have al : t₁.gpr Reg8.al.reg = (t.mem (p.setWidth 64 + BitVec.ofNat 64 i)).setWidth 32 := u₁.gpr
   have hmem : t₅.mem = writeBytes s.mem (c.setWidth 64) (Spec.Aes.bytesAt s.mem (p.setWidth 64) (i + 1)) := by
     rw [u₅.mem, u₄.mem, u₃.mem, v₂.mem, al, u₁.mem, mem, byte_rt32, hx, Proof.Cmac.bytesAt_succ,
-      writeBytes_snoc s.mem _ _ _ (by rw [hlen]; omega), hlen]
+      writeBytes_snoc s.mem _ _ _ (by rw [hlen]; omega_arith), hlen]
   have cx₄ : t₄.gpr .ecx = BitVec.ofNat 32 (L - i) := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), v₂.gpr, u₁.other _ (by decide), xcx]
   have xcx' : t₅.gpr .ecx = BitVec.ofNat 32 (L - (i + 1)) := by
-    rw [u₅.gpr, cx₄, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat (by omega), Nat.sub_sub]
+    rw [u₅.gpr, cx₄, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat (by omega_arith), Nat.sub_sub]
   have ev : isa.eval .ne t₅ = some !decide (L - (i + 1) = 0) := by
     show VG.X86.eval .ne t₅ = _
-    rw [eval_ne, z₅, cx₄, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat (by omega), Nat.sub_sub,
-      ofNat_beq_zero (by omega)]
+    rw [eval_ne, z₅, cx₄, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat (by omega_arith), Nat.sub_sub,
+      ofNat_beq_zero (by omega_arith)]
     rfl
   have gg : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .esi → r ≠ .edi → t₅.gpr r = s.gpr r := fun r ha hc hs hd' => by
     rw [u₅.other _ hc, u₄.other _ hd', u₃.other _ hs, v₂.gpr, u₁.other _ ha, g r ha hc hs hd']
@@ -184,7 +184,7 @@ theorem copyLoop_wp {s : State} {p c : BitVec 32} {L : Nat} (hL₀ : 0 < L) (hL 
   · left
     exact ⟨by rw [ev]; simp [he], by rw [hmem, he], gg, rd', wr'⟩
   · right
-    exact ⟨by rw [ev]; simp; omega, L - (i + 1), by omega, i + 1, rfl, by omega, xsi', xdi', xcx', hmem, gg,
+    exact ⟨by rw [ev]; simp; omega_arith, L - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, xsi', xdi', xcx', hmem, gg,
       rd', wr'⟩
 
 /-- `copy`: the `L` bytes at `p` (`esi`) copied to `c` (`edi`), none if `L`
@@ -206,7 +206,7 @@ theorem copy_wp {s : State} {p c : BitVec 32} {L : Nat} (hL : L < 2 ^ 32)
     refine WP.ite true (by rw [ev]; rfl) (fun _ => WP.block_nil ?_) (fun h => by cases h)
     exact ⟨by rw [f₁.mem]; simp [Spec.Aes.bytesAt, writeBytes_nil], fun r _ _ _ _ => by rw [f₁.gpr], f₁.rd, f₁.wr⟩
   · refine WP.ite false (by rw [ev]; simp [h0]) (fun h => by cases h) fun _ => ?_
-    have h0' : 0 < L := by omega
+    have h0' : 0 < L := by omega_arith
     refine WP.mono (copyLoop_wp h0' hL (by rw [f₁.gpr]; exact hsi) (by rw [f₁.gpr]; exact hdi)
       (by rw [f₁.gpr]; exact hcx) (fp h0') (fc h0') (by rw [f₁.rd, f₁.wr]; exact hr h0')
       (by rw [f₁.wr]; exact hw h0') (hd h0'))
@@ -225,19 +225,19 @@ theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) {xs : List Byte} (h : xs.le
   apply List.ext_getElem (by simp [Spec.Aes.bytesAt])
   intro i h1 _
   simp only [Spec.Aes.bytesAt, List.length_map, List.length_range] at h1
-  simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, writeBytes_at m q xs (by omega : i < 2 ^ 64),
+  simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, writeBytes_at m q xs (by omega_arith : i < 2 ^ 64),
     h1, ↓reduceIte, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h1, Option.getD_some]
 
 /-- Bytes `[0, r)` from `p` stay, and the bytes `xs` follow them. -/
 theorem bytesAt_writeBytes (m : Mem) (p : Addr) (r : Nat) (xs : List Byte) (h : r + xs.length < 2 ^ 64) :
     Spec.Aes.bytesAt (writeBytes m (p + BitVec.ofNat 64 r) xs) p (r + xs.length) =
       Spec.Aes.bytesAt m p r ++ xs := by
-  rw [Proof.Cmac.Stream.bytesAt_append, bytesAt_writeBytes_self _ _ (by omega)]
+  rw [Proof.Cmac.Stream.bytesAt_append, bytesAt_writeBytes_self _ _ (by omega_arith)]
   congr 1
   simp only [Spec.Aes.bytesAt]
   apply List.map_congr_left
   intro i hi
-  exact writeBytes_before m p xs (List.mem_range.mp hi) (by omega)
+  exact writeBytes_before m p xs (List.mem_range.mp hi) (by omega_arith)
 
 /-! ## The saved registers -/
 
@@ -267,7 +267,7 @@ theorem savedMem_frame (s₀ : State) (Sc : BitVec 32) :
     rw [show Sc.setWidth 64 + BitVec.ofNat 64 p.2 =
         Sc.setWidth 64 + BitVec.ofNat 64 2176 + BitVec.ofNat 64 (p.2 - 2176) by
       rw [Offset.add_add, Nat.add_sub_cancel' h.1]]
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 /-- Saving the registers, with the scratch buffer `Sc` in `eax`. -/
 theorem save_wp {is : List Instr} {s : State} {Q : State → Prop} {Sc : BitVec 32} (heax : s.gpr .eax = Sc)
@@ -276,11 +276,11 @@ theorem save_wp {is : List Instr} {s : State} {Q : State → Prop} {Sc : BitVec 
       s'.mem = Spill.saveMem s.mem (Sc.setWidth 64 + BitVec.ofNat 64 ·) s.gpr saved → WP isa (.block is) s' Q) :
     WP isa (.block (save ++ is)) s Q := by
   rw [save_eq]
-  refine Spill.save_ofNat_ok saved saved_fits (by rw [heax]; omega) (fun p hp => ?_) fun s' u =>
+  refine Spill.save_ofNat_ok saved saved_fits (by rw [heax]; omega_arith) (fun p hp => ?_) fun s' u =>
     k s' u.gpr u.rd u.wr (by rw [u.mem, heax])
   have hb := saved_bound p hp
   rw [heax]
-  exact hw _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
+  exact hw _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 /-- Restoring the registers, from the scratch buffer `Sc` (the stack argument
 `i`), whose slots hold the registers of `s₀`. -/
@@ -293,24 +293,24 @@ theorem restore_wp {s₀ s : State} {i : Nat} {Sc : BitVec 32} (hesp : s.gpr .es
   rw [restore_eq]
   refine VG.Proof.MdStream.X86.wp_movm (a := argAddr s₀ i) (by rw [ea_at', hesp]; rfl) hin fun s₁ u₁ => ?_
   rw [hv] at u₁
-  refine Spill.restore_ofNat_ok saved saved_fits (by rw [u₁.gpr]; omega) saved_ne_eax (fun p hp' => ?_)
+  refine Spill.restore_ofNat_ok saved saved_fits (by rw [u₁.gpr]; omega_arith) saved_ne_eax (fun p hp' => ?_)
     (fun p hp' => by rw [u₁.gpr, u₁.mem]; exact hs p.1 p.2 hp') fun s₂ r₂ =>
       WP.block_nil ⟨r₂.abi (by decide) (by decide) (by rw [u₁.other _ (by decide), hesp]), by rw [r₂.mem, u₁.mem]⟩
   have hb := saved_bound p hp'
   rw [u₁.gpr, u₁.rd, u₁.wr]
-  exact hr _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩
+  exact hr _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 /-! ## The stack arguments and the stack -/
 
 theorem argAddr_eq {s₀ : State} {n i : Nat} (hfit : (s₀.gpr .esp).toNat + 4 + 4 * n ≤ 2 ^ 32) (hi : i < n) :
-    argAddr s₀ i = (s₀.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) := addr_eq (by omega)
+    argAddr s₀ i = (s₀.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) := addr_eq (by omega_arith)
 
 /-- Argument `i` among the `n`. -/
 theorem arg_sub {s₀ : State} {n i : Nat} (hfit : (s₀.gpr .esp).toNat + 4 + 4 * n ≤ 2 ^ 32) (hi : i < n) :
     Region.Sub ⟨argAddr s₀ i, 4⟩ ⟨argAddr s₀ 0, 4 * n⟩ := by
-  rw [argAddr_eq hfit hi, argAddr_eq hfit (by omega : 0 < n),
-    show 4 + 4 * i = (4 + 4 * 0) + 4 * i by omega, ← Offset.add_add]
-  exact Offset.sub_base _ (by omega)
+  rw [argAddr_eq hfit hi, argAddr_eq hfit (by omega_arith : 0 < n),
+    show 4 + 4 * i = (4 + 4 * 0) + 4 * i by omega_arith, ← Offset.add_add]
+  exact Offset.sub_base _ (by omega_arith)
 
 /-- The arguments are above the stack below `esp`. -/
 theorem args_below {s₀ : State} {n k : Nat} (hfit : (s₀.gpr .esp).toNat + 4 + 4 * n ≤ 2 ^ 32) (hn : 0 < n)
@@ -318,14 +318,14 @@ theorem args_below {s₀ : State} {n k : Nat} (hfit : (s₀.gpr .esp).toNat + 4 
   rw [argAddr_eq hfit hn]
   show Region.Disjoint ⟨(s₀.gpr .esp - BitVec.ofNat 32 k).setWidth 64, k⟩ _
   rw [Taint.sub_setWidth hk]
-  exact Offset.disjoint_below_above _ (by omega)
+  exact Offset.disjoint_below_above _ (by omega_arith)
 
 /-- So is the return address. -/
 theorem ret_below {E : BitVec 32} {k : Nat} (hk : k ≤ E.toNat) :
     (⟨E.setWidth 64, 4⟩ : Region).Disjoint (below E k) := by
   show Region.Disjoint _ ⟨(E - BitVec.ofNat 32 k).setWidth 64, k⟩
   rw [Taint.sub_setWidth hk]
-  exact Offset.base_disjoint_below _ (by omega)
+  exact Offset.base_disjoint_below _ (by omega_arith)
 
 theorem below_eq {E : BitVec 32} {k : Nat} (hk : k ≤ E.toNat) :
     below E k = ⟨E.setWidth 64 - BitVec.ofNat 64 k, k⟩ := by
@@ -344,14 +344,14 @@ theorem add_setWidth {x : BitVec 32} {d : Nat} (h : x.toNat + d < 2 ^ 32) :
 
 theorem add_toNat {x : BitVec 32} {d : Nat} (h : x.toNat + d < 2 ^ 32) :
     (x + BitVec.ofNat 32 d).toNat = x.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega)]; exact Nat.mod_eq_of_lt h
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_arith)]; exact Nat.mod_eq_of_lt h
 
 theorem arg_contains {s₀ : State} {n i : Nat} (hfit : (s₀.gpr .esp).toNat + 4 + 4 * n ≤ 2 ^ 32) (hi : i < n) :
     (⟨argAddr s₀ 0, 4 * n⟩ : Region).Contains (argAddr s₀ i) 4 := by
   have e : argAddr s₀ i = argAddr s₀ 0 + BitVec.ofNat 64 (4 * i) := by
-    rw [argAddr_eq hfit hi, argAddr_eq hfit (by omega : 0 < n), Offset.add_add]
+    rw [argAddr_eq hfit hi, argAddr_eq hfit (by omega_arith : 0 < n), Offset.add_add]
   rewrite [e]
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 /-! ## Two runs between the calls -/
 

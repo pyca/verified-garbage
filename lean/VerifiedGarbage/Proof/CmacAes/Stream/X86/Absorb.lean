@@ -35,7 +35,7 @@ theorem m4_big {s₀ : State} (hp : APre s₀) : Frame (ABig s₀) s₀.mem (m4 
   have := f_le (aC s₀) (aL s₀)
   exact hp.savedMem_big.trans ((m4_frame s₀).sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨astR s₀, by simp, Offset.sub_base _ (by omega)⟩)
+    exact ⟨astR s₀, by simp, Offset.sub_base _ (by omega_arith)⟩)
 
 /-- The save. -/
 theorem absSave_wp {s₀ : State} (hp : APre s₀) :
@@ -76,28 +76,28 @@ theorem absorbPre_wp {s₀ : State} (hp : APre s₀) : WP isa absorbPre s₀ (AM
     by rw [m₂]; exact c₁.args⟩
   refine WP.seq (WP.mono (fill_wp hp c₂ eax₂) fun s₃ h₃ => ?_)
   have p288 : 0 < fOf (aC s₀) (aL s₀) → (aSt s₀ + BitVec.ofNat 32 (288 + held (aC s₀))).setWidth 64 =
-      (aSt s₀).setWidth 64 + BitVec.ofNat 64 (288 + held (aC s₀)) := fun _ => add_setWidth (by omega)
-  refine WP.seq (WP.mono (copy_wp (L := fOf (aC s₀) (aL s₀)) (by omega) h₃.esi h₃.edi h₃.ecx (fun _ => by omega)
-    (fun _ => by rw [add_toNat (by omega)]; omega)
+      (aSt s₀).setWidth 64 + BitVec.ofNat 64 (288 + held (aC s₀)) := fun _ => add_setWidth (by omega_arith)
+  refine WP.seq (WP.mono (copy_wp (L := fOf (aC s₀) (aL s₀)) (by omega_arith) h₃.esi h₃.edi h₃.ecx (fun _ => by omega_arith)
+    (fun _ => by rw [add_toNat (by omega_arith)]; omega_arith)
     (fun _ => by
       rw [h₃.ctx.rd, h₃.ctx.wr, hp.rd, hp.wr]
       exact Covers.of_sub fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact ⟨adR s₀, by simp, 0, by simp, by simp; omega⟩)
+        simp only [List.mem_singleton] at hr; subst hr; exact ⟨adR s₀, by simp, 0, by simp, by simp; omega_arith⟩)
     (fun h0 => by
       rw [h₃.ctx.wr, hp.wr]
       exact Covers.of_sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨astR s₀, by simp, 288 + held (aC s₀), p288 h0, by simp; omega⟩)
+        exact ⟨astR s₀, by simp, 288 + held (aC s₀), p288 h0, by simp; omega_arith⟩)
     (fun h0 => by
       rw [p288 h0]
       exact (hp.st_d.sub_left (Offset.sub_base (d := 288 + held (aC s₀)) (n := fOf (aC s₀) (aL s₀)) _
-        (by omega))).symm.sub_left (Region.sub_prefix hfL))) fun s₄ h₄ => ?_)
+        (by omega_arith))).symm.sub_left (Region.sub_prefix hfL))) fun s₄ h₄ => ?_)
   obtain ⟨m₄, g₄, rd₄, wr₄⟩ := h₄
   have hm₄ : s₄.mem = m4 s₀ := by
     rw [m₄, h₃.mem, m₂, m₁, m4]
     by_cases hf0 : fOf (aC s₀) (aL s₀) = 0
     · rw [hf0]; simp only [Spec.Aes.bytesAt, List.range_zero, List.map_nil, writeBytes_nil]
-    · rw [p288 (by omega)]
+    · rw [p288 (by omega_arith)]
   have c₄ : ACtx s₀ s₄ := ACtx.of_frame hp (by rw [g₄ _ (by decide) (by decide) (by decide) (by decide), h₃.ctx.esp])
     (by rw [rd₄, h₃.ctx.rd]) (by rw [wr₄, h₃.ctx.wr]) (hm₄ ▸ m4_big hp)
   refine WP.mono (chain1_wp hp c₄ (by rw [g₄ _ (by decide) (by decide) (by decide) (by decide), h₃.ebp]))
@@ -118,7 +118,7 @@ theorem upd_aft {s₀ s s' : State} (hp : APre s₀) {Dd : BitVec 32} {n v : Nat
     (h : UPost s (aSt s₀) (aSt s₀ + BitVec.ofNat 32 272) Dd (aSc s₀) (aR s₀) n s') : AAft s₀ v s' := by
   have fSt : (aSt s₀).toNat + 304 ≤ 2 ^ 32 := hp.fSt
   have fr := h.frame
-  rw [hc.esp, add_setWidth (by omega)] at fr
+  rw [hc.esp, add_setWidth (by omega_arith)] at fr
   have F : Frame (ABig s₀) s₀.mem s'.mem := hf.trans (fr.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl

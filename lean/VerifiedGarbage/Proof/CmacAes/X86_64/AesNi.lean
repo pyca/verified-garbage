@@ -117,12 +117,12 @@ end
 
 theorem key_bytes (s₀ : State) {j : Nat} (hj : j ≤ R s₀) :
     ∀ i < 16, byte (key s₀ j) i = (roundKey (sch s₀) j).getD i 0 :=
-  byte_roundKey _ _ (by omega)
+  byte_roundKey _ _ (by omega_arith)
 
 theorem key_in {s₀ : State} (hp : CPre s₀) {j : Nat} (hj : j ≤ 14) :
     InRegions (s₀.rd ++ s₀.wr) (W s₀ + BitVec.ofNat 64 (16 * j)) 16 := by
   rw [hp.rd]
-  exact ⟨schR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+  exact ⟨schR s₀, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 /-- The registers of round keys 1 to 13. -/
 def keyRegs : List XReg :=
@@ -161,15 +161,15 @@ theorem loadKeys_ok {s₀ : State} (hp : CPre s₀) {s : State} (hdi : s.gpr .rd
   | 0, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), XFrame.refl _ _⟩
   | k + 1, hk => by
     rw [loadKeys, List.range_succ, List.map_append, WP.block_append_iff]
-    refine WP.mono (loadKeys_ok hp hdi hm hrd hwr k (by omega)) fun s₁ ⟨e₁, f₁⟩ => ?_
+    refine WP.mono (loadKeys_ok hp hdi hm hrd hwr k (by omega_arith)) fun s₁ ⟨e₁, f₁⟩ => ?_
     rw [List.map_cons, List.map_nil, WP.block_cons_iff]
     have hin : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .rdi + BitVec.ofNat 64 (16 * (k + 1))) 16 := by
-      rw [f₁.rd, f₁.wr, f₁.gpr, hrd, hwr, hdi]; exact key_in hp (by omega)
-    refine ⟨_, exec_load hin, WP.block_nil ⟨fun j hj => ?_, xframe_setXmm f₁ (kreg_mem k (by omega)) _⟩⟩
+      rw [f₁.rd, f₁.wr, f₁.gpr, hrd, hwr, hdi]; exact key_in hp (by omega_arith)
+    refine ⟨_, exec_load hin, WP.block_nil ⟨fun j hj => ?_, xframe_setXmm f₁ (kreg_mem k (by omega_arith)) _⟩⟩
     by_cases hjk : j = k
     · subst hjk
       rw [xmm_setXmm_self, f₁.mem, f₁.gpr, hm, hdi]
-    · rw [xmm_setXmm_of_ne _ _ fun e => hjk (kreg_inj j (by omega) k (by omega) e), e₁ j (by omega)]
+    · rw [xmm_setXmm_of_ne _ _ fun e => hjk (kreg_inj j (by omega_arith) k (by omega_arith) e), e₁ j (by omega_arith)]
 
 /-! ## The setup -/
 
@@ -263,7 +263,7 @@ structure Inv (s₀ : State) (k : Nat) (s : State) : Prop where
 
 theorem last_ok {s₀ : State} (hp : CPre s₀) {s : State} (h : SInv s₀ s) :
     WP isa (.block (last (R s₀))) s (Inv s₀ 0) := by
-  have hR : R s₀ ≤ 14 := by rcases hp.rounds with h | h | h <;> omega
+  have hR : R s₀ ≤ 14 := by rcases hp.rounds with h | h | h <;> omega_arith
   rw [last, WP.block_cons_iff]
   refine ⟨_, exec_load (by rw [h.rd, h.wr, h.gpr]; exact key_in hp hR), ?_⟩
   rw [WP.block_cons_iff]
@@ -291,13 +291,13 @@ theorem rounds_ok {s₀ : State} {x : Spec.Aes.State} {s : State}
   | 0, _, _ => WP.block_nil ⟨h0, XFrame.refl _ _⟩
   | k + 1, hk₁, hk₂ => by
     rw [rounds, List.range_succ, List.map_append, WP.block_append_iff]
-    refine WP.mono (rounds_ok hk h0 k (by omega) (by omega)) fun s₁ ⟨e₁, f₁⟩ => ?_
+    refine WP.mono (rounds_ok hk h0 k (by omega_arith) (by omega_arith)) fun s₁ ⟨e₁, f₁⟩ => ?_
     rw [List.map_cons, List.map_nil, WP.block_cons_iff]
     refine ⟨_, rfl, WP.block_nil ⟨?_, xframe_setXmm f₁ (List.mem_singleton_self _) _⟩⟩
     have hkey : s₁.xmm (kreg (k + 1)) = key s₀ (k + 1) := by
-      rw [f₁.xmm _ (by simpa using (kreg_ne k (by omega)).1), hk k (by omega)]
+      rw [f₁.xmm _ (by simpa using (kreg_ne k (by omega_arith)).1), hk k (by omega_arith)]
     rw [XOp.exec, xmm_setXmm_self, aesenc_st _ _ (roundKey (sch s₀) (k + 1))
-      (by rw [hkey]; exact key_bytes s₀ (by omega)), e₁, rnds_succ]
+      (by rw [hkey]; exact key_bytes s₀ (by omega_arith)), e₁, rnds_succ]
 
 /-- The last round, with `K_Nr ⊕ K₀`, leaves the cipher's output `⊕ K₀`. -/
 theorem last_round {nr : Nat} {w : List Byte} {x : Spec.Aes.State} {V KL K0 : BitVec 128}
@@ -329,12 +329,12 @@ theorem xor_comm3 (a k m : BitVec 128) : a ^^^ k ^^^ m ^^^ k = a ^^^ m := by
 theorem body_ok {s₀ : State} (hp : CPre s₀) {k : Nat} (hk : k < N s₀) {s : State} (h : Inv s₀ k s) :
     WP isa (.block (body (R s₀))) s fun s' =>
       Inv s₀ (k + 1) s' ∧ s'.zf = some (decide (N s₀ - (k + 1) = 0)) := by
-  have hR : R s₀ ≤ 14 := by rcases hp.rounds with h | h | h <;> omega
-  have hR₁ : 1 ≤ R s₀ := by rcases hp.rounds with h | h | h <;> omega
+  have hR : R s₀ ≤ 14 := by rcases hp.rounds with h | h | h <;> omega_arith
+  have hR₁ : 1 ≤ R s₀ := by rcases hp.rounds with h | h | h <;> omega_arith
   have hdw := hp.data_wrap
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .rcx + BitVec.ofNat 64 0) 16 := by
     rw [h.rd, h.wr, h.rcx, BitVec.add_zero, hp.rd]
-    exact ⟨dataR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨dataR s₀, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have hM : s.mem.readW (s.gpr .rcx + BitVec.ofNat 64 0) 128 =
       s₀.mem.readW (Dp s₀ + BitVec.ofNat 64 (16 * k)) 128 := by
     rw [h.mem, h.rcx, BitVec.add_zero]
@@ -346,10 +346,10 @@ theorem body_ok {s₀ : State} (hp : CPre s₀) {k : Nat} (hk : k < N s₀) {s :
   have h0 : st (s.xmm .xmm0 ^^^ s₀.mem.readW (Dp s₀ + BitVec.ofNat 64 (16 * k)) 128) =
       rnds (sch s₀) (st (s.xmm .xmm0 ^^^ key s₀ 0 ^^^ s₀.mem.readW (Dp s₀ + BitVec.ofNat 64 (16 * k)) 128))
         0 := by
-    rw [rnds_zero, ← pxor_st _ _ _ (key_bytes s₀ (j := 0) (by omega)), XBinOp.eval, xor_comm3]
+    rw [rnds_zero, ← pxor_st _ _ _ (key_bytes s₀ (j := 0) (by omega_arith)), XBinOp.eval, xor_comm3]
   refine WP.mono (rounds_ok (s₀ := s₀)
       (x := st (s.xmm .xmm0 ^^^ key s₀ 0 ^^^ s₀.mem.readW (Dp s₀ + BitVec.ofNat 64 (16 * k)) 128))
-      (fun j hj => ?_) ?_ (R s₀ - 1) (by omega) (by omega))
+      (fun j hj => ?_) ?_ (R s₀ - 1) (by omega_arith) (by omega_arith))
     fun s₂ ⟨e₂, f₂⟩ => ?_
   · have := kreg_ne j hj
     simp only [XOp.exec, xmm_setXmm_of_ne _ _ this.1, xmm_setXmm_of_ne _ _ this.2.1]
@@ -375,14 +375,14 @@ theorem body_ok {s₀ : State} (hp : CPre s₀) {k : Nat} (hk : k < N s₀) {s :
     rw [XOp.exec, gpr_setXmm, f₂.gpr]; rfl
   have hN := (s₀.gpr .r8).isLt
   have dec : BitVec.ofNat 64 (N s₀ - k) - 1 = BitVec.ofNat 64 (N s₀ - (k + 1)) := by
-    rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)]; rfl
+    rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_arith)]; rfl
   refine ⟨⟨fun j hj => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · have := kreg_ne j hj
     rw [hx _ this.1 this.2.1]; exact h.keys j hj
   · rw [hx _ (by decide) (by decide)]; exact h.last
   · rw [hg _ (by decide) (by decide)]; exact h.rdi
   · rw [hg _ (by decide) (by decide)]; exact h.rdx
-  · rw [rcx₃, gc, h.rcx, Offset.add_add_eq _ (c := 16 * (k + 1)) (by omega)]
+  · rw [rcx₃, gc, h.rcx, Offset.add_add_eq _ (c := 16 * (k + 1)) (by omega_arith)]
   · rw [r8₃, g8, h.r8, dec]
   · rw [mem₃, XOp.exec, mem_setXmm, f₂.mem]; exact h.mem
   · rw [rd₃, XOp.exec, rd_setXmm, f₂.rd]; exact h.rd
@@ -406,7 +406,7 @@ theorem body_ok {s₀ : State} (hp : CPre s₀) {k : Nat} (hk : k < N s₀) {s :
     constructor
     · intro he
       have := congrArg BitVec.toNat he
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this
       simpa using this
     · intro he; rw [he]; rfl
 
@@ -419,9 +419,9 @@ theorem loop_ok {s₀ : State} (hp : CPre s₀) {k : Nat} (hk : k < N s₀) {s :
   by_cases hz : N s₀ - (k + 1) = 0
   · left
     refine ⟨by simp [eval, zf', hz], ?_⟩
-    rwa [show N s₀ = k + 1 by omega]
+    rwa [show N s₀ = k + 1 by omega_arith]
   · right
-    exact ⟨by simp [eval, zf', hz], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
+    exact ⟨by simp [eval, zf', hz], N s₀ - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, h'⟩
 
 theorem blocks_ok {s₀ : State} (hp : CPre s₀) (hn : 0 < N s₀) {s : State} (h : SInv s₀ s) :
     WP isa (blocks (R s₀)) s (Inv s₀ (N s₀)) :=
@@ -448,7 +448,7 @@ theorem loops_ok {s₀ : State} (hp : CPre s₀) (hn : 0 < N s₀) {s : State} (
     · have h14 : R s₀ = 14 := by
         have := of_decide_eq_false h10
         have := of_decide_eq_false h12
-        rcases hp.rounds with e | e | e <;> omega
+        rcases hp.rounds with e | e | e <;> omega_arith
       rwa [h14] at hb
 
 /-! ## The whole function -/
@@ -506,7 +506,7 @@ theorem correct_wp {s₀ : State} (hp : CPre s₀) :
     simp [Spec.Cmac.blocksAt, hn, Spec.Cmac.chain, mem_arithFlags]
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
     refine WP.seq (WP.mono (setup_ok hp rfl rfl rfl rfl) fun s₁ ⟨h₁, z₁⟩ => ?_)
-    exact WP.seq (WP.mono (loops_ok hp (by omega) h₁ z₁) fun s₂ h₂ => finish_ok hp h₂)
+    exact WP.seq (WP.mono (loops_ok hp (by omega_arith) h₁ z₁) fun s₂ h₂ => finish_ok hp h₂)
 
 /-- No instruction writes a callee-saved register. -/
 theorem keeps (r : Reg) (hr : r ∈ calleeSaved) : ∀ i ∈ instrs update, Taint.clobbers i r = false := by

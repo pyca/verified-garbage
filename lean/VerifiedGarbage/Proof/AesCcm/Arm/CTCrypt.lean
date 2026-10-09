@@ -81,7 +81,7 @@ theorem ctrWhole_ct (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (hn4 : n < 2 ^ 32) : CT (C
     rcases hr with rfl | hr
     · rw [h₁.1.2.2.2.1, h₂.1.2.2.2.1]
     · exact env_eq h₁.1.1 h₂.1.1 hr
-  · obtain ⟨s₄, run₄, C, he₄, -⟩ := ctrWholeArgs_ok L he hR (nonce := nonce) (by omega) (by omega) hc hD h4 h12
+  · obtain ⟨s₄, run₄, C, he₄, -⟩ := ctrWholeArgs_ok L he hR (nonce := nonce) (by omega_arith) (by omega_arith) hc hD h4 h12
     exact WP.of_runBlock ⟨s₄, run₄, C, he₄.sp⟩
   · exact CT.ctr fun _ _ ⟨C₁, e₁⟩ ⟨C₂, e₂⟩ => ⟨_, _, _, _, _, _, C₁, C₂, e₁.trans e₂.symm⟩
 
@@ -112,7 +112,7 @@ theorem ctrTail_ct (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (hn : n < 256 ^ (15 - nl)) 
     rcases hr with rfl | hr
     · rw [h₁.1.2.2.2.2, h₂.1.2.2.2.2]
     · exact env_eq h₁.1.1 h₂.1.1 hr
-  · obtain ⟨s₅, run₅, C, he₅, g₅, -⟩ := ctrTailArgs_ok L he hR (nonce := nonce) (by omega) (by omega) hc
+  · obtain ⟨s₅, run₅, C, he₅, g₅, -⟩ := ctrTailArgs_ok L he hR (nonce := nonce) (by omega_arith) (by omega_arith) hc
       (by rw [hl]; exact hn) hn4 h5
     exact WP.of_runBlock ⟨s₅, run₅, C, he₅, by rw [g₅ _ (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), h4], by rw [g₅ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h5],

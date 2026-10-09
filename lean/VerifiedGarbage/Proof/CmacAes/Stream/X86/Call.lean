@@ -134,15 +134,15 @@ theorem hrs4 : Reg.esp ∉ rs4 := by decide
 /-- A callee's return address, `k + 4` bytes below `esp`. -/
 theorem sub_ret {E : BitVec 32} {k b : Nat} (h : k + 4 ≤ b) (hb : b ≤ E.toNat) :
     Region.Sub ⟨(E - BitVec.ofNat 32 (k + 4)).setWidth 64, 4⟩ (below E b) := by
-  have := below_inner (sp := E) (a := 4) (b := b) (k := k) (by omega) hb
+  have := below_inner (sp := E) (a := 4) (b := b) (k := k) (by omega_arith) hb
   simp only [below] at this
   rwa [BitVec.sub_sub, ← BitVec.ofNat_add] at this
 
 /-- A callee's stack, the `a` bytes below its stack pointer `E - k`. -/
 theorem sub_stk {E : BitVec 32} {k a b : Nat} (h : k + a ≤ b) (hb : b ≤ E.toNat) :
     Region.Sub ⟨(E - BitVec.ofNat 32 k).setWidth 64 - BitVec.ofNat 64 a, a⟩ (below E b) := by
-  rw [← Taint.sub_setWidth (by rw [sub_toNat (by omega)]; omega)]
-  exact below_inner (by omega) hb
+  rw [← Taint.sub_setWidth (by rw [sub_toNat (by omega_arith)]; omega_arith)]
+  exact below_inner (by omega_arith) hb
 
 /-- The bytes of a region the stack does not overlap, from the state a call
 is made in. -/
@@ -218,7 +218,7 @@ namespace UArgs
 variable {s : State} {W C D S : BitVec 32} {R n : Nat} (h : UArgs s W C D S R n)
 include h
 
-theorem fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by have := h.esp; simp only [List.length_cons, List.length_nil]; omega
+theorem fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by have := h.esp; simp only [List.length_cons, List.length_nil]; omega_arith
 
 theorem args : arg (pushed rs6 s).callEntry 0 = W ∧ arg (pushed rs6 s).callEntry 1 = BitVec.ofNat 32 R ∧
     arg (pushed rs6 s).callEntry 2 = C ∧ arg (pushed rs6 s).callEntry 3 = D ∧
@@ -229,23 +229,23 @@ theorem args : arg (pushed rs6 s).callEntry 0 = W ∧ arg (pushed rs6 s).callEnt
 theorem callPre : CallPre updateX86 rs6 (uRd (s.gpr .esp) W D n) (uWr C S) s := by
   obtain ⟨a0, a1, a2, a3, a4, a5⟩ := h.args
   have hR := toNat_rounds h.rounds
-  have hN : (BitVec.ofNat 32 n).toNat = n := eq_ofNat rfl (by have := h.hn; omega)
+  have hN : (BitVec.ofNat 32 n).toNat = n := eq_ofNat rfl (by have := h.hn; omega_arith)
   have he := h.esp
   have eA : argAddr (pushed rs6 s).callEntry 0 = (s.gpr .esp - BitVec.ofNat 32 24).setWidth 64 := by
     rw [callEntry_argAddr0]; rfl
   have eSp : (pushed rs6 s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 (24 + 4) := by
     rw [callEntry_esp']; rfl
-  have bA : Region.Sub (below (s.gpr .esp) 24) (below (s.gpr .esp) 56) := below_sub (by omega) he
-  have bR := sub_ret (E := s.gpr .esp) (k := 24) (b := 56) (by omega) he
-  have bK := sub_stk (E := s.gpr .esp) (k := 24 + 4) (a := 28) (b := 56) (by omega) he
+  have bA : Region.Sub (below (s.gpr .esp) 24) (below (s.gpr .esp) 56) := below_sub (by omega_arith) he
+  have bR := sub_ret (E := s.gpr .esp) (k := 24) (b := 56) (by omega_arith) he
+  have bK := sub_stk (E := s.gpr .esp) (k := 24 + 4) (a := 28) (b := 56) (by omega_arith) he
   refine ⟨?_, ?_, ?_⟩
   · simp only [updateX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, a5, eA, eSp, hR, hN]
     refine ⟨trivial, trivial, h.wc, h.ws, h.dc, h.ds, h.cs, h.bC.sub_left bA, h.bS.sub_left bA,
       h.bC.sub_left bR, h.bS.sub_left bR, h.bW.sub_left bK, h.bD.sub_left bK, h.bC.sub_left bK,
       h.bS.sub_left bK, h.fW, h.fC, h.fD, h.fS, ?_, ?_, h.rounds⟩
-    · rw [sub_toNat (by omega)]; omega
-    · rw [sub_toNat (by omega)]; have := (s.gpr .esp).isLt; omega
+    · rw [sub_toNat (by omega_arith)]; omega_arith
+    · rw [sub_toNat (by omega_arith)]; have := (s.gpr .esp).isLt; omega_arith
   · intro a k ⟨r, hr, hcn⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -266,11 +266,11 @@ end UArgs
 theorem upd_call {s : State} {W C D S : BitVec 32} {R n : Nat} (h : UArgs s W C D S R n) :
     WP isa (call6 ("vg_cmac_aes_update" ++ v.suffix) (Impl.CmacAes.X86.update v.callee)) s (UPost s W C D S R n) := by
   have hR := toNat_rounds h.rounds
-  have hN : (BitVec.ofNat 32 n).toNat = n := eq_ofNat rfl (by have := h.hn; omega)
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega
+  have hN : (BitVec.ofNat 32 n).toNat = n := eq_ofNat rfl (by have := h.hn; omega_arith)
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_arith
   have he := h.esp
   refine WP.callWith (rs := rs6) (k := updateX86) (fun _ hs => update_wp v hs) (upd_nosp v) (by simp) hrs6
-    (by rw [(upd_stack v)]; simp only [List.length_cons, List.length_nil]; omega) h.callPre
+    (by rw [(upd_stack v)]; simp only [List.length_cons, List.length_nil]; omega_arith) h.callPre
     fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   obtain ⟨a0, a1, a2, a3, a4, -⟩ := h.args
   rw [(upd_stack v)] at f'
@@ -280,8 +280,8 @@ theorem upd_call {s : State} {W C D S : BitVec 32} {R n : Nat} (h : UArgs s W C 
     fun hd hk => entry_bytes h.fit hrs6 (by simp) he hd hk
   simp only [updateX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hN, m₂] at post
   rw [post, Proof.Cmac.Stream.blocksAt_eq, Proof.Cmac.Stream.blocksAt_eq, Proof.CmacAes.X86.ciphAt,
-    keep (h.bW.sub_right (Region.sub_prefix hRb)) (by omega), keep h.bC (by decide),
-    keep h.bD (by have := h.hn; omega)]
+    keep (h.bW.sub_right (Region.sub_prefix hRb)) (by omega_arith), keep h.bC (by decide),
+    keep h.bD (by have := h.hn; omega_arith)]
 
 theorem upd_rel {W C D S E : BitVec 32} {R n : Nat} {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → UArgs s₁ W C D S R n ∧ UArgs s₂ W C D S R n ∧ s₁.gpr .esp = E ∧ s₂.gpr .esp = E) :
@@ -297,7 +297,7 @@ theorem upd_rel {W C D S E : BitVec 32} {R n : Nat} {P : State → State → Pro
   obtain ⟨b0, b1, b2, b3, b4, b5⟩ := h₂.args
   refine ⟨by simp only [State.withRegions_gpr, callEntry_esp', e₁, e₂], fun i hi => ?_⟩
   simp only [arg_withRegions]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
   · rw [a0, b0]
   · rw [a1, b1]
   · rw [a2, b2]
@@ -359,7 +359,7 @@ namespace FArgs
 variable {s : State} {K St P S : BitVec 32} {L R : Nat} (h : FArgs s K St P S L R)
 include h
 
-theorem fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by have := h.esp; simp only [List.length_cons, List.length_nil]; omega
+theorem fit : 4 * rs6.length + 4 ≤ (s.gpr .esp).toNat := by have := h.esp; simp only [List.length_cons, List.length_nil]; omega_arith
 
 theorem args : arg (pushed rs6 s).callEntry 0 = K ∧ arg (pushed rs6 s).callEntry 1 = BitVec.ofNat 32 R ∧
     arg (pushed rs6 s).callEntry 2 = St ∧ arg (pushed rs6 s).callEntry 3 = P ∧
@@ -370,23 +370,23 @@ theorem args : arg (pushed rs6 s).callEntry 0 = K ∧ arg (pushed rs6 s).callEnt
 theorem callPre : CallPre finalizeX86 rs6 (fRd (s.gpr .esp) K P L) (fWr St S) s := by
   obtain ⟨a0, a1, a2, a3, a4, a5⟩ := h.args
   have hR := toNat_rounds h.rounds
-  have hL : (BitVec.ofNat 32 L).toNat = L := eq_ofNat rfl (by have := h.len; omega)
+  have hL : (BitVec.ofNat 32 L).toNat = L := eq_ofNat rfl (by have := h.len; omega_arith)
   have he := h.esp
   have eA : argAddr (pushed rs6 s).callEntry 0 = (s.gpr .esp - BitVec.ofNat 32 24).setWidth 64 := by
     rw [callEntry_argAddr0]; rfl
   have eSp : (pushed rs6 s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 (24 + 4) := by
     rw [callEntry_esp']; rfl
-  have bA : Region.Sub (below (s.gpr .esp) 24) (below (s.gpr .esp) 56) := below_sub (by omega) he
-  have bR := sub_ret (E := s.gpr .esp) (k := 24) (b := 56) (by omega) he
-  have bK := sub_stk (E := s.gpr .esp) (k := 24 + 4) (a := 28) (b := 56) (by omega) he
+  have bA : Region.Sub (below (s.gpr .esp) 24) (below (s.gpr .esp) 56) := below_sub (by omega_arith) he
+  have bR := sub_ret (E := s.gpr .esp) (k := 24) (b := 56) (by omega_arith) he
+  have bK := sub_stk (E := s.gpr .esp) (k := 24 + 4) (a := 28) (b := 56) (by omega_arith) he
   refine ⟨?_, ?_, ?_⟩
   · simp only [finalizeX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, a5, eA, eSp, hR, hL]
     refine ⟨trivial, trivial, h.kst, h.ks, h.pst, h.ps, h.sts, h.bSt.sub_left bA, h.bS.sub_left bA,
       h.bSt.sub_left bR, h.bS.sub_left bR, h.bK.sub_left bK, h.bP.sub_left bK, h.bSt.sub_left bK,
       h.bS.sub_left bK, h.fK, h.fSt, h.fP, h.fS, ?_, ?_, h.rounds, h.len⟩
-    · rw [sub_toNat (by omega)]; omega
-    · rw [sub_toNat (by omega)]; have := (s.gpr .esp).isLt; omega
+    · rw [sub_toNat (by omega_arith)]; omega_arith
+    · rw [sub_toNat (by omega_arith)]; have := (s.gpr .esp).isLt; omega_arith
   · intro a k ⟨r, hr, hcn⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -407,11 +407,11 @@ end FArgs
 theorem fin_call {s : State} {K St P S : BitVec 32} {L R : Nat} (h : FArgs s K St P S L R) :
     WP isa (call6 ("vg_cmac_aes_finalize" ++ v.suffix) (Impl.CmacAes.X86.finalize v.callee)) s (FPost s K St P S L R) := by
   have hR := toNat_rounds h.rounds
-  have hL : (BitVec.ofNat 32 L).toNat = L := eq_ofNat rfl (by have := h.len; omega)
-  have hRb : 16 * (R + 1) ≤ 272 := by rcases h.rounds with h | h | h <;> omega
+  have hL : (BitVec.ofNat 32 L).toNat = L := eq_ofNat rfl (by have := h.len; omega_arith)
+  have hRb : 16 * (R + 1) ≤ 272 := by rcases h.rounds with h | h | h <;> omega_arith
   have he := h.esp
   refine WP.callWith (rs := rs6) (k := finalizeX86) (fun _ hs => finalize_wp v hs) (fin_nosp v) (by simp) hrs6
-    (by rw [(fin_stack v)]; simp only [List.length_cons, List.length_nil]; omega) h.callPre
+    (by rw [(fin_stack v)]; simp only [List.length_cons, List.length_nil]; omega_arith) h.callPre
     fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   obtain ⟨a0, a1, a2, a3, a4, -⟩ := h.args
   rw [(fin_stack v)] at f'
@@ -421,11 +421,11 @@ theorem fin_call {s : State} {K St P S : BitVec 32} {L R : Nat} (h : FArgs s K S
     fun hd hk => entry_bytes h.fit hrs6 (by simp) he hd hk
   simp only [finalizeX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3, a4, hR, hL, m₂] at post
   intro _ _ hk msg hm hne hst
-  have eK := keep (h.bK.sub_right (Region.sub_prefix hRb)) (by omega)
+  have eK := keep (h.bK.sub_right (Region.sub_prefix hRb)) (by omega_arith)
   have eK2 := keep (p := K.setWidth 64 + 240) (k := 32)
     (h.bK.sub_right (Offset.sub_base (K.setWidth 64) (d := 240) (n := 32) (by decide))) (by decide)
   have eSt := keep h.bSt (by decide)
-  have eP := keep h.bP (by omega)
+  have eP := keep h.bP (by omega_arith)
   simp only [Proof.CmacAes.X86.ciphAt, eK, eK2, eSt, eP] at post
   exact post hk msg hm hne hst
 
@@ -443,7 +443,7 @@ theorem fin_rel {K St P S E : BitVec 32} {L R : Nat} {Q : State → State → Pr
   obtain ⟨b0, b1, b2, b3, b4, b5⟩ := h₂.args
   refine ⟨by simp only [State.withRegions_gpr, callEntry_esp', e₁, e₂], fun i hi => ?_⟩
   simp only [arg_withRegions]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
   · rw [a0, b0]
   · rw [a1, b1]
   · rw [a2, b2]
@@ -494,7 +494,7 @@ namespace SArgs
 variable {s : State} {W K S : BitVec 32} {R : Nat} (h : SArgs s W K S R)
 include h
 
-theorem fit : 4 * rs4.length + 4 ≤ (s.gpr .esp).toNat := by have := h.esp; simp only [List.length_cons, List.length_nil]; omega
+theorem fit : 4 * rs4.length + 4 ≤ (s.gpr .esp).toNat := by have := h.esp; simp only [List.length_cons, List.length_nil]; omega_arith
 
 theorem args : arg (pushed rs4 s).callEntry 0 = W ∧ arg (pushed rs4 s).callEntry 1 = BitVec.ofNat 32 R ∧
     arg (pushed rs4 s).callEntry 2 = K ∧ arg (pushed rs4 s).callEntry 3 = S := by
@@ -509,17 +509,17 @@ theorem callPre : CallPre subkeysX86 rs4 (sRd (s.gpr .esp) W) (sWr K S) s := by
     rw [callEntry_argAddr0]; rfl
   have eSp : (pushed rs4 s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 (16 + 4) := by
     rw [callEntry_esp']; rfl
-  have bA : Region.Sub (below (s.gpr .esp) 16) (below (s.gpr .esp) 48) := below_sub (by omega) he
-  have bR := sub_ret (E := s.gpr .esp) (k := 16) (b := 48) (by omega) he
-  have bK := sub_stk (E := s.gpr .esp) (k := 16 + 4) (a := 28) (b := 48) (by omega) he
+  have bA : Region.Sub (below (s.gpr .esp) 16) (below (s.gpr .esp) 48) := below_sub (by omega_arith) he
+  have bR := sub_ret (E := s.gpr .esp) (k := 16) (b := 48) (by omega_arith) he
+  have bK := sub_stk (E := s.gpr .esp) (k := 16 + 4) (a := 28) (b := 48) (by omega_arith) he
   refine ⟨?_, ?_, ?_⟩
   · simp only [subkeysX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, eA, eSp, hR]
     refine ⟨trivial, trivial, h.wk, h.ws, h.ks, h.bK.sub_left bA, h.bS.sub_left bA,
       h.bK.sub_left bR, h.bS.sub_left bR, h.bW.sub_left bK, h.bK.sub_left bK,
       h.bS.sub_left bK, h.fW, h.fK, h.fS, ?_, ?_, h.rounds⟩
-    · rw [sub_toNat (by omega)]; omega
-    · rw [sub_toNat (by omega)]; have := (s.gpr .esp).isLt; omega
+    · rw [sub_toNat (by omega_arith)]; omega_arith
+    · rw [sub_toNat (by omega_arith)]; have := (s.gpr .esp).isLt; omega_arith
   · intro a k ⟨r, hr, hcn⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -538,17 +538,17 @@ end SArgs
 theorem sub_call {s : State} {W K S : BitVec 32} {R : Nat} (h : SArgs s W K S R) :
     WP isa (call4 ("vg_cmac_aes_subkeys" ++ v.suffix) (Impl.CmacAes.X86.subkeys v.callee)) s (SPost s W K S R) := by
   have hR := toNat_rounds h.rounds
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_arith
   have he := h.esp
   refine WP.callWith (rs := rs4) (k := subkeysX86) (fun _ hs => subkeys_wp v hs) (sub_nosp v) (by simp) hrs4
-    (by rw [(sub_stack v)]; simp only [List.length_cons, List.length_nil]; omega) h.callPre
+    (by rw [(sub_stack v)]; simp only [List.length_cons, List.length_nil]; omega_arith) h.callPre
     fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   obtain ⟨a0, a1, a2, -⟩ := h.args
   rw [(sub_stack v)] at f'
   refine ⟨rd', wr', cs', f'.mono fun r hr => by simpa using hr, ?_⟩
   simp only [subkeysX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, hR, m₂] at post
   rw [post, Proof.CmacAes.X86.ciphAt,
-    entry_bytes h.fit hrs4 (by simp) he (h.bW.sub_right (Region.sub_prefix hRb)) (by omega)]
+    entry_bytes h.fit hrs4 (by simp) he (h.bW.sub_right (Region.sub_prefix hRb)) (by omega_arith)]
 
 theorem sub_rel {W K S E : BitVec 32} {R : Nat} {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → SArgs s₁ W K S R ∧ SArgs s₂ W K S R ∧ s₁.gpr .esp = E ∧ s₂.gpr .esp = E) :
@@ -564,7 +564,7 @@ theorem sub_rel {W K S E : BitVec 32} {R : Nat} {P : State → State → Prop}
   obtain ⟨b0, b1, b2, b3⟩ := h₂.args
   refine ⟨by simp only [State.withRegions_gpr, callEntry_esp', e₁, e₂], fun i hi => ?_⟩
   simp only [arg_withRegions]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
   · rw [a0, b0]
   · rw [a1, b1]
   · rw [a2, b2]
@@ -612,7 +612,7 @@ namespace EArgs
 variable {s : State} {Kp W S : BitVec 32} {KL : Nat} (h : EArgs s Kp W S KL)
 include h
 
-theorem fit : 4 * rs4.length + 4 ≤ (s.gpr .esp).toNat := by have := h.esp; simp only [List.length_cons, List.length_nil]; omega
+theorem fit : 4 * rs4.length + 4 ≤ (s.gpr .esp).toNat := by have := h.esp; simp only [List.length_cons, List.length_nil]; omega_arith
 
 theorem args : arg (pushed rs4 s).callEntry 0 = Kp ∧ arg (pushed rs4 s).callEntry 1 = BitVec.ofNat 32 KL ∧
     arg (pushed rs4 s).callEntry 2 = W ∧ arg (pushed rs4 s).callEntry 3 = S := by
@@ -621,20 +621,20 @@ theorem args : arg (pushed rs4 s).callEntry 0 = Kp ∧ arg (pushed rs4 s).callEn
 
 theorem callPre : CallPre Proof.Aes.expandKeyX86 rs4 (eRd (s.gpr .esp) Kp KL) (eWr W S) s := by
   obtain ⟨a0, a1, a2, a3⟩ := h.args
-  have hK : (BitVec.ofNat 32 KL).toNat = KL := eq_ofNat rfl (by rcases h.klen with h | h | h <;> omega)
+  have hK : (BitVec.ofNat 32 KL).toNat = KL := eq_ofNat rfl (by rcases h.klen with h | h | h <;> omega_arith)
   have he := h.esp
   have eA : argAddr (pushed rs4 s).callEntry 0 = (s.gpr .esp - BitVec.ofNat 32 16).setWidth 64 := by
     rw [callEntry_argAddr0]; rfl
   have eSp : (pushed rs4 s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 (16 + 4) := by
     rw [callEntry_esp']; rfl
-  have bA : Region.Sub (below (s.gpr .esp) 16) (below (s.gpr .esp) 20) := below_sub (by omega) he
-  have bR := sub_ret (E := s.gpr .esp) (k := 16) (b := 20) (by omega) he
+  have bA : Region.Sub (below (s.gpr .esp) 16) (below (s.gpr .esp) 20) := below_sub (by omega_arith) he
+  have bR := sub_ret (E := s.gpr .esp) (k := 16) (b := 20) (by omega_arith) he
   refine ⟨?_, ?_, ?_⟩
   · simp only [Proof.Aes.expandKeyX86, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, eA, eSp, hK]
     refine ⟨trivial, trivial, h.kw, h.ks, h.ws, h.bW.sub_left bA, h.bS.sub_left bA,
       h.bW.sub_left bR, h.bS.sub_left bR, h.fK, h.fW, h.fS, ?_, h.klen⟩
-    rw [sub_toNat (by omega)]; have := (s.gpr .esp).isLt; omega
+    rw [sub_toNat (by omega_arith)]; have := (s.gpr .esp).isLt; omega_arith
   · intro a k ⟨r, hr, hcn⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -652,16 +652,16 @@ end EArgs
 
 theorem ek_call {s : State} {Kp W S : BitVec 32} {KL : Nat} (h : EArgs s Kp W S KL) :
     WP isa (call4 v.expand.name v.expand.code) s (EPost s Kp W S KL) := by
-  have hK : (BitVec.ofNat 32 KL).toNat = KL := eq_ofNat rfl (by rcases h.klen with h | h | h <;> omega)
+  have hK : (BitVec.ofNat 32 KL).toNat = KL := eq_ofNat rfl (by rcases h.klen with h | h | h <;> omega_arith)
   have he := h.esp
   refine WP.callWith (rs := rs4) (k := Proof.Aes.expandKeyX86) v.expandOk (ek_nosp v)
-    (by simp) hrs4 (by rw [(ek_stack v)]; simp only [List.length_cons, List.length_nil]; omega) h.callPre
+    (by simp) hrs4 (by rw [(ek_stack v)]; simp only [List.length_cons, List.length_nil]; omega_arith) h.callPre
     fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   obtain ⟨a0, a1, a2, -⟩ := h.args
   rw [(ek_stack v)] at f'
   refine ⟨rd', wr', cs', f'.mono fun r hr => by simpa using hr, ?_⟩
   simp only [Proof.Aes.expandKeyX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, hK, m₂] at post
-  rw [post, entry_bytes h.fit hrs4 (by simp) he h.bK (by rcases h.klen with h | h | h <;> omega)]
+  rw [post, entry_bytes h.fit hrs4 (by simp) he h.bK (by rcases h.klen with h | h | h <;> omega_arith)]
 
 theorem ek_rel {Kp W S E : BitVec 32} {KL : Nat} {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → EArgs s₁ Kp W S KL ∧ EArgs s₂ Kp W S KL ∧ s₁.gpr .esp = E ∧ s₂.gpr .esp = E) :
@@ -678,7 +678,7 @@ theorem ek_rel {Kp W S E : BitVec 32} {KL : Nat} {P : State → State → Prop}
   obtain ⟨b0, b1, b2, b3⟩ := h₂.args
   refine ⟨by simp only [State.withRegions_gpr, callEntry_esp', e₁, e₂], fun i hi => ?_⟩
   simp only [arg_withRegions]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
   · rw [a0, b0]
   · rw [a1, b1]
   · rw [a2, b2]

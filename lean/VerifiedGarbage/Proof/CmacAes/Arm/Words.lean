@@ -66,11 +66,11 @@ theorem xw_ok {t₁ t₂ pb qb cb : Reg} {pd qd cd : Nat} {is : List Instr} {s :
 /-- Word `i` of a block that does not wrap the 32-bit space. -/
 theorem addr_word {b : BitVec 32} {d : Nat} (i : Nat) (h : b.toNat + d + 16 ≤ 2 ^ 32) (hi : i ≤ 12) :
     State.addr (b + BitVec.ofNat 32 (d + i)) = State.addr b + BitVec.ofNat 64 d + BitVec.ofNat 64 i := by
-  rw [addr_add (by omega), Offset.add_add]
+  rw [addr_add (by omega_arith), Offset.add_add]
 
 theorem in_word {rs : List Region} {P : Addr} (h : Covers [⟨P, 16⟩] rs) {i : Nat} (hi : i ≤ 12) :
     InRegions rs (P + BitVec.ofNat 64 i) 4 :=
-  h _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base P (by omega) (by omega)⟩
+  h _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base P (by omega_arith) (by omega_arith)⟩
 
 theorem in_word0 {rs : List Region} {P : Addr} (h : Covers [⟨P, 16⟩] rs) : InRegions rs P 4 := by
   have c := Offset.contains_base P (d := 0) (n := 4) (k := 16) (by decide) (by decide)
@@ -91,12 +91,12 @@ theorem xorBlk_ok {t₁ t₂ pb qb cb : Reg} {pd qd cd : Nat} {is : List Instr} 
       WP isa (.block is) s' Q) :
     WP isa (.block (xorBlk t₁ t₂ pb qb cb pd qd cd ++ is)) s Q := by
   simp only [xorBlk, List.cons_append, List.nil_append]
-  refine xw_ok h12 hq₁ hc₁ hc₂ (by omega) (by omega) (by omega) (addr_add (by omega)) (addr_add (by omega))
-    (addr_add (by omega)) (in_word0 rP) (in_word0 rQ) (in_word0 wC) fun s₁ g₁ => ?_
+  refine xw_ok h12 hq₁ hc₁ hc₂ (by omega_arith) (by omega_arith) (by omega_arith) (addr_add (by omega_arith)) (addr_add (by omega_arith))
+    (addr_add (by omega_arith)) (in_word0 rP) (in_word0 rQ) (in_word0 wC) fun s₁ g₁ => ?_
   have e₁ : ∀ r, r ≠ t₁ → r ≠ t₂ → s₁.gpr r = s.gpr r := g₁.gpr
   refine xw_ok (P := State.addr (s.gpr pb) + BitVec.ofNat 64 pd + BitVec.ofNat 64 4)
     (Q' := State.addr (s.gpr qb) + BitVec.ofNat 64 qd + BitVec.ofNat 64 4)
-    (C := State.addr (s.gpr cb) + BitVec.ofNat 64 cd + BitVec.ofNat 64 4) h12 hq₁ hc₁ hc₂ (by omega) (by omega) (by omega)
+    (C := State.addr (s.gpr cb) + BitVec.ofNat 64 cd + BitVec.ofNat 64 4) h12 hq₁ hc₁ hc₂ (by omega_arith) (by omega_arith) (by omega_arith)
     (by rw [e₁ _ hp₁ hp₂]; exact addr_word 4 fp (by decide))
     (by rw [e₁ _ hq₁ hq₂]; exact addr_word 4 fq (by decide))
     (by rw [e₁ _ hc₁ hc₂]; exact addr_word 4 fc (by decide))
@@ -105,7 +105,7 @@ theorem xorBlk_ok {t₁ t₂ pb qb cb : Reg} {pd qd cd : Nat} {is : List Instr} 
   have e₂ : ∀ r, r ≠ t₁ → r ≠ t₂ → s₂.gpr r = s.gpr r := fun r h₁ h₂ => by rw [g₂.gpr r h₁ h₂, e₁ r h₁ h₂]
   refine xw_ok (P := State.addr (s.gpr pb) + BitVec.ofNat 64 pd + BitVec.ofNat 64 8)
     (Q' := State.addr (s.gpr qb) + BitVec.ofNat 64 qd + BitVec.ofNat 64 8)
-    (C := State.addr (s.gpr cb) + BitVec.ofNat 64 cd + BitVec.ofNat 64 8) h12 hq₁ hc₁ hc₂ (by omega) (by omega) (by omega)
+    (C := State.addr (s.gpr cb) + BitVec.ofNat 64 cd + BitVec.ofNat 64 8) h12 hq₁ hc₁ hc₂ (by omega_arith) (by omega_arith) (by omega_arith)
     (by rw [e₂ _ hp₁ hp₂]; exact addr_word 8 fp (by decide))
     (by rw [e₂ _ hq₁ hq₂]; exact addr_word 8 fq (by decide))
     (by rw [e₂ _ hc₁ hc₂]; exact addr_word 8 fc (by decide))
@@ -115,7 +115,7 @@ theorem xorBlk_ok {t₁ t₂ pb qb cb : Reg} {pd qd cd : Nat} {is : List Instr} 
   have e₃ : ∀ r, r ≠ t₁ → r ≠ t₂ → s₃.gpr r = s.gpr r := fun r h₁ h₂ => by rw [g₃.gpr r h₁ h₂, e₂ r h₁ h₂]
   refine xw_ok (P := State.addr (s.gpr pb) + BitVec.ofNat 64 pd + BitVec.ofNat 64 12)
     (Q' := State.addr (s.gpr qb) + BitVec.ofNat 64 qd + BitVec.ofNat 64 12)
-    (C := State.addr (s.gpr cb) + BitVec.ofNat 64 cd + BitVec.ofNat 64 12) h12 hq₁ hc₁ hc₂ (by omega) (by omega) (by omega)
+    (C := State.addr (s.gpr cb) + BitVec.ofNat 64 cd + BitVec.ofNat 64 12) h12 hq₁ hc₁ hc₂ (by omega_arith) (by omega_arith) (by omega_arith)
     (by rw [e₃ _ hp₁ hp₂]; exact addr_word 12 fp (by decide))
     (by rw [e₃ _ hq₁ hq₂]; exact addr_word 12 fq (by decide))
     (by rw [e₃ _ hc₁ hc₂]; exact addr_word 12 fc (by decide))
@@ -136,14 +136,14 @@ theorem zeroBlk_ok {z b : Reg} {d : Nat} {is : List Instr} {s : State} {Q : Stat
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → WP isa (.block is) s' Q) :
     WP isa (.block (zeroBlk z b d ++ is)) s Q := by
   simp only [zeroBlk, List.cons_append, List.nil_append]
-  refine wp_str (by omega) (addr_add (by omega)) (in_word0 wB) fun s₁ u₁ => ?_
-  refine wp_str (a := State.addr (s.gpr b) + BitVec.ofNat 64 d + BitVec.ofNat 64 4) (by omega)
+  refine wp_str (by omega_arith) (addr_add (by omega_arith)) (in_word0 wB) fun s₁ u₁ => ?_
+  refine wp_str (a := State.addr (s.gpr b) + BitVec.ofNat 64 d + BitVec.ofNat 64 4) (by omega_arith)
     (by rw [u₁.gpr]; exact addr_word 4 fb (by decide))
     (by rw [u₁.wr]; exact in_word wB (by decide)) fun s₂ u₂ => ?_
-  refine wp_str (a := State.addr (s.gpr b) + BitVec.ofNat 64 d + BitVec.ofNat 64 8) (by omega)
+  refine wp_str (a := State.addr (s.gpr b) + BitVec.ofNat 64 d + BitVec.ofNat 64 8) (by omega_arith)
     (by rw [u₂.gpr, u₁.gpr]; exact addr_word 8 fb (by decide))
     (by rw [u₂.wr, u₁.wr]; exact in_word wB (by decide)) fun s₃ u₃ => ?_
-  refine wp_str (a := State.addr (s.gpr b) + BitVec.ofNat 64 d + BitVec.ofNat 64 12) (by omega)
+  refine wp_str (a := State.addr (s.gpr b) + BitVec.ofNat 64 d + BitVec.ofNat 64 12) (by omega_arith)
     (by rw [u₃.gpr, u₂.gpr, u₁.gpr]; exact addr_word 12 fb (by decide))
     (by rw [u₃.wr, u₂.wr, u₁.wr]; exact in_word wB (by decide)) fun s₄ u₄ => k s₄ ?_ ?_ ?_ ?_ ?_
   · rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]

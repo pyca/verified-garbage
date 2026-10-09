@@ -130,8 +130,8 @@ abbrev entryR (W : Addr) : Region := ⟨W + BitVec.ofNat 64 128, 120⟩
 theorem entry_contains (W : Addr) {d : Nat} (h₁ : 128 ≤ d) (h₂ : d + 8 ≤ 248) :
     (entryR W).Contains (W + BitVec.ofNat 64 d) 8 := by
   rw [show W + BitVec.ofNat 64 d = (W + BitVec.ofNat 64 128) + BitVec.ofNat 64 (d - 128) from
-    (Offset.add_add_eq W (by omega)).symm]
-  exact Offset.contains_base _ (by omega) (by omega)
+    (Offset.add_add_eq W (by omega_arith)).symm]
+  exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 theorem entryMem_frame (m : Mem) (W : Addr) (g : Reg → BitVec 64) : Frame [entryR W] m (entryMem m W g) := by
   have c (d : Nat) (h₁ : 128 ≤ d) (h₂ : d + 8 ≤ 248) := entry_contains W h₁ h₂
@@ -150,8 +150,8 @@ theorem entryMem_saved (m : Mem) (W : Addr) {g : Reg → BitVec 64} {s₀ : Stat
   · have c (d : Nat) (h₁ : 216 ≤ d) (h₂ : d + 8 ≤ 248) :
         (⟨W + BitVec.ofNat 64 216, 32⟩ : Region).Contains (W + BitVec.ofNat 64 d) 8 := by
       rw [show W + BitVec.ofNat 64 d = (W + BitVec.ofNat 64 216) + BitVec.ofNat 64 (d - 216) from
-        (Offset.add_add_eq W (by omega)).symm]
-      exact Offset.contains_base _ (by omega) (by omega)
+        (Offset.add_add_eq W (by omega_arith)).symm]
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)
     exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 216 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (c 224 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (c 232 (by decide) (by decide))).writeW

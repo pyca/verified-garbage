@@ -42,46 +42,46 @@ structure PlainInv (s₀ : State) (k : Nat) (s : State) : Prop where
 
 theorem key_in {s₀ : State} (hp : UPre s₀) {o : Nat} (h : o + 16 ≤ 240) :
     InRegions (s₀.rd ++ s₀.wr) (W s₀ + BitVec.ofNat 64 o) 16 :=
-  ⟨schR s₀, by rw [hp.rd]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨schR s₀, by rw [hp.rd]; simp, Offset.contains_base _ h (by omega_arith)⟩
 
 theorem setupKeys_ok {s₀ : State} (hp : UPre s₀) : WP isa (.block setupKeys) s₀ (PlainInv s₀ 0) := by
   have hR := hp.rounds
   have hx1 := x1_ofNat s₀
   rw [setupKeys, WP.block_append_iff]
-  refine WP.mono (loads_ok s₀ (fun j hj => key_in hp (by omega)) 13 (Nat.le_refl _))
+  refine WP.mono (loads_ok s₀ (fun j hj => key_in hp (by omega_arith)) 13 (Nat.le_refl _))
     fun s₁ ⟨e₁, f₁⟩ => ?_
   have g : ∀ r, s₁.gpr r = s₀.gpr r := fun r => f₁.gpr r (by simp)
   have e9 : s₁.gpr .x0 + s₁.gpr .x1 <<< 4 = W s₀ + BitVec.ofNat 64 (16 * R s₀) := by
     rw [g, g, VG.Proof.Aes.AArch64.shl4]
   have e9' : W s₀ + BitVec.ofNat 64 (16 * R s₀) - BitVec.ofNat 64 16 =
       W s₀ + BitVec.ofNat 64 (16 * (R s₀ - 1)) := by
-    rw [Offset.add_ofNat_sub _ (by omega), show 16 * R s₀ - 16 = 16 * (R s₀ - 1) by omega]
+    rw [Offset.add_ofNat_sub _ (by omega_arith), show 16 * R s₀ - 16 = 16 * (R s₀ - 1) by omega_arith]
   have rdwr : s₁.rd ++ s₁.wr = s₀.rd ++ s₀.wr := by rw [f₁.rd, f₁.wr]
   rw [WP.block_cons_iff]; refine ⟨_, exec_lsl_x (sh := 4) (by decide), ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_add, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_ldrq (off := 0) (by decide) (by
     simp only [State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, e9,
       BitVec.add_zero, rdwr]
-    exact key_in hp (by omega)), ?_⟩
+    exact key_in hp (by omega_arith)), ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_subImm_x (imm := 16) (by decide), ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_ldrq (off := 0) (by decide) (by
     simp only [State.setV, State.write, State.read, ite_true, reduceCtorEq, ite_false,
       BitVec.setWidth_eq, e9, e9', BitVec.add_zero, rdwr]
-    exact key_in hp (by omega)), ?_⟩
+    exact key_in hp (by omega_arith)), ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_subImm_x (imm := 10) (by decide), ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_subImm_x (imm := 12) (by decide), ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, exec_ldrq (off := 0) (by decide) (by
     simp only [State.setV, State.write, reduceCtorEq, ite_false, BitVec.add_zero, rdwr, g]
     exact ⟨stR s₀, by rw [hp.wr]; simp, Region.contains_self _ _⟩), WP.block_nil ?_⟩
-  have hL : ∀ j, j ≤ R s₀ → 16 * j + 16 ≤ 16 * (R s₀ + 1) := fun j hj => by omega
+  have hL : ∀ j, j ≤ R s₀ → 16 * j + 16 ≤ 16 * (R s₀ + 1) := fun j hj => by omega_arith
   refine ⟨⟨hR, fun j hj => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, f₁.rd, f₁.wr, ?_⟩
   · simp only [State.setV, State.write, (kreg_ne j).1, (kreg_ne j).2, ite_false,
       show kreg j ≠ .v0 by unfold kreg; split <;> decide]
-    rw [e₁ j (by omega)]
-    exact keyIs_readW _ _ (hL j (by omega))
+    rw [e₁ j (by omega_arith)]
+    exact keyIs_readW _ _ (hL j (by omega_arith))
   · simp only [State.setV, State.write, State.read, ite_true, reduceCtorEq, ite_false,
       BitVec.setWidth_eq, e9, e9', BitVec.add_zero, f₁.mem]
-    exact keyIs_readW _ _ (hL _ (by omega))
+    exact keyIs_readW _ _ (hL _ (by omega_arith))
   · simp only [State.setV, State.write, State.read, ite_true, reduceCtorEq, ite_false,
       BitVec.setWidth_eq, e9, BitVec.add_zero, f₁.mem]
     exact keyIs_readW _ _ (hL _ (Nat.le_refl _))
@@ -146,7 +146,7 @@ theorem absorb_ok {nr : Nat} {w : List Byte} (s : State)
     simp only [List.mem_singleton] at hb; subst hb
     simp only [State.setV, ite_true, reduceCtorEq, ite_false, BitVec.add_zero, hc]
     rw [folded_xor]
-    exact round_st (hK.full 0 (by have := hK.rounds; omega)) (rnds_zero w _).symm
+    exact round_st (hK.full 0 (by have := hK.rounds; omega_arith)) (rnds_zero w _).symm
   · intro r hr
     simp only [List.mem_cons, not_or] at hr
     simp [State.setV, hr.1, hr.2]
@@ -159,10 +159,10 @@ theorem rounds_tail_ok {nr : Nat} {w : List Byte} {x : VReg → Spec.Aes.State} 
   | 0, _ => WP.block_nil ⟨hI, VFrame.refl _ _⟩
   | k + 1, hk => by
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (rounds_tail_ok hK hI k (by omega)) fun s₁ ⟨hI₁, hf₁⟩ => ?_
+    refine WP.mono (rounds_tail_ok hK hI k (by omega_arith)) fun s₁ ⟨hI₁, hf₁⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     have br : BlockRegs [.v0] := ⟨by decide, by decide⟩
-    exact WP.mono (round_ok br (j := k + 1) (by omega) (hK.of_frame hf₁ br) hI₁)
+    exact WP.mono (round_ok br (j := k + 1) (by omega_arith) (hK.of_frame hf₁ br) hI₁)
       fun s' ⟨hI', hf'⟩ => ⟨hI', hf₁.trans hf'⟩
 
 theorem folded_last_ok {nr : Nat} {w : List Byte} {x : VReg → Spec.Aes.State} {s : State}
@@ -181,9 +181,9 @@ theorem tail_ok {nr middle : Nat} {w : List Byte} {x : VReg → Spec.Aes.State} 
     (hK : Keys nr w s) (hI : RInv [.v0] w x 1 s) (hm : middle + 2 = nr) :
     WP isa (tail middle) s fun s' => st (s'.v .v0 ^^^ s'.v .v30) = Spec.Aes.cipher nr w (x .v0) ∧ VFrame [.v0] s s' := by
   have br : BlockRegs [.v0] := ⟨by decide, by decide⟩
-  refine WP.seq (WP.mono (rounds_tail_ok hK hI middle (by omega)) fun s₁ ⟨hI₁, hf₁⟩ => ?_)
+  refine WP.seq (WP.mono (rounds_tail_ok hK hI middle (by omega_arith)) fun s₁ ⟨hI₁, hf₁⟩ => ?_)
   have hI' : RInv [.v0] w x (nr - 1) s₁ := by
-    rwa [show middle + 1 = nr - 1 by omega] at hI₁
+    rwa [show middle + 1 = nr - 1 by omega_arith] at hI₁
   exact WP.mono (folded_last_ok (hK.of_frame hf₁ br) hI')
     fun s' ⟨hv, hf'⟩ => ⟨hv, hf₁.trans hf'⟩
 
@@ -204,7 +204,7 @@ theorem body_ok {s₀ : State} (hp : UPre s₀) {middle : Nat} (hm : middle + 2 
     (h : Inv s₀ k s) : WP isa (body middle) s (Inv s₀ (k + 1)) := by
   have hin : InRegions (s.rd ++ s.wr) (s.gpr .x3 + BitVec.ofNat 64 0) 16 := by
     rw [h.rd, h.wr, h.x3, BitVec.add_zero, hp.rd]
-    exact ⟨dataR s₀, by simp, Offset.contains_base _ (by omega) (by have := hp.data_wrap; omega)⟩
+    exact ⟨dataR s₀, by simp, Offset.contains_base _ (by omega_arith) (by have := hp.data_wrap; omega_arith)⟩
   refine WP.seq (WP.mono (absorb_ok s hin h.keys h.combo) fun s₁ ⟨e₁, f₁⟩ => ?_)
   have br : BlockRegs [.v0, .v1] := ⟨by decide, by decide⟩
   refine WP.seq (WP.mono (tail_ok (h.keys.of_frame f₁ br) e₁ hm) fun s₂ ⟨e₂, f₂⟩ => ?_)
@@ -218,10 +218,10 @@ theorem body_ok {s₀ : State} (hp : UPre s₀) {middle : Nat} (hm : middle + 2 
   · rw [f₃.gpr _ (by decide), g, h.x2]
   · rw [e3, g, h.x3]
     change Dp s₀ + BitVec.ofNat 64 (16 * k) + BitVec.ofNat 64 16 = _
-    exact Offset.add_add_eq _ (by omega)
+    exact Offset.add_add_eq _ (by omega_arith)
   · rw [e4, g, h.x4]
     change BitVec.ofNat 64 (N s₀ - k) - BitVec.ofNat 64 1 = _
-    rw [Offset.ofNat_sub_ofNat (by omega)]
+    rw [Offset.ofNat_sub_ofNat (by omega_arith)]
     congr 1
   · rw [f₃.mem, f₂.mem, f₁.mem, h.mem]
   · rw [f₃.rd, f₂.rd, f₁.rd, h.rd]
@@ -247,13 +247,13 @@ theorem loop_ok {s₀ : State} (hp : UPre s₀) {middle : Nat} (hm : middle + 2 
   rintro n s ⟨k, rfl, hk, h⟩
   refine WP.mono (body_ok hp hm hk h) fun s' h' => ?_
   have hN : N s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
-  have ev := eval_count (n := N s₀ - (k + 1)) (by omega) h'.x4
+  have ev := eval_count (n := N s₀ - (k + 1)) (by omega_arith) h'.x4
   by_cases hz : N s₀ - (k + 1) = 0
   · left
     refine ⟨by rw [ev]; simp [hz], ?_⟩
-    rwa [show N s₀ = k + 1 by omega]
+    rwa [show N s₀ = k + 1 by omega_arith]
   · right
-    exact ⟨by rw [ev]; simp [hz], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
+    exact ⟨by rw [ev]; simp [hz], N s₀ - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, h'⟩
 
 theorem loops_ok {s₀ : State} (hp : UPre s₀) {s : State}
     (hn : 0 < N s₀) (h : Inv s₀ 0 s) : WP isa loops s (Inv s₀ (N s₀)) := by
@@ -262,17 +262,17 @@ theorem loops_ok {s₀ : State} (hp : UPre s₀) {s : State}
   obtain h10 | h12 | h14 := h.keys.rounds
   · rw [h10] at hx6
     exact WP.ite true (by simp only [AArch64.eval, State.read, hx6]; decide)
-      (fun _ => loop_ok hp (by omega) hn h) (fun h => absurd h (by decide))
+      (fun _ => loop_ok hp (by omega_arith) hn h) (fun h => absurd h (by decide))
   · rw [h12] at hx6 hx7
     refine WP.ite false (by simp only [AArch64.eval, State.read, hx6]; decide)
       (fun h => absurd h (by decide)) fun _ => ?_
     exact WP.ite true (by simp only [AArch64.eval, State.read, hx7]; decide)
-      (fun _ => loop_ok hp (by omega) hn h) (fun h => absurd h (by decide))
+      (fun _ => loop_ok hp (by omega_arith) hn h) (fun h => absurd h (by decide))
   · rw [h14] at hx6 hx7
     refine WP.ite false (by simp only [AArch64.eval, State.read, hx6]; decide)
       (fun h => absurd h (by decide)) fun _ => ?_
     exact WP.ite false (by simp only [AArch64.eval, State.read, hx7]; decide)
-      (fun h => absurd h (by decide)) (fun _ => loop_ok hp (by omega) hn h)
+      (fun h => absurd h (by decide)) (fun _ => loop_ok hp (by omega_arith) hn h)
 
 theorem store_bytes (m : Mem) (p : Addr) (v : BitVec 128) :
     Spec.Aes.bytesAt (m.write p 16 v) p 16 = bytes v := by
@@ -282,7 +282,7 @@ theorem store_bytes (m : Mem) (p : Addr) (v : BitVec 128) :
     have hi' : i < 16 := by simpa [Spec.Aes.bytesAt] using hi
     simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, bytes, Vector.getElem_toList, st, Vector.getElem_ofFn, vbyte]
     change (if (p + BitVec.ofNat 64 i - p).toNat < 16 then _ else _) = _
-    rw [Mem.sub_ofNat_toNat p (by omega), ite_eq_left hi']
+    rw [Mem.sub_ofNat_toNat p (by omega_arith), ite_eq_left hi']
 
 theorem correct_wp {s₀ : State} (hp : UPre s₀) : WP isa update s₀ (updateAArch64.post s₀) := by
   have ev : isa.eval (.zero .x .x4) s₀ = some (decide (N s₀ = 0)) := by
@@ -296,7 +296,7 @@ theorem correct_wp {s₀ : State} (hp : UPre s₀) : WP isa update s₀ (updateA
     simp [updateAArch64, Spec.Cmac.blocksAt, hn, Spec.Cmac.chain]
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
     refine WP.seq (WP.mono (setup_ok hp) fun s₁ h₁ => ?_)
-    refine WP.seq (WP.mono (loops_ok hp (by omega) h₁) fun s₂ h₂ => ?_)
+    refine WP.seq (WP.mono (loops_ok hp (by omega_arith) h₁) fun s₂ h₂ => ?_)
     rw [WP.block_cons_iff]
     refine ⟨_, rfl, ?_⟩
     rw [WP.block_cons_iff]

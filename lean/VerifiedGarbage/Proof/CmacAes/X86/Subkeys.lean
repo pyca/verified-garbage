@@ -24,7 +24,7 @@ theorem bswap_eq (a : BitVec 32) : bswap a = byteRev32 a := rfl
 theorem add_self_shl (x : BitVec 32) : x + x = x <<< 1 := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 /-- The memory after `dbl src dst`, with `ebx` pointing at `A`. -/
 def dblMem (m : Mem) (A : Addr) (src dst : Nat) : Mem :=
@@ -56,7 +56,7 @@ theorem dbl_wp {is : List Instr} {s : State} {Q : State → Prop} {K : BitVec 32
       s'.mem = dblMem s.mem (K.setWidth 64) src dst → s'.rd = s.rd → s'.wr = s.wr → WP isa (.block is) s' Q) :
     WP isa (.block (dbl src dst ++ is)) s Q := by
   simp only [dbl, List.cons_append, List.nil_append]
-  refine wp_movm (a := K.setWidth 64 + BitVec.ofNat 64 src) (by rw [ea_at', hb]; exact addr_eq (by omega))
+  refine wp_movm (a := K.setWidth 64 + BitVec.ofNat 64 src) (by rw [ea_at', hb]; exact addr_eq (by omega_arith))
     (in_word0 rS) fun s₁ u₁ => ?_
   refine wp_movm (a := K.setWidth 64 + BitVec.ofNat 64 src + BitVec.ofNat 64 4)
     (by rw [ea_at', u₁.other _ (by decide), hb]; exact addr_word 4 fs (by decide))
@@ -117,7 +117,7 @@ theorem dbl_wp {is : List Instr} {s : State} {Q : State → Prop} {K : BitVec 32
     simp (disch := decide) only [u₃₁.gpr, u₃₁.other, u₃₀.gpr, u₃₀.other, u₂₉.gpr, u₂₉.other, u₂₈.gpr, u₂₈.other, u₂₇.gpr, u₂₇.other, u₂₆.gpr, u₂₆.other, u₂₅.gpr, u₂₅.other, u₂₄.gpr, u₂₄.other, u₂₃.gpr, u₂₃.other, u₂₂.gpr, u₂₂.other, u₂₁.gpr, u₂₁.other, u₂₀.gpr, u₂₀.other, u₁₉.gpr, u₁₉.other, u₁₈.gpr, u₁₈.other, u₁₇.gpr, u₁₇.other, u₁₆.gpr, u₁₆.other, u₁₅.gpr, u₁₅.other, u₁₄.gpr, u₁₄.other, u₁₃.gpr, u₁₃.other, u₁₂.gpr, u₁₂.other, u₁₁.gpr, u₁₁.other, u₁₀.gpr, u₁₀.other, u₉.gpr, u₉.other,
       bswap_eq, add_self_shl, Proof.Cmac.dblW0, Proof.Cmac.dblW3, and_self]
   obtain ⟨v₀, v₁, v₂, v₃⟩ := v
-  refine wp_store (a := K.setWidth 64 + BitVec.ofNat 64 dst) (by rw [ea_at', gb]; exact addr_eq (by omega))
+  refine wp_store (a := K.setWidth 64 + BitVec.ofNat 64 dst) (by rw [ea_at', gb]; exact addr_eq (by omega_arith))
     (by rw [wr31]; exact in_word0 wD) fun s₃₂ v₃₂ => ?_
   refine wp_store (a := K.setWidth 64 + BitVec.ofNat 64 dst + BitVec.ofNat 64 4)
     (by rw [ea_at', v₃₂.gpr, gb]; exact addr_word 4 fd (by decide))
@@ -215,7 +215,7 @@ theorem ret_stk (s₀ : State) : (retR s₀).Disjoint (stkR s₀) := by
 
 theorem sSaved_frame (s₀ : State) : Frame [scR s₀] s₀.mem (sSaved s₀) :=
   Spill.saveMem_frame List.mem_cons_self _ _ _ _ fun p hp =>
-    have := saved_bound p hp; Offset.contains_base _ (by omega) (by omega)
+    have := saved_bound p hp; Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 section
 variable {s₀ : State} (hp : SPre s₀)
@@ -229,18 +229,18 @@ theorem SPre.argA {i : Nat} (hi : i < 4) : argAddr s₀ i = argAddr s₀ 0 + Bit
   simp only [argAddr]
   rw [show (s₀.gpr .esp + BitVec.ofNat 32 (4 + 4 * i)).setWidth 64 = addr (s₀.gpr .esp) (4 + 4 * i) from rfl,
     show (s₀.gpr .esp + BitVec.ofNat 32 (4 + 4 * 0)).setWidth 64 = addr (s₀.gpr .esp) (4 + 4 * 0) from rfl,
-    addr_eq (by omega), addr_eq (by omega), Offset.add_add]
+    addr_eq (by omega_arith), addr_eq (by omega_arith), Offset.add_add]
 
 theorem SPre.arg_sub {i : Nat} (hi : i < 4) : Region.Sub ⟨argAddr s₀ i, 4⟩ (kArgsR s₀) := by
-  rw [hp.argA hi]; exact Offset.sub_base _ (by omega)
+  rw [hp.argA hi]; exact Offset.sub_base _ (by omega_arith)
 
 theorem SPre.arg_in {i : Nat} (hi : i < 4) : InRegions (s₀.rd ++ s₀.wr) (argAddr s₀ i) 4 := by
   refine ⟨kArgsR s₀, by simp [hp.rd], ?_⟩
-  rw [hp.argA hi]; exact Offset.contains_base _ (by omega) (by omega)
+  rw [hp.argA hi]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 theorem SPre.args_stk : (kArgsR s₀).Disjoint (stkR s₀) := by
   have : (s₀.gpr .esp).toNat + 20 ≤ 2 ^ 32 := hp.esp_fit
-  have e : argAddr s₀ 0 = (E s₀).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega)
+  have e : argAddr s₀ 0 = (E s₀).setWidth 64 + BitVec.ofNat 64 4 := addr_eq (by omega_arith)
   show Region.Disjoint ⟨argAddr s₀ 0, 16⟩ _
   rw [e]; exact (Offset.disjoint_below_above _ (by decide)).symm
 
@@ -257,8 +257,8 @@ theorem SPre.arg_keep {m : Mem} (hf : Frame (SBig s₀) s₀.mem m) {i : Nat} (h
 theorem SPre.sched_bytes {m : Mem} (hf : Frame (SBig s₀) s₀.mem m) :
     Spec.Aes.bytesAt m ((W s₀).setWidth 64) (16 * (R s₀ + 1)) =
       Spec.Aes.bytesAt s₀.mem ((W s₀).setWidth 64) (16 * (R s₀ + 1)) := by
-  have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega
-  refine Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by omega)
+  have hR : 16 * (R s₀ + 1) ≤ 240 := by rcases hp.rounds with h | h | h <;> omega_arith
+  refine Proof.Cmac.bytesAt_frame hf (fun r hr => ?_) (by omega_arith)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact hp.sch_k.sub_left (Region.sub_prefix hR)
@@ -275,7 +275,7 @@ theorem SPre.ret_keep {m : Mem} (hf : Frame (SBig s₀) s₀.mem m) :
     · exact ret_stk s₀) (by decide)
 
 theorem SPre.cA : (Sc s₀ + BitVec.ofNat 32 2048).setWidth 64 = (Sc s₀).setWidth 64 + BitVec.ofNat 64 2048 :=
-  addr_eq (by have := hp.scr_fit; omega)
+  addr_eq (by have := hp.scr_fit; omega_arith)
 
 end
 
@@ -319,10 +319,10 @@ theorem spre_wp {s₀ : State} (hp : SPre s₀) : WP isa (.block subkeysPre) s�
   rw [subkeysPre_eq]
   refine wp_arg (s₀ := s₀) rfl (hp.arg_in (by decide)) rfl fun s₁ u₁ => ?_
   have h₁ : s₁.gpr .eax = Sc s₀ := u₁.gpr
-  refine Spill.save_ofNat_ok saved saved_fits (by rw [h₁]; omega) (fun p hp' => ?_) fun s₂ u₂ => ?_
+  refine Spill.save_ofNat_ok saved saved_fits (by rw [h₁]; omega_arith) (fun p hp' => ?_) fun s₂ u₂ => ?_
   · have hb := saved_bound p hp'
     rw [h₁, u₁.wr, hp.wr]
-    exact ⟨scR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨scR s₀, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have hm₂ : s₂.mem = sSaved s₀ := by
     rw [u₂.mem, u₁.mem, h₁, sSaved]
     exact Spill.saveMem_congr _ _ (fun _ _ => rfl) fun p hp' => u₁.other _ (saved_ne_eax p hp')
@@ -336,13 +336,13 @@ theorem spre_wp {s₀ : State} (hp : SPre s₀) : WP isa (.block subkeysPre) s�
   have p₄ : s₄.gpr .ebp = Sc s₀ := by rw [u₄.other _ (by decide), u₃.gpr, u₂.gpr, h₁]
   have b₄ : s₄.gpr .ebx = Kb s₀ := u₄.gpr
   have w₄ : s₄.wr = s₀.wr := by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]
-  refine zero4_ok (b := .ebp) (d := 2048) (by decide) (by rw [p₄]; omega) ?_ fun s₅ g₅ m₅ rd₅ wr₅ => ?_
+  refine zero4_ok (b := .ebp) (d := 2048) (by decide) (by rw [p₄]; omega_arith) ?_ fun s₅ g₅ m₅ rd₅ wr₅ => ?_
   · rw [p₄, w₄, hp.wr]
     exact Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨scR s₀, by simp, 2048, rfl, by simp⟩
   have b₅ : s₅.gpr .ebx = Kb s₀ := by rw [g₅ _ (by decide), b₄]
-  refine zero4_ok (b := .ebx) (d := 0) (by decide) (by rw [b₅]; omega) ?_ fun s₆ g₆ m₆ rd₆ wr₆ => ?_
+  refine zero4_ok (b := .ebx) (d := 0) (by decide) (by rw [b₅]; omega_arith) ?_ fun s₆ g₆ m₆ rd₆ wr₆ => ?_
   · rw [b₅, add0, wr₅, w₄, hp.wr]
     exact Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -373,7 +373,7 @@ theorem spre_wp {s₀ : State} (hp : SPre s₀) : WP isa (.block subkeysPre) s�
     hp.sch_k.sub_right (Region.sub_prefix (by decide)), hp.sch_scr.sub_right (Region.sub_prefix (by decide)),
     ?_, ?_, (hp.k_scr.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide)),
     by rw [hb]; exact hp.b_sch, ?_, by rw [hb]; exact hp.b_k.sub_right (Region.sub_prefix (by decide)),
-    by rw [hb]; exact hp.b_scr.sub_right (Region.sub_prefix (by decide)), hp.sch_fit, ?_, by omega, by omega,
+    by rw [hb]; exact hp.b_scr.sub_right (Region.sub_prefix (by decide)), hp.sch_fit, ?_, by omega_arith, by omega_arith,
     ?_, ?_, ?_⟩, sp₁₁, rd₁₁, wr₁₁, mem₁₁⟩
   · rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr]
   · rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.gpr]; exact arg_ofNat s₀ 1
@@ -383,10 +383,10 @@ theorem spre_wp {s₀ : State} (hp : SPre s₀) : WP isa (.block subkeysPre) s�
   · rw [cA]; exact hp.sch_scr.sub_right (Offset.sub_base _ (by decide))
   · rw [cA]
     exact (hp.k_scr.symm.sub_left (Offset.sub_base _ (by decide))).sub_right (Region.sub_prefix (by decide))
-  · rw [cA]; exact Offset.disjoint_base _ (by decide) (by omega)
+  · rw [cA]; exact Offset.disjoint_base _ (by decide) (by omega_arith)
   · rw [hb, cA]; exact hp.b_scr.sub_right (Offset.sub_base _ (by decide))
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2048) (by decide),
-      Nat.mod_eq_of_lt (by omega)]; omega
+      Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
   · rw [rd₁₁, wr₁₁, hp.rd]
     exact Covers.of_sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -411,7 +411,7 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysX86.pre s₀) :
   have hk := hp.k_fit
   have hsc := hp.scr_fit
   have hR := hp.rounds
-  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hR with h | h | h <;> omega
+  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hR with h | h | h <;> omega_arith
   have cA := hp.cA
   have cK : ∀ d n, d + n ≤ 32 → Covers [⟨(Kb s₀).setWidth 64 + BitVec.ofNat 64 d, n⟩] s₀.wr := fun d n h => by
     rw [hp.wr]
@@ -451,11 +451,11 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysX86.pre s₀) :
   have wr₂ : s₂.wr = s₀.wr := by rw [h₂.wr, a.wr]
   -- The doubling.
   rw [subkeysPost_eq]
-  refine dbl_wp b₂ (by omega) (by omega) (by rw [rdwr₂]; exact cKr 0 16 (by decide))
+  refine dbl_wp b₂ (by omega_arith) (by omega_arith) (by rw [rdwr₂]; exact cKr 0 16 (by decide))
     (by rw [wr₂]; exact cK 0 16 (by decide)) fun s₃ g₃ m₃ rd₃ wr₃ => ?_
   have b₃ : s₃.gpr .ebx = Kb s₀ := by
     rw [g₃ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), b₂]
-  refine dbl_wp b₃ (by omega) (by omega) (by rw [rd₃, wr₃, rdwr₂]; exact cKr 0 16 (by decide))
+  refine dbl_wp b₃ (by omega_arith) (by omega_arith) (by rw [rd₃, wr₃, rdwr₂]; exact cKr 0 16 (by decide))
     (by rw [wr₃, wr₂]; exact cK 16 16 (by decide)) fun s₄ g₄ m₄ rd₄ wr₄ => ?_
   have f₄ : Frame [kR s₀, ⟨(Sc s₀).setWidth 64, 2064⟩, stkR s₀] (sSaved s₀) s₄.mem := by
     refine fr₂.trans (((dblMem_frame _ _ _ _).sub fun r hr => ?_).trans ((dblMem_frame _ _ _ _).sub fun r hr => ?_))
@@ -478,16 +478,16 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysX86.pre s₀) :
     rw [f₄.readW (r := ⟨(Sc s₀).setWidth 64 + BitVec.ofNat 64 d, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact hp.k_scr.symm.sub_left (Offset.sub_base _ (by omega))
-      · exact Offset.disjoint_base _ hb.1 (by omega)
-      · exact hp.b_scr.symm.sub_left (Offset.sub_base _ (by omega))) (by decide)]
+      · exact hp.k_scr.symm.sub_left (Offset.sub_base _ (by omega_arith))
+      · exact Offset.disjoint_base _ hb.1 (by omega_arith)
+      · exact hp.b_scr.symm.sub_left (Offset.sub_base _ (by omega_arith))) (by decide)]
     exact saveMem_slot _ _ _ hrd
   have hsc' : (arg s₀ 3).toNat + 2176 ≤ 2 ^ 32 := hsc
-  refine Spill.restore_ofNat_ok saved saved_fits (by rw [u₅.gpr]; omega) saved_ne_eax (fun p hp' => ?_)
+  refine Spill.restore_ofNat_ok saved saved_fits (by rw [u₅.gpr]; omega_arith) saved_ne_eax (fun p hp' => ?_)
     (fun p hp' => by rw [u₅.gpr, u₅.mem]; exact sl p.1 p.2 hp') fun s₆ r₆ => WP.block_nil ?_
   · have hb := saved_bound p hp'
     rw [u₅.gpr, u₅.rd, u₅.wr, rdwr₄, hp.rd, hp.wr]
-    exact ⟨scR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨scR s₀, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   refine ⟨⟨r₆.abi (by decide) (by decide) (by rw [u₅.other _ (by decide), esp₄]), ?_⟩, ?_⟩
   · rw [r₆.mem, u₅.mem]; exact hp.ret_keep big₄
   · show Spec.Aes.bytesAt s₆.mem ((Kb s₀).setWidth 64) 32 = _
@@ -499,7 +499,7 @@ theorem subkeys_wp {s₀ : State} (h0 : subkeysX86.pre s₀) :
       rw [m₄]
       exact Proof.Cmac.bytesAt_frame16 (dblMem_frame _ _ _ _) fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (Offset.disjoint_base _ (by decide) (by omega)).symm
+        exact (Offset.disjoint_base _ (by decide) (by omega_arith)).symm
     have hi : Spec.Aes.bytesAt s₄.mem ((Kb s₀).setWidth 64 + BitVec.ofNat 64 16) 16 =
         Spec.Cmac.dbl 16 (Spec.Aes.bytesAt s₃.mem ((Kb s₀).setWidth 64) 16) := by
       have := dblMem_bytes s₃.mem ((Kb s₀).setWidth 64) 0 16

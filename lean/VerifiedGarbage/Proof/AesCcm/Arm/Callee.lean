@@ -64,7 +64,7 @@ structure UPost (s : State) (W C D S : BitVec 32) (R n : Nat) (s' : State) : Pro
 theorem UArgs.pre {s : State} {W C D S : BitVec 32} {R n : Nat} (h : UArgs s W C D S R n) :
     Proof.CmacAes.Arm.updateArm.pre (view .r12 .lr s (uRd s W D n) (uWr C S)) := by
   have hR := toNat_rounds h.rounds
-  have hN : (BitVec.ofNat 32 n).toNat = n := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.hn; omega)
+  have hN : (BitVec.ofNat 32 n).toNat = n := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.hn; omega_arith)
   have hb := view_blw (ra := .r12) (rb := .lr) (rd := uRd s W D n) (wr := uWr C S) h.hsp
   have hslot : Region.Sub ⟨stackArgAddr (view .r12 .lr s (uRd s W D n) (uWr C S)) 0, 8⟩ (blw16 s) := by
     rw [view_argAddr h.hsp]; exact slot_sub
@@ -77,13 +77,13 @@ theorem UArgs.pre {s : State} {W C D S : BitVec 32} {R n : Nat} (h : UArgs s W C
   refine ⟨rfl, trivial, h.wc, h.ws, h.dc, h.ds, h.cs, (h.bc.sub_left slot_sub).symm,
     (h.bs.sub_left slot_sub).symm, h.bw.sub_left hb, h.bd.sub_left hb, h.bc.sub_left hb, h.bs.sub_left hb,
     h.fW, h.fC, h.fD, h.fS, ?_, ?_, h.rounds⟩
-  · rw [view_sp, hspv]; omega
-  · rw [view_sp, hspv]; have := s.sp.isLt; omega
+  · rw [view_sp, hspv]; omega_arith
+  · rw [view_sp, hspv]; have := s.sp.isLt; omega_arith
 
 theorem upd_call {s : State} {W C D S : BitVec 32} {R n : Nat} (h : UArgs s W C D S R n) :
     WP isa Impl.AesCcm.Arm.updFrame s (UPost s W C D S R n) := by
   have hR := toNat_rounds h.rounds
-  have hN : (BitVec.ofNat 32 n).toNat = n := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.hn; omega)
+  have hN : (BitVec.ofNat 32 n).toNat = n := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.hn; omega_arith)
   refine WP.frameCallF (k := Proof.CmacAes.Arm.updateArm) (fun _ hs => Proof.CmacAes.Arm.update_wp hs)
     stackUse_update rfl h.hsp h.pre (cov_push h.hsp h.reads h.writes) (covW_push h.writes) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -96,15 +96,15 @@ theorem upd_call {s : State} {W C D S : BitVec 32} {R n : Nat} (h : UArgs s W C 
       Spec.Aes.bytesAt (pushed [.r12, .lr] s).mem p k = Spec.Aes.bytesAt s.mem p k := fun hd hk =>
     Proof.Cmac.bytesAt_frame fP (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact (hd.sub_left slot_sub).symm) hk
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_arith
   simp only [Proof.CmacAes.Arm.updateArm, Proof.CmacAes.Arm.ciphAt, view_arg0 h.hsp,
     view_gpr .r0 (by decide), view_gpr .r1 (by decide), view_gpr .r2 (by decide), view_gpr .r3 (by decide),
     h.r0, h.r1, h.r2, h.r3, h.r12, hR, hN, State.withRegions_mem, State.callEntry_mem] at hpost
-  rw [hm, hpost, keep (h.bw.sub_right (Region.sub_prefix hRb)) (by omega), keep h.bc (by decide)]
+  rw [hm, hpost, keep (h.bw.sub_right (Region.sub_prefix hRb)) (by omega_arith), keep h.bc (by decide)]
   congr 1
   simp only [Spec.Cmac.blocksAt]
   refine List.map_congr_left fun i hi => keep (h.bd.sub_right (Offset.sub_base _ ?_)) (by decide)
-  rw [List.mem_range] at hi; omega
+  rw [List.mem_range] at hi; omega_arith
 
 theorem upd_rel {W C D S sp₀ : BitVec 32} {R n : Nat} {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → UArgs s₁ W C D S R n ∧ UArgs s₂ W C D S R n ∧ s₁.sp = sp₀ ∧ s₂.sp = sp₀) :
@@ -126,7 +126,7 @@ theorem upd_rel {W C D S sp₀ : BitVec 32} {R n : Nat} {P : State → State →
   rw [e₁] at c₁
   rw [e₂] at c₂
   have := h₁.hsp
-  refine ⟨e₁.trans e₂.symm, by omega, by have := h₂.hsp; omega, p₁, p₂, ?_, c₁, covW_push h₁.writes, c₂,
+  refine ⟨e₁.trans e₂.symm, by omega_arith, by have := h₂.hsp; omega_arith, p₁, p₂, ?_, c₁, covW_push h₁.writes, c₂,
     covW_push h₂.writes⟩
   simp only [Proof.CmacAes.Arm.updateArm, view_sp, view_arg0 h₁.hsp, view_arg1 h₁.hsp, view_arg0 h₂.hsp,
     view_arg1 h₂.hsp, view_gpr .r0 (by decide), view_gpr .r1 (by decide), view_gpr .r2 (by decide),

@@ -19,9 +19,9 @@ theorem getD_le8_append (a b : BitVec 64) {k : Nat} (hk : k < 16) :
     (le8 a ++ le8 b).getD k 0 = if k < 8 then a.extractLsb' (8 * k) 8 else b.extractLsb' (8 * (k - 8)) 8 := by
   rw [List.getD_eq_getElem?_getD]
   split
-  · rw [List.getElem?_append_left (by rw [length_le8]; omega), ← List.getD_eq_getElem?_getD, getD_le8 _ ‹_›]
-  · rw [List.getElem?_append_right (by rw [length_le8]; omega), length_le8, ← List.getD_eq_getElem?_getD,
-      getD_le8 _ (by omega)]
+  · rw [List.getElem?_append_left (by rw [length_le8]; omega_arith), ← List.getD_eq_getElem?_getD, getD_le8 _ ‹_›]
+  · rw [List.getElem?_append_right (by rw [length_le8]; omega_arith), length_le8, ← List.getD_eq_getElem?_getD,
+      getD_le8 _ (by omega_arith)]
 
 theorem getLsbD_bswap64 (x : BitVec 64) {p : Nat} (hp : p < 64) :
     (bswap64 x).getLsbD p = x.getLsbD (8 * (7 - p / 8) + p % 8) :=
@@ -39,19 +39,19 @@ theorem le8_bswap (h l : BitVec 64) :
   rcases Nat.lt_or_ge k 8 with h8 | h8
   · rw [getD_le8_append _ _ hk]
     simp only [h8, ↓reduceIte]
-    rw [BitVec.getLsbD_extractLsb', getLsbD_bswap64 _ (by omega)]
-    simp only [hj, decide_true, Bool.true_and, show ¬ 8 * (15 - k) + j < 64 by omega, ite_false]
-    congr 1; omega
+    rw [BitVec.getLsbD_extractLsb', getLsbD_bswap64 _ (by omega_arith)]
+    simp only [hj, decide_true, Bool.true_and, show ¬ 8 * (15 - k) + j < 64 by omega_arith, ite_false]
+    congr 1; omega_arith
   · rw [getD_le8_append _ _ hk]
-    simp only [show ¬ k < 8 by omega, ↓reduceIte]
-    rw [BitVec.getLsbD_extractLsb', getLsbD_bswap64 _ (by omega)]
-    simp only [hj, decide_true, Bool.true_and, show 8 * (15 - k) + j < 64 by omega, ite_true]
-    congr 1; omega
+    simp only [show ¬ k < 8 by omega_arith, ↓reduceIte]
+    rw [BitVec.getLsbD_extractLsb', getLsbD_bswap64 _ (by omega_arith)]
+    simp only [hj, decide_true, Bool.true_and, show 8 * (15 - k) + j < 64 by omega_arith, ite_true]
+    congr 1; omega_arith
 
 theorem add_self (x : BitVec 64) : x + x = x <<< 1 := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 theorem mask_eq (hi : BitVec 64) :
     ((0 : BitVec 64) - (hi >>> 63)) &&& BitVec.signExtend 64 (0x87 : BitVec 32) = if hi.msb then 0x87 else 0 := by
@@ -60,8 +60,8 @@ theorem mask_eq (hi : BitVec 64) :
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.msb_eq_decide]
     have := hi.isLt
     by_cases hm : 2 ^ (64 - 1) ≤ hi.toNat
-    · rw [decide_eq_true hm]; simp; omega
-    · rw [decide_eq_false hm]; simp; omega
+    · rw [decide_eq_true hm]; simp; omega_arith
+    · rw [decide_eq_false hm]; simp; omega_arith
   rw [h]
   split <;> decide
 
@@ -81,21 +81,21 @@ theorem dbl_words (hi lo : BitVec 64) :
   have h0 : ((64 : Nat) = 0) = False := by simp
   simp only [h0, ite_false]
   by_cases h64 : p < 64
-  · simp only [h64, ↓reduceIte, show p - 1 < 64 by omega, decide_true, Bool.true_and]
+  · simp only [h64, ↓reduceIte, show p - 1 < 64 by omega_arith, decide_true, Bool.true_and]
     congr 1
     split
     · exact bit135 p h64
     · simp
   · have hm : (if hi.msb = true then (135 : BitVec 128) else 0).getLsbD p = false := by
       split
-      · exact Proof.Cmac.high_0x87 (by omega)
+      · exact Proof.Cmac.high_0x87 (by omega_arith)
       · simp
     rw [hm, Bool.xor_false]
-    simp only [h64, ↓reduceIte, show p - 64 < 64 by omega, decide_true, Bool.true_and]
-    rcases Nat.eq_or_lt_of_le (show 64 ≤ p by omega) with rfl | hlt
+    simp only [h64, ↓reduceIte, show p - 64 < 64 by omega_arith, decide_true, Bool.true_and]
+    rcases Nat.eq_or_lt_of_le (show 64 ≤ p by omega_arith) with rfl | hlt
     · simp
-    · rw [BitVec.getLsbD_of_ge lo (63 + (p - 64)) (by omega)]
-      simp [show ¬ p - 64 < 1 by omega, show ¬ p < 1 by omega, show ¬ p - 1 < 64 by omega]
+    · rw [BitVec.getLsbD_of_ge lo (63 + (p - 64)) (by omega_arith)]
+      simp [show ¬ p - 64 < 1 by omega_arith, show ¬ p < 1 by omega_arith, show ¬ p - 1 < 64 by omega_arith]
       congr 1
 
 end VG.Proof.CmacAes.X86_64

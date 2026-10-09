@@ -47,8 +47,8 @@ theorem ctrCall_of {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 
   have e64 := L.wA (d := 64) (by decide)
   have e384 := L.wA (d := 384) (by decide)
   have hsp := he.sp
-  refine ⟨h0, h1, h2, h3, h12, hlr, hR, by rw [hsp]; have := L.sp16; omega, L.kw,
-    by rw [L.wN (by decide)]; have := L.ww; omega, fD, by rw [L.wN (by decide)]; have := L.ww; omega, ?_, dK,
+  refine ⟨h0, h1, h2, h3, h12, hlr, hR, by rw [hsp]; have := L.sp16; omega_arith, L.kw,
+    by rw [L.wN (by decide)]; have := L.ww; omega_arith, fD, by rw [L.wN (by decide)]; have := L.ww; omega_arith, ?_, dK,
     ?_, by rw [e64]; exact dC, ?_, by rw [e384]; exact dS, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [e64]; exact L.k_w' (by decide)
   · rw [e384]; exact L.k_w' (by decide)
@@ -112,15 +112,15 @@ theorem tagArgs_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₃ _ (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide)) k₃.2.2.2 k₃.2.1 k₃.2.2.1
-  have eY := L.wA (d := y) (by omega)
+  have eY := L.wA (d := y) (by omega_arith)
   have hqc : (⟨State.addr w + BitVec.ofNat 64 64, 16⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 y, 16 * 1⟩ := by
     rcases hy with rfl | rfl
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
     · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  have C₃ := ctrCall_of L he₃ hR (n := 1) a0 a1 a2 a3 a12 alr (by rw [L.wN (by omega)]; have := L.ww; omega)
-    (by rw [eY]; exact L.k_w' (by omega)) (by rw [eY]; exact hqc)
-    (by rw [eY]; exact L.w_w (.inl (by omega)) (by omega) (by decide))
-    (by rw [eY]; exact L.stk_w' (by omega)) (by rw [eY]; exact he₃.perm.wC (by omega))
+  have C₃ := ctrCall_of L he₃ hR (n := 1) a0 a1 a2 a3 a12 alr (by rw [L.wN (by omega_arith)]; have := L.ww; omega_arith)
+    (by rw [eY]; exact L.k_w' (by omega_arith)) (by rw [eY]; exact hqc)
+    (by rw [eY]; exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide))
+    (by rw [eY]; exact L.stk_w' (by omega_arith)) (by rw [eY]; exact he₃.perm.wC (by omega_arith))
   refine ⟨s₃, by
     rw [show [.mov .r0 (VG.Impl.AesGcm.Arm.imm 0)] ++ ctrAt ++ ctrArgs ++
       [VG.Impl.AesGcm.Arm.addI .r3 .r11 y, .mov .r12 (VG.Impl.AesGcm.Arm.imm 1)] =
@@ -143,7 +143,7 @@ theorem tag_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ 
         xorFrom (Spec.Ccm.ctxCiph s.mem (State.addr k) R) nonce 0
           (bytesAt s.mem (State.addr w + BitVec.ofNat 64 y) 16) := by
   obtain ⟨s₃, run₃, C₃, he₃, g₃, rd₃, wr₃, sp₃, f₀₃, hc₂⟩ := tagArgs_ok L he hR h7 h13 hc0 hy
-  have eY := L.wA (d := y) (by omega)
+  have eY := L.wA (d := y) (by omega_arith)
   have hqc : (⟨State.addr w + BitVec.ofNat 64 64, 16⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 y, 16 * 1⟩ := by
     rcases hy with rfl | rfl
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
@@ -157,7 +157,7 @@ theorem tag_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ 
     simp only [Spec.Ccm.ctxCiph]
     rw [bytesAt_frame f₀₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (L.k_w' (by decide)).sub_left (Region.sub_prefix hRb)) (by omega)]
+      exact (L.k_w' (by decide)).sub_left (Region.sub_prefix hRb)) (by omega_arith)]
   have hY₃ : bytesAt s₃.mem (State.addr w + BitVec.ofNat 64 y) 16 = bytesAt s.mem (State.addr w + BitVec.ofNat 64 y) 16 :=
     bytesAt_frame f₀₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hqc.symm) (by decide)
@@ -178,9 +178,9 @@ theorem tag_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ 
     · exact ⟨scrR w, by simp, Region.sub_prefix (by decide)⟩
     · exact ⟨blw sp, by simp, below_blw sp⟩
   · have hc := ctr32_ccm (m := s₃.mem) (m' := s₄.mem) (K := State.addr k) (C := State.addr (w + BitVec.ofNat 32 64))
-      (D := State.addr (w + BitVec.ofNat 32 y)) (R := R) (nonce := nonce) (by omega) (j := 0) (k := 1)
+      (D := State.addr (w + BitVec.ofNat 32 y)) (R := R) (nonce := nonce) (by omega_arith) (j := 0) (k := 1)
       (fun i hi => by
-        rw [show i = 0 by omega, Nat.zero_add]
+        rw [show i = 0 by omega_arith, Nat.zero_add]
         show Spec.Gcm.ofBytes _ = _
         rw [L.wA (by decide), hc₂]) h.out
     rw [Nat.mul_one, eY] at hc

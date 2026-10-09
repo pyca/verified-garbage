@@ -42,13 +42,13 @@ theorem tagArgs_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {nonce : List 
   refine WP.block_append (WP.mono (ctrAt_ok E₁ h7 h13 (by rw [hm₁]; exact hc0) (i := 0) (Nat.pow_pos (by decide))
     h9) fun t₂ ⟨f₂, hc₂, hg₂, sp₂, rd₂, wr₂⟩ => ?_)
   have E₂ : Env c t₂ := E₁.others hg₂ (by decide) sp₂ rd₂ wr₂
-  have hy' : y < 4096 := by omega
+  have hy' : y < 4096 := by omega_arith
   refine Proof.AesGcm.AArch64.WP.run ⟨_, by carun [ctrArgs, hy'], rfl⟩ fun t₃ ht₃ => ?_
   have hg₃ : Others [.x0, .x1, .x2, .x3, .x4, .x5] t₂ t₃ := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr; rw [← ht₃]; simp [gpr_write, hr]
   have E₃ : Env c t₃ := E₂.others hg₃ (by decide) (by rw [← ht₃]; rfl) (by rw [← ht₃]; rfl) (by rw [← ht₃]; rfl)
   have hm₃ : t₃.mem = t₂.mem := by rw [← ht₃]; rfl
-  refine ⟨E₃, cargsW L E₃ (o := 64) (d := y) (by decide) (by omega) (by omega) ?_ ?_ ?_ ?_ ?_ ?_, ?_,
+  refine ⟨E₃, cargsW L E₃ (o := 64) (d := y) (by decide) (by omega_arith) (by omega_arith) ?_ ?_ ?_ ?_ ?_ ?_, ?_,
     by rw [← ht₃]; simp only [rd_write]; rw [rd₂, ← ht₁]; rfl,
     by rw [← ht₃]; simp only [wr_write]; rw [wr₂, ← ht₁]; rfl,
     by rw [hm₃, ← hm₁]; exact f₂, by rw [hm₃]; exact hc₂⟩
@@ -80,8 +80,8 @@ theorem tag_ok (v : Ctr32Impl) {c : Cx} (L : Lay c) {s : State} (E : Env c s) {n
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> exact ⟨_, by simp, fun _ h => h⟩
-  · have hx := ctr32_ccm (nonce := nonce) (k := 1) (j := 0) (by rw [hnl]; have := L.h13; omega) (fun i hi => by
-      rw [show i = 0 by omega, Nat.add_zero]
+  · have hx := ctr32_ccm (nonce := nonce) (k := 1) (j := 0) (by rw [hnl]; have := L.h13; omega_arith) (fun i hi => by
+      rw [show i = 0 by omega_arith, Nat.add_zero]
       show Spec.Gcm.ofBytes _ = _
       rw [hc₃]) h.out
     rw [Nat.mul_one] at hx
@@ -89,7 +89,7 @@ theorem tag_ok (v : Ctr32Impl) {c : Cx} (L : Lay c) {s : State} (E : Env c s) {n
       unfold Spec.Ccm.ctxCiph
       rw [Proof.AesGcm.AArch64.bytesAt_frame f₃ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (L.k_w' (by decide)).sub_left (Region.sub_prefix L.rb)) (by have := L.rb; omega)]
+        exact (L.k_w' (by decide)).sub_left (Region.sub_prefix L.rb)) (by have := L.rb; omega_arith)]
     have hY : bytesAt t₃.mem (c.W + BitVec.ofNat 64 y) 16 = bytesAt s.mem (c.W + BitVec.ofNat 64 y) 16 :=
       Proof.AesGcm.AArch64.bytesAt_frame f₃ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr

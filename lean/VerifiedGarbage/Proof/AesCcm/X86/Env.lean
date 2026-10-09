@@ -80,7 +80,7 @@ theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 2560) : Region.Sub ⟨W + Bit
 /-- Parts of `W` are disjoint. -/
 theorem w_w {W : BitVec 32} {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
     (⟨w64 W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by omega) (by omega)
+  Offset.disjoint _ h (by omega_arith) (by omega_arith)
 
 variable {K W SP : BitVec 32} (L : Lay K W SP)
 include L
@@ -93,10 +93,10 @@ theorem stk_w' {a n : Nat} (ha : a + n ≤ 2560) : (below SP 56).Disjoint ⟨w64
   L.stk_w.sub_right (wSub ha)
 
 theorem aW {o : Nat} (ho : o < 2560) : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o :=
-  w64_add (by have := L.fw; omega)
+  w64_add (by have := L.fw; omega_arith)
 
 theorem nW {o : Nat} (ho : o < 2560) : (W + BitVec.ofNat 32 o).toNat = W.toNat + o :=
-  toNat_add32 (by have := L.fw; omega)
+  toNat_add32 (by have := L.fw; omega_arith)
 
 end Lay
 
@@ -140,7 +140,7 @@ include h
 theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Buf W SP s' D n :=
   { h with rd := by rw [hrd, hwr]; exact h.rd }
 
-theorem lt : n < 2 ^ 64 := by have := h.wrap; omega
+theorem lt : n < 2 ^ 64 := by have := h.wrap; omega_arith
 
 omit h in
 /-- The address of byte `k`. -/
@@ -149,17 +149,17 @@ theorem ptr {k : Nat} (hk : D.toNat + k < 2 ^ 32) : w64 (D + BitVec.ofNat 32 k) 
 
 /-- The bytes from `k` on. -/
 theorem drop {k : Nat} (hk : k ≤ n) (hw : D.toNat + k < 2 ^ 32) : Buf W SP s (D + BitVec.ofNat 32 k) (n - k) where
-  rd := by rw [ptr hw]; exact covers_off h.rd (by omega) h.lt
-  wrap := by rw [toNat_add32 hw]; have := h.wrap; omega
-  w := by rw [ptr hw]; exact h.w.sub_left (Offset.sub_base _ (by omega))
-  stk := by rw [ptr hw]; exact h.stk.sub_right (Offset.sub_base _ (by omega))
+  rd := by rw [ptr hw]; exact covers_off h.rd (by omega_arith) h.lt
+  wrap := by rw [toNat_add32 hw]; have := h.wrap; omega_arith
+  w := by rw [ptr hw]; exact h.w.sub_left (Offset.sub_base _ (by omega_arith))
+  stk := by rw [ptr hw]; exact h.stk.sub_right (Offset.sub_base _ (by omega_arith))
 
 /-- The first `k` bytes. -/
 theorem take {k : Nat} (hk : k ≤ n) : Buf W SP s D k where
   rd := fun a m ⟨r, hr, hc⟩ => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact h.rd a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
-  wrap := by have := h.wrap; omega
+    exact h.rd a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_arith⟩
+  wrap := by have := h.wrap; omega_arith
   w := h.w.sub_left (Region.sub_prefix hk)
   stk := h.stk.sub_right (Region.sub_prefix hk)
 
@@ -211,12 +211,12 @@ theorem kept_mut {K W SP D : BitVec 32} {n : Nat} (L : Lay K W SP)
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · simpa using Lay.w_w (W := W) (a := d) (n := k) (d := 0) (k := 112) (.inr (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (by omega) (by omega) (by decide)
-  · exact Lay.w_w (by omega) (by omega) (by decide)
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (L.stk_w' (by omega)).symm
-  · exact (hD.sub_right (Lay.wSub (by omega))).symm
+  · simpa using Lay.w_w (W := W) (a := d) (n := k) (d := 0) (k := 112) (.inr (by omega_arith)) (by omega_arith) (by decide)
+  · exact Lay.w_w (by omega_arith) (by omega_arith) (by decide)
+  · exact Lay.w_w (by omega_arith) (by omega_arith) (by decide)
+  · exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact (L.stk_w' (by omega_arith)).symm
+  · exact (hD.sub_right (Lay.wSub (by omega_arith))).symm
 
 /-- The slots, after code that changes only `mutR`. -/
 theorem slots_mut {K W SP D' : BitVec 32} {n' : Nat} (L : Lay K W SP)

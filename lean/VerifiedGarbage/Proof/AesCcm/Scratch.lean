@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.Ccm.Contract
 import VerifiedGarbage.Proof.AesGcm.Scratch
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-CCM with its working space as an argument
@@ -65,9 +66,9 @@ theorem ctxCiph_congr {m₁ m₂ : Mem} {p : Addr} {nr : Nat} (hn : nr ≤ 14)
     (h : ∀ i < 240, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     ctxCiph m₂ p nr = ctxCiph m₁ p nr := by
   simp only [ctxCiph]
-  rw [bytesAt_congr fun i hi => h i (by omega)]
+  rw [bytesAt_congr fun i hi => h i (by omega_arith)]
 
-theorem le14 {n : Nat} (h : n = 10 ∨ n = 12 ∨ n = 14) : n ≤ 14 := by omega
+theorem le14 {n : Nat} (h : n = 10 ∨ n = 12 ∨ n = 14) : n ≤ 14 := by omega_arith
 
 variable (pb : Nat)
 
@@ -97,9 +98,9 @@ private theorem inputs_local {pb : Nat} {m₁ m₂ : Mem}
   have := Nat.mod_le len.toNat (2 ^ pb)
   have := Nat.mod_le tl.toNat (2 ^ pb)
   simp only [BitVec.toNat_setWidth] at hn ⊢
-  exact ⟨ctxCiph_congr hn fun i hi => hc i (by omega), bytesAt_congr fun i hi => hN i (by omega),
-    bytesAt_congr fun i hi => hA i (by omega), bytesAt_congr fun i hi => hD i (by omega),
-    bytesAt_congr fun i hi => hT i (by omega)⟩
+  exact ⟨ctxCiph_congr hn fun i hi => hc i (by omega_arith), bytesAt_congr fun i hi => hN i (by omega_arith),
+    bytesAt_congr fun i hi => hA i (by omega_arith), bytesAt_congr fun i hi => hD i (by omega_arith),
+    bytesAt_congr fun i hi => hT i (by omega_arith)⟩
 
 theorem sealPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealSig.words pb).length →
     (∀ b ∈ Sig.bufs sealSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →

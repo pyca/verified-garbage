@@ -52,7 +52,7 @@ theorem macTag_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) 
         (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (Spec.Cmac.zeros 16)
           (Spec.Ccm.format tl nonce (bytesAt s.mem A al) (bytesAt s.mem D n))) → Q s') :
     WP isa (.seq (mac v.callee y) (tag v.ctr.callee y)) s Q := by
-  have hy16 : y + 16 ≤ 112 := by omega
+  have hy16 : y + 16 ≤ 112 := by omega_arith
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> subst h <;> decide
   refine WP.seq (WP.mono (mac_ok v L E S hR hnl h7 h13 ht4 ht16 hte hn hc0 hy hA hD) fun s₁ M => ?_)
   have fy : Frame (tagR W SP y) s.mem s₁.mem := M.frame.sub fun r hr => by
@@ -70,7 +70,7 @@ theorem macTag_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) 
       · exact L.w_w (.inr (by decide)) (by decide) (by decide)
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact (L.stk_w' (by decide)).symm) (by decide), hc0]
-  refine WP.mono (tag_ok v.ctr L M.env hR hRo₁ (by omega) (by omega) hc₁ hy)
+  refine WP.mono (tag_ok v.ctr L M.env hR hRo₁ (by omega_arith) (by omega_arith) hc₁ hy)
     fun s₂ ⟨E₂, _, rd₂, wr₂, f₂, h₂⟩ => ?_
   refine hk s₂ E₂ (by rw [rd₂, M.rd]) (by rw [wr₂, M.wr]) (fy.trans (f₂.sub fun r hr => ?_)) ?_ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -84,7 +84,7 @@ theorem macTag_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) 
         · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact (L.stk_w' (by decide)).symm) (by decide), hc₁]
-  · rw [h₂, M.out, ctxCiph_frame M.frame (k_macR L (by omega)) hRb]
+  · rw [h₂, M.out, ctxCiph_frame M.frame (k_macR L (by omega_arith)) hRb]
 
 /-- The return address is outside what the functions write. -/
 theorem ret_disj {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hW : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 2560⟩)
@@ -96,7 +96,7 @@ theorem ret_disj {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hW : (⟨SP, 8⟩
   · exact hW.sub_right (Region.sub_prefix (by decide))
   · exact hW.sub_right (Lay.wSub (by decide))
   · exact hW.sub_right (Lay.wSub (by decide))
-  · exact Offset.base_disjoint_below SP (by have := L.sp; omega)
+  · exact Offset.base_disjoint_below SP (by have := L.sp; omega_arith)
   · exact hD
 
 /-- `tagOut`: the first `tl` bytes at `W` copied to the tag `T`, whose
@@ -127,8 +127,8 @@ theorem tagOut_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide)) hrd₁ hwr₁
   have lp : LoopPre s₁ W T tl :=
-    ⟨hsi, hdi, hcx, by omega, by omega, covers_left (by simpa using E₁.perm.wC (d := 0) (n := tl) (by omega)),
-      by rw [hwr₁]; exact hTw, (hTW.sub_right (Region.sub_prefix (by omega))).symm⟩
+    ⟨hsi, hdi, hcx, by omega_arith, by omega_arith, covers_left (by simpa using E₁.perm.wC (d := 0) (n := tl) (by omega_arith)),
+      by rw [hwr₁]; exact hTw, (hTW.sub_right (Region.sub_prefix (by omega_arith))).symm⟩
   refine WP.mono (copyLoop_ok s₁ lp) fun s₂ ⟨hm₂, hg₂, hrd₂, hwr₂⟩ => ⟨E₁.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide)) hrd₂ hwr₂,
@@ -155,7 +155,7 @@ theorem seal_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n
   have hent : ∀ {P : Addr} {len : Nat}, Buf K W SP s P len → bytesAt s₁.mem P len = bytesAt s.mem P len :=
     fun hP => bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hP.w.sub_right (Lay.wSub (by decide)))
-      (by have := hP.lt; omega)
+      (by have := hP.lt; omega_arith)
   have hK₁ : Spec.Ccm.ctxCiph s₁.mem K R = Spec.Ccm.ctxCiph s.mem K R :=
     ctxCiph_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.k_w.sub_right (Lay.wSub (by decide))) hRb
@@ -203,7 +203,7 @@ theorem seal_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n
       rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     exact f₅.readW (r := ⟨W + BitVec.ofNat 64 p.2, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (Tb.w.sub_right (Lay.wSub (by omega))).symm) (by decide)
+      exact (Tb.w.sub_right (Lay.wSub (by omega_arith))).symm) (by decide)
   obtain ⟨s₆, run₆, hg₆, hm₆, hsp₆, _⟩ := restore_ok E₅ sv₅
   refine WP.of_runBlock ⟨s₆, run₆, ⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -230,20 +230,20 @@ theorem seal_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n
     have w₄ : bytesAt s₄.mem W tl = bytesAt s₃.mem W tl := bytesAt_frame f₄ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
-      · simpa using L.w_w (a := 0) (n := tl) (d := 64) (k := 32) (.inl (by have := Ar.t16; omega))
-          (by have := Ar.t16; omega) (by decide)
-      · simpa using L.w_w (a := 0) (n := tl) (d := 216) (k := 8) (.inl (by have := Ar.t16; omega))
-          (by have := Ar.t16; omega) (by decide)
-      · simpa using L.w_w (a := 0) (n := tl) (d := 384) (k := 2176) (.inl (by have := Ar.t16; omega))
-          (by have := Ar.t16; omega) (by decide)
-      · exact (L.stk_w.sub_right (Region.sub_prefix (by have := Ar.t16; omega))).symm
-      · exact (Ar.data.w.sub_right (Region.sub_prefix (by have := Ar.t16; omega))).symm) (by have := Ar.t16; omega)
+      · simpa using L.w_w (a := 0) (n := tl) (d := 64) (k := 32) (.inl (by have := Ar.t16; omega_arith))
+          (by have := Ar.t16; omega_arith) (by decide)
+      · simpa using L.w_w (a := 0) (n := tl) (d := 216) (k := 8) (.inl (by have := Ar.t16; omega_arith))
+          (by have := Ar.t16; omega_arith) (by decide)
+      · simpa using L.w_w (a := 0) (n := tl) (d := 384) (k := 2176) (.inl (by have := Ar.t16; omega_arith))
+          (by have := Ar.t16; omega_arith) (by decide)
+      · exact (L.stk_w.sub_right (Region.sub_prefix (by have := Ar.t16; omega_arith))).symm
+      · exact (Ar.data.w.sub_right (Region.sub_prefix (by have := Ar.t16; omega_arith))).symm) (by have := Ar.t16; omega_arith)
     have d₅ : bytesAt s₅.mem D n = bytesAt s₄.mem D n :=
       bytesAt_frame f₅ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact Tb.d.symm) (by have := Ar.data.lt; omega)
+        simp only [List.mem_singleton] at hr; subst hr; exact Tb.d.symm) (by have := Ar.data.lt; omega_arith)
     have t₅ : bytesAt s₅.mem T tl = bytesAt s₄.mem W tl := by
-      have e := bytesAt_writeBytes_at s₄.mem T (o := 0) (n := tl) (bytesAt s₄.mem W tl) (by rw [hx]; omega)
-        (by have := Ar.t16; omega)
+      have e := bytesAt_writeBytes_at s₄.mem T (o := 0) (n := tl) (bytesAt s₄.mem W tl) (by rw [hx]; omega_arith)
+        (by have := Ar.t16; omega_arith)
       rw [BitVec.add_zero, List.take_zero, List.nil_append, Nat.zero_add,
         List.drop_eq_nil_of_le (by rw [length_bytesAt, hx]), List.append_nil] at e
       rw [hm₅, e]
@@ -255,7 +255,7 @@ theorem seal_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n
     refine ⟨?_, ?_⟩
     · rw [hm₆, d₅, h₄, c₃', d₃, crypt_eq (hBC _)]
     · rw [hm₆, t₅, w₄, bytesAt_prefix s₃.mem W Ar.t16, h₃, take_xorFrom_zero (hBC _) _ hY.symm Ar.t16,
-        ← mac_eq _ _ (by rw [length_bytesAt]; have := Ar.h13; omega), c₂', a₂, d₂]
+        ← mac_eq _ _ (by rw [length_bytesAt]; have := Ar.h13; omega_arith), c₂', a₂, d₂]
 
 /-- `vg_aes_ccm_seal`. -/
 theorem seal_wp (v : UpdateImpl) {s : State} (h : sealX86_64.pre s) :

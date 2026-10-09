@@ -48,7 +48,7 @@ theorem ctrs_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {N : Addr} (hN : 
     · have z : (BitVec.setWidth 64 0#16 <<< 0 : BitVec 64) = 0 := by decide
       have f : (BitVec.setWidth 64 14#16 <<< 0 : BitVec 64) = BitVec.ofNat 64 14 := by decide
       simp only [mem_write, z, f, h3, BitVec.setWidth_setWidth_of_le _ (show 8 ≤ 32 by decide),
-        sub_low_byte (show c.nl ≤ 14 by omega)]
+        sub_low_byte (show c.nl ≤ 14 by omega_arith)]
       rfl
     · simp [gpr_write, E.x19]
     · simp [gpr_write, h2]
@@ -58,10 +58,10 @@ theorem ctrs_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {N : Addr} (hN : 
       simp [gpr_write, hr]
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have E₁ : Env c s₁ := E.others hg₁ (by decide) sp₁ rd₁ wr₁
-  have dNW : (⟨N, c.nl⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 49, c.nl⟩ := hN.wd (by omega)
+  have dNW : (⟨N, c.nl⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 49, c.nl⟩ := hN.wd (by omega_arith)
   have lp : LoopPre s₁ N (c.W + BitVec.ofNat 64 49) c.nl :=
-    ⟨by omega, by rw [rd₁, wr₁]; exact hN.rd, E₁.perm.wC (by omega), dNW⟩
-  refine WP.mono (copyLoop_ok s₁ x12₁ x11₁ x13₁ (by omega) lp) fun s₂ ⟨hm₂, _, _, hg₂, sp₂, rd₂, wr₂⟩ => ?_
+    ⟨by omega_arith, by rw [rd₁, wr₁]; exact hN.rd, E₁.perm.wC (by omega_arith), dNW⟩
+  refine WP.mono (copyLoop_ok s₁ x12₁ x11₁ x13₁ (by omega_arith) lp) fun s₂ ⟨hm₂, _, _, hg₂, sp₂, rd₂, wr₂⟩ => ?_
   have hfz : Frame [⟨c.W + BitVec.ofNat 64 48, 16⟩] s.mem s₁.mem := by
     rw [hm₁]
     exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _
@@ -73,13 +73,13 @@ theorem ctrs_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {N : Addr} (hN : 
   have hNs : bytesAt s₁.mem N c.nl = bytesAt s.mem N c.nl :=
     Proof.AesGcm.AArch64.bytesAt_frame hfz (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hN.wd (by decide)) (by omega)
+      exact hN.wd (by decide)) (by omega_arith)
   refine ⟨E₁.others hg₂ (by decide) sp₂ rd₂ wr₂, ?_, ?_, by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
   · refine hfz.trans ?_
     rw [hm₂]
     exact writeBytes_frame _ _ _ (by
       rw [length_bytesAt]
-      exact Offset.contains c.W (d := 49) (n := c.nl) (e := 48) (k := 16) (by decide) (by omega) (by decide))
+      exact Offset.contains c.W (d := 49) (n := c.nl) (e := 48) (k := 16) (by decide) (by omega_arith) (by decide))
   · -- The bytes of the block.
     have e56 : c.W + BitVec.ofNat 64 56 = c.W + BitVec.ofNat 64 48 + BitVec.ofNat 64 8 := by rw [add_ofNat_assoc]
     have hz : bytesAt s₁.mem (c.W + BitVec.ofNat 64 48) 16 = BitVec.ofNat 8 (15 - c.nl - 1) :: Spec.Ccm.zeros 15 := by
@@ -88,8 +88,8 @@ theorem ctrs_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {N : Addr} (hN : 
       rfl
     have hl := length_bytesAt s.mem N c.nl
     rw [hm₂, show c.W + BitVec.ofNat 64 49 = c.W + BitVec.ofNat 64 48 + BitVec.ofNat 64 1 by rw [add_ofNat_assoc],
-      bytesAt_writeBytes_at _ _ _ (by rw [length_bytesAt]; omega) (by decide), length_bytesAt, hz, hNs,
-      Spec.Ccm.ctrBlock, hl, be_zero, show 1 + c.nl = c.nl + 1 by omega]
+      bytesAt_writeBytes_at _ _ _ (by rw [length_bytesAt]; omega_arith) (by decide), length_bytesAt, hz, hNs,
+      Spec.Ccm.ctrBlock, hl, be_zero, show 1 + c.nl = c.nl + 1 by omega_arith]
     simp only [Spec.Ccm.zeros, List.take_succ_cons, List.take_zero, List.drop_succ_cons, List.drop_replicate,
       List.cons_append, List.nil_append]
 
@@ -150,7 +150,7 @@ theorem updArgs_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {y : Nat} (hy 
       s₁.gpr .x3 = c.W + BitVec.ofNat 64 32 ∧ s₁.gpr .x4 = BitVec.ofNat 64 1 ∧
       s₁.gpr .x5 = c.W + BitVec.ofNat 64 384 ∧
       Others [.x0, .x1, .x2, .x3, .x4, .x5] s s₁ ∧ s₁.sp = s.sp ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-    have hy' : y < 4096 := by omega
+    have hy' : y < 4096 := by omega_arith
     refine ⟨_, by carun [updArgs, hy'], ?_⟩
     refine ⟨rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, rfl, rfl, rfl⟩
     · simp [gpr_write, E.x21]
@@ -169,7 +169,7 @@ theorem updArgs_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {y : Nat} (hy 
     rcases hy with rfl | rfl
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
     · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  exact uargs L E₁ (by omega) hq hqy (by decide) x0 x1 x2 x3 x4 x5
+  exact uargs L E₁ (by omega_arith) hq hqy (by decide) x0 x1 x2 x3 x4 x5
 
 /-- `B` (at `W + 32`) chained into the MAC state at `W + y`. -/
 theorem updBlock_ok (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c) {s : State} (E : Env c s)

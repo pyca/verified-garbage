@@ -132,7 +132,7 @@ theorem open_verified : Verified Arm.target «open» (Proof.AesCcm.openScratchCo
           Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] at h
         obtain ⟨hsp, hl, h0, h1, h2, h3, a0, a1, a2, a3, a4, a5, a6⟩ := h
         refine ⟨⟨hsp, h0, h1, h2, h3, fun i hi => ?_⟩, hl⟩
-        rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 by omega) with
+        rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 by omega_arith) with
           rfl | rfl | rfl | rfl | rfl | rfl | rfl
         · exact a0
         · exact a1

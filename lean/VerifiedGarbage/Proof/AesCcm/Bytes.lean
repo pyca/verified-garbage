@@ -38,31 +38,31 @@ theorem bytesAt_writeBytes_at (m : Mem) (p : Addr) {o n : Nat} (xs : List Byte) 
     (hn : n < 2 ^ 64) :
     bytesAt (writeBytes m (p + BitVec.ofNat 64 o) xs) p n =
       (bytesAt m p n).take o ++ xs ++ (bytesAt m p n).drop (o + xs.length) := by
-  apply List.ext_getElem (by simp [length_bytesAt]; omega)
+  apply List.ext_getElem (by simp [length_bytesAt]; omega_arith)
   intro i h₁ h₂
   rw [getElem_bytesAt _ _ (by rw [length_bytesAt] at h₁; exact h₁)]
   simp only [writeBytes]
   have hi : i < n := by rw [length_bytesAt] at h₁; exact h₁
   have e : (p + BitVec.ofNat 64 i - (p + BitVec.ofNat 64 o)).toNat = (i + (2 ^ 64 - o)) % 2 ^ 64 := by
-    rw [Offset.add_sub_add_left, BitVec.toNat_sub, toNat_ofNat64 (by omega), toNat_ofNat64 (by omega)]
-    omega
+    rw [Offset.add_sub_add_left, BitVec.toNat_sub, toNat_ofNat64 (by omega_arith), toNat_ofNat64 (by omega_arith)]
+    omega_arith
   rw [e]
   have hl := length_bytesAt m p n
   by_cases hlo : i < o
-  · rw [show (i + (2 ^ 64 - o)) % 2 ^ 64 = 2 ^ 64 - o + i by omega]
-    simp only [show ¬ (2 ^ 64 - o + i < xs.length) by omega, ite_false]
-    rw [List.getElem_append_left (by simp [hl]; omega), List.getElem_append_left (by simp [hl]; omega),
+  · rw [show (i + (2 ^ 64 - o)) % 2 ^ 64 = 2 ^ 64 - o + i by omega_arith]
+    simp only [show ¬ (2 ^ 64 - o + i < xs.length) by omega_arith, ite_false]
+    rw [List.getElem_append_left (by simp [hl]; omega_arith), List.getElem_append_left (by simp [hl]; omega_arith),
       List.getElem_take, getElem_bytesAt _ _ hi]
-  · rw [show (i + (2 ^ 64 - o)) % 2 ^ 64 = i - o by omega]
+  · rw [show (i + (2 ^ 64 - o)) % 2 ^ 64 = i - o by omega_arith]
     by_cases hhi : i < o + xs.length
-    · simp only [show i - o < xs.length by omega, ite_true]
-      rw [List.getElem_append_left (by simp [hl]; omega), List.getElem_append_right (by simp [hl]; omega)]
-      simp only [List.length_take, hl, List.getD_eq_getElem?_getD, Nat.min_eq_left (show o ≤ n by omega),
-        List.getElem?_eq_getElem (show i - o < xs.length by omega), Option.getD_some]
-    · simp only [show ¬ (i - o < xs.length) by omega, ite_false]
-      rw [List.getElem_append_right (by simp [hl]; omega), List.getElem_drop]
-      simp only [List.length_append, List.length_take, hl, Nat.min_eq_left (show o ≤ n by omega)]
-      rw [getElem_bytesAt _ _ (by omega), show o + xs.length + (i - (o + xs.length)) = i by omega]
+    · simp only [show i - o < xs.length by omega_arith, ite_true]
+      rw [List.getElem_append_left (by simp [hl]; omega_arith), List.getElem_append_right (by simp [hl]; omega_arith)]
+      simp only [List.length_take, hl, List.getD_eq_getElem?_getD, Nat.min_eq_left (show o ≤ n by omega_arith),
+        List.getElem?_eq_getElem (show i - o < xs.length by omega_arith), Option.getD_some]
+    · simp only [show ¬ (i - o < xs.length) by omega_arith, ite_false]
+      rw [List.getElem_append_right (by simp [hl]; omega_arith), List.getElem_drop]
+      simp only [List.length_append, List.length_take, hl, Nat.min_eq_left (show o ≤ n by omega_arith)]
+      rw [getElem_bytesAt _ _ (by omega_arith), show o + xs.length + (i - (o + xs.length)) = i by omega_arith]
 
 /-- A byte write is a write of one byte. -/
 theorem writeW8_eq (m : Mem) (a : Addr) (b : Byte) : m.writeW a b = writeBytes m a [b] := by
@@ -70,7 +70,7 @@ theorem writeW8_eq (m : Mem) (a : Addr) (b : Byte) : m.writeW a b = writeBytes m
   simp only [Mem.writeW, Mem.write, writeBytes, List.length_cons, List.length_nil, Nat.zero_add]
   split
   · rename_i h
-    simp only [show (x - a).toNat = 0 by omega, List.getD_cons_zero]
+    simp only [show (x - a).toNat = 0 by omega_arith, List.getD_cons_zero]
     simp
   · rfl
 
@@ -95,7 +95,7 @@ theorem bytesAt_writeW32_at (m : Mem) (p : Addr) {o n : Nat} (v : BitVec 32) (h 
 /-- At offset 0. -/
 theorem bytesAt_writeBytes_base (m : Mem) (p : Addr) {n : Nat} (xs : List Byte) (h : xs.length ≤ n)
     (hn : n < 2 ^ 64) : bytesAt (writeBytes m p xs) p n = xs ++ (bytesAt m p n).drop xs.length := by
-  have := bytesAt_writeBytes_at m p (o := 0) xs (by omega) hn
+  have := bytesAt_writeBytes_at m p (o := 0) xs (by omega_arith) hn
   simpa using this
 
 theorem bytesAt_writeW32_base (m : Mem) (p : Addr) {n : Nat} (v : BitVec 32) (h : 4 ≤ n) (hn : n < 2 ^ 64) :
@@ -110,11 +110,11 @@ theorem bytesAt_writeW8_base (m : Mem) (p : Addr) {n : Nat} (b : Byte) (h : 1 �
 
 theorem bytesAt_prefix (m : Mem) (p : Addr) {a n : Nat} (h : a ≤ n) :
     bytesAt m p a = (bytesAt m p n).take a := by
-  rw [show n = a + (n - a) by omega, Proof.Cmac.Stream.bytesAt_append, List.take_left' (length_bytesAt _ _ _)]
+  rw [show n = a + (n - a) by omega_arith, Proof.Cmac.Stream.bytesAt_append, List.take_left' (length_bytesAt _ _ _)]
 
 theorem bytesAt_suffix (m : Mem) (p : Addr) {a n : Nat} (h : a ≤ n) :
     bytesAt m (p + BitVec.ofNat 64 a) (n - a) = (bytesAt m p n).drop a := by
-  conv => rhs; rw [show n = a + (n - a) by omega, Proof.Cmac.Stream.bytesAt_append]
+  conv => rhs; rw [show n = a + (n - a) by omega_arith, Proof.Cmac.Stream.bytesAt_append]
   rw [List.drop_left' (length_bytesAt _ _ _)]
 
 /-! ## Big-endian strings -/
@@ -126,11 +126,11 @@ theorem be_zero (k : Nat) : Spec.Ccm.be k 0 = Spec.Ccm.zeros k := by
 theorem be_split {q k v : Nat} (hqk : q ≤ k) (hv : v < 256 ^ q) :
     Spec.Ccm.be k v = Spec.Ccm.zeros (k - q) ++ Spec.Ccm.be q v := by
   induction k with
-  | zero => rw [show q = 0 by omega]; simp [Spec.Ccm.zeros, Spec.Ccm.be]
+  | zero => rw [show q = 0 by omega_arith]; simp [Spec.Ccm.zeros, Spec.Ccm.be]
   | succ k ih =>
     rcases Nat.lt_or_ge k q with h | h
-    · rw [show q = k + 1 by omega]; simp [Spec.Ccm.zeros]
-    · rw [be_succ, ih h, show k + 1 - q = (k - q) + 1 by omega, Spec.Ccm.zeros, Spec.Ccm.zeros,
+    · rw [show q = k + 1 by omega_arith]; simp [Spec.Ccm.zeros]
+    · rw [be_succ, ih h, show k + 1 - q = (k - q) + 1 by omega_arith, Spec.Ccm.zeros, Spec.Ccm.zeros,
         List.replicate_succ, List.cons_append]
       congr 1
       rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hv (Nat.pow_le_pow_right (by decide) h))]
@@ -170,14 +170,14 @@ theorem ctrBlock_drop12 {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : non
       nonce.drop 11 ++ Spec.Ccm.be (min (15 - nonce.length) 4) i := by
   simp only [Spec.Ccm.ctrBlock, List.cons_append, List.drop_succ_cons]
   by_cases h11 : 11 ≤ nonce.length
-  · rw [List.drop_append_of_le_length h11, Nat.min_eq_left (by omega)]
-  · rw [List.drop_append, List.drop_eq_nil_of_le (show nonce.length ≤ 11 by omega), List.nil_append,
-      show 11 - nonce.length = (15 - nonce.length) - min (15 - nonce.length) 4 by omega,
-      be_drop (by omega) hi, List.nil_append]
+  · rw [List.drop_append_of_le_length h11, Nat.min_eq_left (by omega_arith)]
+  · rw [List.drop_append, List.drop_eq_nil_of_le (show nonce.length ≤ 11 by omega_arith), List.nil_append,
+      show 11 - nonce.length = (15 - nonce.length) - min (15 - nonce.length) 4 by omega_arith,
+      be_drop (by omega_arith) hi, List.nil_append]
 
 theorem length_ctrBlock' {nonce : List Byte} (h13 : nonce.length ≤ 13) (i : Nat) :
     (Spec.Ccm.ctrBlock nonce i).length = 16 := by
-  simp only [Spec.Ccm.ctrBlock, List.length_cons, List.length_append, length_be]; omega
+  simp only [Spec.Ccm.ctrBlock, List.length_cons, List.length_append, length_be]; omega_arith
 
 /-- `Ctrᵢ`, for `i < 2³²` (and `i < 2^(8q)`), from `Ctr₀`: its first 12 bytes, and
 its last 4 ORed with `[i]₃₂`. -/
@@ -185,7 +185,7 @@ theorem ctrBlock_split {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonc
     (hi : i < 256 ^ min (15 - nonce.length) 4) :
     Spec.Ccm.ctrBlock nonce i = (Spec.Ccm.ctrBlock nonce 0).take 12 ++
       List.zipWith (· ||| ·) ((Spec.Ccm.ctrBlock nonce 0).drop 12) (Spec.Ccm.be 4 i) := by
-  have hi4 : i < 256 ^ 4 := Nat.lt_of_lt_of_le hi (Nat.pow_le_pow_right (by decide) (by omega))
+  have hi4 : i < 256 ^ 4 := Nat.lt_of_lt_of_le hi (Nat.pow_le_pow_right (by decide) (by omega_arith))
   have k0 : (0 : Nat) < 256 ^ min (15 - nonce.length) 4 := Nat.pow_pos (by decide)
   conv => lhs; rw [← List.take_append_drop 12 (Spec.Ccm.ctrBlock nonce i)]
   congr 1
@@ -193,13 +193,13 @@ theorem ctrBlock_split {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonc
     congr 1
     by_cases h11 : 11 ≤ nonce.length
     · rw [List.take_append_of_le_length h11, List.take_append_of_le_length h11]
-    · rw [List.take_append, List.take_append, be_split (q := 4) (by omega) hi4,
-        be_split (q := 4) (by omega) (show 0 < 256 ^ 4 by decide)]
+    · rw [List.take_append, List.take_append, be_split (q := 4) (by omega_arith) hi4,
+        be_split (q := 4) (by omega_arith) (show 0 < 256 ^ 4 by decide)]
       congr 1
-      rw [List.take_left' (by simp [Spec.Ccm.zeros]; omega), List.take_left' (by simp [Spec.Ccm.zeros]; omega)]
+      rw [List.take_left' (by simp [Spec.Ccm.zeros]; omega_arith), List.take_left' (by simp [Spec.Ccm.zeros]; omega_arith)]
   · rw [ctrBlock_drop12 h7 h13 hi, ctrBlock_drop12 h7 h13 k0, be_zero,
-      be_split (k := 4) (q := min (15 - nonce.length) 4) (by omega) hi,
-      List.zipWith_append (by simp [Spec.Ccm.zeros]; omega), zipWith_or_zeros_right _ (by simp; omega),
+      be_split (k := 4) (q := min (15 - nonce.length) 4) (by omega_arith) hi,
+      List.zipWith_append (by simp [Spec.Ccm.zeros]; omega_arith), zipWith_or_zeros_right _ (by simp; omega_arith),
       zipWith_or_zeros_left _ (length_be _ _)]
 
 /-- The cipher of a key schedule that a write misses. -/
@@ -207,6 +207,6 @@ theorem ctxCiph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {K : 
     (hd : ∀ r ∈ rs, (⟨K, 240⟩ : Region).Disjoint r) {R : Nat} (hR : 16 * (R + 1) ≤ 240) :
     Spec.Ccm.ctxCiph m' K R = Spec.Ccm.ctxCiph m K R := by
   unfold Spec.Ccm.ctxCiph
-  rw [Proof.Cmac.bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hR)) (by omega)]
+  rw [Proof.Cmac.bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hR)) (by omega_arith)]
 
 end VG.Proof.AesCcm

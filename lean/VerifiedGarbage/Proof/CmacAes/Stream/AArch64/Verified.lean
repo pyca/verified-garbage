@@ -65,24 +65,24 @@ theorem chain2_mid {s₀ s : State} {St D S : Addr} {L R : Nat} (hp : APre s₀ 
   have hsum := nb_le c L
   obtain ⟨x19₆, x20₆, x21₆, x22₆, x23₆, sp₆, rd₆, wr₆⟩ := h
   rw [hc] at x21₆ x22₆
-  refine WP.mono (chain2_wp (x := leftOf c L) (by unfold leftOf; omega) x22₆) fun s₇ h₇ => ?_
+  refine WP.mono (chain2_wp (x := leftOf c L) (by unfold leftOf; omega_arith) x22₆) fun s₇ h₇ => ?_
   obtain ⟨x24₇, x4₇, x0₇, x1₇, x2₇, x3₇, x5₇, sv₇, sp₇, -, rd₇, wr₇⟩ := h₇
   have hnb : (if leftOf c L = 0 then 0 else (leftOf c L - 1) / 16) = nbOf c L := rfl
   rw [hnb] at x24₇ x4₇
   have c272 : Region.Sub ⟨St + BitVec.ofNat 64 272, 16⟩ ⟨St, 304⟩ := Offset.sub_base St (by decide)
   subst hc
   have dD : Region.Sub ⟨D + BitVec.ofNat 64 (fOf (s₀.gpr .x2).toNat L), 16 * nbOf (s₀.gpr .x2).toNat L⟩
-      ⟨D, L⟩ := Offset.sub_base D (by omega)
+      ⟨D, L⟩ := Offset.sub_base D (by omega_arith)
   refine ⟨hp.uargs (s := s₇) (Dd := D + BitVec.ofNat 64 (fOf (s₀.gpr .x2).toNat L))
     (n := nbOf (s₀.gpr .x2).toNat L)
     (by rw [x0₇, x19₆]) (by rw [x1₇, x20₆]) (by rw [x2₇, x19₆]) (by rw [x3₇, x21₆]) x4₇
-    (by rw [x5₇, x23₆]) (by rw [rd₇, rd₆]) (by rw [wr₇, wr₆]) (by omega) ((hp.st_d.sub_left c272).symm.sub_left dD)
+    (by rw [x5₇, x23₆]) (by rw [rd₇, rd₆]) (by rw [wr₇, wr₆]) (by omega_arith) ((hp.st_d.sub_left c272).symm.sub_left dD)
     ((hp.d_s.sub_left dD).sub_right (Region.sub_prefix (by decide)))
     (by
       by_cases h0 : nbOf (s₀.gpr .x2).toNat L = 0
-      · rw [h0]; have := (D + BitVec.ofNat 64 (fOf (s₀.gpr .x2).toNat L)).isLt; omega
-      · have := hp.wD; rw [toNat_add_lt D hp.wD (by omega)]; omega)
-    ⟨⟨D, L⟩, by simp, fOf (s₀.gpr .x2).toNat L, rfl, by simp; omega⟩,
+      · rw [h0]; have := (D + BitVec.ofNat 64 (fOf (s₀.gpr .x2).toNat L)).isLt; omega_arith
+      · have := hp.wD; rw [toNat_add_lt D hp.wD (by omega_arith)]; omega_arith)
+    ⟨⟨D, L⟩, by simp, fOf (s₀.gpr .x2).toNat L, rfl, by simp; omega_arith⟩,
     by rw [sv₇ .x19 (by simp [preserved]) (by decide), x19₆], x24₇,
     by rw [sv₇ .x21 (by simp [preserved]) (by decide), x21₆],
     by rw [sv₇ .x22 (by simp [preserved]) (by decide), x22₆],

@@ -50,8 +50,8 @@ theorem header_kept {W : BitVec 32} {m m' : Mem}
   f.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
-    · exact Lay.w_w (by simp only [bO]; omega) (by omega) (by decide)) (by decide)
+    · exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+    · exact Lay.w_w (by simp only [bO]; omega_arith) (by omega_arith) (by decide)) (by decide)
 
 /-- After `header`: what `PadPre` says, and the length of the encoding at
 `W + bO`. -/
@@ -62,8 +62,8 @@ structure HeadPre (K W SP : BitVec 32) (R : Nat) (A : BitVec 32) (a : Nat) (s : 
 theorem aadHead_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     {y : Nat} (hy : y = 0 ∨ y = 96) {A : BitVec 32} {a : Nat} (ha0 : 0 < a) (ha : a < 2 ^ 32) :
     CT (PadPre K W SP R A a) (aadHead v.callee v.suffix y) := by
-  have hh6 : hdrLen a ≤ 6 := by unfold hdrLen; split <;> (try split) <;> omega
-  have hn1 : 1 ≤ headLen a ∧ headLen a ≤ a ∧ hdrLen a + headLen a ≤ 16 := by unfold headLen; omega
+  have hh6 : hdrLen a ≤ 6 := by unfold hdrLen; split <;> (try split) <;> omega_arith
+  have hn1 : 1 ≤ headLen a ∧ headLen a ≤ a ∧ hdrLen a + headLen a ≤ 16 := by unfold headLen; omega_arith
   -- `header`.
   refine CT.seq (J := HeadPre K W SP R A a) (header_ct L ha fun s hs => ⟨hs.env, hs.n⟩)
     (fun s hs => WP.mono (header_ok L hs.env ha hs.n) fun s₁ ⟨E₁, rd, wr, f, hb, _⟩ =>
@@ -73,11 +73,11 @@ theorem aadHead_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Na
         by rw [header_kept f (.inl ⟨by decide, by decide⟩)]; exact hs.n⟩, hb⟩) ?_
   -- `minLen`.
   refine CT.seq (J := fun s => HeadPre K W SP R A a s ∧ s.gpr .ecx = BitVec.ofNat 32 (headLen a))
-    (minLen_ct L fun s hs => ⟨hs.env, hs.n, hs.b, by omega, ha⟩)
-    (fun s hs => WP.mono (minLen_ok L hs.env hs.n hs.b (by omega) ha) fun s₁ ⟨cx, bp, sp, m, rd, wr⟩ =>
+    (minLen_ct L fun s hs => ⟨hs.env, hs.n, hs.b, by omega_arith, ha⟩)
+    (fun s hs => WP.mono (minLen_ok L hs.env hs.n hs.b (by omega_arith) ha) fun s₁ ⟨cx, bp, sp, m, rd, wr⟩ =>
       ⟨⟨⟨⟨bp, sp, hs.env.perm.of_eq rd wr⟩, by rw [m]; exact hs.ctx, by rw [m]; exact hs.rounds,
         fun h => (hs.buf h).of_eq rd wr, by rw [m]; exact hs.d, by rw [m]; exact hs.n⟩, by rw [m]; exact hs.b⟩,
-        by rw [cx]; congr 1; unfold headLen; omega⟩) ?_
+        by rw [cx]; congr 1; unfold headLen; omega_arith⟩) ?_
   -- The arguments of the copy.
   refine CT.block_seq [.ebp] (pin_ebp fun _ h => h.1.env.ebp) (by taint_decide)
     (fun s ⟨hs, cx⟩ => aadHeadArgs_ok L hs.env hs.d hs.n hs.b cx hn1.2.1 ha) ?_
@@ -88,21 +88,21 @@ theorem aadHead_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Na
     (updBlock_ct v L hR hy fun _ h => h)
   have E₃ : Env K W SP s₃ := ⟨hbp₃, hsp₃, hs.env.perm.of_eq hrd₃ hwr₃⟩
   have hA₃ := (hs.buf ha0).of_eq hrd₃ hwr₃
-  have aB : w64 (W + BitVec.ofNat 32 (32 + hdrLen a)) = w64 W + BitVec.ofNat 64 (32 + hdrLen a) := L.aW (by omega)
+  have aB : w64 (W + BitVec.ofNat 32 (32 + hdrLen a)) = w64 W + BitVec.ofNat 64 (32 + hdrLen a) := L.aW (by omega_arith)
   have lp : LoopPre s₃ A (W + BitVec.ofNat 32 (32 + hdrLen a)) (headLen a) :=
-    ⟨hdi, hdx, hcx₃, hn1.1, by omega, by have := hA₃.wrap; omega, by rw [L.nW (by omega)]; have := L.fw; omega,
-      (hA₃.take hn1.2.1).rd, by rw [aB]; exact E₃.perm.wC (by omega),
-      by rw [aB]; exact (hA₃.w.sub_left (Region.sub_prefix hn1.2.1)).sub_right (Lay.wSub (by omega))⟩
+    ⟨hdi, hdx, hcx₃, hn1.1, by omega_arith, by have := hA₃.wrap; omega_arith, by rw [L.nW (by omega_arith)]; have := L.fw; omega_arith,
+      (hA₃.take hn1.2.1).rd, by rw [aB]; exact E₃.perm.wC (by omega_arith),
+      by rw [aB]; exact (hA₃.w.sub_left (Region.sub_prefix hn1.2.1)).sub_right (Lay.wSub (by omega_arith))⟩
   refine WP.mono (copyLoop_ok s₃ lp) fun s₄ P₄ => ?_
   have fC : Frame [⟨w64 W + BitVec.ofNat 64 32, 16⟩] s₃.mem s₄.mem := by
     rw [P₄.mem, aB]
     exact writeBytes_frame _ _ _ (by
       rw [length_bytesAt]
-      exact Offset.contains (w64 W) (d := 32 + hdrLen a) (n := headLen a) (e := 32) (k := 16) (by omega) (by omega)
+      exact Offset.contains (w64 W) (d := 32 + hdrLen a) (n := headLen a) (e := 32) (k := 16) (by omega_arith) (by omega_arith)
         (by decide))
   have k₄ : ∀ o, 112 ≤ o → o + 4 ≤ 240 → slotv s₄.mem W o = slotv s₂.mem W o := fun o h₁ h₂ =>
     (fC.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega)) (by omega) (by decide))
+      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide))
       (by decide)).trans (split_kept hm₃ h₁ h₂)
   exact ⟨E₃.keep (by rw [P₄.other _ (by decide) (by decide) (by decide) (by decide)])
       (by rw [P₄.other _ (by decide) (by decide) (by decide) (by decide)]) P₄.rd P₄.wr,
@@ -124,7 +124,7 @@ theorem aad_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} (
     (fun s hs => aadBlk_ok L hs.env hs.aad hs.alen hl) ?_
   refine CT.ite (decide (al = 0)) (fun _ ⟨_, _, _, hzf, _⟩ => eval_e hzf) (fun _ => CT.nil) fun hf => ?_
   have h0 : al ≠ 0 := of_decide_eq_false hf
-  have hk : headLen al ≤ al := by unfold headLen; omega
+  have hk : headLen al ≤ al := by unfold headLen; omega_arith
   have toPad : ∀ s₁, (∃ s, AadPre K W SP R A al s ∧ s₁.mem = (s.mem.writeW (w64 W + BitVec.ofNat 64 dO) A).writeW
       (w64 W + BitVec.ofNat 64 nO) (BitVec.ofNat 32 al) ∧ s₁.zf = some (decide (al = 0)) ∧ s₁.gpr .ebp = W ∧
       s₁.gpr .esp = SP ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr) → PadPre K W SP R A al s₁ :=
@@ -137,7 +137,7 @@ theorem aad_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} (
           (Offset.contains (w64 W) (d := 276) (n := 4) (e := 240) (k := 2320) (by decide) (by decide) (by decide))
       have k₁ : ∀ o, 112 ≤ o → o + 4 ≤ 240 → slotv s₁.mem W o = slotv s.mem W o := fun o h₁ h₂ =>
         f₁.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by omega)) (by omega) (by decide))
+          simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide))
           (by decide)
       ⟨⟨hbp, hsp, hs.env.perm.of_eq hrd₁ hwr₁⟩, by rw [k₁ _ (by decide) (by decide)]; exact hs.ctx,
         by rw [k₁ _ (by decide) (by decide)]; exact hs.rounds, fun _ => hs.buf.of_eq hrd₁ hwr₁,
@@ -145,13 +145,13 @@ theorem aad_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} (
            exact Mem.readW_writeW_self32 _ _ _,
         by rw [hm₁]; exact Mem.readW_writeW_self32 _ _ _⟩
   refine CT.seq (J := PadPre K W SP R (A + BitVec.ofNat 32 (headLen al)) (al - headLen al))
-    ((aadHead_ct v L hR hy (by omega) hl).mono toPad) (fun s₁ h => ?_) (absorbPad_ct v L hR hy (by omega))
+    ((aadHead_ct v L hR hy (by omega_arith) hl).mono toPad) (fun s₁ h => ?_) (absorbPad_ct v L hR hy (by omega_arith))
   have P := toPad s₁ h
   obtain ⟨s, hs, -⟩ := h
-  refine WP.mono (aadHead_ok v L P.env hR P.ctx P.rounds hy (P.buf (by omega)) (by omega) hl P.d P.n)
+  refine WP.mono (aadHead_ok v L P.env hR P.ctx P.rounds hy (P.buf (by omega_arith)) (by omega_arith) hl P.d P.n)
     fun s₂ ⟨A₂, hd₂, hn₂⟩ => ⟨A₂.env, by rw [slot_kept L hy A₂.frame (by decide) (by decide)]; exact P.ctx,
       by rw [slot_kept L hy A₂.frame (by decide) (by decide)]; exact P.rounds, fun _ => ?_, hd₂, hn₂⟩
-  have hA := P.buf (by omega)
-  exact (hA.drop hk (by have := hA.wrap; omega)).of_eq A₂.rd A₂.wr
+  have hA := P.buf (by omega_arith)
+  exact (hA.drop hk (by have := hA.wrap; omega_arith)).of_eq A₂.rd A₂.wr
 
 end VG.Proof.AesCcm.X86

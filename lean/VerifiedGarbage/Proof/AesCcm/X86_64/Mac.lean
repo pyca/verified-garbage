@@ -30,7 +30,7 @@ theorem mac_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E 
       (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (Spec.Cmac.zeros 16)
         (Spec.Ccm.format tl nonce (bytesAt s.mem A al) (bytesAt s.mem D n)))) := by
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with rfl | rfl | rfl <;> decide
-  have hy16 : y + 16 ≤ 2560 := by omega
+  have hy16 : y + 16 ≤ 2560 := by omega_arith
   refine WP.seq (WP.mono (b0_ok v L E S hR hnl h7 h13 ht4 ht16 hte hA.lt hn hc0 hy)
     fun s₁ ⟨E₁, f₁, h₁, hrd₁, hwr₁⟩ => ?_)
   -- The slots, which the pieces of the MAC keep.
@@ -41,11 +41,11 @@ theorem mac_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E 
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl | rfl
           · rcases hy with rfl | rfl
-            · exact L.w_w (.inr (by omega)) (by omega) (by decide)
-            · exact L.w_w (.inr (by omega)) (by omega) (by decide)
-          · exact L.w_w (.inr (by omega)) (by omega) (by decide)
-          · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-          · exact (L.stk_w' (by omega)).symm) (by decide)
+            · exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+            · exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+          · exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+          · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+          · exact (L.stk_w' (by omega_arith)).symm) (by decide)
       exact ⟨by rw [k 232 (by decide) (by decide)]; exact hs.rounds, by rw [k 160 (by decide) (by decide)]; exact hs.nonce,
         by rw [k 168 (by decide) (by decide)]; exact hs.nlen, by rw [k 176 (by decide) (by decide)]; exact hs.aad,
         by rw [k 184 (by decide) (by decide)]; exact hs.alen, by rw [k 192 (by decide) (by decide)]; exact hs.data,
@@ -80,7 +80,7 @@ theorem mac_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E 
   have f₃ : Frame (macR W SP y) s.mem s₃.mem := by rw [hm₃]; exact f₁.trans M₂.frame
   have hk := k_macR L hy16
   refine ⟨A₄.env, f₃.trans A₄.frame, ?_, by rw [A₄.rd, rd₃], by rw [A₄.wr, wr₃]⟩
-  have hl : nonce.length ≤ 15 := by omega
+  have hl : nonce.length ≤ 15 := by omega_arith
   have f₂ : Frame (macR W SP y) s.mem s₂.mem := f₁.trans M₂.frame
   rw [A₄.out, hm₃, M₂.out, h₁, ctxCiph_frame f₂ hk hRb, ctxCiph_frame f₁ hk hRb, buf_kept hD hy16 f₂,
     buf_kept hA hy16 f₁, format_eq tl hl, length_bytesAt, length_bytesAt, Proof.Cmac.chain_append,

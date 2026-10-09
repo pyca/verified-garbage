@@ -30,12 +30,12 @@ theorem arg_cur {s₀ s : State} (hesp : s.gpr .esp = s₀.gpr .esp) {i : Nat}
 theorem UPre.argsOut {s₀ : State} (hp : UPre s₀) {s : State} (hesp : s.gpr .esp = E s₀) (hwr : s.wr = s₀.wr) :
     ArgsOut 6 s := by
   have hs : (s₀.gpr .esp).toNat + 28 ≤ 2 ^ 32 := hp.esp_fit
-  refine ⟨by rw [hesp]; omega, ?_⟩
+  refine ⟨by rw [hesp]; omega_arith, ?_⟩
   rw [hwr, hp.wr, hesp]
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
-  · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega) hp.ret_st hp.args_st
-  · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega) hp.ret_scr hp.args_scr
+  · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega_arith) hp.ret_st hp.args_st
+  · exact VG.X86.Taint.frame_disjoint (n := 24) (by omega_arith) hp.ret_scr hp.args_scr
 
 /-- What two runs agree on at a point between the calls. -/
 structure Pt (s₀ : State) (s : State) : Prop where
@@ -167,7 +167,7 @@ theorem loop_ct {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : u
     exact ⟨h0 ▸ l₁, by rw [← hN, ← h0]; exact l₂⟩
   · rw [e₁] at ht
     have h0 : k + 1 ≠ N s₀ := by simpa using ht
-    exact ⟨N s₀ - (k + 1), by omega, k + 1, rfl, ⟨by omega, l₁⟩, ⟨by omega, l₂⟩⟩
+    exact ⟨N s₀ - (k + 1), by omega_arith, k + 1, rfl, ⟨by omega_arith, l₁⟩, ⟨by omega_arith, l₂⟩⟩
 
 /-! ## The whole function -/
 
@@ -210,7 +210,7 @@ theorem update_rel {s₀ s₀' : State} (h0 : updateX86.pre s₀) (h0' : updateX
       all_goals
         have := h.2; rw [ev h.1.1.2] at this
         have : N s₀ ≠ 0 := by simpa using this
-        omega
+        omega_arith
   have epi := RelCT.taint (A := taint) (P := fun a b => LInv s₀ (N s₀) a ∧ LInv s₀' (N s₀') b)
     (argTaint [] (4 + 4 * 6)) (fun _ _ h => Pt.agree hq hp hp' (h.1.pt hp) (h.2.pt hp') fun r hr => by simp at hr)
     (c := .block (restore 5)) (by taint_decide)

@@ -113,18 +113,18 @@ theorem mask_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W S
       rw [m₂]; cases c <;> simp [Spec.Aes.bytesAt, zeros, writeBytes_nil], fun r _ _ _ => rfl, rd₂, wr₂⟩
   rintro k t ⟨j, rfl, hj, di, cx, mem, g, rd, wr⟩
   obtain ⟨t', run', mem', di', cx', zf', g', rd', wr'⟩ := maskStep_ok t (P := D) (i := j) (n := n) (c := c) di cx
-    (by rw [g _ (by decide) (by decide) (by decide), bx₂]) (w64_add (by omega))
-    (by rw [rd, wr]; exact in_of_covers hD.rd hj (by omega))
-    (by rw [wr]; exact in_of_covers hDw hj (by omega))
+    (by rw [g _ (by decide) (by decide) (by decide), bx₂]) (w64_add (by omega_arith))
+    (by rw [rd, wr]; exact in_of_covers hD.rd hj (by omega_arith))
+    (by rw [wr]; exact in_of_covers hDw hj (by omega_arith))
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have fr : Frame [⟨w64 D, j⟩] s.mem t.mem := by
     rw [mem]; exact writeBytes_frame _ _ _ (by rw [length_mask]; exact Region.contains_self _ _)
   have hq : t.mem (w64 D + BitVec.ofNat 64 j) = s.mem (w64 D + BitVec.ofNat 64 j) :=
     fr _ fun r hr hcon => by
       simp only [List.mem_singleton] at hr; subst hr
-      simp only [Region.Contains, Mem.sub_ofNat_toNat (w64 D) (show j < 2 ^ 64 by omega)] at hcon; omega
+      simp only [Region.Contains, Mem.sub_ofNat_toNat (w64 D) (show j < 2 ^ 64 by omega_arith)] at hcon; omega_arith
   have hmem : t'.mem = writeBytes s.mem (w64 D) (if c then bytesAt s.mem (w64 D) (j + 1) else zeros (j + 1)) := by
-    rw [mem', hq, mem, mask_succ, writeBytes_snoc _ _ _ _ (by rw [length_mask]; omega), length_mask]
+    rw [mem', hq, mem, mask_succ, writeBytes_snoc _ _ _ _ (by rw [length_mask]; omega_arith), length_mask]
   have hz : t'.zf = some (decide (j + 1 = n)) := by rw [zf', pred_beq hj hn32]
   have gg : ∀ r, r ≠ .edx → r ≠ .edi → r ≠ .ecx → t'.gpr r = s₂.gpr r := fun r h₁ h₂ h₃ => by
     rw [g' r h₁ h₂ h₃, g r h₁ h₂ h₃]
@@ -134,7 +134,7 @@ theorem mask_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W S
   · left
     exact ⟨by simp [eval, hz, he], E', by rw [rd', rd], by rw [wr', wr], by rw [hmem, he]⟩
   · right
-    refine ⟨by simp [eval, hz, he], n - (j + 1), by omega, j + 1, rfl, by omega, di',
+    refine ⟨by simp [eval, hz, he], n - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, di',
       by rw [cx', pred_count hj hn32], hmem, gg, by rw [rd', rd], by rw [wr', wr]⟩
 
 /-! ## The tag copied out -/
@@ -158,9 +158,9 @@ theorem tagOut_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W
     · cregs [E.esp]
     all_goals cmems []
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have lp : LoopPre s₁ W T t := ⟨hdi, hdx, hcx, ht1, by omega, by have := L.fw; omega, Tb.wrap,
-    by rw [hrd₁, hwr₁]; simpa using covers_left (E.perm.wC (d := 0) (n := t) (by omega)),
-    by rw [hwr₁]; exact tw, (Tb.w.sub_right (Region.sub_prefix (by omega))).symm⟩
+  have lp : LoopPre s₁ W T t := ⟨hdi, hdx, hcx, ht1, by omega_arith, by have := L.fw; omega_arith, Tb.wrap,
+    by rw [hrd₁, hwr₁]; simpa using covers_left (E.perm.wC (d := 0) (n := t) (by omega_arith)),
+    by rw [hwr₁]; exact tw, (Tb.w.sub_right (Region.sub_prefix (by omega_arith))).symm⟩
   refine WP.mono (copyLoop_ok s₁ lp) fun s' P => ⟨by rw [P.mem, hm₁], ⟨?_, ?_, E.perm.of_eq ?_ ?_⟩, ?_, ?_⟩
   · rw [P.other _ (by decide) (by decide) (by decide) (by decide), hbp]
   · rw [P.other _ (by decide) (by decide) (by decide) (by decide), hsp]

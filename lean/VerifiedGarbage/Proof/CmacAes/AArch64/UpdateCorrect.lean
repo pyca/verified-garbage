@@ -41,13 +41,13 @@ theorem loop_ok (v : Ctr32Impl) {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : 
   rintro n s ⟨k, rfl, hk, h⟩
   refine WP.mono (body_ok v hp hk h) fun s' h' => ?_
   have hN : N s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
-  have ev := eval_x23 (x := N s₀ - (k + 1)) (by omega) h'.x23
+  have ev := eval_x23 (x := N s₀ - (k + 1)) (by omega_arith) h'.x23
   by_cases hz : N s₀ - (k + 1) = 0
   · left
     refine ⟨by rw [ev]; simp [hz], ?_⟩
-    rwa [show N s₀ = k + 1 by omega]
+    rwa [show N s₀ = k + 1 by omega_arith]
   · right
-    refine ⟨by rw [ev]; simp [hz], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
+    refine ⟨by rw [ev]; simp [hz], N s₀ - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, h'⟩
 
 /-! ## Saving and restoring the registers -/
 
@@ -98,7 +98,7 @@ theorem slots_disj {s₀ : State} (hp : UPre s₀) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact hp.st_scr.symm.sub_left (UPre.scr_sub (by decide))
-  · exact Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega)
+  · exact Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega_arith)
 
 theorem slot_read {s₀ : State} (hp : UPre s₀) {m : Mem}
     (hf : Frame [stR s₀, ⟨S s₀, 2064⟩] (savedMem s₀) m) {d : Nat} (h₁ : 2064 ≤ d) (h₂ : d + 8 ≤ 2120) :
@@ -109,7 +109,7 @@ theorem prologue_wp {s₀ : State} (hp : UPre s₀) :
     WP isa (.block (save ++ setup)) s₀ fun s₁ => LInv s₀ 0 s₁ := by
   obtain ⟨s₁, run₁, x19₁, x20₁, x21₁, x22₁, x23₁, x24₁, keep₁, sp₁, mem₁, rd₁, wr₁⟩ :=
     prologue_ok s₀ fun d _ h₂ => by
-      rw [hp.wr]; exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega) (by omega))
+      rw [hp.wr]; exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega_arith) (by omega_arith))
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   have stSaved : Spec.Aes.bytesAt (savedMem s₀) (St s₀) 16 = Spec.Aes.bytesAt s₀.mem (St s₀) 16 :=
     Proof.Cmac.bytesAt_frame16 (savedMem_frame s₀) fun r hr => by
@@ -133,7 +133,7 @@ theorem mid_wp (v : Ctr32Impl) {s₀ : State} (hp : UPre s₀) {s₁ : State} (h
   · refine WP.ite true (by rw [ev]; simp [hn]) (fun _ => WP.block_nil ?_) (fun h => by cases h)
     rw [hn]; exact h
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
-    exact loop_ok v hp (by omega) h
+    exact loop_ok v hp (by omega_arith) h
 
 theorem epilogue_wp {s₀ : State} (hp : UPre s₀) {s₂ : State} (h₂ : LInv s₀ (N s₀) s₂) :
     WP isa (.block restore) s₂ fun s' => GprAbi s₀ s' ∧ updateAArch64.post s₀ s' := by
@@ -141,7 +141,7 @@ theorem epilogue_wp {s₀ : State} (hp : UPre s₀) {s₂ : State} (h₂ : LInv 
   obtain ⟨s₃, run₃, slot₃, keep₃, sp₃, mem₃⟩ :=
     restore_ok s₂ h₂.x24 fun d _ h₂' => by
       rw [rdwr, hp.rd, hp.wr]
-      exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega) (by have := hp.scr_wrap; omega))
+      exact in_rw (r := scrR s₀) (by simp) (Offset.contains_base _ (by omega_arith) (by have := hp.scr_wrap; omega_arith))
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
   have sl {r : Reg} {d : Nat} (h : (r, d) ∈ saved) : s₃.gpr r = s₀.gpr r := by
     have hd : 2064 ≤ d ∧ d + 8 ≤ 2120 := by

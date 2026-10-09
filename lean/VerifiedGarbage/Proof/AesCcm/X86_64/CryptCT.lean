@@ -42,8 +42,8 @@ theorem both_agree_k {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat}
           List.getD_cons_zero]
       simp only at hk₁' hk₂'
       rw [hb s₁ h.wr₁, hb s₂ h.wr₂, show W + BitVec.ofNat 64 k = W + BitVec.ofNat 64 216 + BitVec.ofNat 64 (k - 216)
-        by rw [add_ofNat_assoc, show 216 + (k - 216) = k by omega]]
-      exact word_byte hk₁ hk₂ (by omega)
+        by rw [add_ofNat_assoc, show 216 + (k - 216) = k by omega_arith]]
+      exact word_byte hk₁ hk₂ (by omega_arith)
 
 /-- Code the taint analysis checks from `ccmTk rs`, leaving the flags public. -/
 theorem rel_flagsCk {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {P : State → State → Prop}
@@ -79,20 +79,20 @@ theorem chunkPre_ok {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {D
       Frame [⟨W + BitVec.ofNat 64 64, 16⟩, ⟨W + BitVec.ofNat 64 216, 8⟩] t.mem t₅.mem := by
   have L := C.lay
   have hn64 : n < 2 ^ 64 := C.buf.lt
-  refine WP.assoc (WP.seq (WP.mono (kSel_ok I.rbx I.r14 (by omega)) fun t₂ ⟨hm₂, hr8₂, hg₂, hrd₂, hwr₂⟩ => ?_))
-  have hk1 : 1 ≤ chunkK n b := by unfold chunkK; have := Nat.mod_lt (1 + b) (show 0 < 2 ^ 32 by decide); omega
-  have hkb : b + chunkK n b ≤ n / 16 := by unfold chunkK; omega
+  refine WP.assoc (WP.seq (WP.mono (kSel_ok I.rbx I.r14 (by omega_arith)) fun t₂ ⟨hm₂, hr8₂, hg₂, hrd₂, hwr₂⟩ => ?_))
+  have hk1 : 1 ≤ chunkK n b := by unfold chunkK; have := Nat.mod_lt (1 + b) (show 0 < 2 ^ 32 by decide); omega_arith
+  have hkb : b + chunkK n b ≤ n / 16 := by unfold chunkK; omega_arith
   obtain ⟨t₅, run₅, f₅, _, hkO₅, hdi, hsi, hdx, hcx, hr8, hr9, hg₅, hrd₅, hwr₅⟩ :=
     setup_ok C I hb hm₂ hr8₂ hg₂ hrd₂ hwr₂
   have E₅ : Env K W SP t₅ := I.env.keep (fun r hr => hg₅ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp)) hrd₅ hwr₅
-  have hS := (C.buf.of_eq (hrd₅.trans I.rd) (hwr₅.trans I.wr)).slice (a := 16 * b) (k := 16 * chunkK n b) (by omega)
+  have hS := (C.buf.of_eq (hrd₅.trans I.rd) (hwr₅.trans I.wr)).slice (a := 16 * b) (k := 16 * chunkK n b) (by omega_arith)
   have hqc : (⟨D + BitVec.ofNat 64 (16 * b), 16 * chunkK n b⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 64, 16⟩ :=
     hS.w.sub_right (Lay.wSub (by decide))
   have hqk : (⟨K, 240⟩ : Region).Disjoint ⟨D + BitVec.ofNat 64 (16 * b), 16 * chunkK n b⟩ :=
-    C.dk.sub_right (Offset.sub_base D (by omega))
+    C.dk.sub_right (Offset.sub_base D (by omega_arith))
   have hqw : Covers [⟨D + BitVec.ofNat 64 (16 * b), 16 * chunkK n b⟩] t₅.wr := by
-    rw [hwr₅, I.wr]; exact covers_off C.dw (by omega) hn64
+    rw [hwr₅, I.wr]; exact covers_off C.dw (by omega_arith) hn64
   exact WP.of_runBlock ⟨t₅, run₅, cargs L E₅ C.rounds (c := 64) (by decide) (srcBuf hS) hqc hqk hqw
     hdi hsi hdx hcx hr8 hr9, E₅, hkO₅, hg₅, hrd₅, hwr₅, f₅⟩
 
@@ -179,7 +179,7 @@ theorem chunk_rel (v : Ctr32Impl) {K W SP : Addr} {R : Nat} {N A D : Addr} {nl a
   have L := C₁.lay
   have hDW := C₁.buf.w
   have hn : n ≤ 2 ^ 64 := Nat.le_of_lt C₁.buf.lt
-  have hkb : 16 * b + 16 * chunkK n b ≤ n := by unfold chunkK; omega
+  have hkb : 16 * b + 16 * chunkK n b ≤ n := by unfold chunkK; omega_arith
   have hreg : ∀ {t₁ t₂ : State}, t₁.gpr .rbx = BitVec.ofNat 64 (n / 16 - b) → t₂.gpr .rbx = BitVec.ofNat 64 (n / 16 - b) →
       t₁.gpr .r12 = D + BitVec.ofNat 64 (16 * b) → t₂.gpr .r12 = D + BitVec.ofNat 64 (16 * b) →
       t₁.gpr .r14 = BitVec.ofNat 64 (1 + b) → t₂.gpr .r14 = BitVec.ofNat 64 (1 + b) →
@@ -235,8 +235,8 @@ theorem tailArgs_ok {K W SP : Addr} {σ : State} {R : Nat} {nonce : List Byte} {
   have E₀ : Env K W SP t₀ := I.env.keep (fun r hr => hg₀ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide)) hrd₀ hwr₀
   obtain ⟨t₁, run₁, f₁, _, _, hdi, hsi, hdx, hcx, hr8, hr9, hg₁, hrd₁, hwr₁⟩ :=
-    tailSetup_ok E₀ (by rw [hm₀, C.readW_kept I.frame (by omega), C.ro]) C.h7 C.h13
-      (by rw [hm₀, C.bytes_kept I.frame (by omega), C.c0]) (j := 1 + n / 16) (by have := C.hn; omega)
+    tailSetup_ok E₀ (by rw [hm₀, C.readW_kept I.frame (by omega_arith), C.ro]) C.h7 C.h13
+      (by rw [hm₀, C.bytes_kept I.frame (by omega_arith), C.c0]) (j := 1 + n / 16) (by have := C.hn; omega_arith)
       (by rw [hg₀ _ (by decide), I.r14])
   have E₁ : Env K W SP t₁ := E₀.keep (fun r hr => hg₁ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp)) hrd₁ hwr₁
@@ -362,7 +362,7 @@ theorem chunks_rel (v : Ctr32Impl) {K W SP : Addr} {R : Nat} {N A D : Addr} {nl 
     exact ⟨I₁, I₂⟩
   · rw [eval_ne hz₁] at ht
     have he : b + min (n / 16 - b) (2 ^ 32 - (1 + b) % 2 ^ 32) ≠ n / 16 := by simpa using ht
-    exact ⟨n / 16 - (b + min (n / 16 - b) (2 ^ 32 - (1 + b) % 2 ^ 32)), by omega, _, rfl, by omega, I₁, I₂⟩
+    exact ⟨n / 16 - (b + min (n / 16 - b) (2 ^ 32 - (1 + b) % 2 ^ 32)), by omega_arith, _, rfl, by omega_arith, I₁, I₂⟩
 
 /-- After the whole blocks: `n mod 16` in `rbp`, and ZF set when there are no
 last bytes. -/
@@ -372,7 +372,7 @@ theorem tailIn_ok {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {�
     WP isa (.block [.mov .rbp (.mem (at_ .r15 lenO)), .alu .and .rbp (imm 15), .alu .test .rbp (.reg .rbp)]) t
       fun t₀ => TailIn K W SP R nonce D n σ t₀ ∧ t₀.zf = some (decide (n % 16 = 0)) := by
   have hl : t.mem.readW (W + BitVec.ofNat 64 200) 64 = BitVec.ofNat 64 n := by
-    rw [C.readW_kept I.frame (by omega)]; exact O.sl.len
+    rw [C.readW_kept I.frame (by omega_arith)]; exact O.sl.len
   exact WP.mono (ctrB3_ok I.env hl C.buf.lt) fun t₀ ⟨hm, hbp, hz, hg, hrd, hwr⟩ =>
     ⟨⟨t, I, hm, hg, hbp, hrd, hwr⟩, hz⟩
 
@@ -400,7 +400,7 @@ theorem crypt_rel (v : Ctr32Impl) {K W SP : Addr} {R : Nat} {N A D : Addr} {nl a
     · have h0 : n / 16 = 0 := by rw [eval_e hz₁] at ht; simpa using ht
       rw [h0]; exact ⟨I₁, I₂⟩
     · have h0 : n / 16 ≠ 0 := by rw [eval_e hz₁] at hf; simpa using hf
-      exact ⟨0, rfl, by omega, I₁, I₂⟩
+      exact ⟨0, rfl, by omega_arith, I₁, I₂⟩
   · refine RelCT.ite (fun t₁ t₂ h => eval_e_eq h.1.2) (RelCT.block_nil fun _ _ _ => trivial) ?_
     by_cases h0 : n % 16 = 0
     · exact RelCT.of_false fun t₁ t₂ ⟨⟨_, ⟨_, hz₁⟩, _⟩, hf⟩ => by rw [eval_e hz₁] at hf; simp [h0] at hf

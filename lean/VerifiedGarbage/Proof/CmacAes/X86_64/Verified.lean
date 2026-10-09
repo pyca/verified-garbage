@@ -135,11 +135,11 @@ theorem loop_ct (v : Ctr32Impl) {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPr
   · rw [e₁] at hf
     have h0 : N s₀ = k + 1 := by
       have : N s₀ - (k + 1) = 0 := by simpa using hf
-      omega
+      omega_arith
     exact ⟨h0 ▸ l₁, by rw [← hN, h0]; exact l₂⟩
   · rw [e₁] at ht
     have h0 : N s₀ - (k + 1) ≠ 0 := by simpa using ht
-    exact ⟨N s₀ - (k + 1), by omega, k + 1, rfl, by omega, l₁, l₂⟩
+    exact ⟨N s₀ - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, l₁, l₂⟩
 
 /-! ## The whole function -/
 
@@ -184,7 +184,7 @@ theorem update_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : updateX86_64.pre s
         fun _ _ h => h
       have := h.2; change a.zf = _ at this; rw [h.1.1.2] at this
       have : N s₀ ≠ 0 := by simpa using this
-      omega
+      omega_arith
   have epi := RelCT.taint (A := taint) (P := fun a b => LInv s₀ (N s₀) a ∧ LInv s₀' (N s₀') b) _
     (fun a b h => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -227,9 +227,9 @@ theorem smid_wp {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W K S R)
   have sw := hp.scr_wrap
   have kw := hp.k_wrap
   have inS (d : Nat) (h : d + 8 ≤ 2176) : InRegions s₀.wr (s₀.gpr .rcx + BitVec.ofNat 64 d) 8 := by
-    rw [hp.wr, hp.rcx]; exact in_rw (r := ⟨S, 2176⟩) (by simp) (Offset.contains_base _ h (by omega))
+    rw [hp.wr, hp.rcx]; exact in_rw (r := ⟨S, 2176⟩) (by simp) (Offset.contains_base _ h (by omega_arith))
   have inK (d : Nat) (h : d + 8 ≤ 32) : InRegions s₀.wr (s₀.gpr .rdx + BitVec.ofNat 64 d) 8 := by
-    rw [hp.wr, hp.rdx]; exact in_rw (r := ⟨K, 32⟩) (by simp) (Offset.contains_base _ h (by omega))
+    rw [hp.wr, hp.rdx]; exact in_rw (r := ⟨K, 32⟩) (by simp) (Offset.contains_base _ h (by omega_arith))
   obtain ⟨s₁, run₁, rdi₁, rsi₁, rdx₁, rcx₁, r8₁, r9₁, rbx₁, rbp₁, cs₁, mem₁, rd₁, wr₁⟩ :=
     subkeysPre_ok s₀ (inS _ (by decide)) (inS _ (by decide)) (inS _ (by decide)) (inS _ (by decide))
       (inK _ (by decide)) (inK _ (by decide))

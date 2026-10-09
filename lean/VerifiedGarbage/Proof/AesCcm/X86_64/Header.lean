@@ -24,7 +24,7 @@ theorem le8_ushiftRight (x : BitVec 64) {k : Nat} (hk : k ≤ 8) :
   have hl : ((le8 x).drop k).length = 8 - k := by rw [List.length_drop, Proof.Cmac.length_le8]
   have hlen : (le8 (x >>> (8 * k))).length = ((le8 x).drop k ++ Spec.Ccm.zeros k).length := by
     rw [Proof.Cmac.length_le8, List.length_append, hl, Spec.Ccm.zeros, List.length_replicate]
-    omega
+    omega_arith
   apply List.ext_getElem hlen
   intro i h₁ h₂
   have hi : i < 8 := by rwa [Proof.Cmac.length_le8] at h₁
@@ -34,13 +34,13 @@ theorem le8_ushiftRight (x : BitVec 64) {k : Nat} (hk : k ≤ 8) :
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.div_div_eq_div_mul,
       ← Nat.pow_add]
-    rw [show 8 * k + 8 * i = 8 * (k + i) by omega]
-  · rw [List.getElem_append_right (by rw [hl]; omega)]
+    rw [show 8 * k + 8 * i = 8 * (k + i) by omega_arith]
+  · rw [List.getElem_append_right (by rw [hl]; omega_arith)]
     simp only [Spec.Ccm.zeros, List.getElem_replicate, le8, List.getElem_map, List.getElem_range]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, Nat.div_div_eq_div_mul,
       ← Nat.pow_add, BitVec.toNat_ofNat]
-    rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le x.isLt (Nat.pow_le_pow_right (by decide) (by omega)))]
+    rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le x.isLt (Nat.pow_le_pow_right (by decide) (by omega_arith)))]
     rfl
 
 theorem le8_ffff : le8 (BitVec.ofNat 64 0xffff) = [0xff, 0xff] ++ Spec.Ccm.zeros 6 := by decide
@@ -68,7 +68,7 @@ theorem minLen_ok (s : State) {o n : Nat} (hbx : s.gpr .rbx = BitVec.ofNat 64 o)
     refine ⟨_, by crun [], ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp [gpr_setReg, hbx, ofNat_sub ho (by decide)]
     · simp only [cf_arithFlags, hbp, hbx, setWidth_imm, ofNat_sub ho (by decide),
-        toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (show 16 - o < 2 ^ 64 by omega),
+        toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (show 16 - o < 2 ^ 64 by omega_arith),
         show (16 : Nat) % 2 ^ 32 = 16 from rfl, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
     · intro r hr; simp [gpr_setReg, gpr_arithFlags, hr]
     all_goals rfl
@@ -82,7 +82,7 @@ theorem minLen_ok (s : State) {o n : Nat} (hbx : s.gpr .rbx = BitVec.ofNat 64 o)
     all_goals first | exact hm | exact hrd | exact hwr
   · have h := of_decide_eq_false hf
     refine WP.of_runBlock ⟨s₁, rfl, ?_, hg, hm, hrd, hwr⟩
-    rw [hcx, Nat.min_eq_left (by omega)]
+    rw [hcx, Nat.min_eq_left (by omega_arith)]
 
 /-- `B` zeroed, then the encoding of the length `a` of the associated data
 (`rbp`) at its start, and its length in `rbx`. -/
@@ -100,7 +100,7 @@ theorem header_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {a : Nat} (ha0 
   have e40 : W + BitVec.ofNat 64 40 = W + BitVec.ofNat 64 32 + BitVec.ofNat 64 8 := by rw [add_ofNat_assoc]
   have e34 : W + BitVec.ofNat 64 34 = W + BitVec.ofNat 64 32 + BitVec.ofNat 64 2 := by rw [add_ofNat_assoc]
   have cB : ∀ d k, 32 ≤ d → d + k ≤ 48 → (⟨W + BitVec.ofNat 64 32, 16⟩ : Region).Contains (W + BitVec.ofNat 64 d) k :=
-    fun d k h₁ h₂ => Offset.contains W h₁ (by omega) (by decide)
+    fun d k h₁ h₂ => Offset.contains W h₁ (by omega_arith) (by decide)
   -- `B` zeroed; CF for `a < 2¹⁶ − 2⁸`.
   obtain ⟨s₁, run₁, hm₁, hcf₁, hg₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
       (zero16 bO ++ [.mov32 .rax (imm 0xff00), .alu .cmp .rbp (.reg .rax)]) s = some s₁ ∧
@@ -144,7 +144,7 @@ theorem header_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {a : Nat} (ha0 
     · simp only [mem_setReg, gpr_setReg, ite_true, ite_false, reduceCtorEq, hbp₁]
       rw [bytesAt_writeW64_base _ _ _ (by decide) (by decide), hz,
         show (48 : Nat) = 8 * 6 from rfl, le8_ushiftRight _ (by decide), le8_bswap64_ofNat ha,
-        be_split (q := 2) (by decide) (by omega), encodeLen_lo h₁, show Proof.AesCcm.hdrLen a = 2 by
+        be_split (q := 2) (by decide) (by omega_arith), encodeLen_lo h₁, show Proof.AesCcm.hdrLen a = 2 by
           simp [Proof.AesCcm.hdrLen, h₁]]
       simp [Spec.Ccm.zeros, List.drop_append_of_le_length, Proof.AesCcm.length_be]
   · have h₁ := of_decide_eq_false hf
@@ -182,7 +182,7 @@ theorem header_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {a : Nat} (ha0 
         rw [bytesAt_writeW64_base _ _ _ (by decide) (by decide), hz,
           show (65279#64 : BitVec 64) = BitVec.ofNat 64 0xfeff from rfl, le8_or,
           show bswap64 (BitVec.ofNat 64 a) >>> 16 = bswap64 (BitVec.ofNat 64 a) >>> (8 * 2) from rfl,
-          le8_ushiftRight _ (by decide), le8_bswap64_ofNat ha, be_split (q := 4) (by decide) (by omega),
+          le8_ushiftRight _ (by decide), le8_bswap64_ofNat ha, be_split (q := 4) (by decide) (by omega_arith),
           encodeLen_mid h₁ h₂, le8_feff, show Proof.AesCcm.hdrLen a = 6 by simp [Proof.AesCcm.hdrLen, h₁, h₂]]
         have hl4 := Proof.AesCcm.length_be 4 a
         rcases hb : Spec.Ccm.be 4 a with _ | ⟨b₀, _ | ⟨b₁, _ | ⟨b₂, _ | ⟨b₃, _ | ⟨_, _⟩⟩⟩⟩⟩ <;>

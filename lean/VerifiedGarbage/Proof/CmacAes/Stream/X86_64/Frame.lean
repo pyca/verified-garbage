@@ -25,7 +25,7 @@ theorem init_xdepth (v : Ctr32Impl) : (init v.expand v.callee v.suffix).x86_64De
 theorem absorb_xdepth (v : UpdateImpl) : (absorb v.callee).x86_64Depth ≤ 16 := by
   have := v.xdepth
   simp only [absorb, absorbPre, absorbPost, held, fill, copy, chain1, chain2, Code.x86_64Depth, Nat.max_le]
-  omega
+  omega_arith
 
 theorem finish_xdepth (v : Ctr32Impl) : (finish v.callee v.suffix).x86_64Depth ≤ 16 := by
   simp only [finish, finPre, lastLen, Impl.CmacAes.X86_64.finalize, Code.x86_64Depth, v.noStack]

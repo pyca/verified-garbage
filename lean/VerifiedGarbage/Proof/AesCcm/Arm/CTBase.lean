@@ -87,7 +87,7 @@ theorem pubArgs : PubArgs sp (argVals A D T w al n tl) s where
   fit := by rw [← h.sp]; exact h.ar.stk.fit
   wr := h.wr
   arg i hi := by
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 by omega) with
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 by omega_arith) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact h.eA
     · exact h.eal

@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Impl.CmacAes.Arm
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-CMAC on ARMv7: calling `vg_aes_ctr32` on one block
@@ -22,7 +23,7 @@ open VG VG.Arm VG.Impl.CmacAes.Arm
 theorem ofBytes_zeros : Spec.Gcm.ofBytes (Spec.Cmac.zeros 16) = 0 := by decide
 
 theorem toNat_rounds {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofNat 32 R).toNat = R := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
 
 theorem storeWords_two (m : Mem) (a : BitVec 32) (x y : BitVec 32) :
     storeWords m a [x, y] = (m.writeW (State.addr a) x).writeW (State.addr (a + 4)) y := rfl
@@ -34,9 +35,9 @@ theorem addr_sub {a : BitVec 32} {k : Nat} (h : k ≤ a.toNat) :
   apply BitVec.eq_of_toNat_eq
   have := a.isLt
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := k) (by omega),
-    Nat.mod_eq_of_lt (a := a.toNat) (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := k) (by omega_arith), Nat.mod_eq_of_lt (a := k) (by omega_arith),
+    Nat.mod_eq_of_lt (a := a.toNat) (by omega_arith)]
+  omega_arith
 
 /-- The 8 bytes below the stack pointer, where the frame pushes the stack arguments. -/
 abbrev below (s : State) : Region := ⟨State.addr s.sp - 8, 8⟩
@@ -103,7 +104,7 @@ theorem hspA : (s.sp - 8).toNat = s.sp.toNat - 8 :=
 
 theorem hA4 : State.addr (s.sp - 8 + BitVec.ofNat 32 4) = State.addr s.sp - 8 + 4 := by
   have := s.sp.isLt
-  rw [addr_add (by rw [h.hspA]; omega), h.hA]; rfl
+  rw [addr_add (by rw [h.hspA]; omega_arith), h.hA]; rfl
 
 theorem amem : (pushed [ra, rb] s).mem =
     (s.mem.writeW (State.addr s.sp - 8) (1 : BitVec 32)).writeW (State.addr s.sp - 8 + 4) S := by
@@ -114,7 +115,7 @@ theorem amem : (pushed [ra, rb] s).mem =
 theorem fA : Frame [below s] s.mem (pushed [ra, rb] s).mem := by
   rw [h.amem]
   refine ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _ ?_
-  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
   · simp only [Region.Contains]
     rw [Offset.add_sub_cancel_left]; decide
 
@@ -155,7 +156,7 @@ theorem pre : Proof.Aes.ctr32Arm.pre (ctrView s ra rb W C D S) := by
   · simpa using h.ds
   · simpa [below] using h.bd.symm
   · simpa using h.hD
-  · have := s.sp.isLt; omega
+  · have := s.sp.isLt; omega_arith
 
 /-- The stack arguments are the frame. -/
 theorem cov : Covers (ctrRd s W ++ ctrWr C D S) ((pushed [ra, rb] s).rd ++ (pushed [ra, rb] s).wr) := by
@@ -189,7 +190,7 @@ theorem ctr_call {s : State} {W C D S : BitVec 32} {R : Nat} {ra rb : Reg} (h : 
     (rd := ctrRd s W) (wr := ctrWr C D S) h.pre h.cov h.covW ?_ ctr_noCalls
   intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
   have hR := toNat_rounds h.rounds
-  have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega
+  have hR' : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h' | h' | h' <;> omega_arith
   -- The memory of the frame.
   have fBelow : Frame [⟨State.addr C, 16⟩, ⟨State.addr D, 16⟩, ⟨State.addr S, 2048⟩]
       (pushed [ra, rb] s).mem s₂.mem := hf
@@ -197,7 +198,7 @@ theorem ctr_call {s : State} {W C D S : BitVec 32} {R : Nat} {ra rb : Reg} (h : 
       Spec.Aes.bytesAt s.mem (State.addr W) (16 * (R + 1)) :=
     Proof.Cmac.bytesAt_frame h.fA (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.bw.symm.sub_left (Region.sub_prefix hR')).symm.symm) (by omega)
+      exact (h.bw.symm.sub_left (Region.sub_prefix hR')).symm.symm) (by omega_arith)
   have bytesC : Spec.Aes.bytesAt (pushed [ra, rb] s).mem (State.addr C) 16 =
       Spec.Aes.bytesAt s.mem (State.addr C) 16 :=
     Proof.Cmac.bytesAt_frame16 h.fA (fun r hr => by

@@ -37,7 +37,7 @@ theorem xor2_ok (s : State) (pb qb cb : Reg) (pd qd cd : Nat) {P Q C : Addr}
       State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write,
       wr_write, Option.bind_some, Option.map_some, BitVec.setWidth_eq,
       h₁, h₂, h₃, h₄, h₅, h₆, hpd.1, hqd.1, hcd.1, Nat.add_mod_right,
-      show pd < 32768 by omega, show qd < 32768 by omega, show cd < 32768 by omega, hpd.2, hqd.2, hcd.2,
+      show pd < 32768 by omega_arith, show qd < 32768 by omega_arith, show cd < 32768 by omega_arith, hpd.2, hqd.2, hcd.2,
       hp, hp8, hq, hq8, hc, hc8, rp, rp8, rq, rq8, wc, wc8, and_self]
     rfl, ?_⟩
   refine ⟨?_, fun r h₁ h₂ => by simp [gpr_write, h₁, h₂], rfl, rfl, rfl⟩
@@ -58,7 +58,7 @@ theorem sub16_ok (s : State) {L : Nat} (h4 : s.gpr .x4 = BitVec.ofNat 64 L) (hL 
   refine ⟨?_, fun r h => by simp [gpr_write, h], rfl, rfl, rfl, rfl⟩
   show some (_ == 0) = _
   simp only [State.read, gpr_write_self, BitVec.setWidth_eq, h4]
-  rw [Offset.ofNat_sub_ofNat_beq (by omega) (by decide)]
+  rw [Offset.ofNat_sub_ofNat_beq (by omega_arith) (by decide)]
 
 theorem zero_ok (s : State) {C : Addr} (hc : s.gpr .x5 + BitVec.ofNat 64 2048 = C)
     (hc8 : s.gpr .x5 + BitVec.ofNat 64 2056 = C + BitVec.ofNat 64 8)
@@ -85,7 +85,7 @@ theorem byte_rt (b : BitVec (8 * 1)) :
   apply BitVec.eq_of_toNat_eq
   have := b.isLt
   simp only [BitVec.toNat_setWidth]
-  omega
+  omega_arith
 
 theorem read_one (m : Mem) (a : Addr) : m.read a 1 = m a := by
   have := Mem.extractLsb'_read m a (n := 1) (j := 0) (by decide)
@@ -133,24 +133,24 @@ theorem copy_ok (s : State) {P C : Addr} {L : Nat} (hL₀ : 0 < L) (hL : L < 16)
   rintro n t ⟨i, rfl, hi, x7, x6, x8, mem, g, sp, rd, wr⟩
   obtain ⟨t', run', mem', x7', x6', x8', g', sp', rd', wr'⟩ := copyStep_ok t
     (A := P + BitVec.ofNat 64 i) (B := C + BitVec.ofNat 64 i) (by rw [x7, BitVec.add_zero])
-    (by rw [x6, BitVec.add_zero]) (by rw [rd, wr]; exact hr i hi) (by rw [wr]; exact hw i (by omega))
+    (by rw [x6, BitVec.add_zero]) (by rw [rd, wr]; exact hr i hi) (by rw [wr]; exact hw i (by omega_arith))
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have hlen : (Spec.Aes.bytesAt s.mem P i).length = i := by simp [Spec.Aes.bytesAt]
   have hx : writeBytes s.mem C (Spec.Aes.bytesAt s.mem P i) (P + BitVec.ofNat 64 i) = s.mem (P + BitVec.ofNat 64 i) :=
     (writeBytes_frame s.mem C _ (R := ⟨C, i⟩) (by rw [hlen]; exact Region.contains_self _ _)) _
       fun r hr hcon => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact hd _ (Offset.contains_base P (by omega) (by omega)) (Region.sub_prefix (by omega) _ hcon)
+        exact hd _ (Offset.contains_base P (by omega_arith) (by omega_arith)) (Region.sub_prefix (by omega_arith) _ hcon)
   have hmem : t'.mem = writeBytes s.mem C (Spec.Aes.bytesAt s.mem P (i + 1)) := by
     rw [mem', mem, hx, Proof.Cmac.bytesAt_succ,
-      writeBytes_snoc s.mem C (Spec.Aes.bytesAt s.mem P i) (s.mem (P + BitVec.ofNat 64 i)) (by rw [hlen]; omega),
+      writeBytes_snoc s.mem C (Spec.Aes.bytesAt s.mem P i) (s.mem (P + BitVec.ofNat 64 i)) (by rw [hlen]; omega_arith),
       hlen]
-  have hb : L < 2 ^ 64 := by omega
+  have hb : L < 2 ^ 64 := by omega_arith
   have x8'' : t'.gpr .x8 = BitVec.ofNat 64 (L - (i + 1)) := by
-    rw [x8', x8, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega)]; rfl
+    rw [x8', x8, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_arith)]; rfl
   have ev : isa.eval (.nonzero .x .x8) t' = some !decide (L - (i + 1) = 0) := by
     show some (t'.read .x .x8 != 0) = _
-    rw [State.read, x8'', BitVec.setWidth_eq, ofNat_ne_zero (by omega)]
+    rw [State.read, x8'', BitVec.setWidth_eq, ofNat_ne_zero (by omega_arith)]
   have gg : ∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ .x8 → r ≠ .x9 → t'.gpr r = s.gpr r := fun r h₁ h₂ h₃ h₄ => by
     rw [g' r h₁ h₂ h₃ h₄, g r h₁ h₂ h₃ h₄]
   by_cases he : i + 1 = L
@@ -158,7 +158,7 @@ theorem copy_ok (s : State) {P C : Addr} {L : Nat} (hL₀ : 0 < L) (hL : L < 16)
     refine ⟨by rw [ev]; simp [he], by rw [hmem, he], by rw [x6', x6, BitVec.add_assoc, succ_ofNat, he], gg,
       by rw [sp', sp], by rw [rd', rd], by rw [wr', wr]⟩
   · right
-    refine ⟨by rw [ev]; simp; omega, L - (i + 1), by omega, i + 1, rfl, by omega,
+    refine ⟨by rw [ev]; simp; omega_arith, L - (i + 1), by omega_arith, i + 1, rfl, by omega_arith,
       by rw [x7', x7, BitVec.add_assoc, succ_ofNat], by rw [x6', x6, BitVec.add_assoc, succ_ofNat], x8'', hmem, gg,
       by rw [sp', sp], by rw [rd', rd], by rw [wr', wr]⟩
 

@@ -22,9 +22,9 @@ theorem getD_le8_append (a b : BitVec 64) {k : Nat} (hk : k < 16) :
     (le8 a ++ le8 b).getD k 0 = if k < 8 then a.extractLsb' (8 * k) 8 else b.extractLsb' (8 * (k - 8)) 8 := by
   rw [List.getD_eq_getElem?_getD]
   split
-  · rw [List.getElem?_append_left (by rw [length_le8]; omega), ← List.getD_eq_getElem?_getD, getD_le8 _ ‹_›]
-  · rw [List.getElem?_append_right (by rw [length_le8]; omega), length_le8, ← List.getD_eq_getElem?_getD,
-      getD_le8 _ (by omega)]
+  · rw [List.getElem?_append_left (by rw [length_le8]; omega_arith), ← List.getD_eq_getElem?_getD, getD_le8 _ ‹_›]
+  · rw [List.getElem?_append_right (by rw [length_le8]; omega_arith), length_le8, ← List.getD_eq_getElem?_getD,
+      getD_le8 _ (by omega_arith)]
 
 theorem getLsbD_rev64 (x : BitVec 64) {p : Nat} (hp : p < 64) :
     (rev64 x).getLsbD p = x.getLsbD (8 * (7 - p / 8) + p % 8) :=
@@ -42,14 +42,14 @@ theorem le8_rev (h l : BitVec 64) :
   rcases Nat.lt_or_ge k 8 with h8 | h8
   · rw [getD_le8_append _ _ hk]
     simp only [h8, ↓reduceIte]
-    rw [BitVec.getLsbD_extractLsb', getLsbD_rev64 _ (by omega)]
-    simp only [hj, decide_true, Bool.true_and, show ¬ 8 * (15 - k) + j < 64 by omega, ite_false]
-    congr 1; omega
+    rw [BitVec.getLsbD_extractLsb', getLsbD_rev64 _ (by omega_arith)]
+    simp only [hj, decide_true, Bool.true_and, show ¬ 8 * (15 - k) + j < 64 by omega_arith, ite_false]
+    congr 1; omega_arith
   · rw [getD_le8_append _ _ hk]
-    simp only [show ¬ k < 8 by omega, ↓reduceIte]
-    rw [BitVec.getLsbD_extractLsb', getLsbD_rev64 _ (by omega)]
-    simp only [hj, decide_true, Bool.true_and, show 8 * (15 - k) + j < 64 by omega, ite_true]
-    congr 1; omega
+    simp only [show ¬ k < 8 by omega_arith, ↓reduceIte]
+    rw [BitVec.getLsbD_extractLsb', getLsbD_rev64 _ (by omega_arith)]
+    simp only [hj, decide_true, Bool.true_and, show 8 * (15 - k) + j < 64 by omega_arith, ite_true]
+    congr 1; omega_arith
 
 theorem mask_eq (hi : BitVec 64) :
     ((0 : BitVec 64) - (hi >>> 63)) &&& 0x87 = if hi.msb then 0x87 else 0 := by
@@ -58,8 +58,8 @@ theorem mask_eq (hi : BitVec 64) :
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.msb_eq_decide]
     have := hi.isLt
     by_cases hm : 2 ^ (64 - 1) ≤ hi.toNat
-    · rw [decide_eq_true hm]; simp; omega
-    · rw [decide_eq_false hm]; simp; omega
+    · rw [decide_eq_true hm]; simp; omega_arith
+    · rw [decide_eq_false hm]; simp; omega_arith
   rw [h]
   split <;> decide
 
@@ -80,21 +80,21 @@ theorem dbl_words (hi lo : BitVec 64) : dblHi hi lo ++ dblLo hi lo = dbl128 (hi 
   have h0 : ((64 : Nat) = 0) = False := by simp
   simp only [h0, ite_false]
   by_cases h64 : p < 64
-  · simp only [h64, ↓reduceIte, show p - 1 < 64 by omega, decide_true, Bool.true_and]
+  · simp only [h64, ↓reduceIte, show p - 1 < 64 by omega_arith, decide_true, Bool.true_and]
     congr 1
     split
     · exact bit135 p h64
     · simp
   · have hm : (if hi.msb = true then (135 : BitVec 128) else 0).getLsbD p = false := by
       split
-      · exact Proof.Cmac.high_0x87 (by omega)
+      · exact Proof.Cmac.high_0x87 (by omega_arith)
       · simp
     rw [hm, Bool.xor_false]
-    simp only [h64, ↓reduceIte, show p - 64 < 64 by omega, decide_true, Bool.true_and]
-    rcases Nat.eq_or_lt_of_le (show 64 ≤ p by omega) with rfl | hlt
+    simp only [h64, ↓reduceIte, show p - 64 < 64 by omega_arith, decide_true, Bool.true_and]
+    rcases Nat.eq_or_lt_of_le (show 64 ≤ p by omega_arith) with rfl | hlt
     · simp
-    · rw [BitVec.getLsbD_of_ge lo (63 + (p - 64)) (by omega)]
-      simp [show ¬ p - 64 < 1 by omega, show ¬ p < 1 by omega, show ¬ p - 1 < 64 by omega]
+    · rw [BitVec.getLsbD_of_ge lo (63 + (p - 64)) (by omega_arith)]
+      simp [show ¬ p - 64 < 1 by omega_arith, show ¬ p < 1 by omega_arith, show ¬ p - 1 < 64 by omega_arith]
       congr 1
 
 end VG.Proof.CmacAes.AArch64
@@ -134,7 +134,7 @@ theorem dbl_ok (s : State) {K : Addr} (hb : s.gpr .x19 = K) {src dst : Nat}
     simp (config := {decide := true}) only [dbl, runBlock_cons, runStep_some, runBlock_nil, exec, addr,
       State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
       ite_true, ite_false, Option.bind_some, Option.map_some, hb, hs.1, hd.1, BitVec.setWidth_eq,
-      show src < 32768 by omega, show src + 8 < 32768 from hs.2, show dst < 32768 by omega,
+      show src < 32768 by omega_arith, show src + 8 < 32768 from hs.2, show dst < 32768 by omega_arith,
       show dst + 8 < 32768 from hd.2, Nat.add_mod_right, r₀, r₁, w₀, w₁, and_self]
     rfl, ?_⟩
   refine ⟨?_, fun r h₁ h₂ h₃ h₄ => by simp [gpr_write, h₁, h₂, h₃, h₄], rfl, rfl, rfl⟩
@@ -239,9 +239,9 @@ theorem preMem_frame (s : State) :
     Frame [⟨s.gpr .x3 + BitVec.ofNat 64 2048, 40⟩, ⟨s.gpr .x2, 16⟩] s.mem (preMem s) := by
   have c (d : Nat) (h : d + 8 ≤ 40) :
       (⟨s.gpr .x3 + BitVec.ofNat 64 2048, 40⟩ : Region).Contains (s.gpr .x3 + BitVec.ofNat 64 (2048 + d)) 8 := by
-    rw [← Offset.add_add]; exact Offset.contains_base _ h (by omega)
+    rw [← Offset.add_add]; exact Offset.contains_base _ h (by omega_arith)
   have k (d : Nat) (h : d + 8 ≤ 16) : (⟨s.gpr .x2, 16⟩ : Region).Contains (s.gpr .x2 + BitVec.ofNat 64 d) 8 :=
-    Offset.contains_base _ h (by omega)
+    Offset.contains_base _ h (by omega_arith)
   exact (((((((Frame.refl _ _).writeW (by simp) _ (c 16 (by decide))).writeW (by simp) _
     (c 24 (by decide))).writeW (by simp) _ (c 32 (by decide))).writeW
     (by simp) _ (c 0 (by decide))).writeW (by simp) _ (c 8 (by decide))).writeW (by simp) _
@@ -279,10 +279,10 @@ theorem preMem_slot (s : State) {d : Nat} (hd : d = 2064 ∨ d = 2072 ∨ d = 20
       if d = 2064 then s.gpr .x19 else if d = 2072 then s.gpr .x20 else s.gpr .x30 := by
   have kd (e : Nat) (he : e + 8 ≤ 32) : Mem.Sep (s.gpr .x3 + BitVec.ofNat 64 d) (64 / 8)
       (s.gpr .x2 + BitVec.ofNat 64 e) (64 / 8) :=
-    hks.symm.sep (Offset.contains_base _ (by omega) (by omega)) (Offset.contains_base _ he (by omega))
+    hks.symm.sep (Offset.contains_base _ (by omega_arith) (by omega_arith)) (Offset.contains_base _ he (by omega_arith))
   rw [preMem, Mem.readW_writeW_sep (kd 8 (by decide)) (by decide), Mem.readW_writeW_sep (kd 0 (by decide)) (by decide),
-    readW_writeW_other _ _ _ (by omega) (by omega) (by decide),
-    readW_writeW_other _ _ _ (by omega) (by omega) (by decide)]
+    readW_writeW_other _ _ _ (by omega_arith) (by omega_arith) (by decide),
+    readW_writeW_other _ _ _ (by omega_arith) (by omega_arith) (by decide)]
   rcases hd with rfl | rfl | rfl
   · rw [readW_writeW_other _ _ _ (by decide) (by decide) (by decide),
       readW_writeW_other _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self64]; rfl
@@ -304,7 +304,7 @@ theorem callPre_of {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W K S
     rw [mem₁, preMem, hp.x2, k0, Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_zero, zeros_8_8]
   exact
       { x0 := by rw [x0₁, hp.x0]
-        x1 := by rw [x1₁]; apply BitVec.eq_of_toNat_eq; simp [hp.x1]; omega
+        x1 := by rw [x1₁]; apply BitVec.eq_of_toNat_eq; simp [hp.x1]; omega_arith
         x2 := by rw [x2₁, hp.x3]
         x3 := by rw [x3₁, hp.x2]
         x4 := x4₁
@@ -314,9 +314,9 @@ theorem callPre_of {s₀ : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W K S
         wd := hp.sch_k.sub_right (Region.sub_prefix (by decide))
         ws := hp.sch_scr.sub_right (Region.sub_prefix (by decide))
         cd := cK.symm
-        cs := Offset.disjoint_base _ (by decide) (by omega)
+        cs := Offset.disjoint_base _ (by decide) (by omega_arith)
         ds := (hp.k_scr.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide))
-        wrap := by omega
+        wrap := by omega_arith
         reads := by
           rw [rd₁, wr₁, hp.rd, hp.wr]
           refine Covers.of_sub fun r hr => ?_
@@ -344,13 +344,13 @@ theorem subkeys_wp (v : Ctr32Impl) {s₀ : State} (h0 : subkeysAArch64.pre s₀)
   generalize s₀.gpr .x3 = S at hp
   generalize (s₀.gpr .x1).toNat = R at hp
   have hR := hp.rounds
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> omega
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> omega_arith
   have kw := hp.k_wrap
   have sw := hp.scr_wrap
   have inS (d : Nat) (h : d + 8 ≤ 2176) : InRegions s₀.wr (S + BitVec.ofNat 64 d) 8 := by
-    rw [hp.wr]; exact in_rw (r := ⟨S, 2176⟩) (by simp) (Offset.contains_base _ h (by omega))
+    rw [hp.wr]; exact in_rw (r := ⟨S, 2176⟩) (by simp) (Offset.contains_base _ h (by omega_arith))
   have inK (d : Nat) (h : d + 8 ≤ 32) : InRegions s₀.wr (K + BitVec.ofNat 64 d) 8 := by
-    rw [hp.wr]; exact in_rw (r := ⟨K, 32⟩) (by simp) (Offset.contains_base _ h (by omega))
+    rw [hp.wr]; exact in_rw (r := ⟨K, 32⟩) (by simp) (Offset.contains_base _ h (by omega_arith))
   -- Before the call.
   obtain ⟨s₁, run₁, x0₁, x1₁, x2₁, x3₁, x4₁, x5₁, x19₁, x20₁, cs₁, sp₁, mem₁, rd₁, wr₁⟩ :=
     subkeysPre_ok s₀ (by rw [hp.x3]; exact inS _ (by decide)) (by rw [hp.x3]; exact inS _ (by decide))
@@ -377,7 +377,7 @@ theorem subkeys_wp (v : Ctr32Impl) {s₀ : State} (h0 : subkeysAArch64.pre s₀)
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact (hp.sch_scr.sub_left (Region.sub_prefix hRb)).sub_right (scr_sub' (by decide))
-      · exact (hp.sch_k.sub_left (Region.sub_prefix hRb)).sub_right (Region.sub_prefix (by decide))) (by omega)
+      · exact (hp.sch_k.sub_left (Region.sub_prefix hRb)).sub_right (Region.sub_prefix (by decide))) (by omega_arith)
   -- The call.
   have pre := callPre_of hp x0₁ x1₁ x2₁ x3₁ x4₁ x5₁ mem₁ rd₁ wr₁
   refine WP.seq (WP.mono (ctr_call v pre) fun s₂ h₂ => ?_)
@@ -416,17 +416,17 @@ theorem subkeys_wp (v : Ctr32Impl) {s₀ : State} (h0 : subkeysAArch64.pre s₀)
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact Offset.disjoint S (by decide) (by omega) (by omega)
+    · exact Offset.disjoint S (by decide) (by omega_arith) (by omega_arith)
     · exact (hp.k_scr.symm.sub_left (scr_sub' (by decide))).sub_right (Region.sub_prefix (by decide))
-    · exact Offset.disjoint_base _ (by decide) (by omega)
+    · exact Offset.disjoint_base _ (by decide) (by omega_arith)
   have slotK (e : Nat) (he : e ≤ 16) : (⟨S + BitVec.ofNat 64 2064, 24⟩ : Region).Disjoint ⟨K + BitVec.ofNat 64 e, 16⟩ :=
-    (hp.k_scr.symm.sub_left (scr_sub' (by decide))).sub_right (Offset.sub_base _ (by omega))
+    (hp.k_scr.symm.sub_left (scr_sub' (by decide))).sub_right (Offset.sub_base _ (by omega_arith))
   have slot (d : Nat) (h₁ : 2064 ≤ d) (h₂' : d + 8 ≤ 2088) :
       s₄.mem.readW (S + BitVec.ofNat 64 d) 64 = s₁.mem.readW (S + BitVec.ofNat 64 d) 64 := by
     have c : (⟨S + BitVec.ofNat 64 2064, 24⟩ : Region).Contains (S + BitVec.ofNat 64 d) (64 / 8) := by
       rw [show S + BitVec.ofNat 64 d = S + BitVec.ofNat 64 2064 + BitVec.ofNat 64 (d - 2064) from
-        (Offset.add_add_eq S (by omega)).symm]
-      exact Offset.contains_base _ (by omega) (by omega)
+        (Offset.add_add_eq S (by omega_arith)).symm]
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)
     rw [f₄.readW c (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact slotK 16 (by decide))
         (by decide),
       f₃.readW c (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact slotK 0 (by decide))
@@ -459,7 +459,7 @@ theorem subkeys_wp (v : Ctr32Impl) {s₀ : State} (h0 : subkeysAArch64.pre s₀)
     have b4lo : Spec.Aes.bytesAt s₄.mem K 16 = Spec.Aes.bytesAt s₃.mem K 16 :=
       Proof.Cmac.bytesAt_frame16 f₄ fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (Offset.disjoint_base K (by decide) (by omega)).symm
+        exact (Offset.disjoint_base K (by decide) (by omega_arith)).symm
     have b4hi : Spec.Aes.bytesAt s₄.mem (K + BitVec.ofNat 64 16) 16 =
         Spec.Cmac.dbl 16 (Spec.Aes.bytesAt s₃.mem K 16) := by
       have := dblMem_bytes s₃.mem K 0 16

@@ -46,10 +46,10 @@ structure Src (W SP : BitVec 32) (s : State) (Q : BitVec 32) (k : Nat) : Prop wh
 /-- Bytes of `W` below 384 as data. -/
 theorem srcW {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (P : Perm K W s) {t k : Nat} (hk : t + k ≤ 384) :
     Src W SP s (W + BitVec.ofNat 32 t) k where
-  rd := by rw [L.aW (o := t) (by omega)]; exact covers_left (P.wC (by omega))
-  wrap := by rw [L.nW (by omega)]; have := L.fw; omega
-  qs := by rw [L.aW (o := t) (by omega)]; exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  stk := by rw [L.aW (o := t) (by omega)]; exact L.stk_w' (by omega)
+  rd := by rw [L.aW (o := t) (by omega_arith)]; exact covers_left (P.wC (by omega_arith))
+  wrap := by rw [L.nW (by omega_arith)]; have := L.fw; omega_arith
+  qs := by rw [L.aW (o := t) (by omega_arith)]; exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  stk := by rw [L.aW (o := t) (by omega_arith)]; exact L.stk_w' (by omega_arith)
 
 /-- A buffer as data. -/
 theorem srcBuf {W SP : BitVec 32} {s : State} {Q : BitVec 32} {k : Nat} (h : Buf W SP s Q k) : Src W SP s Q k :=
@@ -83,23 +83,23 @@ theorem uargs {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP 
   rounds := hR
   esp := by rw [E.esp]; exact L.sp
   hn := hn
-  wc := by rw [wAddr L (by omega)]; simpa using L.k_w' (a := 0) (n := 240) (d := y) (k := 16) (by decide) (by omega)
-  ws := by rw [wAddr L (by omega)]; simpa using L.k_w' (a := 0) (n := 240) (d := 384) (k := 2176) (by decide) (by decide)
-  dc := by rw [wAddr L (by omega)]; exact hqy
-  ds := by rw [wAddr L (by omega)]; exact hq.qs
-  cs := by rw [wAddr L (by omega), wAddr L (by omega)]; exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+  wc := by rw [wAddr L (by omega_arith)]; simpa using L.k_w' (a := 0) (n := 240) (d := y) (k := 16) (by decide) (by omega_arith)
+  ws := by rw [wAddr L (by omega_arith)]; simpa using L.k_w' (a := 0) (n := 240) (d := 384) (k := 2176) (by decide) (by decide)
+  dc := by rw [wAddr L (by omega_arith)]; exact hqy
+  ds := by rw [wAddr L (by omega_arith)]; exact hq.qs
+  cs := by rw [wAddr L (by omega_arith), wAddr L (by omega_arith)]; exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
   bW := by rw [E.esp]; exact L.stk_k
   bD := by rw [E.esp]; exact hq.stk
-  bC := by rw [E.esp, wAddr L (by omega)]; exact L.stk_w' (by omega)
-  bS := by rw [E.esp, wAddr L (by omega)]; exact L.stk_w' (by decide)
-  fW := by have := L.fk; omega
-  fC := by rw [L.nW (by omega)]; have := L.fw; omega
+  bC := by rw [E.esp, wAddr L (by omega_arith)]; exact L.stk_w' (by omega_arith)
+  bS := by rw [E.esp, wAddr L (by omega_arith)]; exact L.stk_w' (by decide)
+  fW := by have := L.fk; omega_arith
+  fC := by rw [L.nW (by omega_arith)]; have := L.fw; omega_arith
   fD := hq.wrap
-  fS := by rw [L.nW (by omega)]; have := L.fw; omega
+  fS := by rw [L.nW (by omega_arith)]; have := L.fw; omega_arith
   reads := covers_cons E.perm.k (covers_cons hq.rd covers_nil)
   writes := by
-    rw [wAddr L (by omega), wAddr L (by omega)]
-    exact covers_cons (E.perm.wC (by omega)) (covers_cons (E.perm.wC (by decide)) covers_nil)
+    rw [wAddr L (by omega_arith), wAddr L (by omega_arith)]
+    exact covers_cons (E.perm.wC (by omega_arith)) (covers_cons (E.perm.wC (by decide)) covers_nil)
 
 /-- A call of `vg_cmac_aes_update`, with its arguments (`uargs`). -/
 theorem updCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
@@ -117,10 +117,10 @@ theorem updCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
   refine WP.mono (Proof.CmacAes.Stream.X86.upd_call v (uargs L E hR hy hq hqy hn eax ecx edx ebx esi edi))
     fun s' h => ⟨E.keep (h.saved _ (by decide)) (h.saved _ (by decide)) h.rd h.wr, h.rd, h.wr, h.saved, ?_, ?_⟩
   · have f := h.frame
-    rw [wAddr L (by omega), wAddr L (by omega), E.esp] at f
+    rw [wAddr L (by omega_arith), wAddr L (by omega_arith), E.esp] at f
     exact f
   · have o := h.out
-    rw [wAddr L (by omega)] at o
+    rw [wAddr L (by omega_arith)] at o
     exact o
 
 /-! ## `vg_aes_ctr32` -/
@@ -155,25 +155,25 @@ theorem ctrCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
     (S := W + BitVec.ofNat 32 384) (R := R) (n := n) ?_) fun s₂ P => ?_)
   · have e384 : s.gpr .ebp + BitVec.ofNat 32 384 = W + BitVec.ofNat 32 384 := by rw [E.ebp]
     refine ⟨by cregs [eax], by cregs [ecx], by cregs [edx], by cregs [ebx], by cregs [edi], by cregs [e384], hR,
-      by cregs [E.esp]; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [L.aW (o := c) (by omega)]; simpa using L.k_w' (a := 0) (n := 240) (d := c) (k := 16) (by decide) (by omega)
+      by cregs [E.esp]; omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rw [L.aW (o := c) (by omega_arith)]; simpa using L.k_w' (a := 0) (n := 240) (d := c) (k := 16) (by decide) (by omega_arith)
     · exact hqk
-    · rw [L.aW (o := 384) (by omega)]
+    · rw [L.aW (o := 384) (by omega_arith)]
       simpa using L.k_w' (a := 0) (n := 240) (d := 384) (k := 2048) (by decide) (by decide)
-    · rw [L.aW (o := c) (by omega)]; exact hqc.symm
-    · rw [L.aW (o := c) (by omega), L.aW (o := 384) (by omega)]; exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-    · rw [L.aW (o := 384) (by omega)]; exact hq.qs.sub_right (Region.sub_prefix (by decide))
+    · rw [L.aW (o := c) (by omega_arith)]; exact hqc.symm
+    · rw [L.aW (o := c) (by omega_arith), L.aW (o := 384) (by omega_arith)]; exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+    · rw [L.aW (o := 384) (by omega_arith)]; exact hq.qs.sub_right (Region.sub_prefix (by decide))
     · cregs [E.esp]; exact L.stk_k.sub_left b28
-    · cregs [E.esp]; rw [L.aW (o := c) (by omega)]; exact (L.stk_w' (by omega)).sub_left b28
+    · cregs [E.esp]; rw [L.aW (o := c) (by omega_arith)]; exact (L.stk_w' (by omega_arith)).sub_left b28
     · cregs [E.esp]; exact hq.stk.sub_left b28
-    · cregs [E.esp]; rw [L.aW (o := 384) (by omega)]; exact (L.stk_w' (by decide)).sub_left b28
-    · have := L.fk; omega
-    · rw [L.nW (by omega)]; have := L.fw; omega
+    · cregs [E.esp]; rw [L.aW (o := 384) (by omega_arith)]; exact (L.stk_w' (by decide)).sub_left b28
+    · have := L.fk; omega_arith
+    · rw [L.nW (by omega_arith)]; have := L.fw; omega_arith
     · exact hq.wrap
-    · rw [L.nW (by omega)]; have := L.fw; omega
+    · rw [L.nW (by omega_arith)]; have := L.fw; omega_arith
     · cmems []; exact covers_cons E.perm.k covers_nil
-    · cmems []; rw [L.aW (o := c) (by omega), L.aW (o := 384) (by omega)]
-      exact covers_cons (E.perm.wC (by omega)) (covers_cons hqw (covers_cons (E.perm.wC (by decide)) covers_nil))
+    · cmems []; rw [L.aW (o := c) (by omega_arith), L.aW (o := 384) (by omega_arith)]
+      exact covers_cons (E.perm.wC (by omega_arith)) (covers_cons hqw (covers_cons (E.perm.wC (by decide)) covers_nil))
   -- `ebp := W`.
   have hbp₂ : s₂.gpr .ebp = W + BitVec.ofNat 32 384 := by
     rw [P.saved _ (by decide)]; cregs [E.ebp]
@@ -185,7 +185,7 @@ theorem ctrCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> (cregs []; rw [P.saved _ (by decide)]; cregs [])
   · have f := P.frame
-    rw [L.aW (o := c) (by omega), L.aW (o := 384) (by omega)] at f
+    rw [L.aW (o := c) (by omega_arith), L.aW (o := 384) (by omega_arith)] at f
     cmems []
     refine f.sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -197,7 +197,7 @@ theorem ctrCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
       have : (s.gpr .ebp + BitVec.ofNat 32 384).setWidth 64 = (W + BitVec.ofNat 32 384).setWidth 64 := by rw [E.ebp]
       simpa [gpr_setReg_of_ne, E.esp] using b28
   · have o := P.out
-    rw [L.aW (o := c) (by omega)] at o
+    rw [L.aW (o := c) (by omega_arith)] at o
     cmems []
     exact o
 
@@ -233,29 +233,29 @@ theorem ctrCall_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Na
     intro s hs s' run
     obtain ⟨E, hq, hqw, hqc, hqk, eax, ecx, edx, ebx, edi⟩ := hI s hs
     have e := run
-    simp (disch := first | decide | omega) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+    simp (disch := first | decide | omega_arith) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
       imm, scrO, Option.bind_some, Option.some.injEq] at e
     subst e
     have e384 : s.gpr .ebp + BitVec.ofNat 32 384 = W + BitVec.ofNat 32 384 := by rw [E.ebp]
     refine ⟨⟨by cregs [eax], by cregs [ecx], by cregs [edx], by cregs [ebx], by cregs [edi], by cregs [e384], hR,
-      by cregs [E.esp]; omega, ?_, hqk, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, by cregs [E.esp]⟩
-    · rw [L.aW (o := c) (by omega)]; simpa using L.k_w' (a := 0) (n := 240) (d := c) (k := 16) (by decide) (by omega)
-    · rw [L.aW (o := 384) (by omega)]
+      by cregs [E.esp]; omega_arith, ?_, hqk, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, by cregs [E.esp]⟩
+    · rw [L.aW (o := c) (by omega_arith)]; simpa using L.k_w' (a := 0) (n := 240) (d := c) (k := 16) (by decide) (by omega_arith)
+    · rw [L.aW (o := 384) (by omega_arith)]
       simpa using L.k_w' (a := 0) (n := 240) (d := 384) (k := 2048) (by decide) (by decide)
-    · rw [L.aW (o := c) (by omega)]; exact hqc.symm
-    · rw [L.aW (o := c) (by omega), L.aW (o := 384) (by omega)]; exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-    · rw [L.aW (o := 384) (by omega)]; exact hq.qs.sub_right (Region.sub_prefix (by decide))
+    · rw [L.aW (o := c) (by omega_arith)]; exact hqc.symm
+    · rw [L.aW (o := c) (by omega_arith), L.aW (o := 384) (by omega_arith)]; exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+    · rw [L.aW (o := 384) (by omega_arith)]; exact hq.qs.sub_right (Region.sub_prefix (by decide))
     · cregs [E.esp]; exact L.stk_k.sub_left b28
-    · cregs [E.esp]; rw [L.aW (o := c) (by omega)]; exact (L.stk_w' (by omega)).sub_left b28
+    · cregs [E.esp]; rw [L.aW (o := c) (by omega_arith)]; exact (L.stk_w' (by omega_arith)).sub_left b28
     · cregs [E.esp]; exact hq.stk.sub_left b28
-    · cregs [E.esp]; rw [L.aW (o := 384) (by omega)]; exact (L.stk_w' (by decide)).sub_left b28
-    · have := L.fk; omega
-    · rw [L.nW (by omega)]; have := L.fw; omega
+    · cregs [E.esp]; rw [L.aW (o := 384) (by omega_arith)]; exact (L.stk_w' (by decide)).sub_left b28
+    · have := L.fk; omega_arith
+    · rw [L.nW (by omega_arith)]; have := L.fw; omega_arith
     · exact hq.wrap
-    · rw [L.nW (by omega)]; have := L.fw; omega
+    · rw [L.nW (by omega_arith)]; have := L.fw; omega_arith
     · cmems []; exact covers_cons E.perm.k covers_nil
-    · cmems []; rw [L.aW (o := c) (by omega), L.aW (o := 384) (by omega)]
-      exact covers_cons (E.perm.wC (by omega)) (covers_cons hqw (covers_cons (E.perm.wC (by decide)) covers_nil))
+    · cmems []; rw [L.aW (o := c) (by omega_arith), L.aW (o := 384) (by omega_arith)]
+      exact covers_cons (E.perm.wC (by omega_arith)) (covers_cons hqw (covers_cons (E.perm.wC (by decide)) covers_nil))
   refine CT.seq (J := fun s' => ∃ s, I s ∧ runBlock isa [.alu .add .ebp (imm scrO)] s = some s')
     (CT.taint [.ebp] (fun s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [(hI _ h₁).1.ebp, (hI _ h₂).1.ebp]) (by taint_decide))

@@ -74,7 +74,7 @@ theorem updBlock_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP
   have h15 := E.r15
   have h13 := E.r13
   have r₁ := E.perm.wR (show 232 + 8 ≤ 2560 by decide)
-  have hy' : y < 2 ^ 31 := by omega
+  have hy' : y < 2 ^ 31 := by omega_arith
   obtain ⟨s₁, run₁, hm₁, hdi, hsi, hdx, hcx, hr8, hr9, hg₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
       (updArgs y ++ ptr .rcx .r15 bO ++ [.mov32 .r8 (imm 1)]) s = some s₁ ∧ s₁.mem = s.mem ∧
       s₁.gpr .rdi = K ∧ s₁.gpr .rsi = BitVec.ofNat 64 R ∧ s₁.gpr .rdx = W + BitVec.ofNat 64 y ∧
@@ -100,7 +100,7 @@ theorem updBlock_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP
     rcases hy with rfl | rfl
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
     · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  refine WP.mono (upd_call v (uargs L E₁ hR (by omega) hq hqy (by decide) hdi hsi hdx hcx hr8 hr9))
+  refine WP.mono (upd_call v (uargs L E₁ hR (by omega_arith) hq hqy (by decide) hdi hsi hdx hcx hr8 hr9))
     fun s₂ h => ⟨E₁.of_saved h.saved h.rd h.wr, fun r hr => ?_, by rw [h.rd, hrd₁], by rw [h.wr, hwr₁], ?_, ?_⟩
   · rw [h.saved r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide),
       hg₁ r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl <;> simp)]

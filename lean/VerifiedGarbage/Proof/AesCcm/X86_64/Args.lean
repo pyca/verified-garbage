@@ -180,7 +180,7 @@ theorem buf_mut {s : State} {P : Addr} {len : Nat} (hP : Buf K W SP s P len)
     · exact hP.w.sub_right (Lay.wSub (by decide))
     · exact hP.w.sub_right (Lay.wSub (by decide))
     · exact hP.stk.symm
-    · exact hPD) (by have := hP.lt; omega)
+    · exact hPD) (by have := hP.lt; omega_arith)
 
 theorem buf_wR {s : State} {P : Addr} {len : Nat} (hP : Buf K W SP s P len) (hf : Frame (wR W SP) m m') :
     bytesAt m' P len = bytesAt m P len :=
@@ -190,7 +190,7 @@ theorem buf_wR {s : State} {P : Addr} {len : Nat} (hP : Buf K W SP s P len) (hf 
     · exact hP.w.sub_right (Region.sub_prefix (by decide))
     · exact hP.w.sub_right (Lay.wSub (by decide))
     · exact hP.w.sub_right (Lay.wSub (by decide))
-    · exact hP.stk.symm) (by have := hP.lt; omega)
+    · exact hP.stk.symm) (by have := hP.lt; omega_arith)
 
 end
 
@@ -233,7 +233,7 @@ theorem tag_kept {T : Addr} {tl : Nat} (hT : TagBuf W SP D n T tl) (ht : tl ≤ 
     · exact hT.w.sub_right (Lay.wSub (by decide))
     · exact hT.w.sub_right (Lay.wSub (by decide))
     · exact hT.stk.symm
-    · exact hT.d) (by omega)
+    · exact hT.d) (by omega_arith)
 
 end
 

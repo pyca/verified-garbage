@@ -56,7 +56,7 @@ theorem absorbWhole_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W
     refine ⟨_, by crun [], ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rfl
     · simp [gpr_setReg, hbp, shr4 len hl]
-    · simp only [zf_arithFlags, gpr_setReg, ite_true, hbp, shr4 len hl, and_self_beq (show len / 16 < 2 ^ 64 by omega)]
+    · simp only [zf_arithFlags, gpr_setReg, ite_true, hbp, shr4 len hl, and_self_beq (show len / 16 < 2 ^ 64 by omega_arith)]
     · intro r a; simp [gpr_setReg, gpr_setFlags, a]
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
@@ -73,7 +73,7 @@ theorem absorbWhole_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W
     have h13 := E₁.r13
     have r₁ := E₁.perm.wR (show 232 + 8 ≤ 2560 by decide)
     have hRo₁ : s₁.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R := by rw [hm₁]; exact hRo
-    have hy' : y < 2 ^ 31 := by omega
+    have hy' : y < 2 ^ 31 := by omega_arith
     obtain ⟨s₂, run₂, hm₂, hdi, hsi, hdx, hcx, hr8₂, hr9, hg₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa
         (updArgs y ++ [.mov .rcx (.reg .r12)]) s₁ = some s₂ ∧ s₂.mem = s₁.mem ∧
         s₂.gpr .rdi = K ∧ s₂.gpr .rsi = BitVec.ofNat 64 R ∧ s₂.gpr .rdx = W + BitVec.ofNat 64 y ∧
@@ -97,8 +97,8 @@ theorem absorbWhole_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W
     have hb : 16 * (len / 16) ≤ len := Nat.mul_div_le len 16
     have hq := srcBuf ((hP.take hb).of_eq (s' := s₂) (by rw [hrd₂, hrd₁]) (by rw [hwr₂, hwr₁]))
     have hqy : (⟨P, 16 * (len / 16)⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 y, 16⟩ :=
-      (hP.w.sub_left (Region.sub_prefix hb)).sub_right (Lay.wSub (by omega))
-    refine WP.mono (upd_call v (uargs L E₂ hR (by omega) hq hqy (by omega) hdi hsi hdx hcx hr8₂ hr9))
+      (hP.w.sub_left (Region.sub_prefix hb)).sub_right (Lay.wSub (by omega_arith))
+    refine WP.mono (upd_call v (uargs L E₂ hR (by omega_arith) hq hqy (by omega_arith) hdi hsi hdx hcx hr8₂ hr9))
       fun s₃ h => ⟨E₂.of_saved h.saved h.rd h.wr, ?_, ?_, ?_, ?_, by rw [h.rd, hrd₂, hrd₁], by rw [h.wr, hwr₂, hwr₁]⟩
     · rw [h.saved _ (by decide), hg₂ _ (by simp), hg₁ _ (by decide), h12]
     · rw [h.saved _ (by decide), hg₂ _ (by simp), hg₁ _ (by decide), hbp]
@@ -140,7 +140,7 @@ theorem absorbTail_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W 
     · rfl
     · simp [gpr_setReg, hbp, and15', toNat_ofNat_of_lt hl]
     · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, hbp, and15', toNat_ofNat_of_lt hl,
-        and_self_beq (show len % 16 < 2 ^ 64 by omega)]
+        and_self_beq (show len % 16 < 2 ^ 64 by omega_arith)]
     · intro r a; simp [gpr_setReg, gpr_arithFlags, a]
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
@@ -168,7 +168,7 @@ theorem absorbTail_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W 
       · simp only [mem_setReg, mem_arithFlags]; rfl
       · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hg₁ _ (by decide : Reg.rbp ≠ .rcx),
           hg₁ _ (by decide : Reg.r12 ≠ .rcx), hbp, h12, hcx]
-        rw [ofNat_sub (by omega) hl, BitVec.add_comm, show len - len % 16 = 16 * (len / 16) by omega]
+        rw [ofNat_sub (by omega_arith) hl, BitVec.add_comm, show len - len % 16 = 16 * (len / 16) by omega_arith]
       · simp [gpr_setReg, h15]
       · simp [gpr_setReg, hcx]
       · intro r a b c; simp [gpr_setReg, gpr_arithFlags, a, b, c]
@@ -177,13 +177,13 @@ theorem absorbTail_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W 
     have E₂ : Env K W SP s₂ := E₁.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide) (by decide)) hrd₂ hwr₂
-    have hb : 16 * (len / 16) + len % 16 = len := by omega
-    have hT := (hP.slice (a := 16 * (len / 16)) (k := len % 16) (by omega)).of_eq (s' := s₂)
+    have hb : 16 * (len / 16) + len % 16 = len := by omega_arith
+    have hT := (hP.slice (a := 16 * (len / 16)) (k := len % 16) (by omega_arith)).of_eq (s' := s₂)
       (by rw [hrd₂, hrd₁]) (by rw [hwr₂, hwr₁])
     have dTB : (⟨P + BitVec.ofNat 64 (16 * (len / 16)), len % 16⟩ : Region).Disjoint
-        ⟨W + BitVec.ofNat 64 32, len % 16⟩ := hT.w.sub_right (Lay.wSub (by omega))
+        ⟨W + BitVec.ofNat 64 32, len % 16⟩ := hT.w.sub_right (Lay.wSub (by omega_arith))
     have lp : LoopPre s₂ (P + BitVec.ofNat 64 (16 * (len / 16))) (W + BitVec.ofNat 64 32) (len % 16) :=
-      ⟨hsi, hdi, hcx₂, by omega, by omega, hT.rd, E₂.perm.wC (by omega), dTB⟩
+      ⟨hsi, hdi, hcx₂, by omega_arith, by omega_arith, hT.rd, E₂.perm.wC (by omega_arith), dTB⟩
     refine WP.seq (WP.mono (copyLoop_ok s₂ lp) fun s₃ ⟨hm₃, hg₃, hrd₃, hwr₃⟩ => ?_)
     have E₃ : Env K W SP s₃ := E₂.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -200,7 +200,7 @@ theorem absorbTail_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W 
       rw [hm₃]
       exact writeBytes_frame _ _ _ (by
         rw [length_bytesAt]
-        exact Offset.contains W (d := 32) (n := len % 16) (e := 32) (k := 16) (by decide) (by omega) (by decide))
+        exact Offset.contains W (d := 32) (n := len % 16) (e := 32) (k := 16) (by decide) (by omega_arith) (by decide))
     have fB : Frame [⟨W + BitVec.ofNat 64 32, 16⟩] s.mem s₃.mem := by rw [← hm₁]; exact fZ.trans fC
     have dK : ∀ r ∈ [(⟨W + BitVec.ofNat 64 32, 16⟩ : Region)], (⟨K, 240⟩ : Region).Disjoint r := by
       intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact L.k_w.sub_right (Lay.wSub (by decide))
@@ -220,16 +220,16 @@ theorem absorbTail_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W 
       have hs₁ : bytesAt s₂.mem (P + BitVec.ofNat 64 (16 * (len / 16))) (len % 16) =
           (bytesAt s.mem P len).drop (16 * (len / 16)) := by
         rw [bytesAt_frame fZ (fun r hr => by
-            simp only [List.mem_singleton] at hr; subst hr; exact hT.w.sub_right (Lay.wSub (by decide))) (by omega),
-          hm₁, show len % 16 = len - 16 * (len / 16) by omega, bytesAt_suffix _ _ (by omega)]
+            simp only [List.mem_singleton] at hr; subst hr; exact hT.w.sub_right (Lay.wSub (by decide))) (by omega_arith),
+          hm₁, show len % 16 = len - 16 * (len / 16) by omega_arith, bytesAt_suffix _ _ (by omega_arith)]
       have hz : bytesAt s₂.mem (W + BitVec.ofNat 64 32) 16 = Spec.Cmac.zeros 16 := by
         rw [hm₂, e40, Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_zero]; rfl
-      rw [hm₃, bytesAt_writeBytes_base _ _ _ (by rw [length_bytesAt]; omega) (by decide), hs₁, hz,
+      rw [hm₃, bytesAt_writeBytes_base _ _ _ (by rw [length_bytesAt]; omega_arith) (by decide), hs₁, hz,
         List.length_drop, hxl]
       congr 1
       simp only [Spec.Cmac.zeros, Spec.Ccm.zeros, List.drop_replicate]
       congr 1
-      omega
+      omega_arith
     have rw₄ : ∀ s₄ : State, s₄.rd = s₃.rd → s₄.wr = s₃.wr → s₄.rd = s.rd ∧ s₄.wr = s.wr := fun s₄ a b =>
       ⟨by rw [a, hrd₃, hrd₂, hrd₁], by rw [b, hwr₃, hwr₂, hwr₁]⟩
     refine WP.mono (updBlock_ok v L E₃ hR hRo₃ hy) fun s₄ ⟨E₄, g₄, hr₄, hw₄, f₄, h₄⟩ =>
@@ -268,7 +268,7 @@ theorem buf_kept {K W SP : Addr} {s : State} {P : Addr} {len : Nat} (hP : Buf K 
     · exact hP.w.sub_right (Lay.wSub hy)
     · exact hP.w.sub_right (Lay.wSub (by decide))
     · exact hP.w.sub_right (Lay.wSub (by decide))
-    · exact hP.stk.symm) (by have := hP.lt; omega)
+    · exact hP.stk.symm) (by have := hP.lt; omega_arith)
 
 theorem k_macR {K W SP : Addr} (L : Lay K W SP) {y : Nat} (hy : y + 16 ≤ 2560) :
     ∀ r ∈ macR W SP y, (⟨K, 240⟩ : Region).Disjoint r := by
@@ -294,7 +294,7 @@ theorem absorbPad_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W S
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with rfl | rfl | rfl <;> decide
   refine WP.mono (absorbTail_ok v L A₁.env hR hRo₁ hy (hP.of_eq A₁.rd A₁.wr) A₁.r12 A₁.rbp) fun s₂ A₂ =>
     ⟨A₂.env, A₂.r12, A₂.rbp, A₁.frame.trans A₂.frame, ?_, A₂.rd.trans A₁.rd, A₂.wr.trans A₁.wr⟩
-  rw [A₂.out, A₁.out, buf_kept hP (by omega) A₁.frame, ctxCiph_frame A₁.frame (k_macR L (by omega)) hRb,
+  rw [A₂.out, A₁.out, buf_kept hP (by omega_arith) A₁.frame, ctxCiph_frame A₁.frame (k_macR L (by omega_arith)) hRb,
     ← Proof.Cmac.chain_append, Proof.AesCcm.blocks_pad16, length_bytesAt, tailBlocks, length_bytesAt]
 
 end VG.Proof.AesCcm.X86_64

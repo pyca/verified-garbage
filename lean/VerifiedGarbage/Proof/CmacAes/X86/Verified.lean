@@ -26,12 +26,12 @@ variable (v : Ctr32Impl)
 theorem SPre.argsOut {s₀ : State} (hp : SPre s₀) {s : State} (hesp : s.gpr .esp = E s₀) (hwr : s.wr = s₀.wr) :
     ArgsOut 4 s := by
   have hs : (s₀.gpr .esp).toNat + 20 ≤ 2 ^ 32 := hp.esp_fit
-  refine ⟨by rw [hesp]; omega, ?_⟩
+  refine ⟨by rw [hesp]; omega_arith, ?_⟩
   rw [hwr, hp.wr, hesp]
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
-  · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.ret_k hp.args_k
-  · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.ret_scr hp.args_scr
+  · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_arith) hp.ret_k hp.args_k
+  · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_arith) hp.ret_scr hp.args_scr
 
 /-- What two runs agree on at a point between the calls. -/
 structure SPt (s₀ : State) (s : State) : Prop where

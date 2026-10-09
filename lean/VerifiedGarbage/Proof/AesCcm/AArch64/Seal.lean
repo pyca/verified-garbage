@@ -24,14 +24,14 @@ open VG.Proof.AesCcm (xorFrom length_bytesAt crypt_eq take_xorFrom_zero mac_eq l
 theorem entry_buf {c : Cx} {s s₁ : State} (hf : Frame [entryR c.W] s.mem s₁.mem) {P : Addr} {len : Nat}
     (hP : Buf c s P len) : bytesAt s₁.mem P len = bytesAt s.mem P len :=
   Proof.AesGcm.AArch64.bytesAt_frame hf (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact hP.wd (by decide)) (by have := hP.lt; omega)
+    simp only [List.mem_singleton] at hr; subst hr; exact hP.wd (by decide)) (by have := hP.lt; omega_arith)
 
 theorem entry_ciph {c : Cx} (L : Lay c) {s s₁ : State} (hf : Frame [entryR c.W] s.mem s₁.mem) :
     Spec.Ccm.ctxCiph s₁.mem c.K c.R = Spec.Ccm.ctxCiph s.mem c.K c.R := by
   unfold Spec.Ccm.ctxCiph
   rw [Proof.AesGcm.AArch64.bytesAt_frame hf (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (L.k_w' (by decide)).sub_left (Region.sub_prefix L.rb)) (by have := L.rb; omega)]
+    exact (L.k_w' (by decide)).sub_left (Region.sub_prefix L.rb)) (by have := L.rb; omega_arith)]
 
 theorem frame_ctrs_mut (c : Cx) : ∀ r ∈ [(⟨c.W + BitVec.ofNat 64 48, 16⟩ : Region)], ∃ r' ∈ mutR c, Region.Sub r r' := by
   intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact sub_lo (by decide)
@@ -43,7 +43,7 @@ theorem tagR_mut (c : Cx) {y : Nat} (hy : y = 0 ∨ y = 96) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact sub_lo (by decide)
-  · exact sub_lo (by omega)
+  · exact sub_lo (by omega_arith)
   · exact sub_hi (by decide) (by decide)
 
 /-- The bytes of `W` below 48, kept by `ctrs`. -/
@@ -51,8 +51,8 @@ theorem ctrs_keeps {c : Cx} (L : Lay c) {d k : Nat} (h : d + k ≤ 48 ∨ (64 �
     ∀ r ∈ [(⟨c.W + BitVec.ofNat 64 48, 16⟩ : Region)], (⟨c.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   intro r hr; simp only [List.mem_singleton] at hr; subst hr
   rcases h with h | h
-  · exact L.w_w (.inl h) (by omega) (by decide)
-  · exact L.w_w (.inr h.1) (by omega) (by decide)
+  · exact L.w_w (.inl h) (by omega_arith) (by decide)
+  · exact L.w_w (.inr h.1) (by omega_arith) (by decide)
 
 /-- `Ctr₀` is kept by the MAC's pieces. -/
 theorem macR_c0 {c : Cx} (L : Lay c) {y : Nat} (hy : y = 0 ∨ y = 96) :
@@ -117,9 +117,9 @@ theorem tagOut_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) (hx11 : s.gpr .
   have E₁ : Env c s₁ := E.others og₁ (by decide) sp₁ rd₁ wr₁
   have x11₁ : s₁.gpr .x11 = c.T := by rw [og₁ .x11 (by decide), hx11]
   have lp : LoopPre s₁ c.W c.T c.tl :=
-    ⟨by have := L.t16; omega, by simpa using E₁.perm.wCR (d := 0) (n := c.tl) (by have := L.t16; omega),
-      by rw [wr₁]; exact hTw, (L.t_w.sub_right (Region.sub_prefix (by have := L.t16; omega))).symm⟩
-  refine WP.mono (copyLoop_ok s₁ x12₁ x11₁ x13₁ (by have := L.t4; omega) lp)
+    ⟨by have := L.t16; omega_arith, by simpa using E₁.perm.wCR (d := 0) (n := c.tl) (by have := L.t16; omega_arith),
+      by rw [wr₁]; exact hTw, (L.t_w.sub_right (Region.sub_prefix (by have := L.t16; omega_arith))).symm⟩
+  refine WP.mono (copyLoop_ok s₁ x12₁ x11₁ x13₁ (by have := L.t4; omega_arith) lp)
     fun s₂ ⟨hm₂, _, _, og₂, sp₂, rd₂, wr₂⟩ => ⟨E₁.others og₂ (by decide) sp₂ rd₂ wr₂, by rw [hm₂, m₁],
       by rw [sp₂, sp₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
 
@@ -171,20 +171,20 @@ theorem seal_wp' (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} {N : Addr} {s :
   have ha₁ : bytesAt s₁.mem c.A c.al = bytesAt s.mem c.A c.al := entry_buf En.frame (L.bufA Ar.perm)
   have hd₂ : bytesAt s₂.mem c.D c.n = bytesAt s.mem c.D c.n := by
     rw [Proof.AesGcm.AArch64.bytesAt_frame f₂ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by have := L.n_lt; omega), hd₁]
+      simp only [List.mem_singleton] at hr; subst hr; exact L.d_w' (by decide)) (by have := L.n_lt; omega_arith), hd₁]
   have ha₂ : bytesAt s₂.mem c.A c.al = bytesAt s.mem c.A c.al := by rw [aad_mut L f₂', ha₁]
   have hd₄ : bytesAt s₄.mem c.D c.n = bytesAt s.mem c.D c.n := by
     rw [Proof.AesGcm.AArch64.bytesAt_frame f₄ (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> exact L.d_w' (by decide)) (by have := L.n_lt; omega),
+        rcases hr with rfl | rfl | rfl <;> exact L.d_w' (by decide)) (by have := L.n_lt; omega_arith),
       buf_macR (L.bufD M.env.perm) (by decide) M.frame, hd₂]
   have w₅ : bytesAt s₅.mem c.W c.tl = bytesAt s₄.mem c.W c.tl :=
     Proof.AesGcm.AArch64.bytesAt_frame f₅ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact L.w0_w (by have := L.t16; omega) (by decide)
-      · exact L.w0_w (by have := L.t16; omega) (by decide)
-      · exact (L.d_w.sub_right (Region.sub_prefix (by have := L.t16; omega))).symm) (by have := L.t16; omega)
+      · exact L.w0_w (by have := L.t16; omega_arith) (by decide)
+      · exact L.w0_w (by have := L.t16; omega_arith) (by decide)
+      · exact (L.d_w.sub_right (Region.sub_prefix (by have := L.t16; omega_arith))).symm) (by have := L.t16; omega_arith)
   have e0 : c.W + BitVec.ofNat 64 0 = c.W := BitVec.add_zero c.W
   have M' := M.out
   rw [e0] at h₄ M'
@@ -193,10 +193,10 @@ theorem seal_wp' (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} {N : Addr} {s :
   simp only [Spec.Ccm.encryptWith, Prod.mk.injEq]
   have d₇ : bytesAt s₇.mem c.D c.n = bytesAt s₅.mem c.D c.n := by
     rw [Proof.AesGcm.AArch64.bytesAt_frame f₇ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.t_d.symm) (by have := L.n_lt; omega), m₆]
+      simp only [List.mem_singleton] at hr; subst hr; exact L.t_d.symm) (by have := L.n_lt; omega_arith), m₆]
   have t₇ : bytesAt s₇.mem c.T c.tl = bytesAt s₅.mem c.W c.tl := by
     have e := Proof.AesCcm.bytesAt_writeBytes_at s₆.mem c.T (o := 0) (n := c.tl) (bytesAt s₆.mem c.W c.tl)
-      (by rw [hx]; omega) (by have := L.t16; omega)
+      (by rw [hx]; omega_arith) (by have := L.t16; omega_arith)
     rw [BitVec.add_zero, List.take_zero, List.nil_append, Nat.zero_add,
       List.drop_eq_nil_of_le (by rw [length_bytesAt, hx]), List.append_nil] at e
     rw [m₇, e, m₆]
@@ -204,7 +204,7 @@ theorem seal_wp' (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} {N : Addr} {s :
   · rw [hm, d₇, h₅, k₄, hd₄, crypt_eq (hBC _)]
   · rw [hm, t₇, w₅, Proof.AesCcm.bytesAt_prefix s₄.mem c.W L.t16, h₄, k₃,
       take_xorFrom_zero (hBC _) _ hY.symm L.t16, M', k₂, ha₂, hd₂,
-      ← mac_eq _ _ (by rw [hnl]; have := L.h13; omega)]
+      ← mac_eq _ _ (by rw [hnl]; have := L.h13; omega_arith)]
 
 /-- `vg_aes_ccm_seal`. -/
 theorem seal_wp (v : Proof.CmacAes.AArch64.UpdateImpl) {s : State} (h : sealAArch64.pre s) :

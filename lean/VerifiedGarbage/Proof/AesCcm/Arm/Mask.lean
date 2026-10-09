@@ -92,7 +92,7 @@ theorem mask_ok {k w sp : BitVec 32} {R q1 : Nat} {s₀ s : State} (he : Env k w
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     · rw [k₁.mem]; cases c <;> simp [bytesAt, zeros, writeBytes_nil]
   have hn0 : 0 < n := by have : n ≠ 0 := by simpa using hb
-                         omega
+                         omega_arith
   refine WP.loop (M := isa) (c := .ne)
     (fun (k : Nat) (t : State) => ∃ j, k = n - j ∧ j < n ∧ t.gpr .r4 = D + BitVec.ofNat 32 j ∧
       t.gpr .r5 = BitVec.ofNat 32 (n - j) ∧
@@ -105,18 +105,18 @@ theorem mask_ok {k w sp : BitVec 32} {R q1 : Nat} {s₀ s : State} (he : Env k w
   have aD := addr_i hn hj
   obtain ⟨t', run', mem', r4', r5', z', g', rd', wr', sp'⟩ := maskStep_ok t (c := c) r4 r5
     (by rw [g _ (by decide) (by decide) (by decide), h1₁])
-    (by rw [rd, wr, aD]; exact in_of_covers hD.buf.rd hj (by omega))
-    (by rw [wr, aD]; exact in_of_covers hD.wr hj (by omega))
+    (by rw [rd, wr, aD]; exact in_of_covers hD.buf.rd hj (by omega_arith))
+    (by rw [wr, aD]; exact in_of_covers hD.wr hj (by omega_arith))
   refine WP.of_runBlock ⟨t', run', ?_⟩
   have fr : Frame [⟨State.addr D, j⟩] s.mem t.mem := by
     rw [mem]; exact writeBytes_frame _ _ _ (by rw [length_mask]; exact Region.contains_self _ _)
   have hq : t.mem (State.addr D + BitVec.ofNat 64 j) = s.mem (State.addr D + BitVec.ofNat 64 j) :=
     fr _ fun r hr hcon => by
       simp only [List.mem_singleton] at hr; subst hr
-      simp only [Region.Contains, Mem.sub_ofNat_toNat (State.addr D) (show j < 2 ^ 64 by omega)] at hcon; omega
+      simp only [Region.Contains, Mem.sub_ofNat_toNat (State.addr D) (show j < 2 ^ 64 by omega_arith)] at hcon; omega_arith
   have hmem : t'.mem = writeBytes s.mem (State.addr D)
       (if c then bytesAt s.mem (State.addr D) (j + 1) else zeros (j + 1)) := by
-    rw [mem', aD, hq, mem, mask_succ, writeBytes_snoc _ _ _ _ (by rw [length_mask]; omega), length_mask]
+    rw [mem', aD, hq, mem, mask_succ, writeBytes_snoc _ _ _ _ (by rw [length_mask]; omega_arith), length_mask]
   have hz : t'.z = decide (j + 1 = n) := by rw [z', dec32 hj hn32, z_dec hj hn32]
   have gg : ∀ r, r ≠ .r4 → r ≠ .r5 → r ≠ .r12 → t'.gpr r = s₁.gpr r := fun r a b d => by
     rw [g' r a b d, g r a b d]
@@ -133,7 +133,7 @@ theorem mask_ok {k w sp : BitVec 32} {R q1 : Nat} {s₀ s : State} (he : Env k w
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     rw [gg r a b hr12.1, g₁ r hr12.2 a b]
   · right
-    refine ⟨by rw [ev]; simp [hjn], n - (j + 1), by omega, j + 1, rfl, by omega, r4',
+    refine ⟨by rw [ev]; simp [hjn], n - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, r4',
       by rw [r5', dec32 hj hn32], hmem, gg, by rw [rd', rd], by rw [wr', wr], by rw [sp', sp]⟩
 
 end VG.Proof.AesCcm.Arm

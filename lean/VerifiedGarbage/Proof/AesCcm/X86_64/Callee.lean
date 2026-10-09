@@ -48,7 +48,7 @@ theorem ctxCiph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {K : 
     (hd : ∀ r ∈ rs, (⟨K, 240⟩ : Region).Disjoint r) {R : Nat} (hR : 16 * (R + 1) ≤ 240) :
     Spec.Ccm.ctxCiph m' K R = Spec.Ccm.ctxCiph m K R := by
   unfold Spec.Ccm.ctxCiph
-  rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hR)) (by omega)]
+  rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hR)) (by omega_arith)]
 
 /-- The return address a call stores. -/
 theorem callEntry_frame (s : State) : Frame [below (s.gpr .rsp) 8] s.mem s.callEntry.mem := by
@@ -60,7 +60,7 @@ theorem disj_below {s : State} {p : Addr} {n : Nat} (h : (below (s.gpr .rsp) 8).
   intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact h.symm
 
 theorem toNat_rounds {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) : (BitVec.ofNat 64 R).toNat = R :=
-  toNat_ofNat_of_lt (by omega)
+  toNat_ofNat_of_lt (by omega_arith)
 
 theorem below8_sub (sp : Addr) : Region.Sub (below sp 8) (below sp 16) :=
   Offset.sub_below sp (a := 8) (b := 16) (by decide) (by decide)
@@ -104,7 +104,7 @@ theorem CtrCall.pre {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C 
     Proof.Aes.ctr32X86_64.pre
       (s.callEntry.withRegions [⟨K, 240⟩] [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩]) := by
   have hR := toNat_rounds h.rounds
-  have hn := toNat_ofNat_of_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_of_lt (show n < 2 ^ 64 by have := h.wrap; omega_arith)
   simp only [Proof.Aes.ctr32X86_64, State.withRegions_gpr, State.withRegions_rd,
     State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
@@ -116,7 +116,7 @@ theorem CtrCall.pre {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C 
 theorem ctr_call (v : Ctr32Impl) {s : State} {K C D S : Addr} {R n : Nat} (h : CtrCall s K C D S R n) :
     WP isa (.call v.callee.name v.callee.code) s (CtrPost s K C D S R n) := by
   have hR := toNat_rounds h.rounds
-  have hn := toNat_ofNat_of_lt (show n < 2 ^ 64 by have := h.wrap; omega)
+  have hn := toNat_ofNat_of_lt (show n < 2 ^ 64 by have := h.wrap; omega_arith)
   refine WP.call (k := Proof.Aes.ctr32X86_64) v.ok v.nosp (by rw [v.depth]; decide)
     (rd := [⟨K, 240⟩]) (wr := [⟨C, 16⟩, ⟨D, 16 * n⟩, ⟨S, 2048⟩]) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
@@ -132,8 +132,8 @@ theorem ctr_call (v : Ctr32Impl) {s : State} {K C D S : Addr} {R n : Nat} (h : C
   have eK := bytesAt_frame fE (p := K) (n := 16 * (R + 1))
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (h.stkK.sub_right (Region.sub_prefix hRb)).symm) (by omega)
-  rw [blockAt_frame fE (disj_below h.stkC), blocksAt_frame fE (disj_below h.stkD) (by have := h.wrap; omega),
+      exact (h.stkK.sub_right (Region.sub_prefix hRb)).symm) (by omega_arith)
+  rw [blockAt_frame fE (disj_below h.stkC), blocksAt_frame fE (disj_below h.stkD) (by have := h.wrap; omega_arith),
     eK] at hdata
   exact ⟨hrd, hwr, hcs, by simpa using hf, hdata⟩
 
@@ -164,13 +164,13 @@ structure Src (W SP : Addr) (s : State) (Q : Addr) (k : Nat) : Prop where
 /-- Bytes of `W` below 384 as data. -/
 theorem srcW {K W SP : Addr} {s : State} (L : Lay K W SP) (P : Perm K W s) {t k : Nat} (hk : t + k ≤ 384) :
     Src W SP s (W + BitVec.ofNat 64 t) k where
-  rd := covers_left (P.wC (by omega))
+  rd := covers_left (P.wC (by omega_arith))
   wrap := by
     have := L.ww
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := t) (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
-  qs := L.w_w (.inl (by omega)) (by omega) (by decide)
-  stk := L.stk_w' (by omega)
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := t) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
+  qs := L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  stk := L.stk_w' (by omega_arith)
 
 /-- A buffer as data. -/
 theorem srcBuf {K W SP : Addr} {s : State} {Q : Addr} {k : Nat} (h : Buf K W SP s Q k) : Src W SP s Q k :=
@@ -192,27 +192,27 @@ theorem uargs {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R
   r9 := r9
   rounds := hR
   hn := hn
-  wc := by simpa using L.k_w' (a := 0) (n := 240) (d := y) (k := 16) (by decide) (by omega)
+  wc := by simpa using L.k_w' (a := 0) (n := 240) (d := y) (k := 16) (by decide) (by omega_arith)
   ws := by simpa using L.k_w' (a := 0) (n := 240) (d := 384) (k := 2176) (by decide) (by decide)
   dc := hqy
   ds := hq.qs
-  cs := L.w_w (.inl (by omega)) (by omega) (by decide)
+  cs := L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
   stkW := by rw [E.rsp]; exact L.stk_k
   stkD := by rw [E.rsp]; exact hq.stk
-  stkC := by rw [E.rsp]; exact L.stk_w' (by omega)
+  stkC := by rw [E.rsp]; exact L.stk_w' (by omega_arith)
   stkS := by rw [E.rsp]; exact L.stk_w' (by decide)
   wrapC := by
     have := L.ww
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := y) (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := y) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   wrapD := hq.wrap
   wrapS := by
     have := L.ww
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 384) (by omega), Nat.mod_eq_of_lt (by omega)]
-    omega
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 384) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   reads := covers_append (covers_cons E.perm.k (covers_cons hq.rd covers_nil))
-    (covers_cons (covers_left (E.perm.wC (by omega))) (covers_cons (covers_left (E.perm.wC (by decide))) covers_nil))
-  writes := covers_cons (E.perm.wC (by omega)) (covers_cons (E.perm.wC (by decide)) covers_nil)
+    (covers_cons (covers_left (E.perm.wC (by omega_arith))) (covers_cons (covers_left (E.perm.wC (by decide))) covers_nil))
+  writes := covers_cons (E.perm.wC (by omega_arith)) (covers_cons (E.perm.wC (by decide)) covers_nil)
 
 /-- The arguments of `vg_aes_ctr32`: the key schedule, the counter block at
 `W + c`, `n` blocks at `Q`, which it may write, and the working space at
@@ -232,19 +232,19 @@ theorem cargs {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R
   r9 := r9
   rounds := hR
   wrap := hq.wrap
-  kc := by simpa using L.k_w' (a := 0) (n := 240) (d := c) (k := 16) (by decide) (by omega)
+  kc := by simpa using L.k_w' (a := 0) (n := 240) (d := c) (k := 16) (by decide) (by omega_arith)
   kd := hqk
   ks := by simpa using L.k_w' (a := 0) (n := 240) (d := 384) (k := 2048) (by decide) (by decide)
   cd := hqc.symm
-  cs := L.w_w (.inl (by omega)) (by omega) (by decide)
+  cs := L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
   ds := hq.qs.sub_right (Region.sub_prefix (by decide))
   stkK := by rw [E.rsp]; exact L.stk_k.sub_left (below8_sub _)
-  stkC := by rw [E.rsp]; exact (L.stk_w' (by omega)).sub_left (below8_sub _)
+  stkC := by rw [E.rsp]; exact (L.stk_w' (by omega_arith)).sub_left (below8_sub _)
   stkD := by rw [E.rsp]; exact hq.stk.sub_left (below8_sub _)
   stkS := by rw [E.rsp]; exact (L.stk_w' (a := 384) (n := 2048) (by decide)).sub_left (below8_sub _)
   reads := covers_append (covers_cons E.perm.k covers_nil)
-    (covers_cons (covers_left (E.perm.wC (by omega))) (covers_cons hq.rd
+    (covers_cons (covers_left (E.perm.wC (by omega_arith))) (covers_cons hq.rd
       (covers_cons (covers_left (E.perm.wC (by decide))) covers_nil)))
-  writes := covers_cons (E.perm.wC (by omega)) (covers_cons hqw (covers_cons (E.perm.wC (by decide)) covers_nil))
+  writes := covers_cons (E.perm.wC (by omega_arith)) (covers_cons hqw (covers_cons (E.perm.wC (by decide)) covers_nil))
 
 end VG.Proof.AesCcm.X86_64

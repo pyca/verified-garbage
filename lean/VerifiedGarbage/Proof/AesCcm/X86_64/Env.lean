@@ -30,10 +30,10 @@ theorem offset_nat (i : Nat) : BitVec.ofInt 64 (i : Int) = BitVec.ofNat 64 i := 
 
 theorem imm_eq {n : Nat} (h : n < 2 ^ 31) : (BitVec.ofNat 32 n).signExtend 64 = BitVec.ofNat 64 n := by
   have hm : (BitVec.ofNat 32 n).msb = false := by
-    rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; simp; omega
+    rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; simp; omega_arith
   rw [BitVec.signExtend_eq_setWidth_of_msb_false hm]
   apply BitVec.eq_of_toNat_eq
-  simp [Nat.mod_eq_of_lt (show n < 2 ^ 32 by omega), Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega)]
+  simp [Nat.mod_eq_of_lt (show n < 2 ^ 32 by omega_arith), Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega_arith)]
 
 theorem toNat_ofNat_of_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
   rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
@@ -44,25 +44,25 @@ theorem ofNat_add_ofNat (a b : Nat) : BitVec.ofNat 64 a + BitVec.ofNat 64 b = Bi
 theorem ofNat_sub {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_sub, toNat_ofNat_of_lt ha, toNat_ofNat_of_lt (by omega), toNat_ofNat_of_lt (by omega)]
-  omega
+  rw [BitVec.toNat_sub, toNat_ofNat_of_lt ha, toNat_ofNat_of_lt (by omega_arith), toNat_ofNat_of_lt (by omega_arith)]
+  omega_arith
 
 theorem shr4 (n : Nat) (hn : n < 2 ^ 64) : BitVec.ofNat 64 n >>> 4 = BitVec.ofNat 64 (n / 16) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (by omega), Nat.shiftRight_eq_div_pow]
+  rw [BitVec.toNat_ushiftRight, toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (by omega_arith), Nat.shiftRight_eq_div_pow]
 
 theorem and15 (x : BitVec 64) : x &&& (BitVec.ofNat 32 15).signExtend 64 = BitVec.ofNat 64 (x.toNat % 16) := by
   rw [show (BitVec.ofNat 32 15).signExtend 64 = 15#64 by decide]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
   rw [show (15 : Nat) % 2 ^ 64 = 2 ^ 4 - 1 by decide, Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_arith
 
 theorem and15' (x : BitVec 64) : x &&& 15#64 = BitVec.ofNat 64 (x.toNat % 16) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
   rw [show (15 : Nat) % 2 ^ 64 = 2 ^ 4 - 1 by decide, Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_arith
 
 /-! ## Covering -/
 
@@ -75,9 +75,9 @@ theorem covers_off {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p
   simp only [Region.Contains] at hc ⊢
   have e : a - p = (a - (p + BitVec.ofNat 64 d)) + BitVec.ofNat 64 d := by
     rw [Offset.sub_add_eq]; exact (BitVec.sub_add_cancel _ _).symm
-  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega_arith),
+    Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 theorem in_off {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p, k⟩] rs) (hd : d + n ≤ k)
     (hk : k < 2 ^ 64) : InRegions rs (p + BitVec.ofNat 64 d) n :=
@@ -164,7 +164,7 @@ include L
 /-- Parts of `W` are disjoint. -/
 theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
     (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
-  Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
+  Offset.disjoint _ h (by have := L.ww; omega_arith) (by have := L.ww; omega_arith)
 
 theorem k_w' {a n d k : Nat} (ha : a + n ≤ 240) (hd : d + k ≤ 2560) :
     (⟨K + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
@@ -218,29 +218,29 @@ theorem of_eq {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Buf K W S
 
 /-- The bytes from `k` on. -/
 theorem drop {k : Nat} (hk : k ≤ n) : Buf K W SP s (D + BitVec.ofNat 64 k) (n - k) where
-  rd := covers_off h.rd (by omega) h.lt
-  lt := by have := h.lt; omega
+  rd := covers_off h.rd (by omega_arith) h.lt
+  lt := by have := h.lt; omega_arith
   wrap := by
     have := h.wrap
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by have := h.lt; omega)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by have := h.lt; omega_arith)]
     have := Nat.mod_le (D.toNat + k) (2 ^ 64)
-    omega
-  w := h.w.sub_left (Offset.sub_base D (by omega))
-  stk := h.stk.sub_right (Offset.sub_base D (by omega))
+    omega_arith
+  w := h.w.sub_left (Offset.sub_base D (by omega_arith))
+  stk := h.stk.sub_right (Offset.sub_base D (by omega_arith))
 
 /-- The first `k` bytes. -/
 theorem take {k : Nat} (hk : k ≤ n) : Buf K W SP s D k where
   rd := fun a m ⟨r, hr, hc⟩ => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact h.rd a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
-  lt := by have := h.lt; omega
-  wrap := by have := h.wrap; omega
+    exact h.rd a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_arith⟩
+  lt := by have := h.lt; omega_arith
+  wrap := by have := h.wrap; omega_arith
   w := h.w.sub_left (Region.sub_prefix hk)
   stk := h.stk.sub_right (Region.sub_prefix hk)
 
 /-- Bytes `[a, a + k)`. -/
 theorem slice {a k : Nat} (hk : a + k ≤ n) : Buf K W SP s (D + BitVec.ofNat 64 a) k :=
-  (h.drop (k := a) (by omega)).take (by omega)
+  (h.drop (k := a) (by omega_arith)).take (by omega_arith)
 
 end Buf
 
@@ -276,12 +276,12 @@ theorem kept_mut {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hD : (⟨D, n⟩ 
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · simpa using L.w_w (a := d) (n := k) (d := 0) (k := 112) (.inr (by omega)) (by omega) (by decide)
+  · simpa using L.w_w (a := d) (n := k) (d := 0) (k := 112) (.inr (by omega_arith)) (by omega_arith) (by decide)
   · rcases hd with hd | hd
-    · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-    · exact L.w_w (.inr (by omega)) (by omega) (by decide)
-  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (L.stk_w' (by omega)).symm
-  · exact (hD.sub_right (Lay.wSub (by omega))).symm
+    · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+    · exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+  · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact (L.stk_w' (by omega_arith)).symm
+  · exact (hD.sub_right (Lay.wSub (by omega_arith))).symm
 
 end VG.Proof.AesCcm.X86_64

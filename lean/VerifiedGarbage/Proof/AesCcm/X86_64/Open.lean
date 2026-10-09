@@ -85,8 +85,8 @@ theorem openCmp_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP 
   have wr₀₄ : s₄.wr = s.wr := by rw [hwr₄, wr₃, wr₂, hwr₁]
   have hV : bytesAt s₂.mem (W + BitVec.ofNat 64 96) tl = bytesAt s.mem (W + BitVec.ofNat 64 96) tl := by
     rw [bytesAt_frame f₂ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega)) (by omega) (by decide))
-      (by omega), hm₁]
+      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide))
+      (by omega_arith), hm₁]
   rw [hV, hm₁] at hax₃
   refine WP.of_runBlock ⟨s₄, run₄, E₄, rd₀₄, wr₀₄, f₀₄w, ?_⟩
   rw [hm₄, Mem.readW_writeW_self64, hax₃]
@@ -146,12 +146,12 @@ theorem openTail_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP
   · rw [hax₇, hax₆, hc]; simp only [decide_eq_true_eq]
   · have hx : (if c then bytesAt s₄.mem D n else zeros n).length = n := length_mask _ _ _ _
     have e := bytesAt_writeBytes_at s₄.mem D (o := 0) (n := n) (if c then bytesAt s₄.mem D n else zeros n)
-      (by rw [hx]; omega) hD.lt
+      (by rw [hx]; omega_arith) hD.lt
     rw [BitVec.add_zero, List.take_zero, List.nil_append, Nat.zero_add,
       List.drop_eq_nil_of_le (by rw [length_bytesAt, hx]), List.append_nil] at e
     have hd₄ : bytesAt s₄.mem D n = bytesAt s.mem D n := bytesAt_frame f₀₄w (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact hD.w.sub_right (Lay.wSub (by decide))) (by have := hD.lt; omega)
+      rcases hr with rfl | rfl <;> exact hD.w.sub_right (Lay.wSub (by decide))) (by have := hD.lt; omega_arith)
     rw [hm₇, hm₆, hm₅, e, hc, hd₄]
     simp only [decide_eq_true_eq]
   · rw [hm₇, hm₆]
@@ -181,7 +181,7 @@ theorem open_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n
   have hent : ∀ {P : Addr} {len : Nat}, Buf K W SP s P len → bytesAt s₁.mem P len = bytesAt s.mem P len :=
     fun hP => bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hP.w.sub_right (Lay.wSub (by decide)))
-      (by have := hP.lt; omega)
+      (by have := hP.lt; omega_arith)
   have hK₁ : Spec.Ccm.ctxCiph s₁.mem K R = Spec.Ccm.ctxCiph s.mem K R :=
     ctxCiph_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.k_w.sub_right (Lay.wSub (by decide))) hRb
@@ -228,7 +228,7 @@ theorem open_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n
     rw [add_ofNat_assoc] at h
     rw [rd₁₄, wr₁₄]; exact h
   refine WP.mono (openTail_ok L E₄ (slots_mut L Ar.data.w f₁₄ S₁) (Ar.data.of_eq rd₁₄ wr₁₄)
-    (by rw [wr₁₄]; exact Ar.dw) (by have := Ar.t4; omega) Ar.t16 (saved_mut L Ar.data.w f₁₄ sv₁) hT₄ hTr₄
+    (by rw [wr₁₄]; exact Ar.dw) (by have := Ar.t4; omega_arith) Ar.t16 (saved_mut L Ar.data.w f₁₄ sv₁) hT₄ hTr₄
     (by rw [rd₁₄, wr₁₄]; exact hTc) Tb.w)
     fun s₅ ⟨hg₅, hsp₅, hax₅, hd₅, f₅⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -267,7 +267,7 @@ theorem open_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n
     rw [c₃', a₃, p₃] at h₄
     have hY := congrArg List.length h₄
     rw [length_bytesAt, length_xorFrom] at hY
-    have hl : (bytesAt s.mem N nl).length ≤ 15 := by rw [length_bytesAt]; have := Ar.h13; omega
+    have hl : (bytesAt s.mem N nl).length ≤ 15 := by rw [length_bytesAt]; have := Ar.h13; omega_arith
     have hV : bytesAt s₄.mem (W + BitVec.ofNat 64 96) tl =
         Spec.Ccm.cryptTag (Spec.Ccm.ctxCiph s.mem K R) tl (bytesAt s.mem N nl)
           (Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem K R) tl (bytesAt s.mem N nl) (bytesAt s.mem A al)
@@ -275,7 +275,7 @@ theorem open_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n
       rw [bytesAt_prefix s₄.mem _ Ar.t16, h₄, take_xorFrom_zero (hBC _) _ hY.symm Ar.t16, ← mac_eq _ _ hl]
     have hML : (Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem K R) tl (bytesAt s.mem N nl) (bytesAt s.mem A al)
         (Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem K R) (bytesAt s.mem N nl) (bytesAt s.mem D n))).length = tl := by
-      rw [mac_eq _ _ hl, List.length_take, ← hY]; have := Ar.t16; omega
+      rw [mac_eq _ _ hl, List.length_take, ← hY]; have := Ar.t16; omega_arith
     have key : bytesAt s₄.mem (W + BitVec.ofNat 64 96) tl = bytesAt s₄.mem T tl ↔
         Spec.Ccm.cryptTag (Spec.Ccm.ctxCiph s.mem K R) tl (bytesAt s.mem N nl) (bytesAt s.mem T tl) =
           Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem K R) tl (bytesAt s.mem N nl) (bytesAt s.mem A al)

@@ -20,9 +20,9 @@ theorem slot_read {s₀ : State} (hp : UPre s₀) {m : Mem}
   hf.readW (r := ⟨State.addr (S s₀) + BitVec.ofNat 64 d, 4⟩) (Region.contains_self _ _) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact hp.st_scr.symm.sub_left (UPre.scr_sub (by omega))
-    · exact Offset.disjoint_base _ h₁ (by omega)
-    · exact hp.b_scr.symm.sub_left (UPre.scr_sub (by omega))) (by decide)
+    · exact hp.st_scr.symm.sub_left (UPre.scr_sub (by omega_arith))
+    · exact Offset.disjoint_base _ h₁ (by omega_arith)
+    · exact hp.b_scr.symm.sub_left (UPre.scr_sub (by omega_arith))) (by decide)
 
 theorem epilogue_wp {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv s₀ (N s₀) s) :
     WP isa (.block restore) s fun s' => abiPreserved s₀ s' ∧ updateArm.post s₀ s' := by
@@ -30,7 +30,7 @@ theorem epilogue_wp {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv s₀ (
   have rdwr : s.rd ++ s.wr = [schR s₀, dataR s₀, argsR s₀, stR s₀, scrR s₀] := by
     rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   have inS : ∀ d, d + 4 ≤ 2176 → InRegions (s.rd ++ s.wr) (State.addr (S s₀) + BitVec.ofNat 64 d) 4 :=
-    fun d hd => by rw [rdwr]; exact ⟨scrR s₀, by simp, Offset.contains_base _ hd (by omega)⟩
+    fun d hd => by rw [rdwr]; exact ⟨scrR s₀, by simp, Offset.contains_base _ hd (by omega_arith)⟩
   have sl : ∀ r d, (r, d) ∈ saved → s.mem.readW (State.addr (S s₀) + BitVec.ofNat 64 d) 32 = s₀.gpr r :=
     fun r d hrd => by
       have hb := saved_bound _ hrd
@@ -38,7 +38,7 @@ theorem epilogue_wp {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv s₀ (
   rw [restore, saved_eq, ← List.append_nil (List.map _ _)]
   refine Spill.restoreBase_ok (by decide) (fun p hp' => ?_) fun s₂ ld ho m₁ _ _ sp₁ => WP.block_nil ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · have hb := saved_bound p (by rw [saved_eq]; exact hp')
-    exact ⟨by omega, by rw [h.r10]; omega, by rw [h.r10]; exact inS _ (by omega)⟩
+    exact ⟨by omega_arith, by rw [h.r10]; omega_arith, by rw [h.r10]; exact inS _ (by omega_arith)⟩
   · by_cases hs : r ∈ saved.map Prod.fst
     · obtain ⟨p, hp', rfl⟩ := List.mem_map.mp hs
       rw [ld p (by rw [← saved_eq]; exact hp'), h.r10, sl _ _ hp']
@@ -58,7 +58,7 @@ theorem mid_wp {s₀ : State} (hp : UPre s₀) {s₁ : State} (h : LInv s₀ 0 s
   · refine WP.ite true (by rw [ev]; simp [hn]) (fun _ => WP.block_nil ?_) (fun h => by cases h)
     rw [hn]; exact h
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
-    exact loop_ok hp (by omega) h
+    exact loop_ok hp (by omega_arith) h
 
 theorem update_wp {s₀ : State} (h0 : updateArm.pre s₀) :
     WP isa update s₀ fun s' => abiPreserved s₀ s' ∧ updateArm.post s₀ s' := by

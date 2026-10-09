@@ -124,7 +124,7 @@ theorem w_mut {w sp D : BitVec 32} {n a l : Nat} (h : a + l ≤ 128 ∨ (164 ≤
     ∃ r' ∈ mutR w sp D n, Region.Sub ⟨State.addr w + BitVec.ofNat 64 a, l⟩ r' := by
   rcases h with h | h
   · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ h⟩
-  · exact ⟨⟨State.addr w + BitVec.ofNat 64 164, 2396⟩, by simp, Offset.sub _ h.1 (by omega)⟩
+  · exact ⟨⟨State.addr w + BitVec.ofNat 64 164, 2396⟩, by simp, Offset.sub _ h.1 (by omega_arith)⟩
 
 theorem blw_mut {w sp D : BitVec 32} {n : Nat} : ∃ r' ∈ mutR w sp D n, Region.Sub (blw sp) r' :=
   ⟨_, by simp, fun _ h => h⟩
@@ -134,7 +134,7 @@ theorem macR_mut {w sp D : BitVec 32} {n y : Nat} (hy : y = 0 ∨ y = 112) :
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact w_mut (.inl (by omega))
+  · exact w_mut (.inl (by omega_arith))
   · exact w_mut (.inl (by decide))
   · exact w_mut (.inr ⟨by decide, by decide⟩)
   · exact blw_mut

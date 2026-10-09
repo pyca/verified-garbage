@@ -54,7 +54,7 @@ theorem mask_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A D 
     · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
     · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, hl, ofNat_shr4 hn]
     · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false,
-        reduceCtorEq, hl, ofNat_shr4 hn, and_self_beq (show n / 16 < 2 ^ 64 by omega)]
+        reduceCtorEq, hl, ofNat_shr4 hn, and_self_beq (show n / 16 < 2 ^ 64 by omega_arith)]
     · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;>
         simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]

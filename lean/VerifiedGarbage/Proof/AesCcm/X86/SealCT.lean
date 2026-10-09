@@ -65,7 +65,7 @@ theorem seal_top_ct (v : Ctr32Impl) {K W SP N A D T : BitVec 32} {R nl al n tl :
   refine CT.seq (J := fun s => s.gpr .ebp = W)
     (tagOut_ct L fun s ⟨_, Tp, h⟩ => ⟨h.env, (h.slots Tp.args).tl, (h.slots Tp.args).tp⟩)
     (fun s ⟨s₀, Tp, h⟩ => WP.mono (tagOut_ok L h.env (h.slots Tp.args).tl (h.slots Tp.args).tp
-      (by have := Ar.t4; omega) Ar.t16 (Tp.args.tag.of_eq h.rd h.wr) (by rw [h.wr]; exact Tp.tw))
+      (by have := Ar.t4; omega_arith) Ar.t16 (Tp.args.tag.of_eq h.rd h.wr) (by rw [h.wr]; exact Tp.tw))
       fun _ ⟨_, E, _, _⟩ => E.ebp) ?_
   -- The exit.
   exact CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide)

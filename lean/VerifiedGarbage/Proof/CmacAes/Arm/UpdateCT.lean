@@ -129,11 +129,11 @@ theorem loop_ct {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : u
   · rw [e₁] at hf
     have h0 : N s₀ = k + 1 := by
       have : N s₀ - (k + 1) = 0 := by simpa using hf
-      omega
+      omega_arith
     exact ⟨h0 ▸ l₁, by rw [← hN, h0]; exact l₂⟩
   · rw [e₁] at ht
     have h0 : N s₀ - (k + 1) ≠ 0 := by simpa using ht
-    exact ⟨N s₀ - (k + 1), by omega, k + 1, rfl, ⟨by omega, l₁⟩, ⟨by omega, l₂⟩⟩
+    exact ⟨N s₀ - (k + 1), by omega_arith, k + 1, rfl, ⟨by omega_arith, l₁⟩, ⟨by omega_arith, l₂⟩⟩
 
 /-! ## The whole function -/
 
@@ -172,7 +172,7 @@ theorem update_rel {s₀ s₀' : State} (h0 : updateArm.pre s₀) (h0' : updateA
         · exact hq.2.2.1
         · exact hq.2.2.2.1
         · exact hq.2.2.2.2.1
-      · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+      · rcases (by omega_arith : i = 0 ∨ i = 1) with rfl | rfl
         · exact hq.2.2.2.2.2.1
         · exact hq.2.2.2.2.2.2) ⟨_, hpro⟩
     (fun s e => by rw [e]; exact prologue_wp hp) (fun s e => by rw [e]; exact prologue_wp hp')
@@ -197,7 +197,7 @@ theorem update_rel {s₀ s₀' : State} (h0 : updateArm.pre s₀) (h0' : updateA
       all_goals
         have := h.2; rw [ev h.1.1.2] at this
         have : N s₀ ≠ 0 := by simpa using this
-        omega
+        omega_arith
   have epi := RelCT.taint (A := taint) (P := fun a b => LInv s₀ (N s₀) a ∧ LInv s₀' (N s₀') b)
     (Taint.ofRegs [.r10]) (fun a b h => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

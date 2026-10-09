@@ -33,7 +33,7 @@ theorem w_wR {w sp : BitVec 32} {a l : Nat} (h : a + l ≤ 128 ∨ (164 ≤ a �
     ∃ r' ∈ wR w sp, Region.Sub ⟨State.addr w + BitVec.ofNat 64 a, l⟩ r' := by
   rcases h with h | h
   · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ h⟩
-  · exact ⟨⟨State.addr w + BitVec.ofNat 64 164, 2396⟩, by simp, Offset.sub _ h.1 (by omega)⟩
+  · exact ⟨⟨State.addr w + BitVec.ofNat 64 164, 2396⟩, by simp, Offset.sub _ h.1 (by omega_arith)⟩
 
 theorem wR_mut {w sp D : BitVec 32} {n : Nat} : ∀ r ∈ wR w sp, ∃ r' ∈ mutR w sp D n, Region.Sub r r' := by
   intro r hr
@@ -45,7 +45,7 @@ theorem macR_wR {w sp : BitVec 32} {y : Nat} (hy : y = 0 ∨ y = 112) :
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact w_wR (.inl (by omega))
+  · exact w_wR (.inl (by omega_arith))
   · exact w_wR (.inl (by decide))
   · exact w_wR (.inr ⟨by decide, by decide⟩)
   · exact ⟨_, by simp, fun _ h => h⟩
@@ -58,7 +58,7 @@ theorem buf_wR {w sp : BitVec 32} {s : State} {P : BitVec 32} {len : Nat} (hP : 
     rcases hr with rfl | rfl | rfl
     · exact hP.w.sub_right (Region.sub_prefix (by decide))
     · exact hP.w.sub_right (Lay.wSub (by decide))
-    · exact hP.stk.symm) (by have := hP.lt; omega)
+    · exact hP.stk.symm) (by have := hP.lt; omega_arith)
 
 /-- The entry: our caller's registers saved in `W`, and `W`, the key schedule
 and the rounds in `r11`, `r9` and `r8`. -/
@@ -104,8 +104,8 @@ theorem tagOut_ok {k w sp : BitVec 32} {R q1 : Nat} (L : Lay k w sp) {s : State}
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide) (by decide) (by decide)) k₁.sp k₁.rd k₁.wr
   have ww := L.ww
   have lp : LoopPre s₁ w T tl :=
-    ⟨h1₁, h2₁, h3₁, by omega, by omega, by omega, hTf, covers_left (covers_prefix he₁.perm.w (by omega)),
-      by rw [k₁.wr]; exact hTw, (hTW.sub_right (Region.sub_prefix (by omega))).symm⟩
+    ⟨h1₁, h2₁, h3₁, by omega_arith, by omega_arith, by omega_arith, hTf, covers_left (covers_prefix he₁.perm.w (by omega_arith)),
+      by rw [k₁.wr]; exact hTw, (hTW.sub_right (Region.sub_prefix (by omega_arith))).symm⟩
   refine WP.mono (copyLoop_ok s₁ lp) fun s₂ ⟨hm₂, lo⟩ => ⟨he₁.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact lo.other _ (by decide) (by decide) (by decide) (by decide)
@@ -130,7 +130,7 @@ theorem seal_wp' {s₀ : State} {k w N A D T : BitVec 32} {R nl al n tl : Nat} (
       bytesAt s₁.mem (State.addr P) len = bytesAt s₀.mem (State.addr P) len := fun hP =>
     bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hP.w.sub_right (Lay.wSub (by decide)))
-      (by have := hP.lt; omega)
+      (by have := hP.lt; omega_arith)
   have hK₁ : Spec.Ccm.ctxCiph s₁.mem (State.addr k) R = Spec.Ccm.ctxCiph s₀.mem (State.addr k) R :=
     ctxCiph_frame f₁ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsavedK) hRb
   have hk₁ : Stk w s₀ s₁ := Ar.stk.frame f₁ (fun r hr => by
@@ -239,15 +239,15 @@ theorem seal_wp' {s₀ : State} {k w N A D T : BitVec 32} {R nl al n tl : Nat} (
   simp only [Spec.Ccm.encryptWith, Prod.mk.injEq]
   have d₆ : bytesAt s₆.mem (State.addr D) n = bytesAt s₅.mem (State.addr D) n :=
     bytesAt_frame f₆ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Tb.d.symm) (by have := Ar.n32; omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact Tb.d.symm) (by have := Ar.n32; omega_arith)
   have t₆ : bytesAt s₆.mem (State.addr T) tl = bytesAt s₅.mem (State.addr w) tl := by
-    rw [hm₆, bytesAt_writeBytes_prefix _ _ _ (by rw [hx]) (by have := Ar.t16; omega), hx, Nat.sub_self]
+    rw [hm₆, bytesAt_writeBytes_prefix _ _ _ (by rw [hx]) (by have := Ar.t16; omega_arith), hx, Nat.sub_self]
     simp [Spec.Aes.bytesAt]
   refine ⟨?_, ?_⟩
   · rw [hm, d₆, o₅, cK F₄, d₄, crypt_eq (hBC _)]
   · rw [hm, t₆, bytesAt_prefix s₅.mem (State.addr w) Ar.t16, w₅, o₄, take_xorFrom_zero (hBC _) _ hY.symm Ar.t16,
       mo, cK (f₂'.sub wR_mut), cK ((f₂'.sub wR_mut).trans (M.frame.sub (macR_mut (.inl rfl)))), a₂, d₂,
-      ← mac_eq _ _ (by rw [hnl]; have := Ar.h13; omega)]
+      ← mac_eq _ _ (by rw [hnl]; have := Ar.h13; omega_arith)]
 
 theorem ofNat_toNat32 (x : BitVec 32) : BitVec.ofNat 32 x.toNat = x := by simp
 

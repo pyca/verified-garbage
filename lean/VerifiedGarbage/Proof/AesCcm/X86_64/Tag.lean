@@ -32,7 +32,7 @@ theorem tagArgs_ok {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP 
   have h15 := E.r15
   have h13' := E.r13
   have r₁ := E.perm.wR (show 232 + 8 ≤ 2560 by decide)
-  have hy' : y < 2 ^ 31 := by omega
+  have hy' : y < 2 ^ 31 := by omega_arith
   obtain ⟨s₁, run₁, hm₁, hsi₁, hax₁, hg₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
       [.mov .rsi (.mem (at_ .r15 roundsO)), .mov32 .rax (imm 0)] s = some s₁ ∧ s₁.mem = s.mem ∧
       s₁.gpr .rsi = BitVec.ofNat 64 R ∧ s₁.gpr .rax = BitVec.ofNat 64 0 ∧
@@ -76,13 +76,13 @@ theorem tagArgs_ok {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP 
   · simp only [List.append_assoc]
     rw [runBlock_append, run₁, Option.bind_some, runBlock_append, run₂, Option.bind_some]
     simpa only [List.append_assoc] using run₃
-  have hq := srcW (s := s₃) L E₃.perm (t := y) (k := 16 * 1) (by omega)
+  have hq := srcW (s := s₃) L E₃.perm (t := y) (k := 16 * 1) (by omega_arith)
   have hqc : (⟨W + BitVec.ofNat 64 y, 16 * 1⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 64, 16⟩ := by
     rcases hy with rfl | rfl
     · exact L.w_w (.inl (by decide)) (by decide) (by decide)
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-  have hqk : (⟨K, 240⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 y, 16 * 1⟩ := L.k_w.sub_right (Lay.wSub (by omega))
-  refine ⟨E₃, cargs L E₃ hR (c := 64) (by decide) hq hqc hqk (E₃.perm.wC (d := y) (n := 16 * 1) (by omega))
+  have hqk : (⟨K, 240⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 y, 16 * 1⟩ := L.k_w.sub_right (Lay.wSub (by omega_arith))
+  refine ⟨E₃, cargs L E₃ hR (c := 64) (by decide) hq hqc hqk (E₃.perm.wC (d := y) (n := 16 * 1) (by omega_arith))
     hdi hsi hdx hcx hr8 hr9, fun r hr => ?_, by rw [hrd₃, hrd₂, hrd₁], by rw [hwr₃, hwr₂, hwr₁],
     by rw [hm₃, ← hm₁]; exact f₂, by rw [hm₃]; exact hc₂⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -131,9 +131,9 @@ theorem tag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E :
     · exact ⟨⟨W + BitVec.ofNat 64 384, 2176⟩, by simp, Region.sub_prefix (by decide)⟩
     · exact ⟨below SP 16, by simp, below8_sub SP⟩
   · have hc := ctr32_ccm (m := s₃.mem) (m' := s₄.mem) (K := K) (C := W + BitVec.ofNat 64 64)
-      (D := W + BitVec.ofNat 64 y) (R := R) (nonce := nonce) (by omega) (j := 0) (k := 1)
+      (D := W + BitVec.ofNat 64 y) (R := R) (nonce := nonce) (by omega_arith) (j := 0) (k := 1)
       (fun i hi => by
-        rw [show i = 0 by omega, Nat.zero_add]
+        rw [show i = 0 by omega_arith, Nat.zero_add]
         show Spec.Gcm.ofBytes _ = _
         rw [hc₃]) h.out
     rw [Nat.mul_one] at hc

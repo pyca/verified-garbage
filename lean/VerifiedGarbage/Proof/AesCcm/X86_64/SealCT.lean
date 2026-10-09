@@ -78,8 +78,8 @@ theorem mac_mid (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A
     (h : Mid K W SP R N A D nl al n tl T s) : WP isa (mac v.callee y) s (Mid K W SP R N A D nl al n tl T) := by
   obtain ⟨o, ⟨nonce, hl, c⟩, hA, hD, hT⟩ := h
   refine WP.mono (mac_ok v L o.env o.sl hR hl h7 h13 ht4 ht16 hte hn' c hy hA hD) fun s' M => ?_
-  refine ⟨o.macR L hD.w (by omega) M.env M.frame M.wr, ⟨nonce, hl, ?_⟩, hA.of_eq M.rd M.wr, hD.of_eq M.rd M.wr,
-    hT.mut (M.frame.sub (macR_mut W SP D n (by omega))) M.rd M.wr⟩
+  refine ⟨o.macR L hD.w (by omega_arith) M.env M.frame M.wr, ⟨nonce, hl, ?_⟩, hA.of_eq M.rd M.wr, hD.of_eq M.rd M.wr,
+    hT.mut (M.frame.sub (macR_mut W SP D n (by omega_arith))) M.rd M.wr⟩
   rw [bytesAt_frame M.frame (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -94,12 +94,12 @@ theorem tag_mid (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A 
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (h7 : 7 ≤ nl) (h13 : nl ≤ 13) {y : Nat} (hy : y = 0 ∨ y = 96) {s : State}
     (h : Mid K W SP R N A D nl al n tl T s) : WP isa (tag v.callee y) s (Mid K W SP R N A D nl al n tl T) := by
   obtain ⟨o, ⟨nonce, hl, c⟩, hA, hD, hT⟩ := h
-  refine WP.mono (tag_ok v L o.env hR o.sl.rounds (by omega) (by omega) c hy) fun s' ⟨E, _, rd, wr, f, _⟩ => ?_
+  refine WP.mono (tag_ok v L o.env hR o.sl.rounds (by omega_arith) (by omega_arith) c hy) fun s' ⟨E, _, rd, wr, f, _⟩ => ?_
   have f' : Frame (mutR W SP D n) s.mem s'.mem := f.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨wA W, by simp, Offset.sub_base W (by decide)⟩
-    · exact ⟨wA W, by simp, Offset.sub_base W (by omega)⟩
+    · exact ⟨wA W, by simp, Offset.sub_base W (by omega_arith)⟩
     · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
     · exact ⟨_, by simp, fun _ h => h⟩
   refine ⟨⟨E, slots_mut L hD.w f' o.sl, wr.trans o.wr⟩, ⟨nonce, hl, ?_⟩, hA.of_eq rd wr,
@@ -120,7 +120,7 @@ theorem Mid.ctx {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr} {nl 
     (hdk : (⟨K, 240⟩ : Region).Disjoint ⟨D, n⟩) {s : State} (h : Mid K W SP R N A D nl al n tl T s) :
     ∃ nonce, CtrCtx K W SP s R nonce D n := by
   obtain ⟨o, ⟨nonce, hl, c⟩, -, hD, -⟩ := h
-  exact ⟨nonce, L, hR, o.sl.rounds, by omega, by omega, by rw [hl]; exact hn', c, hD,
+  exact ⟨nonce, L, hR, o.sl.rounds, by omega_arith, by omega_arith, by rw [hl]; exact hn', c, hD,
     by rw [o.wr]; exact covers_of_mem List.mem_cons_self, hdk⟩
 
 theorem ctr_mid (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr} {nl al n tl : Nat}

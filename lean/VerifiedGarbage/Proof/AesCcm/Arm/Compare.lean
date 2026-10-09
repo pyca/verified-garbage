@@ -39,13 +39,13 @@ theorem padCopy_ok {s : State} (he : Env k w sp R q1 s) {S : BitVec 32} {o d tl 
     WP isa copyLoop s fun s' => bytesAt s'.mem (State.addr w + BitVec.ofNat 64 d) 16 =
         bytesAt m₀ (State.addr w + BitVec.ofNat 64 o) tl ++ zeros (16 - tl) ∧
       Frame [⟨State.addr w + BitVec.ofNat 64 d, 16⟩] m₀ s'.mem ∧ LoopOut s S (w + BitVec.ofNat 32 d) tl s' := by
-  have eD := L.wA (d := d) (by omega)
+  have eD := L.wA (d := d) (by omega_arith)
   have ww := L.ww
   have lp : LoopPre s S (w + BitVec.ofNat 32 d) tl := by
-    refine ⟨hr1, hr2, hr3, h1, by omega, by omega, by rw [L.wN (by omega)]; omega, ?_, ?_, ?_⟩
-    · rw [hSa]; exact covers_left (he.perm.wC (by omega))
-    · rw [eD]; exact he.perm.wC (by omega)
-    · rw [hSa, eD]; exact L.w_w (by omega) (by omega) (by omega)
+    refine ⟨hr1, hr2, hr3, h1, by omega_arith, by omega_arith, by rw [L.wN (by omega_arith)]; omega_arith, ?_, ?_, ?_⟩
+    · rw [hSa]; exact covers_left (he.perm.wC (by omega_arith))
+    · rw [eD]; exact he.perm.wC (by omega_arith)
+    · rw [hSa, eD]; exact L.w_w (by omega_arith) (by omega_arith) (by omega_arith)
   refine WP.mono (copyLoop_ok s lp) fun s' ⟨hm', lo⟩ => ?_
   rw [hm, hSa, eD] at hm'
   have fz : Frame [⟨State.addr w + BitVec.ofNat 64 d, 16⟩] m₀ (store4 m₀ (State.addr w + BitVec.ofNat 64 d) 0 0 0 0) :=
@@ -53,15 +53,15 @@ theorem padCopy_ok {s : State} (he : Env k w sp R q1 s) {S : BitVec 32} {o d tl 
   have hx : bytesAt (store4 m₀ (State.addr w + BitVec.ofNat 64 d) 0 0 0 0) (State.addr w + BitVec.ofNat 64 o) tl =
       bytesAt m₀ (State.addr w + BitVec.ofNat 64 o) tl :=
     bytesAt_frame fz (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (by omega) (by omega) (by omega)) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (by omega_arith) (by omega_arith) (by omega_arith)) (by omega_arith)
   rw [hx] at hm'
   have hlen := length_bytesAt m₀ (State.addr w + BitVec.ofNat 64 o) tl
   refine ⟨?_, ?_, lo⟩
-  · rw [hm', bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega) (by omega), hlen, store4_zero_tail _ _ h16]
+  · rw [hm', bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega_arith) (by omega_arith), hlen, store4_zero_tail _ _ h16]
   · rw [hm']
     exact fz.trans ((writeBytes_frame' _ hlen).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩)
+      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩)
 
 /-- `zero16 d`: the 16 bytes at `W + d` zeroed. -/
 theorem zero16_ok {s : State} (he : Env k w sp R q1 s) {d : Nat} (hd : d + 16 ≤ 2560) (ed₁ : d + 12 < 4096) :
@@ -69,17 +69,17 @@ theorem zero16_ok {s : State} (he : Env k w sp R q1 s) {d : Nat} (hd : d + 16 �
       s'.mem = store4 s.mem (State.addr w + BitVec.ofNat 64 d) 0 0 0 0 ∧
       (∀ r, r ≠ .r0 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.gpr .r0 = 0 := by
   have h11 := he.r11
-  have w₀ := he.perm.wW (show d + 4 ≤ 2560 by omega)
-  have w₁ := he.perm.wW (show d + 4 + 4 ≤ 2560 by omega)
-  have w₂ := he.perm.wW (show d + 8 + 4 ≤ 2560 by omega)
-  have w₃ := he.perm.wW (show d + 12 + 4 ≤ 2560 by omega)
-  have e₀ := L.wA (d := d) (by omega)
-  have e₁ := L.wA (d := d + 4) (by omega)
-  have e₂ := L.wA (d := d + 8) (by omega)
-  have e₃ := L.wA (d := d + 12) (by omega)
-  have o₀ : d < 4096 := by omega
-  have o₁ : d + 4 < 4096 := by omega
-  have o₂ : d + 8 < 4096 := by omega
+  have w₀ := he.perm.wW (show d + 4 ≤ 2560 by omega_arith)
+  have w₁ := he.perm.wW (show d + 4 + 4 ≤ 2560 by omega_arith)
+  have w₂ := he.perm.wW (show d + 8 + 4 ≤ 2560 by omega_arith)
+  have w₃ := he.perm.wW (show d + 12 + 4 ≤ 2560 by omega_arith)
+  have e₀ := L.wA (d := d) (by omega_arith)
+  have e₁ := L.wA (d := d + 4) (by omega_arith)
+  have e₂ := L.wA (d := d + 8) (by omega_arith)
+  have e₃ := L.wA (d := d + 12) (by omega_arith)
+  have o₀ : d < 4096 := by omega_arith
+  have o₁ : d + 4 < 4096 := by omega_arith
+  have o₂ : d + 8 < 4096 := by omega_arith
   refine ⟨_, by simp only [zero16]; arun [h11, e₀, e₁, e₂, e₃, w₀, w₁, w₂, w₃, o₀, o₁, o₂, ed₁], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [mem_setReg, mem_store, store4_eq, add_ofNat_assoc]; rfl
   · intro r a; simp [gpr_setReg, a]
@@ -154,11 +154,11 @@ theorem padCopyAny_ok {s : State} (he : Env k w sp R q1 s) {S : BitVec 32} {d tl
     WP isa copyLoop s fun s' => bytesAt s'.mem (State.addr w + BitVec.ofNat 64 d) 16 =
         bytesAt m₀ (State.addr S) tl ++ zeros (16 - tl) ∧
       Frame [⟨State.addr w + BitVec.ofNat 64 d, 16⟩] m₀ s'.mem ∧ LoopOut s S (w + BitVec.ofNat 32 d) tl s' := by
-  have eD := L.wA (d := d) (by omega)
+  have eD := L.wA (d := d) (by omega_arith)
   have ww := L.ww
   have lp : LoopPre s S (w + BitVec.ofNat 32 d) tl := by
-    refine ⟨hr1, hr2, hr3, h1, by omega, hSf, by rw [L.wN (by omega)]; omega, hSr, ?_, ?_⟩
-    · rw [eD]; exact he.perm.wC (by omega)
+    refine ⟨hr1, hr2, hr3, h1, by omega_arith, hSf, by rw [L.wN (by omega_arith)]; omega_arith, hSr, ?_, ?_⟩
+    · rw [eD]; exact he.perm.wC (by omega_arith)
     · rw [eD]; exact hSd.sub_right (Region.sub_prefix h16)
   refine WP.mono (copyLoop_ok s lp) fun s' ⟨hm', lo⟩ => ?_
   rw [hm, eD] at hm'
@@ -166,15 +166,15 @@ theorem padCopyAny_ok {s : State} (he : Env k w sp R q1 s) {S : BitVec 32} {d tl
     Cmac.frame_store4 _ _ _ _ _
   have hx : bytesAt (store4 m₀ (State.addr w + BitVec.ofNat 64 d) 0 0 0 0) (State.addr S) tl =
       bytesAt m₀ (State.addr S) tl :=
-    bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hSd) (by omega)
+    bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hSd) (by omega_arith)
   rw [hx] at hm'
   have hlen := length_bytesAt m₀ (State.addr S) tl
   refine ⟨?_, ?_, lo⟩
-  · rw [hm', bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega) (by omega), hlen, store4_zero_tail _ _ h16]
+  · rw [hm', bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega_arith) (by omega_arith), hlen, store4_zero_tail _ _ h16]
   · rw [hm']
     exact fz.trans ((writeBytes_frame' _ hlen).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩)
+      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩)
 
 /-- `recv` (AES-GCM's): the received tag, the `r6` bytes at `T` (the stack
 argument at `sp + 16`), padded with zeros at `W + 256`. -/
@@ -252,8 +252,8 @@ theorem cmp_ok {s : State} (he : Env k w sp R q1 s) {o : Nat} (ho : o = 0 ∨ o 
     rcases hr with rfl | rfl | rfl | rfl <;>
       rw [g₂ _ (by decide) (by decide) (by decide), g₁ _ (by decide)]) (k₂.sp.trans sp₁) (k₂.rd.trans rd₁)
       (k₂.wr.trans wr₁)
-  refine WP.seq (WP.mono (padCopy_ok L he₂ (o := o) (d := 240) (by omega) (by omega) (by decide) h1 h16
-    (L.wA (by omega)) (L.wN (by omega)) (m₀ := s.mem) (by rw [k₂.mem, hm₁]; rfl) h1₂ h2₂ h3₂) fun s₃ ⟨hb, hf, lo⟩ => ?_)
+  refine WP.seq (WP.mono (padCopy_ok L he₂ (o := o) (d := 240) (by omega_arith) (by omega_arith) (by decide) h1 h16
+    (L.wA (by omega_arith)) (L.wN (by omega_arith)) (m₀ := s.mem) (by rw [k₂.mem, hm₁]; rfl) h1₂ h2₂ h3₂) fun s₃ ⟨hb, hf, lo⟩ => ?_)
   have he₃ := he₂.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact lo.other _ (by decide) (by decide) (by decide) (by decide)

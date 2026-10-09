@@ -39,7 +39,7 @@ theorem ctrsBlk_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K 
       s₁.gpr .ebp = W ∧ s₁.gpr .esp = SP ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
   have hz := zero4_fold s.mem W 48
   simp only [Nat.reduceAdd] at hz
-  have hb := sub_low_byte32 (show nl ≤ 14 by omega)
+  have hb := sub_low_byte32 (show nl ≤ 14 by omega_arith)
   refine ⟨_, by crun [zero4, E.ebp, L.aW, E.perm.wW, E.perm.wR, hnl, hNp], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · cmems [hz, hb]
   · cregs [hNp]
@@ -61,10 +61,10 @@ theorem ctrs_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W S
   have E₁ : Env K W SP s₁ := E.keep (by rw [hbp, E.ebp]) (by rw [hsp, E.esp]) hrd₁ hwr₁
   have a49 : w64 (W + BitVec.ofNat 32 49) = w64 W + BitVec.ofNat 64 49 := L.aW (by decide)
   have dNW : (⟨w64 N, nl⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 49, nl⟩ :=
-    hN.w.sub_right (Lay.wSub (by omega))
+    hN.w.sub_right (Lay.wSub (by omega_arith))
   have lp : LoopPre s₁ N (W + BitVec.ofNat 32 49) nl :=
-    ⟨hdi, hdx, hcx, by omega, by omega, hN.wrap, by rw [L.nW (by decide)]; have := L.fw; omega,
-      by rw [hrd₁, hwr₁]; exact hN.rd, by rw [a49]; exact E₁.perm.wC (by omega), by rw [a49]; exact dNW⟩
+    ⟨hdi, hdx, hcx, by omega_arith, by omega_arith, hN.wrap, by rw [L.nW (by decide)]; have := L.fw; omega_arith,
+      by rw [hrd₁, hwr₁]; exact hN.rd, by rw [a49]; exact E₁.perm.wC (by omega_arith), by rw [a49]; exact dNW⟩
   refine WP.mono (copyLoop_ok s₁ lp) fun s₂ P => ?_
   have hfz : Frame [⟨w64 W + BitVec.ofNat 64 48, 16⟩] s.mem s₁.mem := by
     rw [hm₁]
@@ -73,7 +73,7 @@ theorem ctrs_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W S
   have hNs : bytesAt s₁.mem (w64 N) nl = bytesAt s.mem (w64 N) nl :=
     Proof.AesGcm.X86.bytesAt_frame hfz (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hN.w.sub_right (Lay.wSub (by decide))) (by have := hN.lt; omega)
+      exact hN.w.sub_right (Lay.wSub (by decide))) (by have := hN.lt; omega_arith)
   refine ⟨E₁.keep (by rw [P.other _ (by decide) (by decide) (by decide) (by decide)])
       (by rw [P.other _ (by decide) (by decide) (by decide) (by decide)]) P.rd P.wr, ?_, ?_,
     by rw [P.rd, hrd₁], by rw [P.wr, hwr₁]⟩
@@ -81,7 +81,7 @@ theorem ctrs_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W S
     rw [P.mem, a49]
     exact writeBytes_frame _ _ _ (by
       rw [length_bytesAt]
-      exact Offset.contains (w64 W) (d := 49) (n := nl) (e := 48) (k := 16) (by decide) (by omega) (by decide))
+      exact Offset.contains (w64 W) (d := 49) (n := nl) (e := 48) (k := 16) (by decide) (by omega_arith) (by decide))
   · -- The bytes of the block.
     have hz' : bytesAt s₁.mem (w64 W + BitVec.ofNat 64 48) 16 = BitVec.ofNat 8 (15 - nl - 1) :: Spec.Ccm.zeros 15 := by
       rw [hm₁, bytesAt_writeW8_base _ _ _ (by decide) (by decide), zero4_bytes']
@@ -89,8 +89,8 @@ theorem ctrs_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W S
     have hl := length_bytesAt s.mem (w64 N) nl
     rw [P.mem, a49, show w64 W + BitVec.ofNat 64 49 = w64 W + BitVec.ofNat 64 48 + BitVec.ofNat 64 1 by
         rw [add_ofNat_assoc],
-      bytesAt_writeBytes_at _ _ _ (by rw [length_bytesAt]; omega) (by decide), length_bytesAt, hz', hNs,
-      Spec.Ccm.ctrBlock, hl, be_zero, show 1 + nl = nl + 1 by omega]
+      bytesAt_writeBytes_at _ _ _ (by rw [length_bytesAt]; omega_arith) (by decide), length_bytesAt, hz', hNs,
+      Spec.Ccm.ctrBlock, hl, be_zero, show 1 + nl = nl + 1 by omega_arith]
     simp only [Spec.Ccm.zeros, List.take_succ_cons, List.take_zero, List.drop_succ_cons, List.drop_replicate,
       List.cons_append, List.nil_append]
 
@@ -185,7 +185,7 @@ theorem updBlock_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K 
     rcases hy with rfl | rfl
     · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
     · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
-  refine WP.mono (updCall_ok v L E₁ hR (by omega) hq hqy (by decide) hax hcx hdx hbx hsi hdi)
+  refine WP.mono (updCall_ok v L E₁ hR (by omega_arith) hq hqy (by decide) hax hcx hdx hbx hsi hdi)
     fun s₂ ⟨E₂, rd₂, wr₂, _, f₂, o₂⟩ => ⟨E₂, by rw [rd₂, hrd₁], by rw [wr₂, hwr₁], by rw [← hm₁]; exact f₂, ?_⟩
   rw [o₂, Proof.Cmac.Stream.blocksAt_eq, Nat.mul_one, Proof.Cmac.Stream.blocks_single
     (Proof.Cmac.bytesAt_length _ _ _), hm₁, L.aW (o := 32) (by decide)]

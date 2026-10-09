@@ -124,17 +124,17 @@ theorem loop_ct (v : Ctr32Impl) {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPr
     fun _ _ h => ⟨body_ok v hp h.1 h.2.1, body_ok v hp' (by rw [← hN]; exact h.1) h.2.2⟩
   refine ct.mono (fun _ _ h => h.2) fun s₁ s₂ ⟨_, l₁, l₂⟩ => ?_
   have hb : N s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
-  have e₁ := eval_x23 (x := N s₀ - (k + 1)) (by omega) l₁.x23
-  have e₂ := eval_x23 (x := N s₀ - (k + 1)) (by omega) (by rw [l₂.x23, ← hN])
+  have e₁ := eval_x23 (x := N s₀ - (k + 1)) (by omega_arith) l₁.x23
+  have e₂ := eval_x23 (x := N s₀ - (k + 1)) (by omega_arith) (by rw [l₂.x23, ← hN])
   refine ⟨by rw [e₁, e₂], fun hf => ?_, fun ht => ?_⟩
   · rw [e₁] at hf
     have h0 : N s₀ = k + 1 := by
       have : N s₀ - (k + 1) = 0 := by simpa using hf
-      omega
+      omega_arith
     exact ⟨h0 ▸ l₁, by rw [← hN, h0]; exact l₂⟩
   · rw [e₁] at ht
     have h0 : N s₀ - (k + 1) ≠ 0 := by simpa using ht
-    exact ⟨N s₀ - (k + 1), by omega, k + 1, rfl, by omega, l₁, l₂⟩
+    exact ⟨N s₀ - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, l₁, l₂⟩
 
 /-! ## The whole function -/
 
@@ -181,7 +181,7 @@ theorem update_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : updateAArch64.pre 
         fun _ _ h => h
       have := h.2; rw [ev (k := 0) h.1.1] at this
       have : N s₀ ≠ 0 := by simpa using this
-      omega
+      omega_arith
   have epi := RelCT.taint (A := taint) (P := fun a b => LInv s₀ (N s₀) a ∧ LInv s₀' (N s₀') b) _
     (fun a b h => agree_of (by rw [h.1.sp, h.2.sp, pub_sp hq]) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

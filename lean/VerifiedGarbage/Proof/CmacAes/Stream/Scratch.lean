@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.Cmac.Contract
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Streaming AES-CMAC with its working space as an argument
@@ -73,7 +74,7 @@ private theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
 private theorem bytesAt_congr_off {m₁ m₂ : Mem} {p : Addr} {d n N : Nat} (hn : d + n ≤ N)
     (h : ∀ i < N, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     Spec.Aes.bytesAt m₂ (p + BitVec.ofNat 64 d) n = Spec.Aes.bytesAt m₁ (p + BitVec.ofNat 64 d) n :=
-  bytesAt_congr fun i hi => by rw [Offset.add_add]; exact h _ (by omega)
+  bytesAt_congr fun i hi => by rw [Offset.add_add]; exact h _ (by omega_arith)
 
 /-- The streaming state represents a message by its 304 bytes alone. -/
 theorem repr_congr_304 {m₁ m₂ : Mem} {p : Addr} {key msg : List Byte}
@@ -81,15 +82,15 @@ theorem repr_congr_304 {m₁ m₂ : Mem} {p : Addr} {key msg : List Byte}
     (hr : Repr m₁ p key msg) : Repr m₂ p key msg := by
   obtain ⟨hl, h1, h2, h3, h4⟩ := hr
   have hR : 16 * (Spec.Aes.rounds (key.length / 4) + 1) ≤ 240 := by
-    simp only [Spec.Aes.rounds]; omega
-  have hc : msg.length - chainedLen 16 msg.length ≤ 16 := by unfold chainedLen; omega
+    simp only [Spec.Aes.rounds]; omega_arith
+  have hc : msg.length - chainedLen 16 msg.length ≤ 16 := by unfold chainedLen; omega_arith
   refine ⟨hl, ?_, ?_, ?_, ?_⟩
-  · rw [bytesAt_congr fun i hi => h i (by omega)]; exact h1
-  · rw [show p + 240 = p + BitVec.ofNat 64 240 from rfl, bytesAt_congr_off (N := 304) (by omega) h]
+  · rw [bytesAt_congr fun i hi => h i (by omega_arith)]; exact h1
+  · rw [show p + 240 = p + BitVec.ofNat 64 240 from rfl, bytesAt_congr_off (N := 304) (by omega_arith) h]
     exact h2
-  · rw [show p + 272 = p + BitVec.ofNat 64 272 from rfl, bytesAt_congr_off (N := 304) (by omega) h]
+  · rw [show p + 272 = p + BitVec.ofNat 64 272 from rfl, bytesAt_congr_off (N := 304) (by omega_arith) h]
     exact h3
-  · rw [show p + 288 = p + BitVec.ofNat 64 288 from rfl, bytesAt_congr_off (N := 304) (by omega) h]
+  · rw [show p + 288 = p + BitVec.ofNat 64 288 from rfl, bytesAt_congr_off (N := 304) (by omega_arith) h]
     exact h4
 
 /-- The memory agrees on the `n` bytes at `p`, from its agreeing on the
@@ -100,10 +101,10 @@ private theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   intro i hi
   refine (h _ ?_).symm
   by_cases hw : i < 2 ^ 64
-  · exact Offset.contains_base _ (by omega) hw
+  · exact Offset.contains_base _ (by omega_arith) hw
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
-    omega
+    omega_arith
 
 variable (pb : Nat)
 
@@ -126,7 +127,7 @@ theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = (aesInitSig.words pb
     dsimp only [Curry.apply, aesInitPost, ArgWord.ofRaw] at h ⊢
     have := Nat.mod_le kl.toNat (2 ^ pb)
     rw [bytesAt_congr (n := (kl.setWidth pb).toNat) fun i hi => hk i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
+      rw [BitVec.toNat_setWidth] at hi; omega_arith)]
     exact h
 
 theorem absorbPre_local : ∀ vs m₁ m₂, vs.length = (aesAbsorbSig.words pb).length →
@@ -152,8 +153,8 @@ theorem absorbPost_local : ∀ vs m₁ m₂ m' r, vs.length = (aesAbsorbSig.word
     intro key msg hr h1 h2 h3
     have := Nat.mod_le len.toNat (2 ^ pb)
     rw [bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
-    exact h key msg (repr_congr_304 (fun i hi => (hs i (by omega)).symm) hr) h1 h2 h3
+      rw [BitVec.toNat_setWidth] at hi; omega_arith)]
+    exact h key msg (repr_congr_304 (fun i hi => (hs i (by omega_arith)).symm) hr) h1 h2 h3
 
 theorem finishPre_local : ∀ vs m₁ m₂, vs.length = (aesFinishSig.words pb).length →
     (∀ b ∈ Sig.bufs aesFinishSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -175,6 +176,6 @@ theorem finishPost_local : ∀ vs m₁ m₂ m' r, vs.length = (aesFinishSig.word
       (aesFinishPost pb) _ m₂ m' r
     dsimp only [Curry.apply, aesFinishPost, ArgWord.ofRaw] at h ⊢
     intro key msg hr
-    exact h key msg (repr_congr_304 (fun i hi => (hs i (by omega)).symm) hr)
+    exact h key msg (repr_congr_304 (fun i hi => (hs i (by omega_arith)).symm) hr)
 
 end VG.Proof.CmacAes.Stream

@@ -35,13 +35,13 @@ theorem aadHeadPre_ok {K W SP : Addr} {s : State} (E : Env K W SP s)
         Spec.Ccm.pad16 (Spec.Ccm.encodeLen a ++ (bytesAt s.mem A a).take (headLen a)) := by
   have ha := hA.lt
   have hh := Proof.AesCcm.hdrLen_le a
-  have hh2 : 2 ≤ hdrLen a := by unfold hdrLen; split <;> [omega; split <;> omega]
+  have hh2 : 2 ≤ hdrLen a := by unfold hdrLen; split <;> [omega_arith; split <;> omega_arith]
   refine WP.seq (WP.mono (header_ok E ha0 ha hbp) fun s₁ ⟨E₁, hbx₁, hg₁, hrd₁, hwr₁, f₁, hB₁⟩ => ?_)
   have hbp₁ : s₁.gpr .rbp = BitVec.ofNat 64 a := by rw [hg₁ _ (by simp), hbp]
-  refine WP.seq (WP.mono (minLen_ok s₁ hbx₁ hbp₁ (by omega) ha) fun s₂ ⟨hcx₂, hg₂, hm₂, hrd₂, hwr₂⟩ => ?_)
-  have hn1 : min (16 - hdrLen a) a = headLen a := by unfold headLen; omega
+  refine WP.seq (WP.mono (minLen_ok s₁ hbx₁ hbp₁ (by omega_arith) ha) fun s₂ ⟨hcx₂, hg₂, hm₂, hrd₂, hwr₂⟩ => ?_)
+  have hn1 : min (16 - hdrLen a) a = headLen a := by unfold headLen; omega_arith
   rw [hn1] at hcx₂
-  have hn1' : 1 ≤ headLen a ∧ headLen a ≤ a ∧ hdrLen a + headLen a ≤ 16 := by unfold headLen; omega
+  have hn1' : 1 ≤ headLen a ∧ headLen a ≤ a ∧ hdrLen a + headLen a ≤ 16 := by unfold headLen; omega_arith
   have E₂ : Env K W SP s₂ := E₁.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact hg₂ _ (by decide)) hrd₂ hwr₂
@@ -74,9 +74,9 @@ theorem aadHeadPre_ok {K W SP : Addr} {s : State} (E : Env K W SP s)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp)) hrd₃ hwr₃
   have hA₃ := hA.of_eq (s' := s₃) (by rw [hrd₃, hrd₂, hrd₁]) (by rw [hwr₃, hwr₂, hwr₁])
   have dAB : (⟨A, headLen a⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 (32 + hdrLen a), headLen a⟩ :=
-    (hA.w.sub_left (Region.sub_prefix hn1'.2.1)).sub_right (Lay.wSub (by omega))
+    (hA.w.sub_left (Region.sub_prefix hn1'.2.1)).sub_right (Lay.wSub (by omega_arith))
   have lp : LoopPre s₃ A (W + BitVec.ofNat 64 (32 + hdrLen a)) (headLen a) :=
-    ⟨hsi, hdi, hcx₃, hn1'.1, by omega, (hA₃.take hn1'.2.1).rd, E₃.perm.wC (by omega), dAB⟩
+    ⟨hsi, hdi, hcx₃, hn1'.1, by omega_arith, (hA₃.take hn1'.2.1).rd, E₃.perm.wC (by omega_arith), dAB⟩
   refine WP.mono (copyLoop_ok s₃ lp) fun s₄ ⟨hm₄, hg₄, hrd₄, hwr₄⟩ => ?_
   have E₄ : Env K W SP s₄ := E₃.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -86,29 +86,29 @@ theorem aadHeadPre_ok {K W SP : Addr} {s : State} (E : Env K W SP s)
     rw [hm₄]
     exact writeBytes_frame _ _ _ (by
       rw [length_bytesAt]
-      exact Offset.contains W (d := 32 + hdrLen a) (n := headLen a) (e := 32) (k := 16) (by omega) (by omega)
+      exact Offset.contains W (d := 32 + hdrLen a) (n := headLen a) (e := 32) (k := 16) (by omega_arith) (by omega_arith)
         (by decide))
   have fB : Frame [⟨W + BitVec.ofNat 64 32, 16⟩] s.mem s₄.mem := by
     rw [← hm₂] at f₁; rw [← hm₃] at f₁; exact f₁.trans fC
   have hAk : bytesAt s₃.mem A (headLen a) = (bytesAt s.mem A a).take (headLen a) := by
     rw [hm₃, hm₂, bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (hA.w.sub_left (Region.sub_prefix hn1'.2.1)).sub_right
-        (Lay.wSub (by decide))) (by omega), bytesAt_prefix _ _ hn1'.2.1]
+        (Lay.wSub (by decide))) (by omega_arith), bytesAt_prefix _ _ hn1'.2.1]
   have hB₄ : bytesAt s₄.mem (W + BitVec.ofNat 64 32) 16 =
       Spec.Ccm.pad16 (Spec.Ccm.encodeLen a ++ (bytesAt s.mem A a).take (headLen a)) := by
     have hl := Proof.AesCcm.length_encodeLen a
     have htl : ((bytesAt s.mem A a).take (headLen a)).length = headLen a := by
-      rw [List.length_take, length_bytesAt]; omega
+      rw [List.length_take, length_bytesAt]; omega_arith
     rw [hm₄, show W + BitVec.ofNat 64 (32 + hdrLen a) = W + BitVec.ofNat 64 32 + BitVec.ofNat 64 (hdrLen a) by
-        rw [add_ofNat_assoc], bytesAt_writeBytes_at _ _ _ (by rw [length_bytesAt]; omega) (by decide),
+        rw [add_ofNat_assoc], bytesAt_writeBytes_at _ _ _ (by rw [length_bytesAt]; omega_arith) (by decide),
       length_bytesAt, hAk, hm₃, hm₂, hB₁]
     rcases Proof.AesCcm.pad16_short (r := Spec.Ccm.encodeLen a ++ (bytesAt s.mem A a).take (headLen a))
-      (by rw [List.length_append, hl, htl]; omega) with e | e
+      (by rw [List.length_append, hl, htl]; omega_arith) with e | e
     · rw [e, List.length_append, hl, htl, List.take_left' hl, ← hl, List.drop_append, hl, List.append_assoc]
       simp only [Spec.Ccm.zeros, List.drop_replicate]
-      rw [List.drop_eq_nil_of_le (by rw [hl]; omega), List.nil_append, List.append_assoc,
-        show 16 - hdrLen a - (hdrLen a + headLen a - hdrLen a) = 16 - (hdrLen a + headLen a) by omega]
-    · exact absurd (congrArg List.length e) (by rw [List.length_append, hl]; simp; omega)
+      rw [List.drop_eq_nil_of_le (by rw [hl]; omega_arith), List.nil_append, List.append_assoc,
+        show 16 - hdrLen a - (hdrLen a + headLen a - hdrLen a) = 16 - (hdrLen a + headLen a) by omega_arith]
+    · exact absurd (congrArg List.length e) (by rw [List.length_append, hl]; simp; omega_arith)
   exact ⟨E₄, by rw [hrd₄, hrd₃, hrd₂, hrd₁], by rw [hwr₄, hwr₃, hwr₂, hwr₁], fB,
     by rw [hg₄ _ (by decide) (by decide), h12₃], by rw [hg₄ _ (by decide) (by decide), hbp₃], hB₄⟩
 
@@ -191,14 +191,14 @@ theorem aad_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E 
     simp only [hm₁, adataBlocks, length_bytesAt, h0, ↓reduceIte]; rfl
   · have h0 : al ≠ 0 := of_decide_eq_false hf
     have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with rfl | rfl | rfl <;> decide
-    refine WP.seq (WP.mono (aadHead_ok v L E₁ hR hRo₁ hy hA₁ (by omega) h12 hbp) fun s₂ A₂ => ?_)
-    have hn1 : headLen al ≤ al := by unfold headLen; omega
+    refine WP.seq (WP.mono (aadHead_ok v L E₁ hR hRo₁ hy hA₁ (by omega_arith) h12 hbp) fun s₂ A₂ => ?_)
+    have hn1 : headLen al ≤ al := by unfold headLen; omega_arith
     have hRo₂ : s₂.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R := by
       rw [rounds_kept L hy A₂.frame, hRo₁]
     have hT := (hA.drop hn1).of_eq (s' := s₂) (by rw [A₂.rd, hrd₁]) (by rw [A₂.wr, hwr₁])
     refine WP.mono (absorbPad_ok v L A₂.env hR hRo₂ hy hT A₂.r12 A₂.rbp) fun s₃ A₃ =>
       ⟨A₃.env, by rw [← hm₁]; exact A₂.frame.trans A₃.frame, ?_, by rw [A₃.rd, A₂.rd, hrd₁], by rw [A₃.wr, A₂.wr, hwr₁]⟩
-    rw [A₃.out, A₂.out, buf_kept hT (by omega) A₂.frame, ctxCiph_frame A₂.frame (k_macR L (by omega)) hRb,
+    rw [A₃.out, A₂.out, buf_kept hT (by omega_arith) A₂.frame, ctxCiph_frame A₂.frame (k_macR L (by omega_arith)) hRb,
       bytesAt_suffix _ _ hn1, hm₁, ← Proof.Cmac.chain_append]
     simp only [adataBlocks, length_bytesAt, h0, ↓reduceIte]
 

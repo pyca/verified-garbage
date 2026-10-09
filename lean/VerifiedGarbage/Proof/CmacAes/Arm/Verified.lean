@@ -120,7 +120,7 @@ theorem finArgs_wp {s₀ : State} (hp : FPre s₀) {s : State} (h : BPost s₀ s
   have hR := hp.rounds
   have hrw : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
   have r2 : s.gpr .r2 = St s₀ := h.keep _ (by decide) (by decide) (by decide) (by decide) (by decide)
-  have cA : State.addr (S s₀ + BitVec.ofNat 32 2048) = Ca s₀ := addr_add (by omega)
+  have cA : State.addr (S s₀ + BitVec.ofNat 32 2048) = Ca s₀ := addr_add (by omega_arith)
   have cSt : (⟨Ca s₀, 16⟩ : Region).Disjoint (stR s₀) := hp.st_scr.symm.sub_left (Offset.sub_base _ (by decide))
   have wSt : Covers [stR s₀] s₀.wr := by
     rw [hp.wr]
@@ -128,7 +128,7 @@ theorem finArgs_wp {s₀ : State} (hp : FPre s₀) {s : State} (h : BPost s₀ s
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨stR s₀, by simp, 0, by simp, by simp⟩
   rw [finArgs_eq]
   refine xorBlk_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by rw [h.r5]; omega) (by rw [r2]; omega) (by rw [h.r5]; omega)
+    (by decide) (by decide) (by decide) (by rw [h.r5]; omega_arith) (by rw [r2]; omega_arith) (by rw [h.r5]; omega_arith)
     (by
       rw [h.r5, hrw]
       exact fun a n hi => (hp.cS (d := 2048) (n := 16) (by decide)) a n hi |>
@@ -139,7 +139,7 @@ theorem finArgs_wp {s₀ : State} (hp : FPre s₀) {s : State} (h : BPost s₀ s
     (by rw [h.r5, h.wr]; exact hp.cS (by decide)) fun s₁ g₁ => ?_
   refine wp_mov (op2_imm (by decide)) fun s₂ u₂ => ?_
   have r2₂ : s₂.gpr .r2 = St s₀ := by rw [u₂.other _ (by decide), g₁.gpr _ (by decide) (by decide), r2]
-  refine Proof.CmacAes.Arm.zeroBlk_ok u₂.gpr (by decide) (by rw [r2₂]; omega)
+  refine Proof.CmacAes.Arm.zeroBlk_ok u₂.gpr (by decide) (by rw [r2₂]; omega_arith)
     (by rw [r2₂, add0, u₂.wr, g₁.wr, h.wr]; exact wSt) fun s₃ G₃ m₃ rd₃ wr₃ sp₃ => ?_
   refine wp_mov (op2_reg _ _) fun s₄ u₄ => wp_add (op2_imm (by decide)) fun s₅ u₅ =>
     wp_mov (op2_imm (by decide)) fun s₆ u₆ => WP.block_nil ?_
@@ -178,18 +178,18 @@ theorem finArgs_wp {s₀ : State} (hp : FPre s₀) {s : State} (h : BPost s₀ s
       wd := hp.key_st.sub_left (Region.sub_prefix (by decide))
       ws := (hp.key_scr.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide))
       cd := by rw [cA]; exact cSt
-      cs := by rw [cA]; exact Offset.disjoint_base _ (by decide) (by omega)
+      cs := by rw [cA]; exact Offset.disjoint_base _ (by decide) (by omega_arith)
       ds := hp.st_scr.sub_right (Region.sub_prefix (by decide))
       bw := by rw [hb]; exact hp.b_key.sub_right (Region.sub_prefix (by decide))
       bc := by rw [hb, cA]; exact hp.b_scr.sub_right (Offset.sub_base _ (by decide))
       bd := by rw [hb]; exact hp.b_st
       bs := by rw [hb]; exact hp.b_scr.sub_right (Region.sub_prefix (by decide))
-      hW := by have := hp.key_fit; omega
+      hW := by have := hp.key_fit; omega_arith
       hC := by
         rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 2048) (by decide),
-          Nat.mod_eq_of_lt (by omega)]; omega
+          Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
       hD := tf
-      hS := by omega
+      hS := by omega_arith
       reads := by
         rw [rd₆, wr₆, hp.rd]
         exact Covers.of_sub fun r hr => by
@@ -221,7 +221,7 @@ theorem finPre_wp {s₀ : State} (hp : FPre s₀) : WP isa finPre s₀ (FMid s�
   by_cases hL : N s₀ = 16
   · exact WP.ite true (by rw [ev]; simp [hL]) (fun _ => full_wp hp hL h₁) (fun h => by cases h)
   · exact WP.ite false (by rw [ev]; simp [hL]) (fun h => by cases h)
-      (fun _ => partial_wp hp (by have := hp.len; omega) h₁)
+      (fun _ => partial_wp hp (by have := hp.len; omega_arith) h₁)
 
 /-! ## The whole function -/
 
@@ -238,9 +238,9 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
     WP isa finalize s₀ fun s' => abiPreserved s₀ s' ∧ finalizeRaw s₀ s' := by
   have hp := FPre.of h0
   have hR := hp.rounds
-  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hR with h | h | h <;> omega
+  have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hR with h | h | h <;> omega_arith
   have sf := hp.scr_fit
-  have cA : State.addr (S s₀ + BitVec.ofNat 32 2048) = Ca s₀ := addr_add (by omega)
+  have cA : State.addr (S s₀ + BitVec.ofNat 32 2048) = Ca s₀ := addr_add (by omega_arith)
   refine WP.seq (WP.mono (finPre_wp hp) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (ctr_call h₁.pre) fun s₂ h₂ => ?_)
   have r5₂ : s₂.gpr .r5 = S s₀ := by rw [h₂.saved .r5 (by simp [preserved]) (by decide), h₁.r5]
@@ -259,7 +259,7 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
       rcases hp' with rfl | rfl <;> decide
     exact ⟨hb.2.2, by omega, by rw [r5₂]; omega, by rw [r5₂]; exact inS _ (by omega)⟩
   refine wp_ldr (a := State.addr (S s₀) + BitVec.ofNat 64 2068) (by decide)
-    (by rw [ho₃ _ (by decide), r5₂]; exact addr_add (by omega))
+    (by rw [ho₃ _ (by decide), r5₂]; exact addr_add (by omega_arith))
     (by rw [rd₃, wr₃]; exact inS _ (by decide)) fun s₄ u₄ => WP.block_nil ?_
   -- The slots, which nothing after the save writes.
   have slot : ∀ r d, (r, d) ∈ fsaved → s₂.mem.readW (State.addr (S s₀) + BitVec.ofNat 64 d) 32 = s₀.gpr r := by
@@ -270,15 +270,15 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
     rw [h₂.frame.readW (r := ⟨State.addr (S s₀) + BitVec.ofNat 64 d, 4⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
-        · rw [cA]; exact Offset.disjoint _ (by omega) (by omega) (by omega)
-        · exact hp.st_scr.symm.sub_left (Offset.sub_base _ (by omega))
-        · exact Offset.disjoint_base _ (by omega) (by omega)
-        · rw [below, h₁.sp]; exact hp.b_scr.symm.sub_left (Offset.sub_base _ (by omega))) (by decide),
+        · rw [cA]; exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+        · exact hp.st_scr.symm.sub_left (Offset.sub_base _ (by omega_arith))
+        · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+        · rw [below, h₁.sp]; exact hp.b_scr.symm.sub_left (Offset.sub_base _ (by omega_arith))) (by decide),
       h₁.frame.readW (r := ⟨State.addr (S s₀) + BitVec.ofNat 64 d, 4⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-        · exact hp.st_scr.symm.sub_left (Offset.sub_base _ (by omega))) (by decide),
+        · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+        · exact hp.st_scr.symm.sub_left (Offset.sub_base _ (by omega_arith))) (by decide),
       fsMem_slot s₀ hrd]
   have sch : Spec.Aes.bytesAt s₁.mem (State.addr (W s₀)) (16 * (R s₀ + 1)) =
       Spec.Aes.bytesAt s₀.mem (State.addr (W s₀)) (16 * (R s₀ + 1)) := by
@@ -291,8 +291,8 @@ theorem finalize_raw_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
     exact Proof.Cmac.bytesAt_frame f (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact hp.key_scr.sub_left (Region.sub_prefix (by omega))
-      · exact hp.key_st.sub_left (Region.sub_prefix (by omega))) (by omega)
+      · exact hp.key_scr.sub_left (Region.sub_prefix (by omega_arith))
+      · exact hp.key_st.sub_left (Region.sub_prefix (by omega_arith))) (by omega_arith)
   refine ⟨⟨fun r hr => ?_, by rw [u₄.sp, sp₃, h₂.sp, h₁.sp]⟩, ?_⟩
   · by_cases h4 : r = .r4
     · subst h4; rw [u₄.other _ (by decide), ld₃ (.r4, 2064) (by simp), r5₂, slot .r4 2064 (by decide)]
@@ -368,7 +368,7 @@ theorem finalize_rel {s₀ s₀' : State} (h0 : finalizeArm.pre s₀) (h0' : fin
         (argMem_of (j := 2) q₀ hp.sp_fit fun i hi => ?_)
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
-      · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+      · rcases (by omega_arith : i = 0 ∨ i = 1) with rfl | rfl
         · exact q₅
         · exact q₆) ⟨_, hA⟩
     (fun s e => by rw [e]; exact finPre_wp hp) (fun s e => by rw [e]; exact finPre_wp hp')

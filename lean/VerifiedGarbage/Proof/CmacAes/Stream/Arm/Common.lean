@@ -27,15 +27,15 @@ theorem or_beq_zero {lo hi : BitVec 32} {x : Nat} (h : (hi ++ lo : BitVec 64) = 
   rw [toNat_append32, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hx] at e
   rw [show (lo ||| hi) - 0 = lo ||| hi from BitVec.sub_zero _]
   by_cases hx0 : x = 0
-  · have h1 : lo = 0 := BitVec.eq_of_toNat_eq (by show lo.toNat = 0; omega)
-    have h2 : hi = 0 := BitVec.eq_of_toNat_eq (by show hi.toNat = 0; omega)
+  · have h1 : lo = 0 := BitVec.eq_of_toNat_eq (by show lo.toNat = 0; omega_arith)
+    have h2 : hi = 0 := BitVec.eq_of_toNat_eq (by show hi.toNat = 0; omega_arith)
     simp [h1, h2, hx0]
   · rw [decide_eq_false hx0, beq_eq_false_iff_ne]
     intro h0
     obtain ⟨h1, h2⟩ := BitVec.or_eq_zero_iff.mp h0
     rw [h1, h2] at e
     rw [BitVec.toNat_zero] at e
-    omega
+    omega_arith
 
 theorem count_eq (s : State) : (s.gpr .r3 ++ s.gpr .r2 : BitVec 64) = BitVec.ofNat 64 (countArm s).toNat :=
   BitVec.eq_of_toNat_eq (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (BitVec.isLt _)]; rfl)
@@ -49,13 +49,13 @@ theorem held_lo {lo hi : BitVec 32} {x : Nat} (h : (hi ++ lo : BitVec 64) = BitV
     (hx : x < 2 ^ 64) (h0 : x ≠ 0) : ((lo - 1) &&& 15) + 1 = BitVec.ofNat 32 (held x) := by
   have e := congrArg BitVec.toNat h
   rw [toNat_append32, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hx] at e
-  rw [held_pos (by omega)]
+  rw [held_pos (by omega_arith)]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, and15, BitVec.toNat_sub]
   simp only [BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
   have := lo.isLt
   have := hi.isLt
-  omega
+  omega_arith
 
 /-! ## Conditions -/
 
@@ -73,7 +73,7 @@ theorem eq_iff (s : State) {k : Nat} (h : s.z = (BitVec.ofNat 32 k - 0 == 0)) (h
 /-- A pointer plus an offset that does not wrap. -/
 theorem toNat_add_ofNat {p : BitVec 32} {k : Nat} (h : p.toNat + k < 2 ^ 32) :
     (p + BitVec.ofNat 32 k).toNat = p.toNat + k := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega_arith), Nat.mod_eq_of_lt h]
 
 theorem toNat_ofNat32 {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).toNat = n := by
   rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
@@ -100,19 +100,19 @@ theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) {xs : List Byte} (h : xs.le
   apply List.ext_getElem (by simp [Spec.Aes.bytesAt])
   intro i h1 _
   simp only [Spec.Aes.bytesAt, List.length_map, List.length_range] at h1
-  simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, writeBytes_at m q xs (by omega : i < 2 ^ 64),
+  simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, writeBytes_at m q xs (by omega_arith : i < 2 ^ 64),
     h1, ↓reduceIte, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h1, Option.getD_some]
 
 /-- Bytes `[0, r)` from `p` stay, and the bytes `xs` follow them. -/
 theorem bytesAt_writeBytes (m : Mem) (p : Addr) (r : Nat) (xs : List Byte) (h : r + xs.length < 2 ^ 64) :
     Spec.Aes.bytesAt (writeBytes m (p + BitVec.ofNat 64 r) xs) p (r + xs.length) =
       Spec.Aes.bytesAt m p r ++ xs := by
-  rw [Proof.Cmac.Stream.bytesAt_append, bytesAt_writeBytes_self _ _ (by omega)]
+  rw [Proof.Cmac.Stream.bytesAt_append, bytesAt_writeBytes_self _ _ (by omega_arith)]
   congr 1
   simp only [Spec.Aes.bytesAt]
   apply List.map_congr_left
   intro i hi
-  exact writeBytes_before m p xs (List.mem_range.mp hi) (by omega)
+  exact writeBytes_before m p xs (List.mem_range.mp hi) (by omega_arith)
 
 end
 

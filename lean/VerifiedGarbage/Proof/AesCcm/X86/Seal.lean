@@ -38,7 +38,7 @@ theorem buf_kept' {W SP : BitVec 32} {s : State} {P : BitVec 32} {len : Nat} (hP
   Proof.AesGcm.X86.bytesAt_frame hf (fun r hr => by
     rcases hrs r hr with h | rfl
     · exact hP.w.sub_right h
-    · exact hP.stk.symm) (by have := hP.lt; omega)
+    · exact hP.stk.symm) (by have := hP.lt; omega_arith)
 
 /-- `Ctr₀` is kept by a frame of parts of `W` apart from it. -/
 theorem c0_kept {W : BitVec 32} {rs : List Region}
@@ -107,9 +107,9 @@ theorem seal_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
   have rd₅' : s₅.rd = s.rd := by rw [rd₅, rd₄']
   have wr₅' : s₅.wr = s.wr := by rw [wr₅, wr₄']
   -- The tag copied out.
-  refine WP.seq (WP.mono (tagOut_ok L E₅ S₅.tl S₅.tp (by have := Ar.t4; omega) Ar.t16
+  refine WP.seq (WP.mono (tagOut_ok L E₅ S₅.tl S₅.tp (by have := Ar.t4; omega_arith) Ar.t16
     (Ar.tag.of_eq rd₅' wr₅') (by rw [wr₅']; exact tw)) fun s₆ ⟨m₆', E₆, rd₆, wr₆⟩ => ?_)
-  have hTl : tl < 2 ^ 64 := by have := Ar.t16; omega
+  have hTl : tl < 2 ^ 64 := by have := Ar.t16; omega_arith
   have fT : Frame [⟨w64 T, tl⟩] s₅.mem s₆.mem := by
     rw [m₆']; exact writeBytes_frame' _ (length_bytesAt _ _ _)
   have tW : ∀ {d k : Nat}, d + k ≤ 2560 → ∀ r ∈ [(⟨w64 T, tl⟩ : Region)],
@@ -133,11 +133,11 @@ theorem seal_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
     exact Proof.AesGcm.X86.bytesAt_frame f₅ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      · simpa using Lay.w_w (W := W) (a := 0) (n := tl) (d := 64) (k := 32) (.inl (by omega)) (by omega) (by decide)
-      · simpa using Lay.w_w (W := W) (a := 0) (n := tl) (d := 240) (k := 2320) (.inl (by omega)) (by omega)
+      · simpa using Lay.w_w (W := W) (a := 0) (n := tl) (d := 64) (k := 32) (.inl (by omega_arith)) (by omega_arith) (by decide)
+      · simpa using Lay.w_w (W := W) (a := 0) (n := tl) (d := 240) (k := 2320) (.inl (by omega_arith)) (by omega_arith)
           (by decide)
-      · exact (L.stk_w.sub_right (Region.sub_prefix (by omega))).symm
-      · exact (Ar.data.w.sub_right (Region.sub_prefix (by omega))).symm) (by omega)
+      · exact (L.stk_w.sub_right (Region.sub_prefix (by omega_arith))).symm
+      · exact (Ar.data.w.sub_right (Region.sub_prefix (by omega_arith))).symm) (by omega_arith)
   have e0 : w64 W + BitVec.ofNat 64 0 = w64 W := BitVec.add_zero _
   have o₃ := A₃.out
   rw [e0] at h₄ o₃
@@ -146,13 +146,13 @@ theorem seal_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
   simp only [Spec.Ccm.encryptWith, Prod.mk.injEq]
   refine ⟨?_, ?_⟩
   · rw [m₇, Proof.AesGcm.X86.bytesAt_frame fT (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact Ar.td.symm) (by have := Ar.data.lt; omega), h₅, ci₄, hD₄, crypt_eq (hBC _)]
+        simp only [List.mem_singleton] at hr; subst hr; exact Ar.td.symm) (by have := Ar.data.lt; omega_arith), h₅, ci₄, hD₄, crypt_eq (hBC _)]
   · have hT₇ : bytesAt s₇.mem (w64 T) tl = bytesAt s₅.mem (w64 W) tl := by
-      have := bytesAt_writeBytes_self s₅.mem (w64 T) (bytesAt s₅.mem (w64 W) tl) (by rw [length_bytesAt]; omega)
+      have := bytesAt_writeBytes_self s₅.mem (w64 T) (bytesAt s₅.mem (w64 W) tl) (by rw [length_bytesAt]; omega_arith)
       rw [length_bytesAt] at this
       rw [m₇, m₆', this]
     rw [hT₇, hW₅, Proof.AesCcm.bytesAt_prefix s₄.mem (w64 W) Ar.t16, h₄,
       take_xorFrom_zero (hBC _) _ (by rw [length_bytesAt]) Ar.t16, o₃, ci₃,
-      ← Proof.AesCcm.mac_eq _ _ (by rw [hnl]; have := Ar.h13; omega), St.ciph, St.aadB, St.dataB]
+      ← Proof.AesCcm.mac_eq _ _ (by rw [hnl]; have := Ar.h13; omega_arith), St.ciph, St.aadB, St.dataB]
 
 end VG.Proof.AesCcm.X86

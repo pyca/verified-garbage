@@ -29,7 +29,7 @@ theorem dn_kept {W : BitVec 32} {m m' : Mem} {a b : BitVec 32}
       (List.mem_singleton_self _) _
       (Offset.contains (w64 W) (d := 276) (n := 4) (e := 240) (k := 2320) (by decide) (by decide) (by decide))
   exact f₁.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by omega)) (by omega) (by decide))
+    simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide))
     (by decide)
 
 /-- `dO` and `nO`, after they are written. -/
@@ -75,9 +75,9 @@ theorem absorbWhole_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R 
       wholeArgs_ok L ⟨hbp, hsp, hs.env.perm.of_eq hrd₁ hwr₁⟩
         (by rw [split_kept hm₁ (by decide) (by decide)]; exact hs.ctx)
         (by rw [split_kept hm₁ (by decide) (by decide)]; exact hs.rounds) hbx hdi y) ?_
-  refine updCall_ct v L hR (y := y) (Q := P) (n := len / 16) (by rcases hy with rfl | rfl <;> decide) (by omega)
+  refine updCall_ct v L hR (y := y) (Q := P) (n := len / 16) (by rcases hy with rfl | rfl <;> decide) (by omega_arith)
     fun s₂ ⟨s₁, ⟨s, hs, _, _, _, _, _, _, hrd₁, hwr₁⟩, _, ax, cx, dx, bx, si, di, bp, sp, rd₂, wr₂⟩ => ?_
-  have hP := hs.buf (by omega)
+  have hP := hs.buf (by omega_arith)
   exact ⟨⟨bp, sp, hs.env.perm.of_eq (by rw [rd₂, hrd₁]) (by rw [wr₂, hwr₁])⟩,
     srcBuf ((hP.take hb).of_eq (by rw [rd₂, hrd₁]) (by rw [wr₂, hwr₁])),
     (hP.w.sub_left (Region.sub_prefix hb)).sub_right (Lay.wSub (by rcases hy with rfl | rfl <;> decide)),
@@ -100,7 +100,7 @@ theorem absorbTail_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R :
               .mov .ecx (slot nO)] : List Instr)))
             (.seq copyLoop (updBlock v.callee v.suffix y))))) := by
   refine CT.block_seq [.ebp] (pin_ebp fun s h => h.env.ebp) (by taint_decide)
-    (fun s hs => testN_ok L hs.env (r := t) (by omega) hs.n) ?_
+    (fun s hs => testN_ok L hs.env (r := t) (by omega_arith) hs.n) ?_
   refine CT.ite (decide (t = 0)) (fun _ ⟨_, _, _, hzf, _⟩ => eval_e hzf) (fun _ => CT.nil) fun hf => ?_
   have h0 : t ≠ 0 := of_decide_eq_false hf
   refine CT.block_seq [.ebp] (pin_ebp fun _ ⟨_, _, _, _, hbp, _⟩ => hbp) (by taint_decide)
@@ -111,15 +111,15 @@ theorem absorbTail_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R :
     (Proof.AesGcm.X86.copyLoop_ct (pin3 fun _ ⟨_, _, _, hdi, hdx, hcx, _⟩ => ⟨hdi, hdx, hcx⟩))
     (fun s₂ ⟨s₁, ⟨s, hs, hm₁, _, _, _, hrd₁, hwr₁⟩, hm₂, hdi, hdx, hcx, hbp₂, hsp₂, hrd₂, hwr₂⟩ => ?_)
     (updBlock_ct v L hR hy fun _ h => h)
-  have hB := hs.buf (by omega)
+  have hB := hs.buf (by omega_arith)
   have he : WEnv W s₂ := ⟨hbp₂, by rw [hwr₂, hwr₁]; exact hs.env.perm.w, L.fw⟩
-  refine WP.mono (padLoop_ok (S := Q) (d := 32) (t := t) (m := s₁.mem) he hm₂ hdi hdx hcx (by omega)
-    (by omega) (by rw [hrd₂, hwr₂, hrd₁, hwr₁]; exact hB.rd) hB.wrap (hB.w.sub_right (Lay.wSub (by decide)))
+  refine WP.mono (padLoop_ok (S := Q) (d := 32) (t := t) (m := s₁.mem) he hm₂ hdi hdx hcx (by omega_arith)
+    (by omega_arith) (by rw [hrd₂, hwr₂, hrd₁, hwr₁]; exact hB.rd) hB.wrap (hB.w.sub_right (Lay.wSub (by decide)))
     (by decide)) fun s₃ ⟨_, f₃, g₃, rd₃, wr₃⟩ => ?_
   have k₃ : ∀ o, 112 ≤ o → o + 4 ≤ 240 → slotv s₃.mem W o = slotv s.mem W o := fun o h₁ h₂ => by
     rw [← hm₁]
     exact f₃.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega)) (by omega) (by decide))
+      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide))
       (by decide)
   exact ⟨⟨by rw [g₃ _ (by decide) (by decide) (by decide) (by decide), hbp₂],
       by rw [g₃ _ (by decide) (by decide) (by decide) (by decide), hsp₂],
@@ -136,8 +136,8 @@ theorem absorbPad_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : 
         by rw [slot_kept L hy A₁.frame (by decide) (by decide)]; exact hs.rounds, fun h => ?_, hd₁, hn₁⟩)
     (absorbTail_ct v L hR hy (Nat.mod_lt _ (by decide))))
   have hb : 16 * (len / 16) ≤ len := Nat.mul_div_le len 16
-  have hP := hs.buf (by omega)
-  have := (hP.drop hb (by have := hP.wrap; omega)).of_eq A₁.rd A₁.wr
-  rwa [show len - 16 * (len / 16) = len % 16 by omega] at this
+  have hP := hs.buf (by omega_arith)
+  have := (hP.drop hb (by have := hP.wrap; omega_arith)).of_eq A₁.rd A₁.wr
+  rwa [show len - 16 * (len / 16) = len % 16 by omega_arith] at this
 
 end VG.Proof.AesCcm.X86

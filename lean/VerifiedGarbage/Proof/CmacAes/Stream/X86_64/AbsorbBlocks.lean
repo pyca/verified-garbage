@@ -49,8 +49,8 @@ theorem absSaved_read (s : State) (S : Addr) :
 theorem slot_contains (b : Addr) {d : Nat} (h₁ : 2176 ≤ d) (h₂ : d + 8 ≤ 2224) :
     (⟨b + BitVec.ofNat 64 2176, 48⟩ : Region).Contains (b + BitVec.ofNat 64 d) 8 := by
   rw [show b + BitVec.ofNat 64 d = (b + BitVec.ofNat 64 2176) + BitVec.ofNat 64 (d - 2176) from
-    (Offset.add_add_eq b (by omega)).symm]
-  exact Offset.contains_base _ (by omega) (by omega)
+    (Offset.add_add_eq b (by omega_arith)).symm]
+  exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 /-- Saving the registers changes only their slots. -/
 theorem absSavedMem_frame (s : State) (S : Addr) :
@@ -140,10 +140,10 @@ def nbOf (c L : Nat) : Nat := if leftOf c L = 0 then 0 else (leftOf c L - 1) / 1
 def restOf (c L : Nat) : Nat := leftOf c L - 16 * nbOf c L
 
 theorem f_le (c L : Nat) : fOf c L ≤ L ∧ fOf c L + held c ≤ 16 := by
-  have := held_le c; unfold fOf; omega
+  have := held_le c; unfold fOf; omega_arith
 
 theorem nb_le (c L : Nat) : fOf c L + 16 * nbOf c L + restOf c L = L := by
-  have := f_le c L; unfold restOf nbOf leftOf; split <;> omega
+  have := f_le c L; unfold restOf nbOf leftOf; split <;> omega_arith
 
 /-! ## Arithmetic on registers -/
 
@@ -156,15 +156,15 @@ theorem nb16_bv {x : Nat} (hx : 0 < x) (hx' : x < 2 ^ 64) :
     BitVec.ofNat 64 x - 1 - ((BitVec.ofNat 64 x - 1) &&& 15) = BitVec.ofNat 64 (16 * ((x - 1) / 16)) := by
   apply BitVec.eq_of_toNat_eq
   have e : (BitVec.ofNat 64 x - 1).toNat = x - 1 := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]; omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]; omega_arith
   rw [BitVec.toNat_sub, and15, e, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem shr4 {n : Nat} (hn : 16 * n < 2 ^ 64) :
     BitVec.ofNat 64 (16 * n) >>> 4 = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 /-! ## `held`: the bytes held back -/
 
@@ -210,7 +210,7 @@ theorem fill_wp {s : State} {St : Addr} {c L : Nat} (hL : L < 2 ^ 64) (hax : s.g
       rfl, ?_⟩
     simp only [gpr_setReg, gpr_arithFlags, cf_arithFlags, mem_setReg, mem_arithFlags, rd_setReg,
       rd_arithFlags, wr_setReg, wr_arithFlags, ite_true, reduceCtorEq, ite_false, hax, h14, sub16 hh,
-      toNat_ofNat hL, toNat_ofNat (show 16 - held c < 2 ^ 64 by omega)]
+      toNat_ofNat hL, toNat_ofNat (show 16 - held c < 2 ^ 64 by omega_arith)]
     exact ⟨trivial, trivial, fun r h => by simp [h], trivial, trivial, trivial⟩
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.seq (WP.mono (Q := fun (s₂ : State) => s₂.gpr .rcx = BitVec.ofNat 64 (fOf c L) ∧
@@ -221,10 +221,10 @@ theorem fill_wp {s : State} {St : Addr} {c L : Nat} (hL : L < 2 ^ 64) (hax : s.g
         simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some]
         rfl, ?_⟩
       simp only [gpr_setReg, mem_setReg, rd_setReg, wr_setReg, ite_true]
-      refine ⟨by rw [g₁ _ (by decide), h14, fOf, Nat.min_eq_left (by omega)],
+      refine ⟨by rw [g₁ _ (by decide), h14, fOf, Nat.min_eq_left (by omega_arith)],
         fun r h => by simp [h, g₁ r h], m₁, rd₁, wr₁⟩
     · refine WP.ite false (by show s₁.cf = _; rw [cf₁]; simp [hl]) (fun h => by cases h) fun _ => ?_
-      refine WP.block_nil ⟨by rw [rcx₁, fOf, Nat.min_eq_right (by omega)], g₁, m₁, rd₁, wr₁⟩
+      refine WP.block_nil ⟨by rw [rcx₁, fOf, Nat.min_eq_right (by omega_arith)], g₁, m₁, rd₁, wr₁⟩
   · obtain ⟨rcx₂, g₂, m₂, rd₂, wr₂⟩ := h₂
     refine WP.of_runBlock ⟨_, by
       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, Option.map_some,
@@ -259,7 +259,7 @@ theorem chain1_wp {s : State} {St D S : Addr} {f L : Nat} (hf : f ≤ L) (hL : L
       rfl, ?_⟩
     simp only [gpr_setReg, gpr_arithFlags, zf_setReg, zf_arithFlags, mem_setReg, mem_arithFlags, rd_setReg,
       rd_arithFlags, wr_setReg, wr_arithFlags, ite_true, reduceCtorEq, ite_false, h13, h14, hcx,
-      Offset.ofNat_sub_ofNat hf, beq_zero_iff, toNat_ofNat (show L - f < 2 ^ 64 by omega)]
+      Offset.ofNat_sub_ofNat hf, beq_zero_iff, toNat_ofNat (show L - f < 2 ^ 64 by omega_arith)]
     exact ⟨trivial, trivial, rfl, trivial, fun r a b c => by simp [a, b, c], trivial, trivial, trivial⟩
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.seq (WP.mono (Q := fun (s₂ : State) => s₂.gpr .r8 = BitVec.ofNat 64 (if L - f = 0 then 0 else 1) ∧
@@ -328,7 +328,7 @@ theorem chain2_wp {s : State} {x : Nat} (hx : x < 2 ^ 64) (h14 : s.gpr .r14 = Bi
       simp only [gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg,
         wr_arithFlags, reduceCtorEq, h0, ↓reduceIte, g₁ _ (by decide : Reg.r14 ≠ .r12), h14,
         sx1, sx15]
-      exact ⟨nb16_bv (by omega) hx, fun r a b => by simp [a, b, g₁ r a], m₁, rd₁, wr₁⟩
+      exact ⟨nb16_bv (by omega_arith) hx, fun r a b => by simp [a, b, g₁ r a], m₁, rd₁, wr₁⟩
   · obtain ⟨r12₂, g₂, m₂, rd₂, wr₂⟩ := h₂
     refine WP.of_runBlock ⟨_, by
       simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, Nat.reducePow, and_self, BitVec.reduceSignExtend, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
@@ -338,7 +338,7 @@ theorem chain2_wp {s : State} {x : Nat} (hx : x < 2 ^ 64) (h14 : s.gpr .r14 = Bi
       rd_arithFlags, rd_setFlags, wr_setReg, wr_arithFlags, wr_setFlags, ite_true, reduceCtorEq, ite_false,
       g₂ _ (by decide : Reg.rbx ≠ .r12) (by decide), g₂ _ (by decide : Reg.rbp ≠ .r12) (by decide),
       g₂ _ (by decide : Reg.r13 ≠ .r12) (by decide), g₂ _ (by decide : Reg.r15 ≠ .r12) (by decide), r12₂]
-    refine ⟨trivial, shr4 (by split <;> omega), trivial, trivial, trivial, trivial, trivial,
+    refine ⟨trivial, shr4 (by split <;> omega_arith), trivial, trivial, trivial, trivial, trivial,
       fun r hr a => ?_, m₂, rd₂, wr₂⟩
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all

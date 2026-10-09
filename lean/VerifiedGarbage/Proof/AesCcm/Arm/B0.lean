@@ -28,21 +28,21 @@ theorem le4_flags (x : BitVec 32) {c f : Nat} (hc : c < 256) (hf : f < 256)
     le4 ((x ^^^ BitVec.ofNat 32 c) ||| BitVec.ofNat 32 f) = BitVec.ofNat 8 f :: (le4 x).drop 1 := by
   have hi : ∀ o j, 8 ≤ o → o + j < 32 → (BitVec.ofNat 32 c).getLsbD (o + j) = false ∧
       (BitVec.ofNat 32 f).getLsbD (o + j) = false := fun o j h₁ h₂ => by
-    have hp : 256 ≤ 2 ^ (o + j) := Nat.pow_le_pow_right (n := 2) (i := 8) (by decide) (by omega)
+    have hp : 256 ≤ 2 ^ (o + j) := Nat.pow_le_pow_right (n := 2) (i := 8) (by decide) (by omega_arith)
     simp only [BitVec.getLsbD_ofNat, Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hc hp),
       Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hf hp), Bool.and_false, and_self]
   have ek : ∀ o, 8 ≤ o → o + 8 ≤ 32 →
       ((x ^^^ BitVec.ofNat 32 c) ||| BitVec.ofNat 32 f).extractLsb' o 8 = x.extractLsb' o 8 := fun o h₁ h₂ => by
     ext j hj
-    simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_xor, (hi o j h₁ (by omega)).1,
-      (hi o j h₁ (by omega)).2, Bool.xor_false, Bool.or_false]
+    simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_or, BitVec.getLsbD_xor, (hi o j h₁ (by omega_arith)).1,
+      (hi o j h₁ (by omega_arith)).2, Bool.xor_false, Bool.or_false]
   have e0 : ((x ^^^ BitVec.ofNat 32 c) ||| BitVec.ofNat 32 f).extractLsb' 0 8 = BitVec.ofNat 8 f := by
     ext j hj
     have hx := congrArg (fun b : BitVec 8 => b.getLsbD j) h0
     simp only [BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and, Nat.zero_add,
       BitVec.getLsbD_ofNat] at hx
     simp only [BitVec.getElem_extractLsb', Nat.zero_add, BitVec.getLsbD_or,
-      BitVec.getLsbD_xor, hx, BitVec.getLsbD_ofNat, show j < 32 by omega, decide_true, Bool.true_and,
+      BitVec.getLsbD_xor, hx, BitVec.getLsbD_ofNat, show j < 32 by omega_arith, decide_true, Bool.true_and,
       Bool.xor_self, Bool.false_or]
     rw [← BitVec.getLsbD_eq_getElem, BitVec.getLsbD_ofNat]; simp [hj]
   rw [le4_eq, le4_eq, e0, ek 8 (by decide) (by decide), ek 16 (by decide) (by decide),
@@ -55,14 +55,14 @@ theorem flags_val {tl nl al : Nat} (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16) (hte : tl
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat, Spec.Ccm.flags]
   by_cases h : al = 0
-  · subst h; simp only [ite_true, Nat.add_zero, show ¬ (0 > 0) by omega, ite_false, Nat.zero_add]; omega
-  · simp only [h, ite_false, show al > 0 by omega, ite_true]; omega
+  · subst h; simp only [ite_true, Nat.add_zero, show ¬ (0 > 0) by omega_arith, ite_false, Nat.zero_add]; omega_arith
+  · simp only [h, ite_false, show al > 0 by omega_arith, ite_true]; omega_arith
 
 theorem shl2 {n : Nat} (hn : n < 2 ^ 30) : BitVec.ofNat 32 n <<< 2 = BitVec.ofNat 32 (4 * n) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-    Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-  omega
+  rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith),
+    Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+  omega_arith
 
 /-- The bytes of `B₀`, as `b0Block` builds them from `Ctr₀`. -/
 theorem b0_bytes {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13) {w₀ w₁ w₂ w₃ : BitVec 32}
@@ -75,8 +75,8 @@ theorem b0_bytes {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.leng
     have := congrArg List.head? hc
     rw [le4_eq w₀] at this
     simp only [List.cons_append, List.head?_cons, Spec.Ccm.ctrBlock, Option.some.injEq] at this
-    rw [this]; congr 1; omega
-  rw [le4_flags w₀ (by omega) hf h0]
+    rw [this]; congr 1; omega_arith
+  rw [le4_flags w₀ (by omega_arith) hf h0]
   have hl : (le4 w₀ ++ le4 w₁ ++ le4 w₂).length = 12 := by simp [l]
   rw [ctrBlock_split h7 h13 hn, ← hc, Proof.AesCcm.le4_or, le4_rev_ofNat hn4, List.take_left' hl,
     List.drop_left' hl]
@@ -103,9 +103,9 @@ theorem flags_ok {s₀ s : State} {nl : Nat} (he : Env k w sp R (14 - nl) s) (hk
       (∀ r, r ≠ .r0 → r ≠ .r1 → s₁.gpr r = s.gpr r) ∧ Keeps s s₁ := by
     refine ⟨_, by arun [i5, v5, i1, v1], ?_, ?_, ?_, ?_⟩
     · simp only [gpr_setReg, gpr_subFlags, ite_true, ite_false, reduceCtorEq, v5, etl, h10, imm,
-        shl2 (show tl < 2 ^ 30 by omega), ofNat_sub32 (show 8 ≤ 4 * tl by omega) (show 4 * tl < 2 ^ 32 by omega),
+        shl2 (show tl < 2 ^ 30 by omega_arith), ofNat_sub32 (show 8 ≤ 4 * tl by omega_arith) (show 4 * tl < 2 ^ 32 by omega_arith),
         ofNat_add32]
-      congr 1; omega
+      congr 1; omega_arith
     · simp only [z_subFlags, gpr_setReg, gpr_subFlags, ite_true, ite_false, reduceCtorEq, v1, eal, imm]
       rw [z_cmp hal (by decide)]
     · intro r a b; simp [gpr_setReg, a, b]
@@ -170,7 +170,7 @@ theorem b0Pre_ok {s₀ s : State} {nl : Nat} (he : Env k w sp R (14 - nl) s) (hk
   let m := s₁.mem
   let W := State.addr w
   let f := 4 * (tl - 2) + (14 - nl) + if al = 0 then 0 else 64
-  have hf : f < 256 := by simp only [f]; split <;> omega
+  have hf : f < 256 := by simp only [f]; split <;> omega_arith
   obtain ⟨s₂, run₂, hm₂, g₂, k₂⟩ : ∃ s₂, runBlock isa [.ldr .r1 .r11 c0O, .dp .eor .r1 .r1 (.reg .r10),
       .dp .orr .r1 .r1 (.reg .r0), .str .r1 .r11 bO, .ldr .r1 .r11 (c0O + 4), .str .r1 .r11 (bO + 4),
       .ldr .r1 .r11 (c0O + 8), .str .r1 .r11 (bO + 8), .ldr .r1 .r11 (c0O + 12), .ldrSp .r2 12, .rev .r2 .r2,
@@ -189,7 +189,7 @@ theorem b0Pre_ok {s₀ s : State} {nl : Nat} (he : Env k w sp R (14 - nl) s) (hk
   have he₂ := he₁.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide) (by decide)) k₂.2.2 k₂.1 k₂.2.1
-  obtain ⟨s₃, run₃, hm₃, g₃, rd₃, wr₃, sp₃, -⟩ := zero16_ok L he₂ (d := y) (by omega) (by omega)
+  obtain ⟨s₃, run₃, hm₃, g₃, rd₃, wr₃, sp₃, -⟩ := zero16_ok L he₂ (d := y) (by omega_arith) (by omega_arith)
   refine WP.of_runBlock ⟨s₃, by
     rw [show b0Block y = [.ldr .r1 .r11 c0O, .dp .eor .r1 .r1 (.reg .r10),
       .dp .orr .r1 .r1 (.reg .r0), .str .r1 .r11 bO, .ldr .r1 .r11 (c0O + 4), .str .r1 .r11 (bO + 4),
@@ -224,7 +224,7 @@ theorem b0Pre_ok {s₀ s : State} {nl : Nat} (he : Env k w sp R (14 - nl) s) (hk
       rcases Nat.le_total (15 - nl) 4 with h | h
       · rw [Nat.min_eq_left h]; exact hn
       · rw [Nat.min_eq_right h]; exact Nat.lt_of_lt_of_le hn4 (by decide)
-    have hb := b0_bytes (f := f) (by omega) (by omega) hw hf hnm hn4
+    have hb := b0_bytes (f := f) (by omega_arith) (by omega_arith) hw hf hnm hn4
     rw [hnl] at hb
     rw [hb]
     simp only [Spec.Ccm.b0, Spec.Ccm.ctrBlock, List.drop_succ_cons, List.drop_zero, hnl, f]

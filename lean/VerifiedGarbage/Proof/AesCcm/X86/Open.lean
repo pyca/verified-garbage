@@ -83,7 +83,7 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
   -- The received tag.
   have Tb₅ := Ar.tag.of_eq rd₅' wr₅'
   refine WP.seq (WP.mono (Proof.AesGcm.X86.recv_ok ⟨E₅.ebp, E₅.perm.w, L.fw⟩ S₅.tl S₅.tp Tb₅.rd Tb₅.wrap Tb₅.w
-    (by omega) ht16) fun s₆ ⟨b₆, f₆, bp₆, _, sp₆, rd₆, wr₆⟩ => ?_)
+    (by omega_arith) ht16) fun s₆ ⟨b₆, f₆, bp₆, _, sp₆, rd₆, wr₆⟩ => ?_)
   have E₆ : Env K W SP s₆ := ⟨by rw [bp₆, E₅.ebp], by rw [sp₆, E₅.esp], E₅.perm.of_eq rd₆ wr₆⟩
   -- The comparison.
   have hv₆ : slotv s₆.mem W tglO = BitVec.ofNat 32 tl := by
@@ -92,7 +92,7 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
       simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by decide)) (by decide) (by decide))
       (by decide)]
     exact S₅.tl
-  refine WP.seq (WP.mono (Proof.AesGcm.X86.cmp_ok (o := uO) ⟨E₆.ebp, E₆.perm.w, L.fw⟩ hv₆ (by omega) ht16 (by decide))
+  refine WP.seq (WP.mono (Proof.AesGcm.X86.cmp_ok (o := uO) ⟨E₆.ebp, E₆.perm.w, L.fw⟩ hv₆ (by omega_arith) ht16 (by decide))
     fun s₇ ⟨ax₇, f₇, bp₇, _, sp₇, rd₇, wr₇⟩ => ?_)
   rw [ofNat_ite] at ax₇
   generalize hc : decide (bytesAt s₆.mem (w64 W + BitVec.ofNat 64 uO) tl ++ Spec.Gcm.zeros (16 - tl) =
@@ -163,13 +163,13 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
       Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem (w64 K) R) (bytesAt s.mem (w64 N) nl) (bytesAt s.mem (w64 D) n) := by
     rw [h₃, St.ciph, St.dataB, crypt_eq (hBC _)]
   have pt₈ : bytesAt s₈.mem (w64 D) n = bytesAt s₃.mem (w64 D) n := by
-    rw [hm₈, bytesAt_writeW_sep _ _ (Ar.data.w.sub_right (Lay.wSub (by decide))) (by have := Ar.data.lt; omega),
+    rw [hm₈, bytesAt_writeW_sep _ _ (Ar.data.w.sub_right (Lay.wSub (by decide))) (by have := Ar.data.lt; omega_arith),
       Proof.AesGcm.X86.bytesAt_frame f₇ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact Ar.data.w.sub_right (Lay.wSub (by decide)))
-        (by have := Ar.data.lt; omega),
+        (by have := Ar.data.lt; omega_arith),
       Proof.AesGcm.X86.bytesAt_frame f₆ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact Ar.data.w.sub_right (Lay.wSub (by decide)))
-        (by have := Ar.data.lt; omega),
+        (by have := Ar.data.lt; omega_arith),
       buf_kept' Ar.data (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
@@ -180,7 +180,7 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
       buf_kept Ar.data (y := 96) (by decide) A₄.frame]
   have tg₅ : bytesAt s₅.mem (w64 T) tl = bytesAt s.mem (w64 T) tl := by
     rw [buf_mut Ar.tag Ar.td f₂₅, St.tagB]
-  have hl : (bytesAt s.mem (w64 N) nl).length ≤ 15 := by rw [hnl]; have := Ar.h13; omega
+  have hl : (bytesAt s.mem (w64 N) nl).length ≤ 15 := by rw [hnl]; have := Ar.h13; omega_arith
   have o₄ := A₄.out
   rw [ci₃, aa₃, pt₃] at o₄
   have hY := congrArg List.length o₄
@@ -191,13 +191,13 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
           (Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem (w64 K) R) (bytesAt s.mem (w64 N) nl) (bytesAt s.mem (w64 D) n))) := by
     rw [Proof.AesGcm.X86.bytesAt_frame f₆ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Lay.w_w (.inl (by simp only [uO, rO]; omega)) (by simp only [uO]; omega) (by decide)) (by omega),
+        exact Lay.w_w (.inl (by simp only [uO, rO]; omega_arith)) (by simp only [uO]; omega_arith) (by decide)) (by omega_arith),
       Proof.AesCcm.bytesAt_prefix s₅.mem _ ht16, h₅, ci₄, o₄, take_xorFrom_zero (hBC _) _ hY.symm ht16,
       ← Proof.AesCcm.mac_eq _ _ hl]
   have hML : (Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem (w64 K) R) tl (bytesAt s.mem (w64 N) nl) (bytesAt s.mem (w64 A) al)
       (Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem (w64 K) R) (bytesAt s.mem (w64 N) nl) (bytesAt s.mem (w64 D) n))).length =
         tl := by
-    rw [Proof.AesCcm.mac_eq _ _ hl, List.length_take, length_bytesAt] at *; omega
+    rw [Proof.AesCcm.mac_eq _ _ hl, List.length_take, length_bytesAt] at *; omega_arith
   have key : c = true ↔
       Spec.Ccm.cryptTag (Spec.Ccm.ctxCiph s.mem (w64 K) R) tl (bytesAt s.mem (w64 N) nl) (bytesAt s.mem (w64 T) tl) =
         Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem (w64 K) R) tl (bytesAt s.mem (w64 N) nl) (bytesAt s.mem (w64 A) al)
@@ -206,7 +206,7 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl 
       append_zeros_iff, cryptTag_eq_iff (hBC _) ht16 _ hML (length_bytesAt _ _ _), eq_comm]
   simp only [Spec.Ccm.decryptWith]
   have hD₉ : bytesAt s'.mem (w64 D) n = if c then bytesAt s₈.mem (w64 D) n else Spec.Ccm.zeros n := by
-    rw [m', hm₁₀, hm₉, bytesAt_writeBytes_base _ _ _ (by rw [length_mask]) (by have := Ar.data.lt; omega),
+    rw [m', hm₁₀, hm₉, bytesAt_writeBytes_base _ _ _ (by rw [length_mask]) (by have := Ar.data.lt; omega_arith),
       List.drop_eq_nil_of_le (by rw [length_mask, length_bytesAt]), List.append_nil]
   by_cases hk : c = true
   · have hk' := key.mp hk

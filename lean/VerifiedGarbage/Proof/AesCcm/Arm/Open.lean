@@ -52,7 +52,7 @@ theorem open_wp' {s₀ : State} {k w N A D T : BitVec 32} {R nl al n tl : Nat} (
       bytesAt s₁.mem (State.addr P) len = bytesAt s₀.mem (State.addr P) len := fun hP =>
     bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hP.w.sub_right (Lay.wSub (by decide)))
-      (by have := hP.lt; omega)
+      (by have := hP.lt; omega_arith)
   have hK₁ : Spec.Ccm.ctxCiph s₁.mem (State.addr k) R = Spec.Ccm.ctxCiph s₀.mem (State.addr k) R :=
     ctxCiph_frame f₁ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsavedK) hRb
   have hk₁ : Stk w s₀ s₁ := Ar.stk.frame f₁ (fun r hr => by
@@ -95,7 +95,7 @@ theorem open_wp' {s₀ : State} {k w N A D T : BitVec 32} {R nl al n tl : Nat} (
       · exact (L.stk_w' (by decide)).symm
       · exact (Ar.data.buf.w.sub_right (Lay.wSub (by decide))).symm) (by decide), c₂]
   have a₃ : bytesAt s₃.mem (State.addr A) al = bytesAt s₀.mem (State.addr A) al := by
-    rw [bytesAt_frame F₃ (aad_mut Ar) (by have := Ar.aad.lt; omega), hent Ar.aad]
+    rw [bytesAt_frame F₃ (aad_mut Ar) (by have := Ar.aad.lt; omega_arith), hent Ar.aad]
   -- The MAC of the plaintext, encrypted, at `W + 112`.
   refine WP.seq (WP.mono (mac_ok L he₃ hk₃ rfl Ar.rounds eA eal eD en etl hnl Ar.h7 Ar.h13 Ar.t4 Ar.t16 Ar.te
     Ar.al32 Ar.n32 Ar.hn c₃ (y := uO) (.inr rfl) (Ar.aad.of_eq rd₁₃ wr₁₃) (Ar.data.buf.of_eq rd₁₃ wr₁₃))
@@ -124,8 +124,8 @@ theorem open_wp' {s₀ : State} {k w N A D T : BitVec 32} {R nl al n tl : Nat} (
   have wr₁₅ : s₅.wr = s₀.wr := by rw [wr₅, M.wr, wr₁₃]
   have hk₅ := hk₁.frame F₅ (args_mut Ar) (by rw [he₅.sp, he₁.sp]) (by rw [rd₁₅, rd₁]) (by rw [wr₁₅, wr₁])
   have hT₅ : bytesAt s₅.mem (State.addr T) tl = bytesAt s₀.mem (State.addr T) tl := by
-    rw [bytesAt_frame F₅ (tag_mut Tb) (by omega), bytesAt_frame f₁ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Tb.w.sub_right (Lay.wSub (by decide))) (by omega)]
+    rw [bytesAt_frame F₅ (tag_mut Tb) (by omega_arith), bytesAt_frame f₁ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact Tb.w.sub_right (Lay.wSub (by decide))) (by omega_arith)]
   -- `t`, and the received tag padded at `W + 256`.
   obtain ⟨i5, v5⟩ := hk₅.at 5 (by decide) (show 4 * 5 = 20 from rfl)
   obtain ⟨s₆, run₆, h6₆, g₆, k₆⟩ : ∃ s₆, runBlock isa [.ldrSp .r6 20] s₅ = some s₆ ∧
@@ -142,7 +142,7 @@ theorem open_wp' {s₀ : State} {k w N A D T : BitVec 32} {R nl al n tl : Nat} (
   rw [eT] at v4
   refine WP.seq (WP.mono (recv_ok L he₆ i4 v4
       (by rw [k₆.rd, k₆.wr, rd₁₅, wr₁₅]; exact hTr) Tb.wrap (Tb.w.sub_right (Lay.wSub (by decide))) h6₆
-      (by omega) t16) fun s₇ ⟨hR₇, fr₇, g₇, rd₇, wr₇, sp₇⟩ => ?_)
+      (by omega_arith) t16) fun s₇ ⟨hR₇, fr₇, g₇, rd₇, wr₇, sp₇⟩ => ?_)
   have he₇ := he₆.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₇ _ (by decide) (by decide) (by decide) (by decide) (by decide))
@@ -150,7 +150,7 @@ theorem open_wp' {s₀ : State} {k w N A D T : BitVec 32} {R nl al n tl : Nat} (
   have h6₇ : s₇.gpr .r6 = BitVec.ofNat 32 tl := by
     rw [g₇ _ (by decide) (by decide) (by decide) (by decide) (by decide), h6₆]
   -- The comparison.
-  refine WP.seq (WP.mono (cmp_ok L he₇ (o := uO) (.inr rfl) h6₇ (by omega) t16)
+  refine WP.seq (WP.mono (cmp_ok L he₇ (o := uO) (.inr rfl) h6₇ (by omega_arith) t16)
     fun s₈ ⟨h0₈, fr₈, g₈, rd₈, wr₈, sp₈⟩ => ?_)
   obtain ⟨s₉, run₉, h7₉, g₉, k₉⟩ : ∃ s₉, runBlock isa [.mov .r7 (.reg .r0)] s₈ = some s₉ ∧
       s₉.gpr .r7 = s₈.gpr .r0 ∧ (∀ r, r ≠ .r7 → s₉.gpr r = s₈.gpr r) ∧ Keeps s₈ s₉ := by
@@ -186,7 +186,7 @@ theorem open_wp' {s₀ : State} {k w N A D T : BitVec 32} {R nl al n tl : Nat} (
     rw [o₃, cK F₂, d₂, crypt_eq (hBC _)]
   have p₉ : bytesAt s₉.mem (State.addr D) n = bytesAt s₃.mem (State.addr D) n := by
     rw [buf_wR Ar.data.buf f₅₉, buf_wR Ar.data.buf G₅]
-  have hl : (bytesAt s₀.mem (State.addr N) nl).length ≤ 15 := by rw [hnl]; have := Ar.h13; omega
+  have hl : (bytesAt s₀.mem (State.addr N) nl).length ≤ 15 := by rw [hnl]; have := Ar.h13; omega_arith
   have mo := M.out
   rw [cK F₃, a₃, p₃] at mo
   rw [cK (F₃.trans (M.frame.sub (macR_mut (.inr rfl)))), mo] at o₅
@@ -206,7 +206,7 @@ theorem open_wp' {s₀ : State} {k w N A D T : BitVec 32} {R nl al n tl : Nat} (
   have hML : (Spec.Ccm.mac (Spec.Ccm.ctxCiph s₀.mem (State.addr k) R) tl (bytesAt s₀.mem (State.addr N) nl)
       (bytesAt s₀.mem (State.addr A) al) (Spec.Ccm.crypt (Spec.Ccm.ctxCiph s₀.mem (State.addr k) R)
         (bytesAt s₀.mem (State.addr N) nl) (bytesAt s₀.mem (State.addr D) n))).length = tl := by
-    rw [mac_eq _ _ hl, List.length_take, ← mo, length_bytesAt]; omega
+    rw [mac_eq _ _ hl, List.length_take, ← mo, length_bytesAt]; omega_arith
   have key : decide (bytesAt s₇.mem (State.addr w + BitVec.ofNat 64 uO) tl ++ Spec.Gcm.zeros (16 - tl) =
       bytesAt s₇.mem (State.addr w + BitVec.ofNat 64 256) 16) =
       tagOk (Spec.Ccm.ctxCiph s₀.mem (State.addr k) R) tl (bytesAt s₀.mem (State.addr N) nl)
@@ -233,7 +233,7 @@ theorem open_wp' {s₀ : State} {k w N A D T : BitVec 32} {R nl al n tl : Nat} (
     fun s' ⟨ab, hm, h0', _, _⟩ => ⟨ab, ?_, ?_⟩
   · rw [h0', gpr_setReg_self, g₁₀ _ (by decide) (by decide) (by decide) (by decide), h7']
     rw [key]
-  · rw [hm, mem_setReg, m₁₀, bytesAt_writeBytes_base _ _ _ (by rw [length_mask]) (by have := Ar.data.buf.lt; omega),
+  · rw [hm, mem_setReg, m₁₀, bytesAt_writeBytes_base _ _ _ (by rw [length_mask]) (by have := Ar.data.buf.lt; omega_arith),
       length_mask, List.drop_eq_nil_of_le (by rw [length_bytesAt]), List.append_nil, p₉, p₃]
 
 theorem openPost {s s' : State} {c : Prop} [Decidable c] {pt : List Byte}

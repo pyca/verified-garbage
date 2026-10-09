@@ -20,9 +20,9 @@ theorem slot_read {s₀ : State} (hp : UPre s₀) {m : Mem}
   hf.readW (r := ⟨(S s₀).setWidth 64 + BitVec.ofNat 64 d, 4⟩) (Region.contains_self _ _) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact hp.st_scr.symm.sub_left (UPre.scr_sub (by omega))
-    · exact Offset.disjoint_base _ h₁ (by omega)
-    · exact hp.b_scr.symm.sub_left (UPre.scr_sub (by omega))) (by decide)
+    · exact hp.st_scr.symm.sub_left (UPre.scr_sub (by omega_arith))
+    · exact Offset.disjoint_base _ h₁ (by omega_arith)
+    · exact hp.b_scr.symm.sub_left (UPre.scr_sub (by omega_arith))) (by decide)
 
 theorem UPre.ret_stk {s₀ : State} (_hp : UPre s₀) : (retR s₀).Disjoint (stkR s₀) := by
   have := Offset.disjoint_below_above ((E s₀).setWidth 64) (m := 28) (a := 0) (l := 4) (by decide)
@@ -53,11 +53,11 @@ theorem epilogue_wp {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv s₀ (
   rw [restore_eq]
   refine wp_arg (s₀ := s₀) h.esp (by rw [hrw]; exact hp.arg_in (by decide))
     (hp.arg_keep (UPre.big_of h.frame) (by decide)) fun s₁ u₁ => ?_
-  refine Spill.restore_ofNat_ok saved saved_fits (by rw [u₁.gpr]; omega) saved_ne_eax (fun p hp' => ?_)
+  refine Spill.restore_ofNat_ok saved saved_fits (by rw [u₁.gpr]; omega_arith) saved_ne_eax (fun p hp' => ?_)
     (fun p hp' => by rw [u₁.gpr, u₁.mem]; exact sl p.1 p.2 hp') fun s₂ r₂ => WP.block_nil ?_
   · have hb := saved_bound p hp'
     rw [u₁.gpr, u₁.rd, u₁.wr, rdwr]
-    exact ⟨scrR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨scrR s₀, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   refine ⟨⟨r₂.abi (by decide) (by decide) (by rw [u₁.other _ (by decide), h.esp]), ?_⟩, ?_⟩
   · rw [r₂.mem, u₁.mem]; exact ret_read hp h.frame
   · show Spec.Aes.bytesAt s₂.mem ((St s₀).setWidth 64) 16 = Spec.Cmac.chain (ciph s₀) _ (blks s₀)
@@ -72,7 +72,7 @@ theorem mid_wp {s₀ : State} (hp : UPre s₀) {s₁ : State} (h : LInv s₀ 0 s
   · refine WP.ite true (by rw [ev]; simp [hn]) (fun _ => WP.block_nil ?_) (fun h => by cases h)
     rw [hn]; exact h
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
-    exact loop_ok v hp (by omega) h
+    exact loop_ok v hp (by omega_arith) h
 
 theorem update_wp {s₀ : State} (h0 : updateX86.pre s₀) :
     WP isa (update v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ updateX86.post s₀ s' := by

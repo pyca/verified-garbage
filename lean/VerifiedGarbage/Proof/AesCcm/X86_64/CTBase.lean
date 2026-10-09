@@ -80,23 +80,23 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {
       have S₂ := h.sl₂
       have key : ∀ d, d ∈ [160, 168, 176, 184, 192, 200, 208] → d ≤ k → k < d + 8 →
           s₁.mem (W + BitVec.ofNat 64 k) = s₂.mem (W + BitVec.ofNat 64 k) := fun d hd h₁ h₂ => by
-        rw [hw d (by omega)]
+        rw [hw d (by omega_arith)]
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
         rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-        · exact word_byte S₁.nonce S₂.nonce (by omega)
-        · exact word_byte S₁.nlen S₂.nlen (by omega)
-        · exact word_byte S₁.aad S₂.aad (by omega)
-        · exact word_byte S₁.alen S₂.alen (by omega)
-        · exact word_byte S₁.data S₂.data (by omega)
-        · exact word_byte S₁.len S₂.len (by omega)
-        · exact word_byte S₁.tl S₂.tl (by omega)
+        · exact word_byte S₁.nonce S₂.nonce (by omega_arith)
+        · exact word_byte S₁.nlen S₂.nlen (by omega_arith)
+        · exact word_byte S₁.aad S₂.aad (by omega_arith)
+        · exact word_byte S₁.alen S₂.alen (by omega_arith)
+        · exact word_byte S₁.data S₂.data (by omega_arith)
+        · exact word_byte S₁.len S₂.len (by omega_arith)
+        · exact word_byte S₁.tl S₂.tl (by omega_arith)
       have hq : (k - 160) / 8 = 0 ∨ (k - 160) / 8 = 1 ∨ (k - 160) / 8 = 2 ∨ (k - 160) / 8 = 3 ∨
-          (k - 160) / 8 = 4 ∨ (k - 160) / 8 = 5 ∨ (k - 160) / 8 = 6 := by omega
+          (k - 160) / 8 = 4 ∨ (k - 160) / 8 = 5 ∨ (k - 160) / 8 = 6 := by omega_arith
       exact key (160 + 8 * ((k - 160) / 8)) (by
-        rcases hq with h | h | h | h | h | h | h <;> rw [h] <;> decide) (by omega) (by omega)
+        rcases hq with h | h | h | h | h | h | h <;> rw [h] <;> decide) (by omega_arith) (by omega_arith)
     · simp only at hk₁ hk₂
-      rw [hw 232 (by omega)]
-      exact word_byte h.sl₁.rounds h.sl₂.rounds (by omega)
+      rw [hw 232 (by omega_arith)]
+      exact word_byte h.sl₁.rounds h.sl₂.rounds (by omega_arith)
 
 /-- Code the taint analysis checks from `ccmT rs`. -/
 theorem rel_taintC {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {P : State → State → Prop}

@@ -36,7 +36,7 @@ theorem absArgs_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {y : Nat} (hy 
       s₁.gpr .x0 = c.K ∧ s₁.gpr .x1 = BitVec.ofNat 64 c.R ∧ s₁.gpr .x2 = c.W + BitVec.ofNat 64 y ∧
       s₁.gpr .x3 = P ∧ s₁.gpr .x4 = BitVec.ofNat 64 (len / 16) ∧ s₁.gpr .x5 = c.W + BitVec.ofNat 64 384 ∧
       Others [.x0, .x1, .x2, .x3, .x4, .x5] s s₁ ∧ s₁.sp = s.sp ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-    have hy' : y < 4096 := by omega
+    have hy' : y < 4096 := by omega_arith
     refine ⟨_, by carun [updArgs, hy'], ?_⟩
     refine ⟨rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, rfl, rfl, rfl⟩
     · simp [gpr_write, E.x21]
@@ -52,8 +52,8 @@ theorem absArgs_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) {y : Nat} (hy 
   have hb : 16 * (len / 16) ≤ len := Nat.mul_div_le len 16
   have hq := ((hP.take hb).of_eq (s' := s₁) rd₁ wr₁).src
   have hqy : (⟨P, 16 * (len / 16)⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 y, 16⟩ :=
-    (hP.take hb).wd (by omega)
-  exact WP.of_runBlock ⟨s₁, run₁, uargs L E₁ (by omega) hq hqy (by omega) x0 x1 x2 x3 x4 x5, E₁, hg₁, hm₁,
+    (hP.take hb).wd (by omega_arith)
+  exact WP.of_runBlock ⟨s₁, run₁, uargs L E₁ (by omega_arith) hq hqy (by omega_arith) x0 x1 x2 x3 x4 x5, E₁, hg₁, hm₁,
     rd₁, wr₁⟩
 
 /-- What `absorbPad`'s pieces leave. -/
@@ -127,13 +127,13 @@ theorem absTailPre_ok {c : Cx} {s : State} (E : Env c s)
       simp [gpr_write, hr]
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
   have E₂ : Env c s₂ := E.others hg₂ (by decide) sp₂ rd₂ wr₂
-  have hb : 16 * (len / 16) + len % 16 = len := by omega
-  have hT := (hP.slice (a := 16 * (len / 16)) (k := len % 16) (by omega)).of_eq (s' := s₂) rd₂ wr₂
+  have hb : 16 * (len / 16) + len % 16 = len := by omega_arith
+  have hT := (hP.slice (a := 16 * (len / 16)) (k := len % 16) (by omega_arith)).of_eq (s' := s₂) rd₂ wr₂
   have dTB : (⟨P + BitVec.ofNat 64 (16 * (len / 16)), len % 16⟩ : Region).Disjoint
-      ⟨c.W + BitVec.ofNat 64 32, len % 16⟩ := hT.wd (by omega)
+      ⟨c.W + BitVec.ofNat 64 32, len % 16⟩ := hT.wd (by omega_arith)
   have lp : LoopPre s₂ (P + BitVec.ofNat 64 (16 * (len / 16))) (c.W + BitVec.ofNat 64 32) (len % 16) :=
-    ⟨by omega, hT.rd, E₂.perm.wC (by omega), dTB⟩
-  refine WP.mono (copyLoop_ok s₂ x12₂ x11₂ x13₂ (by omega) lp) fun s₃ ⟨hm₃, _, _, hg₃, sp₃, rd₃, wr₃⟩ => ?_
+    ⟨by omega_arith, hT.rd, E₂.perm.wC (by omega_arith), dTB⟩
+  refine WP.mono (copyLoop_ok s₂ x12₂ x11₂ x13₂ (by omega_arith) lp) fun s₃ ⟨hm₃, _, _, hg₃, sp₃, rd₃, wr₃⟩ => ?_
   have E₃ : Env c s₃ := E₂.others hg₃ (by decide) sp₃ rd₃ wr₃
   -- What was written.
   have e40 : c.W + BitVec.ofNat 64 40 = c.W + BitVec.ofNat 64 32 + BitVec.ofNat 64 8 := by rw [add_ofNat_assoc]
@@ -147,23 +147,23 @@ theorem absTailPre_ok {c : Cx} {s : State} (E : Env c s)
     rw [hm₃]
     exact writeBytes_frame _ _ _ (by
       rw [length_bytesAt]
-      exact Offset.contains c.W (d := 32) (n := len % 16) (e := 32) (k := 16) (by decide) (by omega) (by decide))
+      exact Offset.contains c.W (d := 32) (n := len % 16) (e := 32) (k := 16) (by decide) (by omega_arith) (by decide))
   have fB : Frame [⟨c.W + BitVec.ofNat 64 32, 16⟩] s.mem s₃.mem := fZ.trans fC
   have hB₃ : bytesAt s₃.mem (c.W + BitVec.ofNat 64 32) 16 =
       (bytesAt s.mem P len).drop (16 * (len / 16)) ++ Spec.Ccm.zeros (16 - len % 16) := by
     have hs₁ : bytesAt s₂.mem (P + BitVec.ofNat 64 (16 * (len / 16))) (len % 16) =
         (bytesAt s.mem P len).drop (16 * (len / 16)) := by
       rw [Proof.AesGcm.AArch64.bytesAt_frame fZ (fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; exact hT.wd (by decide)) (by omega),
-        show len % 16 = len - 16 * (len / 16) by omega, bytesAt_suffix _ _ (by omega)]
+          simp only [List.mem_singleton] at hr; subst hr; exact hT.wd (by decide)) (by omega_arith),
+        show len % 16 = len - 16 * (len / 16) by omega_arith, bytesAt_suffix _ _ (by omega_arith)]
     have hz : bytesAt s₂.mem (c.W + BitVec.ofNat 64 32) 16 = Spec.Cmac.zeros 16 := by
       rw [hm₂, e40, Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_zero]; rfl
-    rw [hm₃, bytesAt_writeBytes_base _ _ _ (by rw [length_bytesAt]; omega) (by decide), hs₁, hz,
+    rw [hm₃, bytesAt_writeBytes_base _ _ _ (by rw [length_bytesAt]; omega_arith) (by decide), hs₁, hz,
       List.length_drop, hxl]
     congr 1
     simp only [Spec.Cmac.zeros, Spec.Ccm.zeros, List.drop_replicate]
     congr 1
-    omega
+    omega_arith
   refine ⟨E₃, by rw [hg₃ _ (by decide), hg₂ _ (by decide), h23], by rw [hg₃ _ (by decide), hg₂ _ (by decide), h24],
     by rw [rd₃, rd₂], by rw [wr₃, wr₂], fB, hB₃⟩
 
@@ -192,7 +192,7 @@ theorem absTail_ok (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c) {
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact ⟨_, by simp, fun _ h => h⟩
-  · rw [h₄, hY₃, hB₃, ciph_macR L (y := y) (by omega) (fB.sub fun r hr => by
+  · rw [h₄, hY₃, hB₃, ciph_macR L (y := y) (by omega_arith) (fB.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)]
     simp only [tailBlocks, hxl, h0, ↓reduceIte]
 
@@ -229,7 +229,7 @@ theorem absorbPad_ok (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c)
   have hb := Proof.AesCcm.blocks_pad16 (bytesAt s.mem P len)
   rw [length_bytesAt] at hb
   have hRb := L.rb
-  refine WP.ite (decide (len % 16 = 0)) (eval_zero x13₂ (by omega)) (fun ht => ?_) (fun hf => ?_)
+  refine WP.ite (decide (len % 16 = 0)) (eval_zero x13₂ (by omega_arith)) (fun ht => ?_) (fun hf => ?_)
   · have h0 : len % 16 = 0 := of_decide_eq_true ht
     refine WP.block_nil ⟨E₂, by rw [hg₂ _ (by decide), A₁.x23], by rw [hg₂ _ (by decide), A₁.x24],
       by rw [hm₂]; exact A₁.frame, ?_, by rw [rd₂, A₁.rd], by rw [wr₂, A₁.wr]⟩
@@ -240,7 +240,7 @@ theorem absorbPad_ok (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} (L : Lay c)
       (by rw [hg₂ _ (by decide), A₁.x23]) (by rw [hg₂ _ (by decide), A₁.x24]) x13₂ h0) fun s₃ A₃ =>
       ⟨A₃.env, A₃.x23, A₃.x24, A₁.frame.trans (by rw [← hm₂]; exact A₃.frame), ?_,
         by rw [A₃.rd, rd₂, A₁.rd], by rw [A₃.wr, wr₂, A₁.wr]⟩
-    rw [A₃.out, hm₂, A₁.out, buf_macR hP (by omega) A₁.frame, ciph_macR L (by omega) A₁.frame,
+    rw [A₃.out, hm₂, A₁.out, buf_macR hP (by omega_arith) A₁.frame, ciph_macR L (by omega_arith) A₁.frame,
       ← Proof.Cmac.chain_append, hb, tailBlocks, length_bytesAt]
 
 end VG.Proof.AesCcm.AArch64

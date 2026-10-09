@@ -97,7 +97,7 @@ theorem open_top_ct (v : Ctr32Impl) {K W SP N A D T : BitVec 32} {R nl al n tl :
   have h13' : ∀ m : Mem, (bytesAt m (w64 N) nl).length ≤ 13 := fun m => by rw [length_bytesAt]; exact Ar.h13
   have c0W : ∀ {d k : Nat}, (64 ≤ d ∨ d + k ≤ 48) → d + k ≤ 2560 →
       (⟨w64 W + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ := fun h₁ h₂ =>
-    Lay.w_w (by omega) (by decide) h₂
+    Lay.w_w (by omega_arith) (by decide) h₂
   refine RelCT.assoc (CT.seq (J := fun s => ∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s)
     (start_ct L Ar.h13) (fun s hs => WP.mono (start_ok hs.args hs.sp hs.a0 hs.a1 hs.a2 hs.a3 hs.a4 hs.a5 hs.a6 hs.a7
       hs.a8 hs.a9 hs.a10) fun _ St => ⟨s, hs, Run.of_started St⟩) ?_)
@@ -125,7 +125,7 @@ theorem open_top_ct (v : Ctr32Impl) {K W SP N A D T : BitVec 32} {R nl al n tl :
       ⟨⟨h.env.ebp, h.env.perm.w, L.fw⟩, (h.slots Tp.args).tl, (h.slots Tp.args).tp⟩)
     (fun s ⟨s₀, Tp, h⟩ => WP.mono (recv_ok ⟨h.env.ebp, h.env.perm.w, L.fw⟩ (h.slots Tp.args).tl (h.slots Tp.args).tp
       (Tp.args.tag.of_eq h.rd h.wr).rd (Tp.args.tag.of_eq h.rd h.wr).wrap (Tp.args.tag.of_eq h.rd h.wr).w
-      (by have := Ar.t4; omega) Ar.t16) fun _ ⟨_, f, bp, _, sp, rd, wr⟩ => ⟨s₀, Tp,
+      (by have := Ar.t4; omega_arith) Ar.t16) fun _ ⟨_, f, bp, _, sp, rd, wr⟩ => ⟨s₀, Tp,
         h.step ⟨by rw [bp, h.env.ebp], by rw [sp, h.env.esp], h.env.perm.of_eq rd wr⟩ rd wr f
         (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨wT W, by simp, fun _ h => h⟩)
         (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact c0W (.inl (by decide)) (by decide))⟩) ?_
@@ -134,7 +134,7 @@ theorem open_top_ct (v : Ctr32Impl) {K W SP N A D T : BitVec 32} {R nl al n tl :
       ∃ c : Bool, s.gpr .eax = if c then 1 else 0)
     (cmp96_ct (W := W) (t := tl) fun s ⟨_, Tp, h⟩ => ⟨⟨h.env.ebp, h.env.perm.w, L.fw⟩, (h.slots Tp.args).tl⟩)
     (fun s ⟨s₀, Tp, h⟩ => WP.mono (cmp_ok (o := uO) ⟨h.env.ebp, h.env.perm.w, L.fw⟩ (h.slots Tp.args).tl
-      (by have := Ar.t4; omega) Ar.t16 (by decide)) fun s' ⟨ax, f, bp, _, sp, rd, wr⟩ =>
+      (by have := Ar.t4; omega_arith) Ar.t16 (by decide)) fun s' ⟨ax, f, bp, _, sp, rd, wr⟩ =>
         ⟨⟨s₀, Tp, h.step ⟨by rw [bp, h.env.ebp], by rw [sp, h.env.esp], h.env.perm.of_eq rd wr⟩ rd wr f
           (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr; exact ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩)

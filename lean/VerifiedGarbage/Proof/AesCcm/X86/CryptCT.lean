@@ -55,7 +55,7 @@ theorem ctrWhole_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : N
       (by
         have : 1 ≤ 256 ^ (15 - nonce.length) := Nat.pow_pos (by decide)
         have := C.hn
-        omega) (by decide) hbx hdi
+        omega_arith) (by decide) hbx hdi
     exact ⟨sc, run, rest⟩
   refine CT.block_seq [.ebp] (pin_ebp fun _ ⟨_, _, _, _, _, E₁, _⟩ => E₁.ebp) (by taint_decide) blk ?_
   refine ctrCall_ct v L hR (c := 64) (Q := D) (n := n / 16) (by decide)
@@ -69,7 +69,7 @@ theorem ctrWhole_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : N
   rw [wrc]
   intro a k ⟨r, hr, hc⟩
   simp only [List.mem_singleton] at hr; subst hr
-  exact C.dw a k ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
+  exact C.dw a k ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_arith⟩
 
 /-- What `ctr`'s last bytes start from. -/
 abbrev CtrTailPre (K W SP : BitVec 32) (R : Nat) (D : BitVec 32) (n : Nat) (t : State) : Prop :=
@@ -85,7 +85,7 @@ theorem ctrTail_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Na
           (.seq (.block [.mov .edi (slot dO), .mov .edx (.reg .ebp), .alu .add .edx (imm ksO), .mov .ecx (slot nO)])
             xorLoop))))) := by
   refine CT.block_seq [.ebp] (pin_ebp fun _ ⟨_, _, _, _, I⟩ => I.env.ebp) (by taint_decide)
-    (fun t ⟨_, _, _, _, I⟩ => testN_ok L I.env (r := n % 16) (by omega) I.nO) ?_
+    (fun t ⟨_, _, _, _, I⟩ => testN_ok L I.env (r := n % 16) (by omega_arith) I.nO) ?_
   refine CT.ite (decide (n % 16 = 0)) (fun _ ⟨_, _, _, hzf, _⟩ => eval_e hzf) (fun _ => CT.nil) fun hf => ?_
   have h0 : n % 16 ≠ 0 := of_decide_eq_false hf
   -- The arguments of the call making the keystream block.
@@ -104,7 +104,7 @@ theorem ctrTail_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Na
         rw [hm₀]; exact C.slot_kept I.frame h₁ h₂
       obtain ⟨tc, run, ft, -, -, rest⟩ := ctrTailArgs_ok L E₀ (by rw [k₀ _ (by decide) (by decide)]; exact hs.ctx)
         (by rw [k₀ _ (by decide) (by decide)]; exact hs.rounds) (by rw [k₀ _ (by decide) (by decide)]; exact hs.len)
-        hn32 C.h7 C.h13 (by rw [hm₀]; exact C.c0_kept I.frame) (by have := C.hn; omega)
+        hn32 C.h7 C.h13 (by rw [hm₀]; exact C.c0_kept I.frame) (by have := C.hn; omega_arith)
       exact ⟨tc, run, ft, rest⟩
   refine CT.block_seq [.ebp] (pin_ebp fun _ ⟨_, _, _, _, hbp, _⟩ => hbp) (by taint_decide) blk ?_
   -- The call.
@@ -150,9 +150,9 @@ theorem ctrTail_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Na
             t₀.mem td.mem).readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl
-          · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
-          · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-          · exact (L.stk_w' (by omega)).symm) (by decide)
+          · exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+          · exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+          · exact (L.stk_w' (by omega_arith)).symm) (by decide)
     exact ⟨Ed, by rw [kd _ (by decide) (by decide)]; exact I.dO, by rw [kd _ (by decide) (by decide)]; exact I.nO⟩
   -- The XOR.
   refine CT.block_seq [.ebp] (pin_ebp fun _ h => h.1.ebp) (by taint_decide)

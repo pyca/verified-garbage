@@ -55,7 +55,7 @@ theorem start_ok {s : State} {K W SP N A D T : BitVec 32} {R nl al n tl : Nat}
   have bE : ∀ {P : BitVec 32} {len : Nat}, Buf W SP s P len → bytesAt s₁.mem (w64 P) len = bytesAt s.mem (w64 P) len :=
     fun hP => Proof.AesGcm.X86.bytesAt_frame fE (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hP.w.sub_right (Lay.wSub (by decide)))
-      (by have := hP.lt; omega)
+      (by have := hP.lt; omega_arith)
   have hRb : 16 * (R + 1) ≤ 240 := by rcases Ar.rounds with h | h | h <;> subst h <;> decide
   have cE : Spec.Ccm.ctxCiph s₁.mem (w64 K) R = Spec.Ccm.ctxCiph s.mem (w64 K) R :=
     ctxCiph_frame fE (fun r hr => by
@@ -67,7 +67,7 @@ theorem start_ok {s : State} {K W SP N A D T : BitVec 32} {R nl al n tl : Nat}
   have b₂ : ∀ {P : BitVec 32} {len : Nat}, Buf W SP s P len → bytesAt s₂.mem (w64 P) len = bytesAt s₁.mem (w64 P) len :=
     fun hP => Proof.AesGcm.X86.bytesAt_frame f₂ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hP.w.sub_right (Lay.wSub (by decide)))
-      (by have := hP.lt; omega)
+      (by have := hP.lt; omega_arith)
   refine ⟨E₂, slots_mut L Ar.data.w f₂' S₁, saved_mut L Ar.data.w f₂' E₀.saved, by rw [rd₂, E₀.rd],
     by rw [wr₂, E₀.wr], by rw [c₂, bE Ar.nonce], ?_, by rw [b₂ Ar.aad, bE Ar.aad], by rw [b₂ Ar.data, bE Ar.data],
     ?_, ?_⟩
