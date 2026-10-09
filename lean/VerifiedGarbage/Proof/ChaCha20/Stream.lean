@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.ChaCha20.Keystream
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The streaming state of ChaCha20
@@ -38,7 +39,7 @@ theorem bytesAt_getD (m : Mem) (p : Addr) {n k : Nat} (hk : k < n) :
 
 theorem length_restAt (m : Mem) (p : Addr) : (restAt m p).length = leftAt m p := by
   simp only [restAt, List.length_append, length_bytesAt, length_keystream]
-  omega
+  omega_using []
 
 /-- The keystream left, byte by byte: the last `n % 64` bytes of the
 buffered block, then the blocks of the 16-word state. -/
@@ -54,8 +55,8 @@ theorem restAt_getD (m : Mem) (p : Addr) {k : Nat} (hk : k < leftAt m p) :
     rw [List.getElem?_append_left (by rw [length_bytesAt]; exact h), ← List.getD_eq_getElem?_getD,
       bytesAt_getD _ _ h, Offset.add_add]
   · rename_i h
-    rw [List.getElem?_append_right (by rw [length_bytesAt]; omega), length_bytesAt,
-      ← List.getD_eq_getElem?_getD, keystream_getD _ (by omega), List.getD_eq_getElem?_getD]
+    rw [List.getElem?_append_right (by rw [length_bytesAt]; omega_using [h]), length_bytesAt,
+      ← List.getD_eq_getElem?_getD, keystream_getD _ (by omega_using [hk, h]), List.getD_eq_getElem?_getD]
 
 /-! ## Words and bytes -/
 
@@ -63,16 +64,16 @@ theorem restAt_getD (m : Mem) (p : Addr) {k : Nat} (hk : k < leftAt m p) :
 theorem word_ext {x y : Word} (h : ∀ i < 4, x.extractLsb' (8 * i) 8 = y.extractLsb' (8 * i) 8) :
     x = y := by
   ext j hj
-  have := congrArg (·.getLsbD (j % 8)) (h (j / 8) (by omega))
-  simp only [BitVec.getLsbD_extractLsb', show j % 8 < 8 by omega, decide_true,
+  have := congrArg (·.getLsbD (j % 8)) (h (j / 8) (by omega_using [hj]))
+  simp only [BitVec.getLsbD_extractLsb', show j % 8 < 8 by omega_using [], decide_true,
     Bool.true_and] at this
-  rw [show 8 * (j / 8) + j % 8 = j by omega] at this
+  rw [show 8 * (j / 8) + j % 8 = j by omega_using []] at this
   simpa [BitVec.getLsbD_eq_getElem hj] using this
 
 /-- Byte `i` of a little-endian word of a byte string. -/
 theorem wordLE_byte (bs : List Byte) (j : Nat) {i : Nat} (hi : i < 4) :
     (wordLE bs j).extractLsb' (8 * i) 8 = bs.getD (4 * j + i) 0 := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
   · simp only [wordLE, Nat.add_zero]
     generalize bs.getD (4 * j + 3) 0 = a
     generalize bs.getD (4 * j + 2) 0 = b
@@ -81,7 +82,7 @@ theorem wordLE_byte (bs : List Byte) (j : Nat) {i : Nat} (hi : i < 4) :
     ext k hk
     simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_append]
     repeat' split
-    all_goals first | (exfalso; omega) | (rw [BitVec.getLsbD_eq_getElem (by omega)]; congr 1; omega)
+    all_goals first | (exfalso; omega) | (rw [BitVec.getLsbD_eq_getElem (by omega)]; congr 1; omega_using [])
 
 /-- Word `j` of the 16-word state in memory, from its bytes. -/
 theorem stateAt_getElem (m : Mem) (p : Addr) {j : Nat} (hj : j < 16) {bs : List Byte}
@@ -94,26 +95,26 @@ theorem stateAt_getElem (m : Mem) (p : Addr) {j : Nat} (hj : j < 16) {bs : List 
 /-- A byte of the key, from the state's words 4–11. -/
 theorem key_byte (m : Mem) (p : Addr) {i : Nat} (hi : i < 32) :
     m (p + 16 + BitVec.ofNat 64 i) =
-      ((stateAt m p)[4 + i / 4]'(by omega)).extractLsb' (8 * (i % 4)) 8 := by
+      ((stateAt m p)[4 + i / 4]'(by omega_using [hi])).extractLsb' (8 * (i % 4)) 8 := by
   simp only [stateAt, Vector.getElem_ofFn]
   rw [← Mem.readW_byte m _ (Nat.mod_lt _ (by decide)), Offset.add_add,
     show (p + 16 : Addr) = p + BitVec.ofNat 64 16 from rfl, Offset.add_add,
-    show 16 + i = 4 * (4 + i / 4) + i % 4 by omega]
+    show 16 + i = 4 * (4 + i / 4) + i % 4 by omega_using []]
 
 /-- The key is words 4–11 of the 16-word state. -/
 theorem keyAt_congr {m m' : Mem} {p : Addr}
-    (h : ∀ i (hi : 4 ≤ i ∧ i < 12), (stateAt m' p)[i]'(by omega) = (stateAt m p)[i]'(by omega)) :
+    (h : ∀ i (hi : 4 ≤ i ∧ i < 12), (stateAt m' p)[i]'(by omega_using [hi]) = (stateAt m p)[i]'(by omega_using [hi])) :
     keyAt m' p = keyAt m p := by
   simp only [keyAt, bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  rw [key_byte m' p hi, key_byte m p hi, h _ ⟨by omega, by omega⟩]
+  rw [key_byte m' p hi, key_byte m p hi, h _ ⟨by omega_using [], by omega_using [hi]⟩]
 
 /-- Advancing the counter keeps the key. -/
 theorem keyAt_of_ctr {m m' : Mem} {p : Addr} {j : Nat} (h : stateAt m' p = ctr (stateAt m p) j) :
     keyAt m' p = keyAt m p :=
   keyAt_congr fun i hi => by
-    rw [h]; simp only [ctr, Vector.getElem_set, show ¬ (12 = i) from by omega, ↓reduceIte]
+    rw [h]; simp only [ctr, Vector.getElem_set, show ¬ (12 = i) from by omega_using [hi], ↓reduceIte]
 
 /-- A state whose first 136 bytes are unchanged represents the same key and
 keystream. -/
@@ -123,19 +124,19 @@ theorem stream_congr {m m' : Mem} {p : Addr}
   have hb : ∀ a n, a + n ≤ 136 → bytesAt m' (p + BitVec.ofNat 64 a) n = bytesAt m (p + BitVec.ofNat 64 a) n :=
     fun a n hn => List.map_congr_left fun i hi => by
       have := List.mem_range.mp hi
-      simpa only [Offset.add_add] using h (a + i) (by omega)
+      simpa only [Offset.add_add] using h (a + i) (by omega_using [hn, this])
   have hw : ∀ a w, a + w / 8 ≤ 136 → m'.readW (p + BitVec.ofNat 64 a) w = m.readW (p + BitVec.ofNat 64 a) w :=
     fun a w hn => Mem.readW_congr fun i hi => by
-      simpa only [Offset.add_add] using h (a + i) (by omega)
+      simpa only [Offset.add_add] using h (a + i) (by omega_using [hn, hi])
   have hl : leftAt m' p = leftAt m p := by
     simp only [leftAt]; rw [show (p + 128 : Addr) = p + BitVec.ofNat 64 128 from rfl, hw _ _ (by decide)]
   have hs : stateAt m' p = stateAt m p := by
     apply Vector.ext; intro i hi
     simp only [stateAt, Vector.getElem_ofFn]
-    exact hw _ _ (by omega)
+    exact hw _ _ (by omega_using [hi])
   refine ⟨by simp only [keyAt]; exact hb 16 32 (by decide), ?_, hl⟩
   simp only [restAt, hl, hs]
-  rw [hb _ _ (by omega)]
+  rw [hb _ _ (by omega_using [])]
 
 /-! ## Starting a keystream -/
 
@@ -153,24 +154,24 @@ theorem getD_append_right {xs ys : List Byte} {n : Nat} (h : xs.length ≤ n) (d
 
 theorem wordLE_append_left {xs ys : List Byte} {i : Nat} (h : 4 * i + 4 ≤ xs.length) :
     wordLE (xs ++ ys) i = wordLE xs i := by
-  simp only [wordLE, getD_append_left (show 4 * i + 3 < xs.length by omega),
-    getD_append_left (show 4 * i + 2 < xs.length by omega),
-    getD_append_left (show 4 * i + 1 < xs.length by omega),
-    getD_append_left (show 4 * i < xs.length by omega)]
+  simp only [wordLE, getD_append_left (show 4 * i + 3 < xs.length by omega_using [h]),
+    getD_append_left (show 4 * i + 2 < xs.length by omega_using [h]),
+    getD_append_left (show 4 * i + 1 < xs.length by omega_using [h]),
+    getD_append_left (show 4 * i < xs.length by omega_using [h])]
 
 theorem wordLE_append_right {xs ys : List Byte} {a i : Nat} (hl : xs.length = 4 * a) (h : a ≤ i) :
     wordLE (xs ++ ys) i = wordLE ys (i - a) := by
-  simp only [wordLE, getD_append_right (show xs.length ≤ 4 * i + 3 by omega),
-    getD_append_right (show xs.length ≤ 4 * i + 2 by omega),
-    getD_append_right (show xs.length ≤ 4 * i + 1 by omega),
-    getD_append_right (show xs.length ≤ 4 * i by omega), hl,
-    show 4 * i + 3 - 4 * a = 4 * (i - a) + 3 by omega, show 4 * i + 2 - 4 * a = 4 * (i - a) + 2 by omega,
-    show 4 * i + 1 - 4 * a = 4 * (i - a) + 1 by omega, show 4 * i - 4 * a = 4 * (i - a) by omega]
+  simp only [wordLE, getD_append_right (show xs.length ≤ 4 * i + 3 by omega_using [hl, h]),
+    getD_append_right (show xs.length ≤ 4 * i + 2 by omega_using [hl, h]),
+    getD_append_right (show xs.length ≤ 4 * i + 1 by omega_using [hl, h]),
+    getD_append_right (show xs.length ≤ 4 * i by omega_using [hl, h]), hl,
+    show 4 * i + 3 - 4 * a = 4 * (i - a) + 3 by omega_using [h], show 4 * i + 2 - 4 * a = 4 * (i - a) + 2 by omega_using [h],
+    show 4 * i + 1 - 4 * a = 4 * (i - a) + 1 by omega_using [h], show 4 * i - 4 * a = 4 * (i - a) by omega_using []]
 
 theorem wordLE_drop (xs : List Byte) (i : Nat) : wordLE (xs.drop 4) i = wordLE xs (i + 1) := by
   simp only [wordLE, List.getD_eq_getElem?_getD, List.getElem?_drop,
-    show 4 + (4 * i + 3) = 4 * (i + 1) + 3 by omega, show 4 + (4 * i + 2) = 4 * (i + 1) + 2 by omega,
-    show 4 + (4 * i + 1) = 4 * (i + 1) + 1 by omega, show 4 + 4 * i = 4 * (i + 1) by omega]
+    show 4 + (4 * i + 3) = 4 * (i + 1) + 3 by omega_using [], show 4 + (4 * i + 2) = 4 * (i + 1) + 2 by omega_using [],
+    show 4 + (4 * i + 1) = 4 * (i + 1) + 1 by omega_using [], show 4 + 4 * i = 4 * (i + 1) by omega_using []]
 
 theorem sigma_words : ∀ i < 4, wordLE sigma i = constants.getD i 0 := by decide
 
@@ -186,7 +187,7 @@ theorem restAt_of_bytes {m : Mem} {p : Addr} {key nonce : List Byte} (hk : key.l
     restAt m p = keystreamOf key nonce := by
   have hc := (wordLE nonce 0).isLt
   have hw : ∀ i (hi : i < 16), (stateAt m p)[i] = wordLE (sigma ++ key ++ nonce) i :=
-    fun i hi => stateAt_getElem m p hi fun r hr => hb _ (by omega)
+    fun i hi => stateAt_getElem m p hi fun r hr => hb _ (by omega_using [hi, hr])
   have l48 : (sigma ++ key).length = 4 * 12 := by rw [List.length_append, length_sigma, hk]
   have l16 : sigma.length = 4 * 4 := length_sigma
   have hS : ∀ j : Nat, (stateAt m p).set 12 ((stateAt m p)[12] + BitVec.ofNat 32 j) =
@@ -200,24 +201,24 @@ theorem restAt_of_bytes {m : Mem} {p : Addr} {key nonce : List Byte} (hk : key.l
         wordLE_append_right l48 (Nat.le_refl 12)]
     · rw [hw i hi]
       by_cases h4 : i < 4
-      · simp only [show ¬ (12 = i) by omega, h4, ↓reduceIte]
-        rw [wordLE_append_left (xs := sigma ++ key) (by rw [l48]; omega),
-          wordLE_append_left (by rw [length_sigma]; omega), sigma_words i h4]
+      · simp only [show ¬ (12 = i) by omega_using [h4], h4, ↓reduceIte]
+        rw [wordLE_append_left (xs := sigma ++ key) (by rw [l48]; omega_using [h4]),
+          wordLE_append_left (by rw [length_sigma]; omega_using [h4]), sigma_words i h4]
       by_cases h12 : i < 12
-      · simp only [show ¬ (12 = i) by omega, h4, h12, ↓reduceIte]
-        rw [wordLE_append_left (xs := sigma ++ key) (by rw [l48]; omega),
-          wordLE_append_right l16 (by omega)]
-      · simp only [show ¬ (12 = i) by omega, h4, h12, e, ↓reduceIte]
-        rw [wordLE_append_right l48 (by omega), wordLE_drop]
-        congr 1; omega
+      · simp only [show ¬ (12 = i) by omega_using [h12], h4, h12, ↓reduceIte]
+        rw [wordLE_append_left (xs := sigma ++ key) (by rw [l48]; omega_using [h12]),
+          wordLE_append_right l16 (by omega_using [h4])]
+      · simp only [show ¬ (12 = i) by omega_using [e], h4, h12, e, ↓reduceIte]
+        rw [wordLE_append_right l48 (by omega_using [h12]), wordLE_drop]
+        congr 1; omega_using [e, h12]
   have h12 : (stateAt m p)[12] = wordLE nonce 0 := by
     rw [hw 12 (by decide), wordLE_append_right l48 (Nat.le_refl 12)]
-  have hmod : leftAt m p % 64 = 0 := by rw [hl]; omega
+  have hmod : leftAt m p % 64 = 0 := by rw [hl]; omega_using []
   simp only [restAt, hmod, keystreamOf, keystream]
   have e0 : bytesAt m (p + BitVec.ofNat 64 (128 - 0)) 0 = [] := List.map_nil
   generalize hN : 2 ^ 32 - (wordLE nonce 0).toNat = N at hl
-  have e1 : 64 * (leftAt m p / 64) = 64 * N := by rw [hl]; omega
-  have e2 : (64 * N + 63) / 64 = N := by omega
+  have e1 : 64 * (leftAt m p / 64) = 64 * N := by rw [hl]; omega_using []
+  have e2 : (64 * N + 63) / 64 = N := by omega_using []
   rw [e0, List.nil_append, e1, e2, List.take_of_length_le (by
     rw [length_flatMap_const _ (n := 64) (fun _ => length_serialize _), List.length_range])]
   simp only [hS, chacha20Block]
@@ -247,10 +248,10 @@ theorem stream_of_parts {m : Mem} {p : Addr} {key nonce : List Byte} (hk : key.l
   · rw [getD_append_left (by rw [l48]; exact h₁)]
     by_cases h₂ : i < 16
     · rw [getD_append_left (by rw [length_sigma]; exact h₂), hσ i h₂]
-    · rw [getD_append_right (by rw [length_sigma]; omega), length_sigma, ← hK (i - 16) (by omega),
-        show 16 + (i - 16) = i by omega]
-  · rw [getD_append_right (by rw [l48]; omega), l48, ← hN (i - 48) (by omega),
-      show 48 + (i - 48) = i by omega]
+    · rw [getD_append_right (by rw [length_sigma]; omega_using [h₂]), length_sigma, ← hK (i - 16) (by omega_using [h₁]),
+        show 16 + (i - 16) = i by omega_using [h₂]]
+  · rw [getD_append_right (by rw [l48]; omega_using [h₁]), l48, ← hN (i - 48) (by omega_using [hi]),
+      show 48 + (i - 48) = i by omega_using [h₁]]
 
 /-- Byte `j` of a little-endian 64-bit word. -/
 theorem readW64_byte (m : Mem) (a : Addr) {j : Nat} (hj : j < 8) :
@@ -264,30 +265,30 @@ theorem byte_of_words64 {m : Mem} {p : Addr} {W : Nat → BitVec 64} {a b : Nat}
     (h : ∀ k, a ≤ k → k < b → m.readW (p + BitVec.ofNat 64 (8 * k)) 64 = W k) {i : Nat}
     (h₁ : 8 * a ≤ i) (h₂ : i < 8 * b) :
     m (p + BitVec.ofNat 64 i) = (W (i / 8)).extractLsb' (8 * (i % 8)) 8 := by
-  rw [← h (i / 8) (by omega) (by omega), readW64_byte _ _ (Nat.mod_lt _ (by decide)), Offset.add_add,
-    show 8 * (i / 8) + i % 8 = i by omega]
+  rw [← h (i / 8) (by omega_using [h₁]) (by omega_using [h₂]), readW64_byte _ _ (Nat.mod_lt _ (by decide)), Offset.add_add,
+    show 8 * (i / 8) + i % 8 = i by omega_using []]
 
 /-- The bytes of memory from its 32-bit words. -/
 theorem byte_of_words32 {m : Mem} {p : Addr} {W : Nat → BitVec 32} {a b : Nat}
     (h : ∀ k, a ≤ k → k < b → m.readW (p + BitVec.ofNat 64 (4 * k)) 32 = W k) {i : Nat}
     (h₁ : 4 * a ≤ i) (h₂ : i < 4 * b) :
     m (p + BitVec.ofNat 64 i) = (W (i / 4)).extractLsb' (8 * (i % 4)) 8 := by
-  rw [← h (i / 4) (by omega) (by omega), ← Mem.readW_byte _ _ (Nat.mod_lt _ (by decide)), Offset.add_add,
-    show 4 * (i / 4) + i % 4 = i by omega]
+  rw [← h (i / 4) (by omega_using [h₁]) (by omega_using [h₂]), ← Mem.readW_byte _ _ (Nat.mod_lt _ (by decide)), Offset.add_add,
+    show 4 * (i / 4) + i % 4 = i by omega_using []]
 
 /-- The first word of a nonce in memory. -/
 theorem wordLE_bytesAt (m : Mem) (p : Addr) {n : Nat} (hn : 4 ≤ n) :
     wordLE (bytesAt m p n) 0 = m.readW p 32 :=
   word_ext fun i hi => by
-    rw [wordLE_byte _ _ hi, Nat.mul_zero, Nat.zero_add, bytesAt_getD _ _ (by omega), Mem.readW_byte m p hi]
+    rw [wordLE_byte _ _ hi, Nat.mul_zero, Nat.zero_add, bytesAt_getD _ _ (by omega_using [hn, hi]), Mem.readW_byte m p hi]
 
 /-- The low half of a 64-bit word. -/
 theorem readW64_setWidth (m : Mem) (a : Addr) : (m.readW a 64).setWidth 32 = m.readW a 32 := by
   refine word_ext fun i hi => ?_
-  rw [← Mem.readW_byte m a hi, ← readW64_byte m a (by omega)]
+  rw [← Mem.readW_byte m a hi, ← readW64_byte m a (by omega_using [hi])]
   ext j hj
   simp [BitVec.getElem_extractLsb', BitVec.getLsbD_setWidth]
-  omega
+  omega_using [hi, hj]
 
 /-- A 16-word state with the same bytes. -/
 theorem stateAt_congr {m m' : Mem} {p q : Addr}
@@ -295,7 +296,7 @@ theorem stateAt_congr {m m' : Mem} {p q : Addr}
   apply Vector.ext; intro j hj
   simp only [stateAt, Vector.getElem_ofFn]
   refine word_ext fun i hi => ?_
-  rw [← Mem.readW_byte m' _ hi, ← Mem.readW_byte m _ hi, Offset.add_add, Offset.add_add, h _ (by omega)]
+  rw [← Mem.readW_byte m' _ hi, ← Mem.readW_byte m _ hi, Offset.add_add, Offset.add_add, h _ (by omega_using [hj, hi])]
 
 theorem getElem_eq_getD' (l : List Byte) {i : Nat} (h : i < l.length) : l[i] = l.getD i 0 := by
   simp [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h]
@@ -311,7 +312,7 @@ theorem xor_getD {m m' : Mem} {p : Addr} {n : Nat} {ks : List Byte} (hks : ks.le
     (by rw [length_bytesAt]; exact hj), List.getElem?_eq_getElem (by rw [hks]; exact hj)]
   simp only [Option.getD_some]
   rw [getElem_eq_getD' _ (by rw [length_bytesAt]; exact hj), bytesAt_getD _ _ hj,
-    getElem_eq_getD' _ (show j < ks.length by omega)]
+    getElem_eq_getD' _ (show j < ks.length by omega_using [hks, hj])]
 
 /-- Reading a word after writing one elsewhere, at offsets from `p`. -/
 theorem readW_writeW_ofNat (m : Mem) (p : Addr) {w w' : Nat} (v : BitVec w') {d e : Nat}
@@ -368,20 +369,20 @@ theorem apply_data {m m' : Mem} {p d : Addr} {len : Nat} (hlen : len ≤ leftAt 
       else (serialize (block (ctr (stateAt m p) ((k - headLen m p len) / 64)))).getD
         ((k - headLen m p len) % 64) 0)) :
     bytesAt m' d len = List.zipWith (· ^^^ ·) (bytesAt m d len) ((restAt m p).take len) := by
-  refine bytesAt_xor (by rw [List.length_take, length_restAt]; omega) fun k hk => ?_
+  refine bytesAt_xor (by rw [List.length_take, length_restAt]; omega_using [hlen]) fun k hk => ?_
   rw [hD k hk]
   refine congrArg (_ ^^^ ·) ?_
   have hh : headLen m p len = min (leftAt m p % 64) len := rfl
   have hb : bufLeft m p = leftAt m p % 64 := rfl
-  rw [getD_take _ hk, restAt_getD _ _ (by omega)]
+  rw [getD_take _ hk, restAt_getD _ _ (by omega_using [hlen, hk])]
   by_cases h : k < headLen m p len
-  · rw [ite_pos h, ite_pos (by omega)]
-  · rw [ite_neg h, ite_neg (by omega), show headLen m p len = leftAt m p % 64 by omega]
+  · rw [ite_pos h, ite_pos (by omega_using [hh, h])]
+  · rw [ite_neg h, ite_neg (by omega_using [hk, hh, h]), show headLen m p len = leftAt m p % 64 by omega_using [hk, hh, h]]
 
 /-- The keystream left after `apply`: the counter advanced past the blocks
 used, and, if a block was started (`tailLen ≠ 0`), that block buffered;
 `left` decreased by the length. -/
-theorem apply_rest {m m' : Mem} {p : Addr} {len : Nat} (hlen : len ≤ leftAt m p)
+theorem apply_rest {m m' : Mem} {p : Addr} {len : Nat} (_hlen : len ≤ leftAt m p)
     (hL : leftAt m' p = leftAt m p - len)
     (hS : stateAt m' p = ctr (stateAt m p) (blocksOf m p len + if tailLen m p len = 0 then 0 else 1))
     (hB : ∀ i < 64, m' (p + BitVec.ofNat 64 (64 + i)) = if tailLen m p len = 0 then m (p + BitVec.ofNat 64 (64 + i))
@@ -392,7 +393,7 @@ theorem apply_rest {m m' : Mem} {p : Addr} {len : Nat} (hlen : len ≤ leftAt m 
   intro i h₁ _
   rw [length_restAt, hL] at h₁
   rw [List.getElem_drop, getElem_eq_getD, getElem_eq_getD,
-    restAt_getD _ _ (by omega), restAt_getD _ _ (by omega), hL, hS, ctr_ctr]
+    restAt_getD _ _ (by omega_using [hL, h₁]), restAt_getD _ _ (by omega_using [h₁]), hL, hS, ctr_ctr]
   generalize hn : leftAt m p = n at *
   have hbl : bufLeft m p = n % 64 := by simp only [bufLeft, hn]
   have hh : headLen m p len = min (n % 64) len := by simp only [headLen, hbl]
@@ -402,30 +403,30 @@ theorem apply_rest {m m' : Mem} {p : Addr} {len : Nat} (hlen : len ≤ leftAt m 
   by_cases t0 : (len - min (n % 64) len) % 64 = 0
   · simp only [t0, ite_true, Nat.add_zero] at hB ⊢
     by_cases hlo : len ≤ n % 64
-    · have e1 : (n - len) % 64 = n % 64 - len := by omega
-      have e2 : (len - min (n % 64) len) / 64 = 0 := by omega
+    · have e1 : (n - len) % 64 = n % 64 - len := by omega_using [hlo]
+      have e2 : (len - min (n % 64) len) / 64 = 0 := by omega_using [hlo]
       rw [e1, e2]
       by_cases hi : i < n % 64 - len
-      · rw [ite_pos hi, ite_pos (by omega)]
-        have := hB (64 - (n % 64 - len) + i) (by omega)
-        rw [show 64 + (64 - (n % 64 - len) + i) = 128 - (n % 64 - len) + i by omega] at this
-        rw [this, show 128 - n % 64 + (len + i) = 128 - (n % 64 - len) + i by omega]
-      · rw [ite_neg hi, ite_neg (by omega)]
-        exact blk_congr (by omega) (by omega)
-    · have e1 : (n - len) % 64 = 0 := by omega
-      rw [e1, ite_neg (by omega), ite_neg (by omega)]
-      exact blk_congr (by omega) (by omega)
+      · rw [ite_pos hi, ite_pos (by omega_using [hi])]
+        have := hB (64 - (n % 64 - len) + i) (by omega_using [hi])
+        rw [show 64 + (64 - (n % 64 - len) + i) = 128 - (n % 64 - len) + i by omega_using []] at this
+        rw [this, show 128 - n % 64 + (len + i) = 128 - (n % 64 - len) + i by omega_using [hi]]
+      · rw [ite_neg hi, ite_neg (by omega_using [hi])]
+        exact blk_congr (by omega_using [hlo]) (by omega_using [hlo])
+    · have e1 : (n - len) % 64 = 0 := by omega_using [t0, hlo]
+      rw [e1, ite_neg (by omega_using []), ite_neg (by omega_using [e1])]
+      exact blk_congr (by omega_using [t0, e1]) (by omega_using [t0, e1])
   · simp only [t0, ite_false] at hB ⊢
-    have e1 : (n - len) % 64 = 64 - (len - n % 64) % 64 := by omega
+    have e1 : (n - len) % 64 = 64 - (len - n % 64) % 64 := by omega_using [h₁, t0]
     rw [e1]
     by_cases hi : i < 64 - (len - n % 64) % 64
-    · rw [ite_pos hi, ite_neg (by omega)]
-      have := hB ((len - n % 64) % 64 + i) (by omega)
-      rw [show 64 + ((len - n % 64) % 64 + i) = 128 - (64 - (len - n % 64) % 64) + i by omega]
+    · rw [ite_pos hi, ite_neg (by omega_using [e1])]
+      have := hB ((len - n % 64) % 64 + i) (by omega_using [hi])
+      rw [show 64 + ((len - n % 64) % 64 + i) = 128 - (64 - (len - n % 64) % 64) + i by omega_using []]
         at this
       rw [this]
-      exact blk_congr (by omega) (by omega)
-    · rw [ite_neg hi, ite_neg (by omega)]
-      exact blk_congr (by omega) (by omega)
+      exact blk_congr (by omega_using [hi]) (by omega_using [e1, hi])
+    · rw [ite_neg hi, ite_neg (by omega_using [hi])]
+      exact blk_congr (by omega_using [e1, hi]) (by omega_using [e1, hi])
 
 end VG.Proof.ChaCha20

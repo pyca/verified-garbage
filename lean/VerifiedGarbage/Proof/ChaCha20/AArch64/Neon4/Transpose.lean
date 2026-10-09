@@ -82,12 +82,14 @@ theorem transposePrep_ok (s : State) (r : Fin 4) :
   simp only [↓reduceIte, transposePrep, runBlock_cons, runBlock_nil,
     exec, VOp.eval, isa, runStep_some, Option.map_some, Option.some.injEq,
     exists_eq_left', RegUpd.v_setV, hn0, hn1, hn2]
-  refine ⟨?_, ?_, ?_, ?_, ?_, rfl, rfl, rfl, rfl, rfl⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_⟩⟩
   · simp only [RegUpd.v_setV]; rfl
   · simp only [RegUpd.v_setV]; rfl
   · simp only [RegUpd.v_setV]; rfl
   · exact RegUpd.v_setV_self _ _ _
   · intro k; simp only [RegUpd.v_setV, hn0, hn1, hn2, hn3, ite_false]
+  all_goals simp only [RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV,
+    RegUpd.sp_setV]
 
 theorem transposeEnd_ok {s₀ s : State} {r : Fin 4} (h : TPrep s₀ r s) :
     WP isa (.block (transposeEnd (vreg (rowWord r 0)) (vreg (rowWord r 1))
@@ -102,7 +104,13 @@ theorem transposeEnd_ok {s₀ s : State} {r : Fin 4} (h : TPrep s₀ r s) :
   simp only [transposeEnd, runBlock_cons, runBlock_nil, exec, VOp.eval, isa, runStep_some,
     Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.v_setV,
     hn0, hn1, hn2, hn3, ite_false, h.t24, h.t25, h.t26, h.t27]
-  refine ⟨?_, ?_, h.same.gpr, h.same.mem, h.same.rd, h.same.wr, h.same.sp⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  rotate_left 2
+  · simp only [RegUpd.gpr_setV, h.same.gpr]
+  · simp only [RegUpd.mem_setV, h.same.mem]
+  · simp only [RegUpd.rd_setV, h.same.rd]
+  · simp only [RegUpd.wr_setV, h.same.wr]
+  · simp only [RegUpd.sp_setV, h.same.sp]
   · intro j
     rcases j with ⟨j, hj⟩
     rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega) with rfl | rfl | rfl | rfl <;>
