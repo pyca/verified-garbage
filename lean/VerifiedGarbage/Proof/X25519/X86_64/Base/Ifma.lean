@@ -21,16 +21,9 @@ theorem engineIfma_ok [DivstepInv] : UEngineOk engineIfma := engineOf_ok Ifma.co
 
 theorem engineIfma_public (base k T : Addr) :
     RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y) engineIfma
-      (fun _ _ => True) := by
-  apply taintSymFld (Taint.ofRegs [.rdi, .rsi]) _ (by exact ⟨_, by taint_decide⟩)
-  intro x y h
-  refine ⟨Taint.agree_ofRegs fun r hr => ?_, fun n hn => ?_⟩
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact h.1.1.rdi.trans h.2.1.rdi.symm
-    · exact h.1.2.1.trans h.2.2.1.symm
-  · simp only [List.mem_singleton] at hn; subst hn
-    exact h.1.2.2.2.2.1.sym.trans h.2.2.2.2.2.1.sym.symm
+      (fun _ _ => True) :=
+  engineOf_ct Ifma.combOk base k T
+
 
 theorem x25519BaseIfma_ok [DivstepInv] (s : State) (hs : baseLocal.pre s) :
     ∃ tr t, Exec isa x25519BaseIfma s tr t ∧ abiPreserved s t ∧ baseLocal.post s t := by
