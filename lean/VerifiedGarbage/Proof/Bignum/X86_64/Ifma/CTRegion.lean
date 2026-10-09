@@ -94,7 +94,7 @@ theorem RT.of_frm {p sp sl : Nat} {q : RegPub} {s t : State} (h : RT l p sp sl q
   obtain ⟨ok, mx, eb, c, hl⟩ := h
   have hok := ok
   obtain ⟨hoa, haZ, _, hsp, hsl, _⟩ := ok
-  exact ⟨hok, mx, eb, c.of_frm hf hr hoa (by omega) hsp hsl k, hl⟩
+  exact ⟨hok, mx, eb, c.of_frm hf hr hoa (by omega_using [haZ]) hsp hsl k, hl⟩
 
 theorem RT.rdi {p sp sl : Nat} {q : RegPub} {s : State} (h : RT l p sp sl q s) : s.gpr .rdi = off q.B q.o :=
   let ⟨_, _, _, c, _⟩ := h; c.rdi
@@ -109,7 +109,7 @@ theorem RT.hd {p sp sl : Nat} {q : RegPub} {s : State} (h : RT l p sp sl q s) :
     ∀ i < 32, InRegions (s.rd ++ s.wr) (off (off q.B q.o) (8 * i)) 8 := fun i hi => by
   obtain ⟨⟨hoa, haZ, -⟩, mx, eb, c, -⟩ := h
   have := hdr_lt_slot l.W 8 hi
-  rw [off_off]; exact c.scr.ld (by omega)
+  rw [off_off]; exact c.scr.ld (by omega_using [hoa, haZ, this])
 
 /-! ## The blocks -/
 
@@ -125,16 +125,16 @@ theorem arrLd_ok {p j sp sl : Nat} (hj : j < 8) {q : RegPub} {s : State} (h : RT
   obtain ⟨-, mx, eb, c, -⟩ := h
   refine WP.mono (WP.keep [.rsi, .r11] (Q := fun t => t.gpr .rsi = off (off q.B q.o) (slot l.W j) ∧
     t.gpr .r11 = off q.B q.a) (by
-      xrun [State.ea, hdr, c.rdi, hdrOff, hH _ (show sArr j < 32 by unfold sArr; omega), hH sIfma (by decide)]
+      xrun [State.ea, hdr, c.rdi, hdrOff, hH _ (show sArr j < 32 by unfold sArr; omega_arith), hH sIfma (by decide)]
       exact ⟨c.hdr.harr j hj, c.ia⟩) rfl) fun t h => h.1
 
 theorem arr52_rt (hl : LayOk l) {p j c sp sl : Nat} (hc : c + l.NB ≤ l.D) (hj : j < 8) {q : RegPub} {s : State}
     (h : RT l p sp sl q s) : WP isa (.block (arr52 l p j c)) s fun t => RT l p sp sl q t ∧ t.gpr .r12 = mask52 := by
   have hRT := h
   obtain ⟨⟨hoa, haZ, hp, -⟩, mx, eb, c', -⟩ := h
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega
+  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
   exact WP.mono (arr52r_ok hl c'.scr c'.rdi c'.hdr c'.ia hoa haZ hp hc hj) fun t ⟨_, f, k, h12, _⟩ =>
-    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) k, h12⟩
+    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [hc, haZ, hDp]) k, h12⟩
 
 /-- `arr52` is constant time, given that the taint analysis checks the rest after its loads. -/
 theorem arr52_ct {p j c sp sl : Nat} (hj : j < 8) {hc₁ : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -159,12 +159,12 @@ theorem k0St_rt (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : RT 
     WP isa (.block (k0St l p)) s fun t => RT l p sp sl q t ∧ t.gpr .r11 = off (off q.B q.a) (l.D * p) := by
   have hRT := h.1
   obtain ⟨⟨⟨hoa, haZ, hp, -⟩, mx, eb, c, -⟩, h12⟩ := h
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega
+  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
   obtain ⟨o1, -⟩ := lay_offs l
   obtain ⟨hDb1, -⟩ := hl.D_bounds
   have := hl.D_ge
   exact WP.mono (k0r_ok hl c.scr c.rdi c.hdr c.ia hoa haZ hp h12) fun t ⟨_, f, r11, k⟩ =>
-    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (k.mono (by decide)), r11⟩
+    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, hDp, o1, this]) (k.mono (by decide)), r11⟩
 
 theorem k0St_ct (p : Nat) {sp sl : Nat} (hT : TOk [.rdi, .r11] (.block (k0Tail l p))) :
     RelCT isa (Two fun q s => RT l p sp sl q s ∧ s.gpr .r12 = mask52) (.block (k0St l p)) fun _ _ => True := by
@@ -189,10 +189,10 @@ theorem eZero_rt (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State}
       RT l p sp sl q t ∧ t.gpr .r11 = off (off q.B q.a) (l.D * p) ∧ t.gpr .rax = 0 := by
   have hRT := h.1
   obtain ⟨⟨⟨hoa, haZ, hp, -⟩, mx, eb, c, -⟩, h11⟩ := h
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega
+  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
   obtain ⟨-, -, -, -, -, o6, o7, o8, o9, o10⟩ := lay_offs l
   exact WP.mono (eZr_ok hl c.scr haZ hp h11) fun t ⟨_, f, ra, k⟩ =>
-    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (k.mono (by decide)),
+    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, hDp, o6, o10]) (k.mono (by decide)),
       (k.gpr (by decide)).trans h11, ra⟩
 
 theorem eZero_ct (p : Nat) {sp sl : Nat} (hT : TOk [.r11] (.block (eZero l))) :
@@ -210,7 +210,7 @@ theorem finOne_rt (hl : LayOk l) {sp sl : Nat} {q : RegPub} {s : State}
   obtain ⟨⟨⟨hoa, haZ, hp, -⟩, mx, eb, c, -⟩, h11, ha⟩ := h
   obtain ⟨-, -, -, -, -, -, -, -, o9, o10⟩ := lay_offs l
   exact WP.mono (finr_ok hl c.scr haZ h11 ha) fun t ⟨_, f, k⟩ =>
-    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (k.mono (by decide)),
+    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [haZ, o9, o10]) (k.mono (by decide)),
       (k.gpr (by decide)).trans h11⟩
 
 theorem finOne_ct {sp sl : Nat} (hT : TOk [.r11] (.block (finOne l))) :
@@ -239,18 +239,18 @@ theorem eBlk_ok (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State}
   obtain ⟨-, -, -, -, -, o6, -, -, -, o10⟩ := lay_offs l
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
   have hlv₁ : s.mem.readW (off (off q.B q.o) (8 * sLink)) 64 = q.B := c.lk
-  have hp' : InRegions (s.rd ++ s.wr) (off q.B (8 * sp)) 8 := c.scr.ld (by omega)
-  have hl'' : InRegions (s.rd ++ s.wr) (off q.B (8 * sl)) 8 := c.scr.ld (by omega)
+  have hp' : InRegions (s.rd ++ s.wr) (off q.B (8 * sp)) 8 := c.scr.ld (by omega_using [hoa, haZ, hsp, h8])
+  have hl'' : InRegions (s.rd ++ s.wr) (off q.B (8 * sl)) 8 := c.scr.ld (by omega_using [hoa, haZ, hsl, h8])
   have hlv' : word s.mem q.B (8 * sl) = BitVec.ofNat 64 q.L := by rw [← hl']; exact c.lv
   refine WP.mono (WP.keep [.rax, .rcx, .rsi, .r11] (Q := fun t => t.gpr .rsi = q.ep ∧
     t.gpr .rcx = BitVec.ofNat 64 q.L ∧ t.gpr .r11 = off (off (off q.B q.a) (l.D * p)) (l.oE + l.E - q.L)) (by
     xrun [State.ea, hdr, ws, c.rdi, hdrOff, hH sLink (by decide), hlv₁, hp', hl'',
-      AmmSym.se_ofNat (show l.oE + l.E < 2 ^ 31 by omega)]
+      AmmSym.se_ofNat (show l.oE + l.E < 2 ^ 31 by omega_using [o6, o10, hDb2])]
     and_intros
     · exact c.pv
     · exact hlv'
     rw [show s.mem.readW (off q.B (8 * sl)) 64 = BitVec.ofNat 64 q.L from hlv', h11,
-      VG.Offset.add_ofNat_sub _ (by omega)]) rfl) fun t h => h.1
+      VG.Offset.add_ofNat_sub _ (by omega_using [hL2])]) rfl) fun t h => h.1
 
 /-- `eCopy` is constant time, given that the taint analysis checks its loads
 from `n`'s workspace. -/
@@ -295,8 +295,8 @@ theorem eCopy_ct (hl : LayOk l) {p sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
     obtain ⟨⟨hoa, haZ, hp, hsp, hsl, -⟩, mx, eb, c, hl'⟩ := hRT
     have hn := c.scr.nowrap
     have h8 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
-    have hp' : InRegions (s.rd ++ s.wr) (off q.B (8 * sp)) 8 := c.scr.ld (by omega)
-    have hl'' : InRegions (s.rd ++ s.wr) (off q.B (8 * sl)) 8 := c.scr.ld (by omega)
+    have hp' : InRegions (s.rd ++ s.wr) (off q.B (8 * sp)) 8 := c.scr.ld (by omega_using [hoa, haZ, hsp, h8])
+    have hl'' : InRegions (s.rd ++ s.wr) (off q.B (8 * sl)) 8 := c.scr.ld (by omega_using [hoa, haZ, hsl, h8])
     refine WP.mono (WP.keep [.rsi, .rcx] (Q := fun t => t.gpr .rcx = BitVec.ofNat 64 q.L) (by
       xrun [State.ea, ws, ha, hdrOff, hp', hl'']; rw [← hl']; exact c.lv) rfl) fun t ⟨hcx, k⟩ =>
         ⟨hcx, (k.gpr (by decide)).trans h11⟩
@@ -342,31 +342,31 @@ theorem k1_chain (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : Re
     have := slot_le (w := l.W) (show Public.aTmp < 8 by decide)
     have := hdr_lt_slot l.W 8 (show sCtr < 32 by decide)
     simp only [k1Ranges, List.mem_cons, List.not_mem_nil, or_false]
-    rintro _ (rfl | rfl | rfl | rfl) <;> omega
-  refine ⟨⟨mx, hg, Nat.le_refl _⟩, WP.mono (copyArr_ok hg (Nat.le_refl _) (by omega) (by omega) (o := aT)
+    rintro _ (rfl | rfl | rfl | rfl) <;> omega_arith
+  refine ⟨⟨mx, hg, Nat.le_refl _⟩, WP.mono (copyArr_ok hg (Nat.le_refl _) (by omega_using [hW1]) (by omega_using [hW2]) (o := aT)
     (a := Public.aY) (by decide) (by decide) (by decide)) fun s₁ ⟨hv₁, ho₁, k₁⟩ => ?_⟩
   have hg₁ := hg.of_outsideArr ho₁ k₁
   have hN₁ : wv s₁.mem (off q.B q.o) (slot l.W Public.aN) l.W = X := by
-    rw [ho₁.wv (by omega) (by omega)]; exact hN
+    rw [ho₁.wv (by omega_using [sTN]) (by omega_using [hoa, haZ, hn, lN])]; exact hN
   refine ⟨hg₁.rdi, WP.mono (WP.keep [.rcx] (Q := fun t => t.gpr .rcx = BitVec.ofNat 64 l.dbls ∧ t.mem = s₁.mem) (by
     xrun; and_intros
     · apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]) rfl)
+      rw [Nat.mod_eq_of_lt (by omega_using []), Nat.mod_eq_of_lt (by omega_using [hdb]), Nat.mod_eq_of_lt (by omega_using [hdb])]) rfl)
     fun s₂ ⟨⟨cx₂, me₂⟩, k₂⟩ => ?_⟩
   have hg₂ : VG.Proof.Bignum.X86_64.Good s₂ (off q.B q.o) (slot l.W 8) l.W mx :=
     ⟨hg₁.scr.congr k₂.2.2, (k₂.gpr (by decide)).trans hg₁.rdi, by rw [me₂]; exact hg₁.hdr⟩
-  refine ⟨⟨⟨mx, hg₂, Nat.le_refl _⟩, show 2 ≤ l.W by omega, show l.W < 2 ^ 31 by omega, hdb.1, hdb.2, cx₂,
+  refine ⟨⟨⟨mx, hg₂, Nat.le_refl _⟩, show 2 ≤ l.W by omega_using [hW1], show l.W < 2 ^ 31 by omega_using [hW2], hdb.1, hdb.2, cx₂,
     by rw [me₂, hv₁, hN₁]; exact hY⟩, ?_⟩
-  refine WP.mono (doubles_ok hg₂.scr hg₂.rdi hg₂.hdr (Nat.le_refl _) (by omega) (by omega) (mo := Public.aN)
+  refine WP.mono (doubles_ok hg₂.scr hg₂.rdi hg₂.hdr (Nat.le_refl _) (by omega_using [hW1]) (by omega_using [hW2]) (mo := Public.aN)
     (acc := Public.aAcc) (tmp := Public.aTmp) (o := aT) (sl := sCtr) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (c := l.dbls) hdb.1 hdb.2 cx₂ (by rw [me₂, hv₁, hN₁]; exact hY)) fun t ⟨_, hf, hH, k⟩ => ?_
   have fW : Frm (off q.B q.o) (k1Ranges l.W) s.mem t.mem :=
-    (Frm.of_outside (ho₁.mono (o' := slot l.W aT) (n' := 8 * (l.W + 2)) (Nat.le_refl _) (by omega))
+    (Frm.of_outside (ho₁.mono (o' := slot l.W aT) (n' := 8 * (l.W + 2)) (Nat.le_refl _) (by omega_using []))
       (by simp [k1Ranges])).trans (by rw [← me₂]; exact hf)
   have fB : Frm q.B (shiftRanges q.o (k1Ranges l.W)) s.mem t.mem :=
-    fW.rebase (by omega) fun r hr => by have := hk1 r hr; omega
+    fW.rebase (by omega_using [hoa, haZ, hn]) fun r hr => by have := hk1 r hr; omega_using [hoa, haZ, hn, this]
   have kk := (k₁.trans k₂).trans k
   have hia' : word t.mem (off q.B q.o) (8 * sIfma) = off q.B q.a := by
     rw [fW.word_eq (fun r hr => by
@@ -374,8 +374,8 @@ theorem k1_chain (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : Re
       have := hdr_lt_slot l.W Public.aTmp (show sIfma < 32 by decide)
       have := hdr_lt_slot l.W aT (show sIfma < 32 by decide)
       simp only [k1Ranges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> simp only [sCtr, sIfma, sFn] at * <;> omega)
-      (by unfold sIfma sFn; omega)]
+      rcases hr with rfl | rfl | rfl | rfl <;> simp only [sCtr, sIfma, sFn] at * <;> omega_arith)
+      (by unfold sIfma sFn; omega_using [])]
     exact hia
   exact ⟨hok, mx, eb, TCtx.of_regionA hl hc hoa haZ hp hsp hsl hpv hlv he
     (fB.mono fun r hr => List.mem_append_left _ hr) kk.2.2 kk.2.1 ((kk.gpr (by decide)).trans hc.rdi) hH hia', hl'⟩
@@ -427,14 +427,14 @@ theorem region0_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
     .block (arr52 l 0 Public.aY l.oFin) :: .block (k0St l 0) :: .block (eZero l) ::
     eCopy l sp sl) from rfl]
   refine k1_ct hl hR (List.cons_ne_nil _ _) ?_
-  refine arr52_ct' hl (by decide) (by omega) arrLd_aN hR.a0M (List.cons_ne_nil _ _) ?_
-  refine two_map id (fun _ _ h => h.1) (arr52_ct' hl (by decide) (by omega) arrLd_aT hR.a0K1
+  refine arr52_ct' hl (by decide) (by omega_using [o10, hoM]) arrLd_aN hR.a0M (List.cons_ne_nil _ _) ?_
+  refine two_map id (fun _ _ h => h.1) (arr52_ct' hl (by decide) (by omega_using [o7, o10]) arrLd_aT hR.a0K1
     (List.cons_ne_nil _ _) ?_)
-  refine two_map id (fun _ _ h => h.1) (arr52_ct' hl (by decide) (by omega) arrLd_aXc hR.a0X
+  refine two_map id (fun _ _ h => h.1) (arr52_ct' hl (by decide) (by omega_using [o3, o10]) arrLd_aXc hR.a0X
     (List.cons_ne_nil _ _) ?_)
-  refine two_map id (fun _ _ h => h.1) (arr52_ct' hl (by decide) (by omega) arrLd_aY hR.a0Y
+  refine two_map id (fun _ _ h => h.1) (arr52_ct' hl (by decide) (by omega_using [o2, o10]) arrLd_aY hR.a0Y
     (List.cons_ne_nil _ _) ?_)
-  refine two_map id (fun _ _ h => h.1) (arr52_ct' hl (by decide) (by omega) arrLd_aY hR.a0F
+  refine two_map id (fun _ _ h => h.1) (arr52_ct' hl (by decide) (by omega_using [o9, o10]) arrLd_aY hR.a0F
     (List.cons_ne_nil _ _) ?_)
   refine ct_cons (List.cons_ne_nil _ _) (k0St_ct 0 hR.k00) (fun _ _ h => k0St_rt hl h) ?_
   refine ct_cons (by simp [eCopy]) (eZero_ct 0 hR.eZ) (fun _ _ h => eZero_rt hl h) ?_
@@ -454,12 +454,12 @@ theorem region1_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
     .block (arr52 l 1 aT l.oK1) :: .block (arr52 l 1 aXc l.oX) :: .block (arr52 l 1 Public.aY l.oY) ::
     .block (k0St l 1) :: .block (eZero l) :: .block (finOne l) :: eCopy l sp sl) from rfl]
   refine k1_ct hl hR (List.cons_ne_nil _ _) ?_
-  refine arr52_ct' hl (by decide) (by omega) arrLd_aN hR.a1M (List.cons_ne_nil _ _) ?_
-  refine two_map id (fun _ _ h => h.1) (arr52_ct' hl (by decide) (by omega) arrLd_aT hR.a1K1
+  refine arr52_ct' hl (by decide) (by omega_using [o10, hoM]) arrLd_aN hR.a1M (List.cons_ne_nil _ _) ?_
+  refine two_map id (fun _ _ h => h.1) (arr52_ct' hl (by decide) (by omega_using [o7, o10]) arrLd_aT hR.a1K1
     (List.cons_ne_nil _ _) ?_)
-  refine two_map id (fun _ _ h => h.1) (arr52_ct' hl (by decide) (by omega) arrLd_aXc hR.a1X
+  refine two_map id (fun _ _ h => h.1) (arr52_ct' hl (by decide) (by omega_using [o3, o10]) arrLd_aXc hR.a1X
     (List.cons_ne_nil _ _) ?_)
-  refine two_map id (fun _ _ h => h.1) (arr52_ct' hl (by decide) (by omega) arrLd_aY hR.a1Y
+  refine two_map id (fun _ _ h => h.1) (arr52_ct' hl (by decide) (by omega_using [o2, o10]) arrLd_aY hR.a1Y
     (List.cons_ne_nil _ _) ?_)
   refine ct_cons (List.cons_ne_nil _ _) (k0St_ct 1 hR.k01) (fun _ _ h => k0St_rt hl h) ?_
   refine ct_cons (List.cons_ne_nil _ _) (eZero_ct 1 hR.eZ) (fun _ _ h => eZero_rt hl h) ?_
