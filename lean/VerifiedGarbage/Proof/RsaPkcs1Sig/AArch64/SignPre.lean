@@ -109,9 +109,13 @@ theorem preS_of {K : Nat} {s : State}
     List.append_eq] at h
   sig_pre [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs, stackArgs_thirteen,
     List.append_eq] at h
-  obtain ⟨sp1, sp2, hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oa, ns, es, ds, ps, qs, dps, dqs, qis, sa,
-    ko, kn, ke, kd, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wd, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, ol, e1,
-    e2, p1, p2, q1, q2, hdp, hqi, hdq, hs⟩ := h
+  sig_split h
+  rename_i sp1 sp2 hrd hwr on oe od op oq odp odq oqi os oa ns es ds ps qs dps dqs qis sa ko kn ke
+    kd kp kq kdp kdq kqi ks ka wo wn we wd wp wq wdp wdq wqi ws hk12 ol e1 e2 p1 p2 q1 q2 hdp
+    hqi hdq
+  have hs := h
+  clear h
+  obtain ⟨k1, k2⟩ := hk12
   rw [← e] at sp1 ko kn ke kd kp kq kdp kdq kqi ks ka
   exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, by rw [hwr]; simp, by rw [hwr]; simp, on, oe, od, op, oq,
     odp, odq, oqi, os, oa, ns, es, ds, ps, qs, dps, dqs, qis, sa, ko, kn, ke, kd, kp, kq, kdp, kdq, kqi, ks, ka,

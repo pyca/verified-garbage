@@ -48,13 +48,12 @@ theorem forall_ro {L : DLay} {F : Region → Prop}
 theorem lay_ok {H G : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (decSpec H G P).pre s) : (lay P s).Ok := by
   sig_pre [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, AArch64.abi, AArch64.argRegs,
     _root_.List.range, _root_.List.range.loop, List.append_eq] at h
-  obtain ⟨hsp, hsp2, -, -,
-    oM, oN, oE, oP, oQ, oDP, oDQ, oQI, oL, oC, oS, oA,
-    mN, mE, mP, mQ, mDP, mDQ, mQI, mL, mC, mS, mA,
-    nS, eS, pS, qS, dpS, dqS, qiS, lS, cS, sA,
-    kO, kM, kN, kE, kP, kQ, kDP, kDQ, kQI, kL, kC, kS, -,
-    bO, bM, bN, bE, bP, bQ, bDP, bDQ, bQI, bL, bC, bS,
-    kv, hk1, hk2, el1, elk, pl1, plk, ql1, qlk, hdp, hqi, hdq, slk⟩ := h
+  sig_split h
+  rename_i hsp hsp2 _ _ oM oN oE oP oQ oDP oDQ oQI oL oC oS oA mN mE mP mQ mDP mDQ mQI mL mC mS mA
+    nS eS pS qS dpS dqS qiS lS cS sA kO kM kN kE kP kQ kDP kDQ kQI kL kC kS _ bO bM bN bE bP bQ bDP
+    bDQ bQI bL bC bS kv hk1 hk2 el1 elk pl1 plk ql1 qlk hdp hqi hdq
+  have slk := h
+  clear h
   simp only [hk1, hk2, hdp, hqi, hdq] at oA oN oE oP oQ oDP oDQ oQI oL oC oS oM mC mDP mDQ mQI cS dpS dqS qiS
   simp only [hk1, hk2, hdp, hqi, hdq] at kO kC kDP kDQ kQI bO bC bDP bDQ bQI
   have eA : (lay P s).ARGS = ⟨stackArgAddr s 0, 120⟩ := by simp only [DLay.ARGS, lay_args]

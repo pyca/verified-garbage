@@ -67,8 +67,12 @@ structure EPre (s : State) : Prop where
 
 theorem ePre_of {s : State} (h : encK.pre s) : EPre s := by
   simp only [encK] at h
-  obtain ⟨sp1, sp2, hrd, hwr, dOn, dOe, dOm, dOp, dOs, dOa, dns, des, dms, dps, dsa, dRo, -, -, -, -, dRs, -,
-    dKo, dKn, dKe, dKm, dKp, dKs, dKa, wO, wN, wE, wM, wP, wS, ⟨k1, k2⟩, hsi, L1, L2, hml, hpl, hsl⟩ := h
+  sig_split h
+  rename_i sp1 sp2 hrd hwr dOn dOe dOm dOp dOs dOa dns des dms dps dsa dRo _ _ _ _ dRs _ dKo dKn dKe
+    dKm dKp dKs dKa wO wN wE wM wP wS hk12 hsi L1 L2 hml hpl
+  have hsl := h
+  clear h
+  obtain ⟨k1, k2⟩ := hk12
   exact ⟨sp1, sp2, hrd, hwr, dOn, dOe, dOm, dOp, dOs, dOa, dns, des, dms, dps, dsa, dRo, dRs, dKo, dKn, dKe, dKm,
     dKp, dKs, dKa, wO, wN, wE, wM, wP, wS, k1, k2, hsi, L1, L2, hml, hpl, hsl⟩
 

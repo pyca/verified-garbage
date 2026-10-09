@@ -101,10 +101,13 @@ structure PreS (s : State) : Prop where
 
 theorem preS_of {s : State} (h : sigContract.pre s) : PreS s := by
   simp only [sigContract] at h
-  obtain ⟨sp1, sp2, hrd, hwr, dOn, dOe, dOd, dOp, dOq, dOdp, dOdq, dOqi, dOs, dOa, dns, des, dds, dps, dqs, ddps,
-    ddqs, dqis, dsa, dRo, -, -, -, -, -, -, -, -, dRs, -, dKo, dKn, dKe, dKd, dKp, dKq, dKdp, dKdq, dKqi, dKs, dKa,
-    wO, wN, wE, wD, wP, wQ, wDp, wDq, wQi, wS, ⟨k1, k2⟩, hsi, L1, L2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql,
-    hsl⟩ := h
+  sig_split h
+  rename_i sp1 sp2 hrd hwr dOn dOe dOd dOp dOq dOdp dOdq dOqi dOs dOa dns des dds dps dqs ddps ddqs
+    dqis dsa dRo _ _ _ _ _ _ _ _ dRs _ dKo dKn dKe dKd dKp dKq dKdp dKdq dKqi dKs dKa wO wN wE wD wP
+    wQ wDp wDq wQi wS hk12 hsi L1 L2 pl1 pl2 ql1 ql2 hdpl hqil hdql
+  have hsl := h
+  clear h
+  obtain ⟨k1, k2⟩ := hk12
   exact ⟨sp1, sp2, hrd, hwr, dOn, dOe, dOd, dOp, dOq, dOdp, dOdq, dOqi, dOs, dOa, dns, des, dds, dps, dqs, ddps,
     ddqs, dqis, dsa, dRo, dRs, dKo, dKn, dKe, dKd, dKp, dKq, dKdp, dKdq, dKqi, dKs, dKa, wO, wN, wE, wD, wP, wQ, wDp,
     wDq, wQi, wS, k1, k2, hsi, L1, L2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsl⟩
