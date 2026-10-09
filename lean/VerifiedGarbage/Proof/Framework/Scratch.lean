@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Artifact
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Contracts with and without a scratch buffer argument
@@ -28,6 +30,9 @@ Memories that agree on the descriptors list the same slices
 frame that copies arguments then needs the contract to read memory only
 within the buffers and the lists (`Sig.Local`, `Sig.LeakLocalL`).
 -/
+
+@[expose] public section
+
 
 namespace VG
 

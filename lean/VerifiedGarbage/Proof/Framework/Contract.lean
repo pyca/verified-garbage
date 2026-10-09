@@ -1,7 +1,9 @@
-import Mathlib.Tactic.CasesM
-import Lean.Meta.Eqns
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Sig
+module
+
+public import Mathlib.Tactic.CasesM
+public meta import Lean.Meta.Eqns
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # Moving a proof from one contract to a stronger one
@@ -18,6 +20,9 @@ the code than `k` does, so a proof of `Verified T c k` gives `Verified T c k'`
 `Proof/Framework/Sig.lean`: prefer it to `contract_implies`, which searches
 with `simp_all`.
 -/
+
+@[expose] public section
+
 
 namespace VG
 

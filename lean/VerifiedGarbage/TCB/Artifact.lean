@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Print
-import VerifiedGarbage.TCB.Sig
+module
+
+public import VerifiedGarbage.TCB.Print
+public import VerifiedGarbage.TCB.Sig
 
 /-!
 # Targets, contracts and verified artifacts
@@ -30,6 +32,9 @@ signature (`Sig`) and documentation (its `Api` in `Spec/`, and what its
 registration file adds for the target). The code and the proof need not be
 read.
 -/
+
+@[expose] public section
+
 
 namespace VG
 

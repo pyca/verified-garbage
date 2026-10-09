@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Semantics
+module
+
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # Running straight-line blocks symbolically
@@ -7,6 +9,9 @@ import VerifiedGarbage.Proof.Framework.Semantics
 weakest precondition of a block to `∃ s', runBlock M is s = some s' ∧ Q s'`,
 which `simp` can evaluate one instruction at a time.
 -/
+
+@[expose] public section
+
 
 namespace VG
 

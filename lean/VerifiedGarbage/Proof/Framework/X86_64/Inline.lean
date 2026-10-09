@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+module
+
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 
 /-!
 # Inlining verified code (x86-64)
@@ -10,6 +12,9 @@ the same result (`Exec.widen`), code never writes outside the regions its
 state permits (`Exec.regions`), and `WP.inline` combines the two with the
 correctness part of the inlined function's `Verified` proof.
 -/
+
+@[expose] public section
+
 
 namespace VG.X86_64
 

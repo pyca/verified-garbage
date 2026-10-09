@@ -1,7 +1,9 @@
-import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.Data.Nat.Prime.Defs
-import Mathlib.Data.Nat.Find
-import Mathlib.Data.Finset.Card
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import Mathlib.Data.Nat.Prime.Defs
+public import Mathlib.Data.Nat.Find
+public import Mathlib.Data.Finset.Card
 
 /-!
 # Pratt certificates
@@ -20,6 +22,9 @@ prime proof would load (`ci/check_lean_speed.py`). A proof that computes a
 power in `ZMod p` with `powMod` casts `powMod_eq`'s `b ^ e % p` there
 (`ZMod.natCast_mod`, `Nat.cast_pow`).
 -/
+
+@[expose] public section
+
 
 namespace VG.Proof.Pratt
 

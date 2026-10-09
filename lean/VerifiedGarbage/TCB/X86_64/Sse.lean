@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.State
+module
+
+public import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # x86-64 SSE instructions
@@ -8,6 +10,9 @@ import VerifiedGarbage.TCB.X86_64.State
 AES-NI and PCLMULQDQ), with the SHA-1, SHA-256 and AES functions their SDM
 pseudocode uses.
 -/
+
+@[expose] public section
+
 
 namespace VG.X86_64
 

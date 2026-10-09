@@ -1,14 +1,19 @@
-import Batteries.Tactic.Init
-import Batteries.Tactic.PermuteGoals
-import Batteries.Tactic.SeqFocus
-import Batteries.Data.List.Basic
-import VerifiedGarbage.TCB.Mem
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.GetElem
+module
+
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Batteries.Data.List.Basic
+public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Memory: reads after writes, regions, frames
 -/
+
+@[expose] public section
+
 
 -- `rw` closes goals `a ≤ a`, as it does with Mathlib's `le_refl`.
 attribute [refl] Nat.le_refl

@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.MdStream.X86_64
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.MdStream.X86_64
+meta import VerifiedGarbage.Impl.MdStream.X86_64
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86-64: common lemmas
@@ -14,6 +23,9 @@ function's parameters (`Shape`) and of its compression function (`CalleeOk`),
 the call of the compression function (`compressAt`), and weakest-precondition
 rules for the instructions used.
 -/
+
+@[expose] public section
+
 
 namespace VG.Proof.MdStream.X86_64
 

@@ -1,6 +1,11 @@
-import VerifiedGarbage.Proof.MdStream.X86_64.Common
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MdStream.X86_64.Common
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Common
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86-64: `finalize`
@@ -9,6 +14,9 @@ The functional correctness of `finalize`, for any hash function (`Md`) whose
 code stores the length field and writes the digest as `Shape` says, and any
 correct compression function (`CalleeOk`).
 -/
+
+@[expose] public section
+
 
 namespace VG.Proof.MdStream.X86_64.Finalize
 

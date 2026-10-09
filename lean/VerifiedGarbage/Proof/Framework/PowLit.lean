@@ -1,3 +1,5 @@
+module
+
 /-!
 # Numeral exponents are natural numbers
 
@@ -19,6 +21,9 @@ through `GetElem`) elaborates numeral exponents this way, and
 `Generic/` and `Variants/` with one does. `Spec/`, `Impl/` and `TCB/` never
 import `Proof/`, so their terms are elaborated as before.
 -/
+
+@[expose] public section
+
 
 /-- A numeral exponent is a `Nat`. -/
 macro_rules | `($x ^ $n:num) => `($x ^ ($n : Nat))

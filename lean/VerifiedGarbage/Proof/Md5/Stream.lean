@@ -1,6 +1,8 @@
-import VerifiedGarbage.Spec.Md5
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Spec.Md5
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # Streaming MD5: facts about the specification
@@ -8,6 +10,9 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 How `Repr` evolves as bytes are buffered and blocks compressed, and how the
 padded message decomposes, independently of any target.
 -/
+
+@[expose] public section
+
 
 namespace VG.Proof.Md5.Stream
 

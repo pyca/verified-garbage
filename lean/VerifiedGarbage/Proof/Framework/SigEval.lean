@@ -1,5 +1,7 @@
-import Lean.Meta.Tactic.Simp.Simproc
-import Lean.Elab.Tactic.Location
+module
+
+public meta import Lean.Meta.Tactic.Simp.Simproc
+public meta import Lean.Elab.Tactic.Location
 
 /-!
 # Evaluating a contract's signature by unfolding
@@ -27,6 +29,9 @@ top-down instead, only what the result needs:
 * arithmetic on numerals is evaluated (not `^`, which stays readable);
 * then the arguments, and the bodies of binders, are evaluated in turn.
 -/
+
+public meta section
+
 
 namespace VG.Sig.Eval
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Code
+module
+
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # x86-64 machine state
@@ -7,6 +9,9 @@ import VerifiedGarbage.TCB.Code
 x86-64 model, and the helpers that read and write them. The modelling choices
 are described in `TCB/X86_64/Isa.lean`.
 -/
+
+@[expose] public section
+
 
 namespace VG.X86_64
 

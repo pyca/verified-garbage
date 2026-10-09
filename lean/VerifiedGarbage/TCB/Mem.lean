@@ -1,3 +1,5 @@
+module
+
 
 /-!
 # Byte-addressed memory and memory regions
@@ -14,6 +16,9 @@ touches permitted memory.
 This file contains definitions only; lemmas about them live in
 `VerifiedGarbage/Proof/Framework/`.
 -/
+
+@[expose] public section
+
 
 namespace VG
 

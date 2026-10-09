@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.SigEval
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Proof.Framework.SigEval
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Proving code against a contract built with `Sig.contract`
@@ -27,6 +29,9 @@ calling convention and its helpers. Each runs one `sig_reduce` and one
 `simp only` with a fixed set of lemmas, and no search over
 hypotheses.
 -/
+
+@[expose] public section
+
 
 namespace VG
 

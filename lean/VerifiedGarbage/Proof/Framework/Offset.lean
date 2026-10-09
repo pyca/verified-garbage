@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Byte ranges at offsets from a base address
@@ -17,6 +19,9 @@ The identities of bit vectors (`add_add`, `add_sub_cancel_left`,
 `ofNat_sub_ofNat`, `sub_sub_eq`, …) are in the same namespace, in
 `VerifiedGarbage.Proof.Framework.AddrArith` (which `Mem` imports).
 -/
+
+@[expose] public section
+
 
 namespace VG.Offset
 

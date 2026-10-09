@@ -1,9 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.RegSet
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.KernelList
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.TCB.X86_64.Target
+module
+
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.KernelList
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # Taint tracking for x86-64
@@ -37,13 +39,20 @@ registers secret. Any other write to the vector registers forgets them all
 (`noX`).
 -/
 
+@[expose] public section
+
+
 namespace VG.X86_64.Taint
 
+public meta section
 deriving instance Lean.ToExpr for Reg
+end
 
 instance : RegIdx Reg := ⟨Reg.ctorIdx, fun {a b} h => by rw [← Reg.ofNat_ctorIdx a, h, Reg.ofNat_ctorIdx]⟩
 
+public meta section
 deriving instance Lean.ToExpr for XReg
+end
 
 instance : RegIdx XReg := ⟨XReg.ctorIdx, fun {a b} h => by rw [← XReg.ofNat_ctorIdx a, h, XReg.ofNat_ctorIdx]⟩
 
@@ -63,7 +72,11 @@ structure T where
   /-- SSE registers known to be public: written by `movq xmm, r64` from a
   public register. Any other write to the vector registers forgets them. -/
   xregs : RegSet XReg := .empty
-  deriving DecidableEq, Lean.ToExpr
+  deriving DecidableEq
+
+public meta section
+deriving instance Lean.ToExpr for T
+end
 
 def pub (τ : T) (r : Reg) : Bool := τ.regs.mem r
 

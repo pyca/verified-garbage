@@ -1,3 +1,5 @@
+module
+
 /-!
 # `omega`'s decisions without Mathlib's instance search
 
@@ -12,6 +14,9 @@ a tenth of the time of proofs that call it hundreds of times. This instance,
 tried first, is the one the search finds (`List.decidableBAll`, deciding each
 `x = 0` by `Int.instDecidableEq`).
 -/
+
+@[expose] public section
+
 
 namespace VG
 

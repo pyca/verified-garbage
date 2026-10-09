@@ -1,9 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Framework.KernelList
-import Mathlib.Util.CompileInductive
-import Lean.Elab.Tactic.Basic
-import Lean.Meta.Eval
-import VerifiedGarbage.Proof.Framework.Lit
+module
+
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.KernelList
+public import Mathlib.Util.CompileInductive
+public meta import Lean.Elab.Tactic.Basic
+public meta import Lean.Meta.Eval
+public import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Constant time by taint tracking
@@ -24,6 +26,9 @@ checks that they are sound (`le`). `Taint.hint` computes such a hint by
 running the search in compiled code, and `taint_decide` has the kernel check
 the analysis with it. A wrong hint can only make the check fail.
 -/
+
+@[expose] public section
+
 
 namespace VG
 
@@ -74,7 +79,6 @@ inductive Hint (T : Type) where
   | loop (inv : T) (h : Hint T)
   | call (h : Hint T)
   | frame (h : Hint T)
-  deriving Lean.ToExpr
 
 variable {M : ISA} (A : Taint M)
 
@@ -362,6 +366,10 @@ def Hint.map {T U : Type} (f : T → U) : Hint T → Hint U
 
 end Taint
 
+public meta section
+
+deriving instance Lean.ToExpr for Taint.Hint
+
 open Lean Meta Elab Tactic in
 /-- `taint_decide`, with the taints of the hint weakened by `w`, if given. -/
 def taintDecideAt (chunkSize : Nat) (name : String) (w : Option Term) : TacticM Unit := do
@@ -395,7 +403,7 @@ def taintDecide (name : String) (w : Option Term) : TacticM Unit := do
   catch _ =>
     -- Discard the failed attempt's hint assignment before constructing another.
     saved.restore
-    taintDecideAt Taint.chunk name w
+    taintDecideAt 256 name w  -- `Taint.chunk`, which meta code cannot read
 
 /-- Proves `(Taint.check A τ c ?hint).isSome = true`, or any decidable
 equation whose left side contains `Taint.check A τ c ?hint` (e.g. a property of
@@ -418,5 +426,7 @@ a table of constants stored on the stack fills), so forgetting them can make
 the kernel's check several times faster. Nothing about `w` needs to be sound:
 a hint it weakens too much only makes the check fail. -/
 elab "taint_decide_weak " w:term : tactic => taintDecide "taint_decide_weak" (some w)
+
+end
 
 end VG

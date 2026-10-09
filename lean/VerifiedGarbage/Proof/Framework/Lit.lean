@@ -1,8 +1,10 @@
-import Lean.Elab.Command
-import Lean.Elab.Tactic.Rewrite
-import Lean.Meta.Eval
-import Lean.Util.ShareCommon
-import VerifiedGarbage.TCB.Code
+module
+
+public meta import Lean.Elab.Command
+public meta import Lean.Elab.Tactic.Rewrite
+public meta import Lean.Meta.Eval
+public meta import Lean.Util.ShareCommon
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # Code as literals, for the kernel
@@ -25,6 +27,9 @@ instructions once for every caller (in `g.lit_eq`).
 it that has a literal (`rw_lit`); `taint_decide` does the same.
 -/
 
+public meta section
+
+
 namespace VG
 
 deriving instance Lean.ToExpr for Code
@@ -32,6 +37,7 @@ deriving instance Lean.ToExpr for Code
 open Lean Meta Elab Command
 
 namespace Lit
+
 
 /-- The functions `materialize_code` has materialized, whose literals the
 literals of their callers refer to: each `N` with a theorem `N.lit_eq`, in the
@@ -308,7 +314,7 @@ def materialize (N : Name) (code : Expr) : MetaM Unit := do
       | .bvar k => if 1000000 ≤ k then some (f (k - 1000000)) else none
       | _ => none
   let litV := ShareCommon.shareCommon' (inst fun i => mkConst (gs[i]! ++ `lit))
-  addDecl <| .defnDecl {
+  addDecl (forceExpose := true) <| .defnDecl {
     name := N ++ `lit, levelParams := [], type := ty, value := litV
     hints := .abbrev, safety := .safe }
   let eqTy (rhs : Expr) := mkApp3 (mkConst ``Eq [1]) ty code rhs
@@ -453,7 +459,7 @@ elab "materialize_table " id:ident n:num m:(num)? : command => liftTermElabM do
     let prf := mkApp (lemma (mkConst f)) h
     let some (_, _, litV) := (← inferType prf).eq?
       | throwError "materialize_table: unexpected {← inferType prf}"
-    addDecl <| .defnDecl {
+    addDecl (forceExpose := true) <| .defnDecl {
       name := f ++ `lit, levelParams := [], type := fty, value := litV
       hints := .abbrev, safety := .safe }
     addDecl <| .thmDecl {
@@ -481,7 +487,7 @@ elab "materialize_table " id:ident n:num m:(num)? : command => liftTermElabM do
   let prf := match m with
     | none => mkApp5 (mkConst ``Lit.table_eq) β (mkConst f) (mkNatLit n.getNat) l hvals
     | some m => mkApp6 (mkConst ``Lit.table2_eq) β (mkConst f) (mkNatLit n.getNat) (mkNatLit m.getNat) l hvals
-  addDecl <| .defnDecl {
+  addDecl (forceExpose := true) <| .defnDecl {
     name := f ++ `lit, levelParams := [], type := fty, value := litV
     hints := .abbrev, safety := .safe }
   addDecl <| .thmDecl {
@@ -498,7 +504,7 @@ def materializeValue (N : Name) (v : Expr) : MetaM Unit := do
   if ty.hasLevelParam || ty.hasMVar then throwError "materialize_value: {v} is universe polymorphic"
   let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) ty)
   let l ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) ty inst v)
-  addDecl <| .defnDecl {
+  addDecl (forceExpose := true) <| .defnDecl {
     name := N ++ `lit, levelParams := [], type := ty, value := ShareCommon.shareCommon' l
     hints := .abbrev, safety := .safe }
   -- By evaluation, of `v` with the literals it reaches (`unfoldToLits`) if any.

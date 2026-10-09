@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-!
 # Frames (x86-64)
@@ -9,6 +11,9 @@ region (`popped`). `WP.frame` runs a frame whose body leaves `rsp` and the
 writable regions as the push left them, and `RelCT.frame` relates two runs of
 one.
 -/
+
+@[expose] public section
+
 
 namespace VG.X86_64
 

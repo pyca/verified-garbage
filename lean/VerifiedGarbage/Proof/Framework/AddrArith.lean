@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Mem
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # Address arithmetic without `bv_omega`
@@ -14,6 +16,9 @@ identities keep `x - E` together instead: rewrite `x - (E ± m)` to
 These are the part of `VG.Offset` below `Mem` (which uses them); the facts
 about byte ranges at offsets from a base are in `Proof/Framework/Offset.lean`.
 -/
+
+@[expose] public section
+
 
 namespace VG.Offset
 

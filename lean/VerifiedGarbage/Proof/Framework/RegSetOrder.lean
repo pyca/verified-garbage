@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.RegSet
+module
+
+public import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # The order of register sets
@@ -6,6 +8,9 @@ import VerifiedGarbage.Proof.Framework.RegSet
 `subset` is a partial order, with `union` and `inter` its join and meet, for
 the monotonicity of the taint analyses (`Taint.Frame`).
 -/
+
+@[expose] public section
+
 
 namespace VG
 

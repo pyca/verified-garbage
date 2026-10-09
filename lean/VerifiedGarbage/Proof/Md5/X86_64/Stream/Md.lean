@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
-import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
-import VerifiedGarbage.Proof.MdStream.X86_64.Words
-import VerifiedGarbage.Proof.Md5.Md
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Md5.X86_64.Compress
-import VerifiedGarbage.Impl.Md5.X86_64.Stream
+module
+
+public import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+public import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+public import VerifiedGarbage.Proof.MdStream.X86_64.Words
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
+public import VerifiedGarbage.Proof.Md5.Md
+meta import VerifiedGarbage.Proof.Md5.Md
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Md5.X86_64.Compress
+meta import VerifiedGarbage.Proof.Md5.X86_64.Compress
+public import VerifiedGarbage.Impl.Md5.X86_64.Stream
+meta import VerifiedGarbage.Impl.Md5.X86_64.Stream
 
 /-!
 # Streaming MD5 on x86-64: `update` and `finalize`
@@ -16,6 +25,9 @@ what MD5's own pieces do: its length field and digest (`shape`), that the
 taint analysis accepts its code between the calls (`taints`), and that its
 compression function is verified (`callee`).
 -/
+
+@[expose] public section
+
 
 namespace VG.Proof.Md5.X86_64.Stream
 

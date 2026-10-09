@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Writing a list of bytes
@@ -7,6 +9,9 @@ import VerifiedGarbage.Proof.Framework.Mem
 streaming proofs of the hash functions (which export these names into their
 own namespaces).
 -/
+
+@[expose] public section
+
 
 namespace VG.WriteBytes
 

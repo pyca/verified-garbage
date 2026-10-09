@@ -1,4 +1,6 @@
-import Mathlib.Util.CompileInductive
+module
+
+public import Mathlib.Util.CompileInductive
 
 /-!
 # List functions for the kernel
@@ -12,6 +14,9 @@ to the library's, so that an analysis can be evaluated in these terms and
 reasoned about in the library's. (`Mathlib.Util.CompileInductive` compiles
 `List.rec`, for the analyses' hints, which are computed in compiled code.)
 -/
+
+@[expose] public section
+
 
 namespace VG.KList
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 
 /-!
 # Stack depth (x86-64)
@@ -12,6 +14,9 @@ keeps `rsp` (`Exec.rsp`), and changes memory only within the regions it may
 write and that many bytes below `rsp` (`Exec.stackFrame`), as
 `Exec.frameSp` says of code without frames.
 -/
+
+@[expose] public section
+
 
 namespace VG
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 
 /-!
 # Calls (x86-64)
@@ -10,6 +12,9 @@ addresses of its calls, within `8 * depth` bytes below `rsp`
 (`Exec.frameSp`). `WP.call` runs a call of verified code from the callee's
 `Verified` proof, as `WP.inline` does for inlined code.
 -/
+
+@[expose] public section
+
 
 namespace VG
 

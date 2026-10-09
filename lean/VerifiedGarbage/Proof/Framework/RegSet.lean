@@ -1,4 +1,6 @@
-import Lean.ToExpr
+module
+
+public meta import Lean.ToExpr
 
 /-!
 # Sets of registers as bit masks
@@ -13,6 +15,9 @@ with the `Nat` functions themselves (`Nat.lor`, not `|||`; `Nat.beq`, not
 unfolding the instances every time; the lemmas state them with the usual
 operations.
 -/
+
+@[expose] public section
+
 
 namespace VG
 
@@ -30,7 +35,7 @@ namespace RegSet
 
 variable {R : Type} [RegIdx R]
 
-instance [Lean.ToExpr R] : Lean.ToExpr (RegSet R) where
+meta instance [Lean.ToExpr R] : Lean.ToExpr (RegSet R) where
   toExpr s := Lean.mkApp2 (.const ``RegSet.mk []) (Lean.toTypeExpr R) (Lean.toExpr s.bits)
   toTypeExpr := Lean.mkApp (.const ``RegSet []) (Lean.toTypeExpr R)
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.Inline
+module
+
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.Inline
 
 /-!
 # Constant time by relating two runs
@@ -19,6 +21,9 @@ and `loop`. A call of verified code is related by `RegionModel.relCT_call`:
 the callee's run from its contract's narrower permissions is the actual run
 (`Inline.lean`), and the callee is constant time.
 -/
+
+@[expose] public section
+
 
 namespace VG
 

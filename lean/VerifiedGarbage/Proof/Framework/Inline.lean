@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Framework.Covers
+module
+
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.Covers
 
 /-!
 # Inlining verified code, on any ISA
@@ -20,6 +22,9 @@ own states. `Exec.keep` is the same induction for a value that every
 instruction keeps (a register no instruction writes), given how calls and
 frames keep it.
 -/
+
+@[expose] public section
+
 
 namespace VG
 

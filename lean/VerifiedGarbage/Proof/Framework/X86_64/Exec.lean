@@ -1,9 +1,14 @@
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Proof.Framework.Block
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # x86-64: lemmas for symbolic execution
 -/
+
+@[expose] public section
+
 
 namespace VG.X86_64
 

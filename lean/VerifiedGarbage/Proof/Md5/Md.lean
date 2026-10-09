@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Proof.Md5.Stream
+module
+
+public import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Md5.Stream
 
 /-!
 # MD5 as a streaming Merkle–Damgård hash function
@@ -7,6 +9,9 @@ import VerifiedGarbage.Proof.Md5.Stream
 MD5 as an instance of `Proof.MdStream.Md`, for the generic streaming proofs:
 its `Repr` and `hash` are the generic ones for `H0`, by unfolding.
 -/
+
+@[expose] public section
+
 
 namespace VG.Proof.Md5
 

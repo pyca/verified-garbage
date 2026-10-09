@@ -1,9 +1,11 @@
-import VerifiedGarbage.Impl.StackScratch.X86_64
-import VerifiedGarbage.Proof.Framework.Scratch
-import VerifiedGarbage.Proof.Framework.X86_64.Depth
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.X86_64.Target
+module
+
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.Framework.Scratch
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # A scratch buffer on the stack (x86-64)
@@ -20,6 +22,9 @@ which keeps them out of the buffers; the code changes no memory at or above
 the frame but in the buffers (`Exec.stackFrame`), so it keeps the return
 address of the function without the argument.
 -/
+
+@[expose] public section
+
 
 namespace VG.X86_64
 

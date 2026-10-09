@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # x86-64: the calling-convention obligations
@@ -8,6 +10,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.Taint
 loads MXCSR keeps it, so its proofs show only the other obligations
 (`gprPreserved`), and `abiPreserved_of_exec` adds MXCSR's.
 -/
+
+@[expose] public section
+
 
 namespace VG.X86_64
 

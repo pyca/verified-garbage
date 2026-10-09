@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # x86-64: reading a state after a write, for symbolic execution
@@ -22,6 +24,9 @@ Use them with `simp only [runBlock_cons, runStep_some, exec, …,
 State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, …]` and never unfold
 `State.setReg`, `arithFlags` or `State.setFlags`.
 -/
+
+@[expose] public section
+
 
 namespace VG.X86_64.RegUpd
 

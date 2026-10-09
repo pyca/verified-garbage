@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+module
+
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # Constant time of calls, by relating two runs (x86-64)
@@ -11,6 +13,9 @@ is the actual run with fewer permissions (`Exec.widen` and determinism),
 and the callee is constant time. The call and return addresses agree when
 `rsp` does.
 -/
+
+@[expose] public section
+
 
 namespace VG.X86_64
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # MD5 (RFC 1321)
@@ -21,6 +23,9 @@ interface: initialize, absorb message bytes, pad and output the digest, on a
 streaming state that `Repr` relates to the message absorbed so far. Their
 contracts are in `Spec/Md5/Contract.lean`.
 -/
+
+@[expose] public section
+
 
 namespace VG.Spec.Md5
 

@@ -1,13 +1,18 @@
-import Batteries.Tactic.Init
-import Batteries.Tactic.PermuteGoals
-import Batteries.Tactic.SeqFocus
-import Mathlib.Util.CompileInductive
-import VerifiedGarbage.TCB.Artifact
-import VerifiedGarbage.Proof.Framework.GetElem
+module
+
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Reasoning about `Exec`: determinism, weakest preconditions, constant time
 -/
+
+@[expose] public section
+
 
 namespace VG
 

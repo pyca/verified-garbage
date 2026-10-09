@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Sha256.Stream
+module
+
+public import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming Merkle–Damgård hash functions: facts about the specification
@@ -15,6 +17,9 @@ compressed, and how the padded message decomposes, is proven here once for all
 of them. (Memory written byte by byte is `Proof.Sha256.Stream.writeBytes`,
 which does not depend on the hash function.)
 -/
+
+@[expose] public section
+
 
 namespace VG.Proof.MdStream
 

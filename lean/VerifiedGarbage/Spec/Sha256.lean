@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # SHA-224 and SHA-256 (FIPS 180-4)
@@ -19,6 +21,9 @@ that `ReprFrom` relates to the message absorbed so far. Their contracts,
 which say how the code's arguments and memory relate to these definitions,
 are in `Spec/Sha256/Contract.lean`.
 -/
+
+@[expose] public section
+
 
 namespace VG.Spec.Sha256
 

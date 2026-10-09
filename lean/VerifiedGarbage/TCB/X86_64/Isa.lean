@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.Code
-import VerifiedGarbage.TCB.X86_64.Gpr
-import VerifiedGarbage.TCB.X86_64.Evex
+module
+
+public import VerifiedGarbage.TCB.Code
+public import VerifiedGarbage.TCB.X86_64.Gpr
+public import VerifiedGarbage.TCB.X86_64.Evex
 
 /-!
 # x86-64 machine model
@@ -128,6 +130,9 @@ Modelling choices:
   `ci/check_mcdt.py` checks this in the generated code; `lfence` and the
   MXCSR instructions exist in the model for it.
 -/
+
+@[expose] public section
+
 
 namespace VG.X86_64
 

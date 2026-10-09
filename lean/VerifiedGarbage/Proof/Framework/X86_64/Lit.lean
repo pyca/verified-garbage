@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # XReg code as literals
@@ -7,6 +9,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.Taint
 The instances `materialize_code` needs to write this ISA's code as a literal
 (`Proof/Framework/Lit.lean`).
 -/
+
+public meta section
+
 
 namespace VG.X86_64
 

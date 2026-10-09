@@ -1,8 +1,10 @@
-import VerifiedGarbage.Spec.Sha256
-import VerifiedGarbage.Proof.Framework.GetElem
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import Mathlib.Tactic.Conv
+module
+
+public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import Mathlib.Tactic.Conv
 
 /-!
 # Streaming SHA-256: facts about the specification
@@ -10,6 +12,9 @@ import Mathlib.Tactic.Conv
 How `Repr` evolves as bytes are buffered and blocks compressed, and how the
 padded message decomposes, independently of any target.
 -/
+
+@[expose] public section
+
 
 namespace VG.Proof.Sha256.Stream
 

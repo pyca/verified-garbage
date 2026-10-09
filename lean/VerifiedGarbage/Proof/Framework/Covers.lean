@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Covering regions
@@ -7,6 +9,9 @@ import VerifiedGarbage.Proof.Framework.Mem
 permit. Inlining verified code (`Inline.lean`) and calls narrow a state's
 permissions to regions that its own cover.
 -/
+
+@[expose] public section
+
 
 namespace VG
 
