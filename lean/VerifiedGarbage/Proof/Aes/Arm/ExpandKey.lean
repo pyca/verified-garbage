@@ -2,6 +2,7 @@ import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
 import VerifiedGarbage.Proof.Aes.Arm.Ctr32
 import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Spec.Aes.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The AES key expansion on ARMv7
@@ -90,11 +91,8 @@ end
 def qRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7]
 
 theorem lslot_frame (B : Addr) {k : Nat} (h1 : 42 ≤ k) (h2 : k < 46) :
-    (⟨B + BitVec.ofNat 64 168, 16⟩ : Region).Contains (slotA B k) (32 / 8) := by
-  simp only [Region.Contains, slotA]
-  rw [show B + BitVec.ofNat 64 (4 * k) - (B + BitVec.ofNat 64 168) = BitVec.ofNat 64 (4 * k - 168) by
-    bv_omega, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+    (⟨B + BitVec.ofNat 64 168, 16⟩ : Region).Contains (slotA B k) (32 / 8) :=
+  Offset.contains B (by omega) (by omega) (by omega)
 
 theorem subAll_wp {s : State} {b : BitVec 32} (hb : s.gpr sb = b)
     (hscr : (⟨State.addr b, 512⟩ : Region) ∈ s.wr) (hfit : b.toNat + 512 ≤ 2 ^ 32) {P : State → Prop}
@@ -338,11 +336,8 @@ theorem rot_lt {nk i : Nat} (h3 : nk = 4 ∨ nk = 6 ∨ nk = 8) (hn : i < 4 * (n
   rcases h3 with rfl | rfl | rfl <;> omega
 
 theorem sub_scr' (B : Addr) {x lx : Nat} (h : x + lx ≤ 512) :
-    Region.Sub ⟨B + BitVec.ofNat 64 x, lx⟩ ⟨B, 512⟩ := by
-  intro a h₁
-  simp only [Region.Contains] at h₁ ⊢
-  have : (BitVec.ofNat 64 x).toNat = x := by simp; omega
-  bv_omega
+    Region.Sub ⟨B + BitVec.ofNat 64 x, lx⟩ ⟨B, 512⟩ :=
+  Offset.sub_base B h
 
 /-! ## One word -/
 
@@ -512,21 +507,14 @@ theorem sched_addr {S : BitVec 32} (hfit : S.toNat + 240 ≤ 2 ^ 32) {k : Nat} (
     State.addr (S + BitVec.ofNat 32 k) = State.addr S + BitVec.ofNat 64 k := addr_add (by omega)
 
 theorem c_off240 (SA : Addr) {x n : Nat} (h : x + n ≤ 240) :
-    (⟨SA, 240⟩ : Region).Contains (SA + BitVec.ofNat 64 x) n := by
-  simp only [Region.Contains]
-  rw [show SA + BitVec.ofNat 64 x - SA = BitVec.ofNat 64 x by bv_omega, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega)]
-  omega
+    (⟨SA, 240⟩ : Region).Contains (SA + BitVec.ofNat 64 x) n :=
+  Offset.contains_base SA h (by omega)
 
 theorem saved_frame {s₀ : State} {B : Addr} {m m' : Mem} {rs : List Region} (h : Saved s₀ B m)
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, Region.Disjoint ⟨B + BitVec.ofNat 64 128, 36⟩ r) :
     Saved s₀ B m' := fun i hi => by
   rw [← h i hi]
-  refine hf.readW ?_ hd (by decide)
-  simp only [Region.Contains, slotA]
-  rw [show B + BitVec.ofNat 64 (4 * (32 + i)) - (B + BitVec.ofNat 64 128) = BitVec.ofNat 64 (4 * i) by
-    bv_omega, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+  exact hf.readW (Offset.contains B (by omega) (by omega) (by omega)) hd (by decide)
 
 theorem store_facts {s₀ : State} {S B : BitVec 32} {kl : List Byte} {nk i : Nat}
     (hs : WSetup s₀ S B kl nk) {s s₂ : State} (hi : WInv s₀ S B kl nk i s) (hm : Mid B kl nk i s s₂) :
@@ -658,7 +646,7 @@ theorem word_ok {s₀ : State} {S B : BitVec 32} {kl : List Byte} {nk i : Nat} (
     rw [o₁₀ _ (by decide), f₉.gpr, u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide),
       u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), lr₂]
   have e : BitVec.ofNat 32 (4 * (nk + 7) - i) - 1 = BitVec.ofNat 32 (4 * (nk + 7) - i - 1) := by
-    bv_omega
+    bv_omega_using [hn, h3]
   have lr₁₁ : s₁₁.gpr .lr = BitVec.ofNat 32 (4 * (nk + 7) - i - 1) := by rw [u₁₁.gpr, lr₁₀, e]
   have hev : Arm.eval .ne s₁₁ = some (!decide (4 * (nk + 7) - i - 1 = 0)) := by
     simp only [Arm.eval, z₁₁, lr₁₀, e]
@@ -783,7 +771,8 @@ theorem copy_ok {s₀ : State} {S B P : BitVec 32} {K : Nat} (hs : CSetup s₀ S
     fun s₂ u₂ => ?_
   refine wp_add (op2_imm (by decide)) fun s₃ u₃ => wp_add (op2_imm (by decide)) fun s₄ u₄ =>
     wp_subs (op2_imm (by decide)) fun s₅ u₅ z₅ => WP.block_nil ?_
-  have e : BitVec.ofNat 32 (K - 4 * c) - 4 = BitVec.ofNat 32 (K - 4 * c - 4) := by bv_omega
+  have e : BitVec.ofNat 32 (K - 4 * c) - 4 = BitVec.ofNat 32 (K - 4 * c - 4) := by
+    bv_omega_using [hc4, hK]
   have lr₅ : s₅.gpr .lr = BitVec.ofNat 32 (K - 4 * c - 4) := by
     rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), hi.lr, e]
   have hev : Arm.eval .ne s₅ = some (!decide (K - 4 * c - 4 = 0)) := by
@@ -844,7 +833,7 @@ theorem copy_ok {s₀ : State} {S B P : BitVec 32} {K : Nat} (hs : CSetup s₀ S
   · refine .inr ⟨hev.trans (by simp [hl]), ⟨by omega, ?_, r10₅, ?_, r1₅, r8₅, rd₅, wr₅, sp₅,
       copied, sv, fr⟩⟩
     · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.gpr, u₁.other _ (by decide), hi.r9]
-      bv_omega
+      bv_omega_using []
     · rw [lr₅, show K - 4 * (c + 1) = K - 4 * c - 4 by omega]
 
 theorem copyLoop_ok {s₀ : State} {S B P : BitVec 32} {K : Nat} (hs : CSetup s₀ S B P K) {s : State}
