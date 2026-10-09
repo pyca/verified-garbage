@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPointChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
 import VerifiedGarbage.Proof.Weierstrass.X86.NafWindowTiming
 
 namespace VG.Proof.Ecdsa.Verify.X86
@@ -35,17 +36,13 @@ materialize_code nafRunNeg
 theorem nafRunNeg_ct : ScratchCT nafRunNeg :=
   Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
 
-def nafRunCopy : Prog isa := .block (copyPt nafK.M.n nafK.R nafK.D)
-materialize_code nafRunCopy
+/-- The same copy as the table's step (`nafTableCopyStep`). -/
+theorem nafRunCopy_ct : ScratchCT (.block (copyPt nafK.M.n nafK.R nafK.D)) :=
+  nafTableCopyStep_ct
 
-theorem nafRunCopy_ct : ScratchCT nafRunCopy :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
-
-def nafRunDouble : Prog isa := fprog p256Comb.SP (dblJMul nafK.S nafK.R nafK.D)
-materialize_code nafRunDouble
-
-theorem nafRunDouble_ct : ScratchCT nafRunDouble :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+/-- The same doubling as the additions' (`nafAddDouble`). -/
+theorem nafRunDouble_ct : ScratchCT (fprog p256Comb.SP (dblJMul nafK.S nafK.R nafK.D)) :=
+  nafAddDouble_ct
 
 def nafRunDec : Prog isa := .block [.alu .sub .esi (.imm 1)]
 materialize_code nafRunDec
