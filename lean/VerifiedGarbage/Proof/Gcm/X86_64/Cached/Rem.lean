@@ -150,7 +150,7 @@ theorem QG.ksR {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X 
 
 /-- Before the loop: `rdx` at the blocks, `r10 = 0`, and the products cleared. -/
 theorem remPre_ok (s : State) :
-    WP isa (.block ([.alu .add .rdx (.imm 256), .mov32 .r10 (.imm 0)] ++ [] ++ Impl.Gcm.X86_64.StitchAvx.zero)) s
+    WP isa (.block (([.alu .add .rdx (.imm 256), .mov32 .r10 (.imm 0)] : List Instr) ++ ([] : List Instr) ++ Impl.Gcm.X86_64.StitchAvx.zero)) s
       fun s' => s'.gpr .rdx = s.gpr .rdx + 256 ∧ s'.gpr .r10 = BitVec.ofNat 64 (16 * 0) ∧
         (∀ q, q ≠ .rdx → q ≠ .r10 → s'.gpr q = s.gpr q) ∧ prod (s'.proj 0) = Prod.zero ∧
         (∀ x, x ≠ .xmm8 → x ≠ .xmm9 → x ≠ .xmm10 → s'.lane x 0 = s.lane x 0) ∧
