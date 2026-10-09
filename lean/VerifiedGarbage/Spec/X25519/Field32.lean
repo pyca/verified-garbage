@@ -9,7 +9,11 @@ elements of `GF(p)`, `p = 2^255 - 19`, each eight 32-bit words, so that the
 code of X25519 and Ed25519 that keeps elements this way (the x86 code) can
 call one copy of the product instead of repeating it at every use:
 
-* `vg_gf25519_r32_mul`: the product `a b`.
+* `vg_gf25519_r32_mul`: the product `a b`;
+* `vg_gf25519_r32_pow250`: the powers `a^(2^250 - 1)` and `a^11`, the
+  addition chain that inversion (`a^(p-2) = (a^(2^250-1))^(2^5) a^11`) and
+  decoding's square root (`a^((p-5)/8) = (a^(2^250-1))^(2^2) a`) share, so
+  that each finishes it with a few squarings and a product.
 
 It is not an algorithm of a standard but the arithmetic X25519 and Ed25519
 are built from, in the representation that code keeps elements in: what it
@@ -21,13 +25,14 @@ working space `ws` of 4096 bytes (`[u64; 512]`, X25519's working space and
 the start of Ed25519's), each at a byte offset: `o` for the result, `a`
 and `b` for the operands. The offsets are arguments, so that the result may
 be an operand and the caller keeps its elements where it likes. Bytes 768 to
-1023 of `ws` are the function's own working space (`ownAt` to `ownEnd`), and
-the elements lie below them (`Fits`). On return the function's own bytes are
-unspecified and may hold intermediate values; every other byte of `ws` keeps
-its value but the result's (`Keeps`).
+1023 of `ws` are `mul`'s own working space (`ownAt` to `ownEnd`), and bytes
+704 to 1023 `pow250`'s (`powOwnAt` to `ownEnd`); the elements lie below them
+(`Fits`, `PowFits`). On return a function's own bytes are unspecified and may
+hold intermediate values; every other byte of `ws` keeps its value but the
+results' (`Keeps`, `Keeps₂`).
 
 Everything is secret but the pointer and the offsets, which are public, and
-the function is constant time.
+the functions are constant time.
 -/
 
 namespace VG.Spec.X25519.Field32
@@ -89,6 +94,60 @@ def mulApi : Api where
     ["`o`, `a` and `b` plus 32 must be at most 768: bytes 768 to 1023 of `ws` are the \
         function's own working space.",
       "Bytes 768 to 1023 of `ws` are unspecified on return and may hold intermediate values, \
+        which the caller must destroy if they are secret."]
+
+/-! ## `pow250` -/
+
+/-- Where `pow250`'s own working space starts; it ends at `ownEnd`. -/
+def powOwnAt : Nat := 704
+
+/-- The element at `o` lies below `pow250`'s own working space. -/
+abbrev PowFits (o : BitVec 32) : Prop := o.toNat + elemBytes ≤ powOwnAt
+
+/-- Every byte of `ws` but those of `pow250`'s own working space and of the
+results at `o` and `e` keeps its value. -/
+def Keeps₂ (ws : Addr) (o e : BitVec 32) (m m' : Mem) : Prop :=
+  ∀ i < wsBytes, (i < powOwnAt ∨ ownEnd ≤ i) → (i < o.toNat ∨ o.toNat + elemBytes ≤ i) →
+    (i < e.toNat ∨ e.toNat + elemBytes ≤ i) → m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
+
+/-- `ws: *mut [u64; 512], o: u32, e: u32, a: u32`, the offsets public. -/
+def pow250Sig : Sig where
+  params := [("ws", .array true .u64 512), ("o", .int .u32 true), ("e", .int .u32 true),
+    ("a", .int .u32 true)]
+
+/-- `pow250`: for elements that fit, with the results at `o` and `e` apart, the
+result at `o` is congruent to `a^(2^250 - 1)` and the one at `e` to `a^11`,
+modulo `P`. `a` may be `o` or `e`. -/
+def pow250Contract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+  pow250Sig.contract A
+    (pre := fun _ o e a _ => PowFits o ∧ PowFits e ∧ PowFits a ∧
+      (o.toNat + elemBytes ≤ e.toNat ∨ e.toNat + elemBytes ≤ o.toNat))
+    (post := fun ws o e a m m' _ =>
+      valAt m' ws o % P = valAt m ws a ^ (2 ^ 250 - 1) % P ∧
+        valAt m' ws e % P = valAt m ws a ^ 11 % P ∧ Keeps₂ ws o e m m')
+    (stack := stack)
+
+/-- `vg_gf25519_r32_pow250` on every target. -/
+def pow250Api : Api where
+  module := "gf25519_r32"
+  name := "vg_gf25519_r32_pow250"
+  sig := pow250Sig
+  contracts := some fun A stack => pow250Contract A stack
+  summary := "Powers in curve25519's field: writes an element congruent to `a^(2^250 - 1)` \
+    modulo `p = 2^255 - 19` to `o`, and one congruent to `a^11` to `e`: the addition chain \
+    that inversion (`a^(p-2)`, five squarings of the first and a product with the second) and \
+    decoding's square root (`a^((p-5)/8)`, two squarings of the first and a product with `a`) \
+    share. An element is 32 bytes, a little-endian number below `2^256`, not necessarily below \
+    `p`. The elements are at the byte offsets `o`, `e` and `a` of the working space `ws`; `a` \
+    may be `o` or `e`. Every byte of `ws` but the results' and the function's own working \
+    space (bytes 704 to 1023) keeps its value.\n\n\
+    Contract: `pow250Contract` of `VG.Spec.X25519.Field32`. Constant time: only the pointer \
+    and the offsets may affect timing."
+  safety :=
+    ["`o`, `e` and `a` plus 32 must be at most 704: bytes 704 to 1023 of `ws` are the \
+        function's own working space.",
+      "The 32 bytes at `o` and those at `e` must not overlap.",
+      "Bytes 704 to 1023 of `ws` are unspecified on return and may hold intermediate values, \
         which the caller must destroy if they are secret."]
 
 end VG.Spec.X25519.Field32
