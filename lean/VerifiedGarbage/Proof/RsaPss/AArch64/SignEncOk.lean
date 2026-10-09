@@ -31,8 +31,8 @@ theorem Lay.slotW {t : State} {F S : Addr} (L : Lay t F S) {d : Nat} (hd : d + 8
   rcases hr with rfl | rfl | rfl | rfl
   · exact L.dFS.sub_left (Offset.sub_base F hd)
   · exact slot_not_below F hd
-  · exact Offset.disjoint F h1 (by unfold frameBytes at hd; omega) (by decide)
-  · exact Offset.disjoint F h2 (by unfold frameBytes at hd; omega) (by decide)
+  · exact Offset.disjoint F h1 (by unfold frameBytes at hd; omega_using [hd]) (by decide)
+  · exact Offset.disjoint F h2 (by unfold frameBytes at hd; omega_using [hd]) (by decide)
 
 section
 variable {H : Hash} (hH : HashOK H)
@@ -66,31 +66,33 @@ theorem signTail_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x
     fun hd h1 h2 _ hf => slot_keep hf (L.slotW hd h1 h2)
   generalize hsB : Spec.Rsa.bytesAt u.mem q sl = saltB
   have hsBl : saltB.length = sl := by rw [← hsB, VG.Proof.RsaPkcs1Sig.bytesAt_length]
-  have hD64 : H.D ≤ 64 := by omega
+  have hD64 : H.D ≤ 64 := by omega_using [hDN, hN]
   unfold seqs seqs seqs seqs seqs
   -- `EM` cleared.
-  refine WP.seq (WP.mono (clearEm_ok L (fun _ _ => rfl) (k := k) h23 (by omega) hk) fun u7 ⟨k7, f7, R7⟩ => ?_)
+  refine WP.seq (WP.mono (clearEm_ok L (fun _ _ => rfl) (k := k) h23 (by omega_using [hkd]) hk) fun u7 ⟨k7, f7, R7⟩ => ?_)
   have L7 := L.congr k7.sp k7.wr (k7.get .x20)
   have F7 : Frame (mgfWr F S) u.mem u7.mem := f7.mono (by simp)
   -- `0x01` and the salt.
   refine WP.seq (WP.mono (putSalt_ok L7 R7 (e := oEm + lo) (db := db) (q := q) (sl := sl)
     (by rw [k7.get .x24, h24]) (by rw [k7.get .x25, h25])
     (by rw [hW (by decide) (by decide) (by decide) F7, hq]) (by rw [hW (by decide) (by decide) (by decide) F7, hsl])
-    (by omega) (by omega) (by rw [k7.rd, k7.wr]; exact hqR) (hqW _ (by simp))) fun u8 ⟨k8, f8, R8⟩ => ?_)
-  rw [bytes_apartL F7 hqW (by omega), hsB] at R8
+    (by omega_using [hfit]) (by omega_using [hk, hkd, c1, c2]) (by rw [k7.rd, k7.wr]; exact hqR) (hqW _
+        (by simp))) fun u8 ⟨k8, f8, R8⟩ => ?_)
+  rw [bytes_apartL F7 hqW (by omega_using [hk, hkd, hfit]), hsB] at R8
   have L8 := L7.congr k8.sp k8.wr (k8.get .x20)
   have F8 : Frame (mgfWr F S) u.mem u8.mem := F7.trans (f8.mono (by simp))
   -- `H` and `0xbc`.
   refine WP.seq (WP.mono (putH_ok hH L8 R8 (e := oEm + lo) (db := db) (k := k)
     (by rw [k8.get .x24, k7.get .x24, h24]) (by rw [k8.get .x25, k7.get .x25, h25])
-    (by rw [k8.get .x21, k7.get .x21, h21]) (by rw [k8.get .x23, k7.get .x23, h23]) (by omega) (by omega) hk)
+    (by rw [k8.get .x21, k7.get .x21, h21]) (by rw [k8.get .x23, k7.get .x23, h23]) (by omega_using []) (by omega_using [hkd]) hk)
     fun u9 ⟨k9, f9, R9⟩ => ?_)
   have R9' : Rep u9.mem S (encV (fun o => u.mem (off S o)) k lo db sl saltB H.D) := R9
   have L9 := L8.congr k9.sp k9.wr (k9.get .x20)
   have F9 : Frame (mgfWr F S) u.mem u9.mem := F8.trans (f9.mono (by simp))
   have hdig' : ∀ j < H.D, (fun o => u.mem (off S o)) (oDig + j) = h.getD j 0 := hdig
   -- The mask.
-  refine WP.seq (WP.mono (mgfXor_ok hH hGh hGl hG L9 R9' (e := oEm + lo) (db := db) ⟨by omega, by omega, by omega⟩
+  refine WP.seq (WP.mono (mgfXor_ok hH hGh hGl hG L9 R9' (e := oEm + lo)
+      (db := db) ⟨by omega_using [], by omega_using [hfit], by omega_using [hk, hkd, c1, c2]⟩
     (by rw [k9.get .x19, k8.get .x19, k7.get .x19, h19]) (by rw [k9.get .x21, k8.get .x21, k7.get .x21, h21])
     (by rw [k9.get .x24, k8.get .x24, k7.get .x24, h24]) (by rw [k9.get .x25, k8.get .x25, k7.get .x25, h25]))
     fun u10 ⟨sp10, rd10, wr10, cs10, v10, fr10, em10⟩ => ?_)
@@ -99,7 +101,7 @@ theorem signTail_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x
   have F10 : Frame (mgfWr F S) u.mem u10.mem := F9.trans fr10
   -- `DB`'s top bits.
   refine WP.mono (clearTop_ok L10 (fun _ _ => rfl) (e := oEm + lo) (c := c)
-    (by rw [cs10 .x24 (by decide), k9.get .x24, k8.get .x24, k7.get .x24, h24]) (by omega)
+    (by rw [cs10 .x24 (by decide), k9.get .x24, k8.get .x24, k7.get .x24, h24]) (by omega_using [hk, hkd, c1, c6])
     (by rw [hW (by decide) (by decide) (by decide) F10, hc])) fun u11 ⟨k11, f11, R11⟩ => ?_
   refine ⟨by rw [k11.sp, sp10, k9.sp, k8.sp, k7.sp], by rw [k11.rd, rd10, k9.rd, k8.rd, k7.rd],
     by rw [k11.wr, wr10, k9.wr, k8.wr, k7.wr], fun r hr => ?_,
@@ -110,9 +112,9 @@ theorem signTail_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x
       rw [k11.get _ (by decide), cs10 _ (by decide), k9.get _ (by decide), k8.get _ (by decide),
         k7.get _ (by decide)]
   rw [← em_view (V9 := encV (fun o => u.mem (off S o)) k lo db sl saltB H.D) (mk := Spec.Mgf1.mgf1 G h db)
-    (c := c) (saltB := saltB) hh hkd hfit (encV_eq hsBl hkd hfit hk hD64 hdig') i hi, R11 _ (by omega)]
+    (c := c) (saltB := saltB) hh hkd hfit (encV_eq hsBl hkd hfit hk hD64 hdig') i hi, R11 _ (by omega_using [hk, c1, c6, hi])]
   simp only [upd]
-  rw [em10 _ (by omega) (by omega), em10 _ (by omega) (by omega)]
+  rw [em10 _ (by omega_using []) (by omega_using [hk, hkd, c1, c2]), em10 _ (by omega_using []) (by omega_using [hk, c1, c2, hi])]
 
 theorem signEnc_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
     (hG : Proof.Mgf1.Valid G) {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (R : Rep t.mem S V)
@@ -123,7 +125,7 @@ theorem signEnc_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
     (hc : t.mem.readW (off F sC) 64 = BitVec.setWidth 64 c)
     (hdg : t.mem.readW (off F sDig) 64 = dig) (hq : t.mem.readW (off F sSalt) 64 = q)
     (hsl : t.mem.readW (off F sSaltLen) 64 = BitVec.ofNat 64 sl)
-    (hk : k ≤ 1024) (hlo1 : lo ≤ 1) (hfit : H.D + sl + 2 ≤ k - lo)
+    (hk : k ≤ 1024) (_hlo1 : lo ≤ 1) (hfit : H.D + sl + 2 ≤ k - lo)
     (hdR : ∀ j < H.D, InRegions (t.rd ++ t.wr) (dig + BitVec.ofNat 64 j) 1)
     (hdW : ∀ r ∈ mgfWr F S, Region.Disjoint ⟨dig, H.D⟩ r)
     (hqR : ∀ j < sl, InRegions (t.rd ++ t.wr) (q + BitVec.ofNat 64 j) 1)
@@ -146,7 +148,7 @@ theorem signEnc_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
   have c2 : oY = 3584 := rfl
   have c3 : oDig = 2304 := rfl
   have c6 : oRsa = 8192 := rfl
-  have hsl1 : sl ≤ 1024 := by omega
+  have hsl1 : sl ≤ 1024 := by omega_using [hk, hfit]
   generalize hdb : k - lo - H.D - 1 = db
   generalize hsB : Spec.Rsa.bytesAt t.mem q sl = saltB
   generalize hdB : Spec.Rsa.bytesAt t.mem dig H.D = digB
@@ -158,7 +160,7 @@ theorem signEnc_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
   unfold signEnc seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs
   -- `DB`'s registers.
   refine WP.seq (WP.mono (dbRegs_ok L h9 hlo) fun u1 ⟨O1, x25₁, x24₁⟩ => ?_)
-  rw [show k - lo - (H.D + 2) + 1 = db by omega] at x25₁
+  rw [show k - lo - (H.D + 2) + 1 = db by omega_using [hfit, hdb]] at x25₁
   have L1 := L.congr O1.sp O1.wr (O1.get .x20)
   have R1 : Rep u1.mem S V := O1.mem ▸ R
   -- `Y` cleared.
@@ -169,7 +171,7 @@ theorem signEnc_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
   refine WP.seq (WP.mono (copyDigest_ok hH L2 R2 (dig := dig)
     (by rw [hW (by decide) (by decide) (by decide) F2, hdg])
     (by rw [k2.rd, k2.wr, O1.rd, O1.wr]; exact hdR) (hdW _ (by simp))) fun u3 ⟨k3, f3, R3⟩ => ?_)
-  rw [bytes_apartL F2 hdW (by omega), hdB] at R3
+  rw [bytes_apartL F2 hdW (by omega_using [hDN, hN]), hdB] at R3
   have L3 := L2.congr k3.sp k3.wr (k3.get .x20)
   have F3 : Frame (mgfWr F S) t.mem u3.mem := F2.trans (f3.mono (by simp))
   -- The salt.
@@ -177,7 +179,7 @@ theorem signEnc_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
     (by rw [hW (by decide) (by decide) (by decide) F3, hq])
     (by rw [hW (by decide) (by decide) (by decide) F3, hsl]) hsl1
     (by rw [k3.rd, k3.wr, k2.rd, k2.wr, O1.rd, O1.wr]; exact hqR) (hqW _ (by simp))) fun u4 ⟨k4, f4, R4⟩ => ?_)
-  rw [bytes_apartL F3 hqW (by omega), hsB] at R4
+  rw [bytes_apartL F3 hqW (by omega_using [hsl1]), hsB] at R4
   have L4 := L3.congr k4.sp k4.wr (k4.get .x20)
   have F4 : Frame (mgfWr F S) t.mem u4.mem := F3.trans (f4.mono (by simp))
   -- `ℓ` and `nbm`.
@@ -203,24 +205,25 @@ theorem signEnc_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
         O1.get _ (by decide)]
   refine WP.seq (WP.mono (ctHash_ok hH L5 R5 (msg := msg) (nbm := (8 + H.D + sl + H.P.L) / H.P.B + 1)
     (by rw [g5 .x19 (by decide), h19]) (by rw [g5 .x21 (by decide), h21]) (by rw [x22₅, hml])
-    (by rw [m5, Mem.readW_writeW_self64]) (by rw [hml, hnbB]; omega) (by rw [hnbB]; omega) (fun i hi => ?_))
+    (by rw [m5, Mem.readW_writeW_self64]) (by rw [hml, hnbB]; omega_using [hnb1])
+        (by rw [hnbB]; omega_using [hDN, hN, hL, hBl, hsl1, hnb2]) (fun i hi => ?_))
     fun u6 ⟨O6, d6⟩ => ?_)
   · rw [← hmsg, getD_app, getD_app, RsaPss.zeros_length]
     by_cases h1 : i < 8
-    · simp (disch := omega) only [updL, clr, ite_eq_left, ite_eq_right, hsBl, hdBl, List.length_append,
+    · simp (disch := omega_arith) only [updL, clr, ite_eq_left, ite_eq_right, hsBl, hdBl, List.length_append,
         RsaPss.zeros_length]
       exact (RsaPss.zeros_getD _ _).symm
     by_cases h2 : i < 8 + H.D
-    · simp (disch := omega) only [updL, clr, ite_eq_left, ite_eq_right, hsBl, hdBl, List.length_append,
+    · simp (disch := omega_arith) only [updL, clr, ite_eq_left, ite_eq_right, hsBl, hdBl, List.length_append,
         RsaPss.zeros_length]
-      rw [show oY + i - (oY + 8) = i - 8 by omega]
+      rw [show oY + i - (oY + 8) = i - 8 by omega_using []]
     by_cases h3 : i < 8 + H.D + sl
-    · simp (disch := omega) only [updL, clr, ite_eq_left, ite_eq_right, hsBl, hdBl, List.length_append,
+    · simp (disch := omega_arith) only [updL, clr, ite_eq_left, ite_eq_right, hsBl, hdBl, List.length_append,
         RsaPss.zeros_length]
-      rw [show oY + i - (oY + 8 + H.D) = i - (8 + H.D) by omega]
-    · simp (disch := omega) only [updL, clr, ite_eq_left, ite_eq_right, hsBl, hdBl, List.length_append,
+      rw [show oY + i - (oY + 8 + H.D) = i - (8 + H.D) by omega_using []]
+    · simp (disch := omega_arith) only [updL, clr, ite_eq_left, ite_eq_right, hsBl, hdBl, List.length_append,
         RsaPss.zeros_length]
-      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega)]
+      rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega_using [hsBl, h3])]
       rfl
   have L6 := L5.congr O6.sp O6.wr (O6.cs .x20 (by decide))
   have F6 : Frame (mgfWr F S) t.mem u6.mem := F5.trans (O6.fr.mono (by simp))
@@ -232,13 +235,13 @@ theorem signEnc_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       rw [k5.get _ (by decide), k4.get _ (by decide), k3.get _ (by decide), k2.get _ (by decide)]
   have hhl : (G.hash msg).length = H.D := by
-    rw [hGh, hH.hash, List.length_take, MdStream.Md.hash, hH.md.digest_length]; omega
+    rw [hGh, hH.hash, List.length_take, MdStream.Md.hash, hH.md.digest_length]; omega_using [hDN]
   refine WP.mono (signTail_ok hH hGh hGl hG L6 (k := k) (lo := lo) (sl := sl) (db := db) (c := c) (q := q)
     (h := G.hash msg) (by rw [g6 .x19 (by decide), O1.get .x19, h19]) (by rw [g6 .x21 (by decide), O1.get .x21, h21])
     (by rw [g6 .x23 (by decide), O1.get .x23, h23]) (by rw [g6 .x24 (by decide), x24₁])
     (by rw [g6 .x25 (by decide), x25₁]) (by rw [hW (by decide) (by decide) (by decide) F6, hq])
     (by rw [hW (by decide) (by decide) (by decide) F6, hsl]) (by rw [hW (by decide) (by decide) (by decide) F6, hc])
-    hk (by omega) (by omega)
+    hk (by omega_using [hfit, hdb]) (by omega_using [hfit, hdb])
     (by rw [O6.rd, O6.wr, k5.rd, k5.wr, k4.rd, k4.wr, k3.rd, k3.wr, k2.rd, k2.wr, O1.rd, O1.wr]; exact hqR)
     hqW hhl (fun j hj => by rw [← off_add, byte_of_bytesAt d6 hj, hGh]))
     fun u' ⟨sp', rd', wr', cs', v', f', em'⟩ => ⟨?_, ?_, ?_, fun r hr => ?_, fun r hr => ?_, F6.trans f', ?_⟩
@@ -250,7 +253,7 @@ theorem signEnc_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
     rw [cs' r hr', g6 r (by rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide),
       O1.get r (by rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)]
   · rw [v' r hr, O6.vec r hr, k5.vcs r hr, k4.vcs r hr, k3.vcs r hr, k2.vcs r hr, O1.vcs r hr]
-  · rw [bytes_apartL F6 hqW (by omega), hsB] at em'
+  · rw [bytes_apartL F6 hqW (by omega_using [hsl1]), hsB] at em'
     exact em'
 
 end
