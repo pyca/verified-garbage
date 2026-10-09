@@ -49,8 +49,11 @@ theorem vComb_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.
     obtain ⟨rd, wr⟩ := vComb_regions h
     refine ⟨r, ?_, hc⟩
     rw [rd, wr]
-    simpa only [vCombRd, vCombWr, List.mem_append, List.mem_cons,
-      List.not_mem_nil, or_false, or_assoc, or_left_comm, or_comm] using hr
+    simp only [vCombRd, vCombWr] at hr
+    generalize Abi.constRegions (fun n => (s.syms n).setWidth 64) p256Comb.combConsts = C at hr ⊢
+    simp only [List.cons_append, List.nil_append, List.mem_append, List.mem_cons, List.not_mem_nil,
+      or_false] at hr ⊢
+    rcases hr with rfl | rfl | rfl | rfl | h | rfl <;> simp [h]
   · intro s h a n ⟨r, hr, hc⟩
     refine ⟨r, ?_, hc⟩
     rw [(vComb_regions h).2]
