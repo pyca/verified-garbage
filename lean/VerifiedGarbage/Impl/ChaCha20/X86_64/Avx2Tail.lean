@@ -6,15 +6,22 @@ import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
 
 `tail` XORs the last `rdx` bytes of data (fewer than 512, at `rsi`) with the
 keystream of the state at `rdi`, for `vg_chacha20_xor_avx2`, in at most two
-computations of four blocks:
+computations of up to six blocks:
 
-* if more than 256 bytes remain, four blocks (the counters `c, …, c + 3`
+* if more than 384 bytes remain, four blocks (the counters `c, …, c + 3`
   modulo 2³², `c` being word 12 of the state) are XORed into the next 256
   bytes, and word 12 advanced by 4;
-* then, if more than 128 bytes remain, four blocks are computed into
-  `buf[0, 256)`, and as many of their bytes as remain XORed into the data
-  (`XorBuf.xorBuf`); if 65 to 128, two blocks into `buf[0, 128)`, the
-  same; if fewer, but some, `vg_chacha20_xor` XORs them (`scalar`).
+* then, if more than 256 bytes remain, six blocks (`last3`): the first four
+  XORed into the next 256 bytes, the last two computed into `buf[0, 128)`;
+  as many of their bytes as remain are XORed into the data
+  (`XorBuf.xorBuf`);
+* if 129 to 256, four blocks are computed into `buf[0, 256)`, and the data
+  XORed from there; if 65 to 128, two blocks into `buf[0, 128)`, the same;
+  if fewer, but some, `vg_chacha20_xor` XORs them (`scalar`).
+
+The rounds of a computation take about the same time for two, four or six
+blocks (they are bound by the latency of a quarter round, not by its
+throughput), so each pass computes as many blocks as remain.
 
 The states are kept one per 128-bit lane, two to a set of four `ymm`
 registers (`ymm0 … ymm3`, and `ymm4 … ymm7` for the second two): row `r` of
