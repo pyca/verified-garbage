@@ -131,3 +131,18 @@ impl Curve for Secp256k1 {
     type PublicKey = [u8; 65];
     type Signature = [u8; 64];
 }
+
+/// The curve P-192 (NIST SP 800-186, §3.2.1.1).
+#[cfg(target_arch = "x86_64")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum P192 {}
+
+#[cfg(target_arch = "x86_64")]
+impl sealed::Sealed for P192 {}
+
+#[cfg(target_arch = "x86_64")]
+impl Curve for P192 {
+    type PrivateKey = [u8; 24];
+    type PublicKey = [u8; 49];
+    type Signature = [u8; 48];
+}

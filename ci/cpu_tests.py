@@ -135,6 +135,7 @@ GROUPS = {
             "wycheproof::ecdsa_p384",
             "wycheproof::ecdsa_p521",
             "wycheproof::ecdsa_secp256k1",
+            "wycheproof::ecdsa_p192",
         ],
     },
     "ed25519": {
@@ -281,7 +282,9 @@ GROUPS = {
         "tests": [
             "cavp::sha256",
             "secp256k1",
+            "rfc6979::p192::p192_sha256",
             "wycheproof::ecdsa_secp256k1",
+            "wycheproof::ecdsa_p192",
             "pbkdf2::sha256",
             "rfc6979::p256::p256_sha256",
             "wycheproof::ecdsa_p256::ecdsa_secp256r1_sha256_p1363_test",

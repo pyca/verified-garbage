@@ -24,6 +24,7 @@ mod aes_xts;
 mod camellia_ecb;
 mod cmac_aes;
 mod cmac_triple_des;
+mod ecdh_p192;
 mod ecdh_p224;
 mod ecdh_p256;
 mod ecdh_p384;
