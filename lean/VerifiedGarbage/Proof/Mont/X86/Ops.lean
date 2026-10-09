@@ -57,14 +57,14 @@ theorem stores0_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [List.range_succ, List.map_append, List.map_cons, List.map_nil]
-    refine WP.block_append (WP.mono (stores0_ok hs heax k (by omega)) fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
+    refine WP.block_append (WP.mono (stores0_ok hs heax k (by omega_arith)) fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
     have hs₁ := hs.of_keeps K₁ (by decide)
-    refine wp_storeS (hs₁.ea (d := acc + 4 * k) (by omega)) (hs₁.write (d := acc + 4 * k) (n := 4) (by omega))
+    refine wp_storeS (hs₁.ea (d := acc + 4 * k) (by omega_arith)) (hs₁.write (d := acc + 4 * k) (n := 4) (by omega_arith))
       fun u m => WP.block_nil ⟨?_, ?_, K₁.trans (m.keeps _)⟩
     · rw [m.mem]
-      exact (O₁.mono (Nat.le_refl _) (by omega)).trans
-        ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))
-    · rw [val32_succ, m.mem, (writeW32_outside _ _ _ (by omega)).val32 (by omega) (by omega), V₁,
+      exact (O₁.mono (Nat.le_refl _) (by omega_arith)).trans
+        ((writeW32_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
+    · rw [val32_succ, m.mem, (writeW32_outside _ _ _ (by omega_arith)).val32 (by omega_arith) (by omega_arith), V₁,
         w32_write_self, K₁.1 _ (by decide), heax]
       rfl
 
@@ -94,46 +94,48 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   obtain ⟨N, hNw⟩ : ∃ N, words M = N := ⟨_, rfl⟩
   have hN2 : N = 2 * M.n := hNw ▸ rfl
   have hacc : accLen M = 4 * (2 * N + 1) := by rw [accLen, hNw]
-  have := hL.acc_le; have := hL.o_le; have := hL.a_le; have := hL.b_le; have := hL.acc_o; have := hL.acc_a
-  have := hL.acc_b; have := hL.acc_mo; have := hL.acc_tmp; have := hL.o_tmp
-  have := hM.mo; have := hM.tmp; have := hM.sep; have := hM.n0
+  have := hL.acc_le; have := hL.o_le; have := hL.a_le; have := hL.b_le
+  have := hM.mo; have := hM.tmp; have := hM.n0
   have hm0 := m_pos_of_inv hM.inv
   have hmv : val32 s.mem base M.mo N = m := by rw [hN2, ← wordsVal_eq_val32]; exact hM.val
   have hBv : val32 s.mem base b N < m := by rw [hN2, ← wordsVal_eq_val32]; exact hB
-  have hML : MulLay N size acc a b M.mo := ⟨by omega, by omega, by omega, by omega, by omega, by omega, by omega⟩
+  have hML : MulLay N size acc a b M.mo := ⟨by omega_arith, by omega_arith, by omega_arith, by omega_arith,
+    by have := hL.acc_a; omega_arith, by have := hL.acc_b; omega_arith, by have := hL.acc_mo; omega_arith⟩
   simp only [mul, hNw]
-  refine WP.seq (WP.block_append (WP.mono (zeros_ok hs (k := 2 * N + 1) (by omega)) fun s₁ ⟨O₁, V₁, K₁⟩ => ?_))
+  refine WP.seq (WP.block_append (WP.mono (zeros_ok hs (k := 2 * N + 1) (by omega_arith)) fun s₁ ⟨O₁, V₁, K₁⟩ => ?_))
   refine wp_movS rfl fun s₂ u₂ _ => WP.block_nil ?_
   have k₂ : Keeps clob s s₂ := (K₁.mono (by decide)).widen u₂.keeps
   have hs₂ := hs.of_keeps k₂ (by decide)
   have mem₂ : s₂.mem = s₁.mem := u₂.mem
   have O₂ : Outside base acc (4 * (2 * N + 1)) s.mem s₂.mem := mem₂ ▸ O₁
-  have hm₂ : val32 s₂.mem base M.mo N = m := by rw [O₂.val32 (by omega) (by omega), hmv]
-  have hB₂ : val32 s₂.mem base b N < m := by rw [O₂.val32 (by omega) (by omega)]; exact hBv
+  have hm₂ : val32 s₂.mem base M.mo N = m := by rw [O₂.val32 (by have := hL.acc_mo; omega_arith) (by omega_arith), hmv]
+  have hB₂ : val32 s₂.mem base b N < m := by rw [O₂.val32 (by have := hL.acc_b; omega_arith) (by omega_arith)]; exact hBv
   have I₀ : LoopInv base N acc a b m 0 s₂ s₂ := by
     refine ⟨?_, VG.Proof.Mont.Outside.refl _ _ _ _, Keeps.refl _ _, ?_, ⟨0, ?_⟩⟩
     · rw [u₂.gpr, u₂.other _ (by decide), K₁.1 _ (by decide), Nat.mul_zero]; exact (BitVec.add_zero _).symm
-    · rw [Nat.mul_zero, Nat.add_zero, Nat.sub_zero, mem₂, V₁]; omega
+    · rw [Nat.mul_zero, Nat.add_zero, Nat.sub_zero, mem₂, V₁]; omega_arith
     · rw [Nat.mul_zero, Nat.add_zero, Nat.sub_zero, mem₂, V₁]; simp [val32]
-  refine WP.seq (WP.mono (loop_ok hs₂ hNw hML (by omega) hM.red hm₂ (minv32_inv hM.inv) hB₂ I₀) fun t I => ?_)
+  refine WP.seq (WP.mono (loop_ok hs₂ hNw hML (by omega_arith) hM.red hm₂ (minv32_inv hM.inv) hB₂ I₀) fun t I => ?_)
   have ht := hs₂.of_keeps I.keeps (by decide)
-  have hmt : val32 t.mem base M.mo N = m := by rw [I.out.val32 (by omega) (by omega), hm₂]
+  have hmt : val32 t.mem base M.mo N = m := by rw [I.out.val32 (by have := hL.acc_mo; omega_arith) (by omega_arith), hm₂]
   have hlt := I.lt
-  rw [show 2 * N + 1 - N = N + 1 by omega] at hlt
-  refine WP.mono (csub_ok ht hNw (src := acc + 4 * N) (o := o) (by omega) (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) (by omega) (by omega) hmt hlt) fun u ⟨O, V, K⟩ => ⟨?_, ?_, ?_⟩
+  rw [show 2 * N + 1 - N = N + 1 by omega_arith] at hlt
+  refine WP.mono (csub_ok ht hNw (src := acc + 4 * N) (o := o) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by have := hL.acc_tmp; omega_arith) (by have := hM.sep; omega_arith)
+    (by have := hL.acc_o; omega_arith) (by have := hL.o_tmp; omega_arith) hmt hlt) fun u ⟨O, V, K⟩ => ⟨?_, ?_, ?_⟩
   · refine OpKeep.of ((k₂.trans I.keeps).trans (K.mono (by decide))) (by decide) ?_
     have O₂' : Outside base acc (accLen M) s.mem s₂.mem := by rw [hacc]; exact O₂
     have O₃ : Outside base acc (accLen M) s₂.mem t.mem := by rw [hacc]; exact I.out
     refine ((Outs.of_outside O₂' (by simp)).trans (Outs.of_outside O₃ (by simp))).trans ?_
-    rw [show 4 * N = 8 * M.n by omega] at O
+    rw [show 4 * N = 8 * M.n by omega_arith] at O
     exact O.mono (by simp)
   · rw [wordsVal_eq_val32, ← hN2, V]; exact Nat.mod_lt _ hm0
   · obtain ⟨U, hU⟩ := I.cong
-    rw [show 2 * N + 1 - N = N + 1 by omega] at hU
+    rw [show 2 * N + 1 - N = N + 1 by omega_arith] at hU
     rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32, ← hN2, V,
-      show 64 * M.n = 32 * N by omega, ← O₂.val32 (d := a) (by omega) (by omega),
-      ← O₂.val32 (d := b) (by omega) (by omega), Nat.mod_mul_mod, Nat.mul_comm, hU, Nat.add_mul_mod_self_right]
+      show 64 * M.n = 32 * N by omega_arith, ← O₂.val32 (d := a) (by have := hL.acc_a; omega_arith) (by omega_arith),
+      ← O₂.val32 (d := b) (by have := hL.acc_b; omega_arith) (by omega_arith), Nat.mod_mul_mod, Nat.mul_comm, hU,
+      Nat.add_mul_mod_self_right]
 
 /-- `[o] = [a] + [b] mod m`. -/
 theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
@@ -145,40 +147,41 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   obtain ⟨N, hNw⟩ : ∃ N, words M = N := ⟨_, rfl⟩
   have hN2 : N = 2 * M.n := hNw ▸ rfl
   have hacc : accLen M = 4 * (2 * N + 1) := by rw [accLen, hNw]
-  have := hL.acc_le; have := hL.o_le; have := hL.a_le; have := hL.b_le; have := hL.acc_o; have := hL.acc_a
-  have := hL.acc_b; have := hL.acc_mo; have := hL.acc_tmp; have := hL.o_tmp
-  have := hM.mo; have := hM.tmp; have := hM.sep; have := hM.n0
-  obtain ⟨k, hk⟩ : ∃ k, N = k + 1 := ⟨N - 1, by omega⟩
+  have := hL.acc_le; have := hL.o_le; have := hL.a_le; have := hL.b_le
+  have := hM.mo; have := hM.tmp; have := hM.n0
+  obtain ⟨k, hk⟩ : ∃ k, N = k + 1 := ⟨N - 1, by omega_arith⟩
   simp only [add, chain_eq, hNw, hk, List.append_assoc, List.cons_append, List.nil_append]
-  refine WP.block_append (WP.mono (chainAdd_ok hs (acc := acc) (a := a) (b := b) k (by omega) (by omega)
-    (by omega) (by omega) (by omega)) fun s₁ ⟨O₁, ⟨c, hc, V₁⟩, K₁⟩ => ?_)
+  refine WP.block_append (WP.mono (chainAdd_ok hs (acc := acc) (a := a) (b := b) k (by omega_arith) (by omega_arith)
+    (by omega_arith) (by have := hL.acc_a; omega_arith) (by have := hL.acc_b; omega_arith))
+    fun s₁ ⟨O₁, ⟨c, hc, V₁⟩, K₁⟩ => ?_)
   have hs₁ := hs.of_keeps K₁ (by decide)
   refine wp_movS rfl fun s₂ u₂ cf₂ => ?_
   refine wp_adcS rfl (by rw [cf₂]; exact hc) fun s₃ u₃ _ => ?_
   have k₃ : Keeps [.eax] s s₃ := (K₁.widen u₂.keeps).widen u₃.keeps
   have hs₃ := hs.of_keeps k₃ (by decide)
-  refine wp_storeS (hs₃.ea (d := acc + 4 * (k + 1)) (by omega))
-    (hs₃.write (d := acc + 4 * (k + 1)) (n := 4) (by omega)) fun s₄ m₄ => ?_
+  refine wp_storeS (hs₃.ea (d := acc + 4 * (k + 1)) (by omega_arith))
+    (hs₃.write (d := acc + 4 * (k + 1)) (n := 4) (by omega_arith)) fun s₄ m₄ => ?_
   have hs₄ := hs₃.of_keeps (m₄.keeps []) (by decide)
   have O₄ : Outside base acc (4 * (k + 1) + 4) s.mem s₄.mem := by
     rw [m₄.mem, u₃.mem, u₂.mem]
-    exact (O₁.mono (Nat.le_refl _) (by omega)).trans
-      ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))
+    exact (O₁.mono (Nat.le_refl _) (by omega_arith)).trans
+      ((writeW32_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
   have hsum : val32 s₄.mem base acc (k + 1 + 1) =
       wordsVal s.mem base a M.n + wordsVal s.mem base b M.n := by
-    rw [val32_succ, m₄.mem, u₃.mem, u₂.mem, (writeW32_outside _ _ _ (by omega)).val32 (by omega) (by omega),
+    rw [val32_succ, m₄.mem, u₃.mem, u₂.mem, (writeW32_outside _ _ _ (by omega_arith)).val32 (by omega_arith) (by omega_arith),
       w32_write_self, u₃.gpr, u₂.gpr, wordsVal_eq_val32, wordsVal_eq_val32, ← hN2, hk, ← V₁]
     have : ((0 : BitVec 32) + 0 + (BitVec.ofBool c).setWidth 32).toNat = c.toNat := by cases c <;> rfl
     rw [this]
   have hm₄ : val32 s₄.mem base M.mo (k + 1) = m := by
-    rw [O₄.val32 (by omega) (by omega), ← hk, hN2, ← wordsVal_eq_val32]; exact hM.val
-  refine WP.mono (csub_ok hs₄ (hNw.trans hk) (src := acc) (o := o) (by omega) (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) (by omega) (by omega) hm₄ (by rw [hsum]; exact hAB))
+    rw [O₄.val32 (by have := hL.acc_mo; omega_arith) (by omega_arith), ← hk, hN2, ← wordsVal_eq_val32]; exact hM.val
+  refine WP.mono (csub_ok hs₄ (hNw.trans hk) (src := acc) (o := o) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by have := hL.acc_tmp; omega_arith) (by have := hM.sep; omega_arith)
+    (by have := hL.acc_o; omega_arith) (by have := hL.o_tmp; omega_arith) hm₄ (by rw [hsum]; exact hAB))
     fun u ⟨O, V, K⟩ => ⟨?_, ?_⟩
   · refine OpKeep.of (((k₃.mono (rs' := clob) (by decide)).widen (m₄.keeps [])).widen K) (by decide) ?_
-    have O₄' : Outside base acc (accLen M) s.mem s₄.mem := O₄.mono (Nat.le_refl _) (by omega)
+    have O₄' : Outside base acc (accLen M) s.mem s₄.mem := O₄.mono (Nat.le_refl _) (by omega_arith)
     refine (Outs.of_outside O₄' (by simp)).trans ?_
-    rw [show 4 * (k + 1) = 8 * M.n by omega] at O
+    rw [show 4 * (k + 1) = 8 * M.n by omega_arith] at O
     exact O.mono (by simp)
   · rw [wordsVal_eq_val32, ← hN2, hk, V, hsum]
 
@@ -205,21 +208,21 @@ theorem masked_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   | k + 1, hmo, htmp, hsep => by
     have hn := hs.nowrap
     rw [maskK_succ]
-    refine WP.block_append (WP.mono (masked_ok hs c hm k (by omega) (by omega) (by omega))
+    refine WP.block_append (WP.mono (masked_ok hs c hm k (by omega_arith) (by omega_arith) (by omega_arith))
       fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
     have hs₁ := hs.of_keeps K₁ (by decide)
-    refine wp_movS (readSrc_sc hs₁ (d := mo + 4 * k) (by omega)) fun s₂ u₂ _ => ?_
+    refine wp_movS (readSrc_sc hs₁ (d := mo + 4 * k) (by omega_arith)) fun s₂ u₂ _ => ?_
     refine wp_logicS (.inl rfl) rfl fun s₃ u₃ => ?_
     have k₃ : Keeps [.edx] s s₃ := (K₁.widen u₂.keeps).widen u₃.keeps
     have hs₃ := hs.of_keeps k₃ (by decide)
-    refine wp_storeS (hs₃.ea (d := tmp + 4 * k) (by omega)) (hs₃.write (d := tmp + 4 * k) (n := 4) (by omega))
+    refine wp_storeS (hs₃.ea (d := tmp + 4 * k) (by omega_arith)) (hs₃.write (d := tmp + 4 * k) (n := 4) (by omega_arith))
       fun s₄ m₄ => WP.block_nil ⟨?_, ?_, k₃.trans (m₄.keeps _)⟩
     · rw [m₄.mem, u₃.mem, u₂.mem]
-      exact (O₁.mono (Nat.le_refl _) (by omega)).trans
-        ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))
+      exact (O₁.mono (Nat.le_refl _) (by omega_arith)).trans
+        ((writeW32_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith))
     · have heax : s₂.gpr .eax = s.gpr .eax := by rw [u₂.other _ (by decide), K₁.1 _ (by decide)]
-      have hw : w32 s₁.mem base (mo + 4 * k) = w32 s.mem base (mo + 4 * k) := O₁.w32 (by omega) (by omega)
-      rw [val32_succ, m₄.mem, u₃.mem, u₂.mem, (writeW32_outside _ _ _ (by omega)).val32 (by omega) (by omega),
+      have hw : w32 s₁.mem base (mo + 4 * k) = w32 s.mem base (mo + 4 * k) := O₁.w32 (by omega_arith) (by omega_arith)
+      rw [val32_succ, m₄.mem, u₃.mem, u₂.mem, (writeW32_outside _ _ _ (by omega_arith)).val32 (by omega_arith) (by omega_arith),
         w32_write_self, V₁, u₃.gpr, u₂.gpr, heax, hm]
       cases c
       · simp only [Bool.false_eq_true, ite_false]
@@ -237,12 +240,12 @@ theorem sub_arith {A B m X acc o : Nat} {c c' : Bool} (hA : A < m) (hB : B < m)
     (hacc : acc < X) (ho : o < X) (h1 : acc + B = A + X * c.toNat)
     (h2 : o + X * c'.toNat = acc + (if c then m else 0)) : o = (A + m - B) % m := by
   rcases Nat.lt_or_ge A B with h | h
-  · rw [Nat.mod_eq_of_lt (by omega)]
+  · rw [Nat.mod_eq_of_lt (by omega_arith)]
     cases c <;> cases c' <;> simp only [Bool.toNat_false, Bool.toNat_true, ite_true, Bool.false_eq_true,
-      ite_false, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at h1 h2 <;> omega
-  · rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+      ite_false, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at h1 h2 <;> omega_arith
+  · rw [Nat.mod_eq_sub_mod (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
     cases c <;> cases c' <;> simp only [Bool.toNat_false, Bool.toNat_true, ite_true, Bool.false_eq_true,
-      ite_false, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at h1 h2 <;> omega
+      ite_false, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at h1 h2 <;> omega_arith
 
 /-- `[o] = [a] - [b] mod m`. -/
 theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
@@ -254,36 +257,37 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   obtain ⟨N, hNw⟩ : ∃ N, words M = N := ⟨_, rfl⟩
   have hN2 : N = 2 * M.n := hNw ▸ rfl
   have hacc : accLen M = 4 * (2 * N + 1) := by rw [accLen, hNw]
-  have := hL.acc_le; have := hL.o_le; have := hL.a_le; have := hL.b_le; have := hL.acc_o; have := hL.acc_a
-  have := hL.acc_b; have := hL.acc_mo; have := hL.acc_tmp; have := hL.o_tmp
-  have := hM.mo; have := hM.tmp; have := hM.sep; have := hM.n0
-  obtain ⟨k, hk⟩ : ∃ k, N = k + 1 := ⟨N - 1, by omega⟩
+  have := hL.acc_le; have := hL.o_le; have := hL.a_le; have := hL.b_le
+  have := hM.mo; have := hM.tmp; have := hM.n0
+  obtain ⟨k, hk⟩ : ∃ k, N = k + 1 := ⟨N - 1, by omega_arith⟩
   simp only [sub, chain_eq, masked_eq, hNw, hk, List.append_assoc, List.cons_append, List.nil_append]
-  refine WP.block_append (WP.mono (chainSub_ok hs (acc := acc) (a := a) (b := b) k (by omega) (by omega)
-    (by omega) (by omega) (by omega)) fun s₁ ⟨O₁, ⟨c, hc, V₁⟩, K₁⟩ => ?_)
+  refine WP.block_append (WP.mono (chainSub_ok hs (acc := acc) (a := a) (b := b) k (by omega_arith) (by omega_arith)
+    (by omega_arith) (by have := hL.acc_a; omega_arith) (by have := hL.acc_b; omega_arith))
+    fun s₁ ⟨O₁, ⟨c, hc, V₁⟩, K₁⟩ => ?_)
   have hs₁ := hs.of_keeps K₁ (by decide)
   refine wp_sbbS rfl hc fun s₂ u₂ _ => ?_
   have k₂ : Keeps [.eax, .edx] s s₂ := (K₁.mono (by decide)).widen u₂.keeps
   have hs₂ := hs.of_keeps k₂ (by decide)
   have mask : s₂.gpr .eax = if c then BitVec.allOnes 32 else 0 := by rw [u₂.gpr, borrow_mask]
-  refine WP.block_append (WP.mono (masked_ok hs₂ c mask (k + 1) (mo := M.mo) (tmp := M.tmp) (by omega)
-    (by omega) (by omega)) fun s₃ ⟨O₃, V₃, K₃⟩ => ?_)
+  refine WP.block_append (WP.mono (masked_ok hs₂ c mask (k + 1) (mo := M.mo) (tmp := M.tmp) (by omega_arith)
+    (by omega_arith) (by have := hM.sep; omega_arith)) fun s₃ ⟨O₃, V₃, K₃⟩ => ?_)
   have k₃ : Keeps [.eax, .edx] s s₃ := k₂.widen K₃
   have hs₃ := hs.of_keeps k₃ (by decide)
-  refine WP.mono (chainAdd_ok hs₃ (acc := o) (a := acc) (b := M.tmp) k (by omega) (by omega)
-    (by omega) (by omega) (by omega)) fun u ⟨O, ⟨c', _, V⟩, K⟩ => ⟨?_, ?_⟩
+  refine WP.mono (chainAdd_ok hs₃ (acc := o) (a := acc) (b := M.tmp) k (by omega_arith) (by omega_arith)
+    (by omega_arith) (by have := hL.acc_o; omega_arith) (by have := hL.o_tmp; omega_arith))
+    fun u ⟨O, ⟨c', _, V⟩, K⟩ => ⟨?_, ?_⟩
   · refine OpKeep.of (k₃.widen K) (by decide) ?_
-    have O₁' : Outside base acc (accLen M) s.mem s₁.mem := O₁.mono (Nat.le_refl _) (by omega)
+    have O₁' : Outside base acc (accLen M) s.mem s₁.mem := O₁.mono (Nat.le_refl _) (by omega_arith)
     rw [u₂.mem] at O₃
-    rw [show 4 * (k + 1) = 8 * M.n by omega] at O₃ O
+    rw [show 4 * (k + 1) = 8 * M.n by omega_arith] at O₃ O
     exact ((Outs.of_outside O₁' (by simp)).trans (Outs.of_outside O₃ (by simp))).trans
       (Outs.of_outside O (by simp))
   · have hacc₃ : val32 s₃.mem base acc (k + 1) = val32 s₁.mem base acc (k + 1) := by
-      rw [O₃.val32 (by omega) (by omega), u₂.mem]
+      rw [O₃.val32 (by have := hL.acc_tmp; omega_arith) (by omega_arith), u₂.mem]
     have hmo : val32 s₁.mem base M.mo (k + 1) = m := by
-      rw [O₁.val32 (by omega) (by omega), ← hk, hN2, ← wordsVal_eq_val32]; exact hM.val
+      rw [O₁.val32 (by have := hL.acc_mo; omega_arith) (by omega_arith), ← hk, hN2, ← wordsVal_eq_val32]; exact hM.val
     rw [hacc₃, V₃, u₂.mem, hmo] at V
-    have e : 2 * M.n = k + 1 := by omega
+    have e : 2 * M.n = k + 1 := by omega_arith
     have hA' : val32 s.mem base a (k + 1) < m := by rw [← e, ← wordsVal_eq_val32]; exact hA
     have hB' : val32 s.mem base b (k + 1) < m := by rw [← e, ← wordsVal_eq_val32]; exact hB
     rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32, e]
