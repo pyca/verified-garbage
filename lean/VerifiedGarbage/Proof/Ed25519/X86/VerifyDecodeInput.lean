@@ -22,13 +22,15 @@ theorem decodeInput_number_ok {s₀ s : State} {i : Nat} (hp : ScratchPre s₀ 3
     (hi : SlicePre s₀ 3 (arg s₀ i + BitVec.ofNat 32 0) 32)
     (hs : Saved s₀ (arg s₀ 3) s) (hia : i < 4) :
     WP isa (.seq (.block (inputSliceWords i 0 96 8)) pointDecode) s fun t =>
-      Saved s₀ (arg s₀ 3) t ∧ Frame [sub (arg s₀ 3) 24 7144] s.mem t.mem ∧
+      Saved s₀ (arg s₀ 3) t ∧ Frame [sub (arg s₀ 3) 24 7144, callStk s] s.mem t.mem ∧
       DecodeResult (arg s₀ 3) (decodeNumber (fe s₀.mem (arg s₀ i + BitVec.ofNat 32 0) 0)) t := by
   refine WP.seq (WP.mono (inputSliceWords_ok hp hi hs hia (by decide) (by decide) (by decide))
     fun a ⟨ha, wa, fa⟩ => ?_)
-  refine WP.mono (pointDecode_ok (ha.ctx hp.fit hp.wr)) fun t ht => ?_
+  refine WP.mono (pointDecode_ok (ha.ctx hp.fit hp.wr hp.stk)) fun t ht => ?_
   have kt := ht.1
-  refine ⟨ha.mulkeep hp.fit kt, (frameWiden fa hp.fit (by decide) (by decide) (by decide)).trans kt.frame, ?_⟩
+  have es : callStk a = callStk s := by rw [callStk, callStk, ha.esp, hs.esp]
+  refine ⟨ha.mulkeep hp.fit kt, (Frame.withStk (s := s) (frameWiden fa hp.fit (by decide) (by decide)
+    (by decide))).trans (by rw [← es]; exact kt.frame), ?_⟩
   have value : fe a.mem (arg s₀ 3) 96 = fe s₀.mem (arg s₀ i + BitVec.ofNat 32 0) 0 := by
     apply num_congr
     intro k hk
@@ -49,7 +51,7 @@ theorem decodeInput_ok {s₀ s : State} {i : Nat} (hp : ScratchPre s₀ 3 4)
     (hi : SlicePre s₀ 3 (arg s₀ i + BitVec.ofNat 32 0) 32)
     (hs : Saved s₀ (arg s₀ 3) s) (hia : i < 4) :
     WP isa (.seq (.block (inputSliceWords i 0 96 8)) pointDecode) s fun t =>
-      Saved s₀ (arg s₀ 3) t ∧ Frame [sub (arg s₀ 3) 24 7144] s.mem t.mem ∧
+      Saved s₀ (arg s₀ 3) t ∧ Frame [sub (arg s₀ 3) 24 7144, callStk s] s.mem t.mem ∧
       DecodeResult (arg s₀ 3) (inputPoint s₀ i) t := by
   refine WP.mono (decodeInput_number_ok hp hi hs hia) fun t ht => ⟨ht.1, ht.2.1, ?_⟩
   with_reducible exact Eq.mp (congrArg (fun p => DecodeResult (arg s₀ 3) p t) (inputPoint_number hi)) ht.2.2

@@ -62,7 +62,7 @@ namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
 theorem PowersKeep.counter {b : BitVec 32} {o n : Nat} {s t : State}
-    (h : PowersKeep b o n s t) (ho : 1600 ≤ o) (hn : o + n ≤ 8192) :
+    (h : PowersKeep b o n s t) (ho : 1632 ≤ o) (hn : o + n ≤ 8192) :
     t.mem.readW (State.addr b + BitVec.ofNat 64 56) 32 =
       s.mem.readW (State.addr b + BitVec.ofNat 64 56) 32 := by
   apply BitVec.eq_of_toNat_eq
@@ -89,7 +89,7 @@ theorem bitsFrame_counter {b : BitVec 32} {m m' : Mem}
 
 theorem smallFrame_table {b : BitVec 32} {m m' : Mem} {o n d : Nat}
     (h : Frame [⟨State.addr b + BitVec.ofNat 64 o, n⟩] m m') (hn : o + n ≤ 64)
-    (hd : 1600 ≤ d) (hb : d + 128 ≤ 8192) : tablePoint m' b d = tablePoint m b d := by
+    (hd : 1632 ≤ d) (hb : d + 128 ≤ 8192) : tablePoint m' b d = tablePoint m b d := by
   refine tablePoint_frame h fun r hr => ?_
   rw [List.mem_singleton.mp hr]
   exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
@@ -106,31 +106,31 @@ theorem pointMulBody_ok {b ptr : BitVec 32} {s : State} (hc : Ctx b s) (hl : All
     (hj : j < count) (hd : env s.mem b 16 = Spec.Ed25519.d)
     (hp : point (env s.mem b) 0 1 2 3 = after scalar p (16 * (j + 1)))
     (hcj : s.mem.readW (State.addr b + BitVec.ofNat 64 56) 32 = BitVec.ofNat 32 (j + 1))
-    (ht : tablePoint s.mem b (1600 + 128 * j) = powerPoint p (16 * j)) :
-    WP isa pointMulBody s fun t => MulKeep b 5696 2048 s t ∧ AllLim t.mem b ∧
+    (ht : tablePoint s.mem b (1632 + 128 * j) = powerPoint p (16 * j)) :
+    WP isa pointMulBody s fun t => MulKeep b 5728 2048 s t ∧ AllLim t.mem b ∧
       env t.mem b 16 = Spec.Ed25519.d ∧ point (env t.mem b) 0 1 2 3 = after scalar p (16 * j) ∧
       t.mem.readW (State.addr b + BitVec.ofNat 64 56) 32 = BitVec.ofNat 32 j ∧ t.z = decide (j = 0) := by
   have hj32 : j < 32 := Nat.lt_of_lt_of_le hj hi.bound
   refine WP.seq (WP.mono (batchStart_ok hc j hcj) fun a ⟨ar, af, av, ac⟩ => ?_)
-  have ak : MulKeep b 5696 2048 s a := MulKeep.of_counter ar (by decide) af
+  have ak : MulKeep b 5728 2048 s a := MulKeep.of_counter ar (by decide) af
   have al := smallFrame_lim af (by decide) hl
   have ae := smallFrame_env af (by decide)
   have ad : env a.mem b 16 = Spec.Ed25519.d := (congrFun ae 16).trans hd
   refine WP.seq (WP.mono (prepareBatch_ok (ak.ctx hc) al j hj32 av ad) fun u ⟨uk, ul, up, ut, ud⟩ => ?_)
-  have kum : MulKeep b 5696 2048 s u := ak.trans (MulKeep.of_powers uk)
+  have kum : MulKeep b 5728 2048 s u := ak.trans (MulKeep.of_powers uk)
   have ui := hi.keep kum (by decide) (by decide)
   have uc := (uk.counter (by decide) (by decide)).trans ac
   have upt : point (env u.mem b) 0 1 2 3 = after scalar p (16 * j + 16) :=
     up.trans ((congrArg (fun e => point e 0 1 2 3) ae).trans
       (hp.trans (congrArg (after scalar p) (by omega))))
-  have utt : ∀ i < 16, tablePoint u.mem b (5696 + 128 * i) = powerPoint p (16 * j + i) := by
+  have utt : ∀ i < 16, tablePoint u.mem b (5728 + 128 * i) = powerPoint p (16 * j + i) := by
     intro i hib
     exact (ut i hib).trans ((congrArg (fun q => powerPoint q i)
       ((smallFrame_table af (by decide) (by omega) (by omega)).trans ht)).trans
       (powerPoint_add p (16 * j) i).symm)
   refine WP.seq (WP.mono (batchBits_ok (kum.ctx hc) count j hj ui.bound ui.fit ui.pointer uc ui.readable)
     fun v ⟨vr, vf, vb⟩ => ?_)
-  have kv : MulKeep b 5696 2048 u v := MulKeep.of_bits vr (by decide) vf
+  have kv : MulKeep b 5728 2048 u v := MulKeep.of_bits vr (by decide) vf
   have ve := smallFrame_env vf (by decide)
   have vl := smallFrame_lim vf (by decide) ul
   have vbits : ∀ i < 16, v.mem (State.addr b + BitVec.ofNat 64 (32 + i)) =
@@ -141,7 +141,7 @@ theorem pointMulBody_ok {b ptr : BitVec 32} {s : State} (hc : Ctx b s) (hl : All
     ((congrFun ve 16).trans ud) ((congrArg (fun e => point e 0 1 2 3) ve).trans upt)
     (fun i hib => (smallFrame_table vf (by decide) (by omega) (by omega)).trans (utt i hib)))
     fun w ⟨wl, wp, wd, wk⟩ => ?_)
-  have kwm : MulKeep b 5696 2048 s w := kum.trans (kv.trans (MulKeep.of_loop wk))
+  have kwm : MulKeep b 5728 2048 s w := kum.trans (kv.trans (MulKeep.of_loop wk))
   have wc := wk.counter.trans ((bitsFrame_counter vf).trans uc)
   refine WP.mono (batchTest_ok (kwm.ctx hc) j hj32 wc) fun t ⟨tr, tm, tz⟩ => ?_
   exact ⟨kwm.trans (MulKeep.of_rest tr (by decide) tm), tm ▸ wl,

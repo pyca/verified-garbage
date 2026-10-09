@@ -14,7 +14,7 @@ these into a proof for any list of field operations.
 namespace VG.Proof.Ed25519.X86_64
 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
-open VG.Proof.X25519.X86_64 (Scr Outside Op clob F)
+open VG.Proof.X25519.X86_64 (Scr Outside Op clob F fe)
 
 /-- The field multiplications the code may be emitted with: the baseline's, or BMI2 and
 ADX's. The proofs hold for any multiplications that are correct (`ok`); the constant-time
@@ -128,16 +128,126 @@ theorem fieldOp_ok {s : State} {base : Addr} (hs : Scr s base) (op : FieldOp) :
       (by simp only [offset]; omega) (by simp only [offset]; omega)) fun t ⟨h, e⟩ => ?_
     exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl⟩
 
+/-- Slot `i` holds at most `2p`. -/
+def Bnd (m : Mem) (base : Addr) (i : Slot) : Prop :=
+  fe m base (offset i) ≤ 2 * Spec.X25519.P
+
+/-- A product of `fld` is at most `2p`. -/
+theorem EdArith.mulBnd {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
+    (ho : Proof.X25519.X86_64.Slot o) (ha : Proof.X25519.X86_64.Slot a)
+    (hb : Proof.X25519.X86_64.Slot b) :
+    WP isa (.block (fld.mul o a b)) s fun t => Op base o s t ∧
+      F t.mem base o = F s.mem base a * F s.mem base b ∧ fe t.mem base o ≤ 2 * Spec.X25519.P := by
+  rcases EdArith.known (fld := fld) with rfl | rfl
+  · exact Proof.X25519.X86_64.mulBnd_ok hs ho ha hb
+  · exact Proof.X25519.X86_64.mulXBnd_ok hs ho ha hb
+
+/-- A square of `fld` is at most `2p`. -/
+theorem EdArith.sqrBnd {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
+    (ho : Proof.X25519.X86_64.Slot o) (ha : Proof.X25519.X86_64.Slot a) :
+    WP isa (.block (fld.sqr o a)) s fun t => Op base o s t ∧
+      F t.mem base o = F s.mem base a * F s.mem base a ∧ fe t.mem base o ≤ 2 * Spec.X25519.P := by
+  rcases EdArith.known (fld := fld) with rfl | rfl
+  · exact Proof.X25519.X86_64.sqrBnd_ok hs ho ha
+  · exact Proof.X25519.X86_64.sqrXBnd_ok hs ho ha
+
+/-- The bounds after an operation into `op.out`: the other slots keep theirs. -/
+theorem bnd_after {op : FieldOp} {B : Slot → Bool} {base : Addr} {s t : State}
+    (h : Op base (offset op.out) s t) (hB : ∀ i, B i = true → Bnd s.mem base i)
+    (hp : op.bnd = true → Bnd t.mem base op.out) :
+    ∀ i, bndStep op B i = true → Bnd t.mem base i := by
+  intro i hi
+  by_cases e : i = op.out
+  · subst e
+    simp only [bndStep, ↓reduceIte] at hi
+    exact hp hi
+  · simp only [bndStep, e, ↓reduceIte] at hi
+    have hne : i.val ≠ op.out.val := fun h' => e (Fin.ext h')
+    unfold Bnd
+    rw [h.mem.fe (by simp only [offset]; omega) (by simp only [offset]; omega)]
+    exact hB i hi
+
+theorem fieldOpB_ok {s : State} {base : Addr} (hs : Scr s base) (lazy : Bool) (op : FieldOp)
+    {B : Slot → Bool} (hok : opOk lazy op B = true) (hB : ∀ i, B i = true → Bnd s.mem base i) :
+    WP isa (.block (op.codeB fld lazy)) s fun t => Keep base s t ∧
+      env t.mem base = evalOp op (env s.mem base) ∧ ∀ i, bndStep op B i = true → Bnd t.mem base i := by
+  cases op with
+  | mul o a b =>
+    refine WP.mono (EdArith.mulBnd (fld := fld) hs
+      (by simp only [offset]; omega) (by simp only [offset]; omega)
+      (by simp only [offset]; omega)) fun t ⟨h, e, hb⟩ => ?_
+    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, bnd_after h hB fun _ => hb⟩
+  | sqr o a =>
+    refine WP.mono (EdArith.sqrBnd (fld := fld) hs
+      (by simp only [offset]; omega) (by simp only [offset]; omega)) fun t ⟨h, e, hb⟩ => ?_
+    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, bnd_after h hB fun _ => hb⟩
+  | add o a b =>
+    cases lazy with
+    | false =>
+      refine WP.mono (Proof.X25519.X86_64.add_ok hs
+        (by simp only [offset]; omega) (by simp only [offset]; omega)
+        (by simp only [offset]; omega)) fun t ⟨h, e⟩ => ?_
+      exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, bnd_after h hB (fun e => by simp [FieldOp.bnd] at e)⟩
+    | true =>
+      have hab : Bnd s.mem base a ∨ Bnd s.mem base b := by
+        simp only [opOk, Bool.or_eq_true] at hok
+        exact hok.imp (hB a) (hB b)
+      refine WP.mono (Proof.X25519.X86_64.addL_ok hs
+        (by simp only [offset]; omega) (by simp only [offset]; omega)
+        (by simp only [offset]; omega) hab) fun t ⟨h, e⟩ => ?_
+      exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, bnd_after h hB (fun e => by simp [FieldOp.bnd] at e)⟩
+  | sub o a b =>
+    cases lazy with
+    | false =>
+      refine WP.mono (Proof.X25519.X86_64.sub_ok hs
+        (by simp only [offset]; omega) (by simp only [offset]; omega)
+        (by simp only [offset]; omega)) fun t ⟨h, e⟩ => ?_
+      exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, bnd_after h hB (fun e => by simp [FieldOp.bnd] at e)⟩
+    | true =>
+      refine WP.mono (Proof.X25519.X86_64.subL_ok hs
+        (by simp only [offset]; omega) (by simp only [offset]; omega)
+        (by simp only [offset]; omega) (hB b hok)) fun t ⟨h, e⟩ => ?_
+      exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, bnd_after h hB (fun e => by simp [FieldOp.bnd] at e)⟩
+  | copy o a =>
+    refine WP.mono (copyField_op hs o a) fun t ⟨h, e⟩ => ?_
+    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, bnd_after h hB (fun e => by simp [FieldOp.bnd] at e)⟩
+  | const o v =>
+    refine WP.mono (constField_op hs o v) fun t ⟨h, e, r⟩ => ?_
+    refine ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, bnd_after h hB fun _ => ?_⟩
+    show fe t.mem base (offset o) ≤ _
+    rw [r]; have := v.isLt; omega
+  | mul2 o a b =>
+    refine WP.mono ((EdArith.ok (fld := fld)).mul2 hs
+      (by simp only [offset]; omega) (by simp only [offset]; omega)
+      (by simp only [offset]; omega)) fun t ⟨h, e⟩ => ?_
+    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, bnd_after h hB (fun e => by simp [FieldOp.bnd] at e)⟩
+  | sqr2 o a =>
+    refine WP.mono ((EdArith.ok (fld := fld)).sqr2 hs
+      (by simp only [offset]; omega) (by simp only [offset]; omega)) fun t ⟨h, e⟩ => ?_
+    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl, bnd_after h hB (fun e => by simp [FieldOp.bnd] at e)⟩
+
+theorem opOk_self (op : FieldOp) (B : Slot → Bool) : opOk (opOk true op B) op B = true := by
+  cases h : opOk true op B
+  · cases op <;> rfl
+  · exact h
+
+theorem fieldCodeFrom_ok (ops : List FieldOp) {s : State} {base : Addr} (hs : Scr s base)
+    {B : Slot → Bool} (hB : ∀ i, B i = true → Bnd s.mem base i) :
+    WP isa (.block (fieldCodeFrom fld B ops)) s fun t => Keep base s t ∧
+      env t.mem base = evalOps ops (env s.mem base) ∧
+      ∀ i, bndOut ops B i = true → Bnd t.mem base i := by
+  induction ops generalizing s B with
+  | nil => exact WP.block_nil ⟨Keep.refl _ _, rfl, hB⟩
+  | cons op ops ih =>
+    rw [fieldCodeFrom, WP.block_append_iff]
+    refine WP.mono (fieldOpB_ok hs _ op (opOk_self op B) hB) fun t ⟨ht, et, bt⟩ => ?_
+    refine WP.mono (ih (ht.scr hs) bt) fun u ⟨hu, eu, bu⟩ => ?_
+    exact ⟨ht.trans hu, by rw [eu, et]; rfl, bu⟩
+
 theorem fieldCode_ok (ops : List FieldOp) {s : State} {base : Addr} (hs : Scr s base) :
     WP isa (.block (fieldCode fld ops)) s fun t =>
-      Keep base s t ∧ env t.mem base = evalOps ops (env s.mem base) := by
-  induction ops generalizing s with
-  | nil => exact WP.block_nil ⟨Keep.refl _ _, rfl⟩
-  | cons op ops ih =>
-    rw [fieldCode, List.flatMap_cons, WP.block_append_iff]
-    refine WP.mono (fieldOp_ok hs op) fun t ⟨ht, et⟩ => ?_
-    refine WP.mono (ih (ht.scr hs)) fun u ⟨hu, eu⟩ => ?_
-    exact ⟨ht.trans hu, by rw [eu, et]; rfl⟩
+      Keep base s t ∧ env t.mem base = evalOps ops (env s.mem base) :=
+  WP.mono (fieldCodeFrom_ok ops hs (B := fun _ => false) nofun) fun _ ⟨k, e, _⟩ => ⟨k, e⟩
 
 /-- Coordinates in four consecutive slots. -/
 def point (e : Env) (x y z t : Slot) : Spec.Ed25519.Point := ⟨e x, e y, e z, e t⟩

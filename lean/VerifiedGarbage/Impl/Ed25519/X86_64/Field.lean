@@ -57,8 +57,6 @@ def FieldOp.code (fld : Arith) : FieldOp → List Instr
   | .mul2 o a b => fld.mul2 (offset o) (offset a) (offset b)
   | .sqr2 o a => fld.sqr2 (offset o) (offset a)
 
-def fieldCode (fld : Arith) (ops : List FieldOp) : List Instr := ops.flatMap (FieldOp.code fld)
-
 /-- `FieldOp.code`, but with the sums and differences folded once (`addL`, `subL`) if
 `lazy`: correct when one operand of each sum, and the subtrahend of each difference,
 is at most `2p`, as a product is. -/
@@ -68,6 +66,42 @@ def FieldOp.codeB (fld : Arith) (lazy : Bool) : FieldOp → List Instr
   | .sub o a b => if lazy then Impl.X25519.X86_64.subL (offset o) (offset a) (offset b)
       else Impl.X25519.X86_64.sub (offset o) (offset a) (offset b)
   | op => op.code fld
+
+/-- The slot an operation writes. -/
+def FieldOp.out : FieldOp → Slot
+  | .copy o _ | .const o _ | .mul o _ _ | .sqr o _ | .add o _ _ | .sub o _ _ | .mul2 o _ _
+  | .sqr2 o _ => o
+
+/-- The operation's result is at most `2p`: a product, or a constant. -/
+def FieldOp.bnd : FieldOp → Bool
+  | .mul .. | .sqr .. | .const .. => true
+  | _ => false
+
+/-- The slots holding at most `2p` after `op`, if `B` did before it. -/
+def bndStep (op : FieldOp) (B : Slot → Bool) (i : Slot) : Bool := if i = op.out then op.bnd else B i
+
+/-- `op`'s operands are bounded as `codeB lazy` needs. -/
+def opOk (lazy : Bool) (op : FieldOp) (B : Slot → Bool) : Bool :=
+  match lazy, op with
+  | true, .add _ a b => B a || B b
+  | true, .sub _ _ b => B b
+  | _, _ => true
+
+/-- The slots bounded after `ops`, if `B` were before them. -/
+def bndOut : List FieldOp → (Slot → Bool) → Slot → Bool
+  | [], B => B
+  | op :: ops, B => bndOut ops (bndStep op B)
+
+/-- The field program `ops`, with the slots `B` at most `2p` before it: each sum or
+difference is folded once (`FieldOp.codeB`) where an operand of the sum, or the
+subtrahend, is bounded (`opOk`), as products and constants are (`bndStep`). -/
+def fieldCodeFrom (fld : Arith) : (Slot → Bool) → List FieldOp → List Instr
+  | _, [] => []
+  | B, op :: ops => op.codeB fld (opOk true op B) ++ fieldCodeFrom fld (bndStep op B) ops
+
+/-- The field program `ops`, its sums and differences of products folded once
+(`fieldCodeFrom`, from no slot bounded). -/
+def fieldCode (fld : Arith) (ops : List FieldOp) : List Instr := fieldCodeFrom fld (fun _ => false) ops
 
 /-- `fieldCode` with the sums and differences folded once (`FieldOp.codeB`). -/
 def fieldCodeL (fld : Arith) (ops : List FieldOp) : List Instr := ops.flatMap (FieldOp.codeB fld true)

@@ -8,6 +8,7 @@ structure SlicePre (s₀ : State) (scidx : Nat) (p : BitVec 32) (bytes : Nat) : 
   rd : ∀ k len, 0 < len → k + len ≤ bytes → InRegions (s₀.rd ++ s₀.wr) (addr p k) len
   fit : p.toNat + bytes ≤ 2 ^ 32
   sep : (sub p 0 bytes).Disjoint (scR 8192 (arg s₀ scidx))
+  stk : (sub p 0 bytes).Disjoint (callStk s₀)
 
 theorem slice_contains {s₀ : State} {scidx n k len : Nat} {p : BitVec 32}
     (h : SlicePre s₀ scidx p n) (hk : k + len ≤ n) (hlen : 0 < len) :
@@ -32,8 +33,12 @@ theorem sliceBytes_same {s₀ s : State} {scidx n : Nat} {p : BitVec 32} (hi : S
   have hk' := List.mem_range.mp hk
   rw [← addr_eq (by have := hi.fit; omega_using [this, hk'])]
   apply hs.frame
-  intro r hr; rw [List.mem_singleton.mp hr]
-  exact hi.sep _ (slice_contains hi (by omega_using [hk']) (by have := hi.fit; omega_using [this, hk']))
+  intro r hr
+  have hc := slice_contains hi (k := k) (len := 1) (by omega_using [hk']) (by decide)
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact hi.sep _ hc
+  · exact hi.stk _ hc
 
 theorem loadSlicePointer_ok {s₀ s : State} {scidx argc i skip : Nat}
     (hp : ScratchPre s₀ scidx argc) (hs : Saved s₀ (arg s₀ scidx) s) (hi : i < argc) :
@@ -45,7 +50,7 @@ theorem loadSlicePointer_ok {s₀ s : State} {scidx argc i skip : Nat}
   refine Wp.wp_addi fun t ht => WP.block_nil ?_
   refine ⟨⟨(ht.other _ (by decide)).trans hu.edi, (ht.other _ (by decide)).trans hu.esp,
     ht.rd.trans hu.rd, ht.wr.trans hu.wr, by rw [ht.mem]; exact hu.frame,
-    by rw [ht.mem]; exact hu.saved⟩, ?_, ht.mem.trans mu⟩
+    by rw [ht.mem]; exact hu.saved, hu.stk⟩, ?_, ht.mem.trans mu⟩
   rw [ht.gpr, eu]
 
 theorem inputSliceWords_ok {s₀ s : State} {scidx argc i skip n dst : Nat}
@@ -57,7 +62,7 @@ theorem inputSliceWords_ok {s₀ s : State} {scidx argc i skip n dst : Nat}
         wd s₀.mem (arg s₀ i + BitVec.ofNat 32 skip) (4 * k)) ∧
       Frame [sub (arg s₀ scidx) dst (4 * n)] s.mem t.mem := by
   refine WP.block_append (WP.mono (loadSlicePointer_ok hp hs hia) fun u ⟨hu, eu, mu⟩ => ?_)
-  have cu := hu.ctx hp.fit hp.wr
+  have cu := hu.ctx hp.fit hp.wr hp.stk
   have hr : ∀ k < n, InRegions (u.rd ++ u.wr) (addr (arg s₀ i + BitVec.ofNat 32 skip) (4 * k)) 4 := by
     intro k hk; rw [hu.rd, hu.wr]
     exact slice_read hi (by omega_using [hk]) (by decide)
@@ -69,8 +74,11 @@ theorem inputSliceWords_ok {s₀ s : State} {scidx argc i skip n dst : Nat}
   refine ⟨hu.of_offset hp.fit (Keep.scalar ht.keep) ht.frame hd0 hd hd', ?_, by rw [← mu]; exact ht.frame⟩
   intro k hk
   rw [ht.words k hk]
-  exact hu.frame.readW (slice_contains hi (by omega_using [hk]) (by decide))
-    (by simp only [List.mem_singleton]; rintro r rfl; exact hi.sep) (by decide)
+  exact hu.frame.readW (slice_contains hi (by omega_using [hk]) (by decide)) (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hi.sep
+    · exact hi.stk) (by decide)
 
 theorem inputSliceBits_ok {s₀ s : State} {scidx argc i skip bytes : Nat}
     (hp : ScratchPre s₀ scidx argc) (hi : SlicePre s₀ scidx (arg s₀ i + BitVec.ofNat 32 skip) bytes)
@@ -81,7 +89,7 @@ theorem inputSliceBits_ok {s₀ s : State} {scidx argc i skip bytes : Nat}
           ((arg s₀ i + BitVec.ofNat 32 skip).setWidth 64) bytes) / 2 ^ k % 2)) ∧
       Frame [sub (arg s₀ scidx) 7168 (8 * bytes)] s.mem t.mem := by
   refine WP.block_append (WP.mono (loadSlicePointer_ok hp hs hia) fun u ⟨hu, eu, mu⟩ => ?_)
-  have cu := hu.ctx hp.fit hp.wr
+  have cu := hu.ctx hp.fit hp.wr hp.stk
   have hr : ∀ k < bytes, InRegions (u.rd ++ u.wr) (addr (arg s₀ i + BitVec.ofNat 32 skip) k) 1 := by
     intro k hk; rw [hu.rd, hu.wr]
     exact slice_read hi (by omega_using [hk]) (by decide)

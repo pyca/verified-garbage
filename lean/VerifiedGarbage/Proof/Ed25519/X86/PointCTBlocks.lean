@@ -1,42 +1,27 @@
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
 
 /-!
 # Constant time of the point arithmetic blocks
 
-## Summaries of the addition chain
+## The encoding
 
-The constant-time checks of the point encoding (the inversion) and of the
-point recovery (the square root) both run the addition chain `power250`, and
-it repeats the loops of squarings of `sqn` on the same slots: each is
-analysed once here, as a summary (`taint_summary`), which the checks use
-(`taint_decide_sum`).
+The point encoding's inversion calls `vg_gf25519_r32_pow250`, which the
+analysis follows (`callTaint₀`).
 -/
 
 namespace VG.Proof.Ed25519.X86
 
 open VG VG.X86 VG.Impl.Ed25519.X86
-open VG.Impl.X25519.X86 (mul)
-
-/-- The body of the loop of squarings of `sqn` in the slot at `o`. -/
-abbrev sqBody (o : Nat) : Prog isa := .block (mul o o o ++ [.alu .sub .esi (.imm 1)])
-
-taint_summary sqT1 : taint (regsTaint [.ebp, .esi, .edi]) (sqBody T1)
-taint_summary sqT2 : taint (regsTaint [.ebp, .esi, .edi]) (sqBody T2)
-taint_summary sqT3 : taint (regsTaint [.ebp, .esi, .edi]) (sqBody T3)
-
-taint_summary power250Sum : taint (regsTaint [.edi]) power250 using sqT1 sqT2 sqT3
 
 /-! ## The checks -/
 
-theorem pointEncode_ct : RelCT isa (fun s t => s.gpr .edi = t.gpr .edi)
-    pointEncode (fun _ _ => True) := by
-  obtain ⟨_, hc⟩ : ∃ h, (taint.check (regsTaint [.edi]) pointEncode h).isSome = true := by
-    taint_decide_sum [power250Sum, sqT1]
-  apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ hc
-  intro s t h
-  exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸ h)
+theorem pointEncode_ct {x : BitVec 32} : RelCT isa (CallCTPre x) pointEncode (fun _ _ => True) := by
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check callTaint₀ pointEncode h).isSome = true := by
+    taint_decide_sum [VG.Proof.X25519.X86.pow250Sum]
+  exact VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ h => callTaint₀_agree h) hc
 
 def PowersCTPre (x : BitVec 32) (s t : State) : Prop :=
   PointCTCtx x s ∧ PointCTCtx x t ∧ s.wr = t.wr ∧ wd s.mem x 24 = wd t.mem x 24

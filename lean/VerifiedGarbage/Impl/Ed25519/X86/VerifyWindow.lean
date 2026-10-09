@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.Ed25519.BaseMultiples
 import VerifiedGarbage.Impl.Ed25519.X86.PointTable
+import VerifiedGarbage.Impl.Ed25519.X86.Point32
 
 /-!
 # Verification's equation with 4-bit windows
@@ -64,12 +65,12 @@ def doubleWindow : Prog isa := .loop (.block dblStep) .ae
 def aTableInit : List Instr := pointTableRead 7680 ++ pointTableWrite 1024 ++ [.mov .esi (.imm 1)]
 
 /-- Entry `esi` = entry `esi - 1` (in slots 0–3) + `A`; ZF is clear while another follows. -/
-def aTableBody : List Instr :=
-  pointTableQ 7680 ++ pointAdd ++ tableAddr 1024 ++ pointToTable ++
-    [.alu .add .esi (.imm 1), .alu .cmp .esi (.imm 15)]
+def aTableBody : Prog isa :=
+  .seq (.block (pointTableQ 7680)) (.seq Point32.addCall (.block (tableAddr 1024 ++ pointToTable ++
+    [.alu .add .esi (.imm 1), .alu .cmp .esi (.imm 15)])))
 
 /-- Entries `j < 15` of the table at byte 1024 are `[j + 1]A`. -/
-def aTable : Prog isa := .seq (.block aTableInit) (.loop (.block aTableBody) .ne)
+def aTable : Prog isa := .seq (.block aTableInit) (.loop aTableBody .ne)
 
 /-- `-[i + 1]B`, affine, with `Z = 1`. -/
 def negBase (i : Nat) : Spec.Ed25519.Point :=
@@ -102,7 +103,7 @@ def entryAddr (o : Nat) : List Instr :=
 /-- Add entry `eax - 1` of the table at byte `o` to slots 0–3, unless `eax` is zero. -/
 def addDigit (o : Nat) : Prog isa :=
   .seq (.block [.alu .test .eax (.reg .eax)])
-    (.ite .ne (.block (entryAddr o ++ pointFromTableQ ++ pointAdd)) (.block []))
+    (.ite .ne (.seq (.block (entryAddr o ++ pointFromTableQ)) Point32.addCall) (.block []))
 
 /-- `k`'s nibble `esi` (`k` is the third argument, at `[esp + 12]`), added from the table at
 byte 1024. -/

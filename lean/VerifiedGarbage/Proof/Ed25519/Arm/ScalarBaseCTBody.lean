@@ -75,7 +75,7 @@ theorem batchStart_ct (b p : BitVec 32) (j : Nat) :
     exact h.1.1.r0.trans h.2.1.r0.symm
   · intro s ⟨hc, hl, hi, hj, hd⟩
     refine WP.mono (batchStart_ok hc j hj) fun t ⟨tr, tf, tv, tc⟩ => ?_
-    have tk : MulKeep b 5696 2048 s t := MulKeep.of_counter tr (by decide) tf
+    have tk : MulKeep b 5728 2048 s t := MulKeep.of_counter tr (by decide) tf
     exact ⟨tk.ctx hc, smallFrame_lim tf (by decide) hl, (tk.word (by decide) (by decide) 52 (.inr rfl)).trans hi, tc,
       (congrFun (smallFrame_env tf (by decide)) 16).trans hd, tv⟩
 

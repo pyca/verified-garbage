@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Field
+import VerifiedGarbage.Impl.Ed25519.Arm.Point16
 
 /-! A fixed addition chain shared by inversion and square-root recovery. -/
 namespace VG.Impl.Ed25519.Arm
@@ -11,8 +11,9 @@ def sqn (o a : Slot) (n : Nat) : Prog isa :=
   .seq (.block [.movw .r10 (BitVec.ofNat 16 (n - 1))]) <|
     .loop (.seq (mulP o o o) (.block [.subs .r10 .r10 (.imm 1)])) .ne
 
-/-- From z in slot 2, leave z^(2^250 - 1) in slot 15 and z^11 in slot 14. -/
-def power250 : Prog isa :=
+/-- From z in slot 2, leave z^(2^250 - 1) in slot 15 and z^11 in slot 14,
+using slots 16 and 17. -/
+def chain250 : Prog isa :=
   .seq (mulP 14 2 2) <|
   .seq (mulP 15 14 14) <| .seq (mulP 15 15 15) <|
   .seq (mulP 15 2 15) <| .seq (mulP 14 14 15) <|
@@ -24,6 +25,14 @@ def power250 : Prog isa :=
   .seq (sqn 16 15 50) <| .seq (mulP 16 16 15) <|
   .seq (sqn 17 16 100) <| .seq (mulP 16 17 16) <|
   .seq (sqn 16 16 50) (mulP 15 16 15)
+
+/-- `vg_gf25519_r16_pow250` (`Spec/X25519/Field16.lean`): the chain, saving
+and restoring the registers it changes, `r10` (its squarings' counter)
+among them. -/
+def pow250Fn : Prog isa := asFn true chain250
+
+/-- A call of `vg_gf25519_r16_pow250`. -/
+def power250 : Prog isa := .call Spec.X25519.Field16.pow250Api.name pow250Fn
 
 def invert : Prog isa := .seq power250 (.seq (sqn 15 15 5) (mulP 15 15 14))
 

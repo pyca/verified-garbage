@@ -47,33 +47,35 @@ theorem raw_update_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P s
     U₄.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl | rfl | rfl <;> dsimp only <;>
-        omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, h1, h2]) (by omega_using [h3, hn])
+        simp only [eL, eF, eG, eNF, eNG, eT] at h1 h2 ⊢ <;> omega_using [h1, h2]) (by omega_using [h3, hn])
   have M₄ : ModOkA P.M size p s₄.mem base := ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep,
     by
       rw [U₄.wordsVal (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         have hmt := hL.mo_tbl
         rcases hw with rfl | rfl | rfl | rfl | rfl <;> dsimp only <;>
-          omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, hmt, n4]) (by have := hM.mo; omega_using [this, hn]), m₃]
+          simp only [eL, eF, eG, eNF, eNG, eT] at hmt ⊢ <;> omega_using [hmt, n4]) (by have := hM.mo; omega_using [this, hn]), m₃]
       exact hM.val, hM.inv, hM.red, hM.call⟩
   refine WP.mono (abUpd_ok hL hs₄ M₄ (by rw [g₄ _ (by decide), z₃]) (u := mat.u) (v := mat.v) (q := mat.q) (r := mat.r)
     (by rw [g₄ _ (by decide), k₃.gpr _ (by decide)]; exact hU) (by rw [g₄ _ (by decide), k₃.gpr _ (by decide)]; exact hV)
     (by rw [g₄ _ (by decide), k₃.gpr _ (by decide)]; exact hQ) (by rw [g₄ _ (by decide), k₃.gpr _ (by decide)]; exact hR)
-    buv bqr (by rw [rd₄ (by omega) (by omega) (by omega), m₃]; exact hA)
-    (by rw [rd₄ (by omega) (by omega) (by omega), m₃]; exact hB) ha hb) fun t ⟨eA₅, eB₅, k₅, U₅⟩ => ?_
+    buv bqr (by rw [rd₄ (by omega_using [eA, eNF]) (by omega_using [eL, eG, eA])
+      (by omega_using [eA, htbl, n4]), m₃]; exact hA)
+    (by rw [rd₄ (by omega_using [eB, eNF]) (by omega_using [eL, eG, eB])
+      (by omega_using [eB, htbl, n4]), m₃]; exact hB) ha hb) fun t ⟨eA₅, eB₅, k₅, U₅⟩ => ?_
   have rd₅ : ∀ {d k : Nat}, d + 8 * k ≤ P.sA → d + 8 * k ≤ size →
       wordsVal t.mem base d k = wordsVal s₄.mem base d k := fun h1 h3 =>
     U₅.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl | rfl <;> dsimp only <;>
-        omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, h1]) (by omega_using [h3, hn])
+        simp only [eA, eB, eNF, eT] at h1 ⊢ <;> omega_using [h1]) (by omega_using [h3, hn])
   refine ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
   · simp only [Divstep.batch,hmat]
     rw [k₅.gpr _ (by decide), g₄ _ (by decide), k₃.gpr _ (by decide)]; exact hD
   · simp only [Divstep.batch,hmat]
-    rw [rd₅ (by omega) (by omega)]; exact eF₄
+    rw [rd₅ (by omega_using [eL, eF, eA]) (by omega_using [eL, eF, htbl, n4])]; exact eF₄
   · simp only [Divstep.batch,hmat]
-    rw [rd₅ (by omega) (by omega)]; exact eG₄
+    rw [rd₅ (by omega_using [eL, eG, eA]) (by omega_using [eL, eG, htbl, n4])]; exact eG₄
   · simp only [Divstep.batch,hmat]; exact eA₅
   · simp only [Divstep.batch,hmat]; exact eB₅
   · rw [k₅.gpr _ (by decide), g₄ _ (by decide), k₃.gpr _ (by decide)]
@@ -83,6 +85,6 @@ theorem raw_update_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P s
     refine (U.outside fun w hw => ?_).unch
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;>
-      omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT]
+      simp only [eL, eF, eG, eA, eB, eNF, eNG, eT] <;> omega_using []
 
 end VG.Proof.P256.EcdhInverse

@@ -35,7 +35,7 @@ theorem square_frame_outside {m m' : Mem} {x : BitVec 32} {o n : Nat}
 
 /-- The copied input is squared exactly; the saved registers and input
 buffer remain outside the written product. `ebp` is restored to the base. -/
-theorem squareProduct_ok {s : State} {x : BitVec 32} (hc : VG.Proof.X25519.X86.Ctx 8192 x s) :
+theorem squareProduct_ok {s : State} {x : BitVec 32} (hc : VG.Proof.X25519.X86.Ctx 8192 x s false) :
     WP isa (.block squareProductBase) s fun u =>
       Bx u (x.setWidth 64) 8192 ∧ VG.Proof.X25519.X86.Keep s u ∧
       Outside (x.setWidth 64) (own 4) 64 s.mem u.mem ∧

@@ -62,17 +62,17 @@ section
 variable {M : CtxMode} (T : BlkToFn M) (E : EncFn M)
 
 theorem encrypt_mx : (encrypt T.fn E.fn).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [encrypt, blocks, rest, Code.allInstrs, T.mx, E.mx, Bool.true_and, Bool.and_true]
+  simp only [encrypt, head, blocks, rest, Code.allInstrs, T.mx, E.mx, Bool.true_and, Bool.and_true]
   decide +kernel
 
 theorem encrypt_spAll : (encrypt T.fn E.fn).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [encrypt, blocks, rest, Code.all, T.spAll, E.spAll, Bool.true_and, Bool.and_true]
+  simp only [encrypt, head, blocks, rest, Code.all, T.spAll, E.spAll, Bool.true_and, Bool.and_true]
   decide +kernel
 
 theorem encrypt_xdepth : (encrypt T.fn E.fn).x86_64Depth ≤ 2624 := by
   have t := T.xd
   have e := E.xd
-  simp only [encrypt, blocks, rest, copyLoop, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons,
+  simp only [encrypt, head, blocks, rest, copyLoop, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons,
     List.length_nil, Nat.max_le]
   omega
 

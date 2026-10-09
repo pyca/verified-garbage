@@ -218,17 +218,25 @@ theorem choose_after (s n : Nat) (p x y : Spec.Ed25519.Point)
       ite_false, ite_true] using h
   · simpa only [scalarBit, hz, ne_eq, not_false_eq_true, decide_true, ite_true, ite_false] using h
 
+/-- A bit of the scalar, through a frame of the slots and the stack a call uses. -/
+theorem bit_frame {x : BitVec 32} {s : State} (hc : Ctx x s) {m m' : Mem}
+    (hf : Frame [sub x 64 960, callStk s] m m')
+    (i : Nat) (hi : i < 512) : m' (addr x (7168 + i)) = m (addr x (7168 + i)) := by
+  apply hf
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact (sub_disj (by omega_using [hc.fit, hi]) (by omega_using [hc.fit])
+      (Or.inr (by omega)) : (sub x (7168 + i) 1).Disjoint (sub x 64 960)) _ (Region.contains_self _ _)
+  · exact stk_apart hc (d := 7168 + i) (n := 1) (by omega) (by decide) _ (Region.contains_self _ _)
+
 theorem IKeep.word {x : BitVec 32} {s t : State} (h : IKeep x s t) (hc : Ctx x s)
     (o : Nat) (ho : o + 4 ≤ 64) : wd t.mem x o = wd s.mem x o :=
-  wd_frame1 h.frame hc.fit (by decide) (by omega) (Or.inl ho)
+  wd_frame1s hc h.frame (by decide) (by omega) (Or.inl ho)
 
 theorem IKeep.bit {x : BitVec 32} {s t : State} (h : IKeep x s t) (hc : Ctx x s)
-    (i : Nat) (hi : i < 512) : t.mem (addr x (7168 + i)) = s.mem (addr x (7168 + i)) := by
-  apply h.frame
-  intro r hr
-  rw [List.mem_singleton.mp hr]
-  exact (sub_disj (by omega_using [hc.fit, hi]) (by omega_using [hc.fit])
-    (Or.inr (by omega)) : (sub x (7168 + i) 1).Disjoint (sub x 64 864)) _ (Region.contains_self _ _)
+    (i : Nat) (hi : i < 512) : t.mem (addr x (7168 + i)) = s.mem (addr x (7168 + i)) :=
+  bit_frame hc h.frame i hi
 
 theorem accumulateBody_ok {x : BitVec 32} {s : State} (hc : Ctx x s)
     (n batch scalar : Nat) (p : Spec.Ed25519.Point) (hn : n < 16) (hb : batch < 32)

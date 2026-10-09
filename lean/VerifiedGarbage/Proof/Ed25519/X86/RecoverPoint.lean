@@ -32,13 +32,6 @@ private theorem recoverFinish_eval (e : Env) :
     evalOps recoverFinishOps e 12 = 0 - e 6 := by
   exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
-theorem rootEnv_low (e : Env) (i : Slot) (hi : i.val < 14) : rootEnv e i = e i := by
-  have h14 : i ≠ 14 := by intro h; subst i; contradiction
-  have h15 : i ≠ 15 := by intro h; subst i; contradiction
-  have h16 : i ≠ 16 := by intro h; subst i; contradiction
-  have h17 : i ≠ 17 := by intro h; subst i; contradiction
-  simp only [rootEnv, power250Env, opMul, opSqn, Function.update_apply, h14, h15, h16, h17, ite_false]
-
 theorem recoverCandidate_ok {s : State} {base : BitVec 32} (hs : Ctx base s) :
     WP isa recoverCandidate s fun t => IKeep base s t ∧
       env t.mem base 0 = rootX (env s.mem base 1) ∧
@@ -49,13 +42,8 @@ theorem recoverCandidate_ok {s : State} {base : BitVec 32} (hs : Ctx base s) :
       env t.mem base 12 = 0 - rootU (env s.mem base 1) := by
   rw [recoverCandidate]
   refine WP.seq (WP.mono (fieldCode_ok recoverInitOps hs) fun a ⟨ka, va⟩ => ?_)
-  refine WP.seq (WP.mono (rootPower_spec base a (ka.ctx hs)) fun b ⟨kb, eb⟩ => ?_)
+  refine WP.seq (WP.mono (rootPower_ok (ka.ctx hs)) fun b ⟨kb, vb, be⟩ => ?_)
   have kbr := kb
-  have vb : env b.mem base 15 = VG.Proof.Ed25519.rootPower (env a.mem base 2) := by rw [eb, rootEnv_eval]
-  have be : ∀ i : Slot, i.val < 14 → env b.mem base i = env a.mem base i := by
-    intro i hi
-    rw [eb]
-    exact rootEnv_low _ i hi
   refine WP.mono (fieldCode_ok recoverFinishOps (kbr.ctx (ka.ctx hs))) fun t ⟨kt, vt⟩ => ?_
   have ay := (recoverInit_eval (env s.mem base)).1
   have au := (recoverInit_eval (env s.mem base)).2.1

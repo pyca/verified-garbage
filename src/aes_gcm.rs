@@ -1850,7 +1850,13 @@ mod tests {
                     assert_eq!(&ct[..len], &msg[..len], "{b:?}");
                     let (a, c) = msg[..len].split_at(len / 3);
                     let (p, t) = msg[..len].split_at(len - 1);
-                    for pieces in [&[&msg[..len]][..], &[a, c], &[p, t]] {
+                    // Slices after one ending inside a block: shorter than
+                    // the bytes that end it, ending it exactly, and longer.
+                    let m = &msg[..len];
+                    let short: [&[u8]; 4] = [&m[..5], &m[5..7], &m[7..16], &m[16..]];
+                    let ends: [&[u8]; 3] = [&m[..1], &m[1..32], &m[32..]];
+                    let long: [&[u8]; 3] = [&m[..3], &m[3..len - 33], &m[len - 33..]];
+                    for pieces in [&[m][..], &[a, c], &[p, t], &short, &ends, &long] {
                         let mut out = [0u8; 3100];
                         let tag = k.encrypt(&nonce, &aad, pieces, &mut out[..len]);
                         assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)), "{b:?}");

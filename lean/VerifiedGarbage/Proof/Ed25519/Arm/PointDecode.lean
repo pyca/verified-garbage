@@ -64,7 +64,7 @@ theorem splitYSign_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : All
       change limb s3.mem (State.addr base) (offset 1) k = _
       rw [ys k hk]
       simp only [mask15, hk15, ite_false]
-  have lt : AllLim t.mem base := (field_update 1 (smallFrame_lim f3 (by decide) hl) (frame_o ft)
+  have lt : AllLim t.mem base := (field_update 1 (smallFrame_lim f3 (by decide) hl) (frame_o16 ft)
     (fun k hk => by rw [yt k hk]; exact mf.2.2.1 k hk)).1
   refine ⟨⟨(r5.trans (ht.rest _)).mono (by decide), ?_⟩, lt, ?_, ?_⟩
   · exact (f3.mono (fun r hr => by rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..)).trans
@@ -223,7 +223,7 @@ theorem pointDecodeLoad_ok {s : State} {base ptr : BitVec 32} (hc : Ctx base s) 
   have vu : V u.mem (State.addr base) (offset 1) =
       Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) :=
     uv.trans ((congrArg (packedV s.mem) (BitVec.add_zero _)).trans (packedV_decode _ _))
-  obtain ⟨uk, ull, _⟩ := field_finish 1 hl (ur.mono (by decide)) (frame_o uf) ul (v := FS u.mem (State.addr base) (offset 1)) rfl
+  obtain ⟨uk, ull, _⟩ := field_finish 1 hl (ur.mono (by decide)) (frame_o16 uf) ul (v := FS u.mem (State.addr base) (offset 1)) rfl
   refine WP.mono (splitYSign_ok (uk.ctx hc) ull) fun v ⟨vk, vl, vy, vs⟩ => ?_
   have kv : DecodeKeep base s v := (DecodeKeep.of_keep uk).trans vk
   have ve : env v.mem base 1 = VG.Proof.X25519.toFe

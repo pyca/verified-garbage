@@ -113,10 +113,16 @@ pub(crate) mod ecdsa_p521_sha512;
 pub(crate) mod ed25519;
 
 #[rustfmt::skip]
+pub(crate) mod ed25519_r32;
+
+#[rustfmt::skip]
 pub(crate) mod ed448;
 
 #[rustfmt::skip]
 pub(crate) mod gcm;
+
+#[rustfmt::skip]
+pub(crate) mod gf25519_r32;
 
 #[rustfmt::skip]
 pub(crate) mod gf448_r16;

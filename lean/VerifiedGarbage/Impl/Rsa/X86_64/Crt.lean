@@ -313,27 +313,72 @@ def tabBuild (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
     .loop (seqs ([mul aT aT aXc, nextEnt] ++ toEnt aT ++
       [.block [.mov .rax (.mem (hdr sBit)), .alu .sub .rax (.imm 1), .store (hdr sBit) .rax]])) .ne]
 
-/-- `[rbx] := rbp ? [r8] : [rbx]` over the words below `2 ⌈w / 2⌉` (`r12 =
-w`), two at a time with SSE2: the mask in both quadwords of `xmm0`, and each
-pair `T ^ ((T ^ E) & mask)`. -/
-def sseSelect : Prog isa :=
-  .seq (.block [.xop (.movq .xmm0 .rbp), .xop (.bin .punpcklqdq .xmm0 .xmm0), .mov .r13 (.reg .r12),
-      .alu .add .r13 (.imm 1), .shift .shr .r13 1, .alu .add .r13 (.reg .r13), .mov32 .r14 (.imm 0)])
-    (.loop (.block [.movdquLoad .xmm1 (ix .r8 .r14), .movdquLoad .xmm2 (ix .rbx .r14), .xop (.bin .pxor .xmm1 .xmm2),
-      .xop (.bin .pand .xmm1 .xmm0), .xop (.bin .pxor .xmm2 .xmm1), .movdquStore (ix .rbx .r14) .xmm2,
-      .alu .add .r14 (.imm 2), .alu .cmp .r14 (.reg .r13)]) .ne)
+/-- `x := mask (r15 + j = src)` in both quadwords, by `r14`. -/
+def selMask (j : BitVec 32) (src : Src) (x : XReg) : List Instr :=
+  [.mov .r14 (.reg .r15), .alu .add .r14 (.imm j), .alu .xor .r14 src, .alu .cmp .r14 (.imm 1),
+    .alu .sbb .r14 (.reg .r14), .xop (.movq x .r14), .xop (.bin .punpcklqdq x x)]
 
-/-- `[aT] := T_v`, `v` in `sNib`: for each entry `j`, `[aT] := T_j` under the
-mask of `j = v`. -/
+/-- A pass's registers: `r15 = 8 p` (from `sJ`), `rcx` its first entry (from
+`sEnt`), `r11` an entry's size `8 (w + 2)`, `r13 = 2 ⌈w / 2⌉` and `rbx = aT`. -/
+def gatherRegs : List Instr :=
+  [.mov .r15 (.mem (hdr sJ)), .mov .rcx (.mem (hdr sEnt)), .mov .r12 (.mem (hdr sW)), .mov .r11 (.reg .r12),
+    .alu .add .r11 (.imm 2), .alu .add .r11 (.reg .r11), .alu .add .r11 (.reg .r11), .alu .add .r11 (.reg .r11),
+    .mov .r13 (.reg .r12), .alu .add .r13 (.imm 1), .shift .shr .r13 1, .alu .add .r13 (.reg .r13),
+    .mov .rbx (.mem (hdr (sArr aT)))]
+
+/-- The pass's eight entries, from `rcx`, in `rcx`, `rdx`, `rsi`, `rbp`, `r8`,
+`r9`, `r10` and `rax`, and `r14 = 0`. -/
+def gatherBases : List Instr :=
+  [.mov .rdx (.reg .rcx), .alu .add .rdx (.reg .r11), .mov .rsi (.reg .rdx), .alu .add .rsi (.reg .r11),
+    .mov .rbp (.reg .rsi), .alu .add .rbp (.reg .r11), .mov .r8 (.reg .rbp), .alu .add .r8 (.reg .r11),
+    .mov .r9 (.reg .r8), .alu .add .r9 (.reg .r11), .mov .r10 (.reg .r9), .alu .add .r10 (.reg .r11),
+    .mov .rax (.reg .r10), .alu .add .rax (.reg .r11), .mov32 .r14 (.imm 0)]
+
+/-- `xmm0 |= [b + 8 r14] & x`, a pair of words. -/
+def gatherOr (b : Reg) (x : XReg) : List Instr :=
+  [.movdquLoad .xmm1 (ix b .r14), .xop (.bin .pand .xmm1 x), .xop (.bin .por .xmm0 .xmm1)]
+
+/-- `xmm0 := [rcx + 8 r14] & xmm8`. -/
+def gatherFirst : List Instr :=
+  [.movdquLoad .xmm0 (ix .rcx .r14), .xop (.bin .pand .xmm0 .xmm8)]
+
+/-- The pair into `[rbx + 8 r14]`, and the next. -/
+def gatherStore : List Instr :=
+  [.movdquStore (ix .rbx .r14) .xmm0, .alu .add .r14 (.imm 2), .alu .cmp .r14 (.reg .r13)]
+
+/-- `sEnt` past the pass's entries, `sJ := 8 (p + 1)`, `ZF` after the second. -/
+def gatherEnd : List Instr :=
+  [.alu .add .rax (.reg .r11), .store (hdr sEnt) .rax, .mov .rax (.reg .r15), .alu .add .rax (.imm 8),
+    .store (hdr sJ) .rax, .alu .cmp .rax (.imm 16)]
+
+/-- A pass's registers, masks and bases. -/
+def gatherHead : List (Prog isa) :=
+  [.block gatherRegs,
+    .block (selMask 0 (.mem (hdr sNib)) .xmm8), .block (selMask 1 (.mem (hdr sNib)) .xmm9),
+    .block (selMask 2 (.mem (hdr sNib)) .xmm10), .block (selMask 3 (.mem (hdr sNib)) .xmm11),
+    .block (selMask 4 (.mem (hdr sNib)) .xmm12), .block (selMask 5 (.mem (hdr sNib)) .xmm13),
+    .block (selMask 6 (.mem (hdr sNib)) .xmm14), .block (selMask 7 (.mem (hdr sNib)) .xmm15),
+    .block (selMask 0 (.imm 8) .xmm7),
+    .block gatherBases]
+
+/-- A pair of words of `[aT]`: `([aT] & xmm7) | OR_j ([b_j] & xmm(8+j))`. -/
+def gatherBody : List (Prog isa) :=
+  [.block gatherFirst, .block (gatherOr .rdx .xmm9), .block (gatherOr .rsi .xmm10),
+    .block (gatherOr .rbp .xmm11), .block (gatherOr .r8 .xmm12), .block (gatherOr .r9 .xmm13),
+    .block (gatherOr .r10 .xmm14), .block (gatherOr .rax .xmm15), .block (gatherOr .rbx .xmm7),
+    .block gatherStore]
+
+/-- Pass `p` of the selection, over entries `8 p` to `8 p + 7`: with the mask
+of `8 p + j = v` in `xmm(8 + j)` and the mask of `p = 1` in `xmm7`, each pair
+of words of `[aT]` becomes `([aT] & xmm7) | OR_j (T_(8p+j) & xmm(8+j))`, two
+words at a time, from eight bases in registers: `T_v` after both passes. -/
+def gatherPass : List (Prog isa) :=
+  [seqs gatherHead, .loop (seqs gatherBody) .ne, .block gatherEnd]
+
+/-- `[aT] := T_v`, `v` in `sNib`: two passes of `gatherPass`. -/
 def tabSelect : List (Prog isa) :=
   [.block [.mov .rax (.mem (hdr sTab)), .store (hdr sEnt) .rax, .mov32 .rax (.imm 0), .store (hdr sJ) .rax],
-    .loop (seqs [
-      .block [.mov .rax (.mem (hdr sJ)), .alu .xor .rax (.mem (hdr sNib)), .alu .cmp .rax (.imm 1),
-        .alu .sbb .rbp (.reg .rbp), .mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr sEnt)),
-        .mov .rsi (.mem (hdr (sArr aT))), .mov .rbx (.mem (hdr (sArr aT)))],
-      sseSelect,
-      nextEnt,
-      .block [.mov .rax (.mem (hdr sJ)), .alu .add .rax (.imm 1), .store (hdr sJ) .rax, .alu .cmp .rax (.imm 16)]]) .ne]
+    .loop (seqs gatherPass) .ne]
 
 /-- One window: `Y := Y¹⁶ T_v R⁻¹` for `v` the top 4 bits of the byte in
 `sV`, which moves up 4 bits. -/

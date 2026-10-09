@@ -48,9 +48,15 @@ theorem mul_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : MulArgs L s) :
   · have h := hL.no
     rw [BitVec.toNat_add, show (32 : BitVec 32).toNat = 32 from rfl, Nat.mod_eq_of_lt (by omega)]
     omega
-  · change (L.E - BitVec.ofNat 32 4).toNat + 24 ≤ 2 ^ 32
-    rw [sub_toNat (k := 4) (by have := hL.below; omega)]
-    have := hL.top; omega
+  · have e : (L.E - 4).toNat = L.E.toNat - 4 := sub_toNat (k := 4) (by have := hL.below; omega)
+    have := hL.top; have := hL.below
+    refine ⟨by rw [e]; omega, by rw [e]; omega, ?_⟩
+    simp only [callStk, State.withRegions_gpr, State.callEntry_esp, hc.esp]
+    have hf : L.E.toNat + 256 ≤ 2 ^ 32 := by omega
+    exact ⟨hL.kc.sub_left (Whole.inner_sub_stack hL.below),
+      Whole.inner_frame hL.below hf (d := 96) (n := 32) (by decide) (by decide),
+      Whole.inner_frame hL.below hf (d := 128) (n := 32) (by decide) (by decide),
+      Whole.inner_frame hL.below hf (d := 32) (n := 32) (by decide) (by decide)⟩
 
 theorem mul_call (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : MulArgs L s) :
     WP isa (.call "vg_ed25519_scalar_mul_add" scalarMulAdd) s fun t => Ctx L g m₀ t ∧

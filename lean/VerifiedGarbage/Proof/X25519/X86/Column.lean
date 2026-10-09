@@ -14,7 +14,7 @@ namespace VG.Proof.X25519.X86
 
 open VG VG.X86 VG.Impl.X25519.X86
 
-variable {W : Nat}
+variable {W : Nat} {c : Bool}
 
 /-- The accumulator `ebx + 2³² ecx + 2⁶⁴ ebp`. -/
 abbrev acc (s : State) : Nat := v s .ebx + 2 ^ 32 * v s .ecx + 2 ^ 64 * v s .ebp
@@ -183,7 +183,7 @@ theorem accMul2_ok {s : State} {src : Src} {y : BitVec 32} (hy : readSrc s src =
   omega
 
 open VG.X86.Wp in
-theorem readSrc_sc {x : BitVec 32} {s : State} (hc : Ctx W x s) {d : Nat} (hd : d + 4 ≤ 4096) :
+theorem readSrc_sc {x : BitVec 32} {s : State} (hc : Ctx W x s c) {d : Nat} (hd : d + 4 ≤ 4096) :
     readSrc s (.mem (sc d)) = some (wd s.mem x d) :=
   readSrc_mem hc.edi (hc.inRW4 hd (by decide))
 
@@ -198,7 +198,7 @@ theorem xor_ones_toNat (w : BitVec 32) : (w ^^^ 0xffffffff).toNat = 2 ^ 32 - 1 -
   rw [show (0xffffffff : BitVec 32) = BitVec.allOnes 32 by decide, BitVec.xor_allOnes, BitVec.toNat_not]
 
 open VG.X86.Wp in
-theorem term_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) (t : Term) (hr : ∀ d ∈ treads t, d + 4 ≤ 4096) :
+theorem term_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) (t : Term) (hr : ∀ d ∈ treads t, d + 4 ≤ 4096) :
     WP isa (.block (Term.code t)) s fun s' =>
       (acc s + tval s.mem x t < 2 ^ 96 → acc s' = acc s + tval s.mem x t) ∧ Keep s s' ∧ s'.mem = s.mem := by
   cases t with
@@ -240,7 +240,7 @@ theorem term_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) (t : Term) (hr : �
     rw [e] at h
     rw [h (by rw [(updAcc u₂), (updAcc u₁)]; exact hlt), (updAcc u₂), (updAcc u₁)]
 
-theorem terms_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) (ts : List Term)
+theorem terms_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) (ts : List Term)
     (hr : ∀ t ∈ ts, ∀ d ∈ treads t, d + 4 ≤ 4096) :
     WP isa (.block (ts.flatMap Term.code)) s fun s' =>
       (acc s + colv s.mem x ts < 2 ^ 96 → acc s' = acc s + colv s.mem x ts) ∧ Keep s s' ∧
@@ -259,7 +259,7 @@ theorem terms_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) (ts : List Term)
     omega_using []
 
 open VG.X86.Wp in
-theorem colEnd_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) {o : Nat} (ho : o + 4 ≤ 4096) :
+theorem colEnd_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o : Nat} (ho : o + 4 ≤ 4096) :
     WP isa (.block (colEnd o)) s fun s' =>
       Keep s s' ∧ s'.mem = s.mem.writeW (addr x o) (s.gpr .ebx) ∧ acc s' = acc s / 2 ^ 32 := by
   refine wp_stm hc.edi (hc.inW4 ho (by decide)) fun s₁ u₁ => ?_
@@ -272,7 +272,7 @@ theorem colEnd_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) {o : Nat} (ho : o
   have := (s.gpr .ebx).isLt
   omega_using [this]
 
-theorem column_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) (ts : List Term) {o : Nat}
+theorem column_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) (ts : List Term) {o : Nat}
     (hr : ∀ t ∈ ts, ∀ d ∈ treads t, d + 4 ≤ 4096) (ho : o + 4 ≤ 4096)
     (hlt : acc s + colv s.mem x ts < 2 ^ 96) :
     WP isa (.block (column ts o)) s fun s' => Keep s s' ∧ Frame [sub x o 4] s.mem s'.mem ∧
@@ -301,7 +301,7 @@ theorem digit_step (P x : Nat) : P * (x % 2 ^ 32) + P * 2 ^ 32 * (x / 2 ^ 32) = 
 /-- `n` columns at `[x + o]`: their words and the carry are the sum of the
 columns' values (with the accumulator's value on entry), as long as each
 column reads no word an earlier one stored. -/
-theorem cols_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) {o : Nat} (ts : Nat → List Term) :
+theorem cols_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o : Nat} (ts : Nat → List Term) :
     ∀ n, o + 4 * n ≤ 4096 →
     (∀ k < n, ∀ t ∈ ts k, ∀ d ∈ treads t, d + 4 ≤ 4096 ∧ (d + 4 ≤ o ∨ o + 4 * k ≤ d)) →
     (∀ k < n, colv s.mem x (ts k) < 2 ^ 68) → acc s < 2 ^ 40 →

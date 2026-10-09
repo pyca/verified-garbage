@@ -229,7 +229,7 @@ theorem decrypt_implies : decK.Implies (Spec.RsaPkcs1Enc.decryptContract abi dec
       a15, a16⟩ := h
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, h8]) hl
     refine ⟨?_, by simp only [stackArgs_seventeen, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14,
-      a15, a16], hn, by have := he; rwa [← a0] at this⟩
+      a15, a16], hn, he⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
   sat := by sig_implies_sat [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, decK, decStack, privStack, Impl.RsaPkcs1Enc.X86_64.Decrypt.frameBytes, stackArgs_seventeen, List.append_eq] [decSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using decSatState

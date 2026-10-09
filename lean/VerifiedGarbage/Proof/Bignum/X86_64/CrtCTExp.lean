@@ -9,7 +9,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 pointer plus the byte index), and reads its table by a masked selection
 from every entry, the mask computed from each window: the windows flow only
 into data. Its loops count public numbers (the exponent's length, 2
-windows a byte, 16 entries and the table's 14 products), the products are
+windows a byte, 2 passes over 8 entries each, the pairs of words of an entry
+and the table's 14 products), the products are
 Montgomery multiplications (constant time for any prime, `Mont.ct`), and
 the addresses come from the header, which the steps' correctness
 (`CrtExp.lean`, for the bounds alone: `Q := False`) pins in both runs.
@@ -43,50 +44,67 @@ theorem rdi_ct {α : Type} {Φ : α → State → Prop} (f : α → Addr) (h : �
 
 /-! ## Reading an entry -/
 
-/-- After `j` entries of the selection, in the workspace of `p`. -/
-def SelI (p : XPub) (j : Nat) (s : State) : Prop :=
-  ∃ (t₀ : State) (minv : BitVec 64) (X Xc v : Nat), TabSelInv t₀ (off p.B p.o) p.wx minv X Xc v j s ∧
+/-- After `j` passes of the selection, in the workspace of `p`. -/
+def GathPassI (p : XPub) (j : Nat) (s : State) : Prop :=
+  ∃ (t₀ : State) (minv : BitVec 64) (X Xc v : Nat), GathPassInv t₀ (off p.B p.o) p.wx minv X Xc v j s ∧
     2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧ v < 16
 
-/-- Before the selection of entry `j`: its bases, `w_X` and the mask. -/
-def SelB (q : XPub × Nat) (t : State) : Prop :=
-  ∃ lt : Bool, Scr t (off q.1.B q.1.o) (slot q.1.wx 8 + tabBytes q.1.wx) ∧ t.gpr .rdi = off q.1.B q.1.o ∧
-    t.gpr .rbp = mask lt ∧ t.gpr .r12 = BitVec.ofNat 64 q.1.wx ∧
-    t.gpr .r8 = off (off q.1.B q.1.o) (slot q.1.wx (8 + q.2)) ∧
-    t.gpr .rsi = off (off q.1.B q.1.o) (slot q.1.wx Crt.aT) ∧
-    t.gpr .rbx = off (off q.1.B q.1.o) (slot q.1.wx Crt.aT) ∧ 2 ≤ q.1.wx ∧ q.1.wx < 2 ^ 30 ∧ q.2 < 16
+/-- After the head of pass `q.2`: its bases, counts and masks, whatever the window. -/
+def GathB (q : XPub × Nat) (s : State) : Prop :=
+  ∃ v, GRegs (off q.1.B q.1.o) q.1.wx q.2 v s ∧ Scr s (off q.1.B q.1.o) (slot q.1.wx 8 + tabBytes q.1.wx) ∧
+    s.gpr .r14 = BitVec.ofNat 64 (2 * 0) ∧ s.gpr .r11 = BitVec.ofNat 64 (8 * (q.1.wx + 2)) ∧
+    s.gpr .r15 = BitVec.ofNat 64 (8 * q.2) ∧ s.gpr .rdi = off q.1.B q.1.o ∧ 2 ≤ q.1.wx ∧ q.1.wx < 2 ^ 30 ∧ q.2 < 2
 
-theorem pins_selB : Pins SelB [.r8, .rsi, .rbx, .r12] := by
-  intro p s₁ s₂ ⟨_, _, _, _, a₁, b₁, c₁, d₁, _⟩ ⟨_, _, _, _, a₂, b₂, c₂, d₂, _⟩ r hr
+theorem pins_GathB : Pins GathB [.rcx, .rdx, .rsi, .rbp, .r8, .r9, .r10, .rax, .rbx, .r13, .r14] := by
+  intro q s₁ s₂ ⟨_, g₁, _, a₁, _⟩ ⟨_, g₂, _, a₂, _⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact (g₁.base 0 (by decide)).trans (g₂.base 0 (by decide)).symm
+  · exact (g₁.base 1 (by decide)).trans (g₂.base 1 (by decide)).symm
+  · exact (g₁.base 2 (by decide)).trans (g₂.base 2 (by decide)).symm
+  · exact (g₁.base 3 (by decide)).trans (g₂.base 3 (by decide)).symm
+  · exact (g₁.base 4 (by decide)).trans (g₂.base 4 (by decide)).symm
+  · exact (g₁.base 5 (by decide)).trans (g₂.base 5 (by decide)).symm
+  · exact (g₁.base 6 (by decide)).trans (g₂.base 6 (by decide)).symm
+  · exact (g₁.base 7 (by decide)).trans (g₂.base 7 (by decide)).symm
+  · exact g₁.bx.trans g₂.bx.symm
+  · exact g₁.r13.trans g₂.r13.symm
+  · exact a₁.trans a₂.symm
+
+/-- After the pairs of pass `q.2`: what its end reads. -/
+def GathE (q : XPub × Nat) (s : State) : Prop :=
+  s.gpr .rdi = off q.1.B q.1.o ∧ s.gpr .rax = off (off q.1.B q.1.o) (slot q.1.wx (8 + 8 * q.2 + 7)) ∧
+    s.gpr .r11 = BitVec.ofNat 64 (8 * (q.1.wx + 2)) ∧ s.gpr .r15 = BitVec.ofNat 64 (8 * q.2)
+
+theorem pins_GathE : Pins GathE [.rdi, .rax, .r11, .r15] := by
+  intro q s₁ s₂ ⟨a₁, b₁, c₁, d₁⟩ ⟨a₂, b₂, c₂, d₂⟩ r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
+  · rw [a₁, a₂]
   · rw [b₁, b₂]
   · rw [c₁, c₂]
   · rw [d₁, d₂]
-  · rw [a₁, a₂]
 
-/-- An entry of the selection leaks the same in runs with the same workspace,
-whatever the window. -/
-theorem selBody_ct : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 16 ∧ SelI q.1 q.2 s) (seqs selBody)
+/-- A pass of the selection leaks the same in runs with the same workspace,
+whatever the window: its addresses come from the header and the pass. -/
+theorem passBody_ct : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 2 ∧ GathPassI q.1 q.2 s) (seqs Crt.gatherPass)
     fun _ _ => True := by
-  simp only [selBody, seqs]
-  -- The mask and the bases.
-  refine RelCT.seq (two_piece (Ψ := SelB) [.rdi] (pins_rdi (fun q => off q.1.B q.1.o)
-    fun _ _ ⟨_, _, _, _, _, _, hI, _⟩ => hI.ctx.good.rdi) (by taint_decide) fun q s ⟨hj, t₀, minv, X, Xc, v, hI, hw, hw', hv⟩ =>
-      WP.mono (selHead_ok hI.ctx hj hv hI.idx hI.nib hI.ent) fun t ⟨hbp, h12, h8, hsi, hbx, _, k⟩ =>
-        ⟨_, hI.ctx.scrT.congr k.2.2, (k.gpr (by decide)).trans hI.ctx.good.rdi, hbp, h12, h8, hsi, hbx, hw, hw', hj⟩) ?_
-  -- `T := j = v ? T_j : T`.
-  refine RelCT.seq (two_post (Ψ := fun (q : XPub × Nat) t => t.gpr .rdi = off q.1.B q.1.o)
-    (two_taint [.r8, .rsi, .rbx, .r12] pins_selB (by taint_decide)) fun q s h => ?_) ?_
-  · obtain ⟨lt, hs, hdi, hbp, h12, h8, hsi, hbx, hw, hw', hj⟩ := h
-    have hn := hs.nowrap
-    have hT0 := slot_le (w := q.1.wx) (show Crt.aT < 8 by decide)
-    have hE := ent_le q.1.wx hj
-    have hTE := slot_sep (w := q.1.wx) (show Crt.aT ≠ 8 + q.2 by unfold Crt.aT; omega)
-    exact WP.mono (sseSelect_ok hs h8 hbx h12 hbp (by omega) (by omega) (by omega) (by omega)
-      (by omega)) fun t ⟨_, _, k⟩ => (k.gpr (by decide)).trans hdi
-  -- The next entry, and the index.
-  exact rdi_ct (fun q : XPub × Nat => off q.1.B q.1.o) (fun _ _ h => h) (by taint_decide)
+  rw [show seqs Crt.gatherPass = .seq (seqs Crt.gatherHead) (.seq (.loop (seqs Crt.gatherBody) .ne)
+    (.block Crt.gatherEnd)) from rfl]
+  -- The registers, masks and bases.
+  refine RelCT.seq (two_piece (Ψ := GathB) [.rdi] (pins_rdi (fun q => off q.1.B q.1.o)
+    fun _ _ ⟨_, _, _, _, _, _, hI, _⟩ => hI.ctx.good.rdi) (by taint_decide)
+    fun q s ⟨hp, t₀, minv, X, Xc, v, hI, hw, hw', hv⟩ =>
+      WP.mono (gathHead_ok hI.ctx hw' hv hp hI.nib hI.idx hI.ent) fun t ⟨hG, h14, h11, h15, _, k⟩ =>
+        ⟨v, hG, hI.ctx.scrT.congr k.2.2, h14, h11, h15, (k.gpr (by decide)).trans hI.ctx.good.rdi, hw, hw', hp⟩) ?_
+  -- The pairs.
+  refine RelCT.seq (two_post (Ψ := GathE) (two_taint _ pins_GathB (by taint_decide))
+    fun q s ⟨v, hG, hs, h14, h11, h15, hdi, hw, hw', hp⟩ =>
+      WP.mono (gLoop_ok hs hG hp h14 (by omega) hw') fun t hL =>
+        ⟨by rw [hL.gpr _ (by decide)]; exact hdi, by rw [hL.gpr _ (by decide)]; exact hG.base 7 (by decide),
+          by rw [hL.gpr _ (by decide)]; exact h11, by rw [hL.gpr _ (by decide)]; exact h15⟩) ?_
+  -- The next pass.
+  exact two_taint _ pins_GathE (by taint_decide)
 
 /-- `tabSel_ok`'s hypotheses. -/
 def SelP (p : XPub) (s : State) : Prop :=
@@ -98,7 +116,7 @@ def SelP (p : XPub) (s : State) : Prop :=
 theorem tabSel_ct : RelCT isa (Two SelP) (seqs Crt.tabSelect) fun _ _ => True := by
   rw [tabSelect_eq]
   simp only [seqs]
-  refine RelCT.seq (two_piece (Ψ := fun p s => 0 < 16 ∧ SelI p 0 s) [.rdi]
+  refine RelCT.seq (two_piece (Ψ := fun p s => 0 < 2 ∧ GathPassI p 0 s) [.rdi]
     (pins_rdi (fun p : XPub => off p.B p.o) fun _ _ ⟨_, _, _, _, hc, _⟩ => hc.good.rdi) (by taint_decide)
     fun p s ⟨minv, X, Xc, v, hc, hw, hw', hv, ht, hN⟩ => ?_) ?_
   · have hn := hc.scrT.nowrap
@@ -109,15 +127,15 @@ theorem tabSel_ct : RelCT isa (Two SelP) (seqs Crt.tabSelect) fun _ _ => True :=
     rw [← hm₁] at o2
     have f₁ : Frm (off p.B p.o) (selRanges p.wx) s.mem t₁.mem :=
       (Frm.of_outside o1 (by simp [selRanges])).trans (Frm.of_outside o2 (by simp [selRanges]))
-    refine ⟨hc.of_win (f₁.mono (selRanges_sub p.wx)) k₁.2.2 (k₁.gpr (by decide)), ?_, ?_, ?_, by simp,
+    refine ⟨hc.of_win (f₁.mono (selRanges_sub p.wx)) k₁.2.2 (k₁.gpr (by decide)), ?_, ?_, ?_, .inl rfl,
       Frm.refl _ _ _, Keep.refl _ _⟩
     · rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
         hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)]; exact hN
     · rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
     · rw [hm₁, word_writeW_self]; rfl
-  exact (two_loop (Φ := SelI) (Ψ := fun _ _ => True) (fun _ => 16) selBody_ct
+  exact (two_loop (Φ := GathPassI) (Ψ := fun _ _ => True) (fun _ => 2) passBody_ct
     fun p j s hj ⟨t₀, minv, X, Xc, v, hI, hw, hw', hv⟩ =>
-      WP.mono (selStep_ok hw hw' hv hj hI) fun s' ⟨hz, hI'⟩ =>
+      WP.mono (gPass_ok hw hw' hv hj hI) fun s' ⟨hz, hI'⟩ =>
         ⟨eval_ne_count hj hz, fun _ => ⟨t₀, minv, X, Xc, v, hI', hw, hw', hv⟩, fun _ => trivial⟩).mono
     (fun _ _ h => h) fun _ _ _ => trivial
 

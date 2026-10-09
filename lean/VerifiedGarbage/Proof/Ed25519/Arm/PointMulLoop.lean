@@ -14,16 +14,16 @@ structure PointMulInv (s₀ : State) (b ptr : BitVec 32) (count scalar : Nat)
   counter : s.mem.readW (State.addr b + BitVec.ofNat 64 56) 32 = BitVec.ofNat 32 n
   d : env s.mem b 16 = Spec.Ed25519.d
   value : point (env s.mem b) 0 1 2 3 = after scalar p (16 * n)
-  table : ∀ j < count, tablePoint s.mem b (1600 + 128 * j) = powerPoint p (16 * j)
-  keep : MulKeep b 5696 2048 s₀ s
+  table : ∀ j < count, tablePoint s.mem b (1632 + 128 * j) = powerPoint p (16 * j)
+  keep : MulKeep b 5728 2048 s₀ s
 
 theorem pointMulLoop_ok {b ptr : BitVec 32} {s₀ : State} (hc : Ctx b s₀) (hl : AllLim s₀.mem b)
     (count scalar : Nat) (p : Spec.Ed25519.Point) (hi : MulInput b ptr count scalar s₀)
     (hn : 0 < count) (hd : env s₀.mem b 16 = Spec.Ed25519.d)
     (hp : point (env s₀.mem b) 0 1 2 3 = after scalar p (16 * count))
     (hcj : s₀.mem.readW (State.addr b + BitVec.ofNat 64 56) 32 = BitVec.ofNat 32 count)
-    (ht : ∀ j < count, tablePoint s₀.mem b (1600 + 128 * j) = powerPoint p (16 * j)) :
-    WP isa (.loop pointMulBody .ne) s₀ fun t => MulKeep b 5696 2048 s₀ t ∧ AllLim t.mem b ∧
+    (ht : ∀ j < count, tablePoint s₀.mem b (1632 + 128 * j) = powerPoint p (16 * j)) :
+    WP isa (.loop pointMulBody .ne) s₀ fun t => MulKeep b 5728 2048 s₀ t ∧ AllLim t.mem b ∧
       env t.mem b 16 = Spec.Ed25519.d ∧ point (env t.mem b) 0 1 2 3 = Spec.Ed25519.pointMul scalar p := by
   apply WP.loop (PointMulInv s₀ b ptr count scalar p) (n := count)
   · intro n s h
@@ -31,7 +31,7 @@ theorem pointMulLoop_ok {b ptr : BitVec 32} {s₀ : State} (hc : Ctx b s₀) (hl
     have hj : j < count := by have := h.bound; omega
     refine WP.mono (pointMulBody_ok h.ctx h.lim count scalar j p h.input hj h.d h.value h.counter
       (h.table j hj)) fun t ⟨tk, tl, td, tp, tc, tz⟩ => ?_
-    have tt : ∀ i < count, tablePoint t.mem b (1600 + 128 * i) = powerPoint p (16 * i) := by
+    have tt : ∀ i < count, tablePoint t.mem b (1632 + 128 * i) = powerPoint p (16 * i) := by
       intro i hib
       have := h.input.bound
       exact (tk.table (by omega) (by omega) (by decide) (.inl (by omega))).trans (h.table i hib)
