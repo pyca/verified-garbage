@@ -584,14 +584,16 @@ theorem store_ok {c : Addr} {s : State} (hrcx : s.gpr .rcx = bfA c) (hw : psR c 
   have i0 := i 544 (by decide) (by decide); have i1 := i 520 (by decide) (by decide)
   have i2 := i 528 (by decide) (by decide); have i3 := i 536 (by decide) (by decide)
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, VG.Proof.ChaCha20.X86_64.ea_at, State.store64,
-    State.load64, readSrc, execAlu, arithFlags, State.setFlags, State.setReg, hrcx, accOff, r12Off, r13Off,
-    r14Off, lenOff, ofInt_bf, Nat.reduceAdd, reduceCtorEq, o0, o1, o2, i0, i1, i2, i3, ite_true, ite_false,
-    Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
   have se512 : BitVec.signExtend 64 (512 : BitVec 32) = 512 := by decide
   have se128 : BitVec.signExtend 64 (128 : BitVec 32) = BitVec.ofNat 64 128 := by decide
-  simp (disch := decide) only [readW_writeW_ofNat, se512, se128, bfA, BitVec.add_sub_cancel, true_and]
-  exact ⟨fun r h1 h2 h3 h4 h5 h6 h7 h8 => by simp [h1, h2, h3, h4, h5, h6, h7, h8], trivial⟩
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, VG.Proof.ChaCha20.X86_64.ea_at, State.store64,
+    State.load64, readSrc, execAlu, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, hrcx, accOff,
+    r12Off, r13Off, r14Off, lenOff, ofInt_bf, Nat.reduceAdd, reduceCtorEq, o0, o1, o2, i0, i1, i2, i3,
+    ite_true, ite_false, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, trivial, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r h1 h2 h3 h4 h5 h6 h7 h8 => by
+    simp only [h1, h2, h3, h4, h5, h6, h7, h8, ite_false], trivial, trivial⟩
+  all_goals simp (disch := decide) only [readW_writeW_ofNat, se512, se128, bfA, BitVec.add_sub_cancel]
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
