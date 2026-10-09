@@ -125,10 +125,9 @@ theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} 
       k ≠ kUsed → word s₂.mem B (8 * k) = word s.mem B (8 * k) := fun {k} hk hku => by
     have hk32 : k < 32 := by rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     rw [← hw₁ hk]
-    refine hf₂.word_eq ?_ (by omega_arith)
-    simp only [roundRanges, preRanges, witRanges, expRanges, bitRanges, List.cons_append, List.nil_append]
+    refine hf₂.word_eq (roundRanges_hdr w ?_) (by omega_arith)
     rcases hk with rfl | rfl | rfl | rfl | rfl | rfl
-    all_goals first | exact absurd rfl hku | rng_disj
+    all_goals first | exact absurd rfl hku | simp only [true_or, or_true]
   have hsl₂ : ∀ r ∈ roundRanges w, r.1 + r.2 ≤ Z := fun r hr => by
     have := roundRanges_le w r hr; omega_arith
   have hhi : ∀ x, Z ≤ ofs B x → s₂.mem x = s.mem x := fun x hx =>
