@@ -110,6 +110,9 @@ structure Kept (s : State) (o : Nat) (m : Mem) : Prop where
 /-- The slots of the arguments kept. -/
 abbrev kR' (s : State) : Region := ⟨W s, 72⟩
 
+/-- The slot of the number of bytes of the head, across its call. -/
+abbrev hR (s : State) : Region := ⟨W s + BitVec.ofNat 64 72, 8⟩
+
 /-- The working space of `vg_aes_gcm_encrypt_blocks_to`. -/
 abbrev scR (s : State) : Region := ⟨W s + BitVec.ofNat 64 80, 2112⟩
 
@@ -135,6 +138,12 @@ theorem scR_sub : (scR s).Sub (wkR s) := Offset.sub_base _ (by decide)
 
 omit hp in
 theorem kR'_scR : (kR' s).Disjoint (scR s) := Offset.base_disjoint _ (by decide) (by decide)
+
+omit hp in
+theorem hR_sub : (hR s).Sub (wkR s) := Offset.sub_base _ (by decide)
+
+omit hp in
+theorem kR'_hR : (kR' s).Disjoint (hR s) := Offset.base_disjoint _ (by decide) (by decide)
 
 /-- What a frame of the regions written and the stack below keeps: the
 stack arguments. -/
