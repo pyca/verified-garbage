@@ -123,9 +123,12 @@ def decSatState : State where
 
 theorem dec_sat (H G : Spec.Mgf1.Hash) (c : Proof.Rsa.AArch64.CrtImpl) :
     ∃ s, (Spec.RsaOaep.decryptContract H G AArch64.abi (Dec.decStack (RsaPkcs1Enc.AArch64.privOf c))).pre s := by
-  sig_implies_sat [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, AArch64.abi, AArch64.argRegs,
-    Dec.decStack, RsaPkcs1Enc.AArch64.privOf, Proof.Rsa.AArch64.stackBytes,
+  refine ⟨decSatState, ?_⟩
+  -- The precondition does not depend on the hash functions: with them and the
+  -- stack literal, `sig_sat_check` decides it in the kernel.
+  change (Spec.RsaOaep.decryptContract Spec.Mgf1.md5 Spec.Mgf1.md5 AArch64.abi 3536).pre decSatState
+  sig_sat_check [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, AArch64.abi, AArch64.argRegs,
     RsaPkcs1Enc.AArch64.stackArgs_fifteen, List.append_eq, Spec.Rsa.lenValid, Spec.RsaPss.scratchWords,
-    Spec.Rsa.scratchWords] [decSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using decSatState
+    Spec.Rsa.scratchWords]
 
 end VG.Proof.RsaOaep.AArch64
