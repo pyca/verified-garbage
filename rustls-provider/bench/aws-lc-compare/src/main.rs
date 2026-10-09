@@ -253,7 +253,7 @@ fn main() {
             pk.public_op(&sig, &mut out).unwrap();
         });
         row(
-            &format!("  vg RSA-{bits} PublicKey::new (precomputes for verify)"),
+            &format!("  vg RSA-{bits} PublicKey::new (computes lazily)"),
             a,
             v1,
         );
@@ -366,4 +366,67 @@ fn main() {
         black_box(xk.diffie_hellman(&peer).unwrap());
     });
     row("X25519 DH (aws: keygen + DH; vg: DH)", a, v);
+
+    // --- HMAC and HKDF, as TLS 1.3's key schedule uses them: a 32- or
+    // 48-byte key and secret, and one block of output.
+    hkdf_rows::<vg::hashes::sha256::Sha256>(
+        "SHA-256",
+        aws_lc_rs::hmac::HMAC_SHA256,
+        aws_lc_rs::hkdf::HKDF_SHA256,
+        32,
+    );
+    hkdf_rows::<vg::hashes::sha384::Sha384>(
+        "SHA-384",
+        aws_lc_rs::hmac::HMAC_SHA384,
+        aws_lc_rs::hkdf::HKDF_SHA384,
+        48,
+    );
+}
+
+fn hkdf_rows<H: vg::hmac::HmacHash>(
+    name: &str,
+    hmac_alg: aws_lc_rs::hmac::Algorithm,
+    hkdf_alg: aws_lc_rs::hkdf::Algorithm,
+    len: usize,
+) where
+    H::Output: AsRef<[u8]>,
+{
+    let key = vec![7u8; len];
+    let msg = [3u8; 32];
+    let a = time(|| {
+        let k = aws_lc_rs::hmac::Key::new(hmac_alg, &key);
+        black_box(aws_lc_rs::hmac::sign(&k, &msg));
+    });
+    let v = time(|| {
+        black_box(vg::hmac::Hmac::<H>::mac(&key, &msg));
+    });
+    row(&format!("HMAC-{name}, {len}-byte key, 32 B"), a, v);
+
+    let info = [5u8; 20];
+    let mut out = vec![0u8; len];
+    let a = time(|| {
+        let prk = aws_lc_rs::hkdf::Salt::new(hkdf_alg, &key).extract(&msg);
+        let info: &[&[u8]] = &[&info];
+        let okm = prk.expand(info, OutLen(len)).unwrap();
+        okm.fill(&mut out).unwrap();
+        black_box(&out);
+    });
+    let v = time(|| {
+        let prk = vg::hmac::Hmac::<H>::mac(&key, &msg);
+        let mut h = vg::hmac::Hmac::<H>::new(prk.as_ref());
+        h.update(&info);
+        h.update(&[1]);
+        out.copy_from_slice(&h.finalize().as_ref()[..len]);
+        black_box(&out);
+    });
+    row(&format!("HKDF-{name} extract + expand ({len} B)"), a, v);
+}
+
+/// An output length for aws-lc-rs's HKDF.
+struct OutLen(usize);
+
+impl aws_lc_rs::hkdf::KeyType for OutLen {
+    fn len(&self) -> usize {
+        self.0
+    }
 }

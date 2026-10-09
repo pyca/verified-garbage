@@ -40,10 +40,10 @@ index f21627e3..a4197a10 100644
 +required-features = ["aws-lc-rs", "verified-garbage"]
 diff --git a/rustls-bench/src/bin/provider_primitives.rs b/rustls-bench/src/bin/provider_primitives.rs
 new file mode 100644
-index 00000000..3026f876
+index 00000000..1e42f72c
 --- /dev/null
 +++ b/rustls-bench/src/bin/provider_primitives.rs
-@@ -0,0 +1,285 @@
+@@ -0,0 +1,288 @@
 +//! Times each provider's primitives as a handshake uses them, through the
 +//! rustls traits: key exchange, signing, signature verification, the record
 +//! layer, the key schedule and tickets.
@@ -290,8 +290,11 @@ index 00000000..3026f876
 +                .find(|s| format!("{:?}", s.common.suite) == suite)
 +                .unwrap();
 +            let hkdf = s.hkdf_provider;
++            // aws-lc-rs defers the extract to the first expand, so time
++            // an extract together with one expand of its result.
 +            extract.push(time(|| {
-+                black_box(hkdf.extract_from_secret(Some(&[1u8; 32]), &[2u8; 32]));
++                let e = hkdf.extract_from_secret(Some(&[1u8; 32]), &[2u8; 32]);
++                black_box(e.expand_block(&[b"\x00\x20", b"\x0dtls13 derived", &[0x20], &[9u8; 32]]));
 +            }));
 +            let okm = OkmBlock::new(&[5u8; 32]);
 +            let expander = hkdf.expander_for_okm(&okm);
@@ -307,7 +310,7 @@ index 00000000..3026f876
 +                black_box(c.finish());
 +            }));
 +        }
-+        report(&format!("{suite} HKDF extract"), &extract);
++        report(&format!("{suite} HKDF extract + expand"), &extract);
 +        report(&format!("{suite} HKDF expand (one block)"), &expand);
 +        report(&format!("{suite} transcript hash 2.3 KB + fork"), &hash);
 +    }
