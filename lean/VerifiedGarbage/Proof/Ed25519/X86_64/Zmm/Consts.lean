@@ -52,7 +52,7 @@ theorem rowCopy_ok {s : State} {b : Addr} (hs : Scratch s b) {o d : Nat} (ho : o
       some (s₂.setMem (s₂.mem.writeW (b + BitVec.ofNat 64 d) (s₂.zmm (y 9)))) := by
     simp only [exec, ea_sc' (show s₂.gpr .rdi = b from hs.rdi), State.store512_eq, hw, ite_true]
   refine WP.of_runBlock ⟨_, runBlock_three e₁ rfl e₃, ?_⟩
-  refine ⟨fun i hi => ?_, fun a ha => ?_, rfl, rfl, rfl, rfl, fun r hr i hi => ?_⟩
+  refine ⟨fun i hi => ?_, fun a ha => ?_, by zkeep, by zkeep, by zkeep, by zkeep, fun r hr i hi => ?_⟩
   · simp only [State.setMem]
     rw [← Offset.add_ofNat_add_ofNat, writeW_byte _ _ _ (by omega) (by decide)]
     rw [show i = 32 * (i / 32) + i % 32 by omega, zmm_byte s₂ (y 9) (by omega) (by omega),
@@ -138,7 +138,7 @@ theorem maskCopy_ok {s : State} {b : Addr} (hs : Scratch s b) {d : Nat} (hd : d 
       some (s₂.setMem (s₂.mem.writeW (b + BitVec.ofNat 64 d) (s₂.zmm (y 9)))) := by
     simp only [exec, ea_sc' (show s₂.gpr .rdi = b from hs.rdi), State.store512_eq, hw, ite_true]
   refine WP.of_runBlock ⟨_, runBlock_three rfl rfl e₃, ?_⟩
-  refine ⟨fun i hi => ?_, fun a ha => ?_, rfl, rfl, rfl, rfl, fun r hr i hi => ?_⟩
+  refine ⟨fun i hi => ?_, fun a ha => ?_, by zkeep, by zkeep, by zkeep, by zkeep, fun r hr i hi => ?_⟩
   · simp only [State.setMem]
     have e : (s₂.mem.writeW (b + BitVec.ofNat 64 d) (s₂.zmm (y 9))).readW (b + BitVec.ofNat 64 d) 512 =
         s₂.zmm (y 9) := Mem.readW_writeW_self _ _ 64 _ (by decide)
@@ -183,7 +183,7 @@ theorem masksCopy_ok {b : Addr} : ∀ n ≤ 4, ∀ (s : State), Scratch s b →
     · by_cases hkn : k = n
       · subst hkn; exact c i hi
       · rw [← c₁ k (by omega) i hi]
-        congr 1
+        refine congrArg (BitVec.extractLsb' (128 * i) 128) ?_
         refine Mem.readW_congr fun q hq => f _ ?_
         simp only [ofs, Offset.add_ofNat_add_ofNat]
         rw [off_ofNat _ (by unfold ZMASK; omega)]; unfold ZMASK at *; omega
@@ -251,7 +251,7 @@ theorem zconsts_ok {s : State} {b : Addr} (hs : Scratch s b) (hk : EConsts s.mem
       (∀ h < 2, ∀ r < 5, ∀ k < 4, qw (Zmm.half b h t) (xr r) k = qw s (xr r) k) ∧
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.syms = s.syms := by
   rw [zconsts_split, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (rowsCopy_ok (b := b) zrowList s hs (by decide) (by decide))
+  refine WP.mono (rowsCopy_ok (b := b) zrowList s hs (by decide +kernel) (by decide +kernel))
     fun s₁ ⟨c₁, f₁, g₁, rd₁, wr₁, sy₁, z₁⟩ => ?_
   have hs₁ : Scratch s₁ b := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
   let s₂ := (VOp.vbin .vpcmpeqd .l256 (y 11) (y 11) (y 11)).exec ((VOp.vbin .vpxor .l256 (y 10) (y 10) (y 10)).exec s₁)
@@ -273,11 +273,11 @@ theorem zconsts_ok {s : State} {b : Addr} (hs : Scratch s b) (hk : EConsts s.mem
     rw [m, f₃ a ha]; rfl
   have row : ∀ e ∈ zrowList, ∀ i < 64,
       t.mem (b + BitVec.ofNat 64 (e.2 + i)) = s.mem (b + BitVec.ofNat 64 (e.1 + i % 32)) := fun e he i hi => by
-    have := (show ∀ e ∈ zrowList, (e.2 + 64 ≤ ZMASK ∨ ZMASK + 64 * 4 ≤ e.2) ∧ e.2 + 64 ≤ 8192 by decide) e he
+    have := (show ∀ e ∈ zrowList, (e.2 + 64 ≤ ZMASK ∨ ZMASK + 64 * 4 ≤ e.2) ∧ e.2 + 64 ≤ 8192 by decide +kernel) e he
     rw [mt _ (by simp only [ofs]; rw [off_ofNat _ (by omega)]; omega), c₁ e he i hi]
   have frame : ∀ a, ¬ (ZB ≤ ofs b a ∧ ofs b a < 6080) → t.mem a = s.mem a := fun a ha => by
     rw [mt a (fun h => ha (by unfold ZMASK ZB at *; omega)), f₁ a (fun e he => by
-      have := (show ∀ e ∈ zrowList, ZB ≤ e.2 ∧ e.2 + 64 ≤ 6080 by decide) e he
+      have := (show ∀ e ∈ zrowList, ZB ≤ e.2 ∧ e.2 + 64 ≤ 6080 by decide +kernel) e he
       omega)]
   refine ⟨fun h hh => ?_, fun sel hsel i hi => ?_, fun h hh => ?_, frame, fun h hh r hr k hk => ?_,
     by rw [g, g₃]; exact g₁, by rw [rd, rd₃]; exact rd₁, by rw [wr, wr₃]; exact wr₁, by rw [sy, sy₃]; exact sy₁⟩
@@ -293,12 +293,12 @@ theorem zconsts_ok {s : State} {b : Addr} (hs : Scratch s b) (hk : EConsts s.mem
         have : ∀ x, 1664 ≤ x → x < 1792 → ∃ e ∈ zrowList, e.1 ≤ x ∧ x < e.1 + 32 ∧ e.2 = zrow e.1 := by
           intro x h1 h2
           rcases (by omega : x < 1696 ∨ (1696 ≤ x ∧ x < 1728) ∨ (1728 ≤ x ∧ x < 1760) ∨ 1760 ≤ x) with h | h | h | h
-          · exact ⟨(KM, zrow KM), by decide, by simp only [KM]; omega, by simp only [KM]; omega, rfl⟩
-          · exact ⟨(K19, zrow K19), by decide, by simp only [K19]; omega, by simp only [K19]; omega, rfl⟩
-          · exact ⟨(KB0, zrow KB0), by decide, by simp only [KB0]; omega, by simp only [KB0]; omega, rfl⟩
-          · exact ⟨(KB1, zrow KB1), by decide, by simp only [KB1]; omega, by simp only [KB1]; omega, rfl⟩
+          · exact ⟨(KM, zrow KM), by decide +kernel, by simp only [KM]; omega, by simp only [KM]; omega, rfl⟩
+          · exact ⟨(K19, zrow K19), by decide +kernel, by simp only [K19]; omega, by simp only [K19]; omega, rfl⟩
+          · exact ⟨(KB0, zrow KB0), by decide +kernel, by simp only [KB0]; omega, by simp only [KB0]; omega, rfl⟩
+          · exact ⟨(KB1, zrow KB1), by decide +kernel, by simp only [KB1]; omega, by simp only [KB1]; omega, rfl⟩
         exact this x h1 (by omega)
-      have hrow := (show ∀ e ∈ zrowList, 1024 ≤ e.1 → (e.1 - 1024) % 32 = 0 by decide) e he
+      have hrow := (show ∀ e ∈ zrowList, 1024 ≤ e.1 → (e.1 - 1024) % 32 = 0 by decide +kernel) e he
       have := row e he (32 * h + (x - e.1)) (by omega)
       rw [h5] at this
       rw [show zoff h x = zrow e.1 + (32 * h + (x - e.1)) by
@@ -306,7 +306,7 @@ theorem zconsts_ok {s : State} {b : Addr} (hs : Scratch s b) (hk : EConsts s.mem
       congr 3; omega
     · rw [ite_eq_right hw, frame _ (by simp only [ofs]; rw [off_ofNat _ (by omega)]; unfold ZB; omega)]
   · obtain ⟨k, hk4, e1, e2⟩ : ∃ k < 4, blendSels.getD k 0 = sel ∧ maskRow sel = ZMASK + 64 * k := by
-      have : ∀ sel ∈ blendSels, ∃ k < 4, blendSels.getD k 0 = sel ∧ maskRow sel = ZMASK + 64 * k := by decide
+      have : ∀ sel ∈ blendSels, ∃ k < 4, blendSels.getD k 0 = sel ∧ maskRow sel = ZMASK + 64 * k := by decide +kernel
       exact this sel hsel
     rw [m, e2, ← e1]
     exact c₃ k hk4 i hi
@@ -314,7 +314,7 @@ theorem zconsts_ok {s : State} {b : Addr} (hs : Scratch s b) (hk : EConsts s.mem
         s.mem.readW (b + BitVec.ofNat 64 (offset 15 + d)) 64 := fun d hd =>
       readW_congr2 fun i hi => by
         rw [Offset.add_ofNat_add_ofNat, Offset.add_ofNat_add_ofNat]
-        have := row (offset 15, ZK2) (by decide) (32 * h + d + i) (by omega)
+        have := row (offset 15, ZK2) (by decide +kernel) (32 * h + d + i) (by omega)
         rw [show ZK2 + 32 * h + d + i = ZK2 + (32 * h + d + i) by omega, this]
         congr 3; omega
     have w0 := w 0 (by decide)

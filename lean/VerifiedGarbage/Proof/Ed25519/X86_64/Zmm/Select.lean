@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombSelect
 import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
 import VerifiedGarbage.Proof.Framework.X86_64.ZVecKeep
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
 
 /-!
 # The `zmm` comb: the selection
@@ -145,14 +146,13 @@ theorem zmasks_ok (s : State) {a b m : Nat} (hm : m < 2 ^ 31) (ha : a < 2 ^ 31) 
   refine ⟨fun i hi => ?_, ⟨fun r hr => ?_, ?_, ?_, ?_, fun r hr i hi => ?_, ?_⟩⟩
   · rw [show xr 15 = y 15 from rfl, l₄ _ _ hi, ite_eq_left rfl]
     split <;> rfl
-  · show s₃.gpr r = s.gpr r
-    rw [k₃.1 r hr]; show s₁.gpr r = _; exact k₁.1 r hr
-  · show s₃.mem = s.mem; rw [k₃.2.1]; show s₁.mem = _; exact k₁.2.1
-  · show s₃.rd = s.rd; rw [k₃.2.2.1]; show s₁.rd = _; exact k₁.2.2.1
-  · show s₃.wr = s.wr; rw [k₃.2.2.2]; show s₁.wr = _; exact k₁.2.2.2
+  · rw [show s₄.gpr = s₃.gpr by zkeep, k₃.1 r hr, show s₂.gpr = s₁.gpr by zkeep]; exact k₁.1 r hr
+  · rw [show s₄.mem = s₃.mem by zkeep, k₃.2.1, show s₂.mem = s₁.mem by zkeep]; exact k₁.2.1
+  · rw [show s₄.rd = s₃.rd by zkeep, k₃.2.2.1, show s₂.rd = s₁.rd by zkeep]; exact k₁.2.2.1
+  · rw [show s₄.wr = s₃.wr by zkeep, k₃.2.2.2, show s₂.wr = s₁.wr by zkeep]; exact k₁.2.2.2
   · simp only [not_or, show xr 14 = y 14 from rfl, show xr 15 = y 15 from rfl] at hr
     rw [l₄ _ _ hi, ite_eq_right hr.2, ite_eq_right hr.1, z₁]
-  · show s₃.syms = s.syms; rw [y₃]; show s₁.syms = _; exact y₁
+  · rw [show s₄.syms = s₃.syms by zkeep, y₃, show s₂.syms = s₁.syms by zkeep]; exact y₁
 
 /-! ## The pieces -/
 
@@ -201,7 +201,8 @@ theorem zselLoad_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {d c : Nat} (hc
       · simp only [s₃, s₂, s₁, zlane_zbin _ _ _ _ _ _ hi, zlane_zlo _ _ _ _ _ hi, zlane_setV256 _ _ _ _ _ hi,
           e', ite_false]
   have hea : s.ea (combTblAt d) = X + BitVec.ofNat 64 d := by rw [ea_combTblAt, hx]
-  refine WP.of_runBlock ⟨s₄, ?_, fun h hh k hk => ?_, ⟨fun _ _ => rfl, rfl, rfl, rfl, fun r hr i hi => ?_, rfl⟩⟩
+  refine WP.of_runBlock ⟨s₄, ?_, fun h hh k hk => ?_, ⟨fun _ _ => by zkeep, by zkeep, by zkeep, by zkeep,
+    fun r hr i hi => ?_, by zkeep⟩⟩
   · simp only [runBlock_cons, runStep_some, runBlock_nil, exec, hea, State.load256, hr, ite_true,
       Option.map_some, zlo]
     rfl
@@ -326,7 +327,8 @@ theorem zselClear_ok (s : State) :
   apply WP.of_runBlock
   simp only [zero, v, runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq,
     exists_eq_left']
-  refine ⟨fun h hh c hc k hk => ?_, ⟨fun _ _ => rfl, rfl, rfl, rfl, fun r hr i hi => ?_, rfl⟩⟩
+  refine ⟨fun h hh c hc k hk => ?_, ⟨fun _ _ => by zkeep, by zkeep, by zkeep, by zkeep, fun r hr i hi => ?_,
+    by zkeep⟩⟩
   · simp only [zq]
     rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;>
       simp only [VOp.exec, zlane_setV256 _ _ _ _ _ (show 2 * h + k / 2 < 4 by omega), y, xr, Nat.reduceAdd,
@@ -453,8 +455,8 @@ theorem zselect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombT
     have hin : InRegions (u₄.rd ++ u₄.wr) (base + BitVec.ofNat 64 ZK2) 64 := by
       simp only [u₄, ZOp.exec_rd, ZOp.exec_wr, u₃, u₂, u₁, VOp.exec_rd, VOp.exec_wr]
       exact hz2
-    simp only [exec, hea, State.load512, hin, ite_true, Option.map_some]
-    rfl
+    simp (config := { zetaDelta := true }) only [exec, hea, State.load512, hin, ite_true, Option.map_some,
+      ZOp.exec_mem, VOp.exec_mem]
   refine WP.of_runBlock ⟨u₅, ?_, ?_⟩
   · rw [runBlock_cons, show exec _ s₆ = some u₁ from rfl, runStep_some, runBlock_cons,
       show exec (zlo 10 10 9) u₁ = some u₂ from rfl, runStep_some, runBlock_cons, show exec _ u₂ = some u₃ from rfl,

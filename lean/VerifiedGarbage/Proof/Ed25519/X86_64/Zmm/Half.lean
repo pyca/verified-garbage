@@ -252,7 +252,7 @@ theorem ZOK.of_keep {b : Addr} {z z' : State} (hz : ZOK b z) (hk : ZKeep b z z')
     rw [← hz.masks sel hs i hi]
     refine congrArg (fun (v : BitVec 512) => v.extractLsb' (128 * i) 128) ?_
     refine Mem.readW_congr fun j hj => hk.mem _ ?_
-    have hm : ∀ sel ∈ blendSels, ZMASK ≤ maskRow sel ∧ maskRow sel + 64 ≤ 6016 := by decide
+    have hm : ∀ sel ∈ blendSels, ZMASK ≤ maskRow sel ∧ maskRow sel + 64 ≤ 6016 := by decide +kernel
     have := hm sel hs
     rw [Offset.add_ofNat_add_ofNat, off_ofNat _ (by omega)]
     simp only [InZ]; omega
@@ -522,7 +522,7 @@ theorem sim_blend {b : Addr} {t : Nat} {J : List Nat} {d a c : XReg} {sel : BitV
       ∀ h < 2, ∀ y' y'', Rel b h J z y' → exec (.vop (.vpblendd .l256 d a c sel)) y' = some y'' →
         Rel b h (if xi d = t then jw J d else t :: jw J d) z' y'' := by
   have hT := xi_y ht
-  have hm : ∀ sel ∈ blendSels, maskRow sel + 64 ≤ 8192 := by decide
+  have hm : ∀ sel ∈ blendSels, maskRow sel + 64 ≤ 8192 := by decide +kernel
   have hin : InRegions (z.rd ++ z.wr) (b + BitVec.ofNat 64 (maskRow sel)) 64 := by
     obtain ⟨r, hr', hc'⟩ := scratch_in hz (hm sel hs)
     exact ⟨r, List.mem_append_right _ hr', hc'⟩
