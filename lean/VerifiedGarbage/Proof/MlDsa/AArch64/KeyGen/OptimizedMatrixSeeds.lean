@@ -25,13 +25,13 @@ theorem matrixCopy_ok {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
   have L := hs.k1.kc.lay hF hp
   refine WP.mono (copySeed4_ok hF L hj) fun t ⟨ht,hkeep,hbytes⟩ => ?_
-  refine ⟨hs.keep hF hp ht (by unfold k1Chk kcChk; lay) (fun k hk => by lay)
+  refine ⟨hs.keep hF hp ht (by unfold k1Chk kcChk; layd) (fun k hk => by layd)
     (fun _ h => False.elim (Nat.not_lt_zero _ h)) (hkeep.get .x24),?_⟩
   intro k hk
   by_cases hkj : k=j
   · subst k
     rw [sc_pa ht,hbytes,hs.k1.sa]
-  · rw [L.keepBytes ht (by lay)]
+  · rw [L.keepBytes ht (by layd)]
     exact hr k (by omega)
 
 theorem matrixPrefixes_ok {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
@@ -52,16 +52,16 @@ theorem matrixNonce_ok {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
   have L := hs.ks.k1.kc.lay hF hp
   unfold setSR
   refine WP.mono (setTwo_ok L (o := oSA4+34*j+32) (a := (e+j)%p.ℓ) (b := (e+j)/p.ℓ)
-    (by dsimp only [oSA4]; omega) (by lay) (by lay)) fun t ⟨ht,hkeep,hbytes⟩ => ?_
-  refine ⟨⟨hs.ks.keep hF hp ht (by unfold k1Chk kcChk; lay) (fun k hk => by lay)
+    (by dsimp only [oSA4]; omega) (by layd) (by layd)) fun t ⟨ht,hkeep,hbytes⟩ => ?_
+  refine ⟨⟨hs.ks.keep hF hp ht (by unfold k1Chk kcChk; layd) (fun k hk => by lay)
     (fun _ h => False.elim (Nat.not_lt_zero _ h)) (hkeep.get .x24),?_⟩,
-    hr.keep L ht (fun k hk => by lay)⟩
+    hr.keep L ht (fun k hk => by layd)⟩
   intro k hk
   by_cases hkj : k=j
   · subst k
-    rw [bytes34,L.keepBytes ht (by lay),hr j hj,sc_add,sc_pa ht,hbytes,
+    rw [bytes34,L.keepBytes ht (by layd),hr j hj,sc_add,sc_pa ht,hbytes,
       Proof.MlDsa.KeyGen.seedA_eq]
-  · rw [L.keepBytes ht (by lay)]
+  · rw [L.keepBytes ht (by layd)]
     exact hs.done k (by omega)
 
 /-- Both full groups and the two-stream tail reuse the same prepared prefixes. -/

@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlDsa.DecideAt
 
 /-!
 # ML-DSA key generation on AArch64: parameters and buffers
@@ -172,5 +173,14 @@ macro_rules
         VG.Impl.MlDsa.AArch64.KeyGen.oSB, VG.Impl.MlDsa.AArch64.KeyGen.oHX, VG.Impl.MlDsa.AArch64.KeyGen.oKL,
         VG.Impl.MlDsa.AArch64.KeyGen.oSS, VG.Impl.MlDsa.AArch64.KeyGen.SV, VG.Impl.MlDsa.AArch64.KeyGen.oT0, $ls,*]
       and_intros <;> omega_arith))
+
+/-- A check about the layout that mentions no variable but the parameter set and
+bounded indices, decided for each parameter set (`decide_at`): cheaper than
+`lay`, which unfolds it into arithmetic on the parameters for `omega`, unless
+there are many indices to try. -/
+syntax "layd" : tactic
+macro_rules
+  | `(tactic| layd) => `(tactic| (
+      have hmem := (‹VG.Proof.MlDsa.AArch64.KeyGen.PFacts _›).mem; decide_at hmem))
 
 end VG.Proof.MlDsa.AArch64.KeyGen

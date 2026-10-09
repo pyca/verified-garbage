@@ -123,13 +123,13 @@ theorem seeds_ok {p : Params} (hF : PFacts p) {S : Nat} (h16 : 16 ≤ S) (hSl : 
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl; have hsc := scr_eq p
   have L := h.lay hF hp
   unfold seedsWith
-  refine WP.seq (WP.mono (setTwo_ok L (o := oKL) (a := p.k) (b := p.ℓ) (by decide) (by lay) (by lay))
+  refine WP.seq (WP.mono (setTwo_ok L (o := oKL) (a := p.k) (b := p.ℓ) (by decide) (by layd) (by layd))
     fun s₁ ⟨hP₁, k₁, hb₁⟩ => ?_)
-  have h₁ := h.step hF hp hP₁ (by unfold kcChk; lay)
+  have h₁ := h.step hF hp hP₁ (by unfold kcChk; layd)
   have L₁ := h₁.lay hF hp
   refine WP.seq (WP.mono (shake_ok h16 hSl L₁ (ins := [⟨.x25, 0, 32⟩, ⟨.x28, oKL, 2⟩]) (out := ⟨.x28, oHX, 128⟩)
-    (by simp) (by unfold hashChk pieceChk; lay)) fun s₂ ⟨hP₂, x₂, ho₂⟩ => ?_)
-  have h₂ := h₁.step hF hp hP₂ (by unfold kcChk; lay)
+    (by simp) (by unfold hashChk pieceChk; layd)) fun s₂ ⟨hP₂, x₂, ho₂⟩ => ?_)
+  have h₂ := h₁.step hF hp hP₂ (by unfold kcChk; layd)
   have L₂ := h₂.lay hF hp
   have hmsg : ([⟨.x25, 0, 32⟩, ⟨.x28, oKL, 2⟩].map (pbytes s₁) : List (List Byte)).flatten =
       xiOf σ ++ [BitVec.ofNat 8 p.k, BitVec.ofNat 8 p.ℓ] := by
@@ -141,31 +141,31 @@ theorem seeds_ok {p : Params} (hF : PFacts p) {S : Nat} (h16 : 16 ≤ S) (hSl : 
   rw [hmsg, ← hx_eq] at ho₂
   have ho₂' : bytesAt s₂.mem (pa s₂ (sc oHX)) 128 = hxOf p σ := by rw [sc_pa hP₂]; exact ho₂
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (copyP_ok L₂ (dst := sc oSA) (src := sc oHX) (by unfold copyPChk; lay)) fun s₃ ⟨hP₃, k₃, b₃⟩ => ?_
-  have h₃ := h₂.step hF hp hP₃ (by unfold kcChk; lay)
+  refine WP.mono (copyP_ok L₂ (dst := sc oSA) (src := sc oHX) (by unfold copyPChk; layd)) fun s₃ ⟨hP₃, k₃, b₃⟩ => ?_
+  have h₃ := h₂.step hF hp hP₃ (by unfold kcChk; layd)
   have L₃ := h₃.lay hF hp
-  have hx3 : bytesAt s₃.mem (pa s₃ (sc oHX)) 128 = hxOf p σ := by rw [L₂.keepBytes hP₃ (by lay)]; exact ho₂'
+  have hx3 : bytesAt s₃.mem (pa s₃ (sc oHX)) 128 = hxOf p σ := by rw [L₂.keepBytes hP₃ (by layd)]; exact ho₂'
   have sa3 : bytesAt s₃.mem (pa s₃ (sc oSA)) 32 = rhoOf p σ := by
     rw [sc_pa hP₃, b₃, rho_eq, ← ho₂', Proof.MlKem.bytesAt_take _ _ (by decide)]
-  refine WP.mono (copyP_ok L₃ (dst := sc oSB) (src := sc (oHX + 32)) (by unfold copyPChk; lay))
+  refine WP.mono (copyP_ok L₃ (dst := sc oSB) (src := sc (oHX + 32)) (by unfold copyPChk; layd))
     fun s₄ ⟨hP₄, k₄, b₄⟩ => ?_
-  have h₄ := h₃.step hF hp hP₄ (by unfold kcChk; lay)
+  have h₄ := h₃.step hF hp hP₄ (by unfold kcChk; layd)
   have L₄ := h₄.lay hF hp
-  refine WP.mono (copyP_ok L₄ (dst := sc (oSB + 32)) (src := sc (oHX + 64)) (by unfold copyPChk; lay))
+  refine WP.mono (copyP_ok L₄ (dst := sc (oSB + 32)) (src := sc (oHX + 64)) (by unfold copyPChk; layd))
     fun s₅ ⟨hP₅, k₅, b₅⟩ => ?_
-  have h₅ := h₄.step hF hp hP₅ (by unfold kcChk; lay)
+  have h₅ := h₄.step hF hp hP₅ (by unfold kcChk; layd)
   have L₅ := h₅.lay hF hp
-  refine WP.mono (setB_ok L₅ (p := sc (oSB + 65)) (v := 0) (by decide) (by lay) (show Reg.x28 ∈ keptRegs by decide))
-    fun s₆ ⟨hP₆, k₆, m₆⟩ => ⟨⟨h₅.step hF hp hP₆ (by unfold kcChk; lay), ?_, ?_, ?_, ?_⟩, ?_⟩
-  · rw [L₅.keepBytes hP₆ (by lay), L₄.keepBytes hP₅ (by lay), L₃.keepBytes hP₄ (by lay)]; exact hx3
-  · rw [L₅.keepBytes hP₆ (by lay), L₄.keepBytes hP₅ (by lay), L₃.keepBytes hP₄ (by lay)]; exact sa3
-  · rw [L₅.keepBytes hP₆ (by lay)]
+  refine WP.mono (setB_ok L₅ (p := sc (oSB + 65)) (v := 0) (by decide) (by layd) (show Reg.x28 ∈ keptRegs by decide))
+    fun s₆ ⟨hP₆, k₆, m₆⟩ => ⟨⟨h₅.step hF hp hP₆ (by unfold kcChk; layd), ?_, ?_, ?_, ?_⟩, ?_⟩
+  · rw [L₅.keepBytes hP₆ (by layd), L₄.keepBytes hP₅ (by layd), L₃.keepBytes hP₄ (by layd)]; exact hx3
+  · rw [L₅.keepBytes hP₆ (by layd), L₄.keepBytes hP₅ (by layd), L₃.keepBytes hP₄ (by layd)]; exact sa3
+  · rw [L₅.keepBytes hP₆ (by layd)]
     have add32 : ∀ (t : State) (o : Nat), pa t (sc o) + BitVec.ofNat 64 32 = pa t (sc (o + 32)) := fun t o => by
       rw [pa, pa, BitVec.add_assoc, ← BitVec.ofNat_add]
     have A : bytesAt s₅.mem (pa s₅ (sc oSB)) 32 = bytesAt s₃.mem (pa s₃ (sc (oHX + 32))) 32 := by
-      rw [L₄.keepBytes hP₅ (by lay), sc_pa hP₄, b₄]
+      rw [L₄.keepBytes hP₅ (by layd), sc_pa hP₄, b₄]
     have B : bytesAt s₅.mem (pa s₅ (sc (oSB + 32))) 32 = bytesAt s₃.mem (pa s₃ (sc (oHX + 64))) 32 := by
-      rw [sc_pa hP₅, b₅, L₃.keepBytes hP₄ (by lay)]
+      rw [sc_pa hP₅, b₅, L₃.keepBytes hP₄ (by layd)]
     have C : rho'Of p σ = bytesAt s₃.mem (pa s₃ (sc (oHX + 32))) 32 ++ bytesAt s₃.mem (pa s₃ (sc (oHX + 64))) 32 := by
       rw [rho'_eq, ← hx3, Proof.MlKem.bytesAt_slice _ _ (show 32 + 64 ≤ 128 by decide),
         bytes64, add32, add32]
@@ -181,11 +181,11 @@ theorem seeds_tr {p : Params} (hF : PFacts p) {S : Nat} (h16 : 16 ≤ S) (hSl : 
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl; have hsc := scr_eq p
   unfold seedsWith
   refine RelCT.seq (Two.step (taintRel [.x28] (fun x y h => h.x28) (setKL_taint p.k (by omega) p.ℓ (by omega)))
-    fun x L => WP.mono (setTwo_ok L (o := oKL) (a := p.k) (b := p.ℓ) (by decide) (by lay) (by lay))
+    fun x L => WP.mono (setTwo_ok L (o := oKL) (a := p.k) (b := p.ℓ) (by decide) (by layd) (by layd))
       fun _ h => ⟨_, h.1⟩) ?_
   refine RelCT.seq (Two.step (VectorTaint.relRegs [.x25, .x26, .x27, .x28] (fun x y h => h.bases) keccak.mldsaSeedsTaint.choose_spec)
     fun x L => WP.mono (shake_ok h16 hSl L (ins := [⟨.x25, 0, 32⟩, ⟨.x28, oKL, 2⟩]) (out := ⟨.x28, oHX, 128⟩)
-      (by simp) (by unfold hashChk pieceChk; lay)) fun _ h => ⟨_, h.1⟩) ?_
+      (by simp) (by unfold hashChk pieceChk; layd)) fun _ h => ⟨_, h.1⟩) ?_
   exact taintRel [.x28] (fun x y h => h.x28) (by taint_decide)
 
 theorem seeds_piece {p : Params} (hF : PFacts p) {S : Nat} (h16 : 16 ≤ S) (hSl : S < 2 ^ 64) :

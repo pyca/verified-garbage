@@ -51,7 +51,7 @@ theorem sbp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State
   have L := h.kc.lay hF hp
   refine WP.mono (sbpAt_ok hP.s64 hP.simpleBitPack L (sbp_chk hF hi) sbpOk_t1 (t1_bound h1))
     fun s' ⟨hP', x', hb⟩ => ?_
-  refine ⟨h.keep hF hp hP' x' (chk_sbp hF hi), L.keepPoly hP' (by lay [hF.pk]) h0, ?_⟩
+  refine ⟨h.keep hF hp hP' x' (chk_sbp hF hi), L.keepPoly hP' (by layd) h0, ?_⟩
   rw [hP'.pa (show Reg.x26 ∈ keptRegs by decide), hb, h1]
 
 /-- `t₀[i]` to `sk`. -/
@@ -72,7 +72,7 @@ theorem bp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
   · exact hk'.rows i' hi'
   · refine ⟨by
       have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
-      rw [L.keepBytes hP' (by lay [hF.pk, hF.sk])]; exact h1, ?_⟩
+      rw [L.keepBytes hP' (by layd)]; exact h1, ?_⟩
     rw [hP'.pa (show Reg.x27 ∈ keptRegs by decide), hb, h0.2, modPm_t0]
     rfl
 

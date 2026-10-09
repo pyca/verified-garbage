@@ -51,8 +51,8 @@ theorem group_ok (c : Impl.Sha3.AArch64.Callee) {p : Params} (hF : PFacts p)
   have hP3 : PPostB S s2 t [] := postB_of_keep ht.keep (by decide)
     (by rw [ht.mem]; exact Frame.refl _ _)
   obtain ⟨A,old,hA,hS,hG⟩:=h2.ex
-  refine ⟨h2.k1.step hF hp hP3 (by unfold k1Chk kcChk; lay),A,secretUpdate r n old fresh,
-    fun i hi=>L2.keepPoly hP3 (by lay) (hA i hi),fun i hi=>?_,?_⟩
+  refine ⟨h2.k1.step hF hp hP3 (by unfold k1Chk kcChk; layd),A,secretUpdate r n old fresh,
+    fun i hi=>L2.keepPoly hP3 (by layd) (hA i hi),fun i hi=>?_,?_⟩
   · unfold secretUpdate
     by_cases hir : r≤i
     · rw [ite_eq_left ⟨hir,hi⟩]
