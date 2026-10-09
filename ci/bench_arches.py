@@ -42,7 +42,8 @@ files changed:
     whose code names `crate::<helper>` (a private submodule's: its
     parent's);
   * a module only tests compile (`#[cfg(test)] mod <name>;`), or its
-    declaration: none, also when it is new or removed;
+    declaration: none, also when it is new or removed; external test files
+    follow their parent's gate and `#[path]`, including `all(test, ...)`;
   * `bench/benches/primitives/<name>.rs`, or its differential test
     `bench/tests/<name>.rs`: the modules in its `USES`, or for a helper
     without one (e.g. `mlkem.rs`, a macro), those of the benchmarks that
@@ -105,6 +106,7 @@ import difflib
 import functools
 import json
 import pathlib
+import posixpath
 import subprocess
 import re
 import sys
@@ -191,6 +193,9 @@ API = re.compile(r"src/(?:hashes/)?([a-z0-9_]+)\.rs$")
 HASHES = "src/hashes/mod.rs"
 # A module declared in `src/lib.rs`: its attributes, and `pub` if it has it.
 LIB_MOD = re.compile(r"^((?:#\[[^\n]*\]\n)*)(pub(?:\([a-z]+\))? )?mod ([a-z0-9_]+);", re.M)
+# External modules, including multiline attributes and renamed `#[path]` files.
+EXTERNAL_MOD = re.compile(
+    r"^[ \t]*((?:#\[[^\]]*\]\s*)*)(?:pub(?:\([a-z]+\))?\s+)?mod\s+([a-z0-9_]+)\s*;", re.M)
 FAMILY = re.compile(r"src/(?!asm/|hashes/)([a-z0-9_]+)/([a-z0-9_]+)\.rs$")
 # One algorithm's benchmark, and the modules it lists in its `USES`.
 BENCH = re.compile(r"bench/benches/primitives/(?!main\.rs$)([a-z0-9_]+)\.rs$")
@@ -431,13 +436,17 @@ def split_top(text):
     return [p.strip() for p in parts if p.strip()]
 
 
-def cfg_value(predicate, arch):
-    """Whether a `cfg` predicate holds on `arch`: None if that depends on
-    more than the architecture (a feature, `test`, …)."""
+def cfg_value(predicate, arch, test=None):
+    """Whether a `cfg` holds for the known architecture and test mode.
+
+    Unknown inputs (including `test` by default) leave the value unknown.
+    """
     if m := re.fullmatch(r'(\w+)\s*=\s*"([^"]*)"', predicate):
+        if arch is None:
+            return None
         return {"target_arch": m[2] == arch, "target_endian": m[2] == ENDIAN}.get(m[1])
     if m := re.fullmatch(r"(all|any|not)\s*\((.*)\)", predicate, re.S):
-        values = [cfg_value(p, arch) for p in split_top(m[2])]
+        values = [cfg_value(p, arch, test) for p in split_top(m[2])]
         if m[1] == "not":
             if len(values) != 1:
                 raise Unreadable
@@ -447,7 +456,7 @@ def cfg_value(predicate, arch):
             return decisive
         return None if None in values else not decisive
     if re.fullmatch(r"\w+", predicate):
-        return None
+        return test if predicate == "test" else None
     raise Unreadable
 
 
@@ -555,6 +564,56 @@ def test_only(module, base=None):
     is new or removed there), so no benchmark can measure it."""
     declared = [lib_modules(r).get(module) for r in ([base, None] if base else [None])]
     return any(declared) and all(d is None or d[0] for d in declared)
+
+
+def external_test_modules(revision=None, changed=()):
+    """For each external file, whether its top-level declarations require `test`.
+
+    Follow `#[path]` relative to its declaring file, as well as normal
+    module filenames. Unknown gates and production declarations keep the
+    file eligible for benchmarks. Inline modules are left to the fallback.
+    """
+    declared = {}
+    # Include deleted parents when checking the base revision.
+    paths = set(rust_files()) | {p for p in changed if p.startswith("src/") and p.endswith(".rs")}
+    for path in sorted(paths):
+        if path.startswith("src/asm/"):
+            continue
+        try:
+            text = without_comments(read(path, revision) or "")
+            i = 0
+            while i < len(text):
+                if (end := literal_end(text, i)) is not None:
+                    i = end
+                elif text[i] == "{":
+                    end = closing(text, i)
+                    # An inline module's path depends on its enclosing modules;
+                    # do not exclude an alias we cannot resolve.
+                    if re.search(r"#\[\s*path\s*=|\bmod\s+[a-z0-9_]+\s*;", text[i:end]):
+                        return {}
+                    i = end
+                elif m := EXTERNAL_MOD.match(text, i):
+                    attributes = re.findall(r"#\[([^\]]*)\]", m[1])
+                    target = next((p[1] for a in attributes
+                                   if (p := re.fullmatch(r'\s*path\s*=\s*"([^"]+)"\s*', a))), None)
+                    parent = pathlib.PurePosixPath(path)
+                    directory = (parent.parent if target is not None or parent.stem in ("lib", "mod")
+                                 else parent.with_suffix(""))
+                    target = posixpath.normpath(str(directory / (target or f"{m[2]}.rs")))
+                    gates = [g[1] for a in attributes if (g := re.fullmatch(r"\s*cfg\s*\((.*)\)\s*", a, re.S))]
+                    only_tests = any(cfg_value(g, None, test=False) is False for g in gates)
+                    # A conditional path can alias another declared test file.
+                    if any(a.strip().startswith("cfg_attr") and re.search(r"\bpath\s*=", a)
+                           for a in attributes):
+                        return {}
+                    declared[target] = declared.get(target, True) and only_tests
+                    i = m.end()
+                else:
+                    i += 1
+        except Unreadable:
+            # Do not infer exclusions from a file this parser cannot follow.
+            return {}
+    return declared
 
 
 def parent_code(family, known, root=".", seen=frozenset()):
@@ -692,8 +751,10 @@ def allows(restriction, reqs):
 def arches(changed, base=None):
     # The modules to benchmark on each architecture that needs it, or ALL.
     needed = {}
+    changed = list(changed)
     catalogs = [bench_catalog(base), bench_catalog()]
     known = set().union(*catalogs[-1].values()) if catalogs[-1] else set()
+    external_tests = None
 
     def need(arch, module):
         if module not in known:
@@ -709,6 +770,14 @@ def arches(changed, base=None):
 
     for path in changed:
         asm, api, family = ASM.match(path), API.match(path), FAMILY.match(path)
+        if path.startswith("src/") and not asm:
+            revisions = [base, None] if base else [None]
+            if external_tests is None:
+                external_tests = [external_test_modules(r, changed) for r in revisions]
+            if any(tests.get(path) is True for tests in external_tests) and all(
+                    tests.get(path) is True or (path not in tests and read(path, revision) is None)
+                    for tests, revision in zip(external_tests, revisions)):
+                continue
         if path.startswith("src/") and not asm and tests_only(path, base):
             continue
         # A change to code only other architectures compile (e.g. PPC64LE's)
