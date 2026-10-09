@@ -319,6 +319,15 @@ def Tree.insert {α : Type} (key : Nat) (value : α) : Tree α → Tree α
     else .node k v left (insert key value right)
 
 
+/-- The key of a register in `FastEnv`: its index with its five bits reversed,
+so registers written in the order of their indices (as allocated registers
+are) make a balanced tree rather than a list. -/
+def regKey : Reg → Nat
+  | .x0 => 0 | .x1 => 16 | .x2 => 8 | .x3 => 24 | .x4 => 4 | .x5 => 20 | .x6 => 12 | .x7 => 28
+  | .x8 => 2 | .x9 => 18 | .x10 => 10 | .x11 => 26 | .x12 => 6 | .x13 => 22 | .x14 => 14
+  | .x15 => 30 | .x16 => 1 | .x17 => 17 | .x19 => 9 | .x20 => 25 | .x21 => 5 | .x22 => 21
+  | .x23 => 13 | .x24 => 29 | .x25 => 3 | .x26 => 19 | .x27 => 11 | .x28 => 27 | .x30 => 7
+
 /-- A sparse representation of the same functional environment. The initial
 functions handle keys that have not been written. -/
 structure FastEnv (α : Type) where
@@ -333,13 +342,13 @@ variable {α : Type}
 
 def ofEnv (e : Env α) : FastEnv α := ⟨e, .empty, .empty, e.carry⟩
 def toEnv (e : FastEnv α) : Env α where
-  reg r := (e.regs.lookup r.ctorIdx).orElse fun _ => e.initial.reg r
+  reg r := (e.regs.lookup (regKey r)).orElse fun _ => e.initial.reg r
   slot off := (e.slots.lookup off).getD (e.initial.slot off)
   carry := e.carry
 
 
 def setReg (e : FastEnv α) (d : Reg) (v : α) : FastEnv α :=
-  { e with regs := e.regs.insert d.ctorIdx v }
+  { e with regs := e.regs.insert (regKey d) v }
 def setSlot (e : FastEnv α) (off : Nat) (v : α) : FastEnv α :=
   { e with slots := e.slots.insert off v }
 def withCarry (e : FastEnv α) (c : Option α) : FastEnv α := { e with carry := c }

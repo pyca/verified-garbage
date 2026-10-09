@@ -19,6 +19,15 @@ theorem Tree.lookup_insert {α : Type} (t : Tree α) (key query : Nat) (value : 
       | simpa only [he, ite_true, ite_false] using ihr
       | exact (ite_eq_right (Ne.symm hk)).symm
 
+private def regOfKey : Nat → Reg
+  | 16 => .x1 | 8 => .x2 | 24 => .x3 | 4 => .x4 | 20 => .x5 | 12 => .x6 | 28 => .x7
+  | 2 => .x8 | 18 => .x9 | 10 => .x10 | 26 => .x11 | 6 => .x12 | 22 => .x13 | 14 => .x14
+  | 30 => .x15 | 1 => .x16 | 17 => .x17 | 9 => .x19 | 25 => .x20 | 5 => .x21 | 21 => .x22
+  | 13 => .x23 | 29 => .x24 | 3 => .x25 | 19 => .x26 | 11 => .x27 | 27 => .x28 | 7 => .x30
+  | _ => .x0
+
+private theorem regOfKey_key (r : Reg) : regOfKey (regKey r) = r := by cases r <;> rfl
+
 namespace FastEnv
 variable {α : Type}
 
@@ -26,8 +35,8 @@ theorem toEnv_ofEnv (e : Env α) : (ofEnv e).toEnv = e := by cases e; rfl
 
 theorem toEnv_setReg (e : FastEnv α) (d : Reg) (v : α) :
     (e.setReg d v).toEnv = e.toEnv.setReg d v := by
-  have inj (r : Reg) : r.ctorIdx = d.ctorIdx ↔ r = d := ⟨fun h => by
-    rw [← Reg.ofNat_ctorIdx r, h, Reg.ofNat_ctorIdx], fun h => congrArg Reg.ctorIdx h⟩
+  have inj (r : Reg) : regKey r = regKey d ↔ r = d := ⟨fun h => by
+    rw [← regOfKey_key r, h, regOfKey_key], fun h => congrArg regKey h⟩
   unfold setReg toEnv Env.setReg
   congr 1
   funext r
