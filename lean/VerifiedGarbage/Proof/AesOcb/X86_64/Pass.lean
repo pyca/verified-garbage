@@ -350,8 +350,11 @@ theorem pass_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {fB : Block → Block
     have e4 : BitVec.signExtend 64 (4 : BitVec 32) = BitVec.ofNat 64 4 := by decide
     refine ⟨_, by orun [State.load128, E.r15, r₀, r₁, r₂, r₃], ?_, ?_, ?_, ?_, fun h2 => ?_⟩
     · exact {
-        env := E.keep (fun _ _ => rfl) rfl rfl
-        frame := Frame.refl _ _, rd := rfl, wr := rfl
+        env := E.keep (fun _ _ => by simp only [gpr_arithFlags, gpr_setXmm])
+          (by simp only [rd_arithFlags, rd_setXmm]) (by simp only [wr_arithFlags, wr_setXmm])
+        frame := by simp only [mem_arithFlags, mem_setXmm]; exact Frame.refl _ _
+        rd := by simp only [rd_arithFlags, rd_setXmm]
+        wr := by simp only [wr_arithFlags, wr_setXmm]
         rbx := by simp only [gpr_arithFlags, gpr_setXmm, hbx]; simp
         rbp := by simp only [gpr_arithFlags, gpr_setXmm, hbp]
         ofs := by
@@ -361,7 +364,7 @@ theorem pass_ok {K W SP D : Addr} {m : Nat} {O0 l : Block} {fB : Block → Block
           simp only [xmm_arithFlags, xmm_setXmm, reduceCtorEq, ite_true, ite_false, ← blockAtMem_eq]
           exact hck
         blk := fun k _ => by simp [X, mem_arithFlags, mem_setXmm]
-        gpr := fun _ _ _ _ _ _ _ => rfl }
+        gpr := fun _ _ _ _ _ _ _ => by simp only [gpr_arithFlags, gpr_setXmm] }
     · simp only [gpr_arithFlags, gpr_setXmm, h12]; simp
     · simp only [cf_arithFlags, gpr_setXmm, h12, e4]
       rw [toNat_ofNat_of_lt (show m < 2 ^ 64 by omega), toNat_ofNat_of_lt (by decide)]
