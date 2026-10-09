@@ -10,7 +10,9 @@ messages of TLS and QUIC: a 12-byte nonce, and at most 32 blocks to hash
 (the additional data and the text, each padded to whole blocks, and the
 lengths block), with some text or more than 16 bytes of additional data,
 which needs no call. The others take the path of the other instances
-(`Impl.AesGcm.X86_64.seal`, `open`).
+(`Impl.AesGcm.X86_64.seal`, `open`), but for `seal`'s end: after the whole
+blocks, the bytes left, the lengths block and the tag take no calls either
+(`finish`).
 
 GHASH over the `m` blocks `X₁ … Xₘ` is `Σ Xᵢ · Hᵐ⁺¹⁻ⁱ`, so the short path
 computes the powers `H'` … `H'ᵐ'` once (`H'ᵏ = Hᵏ · x⁻¹`, `m'` the multiple
@@ -44,7 +46,7 @@ tag is right) affect timing.
 namespace VG.Impl.AesGcm.X86_64.Short
 
 open VG.X86_64
-open VG.Impl.AesGcm.X86_64 (at_ imm ptr srcB dstB Callees alenO lenO aadO dataO roundsO tlO uO auxO j012 recv cmp
+open VG.Impl.AesGcm.X86_64 (at_ imm ptr srcB dstB Callees alenO lenO tlenO aadO dataO roundsO tlO uO auxO j012 recv cmp
   tagLenOk tagOut restore oneEntry oneAad oneBlocks oneCrypt oneTag oneUndo)
 open VG.Impl.Gcm.X86_64.Pclmul (revMask poly hInv pows)
 
@@ -277,13 +279,84 @@ def openShort : Prog isa :=
   (.seq (.ite .e (.block []) (.seq (.block textArgs) (xorText false)))
     (.block [.mov .rax (.mem (at_ .r15 auxO))])))
 
+/-! ## The end of a long `seal`
+
+After `oneBlocks`, the other instances encrypt the `r = len mod 16` bytes
+left with a call of `vg_aes_ctr32`, and hash them, the lengths block and the
+tag's counter block with calls of `vg_ghash` and `vg_aes_ctr32`, one after
+the other. `finish` does it without calls: `H'` and `H'²` in SSE
+(`vg_ghash_pclmul`'s code), `J₀` and the counter block encrypted together in
+two lanes of `zmm5` into `K` (`K[0]` masks the tag, `K[1]` the bytes left),
+the bytes left encrypted in place and copied to `G[0]`, which was zeroed
+(`xorText true`), the lengths block at `G[1]`, and then, with `Y` the GHASH
+accumulator so far, `Y ← mul(Y ⊕ G[0], H'²) ⊕ mul(G[1], H')` (or
+`mul(Y ⊕ G[1], H')` without bytes left), reduced once, and the tag
+`Y ⊕ K[0]` at `W` (`tagK 0`). -/
+
+/-- `H'` into `xmm3` and `H'²` into `xmm6`, with the constants in `xmm0` and
+`xmm1`. -/
+def finPow : List Instr :=
+  Gcm.X86_64.Pclmul.const .xmm0 revMask ++ Gcm.X86_64.Pclmul.const .xmm1 poly ++
+  [.movdquLoad .xmm7 (at_ .r13 240), .xop (.bin .pshufb .xmm7 .xmm0)] ++ hInv ++
+  Gcm.X86_64.Pclmul.mul .xmm6 .xmm3 .xmm3
+
+/-- `J₀` and the counter block in the first two lanes of `zmm5`, and the key
+schedule, the number of rounds and the last round key's address in `rdi`,
+`rsi` and `r10`, for `VaesZ.aesZ`. -/
+def finCtrs : List Instr :=
+  [.vmovdquLoad .l128 .xmm5 (at_ .r14 0), .vmovdquLoad .l128 .xmm7 (at_ .r14 48),
+   .vop (.vinserti128 .xmm5 .xmm5 .xmm7 1), .mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO)),
+   .mov .r10 (.reg .rsi), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10),
+   .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .rdi)]
+
+/-- The keystream of `J₀` and of the counter block at `K`. -/
+def finKs : Prog isa :=
+  .seq (.block finCtrs)
+    (.seq (Aes.X86_64.VaesZ.aesZ .xmm13 [.xmm5]) (.block [.vmovdqu32Store (at_ .r15 kO) .xmm5, .vop .vzeroupper]))
+
+/-- `G[0]` zeroed, and the arguments of `xorText true` for the bytes left. -/
+def finTextArgs : List Instr :=
+  [.xop (.bin .pxor .xmm7 .xmm7), .movdquStore (at_ .r15 gO) .xmm7] ++ ptr .rdi .r15 gO ++
+  [.mov .rsi (.mem (at_ .r15 dataO))] ++ ptr .rdx .r15 (kO + 16) ++ [.mov .rcx (.mem (at_ .r15 lenO))]
+
+/-- The lengths block at `G[1]`: `8 a` and `8 n`, big-endian. -/
+def finLens : List Instr :=
+  [.mov .rax (.mem (at_ .r15 alenO)), .shift .shl .rax 3, .bswap .rax, .store (at_ .r15 (gO + 16)) .rax,
+   .mov .rax (.mem (at_ .r15 tlenO)), .shift .shl .rax 3, .bswap .rax, .store (at_ .r15 (gO + 24)) .rax]
+
+/-- `Y` (from the state) byte-reversed into `xmm12`. -/
+def finY : List Instr := [.movdquLoad .xmm12 (at_ .r14 16), .xop (.bin .pshufb .xmm12 .xmm0)]
+
+/-- With bytes left: `mul(Y ⊕ G[0], H'²) ⊕ mul(G[1], H')` into `xmm2`. -/
+def finGh2 : List Instr :=
+  finY ++ [.movdquLoad .xmm7 (at_ .r15 gO), .xop (.bin .pshufb .xmm7 .xmm0), .xop (.bin .pxor .xmm7 .xmm12)] ++
+  Gcm.X86_64.Pclmul.zero ++ Gcm.X86_64.Pclmul.acc .xmm7 .xmm6 ++
+  [.movdquLoad .xmm7 (at_ .r15 (gO + 16)), .xop (.bin .pshufb .xmm7 .xmm0)] ++
+  Gcm.X86_64.Pclmul.acc .xmm7 .xmm3 ++ Gcm.X86_64.Pclmul.reduce .xmm2
+
+/-- Without: `mul(Y ⊕ G[1], H')` into `xmm2`. -/
+def finGh1 : List Instr :=
+  finY ++ [.movdquLoad .xmm7 (at_ .r15 (gO + 16)), .xop (.bin .pshufb .xmm7 .xmm0),
+    .xop (.bin .pxor .xmm7 .xmm12)] ++
+  Gcm.X86_64.Pclmul.zero ++ Gcm.X86_64.Pclmul.acc .xmm7 .xmm3 ++ Gcm.X86_64.Pclmul.reduce .xmm2
+
+/-- The end of a long `seal`, after `oneBlocks`: the bytes left encrypted
+and the tag at `W`, without calls. -/
+def finish : Prog isa :=
+  .seq (.block finPow)
+  (.seq finKs
+  (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .test .rax (.reg .rax)])
+    (.ite .e (.block (finLens ++ finGh1 ++ tagK 0))
+      (.seq (.block finTextArgs)
+        (.seq (xorText true) (.block (finLens ++ finGh2 ++ tagK 0)))))))
+
 variable (c : Callees)
 
 /-- `seal` with the short path (`cond`), or else the other instances' body. -/
 def «seal» : Prog isa :=
   .seq (.block (oneEntry 32))
     (.seq (.seq cond (.ite .e
-        (.seq (oneAad c) (.seq (oneBlocks c.enc) (.seq (oneCrypt c) (oneTag c 0)))) sealShort))
+        (.seq (oneAad c) (.seq (oneBlocks c.enc) finish)) sealShort))
       (.seq (.block (tagOut (at_ .rsp 24))) (.block restore)))
 
 /-- `open` with the short path (`cond`), or else the other instances' body. -/

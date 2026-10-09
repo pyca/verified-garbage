@@ -15,7 +15,9 @@ reads (`TabF`: group `j`, lane `l` is `Tₖ` with `x · Tₖ = Hᵏ`,
 (`vg_ghash_pclmul`'s `hInv` and `pows`, `powSse_ok`), as group 0
 (`pow4_ok`), then each further group from one below it times a power
 (`StitchZ.powLoad_ok`, `powMore_ok`), as far as `m'` (in `rax`) needs. The
-registers the first block leaves: `powHead_ok`.
+registers the first block leaves: `powHead_ok`. For the end of a long
+`seal`, `finPow` leaves `H'` and `H'²` (`finPow_ok`), which multiply as one
+and two steps of `GHASH` (`step1'`, `step2`, `finPow_facts`).
 -/
 
 set_option linter.unusedSimpArgs false
@@ -454,5 +456,71 @@ theorem powHead_ok {Ctx W SP : Addr} {g : Nat} (s : State) (he : Env Ctx (W + Bi
   refine WP.of_runBlock ⟨_, by xrun [r15₅, mm, r288, mpO], ?_, ?_⟩
   · simp [gpr_setReg]
   · simp [gpr_setReg, f₅.gpr, g₄, f₃.gpr, r11₂]
+
+/-! ## `H'` and `H'²` for the end of a long `seal` -/
+
+section
+open VG.Proof.Gcm.X86_64.Pclmul (const_ok ldrev_ok hInv_ok mul_ok Only)
+open VG.Spec.Gcm (Block blockAt)
+
+/-- `H'` in `xmm3` and `H'²` in `xmm6`, from the hash subkey at `r13 + 240`,
+and the mask and the reduction constant in `xmm0` and `xmm1`. -/
+theorem finPow_ok (s : State) (hin : InRegions (s.rd ++ s.wr) (s.gpr .r13 + BitVec.ofInt 64 ((240 : Nat) : Int)) 16) :
+    WP isa (.block finPow) s fun t =>
+      t.xmm .xmm0 = revMask ∧ t.xmm .xmm1 = poly ∧
+      x * φ (t.xmm .xmm3) = φ (blockAt s.mem (s.gpr .r13 + BitVec.ofInt 64 ((240 : Nat) : Int))) ∧
+      x * φ (t.xmm .xmm6) = φ (blockAt s.mem (s.gpr .r13 + BitVec.ofInt 64 ((240 : Nat) : Int))) ^ 2 ∧
+      Only [.xmm0, .xmm1, .xmm3, .xmm6, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11, .xmm12, .xmm13, .xmm14] s t := by
+  simp only [finPow, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (const_ok .xmm0 _ s (by decide)) fun s₁ ⟨c₁, o₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (const_ok .xmm1 _ s₁ (by decide)) fun s₂ ⟨c₂, o₂⟩ => ?_
+  have o₁₂ := o₁.trans o₂
+  rw [WP.block_append_iff]
+  refine WP.mono (ldrev_ok .xmm7 .r13 240 s₂ (by decide) (by rw [o₂.xmm _ (by decide), c₁, VG.Proof.Gcm.X86_64.Pclmul.rev_eq])
+    (by rw [o₁₂.rd, o₁₂.wr, o₁₂.gpr _ (by decide)]; exact hin)) fun s₃ ⟨l₃, o₃⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (hInv_ok s₃) fun s₄ ⟨t₄, o₄⟩ => ?_
+  have x1 : s₄.xmm .xmm1 = poly := by rw [o₄.xmm _ (by decide), o₃.xmm _ (by decide), c₂]
+  refine WP.mono (mul_ok .xmm6 .xmm3 .xmm3 s₄ (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) x1)
+    fun t ⟨m, o⟩ => ?_
+  have hH : x * φ (s₄.xmm .xmm3) = φ (blockAt s.mem (s.gpr .r13 + BitVec.ofInt 64 ((240 : Nat) : Int))) := by
+    rw [t₄, l₃, o₁₂.mem, o₁₂.gpr _ (by decide)]
+  have O := o₁₂.trans (o₃.trans (o₄.trans o))
+  refine ⟨by rw [o.xmm _ (by decide), o₄.xmm _ (by decide), o₃.xmm _ (by decide), o₂.xmm _ (by decide), c₁,
+    VG.Proof.Gcm.X86_64.Pclmul.rev_eq],
+    by rw [o.xmm _ (by decide), x1], by rw [o.xmm _ (by decide)]; exact hH, ?_, O.weaken fun r hr => ?_⟩
+  · rw [m, show ∀ a : VG.Proof.Gcm.Poly.Q, x * (x * a * a) = (x * a) * (x * a) from fun a => by ring, hH]; ring
+  · revert hr; cases r <;> decide
+
+/-- Two blocks, the first with `Y`, in one product: `GHASH` over them from `Y`. -/
+theorem step2 (H Y X₁ X₂ T₁ T₂ : Block) (h₁ : x * φ T₁ = φ H) (h₂ : x * φ T₂ = φ H ^ 2) :
+    VG.Proof.Gcm.X86_64.Pclmul.reduce ((VG.Proof.Gcm.X86_64.Pclmul.Prod.zero.acc (Y ^^^ X₁) T₂).acc X₂ T₁) =
+      Spec.Gcm.ghashFrom H Y [X₁, X₂] := by
+  apply φ_inj
+  simp only [Spec.Gcm.ghashFrom, List.foldl_cons, List.foldl_nil, VG.Proof.Gcm.X86_64.Pclmul.φ_reduce,
+    VG.Proof.Gcm.X86_64.Pclmul.Prod.val_acc, VG.Proof.Gcm.X86_64.Pclmul.Prod.val_zero, φ_mul, φ_xor]
+  linear_combination (φ Y + φ X₁) * h₂ + φ X₂ * h₁
+
+/-- One block, with `Y`: `GHASH` over it from `Y`. -/
+theorem step1' (H Y X₁ T₁ : Block) (h₁ : x * φ T₁ = φ H) :
+    VG.Proof.Gcm.X86_64.Pclmul.reduce (VG.Proof.Gcm.X86_64.Pclmul.Prod.zero.acc (Y ^^^ X₁) T₁) =
+      Spec.Gcm.ghashFrom H Y [X₁] := by
+  rw [VG.Proof.Gcm.X86_64.Pclmul.step1 H Y X₁ T₁ h₁]; rfl
+
+/-- `finPow`, as `ShortFacts` states it. -/
+theorem finPow_facts (s : State)
+    (hin : InRegions (s.rd ++ s.wr) (s.gpr .r13 + BitVec.ofInt 64 ((240 : Nat) : Int)) 16) :
+    WP isa (.block finPow) s fun t =>
+      t.xmm .xmm0 = revMask ∧ t.xmm .xmm1 = poly ∧
+      IsH1 (blockAt s.mem (s.gpr .r13 + BitVec.ofInt 64 ((240 : Nat) : Int))) (t.xmm .xmm3) ∧
+      IsH2 (blockAt s.mem (s.gpr .r13 + BitVec.ofInt 64 ((240 : Nat) : Int))) (t.xmm .xmm3) (t.xmm .xmm6) ∧
+      Only [.xmm0, .xmm1, .xmm3, .xmm6, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11, .xmm12, .xmm13, .xmm14] s t :=
+  WP.mono (finPow_ok s hin) fun _ ⟨x0, x1, h1, h2, o⟩ =>
+    ⟨x0, x1, fun _ _ => step1' _ _ _ _ h1, fun _ _ _ => step2 _ _ _ _ _ _ h1 h2, o⟩
+
+end
 
 end VG.Proof.AesGcm.X86_64.Short

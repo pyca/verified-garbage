@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 
 Untrusted: everything here is checked by Lean. `seal` and `open` with the
 short path load no `mxcsr`, never write `rsp` and use as much stack as the
-other instances (the short path's code uses none: `cond_xdepth`,
-`sealShort_xdepth`, `openShort_xdepth`), and so they preserve what the ABI
+other instances (the short path's code and the end of the long `seal` use none: `cond_xdepth`,
+`sealShort_xdepth`, `openShort_xdepth`, `finish_xdepth`), and so they preserve what the ABI
 says (`sealM_correct`, `openM_correct`).
 -/
 
@@ -21,6 +21,7 @@ open Gcm.X86_64.Stitch (CtxMode)
 theorem cond_xdepth : Impl.AesGcm.X86_64.Short.cond.x86_64Depth = 0 := by decide +kernel
 theorem sealShort_xdepth : Impl.AesGcm.X86_64.Short.sealShort.x86_64Depth = 0 := by decide +kernel
 theorem openShort_xdepth : Impl.AesGcm.X86_64.Short.openShort.x86_64Depth = 0 := by decide +kernel
+theorem finish_xdepth : Impl.AesGcm.X86_64.Short.finish.x86_64Depth = 0 := by decide +kernel
 
 variable (v : GcmImpl) {M : CtxMode} (B : BlkFn M)
 
@@ -41,7 +42,7 @@ theorem sealM_spSafe : (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B)).all (fu
 theorem sealM_xdepth : (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B)).x86_64Depth ≤ 24 := by
   have e := B.encXd
   have d := B.decXd
-  simp only [Impl.AesGcm.X86_64.Short.«seal», cond_xdepth, sealShort_xdepth, init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, Impl.AesGcm.X86_64.cmp, tagOut, copyLoop, xorLoop, minLen, j012, initState,
+  simp only [Impl.AesGcm.X86_64.Short.«seal», cond_xdepth, sealShort_xdepth, finish_xdepth, init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, Impl.AesGcm.X86_64.cmp, tagOut, copyLoop, xorLoop, minLen, j012, initState,
     Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega

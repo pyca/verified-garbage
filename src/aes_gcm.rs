@@ -1860,6 +1860,43 @@ mod tests {
         }
     }
 
+    /// Long texts with every number of bytes after their whole blocks, after
+    /// additional data of none, part of and whole blocks, encrypt as the
+    /// baseline does on every backend the CPU can run.
+    #[test]
+    fn long_tails_agree() {
+        let msg: [u8; 1040] = core::array::from_fn(|i| (i * 7 + 3) as u8);
+        let aad = [0x33u8; 16];
+        let nonce = [4u8; 12];
+        for key_len in [16, 32] {
+            let k = AesGcm::new(&[0x6b; 32][..key_len]).unwrap();
+            let base = k.with_backend(Backend::Scalar);
+            for &(b, need) in Backend::ALL {
+                if !detected().contains(need) {
+                    continue;
+                }
+                let k = k.with_backend(b);
+                for al in [0, 13, 16] {
+                    for len in 1024..=1040 {
+                        let mut want = msg;
+                        let want_tag = base
+                            .encrypt_in_place(&nonce, &aad[..al], &mut want[..len])
+                            .unwrap();
+                        let mut ct = msg;
+                        let tag = k
+                            .encrypt_in_place(&nonce, &aad[..al], &mut ct[..len])
+                            .unwrap();
+                        assert_eq!(
+                            (&ct[..len], tag),
+                            (&want[..len], want_tag),
+                            "{b:?} {al} {len}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     /// All partial tails, including no tail and a suffix completing a
     /// block, agree with the existing in-place AEAD on every backend.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
