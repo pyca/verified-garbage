@@ -7,11 +7,6 @@ use verified_garbage::chacha20poly1305::ChaCha20Poly1305;
 
 pub(crate) const TAG_LEN: usize = 16;
 
-/// The shortest plaintext AES-GCM encrypts out of place (see `Key::seal_to`):
-/// below it, `AesGcm::encrypt` took about twice as long as copying and
-/// `encrypt_in_place`.
-const GATHER_MIN_LEN: usize = 512;
-
 /// An AEAD key: AES-GCM (128- or 256-bit) or ChaCha20-Poly1305. Each lives
 /// in a boxed record encrypter or decrypter, so its size does not matter.
 #[allow(clippy::large_enum_variant)]
@@ -51,11 +46,9 @@ impl Algorithm {
 
 impl Key {
     /// Encrypts the plaintext `plain ‖ extra` into `out`, which is exactly as
-    /// long, returning the tag. AES-GCM reads the pieces of a plaintext of
-    /// at least `GATHER_MIN_LEN` bytes where they are and writes only `out`;
-    /// shorter ones, and ChaCha20-Poly1305's, are copied into `out` and
-    /// encrypted there. `ChaCha20Poly1305::encrypt` (out of place) measured
-    /// 3-7% slower than copying and `encrypt_in_place` at every length.
+    /// long, returning the tag. Both AEADs read the pieces where they are
+    /// and write only `out`; a plaintext of more pieces than `encrypt`
+    /// takes is copied into `out` and encrypted there.
     pub(crate) fn seal_to(
         &self,
         nonce: &[u8; 12],
@@ -65,27 +58,22 @@ impl Key {
         out: &mut [u8],
     ) -> Result<[u8; TAG_LEN], ()> {
         debug_assert_eq!(out.len(), plain.len() + extra.len());
-        // Under `GATHER_MIN_LEN` bytes, copying and encrypting in place is
-        // faster: `encrypt_in_place` has a path for short inputs that
-        // `encrypt` lacks.
-        if let Self::AesGcm(k) = self
-            && out.len() >= GATHER_MIN_LEN
-        {
-            // The usual record, one chunk, without the array below, whose
-            // initialization costs about a sixth of a 1 KiB record.
-            if let Some(p) = plain.single_chunk() {
-                return k.encrypt(nonce, aad, &[p, extra], out).map_err(|_| ());
+        // The usual record, one chunk, without the array below, whose
+        // initialization costs about a sixth of a 1 KiB record.
+        if let Some(p) = plain.single_chunk() {
+            return self.encrypt(nonce, aad, &[p, extra], out);
+        }
+        // `encrypt` takes at most `MAX_PIECES` pieces (the same for both).
+        const MAX_PIECES: usize = AesGcm::MAX_PIECES;
+        const _: () = assert!(ChaCha20Poly1305::MAX_PIECES == MAX_PIECES);
+        if plain.chunks().count() < MAX_PIECES {
+            let mut pieces: [&[u8]; MAX_PIECES] = [&[]; MAX_PIECES];
+            let mut n = 0;
+            for piece in plain.chunks().chain([extra]) {
+                pieces[n] = piece;
+                n += 1;
             }
-            // `encrypt` takes at most `MAX_PIECES` pieces; more are copied.
-            if plain.chunks().count() < AesGcm::MAX_PIECES {
-                let mut pieces: [&[u8]; AesGcm::MAX_PIECES] = [&[]; AesGcm::MAX_PIECES];
-                let mut n = 0;
-                for piece in plain.chunks().chain([extra]) {
-                    pieces[n] = piece;
-                    n += 1;
-                }
-                return k.encrypt(nonce, aad, &pieces[..n], out).map_err(|_| ());
-            }
+            return self.encrypt(nonce, aad, &pieces[..n], out);
         }
         let mut used = 0;
         for piece in plain.chunks().chain([extra]) {
@@ -93,6 +81,20 @@ impl Key {
             used += piece.len();
         }
         self.seal(nonce, aad, out)
+    }
+
+    /// Encrypts the concatenation of `pieces` into `out`, returning the tag.
+    fn encrypt(
+        &self,
+        nonce: &[u8; 12],
+        aad: &[u8],
+        pieces: &[&[u8]],
+        out: &mut [u8],
+    ) -> Result<[u8; TAG_LEN], ()> {
+        match self {
+            Self::AesGcm(k) => k.encrypt(nonce, aad, pieces, out).map_err(|_| ()),
+            Self::ChaCha20Poly1305(k) => k.encrypt(nonce, aad, pieces, out).map_err(|_| ()),
+        }
     }
 
     /// Encrypts `data` in place, returning the tag.
