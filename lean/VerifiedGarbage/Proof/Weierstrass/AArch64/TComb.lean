@@ -231,12 +231,12 @@ theorem tentry_after_digit_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {
   dsimp only [TCombCfg.toComb] at hnd
   simp only [combWs, rcbW, List.cons_append, List.nil_append, List.nodup_cons,
     List.mem_cons, List.not_mem_nil, or_false, not_or] at hnd
-  have yneg := hL.comb.apart₂ (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind)
+  have yneg := hL.comb.apart₂ (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) hnd.2.2.2.2.1.2.1
   have xy := hap.1
   have xz := hap.2.1
   have yz := hap.2.2
-  have xneg := hL.comb.apart₂ (x := K.E.x) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind)
-  have zneg := hL.comb.apart₂ (x := K.E.z) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind)
+  have xneg := hL.comb.apart₂ (x := K.E.x) (y := K.neg) (by tcomb_mem) (by tcomb_mem) hnd.2.2.2.1.2.2.1
+  have zneg := hL.comb.apart₂ (x := K.E.z) (y := K.neg) (by tcomb_mem) (by tcomb_mem) hnd.2.2.2.2.2.1.1
   have hEx := hE K.E.x (by simp)
   have hEy := hE K.E.y (by simp)
   have hEz := hE K.E.z (by simp)
@@ -513,10 +513,10 @@ theorem tstep_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {base : Addr} 
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hw with rfl | rfl | rfl | rfl | rfl
-        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by grind)
-        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by grind)
-        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by grind)
-        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by grind)
+        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by rcases hx with rfl | rfl | rfl <;> [exact hnd.1.2.2.1; exact hnd.2.1.2.1; exact hnd.2.2.1.1])
+        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by rcases hx with rfl | rfl | rfl <;> [exact hnd.1.2.2.2.1; exact hnd.2.1.2.2.1; exact hnd.2.2.1.2.1])
+        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by rcases hx with rfl | rfl | rfl <;> [exact hnd.1.2.2.2.2.1; exact hnd.2.1.2.2.2.1; exact hnd.2.2.1.2.2.1])
+        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by rcases hx with rfl | rfl | rfl <;> [exact hnd.1.2.2.2.2.2.1; exact hnd.2.1.2.2.2.2.1; exact hnd.2.2.1.2.2.2.1])
         · exact hL.comb.lay.tmp x (combWs_slots _ x hxs))
         (by have := hle x (combWs_slots _ x hxs); omega_using [hn, this]), hm₁]
   have hro : ∀ x ∈ combRo K.toComb, wordsVal s₃.mem base x K.M.n = wordsVal s₀.mem base x K.M.n :=
@@ -638,9 +638,9 @@ theorem tcomb_init_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T
   have al : ∀ x ∈ combWs K.toComb, x % 8 = 0 := fun x hx => hA.sl x (combWs_slots _ x hx)
   have b64 : ∀ x ∈ combWs K.toComb, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by
     have := le x hx; omega_using [this, hn]
-  have axy := hL.comb.apart₂ (x := K.A.x) (y := K.A.y) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have axz := hL.comb.apart₂ (x := K.A.x) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have ayz := hL.comb.apart₂ (x := K.A.y) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by grind)
+  have axy := hL.comb.apart₂ (x := K.A.x) (y := K.A.y) (by tcomb_mem) (by tcomb_mem) hnd.1.1
+  have axz := hL.comb.apart₂ (x := K.A.x) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) hnd.1.2.1
+  have ayz := hL.comb.apart₂ (x := K.A.y) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) hnd.2.1.1
   dsimp only [TCombCfg.toComb] at axy axz ayz
   have hsl : ∀ x ∈ combWs K.toComb, K.bits + K.kbytes + 8 * K.zw ≤ x ∨ x + 8 * K.M.n ≤ K.bits + K.kbytes :=
     fun x hx => hL.bits_sl x (List.mem_cons_of_mem _ (combWs_slots _ x hx))
