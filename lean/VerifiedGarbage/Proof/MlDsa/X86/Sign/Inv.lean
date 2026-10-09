@@ -117,7 +117,7 @@ macro "ofs" : tactic => do
     true_and, ne_eq, not_true_eq_false, false_and, or_false, true_or, or_true, Out, In,
     Y_n, Y_alen0, Y_alen1, Y_alen2, Y_alen3, Y_alen4, Y_awr0, Y_awr1, Y_awr2, Y_awr3, Y_awr4,
     oP, SC, oPS, oRS, oHIN, oMS, oCT, oW1, oST, oWK, oOK, oCNT, oKAP, oONES, skS1, skS2, skT0, sigZ, sigH, aBase, s1B, s2B, t0B, OutK, OutI, OutC, yB, yhB, wB, bMu, bRnd, bSk, bSig]
-  omega))
+  omega_arith))
 
 /-! ## Slots -/
 
