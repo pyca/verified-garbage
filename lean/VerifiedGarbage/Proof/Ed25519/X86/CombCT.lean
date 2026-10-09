@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Ed25519.X86.Comb
 import VerifiedGarbage.Proof.Ed25519.X86.CombLit
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
 
 /-! The comb has a public trace: its loops' counters (`esi`) are public, and every address is
 the workspace pointer `edi` plus a constant or `8 esi`, or the tables' address plus
@@ -14,7 +15,9 @@ open VG VG.X86 VG.Impl.Ed25519.X86
 theorem combMultiply_ct {x : BitVec 32} : RelCT isa
     (fun s t => PointCTCtx x s ∧ PointCTCtx x t ∧ s.wr = t.wr ∧ s.gpr .esp = t.gpr .esp ∧
       wd s.mem x combTbl = wd t.mem x combTbl) combMultiply (fun _ _ => True) := by
-  apply VG.RelCT.taint (A := taint) (callTaint combTbl) _ (by taint_decide)
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check (callTaint combTbl) combMultiply h).isSome = true := by
+    taint_decide_sum [addSum]
+  apply VG.RelCT.taint (A := taint) (callTaint combTbl) _ hc
   intro s t ⟨hs, ht, hw, hsp, hv⟩
   exact callTaint_agree hs ht hw hsp (by decide) hv
 
