@@ -335,6 +335,15 @@ abbrev macR (W SP : BitVec 32) (out : Nat) : List Region :=
   [⟨w64 W + BitVec.ofNat 64 out, 16⟩, ⟨w64 W + BitVec.ofNat 64 jO, 4⟩, ⟨w64 W + BitVec.ofNat 64 256, 2176⟩,
     below SP 56]
 
+theorem out_macR {W SP : BitVec 32} {out : Nat} :
+    ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 out, 16⟩ : Region)], ∃ r' ∈ macR W SP out, Region.Sub r r' :=
+  fun r hr => ⟨r, by rw [List.mem_singleton.mp hr]; exact List.mem_cons_self, fun _ h => h⟩
+
+theorem jO_macR {W SP : BitVec 32} {out : Nat} :
+    ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 jO, 4⟩ : Region)], ∃ r' ∈ macR W SP out, Region.Sub r r' :=
+  fun r hr => ⟨r, by rw [List.mem_singleton.mp hr]; exact List.mem_cons_of_mem _ List.mem_cons_self,
+    fun _ h => h⟩
+
 theorem macR_finR {W SP : BitVec 32} {out : Nat} : ∀ r ∈ macR W SP out, ∃ r' ∈ finR W SP out, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -436,7 +445,7 @@ theorem finishLong_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R :
   have fz : Frame [⟨w64 W + BitVec.ofNat 64 out, 16⟩] s₁.mem s₂.mem := by
     rw [m₂]; exact Cmac.frame_store4 _ _ _ _ _
   have f₁₃ : Frame (macR W SP out) s₁.mem s₃.mem :=
-    (fz.sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩).trans (f₃.sub call_macR)
+    (fz.sub out_macR).trans (f₃.sub call_macR)
   -- `j`.
   have k₃ : ∀ o, 176 ≤ o → o + 4 ≤ 208 → slotv s₃.mem W o = slotv s.mem W o := fun o h₁ h₂ =>
     (slot_macR L hout f₁₃ h₁ (by simp only [jO]; omega)).trans (k₁ o h₁ h₂)
@@ -464,13 +473,13 @@ theorem finishLong_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R :
     (by rw [L.aW (o := 32) (by decide)]; exact Lay.w_w (by omega) (by omega) (by omega)) (by omega)
     ax₆ cx₆ dx₆ bx₆ si₆ di₆) fun s₇ ⟨E₇, rd₇, wr₇, _, f₇, o₇⟩ => ?_)
   have f₃₇ : Frame (macR W SP out) s₃.mem s₇.mem :=
-    (f₃₆.sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩).trans (f₇.sub call_macR)
+    (f₃₆.sub jO_macR).trans (f₇.sub call_macR)
   have k₇ : ∀ o, 176 ≤ o → o + 4 ≤ 208 → slotv s₇.mem W o = slotv s.mem W o := fun o h₁ h₂ =>
-    (slot_call L hout f₇ h₁ (by omega)).trans ((slot_macR L hout (f₃₆.sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩)
+    (slot_call L hout f₇ h₁ (by omega)).trans ((slot_macR L hout (f₃₆.sub jO_macR)
       h₁ (by simp only [jO]; omega)).trans (k₃ o h₁ h₂))
   have nb₇ : slotv s₇.mem W nbO = BitVec.ofNat 32 (16 * kOf k) :=
     (slot_call L hout f₇ (o := nbO) (by decide) (by decide)).trans ((slot_macR L hout
-      (f₃₆.sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩) (o := nbO) (by decide) (by decide)).trans nb₃)
+      (f₃₆.sub jO_macR) (o := nbO) (by decide) (by decide)).trans nb₃)
   have j₇ : slotv s₇.mem W jO = BitVec.ofNat 32 (jOf k) :=
     (slot_call L hout f₇ (o := jO) (by decide) (by decide)).trans (by rw [m₆]; exact Mem.readW_writeW_self32 _ _ _)
   -- The rest of the tail.
@@ -504,9 +513,9 @@ theorem finishLong_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R :
   have hTl {n : Nat} (hn : n ≤ 32) {m : Mem} (hm : Frame (macR W SP out) s₁.mem m) :
       bytesAt m (w64 W + BitVec.ofNat 64 32) n = bytesAt s₁.mem (w64 W + BitVec.ofNat 64 32) n :=
     Proof.AesGcm.X86.bytesAt_frame hm (tail_macR L hout hn) (by omega)
-  have f₁₂ : Frame (macR W SP out) s₁.mem s₂.mem := fz.sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩
+  have f₁₂ : Frame (macR W SP out) s₁.mem s₂.mem := fz.sub out_macR
   have f₁₆ : Frame (macR W SP out) s₁.mem s₆.mem :=
-    f₁₃.trans (f₃₆.sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩)
+    f₁₃.trans (f₃₆.sub jO_macR)
   have f₁₈ : Frame (macR W SP out) s₁.mem s₈.mem := by rw [m₈]; exact f₁₃.trans f₃₇
   have sch₈ := hC (d := 0) (n := 16 * (R + 1)) (by omega) f₁₈
   have sch₆ := hC (d := 0) (n := 16 * (R + 1)) (by omega) f₁₆
