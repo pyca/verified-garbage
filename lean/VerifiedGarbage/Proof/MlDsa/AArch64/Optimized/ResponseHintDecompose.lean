@@ -8,16 +8,18 @@ open VG.Proof.MlDsa.Round VG.Proof.MlDsa.AArch64.Round
 /-- Recombining high and signed low parts recovers the original field element. -/
 theorem hintBase_parts {g : Nat} (hg : IsG g) (r : Zq) :
     ofInt (lowBits g r+2*(g:Int)*(highBits g r).toNat)=r := by
+  -- `LowBits + 2γ₂·HighBits` is `r`, less `q` when `f = m`.
+  have he : lowBits g r+2*(g:Int)*(highBits g r).toNat=
+      (r.val:Int)-(if hbF g r.val=hbM g then (q:Int) else 0) := by
+    rw [lowBits_eq (mem_of_isG hg),highBits_eq (mem_of_isG hg),Int.toNat_natCast,
+      Int.natCast_mul,Int.natCast_mul,Int.mul_comm (2*(g:Int)),Int.sub_sub,
+      Int.add_comm (_*_),←Int.sub_sub,show ((2:Nat):Int)=2 from rfl,Int.sub_add_cancel]
+  rw [he]
   apply Fin.ext
-  have hv := VG.Proof.MlDsa.KeyGen.ofInt_val (lowBits g r+2*(g:Int)*(highBits g r).toNat)
+  have hv := VG.Proof.MlDsa.KeyGen.ofInt_val ((r.val:Int)-(if hbF g r.val=hbM g then (q:Int) else 0))
   have hr := r.isLt
-  rw [lowBits_eq (mem_of_isG hg),highBits_eq (mem_of_isG hg)] at hv ⊢
-  have hf := hbF_le (mem_of_isG hg) hr
-  by_cases hh : hbF g r.val=hbM g <;>
-   simp only [hh,ite_true,ite_false] at hv ⊢ <;>
-   rcases hg with rfl|rfl <;>
-    simp only [hbF,hbM,q,Impl.MlDsa.AArch64.Round.g32,Impl.MlDsa.AArch64.Round.g88,
-      Int.toNat_natCast] at * <;> omega
+  have hq : ((q:Nat):Int)=8380417 := rfl
+  by_cases hc : hbF g r.val=hbM g <;> simp only [hc,ite_true,ite_false] at hv ⊢ <;> omega
 
 theorem responseHintBase_parts {m : Mem} {low high : Addr} {g i : Nat} (hg : IsG g) {r : Zq}
     (hl : (coeffAt m low i).toInt=lowBits g r)
