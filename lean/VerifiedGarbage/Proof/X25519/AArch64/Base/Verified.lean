@@ -17,18 +17,22 @@ namespace VG.Proof.X25519.AArch64.Base
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64 VG.Impl.X25519.AArch64.Base
 open VG.Proof.Ed25519.AArch64
 
+/-- The engine: Ed25519's preparation and comb (`scalarBasePrepare_ct`, `combMultiply_ct`), with
+the clamping and the encoding of `u` between and after them. -/
 theorem engine_ct (base k T : Addr) :
     CT (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y) engine (fun _ _ => True) := by
-  apply CT.taintS (L := [combSym]) (Taint.ofRegs [.x0, .x1]) _ (by taint_decide)
-  intro x y h
-  refine ⟨agree_ofRegs fun r hr => ?_, fun n hn => ?_⟩
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact h.1.1.x0.trans h.2.1.x0.symm
-    · exact h.1.2.1.trans h.2.2.1.symm
-  · simp only [List.mem_singleton] at hn
-    subst hn
-    exact h.1.2.2.2.2.2.trans h.2.2.2.2.2.2.symm
+  have hw : ∀ s, (Scr s base ∧ s.syms combSym = T) →
+      WP isa (.block clampBits) s (fun t => Scr t base ∧ t.syms combSym = T) := fun s h =>
+    WP.mono_syms (clampBits_ok h.1) fun _ ⟨kt, _⟩ syt => ⟨kt.scratch h.1, by rw [syt]; exact h.2⟩
+  have hc : CT (fun x y => (Scr x base ∧ x.syms combSym = T) ∧ (Scr y base ∧ y.syms combSym = T))
+      (.block clampBits) (fun _ _ => True) :=
+    CT.taint (Taint.ofRegs [.x0]) (fun _ _ h => agree_ofRegs fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      subst hr; exact h.1.1.x0.trans h.2.1.x0.symm) (by taint_decide)
+  rw [engine]
+  refine CT.seq (scalarBasePrepare_ct base k T) (CT.seq ((hc.wp fun x y h => ⟨hw x h.1, hw y h.2⟩).mono
+    (fun _ _ h => h) fun _ _ h => h.2) (CT.seq (combMultiply_ct base T) ?_))
+  exact CT.taint (Taint.ofRegs [.x0]) (fun _ _ h => agree_ofRegs h) (by taint_decide)
 
 private def BaseStart (base k out T : Addr) (s : State) : Prop :=
   baseLocal.pre s ∧ s.gpr .x0 = out ∧ s.gpr .x1 = k ∧ s.gpr .x2 = base ∧ s.syms combSym = T
