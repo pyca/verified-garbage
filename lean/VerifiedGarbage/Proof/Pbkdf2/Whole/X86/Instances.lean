@@ -1,7 +1,11 @@
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Md5
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha384
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_224
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_256
 import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
