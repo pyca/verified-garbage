@@ -262,9 +262,10 @@ theorem decMain_tr {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
     fun t V W L R hx => WP.mono (outLoop_ok L R hx.2.1.ho hx.2.2 (by omega) hk' hx.2.1.hw hx.2.1.hnw hx.2.1.ha)
       fun u ⟨Lu, Su, Ru, _⟩ => ⟨V, W, Lu, Ru, hx.step Su fun _ _ => rfl⟩).seq ?_
   -- The length and the result.
-  show RelCT isa _ (.block ([.ldrSp .x14 sOk, .ldrSp .x10 sK, .subImm .x .x10 .x10 (2 * Hl.D + 2), .ldrSp .x11 sIdx,
-    .sub .x .x10 .x10 .x11, .logic .and .x .x10 .x10 .x14, .ldrSp .x11 sMl] ++ ([.str .x .x10 .x11 0,
-    .movz .x .x15 1 0, .logic .and .x .x14 .x14 .x15] ++ faultBit ++ [.logic .orr .x .x0 .x0 .x14]))) _
+  show RelCT isa _ (.block (([.ldrSp .x14 sOk, .ldrSp .x10 sK, .subImm .x .x10 .x10 (2 * Hl.D + 2), .ldrSp .x11 sIdx,
+    .sub .x .x10 .x10 .x11, .logic .and .x .x10 .x10 .x14, .ldrSp .x11 sMl] : List Instr) ++
+    (([.str .x .x10 .x11 0, .movz .x .x15 1 0, .logic .and .x .x14 .x14 .x15] : List Instr) ++ faultBit ++
+      ([.logic .orr .x .x0 .x0 .x14] : List Instr)))) _
   exact RelCT.block_append (lr_seq_tr [.x11] (fun _ => ml)
     (check_of_zImm (τ := Taint.ofRegs [])
       (c' := .block [.ldrSp .x14 sOk, .ldrSp .x10 sK, .subImm .x .x10 .x10 (2 * gH.D + 2), .ldrSp .x11 sIdx,

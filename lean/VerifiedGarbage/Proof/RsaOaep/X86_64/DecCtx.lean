@@ -266,7 +266,7 @@ theorem dec_implies : (decK H G).Implies (Spec.RsaOaep.decryptContract H G abi d
       a15, a16⟩ := h
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, h8]) hl
     refine ⟨?_, by simp only [stackArgs_seventeen, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14,
-      a15, a16], hn, by have := he; rwa [← a0] at this⟩
+      a15, a16], hn, he⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
   sat := dec_sat H G
