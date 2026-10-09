@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
 import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
+import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 
 /-! # ML-KEM (FIPS 203) on x86-64: the polynomial primitives -/
 
@@ -31,7 +32,7 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.X86_64.encryptMul .sse 3
     contract := Spec.MlKem.encryptMulContract 3 X86_64.abi
     verified := Proof.MlKem.X86_64.encMulSse3_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.MlKem.encryptMulApi with
     name := Spec.MlKem.encryptMulApi.name ++ "_avx2"
     target := X86_64.target
@@ -44,7 +45,7 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.X86_64.encryptMul .avx2 3
     contract := Spec.MlKem.encryptMulContract 3 X86_64.abi
     verified := Proof.MlKem.X86_64.encMulAvx3_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"] },
   { Spec.MlKem.decryptMulApi with
     target := X86_64.target
@@ -56,7 +57,7 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.X86_64.decryptMul .sse 3
     contract := Spec.MlKem.decryptMulContract 3 X86_64.abi
     verified := Proof.MlKem.X86_64.decMulSse3_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.MlKem.decryptMulApi with
     name := Spec.MlKem.decryptMulApi.name ++ "_avx2"
     target := X86_64.target
@@ -69,7 +70,7 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.X86_64.decryptMul .avx2 3
     contract := Spec.MlKem.decryptMulContract 3 X86_64.abi
     verified := Proof.MlKem.X86_64.decMulAvx3_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"] },
   { Spec.MlKem.nttApi with
     target := X86_64.target
@@ -103,7 +104,7 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.X86_64.nttAvx2
     contract := Spec.MlKem.nttContract X86_64.abi
     verified := Proof.MlKem.X86_64.nttY_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"]
     ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩ },
   { Spec.MlKem.addApi with
@@ -129,7 +130,7 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.X86_64.addAvx2
     contract := Spec.MlKem.addContract X86_64.abi
     verified := Proof.MlKem.X86_64.addY_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"] },
   { Spec.MlKem.subApi with
     name := Spec.MlKem.subApi.name ++ "_avx2"
@@ -140,7 +141,7 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.X86_64.subAvx2
     contract := Spec.MlKem.subContract X86_64.abi
     verified := Proof.MlKem.X86_64.subY_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"] },
   { Spec.MlKem.mulApi with
     target := X86_64.target
@@ -162,7 +163,7 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.X86_64.multiplyNTTsAvx2
     contract := Spec.MlKem.mulContract X86_64.abi
     verified := Proof.MlKem.X86_64.mulY_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"] },
   { Spec.MlKem.sampleNTTApi with
     target := X86_64.target
@@ -196,7 +197,7 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.X86_64.decode12Avx2
     contract := Spec.MlKem.decode12Contract X86_64.abi
     verified := Proof.MlKem.X86_64.decode12Y_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"] },
   { Spec.MlKem.cbd2Api with
     target := X86_64.target
@@ -235,7 +236,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlKem.sampleNTT4Contract X86_64.abi 24
     stack := 24
     verified := Proof.MlKem.X86_64.sample4_scalar_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.MlKem.sampleNTT4Api with
     name := Spec.MlKem.sampleNTT4Api.name ++ "_avx2"
     target := X86_64.target
@@ -250,7 +251,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlKem.sampleNTT4Contract X86_64.abi 24
     stack := 24
     verified := Proof.MlKem.X86_64.sample4_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"] },
   { Spec.MlKem.sampleNTT4Api with
     name := Spec.MlKem.sampleNTT4Api.name ++ "_avx512"
@@ -266,7 +267,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlKem.sampleNTT4Contract X86_64.abi 24
     stack := 24
     verified := Proof.MlKem.X86_64.sample4_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2", "avx512f", "avx512vl"] }]
 
 end VG.Artifacts.MlKem.X86_64

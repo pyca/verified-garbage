@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.MlKem.X86_64.EncMul
+import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem768_encrypt_mul` and `vg_mlkem1024_encrypt_mul`, verified
@@ -99,48 +100,65 @@ theorem encMul4_verified (hB : BodiesOk B)
 
 end
 
+/-! The checks of each backend's code at each rank, each evaluated once: with
+`Elab.async` the theorems below are elaborated in parallel, and the kernel
+would evaluate a check stated in two of them twice. -/
+
+theorem encMulWoSse3 : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
+    (EncMul.innerE .sse 3) = true := by lit_decide
+theorem encMulCtlSse3 : ctlOk (encryptMul .sse 3) = true := by lit_decide
+theorem encMulWoSse4 : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
+    (EncMul.innerE .sse 4) = true := by lit_decide
+theorem encMulCtlSse4 : ctlOk (encryptMul .sse 4) = true := by lit_decide
+theorem encMulWoAvx3 : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
+    (EncMul.innerE .avx2 3) = true := by lit_decide
+theorem encMulCtlAvx3 : ctlOk (encryptMul .avx2 3) = true := by lit_decide
+theorem encMulWoAvx4 : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
+    (EncMul.innerE .avx2 4) = true := by lit_decide
+theorem encMulCtlAvx4 : ctlOk (encryptMul .avx2 4) = true := by lit_decide
+
 theorem encMulSse3_ct : ConstantTime isa (encMulK 3).pre (encMulK 3).pub (encryptMul .sse 3) :=
   VG.Taint.constantTime (A := taint) _ encMul_agree (by taint_decide)
 
 theorem encMulSse3_correct : ∀ s, (encMulK 3).pre s →
     ∃ t s', Exec isa (encryptMul .sse 3) s t s' ∧ abiPreserved s s' ∧ (encMulK 3).post s s' :=
-  encMul_correct BodiesOk.sse (by decide) (by decide) (by decide +kernel) (by decide +kernel)
+  encMul_correct BodiesOk.sse (by decide) (by decide) encMulWoSse3 encMulCtlSse3
 
 theorem encMulSse3_verified :
     Verified X86_64.target (encryptMul .sse 3) (Spec.MlKem.encryptMulContract 3 X86_64.abi) :=
-  encMul3_verified _ BodiesOk.sse (by decide +kernel) (by decide +kernel) encMulSse3_ct
+  encMul3_verified _ BodiesOk.sse encMulWoSse3 encMulCtlSse3 encMulSse3_ct
 
 theorem encMulSse4_ct : ConstantTime isa (encMulK 4).pre (encMulK 4).pub (encryptMul .sse 4) :=
   VG.Taint.constantTime (A := taint) _ encMul_agree (by taint_decide)
 
 theorem encMulSse4_correct : ∀ s, (encMulK 4).pre s →
     ∃ t s', Exec isa (encryptMul .sse 4) s t s' ∧ abiPreserved s s' ∧ (encMulK 4).post s s' :=
-  encMul_correct BodiesOk.sse (by decide) (by decide) (by decide +kernel) (by decide +kernel)
+  encMul_correct BodiesOk.sse (by decide) (by decide) encMulWoSse4 encMulCtlSse4
 
 theorem encMulSse4_verified :
     Verified X86_64.target (encryptMul .sse 4) (Spec.MlKem.encryptMulContract 4 X86_64.abi) :=
-  encMul4_verified _ BodiesOk.sse (by decide +kernel) (by decide +kernel) encMulSse4_ct
+  encMul4_verified _ BodiesOk.sse encMulWoSse4 encMulCtlSse4 encMulSse4_ct
 
 theorem encMulAvx3_ct : ConstantTime isa (encMulK 3).pre (encMulK 3).pub (encryptMul .avx2 3) :=
   VG.Taint.constantTime (A := taint) _ encMul_agree (by taint_decide)
 
 theorem encMulAvx3_correct : ∀ s, (encMulK 3).pre s →
     ∃ t s', Exec isa (encryptMul .avx2 3) s t s' ∧ abiPreserved s s' ∧ (encMulK 3).post s s' :=
-  encMul_correct BodiesOk.avx2 (by decide) (by decide) (by decide +kernel) (by decide +kernel)
+  encMul_correct BodiesOk.avx2 (by decide) (by decide) encMulWoAvx3 encMulCtlAvx3
 
 theorem encMulAvx3_verified :
     Verified X86_64.target (encryptMul .avx2 3) (Spec.MlKem.encryptMulContract 3 X86_64.abi) :=
-  encMul3_verified _ BodiesOk.avx2 (by decide +kernel) (by decide +kernel) encMulAvx3_ct
+  encMul3_verified _ BodiesOk.avx2 encMulWoAvx3 encMulCtlAvx3 encMulAvx3_ct
 
 theorem encMulAvx4_ct : ConstantTime isa (encMulK 4).pre (encMulK 4).pub (encryptMul .avx2 4) :=
   VG.Taint.constantTime (A := taint) _ encMul_agree (by taint_decide)
 
 theorem encMulAvx4_correct : ∀ s, (encMulK 4).pre s →
     ∃ t s', Exec isa (encryptMul .avx2 4) s t s' ∧ abiPreserved s s' ∧ (encMulK 4).post s s' :=
-  encMul_correct BodiesOk.avx2 (by decide) (by decide) (by decide +kernel) (by decide +kernel)
+  encMul_correct BodiesOk.avx2 (by decide) (by decide) encMulWoAvx4 encMulCtlAvx4
 
 theorem encMulAvx4_verified :
     Verified X86_64.target (encryptMul .avx2 4) (Spec.MlKem.encryptMulContract 4 X86_64.abi) :=
-  encMul4_verified _ BodiesOk.avx2 (by decide +kernel) (by decide +kernel) encMulAvx4_ct
+  encMul4_verified _ BodiesOk.avx2 encMulWoAvx4 encMulCtlAvx4 encMulAvx4_ct
 
 end VG.Proof.MlKem.X86_64

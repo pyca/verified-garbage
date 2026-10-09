@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
+import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem768_decrypt_mul` and `vg_mlkem1024_decrypt_mul`, verified
@@ -108,34 +109,47 @@ theorem decMulAvx3_ct : ConstantTime isa (decMulK 3).pre (decMulK 3).pub (decryp
 theorem decMulAvx4_ct : ConstantTime isa (decMulK 4).pre (decMulK 4).pub (decryptMul .avx2 4) :=
   VG.Taint.constantTime (A := taint) _ decMul_agree (by taint_decide)
 
+/-! The checks of each backend's code, each evaluated once: with `Elab.async`
+the theorems below are elaborated in parallel, and the kernel would evaluate
+a check stated in two of them twice. -/
+
+theorem decMulWoSse : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14]
+    (DecMul.inner .sse) = true := by lit_decide
+theorem decMulWoAvx : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14]
+    (DecMul.inner .avx2) = true := by lit_decide
+theorem decMulCtlSse3 : ctlOk (decryptMul .sse 3) = true := by lit_decide
+theorem decMulCtlSse4 : ctlOk (decryptMul .sse 4) = true := by lit_decide
+theorem decMulCtlAvx3 : ctlOk (decryptMul .avx2 3) = true := by lit_decide
+theorem decMulCtlAvx4 : ctlOk (decryptMul .avx2 4) = true := by lit_decide
+
 theorem decMulSse3_correct : ∀ s, (decMulK 3).pre s →
     ∃ t s', Exec isa (decryptMul .sse 3) s t s' ∧ abiPreserved s s' ∧ (decMulK 3).post s s' :=
-  decMul_correct BodiesOk.sse (by decide) (by decide) (by decide +kernel) (by decide +kernel)
+  decMul_correct BodiesOk.sse (by decide) (by decide) decMulWoSse decMulCtlSse3
 
 theorem decMulSse4_correct : ∀ s, (decMulK 4).pre s →
     ∃ t s', Exec isa (decryptMul .sse 4) s t s' ∧ abiPreserved s s' ∧ (decMulK 4).post s s' :=
-  decMul_correct BodiesOk.sse (by decide) (by decide) (by decide +kernel) (by decide +kernel)
+  decMul_correct BodiesOk.sse (by decide) (by decide) decMulWoSse decMulCtlSse4
 
 theorem decMulAvx3_correct : ∀ s, (decMulK 3).pre s →
     ∃ t s', Exec isa (decryptMul .avx2 3) s t s' ∧ abiPreserved s s' ∧ (decMulK 3).post s s' :=
-  decMul_correct BodiesOk.avx2 (by decide) (by decide) (by decide +kernel) (by decide +kernel)
+  decMul_correct BodiesOk.avx2 (by decide) (by decide) decMulWoAvx decMulCtlAvx3
 
 theorem decMulAvx4_correct : ∀ s, (decMulK 4).pre s →
     ∃ t s', Exec isa (decryptMul .avx2 4) s t s' ∧ abiPreserved s s' ∧ (decMulK 4).post s s' :=
-  decMul_correct BodiesOk.avx2 (by decide) (by decide) (by decide +kernel) (by decide +kernel)
+  decMul_correct BodiesOk.avx2 (by decide) (by decide) decMulWoAvx decMulCtlAvx4
 
 theorem decMulSse3_verified : Verified X86_64.target (decryptMul .sse 3) (Spec.MlKem.decryptMulContract 3 X86_64.abi) :=
-  decMul3_verified _ BodiesOk.sse (by decide +kernel) (by decide +kernel) decMulSse3_ct
+  decMul3_verified _ BodiesOk.sse decMulWoSse decMulCtlSse3 decMulSse3_ct
 
 theorem decMulSse4_verified : Verified X86_64.target (decryptMul .sse 4) (Spec.MlKem.decryptMulContract 4 X86_64.abi) :=
-  decMul4_verified _ BodiesOk.sse (by decide +kernel) (by decide +kernel) decMulSse4_ct
+  decMul4_verified _ BodiesOk.sse decMulWoSse decMulCtlSse4 decMulSse4_ct
 
 theorem decMulAvx3_verified :
     Verified X86_64.target (decryptMul .avx2 3) (Spec.MlKem.decryptMulContract 3 X86_64.abi) :=
-  decMul3_verified _ BodiesOk.avx2 (by decide +kernel) (by decide +kernel) decMulAvx3_ct
+  decMul3_verified _ BodiesOk.avx2 decMulWoAvx decMulCtlAvx3 decMulAvx3_ct
 
 theorem decMulAvx4_verified :
     Verified X86_64.target (decryptMul .avx2 4) (Spec.MlKem.decryptMulContract 4 X86_64.abi) :=
-  decMul4_verified _ BodiesOk.avx2 (by decide +kernel) (by decide +kernel) decMulAvx4_ct
+  decMul4_verified _ BodiesOk.avx2 decMulWoAvx decMulCtlAvx4 decMulAvx4_ct
 
 end VG.Proof.MlKem.X86_64
