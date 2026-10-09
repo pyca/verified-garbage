@@ -30,7 +30,7 @@ open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 
 /-- `vg_aes_gcm_encrypt_blocks_to`, named `n`, calling `B` and the loops `st`. -/
 def BlkToFn.ofBlocks {M : CtxMode} (n : String) (B : BlkFn M) {aligned : Bool} (st : Option (StitchToCode M aligned)) : BlkToFn M where
-  fn := ⟨n, BlocksTo.encrypt B.enc (st.map (·.enc)) aligned⟩
+  fn := ⟨n, BlocksTo.encrypt B.enc (st.map (·.enc)) aligned (encFullTo st)⟩
   ok := encryptToM_correct st B
   ct := BlocksTo.encrypt_ct B st
   sp := SpSafe.of_all (encryptTo_spSafe st B)

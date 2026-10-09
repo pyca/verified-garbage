@@ -210,7 +210,7 @@ theorem entry_rel : RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.
 /-- The interleaved part (or nothing) and `rest`, in two runs. -/
 theorem part_rel {aligned : Bool} (st : Option (StitchToCode M aligned)) :
     RelCT isa (fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧ EntryPost s₀' s₂)
-      (head (st.map (·.enc)) aligned)
+      (head (st.map (·.enc)) aligned (encFullTo st))
       fun s₁ s₂ => ∃ q, Mid s₀ q q s₁ ∧ Mid s₀' q q s₂ := by
   have me : ∀ (s s₁ : State), BT M s → EntryPost s s₁ → Mid s 0 0 s₁ := fun s s₁ hp h => by
     obtain ⟨_, _, g₁, k₁, f₁, rd₁, wr₁⟩ := h
@@ -229,17 +229,33 @@ theorem part_rel {aligned : Bool} (st : Option (StitchToCode M aligned)) :
       rcases List.mem_cons.mp hr with rfl | hr
       · rw [h.2.1.2.1, h.2.2.2.1, pb.dst]
       · exact h.1 r hr
-    have a := rel_wp (rel_regs _ [.rsp] false ag p.P.ct) (fun _ _ h => h.2)
-      (fun _ h => stitch_ok hp p.ok h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2)
-      (fun _ h => stitch_ok hp' p.ok h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2)
-    have b := rel_wp (rel_r11 (l₀ := rest) (l := rest.tail) rfl
-      (P := fun s₁ s₂ => (∀ r ∈ [Reg.rsp], s₁.gpr r = s₂.gpr r) ∧
-        Mid s₀ (n s₀ - n s₀ % 16) 0 s₁ ∧ Mid s₀' (n s₀' - n s₀' % 16) 0 s₂) [.rsp] [.rsp] (by simp)
-      (fun _ _ h => h.1) (fun _ _ h => mid_hS hp hp' pb h.2.1 h.2.2) rest_check)
-      (fun _ _ h => h.2) (fun _ h => rest_ok hp rfl h) (fun _ h => rest_ok hp' rfl h)
-    refine (RelCT.seq (a.mono (fun _ _ h => h) fun _ _ h => ⟨h.1.1, h.2⟩) b).mono (fun _ _ h => h)
-      fun _ _ h => ⟨n s₀ - n s₀ % 16, h.2.1, ?_⟩
-    rw [← pb.en]; exact h.2.2
+    rcases p with ⟨enc, full, ok, P⟩
+    cases full with
+    | false =>
+      have a := rel_wp (rel_regs _ [.rsp] false ag P.ct) (fun _ _ h => h.2)
+        (fun _ h => stitch_ok hp ok h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2)
+        (fun _ h => stitch_ok hp' ok h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2)
+      have b := rel_wp (rel_r11 (l₀ := rest) (l := rest.tail) rfl
+        (P := fun s₁ s₂ => (∀ r ∈ [Reg.rsp], s₁.gpr r = s₂.gpr r) ∧
+          Mid s₀ (n s₀ - n s₀ % 16) 0 s₁ ∧ Mid s₀' (n s₀' - n s₀' % 16) 0 s₂) [.rsp] [.rsp] (by simp)
+        (fun _ _ h => h.1) (fun _ _ h => mid_hS hp hp' pb h.2.1 h.2.2) rest_check)
+        (fun _ _ h => h.2) (fun _ h => rest_ok hp rfl h) (fun _ h => rest_ok hp' rfl h)
+      refine (RelCT.seq (a.mono (fun _ _ h => h) fun _ _ h => ⟨h.1.1, h.2⟩) b).mono (fun _ _ h => h)
+        fun _ _ h => ⟨n s₀ - n s₀ % 16, h.2.1, ?_⟩
+      rw [← pb.en]; exact h.2.2
+    | true =>
+      have eq : qf s₀' = qf s₀ := by simp only [qf, pb.en]
+      have a := rel_wp (rel_regs _ [.rsp] false ag P.ct) (fun _ _ h => h.2)
+        (fun _ h => stitchFullTo_ok hp ok h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2)
+        (fun _ h => stitchFullTo_ok hp' ok h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2)
+      have b := rel_wp (rel_r11 (l₀ := rest) (l := rest.tail) rfl
+        (P := fun s₁ s₂ => (∀ r ∈ [Reg.rsp], s₁.gpr r = s₂.gpr r) ∧
+          Mid s₀ (qf s₀) (qf s₀) s₁ ∧ Mid s₀' (qf s₀') (qf s₀') s₂) [.rsp] [.rsp] (by simp)
+        (fun _ _ h => h.1) (fun _ _ h => mid_hS hp hp' pb h.2.1 h.2.2) rest_check)
+        (fun _ _ h => h.2) (fun _ h => restFullTo_ok hp h) (fun _ h => restFullTo_ok hp' h)
+      refine (RelCT.seq (a.mono (fun _ _ h => h) fun _ _ h => ⟨h.1.1, h.2⟩) b).mono (fun _ _ h => h)
+        fun _ _ h => ⟨qf s₀, h.2.1, ?_⟩
+      rw [← eq]; exact h.2.2
 
 /-- The call, in two runs at the same point. -/
 theorem frame_rel (B : BlkFn M) {q : Nat} (hlt : q < n s₀) :
@@ -301,7 +317,7 @@ end
 
 theorem encrypt_ct {M : CtxMode} (B : BlkFn M) {aligned : Bool} (st : Option (StitchToCode M aligned)) :
     ConstantTime isa (Proof.AesGcm.encryptBlocksToX86_64M M).pre Proof.AesGcm.blocksToPub
-      (encrypt B.enc (st.map (·.enc)) aligned) := by
+      (encrypt B.enc (st.map (·.enc)) aligned (encFullTo st)) := by
   refine ct_of_rel fun s₀ s₀' h h' hq => ?_
   have hp := BT.ofM h
   have hp' := BT.ofM h'

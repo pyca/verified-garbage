@@ -23,47 +23,50 @@ open Gcm.X86_64.Stitch (CtxMode)
 section
 variable {M : CtxMode} {aligned : Bool} (st : Option (StitchToCode M aligned))
 
-theorem headTo_mx : (BlocksTo.head (st.map (·.enc)) aligned).allInstrs (fun i => !loadsMxcsr i) = true := by
-  rcases st with _ | i
+theorem headTo_mx : (BlocksTo.head (st.map (·.enc)) aligned (encFullTo st)).allInstrs (fun i => !loadsMxcsr i) = true := by
+  rcases st with _ | ⟨enc, full, ok, P⟩
   · rfl
-  · cases aligned <;> simp only [Option.map, BlocksTo.head, BlocksTo.stitchPart, Code.allInstrs, i.P.mxcsr] <;> decide
+  · simp only [Option.map, Option.any, encFullTo, BlocksTo.head, BlocksTo.stitchPart, Code.allInstrs, P.mxcsr]
+    cases full <;> cases aligned <;> rfl
 
-theorem headTo_spSafe : (BlocksTo.head (st.map (·.enc)) aligned).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases st with _ | i
+theorem headTo_spSafe : (BlocksTo.head (st.map (·.enc)) aligned (encFullTo st)).all (fun i => !X86_64.isa.writesSp i) = true := by
+  rcases st with _ | ⟨enc, full, ok, P⟩
   · rfl
-  · cases aligned <;> simp only [Option.map, BlocksTo.head, BlocksTo.stitchPart, Code.all, i.P.spSafe] <;> decide
+  · simp only [Option.map, Option.any, encFullTo, BlocksTo.head, BlocksTo.stitchPart, Code.all, P.spSafe]
+    cases full <;> cases aligned <;> rfl
 
-theorem headTo_xdepth : (BlocksTo.head (st.map (·.enc)) aligned).x86_64Depth = 0 := by
-  rcases st with _ | i
+theorem headTo_xdepth : (BlocksTo.head (st.map (·.enc)) aligned (encFullTo st)).x86_64Depth = 0 := by
+  rcases st with _ | ⟨enc, full, ok, P⟩
   · rfl
-  · cases aligned <;> simp only [Option.map, BlocksTo.head, BlocksTo.stitchPart, Code.x86_64Depth, i.P.xdepth] <;> decide
+  · simp only [Option.map, Option.any, encFullTo, BlocksTo.head, BlocksTo.stitchPart, Code.x86_64Depth, P.xdepth]
+    cases full <;> cases aligned <;> rfl
 
 variable (B : BlkFn M)
 
-theorem encryptTo_mx : (BlocksTo.encrypt B.enc (st.map (·.enc)) aligned).allInstrs (fun i => !loadsMxcsr i) = true := by
+theorem encryptTo_mx : (BlocksTo.encrypt B.enc (st.map (·.enc)) aligned (encFullTo st)).allInstrs (fun i => !loadsMxcsr i) = true := by
   have e := B.encMx
   simp only [BlocksTo.encrypt, BlocksTo.tail, BlocksTo.copyBlocks, Code.allInstrs, headTo_mx st, e,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
 theorem encryptTo_spSafe :
-    (BlocksTo.encrypt B.enc (st.map (·.enc)) aligned).all (fun i => !X86_64.isa.writesSp i) = true := by
+    (BlocksTo.encrypt B.enc (st.map (·.enc)) aligned (encFullTo st)).all (fun i => !X86_64.isa.writesSp i) = true := by
   have e := B.encSp
   simp only [BlocksTo.encrypt, BlocksTo.tail, BlocksTo.copyBlocks, Code.all, headTo_spSafe st, e,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem encryptTo_xdepth : (BlocksTo.encrypt B.enc (st.map (·.enc)) aligned).x86_64Depth ≤ 24 := by
+theorem encryptTo_xdepth : (BlocksTo.encrypt B.enc (st.map (·.enc)) aligned (encFullTo st)).x86_64Depth ≤ 24 := by
   have e := B.encXd
   simp only [BlocksTo.encrypt, BlocksTo.tail, BlocksTo.copyBlocks, Code.x86_64Depth, X86_64.Instr.frameBytes,
     List.length_cons, List.length_nil, headTo_xdepth st, Nat.max_le]
   omega
 
 theorem encryptToM_correct (s : State) (hs : (Proof.AesGcm.encryptBlocksToX86_64M M).pre s) :
-    ∃ t s', Exec isa (BlocksTo.encrypt B.enc (st.map (·.enc)) aligned) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (BlocksTo.encrypt B.enc (st.map (·.enc)) aligned (encFullTo st)) s t s' ∧ abiPreserved s s' ∧
       Proof.AesGcm.blocksToPost s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := BlocksTo.encrypt_wp B aligned (st.map (·.enc))
-    (fun p e => by obtain ⟨i, -, rfl⟩ := Option.map_eq_some_iff.1 e; exact i.ok) hs
+  obtain ⟨t, s', he, hg, hp⟩ := BlocksTo.encrypt_wp B aligned (encFullTo st) (st.map (·.enc))
+    (fun p e => by obtain ⟨i, rfl, rfl⟩ := Option.map_eq_some_iff.1 e; exact i.ok) hs
   exact ⟨t, s', he, abiPreserved_of_exec (encryptTo_mx st B) he hg, hp⟩
 
 end
@@ -203,12 +206,12 @@ theorem blocksToP_implies : (Proof.AesGcm.encryptBlocksToX86_64M Gcm.X86_64.Stit
               | exact Region.disjoint_of_sep (by decide)⟩ }
 
 theorem encryptBlocksTo_verified (B : BlkFn CtxMode.base) (st : Option (StitchToCode CtxMode.base)) :
-    Verified X86_64.target (BlocksTo.encrypt B.enc (st.map (·.enc))) (Spec.Gcm.encryptBlocksToContract X86_64.abi 24) :=
+    Verified X86_64.target (BlocksTo.encrypt B.enc (st.map (·.enc)) false (encFullTo st)) (Spec.Gcm.encryptBlocksToContract X86_64.abi 24) :=
   Verified.of_correct (k := Proof.AesGcm.encryptBlocksToX86_64M CtxMode.base) (encryptToM_correct st B)
     (BlocksTo.encrypt_ct B st) blocksTo_implies
 
 theorem encryptBlocksToP_verified (B : BlkFn CtxMode.powers) (st : Option (StitchToCode CtxMode.powers)) :
-    Verified X86_64.target (BlocksTo.encrypt B.enc (st.map (·.enc)))
+    Verified X86_64.target (BlocksTo.encrypt B.enc (st.map (·.enc)) false (encFullTo st))
       (Spec.Gcm.encryptBlocksToPrecomputedContract X86_64.abi 24) :=
   Verified.of_correct (k := Proof.AesGcm.encryptBlocksToX86_64M CtxMode.powers) (encryptToM_correct st B)
     (BlocksTo.encrypt_ct B st) blocksToP_implies

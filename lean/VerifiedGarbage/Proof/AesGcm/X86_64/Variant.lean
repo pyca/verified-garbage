@@ -122,7 +122,14 @@ def encP : StitchToName → Prog isa
 /-- Out-of-place encryption using a prepared context. -/
 def encR : StitchToName → Prog isa
   | .vaes => Impl.Gcm.X86_64.StitchTo.enc
-  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZHTo.encP
+  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZHTo.encR
+
+/-- Whether the loop named `n` for a prepared context takes all the blocks,
+from 16 on (`BlocksTo.stitchPart`'s `full`), and not only the first
+`16 ⌊n / 16⌋`. -/
+def fullR : StitchToName → Bool
+  | .vaesAvx512 => true
+  | _ => false
 
 end StitchToName
 
@@ -133,7 +140,7 @@ structure PieceToP (n : StitchToName) : Type where
 
 /-- Static and constant-time facts for a prepared out-of-place loop. -/
 structure PieceToR (n : StitchToName) : Type where
-  enc : PieceTo n.encR true
+  enc : PieceTo n.encR true n.fullR
 
 /-- Out-of-place loops by name, with the facts `PieceTo` states of them (and
 of those for a key context of `vg_aes_gcm_init_precomputed`, if they read

@@ -14,7 +14,9 @@ that interleave counter mode and GHASH out of place, `Gcm.X86_64.Stitch.SPreTo`,
 entered with `dst` in `r10`), the first `16 ⌊n / 16⌋` blocks, if any, are
 encrypted from `src` to `dst` and hashed in one pass by it (with
 `scratch + 64` for its working space), and the arguments kept become those
-of the rest. The rest (all the blocks, without a `piece`) is copied from
+of the rest; a `piece` that also takes the blocks after the last 16
+(`full`) is given them all, the arguments kept first made those of no rest.
+The rest (all the blocks, without a `piece`) is copied from
 `src` to `dst` (`copyBlocks`), and encrypted and hashed there in place by a
 call of `vg_aes_gcm_encrypt_blocks`, given `scratch` for its working space.
 -/
@@ -35,13 +37,26 @@ def entry : List Instr :=
     .store (at_ .r11 argRounds) .rsi, .store (at_ .r11 argCtr) .rdx, .store (at_ .r11 argY) .rcx,
     .store (at_ .r11 argSrc) .r8, .store (at_ .r11 argN) .r9, .store (at_ .r11 argDst) .r10]
 
+/-- All the blocks taken: the arguments kept become those of no rest
+(`src + 16 n`, `dst + 16 n`, and 0 blocks), from `src` in `r8` and `dst` in
+`r10`. -/
+def takeAllTo : List Instr :=
+  [.mov .rax (.reg .r9), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+    .alu .add .rax (.reg .rax), .alu .add .rax (.reg .r8), .store (at_ .r11 argSrc) .rax,
+    .mov .rax (.reg .r9), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+    .alu .add .rax (.reg .rax), .alu .add .rax (.reg .r10), .store (at_ .r11 argDst) .rax,
+    .mov32 .rax (imm 0), .store (at_ .r11 argN) .rax]
+
 /-- If there are at least 16 blocks, the first `16 ⌊n / 16⌋` by `piece`,
 with `dst` still in `r10` and `r11` at its working space, `scratch + 64`,
-rounded up to 64 bytes when `aligned`. -/
-def stitchPart (piece : Prog isa) (aligned : Bool := false) : Prog isa :=
+rounded up to 64 bytes when `aligned`; all of them if `full` (a `piece`
+that also takes the blocks after the last 16), with the arguments kept
+those of no rest. -/
+def stitchPart (piece : Prog isa) (aligned : Bool := false) (full : Bool := false) : Prog isa :=
   .seq (.block [.alu .cmp .r9 (imm 16)])
     (.ite .b (.block [])
-      (.seq (.block ([.mov .rax (.reg .r9), .alu .and .rax (imm 15), .alu .sub .r9 (.reg .rax)] ++
+      (.seq (.block ((if full then takeAllTo else
+        [.mov .rax (.reg .r9), .alu .and .rax (imm 15), .alu .sub .r9 (.reg .rax)]) ++
         Blocks.scratchSetup aligned)) piece))
 
 /-- The arguments of the rest: `n mod 16` blocks after the first
@@ -75,14 +90,15 @@ def tail (enc : Fn) : Prog isa :=
         (.frame (.push [.rax]) (.call enc.name enc.code) (.pop .rax 1))))))
 
 /-- The first blocks by `piece`, if any, then the rest. -/
-def head (piece : Option (Prog isa)) (aligned : Bool := false) : Prog isa :=
+def head (piece : Option (Prog isa)) (aligned : Bool := false) (full : Bool := false) : Prog isa :=
   match piece with
-  | some piece => .seq (stitchPart piece aligned) (.block rest)
+  | some piece => .seq (stitchPart piece aligned full) (.block rest)
   | none => .block []
 
 /-- `vg_aes_gcm_encrypt_blocks_to`, with the out-of-place encrypting `piece`,
-if any, and calling `enc` (`vg_aes_gcm_encrypt_blocks`) for the rest. -/
-def encrypt (enc : Fn) (piece : Option (Prog isa)) (aligned : Bool := false) : Prog isa :=
-  .seq (.block entry) (.seq (head piece aligned) (tail enc))
+if any (taking all the blocks if `full`), and calling `enc`
+(`vg_aes_gcm_encrypt_blocks`) for the rest. -/
+def encrypt (enc : Fn) (piece : Option (Prog isa)) (aligned : Bool := false) (full : Bool := false) : Prog isa :=
+  .seq (.block entry) (.seq (head piece aligned full) (tail enc))
 
 end VG.Impl.AesGcm.X86_64.BlocksTo

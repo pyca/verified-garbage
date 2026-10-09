@@ -45,15 +45,15 @@ theorem split_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) (h11 : s₁.gpr 
 /-- What the out-of-place loops need, from the arguments in their
 registers, `r9 = 16 ⌊n / 16⌋`, the output in `r10` and the working space in
 `r11`. -/
-theorem spreTo_of {s₃ : State} (h16 : 16 ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 (n s - n s % 16))
+theorem spreTo_of {q : Nat} {s₃ : State} (hq16 : 16 ≤ q) (hqle : q ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 q)
     (hg : ∀ r ∈ argRegs, s₃.gpr r = s.gpr r) (h10 : s₃.gpr .r10 = Dst s)
     (h11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s))) (hrd : s₃.rd = s.rd)
     (hwr : s₃.wr = s.wr) (hf₃ : Frame [kR' s] s.mem s₃.mem) : SPreTo M s₃ := by
   have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
-  have hq : (s₃.gpr .r9).toNat = n s - n s % 16 := by rw [h9, toNat_ofNat_of_lt (by omega)]
-  have hqn : 16 * (n s - n s % 16) ≤ n s * 16 := by omega
-  have pd : Region.Sub ⟨Dst s, 16 * (n s - n s % 16)⟩ (dR s) := Region.sub_prefix hqn
-  have pr : Region.Sub ⟨Src s, 16 * (n s - n s % 16)⟩ (srcR s) := Region.sub_prefix hqn
+  have hq : (s₃.gpr .r9).toNat = q := by rw [h9, toNat_ofNat_of_lt (by omega)]
+  have hqn : 16 * q ≤ n s * 16 := by omega
+  have pd : Region.Sub ⟨Dst s, 16 * q⟩ (dR s) := Region.sub_prefix hqn
+  have pr : Region.Sub ⟨Src s, 16 * q⟩ (srcR s) := Region.sub_prefix hqn
   have ps : Region.Sub ⟨S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)), 1024⟩ (sR s) := Offset.sub_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega)
   have hws := hp.w_s
   have ts : (S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s))).toNat = (S s).toNat + AlignedScratch.offset aligned (S s) := by
@@ -85,18 +85,16 @@ theorem spreTo_of {s₃ : State} (h16 : 16 ≤ n s) (h9 : s₃.gpr .r9 = BitVec.
       simp only [List.mem_singleton] at hr; subst hr; exact hp.k_s.sub_right kR'_sub) hp.w_k hp.ok]
 
 /-- `Mid` after the out-of-place loops, from what they leave. -/
-theorem mid_of_postTo {s₃ s₄ : State} (h9 : s₃.gpr .r9 = BitVec.ofNat 64 (n s - n s % 16))
+theorem mid_of_postTo {q k : Nat} {s₃ s₄ : State} (hqn : q ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 q)
     (hg : ∀ r ∈ argRegs, s₃.gpr r = s.gpr r) (hcs : ∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r)
     (h10 : s₃.gpr .r10 = Dst s) (h11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)))
-    (hrd : s₃.rd = s.rd) (hwr : s₃.wr = s.wr) (hkp : Kept s 0 s₃.mem) (hf₃ : Frame [kR' s] s.mem s₃.mem)
-    (P : EPostTo s₃ s₄) : Mid s (n s - n s % 16) 0 s₄ := by
+    (hrd : s₃.rd = s.rd) (hwr : s₃.wr = s.wr) (hkp : Kept s k s₃.mem) (hf₃ : Frame [kR' s] s.mem s₃.mem)
+    (P : EPostTo s₃ s₄) : Mid s q k s₄ := by
   have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
   have data := P.data
   have ctr := P.ctr
   have frame := P.frame
   have y := P.y
-  generalize hq : n s - n s % 16 = q at *
-  have hqn : q ≤ n s := by omega
   have hq9 : (s₃.gpr .r9).toNat = q := by rw [h9, toNat_ofNat_of_lt (by omega)]
   have ek : s₃.gpr .rdi = K s := hg _ (by simp [argRegs])
   have er : s₃.gpr .rsi = s.gpr .rsi := hg _ (by simp [argRegs])
@@ -200,8 +198,8 @@ theorem stitch_ok {piece : Prog isa} (hpiece : StitchToOkM M piece)
     have hm : Gcm.X86_64.Stitch.nb s₃ % 16 = 0 := by
       have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
       simp only [Gcm.X86_64.Stitch.nb, h9, toNat_ofNat_of_lt (show n s - n s % 16 < 2 ^ 64 by omega)]; omega
-    exact WP.mono (hpiece s₃ (spreTo_of hp h16 h9 ga h10₃ h11₃ rd₃' wr₃' hf₃) hm) fun s₄ hP =>
-      mid_of_postTo hp h9 ga gc h10₃ h11₃ rd₃' wr₃' hk₃ hf₃ hP
+    exact WP.mono (hpiece s₃ (spreTo_of hp (by omega) (by omega) h9 ga h10₃ h11₃ rd₃' wr₃' hf₃) hm) fun s₄ hP =>
+      mid_of_postTo hp (by omega) h9 ga gc h10₃ h11₃ rd₃' wr₃' hk₃ hf₃ hP
 
 end
 
