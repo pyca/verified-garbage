@@ -66,4 +66,7 @@ theorem rd_setV (r : VReg) (x : BitVec 128) : (s.setV r x).rd = s.rd := rfl
 theorem wr_setV (r : VReg) (x : BitVec 128) : (s.setV r x).wr = s.wr := rfl
 theorem sp_setV (r : VReg) (x : BitVec 128) : (s.setV r x).sp = s.sp := rfl
 
+set_option allowUnsafeReducibility true in
+attribute [irreducible] State.setV State.write
+
 end VG.AArch64.RegUpd
