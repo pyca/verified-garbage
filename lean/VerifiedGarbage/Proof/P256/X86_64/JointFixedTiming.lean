@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.P256.X86_64.JacTiming
+import VerifiedGarbage.Proof.P256.X86_64.JacTimingAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
 
 namespace VG.Proof.P256.X86_64

@@ -1,51 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.CombSign
-import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
-import VerifiedGarbage.Proof.Framework.X86.TaintSym
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.X86.Inline
+import VerifiedGarbage.Proof.Ecdsa.X86.CombStepCT
+import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 
 namespace VG.Proof.Ecdsa.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Mont.X86 VG.Proof.Mont
 open VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass Spec.Weierstrass
 
-def p256d : CombData := ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB"⟩
-abbrev p256K := p256Comb.combCfg p256d
-
-def combStep : Prog isa := p256K.stepJ
-materialize_code combStep
-
-def combFirst : Prog isa := p256K.first
-materialize_code combFirst
-
-/-- No instruction of an iteration writes `esp`, and its calls use 20 bytes of stack. -/
-theorem combStep_sp : SpOk combStep 20 := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
-theorem combFirst_sp : SpOk combFirst 20 := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
-
-def combRegion (scratchSecond : Bool) : Nat := if scratchSecond then 1 else 0
-
-def combτAt (scratchSecond : Bool) : VG.X86.Taint.T :=
-  { regs := .ofList [.esi, .edi, .esp], flags := false,
-    lens := if scratchSecond then [0, 8192] else [8192],
-    bases := [(.edi, combRegion scratchSecond, 0)],
-    slots := [(combRegion scratchSecond, 60, 4)], room := 20 }
-
-abbrev combτ := combτAt true
-
 variable {scratchSecond : Bool}
-
-/-- The hints forget the public slots and base words outside the calls of the
-field arithmetic; inside them they keep everything (the functions read their
-pointers from the call's frame). -/
-def combWeak (τ : VG.X86.Taint.T) : VG.X86.Taint.T := if τ.stk = [] then { τ with slots := [], wbases := [] } else τ
-
-/-- One iteration reads a public table address, scans every entry, then
-performs scalar arithmetic. The loop invariant supplies that address again
-at the next iteration. -/
-theorem combStep_rel : RelCT isa (VG.X86.Taint.Agree (combτAt scratchSecond)) combStep (fun _ _ => True) :=
-  by
-    cases scratchSecond <;>
-      exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h)
-        (by taint_decide_weak VG.Proof.Ecdsa.X86.combWeak)
 
 /-- The loop's taint well-formedness only needs the scratch base and the
 unchanged region metadata. -/
@@ -204,11 +164,6 @@ theorem combLoop_rel (hL : TCombLay p256K size) (hC : Law p256Comb.C) (ham3 : AM
     omega
   exact ⟨j - 1, by omega, by dsimp only [I]; rw [show p256K.J - (j - 1) = p256K.J - j + 1 by omega]; exact ⟨by omega, by omega, i₁, i₂⟩⟩
 
-
-theorem combFinish_rel : RelCT isa (VG.X86.Taint.Agree (combτAt scratchSecond))
-    (.seq (.block p256K.outFix) (Impl.Weierstrass.X86.fprog p256K.F p256K.outOps)) (fun _ _ => True) := by
-  cases scratchSecond <;>
-    exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) (by taint_decide)
 
 theorem combFirst_rel : RelCT isa (VG.X86.Taint.Agree (combStartτAt scratchSecond)) p256K.first
     (fun _ _ => True) := by
