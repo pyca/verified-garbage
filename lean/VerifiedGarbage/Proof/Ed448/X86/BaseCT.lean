@@ -66,7 +66,7 @@ theorem baseStep_tr (n : Nat) : RelCT isa (Runs BP₀ (LadB n)) baseStep fun _ _
       (fun _ _ _ => agree_regs fun _ h => (List.not_mem_nil h).elim) (by taint_decide)) ?_)
     (RelCT.seq (fieldB_rel n _ _ doubleFields_impl) (RelCT.seq (fieldB_rel n _ _ addFields_impl) ?_))
   · rintro σ s ⟨hn, s₄, h⟩
-    refine WP.mono (h.2.2.wp (NoSp.of_all (by decide +kernel)) (by decide +kernel)
+    refine WP.mono (h.2.2.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
       (Q := fun t => t.gpr .esi = BitVec.ofNat 32 n)
       (WP.mono (decCounter_ok (by omega) h.2.1.esi) fun t ⟨c, g, m, r, w, _⟩ =>
         ⟨FInv.of_counter h.2.2.fin g m r w, g _ (by decide), w, c⟩)) fun t ⟨fe, c⟩ => ⟨fe, c⟩
@@ -125,7 +125,7 @@ theorem baseEncode_tr : RelCT isa (Runs BP₀ fun σ s => ∃ s₄, BL σ s₄ s
     (rf_tr (fun _ _ h => h.hp) (fun _ _ ⟨_, h⟩ => h.2.2.fs) invert_rel) ?_)
     (RelCT.seq (R := Runs BP₀ (FE bsB)) ?_ ?_)
   · rintro σ s ⟨_, h⟩
-    exact WP.mono (h.2.2.wp (NoSp.of_all (by decide +kernel)) (by decide +kernel) (Q := fun _ => True)
+    exact WP.mono (h.2.2.wp (NoSp.of_all (by lit_decide)) (by lit_decide) (Q := fun _ => True)
       (WP.mono (invert_ok h.2.2.fin.scr h.2.2.fin.ctx h.2.2.fin.bounded) fun t ⟨k, b, _⟩ =>
         ⟨⟨k.scr h.2.2.fin.scr, k.ctx h.2.2.fin.ctx, b⟩, k.regs.1 _ (by decide), k.regs.2.2, trivial⟩))
       fun t ⟨fe, _⟩ => fe

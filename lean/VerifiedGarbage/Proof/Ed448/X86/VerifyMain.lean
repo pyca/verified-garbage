@@ -293,7 +293,7 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s₀ : State} (h
     have frame : Frame (s₁.wr ++ [below (s₁.gpr .esp) 20]) s₀.mem t.mem :=
       ((Outside.frame o₁).mono fun r hr => by
         rw [List.mem_singleton.mp hr, hw₁]; exact List.mem_cons_self).trans
-        (Frame.below_mono ft (by decide +kernel) hc₁.sp)
+        (Frame.below_mono ft (by lit_decide) hc₁.sp)
     have ret : (retR s₀).Contains ((s₀.gpr .esp).setWidth 64) 4 := by
       simpa only [BitVec.add_zero] using
         Offset.contains_base ((s₀.gpr .esp).setWidth 64) (d := 0) (n := 4) (k := 4) (by decide)
@@ -304,8 +304,8 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s₀ : State} (h
     rintro r (rfl | rfl)
     · exact hbase ▸ h.ret_sc
     · exact h.stk_ret.symm
-  refine WP.mono (WP.withFrame (NoSp.of_all (by decide +kernel))
-    (Nat.le_trans (by decide +kernel : stackUse (.seq vdecode vafter) ≤ 20) hc₁.sp)
+  refine WP.mono (WP.withFrame (NoSp.of_all (by lit_decide))
+    (Nat.le_trans (by lit_decide : stackUse (.seq vdecode vafter) ≤ 20) hc₁.sp)
     (Q := fun t => (∀ r ∈ calleeSaved, t.gpr r = s₀.gpr r) ∧
       t.gpr .eax = if Spec.Ed448.verifyEquation (bytesAt s₀.mem ((arg s₀ 0).setWidth 64) 57)
         (bytesAt s₀.mem ((arg s₀ 1).setWidth 64) 114) (bytesAt s₀.mem ((arg s₀ 2).setWidth 64) 57)

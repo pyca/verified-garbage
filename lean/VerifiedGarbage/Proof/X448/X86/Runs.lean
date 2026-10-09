@@ -101,10 +101,10 @@ theorem call2_nosp {name : String} {body : Prog isa} (hb : NoSp body) (o a : Nat
 
 theorem op_nosp (op : FieldOp) : NoSp op.impl.code := by
   cases op with
-  | mul o a b => exact call3_nosp (NoSp.of_all (by decide +kernel)) _ _ _
-  | add o a b => exact call3_nosp (NoSp.of_all (by decide +kernel)) _ _ _
-  | sub o a b => exact call3_nosp (NoSp.of_all (by decide +kernel)) _ _ _
-  | mulSmall o a => exact call2_nosp (NoSp.of_all (by decide +kernel)) _ _
+  | mul o a b => exact call3_nosp (NoSp.of_all (by lit_decide)) _ _ _
+  | add o a b => exact call3_nosp (NoSp.of_all (by lit_decide)) _ _ _
+  | sub o a b => exact call3_nosp (NoSp.of_all (by lit_decide)) _ _ _
+  | mulSmall o a => exact call2_nosp (NoSp.of_all (by lit_decide)) _ _
   | copy o a =>
     intro i hi
     simp only [FieldOp.impl, Op.code, instrs, copy, List.mem_flatMap, List.mem_range] at hi

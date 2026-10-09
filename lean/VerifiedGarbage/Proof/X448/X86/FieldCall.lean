@@ -242,28 +242,28 @@ theorem mulCall_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s b
     (ho : Slot o) (ha : Slot a) (hb : Slot b) (ab : Bounded s.mem base a) (bb : Bounded s.mem base b) :
     WP isa (mulCall o a b) s fun t =>
       COp base o s t ∧ Bounded t.mem base o ∧ F t.mem base o = F s.mem base a * F s.mem base b :=
-  call3_ok (op := (· * ·)) (NoSp.of_all (by decide +kernel)) (by decide +kernel) hs hc ho ha hb ab bb
+  call3_ok (op := (· * ·)) (NoSp.of_all (by lit_decide)) (by lit_decide) hs hc ho ha hb ab bb
     fun _ he hvb ab' bb' => mulFn_ok he hvb hb ab' bb'
 
 theorem addCall_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) {o a b : Nat}
     (ho : Slot o) (ha : Slot a) (hb : Slot b) (ab : Bounded s.mem base a) (bb : Bounded s.mem base b) :
     WP isa (addCall o a b) s fun t =>
       COp base o s t ∧ Bounded t.mem base o ∧ F t.mem base o = F s.mem base a + F s.mem base b :=
-  call3_ok (op := (· + ·)) (NoSp.of_all (by decide +kernel)) (by decide +kernel) hs hc ho ha hb ab bb
+  call3_ok (op := (· + ·)) (NoSp.of_all (by lit_decide)) (by lit_decide) hs hc ho ha hb ab bb
     fun _ he hvb ab' bb' => addFn_ok he hvb hb ab' bb'
 
 theorem subCall_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) {o a b : Nat}
     (ho : Slot o) (ha : Slot a) (hb : Slot b) (ab : Bounded s.mem base a) (bb : Bounded s.mem base b) :
     WP isa (subCall o a b) s fun t =>
       COp base o s t ∧ Bounded t.mem base o ∧ F t.mem base o = F s.mem base a - F s.mem base b :=
-  call3_ok (op := (· - ·)) (NoSp.of_all (by decide +kernel)) (by decide +kernel) hs hc ho ha hb ab bb
+  call3_ok (op := (· - ·)) (NoSp.of_all (by lit_decide)) (by lit_decide) hs hc ho ha hb ab bb
     fun _ he hvb ab' bb' => subFn_ok he hvb hb ab' bb'
 
 theorem a24Call_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) {o a : Nat}
     (ho : Slot o) (ha : Slot a) (ab : Bounded s.mem base a) :
     WP isa (a24Call o a) s fun t =>
       COp base o s t ∧ Bounded t.mem base o ∧ F t.mem base o = Spec.X448.a24 * F s.mem base a :=
-  call2_ok (op := (Spec.X448.a24 * ·)) (NoSp.of_all (by decide +kernel)) (by decide +kernel) hs hc ho ha ab
+  call2_ok (op := (Spec.X448.a24 * ·)) (NoSp.of_all (by lit_decide)) (by lit_decide) hs hc ho ha ab
     fun _ he ab' => mulA24Fn_ok he ab'
 
 /-- What code that never writes `esp` changes in memory, alongside what a

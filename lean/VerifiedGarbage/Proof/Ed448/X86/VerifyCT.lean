@@ -233,7 +233,7 @@ theorem decode_FE (hR : RecoverOk) {σ u : State} {n : Nat} (h : MidAt σ n u) :
     split
     · exact e.lp.isig.of_keeps kt
     · exact e.lp.ipk.of_keeps kt
-  refine WP.mono (fe.wp (NoSp.of_all (by decide +kernel)) (by decide +kernel) (Q := fun _ => True)
+  refine WP.mono (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide) (Q := fun _ => True)
     (WP.mono (decode_ok hR fe.fin.scr fe.fin.ctx fe.fin.bounded hp hin.fit hin.read hin.far 6 7
       (Or.inl ⟨rfl, rfl⟩) h10u h11u) fun w ⟨k, b, _⟩ =>
       ⟨⟨k.scr fe.fin.scr, k.ctx fe.fin.ctx, b⟩, k.regs.1 _ (by decide), k.regs.2.2, trivial⟩))
@@ -460,7 +460,7 @@ theorem vloop_rel : RelCT isa (Runs VP₀ V4) Impl.Ed448.X86.vloop (Runs VP₀ V
       VInv (bsV σ) (SV σ) (KV σ) (AV s₄ σ) s₄ t n ∧ FE bsV σ t) ∧ t.zf = some (decide (n = 0)))
     (fun _ _ h => h) (vstep_tr n) ?_ ?_
   · rintro σ s ⟨hn, s₄, v, L, fe⟩
-    exact WP.mono (fe.wp (NoSp.of_all (by decide +kernel)) (by decide +kernel)
+    exact WP.mono (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
       (Q := fun t => VInv (bsV σ) (SV σ) (KV σ) (AV s₄ σ) s₄ t n ∧ t.zf = some (decide (n = 0)))
       (WP.mono (vstep_ok hn v.bits L) fun t ⟨l, z⟩ =>
         ⟨(VInv.fs L l).1, (VInv.fs L l).2.1, (VInv.fs L l).2.2, l, z⟩))
@@ -496,7 +496,7 @@ theorem negA_rel : RelCT isa (Runs VP₀ (LoopAt · 0 ·)) (field [.sub 6 0 6]) 
   refine Runs.step (field_tr (fun _ _ h => h.fe.fs) _ (by decide)) ?_
   intro σ s h
   have fe := h.fe
-  exact WP.mono (fe.wp (NoSp.of_all (by decide +kernel)) (by decide +kernel)
+  exact WP.mono (fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
     (Q := fun t => Keep (bsV σ) s t ∧ E t.mem (bsV σ) = evalOps [.sub 6 0 6] (E s.mem (bsV σ)))
     (WP.mono (field_ok _ (by decide) fe.fin.scr fe.fin.ctx fe.fin.bounded) fun t ⟨k, b, e⟩ =>
       ⟨⟨k.scr fe.fin.scr, k.ctx fe.fin.ctx, b⟩, k.regs.1 _ (by decide), k.regs.2.2, k, e⟩))

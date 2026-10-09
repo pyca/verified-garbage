@@ -200,11 +200,11 @@ theorem vdecodeRest_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s ba
       (∀ i < 28, limbs t.mem base RX i = limbs s.mem base RX i) ∧
       (∀ i < 28, limbs t.mem base RY i = limbs s.mem base RY i) ∧
       word t.mem base PCUR = pk ∧ word t.mem base CNT = BitVec.ofNat 32 c ∧ t.zf = some (decide (c = 0)) := by
-  refine WP.seq (WP.mono (WP.withFrame (NoSp.of_all (by decide +kernel))
-    (Nat.le_trans (by decide +kernel : stackUse (decode 6 7) ≤ 20) hcc.sp)
+  refine WP.seq (WP.mono (WP.withFrame (NoSp.of_all (by lit_decide))
+    (Nat.le_trans (by lit_decide : stackUse (decode 6 7) ≤ 20) hcc.sp)
     (decode_ok hR hs hcc hb hp hin.fit hin.read hin.far 6 7 (Or.inl ⟨rfl, rfl⟩) h10 h11))
     fun w ⟨⟨kw, bw, cw, vw, ew⟩, fw⟩ => ?_)
-  have xw : XF base s s.mem w.mem := XF.of_frame hw (by decide +kernel) hcc fw
+  have xw : XF base s s.mem w.mem := XF.of_frame hw (by lit_decide) hcc fw
   have hsw := kw.scr hs
   obtain ⟨a, ae, ar, av⟩ := hpk w (kw.regs.1 _ (by decide)) kw.regs.2.1 kw.regs.2.2 xw
   unfold vnext

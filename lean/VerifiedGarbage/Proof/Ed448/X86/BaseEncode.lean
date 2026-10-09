@@ -86,15 +86,15 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
   have ws1 : ∀ {m m' : Mem}, Outside base 0 8192 m m' → Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) m m' :=
     fun h => (Outside.frame h).mono fun r hr => by rw [List.mem_singleton.mp hr]; exact ws
   unfold baseEncode
-  refine WP.seq (WP.mono (WP.withFrame (NoSp.of_all (by decide +kernel))
-    (by rw [show stackUse Impl.X448.X86.invert = 20 by decide +kernel]; exact hc.sp)
+  refine WP.seq (WP.mono (WP.withFrame (NoSp.of_all (by lit_decide))
+    (by rw [show stackUse Impl.X448.X86.invert = 20 by lit_decide]; exact hc.sp)
     (invert_ok hs hc hb)) fun s₁ ⟨⟨k₁, b₁, e₁⟩, f₁⟩ => ?_)
   have hs₁ := k₁.scr hs
   have hc₁ := k₁.ctx hc
   have sp₁ : s₁.gpr .esp = s₀.gpr .esp := (k₁.regs.1 _ (by decide)).trans hsp
   rw [encodeFields_impl]
-  refine WP.seq (WP.mono (WP.withFrame (NoSp.of_all (by decide +kernel))
-    (Nat.le_trans (by decide +kernel :
+  refine WP.seq (WP.mono (WP.withFrame (NoSp.of_all (by lit_decide))
+    (Nat.le_trans (by lit_decide :
       stackUse (Impl.X448.X86.ops (encodeFields.map FieldOp.impl)) ≤ 20) hc₁.sp)
     (ops_ok hs₁ hc₁ b₁ encodeFields)) fun s₂ ⟨⟨k₂, b₂, e₂⟩, f₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
@@ -114,8 +114,8 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
   refine WP.mono (freeze_ok hs₂ (b₂ 1)) fun s₃ ⟨bx₃, vx₃, m₃, k₃⟩ => ?_
   have hs₃ := hs₂.of_keeps k₃ (by decide)
   have f03 : Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) s.mem s₃.mem :=
-    ((wf hsp hwr (by rwa [show stackUse Impl.X448.X86.invert = 20 by decide +kernel] at f₁)).trans
-      (wf sp₁ (k₁.regs.2.2.trans hwr) (Frame.below_mono f₂ (by decide +kernel) hc₁.sp))).trans
+    ((wf hsp hwr (by rwa [show stackUse Impl.X448.X86.invert = 20 by lit_decide] at f₁)).trans
+      (wf sp₁ (k₁.regs.2.2.trans hwr) (Frame.below_mono f₂ (by lit_decide) hc₁.sp))).trans
       (ws1 (m₃.whole (by decide)))
   have kk : Keeps (.esi :: workRegs) s s₃ :=
     k₁.regs.trans ((k₂.regs.mono (by decide)).trans (k₃.mono (by decide)))
