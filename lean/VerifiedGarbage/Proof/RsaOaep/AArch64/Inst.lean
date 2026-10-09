@@ -123,9 +123,6 @@ def decSatState : State where
 
 theorem dec_sat (H G : Spec.Mgf1.Hash) (c : Proof.Rsa.AArch64.CrtImpl) :
     ∃ s, (Spec.RsaOaep.decryptContract H G AArch64.abi (Dec.decStack (RsaPkcs1Enc.AArch64.privOf c))).pre s := by
-  -- The stack's size is the same for every `c`: state it without `c`, which
-  -- `sig_sat_check` (`decide`) needs.
-  change ∃ s, (Spec.RsaOaep.decryptContract H G AArch64.abi (Proof.Rsa.AArch64.stackBytes + 288)).pre s
   sig_implies_sat [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, AArch64.abi, AArch64.argRegs,
     Dec.decStack, RsaPkcs1Enc.AArch64.privOf, Proof.Rsa.AArch64.stackBytes,
     RsaPkcs1Enc.AArch64.stackArgs_fifteen, List.append_eq, Spec.Rsa.lenValid, Spec.RsaPss.scratchWords,
