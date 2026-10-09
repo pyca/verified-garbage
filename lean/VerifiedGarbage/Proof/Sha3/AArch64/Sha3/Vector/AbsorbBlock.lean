@@ -1,6 +1,10 @@
 import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.AbsorbBlock
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
+import VerifiedGarbage.Proof.Framework.AArch64.Seal
+
+
+
 
 namespace VG.Proof.Sha3.AArch64.Sha3.Vector
 
@@ -61,7 +65,7 @@ theorem absorbPair_ok (s : VG.AArch64.State) (i : Nat) (hi : i < 12)
   unfold absorbPair
   refine WP.cons (exec_ldrq ⟨by omega,by omega⟩ hin)
     (WP.cons rfl (WP.cons rfl (WP.cons rfl (wp_nil ?_))))
-  refine ⟨⟨rfl,rfl,rfl,rfl,rfl⟩,fun j hj => ?_⟩
+  refine ⟨⟨by upd_frame,by upd_frame,by upd_frame,by upd_frame,by upd_frame⟩,fun j hj => ?_⟩
   have he := state_not_temps (2*i) (by omega)
   have ho := state_not_temps (2*i+1) (by omega)
   have hd : vreg (2*i+1) ≠ vreg (2*i) := by
@@ -88,7 +92,7 @@ theorem absorbWord_ok (s : VG.AArch64.State) (i : Nat) (hi : i < 25)
         else low s (vreg j) := by
   unfold absorbWord
   refine WP.cons (exec_ldr_x ⟨by omega,by omega⟩ hin) (WP.cons rfl (WP.cons rfl (wp_nil ?_)))
-  refine ⟨⟨fun r hr => ?_,rfl,rfl,rfl,rfl⟩,fun j hj => ?_⟩
+  refine ⟨⟨fun r hr => ?_,by upd_frame,by upd_frame,by upd_frame,by upd_frame⟩,fun j hj => ?_⟩
   · simp only [RegUpd.gpr_setV,RegUpd.gpr_write,hr,ite_false]
   · have hn := (state_not_temps i hi).1
     have hjn := (state_not_temps j hj).1

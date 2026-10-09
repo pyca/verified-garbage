@@ -1,5 +1,9 @@
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
 import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
+import VerifiedGarbage.Proof.Framework.AArch64.Seal
+
+
+
 
 /-!
 # One S-box of an AdvSIMD round, and the exchange of the halves
@@ -87,7 +91,8 @@ theorem inputStep_run {K : BitVec 64} {s : State} (h : Room s) (hk : KeyRegs K s
   let v₃ := VArr.d2.map2 (fun _ a b' => a - b') (s₂.v zeroReg) (s₂.v x)
   let s₃ := s₂.setV x v₃
   have e₃ : exec (.vop (.sub .d2 x zeroReg x)) s₂ = some s₃ := rfl
-  have hin : InRegions (s₃.rd ++ s₃.wr) (vAddr (s₃.gpr .x4) w) 16 := word_in h hw
+  have hin : InRegions (s₃.rd ++ s₃.wr) (vAddr (s₃.gpr .x4) w) 16 := by
+    simp only [s₃, s₂, s₁, RegUpd.rd_setV, RegUpd.wr_setV, RegUpd.gpr_setV]; exact word_in h hw
   let s₄ := s₃.setV tmpReg (s₃.mem.readW (vAddr (s₃.gpr .x4) w) 128)
   have e₄ : exec (.ldrq tmpReg .x4 (16 * w)) s₃ = some s₄ := by
     simp only [exec, addr_slot (show 16 * w < 65536 by omega), Option.bind_some, State.load, hin,
@@ -96,17 +101,8 @@ theorem inputStep_run {K : BitVec 64} {s : State} (h : Room s) (hk : KeyRegs K s
   let s₅ := s₄.setV x (s₄.v x ^^^ s₄.v tmpReg)
   have e₅ : exec (.vop (.logic .eor x x tmpReg)) s₄ = some s₅ := rfl
   -- Through the writes one at a time (`rfl` would first try to unify the states).
-  refine ⟨s₅, ?_, ?_, fun y h1 h2 => ?_,
-    (gpr_setV _ _ _).trans <| (gpr_setV _ _ _).trans <| (gpr_setV _ _ _).trans <|
-      (gpr_setV _ _ _).trans <| gpr_setV _ _ _,
-    (mem_setV _ _ _).trans <| (mem_setV _ _ _).trans <| (mem_setV _ _ _).trans <|
-      (mem_setV _ _ _).trans <| mem_setV _ _ _,
-    (rd_setV _ _ _).trans <| (rd_setV _ _ _).trans <| (rd_setV _ _ _).trans <|
-      (rd_setV _ _ _).trans <| rd_setV _ _ _,
-    (wr_setV _ _ _).trans <| (wr_setV _ _ _).trans <| (wr_setV _ _ _).trans <|
-      (wr_setV _ _ _).trans <| wr_setV _ _ _,
-    (sp_setV _ _ _).trans <| (sp_setV _ _ _).trans <| (sp_setV _ _ _).trans <|
-      (sp_setV _ _ _).trans <| sp_setV _ _ _, rfl⟩
+  refine ⟨s₅, ?_, ?_, fun y h1 h2 => ?_, by upd_frame, by upd_frame, by upd_frame, by upd_frame,
+    by upd_frame, by upd_frame⟩
   · rw [runBlock_cons, e₁, runStep_some, runBlock_cons, e₂, runStep_some, runBlock_cons, e₃,
       runStep_some, runBlock_cons, e₄, runStep_some, runBlock_cons, e₅, runStep_some, runBlock_nil]
   · have hv₁ : ∀ q < 2, vdword v₁ q = K <<< (63 - b) := by
@@ -122,8 +118,7 @@ theorem inputStep_run {K : BitVec 64} {s : State} (h : Room s) (hk : KeyRegs K s
       simp only [v₃, vdword_map2 _ _ _ hq, zx, vdword_zero, s₂, v_setV_self, hv₂ q hq]
       rfl
     have e : s₅.v x = v₃ ^^^ s.mem.readW (vAddr (s.gpr .x4) w) 128 := by
-      simp only [s₅, s₄, s₃, v_setV_self, v_setV_of_ne _ _ hxt]
-      rfl
+      simp only [s₅, s₄, s₃, s₂, s₁, v_setV_self, v_setV_of_ne _ _ hxt, mem_setV, gpr_setV]
     apply eq_of_vdword; intro q hq
     rw [e, vdword_xor, hv₃ q hq, bitMask K hb, vdword_xor, vdword_maskX _ hq, BitVec.xor_comm]
     rfl
