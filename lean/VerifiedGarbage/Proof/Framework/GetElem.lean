@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.OmegaDecide
 /-!
 # Index bounds by `decide`
 
