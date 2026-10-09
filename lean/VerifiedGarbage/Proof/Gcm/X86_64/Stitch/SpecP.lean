@@ -37,7 +37,8 @@ structure SPreP (s₀ : State) : Prop where
 
 /-- Interleaved loops `enc` and `dec` that read the powers meet the contracts. -/
 def StitchOkP (enc dec : Prog isa) : Prop :=
-  (∀ s₀, SPreP s₀ → WP isa enc s₀ (EPost s₀)) ∧ (∀ s₀, SPreP s₀ → WP isa dec s₀ (DPost s₀))
+  (∀ s₀, SPreP s₀ → nb s₀ % 16 = 0 → WP isa enc s₀ (EPost s₀)) ∧
+    (∀ s₀, SPreP s₀ → nb s₀ % 16 = 0 → WP isa dec s₀ (DPost s₀))
 
 /-! ## Both kinds of key context -/
 
@@ -84,9 +85,13 @@ structure SPreM (M : CtxMode) (s₀ : State) : Prop where
   p_k : (pR s₀).Disjoint (kMR M s₀)
   ok : M.ok s₀.mem (kp s₀)
 
-/-- `StitchOk`, for a key context of kind `M`. -/
-def StitchOkM (M : CtxMode) (enc dec : Prog isa) : Prop :=
-  (∀ s₀, SPreM M s₀ → WP isa enc s₀ (EPost s₀)) ∧ (∀ s₀, SPreM M s₀ → WP isa dec s₀ (DPost s₀))
+/-- `StitchOk`, for a key context of kind `M`, and for a number of blocks
+that is a multiple of `we` when encrypting and of `wd` when decrypting
+(`StitchOk`'s 16, or 1 for loops that also take the blocks after the last
+16). -/
+def StitchOkM (M : CtxMode) (enc dec : Prog isa) (we wd : Nat := 16) : Prop :=
+  (∀ s₀, SPreM M s₀ → nb s₀ % we = 0 → WP isa enc s₀ (EPost s₀)) ∧
+    (∀ s₀, SPreM M s₀ → nb s₀ % wd = 0 → WP isa dec s₀ (DPost s₀))
 
 theorem StitchOk.toM {enc dec : Prog isa} (h : StitchOk enc dec) (M : CtxMode) : StitchOkM M enc dec :=
   ⟨fun s₀ hp => h.1 s₀ hp.base, fun s₀ hp => h.2 s₀ hp.base⟩

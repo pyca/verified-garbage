@@ -7,8 +7,8 @@ Untrusted: everything here is checked by Lean. Interleaved encryption loops
 that read the plaintext from one buffer and write the ciphertext to another
 (for `vg_aes_gcm_encrypt_blocks_to`) start from a state `s₀` whose registers
 hold the key context (`rdi`), the number of rounds (`rsi`), the counter
-(`rdx`), `Y` (`rcx`), the plaintext (`r8`), the number of blocks (`r9`, a
-multiple of 16), the output (`r10`) and the working space (`r11`).
+(`rdx`), `Y` (`rcx`), the plaintext (`r8`), the number of blocks (`r9`),
+the output (`r10`) and the working space (`r11`).
 `SPreTo s₀` is what they need of it, and `EPostTo` what they do
 (`StitchToOkM`): `SPre`/`EPost` (`Stitch/Spec.lean`), with the plaintext
 read from `r8`, which nothing writes, and the ciphertext written to `r10`.
@@ -33,7 +33,6 @@ end
 structure SPreTo (M : CtxMode) (s₀ : State) : Prop where
   rounds : nr s₀ = 10 ∨ nr s₀ = 12 ∨ nr s₀ = 14
   nb16 : 16 ≤ nb s₀
-  nbm : nb s₀ % 16 = 0
   k_in : InRegions (s₀.rd ++ s₀.wr) (kp s₀) M.len
   c_in : InRegions s₀.wr (cp s₀) 16
   y_in : InRegions s₀.wr (yp s₀) 16
@@ -76,8 +75,9 @@ structure EPostTo (s₀ s : State) : Prop where
   wr : s.wr = s₀.wr
 
 /-- An out-of-place interleaved encryption loop `enc`, for a key context of
-kind `M`, meets these contracts. -/
-def StitchToOkM (M : CtxMode) (enc : Prog isa) : Prop :=
-  ∀ s₀, SPreTo M s₀ → WP isa enc s₀ (EPostTo s₀)
+kind `M`, meets these contracts for a number of blocks that is a multiple of
+`w` (16, or 1 for loops that also take the blocks after the last 16). -/
+def StitchToOkM (M : CtxMode) (enc : Prog isa) (w : Nat := 16) : Prop :=
+  ∀ s₀, SPreTo M s₀ → nb s₀ % w = 0 → WP isa enc s₀ (EPostTo s₀)
 
 end VG.Proof.Gcm.X86_64.Stitch

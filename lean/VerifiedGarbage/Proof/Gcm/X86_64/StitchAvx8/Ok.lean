@@ -345,7 +345,7 @@ private theorem prefixContinue {a b z : Prog isa} {xs ys : List Instr} {s : Stat
     WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h =>
       WP.seq (WP.block_append_iff.mpr (WP.mono h fun _ h => WP.seq_iff.mp h))))
 
-theorem encFor_ok {s₀ : State} (hp : SPre s₀) :
+theorem encFor_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
     WP isa (encFor (nr s₀)) s₀ (EPost s₀) := by
   rw [encFor]
   refine WP.seq (WP.mono (setup_ok hp) fun s ⟨P, hR, hP⟩ => ?_)
@@ -353,16 +353,16 @@ theorem encFor_ok {s₀ : State} (hp : SPre s₀) :
   apply prefixContinue
   refine WP.mono (firstEnc_ok hp hR) fun t hI => ?_
   refine WP.seq (WP.mono hI.compare fun u ⟨hu, hcf⟩ => ?_)
-  refine WP.seq (WP.mono (loopMaybe_ok hp hlaw hu hcf) fun v ⟨g, hg, hv⟩ => ?_)
+  refine WP.seq (WP.mono (loopMaybe_ok hp hm hlaw hu hcf) fun v ⟨g, hg, hv⟩ => ?_)
   exact finalEnc_ok hp hlaw hv hg
 
-theorem decFor_ok {s₀ : State} (hp : SPre s₀) :
+theorem decFor_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
     WP isa (decFor (nr s₀)) s₀ (DPost s₀) := by
   rw [decFor, WP.seq_iff, WP.block_append_iff]
   refine WP.mono (setup_ok hp) fun s ⟨P, hR, hP⟩ => ?_
   have hlaw : HashLaw s₀ P := fun X y => finishHash X P (hk s₀) y hP
   refine WP.mono (firstDec_ok hp hR) fun t hI => ?_
-  refine WP.seq (WP.mono (loopRun_ok hp hlaw hI hp.nb16) fun u ⟨g, hg, hu⟩ => ?_)
+  refine WP.seq (WP.mono (loopRun_ok hp hm hlaw hI hp.nb16) fun u ⟨g, hg, hu⟩ => ?_)
   exact WP.seq (WP.block_nil (finalDec_ok hp hlaw hu hg))
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
@@ -376,18 +376,18 @@ open VG.Impl.Gcm.X86_64.StitchAvx8 (enc dec)
 
 theorem stitch_ok : StitchOk enc dec := by
   constructor
-  · intro s₀ hp
+  · intro s₀ hp hm
     apply dispatch_ok hp <;> intro t hf hn
     all_goals
       have ht : nr t = nr s₀ := by simp only [nr, hf.gpr]
-      have hw := encFor_ok (pre_same hp hf)
+      have hw := encFor_ok (pre_same hp hf) (by simp only [nb, hf.gpr]; exact hm)
       rw [ht, hn] at hw
       exact WP.mono hw fun u hu => epost_same hf hu
-  · intro s₀ hp
+  · intro s₀ hp hm
     apply dispatch_ok hp <;> intro t hf hn
     all_goals
       have ht : nr t = nr s₀ := by simp only [nr, hf.gpr]
-      have hw := decFor_ok (pre_same hp hf)
+      have hw := decFor_ok (pre_same hp hf) (by simp only [nb, hf.gpr]; exact hm)
       rw [ht, hn] at hw
       exact WP.mono hw fun u hu => dpost_same hf hu
 

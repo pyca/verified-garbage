@@ -71,12 +71,12 @@ theorem spre_of {s₃ : State} (h16 : 16 ≤ n s) (h9 : s₃.gpr .r9 = BitVec.of
   have ed : s₃.gpr .r8 = D s := hg _ (by simp [argRegs])
   have wr : s.wr = wR s := hp.wr
   have pk : Region.Sub ⟨K s, 256⟩ (kR M s) := Region.sub_prefix M.ge
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
   simp only [Gcm.X86_64.Stitch.nr, Gcm.X86_64.Stitch.nb, Gcm.X86_64.Stitch.kp,
     Gcm.X86_64.Stitch.cp, Gcm.X86_64.Stitch.yp, Gcm.X86_64.Stitch.dp, Gcm.X86_64.Stitch.pp,
     Gcm.X86_64.Stitch.kR, Gcm.X86_64.Stitch.cR, Gcm.X86_64.Stitch.yR, Gcm.X86_64.Stitch.dR,
     Gcm.X86_64.Stitch.pR, ek, er, ec, ey, ed, h11, hq, hrd, hwr]
-  exacts [hp.rounds, by omega, by omega, ⟨kR M s, by rw [hp.rd]; simp, contains_prefix _ M.ge⟩,
+  exacts [hp.rounds, by omega, ⟨kR M s, by rw [hp.rd]; simp, contains_prefix _ M.ge⟩,
     ⟨cR s, by rw [wr]; simp, Region.contains_self _ _⟩, ⟨yR s, by rw [wr]; simp, Region.contains_self _ _⟩,
     ⟨dR s, by rw [wr]; simp, contains_prefix _ hqn⟩, ⟨sR s, by rw [wr]; simp, Offset.contains_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega) (by have := AlignedScratch.offset_bounds aligned (S s); omega)⟩,
     (hp.k_d.symm.sub_left pd).sub_right pk, hp.c_d.symm.sub_left pd, hp.y_d.symm.sub_left pd,
@@ -216,7 +216,7 @@ theorem cmp16_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
 what the loops leave (`post`) as `Mid` for the blocks hashed `ys q`. -/
 theorem stitch_ok {piece : Prog isa} {Post : State → State → Prop} {ys : Nat → List Block}
     (hys : ys 0 = [])
-    (hpiece : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ → WP isa piece s₃ (Post s₃))
+    (hpiece : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ → Gcm.X86_64.Stitch.nb s₃ % 16 = 0 → WP isa piece s₃ (Post s₃))
     (hpost : ∀ s₃ s₄, s₃.gpr .r9 = BitVec.ofNat 64 (n s - n s % 16) → (∀ r ∈ argRegs, s₃.gpr r = s.gpr r) →
       (∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r) → s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) → s₃.rd = s.rd →
       s₃.wr = s.wr →
@@ -251,7 +251,10 @@ theorem stitch_ok {piece : Prog isa} {Post : State → State → Prop} {ys : Nat
     have wr₃' : s₃.wr = s.wr := wr₃.trans (wr₂.trans hwr)
     have hk₃ : Kept s 0 s₃.mem := by rw [m₃, m₂]; exact hk
     have hf₃ : Frame [kR' s] s.mem s₃.mem := by rw [m₃, m₂]; exact hf
-    exact WP.mono (hpiece s₃ (spreM_of hp h16 h9 ga g11 rd₃' wr₃' hf₃)) fun s₄ hP =>
+    have hm : Gcm.X86_64.Stitch.nb s₃ % 16 = 0 := by
+      have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
+      simp only [Gcm.X86_64.Stitch.nb, h9, toNat_ofNat_of_lt (show n s - n s % 16 < 2 ^ 64 by omega)]; omega
+    exact WP.mono (hpiece s₃ (spreM_of hp h16 h9 ga g11 rd₃' wr₃' hf₃) hm) fun s₄ hP =>
       hpost s₃ s₄ h9 ga gc g11 rd₃' wr₃' hk₃ hf₃ hP
 
 /-- Encryption: the blocks hashed are those written. -/
@@ -261,7 +264,7 @@ theorem stitchE_ok {enc dec : Prog isa} (hS : Gcm.X86_64.Stitch.StitchOkM M enc 
       (Mid s (n s - n s % 16) 0
         (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) (n s - n s % 16)))) :=
   stitch_ok hp (ys := fun q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) rfl
-    (fun _ h => hS.1 _ h)
+    (fun _ h hm => hS.1 _ h hm)
     (fun s₃ s₄ h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP => by
       refine mid_of_post hp h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP.data hP.ctr hP.frame hP.gpr hP.rd hP.wr
         fun eH eY _ eD => ?_
@@ -281,7 +284,7 @@ theorem stitchD_ok {enc dec : Prog isa} (hS : Gcm.X86_64.Stitch.StitchOkM M enc 
       (Mid s (n s - n s % 16) 0
         (blocksAt s.mem (D s) (n s - n s % 16))) :=
   stitch_ok hp (ys := fun q => blocksAt s.mem (D s) q) rfl
-    (fun _ h => hS.2 _ h)
+    (fun _ h hm => hS.2 _ h hm)
     (fun s₃ s₄ h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP => by
       refine mid_of_post hp h9 ga gc g11 rd₃ wr₃ hk₃ hf₃ hP.data hP.ctr hP.frame hP.gpr hP.rd hP.wr
         fun eH eY eD _ => ?_

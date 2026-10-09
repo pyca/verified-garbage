@@ -23,7 +23,7 @@ and those of the tables loaded (`bigP_ok`, `bigDP_ok`), add up to `GHASH`
 namespace VG.Proof.Gcm.X86_64.StitchZP
 
 open VG VG.X86_64 VG.Proof.Gcm.Poly
-open VG.Proof.Gcm.X86_64.Stitch (SPreP StitchOkP EPost DPost hk)
+open VG.Proof.Gcm.X86_64.Stitch (nb SPreP StitchOkP EPost DPost hk)
 open VG.Proof.Gcm.X86_64.StitchZ (finZ finZ48 FinOk48 encTailG_ok decTailG_ok)
 open VG.Spec.Gcm (Block hpow)
 
@@ -41,19 +41,19 @@ theorem fin48P (H : Block) (T : Nat → Nat → Nat → Block)
   finZ48 fun g hg k hk l hl => by rw [hT g hg k hk l hl, x_φ_hInvF]
 
 /-- The encryption of `n` blocks (a multiple of 16, at least 16). -/
-theorem enc_ok {s₀ : State} (hp : SPreP s₀) : WP isa Impl.Gcm.X86_64.StitchZP.enc s₀ (EPost s₀) :=
+theorem enc_ok {s₀ : State} (hp : SPreP s₀) (hm : nb s₀ % 16 = 0) : WP isa Impl.Gcm.X86_64.StitchZP.enc s₀ (EPost s₀) :=
   WP.seq (WP.mono (setupP_ok hp) fun _ ⟨_, hR, hpw⟩ =>
-    encTailG_ok hp.base (finZ (finP hpw))
-      (fun _ h256 hI => bigP_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI) hR)
+    encTailG_ok hp.base hm (finZ (finP hpw))
+      (fun _ h256 hI => bigP_ok hp hm (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI) hR)
 
 /-- The decryption of `n` blocks (a multiple of 16, at least 16). -/
-theorem dec_ok {s₀ : State} (hp : SPreP s₀) : WP isa Impl.Gcm.X86_64.StitchZP.dec s₀ (DPost s₀) :=
+theorem dec_ok {s₀ : State} (hp : SPreP s₀) (hm : nb s₀ % 16 = 0) : WP isa Impl.Gcm.X86_64.StitchZP.dec s₀ (DPost s₀) :=
   WP.seq (WP.mono (setupP_ok hp) fun _ ⟨_, hR, hpw⟩ =>
-    decTailG_ok hp.base (finZ (finP hpw)) (fun _ h256 hI => bigDP_ok hp hpw (fin48P (hk s₀)) h256 hI) hR)
+    decTailG_ok hp.base hm (finZ (finP hpw)) (fun _ h256 hI => bigDP_ok hp hpw (fin48P (hk s₀)) h256 hI) hR)
 
 /-- Both loops meet their contracts. -/
 theorem stitchP_ok : StitchOkP Impl.Gcm.X86_64.StitchZP.enc Impl.Gcm.X86_64.StitchZP.dec :=
-  ⟨fun _ hp => enc_ok hp, fun _ hp => dec_ok hp⟩
+  ⟨fun _ hp hm => enc_ok hp hm, fun _ hp hm => dec_ok hp hm⟩
 
 end VG.Proof.Gcm.X86_64.StitchZP
 
@@ -83,7 +83,7 @@ They are proven here, with the loops they build on, rather than in
 namespace VG.Proof.Gcm.X86_64.StitchZTo
 
 open VG VG.X86_64 VG.Proof.Gcm.Poly
-open VG.Proof.Gcm.X86_64.Stitch (SPreTo StitchToOkM CtxMode hk in_sub_int)
+open VG.Proof.Gcm.X86_64.Stitch (nb SPreTo StitchToOkM CtxMode hk in_sub_int)
 open VG.Proof.Gcm.X86_64.Pclmul (pows_ok const_ok ldrev_ok hInv_ok rev_eq)
 open VG.Proof.Gcm.X86_64.Vpclmul (powersP_ok powers16P_ok)
 open VG.Proof.Gcm.X86_64.StitchZ (finZ finZ48 powers48)
@@ -145,9 +145,9 @@ theorem setupTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) :
 
 /-- The out-of-place loop meets its contract, for a key context of either
 kind. -/
-theorem stitchTo_ok (M : CtxMode) : StitchToOkM M Impl.Gcm.X86_64.StitchZTo.enc := fun _ hp =>
+theorem stitchTo_ok (M : CtxMode) : StitchToOkM M Impl.Gcm.X86_64.StitchZTo.enc := fun _ hp hm =>
   WP.seq (WP.mono (setupTo_ok hp) fun _ ⟨_, hR, hpw⟩ =>
-    encTailGTo_ok hp (finZ hpw) (fun _ h256 hI => bigTo_ok hp (finZ hpw) (finZ48 (powers48 hpw)) h256 hI) hR)
+    encTailGTo_ok hp hm (finZ hpw) (fun _ h256 hI => bigTo_ok hp hm (finZ hpw) (finZ48 (powers48 hpw)) h256 hI) hR)
 
 
 open VG.Proof.Gcm.X86_64.StitchZP (vinsSelf_ok consts_ok cvtRun_ok hInvF finP fin48P)
@@ -201,10 +201,10 @@ theorem setupPTo_ok {s₀ : State} (hp : SPreTo CtxMode.powers s₀) :
       exact pw _ (by omega) _ (by omega)⟩
 
 /-- The out-of-place loop with the powers loaded meets its contract. -/
-theorem stitchToP_ok : StitchToOkM CtxMode.powers Impl.Gcm.X86_64.StitchZTo.encP := fun s₀ hp =>
+theorem stitchToP_ok : StitchToOkM CtxMode.powers Impl.Gcm.X86_64.StitchZTo.encP := fun s₀ hp hm =>
   WP.seq (WP.mono (setupPTo_ok hp) fun _ ⟨_, hR, hpw⟩ =>
-    encTailGTo_ok hp (finZ (finP hpw))
-      (fun _ h256 hI => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI) hR)
+    encTailGTo_ok hp hm (finZ (finP hpw))
+      (fun _ h256 hI => bigPTo_ok hp hm (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI) hR)
 
 end VG.Proof.Gcm.X86_64.StitchZTo
 
@@ -217,76 +217,76 @@ The existing loop and field proofs therefore apply unchanged.
 
 namespace VG.Proof.Gcm.X86_64.StitchZR
 open VG VG.X86_64
-open VG.Proof.Gcm.X86_64.Stitch (SPrePrepared StitchOkM CtxMode EPost DPost hk)
+open VG.Proof.Gcm.X86_64.Stitch (nb SPrePrepared StitchOkM CtxMode EPost DPost hk)
 open VG.Proof.Gcm.X86_64.StitchZ (finZ encTailG_ok decTailG_ok)
 open VG.Proof.Gcm.X86_64.StitchZP (finP fin48P)
 
 /-- Encryption with prepared powers. -/
-theorem enc_ok {s₀ : State} (hp : SPrePrepared s₀) : WP isa Impl.Gcm.X86_64.StitchZR.enc s₀ (EPost s₀) :=
+theorem enc_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) : WP isa Impl.Gcm.X86_64.StitchZR.enc s₀ (EPost s₀) :=
   WP.seq (WP.mono (setupP_ok hp) fun _ ⟨_, hR, hpw⟩ =>
-    encTailG_ok hp.base (finZ (finP hpw))
-      (fun _ h256 hI => bigP_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI) hR)
+    encTailG_ok hp.base hm (finZ (finP hpw))
+      (fun _ h256 hI => bigP_ok hp hm (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI) hR)
 
 /-- Decryption with prepared powers. -/
-theorem dec_ok {s₀ : State} (hp : SPrePrepared s₀) : WP isa Impl.Gcm.X86_64.StitchZR.dec s₀ (DPost s₀) :=
+theorem dec_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) : WP isa Impl.Gcm.X86_64.StitchZR.dec s₀ (DPost s₀) :=
   WP.seq (WP.mono (setupP_ok hp) fun _ ⟨_, hR, hpw⟩ =>
-    decTailG_ok hp.base (finZ (finP hpw)) (fun _ h256 hI => bigDP_ok hp hpw (fin48P (hk s₀)) h256 hI) hR)
+    decTailG_ok hp.base hm (finZ (finP hpw)) (fun _ h256 hI => bigDP_ok hp hpw (fin48P (hk s₀)) h256 hI) hR)
 
 /-- Both in-place loops implement the prepared context mode. -/
 theorem stitch_ok : StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZR.enc Impl.Gcm.X86_64.StitchZR.dec :=
-  ⟨fun _ hp => enc_ok hp.toPrepared, fun _ hp => dec_ok hp.toPrepared⟩
+  ⟨fun _ hp hm => enc_ok hp.toPrepared hm, fun _ hp hm => dec_ok hp.toPrepared hm⟩
 end VG.Proof.Gcm.X86_64.StitchZR
 
 namespace VG.Proof.Gcm.X86_64.StitchZRTo
 open VG VG.X86_64
-open VG.Proof.Gcm.X86_64.Stitch (StitchToOkM CtxMode hk)
+open VG.Proof.Gcm.X86_64.Stitch (nb StitchToOkM CtxMode hk)
 open VG.Proof.Gcm.X86_64.StitchZ (finZ)
 open VG.Proof.Gcm.X86_64.StitchZP (finP fin48P)
 open VG.Proof.Gcm.X86_64.StitchZTo (encTailGTo_ok)
 
 /-- Out-of-place encryption implements the same prepared context mode. -/
-theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZRTo.encP := fun s₀ hp =>
+theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZRTo.encP := fun s₀ hp hm =>
   WP.seq (WP.mono (setupPTo_ok hp) fun _ ⟨_, hR, hpw⟩ =>
-    encTailGTo_ok hp (finZ (finP hpw))
-      (fun _ h256 hI => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI) hR)
+    encTailGTo_ok hp hm (finZ (finP hpw))
+      (fun _ h256 hI => bigPTo_ok hp hm (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI) hR)
 end VG.Proof.Gcm.X86_64.StitchZRTo
 
 /-! ## Prepared powers and cached AES keys -/
 
 namespace VG.Proof.Gcm.X86_64.StitchZH
 open VG VG.X86_64
-open VG.Proof.Gcm.X86_64.Stitch (SPrePrepared StitchOkM CtxMode EPost DPost hk)
+open VG.Proof.Gcm.X86_64.Stitch (nb SPrePrepared StitchOkM CtxMode EPost DPost hk)
 open VG.Proof.Gcm.X86_64.StitchZ (finZ)
 open VG.Proof.Gcm.X86_64.StitchZP (finP fin48P)
 
-theorem enc_ok {s₀ : State} (hp : SPrePrepared s₀) :
+theorem enc_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) :
     WP isa Impl.Gcm.X86_64.StitchZH.enc s₀ (EPost s₀) :=
   WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
-    encTailG_ok hp.base (finZ (finP hpw))
-      (fun _ h256 hI hC => bigP_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
+    encTailG_ok hp.base hm (finZ (finP hpw))
+      (fun _ h256 hI hC => bigP_ok hp hm (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
 
-theorem dec_ok {s₀ : State} (hp : SPrePrepared s₀) :
+theorem dec_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) :
     WP isa Impl.Gcm.X86_64.StitchZH.dec s₀ (DPost s₀) :=
   WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
-    decTailG_ok hp.base (finZ (finP hpw))
+    decTailG_ok hp.base hm (finZ (finP hpw))
       (fun _ h256 hI hC => bigDP_ok hp hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
 
 theorem stitch_ok : StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZH.enc Impl.Gcm.X86_64.StitchZH.dec :=
-  ⟨fun _ hp => enc_ok hp.toPrepared, fun _ hp => dec_ok hp.toPrepared⟩
+  ⟨fun _ hp hm => enc_ok hp.toPrepared hm, fun _ hp hm => dec_ok hp.toPrepared hm⟩
 
 end VG.Proof.Gcm.X86_64.StitchZH
 
 namespace VG.Proof.Gcm.X86_64.StitchZHTo
 open VG VG.X86_64
-open VG.Proof.Gcm.X86_64.Stitch (StitchToOkM CtxMode hk)
+open VG.Proof.Gcm.X86_64.Stitch (nb StitchToOkM CtxMode hk)
 open VG.Proof.Gcm.X86_64.StitchZ (finZ)
 open VG.Proof.Gcm.X86_64.StitchZP (finP fin48P)
 
 /-- Prepared powers and cached AES keys, with separate input and output buffers. -/
-theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZHTo.encP := fun s₀ hp =>
+theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZHTo.encP := fun s₀ hp hm =>
   WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
-    encTailGTo_ok hp (finZ (finP hpw))
-      (fun _ h256 hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
+    encTailGTo_ok hp hm (finZ (finP hpw))
+      (fun _ h256 hI hC => bigPTo_ok hp hm (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
 
 end VG.Proof.Gcm.X86_64.StitchZHTo
 
@@ -302,7 +302,7 @@ so it meets the contract for a key context of any kind.
 namespace VG.Proof.Gcm.X86_64.StitchTo
 
 open VG VG.X86_64 VG.Proof.Gcm.Poly
-open VG.Proof.Gcm.X86_64.Stitch (SPreTo StitchToOkM CtxMode hk finE)
+open VG.Proof.Gcm.X86_64.Stitch (nb SPreTo StitchToOkM CtxMode hk finE)
 open VG.Proof.Gcm.X86_64.StitchZTo (setupGTo_ok setupTTo_ok)
 open VG.Impl.Gcm.X86_64.StitchTo (setup)
 open VG.Spec.Gcm (Block)
@@ -318,7 +318,7 @@ theorem setupTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) :
 
 /-- The out-of-place loop meets its contract, for a key context of any
 kind. -/
-theorem stitchTo_ok (M : CtxMode) : StitchToOkM M Impl.Gcm.X86_64.StitchTo.enc := fun _ hp =>
-  WP.seq (WP.mono (setupTo_ok hp) fun _ ⟨_, hR, hpw⟩ => encTailTo_ok hp (finE hpw) hR)
+theorem stitchTo_ok (M : CtxMode) : StitchToOkM M Impl.Gcm.X86_64.StitchTo.enc := fun _ hp hm =>
+  WP.seq (WP.mono (setupTo_ok hp) fun _ ⟨_, hR, hpw⟩ => encTailTo_ok hp hm (finE hpw) hR)
 
 end VG.Proof.Gcm.X86_64.StitchTo

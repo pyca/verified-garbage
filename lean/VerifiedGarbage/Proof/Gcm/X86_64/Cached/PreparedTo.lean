@@ -36,7 +36,7 @@ theorem setup_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) :
     (by rw [hR.a.r10, hR.a.rdi])) fun t ⟨hK, hf⟩ => ?_
   exact ⟨P, ready_frame hR hf, hpw, hK⟩
 
-theorem bigPTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+theorem bigPTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     (hP : ∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l)))
     (hFin : ∀ T : Nat → Nat → Nat → Block,
       (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow (hk s₀) (48 - 16 * g - 4 * k - l))) →
@@ -65,7 +65,7 @@ theorem bigPTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) {P : Nat �
     · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
     · simp only [T, h2, ↓reduceIte]; exact t g (by omega) k hk l hl
   have hA₁ := (hI.a.pow hp fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
-  exact (bigRestTo_ok hp hf hT (fun k l => by simp only [T, ↓reduceIte]) h256 hI
+  exact (bigRestTo_ok hp hm hf hT (fun k l => by simp only [T, ↓reduceIte]) h256 hI
     hA₁ hv pm g₁
     (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
     (hCache.keep hh₁ (hA₁.keys hp)))

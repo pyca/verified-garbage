@@ -128,10 +128,9 @@ theorem cmpE_ok {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State}
   refine ⟨{ hI with a := { hI.a with } }, ?_⟩
   rw [toNat_ofNat_lt (by omega)]; rfl
 
-theorem loopE_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk ordE (hk s₀) P) {s : State}
+theorem loopE_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk ordE (hk s₀) P) {s : State}
     (hI : EInv s₀ P 1 s) (hcf : s.cf = some (decide (nb s₀ - 16 * (1 - 1) < 32))) :
     WP isa (.ite .b (.block []) (.loop body .ae)) s fun s' => ∃ e, nb s₀ = 16 * e ∧ EInv s₀ P e s' := by
-  have hm := hp.nbm
   have fin : ∀ e, nb s₀ - 16 * (e - 1) < 32 → ∀ t, EInv s₀ P e t → ∃ e, nb s₀ = 16 * e ∧ EInv s₀ P e t :=
     fun e he t hI => ⟨e, by have := hI.a.le; have := hI.one; omega, hI⟩
   refine WP.ite (decide (nb s₀ - 16 * (1 - 1) < 32)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
@@ -270,12 +269,12 @@ theorem final_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
     rw [g₅, g₄]; exact hI.gpr r h1 h2 h3 h4
 
 /-- The encryption after the setup. -/
-theorem encTail_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk ordE (hk s₀) P) {s : State}
+theorem encTail_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk ordE (hk s₀) P) {s : State}
     (hR : Ready s₀ P s) :
     WP isa (.seq first (.seq (.block [.alu .cmp .r9 (.imm 32)])
       (.seq (.ite .b (.block []) (.loop body .ae)) (.block (storeCtr ++ lastG ++ storeY))))) s (EPost s₀) := by
   refine WP.seq (WP.mono (first_ok hp hR) fun s₂ hI₂ => ?_)
   refine WP.seq (WP.mono (cmpE_ok hI₂) fun s₃ ⟨hI₃, hcf⟩ => ?_)
-  exact WP.seq (WP.mono (loopE_ok hp hf hI₃ hcf) fun s₄ ⟨e, he, hI₄⟩ => final_ok hp hf he hI₄)
+  exact WP.seq (WP.mono (loopE_ok hp hm hf hI₃ hcf) fun s₄ ⟨e, he, hI₄⟩ => final_ok hp hf he hI₄)
 
 end VG.Proof.Gcm.X86_64.Stitch
