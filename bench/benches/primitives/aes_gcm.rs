@@ -11,7 +11,12 @@ pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
 /// has no streaming AES-GCM, is measured one-shot only, with a separate tag
 /// as this library's is. The one-shot functions are also measured at `RECORD_SIZES`, the short
 /// messages of protocols such as TLS and QUIC, where the fixed costs of a
-/// call (the hash subkey's powers, the tag) weigh the most.
+/// call (the hash subkey's powers, the tag) weigh the most. Encryption with
+/// a key used for many messages, as a TLS or QUIC connection's is, is also
+/// measured at `REUSED_SIZES`, which leave some blocks after the last 16:
+/// this library computes its keys' powers of the hash subkey once a key has
+/// been used for enough messages, which the benchmarks that set up a key for
+/// each message never reach.
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
@@ -23,6 +28,8 @@ pub fn bench(c: &mut Criterion) {
 
     use aws_lc_rs::aead::{AES_128_GCM, Aad, LessSafeKey, Nonce, UnboundKey};
     use criterion::{BenchmarkId, Throughput};
+    use openssl::cipher::Cipher as OsslCipher;
+    use openssl::cipher_ctx::CipherCtx;
     use openssl::symm::{Cipher, Crypter, Mode, decrypt_aead, encrypt_aead};
     use verified_garbage::aes_gcm::AesGcm;
 
@@ -30,6 +37,8 @@ pub fn bench(c: &mut Criterion) {
 
     /// The sizes measured one-shot only, besides `SIZES`.
     const RECORD_SIZES: [usize; 3] = [128, 192, 384];
+    /// The sizes measured with a key reused across messages.
+    const REUSED_SIZES: [usize; 3] = [600, 1350, 4000];
 
     let key = [0x42; 16];
     let nonce = [0x24; 12];
@@ -286,6 +295,102 @@ pub fn bench(c: &mut Criterion) {
                 let n = s.update(black_box(&data), &mut out).unwrap();
                 s.finalize(&mut out[n..]).unwrap();
                 s.get_tag(&mut t).unwrap();
+            })
+        });
+        g.finish();
+    }
+
+    // A key reused for every message: in place, and out of place from two
+    // pieces (a TLS 1.3 record's payload and its content type), each next to
+    // OpenSSL's context and aws-lc-rs's key, also set up once.
+    let vg_key = AesGcm::new(&key).unwrap();
+    let aws_lc_reused = aws_lc_key(&key);
+    let mut ossl = CipherCtx::new().unwrap();
+    ossl.encrypt_init(Some(OsslCipher::aes_128_gcm()), Some(&key), None)
+        .unwrap();
+    let ty = [0x17u8];
+    for size in REUSED_SIZES {
+        let data = vec![0u8; size];
+        let mut buf = data.clone();
+        let mut ossl_out = vec![0u8; size + 1 + 16];
+        let mut t = [0u8; 16];
+        let mut ossl_seal = |pieces: &[&[u8]], out: &mut [u8]| {
+            ossl.encrypt_init(None, None, Some(&nonce)).unwrap();
+            ossl.cipher_update(&aad, None).unwrap();
+            let mut n = 0;
+            for p in pieces {
+                n += ossl.cipher_update(p, Some(&mut out[n..])).unwrap();
+            }
+            ossl.cipher_final(&mut out[n..]).unwrap();
+            ossl.tag(&mut t).unwrap();
+            t
+        };
+
+        let tag = vg_key.encrypt_in_place(&nonce, &aad, &mut buf).unwrap();
+        let ossl_tag = ossl_seal(&[&data], &mut ossl_out);
+        assert_eq!((&buf[..], &tag[..]), (&ossl_out[..size], &ossl_tag[..]));
+        let mut g = c.benchmark_group("aes-128-gcm-encrypt-reused-key");
+        g.throughput(Throughput::Bytes(size as u64));
+        g.bench_function(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                vg_key
+                    .encrypt_in_place(black_box(&nonce), black_box(&aad), black_box(&mut buf))
+                    .unwrap()
+            })
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| ossl_seal(&[black_box(&data)], &mut ossl_out))
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                aws_lc_reused
+                    .seal_in_place_separate_tag(
+                        Nonce::assume_unique_for_key(*black_box(&nonce)),
+                        Aad::from(black_box(&aad)),
+                        black_box(&mut buf),
+                    )
+                    .unwrap()
+            })
+        });
+        g.finish();
+
+        let mut out = vec![0u8; size + 1];
+        let mut aws_lc_out = vec![0u8; size];
+        let mut aws_lc_extra = [0u8; 1 + 16];
+        let tag = vg_key
+            .encrypt(&nonce, &aad, &[&data, &ty], &mut out)
+            .unwrap();
+        let ossl_tag = ossl_seal(&[&data, &ty], &mut ossl_out);
+        assert_eq!((&out[..], &tag[..]), (&ossl_out[..size + 1], &ossl_tag[..]));
+        let mut g = c.benchmark_group("aes-128-gcm-encrypt-two-pieces-reused-key");
+        g.throughput(Throughput::Bytes(size as u64 + 1));
+        g.bench_function(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                vg_key
+                    .encrypt(
+                        black_box(&nonce),
+                        black_box(&aad),
+                        &[black_box(&data[..]), black_box(&ty[..])],
+                        black_box(&mut out),
+                    )
+                    .unwrap()
+            })
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| ossl_seal(&[black_box(&data), black_box(&ty)], &mut ossl_out))
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                aws_lc_reused
+                    .seal_out_of_place_scatter(
+                        Nonce::assume_unique_for_key(*black_box(&nonce)),
+                        Aad::from(black_box(&aad)),
+                        black_box(&data),
+                        black_box(&mut aws_lc_out),
+                        black_box(&ty),
+                        &mut aws_lc_extra,
+                    )
+                    .unwrap()
             })
         });
         g.finish();
