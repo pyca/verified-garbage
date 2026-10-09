@@ -127,19 +127,49 @@ theorem dword_pandn (a b : BitVec 128) {i : Nat} (hi : i < 4) :
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp [XBinOp.eval, dword, hj, show 32 * i + j < 128 by omega]
 
+/-- `uhX` as its parts (`hfX_ok`, `mul2X_ok`), so that the doublewords are not one
+large term with `hbFL` repeated in it. -/
 theorem uhX_ok {g : Nat} (hg : g = g32 ∨ g = g88) (s : State) (hc : HbC g s) :
     WP isa (.block (uhX g)) s fun s' =>
       (∀ e < 4, dword (s'.xmm .xmm4) e = uhL g (dword (s.xmm .xmm5) e) (dword (s.xmm .xmm0) e)) ∧
       XOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4] s s' := by
-  rcases hg with rfl | rfl <;>
-  · simp only [uhX, hfX, msub, mulX, mul2X_32, mul2X_88, dSh_32, dSh_88, dShift_32, dShift_88, xmov, xb,
-      List.cons_append, List.nil_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    vrun [VG.X86_64.eval_movdqa]
-    refine ⟨fun e he => ?_, by xonly⟩
-    simp (disch := first | decide | with_reducible assumption) only [dword_pand, dword_pandn, dword_por, dword_pxor, dword_psrad,
-      dword_psubd, dword_psrld, dword_pslld, dword_paddd, hc.c8 e he, hc.c9 e he, hc.c10 e he, BitVec.toNat_ofNat,
-      BitVec.xor_self]
-    rfl
+  rw [show uhX g = [xmov .xmm3 .xmm0] ++ (hfX g ++ ([xmov .xmm4 .xmm0] ++ (mul2X g ++
+      ([xb .psubd .xmm1 .xmm3, .xop (.shift .psrad .xmm1 31), xb .paddd .xmm1 .xmm1, xb .pxor .xmm2 .xmm2,
+        xb .psubd .xmm2 .xmm5, xb .por .xmm2 .xmm5, .xop (.shift .psrad .xmm2 31), xb .pandn .xmm1 .xmm2,
+        xb .paddd .xmm4 .xmm1, xb .paddd .xmm4 .xmm10] ++ msub .xmm4 .xmm1 ++ msub .xmm4 .xmm1)))) by
+    simp only [uhX, List.cons_append, List.nil_append, List.append_assoc], WP.block_append_iff]
+  simp only [xmov, xb]
+  vrun [VG.X86_64.eval_movdqa]
+  rw [WP.block_append_iff]
+  refine WP.mono (hfX_ok hg _ ?_ ?_) fun s1 ⟨h1, k1⟩ => ?_
+  · rw [RegUpd.xmm_setXmm_of_ne _ _ (by decide)]; exact hc.c8
+  · rw [RegUpd.xmm_setXmm_of_ne _ _ (by decide)]; exact hc.c9
+  rw [WP.block_append_iff]
+  vrun [VG.X86_64.eval_movdqa]
+  rw [WP.block_append_iff]
+  refine WP.mono (mul2X_ok hg _) fun s2 ⟨h2, k2⟩ => ?_
+  have k : XOnly [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4] s s2 :=
+    ((((XOnly.refl [.xmm3] s).setXmm (List.mem_singleton_self _) _).trans
+      (((k1.mono (rs' := [.xmm0, .xmm1, .xmm2, .xmm4]) (by decide)).setXmm (by decide) _).trans k2))).mono
+      (by decide)
+  have d3 : s2.xmm .xmm3 = s.xmm .xmm0 := by
+    rw [k2.xmm _ (by decide), RegUpd.xmm_setXmm_of_ne _ _ (by decide), k1.xmm _ (by decide),
+      RegUpd.xmm_setXmm_self]
+  have d4 : s2.xmm .xmm4 = s1.xmm .xmm0 := by
+    rw [k2.xmm _ (by decide), RegUpd.xmm_setXmm_self]
+  have d5 : s2.xmm .xmm5 = s.xmm .xmm5 := by rw [k.xmm _ (by decide)]
+  have d10 : s2.xmm .xmm10 = s.xmm .xmm10 := by rw [k.xmm _ (by decide)]
+  have h0 : ∀ e < 4, dword (s1.xmm .xmm0) e = hbFL g (dword (s.xmm .xmm0) e) := fun e he => by
+    rw [h1 e he, RegUpd.xmm_setXmm_of_ne _ _ (by decide)]
+  have h2' : ∀ e < 4, dword (s2.xmm .xmm1) e = mul2L g (hbFL g (dword (s.xmm .xmm0) e)) := fun e he => by
+    rw [h2 e he, RegUpd.xmm_setXmm_of_ne _ _ (by decide), h0 e he]
+  simp only [msub, xb, xmov, List.cons_append, List.nil_append]
+  vrun [VG.X86_64.eval_movdqa]
+  refine ⟨fun e he => ?_, by (repeat (refine XOnly.setXmm (by simp) ?_ _)) <;> exact k⟩
+  simp (disch := first | decide | with_reducible assumption) only [dword_pand, dword_pandn, dword_por,
+    dword_pxor, dword_psrad, dword_psubd, dword_paddd, d3, d4, d5, d10, hc.c10 e he, h2' e he,
+    h0 e he, BitVec.xor_self, uhL, msubL]
+  rfl
 
 end VG.Proof.MlDsa.X86_64.Round
 
