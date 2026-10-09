@@ -198,7 +198,7 @@ theorem copyPlanes_run {s : State} {T S : Addr} (E : CopyEnv T S s) (hx9 : s.gpr
   rw [copyPlanes]
   apply WP.seq
   refine WP.of_runBlock ⟨s₁, rfl, ?_⟩
-  have I₀ : CopyPInv T S s₁ 0 s₁ := ⟨by omega, by simp [s₁, State.write, hx9], by simp [s₁, State.write, hx12],
+  have I₀ : CopyPInv T S s₁ 0 s₁ := ⟨by omega, by simp [s₁, gpr_write, hx9], by simp [s₁, gpr_write, hx12],
     rfl, fun o ho => by omega, Frame.refl _ _, fun _ _ _ _ => rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
   refine WP.mono (WP.loop (M := isa) (Q := CopyPInv T S s₁ 64) (fun m u => ∃ i, i < 64 ∧ m = 64 - i ∧
     CopyPInv T S s₁ i u) ?_ 64 s₁ ⟨0, by omega, rfl, I₀⟩) fun u h => ⟨s₁, rfl, h⟩
@@ -229,7 +229,7 @@ theorem keyByte_run {s : State} {K : Addr} {L c : Nat} (hc : c < L) (hL : L < 2 
   apply WP.seq
   let s₁ := s.write .x .x13 (s.read .x .x0 + s.read .x .x10)
   have a₁ : s₁.gpr .x13 + BitVec.ofNat 64 0 = K + BitVec.ofNat 64 c := by
-    simp [s₁, State.write, State.read, h0, h10]
+    simp [s₁, gpr_write, State.read, h0, h10]
   have hr₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x13 + BitVec.ofNat 64 0) 1 := by
     rw [a₁]; exact hK c hc
   let byte := s.mem (K + BitVec.ofNat 64 c)
@@ -264,14 +264,14 @@ theorem keyByte_run {s : State} {K : Addr} {L c : Nat} (hc : c < L) (hL : L < 2 
     simp [hi]
   have x10₆ : s₆.gpr .x10 = BitVec.ofNat 64 (c + 1) := by
     simp only [s₆, s₅, State.write, State.read, reduceCtorEq, ite_false, ite_true, BitVec.setWidth_eq]
-    rw [show s₄.gpr .x10 = s.gpr .x10 by simp [s₄, s₃, s₂, s₁, State.write], h10, BitVec.ofNat_add_ofNat]
+    rw [show s₄.gpr .x10 = s.gpr .x10 by simp [s₄, s₃, s₂, s₁, gpr_write, mem_write], h10, BitVec.ofNat_add_ofNat]
   have x13₆ : s₆.gpr .x13 = BitVec.ofNat 64 (c + 1) - BitVec.ofNat 64 L := by
     simp only [s₆, State.write, State.read, ite_true, BitVec.setWidth_eq]
-    rw [show s₅.gpr .x10 = s₆.gpr .x10 by simp [s₆, State.write], x10₆,
-      show s₅.gpr .x1 = s.gpr .x1 by simp [s₅, s₄, s₃, s₂, s₁, State.write], h1]
+    rw [show s₅.gpr .x10 = s₆.gpr .x10 by simp [s₆, gpr_write], x10₆,
+      show s₅.gpr .x1 = s.gpr .x1 by simp [s₅, s₄, s₃, s₂, s₁, gpr_write, mem_write], h1]
   have g₆ : ∀ r, KeyByteRegs r → s₆.gpr r = s.gpr r := by
     intro r ⟨a, b, c', d⟩
-    simp [s₆, s₅, s₄, s₃, s₂, s₁, State.write, a, b, c', d]
+    simp [s₆, s₅, s₄, s₃, s₂, s₁, gpr_write, mem_write, a, b, c', d]
   have zero : isa.eval (.zero .x .x13) s₆ = some (c + 1 == L) := by
     show some (s₆.read .x .x13 == 0) = _
     simp only [State.read, BitVec.setWidth_eq, x13₆]
@@ -295,7 +295,7 @@ theorem keyByte_run {s : State} {K : Addr} {L c : Nat} (hc : c < L) (hL : L < 2 
     let s₇ := s₆.write .x .x10 ((0 : BitVec 16).setWidth 64 <<< (16 * 0))
     refine WP.of_runBlock ⟨s₇, rfl, ?_, ?_, fun r hr => ?_, rfl⟩
     · simp only [s₇, State.write, reduceCtorEq, ite_false]; exact x8₆
-    · simp [s₇, State.write, ← hL']
+    · simp [s₇, gpr_write, ← hL']
     · simp only [s₇, State.write, hr.2.1, ite_false]; exact g₆ r hr
   · intro h
     have hL' : c + 1 ≠ L := by simpa using h
@@ -332,8 +332,8 @@ theorem keyWord_run {T S K : Addr} {L i : Nat} {s : State} (E : KeyWordEnv T S K
   let s₀ := s.write .x .x8 ((0 : BitVec 16).setWidth 64 <<< (16 * 0))
   refine WP.of_runBlock ⟨s₀, rfl, ?_⟩
   have k₀ : KeyIn s₀ K L := E.key
-  have g₀ : ∀ r, r ≠ .x8 → s₀.gpr r = s.gpr r := fun r hr => by simp [s₀, State.write, hr]
-  have x8₀ : (s₀.gpr .x8).setWidth 32 = 0 := by simp [s₀, State.write]
+  have g₀ : ∀ r, r ≠ .x8 → s₀.gpr r = s.gpr r := fun r hr => by simp [s₀, gpr_write, hr]
+  have x8₀ : (s₀.gpr .x8).setWidth 32 = 0 := by simp [s₀, gpr_write]
   -- the four key bytes
   have step : ∀ (t : State) (m : Nat), t = { s with gpr := t.gpr } → t.gpr .x0 = K →
       t.gpr .x1 = BitVec.ofNat 64 L → t.gpr .x10 = BitVec.ofNat 64 ((4 * i + m) % L) →
@@ -380,7 +380,7 @@ theorem keyWord_run {T S K : Addr} {L i : Nat} {s : State} (E : KeyWordEnv T S K
   let t₆ := t₅.write .w .x14 (t₅.read .w .x14 ^^^ t₅.read .w .x8)
   have wrS : InRegions t₆.wr (t₆.gpr .x12 + BitVec.ofNat 64 0) 4 := by
     have h2 : t₆.wr = s.wr := by rw [show t₆.wr = t₄.wr from rfl, d₄]
-    have h3 : t₆.gpr .x12 = t₄.gpr .x12 := by simp [t₆, t₅, State.write]
+    have h3 : t₆.gpr .x12 = t₄.gpr .x12 := by simp [t₆, t₅, gpr_write]
     rw [h2, h3, BitVec.add_zero, x12₄]; exact E.wrS
   let t₇ : State := { t₆ with mem := t₆.mem.writeW (t₆.gpr .x12 + BitVec.ofNat 64 0) ((t₆.gpr .x14).setWidth 32) }
   let t₈ := t₇.write .x .x9 (t₇.read .x .x9 + BitVec.ofNat _ 4)
@@ -398,18 +398,18 @@ theorem keyWord_run {T S K : Addr} {L i : Nat} {s : State} (E : KeyWordEnv T S K
         BitVec.add_zero]
       rw [m₄, x9₄, ← kw]
       apply BitVec.eq_of_getLsbD_eq; intro j hj; simp [hj]
-    have h12 : t₆.gpr .x12 = t₄.gpr .x12 := by simp [t₆, t₅, State.write]
+    have h12 : t₆.gpr .x12 = t₄.gpr .x12 := by simp [t₆, t₅, gpr_write]
     rw [h14, h12, BitVec.add_zero, x12₄, show t₆.mem = s.mem from m₄]
-  · simp [t₁₀, t₉, t₈, t₇, t₆, t₅, State.write]
+  · simp [t₁₀, t₉, t₈, t₇, t₆, t₅, gpr_write, v_write, mem_write, rd_write, wr_write, sp_write]
     rw [b₄]; rfl
-  · simp [t₁₀, t₉, t₈, t₇, t₆, t₅, State.write, State.read]
+  · simp [t₁₀, t₉, t₈, t₇, t₆, t₅, gpr_write, v_write, mem_write, rd_write, wr_write, sp_write, State.read]
     rw [g₄ _ (by decide) (by decide)]
-  · simp [t₁₀, t₉, t₈, t₇, t₆, t₅, State.write, State.read]
+  · simp [t₁₀, t₉, t₈, t₇, t₆, t₅, gpr_write, v_write, mem_write, rd_write, wr_write, sp_write, State.read]
     rw [g₄ _ (by decide) (by decide)]
-  · simp [t₁₀, t₉, t₈, t₇, t₆, t₅, State.write, State.read]
+  · simp [t₁₀, t₉, t₈, t₇, t₆, t₅, gpr_write, v_write, mem_write, rd_write, wr_write, sp_write, State.read]
     rw [g₄ _ (by decide) (by decide)]
   · obtain ⟨a, b, c, d, e, f, g⟩ := hr
-    simp [t₁₀, t₉, t₈, t₇, t₆, t₅, State.write, b, d, e, g]
+    simp [t₁₀, t₉, t₈, t₇, t₆, t₅, gpr_write, v_write, mem_write, rd_write, wr_write, sp_write, b, d, e, g]
     exact g₄ r ⟨a, c, f, g⟩ a
   · simp only [t₁₀, t₉, t₈, t₇, t₆, t₅, State.write]
     rw [d₄]
@@ -491,10 +491,10 @@ theorem keyP_run {T S K : Addr} {L : Nat} {s₀ : State} (E : KeyPEnv T S K L s�
     ((18 : BitVec 16).setWidth 64 <<< (16 * 0))
   refine WP.of_runBlock ⟨s₁, rfl, ?_⟩
   have I₀ : KeyPInv T S K L s₀ 0 s₁ := by
-    refine ⟨by omega, by simp [s₁, State.write], ?_, ?_, by simp [s₁, State.write], fun j hj => by omega,
-      Frame.refl _ _, fun r ⟨_, _, h10, h11, _⟩ => by simp [s₁, State.write, h10, h11], rfl⟩
-    · simp [s₁, State.write, E.x9]
-    · simp [s₁, State.write, E.x12]
+    refine ⟨by omega, by simp [s₁, gpr_write], ?_, ?_, by simp [s₁, gpr_write], fun j hj => by omega,
+      Frame.refl _ _, fun r ⟨_, _, h10, h11, _⟩ => by simp [s₁, gpr_write, h10, h11], rfl⟩
+    · simp [s₁, gpr_write, E.x9]
+    · simp [s₁, gpr_write, E.x12]
   refine WP.loop (M := isa) (fun m u => ∃ i, i < 18 ∧ m = 18 - i ∧ KeyPInv T S K L s₀ i u)
     ?_ 18 s₁ ⟨0, by omega, rfl, I₀⟩
   intro m u ⟨i, hi, hm, I⟩

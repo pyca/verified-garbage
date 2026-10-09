@@ -87,8 +87,8 @@ theorem setupKeys_ok {s₀ : State} (hp : UPre s₀) : WP isa (.block setupKeys)
     exact keyIs_readW _ _ (hL _ (Nat.le_refl _))
   · simp only [State.setV, State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, g, hx1]; rfl
   · simp only [State.setV, State.write, State.read, ite_true, reduceCtorEq, ite_false, BitVec.setWidth_eq, g, hx1]; rfl
-  · simp [State.setV, State.write, g]
-  · simp [State.setV, State.write, g]
+  · simp [gpr_setV, mem_setV, gpr_write, mem_write, g]
+  · simp [gpr_setV, mem_setV, gpr_write, mem_write, g]
   · simp only [State.setV, State.write, reduceCtorEq, ite_false, g]
     exact x4_ofNat s₀
   · exact f₁.mem
@@ -119,9 +119,9 @@ theorem setup_ok {s₀ : State} (hp : UPre s₀) : WP isa (.block setup) s₀ (I
     refine ⟨rfl, rfl, rfl, rfl, rfl, ?_⟩
     intro r hr
     simp only [List.mem_cons, not_or] at hr
-    simp [State.setV, hr.1, hr.2]
+    simp [v_setV, hr.1, hr.2]
   refine ⟨h.keys.of_frame vf ⟨by decide, by decide⟩, ?_, h.x2, h.x3, h.x4, h.mem, h.rd, h.wr, ?_⟩
-  · simp [State.setV]
+  · simp [v_setV]
   · simpa [State.setV, BitVec.xor_assoc] using h.state
 
 theorem folded_xor (a m k l : BitVec 128) :
@@ -141,7 +141,16 @@ theorem absorb_ok {nr : Nat} {w : List Byte} (s : State)
   rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ?_⟩
-  refine ⟨?_, ⟨rfl, rfl, rfl, rfl, rfl, ?_⟩⟩
+  refine ⟨?_, ⟨?_, ?_, ?_, ?_, ?_, ?_⟩⟩
+  rotate_left
+  -- The state's frame by the `setV` lemmas, rather than by `rfl` elaborated
+  -- against the states, which first tries to unify them.
+  · simp only [gpr_setV]
+  · simp only [sp_setV]
+  · simp only [mem_setV]
+  · simp only [rd_setV]
+  · simp only [wr_setV]
+  rotate_left
   · intro b hb
     simp only [List.mem_singleton] at hb; subst hb
     simp only [State.setV, ite_true, reduceCtorEq, ite_false, BitVec.add_zero, hc]
@@ -149,7 +158,7 @@ theorem absorb_ok {nr : Nat} {w : List Byte} (s : State)
     exact round_st (hK.full 0 (by have := hK.rounds; omega)) (rnds_zero w _).symm
   · intro r hr
     simp only [List.mem_cons, not_or] at hr
-    simp [State.setV, hr.1, hr.2]
+    simp [v_setV, hr.1, hr.2]
 
 theorem rounds_tail_ok {nr : Nat} {w : List Byte} {x : VReg → Spec.Aes.State} {s : State}
     (hK : Keys nr w s) (hI : RInv [.v0] w x 1 s) :
@@ -171,11 +180,18 @@ theorem folded_last_ok {nr : Nat} {w : List Byte} {x : VReg → Spec.Aes.State} 
       st (s'.v .v0 ^^^ s'.v .v30) = Spec.Aes.cipher nr w (x .v0) ∧ VFrame [.v0] s s' := by
   rw [WP.block_cons_iff]
   refine ⟨_, rfl, WP.block_nil ?_⟩
-  refine ⟨?_, ⟨rfl, rfl, rfl, rfl, rfl, ?_⟩⟩
+  refine ⟨?_, ⟨?_, ?_, ?_, ?_, ?_, ?_⟩⟩
+  rotate_left
+  · simp only [gpr_setV]
+  · simp only [sp_setV]
+  · simp only [mem_setV]
+  · simp only [rd_setV]
+  · simp only [wr_setV]
+  rotate_left
   · simp only [State.setV, ite_true, reduceCtorEq, ite_false]
     exact last_st hK.k29 hK.k30 (hI .v0 (by simp))
   · intro r hr; simp only [List.mem_singleton] at hr
-    simp [State.setV, hr]
+    simp [v_setV, hr]
 
 theorem tail_ok {nr middle : Nat} {w : List Byte} {x : VReg → Spec.Aes.State} {s : State}
     (hK : Keys nr w s) (hI : RInv [.v0] w x 1 s) (hm : middle + 2 = nr) :
@@ -194,11 +210,11 @@ theorem advance_ok (s : State) : WP isa (.block advance) s fun s' =>
   refine ⟨_, exec_addImm_x (imm := 16) (by decide), ?_⟩
   rw [WP.block_cons_iff]
   refine ⟨_, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
-  refine ⟨by simp [State.write, State.read], by simp [State.write, State.read],
+  refine ⟨by simp [gpr_write, State.read], by simp [gpr_write, State.read],
     ⟨?_, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩⟩
   intro r hr
   simp only [List.mem_cons, not_or] at hr
-  simp [State.write, hr.1, hr.2]
+  simp [gpr_write, hr.1, hr.2]
 
 theorem body_ok {s₀ : State} (hp : UPre s₀) {middle : Nat} (hm : middle + 2 = R s₀) {k : Nat} (hk : k < N s₀) {s : State}
     (h : Inv s₀ k s) : WP isa (body middle) s (Inv s₀ (k + 1)) := by
