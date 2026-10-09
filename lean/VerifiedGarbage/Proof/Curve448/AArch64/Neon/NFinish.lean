@@ -89,7 +89,7 @@ theorem m56_ok {s : State} (hM : ∀ e < 2, (vdword (s.v (V 30)) e).toNat = 2 ^ 
     WP isa (.block m56) s fun t =>
       (∀ e < 2, (vdword (t.v (V 31)) e).toNat = 2 ^ 56 - 1) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       t.gpr = s.gpr ∧ (∀ r : VReg, r ≠ V 31 → t.v r = s.v r) := by
-  have n : V 30 ≠ V 31 := V_ne _ (by omega) _ (by omega) (by omega)
+  have n : V 30 ≠ V 31 := by decide
   simp only [m56]
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, WP.block_nil_iff.mpr ⟨fun e he => ?_,
@@ -110,7 +110,7 @@ theorem carry56_ok {s : State} {i : Nat} (hi : i = 16 ∨ i = 20)
   have n1 : V 28 ≠ V i := V_ne _ (by omega) _ (by omega) (by omega)
   have n2 : V 28 ≠ V (i + 1) := V_ne _ (by omega) _ (by omega) (by omega)
   have n3 : V i ≠ V (i + 1) := V_ne _ (by omega) _ (by omega) (by omega)
-  have n4 : V 31 ≠ V 28 := V_ne _ (by omega) _ (by omega) (by omega)
+  have n4 : V 31 ≠ V 28 := by decide
   have n5 : V 31 ≠ V i := V_ne _ (by omega) _ (by omega) (by omega)
   have n1' := n1.symm
   have n2' := n2.symm
@@ -137,7 +137,7 @@ theorem outChunk_ok {s : State} {base : Addr} (hs : Scr s base) {o₁ o₂ k : N
       (∀ j < 2, word t.mem base (o₂ + 8 * (2 * k + j)) = vdword (s.v (V (16 + (2 * k + j)))) 1) ∧
       VG.Proof.X448.AArch64.Outside2 base (o₁ + 16 * k) 16 (o₂ + 16 * k) 16 s.mem t.mem ∧
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ (∀ r : VReg, r ≠ V 8 → r ≠ V 9 → t.v r = s.v r) := by
-  have n89 : V 8 ≠ V 9 := V_ne _ (by omega) _ (by omega) (by omega)
+  have n89 : V 8 ≠ V 9 := by decide
   have n98 := n89.symm
   have a8 : V (16 + 2 * k) ≠ V 8 := V_ne _ (by omega) _ (by omega) (by omega)
   have b8 : V (17 + 2 * k) ≠ V 8 := V_ne _ (by omega) _ (by omega) (by omega)
