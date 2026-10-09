@@ -12,7 +12,7 @@ namespace VG.Proof.X25519.X86
 
 open VG VG.X86 VG.Impl.X25519.X86 VG.Spec.X25519
 
-variable {W lo : Nat}
+variable {W lo : Nat} {c : Bool}
 
 theorem shr31_toNat (w : BitVec 32) : (w >>> 31).toNat = w.toNat / 2 ^ 31 := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
@@ -21,7 +21,7 @@ theorem low31_toNat (w : BitVec 32) : (w &&& low31).toNat = w.toNat % 2 ^ 31 := 
   rw [BitVec.toNat_and, show low31.toNat = 2 ^ 31 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
 
 /-- Bit 255 of the element at `o` into the accumulator as `19 b`, and cleared. -/
-theorem top_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) {o : Nat} (ho : o + 32 ≤ 4096) :
+theorem top_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o : Nat} (ho : o + 32 ≤ 4096) :
     WP isa (.block [.mov .eax (.mem (sc (o + 28))), .shift .shr .eax 31, .mov .edx (.imm 19), .mul .edx,
       .mov .ebx (.reg .eax), .mov .ecx (.imm 0), .mov .ebp (.imm 0),
       .mov .eax (.mem (sc (o + 28))), .alu .and .eax (.imm low31), .store (sc (o + 28)) .eax]) s fun s' =>
@@ -64,7 +64,7 @@ theorem setAcc_ok {s : State} (c : BitVec 32) :
     u₂.other .ebx (by decide), u₁.gpr, toNat_zero32, Nat.mul_zero, Nat.add_zero]
 
 /-- The mask of bit 255 of `W` in `T` into `ecx`, and the bit cleared. -/
-theorem mask_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) :
+theorem mask_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) :
     WP isa (.block [.mov .eax (.mem (sc (T + 28))), .shift .shr .eax 31, .mov .ecx (.imm 0),
       .alu .sub .ecx (.reg .eax), .mov .eax (.mem (sc (T + 28))), .alu .and .eax (.imm low31),
       .store (sc (T + 28)) .eax]) s fun s' =>
@@ -102,7 +102,7 @@ structure SelInv (x : BitVec 32) (s₀ : State) (o g n : Nat) (s : State) : Prop
   frame : Frame [sub x o (4 * n)] s₀.mem s.mem
   done : ∀ j < n, wd s.mem x (o + 4 * j) = if g = 1 then wd s₀.mem x (T + 4 * j) else wd s₀.mem x (o + 4 * j)
 
-theorem select_step {x : BitVec 32} {s₀ s : State} (hc : Ctx W x s) {o g n : Nat} (ho : Below o)
+theorem select_step {x : BitVec 32} {s₀ s : State} (hc : Ctx W x s c) {o g n : Nat} (ho : Below o)
     (hg : g ≤ 1) (hm : s₀.gpr .ecx = mask g) (hn : n < 8) (h : SelInv x s₀ o g n s) :
     WP isa (.block [.mov .eax (.mem (sc (o + 4 * n))), .mov .edx (.mem (sc (T + 4 * n))),
       .alu .xor .edx (.reg .eax), .alu .and .edx (.reg .ecx), .alu .xor .eax (.reg .edx),
@@ -142,7 +142,7 @@ theorem select_step {x : BitVec 32} {s₀ s : State} (hc : Ctx W x s) {o g n : N
         (by omega_using [hj, e])]
       exact h.done j (by omega_using [hj, e])
 
-theorem selects_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx W x s₀) {o g : Nat} (ho : Below o)
+theorem selects_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx W x s₀ c) {o g : Nat} (ho : Below o)
     (hg : g ≤ 1) (hm : s₀.gpr .ecx = mask g) : ∀ n ≤ 8, ∀ s, SelInv x s₀ o g 0 s →
     WP isa (.block ((List.range n).flatMap fun k =>
       [.mov .eax (.mem (sc (o + 4 * k))), .mov .edx (.mem (sc (T + 4 * k))), .alu .xor .edx (.reg .eax),
@@ -191,7 +191,7 @@ theorem colv_addM (m : Mem) (x : BitVec 32) (d : Nat) : colv m x [.addM d] = wv 
   simp only [colv, tval, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.add_zero]
 
 /-- The element at `o` reduced fully, in place. -/
-theorem freeze_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) {o : Nat} (ho : isSlot lo o = true) :
+theorem freeze_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o : Nat} (ho : isSlot lo o = true) :
     WP isa (.block (freeze o)) s fun s' => Keep s s' ∧ Frame [sub x o 32, sub x T 32] s.mem s'.mem ∧
       fe s'.mem x o = fe s.mem x o % P := by
   have hfit := hc.fit4

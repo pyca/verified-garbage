@@ -14,7 +14,7 @@ namespace VG.Proof.X25519.X86
 
 open VG VG.X86 VG.Impl.X25519.X86 VG.Spec.X25519
 
-variable {W : Nat}
+variable {W : Nat} {c : Bool}
 
 /-- `mul r`: `edx:eax = eax · r`, the other registers, memory and regions kept. -/
 structure MulUpd (s s' : State) (r : Reg) : Prop where
@@ -82,7 +82,7 @@ theorem head_ok {s : State} {c : Nat} (hc : acc s = c) (hc' : c < 2 ^ 26) :
   simp only [v] at e₂ hcx hbp
   rw [e₂, hcx, hbp]; omega_using []
 
-theorem tail_ok {x : BitVec 32} {s : State} (hctx : Ctx W x s) {o c : Nat} (ho : o + 4 ≤ 4096)
+theorem tail_ok {x : BitVec 32} {s : State} (hctx : Ctx W x s c) {o c : Nat} (ho : o + 4 ≤ 4096)
     (hc : acc s = c) (hc' : c ≤ 1) (hw : wv s.mem x o + 38 * c < 2 ^ 32) :
     WP isa (.block [.mov .eax (.imm 38), .mul .ebx, .alu .add .eax (.mem (sc o)), .store (sc o) .eax]) s
       fun s' => Keep s s' ∧ Frame [sub x o 4] s.mem s'.mem ∧ wv s'.mem x o = wv s.mem x o + 38 * c := by
@@ -108,7 +108,7 @@ theorem tail_ok {x : BitVec 32} {s : State} (hctx : Ctx W x s) {o c : Nat} (ho :
 
 /-- The fold of the carry `c < 2²⁶` in the accumulator into the element at
 `[x + o]`. -/
-theorem fold_ok {x : BitVec 32} {s : State} (hctx : Ctx W x s) {o c : Nat} (ho : o + 32 ≤ 4096)
+theorem fold_ok {x : BitVec 32} {s : State} (hctx : Ctx W x s c) {o c : Nat} (ho : o + 32 ≤ 4096)
     (hc : acc s = c) (hc' : c < 2 ^ 26) :
     WP isa (.block (fold o)) s fun s' => Keep s s' ∧ Frame [sub x o 32] s.mem s'.mem ∧
       fe s'.mem x o % P = (fe s.mem x o + 38 * c) % P := by
@@ -154,7 +154,7 @@ theorem fold_ok {x : BitVec 32} {s : State} (hctx : Ctx W x s) {o c : Nat} (ho :
 
 /-- An element summed by eight columns (reading no word an earlier one
 stored) and folded: the sum of the columns modulo `p`. -/
-theorem linear_ok {x : BitVec 32} {s : State} (hctx : Ctx W x s) (o : Nat) (ts : Nat → List Term)
+theorem linear_ok {x : BitVec 32} {s : State} (hctx : Ctx W x s c) (o : Nat) (ts : Nat → List Term)
     (ho : o + 32 ≤ 4096)
     (hr : ∀ k < 8, ∀ t ∈ ts k, ∀ d ∈ treads t, d + 4 ≤ 4096 ∧ (d + 4 ≤ o ∨ o + 4 * k ≤ d))
     (hb : ∀ k < 8, colv s.mem x (ts k) < 2 ^ 68)

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Impl.Ed25519.X86.Point32
 import VerifiedGarbage.Impl.Ed25519.CombTable
 import VerifiedGarbage.Impl.Ed25519.X86.PointSelect
 import VerifiedGarbage.Impl.Ed25519.X86.PointLoop
@@ -200,7 +201,7 @@ def combInit : List Instr :=
 
 /-- `16 A + B` into slots 0–3 (with `d` in slot 16). -/
 def combFinish : Prog isa :=
-  .seq double4 (.block (fieldCode [.copy 4 17, .copy 5 18, .copy 6 19, .copy 7 20] ++ pointAdd))
+  .seq double4 (.seq (.block (fieldCode [.copy 4 17, .copy 5 18, .copy 6 19, .copy 7 20])) Point32.addCall)
 
 /-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 7168 onward, `d` in slot 16
 and the tables' address at byte `combTbl`. -/

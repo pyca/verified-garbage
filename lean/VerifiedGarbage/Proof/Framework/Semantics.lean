@@ -85,6 +85,15 @@ theorem mono {c : Prog M} {s : M.State} {Q Q' : M.State → Prop}
     (h : WP M c s Q) (hq : ∀ s, Q s → Q' s) : WP M c s Q' := by
   obtain ⟨t, s', he, hq'⟩ := h; exact ⟨t, s', he, hq _ hq'⟩
 
+/-- Two postconditions of the same code hold together, as the semantics is
+deterministic. -/
+theorem and {c : Prog M} {s : M.State} {Q R : M.State → Prop}
+    (h₁ : WP M c s Q) (h₂ : WP M c s R) : WP M c s fun t => Q t ∧ R t := by
+  obtain ⟨t₁, s₁, e₁, q⟩ := h₁
+  obtain ⟨t₂, s₂, e₂, r⟩ := h₂
+  obtain ⟨-, rfl⟩ := Exec.det e₁ e₂
+  exact ⟨t₁, s₁, e₁, q, r⟩
+
 theorem block {is : List M.Instr} {s : M.State} {Q : M.State → Prop}
     (h : ∃ p, execBlock M is s = some p ∧ Q p.1) : WP M (.block is) s Q := by
   obtain ⟨⟨s', t⟩, h1, h2⟩ := h; exact ⟨t, s', .block h1, h2⟩

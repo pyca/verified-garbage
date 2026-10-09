@@ -14,7 +14,7 @@ def BaseArgs (L : Lay) (t : State) : Prop :=
   Whole.slots L.E t 0 = L.out ∧ Whole.slots L.E t 1 = fp L 96 ∧ Whole.slots L.E t 2 = L.scr
 
 theorem base_nosp : NoSp scalarBase := NoSp.of_all (by lit_decide)
-theorem base_stack : stackUse scalarBase = 4 := by lit_decide
+theorem base_stack : stackUse scalarBase = 8 := by lit_decide
 
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
 
@@ -32,34 +32,30 @@ theorem base_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : BaseArgs L s) (hy : s.s
     fun p hp => Whole.frame_sub L.E p (Region.sub_prefix (by decide) p hp)
   have out : Region.Sub (baseOut L) L.OUT := Region.sub_prefix (by decide)
   have be := hL.below
-  have stk8 : Region.Sub (below (L.E - BitVec.ofNat 32 4) 4) (below L.E 8) :=
-    below_inner (by decide) (by omega)
-  have stk : Region.Sub (below (L.E - BitVec.ofNat 32 4) 4) L.STK :=
-    fun p hp => Whole.below_sub_stack be (by decide) p (stk8 p hp)
-  have stkField : (below (L.E - BitVec.ofNat 32 4) 4).Disjoint (field L 96) := by
-    refine Region.Disjoint.sub_left ?_ stk8
-    change Region.Disjoint ⟨(L.E - BitVec.ofNat 32 8).setWidth 64, 8⟩ ⟨(fp L 96).setWidth 64, 32⟩
-    rw [Taint.sub_setWidth (by omega), show (fp L 96).setWidth 64 = L.E.setWidth 64 + BitVec.ofNat 64 96
-      from addr_eq (by have := hL.top; omega)]
-    exact Offset.disjoint_below_above _ (by decide)
+  have stk : Region.Sub (below (L.E - BitVec.ofNat 32 4) 8) L.STK := Whole.inner_sub_stack be
+  have hf : L.E.toNat + 256 ≤ 2 ^ 32 := by have := hL.top; omega
   have tb : L.TB ∈ L.inputs := by simp [Lay.inputs]
   have tw : TblWords (L.T.setWidth 64) s.callEntry.mem :=
     ht.frame (Whole.callEntry_frame s) fun r hr => by
       rw [List.mem_singleton.mp hr, hc.esp]
       exact (hL.ks _ tb).symm.sub_right (Whole.below_sub_stack be (by decide))
   have cy : (s.callEntry.withRegions (baseRd L) (baseWr L)).syms combSym = L.T := hy
-  simp only [scalarBaseLocal, BaseRegions, CombHeld, cy, State.withRegions_rd, State.withRegions_wr,
+  have cs : callStk (s.callEntry.withRegions (baseRd L) (baseWr L)) = below (L.E - BitVec.ofNat 32 4) 8 := by
+    simp only [callStk, State.withRegions_gpr, State.callEntry_esp, hc.esp]; rfl
+  simp only [scalarBaseLocal, BaseRegions, CombHeld, cy, cs, State.withRegions_rd, State.withRegions_wr,
     arg_withRegions, State.withRegions_gpr, State.withRegions_mem, State.callEntry_esp, hc.esp, a0, a1,
     a2, ae]
   refine ⟨⟨rfl, rfl, hL.oc.sub_left out, hL.kc.sub_left (field_sub hL (by decide)),
     (hL.ko.sub_left args).sub_right out, hL.kc.sub_left args,
     (hL.ko.sub_left ret).sub_right out, hL.kc.sub_left ret,
-    by have := hL.no; omega, field_fit hL (by decide), hL.nc, ?_⟩, ?_,
-    (hL.ko.sub_left stk).sub_right out, stkField, hL.kc.sub_left stk, tw, hL.nt, ?_⟩
+    by have := hL.no; omega, field_fit hL (by decide), hL.nc, ?_, ?_,
+    Whole.inner_frame be hf (d := 96) (n := 32) (by decide) (by decide), hL.kc.sub_left stk,
+    (hL.ko.sub_left stk).sub_right out⟩,
+    (hL.ko.sub_left stk).sub_right out, tw, hL.nt, ?_⟩
   · change (L.E - BitVec.ofNat 32 4).toNat + 16 ≤ 2 ^ 32
     rw [sub_toNat (k := 4) (by omega)]
     have := hL.top; omega
-  · change 4 ≤ (L.E - BitVec.ofNat 32 4).toNat
+  · change 8 ≤ (L.E - BitVec.ofNat 32 4).toNat
     rw [sub_toNat (k := 4) (by omega)]
     omega
   · simp only [List.mem_cons, List.not_mem_nil, or_false]

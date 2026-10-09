@@ -122,7 +122,7 @@ def EqArgs (L : Lay) (s : State) : Prop := Whole.slots L.E s 0 = L.pk ∧
   Whole.slots L.E s 1 = L.sig ∧ Whole.slots L.E s 2 = L.E + 128 ∧ Whole.slots L.E s 3 = L.scr
 
 theorem equation_nosp : NoSp verifyEquation := NoSp.of_all (by lit_decide)
-theorem equation_stack : stackUse verifyEquation = 0 := by lit_decide
+theorem equation_stack : stackUse verifyEquation = 8 := by lit_decide
 
 theorem challengeWithin (hL : L.Ok) : Whole.Within (challenge L) L.FR :=
   ⟨128, Whole.frame_addr (hashSpace hL).frameFit (by decide), by change 128 + 64 ≤ 256; decide⟩
@@ -137,17 +137,26 @@ theorem equation_pre (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : EqArgs L s) :
   have e2 := (ca (j := 2) (by decide)).trans a2
   have e3 := (ca (j := 3) (by decide)).trans a3
   have ab := Whole.arg_base hc.esp (equationRd L) (equationWr L)
+  have stk := Whole.inner_sub_stack hL.below
+  have hf : L.E.toNat + 256 ≤ 2 ^ 32 := by have := hL.top; omega
+  have cs : callStk (s.callEntry.withRegions (equationRd L) (equationWr L)) =
+      below (L.E - BitVec.ofNat 32 4) 8 := by
+    simp only [callStk, State.withRegions_gpr, State.callEntry_esp, hc.esp]; rfl
   simp only [verifyLocal, State.withRegions_rd, State.withRegions_wr, arg_withRegions,
-    State.withRegions_gpr, State.callEntry_esp, hc.esp, e0, e1, e2, e3, ab,
+    State.withRegions_gpr, State.callEntry_esp, hc.esp, e0, e1, e2, e3, ab, cs,
     sub, addr_zero, scR]
   refine ⟨rfl, rfl, hL.sc _ (by simp [Lay.inputs]), hL.sc _ (by simp [Lay.inputs]),
     hL.kc.sub_left (fun p hp => Whole.frame_sub L.E p ((challengeWithin hL).sub p hp)),
     hL.kc.sub_left (fun p hp => Whole.frame_sub L.E p (Region.sub_prefix (by decide) p hp)),
     hL.kc.sub_left (Whole.below_sub_stack hL.below (by decide)), hL.np, hL.ns,
-    Whole.frame_fit H.frameFit (by decide : 128 < 256) (by decide : 128 + 64 ≤ 256), hL.nc, ?_⟩
-  have e : (L.E - 4).toNat = L.E.toNat - 4 := sub_toNat (k := 4) (by have := hL.below; omega)
-  rw [e]
-  have := hL.top; omega
+    Whole.frame_fit H.frameFit (by decide : 128 < 256) (by decide : 128 + 64 ≤ 256), hL.nc, ?_, ?_,
+    hL.kc.sub_left stk, (hL.ks _ (by simp [Lay.inputs])).sub_left stk,
+    (hL.ks _ (by simp [Lay.inputs])).sub_left stk,
+    Whole.inner_frame hL.below hf (d := 128) (n := 64) (by decide) (by decide)⟩
+  all_goals
+    have e : (L.E - 4).toNat = L.E.toNat - 4 := sub_toNat (k := 4) (by have := hL.below; omega)
+    rw [e]
+    have := hL.top; have := hL.below; omega
 
 theorem equation_correct_result (s : State) (h : verifyLocal.pre s) :
     ∃ tr t, Exec isa verifyEquation s tr t ∧ abiPreserved s t ∧ verifyLocal.post s t := verify_correct h

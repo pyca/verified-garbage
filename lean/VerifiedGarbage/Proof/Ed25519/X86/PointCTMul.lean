@@ -19,7 +19,7 @@ def PowersCTInv (x : BitVec 32) (count n : Nat) (s t : State) : Prop :=
   0 < n ∧ n ≤ count ∧ PowersCTState x (count - n) s ∧ PowersCTState x (count - n) t ∧ s.wr = t.wr
 
 theorem powersLoop_ct (x : BitVec 32) (o count : Nat) (batch : Bool)
-    (hlo : 928 ≤ o) (hfit : o + 128 * count ≤ 8192) (hn : count ≤ 32)
+    (hlo : 1024 ≤ o) (hfit : o + 128 * count ≤ 8192) (hn : count ≤ 32)
     (hc : RelCT isa (PowersCTPre x) (powersBody o count batch) (fun _ _ => True)) (n : Nat) :
     RelCT isa (PowersCTInv x count n) (.loop (powersBody o count batch) .ne) (fun _ _ => True) := by
   apply VG.RelCT.loop (M := isa) (PowersCTInv x count) (n := n)
@@ -33,7 +33,7 @@ theorem powersLoop_ct (x : BitVec 32) (o count : Nat) (batch : Bool)
           isa.eval .ne t = some (!decide (count - n + 1 = count)) := by
     refine WP.mono (powersBody_ok h.ctx.ctx o count (count - n) batch (by omega) hn hlo hfit
       h.counter h.d) fun t ⟨kt, it, zt, _, _, dt⟩ => ?_
-    exact ⟨⟨h.ctx.keep kt.edi kt.wr, it, (dt 16 (by decide)).trans h.d⟩, kt.wr, zt⟩
+    exact ⟨⟨h.ctx.keep kt.edi kt.wr kt.esp, it, (dt 16 (by decide)).trans h.d⟩, kt.wr, zt⟩
   have hh := ctWithRuns hb (fun s t h => ⟨hw s h.2.2.1 h.1 h.2.1, hw t h.2.2.2.1 h.1 h.2.1⟩)
   apply hh.mono (fun _ _ h => h)
   intro s t ⟨_, a, b, hp, hs, ht⟩
@@ -56,7 +56,7 @@ def PowersCTStart (x : BitVec 32) (s t : State) : Prop :=
     env s.mem x 16 = Spec.Ed25519.d ∧ env t.mem x 16 = Spec.Ed25519.d
 
 theorem pointPowers_ct (x : BitVec 32) (o count : Nat) (batch : Bool)
-    (hlo : 928 ≤ o) (hfit : o + 128 * count ≤ 8192) (hn0 : 0 < count) (hn : count ≤ 32)
+    (hlo : 1024 ≤ o) (hfit : o + 128 * count ≤ 8192) (hn0 : 0 < count) (hn : count ≤ 32)
     (hc : RelCT isa (PowersCTPre x) (powersBody o count batch) (fun _ _ => True)) :
     RelCT isa (PowersCTStart x) (pointPowers o count batch) (fun _ _ => True) := by
   have hi : RelCT isa (PowersCTStart x)
@@ -68,7 +68,7 @@ theorem pointPowers_ct (x : BitVec 32) (o count : Nat) (batch : Bool)
       WP isa (.block [.mov .eax (.imm 0), .store (Impl.X25519.X86.sc 24) .eax]) s fun t =>
         PowersCTState x 0 t ∧ t.wr = s.wr := by
     refine WP.mono (powersInit_ok h.ctx o (128 * count)) fun t ⟨kt, it, ft⟩ => ?_
-    exact ⟨⟨h.keep kt.edi kt.wr, it, by rw [counter_env h.ctx.fit ft]; exact hd⟩, kt.wr⟩
+    exact ⟨⟨h.keep kt.edi kt.wr kt.esp, it, by rw [counter_env h.ctx.fit ft]; exact hd⟩, kt.wr⟩
   have hh := ctWithRuns hi (fun s t h => ⟨hw s h.1 h.2.2.2.1, hw t h.2.1 h.2.2.2.2⟩)
   rw [pointPowers]
   refine VG.RelCT.seq (hh.mono (fun _ _ h => h) ?_) (powersLoop_ct x o count batch hlo hfit hn hc count)
@@ -99,7 +99,7 @@ private theorem prepareBatch_ct (x : BitVec 32) (j : Nat) (hj : j < 32) :
       (hd : env s.mem x 16 = Spec.Ed25519.d) :
       WP isa (.block loadCheckpoint) s fun t => PointCTCtx x t ∧ t.wr = s.wr ∧ env t.mem x 16 = Spec.Ed25519.d := by
     refine WP.mono (loadCheckpoint_ok h.ctx j hj hb) fun t ⟨kt, _, _, dt⟩ => ?_
-    exact ⟨h.keep kt.keep.edi kt.keep.wr, kt.keep.wr, dt.trans hd⟩
+    exact ⟨h.keep kt.keep.edi kt.keep.wr kt.keep.esp, kt.keep.wr, dt.trans hd⟩
   have hh := ctWithRuns hl (fun s t h => ⟨hw s h.1.1 h.2.1 h.1.2.2.2.1,
     hw t h.1.2.1 h.2.2 h.1.2.2.2.2⟩)
   have hp := pointPowers_ct x 5120 16 false (by decide) (by decide) (by decide) (by decide) (powersBodyLocal_ct x)
@@ -133,7 +133,7 @@ theorem pointMulBatch_ct (x : BitVec 32) (j : Nat) (hj : j < 32) :
   have hw (s : State) (h : BatchCTState x (j + 1) s) : WP isa (.block batchBegin) s fun t =>
       BatchCTState x j t ∧ t.gpr .esi = BitVec.ofNat 32 j ∧ t.wr = s.wr := by
     refine WP.mono (batchBegin_ok h.ctx.ctx j h.counter) fun t ⟨kt, bt, it, ft⟩ => ?_
-    exact ⟨⟨h.ctx.keep kt.edi kt.wr, it, by rw [counter28_env h.ctx.ctx.fit ft]; exact h.d⟩, bt, kt.wr⟩
+    exact ⟨⟨h.ctx.keep kt.edi kt.wr kt.esp, it, by rw [counter28_env h.ctx.ctx.fit ft]; exact h.d⟩, bt, kt.wr⟩
   have hh := ctWithRuns hb (fun s t h => ⟨hw s h.1, hw t h.2.1⟩)
   have prep := (prepareBatch_ct x j hj).mono
     (P' := fun (s t : State) => BatchCTState x j s ∧ BatchCTState x j t ∧ s.wr = t.wr ∧
@@ -142,7 +142,7 @@ theorem pointMulBatch_ct (x : BitVec 32) (j : Nat) (hj : j < 32) :
   have pw (s : State) (h : BatchCTState x j s) (hb : s.gpr .esi = BitVec.ofNat 32 j) :
       WP isa prepareBatch s fun t => BatchCTState x j t ∧ t.wr = s.wr := by
     refine WP.mono (prepareBatch_ok h.ctx.ctx j hj hb h.d) fun t ⟨kt, _, _, dt⟩ => ?_
-    exact ⟨⟨h.ctx.keep kt.edi kt.wr, (kt.batch_index h.ctx.ctx).trans h.counter, dt⟩, kt.wr⟩
+    exact ⟨⟨h.ctx.keep kt.edi kt.wr kt.esp, (kt.batch_index h.ctx.ctx).trans h.counter, dt⟩, kt.wr⟩
   have prep' := ctWithRuns prep (fun s t h => ⟨pw s h.1 h.2.2.2.1, pw t h.2.1 h.2.2.2.2⟩)
   have test : RelCT isa (fun s t => s.gpr .edi = t.gpr .edi) (.block batchTest) (fun _ _ => True) := by
     apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
@@ -178,7 +178,7 @@ theorem mulCTState_step {x : BitVec 32} {s : State} {scalar count j : Nat} {p : 
       isa.eval .ne t = some (!decide (j = 0)) := by
   refine WP.mono (pointMulBatch_ok h.ctx.ctx scalar j p (by omega) h.counter
     (fun i hi => h.bits _ (by omega)) (h.table j hj) h.value h.d) fun t ⟨kt, it, zt, pt, dt⟩ => ?_
-  refine ⟨⟨h.ctx.keep kt.edi kt.wr, it, pt, ?_, ?_, dt⟩, kt.wr, zt⟩
+  refine ⟨⟨h.ctx.keep kt.edi kt.wr kt.esp, it, pt, ?_, ?_, dt⟩, kt.wr, zt⟩
   · intro k hk
     exact (kt.checkpoint h.ctx.ctx k (by omega)).trans (h.table k hk)
   · intro i hi
@@ -263,7 +263,7 @@ theorem pointMultiply_ct (x : BitVec 32) (a b count : Nat) (hn : count = 16 ∨ 
       WP isa (pointMultiplyInit count) s fun t =>
         MulCTState x scalar count (point (env s.mem x) 0 1 2 3) count t ∧ t.wr = s.wr := by
     refine WP.mono (pointMultiplyInit_ok h.ctx.ctx count hn0 hn32 h.d) fun t ⟨kt, it, pt, tt, dt⟩ => ?_
-    exact ⟨⟨h.ctx.keep kt.edi kt.wr, it,
+    exact ⟨⟨h.ctx.keep kt.edi kt.wr kt.esp, it,
       pt.trans (after_top scalar (16 * count) _ h.bound).symm, tt,
       fun i hi => (kt.bit h.ctx.ctx i (by omega)).trans (h.bits i hi), dt⟩, kt.wr⟩
   have hh := ctWithRuns init (fun s t h => ⟨hw s a h.1, hw t b h.2.1⟩)

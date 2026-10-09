@@ -21,7 +21,7 @@ theorem abiSave_frame {s₀ : State} {scidx argc : Nat} (hp : ScratchPre s₀ sc
     rw [u₆.mem, u₅.mem, ea, u₁.mem]
     exact Spill.saveMem_congr _ _ (fun _ _ => rfl) fun p h => u₁.other _ (by revert p h; decide)
   refine ⟨⟨by rw [u₆.gpr, u₅.gpr, ea], by rw [u₆.other _ (by decide), u₅.gpr, u₁.other _ (by decide)],
-    by rw [u₆.rd, u₅.rd, u₁.rd], by rw [u₆.wr, u₅.wr, u₁.wr], ?_, ?_⟩, ?_⟩
+    by rw [u₆.rd, u₅.rd, u₁.rd], by rw [u₆.wr, u₅.wr, u₁.wr], ?_, ?_, hp.stk⟩, ?_⟩
   · rw [hm]
     exact Spill.saveMem_frame List.mem_cons_self _ _ _ _ fun p h =>
       scR_contains hfit (by have := savedSlots_bound p h; omega_using [this]) (by decide)
@@ -106,7 +106,7 @@ theorem loadArg_ok {s₀ s : State} {scidx argc i : Nat} (hp : ScratchPre s₀ s
   refine Wp.wp_ldm h.esp (by rw [h.rd, h.wr]; exact hp.argIn hi) fun t ht => WP.block_nil ?_
   refine ⟨⟨(ht.other _ (by decide)).trans h.edi, (ht.other _ (by decide)).trans h.esp,
     ht.rd.trans h.rd, ht.wr.trans h.wr, by rw [ht.mem]; exact h.frame,
-    by rw [ht.mem]; exact h.saved⟩, ?_, ht.mem⟩
+    by rw [ht.mem]; exact h.saved, h.stk⟩, ?_, ht.mem⟩
   rw [ht.gpr]; exact hp.arg_same h.frame hi
 
 end VG.Proof.Ed25519.X86

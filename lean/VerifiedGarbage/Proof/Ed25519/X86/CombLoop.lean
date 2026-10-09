@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Ed25519.X86.CombSelect
 import VerifiedGarbage.Proof.Ed25519.X86.PointMul
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
 
 /-!
 # The comb's loop
@@ -22,17 +23,20 @@ open VG.Impl.X25519.X86 (sc)
 theorem MulKeep.of_field {x : BitVec 32} {s t : State} (hc : Ctx x s) (h : FieldKeep x s t) :
     MulKeep x s t := MulKeep.of_ikeep hc (IKeep.of_field h)
 
+theorem MulKeep.of_call {x : BitVec 32} {s t : State} (hc : Ctx x s) (h : CallKeep x s t) :
+    MulKeep x s t := MulKeep.of_ikeep hc (IKeep.of_call h)
+
 theorem MulKeep.of_digit {x : BitVec 32} {s t : State} (hc : Ctx x s) (h : DigitKeep x s t) :
     MulKeep x s t := by
   refine ⟨h.keep.edi, h.keep.esp, h.keep.rd, h.keep.wr, h.frame.sub fun r hr => ?_⟩
   rw [List.mem_singleton.mp hr]
-  exact ⟨sub x 24 7144, List.mem_singleton_self _, sub_sub hc.fit (by omega) (by omega) (by omega)⟩
+  exact ⟨sub x 24 7144, List.mem_cons_self .., sub_sub hc.fit (by omega) (by omega) (by omega)⟩
 
 theorem MulKeep.of_sel {x : BitVec 32} {s t : State} (hc : Ctx x s) (k : Keep s t)
     (h : SelFrame x s.mem t.mem) : MulKeep x s t :=
   ⟨k.edi, k.esp, k.rd, k.wr, h.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    refine ⟨sub x 24 7144, List.mem_singleton_self _, ?_⟩
+    refine ⟨sub x 24 7144, List.mem_cons_self .., ?_⟩
     rcases hr with rfl | rfl
     · exact sub_sub hc.fit (by decide) (by decide) (by decide)
     · exact sub_sub hc.fit (by decide) (by decide) (by decide)⟩
@@ -40,12 +44,18 @@ theorem MulKeep.of_sel {x : BitVec 32} {s t : State} (hc : Ctx x s) (k : Keep s 
 theorem MulKeep.of_keepMem {x : BitVec 32} {s t : State} (k : Keep s t) (h : t.mem = s.mem) :
     MulKeep x s t := ⟨k.edi, k.esp, k.rd, k.wr, by rw [h]; exact Frame.refl _ _⟩
 
-/-- The tables survive the comb's writes, all to the workspace. -/
+/-- The tables survive the comb's writes, to the workspace and the stack a call uses. -/
 theorem TblAt.mulkeep {x P : BitVec 32} {s t : State} (h : TblAt x P s) (hc : Ctx x s)
-    (k : MulKeep x s t) : TblAt x P t :=
-  h.of_frame k.rd k.frame fun r hr => by
-    rw [List.mem_singleton.mp hr, scR_eq]
-    exact sub_sub hc.fit (by decide) (by decide) (by decide)
+    (hstk : (TBL (P.setWidth 64)).Disjoint (callStk s)) (k : MulKeep x s t) : TblAt x P t := by
+  have hl := combWords_length
+  refine ⟨h.fit, k.rd ▸ h.rd, fun i hi => ?_, h.far⟩
+  rw [← h.words i hi]
+  refine k.frame.readW (r := TBL (P.setWidth 64)) (Offset.contains_base _ (by omega) (by omega))
+    (fun r hr => ?_) (by decide)
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact h.far.sub_right (by rw [scR_eq]; exact sub_sub hc.fit (by decide) (by decide) (by decide))
+  · exact hstk
 
 /-! ## The mixed additions -/
 
@@ -243,7 +253,8 @@ private theorem dis_even : ∀ ab ∈ [((13 : Slot), (14 : Slot)), (15, 8)], ab.
 
 theorem combStep_ok {x P : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j : Nat}
     (hb : ∀ q < 256, s₀.mem (addr x (7168 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
-    (ht₀ : TblAt x P s₀) (h : CombInv x s₀ S P j s) (hj : j < 32) :
+    (ht₀ : TblAt x P s₀) (hts : (TBL (P.setWidth 64)).Disjoint (callStk s₀))
+    (h : CombInv x s₀ S P j s) (hj : j < 32) :
     WP isa combStep s fun t => isa.eval .ne t = some (!decide (j + 1 = 32)) ∧
       CombInv x s₀ S P (j + 1) t := by
   have hc := h.keep.ctx hc₀
@@ -259,7 +270,7 @@ theorem combStep_ok {x P : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j
   have ea : env a.mem x = env s.mem x := digit_env ka.frame hfit
   have pa : wd a.mem x combTbl = P :=
     (wd_frame1 ka.frame hfit (by decide) (by decide) (Or.inr (by decide))).trans h.ptr
-  have ta : TblAt x P a := ht₀.mulkeep hc₀ (h.keep.trans (MulKeep.of_digit hc ka))
+  have ta : TblAt x P a := ht₀.mulkeep hc₀ hts (h.keep.trans (MulKeep.of_digit hc ka))
   -- Both entries.
   refine WP.seq (WP.mono (combSelect_ok ca (mag_lt no) (mag_lt ne) ⟨ma.oddMask, ma.evenMask⟩ hj
     (ka.keep.esi.trans h.counter) pa ta) fun b ⟨bo, be, kb, fb⟩ => ?_)
@@ -379,15 +390,14 @@ theorem combFinish_ok {s : State} {x : BitVec 32} (hc : Ctx x s) {v w : ℤ}
   rw [combFinish]
   refine WP.seq (WP.mono (double4_ok hc hd) fun b ⟨kb, bp, bh⟩ => ?_)
   have cb := kb.ctx hc
-  rw [WP.block_append_iff]
-  refine WP.mono (fieldCode_ok [.copy 4 17, .copy 5 18, .copy 6 19, .copy 7 20] cb)
-    fun c ⟨kc, vc⟩ => ?_
+  refine WP.seq (WP.mono (fieldCode_ok [.copy 4 17, .copy 5 18, .copy 6 19, .copy 7 20] cb)
+    fun c ⟨kc, vc⟩ => ?_)
   have cc := kc.ctx cb
   have cd : env c.mem x 16 = Spec.Ed25519.d := by
     rw [vc, show evalOps [.copy 4 17, .copy 5 18, .copy 6 19, .copy 7 20] (env b.mem x) 16 =
       env b.mem x 16 from rfl, bh 16 (by decide), hd]
-  refine WP.mono (pointAdd_ok cc cd) fun t ⟨kt, tp, _⟩ => ?_
-  refine ⟨?_, ((MulKeep.of_ikeep hc kb).trans (MulKeep.of_field cb kc)).trans (MulKeep.of_field cc kt)⟩
+  refine WP.mono (pointAddCall_ok cc cd) fun t ⟨kt, tp, _⟩ => ?_
+  refine ⟨?_, ((MulKeep.of_ikeep hc kb).trans (MulKeep.of_field cb kc)).trans (MulKeep.of_call cc kt)⟩
   have p0 : point (env c.mem x) 0 1 2 3 = point (env b.mem x) 0 1 2 3 := by rw [vc]; rfl
   have p4 : point (env c.mem x) 4 5 6 7 = point (env s.mem x) 17 18 19 20 := by
     rw [vc]
@@ -400,7 +410,8 @@ theorem combFinish_ok {s : State} {x : BitVec 32} (hc : Ctx x s) {v w : ℤ}
 
 theorem combMultiply_ok {s : State} {x P : BitVec 32} (hc : Ctx x s) {S : Nat} (hS : S < 2 ^ 256)
     (hb : ∀ q < 256, s.mem (addr x (7168 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
-    (hd : env s.mem x 16 = Spec.Ed25519.d) (hp : wd s.mem x combTbl = P) (ht : TblAt x P s) :
+    (hd : env s.mem x 16 = Spec.Ed25519.d) (hp : wd s.mem x combTbl = P) (ht : TblAt x P s)
+    (hts : (TBL (P.setWidth 64)).Disjoint (callStk s)) :
     WP isa combMultiply s fun t =>
       Rep (point (env t.mem x) 0 1 2 3) (S • baseAff) ∧ MulKeep x s t := by
   rw [combMultiply]
@@ -413,7 +424,7 @@ theorem combMultiply_ok {s : State} {x P : BitVec 32} (hc : Ctx x s) {S : Nat} (
     apply WP.loop (fun n t => CombInv x s S P (32 - n) t ∧ 0 < n ∧ n ≤ 32) (n := 32)
     · intro n t ⟨hi, hn0, hn⟩
       obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-      refine WP.mono (combStep_ok hc hb ht hi (by omega)) fun u ⟨u8, hu⟩ => ?_
+      refine WP.mono (combStep_ok hc hb ht hts hi (by omega)) fun u ⟨u8, hu⟩ => ?_
       by_cases hk : k = 0
       · subst hk
         exact Or.inl ⟨by rw [u8]; rfl, hu⟩
