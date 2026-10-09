@@ -17,19 +17,19 @@ theorem vslot2_ok {p : Params} (hF : VFacts p) {S : Nat} {σ : State} (hp : vPre
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
   have L := h.va.vz.vc.lay hF hp
   unfold seedSlot4
-  refine WP.seq (WP.mono (copySeed4_generic L (by vlay) (by vlay) (by vlay)) fun s1 ⟨hP1,hk1,hb1⟩ => ?_)
+  refine WP.seq (WP.mono (copySeed4_generic L (by vlayd) (by vlayd) (by vlayd)) fun s1 ⟨hP1,hk1,hb1⟩ => ?_)
   have h1 := h.va.keep hF hp hP1 (by vachk hF) (hk1.get .x24)
   have L1 := h1.vz.vc.lay hF hp
   unfold setSR
   refine WP.mono (vsetTwo_ok L1 (o := oSA4+34*j+32) (a := (e+j)%p.ℓ) (b := (e+j)/p.ℓ)
-    (by dsimp only [oSA4]; omega) (by vlay) (by vlay)) fun t ⟨hP2,hk2,hb2⟩ => ?_
+    (by dsimp only [oSA4]; omega) (by vlayd) (by vlayd)) fun t ⟨hP2,hk2,hb2⟩ => ?_
   refine ⟨h1.keep hF hp hP2 (by vachk hF) (hk2.get .x24),fun k hk => ?_⟩
   by_cases heq : k = j
   · subst k
-    rw [bytes34,L1.keepBytes hP2 (by vlay),sc_pa hP2,sc_pa hP1,hb1,h.va.rho,
+    rw [bytes34,L1.keepBytes hP2 (by vlayd),sc_pa hP2,sc_pa hP1,hb1,h.va.rho,
       sc_add,← sc_pa hP1,hb2,seedOf,Proof.MlDsa.Verify.aSeed,integerToBytes_one,integerToBytes_one,List.append_assoc]
     rfl
-  · rw [L1.keepBytes hP2 (by vlay),L.keepBytes hP1 (by vlay)]
+  · rw [L1.keepBytes hP2 (by vlayd),L.keepBytes hP1 (by vlayd)]
     exact h.done k (by omega)
 
 theorem vslot2_piece {p : Params} (hF : VFacts p) {S e j : Nat} (he : e+2 ≤ p.k*p.ℓ) (hj : j < 2) :
@@ -52,7 +52,7 @@ theorem vcall2_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
   have L := h.va.vz.vc.lay hF hp
   refine WP.seq (WP.mono (rej2At_ok hS C L
-    (seed := sc oSA4) (a := aP (e)) (ss := sc (oR4 p)) (by unfold rej2Chk; vlay))
+    (seed := sc oSA4) (a := aP (e)) (ss := sc (oR4 p)) (by unfold rej2Chk; vlayd))
     fun s2 ⟨hP2,h24,hred,hout⟩ => ?_)
   have L2 := L.post hP2
   have hr01 : (s2.gpr .x0).setWidth 32 = 0 ∨ (s2.gpr .x0).setWidth 32 = 1 := by
@@ -61,7 +61,7 @@ theorem vcall2_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
   have hP20 : PPostB S s2 s20 [] := postB_of_keep h20.keep (by decide) (by rw [h20.mem]; exact Frame.refl _ _)
   have L20 := L2.post hP20
   have hr20 : (s20.gpr .x0).setWidth 32 = 0 ∨ (s20.gpr .x0).setWidth 32 = 1 := by rw [h20.get .x0]; exact hr01
-  refine WP.mono (VG.Proof.MlDsa.AArch64.Optimized.MatrixMask.mask_ok L20 (a := aP (e)) (N := 32) (by decide) (by decide) (by vlay) (by vlay) hr20) fun s3 ⟨hP3,k3,hco⟩ => ?_
+  refine WP.mono (VG.Proof.MlDsa.AArch64.Optimized.MatrixMask.mask_ok L20 (a := aP (e)) (N := 32) (by decide) (by decide) (by vlayd) (by vlayd) hr20) fun s3 ⟨hP3,k3,hco⟩ => ?_
   have hP23 := PPostB.app hP20 hP3 (sc_bases _ (by simp))
   have hP13 := PPostB.app hP2 hP23 (sc_bases _ (by simp))
   have e2 : pa s2 (aP (e)) = pa s (aP (e)) := sc_pa hP2 _
@@ -73,7 +73,7 @@ theorem vcall2_ok {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
   have e3 : ∀ k,pa s3 (aP (e+k)) = poly4 (pa s (aP (e))) k := fun k => by rw [pa_poly4,sc_pa hP13]
   obtain ⟨q,hq,h1,h0⟩ := h.va.ok
   have hA : ∀ e' < e,polyAt s3.mem (pa s3 (aP e')) = polyAt s.mem (pa s (aP e')) := fun e' he' => L.keepPolyAt hP13 (by vlay)
-  refine ⟨h.va.vz.keep hF hp hP13 (by vzchk hF),h.va.nok,by rw [L.keepBytes hP13 (by vlay)]; exact h.va.rho,
+  refine ⟨h.va.vz.keep hF hp hP13 (by vzchk hF),h.va.nok,by rw [L.keepBytes hP13 (by vlayd)]; exact h.va.rho,
     fun e' he' => ?_,q && ((s2.gpr .x0).setWidth 32 == 1),?_,fun hq' e' he' => ?_,fun hq' => ?_⟩
   · by_cases hlt : e' < e
     · exact L.keepRed hP13 (by vlay) (h.va.red e' hlt)

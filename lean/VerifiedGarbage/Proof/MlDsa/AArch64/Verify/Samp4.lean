@@ -21,19 +21,19 @@ theorem vslot_ok {p : Params} (hF : VFacts p) {S : Nat} {σ : State} (hp : vPre 
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
   have L := h.va.vz.vc.lay hF hp
   unfold seedSlot4
-  refine WP.seq (WP.mono (copySeed4_generic L (by vlay) (by vlay) (by vlay)) fun s1 ⟨hP1,hk1,hb1⟩ => ?_)
+  refine WP.seq (WP.mono (copySeed4_generic L (by vlayd) (by vlayd) (by vlayd)) fun s1 ⟨hP1,hk1,hb1⟩ => ?_)
   have h1 := h.va.keep hF hp hP1 (by vachk hF) (hk1.get .x24)
   have L1 := h1.vz.vc.lay hF hp
   unfold setSR
   refine WP.mono (vsetTwo_ok L1 (o := oSA4+34*j+32) (a := (e+j)%p.ℓ) (b := (e+j)/p.ℓ)
-    (by dsimp only [oSA4]; omega) (by vlay) (by vlay)) fun t ⟨hP2,hk2,hb2⟩ => ?_
+    (by dsimp only [oSA4]; omega) (by vlayd) (by vlayd)) fun t ⟨hP2,hk2,hb2⟩ => ?_
   refine ⟨h1.keep hF hp hP2 (by vachk hF) (hk2.get .x24),fun k hk => ?_⟩
   by_cases heq : k = j
   · subst k
-    rw [bytes34,L1.keepBytes hP2 (by vlay),sc_pa hP2,sc_pa hP1,hb1,h.va.rho,
+    rw [bytes34,L1.keepBytes hP2 (by vlayd),sc_pa hP2,sc_pa hP1,hb1,h.va.rho,
       sc_add,← sc_pa hP1,hb2,seedOf,Proof.MlDsa.Verify.aSeed,integerToBytes_one,integerToBytes_one,List.append_assoc]
     rfl
-  · rw [L1.keepBytes hP2 (by vlay),L.keepBytes hP1 (by vlay)]
+  · rw [L1.keepBytes hP2 (by vlayd),L.keepBytes hP1 (by vlayd)]
     exact h.done k (by omega)
 
 theorem vslot_piece {p : Params} (hF : VFacts p) {S e j : Nat} (he : e+4 ≤ p.k*p.ℓ) (hj : j < 4) :
@@ -63,7 +63,7 @@ theorem vcall4_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VF
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
   have L := h.va.vz.vc.lay hF hp
   refine WP.seq (WP.mono (rej4At_ok hP.s64 hP.rej4 L
-    (seed := sc oSA4) (a := aP (4*g)) (ss := sc (oR4 p)) (by unfold rej4Chk; vlay))
+    (seed := sc oSA4) (a := aP (4*g)) (ss := sc (oR4 p)) (by unfold rej4Chk; vlayd))
     fun s2 ⟨hP2,h24,hred,hout⟩ => ?_)
   have L2 := L.post hP2
   have hr01 : (s2.gpr .x0).setWidth 32 = 0 ∨ (s2.gpr .x0).setWidth 32 = 1 := by
@@ -72,7 +72,7 @@ theorem vcall4_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VF
   have hP20 : PPostB S s2 s20 [] := postB_of_keep h20.keep (by decide) (by rw [h20.mem]; exact Frame.refl _ _)
   have L20 := L2.post hP20
   have hr20 : (s20.gpr .x0).setWidth 32 = 0 ∨ (s20.gpr .x0).setWidth 32 = 1 := by rw [h20.get .x0]; exact hr01
-  refine WP.mono (mask4_ok L20 (a := aP (4*g)) (by vlay) (by vlay) hr20) fun s3 ⟨hP3,k3,hco⟩ => ?_
+  refine WP.mono (mask4_ok L20 (a := aP (4*g)) (by vlayd) (by vlayd) hr20) fun s3 ⟨hP3,k3,hco⟩ => ?_
   have hP23 := PPostB.app hP20 hP3 (sc_bases _ (by simp))
   have hP13 := PPostB.app hP2 hP23 (sc_bases _ (by simp))
   have e2 : pa s2 (aP (4*g)) = pa s (aP (4*g)) := sc_pa hP2 _
@@ -84,7 +84,7 @@ theorem vcall4_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VF
   have e3 : ∀ k,pa s3 (aP (4*g+k)) = poly4 (pa s (aP (4*g))) k := fun k => by rw [pa_poly4,sc_pa hP13]
   obtain ⟨q,hq,h1,h0⟩ := h.va.ok
   have hA : ∀ e' < 4*g,polyAt s3.mem (pa s3 (aP e')) = polyAt s.mem (pa s (aP e')) := fun e' he' => L.keepPolyAt hP13 (by vlay)
-  refine ⟨h.va.vz.keep hF hp hP13 (by vzchk hF),h.va.nok,by rw [L.keepBytes hP13 (by vlay)]; exact h.va.rho,
+  refine ⟨h.va.vz.keep hF hp hP13 (by vzchk hF),h.va.nok,by rw [L.keepBytes hP13 (by vlayd)]; exact h.va.rho,
     fun e' he' => ?_,q && ((s2.gpr .x0).setWidth 32 == 1),?_,fun hq' e' he' => ?_,fun hq' => ?_⟩
   · by_cases hlt : e' < 4*g
     · exact L.keepRed hP13 (by vlay) (h.va.red e' hlt)
@@ -139,7 +139,7 @@ theorem vcall4_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF :
     vrel_of (Q := fun x y => VTwo p S x y ∧ bytesAt x.mem (pa x (sc oSA4)) 136 = bytesAt y.mem (pa y (sc oSA4)) 136) ?_
       (fun _ _ _ _ hp hp' hq h h' => ⟨vc_two hF hp hp' hq h.va.vz.vc h'.va.vz.vc,by
         rw [h.seeds,h'.seeds]; simp only [seedOf,(vPub_eq hq).2.1]⟩)⟩
-  have hc : rej4Chk (vR p) (vW p) (sc oSA4) (aP (4*g)) (sc (oR4 p)) = true := by unfold rej4Chk; vlay
+  have hc : rej4Chk (vR p) (vW p) (sc oSA4) (aP (4*g)) (sc (oR4 p)) = true := by unfold rej4Chk; vlayd
   have ok := fun x (L : Lay S (vR p) (vW p) x) => WP.mono (rej4At_ok hP.s64 hP.rej4 L hc)
     fun _ h => (⟨_,h.1⟩ : ∃ W,PostB S x _ W)
   have tail : RelCT isa (VTwo p S) (.seq (.block and24) (mask4 (aP (4*g)))) fun _ _ => True := by

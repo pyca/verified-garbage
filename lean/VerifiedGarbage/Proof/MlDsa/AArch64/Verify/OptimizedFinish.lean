@@ -50,8 +50,8 @@ theorem cmp_vpiece {S : Nat} {p : Params} (hF : VFacts p) :
     fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, _, h₁, _⟩ ⟨_, _, _, _, h₂, _⟩ => vc_two hF p₁ p₂ pub h₁.vc h₂.vc⟩
   have L := hs.vc.lay hF hp
   have := hF.ct.2; have := hF.sig; have := hF.scr; have := hF.k; have := hF.l; have := hF.kl
-  refine WP.mono (cmpAnd_ok L (by omega) (by omega) (by vlay) (by vlay)) fun s' ⟨hP', x'⟩ => ⟨?_, ?_⟩
-  · exact hs.vc.step hF hp hP' (by unfold vcChk; vlay)
+  refine WP.mono (cmpAnd_ok L (by omega) (by omega) (by vlayd) (by vlayd)) fun s' ⟨hP', x'⟩ => ⟨?_, ?_⟩
+  · exact hs.vc.step hF hp hP' (by unfold vcChk; vlayd)
   · rw [hH, ctOf_eq hF hs.vc, hs.x24] at x'
     have e : s'.gpr .x24 = flag (q = true ∧ Spec.MlDsa.H (vMu σ ++ w1Enc p σ h A' c0) p.ctildeLen = ctOf p σ) := by
       rw [x', and_flag (P := q = true)
