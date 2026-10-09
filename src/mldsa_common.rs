@@ -561,7 +561,8 @@ mod tests {
     // Compare both key constructors with the original raw-key entry. In
     // SHA3-enabled test runs the wrapper takes the cached-digest path.
     macro_rules! cached_verification_matches_raw {
-        ($test:ident, $module:ident, $signing:ident, $verifying:ident, $raw:ident, $scratch:literal) => {
+        ($test:ident, $module:ident, $signing:ident, $verifying:ident, $raw:ident,
+         $raw_sha3:ident, $raw_sha3_features:ident, $scratch:literal) => {
             #[test]
             fn $test() {
                 use crate::$module::{Error, $signing, $verifying};
@@ -593,6 +594,26 @@ mod tests {
                                         &mut scratch,
                                     )
                                 };
+                                #[cfg(target_arch = "aarch64")]
+                                if crate::cpu::detected()
+                                    .contains(crate::arch::$module::$raw_sha3_features)
+                                {
+                                    // SAFETY: the buffers have the generated sizes,
+                                    // and the accelerated entry's CPU requirements
+                                    // were checked above. The raw call has finished.
+                                    let accelerated = unsafe {
+                                        crate::arch::$module::$raw_sha3(
+                                            vk.as_bytes(),
+                                            msg.as_ptr(),
+                                            msg.len(),
+                                            ctx.as_ptr(),
+                                            ctx.len(),
+                                            &candidate,
+                                            &mut scratch,
+                                        )
+                                    };
+                                    assert_eq!(accelerated, raw);
+                                }
                                 let expected = if raw == 1 {
                                     Ok(())
                                 } else {
@@ -613,6 +634,8 @@ mod tests {
         SigningKey44,
         VerifyingKey44,
         vg_mldsa44_verify_message,
+        vg_mldsa44_verify_message_sha3,
+        VG_MLDSA44_VERIFY_MESSAGE_SHA3_FEATURES,
         9856
     );
     cached_verification_matches_raw!(
@@ -621,6 +644,8 @@ mod tests {
         SigningKey65,
         VerifyingKey65,
         vg_mldsa65_verify_message,
+        vg_mldsa65_verify_message_sha3,
+        VG_MLDSA65_VERIFY_MESSAGE_SHA3_FEATURES,
         13056
     );
     cached_verification_matches_raw!(
@@ -629,6 +654,8 @@ mod tests {
         SigningKey87,
         VerifyingKey87,
         vg_mldsa87_verify_message,
+        vg_mldsa87_verify_message_sha3,
+        VG_MLDSA87_VERIFY_MESSAGE_SHA3_FEATURES,
         18176
     );
 

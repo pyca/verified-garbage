@@ -207,10 +207,10 @@ fn signed_add_norm_matches_canonical_composition() {
             } else {
                 rejected += 1;
             }
-            for i in 0..256 {
-                let signed = output.coefficients[i] as i32;
+            for (&coefficient, &expected) in output.coefficients.iter().zip(&reference) {
+                let signed = coefficient as i32;
                 assert!(signed > -(Q as i32) && signed < Q as i32);
-                assert_eq!(canonical_signed(output.coefficients[i]), reference[i]);
+                assert_eq!(canonical_signed(coefficient), expected);
                 if actual == 1 {
                     assert!(signed.unsigned_abs() < bound);
                 }
@@ -449,5 +449,70 @@ fn signed_hint_norm_matches_canonical_composition() {
             low.check_guards();
         }
         assert!(accepted > 0 && rejected > 0 && hints_seen > 0);
+    }
+}
+
+#[test]
+fn rejection_samplers_match_scalar_and_sha3() {
+    use crate::arch::mldsa::{
+        VG_MLDSA_REJ_BOUNDED_POLY_SHA3_FEATURES, VG_MLDSA_REJ_NTT_POLY_SHA3_FEATURES,
+        vg_mldsa_rej_bounded_poly, vg_mldsa_rej_bounded_poly_sha3, vg_mldsa_rej_ntt_poly,
+        vg_mldsa_rej_ntt_poly_sha3,
+    };
+    let required = crate::cpu::Features::all(&[
+        VG_MLDSA_REJ_BOUNDED_POLY_SHA3_FEATURES,
+        VG_MLDSA_REJ_NTT_POLY_SHA3_FEATURES,
+    ]);
+    if !crate::cpu::detected().contains(required) {
+        return;
+    }
+    for case in 0u8..32 {
+        let seed: [u8; 66] =
+            core::array::from_fn(|i| case.wrapping_add((i as u8).wrapping_mul(17)));
+        let matrix_seed: [u8; 34] = seed[..34].try_into().unwrap();
+        let mut scalar = GuardedPoly::new([u32::MAX; 256]);
+        let mut accelerated = GuardedPoly::new([u32::MAX; 256]);
+        let mut scratch = [0u64; 256];
+        // SAFETY: feature requirements were checked above. Each call has
+        // correctly sized disjoint buffers, and the previous call has finished.
+        let (left, right) = unsafe {
+            (
+                vg_mldsa_rej_ntt_poly(&matrix_seed, &mut scalar.coefficients, &mut scratch),
+                vg_mldsa_rej_ntt_poly_sha3(
+                    &matrix_seed,
+                    &mut accelerated.coefficients,
+                    &mut scratch,
+                ),
+            )
+        };
+        assert_eq!(left, right);
+        assert_eq!(scalar.coefficients, accelerated.coefficients);
+        scalar.check_guards();
+        accelerated.check_guards();
+        for eta in [2, 4] {
+            // SAFETY: the same buffer and CPU conditions hold, and eta is one
+            // of the two values allowed by the bounded-sampler contract.
+            let (left, right) = unsafe {
+                (
+                    vg_mldsa_rej_bounded_poly(&seed, eta, &mut scalar.coefficients, &mut scratch),
+                    vg_mldsa_rej_bounded_poly_sha3(
+                        &seed,
+                        eta,
+                        &mut accelerated.coefficients,
+                        &mut scratch,
+                    ),
+                )
+            };
+            assert_eq!(left, right);
+            assert_eq!(scalar.coefficients, accelerated.coefficients);
+            assert!(
+                scalar
+                    .coefficients
+                    .iter()
+                    .all(|&x| x <= eta || (Q - eta..Q).contains(&x))
+            );
+            scalar.check_guards();
+            accelerated.check_guards();
+        }
     }
 }

@@ -23,8 +23,7 @@ include ha hp hs h7 h8 h9 h15 h16 h17 h18 h19 h20 hn hno hdot hchecks hcanon in
 theorem optimizedSign_dle : DLe 1 (Impl.MlDsa.AArch64.Sign.Optimized.signWith c P p
     (Impl.MlDsa.AArch64.Sign.Optimized.checks p)) := by
   unfold Impl.MlDsa.AArch64.Sign.Optimized.signWith
-  repeat' (first | (with_reducible assumption) | (apply DLe.call; with_reducible assumption) | apply DLe.seq |
-    apply DLe.ite | apply DLe.loop | (apply DLe.seqR; intro) | apply DLe.block)
+  dle_tac
   all_goals unfold Impl.MlDsa.AArch64.Sign.Optimized.masks
   all_goals split <;> dle_tac
 end

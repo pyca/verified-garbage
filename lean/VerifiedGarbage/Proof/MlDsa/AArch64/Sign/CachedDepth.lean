@@ -38,9 +38,7 @@ theorem cachedSignWith_dle (v : Proof.Sha3.AArch64.Permutation)
   have hn : DLe 1 Impl.MlDsa.AArch64.Optimized.Response.canonicalize := ⟨by decide +kernel⟩
   unfold Impl.MlDsa.AArch64.Sign.Cached.signWith
   unfold Impl.MlDsa.AArch64.Sign.CachedMatrix.expandA
-  split <;>
-  repeat' (first | (with_reducible assumption) | (apply DLe.call; with_reducible assumption) |
-    apply DLe.seq | apply DLe.ite | apply DLe.loop | (apply DLe.seqR; intro) | apply DLe.block)
+  split <;> dle_tac
 
 theorem cachedPairedSignWith_dle (v : Proof.Sha3.AArch64.Permutation)
     {p : Spec.MlDsa.Params} (hp : p=Spec.MlDsa.mlDsa65∨p=Spec.MlDsa.mlDsa87) :

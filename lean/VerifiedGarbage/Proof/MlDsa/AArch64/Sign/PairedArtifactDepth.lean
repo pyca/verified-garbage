@@ -14,7 +14,6 @@ theorem pairedChecks_dle (p : Spec.MlDsa.Params) :
   have ph : DLe 1 (Impl.MlDsa.AArch64.Optimized.Paired.selected .h) := ⟨by decide +kernel⟩
   unfold Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks
   dle_tac
-  all_goals split <;> dle_tac
 
 theorem pairedSignWith_dle (v : Proof.Sha3.AArch64.Permutation)
     {p : Spec.MlDsa.Params} (hp3 : Sign.Ok3 p) :
@@ -31,7 +30,6 @@ theorem pairedSignWith_dle (v : Proof.Sha3.AArch64.Permutation)
   have hhp := DLe.of_fd C.hintBitPack.fd
   have hn : DLe 1 Impl.MlDsa.AArch64.Optimized.Response.canonicalize := ⟨by decide +kernel⟩
   unfold Impl.MlDsa.AArch64.Sign.Optimized.signWith
-  repeat' (first | (with_reducible assumption) | (apply DLe.call; with_reducible assumption) |
-    apply DLe.seq | apply DLe.ite | apply DLe.loop | (apply DLe.seqR; intro) | apply DLe.block)
+  dle_tac
 
 end VG.Proof.MlDsa.AArch64.Message

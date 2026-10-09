@@ -143,11 +143,11 @@ theorem rej_vpiece : VPiece p S (VA1 p e) (VA2 p e) (rejNttAt P (sc oSS) (sc oSA
   have hc := rej_chk hF he
   refine ⟨fun σ s hp h => ?_, vrel_of (Q := fun x y => VTwo p S x y ∧
     bytesAt x.mem (pa x (sc oSA)) 34 = bytesAt y.mem (pa y (sc oSA)) 34)
-    (rejNttAt_tr hP.rejNtt (vOk p) hc fun x y h => ⟨h.1.lx, h.1.ly, h.2, h.1.same⟩)
+    (rejNttInline_tr hP.rejNtt (vOk p) hc fun x y h => ⟨h.1.lx, h.1.ly, h.2, h.1.same⟩)
     fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨vc_two hF p₁ p₂ pub h₁.1.vz.vc h₂.1.vz.vc, by
       rw [h₁.2, h₂.2, seedOf, seedOf, (vPub_eq pub).2.1]⟩⟩
   have L := h.1.vz.vc.lay hF hp
-  refine WP.mono (rejNttAt_ok hP.s64 hP.rejNtt L hc) fun s' ⟨hP', x', hred, hout⟩ => ?_
+  refine WP.mono (rejNttInline_ok hP.s64 hP.rejNtt L hc) fun s' ⟨hP', x', hred, hout⟩ => ?_
   rw [h.2] at hout
   have e' : pa s' (aP e) = pa s (aP e) := sc_pa hP' _
   refine ⟨h.1.keep hF hp hP' (by vachk hF) x', fun h1 => by rw [e']; exact hred h1, by rw [e']; exact hout⟩

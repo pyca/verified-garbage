@@ -48,12 +48,15 @@ end
 /-- `DLe` of code from its structure, given that of the functions it calls. -/
 macro "dle_tac" : tactic =>
   `(tactic| repeat' (first
+    | (with_reducible assumption)
     | (apply DLe.call; assumption)
     | apply DLe.seq
     | apply DLe.ite
     | apply DLe.loop
     | (apply DLe.seqR; intro)
-    | apply DLe.block))
+    | apply DLe.block
+    | (dsimp only [Impl.MlDsa.AArch64.Sign.rejCallAt,
+        Impl.MlDsa.AArch64.Sign.maskAt, Impl.MlDsa.AArch64.Sign.maskCallAt, Impl.MlDsa.AArch64.Sign.masks]; split)))
 
 end VG.Proof.MlDsa.AArch64.Message
 
@@ -73,8 +76,6 @@ include ha hp hs h1 h2 h3 h4 h5 h6 h7 h8 h9 h11 h12 h13 h15 h16 h17 h18 h19 h20 
 theorem sign_dle : DLe 1 (Impl.MlDsa.AArch64.Sign.signWith c P p) := by
   unfold Impl.MlDsa.AArch64.Sign.signWith
   dle_tac
-  unfold Impl.MlDsa.AArch64.Sign.masks
-  split <;> dle_tac
 end
 
 section

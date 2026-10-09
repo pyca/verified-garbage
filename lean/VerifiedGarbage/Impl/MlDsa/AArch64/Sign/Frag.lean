@@ -122,13 +122,28 @@ def addAt (f g : Ptr) : Prog isa := callAt "vg_mldsa_add" P.add [(.x0, .ptr f), 
 
 def subAt (f g : Ptr) : Prog isa := callAt "vg_mldsa_sub" P.sub [(.x0, .ptr f), (.x1, .ptr g)]
 
+/-- The baseline matrix tail embeds the scalar sampler; the paired backend
+retains its named scalar tail wherever a single polynomial remains. -/
+def rejCallAt (a : Ptr) : Prog isa :=
+  let args := [(.x0, .ptr (sc oRS)), (.x1, .ptr a), (.x2, .ptr (sc oPS))]
+  if P.pairedMask then callAt ("vg_mldsa_rej_ntt_poly" ++ P.suffix) P.rejNTT args
+  else .seq (.block (glue args)) P.rejNTT
+
 /-- `RejNTTPoly` of the seed at `RS` to `a`, and `x24 ← x24 ∧ result`. -/
 def rejAt (a : Ptr) : Prog isa :=
-  .seq (callAt ("vg_mldsa_rej_ntt_poly" ++ P.suffix) P.rejNTT [(.x0, .ptr (sc oRS)), (.x1, .ptr a), (.x2, .ptr (sc oPS))]) (.block and24)
+  .seq (rejCallAt P a) (.block and24)
+
+/-- The scalar fallback embeds its verified sampler body. The paired backend
+retains a single-sample call for an odd tail; its even samples use the paired
+sampler. Inlining avoids a separate scalar call in the fallback's hot loop. -/
+def maskCallAt (seed : Ptr) (gamma1 : Nat) (a scratch : Ptr) : Prog isa :=
+  let args := [(.x0, .ptr seed), (.x1, .imm gamma1), (.x2, .ptr a), (.x3, .ptr scratch)]
+  if P.pairedMask then callAt ("vg_mldsa_expand_mask_poly" ++ P.suffix) P.expandMask args
+  else .seq (.block (glue args)) P.expandMask
 
 /-- A polynomial of `ExpandMask` from the seed at `MS` to `a`. -/
 def maskAt (gamma1 : Nat) (a : Ptr) : Prog isa :=
-  callAt ("vg_mldsa_expand_mask_poly" ++ P.suffix) P.expandMask [(.x0, .ptr (sc oMS)), (.x1, .imm gamma1), (.x2, .ptr a), (.x3, .ptr (sc oPS))]
+  maskCallAt P (sc oMS) gamma1 a (sc oPS)
 
 /-- `SampleInBall` of the `len` bytes at `CT` to `c`. -/
 def ballAt (len tau : Nat) (c : Ptr) : Prog isa :=
