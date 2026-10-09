@@ -78,6 +78,7 @@ mod pbkdf2_sha512;
 mod pbkdf2_sha512_224;
 mod pbkdf2_sha512_256;
 mod poly1305;
+mod probe;
 mod rc2_cbc;
 mod rc4;
 mod rsa;
@@ -407,6 +408,7 @@ const BENCHES: &[Bench] = &[
     (ecdh_secp256k1::USES, ecdh_secp256k1::bench),
     (ecdh_p256::USES, ecdh_p256::bench),
     (ecdh_p384::USES, ecdh_p384::bench),
+    (probe::USES, probe::bench),
     (ecdh_p521::USES, ecdh_p521::bench),
 ];
 
