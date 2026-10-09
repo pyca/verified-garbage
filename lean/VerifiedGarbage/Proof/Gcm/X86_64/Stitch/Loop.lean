@@ -153,7 +153,9 @@ theorem body_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf 
   have lk : ∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → r ∉ gRegs → ∀ l < 2, s'.lane r l = s.lane r l :=
     fun r h13 h14 ha' hg' l hl => by
       rw [fl r l, hl₃ r h13 h14 ha' hg' l hl, hl₂ r h13 h14 ha' hg' l hl,
-        f₁.lane r (by simp only [gRegs, List.mem_cons, not_or] at hg' ⊢; simp_all) l hl]
+        f₁.lane r (fun h => hg' (by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+          rcases h with rfl | rfl | rfl <;> decide)) l hl]
   have hA' : AInv s₀ (16 * (e + 1)) s' := by
     rw [show 16 * (e + 1) = 16 * e + 8 + 8 by omega]
     exact ⟨hA₃.le, fun l hl => by rw [fl]; exact hA₃.ctr l hl, fun l hl => by rw [fl]; exact hA₃.msk l hl,
