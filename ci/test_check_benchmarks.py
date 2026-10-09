@@ -285,6 +285,81 @@ class Selection(unittest.TestCase):
         with mock.patch.object(planner, 'read', self.read):
             self.assertFalse(planner.test_only('unknown', 'base'))
 
+    def test_external_test_file_uses_its_parent_gate_and_path(self):
+        # #1417: the file's name differs from its module, and its test gate
+        # also restricts the architecture. Its own items have no cfg(test).
+        self.files.update({
+            'src/mldsa_common.rs': '#[cfg(all(test, target_arch = "aarch64"))]\n'
+                                   '#[path = "mldsa_fused_tests.rs"]\nmod fused_tests;\n',
+            'src/mldsa_fused_tests.rs': '#[test]\nfn fused() {}\n',
+        })
+        self.assertEqual(self.rows(['src/mldsa_fused_tests.rs']), [])
+        self.base_files.update(self.files)
+        self.files['src/mldsa_fused_tests.rs'] += '#[test]\nfn another() {}\n'
+        self.assertEqual(self.rows(['src/mldsa_fused_tests.rs']), [])
+        # Removing the file and declaration also needs no benchmark.
+        del self.files['src/mldsa_fused_tests.rs']
+        self.files['src/mldsa_common.rs'] = ''
+        self.assertEqual(self.rows(['src/mldsa_fused_tests.rs']), [])
+
+    def test_external_test_gate_must_exclude_production_at_both_revisions(self):
+        path = '#[path = "separate_tests.rs"]\nmod tests;\n'
+        self.files.update({'src/old.rs': '#[cfg(test)]\n' + path,
+                           'src/separate_tests.rs': '#[test]\nfn a() {}\n'})
+        self.base_files.update(self.files)
+        for gate in ['', '#[cfg(any(test, feature = "extra"))]\n',
+                     '#[cfg(not(test))]\n', '#[cfg(target_arch = "aarch64")]\n']:
+            for revision in [self.files, self.base_files]:
+                with self.subTest(gate=gate, base=revision is self.base_files):
+                    revision['src/old.rs'] = gate + path
+                    self.assertEqual(len(self.rows(['src/separate_tests.rs'])), self.full_matrix())
+                    revision['src/old.rs'] = '#[cfg(test)]\n' + path
+
+    def test_external_file_with_production_alias_keeps_benchmarks(self):
+        self.files.update({
+            'src/old.rs': '#[cfg(test)]\n#[path = "shared.rs"]\nmod tests;\n',
+            'src/other.rs': '#[path = "shared.rs"]\nmod helper;\n',
+            'src/shared.rs': 'fn helper() {}\n',
+        })
+        self.assertEqual(len(self.rows(['src/shared.rs'])), self.full_matrix())
+
+    def test_deleted_production_alias_keeps_base_benchmarks(self):
+        self.files.update({'src/old.rs': '#[cfg(test)]\n#[path = "shared.rs"]\nmod tests;\n',
+                           'src/shared.rs': 'fn helper() {}\n'})
+        self.base_files.update(self.files)
+        self.base_files['src/removed.rs'] = '#[path = "shared.rs"]\nmod helper;\n'
+        self.assertEqual(len(self.rows(['src/shared.rs', 'src/removed.rs'])), self.full_matrix())
+
+    def test_unresolved_path_alias_keeps_benchmarks(self):
+        self.files.update({
+            'src/old.rs': '#[cfg(test)]\n#[path = "shared.rs"]\nmod tests;\n',
+            'src/shared.rs': 'fn helper() {}\n',
+        })
+        for alias in ['mod inline {\n#[path = "../shared.rs"]\nmod helper;\n}\n',
+                      'mod inline {\nmod helper;\n}\n',
+                      '#[cfg_attr(feature = "extra", path = "shared.rs")]\nmod helper;\n']:
+            with self.subTest(alias=alias):
+                self.files['src/other.rs'] = alias
+                self.assertEqual(len(self.rows(['src/shared.rs'])), self.full_matrix())
+
+    def test_external_test_paths_are_relative_and_support_default_modules(self):
+        self.files.update({
+            'src/old.rs': '#[cfg(all(\n    test,\n    feature = "extra",\n))]\nmod tests;\n',
+            'src/old/tests.rs': '#[test]\nfn a() {}\n',
+            'src/other/mod.rs': '#[cfg(test)]\n#[path = "../renamed.rs"]\nmod tests;\n',
+            'src/renamed.rs': '#[test]\nfn b() {}\n',
+        })
+        self.assertEqual(self.rows(['src/old/tests.rs', 'src/renamed.rs']), [])
+
+    def test_module_like_literals_and_inline_modules_do_not_exclude_files(self):
+        fake = '#[cfg(test)]\n#[path = "shared.rs"]\nmod tests;\n'
+        self.files['src/shared.rs'] = 'fn helper() {}\n'
+        for parent in ['const S: &str = r#"\n' + fake + '"#;\n',
+                       'mod inline {\n' + fake + '}\n']:
+            with self.subTest(parent=parent):
+                self.files['src/old.rs'] = parent
+                self.assertEqual(len(self.rows(['src/shared.rs'])), self.full_matrix())
+
     def test_private_helpers_select_the_modules_using_them(self):
         self.files.update({
             'src/lib.rs': 'mod ct;\npub mod argon2;\n#[cfg(test)]\nmod argon2_tests;\nmod unused;\n',
