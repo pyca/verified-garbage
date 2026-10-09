@@ -61,7 +61,9 @@ theorem absorbPair_ok (s : VG.AArch64.State) (i : Nat) (hi : i < 12)
   unfold absorbPair
   refine WP.cons (exec_ldrq ⟨by omega,by omega⟩ hin)
     (WP.cons rfl (WP.cons rfl (WP.cons rfl (wp_nil ?_))))
-  refine ⟨⟨rfl,rfl,rfl,rfl,rfl⟩,fun j hj => ?_⟩
+  -- The fields through the writes' lemmas: `rfl` would unify the states first.
+  refine ⟨⟨by simp only [RegUpd.gpr_setV], by simp only [RegUpd.mem_setV], by simp only [RegUpd.rd_setV],
+    by simp only [RegUpd.wr_setV], by simp only [RegUpd.sp_setV]⟩, fun j hj => ?_⟩
   have he := state_not_temps (2*i) (by omega)
   have ho := state_not_temps (2*i+1) (by omega)
   have hd : vreg (2*i+1) ≠ vreg (2*i) := by
