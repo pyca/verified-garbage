@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.P521.Point
 import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumP
+import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumN
 
 /-!
 # ECDSA over P-521 on x86 (32-bit): `Verified`
@@ -146,21 +148,6 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : signX86.pre s₁) (h₂ : signX86.p
     · exact congrArg _ a2
     · exact congrArg _ a3
     · exact congrArg _ a4
-
-/-- What is public on entry to every call of the multiplications: the stack
-pointer and the four words of its arguments' frame, below the return
-address. Their calls are entered from several taints (with more public:
-registers, the flags, or the slots of a table in the working space), each
-analysing the body again in full; the summaries analyse each once. -/
-def τMul : VG.X86.Taint.T :=
-  { regs := ⟨215⟩, flags := false, lens := [16, 132, 8192], bases := [(.edi, 2, 0), (.esp, 0, 4)],
-    slots := [(0, 12, 4), (0, 8, 4), (0, 4, 4), (0, 0, 4)], wbases := [(0, 0, 2)], argLen := 24,
-    argBases := [(4, 1), (20, 2)], stk := [none, some 16], room := 20 }
-
-taint_summary mulPSum : taint τMul
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p521p.k Spec.Weierstrass.Mont.p521p.m)
-taint_summary mulNSum : taint τMul
-  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p521n.k Spec.Weierstrass.Mont.p521n.m)
 
 theorem sign_ct : ConstantTime isa signX86.pre signX86.pub signP521 := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ signP521 h).isSome = true := by taint_decide_sum [mulPSum, mulNSum]

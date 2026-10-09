@@ -1,5 +1,8 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
-import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFrontCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMidCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombTailCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFinalCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPointTail
 
 namespace VG.Proof.Ecdsa.Verify.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Mont.X86 VG.Proof.Mont
@@ -8,46 +11,6 @@ open VG.Proof.Ecdsa.X86
 open VG.Impl.Ecdsa.Verify.X86
 
 variable {c : Impl.Ecdsa.X86.Cfg}
-
-def vFrontCode : Prog isa := Impl.Ecdsa.Verify.X86.Cfg.combFront p256Comb
-def vMidCode : Prog isa := Impl.Ecdsa.Verify.X86.Cfg.combMid p256Comb
-def vBitsCode : Prog isa := Impl.Weierstrass.X86.bits (p256Comb.sl U) (bitsAt p256Comb.n 0) (8 * p256Comb.n)
-def vPointTailCode : Prog isa :=
-  .seq (.block (Impl.Ecdsa.Verify.X86.Cfg.save p256Comb)) <|
-  .seq (Impl.Ecdsa.Verify.X86.Cfg.windowMulQ p256Comb)
-    (Impl.Ecdsa.Verify.X86.Cfg.sum p256Comb)
-def vFinalCode : Prog isa := Impl.Ecdsa.Verify.X86.Cfg.tail p256Comb
-materialize_code vFrontCode
-materialize_code vMidCode
-materialize_code vBitsCode
-materialize_code vPointTailCode
-materialize_code vFinalCode
-
-/-- The front starts at the function's entry: its arguments public, the
-fourth the base of the working space, and the calls' stack below. -/
-def vFrontτ : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [8192], argLen := 20, argBases := [(16, 0)],
-    room := 20 }
-
-theorem vFront_rel : RelCT isa (VG.X86.Taint.Agree vFrontτ) vFrontCode (fun _ _ => True) :=
-  RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
-theorem vMid_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vMidCode (fun _ _ => True) :=
-  RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
-theorem vBits_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp, .edi] 4)) vBitsCode (fun _ _ => True) :=
-  RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
-def vSaveCode : Prog isa := .block (Impl.Ecdsa.Verify.X86.Cfg.save p256Comb)
-def vSumCode : Prog isa := Impl.Ecdsa.Verify.X86.Cfg.sum p256Comb
-materialize_code vSaveCode
-materialize_code vSumCode
-
-theorem vSave_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vSaveCode
-    (fun _ _ => True) :=
-  RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
-theorem vSum_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vSumCode
-    (fun _ _ => True) :=
-  RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
-theorem vFinal_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vFinalCode (fun _ _ => True) :=
-  RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
 
 theorem vFrontWf {s : State} {extra : List Region} (hp : VPre c s extra) : VG.X86.Taint.Wf vFrontτ s := by
   have hsc := hp.sc_fit; have hs := hp.sp_fit
