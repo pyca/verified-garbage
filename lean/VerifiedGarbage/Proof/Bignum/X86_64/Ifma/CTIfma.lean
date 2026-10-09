@@ -139,7 +139,7 @@ theorem head_ct : RelCT isa (Two HdPre) (.block (([.mov .rdx (.mem (hdr sWsQ))] 
     refine WP.mono (WP.keep [.rdx] (Q := fun u => u.gpr .rdx = off p.B p.op ∧ u.mem = t₂.mem) (by
       xrun [State.ea, hdr, hdi₂, hdrOff, (hs.congr k12.2.2).ld (d := 8 * sWsP) (by unfold sWsP sFn; omega_arith)]
       rw [me₂, me]; exact hsp) rfl) fun u ⟨⟨dx', me'⟩, k'⟩ =>
-        ⟨s, h, dx', by rw [k'.gpr (by decide)]; exact ax₂, me'.trans (me₂.trans me), (k12.trans k').mono (by simp)⟩
+        ⟨s, h, dx', by rw [k'.gpr (by decide)]; exact ax₂, me'.trans (me₂.trans me), (k12.trans k').mono (by decide)⟩
   · rintro p t ⟨s, h, dx, ax, me, k⟩
     have h' := h
     obtain ⟨minv, mq, hg, hlo, hpq, haZ, hsp, hsq, hwsq⟩ := h'
@@ -162,7 +162,7 @@ theorem head_ct : RelCT isa (Two HdPre) (.block (([.mov .rdx (.mem (hdr sWsQ))] 
     refine WP.mono (WP.keep [.rdx] (Q := fun u => u.gpr .rdx = off p.B p.oq ∧
       u.mem = s.mem.writeW (off (off p.B p.op) (8 * sIfma)) (off (off p.B p.oq) (slot p.wx 8 + tabBytes p.wx))) (by
         xrun [State.ea, hdr, ws, hdi, dx, ax, me, hdrOff, hst, hl, hq']) rfl) fun u ⟨⟨dx', me'⟩, k'⟩ =>
-      ⟨s, h, dx', by rw [k'.gpr (by decide)]; exact ax, me', (k.trans k').mono (by simp)⟩
+      ⟨s, h, dx', by rw [k'.gpr (by decide)]; exact ax, me', (k.trans k').mono (by decide)⟩
 
 /-! ## The vector code -/
 

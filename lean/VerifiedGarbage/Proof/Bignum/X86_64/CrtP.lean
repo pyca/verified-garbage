@@ -219,7 +219,7 @@ theorem hTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mx : BitVec 64} 
     intro j hj; simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl <;> decide) k₆.2.2 (k₆.gpr (by decide)) (by omega_arith)
   have kall := (((k₃.trans k₄).trans k₅).trans k₆)
-  refine ⟨hc₆, hX₆, hlt₆, fun hct => ?_, ((fx₃.trans fx₄).trans fx₅).trans fx₆, kall.mono (by simp [mmRegs]),
+  refine ⟨hc₆, hX₆, hlt₆, fun hct => ?_, ((fx₃.trans fx₄).trans fx₅).trans fx₆, kall.mono (by decide),
     (k₆.gpr (by decide)).trans ((k₅.gpr (by decide)).trans ((k₄.gpr (by decide)).trans (k₃.gpr (by decide))))⟩
   simp only [hm₆, hT₅, hT₃, hq₅, hq₄, hct, ↓reduceIte]
 

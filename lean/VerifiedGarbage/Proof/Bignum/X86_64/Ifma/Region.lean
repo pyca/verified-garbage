@@ -70,7 +70,7 @@ theorem arr52_ok (hl : LayOk l) {s : State} {W A Aj : Addr} {p j o : Nat} (hdi :
   refine WP.mono (to52_ok hl si r11 r12 (fun i hi => by rw [k.2.1, k.2.2]; exact hrd i hi)
     (fun i hi => by rw [k.2.2]; exact hwr i hi) hsep) fun s' ⟨v, o', k', x'⟩ => ?_
   rw [me] at v o'
-  exact ⟨v, o', (k.trans k').mono (by simp), by rw [k'.gpr (by decide)]; exact r12, x'.trans mx⟩
+  exact ⟨v, o', (k.trans k').mono (by decide), by rw [k'.gpr (by decide)]; exact r12, x'.trans mx⟩
 
 /-! ## `k₀`, zeros and the last multiplier -/
 
@@ -247,7 +247,7 @@ theorem cpStep_ok {s₀ t : State} {C ep : Addr} {L : Nat} {eb : List Byte} {hL 
           omega_arith
       · rw [setWidth_byte']
       · rfl) rfl) fun t' ⟨⟨si, di, cx, zf, me, mx⟩, k⟩ => ⟨zf, si, di, cx, fun i hiL hi => ?_, ?_,
-        (hI.keep.trans k).mono (by simp), mx.trans hI.mx⟩
+        (hI.keep.trans k).mono (by decide), mx.trans hI.mx⟩
   · have ow := writeB_outside t.mem C (d := j) (eb[j]'(by omega_arith)) (by omega_arith)
     rw [me]
     by_cases e : i = j
@@ -296,7 +296,7 @@ theorem eCopy_ok {s : State} {W B C ep : Addr} {L sp sl : Nat} {eb : List Byte} 
     (fun j t => CpInv s₁ t (off C (l.oE + l.E - L)) ep L eb hL j)
     (fun j _ hj t hI => cpStep_ok hj (by omega_arith) hI (fun i hi => by rw [k.2.1, k.2.2]; exact hrd i hi)
       (fun i hi => by rw [me]; exact hval i hi) (fun i hi => by rw [k.2.2]; exact hwr i hi) hsep)
-    (fun t hI => ⟨fun i hi => hI.bytes i hi hi, by rw [← me]; exact hI.out, (k.trans hI.keep).mono (by simp),
+    (fun t hI => ⟨fun i hi => hI.bytes i hi hi, by rw [← me]; exact hI.out, (k.trans hI.keep).mono (by decide),
       hI.mx.trans mx⟩) ⟨by rw [e0]; exact si, by rw [e0]; exact di, by rw [Nat.sub_zero]; exact cx,
       fun _ _ h => absurd h (Nat.not_lt_zero _), Outside.refl _ _ _ _, VG.Proof.MlKem.X86_64.Keep.refl _ _, rfl⟩
 
@@ -729,10 +729,10 @@ theorem regionB0_ok (hl : LayOk l) {u : State} {B : Addr} {Z o a sp sl : Nat} {m
   refine WP.seq (WP.mono (k0r_ok hl c₁.scr c₁.rdi c₁.hdr c₁.ia hoa haZ (p := 0) (by decide) r12₁)
     fun u₂ ⟨hk, f₂, r11₂, k₂⟩ => ?_)
   have c₂ := c₁.of_frm f₂ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_arith) hoa (by omega_arith)
-    hsp hsl (k₂.mono (by simp))
+    hsp hsl (k₂.mono (by decide))
   refine WP.mono (eZr_ok hl c₂.scr haZ (p := 0) (by decide) r11₂) fun u₃ ⟨hz, f₃, _, k₃⟩ => ?_
   have c₃ := c₂.of_frm f₃ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_arith) hoa (by omega_arith)
-    hsp hsl (k₃.mono (by simp))
+    hsp hsl (k₃.mono (by decide))
   have r11₃ : u₃.gpr .r11 = off (off B a) (l.D * 0) := by rw [k₃.gpr (by decide)]; exact r11₂
   refine WP.mono (eCr_ok hl c₃.scr c₃.rdi c₃.lk hoa haZ (p := 0) (by decide) hsp hsl c₃.pv c₃.lv c₃.src rfl hL1 hL2
     r11₃) fun u' ⟨hb, f₄, k₄⟩ => ?_
@@ -778,14 +778,14 @@ theorem regionB1_ok (hl : LayOk l) {u : State} {B : Addr} {Z o a sp sl : Nat} {m
   refine WP.seq (WP.mono (k0r_ok hl hc.scr hc.rdi hc.hdr hc.ia hoa haZ (p := 1) (by decide) h12)
     fun u₁ ⟨hk, f₁, r11₁, k₁⟩ => ?_)
   have c₁ := hc.of_frm f₁ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_arith) hoa (by omega_arith)
-    hsp hsl (k₁.mono (by simp))
+    hsp hsl (k₁.mono (by decide))
   refine WP.seq (WP.mono (eZr_ok hl c₁.scr haZ (p := 1) (by decide) r11₁) fun u₂ ⟨hz, f₂, ra₂, k₂⟩ => ?_)
   have c₂ := c₁.of_frm f₂ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_arith) hoa (by omega_arith)
-    hsp hsl (k₂.mono (by simp))
+    hsp hsl (k₂.mono (by decide))
   have r11₂ : u₂.gpr .r11 = off (off B a) (l.D * 1) := by rw [k₂.gpr (by decide)]; exact r11₁
   refine WP.mono (finr_ok hl c₂.scr haZ r11₂ ra₂) fun u₃ ⟨lF, f₃, k₃⟩ => ?_
   have c₃ := c₂.of_frm f₃ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_arith) hoa (by omega_arith)
-    hsp hsl (k₃.mono (by simp))
+    hsp hsl (k₃.mono (by decide))
   have r11₃ : u₃.gpr .r11 = off (off B a) (l.D * 1) := by rw [k₃.gpr (by decide)]; exact r11₂
   refine WP.mono (eCr_ok hl c₃.scr c₃.rdi c₃.lk hoa haZ (p := 1) (by decide) hsp hsl c₃.pv c₃.lv c₃.src rfl hL1 hL2
     r11₃) fun u' ⟨hb, f₄, k₄⟩ => ?_

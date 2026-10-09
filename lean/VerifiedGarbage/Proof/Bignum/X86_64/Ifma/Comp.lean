@@ -292,7 +292,7 @@ theorem ifmaA_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a : Nat} {minv
     hq₃ _ (by decide) (by decide) (by decide) (by decide)] at rq
   refine ⟨m₂.of_frm hl f₄' hlo hpq (by omega_arith) (by omega_arith), rp.of_frm hl f₄ (fun r hr => ?_) (by omega_arith), rq,
     F₂.trans (f₄'.mono fun r hr => List.mem_append_right _ hr), w₄.trans k₁₃.2.2, ?_, d₄,
-    k₁₃.trans k₄ |>.mono (by simp [mmRegs])⟩
+    k₁₃.trans k₄ |>.mono (by decide)⟩
   · rcases List.mem_append.mp hr with hr | hr
     · exact .inr (by have := k1sh_lt oq r hr; omega_arith)
     · rw [List.mem_singleton.mp hr]; exact .inl (by simp only; omega_arith)
@@ -460,7 +460,7 @@ theorem resI_ok (hl : LayOk l) {t : State} {B : Addr} {Z w op oq a : Nat} {minv 
     exact ((f₁.mono (resSh_ifmaR op oq a (.inr rfl))).trans (show Frm B _ t₁.mem t₃.mem by rw [← me₂]; exact f₃.mono (resSh_ifmaR op oq a (.inl rfl))))
   · rw [k₄.2.1, k₃.2.1, k₂.2.1, k₁.2.1]
   · rw [k₄.2.2, k₃.2.2, k₂.2.2, k₁.2.2]
-  · exact (((k₁.trans k₂).trans k₃).trans k₄).mono (by simp [mmRegs])
+  · exact (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)
 
 /-! ## `ifma` -/
 

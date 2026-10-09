@@ -79,7 +79,7 @@ theorem divShift_ok {s : State} {B : Addr} {Z w : Nat} {iQ iR : Nat} (hs : Scr s
   have hc1 : c₁.toNat = wv s.mem B (slot w iQ) w / 2 ^ (64 * w - 1) := by
     rw [← two_mul_div (by omega_arith), ← hv₂, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt hQlt]
     simp
-  refine ⟨(k₅.gpr (by decide)).trans h12₄, ?_, fun hRlt => ?_, ?_, ((k04.trans k₅).mono (by simp))⟩
+  refine ⟨(k₅.gpr (by decide)).trans h12₄, ?_, fun hRlt => ?_, ?_, ((k04.trans k₅).mono (by decide))⟩
   · rw [hQ', ← hv₂, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hQlt]
   · rw [hR'] at hv
     have hc1' : c₁.toNat ≤ 1 := Bool.toNat_le _
@@ -191,7 +191,7 @@ theorem divSub_ok {s : State} {B : Addr} {Z w : Nat} {iR iD iT : Nat} (hs : Scr 
     rw [m₃, (writeW_outside s₂.mem B r (by omega_arith)).wv (by omega_arith) (by omega_arith)]
     exact ho₂.wv (by omega_arith) (by omega_arith)
   refine ⟨(k₄.gpr (by decide)).trans h12₃, (k₄.gpr (by decide)).trans (hb ▸ hb₂), ?_, ?_,
-    (k03.trans k₄).mono (by simp)⟩
+    (k03.trans k₄).mono (by decide)⟩
   · rw [hv, hR₃]
     cases b₂
     · simp only [Bool.false_eq_true, ite_false]
@@ -250,7 +250,7 @@ theorem divBit_ok {s : State} {B : Addr} {Z w k : Nat} {iQ : Nat} {b : Bool} (hs
     fun t ⟨⟨hz, h13t, mt⟩, k₃⟩ => ?_
   have hax : (s₂.gpr .rax).toNat ≤ 1 := by rw [eax]; split <;> omega_arith
   refine ⟨hz, h13t, (k₃.gpr (by decide)).trans ((k₂.gpr (by decide)).trans h12₁), ?_, ?_,
-    (k12.trans k₃).mono (by simp)⟩
+    (k12.trans k₃).mono (by decide)⟩
   · rw [mt, wv_low hw1, wv_low (m := s.mem) hw1, word_writeW_self, add_bit hev hax, eax,
       (writeW_outside s₂.mem B _ (by omega_arith)).wv (Or.inr (by omega_arith)) (by omega_arith), m₂, m₁]
     omega_arith
@@ -305,7 +305,7 @@ theorem divStepCode_ok {s : State} {B : Addr} {Z w k : Nat} {iQ iR iD iT : Nat} 
   simp only [seqs]
   refine WP.mono (divBit_ok (hs.congr k12.2.2) ((k12.gpr (by decide)).trans hdi) h12₂ ((k12.gpr (by decide)).trans h9)
     hbp₂ ((k12.gpr (by decide)).trans h13) ((k12.gpr (by decide)).trans h11) hw1 hw hk hZ hQ hev)
-    fun t ⟨hz, h13t, h12t, hQt, f₃, k₃⟩ => ⟨hz, h13t, h12t, ?_, (k12.trans k₃).mono (by simp [stepRegs]), fun hlt => ?_⟩
+    fun t ⟨hz, h13t, h12t, hQt, f₃, k₃⟩ => ⟨hz, h13t, h12t, ?_, (k12.trans k₃).mono (by decide), fun hlt => ?_⟩
   · intro x hx
     have a := hx (ar w iQ) (by simp)
     have b := hx (ar w iR) (by simp)
@@ -387,7 +387,7 @@ theorem divmod_ok {s : State} {B : Addr} {Z w : Nat} {iQ iR iD iT : Nat} (hs : S
     have kk := (((k12.trans k₃).trans k₄).trans k₅)
     refine ⟨(kk.gpr (by decide)).trans hdi, (((k₂.trans k₃).trans k₄).trans k₅ |>.gpr (by decide)).trans h12,
       (((k₂.trans k₃).trans k₄).trans k₅ |>.gpr (by decide)).trans h9, ((k₃.trans k₄).trans k₅ |>.gpr (by decide)).trans h8,
-      (k₅.gpr (by decide)).trans h11', h13, by rw [m₅, m₄, m₃, m₂, m₁], kk.mono (by simp)⟩
+      (k₅.gpr (by decide)).trans h11', h13, by rw [m₅, m₄, m₃, m₂, m₁], kk.mono (by decide)⟩
   refine WP.seq (WP.mono e₁ fun s₁ ⟨hdi₁, h12₁, h9₁, h8₁, h11₁, h13₁, m₁, k₁⟩ => ?_)
   -- `[r] := 0`.
   refine WP.seq (WP.mono (zeroAccLoop_ok (hs.congr k₁.2.2) h8₁ h12₁ hw1 (by omega_arith) (by omega_arith)) fun s₂ ⟨hz, ho, k₂⟩ => ?_)
@@ -405,14 +405,14 @@ theorem divmod_ok {s : State} {B : Addr} {Z w : Nat} {iQ iR iD iT : Nat} (hs : S
     (fun j _ hj t hI => ?_) (fun t hI => ⟨hI.rdi, hI.frm, hI.keep, fun hD0 => ?_⟩)
     ⟨hs.congr k12.2.2, (k₂.gpr (by decide)).trans hdi₁, (k₂.gpr (by decide)).trans h12₁,
       (k₂.gpr (by decide)).trans h9₁, (k₂.gpr (by decide)).trans h13₁, (k₂.gpr (by decide)).trans h11₁,
-      Frm.of_outside (ho.mono (Nat.le_refl _) (Nat.le_refl _)) (by simp), k12.mono (by simp [stepRegs]),
+      Frm.of_outside (ho.mono (Nat.le_refl _) (Nat.le_refl _)) (by simp), k12.mono (by decide),
       fun _ => by rw [hR₂, hN₂]; rfl⟩
   · have hDt : wv t.mem B (slot w iD) w = wv s.mem B (slot w iD) w :=
       hI.frm.wv_eq (fun r hr => by simp at hr; rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
     refine WP.mono (divStepCode_ok hI.scr hI.rdi hI.r12 hI.r9 hI.r13 hI.r11 hw1 hw hj hZ hQ hR hD hT dQR dQD dQT dRD
       dRT dDT) fun t' ⟨hz', h13', h12', f', k', hv'⟩ => ⟨hz', ?_⟩
     refine ⟨hI.scr.congr k'.2.2, (k'.gpr (by decide)).trans hI.rdi, h12', (k'.gpr (by decide)).trans hI.r9, h13',
-      (k'.gpr (by decide)).trans hI.r11, hI.frm.trans f', (hI.keep.trans k').mono (by simp [stepRegs]), fun hD0 => ?_⟩
+      (k'.gpr (by decide)).trans hI.r11, hI.frm.trans f', (hI.keep.trans k').mono (by decide), fun hD0 => ?_⟩
     obtain ⟨q, hlt, -, -, -⟩ := divIter_inv hD0 (wv_lt s.mem B (slot w iQ) w) j (by omega_arith)
     have hv := hI.val hD0
     have hRt : wv t.mem B (slot w iR) (w + 1) < wv t.mem B (slot w iD) w := by

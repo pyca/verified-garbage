@@ -48,7 +48,7 @@ theorem blkStep_ok {s₀ t : State} {B : Addr} {Z e eb eN w k : Nat} (hs : Scr s
   have rN : wv t.mem B (eN + 8 * (4 * k)) 4 = wv s₀.mem B (eN + 8 * (4 * k)) 4 := hI.out.wv (by omega_arith) (by omega_arith)
   have rL : wv t'.mem B e (4 * k) = wv t.mem B e (4 * k) := ho.wv (by omega_arith) (by omega_arith)
   rw [rX, rU, rT, rB, rN] at hv
-  refine ⟨hI.scr.congr k'.2.2, (kp.trans k').mono (by simp), by rw [h14]; congr 1, ?_, ?_⟩
+  refine ⟨hI.scr.congr k'.2.2, (kp.trans k').mono (by decide), by rw [h14]; congr 1, ?_, ?_⟩
   · exact (hI.out.mono (o' := e) (n' := 8 * (4 * (k + 1))) (Nat.le_refl _) (by omega_arith)).trans
       (ho.mono (o' := e) (n' := 8 * (4 * (k + 1))) (by omega_arith) (by omega_arith))
   · have hval := hI.val

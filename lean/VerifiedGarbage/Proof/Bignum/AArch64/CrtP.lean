@@ -226,7 +226,7 @@ theorem hTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mx : BitVec 64} 
     intro j hj; simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl <;> decide) k₆.wr (k₆.gpr .x0 (by decide)) (by omega_arith)
   have kall := (((k₃.trans k₄).trans k₅).trans k₆)
-  refine ⟨hc₆, hX₆, hlt₆, fun hct => ?_, ((fx₃.trans fx₄).trans fx₅).trans fx₆, kall.mono (by simp [mmRegs]),
+  refine ⟨hc₆, hX₆, hlt₆, fun hct => ?_, ((fx₃.trans fx₄).trans fx₅).trans fx₆, kall.mono (by decide),
     (k₆.gpr .x0 (by decide)).trans ((k₅.gpr .x0 (by decide)).trans ((k₄.gpr .x0 (by decide)).trans (k₃.gpr .x0 (by decide))))⟩
   simp only [hm₆, hT₅, hT₃, hq₅, hq₄, hct, ↓reduceIte]
 
@@ -324,7 +324,7 @@ theorem hPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec
     rw [hm, hh₆ hct, hY₂]
   · by_cases h : r = .x0
     · subst h; rw [hdi, hg.x0]
-    · exact kall.gpr r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)
+    · exact kall.gpr r (by simp only [List.mem_append, List.mem_singleton, hr, h, or_self, not_false_eq_true])
 
 /-- `p`'s phase: `h = (m_p - m_q) qInv mod p` into `p`'s `Y` if `p` divides
 `N`, `X_m ≡ c R (mod N)`, `m_q` in `q`'s `Y` and `qInv` (masked by `c`). -/
@@ -493,6 +493,6 @@ theorem pPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : Bi
   refine ⟨hg', hws', hX', hlt', hh', f₀₅.trans (hsub sx fx'), ⟨fun r hr => ?_, kall.rd, kall.wr, kall.sp, kall.vcs⟩⟩
   by_cases h : r = .x0
   · subst h; rw [hg'.x0, hg.x0]
-  · exact kall.gpr r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)
+  · exact kall.gpr r (by simp only [List.mem_append, List.mem_singleton, hr, h, or_self, not_false_eq_true])
 
 end VG.Proof.Bignum.AArch64
