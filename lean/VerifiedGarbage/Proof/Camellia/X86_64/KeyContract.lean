@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
 import VerifiedGarbage.Spec.Camellia.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+import VerifiedGarbage.Proof.Camellia.X86_64.Lit
 
 /-!
 # The Camellia key schedule on x86-64: contract and constant time
