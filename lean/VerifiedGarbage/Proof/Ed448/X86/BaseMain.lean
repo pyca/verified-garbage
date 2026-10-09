@@ -162,14 +162,14 @@ theorem BL.fin {σ s₄ s t : State} {n m : Nat} (h : BL σ s₄ s n) (ht : Base
 
 theorem loop_stage {σ s : State} (h : BMid σ s) :
     WP isa Impl.Ed448.X86.baseLoop s fun t => BL σ s t 0 :=
-  WP.mono (h.fe.wp (NoSp.of_all (by decide +kernel)) (by decide +kernel)
+  WP.mono (h.fe.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
     (Q := fun t => BaseInv (bsB σ) (kB σ) s t 0) (WP.mono (baseLoop_ok h.bits h.start) fun t ht =>
       ⟨⟨ht.scr, ht.ctx, ht.bounded⟩, ht.regs.1 _ (by decide), ht.regs.2.2, ht⟩))
     fun t ⟨fe, ht⟩ => ⟨h, ht, fe⟩
 
 theorem step_stage {σ s₄ s : State} {n : Nat} (hn : n < 456) (h : BL σ s₄ s (n + 1)) :
     WP isa Impl.Ed448.X86.baseStep s fun t => BL σ s₄ t n ∧ t.zf = some (decide (n = 0)) :=
-  WP.mono (h.2.2.wp (NoSp.of_all (by decide +kernel)) (by decide +kernel)
+  WP.mono (h.2.2.wp (NoSp.of_all (by lit_decide)) (by lit_decide)
     (Q := fun t => BaseInv (bsB σ) (kB σ) s₄ t n ∧ t.zf = some (decide (n = 0)))
     (WP.mono (baseStep_ok hn h.1.bits h.2.1) fun t ⟨ht, z⟩ => ⟨(BL.fin h ht).1, (BL.fin h ht).2.1, (BL.fin h ht).2.2, ht, z⟩))
     fun t ⟨fe, ht, z⟩ => ⟨⟨h.1, ht, fe⟩, z⟩

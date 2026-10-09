@@ -232,7 +232,7 @@ theorem loop_rel : ∀ n, RelCT isa (W (LadI n)) (.loop step .ne) (W fun σ s =>
   refine RelCT.loop (M := isa) (fun n => W (LadI n)) fun n => ?_
   refine W.then (G := fun σ t => (n < 448 ∧ ∃ s₂, Lad σ s₂ t n) ∧ t.zf = some (decide (n = 0))) (step_tr n) ?_ ?_
   · rintro σ s - ⟨hn, s₂, m, L, f⟩
-    refine WP.mono (xframe m.pre (NoSp.of_all (by decide +kernel)) (by decide +kernel)
+    refine WP.mono (xframe m.pre (NoSp.of_all (by lit_decide)) (by lit_decide)
       (Lad.sp ⟨m, L, f⟩) (Lad.wr ⟨m, L, f⟩) f (step_ok hn m.bits L)) fun t ⟨⟨l, z⟩, f'⟩ =>
       ⟨⟨hn, s₂, m, l, f'⟩, z⟩
   · rintro σ₁ σ₂ t₁ t₂ hP - ⟨l₁, z₁⟩ ⟨l₂, z₂⟩
@@ -315,7 +315,7 @@ theorem finish_rel : RelCT isa (fun t₁ t₂ => (∃ b, RF b t₁ t₂) ∧ W I
         fun _ _ h => h) ?_ fun _ _ _ _ hP _ g₁ g₂ => ⟨_, _, hP, g₁, g₂⟩
     intro σ s hp h
     obtain ⟨hs, hc, hb, -, sp, wr, f⟩ := h.af
-    refine WP.mono (xframe hp (NoSp.of_all (by decide +kernel)) (by decide +kernel) sp wr f
+    refine WP.mono (xframe hp (NoSp.of_all (by lit_decide)) (by lit_decide) sp wr f
       (mulCall_ok hs hc (o := X2) (a := X2) (b := T7) (by decide) (by decide) (by decide) (hb 1) (hb 21)))
       fun t ⟨⟨c, _, _⟩, f'⟩ => ⟨hs.of_keeps c.keeps (by decide), (c.keeps.1 _ (by decide)).trans sp,
         c.keeps.2.2.trans wr, f'⟩

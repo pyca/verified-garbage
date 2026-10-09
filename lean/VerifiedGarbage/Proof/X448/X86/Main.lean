@@ -141,7 +141,7 @@ theorem Lad.wr {σ s₂ s : State} {n : Nat} (h : Lad σ s₂ s n) : s.wr = σ.w
   h.2.1.regs.2.2.trans h.1.wr
 
 theorem ladder_stage {σ s : State} (h : Mid σ s) : WP isa ladder s fun t => Lad σ s t 0 := by
-  refine WP.mono (xframe h.pre (NoSp.of_all (by decide +kernel)) (by decide +kernel) h.sp h.wr
+  refine WP.mono (xframe h.pre (NoSp.of_all (by lit_decide)) (by lit_decide) h.sp h.wr
     (XFrame.of_outside h.out) (ladder_ok h.bits h.start)) fun t ⟨l, f⟩ => ⟨h, l, f⟩
 
 /-- The swap the ladder leaves. -/
@@ -154,7 +154,7 @@ def Sw (σ s₂ s₄ s : State) : Prop :=
 
 theorem lastSwap_stage {σ s₂ s : State} (h : Lad σ s₂ s 0) : WP isa (.block lastSwap) s (Sw σ s₂ s) := by
   obtain ⟨m, L, f⟩ := h
-  refine WP.mono (xframe m.pre (c := .block lastSwap) (NoSp.of_all (by decide +kernel)) (Nat.zero_le 20)
+  refine WP.mono (xframe m.pre (c := .block lastSwap) (NoSp.of_all (by lit_decide)) (Nat.zero_le 20)
     (Lad.sp ⟨m, L, f⟩) (Lad.wr ⟨m, L, f⟩) f
     (lastSwap_ok L.scr L.bounded
     (by have := ladderAfter_swap_le (kOf σ) (uOf σ) (n := 0) (by decide); omega) L.swap))
@@ -173,7 +173,7 @@ def Iv (σ s₂ s₄ s₅ s : State) : Prop :=
 theorem invert_stage {σ s₂ s₄ s : State} (h : Sw σ s₂ s₄ s) :
     WP isa Impl.X448.X86.invert s (Iv σ s₂ s₄ s) := by
   obtain ⟨hs, hc, sp, wr⟩ := h.fin
-  refine WP.mono (xframe h.1.1.pre (NoSp.of_all (by decide +kernel)) (by decide +kernel) sp wr h.2.2.2.2
+  refine WP.mono (xframe h.1.1.pre (NoSp.of_all (by lit_decide)) (by lit_decide) sp wr h.2.2.2.2
     (invert_ok hs hc h.2.2.1)) fun t ⟨⟨k, b', e⟩, f'⟩ => ⟨h, k, b', e, f'⟩
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
