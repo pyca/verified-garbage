@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Sha3.Lanes
 import VerifiedGarbage.Proof.Sha512.X86.Rounds
 import VerifiedGarbage.Impl.Sha3.X86
+import VerifiedGarbage.Proof.Sha3.X86.Lit
 import VerifiedGarbage.Spec.Sha3.Contract
 import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Sha3.Stream
@@ -1526,9 +1527,9 @@ namespace VG.Proof.Sha3.X86
 open VG VG.X86
 open VG.Spec.Sha3 (stateAt keccakF)
 
-theorem permute_nosp : NoSp Impl.Sha3.X86.permute := NoSp.of_all (by decide +kernel)
+theorem permute_nosp : NoSp Impl.Sha3.X86.permute := NoSp.of_all (by lit_decide)
 
-theorem permute_stack : stackUse Impl.Sha3.X86.permute = 0 := by decide +kernel
+theorem permute_stack : stackUse Impl.Sha3.X86.permute = 0 := by lit_decide
 
 /-- A region at offset `o` within one of `rs'`. -/
 theorem within {r : Region} {rs' : List Region} (r' : Region) (hr' : r' ∈ rs') (o : Nat)
