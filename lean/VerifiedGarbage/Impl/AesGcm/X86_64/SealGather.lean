@@ -15,7 +15,7 @@ generic over the implementations of `vg_aes_gcm_seal`, `vg_aes_gcm_stream_init`,
 
 A text shorter than `t` bytes (a parameter of the code, below `2^31`) is
 copied, slice after slice, to the output (`copy`: 64 bytes at a time
-through `xmm0`–`xmm3`, then 16, then one), and encrypted there in place by
+through `xmm0`–`xmm3`, then 16, then the last 16 again, or one at a time), and encrypted there in place by
 one call of `sealFn` (`vg_aes_gcm_seal` for the same implementations, with the
 short path of the AVX-512 ones), with the arguments kept in `work`. The
 streaming functions' calls cost more than the copy saves below `t`.
@@ -174,8 +174,15 @@ def copy16Body : List Instr :=
 def copy1Body : List Instr :=
   [.movzx8 .rax (srcD 0), .store8 (dstD 0) .rax, .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)]
 
+/-- The last 16 of the `rcx ≥ 16` bytes, through `xmm0`, from `r10 = rcx - 16`
+(some of them again). -/
+def copyLast : List Instr :=
+  [.mov .r10 (.reg .rcx), .alu .sub .r10 (imm 16), .movdquLoad .xmm0 (srcD 0), .movdquStore (dstD 0) .xmm0]
+
 /-- The `rcx` bytes at `rsi` copied to `rdi`: 64 at a time up to `64 ⌊rcx / 64⌋`,
-16 at a time up to `16 ⌊rcx / 16⌋`, then one at a time, from `r10 = 0`. -/
+16 at a time up to `16 ⌊rcx / 16⌋`, from `r10 = 0`; then the rest, if any, with
+the last 16 bytes (`copyLast`, which copies again those before the rest) if
+there are 16, and otherwise one at a time. -/
 def copy : Prog isa :=
   .seq (.block [.mov32 .r10 (imm 0), .mov .r8 (.reg .rcx), .shift .shr .r8 6, .shift .shl .r8 6,
       .alu .cmp .r8 (imm 0)])
@@ -183,7 +190,9 @@ def copy : Prog isa :=
   (.seq (.block [.mov .r8 (.reg .rcx), .shift .shr .r8 4, .shift .shl .r8 4, .alu .cmp .r10 (.reg .r8)])
   (.seq (.ite .e (.block []) (.loop (.block copy16Body) .ne))
   (.seq (.block [.alu .cmp .r10 (.reg .rcx)])
-    (.ite .e (.block []) (.loop (.block copy1Body) .ne))))))
+    (.ite .e (.block [])
+      (.seq (.block [.alu .cmp .rcx (imm 16)])
+        (.ite .b (.loop (.block copy1Body) .ne) (.block copyLast))))))))
 
 /-- The `r9` slices that the descriptors at `r11` list copied to `rdi`, one
 after the other, as ChaCha20-Poly1305's gathering does them
