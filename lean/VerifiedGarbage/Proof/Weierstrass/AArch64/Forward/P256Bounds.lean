@@ -7,11 +7,14 @@ open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.P256.VerifyDouble
 open VG.Proof.Weierstrass.AArch64.Forward
 
 materialize_value leftRD := Fixed.original R D
-materialize_value rightRD := Fixed.optimized R D
+forward_state rightRD.lit := Fixed.optimized R D
+theorem rightRD.lit_eq : Fixed.optimized R D=rightRD.lit := optimize_of_lit leftRD.lit_eq (by kernel_rfl)
 materialize_value leftDR := Fixed.original D R
-materialize_value rightDR := Fixed.optimized D R
+forward_state rightDR.lit := Fixed.optimized D R
+theorem rightDR.lit_eq : Fixed.optimized D R=rightDR.lit := optimize_of_lit leftDR.lit_eq (by kernel_rfl)
 materialize_value leftED := Fixed.original E D
-materialize_value rightED := Fixed.optimized E D
+forward_state rightED.lit := Fixed.optimized E D
+theorem rightED.lit_eq : Fixed.optimized E D=rightED.lit := optimize_of_lit leftED.lit_eq (by kernel_rfl)
 
 theorem rd_left : ∀ i∈Fixed.original R D,instrBound i≤992 := by
   rw [leftRD.lit_eq]; exact bound_of_listAllK (by decide +kernel)
