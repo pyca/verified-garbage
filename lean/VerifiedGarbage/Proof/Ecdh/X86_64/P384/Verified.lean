@@ -1,8 +1,7 @@
 import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
-import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Lit
+import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-import VerifiedGarbage.Proof.P384.X86_64.TaintSums
 import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacA
 import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleIn
 
@@ -87,10 +86,11 @@ theorem ecdh_x86 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64
       · exact hro
       · exact hrs) (by decide)
 
+/-- Constant time by the analysis of the code without its displacements
+(`exchangeErased`, `LitErase.lean`), from a taint that knows no region bases. -/
 theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP384 := by
-  obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) exchangeP384 h).isSome = true := by
-    taint_decide_sum [Proof.P384.X86_64.ladderGSum, Proof.P384.X86_64.powPSum]
-  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ hc
+  refine VG.Taint.constantTime_mapBlocks (c' := exchangeErased) taintS_eraseInv
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) rfl ?_ rfl (by taint_decide)
   intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

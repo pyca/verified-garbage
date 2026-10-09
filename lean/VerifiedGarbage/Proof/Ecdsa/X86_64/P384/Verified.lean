@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
 import VerifiedGarbage.Proof.P384.Point
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -120,7 +120,8 @@ theorem sign_x86 (hL : Law Spec.P384.curve)
       · exact hrs) (by decide)
 
 theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP384 :=
-  VG.Taint.constantTime (A := taintSym ["VG_P384_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8])
+  VG.Taint.constantTime_mapBlocks (c' := signErased) (taintSym_eraseInv ["VG_P384_COMB"])
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) rfl
     (fun _ _ _ _ ⟨_, h1, h2, h3, h4, h5, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -129,7 +130,7 @@ theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP384 :=
       · exact h3
       · exact h4
       · exact h5, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
-    (by taint_decide)
+    rfl (by taint_decide)
 
 theorem sign_verified (hL : Law Spec.P384.curve)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
