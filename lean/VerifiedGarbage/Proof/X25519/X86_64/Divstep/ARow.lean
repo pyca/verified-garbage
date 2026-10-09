@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.X25519.X86_64.Divstep.FRow
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # X25519 on x86-64, inversion by divsteps: the rows of `a` and `b`
@@ -91,7 +92,7 @@ theorem foldB_arith (lo Q4 c r13 r14 S c3 F c3' fix : Nat) (hlo : lo < 2 ^ 256) 
     (hS : S < 2 ^ 256) (hc3 : c3 ≤ 1)
     (e1 : S + 2 ^ 256 * c3 = lo + (r13 + 2 ^ 64 * r14 + (if 2 ^ 63 ≤ r14 then 2 ^ 256 - 2 ^ 128 else 0)))
     (hfix : fix = (38 * c3 + 2 ^ 64 - (if 2 ^ 63 ≤ r14 then 38 else 0)) % 2 ^ 64)
-    (hF : F < 2 ^ 256) (hc3' : c3' ≤ 1)
+    (hF : F < 2 ^ 256) (_hc3' : c3' ≤ 1)
     (e2 : F + 2 ^ 256 * c3' = S + (fix + (if 2 ^ 63 ≤ fix then 2 ^ 256 - 2 ^ 64 else 0))) :
     F = foldV (lo + 2 ^ 256 * Q4) c := by
   unfold foldV
@@ -99,9 +100,18 @@ theorem foldB_arith (lo Q4 c r13 r14 S c3 F c3' fix : Nat) (hlo : lo < 2 ^ 256) 
   have q1 : (lo + 2 ^ 256 * Q4) % 2 ^ 256 = lo := by omega
   have q2 : (lo + 2 ^ 256 * Q4) / 2 ^ 256 = Q4 := by omega
   rw [q1, q2]
+  -- No `%` and no truncating subtraction but the goal's: `omega`'s problems stay small.
+  obtain ⟨k, hk, hW'⟩ : ∃ k, k ≤ 1 ∧ 38 * Q4 + 2 ^ 128 = r13 + 2 ^ 64 * r14 + 2 ^ 128 * k + 37 * c :=
+    ⟨(38 * Q4 + 2 ^ 128 - 37 * c) / 2 ^ 128, by omega, by omega⟩
+  clear hW
+  generalize hR : lo + 38 * Q4 + 2 ^ 256 - 37 * c = R
+  have hR' : R + 37 * c = lo + 38 * Q4 + 2 ^ 256 := by omega
+  clear hR
   by_cases hn : 2 ^ 63 ≤ r14 <;> simp only [hn, ↓reduceIte] at e1 hfix <;>
-    rcases (by omega : c3 = 0 ∨ c3 = 1) with rfl | rfl <;> simp only [Nat.mul_zero, Nat.mul_one] at hfix <;>
-    (by_cases hf : 2 ^ 63 ≤ fix <;> simp only [hf, ↓reduceIte] at e2) <;>
+    rcases (by omega : c3 = 0 ∨ c3 = 1) with rfl | rfl <;>
+    simp only [Nat.mul_zero, Nat.mul_one, Nat.zero_add, Nat.add_zero, Nat.reducePow, Nat.reduceAdd,
+      Nat.reduceSub, Nat.reduceMod] at hfix e1 <;> subst hfix <;>
+    simp only [Nat.reducePow, Nat.reduceLeDiff, ↓reduceIte, Nat.reduceSub, Nat.reduceAdd, Nat.add_zero] at e2 <;>
     (split <;> (try split)) <;> omega
 
 /-- Four `add`/`adc` of registers into `r8–r11`, the carry out in `CF`. -/
@@ -249,13 +259,14 @@ theorem aRow_ok {s : State} {base : Addr} (hs : Scr s base) {m₁ m₂ dst : Nat
     have p2 := prodN_le (word s.mem base m₂) (fe_lt s.mem base dsB)
     simp only [Bool.false_eq_true, ↓reduceIte, Nat.mul_zero, Nat.sub_zero, z, Nat.zero_add]
     refine congr (congrArg foldV ?_) ?_
-    · omega
-    · omega
+    · omega_arith
+    · omega_arith
   · rw [mt, k4.2.1, k3.2.1, k2.2.1, k1.2.1]
     exact st4_outside _ _ (by omega) _ _ _ _
   · intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    rw [gt r, k4.1 r (by simp_all), k3.1 r (by simp_all), k2.1 r (by simp_all), k1.1 r (by simp_all)]
+    have sub : ∀ L : List Reg, (∀ x ∈ L, x ∈ rowClob) → r ∉ L := fun L hL h => hr (hL r h)
+    rw [gt r, k4.1 r (sub _ (by decide)), k3.1 r (sub _ (by decide)), k2.1 r (sub _ (by decide)),
+      k1.1 r (sub _ (by decide))]
   · rw [rt, k4.2.2.1, k3.2.2.1, k2.2.2.1, k1.2.2.1]
   · rw [wt, k4.2.2.2, k3.2.2.2, k2.2.2.2, k1.2.2.2]
 
