@@ -679,7 +679,9 @@ theorem ptr_ok (d r : Reg) {k : Nat} (hk : k < 2 ^ 31) (s : State) :
       s'.mem = s.mem := by
   apply WP.of_runBlock
   simp only [and_self, ptr, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-    execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some, Option.bind_some,
+    execAlu, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
+    RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.map_some,
+    Option.bind_some,
     Option.some.injEq, exists_eq_left', ite_true, se_ofNat hk]
   exact ⟨by rw [off_eq], fun q hq => by simp [hq], trivial⟩
 
@@ -690,7 +692,9 @@ theorem anchor_ok (r : Reg) {k : Nat} (hk : k < 2 ^ 31) (s : State) :
       s'.wr = s.wr ∧ s'.mem = s.mem := by
   apply WP.of_runBlock
   simp only [and_self, anchor, runBlock_cons, runStep_some, runBlock_nil, exec,
-    readSrc, execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some, Option.bind_some,
+    readSrc, execAlu, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags,
+    RegUpd.wr_arithFlags, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left', ite_true, se_ofNat hk]
   exact ⟨trivial, fun q hq => by simp [hq], trivial⟩
 
@@ -783,7 +787,9 @@ theorem saveMoves_ok {s₀ : State} (hp : APre e s₀) :
   apply WP.of_runBlock
   rw [saveMoves_eq]
   simp (config := {decide := true}) only [entryS, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
-    readSrc, State.store64, State.setReg, o0, o1, o2, o3, o4, o5, ite_true, ite_false, Option.map_some,
+    readSrc, State.store64, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    RegUpd.xmm_setReg, RegUpd.cf_setReg, RegUpd.zf_setReg, o0, o1, o2, o3, o4, o5, ite_true, ite_false,
+    Option.map_some,
     Option.some.injEq, exists_eq_left']
   refine ⟨trivial, trivial, trivial, trivial, trivial, trivial,
     fun r h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈ => by simp [h₁, h₂, h₃, h₄, h₅, h₆, h₇, h₈], trivial, trivial, ?_, ?_⟩
@@ -906,20 +912,26 @@ theorem stQ_ok {c kp np : Addr} {o j : Nat} (ho : o + 64 ≤ 1696) (hj : j < 8) 
   · subst h₁
     apply WP.of_runBlock
     simp only [List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
-      State.store64, State.setReg, show (Reg.r15 = Reg.rax) = False from by decide, hr15, o, ite_true,
+      State.store64, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+      RegUpd.xmm_setReg, RegUpd.cf_setReg, RegUpd.zf_setReg,
+      show (Reg.r15 = Reg.rax) = False from by decide, hr15, o, ite_true,
       ite_false, Option.some.injEq, exists_eq_left']
     exact ⟨by rw [qOf_c0], fun r hr => by simp [hr], trivial, trivial⟩
   · subst h₂
     apply WP.of_runBlock
     simp only [List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
-      State.store64, State.setReg, show (Reg.r15 = Reg.rax) = False from by decide, hr15, o, ite_true,
+      State.store64, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+      RegUpd.xmm_setReg, RegUpd.cf_setReg, RegUpd.zf_setReg,
+      show (Reg.r15 = Reg.rax) = False from by decide, hr15, o, ite_true,
       ite_false, Option.some.injEq, exists_eq_left']
     exact ⟨by rw [qOf_c1], fun r hr => by simp [hr], trivial, trivial⟩
   · have i := hc.2.1 (8 * (j - 2)) 8 (by lit_omega)
     simp only [off] at i
     apply WP.of_runBlock
     simp (config := {decide := true}) only [List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
-      readSrc, State.load64, State.store64, State.setReg, hr15, hrdi, o, i, ite_true, ite_false, Option.map_some,
+      readSrc, State.load64, State.store64, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg,
+      RegUpd.wr_setReg, RegUpd.xmm_setReg, RegUpd.cf_setReg, RegUpd.zf_setReg, hr15, hrdi, o, i, ite_true,
+      ite_false, Option.map_some,
       Option.some.injEq, exists_eq_left']
     exact ⟨by rw [qOf_key _ _ _ (by omega_using [h₁, h₂]) (by omega_using [h₃])], fun r hr => by simp [hr], trivial⟩
   · subst h₄
@@ -927,7 +939,10 @@ theorem stQ_ok {c kp np : Addr} {o j : Nat} (ho : o + 64 ≤ 1696) (hj : j < 8) 
     simp only [off] at i
     apply WP.of_runBlock
     simp (config := {decide := true}) only [List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
-      readSrc32, execShift, State.load32, State.store64, State.setReg, State.setReg32, State.setFlags, hr15,
+      readSrc32, execShift, State.load32, State.store64, RegUpd.gpr_setReg, RegUpd.mem_setReg,
+      RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.xmm_setReg, RegUpd.cf_setReg, RegUpd.zf_setReg,
+      State.setReg32, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags,
+      RegUpd.xmm_setFlags, RegUpd.cf_setFlags, hr15,
       hrsi, o, i, ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left']
     refine ⟨?_, fun r hr => by simp [hr], trivial⟩
     refine congrArg _ ?_
@@ -943,7 +958,9 @@ theorem stQ_ok {c kp np : Addr} {o j : Nat} (ho : o + 64 ≤ 1696) (hj : j < 8) 
     simp only [off] at i
     apply WP.of_runBlock
     simp (config := {decide := true}) only [List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
-      readSrc, State.load64, State.store64, State.setReg, hr15, hrsi, o, i, ite_true, ite_false, Option.map_some,
+      readSrc, State.load64, State.store64, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg,
+      RegUpd.wr_setReg, RegUpd.xmm_setReg, RegUpd.cf_setReg, RegUpd.zf_setReg, hr15, hrsi, o, i, ite_true,
+      ite_false, Option.map_some,
       Option.some.injEq, exists_eq_left']
     exact ⟨by rw [qOf_n7], fun r hr => by simp [hr], trivial⟩
 
@@ -1134,15 +1151,19 @@ theorem foldM_ok {fold len : Nat} (hf : fold + 1 < 2 ^ 31) (hl : len < 2 ^ 64) {
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem ∧ s'.cf = some (decide (len < fold + 1))) ?_
     fun s₁ ⟨d₁, g₁, rd₁, wr₁, m₁, c₁⟩ => ?_)
   · apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu, arithFlags,
-      State.setReg32, State.setReg, State.setFlags, Option.map_some, Option.bind_some, Option.some.injEq,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,
+    RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
+    RegUpd.cf_arithFlags,
+      State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+      Option.map_some, Option.bind_some, Option.some.injEq,
       exists_eq_left', se_ofNat hf, reduceCtorEq, ↓reduceIte]
     refine ⟨rfl, fun q hq => by simp [hq], trivial, trivial, trivial, ?_⟩
     rw [hr13, toNat_ofNat_lt hl, toNat_ofNat_lt (by lit_omega)]
   · refine WP.ite (decide (len < fold + 1)) (by simp [eval, c₁]) (fun h => ?_) (fun h => ?_)
     · simp only [decide_eq_true_eq] at h
       apply WP.of_runBlock
-      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.setReg,
+      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, RegUpd.gpr_setReg,
+      RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
         Option.map_some, Option.some.injEq, exists_eq_left', ite_true]
       refine ⟨by rw [g₁ _ (by decide), hr13]; simp only [mOf, show len ≤ fold from by omega_using [h], ite_true],
         fun q hq => by simp [hq, g₁ q hq], rd₁, wr₁, m₁⟩
@@ -1156,8 +1177,10 @@ theorem add64_ok {n : Nat} {s : State} (hrdx : s.gpr .rdx = BitVec.ofNat 64 n) :
     WP isa (.block [.alu .add .rdx (.imm 64)]) s fun s' => s'.gpr .rdx = BitVec.ofNat 64 (64 + n) ∧
       (∀ q, q ≠ .rdx → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags, State.setReg,
-    State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left', se64', ite_true]
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, RegUpd.gpr_arithFlags,
+  RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setReg, RegUpd.mem_setReg,
+  RegUpd.rd_setReg, RegUpd.wr_setReg,
+    Option.bind_some, Option.some.injEq, exists_eq_left', se64', ite_true]
   refine ⟨by rw [hrdx, BitVec.ofNat_add, BitVec.add_comm]; rfl, fun q hq => by simp [hq], trivial, trivial,
     trivial⟩
 
@@ -1225,7 +1248,8 @@ theorem zeroKs_ok {s₀ : State} (hp : APre e s₀) {n : Nat} (hn0 : 0 < n) (hn 
       (∀ r, r ≠ .rcx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem) ?_
     fun s₂ ⟨x₂, c₂, g₂, rd₂, wr₂, m₂⟩ => ?_)
   · apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32, State.setReg,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32,
+    RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.xmm_setReg,
       XOp.exec, XBinOp.eval, State.setXmm, Option.map_some, Option.some.injEq, exists_eq_left',
       ↓reduceIte, BitVec.xor_self]
     exact ⟨rfl, rfl, fun r h₁ => by simp [h₁], trivial, trivial, trivial⟩
@@ -1662,7 +1686,9 @@ theorem macC_ok {p n : Reg} (hr : MacRegs p n) (s : State) :
   have se15 : BitVec.signExtend 64 (15 : BitVec 32) = 15 := by decide
   apply WP.of_runBlock
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-    execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some, Option.bind_some,
+    execAlu, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
+    RegUpd.zf_arithFlags, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    RegUpd.zf_setReg, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left', ite_true, se15]
   refine ⟨by simp, by simp, fun q h₁ => by simp [h₁], trivial⟩
 
@@ -1675,7 +1701,9 @@ theorem macD_ok {p n : Reg} (hr : MacRegs p n) (s : State) :
   have hps : p ≠ .rsi := by rcases hp with rfl | rfl <;> decide
   apply WP.of_runBlock
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-    execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some, Option.bind_some,
+    execAlu, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
+    RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.map_some,
+    Option.bind_some,
     Option.some.injEq, exists_eq_left', ite_true, ite_false, hps]
   exact ⟨trivial, fun q hq => by simp [hq], trivial⟩
 
@@ -1694,7 +1722,8 @@ theorem padZ_ok {s₀ : State} (hp : APre e s₀) {s : State} (hr15 : s.gpr .r15
   simp only [off] at o0 o1
   apply WP.of_runBlock
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
-    readSrc32, State.store64, State.setReg, State.setReg32, hr15, o0, o1, ite_true, ite_false,
+    readSrc32, State.store64, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    RegUpd.xmm_setReg, RegUpd.cf_setReg, RegUpd.zf_setReg, State.setReg32, hr15, o0, o1, ite_true, ite_false,
     Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨trivial, fun q h₁ h₂ => by simp [h₁, h₂], trivial, trivial, ?_, fun j hj => ?_⟩
   · exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega))
@@ -1825,7 +1854,8 @@ theorem mov32_rdx_ok (v : BitVec 32) (s : State) :
       s'.mem = s.mem := by
   apply WP.of_runBlock
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32,
-    State.setReg32, State.setReg, Option.map_some, Option.some.injEq, exists_eq_left', ite_true]
+    State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    Option.map_some, Option.some.injEq, exists_eq_left', ite_true]
   exact ⟨trivial, fun q hq => by simp [hq], trivial⟩
 
 theorem padTail_eq (b : Impl.Poly1305.X86_64.Blocks) (k : Nat) : padTail b k =
@@ -2265,7 +2295,8 @@ theorem restoreLoads_ok {s₀ : State} (hp : APre e s₀) {s : State} (hr15 : s.
   obtain ⟨v0, v1, v2, v3, v4, v5⟩ := hsv
   apply WP.of_runBlock
   simp (config := {decide := true}) only [restoreLoads, List.map_cons, List.map_nil, runBlock_cons,
-    runStep_some, runBlock_nil, exec, ea_at, readSrc, State.load64, State.setReg, hr15, i0, i1, i2, i3, i4,
+    runStep_some, runBlock_nil, exec, ea_at, readSrc, State.load64, RegUpd.gpr_setReg, RegUpd.mem_setReg,
+    RegUpd.rd_setReg, RegUpd.wr_setReg, hr15, i0, i1, i2, i3, i4,
     i5, v0, v1, v2, v3, v4, v5, ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨fun r hr => ?_, trivial⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -2336,8 +2367,10 @@ theorem compare_ok {s₀ : State} (hp : APre false s₀) {s : State} (hrcx : s.g
   have i3 := it 8 (by lit_omega)
   apply WP.of_runBlock
   simp (config := {decide := true}) only [VG.Impl.ChaCha20Poly1305.X86_64.compare, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
-    readSrc, readSrc32, execAlu, execAlu32, arithFlags, State.load64, State.setReg, State.setReg32,
-    State.setFlags, hrcx, hr12, e0, e1, i0, i1, i2, i3, ite_true, ite_false, Option.map_some,
+    readSrc, readSrc32, execAlu, execAlu32, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
+    RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.cf_arithFlags, State.load64, RegUpd.gpr_setReg,
+    RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.cf_setReg, State.setReg32,
+    hrcx, hr12, e0, e1, i0, i1, i2, i3, ite_true, ite_false, Option.map_some,
     Option.bind_some, Option.some.injEq, exists_eq_left', se1']
   refine ⟨?_, fun q h₁ h₂ => by simp [h₁, h₂], trivial⟩
   have ht := tag_eq s.mem (off (cx s₀) 48) (tp s₀)
@@ -2374,8 +2407,11 @@ theorem cryptA_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
   simp only [off] at o
   apply WP.of_runBlock
   simp (config := {decide := true}) only [cryptArgs, ptr, List.cons_append, List.nil_append, runBlock_cons,
-    runStep_some, runBlock_nil, exec, ea_at, readSrc, readSrc32, execAlu, arithFlags, State.store32, State.setReg,
-    State.setReg32, State.setFlags, h.r15, h.r14, h.r13, o, ite_true, ite_false, Option.map_some,
+    runStep_some, runBlock_nil, exec, ea_at, readSrc, readSrc32, execAlu, RegUpd.gpr_arithFlags,
+    RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, State.store32, RegUpd.gpr_setReg,
+    RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.xmm_setReg, RegUpd.cf_setReg,
+    RegUpd.zf_setReg,
+    State.setReg32, h.r15, h.r14, h.r13, o, ite_true, ite_false, Option.map_some,
     Option.bind_some, Option.some.injEq, exists_eq_left', se_ofNat (show 64 < 2 ^ 31 by omega_using []),
     se_ofNat (show 128 < 2 ^ 31 by omega_using []), BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq]
   refine ⟨trivial, by rw [off_eq], trivial, trivial, by rw [off_eq], fun r hr => ?_, trivial⟩

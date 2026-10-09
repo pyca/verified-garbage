@@ -450,8 +450,13 @@ theorem args_exec {s : State} {p : Addr} (hrbx : s.gpr .rbx = p)
   simp only [off] at i0 i8 i16 i24 i32 i40 i48 i56 o4 o192 o200 o208 o216 o224 o232 o240 o248
   apply WP.of_runBlock
   simp (config := {decide := true}) only [blocksArgs, runBlock_cons, runStep_some, runBlock_nil, exec,
-    ea_at, readSrc, readSrc32, execAlu, execAlu32, execShift, arithFlags, State.store64, State.store32,
-    State.load64, State.setReg, State.setReg32, State.setFlags, hrbx, i0, i8, i16, i24, i32,
+    ea_at, readSrc, readSrc32, execAlu, execAlu32, execShift, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
+    RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.xmm_arithFlags, RegUpd.cf_arithFlags,
+    RegUpd.zf_arithFlags, State.store64, State.store32,
+    State.load64, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    RegUpd.xmm_setReg, RegUpd.cf_setReg, RegUpd.zf_setReg, State.setReg32, RegUpd.gpr_setFlags,
+    RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, RegUpd.xmm_setFlags, hrbx, i0, i8, i16,
+    i24, i32,
     i40, i48, i56, o4, o192, o200, o208, o216, o224, o232, o240, o248, ite_true, ite_false,
     Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left', RegUpd.setWidth_setWidth_32]
   refine ⟨rfl, rfl, trivial, rfl, trivial, trivial, trivial, fun r hr => ?_, trivial⟩
@@ -748,8 +753,11 @@ theorem ctr_exec {s : State} {p : Addr} (hrbx : s.gpr .rbx = p) (hw : InRegions 
   simp only [off] at hw hr
   apply WP.of_runBlock
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_at, readSrc,
-    readSrc32, execAlu, execAlu32, arithFlags, State.load32, State.store32, State.setReg, State.setReg32,
-    State.setFlags, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left', ite_true,
+    readSrc32, execAlu, execAlu32, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags,
+    RegUpd.wr_arithFlags, RegUpd.xmm_arithFlags, RegUpd.cf_arithFlags, RegUpd.zf_arithFlags, State.load32,
+    State.store32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    RegUpd.xmm_setReg, RegUpd.cf_setReg, RegUpd.zf_setReg, State.setReg32,
+    Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left', ite_true,
     ite_false, hrbx, hw, hr, RegUpd.setWidth_setWidth_32]
   exact ⟨trivial, rfl, trivial, fun r h₁ h₂ h₃ => by simp [h₁, h₂, h₃], trivial⟩
 
@@ -913,7 +921,7 @@ theorem part3_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q2 s₀ s) : W
       Q2 s₀ s₁ ∧ s₁.zf = some (decide (T s₀ = 0)) := by
     apply WP.of_runBlock
     simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-      execAlu, arithFlags, State.setFlags, Option.bind_some, Option.some.injEq,
+      execAlu, RegUpd.zf_arithFlags, Option.bind_some, Option.some.injEq,
       exists_eq_left']
     refine ⟨⟨h.rbx, h.rbp, h.r12, h.keep, h.rd, h.wr, h.state, h.buf, h.saved, h.done, h.frame⟩, ?_⟩
     rw [BitVec.and_self, h.r12, ← Offset.ofNat_sub_ofNat_beq (x := T s₀) (y := 0) (by omega_arith) (by omega_arith)]

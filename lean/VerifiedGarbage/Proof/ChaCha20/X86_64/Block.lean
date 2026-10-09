@@ -38,7 +38,10 @@ theorem qr_ok {a b c d : Reg} (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d) (h
   apply WP.of_runBlock
   simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reducePow, and_self, and_true, qr, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu32, execShift32, readSrc32,
-    isa, State.setReg32, State.setReg, arithFlags, State.setFlags, ha, hb, hc, hd,
+    isa, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    RegUpd.zf_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags,
+    RegUpd.wr_arithFlags, RegUpd.zf_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags,
+    RegUpd.rd_setFlags, RegUpd.wr_setFlags, ha, hb, hc, hd,
     hab, hac, had, hbc, hbd, hcd, hab.symm, hac.symm, had.symm, hbc.symm, hbd.symm, hcd.symm,
     BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
     Option.bind_some, Option.some.injEq, exists_eq_left']
@@ -342,13 +345,17 @@ theorem copyWord_ok {k : Nat} (hk : k < 16) {s : State} {st buf : Addr} (hrdi : 
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, and_self, copyWord, h, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
           exec, readSrc32, isa, ea_at, State.load32, State.store32,
-      State.setReg32, State.setReg, hrdi, hin, hrsi, o₁, o₂, BitVec.setWidth_setWidth_of_le,
+      State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+      RegUpd.xmm_setReg, RegUpd.cf_setReg, RegUpd.zf_setReg, hrdi, hin, hrsi, o₁, o₂,
+      BitVec.setWidth_setWidth_of_le,
       BitVec.setWidth_eq, Option.map_some, Option.some.injEq, exists_eq_left']
     exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
   · simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, and_self, copyWord, h, List.append_nil,
       runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32,
           isa, ea_at, State.load32, State.store32, State.setReg32,
-      State.setReg, hrdi, hin, hrsi, o₁, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
+      RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.xmm_setReg,
+      RegUpd.cf_setReg, RegUpd.zf_setReg, hrdi, hin, hrsi, o₁, BitVec.setWidth_setWidth_of_le,
+      BitVec.setWidth_eq,
       Option.map_some, Option.some.injEq, exists_eq_left']
     exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
 
