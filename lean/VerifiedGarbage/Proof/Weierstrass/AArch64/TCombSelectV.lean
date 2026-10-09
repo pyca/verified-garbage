@@ -1138,9 +1138,9 @@ theorem tselect_ok (K : TCombCfg) (hn : K.M.n ≤ 9)
       fun i hi => ?_
     rw [wt i hi, c₄]
     by_cases h : 1 ≤ a <;> simp only [h, decide_true, decide_false, ↓reduceIte] <;> [rfl; simp]
-  · exact (((((Keeps.regs k₁).mono (by sub_regs)).trans
+  · exact (((((Keeps.regs k₁).mono (by intro r hr; exact List.mem_append_left (as := [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17]) (entryRegs K.M.n) (by revert r; decide))).trans
       ((Keeps.regs k₂.keeps).mono fun _ h => absurd h List.not_mem_nil)).trans
-      (hxy.keep.mono (by sub_regs))).trans ((Keeps.regs k₄).mono (by sub_regs))).trans (kt.mono (by sub_regs))
+      (hxy.keep.mono (by intro r hr; exact List.mem_append_left (as := [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17]) (entryRegs K.M.n) (by revert r; decide)))).trans ((Keeps.regs k₄).mono (by intro r hr; exact List.mem_append_left (as := [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17]) (entryRegs K.M.n) (by revert r; decide)))).trans (kt.mono (by intro r hr; exact List.mem_append_left (as := [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17]) (entryRegs K.M.n) (by revert r; decide)))
   · intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
     have hxy' : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n)], ofs base x < w.1 ∨ w.1 + w.2 ≤ ofs base x := by
