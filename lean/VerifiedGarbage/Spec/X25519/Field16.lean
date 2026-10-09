@@ -21,11 +21,12 @@ any number below `2^256` (so not necessarily below `p`). The elements live
 in a working space `ws` of 4096 bytes (`[u64; 512]`, the start of Ed25519's
 working space), each at a byte offset: `o` for the result, `a` and `b` for
 the operands. The offsets are arguments, so that the result may be an
-operand and the caller keeps its elements where it likes. Bytes 1472 to 1599
-of `ws` are the function's own working space (`ownAt` to `ownEnd`), and the
-elements lie below them (`Fits`). On return the function's own bytes are unspecified and
-may hold intermediate values; every other byte of `ws` keeps its value but
-the result's (`Keeps`).
+operand and the caller keeps its elements where it likes. Bytes 1472 to 1631
+of `ws` are the function's own working space (`ownAt` to `ownEnd`): the 32
+limbs of the product, and room to save the registers it uses, so that it
+needs no stack. The elements lie below them (`Fits`). On return the
+function's own bytes are unspecified and may hold intermediate values; every
+other byte of `ws` keeps its value but the result's (`Keeps`).
 
 The result's limbs are below `2^16` again, so that it can be an operand.
 Everything is secret but the pointer and the offsets, which are public, and
@@ -47,7 +48,7 @@ def wsBytes : Nat := 4096
 def ownAt : Nat := 1472
 
 /-- Where it ends. -/
-def ownEnd : Nat := 1600
+def ownEnd : Nat := 1632
 
 /-- Limb `i` of the element at byte offset `o` of the working space `ws`. -/
 def limbAt (m : Mem) (ws : Addr) (o : BitVec 32) (i : Nat) : Nat :=
@@ -98,14 +99,14 @@ def mulApi : Api where
     significant first, each a limb below `2^16`: the number `Σ l_i 2^(16 i)`, not necessarily \
     below `p`. The elements are at the byte offsets `o`, `a` and `b` of the working space `ws`; \
     `o` may be `a` or `b`. The result's limbs are below `2^16`. Every byte of `ws` but the \
-    result's and the function's own working space (bytes 1472 to 1599) keeps its value.\n\n\
+    result's and the function's own working space (bytes 1472 to 1631) keeps its value.\n\n\
     Contract: `mulContract` of `VG.Spec.X25519.Field16`. Constant time: only the pointer and \
     the offsets may affect timing."
   safety :=
-    ["`o`, `a` and `b` plus 64 must be at most 1472: bytes 1472 to 1599 of `ws` are the \
+    ["`o`, `a` and `b` plus 64 must be at most 1472: bytes 1472 to 1631 of `ws` are the \
         function's own working space.",
       "Each limb of the operands must be below `2^16`.",
-      "Bytes 1472 to 1599 of `ws` are unspecified on return and may hold intermediate values, \
+      "Bytes 1472 to 1631 of `ws` are unspecified on return and may hold intermediate values, \
         which the caller must destroy if they are secret."]
 
 end VG.Spec.X25519.Field16
