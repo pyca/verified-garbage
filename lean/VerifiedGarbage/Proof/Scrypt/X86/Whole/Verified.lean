@@ -691,10 +691,10 @@ open VG.Proof.Sha256.X86.Variants (Backend)
 /-- Memory holding the arguments `0x1000, 0, 0x1100, 0, 1, 0x3000, 1, 0x4000, 2, 0x5000, 17, 0x6000, 1`
 at `0x8004`. -/
 def satMem : Mem := fun a =>
-  if a = 0x8005 then 0x10 else if a = 0x800D then 0x11 else if a = 0x8014 then 1 else
-  if a = 0x8019 then 0x30 else if a = 0x801C then 1 else if a = 0x8021 then 0x40 else
-  if a = 0x8024 then 2 else if a = 0x8029 then 0x50 else if a = 0x802C then 17 else
-  if a = 0x8031 then 0x60 else if a = 0x8034 then 1 else 0
+  bif Nat.beq a.toNat 0x8005 then 0x10 else bif Nat.beq a.toNat 0x800D then 0x11 else bif Nat.beq a.toNat 0x8014 then 1 else
+  bif Nat.beq a.toNat 0x8019 then 0x30 else bif Nat.beq a.toNat 0x801C then 1 else bif Nat.beq a.toNat 0x8021 then 0x40 else
+  bif Nat.beq a.toNat 0x8024 then 2 else bif Nat.beq a.toNat 0x8029 then 0x50 else bif Nat.beq a.toNat 0x802C then 17 else
+  bif Nat.beq a.toNat 0x8031 then 0x60 else bif Nat.beq a.toNat 0x8034 then 1 else 0
 
 /-- A state satisfying the precondition: `N = 2`, `r = 1`, `p = 1`, a
 one-byte key and an empty password and salt. -/

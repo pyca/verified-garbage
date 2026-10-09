@@ -651,8 +651,8 @@ open VG.Proof.ChaCha20.X86 (XorImpl)
 `0x1100` (`nonce`), `0x2000` (`aad`), `0`, `0x2100` (`data`), `0`, `0x3000`
 (`tag`) and `0x6000` (`work`). -/
 def satMem : Mem := fun a =>
-  if a = 0x5005 then 0x10 else if a = 0x5009 then 0x11 else if a = 0x500D then 0x20 else
-  if a = 0x5015 then 0x21 else if a = 0x501D then 0x30 else if a = 0x5021 then 0x60 else 0
+  bif Nat.beq a.toNat 0x5005 then 0x10 else bif Nat.beq a.toNat 0x5009 then 0x11 else bif Nat.beq a.toNat 0x500D then 0x20 else
+  bif Nat.beq a.toNat 0x5015 then 0x21 else bif Nat.beq a.toNat 0x501D then 0x30 else bif Nat.beq a.toNat 0x5021 then 0x60 else 0
 
 /-- A state satisfying `seal`'s precondition (with no additional data and no
 data). -/

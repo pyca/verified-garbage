@@ -205,7 +205,7 @@ theorem init_agree₀ {s₁ s₂ : State} (h₁ : Proof.Poly1305.initX86.pre s�
     exacts [a0, a1]
 
 /-- Memory holding the arguments `0x1000, 0x2000` at `0x4004`. -/
-def initSatMem : Mem := fun a => if a = 0x4005 then 0x10 else if a = 0x4009 then 0x20 else 0
+def initSatMem : Mem := fun a => bif Nat.beq a.toNat 0x4005 then 0x10 else bif Nat.beq a.toNat 0x4009 then 0x20 else 0
 
 /-- A state satisfying the precondition. -/
 def initSat : State where

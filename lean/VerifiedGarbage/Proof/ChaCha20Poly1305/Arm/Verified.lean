@@ -705,7 +705,7 @@ def sealSat : State where
   z := false
   c := false
   v := false
-  mem a := if a = 0x5009 then 0x30 else 0
+  mem a := bif Nat.beq a.toNat 0x5009 then 0x30 else 0
   rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x5000, 16⟩]
   wr := [⟨0, 0⟩, ⟨0x3000, 16⟩, ⟨0, 632⟩]
 
