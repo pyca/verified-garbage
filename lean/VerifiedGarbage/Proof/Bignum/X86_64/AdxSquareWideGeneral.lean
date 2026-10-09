@@ -59,7 +59,7 @@ theorem RowInv.limit {s₀ s t : State} {B : Addr} {Z e eb j : Nat}
     (hi : RowInv s₀ B Z e eb j s) (hm : t.mem = s.mem)
     (h14 : t.gpr .r14 = s.gpr .r14) (hk : Keep [.rbx, .r14] s t) :
     RowInv s₀ B Z e eb j t :=
-  ⟨hi.scr.congr hk.2.2, (hi.keep.trans hk).mono (by simp), h14.trans hi.r14,
+  ⟨hi.scr.congr hk.2.2, (hi.keep.trans hk).mono (by decide), h14.trans hi.r14,
     hm ▸ hi.out, by rw [hm, hk.gpr (by decide)]; exact hi.val⟩
 
 theorem generalRow_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
@@ -125,7 +125,7 @@ theorem generalRow_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
       exact eq ▸ J3
     · refine WP.ite true (by simp [eval, z3, eq]) (fun _ => ?_) (by simp)
       exact AdxSquare.remainder_ok hu8 hu9 bx3 (by omega) hw hZ hZb sb J3
-  refine WP.mono phase3 fun t hi => ⟨?_, ?_, hi.r14, (ku.trans hi.keep).mono (by simp)⟩
+  refine WP.mono phase3 fun t hi => ⟨?_, ?_, hi.r14, (ku.trans hi.keep).mono (by decide)⟩
   · have hv := hi.val
     rw [hm, ku.gpr (by decide), hcx] at hv
     simpa using hv

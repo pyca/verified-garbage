@@ -38,12 +38,12 @@ theorem diagonalChoice_ok {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B 
       ((ka.gpr (by decide)).trans h8) ((ka.gpr (by decide)).trans h9)
       ((ka.gpr (by decide)).trans h10) hw0 hw h4 hA hb sep) fun t ⟨hv,ho,kt⟩ => ?_
     rw [hm] at hv ho
-    exact ⟨hv,ho,(ka.trans kt).mono (by simp)⟩
+    exact ⟨hv,ho,(ka.trans kt).mono (by decide)⟩
   · refine WP.ite false (by simp [eval,hz,h4]) (by simp) (fun _ => ?_)
     refine WP.mono (diagonal_ok (hs.congr ka.2.2)
       ((ka.gpr (by decide)).trans h8) ((ka.gpr (by decide)).trans h9)
       ((ka.gpr (by decide)).trans h10) hw0 hw hA hb sep) fun t ⟨hv,ho,kt⟩ => ?_
     rw [hm] at hv ho
-    exact ⟨hv,ho,(ka.trans kt).mono (by simp)⟩
+    exact ⟨hv,ho,(ka.trans kt).mono (by decide)⟩
 
 end VG.Proof.Bignum.X86_64.AdxSquare

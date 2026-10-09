@@ -39,7 +39,7 @@ theorem redcRow_frame {s : State} {B : Addr} {Z e w : Nat} {minv : BitVec 64}
   have k123 := k12.trans k₃
   refine WP.mono (VG.Proof.Bignum.X86_64.rowEnd_ok (hs.congr k123.2.2)
     ((k123.gpr (by decide)).trans hdi) (hH.of_outside allout he) hZ h8₃ (by omega))
-    fun t ⟨hz, hm, h8', kt⟩ => ⟨?_, h8', hz, (k123.trans kt).mono (by simp)⟩
+    fun t ⟨hz, hm, h8', kt⟩ => ⟨?_, h8', hz, (k123.trans kt).mono (by decide)⟩
   rw [hm]; exact allout
 
 end VG.Proof.Bignum.X86_64.AdxSquare

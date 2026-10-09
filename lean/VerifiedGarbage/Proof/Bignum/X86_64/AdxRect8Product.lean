@@ -34,7 +34,7 @@ theorem productN_disjoint_ok {s : State} {B : Addr} {Z eU eO eN n : Nat}
     have mu : word a.mem B (eU + 8 * n) = word s.mem B (eU + 8 * n) := oa.word (by omega) (by omega)
     have lo : wv t.mem B eO n = wv a.mem B eO n := ot.wv (by omega) (by omega)
     refine ⟨?_, (oa.mono (o' := eO) (n' := 8 * (n + 1)) (by omega) (by omega)).trans
-      (ot.mono (o' := eO) (n' := 8 * (n + 1)) (by omega) (by omega)), (ka.trans kt).mono (by simp)⟩
+      (ot.mono (o' := eO) (n' := 8 * (n + 1)) (by omega) (by omega)), (ka.trans kt).mono (by decide)⟩
     rw [mn, mu] at vt
     rw [wv, wv, lo, pow64_succ]
     grind

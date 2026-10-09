@@ -141,7 +141,7 @@ theorem APost.of_regs {s t t' : State} {B : Addr} {Z w op oq wp : Nat} {minv mp 
   have hpr : ∀ {o wx : Nat} {mx : BitVec 64} {X : Nat}, PrimeRdy t B o wx mx N X C → PrimeRdy t' B o wx mx N X C :=
     fun hp => ⟨hm ▸ hp.ws, hx hp.x, hm ▸ hp.ylt, hm ▸ hp.yv, hm ▸ hp.clt, hm ▸ hp.cv⟩
   refine ⟨⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi, hm ▸ hg.hdr⟩, ?_, hpr hp, hpr hq, hm ▸ hf,
-    (hk.trans k).mono (by simp [mmRegs]), hm ▸ hw⟩
+    (hk.trans k).mono (by decide), hm ▸ hw⟩
   rw [show t' = { t' with mem := t.mem } by rw [← hm]]
   exact ⟨hN.n, hN.inv, hN.r2, hN.r2lt, hN.one⟩
 

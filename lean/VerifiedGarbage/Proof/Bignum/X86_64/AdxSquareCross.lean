@@ -59,7 +59,7 @@ theorem crossRow_ok {s : State} {B : Addr} {Z e eb i w : Nat} (hs : Scr s B Z)
     (by omega) (by omega) (by omega)) fun t ⟨hm, h8', hbp', hz, kt⟩ => ?_
   rw [k₁.2.1, hdx] at hv
   rw [k₁.2.1] at ho
-  refine ⟨?_, ?_, h8', hbp', hz, (k12.trans kt).mono (by simp)⟩
+  refine ⟨?_, ?_, h8', hbp', hz, (k12.trans kt).mono (by decide)⟩
   · rw [hm, wv_writeW_top _ _ _ _ _ (by omega)]
     exact hv
   · rw [hm]
@@ -136,7 +136,7 @@ theorem crossStep_ok {s₀ t : State} {B : Addr} {Z A eb w i : Nat}
   rw [rB, rX, ← old] at hv
   have global := wv_change_window (n := 2 * w + 2) (by omega) (by omega) ho hv
   rw [hI.val] at global
-  refine ⟨hI.scr.congr kt.2.2, (kp.trans kt).mono (by simp), ?_, hbp',
+  refine ⟨hI.scr.congr kt.2.2, (kp.trans kt).mono (by decide), ?_, hbp',
     hI.out.trans (ho.mono (o' := A) (n' := 8 * (2 * w + 2)) (by omega) (by omega)), ?_, ?_⟩
   · rw [h8']; congr 1
   · rw [global, crossValue_succ]
@@ -187,7 +187,7 @@ theorem cross_ok {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B Z)
       rw [hm₂, wv_zero hz₁]; simp [crossValue, Square.cross, Square.value], fun k _ hk => by rw [hm₂]; exact hz₁ k hk⟩
   refine WP.mono (wp_upto (a := 1) (N := w) (by omega) (CrossInv s₂ B Z A eb w)
     (fun i _ hi t hI => crossStep_ok h9₂ h10₂ hw hi hA hb sb hI) (fun _ h => h) hI)
-    fun t h => ⟨?_, ?_, h.zero, (k12.trans h.keep).mono (by simp)⟩
+    fun t h => ⟨?_, ?_, h.zero, (k12.trans h.keep).mono (by decide)⟩
   · rw [h.val]
     apply crossValue_congr
     intro j hj

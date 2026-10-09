@@ -39,7 +39,7 @@ theorem step_ok {s : State} {B : Addr} {Z A eb i k carry : Nat} (core : List Ins
   rw [← hm] at hv hout
   rw [kab.2.1] at hout
   refine ⟨cb, ob, hct.trans hcb, hot.trans hob, (kt.gpr (by simp)).trans zb, ?_, hout,
-    (kab.keep.trans kt).mono (by simp [stepRegs])⟩
+    (kab.keep.trans kt).mono (by decide)⟩
   rw [hv, AdxSquare.wv2]
   rw [h11, h12, hdx] at eb'
   exact eb'
@@ -80,7 +80,7 @@ theorem nextStep_ok {s : State} {B : Addr} {Z A eb i k : Nat} {c o : Bool}
     exact ⟨ct,ot,hct,hot,zt,by omega,hout,kt⟩
   · intro a ka hca hoa
     refine WP.mono (pair_ok a (hca.trans hc) (hoa.trans ho)) fun t ⟨ct,ot,hct,hot,et,kt⟩ => ?_
-    refine ⟨ct,ot,hct,hot,?_,by omega,kt.mono (by simp)⟩
+    refine ⟨ct,ot,hct,hot,?_,by omega,kt.mono (by decide)⟩
     exact (kt.gpr (by decide)).trans ((ka.gpr (by decide)).trans hz)
 
 end VG.Proof.Bignum.X86_64.AdxSquareGrouped

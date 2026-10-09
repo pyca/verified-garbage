@@ -29,7 +29,7 @@ theorem middleBody_ok {s : State} {B : Addr} {Z eU eO eN : Nat}
   have wu : wv a.mem B eU 8 = wv s.mem B eU 8 := oa.wv (by omega) (by omega)
   have wc : word t.mem B (eU - 8) = word a.mem B (eU - 8) := ot.word (by omega) (by omega)
   rw [wn, wu] at vt
-  refine ⟨?_, by rw [wc]; exact ba, (BlockOut.first oa).trans (BlockOut.second ot), (ka.trans kt).mono (by simp)⟩
+  refine ⟨?_, by rw [wc]; exact ba, (BlockOut.first oa).trans (BlockOut.second ot), (ka.trans kt).mono (by decide)⟩
   rw [wc]
   omega_using [va, vt]
 end VG.Proof.Bignum.X86_64.AdxRotate8

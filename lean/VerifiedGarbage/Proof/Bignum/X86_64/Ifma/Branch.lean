@@ -157,7 +157,7 @@ theorem branchA2_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} 
     m₂, qlt, fun hm => ?_, plt, fun hm => ?_,
     by rw [hb₂ _ (by unfold sQinv sFn; omega), hf₁ _ (by decide) (by decide)]; exact h.hQi,
     fun i hi hf => by rw [hb₂ _ (by have := hdr_lt_slot ((k + 7) / 8) 8 hi; omega), hf₁ i hi hf],
-    (hr.iscr.trans i₀₁).trans (InScr.of_frm f₂ hlZ), (kk₁.trans k₂).mono (by simp [mmRegs])⟩,
+    (hr.iscr.trans i₀₁).trans (InScr.of_frm f₂ hlZ), (kk₁.trans k₂).mono (by decide)⟩,
     mx₂⟩
   · have := qv (hMK hm); simp only [hm, ↓reduceIte] at this; exact this
   · have := pv (hMK hm); simp only [hm, ↓reduceIte] at this; exact this
@@ -316,7 +316,7 @@ theorem branchB_ok (hl : LayOk l) (M : Mont) {s t₁ : State} {B : Addr} {Z k : 
         rcases hr with rfl | rfl
         · have := slot_le (w := (k + 7) / 8) (show Public.aX < 8 by decide); simp only; omega
         · simp only [xRange]; rw [hoq] at hZq; rw [hop]; omega),
-    (hd.keep.trans k').mono (by simp [mmRegs])⟩, mx'⟩
+    (hd.keep.trans k').mono (by decide)⟩, mx'⟩
   obtain ⟨a, b, ha, hb, hbP, hh⟩ := hh' hmk
   simp only [hmk, ↓reduceIte] at ha hb hbP hh
   rw [show wv t₁.mem (off B (offQ ((k + 7) / 8) pl)) (slot (wsWords pl) Public.aY) (wsWords pl) =

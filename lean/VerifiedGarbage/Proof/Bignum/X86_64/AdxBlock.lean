@@ -167,7 +167,7 @@ theorem halfA_ok {s : State} {B : Addr} {Z e eb j : Nat} (hs : Scr s B Z) (h8 : 
     (word s.mem B (e + 8 * j + 8 * 1)).isLt (word s.mem B (e + 8 * j + 8 * 2)).isLt
     (word s.mem B (e + 8 * j + 8 * 3)).isLt (s.gpr .rcx).isLt (s₃.gpr .r11).isLt (s₄.gpr .r12).isLt
     (s₅.gpr .r13).isLt (s₆.gpr .r15).isLt (t.gpr .rcx).isLt e₀ e₁ e₂ e₃ e₄
-  refine ⟨?_, ?_, ?_, ?_, K.mono (by simp)⟩
+  refine ⟨?_, ?_, ?_, ?_, K.mono (by decide)⟩
   · rw [ca₅]; cases a₅ <;> simp_all
   · rw [oa₅]; cases p₅ <;> simp_all
   · rw [(k₇.gpr (by decide)).trans ((k₆.gpr (by decide)).trans x₅)]
@@ -253,7 +253,7 @@ theorem halfB_ok {s : State} {B : Addr} {Z e eN j : Nat} (hs : Scr s B Z) (h8 : 
   have e := halfB_arith (hm 0) (hm 1) (hm 2) (hm 3) (s.gpr .r11).isLt (s.gpr .r12).isLt (s.gpr .r13).isLt
     (s.gpr .r15).isLt (s.gpr .rbp).isLt (s₂.gpr .r11).isLt (s₃.gpr .r12).isLt (s₄.gpr .r13).isLt
     (s₅.gpr .r15).isLt (t.gpr .rbp).isLt e₀ e₁ e₂ e₃ e₄
-  refine ⟨?_, K.mono (by simp)⟩
+  refine ⟨?_, K.mono (by decide)⟩
   rw [r11, r12, r13, r15]; exact e
 
 /-! ## The stores and the count -/
@@ -362,7 +362,7 @@ theorem block_ok {s : State} {B : Addr} {Z e eb eN j w : Nat} (hs : Scr s B Z) (
   have rbp : t.gpr .rbp = b.gpr .rbp := kt.gpr (by decide)
   have rbp₀ : a.gpr .rbp = s.gpr .rbp := ka.gpr (by decide)
   rw [rbp₀] at eb'
-  refine ⟨?_, ho, h14', hz, (kab.keep.trans kt).mono (by simp)⟩
+  refine ⟨?_, ho, h14', hz, (kab.keep.trans kt).mono (by decide)⟩
   rw [hv, rcx, rbp, wv4 s.mem B (e + 8 * j), wv4 s.mem B (eb + 8 * j), wv4 s.mem B (eN + 8 * j), mul_w4, mul_w4]
   omega
 

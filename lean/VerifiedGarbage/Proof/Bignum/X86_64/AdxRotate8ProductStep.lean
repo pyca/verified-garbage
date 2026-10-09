@@ -48,7 +48,7 @@ theorem productStep_ok {s : State} {B : Addr} {Z eU eO eN k : Nat}
   refine WP.mono (storeAt_ok (hs.congr kab.2.2.2) ((kab.gpr (by decide)).trans ho) hoZ)
     fun t ⟨wt, ot, kt⟩ => ?_
   rw [ha, ka.2.1, cols_keep ka.keep (by decide)] at eb
-  refine ⟨?_, ?_, (kab.keep.trans kt).mono (by simp)⟩
+  refine ⟨?_, ?_, (kab.keep.trans kt).mono (by decide)⟩
   · rw [wt, cols_keep kt (by simp)]; exact eb
   · rw [kab.2.1] at ot; exact ot
 end VG.Proof.Bignum.X86_64.AdxRotate8

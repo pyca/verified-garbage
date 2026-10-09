@@ -155,7 +155,7 @@ theorem to52_ok (hl : LayOk l) {s : State} {A C : Addr} (hA : s.gpr .rsi = A) (h
     refine WP.mono (l52_ok (j := n) (A := A) (C := C) ((k.gpr (by decide)).trans hA)
       ((k.gpr (by decide)).trans hC) ((k.gpr (by decide)).trans h12)
       (fun i hi => by rw [k.2.1, k.2.2]; exact hrd i hi) (by rw [k.2.2]; exact hwr n (by omega)))
-      fun t' ⟨m', k', x'⟩ => ⟨fun j hj => ?_, ?_, (k.trans k').mono (by simp), x'.trans x⟩
+      fun t' ⟨m', k', x'⟩ => ⟨fun j hj => ?_, ?_, (k.trans k').mono (by decide), x'.trans x⟩
     · have := off_lt hl (j := n) (by omega)
       rw [m', hwv]
       rcases Nat.lt_or_eq_of_le (Nat.le_of_lt_succ hj) with hj | rfl
@@ -256,7 +256,7 @@ theorem orList_ok {C : Addr} {lo : Nat} :
     refine WP.mono (orj_ok h1 h2 hC (hrd j hj)) fun t ⟨a, k, m, x⟩ => ?_
     refine WP.mono (orList_ok xs t (fun j hj => hxs j (List.mem_cons_of_mem _ hj)) ((k.gpr (by decide)).trans hC)
       (fun j hj => by rw [k.2.1, k.2.2]; exact hrd j hj)) fun t' ⟨a', k', m', x'⟩ =>
-        ⟨?_, (k.trans k').mono (by simp), m'.trans m, x'.trans x⟩
+        ⟨?_, (k.trans k').mono (by decide), m'.trans m, x'.trans x⟩
     rw [a', a, m, List.foldl_cons]
 
 /-- Word `w` of `to64`. -/
@@ -344,7 +344,7 @@ theorem to64_ok {s : State} {C D' : Addr} (hC : s.gpr .r11 = C) (h8 : s.gpr .r8 
     refine WP.mono (w64_ok (w := n) ((k.gpr (by decide)).trans hC) ((k.gpr (by decide)).trans h8)
       (fun j hj => by rw [k.2.1, k.2.2]; exact hrd j hj) (by rw [k.2.2]; exact hwr n (by omega))
       (fun j hj => by rw [hsep _ _ o j hj]; exact hL j hj))
-      fun t' ⟨m', k', x'⟩ => ⟨fun w hw => ?_, ?_, (k.trans k').mono (by simp), x'.trans x⟩
+      fun t' ⟨m', k', x'⟩ => ⟨fun w hw => ?_, ?_, (k.trans k').mono (by decide), x'.trans x⟩
     · simp only [hlim] at m'
       rw [m']
       rcases Nat.lt_or_eq_of_le (Nat.le_of_lt_succ hw) with hw | rfl

@@ -37,7 +37,7 @@ theorem headN_ok {s : State} {B : Addr} {Z e eN n : Nat} {mi : BitVec 64}
     have mn0 : word a.mem B eN = word s.mem B eN := oa.word (by omega) (by omega)
     have lo : wv t.mem B e n = wv a.mem B e n := ot.wv (by omega) (by omega)
     refine ⟨?_, (oa.mono (o' := e) (n' := 8 * (n + 1)) (by omega) (by omega)).trans
-      (ot.mono (o' := e) (n' := 8 * (n + 1)) (by omega) (by omega)), (ka.trans kt).mono (by simp)⟩
+      (ot.mono (o' := e) (n' := 8 * (n + 1)) (by omega) (by omega)), (ka.trans kt).mono (by decide)⟩
     intro hinv
     have ea := va hinv
     have et := vt (by rw [mn0]; exact hinv)

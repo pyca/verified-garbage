@@ -21,7 +21,7 @@ theorem finish_ok {s : State} {B : Addr} {Z e : Nat}
     fun a ⟨ea,ba,_,_,ka⟩ => ?_)
   refine WP.mono (storeCols_ok (hs.congr ka.2.2.2)
     ((ka.gpr (by decide)).trans hp) he) fun t ⟨vt,ot,kt⟩ => ?_
-  refine ⟨?_,?_,?_,(ka.keep.trans kt).mono (by simp)⟩
+  refine ⟨?_,?_,?_,(ka.keep.trans kt).mono (by decide)⟩
   · rw [vt,kt.gpr (r := .rax) (by simp)]; exact ea
   · rw [kt.gpr (r := .rax) (by simp)]; exact ba
   · rw [ka.2.1] at ot; exact ot
@@ -46,6 +46,6 @@ theorem product_ok {s : State} {B : Addr} {Z eA eB eO : Nat}
   rw [va,ka.2.1] at vt
   simp only [Nat.reduceMul] at vt
   rw [ka.2.1] at ot
-  exact ⟨vt,ot,(ka.keep.trans kt).mono (by simp)⟩
+  exact ⟨vt,ot,(ka.keep.trans kt).mono (by decide)⟩
 
 end VG.Proof.Bignum.X86_64.AdxRect8

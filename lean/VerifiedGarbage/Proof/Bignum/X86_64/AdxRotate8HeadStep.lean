@@ -50,7 +50,7 @@ theorem headStep_ok {s : State} {B : Addr} {Z e eN k : Nat} {mi : BitVec 64}
   refine WP.mono (core_mem (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hp) hN)
     fun t ⟨ht, _, _, kt⟩ => ?_
   rw [hv, hd, oa.wv (by omega) (by omega)] at ht
-  refine ⟨?_, ?_, ?_, (ka.trans kt.keep).mono (by simp)⟩
+  refine ⟨?_, ?_, ?_, (ka.trans kt.keep).mono (by decide)⟩
   · intro hi
     have low := cancel_low hi ht
     rw [low] at ht

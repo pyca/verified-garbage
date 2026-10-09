@@ -131,6 +131,6 @@ theorem CrtReady.of_regs {s t t' : State} {B : Addr} {Z w pl ql : Nat} {minv mp 
     exact ⟨h.nv.n, h.nv.inv, h.nv.r2, h.nv.r2lt, h.nv.one⟩
   exact ⟨⟨h.good.scr.congr k.2.2, (k.gpr (by decide)).trans h.good.rdi, hm ▸ h.good.hdr⟩, hN, hm ▸ h.xm,
     hm ▸ h.msk, hm ▸ h.wsP, hm ▸ h.wsQ, hm ▸ h.pws, hx h.pxv, hm ▸ h.pmask, hm ▸ h.qws, hx h.qxv,
-    hm ▸ h.hfix, hm ▸ h.iscr, (h.keep.trans k).mono (by simp [mmRegs])⟩
+    hm ▸ h.hfix, hm ▸ h.iscr, (h.keep.trans k).mono (by decide)⟩
 
 end VG.Proof.Bignum.X86_64

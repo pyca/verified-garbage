@@ -30,34 +30,34 @@ theorem chain_ok (s : State) (src : Nat → Src) (v : Nat → BitVec 64) {c : Bo
     ([.adcx .r8 (src 0)] : List Instr) ++ ([.adcx .r9 (src 1)] : List Instr) ++ ([.adcx .r10 (src 2)] : List Instr) ++ ([.adcx .r11 (src 3)] : List Instr) ++ ([.adcx .r12 (src 4)] : List Instr) ++ ([.adcx .r13 (src 5)] : List Instr) ++ ([.adcx .r14 (src 6)] : List Instr) ++ ([.adcx .r15 (src 7)] : List Instr))) s _
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (adcx_ok s (hsrc 0 (by decide) s (k0.mono (by simp)))
+  refine WP.mono (adcx_ok s (hsrc 0 (by decide) s (k0.mono (by decide)))
     (himm 0 (by decide)) hc) fun a1 ⟨c1, hc1, _, e1, q1⟩ => ?_
   have k1 := k0.trans q1
   rw [WP.block_append_iff]
-  refine WP.mono (adcx_ok a1 (hsrc 1 (by decide) a1 (k1.mono (by simp)))
+  refine WP.mono (adcx_ok a1 (hsrc 1 (by decide) a1 (k1.mono (by decide)))
     (himm 1 (by decide)) hc1) fun a2 ⟨c2, hc2, _, e2, q2⟩ => ?_
   have k2 := k1.trans q2
   rw [WP.block_append_iff]
-  refine WP.mono (adcx_ok a2 (hsrc 2 (by decide) a2 (k2.mono (by simp)))
+  refine WP.mono (adcx_ok a2 (hsrc 2 (by decide) a2 (k2.mono (by decide)))
     (himm 2 (by decide)) hc2) fun a3 ⟨c3, hc3, _, e3, q3⟩ => ?_
   have k3 := k2.trans q3
   rw [WP.block_append_iff]
-  refine WP.mono (adcx_ok a3 (hsrc 3 (by decide) a3 (k3.mono (by simp)))
+  refine WP.mono (adcx_ok a3 (hsrc 3 (by decide) a3 (k3.mono (by decide)))
     (himm 3 (by decide)) hc3) fun a4 ⟨c4, hc4, _, e4, q4⟩ => ?_
   have k4 := k3.trans q4
   rw [WP.block_append_iff]
-  refine WP.mono (adcx_ok a4 (hsrc 4 (by decide) a4 (k4.mono (by simp)))
+  refine WP.mono (adcx_ok a4 (hsrc 4 (by decide) a4 (k4.mono (by decide)))
     (himm 4 (by decide)) hc4) fun a5 ⟨c5, hc5, _, e5, q5⟩ => ?_
   have k5 := k4.trans q5
   rw [WP.block_append_iff]
-  refine WP.mono (adcx_ok a5 (hsrc 5 (by decide) a5 (k5.mono (by simp)))
+  refine WP.mono (adcx_ok a5 (hsrc 5 (by decide) a5 (k5.mono (by decide)))
     (himm 5 (by decide)) hc5) fun a6 ⟨c6, hc6, _, e6, q6⟩ => ?_
   have k6 := k5.trans q6
   rw [WP.block_append_iff]
-  refine WP.mono (adcx_ok a6 (hsrc 6 (by decide) a6 (k6.mono (by simp)))
+  refine WP.mono (adcx_ok a6 (hsrc 6 (by decide) a6 (k6.mono (by decide)))
     (himm 6 (by decide)) hc6) fun a7 ⟨c7, hc7, _, e7, q7⟩ => ?_
   have k7 := k6.trans q7
-  refine WP.mono (adcx_ok a7 (hsrc 7 (by decide) a7 (k7.mono (by simp)))
+  refine WP.mono (adcx_ok a7 (hsrc 7 (by decide) a7 (k7.mono (by decide)))
     (himm 7 (by decide)) hc7) fun a8 ⟨c8, hc8, _, e8, q8⟩ => ?_
   have k8 := k7.trans q8
   rw [k1.gpr (by decide : Reg.r9 ∉ _)] at e2
@@ -74,7 +74,7 @@ theorem chain_ok (s : State) (src : Nat → Src) (v : Nat → BitVec 64) {c : Bo
   have f5 : a8.gpr .r12 = a5.gpr .r12 := ((q6.trans q7).trans q8).gpr (by decide)
   have f6 : a8.gpr .r13 = a6.gpr .r13 := (q7.trans q8).gpr (by decide)
   have f7 : a8.gpr .r14 = a7.gpr .r14 := q8.gpr (by decide)
-  refine ⟨c8, hc8, ?_, k8.mono (by simp)⟩
+  refine ⟨c8, hc8, ?_, k8.mono (by decide)⟩
   unfold cols number
   rw [f1, f2, f3, f4, f5, f6, f7]
   have h := add_combine e1 e2 e3 e4 e5 e6 e7 e8

@@ -73,7 +73,7 @@ theorem initialPair_ok (s : State) (hc : (s.gpr .r15).toNat ≤ 2) :
   refine WP.mono (addPair_ok d cd od) fun t ⟨ct, ot, hct, hot, et, kt⟩ => ?_
   have kad := ka.trans (kb.trans kd)
   refine ⟨ct, ot, hct, hot, (kt.gpr (by decide)).trans zd, ?_,
-    (kad.trans kt).mono (by simp)⟩
+    (kad.trans kt).mono (by decide)⟩
   rw [kad.gpr (by decide : Reg.r11 ∉ _), kad.gpr (by decide : Reg.r12 ∉ _),
     kd.gpr (by decide : Reg.rcx ∉ _), kd.gpr (by decide : Reg.rax ∉ _)] at et
   rw [ka.gpr (by decide : Reg.r15 ∉ _)] at eb
@@ -101,6 +101,6 @@ theorem close_ok (s : State) {c o : Bool} (hz : s.gpr .rsi = 0)
   have hb := Bool.toNat_le c
   have ho' := Bool.toNat_le o
   simp only [show (0 : BitVec 64).toNat = 0 from rfl] at eb et
-  refine ⟨?_, ?_, (ka.trans (kb.trans kt)).mono (by simp)⟩ <;> omega
+  refine ⟨?_, ?_, (ka.trans (kb.trans kt)).mono (by decide)⟩ <;> omega
 
 end VG.Proof.Bignum.X86_64.AdxSquareGrouped

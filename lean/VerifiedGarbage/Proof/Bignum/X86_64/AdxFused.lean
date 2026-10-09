@@ -129,7 +129,7 @@ theorem rows_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr 
   rw [vN, vB, fw (by omega_arith) (by omega_arith)] at hv
   have e8 : slot w aAcc + 16 + 8 * i + 8 = slot w aAcc + 16 + 8 * (i + 1) := by omega_arith
   rw [e8] at hv h8'
-  refine ⟨hI.scr.congr k'.2.2, (hk.trans k').mono (by simp), h8',
+  refine ⟨hI.scr.congr k'.2.2, (hk.trans k').mono (by decide), h8',
     hI.out.trans (ho.mono (o' := slot w aAcc) (n' := 16 * (w + 2)) (by omega_arith) (by omega_arith)), fun j hj hj' => ?_,
     VG.Proof.Bignum.round_lt hv hI.lt (word s.mem B (slot w a + 8 * i)).isLt hB hu, ?_⟩
   · rw [ho.word (by omega_arith) (by omega_arith)]; exact hI.zero j (by omega_arith) hj'

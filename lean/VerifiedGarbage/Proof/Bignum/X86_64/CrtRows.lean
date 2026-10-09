@@ -115,7 +115,7 @@ theorem mrStep_ok {s₀ : State} {B : Addr} {Z ea eb eA wa wb : Nat} (hs : Scr s
       t'.gpr .r13 = BitVec.ofNat 64 (i + 1) ∧ t'.zf = some (decide (i + 1 = wa)) ∧ t'.mem = t₂.mem)
     (by xrun [t₂8, t₂13, t₂10, ofNat_add_one, ofNat_sub_beq (show i + 1 < 2 ^ 64 by omega) (show wa < 2 ^ 64 by omega), a8]) rfl)
     fun t' ⟨⟨h8', h13', hz, hm'⟩, k'⟩ => ⟨hz, ?_⟩
-  refine ⟨hI.scr.congr ((k12.trans k').2.2), ((hk.trans k12).trans k').mono (by simp), h13', h8', ?_, ?_⟩
+  refine ⟨hI.scr.congr ((k12.trans k').2.2), ((hk.trans k12).trans k').mono (by decide), h13', h8', ?_, ?_⟩
   · rw [hm']
     exact hI.out.trans (ho₂.mono (by omega) (by omega))
   · -- The low words and the rest are as before.
@@ -158,6 +158,6 @@ theorem mulRows_ok {s : State} {B : Addr} {Z ea eb eA wa wb : Nat} (hs : Scr s B
   have hv := hI.val
   have ho := hI.out
   rw [hm₁] at hv ho
-  exact ⟨by rw [hv, Nat.mul_comm], ho, (k₁.trans hI.keep).mono (by simp)⟩
+  exact ⟨by rw [hv, Nat.mul_comm], ho, (k₁.trans hI.keep).mono (by decide)⟩
 
 end VG.Proof.Bignum.X86_64
