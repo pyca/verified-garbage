@@ -55,7 +55,7 @@ theorem num_eq_val32 (m : Mem) {x : BitVec 32} {o : Nat} (hx : x.toNat + o + 32 
   | 0, _ => rfl
   | n + 1, hn => by
     rw [num_succ, Proof.Mont.val32_succ, num_eq_val32 m hx n (by omega), ← Nat.pow_mul]
-    congr 2
+    refine congrArg (Proof.Mont.val32 m (x.setWidth 64) o n + 2 ^ (32 * n) * ·) ?_
     show (m.readW (addr x (o + 4 * n)) 32).toNat = _
     rw [addr_eq (by omega)]
 
