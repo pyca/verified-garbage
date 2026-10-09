@@ -6,7 +6,7 @@ import VerifiedGarbage.TCB.X86_64.State
 **Trusted.** The semantics of the general-purpose (integer) instructions of
 the x86-64 model in `TCB/X86_64/Isa.lean`: source operands, the ALU
 operations and their flags, shifts, rotates (including BMI2's `rorx`), BMI1's
-`andn`, byte swaps, `mul`, BMI2's `mulx` and ADX's `adcx` and `adox`.
+`andn`, byte swaps, `mul`, `imul`, BMI2's `mulx` and ADX's `adcx` and `adox`.
 (`cmovcc`, which reads the flags through a branch condition, is in
 `Isa.lean`, with the conditions.)
 -/
@@ -223,6 +223,18 @@ def execMul (src : Reg) (s : State) : State :=
   let hi : BitVec 64 := BitVec.ofNat 64 (p / 2 ^ 64)
   ((s.setFlags (some (hi != 0)) (some (hi != 0)) none none).setReg .rax (BitVec.ofNat 64 p)).setReg
     .rdx hi
+
+/-- SDM Vol. 2, "IMUL—Signed Multiply", the two-operand form `IMUL r64, r/m64`
+(`REX.W + 0F AF /r`) with a register source: `TMP_XP := DEST ∗ SRC; DEST :=
+TruncateToOperandSize(TMP_XP); IF SignExtend(DEST) ≠ TMP_XP THEN CF := 1;
+OF := 1; ELSE CF := 0; OF := 0; FI;` (signed operands). "The SF, ZF, AF, and
+PF flags are undefined." (AF and PF are not modelled.) The low 64 bits of the
+product are those of the unsigned product as well. -/
+def execImul (dst src : Reg) (s : State) : State :=
+  let t := (s.gpr dst).toInt * (s.gpr src).toInt
+  let r : BitVec 64 := BitVec.ofInt 64 t
+  let o := r.toInt != t
+  (s.setFlags (some o) (some o) none none).setReg dst r
 
 /-- SDM Vol. 2, "MULX—Unsigned Multiply Without Affecting Flags", for 64-bit
 operands (`VEX.LZ.F2.0F38.W1 F6 /r`, `MULX r64a, r64b, r/m64`): `SRC1 :=
