@@ -496,8 +496,7 @@ theorem narrowS_facts (hk : 6 ≤ (sig.words abi.ptrBits).length)
       (stackArg_withRegions _ _ _ j).trans (hargs j hj)]
     exact congrArg (fun x => allArgs sig s ++ [x])
       ((stackArg_withRegions _ _ _ _).trans hlast)
-  · rw [show (narrowS sig e n bytes s).mem =
-      (setArgsState bytes (nStack sig) (allocState bytes s)).mem from rfl, ← allocState_rsp']
+  · rw [narrowS, State.withRegions_mem, ← allocState_rsp']
     exact hf
 
 /-- `p - b + d` is `p - (b - d)`, for `d ≤ b`. -/
