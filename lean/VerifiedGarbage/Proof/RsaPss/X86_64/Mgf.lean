@@ -32,12 +32,12 @@ theorem mgfNb_spec : H.D + 4 + 1 + H.P.L ≤ mgfNb H * H.P.B ∧ mgfNb H * H.P.B
   have hN := hH.N_le
   have hL := hH.dims.L
   unfold mgfNb
-  have hB0 : 0 < H.P.B := by omega_arith
+  have hB0 : 0 < H.P.B := by omega_using [hDL]
   have := Nat.lt_div_mul_add (a := H.D + 4 + H.P.L) (b := H.P.B) hB0
-  have h1 : (H.D + 4 + H.P.L) / H.P.B ≤ 1 := Nat.div_le_of_le_mul (by rcases hB with h | h <;> rw [h] <;> omega_arith)
-  refine ⟨by rw [Nat.succ_mul]; omega_arith, ?_⟩
-  have : ((H.D + 4 + H.P.L) / H.P.B + 1) * H.P.B ≤ 2 * H.P.B := Nat.mul_le_mul_right _ (by omega_arith)
-  rcases hB with h | h <;> rw [h] at this ⊢ <;> omega_arith
+  have h1 : (H.D + 4 + H.P.L) / H.P.B ≤ 1 := Nat.div_le_of_le_mul (by rcases hB with h | h <;> rw [h] <;> omega_using [hDL, h, hDN, hN, hL])
+  refine ⟨by rw [Nat.succ_mul]; omega_using [this], ?_⟩
+  have : ((H.D + 4 + H.P.L) / H.P.B + 1) * H.P.B ≤ 2 * H.P.B := Nat.mul_le_mul_right _ (by omega_using [h1])
+  rcases hB with h | h <;> rw [h] at this ⊢ <;> omega_using [this]
 
 /-! ## `H ‖ C` in `Y` -/
 
@@ -49,7 +49,7 @@ theorem clearBlock_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte
   obtain ⟨_, hnb⟩ := mgfNb_spec hH
   have hB := hH.dims.B
   have h8 : mgfNb H * H.P.B % 8 = 0 := by
-    rcases hB with h | h <;> rw [h] <;> generalize mgfNb H = a <;> omega_arith
+    rcases hB with h | h <;> rw [h] <;> generalize mgfNb H = a <;> omega_using []
   have hpos : 0 < mgfNb H * H.P.B := Nat.mul_pos (Nat.succ_pos _) hH.B_pos
   refine WP.seq (WP.mono (WP.keep [.rcx, .rax, .r8] (Q := fun v => v.gpr .rcx = off S oY ∧ v.gpr .rax = 0 ∧
       v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl) fun v ⟨⟨h₁, h₂, h₃, hm⟩, hk⟩ => ?_)
@@ -58,7 +58,7 @@ theorem clearBlock_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte
     xrun [scr, List.cons_append, List.nil_append, ea_sp, L.rsp, L.ld (d := sScr) (by decide), hs,
       VG.Proof.MlKem.X86_64.sx_ofNat (show oY < 2 ^ 31 by decide)]
   have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
-  refine WP.mono (clearQ_ok Lv (hm ▸ R) hpos h8 (by unfold oY oRsa; omega_arith) (by omega_arith) h₁ h₂ h₃)
+  refine WP.mono (clearQ_ok Lv (hm ▸ R) hpos h8 (by unfold oY oRsa; omega_using [hnb]) (by omega_using [hnb]) h₁ h₂ h₃)
     fun w ⟨Lw, kw, Rw⟩ => ⟨Lw, (hk.trans kw).mono (by decide), (kw.gpr (by decide)).trans h₁, Rw⟩
 
 /-- Where `DB` and `H` are: `DB` the `db` bytes at `scratch + e`, `H` the
@@ -89,11 +89,12 @@ theorem copyHBytes_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte
   have c1 : oEm = 2560 := rfl
   have c2 : oY = 3584 := rfl
   have hcp := copy_ok Lv Rv (d := .rcx) (by decide) (p := off S (e + db)) (o := oY) (disp := 0) (n := H.D)
-    (stepI_ok (show H.D < 2 ^ 31 by omega_arith) v [.rax, .r8]) hD (by unfold oRsa; omega_arith) h₁
+    (stepI_ok (show H.D < 2 ^ 31 by omega_using [hfit, c1]) v [.rax, .r8]) hD (by unfold oRsa; omega_using [hfit, c1, c2]) h₁
     ((hk.gpr (by decide)).trans hcx) h₂
-    (fun i hi => by rw [off_plus]; exact Lv.sld8 (by unfold oRsa; omega_arith))
+    (fun i hi => by rw [off_plus]; exact Lv.sld8 (by unfold oRsa; omega_using [hfit, c1, hi]))
     (fun i hi j hj => by
-      rw [off_plus]; exact Offset.add_ofNat_ne S (by omega_arith) (by omega_arith) (by omega_arith))
+      rw [off_plus]; exact Offset.add_ofNat_ne S (by omega_using [hfit, c1, hi]) (by omega_using [hfit, c1, c2, hj])
+          (by omega_using [hfit, c1, c2, hi]))
   refine WP.mono hcp fun w ⟨Lw, kw, Rw⟩ => ⟨Lw, (hk.trans kw).mono (by decide), ?_⟩
   refine (congrArg (fun V' => Rep w.mem F S V' W) (funext fun x => ?_)).mp Rw
   simp only [cpV, Nat.add_zero]
@@ -113,7 +114,7 @@ theorem copyH_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W 
     have hDN := hH.hDN
     have hN := hH.N_le
     have hfit := hd.fit
-    have hwords : 8 * (H.D / 8) = H.D := by omega_arith
+    have hwords : 8 * (H.D / 8) = H.D := by omega_using [h8]
     have h23 : u.mem.readW (off F sEb) 64 = off S e := by rw [← he, ← R.fr 23 (by decide)]; rfl
     have h24 : u.mem.readW (off F sDb) 64 = BitVec.ofNat 64 db := by rw [← hdb, ← R.fr 24 (by decide)]; rfl
     refine WP.seq (WP.mono (WP.keep [.rsi, .r8] (Q := fun v =>
@@ -122,9 +123,9 @@ theorem copyH_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W 
       exact off_off S e db
     have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
     refine WP.mono (copyScratchWords_ok Lv (hm ▸ R) (by decide) (by decide)
-      (by rw [hwords]; unfold oEm oRsa at *; omega_arith)
-      (by rw [hwords]; unfold oY oRsa; omega_arith)
-      (by rw [hwords]; unfold oEm oY at *; omega_arith) hsrc ((hk.gpr (by decide)).trans hcx))
+      (by rw [hwords]; unfold oEm oRsa at *; omega_using [hfit])
+      (by rw [hwords]; unfold oY oRsa; omega_using [hDN, hN])
+      (by rw [hwords]; unfold oEm oY at *; omega_using [hfit]) hsrc ((hk.gpr (by decide)).trans hcx))
       fun w ⟨Lw, kw, Rw⟩ => ?_
     rw [hwords] at Rw
     exact ⟨Lw, (hk.trans kw).mono (by decide), Rw⟩
@@ -171,9 +172,9 @@ theorem counter_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
       L.sst8 (d := oY + (H.D + 3)) (by unfold oY oRsa; omega_arith), L.sst8 (d := oY + (H.D + 2)) (by unfold oY oRsa; omega_arith),
       L.sst8 (d := oY + (H.D + 1)) (by unfold oY oRsa; omega_arith), L.sst8 (d := oY + H.D) (by unfold oY oRsa; omega_arith),
       L.st (d := sL) (by decide), L.st (d := sNb) (by decide), trunc_ofNat,
-      shr_ofNat 8 (show c < 2 ^ 64 by omega_arith), shr_ofNat 8 (show c / 2 ^ 8 < 2 ^ 64 by omega_arith),
-      shr_ofNat 8 (show c / 2 ^ 8 / 2 ^ 8 < 2 ^ 64 by omega_arith),
-      zx32 (show H.D + 4 < 2 ^ 32 by omega_arith), zx32 (show mgfNb H < 2 ^ 32 by omega_arith)]
+      shr_ofNat 8 (show c < 2 ^ 64 by omega_using [hc32]), shr_ofNat 8 (show c / 2 ^ 8 < 2 ^ 64 by omega_using [hc32]),
+      shr_ofNat 8 (show c / 2 ^ 8 / 2 ^ 8 < 2 ^ 64 by omega_using [hc32]),
+      zx32 (show H.D + 4 < 2 ^ 32 by omega_arith), zx32 (show mgfNb H < 2 ^ 32 by omega_using [hmg])]
   · refine L.congr (hk.gpr (by decide)) hk.2.2 ?_
     have h1 := R2.fr 21 (by decide)
     rw [← hm] at h1
@@ -187,15 +188,15 @@ theorem counter_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
     have e4 : c = c / 256 ^ 0 := by simp
     simp only [upd, ctrV, Spec.Rsa.i2osp, List.getD_eq_getElem?_getD, List.getElem?_map]
     rcases (show x = oY + H.D ∨ x = oY + (H.D + 1) ∨ x = oY + (H.D + 2) ∨ x = oY + (H.D + 3) ∨
-        ¬(oY + H.D ≤ x ∧ x < oY + H.D + 4) by omega_arith) with h | h | h | h | h
+        ¬(oY + H.D ≤ x ∧ x < oY + H.D + 4) by omega_using []) with h | h | h | h | h
     · subst h; simp [e1]
     · subst h
-      simp [e2, show oY + (H.D + 1) - (oY + H.D) = 1 by omega_arith, show oY + (H.D + 1) < oY + H.D + 4 by omega_arith]
+      simp [e2, show oY + (H.D + 1) - (oY + H.D) = 1 by omega_using [], show oY + (H.D + 1) < oY + H.D + 4 by omega_using []]
     · subst h
-      simp [e3, show oY + (H.D + 2) - (oY + H.D) = 2 by omega_arith, show oY + (H.D + 2) < oY + H.D + 4 by omega_arith]
+      simp [e3, show oY + (H.D + 2) - (oY + H.D) = 2 by omega_using [], show oY + (H.D + 2) < oY + H.D + 4 by omega_using []]
     · subst h
-      simp [show oY + (H.D + 3) - (oY + H.D) = 3 by omega_arith, show oY + (H.D + 3) < oY + H.D + 4 by omega_arith]
-    · rw [ifn h, ifn (by omega_arith), ifn (by omega_arith), ifn (by omega_arith), ifn (by omega_arith)]
+      simp [show oY + (H.D + 3) - (oY + H.D) = 3 by omega_using [], show oY + (H.D + 3) < oY + H.D + 4 by omega_using []]
+    · rw [ifn h, ifn (by omega_using [h]), ifn (by omega_using [h]), ifn (by omega_using [h]), ifn (by omega_using [h])]
 
 /-! ## The digest into `DB` -/
 
@@ -215,7 +216,7 @@ theorem xorArgs_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
   have he1 := hd.e1
   have c1 : oEm = 2560 := rfl
   have c3 : oDig = 2304 := rfl
-  have hdbn : db < 2 ^ 63 := by omega_arith
+  have hdbn : db < 2 ^ 63 := by omega_using [hfit, c1]
   have h23 : u.mem.readW (off F sEb) 64 = off S e := by rw [← he, ← R.fr 23 (by decide)]; rfl
   have h24 : u.mem.readW (off F sDb) 64 = BitVec.ofNat 64 db := by rw [← hdb, ← R.fr 24 (by decide)]; rfl
   have h32 : u.mem.readW (off F sDone) 64 = BitVec.ofNat 64 done := by rw [← hdn, ← R.fr 32 (by decide)]; rfl
@@ -225,8 +226,8 @@ theorem xorArgs_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
   xrun [xorArgs, scr, List.cons_append, List.nil_append, ea_sp, L.rsp, L.ld (d := sScr) (by decide), hs,
     VG.Proof.MlKem.X86_64.sx_ofNat (show oDig < 2 ^ 31 by decide), L.ld (d := sEb) (by decide),
     L.ld (d := sDone) (by decide), L.ld (d := sDb) (by decide), h23, h24, h32,
-    VG.Offset.ofNat_sub_ofNat (show done ≤ db by omega_arith), zx32 (show H.D < 2 ^ 32 by omega_arith), off_plus]
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+    VG.Offset.ofNat_sub_ofNat (show done ≤ db by omega_using [hlt]), zx32 (show H.D < 2 ^ 32 by omega_using [hfit, c1]), off_plus]
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hdbn]), Nat.mod_eq_of_lt (by omega_using [hfit, c1])]
 
 include hH in
 theorem xorOutBytes_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
@@ -241,25 +242,25 @@ theorem xorOutBytes_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byt
   have he1 := hd.e1
   have c1 : oEm = 2560 := rfl
   have c3 : oDig = 2304 := rfl
-  have hdbn : db < 2 ^ 63 := by omega_arith
+  have hdbn : db < 2 ^ 63 := by omega_using [hfit, c1]
   unfold xorOutBytes seqs seqs seqs
   refine WP.seq (WP.mono (xorArgs_ok hH L R hd he hdb hdn hlt)
     fun v ⟨⟨h₁, h₂, h₃, h₄, h₅, hm⟩, hk⟩ => ?_)
   have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
   have Rv : Rep v.mem F S V W := hm ▸ R
   -- The count, `min(hLen, dbLen - done)`.
-  have hmin : 0 < min H.D (db - done) := by omega_arith
+  have hmin : 0 < min H.D (db - done) := by omega_using [hlt, hD]
   refine WP.seq (WP.mono (Q := fun (w : State) => Keep [.r10] v w ∧ w.mem = v.mem ∧
       w.gpr .r10 = BitVec.ofNat 64 (min H.D (db - done))) ?_ fun w ⟨kw, hmw, h10⟩ => ?_)
   · refine WP.ite (M := isa) _ (show isa.eval .b v = _ from h₅) (fun hb => ?_) (fun hb => ?_)
     · rw [decide_eq_true_eq] at hb
       refine WP.mono (WP.keep [.r10] (Q := fun w => w.mem = v.mem ∧ w.gpr .r10 = BitVec.ofNat 64 (db - done))
-        ?_ rfl) fun w ⟨⟨hm', h'⟩, k'⟩ => ⟨k', hm', by rw [h', Nat.min_eq_right (by omega_arith)]⟩
+        ?_ rfl) fun w ⟨⟨hm', h'⟩, k'⟩ => ⟨k', hm', by rw [h', Nat.min_eq_right (by omega_using [hb])]⟩
       xrun [h₃]
     · rw [decide_eq_false_iff_not] at hb
       refine WP.mono (WP.keep [] (Q := fun w => w = v) ?_ rfl) fun w ⟨hw, _⟩ => ?_
       · xrun
-      · subst hw; exact ⟨Keep.refl _ _, rfl, by rw [h₄, Nat.min_eq_left (by omega_arith)]⟩
+      · subst hw; exact ⟨Keep.refl _ _, rfl, by rw [h₄, Nat.min_eq_left (by omega_using [hb])]⟩
   have Lw : Lay w F S := Lv.congr (kw.gpr (by decide)) kw.2.2 (by rw [hmw])
   have Rw : Rep w.mem F S V W := hmw ▸ Rv
   refine WP.seq (WP.mono (WP.keep [.r8] (Q := fun x => x.gpr .r8 = BitVec.ofNat 64 0 ∧ x.mem = w.mem) ?_ rfl)
@@ -269,8 +270,8 @@ theorem xorOutBytes_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byt
   have Rx : Rep x.mem F S V W := hmx ▸ Rw
   have kvx := kw.trans kx
   refine WP.mono (xor_ok Lx Rx (a := oDig) (b := e + done) (n := min H.D (db - done))
-    (stepR_ok (by omega_arith) x (show Reg.r10 ∉ [Reg.rax, .rdx, .r8] by decide) (by decide)
-      ((kx.gpr (by decide)).trans h10)) hmin (by unfold oRsa; omega_arith) (by unfold oRsa; omega_arith) (by omega_arith)
+    (stepR_ok (by omega_using [hdbn]) x (show Reg.r10 ∉ [Reg.rax, .rdx, .r8] by decide) (by decide)
+      ((kx.gpr (by decide)).trans h10)) hmin (by unfold oRsa; omega_using [hfit, c1, c3]) (by unfold oRsa; omega_using [hfit, c1, hmin]) (by omega_using [hDN, hN, he1, c1, c3])
     ((kvx.gpr (by decide)).trans h₁) ((kvx.gpr (by decide)).trans h₂) h8)
     fun y ⟨Ly, ky, Ry⟩ => ⟨Ly, ?_, Ry⟩
   exact (hk.trans (kvx.trans ky)).mono (by decide)
@@ -291,7 +292,7 @@ theorem xorOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
     have he1 := hd.e1
     have c1 : oEm = 2560 := rfl
     have c3 : oDig = 2304 := rfl
-    have hdbn : db < 2 ^ 63 := by omega_arith
+    have hdbn : db < 2 ^ 63 := by omega_using [hfit, c1]
     refine WP.seq (WP.mono (xorArgs_ok hH L R hd he hdb hdn hlt)
       fun v ⟨⟨h₁, h₂, h₃, h₄, h₅, hm⟩, hk⟩ => ?_)
     have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
@@ -300,12 +301,12 @@ theorem xorOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
     · exact WP.mono (xorOutBytes_ok hH Lv Rv hd he hdb hdn hlt) fun t ⟨Lt, kt, Rt⟩ =>
         ⟨Lt, (hk.trans kt).mono (by decide), Rt⟩
     · rw [decide_eq_false_iff_not] at hb
-      have hw : 8 * (H.D / 8) = H.D := by omega_arith
+      have hw : 8 * (H.D / 8) = H.D := by omega_using [h8]
       refine WP.mono (xorScratchWords_ok (H.D / 8) Lv Rv
-        (by rw [hw]; unfold oDig oRsa; omega_arith)
-        (by rw [hw]; unfold oRsa; omega_arith)
-        (by rw [hw]; unfold oDig; omega_arith) h₁ h₂) fun t ⟨Lt, kt, Rt⟩ => ?_
-      rw [Nat.min_eq_left (by omega_arith)]
+        (by rw [hw]; unfold oDig oRsa; omega_using [hfit, c1])
+        (by rw [hw]; unfold oRsa; omega_using [hD, hfit, c1, hb])
+        (by rw [hw]; unfold oDig; omega_using [hDN, hN, he1, c1]) h₁ h₂) fun t ⟨Lt, kt, Rt⟩ => ?_
+      rw [Nat.min_eq_left (by omega_using [hb])]
       exact ⟨Lt, (hk.trans kt).mono (by decide), by simpa only [hw] using Rt⟩
   · exact xorOutBytes_ok hH L R hd he hdb hdn hlt
 
@@ -338,8 +339,8 @@ theorem nextCtr_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
       ?_ rfl) fun u' ⟨⟨hcf, hm⟩, hk⟩ => ⟨?_, hk, hcf, hm ▸ R2⟩
   · xrun [nextCtr, ea_sp, L.rsp, L.ld (d := sCtr) (by decide), L.ld (d := sDone) (by decide),
       L.ld (d := sDb) (by decide), L.st (d := sCtr) (by decide), L.st (d := sDone) (by decide), h31, h32', h24,
-      ofNat_add_lit, VG.Proof.MlKem.X86_64.sx_ofNat (show H.D < 2 ^ 31 by omega_arith), BitVec.ofNat_add_ofNat]
-    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+      ofNat_add_lit, VG.Proof.MlKem.X86_64.sx_ofNat (show H.D < 2 ^ 31 by omega_using [hDN, hN]), BitVec.ofNat_add_ofNat]
+    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hd']), Nat.mod_eq_of_lt (by omega_using [hdb'])]
   · refine L.congr (hk.gpr (by decide)) hk.2.2 ?_
     have h1 := R2.fr 21 (by decide)
     rw [← hm] at h1
@@ -396,10 +397,11 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
   obtain ⟨hnb1, hnb2⟩ := mgfNb_spec hH
   have hcD : c ≤ c * H.D := Nat.le_mul_of_pos_right c hD
   obtain ⟨V1, W1, R1, h31, h32, hW, hV⟩ := I.rep
-  have hW23 : W1 23 = off S e := (hW 23 (by decide) (by omega_arith)).trans he
-  have hW24 : W1 24 = BitVec.ofNat 64 db := (hW 24 (by decide) (by omega_arith)).trans hdb
+  have hW23 : W1 23 = off S e := (hW 23 (by decide) (by omega_using [])).trans he
+  have hW24 : W1 24 = BitVec.ofNat 64 db := (hW 24 (by decide) (by omega_using [])).trans hdb
   have hH1 : ∀ i < H.D, V1 (e + db + i) = V (e + db + i) := fun i hi => by
-    rw [hV _ (by omega_arith) ⟨by omega_arith, by omega_arith⟩, mixV, ifn (by omega_arith)]
+    rw [hV _ (by omega_using [hfit, c1, c5, hi]) ⟨by omega_using [he1, c1, c4], by omega_using [hfit, c1, c2, hi]⟩,
+        mixV, ifn (by omega_using [])]
   set hB := (List.range H.D).map fun i => V (e + db + i) with hhB
   set mk := Spec.Mgf1.mgf1 G hB db with hmk
   have hBl : hB.length = H.D := by rw [hhB, List.length_map, List.length_range]
@@ -411,36 +413,39 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
   -- `H`.
   refine WP.seq (WP.mono (copyH_ok hH L1 R1' hd hW23 hW24 hcx1) fun u2 ⟨L2, k2, R2⟩ => ?_)
   -- The counter.
-  refine WP.seq (WP.mono (counter_ok hH L2 R2 h31 (by omega_arith) ((k2.gpr (by decide)).trans hcx1))
+  refine WP.seq (WP.mono (counter_ok hH L2 R2 h31 (by omega_using [hc, hfit, c1, hcD]) ((k2.gpr (by decide)).trans hcx1))
     fun u3 ⟨L3, k3, R3⟩ => ?_)
   -- The digest of `H ‖ C`.
   have hml : (hB ++ Spec.Rsa.i2osp c 4).length = H.D + 4 := by
     rw [List.length_append, hBl, i2osp_len]
   refine WP.seq (WP.mono (mgfHash_ok hH K L3 R3 (msg := hB ++ Spec.Rsa.i2osp c 4) (nbm := mgfNb H) hml
-    (by simp [upd, hml]) (by simp [upd]) (by omega_arith) (by omega_arith) (fun i hi => ?_))
+    (by simp [upd, hml]) (by simp [upd]) (by omega_using [hnb1, hml]) (by omega_using [hnb2]) (fun i hi => ?_))
     fun u4 ⟨L4, rd4, wr4, cs4, V5, W3, R4, hout4, hW4, hdig⟩ => ?_)
   · simp only [ctrV, cpV, clrV, getD_app, hBl]
     by_cases h1 : i < H.D
-    · rw [ifn (by omega_arith), ifp (by omega_arith), ifp h1, ifn (by omega_arith), Nat.add_sub_cancel_left, hH1 i h1, hBg i h1]
+    · rw [ifn (by omega_using [h1]), ifp (by omega_using [h1]), ifp h1, ifn (by omega_using [hfit, c1, c2, h1]),
+        Nat.add_sub_cancel_left, hH1 i h1, hBg i h1]
     · by_cases h2 : i < H.D + 4
-      · rw [ifp (by omega_arith), ifn h1, show oY + i - (oY + H.D) = i - H.D by omega_arith]
-      · rw [ifn (by omega_arith), ifn (by omega_arith), ifp (by omega_arith), ifn h1, List.getD_eq_getElem?_getD,
-          List.getElem?_eq_none (by rw [i2osp_len]; omega_arith)]
+      · rw [ifp (by omega_using [h1, h2]), ifn h1, show oY + i - (oY + H.D) = i - H.D by omega_using []]
+      · rw [ifn (by omega_using [h2]), ifn (by omega_using [h2]), ifp (by omega_using [hi]), ifn h1, List.getD_eq_getElem?_getD,
+          List.getElem?_eq_none (by rw [i2osp_len]; omega_using [h2])]
         rfl
   -- Into `DB`.
   have hW3 : ∀ k < nW, k < 27 ∨ 32 < k → W3 k = W k := fun k hk h => by
-    rw [hW4 k hk (by omega_arith) (by omega_arith)]; simp only [upd, ifn (show k ≠ 28 by omega_arith), ifn (show k ≠ 27 by omega_arith)]
+    rw [hW4 k hk (by omega_using [h]) (by omega_using [h])]; simp only [upd, ifn (show k ≠ 28 by omega_using [h]),
+        ifn (show k ≠ 27 by omega_using [h])]
     exact hW k hk h
   have hW3' : ∀ k, k = 31 ∨ k = 32 → W3 k = W1 k := fun k h => by
-    rw [hW4 k (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith)]
-    simp only [upd, ifn (show k ≠ 28 by omega_arith), ifn (show k ≠ 27 by omega_arith)]
-  have hcD' : c * H.D + H.D ≤ db + H.D := by omega_arith
-  refine WP.seq (WP.mono (xorOut_ok hH L4 R4 hd ((hW3 23 (by decide) (by omega_arith)).trans he)
-    ((hW3 24 (by decide) (by omega_arith)).trans hdb) ((hW3' 32 (by omega_arith)).trans h32) hc)
+    rw [hW4 k (by unfold nW frameBytes; omega_using [h]) (by omega_using [h]) (by omega_using [h])]
+    simp only [upd, ifn (show k ≠ 28 by omega_using [h]), ifn (show k ≠ 27 by omega_using [h])]
+  have hcD' : c * H.D + H.D ≤ db + H.D := by omega_using [hc]
+  refine WP.seq (WP.mono (xorOut_ok hH L4 R4 hd ((hW3 23 (by decide) (by omega_using [])).trans he)
+    ((hW3 24 (by decide) (by omega_using [])).trans hdb) ((hW3' 32 (by omega_using [])).trans h32) hc)
     fun u5 ⟨L5, k5, R5⟩ => ?_)
   -- The next counter.
-  refine WP.mono (nextCtr_ok hH L5 R5 ((hW3' 31 (by omega_arith)).trans h31) ((hW3' 32 (by omega_arith)).trans h32)
-    ((hW3 24 (by decide) (by omega_arith)).trans hdb) (by omega_arith) (by omega_arith)) fun u6 ⟨L6, k6, cf6, R6⟩ => ?_
+  refine WP.mono (nextCtr_ok hH L5 R5 ((hW3' 31 (by omega_using [])).trans h31) ((hW3' 32 (by omega_using [])).trans h32)
+    ((hW3 24 (by decide) (by omega_using [])).trans hdb) (by omega_using [hfit, c1, hcD'])
+        (by omega_using [hfit, c1])) fun u6 ⟨L6, k6, cf6, R6⟩ => ?_
   refine ⟨by rw [cf6, Nat.succ_mul], L6, ?_, ?_, ?_, _, _, R6, by simp [upd], ?_, ?_, ?_⟩
   · rw [k6.2.1, k5.2.1, rd4, k3.2.1, k2.2.1, k1.2.1, I.rd]
   · rw [k6.2.2, k5.2.2, wr4, k3.2.2, k2.2.2, k1.2.2, I.wr]
@@ -449,7 +454,7 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
       keep_cs k2 (by decide) r hr, keep_cs k1 (by decide) r hr, I.cs r hr]
   · simp [upd, Nat.succ_mul]
   · intro k hk h
-    simp only [upd, ifn (show k ≠ 32 by omega_arith), ifn (show k ≠ 31 by omega_arith)]
+    simp only [upd, ifn (show k ≠ 32 by omega_using [h]), ifn (show k ≠ 31 by omega_using [h])]
     exact hW3 k hk h
   · intro o ho hco
     have hcm : H.D * c = c * H.D := Nat.mul_comm _ _
@@ -461,19 +466,19 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
     have hold : V5 o = mixV V mk e (min (c * H.D) db) o := by
       rw [hout4 o ho hco]
       simp only [ctrV, cpV, clrV]
-      rw [ifn (by omega_arith), ifn (by omega_arith), ifn (by omega_arith), hV o ho hco]
+      rw [ifn (by omega_using [hnb1, hnb2, hY]), ifn (by omega_using [hnb1, hnb2, hY]), ifn (by omega_using [hnb2, hY]), hV o ho hco]
     simp only [xorV]
     by_cases hx : e + c * H.D ≤ o ∧ o < e + c * H.D + min H.D (db - c * H.D)
     · have hq : (o - e) / H.D = c :=
-        Nat.div_eq_of_lt_le (by rw [Nat.mul_comm]; omega_arith) (by rw [Nat.succ_mul, Nat.mul_comm]; omega_arith)
+        Nat.div_eq_of_lt_le (by rw [Nat.mul_comm]; omega_using [hcm, hx]) (by rw [Nat.succ_mul, Nat.mul_comm]; omega_using [hcm, hx])
       have hr : (o - e) % H.D = o - (e + c * H.D) := by
-        rw [Nat.mod_eq_sub_mul_div, hq, Nat.mul_comm]; omega_arith
-      rw [ifp hx, hold, hdg _ (by omega_arith), mixV, mixV, ifn (by omega_arith), ifp (by omega_arith), hmk,
-        mgf1_getD hG hB (show o - e < db by omega_arith), hGl, hGh, hq, hr]
+        rw [Nat.mod_eq_sub_mul_div, hq, Nat.mul_comm]; omega_using []
+      rw [ifp hx, hold, hdg _ (by omega_using [hx]), mixV, mixV, ifn (by omega_using [hx]), ifp (by omega_using [hs1, hx]), hmk,
+        mgf1_getD hG hB (show o - e < db by omega_using [hx]), hGl, hGh, hq, hr]
     · rw [ifn hx, hold, mixV, mixV]
       by_cases hy : e ≤ o ∧ o < e + min (c * H.D) db
-      · rw [ifp hy, ifp (by omega_arith)]
-      · rw [ifn hy, ifn (by omega_arith)]
+      · rw [ifp hy, ifp (by omega_using [hs1, hy])]
+      · rw [ifn hy, ifn (by omega_using [hs1, hx, hy])]
 
 /-! ## MGF1 -/
 
@@ -503,19 +508,19 @@ theorem mgfXor_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) 
     rw [slot_eq sScr 21 rfl, slot_eq sScr 21 rfl, R2'.fr 21 (by decide), R.fr 21 (by decide)]; simp [upd])
   have I0 : MgfI u F S V W (Spec.Mgf1.mgf1 G ((List.range H.D).map fun i => V (e + db + i)) db) e db H.D 0 v :=
     ⟨Lv, hk.2.1, hk.2.2, keep_cs hk (by decide), _, _, R2', by simp [upd], by simp [upd],
-      fun k _ h => by simp only [upd, ifn (show k ≠ 32 by omega_arith), ifn (show k ≠ 31 by omega_arith)],
-      fun o _ _ => by simp only [mixV, Nat.zero_mul, Nat.zero_min, Nat.add_zero]; rw [ifn (by omega_arith)]⟩
+      fun k _ h => by simp only [upd, ifn (show k ≠ 32 by omega_using [h]), ifn (show k ≠ 31 by omega_using [h])],
+      fun o _ _ => by simp only [mixV, Nat.zero_mul, Nat.zero_min, Nat.add_zero]; rw [ifn (by omega_using [])]⟩
   refine WP.loop (M := isa) (fun n w => ∃ c, n = db - c * H.D ∧ c * H.D < db ∧
       MgfI u F S V W (Spec.Mgf1.mgf1 G ((List.range H.D).map fun i => V (e + db + i)) db) e db H.D c w)
-    ?_ (db - 0 * H.D) v ⟨0, rfl, by omega_arith, I0⟩
+    ?_ (db - 0 * H.D) v ⟨0, rfl, by omega_using [hdb1], I0⟩
   rintro n w ⟨c, rfl, hc, I⟩
   refine WP.mono (round_ok hH K hGh hGl hG hd he hdb I hc) fun w' ⟨hcf, I'⟩ => ?_
   have hs1 : (c + 1) * H.D = c * H.D + H.D := Nat.succ_mul _ _
   by_cases h : (c + 1) * H.D < db
   · refine .inr ⟨by simp only [eval, hcf, h, decide_true], _, ?_, c + 1, rfl, h, I'⟩
-    omega_arith
+    omega_using [hD, hs1, h]
   · refine .inl ⟨by simp only [eval, hcf, h, decide_false], I'.L, I'.rd, I'.wr, I'.cs, ?_⟩
     obtain ⟨V', W', R', _, _, hW', hV'⟩ := I'.rep
-    exact ⟨V', W', R', hW', fun o ho hco => by rw [hV' o ho hco, Nat.min_eq_right (by omega_arith)]⟩
+    exact ⟨V', W', R', hW', fun o ho hco => by rw [hV' o ho hco, Nat.min_eq_right (by omega_using [h])]⟩
 
 end VG.Proof.RsaPss.X86_64
