@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Sha512.Md
-import VerifiedGarbage.Proof.MdStream.X86.Finalize
+import VerifiedGarbage.Proof.MdStream.X86.Update
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha512.X86.Compress
 import VerifiedGarbage.Impl.Sha512.X86.Stream
