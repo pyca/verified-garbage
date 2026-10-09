@@ -45,6 +45,22 @@ theorem fastSign_toNat (w k j : Nat) :
   · have hp := hp hn
     simp only [ite_true]; omega
 
+/-- The step's arithmetic at any width `M`: the registers' value after subtracting the digit's
+`M`-bit two's complement. -/
+theorem sub_next_of {M o r m r' : Nat} {neg : Bool}
+    (hs : (o+(if neg then M-m else m))%M=r) (hlt : o<M) (hm : m≤63) (hpos : neg=true → 0<m)
+    (hrM : r+64≤M) (hr : if neg then r+m=2*r' else r=2*r'+m) : o=2*r' := by
+  cases neg
+  · simp only [Bool.false_eq_true,ite_false] at hs hr
+    by_cases h : o+m<M
+    · rw [Nat.mod_eq_of_lt h] at hs; omega
+    · rw [Nat.mod_eq_sub_mod (by omega),Nat.mod_eq_of_lt (by omega)] at hs; omega
+  · have hp := hpos rfl
+    simp only [ite_true] at hs hr
+    by_cases h : m≤o
+    · rw [show o+(M-m)=(o-m)+M by omega,Nat.add_mod_right,Nat.mod_eq_of_lt (by omega)] at hs; omega
+    · rw [Nat.mod_eq_of_lt (by omega)] at hs; omega
+
 theorem fastSub5_next (a b c d e : BitVec 64) (w k j : Nat)
     (hv : nafVal5 a b c d e=FastNaf.residual w k j) (hb : FastNaf.residual w k j≤2^256) :
     let x := BitVec.ofInt 64 (FastNaf.digit w k j)
@@ -52,12 +68,6 @@ theorem fastSub5_next (a b c d e : BitVec 64) (w k j : Nat)
     nafVal5 out.1 out.2.1 out.2.2.1 out.2.2.2.1 out.2.2.2.2 = 2*FastNaf.residual w k (j+1) := by
   have hs := nafSub5_value a b c d e (BitVec.ofInt 64 (FastNaf.digit w k j))
     (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63))
-  have hlt := nafVal5_lt (nafSub5 a b c d e (BitVec.ofInt 64 (FastNaf.digit w k j))
-    (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63))).1
-    (nafSub5 a b c d e (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63))).2.1
-    (nafSub5 a b c d e (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63))).2.2.1
-    (nafSub5 a b c d e (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63))).2.2.2.1
-    (nafSub5 a b c d e (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63))).2.2.2.2
   dsimp only at hs ⊢
   rw [hv] at hs
   have he : nafVal5 (BitVec.ofInt 64 (FastNaf.digit w k j))
@@ -71,9 +81,8 @@ theorem fastSub5_next (a b c d e : BitVec 64) (w k j : Nat)
     · omega
     · have := fastMagnitude_bound w k j; omega
   rw [he] at hs
-  have hr := FastNaf.recurrence w k j
-  have hm := fastMagnitude_bound w k j
-  cases hn : FastNaf.negative w k j <;> simp only [hn,Bool.false_eq_true,ite_false,ite_true] at hs hr <;> omega
+  exact sub_next_of hs (nafVal5_lt _ _ _ _ _) (fastMagnitude_bound w k j)
+    (FastNaf.negative_magnitude_pos w k j) (by omega) (FastNaf.recurrence w k j)
 
 
 theorem fastSubtract_ok (s : State) (w k j : Nat)
@@ -105,7 +114,6 @@ theorem fastSub7_next (a b c d e f g : BitVec 64) (w k j : Nat)
       2*FastNaf.residual w k (j+1) := by
   have hs := nafSub7_value a b c d e f g (BitVec.ofInt 64 (FastNaf.digit w k j))
     (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63))
-  have hlt := nafVal7_lt (nafSub7 a b c d e f g (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63))).1 (nafSub7 a b c d e f g (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63))).2.1 (nafSub7 a b c d e f g (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63))).2.2.1 (nafSub7 a b c d e f g (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63))).2.2.2.1 (nafSub7 a b c d e f g (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63))).2.2.2.2.1 (nafSub7 a b c d e f g (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63))).2.2.2.2.2.1 (nafSub7 a b c d e f g (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63))).2.2.2.2.2.2
   dsimp only at hs ⊢
   rw [hv] at hs
   have he : nafVal7 (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63)) (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63)) =
@@ -115,9 +123,8 @@ theorem fastSub7_next (a b c d e f g : BitVec 64) (w k j : Nat)
     · omega
     · have := fastMagnitude_bound w k j; omega
   rw [he] at hs
-  have hr := FastNaf.recurrence w k j
-  have hm := fastMagnitude_bound w k j
-  cases hn : FastNaf.negative w k j <;> simp only [hn,Bool.false_eq_true,ite_false,ite_true] at hs hr <;> omega
+  exact sub_next_of hs (nafVal7_lt _ _ _ _ _ _ _) (fastMagnitude_bound w k j)
+    (FastNaf.negative_magnitude_pos w k j) (by omega) (FastNaf.recurrence w k j)
 
 theorem subtractDigitN_four : Naf.subtractDigitN 4=Naf.subtractDigit := rfl
 
@@ -160,19 +167,17 @@ theorem fastSub10_next (a b c d e f g h i l : BitVec 64) (w k j : Nat)
       2*FastNaf.residual w k (j+1) := by
   have hs := nafSub10_value a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j))
     (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))
-  have hlt := nafVal10_lt (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.2.2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.2.2.2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.2.2.2.2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.2.2.2.2.2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.2.2.2.2.2.2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.2.2.2.2.2.2.2
   dsimp only at hs ⊢
   rw [hv] at hs
   have he : nafVal10 (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) =
       if FastNaf.negative w k j then 2^256*2^256*2^128-FastNaf.magnitude w k j else FastNaf.magnitude w k j := by
-    simp only [nafVal10,fastWord_toNat,fastSign_toNat]
+    simp only [nafVal10_unfold,fastWord_toNat,fastSign_toNat]
     cases hn : FastNaf.negative w k j <;> simp only [Bool.false_eq_true,ite_false,ite_true]
     · omega
     · have := fastMagnitude_bound w k j; omega
   rw [he] at hs
-  have hr := FastNaf.recurrence w k j
-  have hm := fastMagnitude_bound w k j
-  cases hn : FastNaf.negative w k j <;> simp only [hn,Bool.false_eq_true,ite_false,ite_true] at hs hr <;> omega
+  exact sub_next_of hs (nafVal10_lt _ _ _ _ _ _ _ _ _ _) (fastMagnitude_bound w k j)
+    (FastNaf.negative_magnitude_pos w k j) (by omega) (FastNaf.recurrence w k j)
 
 theorem subtractDigitN_nine : Naf.subtractDigitN 9=
     [.mov .rax (.reg .rcx),.shift .shr .rax 63,.mov32 .rdx (.imm 0),.alu .sub .rdx (.reg .rax),
