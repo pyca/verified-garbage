@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointCorrect
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointCT
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLitAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 
 /-!

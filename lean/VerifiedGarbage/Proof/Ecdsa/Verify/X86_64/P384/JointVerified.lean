@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCorrect
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCT
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
 
 /-!
 # ECDSA verification over P-384 on x86-64: `Verified`

@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
 import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+import VerifiedGarbage.Proof.P521.X86_64.JointPartsLit
+import VerifiedGarbage.Proof.P521.X86_64.JointPartsLitAdx
 
 /-! Baseline and ADX taint checks of the rest of P-521's joint loop: its digits'
 reads and entries, the cache of `Z²`, `Z³`, the seed, the counter, the
