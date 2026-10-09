@@ -186,7 +186,12 @@ theorem loadGroup_ok (t : State)
     (by simp only [s₄, s₃, v_setV_self, v_setV_of_ne _ _ (by decide : VReg.v2 ≠ .v3)])
     (by simp only [s₄, v_setV_self])) fun t' ⟨tg, tv, tgp, tm, trd, twr, tsp⟩ =>
       ⟨fun h hh i hi b hb => tg i (List.mem_range.mpr hi) h hh b hb, fun w a0 a1 a2 a3 a4 hw => ?_,
-        fun g h6 h7 => (tgp g h6 h7).trans rfl, tm, trd, twr, tsp⟩
+        fun g h6 h7 => (tgp g h6 h7).trans rfl, ?_, ?_, ?_, ?_⟩
+  rotate_left
+  · rw [tm]; simp only [s₄, s₃, s₂, s₁, mem_setV]
+  · rw [trd]; simp only [s₄, s₃, s₂, s₁, rd_setV]
+  · rw [twr]; simp only [s₄, s₃, s₂, s₁, wr_setV]
+  · rw [tsp]; simp only [s₄, s₃, s₂, s₁, sp_setV]
   rw [tv w a4 (fun i hi h hh => hw i (List.mem_range.mp hi) h hh)]
   simp only [s₄, s₃, s₂, s₁, v_setV_of_ne _ _ a0, v_setV_of_ne _ _ a1, v_setV_of_ne _ _ a2,
     v_setV_of_ne _ _ a3]
