@@ -395,11 +395,11 @@ def sqLow : List Reg := [.r12, .r13, .r14, .r15]
 /-- A round of `redRX`'s reduction, in the window `t, w₁, w₂, w₃` of four
 words `W`, for `m + 1 = 2⁶⁴ m'` and `m' = 2ᵏ + 2¹²⁸ (2⁶⁴ − 2ᵏ + 1)`: the
 window becomes `w₁, w₂, w₃, t` with the value `(W + t m) / 2⁶⁴`, as
-`W + t m = W − t + 2⁶⁴ t m'`. `t 2ᵏ` (`rbp:rax`) and `t (2⁶⁴ − 2ᵏ + 1)`
-(`t:rcx`) by `mulx`, and added in one carry chain, which ends in the new top
-word `t`. -/
+`W + t m = W − t + 2⁶⁴ t m'`. `t 2ᵏ` (`rbp:rax`) by two shifts (cheaper than
+a `mulx` on AMD's Zen cores) and `t (2⁶⁴ − 2ᵏ + 1)` (`t:rcx`) by `mulx`, and
+added in one carry chain, which ends in the new top word `t`. -/
 def redRoundX (k : Nat) (t w1 w2 w3 : Reg) : List Instr :=
-  [.mov .rdx (.reg t), .movImm64 .rax (BitVec.ofNat 64 (2 ^ k)), .mulx .rbp .rax (.reg .rax),
+  [.mov .rdx (.reg t), .mov .rax (.reg t), .shift .shl .rax k, .mov .rbp (.reg t), .shift .shr .rbp (64 - k),
     .movImm64 .rcx (BitVec.ofNat 64 (2 ^ 64 - 2 ^ k + 1)), .mulx t .rcx (.reg .rcx),
     .alu .add w1 (.reg .rax), .alu .adc w2 (.reg .rbp), .alu .adc w3 (.reg .rcx), .alu .adc t (.imm 0)]
 

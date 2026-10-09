@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Aes.X86.Encrypt
 import VerifiedGarbage.Proof.Framework.Bitslice.Sym
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Bitslicing the round keys, on x86 (32-bit)
@@ -224,7 +225,7 @@ theorem keyBody_ok {j : Nat} {s : State} (hi : KInv s₀ B R w j s) :
     rw [u₆.gpr, u₅'.gpr, u₅'.other .eax (by decide), u₅.gpr, u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr, hi.esi,
       u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, a0, BitVec.add_comm _ S]
     congr 1
-    bv_omega
+    bv_omega_using [hi.hj, hk.hR]
   -- The loads.
   have hok₁ : Ok loadCfg s₆ :=
     Ok.of_off (r := reg32 B 2048) (r' := reg32 S 240) (b := B) (b' := S) (off := 0) (off' := 16 * j)
@@ -286,7 +287,7 @@ theorem keyBody_ok {j : Nat} {s : State} (hi : KInv s₀ B R w j s) :
   have heax : s₁₅.gpr .eax = BitVec.ofNat 32 (32 * (R - j)) := by
     rw [u₁₅.gpr, u₁₄.gpr, u₁₃.gpr, u₁₂.gpr, u₁₁.gpr, u₁₀.gpr, u₉.gpr, u₉.other .esi (by decide),
       hesi₈, a1]
-    bv_omega
+    bv_omega_using [hi.hj, hk.hR]
   have hebx : s₁₈.gpr .ebx = B + BitVec.ofNat 32 (keyOff R j) := by
     rw [u₁₈.gpr, u₁₇.gpr, u₁₆.gpr, u₁₇.other .eax (by decide), u₁₆.other .eax (by decide), heax]
     have : s₁₅.gpr .edi = B := by
@@ -295,7 +296,7 @@ theorem keyBody_ok {j : Nat} {s : State} (hi : KInv s₀ B R w j s) :
         u₉.other _ (by decide)]; exact hsb₈
     rw [this]
     simp only [keyOff, lastKey]
-    bv_omega
+    bv_omega_using [hi.hj, hk.hR]
   have hm₁₈ : s₁₈.mem = s₈.mem := by
     rw [u₁₈.mem, u₁₇.mem, u₁₆.mem, u₁₅.mem, u₁₄.mem, u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem]
   have hrd₁₈ : s₁₈.rd = s₀.rd := by

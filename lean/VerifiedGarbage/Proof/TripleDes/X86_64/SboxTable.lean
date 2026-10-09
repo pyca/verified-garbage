@@ -2,10 +2,8 @@ import VerifiedGarbage.Impl.TripleDes.X86_64.Sbox
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
-The code of the eight S-boxes as literals (`materialize_table`): the
-literals of the code that runs them, and the kernel's checks of that code
-(`lit_decide`, `taint_decide`), read it rather than run the register
-allocator that writes it again.
+The code of the eight S-boxes (written out in `Impl`) as one table
+(`materialize_table`), which the literals of the code that runs them read.
 -/
 
 namespace VG

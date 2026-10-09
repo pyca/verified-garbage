@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Camellia.Scratch
 import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Camellia.X86_64.Lit
 
 /-!
 # Camellia ECB on x86-64 meets its contracts
@@ -80,7 +81,7 @@ theorem ecb_correct (dir : Dir) (s : State) (hs : (ecbX86_64 dir).pre s) :
     ∃ t s', Exec isa (ecb dir) s t s' ∧ abiPreserved s s' ∧ (ecbX86_64 dir).post s s' := by
   obtain ⟨t, s', he, hg, hpost⟩ := ecb_wp dir hs
   refine ⟨t, s', he, abiPreserved_of_exec (c := ecb dir) ?_ he hg, hpost⟩
-  cases dir <;> decide +kernel
+  cases dir <;> lit_decide
 
 /-- A state satisfying the precondition (one block, 18 rounds). -/
 def ecbSat : State where
@@ -129,7 +130,7 @@ theorem ecb_framed (dir : Dir) :
     (n := 393) (pre := Spec.Camellia.ecbPre X86_64.abi.ptrBits)
     (post := Spec.Camellia.ecbPost (specDir dir) X86_64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 3152) (by rw [← Proof.Camellia.ecbScratchContract_eq]; exact ecb_verified dir)
-    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by cases dir <;> decide +kernel))
-    (by cases dir <;> decide +kernel) (by decide) (Proof.Camellia.ecbPostOut_local _ _) (ecbFrameSat_pre _)
+    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by cases dir <;> lit_decide))
+    (by cases dir <;> lit_decide) (by decide) (Proof.Camellia.ecbPostOut_local _ _) (ecbFrameSat_pre _)
 
 end VG.Proof.Camellia.X86_64

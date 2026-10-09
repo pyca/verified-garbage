@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
 
 /-!
 # Constant time of the point arithmetic blocks
@@ -18,7 +19,9 @@ open VG VG.X86 VG.Impl.Ed25519.X86
 /-! ## The checks -/
 
 theorem pointEncode_ct {x : BitVec 32} : RelCT isa (CallCTPre x) pointEncode (fun _ _ => True) := by
-  exact VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ h => callTaint₀_agree h) (by taint_decide)
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check callTaint₀ pointEncode h).isSome = true := by
+    taint_decide_sum [VG.Proof.X25519.X86.pow250Sum]
+  exact VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ h => callTaint₀_agree h) hc
 
 def PowersCTPre (x : BitVec 32) (s t : State) : Prop :=
   PointCTCtx x s ∧ PointCTCtx x t ∧ s.wr = t.wr ∧ wd s.mem x 24 = wd t.mem x 24

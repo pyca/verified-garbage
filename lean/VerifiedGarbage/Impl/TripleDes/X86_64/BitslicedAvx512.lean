@@ -51,7 +51,202 @@ def outReg (i : Nat) : XReg := outRegs.getD i .xmm0
 /-- The key bit mask. -/
 def maskReg : XReg := .xmm15
 
-def sboxCode (j : Nat) : List Instr :=
+/-! The code of the S-boxes, as `compile` allocates it for their circuits. It is written
+out (and `#guard` checks that it is what `compile` produces) so that the kernel, which
+evaluates the code in the proofs, does not have to run the allocator. -/
+
+/-- The code of S-box 1. -/
+def sboxCode0 : List Instr := [
+  .zop (.zbin .vpandnq .xmm6 .xmm1 .xmm5), .zop (.zbin .vpxord .xmm7 .xmm2 .xmm6),
+  .zop (.zbin .vporq .xmm8 .xmm3 .xmm0), .zop (.zbin .vpxord .xmm9 .xmm5 .xmm3),
+  .zop (.zbin .vpandq .xmm10 .xmm8 .xmm9), .zop (.zbin .vpxord .xmm11 .xmm2 .xmm10),
+  .zop (.zbin .vpandnq .xmm12 .xmm7 .xmm11), .zop (.zbin .vpxord .xmm13 .xmm1 .xmm0),
+  .zop (.vmovdqa64 .xmm14 .xmm7), .zop (.vpternlogd .xmm14 .xmm3 .xmm13 0x90#8),
+  .zop (.vpternlogd .xmm14 .xmm0 .xmm10 0x1e#8), .zop (.zbin .vpandnq .xmm10 .xmm12 .xmm14),
+  .zop (.zbin .vporq .xmm0 .xmm5 .xmm0), .zop (.zbin .vporq .xmm15 .xmm14 .xmm0),
+  .zop (.zbin .vpandnq .xmm11 .xmm11 .xmm1), .zop (.vpternlogd .xmm2 .xmm11 .xmm0 0x9c#8),
+  .zop (.vpternlogd .xmm2 .xmm13 .xmm9 0xf4#8), .zop (.zbin .vpandnq .xmm6 .xmm6 .xmm3),
+  .zop (.vpternlogd .xmm6 .xmm7 .xmm15 0x06#8), .zop (.vpternlogd .xmm14 .xmm6 .xmm8 0x93#8),
+  .zop (.vmovdqa64 .xmm3 .xmm4), .zop (.vpternlogd .xmm3 .xmm15 .xmm11 0x06#8),
+  .zop (.zbin .vpxord .xmm3 .xmm3 .xmm14), .zop (.vpternlogd .xmm11 .xmm13 .xmm6 0xf6#8),
+  .zop (.vpternlogd .xmm5 .xmm8 .xmm11 0x96#8), .zop (.zbin .vpxord .xmm14 .xmm14 .xmm5),
+  .zop (.vpternlogd .xmm12 .xmm14 .xmm4 0x36#8), .zop (.vpternlogd .xmm8 .xmm2 .xmm15 0xde#8),
+  .zop (.zbin .vpxord .xmm8 .xmm5 .xmm8), .zop (.vpternlogd .xmm13 .xmm8 .xmm14 0x36#8),
+  .zop (.vpternlogd .xmm13 .xmm10 .xmm4 0x1e#8), .zop (.vpternlogd .xmm8 .xmm1 .xmm7 0x0e#8),
+  .zop (.vpternlogd .xmm8 .xmm10 .xmm5 0x78#8), .zop (.vpternlogd .xmm2 .xmm8 .xmm4 0x1e#8),
+  .zop (.vmovdqa64 .xmm0 .xmm2), .zop (.vmovdqa64 .xmm1 .xmm3), .zop (.vmovdqa64 .xmm2 .xmm13),
+  .zop (.vmovdqa64 .xmm3 .xmm12)]
+
+/-- The code of S-box 2. -/
+def sboxCode1 : List Instr := [
+  .zop (.zbin .vpxord .xmm6 .xmm4 .xmm1), .zop (.vmovdqa64 .xmm7 .xmm1),
+  .zop (.vpternlogd .xmm7 .xmm5 .xmm0 0xb0#8), .zop (.zbin .vporq .xmm8 .xmm4 .xmm7),
+  .zop (.zbin .vpandnq .xmm9 .xmm0 .xmm6), .zop (.vpternlogd .xmm1 .xmm5 .xmm6 0x78#8),
+  .zop (.zbin .vpandq .xmm10 .xmm3 .xmm0), .zop (.vpternlogd .xmm7 .xmm8 .xmm9 0x48#8),
+  .zop (.zbin .vpandq .xmm11 .xmm3 .xmm7), .zop (.vpternlogd .xmm5 .xmm11 .xmm11 0xc3#8),
+  .zop (.zbin .vpxord .xmm0 .xmm0 .xmm6), .zop (.zbin .vpandnq .xmm12 .xmm10 .xmm0),
+  .zop (.zbin .vpxord .xmm13 .xmm5 .xmm12), .zop (.vmovdqa64 .xmm14 .xmm2),
+  .zop (.vpternlogd .xmm14 .xmm7 .xmm10 0xb0#8), .zop (.zbin .vpxord .xmm14 .xmm14 .xmm13),
+  .zop (.zbin .vpandnq .xmm12 .xmm12 .xmm4), .zop (.zbin .vpxord .xmm4 .xmm1 .xmm12),
+  .zop (.zbin .vpxord .xmm3 .xmm3 .xmm0), .zop (.vpternlogd .xmm5 .xmm3 .xmm4 0x9c#8),
+  .zop (.vmovdqa64 .xmm15 .xmm5), .zop (.vpternlogd .xmm15 .xmm8 .xmm2 0xb4#8),
+  .zop (.vpternlogd .xmm3 .xmm11 .xmm12 0xf6#8), .zop (.zbin .vpxord .xmm8 .xmm8 .xmm13),
+  .zop (.zbin .vporq .xmm10 .xmm10 .xmm8), .zop (.zbin .vpxord .xmm12 .xmm3 .xmm10),
+  .zop (.vpternlogd .xmm5 .xmm7 .xmm13 0x96#8), .zop (.zbin .vpandq .xmm3 .xmm6 .xmm3),
+  .zop (.vpternlogd .xmm3 .xmm10 .xmm5 0x78#8), .zop (.vpternlogd .xmm12 .xmm3 .xmm2 0x1e#8),
+  .zop (.zbin .vporq .xmm8 .xmm0 .xmm8), .zop (.vpternlogd .xmm8 .xmm3 .xmm4 0xb4#8),
+  .zop (.vpternlogd .xmm2 .xmm1 .xmm9 0xf4#8), .zop (.zbin .vpxord .xmm8 .xmm2 .xmm8),
+  .zop (.vmovdqa64 .xmm0 .xmm8), .zop (.vmovdqa64 .xmm1 .xmm12), .zop (.vmovdqa64 .xmm2 .xmm14),
+  .zop (.vmovdqa64 .xmm3 .xmm15)]
+
+/-- The code of S-box 3. -/
+def sboxCode2 : List Instr := [
+  .zop (.zbin .vpandnq .xmm6 .xmm4 .xmm5), .zop (.zbin .vpxord .xmm7 .xmm3 .xmm0),
+  .zop (.zbin .vporq .xmm8 .xmm6 .xmm7), .zop (.zbin .vpxord .xmm9 .xmm2 .xmm0),
+  .zop (.zbin .vpandnq .xmm10 .xmm5 .xmm9), .zop (.zbin .vpxord .xmm11 .xmm8 .xmm10),
+  .zop (.zbin .vpxord .xmm12 .xmm4 .xmm7), .zop (.vpternlogd .xmm8 .xmm12 .xmm0 0xb4#8),
+  .zop (.vmovdqa64 .xmm13 .xmm2), .zop (.vpternlogd .xmm13 .xmm0 .xmm11 0xf8#8),
+  .zop (.vpternlogd .xmm13 .xmm12 .xmm5 0x6c#8), .zop (.vmovdqa64 .xmm14 .xmm13),
+  .zop (.vpternlogd .xmm14 .xmm11 .xmm1 0xb4#8), .zop (.zbin .vpxord .xmm15 .xmm5 .xmm2),
+  .vmovdqu32Store (spillAt 0) .xmm14,
+  .zop (.vmovdqa64 .xmm14 .xmm3), .zop (.vpternlogd .xmm14 .xmm8 .xmm15 0xf6#8),
+  .zop (.vpternlogd .xmm14 .xmm7 .xmm9 0x70#8), .zop (.zbin .vporq .xmm15 .xmm10 .xmm15),
+  .zop (.zbin .vpandq .xmm0 .xmm2 .xmm0), .zop (.zbin .vpandnq .xmm10 .xmm4 .xmm0),
+  .zop (.vpternlogd .xmm10 .xmm13 .xmm15 0xb4#8), .zop (.zbin .vpandq .xmm9 .xmm8 .xmm10),
+  .zop (.vpternlogd .xmm9 .xmm12 .xmm0 0x0e#8), .zop (.zbin .vpxord .xmm9 .xmm5 .xmm9),
+  .zop (.vpternlogd .xmm14 .xmm9 .xmm1 0x6c#8), .zop (.vmovdqa64 .xmm5 .xmm11),
+  .zop (.vpternlogd .xmm5 .xmm11 .xmm11 0x0f#8), .zop (.vpternlogd .xmm3 .xmm4 .xmm5 0xfe#8),
+  .zop (.zbin .vpxord .xmm3 .xmm12 .xmm3), .zop (.vpternlogd .xmm11 .xmm1 .xmm8 0x8c#8),
+  .zop (.vpternlogd .xmm11 .xmm15 .xmm3 0x96#8), .zop (.vpternlogd .xmm13 .xmm2 .xmm5 0x78#8),
+  .zop (.zbin .vpxord .xmm9 .xmm6 .xmm9), .zop (.vpternlogd .xmm9 .xmm3 .xmm13 0x1e#8),
+  .zop (.vpternlogd .xmm9 .xmm10 .xmm1 0x1e#8),
+  .vmovdqu32Load .xmm0 (spillAt 0),
+  .zop (.vmovdqa64 .xmm1 .xmm9), .zop (.vmovdqa64 .xmm2 .xmm14), .zop (.vmovdqa64 .xmm3 .xmm11)]
+
+/-- The code of S-box 4. -/
+def sboxCode3 : List Instr := [
+  .zop (.zbin .vpxord .xmm5 .xmm5 .xmm3), .zop (.zbin .vpxord .xmm3 .xmm3 .xmm1),
+  .zop (.vmovdqa64 .xmm6 .xmm1), .zop (.vpternlogd .xmm6 .xmm4 .xmm2 0x1e#8),
+  .zop (.zbin .vpandnq .xmm6 .xmm6 .xmm3), .zop (.zbin .vpandnq .xmm7 .xmm4 .xmm3),
+  .zop (.zbin .vpxord .xmm8 .xmm2 .xmm7), .zop (.vmovdqa64 .xmm9 .xmm6),
+  .zop (.vpternlogd .xmm9 .xmm5 .xmm8 0x0e#8), .zop (.zbin .vpxord .xmm10 .xmm4 .xmm9),
+  .zop (.zbin .vpandq .xmm8 .xmm8 .xmm10), .zop (.zbin .vpxord .xmm5 .xmm5 .xmm10),
+  .zop (.vpternlogd .xmm3 .xmm5 .xmm8 0x8c#8), .zop (.zbin .vpxord .xmm3 .xmm6 .xmm3),
+  .zop (.zbin .vpxord .xmm2 .xmm4 .xmm2), .zop (.vpternlogd .xmm5 .xmm1 .xmm7 0x1e#8),
+  .zop (.vpternlogd .xmm9 .xmm5 .xmm2 0xb4#8), .zop (.vmovdqa64 .xmm7 .xmm9),
+  .zop (.vpternlogd .xmm7 .xmm0 .xmm3 0xb4#8), .zop (.vpternlogd .xmm9 .xmm9 .xmm9 0x0f#8),
+  .zop (.vmovdqa64 .xmm1 .xmm9), .zop (.vpternlogd .xmm1 .xmm3 .xmm0 0xb4#8),
+  .zop (.vpternlogd .xmm2 .xmm3 .xmm9 0x06#8), .zop (.vpternlogd .xmm5 .xmm8 .xmm2 0x1e#8),
+  .zop (.vmovdqa64 .xmm2 .xmm5), .zop (.vpternlogd .xmm2 .xmm10 .xmm0 0x1e#8),
+  .zop (.vpternlogd .xmm5 .xmm0 .xmm10 0x78#8), .zop (.vmovdqa64 .xmm0 .xmm5),
+  .vmovdqu32Store (spillAt 0) .xmm1,
+  .zop (.vmovdqa64 .xmm1 .xmm2),
+  .vmovdqu32Load .xmm2 (spillAt 0),
+  .zop (.vmovdqa64 .xmm3 .xmm7)]
+
+/-- The code of S-box 5. -/
+def sboxCode4 : List Instr := [
+  .zop (.zbin .vporq .xmm6 .xmm5 .xmm3), .zop (.zbin .vpandnq .xmm7 .xmm0 .xmm6),
+  .zop (.zbin .vpxord .xmm8 .xmm5 .xmm7), .zop (.zbin .vpxord .xmm9 .xmm3 .xmm8),
+  .zop (.zbin .vporq .xmm10 .xmm2 .xmm9), .zop (.vpternlogd .xmm3 .xmm7 .xmm2 0xb4#8),
+  .zop (.zbin .vporq .xmm9 .xmm5 .xmm9), .zop (.vmovdqa64 .xmm7 .xmm9),
+  .zop (.vpternlogd .xmm7 .xmm1 .xmm3 0x78#8), .zop (.zbin .vpxord .xmm7 .xmm2 .xmm7),
+  .zop (.zbin .vpxord .xmm0 .xmm0 .xmm7), .zop (.zbin .vporq .xmm11 .xmm8 .xmm0),
+  .zop (.zbin .vpandq .xmm12 .xmm1 .xmm11), .zop (.zbin .vpandq .xmm13 .xmm2 .xmm9),
+  .zop (.vpternlogd .xmm13 .xmm8 .xmm12 0x96#8), .zop (.zbin .vpandnq .xmm11 .xmm5 .xmm11),
+  .zop (.zbin .vpxord .xmm1 .xmm1 .xmm10), .zop (.vmovdqa64 .xmm14 .xmm1),
+  .zop (.vpternlogd .xmm14 .xmm3 .xmm11 0x6f#8), .zop (.vpternlogd .xmm7 .xmm14 .xmm4 0xb4#8),
+  .zop (.vpternlogd .xmm11 .xmm13 .xmm1 0xde#8), .zop (.vpternlogd .xmm11 .xmm3 .xmm12 0xb0#8),
+  .zop (.vpternlogd .xmm1 .xmm0 .xmm11 0x78#8), .zop (.vpternlogd .xmm9 .xmm1 .xmm3 0xec#8),
+  .zop (.vpternlogd .xmm12 .xmm4 .xmm9 0x48#8), .zop (.zbin .vpxord .xmm13 .xmm12 .xmm13),
+  .zop (.vpternlogd .xmm5 .xmm11 .xmm6 0x96#8), .zop (.vpternlogd .xmm5 .xmm2 .xmm1 0x78#8),
+  .zop (.vpternlogd .xmm11 .xmm4 .xmm10 0xce#8), .zop (.zbin .vpxord .xmm11 .xmm11 .xmm5),
+  .zop (.vpternlogd .xmm5 .xmm10 .xmm3 0x06#8), .zop (.vpternlogd .xmm5 .xmm8 .xmm1 0x96#8),
+  .zop (.vpternlogd .xmm5 .xmm10 .xmm4 0x78#8), .zop (.vmovdqa64 .xmm0 .xmm13),
+  .zop (.vmovdqa64 .xmm1 .xmm7), .zop (.vmovdqa64 .xmm2 .xmm5), .zop (.vmovdqa64 .xmm3 .xmm11)]
+
+/-- The code of S-box 6. -/
+def sboxCode5 : List Instr := [
+  .zop (.vmovdqa64 .xmm6 .xmm5), .zop (.vpternlogd .xmm6 .xmm4 .xmm0 0xe0#8),
+  .zop (.vmovdqa64 .xmm7 .xmm6), .zop (.vpternlogd .xmm7 .xmm4 .xmm1 0x96#8),
+  .zop (.zbin .vpxord .xmm8 .xmm0 .xmm7), .zop (.zbin .vpandnq .xmm9 .xmm8 .xmm1),
+  .zop (.zbin .vpandq .xmm8 .xmm5 .xmm8), .zop (.zbin .vpxord .xmm10 .xmm4 .xmm8),
+  .zop (.zbin .vpxord .xmm11 .xmm5 .xmm3), .zop (.zbin .vporq .xmm12 .xmm10 .xmm11),
+  .zop (.zbin .vpxord .xmm13 .xmm7 .xmm12), .zop (.zbin .vpandq .xmm14 .xmm3 .xmm13),
+  .zop (.zbin .vpandnq .xmm15 .xmm0 .xmm14), .zop (.zbin .vporq .xmm10 .xmm9 .xmm10),
+  .vmovdqu32Store (spillAt 0) .xmm8,
+  .zop (.zbin .vpxord .xmm8 .xmm15 .xmm10),
+  .vmovdqu32Store (spillAt 1) .xmm7,
+  .zop (.vmovdqa64 .xmm7 .xmm13), .zop (.vpternlogd .xmm7 .xmm8 .xmm2 0x78#8),
+  .zop (.zbin .vpxord .xmm12 .xmm4 .xmm12), .zop (.vpternlogd .xmm3 .xmm0 .xmm12 0xb4#8),
+  .vmovdqu32Store (spillAt 2) .xmm7,
+  .zop (.vmovdqa64 .xmm7 .xmm3), .zop (.vpternlogd .xmm7 .xmm1 .xmm14 0xf4#8),
+  .zop (.zbin .vporq .xmm11 .xmm4 .xmm11), .zop (.zbin .vporq .xmm6 .xmm6 .xmm7),
+  .zop (.vpternlogd .xmm6 .xmm8 .xmm11 0x96#8), .zop (.vpternlogd .xmm10 .xmm5 .xmm13 0xe0#8),
+  .zop (.zbin .vpxord .xmm10 .xmm3 .xmm10), .zop (.zbin .vpandnq .xmm15 .xmm15 .xmm10),
+  .zop (.vpternlogd .xmm15 .xmm9 .xmm2 0x1e#8),
+  .vmovdqu32Load .xmm9 (spillAt 1),
+  .zop (.vpternlogd .xmm1 .xmm9 .xmm10 0x90#8), .zop (.vpternlogd .xmm12 .xmm11 .xmm11 0xc3#8),
+  .zop (.vpternlogd .xmm1 .xmm2 .xmm12 0x12#8), .zop (.zbin .vpxord .xmm6 .xmm1 .xmm6),
+  .zop (.zbin .vpxord .xmm3 .xmm5 .xmm3),
+  .vmovdqu32Load .xmm5 (spillAt 0),
+  .zop (.vpternlogd .xmm3 .xmm0 .xmm5 0x60#8), .zop (.vpternlogd .xmm3 .xmm14 .xmm12 0x96#8),
+  .zop (.vpternlogd .xmm3 .xmm7 .xmm2 0xb4#8),
+  .vmovdqu32Load .xmm0 (spillAt 2),
+  .zop (.vmovdqa64 .xmm1 .xmm15), .zop (.vmovdqa64 .xmm2 .xmm6)]
+
+/-- The code of S-box 7. -/
+def sboxCode6 : List Instr := [
+  .zop (.zbin .vpxord .xmm6 .xmm2 .xmm1), .zop (.zbin .vpxord .xmm7 .xmm3 .xmm6),
+  .zop (.zbin .vpandq .xmm8 .xmm0 .xmm7), .zop (.zbin .vpandq .xmm9 .xmm2 .xmm6),
+  .zop (.zbin .vpxord .xmm10 .xmm4 .xmm9), .zop (.zbin .vpandq .xmm11 .xmm8 .xmm10),
+  .zop (.zbin .vpandq .xmm12 .xmm0 .xmm9), .zop (.zbin .vpxord .xmm13 .xmm3 .xmm12),
+  .zop (.zbin .vporq .xmm14 .xmm10 .xmm13), .zop (.zbin .vpxord .xmm6 .xmm0 .xmm6),
+  .zop (.zbin .vpxord .xmm15 .xmm14 .xmm6), .zop (.vpternlogd .xmm15 .xmm5 .xmm11 0xb4#8),
+  .zop (.zbin .vpandnq .xmm7 .xmm7 .xmm1), .zop (.zbin .vpxord .xmm13 .xmm8 .xmm13),
+  .vmovdqu32Store (spillAt 0) .xmm15,
+  .zop (.vmovdqa64 .xmm15 .xmm13), .zop (.vpternlogd .xmm15 .xmm10 .xmm7 0x1e#8),
+  .zop (.zbin .vpxord .xmm6 .xmm8 .xmm6), .zop (.zbin .vpandnq .xmm2 .xmm6 .xmm2),
+  .zop (.zbin .vpxord .xmm13 .xmm1 .xmm13), .zop (.vpternlogd .xmm13 .xmm10 .xmm2 0xb4#8),
+  .zop (.zbin .vpandnq .xmm12 .xmm12 .xmm6), .zop (.zbin .vporq .xmm2 .xmm2 .xmm12),
+  .zop (.vpternlogd .xmm14 .xmm13 .xmm4 0x48#8), .zop (.zbin .vpxord .xmm14 .xmm2 .xmm14),
+  .zop (.vmovdqa64 .xmm6 .xmm13), .zop (.vpternlogd .xmm6 .xmm14 .xmm5 0x78#8),
+  .zop (.vpternlogd .xmm12 .xmm10 .xmm3 0xf4#8), .zop (.vpternlogd .xmm12 .xmm9 .xmm13 0xe0#8),
+  .zop (.vpternlogd .xmm0 .xmm7 .xmm2 0x60#8), .zop (.zbin .vporq .xmm0 .xmm11 .xmm0),
+  .zop (.zbin .vpxord .xmm11 .xmm12 .xmm0), .zop (.vmovdqa64 .xmm2 .xmm15),
+  .zop (.vpternlogd .xmm2 .xmm11 .xmm5 0xb4#8), .zop (.vpternlogd .xmm15 .xmm4 .xmm0 0x87#8),
+  .zop (.vpternlogd .xmm5 .xmm14 .xmm12 0xf6#8), .zop (.vpternlogd .xmm5 .xmm11 .xmm15 0x96#8),
+  .vmovdqu32Load .xmm0 (spillAt 0),
+  .zop (.vmovdqa64 .xmm1 .xmm6),
+  .vmovdqu32Store (spillAt 1) .xmm2,
+  .zop (.vmovdqa64 .xmm2 .xmm5),
+  .vmovdqu32Load .xmm3 (spillAt 1)]
+
+/-- The code of S-box 8. -/
+def sboxCode7 : List Instr := [
+  .zop (.zbin .vpandnq .xmm6 .xmm4 .xmm3), .zop (.vmovdqa64 .xmm7 .xmm2),
+  .zop (.vpternlogd .xmm7 .xmm1 .xmm3 0xb4#8), .zop (.zbin .vpandq .xmm8 .xmm5 .xmm7),
+  .zop (.zbin .vpandnq .xmm9 .xmm6 .xmm8), .zop (.zbin .vpandnq .xmm10 .xmm7 .xmm4),
+  .zop (.zbin .vporq .xmm11 .xmm5 .xmm10), .zop (.vmovdqa64 .xmm12 .xmm1),
+  .zop (.vpternlogd .xmm12 .xmm4 .xmm3 0xb4#8), .zop (.zbin .vpandq .xmm13 .xmm11 .xmm12),
+  .zop (.zbin .vporq .xmm8 .xmm8 .xmm13), .zop (.zbin .vpandnq .xmm11 .xmm11 .xmm3),
+  .zop (.vpternlogd .xmm11 .xmm13 .xmm7 0x69#8), .zop (.zbin .vpxord .xmm6 .xmm6 .xmm11),
+  .zop (.vmovdqa64 .xmm7 .xmm6), .zop (.vpternlogd .xmm7 .xmm9 .xmm0 0x1e#8),
+  .zop (.zbin .vpxord .xmm6 .xmm5 .xmm6), .zop (.zbin .vpxord .xmm11 .xmm4 .xmm11),
+  .zop (.vmovdqa64 .xmm13 .xmm11), .zop (.vpternlogd .xmm13 .xmm1 .xmm6 0x78#8),
+  .zop (.zbin .vpxord .xmm10 .xmm10 .xmm13), .zop (.vpternlogd .xmm4 .xmm8 .xmm13 0xf6#8),
+  .zop (.vpternlogd .xmm4 .xmm1 .xmm6 0x96#8), .zop (.vpternlogd .xmm8 .xmm4 .xmm0 0x6c#8),
+  .zop (.zbin .vpxord .xmm12 .xmm12 .xmm10), .zop (.vpternlogd .xmm11 .xmm12 .xmm2 0x36#8),
+  .zop (.vpternlogd .xmm5 .xmm0 .xmm11 0x48#8), .zop (.zbin .vpxord .xmm5 .xmm5 .xmm10),
+  .zop (.vpternlogd .xmm4 .xmm12 .xmm2 0x40#8), .zop (.vpternlogd .xmm4 .xmm9 .xmm11 0x96#8),
+  .zop (.vpternlogd .xmm10 .xmm4 .xmm0 0x1e#8), .zop (.vmovdqa64 .xmm0 .xmm5),
+  .zop (.vmovdqa64 .xmm1 .xmm8), .zop (.vmovdqa64 .xmm2 .xmm7), .zop (.vmovdqa64 .xmm3 .xmm10)]
+
+def sboxCode : Nat → List Instr
+  | 0 => sboxCode0 | 1 => sboxCode1 | 2 => sboxCode2 | 3 => sboxCode3
+  | 4 => sboxCode4 | 5 => sboxCode5 | 6 => sboxCode6 | _ => sboxCode7
+
+#guard (List.range 8).all fun j => sboxCode j ==
   compile (box j) ((List.range 6).map fun i => (i, inReg i))
     ((List.range 4).map fun i => ((outputs j).getD i 0, outReg i)) freeRegs (List.range spills)
 

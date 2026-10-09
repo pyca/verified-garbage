@@ -12,7 +12,7 @@ def artifacts : List Artifact := [
     contract := Spec.Camellia.expandKeyContract X86_64.abi 3152
     stack := 3152
     verified := Proof.Camellia.X86_64.expandKey_framed
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Camellia.ecbEncryptApi with
     target := X86_64.target
     doc := Spec.Camellia.ecbEncryptApi.doc
@@ -23,7 +23,7 @@ def artifacts : List Artifact := [
     stack := 3152
     ofSig := ⟨_, _, _, by unfold Spec.Camellia.ecbEncryptContract Spec.Camellia.ecbContract; rfl⟩
     verified := Proof.Camellia.X86_64.ecb_framed .encrypt
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Camellia.ecbDecryptApi with
     target := X86_64.target
     doc := Spec.Camellia.ecbDecryptApi.doc
@@ -34,6 +34,6 @@ def artifacts : List Artifact := [
     stack := 3152
     ofSig := ⟨_, _, _, by unfold Spec.Camellia.ecbDecryptContract Spec.Camellia.ecbContract; rfl⟩
     verified := Proof.Camellia.X86_64.ecb_framed .decrypt
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Camellia.X86_64

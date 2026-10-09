@@ -323,7 +323,7 @@ theorem pubArgs_ok {s A : State} (hp : PreV s) (hA : Keep [.rax] (allocState fra
   · rw [hm]; simp (disch := decide) only [word_wo, word_writeW_self]
   · rw [hm]; simp (disch := decide) only [word_wo, word_writeW_self]
   · rw [hm]; exact word_writeW_self _ _ _ _
-  · rw [k'.gpr (by simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all)]
+  · rw [k'.gpr (by simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first | decide | simp_all)]
     simp [allocState_gpr, hr']
 
 /-! ## The whole function -/
@@ -413,7 +413,7 @@ theorem code_correct (v : PubImpl) (s : State) (h : verContract.pre s) :
       · show (if r = .rsp then _ else t₃.gpr r) = s.gpr r
         simp only [hr', ↓reduceIte]
         have hr'' : r ∉ [Reg.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] := by
-          simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
+          simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first | decide | simp_all
         rw [k₃.gpr hr'', hcs₂ r hr, hcs₁ r hr hr']
     · show t₃.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
       rw [hmx₃, hmx₂, hmx₁]; exact congrArg _ hmx₀

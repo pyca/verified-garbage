@@ -172,9 +172,11 @@ theorem selPart_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} 
     exact hfw₃.bytes (R := ⟨scA s sAM, kOf s⟩) (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact (hp.dMs.sub_right (dAM (by unfold sAM scrBytes; omega))).symm)
       (show kOf s ≤ 2 ^ 64 by omega) hi
-  have kk : Keep ([.rax, .rsi, .rdx, .r10, .r11] ++ [.r8, .rcx] ++ [.rdx, .rsi, .rcx]) t t₃ := (k₁.trans k₂).trans k₃
+  have kk : Keep (([.rax, .rsi, .rdx, .r10, .r11] : List Reg) ++ ([.r8, .rcx] : List Reg) ++
+      ([.rdx, .rsi, .rcx] : List Reg)) t t₃ := (k₁.trans k₂).trans k₃
   have g : ∀ r, r ∉ [Reg.rax, .rsi, .rdx, .r10, .r11, .r8, .rcx] → t₃.gpr r = t.gpr r := fun r hr =>
-    have hr' : r ∉ [Reg.rax, .rsi, .rdx, .r10, .r11] ++ [.r8, .rcx] ++ [.rdx, .rsi, .rcx] := by
+    have hr' : r ∉ ([Reg.rax, .rsi, .rdx, .r10, .r11] : List Reg) ++ ([.r8, .rcx] : List Reg) ++
+        ([.rdx, .rsi, .rcx] : List Reg) := by
       intro h; apply hr
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
       rcases h with ((h | h | h | h | h) | (h | h)) | (h | h | h) <;> subst h <;> simp

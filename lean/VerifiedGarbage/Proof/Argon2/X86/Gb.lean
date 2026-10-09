@@ -281,13 +281,18 @@ set_option linter.unusedSimpArgs false in
 theorem gbV_eq {n : Nat} (v : Vector Word n) {a b c d : Fin n} (hab : a.val ≠ b.val)
     (hac : a.val ≠ c.val) (had : a.val ≠ d.val) (hbc : b.val ≠ c.val) (hbd : b.val ≠ d.val)
     (hcd : c.val ≠ d.val) : gbV v a b c d = Proof.Argon2.mixWords v a b c d := by
-  apply Vector.ext
-  intro j hj
-  simp only [gbV, am, xr, Proof.Argon2.mixWords, Proof.Argon2.mix, Fin.getElem_fin, Vector.getElem_set,
-    hab, hac, had, hbc, hbd, hcd, Ne.symm hab, Ne.symm hac, Ne.symm had, Ne.symm hbc,
-    Ne.symm hbd, Ne.symm hcd, ite_true, ite_false]
   have nb := Ne.symm hab; have nc := Ne.symm hac; have nd := Ne.symm had
   have nc' := Ne.symm hbc; have nd' := Ne.symm hbd; have nd'' := Ne.symm hcd
+  -- The reads at `a`, `b`, `c` and `d` first, then the writes, at any index.
+  simp only [gbV, am, xr, Proof.Argon2.mixWords, Proof.Argon2.mix, Fin.getElem_fin,
+    Vector.getElem_set_self, Vector.getElem_set_ne _ _ hab, Vector.getElem_set_ne _ _ hac,
+    Vector.getElem_set_ne _ _ had, Vector.getElem_set_ne _ _ hbc, Vector.getElem_set_ne _ _ hbd,
+    Vector.getElem_set_ne _ _ hcd, Vector.getElem_set_ne _ _ nb, Vector.getElem_set_ne _ _ nc,
+    Vector.getElem_set_ne _ _ nd, Vector.getElem_set_ne _ _ nc', Vector.getElem_set_ne _ _ nd',
+    Vector.getElem_set_ne _ _ nd'']
+  apply Vector.ext
+  intro j hj
+  simp only [Vector.getElem_set]
   by_cases eb : b.val = j
   · subst j
     simp only [hab, hac, had, hbc, hbd, hcd, nb, nc, nd, nc', nd', nd'', ite_true, ite_false]
