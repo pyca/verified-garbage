@@ -243,14 +243,28 @@ def unfoldToLits (N : Name) (x : Expr) : MetaM (Option (Expr × Expr)) := do
     if r && !(← hasProofFields d.type.getForallBody.getAppFn) then headReach := headReach.insert c
   let memo' := memo
   let headReach' := headReach
+  -- The templates (`materialize_template`): their applications are found up to
+  -- definitional equality of the fixed arguments, and are not unfolded either.
+  let tpls ← atoms.filterM fun (_, l) => do return (← whnfD (← inferType l)).isForall
+  let isTplApp (l t : Expr) : Bool := t.getAppFn == l.getAppFn && t.getAppNumArgs == l.getAppNumArgs
   let isAtom (t : Expr) : Bool :=
-    t.getAppFn.isConst && heads.contains t.getAppFn.constName! && atoms.any (·.2 == t)
+    t.getAppFn.isConst && heads.contains t.getAppFn.constName! &&
+      (atoms.any (·.2 == t) || tpls.any fun (_, l) => isTplApp l t)
   let e := unfoldWhere env (fun c => memo'.find? c == some true || headReach'.contains c) x isAtom
   -- What is rewritten to a literal: the constants with one, then the applications.
   let mut items : Array (Expr × Name) :=
     (e.getUsedConstants.filter targets.contains).map fun c => (mkConst c, c)
   for (M, lhs) in atoms do
     if (e.find? (· == lhs)).isSome then items := items.push (lhs, M)
+  for (M, lhs) in tpls do
+    let found ← IO.mkRef (#[] : Array Expr)
+    e.forEach fun t => do
+      if isTplApp lhs t && t != lhs && !t.hasLooseBVars then found.modify (·.push t)
+    for t in ← found.get do
+      -- By the kernel's check (as the proof will be), which decides closed terms
+      -- (moduli, offsets) by evaluation, faster than `isDefEq`.
+      if !items.any (·.1 == t) && Kernel.isDefEqGuarded (← getEnv) {} t lhs then
+        items := items.push (t, M)
   if items.isEmpty then return none
   let ty ← inferType x
   let u ← getLevel ty
@@ -277,6 +291,105 @@ def unfoldToLits (N : Name) (x : Expr) : MetaM (Option (Expr × Expr)) := do
       (mkApp6 (mkConst ``congrArg [lvl, 1]) cty (mkSort 0) pat
         (mkConst (M ++ `lit)) motive (mkConst (M ++ `lit_eq))) prf
   return some (inst items.size none, prf)
+
+/-! ### Templates
+
+Code built by a function of a few offsets (`mulG M o a b`, a product of the
+operands at `a` and `b` into `o`) is evaluated by the kernel once for each
+call, in every literal of the code that calls it: P-384's ECDH evaluates over
+a hundred products. `materialize_template N := f x₁ … xₖ`, for
+`f x₁ … xₖ : Nat → … → Nat → α`, evaluates it once instead, with the offsets
+variables: `N.lit` is a function whose body is the code with each offset
+`oᵢ + c` written as such (found by evaluating the code at a few offsets far
+apart and comparing them, `antiUnify`), and the kernel checks
+`N.lit_eq : f x₁ … xₖ = N.lit` with the offsets free. A literal of code that
+calls it then evaluates `N.lit o a b`, the body with the offsets added
+(`unfoldToLits`), rather than `f`.
+
+The function must not decide anything on its offsets (the kernel could not
+decide it with them free): give a name to the code of each case
+(`mulR`'s `mulG`), and a template to that. `unfoldToLits` rewrites the
+applications of `f` whose fixed arguments are `x₁ … xₖ` up to definitional
+equality (the modulus is reached by many paths: `p384.MP'`,
+`(jwinCfg p384).M`, …). -/
+
+/-- `(T, n)` if `e` is the literal `OfNat.ofNat T n _` (`ToExpr` of `Nat`
+and of a nonnegative `Int`). -/
+def natLitOf? (e : Expr) : Option (Expr × Nat) :=
+  if e.isAppOfArity ``OfNat.ofNat 3 then
+    match e.appFn!.appArg! with
+    | .lit (.natVal n) => some (e.appFn!.appFn!.appArg!, n)
+    | _ => none
+  else none
+
+/-- The offsets a template is evaluated at: sample `j`'s offset `i` is
+`2⁴⁰ (1 + j (i + 1)) + 2³⁶ i`, so that no two offsets differ by the same
+amount in every sample. -/
+def tplSamples (k : Nat) : Array (Array Nat) :=
+  (Array.range 3).map fun j => (Array.range k).map fun i => 0x10000000000 * (1 + j * (i + 1)) + 0x1000000000 * i
+
+/-- The value at the same place in the samples `es` of a template (of the
+parameters `xs`), the same in each, but for each number that differs between
+them, which is `xᵢ + c` for one `xᵢ` and `c < 2³²` in every sample. -/
+partial def antiUnify (xs : Array Expr) (samples : Array (Array Nat)) (es : Array Expr) :
+    StateT (Std.HashMap (Array Expr) Expr) MetaM Expr := do
+  let e0 := es[0]!
+  if es.all (· == e0) then return e0
+  if let some r := (← get)[es]? then return r
+  let r ← do
+    if let some (T, _) := natLitOf? e0 then
+      let ns := es.filterMap fun e => (natLitOf? e).map (·.2)
+      unless ns.size == es.size do
+        throwError "materialize_template: a number in one sample, not in another"
+      let follows (i : Nat) : Option Nat := Id.run do
+        let c : Int := (ns[0]! : Int) - samples[0]![i]!
+        unless 0 ≤ c && c < 0x100000000 do return none
+        for j in [1:ns.size] do
+          unless (ns[j]! : Int) - samples[j]![i]! == c do return none
+        return some c.toNat
+      let some (i, c) := (List.range xs.size).findSome? fun i => (follows i).map (i, ·)
+        | throwError "materialize_template: a number that follows no parameter: {ns}"
+      let s := mkApp6 (mkConst ``HAdd.hAdd [0, 0, 0]) (mkConst ``Nat) (mkConst ``Nat) (mkConst ``Nat)
+        (mkApp2 (mkConst ``instHAdd [0]) (mkConst ``Nat) (mkConst ``instAddNat)) xs[i]! (mkNatLit c)
+      if T.isConstOf ``Nat then pure s
+      else if T.isConstOf ``Int then pure (mkApp (mkConst ``Int.ofNat) s)
+      else throwError "materialize_template: a number of type {T}"
+    else
+      let f := e0.getAppFn
+      let n := e0.getAppNumArgs
+      unless e0.isApp && es.all fun e => e.getAppFn == f && e.getAppNumArgs == n do
+        throwError "materialize_template: the samples differ in shape (does the code decide on its offsets?)"
+      let mut args := #[]
+      for i in [0:n] do
+        args := args.push (← antiUnify xs samples (es.map (·.getArg! i)))
+      pure (mkAppN f args)
+  modify (·.insert es r)
+  return r
+
+/-- `materialize_template N := f`: `N.lit` and `N.lit_eq : f = N.lit`, for `f`
+a function of offsets (`Nat`), as above. -/
+def materializeTemplate (N : Name) (f : Expr) : MetaM Unit := do
+  if f.hasMVar || f.hasFVar then throwError "materialize_template: {f} is not closed"
+  let ty ← inferType f
+  forallTelescopeReducing ty fun xs body => do
+    if xs.isEmpty then throwError "materialize_template: {f} is not a function"
+    for x in xs do
+      unless (← whnfD (← inferType x)).isConstOf ``Nat do
+        throwError "materialize_template: a parameter is not a number: {x}"
+    let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) body)
+    let samples := tplSamples xs.size
+    let es ← samples.mapM fun s => unsafe evalExpr Expr (mkConst ``Expr)
+      (mkApp3 (mkConst ``ToExpr.toExpr [0]) body inst (mkAppN f (Array.map mkNatLit s)))
+    let (b, _) ← (antiUnify xs samples es).run {}
+    addDecl <| .defnDecl {
+      name := N ++ `lit, levelParams := [], type := ty
+      value := ← mkLambdaFVars xs (ShareCommon.shareCommon' b)
+      hints := .abbrev, safety := .safe }
+    let u ← getLevel ty
+    addDecl <| .thmDecl {
+      name := N ++ `lit_eq, levelParams := [],
+      type := mkApp3 (mkConst ``Eq [u]) ty f (mkConst (N ++ `lit)),
+      value := mkApp2 (mkConst ``Eq.refl [u]) ty f }
 
 /-! ### Code with its appends flattened
 
@@ -766,6 +879,20 @@ elab_rules : command
     let e ← instantiateMVars (← Term.elabTermAndSynthesize t none)
     if e.hasMVar || e.hasFVar then throwError "materialize_flat_code: {e} is not closed"
     materialize ((← getCurrNamespace) ++ id.getId) e (flat := true)
+
+open Lit in
+/-- `materialize_template N := f x₁ … xₖ`, for code that is a function of
+offsets (`Nat → … → Nat → α`): `N.lit`, that function as a literal with the
+offsets free, and `N.lit_eq : f x₁ … xₖ = N.lit`, which the literals of code
+calling `f x₁ … xₖ` then read rather than evaluating `f` at each call (see
+"Templates" in `Lit.lean`). -/
+syntax "materialize_template " ident " := " term : command
+
+open Lit in
+elab_rules : command
+  | `(materialize_template $id:ident := $t) => liftTermElabM do
+    let e ← instantiateMVars (← Term.elabTermAndSynthesize t none)
+    materializeTemplate ((← getCurrNamespace) ++ id.getId) e
 
 open Elab Tactic Lit in
 /-- Rewrites each code of the goal that has a literal (`materialize_code`) to it. -/
