@@ -80,11 +80,11 @@ theorem reduce (p : Nat) (hp : p ≤ 2 ^ 32) (m : BitVec 64) (hm : m.toNat = 655
   · have hR : (2 ^ 64 - H + L) % 2 ^ 64 = 2 ^ 64 - (H - L) := by
       rw [Nat.mod_eq_of_lt (by omega)]; omega
     have ht : (2 ^ 64 - (H - L)) / 2 ^ 63 = 1 := by omega
-    rw [hR, ht]
+    rw [hR, ht, Nat.mod_mod_of_dvd _ (by decide : 65536 ∣ 2 ^ 64)]
     omega
   · have hR : (2 ^ 64 - H + L) % 2 ^ 64 = L - H := by omega
     have ht : (L - H) / 2 ^ 63 = 0 := by omega
-    rw [hR, ht]
+    rw [hR, ht, Nat.mod_mod_of_dvd _ (by decide : 65536 ∣ 2 ^ 64)]
     omega
 
 theorem mul_toNat (a b : Spec.Idea.Word) :

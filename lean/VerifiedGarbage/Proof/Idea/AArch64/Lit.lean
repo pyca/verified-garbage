@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Idea.KeyLit
 import VerifiedGarbage.Impl.Idea.AArch64
 
 /-! # Literal IDEA programs for kernel-evaluated checks (AArch64) -/
