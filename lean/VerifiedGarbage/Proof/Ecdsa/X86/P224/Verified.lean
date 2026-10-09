@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.NativeTaint
 import VerifiedGarbage.Proof.Ecdsa.X86.Main
 import VerifiedGarbage.Proof.Weierstrass.X86.MontModuli
 import VerifiedGarbage.Proof.Ecdsa.X86.P224.Contract
@@ -86,7 +87,7 @@ theorem sign_x86 (hL : Weierstrass.Law Spec.P224.curve) (s : State) (hs : signX8
   · exact K.esp
 
 /-- The hints of the constant-time checks forget the words known to hold base
-addresses (`taint_decide_weak`): no address depends on a value loaded from
+addresses (`native_taint_decide_weak`): no address depends on a value loaded from
 the working space, and the kernel evaluates every instruction faster with
 less to look through. They keep the public slots of memory, unlike P-384's:
 the setup stores the top 32-bit word of the hash's slot, past its 28 bytes,
@@ -151,7 +152,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : signX86.pre s₁) (h₂ : signX86.p
 
 theorem sign_ct : ConstantTime isa signX86.pre signX86.pub signP224 :=
   VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
-    (by taint_decide_weak VG.Proof.Ecdsa.X86.P224.weak)
+    (by native_taint_decide_weak VG.Proof.Ecdsa.X86.P224.weak)
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/

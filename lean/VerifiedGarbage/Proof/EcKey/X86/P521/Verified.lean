@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.NativeTaint
 import VerifiedGarbage.Proof.EcKey.X86.Main
 import VerifiedGarbage.Proof.EcKey.X86.P521.Contract
 import VerifiedGarbage.Proof.EcKey.X86.P521.Lit
@@ -110,7 +111,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : pkX86.pre s₁) (h₂ : pkX86.pre s
 
 theorem pk_ct : ConstantTime isa pkX86.pre pkX86.pub publicKeyP521 :=
   VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
-    (by taint_decide_weak VG.Proof.Ecdsa.X86.P521.weak)
+    (by native_taint_decide_weak VG.Proof.Ecdsa.X86.P521.weak)
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.NativeTaint
 import VerifiedGarbage.Proof.P256.Prime
 import VerifiedGarbage.Proof.P256.Order
 import VerifiedGarbage.Proof.Ecdsa.X86.Main
@@ -148,7 +149,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : signX86.pre s₁) (h₂ : signX86.p
 
 theorem sign_ct : ConstantTime isa signX86.pre signX86.pub signP256 :=
   VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
-    (by taint_decide_weak VG.Proof.Ecdsa.X86.weak)
+    (by native_taint_decide_weak VG.Proof.Ecdsa.X86.weak)
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/
