@@ -25,7 +25,7 @@ def eG (q p : Nat) : List Nat := [64 * (expandSrc q p).1 + (expandSrc q p).2]
 
 theorem expand_check : ∀ q < 13,
     check (lanes 64 7) eCfg (linExt 0) (expandWord q) (linEnv []) (linPost 7 [(.x11, eG q)]) = true := by
-  decide +kernel
+  lit_decide
 
 /-- The registers `expandWord` keeps. -/
 abbrev expandKept : List Reg :=
@@ -33,7 +33,7 @@ abbrev expandKept : List Reg :=
 
 theorem expand_kept : ∀ q < 13, ∀ r ∈ expandKept,
     ((expandWord q).all fun i => dstOf i != some r) = true := by
-  decide +kernel
+  lit_decide
 
 theorem expandWord_run (q : Nat) (hq : q < 13) (s : State)
     (hk : ∀ j < 2, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (8 * j)) 8) :
