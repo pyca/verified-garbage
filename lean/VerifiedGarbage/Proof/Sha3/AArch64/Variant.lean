@@ -14,6 +14,8 @@ import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 import VerifiedGarbage.Impl.MlKem.AArch64.Sample
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlKem
+import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlDsa
 
 namespace VG.Proof.Sha3.AArch64
 
@@ -154,6 +156,32 @@ theorem keeps_of_check {c : Prog isa} {rs : List Reg}
 
 sponge_taint_summaries ScalarSums Impl.Sha3.AArch64.Callee.scalar
 
+/-- The summaries the sponge's callers' checks use (`Callers.sums`, from this backend's summaries
+with their frames: `Taint.SumOk.restrict`). -/
+theorem scalarSums : Taint.AllOk VectorTaint.taint (Callers.sums .scalar) :=
+  Callers.sums_ok (by
+    exact
+      .cons (ScalarSums.absorb.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.absorb.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.absorb.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.absorb.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.absorb.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.pad.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.pad.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.pad.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.squeeze.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.squeeze.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.squeeze.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.perm.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.perm.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.perm.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.perm.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.perm.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.perm.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.perm.restrict (by decide) (by decide)) <|
+      .cons (ScalarSums.perm.restrict (by decide) (by decide)) <|
+      .nil)
+
 def Permutation.scalar : Permutation where
   callee := .scalar
   features := []
@@ -164,36 +192,30 @@ def Permutation.scalar : Permutation where
   absorbTaint := Taint.exists_check_of_sumOk_call ScalarSums.absorb (VG.AArch64.VectorTaint.le_refl _) rfl
   padTaint := Taint.exists_check_of_sumOk_call ScalarSums.pad (VG.AArch64.VectorTaint.le_refl _) rfl
   squeezeTaint := Taint.exists_check_of_sumOk_call ScalarSums.squeeze (VG.AArch64.VectorTaint.le_refl _) rfl
-  sampleFullTaint := by sponge_taint_decide ScalarSums
-  sampleFastTaint := by sponge_taint_decide ScalarSums
-  mldsaNttTaint := by sponge_taint_decide ScalarSums
-  mldsaBoundedTaint := by sponge_taint_decide ScalarSums
-  mldsaBallTaint := by sponge_taint_decide ScalarSums
-  mldsaMaskTaint := by sponge_taint_decide ScalarSums
-  mlkemKgATaint := by sponge_taint_decide ScalarSums
-  mlkemKgCTaint := by sponge_taint_decide ScalarSums
-  mlkemEnATaint := by sponge_taint_decide ScalarSums
-  mlkemEnCTaint := by sponge_taint_decide ScalarSums
-  mlkemDeATaint := by sponge_taint_decide ScalarSums
-  mlkemDeCTaint := by sponge_taint_decide ScalarSums
-  mlkem1024KgATaint := by sponge_taint_decide ScalarSums
-  mlkem1024KgCTaint := by sponge_taint_decide ScalarSums
-  mlkem1024EnATaint := by sponge_taint_decide ScalarSums
-  mlkem1024EnCTaint := by sponge_taint_decide ScalarSums
-  mlkem1024DeATaint := by sponge_taint_decide ScalarSums
-  mlkem1024DeCTaint := by sponge_taint_decide ScalarSums
+  sampleFullTaint := Callers.sampleFullTaint _ scalarSums
+  sampleFastTaint := Callers.sampleFastTaint _ scalarSums
+  mldsaNttTaint := Callers.mldsaNttTaint _ scalarSums
+  mldsaBoundedTaint := Callers.mldsaBoundedTaint _ scalarSums
+  mldsaBallTaint := Callers.mldsaBallTaint _ scalarSums
+  mldsaMaskTaint := Callers.mldsaMaskTaint _ scalarSums
+  mlkemKgATaint := Callers.mlkemKgATaint _ scalarSums
+  mlkemKgCTaint := Callers.mlkemKgCTaint _ scalarSums
+  mlkemEnATaint := Callers.mlkemEnATaint _ scalarSums
+  mlkemEnCTaint := Callers.mlkemEnCTaint _ scalarSums
+  mlkemDeATaint := Callers.mlkemDeATaint _ scalarSums
+  mlkemDeCTaint := Callers.mlkemDeCTaint _ scalarSums
+  mlkem1024KgATaint := Callers.mlkem1024KgATaint _ scalarSums
+  mlkem1024KgCTaint := Callers.mlkem1024KgCTaint _ scalarSums
+  mlkem1024EnATaint := Callers.mlkem1024EnATaint _ scalarSums
+  mlkem1024EnCTaint := Callers.mlkem1024EnCTaint _ scalarSums
+  mlkem1024DeATaint := Callers.mlkem1024DeATaint _ scalarSums
+  mlkem1024DeCTaint := Callers.mlkem1024DeCTaint _ scalarSums
 
-  mldsaSeedsTaint := by sponge_taint_decide ScalarSums
-  mldsaTrHashTaint := by
-    intro p hp
-    rcases hp with rfl | rfl | rfl <;> exact by sponge_taint_decide ScalarSums
-  mldsaVerifyHashTaint := by
-    intro p hp
-    rcases hp with rfl | rfl | rfl <;> exact by sponge_taint_decide ScalarSums
+  mldsaSeedsTaint := Callers.mldsaSeedsTaint _ scalarSums
+  mldsaTrHashTaint := Callers.mldsaTrHashTaint _ scalarSums
+  mldsaVerifyHashTaint := Callers.mldsaVerifyHashTaint _ scalarSums
 
-  mldsaSignDecodeTaint := by sponge_taint_decide ScalarSums
-  mldsaSignCommitTaint := by
-    intro p hp
-    rcases hp with rfl | rfl | rfl <;> exact by sponge_taint_decide ScalarSums
+  mldsaSignDecodeTaint := Callers.mldsaSignDecodeTaint _ scalarSums
+  mldsaSignCommitTaint := Callers.mldsaSignCommitTaint _ scalarSums
 
 end VG.Proof.Sha3.AArch64
