@@ -175,7 +175,7 @@ theorem rsum_comm (f : Nat → Nat → Nat) (m : Nat) : ∀ n,
     rw [rsum, rsum_comm f m n, ← rsum_add]; rfl
 
 theorem val_eq (f : Nat → Nat) : val f = rsum (fun k => 2 ^ (13 * k) * f k) 10 := by
-  simp only [val, rsum]; omega_using []
+  simp only [val, rsum]; grind
 
 /-- The terms of row `j` of `h r` that wrap around: `2¹³⁰ ≡ 5`. -/
 def wrap (r : Nat → Nat) (j : Nat) : Nat := rsum (fun i => if 10 ≤ i + j then 2 ^ (13 * (i + j - 10)) * r i else 0) 10
@@ -188,7 +188,7 @@ theorem row_wrap (r : Nat → Nat) {j : Nat} (hj : j < 10) :
     simp only [↓reduceIte, Nat.reduceLeDiff, val, wrap, rsum, coef, Nat.reduceSub,
       Nat.reduceAdd, Nat.reduceMul, Nat.zero_add, Nat.add_zero, Nat.mul_zero, Nat.mul_add,
       ← Nat.mul_assoc, Nat.reducePow, Nat.mul_one, Nat.one_mul] <;>
-    ac_rfl
+    grind
 
 /-- The columns of `h r`, as a number, are `h r` modulo `p`. -/
 theorem val_col (h r : Nat → Nat) : val (col h r) % P = val h * val r % P := by
@@ -221,7 +221,7 @@ def cstep (f : Nat → Nat) (k : Nat) : Nat → Nat :=
 theorem val_cstep (f : Nat → Nat) {k : Nat} (hk : k < 9) : val (cstep f k) = val f := by
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
     k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 := by omega
-  all_goals simp [val, cstep]; omega_using []
+  all_goals simp [val, cstep]; grind
 
 /-- The carries from columns `a`, …, `a + n - 1`, in order. -/
 def carryN (f : Nat → Nat) (a : Nat) : Nat → Nat → Nat
@@ -321,7 +321,7 @@ theorem fold_facts (f : Nat → Nat) (hf : ∀ j < 10, f j < 2 ^ 32 - 2 ^ 19) :
     simp only [val, f0, f1, f9, fj 2 (by decide) (by decide), fj 3 (by decide) (by decide),
       fj 4 (by decide) (by decide), fj 5 (by decide) (by decide), fj 6 (by decide) (by decide),
       fj 7 (by decide) (by decide), fj 8 (by decide) (by decide), P_eq]
-    omega_using []
+    grind
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · rw [← hv, ← key, Nat.add_mul_mod_self_left]
   · have l2 := hl 2 (by decide); have l3 := hl 3 (by decide); have l4 := hl 4 (by decide)
@@ -386,7 +386,7 @@ theorem val_toWords {u : Nat → Nat} (h : ∀ k < 9, u k < 2 ^ 13) :
   have := h 4 (by decide); have := h 5 (by decide); have := h 6 (by decide); have := h 7 (by decide)
   have := h 8 (by decide)
   simp only [val]
-  omega_using []
+  grind
 
 /-! ## The final reduction -/
 
@@ -411,7 +411,7 @@ theorem chainT_eq (u : Nat → Nat) : ∀ k, chainT u k = u k + (spre u k + 5) /
 theorem chainT_top (u : Nat → Nat) : chainT u 9 / 2 ^ 13 = (val u + 5) / 2 ^ 130 := by
   rw [chainT_eq, Nat.add_comm (u 9)]
   have e : val u + 5 = (spre u 9 + 5) + 2 ^ 117 * u 9 := by
-    simp only [val, spre, rsum]; omega_using []
+    simp only [val, spre, rsum]; grind
   rw [e, show (130 : Nat) = 117 + 13 from rfl, Nat.pow_add, ← Nat.div_div_eq_div_mul,
     Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), show 13 * 9 = 117 from rfl]
 
@@ -424,7 +424,7 @@ theorem val_mask_top {g g' : Nat → Nat} (h : ∀ k < 9, g k < 2 ^ 13) (h' : �
   have e : val g = val g' + 2 ^ 130 * (g 9 / 2 ^ 13) := by
     simp only [val, h' 0 (by decide), h' 1 (by decide), h' 2 (by decide), h' 3 (by decide),
       h' 4 (by decide), h' 5 (by decide), h' 6 (by decide), h' 7 (by decide), h' 8 (by decide), h9]
-    omega_using []
+    grind
   have hl : val g' < 2 ^ 130 := by
     simp only [val, h' 0 (by decide), h' 1 (by decide), h' 2 (by decide), h' 3 (by decide),
       h' 4 (by decide), h' 5 (by decide), h' 6 (by decide), h' 7 (by decide), h' 8 (by decide), h9]
@@ -496,7 +496,7 @@ theorem red_facts (E : Nat → Nat) (hE : ∀ j < 10, E j < 2 ^ 32 - 2 ^ 19) :
       (fun k hk => by simp only [redL]; rw [iteF (by omega_using [hk])]) (by simp only [redL, ↓reduceIte, Nat.reducePow])
     rw [hm, val_carryN _ 0 9 (by decide)]
     have e : val (redK' E) = val (redK E) + 5 * redC E := by
-      simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, val, redK']; omega_using []
+      simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, val, redK']; grind
     rw [e, redC, reduce_eq (by omega_using [hvl, hvK, e]), hvK, hv]
   · simp only [redL]
     split
@@ -1596,7 +1596,7 @@ def addE (D : Nat → Nat) (w : Nat → Nat) (pad : Bool) : Nat → Nat :=
 
 omit hfit in
 theorem val_add (f g : Nat → Nat) : val (fun k => f k + g k) = val f + val g := by
-  simp only [val]; omega
+  simp only [val]; grind
 
 omit hfit in
 theorem val_addE (D w : Nat → Nat) (pad : Bool) :

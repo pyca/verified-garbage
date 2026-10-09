@@ -321,37 +321,37 @@ theorem round_ok {P : Params w} (hP : Ok P) {scr : Addr} {m : Block w} {v : Work
     WP isa (Impl.Blake2.X86_64.round P r) s (RI scr m 9 (Spec.Blake2.round P m v r) s₀) := by
   have hw := hP.hw
   unfold Impl.Blake2.X86_64.round
-  refine WP.seq (WP.mono (swap_stepR hw (i := 9) (j := 8) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (swap_stepR hw (i := 9) (j := 8) (by decide +kernel) (by decide +kernel) (by decide +kernel)
     hsc hR) fun s₁ h₁ => ?_)
-  refine WP.seq (WP.mono (G_stepR hP (a := 0) (b := 4) (c := 8) (d := 12) (by decide) hsc h₁
+  refine WP.seq (WP.mono (G_stepR hP (a := 0) (b := 4) (c := 8) (d := 12) (by decide +kernel) hsc h₁
     (Spec.Blake2.sigmaAt r 0) (Spec.Blake2.sigmaAt r 1)) fun s₂ h₂ => ?_)
-  refine WP.seq (WP.mono (swap_stepR hw (i := 8) (j := 9) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (swap_stepR hw (i := 8) (j := 9) (by decide +kernel) (by decide +kernel) (by decide +kernel)
     hsc h₂) fun s₃ h₃ => ?_)
-  refine WP.seq (WP.mono (G_stepR hP (a := 1) (b := 5) (c := 9) (d := 13) (by decide) hsc h₃
+  refine WP.seq (WP.mono (G_stepR hP (a := 1) (b := 5) (c := 9) (d := 13) (by decide +kernel) hsc h₃
     (Spec.Blake2.sigmaAt r 2) (Spec.Blake2.sigmaAt r 3)) fun s₄ h₄ => ?_)
-  refine WP.seq (WP.mono (swap_stepR hw (i := 9) (j := 10) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (swap_stepR hw (i := 9) (j := 10) (by decide +kernel) (by decide +kernel) (by decide +kernel)
     hsc h₄) fun s₅ h₅ => ?_)
-  refine WP.seq (WP.mono (G_stepR hP (a := 2) (b := 6) (c := 10) (d := 14) (by decide) hsc h₅
+  refine WP.seq (WP.mono (G_stepR hP (a := 2) (b := 6) (c := 10) (d := 14) (by decide +kernel) hsc h₅
     (Spec.Blake2.sigmaAt r 4) (Spec.Blake2.sigmaAt r 5)) fun s₆ h₆ => ?_)
-  refine WP.seq (WP.mono (swap_stepR hw (i := 10) (j := 11) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (swap_stepR hw (i := 10) (j := 11) (by decide +kernel) (by decide +kernel) (by decide +kernel)
     hsc h₆) fun s₇ h₇ => ?_)
-  refine WP.seq (WP.mono (G_stepR hP (a := 3) (b := 7) (c := 11) (d := 15) (by decide) hsc h₇
+  refine WP.seq (WP.mono (G_stepR hP (a := 3) (b := 7) (c := 11) (d := 15) (by decide +kernel) hsc h₇
     (Spec.Blake2.sigmaAt r 6) (Spec.Blake2.sigmaAt r 7)) fun s₈ h₈ => ?_)
-  refine WP.seq (WP.mono (swap_stepR hw (i := 11) (j := 10) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (swap_stepR hw (i := 11) (j := 10) (by decide +kernel) (by decide +kernel) (by decide +kernel)
     hsc h₈) fun s₉ h₉ => ?_)
-  refine WP.seq (WP.mono (G_stepR hP (a := 0) (b := 5) (c := 10) (d := 15) (by decide) hsc h₉
+  refine WP.seq (WP.mono (G_stepR hP (a := 0) (b := 5) (c := 10) (d := 15) (by decide +kernel) hsc h₉
     (Spec.Blake2.sigmaAt r 8) (Spec.Blake2.sigmaAt r 9)) fun s₁₀ h₁₀ => ?_)
-  refine WP.seq (WP.mono (swap_stepR hw (i := 10) (j := 11) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (swap_stepR hw (i := 10) (j := 11) (by decide +kernel) (by decide +kernel) (by decide +kernel)
     hsc h₁₀) fun s₁₁ h₁₁ => ?_)
-  refine WP.seq (WP.mono (G_stepR hP (a := 1) (b := 6) (c := 11) (d := 12) (by decide) hsc h₁₁
+  refine WP.seq (WP.mono (G_stepR hP (a := 1) (b := 6) (c := 11) (d := 12) (by decide +kernel) hsc h₁₁
     (Spec.Blake2.sigmaAt r 10) (Spec.Blake2.sigmaAt r 11)) fun s₁₂ h₁₂ => ?_)
-  refine WP.seq (WP.mono (swap_stepR hw (i := 11) (j := 8) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (swap_stepR hw (i := 11) (j := 8) (by decide +kernel) (by decide +kernel) (by decide +kernel)
     hsc h₁₂) fun s₁₃ h₁₃ => ?_)
-  refine WP.seq (WP.mono (G_stepR hP (a := 2) (b := 7) (c := 8) (d := 13) (by decide) hsc h₁₃
+  refine WP.seq (WP.mono (G_stepR hP (a := 2) (b := 7) (c := 8) (d := 13) (by decide +kernel) hsc h₁₃
     (Spec.Blake2.sigmaAt r 12) (Spec.Blake2.sigmaAt r 13)) fun s₁₄ h₁₄ => ?_)
-  refine WP.seq (WP.mono (swap_stepR hw (i := 8) (j := 9) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (swap_stepR hw (i := 8) (j := 9) (by decide +kernel) (by decide +kernel) (by decide +kernel)
     hsc h₁₄) fun s₁₅ h₁₅ => ?_)
-  exact WP.mono (G_stepR hP (a := 3) (b := 4) (c := 9) (d := 14) (by decide) hsc h₁₅
+  exact WP.mono (G_stepR hP (a := 3) (b := 4) (c := 9) (d := 14) (by decide +kernel) hsc h₁₅
     (Spec.Blake2.sigmaAt r 14) (Spec.Blake2.sigmaAt r 15)) fun _ h => h
 
 theorem rounds_ok {P : Params w} (hP : Ok P) {scr : Addr} {m : Block w} {v : Work w}
@@ -1352,22 +1352,22 @@ theorem common0 {P : Params w} (hw : w = 64 ∨ w = 32) {s₀ : State} (hp : Pre
     fun d v hd h => h.writeW (List.mem_singleton_self _) v (contains_off hd (by omega))
   have F0 : Frame [scR (scA s₀)] s₀.mem s₂.mem := by
     rw [hm, proMem]
-    repeat (first | exact Frame.refl _ _ | refine W _ _ (by decide) ?_)
+    repeat (first | exact Frame.refl _ _ | refine W _ _ (by decide +kernel) ?_)
   have R : ∀ {d : Nat}, s₂.mem.readW (off (scA s₀) d) 64 =
       ((proMem s₀).writeW (off (scA s₀) fOff) (flagW 64 (fl s₀))).readW (off (scA s₀) d) 64 :=
     by intro d; rw [hm]
-  refine ⟨hg _ (by decide) (by decide), hg _ (by decide) (by decide),
-    hg _ (by decide) (by decide), hrd, hwr, F0.mono fun r hr => ?_, ?_, fun p hp' => ?_, ?_⟩
+  refine ⟨hg _ (by decide +kernel) (by decide +kernel), hg _ (by decide +kernel) (by decide +kernel),
+    hg _ (by decide +kernel) (by decide +kernel), hrd, hwr, F0.mono fun r hr => ?_, ?_, fun p hp' => ?_, ?_⟩
   · simp only [List.mem_singleton] at hr; simp [hr]
   · rw [compressBlocks_zero]
     apply Vector.ext; intro j hj
     rw [stateAt_get _ _ hj, stateAt_get _ _ hj]
-    exact hp.keep_st F0 (by decide) hw hj
+    exact hp.keep_st F0 (by decide +kernel) hw hj
   · simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp (disch := decide) only [R, proMem, readW_writeW_sc, Mem.readW_writeW_self64]
+      simp (disch := decide +kernel) only [R, proMem, readW_writeW_sc, Mem.readW_writeW_self64]
   · refine ⟨?_, ?_, ?_, fun _ => ?_, ?_⟩ <;>
-      simp (disch := decide) only [R, proMem, readW_writeW_sc, Mem.readW_writeW_self64]
+      simp (disch := decide +kernel) only [R, proMem, readW_writeW_sc, Mem.readW_writeW_self64]
     · rw [blkAddr, Nat.mul_zero]; exact (BitVec.add_zero _).symm
     · rw [Nat.sub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     · rw [Nat.zero_mul, Nat.add_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq]

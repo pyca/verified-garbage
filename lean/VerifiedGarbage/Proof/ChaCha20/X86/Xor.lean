@@ -305,7 +305,7 @@ theorem setWidth_sub {x : BitVec 32} {d : Nat} (h : d ≤ x.toNat) :
   simp only [BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat]
   rw [Nat.mod_eq_of_lt (a := d) (by lit_omega), Nat.mod_eq_of_lt (a := x.toNat) (by lit_omega),
     Nat.mod_eq_of_lt (a := d) (by lit_omega)]
-  omega
+  grind
 
 /-- The 8 bytes of the frame holding the block function's arguments. -/
 abbrev fR (s₀ : State) : Region := ⟨Es s₀ - 8, 8⟩
@@ -602,7 +602,7 @@ theorem ptr_add2 (x : BitVec 32) {k d : Nat} (h : x.toNat + k + d < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   have hx := x.isLt
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  grind
 
 /-- The data of the four blocks after `j`. -/
 abbrev win (s₀ : State) (j : Nat) : Addr := dp s₀ + BitVec.ofNat 64 (P s₀ j)
