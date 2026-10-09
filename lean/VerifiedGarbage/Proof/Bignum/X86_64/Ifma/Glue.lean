@@ -99,7 +99,7 @@ theorem resBlock_ok (hl : LayOk l) {s : State} {B : Addr} {Z o a p : Nat} {mx : 
     · exact hH₂.harr _ (by decide)) rfl) fun t ⟨⟨bx, r10, r12, si, me₃⟩, k₃⟩ => ?_
   rw [wv_off, Nat.add_zero] at hacc
   refine ⟨by rw [me₃]; exact hacc, by rw [me₃]; exact AmmSym.Outside.rebase ho₂ (by omega) (by omega), by rw [k₃.gpr (by decide), k₂.gpr (by decide)]; exact r8,
-    bx, r10, r12, si, ((k₁.trans k₂).trans k₃).mono (by simp)⟩
+    bx, r10, r12, si, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 /-- `result p`: `aY := Y mod X` in the prime's workspace `off B o` (16
 words, `aN = X`), `Y` the limbs at `l.oY` of region `p` of the area `off B a`. -/
@@ -169,7 +169,7 @@ theorem result_ok (hl : LayOk l) {s : State} {B : Addr} {Z o a p X : Nat} {mx : 
     · exact ⟨_, List.mem_map.mpr ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), rfl⟩,
         by simp only; omega⟩
   · rw [k₃.gpr (by decide), k₂.gpr (by decide), k₁.gpr (by decide)]
-  · exact ((k₁.trans k₂).trans k₃).mono (by simp [mmRegs])
+  · exact ((k₁.trans k₂).trans k₃).mono (by decide)
 
 /-! ## The area's base -/
 
@@ -229,6 +229,6 @@ theorem ifmaHead_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq : Nat} {min
       (by unfold sIfma sFn; omega)).word (d := 8 * sWsP) (.inl (by unfold sWsP sFn; omega)) (by unfold sWsP sFn; omega)
     rw [off_off B op, off_off B oq (8 * sIfma), e2, e1]
     exact hsp) rfl) fun t ⟨⟨me, di⟩, k₃⟩ => ?_
-  exact ⟨me, di, (k12.trans k₃).mono (by simp)⟩
+  exact ⟨me, di, (k12.trans k₃).mono (by decide)⟩
 
 end VG.Proof.Bignum.X86_64.Ifma

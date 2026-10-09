@@ -63,7 +63,7 @@ theorem tile_ok {s : State} {B : Addr} {Z eA eB eO : Nat}
   have allT : wv t.mem B eO 16 = wv c.mem B eO 16 :=
     ot.wv (by omega) (by have := hs.nowrap; omega)
   rw [cols_keep kb (by decide),mb,db,carryA,upperA] at ec
-  refine ⟨?_,?_,?_,?_,?_,(kabc.trans kt).mono (by simp)⟩
+  refine ⟨?_,?_,?_,?_,?_,(kabc.trans kt).mono (by decide)⟩
   · rw [allT,wt,show 16 = 8+8 from rfl,wv_add,wv_add]
     simp only [Nat.reduceMul] at *
     rw [lowC]

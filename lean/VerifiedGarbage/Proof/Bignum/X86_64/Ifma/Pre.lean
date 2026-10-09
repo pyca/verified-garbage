@@ -47,7 +47,7 @@ theorem enterRedc_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
     fun s₃ ⟨hc₃, hX₃, hlt₃, hv₃, f₃, k₃⟩ => ⟨hc₃, hX₃, hlt₃, by rw [← hm₂]; exact hv₃, ?_, ?_, ?_⟩
   · rw [← hm₂]; exact f₃.to_x (redcRanges_ok wx) hoL (List.mem_singleton_self _)
   · rw [← hm₂]; exact f₃
-  · exact (k₂.trans k₃).mono (by simp [mmRegs])
+  · exact (k₂.trans k₃).mono (by decide)
 
 /-- Back to `n`'s workspace, whose header the prime's phase kept. -/
 theorem leaveBack_ok {s₀ t : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {o wx : Nat}
@@ -323,7 +323,7 @@ theorem pre_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVe
     PrimeRdy.of_disj ⟨hwsq₁, hQ₁, hqy, hqyv, hqx, hqxv⟩ fP hPd (by omega),
     (fQ.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp [preRanges]).trans
       (fP.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp [preRanges]),
-    kQ.trans kP |>.mono (by simp [mmRegs]), ?_⟩
+    kQ.trans kP |>.mono (by decide), ?_⟩
   rw [mkP, word_off, word_off, fQ.word_eq (fun r hr => by rcases hQd r hr with h | h <;> omega) (by omega)]
 
 end VG.Proof.Bignum.X86_64

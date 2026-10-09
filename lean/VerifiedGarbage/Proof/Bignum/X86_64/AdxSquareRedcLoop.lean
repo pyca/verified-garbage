@@ -50,7 +50,7 @@ theorem redcStep_ok {s₀ t : State} {B : Addr} {Z w i : Nat} {minv : BitVec 64}
     exact decide_eq_decide.mpr (by unfold slot aAcc aTmp; omega)
   rw [hN, show slot w aAcc + 16 + 8 * i + 8 = slot w aAcc + 16 + 8 * (i + 1) by omega,
     show 2 * w - i - 1 = 2 * w - (i + 1) by omega] at hv
-  refine ⟨hI.scr.congr kt.2.2, (kp.trans kt).mono (by simp), ?_, hc hI.carry, ?_, ?_⟩
+  refine ⟨hI.scr.congr kt.2.2, (kp.trans kt).mono (by decide), ?_, hc hI.carry, ?_, ?_⟩
   · rw [h8']; congr 1
   · exact hI.out.trans (ho.mono (o' := slot w aAcc + 16) (n' := 16 * w) (by omega) (by omega))
   · obtain ⟨q, hq, heq⟩ := hI.val

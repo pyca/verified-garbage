@@ -34,7 +34,7 @@ theorem RowInv.step {s₀ t t' : State} {B : Addr} {Z e eb j n w : Nat}
   have rB : wv t.mem B (eb + 8 * j) n = wv s₀.mem B (eb + 8 * j) n := hI.out.wv (by omega) (by omega)
   have rL : wv t'.mem B e j = wv t.mem B e j := ho.wv (by omega) (by omega)
   rw [rT, rB, hI.keep.gpr (by decide)] at hv
-  refine ⟨hI.scr.congr hk.2.2, (hI.keep.trans hk).mono (by simp), h14, ?_, ?_⟩
+  refine ⟨hI.scr.congr hk.2.2, (hI.keep.trans hk).mono (by decide), h14, ?_, ?_⟩
   · exact (hI.out.mono (o' := e) (n' := 8 * (j + n)) (Nat.le_refl _) (by omega)).trans
       (ho.mono (o' := e) (n' := 8 * (j + n)) (by omega) (by omega))
   · have hi := hI.val
@@ -58,7 +58,7 @@ theorem blocks_ok {s₀ s : State} {B : Addr} {Z e eb a w : Nat}
       ((kp.gpr (by decide)).trans h9) h.r14 hbx'
       (by omega) (by omega) (by omega) (by omega)) fun t' ⟨hv, ho, h14, hz, kt⟩ => ⟨?_, ?_, (kt.gpr (by decide)).trans hbx'⟩
     · rw [hz]; congr 1; exact decide_eq_decide.mpr (by omega)
-    · have step := h.step (by omega : 4 * k + 4 ≤ w) hZ hZb sb hv ho h14 (kt.mono (by simp))
+    · have step := h.step (by omega : 4 * k + 4 ≤ w) hZ hZb sb hv ho h14 (kt.mono (by decide))
       rw [show 4 * (k + 1) = 4 * k + 4 by omega]
       exact step
   · intro t h
@@ -81,7 +81,7 @@ theorem remainder_ok {s₀ s : State} {B : Addr} {Z e eb a w : Nat}
   refine WP.mono (mac1Store_ok h.scr ((kp.gpr (by decide)).trans h8)
     ((kp.gpr (by decide)).trans h9) h.r14 hbx'
     (by omega) (by omega) (by omega) (by omega)) fun t' ⟨hv, ho, h14, hz, kt⟩ => ⟨hz, ?_, (kt.gpr (by decide)).trans hbx'⟩
-  exact h.step (by omega : j + 1 ≤ w) hZ hZb sb hv ho h14 (kt.mono (by simp))
+  exact h.step (by omega : j + 1 ≤ w) hZ hZb sb hv ho h14 (kt.mono (by decide))
 
 /-- Round a public word count down to a multiple of four. -/
 theorem round4 (w : Nat) (hw : w < 2 ^ 64) :
@@ -144,7 +144,7 @@ theorem macRow_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
     xrun [hbp₂, hI₂.r14, ofNat_sub_beq (show 4 * (w / 4) < 2 ^ 64 by omega) (show w < 2 ^ 64 by omega)]
   refine WP.seq (WP.mono mid fun s₃ ⟨hbx₃, hz₃, hm₃, h14₃, k₃⟩ => ?_)
   have hI₃ : RowInv s₁ B Z e eb (4 * (w / 4)) s₃ :=
-    ⟨hI₂.scr.congr k₃.2.2, (hI₂.keep.trans k₃).mono (by simp),
+    ⟨hI₂.scr.congr k₃.2.2, (hI₂.keep.trans k₃).mono (by decide),
       h14₃.trans hI₂.r14, hm₃ ▸ hI₂.out, by
         rw [hm₃, k₃.gpr (by decide)]; exact hI₂.val⟩
   have last : WP isa (.ite .ne (.loop (.block AdxSquare.mac1Store) .ne) (.block [])) s₃
@@ -154,7 +154,7 @@ theorem macRow_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
       exact he ▸ hI₃
     · refine WP.ite true (by simp [eval, hz₃, he]) (fun _ => ?_) (by simp)
       exact remainder_ok h8₁ h9₁ hbx₃ (by omega) hw hZ hZb sb hI₃
-  refine WP.mono last fun t h => ⟨?_, ?_, h.r14, (k₁.trans h.keep).mono (by simp)⟩
+  refine WP.mono last fun t h => ⟨?_, ?_, h.r14, (k₁.trans h.keep).mono (by decide)⟩
   · have hv := h.val
     rw [hm₁, k₁.gpr (by decide), hcx₁] at hv
     simpa using hv

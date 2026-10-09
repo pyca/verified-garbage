@@ -133,7 +133,7 @@ theorem diagonalCore_ok (s : State) :
   have K12 := K11.trans k12
   have v12_r11 : s12.gpr .r11 = s10.gpr .r11 := (k12.gpr (by decide)).trans v11_r11
   have v12_r12 : s12.gpr .r12 = s11.gpr .r12 := k12.gpr (by decide)
-  refine ⟨?_, K12.mono (by simp)⟩
+  refine ⟨?_, K12.mono (by decide)⟩
   rw [v12_r11, v12_r12]
   have bnd6 := Bool.toNat_le b6
   have bnd7 := Bool.toNat_le b7

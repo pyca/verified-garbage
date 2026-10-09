@@ -23,7 +23,7 @@ theorem close_ok (s : State) {c : Bool} (hc : s.cf = some c) (hz : s.gpr .rax = 
   have carryZero : ct = false := Bool.toNat_eq_zero.mp (by omega_using [et,bc])
   rw [carryZero] at et
   simp only [Bool.toNat_false,Nat.mul_zero,Nat.add_zero] at et
-  exact ⟨et,(ka.trans kt).mono (by simp)⟩
+  exact ⟨et,(ka.trans kt).mono (by decide)⟩
 
 theorem add_ok (s : State) (hz : s.gpr .rcx = 0) :
     WP isa AdxCarry8.add s fun t =>
@@ -43,7 +43,7 @@ theorem add_ok (s : State) (hz : s.gpr .rcx = 0) :
   rw [cols_keep ka.keep (by decide)] at eb
   simp only [number,Nat.reduceEqDiff,↓reduceIte,show (0 : BitVec 64).toNat = 0 from rfl,
     Nat.mul_zero,Nat.add_zero,Bool.toNat_false] at eb
-  refine ⟨?_,?_,(ka.trans (kb.trans kt)).mono (by simp)⟩
+  refine ⟨?_,?_,(ka.trans (kb.trans kt)).mono (by decide)⟩
   · rw [cols_keep kt.keep (by decide),et]; exact eb
   · rw [et]; exact Bool.toNat_le _
 
@@ -60,7 +60,7 @@ theorem block8_ok {s : State} {B : Addr} {Z e : Nat}
   refine WP.mono (storeCols_ok (hs.congr kab.2.2.2) ((kab.gpr (by decide)).trans hp) he)
     fun t ⟨vt,ot,kt⟩ => ?_
   rw [va,ka.gpr (r := .rbp) (by decide)] at eb
-  refine ⟨?_,?_,?_,(kab.keep.trans kt).mono (by simp)⟩
+  refine ⟨?_,?_,?_,(kab.keep.trans kt).mono (by decide)⟩
   · rw [vt,kt.gpr (r := .rbp) (by simp)]; exact eb
   · rw [kt.gpr (r := .rbp) (by simp)]; exact bb
   · rw [kab.2.1] at ot; exact ot

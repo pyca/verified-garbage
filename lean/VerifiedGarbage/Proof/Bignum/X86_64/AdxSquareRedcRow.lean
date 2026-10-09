@@ -102,7 +102,7 @@ theorem redcRow_ok {s : State} {B : Addr} {Z e w n : Nat} {minv : BitVec 64}
   refine WP.mono (VG.Proof.Bignum.X86_64.rowEnd_ok (hs.congr k123.2.2)
     ((k123.gpr (by decide)).trans hdi) (hH.of_outside allout he) hZ h8₃ (by omega))
     fun t ⟨hz, hm, h8', kt⟩ => ?_
-  refine ⟨(redcU (word s.mem B e) minv).toNat, (redcU (word s.mem B e) minv).isLt, ?_, ?_, ?_, h8', hz, (k123.trans kt).mono (by simp)⟩
+  refine ⟨(redcU (word s.mem B e) minv).toNat, (redcU (word s.mem B e) minv).isLt, ?_, ?_, ?_, h8', hz, (k123.trans kt).mono (by decide)⟩
   · rw [hm, kt.gpr (by decide)]
     grind
   · rw [kt.gpr (by decide)]; exact hc

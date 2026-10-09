@@ -164,7 +164,7 @@ theorem k0St_rt (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : RT 
   obtain ⟨hDb1, -⟩ := hl.D_bounds
   have := hl.D_ge
   exact WP.mono (k0r_ok hl c.scr c.rdi c.hdr c.ia hoa haZ hp h12) fun t ⟨_, f, r11, k⟩ =>
-    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (k.mono (by simp)), r11⟩
+    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (k.mono (by decide)), r11⟩
 
 theorem k0St_ct (p : Nat) {sp sl : Nat} (hT : TOk [.rdi, .r11] (.block (k0Tail l p))) :
     RelCT isa (Two fun q s => RT l p sp sl q s ∧ s.gpr .r12 = mask52) (.block (k0St l p)) fun _ _ => True := by
@@ -192,7 +192,7 @@ theorem eZero_rt (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State}
   have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega
   obtain ⟨-, -, -, -, -, o6, o7, o8, o9, o10⟩ := lay_offs l
   exact WP.mono (eZr_ok hl c.scr haZ hp h11) fun t ⟨_, f, ra, k⟩ =>
-    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (k.mono (by simp)),
+    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (k.mono (by decide)),
       (k.gpr (by decide)).trans h11, ra⟩
 
 theorem eZero_ct (p : Nat) {sp sl : Nat} (hT : TOk [.r11] (.block (eZero l))) :
@@ -210,7 +210,7 @@ theorem finOne_rt (hl : LayOk l) {sp sl : Nat} {q : RegPub} {s : State}
   obtain ⟨⟨⟨hoa, haZ, hp, -⟩, mx, eb, c, -⟩, h11, ha⟩ := h
   obtain ⟨-, -, -, -, -, -, -, -, o9, o10⟩ := lay_offs l
   exact WP.mono (finr_ok hl c.scr haZ h11 ha) fun t ⟨_, f, k⟩ =>
-    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (k.mono (by simp)),
+    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (k.mono (by decide)),
       (k.gpr (by decide)).trans h11⟩
 
 theorem finOne_ct {sp sl : Nat} (hT : TOk [.r11] (.block (finOne l))) :
@@ -289,7 +289,7 @@ theorem eCopy_ct (hl : LayOk l) {p sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
     obtain ⟨-, mx, eb, c, -⟩ := hRT'
     refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = q.B ∧ t.mem = s.mem) (by
       xrun [State.ea, hdr, c.rdi, hdrOff, hH sLink (by decide)]; exact c.lk) rfl) fun t ⟨⟨ha, hm⟩, k⟩ =>
-        ⟨⟨hRT.of_frm (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) (k.mono (by simp)),
+        ⟨⟨hRT.of_frm (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) (k.mono (by decide)),
           (k.gpr (by decide)).trans h11⟩, ha⟩
   · rintro q s ⟨⟨hRT, h11⟩, ha⟩
     obtain ⟨⟨hoa, haZ, hp, hsp, hsl, -⟩, mx, eb, c, hl'⟩ := hRT

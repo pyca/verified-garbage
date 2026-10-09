@@ -31,7 +31,7 @@ theorem tailCore_ok {s : State} {B : Addr} {Z eU eO : Nat}
   refine WP.mono (storeCols_ok (hs.congr kabc.2.2.2) ((kabc.gpr (by decide)).trans ho) hoZ)
     fun t ⟨vt, ot, kt⟩ => ?_
   rw [kab.2.1] at ec
-  refine ⟨?_, ?_, ?_, (kabc.keep.trans kt).mono (by simp)⟩
+  refine ⟨?_, ?_, ?_, (kabc.keep.trans kt).mono (by decide)⟩
   · rw [vt, kt.gpr (r := .rax) (by simp)]
     omega_using [eb, ec]
   · rw [kt.gpr (r := .rax) (by simp)]

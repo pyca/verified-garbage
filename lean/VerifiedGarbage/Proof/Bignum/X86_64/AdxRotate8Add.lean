@@ -52,7 +52,7 @@ theorem addMem_ok {s : State} {B : Addr} {Z e : Nat} (hs : Scr s B Z)
   have ca := cols_keep ka.keep (by decide)
   have ct := cols_keep kt.keep (by decide)
   rw [number_words, ca] at eb
-  refine ⟨?_, ?_, hct, (ka.trans (kb.trans kt)).mono (by simp)⟩
+  refine ⟨?_, ?_, hct, (ka.trans (kb.trans kt)).mono (by decide)⟩
   · rw [ct, et]; simpa only [Bool.toNat_false, Nat.add_zero] using eb
   · rw [et]; exact Bool.toNat_le _
 
@@ -103,7 +103,7 @@ theorem addWord_ok (s : State) (d : Int) {v : BitVec 64}
     show (0 : BitVec 64).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero] at eb
   rw [ca] at eb
   rw [kbax] at et
-  refine ⟨?_, ?_, hct, (ka.trans (kb.trans kt)).mono (by simp)⟩
+  refine ⟨?_, ?_, hct, (ka.trans (kb.trans kt)).mono (by decide)⟩
   · rw [ct, et]
     omega_using [eb]
   · rw [et]; have h := Bool.toNat_le cb; omega

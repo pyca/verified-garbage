@@ -59,7 +59,7 @@ theorem last_ok (s : State) {v : BitVec 64} {c o : Bool}
   refine WP.mono (mulx_ok s hm (fun _ h => nomatch h) (by decide)) fun a ⟨ea, ca, oa, ka⟩ => ?_
   refine WP.mono (adcx_ok a (src := .reg .rax) rfl (fun _ h => nomatch h) (ca.trans hc))
     fun t ⟨ct, hct, hot, et, kt⟩ => ?_
-  refine ⟨ct, hct, hot.trans (oa.trans ho), ?_, (ka.trans kt).mono (by simp)⟩
+  refine ⟨ct, hct, hot.trans (oa.trans ho), ?_, (ka.trans kt).mono (by decide)⟩
   rw [ka.gpr (by decide)] at et
   rw [kt.gpr (r := .r15) (by decide)]
   omega
@@ -159,6 +159,6 @@ theorem core_ok (s : State) (v : Nat → BitVec 64)
     exact ⟨Bool.toNat_eq_zero.mp (by omega_using [z]),
       Bool.toNat_eq_zero.mp (by omega_using [z])⟩
   rcases z with ⟨rfl, rfl⟩
-  refine ⟨?_, hct, hot, kt.mono (by simp)⟩
+  refine ⟨?_, hct, hot, kt.mono (by decide)⟩
   simpa only [Bool.toNat_false, Nat.zero_add, Nat.mul_zero, Nat.add_zero] using eq
 end VG.Proof.Bignum.X86_64.AdxRotate8

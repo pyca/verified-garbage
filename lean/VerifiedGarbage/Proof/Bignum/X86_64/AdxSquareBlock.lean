@@ -88,7 +88,7 @@ theorem mac4_ok {s : State} {B : Addr} {Z e eb j : Nat} (hs : Scr s B Z) (h8 : s
     (word s.mem B (e + 8 * j + 8 * 1)).isLt (word s.mem B (e + 8 * j + 8 * 2)).isLt
     (word s.mem B (e + 8 * j + 8 * 3)).isLt (s.gpr .rcx).isLt (s₃.gpr .r11).isLt (s₄.gpr .r12).isLt
     (s₅.gpr .r13).isLt (s₆.gpr .r15).isLt (t.gpr .rcx).isLt e₀ e₁ e₂ e₃ e₄
-  refine ⟨?_, ?_, ?_, ?_, K.mono (by simp)⟩
+  refine ⟨?_, ?_, ?_, ?_, K.mono (by decide)⟩
   · rw [ca₅]; cases a₅ <;> simp_all
   · rw [oa₅]; cases p₅ <;> simp_all
   · rw [(k₇.gpr (by decide)).trans ((k₆.gpr (by decide)).trans x₅)]
@@ -118,7 +118,7 @@ theorem mac4Store_ok {s : State} {B : Addr} {Z e eb j w : Nat} (hs : Scr s B Z)
   obtain ⟨hv, ho⟩ := write4 a.mem B (e + 8 * j) (a.gpr .r11) (a.gpr .r12) (a.gpr .r13) (a.gpr .r15) (by omega)
   rw [← hm] at hv ho
   rw [ka.2.1] at ho
-  refine ⟨?_, ho, h14', hz, (ka.keep.trans kt).mono (by simp)⟩
+  refine ⟨?_, ho, h14', hz, (ka.keep.trans kt).mono (by decide)⟩
   rw [hv, kt.gpr (by decide), wv4 s.mem B (e + 8 * j), wv4 s.mem B (eb + 8 * j), mul_w4]
   omega
 
@@ -159,7 +159,7 @@ theorem mac1_ok {s : State} {B : Addr} {Z e eb j : Nat} (hs : Scr s B Z)
   have ht := (word s.mem B (e + 8 * j)).isLt
   have hc := (s.gpr .rcx).isLt
   have zl : c'.toNat = 0 ∧ o'.toNat = 0 := by omega
-  refine ⟨?_, ?_, ?_, ((ka.trans kb).trans kt).mono (by simp)⟩
+  refine ⟨?_, ?_, ?_, ((ka.trans kb).trans kt).mono (by decide)⟩
   · rw [ct]; cases c' <;> simp_all
   · rw [ot]; cases o' <;> simp_all
   · rw [lo]; omega
@@ -191,7 +191,7 @@ theorem mac1Store_ok {s : State} {B : Addr} {Z e eb j w : Nat} (hs : Scr s B Z)
     fun t ⟨⟨hm, h14', hz⟩, kt⟩ => ?_
   have ho := writeW_outside a.mem B (a.gpr .r11) (d := e + 8 * j) (by omega)
   rw [← hm, ka.2.1] at ho
-  refine ⟨?_, ho, h14', hz, (ka.keep.trans kt).mono (by simp)⟩
+  refine ⟨?_, ho, h14', hz, (ka.keep.trans kt).mono (by decide)⟩
   simp only [wv, Nat.mul_zero, Nat.pow_zero, Nat.add_zero, Nat.one_mul, Nat.zero_add]
   rw [hm, word_writeW_self, kt.gpr (by decide)]
   omega

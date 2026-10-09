@@ -48,7 +48,7 @@ theorem diagStep_ok {s₀ t : State} {B : Addr} {Z A eb w i : Nat}
   have rX : word t.mem B (eb + 8 * i) = word s₀.mem B (eb + 8 * i) := hI.out.word (by omega) (by omega)
   have rL : wv t'.mem B A (2 * i) = wv t.mem B A (2 * i) := ho.wv (by omega) (by omega)
   rw [rT, rX] at hv
-  refine ⟨hI.scr.congr kt.2.2, (kp.trans kt).mono (by simp), hbp, h14, ?_, ?_⟩
+  refine ⟨hI.scr.congr kt.2.2, (kp.trans kt).mono (by decide), hbp, h14, ?_, ?_⟩
   · exact (hI.out.mono (o' := A) (n' := 16 * (i + 1)) (Nat.le_refl _) (by omega)).trans
       (ho.mono (o' := A) (n' := 16 * (i + 1)) (by omega) (by omega))
   · have hval := hI.val
@@ -82,7 +82,7 @@ theorem diagonal_ok {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B Z)
   refine WP.mono (wp_upto (a := 0) hw0 (DiagInv s₁ B Z A eb)
     (fun i _ hi t h => diagStep_ok ((k₁.gpr (by decide)).trans h8) ((k₁.gpr (by decide)).trans h9)
       ((k₁.gpr (by decide)).trans h10) hw hi hA hb sb h) (fun _ h => h) hI)
-    fun t h => ⟨?_, ?_, (k₁.trans h.keep).mono (by simp)⟩
+    fun t h => ⟨?_, ?_, (k₁.trans h.keep).mono (by decide)⟩
   · have hv := h.val
     rw [hm] at hv
     exact hv

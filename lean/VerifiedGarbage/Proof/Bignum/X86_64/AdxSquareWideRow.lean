@@ -26,7 +26,7 @@ theorem blocks_ok {s₀ s : State} {B : Addr} {Z e eb a w : Nat}
       (by omega) (by omega) (by omega) (by omega) (by omega))
       fun t' ⟨hv, ho, h14, hz, kt⟩ => ⟨?_, ?_, (kt.gpr (by decide)).trans hbx'⟩
     · exact hz.trans (congrArg some (decide_eq_decide.mpr (by omega_using [hk, hw16])))
-    · have step := @RowInv.step s₀ t t' B Z e eb (16 * k) 16 w h (by omega_using [hk, hw16] : 16 * k + 16 ≤ w) hZ hZb sb (by simpa only [Nat.reduceMul] using hv) ho h14 (kt.mono (by simp))
+    · have step := @RowInv.step s₀ t t' B Z e eb (16 * k) 16 w h (by omega_using [hk, hw16] : 16 * k + 16 ≤ w) hZ hZb sb (by simpa only [Nat.reduceMul] using hv) ho h14 (kt.mono (by decide))
       rw [show 16 * (k + 1) = 16 * k + 16 by omega_using []]
       exact step
   · intro t h
@@ -79,14 +79,14 @@ theorem row_ok {s : State} {B : Addr} {Z e eb w : Nat} (hs : Scr s B Z)
       ⟨hs.congr kab.2.2, Keep.refl _ _, h14, Outside.refl _ _ _ _, by simp [wv]⟩
     refine WP.mono (blocks_ok (a := 0) ((kab.gpr (by decide)).trans h8)
       ((kab.gpr (by decide)).trans h9) hbx h16 (by omega) hw hZ hZb sb inv)
-      fun t hi => ⟨?_, ?_, hi.r14, (kab.trans hi.keep).mono (by simp)⟩
+      fun t hi => ⟨?_, ?_, hi.r14, (kab.trans hi.keep).mono (by decide)⟩
     · have hv := hi.val
       rw [hmb, hm, kab.gpr (by decide), hcx] at hv
       simpa using hv
     · have ho := hi.out; rw [hmb, hm] at ho; exact ho
   · refine WP.ite false (by simp [eval, hz, h16]) (by simp) (fun _ => ?_)
     refine WP.mono (AdxSquare.macRow_ok (hs.congr ka.2.2) ha8 ha9 habp hw hZ hZb sb)
-      fun t ⟨hv, ho, h14, kt⟩ => ⟨?_, ?_, h14, (ka.trans kt).mono (by simp)⟩
+      fun t ⟨hv, ho, h14, kt⟩ => ⟨?_, ?_, h14, (ka.trans kt).mono (by decide)⟩
     · rw [hm, ka.gpr (by decide)] at hv; exact hv
     · rw [hm] at ho; exact ho
 end VG.Proof.Bignum.X86_64.AdxSquareWide

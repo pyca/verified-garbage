@@ -23,7 +23,7 @@ theorem group_ok {s₀ t : State} {B : Addr} {Z A eb w i : Nat}
     ((g0.gpr (by decide)).trans h8) ((g0.gpr (by decide)).trans h9)
     ((l0.gpr (by decide)).trans hI.rbp) ((l0.gpr (by decide)).trans hI.r14)
     (by omega) (by omega) hc) fun s1 ⟨cf1, of1, c1, o1, z1, e1, out1, k1⟩ => ?_)
-  have l1 : Keep stepRegs t s1 := (l0.trans k1).mono (by simp)
+  have l1 : Keep stepRegs t s1 := (l0.trans k1).mono (by decide)
   have g1 := hI.keep.trans l1
   have v1 : ValueInv s₀ B A eb (i+1) (cf1.toNat + of1.toNat) s1 := by
     have e : wv s1.mem B (A+16*(i+0)) 2 + 2^128*(cf1.toNat+of1.toNat) =
@@ -36,7 +36,7 @@ theorem group_ok {s₀ t : State} {B : Addr} {Z A eb w i : Nat}
     ((g1.gpr (by decide)).trans h8) ((g1.gpr (by decide)).trans h9)
     ((l1.gpr (by decide)).trans hI.rbp) ((l1.gpr (by decide)).trans hI.r14)
     (by omega) (by omega) c1 o1 z1) fun s2 ⟨cf2, of2, c2, o2, z2, e2, out2, k2⟩ => ?_)
-  have l2 : Keep stepRegs t s2 := (l1.trans k2).mono (by simp)
+  have l2 : Keep stepRegs t s2 := (l1.trans k2).mono (by decide)
   have g2 := hI.keep.trans l2
   have v2 : ValueInv s₀ B A eb (i+2) (cf2.toNat + of2.toNat) s2 := by
     have e : wv s2.mem B (A+16*(i+1)) 2 + 2^128*(cf2.toNat+of2.toNat) =
@@ -49,7 +49,7 @@ theorem group_ok {s₀ t : State} {B : Addr} {Z A eb w i : Nat}
     ((g2.gpr (by decide)).trans h8) ((g2.gpr (by decide)).trans h9)
     ((l2.gpr (by decide)).trans hI.rbp) ((l2.gpr (by decide)).trans hI.r14)
     (by omega) (by omega) c2 o2 z2) fun s3 ⟨cf3, of3, c3, o3, z3, e3, out3, k3⟩ => ?_)
-  have l3 : Keep stepRegs t s3 := (l2.trans k3).mono (by simp)
+  have l3 : Keep stepRegs t s3 := (l2.trans k3).mono (by decide)
   have g3 := hI.keep.trans l3
   have v3 : ValueInv s₀ B A eb (i+3) (cf3.toNat + of3.toNat) s3 := by
     have e : wv s3.mem B (A+16*(i+2)) 2 + 2^128*(cf3.toNat+of3.toNat) =
@@ -62,7 +62,7 @@ theorem group_ok {s₀ t : State} {B : Addr} {Z A eb w i : Nat}
     ((g3.gpr (by decide)).trans h8) ((g3.gpr (by decide)).trans h9)
     ((l3.gpr (by decide)).trans hI.rbp) ((l3.gpr (by decide)).trans hI.r14)
     (by omega) (by omega) c3 o3 z3) fun s4 ⟨cf4, of4, c4, o4, z4, e4, out4, k4⟩ => ?_)
-  have l4 : Keep stepRegs t s4 := (l3.trans k4).mono (by simp)
+  have l4 : Keep stepRegs t s4 := (l3.trans k4).mono (by decide)
   have g4 := hI.keep.trans l4
   have v4 : ValueInv s₀ B A eb (i+4) (cf4.toNat + of4.toNat) s4 := by
     have e : wv s4.mem B (A+16*(i+3)) 2 + 2^128*(cf4.toNat+of4.toNat) =
@@ -92,7 +92,7 @@ theorem group_ok {s₀ t : State} {B : Addr} {Z A eb w i : Nat}
   refine WP.mono finish fun u ⟨bp, r14, hz, hm, ku⟩ => ?_
   have gu := g5.trans ku
   have h15 : u.gpr .r15 = s5.gpr .r15 := ku.gpr (by decide)
-  refine ⟨hz, ⟨hI.scr.congr (l5.trans ku).2.2, gu.mono (by simp [stepRegs]), bp, r14, ?_, ?_⟩, ?_⟩
+  refine ⟨hz, ⟨hI.scr.congr (l5.trans ku).2.2, gu.mono (by decide), bp, r14, ?_, ?_⟩, ?_⟩
   · rw [hm,k5.2.1]; exact v4.out
   · rw [hm,k5.2.1,h15,e5]; exact v4.val
   · rw [h15]; exact bound5

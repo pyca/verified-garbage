@@ -82,7 +82,7 @@ theorem diagonalStep_ok {s : State} {B : Addr} {Z A eb i w : Nat} (hs : Scr s B 
   obtain ⟨hval, ho⟩ := write2 s₂.mem B (A + 16 * i) (s₂.gpr .r11) (s₂.gpr .r12) (by omega)
   rw [← hm] at hval ho
   rw [k₂.2.1, hm₁] at ho
-  refine ⟨?_, ho, hbp', h14', hz, (k12.trans kt).mono (by simp)⟩
+  refine ⟨?_, ho, hbp', h14', hz, (k12.trans kt).mono (by decide)⟩
   rw [hval, h15', wv2]
   rw [h11, h12, hdx, k₁.gpr (by decide)] at hv
   exact hv
