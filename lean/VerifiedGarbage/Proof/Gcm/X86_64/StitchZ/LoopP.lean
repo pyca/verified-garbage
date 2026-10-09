@@ -290,7 +290,7 @@ theorem ctx_keep {s₀ : State} (hp : SPreP s₀) {m : Mem} (hf : Frame [dR s₀
   rw [kb _ (by omega), hp.pow k hk, hH]; rfl
 
 /-- `bigP`: `big` with the tables loaded. -/
-theorem bigP_ok {s₀ : State} (hp : SPreP s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+theorem bigP_ok {s₀ : State} (hp : SPreP s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     (hP : ∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l)))
     (hFin : ∀ T : Nat → Nat → Nat → Block,
       (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow (hk s₀) (48 - 16 * g - 4 * k - l))) →
@@ -316,7 +316,7 @@ theorem bigP_ok {s₀ : State} (hp : SPreP s₀) {P : Nat → Nat → Block} (hf
     by_cases h2 : g = 2
     · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
     · simp only [T, h2, ↓reduceIte]; exact t g (by omega) k hk l hl
-  exact bigRest_ok hp.base hf hT (fun k l => by simp only [T, ↓reduceIte]) h256 hI
+  exact bigRest_ok hp.base hm hf hT (fun k l => by simp only [T, ↓reduceIte]) h256 hI
     (hI.a.pow hp.base fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl) hv pm g₁
     fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl
 

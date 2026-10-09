@@ -128,8 +128,7 @@ theorem aes_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr ∉ re
       WP isa (.block (g j)) s fun s' => Q (j + 1) s' ∧ KFrame G s s')
     (hq : ∀ j s s', Q j s → KFrame (kr :: regs) s s' → Q j s')
     (s : State) (hK : Keys nr w s) (hQ : Q 1 s)
-    (hrsi : s.gpr .rsi = BitVec.ofNat 64 nr)
-    (_hr10 : s.gpr .r10 = s.gpr .rdi + BitVec.ofNat 64 (16 * nr)) :
+    (hrsi : s.gpr .rsi = BitVec.ofNat 64 nr) :
     WP isa (aes regs g) s fun s' =>
       (∀ b ∈ regs, ∀ l < 4, st (s'.zlane b l) = cipher nr w (st (s.zlane b l))) ∧ Q 10 s' ∧
       KFrame (kr :: (regs ++ G)) s s' := by

@@ -7,14 +7,13 @@ open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch
 open VG.Spec.Gcm (Block)
 
-theorem stopped_length {s₀ : State} (hp : SPre s₀) (dec : Bool) (g : Nat)
+theorem stopped_length {s₀ : State} (_hp : SPre s₀) (hn : nb s₀ % 16 = 0) (dec : Bool) (g : Nat)
     (hm : g % 8 = 0) (ht : g + tailSize dec ≤ nb s₀) (hl : nb s₀ - g < threshold dec) :
     nb s₀ = g + tailSize dec := by
-  have hn := hp.nbm
   cases dec <;> simp [tailSize, threshold] at ht hl ⊢ <;> omega
 
 theorem loopRun_ok {s₀ s : State} {P : Nat → Block} {dec : Bool} {g : Nat}
-    (hp : SPre s₀) (hlaw : HashLaw s₀ P) (h : LoopInv s₀ P dec g s)
+    (hp : SPre s₀) (hm : nb s₀ % 16 = 0) (hlaw : HashLaw s₀ P) (h : LoopInv s₀ P dec g s)
     (hn : g + threshold dec ≤ nb s₀) :
     WP isa (.loop (body8 dec (nr s₀)) .ae) s fun t =>
       ∃ g, nb s₀ = g + tailSize dec ∧ LoopInv s₀ P dec g t := by
@@ -27,7 +26,7 @@ theorem loopRun_ok {s₀ s : State} {P : Nat → Block} {dec : Bool} {g : Nat}
     refine WP.mono (loopStep_ok hp hlaw h hn) fun u ⟨hu, hcf⟩ => ?_
     by_cases halt : nb s₀ - (g + 8) < threshold dec
     · exact .inl ⟨by simp only [eval, hcf, halt, decide_true, Option.map_some, Bool.not_true],
-        g + 8, stopped_length hp dec (g + 8) hu.multiple hu.tail_le halt, hu⟩
+        g + 8, stopped_length hp hm dec (g + 8) hu.multiple hu.tail_le halt, hu⟩
     · have hg := hu.core.g_le
       refine .inr ⟨by simp only [eval, hcf, halt, decide_false, Option.map_some, Bool.not_false],
         nb s₀ - (g + 8), ?_, g + 8, rfl, by omega, hu⟩
@@ -37,14 +36,14 @@ theorem loopRun_ok {s₀ s : State} {P : Nat → Block} {dec : Bool} {g : Nat}
   exact WP.loop (M := isa) I step (nb s₀ - g) s ⟨g, rfl, hn, h⟩
 
 theorem loopMaybe_ok {s₀ s : State} {P : Nat → Block} {dec : Bool} {g : Nat}
-    (hp : SPre s₀) (hlaw : HashLaw s₀ P) (h : LoopInv s₀ P dec g s)
+    (hp : SPre s₀) (hm : nb s₀ % 16 = 0) (hlaw : HashLaw s₀ P) (h : LoopInv s₀ P dec g s)
     (hcf : s.cf = some (decide (nb s₀ - g < threshold dec))) :
     WP isa (.ite .b (.block []) (.loop (body8 dec (nr s₀)) .ae)) s fun t =>
       ∃ g, nb s₀ = g + tailSize dec ∧ LoopInv s₀ P dec g t := by
   refine WP.ite (decide (nb s₀ - g < threshold dec)) (by simp only [eval, hcf]) (fun he => ?_) (fun he => ?_)
-  · exact WP.block_nil ⟨g, stopped_length hp dec g h.multiple h.tail_le (by simpa using he), h⟩
+  · exact WP.block_nil ⟨g, stopped_length hp hm dec g h.multiple h.tail_le (by simpa using he), h⟩
   · have hn : ¬nb s₀ - g < threshold dec := by simpa using he
     have hg := h.core.g_le
-    exact loopRun_ok hp hlaw h (by omega)
+    exact loopRun_ok hp hm hlaw h (by omega)
 
 end VG.Proof.Gcm.X86_64.StitchAvx8

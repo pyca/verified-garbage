@@ -49,7 +49,7 @@ and `_decrypt_blocks_precomputed`: `blocksSat`, with a key context of 1024 bytes
 def blocksSatP : State := { blocksSat with rd := [⟨0x1000, 1024⟩, ⟨0x8008, 8⟩] }
 
 theorem encryptBlocksP_verified (v : GcmImpl) (st : Option (StitchCode CtxMode.powers)) :
-    Verified X86_64.target (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)))
+    Verified X86_64.target (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (encFull st))
       (Spec.Gcm.encryptBlocksPrecomputedContract X86_64.abi 8) :=
   Verified.of_correct (encryptBlocksM_correct v st) (Blocks.encrypt_ct v st)
     { pre := by

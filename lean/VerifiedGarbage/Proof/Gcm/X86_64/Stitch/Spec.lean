@@ -8,9 +8,11 @@ import VerifiedGarbage.Spec.Gcm
 Untrusted: everything here is checked by Lean. Interleaved loops (such as
 `Impl.Gcm.X86_64.Stitch`) start from a state `s₀` whose registers hold the
 key context (`rdi`), the number of rounds (`rsi`), the counter (`rdx`), `Y`
-(`rcx`), the data (`r8`), the number of blocks (`r9`, a multiple of 16) and
+(`rcx`), the data (`r8`), the number of blocks (`r9`) and
 the working space (`r11`). `SPre s₀` is what they need of it, and `EPost`,
-`DPost` what they do (`StitchOk`). This module states them without the
+`DPost` what they do (`StitchOk`), for a number of blocks that is a multiple
+of 16 (loops that also take the blocks after the last 16, such as
+`Impl.Gcm.X86_64.StitchZH.encR`, meet `StitchOkM` with width 1). This module states them without the
 algebra their proofs need (`Proof/Gcm/Poly.lean`), so that the functions
 calling the loops are proven for any loops and proof of `StitchOk`, which
 only the instances that use them import.
@@ -55,7 +57,6 @@ end
 structure SPre (s₀ : State) : Prop where
   rounds : nr s₀ = 10 ∨ nr s₀ = 12 ∨ nr s₀ = 14
   nb16 : 16 ≤ nb s₀
-  nbm : nb s₀ % 16 = 0
   k_in : InRegions (s₀.rd ++ s₀.wr) (kp s₀) 256
   c_in : InRegions s₀.wr (cp s₀) 16
   y_in : InRegions s₀.wr (yp s₀) 16
@@ -98,8 +99,10 @@ structure DPost (s₀ s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-/-- Interleaved loops `enc` and `dec` meet these contracts. -/
+/-- Interleaved loops `enc` and `dec` meet these contracts for a multiple of
+16 blocks. -/
 def StitchOk (enc dec : Prog isa) : Prop :=
-  (∀ s₀, SPre s₀ → WP isa enc s₀ (EPost s₀)) ∧ (∀ s₀, SPre s₀ → WP isa dec s₀ (DPost s₀))
+  (∀ s₀, SPre s₀ → nb s₀ % 16 = 0 → WP isa enc s₀ (EPost s₀)) ∧
+    (∀ s₀, SPre s₀ → nb s₀ % 16 = 0 → WP isa dec s₀ (DPost s₀))
 
 end VG.Proof.Gcm.X86_64.Stitch

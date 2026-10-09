@@ -20,7 +20,7 @@ The only module of `Proof/Gcm/X86_64/StitchZ/` that computes in the field
 namespace VG.Proof.Gcm.X86_64.StitchZ
 
 open VG VG.X86_64 VG.Proof.Gcm.Poly
-open VG.Proof.Gcm.X86_64.Stitch (SPre EPost DPost StitchOk hk zero_xor_b ghash16)
+open VG.Proof.Gcm.X86_64.Stitch (SPre EPost DPost StitchOk nb hk zero_xor_b ghash16)
 open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB φ_reduceB)
 open VG.Impl.Gcm.X86_64.StitchZ (ord setup enc dec)
 open VG.Spec.Gcm (Block mul)
@@ -104,15 +104,15 @@ theorem setup_ok {s₀ : State} (hp : SPre s₀) :
       exact hpw _ (by omega) _ (by omega)⟩
 
 /-- The encryption of `n` blocks (a multiple of 16, at least 16). -/
-theorem enc_ok {s₀ : State} (hp : SPre s₀) : WP isa enc s₀ (EPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => encTail_ok hp (finZ hpw) (finZ48 (powers48 hpw)) hR)
+theorem enc_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) : WP isa enc s₀ (EPost s₀) :=
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => encTail_ok hp hm (finZ hpw) (finZ48 (powers48 hpw)) hR)
 
 /-- The decryption of `n` blocks (a multiple of 16, at least 16). -/
-theorem dec_ok {s₀ : State} (hp : SPre s₀) : WP isa dec s₀ (DPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => decTail_ok hp (finZ hpw) (finZ48 (powers48 hpw)) hR)
+theorem dec_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) : WP isa dec s₀ (DPost s₀) :=
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => decTail_ok hp hm (finZ hpw) (finZ48 (powers48 hpw)) hR)
 
 /-- Both loops meet their contracts. -/
 theorem stitch_ok : StitchOk Impl.Gcm.X86_64.StitchZ.enc Impl.Gcm.X86_64.StitchZ.dec :=
-  ⟨fun _ hp => enc_ok hp, fun _ hp => dec_ok hp⟩
+  ⟨fun _ hp hm => enc_ok hp hm, fun _ hp hm => dec_ok hp hm⟩
 
 end VG.Proof.Gcm.X86_64.StitchZ

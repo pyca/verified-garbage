@@ -51,7 +51,6 @@ theorem inRegions_prefix {rs : List Region} {a : Addr} {n L : Nat} (h : InRegion
 theorem _root_.VG.Proof.Gcm.X86_64.Stitch.SPreTo.toD {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) : SPre (dst s₀) where
   rounds := hp.rounds
   nb16 := hp.nb16
-  nbm := hp.nbm
   k_in := inRegions_prefix hp.k_in M.ge
   c_in := hp.c_in
   y_in := hp.y_in
