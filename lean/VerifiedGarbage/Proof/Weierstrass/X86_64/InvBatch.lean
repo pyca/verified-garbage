@@ -38,8 +38,8 @@ theorem linM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w
   push_cast at e'
   rw [← Divstep.toInt_sgn, ← Divstep.toInt_sgn]
   refine Divstep.lin_words (X' := wordsVal s.mem base x (K - 1)) (Y' := wordsVal s.mem base y (K - 1)) ?_ ?_ ?_
-  · have := shifted_cong s.mem base x (k := k) (K := K) (by omega) (by omega); push_cast at this; exact this
-  · have := shifted_cong s.mem base y (k := k) (K := K) (by omega) (by omega); push_cast at this; exact this
+  · have := shifted_cong s.mem base x (k := k) (K := K) (by omega_using [hk']) (by omega_using [hK]); push_cast at this; exact this
+  · have := shifted_cong s.mem base y (k := k) (K := K) (by omega_using [hk']) (by omega_using [hK]); push_cast at this; exact this
   · push_cast; convert e' using 3
 
 /-- `linM_ok` for `linC`: `lin`, or `linR` for up to five words, whose
@@ -66,7 +66,7 @@ theorem linCM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
 theorem coef_natAbs {u : Int} (h : |u| ≤ 2 ^ 59) : (BitVec.ofInt 64 u).toInt.natAbs ≤ 2 ^ 62 := by
   rw [Divstep.toInt_small h]
   have := Int.natCast_natAbs u
-  omega
+  omega_using [h, this]
 
 /-- `[dst] = y / 2^59` modulo `2^(64 L)`, for `[src] ≡ y` with `|y| < 2^(64 L - 1)`
 a multiple of `2^59`. -/
@@ -79,7 +79,7 @@ theorem shrM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d
       (wordsVal t.mem base dst L : Int) % ((2 ^ (64 * L) : Nat) : Int) = z % ((2 ^ (64 * L) : Nat) : Int) ∧
       KeepRegs [.rax, .rdx, .r8] s t ∧ Outside base dst (8 * L) s.mem t.mem := by
   refine WP.mono (shr59_ok hs hL hsrc hdst hsep) fun t ⟨e, k, O⟩ => ⟨?_, k, O⟩
-  obtain ⟨j, rfl⟩ : ∃ j, L = j + 1 := ⟨L - 1, by omega⟩
+  obtain ⟨j, rfl⟩ : ∃ j, L = j + 1 := ⟨L - 1, by omega_using [hL]⟩
   simp only [Nat.add_sub_cancel] at hy1 hy2 ⊢
   have hQ : 2 ^ (64 * (j + 1)) = 2 * (2 ^ (64 * j) * 2 ^ 63) := by
     rw [pow64_succ, show (2 : Nat) ^ 64 = 2 * 2 ^ 63 from rfl]; ring
@@ -91,7 +91,7 @@ theorem shrM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d
 theorem modOk_out {M : Mod} {size p : Nat} {mem mem' : Mem} {base : Addr} (hM : ModOkW M size p mem base)
     {W : List (Nat × Nat)} (hU : Unch base W mem mem') (hsep : ∀ w ∈ W, M.mo + 8 * M.n ≤ w.1 ∨ w.1 + w.2 ≤ M.mo)
     (hn : base.toNat + size ≤ 2 ^ 64) : ModOkW M size p mem' base :=
-  ⟨hM.n0, hM.mo, hM.tmp, hM.sep, by rw [hU.wordsVal hsep (by have := hM.mo; omega)]; exact hM.val,
+  ⟨hM.n0, hM.mo, hM.tmp, hM.sep, by rw [hU.wordsVal hsep (by have := hM.mo; omega_using [hn, this])]; exact hM.val,
     hM.inv, hM.red⟩
 
 /-- Apart from each range of a list written out. -/
@@ -116,7 +116,7 @@ theorem fHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
       KeepRegs [.rax, .rcx, .rdx, .rbp, .r8, .r13] s t ∧
       Unch base [(T, 8 * L), (U, 8 * (L - 1)), (dst, 8 * L)] s.mem t.mem := by
   rw [WP.block_append_iff]
-  refine WP.mono (linCM_ok hs hw hw' (k := L) (K := L) (Nat.le_refl _) hL (by omega) hx hy hT hU hTx hTy hUT hUx hUy
+  refine WP.mono (linCM_ok hs hw hw' (k := L) (K := L) (Nat.le_refl _) hL (by omega_using []) hx hy hT hU hTx hTy hUT hUx hUy
     (by rw [hu]; exact coef_natAbs (le_trans (le_add_of_nonneg_right (abs_nonneg _)) huv))
     (by rw [hv]; exact coef_natAbs (le_trans (le_add_of_nonneg_left (abs_nonneg _)) huv)))
     fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
@@ -124,7 +124,7 @@ theorem fHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   rw [hu, hv, Divstep.toInt_small (le_trans (le_add_of_nonneg_right (abs_nonneg _)) huv),
     Divstep.toInt_small (le_trans (le_add_of_nonneg_left (abs_nonneg _)) huv), Divstep.cong_comb hf hg] at e₁
   obtain ⟨b1, b2⟩ := Divstep.comb_range (A := 2 ^ (64 * (L - 1))) huv hfb hgb hp
-  refine WP.mono (shrM_ok hs₁ (dst := dst) (src := T) (by omega) hT hd hdT e₁ b1 b2 (Int.mul_ediv_cancel' hdiv).symm)
+  refine WP.mono (shrM_ok hs₁ (dst := dst) (src := T) (by omega_using [hL]) hT hd hdT e₁ b1 b2 (Int.mul_ediv_cancel' hdiv).symm)
     fun t ⟨e, k, O⟩ => ⟨e, k₁.trans (k.mono (by decide)), (O₁.trans O.unch).mono fun w hw => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
       rcases hw with h | h | h <;> simp [h]⟩
@@ -149,8 +149,10 @@ theorem abHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   have hn := hs.nowrap
   have hn0 := hM.n0
   rw [WP.block_append_iff]
-  refine WP.mono (linCM_ok hs hw hw' (k := M.n) (K := M.n + 1) (by omega) (by omega) (by omega) hx hy (by omega)
-    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+  -- `omega` given the fact it needs: the context has eight disjunctions it would split.
+  refine WP.mono (linCM_ok hs hw hw' (k := M.n) (K := M.n + 1) (Nat.le_succ _) (by omega_using [hn2])
+    (Nat.le_refl _) hx hy (by omega_using [hT]) (by omega_using [hU]) (by omega_using [hTx])
+    (by omega_using [hTy]) (by omega_using [hUT]) (by omega_using [hUx]) (by omega_using [hUy])
     (by rw [hu]; exact coef_natAbs (le_trans (le_add_of_nonneg_right (abs_nonneg _)) huv))
     (by rw [hv]; exact coef_natAbs (le_trans (le_add_of_nonneg_left (abs_nonneg _)) huv))) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
@@ -162,8 +164,9 @@ theorem abHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     have hp : (0 : Int) ≤ p := Int.natCast_nonneg _
     nlinarith
   have O₁' : Unch base [(T, 8 * (M.n + 2)), (U, 8 * (M.n + 1))] s.mem s₁.mem := fun z hz => O₁ z (by
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hz ⊢; omega)
-  refine WP.mono (mredC_ok hs₁ hM₁ hT hd hU hTm hdT (by omega) hUm hT' e₁) fun t ⟨e, k, O⟩ =>
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hz ⊢
+    omega_using [hz])
+  refine WP.mono (mredC_ok hs₁ hM₁ hT hd hU hTm hdT (by omega_using [hUT]) hUm hT' e₁) fun t ⟨e, k, O⟩ =>
     ⟨e, k₁.trans k, (O₁'.trans O).mono fun w hw => ?_⟩
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
   rcases hw with h | h | h | h | h <;> simp [h]
@@ -177,12 +180,12 @@ theorem slots (P : InvCfg) :
       P.sT = P.tbl + 48 * P.M.n + 32 ∧ P.sU = P.tbl + 56 * P.M.n + 48 := by
   refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     simp only [InvCfg.L, InvCfg.sG, InvCfg.sA, InvCfg.sB, InvCfg.sNF, InvCfg.sNG, InvCfg.sT, InvCfg.sU] <;>
-    omega
+    omega_using []
 
 set_option hygiene false in
 /-- The slots' arithmetic, from `slots` and the layout (named `eL` … `eU`, `n4`, `htbl`, `hn`). -/
 local macro "slot_omega" : tactic =>
-  `(tactic| omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, eU, n4, htbl, hn])
+  `(tactic| ((try simp only [eL, eF, eG, eA, eB, eNF, eNG, eT, eU]); omega_using [n4, htbl, hn]))
 
 /-- What a batch writes: the working area. -/
 def batchW (P : InvCfg) : List (Nat × Nat) := [(P.tbl, invTbl P.M.n)]
@@ -233,24 +236,24 @@ theorem batchStart_ok {P : InvCfg} {s : State} {base : Addr} {size : Nat} (hs : 
       t.gpr .rbx = ~~~s.gpr .rbx ∧ KeepRegs [.rax, .rbx] s t ∧ Outside base P.sT 16 s.mem t.mem := by
   have hn := hs.nowrap
   rw [InvCfg.batchStart, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (copy1_ok hs (d := P.sT) (a := P.sF) (by omega) hF) fun s₁ ⟨m₁, k₁⟩ => ?_
+  refine WP.mono (copy1_ok hs (d := P.sT) (a := P.sF) (by omega_using [hT]) hF) fun s₁ ⟨m₁, k₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
-  refine WP.mono (copy1_ok hs₁ (d := P.sT + 8) (a := P.sG) (by omega) hG) fun s₂ ⟨m₂, k₂⟩ => ?_
+  refine WP.mono (copy1_ok hs₁ (d := P.sT + 8) (a := P.sG) (by omega_using [hT]) hG) fun s₂ ⟨m₂, k₂⟩ => ?_
   refine WP.mono (notRbx_ok s₂) fun t ⟨b, k⟩ => ⟨?_, ?_, ?_, ?_, ?_⟩
-  · rw [k.2.1, m₂, word_apart _ _ _ (by omega) (by omega) (by omega), m₁, word_writeW_self]
-  · rw [k.2.1, m₂, word_writeW_self, m₁, word_apart _ _ _ (by omega) (by omega) (by omega)]
+  · rw [k.2.1, m₂, word_apart _ _ _ (by omega_using []) (by omega_using [hT, hn]) (by omega_using [hT, hn]), m₁, word_writeW_self]
+  · rw [k.2.1, m₂, word_writeW_self, m₁, word_apart _ _ _ (by omega_using [hGT]) (by omega_using [hT, hGT, hn]) (by omega_using [hT, hn])]
   · rw [b, k₂.gpr _ (by decide), k₁.gpr _ (by decide)]
   · exact ((k₁.mono (by simp)).trans (k₂.mono (by simp))).trans ((Keeps.regs k).mono (by simp))
   · rw [k.2.1, m₂, m₁]
-    exact ((writeW_outside _ _ _ (by omega)).mono (by omega) (by omega)).trans
-      ((writeW_outside _ _ _ (by omega)).mono (by omega) (by omega))
+    exact ((writeW_outside _ _ _ (by omega_using [hT, hn])).mono (by omega_using []) (by omega_using [])).trans
+      ((writeW_outside _ _ _ (by omega_using [hT, hn])).mono (by omega_using []) (by omega_using []))
 
 /-- The low word of numbers of `L` words congruent modulo `2^(64 L)`. -/
 theorem low_cong {P : InvCfg} {m : Mem} {base : Addr} {d : Nat} {x : Int}
     (h : (wordsVal m base d P.L : Int) % ((2 ^ (64 * P.L) : Nat) : Int) = x % ((2 ^ (64 * P.L) : Nat) : Int)) :
     ((word m base d).toNat : Int) % 2 ^ 64 = x % 2 ^ 64 := by
   have hdvd : ((2 : Int) ^ 64) ∣ ((2 ^ (64 * P.L) : Nat) : Int) := by
-    rw [Nat.cast_pow, Nat.cast_ofNat]; exact pow_dvd_pow 2 (by unfold InvCfg.L; omega)
+    rw [Nat.cast_pow, Nat.cast_ofNat]; exact pow_dvd_pow 2 (by unfold InvCfg.L; omega_using [])
   have low : ((word m base d).toNat : Int) % 2 ^ 64 = (wordsVal m base d P.L : Int) % 2 ^ 64 := by
     unfold InvCfg.L; rw [wordsVal]; push_cast; rw [Int.add_mul_emod_self_left]
   rw [low, ← Int.emod_emod_of_dvd _ hdvd, h, Int.emod_emod_of_dvd _ hdvd]
@@ -280,11 +283,11 @@ theorem words_ok {P : InvCfg} {base : Addr} {size : Nat} (hL : InvLay P size) {s
     have := Divstep.msteps_d T0 k
     rw [show T0.d = I.d from rfl] at this
     linarith
-  have hT : P.sT + 24 ≤ size := by omega
+  have hT : P.sT + 24 ≤ size := by omega_using [eT, htbl]
   rw [InvCfg.words]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (batchStart_ok hs (by omega) (by omega) (by omega) (by omega))
+  refine WP.mono (batchStart_ok hs (by omega_using [eF, htbl]) (by omega_using [eG, htbl]) (by omega_using [hT]) (by omega_using [eG, eT]))
     fun s₁ ⟨wf₁, wg₁, b₁, k₁, o₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   have c₁ : ChunkAt base P.sT 64 true T0 s₁ :=
@@ -325,7 +328,7 @@ theorem words_ok {P : InvCfg} {base : Addr} {size : Nat} (hL : InvLay P size) {s
   · rw [k.1 _ (by decide), q₅]
   · rw [k.1 _ (by decide), r₅]
   · rw [k.2.1]
-    exact ((((o₁.mono (by omega) (by omega)).trans o₂).trans o₃).trans o₄).trans o₅
+    exact ((((o₁.mono (by omega_using []) (by omega_using [])).trans o₂).trans o₃).trans o₄).trans o₅
   · exact ((((k₁.mono (by decide)).trans k₂).trans k₃).trans k₄).trans k₅ |>.trans ((Keeps.regs k).mono (by decide))
 
 set_option hygiene false in
@@ -421,7 +424,7 @@ theorem fgUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
 set_option hygiene false in
 /-- `slot_omega` with the modulus's place (`hmt`, `hmo`). -/
 local macro "slotm_omega" : tactic =>
-  `(tactic| omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, eU, n4, htbl, hn, hmt, hmo])
+  `(tactic| ((try simp only [eL, eF, eG, eA, eB, eNF, eNG, eT, eU]); omega_using [n4, htbl, hn, hmt, hmo]))
 
 /-- Both halves of the update of `a`, `b`, into `a'` and `b`. -/
 abbrev abHalves (P : InvCfg) : List Instr :=
@@ -449,7 +452,7 @@ theorem abHalves_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P siz
   have n4 := hL.n4; have htbl := hL.tbl; unfold invTbl at htbl; have hmt := hL.mo_tbl; unfold invTbl at hmt
   have hmo := hM.mo
   rw [WP.block_append_iff]
-  refine WP.mono (abHalf_ok hs hM (by omega) (w := .r9) (w' := .r10) (by decide) (by decide) h9 h10 huv
+  refine WP.mono (abHalf_ok hs hM (by omega_using [n4]) (w := .r9) (w' := .r10) (by decide) (by decide) h9 h10 huv
     (T := P.sT) (x := P.sA) (y := P.sB) (U := P.sU) (dst := P.sNF) (by slotm_omega) (by slotm_omega)
     (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega)
     (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) hA hB ha hb)
@@ -462,7 +465,7 @@ theorem abHalves_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P siz
     U₁.wordsVal (by cover_omega) (by slot_omega)
   have M₁ := modOk_out hM U₁' (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; slotm_omega) hn
-  refine WP.mono (abHalf_ok hs₁ M₁ (by omega) (w := .r11) (w' := .r12) (by decide) (by decide)
+  refine WP.mono (abHalf_ok hs₁ M₁ (by omega_using [n4]) (w := .r11) (w' := .r12) (by decide) (by decide)
     (by rw [k₁.gpr _ (by decide)]; exact h11) (by rw [k₁.gpr _ (by decide)]; exact h12) hqr
     (T := P.sT) (x := P.sA) (y := P.sB) (U := P.sU) (dst := P.sB) (by slotm_omega) (by slotm_omega)
     (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega)
@@ -506,8 +509,8 @@ theorem batchEnd_ok (s : State) {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 64)
   have e : BitVec.ofNat 64 j - 1 = BitVec.ofNat 64 (j - 1) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
-    rw [Nat.mod_eq_of_lt hj', Nat.mod_eq_of_lt (by omega : j - 1 < 2 ^ 64)]
-    omega
+    rw [Nat.mod_eq_of_lt hj', Nat.mod_eq_of_lt (by omega_using [hj'] : j - 1 < 2 ^ 64)]
+    omega_using [hj, hj']
   refine ⟨e, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · rw [e]
     congr 1
@@ -517,7 +520,7 @@ theorem batchEnd_ok (s : State) {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 64)
       simp only [beq_eq_false_iff_ne, ne_eq]
       intro he
       have := congrArg BitVec.toNat he
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj'])] at this
       exact h this
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
