@@ -45,75 +45,10 @@ macro "jac_reg_ct" rs:term : tactic => `(tactic|
   exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs $rs)
     (fun _ _ _ _ h => h) (by taint_decide))
 
-private def treeArithmeticCode :=
-  Jacobian.jacTreeArithmetic (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256) 16
-materialize_value treeArithmeticCode
-
-private theorem treeArithmetic_keeps : ∀ r∈[Reg.x19,Reg.x20],
-    ∀ i∈instrs (Jacobian.jacTreeArithmetic (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256) 16),
-      dstOf i≠some r := by
-  change ∀ r∈[Reg.x19,Reg.x20],∀ i∈instrs treeArithmeticCode,dstOf i≠some r
-  rw [treeArithmeticCode.lit_eq]
-  have h : (instrs treeArithmeticCode.lit).all (fun i => decide (dstOf i≠some .x19 ∧ dstOf i≠some .x20))=true := by decide +kernel
-  intro r hr i hi
-  have hh := of_decide_eq_true (List.all_eq_true.mp h i hi)
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl
-  · exact hh.1
-  · exact hh.2
-
-theorem jacTree_checks : JacTreeChecks (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256) where
-  copyInit := by jac_field_ct
-  pointer := by jac_field_ct
-  store := by jac_reg_ct [.x0,.x20]
-  initCounter := by jac_reg_ct [.x0,.x20]
-  parity := by jac_reg_ct [.x19]
-  fetchAddress := by jac_reg_ct [.x0,.x19]
-  fetchWords := by jac_reg_ct [.x0,.x16]
-  double := Forward.ed_ct
-  add := {
-    zero := by
-      intro a ha
-      simp only [List.mem_cons,List.not_mem_nil,or_false] at ha
-      rcases ha with rfl | rfl | rfl | rfl <;> jac_field_ct
-    copyP := by jac_field_ct
-    copyQ := by jac_field_ct
-    head := by jac_field_ct
-    tail := by jac_field_ct
-    double := Forward.rd_ct
-    infinity := by jac_field_ct }
-  copyStep := by jac_field_ct
-  advance := by jac_reg_ct [.x19,.x20]
-  keepArithmetic := treeArithmetic_keeps
-
 theorem jacTree_copy_preserves : ∀ r∈[Reg.x19,Reg.x20],
     ∀ i∈instrs (.block (VG.Impl.Weierstrass.AArch64.copyPt (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256).M.n
       (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256).R (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256).D) : Prog isa),dstOf i≠some r := by
   decide
-
-theorem jacStep_checks : JacStepChecks (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256) where
-  double := {
-    rd := Forward.rd_ct
-    dr := Forward.dr_ct
-    copy := by jac_field_ct }
-  digit := {
-    entry := {
-      lookup := by jac_reg_ct [.x0,.x2]
-      neg := by jac_reg_ct [.x0,.x19] }
-    add := {
-      zero := by
-        intro a ha
-        simp only [List.mem_cons,List.not_mem_nil,or_false] at ha
-        rcases ha with rfl | rfl | rfl | rfl <;> jac_field_ct
-      copyP := by jac_field_ct
-      copyQ := by jac_field_ct
-      head := by jac_field_ct
-      tail := by jac_field_ct
-      double := Forward.rd_ct
-      infinity := by jac_field_ct }
-    copy := by jac_field_ct
-    digit := by jac_reg_ct [.x0,.x19] }
-  dec := by jac_reg_ct [.x19]
 
 theorem jacWindow_infinity_ct : FieldCT (.block (Jacobian.infinity
     (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256)
@@ -121,22 +56,6 @@ theorem jacWindow_infinity_ct : FieldCT (.block (Jacobian.infinity
 
 theorem jacWindow_finish_ct : FieldCT (Jacobian.jacFinish
     (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256)) := by jac_field_ct
-
-theorem jacWindow_counter_ct : FieldCT (.block [.movz .x .x19 52 0]) := by jac_field_ct
-
-theorem jacWindow_checks : JacWindowChecks (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256) where
-  tree := jacTree_checks
-  treeCopy := jacTree_copy_preserves
-  step := jacStep_checks
-  infinity := jacWindow_infinity_ct
-  counter := jacWindow_counter_ct
-  finish := jacWindow_finish_ct
-
-theorem jacWinPrep_ct : FieldCT (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinPrep p256) := by jac_field_ct
-
-theorem jacSavePrep_ct : FieldCT (.seq
-    (.block (VG.Impl.Ecdsa.Verify.AArch64.Cfg.save p256))
-    (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinPrep p256)) := by jac_field_ct
 
 theorem jacSumTail_ct : FieldCT (.seq
     (VG.Impl.Ecdsa.Verify.AArch64.Cfg.sum p256)
