@@ -25,8 +25,8 @@ def variant : CrtImpl where
   spSafe := Code.all_of_allInstrs (by decide +kernel)
   montSuffix := ""
   pc := Impl.Rsa.X86_64.Precompute.code CallMont.base.mm
-  pcOk := pc_call_ok Mont.fnBase (by decide +kernel) rfl (by decide +kernel)
-  pcCt := pc_call_ct Mont.fnBase (by decide +kernel) rfl (by decide +kernel)
+  pcOk := pc_call_ok Mont.fnBase (R2Impl.words _) (by decide +kernel) rfl (by decide +kernel)
+  pcCt := pc_call_ct Mont.fnBase (R2Impl.words _) (by decide +kernel) rfl (by decide +kernel)
   pcMx := by decide +kernel
   pubOp := VG.Variants.RsaPublicPrecomputed.X86_64.Base.variant
   pcNosp := noSp_of (by decide +kernel)

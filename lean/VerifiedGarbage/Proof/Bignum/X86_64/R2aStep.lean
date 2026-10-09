@@ -10,7 +10,7 @@ branch, as `R2Words.addBack` does by a mask (`fix_ok`, the same statement);
 accumulator holding `mc = R - m`.
 -/
 
-namespace VG.Proof.Bignum.X86_64.R2a
+namespace VG.Proof.Bignum.X86_64.R2ax
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Bignum.X86_64.R2Adx
 open VG.Proof.Bignum.X86_64
@@ -192,4 +192,4 @@ theorem step_ok {L : Lay} {t : State} (hg : GoodL L t) (hw : 4 ≤ L.w) (hw4 : L
     k'.mono (by decide)⟩
   rw [hlow, hT3]
 
-end VG.Proof.Bignum.X86_64.R2a
+end VG.Proof.Bignum.X86_64.R2ax

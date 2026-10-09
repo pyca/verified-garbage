@@ -24,9 +24,9 @@ def variant : CrtImpl where
   nosp := noSp_of (by decide +kernel)
   spSafe := Code.all_of_allInstrs (by decide +kernel)
   montSuffix := "_adx"
-  pc := Impl.Rsa.X86_64.Precompute.code CallMont.adx.mm
-  pcOk := pc_call_ok Mont.fnAdx (by decide +kernel) rfl (by decide +kernel)
-  pcCt := pc_call_ct Mont.fnAdx (by decide +kernel) rfl (by decide +kernel)
+  pc := Impl.Rsa.X86_64.Precompute.code CallMont.adx.mm (Impl.Bignum.X86_64.R2Adx.choice CallMont.adx.mm)
+  pcOk := pc_call_ok Mont.fnAdx (R2Impl.adx _) (by decide +kernel) rfl (by decide +kernel)
+  pcCt := pc_call_ct Mont.fnAdx (R2Impl.adx _) (by decide +kernel) rfl (by decide +kernel)
   pcMx := by decide +kernel
   pubOp := VG.Variants.RsaPublicPrecomputed.X86_64.Adx.variant
   pcNosp := noSp_of (by decide +kernel)

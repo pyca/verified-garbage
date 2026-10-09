@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 `i` of `x` once that word is read into `next` (`word_ok`).
 -/
 
-namespace VG.Proof.Bignum.X86_64.R2a
+namespace VG.Proof.Bignum.X86_64.R2ax
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.R2Adx
 open VG.Proof.Bignum.X86_64
@@ -104,4 +104,4 @@ theorem word_ok {s : State} {B : Addr} {Z ex ec j k : Nat} {prev next hiP hiN : 
     rw [hg, k₄.gpr (by simp [hr.2.2.2]), k₃.gpr (by simp [hr.2.2.1]), k₂.gpr (by simp [hr.2.1]),
       k₁.gpr (by simp [hr.1, hr.2.1])]
 
-end VG.Proof.Bignum.X86_64.R2a
+end VG.Proof.Bignum.X86_64.R2ax

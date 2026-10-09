@@ -13,7 +13,7 @@ the mask in `r14`, the previous word of `x` in `r8`. Through every word `i`
 `i` words `X_i` of `x`, `C_i` of `mc` and `T_i` of `t` (`mulSub_ok`).
 -/
 
-namespace VG.Proof.Bignum.X86_64.R2a
+namespace VG.Proof.Bignum.X86_64.R2ax
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.R2Adx
 open VG.Proof.Bignum.X86_64
@@ -281,6 +281,24 @@ theorem mulTop_ok {s₀ t : State} {B : Addr} {Z ex ec w N : Nat} (hI : TI s₀ 
       ((writeW_outside _ _ _ (by omega)).mono (by omega) (by omega))
   · exact ((k₁.trans ⟨k₂.1, k₂.2.2⟩).trans k').mono (by decide)
 
+/-- The tiles and the top word, from the start of a pass: `t + q̂ R ≡ x 2^64 + q̂ mc`. -/
+theorem mulBody_ok {s₀ : State} {B : Addr} {Z w ex ec N : Nat} (hs : Scr s₀ B Z)
+    (hbx : s₀.gpr .rbx = off B ex) (hsi : s₀.gpr .rsi = off B ec) (h12 : s₀.gpr .r12 = BitVec.ofNat 64 w)
+    (h8 : s₀.gpr .r8 = 0) (h9 : s₀.gpr .r9 = 0) (h14 : s₀.gpr .r14 = 0) (h15 : s₀.gpr .r15 = 0)
+    (hw : w = 4 * N) (hN0 : 0 < N) (hN : N < 2 ^ 60) (hX : ex + 8 * (w + 1) ≤ Z) (hC : ec + 8 * w ≤ Z)
+    (sep : ex + 8 * (w + 1) ≤ ec ∨ ec + 8 * w ≤ ex) :
+    WP isa (.seq (.loop (.block tile) .ne) (.block mulTop)) s₀ fun t =>
+      (wv t.mem B ex (w + 1) + (s₀.gpr .rdx).toNat * 2 ^ (64 * w)) % 2 ^ (64 * (w + 1)) =
+        (wv s₀.mem B ex w * 2 ^ 64 + (s₀.gpr .rdx).toNat * wv s₀.mem B ec w) % 2 ^ (64 * (w + 1)) ∧
+      Outside B ex (8 * (w + 1)) s₀.mem t.mem ∧ Keep chRegs s₀ t := by
+  have c0 : s₀.gpr .r12 = BitVec.ofNat 64 (4 * N) := by rw [h12, hw]
+  have h0 : TI s₀ B Z ex ec w 0 s₀ := ⟨hs, fun _ _ => rfl, h15, rfl, rfl,
+    ⟨false, h14, by rw [h8, h9]; simp [wv]⟩, Outside.refl _ _ _ _⟩
+  refine WP.seq (WP.mono (tiles_ok h0 hbx hsi c0 hw hN0 hN (by omega) hC (by omega)) fun t hT => ?_)
+  refine WP.mono (mulTop_ok hT hbx h12 hX hw) fun t' ⟨hv, ho, k'⟩ => ⟨hv, ho, ?_⟩
+  have kT : Keep chRegs s₀ t := ⟨hT.regs, hT.rd, hT.wr⟩
+  exact (Keep.trans kT k').mono (by decide)
+
 /-- `t := x 2^64 + q̂ mc - q̂ R` in place over `w + 1` words, `q̂` in `rcx`, `mc` from the header. -/
 theorem mulSub_ok {s : State} {B : Addr} {Z w ex ec N : Nat} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
     (hA : word s.mem B (8 * sArr Public.aAcc) = off B ec) (hZ : 8 * sArr Public.aAcc + 8 ≤ Z)
@@ -294,15 +312,10 @@ theorem mulSub_ok {s : State} {B : Addr} {Z w ex ec N : Nat} (hs : Scr s B Z) (h
       Keep [.rdx, .rsi, .r8, .r9, .r11, .r13, .rax, .r14, .r15, .rcx] s t := by
   unfold mulSub
   refine WP.seq (WP.mono (mulHead_ok hs hdi hA hZ) fun s₀ ⟨hdx, hsi, h8, h9, h14, h15, hm, k⟩ => ?_)
-  have b0 : s₀.gpr .rbx = off B ex := (k.gpr (by decide)).trans hbx
-  have c0 : s₀.gpr .r12 = BitVec.ofNat 64 (4 * N) := by rw [k.gpr (by decide), h12, hw]
-  have h0 : TI s₀ B Z ex ec w 0 s₀ := ⟨hs.congr k.2.2, fun _ _ => rfl, h15, rfl, rfl,
-    ⟨false, h14, by rw [h8, h9]; simp [wv]⟩, Outside.refl _ _ _ _⟩
-  refine WP.seq (WP.mono (tiles_ok h0 b0 hsi c0 hw hN0 hN (by omega) hC (by omega)) fun t hT => ?_)
-  refine WP.mono (mulTop_ok hT b0 (by rw [c0, hw]) hX hw) fun t' ⟨hv, ho, k'⟩ => ⟨?_, ?_, ?_⟩
+  refine WP.mono (mulBody_ok (hs.congr k.2.2) ((k.gpr (by decide)).trans hbx) hsi ((k.gpr (by decide)).trans h12)
+    h8 h9 h14 h15 hw hN0 hN hX hC sep) fun t ⟨hv, ho, k'⟩ => ⟨?_, ?_, ?_⟩
   · rw [hdx, hm] at hv; exact hv
   · rw [← hm]; exact ho
-  · have kT : Keep chRegs s₀ t := ⟨hT.regs, hT.rd, hT.wr⟩
-    exact (Keep.trans k (Keep.trans kT k')).mono (by decide)
+  · exact (Keep.trans k k').mono (by decide)
 
-end VG.Proof.Bignum.X86_64.R2a
+end VG.Proof.Bignum.X86_64.R2ax

@@ -57,15 +57,15 @@ def fail : Prog isa :=
       (.block exit))
 
 /-- The computation, once `m` is known valid: `m` into its array, `-m⁻¹`,
-`R² mod m` (`R2Words.choice`), then `m` and `R² mod m` to `pre`, and 1
-returned. -/
-def main : Prog isa := seqs [
+`R² mod m` (`r2`: `R2Words.choice`, or another computation of it, such as
+`R2Adx.choice` with ADX), then `m` and `R² mod m` to `pre`, and 1 returned. -/
+def main (r2 : Prog isa := R2Words.choice mul) : Prog isa := seqs [
   .block head,
   loadBE,
   .block ([.mov .r10 (.reg .rbx), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (at0 .rbx))] ++
     minv ++ [.store (hdr sMinv) .r15]),
   -- `R² mod m`, by word steps when `m`'s top bit is set and `w` a multiple of 4.
-  R2Words.choice mul,
+  r2,
   -- `m`, then `R² mod m`, to `pre`.
   .block [.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aN))), .mov .rbx (.mem (hdr sOut))],
   copyWords,
@@ -74,8 +74,8 @@ def main : Prog isa := seqs [
   .block ([.mov32 .rax (.imm 1)] ++ exit)]
 
 /-- `vg_rsa_public_precompute`. -/
-def code : Prog isa :=
-  .seq (.block (entry ++ invalid)) (.ite .ne fail (main mul))
+def code (r2 : Prog isa := R2Words.choice mul) : Prog isa :=
+  .seq (.block (entry ++ invalid)) (.ite .ne fail (main mul r2))
 
 end Precompute
 

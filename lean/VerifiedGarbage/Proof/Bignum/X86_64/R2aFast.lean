@@ -12,7 +12,7 @@ accumulator, the reciprocal `v` of `m`'s top word and `w` steps, `R² mod m`
 `R2w.choice_ok`'s statement).
 -/
 
-namespace VG.Proof.Bignum.X86_64.R2a
+namespace VG.Proof.Bignum.X86_64.R2ax
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Bignum.X86_64.R2Adx
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.WordStep
@@ -360,4 +360,4 @@ theorem choice_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 6
       ((k₁.gpr (by decide)).trans h10) hodd hlo)
       fun t ⟨h1, h2, h3, h4', h5⟩ => ⟨h1, h2, h3, by rw [← hm₁]; exact h4', (k₁.trans h5).mono (by decide)⟩
 
-end VG.Proof.Bignum.X86_64.R2a
+end VG.Proof.Bignum.X86_64.R2ax
