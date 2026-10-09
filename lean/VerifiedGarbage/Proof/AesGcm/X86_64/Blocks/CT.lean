@@ -257,21 +257,54 @@ theorem part_rel (aligned : Bool) (piece : Option (Prog isa)) {ys : State → Na
       fun _ _ h => ⟨n s₀ - n s₀ % 16, h.2.1, ?_⟩
     rw [← pb.en]; exact h.2.2
 
+/-- A `piece` that takes all the blocks, and `rest`, in two runs. -/
+theorem partFull_rel (aligned : Bool) (p : Prog isa) {ys : State → Nat → List Block}
+    (hc : ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (stitchPart p aligned true) hc).map
+      fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs && (!false || τ'.flags)) = some true)
+    (hw : ∀ {s : State}, BP M s → ∀ {s₁ : State}, EntryPost s s₁ →
+      WP isa (stitchPart p aligned true) s₁ (Mid s (qf s) (qf s) (ys s (qf s)))) :
+    RelCT isa (fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧ EntryPost s₀' s₂)
+      (head (some p) aligned true)
+      fun s₁ s₂ => ∃ q, Mid s₀ q q (ys s₀ q) s₁ ∧ Mid s₀' q q (ys s₀' q) s₂ := by
+  have eq : qf s₀' = qf s₀ := by simp only [qf, pb.en]
+  have a := rel_wp (P := fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧
+      EntryPost s₀' s₂) (rel_regs (.r11 :: args) [.rsp] false (fun _ _ h => h.1) hc) (fun _ _ h => h.2)
+    (fun _ h => hw hp h) (fun _ h => hw hp' h)
+  have b := rel_wp (rel_r11 (l₀ := rest) (l := rest.tail) rfl
+    (P := fun s₁ s₂ => (∀ r ∈ [Reg.rsp], s₁.gpr r = s₂.gpr r) ∧
+      Mid s₀ (qf s₀) (qf s₀) (ys s₀ (qf s₀)) s₁ ∧ Mid s₀' (qf s₀') (qf s₀') (ys s₀' (qf s₀')) s₂) [.rsp] [.rsp]
+    (by simp) (fun _ _ h => h.1) (fun _ _ h => ready_hS hp hp' pb (h.2.1.ready hp) (h.2.2.ready hp')) rest_check)
+    (fun _ _ h => h.2) (fun _ h => restFull_ok hp h) (fun _ h => restFull_ok hp' h)
+  refine (RelCT.seq (a.mono (fun _ _ h => h) fun _ _ h => ⟨h.1.1, h.2⟩) b).mono (fun _ _ h => h)
+    fun _ _ h => ⟨qf s₀, h.2.1, ?_⟩
+  rw [← eq]; exact h.2.2
+
 end
 
 theorem encrypt_ct (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) :
     ConstantTime isa (Proof.AesGcm.encryptBlocksX86_64M M).pre Proof.AesGcm.blocksPub
-      (encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned) := by
+      (encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st)) := by
   refine ct_of_rel fun s₀ s₀' h h' hq => ?_
   have hp := BP.ofM h
   have hp' := BP.ofM h'
   have pb := Pub.of hq
-  refine RelCT.seq (entry_rel hp hp' pb) (RelCT.seq (part_rel hp hp' pb aligned (st.map (·.enc))
-    (ys := fun s q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) (fun _ => rfl)
-    (fun _ e => by obtain ⟨i, -, rfl⟩ := Option.map_eq_some_iff.1 e; exact i.encP.ct)
-    fun _ e {_} hp {_} h => by
-      obtain ⟨i, -, rfl⟩ := Option.map_eq_some_iff.1 e
-      obtain ⟨a, b, c, d, e, f⟩ := h; exact stitchE_ok hp i.ok a b c d e f) ?_)
+  refine RelCT.seq (entry_rel hp hp' pb) (RelCT.seq (R := fun s₁ s₂ => ∃ q,
+    Mid s₀ q q (ctr32 (ciph s₀) (cb s₀) (blocksAt s₀.mem (D s₀) q)) s₁ ∧
+      Mid s₀' q q (ctr32 (ciph s₀') (cb s₀') (blocksAt s₀'.mem (D s₀') q)) s₂) ?_ ?_)
+  · rcases st with _ | ⟨enc, dec, full, ok, encP, decP⟩
+    · exact part_rel hp hp' pb aligned none (ys := fun s q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q))
+        (fun _ => rfl) (fun _ e => by cases e) fun _ e => by cases e
+    · cases full with
+      | false =>
+        exact part_rel hp hp' pb aligned (some enc) (ys := fun s q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q))
+          (fun _ => rfl) (fun _ e => by cases e; exact encP.ct)
+          fun _ e {_} hp {_} h => by
+            cases e
+            obtain ⟨a, b, c, d, e, f⟩ := h; exact stitchE_ok hp ok a b c d e f
+      | true =>
+        exact partFull_rel hp hp' pb aligned enc (ys := fun s q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q))
+          encP.ct fun {_} hp {_} h => by
+          obtain ⟨a, b, c, d, e, f⟩ := h; exact stitchEFull_ok hp ok a b c d e f
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨q, M₁, M₂⟩ e₁ e₂
   exact tail_rel hp hp' pb (fun q hq => ctrCall_rel hp hp' pb v.ctr hq) (fun q hq => ghCall_rel hp hp' pb v.gh hq)
     _ _ _ _ _ _ ⟨M₁, M₂⟩ e₁ e₂

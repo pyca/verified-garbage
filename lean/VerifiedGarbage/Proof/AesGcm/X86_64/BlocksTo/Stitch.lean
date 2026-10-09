@@ -66,13 +66,13 @@ theorem spreTo_of {s₃ : State} (h16 : 16 ≤ n s) (h9 : s₃.gpr .r9 = BitVec.
   have ed : s₃.gpr .r8 = Src s := hg _ (by simp [argRegs])
   have rd : s.rd = [kR M s, srcR s, aR s] := hp.rd
   have wr : s.wr = wR s := hp.wr
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_⟩ <;>
   simp only [Gcm.X86_64.Stitch.nr, Gcm.X86_64.Stitch.nb, Gcm.X86_64.Stitch.kp,
     Gcm.X86_64.Stitch.cp, Gcm.X86_64.Stitch.yp, Gcm.X86_64.Stitch.sp, Gcm.X86_64.Stitch.op, Gcm.X86_64.Stitch.pp,
     Gcm.X86_64.Stitch.cR, Gcm.X86_64.Stitch.yR, Gcm.X86_64.Stitch.sR, Gcm.X86_64.Stitch.oR,
     Gcm.X86_64.Stitch.pR, ek, er, ec, ey, ed, h10, h11, hq, hrd, hwr]
-  exacts [hp.rounds, by omega, by omega, ⟨kR M s, by rw [rd]; simp, Region.contains_self _ _⟩,
+  exacts [hp.rounds, by omega, ⟨kR M s, by rw [rd]; simp, Region.contains_self _ _⟩,
     ⟨cR s, by rw [wr]; simp, Region.contains_self _ _⟩, ⟨yR s, by rw [wr]; simp, Region.contains_self _ _⟩,
     ⟨srcR s, by rw [rd]; simp, contains_prefix _ hqn⟩, ⟨dR s, by rw [wr]; simp, contains_prefix _ hqn⟩,
     ⟨sR s, by rw [wr]; simp, Offset.contains_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega) (by have := AlignedScratch.offset_bounds aligned (S s); omega)⟩,
@@ -197,7 +197,10 @@ theorem stitch_ok {piece : Prog isa} (hpiece : StitchToOkM M piece)
     have wr₃' : s₃.wr = s.wr := wr₃.trans (wr₂.trans hwr)
     have hk₃ : Kept s 0 s₃.mem := by rw [m₃, m₂]; exact hk
     have hf₃ : Frame [kR' s] s.mem s₃.mem := by rw [m₃, m₂]; exact hf
-    exact WP.mono (hpiece s₃ (spreTo_of hp h16 h9 ga h10₃ h11₃ rd₃' wr₃' hf₃)) fun s₄ hP =>
+    have hm : Gcm.X86_64.Stitch.nb s₃ % 16 = 0 := by
+      have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
+      simp only [Gcm.X86_64.Stitch.nb, h9, toNat_ofNat_of_lt (show n s - n s % 16 < 2 ^ 64 by omega)]; omega
+    exact WP.mono (hpiece s₃ (spreTo_of hp h16 h9 ga h10₃ h11₃ rd₃' wr₃' hf₃) hm) fun s₄ hP =>
       mid_of_postTo hp h9 ga gc h10₃ h11₃ rd₃' wr₃' hk₃ hf₃ hP
 
 end

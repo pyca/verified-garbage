@@ -184,14 +184,14 @@ theorem finD {H : Block} {P : Nat → Nat → Block} (hP : ∀ k < 8, ∀ l < 2,
 /-! ## Both loops -/
 
 /-- The encryption of `n` blocks (a multiple of 16, at least 16). -/
-theorem enc_ok {s₀ : State} (hp : SPre s₀) : WP isa enc s₀ (EPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => encTail_ok hp (finE hpw) hR)
+theorem enc_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) : WP isa enc s₀ (EPost s₀) :=
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => encTail_ok hp hm (finE hpw) hR)
 
 /-- The decryption of `n` blocks (a multiple of 16, at least 16). -/
-theorem dec_ok {s₀ : State} (hp : SPre s₀) : WP isa dec s₀ (DPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => decTail_ok hp (finD hpw) hR)
+theorem dec_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) : WP isa dec s₀ (DPost s₀) :=
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => decTail_ok hp hm (finD hpw) hR)
 
 /-- Both interleaved loops meet their contracts. -/
-theorem stitch_ok : StitchOk Impl.Gcm.X86_64.Stitch.enc Impl.Gcm.X86_64.Stitch.dec := ⟨fun _ hp => enc_ok hp, fun _ hp => dec_ok hp⟩
+theorem stitch_ok : StitchOk Impl.Gcm.X86_64.Stitch.enc Impl.Gcm.X86_64.Stitch.dec := ⟨fun _ hp hm => enc_ok hp hm, fun _ hp hm => dec_ok hp hm⟩
 
 end VG.Proof.Gcm.X86_64.Stitch

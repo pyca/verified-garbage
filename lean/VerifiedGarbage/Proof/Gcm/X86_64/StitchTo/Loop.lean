@@ -223,11 +223,10 @@ theorem cmpE_ok {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State}
   refine ⟨{ hI with a := { hI.a with } }, ?_⟩
   rw [toNat_ofNat_lt (by omega)]; rfl
 
-theorem loopE_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block}
+theorem loopE_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block}
     (hf : FinOk ordE (hk s₀) P) {s : State}
     (hI : EInvTo s₀ P 1 s) (hcf : s.cf = some (decide (nb s₀ - 16 * (1 - 1) < 32))) :
     WP isa (.ite .b (.block []) (.loop bodyTo .ae)) s fun s' => ∃ e, nb s₀ = 16 * e ∧ EInvTo s₀ P e s' := by
-  have hm := hp.nbm
   have fin : ∀ e, nb s₀ - 16 * (e - 1) < 32 → ∀ t, EInvTo s₀ P e t → ∃ e, nb s₀ = 16 * e ∧ EInvTo s₀ P e t :=
     fun e he t hI => ⟨e, by have := hI.a.le; have := hI.one; omega, hI⟩
   refine WP.ite (decide (nb s₀ - 16 * (1 - 1) < 32)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
@@ -341,13 +340,13 @@ theorem finalTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
     rw [g₅, g₄]; exact hI.gpr r h1 h2 h3 h4 h5
 
 /-- The encryption after the setup. -/
-theorem encTailTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat → Nat → Block}
+theorem encTailTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block}
     (hf : FinOk ordE (hk s₀) P) {s : State} (hR : ReadyTo s₀ P s) :
     WP isa (.seq firstTo (.seq (.block [.alu .cmp .r9 (.imm 32)])
       (.seq (.ite .b (.block []) (.loop bodyTo .ae)) (.block (storeCtr ++ lastG ++ storeY))))) s
       (EPostTo s₀) := by
   refine WP.seq (WP.mono (firstTo_ok hp hR) fun s₂ hI₂ => ?_)
   refine WP.seq (WP.mono (cmpE_ok hI₂) fun s₃ ⟨hI₃, hcf⟩ => ?_)
-  exact WP.seq (WP.mono (loopE_ok hp hf hI₃ hcf) fun s₄ ⟨e, he, hI₄⟩ => finalTo_ok hp hf he hI₄)
+  exact WP.seq (WP.mono (loopE_ok hp hm hf hI₃ hcf) fun s₄ ⟨e, he, hI₄⟩ => finalTo_ok hp hf he hI₄)
 
 end VG.Proof.Gcm.X86_64.StitchTo

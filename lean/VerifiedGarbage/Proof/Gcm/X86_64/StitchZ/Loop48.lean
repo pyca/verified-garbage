@@ -360,10 +360,9 @@ theorem body48_ok {s₀ : State} (hp : SPre s₀) {T : Nat → Nat → Nat → B
   · rw [fcf, hr9, toNat_ofNat_lt (by omega), show e + 3 - 1 = e + 2 by omega]
     rfl
 
-theorem loop48_ok {s₀ : State} (hp : SPre s₀) {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T) {s : State}
+theorem loop48_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T) {s : State}
     (hI : EInv3 s₀ T 1 s) (h96 : 96 ≤ nb s₀) :
     WP isa (.loop body48 .ae) s fun s' => ∃ e, nb s₀ - 16 * (e - 1) < 96 ∧ EInv3 s₀ T e s' := by
-  have hm := hp.nbm
   let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 5) ≤ nb s₀ ∧ EInv3 s₀ T e s
   have hstep : ∀ m s, I m s → WP isa body48 s (fun s' =>
       (eval .ae s' = some false ∧ ∃ e, nb s₀ - 16 * (e - 1) < 96 ∧ EInv3 s₀ T e s') ∨
@@ -432,7 +431,7 @@ theorem reload_ok {s₀ : State} (hp : SPre s₀) (s : State) (hr11 : s.gpr .r11
 
 /-- What `big` does after the tables: the next two groups, the loop, and two
 of the three groups left to hash, for any tables `T` whose last is `P`. -/
-theorem bigRest_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+theorem bigRest_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T) (hT2 : ∀ k l, T 2 k l = P k l)
     (h256 : 256 ≤ nb s₀) {s s₁ : State} (hI : EInv s₀ P 1 s) (hA₁ : AInv s₀ (16 * 1) s₁)
     (hv₁ : ∀ g < 3, ∀ k < 4, ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l)
@@ -461,7 +460,7 @@ theorem bigRest_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (
     ⟨hA₃, Nat.le_refl _, by rw [g₃]; exact hI.rdx, by rw [g₃]; exact hI.r9, by rw [g₃]; exact hI.rax,
       fun r h1 h2 h3 h4 => by rw [g₃]; exact hI.gpr r h1 h2 h3 h4, hv₃, hm₃,
       by rw [l₃ 0 (by decide)]; exact hI.y, fun l h1 h4 => by rw [l₃ l h4]; exact hI.y1 l h1 h4⟩
-  refine WP.seq (WP.mono (loop48_ok hp hT hI₃ (by omega)) fun s₄ ⟨e, hex, hI₄⟩ => ?_)
+  refine WP.seq (WP.mono (loop48_ok hp hm hT hI₃ (by omega)) fun s₄ ⟨e, hex, hI₄⟩ => ?_)
   -- The reduction constant, and two of the three groups left to hash.
   have h1e := hI₄.one
   have hr11₄ : s₄.gpr .r11 = pp s₀ := hI₄.gpr .r11 (by decide) (by decide) (by decide) (by decide)
@@ -484,12 +483,12 @@ theorem bigRest_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (
 
 /-- `big`: from the first group encrypted to all but up to two groups, all
 but the last encrypted group hashed. -/
-theorem big_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+theorem big_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     (hT : FinOk48 (hk s₀) (T48 P)) (h256 : 256 ≤ nb s₀) {s : State} (hI : EInv s₀ P 1 s) :
     WP isa big s fun s' => ∃ e, EInv s₀ P e s' := by
   have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
   exact WP.seq (WP.mono (powSetup_ok hp (c := 16 * 1) hI.a hr11 hI.pw hI.m1)
-    fun s₁ ⟨hA₁, hv₁, hm₁, hg₁, hl₁⟩ => bigRest_ok hp hf hT (fun k l => by simp only [T48, ↓reduceIte]) h256 hI hA₁
+    fun s₁ ⟨hA₁, hv₁, hm₁, hg₁, hl₁⟩ => bigRest_ok hp hm hf hT (fun k l => by simp only [T48, ↓reduceIte]) h256 hI hA₁
       hv₁ hm₁ hg₁ fun l hl => hl₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
 
 theorem EInv.of_eq {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s s' : State} (h : EInv s₀ P e s)
@@ -501,10 +500,9 @@ theorem EInv.of_eq {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s s' : 
     by rw [hl]; exact h.y, fun l h1 h4 => by rw [hl]; exact h.y1 l h1 h4⟩
 
 /-- The loop of one group, from any number of groups encrypted. -/
-theorem loopE_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {e : Nat} {s : State}
+theorem loopE_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {e : Nat} {s : State}
     (hI : EInv s₀ P e s) (hcf : s.cf = some (decide (nb s₀ - 16 * (e - 1) < 32))) :
     WP isa (.ite .b (.block []) (.loop body .ae)) s fun s' => ∃ e, nb s₀ = 16 * e ∧ EInv s₀ P e s' := by
-  have hm := hp.nbm
   have h1e := hI.one
   have hle := hI.a.le
   have fin : ∀ e, nb s₀ - 16 * (e - 1) < 32 → ∀ t, EInv s₀ P e t → ∃ e, nb s₀ = 16 * e ∧ EInv s₀ P e t :=
@@ -525,7 +523,7 @@ theorem loopE_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
     exact WP.loop (M := isa) I hstep (nb s₀ - 16 * e) s ⟨e, rfl, by simp at h; omega, hI⟩
 
 /-- The encryption after the setup. -/
-theorem encTailG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+theorem encTailG_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     {bigC : Prog isa} (hbig : ∀ s, 256 ≤ nb s₀ → EInv s₀ P 1 s → WP isa bigC s fun s' => ∃ e, EInv s₀ P e s')
     {s : State} (hR : Ready s₀ P s) :
     WP isa (.seq first (.seq (.block [.alu .cmp .r9 (.imm 256)]) (.seq (.ite .b (.block []) bigC)
@@ -540,15 +538,15 @@ theorem encTailG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} 
     (by simp only [eval, hcf]) (fun _ => WP.block_nil ⟨1, hI₃⟩)
     (fun h => hbig _ (by simp at h; omega) hI₃)) fun s₄ ⟨e, hI₄⟩ => ?_)
   refine WP.seq (WP.mono (cmpE_ok hI₄) fun s₅ ⟨hI₅, hcf₅⟩ => ?_)
-  exact WP.seq (WP.mono (loopE_ok hp hf hI₅ hcf₅) fun s₆ ⟨e, he, hI₆⟩ => final_ok hp hf he hI₆)
+  exact WP.seq (WP.mono (loopE_ok hp hm hf hI₅ hcf₅) fun s₆ ⟨e, he, hI₆⟩ => final_ok hp hf he hI₆)
 
 /-- The encryption after the setup. -/
-theorem encTail_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+theorem encTail_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     (hT : FinOk48 (hk s₀) (T48 P)) {s : State} (hR : Ready s₀ P s) :
     WP isa (.seq first (.seq (.block [.alu .cmp .r9 (.imm 256)]) (.seq (.ite .b (.block []) big)
       (.seq (.block [.alu .cmp .r9 (.imm 32)])
         (.seq (.ite .b (.block []) (.loop body .ae)) (.block (storeCtr ++ lastG ++ storeY))))))) s (EPost s₀) :=
-  encTailG_ok hp hf (fun _ h256 hI => big_ok hp hf hT h256 hI) hR
+  encTailG_ok hp hm hf (fun _ h256 hI => big_ok hp hm hf hT h256 hI) hR
 
 /-! ## Decryption -/
 
@@ -709,10 +707,9 @@ theorem DInv.of_eq {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s s' : 
     by rw [hl]; exact h.y, fun l h1 h4 => by rw [hl]; exact h.y1 l h1 h4⟩
 
 /-- The loop of one group, from any number of groups decrypted. -/
-theorem loopD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {e : Nat} {s : State}
+theorem loopD_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {e : Nat} {s : State}
     (hI : DInv s₀ P e s) (hcf : s.cf = some (decide (nb s₀ - 16 * e < 16))) :
     WP isa (.ite .b (.block []) (.loop dbody .ae)) s fun s' => ∃ e, nb s₀ = 16 * e ∧ DInv s₀ P e s' := by
-  have hm := hp.nbm
   have hle := hI.a.le
   refine WP.ite (decide (nb s₀ - 16 * e < 16)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
   · exact WP.block_nil ⟨e, by simp at h; omega, hI⟩
@@ -730,7 +727,7 @@ theorem loopD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
     exact WP.loop (M := isa) I hstep (nb s₀ - 16 * e) s ⟨e, rfl, by simp at h; omega, hI⟩
 
 /-- The decryption after the setup. -/
-theorem decTailG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+theorem decTailG_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     {bigC : Prog isa} (hbig : ∀ s, 256 ≤ nb s₀ → DInv s₀ P 0 s → WP isa bigC s fun s' => ∃ e, DInv s₀ P e s')
     {s : State} (hR : Ready s₀ P s) :
     WP isa (.seq (.block [.alu .cmp .r9 (.imm 256)]) (.seq (.ite .b (.block []) bigC)
@@ -749,14 +746,14 @@ theorem decTailG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} 
   refine WP.seq (WP.mono (cmp_ok s₃ 16 16 (by decide)) fun s₄ ⟨hcf₄, g₄, l₄, m₄, rd₄, wr₄⟩ => ?_)
   have hI₄ := hI₃.of_eq g₄ l₄ m₄ rd₄ wr₄
   rw [hI₃.r9, toNat_ofNat_lt (by omega), toNat_ofNat_lt (by decide)] at hcf₄
-  exact WP.seq (WP.mono (loopD_ok hp hf hI₄ hcf₄) fun s₅ ⟨e, he, hI₅⟩ => dfinal_ok hp he hI₅)
+  exact WP.seq (WP.mono (loopD_ok hp hm hf hI₄ hcf₄) fun s₅ ⟨e, he, hI₅⟩ => dfinal_ok hp he hI₅)
 
 /-- The decryption after the setup. -/
-theorem decTail_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+theorem decTail_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     (hT : FinOk48 (hk s₀) (T48 P)) {s : State} (hR : Ready s₀ P s) :
     WP isa (.seq (.block [.alu .cmp .r9 (.imm 256)]) (.seq (.ite .b (.block []) bigD)
       (.seq (.block [.alu .cmp .r9 (.imm 16)])
         (.seq (.ite .b (.block []) (.loop dbody .ae)) (.block (storeCtr ++ storeY)))))) s (DPost s₀) :=
-  decTailG_ok hp hf (fun _ h256 hI => bigD_ok hp hT h256 hI) hR
+  decTailG_ok hp hm hf (fun _ h256 hI => bigD_ok hp hT h256 hI) hR
 
 end VG.Proof.Gcm.X86_64.StitchZ
