@@ -164,8 +164,10 @@ theorem args_of_lay {s : State} (h : oneLay s)
     Args s (s.gpr .rdi) (arg s 2) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .rcx) (s.gpr .r9) (s.gpr .rsi).toNat
         (s.gpr .r8).toNat (arg s 0).toNat ∧
       TagBuf (arg s 2) (s.gpr .rsp) (s.gpr .r9) (arg s 0).toNat (arg s 1) := by
-  obtain ⟨d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11, d12, d13, d14, d15, d16, d17, d18, d19, b20, b21, b22, b23,
-    b24, b25, b26, _, hR⟩ := h
+  sig_split h
+  rename_i d1 d2 d3 d4 d5 d6 d7 d8 d9 d10 d11 d12 d13 d14 d15 d16 d17 d18 d19 b20 b21 b22 b23 b24 b25 b26 _
+  have hR := h
+  clear h
   exact ⟨{
     lay := ⟨b20, b25, d2, d14, d19, b26⟩
     perm := ⟨hk, hW⟩

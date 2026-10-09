@@ -209,8 +209,10 @@ theorem args_eq (s : State) : args s 5 = argR s.sp := by
   simp only [args, argAddr_zero]
 
 theorem lay_of {s : State} (h : oneLay s) : Lay (prmOf s) := by
-  obtain ⟨sd, sw, nd, nw, ad, aw, td, tw, dw, da, wa, bs, bn, ba, bd, bt, bw, fK, fN, fA, fD, fT, fW, sp8, spf,
-    hR⟩ := h
+  sig_split h
+  rename_i sd sw nd nw ad aw td tw dw da wa bs bn ba bd bt bw fK fN fA fD fT fW sp8 spf
+  have hR := h
+  clear h
   rw [args_eq] at da wa
   exact ⟨fK, fW, fN, fA, fD, BitVec.isLt _, BitVec.isLt _, sp8, spf, fT, sw, sd, nw, nd, aw, ad, dw, tw, td, da, wa,
     bs, bn, ba, bd, bw, hR⟩

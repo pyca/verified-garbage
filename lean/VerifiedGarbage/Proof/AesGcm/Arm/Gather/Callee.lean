@@ -55,8 +55,10 @@ def callPre (s : State) : Prop :=
 
 /-- The shared contract's precondition, from the layout the call gives. -/
 theorem sealSpec_pre {s : State} (h : callPre s) : (Spec.Gcm.sealContract Arm.abi 2600).pre s := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁,
-    a₂₂, a₂₃, a₂₄, a₂₅⟩ := h
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄
+  have a₂₅ := h
+  clear h
   sig_pre [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, List.append_eq]
   exact ⟨a₂₃, a₂₄, a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀,

@@ -86,8 +86,11 @@ theorem SP'.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.streamToPreM M s) : 
   simp only [Proof.AesGcm.streamToPreM, Proof.AesGcm.args, Proof.AesGcm.arg, Proof.AesGcm.ret,
     Proof.AesGcm.stkS, Proof.AesGcm.rounds] at h
   have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
-    a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂⟩ := h
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
+    a₂₈ a₂₉ a₃₀ a₃₁
+  have a₃₂ := h
+  clear h
   rw [hA] at a₁ a₁₀ a₁₄ a₁₅
   rw [a₃] at a₂ a₅ a₈ a₁₁ a₁₃ a₁₄ a₁₇ a₂₂ a₂₇
   exact ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,

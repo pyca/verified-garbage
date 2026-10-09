@@ -55,8 +55,10 @@ theorem OneCtx.of {cl w k : Nat} {s : State} (hp : Proof.AesGcm.oneLay cl w k s)
       (s.gpr .rcx).toNat (s.gpr .r9).toNat (stackArg s 1).toNat := by
   simp only [Proof.AesGcm.oneLay, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.args,
     Proof.AesGcm.arg, Proof.AesGcm.rounds] at hp
-  obtain ⟨d_cd, d_cw, d_nd, d_nw, d_ad, d_aw, d_dw, d_da, d_wa, r_d, r_w, t_c, t_n, t_a, t_d, t_w,
-    wc, wn, wa, wd, ww, sp24, wsp, hR⟩ := hp
+  sig_split hp
+  rename_i d_cd d_cw d_nd d_nw d_ad d_aw d_dw d_da d_wa r_d r_w t_c t_n t_a t_d t_w wc wn wa wd ww sp24 wsp
+  have hR := hp
+  clear hp
   have c256 : Region.Sub ⟨s.gpr .rdi, 256⟩ ⟨s.gpr .rdi, cl⟩ := Region.sub_prefix hcl
   replace d_cd := d_cd.sub_left c256
   replace d_cw := d_cw.sub_left c256

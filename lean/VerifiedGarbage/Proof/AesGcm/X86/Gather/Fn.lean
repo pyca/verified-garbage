@@ -207,8 +207,14 @@ structure Lay (s : State) : Prop where
   sa : ∀ i, i < 11 → s.mem.readW (w64 (Pf s + BitVec.ofNat 32 (52 + 4 * i))) 32 = arg s i
 
 theorem lay {s : State} (hs : gatherPre s) : Lay s := by
-  obtain ⟨rd, wr, kd, kt, -, nd, nt, -, ad, at_, -, dt, dds, dls, -, -, -, -, -, -, -, -, -, ed, et, -, -, -,
-    bk, bn, ba, bd, bt, bds, bls, -, ok, on, oa, od, ot, ods, ol, w₁, w₂, hR, hgl⟩ := hs
+  sig_split hs
+  rename_i rd wr kd kt hdrop4 nd nt hdrop7 ad at_ hdrop10 dt dds dls hdrop14 hdrop15 hdrop16 hdrop17 hdrop18
+    hdrop19 hdrop20 hdrop21 hdrop22 ed et hdrop25 hdrop26 hdrop27 bk bn ba bd bt bds bls hdrop35 ok on oa od
+    ot ods ol w₁ w₂ hR
+  clear hdrop4 hdrop7 hdrop10 hdrop14 hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop25
+    hdrop26 hdrop27 hdrop35
+  have hgl := hs
+  clear hs
   have hPn : (Pf s).toNat = (s.gpr .esp).toNat - 48 := sub_toNat32 (by omega)
   have hB : Bs s = w64 (s.gpr .esp - BitVec.ofNat 32 2684) := (w64_sub (by omega)).symm
   have hBn : (Bs s).toNat = (s.gpr .esp).toNat - 2684 := by rw [hB, toNat_w64, sub_toNat32 (by omega)]
