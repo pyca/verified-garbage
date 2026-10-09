@@ -52,10 +52,13 @@ def restore : List Instr :=
 def alignTest : List Instr :=
   [.mov .rax (.mem (hdr sW)), .alu .sub .rax (.imm 8), .shift .ror .rax 3, .shift .shr .rax 27]
 
-/-- The tiles: the square's if `a = b`, the product's otherwise. -/
+/-- The tiles: the square's if `a = b`, the product's otherwise, then one
+reduction for both, which keeps the function small enough for the decoded
+µop caches of older cores. -/
 def tiled : Prog isa :=
   .seq (.block [.alu .cmp .rcx (.reg .r8)])
-    (.ite .e (AdxTiledSquare.montSquare xO xA) (AdxTiledProduct.montMul xO xA xB))
+    (.seq (.ite .e (AdxTiledSquare.rawSquare xA) (AdxTiledProduct.rawProduct xA xB))
+      (AdxTiledProduct.redcFinish xO))
 
 /-- The tiles for `w` a multiple of 8 (below `2^30 + 8`), `montMul` otherwise. -/
 def adxBody : Prog isa :=

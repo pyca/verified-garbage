@@ -30,7 +30,6 @@ def rawCross (a : Nat) : Prog isa := .seq (.block (Adx.setup a))
 def rawSquare (a : Nat) : Prog isa := .seq (rawCross a)
   (.seq (.block (Adx.setup a)) (.seq (.block [.mov .r10 (.reg .rbx)]) AdxSquare.diagonalChoice))
 
-def montSquare (o a : Nat) : Prog isa := .seq (rawSquare a)
-  (.seq AdxRotate8.redc (.seq (.block [.mov .r10 (.mem (hdr (sArr Public.aN)))]) (Adx.finish8 o)))
+def montSquare (o a : Nat) : Prog isa := .seq (rawSquare a) (AdxTiledProduct.redcFinish o)
 
 end VG.Impl.Bignum.X86_64.AdxTiledSquare

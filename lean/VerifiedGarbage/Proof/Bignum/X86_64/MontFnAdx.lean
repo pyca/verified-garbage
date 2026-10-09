@@ -8,8 +8,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
 The head (`enter`, `slotsIn`) saves the callee-saved registers and header
 words 16–19 in `xmm0`–`xmm4` and writes the bases of `o`, `a` and `b` into
 the slots of `xO`, `xA` and `xB` (`Ops`); the body runs the tiled ADX code
-for those slots (`AdxTiledSquare.montSquare_ok`, `AdxTiledProduct.montMul_ok`)
-or, for `w` not a multiple of 8, `montMul` (`mmTail_ok`); the tail writes the
+for those slots (`AdxTiledSquare.rawSquare_ok` or
+`AdxTiledProduct.rawProduct_ok`, then `AdxTiledProduct.redcFinish_ok`) or, for `w` not a multiple of 8, `montMul` (`mmTail_ok`); the tail writes the
 header words back, so that only `aAcc`, `aTmp` and `o` change, and restores
 the callee-saved registers (`fnLeave_ok`).
 -/
@@ -225,15 +225,22 @@ theorem adxBody_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : S
           wv s₂.mem B (slot w a) w * wv s₂.mem B (slot w b) w % wv s₂.mem B (slot w aN) w ∧
         Arrays B w [aAcc, aTmp, o] s₂.mem t.mem ∧ Keep mmRegs s t) :=
       fun t ⟨h1, h2, h3, k⟩ => ⟨h1, h2, h3, ((k₁.trans k₂).trans k).mono (by decide)⟩
-    by_cases hab : a = b
-    · subst b
-      refine WP.ite true (by simp [eval, hz₂]) (fun _ => WP.mono
-        (AdxTiledSquare.montSquare_ok hs₂ hdi₂ hH hZ (by omega : w = 8 * (w / 8)) (by omega) hw' hv
-          (mem_adxOps_o o a a) (mem_adxOps_a o a a) ho ha ho1 ho2 ha1 ha2 hinv hB) post₂) (by simp)
-    · refine WP.ite false (by simp [eval, hz₂, hab]) (by simp) (fun _ => WP.mono
-        (AdxTiledProduct.montMul_ok hs₂ hdi₂ hH hZ (by omega : w = 8 * (w / 8)) (by omega) hw' hv
-          (mem_adxOps_o o a b) (mem_adxOps_a o a b) (mem_adxOps_b o a b) ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hinv hB)
-        post₂)
+    have hwN : w = 8 * (w / 8) := by omega
+    have hraw : WP isa (.ite .e (AdxTiledSquare.rawSquare xA) (AdxTiledProduct.rawProduct xA xB)) s₂ fun s₃ =>
+        wv s₃.mem B (slot w aAcc + 16) (2 * w) = wv s₂.mem B (slot w a) w * wv s₂.mem B (slot w b) w ∧
+        Outside B (slot w aAcc) (16 * w + 32) s₂.mem s₃.mem ∧ Keep mmRegs s₂ s₃ := by
+      by_cases hab : a = b
+      · subst b
+        exact WP.ite true (by simp [eval, hz₂]) (fun _ => WP.mono
+          (AdxTiledSquare.rawSquare_ok hs₂ hdi₂ hH hZ hwN (by omega) hw' hv (mem_adxOps_a o a a) ha ha1 ha2)
+          fun _ ⟨_, h2, h3, h4⟩ => ⟨h2, h3, h4⟩) (by simp)
+      · exact WP.ite false (by simp [eval, hz₂, hab]) (by simp) (fun _ => WP.mono
+          (AdxTiledProduct.rawProduct_ok hs₂ hdi₂ hH hv (mem_adxOps_a o a b) (mem_adxOps_b o a b) hZ hw' hwN
+            (by omega) ha hb ha1 ha2 hb1 hb2)
+          fun _ ⟨_, h2, h3, h4⟩ => ⟨h2, h3, h4⟩)
+    refine WP.seq (WP.mono hraw fun s₃ ⟨hv₃, ho₃, k₃⟩ => WP.mono
+      (AdxTiledProduct.redcFinish_ok hs₂ hdi₂ hH hZ hwN (by omega) hw' hv (mem_adxOps_o o a b) ho ho1 ho2 hinv
+        (AdxTiledProduct.mul_lt_mont (wv_lt _ _ _ _) hB) hv₃ ho₃ k₃) post₂)
   · refine WP.ite false (by simp [eval, hz, h8w]) (by simp) (fun _ => ?_)
     refine WP.seq (WP.mono (basesR_ok hs₁ hdi₁ hH hZ ho ha hb ((k₁.gpr (by decide)).trans hdx)
       ((k₁.gpr (by decide)).trans hcx) ((k₁.gpr (by decide)).trans h8))
