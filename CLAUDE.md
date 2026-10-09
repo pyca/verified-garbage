@@ -341,6 +341,15 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   Keep writes folded throughout the block; expand the final state once only
   if the postcondition needs it. Preserve this behavior in shared symbolic
   execution tactics so every caller benefits.
+* **Frame facts through writes:** prove `s'.mem = s.mem` (and the other
+  fields a frame keeps) for a state `s'` built by writes with the `RegUpd`
+  lemmas given their arguments, or `simp only [mem_setV, …]` (`upd_frame` on
+  AArch64), never `rfl` or a `.trans` chain of the lemmas with `_`
+  arguments: unification unfolds the writes into structure literals and
+  first tries to unify the states (seconds for a few vector instructions).
+  On AArch64, `Proof/Framework/AArch64/Seal.lean` makes `State.setV`
+  irreducible for elaboration in the modules that import it, which rules
+  this out; import it once a module's proofs no longer unfold `setV`.
 * **Addresses at offsets:** don't prove that ranges at `p + BitVec.ofNat 64 d`
   are separate, disjoint or contained, or their distances, with `bv_omega`
   (a second or more each, and a large term for the kernel): use `VG.Offset`
