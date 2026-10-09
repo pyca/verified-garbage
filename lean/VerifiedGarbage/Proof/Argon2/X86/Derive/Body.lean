@@ -438,24 +438,30 @@ theorem entry_frame : Frame [below (E0 s₀) 160] s₀.mem (entry s₀).mem := b
       refine ⟨_, List.mem_singleton_self _, sub32 ?_ ?_⟩
       · rw [sub_nat hn, sub_nat (by omega)]; omega
       · rw [sub_nat hn, sub_nat (by omega)]; omega
-  have n₁ := pushed_esp_nat (rs := [.ebp]) (s := s₀) (by simp only [List.length_singleton]; omega)
-  have n₂ := pushed_esp_nat (rs := [.edi]) (s := pushed [.ebp] s₀)
-    (by simp only [List.length_singleton] at n₁ ⊢; omega)
-  have n₃ := pushed_esp_nat (rs := [.esi]) (s := pushed [.edi] (pushed [.ebp] s₀))
-    (by simp only [List.length_singleton] at n₁ n₂ ⊢; omega)
-  have n₄ := pushed_esp_nat (rs := [.ebx]) (s := pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀)))
-    (by simp only [List.length_singleton] at n₁ n₂ n₃ ⊢; omega)
-  simp only [List.length_singleton] at n₁ n₂ n₃ n₄
-  exact (((((step (by decide) (by simp only [List.length_singleton]; omega)
-    (by simp only [List.length_singleton]; omega) (Nat.le_refl _))).trans
-    (step (by decide) (by simp only [List.length_singleton]; omega)
-      (by simp only [List.length_singleton]; omega) (by omega))).trans
-    (step (by decide) (by simp only [List.length_singleton]; omega)
-      (by simp only [List.length_singleton]; omega) (by omega))).trans
-    (step (by decide) (by simp only [List.length_singleton]; omega)
-      (by simp only [List.length_singleton]; omega) (by omega))).trans
-    (step (by decide) (by simp only [List.length_replicate]; omega)
-      (by simp only [List.length_replicate]; omega) (by omega))
+  -- The stack pointer after each push.
+  have n₁ : ((pushed [.ebp] s₀).gpr .esp).toNat = (s₀.gpr .esp).toNat - 4 :=
+    pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo])
+  have n₂ : ((pushed [.edi] (pushed [.ebp] s₀)).gpr .esp).toNat = (s₀.gpr .esp).toNat - 8 := by
+    rw [pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo, n₁]), n₁]; rfl
+  have n₃ : ((pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp).toNat =
+      (s₀.gpr .esp).toNat - 12 := by
+    rw [pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo, n₂]), n₂]; rfl
+  have n₄ : ((pushed [.ebx] (pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀)))).gpr .esp).toNat =
+      (s₀.gpr .esp).toNat - 16 := by
+    rw [pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo, n₃]), n₃]; rfl
+  exact ((((step (by decide) (by rw [List.length_singleton]; omega_using [hlo])
+    (by rw [List.length_singleton]; omega_using [hlo]) (Nat.le_refl _)).trans
+    (step (by decide) (by rw [List.length_singleton, n₁]; omega_using [hlo])
+      (by rw [List.length_singleton, n₁]; omega_using [hlo])
+      (by rw [n₁]; omega_using [hlo]))).trans
+    (step (by decide) (by rw [List.length_singleton, n₂]; omega_using [hlo])
+      (by rw [List.length_singleton, n₂]; omega_using [hlo])
+      (by rw [n₂]; omega_using [hlo]))).trans
+    (step (by decide) (by rw [List.length_singleton, n₃]; omega_using [hlo])
+      (by rw [List.length_singleton, n₃]; omega_using [hlo])
+      (by rw [n₃]; omega_using [hlo]))).trans
+    (step (by decide) (by rw [List.length_replicate, n₄]; omega_using [hlo])
+      (by rw [List.length_replicate, n₄]; omega_using [hlo]) (by rw [n₄]; omega_using [hlo]))
 
 end
 
@@ -484,44 +490,60 @@ include hp
 
 theorem entry_saved {j : Nat} (hj : j < 4) : (entry s₀).mem.readW (slot s₀ j) 32 = savedVal s₀ j := by
   have hlo : 244 ≤ (s₀.gpr .esp).toNat := hp.esp_lo
-  have hE := (s₀.gpr .esp).isLt
   have hi : (s₀.gpr .esp).toNat + 76 ≤ 2 ^ 32 := hp.esp_hi
-  have hE0 : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
-  have n₁ := pushed_esp_nat (rs := [.ebp]) (s := s₀) (by simp only [List.length_singleton]; omega)
-  have n₂ := pushed_esp_nat (rs := [.edi]) (s := pushed [.ebp] s₀)
-    (by simp only [List.length_singleton] at n₁ ⊢; omega)
-  have n₃ := pushed_esp_nat (rs := [.esi]) (s := pushed [.edi] (pushed [.ebp] s₀))
-    (by simp only [List.length_singleton] at n₁ n₂ ⊢; omega)
-  have n₄ := pushed_esp_nat (rs := [.ebx]) (s := pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀)))
-    (by simp only [List.length_singleton] at n₁ n₂ n₃ ⊢; omega)
-  simp only [List.length_singleton] at n₁ n₂ n₃ n₄
+  -- The stack pointer after each push, and the facts the pushes need, once.
+  have n₁ : ((pushed [.ebp] s₀).gpr .esp).toNat = (s₀.gpr .esp).toNat - 4 :=
+    pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo])
+  have n₂ : ((pushed [.edi] (pushed [.ebp] s₀)).gpr .esp).toNat = (s₀.gpr .esp).toNat - 8 := by
+    rw [pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo, n₁]), n₁]; rfl
+  have n₃ : ((pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp).toNat =
+      (s₀.gpr .esp).toNat - 12 := by
+    rw [pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo, n₂]), n₂]; rfl
+  have n₄ : ((pushed [.ebx] (pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀)))).gpr .esp).toNat =
+      (s₀.gpr .esp).toNat - 16 := by
+    rw [pushed_esp_nat (by simp only [List.length_singleton]; omega_using [hlo, n₃]), n₃]; rfl
+  have k₁ : 4 * [Reg.ebx].length ≤ ((pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp).toNat := by
+    rw [List.length_singleton, n₃]; omega_using [hlo]
+  have k₂ : 4 * [Reg.esi].length ≤ ((pushed [.edi] (pushed [.ebp] s₀)).gpr .esp).toNat := by
+    rw [List.length_singleton, n₂]; omega_using [hlo]
+  have k₃ : 4 * [Reg.edi].length ≤ ((pushed [.ebp] s₀).gpr .esp).toNat := by
+    rw [List.length_singleton, n₁]; omega_using [hlo]
   have sl : (E s₀ + BitVec.ofNat 32 (144 + 4 * j)).toNat = (s₀.gpr .esp).toNat - 16 + 4 * j := by
-    rw [add_nat (by rw [sub_nat (by omega)]; omega), sub_nat (by omega)]; omega
-  have eq : ∀ (x : BitVec 32), x.toNat = (s₀.gpr .esp).toNat - 16 + 4 * j →
-      E s₀ + BitVec.ofNat 32 (144 + 4 * j) = x := fun x hx => BitVec.eq_of_toNat_eq (by rw [sl, hx])
+    have := (s₀.gpr .esp).isLt
+    have hlo' : 244 ≤ (E0 s₀).toNat := hp.esp_lo
+    have hE0 : (E0 s₀).toNat = (s₀.gpr .esp).toNat := rfl
+    rw [add_nat (by rw [sub_nat (by omega_using [hlo'])]; omega_using [hlo', hE0, hi, hj]),
+      sub_nat (by omega_using [hlo'])]
+    omega_using [hlo', hE0]
+  have ha : (E s₀ + BitVec.ofNat 32 (144 + 4 * j)).toNat + 4 ≤ 2 ^ 32 := by rw [sl]; omega_using [hlo, hi, hj]
+  have p₃ : 1 ≤ j → ((pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))).gpr .esp).toNat ≤
+      (E s₀ + BitVec.ofNat 32 (144 + 4 * j)).toNat := fun h => by rw [n₃, sl]; omega_using [hlo, h]
+  have p₂ : 2 ≤ j → ((pushed [.edi] (pushed [.ebp] s₀)).gpr .esp).toNat ≤
+      (E s₀ + BitVec.ofNat 32 (144 + 4 * j)).toNat := fun h => by rw [n₂, sl]; omega_using [hlo, h]
+  have p₁ : 3 ≤ j → ((pushed [.ebp] s₀).gpr .esp).toNat ≤
+      (E s₀ + BitVec.ofNat 32 (144 + 4 * j)).toNat := fun h => by rw [n₁, sl]; omega_using [hlo, h]
+  -- The slot is the word the push of `savedVal j` wrote.
+  have w : ∀ (s : State), (s.gpr .esp).toNat = (s₀.gpr .esp).toNat - 12 + 4 * j →
+      4 ≤ (s.gpr .esp).toNat ∧ E s₀ + BitVec.ofNat 32 (144 + 4 * j) = s.gpr .esp - BitVec.ofNat 32 4 :=
+    fun s h => ⟨by rw [h]; omega_using [hlo],
+      BitVec.eq_of_toNat_eq (by rw [sl, sub_nat (by rw [h]; omega_using [hlo]), h]; omega_using [hlo])⟩
   unfold entry slot
-  rw [push_keep (by decide) (by simp only [List.length_replicate]; omega) (by rw [n₄, sl]; omega)
-    (by rw [sl]; omega)]
+  rw [push_keep (by decide) (by simp only [List.length_replicate]; omega_using [hlo, n₄])
+    (by rw [n₄, sl]; omega_using [hlo]) ha]
   rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
-  · rw [push_word (by decide) (by omega) (eq _ (by rw [sub_nat (by omega)]; omega)), pushed_gpr _ _ (by decide),
-      pushed_gpr _ _ (by decide), pushed_gpr _ _ (by decide)]; rfl
-  · rw [push_keep (by decide) (by simp only [List.length_singleton]; omega) (by rw [n₃, sl]; omega)
-      (by rw [sl]; omega),
-      push_word (by decide) (by omega) (eq _ (by rw [sub_nat (by omega)]; omega)), pushed_gpr _ _ (by decide),
+  · have ⟨h₁, h₂⟩ := w (pushed [.esi] (pushed [.edi] (pushed [.ebp] s₀))) (by rw [n₃]; omega_using [hlo])
+    rw [push_word (by decide) h₁ h₂, pushed_gpr _ _ (by decide), pushed_gpr _ _ (by decide),
       pushed_gpr _ _ (by decide)]; rfl
-  · rw [push_keep (by decide) (by simp only [List.length_singleton]; omega) (by rw [n₃, sl]; omega)
-      (by rw [sl]; omega),
-      push_keep (by decide) (by simp only [List.length_singleton]; omega) (by rw [n₂, sl]; omega)
-      (by rw [sl]; omega),
-      push_word (by decide) (by omega) (eq _ (by rw [sub_nat (by omega)]; omega)), pushed_gpr _ _ (by decide)]
+  · have ⟨h₁, h₂⟩ := w (pushed [.edi] (pushed [.ebp] s₀)) (by rw [n₂]; omega_using [hlo])
+    rw [push_keep (by decide) k₁ (p₃ (by decide)) ha, push_word (by decide) h₁ h₂, pushed_gpr _ _ (by decide),
+      pushed_gpr _ _ (by decide)]; rfl
+  · have ⟨h₁, h₂⟩ := w (pushed [.ebp] s₀) (by rw [n₁]; omega_using [hlo])
+    rw [push_keep (by decide) k₁ (p₃ (by decide)) ha, push_keep (by decide) k₂ (p₂ (by decide)) ha,
+      push_word (by decide) h₁ h₂, pushed_gpr _ _ (by decide)]
     rfl
-  · rw [push_keep (by decide) (by simp only [List.length_singleton]; omega) (by rw [n₃, sl]; omega)
-      (by rw [sl]; omega),
-      push_keep (by decide) (by simp only [List.length_singleton]; omega) (by rw [n₂, sl]; omega)
-      (by rw [sl]; omega),
-      push_keep (by decide) (by simp only [List.length_singleton]; omega) (by rw [n₁, sl]; omega)
-      (by rw [sl]; omega),
-      push_word (by decide) (by omega) (eq _ (by rw [sub_nat (by omega)]; omega))]
+  · have ⟨h₁, h₂⟩ := w s₀ (by omega_using [hlo])
+    rw [push_keep (by decide) k₁ (p₃ (by decide)) ha, push_keep (by decide) k₂ (p₂ (by decide)) ha,
+      push_keep (by decide) k₃ (p₁ (by decide)) ha, push_word (by decide) h₁ h₂]
     rfl
 
 end
