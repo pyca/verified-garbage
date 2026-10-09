@@ -16,9 +16,9 @@ open VG VG.X86_64
 /-- `coreK` is the same for `p384x` as for `p384`, the same curve. -/
 theorem coreK_p384x : coreK Impl.Ecdsa.X86_64.p384x = Proof.Ecdsa.X86_64.P384.signX86_64 := by
   simp only [coreK, TblsOk, Proof.Ecdsa.X86_64.P384.p384x_combConsts, Proof.Ecdsa.X86_64.P384.p384x_C,
-    Abi.constRegions, Abi.constsHeld, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
-    List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true,
-    Proof.Ecdsa.X86_64.P384.signX86_64, Proof.Ecdsa.X86_64.P384.TblHeld]
+    Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single]
+  simp only [Abi.constsHeld, List.cons_append, List.nil_append, List.forall_mem_cons, List.not_mem_nil,
+    false_implies, implies_true, and_true, Proof.Ecdsa.X86_64.P384.signX86_64, Proof.Ecdsa.X86_64.P384.TblHeld]
   rfl
 
 /-- P-384 with BMI2 and ADX, with the group law `hL`, the comb's tables `hT`
