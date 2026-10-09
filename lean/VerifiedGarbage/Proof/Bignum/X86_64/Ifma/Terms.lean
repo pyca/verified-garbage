@@ -63,11 +63,66 @@ def expReg (i r : Nat) : T :=
   else if r = 2 * l.R + 2 then uT l 0 i else if r = 2 * l.R + 3 then uT l 1 i
   else if r = tN l then cT l 1 i else .reg r
 
+/-! Equality of terms as the kernel evaluates it: a structural comparison,
+rather than the derived `DecidableEq`, whose evaluation was most of
+`checkStep`'s. -/
+
+def G.beq : G → G → Bool
+  | .gpr a, .gpr b => decide (a = b)
+  | .ld a d, .ld b e => decide (a = b) && Nat.beq d e
+  | _, _ => false
+
+def T.beq : T → T → Bool
+  | .reg a, .reg b => Nat.beq a b
+  | .zero, .zero => true
+  | .lane0 g, .lane0 h => G.beq g h
+  | .bc a, .bc b => T.beq a b
+  | .ld a d, .ld b e => decide (a = b) && Nat.beq d e
+  | .mad h c a b, .mad h' c' a' b' => (h == h') && T.beq c c' && T.beq a a' && T.beq b b'
+  | .add a b, .add a' b' => T.beq a a' && T.beq b b'
+  | .shr a n, .shr a' n' => T.beq a a' && Nat.beq n n'
+  | .low a, .low b => T.beq a b
+  | .align a b n, .align a' b' n' => T.beq a a' && T.beq b b' && Nat.beq n n'
+  | .and a b, .and a' b' => T.beq a a' && T.beq b b'
+  | .or a b, .or a' b' => T.beq a a' && T.beq b b'
+  | _, _ => false
+
+theorem G.eq_of_beq : ∀ {a b : G}, G.beq a b = true → a = b := by
+  intro a b h
+  cases a <;> cases b <;> simp_all [G.beq, Nat.beq_eq]
+
+theorem T.eq_of_beq : ∀ {a b : T}, T.beq a b = true → a = b := by
+  intro a
+  induction a with
+  | reg r => intro b h; cases b <;> simp_all [T.beq, Nat.beq_eq]
+  | zero => intro b h; cases b <;> simp_all [T.beq]
+  | lane0 g => intro b h; cases b <;> simp only [T.beq, Bool.false_eq_true] at h; exact congrArg _ (G.eq_of_beq h)
+  | bc a iha => intro b h; cases b <;> simp only [T.beq, Bool.false_eq_true] at h; rw [iha h]
+  | ld r d => intro b h; cases b <;> simp_all [T.beq, Nat.beq_eq]
+  | mad x c a b ihc iha ihb =>
+    intro t h; cases t <;> simp only [T.beq, Bool.false_eq_true, Bool.and_eq_true, beq_iff_eq] at h
+    obtain ⟨⟨⟨rfl, h1⟩, h2⟩, h3⟩ := h; rw [ihc h1, iha h2, ihb h3]
+  | add a b iha ihb =>
+    intro t h; cases t <;> simp only [T.beq, Bool.false_eq_true, Bool.and_eq_true] at h
+    rw [iha h.1, ihb h.2]
+  | shr a n iha =>
+    intro t h; cases t <;> simp only [T.beq, Bool.false_eq_true, Bool.and_eq_true, Nat.beq_eq] at h
+    rw [iha h.1, h.2]
+  | low a iha => intro b h; cases b <;> simp only [T.beq, Bool.false_eq_true] at h; rw [iha h]
+  | align a b n iha ihb =>
+    intro t h; cases t <;> simp only [T.beq, Bool.false_eq_true, Bool.and_eq_true, Nat.beq_eq] at h
+    rw [iha h.1.1, ihb h.1.2, h.2]
+  | and a b iha ihb =>
+    intro t h; cases t <;> simp only [T.beq, Bool.false_eq_true, Bool.and_eq_true] at h
+    rw [iha h.1, ihb h.2]
+  | or a b iha ihb =>
+    intro t h; cases t <;> simp only [T.beq, Bool.false_eq_true, Bool.and_eq_true] at h
+    rw [iha h.1, ihb h.2]
 /-- The run of step `i` gives `expReg i` in the 32 registers and loads `rax`. -/
 def checkStep (i : Nat) : Bool :=
   match ESym.init.run (lim l) (ammStep l i) with
-  | some σ => (List.range 32).all (fun r => decide (σ.reg r = expReg l i r)) &&
-      decide (σ.rax = .ld .r9 (l.D + 32 * i))
+  | some σ => (List.range 32).all (fun r => T.beq (σ.reg r) (expReg l i r)) &&
+      G.beq σ.rax (.ld .r9 (l.D + 32 * i))
   | none => false
 
 /-- The layouts the code runs. -/
@@ -90,8 +145,8 @@ theorem run_ammStep {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : LayOk l) {i : Nat
   split at h
   · rename_i σ hσ
     refine ⟨σ, hσ, fun r hr => ?_⟩
-    simp only [Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at h
-    exact h.1 r hr
+    simp only [Bool.and_eq_true, List.all_eq_true, List.mem_range] at h
+    exact T.eq_of_beq (h.1 r hr)
   · cases h
 
 end VG.Proof.Bignum.X86_64.Ifma
