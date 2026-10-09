@@ -64,6 +64,49 @@ theorem frame1_two {x : BitVec 32} {m m' : Mem} {o n : Nat} (hf : Frame [sub x o
     rw [List.mem_singleton.mp hr]
     exact ⟨_, List.mem_cons_self, sub_sub hx h1 h2 h5⟩
 
+/-! Frames of two regions and the stack a call uses. -/
+
+theorem wd_frame2s {x : BitVec 32} {s : State} (hc : Ctx x s) {m m' : Mem} {o n o' n' d : Nat}
+    (hf : Frame [sub x o n, sub x o' n', callStk s] m m')
+    (ho : o + n ≤ 8192) (ho' : o' + n' ≤ 8192) (hd : d + 4 ≤ 8192)
+    (h1 : d + 4 ≤ o ∨ o + n ≤ d) (h2 : d + 4 ≤ o' ∨ o' + n' ≤ d) : wd m' x d = wd m x d := by
+  have hx := hc.fit
+  exact wd_frameS hc (rs := [sub x o n, sub x o' n']) hf hd fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact sub_disj (by omega) (by omega) h1
+    · exact sub_disj (by omega) (by omega) h2
+
+theorem tablePoint_frame2s {x : BitVec 32} {s : State} (hc : Ctx x s) {m m' : Mem} {o n o' n' a : Nat}
+    (hf : Frame [sub x o n, sub x o' n', callStk s] m m')
+    (ho : o + n ≤ 8192) (ho' : o' + n' ≤ 8192) (ha : a + 128 ≤ 8192)
+    (h1 : a + 128 ≤ o ∨ o + n ≤ a) (h2 : a + 128 ≤ o' ∨ o' + n' ≤ a) :
+    tablePoint m' x a = tablePoint m x a :=
+  table_point_of_words fun k hk => wd_frame2s hc hf ho ho' (by omega) (by omega) (by omega)
+
+/-- A frame of two regions, and of a region and the stack, as one of both and the stack. -/
+theorem Frame.two {x : BitVec 32} {s : State} {m m' : Mem} {o n o' n' : Nat}
+    (hf : Frame [sub x o n, sub x o' n'] m m') : Frame [sub x o n, sub x o' n', callStk s] m m' :=
+  hf.mono fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with rfl | rfl <;> simp
+
+theorem Frame.oneS {x : BitVec 32} {s : State} {m m' : Mem} {o n p q p' q' : Nat}
+    (hf : Frame [sub x o n, callStk s] m m') (hx : x.toNat + 8192 ≤ 2 ^ 32) (h1 : p ≤ o)
+    (h2 : o + n ≤ p + q) (h5 : o < 8192) : Frame [sub x p q, sub x p' q', callStk s] m m' :=
+  hf.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, List.mem_cons_self, sub_sub hx h1 h2 h5⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+
+theorem Frame.one' {x : BitVec 32} {s : State} {m m' : Mem} {o n p q p' q' : Nat}
+    (hf : Frame [sub x o n] m m') (hx : x.toNat + 8192 ≤ 2 ^ 32) (h1 : p' ≤ o)
+    (h2 : o + n ≤ p' + q') (h5 : o < 8192) : Frame [sub x p q, sub x p' q', callStk s] m m' :=
+  hf.sub fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, sub_sub hx h1 h2 h5⟩
+
 /-- A frame of one region as the second of two. -/
 theorem frame1_two' {x : BitVec 32} {m m' : Mem} {o n : Nat} (hf : Frame [sub x o n] m m')
     (hx : x.toNat + 8192 ≤ 2 ^ 32) {p q p' q' : Nat} (h1 : p' ≤ o) (h2 : o + n ≤ p' + q') (h5 : o < 8192) :
@@ -85,7 +128,8 @@ theorem pointFromTableQ_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {o : Nat}
     hp hb (by omega) (by decide) (Or.inr (by omega)) 32 (Nat.le_refl _)) fun t ⟨hk, hv⟩ => ?_
   have hf : Frame [sub x 192 128] s.mem t.mem := by simpa only [Nat.zero_add] using hk.frame
   refine ⟨⟨hk.gpr _ (by decide), hk.gpr _ (by decide), hk.rd, hk.wr,
-    frameWiden hf hc.fit (by decide) (by decide) (by decide)⟩, hk.gpr _ (by decide), ?_, fun i hi => ?_⟩
+    Frame.withStk (s := s) (frameWiden (n' := 960) hf hc.fit (by decide) (by decide) (by decide))⟩,
+    hk.gpr _ (by decide), ?_, fun i hi => ?_⟩
   · have := table_point_of_words (m := s.mem) (m' := t.mem) (x := x) (a := o) (o := 192)
       (fun k hk' => by simpa only [Nat.zero_add, Nat.add_zero] using hv k hk')
     exact this
@@ -117,7 +161,7 @@ structure ATableInv (x : BitVec 32) (s₀ : State) (A : Spec.Ed25519.Point) (Aa 
   table : ∀ j < n, Rep (tablePoint s.mem x (1024 + 128 * j)) ((j + 1) • Aa)
   a : tablePoint s.mem x 7680 = A
   keep : ScalarKeep s₀ s
-  frame : Frame [sub x 64 864, sub x 1024 1920] s₀.mem s.mem
+  frame : Frame [sub x 64 960, sub x 1024 1920, callStk s₀] s₀.mem s.mem
 
 theorem aTableInit_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {A : Spec.Ed25519.Point}
     {Aa : EPoint dZ} (hA : Rep A Aa) (ha : tablePoint s.mem x 7680 = A)
@@ -131,18 +175,18 @@ theorem aTableInit_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {A : Spec.Ed255
   refine Wp.wp_movi fun t ht => WP.block_nil ?_
   have mt : t.mem = b.mem := ht.mem
   have eb : env b.mem x = env a.mem x := table_env hc.fit fb (by decide) (by decide)
-  have fab : Frame [sub x 64 864, sub x 1024 1920] s.mem t.mem := by
+  have fab : Frame [sub x 64 960, sub x 1024 1920, callStk s] s.mem t.mem := by
     rw [mt]
-    exact (frame1_two ka.frame hc.fit (by decide) (by decide) (by decide)).trans
-      (frame1_two' fb hc.fit (by decide) (by decide) (by decide))
+    exact (Frame.two (frame1_two ka.frame hc.fit (by decide) (by decide) (by decide))).trans
+      (Frame.one' fb hc.fit (by decide) (by decide) (by decide))
   refine ⟨by decide, by decide, (ka.keep.ctx hc).keep (by rw [ht.other _ (by decide), kb.edi])
-    (by rw [ht.wr, kb.wr]), ht.gpr, ?_, ?_, ?_, ?_, ?_, fab⟩
+    (by rw [ht.wr, kb.wr]) (by rw [ht.other _ (by decide), kb.esp]), ht.gpr, ?_, ?_, ?_, ?_, ?_, fab⟩
   · rw [mt, eb, ha' 16 (by decide), hd]
   · rw [mt, eb, pa, ha, one_nsmul]; exact hA
   · intro j hj
     obtain rfl : j = 0 := by omega
     rw [mt, Nat.mul_zero, Nat.add_zero, pb, pa, ha, zero_add, one_nsmul]; exact hA
-  · rw [tablePoint_frame2 fab hc.fit (by decide) (by decide) (by decide) (Or.inr (by decide))
+  · rw [tablePoint_frame2s hc fab (by decide) (by decide) (by decide) (Or.inr (by decide))
       (Or.inr (by decide))]
     exact ha
   · exact ⟨by rw [ht.other _ (by decide), kb.edi, ka.keep.edi], by rw [ht.other _ (by decide), kb.esp,
@@ -163,17 +207,18 @@ theorem esiNext_ok {s : State} {n m : Nat} (hn : n + 1 < 2 ^ 32) (hm : m < 2 ^ 3
 
 theorem aTableBody_ok {x : BitVec 32} {s₀ s : State} {A : Spec.Ed25519.Point} {Aa : EPoint dZ}
     {n : Nat} (hn : n < 15) (hA : Rep A Aa) (h : ATableInv x s₀ A Aa n s) :
-    WP isa (.block aTableBody) s fun t => t.zf = some (decide (n + 1 = 15)) ∧
+    WP isa aTableBody s fun t => t.zf = some (decide (n + 1 = 15)) ∧
       ATableInv x s₀ A Aa (n + 1) t := by
   have hc := h.ctx
   have hfit := hc.fit
-  rw [aTableBody, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (pointTableQ_ok hc 7680 (by decide) (by decide)) fun a ⟨ka, ea, pa, ha⟩ => ?_
+  have hs₀ : callStk s = callStk s₀ := by rw [callStk, callStk, h.keep.esp]
+  unfold aTableBody
+  refine WP.seq (WP.mono (pointTableQ_ok hc 7680 (by decide) (by decide)) fun a ⟨ka, ea, pa, ha⟩ => ?_)
   have ca := ka.ctx hc
-  rw [WP.block_append_iff]
-  refine WP.mono (pointAdd_ok ca ((ha 16 (Or.inr (by decide))).trans h.d)) fun b ⟨kb, pb, hb⟩ => ?_
+  refine WP.seq (WP.mono (pointAdd_ok ca ((ha 16 (Or.inr (by decide))).trans h.d)) fun b ⟨kb, pb, hb⟩ => ?_)
   have cb := kb.ctx ca
-  rw [WP.block_append_iff]
+  have kab : IKeep x s b := ka.trans (IKeep.of_call kb)
+  rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (tableAddr_ok cb 1024 n (by omega) (by rw [kb.keep.esi, ea, h.counter]))
     fun c ⟨kc, mc, pc⟩ => ?_
   have cc := kc.ctx cb
@@ -182,12 +227,12 @@ theorem aTableBody_ok {x : BitVec 32} {s₀ s : State} {A : Spec.Ed25519.Point} 
   refine WP.mono (esiNext_ok (m := 15) (by omega) (by decide)
     (by rw [kd.gpr _ (by decide), kc.esi, kb.keep.esi, ea, h.counter])) fun t ⟨te, tz, tedi, tesp, trd, twr, tm⟩ =>
       ⟨tz, ?_⟩
-  have fab : Frame [sub x 64 864, sub x 1024 1920] s.mem c.mem := by
-    rw [mc]; exact (frame1_two ka.frame hfit (by decide) (by decide) (by decide)).trans
-      (frame1_two kb.frame hfit (by decide) (by decide) (by decide))
-  have fd : Frame [sub x 64 864, sub x 1024 1920] c.mem d.mem :=
-    frame1_two' kd.frame hfit (by omega) (by omega) (by omega)
-  have fall : Frame [sub x 64 864, sub x 1024 1920] s.mem t.mem := by rw [tm]; exact fab.trans fd
+  have fab : Frame [sub x 64 960, sub x 1024 1920, callStk s] s.mem c.mem := by
+    rw [mc]; exact Frame.oneS kab.frame hfit (by decide) (by decide) (by decide)
+  have fd : Frame [sub x 64 960, sub x 1024 1920, callStk s] c.mem d.mem :=
+    Frame.one' kd.frame hfit (by omega) (by omega) (by omega)
+  have fall : Frame [sub x 64 960, sub x 1024 1920, callStk s₀] s.mem t.mem := by
+    rw [tm, ← hs₀]; exact fab.trans fd
   have crep : Rep (point (env c.mem x) 0 1 2 3) ((n + 1) • Aa) := by
     rw [mc, pb, pa, h.a, succ_nsmul]
     have : point (env a.mem x) 0 1 2 3 = point (env s.mem x) 0 1 2 3 := by
@@ -195,9 +240,11 @@ theorem aTableBody_ok {x : BitVec 32} {s₀ s : State} {A : Spec.Ed25519.Point} 
         ha 3 (Or.inl (by decide))]
     rw [this]
     exact pointAdd_rep h.value hA
+  have tpb : ∀ o, o + 128 ≤ 8192 → 1024 ≤ o → tablePoint b.mem x o = tablePoint s.mem x o := fun o h1 h2 =>
+    table_point_of_words fun k hk => wd_frame1s hc kab.frame (by decide) (by omega) (Or.inr (by omega))
   refine ⟨by omega, by omega, ?_, te, ?_, ?_, fun j hj => ?_, ?_, ?_, h.frame.trans fall⟩
   · exact hc.keep (by rw [tedi, kd.gpr _ (by decide), kc.edi, kb.keep.edi, ka.edi])
-      (by rw [twr, kd.wr, kc.wr, kb.keep.wr, ka.wr])
+      (by rw [twr, kd.wr, kc.wr, kb.keep.wr, ka.wr]) (by rw [tesp, kd.gpr _ (by decide), kc.esp, kb.keep.esp, ka.esp])
   · rw [tm, table_env hfit kd.frame (by omega) (by omega), mc, hb 16 (by decide),
       ha 16 (Or.inr (by decide))]
     exact h.d
@@ -205,14 +252,12 @@ theorem aTableBody_ok {x : BitVec 32} {s₀ s : State} {A : Spec.Ed25519.Point} 
   · rw [tm]
     by_cases hjn : j < n
     · rw [tablePoint_frame hfit kd.frame (by omega) (by omega) (Or.inl (by omega)), mc,
-        tablePoint_frame hfit kb.frame (by decide) (by omega) (Or.inr (by omega)),
-        tablePoint_frame hfit ka.frame (by decide) (by omega) (Or.inr (by omega))]
+        tpb _ (by omega) (by omega)]
       exact h.table j hjn
     · obtain rfl : j = n := by omega
       rw [pd]; exact crep
   · rw [tm, tablePoint_frame hfit kd.frame (by omega) (by omega) (Or.inr (by omega)), mc,
-      tablePoint_frame hfit kb.frame (by decide) (by decide) (Or.inr (by decide)),
-      tablePoint_frame hfit ka.frame (by decide) (by decide) (Or.inr (by decide))]
+      tpb _ (by decide) (by decide)]
     exact h.a
   · exact ⟨by rw [tedi, kd.gpr _ (by decide), kc.edi, kb.keep.edi, ka.edi, h.keep.edi],
       by rw [tesp, kd.gpr _ (by decide), kc.esp, kb.keep.esp, ka.esp, h.keep.esp],
@@ -268,7 +313,7 @@ theorem bEntries_ok {x : BitVec 32} (l : List Nat) (hl : ∀ i ∈ l, i < 15) (h
     have hnd' := List.nodup_cons.mp hnd
     rw [bEntries]
     refine WP.seq (WP.mono (bEntry_ok hc i hi) fun a ⟨ka, fa, pa, da⟩ => ?_)
-    have ca : Ctx x a := hc.keep ka.edi ka.wr
+    have ca : Ctx x a := hc.keep ka.edi ka.wr ka.esp
     refine WP.mono (ih (fun j hj => hl j (List.mem_cons_of_mem _ hj)) hnd'.2 ca)
       fun t ⟨kt, ft, et, ot, dt⟩ => ⟨ka.trans kt, ?_, fun j hj => ?_, fun j hj hjn => ?_, dt.trans da⟩
     · exact (frame2_widen fa hc.fit (Nat.le_refl _) (Nat.le_refl _) (by omega) (by omega) (by decide)

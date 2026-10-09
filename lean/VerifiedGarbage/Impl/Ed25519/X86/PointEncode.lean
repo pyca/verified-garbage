@@ -7,7 +7,7 @@ open VG.X86
 open VG.Impl.X25519.X86 (sc freeze)
 
 def affineOps : List FieldOp := [.mul 0 0 15, .mul 1 1 15]
-def pointAffine : Prog isa := .seq invert (.block (fieldCode affineOps))
+def pointAffine : Prog isa := .seq invert (fieldProg affineOps)
 def pointSign : List Instr :=
   [.mov .esi (.mem (sc 64)), .alu .and .esi (.imm 1), .shift .ror .esi 1]
 def encodeSign : List Instr :=

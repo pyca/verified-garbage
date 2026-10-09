@@ -69,7 +69,7 @@ def addEvenOps : List FieldOp := [
 
 /-- Four doublings, with the counter `esi`. -/
 def double4 : Prog isa :=
-  .seq (.block [.mov .esi (.imm 4)]) (.loop (.block doubleBody) .ne)
+  .seq (.block [.mov .esi (.imm 4)]) (.loop doubleBody .ne)
 
 /-- `edx = edi + 8 esi`: the bits of the table `esi`'s digits are at `edx + 7168` (even) and
 `edx + 7172` (odd). -/
@@ -188,9 +188,9 @@ their accumulators. ZF is clear while another step follows. -/
 def combStep : Prog isa :=
   .seq (.block combDigits) <|
   .seq (.block combSelect) <|
-  .seq (.block (combNeg 4 5 6 combOddSign ++ fieldCode addOddOps)) <|
-  .block (combNeg 13 14 15 combEvenSign ++ fieldCode addEvenOps ++
-    [.alu .add .esi (.imm 1), .alu .cmp .esi (.imm 32)])
+  .seq (.block (combNeg 4 5 6 combOddSign)) <| .seq (fieldProg addOddOps) <|
+  .seq (.block (combNeg 13 14 15 combEvenSign)) <| .seq (fieldProg addEvenOps) <|
+  .block [.alu .add .esi (.imm 1), .alu .cmp .esi (.imm 32)]
 
 /-- Both accumulators at `[G]B`, zero in slot 21, and the counter. -/
 def combInit : List Instr :=
@@ -200,7 +200,7 @@ def combInit : List Instr :=
 
 /-- `16 A + B` into slots 0–3 (with `d` in slot 16). -/
 def combFinish : Prog isa :=
-  .seq double4 (.block (fieldCode [.copy 4 17, .copy 5 18, .copy 6 19, .copy 7 20] ++ pointAdd))
+  .seq double4 (.seq (.block (fieldCode [.copy 4 17, .copy 5 18, .copy 6 19, .copy 7 20])) pointAdd)
 
 /-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 7168 onward, `d` in slot 16
 and the tables' address at byte `combTbl`. -/

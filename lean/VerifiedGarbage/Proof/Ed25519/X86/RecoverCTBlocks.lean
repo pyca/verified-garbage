@@ -16,11 +16,8 @@ theorem edi_agree {base : BitVec 32} {s t : State} (hs : s.gpr .edi = base) (ht 
   subst r; exact hs.trans ht.symm)
 
 theorem recoverCandidate_ct (base : BitVec 32) :
-    RelCT isa (fun s t => s.gpr .edi = base ∧ t.gpr .edi = base) recoverCandidate (fun _ _ => True) := by
-  obtain ⟨_, hc⟩ : ∃ h, (taint.check (regsTaint [.edi]) recoverCandidate h).isSome = true := by
-    taint_decide_sum [power250Sum, sqT1]
-  apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ hc
-  exact fun _ _ h => edi_agree h.1 h.2
+    RelCT isa (VG.Proof.X25519.X86.Field32.RF base) recoverCandidate (VG.Proof.X25519.X86.Field32.RF base) :=
+  (fieldProg_rf base recoverInitOps).seq ((rootPower_rf base).seq (fieldProg_rf base recoverFinishOps))
 
 theorem parityBlock_ct (base : BitVec 32) :
     RelCT isa (fun s t => s.gpr .edi = base ∧ t.gpr .edi = base)
@@ -41,10 +38,10 @@ theorem negateBlock_ct (base : BitVec 32) :
   exact fun _ _ h => edi_agree h.1 h.2
 
 theorem successBlock_ct (base : BitVec 32) :
-    RelCT isa (fun s t => s.gpr .edi = base ∧ t.gpr .edi = base)
-      (.block recoverSuccess) (fun _ _ => True) := by
-  apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
-  exact fun _ _ h => edi_agree h.1 h.2
+    RelCT isa (VG.Proof.X25519.X86.Field32.RF base) recoverSuccess (fun _ _ => True) :=
+  (fieldProg_rf base recoverSuccessOps).seq
+    (RelCT.taint (A := taint) (τr [.esp, .edi]) (fun _ _ h => VG.Proof.X25519.X86.Field32.RF.agree h)
+      (by taint_decide))
 
 theorem recoverInvalid_ct : RelCT isa (fun _ _ => True) recoverInvalid (fun _ _ => True) := by
   apply VG.RelCT.taint (A := taint) (regsTaint []) _ (by taint_decide)

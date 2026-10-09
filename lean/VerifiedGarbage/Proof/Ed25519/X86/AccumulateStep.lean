@@ -24,6 +24,26 @@ theorem FieldKeep.bit {x : BitVec 32} {s t : State} (h : FieldKeep x s t) (hc : 
   exact (sub_disj (by omega_using [hc.fit, hi]) (by omega_using [hc.fit])
     (Or.inr (by omega)) : (sub x (7168 + i) 1).Disjoint (sub x 64 864)) _ (Region.contains_self _ _)
 
+/-- A bit of the scalar, through a frame of the slots and the stack a call uses. -/
+theorem bit_frame {x : BitVec 32} {s : State} (hc : Ctx x s) {m m' : Mem}
+    (hf : Frame [sub x 64 960, VG.Proof.X25519.X86.callStk s] m m')
+    (i : Nat) (hi : i < 512) : m' (addr x (7168 + i)) = m (addr x (7168 + i)) := by
+  apply hf
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact (sub_disj (by omega_using [hc.fit, hi]) (by omega_using [hc.fit])
+      (Or.inr (by omega)) : (sub x (7168 + i) 1).Disjoint (sub x 64 960)) _ (Region.contains_self _ _)
+  · exact stk_apart hc (d := 7168 + i) (n := 1) (by omega) (by decide) _ (Region.contains_self _ _)
+
+theorem CallKeep.word {x : BitVec 32} {s t : State} (h : CallKeep x s t) (hc : Ctx x s)
+    (o : Nat) (ho : o + 4 ≤ 64) : wd t.mem x o = wd s.mem x o :=
+  wd_frame1s hc h.frame (by decide) (by omega) (Or.inl ho)
+
+theorem CallKeep.bit {x : BitVec 32} {s t : State} (h : CallKeep x s t) (hc : Ctx x s)
+    (i : Nat) (hi : i < 512) : t.mem (addr x (7168 + i)) = s.mem (addr x (7168 + i)) :=
+  bit_frame hc h.frame i hi
+
 theorem scalarBitMask_ok {x : BitVec 32} {s : State} (hc : Ctx x s)
     (batch j : Nat) (hb : batch < 32) (hj : j < 16)
     (hbv : wd s.mem x 28 = BitVec.ofNat 32 batch) (hjv : s.gpr .esi = BitVec.ofNat 32 j)
@@ -172,16 +192,14 @@ theorem pointAccumulate_ok {x : BitVec 32} {s : State} (hc : Ctx x s)
     (hbv : wd s.mem x 28 = BitVec.ofNat 32 batch) (hjv : s.gpr .esi = BitVec.ofNat 32 j)
     (bit : Bool) (hbit : s.mem (addr x (7168 + (16 * batch + j))) = BitVec.ofNat 8 bit.toNat)
     (hd : env s.mem x 16 = Spec.Ed25519.d) :
-    WP isa (.block pointAccumulate) s fun t => FieldKeep x s t ∧
+    WP isa pointAccumulate s fun t => CallKeep x s t ∧
       point (env t.mem x) 0 1 2 3 =
         (if bit then Spec.Ed25519.pointAdd (point (env s.mem x) 0 1 2 3)
           (tablePoint s.mem x (5120 + 128 * j)) else point (env s.mem x) 0 1 2 3) ∧
       env t.mem x 16 = Spec.Ed25519.d := by
-  simp only [pointAccumulate, List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (prepareAdd_ok hc j hj hjv) fun u ⟨ku, pu, qu, su, du⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (pointAdd_ok (ku.ctx hc) (du.trans hd)) fun v ⟨kv, pv, hv⟩ => ?_
+  refine WP.seq (WP.mono (prepareAdd_ok hc j hj hjv) fun u ⟨ku', pu, qu, su, du⟩ => ?_)
+  have ku := ku'.call
+  refine WP.seq (WP.mono (pointAdd_ok (ku.ctx hc) (du.trans hd)) fun v ⟨kv, pv, hv⟩ => ?_)
   have kp := ku.trans kv
   have va := pv.trans (congrArg₂ Spec.Ed25519.pointAdd pu qu)
   have vs : point (env v.mem x) 17 18 19 20 = point (env s.mem x) 0 1 2 3 :=
@@ -192,7 +210,7 @@ theorem pointAccumulate_ok {x : BitVec 32} {s : State} (hc : Ctx x s)
     ((kp.word hc 28 (by decide)).trans hbv) (kp.keep.esi.trans hjv) bit
     ((kp.bit hc _ (by omega)).trans hbit)) fun w ⟨kw, mw, bw⟩ => ?_
   refine WP.mono (pointSelect_ok (kw.ctx (kp.ctx hc)) (!bit) bw) fun t ⟨kt, pt, dt⟩ => ?_
-  refine ⟨kp.trans (kw.trans kt), ?_, ?_⟩
+  refine ⟨kp.trans ((kw.trans kt).call), ?_, ?_⟩
   · exact select_flip bit pt (by rw [mw]; exact vs) (by rw [mw]; exact va)
   · rw [dt, mw, hv 16 (by decide), du, hd]
 
@@ -220,15 +238,11 @@ theorem choose_after (s n : Nat) (p x y : Spec.Ed25519.Point)
 
 theorem IKeep.word {x : BitVec 32} {s t : State} (h : IKeep x s t) (hc : Ctx x s)
     (o : Nat) (ho : o + 4 ≤ 64) : wd t.mem x o = wd s.mem x o :=
-  wd_frame1 h.frame hc.fit (by decide) (by omega) (Or.inl ho)
+  wd_frame1s hc h.frame (by decide) (by omega) (Or.inl ho)
 
 theorem IKeep.bit {x : BitVec 32} {s t : State} (h : IKeep x s t) (hc : Ctx x s)
-    (i : Nat) (hi : i < 512) : t.mem (addr x (7168 + i)) = s.mem (addr x (7168 + i)) := by
-  apply h.frame
-  intro r hr
-  rw [List.mem_singleton.mp hr]
-  exact (sub_disj (by omega_using [hc.fit, hi]) (by omega_using [hc.fit])
-    (Or.inr (by omega)) : (sub x (7168 + i) 1).Disjoint (sub x 64 864)) _ (Region.contains_self _ _)
+    (i : Nat) (hi : i < 512) : t.mem (addr x (7168 + i)) = s.mem (addr x (7168 + i)) :=
+  bit_frame hc h.frame i hi
 
 theorem accumulateBody_ok {x : BitVec 32} {s : State} (hc : Ctx x s)
     (n batch scalar : Nat) (p : Spec.Ed25519.Point) (hn : n < 16) (hb : batch < 32)
@@ -239,22 +253,20 @@ theorem accumulateBody_ok {x : BitVec 32} {s : State} (hc : Ctx x s)
     (hd : env s.mem x 16 = Spec.Ed25519.d)
     (hp : point (env s.mem x) 0 1 2 3 = after scalar p (16 * batch + n + 1))
     (ht : tablePoint s.mem x (5120 + 128 * n) = powerPoint p (16 * batch + n)) :
-    WP isa (.block accumulateBody) s fun t =>
+    WP isa accumulateBody s fun t =>
       IKeep x s t ∧ t.gpr .esi = BitVec.ofNat 32 n ∧
       isa.eval .ne t = some (!decide (n = 0)) ∧
       point (env t.mem x) 0 1 2 3 = after scalar p (16 * batch + n) ∧
       env t.mem x 16 = Spec.Ed25519.d := by
-  simp only [accumulateBody, List.append_assoc]
-  rw [WP.block_append_iff]
-  refine Wp.wp_subi fun u hu _ _ => WP.block_nil ?_
+  unfold accumulateBody
+  refine WP.seq (Wp.wp_subi fun u hu _ _ => WP.block_nil ?_)
   have ku : IKeep x s u := IKeep.of_counter hu
   have bu : u.gpr .esi = BitVec.ofNat 32 n := by
     rw [hu.gpr, hcounter]
     exact (Wp.ofNat_pred (by omega)).trans (congrArg (BitVec.ofNat 32) (by omega))
-  rw [WP.block_append_iff]
-  refine WP.mono (pointAccumulate_ok (ku.ctx hc) batch n hb hn
+  refine WP.seq (WP.mono (pointAccumulate_ok (ku.ctx hc) batch n hb hn
     (by rw [hu.mem]; exact hindex) bu (scalarBit scalar (16 * batch + n))
-    (by rw [hu.mem]; exact hbit) (by rw [hu.mem]; exact hd)) fun v ⟨kv, pv, dv⟩ => ?_
+    (by rw [hu.mem]; exact hbit) (by rw [hu.mem]; exact hd)) fun v ⟨kv, pv, dv⟩ => ?_)
   have bv := kv.keep.esi.trans bu
   have vp : point (env v.mem x) 0 1 2 3 = after scalar p (16 * batch + n) :=
     pv.trans (choose_after scalar (16 * batch + n) p _ _
@@ -262,7 +274,7 @@ theorem accumulateBody_ok {x : BitVec 32} {s : State} (hc : Ctx x s)
       ((congrArg (fun m => tablePoint m x (5120 + 128 * n)) hu.mem).trans ht))
   refine Wp.wp_test fun t kt zt => WP.block_nil ?_
   have keep : Keep v t := ⟨by rw [kt.gpr], by rw [kt.gpr], by rw [kt.gpr], kt.rd, kt.wr⟩
-  refine ⟨ku.trans ((IKeep.of_field kv).trans (IKeep.of_mem keep kt.mem)),
+  refine ⟨ku.trans ((IKeep.of_call kv).trans (IKeep.of_mem keep kt.mem)),
     (congrFun kt.gpr .esi).trans bv, ?_, ?_, ?_⟩
   · show t.zf.map (!·) = _
     rw [zt, BitVec.and_self, bv, Wp.ofNat_beq_zero (by omega)]; rfl

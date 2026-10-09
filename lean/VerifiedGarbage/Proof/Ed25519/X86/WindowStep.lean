@@ -23,9 +23,9 @@ theorem dblOps_eval (e : Env) : point (evalOps dblOps e) 0 1 2 3 = dblPoint (poi
 
 theorem dbl_ok {s : State} {x : BitVec 32} (hc : Ctx x s) {a : EPoint dZ}
     (h : Rep (point (env s.mem x) 0 1 2 3) a) :
-    WP isa dbl s fun t => FieldKeep x s t ∧ Rep (point (env t.mem x) 0 1 2 3) (a + a) ∧
+    WP isa dbl s fun t => CallKeep x s t ∧ Rep (point (env t.mem x) 0 1 2 3) (a + a) ∧
       ∀ i : Slot, 16 ≤ i.val → env t.mem x i = env s.mem x i := by
-  refine WP.mono (fieldCode_ok dblOps hc) fun t ⟨kt, vt⟩ => ⟨kt, ?_, fun i hi => ?_⟩
+  refine WP.mono (fieldProg_ok dblOps hc) fun t ⟨kt, vt⟩ => ⟨kt, ?_, fun i hi => ?_⟩
   · rw [vt, dblOps_eval]; exact dblPoint_rep h.proj
   · rw [vt]; exact point_ops_high _ (by decide) _ i hi
 
@@ -62,13 +62,13 @@ theorem doubleWindow_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (hesi : (s.gp
     ∀ i : Slot, 16 ≤ i.val → env t.mem x i = env s.mem x i) ?_ 4 s
     ⟨by decide, by decide, by simp, IKeep.refl _ _, by simpa using h, fun _ _ => rfl⟩
   intro n t ⟨h1, h4, he, kt, rt, ht⟩
-  rw [dblStep, WP.block_append_iff]
-  refine WP.mono (dbl_ok (kt.ctx hc) rt) fun u ⟨ku, ru, hu⟩ => ?_
+  unfold dblStep
+  refine WP.seq (WP.mono (dbl_ok (kt.ctx hc) rt) fun u ⟨ku, ru, hu⟩ => ?_)
   refine wp_addiC fun v hv cv => WP.block_nil ?_
   have eu : (u.gpr .esi).toNat = (s.gpr .esi).toNat + (4 - n) * 2 ^ 30 := by rw [ku.keep.esi]; exact he
   obtain ⟨ev, cv'⟩ := dblCount_step hesi h1 h4 eu
   rw [cv'] at cv
-  have kv : IKeep x s v := kt.trans ((IKeep.of_field ku).trans (IKeep.of_counter hv))
+  have kv : IKeep x s v := kt.trans ((IKeep.of_call ku).trans (IKeep.of_counter hv))
   have rv : Rep (point (env v.mem x) 0 1 2 3) ((2 ^ (4 - (n - 1)) : Nat) • a) := by
     rw [hv.mem, show 4 - (n - 1) = (4 - n) + 1 by omega, pow_succ, mul_comm, ← smul_smul, two_nsmul]
     exact ru
@@ -168,8 +168,11 @@ theorem nibbleByte_ok {s₀ s : State} (hp : ScratchPre s₀ 3 4) (hs : Saved s�
   · rw [ht.gpr, h₄.gpr, k₃.mem, bytesAt_getD _ _ _ _ (by omega), ← addr_eq (by have := hsl.fit; omega)]
     congr 1
     apply hs.frame
-    intro r hr; rw [List.mem_singleton.mp hr]
-    exact hsl.sep _ (slice_contains hsl (by omega) (by decide))
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hsl.sep _ (slice_contains hsl (by omega) (by decide))
+    · exact hsl.stk _ (slice_contains hsl (by omega) (by decide))
   · rw [zt, h₄.other _ (by decide), k₃.gpr _ (by decide), hesi, and1_beq hn]
 
 theorem digitNibble_ok {s₀ s : State} (hp : ScratchPre s₀ 3 4) (hs : Saved s₀ (arg s₀ 3) s)
@@ -229,14 +232,14 @@ theorem addDigit_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {o : Nat} (ho : 1
   have cu := ku.ctx hc
   refine WP.ite (!decide (v = 0)) (by show u.zf.map (!·) = _; rw [zu]; rfl) (fun h => ?_) (fun h => ?_)
   · have hv0 : v ≠ 0 := by simpa using h
-    rw [List.append_assoc, WP.block_append_iff]
+    refine WP.seq ?_
+    rw [WP.block_append_iff]
     refine WP.mono (entryAddr_ok cu o (by omega) hv (by rw [gu]; exact he)) fun b ⟨kb, mb, pb⟩ => ?_
     have cb := kb.ctx cu
-    rw [WP.block_append_iff]
     refine WP.mono (pointFromTableQ_ok cb pb (by omega) (by omega)) fun c ⟨kc, ec, pc, hc'⟩ => ?_
     have cc := kc.ctx cb
     refine WP.mono (pointAdd_ok cc (by rw [hc' 16 (Or.inr (by decide)), mb, mu]; exact hd))
-      fun t ⟨kt, pt, ht⟩ => ⟨((ku.trans (IKeep.of_mem kb mb)).trans kc).trans (IKeep.of_field kt), ?_, ?_,
+      fun t ⟨kt, pt, ht⟩ => ⟨((ku.trans (IKeep.of_mem kb mb)).trans kc).trans (IKeep.of_call kt), ?_, ?_,
         fun i hi => ?_⟩
     · rw [kt.keep.esi, ec, kb.esi, gu]
     · have p0 : point (env c.mem x) 0 1 2 3 = point (env s.mem x) 0 1 2 3 := by
@@ -265,15 +268,15 @@ structure WinCtx (s₀ : State) (Aa : EPoint dZ) (R : Spec.Ed25519.Point) (s : S
 
 theorem WinCtx.ctx {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
     (h : WinCtx s₀ Aa R s) : Ctx (arg s₀ 3) s :=
-  h.saved.ctx h.pre.scratch.fit h.pre.scratch.wr
+  h.saved.ctx h.pre.scratch.fit h.pre.scratch.wr h.pre.scratch.stk
 
 theorem WinCtx.of_ikeep {s₀ s t : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
     (h : WinCtx s₀ Aa R s) (k : IKeep (arg s₀ 3) s t)
     (hd : env t.mem (arg s₀ 3) 16 = env s.mem (arg s₀ 3) 16) : WinCtx s₀ Aa R t := by
   have hfit := h.pre.scratch.fit
   refine ⟨h.pre, h.saved.ikeep hfit k, hd.trans h.d, fun j hj => ?_, fun j hj => ?_, ?_⟩
-  · rw [tablePoint_frame hfit k.frame (by decide) (by omega) (Or.inr (by omega))]; exact h.ta j hj
-  · rw [tablePoint_frame hfit k.frame (by decide) (by omega) (Or.inr (by omega))]; exact h.tb j hj
-  · rw [tablePoint_frame hfit k.frame (by decide) (by decide) (Or.inr (by decide))]; exact h.r
+  · rw [workspace_table k h.ctx _ (by omega) (by omega)]; exact h.ta j hj
+  · rw [workspace_table k h.ctx _ (by omega) (by omega)]; exact h.tb j hj
+  · rw [workspace_table k h.ctx _ (by decide) (by decide)]; exact h.r
 
 end VG.Proof.Ed25519.X86

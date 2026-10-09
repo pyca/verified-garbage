@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+import VerifiedGarbage.Proof.Ed25519.X86.CallTaint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
@@ -13,7 +14,9 @@ them, so their traces depend on the scalars: both runs must use the same ones
 are read through the argument pointers and the counter `esi`, the same in both
 runs by correctness; everything else is public by the taint analysis, with
 the workspace pointer `edi`. The skipped bytes of `k` are its leading zeros,
-the same in both runs.
+the same in both runs. The code with calls of `vg_gf25519_r32_mul` (the
+tables, the doublings and the additions) is related by `AR`, with `edi`, the
+counter `esi` and a digit in `eax` public.
 -/
 
 namespace VG.Proof.Ed25519.X86
@@ -72,6 +75,94 @@ theorem saved_edi {s₀ t₀ x y : State} (h : VerifyCTFacts s₀ t₀) (hx : Sa
 theorem saved_esp {s₀ t₀ x y : State} (h : VerifyCTFacts s₀ t₀) (hx : Saved s₀ (arg s₀ 3) x)
     (hy : Saved t₀ (arg t₀ 3) y) : x.gpr .esp = y.gpr .esp :=
   hx.esp.trans (h.pub.1.trans hy.esp.symm)
+
+/-! ## Code with calls -/
+
+/-- What the windows need public across the calls: `edi`, then the counter `esi`, then a
+digit in `eax`. -/
+abbrev τW0 : VG.X86.Taint.T := ptR [.edi] []
+abbrev τW : VG.X86.Taint.T := ptR [.edi, .esi] []
+abbrev τWD : VG.X86.Taint.T := ptR [.eax, .edi, .esi] []
+
+theorem verify_wr {s : State} (h : verifyLocal.pre s) :
+    s.wr = [sub (arg s 3) 0 0, scR 8192 (arg s 3)] := by
+  obtain ⟨-, wr, -⟩ := h
+  exact wr
+
+theorem verify_ptctx {s₀ x : State} (h : verifyLocal.pre s₀) (hs : Saved s₀ (arg s₀ 3) x) :
+    PointCTCtx (arg s₀ 3) x := by
+  have hp := (verify_pre h).scratch
+  have hw := verify_wr h
+  refine ⟨hs.ctx hp.fit hp.wr hp.stk, ?_, ?_, ?_, ?_⟩
+  · rw [hs.wr, hw]
+    exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil)
+  · rw [hs.wr, hw]
+    refine List.pairwise_cons.mpr ⟨fun r hr => ?_, by simp⟩
+    rw [List.mem_singleton.mp hr]
+    exact fun a ha => absurd ha (by simp only [Region.Contains]; omega)
+  · intro r hr
+    rw [hs.wr, hw] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · simp only [addr, BitVec.toNat_setWidth]
+      have := (arg s₀ 3 + BitVec.ofNat 32 0).isLt
+      have := Nat.mod_le (arg s₀ 3 + BitVec.ofNat 32 0).toNat (2 ^ 64)
+      omega
+    · simp only [BitVec.toNat_setWidth]
+      omega_using [hp.fit]
+  · change x.wr.getD 1 ⟨0, 0⟩ = _
+    rw [hs.wr, hw]; rfl
+
+/-- Two runs of the windows, related as code with calls needs them. -/
+theorem saved_ar {s₀ t₀ x y : State} (h : VerifyCTFacts s₀ t₀) (hx : Saved s₀ (arg s₀ 3) x)
+    (hy : Saved t₀ (arg t₀ 3) y) {rs : List Reg} (hr : ∀ r ∈ rs, x.gpr r = y.gpr r) :
+    AR (arg s₀ 3) (ptR rs []) x y := by
+  have cx := verify_ptctx h.left hx
+  have cy : PointCTCtx (arg s₀ 3) y := by
+    rw [h.args 3 (by decide)]; exact verify_ptctx h.right hy
+  refine ⟨ptR_agree cx cy ?_ hr (fun o ho => by cases ho), cx, cy, saved_esp h hx hy⟩
+  rw [hx.wr, hy.wr, verify_wr h.left, verify_wr h.right, h.args 3 (by decide)]
+
+/-- The tables: `A`'s multiples by additions, which call `vg_gf25519_r32_mul`, and `-B`'s
+constants. -/
+theorem windowPrep_ar (x : BitVec 32) : RelCT isa (AR x τW0) windowPrep (fun _ _ => True) := by
+  have hb := ptR_base [.edi, .esi] []
+  have hb0 := ptR_base [.edi] []
+  have body : RelCT isa (AR x τW) aTableBody
+      fun s t => isa.eval .ne s = isa.eval .ne t ∧ AR x τW s t :=
+    (block_to x (by decide +kernel) hb).seq
+      ((fieldProg_ar x (by decide +kernel) hb pointAddOps (by decide +kernel)).seq
+        (block_cond x .ne (by decide +kernel) hb))
+  unfold windowPrep aTable
+  exact (block_to x (σ := τW0) (by decide +kernel) hb0).seq
+    (((block_to x (σ := τW) (by decide +kernel) hb).seq (loop_inv body)).seq
+      (VG.RelCT.taint (A := taint) (regsTaint [.edi])
+        (fun _ _ hh => agree_one (hh.rf.1.edi.trans hh.rf.2.1.edi.symm)) (by taint_decide)))
+
+/-- Four doublings, whose products call `vg_gf25519_r32_mul`. -/
+theorem doubleWindow_ar (x : BitVec 32) : RelCT isa (AR x τW) doubleWindow (AR x τW) := by
+  have hb := ptR_base [.edi, .esi] []
+  unfold doubleWindow dblStep
+  exact loop_inv ((fieldProg_ar x (by decide +kernel) hb dblOps (by decide +kernel)).seq
+    (block_cond x .ae (by decide +kernel) hb))
+
+/-- A digit's addition branches on the digit and addresses the table by it, the same in both
+runs. -/
+theorem addDigit_ar (x : BitVec 32) (o : Nat) (ho : o = 1024 ∨ o = 3072) :
+    RelCT isa (AR x τWD) (addDigit o) (fun _ _ => True) := by
+  have hb := ptR_base [.edi, .esi] []
+  have hbd := ptR_base [.eax, .edi, .esi] []
+  have body : RelCT isa (AR x τWD) (.seq (.block (entryAddr o ++ pointFromTableQ)) pointAdd)
+      (AR x τW) := by
+    rcases ho with rfl | rfl
+    all_goals
+      exact (block_to x (by decide +kernel) hb).seq
+        (fieldProg_ar x (by decide +kernel) hb pointAddOps (by decide +kernel))
+  rw [addDigit]
+  refine (block_cond x .ne (σ := τWD) (is := [.alu .test .eax (.reg .eax)]) (by decide +kernel) hbd).seq
+    (VG.RelCT.ite (M := isa) (fun _ _ h => h.1) ?_ ?_)
+  · exact body.mono (fun _ _ h => h.1.2) (fun _ _ _ => trivial)
+  · exact VG.RelCT.block_nil fun _ _ _ => trivial
 
 /-! ## Digits -/
 
@@ -136,40 +227,6 @@ theorem digitNibble_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {P₁ P
   · exact VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide)
   · exact VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide)
 
-/-! ## Adding a digit's entry -/
-
-theorem digitTest_ok {s : State} {v : Nat} (hv : v < 16) {B : BitVec 32}
-    (hs : s.gpr .eax = BitVec.ofNat 32 v ∧ s.gpr .edi = B) :
-    WP isa (.block [.alu .test .eax (.reg .eax)]) s fun t =>
-      (t.gpr .eax = BitVec.ofNat 32 v ∧ t.gpr .edi = B) ∧ t.zf = some (decide (v = 0)) :=
-  Wp.wp_test fun t ht zt => WP.block_nil ⟨⟨by rw [ht.gpr]; exact hs.1, by rw [ht.gpr]; exact hs.2⟩,
-    by rw [zt, hs.1, digit_test_fact v hv]⟩
-
-/-- A digit's addition branches on the digit and addresses the table by it, the same in both
-runs. -/
-theorem addDigit_ct (o : Nat) (ho : o = 1024 ∨ o = 3072) {v : Nat} (hv : v < 16) (B : BitVec 32) :
-    RelCT isa (fun x y => (x.gpr .eax = BitVec.ofNat 32 v ∧ x.gpr .edi = B) ∧
-      (y.gpr .eax = BitVec.ofNat 32 v ∧ y.gpr .edi = B)) (addDigit o) (fun _ _ => True) := by
-  have test : RelCT isa (fun x y => (x.gpr .eax = BitVec.ofNat 32 v ∧ x.gpr .edi = B) ∧
-      (y.gpr .eax = BitVec.ofNat 32 v ∧ y.gpr .edi = B)) (.block [.alu .test .eax (.reg .eax)])
-      (fun _ _ => True) :=
-    VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide)
-  have body : RelCT isa (fun x y => x.gpr .eax = y.gpr .eax ∧ x.gpr .edi = y.gpr .edi)
-      (.block (entryAddr o ++ pointFromTableQ ++ pointAdd)) (fun _ _ => True) := by
-    rcases ho with rfl | rfl
-    all_goals
-      exact VG.RelCT.taint (A := taint) (regsTaint [.eax, .edi]) (fun _ _ hh => agree_two hh)
-        (by taint_decide)
-  rw [addDigit]
-  refine VG.RelCT.seq ((test.wp fun x y hh => ⟨digitTest_ok hv hh.1, digitTest_ok hv hh.2⟩).mono
-    (fun _ _ h => h) (fun _ _ h => h.2)) (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
-  · intro x y hh
-    change x.zf.map Bool.not = y.zf.map Bool.not
-    rw [hh.1.2, hh.2.2]
-  · exact body.mono (fun x y hh => ⟨hh.1.1.1.1.trans hh.1.2.1.1.symm, hh.1.1.1.2.trans hh.1.2.1.2.symm⟩)
-      (fun _ _ h => h)
-  · exact VG.RelCT.block_nil fun _ _ _ => trivial
-
 /-! ## Windows -/
 
 /-- A window's start, in one run: the counter at `i`, and the sum representing a point. -/
@@ -180,9 +237,11 @@ def WinAt (s₀ : State) (Aa : EPoint dZ) (R : Spec.Ed25519.Point) (i : Nat) (x 
 theorem doubleWindow_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
     {R : Spec.Ed25519.Point} {i : Nat} :
     RelCT isa (fun x y => WinAt s₀ Aa R i x ∧ WinAt t₀ Aa R i y) doubleWindow (fun _ _ => True) :=
-  VG.RelCT.taint (A := taint) (regsTaint [.edi, .esi])
-    (fun _ _ hh => agree_two ⟨saved_edi h hh.1.1.saved hh.2.1.saved, hh.1.2.1.trans hh.2.2.1.symm⟩)
-    (by taint_decide)
+  (doubleWindow_ar (arg s₀ 3)).mono (fun _ _ hh => saved_ar h hh.1.1.saved hh.2.1.saved fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      exacts [saved_edi h hh.1.1.saved hh.2.1.saved, hh.1.2.1.trans hh.2.2.1.symm])
+    (fun _ _ _ => trivial)
 
 theorem doubleWindow_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {i : Nat} (hi : i < 128)
     (hx : WinAt s₀ Aa R i x) : WP isa doubleWindow x (WinAt s₀ Aa R i) := by
@@ -203,10 +262,14 @@ theorem DigitAt.of_keep {s₀ x u : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Po
 
 /-- A digit's addition, after its code, from the digit's value in both runs. -/
 theorem digitAdd_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
-    {R : Spec.Ed25519.Point} {i v : Nat} (hv : v < 16) {o : Nat} (ho : o = 1024 ∨ o = 3072) :
+    {R : Spec.Ed25519.Point} {i v : Nat} {o : Nat} (ho : o = 1024 ∨ o = 3072) :
     RelCT isa (fun x y => DigitAt s₀ Aa R i v x ∧ DigitAt t₀ Aa R i v y) (addDigit o) (fun _ _ => True) :=
-  (addDigit_ct o ho hv (arg s₀ 3)).mono
-    (fun _ _ hh => ⟨⟨hh.1.2.1, hh.1.2.2⟩, ⟨hh.2.2.1, hh.2.2.2.trans (h.args 3 (by decide)).symm⟩⟩)
+  (addDigit_ar (arg s₀ 3) o ho).mono
+    (fun _ _ hh => saved_ar h hh.1.1.1.saved hh.2.1.1.saved fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      exacts [hh.1.2.1.trans hh.2.2.1.symm, saved_edi h hh.1.1.1.saved hh.2.1.1.saved,
+        hh.1.1.2.1.trans hh.2.1.2.1.symm])
     (fun _ _ h => h)
 
 theorem digitK_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
@@ -246,7 +309,7 @@ theorem addK_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint d
     {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 128) :
     RelCT isa (fun x y => WinAt s₀ Aa R n x ∧ WinAt t₀ Aa R n y) addK (fun _ _ => True) :=
   seq_runs (digitK_ct h hn) (fun _ hx => digitK_at hn hx)
-    (fun y hy => by rw [h.kNib n]; exact digitK_at hn hy) (digitAdd_ct h (kNib_lt s₀ n) (.inl rfl))
+    (fun y hy => by rw [h.kNib n]; exact digitK_at hn hy) (digitAdd_ct h (.inl rfl))
 
 theorem addK_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 128)
     (hx : WinAt s₀ Aa R n x) : WP isa addK x (WinAt s₀ Aa R n) := by
@@ -272,7 +335,7 @@ theorem addS_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint d
   · by_cases h64 : n < 64
     · exact (seq_runs (digitS_ct h h64 (fun _ hx => hx) (fun _ hy => hy))
         (fun _ hx => digitS_at h64 hx) (fun _ hy => by rw [h.sNib n]; exact digitS_at h64 hy)
-        (digitAdd_ct h (sNib_lt s₀ n) (.inr rfl))).mono (fun _ _ hh => ⟨hh.1.1.1, hh.1.2.1⟩)
+        (digitAdd_ct h (.inr rfl))).mono (fun _ _ hh => ⟨hh.1.1.1, hh.1.2.1⟩)
         (fun _ _ h => h)
     · refine VG.RelCT.of_false fun x y hh => h64 ?_
       have e : x.cf = some true := hh.2
@@ -421,8 +484,8 @@ theorem windowMultiply_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {a r
       (fun _ _ => True) := by
   have prep : RelCT isa (fun x y => EquationCTPre s₀ a r x ∧ EquationCTPre t₀ a r y) windowPrep
       (fun _ _ => True) :=
-    VG.RelCT.taint (A := taint) (regsTaint [.edi]) (fun _ _ hh => agree_one (saved_edi h hh.1.1 hh.2.1))
-      (by taint_decide)
+    (windowPrep_ar (arg s₀ 3)).mono (fun _ _ hh => saved_ar h hh.1.1 hh.2.1 fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact saved_edi h hh.1.1 hh.2.1) (fun _ _ h => h)
   have pw (u x : State) (hu : VerifyPre u) (hx : EquationCTPre u a r x) :
       WP isa windowPrep x (SkipAt u Aa r 32) :=
     WP.mono (windowPrep_ok hu hx.1 hA hx.2.1 hx.2.2) fun _ ⟨w, e, rp⟩ =>

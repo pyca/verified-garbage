@@ -10,7 +10,8 @@ def artifacts : List Artifact := [
       with 32-bit product columns, then reduces every input bit modulo the subgroup order. \
       Callee-saved registers are saved in the first 16 bytes of `scratch`."])
     code := Impl.Ed25519.X86.scalarMulAdd
-    contract := Spec.Ed25519.scalarMulAddContract X86.abi
+    contract := Spec.Ed25519.scalarMulAddContract X86.abi 20
+    stack := 20
     verified := Proof.Ed25519.X86.scalarMulAdd_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 end VG.Artifacts.Ed25519MulAdd.X86

@@ -13,12 +13,14 @@ def verifyLocal : Contract isa where
     let scratch := scR 8192 (arg s 3)
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stk : Region := callStk s
     s.rd = [pk, sig, challenge, args] ∧ s.wr = [sub (arg s 3) 0 0, scratch] ∧
       pk.Disjoint scratch ∧ sig.Disjoint scratch ∧ challenge.Disjoint scratch ∧
       args.Disjoint scratch ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 64 ≤ 2 ^ 32 ∧
       (arg s 2).toNat + 64 ≤ 2 ^ 32 ∧ (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧
-      (s.gpr .esp).toNat + 20 ≤ 2 ^ 32
+      (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧ 20 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint scratch ∧
+      stk.Disjoint pk ∧ stk.Disjoint sig ∧ stk.Disjoint challenge
   post s t := t.gpr .eax = signWord (Spec.Ed25519.verifyEquation
     (Spec.Ed25519.bytesAt s.mem ((arg s 0).setWidth 64) 32) (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 64)
     (Spec.Ed25519.bytesAt s.mem ((arg s 2).setWidth 64) 64))
@@ -33,7 +35,10 @@ theorem input_slice {s : State} {scidx i n skip bytes : Nat} (h : InputPre s sci
     SlicePre s scidx (arg s i + BitVec.ofNat 32 skip) bytes := by
   have hf := h.fit
   have hs : skip < 2 ^ 32 := by omega_using [hn, hb, hf]
-  refine ⟨?_, ?_, ?_⟩
+  have hsub : (sub (arg s i + BitVec.ofNat 32 skip) 0 bytes).Sub (sub (arg s i) 0 (4 * n)) := by
+    rw [sub, addr_plus, Nat.add_zero, sub, addr_eq (by omega_using [hn, hb, hf]), addr_zero]
+    exact Offset.sub_base _ hn
+  refine ⟨?_, ?_, h.sep.sub_left hsub, h.stk.sub_left hsub⟩
   · intro k len hl hk
     rw [addr_plus]
     exact ⟨_, h.rd, sub_contains (by omega_using [hf]) (Nat.zero_le _)
@@ -41,9 +46,6 @@ theorem input_slice {s : State} {scidx i n skip bytes : Nat} (h : InputPre s sci
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hs,
       Nat.mod_eq_of_lt (by omega_using [hn, hb, hf])]
     omega_using [hn, hf]
-  · apply h.sep.sub_left
-    rw [sub, addr_plus, Nat.add_zero, sub, addr_eq (by omega_using [hn, hb, hf]), addr_zero]
-    exact Offset.sub_base _ hn
 
 structure VerifyPre (s : State) : Prop where
   scratch : ScratchPre s 3 4
@@ -54,12 +56,12 @@ structure VerifyPre (s : State) : Prop where
   signature_fit : (arg s 1).toNat + 64 ≤ 2 ^ 32
 
 theorem verify_pre {s : State} (h : verifyLocal.pre s) : VerifyPre s := by
-  obtain ⟨rd, wr, ps, ss, cs, ars, rs, pf, sf, cf, scf, spf⟩ := h
+  obtain ⟨rd, wr, ps, ss, cs, ars, rs, pf, sf, cf, scf, spf, h20, ks, kp, kg, kc⟩ := h
   have hp : ScratchPre s 3 4 := ⟨by decide, by rw [wr]; simp, scf,
-    by rw [rd]; simp, by omega_using [spf], ars, rs⟩
-  have p : InputPre s 3 0 8 := ⟨by rw [rd]; simp, pf, ps⟩
-  have sg : InputPre s 3 1 16 := ⟨by rw [rd]; simp, sf, ss⟩
-  have ch : InputPre s 3 2 16 := ⟨by rw [rd]; simp, cf, cs⟩
+    by rw [rd]; simp, by omega_using [spf], ars, rs, h20, ks.symm⟩
+  have p : InputPre s 3 0 8 := ⟨by rw [rd]; simp, pf, ps, kp.symm⟩
+  have sg : InputPre s 3 1 16 := ⟨by rw [rd]; simp, sf, ss, kg.symm⟩
+  have ch : InputPre s 3 2 16 := ⟨by rw [rd]; simp, cf, cs, kc.symm⟩
   exact ⟨hp, input_slice p (by decide) (by decide), input_slice sg (by decide) (by decide),
     input_slice sg (by decide) (by decide), input_slice ch (by decide) (by decide), sf⟩
 

@@ -112,16 +112,24 @@ theorem frameWiden {m m' : Mem} {x : BitVec 32} {o n o' n' : Nat} (hf : Frame [s
     (hn : o < W) : Frame [sub x o' n'] m m' :=
   hf.sub fun _ hr => ⟨_, List.mem_singleton_self _, List.mem_singleton.mp hr ▸ sub_sub hx h₁ h₂ hn⟩
 
+/-- The 20 bytes below `esp`, where a call of a field function
+(`vg_gf25519_r32_mul`) puts its arguments and return address. -/
+abbrev callStk (s : State) : Region := ⟨(s.gpr .esp - BitVec.ofNat 32 20).setWidth 64, 20⟩
+
 /-- The code's view of the working space: `edi` points at it, it is
-writable, and it does not wrap around the 32-bit address space. -/
-structure Ctx (W : Nat) (x : BitVec 32) (s : State) : Prop where
+writable, and it does not wrap around the 32-bit address space; a working
+space of 8192 bytes (Ed25519's, whose code calls the field functions) lies
+apart from the stack a call uses, unless `calls` is false (code that reuses
+the arithmetic but makes no calls, such as P-256's). -/
+structure Ctx (W : Nat) (x : BitVec 32) (s : State) (calls : Bool := true) : Prop where
   edi : s.gpr .edi = x
   fit : x.toNat + W ≤ 2 ^ 32
   wr : scR W x ∈ s.wr
   room : 4096 ≤ W
+  stk : calls = true → 8192 ≤ W → 20 ≤ (s.gpr .esp).toNat ∧ (scR W x).Disjoint (callStk s)
 
 namespace Ctx
-variable {x : BitVec 32} {s : State} (h : Ctx W x s)
+variable {x : BitVec 32} {s : State} {c : Bool} (h : Ctx W x s c)
 include h
 
 theorem inW {d n : Nat} (hd : d + n ≤ W) (hn : 0 < n) : InRegions s.wr (addr x d) n :=
@@ -141,8 +149,9 @@ theorem inRW4 {d n : Nat} (hd : d + n ≤ 4096) (hn : 0 < n) : InRegions (s.rd +
   h.inRW (Nat.le_trans hd h.room) hn
 
 /-- The context survives a change of other registers and of memory. -/
-theorem keep {s' : State} (he : s'.gpr .edi = s.gpr .edi) (hw : s'.wr = s.wr) : Ctx W x s' :=
-  ⟨he.trans h.edi, h.fit, hw ▸ h.wr, h.room⟩
+theorem keep {s' : State} (he : s'.gpr .edi = s.gpr .edi) (hw : s'.wr = s.wr)
+    (hsp : s'.gpr .esp = s.gpr .esp) : Ctx W x s' c :=
+  ⟨he.trans h.edi, h.fit, hw ▸ h.wr, h.room, fun hc hW => by rw [callStk, hsp]; exact h.stk hc hW⟩
 
 end Ctx
 
@@ -161,8 +170,8 @@ theorem Keep.trans {s₁ s₂ s₃ : State} (h₁ : Keep s₁ s₂) (h₂ : Keep
   ⟨h₂.esi.trans h₁.esi, h₂.edi.trans h₁.edi, h₂.esp.trans h₁.esp, h₂.rd.trans h₁.rd,
     h₂.wr.trans h₁.wr⟩
 
-theorem Keep.ctx {x : BitVec 32} {s s' : State} (h : Keep s s') (hc : Ctx W x s) : Ctx W x s' :=
-  hc.keep h.edi h.wr
+theorem Keep.ctx {x : BitVec 32} {s s' : State} {c : Bool} (h : Keep s s') (hc : Ctx W x s c) : Ctx W x s' c :=
+  hc.keep h.edi h.wr h.esp
 
 /-! ## Numbers of words -/
 

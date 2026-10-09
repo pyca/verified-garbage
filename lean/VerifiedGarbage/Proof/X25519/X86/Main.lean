@@ -46,7 +46,8 @@ theorem finish_ok {s₀ s : State} (hp : Pre s₀) (hb : Base (arg s₀ 3) (kOf 
     fun _ h => absurd h (Nat.not_lt_zero _)⟩
   have w₃ : s₃.wr = s₀.wr := by rw [u₃.wr, b₂.wr]
   refine WP.block_append (WP.mono (outWords_ok hp w₃ 8 (Nat.le_refl _) s₃ o₃) fun s₄ o₄ => ?_)
-  have c₄ : Ctx 4096 (arg s₀ 3) s₄ := ⟨o₄.edi, hfit, by rw [o₄.wr, w₃]; exact hp.sc_in, by decide⟩
+  have c₄ : Ctx 4096 (arg s₀ 3) s₄ :=
+    ⟨o₄.edi, hfit, by rw [o₄.wr, w₃]; exact hp.sc_in, by decide, fun _ hW => absurd hW (by decide)⟩
   -- The saved words, unchanged by the stores to `out`.
   have sv : Spill.Saved s₄.mem (addr (arg s₀ 3)) s₀.gpr savedSlots := b₂.saved.of_readW fun p hq => by
     have := savedSlots_bound p hq

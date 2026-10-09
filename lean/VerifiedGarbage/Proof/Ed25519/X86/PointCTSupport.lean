@@ -31,8 +31,8 @@ structure PointCTCtx (x : BitVec 32) (s : State) : Prop where
   region : VG.X86.Taint.region s 1 = scR 8192 x
 
 theorem PointCTCtx.keep {x : BitVec 32} {s t : State} (h : PointCTCtx x s)
-    (he : t.gpr .edi = s.gpr .edi) (hw : t.wr = s.wr) : PointCTCtx x t :=
-  ⟨h.ctx.keep he hw, hw ▸ h.lengths, hw ▸ h.separate, hw ▸ h.fits,
+    (he : t.gpr .edi = s.gpr .edi) (hw : t.wr = s.wr) (hsp : t.gpr .esp = s.gpr .esp) : PointCTCtx x t :=
+  ⟨h.ctx.keep he hw hsp, hw ▸ h.lengths, hw ▸ h.separate, hw ▸ h.fits,
     (congrArg (fun wr => wr.getD 1 ⟨0, 0⟩) hw).trans h.region⟩
 
 theorem pointTaint_wf {x : BitVec 32} {s : State} (h : PointCTCtx x s) (o : Nat) :

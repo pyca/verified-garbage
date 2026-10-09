@@ -51,25 +51,25 @@ def dblOps : List FieldOp :=
     .mul 3 11 14]
 
 /-- One doubling. -/
-def dbl : Prog isa := .block (fieldCode dblOps)
+def dbl : Prog isa := fieldProg dblOps
 
 /-- A doubling, then `2³⁰` added to `esi`. -/
-def dblStep : List Instr := fieldCode dblOps ++ [.alu .add .esi (.imm 0x40000000)]
+def dblStep : Prog isa := .seq (fieldProg dblOps) (.block [.alu .add .esi (.imm 0x40000000)])
 
 /-- Four doublings, in a loop counted by the top two bits of `esi` (the byte counter, below
 `2³⁰`): adding `2³⁰` carries out of them the fourth time, leaving `esi` as it was. -/
-def doubleWindow : Prog isa := .loop (.block dblStep) .ae
+def doubleWindow : Prog isa := .loop dblStep .ae
 
 /-- `A` from byte 7680 into slots 0–3 and into the table's entry 0; the counter `esi` = 1. -/
 def aTableInit : List Instr := pointTableRead 7680 ++ pointTableWrite 1024 ++ [.mov .esi (.imm 1)]
 
 /-- Entry `esi` = entry `esi - 1` (in slots 0–3) + `A`; ZF is clear while another follows. -/
-def aTableBody : List Instr :=
-  pointTableQ 7680 ++ pointAdd ++ tableAddr 1024 ++ pointToTable ++
-    [.alu .add .esi (.imm 1), .alu .cmp .esi (.imm 15)]
+def aTableBody : Prog isa :=
+  .seq (.block (pointTableQ 7680)) (.seq pointAdd (.block (tableAddr 1024 ++ pointToTable ++
+    [.alu .add .esi (.imm 1), .alu .cmp .esi (.imm 15)])))
 
 /-- Entries `j < 15` of the table at byte 1024 are `[j + 1]A`. -/
-def aTable : Prog isa := .seq (.block aTableInit) (.loop (.block aTableBody) .ne)
+def aTable : Prog isa := .seq (.block aTableInit) (.loop aTableBody .ne)
 
 /-- `-[i + 1]B`, affine, with `Z = 1`. -/
 def negBase (i : Nat) : Spec.Ed25519.Point :=
@@ -102,7 +102,7 @@ def entryAddr (o : Nat) : List Instr :=
 /-- Add entry `eax - 1` of the table at byte `o` to slots 0–3, unless `eax` is zero. -/
 def addDigit (o : Nat) : Prog isa :=
   .seq (.block [.alu .test .eax (.reg .eax)])
-    (.ite .ne (.block (entryAddr o ++ pointFromTableQ ++ pointAdd)) (.block []))
+    (.ite .ne (.seq (.block (entryAddr o ++ pointFromTableQ)) pointAdd) (.block []))
 
 /-- `k`'s nibble `esi` (`k` is the third argument, at `[esp + 12]`), added from the table at
 byte 1024. -/

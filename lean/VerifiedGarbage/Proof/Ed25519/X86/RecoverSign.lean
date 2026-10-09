@@ -10,12 +10,12 @@ def signedX (x : Spec.X25519.Fe) (b : Bool) : Spec.X25519.Fe :=
   if (x.val % 2 == 1) == b then x else 0 - x
 
 theorem recoverSuccess_ok {s : State} {x : BitVec 32} (hc : Ctx x s) :
-    WP isa (.block recoverSuccess) s fun t => FieldKeep x s t ∧ t.gpr .eax = 1 ∧
+    WP isa recoverSuccess s fun t => CallKeep x s t ∧ t.gpr .eax = 1 ∧
       point (env t.mem x) 0 1 2 3 = recoveredPoint (env s.mem x 0) (env s.mem x 1) := by
-  rw [recoverSuccess, WP.block_append_iff]
-  refine WP.mono (fieldCode_ok recoverSuccessOps hc) fun a ⟨ka, ea⟩ => ?_
+  unfold recoverSuccess
+  refine WP.seq (WP.mono (fieldProg_ok recoverSuccessOps hc) fun a ⟨ka, ea⟩ => ?_)
   refine WP.mono (returnFlag_ok a x true) fun t ⟨kt, mt, rt⟩ => ?_
-  exact ⟨ka.trans kt, rt, by rw [mt, ea]; rfl⟩
+  exact ⟨ka.trans (kt.call), rt, by rw [mt, ea]; rfl⟩
 
 private theorem adjustBranch_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (b : Bool)
     (hz : s.zf = some (((env s.mem x 0).val % 2 == 1) == b)) :
@@ -34,7 +34,7 @@ private theorem adjustBranch_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (b : 
 
 theorem recoverAdjustSign_ok {s : State} {x : BitVec 32} (hc : Ctx x s)
     (b : Bool) (hb : s.gpr .esi = signWord b) :
-    WP isa recoverAdjustSign s fun t => FieldKeep x s t ∧ t.gpr .eax = 1 ∧
+    WP isa recoverAdjustSign s fun t => CallKeep x s t ∧ t.gpr .eax = 1 ∧
       point (env t.mem x) 0 1 2 3 = recoveredPoint (signedX (env s.mem x 0) b) (env s.mem x 1) := by
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -46,7 +46,7 @@ theorem recoverAdjustSign_ok {s : State} {x : BitVec 32} (hc : Ctx x s)
     rw [zc, va, ec]
   refine WP.seq (WP.mono (adjustBranch_ok ((ka.trans kc).ctx hc) b zc') fun d ⟨kd, dx, dy⟩ => ?_)
   refine WP.mono (recoverSuccess_ok (((ka.trans kc).trans kd).ctx hc)) fun t ⟨kt, rt, pt⟩ => ?_
-  exact ⟨((ka.trans kc).trans kd).trans kt, rt, by rw [pt, dx, dy, ec]⟩
+  exact ⟨(((ka.trans kc).trans kd).call).trans kt, rt, by rw [pt, dx, dy, ec]⟩
 
 end VG.Proof.Ed25519.X86
 end
@@ -77,7 +77,7 @@ theorem signTest_ok {s : State} (x : BitVec 32) (b : Bool) (hb : s.gpr .esi = si
 
 theorem recoverSign_ok {s : State} {x : BitVec 32} (hc : Ctx x s)
     (b : Bool) (hb : s.gpr .esi = signWord b) :
-    WP isa recoverSign s fun t => FieldKeep x s t ∧
+    WP isa recoverSign s fun t => CallKeep x s t ∧
       DecodeResult x (signResult (env s.mem x 0) (env s.mem x 1) b) t := by
   refine WP.seq (WP.mono (fieldZero_ok hc 0) fun a ⟨ka, ea, za⟩ => ?_)
   apply WP.ite (decide (env s.mem x 0 = 0)) za
@@ -88,18 +88,18 @@ theorem recoverSign_ok {s : State} {x : BitVec 32} (hc : Ctx x s)
     apply WP.ite b zc
     · intro ht
       refine WP.mono (recoverInvalid_ok c x) fun t ⟨kt, tr⟩ => ?_
-      refine ⟨(ka.trans kc).trans kt, ?_⟩
+      refine ⟨((ka.trans kc).trans kt).call, ?_⟩
       simpa only [signResult, hz, ht, decide_true, Bool.and_self, ite_true] using tr
     · intro hf
       refine WP.mono (recoverAdjustSign_ok ((ka.trans kc).ctx hc) b
         (kc.keep.esi.trans (ka.keep.esi.trans hb))) fun t ⟨kt, rt, pt⟩ => ?_
-      refine ⟨(ka.trans kc).trans kt, ?_⟩
+      refine ⟨((ka.trans kc).call).trans kt, ?_⟩
       simp only [signResult, hf, Bool.and_false, Bool.false_eq_true, ite_false, DecodeResult]
       exact ⟨rt, by rw [ec, hf] at pt; exact pt⟩
   · intro hnonzero
     have hn := of_decide_eq_false hnonzero
     refine WP.mono (recoverAdjustSign_ok (ka.ctx hc) b (ka.keep.esi.trans hb)) fun t ⟨kt, rt, pt⟩ => ?_
-    refine ⟨ka.trans kt, ?_⟩
+    refine ⟨(ka.call).trans kt, ?_⟩
     simp only [signResult, hn, decide_false, Bool.false_and, Bool.false_eq_true, ite_false, DecodeResult]
     exact ⟨rt, by rw [ea] at pt; exact pt⟩
 

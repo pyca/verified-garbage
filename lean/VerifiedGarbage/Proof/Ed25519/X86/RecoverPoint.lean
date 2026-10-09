@@ -48,7 +48,7 @@ theorem recoverCandidate_ok {s : State} {base : BitVec 32} (hs : Ctx base s) :
       env t.mem base 11 = rootV (env s.mem base 1) * rootX (env s.mem base 1) * rootX (env s.mem base 1) ∧
       env t.mem base 12 = 0 - rootU (env s.mem base 1) := by
   rw [recoverCandidate]
-  refine WP.seq (WP.mono (fieldCode_ok recoverInitOps hs) fun a ⟨ka, va⟩ => ?_)
+  refine WP.seq (WP.mono (fieldProg_ok recoverInitOps hs) fun a ⟨ka, va⟩ => ?_)
   refine WP.seq (WP.mono (rootPower_spec base a (ka.ctx hs)) fun b ⟨kb, eb⟩ => ?_)
   have kbr := kb
   have vb : env b.mem base 15 = VG.Proof.Ed25519.rootPower (env a.mem base 2) := by rw [eb, rootEnv_eval]
@@ -56,7 +56,7 @@ theorem recoverCandidate_ok {s : State} {base : BitVec 32} (hs : Ctx base s) :
     intro i hi
     rw [eb]
     exact rootEnv_low _ i hi
-  refine WP.mono (fieldCode_ok recoverFinishOps (kbr.ctx (ka.ctx hs))) fun t ⟨kt, vt⟩ => ?_
+  refine WP.mono (fieldProg_ok recoverFinishOps (kbr.ctx (ka.ctx hs))) fun t ⟨kt, vt⟩ => ?_
   have ay := (recoverInit_eval (env s.mem base)).1
   have au := (recoverInit_eval (env s.mem base)).2.1
   have av := (recoverInit_eval (env s.mem base)).2.2.1
@@ -65,8 +65,8 @@ theorem recoverCandidate_ok {s : State} {base : BitVec 32} (hs : Ctx base s) :
   have bx : env b.mem base 6 * env b.mem base 9 * env b.mem base 15 = rootX (env s.mem base 1) := by
     rw [be 6 (by decide), be 9 (by decide), vb, rootPower_eq, va, au, av3, az]
     rfl
-  have kar : IKeep base s a := IKeep.of_field ka
-  have ktr : IKeep base b t := IKeep.of_field kt
+  have kar : IKeep base s a := IKeep.of_call ka
+  have ktr : IKeep base b t := IKeep.of_call kt
   refine ⟨kar.trans (kbr.trans ktr), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [vt, (recoverFinish_eval _).1, bx]
   · rw [vt, (recoverFinish_eval _).2.1, be 1 (by decide), va, ay]
@@ -125,7 +125,7 @@ theorem recoverResult_spec (y : Spec.X25519.Fe) (b : Bool) :
 private theorem sign_known {s : State} {base : BitVec 32} (hs : Ctx base s)
     (b : Bool) (hb : s.gpr .esi = signWord b) (x y : Spec.X25519.Fe)
     (hx : env s.mem base 0 = x) (hy : env s.mem base 1 = y) :
-    WP isa recoverSign s fun t => FieldKeep base s t ∧ DecodeResult base (signResult x y b) t := by
+    WP isa recoverSign s fun t => CallKeep base s t ∧ DecodeResult base (signResult x y b) t := by
   refine WP.mono (recoverSign_ok hs b hb) fun t ⟨kt, tr⟩ => ?_
   exact ⟨kt, by rw [hx, hy] at tr; exact tr⟩
 
@@ -135,7 +135,7 @@ theorem recoverChecks_ok {s : State} {base : BitVec 32} (hs : Ctx base s)
     (hu : env s.mem base 6 = rootU y)
     (hvx : env s.mem base 11 = rootV y * rootX y * rootX y)
     (hnu : env s.mem base 12 = 0 - rootU y) :
-    WP isa recoverChecks s fun t => FieldKeep base s t ∧ DecodeResult base (recoverResult y b) t := by
+    WP isa recoverChecks s fun t => CallKeep base s t ∧ DecodeResult base (recoverResult y b) t := by
   refine WP.seq (WP.mono (fieldEqual_ok hs 11 6) fun c ⟨kc, ce, cz⟩ => ?_)
   have cx : env c.mem base 0 = rootX y := (ce 0 (by decide)).trans hx
   have cy : env c.mem base 1 = y := (ce 1 (by decide)).trans hy
@@ -143,7 +143,7 @@ theorem recoverChecks_ok {s : State} {base : BitVec 32} (hs : Ctx base s)
   · intro ht
     have ht' := of_decide_eq_true ht
     refine WP.mono (sign_known (kc.ctx hs) b (kc.keep.esi.trans hb) _ _ cx cy) fun t ⟨kt, tr⟩ => ?_
-    exact ⟨kc.trans kt, by simpa only [recoverResult, ht', ite_true] using tr⟩
+    exact ⟨kc.call.trans kt, by simpa only [recoverResult, ht', ite_true] using tr⟩
   · intro hf
     have hf' := of_decide_eq_false hf
     refine WP.seq (WP.mono (fieldEqual_ok (kc.ctx hs) 11 12) fun d ⟨kd, de, dz⟩ => ?_)
@@ -154,19 +154,19 @@ theorem recoverChecks_ok {s : State} {base : BitVec 32} (hs : Ctx base s)
       (by rw [ce 11 (by decide), ce 12 (by decide), hvx, hnu] at dz; exact dz)
     · intro ht
       have ht' := of_decide_eq_true ht
-      refine WP.seq (WP.mono (fieldCode_ok [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18] (kcd.ctx hs))
+      refine WP.seq (WP.mono (fieldProg_ok [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18] (kcd.ctx hs))
         fun e ⟨ke, ve⟩ => ?_)
       have ex : env e.mem base 0 = rootX y * Spec.Ed25519.sqrtM1 := by
         rw [ve]; change env d.mem base 0 * Spec.Ed25519.sqrtM1 = _; rw [dx]
       have ey : env e.mem base 1 = y := by rw [ve]; exact dy
-      have kcde := kcd.trans ke
+      have kcde := kcd.call.trans ke
       refine WP.mono (sign_known (kcde.ctx hs) b (kcde.keep.esi.trans hb) _ _ ex ey)
         fun t ⟨kt, tr⟩ => ?_
       exact ⟨kcde.trans kt, by rw [recoverResult, ite_eq_right hf', ite_eq_left ht']; exact tr⟩
     · intro hf2
       have hf2' := of_decide_eq_false hf2
       refine WP.mono (recoverInvalid_ok d base) fun t ⟨kt, tr⟩ => ?_
-      exact ⟨kcd.trans kt, by simpa only [recoverResult, hf', hf2', ite_false] using tr⟩
+      exact ⟨(kcd.trans kt).call, by simpa only [recoverResult, hf', hf2', ite_false] using tr⟩
 
 theorem recoverPoint_ok {s : State} {base : BitVec 32} (hs : Ctx base s)
     (b : Bool) (hb : wd s.mem base 32 = signWord b) :
@@ -185,6 +185,6 @@ theorem recoverPoint_ok {s : State} {base : BitVec 32} (hs : Ctx base s)
   refine WP.mono (recoverChecks_ok (kc.ctx ca) b cb (env s.mem base 1)
     (by rw [hc.mem]; exact ax) (by rw [hc.mem]; exact ay) (by rw [hc.mem]; exact au)
     (by rw [hc.mem]; exact avx) (by rw [hc.mem]; exact anu)) fun t ⟨kt, tr⟩ => ?_
-  exact ⟨(ka.trans kc).trans (IKeep.of_field kt), tr⟩
+  exact ⟨(ka.trans kc).trans (IKeep.of_call kt), tr⟩
 
 end VG.Proof.Ed25519.X86

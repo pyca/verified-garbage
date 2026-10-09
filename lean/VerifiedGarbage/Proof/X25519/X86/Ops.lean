@@ -135,7 +135,7 @@ theorem cswap_step {x : BitVec 32} {s₀ s : State} (hc : Ctx W x s) {X Y sw n :
     ((updKeep u₅).trans ((updKeep u₆).trans (updKeep u₇))))))
   have c₇ := k₇.ctx hc
   refine Wp.wp_stm c₇.edi (c₇.inW4 (by omega_using [hX, hn]) (by decide)) fun s₈ u₈ => ?_
-  have c₈ : Ctx W x s₈ := c₇.keep (by rw [u₈.gpr]) u₈.wr
+  have c₈ : Ctx W x s₈ := c₇.keep (by rw [u₈.gpr]) u₈.wr (by rw [u₈.gpr])
   refine Wp.wp_stm c₈.edi (c₈.inW4 (by omega_using [hY, hn]) (by decide)) fun s₉ u₉ => WP.block_nil ?_
   -- The values.
   have m₇ : s₇.mem = s.mem := by

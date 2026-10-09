@@ -167,8 +167,11 @@ theorem inputBytes_same {s₀ s : State} {scidx i n : Nat} (hp : InputPre s₀ s
   have hk' := List.mem_range.mp hk
   rw [← addr_eq (by have := hp.fit; omega_using [this, hk'])]
   apply hs.frame
-  intro r hr; rw [List.mem_singleton.mp hr]
-  exact hp.sep _ (inputByte_contains hp hk')
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact hp.sep _ (inputByte_contains hp hk')
+  · exact hp.stk _ (inputByte_contains hp hk')
 
 /-- `inputBits`, which writes only the bits' bytes of the workspace. -/
 theorem inputBits_frame {s₀ s : State} {scidx argc i n : Nat}
@@ -178,7 +181,7 @@ theorem inputBits_frame {s₀ s : State} {scidx argc i n : Nat}
       Frame [sub (arg s₀ scidx) 7168 (8 * (4 * n))] s.mem t.mem ∧ (∀ k < 32 * n, t.mem (addr (arg s₀ scidx) (7168 + k)) = BitVec.ofNat 8
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ i).setWidth 64) (4 * n)) / 2 ^ k % 2)) := by
   refine WP.block_append (WP.mono (loadArg_ok hp hs hia) fun u ⟨hu, eu, mu⟩ => ?_)
-  have cu := hu.ctx hp.fit hp.wr
+  have cu := hu.ctx hp.fit hp.wr hp.stk
   have hr : ∀ k < 4 * n, InRegions (u.rd ++ u.wr) (addr (arg s₀ i) k) 1 := by
     intro k hk; refine ⟨_, ?_, inputByte_contains hi hk⟩
     rw [hu.rd, hu.wr]; exact hi.rd

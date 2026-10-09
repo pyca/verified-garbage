@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.X25519.Invert
 /-! Fixed-count squaring and compositional field exponentiation. -/
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
-open VG.Impl.X25519.X86 (mul)
+open VG.Impl.X25519.X86.Field32 (mulCall)
 open VG.Proof.X25519 (sqn)
 
 def opMul (o a b : Slot) (e : Env) : Env := Function.update e o (e a * e b)
@@ -16,20 +16,23 @@ structure IKeep (x : BitVec 32) (s t : State) : Prop where
   esp : t.gpr .esp = s.gpr .esp
   rd : t.rd = s.rd
   wr : t.wr = s.wr
-  frame : Frame [sub x 64 864] s.mem t.mem
+  frame : Frame [sub x 64 960, VG.Proof.X25519.X86.callStk s] s.mem t.mem
 
 theorem IKeep.refl (x : BitVec 32) (s : State) : IKeep x s s :=
   ⟨rfl, rfl, rfl, rfl, Frame.refl _ _⟩
 
 theorem IKeep.trans {x : BitVec 32} {s t u : State} (h : IKeep x s t) (k : IKeep x t u) :
     IKeep x s u := ⟨k.edi.trans h.edi, k.esp.trans h.esp, k.rd.trans h.rd,
-      k.wr.trans h.wr, h.frame.trans k.frame⟩
+      k.wr.trans h.wr, h.frame.trans (by rw [VG.Proof.X25519.X86.callStk, ← h.esp]; exact k.frame)⟩
 
 theorem IKeep.ctx {x : BitVec 32} {s t : State} (h : IKeep x s t) (hc : Ctx x s) : Ctx x t :=
-  hc.keep h.edi h.wr
+  hc.keep h.edi h.wr h.esp
+
+theorem IKeep.of_call {x : BitVec 32} {s t : State} (h : CallKeep x s t) : IKeep x s t :=
+  ⟨h.keep.edi, h.keep.esp, h.keep.rd, h.keep.wr, h.frame⟩
 
 theorem IKeep.of_field {x : BitVec 32} {s t : State} (h : FieldKeep x s t) : IKeep x s t :=
-  ⟨h.keep.edi, h.keep.esp, h.keep.rd, h.keep.wr, h.frame⟩
+  IKeep.of_call h.call
 
 theorem IKeep.of_counter {x : BitVec 32} {s t : State} {v : BitVec 32}
     (h : Wp.Upd s t .esi v) : IKeep x s t :=
@@ -54,8 +57,8 @@ theorem ISpec.append {x : BitVec 32} {c d : List Instr} {f g : Env → Env}
 abbrev ISlot (o : Slot) : Prop := 14 ≤ o.val ∧ o.val < 18
 
 theorem mulI (x : BitVec 32) (o a b : Slot) (_ho : ISlot o) :
-    ISpec x (.block (mul (offset o) (offset a) (offset b))) (opMul o a b) := fun _ hc =>
-  WP.mono (fieldOp_ok hc (.mul o a b)) fun _ ⟨hk, he⟩ => ⟨IKeep.of_field hk, he⟩
+    ISpec x (mulCall (offset o) (offset a) (offset b)) (opMul o a b) := fun _ hc =>
+  WP.mono (mulProg_ok hc o a b) fun _ ⟨hk, he⟩ => ⟨IKeep.of_call hk, he⟩
 
 theorem opMul_update (o : Slot) (e : Env) (v : Spec.X25519.Fe) :
     opMul o o o (Function.update e o v) = Function.update e o (v * v) := by
@@ -65,18 +68,17 @@ theorem sqLoop_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx x s₀) (o : Slot)
     (v : Spec.X25519.Fe) (n : Nat) (hn : n < 2 ^ 32) :
     ∀ m s, 1 ≤ m → m < n → IKeep x s₀ s → s.gpr .esi = BitVec.ofNat 32 m →
       env s.mem x = Function.update (env s₀.mem x) o (sqn v (n - m)) →
-      WP isa (.loop (.block (mul (offset o) (offset o) (offset o) ++
-        ([.alu .sub .esi (.imm 1)] : List Instr))) .ne) s fun t =>
+      WP isa (.loop (.seq (mulCall (offset o) (offset o) (offset o))
+        (.block ([.alu .sub .esi (.imm 1)] : List Instr))) .ne) s fun t =>
         IKeep x s₀ t ∧ env t.mem x = Function.update (env s₀.mem x) o (sqn v n) := by
   intro m s h1 h2 hk hb he
   refine WP.loop (M := isa) (Inv := fun m (s : State) => 1 ≤ m ∧ m < n ∧ IKeep x s₀ s ∧
     s.gpr .esi = BitVec.ofNat 32 m ∧
     env s.mem x = Function.update (env s₀.mem x) o (sqn v (n - m))) ?_ m s ⟨h1, h2, hk, hb, he⟩
   intro m s ⟨h1, h2, hk, hb, he⟩
-  rw [WP.block_append_iff]
-  refine WP.mono (fieldOp_ok (hk.ctx hc₀) (.mul o o o)) fun t ⟨ht, et⟩ => ?_
+  refine WP.seq (WP.mono (mulProg_ok (hk.ctx hc₀) o o o) fun t ⟨ht, et⟩ => ?_)
   refine Wp.wp_subi fun u hu _ hz => WP.block_nil ?_
-  have ku := hk.trans ((IKeep.of_field ht).trans (IKeep.of_counter hu))
+  have ku := hk.trans ((IKeep.of_call ht).trans (IKeep.of_counter hu))
   have bu : u.gpr .esi = BitVec.ofNat 32 (m - 1) := by
     rw [hu.gpr, ht.keep.esi, hb]; exact Wp.ofNat_pred h1
   have eu : env u.mem x = Function.update (env s₀.mem x) o (sqn v (n - (m - 1))) := by
@@ -98,12 +100,10 @@ theorem sqnI (x : BitVec 32) (o a : Slot) (_ho : ISlot o) (n : Nat) (hn : 2 ≤ 
     (hn' : n < 2 ^ 32) :
     ISpec x (Impl.Ed25519.X86.sqn (offset o) (offset a) n) (opSqn o a n) := by
   intro s hc
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (fieldOp_ok hc (.mul o a a)) fun t ⟨ht, et⟩ => ?_
+  refine WP.seq (WP.seq (WP.mono (mulProg_ok hc o a a) fun t ⟨ht, et⟩ => ?_))
   refine Wp.wp_movi fun u hu => WP.block_nil ?_
   refine sqLoop_ok hc o (env s.mem x a) n hn' (n - 1) u (by omega) (by omega)
-    ((IKeep.of_field ht).trans (IKeep.of_counter hu)) hu.gpr ?_
+    ((IKeep.of_call ht).trans (IKeep.of_counter hu)) hu.gpr ?_
   rw [hu.mem, et, show n - (n - 1) = 1 by omega]
   rfl
 

@@ -18,6 +18,6 @@ export VG.Proof.X25519.X86 (v wd wv num fe sub scR addr_zero sub_contains sub_di
   num_congr num_add num_mul fe_lt fe_frame fe_frame1 acc tval treads colv toNat_zero32 updKeep cols_ok
   wp_mul prod_identity num_16 colv_le_len wv_lt wv_mul_le zeroAcc_ok Below F isSlot slot_below slot_ne
   frame_wide mask cswap_ok opOut opIns opValid opVal run op_ok shr31_toNat low31_toNat setAcc_ok
-  selects_ok fold_top colv_addM freeze_ok)
+  selects_ok fold_top colv_addM freeze_ok callStk)
 
 end VG.Proof.Ed25519.X86

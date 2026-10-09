@@ -11,9 +11,23 @@ section
 section
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
+open VG.Proof.X25519.X86.Field32 (RF)
 
-def SignCTPre (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) (s : State) : Prop :=
-  Ctx base s ∧ s.gpr .esi = signWord b ∧ env s.mem base 0 = x
+/-- The working space at `base`, and `esp` at `sp`: in both runs, what the calls of
+`vg_gf25519_r32_mul` need (`RF`). -/
+def CtxAt (base sp : BitVec 32) (s : State) : Prop := Ctx base s ∧ s.gpr .esp = sp
+
+theorem CtxAt.rf {base sp : BitVec 32} {s t : State} (hs : CtxAt base sp s) (ht : CtxAt base sp t) :
+    RF base s t := ⟨hs.1, ht.1, hs.2.trans ht.2.symm⟩
+
+theorem CtxAt.of {base sp : BitVec 32} {s t : State} (h : CtxAt base sp s) (hc : Ctx base t)
+    (he : t.gpr .esp = s.gpr .esp) : CtxAt base sp t := ⟨hc, he.trans h.2⟩
+
+theorem CtxAt.keep {base sp : BitVec 32} {s t : State} (h : CtxAt base sp s) (k : Keep s t) :
+    CtxAt base sp t := h.of (k.ctx h.1) k.esp
+
+def SignCTPre (base sp : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) (s : State) : Prop :=
+  CtxAt base sp s ∧ s.gpr .esi = signWord b ∧ env s.mem base 0 = x
 
 theorem parityBlock_ok {s : State} {base : BitVec 32} (hs : Ctx base s)
     (b : Bool) (hb : s.gpr .esi = signWord b) :
@@ -27,40 +41,36 @@ theorem parityBlock_ok {s : State} {base : BitVec 32} (hs : Ctx base s)
   rw [tz, va]
 
 theorem adjustTail_ct (base : BitVec 32) :
-    RelCT isa (fun s t => Ctx base s ∧ Ctx base t ∧ s.zf = t.zf)
-      (.seq (.ite .e (.block []) (.block (fieldCode [.const 5 0, .sub 0 5 0])))
-        (.block recoverSuccess)) (fun _ _ => True) := by
-  refine VG.RelCT.seq (M := isa) (R := fun s t => s.gpr .edi = base ∧ t.gpr .edi = base)
-    (VG.RelCT.ite (fun _ _ h => h.2.2) ?_ ?_) (successBlock_ct base)
+    RelCT isa (fun s t => RF base s t ∧ s.zf = t.zf)
+      (.seq (.ite .e (.block []) (.block (fieldCode [.const 5 0, .sub 0 5 0]))) recoverSuccess)
+      (fun _ _ => True) := by
+  refine VG.RelCT.seq (M := isa) (R := RF base)
+    (VG.RelCT.ite (fun _ _ h => h.2) ?_ ?_) (successBlock_ct base)
   · intro s t ts tt s' t' h es et
     rw [Exec.block_iff] at es et
     change some (s, []) = some (s', ts) at es
     change some (t, []) = some (t', tt) at et
     cases es; cases et
-    exact ⟨rfl, h.1.1.edi, h.1.2.1.edi⟩
-  · have ct := (negateBlock_ct base).mono
-      (P' := fun (s t : State) => (Ctx base s ∧ Ctx base t ∧ s.zf = t.zf) ∧ isa.eval .e s = some false)
-      (fun _ _ h => ⟨h.1.1.edi, h.1.2.1.edi⟩) (fun _ _ h => h)
-    have hwp := ct.wp (fun _ _ h =>
-      ⟨WP.mono (fieldCode_ok [.const 5 0, .sub 0 5 0] h.1.1) (fun _ k => (k.1.ctx h.1.1).edi),
-       WP.mono (fieldCode_ok [.const 5 0, .sub 0 5 0] h.1.2.1) (fun _ k => (k.1.ctx h.1.2.1).edi)⟩)
-    exact hwp.mono (fun _ _ h => h) (fun _ _ h => h.2)
+    exact ⟨rfl, h.1.1⟩
+  · exact (block_rf base (by taint_decide) fun s h =>
+      WP.mono (fieldCode_ok [.const 5 0, .sub 0 5 0] h) fun _ k => k.1.keep).mono
+      (fun _ _ h => h.1.1) (fun _ _ h => h)
 
-theorem recoverAdjustSign_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
-    RelCT isa (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
+theorem recoverAdjustSign_ct (base sp : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
+    RelCT isa (fun s t => SignCTPre base sp b x s ∧ SignCTPre base sp b x t)
       recoverAdjustSign (fun _ _ => True) := by
-  have hw (s : State) (h : SignCTPre base b x s) :
+  have hw (s : State) (h : SignCTPre base sp b x s) :
       WP isa (.block (Impl.X25519.X86.freeze 64 ++ recoverParity)) s fun t =>
-        Ctx base t ∧ t.zf = some ((x.val % 2 == 1) == b) := by
-    refine WP.mono (parityBlock_ok h.1 b h.2.1) fun t ⟨kt, tz⟩ => ?_
-    exact ⟨kt.ctx h.1, by rw [tz, h.2.2]⟩
+        CtxAt base sp t ∧ t.zf = some ((x.val % 2 == 1) == b) := by
+    refine WP.mono (parityBlock_ok h.1.1 b h.2.1) fun t ⟨kt, tz⟩ => ?_
+    exact ⟨h.1.keep kt.keep, by rw [tz, h.2.2]⟩
   have ht := (parityBlock_ct base).mono
-    (fun _ _ (h : SignCTPre base b x _ ∧ SignCTPre base b x _) => ⟨h.1.1.edi, h.2.1.edi⟩)
+    (fun _ _ (h : SignCTPre base sp b x _ ∧ SignCTPre base sp b x _) => ⟨h.1.1.1.edi, h.2.1.1.edi⟩)
     (fun _ _ h => h)
   have hp := ht.wp (fun s t h => ⟨hw s h.1, hw t h.2⟩)
   rw [recoverAdjustSign]
   exact VG.RelCT.seq (hp.mono (fun _ _ h => h) (fun _ _ h =>
-    ⟨h.2.1.1, h.2.2.1, h.2.1.2.trans h.2.2.2.symm⟩)) (adjustTail_ct base)
+    ⟨h.2.1.1.rf h.2.2.1, h.2.1.2.trans h.2.2.2.symm⟩)) (adjustTail_ct base)
 
 end VG.Proof.Ed25519.X86
 end
@@ -68,45 +78,45 @@ end
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
 
-theorem testThenSign_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
-    RelCT isa (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
+theorem testThenSign_ct (base sp : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
+    RelCT isa (fun s t => SignCTPre base sp b x s ∧ SignCTPre base sp b x t)
       (.seq (.block [.alu .test .esi (.reg .esi)]) (.ite .ne recoverInvalid recoverAdjustSign))
       (fun _ _ => True) := by
-  have ht : RelCT isa (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
+  have ht : RelCT isa (fun s t => SignCTPre base sp b x s ∧ SignCTPre base sp b x t)
       (.block [.alu .test .esi (.reg .esi)]) (fun _ _ => True) := by
     apply VG.RelCT.taint (A := taint) (regsTaint []) _ (by taint_decide)
     exact fun _ _ _ => regsTaint_agree (by simp)
-  have hw (s : State) (h : SignCTPre base b x s) :
+  have hw (s : State) (h : SignCTPre base sp b x s) :
       WP isa (.block [.alu .test .esi (.reg .esi)]) s fun t =>
-        SignCTPre base b x t ∧ isa.eval .ne t = some b := by
+        SignCTPre base sp b x t ∧ isa.eval .ne t = some b := by
     refine WP.mono (signTest_ok base b h.2.1) fun t ⟨kt, mt, zt⟩ => ?_
-    exact ⟨⟨kt.ctx h.1, kt.keep.esi.trans h.2.1, by rw [mt]; exact h.2.2⟩, zt⟩
+    exact ⟨⟨h.1.keep kt.keep, kt.keep.esi.trans h.2.1, by rw [mt]; exact h.2.2⟩, zt⟩
   have hp := ht.wp (fun s t h => ⟨hw s h.1, hw t h.2⟩)
   refine VG.RelCT.seq hp (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
   · exact fun _ _ h => h.2.1.2.trans h.2.2.2.symm
   · exact recoverInvalid_ct.mono (fun _ _ _ => trivial) (fun _ _ h => h)
-  · exact (recoverAdjustSign_ct base b x).mono
+  · exact (recoverAdjustSign_ct base sp b x).mono
       (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) (fun _ _ h => h)
 
-theorem recoverSign_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
-    RelCT isa (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
+theorem recoverSign_ct (base sp : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
+    RelCT isa (fun s t => SignCTPre base sp b x s ∧ SignCTPre base sp b x t)
       recoverSign (fun _ _ => True) := by
   have ht := (zeroBlock_ct base).mono
-    (fun _ _ (h : SignCTPre base b x _ ∧ SignCTPre base b x _) => ⟨h.1.1.edi, h.2.1.edi⟩)
+    (fun _ _ (h : SignCTPre base sp b x _ ∧ SignCTPre base sp b x _) => ⟨h.1.1.1.edi, h.2.1.1.edi⟩)
     (fun _ _ h => h)
-  have hw (s : State) (h : SignCTPre base b x s) :
+  have hw (s : State) (h : SignCTPre base sp b x s) :
       WP isa (.block (fieldZero 0)) s fun t =>
-        SignCTPre base b x t ∧ t.zf = some (decide (x = 0)) := by
-    refine WP.mono (fieldZero_ok h.1 0) fun t ⟨kt, et, zt⟩ => ?_
-    exact ⟨⟨kt.ctx h.1, kt.keep.esi.trans h.2.1, by rw [et]; exact h.2.2⟩,
+        SignCTPre base sp b x t ∧ t.zf = some (decide (x = 0)) := by
+    refine WP.mono (fieldZero_ok h.1.1 0) fun t ⟨kt, et, zt⟩ => ?_
+    exact ⟨⟨h.1.keep kt.keep, kt.keep.esi.trans h.2.1, by rw [et]; exact h.2.2⟩,
       by rw [zt, h.2.2]⟩
   have hp := ht.wp (fun s t h => ⟨hw s h.1, hw t h.2⟩)
   rw [recoverSign]
   refine VG.RelCT.seq hp (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
   · exact fun _ _ h => h.2.1.2.trans h.2.2.2.symm
-  · exact (testThenSign_ct base b x).mono
+  · exact (testThenSign_ct base sp b x).mono
       (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) (fun _ _ h => h)
-  · exact (recoverAdjustSign_ct base b x).mono
+  · exact (recoverAdjustSign_ct base sp b x).mono
       (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) (fun _ _ h => h)
 
 end VG.Proof.Ed25519.X86
@@ -118,31 +128,31 @@ namespace VG.Proof.Ed25519.X86
 
 open VG VG.X86 VG.Impl.Ed25519.X86
 
-def RootCTState (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (s : State) : Prop :=
-  SignCTPre base b (rootX y) s ∧
+def RootCTState (base sp : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (s : State) : Prop :=
+  SignCTPre base sp b (rootX y) s ∧
     env s.mem base 11 = rootV y * rootX y * rootX y ∧
     env s.mem base 6 = rootU y ∧ env s.mem base 12 = 0 - rootU y
 
 def rootCheckValue (y : Spec.X25519.Fe) (minus : Bool) : Bool :=
   decide (rootV y * rootX y * rootX y = if minus then 0 - rootU y else rootU y)
 
-theorem rootCheck_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (minus : Bool) :
-    RelCT isa (fun s t => RootCTState base b y s ∧ RootCTState base b y t)
+theorem rootCheck_ct (base sp : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (minus : Bool) :
+    RelCT isa (fun s t => RootCTState base sp b y s ∧ RootCTState base sp b y t)
       (.block (fieldEqual 11 (if minus then 12 else 6)))
-      (fun s t => (RootCTState base b y s ∧ s.zf = some (rootCheckValue y minus)) ∧
-        (RootCTState base b y t ∧ t.zf = some (rootCheckValue y minus))) := by
-  have ht : RelCT isa (fun s t => RootCTState base b y s ∧ RootCTState base b y t)
+      (fun s t => (RootCTState base sp b y s ∧ s.zf = some (rootCheckValue y minus)) ∧
+        (RootCTState base sp b y t ∧ t.zf = some (rootCheckValue y minus))) := by
+  have ht : RelCT isa (fun s t => RootCTState base sp b y s ∧ RootCTState base sp b y t)
       (.block (fieldEqual 11 (if minus then 12 else 6))) (fun _ _ => True) := by
     cases minus
     · apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
-      exact fun _ _ h => edi_agree h.1.1.1.edi h.2.1.1.edi
+      exact fun _ _ h => edi_agree h.1.1.1.1.edi h.2.1.1.1.edi
     · apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
-      exact fun _ _ h => edi_agree h.1.1.1.edi h.2.1.1.edi
-  have hw (s : State) (h : RootCTState base b y s) :
+      exact fun _ _ h => edi_agree h.1.1.1.1.edi h.2.1.1.1.edi
+  have hw (s : State) (h : RootCTState base sp b y s) :
       WP isa (.block (fieldEqual 11 (if minus then 12 else 6))) s fun t =>
-        RootCTState base b y t ∧ t.zf = some (rootCheckValue y minus) := by
-    refine WP.mono (fieldEqual_ok h.1.1 11 (if minus then 12 else 6)) fun t ⟨kt, te, tz⟩ => ?_
-    refine ⟨⟨⟨kt.ctx h.1.1, kt.keep.esi.trans h.1.2.1,
+        RootCTState base sp b y t ∧ t.zf = some (rootCheckValue y minus) := by
+    refine WP.mono (fieldEqual_ok h.1.1.1 11 (if minus then 12 else 6)) fun t ⟨kt, te, tz⟩ => ?_
+    refine ⟨⟨⟨h.1.1.keep kt.keep, kt.keep.esi.trans h.1.2.1,
       (te 0 (by decide)).trans h.1.2.2⟩, (te 11 (by decide)).trans h.2.1,
       (te 6 (by decide)).trans h.2.2.1, (te 12 (by decide)).trans h.2.2.2⟩, ?_⟩
     rw [tz, rootCheckValue, h.2.1]
@@ -150,48 +160,45 @@ theorem rootCheck_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (minus :
   exact (VG.RelCT.wp ht (fun s t h => ⟨hw s h.1, hw t h.2⟩)).mono
     (fun _ _ h => h) (fun _ _ h => h.2)
 
-theorem rootAdjustSign_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
-    RelCT isa (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
-      (.seq (.block (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18])) recoverSign)
+theorem rootAdjustSign_ct (base sp : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
+    RelCT isa (fun s t => SignCTPre base sp b x s ∧ SignCTPre base sp b x t)
+      (.seq (fieldProg [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18]) recoverSign)
       (fun _ _ => True) := by
-  have ht : RelCT isa (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
-      (.block (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18])) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
-    exact fun _ _ h => edi_agree h.1.1.edi h.2.1.edi
-  have hw (s : State) (h : SignCTPre base b x s) :
-      WP isa (.block (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18])) s fun t =>
-        SignCTPre base b (x * Spec.Ed25519.sqrtM1) t := by
-    refine WP.mono (fieldCode_ok [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18] h.1) fun t ⟨kt, te⟩ => ?_
-    refine ⟨kt.ctx h.1, kt.keep.esi.trans h.2.1, ?_⟩
+  have ht : RelCT isa (fun s t => SignCTPre base sp b x s ∧ SignCTPre base sp b x t)
+      (fieldProg [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18]) (fun _ _ => True) :=
+    (fieldProg_rf base _).mono (fun _ _ h => h.1.1.rf h.2.1) (fun _ _ _ => trivial)
+  have hw (s : State) (h : SignCTPre base sp b x s) :
+      WP isa (fieldProg [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18]) s fun t =>
+        SignCTPre base sp b (x * Spec.Ed25519.sqrtM1) t := by
+    refine WP.mono (fieldProg_ok [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18] h.1.1) fun t ⟨kt, te⟩ => ?_
+    refine ⟨h.1.keep kt.keep, kt.keep.esi.trans h.2.1, ?_⟩
     rw [te]
     change env s.mem base 0 * Spec.Ed25519.sqrtM1 = _
     rw [h.2.2]
   have hp := VG.RelCT.wp ht (fun s t h => ⟨hw s h.1, hw t h.2⟩)
   exact VG.RelCT.seq (hp.mono (fun _ _ h => h) (fun _ _ h => h.2))
-    (recoverSign_ct base b (x * Spec.Ed25519.sqrtM1))
+    (recoverSign_ct base sp b (x * Spec.Ed25519.sqrtM1))
 
-theorem recoverMinus_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) :
-    RelCT isa (fun s t => RootCTState base b y s ∧ RootCTState base b y t)
+theorem recoverMinus_ct (base sp : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) :
+    RelCT isa (fun s t => RootCTState base sp b y s ∧ RootCTState base sp b y t)
       (.seq (.block (fieldEqual 11 12)) (.ite .e
-        (.seq (.block (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18])) recoverSign) recoverInvalid))
+        (.seq (fieldProg [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18]) recoverSign) recoverInvalid))
       (fun _ _ => True) := by
-  refine VG.RelCT.seq (rootCheck_ct base b y true) (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
+  refine VG.RelCT.seq (rootCheck_ct base sp b y true) (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
   · exact fun _ _ h => h.1.2.trans h.2.2.symm
-  · exact (rootAdjustSign_ct base b (rootX y)).mono
+  · exact (rootAdjustSign_ct base sp b (rootX y)).mono
       (fun _ _ h => ⟨h.1.1.1.1, h.1.2.1.1⟩) (fun _ _ h => h)
   · exact recoverInvalid_ct.mono (fun _ _ _ => trivial) (fun _ _ h => h)
 
-theorem recoverChecks_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) :
-    RelCT isa (fun s t => RootCTState base b y s ∧ RootCTState base b y t)
-      (.seq (.block (fieldEqual 11 6)) (.ite .e recoverSign
-        (.seq (.block (fieldEqual 11 12)) (.ite .e
-          (.seq (.block (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18])) recoverSign) recoverInvalid))))
-      (fun _ _ => True) := by
-  refine VG.RelCT.seq (rootCheck_ct base b y false) (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
+theorem recoverChecks_ct (base sp : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) :
+    RelCT isa (fun s t => RootCTState base sp b y s ∧ RootCTState base sp b y t)
+      recoverChecks (fun _ _ => True) := by
+  rw [recoverChecks]
+  refine VG.RelCT.seq (rootCheck_ct base sp b y false) (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
   · exact fun _ _ h => h.1.2.trans h.2.2.symm
-  · exact (recoverSign_ct base b (rootX y)).mono
+  · exact (recoverSign_ct base sp b (rootX y)).mono
       (fun _ _ h => ⟨h.1.1.1.1, h.1.2.1.1⟩) (fun _ _ h => h)
-  · exact (recoverMinus_ct base b y).mono
+  · exact (recoverMinus_ct base sp b y).mono
       (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) (fun _ _ h => h)
 
 
@@ -205,39 +212,39 @@ section
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
 
-def RecoverCTPre (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (s : State) : Prop :=
-  Ctx base s ∧ wd s.mem base 32 = signWord b ∧ env s.mem base 1 = y
+def RecoverCTPre (base sp : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (s : State) : Prop :=
+  CtxAt base sp s ∧ wd s.mem base 32 = signWord b ∧ env s.mem base 1 = y
 
-private def CandidateCTState (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (s : State) : Prop :=
-  Ctx base s ∧ wd s.mem base 32 = signWord b ∧ env s.mem base 0 = rootX y ∧
+private def CandidateCTState (base sp : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (s : State) : Prop :=
+  CtxAt base sp s ∧ wd s.mem base 32 = signWord b ∧ env s.mem base 0 = rootX y ∧
     env s.mem base 11 = rootV y * rootX y * rootX y ∧
     env s.mem base 6 = rootU y ∧ env s.mem base 12 = 0 - rootU y
 
-theorem recoverPoint_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) :
-    RelCT isa (fun s t => RecoverCTPre base b y s ∧ RecoverCTPre base b y t)
+theorem recoverPoint_ct (base sp : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) :
+    RelCT isa (fun s t => RecoverCTPre base sp b y s ∧ RecoverCTPre base sp b y t)
       recoverPoint (fun _ _ => True) := by
   have ht := (recoverCandidate_ct base).mono
-    (fun _ _ (h : RecoverCTPre base b y _ ∧ RecoverCTPre base b y _) => ⟨h.1.1.edi, h.2.1.edi⟩)
-    (fun _ _ h => h)
-  have hw (s : State) (h : RecoverCTPre base b y s) :
-      WP isa recoverCandidate s (CandidateCTState base b y) := by
-    refine WP.mono (recoverCandidate_ok h.1) fun t ⟨kt, tx, _, _, tu, _, tv, tn⟩ => ?_
-    refine ⟨kt.ctx h.1, (kt.word h.1 32 (by decide)).trans h.2.1, ?_, ?_, ?_, ?_⟩
+    (fun _ _ (h : RecoverCTPre base sp b y _ ∧ RecoverCTPre base sp b y _) => h.1.1.rf h.2.1)
+    (fun _ _ _ => trivial)
+  have hw (s : State) (h : RecoverCTPre base sp b y s) :
+      WP isa recoverCandidate s (CandidateCTState base sp b y) := by
+    refine WP.mono (recoverCandidate_ok h.1.1) fun t ⟨kt, tx, _, _, tu, _, tv, tn⟩ => ?_
+    refine ⟨h.1.of (kt.ctx h.1.1) kt.esp, (kt.word h.1.1 32 (by decide)).trans h.2.1, ?_, ?_, ?_, ?_⟩
     · rw [tx, h.2.2]
     · rw [tv, h.2.2]
     · rw [tu, h.2.2]
     · rw [tn, h.2.2]
   have hp := ht.wp (fun s t h => ⟨hw s h.1, hw t h.2⟩)
-  have loadct : RelCT isa (fun s t => CandidateCTState base b y s ∧ CandidateCTState base b y t)
+  have loadct : RelCT isa (fun s t => CandidateCTState base sp b y s ∧ CandidateCTState base sp b y t)
       (.block [.mov .esi (.mem (Impl.X25519.X86.sc 32))]) (fun _ _ => True) := by
     apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
-    exact fun _ _ h => edi_agree h.1.1.edi h.2.1.edi
-  have loadwp (s : State) (h : CandidateCTState base b y s) :
-      WP isa (.block [.mov .esi (.mem (Impl.X25519.X86.sc 32))]) s (RootCTState base b y) := by
-    refine Wp.wp_ldm h.1.edi (h.1.inRW (by decide) (by decide)) fun t kt => WP.block_nil ?_
+    exact fun _ _ h => edi_agree h.1.1.1.edi h.2.1.1.edi
+  have loadwp (s : State) (h : CandidateCTState base sp b y s) :
+      WP isa (.block [.mov .esi (.mem (Impl.X25519.X86.sc 32))]) s (RootCTState base sp b y) := by
+    refine Wp.wp_ldm h.1.1.edi (h.1.1.inRW (by decide) (by decide)) fun t kt => WP.block_nil ?_
     have kb : t.gpr .esi = signWord b := kt.gpr.trans h.2.1
-    have ke := (IKeep.of_counter kt).ctx h.1
-    refine ⟨⟨ke, kb, ?_⟩, ?_, ?_, ?_⟩
+    have ki := IKeep.of_counter (x := base) kt
+    refine ⟨⟨h.1.of (ki.ctx h.1.1) ki.esp, kb, ?_⟩, ?_, ?_, ?_⟩
     · rw [kt.mem]; exact h.2.2.1
     · rw [kt.mem]; exact h.2.2.2.1
     · rw [kt.mem]; exact h.2.2.2.2.1
@@ -245,7 +252,7 @@ theorem recoverPoint_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) :
   have lp := loadct.wp (fun s t h => ⟨loadwp s h.1, loadwp t h.2⟩)
   rw [recoverPoint]
   exact VG.RelCT.seq (hp.mono (fun _ _ h => h) (fun _ _ h => h.2))
-    (VG.RelCT.seq (lp.mono (fun _ _ h => h) (fun _ _ h => h.2)) (recoverChecks_ct base b y))
+    (VG.RelCT.seq (lp.mono (fun _ _ h => h) (fun _ _ h => h.2)) (recoverChecks_ct base sp b y))
 
 end VG.Proof.Ed25519.X86
 end
@@ -254,18 +261,19 @@ end
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
 
-def DecodeCTPre (base : BitVec 32) (n : Nat) (s : State) : Prop := Ctx base s ∧ fe s.mem base 96 = n
+def DecodeCTPre (base sp : BitVec 32) (n : Nat) (s : State) : Prop :=
+  CtxAt base sp s ∧ fe s.mem base 96 = n
 
-theorem decodeHeadCT_ok {base : BitVec 32} {s : State} (hc : Ctx base s) :
+theorem decodeHeadCT_ok {base sp : BitVec 32} {s : State} (hc : CtxAt base sp s) :
     WP isa (.block (decodeY ++ canonicalY)) s fun t =>
-      RecoverCTPre base (fe s.mem base 96 / 2 ^ 255 == 1)
+      RecoverCTPre base sp (fe s.mem base 96 / 2 ^ 255 == 1)
         (VG.Proof.X25519.toFe (fe s.mem base 96 % 2 ^ 255)) t ∧
       t.zf = some (decide (fe s.mem base 96 % 2 ^ 255 < Spec.X25519.P)) := by
   rw [WP.block_append_iff]
-  refine WP.mono (decodeY_ok hc) fun a ⟨ka, ya, ba⟩ => ?_
-  have ca := ka.ctx hc
-  refine WP.mono (canonicalY_ok ca (by rw [ya]; exact Nat.mod_lt _ (by decide))) fun t ⟨kt, et, bt, zt⟩ => ?_
-  refine ⟨⟨kt.ctx ca, ?_, ?_⟩, ?_⟩
+  refine WP.mono (decodeY_ok hc.1) fun a ⟨ka, ya, ba⟩ => ?_
+  have ca : CtxAt base sp a := hc.of (ka.ctx hc.1) ka.esp
+  refine WP.mono (canonicalY_ok ca.1 (by rw [ya]; exact Nat.mod_lt _ (by decide))) fun t ⟨kt, et, bt, zt⟩ => ?_
+  refine ⟨⟨ca.keep kt.keep, ?_, ?_⟩, ?_⟩
   · rw [bt, ba]
     have hn : fe s.mem base 96 / 2 ^ 255 ≤ 1 := by
       have hlt := fe_lt s.mem base 96
@@ -277,17 +285,18 @@ theorem decodeHeadCT_ok {base : BitVec 32} {s : State} (hc : Ctx base s) :
     rw [ya]
   · rw [zt, ya]
 
-theorem pointDecode_ct (base : BitVec 32) (n : Nat) :
-    RelCT isa (fun s t => DecodeCTPre base n s ∧ DecodeCTPre base n t) pointDecode (fun _ _ => True) := by
+theorem pointDecode_ct (base sp : BitVec 32) (n : Nat) :
+    RelCT isa (fun s t => DecodeCTPre base sp n s ∧ DecodeCTPre base sp n t) pointDecode
+      (fun _ _ => True) := by
   let b := n / 2 ^ 255 == 1
   let y := VG.Proof.X25519.toFe (n % 2 ^ 255)
-  have ht : RelCT isa (fun s t => DecodeCTPre base n s ∧ DecodeCTPre base n t)
+  have ht : RelCT isa (fun s t => DecodeCTPre base sp n s ∧ DecodeCTPre base sp n t)
       (.block (decodeY ++ canonicalY)) (fun _ _ => True) := by
     apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
-    exact fun _ _ h => edi_agree h.1.1.edi h.2.1.edi
-  have hw (s : State) (h : DecodeCTPre base n s) :
+    exact fun _ _ h => edi_agree h.1.1.1.edi h.2.1.1.edi
+  have hw (s : State) (h : DecodeCTPre base sp n s) :
       WP isa (.block (decodeY ++ canonicalY)) s fun t =>
-        RecoverCTPre base b y t ∧ t.zf = some (decide (n % 2 ^ 255 < Spec.X25519.P)) := by
+        RecoverCTPre base sp b y t ∧ t.zf = some (decide (n % 2 ^ 255 < Spec.X25519.P)) := by
     have hh := decodeHeadCT_ok h.1
     rw [h.2] at hh
     exact hh
@@ -295,7 +304,7 @@ theorem pointDecode_ct (base : BitVec 32) (n : Nat) :
   rw [pointDecode]
   refine VG.RelCT.seq hp (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
   · exact fun _ _ h => h.2.1.2.trans h.2.2.2.symm
-  · exact (recoverPoint_ct base b y).mono
+  · exact (recoverPoint_ct base sp b y).mono
       (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) (fun _ _ h => h)
   · exact recoverInvalid_ct.mono (fun _ _ _ => trivial) (fun _ _ h => h)
 

@@ -14,8 +14,8 @@ def verifyScalar : List Instr := inputSliceWords 1 32 64 8 ++ scalarSubtract ++ 
 
 def pointEqualOps : List FieldOp := [.mul 8 0 6, .mul 9 4 2, .mul 10 1 6, .mul 11 5 2]
 def pointEqual : Prog isa :=
-  .seq (.block (fieldCode pointEqualOps ++ fieldEqual 8 9)) (.ite .e
-    (.seq (.block (fieldEqual 10 11)) (.ite .e (.block [.mov .eax (.imm 1)]) recoverInvalid)) recoverInvalid)
+  .seq (fieldProg pointEqualOps) (.seq (.block (fieldEqual 8 9)) (.ite .e
+    (.seq (.block (fieldEqual 10 11)) (.ite .e (.block [.mov .eax (.imm 1)]) recoverInvalid)) recoverInvalid))
 
 /-- Returns 1 in `eax` if `[S]B = R + [k]A`, for `A` at byte 7680 and `R` at byte 7808: the
 windows' `[k]A - [S]B` compared with `-R`. -/

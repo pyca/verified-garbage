@@ -34,7 +34,7 @@ def uMulOps : List FieldOp := [.mul 0 0 15]
 /-- `u = (Z + Y) / (Z - Y)`, reduced, in slot 0 (bytes 64–95). -/
 def uEncode : Prog isa :=
   .seq (.block (fieldCode uOps))
-    (.seq Impl.Ed25519.X86.invert (.seq (.block (fieldCode uMulOps)) (.block (freeze 64))))
+    (.seq Impl.Ed25519.X86.invert (.seq (fieldProg uMulOps) (.block (freeze 64))))
 
 /-- The callee-saved registers saved, the clamped scalar's bits expanded, and `d` in slot 16. -/
 def x25519BaseStart : List Instr := abiSave 2 ++ inputBits 1 32 ++ clampBits ++ fieldCode baseSetupOps

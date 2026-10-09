@@ -17,6 +17,6 @@ def recoverFinishOps : List FieldOp := [
   .const 5 0, .sub 12 5 6, .mul 0 6 9, .mul 0 0 15, .mul 11 7 0, .mul 11 11 0]
 
 def recoverCandidate : Prog isa :=
-  .seq (.block (fieldCode recoverInitOps)) (.seq rootPower (.block (fieldCode recoverFinishOps)))
+  .seq (fieldProg recoverInitOps) (.seq rootPower (fieldProg recoverFinishOps))
 
 end VG.Impl.Ed25519.X86

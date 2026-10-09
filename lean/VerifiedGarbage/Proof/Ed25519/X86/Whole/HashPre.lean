@@ -66,6 +66,16 @@ theorem inner_sub : Region.Sub ⟨(E - 4).setWidth 64 - 20, 20⟩ (VG.X86.below 
   rw [Taint.sub_setWidth h.below]
   exact Region.sub_prefix (by decide)
 
+/-- The 20 bytes of stack a callee entered from `E` uses, apart from the scratch. -/
+theorem call_stk : (VG.X86.below (E - 4) 20).Disjoint ⟨scr.setWidth 64, 8192⟩ := by
+  have he := h.below
+  have e : VG.X86.below (E - 4) 20 = ⟨(E - 4).setWidth 64 - 20, 20⟩ := by
+    have e4 : (E - 4).toNat = E.toNat - 4 := sub_toNat (k := 4) (by omega)
+    simp only [VG.X86.below, Taint.sub_setWidth (show 20 ≤ (E - 4).toNat by omega)]
+    rfl
+  rw [e]
+  exact (h.sep.sub_left (below_sub_stack h.below (Nat.le_refl 24))).sub_left h.inner_sub
+
 end HashSpace
 
 variable {E scr : BitVec 32} {t : State}

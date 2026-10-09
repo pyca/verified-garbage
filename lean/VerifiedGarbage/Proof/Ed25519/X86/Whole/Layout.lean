@@ -32,6 +32,29 @@ theorem below_sub_stack {E : BitVec 32} (hE : 24 ≤ E.toNat) {n : Nat} (hn : n 
   simp only [below, Taint.sub_setWidth hE] at h'
   exact Region.sub_prefix (by decide : 24 ≤ 280) p h'
 
+/-- The 20 bytes of stack a callee entered from the frame at `E` uses (below
+its return address), as an offset of the frame's base. -/
+theorem inner_below {E : BitVec 32} (hE : 24 ≤ E.toNat) :
+    below (E - 4) 20 = ⟨E.setWidth 64 - BitVec.ofNat 64 24, 20⟩ := by
+  have e4 : (E - 4).toNat = E.toNat - 4 := sub_toNat (k := 4) (by omega)
+  have e : (E - 4).setWidth 64 = E.setWidth 64 - 4 := Taint.sub_setWidth (m := 4) (by omega)
+  show (⟨((E - 4) - BitVec.ofNat 32 20).setWidth 64, 20⟩ : Region) = _
+  rw [Taint.sub_setWidth (show 20 ≤ (E - 4).toNat by omega), e, BitVec.sub_sub]
+  rfl
+
+/-- That stack lies within the frame's stack. -/
+theorem inner_sub_stack {E : BitVec 32} (hE : 24 ≤ E.toNat) : Region.Sub (below (E - 4) 20) (STK E) := by
+  rw [inner_below hE]; exact Region.sub_prefix (by decide)
+
+/-- That stack lies apart from the frame's bytes. -/
+theorem inner_frame {E : BitVec 32} (hE : 24 ≤ E.toNat) (hf : E.toNat + 256 ≤ 2 ^ 32) {d n : Nat}
+    (hn : d + n ≤ 256) (hd : d < 256) :
+    (below (E - 4) 20).Disjoint ⟨(E + BitVec.ofNat 32 d).setWidth 64, n⟩ := by
+  rw [inner_below hE, show (E + BitVec.ofNat 32 d).setWidth 64 = E.setWidth 64 + BitVec.ofNat 64 d from
+    addr_eq (x := E) (k := d) (by omega)]
+  exact (Offset.disjoint_below (E.setWidth 64) (n := 24) (d := d) (k := n) (by omega)).symm.sub_left
+    (Region.sub_prefix (by decide))
+
 /-- Outer read/write regions exclude the frame. The entry arguments remain in
 read-only memory above it. Secret buffers and outgoing cdecl arguments occupy
 its 256 bytes; calls use at most 24 more bytes below it. -/

@@ -18,7 +18,7 @@ open VG VG.X86 VG.Impl.X25519.X86 VG.Impl.Ed25519.X86
 /-- What the function's body needs. -/
 def BodyPre (s : State) : Prop :=
   BaseRegions s ∧ wd s.mem (arg s 2) combTbl = s.syms combSym ∧
-    TblAt (arg s 2) (s.syms combSym) s
+    TblAt (arg s 2) (s.syms combSym) s ∧ (TBL ((s.syms combSym).setWidth 64)).Disjoint (callStk s)
 
 /-- The state `t` after the prologue, from the entry `s`. -/
 structure Prologue (s t : State) : Prop where
@@ -30,9 +30,19 @@ structure Prologue (s t : State) : Prop where
     Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32
   syms : t.syms = s.syms
 
+/-- The static's address's frame, within the stack a call uses. -/
+theorem below4_sub {sp : BitVec 32} (h : 20 ≤ sp.toNat) :
+    Region.Sub (below sp 4) ⟨(sp - BitVec.ofNat 32 20).setWidth 64, 20⟩ := by
+  simp only [below, Taint.sub_setWidth (show 4 ≤ sp.toNat by omega), Taint.sub_setWidth h]
+  exact Offset.sub_below _ (by decide) (by decide)
+
 theorem combAddr_ok {s : State} (h : scalarBaseLocal.pre s) : WP isa (combAddr 2) s (Prologue s) := by
-  obtain ⟨hr, hsp, _, ki, ks, held⟩ := h
+  obtain ⟨hr, _, held⟩ := h
   obtain ⟨hp, hi, _⟩ := scalarBase_pre hr
+  have h20 := hp.stk.1
+  have hsp : 4 ≤ (s.gpr .esp).toNat := by omega
+  have s4 := below4_sub h20
+  have ki : (below (s.gpr .esp) 4).Disjoint ⟨(arg s 1).setWidth 64, 32⟩ := hr.2.2.2.2.2.2.2.2.2.2.2.2.2.1.sub_left s4
   have hspfit := hp.sp_fit
   have hl := combWords_length
   refine WP.seq (WP.mono (symFrame_ok combSym s hsp) fun s₁ P => ?_)
@@ -80,14 +90,15 @@ theorem combAddr_ok {s : State} (h : scalarBaseLocal.pre s) : WP isa (combAddr 2
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
+    · exact (held.2.2 _ (by simp)).sub_right s4
     · exact held.2.2 _ (by simp)
-    · exact held.2.2 _ (by simp)
-  refine ⟨⟨?_, ?_, ?_⟩, fun r hr => g3 r ?_, ?_, a3, ?_, y3⟩
-  · simpa only [BaseRegions, argAddr, e3, r3, w3, y3, a3 0 (by decide), a3 1 (by decide),
+  refine ⟨⟨?_, ?_, ?_, ?_⟩, fun r hr => g3 r ?_, ?_, a3, ?_, y3⟩
+  · simpa only [BaseRegions, argAddr, callStk, e3, r3, w3, y3, a3 0 (by decide), a3 1 (by decide),
       a3 2 (by decide)] using hr
   · rw [a3 2 (by decide), y3, h₃.mem, wd_write_self, h₂.other .eax (by decide), P.addr]
   · rw [a3 2 (by decide), y3]
     exact ⟨held.2.1, by rw [r3, hr.1]; simp, T3, held.2.2 _ (by simp)⟩
+  · rw [y3, callStk, e3]; exact held.2.2 _ (by simp)
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide
@@ -109,10 +120,10 @@ theorem combAddr_ok {s : State} (h : scalarBaseLocal.pre s) : WP isa (combAddr 2
 /-- The regions and arguments survive the static's address's frame. -/
 theorem BaseRegions.symAddr {name : String} {s t : State} (h : BaseRegions s)
     (P : SymAddrPost name s t) (hsp : 4 ≤ (s.gpr .esp).toNat) : BaseRegions t := by
-  have hf : (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 := h.2.2.2.2.2.2.2.2.2.2.2
+  have hf : (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 := h.2.2.2.2.2.2.2.2.2.2.2.1
   have e : t.gpr .esp = s.gpr .esp := P.gpr .esp (by decide)
   have a : ∀ j < 3, arg t j = arg s j := fun j hj => P.arg hsp (by omega)
-  simpa only [BaseRegions, argAddr, e, P.rd, P.wr, P.syms, a 0 (by decide), a 1 (by decide),
+  simpa only [BaseRegions, argAddr, callStk, e, P.rd, P.wr, P.syms, a 0 (by decide), a 1 (by decide),
     a 2 (by decide)] using h
 
 /-- The public part of the states after the prologue. -/

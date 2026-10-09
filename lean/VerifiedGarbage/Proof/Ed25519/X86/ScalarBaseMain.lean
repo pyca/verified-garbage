@@ -14,7 +14,8 @@ open VG VG.X86 VG.Impl.X25519.X86
 open VG.Impl.Ed25519.X86 (combSym)
 
 /-- The regions and arguments of `vg_ed25519_scalar_base` (and `vg_x25519_base`): the tables
-are readable, after the arguments. -/
+are readable, after the arguments, and the 20 bytes below `esp` a call of the field functions
+uses lie apart from the input and the scratch. -/
 def BaseRegions (s : State) : Prop :=
   let out : Region := ⟨(arg s 0).setWidth 64, 32⟩
   let input : Region := ⟨(arg s 1).setWidth 64, 32⟩
@@ -25,28 +26,33 @@ def BaseRegions (s : State) : Prop :=
     out.Disjoint scratch ∧ input.Disjoint scratch ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
     ret.Disjoint out ∧ ret.Disjoint scratch ∧ (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧
     (arg s 1).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 8192 ≤ 2 ^ 32 ∧
-    (s.gpr .esp).toNat + 16 ≤ 2 ^ 32
+    (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 ∧ 20 ≤ (s.gpr .esp).toNat ∧ (callStk s).Disjoint input ∧
+    (callStk s).Disjoint scratch
 
-/-- The contract the proof is written against: the regions, the four bytes below `esp` (the
-static's address's frame) apart from the buffers, and the tables. -/
+/-- The contract the proof is written against: the regions, the 20 bytes below `esp` (the
+static's address's frame and the calls') apart from the buffers, and the tables. -/
 def scalarBaseLocal : Contract isa where
   pre s :=
     let out : Region := ⟨(arg s 0).setWidth 64, 32⟩
-    let input : Region := ⟨(arg s 1).setWidth 64, 32⟩
     let scratch : Region := ⟨(arg s 2).setWidth 64, 8192⟩
-    let stk : Region := below (s.gpr .esp) 4
-    BaseRegions s ∧ 4 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint out ∧ stk.Disjoint input ∧
-      stk.Disjoint scratch ∧ CombHeld s [out, scratch, stk]
+    let stk : Region := callStk s
+    BaseRegions s ∧ stk.Disjoint out ∧ CombHeld s [out, scratch, stk]
   post s t := Spec.Ed25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 =
     Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
   pub s t := s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧ arg s 1 = arg t 1 ∧ arg s 2 = arg t 2 ∧
     s.syms combSym = t.syms combSym
 
+theorem BaseRegions.spfit {s : State} (h : BaseRegions s) : (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 :=
+  h.2.2.2.2.2.2.2.2.2.2.2.1
+
+theorem BaseRegions.sp4 {s : State} (h : BaseRegions s) : 4 ≤ (s.gpr .esp).toNat := by
+  have := h.2.2.2.2.2.2.2.2.2.2.2.2.1; omega
+
 theorem scalarBase_pre {s : State} (h : BaseRegions s) :
     ScratchPre s 2 3 ∧ InputPre s 2 1 8 ∧ OutputPre s 2 := by
-  obtain ⟨rd, wr, os, ins, _, ars, ro, rs, ofit, ifit, sfit, spfit⟩ := h
-  refine ⟨⟨by decide, ?_, sfit, ?_, by omega_using [spfit], ars, rs⟩,
-    ⟨?_, ifit, ?_⟩, ⟨?_, ofit, os, ro⟩⟩
+  obtain ⟨rd, wr, os, ins, _, ars, ro, rs, ofit, ifit, sfit, spfit, h20, ki, ks⟩ := h
+  refine ⟨⟨by decide, ?_, sfit, ?_, by omega_using [spfit], ars, rs, h20, ks.symm⟩,
+    ⟨?_, ifit, ?_, by rw [sub, addr_zero]; exact ki.symm⟩, ⟨?_, ofit, os, ro⟩⟩
   · rw [wr]; simp
   · rw [rd]; simp
   · rw [sub, addr_zero, rd]; simp
@@ -96,11 +102,11 @@ theorem baseSetup_d (e : Env) : evalOps baseSetupOps e 16 = Spec.Ed25519.d := rf
 
 theorem Saved.ikeep {s₀ s t : State} {x : BitVec 32} (h : Saved s₀ x s)
     (hx : x.toNat + 8192 ≤ 2 ^ 32) (k : IKeep x s t) : Saved s₀ x t :=
-  h.of_offset hx ⟨k.edi, k.esp, k.rd, k.wr⟩ k.frame (by decide) (by decide) (by decide)
+  h.of_offsetS hx ⟨k.edi, k.esp, k.rd, k.wr⟩ k.frame (by decide) (by decide) (by decide)
 
 theorem Saved.mulkeep {s₀ s t : State} {x : BitVec 32} (h : Saved s₀ x s)
     (hx : x.toNat + 8192 ≤ 2 ^ 32) (k : MulKeep x s t) : Saved s₀ x t :=
-  h.of_offset hx ⟨k.edi, k.esp, k.rd, k.wr⟩ k.frame (by decide) (by decide) (by decide)
+  h.of_offsetS hx ⟨k.edi, k.esp, k.rd, k.wr⟩ k.frame (by decide) (by decide) (by decide)
 
 theorem pointEncode_value {x : BitVec 32} {s : State} (hc : Ctx x s) :
     WP isa pointEncode s fun t => IKeep x s t ∧ Spec.Ed25519.encodeLE 32 (fe t.mem x 96) =

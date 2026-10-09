@@ -19,8 +19,8 @@ theorem pointAffine_ok {x : BitVec 32} {s : State} (hc : Ctx x s) :
       env t.mem x 0 = env s.mem x 0 * Spec.X25519.pow (env s.mem x 2) (Spec.X25519.P - 2) ∧
       env t.mem x 1 = env s.mem x 1 * Spec.X25519.pow (env s.mem x 2) (Spec.X25519.P - 2) := by
   refine WP.seq (WP.mono (invert_spec x s hc) fun u ⟨ku, eu⟩ => ?_)
-  refine WP.mono (fieldCode_ok affineOps (ku.ctx hc)) fun t ⟨kt, et⟩ => ?_
-  refine ⟨ku.trans (IKeep.of_field kt), ?_, ?_⟩
+  refine WP.mono (fieldProg_ok affineOps (ku.ctx hc)) fun t ⟨kt, et⟩ => ?_
+  refine ⟨ku.trans (IKeep.of_call kt), ?_, ?_⟩
   · rw [et, (affine_eval _).1, eu, invEnv_x, invEnv_eval, VG.Proof.X25519.invert_eq]
   · rw [et, (affine_eval _).2, eu, invEnv_y, invEnv_eval, VG.Proof.X25519.invert_eq]
 

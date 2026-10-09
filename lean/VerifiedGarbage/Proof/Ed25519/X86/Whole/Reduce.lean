@@ -57,8 +57,10 @@ theorem reduce_pre (hc : Ctx E g m₀ rd wr s) (H : HashSpace E scr)
   · rw [frame_addr H.frameFit (by omega)]
     exact Offset.base_disjoint _ (by omega) (by omega)
   · have e : (E - 4).toNat = E.toNat - 4 := sub_toNat (k := 4) (by have := H.below; omega)
-    rw [e]
-    have := H.frameFit; omega
+    have := H.frameFit; have := H.below
+    refine ⟨by rw [e]; omega, by rw [e]; omega, ?_⟩
+    simp only [callStk, State.withRegions_gpr, State.callEntry_esp, hc.esp]
+    exact ⟨H.call_stk, inner_frame H.below H.frameFit (d := 192) (n := 64) (by decide) (by decide)⟩
 
 theorem reduce_call (hc : Ctx E g m₀ rd wr s) (H : HashSpace E scr)
     (hscr : (⟨scr.setWidth 64, 8192⟩ : Region) ∈ wr)

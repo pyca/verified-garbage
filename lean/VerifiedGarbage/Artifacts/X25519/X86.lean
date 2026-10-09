@@ -28,11 +28,12 @@ def artifacts : List Artifact := [
       `u = 9` and its group law to the ladder's (`VG.Proof.X25519.Edwards.x25519_basePoint`). \
       The tables are the static `VG_ED25519_COMB`, whose address the function obtains with a \
       position-independent four-byte CALL frame and keeps in `scratch`. \
+      Field products call `vg_gf25519_r32_mul`. \
       Callee-saved registers are saved in the first 16 bytes of `scratch`."])
     consts := Impl.Ed25519.X86.combConsts
     code := Impl.X25519.X86.Base.x25519Base
-    contract := Spec.X25519.x25519BaseContract (X86.abi.withConsts Impl.Ed25519.X86.combConsts) 4
-    stack := 4
+    contract := Spec.X25519.x25519BaseContract (X86.abi.withConsts Impl.Ed25519.X86.combConsts) 20
+    stack := 20
     verified := Proof.X25519.X86.Base.x25519Base_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

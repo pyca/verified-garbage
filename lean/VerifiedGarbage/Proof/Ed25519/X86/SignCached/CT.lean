@@ -572,7 +572,7 @@ theorem base_call_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
       WP isa (.call "vg_ed25519_scalar_base" Impl.Ed25519.X86.scalarBase) u
         (fun v => Ctx L g m v ∧ True ∧ Named L v) := fun hm u hc hs =>
     WP.mono_syms ((base_ready hc hL (args hs.1) hs.2 (hc.tbl hL hm)).wp hc scalarBase_ok base_nosp
-      (by rw [base_stack]; decide) hL.below) fun _ hv yv => ⟨hv, trivial, by
+      base_stack.le hL.below) fun _ hv yv => ⟨hv, trivial, by
         rw [Named, yv]; exact hs.2⟩
   exact two_wp hct (fw ha) (fw hb)
 

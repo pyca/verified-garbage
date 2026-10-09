@@ -48,7 +48,7 @@ theorem Base.of_frame {x : BitVec 32} {k : Nat} {s₀ s s' : State} (h : Base x 
     (hwr : s'.wr = s.wr) {o n : Nat} (hf : Frame [sub x o n] s.mem s'.mem) (ho : o + n ≤ 4096)
     (hlo : 16 ≤ o) (hgap : o + n ≤ 32 ∨ 288 ≤ o) (hon : o < 4096) : Base x k s₀ s' := by
   have hfit := h.ctx.fit
-  refine ⟨h.ctx.keep hedi hwr, hesp.trans h.esp, hrd.trans h.rd, hwr.trans h.wr, ?_,
+  refine ⟨h.ctx.keep hedi hwr hesp, hesp.trans h.esp, hrd.trans h.rd, hwr.trans h.wr, ?_,
     h.saved.of_readW fun p hp => ?_, fun t ht => ?_⟩
   · exact h.frame.trans (hf.sub fun _ hr => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hr, scR_eq]
@@ -150,6 +150,7 @@ theorem stepHead_ok {x : BitVec 32} {k : Nat} {x1 : Fe} {s₀ s : State} {n : Na
   have edi₃ : s₃.gpr .edi = x := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hc.edi]
   have c₃ : Ctx 4096 x s₃ := hc.keep (by rw [edi₃, hc.edi]) (by rw [u₃.wr, u₂.wr, u₁.wr])
+    (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)])
   refine wp_movzx8 (a := addr x (BITS + n)) (by rw [eax₃, addr_add_ofNat])
     (c₃.inRW (by simp only [BITS]; omega_using [hn]) (by decide)) fun s₄ u₄ => ?_
   have eax₄ : s₄.gpr .eax = BitVec.ofNat 32 (bit k n) := by

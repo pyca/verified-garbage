@@ -17,7 +17,7 @@ theorem scalarReduce_correct {s : State} (h : scalarReduceLocal.pre s) :
   refine WP.seq (WP.block_append (WP.mono (abiSave_ok hp) fun u hu => ?_))
   refine WP.mono (loadInput_ok hp hi hu (by decide) (dst := 128) (by decide) (by decide) (by decide))
     fun v ⟨hv, words, _⟩ => ?_
-  refine WP.seq (WP.mono (scalarEngine_ok (hv.ctx hp.fit hp.wr)) fun w ⟨kw, fw, vw⟩ => ?_)
+  refine WP.seq (WP.mono (scalarEngine_ok (hv.ctx hp.fit hp.wr hp.stk)) fun w ⟨kw, fw, vw⟩ => ?_)
   have hw := hv.scalarEngine hp.fit kw fw
   refine WP.mono (finishWords_ok hp ho hw (src := scalarR) (by decide)) fun t ⟨abi_t, et⟩ => ⟨abi_t, ?_⟩
   change Spec.Ed25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 = _
@@ -75,11 +75,13 @@ def scalarReduceWide : Contract isa :=
     let scratch : Region := ⟨(arg s 2).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 12⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stk : Region := callStk s
     s.rd = [input] ∧ s.wr = [out, scratch, args] ∧ out.Disjoint scratch ∧
       input.Disjoint scratch ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
       ret.Disjoint out ∧ ret.Disjoint scratch ∧ (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧
       (arg s 1).toNat + 64 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 8192 ≤ 2 ^ 32 ∧
-      (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 }
+      (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 ∧ 20 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint scratch ∧
+      stk.Disjoint input }
 
 def scalarReduceRd (s : State) : List Region := [⟨(arg s 1).setWidth 64, 64⟩, ⟨argAddr s 0, 12⟩]
 def scalarReduceWr (s : State) : List Region := [⟨(arg s 0).setWidth 64, 32⟩, ⟨(arg s 2).setWidth 64, 8192⟩]
@@ -90,17 +92,31 @@ theorem scalarReduceWide_pre (s : State) (h : scalarReduceWide.pre s) :
     State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr]
   exact ⟨True.intro, True.intro, h.2.2⟩
 
-theorem scalarReduceWide_implies : scalarReduceWide.Implies (Spec.Ed25519.scalarReduceContract X86.abi) := by
+theorem scalarReduceWide_implies : scalarReduceWide.Implies (Spec.Ed25519.scalarReduceContract X86.abi 20) := by
     have a0 : arg scalarSatState 0 = 0x1000 := by decide
     have a1 : arg scalarSatState 1 = 0x2000 := by decide
     have a2 : arg scalarSatState 2 = 0x4000 := by decide
     have e : argAddr scalarSatState 0 = 0x8004 := by decide
     have esp : scalarSatState.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Ed25519.scalarReduceContract, Spec.Ed25519.scalarReduceSig,
-      Spec.Ed25519.scratchWords, scalarReduceWide, scalarReduceLocal, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      [a0, a1, a2, e, esp] using scalarSatState
+    refine { pre := fun s h => ?_
+             post := by sig_implies_post [Spec.Ed25519.scalarReduceContract, Spec.Ed25519.scalarReduceSig,
+               Spec.Ed25519.scratchWords, scalarReduceWide, scalarReduceLocal, X86.abi, X86.argSlots,
+               X86.argVal, X86.argBytes]
+             pub := by sig_implies_pub [Spec.Ed25519.scalarReduceContract, Spec.Ed25519.scalarReduceSig,
+               Spec.Ed25519.scratchWords, scalarReduceWide, scalarReduceLocal, X86.abi, X86.argSlots,
+               X86.argVal, X86.argBytes]
+             sat := by sig_implies_sat [Spec.Ed25519.scalarReduceContract, Spec.Ed25519.scalarReduceSig,
+               Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow]
+               [a0, a1, a2, e, esp] using scalarSatState }
+    sig_pre [Spec.Ed25519.scalarReduceContract, Spec.Ed25519.scalarReduceSig,
+      Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow] at h
+    obtain ⟨h20, hsp, hrd, hwr, -, o2, o3, i2, -, s3, r0, -, r2, -, -, b1, b2, -, f0, f1, f2⟩ := h
+    have be : callStk s = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 20, 20⟩ := by
+      simp only [callStk, VG.X86.Taint.sub_setWidth h20]
+    exact ⟨hrd, hwr, o2, i2, o3.symm, s3.symm, r0, r2, f0, f1, f2, by omega, h20, by rw [be]; exact b2,
+      by rw [be]; exact b1⟩
 
-theorem scalarReduce_verified : Verified X86.target scalarReduce (Spec.Ed25519.scalarReduceContract X86.abi) := by
+theorem scalarReduce_verified : Verified X86.target scalarReduce (Spec.Ed25519.scalarReduceContract X86.abi 20) := by
   have hsat := scalarReduceWide_implies.sat_left
   have satLocal : ∃ s, scalarReduceLocal.pre s := hsat.elim fun s h => ⟨_, scalarReduceWide_pre s h⟩
   have verifiedLocal : Verified X86.target scalarReduce scalarReduceLocal :=

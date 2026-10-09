@@ -146,7 +146,7 @@ theorem base_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s₁ 
   have fw : ∀ (u₀ u : State), Facts u₀ → Ctx u₀ u → u.syms = u₀.syms → Slots baseValues u₀ u →
       WP isa (.call "vg_ed25519_scalar_base" Impl.Ed25519.X86.scalarBase) u
         (fun v => Ctx u₀ v ∧ v.syms = u₀.syms) := fun u₀ u hf hc hy hs =>
-    WP.mono_syms ((base_ready hf hc hy hs).wp hc scalarBase_ok base_nosp (by rw [base_stack]; decide)
+    WP.mono_syms ((base_ready hf hc hy hs).wp hc scalarBase_ok base_nosp base_stack.le
       hf.toBounds.call) fun _ hv yv => ⟨hv, yv.trans hy⟩
   exact (hct.wp fun a b h => ⟨fw s₁ a h₁ h.1.1 h.2.1 h.1.2.2.1, fw s₂ b h₂ h.1.2.1 h.2.2 h.1.2.2.2⟩).mono
     (fun _ _ h => h) fun _ _ h => ⟨⟨h.2.1.1, h.2.2.1, trivial, trivial⟩, h.2.1.2, h.2.2.2⟩

@@ -8,7 +8,7 @@ open VG.Impl.X25519.X86 (sc)
 
 def powerStride (batch : Bool) : Nat := if batch then 16 else 1
 def powerBatch (batch : Bool) : Prog isa :=
-  if batch then double16 else .block pointDouble
+  if batch then double16 else pointDouble
 
 def powersNext (count : Nat) : List Instr :=
   [.mov .esi (.mem (sc 24)), .alu .add .esi (.imm 1), .store (sc 24) .esi,

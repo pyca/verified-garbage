@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Ed25519.X86.Workspace
+import VerifiedGarbage.Proof.X25519.X86.Field32.Call
 import VerifiedGarbage.Impl.Ed25519.X86.Field
 
 /-! Merged from `Proof.Ed25519.X86.FieldMemory`. -/
@@ -177,6 +178,124 @@ theorem fieldCode_ok (ops : List FieldOp) {s : State} {x : BitVec 32} (hc : Ctx 
   | cons op ops ih =>
     rw [fieldCode, List.flatMap_cons, WP.block_append_iff]
     refine WP.mono (fieldOp_ok hc op) fun t ⟨ht, et⟩ => ?_
+    refine WP.mono (ih (ht.ctx hc)) fun u ⟨hu, eu⟩ => ?_
+    exact ⟨ht.trans hu, by rw [eu, et]; rfl⟩
+
+/-! ## Field programs with calls
+
+A product of `fieldProg` is a call of `vg_gf25519_r32_mul`
+(`Proof/X25519/X86/Field32/Call.lean`), which also changes the function's own
+working space (bytes 768 to 1023) and the 20 bytes of stack below `esp` that
+the call uses (`CallKeep`). -/
+
+/-- What field programs with calls keep: the registers `Keep` keeps, and the
+memory but the slots, the field function's own working space and the stack a
+call uses. -/
+structure CallKeep (x : BitVec 32) (s t : State) : Prop where
+  keep : Keep s t
+  frame : Frame [sub x 64 960, VG.Proof.X25519.X86.callStk s] s.mem t.mem
+
+theorem CallKeep.refl (x : BitVec 32) (s : State) : CallKeep x s s :=
+  ⟨Keep.refl _, Frame.refl _ _⟩
+
+theorem CallKeep.trans {x : BitVec 32} {s t u : State}
+    (h : CallKeep x s t) (k : CallKeep x t u) : CallKeep x s u :=
+  ⟨h.keep.trans k.keep, h.frame.trans (by rw [VG.Proof.X25519.X86.callStk, ← h.keep.esp]; exact k.frame)⟩
+
+theorem CallKeep.ctx {x : BitVec 32} {s t : State}
+    (h : CallKeep x s t) (hc : Ctx x s) : Ctx x t := h.keep.ctx hc
+
+/-- Field code without calls keeps what field code with calls does. -/
+theorem FieldKeep.call {x : BitVec 32} {s t : State} (h : FieldKeep x s t) : CallKeep x s t :=
+  ⟨h.keep, h.frame.sub fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide)⟩⟩
+
+/-- Bytes of the working space lie apart from the stack a call uses. -/
+theorem stk_apart {x : BitVec 32} {s : State} (hc : Ctx x s) {d n : Nat} (hd : d + n ≤ 8192) (hn : 0 < n) :
+    (sub x d n).Disjoint (callStk s) :=
+  (hc.stk rfl (Nat.le_refl _)).2.sub_left (by
+    rw [scR_eq]; exact sub_sub hc.fit (Nat.zero_le _) (by omega) (by omega))
+
+/-- A word of the working space apart from regions `rs`, through a frame of them and of the
+stack a call uses. -/
+theorem wd_frameS {x : BitVec 32} {s : State} (hc : Ctx x s) {rs : List Region} {m m' : Mem}
+    (hf : Frame (rs ++ [callStk s]) m m') {d : Nat} (hd : d + 4 ≤ 8192)
+    (h : ∀ r ∈ rs, (sub x d 4).Disjoint r) : wd m' x d = wd m x d :=
+  wd_frame hf fun r hr => by
+    rcases List.mem_append.mp hr with hr | hr
+    · exact h r hr
+    · rw [List.mem_singleton.mp hr]; exact stk_apart hc hd (by decide)
+
+/-- `wd_frame1` with the stack a call uses. -/
+theorem wd_frame1s {x : BitVec 32} {s : State} (hc : Ctx x s) {m m' : Mem} {o n d : Nat}
+    (hf : Frame [sub x o n, callStk s] m m') (ho : o + n ≤ 8192) (hd : d + 4 ≤ 8192)
+    (h : d + 4 ≤ o ∨ o + n ≤ d) : wd m' x d = wd m x d :=
+  wd_frameS hc (rs := [sub x o n]) hf hd fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact sub_disj (by have := hc.fit; omega) (by have := hc.fit; omega) h
+
+/-- `fe_frame1` with the stack a call uses. -/
+theorem fe_frame1s {x : BitVec 32} {s : State} (hc : Ctx x s) {m m' : Mem} {o n q : Nat}
+    (hf : Frame [sub x o n, callStk s] m m') (ho : o + n ≤ 8192) (hq : q + 32 ≤ 8192)
+    (h : q + 32 ≤ o ∨ o + n ≤ q) : fe m' x q = fe m x q :=
+  fe_frame fun k hk => wd_frame1s hc hf ho (by omega) (by omega)
+
+/-- A frame of a region and the stack is one of any region containing it, and the stack. -/
+theorem frameWidenS {x : BitVec 32} {s : State} {m m' : Mem} {o n o' n' : Nat}
+    (hf : Frame [sub x o n, callStk s] m m') (hx : x.toNat + 8192 ≤ 2 ^ 32) (h₁ : o' ≤ o)
+    (h₂ : o + n ≤ o' + n') (hn : o < 8192) : Frame [sub x o' n', callStk s] m m' :=
+  hf.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, List.mem_cons_self .., sub_sub hx h₁ h₂ hn⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
+
+/-- A frame of a region is one of it and the stack. -/
+theorem Frame.withStk {x : BitVec 32} {s : State} {m m' : Mem} {o n : Nat}
+    (hf : Frame [sub x o n] m m') : Frame [sub x o n, callStk s] m m' :=
+  hf.mono fun r hr => by rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..
+
+theorem mulProg_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (o a b : Slot) :
+    WP isa (FieldOp.mul o a b).prog s fun t => CallKeep x s t ∧ env t.mem x = evalOp (.mul o a b) (env s.mem x) := by
+  have hfit := hc.fit
+  have sl : ∀ q : Slot, offset q + 32 ≤ 768 := fun q => by simp only [offset]; omega
+  refine WP.mono (VG.Proof.X25519.X86.Field32.mulCall_ok hc (sl o) (sl a) (sl b)) fun t ⟨hk, hf, hv⟩ => ⟨⟨hk, ?_⟩, ?_⟩
+  · refine hf.sub fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨_, List.mem_cons_self .., sub_sub hfit (by simp only [offset]; omega)
+        (by simp only [offset]; omega) (by simp only [offset]; omega)⟩
+    · exact ⟨_, List.mem_cons_self .., sub_sub hfit (by decide) (by decide) (by decide)⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
+  · funext i
+    by_cases hi : i = o
+    · subst i
+      rw [evalOp_mul_apply, ite_eq_left_iff.mpr (fun h => absurd rfl h)]
+      exact VG.Proof.X25519.toFe_mul hv
+    · rw [evalOp_mul_apply, ite_eq_right_iff.mpr (fun h => absurd h hi)]
+      apply congrArg VG.Proof.X25519.toFe
+      refine fe_frame fun k hk => wd_frame hf fun r hr => ?_
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact sub_disj (by simp only [offset]; omega) (by simp only [offset]; omega)
+          (by have := slot_ne (slot_valid o) (slot_valid i) (fun h => hi (offset_inj h)); simp only [offset] at this ⊢; omega)
+      · exact sub_disj (by simp only [offset]; omega) (by simp only [VG.Impl.X25519.X86.Field32.opA]; omega)
+          (.inl (by simp only [offset, VG.Impl.X25519.X86.Field32.opA]; omega))
+      · exact (hc.stk rfl (Nat.le_refl _)).2.sub_left (by
+          rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by simp only [offset]; omega)
+            (by simp only [offset]; omega))
+
+theorem fieldProgOp_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (op : FieldOp) :
+    WP isa op.prog s fun t => CallKeep x s t ∧ env t.mem x = evalOp op (env s.mem x) := by
+  cases op with
+  | mul o a b => exact mulProg_ok hc o a b
+  | _ => exact WP.mono (fieldOp_ok hc _) fun t ⟨hk, he⟩ => ⟨hk.call, he⟩
+
+theorem fieldProg_ok (ops : List FieldOp) {s : State} {x : BitVec 32} (hc : Ctx x s) :
+    WP isa (fieldProg ops) s fun t => CallKeep x s t ∧ env t.mem x = evalOps ops (env s.mem x) := by
+  induction ops generalizing s with
+  | nil => exact WP.block_nil ⟨CallKeep.refl _ _, rfl⟩
+  | cons op ops ih =>
+    refine WP.seq (WP.mono (fieldProgOp_ok hc op) fun t ⟨ht, et⟩ => ?_)
     refine WP.mono (ih (ht.ctx hc)) fun u ⟨hu, eu⟩ => ?_
     exact ⟨ht.trans hu, by rw [eu, et]; rfl⟩
 

@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.X25519.X86
+import VerifiedGarbage.Impl.X25519.X86.Field32
 import VerifiedGarbage.Spec.Ed25519
 
 /-! Extended Edwards formulas on the eight-word field representation.
@@ -36,6 +37,16 @@ def FieldOp.code : FieldOp → List Instr
 
 def fieldCode (ops : List FieldOp) : List Instr := ops.flatMap FieldOp.code
 
+/-- A field operation as a program: a product is a call of `vg_gf25519_r32_mul`. -/
+def FieldOp.prog : FieldOp → Prog isa
+  | .mul o a b => VG.Impl.X25519.X86.Field32.mulCall (offset o) (offset a) (offset b)
+  | op => .block op.code
+
+/-- Field operations as a program, their products calls of `vg_gf25519_r32_mul`. -/
+def fieldProg : List FieldOp → Prog isa
+  | [] => .block []
+  | op :: ops => .seq op.prog (fieldProg ops)
+
 /-- Add the points in slots 0–3 and 4–7 into slots 0–3. The coordinates
 are X,Y,Z,T. Slot 16 holds d; slots 8–15 are temporary. Both points are
 read before the result overwrites the first. -/
@@ -47,7 +58,7 @@ def pointAddOps : List FieldOp := [
   .sub 12 9 8, .sub 13 11 10, .add 14 11 10, .add 15 9 8,
   .mul 0 12 13, .mul 1 14 15, .mul 2 13 14, .mul 3 12 15]
 
-def pointAdd : List Instr := fieldCode pointAddOps
+def pointAdd : Prog isa := fieldProg pointAddOps
 
 /-- Double the first point, using the complete addition formula on two
 equal inputs. Uses precisely the same formula as the specification. -/
@@ -59,6 +70,6 @@ def pointDoubleOps : List FieldOp := [
   .sub 12 9 8, .sub 13 11 10, .add 14 11 10, .add 15 9 8,
   .mul 0 12 13, .mul 1 14 15, .mul 2 13 14, .mul 3 12 15]
 
-def pointDouble : List Instr := fieldCode pointDoubleOps
+def pointDouble : Prog isa := fieldProg pointDoubleOps
 
 end VG.Impl.Ed25519.X86

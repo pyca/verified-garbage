@@ -37,12 +37,12 @@ theorem verifyScalar_ok {s₀ s : State}
       (wd s₀.mem (arg s₀ 1 + BitVec.ofNat 32 32) (0 + 4 * k)).toNat
     rw [Nat.zero_add]
     exact congrArg BitVec.toNat (wa k hk)
-  refine WP.block_append (WP.mono (scalarSubtract_ok (ha.ctx hp.fit hp.wr)) fun b ⟨kb, fb, vb⟩ => ?_)
+  refine WP.block_append (WP.mono (scalarSubtract_ok (ha.ctx hp.fit hp.wr hp.stk)) fun b ⟨kb, fb, vb⟩ => ?_)
   have hb := ha.of_offset hp.fit (Keep.scalar kb) fb (by decide) (by decide) (by decide)
   refine Wp.wp_test fun t kt zt => WP.block_nil ?_
   refine ⟨⟨(congrFun kt.gpr .edi).trans hb.edi, (congrFun kt.gpr .esp).trans hb.esp,
     kt.rd.trans hb.rd, kt.wr.trans hb.wr, by rw [kt.mem]; exact hb.frame,
-    by rw [kt.mem]; exact hb.saved⟩, ?_⟩
+    by rw [kt.mem]; exact hb.saved, hb.stk⟩, ?_⟩
   rw [zt, BitVec.and_self, scalarCarry_compare vb, fa]
 
 end VG.Proof.Ed25519.X86

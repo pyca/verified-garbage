@@ -52,21 +52,21 @@ theorem copyPointToQ_eval (e : Env) :
 
 theorem pointDouble_ok {s : State} {base : BitVec 32} (hs : Ctx base s)
     (hd : env s.mem base 16 = Spec.Ed25519.d) :
-    WP isa (.block pointDouble) s fun t =>
-      FieldKeep base s t ∧ point (env t.mem base) 0 1 2 3 =
+    WP isa pointDouble s fun t =>
+      CallKeep base s t ∧ point (env t.mem base) 0 1 2 3 =
         Spec.Ed25519.pointAdd (point (env s.mem base) 0 1 2 3) (point (env s.mem base) 0 1 2 3) ∧
       ∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i := by
-  refine WP.mono (fieldCode_ok pointDoubleOps hs) fun t ⟨hk, hv⟩ => ?_
+  refine WP.mono (fieldProg_ok pointDoubleOps hs) fun t ⟨hk, hv⟩ => ?_
   rw [hv]
   exact ⟨hk, pointDouble_eval _ hd, pointDouble_high _⟩
 
 theorem pointAdd_ok {s : State} {base : BitVec 32} (hs : Ctx base s)
     (hd : env s.mem base 16 = Spec.Ed25519.d) :
-    WP isa (.block pointAdd) s fun t =>
-      FieldKeep base s t ∧ point (env t.mem base) 0 1 2 3 =
+    WP isa pointAdd s fun t =>
+      CallKeep base s t ∧ point (env t.mem base) 0 1 2 3 =
         Spec.Ed25519.pointAdd (point (env s.mem base) 0 1 2 3) (point (env s.mem base) 4 5 6 7) ∧
       ∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i := by
-  refine WP.mono (fieldCode_ok pointAddOps hs) fun t ⟨hk, hv⟩ => ?_
+  refine WP.mono (fieldProg_ok pointAddOps hs) fun t ⟨hk, hv⟩ => ?_
   rw [hv]
   exact ⟨hk, pointAdd_eval _ hd, pointAdd_high _⟩
 

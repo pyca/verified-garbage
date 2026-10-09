@@ -429,7 +429,7 @@ theorem equation_call_ct (hL : L.Ok) (ch : List Byte)
     RelCT isa (Two L g₁ g₂ m₁ m₂ (EqState L ch))
       (.call "vg_ed25519_verify_equation" Impl.Ed25519.X86.verifyEquation)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
-  apply call_ct hL equation_correct_result verify_ct equation_nosp (by rw [equation_stack]; decide)
+  apply call_ct hL equation_correct_result verify_ct equation_nosp equation_stack.le
   · intro g m t hc hh
     exact equation_ready hc hL (eq_args hL hh.1)
   · intro a b ar aw br bw h

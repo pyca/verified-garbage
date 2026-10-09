@@ -74,7 +74,7 @@ theorem finishWords_ok {s₀ s : State} {scidx argc src : Nat}
   simp only [finishWords, List.append_assoc]
   refine WP.block_append (WP.mono (loadArg_ok (i := 0) hp h (by have := hp.index; omega_using [this]))
     fun u ⟨hu, eu, mu⟩ => ?_)
-  have cu := hu.ctx hp.fit hp.wr
+  have cu := hu.ctx hp.fit hp.wr hp.stk
   have hwr : ∀ j < 8, InRegions u.wr (addr (arg s₀ 0) (4 * j)) 4 := by
     intro j hj
     refine ⟨_, hu.wr ▸ ho.wr, ?_⟩
@@ -103,8 +103,11 @@ theorem finishWords_ok {s₀ s : State} {scidx argc src : Nat}
         simp only [List.mem_singleton]; rintro r rfl
         rw [sub, addr_zero]; exact ho.ret) (by decide)
     rw [hvret]
-    exact hu.frame.readW (Region.contains_self _ _) (by
-      simp only [List.mem_singleton]; rintro r rfl; exact hp.ret_sc) (by decide)
+    exact hu.frame.readW (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hp.ret_sc
+      · exact hp.ret_stk) (by decide)
   · rw [mt, encodeLE_eq]
     apply Proof.X25519.bytesAt_leBytes_words32
     intro j hj

@@ -14,12 +14,13 @@ def scalarBitMask : List Instr :=
 def prepareAdd : List Instr :=
   savePoint ++ tableAddr 5120 ++ pointFromTable ++ copyPointToQ ++ restorePoint
 
-def pointAccumulate : List Instr := prepareAdd ++ pointAdd ++ scalarBitMask ++ pointSelect
+def pointAccumulate : Prog isa :=
+  .seq (.block prepareAdd) (.seq pointAdd (.block (scalarBitMask ++ pointSelect)))
 
-def accumulateBody : List Instr :=
-  [.alu .sub .esi (.imm 1)] ++ pointAccumulate ++ [.alu .test .esi (.reg .esi)]
+def accumulateBody : Prog isa :=
+  .seq (.block [.alu .sub .esi (.imm 1)]) (.seq pointAccumulate (.block [.alu .test .esi (.reg .esi)]))
 
 def accumulate16 : Prog isa :=
-  .seq (.block [.mov .esi (.imm 16)]) (.loop (.block accumulateBody) .ne)
+  .seq (.block [.mov .esi (.imm 16)]) (.loop accumulateBody .ne)
 
 end VG.Impl.Ed25519.X86
