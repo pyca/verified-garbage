@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Spec.Poly1305
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Omega
@@ -416,10 +417,11 @@ theorem mask_ok (s : State) :
     WP isa (.block mask) s fun s' => s'.gpr .x17 = M26 ∧ Keeps [.x17] s s' := by
   apply WP.of_runBlock
   simp (config := {decide := true}) only [mask, runBlock_cons, runStep_some, runBlock_nil, exec,
-    State.read, State.write, Size.bits, ite_true, Option.some.injEq, exists_eq_left']
-  refine ⟨by decide, fun r hr => ?_, rfl, rfl, rfl⟩
+    State.read, RegUpd.gpr_write, Size.bits, ite_true, Option.some.injEq, exists_eq_left']
+  refine ⟨by decide, fun r hr => ?_, by simp only [RegUpd.mem_write], by simp only [RegUpd.rd_write],
+    by simp only [RegUpd.wr_write]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  simp only [hr, BitVec.ofNat_eq_ofNat, Nat.mul_zero, BitVec.shiftLeft_zero, BitVec.setWidth_eq, Nat.mul_one, ite_false]
+  simp only [hr, BitVec.ofNat_eq_ofNat, Nat.mul_zero, BitVec.shiftLeft_zero, BitVec.setWidth_eq, Nat.mul_one, ite_false, RegUpd.gpr_write]
 
 set_option simprocs false in
 /-- The limbs of `lo + 2⁶⁴ hi` (in `x14, x15`) into `x9`–`x13`. -/
@@ -436,17 +438,18 @@ theorem split_ok (s : State) (hm : s.gpr .x17 = M26) :
     exec_lsr_x (show 26 < 64 by decide), exec_lsr_x (show 52 < 64 by decide),
     exec_lsr_x (show 14 < 64 by decide), exec_lsr_x (show 40 < 64 by decide),
     exec_lsl_x (show 12 < 64 by decide), exec_add, v,
-    State.read, State.write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq,
+    State.read, RegUpd.gpr_write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq,
     exists_eq_left']
   obtain ⟨a0, a1, a2, a3, a4⟩ := split_arith (v s .x14) (v s .x15) (s.gpr .x14).isLt
-  refine ⟨?_, ?_, ?_, ?_, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, fun r hr => ?_, by simp only [RegUpd.mem_write], by simp only [RegUpd.rd_write],
+    by simp only [RegUpd.wr_write]⟩
   · rw [hm, and_mask, ← a0]
   · rw [hm, and_mask, lsr_toNat, ← a1]
   · rw [hm, and_mask, add_toNat, lsr_toNat, lsl_toNat, ← a2]
   · rw [hm, and_mask, lsr_toNat, ← a3]
   · rw [lsr_toNat, ← a4]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [hr.2.2.2.2.1, hr.2.2.2.1, hr.2.2.1, hr.2.2.2.2.2, hr.2.1, hr.1, ite_false]
+    simp only [hr.2.2.2.2.1, hr.2.2.2.1, hr.2.2.1, hr.2.2.2.2.2, hr.2.1, hr.1, ite_false, RegUpd.gpr_write]
 
 /-! ## Sums of products -/
 
@@ -466,7 +469,8 @@ theorem mul1_ok (s : State) {d h : Reg} {off : Nat} (hh : h ≠ Reg.x14)
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec_ldr_w ho hin, exec_mul, v, word, write_gpr, write_gpr_w,
     State.read, Size.bits, BitVec.setWidth_eq, ite_true, Option.some.injEq, exists_eq_left', hh,
     ite_false]
-  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨?_, fun r hr => ?_, by simp only [RegUpd.mem_write], by simp only [RegUpd.rd_write],
+    by simp only [RegUpd.wr_write]⟩
   · rw [BitVec.toNat_mul, ldrw_toNat]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [write_gpr, write_gpr_w, hr.1, hr.2, ite_false]
@@ -482,7 +486,8 @@ theorem mac_ok (s : State) {d h : Reg} {off : Nat} (hh : h ≠ Reg.x14)
   simp only [mac, runBlock_cons, runStep_some, runBlock_nil, exec_ldr_w ho hin, exec_madd, v, word,
     write_gpr, write_gpr_w, State.read, Size.bits, BitVec.setWidth_eq, ite_true, Option.some.injEq, exists_eq_left',
     hh, hd', ite_false]
-  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨?_, fun r hr => ?_, by simp only [RegUpd.mem_write], by simp only [RegUpd.rd_write],
+    by simp only [RegUpd.wr_write]⟩
   · rw [madd_toNat, ldrw_toNat]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [write_gpr, write_gpr_w, hr.1, hr.2, ite_false]
@@ -569,16 +574,17 @@ theorem carry_ok (s : State) (hm : s.gpr .x17 = M26) :
   simp (config := {decide := true}) only [carry, carryStep, List.cons_append, List.nil_append,
     runBlock_cons, runStep_some, runBlock_nil, exec_logic,
     exec_lsr_x (show 26 < 64 by decide), exec_lsl_x (show 2 < 64 by decide), exec_add, v,
-    State.read, State.write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq,
+    State.read, RegUpd.gpr_write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq,
     exists_eq_left']
-  refine ⟨fun b0 b1 b2 b3 b4 => ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨fun b0 b1 b2 b3 b4 => ?_, fun r hr => ?_, by simp only [RegUpd.mem_write], by simp only [RegUpd.rd_write],
+    by simp only [RegUpd.wr_write]⟩
   · simp only [hm, and_mask, lsr_toNat, add_toNat, lsl_toNat]
     obtain ⟨e, c0, c1, c2, c3, c4⟩ := carry_arith b0 b1 b2 b3 b4 rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl
       rfl rfl rfl rfl rfl rfl rfl rfl rfl
     refine ⟨?_, c0, c1, c2, c3, c4⟩
     rw [← e, Nat.add_mul_mod_self_left]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [hr.2.1, hr.1, hr.2.2.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2.2.2, hr.2.2.2.2.1, hr.2.2.2.2.2.2.2.2.1, hr.2.2.2.1, hr.2.2.2.2.2.2.2.1, hr.2.2.1, hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.1, ite_false]
+    simp only [hr.2.1, hr.1, hr.2.2.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2.2.2, hr.2.2.2.2.1, hr.2.2.2.2.2.2.2.2.1, hr.2.2.2.1, hr.2.2.2.2.2.2.2.1, hr.2.2.1, hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.1, ite_false, RegUpd.gpr_write]
 
 set_option simprocs false in
 /-- The two words at `[n + off]` into `x14, x15`. -/
@@ -608,12 +614,13 @@ theorem addLimbs_ok (s : State) :
       v s' .x8 = (v s .x8 + v s .x13) % 2 ^ 64 ∧ Keeps [.x4, .x5, .x6, .x7, .x8] s s' := by
   apply WP.of_runBlock
   simp (config := {decide := true}) only [addLimbs, runBlock_cons, runStep_some, runBlock_nil, exec_add,
-    v, State.read, State.write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq,
+    v, State.read, RegUpd.gpr_write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq,
     exists_eq_left']
   refine ⟨add_toNat _ _, add_toNat _ _, add_toNat _ _, add_toNat _ _, add_toNat _ _, fun r hr => ?_,
-    rfl, rfl, rfl⟩
+    by simp only [RegUpd.mem_write], by simp only [RegUpd.rd_write],
+    by simp only [RegUpd.wr_write]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  simp only [hr.2.2.2.2, hr.2.2.2.1, hr.2.2.1, hr.2.1, hr.1, ite_false]
+  simp only [hr.2.2.2.2, hr.2.2.2.1, hr.2.2.1, hr.2.1, hr.1, ite_false, RegUpd.gpr_write]
 
 set_option simprocs false in
 /-- `h += 2¹²⁸`. -/
@@ -622,12 +629,13 @@ theorem padBit_ok (s : State) :
       v s' .x8 = (v s .x8 + 2 ^ 24) % 2 ^ 64 ∧ Keeps [.x8, .x16] s s' := by
   apply WP.of_runBlock
   simp (config := {decide := true}) only [padBit, runBlock_cons, runStep_some, runBlock_nil,
-    exec, v, State.read, State.write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false,
+    exec, v, State.read, RegUpd.gpr_write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false,
     Option.some.injEq, exists_eq_left']
-  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨?_, fun r hr => ?_, by simp only [RegUpd.mem_write], by simp only [RegUpd.rd_write],
+    by simp only [RegUpd.wr_write]⟩
   · rw [add_toNat]; rfl
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [hr.1, BitVec.ofNat_eq_ofNat, Nat.mul_one, hr.2, ite_false]
+    simp only [hr.1, BitVec.ofNat_eq_ofNat, Nat.mul_one, hr.2, ite_false, RegUpd.gpr_write]
 
 theorem ofNat_toNat5 : (BitVec.ofNat 64 5).toNat = 5 := rfl
 theorem ofNat_toNat1 : (BitVec.ofNat 64 1).toNat = 1 := rfl
@@ -658,9 +666,9 @@ theorem reduceA_ok (s : State) (hm : s.gpr .x17 = M26) :
     List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec_logic,
     exec_lsr_x (show 26 < 64 by decide), exec_add, exec_addImm_x (show 5 < 4096 by decide),
     exec_subImm_x (show 1 < 4096 by decide), v,
-    State.read, State.write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq,
-    exists_eq_left']
-  refine ⟨fun b0 b1 b2 b3 b4 => ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+    State.read, RegUpd.gpr_write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+  refine ⟨fun b0 b1 b2 b3 b4 => ?_, fun r hr => ?_, by simp only [RegUpd.mem_write],
+    by simp only [RegUpd.rd_write], by simp only [RegUpd.wr_write]⟩
   · simp only [hm, and_mask, lsr_toNat, add_toNat, sub_toNat, ofNat_toNat5, ofNat_toNat1]
     rcases reduce_arith b0 b1 b2 b3 b4 rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl
       rfl with ⟨hb, e, g⟩ | ⟨hb, e, g⟩
@@ -671,7 +679,7 @@ theorem reduceA_ok (s : State) (hm : s.gpr .x17 = M26) :
       rw [hb]
       exact ⟨rfl, e, g⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [hr.2.2.2.2.2.2.2.2.2, hr.2.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.1, hr.2.2.1, hr.2.1, hr.1, ite_false]
+    simp only [hr.2.2.2.2.2.2.2.2.2, hr.2.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.1, hr.2.2.1, hr.2.1, hr.1, ite_false, RegUpd.gpr_write]
 
 set_option simprocs false in
 /-- Selecting `x9`–`x13` over `x4`–`x8` where the mask `x14` is set. -/
@@ -686,11 +694,12 @@ theorem select_ok (s : State) :
   apply WP.of_runBlock
   simp (config := {decide := true}) only [select, selectLimb, List.cons_append, List.nil_append,
     runBlock_cons, runStep_some, runBlock_nil, exec_logic,
-    State.read, State.write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq,
+    State.read, RegUpd.gpr_write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq,
     exists_eq_left']
-  refine ⟨trivial, trivial, trivial, trivial, trivial, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨trivial, trivial, trivial, trivial, trivial, fun r hr => ?_, by simp only [RegUpd.mem_write], by simp only [RegUpd.rd_write],
+    by simp only [RegUpd.wr_write]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  simp only [hr.2.2.2.2.1, hr.2.2.2.2.2, hr.2.2.2.1, hr.2.2.1, hr.2.1, hr.1, ite_false]
+  simp only [hr.2.2.2.2.1, hr.2.2.2.2.2, hr.2.2.2.1, hr.2.2.1, hr.2.1, hr.1, ite_false, RegUpd.gpr_write]
 
 theorem select_zero (h g : BitVec 64) : g ^^^ ((h ^^^ g) &&& 0) = g := by simp only [BitVec.ofNat_eq_ofNat, BitVec.and_zero, BitVec.xor_zero]
 theorem select_ones (h g : BitVec 64) : g ^^^ ((h ^^^ g) &&& BitVec.allOnes 64) = h := by
@@ -714,13 +723,14 @@ theorem pack_ok (s : State) :
     exec_lsl_x (show 26 < 64 by decide), exec_lsl_x (show 52 < 64 by decide),
     exec_lsl_x (show 14 < 64 by decide), exec_lsl_x (show 40 < 64 by decide),
     exec_lsr_x (show 12 < 64 by decide), exec_lsr_x (show 24 < 64 by decide), exec_add, v,
-    State.read, State.write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq,
+    State.read, RegUpd.gpr_write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq,
     exists_eq_left']
-  refine ⟨fun b0 b1 b2 b3 => ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨fun b0 b1 b2 b3 => ?_, fun r hr => ?_, by simp only [RegUpd.mem_write], by simp only [RegUpd.rd_write],
+    by simp only [RegUpd.wr_write]⟩
   · simp only [lsr_toNat, add_toNat, lsl_toNat]
     exact pack_arith b0 b1 b2 b3
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [hr.2.2.2, hr.2.2.1, hr.1, hr.2.1, ite_false]
+    simp only [hr.2.2.2, hr.2.2.1, hr.1, hr.2.1, ite_false, RegUpd.gpr_write]
 
 set_option simprocs false in
 /-- `hi += xi`, with the carries propagated up to `h4`. -/
@@ -739,15 +749,16 @@ theorem addCarry_ok (s : State) (hm : s.gpr .x17 = M26) :
   simp (config := {decide := true}) only [addLimbs, normalize, carryStep, List.cons_append,
     List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec_logic,
     exec_lsr_x (show 26 < 64 by decide), exec_add, v,
-    State.read, State.write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq,
+    State.read, RegUpd.gpr_write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq,
     exists_eq_left']
-  refine ⟨fun b0 b1 b2 b3 b4 c0 c1 c2 c3 c4 => ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨fun b0 b1 b2 b3 b4 c0 c1 c2 c3 c4 => ?_, fun r hr => ?_, by simp only [RegUpd.mem_write], by simp only [RegUpd.rd_write],
+    by simp only [RegUpd.wr_write]⟩
   · simp only [hm, and_mask, lsr_toNat, add_toNat]
     obtain ⟨e, g⟩ := addCarry_arith b0 b1 b2 b3 b4 c0 c1 c2 c3 c4 rfl rfl rfl rfl rfl rfl rfl rfl rfl
     exact ⟨e, Nat.mod_lt _ (by decide), Nat.mod_lt _ (by decide), Nat.mod_lt _ (by decide),
       Nat.mod_lt _ (by decide), g⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [hr.2.2.2.2.1, hr.2.2.2.1, hr.2.2.2.2.2, hr.2.2.1, hr.2.1, hr.1, ite_false]
+    simp only [hr.2.2.2.2.1, hr.2.2.2.1, hr.2.2.2.2.2, hr.2.2.1, hr.2.1, hr.1, ite_false, RegUpd.gpr_write]
 
 end VG.Proof.Poly1305.AArch64
 
@@ -1130,13 +1141,14 @@ theorem clampR_ok (s : State) :
       Keeps [.x14, .x15, .x16] s s' := by
   apply WP.of_runBlock
   simp (config := {decide := true}) only [clampR, const64, List.cons_append, List.nil_append,
-    runBlock_cons, runStep_some, runBlock_nil, exec, State.read, State.write, Size.bits,
+    runBlock_cons, runStep_some, runBlock_nil, exec, State.read, RegUpd.gpr_write, Size.bits,
     BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq, exists_eq_left']
-  refine ⟨?_, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨?_, ?_, fun r hr => ?_, by simp only [RegUpd.mem_write], by simp only [RegUpd.rd_write],
+    by simp only [RegUpd.wr_write]⟩
   · rw [movz_movk64']
   · rw [movz_movk64']
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [hr.2.1, BitVec.ofNat_eq_ofNat, Nat.mul_zero, BitVec.shiftLeft_zero, Nat.mul_one, hr.2.2, hr.1, ite_false]
+    simp only [hr.2.1, BitVec.ofNat_eq_ofNat, Nat.mul_zero, BitVec.shiftLeft_zero, Nat.mul_one, hr.2.2, hr.1, ite_false, RegUpd.gpr_write]
 
 set_option simprocs false in
 /-- `sj = 5 rj`. -/
@@ -1149,11 +1161,12 @@ theorem times5_ok (s : State) :
       Keeps [.x4, .x5, .x6, .x7] s s' := by
   apply WP.of_runBlock
   simp (config := {decide := true}) only [times5, runBlock_cons, runStep_some, runBlock_nil,
-    exec_lsl_x (show 2 < 64 by decide), exec_add, v, State.read, State.write, Size.bits,
+    exec_lsl_x (show 2 < 64 by decide), exec_add, v, State.read, RegUpd.gpr_write, Size.bits,
     BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq, exists_eq_left']
-  refine ⟨?_, ?_, ?_, ?_, fun r hr => ?_, rfl, rfl, rfl⟩ <;> try rw [add_toNat, lsl_toNat]
+  refine ⟨?_, ?_, ?_, ?_, fun r hr => ?_, by simp only [RegUpd.mem_write], by simp only [RegUpd.rd_write],
+    by simp only [RegUpd.wr_write]⟩ <;> try rw [add_toNat, lsl_toNat]
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  simp only [hr.2.2.2, hr.2.2.1, hr.2.1, hr.1, ite_false]
+  simp only [hr.2.2.2, hr.2.2.1, hr.2.1, hr.1, ite_false, RegUpd.gpr_write]
 
 /-- The memory after the coefficients are stored: `r j` at `rOff j`, `s j` at `sOff j`. -/
 def coefMem (m : Mem) (st : Addr) (r s : Nat → BitVec 64) : Mem :=
@@ -1241,12 +1254,13 @@ theorem moveH_ok (s : State) (h16 : InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec
   apply WP.of_runBlock
   simp (config := {decide := true}) only [moveH, runBlock_cons, runStep_some, runBlock_nil,
     exec_ldr_x (show 16 % 8 = 0 ∧ 16 < 32768 by decide) h16, exec_lsl_x (show 24 < 64 by decide),
-    exec_addImm_x (show 0 < 4096 by decide), exec_add, v, State.read, State.write, Size.bits,
+    exec_addImm_x (show 0 < 4096 by decide), exec_add, v, State.read, RegUpd.gpr_write, Size.bits,
     BitVec.setWidth_eq, add_ofNat_zero, ite_true, ite_false, Option.some.injEq, exists_eq_left']
-  refine ⟨trivial, trivial, trivial, trivial, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨trivial, trivial, trivial, trivial, ?_, fun r hr => ?_, by simp only [RegUpd.mem_write], by simp only [RegUpd.rd_write],
+    by simp only [RegUpd.wr_write]⟩
   · rw [add_toNat, lsl_toNat]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [hr.2.2.2.2.1, hr.2.2.2.1, hr.2.2.1, hr.2.1, hr.1, hr.2.2.2.2.2, ite_false]
+    simp only [hr.2.2.2.2.1, hr.2.2.2.1, hr.2.2.1, hr.2.1, hr.1, hr.2.2.2.2.2, ite_false, RegUpd.gpr_write]
 
 /-! ## `setup` -/
 
@@ -1639,11 +1653,12 @@ theorem advance_ok (s : State) :
   apply WP.of_runBlock
   simp (config := {decide := true}) only [advance, runBlock_cons, runStep_some, runBlock_nil,
     exec_addImm_x (show 16 < 4096 by decide), exec_subImm_x (show 1 < 4096 by decide), State.read,
-    State.write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq,
+    RegUpd.gpr_write, Size.bits, BitVec.setWidth_eq, ite_true, ite_false, Option.some.injEq,
     exists_eq_left']
-  refine ⟨trivial, trivial, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨trivial, trivial, fun r hr => ?_, by simp only [RegUpd.mem_write], by simp only [RegUpd.rd_write],
+    by simp only [RegUpd.wr_write]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  simp only [hr.2, hr.1, ite_false]
+  simp only [hr.2, hr.1, ite_false, RegUpd.gpr_write]
 
 /-- The value of block `i`, with the `0x01` byte appended: its two words and `2¹²⁸`. -/
 theorem block_value {s₀ : State} (hp : BPre s₀) {m : Mem} (hf : Frame [cR (st s₀)] s₀.mem m)
