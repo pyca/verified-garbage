@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
 import VerifiedGarbage.Proof.Argon2.Divide
 import VerifiedGarbage.Impl.Argon2.Arm.Divide
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Fixed-time division on ARMv7
@@ -63,19 +64,19 @@ theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2
     (hq : ∀ t, Stage n D.toNat (k + 1) t → Keep s t → WP isa (.block is) t Q) :
     WP isa (.block (bit ++ is)) s Q := by
   obtain ⟨hc, ha⟩ := h
-  have hm : k + (31 - k) = 31 := by omega
+  have hm : k + (31 - k) = 31 := by omega_using [hk]
   have pos : ∀ j, 0 < 2 ^ j := fun j => Nat.two_pow_pos j
-  have e32 : 32 - k = 31 - k + 1 := by omega
+  have e32 : 32 - k = 31 - k + 1 := by omega_using [hk]
   have p31 : 2 ^ (31 - k) * 2 ^ k = 2 ^ 31 := by rw [← Nat.pow_add, Nat.add_comm, hm]
   have hRlt : n % 2 ^ (32 - k) < 2 ^ (32 - k) := Nat.mod_lt _ (pos _)
   have hRb := (Nat.div_add_mod' (n % 2 ^ (32 - k)) (2 ^ (31 - k))).symm
   have hb1 : n % 2 ^ (32 - k) / 2 ^ (31 - k) ≤ 1 := by
     have h' : 2 ^ (32 - k) = 2 ^ (31 - k) * 2 := by rw [e32, Nat.pow_succ]
-    exact Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega))
+    exact Nat.le_of_lt_succ (Nat.div_lt_of_lt_mul (by omega_using [h', hRlt]))
   have hR'lt : n % 2 ^ (32 - k) % 2 ^ (31 - k) < 2 ^ (31 - k) := Nat.mod_lt _ (pos _)
   have hqlt : n / 2 ^ (32 - k) / D.toNat < 2 ^ k := by
     refine Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (Nat.div_lt_of_lt_mul ?_)
-    rw [← Nat.pow_add, show 32 - k + k = 32 by omega]; exact hn
+    rw [← Nat.pow_add, show 32 - k + k = 32 by omega_using [hk]]; exact hn
   have hrlt : n / 2 ^ (32 - k) % D.toNat < D.toNat := Nat.mod_lt _ hD
   -- Abbreviations, as numbers.
   generalize hN : n / 2 ^ (32 - k) = N at hc ha hqlt hrlt
@@ -84,12 +85,12 @@ theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2
   generalize hR' : R % 2 ^ (31 - k) = R' at hRb hR'lt
   -- The next stage's numbers.
   have N' : n / 2 ^ (32 - (k + 1)) = 2 * N + b := by
-    rw [← hN, ← hbb, ← hRR, show 32 - (k + 1) = 31 - k by omega, e32, Nat.pow_succ,
+    rw [← hN, ← hbb, ← hRR, show 32 - (k + 1) = 31 - k by omega_using [hk], e32, Nat.pow_succ,
       Nat.mod_mul_right_div_self, ← Nat.div_div_eq_div_mul]
     have := Nat.div_add_mod (n / 2 ^ (31 - k)) 2
-    omega
+    omega_using [this]
   have R'' : n % 2 ^ (32 - (k + 1)) = R' := by
-    rw [← hR', ← hRR, show 32 - (k + 1) = 31 - k by omega, e32, Nat.pow_succ, Nat.mod_mul_right_mod]
+    rw [← hR', ← hRR, show 32 - (k + 1) = 31 - k by omega_using [hk], e32, Nat.pow_succ, Nat.mod_mul_right_mod]
   have step := Proof.Argon2.divide_step (n := N) (d := D.toNat) (q := N / D.toNat) (r := N % D.toNat)
     (bit := b) (Nat.div_add_mod' N _).symm hrlt hb1
   dsimp only at step
@@ -99,7 +100,7 @@ theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2
   have pk : 2 ^ (k + 1) = 2 * 2 ^ k := by rw [Nat.pow_succ, Nat.mul_comm]
   have hP : R' * 2 ^ (k + 1) = 2 * (R' * 2 ^ k) := by rw [pk, Nat.mul_left_comm]
   have hPb : R' * 2 ^ k + 2 ^ k ≤ 2 ^ 31 := by
-    have := Nat.mul_le_mul_right (2 ^ k) (show R' + 1 ≤ 2 ^ (31 - k) by omega)
+    have := Nat.mul_le_mul_right (2 ^ k) (show R' + 1 ≤ 2 ^ (31 - k) by omega_using [hR'lt])
     rw [Nat.add_mul, Nat.one_mul, p31] at this
     exact this
   have hr1 : (s.gpr .r1).toNat = b * 2 ^ 31 + R' * 2 ^ k + N / D.toNat := by
@@ -109,17 +110,18 @@ theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2
   simp only [bit, List.cons_append, List.nil_append]
   refine wp_adds (op2_reg _ _) fun s₁ u₁ c₁ => ?_
   have cb : s₁.c = decide (b = 1) := by
-    rw [c₁, hr1]; rcases (by omega : b = 0 ∨ b = 1) with rfl | rfl <;> simp <;> omega
+    rw [c₁, hr1]; rcases (by omega_using [hb1] : b = 0 ∨ b = 1) with rfl | rfl <;> simp <;> omega
   have v₁ : (s₁.gpr .r1).toNat = 2 * P + 2 * (N / D.toNat) := by
     rw [u₁.gpr, BitVec.toNat_add, hr1]
-    rcases (by omega : b = 0 ∨ b = 1) with rfl | rfl
-    · rw [Nat.mod_eq_of_lt (by omega)]; omega
+    rcases (by omega_using [hb1] : b = 0 ∨ b = 1) with rfl | rfl
+    · rw [Nat.mod_eq_of_lt (by omega_using [hPb, hqlt])]; omega_using []
     · rw [show 1 * 2 ^ 31 + P + N / D.toNat + (1 * 2 ^ 31 + P + N / D.toNat) =
-        (2 * P + 2 * (N / D.toNat)) + 2 ^ 32 by omega, Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+        (2 * P + 2 * (N / D.toNat)) + 2 ^ 32 by omega_using [], Nat.add_mod_right,
+        Nat.mod_eq_of_lt (by omega_using [hPb, hqlt])]
   refine wp_adc (op2_reg _ _) fun s₂ u₂ _ => ?_
   have v₂ : (s₂.gpr .r0).toNat = 2 * (N % D.toNat) + b := by
     rw [u₂.gpr, u₁.other _ (by decide), cb, BitVec.toNat_add, BitVec.toNat_add, ha]
-    rcases (by omega : b = 0 ∨ b = 1) with rfl | rfl <;> simp <;> omega
+    rcases (by omega_using [hb1] : b = 0 ∨ b = 1) with rfl | rfl <;> simp <;> omega_using [hrlt, hD2]
   refine wp_subsC (op2_reg _ _) fun s₃ u₃ c₃ => ?_
   have d₂ : s₂.gpr .r2 = D := by rw [u₂.other _ (by decide), u₁.other _ (by decide), hb]
   rw [d₂] at u₃ c₃
@@ -127,22 +129,22 @@ theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2
   refine wp_adc (op2_imm (by decide)) fun s₄ u₄ _ => ?_
   -- The quotient bit.
   generalize ht : (if 2 * (N % D.toNat) + b < D.toNat then 0 else 1) = t
-  have ht1 : t ≤ 1 := by rw [← ht]; split <;> omega
+  have ht1 : t ≤ 1 := by rw [← ht]; split <;> omega_using []
   have v₄ : (s₄.gpr .r1).toNat = 2 * P + 2 * (N / D.toNat) + t := by
     rw [u₄.gpr, c₃, u₃.other _ (by decide), u₂.other _ (by decide), BitVec.toNat_add, BitVec.toNat_add, v₁,
       ← ht]
     by_cases hv : 2 * (N % D.toNat) + b < D.toNat
-    · simp only [hv, ite_true, show ¬ D.toNat ≤ 2 * (N % D.toNat) + b by omega, decide_false,
+    · simp only [hv, ite_true, show ¬ D.toNat ≤ 2 * (N % D.toNat) + b by omega_using [hv], decide_false,
         Bool.false_eq_true, ite_false]
-      simp; omega
-    · simp only [hv, ite_false, show D.toNat ≤ 2 * (N % D.toNat) + b by omega, decide_true, ite_true]
-      simp; omega
+      simp; omega_using [hPb, hqlt]
+    · simp only [hv, ite_false, show D.toNat ≤ 2 * (N % D.toNat) + b by omega_using [hv], decide_true, ite_true]
+      simp; omega_using [hPb, hqlt]
   refine wp_and (op2_imm (by decide)) fun s₅ u₅ => ?_
   have v₅ : s₅.gpr .r3 = BitVec.ofNat 32 t := by
     apply BitVec.eq_of_toNat_eq
     rw [u₅.gpr, BitVec.toNat_and, show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod, v₄,
       BitVec.toNat_ofNat]
-    omega
+    omega_using [ht1]
   refine wp_sub (op2_imm (by decide)) fun s₆ u₆ => ?_
   refine wp_and (op2_reg _ _) fun s₇ u₇ => ?_
   refine wp_add (op2_reg _ _) fun s₈ u₈ => hq s₈ ⟨?_, ?_⟩ ?_
@@ -161,7 +163,7 @@ theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2
         v₂]
     · simp only [hv, ite_false]
       rw [show BitVec.ofNat 32 1 - 1 = 0#32 by decide, show (0#32) &&& D = 0#32 by simp, BitVec.add_zero,
-        BitVec.toNat_sub_of_le (by rw [BitVec.le_def, v₂]; omega), v₂]
+        BitVec.toNat_sub_of_le (by rw [BitVec.le_def, v₂]; omega_using [hv]), v₂]
   · exact (Keep.of_upd u₁ (by simp)).trans ((Keep.of_upd u₂ (by simp)).trans ((Keep.of_upd u₃ (by simp)).trans
       ((Keep.of_upd u₄ (by simp)).trans ((Keep.of_upd u₅ (by simp)).trans ((Keep.of_upd u₆ (by simp)).trans
         ((Keep.of_upd u₇ (by simp)).trans (Keep.of_upd u₈ (by simp))))))))
