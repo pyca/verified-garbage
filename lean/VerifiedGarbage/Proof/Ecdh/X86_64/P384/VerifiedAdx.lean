@@ -1,7 +1,6 @@
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Verified
-import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitAdx
+import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitEraseAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-import VerifiedGarbage.Proof.P384.X86_64.TaintSumsAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
 
 /-!
@@ -44,7 +43,8 @@ theorem mulQJP384Cms_ok {c : Cfg} (hc : CfgOk c) (h6 : c.n = 6) (hcC : c.C = Spe
 theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P384.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP384Adx s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := wp_of_inline (by lit_decide) <| exchangeWith_ok (p384x_ok hI) hL
+  obtain ⟨t, s', he, hsv, hpost⟩ := wp_of_inline (c := exchangeP384Adx) (by lit_decide) <|
+    exchangeWith_ok (p384x_ok hI) hL
     (mulQJP384Cms_ok (p384x_ok hI) rfl rfl (by decide +kernel) hL hO) (mulQJA_w (p384x_ok hI)) (pre_of_x hs)
   have hsp : ∀ i ∈ instrs exchangeP384Adx, Taint.clobbers i .rsp = false := by
     have h : exchangeP384Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
@@ -71,9 +71,8 @@ theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X8
       · exact hrs) (by decide)
 
 theorem ecdh_ct_adx : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP384Adx := by
-  obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) exchangeP384Adx h).isSome = true := by
-    taint_decide_sum [Proof.P384.X86_64.ladderGXSum, Proof.P384.X86_64.powPXSum]
-  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ hc
+  refine VG.Taint.constantTime_mapBlocks (c' := exchangeErasedAdx) taintS_eraseInv
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) rfl ?_ rfl (by taint_decide)
   intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

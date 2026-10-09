@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
 
 /-!
 # ECDSA over P-384 on x86-64 with BMI2 and ADX: `Verified`
@@ -134,7 +134,8 @@ theorem sign_x86_adx (hL : Law Spec.P384.curve)
       · exact hrs) (by decide)
 
 theorem sign_ct_adx : ConstantTime isa signX86_64.pre signX86_64.pub signP384Adx :=
-  VG.Taint.constantTime (A := taintSym ["VG_P384_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8])
+  VG.Taint.constantTime_mapBlocks (c' := signErasedAdx) (taintSym_eraseInv ["VG_P384_COMB"])
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) rfl
     (fun _ _ _ _ ⟨_, h1, h2, h3, h4, h5, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -143,7 +144,7 @@ theorem sign_ct_adx : ConstantTime isa signX86_64.pre signX86_64.pub signP384Adx
       · exact h3
       · exact h4
       · exact h5, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
-    (by taint_decide)
+    rfl (by taint_decide)
 
 theorem sign_verified_adx (hL : Law Spec.P384.curve)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)

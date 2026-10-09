@@ -118,6 +118,7 @@ precompileModules = true
 name = "NativeTactics"
 roots = []
 globs = ["VerifiedGarbage.Proof.Framework.SigEval", "VerifiedGarbage.Proof.Framework.Lit",
+  "VerifiedGarbage.Proof.Framework.LitShare",
   "VerifiedGarbage.Proof.Framework.Omega", "VerifiedGarbage.Proof.Framework.OmegaLit",
   "VerifiedGarbage.Proof.Framework.KernelRfl", "VerifiedGarbage.Proof.Framework.Sig"]
 precompileModules = true
