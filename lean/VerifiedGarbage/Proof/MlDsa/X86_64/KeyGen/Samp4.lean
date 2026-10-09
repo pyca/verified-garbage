@@ -34,12 +34,12 @@ theorem slot_ok {p : Params} (hF : PFacts p) {σ : State} (hp : (kgK p).pre σ) 
   have hq : (e + j) / p.ℓ < 256 := Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (by omega)
   have hr : (e + j) % p.ℓ < 256 := Nat.lt_of_lt_of_le (Nat.mod_lt _ (by omega)) (by omega)
   unfold setSR
-  refine WP.mono (setTwo_ok L (o := oSA4 + 34 * j + 32) hr hq (by lay) (by lay) (by lay))
-    fun s' ⟨hP, hx, hb⟩ => ⟨h.ks.keep hF hp hP.b hx (by layk) (fun e' he' => by layk)
+  refine WP.mono (setTwo_ok L (o := oSA4 + 34 * j + 32) hr hq (by layd) (by layd) (by layd))
+    fun s' ⟨hP, hx, hb⟩ => ⟨h.ks.keep hF hp hP.b hx (by layd) (fun e' he' => by layd)
       (fun _ h => absurd h (Nat.not_lt_zero _)) (hP.cs .r15 (by decide)), fun k hk => ?_⟩
   rcases (by omega : k < j ∨ k = j) with hk' | rfl
-  · rw [L.keepBytes hP.b (by layk)]; exact h.done k hk'
-  · rw [show 34 = 32 + 2 from rfl, Proof.MlKem.bytesAt_add, L.keepBytes hP.b (by layk), h.ks.k1.sa4 k hj,
+  · rw [L.keepBytes hP.b (by layd)]; exact h.done k hk'
+  · rw [show 34 = 32 + 2 from rfl, Proof.MlKem.bytesAt_add, L.keepBytes hP.b (by layd), h.ks.k1.sa4 k hj,
       show pa s' (sc (oSA4 + 34 * k)) + BitVec.ofNat 64 32 = pa s' (sc (oSA4 + 34 * k + 32)) from off_add _ _ _,
       hP.pa rbx_cs, hb, seedA_eq]
 
@@ -105,7 +105,7 @@ theorem call_ok {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {σ : 
   have S := h.ks.k1.kc.site hF hp
   have L := S.lay
   refine WP.seq (WP.mono (rej4At_ok (a := aP (4 * g)) (w := sc (oR4 p)) (sc_ok _ (by simp only [oP]; omega))
-    (sc_ok _ (by simp only [oR4, oP]; omega)) (by lay) (by lay) (by lay) (by lay) (by lay) hP.rej4 S)
+    (sc_ok _ (by simp only [oR4, oP]; omega)) (by layd) (by layd) (by layd) (by layd) (by layd) hP.rej4 S)
     fun s₂ ⟨hP₂, hx₂, hred, hout⟩ => ?_)
   have hP₂' : PPostB s s₂ [(aP (4 * g), 4096), (sc (oR4 p), 8192)] := hP₂.b
   have L₂ := L.post hP₂' (kgB_bases p)
@@ -113,7 +113,7 @@ theorem call_ok {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {σ : 
     rcases hout with ⟨h1, _⟩ | ⟨h0, _⟩
     exacts [.inr h1, .inl h0]
   refine WP.mono (maskN_ok L₂ (a := aP (4 * g)) (N := 1024) (sc_ok _ (by simp only [oP]; omega))
-    (show Reg.rbx ≠ .r15 by decide) (by decide) (by decide) (by lay) hr01) fun s₃ ⟨hP₃, hx₃, h15, hco⟩ => ?_
+    (show Reg.rbx ≠ .r15 by decide) (by decide) (by decide) (by layd) hr01) fun s₃ ⟨hP₃, hx₃, h15, hco⟩ => ?_
   have hP₃' : PPostB s₂ s₃ [(aP (4 * g), 4 * 1024)] := hP₃
   have hP₁₃ := PPostB.app hP₂' hP₃' (sc1_bases _ _)
   have e₂ : pa s₂ (aP (4 * g)) = pa s (aP (4 * g)) := hP₂'.pa rbx_bases
@@ -137,7 +137,7 @@ theorem call_ok {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {σ : 
   · dsimp only
     by_cases hlt : e' < 4 * g
     · rw [ifp hlt]
-      exact polyIs_frame' L hP₁₃ (by layk) (hA e' hlt)
+      exact polyIs_frame' L hP₁₃ (by layd) (hA e' hlt)
     · rw [ifn hlt]
       refine ⟨?_, rfl⟩
       obtain ⟨k, rfl⟩ : ∃ k, e' = 4 * g + k := ⟨e' - 4 * g, by omega⟩
@@ -177,10 +177,10 @@ theorem call_piece {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {g 
     fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨kc_two hF p₁ p₂ pub h₁.ks.k1.kc h₂.ks.k1.kc,
       by rw [h₁.seeds, h₂.seeds, rho_pub pub]⟩⟩
   have ok := fun x (S : Site p x) => WP.mono (rej4At_ok (a := aP (4 * g)) (w := sc (oR4 p)) (sfx := P.sfx)
-    (sc_ok _ (by simp only [oP]; omega)) (sc_ok _ (by simp only [oR4, oP]; omega)) (by lay) (by lay) (by lay)
-    (by lay) (by lay) hP.rej4 S) fun _ h => (⟨_, h.1.b⟩ : ∃ W, PostB x _ W)
+    (sc_ok _ (by simp only [oP]; omega)) (sc_ok _ (by simp only [oR4, oP]; omega)) (by layd) (by layd) (by layd)
+    (by layd) (by layd) hP.rej4 S) fun _ h => (⟨_, h.1.b⟩ : ∃ W, PostB x _ W)
   exact RelCT.seq (RelCT.two (fun _ _ h => h.1) (rej4At_tr (sfx := P.sfx) (sc_ok _ (by simp only [oP]; omega))
-      (sc_ok _ (by simp only [oR4, oP]; omega)) (by lay) (by lay) (by lay) (by lay) (by lay) hP.rej4
+      (sc_ok _ (by simp only [oR4, oP]; omega)) (by layd) (by layd) (by layd) (by layd) (by layd) hP.rej4
       (show Reg.rbx ∈ kgRegs by decide) (show Reg.rbx ∈ kgRegs by decide))
       fun x y h => ⟨ok x h.1.sx, ok y h.1.sy⟩)
     (mask4_tr (j := 4 * g) (by omega) fun x y h => h.regs .rbx (by decide))

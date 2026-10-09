@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 
@@ -129,6 +130,14 @@ macro_rules
       VG.Proof.MlKem.X86_64.wrOk, List.range_succ, List.range_zero, List.all_append, List.nil_append,
       List.all_cons, List.all_nil, VG.Impl.MlKem.X86_64.oSV, $ls,*])
 
+/-- A check about the layout that mentions no variable but the parameter set and
+bounded indices, decided for each parameter set (`decide_at`): cheaper than
+`layk`, which unfolds it into arithmetic on the parameters for `omega`, unless
+there are many indices to try. -/
+syntax "layd" : tactic
+macro_rules
+  | `(tactic| layd) => `(tactic| (
+      have hmem := (‹VG.Proof.MlDsa.X86_64.KeyGen.PFacts _›).mem; decide_at hmem))
 
 section
 open VG VG.X86_64 VG.Proof.MlKem.X86_64
