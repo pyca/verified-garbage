@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PreparedTo
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemTo
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
@@ -333,7 +333,19 @@ open VG.Proof.Gcm.X86_64.StitchZP (finP fin48P)
 theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZHTo.encP := fun s₀ hp hm =>
   WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
     encTailGTo_ok hp hm (finZ (finP hpw))
-      (fun _ h256 hI hC => bigPTo_ok hp hm (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
+      (fun _ h256 hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
+
+/-- `encR`, for any number of blocks from 16 on. -/
+theorem encRTo_ok {s₀ : State} (hp : Proof.Gcm.X86_64.Stitch.SPreTo CtxMode.prepared s₀) :
+    WP isa Impl.Gcm.X86_64.StitchZHTo.encR s₀ (Proof.Gcm.X86_64.Stitch.EPostTo s₀) :=
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
+    encTailRGTo_ok hp (finZ (finP hpw)) (StitchZH.remZ (finP hpw))
+      (fun _ h256 hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
+
+/-- Prepared powers and cached AES keys, out of place, for any number of
+blocks from 16 on. -/
+theorem stitchToR_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZHTo.encR 1 :=
+  fun _ hp _ => encRTo_ok hp
 
 end VG.Proof.Gcm.X86_64.StitchZHTo
 

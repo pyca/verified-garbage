@@ -139,12 +139,12 @@ theorem StitchToName.okP : (n : StitchToName) →
 
 /-- The out-of-place loops a variant names, with their proof. -/
 def GcmVariant.stitchTo (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.base) :=
-  (v.stitch.bind (·.toPart)).map fun p => ⟨p.name.enc, p.name.ok _, p.piece⟩
+  (v.stitch.bind (·.toPart)).map fun p => ⟨p.name.enc, false, p.name.ok _, p.piece⟩
 
 /-- The out-of-place loops a variant names for a key context of
 `vg_aes_gcm_init_precomputed`, with their proof. -/
 def GcmVariant.stitchToP (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.powers) :=
-  (v.stitch.bind (·.toPart)).bind fun p => p.pieceP.map fun q => ⟨p.name.encP, p.name.okP, q.enc⟩
+  (v.stitch.bind (·.toPart)).bind fun p => p.pieceP.map fun q => ⟨p.name.encP, false, p.name.okP, q.enc⟩
 
 /-- The implementations a variant calls. -/
 def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
@@ -165,11 +165,12 @@ def GcmVariant.stitchR (v : GcmVariant) : Option (StitchCode Proof.Gcm.X86_64.St
 
 theorem StitchToName.okR : (n : StitchToName) →
     Proof.Gcm.X86_64.Stitch.StitchToOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR
+      (if n.fullR then 1 else 16)
   | .vaes => Proof.Gcm.X86_64.StitchTo.stitchTo_ok _
-  | .vaesAvx512 => Proof.Gcm.X86_64.StitchZHTo.stitchTo_ok
+  | .vaesAvx512 => Proof.Gcm.X86_64.StitchZHTo.stitchToR_ok
 
 def GcmVariant.stitchToR (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
-  (v.stitch.bind (·.toPart)).bind fun p => p.pieceR.map fun q => ⟨p.name.encR, p.name.okR, q.enc⟩
+  (v.stitch.bind (·.toPart)).bind fun p => p.pieceR.map fun q => ⟨p.name.encR, p.name.fullR, p.name.okR, q.enc⟩
 
 end VG.Proof.AesGcm.X86_64
 
@@ -452,7 +453,7 @@ def artifactsTo (v : GcmVariant) : List Artifact :=
     target := X86_64.target
     doc := Spec.Gcm.encryptBlocksToApi.doc
       (notes := [blocksToNote v.stitchTo.isSome v.impl.blkB.enc.name])
-    code := Impl.AesGcm.X86_64.BlocksTo.encrypt v.impl.blkB.enc (v.stitchTo.map (·.enc))
+    code := Impl.AesGcm.X86_64.BlocksTo.encrypt v.impl.blkB.enc (v.stitchTo.map (·.enc)) false (encFullTo v.stitchTo)
     contract := Spec.Gcm.encryptBlocksToContract X86_64.abi 24
     stack := 24
     verified := encryptBlocksTo_verified v.impl.blkB v.stitchTo
@@ -476,7 +477,7 @@ def artifactsTo (v : GcmVariant) : List Artifact :=
       target := X86_64.target
       doc := Spec.Gcm.encryptBlocksToPrecomputedApi.doc
         (notes := [blocksToNote v.stitchToP.isSome v.impl.blkP.enc.name])
-      code := Impl.AesGcm.X86_64.BlocksTo.encrypt v.impl.blkP.enc (v.stitchToP.map (·.enc))
+      code := Impl.AesGcm.X86_64.BlocksTo.encrypt v.impl.blkP.enc (v.stitchToP.map (·.enc)) false (encFullTo v.stitchToP)
       contract := Spec.Gcm.encryptBlocksToPrecomputedContract X86_64.abi 24
       stack := 24
       verified := encryptBlocksToP_verified v.impl.blkP v.stitchToP
@@ -737,7 +738,7 @@ def artifactsToR (v : GcmVariant) : List Artifact :=
       target := X86_64.target
       doc := Spec.Gcm.encryptBlocksToPreparedApi.doc
         (notes := [blocksToNote v.stitchToR.isSome (blkR v).enc.name])
-      code := Impl.AesGcm.X86_64.BlocksTo.encrypt (blkR v).enc (v.stitchToR.map (·.enc)) true
+      code := Impl.AesGcm.X86_64.BlocksTo.encrypt (blkR v).enc (v.stitchToR.map (·.enc)) true (encFullTo v.stitchToR)
       contract := Spec.Gcm.encryptBlocksToPreparedContract X86_64.abi 24
       stack := 24
       verified := encryptBlocksToPrepared_verified (blkR v) v.stitchToR

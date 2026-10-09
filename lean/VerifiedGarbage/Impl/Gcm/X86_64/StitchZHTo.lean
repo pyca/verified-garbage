@@ -41,4 +41,17 @@ def encWith (su : List Instr) (bigC : Prog isa) : Prog isa :=
 
 def encP : Prog isa := encWith setupP bigPTo
 
+/-- The blocks after the last group, as `StitchZH.rem`'s, read at
+`rdx + r8` (`r8` is `src - dst`). -/
+def remTo : Prog isa := StitchZH.remWith [.alu .add .r8 (.reg .rdx)] .r8
+
+/-- `encP`, for any number of blocks from 16 on. -/
+def encR : Prog isa :=
+  .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
+    (.seq firstTo
+      (.seq (.block [.alu .cmp .r9 (.imm 256)])
+        (.seq (.ite .b (.block []) bigPTo)
+          (.seq (.block [.alu .cmp .r9 (.imm 32)])
+            (.seq (.ite .b (.block []) (.loop bodyTo .ae)) (StitchZH.tailR remTo))))))
+
 end VG.Impl.Gcm.X86_64.StitchZHTo

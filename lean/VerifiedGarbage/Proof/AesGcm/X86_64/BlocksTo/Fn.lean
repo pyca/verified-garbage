@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Stitch
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Full
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Tail
 
 /-!
@@ -14,9 +14,10 @@ namespace VG.Proof.AesGcm.X86_64.BlocksTo
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.BlocksTo
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode StitchToOkM)
 
-theorem encrypt_wp {M : CtxMode} (B : BlkFn M) (aligned : Bool) (st : Option (Prog isa))
-    (hst : ∀ p, st = some p → StitchToOkM M p) {s : State} (hpre : Proof.AesGcm.blocksToPreM M s) :
-    WP isa (encrypt B.enc st aligned) s (Done s) := by
+theorem encrypt_wp {M : CtxMode} (B : BlkFn M) (aligned full : Bool) (st : Option (Prog isa))
+    (hst : ∀ p, st = some p → StitchToOkM M p (if full then 1 else 16)) {s : State}
+    (hpre : Proof.AesGcm.blocksToPreM M s) :
+    WP isa (encrypt B.enc st aligned full) s (Done s) := by
   have hp := BT.ofM hpre
   refine WP.seq (WP.mono (entry_ok hp) fun s₁ ⟨h11, h10, hg, hk, hf, hrd, hwr⟩ => ?_)
   cases st with
@@ -25,7 +26,12 @@ theorem encrypt_wp {M : CtxMode} (B : BlkFn M) (aligned : Bool) (st : Option (Pr
       (fun r hr => hg r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr))
       hk hf hrd hwr)))
   | some p =>
-    exact WP.seq (WP.seq (WP.mono (stitch_ok hp (hst p rfl) h11 h10 hg hk hf hrd hwr) fun st M =>
-      WP.mono (rest_ok hp rfl M) fun st' M' => tail_ok hp B M'))
+    cases full with
+    | false =>
+      exact WP.seq (WP.seq (WP.mono (stitch_ok hp (hst p rfl) h11 h10 hg hk hf hrd hwr) fun st M =>
+        WP.mono (rest_ok hp rfl M) fun st' M' => tail_ok hp B M'))
+    | true =>
+      exact WP.seq (WP.seq (WP.mono (stitchFullTo_ok hp (hst p rfl) h11 h10 hg hk hf hrd hwr) fun st M =>
+        WP.mono (restFullTo_ok hp M) fun st' M' => tail_ok hp B M'))
 
 end VG.Proof.AesGcm.X86_64.BlocksTo
