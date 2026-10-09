@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtVerified
 import VerifiedGarbage.Proof.Rsa.AArch64.CvVerified
 import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
+import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyVerified
 import VerifiedGarbage.Proof.Rsa.AArch64.RpVerified
 
 /-! # RSA (RFC 8017) on AArch64 -/
@@ -100,6 +101,20 @@ def artifacts : List Artifact := [
     code := Impl.Rsa.AArch64.CheckKey.code
     contract := Spec.Rsa.checkKeyContract AArch64.abi
     verified := Proof.Rsa.AArch64.ck_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Rsa.checkCrtKeyApi with
+    target := AArch64.target
+    doc := Spec.Rsa.checkCrtKeyApi.doc
+      (notes := ["Baseline AArch64: `vg_rsa_check_key`'s code without the checks of `d`. `e` and `n` \
+        are checked first, which are the only branches on the key; then every check of the private key is \
+        computed whatever its outcome and and'ed into a mask. Each remainder (`e dP mod (p - 1)`, \
+        `e dQ mod (q - 1)`, `q qInv mod p`) is computed by bit-serial division in the layout's \
+        `W = 2 w + 2` words, starting from the product's words above its low `c` (`c = 1`, or \
+        `⌈q_len / 8⌉` for `q qInv`), which are below the divisor when the comparison before it holds: \
+        `64 c` steps rather than `64 W`."])
+    code := Impl.Rsa.AArch64.CheckCrtKey.code
+    contract := Spec.Rsa.checkCrtKeyContract AArch64.abi
+    verified := Proof.Rsa.AArch64.ckc_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.Rsa.AArch64

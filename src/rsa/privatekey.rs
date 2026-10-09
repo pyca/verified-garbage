@@ -10,13 +10,13 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use super::{Backend, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
+use crate::arch::rsa::{
+    vg_rsa_check_crt_key, vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked,
+    vg_rsa_recover_primes,
+};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa::{
-    vg_rsa_check_crt_key, vg_rsa_private_checked_adx, vg_rsa_private_checked_ifma,
-    vg_rsa_recover_primes_adx,
-};
-use crate::arch::rsa::{
-    vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked, vg_rsa_recover_primes,
+    vg_rsa_private_checked_adx, vg_rsa_private_checked_ifma, vg_rsa_recover_primes_adx,
 };
 use crate::cpu::detected;
 
@@ -76,11 +76,8 @@ impl PrivateKey {
     /// prime's bytes, without its leading zeros). The values must pass the
     /// checks of BoringSSL's `RSA_check_key` on them: `p q = n`,
     /// `dP < p - 1`, `e dP ≡ 1 (mod p - 1)`, `dQ < q - 1`,
-    /// `e dQ ≡ 1 (mod q - 1)`, `qInv < p` and `q qInv ≡ 1 (mod p)`. (On
-    /// AArch64, only `p q = n` and `qInv < p` are checked so far, with the
-    /// private-key operation on 0, which also refuses a key for which its
-    /// result for 0, 0 for a valid key, fails its check against `e`.) `d`
-    /// is kept as it is given, and not used by the operation.
+    /// `e dQ ≡ 1 (mod q - 1)`, `qInv < p` and `q qInv ≡ 1 (mod p)`. `d` is
+    /// kept as it is given, and not used by the operation.
     ///
     /// Nothing else is checked here: not that `p` and `q` are prime (see
     /// [`private_op`](Self::private_op), which never releases a result that
@@ -127,11 +124,10 @@ impl PrivateKey {
         }
     }
 
-    /// Whether the key passes `from_crt`'s checks of its values: on x86-64,
+    /// Whether the key passes `from_crt`'s checks of its values:
     /// `vg_rsa_check_crt_key`, which implies what the operation checks of
     /// the key (a valid modulus, `p q = n` and `qInv < p`), so that it
     /// refuses only an input not below the modulus.
-    #[cfg(target_arch = "x86_64")]
     fn crt_valid(&self) -> bool {
         let k = self.n.len();
         let mut scratch = vec![0u64; scratch_words(k)];
@@ -166,17 +162,6 @@ impl PrivateKey {
         r == 1
     }
 
-    /// Whether the key passes `from_crt`'s checks of its values: on
-    /// AArch64, a result for 0, which the operation computes exactly when
-    /// the modulus is valid, `p q = n` and `qInv < p` (0 is below any
-    /// modulus), and releases if it passes its check against `e`.
-    #[cfg(target_arch = "aarch64")]
-    fn crt_valid(&self) -> bool {
-        let k = self.n.len();
-        let mut out = vec![0; k];
-        self.private_op(&vec![0; k], &mut out).is_ok()
-    }
-
     /// The key with the modulus `n`, the public exponent `e`, the private
     /// exponent `d` and the primes `p` and `q`, all big-endian (with any
     /// number of leading zero bytes but `n`), as RFC 8017 §3.2's first form
@@ -187,8 +172,7 @@ impl PrivateKey {
     /// `2^33 - 1`, as BoringSSL requires; `d` must be 1 to `n.len()` bytes
     /// long without its leading zeros, and `p` and `q` shorter than `n`;
     /// `p q = n`, `q` must have an inverse modulo `p`, and `d e ≡ 1` modulo
-    /// `p - 1` and `q - 1` (`from_crt`'s checks of `dP` and `dQ`, on
-    /// x86-64). Nothing
+    /// `p - 1` and `q - 1` (`from_crt`'s checks of `dP` and `dQ`). Nothing
     /// checks that `p` and `q` are prime (but
     /// [`private_op`](Self::private_op) never releases a result that does
     /// not match `e`).
@@ -331,7 +315,7 @@ impl PrivateKey {
     /// `e dQ ≡ 1 (mod q - 1)`, `qInv < p` and `q qInv ≡ 1 (mod p)` (the
     /// modulus and `e` were checked when the key was loaded). Like
     /// `RSA_check_key`, it does not check that `p` and `q` are prime. Loading
-    /// a key runs all of these checks but those of `d` (on x86-64; see
+    /// a key runs all of these checks but those of `d` (see
     /// [`from_crt`](Self::from_crt)).
     pub fn check_key(&self) -> bool {
         let k = self.n.len();
@@ -548,8 +532,7 @@ mod tests {
         assert_eq!(new(&n, &[3], &p, &q, &[0], &[0], &qi), bad);
         // A `dP`, `dQ` or `qInv` that does not match, `dP = p - 1`,
         // `dQ = (q - 1) + dQ` (`q - 1 = 2^256`), and an `e` that does not
-        // match: refused on x86-64, where loading checks them; on AArch64
-        // the result for 0 is still 0.
+        // match: refused, as loading checks them.
         let flip = |x: &[u8]| {
             let mut x = x.to_vec();
             *x.last_mut().unwrap() ^= 1;
@@ -559,11 +542,6 @@ mod tests {
         pm1[31] = 0xfe;
         let mut dq2 = dq.clone();
         dq2.insert(0, 1);
-        let checked = if cfg!(target_arch = "x86_64") {
-            bad
-        } else {
-            Ok(())
-        };
         for r in [
             new(&n, &[3], &p, &q, &flip(&dp), &dq, &qi),
             new(&n, &[3], &p, &q, &dp, &flip(&dq), &qi),
@@ -572,7 +550,7 @@ mod tests {
             new(&n, &[3], &p, &q, &dp, &dq2, &qi),
             new(&n, &[5], &p, &q, &dp, &dq, &qi),
         ] {
-            assert_eq!(r, checked);
+            assert_eq!(r, bad);
         }
         let key = PrivateKey::from_crt(&n, &[3], &[7], &p, &q, &dp, &dq, &qi).unwrap();
         let mut out = [0; 64];
@@ -606,12 +584,8 @@ mod tests {
                     assert_eq!(private(&key, &x), Ok(x.clone()));
                 }
                 assert_eq!(private(&key, &be(2, k)), Err(Error::Fault));
-                // `d = 1`: refused on x86-64, where loading checks `dP` and
-                // `dQ`.
-                assert_eq!(
-                    PrivateKey::from_primes(&n, &[3], &[1], &p, &q).is_ok(),
-                    cfg!(target_arch = "aarch64")
-                );
+                // `d = 1`: refused, as loading checks `dP` and `dQ`.
+                assert!(PrivateKey::from_primes(&n, &[3], &[1], &p, &q).is_err());
             }
         }
         let [n, p, q, ..] = composite(32, false);
