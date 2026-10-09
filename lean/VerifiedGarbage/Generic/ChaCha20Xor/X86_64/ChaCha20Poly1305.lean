@@ -1,6 +1,7 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.OpenCT
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86-64
@@ -72,11 +73,11 @@ def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
     target := X86_64.target
     doc := Spec.ChaCha20Poly1305.openApi.doc (notes := [xorNote v])
     code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42
-      (Impl.ChaCha20Poly1305.X86_64.«open» v.callee v.poly)
+      (Impl.ChaCha20Poly1305.X86_64.Stitch.openFor v.callee v.poly)
     contract := Spec.ChaCha20Poly1305.openContract X86_64.abi 1744
     stack := 1744
-    verified := open_framed v
-    spSafe := X86_64.withStackArgScratchWipedX_spSafe (open_spSafe v)
+    verified := Stitch.openFor_framed v
+    spSafe := X86_64.withStackArgScratchWipedX_spSafe (Stitch.openFor_spSafe v)
     features := features v },
   { Spec.ChaCha20Poly1305.sealGatherApi with
     name := Spec.ChaCha20Poly1305.sealGatherApi.name ++ v.suffix

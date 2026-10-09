@@ -35,6 +35,7 @@ structure MidO (s₀ s : State) (key msg : List Byte) (E : Nat) (s' : State) : P
   wr : s'.wr = s.wr
   E64 : E % 64 = 0
   EL : E ≤ L s₀
+  Ediv : E = 512 * (L s₀ / 512)
   st : stateAt s'.mem (off (cx s₀) 64) = ctr (initState (K s₀) 1 (N s₀)) (E / 64)
   data : ∀ k < L s₀, s'.mem (dp s₀ + BitVec.ofNat 64 k) = if k < E then
     s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ (keystream (initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0
@@ -44,13 +45,13 @@ structure MidO (s₀ s : State) (key msg : List Byte) (E : Nat) (s' : State) : P
 
 /-- Below 512 bytes: nothing decrypted yet, nothing absorbed. -/
 theorem whole_midO {s₀ : State} (hp : APre e s₀) {s s₂ : State} (ha : Args s₀ s s₂)
-    (h15 : s₂.gpr .r15 = s.gpr .r15)
+    (h15 : s₂.gpr .r15 = s.gpr .r15) (hlt : L s₀ < 512)
     (hst : stateAt s.mem (off (cx s₀) 64) = initState (K s₀) 0 (N s₀))
     {key msg : List Byte} (hrep : Repr s.mem (off (cx s₀) 448) key msg) :
     WP isa (.block whole) s₂ (MidO s₀ s key msg 0) := by
   refine WP.mono (whole_ok s₂) fun s₃ ⟨rbx₃, rbp₃, g₃, rd₃, wr₃, m₃⟩ => ?_
   refine ⟨by rw [rbx₃, ha.r14]; simp, by rw [rbp₃, ha.r13, Nat.sub_zero], fun r hr => ?_, by rw [rd₃, ha.rd],
-    by rw [wr₃, ha.wr], rfl, Nat.zero_le _, ?_, fun k hk => ?_, ?_, ?_⟩
+    by rw [wr₃, ha.wr], rfl, Nat.zero_le _, by omega, ?_, fun k hk => ?_, ?_, ?_⟩
   · rcases hr with rfl | rfl | rfl | rfl | rfl
     · rw [g₃ _ (by decide) (by decide), ha.keep _ (.inl rfl)]
     · rw [g₃ _ (by decide) (by decide), ha.keep _ (.inr (.inl rfl))]
@@ -98,7 +99,7 @@ theorem bulk_midO {s₀ : State} (hp : APre e s₀) {s s₂ : State} (hwr : s.wr
     refine List.map_congr_left fun k hk => ?_
     rw [ha.mem, args_data hp _ (by have := List.mem_range.mp hk; omega)]
   refine ⟨512 * T, rbx, rbp, fun r hr => ?_, (rd₃ : s₃.rd = s₂.rd).trans ha.rd, (wr₃ : s₃.wr = s₂.wr).trans ha.wr,
-    by omega, le, ?_, fun k hk => ?_, ?_, ?_⟩
+    by omega, le, by omega, ?_, fun k hk => ?_, ?_, ?_⟩
   · rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact (r12 : s₃.gpr .r12 = s₂.gpr .r12).trans (ha.keep _ (.inl rfl))
     · exact (r13 : s₃.gpr .r13 = s₂.gpr .r13).trans (ha.keep _ (.inr (.inl rfl)))
@@ -233,6 +234,24 @@ structure CryptedO (s₀ s : State) (key msg : List Byte) (s' : State) : Prop wh
     pad16 (bytesAt s.mem (dp s₀) (L s₀))) ++ bytesAt s.mem (off (cx s₀) 592) 16)
   mx : s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
 
+/-- `cryptArgs` and the comparison with 512, and `r15` kept. -/
+theorem argsCmpO_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s) :
+    WP isa (.block (cryptArgs ++ [.alu .cmp .rdx (.imm 512)])) s fun s₂ =>
+      Args s₀ s s₂ ∧ s₂.gpr .r15 = s.gpr .r15 ∧ s₂.cf = some (decide (L s₀ < 512)) := by
+  have hL9 : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
+  refine WP.block_append (WP.mono (cryptA_ok hp h) fun s₂ ⟨m₂, rdi₂, rsi₂, rdx₂, rcx₂, cs₂, rd₂, wr₂⟩ =>
+    WP.mono (cmp512_ok hL9 (by rw [rdx₂, hL])) fun s₃ ⟨g₃, rd₃, wr₃, m₃, c₃⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_,
+      fun r hr => ?_, by rw [rd₃, rd₂], by rw [wr₃, wr₂]⟩, ?_, c₃⟩)
+  · rw [m₃, m₂]
+  · rw [g₃, rdi₂]
+  · rw [g₃, rsi₂]
+  · rw [g₃, rdx₂, hL]
+  · rw [g₃, rcx₂]
+  · rw [g₃, cs₂ _ (by simp [calleeSaved]), h.r13, hL]
+  · rw [g₃, cs₂ _ (by simp [calleeSaved]), h.r14]
+  · rw [g₃, cs₂ r (by rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])]
+  · rw [g₃, cs₂ _ (by simp [calleeSaved])]
+
 /-- More than `fold` bytes: the whole chunks decrypted and absorbed by
 `bulkO` (none below 512 bytes), the rest and the lengths block absorbed, and
 the rest decrypted by the implementation `v` of `vg_chacha20_xor`. -/
@@ -244,26 +263,12 @@ theorem bigO_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e 
       (.seq (macPadLengths v.poly .rbx .rbp)
       (.seq (.block restArgs) (.call v.callee.name v.callee.code))))) s (CryptedO s₀ s key msg) := by
   have hL9 : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
-  refine WP.seq (WP.mono_mx (by decide +kernel)
-    (Q := fun (s₂ : State) => Args s₀ s s₂ ∧ s₂.gpr .r15 = s.gpr .r15 ∧ s₂.cf = some (decide (L s₀ < 512))) ?_
-    fun s₂ ⟨ha, h15, cf₂⟩ mx₂ => ?_)
-  · refine WP.block_append (WP.mono (cryptA_ok hp h) fun s₂ ⟨m₂, rdi₂, rsi₂, rdx₂, rcx₂, cs₂, rd₂, wr₂⟩ =>
-      WP.mono (cmp512_ok hL9 (by rw [rdx₂, hL])) fun s₃ ⟨g₃, rd₃, wr₃, m₃, c₃⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_,
-        fun r hr => ?_, by rw [rd₃, rd₂], by rw [wr₃, wr₂]⟩, ?_, c₃⟩)
-    · rw [m₃, m₂]
-    · rw [g₃, rdi₂]
-    · rw [g₃, rsi₂]
-    · rw [g₃, rdx₂, hL]
-    · rw [g₃, rcx₂]
-    · rw [g₃, cs₂ _ (by simp [calleeSaved]), h.r13, hL]
-    · rw [g₃, cs₂ _ (by simp [calleeSaved]), h.r14]
-    · rw [g₃, cs₂ r (by rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])]
-    · rw [g₃, cs₂ _ (by simp [calleeSaved])]
+  refine WP.seq (WP.mono_mx (by decide +kernel) (argsCmpO_ok hp h) fun s₂ ⟨ha, h15, cf₂⟩ mx₂ => ?_)
   -- The whole chunks, if any.
   refine WP.seq (WP.mono_mx (by decide +kernel)
     (Q := fun (s₃ : State) => ∃ E, MidO s₀ s key msg E s₃) ?_ fun s₃ ⟨E, hm⟩ mx₃ => ?_)
-  · refine WP.ite (decide (L s₀ < 512)) (by simp [eval, cf₂]) (fun _ => ?_) (fun hc' => ?_)
-    · exact WP.mono (whole_midO hp ha h15 hst hrep) fun s₄ hm₄ => ⟨0, hm₄⟩
+  · refine WP.ite (decide (L s₀ < 512)) (by simp [eval, cf₂]) (fun hc => ?_) (fun hc' => ?_)
+    · exact WP.mono (whole_midO hp ha h15 (by simpa using hc) hst hrep) fun s₄ hm₄ => ⟨0, hm₄⟩
     · simp only [decide_eq_false_iff_not] at hc'
       exact bulk_midO hp h.wr ha h.r15 (by omega) hst hrep
   have hEL := hm.EL
