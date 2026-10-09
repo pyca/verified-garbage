@@ -92,12 +92,12 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
   rw [TCombCfg.toComb_J] at hJ
   have hw := hL.w
   have hnn := hL.n
-  have hzw : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega
+  have hzw : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega_using []
   have hbits' := hL.bits
   have hH2 : 2 ^ K.w = 2 * K.H := by
-    unfold TCombCfg.H; rw [← Nat.pow_succ']; congr 1; omega
+    unfold TCombCfg.H; rw [← Nat.pow_succ']; congr 1; omega_using [hw]
   have hHle : K.H ≤ 128 := by
-    unfold TCombCfg.H; exact Nat.le_trans (Nat.pow_le_pow_right (by decide) (show K.w - 1 ≤ 7 by omega))
+    unfold TCombCfg.H; exact Nat.le_trans (Nat.pow_le_pow_right (by decide) (show K.w - 1 ≤ 7 by omega_using [hw]))
       (by decide)
   have hle : ∀ x, x ∈ combSlots K.toComb → x + 8 * K.M.n ≤ size := fun x hx => hL.comb.lay.le x hx
   have htmp : ∀ x, x ∈ combSlots K.toComb → x + 8 * K.M.n ≤ K.M.tmp ∨ K.M.tmp + 8 * K.M.n ≤ x :=
@@ -121,7 +121,7 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
   have hwi : K.w * i + K.w ≤ K.w * K.J := by
     have := Nat.mul_le_mul_left K.w (show i + 1 ≤ K.J from hi); rwa [Nat.mul_succ] at this
   rw [WP.block_append_iff]
-  refine WP.mono_syms (digit_ok K hs (k := k) (j := i) (N := K.w * K.J) hw.1 hw.2 hwi (by omega) hx hbits)
+  refine WP.mono_syms (digit_ok K hs (k := k) (j := i) (N := K.w * K.J) hw.1 hw.2 hwi (by omega_using [hzw, hbits']) hx hbits)
     fun s₁ ⟨a₁, m₁, k₁⟩ sy₁ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hx₁ : s₁.gpr .rbx = BitVec.ofNat 64 i := by rw [k₁.1 _ (by decide), hx]
@@ -137,8 +137,8 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
     have e : 16 * K.M.n * K.H = 8 * (K.H * (2 * K.M.n)) := by
       rw [Nat.mul_comm K.H, ← Nat.mul_assoc, ← Nat.mul_assoc]
     rw [Nat.mul_left_comm 8 K.J, ← e]
-    omega
-  refine WP.mono (selectChoice_ok publicLookup K hs₁ hnn (by omega) hL.tbl hexy hEy hEz (by
+    omega_using [h2]
+  refine WP.mono (selectChoice_ok publicLookup K hs₁ hnn (by omega_using [hHle]) hL.tbl hexy hEy hEz (by
       have := ap (x := K.E.x) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd)
       have := ap (x := K.E.y) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega)
     (Nat.lt_trans hV.one_lt hpn) hx₁ m₁ hmag (by rw [sy₁]; exact hT) hreg) fun s₂ S₂ => ?_
@@ -152,23 +152,23 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
       wordsVal s.mem (T + BitVec.ofNat 64 (i * K.tblBytes)) (16 * K.M.n * (a - 1) + 8 * K.M.n) K.M.n =
         (combAt tbl i (a - 1)).2 * 2 ^ (64 * K.M.n) % C.p := fun h1 => by
     rw [TCombCfg.tblBytes]
-    exact tbl_entry hTM hV.len hV.lenH hi (by omega) (Nat.lt_trans (Nat.mod_lt _ hp0) hpn)
+    exact tbl_entry hTM hV.len hV.lenH hi (by omega_using [hmag, h1]) (Nat.lt_trans (Nat.mod_lt _ hp0) hpn)
       (Nat.lt_trans (Nat.mod_lt _ hp0) hpn)
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have hmoE : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)],
       K.M.mo + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ K.M.mo := fun w hw => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl
-    · have := hmo K.E.x (by tcomb_mem); dsimp only; omega
-    · have := hmo K.E.y (by tcomb_mem); dsimp only; omega
-    · have := hmo K.E.z (by tcomb_mem); dsimp only; omega
+    · have := hmo K.E.x (by tcomb_mem); dsimp only; omega_using [this]
+    · have := hmo K.E.y (by tcomb_mem); dsimp only; omega_using [this]
+    · have := hmo K.E.z (by tcomb_mem); dsimp only; omega_using [this]
   have hM₂ : ModOkW K.M size C.p s₂.mem base := hM.unch U₂ hmoE hn
   have hz₂ : wordsVal s₂.mem base K.zero K.M.n = 0 := by
     have hzW := combW_ro hL.comb (x := K.zero) (by simp [combRo, TCombCfg.toComb])
     rw [U₂.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl <;>
-        exact hzW _ (by simp [combW, combWs, TCombCfg.toComb])) (by omega), hz]
+        exact hzW _ (by simp [combW, combWs, TCombCfg.toComb])) (by omega_using [hn, hzl]), hz]
   have hEy₂ : wordsVal s₂.mem base K.E.y K.M.n < C.p := by
     rw [ey₂]; split
     · rw [(hent ‹_›).2]; exact Nat.mod_lt _ hp0
@@ -188,46 +188,46 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl
         · have := hbw (K.neg, 8 * K.M.n) (by simp [combW, combWs, TCombCfg.toComb]); dsimp only at this ⊢
-          omega
+          omega_using [hzw, ht, this]
         · have := hbw (K.M.tmp, 8 * K.M.n) (by simp [combW, TCombCfg.toComb]); dsimp only at this ⊢
-          omega) (by omega),
+          omega_using [hzw, ht, this]) (by omega_using [hn, hzw, hbits', ht]),
       U₂.byte (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl | rfl
         · have := hbw (K.E.x, 8 * K.M.n) (by simp [combW, combWs, TCombCfg.toComb]); dsimp only at this ⊢
-          omega
+          omega_using [hzw, ht, this]
         · have := hbw (K.E.y, 8 * K.M.n) (by simp [combW, combWs, TCombCfg.toComb]); dsimp only at this ⊢
-          omega
+          omega_using [hzw, ht, this]
         · have := hbw (K.E.z, 8 * K.M.n) (by simp [combW, combWs, TCombCfg.toComb]); dsimp only at this ⊢
-          omega) (by omega)]
+          omega_using [hzw, ht, this]) (by omega_using [hn, hzw, hbits', ht])]
     exact hbits t ht
   rw [WP.block_append_iff]
-  refine WP.mono (signMask_ok K hs₃ (k := k) (j := i) (N := K.w * K.J) hw.1 (by omega) hwi (by omega)
+  refine WP.mono (signMask_ok K hs₃ (k := k) (j := i) (N := K.w * K.J) hw.1 (by omega_using [hw]) hwi (by omega_using [hzw, hbits'])
     hx₃ hbits₃) fun s₄ ⟨x₄, k₄⟩ => ?_
   have hs₄ := hs₃.of_keeps k₄ (by decide)
   refine WP.mono (sel_ok (decide (combWin K.w k i < 2 ^ (K.w - 1))) K.M.n hs₄ x₄ (o := K.E.y)
     (a := K.E.y) (b := K.neg) hEy hEy hneg (Or.inl (Nat.le_refl _)) 
-      (by have := ap (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
+      (by have := ap (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega_using [this])) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   -- The values.
   have m₄ : s₄.mem = s₃.mem := k₄.2.1
   have vx : wordsVal s₅.mem base K.E.x K.M.n = wordsVal s₂.mem base K.E.x K.M.n := by
-    rw [O₅.wordsVal (by omega) (by omega), m₄, U₃.wordsVal (fun w hw => by
+    rw [O₅.wordsVal (by omega_using [hexy]) (by omega_using [hn, hEx]), m₄, U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
-      · have := ap (x := K.E.x) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); dsimp only; omega
-      · have := htmp K.E.x (by tcomb_mem); dsimp only; omega) (by omega)]
+      · have := ap (x := K.E.x) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); dsimp only; omega_using [this]
+      · have := htmp K.E.x (by tcomb_mem); dsimp only; omega_using [this]) (by omega_using [hn, hEx])]
   have vz : wordsVal s₅.mem base K.E.z K.M.n = wordsVal s₂.mem base K.E.z K.M.n := by
-    rw [O₅.wordsVal (ap (x := K.E.z) (y := K.E.y) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd)) (by omega), m₄, U₃.wordsVal (fun w hw => by
+    rw [O₅.wordsVal (ap (x := K.E.z) (y := K.E.y) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd)) (by omega_using [hn, hEz]), m₄, U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
-      · have := ap (x := K.E.z) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); dsimp only; omega
-      · have := htmp K.E.z (by tcomb_mem); dsimp only; omega) (by omega)]
+      · have := ap (x := K.E.z) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); dsimp only; omega_using [this]
+      · have := htmp K.E.z (by tcomb_mem); dsimp only; omega_using [this]) (by omega_using [hn, hEz])]
   have vy₃ : wordsVal s₃.mem base K.E.y K.M.n = wordsVal s₂.mem base K.E.y K.M.n :=
     U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
-      · have := ap (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); dsimp only; omega
-      · have := htmp K.E.y (by tcomb_mem); dsimp only; omega) (by omega)
+      · have := ap (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); dsimp only; omega_using [this]
+      · have := htmp K.E.y (by tcomb_mem); dsimp only; omega_using [this]) (by omega_using [hn, hEy])
   have vy : wordsVal s₅.mem base K.E.y K.M.n = if decide (combWin K.w k i < 2 ^ (K.w - 1)) then
       (0 + C.p - wordsVal s₂.mem base K.E.y K.M.n) % C.p else wordsVal s₂.mem base K.E.y K.M.n := by
     rw [e₅, m₄, e₃, hz₂, vy₃]
@@ -239,11 +239,11 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
     by_cases h1 : 1 ≤ a
     · obtain ⟨hx, hy⟩ := hent h1
       simp only [h1, ↓reduceIte, hx, hy, toM_mont hV.unit, hV.one]
-      have := hV.entry i hi (a - 1) (by omega)
+      have := hV.entry i hi (a - 1) (by omega_using [hmag, h1])
       rwa [Nat.sub_add_cancel h1] at this
-    · have h0 : a = 0 := by omega
+    · have h0 : a = 0 := by omega_using [h1]
       subst h0
-      simp only [show ¬ 1 ≤ 0 by omega, ↓reduceIte, toM_zero, hV.one]
+      simp only [show ¬ 1 ≤ 0 by omega_using [], ↓reduceIte, toM_zero, hV.one]
       rw [show combPtW C K.w i 0 = .infinity by simp [combPtW, Spec.Weierstrass.mul]]
       exact rep_infinity' hC
   have hcl : ∀ r ∈ [Reg.rax, .rcx, .rdx, .r8], r ∈ clob K.M.n := by
@@ -286,7 +286,7 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
     by_cases h8 : 2 ^ (K.w - 1) ≤ combWin K.w k i
     · have hy : tmv C K.M.n base s₅ K.E.y = tmv C K.M.n base s₂ K.E.y := by
         show toM _ _ _ = toM _ _ _
-        rw [vy, decide_eq_false (show ¬ combWin K.w k i < 2 ^ (K.w - 1) by omega)]; rfl
+        rw [vy, decide_eq_false (show ¬ combWin K.w k i < 2 ^ (K.w - 1) by omega_using [h8])]; rfl
       rw [hy]
       simp only [h8, ↓reduceIte]
       have : a = combWin K.w k i - 2 ^ (K.w - 1) := by rw [← ha, hHd, magH]; simp [h8]
@@ -294,9 +294,9 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
       exact hR
     · have hy : tmv C K.M.n base s₅ K.E.y = -tmv C K.M.n base s₂ K.E.y := by
         show toM _ _ _ = -toM _ _ _
-        rw [vy, decide_eq_true (show combWin K.w k i < 2 ^ (K.w - 1) by omega)]
+        rw [vy, decide_eq_true (show combWin K.w k i < 2 ^ (K.w - 1) by omega_using [h8])]
         simp only [↓reduceIte]
-        rw [toM_sub (by omega), toM_zero]
+        rw [toM_sub (by omega_using [hEy₂]), toM_zero]
         grind
       rw [hy]
       simp only [h8, ↓reduceIte]
@@ -360,9 +360,9 @@ theorem tcombW_mo {K : TCombCfg} {size m : Nat} {mem : Mem} {base : Addr} (hL : 
   intro w hw
   simp only [tcombW, combW, List.mem_append, List.mem_map, List.mem_singleton] at hw
   rcases hw with (⟨y, hy, rfl⟩ | rfl) | rfl
-  · have := hL.comb.lay.mo y (combWs_slots _ y hy); dsimp only [TCombCfg.toComb] at this ⊢; omega
-  · have := hM.sep; dsimp only [TCombCfg.toComb] at this ⊢; omega
-  · have := hL.bits_sl K.M.mo (List.mem_cons_self ..); dsimp only; omega
+  · have := hL.comb.lay.mo y (combWs_slots _ y hy); dsimp only [TCombCfg.toComb] at this ⊢; omega_using [this]
+  · have := hM.sep; dsimp only [TCombCfg.toComb] at this ⊢; omega_using [this]
+  · have := hL.bits_sl K.M.mo (List.mem_cons_self ..); dsimp only; omega_using [this]
 
 /-- A slot read only is apart from what the comb writes. -/
 theorem tcombW_ro {K : TCombCfg} {size : Nat} (hL : TCombLay K size) {x : Nat}
@@ -371,12 +371,12 @@ theorem tcombW_ro {K : TCombCfg} {size : Nat} (hL : TCombLay K size) {x : Nat}
   rcases List.mem_append.mp hw with hw | hw
   · exact combW_ro hL.comb hx w hw
   · simp only [List.mem_singleton] at hw; subst hw
-    have := hL.bits_sl x (List.mem_cons_of_mem _ (combRo_slots x hx)); dsimp only; omega
+    have := hL.bits_sl x (List.mem_cons_of_mem _ (combRo_slots x hx)); dsimp only; omega_using [this]
 
 /-- The bytes of the table of bits, apart from what the loop writes. -/
 theorem combW_bits {K : TCombCfg} {size : Nat} (hL : TCombLay K size) {t : Nat} (ht : t < K.w * K.J) :
     ∀ w ∈ combW K.toComb, K.bits + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ K.bits + t := by
-  have : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega
+  have : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega_using []
   intro w hw; have := hL.bits_w w hw; omega
 
 /-- `o = a`, a point, for `o`'s slots apart from each other and from `a`'s. -/
@@ -403,15 +403,15 @@ theorem copyPt_ok {s : State} {base : Addr} {size n : Nat} (hs : Scr s base size
   have pyc := hap.2.1.2.2.2.2.2 yc
   have pzc := hap.2.2.2.2.2.2.2 zc
   rw [copyPt, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (copy_ok n hs (o := o.x) (a := a.x) hle.1 hle.2.2.2.1 (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+  refine WP.mono (copy_ok n hs (o := o.x) (a := a.x) hle.1 hle.2.2.2.1 (by omega_using [pxa])) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
-  refine WP.mono (copy_ok n hs₁ (o := o.y) (a := a.y) hle.2.1 hle.2.2.2.2.1 (by omega)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+  refine WP.mono (copy_ok n hs₁ (o := o.y) (a := a.y) hle.2.1 hle.2.2.2.2.1 (by omega_using [pyb])) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  refine WP.mono (copy_ok n hs₂ (o := o.z) (a := a.z) hle.2.2.1 hle.2.2.2.2.2 (by omega))
+  refine WP.mono (copy_ok n hs₂ (o := o.z) (a := a.z) hle.2.2.1 hle.2.2.2.2.2 (by omega_using [pzc]))
     fun t ⟨e₃, k₃, O₃⟩ => ⟨?_, ?_, ?_, (k₁.trans k₂).trans k₃, ?_⟩
-  · rw [O₃.wordsVal (by omega) (by omega), O₂.wordsVal (by omega) (by omega), e₁]
-  · rw [O₃.wordsVal (by omega) (by omega), e₂, O₁.wordsVal (by omega) (by omega)]
-  · rw [e₃, O₂.wordsVal (by omega) (by omega), O₁.wordsVal (by omega) (by omega)]
+  · rw [O₃.wordsVal (by omega_using [pxz]) (by omega_using [hn, hle]), O₂.wordsVal (by omega_using [pxy]) (by omega_using [hn, hle]), e₁]
+  · rw [O₃.wordsVal (by omega_using [pyz]) (by omega_using [hn, hle]), e₂, O₁.wordsVal (by omega_using [pxb]) (by omega_using [hn, hle])]
+  · rw [e₃, O₂.wordsVal (by omega_using [pyc]) (by omega_using [hn, hle]), O₁.wordsVal (by omega_using [pxc]) (by omega_using [hn, hle])]
   · exact (O₁.unch.trans (O₂.unch.trans O₃.unch)).mono fun w hw => by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
       rcases hw with h | h | h <;> simp [h]
@@ -443,7 +443,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
   simp only [Code.inline]
   refine WP.seq ?_
   rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono_syms (decRbx_ok s hj (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ sy₁ => ?_
+  refine WP.mono_syms (decRbx_ok s hj (by omega_using [hjn, hJ]) hI.rbx) fun s₁ ⟨b₁, k₁⟩ sy₁ => ?_
   have hs₁ := hI.scr.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
   have hM₁ : ModOkW K.M size C.p s₁.mem base := by rw [hm₁]; exact hI.mod
@@ -451,11 +451,11 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
     fun t ht => by rw [hm₁]; exact hI.bits t ht
   have hz : wordsVal s₁.mem base K.zero K.M.n = 0 := by
     rw [hm₁, hI.unch.wordsVal (tcombW_ro hL (x := K.zero) (by simp [combRo, TCombCfg.toComb]))
-      (by have := hle K.zero (by tcomb_mem); omega), hF.zero]
+      (by have := hle K.zero (by tcomb_mem); omega_using [hn, this]), hF.zero]
   have hT : s₁.syms K.tsym = T := by rw [sy₁]; exact hI.tsym
   have hTM : TblMem s₁ T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) :=
     hI.tbl.unch (by rw [k₁.2.2.1, k₁.2.2.2]) fun _ _ _ _ => by rw [hm₁]
-  refine WP.mono (tentry_ok hL hC hV hpn hs₁ hM₁ (i := j - 1) (by omega) b₁ hbits₁ hz hT hTM publicLookup)
+  refine WP.mono (tentry_ok hL hC hV hpn hs₁ hM₁ (i := j - 1) (by omega_using [hjn, hJ]) b₁ hbits₁ hz hT hTM publicLookup)
     fun s₂ h₂ => WP.seq (WP.mono h₂ fun s₃ E₃ => ?_)
   have hEW : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n), (K.neg, 8 * K.M.n),
       (K.M.tmp, 8 * K.M.n)], w ∈ combW K.toComb := by
@@ -484,14 +484,14 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
         · exact hL.comb.apart₂ hxs (by tcomb_mem) (by clear * - hnd hx; (repeat' (obtain rfl | hx := hx)) <;> nd_ne hnd)
         · exact hL.comb.apart₂ hxs (by tcomb_mem) (by clear * - hnd hx; (repeat' (obtain rfl | hx := hx)) <;> nd_ne hnd)
         · exact hL.comb.lay.tmp x (combWs_slots _ x hxs))
-        (by have := hle x (combWs_slots _ x hxs); omega), hm₁]
+        (by have := hle x (combWs_slots _ x hxs); omega_using [hn, this]), hm₁]
   have U₃ : Unch base (tcombW K) s₀.mem s₃.mem :=
     (hI.unch.trans U₁₃).mono fun w hw => by
       rcases List.mem_append.mp hw with hw | hw
       · exact hw
       · exact List.mem_append_left _ hw
   have hro : ∀ x ∈ combRo K.toComb, wordsVal s₃.mem base x K.M.n = wordsVal s₀.mem base x K.M.n :=
-    fun x hx => U₃.wordsVal (tcombW_ro hL hx) (by have := hle x (combRo_slots x hx); omega)
+    fun x hx => U₃.wordsVal (tcombW_ro hL hx) (by have := hle x (combRo_slots x hx); omega_using [hn, this])
   have hSl : ∀ x ∈ rcbR K.S K.A K.E, x ∈ combSlots K.toComb := by
     intro x hx
     simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -537,7 +537,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
     split
     · exact hC.onCurve_mul hG _
     · exact onCurve_negPt (hC.onCurve_mul hG _)
-  have hadd := combW_add hC hG (w := K.w) (k := k) (J := K.J) (j := j - 1) (by omega)
+  have hadd := combW_add hC hG (w := K.w) (k := k) (J := K.J) (j := j - 1) (by omega_using [hjn, hJ])
   rw [Nat.sub_add_cancel hj] at hadd
   have hsp : signedPtW C K.w k (j - 1) = (if 2 ^ (K.w - 1) ≤ combWin K.w k (j - 1) then
       combPtW C K.w (j - 1) (combWin K.w k (j - 1) - 2 ^ (K.w - 1))
@@ -575,7 +575,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
     · exact Or.inl ⟨y, by simp only [combWs, List.mem_append, TCombCfg.toComb]; exact Or.inr hy, rfl⟩
     · exact Or.inr (by rw [h]; rfl)
   have hbl := hL.bits
-  have hz' : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega
+  have hz' : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega_using []
   have hbits₄ : ∀ t < K.w * K.J, s₄.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0 := by
     intro t ht
     rw [(U₁₃.trans U₄).byte (fun w hw => by
@@ -587,7 +587,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
       have hxs : x ∈ combWs K.toComb := by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hx with rfl | rfl | rfl <;> tcomb_mem
-      refine P₄.unch.wordsVal (fun w hw => ?_) (by have := hle x (combWs_slots _ x hxs); omega)
+      refine P₄.unch.wordsVal (fun w hw => ?_) (by have := hle x (combWs_slots _ x hxs); omega_using [hn, this])
       rcases List.mem_append.mp hw with hw | hw
       · obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hw
         have hys : y ∈ combWs K.toComb := by
@@ -600,21 +600,21 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
         exact hL.comb.lay.tmp x (combWs_slots _ x hxs)
   have hw := hL.w
   have hwi : K.w * (j - 1) + K.w ≤ K.w * K.J := by
-    have := Nat.mul_le_mul_left K.w (show j - 1 + 1 ≤ K.J by omega); rwa [Nat.mul_succ] at this
+    have := Nat.mul_le_mul_left K.w (show j - 1 + 1 ≤ K.J by omega_using [hjn, hJ]); rwa [Nat.mul_succ] at this
   rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (digit_ok K hs₄ (k := k) (j := j - 1) (N := K.w * K.J) hw.1 hw.2 hwi
     (by omega_using [hbl, hz', hn]) hb₄ hbits₄) fun s₅ ⟨_, r₅, k₅⟩ => ?_
   have hs₅ := hs₄.of_keeps k₅ (by decide)
   rw [ha] at r₅
   have hH2 : 2 ^ K.w = 2 * K.H := by
-    unfold TCombCfg.H; rw [← Nat.pow_succ']; congr 1; omega
+    unfold TCombCfg.H; rw [← Nat.pow_succ']; congr 1; omega_using [hw]
   have hHle : K.H ≤ 128 := by
-    unfold TCombCfg.H; exact Nat.le_trans (Nat.pow_le_pow_right (by decide) (show K.w - 1 ≤ 7 by omega))
+    unfold TCombCfg.H; exact Nat.le_trans (Nat.pow_le_pow_right (by decide) (show K.w - 1 ≤ 7 by omega_using [hw]))
       (by decide)
   have hmag : a ≤ K.H := by
     rw [← ha]; exact magH_le (by rw [← hH2]; exact combWin_lt K.w k (j - 1))
   rw [WP.block_append_iff]
-  refine WP.mono (eqMask_ok s₅ (v := 0) (a := a) (by decide) (by omega) r₅) fun s₆ ⟨c₆, k₆, _⟩ => ?_
+  refine WP.mono (eqMask_ok s₅ (v := 0) (a := a) (by decide) (by omega_using [hHle, hmag]) r₅) fun s₆ ⟨c₆, k₆, _⟩ => ?_
   have hs₆ := hs₅.of_keeps k₆ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (selPtKeep_ok hs₆ (decide (a = 0)) (by rw [c₆]) (n := K.M.n) (o := K.A) (a := K.D)
@@ -635,7 +635,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
   have hs₇ := hs₆.of_keepRegs k₇ (by decide)
   have hb₇ : s₇.gpr .rbx = BitVec.ofNat 64 (j - 1) := by
     rw [k₇.gpr _ (by decide), k₆.1 _ (by decide), k₅.1 _ (by decide), hb₄]
-  refine WP.mono (testRbx_ok s₇ (by omega) hb₇) fun s₈ ⟨z₈, k₈⟩ sy₈ => ?_
+  refine WP.mono (testRbx_ok s₇ (by omega_using [hjn, hJ]) hb₇) fun s₈ ⟨z₈, k₈⟩ sy₈ => ?_
   have m₈ : s₈.mem = s₇.mem := k₈.2.1
   have m₆ : s₆.mem = s₄.mem := by rw [k₆.2.1, k₅.2.1]
   have U₈ : Unch base (combW K.toComb) s₄.mem s₈.mem := by
@@ -708,7 +708,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
       rw [e (by rw [m₈, ex₇]), e (by rw [m₈, ey₇]), e (by rw [m₈, ez₇])]
       show Rep C (toM _ _ _) (toM _ _ _) (toM _ _ _) _
       rw [hDval _ (by simp), hDval _ (by simp), hDval _ (by simp)]
-      exact hRD (by omega)
+      exact hRD (by omega_using [h0])
   · intro t ht
     rw [U.byte (combW_bits hL ht) (by omega_using [hbl, hz', ht, hn])]
     exact hI.bits t ht
@@ -723,27 +723,27 @@ theorem zstores_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       KeepRegs [] s s' ∧ Outside base o (8 * m) s.mem s'.mem ∧
         ∀ d < 8 * m, s'.mem (off base (o + d)) = 0
   | 0, _ => WP.block_nil ⟨⟨fun _ _ => rfl, rfl, rfl⟩, Outside.refl _ _ _ _,
-      fun d hd => absurd hd (by omega)⟩
+      fun d hd => absurd hd (by omega_using [])⟩
   | m + 1, hm => by
     have hn := hs.nowrap
     rw [List.range_succ, List.map_append, WP.block_append_iff]
-    refine WP.mono (zstores_ok hs hz m (by omega)) fun s₁ ⟨k₁, O₁, z₁⟩ => ?_
+    refine WP.mono (zstores_ok hs hz m (by omega_using [hm])) fun s₁ ⟨k₁, O₁, z₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by simp)
     have hrax : s₁.gpr .rax = 0 := (k₁.gpr _ (by simp)).trans hz
     apply WP.of_runBlock
     simp only [List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil, exec, State.store64,
-      ea_sc, hs₁.rdi, hrax, st_sc hs₁ (d := o + 8 * m) (by omega), ite_true, Option.some.injEq,
+      ea_sc, hs₁.rdi, hrax, st_sc hs₁ (d := o + 8 * m) (by omega_using [hm]), ite_true, Option.some.injEq,
       exists_eq_left']
-    have Ow := writeW_outside s₁.mem base (d := o + 8 * m) (0 : BitVec 64) (by omega)
-    refine ⟨⟨k₁.gpr, k₁.rd, k₁.wr⟩, fun x hx => (Ow x (by omega)).trans (O₁ x (by omega)),
+    have Ow := writeW_outside s₁.mem base (d := o + 8 * m) (0 : BitVec 64) (by omega_using [hm, hn])
+    refine ⟨⟨k₁.gpr, k₁.rd, k₁.wr⟩, fun x hx => (Ow x (by omega_using [hx])).trans (O₁ x (by omega_using [hx])),
       fun d hd => ?_⟩
     by_cases hd' : d < 8 * m
     · show (s₁.mem.writeW (off base (o + 8 * m)) (0 : BitVec 64)) (off base (o + d)) = 0
-      rw [Ow _ (by rw [ofs_off0 base (by omega)]; omega)]; exact z₁ d hd'
+      rw [Ow _ (by rw [ofs_off0 base (by omega_using [hm, hn, hd'])]; omega_using [hd'])]; exact z₁ d hd'
     · have e : off base (o + d) - off base (o + 8 * m) = BitVec.ofNat 64 (d - 8 * m) := by
-        simp only [off]; rw [show o + d = o + 8 * m + (d - 8 * m) by omega, Offset.add_ofNat_add_sub]
+        simp only [off]; rw [show o + d = o + 8 * m + (d - 8 * m) by omega_using [hd'], Offset.add_ofNat_add_sub]
       simp only [Mem.writeW, Mem.write, e, BitVec.toNat_ofNat,
-        Nat.mod_eq_of_lt (show d - 8 * m < 2 ^ 64 by omega), show d - 8 * m < 64 / 8 by omega,
+        Nat.mod_eq_of_lt (show d - 8 * m < 2 ^ 64 by omega_using [hd]), show d - 8 * m < 64 / 8 by omega_using [hd],
         ↓reduceIte]
       simp
 
@@ -783,8 +783,8 @@ theorem tcomb_init_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T
   have hsl : ∀ x ∈ combWs K.toComb, K.bits + K.kbytes + 8 * K.zw ≤ x ∨ x + 8 * K.M.n ≤ K.bits + K.kbytes :=
     fun x hx => hL.bits_sl x (List.mem_cons_of_mem _ (combWs_slots _ x hx))
   have hbz := hL.bits
-  have hzw : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega
-  have hJ31 : K.J < 2 ^ 31 := by omega
+  have hzw : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega_using []
+  have hJ31 : K.J < 2 ^ 31 := by omega_using [hJ]
   refine WP.of_syms ?_
   have e : K.init = setConst K.M.n K.A.x K.start.1 ++ (setConst K.M.n K.A.y K.start.2 ++
       (setConst K.M.n K.A.z K.one ++ ([.mov32 .rax (.imm 0)] ++ ((List.range K.zw).map
@@ -829,7 +829,7 @@ theorem tcomb_init_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T
       have hxs : x ∈ combWs K.toComb := by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hx with rfl | rfl | rfl <;> tcomb_mem
-      rw [m₆, O₅.wordsVal (by have := hsl x hxs; omega) (b64 x hxs), k₄.2.1]
+      rw [m₆, O₅.wordsVal (by have := hsl x hxs; omega_using [this]) (b64 x hxs), k₄.2.1]
   have vx : wordsVal s₆.mem base K.A.x K.M.n = K.start.1 := by
     rw [hA5 _ (by simp), O₃.wordsVal axz (b64 _ (by tcomb_mem)), O₂.wordsVal axy (b64 _ (by tcomb_mem)), e₁]
   have vy : wordsVal s₆.mem base K.A.y K.M.n = K.start.2 := by
@@ -856,13 +856,13 @@ theorem tcomb_init_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T
       · rw [U₆.byte (fun w hw => by
           rcases List.mem_append.mp hw with hw | hw
           · exact combW_bits hL ht w hw
-          · simp only [List.mem_singleton] at hw; subst hw; dsimp only; omega)
+          · simp only [List.mem_singleton] at hw; subst hw; dsimp only; omega_using [htk])
           (by omega_using [hbz, hzw, ht, hn])]
         exact hF.bits t htk
-      · have := z₅ (t - K.kbytes) (by omega)
-        rw [show K.bits + K.kbytes + (t - K.kbytes) = K.bits + t by omega] at this
+      · have := z₅ (t - K.kbytes) (by omega_using [hzw, ht, htk])
+        rw [show K.bits + K.kbytes + (t - K.kbytes) = K.bits + t by omega_using [htk]] at this
         rw [m₆, this, Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hF.k_lt
-          (Nat.pow_le_pow_right (by decide) (by omega)))]
+          (Nat.pow_le_pow_right (by decide) (by omega_using [htk])))]
         rfl
     · exact TblMem.of_unch hF.tbl (by rw [k₆.2.2.1, k₆.2.2.2, k₅.rd, k₅.wr, k₄.2.2.1, k₄.2.2.2, k₃.rd,
         k₃.wr, k₂.rd, k₂.wr, k₁.rd, k₁.wr]) U₆ (tcombW_size hL hM) hF.out
