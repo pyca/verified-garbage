@@ -62,8 +62,8 @@ def encSatState (H : Spec.Mgf1.Hash) : State where
     | .x0 => 0x1000 | .x1 => 64 | .x2 => 0x2000 | .x3 => 64 | .x4 => 0x3000 | .x5 => 1 | .x6 => 0x4000
     | _ => 0
   sp := 0x10000
-  mem a := if a = 0x10001 then 0x41 else if a = 0x10011 then 0x42 else if a = 0x1001A then 0x02
-    else if a = 0x10021 then 0x08 else 0
+  mem a := bif Nat.beq a.toNat 0x10001 then 0x41 else bif Nat.beq a.toNat 0x10011 then 0x42
+    else bif Nat.beq a.toNat 0x1001A then 0x02 else bif Nat.beq a.toNat 0x10021 then 0x08 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 0⟩, ⟨0x4100, 0⟩, ⟨0x4200, H.len⟩, ⟨0x10000, 40⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x20000, 16384⟩]
 
@@ -112,11 +112,13 @@ def decSatState : State where
     | .x0 => 0x1000 | .x1 => 64 | .x2 => 0x1800 | .x3 => 0x2000 | .x4 => 64 | .x5 => 0x3000 | .x6 => 1
     | .x7 => 0x4200 | _ => 0
   sp := 0x10000
-  mem a := if a = 0x10000 then 1 else if a = 0x10009 then 0x43 else if a = 0x10010 then 1
-    else if a = 0x10019 then 0x44 else if a = 0x10020 then 1 else if a = 0x10029 then 0x45
-    else if a = 0x10030 then 1 else if a = 0x10039 then 0x46 else if a = 0x10040 then 1
-    else if a = 0x10049 then 0x47 else if a = 0x10059 then 0x41 else if a = 0x10060 then 64
-    else if a = 0x1006A then 0x02 else if a = 0x10071 then 0x08 else 0
+  mem a := bif Nat.beq a.toNat 0x10000 then 1 else bif Nat.beq a.toNat 0x10009 then 0x43
+    else bif Nat.beq a.toNat 0x10010 then 1 else bif Nat.beq a.toNat 0x10019 then 0x44
+    else bif Nat.beq a.toNat 0x10020 then 1 else bif Nat.beq a.toNat 0x10029 then 0x45
+    else bif Nat.beq a.toNat 0x10030 then 1 else bif Nat.beq a.toNat 0x10039 then 0x46
+    else bif Nat.beq a.toNat 0x10040 then 1 else bif Nat.beq a.toNat 0x10049 then 0x47
+    else bif Nat.beq a.toNat 0x10059 then 0x41 else bif Nat.beq a.toNat 0x10060 then 64
+    else bif Nat.beq a.toNat 0x1006A then 0x02 else bif Nat.beq a.toNat 0x10071 then 0x08 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩, ⟨0x4500, 1⟩, ⟨0x4600, 1⟩,
     ⟨0x4700, 0⟩, ⟨0x4100, 64⟩, ⟨0x10000, 120⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1800, 8⟩, ⟨0x20000, 16384⟩]
