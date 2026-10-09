@@ -242,6 +242,92 @@ theorem rem_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf :
         rw [rd₁, wr₁, hI.a.rd, hI.a.wr]
         exact in_rdwr (in_sub_int hp.p_in (by omega))
       m0 := fun l hl => by rw [z₁ _ (by decide) l hl]; exact hI.a.msk l hl }
+  have hQ₁ : QG s₀ (fun _ => 0) a X P yl 1 s₁ :=
+    ⟨hE₁, fun l hl => by rw [z₁ _ (by decide) l hl]; exact hI.m1 l hl,
+      by rw [ite_f (by decide)]
+         exact ⟨fun h => absurd h (by decide), fun l hl => by rw [z₁ _ (by decide) l hl]⟩⟩
+  refine WP.seq (WP.mono (ksSel_ok hp hr1 hr15 (QG s₀ (fun _ => 0) a X P yl)
+    (gq_ok (fun _ => Nat.le_refl _) (fun _ _ _ => Nat.zero_le _))
+    (fun j t t' h f => h.zframe f (by decide))
+    (fun t t' h hg hrd hwr hl hf => QG.ksR hp (g := e - 1) (by omega) ha h hg hrd hwr hl hf)
+    (c := 16 * e) a10₁ (fun l hl => by rw [z₁ _ (by decide) l hl]; exact hI.a.ctr l hl)
+    (fun l hl => by rw [z₁ _ (by decide) l hl]; exact hI.a.msk l hl)
+    (fun l hl => by rw [z₁ _ (by decide) l hl]; exact hI.a.inc l hl) hrdi₁
+    (by rw [gk₁ _ (by decide) (by decide)]; exact hI.a.rsi) (by rw [gk₁ _ (by decide) (by decide)]; exact hr11)
+    (by rw [rd₁]; exact hI.a.rd) (by rw [wr₁]; exact hI.a.wr) hfr₁ hCache₁ hQ₁)
+    fun s₂ ⟨q₂, ks₂, g₂, rd₂, wr₂, l₂, f₂⟩ => ?_)
+  obtain ⟨_, h1₂, y₂⟩ := q₂
+  rw [ite_t (by decide)] at y₂
+  -- `Y` after the groups.
+  have hY₂ : s₂.lane .xmm2 0 = ghashFrom (hk s₀) (y₀ s₀) ((List.range (16 * e)).map (ctb s₀)) := by
+    rw [← State.zlane_lt2 _ _ (by decide), y₂.1, hf X yl hI.y1,
+      show 16 * e = 16 * ((e - 1) + 1) by congr 1; omega, VG.Proof.Gcm.X86_64.Stitch.ghash_append16, ← hI.y]
+  -- `rdx` at the `r` blocks, `r10 = 0`, the products cleared.
+  refine WP.seq (WP.mono (remPre_ok s₂) fun s₃ ⟨d₃, z₃, g₃, p₃, l₃, m₃, rd₃, wr₃⟩ => ?_)
+  have hA : s₃.gpr .rdx = bAddr s₀ (16 * e) := by
+    rw [d₃, g₂, gk₁ _ (by decide) (by decide)]
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_add, show (256 : BitVec 64).toNat = 256 from rfl,
+      Nat.mod_eq_of_lt (show a.toNat + 256 < 2 ^ 64 by omega), BitVec.toNat_add, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (show 16 * (16 * e) < 2 ^ 64 by omega), Nat.mod_eq_of_lt (by omega)]
+    show a.toNat + 256 = _
+    omega
+  let E : REnv := REnv.mk r .rdx (bAddr s₀ (16 * e)) (bAddr s₀ (16 * e)) (pp s₀)
+    (pp s₀ + BitVec.ofNat 64 (256 - 16 * r)) s₃.mem s₃.gpr s₃.rd s₃.wr (s₃.lane .xmm2 0)
+  have hrd₃ : s₃.rd = s₀.rd := by rw [rd₃, rd₂, rd₁, hI.a.rd]
+  have hwr₃ : s₃.wr = s₀.wr := by rw [wr₃, wr₂, wr₁, hI.a.wr]
+  have gk₃ : ∀ q, q ≠ .rdx → q ≠ .r10 → q ≠ .rax → s₃.gpr q = s.gpr q := fun q h1 h2 h3 => by
+    rw [g₃ q h1 h2, g₂, gk₁ q h2 h3]
+  have hE : E.Ok :=
+    { r1 := hr1, r15 := hr15, gS := hA, gA := hA,
+      gP := by show s₃.gpr .r11 = _; rw [gk₃ _ (by decide) (by decide) (by decide), hr11]
+      gW := by show s₃.gpr .rax = _; rw [g₃ _ (by decide) (by decide), g₂, ax₁]
+      src9 := by show Reg.rdx ≠ Reg.r9; decide, src10 := by show Reg.rdx ≠ Reg.r10; decide
+      inS := fun j (hj : j < r) => by
+        show InRegions (s₃.rd ++ s₃.wr) (bAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) 16
+        rw [hrd₃, hwr₃, Offset.add_add, ← Nat.mul_add]
+        exact in_rdwr (in_sub hp.d_in (by omega))
+      inK := fun j (hj : j < r) => by
+        show InRegions (s₃.rd ++ s₃.wr) (pp s₀ + BitVec.ofNat 64 (768 + 16 * j)) 16
+        rw [hrd₃, hwr₃]
+        exact in_rdwr (in_sub hp.p_in (by omega))
+      inD := fun j (hj : j < r) => by
+        show InRegions s₃.wr (bAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) 16
+        rw [hwr₃, Offset.add_add, ← Nat.mul_add]
+        exact in_sub hp.d_in (by omega)
+      inW := fun j (hj : j < r) => by
+        show InRegions (s₃.rd ++ s₃.wr) (pp s₀ + BitVec.ofNat 64 (256 - 16 * r) + BitVec.ofNat 64 (16 * j)) 16
+        rw [hrd₃, hwr₃, Offset.add_add]
+        exact in_rdwr (in_sub hp.p_in (by omega))
+      dS := fun j (hj : j < r) i hi => by
+        show Region.Disjoint ⟨bAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j), 16⟩ ⟨bAddr s₀ (16 * e), 16 * i⟩
+        exact Offset.disjoint_base _ (by omega) (by omega)
+      dK := fun j (hj : j < r) => by
+        show Region.Disjoint ⟨pp s₀ + BitVec.ofNat 64 (768 + 16 * j), 16⟩ ⟨bAddr s₀ (16 * e), 16 * r⟩
+        exact (hp.d_p.symm.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega))
+      dW := fun j (hj : j < r) => by
+        show Region.Disjoint ⟨pp s₀ + BitVec.ofNat 64 (256 - 16 * r) + BitVec.ofNat 64 (16 * j), 16⟩
+          ⟨bAddr s₀ (16 * e), 16 * r⟩
+        rw [Offset.add_add]
+        exact (hp.d_p.symm.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega)) }
+  have hI₃ : RInv E 0 s₃ :=
+    { le := Nat.zero_le _, r10 := z₃
+      r9 := by
+        show s₃.gpr .r9 = _
+        rw [gk₃ _ (by decide) (by decide) (by decide), hr9, Nat.sub_zero]
+      gpr := fun _ _ _ => rfl, rd := rfl, wr := rfl
+      frame := Frame.refl _ _
+      ct := fun j hj => absurd hj (Nat.not_lt_zero _)
+      prod := p₃
+      y := rfl
+      m0 := by
+        rw [l₃ _ (by decide) (by decide) (by decide), ← State.zlane_lt2 _ _ (by decide),
+          l₂ _ (by decide) (by decide) (by decide) (by decide) 0 (by decide), z₁ _ (by decide) 0 (by decide)]
+        exact hI.a.msk 0 (by decide)
+      m1 := by
+        rw [l₃ _ (by decide) (by decide) (by decide), ← State.zlane_lt2 _ _ (by decide)]
+        exact h1₂ 0 (by decide) }
+  refine WP.seq (WP.mono (remLoop_ok hE hI₃) fun s₄ hI₄ => ?_)
   sorry
 
 end VG.Proof.Gcm.X86_64.StitchZH
