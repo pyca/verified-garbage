@@ -36,8 +36,11 @@ theorem pre_of {s : State}
     abi, argRegs, verifyStack, stackArgs_seven, List.append_eq] at h
   sig_pre [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig,
     abi, argRegs, verifyStack, stackArgs_seven, List.append_eq] at h
-  obtain ⟨sp1, sp2, hrd, hwr, dns, des, dds, dgs, dsp, dsa, dRn, dRe, dRd, dRg, dRs, -, dRa,
-    dKn, dKe, dKd, dKg, dKs, dKp, dKa, wN, wE, wD, wG, wS, wP, ⟨k1, k2⟩, L1, L2, hsg, hsl, pl⟩ := h
+  sig_split h
+  rename_i sp1 sp2 hrd hwr dns des dds dgs dsp dsa dRn dRe dRd dRg dRs _ dRa dKn dKe dKd dKg dKs dKp
+    dKa wN wE wD wG wS wP _ob1 L1 L2 hsg hsl
+  obtain ⟨k1, k2⟩ := _ob1
+  have pl := h
   have ha : Region.Sub ⟨stackArgAddr s 0, 40⟩ ⟨stackArgAddr s 0, 56⟩ := Region.sub_prefix (by decide)
   refine ⟨⟨sp1, by omega, ?_, hwr, dns, des, dds, dgs, dsa.sub_right ha,
     dRn, dRe, dRd, dRg, dRs, dRa.sub_right ha,

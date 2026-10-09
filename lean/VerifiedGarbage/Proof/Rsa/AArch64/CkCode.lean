@@ -189,8 +189,10 @@ structure CkCtx (s : State) : Prop where
 
 theorem ckCtx_of {s : State} (h : ckA.pre s) : CkCtx s := by
   simp only [ckA] at h
-  obtain ⟨hsp, hrd, hwr, dns, des, dds, dps, dqs, ddps, ddqs, dqis, dsa, wN, wE, wD, wP, wQ, wDp, wDq, wQi, wS, hk,
-    hel1, hel2, hdl1, hdl2, hpl1, hpl2, hql1, hql2, hdpl, hqil, hdql, hsl⟩ := h
+  sig_split h
+  rename_i hsp hrd hwr dns des dds dps dqs ddps ddqs dqis dsa wN wE wD wP wQ wDp wDq wQi wS hk hel1
+    hel2 hdl1 hdl2 hpl1 hpl2 hql1 hql2 hdpl hqil hdql
+  have hsl := h
   obtain ⟨hk1, hk2⟩ := hk
   unfold Spec.Rsa.scratchWords at hsl
   have hs : Scr s (stackArg s 8) ((stackArg s 9).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS

@@ -281,9 +281,11 @@ structure CvCtx (s : State) : Prop where
 
 theorem cvCtx_of {s : State} (h : cvContract.pre s) : CvCtx s := by
   simp only [cvContract] at h
-  obtain ⟨hsp, hrd, hwr, d12, d13, d1n, d1p, d1q, d1d, d1s, d1a, d23, d2n, d2p, d2q, d2d, d2s, d2a,
-    d3n, d3p, d3q, d3d, d3s, d3a, dns, dps, dqs, dds, dsa, dR1, dR2, dR3, dRn, dRp, dRq, dRd, dRs, dRa,
-    w1, w2, w3, wN, wP, wQ, wD, wS, hk, hpl1, hpl2, hql1, hql2, hsi, hr9, hcx, hdl1, hdl2, hsl⟩ := h
+  sig_split h
+  rename_i hsp hrd hwr d12 d13 d1n d1p d1q d1d d1s d1a d23 d2n d2p d2q d2d d2s d2a d3n d3p d3q d3d
+    d3s d3a dns dps dqs dds dsa dR1 dR2 dR3 dRn dRp dRq dRd dRs dRa w1 w2 w3 wN wP wQ wD wS hk hpl1
+    hpl2 hql1 hql2 hsi hr9 hcx hdl1 hdl2
+  have hsl := h
   obtain ⟨hk1, hk2⟩ := hk
   unfold Spec.Rsa.scratchWords at hsl
   have hs : Scr s (stackArg s 8) ((stackArg s 9).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS

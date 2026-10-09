@@ -28,10 +28,11 @@ def cvSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x6009 then 0x20 else if a = 0x6010 then 0x40 else if a = 0x6019 then 0x30
-    else if a = 0x6020 then 1 else if a = 0x6029 then 0x31 else if a = 0x6030 then 1
-    else if a = 0x6039 then 0x32 else if a = 0x6040 then 1 else if a = 0x6049 then 0x80
-    else if a = 0x6051 then 0x04 else 0
+  mem a := bif Nat.beq a.toNat 0x6009 then 0x20 else bif Nat.beq a.toNat 0x6010 then 0x40
+    else bif Nat.beq a.toNat 0x6019 then 0x30 else bif Nat.beq a.toNat 0x6020 then 1
+    else bif Nat.beq a.toNat 0x6029 then 0x31 else bif Nat.beq a.toNat 0x6030 then 1
+    else bif Nat.beq a.toNat 0x6039 then 0x32 else bif Nat.beq a.toNat 0x6040 then 1
+    else bif Nat.beq a.toNat 0x6049 then 0x80 else bif Nat.beq a.toNat 0x6051 then 0x04 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x3100, 1⟩, ⟨0x3200, 1⟩, ⟨0x6008, 80⟩]
   wr := [⟨0x1000, 1⟩, ⟨0x1100, 1⟩, ⟨0x1200, 1⟩, ⟨0x8000, 8192⟩]
 
