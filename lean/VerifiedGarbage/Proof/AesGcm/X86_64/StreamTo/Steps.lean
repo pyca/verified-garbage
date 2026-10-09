@@ -202,8 +202,9 @@ theorem blocksArgs_ok {st : State} {o q : Nat} (h11 : st.gpr .r11 = W s)
     xrun [h11, hax, w64, r₀, r₁, r₂, r₅, r₇, r₈, s₀, s₁, s₂, s₅, s₇, k0, hk.rounds, hk.st, hk.src, hk.dst, hdn,
       hsum],
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by rfl, by rfl⟩
-  all_goals try (simp (disch := first | decide | with_reducible assumption) only [gpr_setReg, gpr_arithFlags,
-    ite_true, reduceCtorEq, ↓reduceIte, Mem.readW_writeW_sep, k0, hk.rounds, hk.st, hk.src, hk.dst, hdn, h11]; done)
+  iterate 7
+    simp (disch := first | decide | with_reducible assumption) only [gpr_setReg, gpr_arithFlags,
+      ite_true, reduceCtorEq, ↓reduceIte, Mem.readW_writeW_sep, k0, hk.rounds, hk.st, hk.src, hk.dst, hdn, h11]
   · intro r a b c d e f g; simp [gpr_setReg, gpr_arithFlags, a, b, c, d, e, f, g]
   · have k : ∀ d, d + 8 ≤ 64 → (st.mem.writeW (W s + BitVec.ofNat 64 64) (BitVec.ofNat 64 (o + 16 * q))).readW
         (W s + BitVec.ofNat 64 d) 64 = st.mem.readW (W s + BitVec.ofNat 64 d) 64 :=

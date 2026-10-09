@@ -49,16 +49,11 @@ theorem shl3_toNat (x : BitVec 64) : (x <<< 3).toNat = 8 * x.toNat % 2 ^ 64 := b
 
 theorem toBytes_append4 (a b c d : BitVec 32) :
     toBytes (a ++ b ++ c ++ d) = be64 (a ++ b).toNat ++ be64 (c ++ d).toNat := by
-  have ha := a.isLt; have hb := b.isLt; have hc := c.isLt; have hd := d.isLt
-  have e : (a ++ b ++ c ++ d).toNat = ((a.toNat * 2 ^ 32 + b.toNat) * 2 ^ 32 + c.toNat) * 2 ^ 32 + d.toNat := by
+  have e : a ++ b ++ c ++ d = (a ++ b) ++ (c ++ d) := by
+    apply BitVec.eq_of_toNat_eq
+    have := c.isLt; have := d.isLt
     simp only [Proof.Gcm.toNat_append]
-  have e₁ : (a ++ b).toNat = a.toNat * 2 ^ 32 + b.toNat := Proof.Gcm.toNat_append a b
-  have e₂ : (c ++ d).toNat = c.toNat * 2 ^ 32 + d.toNat := Proof.Gcm.toNat_append c d
-  simp only [toBytes, be64, List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
-    List.cons_append, List.cons.injEq, and_true, e₁, e₂]
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-  · apply BitVec.eq_of_toNat_eq
-    rw [BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, e]
     omega
+  rw [e, toBytes_append64]
 
 end VG.Proof.AesGcm.Arm
