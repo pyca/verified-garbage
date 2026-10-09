@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: `Verified`
@@ -115,11 +115,13 @@ open VG.Proof.ChaCha20.X86_64 VG.Impl.StackScratch.X86_64 in
 `v` of `vg_chacha20_xor`, with its working space in a frame of its own. -/
 def sealFn (v : XorImpl) : SealFn where
   name := Spec.ChaCha20Poly1305.sealApi.name ++ v.suffix
-  code := withStackArgScratchWipedX 1720 1 42 (Impl.ChaCha20Poly1305.X86_64.«seal» v.callee v.poly)
-  verified := Proof.ChaCha20Poly1305.X86_64.seal_framed v
-  sp := SpSafe.of_all (X86_64.withStackArgScratchWipedX_spSafe (Proof.ChaCha20Poly1305.X86_64.seal_spSafe v))
+  code := withStackArgScratchWipedX 1720 1 42
+    (Impl.ChaCha20Poly1305.X86_64.Stitch.sealFor v.callee v.poly)
+  verified := Proof.ChaCha20Poly1305.X86_64.Stitch.sealFor_framed v
+  sp := SpSafe.of_all
+    (X86_64.withStackArgScratchWipedX_spSafe (Proof.ChaCha20Poly1305.X86_64.Stitch.sealFor_spSafe v))
   depth := by
-    have := Proof.ChaCha20Poly1305.X86_64.seal_xdepth v
+    have := Proof.ChaCha20Poly1305.X86_64.Stitch.sealFor_xdepth v
     simp only [withStackArgScratchWipedX, withStackArgScratch, Code.x86_64Depth, X86_64.Instr.frameBytes,
       Nat.zero_max, Nat.max_zero, Nat.max_le]
     omega
@@ -135,7 +137,7 @@ but its frames' pushes and pops. -/
 theorem sealGather_spSafe (v : XorImpl) :
     (sealGather (width v) (sealFn v).name (sealFn v).code).all (fun i => !X86_64.isa.writesSp i) = true := by
   have hc : (sealFn v).code.all (fun i => !X86_64.isa.writesSp i) = true :=
-    X86_64.withStackArgScratchWipedX_spSafe (Proof.ChaCha20Poly1305.X86_64.seal_spSafe v)
+    X86_64.withStackArgScratchWipedX_spSafe (Proof.ChaCha20Poly1305.X86_64.Stitch.sealFor_spSafe v)
   simp only [sealGather, Code.all, hc, Bool.and_true, Bool.true_and]
   cases width v <;> decide +kernel
 
