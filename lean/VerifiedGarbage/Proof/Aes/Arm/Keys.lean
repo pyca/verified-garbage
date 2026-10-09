@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Aes.Arm.Encrypt
 import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Bitslicing the round keys, on ARMv7
@@ -340,10 +341,10 @@ theorem keyBody_ok {s₀ : State} {b sc : BitVec 32} {R : Nat} {w : List Byte} (
     obtain ⟨-, h2, h3, h4⟩ := keyWrites_not r hr
     rw [hoth₄ r h2 h3 h4, hkeep₃ r hr]
   have hlr' : s₄.gpr .lr = BitVec.ofNat 32 j := by
-    rw [hlr₄, hlr₃, hlr]; bv_omega
+    rw [hlr₄, hlr₃, hlr]; bv_omega_using [hjR, hR]
   have hev : Arm.eval .ne s₄ = some (!(BitVec.ofNat 32 j == 0)) := by
     simp only [Arm.eval, hz₄, hlr₃, hlr]
-    congr 3; bv_omega
+    congr 3; bv_omega_using [hjR, hR]
   rw [← hm₄] at hfr
   have hkeys' : ∀ i, j ≤ i → i ≤ R →
       KeyRel (fun k => s₄.mem.readW (wordAddr (keyAddr b R i) k) 32) (roundKey w i) := by
@@ -359,7 +360,7 @@ theorem keyBody_ok {s₀ : State} {b sc : BitVec 32} {R : Nat} {w : List Byte} (
     refine .inr ⟨by omega, hev.trans (by simpa using hne),
       ⟨by have := hi.hj; omega, ?_, ?_, by rw [hrd₄, hrd], by rw [hwr₄, hwr], by rw [hsp₄, hsp], hkeep,
         hfr, fun i hi' hiR => hkeys' i (by omega) hiR⟩, by rw [hlr', show j - 1 + 1 = j by omega]⟩
-    · rw [hr12₄, hr12]; bv_omega
+    · rw [hr12₄, hr12]; bv_omega_using [h0, hjR, hR]
     · rw [hkp₄, hkp]; exact keyAddr_pred b hk.rounds (by omega) hi.hj
 
 theorem keyLoop_ok {s₀ : State} {b sc : BitVec 32} {R : Nat} {w : List Byte} (hk : KSetup s₀ b sc R w)
