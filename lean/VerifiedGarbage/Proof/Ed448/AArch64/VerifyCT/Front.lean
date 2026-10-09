@@ -1,5 +1,5 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
-import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
+import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
 
 /-!
 # Ed448 verification's equation on AArch64: constant time of the entry, the table and `[S]B`
@@ -9,7 +9,9 @@ Untrusted: everything here is checked by Lean. The analysis of each phase of
 evaluated in a declaration of its own (here and in `VerifyCT/Windows.lean`),
 which the modules check in
 parallel, and composed by `seq_ok`: between the phases only the working
-space's pointer, `x3`, is public.
+space's pointer, `x3`, is public. The field operations, erased
+(`Proof/X448/AArch64/Fast/Erase.lean`), are analysed as pieces of their
+blocks (`Split`): once each, not once for every slot they work on.
 -/
 
 namespace VG.Proof.Ed448.AArch64
@@ -30,17 +32,37 @@ theorem seq_ok {M : ISA} {A : VG.Taint M} {τ mid : A.T} {c₁ c₂ : Prog M} {h
 theorem front_ct : ∃ h, ((taintS [Impl.X448.AArch64.Base.combSym]).check
     (Taint.ofRegs [.x0, .x1, .x2, .x3]) wfront h).map
     ((taintS [Impl.X448.AArch64.Base.combSym]).le (Taint.ofRegs [.x3])) = some true := by
+  apply exists_map_le_of_eraseT
+  simp only [Code.eraseT, wfront, bitsAt, vdecodeA, decode, root, ops_eraseT, sqn_eraseT, List.map_append,
+    eqSlots_eraseT]
   refine ⟨?h, ?g⟩
   case g => taint_decide
 
+open VG.Impl.X448.AArch64 (slot) in
+/-- The body of the table's loop, erased, in pieces. -/
+def tabPieces : List (List Instr) :=
+  (Impl.X448.AArch64.Base.addOps (slot 0) (slot 1) (slot 2) (slot 3) (slot 4) (slot 5)).map opErased ++
+    [(tabStore ++ ([.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 16] : List Instr)).map Instr.eraseT]
+
 theorem table_ct : ∃ h, ((taintS [Impl.X448.AArch64.Base.combSym]).check (Taint.ofRegs [.x3]) table h).map
     ((taintS [Impl.X448.AArch64.Base.combSym]).le (Taint.ofRegs [.x3])) = some true := by
-  refine ⟨?h, ?g⟩
+  apply exists_map_le_of_eraseT
+  refine Split.exists_map_le (c' := ?c') ?s ⟨?h, ?g⟩
+  case s =>
+    have e : tabBody.map Instr.eraseT = tabPieces.flatten := by
+      simp only [tabBody, tabPieces, List.map_append, codeOf_eraseT, List.flatten_append, List.flatten_cons,
+        List.flatten_nil, List.append_nil, List.append_assoc]
+    simp only [Code.eraseT, table, e]
+    exact .seq (.refl _) (.loop _ (.pieces _))
   case g => taint_decide
 
 theorem sBase_ct : ∃ h, ((taintS [Impl.X448.AArch64.Base.combSym]).check (Taint.ofRegs [.x3]) sBase h).map
     ((taintS [Impl.X448.AArch64.Base.combSym]).le (Taint.ofRegs [.x3])) = some true := by
-  refine ⟨?h, ?g⟩
+  apply exists_map_le_of_eraseT
+  refine Split.exists_map_le (c' := ?c') ?s ⟨?h, ?g⟩
+  case s =>
+    simp only [sBase, Code.eraseT]
+    exact .seq (.refl _) (.seq (.loop _ (stepN_split 57)) combine_split)
   case g => taint_decide
 
 end VG.Proof.Ed448.AArch64

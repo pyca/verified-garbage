@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.X448.AArch64.Base.Main
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
@@ -17,8 +18,21 @@ namespace VG.Proof.X448.AArch64.Base
 
 open VG VG.AArch64 VG.Impl.X448.AArch64.Base
 
+/-- The analysis, of the code without what it does not read, its comb's field operations analysed
+once each (`Base/Erase.lean`). -/
+theorem x448Base_check :
+    ∃ h, ((taintS [combSym]).check (Taint.ofRegs [.x0, .x1, .x2]) Impl.X448.AArch64.Base.x448Base h).isSome =
+      true := by
+  apply exists_isSome_of_eraseT
+  refine Split.exists_isSome (c' := ?c') ?s ⟨?h, ?g⟩
+  case s =>
+    simp only [x448Base, step, finish, Code.eraseT, Impl.X448.AArch64.Fast.invert, ops_eraseT, sqn_eraseT]
+    exact .seq (.refl _) (.seq (.loop _ (stepN_split 56)) (.seq combine_split (.refl _)))
+  case g => taint_decide
+
 theorem x448Base_ct : ConstantTime isa Proof.X448.x448BaseAArch64.pre Proof.X448.x448BaseAArch64.pub
     Impl.X448.AArch64.Base.x448Base :=
+  let ⟨_, hc⟩ := x448Base_check
   VG.Taint.constantTime (A := taintS [combSym]) (Taint.ofRegs [.x0, .x1, .x2])
     (fun _ _ _ _ ⟨h0, h1, h2, hsp, hsy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -26,7 +40,7 @@ theorem x448Base_ct : ConstantTime isa Proof.X448.x448BaseAArch64.pre Proof.X448
       · exact h0
       · exact h1
       · exact h2⟩, fun n hn => by
-      simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
+      simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) hc
 
 /-- A state satisfying the precondition: the tables at `0x100000`. -/
 def satState : State where
