@@ -10,11 +10,11 @@ def scalarBitMask : List Instr :=
   [.dp .add .r2 .r0 (.reg .r11), .ldrb .r9 .r2 32, .dp .sub .r9 .r9 (.imm 1)]
 
 def prepareAdd : Prog isa :=
-  .seq savePoint (.seq (.block (tableAddr 5696 ++ pointFromTable))
+  .seq savePoint (.seq (.block (tableAddr 5728 ++ pointFromTable))
     (.seq copyPointToQ restorePoint))
 
 def pointAccumulate : Prog isa :=
-  .seq prepareAdd (.seq pointAdd (.block (scalarBitMask ++ pointSelect)))
+  .seq prepareAdd (.seq Point16.addCall (.block (scalarBitMask ++ pointSelect)))
 
 def accumulateBody : Prog isa :=
   .seq (.block [.dp .sub .r11 .r11 (.imm 1)])

@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarBaseEngine`. -/
 section
@@ -32,11 +33,11 @@ theorem scalarBaseEngine_ok {s : State} {base ptr : BitVec 32} (hc : Ctx base s)
     WP isa scalarBaseEngine s fun t => PointKeep base s t ∧ Lim t.mem (State.addr base) FR ∧
       V t.mem (State.addr base) FR = encodedValue
         (Spec.Ed25519.pointMul (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32)) Spec.Ed25519.basePoint) := by
-  refine WP.seq (WP.mono (initFields_ok hc) fun a ⟨ak, al, _⟩ => ?_)
-  refine WP.seq (WP.mono (fieldCode_ok (constPointOps Spec.Ed25519.basePoint) (ak.ctx hc) al)
-    fun u ⟨uk, ul, ue⟩ => ?_)
+  refine WP.seq (WP.mono (initFields_rest hc) fun a ⟨ak, ar, al, _⟩ => ?_)
+  refine WP.seq (WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) (ak.ctx hc) al)
+    fun u ⟨uk, ur', _, ul, ue⟩ => ?_)
   have ku := ak.trans uk
-  have up : u.gpr .r12 = ptr := (ku.rest.gpr _ (by decide)).trans hp
+  have up : u.gpr .r12 = ptr := (ur'.gpr _ (by decide)).trans ((ar.gpr _ (by decide)).trans hp)
   have ur : ∀ i < 32, InRegions (u.rd ++ u.wr) (State.addr ptr + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [ku.rest.rd, ku.rest.wr]
@@ -79,11 +80,11 @@ materialize_code basePrepareCT
 theorem basePrepareCT_ok {s : State} {base ptr : BitVec 32} (h : BaseCTPre base ptr s) :
     WP isa basePrepareCT s (FromCTPre base ptr 16) := by
   obtain ⟨hc, hp, hfit, hr, hsep⟩ := h
-  refine WP.seq (WP.mono (initFields_ok hc) fun a ⟨ak, al, _⟩ => ?_)
-  refine WP.mono (fieldCode_ok (constPointOps Spec.Ed25519.basePoint) (ak.ctx hc) al)
-    fun u ⟨uk, ul, _⟩ => ?_
+  refine WP.seq (WP.mono (initFields_rest hc) fun a ⟨ak, ar, al, _⟩ => ?_)
+  refine WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) (ak.ctx hc) al)
+    fun u ⟨uk, ur', _, ul, _⟩ => ?_
   have ku := ak.trans uk
-  refine ⟨ku.ctx hc, ul, (ku.rest.gpr _ (by decide)).trans hp, hfit, ?_, hsep⟩
+  refine ⟨ku.ctx hc, ul, (ur'.gpr _ (by decide)).trans ((ar.gpr _ (by decide)).trans hp), hfit, ?_, hsep⟩
   intro i hi
   rw [ku.rest.rd, ku.rest.wr]
   exact hr i hi
@@ -168,28 +169,43 @@ theorem scalarBaseSetup_ok {s : State} (h : ScalarBasePre s) :
       Ctx (s.gpr .r2) t ∧ t.gpr .r12 = s.gpr .r1 ∧
       ScalarSaved (State.addr (s.gpr .r2)) s.gpr t.mem ∧
       t.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 48) 32 = s.gpr .r0 ∧
-      Rest [.r0, .r12] s t ∧ Frame [⟨State.addr (s.gpr .r2), 52⟩] s.mem t.mem := by
+      t.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 LRS) 32 = s.gpr .lr ∧
+      Rest [.r0, .r12] s t ∧ Frame [⟨State.addr (s.gpr .r2), 8192⟩] s.mem t.mem := by
   have hw : (⟨State.addr (s.gpr .r2), 8192⟩ : Region) ∈ s.wr := by rw [h.wr]; simp
   rw [scalarBaseSetup]
+  simp only [List.append_assoc]
   refine WP.append (scalarSave_ok rfl h.f2 hw) fun u ⟨su, fu, gu, ku⟩ => ?_
   refine wp_str (a := State.addr (s.gpr .r2) + BitVec.ofNat 64 48) (by decide)
     (by rw [gu]; exact addr_add (by have := h.f2; omega))
     (by rw [ku.wr]; exact in_base hw (by decide) (by decide)) fun v hv => ?_
-  refine wp_mov (op2_reg _ _) fun w hw' => wp_mov (op2_reg _ _) fun t ht => WP.block_nil ?_
+  refine wp_mov (op2_reg _ _) fun w hw' => ?_
+  have kw : Rest [.r0] s w := (ku.mono (by decide)).trans ((hv.rest _).trans (hw'.rest (by decide)))
+  have hcw : Ctx (s.gpr .r2) w := ⟨by rw [hw'.gpr, hv.gpr, gu], h.f2, by rw [kw.wr]; exact hw⟩
+  show WP isa (.block ((scratchAddr LRS ++ ([.str .lr .r12 0] : List Instr)) ++
+    ([.mov .r12 (.reg .r1)] : List Instr))) w _
+  refine WP.append (saveLr_ok hcw) fun x ⟨xr, xm⟩ => ?_
+  refine wp_mov (op2_reg _ _) fun t ht => WP.block_nil ?_
   have kt : Rest [.r0, .r12] s t :=
-    (ku.mono (by decide)).trans ((hv.rest _).trans ((hw'.rest (by decide)).trans (ht.rest (by decide))))
-  have mt : t.mem = u.mem.writeW (State.addr (s.gpr .r2) + BitVec.ofNat 64 48) (s.gpr .r0) := by
-    rw [ht.mem, hw'.mem, hv.mem, gu]
-  refine ⟨⟨?_, h.f2, by rw [kt.wr]; exact hw⟩, ?_, ?_, ?_, kt, ?_⟩
-  · rw [ht.other _ (by decide), hw'.gpr, hv.gpr, gu]
-  · rw [ht.gpr, hw'.other _ (by decide), hv.gpr, gu]
+    (kw.mono (by decide)).trans ((xr.mono (by decide)).trans (ht.rest (by decide)))
+  have mt : t.mem = (u.mem.writeW (State.addr (s.gpr .r2) + BitVec.ofNat 64 48) (s.gpr .r0)).writeW
+      (State.addr (s.gpr .r2) + BitVec.ofNat 64 LRS) (s.gpr .lr) := by
+    rw [ht.mem, xm, kw.gpr _ (by decide), hw'.mem, hv.mem, gu]
+  have hS : LRS = 8172 := rfl
+  refine ⟨⟨?_, h.f2, by rw [kt.wr]; exact hw⟩, ?_, ?_, ?_, ?_, kt, ?_⟩
+  · rw [ht.other _ (by decide), xr.gpr _ (by decide)]; exact hcw.r0
+  · rw [ht.gpr, xr.gpr _ (by decide), hw'.other _ (by decide), hv.gpr, gu]
   · intro i hi
-    rw [mt, Mem.readW_writeW_sep (Offset.sep _ (d := 4 * i) (e := 48) (n := 4) (k := 4) (by omega) (by omega) (by omega)) (by decide)]
+    rw [mt, Mem.readW_writeW_sep (Offset.sep _ (d := 4 * i) (e := LRS) (n := 4) (k := 4) (by omega) (by omega)
+      (by omega)) (by decide), Mem.readW_writeW_sep (Offset.sep _ (d := 4 * i) (e := 48) (n := 4) (k := 4)
+      (by omega) (by omega) (by omega)) (by decide)]
     exact su i hi
+  · rw [mt, Mem.readW_writeW_sep (Offset.sep _ (d := 48) (e := LRS) (n := 4) (k := 4) (by omega) (by omega)
+      (by omega)) (by decide), Mem.readW_writeW_self32]
   · rw [mt, Mem.readW_writeW_self32]
   · rw [mt]
-    exact (fu.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+    exact ((fu.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by decide)⟩).writeW
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))
 
 end VG.Proof.Ed25519.Arm
@@ -223,7 +239,7 @@ theorem scalarBaseSetup_ct (b p out : BitVec 32) :
     · exact h.1.2.2.2.trans h.2.2.2.2.symm
   · intro s ⟨h, ho, hp, hb⟩
     have hs := ScalarBasePre.of h
-    refine WP.mono (scalarBaseSetup_ok hs) fun t ⟨hc, hptr, _, hout, hr, _⟩ => ?_
+    refine WP.mono (scalarBaseSetup_ok hs) fun t ⟨hc, hptr, _, hout, _, hr, _⟩ => ?_
     have hi : (⟨State.addr (s.gpr .r1), 32⟩ : Region) ∈ s.rd ++ s.wr := by rw [hs.rd]; simp
     have ht : BaseWorkCTPre (s.gpr .r2) (s.gpr .r1) (s.gpr .r0) t := by
       refine ⟨⟨hc, hptr, hs.f1, ?_, hs.scalar_ws⟩, hout⟩
@@ -246,7 +262,7 @@ theorem scalarBaseFinish_ct (b out : BitVec 32) :
     CT (fun x y => BaseFinishCTPre b out x ∧ BaseFinishCTPre b out y)
       (.block scalarBaseFinish) (fun _ _ => True) := by
   have hh : CT (fun x y => BaseFinishCTPre b out x ∧ BaseFinishCTPre b out y)
-      (.block [.ldr .r12 .r0 48])
+      (.block ((scratchAddr LRS ++ ([.ldr .lr .r12 0] : List Instr)) ++ ([.ldr .r12 .r0 48] : List Instr)))
       (fun x y => (x.gpr .r0 = b ∧ x.gpr .r12 = out) ∧ (y.gpr .r0 = b ∧ y.gpr .r12 = out)) := by
     apply ctBoth
     · apply ctRegs [.r0] _ (by taint_decide)
@@ -255,9 +271,11 @@ theorem scalarBaseFinish_ct (b out : BitVec 32) :
       subst r
       exact h.1.1.r0.trans h.2.1.r0.symm
     · intro s ⟨hc, ho⟩
-      refine ldr0_ok hc (by decide) fun t ht => WP.block_nil ?_
-      exact ⟨(ht.other _ (by decide)).trans hc.r0, ht.gpr.trans ho⟩
-  change CT _ (.block (([.ldr .r12 .r0 48] : List Instr) ++ (packField FR 0 ++ scalarRestore))) _
+      refine WP.append (loadLr_ok hc) fun u ⟨ur, um, _⟩ => ?_
+      refine ldr0_ok (hc.of_rest ur (by decide)) (by decide) fun t ht => WP.block_nil ?_
+      exact ⟨(ht.other _ (by decide)).trans ((ur.gpr _ (by decide)).trans hc.r0), ht.gpr.trans (um ▸ ho)⟩
+  change CT _ (.block (((scratchAddr LRS ++ ([.ldr .lr .r12 0] : List Instr)) ++
+    ([.ldr .r12 .r0 48] : List Instr)) ++ (packField FR 0 ++ scalarRestore))) _
   refine ctBlockAppend hh ?_
   apply ctRegs [.r0, .r12] _ (by taint_decide)
   intro x y h r hr
@@ -291,16 +309,23 @@ theorem scalarBaseFinish_ok {b p : BitVec 32} {s : State} (hc : Ctx b s)
     (hsep : (⟨State.addr p, 32⟩ : Region).Disjoint ⟨State.addr b, 8192⟩)
     {g : Reg → BitVec 32} (hs : ScalarSaved (State.addr b) g s.mem) :
     WP isa (.block scalarBaseFinish) s fun t =>
-      (∀ i < 8, t.gpr (scalarSavedReg i) = g (scalarSavedReg i)) ∧ Rest scalarFinishClob s t ∧
+      (∀ i < 8, t.gpr (scalarSavedReg i) = g (scalarSavedReg i)) ∧ Rest (.lr :: scalarFinishClob) s t ∧
+      t.gpr .lr = s.mem.readW (State.addr b + BitVec.ofNat 64 LRS) 32 ∧
       Frame [⟨State.addr p, 32⟩] s.mem t.mem ∧
       Spec.Ed25519.bytesAt t.mem (State.addr p) 32 = Spec.Ed25519.encodeLE 32 (V s.mem (State.addr b) FR) := by
-  rw [scalarBaseFinish, List.append_assoc]
-  simp only [List.cons_append, List.nil_append]
-  refine ldr0_ok hc (by decide) fun u hu => ?_
-  have hcu := hc.of_rest (hu.rest (ws := [.r12]) (by decide)) (by decide)
+  change WP isa (.block ((scratchAddr LRS ++ ([.ldr .lr .r12 0] : List Instr)) ++
+    (.ldr .r12 .r0 48 :: (packField FR 0 ++ scalarRestore)))) s _
+  refine WP.append (loadLr_ok hc) fun s0 ⟨r0', m0, l0⟩ => ?_
+  have hc0 : Ctx b s0 := hc.of_rest r0' (by decide)
+  rw [← m0] at hl hp hs l0
+  rw [← m0]
+  have hw0 : (⟨State.addr p, 32⟩ : Region) ∈ s0.wr := by rw [r0'.wr]; exact hw
+  clear hw
+  refine ldr0_ok hc0 (by decide) fun u hu => ?_
+  have hcu := hc0.of_rest (hu.rest (ws := [.r12]) (by decide)) (by decide)
   refine WP.append (packField_ok (p := p) (a := FR) (dst := 0) hcu (by decide) (hu.mem ▸ hl) (by decide)
     (hu.gpr.trans hp) (by omega)
-    (fun i hi => by rw [hu.wr]; simpa only [Nat.zero_add] using in_base hw (by omega) (by omega))
+    (fun i hi => by rw [hu.wr]; simpa only [Nat.zero_add] using in_base hw0 (by omega) (by omega))
     (by simpa only [BitVec.add_zero] using
       hsep.symm.sub_left (Offset.sub_base _ (by decide : FR + 64 ≤ 8192))))
     fun v ⟨kv, fv, vv⟩ => ?_
@@ -310,7 +335,9 @@ theorem scalarBaseFinish_ok {b p : BitVec 32} {s : State} (hc : Ctx b s)
       rw [List.mem_singleton.mp hr, BitVec.add_zero]
       exact hsep.symm.sub_left (Offset.sub_base _ (by omega))
   refine WP.mono (scalarRestore_ok hcv hs') fun t ⟨saved, kt, mt⟩ => ?_
-  refine ⟨saved, (hu.rest (by decide)).trans ((kv.mono (by decide)).trans (kt.mono (by decide))), ?_, ?_⟩
+  refine ⟨saved, (r0'.mono (by decide)).trans ((hu.rest (by decide)).trans ((kv.mono (by decide)).trans
+    (kt.mono (by decide)))), ?_, ?_, ?_⟩
+  · rw [kt.gpr _ (by decide), kv.gpr _ (by decide), hu.other _ (by decide), l0]
   · rw [mt, ← hu.mem]; simpa only [BitVec.add_zero] using fv
   · rw [mt, scalar_packed_encode, ← hu.mem]
     have e : packedV v.mem (State.addr p) = V u.mem (State.addr b) FR := by
@@ -326,7 +353,7 @@ open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
 theorem scalarBase_correct {s : State} (h : ScalarBasePre s) :
     WP isa scalarBase s fun t => abiPreserved s t ∧ scalarBaseLocal.post s t := by
-  refine WP.seq (WP.mono (scalarBaseSetup_ok h) fun u ⟨hcu, pu, su, ou, ku, fu⟩ => ?_)
+  refine WP.seq (WP.mono (scalarBaseSetup_ok h) fun u ⟨hcu, pu, su, ou, lu, ku, fu⟩ => ?_)
   have input : (⟨State.addr (s.gpr .r1), 32⟩ : Region) ∈ s.rd ++ s.wr := by rw [h.rd]; simp
   refine WP.seq (WP.mono (scalarBaseEngine_ok hcu pu h.f1
     (fun n hn => by rw [ku.rd, ku.wr]; exact in_base input (by omega) (by omega)) h.scalar_ws)
@@ -338,7 +365,7 @@ theorem scalarBase_correct {s : State} (h : ScalarBasePre s) :
   have ov : v.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 48) 32 = s.gpr .r0 :=
     (kv.word 48 (.inl rfl) (by decide)).trans ou
   refine WP.mono (scalarBaseFinish_ok (kv.ctx hcu) lv ov h.f0
-    (by rw [kv.rest.wr, ku.wr, h.wr]; simp) h.out_ws sv) fun t ⟨gt, kt, _, bt⟩ => ?_
+    (by rw [kv.rest.wr, ku.wr, h.wr]; simp) h.out_ws sv) fun t ⟨gt, kt, lt, _, bt⟩ => ?_
   refine ⟨⟨fun r hr => ?_, by rw [kt.sp, kv.rest.sp, ku.sp]⟩, ?_⟩
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -350,7 +377,7 @@ theorem scalarBase_correct {s : State} (h : ScalarBasePre s) :
     · exact gt 5 (by decide)
     · exact gt 6 (by decide)
     · exact gt 7 (by decide)
-    · rw [kt.gpr _ (by decide), kv.rest.gpr _ (by decide), ku.gpr _ (by decide)]
+    · rw [lt, kv.word LRS (.inr (by decide)) (by decide), lu]
   · have hb : Spec.Ed25519.bytesAt u.mem (State.addr (s.gpr .r1)) 32 =
         Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32 := by
       unfold Spec.Ed25519.bytesAt

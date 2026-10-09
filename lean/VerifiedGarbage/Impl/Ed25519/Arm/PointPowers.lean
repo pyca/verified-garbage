@@ -13,7 +13,7 @@ def powersNext (count : Nat) : List Instr :=
   [.movw .r3 (BitVec.ofNat 16 count), .dp .add .r11 .r11 (.imm 1), .cmp .r11 (.reg .r3)]
 
 def powerStride (batch : Bool) : Nat := if batch then 16 else 1
-def powerBatch (batch : Bool) : Prog isa := if batch then double16 else pointDouble
+def powerBatch (batch : Bool) : Prog isa := if batch then double16 else Point16.doubleCall
 
 def powersBody (start count : Nat) (batch : Bool := true) : Prog isa :=
   .seq (.block (tableAddr start ++ pointToTable))

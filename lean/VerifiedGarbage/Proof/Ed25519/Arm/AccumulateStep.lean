@@ -12,7 +12,7 @@ section
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
-abbrev accClob : List Reg := .r12 :: clob
+abbrev accClob : List Reg := fclob
 structure AccKeep (b : BitVec 32) (s t : State) : Prop where
   rest : Rest accClob s t
   frame : Frame [FA b] s.mem t.mem
@@ -31,7 +31,7 @@ theorem AccKeep.of_rest {b : BitVec 32} {s t : State} {ws : List Reg} (hr : Rest
   ⟨hr.mono hws, by rw [hm]; exact Frame.refl _ _⟩
 
 theorem AccKeep.of_table {b : BitVec 32} {s t : State} {o n : Nat} (h : TableKeep b o n s t)
-    (ho : 64 ≤ o) (hn : o + n ≤ 1600) : AccKeep b s t :=
+    (ho : 64 ≤ o) (hn : o + n ≤ 1632) : AccKeep b s t :=
   ⟨h.rest.mono (by decide), h.frame.sub fun r hm => ⟨_, List.mem_singleton_self _, by
     rw [List.mem_singleton.mp hm]; exact Offset.sub _ ho hn⟩⟩
 
@@ -67,13 +67,13 @@ theorem prepareAdd_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.
     (j : Nat) (hj : j < 16) (h11 : s.gpr .r11 = BitVec.ofNat 32 j) :
     WP isa prepareAdd s fun t => AccKeep b s t ∧ AllLim t.mem b ∧
       point (env t.mem b) 0 1 2 3 = point (env s.mem b) 0 1 2 3 ∧
-      point (env t.mem b) 4 5 6 7 = tablePoint s.mem b (5696 + 128 * j) ∧
+      point (env t.mem b) 4 5 6 7 = tablePoint s.mem b (5728 + 128 * j) ∧
       point (env t.mem b) 17 18 19 20 = point (env s.mem b) 0 1 2 3 ∧
       env t.mem b 16 = env s.mem b 16 := by
   refine WP.seq (WP.mono (fieldCode_ok savePointOps hc hl) fun a ⟨ka, la, ea⟩ => ?_)
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (tableAddr_ok (ka.ctx hc) 5696 j (by omega) (by omega)
+  refine WP.mono (tableAddr_ok (ka.ctx hc) 5728 j (by omega) (by omega)
     ((ka.rest.gpr _ (by decide)).trans h11)) fun a' ⟨hptr, hr, hm⟩ => ?_
   have ka' : AccKeep b a a' := AccKeep.of_rest hr (by decide) hm
   refine WP.mono (pointFromTable_ok (ka'.ctx (ka.ctx hc)) (by rw [hm]; exact la)
@@ -84,7 +84,7 @@ theorem prepareAdd_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.
     rw [point_congr _ _ _ _ (kc.high 17 (by decide)) (kc.high 18 (by decide))
       (kc.high 19 (by decide)) (kc.high 20 (by decide)), hm, ea, savePoint_eval]
   have dc : env c.mem b 16 = env s.mem b 16 := by rw [kc.high 16 (by decide), hm, ea, savePoint_d]
-  have tc : tablePoint a'.mem b (5696 + 128 * j) = tablePoint s.mem b (5696 + 128 * j) := by
+  have tc : tablePoint a'.mem b (5728 + 128 * j) = tablePoint s.mem b (5728 + 128 * j) := by
     rw [hm]
     exact workspace_tablePoint ka.frame (by omega) (by omega)
   refine WP.seq (WP.mono (fieldCode_ok copyPointToQOps (ks.ctx hc) lc) fun d ⟨kd, ld, ed⟩ => ?_)
@@ -108,7 +108,7 @@ theorem AccKeep.bit {b : BitVec 32} {s t : State} (h : AccKeep b s t) (j : Nat) 
     t.mem (State.addr b + BitVec.ofNat 64 (32 + j)) = s.mem (State.addr b + BitVec.ofNat 64 (32 + j)) := by
   refine h.frame _ fun r hr => ?_
   rw [List.mem_singleton.mp hr]
-  exact (Offset.disjoint (State.addr b) (d := 32 + j) (n := 1) (e := 64) (k := 1536)
+  exact (Offset.disjoint (State.addr b) (d := 32 + j) (n := 1) (e := 64) (k := 1568)
     (.inl (by omega)) (by omega) (by decide)) _ (Region.contains_self _ _)
 
 
@@ -243,7 +243,7 @@ theorem pointAccumulate_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllL
     WP isa pointAccumulate s fun t => AccKeep b s t ∧ AllLim t.mem b ∧
       point (env t.mem b) 0 1 2 3 =
         (if bit then Spec.Ed25519.pointAdd (point (env s.mem b) 0 1 2 3)
-          (tablePoint s.mem b (5696 + 128 * j)) else point (env s.mem b) 0 1 2 3) ∧
+          (tablePoint s.mem b (5728 + 128 * j)) else point (env s.mem b) 0 1 2 3) ∧
       env t.mem b 16 = env s.mem b 16 := by
   refine WP.seq (WP.mono (prepareAdd_ok hc hl j hj h11) fun u ⟨ku, lu, up, uq, us, ud⟩ => ?_)
   refine WP.seq (WP.mono (pointAdd_ok (ku.ctx hc) lu (ud.trans hd)) fun v ⟨kv, lv, vp, vh⟩ => ?_)
@@ -255,7 +255,7 @@ theorem pointAccumulate_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllL
     (point_congr (e := env v.mem b) (f := env u.mem b) 17 18 19 20 (vh 17 (by decide)) (vh 18 (by decide))
       (vh 19 (by decide)) (vh 20 (by decide))).trans us
   have vp' : point (env v.mem b) 0 1 2 3 =
-      Spec.Ed25519.pointAdd (point (env s.mem b) 0 1 2 3) (tablePoint s.mem b (5696 + 128 * j)) :=
+      Spec.Ed25519.pointAdd (point (env s.mem b) 0 1 2 3) (tablePoint s.mem b (5728 + 128 * j)) :=
     vp.trans (congrArg₂ Spec.Ed25519.pointAdd up uq)
   rw [WP.block_append_iff]
   refine WP.mono (scalarBitMask_ok (ks.ctx hc) j hj hvc bit hvb) fun w ⟨kw, mw, mask⟩ => ?_
@@ -309,7 +309,7 @@ theorem LoopKeep.bit {b : BitVec 32} {s t : State} (h : LoopKeep b s t) (j : Nat
     t.mem (State.addr b + BitVec.ofNat 64 (32 + j)) = s.mem (State.addr b + BitVec.ofNat 64 (32 + j)) := by
   refine h.frame _ fun r hr => ?_
   rw [List.mem_singleton.mp hr]
-  exact (Offset.disjoint (State.addr b) (d := 32 + j) (n := 1) (e := 64) (k := 1536)
+  exact (Offset.disjoint (State.addr b) (d := 32 + j) (n := 1) (e := 64) (k := 1568)
     (.inl (by omega)) (by omega) (by decide)) _ (Region.contains_self _ _)
 
 theorem accumulateDec_ok (s : State) (n : Nat) (h11 : s.gpr .r11 = BitVec.ofNat 32 (n + 1)) :
@@ -334,7 +334,7 @@ theorem accumulateBody_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLi
     (hb : s.mem (State.addr b + BitVec.ofNat 64 (32 + n)) = BitVec.ofNat 8 (scalarBit scalar (start + n)).toNat)
     (hd : env s.mem b 16 = Spec.Ed25519.d)
     (hp : point (env s.mem b) 0 1 2 3 = after scalar p (start + n + 1))
-    (ht : tablePoint s.mem b (5696 + 128 * n) = powerPoint p (start + n)) :
+    (ht : tablePoint s.mem b (5728 + 128 * n) = powerPoint p (start + n)) :
     WP isa accumulateBody s fun t => t.gpr .r11 = BitVec.ofNat 32 n ∧ t.z = decide (n = 0) ∧
       AllLim t.mem b ∧ point (env t.mem b) 0 1 2 3 = after scalar p (start + n) ∧
       env t.mem b 16 = Spec.Ed25519.d ∧ LoopKeep b s t := by
@@ -347,7 +347,7 @@ theorem accumulateBody_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLi
   have vpoint : point (env v.mem b) 0 1 2 3 = after scalar p (start + n) :=
     vp.trans (choose_after scalar (start + n) p _ _
       ((congrArg (fun m => point (env m b) 0 1 2 3) um).trans hp)
-      ((congrArg (fun m => tablePoint m b (5696 + 128 * n)) um).trans ht))
+      ((congrArg (fun m => tablePoint m b (5728 + 128 * n)) um).trans ht))
   refine WP.mono (accumulateTest_ok v n hn vc) fun t ⟨tz, tr, tm⟩ => ?_
   exact ⟨(tr.gpr _ (by decide)).trans vc, tz, tm ▸ vl,
     (congrArg (fun m => point (env m b) 0 1 2 3) tm).trans vpoint,

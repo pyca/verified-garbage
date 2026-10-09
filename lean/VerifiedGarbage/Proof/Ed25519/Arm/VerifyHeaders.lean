@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
+import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
 import VerifiedGarbage.Proof.Ed25519.Arm.PointKeep
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarPass
 import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
@@ -15,19 +16,8 @@ section
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
-theorem scratchAddr_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (o : Nat) (ho : o < 8192) :
-    WP isa (.block (scratchAddr o)) s fun t => Rest [.r12] s t ∧ t.mem = s.mem ∧
-      t.gpr .r12 = b + BitVec.ofNat 32 o := by
-  refine wp_movw fun u hu => wp_dp (op2_reg _ _) fun t ht => WP.block_nil ?_
-  refine ⟨(hu.rest (by decide)).trans (ht.rest (by decide)), by rw [ht.mem, hu.mem], ?_⟩
-  rw [ht.gpr]
-  change u.gpr .r0 + u.gpr .r12 = _
-  rw [hu.other _ (by decide), hc.r0, hu.gpr]
-  refine congrArg (b + ·) (BitVec.eq_of_toNat_eq ?_)
-  rw [movw_nat (by omega), toNat_imm (by omega)]
-
 theorem pointTableWrite_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b)
-    (o : Nat) (ho : 1600 ≤ o) (hn : o + 128 ≤ 8192) :
+    (o : Nat) (ho : 1632 ≤ o) (hn : o + 128 ≤ 8192) :
     WP isa (.block (pointTableWrite o)) s fun t => PowersKeep b o 128 s t ∧ AllLim t.mem b ∧
       env t.mem b = env s.mem b ∧ tablePoint t.mem b o = point (env s.mem b) 0 1 2 3 := by
   unfold pointTableWrite
@@ -39,7 +29,7 @@ theorem pointTableWrite_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllL
     tp.trans (congrArg (fun m => point (env m b) 0 1 2 3) um)⟩
 
 theorem pointTableRead_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b)
-    (o : Nat) (ho : 1600 ≤ o) (hn : o + 128 ≤ 8192) :
+    (o : Nat) (ho : 1632 ≤ o) (hn : o + 128 ≤ 8192) :
     WP isa (.block (pointTableRead o)) s fun t => AccKeep b s t ∧ AllLim t.mem b ∧
       point (env t.mem b) 0 1 2 3 = tablePoint s.mem b o ∧
       ∀ i : Slot, 4 ≤ i.val → env t.mem b i = env s.mem b i := by
@@ -86,7 +76,7 @@ end
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
-abbrev verifyRegion (b : BitVec 32) : Region := ⟨State.addr b + BitVec.ofNat 64 32, 8096⟩
+abbrev verifyRegion (b : BitVec 32) : Region := ⟨State.addr b + BitVec.ofNat 64 32, 8128⟩
 structure VerifyKeep (b : BitVec 32) (s t : State) : Prop where
   rest : Rest powersClob s t
   frame : Frame [verifyRegion b] s.mem t.mem
@@ -98,7 +88,7 @@ theorem VerifyKeep.trans {b : BitVec 32} {s t u : State} (h : VerifyKeep b s t) 
     VerifyKeep b s u := ⟨h.rest.trans k.rest, h.frame.trans k.frame⟩
 theorem VerifyKeep.of_small {b : BitVec 32} {s t : State} {o n : Nat} {ws : List Reg}
     (hr : Rest ws s t) (hw : ∀ r ∈ ws, r ∈ powersClob)
-    (hf : Frame [⟨State.addr b + BitVec.ofNat 64 o, n⟩] s.mem t.mem) (ho : 32 ≤ o) (hn : o + n ≤ 8128) :
+    (hf : Frame [⟨State.addr b + BitVec.ofNat 64 o, n⟩] s.mem t.mem) (ho : 32 ≤ o) (hn : o + n ≤ 8160) :
     VerifyKeep b s t := ⟨hr.mono hw, hf.sub fun r hm => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hm]; exact Offset.sub _ ho hn⟩⟩
 theorem VerifyKeep.of_point {b : BitVec 32} {s t : State} (h : PointKeep b s t) : VerifyKeep b s t := by
@@ -106,7 +96,7 @@ theorem VerifyKeep.of_point {b : BitVec 32} {s t : State} (h : PointKeep b s t) 
   simp only [pointRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl <;> exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩
 theorem VerifyKeep.of_powers {b : BitVec 32} {o n : Nat} {s t : State}
-    (h : PowersKeep b o n s t) (ho : 32 ≤ o) (hn : o + n ≤ 8128) : VerifyKeep b s t := by
+    (h : PowersKeep b o n s t) (ho : 32 ≤ o) (hn : o + n ≤ 8160) : VerifyKeep b s t := by
   refine ⟨h.rest, h.frame.sub fun r hr => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -115,7 +105,7 @@ theorem VerifyKeep.of_powers {b : BitVec 32} {o n : Nat} {s t : State}
 theorem VerifyKeep.of_keep {b : BitVec 32} {s t : State} (h : Keep b s t) : VerifyKeep b s t :=
   VerifyKeep.of_point (PointKeep.of_keep h)
 theorem VerifyKeep.of_acc {b : BitVec 32} {s t : State} (h : AccKeep b s t) : VerifyKeep b s t :=
-  VerifyKeep.of_powers (PowersKeep.of_acc h) (o := 1600) (n := 0) (by decide) (by decide)
+  VerifyKeep.of_powers (PowersKeep.of_acc h) (o := 1632) (n := 0) (by decide) (by decide)
 theorem VerifyKeep.of_decode {b : BitVec 32} {s t : State} (h : DecodeKeep b s t) : VerifyKeep b s t := by
   refine ⟨h.rest.mono (by decide), h.frame.sub fun r hr => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -125,7 +115,7 @@ theorem VerifyKeep.of_rest {b : BitVec 32} {s t : State} {ws : List Reg}
   ⟨hr.mono hw, by rw [hm]; exact Frame.refl _ _⟩
 
 theorem VerifyKeep.header {b : BitVec 32} {s t : State} (h : VerifyKeep b s t)
-    (d : Nat) (hd : 8128 ≤ d) (hn : d + 4 ≤ 8192) :
+    (d : Nat) (hd : 8160 ≤ d) (hn : d + 4 ≤ 8192) :
     t.mem.readW (State.addr b + BitVec.ofNat 64 d) 32 = s.mem.readW (State.addr b + BitVec.ofNat 64 d) 32 := by
   apply BitVec.eq_of_toNat_eq
   exact wd_frame h.frame fun r hr => by
@@ -179,9 +169,9 @@ structure VerifyContext (b pk sig challenge : BitVec 32) (s : State) : Prop wher
   pkInput : VerifyInput b pk 32 s
   sigInput : VerifyInput b sig 64 s
   challengeInput : VerifyInput b challenge 64 s
-  pkHeader : s.mem.readW (State.addr b + BitVec.ofNat 64 8128) 32 = pk
-  sigHeader : s.mem.readW (State.addr b + BitVec.ofNat 64 8132) 32 = sig
-  challengeHeader : s.mem.readW (State.addr b + BitVec.ofNat 64 8136) 32 = challenge
+  pkHeader : s.mem.readW (State.addr b + BitVec.ofNat 64 8160) 32 = pk
+  sigHeader : s.mem.readW (State.addr b + BitVec.ofNat 64 8164) 32 = sig
+  challengeHeader : s.mem.readW (State.addr b + BitVec.ofNat 64 8168) 32 = challenge
 
 theorem VerifyContext.keep {b pk sig challenge : BitVec 32} {s t : State}
     (h : VerifyContext b pk sig challenge s) (hk : VerifyKeep b s t) : VerifyContext b pk sig challenge t :=
