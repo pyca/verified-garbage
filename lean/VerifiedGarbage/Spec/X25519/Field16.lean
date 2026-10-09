@@ -26,8 +26,9 @@ in a working space `ws` of 4096 bytes (`[u64; 512]`, the start of Ed25519's
 working space), each at a byte offset: `o` for the result, `a` and `b` for
 the operands. The offsets are arguments, so that the result may be an
 operand and the caller keeps its elements where it likes. `pow250`'s
-elements are at fixed offsets instead, where the ARMv7 Ed25519 code keeps
-them: `a` at byte 192 (`aAt`), `a^11` at byte 960 (`eAt`) and
+elements are at fixed offsets instead, of the whole of Ed25519's working
+space of 8192 bytes (`[u64; 1024]`, `powWsBytes`), where the ARMv7 Ed25519
+code keeps them: `a` at byte 192 (`aAt`), `a^11` at byte 960 (`eAt`) and
 `a^(2^250 - 1)` at byte 1024 (`oAt`), with two elements of its own after
 them, to byte 1215 (`tmpEnd`). Bytes 1472 to 1631 of `ws` are the functions'
 own working space (`ownAt` to `ownEnd`): the 32 limbs of the product, and
@@ -131,16 +132,19 @@ def oAt : Nat := 1024
 /-- Where `pow250`'s two elements of its own, after `a^(2^250 - 1)`, end. -/
 def tmpEnd : Nat := 1216
 
+/-- The bytes of `pow250`'s working space: Ed25519's. -/
+def powWsBytes : Nat := 8192
+
 /-- Every byte of `ws` but those of `pow250`'s results and its own elements
 (bytes 960 to 1215) and of its own working space (bytes 1472 to 1631) keeps
 its value. -/
 def Keeps₂ (ws : Addr) (m m' : Mem) : Prop :=
-  ∀ i < wsBytes, (i < eAt ∨ tmpEnd ≤ i) → (i < ownAt ∨ ownEnd ≤ i) →
+  ∀ i < powWsBytes, (i < eAt ∨ tmpEnd ≤ i) → (i < ownAt ∨ ownEnd ≤ i) →
     m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
 
-/-- `ws: *mut [u64; 512]`, the pointer public. -/
+/-- `ws: *mut [u64; 1024]`, the pointer public. -/
 def pow250Sig : Sig where
-  params := [("ws", .array true .u64 512)]
+  params := [("ws", .array true .u64 1024)]
 
 /-- `pow250`: for `a` at `aAt` with limbs below `2^16`, the elements at `oAt`
 and `eAt` have limbs below `2^16` and are congruent to `a^(2^250 - 1)` and
