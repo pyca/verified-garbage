@@ -1,9 +1,10 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Inst
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 
 /-! # ML-DSA (FIPS 204) verification on AArch64 -/
 
 namespace VG.Generic.Keccak.AArch64.MlDsaVerify
+open VG.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 
 /-- Notes on the implementation, the same for every parameter set. -/
 def notes : List String :=
@@ -16,32 +17,35 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   { Spec.MlDsa.verify44Api with
     name := Spec.MlDsa.verify44Api.name ++ v.callee.suffix
     features := v.features
+    consts := selectedConsts v
     target := AArch64.target
     doc := Spec.MlDsa.verify44Api.doc (notes := notes)
-    code := Impl.MlDsa.AArch64.KeyGen.verify44With v.callee
-    contract := Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa44 AArch64.abi 16
+    code := selectedCode v Spec.MlDsa.mlDsa44
+    contract := Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa44 (selectedAbi v) 16
     stack := 16
-    verified := Proof.MlDsa.AArch64.Verify.verify44_verifiedWith (keccak := v)
+    verified := selected_verify_verified v (.inl rfl)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlDsa.verify65Api with
     name := Spec.MlDsa.verify65Api.name ++ v.callee.suffix
     features := v.features
+    consts := selectedConsts v
     target := AArch64.target
     doc := Spec.MlDsa.verify65Api.doc (notes := notes)
-    code := Impl.MlDsa.AArch64.KeyGen.verify65With v.callee
-    contract := Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa65 AArch64.abi 16
+    code := selectedCode v Spec.MlDsa.mlDsa65
+    contract := Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa65 (selectedAbi v) 16
     stack := 16
-    verified := Proof.MlDsa.AArch64.Verify.verify65_verifiedWith (keccak := v)
+    verified := selected_verify_verified v (.inr (.inl rfl))
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlDsa.verify87Api with
     name := Spec.MlDsa.verify87Api.name ++ v.callee.suffix
     features := v.features
+    consts := selectedConsts v
     target := AArch64.target
     doc := Spec.MlDsa.verify87Api.doc (notes := notes)
-    code := Impl.MlDsa.AArch64.KeyGen.verify87With v.callee
-    contract := Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa87 AArch64.abi 16
+    code := selectedCode v Spec.MlDsa.mlDsa87
+    contract := Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa87 (selectedAbi v) 16
     stack := 16
-    verified := Proof.MlDsa.AArch64.Verify.verify87_verifiedWith (keccak := v)
+    verified := selected_verify_verified v (.inr (.inr rfl))
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Generic.Keccak.AArch64.MlDsaVerify

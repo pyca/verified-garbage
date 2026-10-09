@@ -74,9 +74,9 @@ theorem pro_vpiece {p : Params} (hF : VFacts p) {S : Nat} :
     (by taint_decide)⟩
   · subst hs
     have hp' := hp
-    unfold vPre at hp'
-    sig_pre [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, AArch64.abi, VG.AArch64.argRegs] at hp'
-    obtain ⟨_, _, hwr, d03, d13, d23, _, _, _, _, _⟩ := hp'
+    have hp' := hp'.1
+    sig_pre [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, AArch64.abi, VG.AArch64.argRegs,vInputs] at hp'
+    obtain ⟨_, hwr, d03, d13, d23, _, _, _, _, _⟩ := hp'
     have hsc : 4096 + 1024 * (p.k * p.ℓ + p.k + p.ℓ + 6) ≤ Spec.MlDsa.scratchWords p * 8 := sc_ge hF
     have hsm := hF.small
     have hsv : SV + 48 ≤ Spec.MlDsa.scratchWords p * 8 := Nat.le_trans (by decide) (Nat.le_trans (Nat.le_add_right 4096 _) hsc)

@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
 
@@ -7,6 +8,20 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
 namespace VG.Artifacts.MlDsaPack.AArch64
 
 def artifacts : List Artifact := [
+  { Spec.MlDsa.highPackApi 261888 with
+    target := AArch64.target
+    doc := (Spec.MlDsa.highPackApi 261888).doc
+    code := Impl.MlDsa.AArch64.Optimized.HighPack.code 261888
+    contract := Spec.MlDsa.highPackContract 261888 AArch64.abi
+    verified := Proof.MlDsa.AArch64.Optimized.HighPack.pack_verified (by decide)
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.MlDsa.highPackApi 95232 with
+    target := AArch64.target
+    doc := (Spec.MlDsa.highPackApi 95232).doc
+    code := Impl.MlDsa.AArch64.Optimized.HighPack.code 95232
+    contract := Spec.MlDsa.highPackContract 95232 AArch64.abi
+    verified := Proof.MlDsa.AArch64.Optimized.HighPack.pack_verified (by decide)
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlDsa.simpleBitPackApi with
     target := AArch64.target
     doc := Spec.MlDsa.simpleBitPackApi.doc

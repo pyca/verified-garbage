@@ -73,10 +73,26 @@ theorem below_of_resv {S : Nat} {sp : Addr} {a b c d : Region}
 theorem inR_self {X : List Region} {r : Region} (h : r ∈ X) : InRegions X r.base r.len :=
   ⟨r, h, Region.contains_self _ _⟩
 
+/-- Additional immutable read-only regions are allowed internally; the original
+writable-buffer, aliasing and stack requirements remain unchanged. -/
+def kgPre (p : Params) (S : Nat) (σ : State) : Prop :=
+  (Spec.MlDsa.keyGenContract p AArch64.abi S).pre
+    {σ with rd := [⟨σ.gpr .x0, 32⟩]} ∧ ⟨σ.gpr .x0, 32⟩ ∈ σ.rd
+
+theorem kgPre_of_shared {p : Params} {S : Nat} {σ : State}
+    (h : (Spec.MlDsa.keyGenContract p AArch64.abi S).pre σ) : kgPre p S σ := by
+  have hr : σ.rd = [⟨σ.gpr .x0, 32⟩] := by
+    sig_pre [Spec.MlDsa.keyGenContract, Spec.MlDsa.keyGenSig, AArch64.abi, VG.AArch64.argRegs] at h
+    exact h.2.1
+  refine ⟨?_, by rw [hr]; simp⟩
+  have he : ({σ with rd := [⟨σ.gpr .x0, 32⟩]} : State) = σ := by rw [← hr]
+  simpa only [he] using h
+
 theorem kgLay {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
-    (hp : (Spec.MlDsa.keyGenContract p AArch64.abi S).pre σ) (h : Top σ s) : Lay S kgR (kgW p) s := by
+    (hp : kgPre p S σ) (h : Top σ s) : Lay S kgR (kgW p) s := by
+  obtain ⟨hp, hseed⟩ := hp
   sig_pre [Spec.MlDsa.keyGenContract, Spec.MlDsa.keyGenSig, AArch64.abi, VG.AArch64.argRegs] at hp
-  obtain ⟨hwf, hrd, hwr, d01, d02, d03, d12, d13, d23, hres, n0, n1, n2, n3⟩ := hp
+  obtain ⟨hwf, hwr, d01, d02, d03, d12, d13, d23, hres, n0, n1, n2, n3⟩ := hp
   obtain ⟨k0, k1, k2, k3⟩ := below_of_resv hres
   have hS : S ≤ σ.sp.toNat := le_of_wfP hwf
   have hsm := hF.small
@@ -101,7 +117,7 @@ theorem kgLay {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
     rintro b (rfl | rfl | rfl | rfl) <;> simp only [e25, e26, e27, e28] <;> with_reducible assumption
   · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
     rintro b (rfl | rfl | rfl | rfl) <;> simp only [e25, e26, e27, e28]
-    · exact mrd ⟨σ.gpr .x0, 32⟩ (by rw [hrd]; simp)
+    · exact mrd ⟨σ.gpr .x0, 32⟩ (List.mem_append_left _ hseed)
     · exact mrd ⟨σ.gpr .x3, scrLen p⟩ (by rw [hwr]; simp)
     · exact mrd ⟨σ.gpr .x1, p.pkLen⟩ (by rw [hwr]; simp)
     · exact mrd ⟨σ.gpr .x2, p.skLen⟩ (by rw [hwr]; simp)

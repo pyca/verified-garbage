@@ -20,8 +20,10 @@
 //! Unset or empty, it restricts nothing. It can only remove features, so it
 //! can never choose code the CPU cannot run, and it names only features
 //! this library knows and the CPU has: anything else panics, rather than
-//! quietly testing another configuration. (On AArch64, FEAT_SHA3's Keccak, which is not
-//! faster, is chosen only when it names `sha3`.)
+//! quietly testing another configuration. On AArch64, standalone hashing
+//! chooses FEAT_SHA3's Keccak only when this variable names `sha3`, since
+//! it is not faster there. ML-DSA independently selects its faster paired
+//! SHA3 implementation whenever the detected features support it.
 
 use core::sync::atomic::{AtomicU32, Ordering};
 

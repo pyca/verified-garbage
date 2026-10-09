@@ -47,6 +47,7 @@ def put (σ : Low) (d : VReg) (w : BitVec 64) : Low := fun r => if r = d then w 
 
 def opLow (σ : Low) : Op → Low
   | .xor d n m => put σ d (σ n ^^^ σ m)
+  | .bic d n m => put σ d (σ n &&& ~~~σ m)
   | .eor3 d n m a => put σ d (σ n ^^^ σ m ^^^ σ a)
   | .rax1 d n m => put σ d (σ n ^^^ (σ m).rotateLeft 1)
   | .xar d n m k => put σ d ((σ n ^^^ σ m).rotateRight k.val)
@@ -54,6 +55,7 @@ def opLow (σ : Low) : Op → Low
 
 def opState (s : VG.AArch64.State) : Op → VG.AArch64.State
   | .xor d n m => s.setV d (s.v n ^^^ s.v m)
+  | .bic d n m => s.setV d (s.v n &&& ~~~s.v m)
   | .eor3 d n m a => s.setV d (s.v n ^^^ s.v m ^^^ s.v a)
   | .rax1 d n m => s.setV d (VArr.d2.map2 (fun _ x y => x ^^^ y.rotateLeft 1) (s.v n) (s.v m))
   | .xar d n m k => s.setV d (VArr.d2.map2 (fun _ x y => (x ^^^ y).rotateRight k.val) (s.v n) (s.v m))

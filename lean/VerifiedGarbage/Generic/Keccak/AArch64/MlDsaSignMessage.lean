@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Verified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedSelected
 
 /-!
 # ML-DSA (FIPS 204) on AArch64: signing messages
@@ -20,7 +20,7 @@ against the contract.
 namespace VG.Generic.Keccak.AArch64.MlDsaSignMessage
 
 open VG
-open VG.Proof.MlDsa.AArch64.Message (signFn signMessage_verified)
+open VG.Proof.MlDsa.AArch64.Message.Paired (signFn signMessage_verified)
 
 /-- Notes on the implementation, the same for every parameter set. -/
 def notes : List String :=
@@ -36,9 +36,12 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     features := v.features
     target := AArch64.target
     doc := Spec.MlDsa.signMessage44Api.doc (notes := notes)
+    consts := Proof.MlDsa.AArch64.Sign.pairedSignRootConsts
     code := Impl.MlDsa.AArch64.Message.signMessage v.callee (Spec.MlDsa.sign44Api.name ++ v.callee.suffix)
-      (Impl.MlDsa.AArch64.Sign.signWith v.callee (Proof.MlDsa.AArch64.Sign.primsWith v.callee) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.signMessageContract Spec.MlDsa.mlDsa44 AArch64.abi 16
+      (Impl.MlDsa.AArch64.Sign.Optimized.signWith v.callee (Proof.MlDsa.AArch64.Sign.primsWith v.callee) Spec.MlDsa.mlDsa44
+        (Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks Spec.MlDsa.mlDsa44)) Spec.MlDsa.mlDsa44
+    contract := Spec.MlDsa.signMessageContract Spec.MlDsa.mlDsa44
+      (AArch64.abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts) 16
     stack := 16
     verified := signMessage_verified v (signFn v (List.mem_cons_self ..)) (List.mem_cons_self ..)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
@@ -47,22 +50,30 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     features := v.features
     target := AArch64.target
     doc := Spec.MlDsa.signMessage65Api.doc (notes := notes)
+    consts := Proof.MlDsa.AArch64.Sign.pairedSignRootConsts
     code := Impl.MlDsa.AArch64.Message.signMessage v.callee (Spec.MlDsa.sign65Api.name ++ v.callee.suffix)
-      (Impl.MlDsa.AArch64.Sign.signWith v.callee (Proof.MlDsa.AArch64.Sign.primsWith v.callee) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.signMessageContract Spec.MlDsa.mlDsa65 AArch64.abi 16
+      (Proof.MlDsa.AArch64.Sign.CachedSelected.code v Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65
+    contract := Spec.MlDsa.signMessageContract Spec.MlDsa.mlDsa65
+      (AArch64.abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts) 16
     stack := 16
-    verified := signMessage_verified v (signFn v (List.mem_cons_of_mem _ (List.mem_cons_self ..))) (List.mem_cons_of_mem _ (List.mem_cons_self ..))
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+    verified := Proof.MlDsa.AArch64.Sign.CachedSelected.message_verified v (.inl rfl) _
+    spSafe := by
+      unfold Proof.MlDsa.AArch64.Sign.CachedSelected.code
+      split <;> exact Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlDsa.signMessage87Api with
     name := Spec.MlDsa.signMessage87Api.name ++ v.callee.suffix
     features := v.features
     target := AArch64.target
     doc := Spec.MlDsa.signMessage87Api.doc (notes := notes)
+    consts := Proof.MlDsa.AArch64.Sign.pairedSignRootConsts
     code := Impl.MlDsa.AArch64.Message.signMessage v.callee (Spec.MlDsa.sign87Api.name ++ v.callee.suffix)
-      (Impl.MlDsa.AArch64.Sign.signWith v.callee (Proof.MlDsa.AArch64.Sign.primsWith v.callee) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.signMessageContract Spec.MlDsa.mlDsa87 AArch64.abi 16
+      (Proof.MlDsa.AArch64.Sign.CachedSelected.code v Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87
+    contract := Spec.MlDsa.signMessageContract Spec.MlDsa.mlDsa87
+      (AArch64.abi.withConsts Proof.MlDsa.AArch64.Sign.pairedSignRootConsts) 16
     stack := 16
-    verified := signMessage_verified v (signFn v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.MlDsa.AArch64.Sign.CachedSelected.message_verified v (.inr rfl) _
+    spSafe := by
+      unfold Proof.MlDsa.AArch64.Sign.CachedSelected.code
+      split <;> exact Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Generic.Keccak.AArch64.MlDsaSignMessage

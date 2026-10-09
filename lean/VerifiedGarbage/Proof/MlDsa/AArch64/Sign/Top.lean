@@ -32,7 +32,7 @@ abbrev scrLen (p : Params) : Nat := 8 * scratchWords p
 below `sp`, and the leakage `signLeakT`. -/
 def signK (p : Params) (S : Nat) : Contract isa where
   pre s :=
-    s.rd = [⟨s.gpr .x0, p.skLen⟩, ⟨s.gpr .x1, 64⟩, ⟨s.gpr .x2, 32⟩] ∧
+    [⟨s.gpr .x0, p.skLen⟩, ⟨s.gpr .x1, 64⟩, ⟨s.gpr .x2, 32⟩] ⊆ s.rd ∧
     s.wr = [⟨s.gpr .x3, p.sigLen⟩, ⟨s.gpr .x4, scrLen p⟩] ∧
     Region.Disjoint ⟨s.gpr .x0, p.skLen⟩ ⟨s.gpr .x3, p.sigLen⟩ ∧
     Region.Disjoint ⟨s.gpr .x0, p.skLen⟩ ⟨s.gpr .x4, scrLen p⟩ ∧
@@ -127,8 +127,8 @@ theorem sgLay (hsz : scrLen p < 2 ^ 32 ∧ p.skLen < 2 ^ 32 ∧ p.sigLen < 2 ^ 3
     exacts [n1, n2, n3, n5, n4]
   · simp only [sgR, sgW, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl | rfl | rfl | rfl <;> simp only [e1, e2, e3, e4, e5]
-    exacts [mem ⟨σ.gpr .x0, p.skLen⟩ (by rw [hrd]; simp), mem ⟨σ.gpr .x1, 64⟩ (by rw [hrd]; simp),
-      mem ⟨σ.gpr .x2, 32⟩ (by rw [hrd]; simp), mem ⟨σ.gpr .x4, scrLen p⟩ (by rw [hwr]; simp),
+    exacts [mem ⟨σ.gpr .x0, p.skLen⟩ (List.mem_append_left _ (hrd (by simp))), mem ⟨σ.gpr .x1, 64⟩ (List.mem_append_left _ (hrd (by simp))),
+      mem ⟨σ.gpr .x2, 32⟩ (List.mem_append_left _ (hrd (by simp))), mem ⟨σ.gpr .x4, scrLen p⟩ (by rw [hwr]; simp),
       mem ⟨σ.gpr .x3, p.sigLen⟩ (by rw [hwr]; simp)]
   · simp only [sgW, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl <;> simp only [e1, e5]

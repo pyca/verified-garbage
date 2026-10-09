@@ -38,8 +38,11 @@ structure Prims where
   rej4 : Prog isa
   rejNTT : Prog isa
   expandMask : Prog isa
+  pairedMask : Bool := false
+  expandMaskPair : Prog isa := .block []
   ball : Prog isa
   highBits : Prog isa
+  highPack : Nat → Prog isa
   lowBits : Prog isa
   normLt : Prog isa
   makeHint : Prog isa

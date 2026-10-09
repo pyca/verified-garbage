@@ -215,7 +215,9 @@ theorem verify_verified {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params)
     (hp : p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87)
     (hsat : ∃ s, (Spec.MlDsa.verifyContract p AArch64.abi S).pre s) :
     Verified AArch64.target ((verifyWith keccak.callee) P p) (Spec.MlDsa.verifyContract p AArch64.abi S) :=
-  ⟨fun σ hσ => (verify_vpiece hP (vfacts hp)).ok σ σ hσ rfl,
-    relStart (Q := fun _ _ => True) (verify_vpiece hP (vfacts hp)).tr, hsat⟩
+  ⟨fun σ hσ => (verify_vpiece hP (vfacts hp)).ok σ σ (vPre_of_shared hσ) rfl,
+    relStart (Q := fun _ _ => True) ((verify_vpiece hP (vfacts hp)).tr.mono
+      (fun _ _ ⟨a,b,ha,hb,hu,hx,hy⟩=>⟨a,b,vPre_of_shared ha,vPre_of_shared hb,hu,hx,hy⟩)
+      (fun _ _ h=>h)), hsat⟩
 
 end VG.Proof.MlDsa.AArch64.Verify

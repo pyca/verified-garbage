@@ -68,10 +68,13 @@ variable (c : Impl.Sha3.AArch64.Callee) (P : Impl.MlDsa.AArch64.Sign.Prims) (p :
     (h6 : DLe 1 P.sub) (h7 : DLe 1 P.rejNTT) (h8 : DLe 1 P.expandMask) (h9 : DLe 1 P.ball)
     (h10 : DLe 1 P.highBits) (h11 : DLe 1 P.lowBits) (h12 : DLe 1 P.normLt) (h13 : DLe 1 P.makeHint)
     (h14 : DLe 1 P.simpleBitPack) (h15 : DLe 1 P.bitPack) (h16 : DLe 1 P.bitUnpack) (h17 : DLe 1 P.hintBitPack) (h18 : DLe 1 P.rej4)
-include ha hp hs h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13 h14 h15 h16 h17 h18 in
+    (h19 : DLe 1 (P.highPack p.γ₂)) (h20 : DLe 1 P.expandMaskPair)
+include ha hp hs h1 h2 h3 h4 h5 h6 h7 h8 h9 h11 h12 h13 h15 h16 h17 h18 h19 h20 in
 theorem sign_dle : DLe 1 (Impl.MlDsa.AArch64.Sign.signWith c P p) := by
   unfold Impl.MlDsa.AArch64.Sign.signWith
   dle_tac
+  unfold Impl.MlDsa.AArch64.Sign.masks
+  split <;> dle_tac
 end
 
 section
@@ -103,8 +106,10 @@ theorem signWith_dle (p : Spec.MlDsa.Params) :
   obtain ⟨ha, hp, hs⟩ := keccak_dle v
   exact sign_dle _ _ p ha hp hs (.of_fd C.ntt.fd) (.of_fd C.invNtt.fd) (.of_fd C.mul.fd) (.of_fd C.mulAdd.fd)
     (.of_fd C.add.fd) (.of_fd C.sub.fd) (.of_fd C.rejNTT.fd) (.of_fd C.expandMask.fd) (.of_fd C.ball.fd)
-    (.of_fd C.highBits.fd) (.of_fd C.lowBits.fd) (.of_fd C.normLt.fd) (.of_fd C.makeHint.fd)
-    (.of_fd C.simpleBitPack.fd) (.of_fd C.bitPack.fd) (.of_fd C.bitUnpack.fd) (.of_fd C.hintBitPack.fd) (.of_fd C.rej4.fd)
+    (.of_fd C.lowBits.fd) (.of_fd C.normLt.fd) (.of_fd C.makeHint.fd)
+    (.of_fd C.bitPack.fd) (.of_fd C.bitUnpack.fd) (.of_fd C.hintBitPack.fd) (.of_fd C.rej4.fd)
+    (by dsimp only [Sign.primsWith, Impl.MlDsa.AArch64.Optimized.HighPack.code]; dle_tac)
+    (.of_fd C.expandMaskPair.fd)
 
 /-- `vg_mldsa*_verify`, with the Keccak permutation of `v`. -/
 theorem verifyWith_dle (p : Spec.MlDsa.Params) :

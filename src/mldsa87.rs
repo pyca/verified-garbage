@@ -42,7 +42,7 @@ crate::mldsa_common::ml_dsa! {
     sign_sha3: (crate::arch::mldsa87::vg_mldsa87_sign_sha3, crate::arch::mldsa87::VG_MLDSA87_SIGN_SHA3_FEATURES),
     verify_sha3: (crate::arch::mldsa87::vg_mldsa87_verify_sha3, crate::arch::mldsa87::VG_MLDSA87_VERIFY_SHA3_FEATURES),
     sign_message_sha3: (crate::arch::mldsa87::vg_mldsa87_sign_message_sha3, crate::arch::mldsa87::VG_MLDSA87_SIGN_MESSAGE_SHA3_FEATURES),
-    verify_message_sha3: (crate::arch::mldsa87::vg_mldsa87_verify_message_sha3, crate::arch::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_SHA3_FEATURES),
+    verify_message_cached_sha3: (crate::arch::mldsa87::vg_mldsa87_verify_message_cached_sha3, crate::arch::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_CACHED_SHA3_FEATURES),
     keygen_avx2: (crate::arch::mldsa87::vg_mldsa87_keygen_avx2, crate::arch::mldsa87::VG_MLDSA87_KEYGEN_AVX2_FEATURES),
     sign_avx2: (crate::arch::mldsa87::vg_mldsa87_sign_avx2, crate::arch::mldsa87::VG_MLDSA87_SIGN_AVX2_FEATURES),
     verify_avx2: (crate::arch::mldsa87::vg_mldsa87_verify_avx2, crate::arch::mldsa87::VG_MLDSA87_VERIFY_AVX2_FEATURES),

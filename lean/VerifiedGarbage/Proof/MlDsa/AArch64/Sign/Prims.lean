@@ -1,3 +1,5 @@
+import VerifiedGarbage.Spec.MlDsa.HighPack
+import VerifiedGarbage.Spec.MlDsa.ResidentMask
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inv
 
 /-!
@@ -41,8 +43,10 @@ structure PrimsOk (P : Prims) (S : Nat) : Prop where
     (s'.gpr .x0).setWidth 32 = 1 → ∀ k < 4,(rejNTTPoly maxBounds.rejNTT (seed4 s.mem (s.gpr .x0) k)).isSome
   rejNTT : CalleeOk S P.rejNTT (rejNTTContract AArch64.abi S)
   expandMask : CalleeOk S P.expandMask (expandMaskContract AArch64.abi S)
+  expandMaskPair : CalleeOk S P.expandMaskPair (expandMaskPairContract AArch64.abi S)
   ball : CalleeOk S P.ball (sampleInBallContract AArch64.abi S)
   highBits : CalleeOk S P.highBits (highBitsContract AArch64.abi S)
+  highPack : ∀ g, g ∈ gamma2s → CalleeOk S (P.highPack g) (highPackContract g AArch64.abi S)
   lowBits : CalleeOk S P.lowBits (lowBitsContract AArch64.abi S)
   normLt : CalleeOk S P.normLt (normLtContract AArch64.abi S)
   makeHint : CalleeOk S P.makeHint (makeHintContract AArch64.abi S)

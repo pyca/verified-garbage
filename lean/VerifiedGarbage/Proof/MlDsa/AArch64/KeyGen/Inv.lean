@@ -21,8 +21,6 @@ open VG.Spec.Sha3 (bytesAt)
 
 /-! ## The contract -/
 
-/-- The precondition of the shared contract. -/
-abbrev kgPre (p : Params) (S : Nat) (σ : State) : Prop := (Spec.MlDsa.keyGenContract p AArch64.abi S).pre σ
 /-- Its public data. -/
 abbrev kgPub (p : Params) (S : Nat) (σ₁ σ₂ : State) : Prop := (Spec.MlDsa.keyGenContract p AArch64.abi S).pub σ₁ σ₂
 

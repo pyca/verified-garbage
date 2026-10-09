@@ -3,10 +3,10 @@ import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
 import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Mul
 import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.AddSub
 import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
+import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSelected
 import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
 import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
+import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
 import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
 import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Hint
 
@@ -31,9 +31,9 @@ def primsWith (c : Impl.Sha3.AArch64.Callee) : Prims where
   add := Arith.add
   sub := Arith.sub
   rejNtt := Sample.rejNTTWith c
-  rej4 := Sample.Rej4.rejNTT4With c.pairedSha3
+  rej4 := Optimized.ResidentRej.selected c.pairedSha3
   rejBounded := Sample.rejBoundedWith c
-  ball := Sample.sampleInBallWith c
+  ball := Optimized.Ball.selected c
   power2Round := Round.power2Round
   useHint := Round.useHint
   normLt := Round.normLt

@@ -11,14 +11,14 @@
 
 /// The implementations of ML-DSA's verified functions: their instances for
 /// the polynomial arithmetic and Keccak they call (`Generic/MlDsaArith/` and
-/// the Keccak backend, `crate::hashes::sha3::Backend`).
+/// their accelerated Keccak implementation).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
     /// The target's baseline ISA (on x86-64, SSE2 polynomial arithmetic),
     /// with scalar Keccak.
     Scalar,
     /// AArch64 with the SHA-3 extension, for Keccak.
-    #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+    #[cfg(target_arch = "aarch64")]
     Sha3,
     /// x86-64 with AVX2, for the polynomial arithmetic.
     #[cfg(target_arch = "x86_64")]
@@ -26,25 +26,22 @@ pub(crate) enum Backend {
 }
 
 impl Backend {
-    /// The implementation for the Keccak backend `keccak`, on a CPU with the
-    /// features `f`, of functions whose AVX2 instances need `avx2`.
-    #[cfg_attr(not(target_arch = "x86_64"), allow(unused_variables))]
-    pub(crate) fn select(
-        keccak: crate::hashes::sha3::Backend,
-        f: crate::cpu::Features,
-        avx2: crate::cpu::Features,
-    ) -> Backend {
-        match keccak {
-            crate::hashes::sha3::Backend::Scalar => {
-                #[cfg(target_arch = "x86_64")]
-                if f.contains(avx2) {
-                    return Backend::Avx2;
-                }
-                Backend::Scalar
-            }
-            #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
-            crate::hashes::sha3::Backend::Sha3 => Backend::Sha3,
+    /// Select independently of standalone hashing: paired ML-DSA sampling has
+    /// different performance characteristics from a single Keccak stream.
+    #[cfg_attr(
+        not(any(target_arch = "x86_64", target_arch = "aarch64")),
+        allow(unused_variables)
+    )]
+    pub(crate) fn select(f: crate::cpu::Features, required: crate::cpu::Features) -> Backend {
+        #[cfg(target_arch = "aarch64")]
+        if f.contains(required) {
+            return Backend::Sha3;
         }
+        #[cfg(target_arch = "x86_64")]
+        if f.contains(required) {
+            return Backend::Avx2;
+        }
+        Backend::Scalar
     }
 }
 
@@ -66,7 +63,7 @@ macro_rules! ml_dsa {
         sign_sha3: ($sign_sha3:path, $sign_sha3_features:path),
         verify_sha3: ($verify_sha3:path, $verify_sha3_features:path),
         sign_message_sha3: ($sign_message_sha3:path, $sign_message_sha3_features:path),
-        verify_message_sha3: ($verify_message_sha3:path, $verify_message_sha3_features:path),
+        verify_message_cached_sha3: ($verify_message_cached_sha3:path, $verify_message_cached_sha3_features:path),
         keygen_avx2: ($keygen_avx2:path, $keygen_avx2_features:path),
         sign_avx2: ($sign_avx2:path, $sign_avx2_features:path),
         verify_avx2: ($verify_avx2:path, $verify_avx2_features:path),
@@ -81,35 +78,29 @@ macro_rules! ml_dsa {
         use $crate::zeroize::zeroize;
         use $crate::mldsa_common::Backend;
 
-        /// The implementation to call: the Keccak implementation the SHA-3
-        /// functions use, if the CPU has the features of every instance
-        /// calling it, and AVX2 for the polynomial arithmetic on x86-64 if
-        /// the CPU has what its callers need.
+        /// Select from the generated requirements of every accelerated caller.
         fn backend() -> Backend {
-            #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
-            if !$crate::cpu::detected().contains(const { $crate::cpu::Features::all(&[
+            #[cfg(target_arch = "aarch64")]
+            const REQUIRED: &[$crate::cpu::Features] = &[
                 $keygen_sha3_features,
                 $sign_sha3_features,
                 $verify_sha3_features,
                 $sign_message_sha3_features,
-                $verify_message_sha3_features,
-            ]) }) {
-                return Backend::Scalar;
-            }
+                $verify_message_cached_sha3_features,
+            ];
             #[cfg(target_arch = "x86_64")]
-            const AVX2: &[$crate::cpu::Features] = &[
+            const REQUIRED: &[$crate::cpu::Features] = &[
                 $keygen_avx2_features,
                 $sign_avx2_features,
                 $verify_avx2_features,
                 $sign_message_avx2_features,
                 $verify_message_avx2_features,
             ];
-            #[cfg(not(target_arch = "x86_64"))]
-            const AVX2: &[$crate::cpu::Features] = &[];
+            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+            const REQUIRED: &[$crate::cpu::Features] = &[];
             Backend::select(
-                $crate::hashes::sha3::Backend::detected(),
                 $crate::cpu::detected(),
-                const { $crate::cpu::Features::all(AVX2) },
+                const { $crate::cpu::Features::all(REQUIRED) },
             )
         }
 
@@ -138,6 +129,9 @@ macro_rules! ml_dsa {
         #[derive(Clone, PartialEq, Eq)]
         pub struct $VerifyingKey {
             bytes: [u8; $pk],
+            // Constructors maintain tr = SHAKE256(bytes, 64).
+            #[cfg(target_arch = "aarch64")]
+            tr: [u8; 64],
         }
 
         impl core::fmt::Debug for $VerifyingKey {
@@ -155,7 +149,15 @@ macro_rules! ml_dsa {
             /// The public key `bytes` (every byte string of this size is
             /// one).
             pub fn from_bytes(bytes: &[u8; $pk]) -> Self {
-                $VerifyingKey { bytes: *bytes }
+                $VerifyingKey {
+                    bytes: *bytes,
+                    #[cfg(target_arch = "aarch64")]
+                    tr: {
+                        let mut tr = [0; 64];
+                        $crate::hashes::sha3::Shake256::digest(bytes, &mut tr);
+                        tr
+                    },
+                }
             }
 
             /// The bytes of the key.
@@ -181,8 +183,10 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     match backend() {
                         Backend::Scalar => $verify_message(&self.bytes, m, m_len, c, c_len, sig, &mut scratch),
-                        #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
-                        Backend::Sha3 => $verify_message_sha3(&self.bytes, m, m_len, c, c_len, sig, &mut scratch),
+                        #[cfg(target_arch = "aarch64")]
+                        // Both constructors establish tr = SHAKE256(bytes, 64);
+                        // the key and digest remain private and immutable.
+                        Backend::Sha3 => $verify_message_cached_sha3(&self.bytes, m, m_len, c, c_len, sig, &mut scratch, &self.tr),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $verify_message_avx2(&self.bytes, m, m_len, c, c_len, sig, &mut scratch),
                     }
@@ -209,7 +213,7 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     match backend() {
                         Backend::Scalar => $verify(&self.bytes, mu, sig, &mut scratch),
-                        #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+                        #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => $verify_sha3(&self.bytes, mu, sig, &mut scratch),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $verify_avx2(&self.bytes, mu, sig, &mut scratch),
@@ -254,7 +258,11 @@ macro_rules! ml_dsa {
             pub fn from_seed(seed: &[u8; 32]) -> Result<Self, Error> {
                 let mut key = $SigningKey {
                     seed: *seed,
-                    vk: $VerifyingKey { bytes: [0; $pk] },
+                    vk: $VerifyingKey {
+                        bytes: [0; $pk],
+                        #[cfg(target_arch = "aarch64")]
+                        tr: [0; 64],
+                    },
                     sk: [0; $sk],
                 };
                 let mut scratch: Scratch = [0; $scratch];
@@ -268,7 +276,7 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     match backend() {
                         Backend::Scalar => $keygen(seed, &mut key.vk.bytes, &mut key.sk, &mut scratch),
-                        #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+                        #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => $keygen_sha3(seed, &mut key.vk.bytes, &mut key.sk, &mut scratch),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $keygen_avx2(seed, &mut key.vk.bytes, &mut key.sk, &mut scratch),
@@ -282,6 +290,10 @@ macro_rules! ml_dsa {
                     return Err(Error::LoopBound);
                     // NO-COVERAGE-END
                 }
+                // keyGenInternal encodes SHAKE256(pk, 64) at sk[64..128].
+                // Initialize the cache only after successful key generation.
+                #[cfg(target_arch = "aarch64")]
+                key.vk.tr.copy_from_slice(&key.sk[64..128]);
                 Ok(key)
             }
 
@@ -338,7 +350,7 @@ macro_rules! ml_dsa {
                         Backend::Scalar => {
                             $sign_message(&self.sk, m, m_len, c, c_len, rnd, &mut sig, &mut scratch)
                         }
-                        #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+                        #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => {
                             $sign_message_sha3(&self.sk, m, m_len, c, c_len, rnd, &mut sig, &mut scratch)
                         }
@@ -382,7 +394,7 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     match backend() {
                         Backend::Scalar => $sign(&self.sk, mu, rnd, &mut sig, &mut scratch),
-                        #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+                        #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => $sign_sha3(&self.sk, mu, rnd, &mut sig, &mut scratch),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $sign_avx2(&self.sk, mu, rnd, &mut sig, &mut scratch),
@@ -405,9 +417,220 @@ macro_rules! ml_dsa {
 
 pub(crate) use ml_dsa;
 
+#[cfg(all(test, target_arch = "aarch64"))]
+#[path = "mldsa_fused_tests.rs"]
+mod fused_tests;
+
 #[cfg(test)]
 mod tests {
     use crate::mldsa44::{Error, SigningKey44};
+
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn accelerated_dispatch_requires_all_features() {
+        use super::Backend;
+        use crate::cpu::Features;
+        let required = Features::of(&["sha3", "sha2"]);
+        assert_eq!(
+            Backend::select(Features::of(&[]), required),
+            Backend::Scalar
+        );
+        assert_eq!(
+            Backend::select(Features::of(&["sha3"]), required),
+            Backend::Scalar
+        );
+        assert_eq!(Backend::select(required, required), Backend::Sha3);
+    }
+
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn fused_dots_match_canonical_reference() {
+        use crate::arch::mldsa::{
+            vg_mldsa_dot_inverse4, vg_mldsa_dot_inverse5, vg_mldsa_dot_inverse7, vg_mldsa_inv_ntt,
+        };
+        const Q: u32 = 8_380_417;
+        fn check<const N: usize>(
+            kernel: unsafe extern "C" fn(
+                *mut [u32; 256],
+                *const [u32; N],
+                *const [u32; N],
+                *mut [u64; 128],
+            ),
+        ) {
+            for case in 0..4 {
+                let a: [u32; N] = core::array::from_fn(|i| match case {
+                    0 => 0,
+                    1 => 3 * Q - 1,
+                    2 => {
+                        if i % 2 == 0 {
+                            Q
+                        } else {
+                            2 * Q - 1
+                        }
+                    }
+                    _ => ((i as u64 * 1_103_515_245 + 12_345) % u64::from(3 * Q)) as u32,
+                });
+                let b: [u32; N] = core::array::from_fn(|i| match case {
+                    0 => 3 * Q - 1,
+                    1 => 3 * Q - 1,
+                    2 => {
+                        if i % 3 == 0 {
+                            0
+                        } else {
+                            3 * Q - 1
+                        }
+                    }
+                    _ => ((i as u64 * 2_654_435_761 + 91) % u64::from(3 * Q)) as u32,
+                });
+                let before_a = a;
+                let before_b = b;
+                let mut reference: [u32; 256] = core::array::from_fn(|i| {
+                    let sum: u64 = (0..N / 256)
+                        .map(|j| u64::from(a[j * 256 + i] % Q) * u64::from(b[j * 256 + i] % Q))
+                        .sum();
+                    (sum % u64::from(Q)) as u32
+                });
+                let mut scratch = [0u64; 128];
+                let mut output = [u32::MAX; 256];
+                // SAFETY: independent correctly sized buffers; reference is canonical,
+                // fused inputs are below 3q; kernels use baseline AArch64 instructions.
+                unsafe {
+                    vg_mldsa_inv_ntt(&mut reference, &mut scratch);
+                    kernel(&mut output, &a, &b, &mut scratch);
+                }
+                assert_eq!(output, reference, "count={} case={case}", N / 256);
+                assert!(output.iter().all(|&x| x < Q));
+                assert_eq!(a, before_a);
+                assert_eq!(b, before_b);
+            }
+        }
+        check(vg_mldsa_dot_inverse4);
+        check(vg_mldsa_dot_inverse5);
+        check(vg_mldsa_dot_inverse7);
+    }
+
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn optimized_transforms_match_canonical_reference() {
+        use crate::arch::mldsa::{
+            vg_mldsa_montgomery_inv_ntt, vg_mldsa_ntt, vg_mldsa_ntt_positive,
+            vg_mldsa_ntt_positive_from,
+        };
+        const Q: u32 = 8_380_417;
+        const R: u64 = 4_193_792;
+        for case in 0..4 {
+            let input = core::array::from_fn(|i| match case {
+                0 => 0,
+                1 => Q - 1,
+                2 => {
+                    if i % 2 == 0 {
+                        0
+                    } else {
+                        Q - 1
+                    }
+                }
+                _ => ((i as u64 * 1_103_515_245 + 12_345) % u64::from(Q)) as u32,
+            });
+            let mut reference = input;
+            let mut positive = input;
+            let mut separate = [u32::MAX; 256];
+            let mut scratch = [0u64; 128];
+            // SAFETY: canonical inputs, separate correctly sized buffers,
+            // and AArch64 baseline instructions only.
+            unsafe {
+                vg_mldsa_ntt(&mut reference, &mut scratch);
+                vg_mldsa_ntt_positive(&mut positive);
+                vg_mldsa_ntt_positive_from(&mut separate, &input);
+            }
+            assert_eq!(positive, separate);
+            for i in 0..256 {
+                assert!(positive[i] < 3 * Q);
+                assert_eq!(positive[i] % Q, reference[i]);
+            }
+            // SAFETY: the reference transform produces canonical coefficients.
+            unsafe { vg_mldsa_montgomery_inv_ntt(&mut reference, &mut scratch) };
+            for i in 0..256 {
+                assert_eq!(
+                    reference[i],
+                    (u64::from(input[i]) * R % u64::from(Q)) as u32
+                );
+            }
+        }
+    }
+
+    // Compare both key constructors with the original raw-key entry. In
+    // SHA3-enabled test runs the wrapper takes the cached-digest path.
+    macro_rules! cached_verification_matches_raw {
+        ($test:ident, $module:ident, $signing:ident, $verifying:ident, $raw:ident, $scratch:literal) => {
+            #[test]
+            fn $test() {
+                use crate::$module::{Error, $signing, $verifying};
+                for seed in 0..4 {
+                    let key = $signing::from_seed(&[seed; 32]).unwrap();
+                    let imported = $verifying::from_bytes(key.verifying_key().as_bytes());
+                    assert_eq!(&imported, key.verifying_key());
+                    for ctx in [&[][..], &[3; 255][..]] {
+                        let msg = [seed; 137];
+                        let sig = key.sign_deterministic(&msg, ctx).unwrap();
+                        for vk in [key.verifying_key(), &imported, &imported.clone()] {
+                            for corrupt in [false, true] {
+                                let mut candidate = sig;
+                                if corrupt {
+                                    candidate[0] ^= 1;
+                                }
+                                let mut scratch = [0u64; $scratch];
+                                // SAFETY: valid, nonoverlapping buffers with the
+                                // exact generated sizes; the scalar entry needs
+                                // no optional CPU features.
+                                let raw = unsafe {
+                                    crate::arch::$module::$raw(
+                                        vk.as_bytes(),
+                                        msg.as_ptr(),
+                                        msg.len(),
+                                        ctx.as_ptr(),
+                                        ctx.len(),
+                                        &candidate,
+                                        &mut scratch,
+                                    )
+                                };
+                                let expected = if raw == 1 {
+                                    Ok(())
+                                } else {
+                                    Err(Error::InvalidSignature)
+                                };
+                                assert_eq!(vk.verify(&msg, ctx, &candidate), expected);
+                            }
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    cached_verification_matches_raw!(
+        cached44_matches_raw,
+        mldsa44,
+        SigningKey44,
+        VerifyingKey44,
+        vg_mldsa44_verify_message,
+        9856
+    );
+    cached_verification_matches_raw!(
+        cached65_matches_raw,
+        mldsa65,
+        SigningKey65,
+        VerifyingKey65,
+        vg_mldsa65_verify_message,
+        13056
+    );
+    cached_verification_matches_raw!(
+        cached87_matches_raw,
+        mldsa87,
+        SigningKey87,
+        VerifyingKey87,
+        vg_mldsa87_verify_message,
+        18176
+    );
 
     #[test]
     fn context_too_long() {
