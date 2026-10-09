@@ -96,7 +96,7 @@ theorem movBasesK_erase (h : τ.bases = []) (ha : τ.argBases = []) (d : Reg) (s
 
 theorem storeStepKD_erase (h : τ.bases = []) (m : MemOp) (w : Nat) (p : Bool) (nb : List Nat) :
     storeStepKD τ m.erase w p nb = storeStepKD τ m w p nb := by
-  simp only [storeStepKD, storeSlotsKD, storeWbasesK, addrOfK_nil h, MemOp.erase_base]
+  simp only [storeStepKD, storeSlotsKD, storeWbasesKD, addrOfK_nil h, MemOp.erase_base]
 
 theorem stepKD_erase (h : τ.bases = []) (ha : τ.argBases = []) (i : Instr) :
     stepKD τ i.erase = stepKD τ i := by

@@ -2428,15 +2428,32 @@ def storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat ×
   | some (i, d) =>
     bif Nat.ble (d + w) (τ.lens.getD i 0) then
       bif p then (bif mem3 (i, d, w) τ.slots then τ.slots else (i, d, w) :: τ.slots)
-      else filter (fun sl => p || !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
+      else VG.Taint.filterKeep (fun sl => !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
         Nat.ble (sl.2.1 + sl.2.2) d) τ.slots
     else bif p then τ.slots else []
   | none => bif p then τ.slots else []
 
+/-- `storeWbasesK`, keeping the list when the store overwrites none of its words. -/
+def storeWbasesKD (τ : T) (m : MemOp) (w : Nat) (nb : List Nat) : List (Nat × Nat × Nat) :=
+  match addrOfK τ m with
+  | some (j, d) =>
+    bif Nat.ble (d + w) (τ.lens.getD j 0) then
+      append (VG.Taint.filterKeep (fun p => !Nat.beq p.1 j || Nat.ble (d + w) p.2.1 || Nat.ble (p.2.1 + 4) d)
+        τ.wbases) (map (fun i => (j, d, i)) nb)
+    else []
+  | none => []
+
+theorem storeWbasesKD_eq : storeWbasesKD = storeWbasesK := by
+  funext τ m w nb
+  unfold storeWbasesKD storeWbasesK
+  rcases addrOfK τ m with _ | ⟨j, d⟩
+  · rfl
+  · simp only [VG.Taint.filterKeep_eq, KList.filter_eq]
+
 def storeStepKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) (nb : List Nat) : Option T :=
   match τ with
   | ⟨rg, f, l, b, _, _, al, ab, st, ro⟩ =>
-    bif pub τ m.base then some ⟨rg, f, l, b, storeSlotsKD τ m w p, storeWbasesK τ m w nb, al, ab, st, ro⟩
+    bif pub τ m.base then some ⟨rg, f, l, b, storeSlotsKD τ m w p, storeWbasesKD τ m w nb, al, ab, st, ro⟩
     else none
 
 def mulStepKD (τ : T) (r : Reg) : T :=
@@ -2524,6 +2541,7 @@ theorem mem_storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) (x : Nat × N
     obtain ⟨i, d⟩ := id
     simp only
     cases Nat.ble (d + w) (τ.lens.getD i 0) <;> cases p <;> simp only [Bool.cond_false, Bool.cond_true]
+    · simp only [VG.Taint.filterKeep_eq, KList.filter_eq, Bool.false_or]
     rw [show filter (fun sl => true || !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
       Nat.ble (sl.2.1 + sl.2.2) d) τ.slots = τ.slots by
         simp only [KList.filter_eq, Bool.true_or]; exact List.filter_eq_self.mpr fun _ _ => rfl]
@@ -2543,7 +2561,7 @@ theorem stepKD_spec (τ : T) (i : Instr) :
     cases pub τ m.base
     · exact .inl ⟨rfl, rfl⟩
     · exact .inr ⟨_, _, rfl, rfl, ⟨rfl, rfl, rfl, rfl, fun x => by rw [storeSlotsK_eq]; exact mem_storeSlotsKD τ m w p x,
-        rfl, rfl, rfl, rfl, rfl⟩⟩
+        congrFun (congrFun (congrFun (congrFun storeWbasesKD_eq τ) m) w) nb, rfl, rfl, rfl, rfl⟩⟩
   have other : ∀ {i}, stepKD τ i = stepK τ i →
       (stepKD τ i = none ∧ step τ i = none) ∨ ∃ a b, stepKD τ i = some a ∧ step τ i = some b ∧ Sim a b := by
     intro i e

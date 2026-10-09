@@ -2084,7 +2084,7 @@ def storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat ×
   | some (i, d) =>
     bif Nat.ble (d + w) (τ.lens.getD i 0) then
       bif p then (bif mem3 (i, d, w) τ.slots then τ.slots else (i, d, w) :: τ.slots)
-      else KList.filter (fun sl => p || !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
+      else VG.Taint.filterKeep (fun sl => !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
         Nat.ble (sl.2.1 + sl.2.2) d) τ.slots
     else bif p then τ.slots else []
   | none => bif p then τ.slots else []
@@ -2169,21 +2169,21 @@ def stepKDFn : Instr → Step
   | .movqR d r => ⟨fun τ => match τ with
     | ⟨_, f, l, _, sl, _, x⟩ => some ⟨setK τ d (xpub τ r), f, l, killK τ d, sl, .empty, x⟩⟩
   | .movdquLoad _ m => ⟨fun τ => bif memPub τ m then some (noX τ) else none⟩
-  | .movdquStore m _ => ⟨fun τ => storeStepK τ m 16 false⟩
+  | .movdquStore m _ => ⟨fun τ => storeStepKD τ m 16 false⟩
   | .xop op => xopStepFn op
   | .vop _ => ⟨fun τ => some (noX τ)⟩
   | .vmovdquLoad _ _ m | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m =>
     ⟨fun τ => bif memPub τ m then some (noX τ) else none⟩
-  | .vmovdquStore .l128 m _ => ⟨fun τ => storeStepK τ m 16 false⟩
-  | .vmovdquStore .l256 m _ => ⟨fun τ => storeStepK τ m 32 false⟩
+  | .vmovdquStore .l128 m _ => ⟨fun τ => storeStepKD τ m 16 false⟩
+  | .vmovdquStore .l256 m _ => ⟨fun τ => storeStepKD τ m 32 false⟩
   | .zop _ => ⟨fun τ => some (noX τ)⟩
   | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m => ⟨fun τ =>
     bif memPub τ m then some (noX τ) else none⟩
-  | .vmovdqu32Store m _ => ⟨fun τ => storeStepK τ m 64 false⟩
+  | .vmovdqu32Store m _ => ⟨fun τ => storeStepKD τ m 64 false⟩
   | .eop _ => ⟨fun τ => some (noX τ)⟩
   | .evLoad _ m | .evMadd52Load _ _ _ m => ⟨fun τ => bif memPub τ m then some (noX τ) else none⟩
-  | .evStore m _ => ⟨fun τ => storeStepK τ m 32 false⟩
-  | .stmxcsr m => ⟨fun τ => storeStepK τ m 4 false⟩
+  | .evStore m _ => ⟨fun τ => storeStepKD τ m 32 false⟩
+  | .stmxcsr m => ⟨fun τ => storeStepKD τ m 4 false⟩
   | .ldmxcsr m => ⟨fun τ => bif memPub τ m then some τ else none⟩
   | .lfence => ⟨fun τ => some τ⟩
   | .mul r => ⟨fun τ => some (mulStepKD τ r)⟩
@@ -2229,6 +2229,7 @@ theorem mem_storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) (x : Nat × N
     obtain ⟨i, d⟩ := id
     simp only
     cases Nat.ble (d + w) (τ.lens.getD i 0) <;> cases p <;> simp only [Bool.cond_false, Bool.cond_true]
+    · simp only [VG.Taint.filterKeep_eq, KList.filter_eq, Bool.false_or]
     rw [show KList.filter (fun sl => true || !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
       Nat.ble (sl.2.1 + sl.2.2) d) τ.slots = τ.slots by
         simp only [KList.filter_eq, Bool.true_or]; exact List.filter_eq_self.mpr fun _ _ => rfl]
@@ -2258,7 +2259,11 @@ theorem stepKD_spec (τ : T) (i : Instr) :
   case store m r => exact st m 8 _
   case store32 m r => exact st m 4 _
   case store8 m r => exact st m 1 _
-  case vmovdquStore l _ _ => cases l <;> exact other rfl
+  case movdquStore m _ => exact st m 16 _
+  case vmovdquStore l m _ => cases l <;> [exact st m 16 _; exact st m 32 _]
+  case vmovdqu32Store m _ => exact st m 64 _
+  case evStore m _ => exact st m 32 _
+  case stmxcsr m => exact st m 4 _
   case xop op => cases op <;> exact other rfl
   case mul r => exact other (by rw [stepKD, stepKDFn, stepK, mulStepKD_eq])
   all_goals exact other rfl
