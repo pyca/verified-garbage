@@ -1,10 +1,11 @@
-import VerifiedGarbage.Proof.Framework.NativeTaint
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
 import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.X86.Inline
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.CallSumsP
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.CallSumsN
 
 /-!
 # ECDSA verification over P-384 on x86 (32-bit): `Verified`
@@ -51,11 +52,6 @@ theorem verify_x86 (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : veri
   · exact K.saved (.edi, 8) (by decide)
   · exact K.saved (.ebp, 12) (by decide)
   · exact K.esp
-
-/-- The hints forget the words known to hold base addresses outside the calls,
-as the signature's do (`Proof/Ecdsa/X86/P384/Verified.lean`), but keep the
-public slots, which the checks of the key read back. -/
-def weak (τ : VG.X86.Taint.T) : VG.X86.Taint.T := if τ.stk = [] then { τ with wbases := [] } else τ
 
 /-- The taint analysis starts with the stack arguments public, and the word
 holding `scratch` known to be the base address of the writable region. -/
@@ -104,9 +100,12 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : verifyX86.pre s₁) (h₂ : verifyX
     · exact congrArg _ a2
     · exact congrArg _ a3
 
-theorem verify_ct : ConstantTime isa verifyX86.pre verifyX86.pub verifyP384 :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
-    (by native_taint_decide_weak weak)
+/-- Constant time by taint tracking, with the summaries of the field
+functions (`CallTaint`) in place of the analysis of each call. -/
+theorem verify_ct : ConstantTime isa verifyX86.pre verifyX86.pub verifyP384 := by
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ verifyP384 h).isSome = true := by
+    taint_decide_sum [mulPSum, addPSum, subPSum, mulNSum, subNSum]
+  exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/
