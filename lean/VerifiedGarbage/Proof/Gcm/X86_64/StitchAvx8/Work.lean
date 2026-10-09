@@ -61,7 +61,8 @@ theorem prepareNext_ok {s₀ s : State} {P X Y : Nat → Block}
     (by rw [hE.wr, hE.r11, hmod]; exact in_sub hp.p_in (by omega)) (by
       rw [hE.r11, hmod]
       exact (hS.sub_left (Region.sub_prefix (by decide))).sub_right
-        (Offset.sub_base (pp s₀) (by omega)))) fun t ⟨hm, hf⟩ => ?_
+        (Offset.sub_base (pp s₀) (by omega)) |>.sep
+        (Region.contains_self _ _) (Region.contains_self _ _))) fun t ⟨hm, hf⟩ => ?_
   rw [hE.r11, hmod] at hm
   have hF : Frame [⟨hashAddr s₀ ((n + 1) % 8), 16⟩] s.mem t.mem := by
     rw [hm]

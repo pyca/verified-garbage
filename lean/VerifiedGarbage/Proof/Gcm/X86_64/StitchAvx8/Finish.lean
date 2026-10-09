@@ -33,7 +33,8 @@ theorem finish_ok {s₀ s : State} {P : Nat → Block} (hp : SPre s₀) (hE : En
     rw [hE.rd, hE.wr, hE.r11]; exact in_rdwr (in_sub hp.p_in (off := 768) (by decide))) (by
     rw [hE.r11, hE.rsi]
     exact (hp.p_c.sub_left (Offset.sub_base (pp s₀) (d := 768) (n := 16) (k := 1024) (by decide))).sub_right
-      (Offset.sub_base (cp s₀) (d := 12) (n := 4) (k := 16) (by decide))))
+      (Offset.sub_base (cp s₀) (d := 12) (n := 4) (k := 16) (by decide)) |>.sep
+      (Region.contains_self _ _) (Region.contains_self _ _)))
     fun t ⟨htM, ht0, htG, htX, htR, htW⟩ => ?_
   have hnum : (s.gpr .r8).setWidth 32 - 8 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 n := by
     rw [hv, BitVec.ofNat_add]
