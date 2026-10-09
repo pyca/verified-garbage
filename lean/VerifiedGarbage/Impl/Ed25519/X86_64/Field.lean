@@ -59,6 +59,19 @@ def FieldOp.code (fld : Arith) : FieldOp → List Instr
 
 def fieldCode (fld : Arith) (ops : List FieldOp) : List Instr := ops.flatMap (FieldOp.code fld)
 
+/-- `FieldOp.code`, but with the sums and differences folded once (`addL`, `subL`) if
+`lazy`: correct when one operand of each sum, and the subtrahend of each difference,
+is at most `2p`, as a product is. -/
+def FieldOp.codeB (fld : Arith) (lazy : Bool) : FieldOp → List Instr
+  | .add o a b => if lazy then Impl.X25519.X86_64.addL (offset o) (offset a) (offset b)
+      else Impl.X25519.X86_64.add (offset o) (offset a) (offset b)
+  | .sub o a b => if lazy then Impl.X25519.X86_64.subL (offset o) (offset a) (offset b)
+      else Impl.X25519.X86_64.sub (offset o) (offset a) (offset b)
+  | op => op.code fld
+
+/-- `fieldCode` with the sums and differences folded once (`FieldOp.codeB`). -/
+def fieldCodeL (fld : Arith) (ops : List FieldOp) : List Instr := ops.flatMap (FieldOp.codeB fld true)
+
 /-- Add the points in slots 0–3 and 4–7 into slots 0–3. The coordinates
 are X,Y,Z,T. Slot 16 holds d; slots 8–15 are temporary. Both points are
 read before the result overwrites the first. -/

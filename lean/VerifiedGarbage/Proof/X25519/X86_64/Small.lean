@@ -117,13 +117,13 @@ theorem mulA24_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : 
     simp only [val4] at e1
     omega
   rw [WP.block_append_iff]
-  refine WP.mono (fold_ok s₂ c2 hc) fun s₃ ⟨e3, k3⟩ => ?_
+  refine WP.mono (fold_ok s₂ c2 hc) fun s₃ ⟨e3, _, k3⟩ => ?_
   have hs₃ := hs₂.of_keeps k3 (by decide)
   refine WP.mono (store4_ok hs₃ ho) fun s₄ ⟨m4, g4, rd4, wr4⟩ => ?_
   refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_⟩, ?_⟩
   · simp only [clob, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, -⟩ := hr
-    rw [g4, g k3 r (by simp [h1, h3, h5, h6, h7, h8]), g k2 r (by simp [h2]),
+    rw [g4, g k3 r (by simp [h1, h3, h4, h5, h6, h7, h8]), g k2 r (by simp [h2]),
       g k1 r (by simp [h1, h2, h3, h4, h5, h6, h7, h8]), g k0 r (by simp [h5, h6, h7, h8])]
   · rw [rd4, k3.2.2.1, k2.2.2.1, k1.2.2.1, k0.2.2.1]
   · rw [wr4, k3.2.2.2, k2.2.2.2, k1.2.2.2, k0.2.2.2]

@@ -85,11 +85,12 @@ theorem mul_mod_arith {L H V c AB : Nat} (h₁ : V + 2 ^ 256 * c = L + 38 * H)
     (h₂ : L + 2 ^ 256 * H = AB) : (V + 38 * c) % VG.Spec.X25519.P = AB % VG.Spec.X25519.P := by
   rw [← h₂, fold256, ← h₁, fold256]
 
-/-- `[o] = [a] · [b]`. -/
-theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : Slot o)
+/-- `[o] = [a] · [b]`, at most `2p`. -/
+theorem mulBnd_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : Slot o)
     (ha : Slot a) (hb : Slot b) :
     WP isa (.block (mul o a b)) s fun s' =>
-      Op base o s s' ∧ F s'.mem base o = F s.mem base a * F s.mem base b := by
+      Op base o s s' ∧ F s'.mem base o = F s.mem base a * F s.mem base b ∧
+        fe s'.mem base o ≤ 2 * VG.Spec.X25519.P := by
   have g : ∀ {x y : State} {rs : List Reg} (k : Keeps rs x y) (r : Reg), r ∉ rs → y.gpr r = x.gpr r :=
     fun k r h => k.1 r h
   rw [show mul o a b = zero4 ++ (row a b 0 ++ (row a b 1 ++ (row a b 2 ++ (row a b 3 ++
@@ -127,16 +128,16 @@ theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : S
     have := (s₅.gpr .r11).isLt
     omega
   rw [WP.block_append_iff]
-  refine WP.mono (fold_ok s₅ c5 (by omega)) fun s₆ ⟨e6, k6⟩ => ?_
+  refine WP.mono (fold_ok s₅ c5 (by omega)) fun s₆ ⟨e6, b6, k6⟩ => ?_
   have hs₆ := hs₅.of_keeps k6 (by decide)
   refine WP.mono (store4_ok hs₆ ho) fun s₇ ⟨m7, g7, rd7, wr7⟩ => ?_
   -- Memory is only read until the store.
   have M : s₆.mem = s.mem :=
     k6.2.1.trans (k5.2.1.trans (k4.2.1.trans (k3.2.1.trans (k2.2.1.trans (k1.2.1.trans k0.2.1)))))
-  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_⟩, ?_⟩
+  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_⟩, ?_, by rw [m7, fe_st4 _ _ (by omega)]; exact b6⟩
   · simp only [clob, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := hr
-    rw [g7, g k6 r (by simp [h5, h6, h7, h8, h1, h3]), g k5 r (by simp [h5, h6, h7, h8, h1, h3, h2, h4]),
+    rw [g7, g k6 r (by simp [h5, h6, h7, h8, h1, h3, h4]), g k5 r (by simp [h5, h6, h7, h8, h1, h3, h2, h4]),
       g k4 r (by simp [h8, h9, h10, h11, h12, h1, h3, h2, h4]),
       g k3 r (by simp [h7, h8, h9, h10, h11, h1, h3, h2, h4]),
       g k2 r (by simp [h6, h7, h8, h9, h10, h1, h3, h2, h4]),
@@ -162,5 +163,12 @@ theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : S
     simp only [val4, hz, Nat.mul_zero, Nat.add_zero, Nat.zero_add] at e1 e2 e3 e4 ⊢
     rw [r3, r2, r1, q3, q2, q4]
     omega_using [e1, e2, e3, e4]
+
+/-- `[o] = [a] · [b]`. -/
+theorem mul_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : Slot o)
+    (ha : Slot a) (hb : Slot b) :
+    WP isa (.block (mul o a b)) s fun s' =>
+      Op base o s s' ∧ F s'.mem base o = F s.mem base a * F s.mem base b :=
+  WP.mono (mulBnd_ok hs ho ha hb) fun _ ⟨h, e, _⟩ => ⟨h, e⟩
 
 end VG.Proof.X25519.X86_64

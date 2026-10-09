@@ -69,8 +69,8 @@ def reduceLo : List Instr :=
   [.mov32 .rdx (.imm 38), clear] ++ madd .r8 .r9 (.reg .r12) ++ madd .r9 .r10 (.reg .r13) ++
     madd .r10 .r11 (.reg .r14) ++ maddLast .r11 .r12 (.reg .r15)
 
-/-- `reduceLo`, then `r8–r11 += 38 r12`, folded. -/
-def reduceX : List Instr := reduceLo ++ [.mulx .rcx .rax (.reg .r12)] ++ carry38
+/-- `reduceLo`, then `r8–r11 += 38 r12`, folded at bit 255 (at most `2p`). -/
+def reduceX : List Instr := reduceLo ++ [.mulx .rcx .rax (.reg .r12)] ++ carry19 .rbp
 
 /-- `r8–r12` doubled. -/
 def dbl5 : List Instr :=

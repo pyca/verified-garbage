@@ -359,13 +359,14 @@ theorem combNeg_ok {s : State} {base : Addr} (hs : Scratch s base) {n : Nat}
     WP isa (.block combNeg) s fun t =>
       point (env t.mem base) 4 5 6 7 = (if n < 16 then negCached (point (env s.mem base) 4 5 6 7)
         else point (env s.mem base) 4 5 6 7) ∧ Keep base s t ∧
-      (∀ i : Slot, (i.val < 4 ∨ 10 ≤ i.val) → env t.mem base i = env s.mem base i) := by
+      (∀ i : Slot, (i.val < 4 ∨ 10 ≤ i.val) → env t.mem base i = env s.mem base i) ∧
+      Outside base (offset 4) 96 s.mem t.mem := by
   rw [combNeg, List.append_assoc, WP.block_append_iff]
   refine WP.mono (loadSignMask_ok hs (m := signMask n) hm) fun b ⟨bc, kb⟩ => ?_
   have hsb := hs.of_keeps kb (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (swapFieldX_ok hsb 4 5 (by decide) (by decide) (sw := decide (n < 16))
-    (by rw [bc, signMask_eq])) fun u ⟨ku, uc, uv⟩ => ?_
+    (by rw [bc, signMask_eq])) fun u ⟨ku, uc, uv, uo⟩ => ?_
   have hsu := hsb.of_keep ku
   refine WP.mono (negFieldWide_ok hsu (x := offset 6) (by decide) (sw := decide (n < 16))
     (by rw [uc, bc, signMask_eq])) fun t ⟨tOp, _, tF⟩ => ?_
@@ -400,7 +401,7 @@ theorem combNeg_ok {s : State} {base : Addr} (hs : Scratch s base) {n : Nat}
         zero_sub]
     · simp only [h, decide_false, Bool.false_eq_true, ↓reduceIte]
       rw [show VG.Proof.X25519.X86_64.F u.mem base (offset 6) = env u.mem base 6 from rfl, h6]
-  refine ⟨?_, (kbk.trans ku).trans ktOp, fun i hi => ?_⟩
+  refine ⟨?_, (kbk.trans ku).trans ktOp, fun i hi => ?_, ?_⟩
   · by_cases h : n < 16
     · simp only [point, e4, e5, e6, e7, h, ↓reduceIte, negCached]
     · simp only [point, e4, e5, e6, e7, h, ↓reduceIte]
@@ -409,6 +410,8 @@ theorem combNeg_ok {s : State} {base : Addr} (hs : Scratch s base) {n : Nat}
     have hi5 : i ≠ 5 := fun h => by subst h; simp at hi
     rw [henv i hi6, hu]
     simp [swapEnv, hi4, hi5]
+  · have hsb : Outside base (offset 4) 96 s.mem b.mem := by rw [kb.2.1]; exact Outside.refl _ _ _ _
+    exact (hsb.trans (uo.mono (by decide) (by decide))).trans (tOp.mem.mono (by decide) (by decide))
 
 end VG.Proof.Ed25519.X86_64
 end
@@ -554,25 +557,28 @@ structure CombInv (s₀ : State) (base T : Addr) (S c : Nat) (s : State) : Prop 
   d : env s.mem base 16 = Spec.Ed25519.d
   bits : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)
   value : Rep (point (env s.mem base) 0 1 2 3) (combVal S c • baseAff)
+  acc : AccBnd s.mem base
   keep : PowersKeep base 56 7368 s₀ s
   tbl : CombTbl s T
 
 theorem bits_far {base : Addr} {q : Nat} (hq : q < 256) :
     ofs base (off base (768 + q)) = 768 + q := Proof.X25519.X86_64.ofs_off' base (by omega)
 
-theorem combAddG_ok {s : State} {base : Addr} (hs : Scratch s base) (_hd : env s.mem base 16 = Spec.Ed25519.d) :
+theorem combAddG_ok {s : State} {base : Addr} (hs : Scratch s base) (_hd : env s.mem base 16 = Spec.Ed25519.d)
+    (hb : AccBnd s.mem base) :
     WP isa (.block (combAddG fld)) s fun t => Keep base s t ∧
       point (env t.mem base) 0 1 2 3 = Spec.Ed25519.pointAdd (point (env s.mem base) 0 1 2 3) combG ∧
-      ∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i := by
+      (∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i) ∧ AccBnd t.mem base := by
   rw [combAddG, WP.block_append_iff]
-  refine WP.mono (fieldCodeWide_ok (fld := fld) hs _) fun a ⟨ka, va⟩ => ?_
+  refine WP.mono (wp_and (fieldCodeWide_ok (fld := fld) hs _)
+    (fieldCodeWide_accKeep (fld := fld) _ hs hb (by decide))) fun a ⟨⟨ka, va⟩, ab⟩ => ?_
   have hsa := hs.of_keep ka
   have ha16 : ∀ i : Slot, 16 ≤ i.val → env a.mem base i = env s.mem base i := fun i hi => by
     rw [va]; exact point_ops_high _ (by decide) _ i hi
   have hp : point (env a.mem base) 0 1 2 3 = point (env s.mem base) 0 1 2 3 := by rw [va]; rfl
   refine WP.mono (pointAddAffineWide_ok (fld := fld) hsa combG
-    (by rw [va, ← combGCached_eq]; rfl)) fun t ⟨kt, tp, th⟩ =>
-    ⟨ka.trans kt, by rw [tp, hp], fun i hi => (th i hi).trans (ha16 i hi)⟩
+    (by rw [va, ← combGCached_eq]; rfl) ab) fun t ⟨kt, tp, th, tb⟩ =>
+    ⟨ka.trans kt, by rw [tp, hp], fun i hi => (th i hi).trans (ha16 i hi), tb⟩
 
 theorem zsmul_32 (v : ℤ) (g : Nat) (P : EPoint dZ) :
     (32 : Nat) • (v • P) + g • P = (32 * v + g) • P := by
@@ -582,11 +588,13 @@ theorem zsmul_32 (v : ℤ) (g : Nat) (P : EPoint dZ) :
 theorem combDouble_ok {s : State} {base : Addr} {a : EPoint dZ} (hs : Scratch s base)
     (ha : Rep (point (env s.mem base) 0 1 2 3) a) :
     WP isa (combDouble fld) s fun t => Rep (point (env t.mem base) 0 1 2 3) ((32 : Nat) • a) ∧
-      (∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i) ∧ DoubleKeep base s t := by
+      (∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i) ∧ DoubleKeep base s t ∧
+      AccBnd t.mem base := by
   rw [combDouble]
   refine WP.seq (WP.mono (double4_ok (fld := fld) hs ha) fun b ⟨br, bh, bk⟩ => ?_)
-  refine WP.mono (dbl_ok (fld := fld) (bk.scratch hs) true br.proj) fun t ⟨kt, _, tr, th⟩ =>
-    ⟨?_, fun i h => (th i h).trans (bh i h), bk.trans ⟨fun r _ hc => kt.gpr r hc, kt.rd, kt.wr, kt.mem⟩⟩
+  refine WP.mono (wp_and (dbl_ok (fld := fld) (bk.scratch hs) true br.proj)
+    (fieldCodeWide_acc (fld := fld) _ (bk.scratch hs) (by decide))) fun t ⟨⟨kt, _, tr, th⟩, tb⟩ =>
+    ⟨?_, fun i h => (th i h).trans (bh i h), bk.trans ⟨fun r _ hc => kt.gpr r hc, kt.rd, kt.wr, kt.mem⟩, tb⟩
   rw [show (32 : Nat) = 16 * 2 by rfl, mul_nsmul, two_nsmul]
   exact tr rfl
 
@@ -617,14 +625,14 @@ theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base
       (∀ q < 256, b.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)) ∧
       Rep (point (env b.mem base) 0 1 2 3)
         ((if c = 26 then 32 * combVal S c + combGVal else combVal S c) • baseAff) ∧
-      PowersKeep base 56 7368 a b := by
+      PowersKeep base 56 7368 a b ∧ AccBnd b.mem base := by
     refine WP.ite (decide (c = 26)) (by simp only [eval, az]) (fun hy => ?_) (fun hn => ?_)
     · have h26 : c = 26 := of_decide_eq_true hy
       refine WP.seq (WP.mono (combDouble_ok (fld := fld) (a := combVal S c • baseAff) hsa (by rw [am]; exact h.value))
-        fun b ⟨br, bh, bk⟩ => ?_)
+        fun b ⟨br, bh, bk, bb⟩ => ?_)
       have hsb := bk.scratch hsa
       have bd : env b.mem base 16 = Spec.Ed25519.d := by rw [bh 16 (by decide), am]; exact h.d
-      refine WP.mono (combAddG_ok (fld := fld) hsb bd) fun e ⟨ke, ep, eh⟩ => ?_
+      refine WP.mono (combAddG_ok (fld := fld) hsb bd bb) fun e ⟨ke, ep, eh, eb⟩ => ?_
       refine ⟨hsb.of_keep ke, (ke.gpr _ (by decide)).trans ((bk.gpr _ (by decide) (by decide)).trans
           (by rw [ag]; exact h.counter)),
         by rw [eh 16 (by decide)]; exact bd,
@@ -632,7 +640,7 @@ theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base
           rw [ke.mem _ (by rw [bits_far hq]; omega), bk.mem _ (by rw [bits_far hq]; omega), am]
           exact h.bits q hq, ?_,
         (⟨fun r _ hs hc' => bk.gpr r hs hc', bk.rd, bk.wr, TableFrame.workspace bk.mem⟩ :
-          PowersKeep base 56 7368 a b).trans (PowersKeep.of_keep ke)⟩
+          PowersKeep base 56 7368 a b).trans (PowersKeep.of_keep ke), eb⟩
       simp only [h26, ↓reduceIte]
       rw [ep, ← zsmul_32]
       subst h26
@@ -640,8 +648,8 @@ theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base
     · have h26 : c ≠ 26 := of_decide_eq_false hn
       refine WP.block_nil ⟨hsa, by rw [ag]; exact h.counter, by rw [am]; exact h.d,
         fun q hq => by rw [am]; exact h.bits q hq, by simp only [h26, ↓reduceIte]; rw [am]; exact h.value,
-        PowersKeep.refl _ _ _ _⟩
-  refine WP.seq (WP.mono_syms hite fun b ⟨hsb, bc, bd, bbits, bv, kb⟩ bsy => ?_)
+        PowersKeep.refl _ _ _ _, by rw [am]; exact h.acc⟩
+  refine WP.seq (WP.mono_syms hite fun b ⟨hsb, bc, bd, bbits, bv, kb, bacc⟩ bsy => ?_)
   -- The chunk's bit index and table.
   refine WP.seq (WP.mono_syms (combIndex_ok b hc bc) fun e ⟨ec, e9, ke⟩ esy => ?_)
   have hse : Scratch e base := hsb.of_keeps ke (by decide)
@@ -690,7 +698,18 @@ theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base
   have tu : CombTbl u T := tg.keep hfar (PowersKeep.of_keep ku) usy
   -- Negated for a negative digit.
   rw [WP.block_append_iff]
-  refine WP.mono_syms (combNeg_ok hsu usm) fun u' ⟨u'q, ku', ue'⟩ u'sy => ?_
+  refine WP.mono_syms (combNeg_ok hsu usm) fun u' ⟨u'q, ku', ue', u'o⟩ u'sy => ?_
+  -- The accumulator's words are those after the doublings: only slots 4–6 and the sign
+  -- were written.
+  have hacc : AccBnd u'.mem base := fun i hi => by
+    have hb := bacc i hi
+    unfold Bnd at hb ⊢
+    have := i.isLt
+    rw [u'o.fe (by simp only [offset]; omega) (by simp only [offset]; omega),
+      uo.fe (by simp only [offset]; omega) (by simp only [offset]; omega), kg.2.1,
+      f'mem.fe (by simp only [offset, combSignMask]; omega) (by simp only [offset]; omega), kf.2.1,
+      ke.2.1]
+    exact hb
   have hsu' : Scratch u' base := hsu.of_keep ku'
   have eu : ∀ x : Slot, (x.val < 4 ∨ 16 ≤ x.val) → env u'.mem base x = env b.mem base x := fun x hx => by
     have hux : env u.mem base x = env g.mem base x := by
@@ -740,7 +759,7 @@ theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base
       exact hrq₀
   -- The addition and the counter.
   rw [WP.block_append_iff]
-  refine WP.mono_syms (pointAddAffineWide_ok (fld := fld) hsu' q hq) fun v ⟨kv, vp, vh⟩ vsy => ?_
+  refine WP.mono_syms (pointAddAffineWide_ok (fld := fld) hsu' q hq hacc) fun v ⟨kv, vp, vh, vb⟩ vsy => ?_
   have vc : v.gpr .rbx = BitVec.ofNat 64 c := by
     rw [kv.gpr _ (by decide), ku'.gpr _ (by decide), ug _ (by decide) (by decide) (by decide),
       kg.1 _ (by decide), f'c]
@@ -751,7 +770,7 @@ theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base
   have kst : PowersKeep base 56 7368 s t :=
     ((((kas.trans kb).trans kbu).trans (PowersKeep.of_keep kv)).trans (PowersKeep.of_keeps kt (by decide)))
   refine ⟨by omega, hsu'.of_keep kv |>.of_keeps kt (by decide), tc, ?_, fun x hx => ?_, ?_,
-    h.keep.trans kst, tu.keep hfar (((PowersKeep.of_keep ku').trans (PowersKeep.of_keep kv)).trans
+    fun i hi => by unfold Bnd; rw [kt.2.1]; exact vb i hi, h.keep.trans kst, tu.keep hfar (((PowersKeep.of_keep ku').trans (PowersKeep.of_keep kv)).trans
       (PowersKeep.of_keeps kt (by decide))) (by rw [tsy, vsy, u'sy])⟩
   · rw [kt.2.1, vh 16 (by decide), ud]
   · have hb := bits_far (base := base) hx
@@ -776,12 +795,12 @@ theorem combMultiplyWith_ok {sel : List Instr} (hsel : SelOk sel) {s : State} {b
   rw [combMultiply]
   apply WP.seq
   rw [WP.block_append_iff]
-  refine WP.mono_syms (fieldCodeWide_ok (fld := fld) hs (constPointOps combG))
-    fun a ⟨ka, va⟩ asy => ?_
+  refine WP.mono_syms (wp_and (fieldCodeWide_ok (fld := fld) hs (constPointOps combG))
+    (fieldCodeWide_acc (fld := fld) _ hs (by decide))) fun a ⟨⟨ka, va⟩, ab⟩ asy => ?_
   refine WP.mono_syms (rbxSet_ok a 0 (by decide)) fun b ⟨bc, kb⟩ bsy => ?_
   have init : CombInv s base T S 0 b := by
     refine ⟨by decide, (hs.of_keep ka).of_keeps kb (by decide), bc, ?_, fun q hq => ?_, ?_,
-      (PowersKeep.of_keep ka).trans (PowersKeep.of_keeps kb (by decide)),
+      fun i hi => by unfold Bnd; rw [kb.2.1]; exact ab i hi, (PowersKeep.of_keep ka).trans (PowersKeep.of_keeps kb (by decide)),
       ht.keep hfar ((PowersKeep.of_keep ka).trans (PowersKeep.of_keeps kb (by decide))) (by rw [bsy, asy])⟩
     · rw [kb.2.1, va, point_ops_high _ (by decide) _ 16 (by decide), hd]
     · rw [kb.2.1, ka.mem _ (by rw [bits_far hq]; omega)]; exact hb q hq

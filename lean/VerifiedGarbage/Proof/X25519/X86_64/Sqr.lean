@@ -257,12 +257,13 @@ theorem diag_ok {s : State} {base : Addr} (hs : Scr s base) {t u : Reg} {d : Nat
 /-! ## The square -/
 
 open VG.Spec.X25519 (P) in
-/-- `reduce`: `r8–r11 + 2²⁵⁶ r12–r15`, reduced into `r8–r11` (modulo `p`). -/
+/-- `reduce`: `r8–r11 + 2²⁵⁶ r12–r15`, reduced into `r8–r11` (modulo `p`), at most `2p`. -/
 theorem reduce_ok (s : State) :
     WP isa (.block reduce) s fun s' =>
       val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) % P =
         (val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) +
           2 ^ 256 * val4 (s.gpr .r12) (s.gpr .r13) (s.gpr .r14) (s.gpr .r15)) % P ∧
+      val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) ≤ 2 * P ∧
       Keeps [.r8, .r9, .r10, .r11, .rax, .rdx, .rcx, .rbp] s s' := by
   rw [show reduce = ([.mov32 .rcx (.imm 38), .mov32 .rbp (.imm 0)] ++
       (mulStep .r8 .rbp .rcx (.reg .r12) ++ (mulStep .r9 .rbp .rcx (.reg .r13) ++
@@ -281,8 +282,8 @@ theorem reduce_ok (s : State) :
     have := (s₁.gpr .r8).isLt; have := (s₁.gpr .r9).isLt; have := (s₁.gpr .r10).isLt
     have := (s₁.gpr .r11).isLt
     omega
-  refine WP.mono (fold_ok s₁ c1 (by omega)) fun s₂ ⟨e2, k2⟩ => ?_
-  refine ⟨?_, (k1.mono (by decide)).trans (k2.mono (by decide))⟩
+  refine WP.mono (fold_ok s₁ c1 (by omega)) fun s₂ ⟨e2, b2, k2⟩ => ?_
+  refine ⟨?_, b2, (k1.mono (by decide)).trans (k2.mono (by decide))⟩
   rw [e2, ← fold256, e1, fold256]
 
 theorem sqr_eq (o a : Nat) : sqr o a = sq1 a ++ (sq2 a ++ (sq3 a ++ (sqDbl ++
@@ -290,11 +291,12 @@ theorem sqr_eq (o a : Nat) : sqr o a = sq1 a ++ (sq2 a ++ (sq3 a ++ (sqDbl ++
       (diag .r14 .r15 (a + 24) ++ (reduce ++ store4 o)))))))) := by
   simp only [sqr, List.append_assoc]
 
-/-- `[o] = [a]²`. -/
-theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : Slot o)
+/-- `[o] = [a]²`, at most `2p`. -/
+theorem sqrBnd_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : Slot o)
     (ha : Slot a) :
     WP isa (.block (sqr o a)) s fun s' =>
-      Op base o s s' ∧ F s'.mem base o = F s.mem base a * F s.mem base a := by
+      Op base o s s' ∧ F s'.mem base o = F s.mem base a * F s.mem base a ∧
+        fe s'.mem base o ≤ 2 * VG.Spec.X25519.P := by
   rw [sqr_eq, WP.block_append_iff]
   refine WP.mono (sq1_ok hs ha) fun s₁ ⟨e1, k1⟩ => ?_
   have hs₁ := hs.of_keeps k1 (by decide)
@@ -324,7 +326,7 @@ theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : Slo
     (by decide) (by decide) (by decide) (by decide)) fun s₈ ⟨e8, k8⟩ => ?_
   have hs₈ := hs₇.of_keeps k8 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (reduce_ok s₈) fun s₉ ⟨e9, k9⟩ => ?_
+  refine WP.mono (reduce_ok s₈) fun s₉ ⟨e9, b9, k9⟩ => ?_
   have hs₉ := hs₈.of_keeps k9 (by decide)
   refine WP.mono (store4_ok hs₉ ho) fun s₁₀ ⟨m10, g10, rd10, wr10⟩ => ?_
   have M : s₉.mem = s.mem := k9.2.1.trans (k8.2.1.trans (k7.2.1.trans (k6.2.1.trans
@@ -334,7 +336,7 @@ theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : Slo
       (k4.mono (by decide))).trans (k5.mono (by decide))).trans (k6.mono (by decide))).trans
       (k7.mono (by decide))).trans (k8.mono (by decide))).trans (k9.mono (by decide))
   refine ⟨⟨fun r hr => by rw [g10, K.1 r hr], by rw [rd10, K.2.2.1], by rw [wr10, K.2.2.2], ?_⟩,
-    ?_⟩
+    ?_, by rw [m10, fe_st4 _ _ (by omega)]; exact b9⟩
   · rw [m10, M]; exact st4_outside _ _ (by omega) _ _ _ _
   · simp only [F]
     apply toFe_mul
@@ -404,5 +406,12 @@ theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : Slo
       omega_using [e4, hX]
     have := (s₈.gpr .rbp).toNat.zero_le
     omega_using [hS, hD, hb]
+
+/-- `[o] = [a]²`. -/
+theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : Slot o)
+    (ha : Slot a) :
+    WP isa (.block (sqr o a)) s fun s' =>
+      Op base o s s' ∧ F s'.mem base o = F s.mem base a * F s.mem base a :=
+  WP.mono (sqrBnd_ok hs ho ha) fun _ ⟨h, e, _⟩ => ⟨h, e⟩
 
 end VG.Proof.X25519.X86_64
