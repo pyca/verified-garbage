@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Spec.X448.Field16
+import VerifiedGarbage.Proof.X448.X86.FnLit
 
 /-!
 # X448 on x86 (32-bit): the field functions' `Verified`
@@ -56,7 +57,7 @@ theorem mulFn_correct (s : State) (hs : (binX86 fun o a b => o % Spec.X448.P = a
   obtain ⟨hp, ho, ha, hb, la, lb⟩ := hs
   have he := FnEntry.of_pre (n := 4) (by decide) hp ho ha
   obtain ⟨t, s', ex, hk, hv⟩ := mulFn_ok he (b := (arg s 3).toNat) (by simp) (slot_of_fits hb) la lb
-  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by decide +kernel)) (by decide +kernel) ex (fnPre_ret hp), hk.bounded, ?_, hk.mem.keeps⟩
+  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by lit_decide)) (by lit_decide) ex (fnPre_ret hp), hk.bounded, ?_, hk.mem.keeps⟩
   rw [valAt_eq, valAt_eq, valAt_eq]
   exact toFe_eq_iff.mp (hv.trans (toFe_mul rfl).symm)
 
@@ -66,7 +67,7 @@ theorem addFn_correct (s : State) (hs : (binX86 fun o a b => o % Spec.X448.P = (
   obtain ⟨hp, ho, ha, hb, la, lb⟩ := hs
   have he := FnEntry.of_pre (n := 4) (by decide) hp ho ha
   obtain ⟨t, s', ex, hk, hv⟩ := addFn_ok he (b := (arg s 3).toNat) (by simp) (slot_of_fits hb) la lb
-  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by decide +kernel)) (by decide +kernel) ex (fnPre_ret hp), hk.bounded, ?_, hk.mem.keeps⟩
+  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by lit_decide)) (by lit_decide) ex (fnPre_ret hp), hk.bounded, ?_, hk.mem.keeps⟩
   rw [valAt_eq, valAt_eq, valAt_eq]
   exact toFe_eq_iff.mp (hv.trans (toFe_add rfl).symm)
 
@@ -76,7 +77,7 @@ theorem subFn_correct (s : State) (hs : (binX86 fun o a b => (o + b) % Spec.X448
   obtain ⟨hp, ho, ha, hb, la, lb⟩ := hs
   have he := FnEntry.of_pre (n := 4) (by decide) hp ho ha
   obtain ⟨t, s', ex, hk, hv⟩ := subFn_ok he (b := (arg s 3).toNat) (by simp) (slot_of_fits hb) la lb
-  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by decide +kernel)) (by decide +kernel) ex (fnPre_ret hp), hk.bounded, ?_, hk.mem.keeps⟩
+  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by lit_decide)) (by lit_decide) ex (fnPre_ret hp), hk.bounded, ?_, hk.mem.keeps⟩
   rw [valAt_eq, valAt_eq, valAt_eq]
   exact toFe_sub_inv hv
 
@@ -85,7 +86,7 @@ theorem mulA24Fn_correct (s : State) (hs : a24X86.pre s) :
   obtain ⟨hp, ho, ha, la⟩ := hs
   have he := FnEntry.of_pre (n := 3) (by decide) hp ho ha
   obtain ⟨t, s', ex, hk, hv⟩ := mulA24Fn_ok he la
-  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by decide +kernel)) (by decide +kernel) ex (fnPre_ret hp), hk.bounded, ?_, hk.mem.keeps⟩
+  refine ⟨t, s', ex, hk.abi (NoSp.of_all (by lit_decide)) (by lit_decide) ex (fnPre_ret hp), hk.bounded, ?_, hk.mem.keeps⟩
   rw [valAt_eq, valAt_eq]
   exact toFe_eq_iff.mp (hv.trans (toFe_a24 rfl).symm)
 

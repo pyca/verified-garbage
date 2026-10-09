@@ -24,7 +24,7 @@ def artifacts : List Artifact := [
     contract := mulContract X86.abi
     verified := mulFn_verified
     ofSig := by unfold mulContract binContract; exact ⟨_, _, _, rfl⟩
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
   { addApi with
     target := X86.target
     doc := addApi.doc (notes := notes)
@@ -32,7 +32,7 @@ def artifacts : List Artifact := [
     contract := addContract X86.abi
     verified := addFn_verified
     ofSig := by unfold addContract binContract; exact ⟨_, _, _, rfl⟩
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
   { subApi with
     target := X86.target
     doc := subApi.doc (notes := notes)
@@ -40,13 +40,13 @@ def artifacts : List Artifact := [
     contract := subContract X86.abi
     verified := subFn_verified
     ofSig := by unfold subContract binContract; exact ⟨_, _, _, rfl⟩
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
   { mulA24Api with
     target := X86.target
     doc := mulA24Api.doc (notes := notes)
     code := mulA24Fn
     contract := mulA24Contract X86.abi
     verified := mulA24Fn_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Gf448R16.X86
