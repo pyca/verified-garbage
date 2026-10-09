@@ -46,6 +46,13 @@ weak.linter.fast_instance_existing = false
 weak.linter.trailingWhitespace = false
 weak.linter.unicodeLinter = false
 weak.linter.whitespaceBeforeSemicolon = false
+# Batteries' `unreachableTactic` and `unnecessarySeqFocus` linters, on in
+# every module that imports them (through Mathlib), also run in the
+# interpreter: summed over the CI build cache's `.trace` files, about 200 s of
+# the build (122 s and 80 s, some 13,000 runs), 3% of
+# `Proof.ChaCha20Poly1305.X86_64.CT`.
+weak.linter.unreachableTactic = false
+weak.linter.unnecessarySeqFocus = false
 
 [[require]]
 name = "mathlib"
