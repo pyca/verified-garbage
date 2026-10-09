@@ -173,28 +173,28 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | vpmovmskb _ d _ => cases hs; exact k d
   | movqR d _ => cases hs; exact k d
   | movdquLoad _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
-  | movdquStore m _ => exact storeStepK_nil h hs
+  | movdquStore m _ => exact storeStepKD_nil h hs
   | xop op => cases op <;> (cases hs; exact h)
   | vop _ => cases hs; exact nx
   | vmovdquLoad _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vbroadcasti128 _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vbinLoad _ _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
-  | vmovdquStore l m _ => cases l <;> exact storeStepK_nil h hs
+  | vmovdquStore l m _ => cases l <;> exact storeStepKD_nil h hs
   | zop _ => cases hs; exact nx
   | vmovdqu32Load _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vbroadcasti32x4 _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vbroadcasti32x4H _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | zbcst _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vpmadd52Load _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
-  | vmovdqu32Store m _ => exact storeStepK_nil h hs
+  | vmovdqu32Store m _ => exact storeStepKD_nil h hs
   | eop _ => cases hs; exact nx
   | evLoad _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | evMadd52Load _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
-  | evStore m _ => exact storeStepK_nil h hs
-  | stmxcsr m => exact storeStepK_nil h hs
+  | evStore m _ => exact storeStepKD_nil h hs
+  | stmxcsr m => exact storeStepKD_nil h hs
   | ldmxcsr m => obtain ⟨-, rfl⟩ := some_cond hs; exact h
   | lfence => cases hs; exact h
-  | mul r => cases hs; simp only [mulStep, kill, h, List.filter_nil]
+  | mul r => cases hs; simp only [mulStepKD_eq, mulStep, kill, h, List.filter_nil]
   | mulx hi lo s =>
     obtain ⟨-, rfl⟩ := some_cond hs
     show KList.filter _ (killK τ hi) = []; rw [k]; rfl
