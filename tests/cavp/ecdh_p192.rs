@@ -3,7 +3,7 @@
 //! public key `QIUT`, and its shared secret with `QCAVS` is `ZIUT`; and keys
 //! that are not valid are refused.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use verified_garbage::ecdh::{Error, P192, PrivateKey};
 

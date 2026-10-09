@@ -1,7 +1,7 @@
 //! ECDH over p192 (`vg_ecdh_p192`), and public keys
 //! (`vg_ec_p192_public_key`).
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use super::{Error, P192, PrivateKey};
 use crate::arch::ec_p192::vg_ec_p192_public_key;
