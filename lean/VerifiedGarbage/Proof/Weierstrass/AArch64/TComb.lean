@@ -48,9 +48,10 @@ structure TCombVals (K : TCombCfg) (C : Curve) (tbl : List (List (Nat × Nat))) 
     (mul (K.H * geomW K.w K.J) (G C))
 
 /-- `x ∈ l` for the comb's lists, through `toComb`. -/
-macro "tcomb_mem" : tactic => `(tactic| (simp only [List.mem_cons, List.mem_append,
-  List.mem_singleton, true_or, or_true, combSlots, combWs, combRo, rcbW, rcbR, List.cons_append,
-  List.nil_append, TCombCfg.toComb]))
+macro "tcomb_mem" : tactic => `(tactic| first
+  | list_mem
+  | (simp only [List.mem_cons, List.mem_append, List.mem_singleton, true_or, or_true, combSlots,
+      combWs, combRo, rcbW, rcbR, List.cons_append, List.nil_append, TCombCfg.toComb]))
 
 /-- The selection's registers are neither `x0` nor `x19`. -/
 theorem sel_regs {n : Nat} (hn : n ≤ 9) {r : Reg} (hr : r = .x0 ∨ r = .x19) :
