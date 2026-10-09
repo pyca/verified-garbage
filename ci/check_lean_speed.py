@@ -54,6 +54,12 @@ without building. Exits non-zero on violations.
     regions before each failed match (seconds in a large context). Use
     `with_reducible assumption` or name the hypothesis.
     `BARE_ASSUMPTION_ALLOWED` counts the uses that remain.
+  * No `.trans` chain of state-update lemmas with placeholders
+    (`(gpr_setV _ _ _).trans <| (gpr_setV _ _ _).trans <| …`): unifying
+    `?s.setV ?r ?x` with the state unfolds the updates into structure
+    literals and tries wrong assignments (seconds per chain). Give the lemmas
+    their arguments, or prove the fact by `simp only [gpr_setV, …]`.
+    `PLACEHOLDER_CHAIN_ALLOWED` counts the uses that remain.
   * A module with `#guard_msgs` turns the profiler off
     (`set_option profiler false`, on a line of its own): the lakefile turns
     it on for every module (`ci/lean_profile.py`), and `#guard_msgs` would
@@ -107,6 +113,7 @@ HEAVY_HUBS_ALLOWED = {
 DECIDE_CONFIG = re.compile(r"\bdecide\s*:=\s*true\b")
 DECIDE_FLAG = re.compile(r"\b(?:simp|simp_all|simpa|dsimp)\b[^\n]*?\+decide\b")
 BARE_ASSUMPTION = re.compile(r"(?:<;>|\|)\s*(?:try\s+)?assumption\b")
+PLACEHOLDER_CHAIN = re.compile(r"\(\w+_set\w*(?:\s+_)+\)\.trans\b")
 # Helpers whose last argument, a check of every instruction of a function,
 # defaults to `decide +kernel`; the number of explicit arguments before it.
 CERT_HELPERS = {"Exec.preservedV": 1, "WP.preservedV": 1, "WP.withPreservedV": 1}
@@ -131,6 +138,7 @@ from lean_speed_allowed import (  # noqa: E402
     DECIDE_SIMP_ALLOWED,
     DEFAULT_CERT_ALLOWED,
     DEPTH_OMEGA_ALLOWED,
+    PLACEHOLDER_CHAIN_ALLOWED,
 )
 
 POW_LIT = "VerifiedGarbage.Proof.Framework.PowLit"
@@ -318,7 +326,7 @@ def main() -> int:
         paths[module] = rel
         depth = ("omega" in text and "max_le" not in text
                  and any(k in text for k in ("stackUse", "Depth", "depth ", "depth,", "depth]")))
-        code = (strip_comments(text) if depth or any(k in text for k in ("^", "tauto", "decide", "assumption", "reservedV"))
+        code = (strip_comments(text) if depth or any(k in text for k in ("^", "tauto", "decide", "assumption", "reservedV", "_set"))
                 else "")
         if "^" in code and module.startswith(POW_PREFIXES) and module != POW_LIT:
             m = NUM_EXP.search(code)
@@ -334,10 +342,13 @@ def main() -> int:
             if "+decide" in code:
                 decide_uses += DECIDE_FLAG.finditer(code)
         assumption_uses = list(BARE_ASSUMPTION.finditer(code)) if "assumption" in code else []
+        chain_uses = list(PLACEHOLDER_CHAIN.finditer(code)) if "_set" in code else []
         for found, allowed, what in (
             (decide_uses, DECIDE_SIMP_ALLOWED, "`decide := true` in simp; measure it against simprocs (`reduceCtorEq`, `↓reduceIte`, `Nat.reduce*`) and raise the count in ci/lean_speed_allowed.py only if it is cheaper"),
             (assumption_uses, BARE_ASSUMPTION_ALLOWED,
              "bare `assumption` after `<;>` or in `first`; use `with_reducible assumption`"),
+            (chain_uses, PLACEHOLDER_CHAIN_ALLOWED,
+             "`.trans` chain of state-update lemmas with `_` arguments; give them their arguments or use `simp only`"),
         ):
             n = allowed.get(key, 0)
             if len(found) > n:
