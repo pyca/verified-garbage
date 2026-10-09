@@ -106,8 +106,9 @@ def decSatState : State where
 
 theorem dec_sat (c : Proof.Rsa.AArch64.CrtImpl) :
     ∃ s, (Spec.RsaPkcs1Enc.decryptContract AArch64.abi (Dec.decStack (privOf c))).pre s := by
+  -- A literal stack lets `sig_sat_check` decide the precondition in the kernel.
+  rw [show Dec.decStack (privOf c) = 3472 from rfl]
   sig_implies_sat [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs,
-    Dec.decStack, privOf, Proof.Rsa.AArch64.stackBytes, stackArgs_fifteen, List.append_eq, Spec.Rsa.lenValid] [decSatState,
-    stackArg, stackArgAddr, Mem.readW, Mem.read] using decSatState
+    stackArgs_fifteen, List.append_eq, Spec.Rsa.lenValid] [decSatState] using decSatState
 
 end VG.Proof.RsaPkcs1Enc.AArch64
