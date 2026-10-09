@@ -40,6 +40,15 @@ theorem sch_frame3 {s₀ : State} (hp : SPre s₀) {m : Mem} (hf : Frame [dR s�
   · exact hp.p_k.symm.sub_left (Region.sub_prefix hn)
   · exact hp.c_k.symm.sub_left (Region.sub_prefix hn)
 
+/-- The key schedule, as the rounds need it, from a state that has not
+written it. -/
+theorem keys_of {s₀ : State} (hp : SPre s₀) {t : State} (h1 : t.gpr .rdi = kp s₀) (h2 : t.rd = s₀.rd)
+    (h3 : t.wr = s₀.wr) (h4 : Frame [dR s₀, pR s₀, cR s₀] s₀.mem t.mem) : Keys (nr s₀) (sch s₀) t :=
+  ⟨by rw [h1, sch_frame3 hp h4], by rcases hp.rounds with h | h | h <;> omega,
+    fun j hj => by
+      rw [h2, h3, h1]
+      exact Stitch.in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega)⟩
+
 /-- A 64-byte store of `b` to `r11 + d`. -/
 theorem store1Z_ok (b : XReg) (d : Nat) (s : State)
     (hin : InRegions s.wr (s.gpr .r11 + BitVec.ofInt 64 (d : Int)) 64) :
@@ -141,11 +150,7 @@ theorem ksBatch_ok {s₀ : State} (hp : SPre s₀) {k : Nat} (hk : k ≤ 4) (g :
       Frame [ksR s₀] s.mem s'.mem ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
   have hwp := hp.wrap_p
   have kys : ∀ t, t.gpr .rdi = kp s₀ → t.rd = s₀.rd → t.wr = s₀.wr → Frame [dR s₀, pR s₀, cR s₀] s₀.mem t.mem →
-      Keys (nr s₀) (sch s₀) t := fun t h1 h2 h3 h4 =>
-    ⟨by rw [h1, sch_frame3 hp h4], by rcases hp.rounds with h | h | h <;> omega,
-      fun j hj => by
-        rw [h2, h3, h1]
-        exact Stitch.in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega)⟩
+      Keys (nr s₀) (sch s₀) t := fun _ h1 h2 h3 h4 => keys_of hp h1 h2 h3 h4
   have hK : Keys (nr s₀) (sch s₀) s := kys s hrdi hrd hwr hfr
   suffices h : WP isa (ksBatch k g) s fun s' => Q 10 s' ∧
       (∀ i < 4 * k, blockAt s'.mem (pp s₀ + BitVec.ofNat 64 (768 + 16 * i)) =
