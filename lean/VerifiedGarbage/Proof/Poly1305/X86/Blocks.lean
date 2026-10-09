@@ -2720,7 +2720,7 @@ theorem add16_eq (n : BitVec 32) : n + n + (n + n) + (n + n + (n + n)) + (n + n 
     BitVec.ofNat 32 (16 * n.toNat) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega_using []
+  grind
 
 /-- `16 n + b`, from the arguments `n` at `[esp + 12]` and `b` at `[esp + 8]`,
 compared with `esi`. -/
