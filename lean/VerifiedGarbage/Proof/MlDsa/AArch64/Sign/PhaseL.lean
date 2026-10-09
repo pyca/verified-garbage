@@ -116,7 +116,7 @@ def lChk (p : Params) : Bool :=
     keepB (sgR p) (sgW p) [(sc oKAP, 8)] (sc oCNT) 8 && inB (sgW p) (sc oKAP) 8 && ikChk p [(sc oKAP, 8)]
 
 theorem lChk_ok {p : Params} (h : Ok3 p) : lChk p = true := by
-  rcases h with rfl | rfl | rfl <;> decide
+  rcases h with rfl | rfl | rfl <;> decide +kernel
 
 theorem one_sub_one : (1 : BitVec 64) - BitVec.ofNat 64 1 = 0 := by decide
 

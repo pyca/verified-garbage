@@ -24,7 +24,7 @@ def optimizedDotChk (p : Params) (i : Nat) : Bool :=
   sepB (sgR p) (sgW p) b (1024*p.ℓ) z 1024 && stChk p (dotWrites p i)
 
 theorem optimizedDotChk_ok {p : Params} (hp : Ok3 p) : ∀i<p.k,optimizedDotChk p i=true := by
-  rcases hp with rfl | rfl | rfl <;> decide
+  rcases hp with rfl | rfl | rfl <;> decide +kernel
 
 theorem optimizedDotReady {p : Params} {S : Nat} {σ s : State} {i : Nat}
     (hc : optimizedDotChk p i=true) (hs : RootedSt p S σ s)

@@ -113,7 +113,7 @@ def lChk (p : Params) : Bool :=
     keepB (sgB p) [(sc oKAP, 8)] (sc oCNT) 8 && inB (sgW p) (sc oKAP) 8 && ikChk p [(sc oKAP, 8)]
 
 theorem lChk_ok {p : Params} (h : Ok3 p) : lChk p = true := by
-  rcases h with rfl | rfl | rfl <;> decide
+  rcases h with rfl | rfl | rfl <;> decide +kernel
 
 theorem ofNat64_sub_one {k : Nat} (h : 1 ≤ k) (hk : k < 2 ^ 64) : BitVec.ofNat 64 k - 1 = BitVec.ofNat 64 (k - 1) :=
   VG.Proof.MlKem.X86_64.ofNat64_pred h hk

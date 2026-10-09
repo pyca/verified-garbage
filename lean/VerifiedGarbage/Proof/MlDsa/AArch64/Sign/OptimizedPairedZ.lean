@@ -26,7 +26,7 @@ def pairedZChk (p : Params) (r : Nat) : Bool :=
   ws.all (fun w => inB (sgW p) w.1 w.2)
 
 theorem pairedZChk_ok {p : Params} (hp : Ok3 p) : ∀r<p.ℓ,r+1<p.ℓ → pairedZChk p r=true := by
-  rcases hp with rfl | rfl | rfl <;> decide
+  rcases hp with rfl | rfl | rfl <;> decide +kernel
 
 theorem paired_pS_addr (s : State) (b j : Nat) :
     pairPolyPtr (pa s (pS b)) j=pa s (pS (b+j)) := by

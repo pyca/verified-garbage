@@ -11,7 +11,7 @@ def canonicalizeZKeepChk (p : Params) : Bool :=
     if j=r then true else keepB (sgR p) (sgW p) [(yP p r,1024)] (yP p j) 1024
 
 theorem canonicalizeZKeepChk_ok {p : Params} (hp : Ok3 p) : canonicalizeZKeepChk p=true := by
-  rcases hp with rfl | rfl | rfl <;> decide
+  rcases hp with rfl | rfl | rfl <;> decide +kernel
 
 theorem canonicalizeZ_keep {p : Params} (hc : canonicalizeZKeepChk p=true)
     {r j : Nat} (hr : r<p.ℓ) (hj : j<p.ℓ) (hne : j≠r) :

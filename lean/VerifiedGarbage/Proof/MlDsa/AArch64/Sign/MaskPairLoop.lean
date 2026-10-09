@@ -10,7 +10,7 @@ def masksPairChk (p : Params) : Bool :=
   (List.range p.ℓ).all (mChk p)
 
 theorem masksPairChk_ok {p : Params} (h : Ok3 p) : masksPairChk p=true := by
-  rcases h with rfl | rfl | rfl <;> decide
+  rcases h with rfl | rfl | rfl <;> decide +kernel
 
 theorem masksPaired_ok {P : Prims} {D : Nat} (hP : PrimsOk P D)
     {nm : String} {cd : Prog isa} (C : CalleeOk D cd (expandMaskPairContract AArch64.abi D))

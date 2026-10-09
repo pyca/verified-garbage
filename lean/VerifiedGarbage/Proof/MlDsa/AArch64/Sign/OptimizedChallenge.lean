@@ -52,7 +52,7 @@ def positiveChallengeChk (p : Params) : Bool :=
   icwChk p [(cP,1024)] p.k && keepB (sgR p) (sgW p) [(cP,1024)] (sc oCT) (cLen p)
 
 theorem positiveChallengeChk_ok {p : Params} (hp : Ok3 p) : positiveChallengeChk p=true := by
-  rcases hp with rfl | rfl | rfl <;> decide
+  rcases hp with rfl | rfl | rfl <;> decide +kernel
 
 theorem positiveChallenge_ok {p : Params} {S : Nat} {σ s : State} {t : Nat}
     (hp : Ok3 p) (h : PositiveIB p S σ t s) (h1 : (s.gpr .x0).setWidth 32=1) :
