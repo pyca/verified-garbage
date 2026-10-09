@@ -30,6 +30,14 @@ def accR (X : Nat → Block) (T : Nat → BitVec 128) (y : Block) : Nat → Prod
   | 0 => Prod.zero
   | i + 1 => (accR X T y i).acc ((if i = 0 then y else 0) ^^^ X i) (T i)
 
+theorem accR_congr {X X' : Nat → Block} {T T' : Nat → BitVec 128} (y : Block) :
+    ∀ n, (∀ j < n, X j = X' j) → (∀ j < n, T j = T' j) → accR X T y n = accR X' T' y n
+  | 0, _, _ => rfl
+  | n + 1, hX, hT => by
+    simp only [accR]
+    rw [accR_congr y n (fun j hj => hX j (by omega)) (fun j hj => hT j (by omega)), hX n (by omega),
+      hT n (by omega)]
+
 /-- What the loop does not change: the `r` blocks at `S` (read through
 `src`), written to `A`, the working space at `P` (the keystream at
 `P + 768`), the powers at `W`, the registers but `r9`, `r10` (`g`), the

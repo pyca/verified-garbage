@@ -328,6 +328,71 @@ theorem rem_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf :
         rw [l₃ _ (by decide) (by decide) (by decide), ← State.zlane_lt2 _ _ (by decide)]
         exact h1₂ 0 (by decide) }
   refine WP.seq (WP.mono (remLoop_ok hE hI₃) fun s₄ hI₄ => ?_)
+  -- The products reduced into `Y`, and `Y` stored.
+  rw [WP.block_append_iff]
+  refine WP.mono (Gcm.X86_64.StitchAvx.reduceHash_ok s₄ hI₄.m1) fun s₅ ⟨y₅, f₅⟩ => ?_
+  have hrcx : s₅.gpr .rcx = yp s₀ := by
+    rw [f₅.gpr, hI₄.gpr _ (by decide) (by decide)]
+    show s₃.gpr .rcx = _
+    rw [gk₃ _ (by decide) (by decide) (by decide)]
+    exact hI.gpr _ (by decide) (by decide) (by decide) (by decide)
+  rw [show storeY = [.vop (.vbin .vpshufb .l128 .xmm2 .xmm2 .xmm0),
+    .vmovdquStore .l128 (at_ .rcx 0) .xmm2] ++ [.vop .vzeroupper] from rfl, WP.block_append_iff]
+  refine WP.mono (Gcm.X86_64.StitchZ.store16Z_ok .xmm2 .xmm2 .rcx s₅
+    (by rw [f₅.lane _ (by decide) 0 (by decide)]; exact hI₄.m0)
+    (by rw [hrcx, f₅.wr, hI₄.wr]; show InRegions s₃.wr _ _; rw [hwr₃]; exact hp.y_in))
+    fun s₆ ⟨m₆, g₆, rd₆, wr₆, _⟩ => ?_
+  rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ?_⟩
+  rw [hrcx, f₅.mem] at m₆
+  have hnb : nb s₀ = 16 * e + r := by omega
+  -- What the stages keep of the memory before them.
+  have toS : ∀ p : Addr, Region.Disjoint ⟨p, 16⟩ (cR s₀) → Region.Disjoint ⟨p, 16⟩ (ksR s₀) →
+      blockAt s₃.mem p = blockAt s.mem p := fun p hc hk => by
+    rw [m₃, blockAt_frame f₂ (fun r' hr' => by simp only [List.mem_singleton] at hr'; subst hr'; exact hk), m₁,
+      show cp s₀ = (cR s₀).base from rfl, blockAt_writeW_sep' hc rfl]
+  have ksP : ∀ k, k < nb s₀ → Region.Disjoint ⟨bAddr s₀ k, 16⟩ (ksR s₀) := fun k hk =>
+    (hp.d_p.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega))
+  have cP : ∀ k, k < nb s₀ → Region.Disjoint ⟨bAddr s₀ k, 16⟩ (cR s₀) := fun k hk =>
+    hp.d_c.sub_left (Offset.sub_base _ (by omega))
+  -- The blocks.
+  have hb₄ : ∀ k < nb s₀, blockAt s₄.mem (bAddr s₀ k) = ctb s₀ k := by
+    intro k hk
+    by_cases hke : k < 16 * e
+    · rw [blockAt_frame hI₄.frame (fun r' hr' => by
+          simp only [List.mem_singleton] at hr'; subst hr'
+          show Region.Disjoint _ ⟨bAddr s₀ (16 * e), 16 * r⟩
+          exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)),
+        toS _ (cP k hk) (ksP k hk), hI.a.blocks k hk]
+      simp only [hke, ite_true]
+    · obtain ⟨j, rfl⟩ : ∃ j, k = 16 * e + j := ⟨k - 16 * e, by omega⟩
+      have hj : j < r := by omega
+      have ct := hI₄.ct j hj
+      have eD : E.aD j = bAddr s₀ (16 * e + j) := by
+        show bAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j) = _
+        rw [Offset.add_add, ← Nat.mul_add]
+      rw [eD] at ct
+      rw [ct]
+      show blockAt s₃.mem (bAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) ^^^
+        blockAt s₃.mem (pp s₀ + BitVec.ofNat 64 (768 + 16 * j)) = _
+      rw [Offset.add_add, ← Nat.mul_add, toS _ (cP _ hk) (ksP _ hk), hI.a.blocks _ hk, m₃, ks₂ j hj]
+      simp only [hke, ite_false]
+  have hX : ∀ j < r, E.X j = ctb s₀ (16 * e + j) := fun j hj => by
+    have hk : 16 * e + j < nb s₀ := by omega
+    show blockAt s₃.mem (bAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) ^^^
+      blockAt s₃.mem (pp s₀ + BitVec.ofNat 64 (768 + 16 * j)) = _
+    rw [Offset.add_add, ← Nat.mul_add, toS _ (cP _ hk) (ksP _ hk), hI.a.blocks _ hk, m₃, ks₂ j hj]
+    simp only [show ¬ 16 * e + j < 16 * e by omega, ite_false]
+  have hT : ∀ j < r, E.T j = P ((16 - r + j) / 4) ((16 - r + j) % 4) := fun j hj => by
+    show s₃.mem.readW (pp s₀ + BitVec.ofNat 64 (256 - 16 * r) + BitVec.ofNat 64 (16 * j)) 128 = _
+    have hm : 16 - r + j < 16 := by omega
+    rw [Offset.add_add, show 256 - 16 * r + 16 * j = 64 * ((16 - r + j) / 4) + 16 * ((16 - r + j) % 4) by omega,
+      m₃, f₂.readW (r := ⟨pp s₀ + BitVec.ofNat 64 (64 * ((16 - r + j) / 4) + 16 * ((16 - r + j) % 4)), 16⟩)
+        (Region.contains_self _ _) (fun r' hr' => by
+          simp only [List.mem_singleton] at hr'; subst hr'
+          exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)) (by decide),
+      m₁, Mem.readW_writeW_sep ((hp.p_c.sub_left (Offset.sub_base _ (by omega))).sep
+          (Region.contains_self _ _) cw) (by decide)]
+    exact hI.pw _ (by omega) _ (by omega)
   sorry
 
 end VG.Proof.Gcm.X86_64.StitchZH
