@@ -126,7 +126,7 @@ theorem stores_E {s : State} {base : Addr} (hs : Scr s base) (i : Index) (rs : L
   rw [hl] at e o
   refine ⟨?_, o, g, rd, wr⟩
   rw [E_update (o.left ACC 112)]
-  congr 1
+  refine congrArg (Function.update (E s.mem base) i) ?_
   simp only [F, fe, e]
 
 theorem setup_eq : setup = save ++ (([.mov .r15 (.reg .rdi), .mov .rdi (.reg .rcx)] : List Instr) ++
