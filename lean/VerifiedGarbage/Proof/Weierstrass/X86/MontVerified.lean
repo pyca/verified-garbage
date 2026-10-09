@@ -1,4 +1,6 @@
 import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
 import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
 import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
 import VerifiedGarbage.Proof.Framework.X86.Taint
