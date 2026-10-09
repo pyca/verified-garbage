@@ -233,12 +233,14 @@ def decSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x10008 then 1 else if a = 0x10011 then 0x41 else if a = 0x10018 then 1
-    else if a = 0x10021 then 0x42 else if a = 0x10028 then 1 else if a = 0x10031 then 0x43
-    else if a = 0x10038 then 1 else if a = 0x10041 then 0x44 else if a = 0x10048 then 1
-    else if a = 0x10051 then 0x45 else if a = 0x10058 then 1 else if a = 0x10061 then 0x46
-    else if a = 0x10071 then 0x47 else if a = 0x10078 then 64 else if a = 0x10082 then 0x02
-    else if a = 0x10089 then 0x08 else 0
+  mem a := bif Nat.beq a.toNat 0x10008 then 1 else bif Nat.beq a.toNat 0x10011 then 0x41
+    else bif Nat.beq a.toNat 0x10018 then 1 else bif Nat.beq a.toNat 0x10021 then 0x42
+    else bif Nat.beq a.toNat 0x10028 then 1 else bif Nat.beq a.toNat 0x10031 then 0x43
+    else bif Nat.beq a.toNat 0x10038 then 1 else bif Nat.beq a.toNat 0x10041 then 0x44
+    else bif Nat.beq a.toNat 0x10048 then 1 else bif Nat.beq a.toNat 0x10051 then 0x45
+    else bif Nat.beq a.toNat 0x10058 then 1 else bif Nat.beq a.toNat 0x10061 then 0x46
+    else bif Nat.beq a.toNat 0x10071 then 0x47 else bif Nat.beq a.toNat 0x10078 then 64
+    else bif Nat.beq a.toNat 0x10082 then 0x02 else bif Nat.beq a.toNat 0x10089 then 0x08 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4100, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩, ⟨0x4500, 1⟩,
     ⟨0x4600, 0⟩, ⟨0x4700, 64⟩, ⟨0x10008, 136⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1800, 8⟩, ⟨0x20000, 2048 * 8⟩]
