@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Sha256.StateMem
 import VerifiedGarbage.Proof.Sha256.X86.Contract
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.MdStream.X86.Finalize
+import VerifiedGarbage.Proof.MdStream.X86.Update
 import VerifiedGarbage.Proof.MdStream.X86.Words
 import VerifiedGarbage.Proof.Sha256.Md
 import VerifiedGarbage.Impl.Sha256.X86.Stream
