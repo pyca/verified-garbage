@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Blake2.Arm.BlockB
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.Spec
 import VerifiedGarbage.Impl.Argon2.Arm.Compress
 
@@ -122,18 +123,35 @@ theorem mulHiV_eq (x y : BitVec 32) : mulHiV x y = BitVec.ofNat 32 (x.toNat * y.
   have r01 := toNat_hi16 p01
   have r10 := toNat_hi16 p10
   have m1 : ((p01 <<< 16 >>> 16) + (p00 >>> 16)).toNat = p01.toNat % 2 ^ 16 + p00.toNat / 2 ^ 16 := by
-    rw [toNat_add_lt (by rw [q01, r00]; omega), q01, r00]
+    rw [toNat_add_lt (by rw [q01, r00]; omega_using [l00]), q01, r00]
   have m2 : ((p01 <<< 16 >>> 16) + (p00 >>> 16) + (p10 <<< 16 >>> 16)).toNat =
       p01.toNat % 2 ^ 16 + p00.toNat / 2 ^ 16 + p10.toNat % 2 ^ 16 := by
-    rw [toNat_add_lt (by rw [m1, q10]; omega), m1, q10]
+    rw [toNat_add_lt (by rw [m1, q10]; omega_using [l00]), m1, q10]
   generalize (p01 <<< 16 >>> 16) + (p00 >>> 16) + (p10 <<< 16 >>> 16) = m at m2 ⊢
   have rm := toNat_hi16 m
   have a1 : (p11 + (p01 >>> 16)).toNat = p11.toNat + p01.toNat / 2 ^ 16 := by
-    rw [toNat_add_lt (by rw [r01]; omega), r01]
+    rw [toNat_add_lt (by rw [r01]; omega_using [l11, l01]), r01]
   have a2 : (p11 + (p01 >>> 16) + (p10 >>> 16)).toNat = p11.toNat + p01.toNat / 2 ^ 16 + p10.toNat / 2 ^ 16 := by
-    rw [toNat_add_lt (by rw [a1, r10]; omega), a1, r10]
-  rw [toNat_add_lt (by rw [a2, rm, m2]; omega), a2, rm, m2]
+    rw [toNat_add_lt (by rw [a1, r10]; omega_using [l11, l01, l10]), a1, r10]
+  rw [toNat_add_lt (by rw [a2, rm, m2]; omega_using [l11, l01, l10, l00]), a2, rm, m2]
   generalize x.toNat * y.toNat = P at split ⊢
+  generalize p00.toNat = c at split l00 ⊢
+  generalize p01.toNat = a at split l01 ⊢
+  generalize p10.toNat = b at split l10 ⊢
+  generalize p11.toNat = d at split l11 ⊢
+  have ha := Nat.div_add_mod a (2 ^ 16)
+  have hb := Nat.div_add_mod b (2 ^ 16)
+  have hc := Nat.div_add_mod c (2 ^ 16)
+  have ha' := Nat.mod_lt a (show 2 ^ 16 > 0 by decide)
+  have hb' := Nat.mod_lt b (show 2 ^ 16 > 0 by decide)
+  have hc' := Nat.mod_lt c (show 2 ^ 16 > 0 by decide)
+  generalize a / 2 ^ 16 = a1 at ha ⊢
+  generalize a % 2 ^ 16 = a0 at ha ha' ⊢
+  generalize b / 2 ^ 16 = b1 at hb ⊢
+  generalize b % 2 ^ 16 = b0 at hb hb' ⊢
+  generalize c / 2 ^ 16 = c1 at hc ⊢
+  generalize c % 2 ^ 16 = c0 at hc hc' ⊢
+  subst ha hb hc split
   omega
 
 /-- Two distinct registers, from the hypotheses, in either order. -/
