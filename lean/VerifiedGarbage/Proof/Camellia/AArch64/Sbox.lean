@@ -31,7 +31,7 @@ def sboxPost (e : Env Nat) : Bool :=
 
 theorem sbox_check :
     check (table 64 256) sboxCfg (fun _ => none) Impl.Camellia.AArch64.sboxCode sboxEnv sboxPost = true := by
-  decide +kernel
+  lit_decide
 
 /-- The registers the layers may write: the state, the S-box's temporaries
 and all ones, and the linear layers' masks and temporaries. -/
@@ -85,8 +85,7 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
     have hc := (bsByte (fun k => s.gpr (q k)) p).isLt
     have := p₁.rel.reg (q j) _ (hout j hj)
     simp only [TableRel] at this
-    rw [← this, sbox1T, testBit_tableOf]
-    simp [hc]
+    rw [← this, testBit_sbox1T hc, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · simp [writes_rest (is := Impl.Camellia.AArch64.sboxCode) (by decide +kernel) r hr]
 
 end VG.Proof.Camellia.AArch64
