@@ -13,7 +13,7 @@ data.
 namespace VG.Proof.Gcm.X86_64.StitchZH
 
 open VG VG.X86_64
-open VG.Proof.Gcm.X86_64.Stitch (SPre nb nr kp pp cb dp dR pR bAddr ciph sch sch_frame in_sub_int)
+open VG.Proof.Gcm.X86_64.Stitch (SPre nb nr kp pp cb dp dR pR cR bAddr ciph sch in_sub_int)
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs)
 open VG.Impl.Gcm.X86_64.StitchZH (ksStores ksBatch)
@@ -24,6 +24,21 @@ open VG.Spec.Gcm (Block blockAt inc32)
 
 /-- Where the keystream goes, in the working space. -/
 abbrev ksR (s₀ : State) : Region := ⟨pp s₀ + BitVec.ofNat 64 768, 256⟩
+
+/-- The key schedule is not in the data, the working space or the counter. -/
+theorem sch_frame3 {s₀ : State} (hp : SPre s₀) {m : Mem} (hf : Frame [dR s₀, pR s₀, cR s₀] s₀.mem m) :
+    Spec.Aes.bytesAt m (kp s₀) (16 * (nr s₀ + 1)) = sch s₀ := by
+  have hn : 16 * (nr s₀ + 1) ≤ 256 := by rcases hp.rounds with h | h | h <;> omega
+  simp only [sch, Spec.Aes.bytesAt]
+  refine List.map_congr_left fun i hi => ?_
+  simp only [List.mem_range] at hi
+  refine hf.bytes (R := ⟨kp s₀, 16 * (nr s₀ + 1)⟩) (fun r hr => ?_)
+    (by show 16 * (nr s₀ + 1) ≤ 2 ^ 64; omega) hi
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact hp.d_k.symm.sub_left (Region.sub_prefix hn)
+  · exact hp.p_k.symm.sub_left (Region.sub_prefix hn)
+  · exact hp.c_k.symm.sub_left (Region.sub_prefix hn)
 
 /-- A 64-byte store of `b` to `r11 + d`. -/
 theorem store1Z_ok (b : XReg) (d : Nat) (s : State)
@@ -111,7 +126,11 @@ theorem ksBatch_ok {s₀ : State} (hp : SPre s₀) {k : Nat} (hk : k ≤ 4) (g :
     (hq : ∀ j s s', Q j s → ZFrame (.xmm13 :: .xmm14 :: aregs) s s' → Q j s')
     (hqx : ∀ s s', Q 10 s → s'.gpr = s.gpr → s'.rd = s.rd → s'.wr = s.wr →
       (∀ r l, s'.zlane r l = s.zlane r l) → Frame [ksR s₀] s.mem s'.mem → Q 10 s')
-    {c : Nat} {s : State} (hI : AInv s₀ c s) (h11 : s.gpr .r11 = pp s₀)
+    {c : Nat} {s : State}
+    (hctr : ∀ l < 4, s.zlane .xmm14 l = Nat.repeat inc32 (c + l) (cb s₀))
+    (hmsk : ∀ l < 4, s.zlane .xmm0 l = revMask) (hinc : ∀ l < 4, s.zlane .xmm15 l = four)
+    (hrdi : s.gpr .rdi = kp s₀) (hrsi : s.gpr .rsi = s₀.gpr .rsi) (h11 : s.gpr .r11 = pp s₀)
+    (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hfr : Frame [dR s₀, pR s₀, cR s₀] s₀.mem s.mem)
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s)
     (hgh : ∀ j, (g j).all Instr.keepsH = true) (hQ : Q 1 s) :
     WP isa (ksBatch k g) s fun s' => Q 10 s' ∧
@@ -121,12 +140,13 @@ theorem ksBatch_ok {s₀ : State} (hp : SPre s₀) {k : Nat} (hk : k ≤ 4) (g :
       (∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → r ∉ G → ∀ l < 4, s'.zlane r l = s.zlane r l) ∧
       Frame [ksR s₀] s.mem s'.mem ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
   have hwp := hp.wrap_p
-  have kys : ∀ t, t.gpr .rdi = kp s₀ → t.rd = s₀.rd → t.wr = s₀.wr → Frame [dR s₀, pR s₀] s₀.mem t.mem →
+  have kys : ∀ t, t.gpr .rdi = kp s₀ → t.rd = s₀.rd → t.wr = s₀.wr → Frame [dR s₀, pR s₀, cR s₀] s₀.mem t.mem →
       Keys (nr s₀) (sch s₀) t := fun t h1 h2 h3 h4 =>
-    ⟨by rw [h1, sch_frame hp h4], by rcases hp.rounds with h | h | h <;> omega,
+    ⟨by rw [h1, sch_frame3 hp h4], by rcases hp.rounds with h | h | h <;> omega,
       fun j hj => by
         rw [h2, h3, h1]
         exact Stitch.in_sub_int hp.k_in (by rcases hp.rounds with h | h | h <;> omega)⟩
+  have hK : Keys (nr s₀) (sch s₀) s := kys s hrdi hrd hwr hfr
   suffices h : WP isa (ksBatch k g) s fun s' => Q 10 s' ∧
       (∀ i < 4 * k, blockAt s'.mem (pp s₀ + BitVec.ofNat 64 (768 + 16 * i)) =
         ciph s₀ (Nat.repeat inc32 (c + i) (cb s₀))) ∧
@@ -134,9 +154,9 @@ theorem ksBatch_ok {s₀ : State} (hp : SPre s₀) {k : Nat} (hk : k ≤ 4) (g :
       (∀ r, r ≠ .xmm13 → r ≠ .xmm14 → r ∉ aregs → r ∉ G → ∀ l < 4, s'.zlane r l = s.zlane r l) ∧
       Frame [ksR s₀] s.mem s'.mem from
     WP.mono (WP.hkeepCode (by rfl) (ksBatch_keeps k g hgh) h)
-      fun t ⟨⟨hq, hks, hg', hrd, hwr, hl, hf⟩, hh⟩ => ⟨hq, hks, hg', hrd, hwr, hl, hf, hCache.keep hh
-        (kys t (by rw [hg']; exact hI.rdi) (by rw [hrd]; exact hI.rd) (by rw [hwr]; exact hI.wr)
-          (hI.frame.trans (hf.sub fun r hr => by
+      fun t ⟨⟨hq, hks, hg', hrd', hwr', hl, hf⟩, hh⟩ => ⟨hq, hks, hg', hrd', hwr', hl, hf, hCache.keep hh
+        (kys t (by rw [hg']; exact hrdi) (by rw [hrd']; exact hrd) (by rw [hwr']; exact hwr)
+          (hfr.trans (hf.sub fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
             exact ⟨pR s₀, by simp, Offset.sub_base _ (by omega)⟩)))⟩
   obtain ⟨hnd, h13, hx⟩ := aregs_ok
@@ -145,8 +165,8 @@ theorem ksBatch_ok {s₀ : State} (hp : SPre s₀) {k : Nat} (hk : k ≤ 4) (g :
   have h13' : .xmm13 ∉ aregs.take k := fun h => h13 (List.mem_of_mem_take h)
   have hlen : (aregs.take k).length = k := by simp [aregs]; omega
   refine WP.seq (WP.mono (WP.hkeep (ctrsZ_keeps _ _ _ _) (ctrsZ_ok .xmm14 .xmm0 .xmm15 (by decide) (by decide)
-    (aregs.take k) s (cb s₀) c hnd' hx' hI.ctr hI.msk hI.inc)) fun s₁ ⟨⟨e₁, c₁, f₁⟩, hh₁⟩ => ?_)
-  have hK₁ : Keys (nr s₀) (sch s₀) s₁ := ZFrame.of_keys (hI.keys hp) f₁
+    (aregs.take k) s (cb s₀) c hnd' hx' hctr hmsk hinc)) fun s₁ ⟨⟨e₁, c₁, f₁⟩, hh₁⟩ => ?_)
+  have hK₁ : Keys (nr s₀) (sch s₀) s₁ := ZFrame.of_keys hK f₁
   have hCache₁ := hCache.keep hh₁ hK₁
   have hQ₁ : Q 1 s₁ := hq _ _ _ hQ (f₁.mono fun r hr => by
     rcases List.mem_cons.mp hr with rfl | hr
@@ -160,15 +180,14 @@ theorem ksBatch_ok {s₀ : State} (hp : SPre s₀) {k : Nat} (hk : k ≤ 4) (g :
       rcases List.mem_cons.mp hr with rfl | hr
       · exact List.mem_cons_self
       · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_of_mem_take hr)))) s₁ hCache₁ hQ₁
-    (by rw [f₁.gpr, hI.rsi]; simp)
-    (by rw [f₁.gpr, hI.r10, hI.rdi])) fun s₂ ⟨e₂, hQ₂, f₂⟩ => ?_)
+    (by rw [f₁.gpr, hrsi]; simp)) fun s₂ ⟨e₂, hQ₂, f₂⟩ => ?_)
   -- The keystream blocks.
   have ks : ∀ j (h : j < (aregs.take k).length), ∀ l < 4,
       XBinOp.eval .pshufb (s₂.zlane (aregs.take k)[j] l) revMask =
         ciph s₀ (Nat.repeat inc32 (c + 4 * j + l) (cb s₀)) := fun j h l hl =>
     (aesWith_eq _ _ _ _ (by rw [e₂ _ (List.getElem_mem h) l hl, e₁ j h l hl])).symm
   have h11₂ : s₂.gpr .r11 = pp s₀ := by rw [f₂.gpr, f₁.gpr, h11]
-  have hwr₂ : s₂.wr = s₀.wr := by rw [f₂.wr, f₁.wr, hI.wr]
+  have hwr₂ : s₂.wr = s₀.wr := by rw [f₂.wr, f₁.wr, hwr]
   refine WP.mono (ksStores_ok (aregs.take k) 0 s₂ (fun j hj => by
       rw [hwr₂, h11₂]; exact in_sub_int hp.p_in (by rw [hlen] at hj; omega))
       (by rw [hlen]; omega)) fun s₃ ⟨b₃, fr₃, g₃, rd₃, wr₃, x₃⟩ => ?_

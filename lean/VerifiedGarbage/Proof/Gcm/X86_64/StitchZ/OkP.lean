@@ -263,7 +263,7 @@ theorem enc_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) :
     WP isa Impl.Gcm.X86_64.StitchZH.enc s₀ (EPost s₀) :=
   WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
     encTailG_ok hp.base hm (finZ (finP hpw))
-      (fun _ h256 hI hC => bigP_ok hp hm (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
+      (fun _ h256 hI hC => bigP_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
 
 theorem dec_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) :
     WP isa Impl.Gcm.X86_64.StitchZH.dec s₀ (DPost s₀) :=
