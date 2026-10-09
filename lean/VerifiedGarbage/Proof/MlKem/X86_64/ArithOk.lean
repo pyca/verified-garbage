@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 
 /-!
 # The polynomial arithmetic a top-level function of ML-KEM calls on x86-64
@@ -53,60 +54,60 @@ structure ArithOk (A : Arith) : Prop where
   em : ∀ k, k = 3 ∨ k = 4 → CalleeOk (encMulK k) (encryptMul A.bodies k)
 
 theorem ArithOk.sse : ArithOk .sse where
-  mul := ⟨mul_correct, mul_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-    Code.all_of_allInstrs (by decide +kernel)⟩
-  ntt := ⟨ntt_correct, ntt_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-    Code.all_of_allInstrs (by decide +kernel)⟩
-  nttInv := ⟨nttInv_correct, nttInv_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-    Code.all_of_allInstrs (by decide +kernel)⟩
-  add := ⟨add_correct, add_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-    Code.all_of_allInstrs (by decide +kernel)⟩
-  sub := ⟨sub_correct, sub_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-    Code.all_of_allInstrs (by decide +kernel)⟩
-  cbd := ⟨cbd2_correct, cbd2_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-    Code.all_of_allInstrs (by decide +kernel)⟩
-  dec12 := ⟨decode12_correct, decode12_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-    Code.all_of_allInstrs (by decide +kernel)⟩
+  mul := ⟨mul_correct, mul_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+  ntt := ⟨ntt_correct, ntt_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+  nttInv := ⟨nttInv_correct, nttInv_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+  add := ⟨add_correct, add_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+  sub := ⟨sub_correct, sub_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+  cbd := ⟨cbd2_correct, cbd2_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+  dec12 := ⟨decode12_correct, decode12_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
   dm k hk := by
     rcases hk with rfl | rfl
-    · exact ⟨decMulSse3_correct, decMulSse3_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-        Code.all_of_allInstrs (by decide +kernel)⟩
-    · exact ⟨decMulSse4_correct, decMulSse4_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-        Code.all_of_allInstrs (by decide +kernel)⟩
+    · exact ⟨decMulSse3_correct, decMulSse3_ct, nosp_of (by lit_decide), by lit_decide, decMulSse3_ctl,
+        Code.all_of_allInstrs (by lit_decide)⟩
+    · exact ⟨decMulSse4_correct, decMulSse4_ct, nosp_of (by lit_decide), by lit_decide, decMulSse4_ctl,
+        Code.all_of_allInstrs (by lit_decide)⟩
   em k hk := by
     rcases hk with rfl | rfl
-    · exact ⟨encMulSse3_correct, encMulSse3_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-        Code.all_of_allInstrs (by decide +kernel)⟩
-    · exact ⟨encMulSse4_correct, encMulSse4_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-        Code.all_of_allInstrs (by decide +kernel)⟩
+    · exact ⟨encMulSse3_correct, encMulSse3_ct, nosp_of (by lit_decide), by lit_decide, encMulSse3_ctl,
+        Code.all_of_allInstrs (by lit_decide)⟩
+    · exact ⟨encMulSse4_correct, encMulSse4_ct, nosp_of (by lit_decide), by lit_decide, encMulSse4_ctl,
+        Code.all_of_allInstrs (by lit_decide)⟩
 
 theorem ArithOk.avx2 : ArithOk .avx2 where
-  mul := ⟨mulY_correct, mulY_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-    Code.all_of_allInstrs (by decide +kernel)⟩
-  ntt := ⟨nttY_correct, nttY_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-    Code.all_of_allInstrs (by decide +kernel)⟩
-  nttInv := ⟨nttInvY_correct, nttInvY_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-    Code.all_of_allInstrs (by decide +kernel)⟩
-  add := ⟨addY_correct, addY_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-    Code.all_of_allInstrs (by decide +kernel)⟩
-  sub := ⟨subY_correct, subY_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-    Code.all_of_allInstrs (by decide +kernel)⟩
-  cbd := ⟨cbd2_correct, cbd2_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-    Code.all_of_allInstrs (by decide +kernel)⟩
-  dec12 := ⟨decode12Y_correct, decode12Y_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-    Code.all_of_allInstrs (by decide +kernel)⟩
+  mul := ⟨mulY_correct, mulY_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+  ntt := ⟨nttY_correct, nttY_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+  nttInv := ⟨nttInvY_correct, nttInvY_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+  add := ⟨addY_correct, addY_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+  sub := ⟨subY_correct, subY_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+  cbd := ⟨cbd2_correct, cbd2_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
+  dec12 := ⟨decode12Y_correct, decode12Y_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
+    Code.all_of_allInstrs (by lit_decide)⟩
   dm k hk := by
     rcases hk with rfl | rfl
-    · exact ⟨decMulAvx3_correct, decMulAvx3_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-        Code.all_of_allInstrs (by decide +kernel)⟩
-    · exact ⟨decMulAvx4_correct, decMulAvx4_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-        Code.all_of_allInstrs (by decide +kernel)⟩
+    · exact ⟨decMulAvx3_correct, decMulAvx3_ct, nosp_of (by lit_decide), by lit_decide, decMulAvx3_ctl,
+        Code.all_of_allInstrs (by lit_decide)⟩
+    · exact ⟨decMulAvx4_correct, decMulAvx4_ct, nosp_of (by lit_decide), by lit_decide, decMulAvx4_ctl,
+        Code.all_of_allInstrs (by lit_decide)⟩
   em k hk := by
     rcases hk with rfl | rfl
-    · exact ⟨encMulAvx3_correct, encMulAvx3_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-        Code.all_of_allInstrs (by decide +kernel)⟩
-    · exact ⟨encMulAvx4_correct, encMulAvx4_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
-        Code.all_of_allInstrs (by decide +kernel)⟩
+    · exact ⟨encMulAvx3_correct, encMulAvx3_ct, nosp_of (by lit_decide), by lit_decide, encMulAvx3_ctl,
+        Code.all_of_allInstrs (by lit_decide)⟩
+    · exact ⟨encMulAvx4_correct, encMulAvx4_ct, nosp_of (by lit_decide), by lit_decide, encMulAvx4_ctl,
+        Code.all_of_allInstrs (by lit_decide)⟩
 
 /-- A call of `vg_mlkem*_decrypt_mul` keeps MXCSR's control bits. -/
 theorem ArithOk.dm_ctl {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
