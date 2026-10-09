@@ -15,7 +15,7 @@ def c := p256
 def P := c.invP
 
 def packed : List Instr :=
-  [.movz .x .x28 65535 0,
+  ([.movz .x .x28 65535 0,
    .movk .x .x28 15 1,
    .logic .and .x .x4 .x2 .x28,
    .movz .x .x28 0 0,
@@ -887,9 +887,9 @@ def packed : List Instr :=
    .mul .x .x26 .x15 .x16,
    .sub .x .x12 .x4 .x26,
    .mul .x .x26 .x15 .x17,
-   .sub .x .x13 .x5 .x26] ++
-  [.logic .orr .x .x4 .x10 .x10,.logic .orr .x .x5 .x11 .x11,
-   .logic .orr .x .x6 .x12 .x12,.logic .orr .x .x7 .x13 .x13]
+   .sub .x .x13 .x5 .x26] : List Instr) ++
+  ([.logic .orr .x .x4 .x10 .x10,.logic .orr .x .x5 .x11 .x11,
+   .logic .orr .x .x6 .x12 .x12,.logic .orr .x .x7 .x13 .x13] : List Instr)
 
 /-- Allocated fixed-modulus matrix update. Its emitted words are checked by a proof certificate. -/
 def update : List Instr := EcdhAllocatedCode.update
