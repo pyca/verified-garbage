@@ -136,7 +136,7 @@ theorem col_le {h r : Nat → Nat} {H R : Nat} (hh : ∀ j < 10, h j ≤ H) (hr 
     apply Nat.mul_le_mul (hh j hj)
     simp only [coef]; split
     · have := hr (k - j) (by omega_using [hk, hj]); omega_using [this]
-    · have := hr (k + 10 - j) (by omega); omega
+    · have := hr (k + 10 - j) (by omega); omega_using [this]
   have := rsum_le_of_lt 10 this
   rw [rsum_const] at this
   exact this
@@ -183,7 +183,7 @@ def wrap (r : Nat → Nat) (j : Nat) : Nat := rsum (fun i => if 10 ≤ i + j the
 theorem row_wrap (r : Nat → Nat) {j : Nat} (hj : j < 10) :
     2 ^ (13 * j) * val r + 5 * wrap r j = rsum (fun k => 2 ^ (13 * k) * coef r k j) 10 + 2 ^ 130 * wrap r j := by
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
-    j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 := by omega
+    j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 := by omega_using [hj]
   all_goals
     simp only [↓reduceIte, Nat.reduceLeDiff, val, wrap, rsum, coef, Nat.reduceSub,
       Nat.reduceAdd, Nat.reduceMul, Nat.zero_add, Nat.add_zero, Nat.mul_zero, Nat.mul_add,
@@ -220,7 +220,7 @@ def cstep (f : Nat → Nat) (k : Nat) : Nat → Nat :=
 
 theorem val_cstep (f : Nat → Nat) {k : Nat} (hk : k < 9) : val (cstep f k) = val f := by
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
-    k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 := by omega
+    k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 := by omega_using [hk]
   all_goals simp [val, cstep]; grind
 
 /-- The carries from columns `a`, …, `a + n - 1`, in order. -/
@@ -962,7 +962,7 @@ theorem wsum_toNat (w : Nat → BitVec 32) {k : Nat} (hk : k < 9) :
     (wsum w 4 k).toNat = mlimb (w 0).toNat (w 1).toNat (w 2).toNat (w 3).toNat k := by
   simp only [wsum, contrib, pieces, pieceBV, zadd, addz]
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
-    k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 := by omega
+    k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 := by omega_using [hk]
   all_goals simp only [mlimb, Nat.reduceEqDiff, ite_true, ite_false, zadd, addz, toNat_shr,
     shl_shr_le _ (show 19 ≤ 19 by decide) (by decide), shl_shr_le _ (show 6 ≤ 19 by decide) (by decide),
     shl_shr_le _ (show 12 ≤ 19 by decide) (by decide), shl_shr_le _ (show 18 ≤ 19 by decide) (by decide),
@@ -2271,7 +2271,7 @@ open VG.Spec.Poly1305 (P clamp leNum bytesAt)
 
 theorem addr_toNat (a : BitVec 32) : (State.addr a).toNat = a.toNat := by
   simp only [State.addr, BitVec.toNat_setWidth]
-  exact Nat.mod_eq_of_lt (by have := a.isLt; omega)
+  exact Nat.mod_eq_of_lt (by have := a.isLt; omega_using [])
 
 /-- Two byte strings are equal if their words are. -/
 theorem bytesAt_eq_of_words {m m' : Mem} {p q : Addr} {n : Nat}
@@ -2284,7 +2284,7 @@ theorem bytesAt_eq_of_words {m m' : Mem} {p q : Addr} {n : Nat}
   have e : ∀ a : Addr, a + BitVec.ofNat 64 i = a + BitVec.ofNat 64 (4 * (i / 4)) + BitVec.ofNat 64 (i % 4) :=
     fun a => by rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.div_add_mod]
   rw [e p, e q, Mem.readW_byte m _ (Nat.mod_lt _ (by decide)), Mem.readW_byte m' _ (Nat.mod_lt _ (by decide)),
-    h _ (by omega)]
+    h _ (by omega_using [hi])]
 
 theorem leNum_bytesAt_4 (m : Mem) (p : Addr) : leNum (bytesAt m p 4) = (m.readW p 32).toNat := by
   rw [Poly1305.leNum_bytesAt_read]
@@ -2295,7 +2295,7 @@ theorem leNum_bytesAt_words (m : Mem) (p : Addr) : ∀ n,
     leNum (bytesAt m p (4 * n)) = rsum (fun j => 2 ^ (32 * j) * (m.readW (p + BitVec.ofNat 64 (4 * j)) 32).toNat) n
   | 0 => by simp only [bytesAt, Nat.mul_zero, List.range_zero, List.map_nil, leNum, rsum]
   | n + 1 => by
-    rw [show 4 * (n + 1) = 4 * n + 4 by omega, Poly1305.bytesAt_add, Poly1305.leNum_append,
+    rw [show 4 * (n + 1) = 4 * n + 4 by omega_using [], Poly1305.bytesAt_add, Poly1305.leNum_append,
       Poly1305.length_bytesAt, leNum_bytesAt_4, leNum_bytesAt_words m p n, rsum,
       show (256 : Nat) ^ (4 * n) = 2 ^ (32 * n) by rw [Nat.pow_mul, Nat.pow_mul]]
 
@@ -2305,7 +2305,7 @@ theorem leNum_bytesAt_16 (m : Mem) (p : Addr) :
       2 ^ 96 * (m.readW (p + BitVec.ofNat 64 12) 32).toNat := by
   rw [show 16 = 4 * 4 from rfl, leNum_bytesAt_words]
   simp only [rsum, Nat.reduceMul]
-  omega
+  omega_using []
 
 theorem leNum_bytesAt_24 (m : Mem) (p : Addr) :
     leNum (bytesAt m p 24) = (m.readW (p + BitVec.ofNat 64 0) 32).toNat +
@@ -2315,7 +2315,7 @@ theorem leNum_bytesAt_24 (m : Mem) (p : Addr) :
       2 ^ 160 * (m.readW (p + BitVec.ofNat 64 20) 32).toNat := by
   rw [show 24 = 4 * 6 from rfl, leNum_bytesAt_words]
   simp only [rsum, Nat.reduceMul]
-  omega
+  omega_using []
 
 /-! ## The stored key -/
 
@@ -2361,7 +2361,7 @@ theorem sub_base (p : Addr) {a len len' : Nat} (h : a + len ≤ len') (_h' : len
 
 theorem contains_base (p : Addr) {d n len : Nat} (h : d + n ≤ len) (h' : len < 2 ^ 32) :
     (⟨p, len⟩ : Region).Contains (p + BitVec.ofNat 64 d) n :=
-  contains_off h (by omega)
+  contains_off h (by omega_using [h, h'])
 
 /-- A region inside `[B + a, B + a + la)` is disjoint from one outside it. -/
 theorem disjoint_of_sub {r₁ r₂ r₁' r₂' : Region} (h : r₁'.Disjoint r₂') (h₁ : Region.Sub r₁ r₁')
