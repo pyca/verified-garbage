@@ -1,7 +1,7 @@
 import VerifiedGarbage.Impl.P256.EcdhTable
 import VerifiedGarbage.Proof.P256.EcdhJac.State
 import VerifiedGarbage.Proof.P256.VerifyAllocated.Case
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Literal
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 namespace VG.Proof.P256.EcdhTable.Zaddu
@@ -12,41 +12,34 @@ def original := VG.Impl.P256.EcdhTable.raw false
 def optimized := VG.Impl.P256.EcdhTable.code false
 materialize_value leftCode := original
 materialize_value rightCode := optimized
-certificate_value nodes := (buildPair 8192 original optimized).getD ⟨.empty,.empty⟩
+forward_state bundle :=
+  let ns := (buildPair 8192 original optimized).getD ⟨.empty,.empty⟩
+  (ns,(evalData (certDom ns) 8192 original initialEnv).getD (.empty,.empty,none),
+    (evalData (certDom ns) 8192 optimized initialEnv).getD (.empty,.empty,none))
+noncomputable def nodes := bundle.1
 theorem original_lit : original=leftCode.lit := leftCode.lit_eq
 theorem optimized_lit : optimized=rightCode.lit := rightCode.lit_eq
 
-theorem valid : CertValid nodes := by decide +kernel
+theorem valid : CertValid nodes := valid_of_validK (by decide +kernel)
 
-theorem inputs : Inputs nodes 8192 := by
-  have h : ∀ i : Fin 1024,nodes.nodes.lookup (i.val+1)=some (.input (8*i.val)) := by decide +kernel
-  intro off ha hb
-  have ho : off=8*(off/8) := by omega
-  simpa only [←ho] using h ⟨off/8,by omega⟩
+theorem inputs : Inputs nodes 8192 := inputs_of_allBelow (by decide +kernel)
 
-noncomputable def left : Env Nat := (eval (certDom nodes) 8192 leftCode.lit initialEnv).getD initialEnv
-noncomputable def right : Env Nat := (eval (certDom nodes) 8192 rightCode.lit initialEnv).getD initialEnv
-
-private theorem some_getD {α : Type} {o : Option α} (d : α) (h : o.isSome=true) :
-    o=some (o.getD d) := by cases o <;> simp_all
+noncomputable def left : Env Nat := fromData initialEnv bundle.2.1
+noncomputable def right : Env Nat := fromData initialEnv bundle.2.2
 
 theorem evalLeft : eval (certDom nodes) 8192 original initialEnv=some left := by
   rw [original_lit]
-  exact some_getD initialEnv (by decide +kernel)
+  exact eval_of_dataK (by kernel_rfl)
 
 theorem evalRight : eval (certDom nodes) 8192 optimized initialEnv=some right := by
   rw [optimized_lit]
-  exact some_getD initialEnv (by decide +kernel)
+  exact eval_of_dataK (by kernel_rfl)
 
 def observe (off : Nat) : Prop := (off<800 ∨ 992≤off) ∧ (off<7104 ∨ 7680≤off)
 instance (off : Nat) : Decidable (observe off) := by unfold observe; infer_instance
 
-theorem same : ∀ off,observe off → off%8=0 → off+8≤8192 → left.slot off=right.slot off := by
-  have h : ∀ i : Fin 1024,observe (8*i.val) → left.slot (8*i.val)=right.slot (8*i.val) := by decide +kernel
-  intro off hv ha hb
-  have ho : off=8*(off/8) := by omega
-  have hh := h ⟨off/8,by omega⟩
-  simpa only [←ho] using hh (by simpa only [←ho] using hv)
+theorem same : ∀ off,observe off → off%8=0 → off+8≤8192 → left.slot off=right.slot off :=
+  fun off hv _ _ => same_of_sameK observe (by decide +kernel) off hv
 
 noncomputable def checked : CheckedObserved 8192 observe original optimized where
   nodes := nodes
@@ -59,26 +52,21 @@ noncomputable def checked : CheckedObserved 8192 observe original optimized wher
   same := same
 
 theorem leftBound : ∀ i∈original,instrBound i≤8192 := by
-  have h : leftCode.lit.all (fun i => decide (instrBound i≤8192))=true := by decide +kernel
-  rw [original_lit]
-  intro i hi
-  exact of_decide_eq_true ((List.all_eq_true.mp h) i hi)
+  rw [original_lit]; exact bound_of_listAllK (by decide +kernel)
+
+private theorem rightOk : listAllK (instrOkK 8192 (RegSet.ofList VG.Proof.Weierstrass.AArch64.allocatedRegs)
+    VG.Proof.P256.EcdhJac.work) rightCode.lit=true := by decide +kernel
 
 theorem rightBound : ∀ i∈optimized,instrBound i≤8192 := by
-  have h : rightCode.lit.all (fun i => decide (instrBound i≤8192))=true := by decide +kernel
-  rw [optimized_lit]
-  intro i hi
-  exact of_decide_eq_true ((List.all_eq_true.mp h) i hi)
+  rw [optimized_lit]; exact bound_of_instrOk rightOk
 
 theorem clob : ∀ r∈optimized.flatMap instrClob,
     r∈VG.Proof.Weierstrass.AArch64.allocatedRegs := by
-  rw [optimized_lit]
-  decide +kernel
+  rw [optimized_lit]; exact clob_of_instrOk rightOk
 
 theorem writes : ∀ w∈optimized.flatMap instrWrites,
     ∃ w'∈VG.Proof.P256.EcdhJac.work,w'.1≤w.1 ∧ w.1+w.2≤w'.1+w'.2 := by
-  rw [optimized_lit]
-  decide +kernel
+  rw [optimized_lit]; exact cover_of_instrOk rightOk
 
 open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass.AArch64
 
