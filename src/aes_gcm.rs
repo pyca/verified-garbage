@@ -1886,11 +1886,7 @@ mod tests {
                         let tag = k
                             .encrypt_in_place(&nonce, &aad[..al], &mut ct[..len])
                             .unwrap();
-                        assert_eq!(
-                            (&ct[..len], tag),
-                            (&want[..len], want_tag),
-                            "{b:?} {al} {len}"
-                        );
+                        assert_eq!((&ct[..len], tag), (&want[..len], want_tag), "{b:?}");
                     }
                 }
             }
