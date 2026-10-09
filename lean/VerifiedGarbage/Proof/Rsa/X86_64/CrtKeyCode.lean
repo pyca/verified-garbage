@@ -109,9 +109,10 @@ structure CkArgs (s : State) : Prop where
 
 theorem ckArgs_of {s : State} (h : ckContract.pre s) : CkArgs s := by
   simp only [ckContract] at h
-  obtain ⟨hsp, hrd, hwr, dns, des, dps, dqs, ddps, ddqs, dqis, dsa,
-    dRn, dRe, dRp, dRq, dRdp, dRdq, dRqi, dRs, dRa, wN, wE, wP, wQ, wDp, wDq, wQi, wS, hk,
-    hel1, hel2, hpl1, hpl2, hql1, hql2, hdpl, hqil, hdql, hsl⟩ := h
+  sig_split h
+  rename_i hsp hrd hwr dns des dps dqs ddps ddqs dqis dsa dRn dRe dRp dRq dRdp dRdq dRqi dRs dRa wN
+    wE wP wQ wDp wDq wQi wS hk hel1 hel2 hpl1 hpl2 hql1 hql2 hdpl hqil hdql
+  have hsl := h
   obtain ⟨hk1, hk2⟩ := hk
   unfold Spec.Rsa.scratchWords at hsl
   have hs : Scr s (stackArg s 8) ((stackArg s 9).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS

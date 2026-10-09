@@ -99,11 +99,13 @@ def signSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x10009 then 0x41 else if a = 0x10010 then 1 else if a = 0x10019 then 0x42
-    else if a = 0x10020 then 1 else if a = 0x10029 then 0x43 else if a = 0x10030 then 1
-    else if a = 0x10039 then 0x44 else if a = 0x10040 then 1 else if a = 0x10049 then 0x45
-    else if a = 0x10050 then 1 else if a = 0x10059 then 0x46 else if a = 0x10061 then 0x47
-    else if a = 0x10072 then 0x02 else if a = 0x10079 then 0x08 else 0
+  mem a := bif Nat.beq a.toNat 0x10009 then 0x41 else bif Nat.beq a.toNat 0x10010 then 1
+    else bif Nat.beq a.toNat 0x10019 then 0x42 else bif Nat.beq a.toNat 0x10020 then 1
+    else bif Nat.beq a.toNat 0x10029 then 0x43 else bif Nat.beq a.toNat 0x10030 then 1
+    else bif Nat.beq a.toNat 0x10039 then 0x44 else bif Nat.beq a.toNat 0x10040 then 1
+    else bif Nat.beq a.toNat 0x10049 then 0x45 else bif Nat.beq a.toNat 0x10050 then 1
+    else bif Nat.beq a.toNat 0x10059 then 0x46 else bif Nat.beq a.toNat 0x10061 then 0x47
+    else bif Nat.beq a.toNat 0x10072 then 0x02 else bif Nat.beq a.toNat 0x10079 then 0x08 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4100, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩, ⟨0x4500, 1⟩,
     ⟨0x4600, G.len⟩, ⟨0x4700, 0⟩, ⟨0x10008, 120⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x20000, 2048 * 8⟩]

@@ -63,8 +63,10 @@ structure CrtCtx (s : State) : Prop where
 
 theorem crtCtx_of {s : State} (h : crtA.pre s) : CrtCtx s := by
   simp only [crtA] at h
-  obtain ⟨hsp, hrd, hwr, dOn, dOi, dOp, dOq, dOdp, dOdq, dOqi, dOs, dOa, dns, dis, dps, dqs, ddps, ddqs, dqis, dsa,
-    wO, wN, wI, wP, wQ, wDp, wDq, wQi, wS, hk, hol, hil, hpl1, hpl2, hql1, hql2, hdpl, hqil, hdql, hsl⟩ := h
+  sig_split h
+  rename_i hsp hrd hwr dOn dOi dOp dOq dOdp dOdq dOqi dOs dOa dns dis dps dqs ddps ddqs dqis dsa wO
+    wN wI wP wQ wDp wDq wQi wS hk hol hil hpl1 hpl2 hql1 hql2 hdpl hqil hdql
+  have hsl := h
   obtain ⟨hk1, hk2⟩ := hk
   unfold Spec.Rsa.scratchWords at hsl
   have hs : Scr s (stackArg s 8) ((stackArg s 9).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS

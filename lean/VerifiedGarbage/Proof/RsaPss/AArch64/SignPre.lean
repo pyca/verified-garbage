@@ -109,9 +109,12 @@ theorem preS_of (G : Spec.Mgf1.Hash) {K : Nat} {s : State}
     List.append_eq] at h
   sig_pre [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, stackArgs_thirteen,
     List.append_eq] at h
-  obtain ⟨sp1, sp2, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oa, ns, es, ps, qs, dps, dqs, qis,
-    dgs, sls, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, ka, wo, wn, we, wp, wq, wdp, wdq, wqi, wdg, wsl,
-    ws, ⟨k1, k2⟩, ol, e1, e2, p1, p2, q1, q2, hdp, hqi, hdq, hs⟩ := h
+  sig_split h
+  rename_i sp1 sp2 hrd hwr on oe op oq odp odq oqi odg osl os oa ns es ps qs dps dqs qis dgs sls sa
+    ko kn ke kp kq kdp kdq kqi kdg ksl ks ka wo wn we wp wq wdp wdq wqi wdg wsl ws _ob1 ol e1 e2 p1
+    p2 q1 q2 hdp hqi hdq
+  obtain ⟨k1, k2⟩ := _ob1
+  have hs := h
   rw [← e] at sp1 ko kn ke kp kq kdp kdq kqi kdg ksl ks ka
   exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, by rw [hwr]; simp, by rw [hwr]; simp, on, oe, op, oq, odp,
     odq, oqi, odg, osl, os, oa, ns, es, ps, qs, dps, dqs, qis, dgs, sls, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi,

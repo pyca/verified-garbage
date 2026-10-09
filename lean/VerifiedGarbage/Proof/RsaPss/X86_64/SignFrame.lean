@@ -92,7 +92,13 @@ structure SPre (s : State) : Prop where
 
 theorem SPre.of {s : State} (h : (signK G).pre s) : SPre G s := by
   simp only [signK] at h
-  obtain ⟨sp1, sp2, hrd, hwr, dOn, dOe, dOp, dOq, dOdp, dOdq, dOqi, dOdg, dOsa, dOs, dOa, dns, des, dps, dqs, ddps, ddqs, dqis, ddgs, dsas, dsa, dRo, dRn, dRe, dRp, dRq, dRdp, dRdq, dRqi, dRdg, dRsa, dRs, dRa, dKo, dKn, dKe, dKp, dKq, dKdp, dKdq, dKqi, dKdg, dKsa, dKs, dKa, wO, wN, wE, wP, wQ, wDp, wDq, wQi, wDg, wSa, wS, ⟨k1, k2⟩, hsi, L1, L2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsl⟩ := h
+  sig_split h
+  rename_i sp1 sp2 hrd hwr dOn dOe dOp dOq dOdp dOdq dOqi dOdg dOsa dOs dOa dns des dps dqs ddps
+    ddqs dqis ddgs dsas dsa dRo dRn dRe dRp dRq dRdp dRdq dRqi dRdg dRsa dRs dRa dKo dKn dKe dKp dKq
+    dKdp dKdq dKqi dKdg dKsa dKs dKa wO wN wE wP wQ wDp wDq wQi wDg wSa wS _ob1 hsi L1 L2 pl1 pl2
+    ql1 ql2 hdpl hqil hdql
+  obtain ⟨k1, k2⟩ := _ob1
+  have hsl := h
   exact ⟨sp1, sp2, hrd, hwr, dOn, dOe, dOp, dOq, dOdp, dOdq, dOqi, dOdg, dOsa, dOs, dOa, dns, des, dps, dqs, ddps, ddqs, dqis, ddgs, dsas, dsa, dRo, dRn, dRe, dRp, dRq, dRdp, dRdq, dRqi, dRdg, dRsa, dRs, dRa, dKo, dKn, dKe, dKp, dKq, dKdp, dKdq, dKqi, dKdg, dKsa, dKs, dKa, wO, wN, wE, wP, wQ, wDp, wDq, wQi, wDg, wSa, wS, k1, k2, hsi, L1, L2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, by unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hsl; omega⟩
 
 /-! ## The frame -/
