@@ -115,6 +115,12 @@ def nafVal10 (a b c d e f g h i l : BitVec 64) : Nat :=
   a.toNat+2^64*(b.toNat+2^64*(c.toNat+2^64*(d.toNat+2^64*(e.toNat+2^64*(f.toNat+2^64*(g.toNat+2^64*
     (h.toNat+2^64*(i.toNat+2^64*l.toNat))))))))
 
+/-- `nafVal10` unfolded. Rewrite with this, not `simp [nafVal10]`: generating
+`nafVal10`'s equation lemma takes seconds. -/
+theorem nafVal10_unfold (a b c d e f g h i l : BitVec 64) : nafVal10 a b c d e f g h i l =
+    a.toNat+2^64*(b.toNat+2^64*(c.toNat+2^64*(d.toNat+2^64*(e.toNat+2^64*(f.toNat+2^64*(g.toNat+2^64*
+      (h.toNat+2^64*(i.toNat+2^64*l.toNat)))))))) := (rfl)
+
 /-- A word at a time (`omega` on all ten at once is exponential). -/
 theorem nafVal10_lt (a b c d e f g h i l : BitVec 64) :
     nafVal10 a b c d e f g h i l<2^256*2^256*2^128 :=

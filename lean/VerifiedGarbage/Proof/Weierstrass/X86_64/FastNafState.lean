@@ -178,11 +178,14 @@ theorem nafPrepInitN_ok {s : State} {base : Addr} {size n src : Nat} (hn : n=4 �
     simp only [runBlock_cons,runStep_some,runBlock_nil,exec,readSrc32,State.setReg32,
       Option.map_some,Option.some.injEq,exists_eq_left']
     refine ⟨?_,rfl,?_,ka.2.1,⟨sa.rdi,sa.wr,sa.nowrap⟩⟩
-    · simp only [nafValN_nine,nafVal10,RegUpd.gpr_setReg,ite_true,ite_false,reduceCtorEq]
-      change _+2^64*(_+2^64*(_+2^64*(_+2^64*(_+2^64*(_+2^64*(_+2^64*(_+2^64*(_+2^64*0))))))))=
-        wordsVal s.mem base src 9
-      simp only [regsVal,List.length_cons,List.length_nil,Nat.reduceAdd] at va
-      omega
+    · -- Not through `nafVal10`: `simp` takes seconds on its nested sum.
+      have hne : ∀ r∈[Reg.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp],r≠.rbx ∧ r≠.rsi := by decide
+      rw [nafValN,show Naf.sregs 9=[Reg.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp]++[.rsi] from rfl,
+        regsVal_append,regsVal_congr (s:=a) fun r hr => by
+          simp only [RegUpd.gpr_setReg,(hne r hr).1,(hne r hr).2,ite_false],va]
+      refine Nat.add_eq_left.mpr (Nat.mul_eq_zero.mpr (.inr ?_))
+      simp only [regsVal,RegUpd.gpr_setReg,ite_true,ite_false,reduceCtorEq]
+      rfl
     · refine ⟨fun r hr => ?_,ka.2.2.1,ka.2.2.2⟩
       have hsi : r≠.rsi := fun h => hr (h ▸ (by decide))
       have hbx : r≠.rbx := fun h => hr (h ▸ (by decide))

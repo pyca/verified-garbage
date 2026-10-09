@@ -16,6 +16,16 @@ theorem fastJoin_value (lo hi : BitVec 64) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7) 
   rw [Nat.mul_comm]
   omega
 
+/-- A Horner step of a shift: the low word's bits and the low bits of the rest. -/
+theorem shift_horner {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7) (lo : BitVec 64) (R : Nat) :
+    (lo.toNat+2^64*R)/2^w=lo.toNat/2^w+2^(64-w)*(R%2^w)+2^64*(R/2^w) := by
+  have := lo.isLt
+  rcases hw with rfl|rfl|rfl <;> omega
+
+theorem mod_horner {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7) (hi : BitVec 64) (R : Nat) :
+    (hi.toNat+2^64*R)%2^w=hi.toNat%2^w := by
+  rcases hw with rfl|rfl|rfl <;> omega
+
 theorem fastShift5_value (a b c d e : BitVec 64) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7) :
     nafVal5 ((a>>>w)|||(b<<<(64-w))) ((b>>>w)|||(c<<<(64-w)))
       ((c>>>w)|||(d<<<(64-w))) ((d>>>w)|||(e<<<(64-w))) (e>>>w)=nafVal5 a b c d e/2^w := by
@@ -44,8 +54,8 @@ theorem fastShift7_value (a b c d e f g : BitVec 64) {w : Nat} (hw : w=1 ∨ w=5
     nafVal7 ((a>>>w)|||(b<<<(64-w))) ((b>>>w)|||(c<<<(64-w)))
       ((c>>>w)|||(d<<<(64-w))) ((d>>>w)|||(e<<<(64-w))) ((e>>>w)|||(f<<<(64-w)))
       ((f>>>w)|||(g<<<(64-w))) (g>>>w)=nafVal7 a b c d e f g/2^w := by
-  simp only [nafVal7,fastJoin_value _ _ hw,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow]
-  rcases hw with rfl|rfl|rfl <;> omega
+  simp only [nafVal7,fastJoin_value _ _ hw,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,
+    shift_horner hw,mod_horner hw]
 
 theorem shiftN_four (w : Nat) : FastNaf.shiftN 4 w=FastNaf.shift w := rfl
 
@@ -80,8 +90,8 @@ theorem fastShift7_ok (s : State) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7) :
 
 theorem fastShift10_value (a b c d e f g h i l : BitVec 64) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7) :
     nafVal10 ((a>>>w)|||(b<<<(64-w))) ((b>>>w)|||(c<<<(64-w))) ((c>>>w)|||(d<<<(64-w))) ((d>>>w)|||(e<<<(64-w))) ((e>>>w)|||(f<<<(64-w))) ((f>>>w)|||(g<<<(64-w))) ((g>>>w)|||(h<<<(64-w))) ((h>>>w)|||(i<<<(64-w))) ((i>>>w)|||(l<<<(64-w))) (l>>>w)=nafVal10 a b c d e f g h i l/2^w := by
-  simp only [nafVal10,fastJoin_value _ _ hw,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow]
-  rcases hw with rfl|rfl|rfl <;> omega
+  simp only [nafVal10_unfold,fastJoin_value _ _ hw,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,
+    shift_horner hw,mod_horner hw]
 
 theorem shiftN_nine (w : Nat) : FastNaf.shiftN 9 w=
     [.shift .shr .r8 w,.mov .rax (.reg .r9),.shift .shl .rax (64-w),.alu .or .r8 (.reg .rax),
