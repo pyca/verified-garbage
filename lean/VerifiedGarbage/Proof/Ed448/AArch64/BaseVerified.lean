@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.Base.Main
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
 import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Contract
 
@@ -24,13 +25,25 @@ theorem scalarBase_ok (s : State) (hs : scalarBaseLocal.pre s) :
   obtain ⟨t, s', he, h⟩ := scalarBase_correct hs
   exact ⟨t, s', he, ⟨h.1, Exec.sp he, h.2.1⟩, h.2.2⟩
 
+/-- The analysis, of the code without what it does not read, its comb's field operations analysed
+once each (`Proof/X448/AArch64/Base/Erase.lean`). -/
+theorem scalarBase_check :
+    ∃ h, ((taintS [combSym]).check (Taint.ofRegs [.x0, .x1, .x2]) scalarBase h).isSome = true := by
+  apply exists_isSome_of_eraseT
+  refine Split.exists_isSome (c' := ?c') ?s ⟨?h, ?g⟩
+  case s =>
+    simp only [scalarBase, encode, Code.eraseT, Impl.X448.AArch64.Fast.invert, ops_eraseT, sqn_eraseT]
+    exact .seq (.refl _) (.seq (.loop _ (stepN_split 57)) (.seq combine_split (.refl _)))
+  case g => taint_decide
+
 theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub scalarBase :=
+  let ⟨_, hc⟩ := scalarBase_check
   VG.Taint.constantTime (A := taintS [combSym]) (Taint.ofRegs [.x0, .x1, .x2])
     (fun _ _ _ _ ⟨hsp, h0, h1, h2, hsy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       exacts [h0, h1, h2]⟩, fun n hn => by
-      simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
+      simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) hc
 
 theorem scalarBase_baseOk : BaseOk := ⟨scalarBase_ok, scalarBase_ct⟩
 
