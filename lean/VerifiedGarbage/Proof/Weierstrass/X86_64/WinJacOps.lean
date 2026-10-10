@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacOps
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
 import VerifiedGarbage.Proof.Weierstrass.JacCoZ
+import VerifiedGarbage.Proof.Weierstrass.Layout
 
 /-!
 # The Jacobian window method on x86-64: its field programs
@@ -193,6 +194,44 @@ end
 
 /-! ## The loop's addition -/
 
+/-- The grid slots `80 … 84` (`T`, its powers) are not written by the addition into `D`. -/
+theorem JacWinLay.gW (hL : JacWinLay K size) : ∀ c < 5, jg K (80 + c) ∉ rcbW K.S K.D := by
+  intro c hc hw
+  simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hw
+  have g := fun x (hx : x ∈ jwOther K) => hL.jg_ne (List.mem_append_right _ hx) (i := 80 + c) (by omega_arith)
+  rcases hw with h | h | h | h | h | h | h | h | h <;> exact g _ (by jw_mem) h.symm
+
+/-- `R`, `T` and the slots the additions write into `D` are apart. -/
+theorem JacWinLay.addApart (hL : JacWinLay K size) : RcbApart K.S K.R K.E K.D := by
+  have hnd := hL.nodup
+  simp only [jwOther, List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
+    List.nodup_nil, and_true] at hnd
+  have hroW : ∀ x ∈ jwRo K ++ [K.R.x, K.R.y, K.R.z], x ∉ rcbW K.S K.D := by
+    intro x hx hw
+    simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hw
+    rcases List.mem_append.mp hx with hx | hx
+    · exact hL.ro x hx (by rcases hw with h | h | h | h | h | h | h | h | h <;> rw [h] <;> jw_mem)
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl <;>
+        rcases hw with h | h | h | h | h | h | h | h | h
+      all_goals exact absurd h (by nd_find hnd)
+  have hgW := hL.gW
+  refine ⟨?_, fun x hx => ?_⟩
+  · simp only [rcbW, List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or, List.nodup_nil,
+      and_true]
+    repeat' apply And.intro
+    all_goals first | nd_find hnd | exact not_false
+  · simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact hroW _ (by jw_mem)
+    · exact hroW _ (by jw_mem)
+    · exact hroW _ (by simp)
+    · exact hroW _ (by simp)
+    · exact hroW _ (by simp)
+    · rw [hL.Tx]; exact hgW 0 (by decide)
+    · rw [hL.Ty]; exact hgW 1 (by decide)
+    · rw [hL.Tz]; exact hgW 2 (by decide)
+
 /-- `D = R + T` with `T`'s cached `Z²` and `Z³`. -/
 theorem cadd_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {base : Addr}
     {V : List Nat} {E : Nat → Fe C} {s : State} (hI : Inv K.M base size C.p (· ∈ jwSlots K) V E s)
@@ -204,70 +243,8 @@ theorem cadd_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {b
         (E' K.D.x, E' K.D.y, E' K.D.z) =
           jacAddF (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y) (E K.E.z) := by
   have hn0 := hL.n0
-  have o := fun i j hi hj h => hL.oth_ne (K := K) (i := i) (j := j) hi hj h
-  have hroW : ∀ x ∈ jwRo K ++ [K.R.x, K.R.y, K.R.z], x ∉ rcbW K.S K.D := by
-    intro x hx hw
-    simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases List.mem_append.mp hx with hx | hx
-    · exact hL.ro x hx (by rcases hw with h | h | h | h | h | h | h | h | h <;> rw [h] <;> jw_mem)
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl <;>
-        rcases hw with h | h | h | h | h | h | h | h | h
-      all_goals first
-        | exact o 0 7 (by decide) (by decide) (by decide) h | exact o 0 8 (by decide) (by decide) (by decide) h
-        | exact o 0 9 (by decide) (by decide) (by decide) h | exact o 0 10 (by decide) (by decide) (by decide) h
-        | exact o 0 11 (by decide) (by decide) (by decide) h | exact o 0 12 (by decide) (by decide) (by decide) h
-        | exact o 0 3 (by decide) (by decide) (by decide) h | exact o 0 4 (by decide) (by decide) (by decide) h
-        | exact o 0 5 (by decide) (by decide) (by decide) h
-        | exact o 1 7 (by decide) (by decide) (by decide) h | exact o 1 8 (by decide) (by decide) (by decide) h
-        | exact o 1 9 (by decide) (by decide) (by decide) h | exact o 1 10 (by decide) (by decide) (by decide) h
-        | exact o 1 11 (by decide) (by decide) (by decide) h | exact o 1 12 (by decide) (by decide) (by decide) h
-        | exact o 1 3 (by decide) (by decide) (by decide) h | exact o 1 4 (by decide) (by decide) (by decide) h
-        | exact o 1 5 (by decide) (by decide) (by decide) h
-        | exact o 2 7 (by decide) (by decide) (by decide) h | exact o 2 8 (by decide) (by decide) (by decide) h
-        | exact o 2 9 (by decide) (by decide) (by decide) h | exact o 2 10 (by decide) (by decide) (by decide) h
-        | exact o 2 11 (by decide) (by decide) (by decide) h | exact o 2 12 (by decide) (by decide) (by decide) h
-        | exact o 2 3 (by decide) (by decide) (by decide) h | exact o 2 4 (by decide) (by decide) (by decide) h
-        | exact o 2 5 (by decide) (by decide) (by decide) h
-  have hgW : ∀ c < 5, jg K (80 + c) ∉ rcbW K.S K.D := by
-    intro c hc hw
-    simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hw
-    have g := fun x (hx : x ∈ jwOther K) => hL.jg_ne (List.mem_append_right _ hx) (i := 80 + c) (by omega)
-    rcases hw with h | h | h | h | h | h | h | h | h <;> exact g _ (by jw_mem) h.symm
-  have hA : RcbApart K.S K.R K.E K.D := by
-    refine ⟨?_, fun x hx => ?_⟩
-    · simp only [rcbW, List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or, List.nodup_nil,
-        and_true]
-      refine ⟨⟨o 7 8 (by decide) (by decide) (by decide), o 7 9 (by decide) (by decide) (by decide),
-        o 7 10 (by decide) (by decide) (by decide), o 7 11 (by decide) (by decide) (by decide),
-        o 7 12 (by decide) (by decide) (by decide), o 7 3 (by decide) (by decide) (by decide),
-        o 7 4 (by decide) (by decide) (by decide), o 7 5 (by decide) (by decide) (by decide)⟩,
-        ⟨o 8 9 (by decide) (by decide) (by decide), o 8 10 (by decide) (by decide) (by decide),
-        o 8 11 (by decide) (by decide) (by decide), o 8 12 (by decide) (by decide) (by decide),
-        o 8 3 (by decide) (by decide) (by decide), o 8 4 (by decide) (by decide) (by decide),
-        o 8 5 (by decide) (by decide) (by decide)⟩,
-        ⟨o 9 10 (by decide) (by decide) (by decide), o 9 11 (by decide) (by decide) (by decide),
-        o 9 12 (by decide) (by decide) (by decide), o 9 3 (by decide) (by decide) (by decide),
-        o 9 4 (by decide) (by decide) (by decide), o 9 5 (by decide) (by decide) (by decide)⟩,
-        ⟨o 10 11 (by decide) (by decide) (by decide), o 10 12 (by decide) (by decide) (by decide),
-        o 10 3 (by decide) (by decide) (by decide), o 10 4 (by decide) (by decide) (by decide),
-        o 10 5 (by decide) (by decide) (by decide)⟩,
-        ⟨o 11 12 (by decide) (by decide) (by decide), o 11 3 (by decide) (by decide) (by decide),
-        o 11 4 (by decide) (by decide) (by decide), o 11 5 (by decide) (by decide) (by decide)⟩,
-        ⟨o 12 3 (by decide) (by decide) (by decide), o 12 4 (by decide) (by decide) (by decide),
-        o 12 5 (by decide) (by decide) (by decide)⟩,
-        ⟨o 3 4 (by decide) (by decide) (by decide), o 3 5 (by decide) (by decide) (by decide)⟩,
-        o 4 5 (by decide) (by decide) (by decide), not_false⟩
-    · simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      · exact hroW _ (by jw_mem)
-      · exact hroW _ (by jw_mem)
-      · exact hroW _ (by simp)
-      · exact hroW _ (by simp)
-      · exact hroW _ (by simp)
-      · rw [hL.Tx]; exact hgW 0 (by decide)
-      · rw [hL.Ty]; exact hgW 1 (by decide)
-      · rw [hL.Tz]; exact hgW 2 (by decide)
+  have hgW := hL.gW
+  have hA := hL.addApart
   have h2a : K.z2 ∉ rcbW K.S K.D := by rw [hL.Tz2]; exact hgW 3 (by decide)
   have h3a : K.z2 + 8 * K.M.n ∉ rcbW K.S K.D := by rw [hL.Tz3]; exact hgW 4 (by decide)
   have hSl : ∀ x ∈ (rcbW K.S K.D ++ rcbR K.S K.R K.E) ++ [K.z2, K.z2 + 8 * K.M.n], x ∈ jwSlots K := by
