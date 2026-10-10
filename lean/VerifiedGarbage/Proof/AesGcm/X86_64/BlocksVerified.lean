@@ -95,7 +95,7 @@ variable (v : GcmImpl) (st : Option StitchImpl)
 /-! The key context of `vg_aes_gcm_init` (`CtxMode.base`). -/
 
 theorem encryptBlocks_correct (s : State) (hs : Proof.AesGcm.encryptBlocksX86_64.pre s) :
-    ∃ t s', Exec isa (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (st.any (·.full))) s t s' ∧ abiPreserved s s' ∧
       Proof.AesGcm.encryptBlocksX86_64.post s s' := by
   have h := encryptBlocksM_correct v (st.map (·.code CtxMode.base)) s (Proof.AesGcm.blocksPreM_base hs)
   rwa [map_code_enc, StitchImpl.encFull_code] at h
@@ -108,7 +108,7 @@ theorem decryptBlocks_correct (s : State) (hs : Proof.AesGcm.decryptBlocksX86_64
 
 theorem Blocks.encrypt_ctB :
     ConstantTime isa Proof.AesGcm.encryptBlocksX86_64.pre Proof.AesGcm.encryptBlocksX86_64.pub
-      (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))) := by
+      (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (st.any (·.full))) := by
   have h := Blocks.encrypt_ct v (st.map (·.code CtxMode.base))
   rw [map_code_enc, StitchImpl.encFull_code] at h
   exact fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ => h s₁ s₂ t₁ t₂ s₁' s₂' (Proof.AesGcm.blocksPreM_base h₁)
@@ -123,11 +123,11 @@ theorem Blocks.decrypt_ctB :
     (Proof.AesGcm.blocksPreM_base h₂)
 
 theorem encryptBlocks_mxB :
-    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))).allInstrs (fun i => !loadsMxcsr i) = true := by
+    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (st.any (·.full))).allInstrs (fun i => !loadsMxcsr i) = true := by
   have h := encryptBlocks_mx v (st.map (·.code CtxMode.base)); rwa [map_code_enc, StitchImpl.encFull_code] at h
 
 theorem encryptBlocks_xdepthB :
-    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))).x86_64Depth ≤ 8 := by
+    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (st.any (·.full))).x86_64Depth ≤ 8 := by
   have h := encryptBlocks_xdepth v (st.map (·.code CtxMode.base)); rwa [map_code_enc, StitchImpl.encFull_code] at h
 
 theorem decryptBlocks_xdepthB :
@@ -139,7 +139,7 @@ theorem decryptBlocks_mxB :
   have h := decryptBlocks_mx v (st.map (·.code CtxMode.base)); rwa [map_code_dec] at h
 
 theorem encryptBlocks_spSafeB :
-    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))).all (fun i => !X86_64.isa.writesSp i) = true := by
+    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (st.any (·.full))).all (fun i => !X86_64.isa.writesSp i) = true := by
   have h := encryptBlocks_spSafe v (st.map (·.code CtxMode.base)); rwa [map_code_enc, StitchImpl.encFull_code] at h
 
 theorem decryptBlocks_spSafeB :
@@ -162,7 +162,7 @@ def blocksSat : State where
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 0⟩, ⟨0, 2112⟩]
 
 theorem encryptBlocks_verified (v : GcmImpl) (st : Option StitchImpl) :
-    Verified X86_64.target (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)))
+    Verified X86_64.target (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) false (st.any (·.full)))
       (Spec.Gcm.encryptBlocksContract X86_64.abi 8) :=
   Verified.of_correct (encryptBlocks_correct v st) (Blocks.encrypt_ctB v st) (by
     sig_implies [Spec.Gcm.encryptBlocksContract, Spec.Gcm.cryptBlocksSig, Proof.AesGcm.encryptBlocksX86_64,

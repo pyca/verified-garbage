@@ -254,14 +254,30 @@ namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch
 open VG.Spec.Gcm (Block)
-open VG.Impl.Gcm.X86_64.StitchAvx8 (hash8 prepare finish)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (hash8 prepare)
 
-theorem finalEnc_ok {s₀ s : State} {P : Nat → Block} {g : Nat}
-    (hp : SPre s₀) (hlaw : HashLaw s₀ P) (h : LoopInv s₀ P false g s) (hn : nb s₀ = g + 16) :
-    WP isa (.block (hash8 ++ (List.range 8).flatMap (fun i => prepare (8 + i)) ++ hash8 ++ finish)) s
-      (EPost s₀) := by
-  have hd : DataInv s₀ (nb s₀) s.mem := by rw [hn]; exact h.core.data
-  rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
+/-- After the pipeline's last two batches are hashed: the blocks before
+`g + 16` encrypted and hashed, the counters of the next eight prepared, and
+`nb - g - 16 < 8` blocks left. -/
+structure TailReady (s₀ : State) (P : Nat → Block) (g : Nat) (s : State) : Prop where
+  env : Env s₀ P s
+  data : DataInv s₀ (g + 16) s.mem
+  templates : Templates s₀ (g + 16) 0 s.mem
+  counter : (s.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (g + 16 + 8)
+  cursor : s.gpr .rdx = bAddr s₀ g
+  remaining : s.gpr .r9 = BitVec.ofNat 64 (nb s₀ - g)
+  hash : s.lane .xmm2 0 = hashPrefix s₀ false (g + 16)
+  le : g + 16 ≤ nb s₀
+  lt : nb s₀ - g < 24
+
+theorem finalHash_ok {s₀ s : State} {P : Nat → Block} {g : Nat}
+    (hp : SPre s₀) (hlaw : HashLaw s₀ P) (h : LoopInv s₀ P false g s) (hn : nb s₀ - g < 24) :
+    WP isa (.block (hash8 ++ (List.range 8).flatMap (fun i => prepare (8 + i)) ++ hash8)) s
+      (TailReady s₀ P g) := by
+  have hle : g + 16 ≤ nb s₀ := h.tail_le
+  have hd : DataInv s₀ (g + 16) s.mem := h.core.data
+  have hT : Templates s₀ (g + 16) 0 s.mem := h.core.templates
+  rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (hashBuffer_ok hp hlaw h.core.env h.buffered) fun t ⟨htE, htY, htF⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (prepareRun_ok hp t htE 8 (by decide)
@@ -274,18 +290,25 @@ theorem finalEnc_ok {s₀ s : State} {P : Nat → Block} {g : Nat}
         (k := 16 * nb s₀) (by omega))) 8 (by decide)) fun u ⟨huE, huB, huF, huM⟩ => ?_
   have huB' : ∀ i < 8, u.mem.readW (hashAddr s₀ i) 128 = window s₀ false (g + 8) i := by
     intro i hi
-    rw [huB i hi, htF.mem, htF.gpr, h.core.addr, hd _ (by omega), ite_eq_left (by omega : g + (8 + i) < nb s₀)]
+    rw [huB i hi, htF.mem, htF.gpr, h.core.addr, hd _ (by omega), ite_eq_left (by omega : g + (8 + i) < g + 16)]
     simp [window, hashBlock, Nat.add_assoc]
-  rw [WP.block_append_iff]
   refine WP.mono (hashBuffer_ok hp hlaw huE huB') fun v ⟨hvE, hvY, hvF⟩ => ?_
-  refine finish_complete hp false hvE ?_ ?_ ?_
+  have hHC : ∀ r ∈ [(⟨pp s₀ + 512, 128⟩ : Region)], (dR s₀).Disjoint r := by
+    intro r hr; simp only [List.mem_singleton] at hr; subst r
+    exact hp.d_p.sub_right (Offset.sub_base (pp s₀) (d := 512) (n := 128) (k := 1024) (by decide))
+  refine ⟨hvE, ?_, ?_, ?_, ?_, ?_, ?_, hle, hn⟩
   · rw [hvF.mem]
-    have htD : DataInv s₀ (nb s₀) t.mem := htF.mem ▸ hd
-    exact htD.frame huM (by
+    exact (htF.mem ▸ hd : DataInv s₀ (g + 16) t.mem).frame huM hHC
+  · rw [hvF.mem]
+    exact (htF.mem ▸ hT : Templates s₀ (g + 16) 0 t.mem).frame huM (by
       intro r hr; simp only [List.mem_singleton] at hr; subst r
-      exact hp.d_p.sub_right (Offset.sub_base (pp s₀) (d := 512) (n := 128) (k := 1024) (by decide)))
-  · rw [hvF.gpr, huF.gpr .r8 (by decide), htF.gpr, h.core.counter, hn]
-    rfl
+      exact (hash_counter_disjoint s₀).symm)
+  · rw [hvF.gpr, huF.gpr .r8 (by decide), htF.gpr]
+    exact h.core.counter
+  · rw [hvF.gpr, huF.gpr .rdx (by decide), htF.gpr]
+    exact h.core.cursor
+  · rw [hvF.gpr, huF.gpr .r9 (by decide), htF.gpr]
+    exact h.core.remaining
   · rw [hvY, huF.lane, htY, h.core.hash]
     change Spec.Gcm.ghashFrom (hk s₀)
       (Spec.Gcm.ghashFrom (hk s₀) (hashPrefix s₀ false g) ((List.range 8).map (fun i => hashBlock s₀ false (g + i))))
@@ -293,7 +316,6 @@ theorem finalEnc_ok {s₀ s : State} {P : Nat → Block} {g : Nat}
     simp only [hashPrefix]
     rw [← ghash_append8 (hk s₀) (y₀ s₀) (hashBlock s₀ false) g,
       ← ghash_append8 (hk s₀) (y₀ s₀) (hashBlock s₀ false) (g + 8)]
-    rw [hn]
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -302,33 +324,28 @@ end
 /-! ## LoopRun -/
 section
 
-/-! # Termination leaves exactly the fixed final batch or batches -/
+/-! # The loops stop with fewer than `threshold` blocks left -/
 
 namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch
 open VG.Spec.Gcm (Block)
 
-theorem stopped_length {s₀ : State} (_hp : SPre s₀) (hn : nb s₀ % 16 = 0) (dec : Bool) (g : Nat)
-    (hm : g % 8 = 0) (ht : g + tailSize dec ≤ nb s₀) (hl : nb s₀ - g < threshold dec) :
-    nb s₀ = g + tailSize dec := by
-  cases dec <;> simp [tailSize, threshold] at ht hl ⊢ <;> omega
-
 theorem loopRun_ok {s₀ s : State} {P : Nat → Block} {dec : Bool} {g : Nat}
-    (hp : SPre s₀) (hm : nb s₀ % 16 = 0) (hlaw : HashLaw s₀ P) (h : LoopInv s₀ P dec g s)
+    (hp : SPre s₀) (hlaw : HashLaw s₀ P) (h : LoopInv s₀ P dec g s)
     (hn : g + threshold dec ≤ nb s₀) :
     WP isa (.loop (body8 dec (nr s₀)) .ae) s fun t =>
-      ∃ g, nb s₀ = g + tailSize dec ∧ LoopInv s₀ P dec g t := by
+      ∃ g, nb s₀ - g < threshold dec ∧ LoopInv s₀ P dec g t := by
   let I : Nat → State → Prop := fun m t => ∃ g,
     m = nb s₀ - g ∧ g + threshold dec ≤ nb s₀ ∧ LoopInv s₀ P dec g t
   have step : ∀ m t, I m t → WP isa (body8 dec (nr s₀)) t fun u =>
-      (eval .ae u = some false ∧ ∃ g, nb s₀ = g + tailSize dec ∧ LoopInv s₀ P dec g u) ∨
+      (eval .ae u = some false ∧ ∃ g, nb s₀ - g < threshold dec ∧ LoopInv s₀ P dec g u) ∨
       (eval .ae u = some true ∧ ∃ m' < m, I m' u) := by
     rintro m t ⟨g, rfl, hn, h⟩
     refine WP.mono (loopStep_ok hp hlaw h hn) fun u ⟨hu, hcf⟩ => ?_
     by_cases halt : nb s₀ - (g + 8) < threshold dec
     · exact .inl ⟨by simp only [eval, hcf, halt, decide_true, Option.map_some, Bool.not_true],
-        g + 8, stopped_length hp hm dec (g + 8) hu.multiple hu.tail_le halt, hu⟩
+        g + 8, halt, hu⟩
     · have hg := hu.core.g_le
       refine .inr ⟨by simp only [eval, hcf, halt, decide_false, Option.map_some, Bool.not_false],
         nb s₀ - (g + 8), ?_, g + 8, rfl, by omega, hu⟩
@@ -338,15 +355,15 @@ theorem loopRun_ok {s₀ s : State} {P : Nat → Block} {dec : Bool} {g : Nat}
   exact WP.loop (M := isa) I step (nb s₀ - g) s ⟨g, rfl, hn, h⟩
 
 theorem loopMaybe_ok {s₀ s : State} {P : Nat → Block} {dec : Bool} {g : Nat}
-    (hp : SPre s₀) (hm : nb s₀ % 16 = 0) (hlaw : HashLaw s₀ P) (h : LoopInv s₀ P dec g s)
+    (hp : SPre s₀) (hlaw : HashLaw s₀ P) (h : LoopInv s₀ P dec g s)
     (hcf : s.cf = some (decide (nb s₀ - g < threshold dec))) :
     WP isa (.ite .b (.block []) (.loop (body8 dec (nr s₀)) .ae)) s fun t =>
-      ∃ g, nb s₀ = g + tailSize dec ∧ LoopInv s₀ P dec g t := by
+      ∃ g, nb s₀ - g < threshold dec ∧ LoopInv s₀ P dec g t := by
   refine WP.ite (decide (nb s₀ - g < threshold dec)) (by simp only [eval, hcf]) (fun he => ?_) (fun he => ?_)
-  · exact WP.block_nil ⟨g, stopped_length hp hm dec g h.multiple h.tail_le (by simpa using he), h⟩
+  · exact WP.block_nil ⟨g, by simpa using he, h⟩
   · have hn : ¬nb s₀ - g < threshold dec := by simpa using he
     have hg := h.core.g_le
-    exact loopRun_ok hp hm hlaw h (by omega)
+    exact loopRun_ok hp hlaw h (by omega)
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 

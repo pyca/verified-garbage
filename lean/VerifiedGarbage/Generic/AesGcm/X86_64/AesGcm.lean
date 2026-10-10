@@ -106,9 +106,17 @@ theorem StitchName.ok : (n : StitchName) → Proof.Gcm.X86_64.Stitch.StitchOk n.
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZ.stitch_ok
   | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitch_ok
 
+/-- The encryption loop named `n`, if it takes all the blocks, meets its
+contract for any number of them from 16 on. -/
+theorem StitchName.okFull : (n : StitchName) → n.full = true → ∀ s₀, Proof.Gcm.X86_64.Stitch.SPre s₀ →
+    WP isa n.enc s₀ (Proof.Gcm.X86_64.Stitch.EPost s₀)
+  | .aesniAvx, _ => fun _ hp => Proof.Gcm.X86_64.StitchAvx8.enc_ok hp
+  | .vaes, h => absurd h (by decide)
+  | .vaesAvx512, h => absurd h (by decide)
+
 /-- The loops `p` names, with their proof. -/
 def StitchPart.impl (p : StitchPart) : StitchImpl :=
-  ⟨p.suffix, p.features, p.name.enc, p.name.dec, p.name.ok, p.encP, p.decP⟩
+  ⟨p.suffix, p.features, p.name.enc, p.name.dec, p.name.ok, p.name.full, p.name.okFull, p.encP, p.decP⟩
 
 /-- The loops named `n` for a key context of `vg_aes_gcm_init_precomputed`
 interleave counter mode and GHASH correctly. -/
@@ -199,11 +207,13 @@ def finNote (v : GcmImpl) : List String :=
   else []
 
 /-- How an instance of `vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks` works. -/
-def blocksNote (v : GcmImpl) : String :=
+def blocksNote (v : GcmImpl) (enc : Bool := false) : String :=
   if v.stitch.isSome then
     "This implementation interleaves the AES rounds of 16 blocks at a time with GHASH's \
       multiplications of the 16 blocks before them, from the powers of the hash subkey it \
-      computes in `scratch`, and handles the rest with `" ++ v.ctr.callee.name ++ "` and `" ++
+      computes in `scratch`, and handles the rest" ++
+      (if enc && v.stitch.any (·.full) then " in the same pass when there are at least 16 blocks, \
+        and otherwise" else "") ++ " with `" ++ v.ctr.callee.name ++ "` and `" ++
       v.gh.fn.name ++ "`."
   else
     "This implementation calls `" ++ v.ctr.callee.name ++ "` and `" ++ v.gh.fn.name ++ "`."
@@ -213,7 +223,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
   { Spec.Gcm.encryptBlocksApi with
     name := Spec.Gcm.encryptBlocksApi.name ++ v.suffix
     target := X86_64.target
-    doc := Spec.Gcm.encryptBlocksApi.doc (notes := [blocksNote v])
+    doc := Spec.Gcm.encryptBlocksApi.doc (notes := [blocksNote v true])
     code := v.callees.enc.code
     contract := Spec.Gcm.encryptBlocksContract X86_64.abi 8
     stack := 8
