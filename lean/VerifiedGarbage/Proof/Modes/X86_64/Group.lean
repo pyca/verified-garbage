@@ -100,7 +100,7 @@ structure GInv (cs : CoreSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.K
     Prop where
   base : s.gpr sb = B
   rsp : s.gpr .rsp = s₀.gpr .rsp
-  ready : cs.Ready s.mem B k
+  ready : cs.Ready s B k
   saved : ∀ i < 6, s.mem.readW (wordAddr B (c.slots + i)) 64 = s₀.mem.readW (wordAddr B (c.slots + i)) 64
   dataR : s.gpr c.dataReg = D + BitVec.ofNat 64 (16 * (c.G * g))
   leftR : s.gpr c.leftReg = BitVec.ofNat 64 (n - c.G * g)
@@ -181,12 +181,14 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
   have subBC : ∀ r ∈ [bufRegion c B, ctrRegion c B], Region.Sub r ⟨B, 8 * c.ctrSlots⟩ := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> refine subS ?_ <;> simp only [Core.hiSlot, Core.ctrSlots] <;> omega
-  have ready₁ : cs.Ready s₁.mem B k := cs.ready_frame hi.ready f₁ fun r hr => by
+  have ready₁ : cs.Ready s₁ B k := cs.ready_frame hi.ready f₁ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact .inr fun _ h => h
     · exact .inl (VG.Offset.disjoint_base B (by simp only [Core.hiSlot]; omega)
-        (by simp only [Core.hiSlot]; omega)).symm
+        (by simp only [Core.hiSlot]; omega)).symm) fun r hr => by
+    obtain ⟨h1, h2, h3, -⟩ := of_not_modeRegs hr
+    exact o₁ r h1 h2 h3
   -- The keystream.
   refine WP.seq (WP.mono (cs.crypt_wp base₁ ⟨by rw [wr₁]; exact hwS, hfit⟩ ready₁)
     fun s₂ ⟨base₂, rsp₂, dr₂, lr₂, ready₂, f₂, ks₂, rd₂, wr₂⟩ => ?_)
@@ -245,11 +247,12 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
   obtain ⟨s₆, e₆, d₆, l₆, z₆, o₆, m₆, rd₆, wr₆⟩ := advance_ok hdl d10 s₅
   have hz : s₆.zf = some (decide (v = cc)) := by
     rw [z₆, left₅, r10₅, VG.Offset.ofNat_sub_ofNat_beq hv (by omega)]
-  have ready₆ : cs.Ready s₆.mem B k := by
-    rw [m₆]
-    refine cs.ready_frame ready₂ f₅ fun r hr => ?_
-    simp only [List.mem_singleton] at hr; subst hr
-    exact .inl (((hp.sep.sub_left (VG.Offset.sub_base D (by omega))).sub_right subCore).symm)
+  have ready₆ : cs.Ready s₆ B k := by
+    refine cs.ready_frame ready₂ (by rw [m₆]; exact f₅) (fun r hr => ?_) fun r hr => ?_
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact .inl (((hp.sep.sub_left (VG.Offset.sub_base D (by omega))).sub_right subCore).symm)
+    · obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := of_not_modeRegs hr
+      rw [o₆ r h6 h7, keep₄ r h1 h2 h3 h4 h5]
   -- The data.
   have hdS : ∀ {rs : List Region}, (∀ r ∈ rs, Region.Sub r ⟨B, 8 * c.ctrSlots⟩) →
       ∀ r ∈ rs, Region.Disjoint ⟨D, 16 * n⟩ r := fun h r hr => hp.sep.sub_right (h r hr)

@@ -17,8 +17,11 @@ else: the modes are proven once, for any core, and each cipher proves
   (the scratch buffer among them). It survives what a mode does before
   `prepare` (`keyArgs_congr`): changing no register of `keyRegs`, nothing
   outside `rs` in memory.
-* `Ready m B k`: the key `k` is ready in the memory `m` at `B`. It depends
-  only on the core's slots outside its buffer (`ready_frame`).
+* `Ready s B k`: the key `k` is ready in the state `s`, with the scratch
+  buffer at `B`. It depends only on the core's slots outside its buffer and
+  on the registers the modes do not write (`modeRegs`, `ready_frame`), so a
+  core may keep part of it in registers (e.g. a pointer it saves and
+  restores around its rounds).
 * `prepare_wp`, `crypt_wp`: with the scratch buffer of `total` slots, each
   changes only the core's slots in memory, and keeps `sb`, `rsp`,
   `dataReg` and `leftReg`; every other register may change.
@@ -54,6 +57,20 @@ structure Layout (c : Core) : Prop where
   room : c.slots + 8 ≤ c.total
   small : 8 * c.total < 2 ^ 31
 
+/-- The registers the modes write between the core's code: their own
+(`rax`, `rbx`, `rcx`, `rbp`, `r10`) and the two the core keeps for them. -/
+def modeRegs (c : Core) : List Reg := [.rax, .rbx, .rcx, .rbp, .r10, c.dataReg, c.leftReg]
+
+theorem not_modeRegs {c : Core} {r : Reg} (h1 : r ≠ .rax) (h2 : r ≠ .rbx) (h3 : r ≠ .rcx) (h4 : r ≠ .rbp)
+    (h5 : r ≠ .r10) (h6 : r ≠ c.dataReg) (h7 : r ≠ c.leftReg) : r ∉ modeRegs c := by
+  simp only [modeRegs, List.mem_cons, List.not_mem_nil, or_false]
+  rintro (h | h | h | h | h | h | h) <;> contradiction
+
+theorem of_not_modeRegs {c : Core} {r : Reg} (h : r ∉ modeRegs c) :
+    r ≠ .rax ∧ r ≠ .rbx ∧ r ≠ .rcx ∧ r ≠ .rbp ∧ r ≠ .r10 ∧ r ≠ c.dataReg ∧ r ≠ c.leftReg := by
+  simp only [modeRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at h
+  exact h
+
 /-- The registers a core keeps for a mode: neither among the registers the
 modes use (`rax`, `rbx`, `rcx`, `rbp`, `r10`), `sb` or `rsp`, nor a key
 argument, nor the same. -/
@@ -66,7 +83,7 @@ structure CoreSpec (c : Core) where
   Key : Type
   cipher : Key → Spec.Cbc.Cipher
   KeyArgs : State → List Region → Key → Prop
-  Ready : Mem → Addr → Key → Prop
+  Ready : State → Addr → Key → Prop
   cipher_len : ∀ k b, (cipher k b).length = 16
   layout : Layout c
   keyRegs_ok : c.keyRegs.all (fun r => r != .rax && r != .rbx && r != sb) = true
@@ -74,16 +91,17 @@ structure CoreSpec (c : Core) where
   keyArgs_congr : ∀ {s s' : State} {rs : List Region} {k : Key}, KeyArgs s rs k →
     (∀ r ∈ c.keyRegs, s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → Frame rs s.mem s'.mem →
     KeyArgs s' rs k
-  ready_frame : ∀ {m m' : Mem} {B : Addr} {k : Key} {rs : List Region}, Ready m B k → Frame rs m m' →
-    (∀ r ∈ rs, Region.Disjoint (coreRegion c B) r ∨ Region.Sub r (bufRegion c B)) → Ready m' B k
+  ready_frame : ∀ {s s' : State} {B : Addr} {k : Key} {rs : List Region}, Ready s B k → Frame rs s.mem s'.mem →
+    (∀ r ∈ rs, Region.Disjoint (coreRegion c B) r ∨ Region.Sub r (bufRegion c B)) →
+    (∀ r, r ∉ modeRegs c → s'.gpr r = s.gpr r) → Ready s' B k
   prepare_wp : ∀ {s : State} {B : Addr} {rs : List Region} {k : Key}, s.gpr sb = B →
     ScrIn s B c.total → (⟨B, 8 * c.total⟩ : Region) ∈ rs → KeyArgs s rs k →
-    WP isa c.prepare s fun s' => Ready s'.mem B k ∧ s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
+    WP isa c.prepare s fun s' => Ready s' B k ∧ s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
       s'.gpr c.dataReg = s.gpr c.dataReg ∧ s'.gpr c.leftReg = s.gpr c.leftReg ∧
       Frame [coreRegion c B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr
-  crypt_wp : ∀ {s : State} {B : Addr} {k : Key}, s.gpr sb = B → ScrIn s B c.total → Ready s.mem B k →
+  crypt_wp : ∀ {s : State} {B : Addr} {k : Key}, s.gpr sb = B → ScrIn s B c.total → Ready s B k →
     WP isa c.crypt s fun s' => s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
-      s'.gpr c.dataReg = s.gpr c.dataReg ∧ s'.gpr c.leftReg = s.gpr c.leftReg ∧ Ready s'.mem B k ∧
+      s'.gpr c.dataReg = s.gpr c.dataReg ∧ s'.gpr c.leftReg = s.gpr c.leftReg ∧ Ready s' B k ∧
       Frame [coreRegion c B] s.mem s'.mem ∧
       (∀ j < c.G, bytesAt s'.mem (bufAddr c B j) 16 = cipher k (bytesAt s.mem (bufAddr c B j) 16)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr

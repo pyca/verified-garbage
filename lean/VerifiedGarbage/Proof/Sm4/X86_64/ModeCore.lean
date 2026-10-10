@@ -26,7 +26,7 @@ def KeyArgs (s : State) (rs : List Region) (k : Spec.Sm4.Schedule) : Prop :=
     p.toNat + 128 ≤ 2 ^ 64 ∧ ∀ r ∈ rs, Region.Disjoint ⟨p, 128⟩ r
 
 /-- The masks and the table of round keys in encryption order. -/
-def Ready (m : Mem) (B : Addr) (k : Spec.Sm4.Schedule) : Prop :=
+def ReadyAt (m : Mem) (B : Addr) (k : Spec.Sm4.Schedule) : Prop :=
   MasksAt m B ∧ ∀ e < 32, VG.Proof.Sm4.WordRel (entryW m B e) fun _ => dirKeys .encrypt k e
 
 theorem scheduleAt_congr {m m' : Mem} {p : Addr}
@@ -65,10 +65,10 @@ theorem word_disjoint {B : Addr} {d : Nat} (hd : d + 8 ≤ 8 * tableEnd)
     exact VG.Offset.disjoint B (by simp only [modeCore, tailSlot_eq] at hout ⊢; omega)
       (by simp only [tableEnd_eq] at hd; omega) (by simp only [modeCore, tailSlot_eq]; omega)
 
-theorem ready_frame {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {rs : List Region} (h : Ready m B k)
+theorem readyAt_frame {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {rs : List Region} (h : ReadyAt m B k)
     (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion modeCore B) r ∨ Region.Sub r (bufRegion modeCore B)) :
-    Ready m' B k := by
+    ReadyAt m' B k := by
   have hR : ∀ d, d + 8 ≤ 8 * tableEnd → (d + 8 ≤ 8 * tailSlot ∨ 8 * tailSlot + 256 ≤ d) →
       m'.readW (B + BitVec.ofNat 64 d) 64 = m.readW (B + BitVec.ofNat 64 d) 64 := fun d h1 h2 =>
     hf.readW (Region.contains_self _ _) (fun r hr => word_disjoint h1 h2 (hd r hr)) (by decide)
@@ -89,7 +89,7 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.Sm4.Schedule} 
 
 theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
     (hs : ScrIn s B modeCore.total) (hR : (⟨B, 8 * modeCore.total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
-    WP isa modeCore.prepare s fun s' => Ready s'.mem B k ∧ s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
+    WP isa modeCore.prepare s fun s' => ReadyAt s'.mem B k ∧ s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
       s'.gpr modeCore.dataReg = s.gpr modeCore.dataReg ∧ s'.gpr modeCore.leftReg = s.gpr modeCore.leftReg ∧
       Frame [coreRegion modeCore B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨p, hp, rfl, hin, hfit, hdis⟩ := hk
@@ -121,10 +121,10 @@ theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Spec.Sm4.Sched
       k₂.frame
 
 theorem crypt_wp {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
-    (hs : ScrIn s B modeCore.total) (hr : Ready s.mem B k) :
+    (hs : ScrIn s B modeCore.total) (hr : ReadyAt s.mem B k) :
     WP isa modeCore.crypt s fun s' => s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
       s'.gpr modeCore.dataReg = s.gpr modeCore.dataReg ∧ s'.gpr modeCore.leftReg = s.gpr modeCore.leftReg ∧
-      Ready s'.mem B k ∧
+      ReadyAt s'.mem B k ∧
       Frame [coreRegion modeCore B] s.mem s'.mem ∧
       (∀ j < modeCore.G, bytesAt s'.mem (bufAddr modeCore B j) 16 =
         Spec.Sm4.cipher k (bytesAt s.mem (bufAddr modeCore B j) 16)) ∧
@@ -165,13 +165,13 @@ def modeCoreSpec : CoreSpec modeCore where
   Key := Spec.Sm4.Schedule
   cipher := Spec.Sm4.cipher
   KeyArgs := KeyArgs
-  Ready := Ready
+  Ready s B k := ReadyAt s.mem B k
   cipher_len _ _ := by simp [Spec.Sm4.cipher]
   layout := ⟨by decide, by decide, by decide, by decide⟩
   keyRegs_ok := by decide
   regs_ok := by decide
   keyArgs_congr := keyArgs_congr
-  ready_frame := ready_frame
+  ready_frame h hf hd _ := readyAt_frame h hf hd
   prepare_wp := prepare_wp
   crypt_wp := crypt_wp
 

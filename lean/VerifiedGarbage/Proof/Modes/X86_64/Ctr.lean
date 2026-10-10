@@ -131,7 +131,8 @@ theorem ctr_wp (cs : CoreSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.dataReg 
       rw [mem₃]
       exact keep₂ j (by rcases hj with rfl | rfl <;> simp only [Core.hiSlot, Core.loSlot] <;> omega)
         (by rcases hj with rfl | rfl <;> simp only [Core.hiSlot, Core.loSlot, Core.ctrSlots] <;> omega)
-    refine ctrLoop_wp cs hp ⟨b₃, rfl, by rw [mem₃]; exact ready₂, fun _ _ => rfl, ?_, ?_, by omega, ?_, ?_,
+    refine ctrLoop_wp cs hp ⟨b₃, rfl, cs.ready_frame ready₂ (by rw [mem₃]; exact Frame.refl [] _)
+        (fun _ h => by simp at h) (fun r _ => by rw [g₃]), fun _ _ => rfl, ?_, ?_, by omega, ?_, ?_,
       fun i _ => by rw [ite_eq_right (by omega)], Frame.refl _ _, rfl, rfl⟩
     · rw [g₃, dr₂, dr₁, g₁a _ hr.data.1 hr.data.2.1 hr.data.2.2, hD]; simp
     · rw [left₃, Nat.mul_zero, Nat.sub_zero, ← hn]; simp
