@@ -235,7 +235,7 @@ theorem subSparse_ok (s : State) {t0 t1 t2 t3 t4 t5 t6 t7 : Reg}
       omega_using [e1, e2, e3, e4, e5]
     have hD6 : D6 = 0 := by omega_using [h5, e6, hC, k1, k2, k3, k4, k5, k7, q5]
     have hD8 : D8 = 0 := by omega_using [h5, e6, e7, e8, hD6, hlt, k1, k2, k3, k4, k5, k6]
-    omega_using [h5, e6, e7, e8, hD6, hD8]
+    subst hD6 hD8; grind only
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1,
       hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2, ite_false]
