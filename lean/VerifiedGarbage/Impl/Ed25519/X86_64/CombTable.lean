@@ -6,9 +6,9 @@ import VerifiedGarbage.Spec.Ed25519
 Table `j < 26` holds `[k]([1024^j]B)` for `k ≤ 16`, cached as `pointAddCached`
 reads it: `[Y - X, Y + X, 2dT, 2Z]`, with `Z = 1` (entry `0` is the identity's);
 the comb adds them or their negations, for digits from `-16` to `15`. `combG`
-is `[G]B` for the constant `G` those digits are offset by, and `combStart`
-`[G']B`, for `G' = 33 G / 32` modulo the group's order, so that `[32 G']B =
-[33 G]B`, where the comb starts.
+is `[G]B` for the constant `G` those digits are offset by, and `combStart b`
+`[G']B` plus the top chunk's (bit 255, `b`) digit, for `G' = 33 G / 32` modulo
+the group's order, so that `[32 G']B = [33 G]B`, where the comb starts.
 The proof checks every entry against the specification's addition.
 
 The code reads the entries `k ≥ 1`, without their `2Z`, from the static
@@ -452,14 +452,21 @@ def combCached (j k : Nat) : Spec.Ed25519.Point :=
 /-- `[G]B`, with `Z = 1`. -/
 def combG : Spec.Ed25519.Point := ⟨combGAff.1, combGAff.2, 1, combGAff.1 * combGAff.2⟩
 
-/-- `(x, y)` of `[G']B`, for `G' = 33 G / 32 mod ℓ` (`combStart`). -/
-def combStartAff : Spec.X25519.Fe × Spec.X25519.Fe :=
-  (689282936907452349785972911620034006729187532656872972349470508709590196323,
-    53445636636501442837259935388503905237811081440513722529362054175649140486930)
+/-- `(x, y)` of the comb's starts (`combStart`): `[G' - 16 · 1024^25]B` and
+`[G' - 15 · 1024^25]B`, for `G' = 33 G / 32` modulo the group's order. -/
+def combStartAff (b : Bool) : Spec.X25519.Fe × Spec.X25519.Fe :=
+  if b then
+    (20684353127101726546660375683862746385054025427342222856134045363588376957554,
+      26351108211729457492438723860601040382807274488334887144693384654305462383313)
+  else
+    (44783428670817401297898257403639106487494069065566075531485796751509565876774,
+      46925391090239671512587709021101190228234498764914527624671868226377223357696)
 
-/-- `[G']B`, with `Z = 1`: the comb's start, which its five doublings take to `[33 G]B`. -/
-def combStart : Spec.Ed25519.Point :=
-  ⟨combStartAff.1, combStartAff.2, 1, combStartAff.1 * combStartAff.2⟩
+/-- The comb's start for bit 255 of the scalar `b`, with `Z = 1`: `[G']B` plus chunk 51's
+digit, `(b - 16) 1024^25`, which its five doublings take to `[33 G]B` plus the digit's
+`[32^51]` multiple. -/
+def combStart (b : Bool) : Spec.Ed25519.Point :=
+  ⟨(combStartAff b).1, (combStartAff b).2, 1, (combStartAff b).1 * (combStartAff b).2⟩
 
 /-- Word `w` of a field element. -/
 def feWord (v : Spec.X25519.Fe) (w : Nat) : BitVec 64 := BitVec.ofNat 64 (v.val / 2 ^ (64 * w))
