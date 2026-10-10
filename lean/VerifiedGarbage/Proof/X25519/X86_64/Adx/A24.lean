@@ -27,7 +27,7 @@ theorem a24addX_ok {s : State} {base : Addr} (hs : Scr s base) {o b a : Nat} (ho
   refine WP.mono (movRdxImm_ok s a24) fun s1 ⟨d1, _, _, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (loads4_ok hs1 hb) fun s2 ⟨l2, k2⟩ => ?_
+  refine WP.mono (loadFe_ok hs1 hb) fun s2 ⟨l2, k2⟩ => ?_
   have hs2 := hs1.of_keeps k2 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (maddRow_ok hs2 (by omega) (by decide)) fun s3 ⟨e3, k3⟩ => ?_

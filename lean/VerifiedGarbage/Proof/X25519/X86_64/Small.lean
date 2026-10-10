@@ -18,7 +18,7 @@ theorem mulSmallAdd_eq (o b a : Nat) (k : BitVec 32) : mulSmallAdd o b a k =
   rfl
 
 /-- `[b]` into `r8–r11`. -/
-theorem loads4_ok {s : State} {base : Addr} (hs : Scr s base) {b : Nat} (hb : Slot b) :
+theorem loadFe_ok {s : State} {base : Addr} (hs : Scr s base) {b : Nat} (hb : Slot b) :
     WP isa (.block (loads b .r8 .r9 .r10 .r11)) s fun s' =>
       val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) = fe s.mem base b ∧
       Keeps [.r8, .r9, .r10, .r11] s s' := by
@@ -102,7 +102,7 @@ theorem mulA24Add_ok {s : State} {base : Addr} (hs : Scr s base) {o b a : Nat} (
   have g : ∀ {x y : State} {rs : List Reg} (k : Keeps rs x y) (r : Reg), r ∉ rs → y.gpr r = x.gpr r :=
     fun k r h => k.1 r h
   rw [mulSmallAdd_eq, WP.block_append_iff]
-  refine WP.mono (loads4_ok hs hb) fun s₀ ⟨l0, k0⟩ => ?_
+  refine WP.mono (loadFe_ok hs hb) fun s₀ ⟨l0, k0⟩ => ?_
   have hs₀ := hs.of_keeps k0 (by decide)
   rw [← List.append_assoc, ← List.append_assoc, ← List.append_assoc, ← List.append_assoc,
     WP.block_append_iff]
