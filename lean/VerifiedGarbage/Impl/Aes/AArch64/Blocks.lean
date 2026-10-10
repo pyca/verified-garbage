@@ -45,19 +45,19 @@ def loadFull : List Instr := (List.range 4).flatMap loadBlock
 
 /-- The last one to three blocks. -/
 def loadTail : Prog isa :=
-  .seq (.block (loadBlock 0 ++ [.subImm .x t0 .x4 1]))
-    (.ite (.nonzero .x t0) (.seq (.block (loadBlock 1 ++ [.subImm .x t0 .x4 2]))
+  .seq (.block (loadBlock 0 ++ ([.subImm .x t0 .x4 1] : List Instr)))
+    (.ite (.nonzero .x t0) (.seq (.block (loadBlock 1 ++ ([.subImm .x t0 .x4 2] : List Instr)))
         (.ite (.nonzero .x t0) (.block (loadBlock 2)) (.block [])))
       (.block []))
 
 /-- Four blocks, and on to the next four. -/
 def storeFull : List Instr :=
-  (List.range 4).flatMap storeBlock ++ [.addImm .x .x3 .x3 64, .subImm .x .x4 .x4 4]
+  (List.range 4).flatMap storeBlock ++ ([.addImm .x .x3 .x3 64, .subImm .x .x4 .x4 4] : List Instr)
 
 /-- The last one to three blocks (and none left). -/
 def storeTail : Prog isa :=
-  .seq (.block (storeBlock 0 ++ [.subImm .x t0 .x4 1]))
-    (.seq (.ite (.nonzero .x t0) (.seq (.block (storeBlock 1 ++ [.subImm .x t0 .x4 2]))
+  .seq (.block (storeBlock 0 ++ ([.subImm .x t0 .x4 1] : List Instr)))
+    (.seq (.ite (.nonzero .x t0) (.seq (.block (storeBlock 1 ++ ([.subImm .x t0 .x4 2] : List Instr)))
         (.ite (.nonzero .x t0) (.block (storeBlock 2)) (.block [])))
       (.block []))
     (.block [.movz .x .x4 0 0]))
@@ -80,16 +80,16 @@ def blocks (crypt4 : Prog isa) : Prog isa :=
 /-- A middle round of the inverse cipher, with `kp` at the previous round
 key; loops until `kp` is at round key 1 (`t0 = 0`). -/
 def invRoundBody : List Instr :=
-  [.subImm .x kp kp 64] ++ invShiftRows ++ invSboxCode ++ addRoundKey ++ invMixColumns ++
-  [.sub .x t0 kp .x0, .subImm .x t0 t0 64]
+  ([.subImm .x kp kp 64] : List Instr) ++ invShiftRows ++ invSboxCode ++ addRoundKey ++ invMixColumns ++
+  ([.sub .x t0 kp .x0, .subImm .x t0 t0 64] : List Instr)
 
 /-- The last round of the inverse cipher, with round key 0. -/
 def invLastRound : List Instr :=
-  [.subImm .x kp kp 64] ++ invShiftRows ++ invSboxCode ++ addRoundKey
+  ([.subImm .x kp kp 64] : List Instr) ++ invShiftRows ++ invSboxCode ++ addRoundKey
 
 /-- Decrypt the four blocks in `q 0 … q 7` (as `toBs` takes them). -/
 def decrypt4 : Prog isa :=
-  .seq (.block (toBs ++ [.addImm .x kp sb lastKey] ++ addRoundKey))
+  .seq (.block (toBs ++ ([.addImm .x kp sb lastKey] : List Instr) ++ addRoundKey))
     (.seq (.loop (.block invRoundBody) (.nonzero .x t0)) (.block (invLastRound ++ fromBs)))
 
 def encryptBlocks : Prog isa := blocks encrypt4

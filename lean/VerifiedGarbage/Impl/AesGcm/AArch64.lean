@@ -168,8 +168,8 @@ def absSeg1 (yo : Nat) : Prog isa :=
 
 /-- Before the second call: the whole blocks at `x23`. -/
 def absSeg2 (yo : Nat) : List Instr :=
-  [.lsr .x .x3 .x24 4, mov .x2 .x23] ++ ghArgs yo ++
-    [.lsl .x .x9 .x3 4, .add .x .x23 .x23 .x9, .sub .x .x24 .x24 .x9]
+  ([.lsr .x .x3 .x24 4, mov .x2 .x23] : List Instr) ++ ghArgs yo ++
+    ([.lsl .x .x9 .x3 4, .add .x .x23 .x23 .x9, .sub .x .x24 .x24 .x9] : List Instr)
 
 /-- The last `x24` bytes at `x23` buffered. -/
 def absTail : Prog isa :=
@@ -192,8 +192,8 @@ def flush (yo : Nat) : Prog isa := .seq (padSeg yo [ptr .x12 .x20 32]) (ghCall c
 
 /-- The lengths block of `ra` and `rb` bytes (as `[8 ra]₆₄ ‖ [8 rb]₆₄`) in `T`. -/
 def lensSeg (yo : Nat) (ra rb : Reg) : List Instr :=
-  [.lsl .x .x9 ra 3, .rev .x9 .x9, .str .x .x9 .x19 tO, .lsl .x .x9 rb 3, .rev .x9 .x9,
-    .str .x .x9 .x19 (tO + 8), imm .x3 1] ++ ghArgs yo ++ [ptr .x2 .x19 tO]
+  ([.lsl .x .x9 ra 3, .rev .x9 .x9, .str .x .x9 .x19 tO, .lsl .x .x9 rb 3, .rev .x9 .x9,
+    .str .x .x9 .x19 (tO + 8), imm .x3 1] : List Instr) ++ ghArgs yo ++ [ptr .x2 .x19 tO]
 
 /-- The lengths block of `ra` and `rb` bytes, absorbed. -/
 def lens (yo : Nat) (ra rb : Reg) : Prog isa := .seq (.block (lensSeg yo ra rb)) (ghCall c)
@@ -211,8 +211,8 @@ def crSeg1 : Prog isa :=
   .seq (.ite (.zero .x .x25) (.block [imm .x10 0]) minK)
   (.seq (.block [.add .x .x11 .x20 .x25, ptr .x11 .x11 64, mov .x12 .x23, mov .x13 .x10])
   (.seq xor
-    (.block ([.add .x .x23 .x23 .x10, .sub .x .x24 .x24 .x10, .lsr .x .x4 .x24 4, mov .x3 .x23] ++
-      ctrArgs ++ [.lsl .x .x9 .x4 4, .add .x .x23 .x23 .x9, .sub .x .x24 .x24 .x9]))))
+    (.block (([.add .x .x23 .x23 .x10, .sub .x .x24 .x24 .x10, .lsr .x .x4 .x24 4, mov .x3 .x23] : List Instr) ++
+      ctrArgs ++ ([.lsl .x .x9 .x4 4, .add .x .x23 .x23 .x9, .sub .x .x24 .x24 .x9] : List Instr)))))
 
 /-- The arguments for a new keystream block (one block, if there are bytes
 left, or none). -/
@@ -249,7 +249,7 @@ def j012 : List Instr :=
 accumulator at `x20`, and its last `x25` bytes at `x23`. -/
 def j0Seg : List Instr :=
   [imm .x9 0, .str .x .x9 .x20 0, .str .x .x9 .x20 8, .lsr .x .x3 .x24 4, mov .x2 .x23] ++ ghArgs 0 ++
-    [.lsl .x .x9 .x3 4, .add .x .x23 .x23 .x9, imm .x10 15, .logic .and .x .x25 .x24 .x10]
+    ([.lsl .x .x9 .x3 4, .add .x .x23 .x23 .x9, imm .x10 15, .logic .and .x .x25 .x24 .x10] : List Instr)
 
 /-- `J₀` of any other nonce, with its length in `x26` and 0 in `x27`. -/
 def j0hash : Prog isa :=
@@ -410,7 +410,7 @@ def streamVerify : Prog isa :=
 nonce_len = x3, aad = x4, aad_len = x5, data = x6, len = x7, …)`, with `work`
 at `[sp + w]`. The state is at `W + 16`. -/
 def oneEntry (w : Nat) : List Instr :=
-  [.ldrSp .x9 w] ++ save .x9 ++
+  ([.ldrSp .x9 w] : List Instr) ++ save .x9 ++
     [mov .x19 .x9, ptr .x20 .x19 16, mov .x21 .x0, mov .x22 .x1, .str .x .x4 .x19 aadO,
       .str .x .x5 .x19 alenO, .str .x .x6 .x19 dataO, .str .x .x7 .x19 lenO, mov .x23 .x2,
       mov .x24 .x3, mov .x26 .x3, imm .x27 0]
@@ -464,7 +464,7 @@ def openMain : Prog isa :=
 /-- `vg_aes_gcm_open`, with `tag = [sp]` (in `x12` until `tagIn`),
 `tag_len = [sp + 8]` (kept at `W + 248`) and `work = [sp + 16]`. -/
 def «open» : Prog isa :=
-  .seq (.block (oneEntry 16 ++ stashArg 8 ++ [.ldrSp .x12 0]))
+  .seq (.block (oneEntry 16 ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)))
   (.seq tagLenOk
   (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openMain c)))
     (.block restore)))

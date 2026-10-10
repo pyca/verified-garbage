@@ -48,11 +48,11 @@ def advance : List Instr := [.dp .add .r7 .r7 (.imm 1), .subs .r8 .r8 (.imm 1)]
 
 /-- `C#ⱼ = P#ⱼ ⊕ MSB₈(Oⱼ)`, shifted into the input block. -/
 def encPost : List Instr :=
-  [.ldrb .r12 .r7 0, .ldrb .lr .r10 cOff, .dp .eor .r12 .r12 (.reg .lr), .strb .r12 .r7 0] ++ shift ++ advance
+  ([.ldrb .r12 .r7 0, .ldrb .lr .r10 cOff, .dp .eor .r12 .r12 (.reg .lr), .strb .r12 .r7 0] : List Instr) ++ shift ++ advance
 
 /-- `P#ⱼ = C#ⱼ ⊕ MSB₈(Oⱼ)`, and `C#ⱼ` shifted into the input block. -/
 def decPost : List Instr :=
-  [.ldrb .r12 .r7 0, .ldrb .lr .r10 cOff, .dp .eor .lr .lr (.reg .r12), .strb .lr .r7 0] ++ shift ++ advance
+  ([.ldrb .r12 .r7 0, .ldrb .lr .r10 cOff, .dp .eor .lr .lr (.reg .r12), .strb .lr .r7 0] : List Instr) ++ shift ++ advance
 
 /-- One byte: the input block enciphered in the scratch buffer, and `post`. -/
 def body (post : List Instr) : Prog isa := .seq (.block pre) (.seq encFrame (.block post))

@@ -47,14 +47,14 @@ def blocksLoad : List Instr :=
 def blocks8 (f : List XReg → Prog isa) : Prog isa :=
   .seq (.block (loadData regs8 0))
     (.seq (f regs8)
-      (.block (storeData regs8 0 ++ [.alu .add .rdx (.imm 128), .alu .sub .rcx (.imm 8),
-        .alu .cmp .rcx (.imm 8)])))
+      (.block (storeData regs8 0 ++ ([.alu .add .rdx (.imm 128), .alu .sub .rcx (.imm 8),
+        .alu .cmp .rcx (.imm 8)] : List Instr))))
 
 /-- One block through `f`. -/
 def blocks1 (f : List XReg → Prog isa) : Prog isa :=
   .seq (.block (loadData [.xmm0] 0))
     (.seq (f [.xmm0])
-      (.block (storeData [.xmm0] 0 ++ [.alu .add .rdx (.imm 16), .alu .sub .rcx (.imm 1)])))
+      (.block (storeData [.xmm0] 0 ++ ([.alu .add .rdx (.imm 16), .alu .sub .rcx (.imm 1)] : List Instr))))
 
 /-- The blocks, eight and then one at a time, after `cmp rcx, 8`. -/
 def blocksTail (f : List XReg → Prog isa) : Prog isa :=
@@ -70,9 +70,9 @@ def imcKey (j : Nat) : List Instr :=
 
 /-- Round keys 1 … `Nr − 1` through `aesimc`, for `rounds` (10, 12 or 14) in `rsi`. -/
 def imcKeys : Prog isa :=
-  .seq (.block ((List.range 9).flatMap (fun j => imcKey (j + 1)) ++ [.alu .cmp .rsi (.imm 10)]))
+  .seq (.block ((List.range 9).flatMap (fun j => imcKey (j + 1)) ++ ([.alu .cmp .rsi (.imm 10)] : List Instr)))
     (.ite .e (.block [])
-      (.seq (.block (imcKey 10 ++ imcKey 11 ++ [.alu .cmp .rsi (.imm 12)]))
+      (.seq (.block (imcKey 10 ++ imcKey 11 ++ ([.alu .cmp .rsi (.imm 12)] : List Instr)))
         (.ite .e (.block []) (.block (imcKey 12 ++ imcKey 13)))))
 
 /-- The middle round with round key `j` (`1 ≤ j < Nr`) of each block, from
@@ -83,7 +83,7 @@ def dround (regs : List XReg) (j : Nat) : List Instr := keyOp regs .aesdec (at_ 
 key schedule at `rdi`, its last round key at `r10`, and round keys
 1 … `Nr − 1` through `aesimc` in the scratch buffer at `r8`. -/
 def aesDec (regs : List XReg) : Prog isa :=
-  .seq (.block (keyOp regs .pxor (at_ .r10 0) ++ [.alu .cmp .rsi (.imm 10)]))
+  .seq (.block (keyOp regs .pxor (at_ .r10 0) ++ ([.alu .cmp .rsi (.imm 10)] : List Instr)))
     (.seq
       (.ite .e (.block [])
         (.seq (.block [.alu .cmp .rsi (.imm 12)])

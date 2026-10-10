@@ -46,8 +46,8 @@ def hInvY (d a t : XReg) : List Instr :=
 /-- `H'ʲ⁺¹` and `H'ʲ` in the lanes of `d`, from `Hʲ⁺¹` and `Hʲ` at
 `ctx + 256 + 16 j` and `ctx + 240 + 16 j`, through `ymm7` and `ymm10`. -/
 def cvtPair (j : Nat) (d : XReg) : List Instr :=
-  [.vmovdquLoad .l128 .xmm7 (at_ .rdi (256 + 16 * j)), .vmovdquLoad .l128 .xmm10 (at_ .rdi (240 + 16 * j)),
-   .vop (.vinserti128 .xmm7 .xmm7 .xmm10 1), .vop (.vbin .vpshufb .l256 .xmm7 .xmm7 .xmm0)] ++
+  ([.vmovdquLoad .l128 .xmm7 (at_ .rdi (256 + 16 * j)), .vmovdquLoad .l128 .xmm10 (at_ .rdi (240 + 16 * j)),
+   .vop (.vinserti128 .xmm7 .xmm7 .xmm10 1), .vop (.vbin .vpshufb .l256 .xmm7 .xmm7 .xmm0)] : List Instr) ++
   hInvY d .xmm7 .xmm10
 
 /-- The constants in both lanes of `ymm0` and `ymm1`, `ymm8` and `ymm9`, and
@@ -71,7 +71,7 @@ def powPair (g m : Nat) : List Instr :=
 saved. -/
 def powP48 : List Instr :=
   cvtConsts ++ (List.range 8).flatMap (powPair 1) ++ (List.range 8).flatMap (powPair 0) ++
-  [.vmovdqu32Store (at_ .r11 832) .xmm1]
+  ([.vmovdqu32Store (at_ .r11 832) .xmm1] : List Instr)
 
 /-- `StitchZ.big` with the tables loaded. -/
 def bigP : Prog isa :=

@@ -115,22 +115,22 @@ def callEcb : Prog isa := .call e.name e.code
 /-- `vg_aes_ctr32`'s arguments but the key schedule: one block at `rcx`, the
 counter block at `W + ccO` and the working space. -/
 def ctrArgs : List Instr :=
-  [.mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r15 ccO ++ [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO
+  ([.mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r15 ccO ++ ([.mov32 .r8 (imm 1)] : List Instr) ++ ptr .r9 .r15 scrO
 
 /-! ## The keys -/
 
 /-- `little_endian_uint32(rbx) ‖ nonce` at `W + ccO`, and a zero block at
 `W + bO`. -/
 def deriveBlock : List Instr :=
-  [.mov .rax (.mem (at_ .r15 nonceO)), .mov32 .rcx (.mem (at_ .rax 0)), .mov32 .rdx (.mem (at_ .rax 4)),
+  ([.mov .rax (.mem (at_ .r15 nonceO)), .mov32 .rcx (.mem (at_ .rax 0)), .mov32 .rdx (.mem (at_ .rax 4)),
     .mov32 .r8 (.mem (at_ .rax 8)), .store32 (at_ .r15 ccO) .rbx, .store32 (at_ .r15 (ccO + 4)) .rcx,
-    .store32 (at_ .r15 (ccO + 8)) .rdx, .store32 (at_ .r15 (ccO + 12)) .r8] ++ zero16 bO
+    .store32 (at_ .r15 (ccO + 8)) .rdx, .store32 (at_ .r15 (ccO + 12)) .r8] : List Instr) ++ zero16 bO
 
 /-- The message keys, 8 bytes per block, from `W + akO`. -/
 def derive : Prog isa :=
-  .seq (.block ([.mov32 .rbx (imm 0)] ++ ptr .r12 .r15 akO ++
-      [.mov .rbp (.mem (at_ .r15 roundsO)), .shift .shr .rbp 1, .alu .sub .rbp (imm 1)]))
-    (.loop (.seq (.block (deriveBlock ++ [.mov .rdi (.reg .r13)] ++ ctrArgs ++ ptr .rcx .r15 bO))
+  .seq (.block (([.mov32 .rbx (imm 0)] : List Instr) ++ ptr .r12 .r15 akO ++
+      ([.mov .rbp (.mem (at_ .r15 roundsO)), .shift .shr .rbp 1, .alu .sub .rbp (imm 1)] : List Instr)))
+    (.loop (.seq (.block (deriveBlock ++ ([.mov .rdi (.reg .r13)] : List Instr) ++ ctrArgs ++ ptr .rcx .r15 bO))
       (.seq (callCtr c)
         (.block [.mov .rax (.mem (at_ .r15 bO)), .store (at_ .r12 0) .rax, .alu .add .r12 (imm 8),
           .alu .add .rbx (imm 1), .alu .cmp .rbx (.reg .rbp)]))) .ne)
@@ -138,19 +138,19 @@ def derive : Prog isa :=
 /-- The encryption key's schedule at `W + skO`: its length is
 `4 (rounds − 6)`. -/
 def expand : Prog isa :=
-  .seq (.block (ptr .rdi .r15 ekO ++ [.mov .rsi (.mem (at_ .r15 roundsO)), .alu .sub .rsi (imm 6),
-      .alu .add .rsi (.reg .rsi), .alu .add .rsi (.reg .rsi)] ++ ptr .rdx .r15 skO ++ ptr .rcx .r15 scrO))
+  .seq (.block (ptr .rdi .r15 ekO ++ ([.mov .rsi (.mem (at_ .r15 roundsO)), .alu .sub .rsi (imm 6),
+      .alu .add .rsi (.reg .rsi), .alu .add .rsi (.reg .rsi)] : List Instr) ++ ptr .rdx .r15 skO ++ ptr .rcx .r15 scrO))
     (callKey c)
 
 /-- GHASH's key, `H · x` for the authentication key `H` (as a
 little-endian number), in GHASH's order at `W + hO`, and its accumulator
 zeroed. -/
 def hkey : List Instr :=
-  [.mov .rax (.mem (at_ .r15 akO)), .mov .rdx (.mem (at_ .r15 (akO + 8))), .mov .rcx (.reg .rax),
+  ([.mov .rax (.mem (at_ .r15 akO)), .mov .rdx (.mem (at_ .r15 (akO + 8))), .mov .rcx (.reg .rax),
     .alu .and .rcx (imm 1), .mov32 .r8 (imm 0), .alu .sub .r8 (.reg .rcx), .shift .shr .rax 1,
     .mov .rcx (.reg .rdx), .alu .and .rcx (imm 1), .shift .ror .rcx 1, .alu .or .rax (.reg .rcx), .shift .shr .rdx 1,
     .movImm64 .rcx 0xE100000000000000, .alu .and .rcx (.reg .r8), .alu .xor .rdx (.reg .rcx), .bswap .rdx,
-    .bswap .rax, .store (at_ .r15 hO) .rdx, .store (at_ .r15 (hO + 8)) .rax] ++ zero16 yO
+    .bswap .rax, .store (at_ .r15 hO) .rdx, .store (at_ .r15 (hO + 8)) .rax] : List Instr) ++ zero16 yO
 
 /-! ## POLYVAL -/
 
@@ -170,9 +170,9 @@ absorbed; `r12` and `rbx` past them. -/
 def absorbChunk : Prog isa :=
   .seq (.block [.mov32 .r14 (imm 64), .alu .cmp .rbx (.reg .r14)])
   (.seq (.ite .b (.block [.mov .r14 (.reg .rbx)]) (.block []))
-  (.seq (.block ([.mov .rsi (.reg .r12)] ++ ptr .rdi .r15 revO))
+  (.seq (.block (([.mov .rsi (.reg .r12)] : List Instr) ++ ptr .rdi .r15 revO))
   (.seq revLoop
-  (.seq (.block (ghArgs ++ ptr .rdx .r15 revO ++ [.mov .rcx (.reg .r14)]))
+  (.seq (.block (ghArgs ++ ptr .rdx .r15 revO ++ ([.mov .rcx (.reg .r14)] : List Instr)))
   (.seq (callGh c)
     (.block [.mov .rax (.reg .r14), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
       .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .r12 (.reg .rax), .alu .sub .rbx (.reg .r14)]))))))
@@ -180,11 +180,11 @@ def absorbChunk : Prog isa :=
 /-- The last `rbp` (1 to 15) bytes at `r12`, padded with zeros, reversed and
 absorbed. -/
 def absorbTail : Prog isa :=
-  .seq (.block (zero16 bO ++ ptr .rdi .r15 bO ++ [.mov .rsi (.reg .r12), .mov .rcx (.reg .rbp)]))
+  .seq (.block (zero16 bO ++ ptr .rdi .r15 bO ++ ([.mov .rsi (.reg .r12), .mov .rcx (.reg .rbp)] : List Instr)))
   (.seq copyLoop
-  (.seq (.block ([.mov .rax (.mem (at_ .r15 bO)), .mov .rdx (.mem (at_ .r15 (bO + 8))), .bswap .rax, .bswap .rdx,
-      .store (at_ .r15 revO) .rdx, .store (at_ .r15 (revO + 8)) .rax] ++ ghArgs ++ ptr .rdx .r15 revO ++
-      [.mov32 .rcx (imm 1)]))
+  (.seq (.block (([.mov .rax (.mem (at_ .r15 bO)), .mov .rdx (.mem (at_ .r15 (bO + 8))), .bswap .rax, .bswap .rdx,
+      .store (at_ .r15 revO) .rdx, .store (at_ .r15 (revO + 8)) .rax] : List Instr) ++ ghArgs ++ ptr .rdx .r15 revO ++
+      ([.mov32 .rcx (imm 1)] : List Instr)))
     (callGh c)))
 
 /-- The `rbp` bytes at `r12`, padded with zeros to whole blocks, absorbed. -/
@@ -197,11 +197,11 @@ def absorb : Prog isa :=
 /-- The lengths block, `le64(8 · aad_len) ‖ le64(8 · len)`, in GHASH's order
 at `W + bO`, absorbed. -/
 def lens : Prog isa :=
-  .seq (.block ([.mov .rax (.mem (at_ .r15 lenO)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+  .seq (.block (([.mov .rax (.mem (at_ .r15 lenO)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
       .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .r15 bO) .rax,
       .mov .rax (.mem (at_ .r15 alenO)), .alu .add .rax (.reg .rax),
-      .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .r15 (bO + 8)) .rax] ++
-      ghArgs ++ ptr .rdx .r15 bO ++ [.mov32 .rcx (imm 1)]))
+      .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .r15 (bO + 8)) .rax] : List Instr) ++
+      ghArgs ++ ptr .rdx .r15 bO ++ ([.mov32 .rcx (imm 1)] : List Instr)))
     (callGh c)
 
 /-- The tag input at `W + cmO`: POLYVAL's result in its own order, its first
@@ -224,8 +224,8 @@ the counter block in `xmm0`, stored and its first 32-bit word incremented
 (`paddd` of `xmm1`, which holds 1 in its first word and 0 in the others)
 `r14` times (`rcx` counting down); then the block back at `W + cmO`. -/
 def ctrGen : Prog isa :=
-  .seq (.block ([.movdquLoad .xmm0 (at_ .r15 cmO), .mov32 .r8 (imm 1), .xop (.movq .xmm1 .r8),
-      .mov .rcx (.reg .r14)] ++ ptr .rdi .r15 revO))
+  .seq (.block (([.movdquLoad .xmm0 (at_ .r15 cmO), .mov32 .r8 (imm 1), .xop (.movq .xmm1 .r8),
+      .mov .rcx (.reg .r14)] : List Instr) ++ ptr .rdi .r15 revO))
     (.seq (.loop (.block [.movdquStore (at_ .rdi 0) .xmm0, .xop (.bin .paddd .xmm0 .xmm1), .alu .add .rdi (imm 16),
         .alu .sub .rcx (imm 1)]) .ne)
       (.block [.movdquStore (at_ .r15 cmO) .xmm0]))
@@ -233,13 +233,13 @@ def ctrGen : Prog isa :=
 /-- `vg_aes_encrypt_blocks`'s arguments: the encryption key's schedule, the
 `r14` counter blocks at `W + revO` and the working space. -/
 def ecbArgs : List Instr :=
-  ptr .rdi .r15 skO ++ [.mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r15 revO ++
-    [.mov .rcx (.reg .r14)] ++ ptr .r8 .r15 scrO
+  ptr .rdi .r15 skO ++ ([.mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r15 revO ++
+    ([.mov .rcx (.reg .r14)] : List Instr) ++ ptr .r8 .r15 scrO
 
 /-- The `r14` keystream blocks at `W + revO` XORed into the data at `r12`,
 16 bytes at a time; `r12` past them. -/
 def ksXor : Prog isa :=
-  .seq (.block ([.mov .rcx (.reg .r14)] ++ ptr .rsi .r15 revO))
+  .seq (.block (([.mov .rcx (.reg .r14)] : List Instr) ++ ptr .rsi .r15 revO))
     (.loop (.block [.movdquLoad .xmm0 (at_ .r12 0), .movdquLoad .xmm1 (at_ .rsi 0), .xop (.bin .pxor .xmm0 .xmm1),
         .movdquStore (at_ .r12 0) .xmm0, .alu .add .r12 (imm 16), .alu .add .rsi (imm 16),
         .alu .sub .rcx (imm 1)]) .ne)
@@ -259,7 +259,7 @@ def cryptChunk : Prog isa :=
 def cryptTail : Prog isa :=
   .seq (.block (copy16 cmO ccO ++ zero16 bO ++ ptr .rdi .r15 skO ++ ctrArgs ++ ptr .rcx .r15 bO))
   (.seq (callCtr c)
-    (.seq (.block ([.mov .rdi (.reg .r12)] ++ ptr .rsi .r15 bO ++ [.mov .rcx (.reg .rbp)])) xorLoop))
+    (.seq (.block (([.mov .rdi (.reg .r12)] : List Instr) ++ ptr .rsi .r15 bO ++ ([.mov .rcx (.reg .rbp)] : List Instr))) xorLoop))
 
 /-- The data encrypted (or decrypted) in place, from the tag at `W` with the
 top bit of its last byte set. -/
@@ -296,10 +296,10 @@ the stack above the length and `tag`, the seventh and eighth), keeps `W` in
 `r15` and the key schedule in `r13`, and the other arguments but `tag` in
 `W`. -/
 def entry : List Instr :=
-  [.mov .rax (.mem (at_ .rsp 24)), .mov .r10 (.mem (at_ .rsp 8))] ++ save .rax ++
-    [.mov .r15 (.reg .rax), .mov .r13 (.reg .rdi), .store (at_ .r15 roundsO) .rsi, .store (at_ .r15 nonceO) .rdx,
+  ([.mov .rax (.mem (at_ .rsp 24)), .mov .r10 (.mem (at_ .rsp 8))] : List Instr) ++ save .rax ++
+    ([.mov .r15 (.reg .rax), .mov .r13 (.reg .rdi), .store (at_ .r15 roundsO) .rsi, .store (at_ .r15 nonceO) .rdx,
       .store (at_ .r15 aadO) .rcx, .store (at_ .r15 alenO) .r8, .store (at_ .r15 dataO) .r9,
-      .store (at_ .r15 lenO) .r10]
+      .store (at_ .r15 lenO) .r10] : List Instr)
 
 /-- The received tag copied from `tag`, whose address is at `[rsp + 16]`, to
 `W`. -/
@@ -333,6 +333,6 @@ def «seal» : Prog isa :=
 /-- `vg_aes_gcm_siv_open`. -/
 def «open» : Prog isa :=
   .seq (.block entry) (.seq (.block recv) (.seq (keys c) (.seq (crypt c e) (.seq (polyval c) (.seq (tag c bO)
-    (.seq (.block cmp) (.seq mask (.block ([.mov .rax (.mem (at_ .r15 okO))] ++ restore)))))))))
+    (.seq (.block cmp) (.seq mask (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)))))))))
 
 end VG.Impl.AesGcmSiv.X86_64

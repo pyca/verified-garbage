@@ -192,7 +192,7 @@ def ghArgs (yo : Nat) : List Instr :=
 
 /-- `vg_ghash` of the block at `b + o` into the accumulator at `esi + yo`. -/
 def ghash1 (yo : Nat) (b : Reg) (o : Nat) : Prog isa :=
-  .seq (.block ([.mov .ebx (.reg b), .alu .add .ebx (imm o), .mov .edi (imm 1)] ++ ghArgs yo))
+  .seq (.block (([.mov .ebx (.reg b), .alu .add .ebx (imm o), .mov .edi (imm 1)] : List Instr) ++ ghArgs yo))
     (.seq (ghCall c) (.block unscr))
 
 /-- The buffer filled from `dO`, and absorbed if full. -/
@@ -228,8 +228,8 @@ def absorb (yo : Nat) : Prog isa :=
 def flush (yo : Nat) : Prog isa :=
   .seq (.block [.mov .ecx (slot bO), .alu .test .ecx (.reg .ecx)])
     (.ite .e (.block [])
-      (.seq (.block (zero4 tO ++ [.mov .edi (.reg .esi), .alu .add .edi (imm 32), .mov .edx (.reg .ebp),
-          .alu .add .edx (imm tO)]))
+      (.seq (.block (zero4 tO ++ ([.mov .edi (.reg .esi), .alu .add .edi (imm 32), .mov .edx (.reg .ebp),
+          .alu .add .edx (imm tO)] : List Instr)))
       (.seq copyLoop (ghash1 c yo .ebp tO))))
 
 /-- `8 x` (modulo 2⁶⁴) for the 64-bit `x` whose words are at `W + lo` and
@@ -271,9 +271,9 @@ def cryptWhole : Prog isa :=
 def cryptTail : Prog isa :=
   .seq (.block [.mov .eax (slot nO), .alu .test .eax (.reg .eax)])
     (.ite .e (.block [])
-      (.seq (.block ([.mov .eax (imm 0), .store (at_ .esi 64) .eax, .store (at_ .esi 68) .eax,
+      (.seq (.block (([.mov .eax (imm 0), .store (at_ .esi 64) .eax, .store (at_ .esi 68) .eax,
           .store (at_ .esi 72) .eax, .store (at_ .esi 76) .eax, .mov .ebx (.reg .esi), .alu .add .ebx (imm 64),
-          .mov .edi (imm 1)] ++ ctrArgs))
+          .mov .edi (imm 1)] : List Instr) ++ ctrArgs))
       (.seq (.seq (ctrCall c) (.block unscr))
       (.seq (.block [.mov .edi (slot dO), .mov .edx (.reg .esi), .alu .add .edx (imm 64), .mov .ecx (slot nO)])
         xorLoop))))
@@ -329,8 +329,8 @@ def j0 : Prog isa :=
 
 /-- The `tag_len` bytes of the received tag (at `tag`, kept at `W + tpO`), padded with zeros at `W + rO`. -/
 def recv : Prog isa :=
-  .seq (.block (zero4 rO ++ [.mov .edi (slot tpO), .mov .edx (.reg .ebp), .alu .add .edx (imm rO),
-    .mov .ecx (slot tglO)]))
+  .seq (.block (zero4 rO ++ ([.mov .edi (slot tpO), .mov .edx (.reg .ebp), .alu .add .edx (imm rO),
+    .mov .ecx (slot tglO)] : List Instr)))
     copyLoop
 
 /-- The words of `W + vO` and `W + rO` compared: `eax = 1` if they are equal. -/
@@ -343,8 +343,8 @@ def cmpTail : List Instr :=
 /-- The first `tag_len` bytes of the tag at `W + o`, padded with zeros at
 `W + vO`, compared with the received one: `eax = 1` if they are equal. -/
 def cmp (o : Nat) : Prog isa :=
-  .seq (.block (zero4 vO ++ [.mov .edi (.reg .ebp), .alu .add .edi (imm o), .mov .edx (.reg .ebp),
-    .alu .add .edx (imm vO), .mov .ecx (slot tglO)]))
+  .seq (.block (zero4 vO ++ ([.mov .edi (.reg .ebp), .alu .add .edi (imm o), .mov .edx (.reg .ebp),
+    .alu .add .edx (imm vO), .mov .ecx (slot tglO)] : List Instr)))
   (.seq copyLoop (.block cmpTail))
 
 /-- ZF is clear iff the tag length (at `W + tglO`) is one §5.2.1.2 allows (4, 8 or 12 to 16). -/
@@ -370,29 +370,29 @@ def init : Prog isa :=
   .seq (entry 3 [.mov .esi (argOp 2), .mov .ecx (argOp 1), .mov .ebx (.reg .ecx), .shift .shr .ebx 2,
       .alu .add .ebx (imm 6), .mov .eax (argOp 0), .mov .edx (.reg .esi), .alu .add .ebp (imm scrO)])
   (.seq (keyCall c)
-  (.seq (.block (unscr ++ [.mov .eax (imm 0), .store (at_ .esi 240) .eax, .store (at_ .esi 244) .eax,
-      .store (at_ .esi 248) .eax, .store (at_ .esi 252) .eax] ++ zero4 tO ++
-      [.mov .eax (.reg .esi), .mov .ecx (.reg .ebx), .mov .edx (.reg .ebp), .alu .add .edx (imm tO),
-        .mov .ebx (.reg .esi), .alu .add .ebx (imm 240), .mov .edi (imm 1), .alu .add .ebp (imm scrO)]))
+  (.seq (.block (unscr ++ ([.mov .eax (imm 0), .store (at_ .esi 240) .eax, .store (at_ .esi 244) .eax,
+      .store (at_ .esi 248) .eax, .store (at_ .esi 252) .eax] : List Instr) ++ zero4 tO ++
+      ([.mov .eax (.reg .esi), .mov .ecx (.reg .ebx), .mov .edx (.reg .ebp), .alu .add .edx (imm tO),
+        .mov .ebx (.reg .esi), .alu .add .ebx (imm 240), .mov .edi (imm 1), .alu .add .ebp (imm scrO)] : List Instr)))
   (.seq (ctrCall c)
     (.block (unscr ++ restore)))))
 
 /-- `vg_aes_gcm_stream_init(ctx, nonce, nonce_len, state, scratch)`. -/
 def streamInit : Prog isa :=
-  .seq (entry 4 ([.mov .esi (argOp 3)] ++ keep 0 ctxO ++ keep 1 dO ++ keep 2 nO ++ keep 2 nlO ++
-      [.mov .eax (imm 0), .store (at_ .ebp zO) .eax]))
+  .seq (entry 4 (([.mov .esi (argOp 3)] : List Instr) ++ keep 0 ctxO ++ keep 1 dO ++ keep 2 nO ++ keep 2 nlO ++
+      ([.mov .eax (imm 0), .store (at_ .ebp zO) .eax] : List Instr)))
   (.seq (j0 c) (.block restore))
 
 /-- `vg_aes_gcm_stream_aad(ctx, state, aad_len (2 words), data, len, scratch)`. -/
 def streamAad : Prog isa :=
-  .seq (entry 6 ([.mov .esi (argOp 1)] ++ keep 0 ctxO ++ keep 4 dO ++ keep 5 nO ++
-      [.mov .eax (argOp 2), .alu .and .eax (imm 15), .store (at_ .ebp bO) .eax]))
+  .seq (entry 6 (([.mov .esi (argOp 1)] : List Instr) ++ keep 0 ctxO ++ keep 4 dO ++ keep 5 nO ++
+      ([.mov .eax (argOp 2), .alu .and .eax (imm 15), .store (at_ .ebp bO) .eax] : List Instr)))
   (.seq (absorb c 16) (.block restore))
 
 /-- The entry of `encrypt` and `decrypt`: `(ctx, rounds, state, aad_len (2 words),
 text_len (2 words), data, len, scratch)`. -/
 def cryptEntry : Prog isa :=
-  entry 9 ([.mov .esi (argOp 2)] ++ keep 0 ctxO ++ keep 1 roundsO ++ keep 3 alO ++ keep 4 ahO ++
+  entry 9 (([.mov .esi (argOp 2)] : List Instr) ++ keep 0 ctxO ++ keep 1 roundsO ++ keep 3 alO ++ keep 4 ahO ++
     keep 5 xlO ++ keep 6 xhO ++ keep 7 dataO ++ keep 8 lenO)
 
 /-- The text: `len` bytes at `data`, `text_len mod 16` into the keystream block. -/
@@ -423,7 +423,7 @@ def streamDecrypt : Prog isa :=
 /-- The entry of `finish` and `verify`: `(ctx, rounds, state, aad_len (2 words),
 text_len (2 words), tag, …)`, with `W` the stack argument `w`, and `rest`. -/
 def finEntry (w : Nat) (rest : List Instr) : Prog isa :=
-  entry w ([.mov .esi (argOp 2)] ++ keep 0 ctxO ++ keep 1 roundsO ++ keep 3 alO ++ keep 4 ahO ++
+  entry w (([.mov .esi (argOp 2)] : List Instr) ++ keep 0 ctxO ++ keep 1 roundsO ++ keep 3 alO ++ keep 4 ahO ++
     keep 5 xlO ++ keep 6 xhO ++ rest)
 
 /-- The buffered bytes padded and absorbed, and the tag into `W + o`. -/
@@ -456,9 +456,9 @@ def streamVerify : Prog isa :=
 aad_len, data, len, tag, …)`, with `W` the stack argument `w`, and `rest`.
 The state is at `W + 16`. -/
 def oneEntry (w : Nat) (rest : List Instr) : Prog isa :=
-  entry w ([.mov .esi (.reg .ebp), .alu .add .esi (imm stO)] ++ keep 0 ctxO ++ keep 1 roundsO ++ keep 2 dO ++
+  entry w (([.mov .esi (.reg .ebp), .alu .add .esi (imm stO)] : List Instr) ++ keep 0 ctxO ++ keep 1 roundsO ++ keep 2 dO ++
     keep 3 nO ++ keep 3 nlO ++ keep 4 aadO ++ keep 5 alO ++ keep 6 dataO ++ keep 7 lenO ++ rest ++
-    [.mov .eax (imm 0), .store (at_ .ebp zO) .eax])
+    ([.mov .eax (imm 0), .store (at_ .ebp zO) .eax] : List Instr))
 
 /-- `J₀`, then the additional data absorbed and padded. -/
 def oneAad : Prog isa :=

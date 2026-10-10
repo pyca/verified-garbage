@@ -102,10 +102,10 @@ its power (at `rax + r10`) added to those in the lower lanes of `xmm8` …
 `xmm10` (`StitchAvx.acc`), with `Y` added to it (then cleared, for the next
 blocks). -/
 def remBody (src : Reg) : List Instr :=
-  [.vmovdquLoad .l128 .xmm13 (atIx src .r10 0), .vmovdquLoad .l128 .xmm12 (atIx .r11 .r10 768),
+  ([.vmovdquLoad .l128 .xmm13 (atIx src .r10 0), .vmovdquLoad .l128 .xmm12 (atIx .r11 .r10 768),
    .vop (.vbin .vpxor .l128 .xmm13 .xmm13 .xmm12), .vmovdquStore .l128 (atIx .rdx .r10 0) .xmm13,
    .vop (.vbin .vpshufb .l128 .xmm13 .xmm13 .xmm0), .vop (.vbin .vpxor .l128 .xmm13 .xmm13 .xmm2),
-   .vop (.vbin .vpxor .l128 .xmm2 .xmm2 .xmm2), .vmovdquLoad .l128 .xmm12 (atIx .rax .r10 0)] ++
+   .vop (.vbin .vpxor .l128 .xmm2 .xmm2 .xmm2), .vmovdquLoad .l128 .xmm12 (atIx .rax .r10 0)] : List Instr) ++
   StitchAvx.acc .xmm13 .xmm12
 
 /-- The next block, and whether it is the last. -/
@@ -117,7 +117,7 @@ does). -/
 def remWith (pre : List Instr) (src : Reg) : Prog isa :=
   .seq (.block remSetup)
     (.seq ksSel
-      (.seq (.block ([.alu .add .rdx (.imm 256), .mov32 .r10 (.imm 0)] ++ pre ++ StitchAvx.zero))
+      (.seq (.block (([.alu .add .rdx (.imm 256), .mov32 .r10 (.imm 0)] : List Instr) ++ pre ++ StitchAvx.zero))
         (.seq (.loop (.block (remBody src ++ remNext)) .ne) (.block (StitchAvx.reduceHash ++ storeY)))))
 
 def rem : Prog isa := remWith [] .rdx

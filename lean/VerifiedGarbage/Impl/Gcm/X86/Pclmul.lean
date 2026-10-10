@@ -18,7 +18,7 @@ def xInv : BitVec 128 := 0xc2000000000000000000000000000001#128
 
 /-- Build a constant in registers; xmm5 is free during setup. -/
 def const (x : XReg) (c : BitVec 128) : List Instr :=
-  [.mov .eax (.imm (c.extractLsb' 96 32)), .xop (.movd x .eax)] ++
+  ([.mov .eax (.imm (c.extractLsb' 96 32)), .xop (.movd x .eax)] : List Instr) ++
   (List.range 3).flatMap (fun k =>
     [.xop (.shift .pslldq x 4), .mov .eax (.imm (c.extractLsb' (32 * (2 - k)) 32)),
      .xop (.movd .xmm5 .eax), .xop (.bin .por x .xmm5)])
@@ -45,35 +45,35 @@ def fold : List Instr :=
    .xop (.pshufd .xmm4 .xmm4 0x4e), .xop (.bin .pxor .xmm4 .xmm7)]
 
 def reduce : List Instr :=
-  [.xop (.bin .movdqa .xmm7 .xmm5), .xop (.shift .psrldq .xmm7 8),
+  ([.xop (.bin .movdqa .xmm7 .xmm5), .xop (.shift .psrldq .xmm7 8),
    .xop (.bin .pxor .xmm6 .xmm7), .xop (.shift .pslldq .xmm5 8),
-   .xop (.bin .pxor .xmm4 .xmm5)] ++ fold ++ fold ++
-  [.xop (.bin .movdqa .xmm2 .xmm6), .xop (.bin .pxor .xmm2 .xmm4)]
+   .xop (.bin .pxor .xmm4 .xmm5)] : List Instr) ++ fold ++ fold ++
+  ([.xop (.bin .movdqa .xmm2 .xmm6), .xop (.bin .pxor .xmm2 .xmm4)] : List Instr)
 
 /-- H arrives in xmm7; xmm4/xmm5/xmm6 are available during setup. -/
 def hInv : List Instr :=
   const .xmm4 xInv ++
-  [.mov .eax (.imm 0xffffffff), .xop (.movd .xmm5 .eax),
+  ([.mov .eax (.imm 0xffffffff), .xop (.movd .xmm5 .eax),
    .xop (.bin .punpckldq .xmm5 .xmm5), .xop (.bin .punpcklqdq .xmm5 .xmm5),
    .xop (.bin .movdqa .xmm3 .xmm7), .xop (.shift .psllq .xmm3 1),
    .xop (.bin .movdqa .xmm6 .xmm7), .xop (.shift .psrlq .xmm6 63),
    .xop (.shift .pslldq .xmm6 8), .xop (.bin .por .xmm3 .xmm6),
    .xop (.pshufd .xmm6 .xmm7 0xff), .xop (.shift .psrld .xmm6 31),
    .xop (.bin .paddd .xmm6 .xmm5), .xop (.bin .pandn .xmm6 .xmm4),
-   .xop (.bin .pxor .xmm3 .xmm6)]
+   .xop (.bin .pxor .xmm3 .xmm6)] : List Instr)
 
 def prologue : List Instr :=
   const .xmm0 revMask ++ const .xmm1 poly ++
-  [.mov .eax (.mem (argOp 0)), .movdquLoad .xmm7 (at_ .eax 0),
-   .xop (.bin .pshufb .xmm7 .xmm0)] ++ hInv ++
-  [.mov .ecx (.mem (argOp 1)), .movdquLoad .xmm2 (at_ .ecx 0),
+  ([.mov .eax (.mem (argOp 0)), .movdquLoad .xmm7 (at_ .eax 0),
+   .xop (.bin .pshufb .xmm7 .xmm0)] : List Instr) ++ hInv ++
+  ([.mov .ecx (.mem (argOp 1)), .movdquLoad .xmm2 (at_ .ecx 0),
    .xop (.bin .pshufb .xmm2 .xmm0), .mov .edx (.mem (argOp 2)),
-   .mov .eax (.mem (argOp 3)), .alu .test .eax (.reg .eax)]
+   .mov .eax (.mem (argOp 3)), .alu .test .eax (.reg .eax)] : List Instr)
 
 def body : List Instr :=
-  [.movdquLoad .xmm7 (at_ .edx 0), .xop (.bin .pshufb .xmm7 .xmm0),
-   .xop (.bin .pxor .xmm2 .xmm7)] ++ zero ++ acc ++ reduce ++
-  [.alu .add .edx (.imm 16), .alu .sub .eax (.imm 1)]
+  ([.movdquLoad .xmm7 (at_ .edx 0), .xop (.bin .pshufb .xmm7 .xmm0),
+   .xop (.bin .pxor .xmm2 .xmm7)] : List Instr) ++ zero ++ acc ++ reduce ++
+  ([.alu .add .edx (.imm 16), .alu .sub .eax (.imm 1)] : List Instr)
 
 def epilogue : List Instr :=
   [.xop (.bin .pshufb .xmm2 .xmm0), .movdquStore (at_ .ecx 0) .xmm2]
