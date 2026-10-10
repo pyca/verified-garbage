@@ -1462,8 +1462,8 @@ theorem agree₀ {P : Params w} (hw : w = 64 ∨ w = 32) {s₁ s₂ : State}
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p1, p6]
-  · intro sl h; simp [τ₀] at h
-  · intro sl h; simp [τ₀] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact p5
 

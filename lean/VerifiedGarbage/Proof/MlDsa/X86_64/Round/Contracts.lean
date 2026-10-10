@@ -99,8 +99,8 @@ theorem agree_regsLo {rs los : List Reg} {s₁ s₂ : State} (h : ∀ r ∈ rs, 
   wr h := absurd rfl h
   wf₁ := ⟨fun h => absurd rfl h, fun _ h => by cases h⟩
   wf₂ := ⟨fun h => absurd rfl h, fun _ h => by cases h⟩
-  ok _ h := by cases h
-  slots _ h := by cases h
+  ok := VG.X86_64.Taint.slotsOk_empty
+  slots := VG.X86_64.Taint.slotsAgree_empty
   lo r hr := hl r (RegSet.mem_ofList.mp hr)
   xr := X86_64.Taint.noXr
 

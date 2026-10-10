@@ -698,7 +698,7 @@ prologue stores at `[200, 392)` of the scratch space: public, but no
 address or branch depends on them, and the kernel checks the analysis much
 faster without them (`taint_decide_weak`). -/
 def dropRC (τ : VG.X86_64.Taint.T) : VG.X86_64.Taint.T :=
-  { τ with slots := τ.slots.filter fun sl => !(200 ≤ sl.2.1 && sl.2.1 < 392) }
+  { τ with slots := τ.slots.removeAll 200 192 }
 
 theorem permute_ct : ConstantTime isa Proof.Sha3.permuteX86_64.pre Proof.Sha3.permuteX86_64.pub
     Impl.Sha3.X86_64.permute := by

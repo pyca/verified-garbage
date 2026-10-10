@@ -158,8 +158,8 @@ theorem ct_zext {M : Modulus} {Pre : State → Prop} (hP : ∀ s, Pre s → x64P
           rcases hr with rfl | rfl | rfl | rfl | rfl <;>
             simp only [zextState, RegUpd.gpr_setReg, reduceCtorEq, ite_false, ite_true, p1, p2, p3, p4, p5]
         · simp only [zextState, RegUpd.wr_setReg]; rw [(hP _ h₁).2.1, (hP _ h₂).2.1, p2]
-        · intro sl h; simp [τ₁] at h
-        · intro sl h; simp [τ₁] at h
+        · exact VG.X86_64.Taint.slotsOk_empty
+        · exact VG.X86_64.Taint.slotsAgree_empty
       rw [h _ _ _ _ _ _ trivial trivial ag c₁ c₂]
 
 theorem mulFnX_ct : ConstantTime isa (mulX64 p521p).pre (mulX64 p521p).pub mulFnX :=

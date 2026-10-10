@@ -43,8 +43,8 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Poly1305.updateX86_64.pre s�
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
   · rw [h₁.2.1, h₂.2.1, p1, p5]
-  · intro sl h; simp [τ₀] at h
-  · intro sl h; simp [τ₀] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 /-- What the code before the call leaves public: the arguments of the call,
 what is kept across it, and the flags. -/

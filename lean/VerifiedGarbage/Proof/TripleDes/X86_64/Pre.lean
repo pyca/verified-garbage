@@ -116,12 +116,8 @@ theorem blockTaint_agree (d : Direction) (s t : State)
       contradiction
   · intro _
     rw [hs.2.1, ht.2.1, hp .rsi (by decide), hp .rdx (by decide)]
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
   · intro r hr
     simp only [blockTaint, RegSet.not_mem_empty] at hr
 

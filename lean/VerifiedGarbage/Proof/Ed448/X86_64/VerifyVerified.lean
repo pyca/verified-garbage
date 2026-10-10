@@ -58,8 +58,8 @@ theorem verifyEquation_agree {s₁ s₂ : State} (h₁ : verifyEquationLocal.pre
   · simp only [verifyEquationτ, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p4]
-  · intro sl h; simp [verifyEquationτ] at h
-  · intro sl h; simp [verifyEquationτ] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 theorem verifyEquation_inlineOk : verifyEquation.InlineOk = true := by lit_decide
 

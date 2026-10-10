@@ -46,8 +46,8 @@ theorem init_agree {s₁ s₂ : State} (h₁ : initX86_64.pre s₁) (h₂ : init
   · simp only [τInit, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p3, p4]
-  · intro sl h; simp [τInit] at h
-  · intro sl h; simp [τInit] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 theorem update_agree {s₁ s₂ : State} (h₁ : updateX86_64.pre s₁) (h₂ : updateX86_64.pre s₂)
     (hpub : updateX86_64.pub s₁ s₂) : X86_64.Taint.Agree τUpdate s₁ s₂ := by
@@ -62,8 +62,8 @@ theorem update_agree {s₁ s₂ : State} (h₁ : updateX86_64.pre s₁) (h₂ : 
   · simp only [τUpdate, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p2, p5]
-  · intro sl h; simp [τUpdate] at h
-  · intro sl h; simp [τUpdate] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 theorem finalize_agree {s₁ s₂ : State} (h₁ : finalizeX86_64.pre s₁) (h₂ : finalizeX86_64.pre s₂)
     (hpub : finalizeX86_64.pub s₁ s₂) : X86_64.Taint.Agree τFinalize s₁ s₂ := by
@@ -78,8 +78,8 @@ theorem finalize_agree {s₁ s₂ : State} (h₁ : finalizeX86_64.pre s₁) (h�
   · simp only [τFinalize, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p2, p5]
-  · intro sl h; simp [τFinalize] at h
-  · intro sl h; simp [τFinalize] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 theorem update_ct : ConstantTime isa updateX86_64.pre updateX86_64.pub Impl.CmacTripleDes.X86_64.update :=
   VG.Taint.constantTime (A := taint) τUpdate (fun _ _ h₁ h₂ hp => update_agree h₁ h₂ hp) (by taint_decide)

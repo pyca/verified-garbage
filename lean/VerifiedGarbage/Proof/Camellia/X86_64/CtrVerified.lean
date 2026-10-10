@@ -130,12 +130,8 @@ theorem ctrTaint_agree (s t : State) (hs : ctrX86_64.pre s) (ht : ctrX86_64.pre 
       contradiction
   · intro _
     rw [hs.2.1, ht.2.1, p3, p4, p5, p6]
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
   · intro r hr
     simp only [ctrTaint, RegSet.not_mem_empty] at hr
 

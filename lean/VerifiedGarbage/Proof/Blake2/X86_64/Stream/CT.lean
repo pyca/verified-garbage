@@ -78,8 +78,8 @@ theorem init_agree (hP : Ok P) {s₁ s₂ : State} (h₁ : (initX86_64 P).pre s�
   · simp only [τInit, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p1]
-  · intro sl h; simp [τInit] at h
-  · intro sl h; simp [τInit] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 theorem update_agree (hP : Ok P) {s₁ s₂ : State} (h₁ : (updateX86_64 P).pre s₁)
     (h₂ : (updateX86_64 P).pre s₂) (hpub : (updateX86_64 P).pub s₁ s₂) :
@@ -97,8 +97,8 @@ theorem update_agree (hP : Ok P) {s₁ s₂ : State} (h₁ : (updateX86_64 P).pr
   · simp only [τUpdate, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p1, p5]
-  · intro sl h; simp [τUpdate] at h
-  · intro sl h; simp [τUpdate] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 theorem finalize_agree (hP : Ok P) {s₁ s₂ : State} (h₁ : (finalizeX86_64 P).pre s₁)
     (h₂ : (finalizeX86_64 P).pre s₂) (hpub : (finalizeX86_64 P).pub s₁ s₂) :
@@ -116,8 +116,8 @@ theorem finalize_agree (hP : Ok P) {s₁ s₂ : State} (h₁ : (finalizeX86_64 P
   · simp only [τFinalize, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p1, p3, p4]
-  · intro sl h; simp [τFinalize] at h
-  · intro sl h; simp [τFinalize] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 theorem okB : Ok Spec.Blake2.b := ⟨by decide, .inl rfl⟩
 theorem okS : Ok Spec.Blake2.s := ⟨by decide, .inr rfl⟩

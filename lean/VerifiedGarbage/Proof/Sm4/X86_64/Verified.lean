@@ -62,12 +62,8 @@ theorem ecbTaint_agree (dir : Dir) (s t : State) (hs : (ecbX86_64 dir).pre s) (h
       contradiction
   · intro _
     rw [hs.2.1, ht.2.1, p2, p3, p4]
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
   · intro r hr
     simp only [ecbTaint, RegSet.not_mem_empty] at hr
 

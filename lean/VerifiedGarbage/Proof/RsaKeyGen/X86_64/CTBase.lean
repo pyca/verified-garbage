@@ -57,16 +57,17 @@ theorem kT_agree {B : Addr} {wr : List Region} {vs : List (Nat × BitVec 64)} {r
   have hb : ∀ {s : State}, HP B wr vs s → ∀ k, VG.X86_64.Taint.byteAddr s 2 k = B + BitVec.ofNat 64 k := fun h k => by
     simp only [VG.X86_64.Taint.byteAddr, VG.X86_64.Taint.region, h.wr, hw, List.getD_cons_succ, List.getD_cons_zero]
   refine ⟨⟨fun r hr => ?_, fun hf => by cases hf⟩, fun _ => by rw [h₁.wr, h₂.wr], wf h₁, wf h₂,
-    fun sl hsl => ?_, fun sl hsl k hk₁ hk₂ => ?_, VG.X86_64.Taint.noLo, VG.X86_64.Taint.noXr⟩
+    VG.X86_64.Taint.slotsOk_of_list rfl fun sl hsl => ?_, fun i k hk => ?_, VG.X86_64.Taint.noLo, VG.X86_64.Taint.noXr⟩
   · rcases List.mem_append.mp (RegSet.mem_ofList.mp hr) with h | h
     · exact hr' r h
     · simp only [List.mem_singleton] at h; subst h; rw [h₁.rdi, h₂.rdi]
-  · simp only [kT, List.map_map, List.mem_map] at hsl
+  · simp only [List.map_map, List.mem_map] at hsl
     obtain ⟨e, he, rfl⟩ := hsl
     have := hS e he
     simp only [kT, List.getD_cons_succ, List.getD_cons_zero, Function.comp]
     omega
-  · simp only [kT, List.map_map, List.mem_map] at hsl
+  · obtain ⟨sl, hsl, rfl, hk₁, hk₂⟩ := (Slots.has_ofList _ i k).mp hk
+    simp only [List.map_map, List.mem_map] at hsl
     obtain ⟨e, he, rfl⟩ := hsl
     simp only [Function.comp] at hk₁ hk₂ ⊢
     have ea : B + BitVec.ofNat 64 k = off B (8 * e.1) + BitVec.ofNat 64 (k - 8 * e.1) := by

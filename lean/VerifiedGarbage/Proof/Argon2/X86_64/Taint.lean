@@ -82,8 +82,8 @@ theorem initial_agree {s t : State} (hs : compressLocal.pre s) (ht : compressLoc
   · simp only [initialTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> assumption
   · rw [hs.2.1, ht.2.1, p3, p4]
-  · intro sl h; simp [initialTaint] at h
-  · intro sl h; simp [initialTaint] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
   · intro r h; simp [initialTaint] at h
 
 theorem compress_ct : ConstantTime isa compressLocal.pre compressLocal.pub

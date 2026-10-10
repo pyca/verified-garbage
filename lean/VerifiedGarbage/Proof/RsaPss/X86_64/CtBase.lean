@@ -88,7 +88,7 @@ theorem two_pub0 {α : Type} {Φ : α → State → Prop} {c : Prog isa} (n : Na
   obtain ⟨sp₁, w₁, r₁⟩ := hΦ a _ h₁
   obtain ⟨sp₂, w₂, r₂⟩ := hΦ a _ h₂
   refine ⟨⟨fun r hr' => ?_, fun hf => by cases hf⟩, fun _ => by rw [w₁, w₂], wf_of sp₁ w₁ (hR a _ h₁) _ _,
-    wf_of sp₂ w₂ (hR a _ h₁) _ _, fun sl hsl => by simp [pT] at hsl, fun sl hsl => by simp [pT] at hsl,
+    wf_of sp₂ w₂ (hR a _ h₁) _ _, VG.X86_64.Taint.slotsOk_empty, VG.X86_64.Taint.slotsAgree_empty,
     X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   rcases List.mem_append.mp (RegSet.mem_ofList.mp hr') with hr' | hr'
   · rw [← hr a] at hr'

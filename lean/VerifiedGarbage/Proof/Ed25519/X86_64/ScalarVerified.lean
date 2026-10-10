@@ -62,8 +62,8 @@ theorem scalarReduce_agree {s₁ s₂ : State} (h₁ : scalarReduceLocal.pre s�
   · simp only [scalarReduceτ, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p1, p3]
-  · intro sl h; simp [scalarReduceτ] at h
-  · intro sl h; simp [scalarReduceτ] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 theorem scalarReduce_ct : ConstantTime isa scalarReduceLocal.pre scalarReduceLocal.pub scalarReduce := by
   refine VG.Taint.constantTime (A := taint) scalarReduceτ (fun _ _ h₁ h₂ hp => scalarReduce_agree h₁ h₂ hp)

@@ -1063,8 +1063,8 @@ theorem agree₀ (hd : Dims P) {s₁ s₂ : State} (h₁ : (updK H).pre s₁) (h
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p1, p5]
-  · intro sl h; simp [τ₀] at h
-  · intro sl h; simp [τ₀] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 theorem pubEq_of {s₁ s₂ : State} (h : (updK H).pub s₁ s₂) : PubEq s₁ s₂ :=
   ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2⟩

@@ -59,7 +59,7 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {
       simp only [X86_64.Taint.region, hw, List.getD_cons_succ, List.getD_cons_zero]
       rw [E.r15, BitVec.add_zero]
   refine ⟨⟨fun r hr => ?_, fun hf => by cases hf⟩, fun _ => by rw [h.wr₁, h.wr₂], wf h.e₁ h.wr₁, wf h.e₂ h.wr₂,
-    fun sl hsl => ?_, fun sl hsl k hk₁ hk₂ => ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
+    X86_64.Taint.slotsOk_of_list rfl fun sl hsl => ?_, fun i k hk => ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · rcases List.mem_append.mp (RegSet.mem_ofList.mp hr) with hr | hr
     · exact h.agree r hr
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -67,13 +67,14 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {
       · rw [h.e₁.r13, h.e₂.r13]
       · rw [h.e₁.r15, h.e₂.r15]
       · rw [h.e₁.rsp, h.e₂.rsp]
-  · simp only [ccmT, List.mem_cons, List.not_mem_nil, or_false] at hsl
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hsl
     rcases hsl with rfl | rfl <;> simp [ccmT]
-  · have hb : ∀ s : State, s.wr = [⟨D, n⟩, ⟨W, 2560⟩] → X86_64.Taint.byteAddr s 1 k = W + BitVec.ofNat 64 k := fun s hw => by
+  · obtain ⟨sl, hsl, rfl, hk₁, hk₂⟩ := (Slots.has_ofList _ i k).mp hk
+    have hb : ∀ s : State, s.wr = [⟨D, n⟩, ⟨W, 2560⟩] → X86_64.Taint.byteAddr s 1 k = W + BitVec.ofNat 64 k := fun s hw => by
       simp only [X86_64.Taint.byteAddr, X86_64.Taint.region, hw, List.getD_cons_succ, List.getD_cons_zero]
     have hw : ∀ d, k = d + (k - d) → W + BitVec.ofNat 64 k = W + BitVec.ofNat 64 d + BitVec.ofNat 64 (k - d) :=
       fun d e => by rw [add_ofNat_assoc, ← e]
-    simp only [ccmT, List.mem_cons, List.not_mem_nil, or_false] at hsl
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hsl
     rcases hsl with rfl | rfl <;> rw [hb s₁ h.wr₁, hb s₂ h.wr₂]
     · simp only at hk₁ hk₂
       have S₁ := h.sl₁
