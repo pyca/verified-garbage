@@ -1,3 +1,4 @@
+mod ossl;
 macro_rules! variant {
     ($name:ident, $file:literal) => {
         core::arch::global_asm!(concat!(".p2align 6\n.globl ", stringify!($name), "\n", stringify!($name), ":\n"), include_str!($file));
@@ -65,6 +66,7 @@ fn main() {
                 best[k].0 = best[k].0.min(s); best[k].1 = best[k].1.min(m);
             }
         }
+        ossl::bench(w, f);
         for (k, (name, _)) in vs.iter().enumerate() {
             println!("w={w} {name}: sq {:.0} cyc  mul {:.0} cyc", best[k].0 * f, best[k].1 * f);
         }
