@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
-import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
 
 /-!
 # Ed448 verification's equation on AArch64: constant time of the entry, the table and `[S]B`
@@ -51,7 +51,7 @@ theorem sBase_ct : ∃ h, ((taintS [Impl.X448.AArch64.Base.combSym]).check (Tain
   refine Split.exists_map_le (c' := ?c') ?s ⟨?h, ?g⟩
   case s =>
     simp only [sBase, Code.eraseT]
-    exact .seq (.refl _) (.seq (.loop _ (stepN_split 57)) (.refl _))
+    exact .seq (.refl _) (.seq (.refl _) (.refl _))
   case g => taint_decide
 
 end VG.Proof.Ed448.AArch64

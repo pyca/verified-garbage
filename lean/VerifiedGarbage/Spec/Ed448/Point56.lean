@@ -13,7 +13,10 @@ one copy of each instead of repeating it at every use:
 * `vg_ed448_r56_point_add`: the sum `p + q`, by the specification's
   complete addition formula (`pointAdd`);
 * `vg_ed448_r56_point_double`: `p` doubled, by RFC 8032 §5.2.4's doubling
-  formulas (`pointDouble`).
+  formulas (`pointDouble`);
+* `vg_ed448_r56_comb_add`: the two additions of each step of the base-point
+  comb (X448's and Ed448's on AArch64), `p₁ + q₁` and `p₂ + q₂` by `pointAdd`,
+  for `q₁` and `q₂` with `Z = 1`, given by their `X` and `Y` alone.
 
 They are not algorithms of a standard but the arithmetic Ed448 is built
 from, in the representation that code keeps points in: what they compute is
@@ -29,6 +32,11 @@ bound, in slot 19. Their temporaries are slots 10 to 18. On return those and
 the functions' own bytes (`Field56.own`) are unspecified and may hold
 intermediate values; every other byte of `ws` keeps its value but the
 result's (`Field56.Keeps`).
+
+The comb's additions replace `p₁` in slots 0 to 2 and `p₂` in slots 3 to 5,
+and read the `X` and `Y` of `q₁` in slots 6 and 7 and of `q₂` in slots 8 and
+9 (`affineAt`); they need what addition needs, and write the temporaries and
+their own bytes as it does.
 
 Everything is secret but the pointer, which is public, and the functions are
 constant time.
@@ -144,5 +152,50 @@ def doubleApi : Api where
     affect timing."
   safety := safetyDoc "The limbs of slot 5 of `ws` (the point's `Z`, byte 704) must be below \
     `2^56 + 2^8`, and slot 20 (byte 2624) must hold an element congruent to 1."
+
+/-! ## The comb's additions -/
+
+/-- The point `(x : y : 1)`, for `x` and `y` in slots `n` and `n + 1`. -/
+def affineAt (m : Mem) (ws : Addr) (n : Nat) : Point :=
+  ⟨elemAt m ws (slotAt n), elemAt m ws (slotAt (n + 1)), 1⟩
+
+/-- What the comb's additions change: both sums (slots 0 to 5), the temporaries (slots 10 to
+18), and their own bytes. -/
+def combWritten : List (Nat × Nat) := (slotAt 0, slotAt 6) :: (slotAt 10, slotAt 19) :: own
+
+/-- `pointAdd`, twice: with every slot `Bounded` and 0, with limbs below `resBound`, in slot 19,
+the points in slots 0 to 2 and 3 to 5 become their sums with `(x : y : 1)` for `x` and `y` in
+slots 6 and 7, and in slots 8 and 9, with limbs below `resBound`. -/
+def combAddContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+  sig.contract A
+    (pre := fun ws m => Bounded m ws ∧ Res m ws zeroSlot ∧ elemAt m ws (slotAt zeroSlot) = 0)
+    (post := fun ws m m' _ =>
+      Bounded m' ws ∧ (∀ n < 6, Res m' ws n) ∧
+        pointAt m' ws 0 = pointAdd (pointAt m ws 0) (affineAt m ws 6) ∧
+        pointAt m' ws 3 = pointAdd (pointAt m ws 3) (affineAt m ws 8) ∧
+        Keeps ws combWritten m m')
+    (stack := stack)
+
+/-- `vg_ed448_r56_comb_add` on every target. -/
+def combAddApi : Api where
+  module := "ed448_r56"
+  name := "vg_ed448_r56_comb_add"
+  sig := sig
+  contracts := some fun A stack => combAddContract A stack
+  summary := "The two point additions of a step of the base-point comb on edwards448: replaces \
+    the point in slots 0 to 2 of the working space `ws` (bytes 64 to 447) with its sum with the \
+    point `(x : y : 1)` for `x` and `y` in slots 6 and 7 (bytes 832 and 960), and the point in \
+    slots 3 to 5 (bytes 448 to 831) with its sum with the point for slots 8 and 9 (bytes 1088 \
+    and 1216), by RFC 8032's complete addition formula in projective coordinates. A point is \
+    three coordinates `X, Y, Z` in consecutive slots; slot `n` of `ws` is the first 64 bytes \
+    from byte `64 + 128 n`, eight 64-bit little-endian words, least significant first, each a \
+    limb: the number `Σ l_i 2^(56 i)`, standing for its residue modulo \
+    `p = 2^448 - 2^224 - 1`, not necessarily reduced. The sums' limbs are below `2^56 + 2^8`. \
+    Every byte of `ws` but the sums', slots 10 to 18 (bytes 1344 to 2495) and the function's \
+    own working space (bytes 3584 to 4735) keeps its value.\n\n\
+    Contract: `combAddContract` of `VG.Spec.Ed448.Point56`. Constant time: only the pointer \
+    may affect timing."
+  safety := safetyDoc "Slot 19 of `ws` (byte 2496) must hold an element congruent to 0, with limbs \
+    below `2^56 + 2^8`."
 
 end VG.Spec.Ed448.Point56

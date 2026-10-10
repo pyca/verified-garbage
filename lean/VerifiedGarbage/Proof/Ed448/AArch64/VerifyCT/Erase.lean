@@ -1,5 +1,5 @@
 import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
-import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
 
 /-!
 # Ed448 verification's equation on AArch64: its comparisons, erased

@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.X448.AArch64.Base.Main
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
@@ -18,16 +18,15 @@ namespace VG.Proof.X448.AArch64.Base
 
 open VG VG.AArch64 VG.Impl.X448.AArch64.Base
 
-/-- The analysis, of the code without what it does not read, its comb's field operations analysed
-once each (`Base/Erase.lean`). -/
+/-- The analysis, of the code without what it does not read. -/
 theorem x448Base_check :
     ∃ h, ((taintS [combSym]).check (Taint.ofRegs [.x0, .x1, .x2]) Impl.X448.AArch64.Base.x448Base h).isSome =
       true := by
   apply exists_isSome_of_eraseT
   refine Split.exists_isSome (c' := ?c') ?s ⟨?h, ?g⟩
   case s =>
-    simp only [x448Base, step, finish, Code.eraseT, Impl.X448.AArch64.Fast.invert, ops_eraseT, sqn_eraseT]
-    exact .seq (.refl _) (.seq (.loop _ (stepN_split 56)) (.seq (.refl _) (.refl _)))
+    simp only [x448Base, finish, Code.eraseT, Impl.X448.AArch64.Fast.invert, ops_eraseT, sqn_eraseT]
+    exact .seq (.refl _) (.seq (.refl _) (.seq (.refl _) (.refl _)))
   case g => taint_decide
 
 theorem x448Base_ct : ConstantTime isa Proof.X448.x448BaseAArch64.pre Proof.X448.x448BaseAArch64.pub

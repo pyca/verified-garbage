@@ -198,18 +198,6 @@ def negate (ox o w : Nat) : List Instr :=
 
 /-! ## The function -/
 
-/-- Step `x19 = j` of a comb of `n` tables: both digits' entries of table `j`, negated for
-negative digits, added to their accumulators. `x9` is nonzero while another step follows. -/
-def stepN (n : Nat) : Prog isa :=
-  .seq (.block digits) <|
-  .seq (.block select) <|
-  .block (negate OX (BITS + 4) (t 0) ++ addAffine AX AY AZ OX OY ++
-    negate EX BITS (t 0) ++ addAffine BX BY BZ EX EY ++
-    [.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 n])
-
-/-- X448's step: 56 tables, for its 448-bit scalars. -/
-def step : Prog isa := stepN 56
-
 /-- Save the registers, keep the output pointer in `x20`, set `x12` to `2²⁸ - 1` and every slot to
 zero. -/
 def entry : List Instr :=
@@ -225,13 +213,6 @@ def accs (g : Spec.X448.Fe × Spec.X448.Fe) : List Instr :=
 /-- `entry`, the clamped scalar's bits, and both accumulators at `[G] B`. -/
 def setup : Prog isa :=
   .seq (.block entry) <| .seq AArch64.bits <| .block (accs baseG)
-
-/-- `A := 16 A + B`. -/
-def combine : Prog isa :=
-  .seq (.block [.movz .x .x19 4 0]) <|
-  .seq (.loop (.block (codeOf (addOps AX AY AZ AX AY AZ) ++ [.subImm .x .x19 .x19 1]))
-    (.nonzero .x .x19)) <|
-  .block (codeOf (addOps AX AY AZ BX BY BZ))
 
 /-- `Y²` to `X2` and `X²` to `Z2`, as the ladder leaves `x₂` and `z₂`, then `Y² / X²`,
 frozen and packed to the output, and the registers restored. -/

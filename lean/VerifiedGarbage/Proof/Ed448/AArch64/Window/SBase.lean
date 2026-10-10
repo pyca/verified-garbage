@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Comb
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
-import VerifiedGarbage.Proof.X448.AArch64.Base.Loop
+import VerifiedGarbage.Proof.X448.AArch64.Base.Step
 import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 
@@ -22,7 +23,7 @@ open VG.Proof.X448.AArch64 (Scr Keeps off word limbs Outside Outside2 ofs)
 open VG.Proof.X448.AArch64.Weak (Index Env)
 open VG.Proof.X448.AArch64.Fast (BEnv Bnd)
 open VG.Proof.Curve448.AArch64.Fast (Mb Ib)
-open VG.Proof.X448.AArch64.Base (StepInv Bits pt consts_ok bnd_of_words F_of_words loop_ok)
+open VG.Proof.X448.AArch64.Base (StepInv Bits pt consts_ok bnd_of_words F_of_words)
 open VG.Proof.Ed448 (Rep baseAff)
 
 local notation "EV" => VG.Proof.X448.AArch64.Weak.E
@@ -73,8 +74,7 @@ theorem sBase_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem ba
       exact hbits q hq
     · rw [syt]
       exact htb.of_far (by rw [kt.2.1, kt.2.2]) fun x hx => tOut x (Or.inr (by omega))
-  refine WP.seq (WP.mono (loop_ok (by decide) (s₀ := t) 57 t (by decide) (Nat.le_refl _)
-    (by rw [Nat.sub_self]; exact inv) rfl) fun u hu => ?_)
+  refine WP.seq (WP.mono (Point56.combLoop_ok (by decide) (by decide) (s₀ := t) inv rfl) fun u hu => ?_)
   refine WP.mono (Point56.combineCall_ok hS hu) fun v ⟨fv, rv⟩ => ⟨fv.scr, fv.env, fv.zero, rv, ?_, ?_, ?_, ?_, ?_⟩
   · have o2 : Outside2 base 64 2816 ACC 1152 s.mem t.mem := fun x a _ => tOut x (by omega)
     exact o2.trans fv.mem

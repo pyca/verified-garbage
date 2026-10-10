@@ -5,7 +5,8 @@ import VerifiedGarbage.Proof.Framework.Mem
 # Code that stores only at given offsets of a base register (AArch64)
 
 `Exec.storeFrame`: code whose every instruction stores nothing but the eight
-bytes at `x3 + d`, for offsets `d` that `ok` accepts, and never writes `x3`
+bytes at `x3 + d`, for offsets `d` that `ok` accepts (sixteen bytes at
+`x3 + d`, for `strq`, if it accepts `d` and `d + 8`), and never writes `x3`
 (`storesAt ok`, checked of every instruction by evaluation), keeps `x3` and
 every byte that no such store covers (`Unstored`), whatever its loops and
 calls.
@@ -13,10 +14,11 @@ calls.
 
 namespace VG.AArch64
 
-/-- Whether `i` stores nothing but the eight bytes at `x3 + d`, for `ok d`, and does not write
-`x3`. -/
+/-- Whether `i` stores nothing but the eight bytes at `x3 + d`, for `ok d` (the sixteen bytes at
+`x3 + d`, for `ok d` and `ok (d + 8)`), and does not write `x3`. -/
 def storesAt (ok : Nat → Bool) : Instr → Bool
   | .str .x _ .x3 d => ok d
+  | .strq _ .x3 d => ok d && ok (d + 8)
   | .str .. | .strb .. | .strq .. | .push _ | .pop _ | .alloc _ | .free _ => false
   | i => dstOf i != some .x3
 
@@ -87,6 +89,20 @@ theorem exec_storeGet {ok : Nat → Bool} {i : Instr} {s s' : State} (hi : store
       simp only [Option.some.injEq] at ha₀; subst ha₀
       split at h <;> cases h
       exact Mem.write_apply (ha d hi)
+    · rename_i t d
+      simp only [exec, Option.bind_eq_some_iff, State.store, addr] at h
+      obtain ⟨a₀, ha₀, h⟩ := h
+      split at ha₀ <;> [rename_i hd; cases ha₀]
+      simp only [Option.some.injEq] at ha₀; subst ha₀
+      split at h <;> cases h
+      simp only [Bool.and_eq_true] at hi
+      refine Mem.write_apply fun hlt => ?_
+      have h1 := ha d hi.1
+      have h2 := ha (d + 8) hi.2
+      rw [Offset.sub_add_eq] at h1 h2 hlt
+      rw [BitVec.toNat_sub, BitVec.toNat_ofNat] at h1 h2 hlt
+      have := (a - s.gpr .x3).isLt
+      omega
     all_goals first
       | exact absurd hi (by decide)
       | exact congrFun (exec_mem_of_noStore h (by intros; simp_all) (by intros; simp_all)

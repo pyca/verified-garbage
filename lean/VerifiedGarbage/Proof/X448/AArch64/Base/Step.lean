@@ -2,12 +2,13 @@ import VerifiedGarbage.Proof.X448.AArch64.Base.Negate
 import VerifiedGarbage.Proof.X448.AArch64.Base.AddEnv
 
 /-!
-# X448 of the base point on AArch64: one step of the comb
+# X448 of the base point on AArch64: the comb's invariant
 
-Untrusted: everything here is checked by Lean. Step `j` reads both digits,
-selects table `j`'s entries, negates each for a negative digit and adds it to
-its accumulator: the invariant `StepInv` (as Ed25519's `CombInv`) holds for
-`j + 1` after the step if it held for `j`.
+Untrusted: everything here is checked by Lean. The state of the comb before
+step `j` (`StepInv`, as Ed25519's `CombInv`), what every phase after the setup
+keeps (`Frame`), and the facts about a step's selection and its sums that the
+step's proof (`Proof/Ed448/AArch64/Point56/Comb.lean`, whose step calls
+`vg_ed448_r56_comb_add`) uses.
 -/
 
 namespace VG.Proof.X448.AArch64.Base
@@ -100,20 +101,23 @@ structure StepInv (n : Nat) (s₀ : State) (base : Addr) (k j : Nat) (s : State)
   mem : Outside2 base 64 2816 ACC 1152 s₀.mem s.mem
   tbl : TblAt s base (s₀.syms combSym)
 
-/-! ## One step -/
+/-- What every phase after the setup keeps. -/
+structure Frame (s₀ : State) (base : Addr) (s : State) : Prop where
+  scr : Scr s base
+  env : BEnv s.mem base
+  zero : ∀ w < 8, limbs s.mem base (slot (19 : Index).val) w = 0
+  lr : s.gpr .x30 = s₀.gpr .x30
+  out : s.gpr .x20 = s₀.gpr .x20
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  mem : Outside2 base 64 2816 ACC 1152 s₀.mem s.mem
+
+theorem StepInv.frame {n : Nat} {s₀ s : State} {base : Addr} {k j : Nat} (h : StepInv n s₀ base k j s) :
+    Frame s₀ base s := ⟨h.scr, h.env, h.zero, h.lr, h.out, h.rd, h.wr, h.mem⟩
+
+/-! ## A step's pieces -/
 
 open VG.Proof.X448 (addPt addPt_rep basePt negAff baseEntry_ok nib_lt mag_lt sdig)
-
-theorem step_eq (n : Nat) : VG.Impl.X448.AArch64.Base.stepN n =
-    .seq (.block digits) (.seq (.block select) (.block (
-      negate (slot (6 : Index).val) (BITS + 4) (slot (10 : Index).val) ++
-      (addAffine (slot (0 : Index).val) (slot (1 : Index).val) (slot (2 : Index).val)
-        (slot (6 : Index).val) (slot (7 : Index).val) ++
-      (negate (slot (8 : Index).val) BITS (slot (10 : Index).val) ++
-      (addAffine (slot (3 : Index).val) (slot (4 : Index).val) (slot (5 : Index).val)
-        (slot (8 : Index).val) (slot (9 : Index).val) ++
-      ([.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 n] : List Instr))))))) := by
-  simp only [VG.Impl.X448.AArch64.Base.stepN, List.append_assoc]; rfl
 
 /-- The selected scalar slots outside `entrySlots` are kept by a selection. -/
 theorem Selected.outside2 {base : Addr} {j ao ae : Nat} {s t : State} (h : Selected base j ao ae s t) :
@@ -138,147 +142,5 @@ theorem TblAt.of_outside2 {s t : State} {base T : Addr} (h : TblAt s base T)
     (hrw : t.rd ++ t.wr = s.rd ++ s.wr) (hm : Outside2 base 64 2816 ACC 1152 s.mem t.mem) :
     TblAt t base T :=
   h.of_far hrw fun x hx => hm x (by omega) (by simp only [ACC]; omega)
-
-theorem step_ok {n : Nat} (hn : n ≤ 57) {s₀ s : State} {base : Addr} {k j : Nat}
-    (h : StepInv n s₀ base k j s) (hj : j < n) (hsy : s.syms = s₀.syms) :
-    WP isa (VG.Impl.X448.AArch64.Base.stepN n) s fun t =>
-      (t.gpr .x9 != 0) = decide (j + 1 ≠ n) ∧ StepInv n s₀ base k (j + 1) t := by
-  obtain ⟨_, hs, hb, hz, hc, hbits, hodd, heven, hlr, hout, hrd, hwr, hmem, htbl⟩ := h
-  have no := nib_lt k (2 * j + 1)
-  have ne := nib_lt k (2 * j)
-  rw [step_eq n]
-  -- The digits.
-  refine WP.seq (WP.mono_syms (digits_ok hs hn hj hc hbits) fun t1 ⟨d1, m1⟩ sy1 => ?_)
-  have hs1 : Scr t1 base := hs.of_keeps d1.keeps (by decide)
-  have hb1 : BEnv t1.mem base := by rw [m1]; exact hb
-  have hm1 : Masks (mag (nib k (2 * j + 1))) (mag (nib k (2 * j))) t1 :=
-    ⟨d1.oddMask, d1.evenMask, d1.oddZero, d1.evenZero⟩
-  have hc1 : t1.gpr .x19 = BitVec.ofNat 64 j := by rw [d1.keeps.1 _ (by decide)]; exact hc
-  -- The selection.
-  have tb1 : TblAt t1 base (s₀.syms combSym) :=
-    htbl.of_far (by rw [d1.keeps.2.1, d1.keeps.2.2]) fun x _ => by rw [m1]
-  refine WP.seq (WP.mono (select_ok hs1 tb1 (by rw [sy1, hsy]) (by omega) hc1 (mag_lt no) (mag_lt ne)
-    hm1) fun t2 (h2 : Selected base j _ _ t1 t2) => ?_)
-  obtain ⟨b2, s2, v6, v7, v8, v9, bnd2⟩ := selected_env hs1 hb1 h2
-  have hs2 : Scr t2 base := hs1.of_keeps h2.2.2 (by decide)
-  have hc2 : t2.gpr .x19 = BitVec.ofNat 64 j := by rw [h2.2.2.1 _ (by decide)]; exact hc1
-  have bits2 : Bits n base k t2.mem := fun q hq => by
-    have hn := hs.nowrap
-    rw [h2.2.1 _ (by rw [ofs_off0 base (by simp only [BITS]; omega)]; simp only [OX, BITS, slot]; omega), m1]
-    exact hbits q hq
-  have z2 : ∀ w < 8, limbs t2.mem base (slot (19 : Index).val) w = 0 := fun w hw => by
-    rw [s2 19 (by decide) w hw]; rw [m1]; exact hz w hw
-  have e1 : EV t1.mem base = EV s.mem base := by rw [m1]
-  -- The odd digit's entry, negated, and added to `A`.
-  rw [WP.block_append_iff]
-  refine WP.mono (negate_ok hs2 b2 (k := k) (i := 2 * j + 1) (o := BITS + 4) 6 (by decide) hn (by omega) (by omega)
-    (by simp only [BITS]; omega) (by simp only [BITS]; omega) hc2 bits2 (bnd2 6 (by decide))
-    (zero_env z2).2) fun t3 ⟨k3, b3, s3, e3⟩ => ?_
-  have hs3 := k3.scr hs2
-  have z3 : ∀ w < 8, limbs t3.mem base (slot (19 : Index).val) w = 0 := fun w hw => by
-    rw [s3 19 (by decide) w hw]; exact z2 w hw
-  rw [WP.block_append_iff]
-  refine WP.mono (addAffine_ok 0 1 2 6 7 (by decide) (by decide) (by decide) hs3 b3 (zero_env z3).2
-    (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)) (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel))
-    (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)) (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)))
-    fun t4 ⟨k4, b4, s4, _, _, _, e4⟩ => ?_
-  have hs4 := k4.scr hs3
-  have z4 : ∀ w < 8, limbs t4.mem base (slot (19 : Index).val) w = 0 := fun w hw => by
-    rw [s4 19 (by decide) w hw]; exact z3 w hw
-  have hc4 : t4.gpr .x19 = BitVec.ofNat 64 j := by
-    rw [k4.regs.1 .x19 (by decide), k3.regs.1 .x19 (by decide)]; exact hc2
-  -- The even digit's entry, negated, and added to `B`.
-  rw [WP.block_append_iff]
-  refine WP.mono (negate_ok hs4 b4 (k := k) (i := 2 * j) (o := BITS) 8 (by decide) hn (by omega) (by omega)
-    (by omega) (by simp only [BITS]; omega) hc4
-    (Bits.of_fkeep hn hs3 (Bits.of_fkeep hn hs2 bits2 k3) k4)
-    (s4.bnd (by decide) (s3.bnd (by decide) (bnd2 8 (by decide)))) (zero_env z4).2)
-    fun t5 ⟨k5, b5, s5, e5⟩ => ?_
-  have hs5 := k5.scr hs4
-  have z5 : ∀ w < 8, limbs t5.mem base (slot (19 : Index).val) w = 0 := fun w hw => by
-    rw [s5 19 (by decide) w hw]; exact z4 w hw
-  rw [WP.block_append_iff]
-  refine WP.mono (addAffine_ok 3 4 5 8 9 (by decide) (by decide) (by decide) hs5 b5 (zero_env z5).2
-    (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)) (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel))
-    (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)) (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)))
-    fun t6 ⟨k6, b6, s6, _, _, _, e6⟩ => ?_
-  have hs6 := k6.scr hs5
-  -- The counter.
-  have hc6 : t6.gpr .x19 = BitVec.ofNat 64 j := by
-    rw [k6.regs.1 .x19 (by decide), k5.regs.1 .x19 (by decide)]; exact hc4
-  refine WP.mono (next_ok t6 hn hj hc6) fun t7 ⟨c7, n7, k7, m7⟩ => ⟨n7, ?_⟩
-  have hs7 : Scr t7 base := hs6.of_keeps k7 (by decide)
-  have z6 : ∀ w < 8, limbs t6.mem base (slot (19 : Index).val) w = 0 := fun w hw => by
-    rw [s6 19 (by decide) w hw]; exact z5 w hw
-  -- Values of the slots along the way.
-  have e2s : ∀ i : Index, i ∉ entrySlots → EV t2.mem base i = EV s.mem base i := fun i hi => by
-    rw [Same.env s2 hi, e1]
-  have z2v : EV t2.mem base 19 = 0 := (zero_env z2).1
-  have t3o : ∀ i : Index, i ≠ 6 → i ≠ 10 → EV t3.mem base i = EV t2.mem base i := fun i h6 h10 => by
-    rw [e3]; simp only [opSwap, Function.update_apply, h6, h10, ite_false]
-  have t36 : EV t3.mem base 6 =
-      if decide (nib k (2 * j + 1) < 8) then EV t2.mem base 19 - EV t2.mem base 6 else EV t2.mem base 6 := by
-    rw [e3]; simp only [opSwap, Function.update_apply, show (6 : Index) ≠ 10 by decide, ite_false, ite_true]
-  have t5o : ∀ i : Index, i ≠ 8 → i ≠ 10 → EV t5.mem base i = EV t4.mem base i := fun i h8 h10 => by
-    rw [e5]; simp only [opSwap, Function.update_apply, h8, h10, ite_false]
-  have t58 : EV t5.mem base 8 =
-      if decide (nib k (2 * j) < 8) then EV t4.mem base 19 - EV t4.mem base 8 else EV t4.mem base 8 := by
-    rw [e5]; simp only [opSwap, Function.update_apply, show (8 : Index) ≠ 10 by decide, ite_false, ite_true]
-  have t4s : ∀ i : Index, i ∉ temps ++ [2, 0, 1] → i ∉ [10] ++ [6, 10] →
-      EV t4.mem base i = EV t2.mem base i := fun i h4 h3 => by
-    rw [Same.env s4 h4, Same.env s3 h3]
-  -- The odd accumulator.
-  have pA : pt (EV t4.mem base) 0 1 2 = addPt (pt (EV s.mem base) 0 1 2)
-      (basePt (if nib k (2 * j + 1) < 8 then negAff (Impl.X448.baseTable j (mag (nib k (2 * j + 1))))
-        else Impl.X448.baseTable j (mag (nib k (2 * j + 1))))) := by
-    rw [e4, affEnv_A, t3o 0 (by decide) (by decide), t3o 1 (by decide) (by decide),
-      t3o 2 (by decide) (by decide), t36, t3o 7 (by decide) (by decide), t3o 19 (by decide) (by decide),
-      z2v, v6, v7, e2s 0 (by decide), e2s 1 (by decide), e2s 2 (by decide), affPt_eq,
-      entry_eq _ 0 rfl]
-    rfl
-  have pB : pt (EV t6.mem base) 3 4 5 = addPt (pt (EV s.mem base) 3 4 5)
-      (basePt (if nib k (2 * j) < 8 then negAff (Impl.X448.baseTable j (mag (nib k (2 * j))))
-        else Impl.X448.baseTable j (mag (nib k (2 * j))))) := by
-    rw [e6, affEnv_B, t5o 3 (by decide) (by decide), t5o 4 (by decide) (by decide),
-      t5o 5 (by decide) (by decide), t58, t5o 9 (by decide) (by decide), t5o 19 (by decide) (by decide),
-      t4s 3 (by decide) (by decide), t4s 4 (by decide) (by decide), t4s 5 (by decide) (by decide),
-      t4s 8 (by decide) (by decide), t4s 9 (by decide) (by decide), t4s 19 (by decide) (by decide),
-      z2v, v8, v9, e2s 3 (by decide), e2s 4 (by decide), e2s 5 (by decide), affPt_eq,
-      entry_eq _ 0 rfl]
-    rfl
-  have p7A : pt (EV t7.mem base) 0 1 2 = pt (EV t4.mem base) 0 1 2 := by
-    simp only [pt, m7]
-    rw [Same.env s6 (i := 0) (by decide), Same.env s5 (i := 0) (by decide),
-      Same.env s6 (i := 1) (by decide), Same.env s5 (i := 1) (by decide),
-      Same.env s6 (i := 2) (by decide), Same.env s5 (i := 2) (by decide)]
-  have p7B : pt (EV t7.mem base) 3 4 5 = pt (EV t6.mem base) 3 4 5 := by simp only [pt, m7]
-  refine ⟨by omega, hs7, by rw [m7]; exact b6, by rw [m7]; exact z6, c7,
-    by rw [m7]; exact Bits.of_fkeep hn hs5 (Bits.of_fkeep hn hs4 (Bits.of_fkeep hn hs3 (Bits.of_fkeep hn hs2 bits2 k3) k4) k5) k6,
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [p7A, pA]
-    have := addPt_rep hodd (baseEntry_ok j (nib k (2 * j + 1)) (by omega) no)
-    rw [acc_step] at this
-    exact this
-  · rw [p7B, pB]
-    have := addPt_rep heven (baseEntry_ok j (nib k (2 * j)) (by omega) ne)
-    rw [acc_step] at this
-    exact this
-  · rw [k7.1 .x30 (by decide), k6.regs.1 .x30 (by decide), k5.regs.1 .x30 (by decide),
-      k4.regs.1 .x30 (by decide), k3.regs.1 .x30 (by decide), h2.2.2.1 .x30 (by decide),
-      d1.keeps.1 .x30 (by decide)]; exact hlr
-  · rw [k7.1 .x20 (by decide), k6.regs.1 .x20 (by decide), k5.regs.1 .x20 (by decide),
-      k4.regs.1 .x20 (by decide), k3.regs.1 .x20 (by decide), h2.2.2.1 .x20 (by decide),
-      d1.keeps.1 .x20 (by decide)]; exact hout
-  · rw [k7.2.1, k6.regs.2.1, k5.regs.2.1, k4.regs.2.1, k3.regs.2.1, h2.2.2.2.1, d1.keeps.2.1]; exact hrd
-  · rw [k7.2.2, k6.regs.2.2, k5.regs.2.2, k4.regs.2.2, k3.regs.2.2, h2.2.2.2.2, d1.keeps.2.2]; exact hwr
-  · rw [m7]
-    refine Outside2.trans hmem ?_
-    rw [← m1]
-    exact (((h2.outside2.trans k3.mem).trans k4.mem).trans k5.mem).trans k6.mem
-  · refine htbl.of_outside2 (by rw [k7.2.1, k6.regs.2.1, k5.regs.2.1, k4.regs.2.1, k3.regs.2.1,
-      h2.2.2.2.1, d1.keeps.2.1, k7.2.2, k6.regs.2.2, k5.regs.2.2, k4.regs.2.2, k3.regs.2.2,
-      h2.2.2.2.2, d1.keeps.2.2]) ?_
-    rw [m7, ← m1]
-    exact (((h2.outside2.trans k3.mem).trans k4.mem).trans k5.mem).trans k6.mem
 
 end VG.Proof.X448.AArch64.Base

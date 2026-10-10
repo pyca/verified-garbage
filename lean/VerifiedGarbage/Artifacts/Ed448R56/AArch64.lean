@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Verified
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Comb
 
 /-! # Ed448's point addition and doubling, in radix `2^56`, on AArch64 -/
 
@@ -28,6 +28,19 @@ def artifacts : List Artifact := [
     code := doubleFn
     contract := doubleContract AArch64.abi
     verified := doubleFn_verified
+    stack := 0
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { combAddApi with
+    target := AArch64.target
+    doc := combAddApi.doc (notes := ["Uses baseline integer instructions and AdvSIMD: the two \
+      additions of the comb as `vg_ed448_scalar_base`, `vg_ed448_verify_equation` and `vg_x448_base` \
+      inlined them, eleven products each with `vg_x448`'s field arithmetic (eight 56-bit limbs in \
+      64-bit words), the temporaries in slots 10 to 18. Their products use every vector register, so \
+      the function keeps `x21` to `x28` in the upper halves of `v8` to `v15` and stores those \
+      registers in its own working space (bytes 3968 to 4095) while it runs."])
+    code := combAddFn
+    contract := combAddContract AArch64.abi
+    verified := combAddFn_verified
     stack := 0
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 

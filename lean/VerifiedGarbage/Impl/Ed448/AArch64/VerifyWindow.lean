@@ -9,7 +9,7 @@ are `VerifyEquation.lean`'s (with X448's memory-resident arithmetic), as is the
 comparison of `[4]Q` with `[4]R`; but `Q = [S]B + [k](-A)` is computed with the
 register-resident arithmetic (`Impl/Curve448/AArch64/Fast.lean`):
 
-* `[S]B` by `vg_ed448_scalar_base`'s comb of 57 tables (`stepN 57`, `Point56.combineCall`),
+* `[S]B` by `vg_ed448_scalar_base`'s comb of 57 tables (`Point56.combLoop 57`, `Point56.combineCall`),
   from the bits of `S` at `BITS`.
 * `[k](-A)` by 4-bit windows from the top, each four doublings and the
   addition of `[n](-A)` for the window's digit `n`, selected in constant time
@@ -84,7 +84,7 @@ def table : Prog isa := .seq (.block tabInit) (.loop tabBody (.nonzero .x .x9))
 `16 A + B`: `[S]B` in slots 0–2. -/
 def sBase : Prog isa :=
   .seq (.block (Impl.X448.AArch64.Base.accs Impl.X448.baseG57)) <|
-  .seq (.loop (Impl.X448.AArch64.Base.stepN 57) (.nonzero .x .x9)) Point56.combineCall
+  .seq (Point56.combLoop 57) Point56.combineCall
 
 /-! ## `[k](-A)` -/
 

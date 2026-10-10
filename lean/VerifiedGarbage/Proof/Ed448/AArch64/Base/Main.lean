@@ -1,7 +1,8 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Comb
 import VerifiedGarbage.Proof.Ed448.AArch64.Base.Setup
 import VerifiedGarbage.Proof.Ed448.AArch64.Base.Encode
-import VerifiedGarbage.Proof.X448.AArch64.Base.Loop
+import VerifiedGarbage.Proof.X448.AArch64.Base.Step
 import VerifiedGarbage.Proof.Ed448.Group.Projective
 import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 
@@ -21,7 +22,6 @@ namespace VG.Proof.Ed448.AArch64
 
 open VG VG.AArch64 VG.Impl.Ed448.AArch64
 open VG.Proof.X448.AArch64 (Scr Keeps off word Outside Outside2 Saved ofs far)
-open VG.Proof.X448.AArch64.Base (loop_ok combine_ok)
 open VG.Proof.Ed448.AArch64.Base (setup_ok encode_ok)
 open VG.Impl.X448.AArch64 (slot ACC)
 open VG.Spec.Ed448 (bytesAt decodeLE)
@@ -57,8 +57,7 @@ theorem scalarBase_correct {s : State} (hp : scalarBaseLocal.pre s) :
   set k := decodeLE kb
   unfold scalarBase
   refine WP.seq (WP.mono (setup_ok hbase hws hn rfl hkr hkd htb) fun s1 R => ?_)
-  refine WP.seq (WP.mono (loop_ok (by decide) (s₀ := s1) 57 s1 (by decide) le_rfl
-    (by rw [Nat.sub_self]; exact R.inv) rfl) fun s2 h2 => ?_)
+  refine WP.seq (WP.mono (Point56.combLoop_ok (by decide) (by decide) (s₀ := s1) R.inv rfl) fun s2 h2 => ?_)
   refine WP.seq (WP.mono (Point56.combineCall_ok (decodeLE_57_lt kb (by simp [kb, VG.Proof.Ed448.bytesAt_eq, Spec.X25519.bytesAt])) h2)
     fun s3 ⟨f3, r3⟩ => ?_)
   -- The encoding.
