@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Weierstrass.X86_64.P224Literals
 import VerifiedGarbage.Impl.Ecdh.P224.X86_64
 
 /-!
