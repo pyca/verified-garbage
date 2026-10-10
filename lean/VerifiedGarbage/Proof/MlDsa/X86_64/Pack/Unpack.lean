@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.BitPack
 
 /-!
@@ -40,7 +41,7 @@ theorem t1Fin_ok : FinOk t1Fin 10 t1Word := fun j s hout _ => by
 theorem buPro_ok (s : State) :
     WP isa (.block [.mov32 .rcx (.reg .rcx), .mov .rsi (.reg .r8)]) s fun s' =>
       (dArg s' .rcx = dArg s .rcx ∧ s'.gpr .rsi = s.gpr .r8 ∧ s'.mem = s.mem) ∧ Keep [.rcx, .rsi] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   xrun [dArg]
 
 /-- A field of `d ≤ 20` bits of the input. -/

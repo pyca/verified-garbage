@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
 
@@ -345,7 +346,7 @@ theorem useHintY_correct (s₀ : State) (hp : useHintK.pre s₀) :
     refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem) (by vrund; rfl) fun u' hm' => ?_
     rw [hm']
     exact ⟨hf, hc⟩
-  obtain ⟨t, s', he, ⟨hf, hv⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .rsi, .rdi, .r10] wp (by decide +kernel)
+  obtain ⟨t, s', he, ⟨hf, hv⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .rsi, .rdi, .r10] wp (Proof.MlKem.X86_64.writesOnly_of (by decide +kernel))
   refine ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he (gprPreserved_of hk (by decide) hf ?_), ?_⟩
   · simpa using hp.2.2.2.2.2.2.1
   · refine natPolyIs_of_toNat fun k hk => ?_

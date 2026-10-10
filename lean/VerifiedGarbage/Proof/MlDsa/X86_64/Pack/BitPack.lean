@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 
@@ -51,7 +52,7 @@ theorem bpLd_ok (B : Nat) : LdOk (bpLd B) (bpVal B) := fun j s hin => by
 theorem bpPro_ok (s : State) :
     WP isa (.block [.mov32 .rdx (.reg .rdx), .mov .r8 (.reg .rcx)]) s fun s' =>
       (dArg s' .rdx = dArg s .rdx ∧ s'.gpr .r8 = s.gpr .rcx ∧ s'.mem = s.mem) ∧ Keep [.rdx, .r8] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   xrun [dArg]
 
 theorem mem_bitPackParams {a b : Nat} (h : (a, b) ∈ bitPackParams) :

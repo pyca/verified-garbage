@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
 
 /-!
@@ -34,7 +35,7 @@ theorem mhBody_ok {g : Nat} (hg : g = g32 ∨ g = g88) (s : State)
           (s.mem.readW (cfAddr (s.gpr .rsi) (s.gpr .rcx)) 32) ∧
         s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0)) ∧
       Keep [.rax, .rdx, .r8, .r9, .r11, .rcx] s s' := by
-  refine WP.keep _ ?_ (by rcases hg with rfl | rfl <;> decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by rcases hg with rfl | rfl <;> decide))
   unfold mhBody hb hbRaw condAdd
   xrun [h1, h1', h2, ea_cf, List.cons_append, List.nil_append, mhB, mhS, hbV, hbRawV, condAddV, dShift_ge,
     dShift_le]
@@ -84,13 +85,13 @@ theorem mhPrologue_ok (s : State) :
       (s'.gpr .r10 = s.gpr .rcx ∧ s'.gpr .r9 = 0 ∧
         s'.zf = some (BitVec.setWidth 32 (s.gpr .rdx) - BitVec.ofNat 32 g32 == 0) ∧ s'.mem = s.mem) ∧
       Keep [.rdx, .r10, .r9] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   unfold gammaCmp
   xrun [List.cons_append, List.nil_append]
 
 theorem mhEpilogue_ok (s : State) :
     WP isa (.block [.mov .rax (.reg .r9)]) s fun s' => (s'.gpr .rax = s.gpr .r9 ∧ s'.mem = s.mem) ∧ Keep [.rax] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   xrun
 
 section
@@ -186,7 +187,7 @@ theorem mh_correct : ∃ t s', Exec isa makeHint s₀ t s' ∧ abiPreserved s₀
       exact go _ ((gamma_cases hg).1 h) s₁ h10 h9 hk hm
     · rw [sub_beq_zero32, decide_eq_false_iff_not] at h
       exact go _ ((gamma_cases hg).2 h) s₁ h10 h9 hk hm
-  obtain ⟨t, s', he, ⟨hv, hax, hf⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .r8, .r9, .r10, .r11] wp (by decide)
+  obtain ⟨t, s', he, ⟨hv, hax, hf⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .r8, .r9, .r10, .r11] wp (Proof.MlKem.X86_64.writesOnly_of (by decide))
   refine ⟨t, s', he, abiPreserved_of_exec (by decide) he (gprPreserved_of hk (by decide) hf ?_), ?_, ?_⟩
   · simpa using hp.2.2.2.2.2.2.1
   · refine hintIs_of_toNat fun k hk' => ?_

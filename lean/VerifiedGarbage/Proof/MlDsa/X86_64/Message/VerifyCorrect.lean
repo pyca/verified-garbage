@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCall
 import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCorrect
 
@@ -30,7 +31,7 @@ theorem verifyMov_ok {p : Params} {s s1 : State} (h : VPre p s) (hg : s1.gpr = s
     refine ⟨vArgs s, by simp [hrd, h.rd], ?_⟩
     rw [hg, ← stackArgAddr0]
     exact Region.contains_self _ _
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   xrun [ea_stk, h8, RegUpd.mxcsr_setReg]
   rw [hm, hg]
   exact ⟨rfl, rfl⟩

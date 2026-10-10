@@ -15,7 +15,7 @@ namespace VG.Proof.MlDsa.X86_64.Arith
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
-open VG.Proof.MlKem.X86_64 (Keep XOnly YOnly ylanes yld_ok yconst_ok WP.keep writesOnly gprPreserved_of ifp ifn
+open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep XOnly YOnly ylanes yld_ok yconst_ok WP.keep writesOnly gprPreserved_of ifp ifn
   ptr_step GOnly wp_rcxLoopY add_ofNat_zero lane_setReg lane_setFlags sx32 State.setMem_ymm)
 open VG.Impl.MlKem.X86_64 (xb xmov toY yconst)
 open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs)
@@ -136,7 +136,7 @@ theorem step {i : Nat} (hi : i < 32) {s : State}
 /-- The whole function, from its precondition. -/
 theorem fn_ok (hv : ∀ k < 256, (L (coeffAt s₀.mem (s₀.gpr .rdi) k) (coeffAt s₀.mem (s₀.gpr .rsi) k)).toNat =
       ((t (polyAt s₀.mem (s₀.gpr .rdi)) (polyAt s₀.mem (s₀.gpr .rsi)))[k]!).val)
-    (hc : writesOnly [.rax, .rdi, .rsi, .rcx] (.seq (.block (yconst .xmm15 8380417))
+    (hc : Code.allInstrs (writesIn [.rax, .rdi, .rsi, .rcx]) (.seq (.block (yconst .xmm15 8380417))
       (.seq (VG.Impl.MlKem.X86_64.rcxLoop 32 (yaccBody op fix)) (.block yepi))) = true)
     (hm : Code.allInstrs (fun i => !loadsMxcsr i) (.seq (.block (yconst .xmm15 8380417))
       (.seq (VG.Impl.MlKem.X86_64.rcxLoop 32 (yaccBody op fix)) (.block yepi)) : Prog isa) = true) :
@@ -159,7 +159,7 @@ theorem fn_ok (hv : ∀ k < 256, (L (coeffAt s₀.mem (s₀.gpr .rdi) k) (coeffA
     refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem) (by simp only [yepi]; vrund; rfl) fun u' hm' => ?_
     rw [hm']
     exact ⟨hI.frame, fun k hk => by rw [hI.coeff k hk, ifp (by omega)]⟩
-  obtain ⟨tr, s', he, ⟨hf, hco⟩, hk⟩ := WP.keep _ hW hc
+  obtain ⟨tr, s', he, ⟨hf, hco⟩, hk⟩ := WP.keep _ hW (writesOnly_of hc)
   refine ⟨tr, s', he, abiPreserved_of_exec hm he (gprPreserved_of hk (by decide) hf ?_),
     polyIs_of_toNat fun k hk => ?_⟩
   · simpa using hp.2.2.2.1

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Common
 import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 import VerifiedGarbage.Proof.MlKem.X86_64.Zero
@@ -239,7 +240,7 @@ theorem blk1_ok {rate : BitVec 32} (hr : spRate rate) {s : State} (h : J0 P σ s
     WP isa (.block (zeroSt ++ absArgs rate)) s (J1 rate.toNat P σ) := by
   unfold zeroSt
   rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (WP.keep [.rax] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .rax = 0) (by xrun) (by decide))
+  refine WP.mono (WP.keep [.rax] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .rax = 0) (by xrun) (Proof.MlKem.X86_64.writesOnly_of (by decide)))
     fun s1 ⟨⟨hm1, hax⟩, k1⟩ => ?_
   rw [WP.block_append_iff]
   have hb1 : s1.gpr .rbx = P.scr := by rw [k1.gpr (by decide), h.env.rbx]

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Batch
 
 namespace VG.Proof.MlDsa.X86_64.Rej4.Segment
@@ -44,7 +45,7 @@ theorem flags_ok {n : Nat} {s : State} (env : EnvK σ s)
   have j0 := j 0 (by decide); have j1 := j 1 (by decide)
   have j2 := j 2 (by decide); have j3 := j 3 (by decide)
   simp only [oJ, Nat.reduceMul, Nat.reduceAdd] at h0 h1 h2 h3 j0 j1 j2 j3
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   change WP isa (.block ([.mov32 .r14 (.imm 1),
     .mov .rax (.mem (at_ .rbx 4424)), .shift .shr .rax 8, .alu32 .and .r14 (.reg .rax),
     .mov .rax (.mem (at_ .rbx 4432)), .shift .shr .rax 8, .alu32 .and .r14 (.reg .rax),

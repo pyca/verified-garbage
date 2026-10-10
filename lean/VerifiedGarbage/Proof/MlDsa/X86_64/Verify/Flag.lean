@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Blocks
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallPack
 
@@ -31,14 +32,14 @@ theorem and15_ok (s : State) :
     WP isa (.block and15) s fun s' =>
       (s'.gpr .r15 = BitVec.setWidth 64 ((s.gpr .r15).setWidth 32 &&& (s.gpr .rax).setWidth 32) ∧ s'.mem = s.mem) ∧
         Keep [.r15] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   unfold and15
   xrun
 
 theorem mov15_ok (s : State) :
     WP isa (.block [.mov32 .r15 (.reg .rax)]) s fun s' =>
       (s'.gpr .r15 = BitVec.setWidth 64 ((s.gpr .rax).setWidth 32) ∧ s'.mem = s.mem) ∧ Keep [.r15] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   xrun
 
 /-- `r15 ∧ eax` of a flag and a result 0 or 1. -/

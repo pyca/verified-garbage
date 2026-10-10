@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 
@@ -104,7 +105,7 @@ theorem cmpPre_wp {a b : Ptr} {n : Nat} (hok : ∀ x ∈ ([(.rsi, .ptr a), (.rdi
         s'.gpr .rcx = (Arg.imm n).val s := by
   rw [WP.block_append_iff]
   refine WP.mono (glue_ok' hok (by simp only [List.map_cons, List.map_nil]; decide) s) fun s1 h1 => ?_
-  refine WP.mono (WP.keep [.rdx] (Q := fun s₂ => s₂.mem = s1.mem ∧ s₂.gpr .rdx = 0) (by xrun) (by decide)) fun s2 ⟨_, k2⟩ => ⟨?_, ?_, ?_⟩
+  refine WP.mono (WP.keep [.rdx] (Q := fun s₂ => s₂.mem = s1.mem ∧ s₂.gpr .rdx = 0) (by xrun) (Proof.MlKem.X86_64.writesOnly_of (by decide))) fun s2 ⟨_, k2⟩ => ⟨?_, ?_, ?_⟩
   · rw [k2.gpr (by decide)]; exact h1.1.1 _ (List.mem_cons_self ..)
   · rw [k2.gpr (by decide)]; exact h1.1.1 _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
   · rw [k2.gpr (by decide)]

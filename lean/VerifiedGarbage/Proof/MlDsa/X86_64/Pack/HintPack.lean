@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Hint
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.MemTaint
@@ -83,7 +84,7 @@ theorem hbpZeroPro_ok (s : State) :
     WP isa (.block [.mov32 .rdx (.reg .rdx), .mov32 .rax (.imm 0), .mov .r9 (.reg .rcx), .mov .r10 (.reg .r8)]) s
       fun s' => (s'.gpr .rdx = BitVec.ofNat 64 (dArg s .rdx) ∧ s'.gpr .rax = 0 ∧ s'.gpr .r9 = s.gpr .rcx ∧
         s'.gpr .r10 = s.gpr .r8 ∧ s'.mem = s.mem) ∧ Keep [.rdx, .rax, .r9, .r10] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   xrun [dArg]
   apply BitVec.eq_of_toNat_eq; simp
 
@@ -91,7 +92,7 @@ theorem zeroStep_ok (s : State) (hout : InRegions s.wr (s.gpr .r9) 1) :
     WP isa (.block [.store8 (at_ .r9 0) .rax, .alu .add .r9 (.imm 1), .alu .sub .r10 (.imm 1)]) s fun s' =>
       (s'.mem = s.mem.writeW (s.gpr .r9) (BitVec.setWidth 8 (s.gpr .rax)) ∧ s'.gpr .r9 = s.gpr .r9 + 1 ∧
         s'.gpr .r10 = s.gpr .r10 - 1 ∧ s'.zf = some (s.gpr .r10 - 1 == 0)) ∧ Keep [.r9, .r10] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   xrun [ea_at', hout]
 
 include hp in
@@ -173,21 +174,21 @@ theorem hpS_succ (s₀ : State) (i : Nat) :
 theorem hbpLoad_ok (s : State) (hin : InRegions (s.rd ++ s.wr) (s.gpr .rdi) 4) :
     WP isa (.block [.mov32 .rsi (.mem (at_ .rdi 0)), .alu32 .cmp .rsi (.imm 0)]) s fun s' =>
       (s'.zf = some (s.mem.readW (s.gpr .rdi) 32 - 0 == 0) ∧ s'.mem = s.mem) ∧ Keep [.rsi] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   xrun [ea_at', hin]
 
 theorem hbpSet_ok (s : State) (hout : InRegions s.wr (s.gpr .rcx + s.gpr .rax) 1) :
     WP isa (.block [.store8 (atIdx .rcx .rax) .r11, .alu .add .rax (.imm 1)]) s fun s' =>
       (s'.mem = s.mem.writeW (s.gpr .rcx + s.gpr .rax) (BitVec.setWidth 8 (s.gpr .r11)) ∧
         s'.gpr .rax = s.gpr .rax + 1) ∧ Keep [.rax] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   xrun [ea_idx, hout]
 
 theorem hbpNext_ok (s : State) :
     WP isa (.block [.alu .add .rdi (.imm 4), .alu .add .r11 (.imm 1), .alu32 .cmp .r11 (.imm 256)]) s fun s' =>
       (s'.gpr .rdi = s.gpr .rdi + 4 ∧ s'.gpr .r11 = s.gpr .r11 + 1 ∧
         s'.zf = some (BitVec.setWidth 32 (s.gpr .r11 + 1) - 256 == 0) ∧ s'.mem = s.mem) ∧ Keep [.rdi, .r11] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   xrun
 
 theorem ofNat_succ64 (x : Nat) : BitVec.ofNat 64 x + 1 = BitVec.ofNat 64 (x + 1) := by
@@ -299,7 +300,7 @@ structure HPInv (s₀ : State) (i : Nat) (s : State) : Prop where
 
 theorem zeroR11_ok (s : State) :
     WP isa (.block [.mov32 .r11 (.imm 0)]) s fun s' => (s'.gpr .r11 = 0 ∧ s'.mem = s.mem) ∧ Keep [.r11] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   xrun
 
 include hp in
@@ -345,7 +346,7 @@ theorem hbpSetup_ok (s : State) :
     WP isa (.block [.mov .r9 (.reg .rcx), .alu .add .r9 (.reg .rdx), .mov .r10 (.reg .r8), .alu .sub .r10 (.reg .rdx)])
       s fun s' => (s'.gpr .r9 = s.gpr .rcx + s.gpr .rdx ∧ s'.gpr .r10 = s.gpr .r8 - s.gpr .rdx ∧ s'.mem = s.mem) ∧
         Keep [.r9, .r10] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   xrun
 
 include hp in

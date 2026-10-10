@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
@@ -220,7 +221,7 @@ theorem nlPro_ok (s₀ : State) :
   unfold nlPro
   refine WP.seq (WP.mono (Q := fun (s₁ : State) => (s₁.cf = some (decide (((s₀.gpr .rsi).setWidth 32).toNat < q)) ∧
       s₁.mem = s₀.mem ∧ s₁.gpr .rsi = BitVec.setWidth 64 ((s₀.gpr .rsi).setWidth 32)) ∧ Keep [.rsi] s₀ s₁)
-    (by refine WP.keep _ ?_ (by decide); xrun; rfl)
+    (by refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide)); xrun; rfl)
     fun s₁ ⟨⟨hc, hm, hsi⟩, hk⟩ => ?_)
   refine WP.ite (M := isa) _ (show isa.eval .b s₁ = _ from hc) (fun h => ?_) (fun h => ?_)
   · rw [decide_eq_true_iff] at h
@@ -230,7 +231,7 @@ theorem nlPro_ok (s₀ : State) :
     rw [hsi, sw3264, Nat.min_eq_left (by unfold arg32; omega)]
   · rw [decide_eq_false_iff_not] at h
     refine WP.mono (Q := fun (s₂ : State) => (s₂.gpr .rsi = BitVec.setWidth 64 qImm ∧ s₂.mem = s₁.mem) ∧
-      Keep [.rsi] s₁ s₂) (by refine WP.keep _ ?_ (by decide); xrun) fun s₂ ⟨⟨h1, h2⟩, k2⟩ => ?_
+      Keep [.rsi] s₁ s₂) (by refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide)); xrun) fun s₂ ⟨⟨h1, h2⟩, k2⟩ => ?_
     refine ⟨⟨h2.trans hm, ?_⟩, (hk.trans k2).mono (by simp)⟩
     rw [h1, Nat.min_eq_right (by unfold arg32; omega)]; rfl
 
@@ -249,13 +250,13 @@ theorem nlConsts_ok (s : State) (hb : ((s.gpr .rsi).setWidth 32).toNat ≤ q) :
   rw [WP.block_append_iff]
   refine WP.mono (Q := fun (s1 : State) => (s1.gpr .rax = BitVec.setWidth 64 ((s.gpr .rsi).setWidth 32) ∧
       s1.mem = s.mem ∧ s1.mxcsr = s.mxcsr ∧ ∀ r l, s1.lane r l = s.lane r l) ∧ Keep [.rax] s s1)
-    (by refine WP.keep _ ?_ (by decide); xrun; exact ⟨rfl, fun _ _ => rfl⟩) fun s1 ⟨⟨a1, m1, x1, l1⟩, k1⟩ => ?_
+    (by refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide)); xrun; exact ⟨rfl, fun _ _ => rfl⟩) fun s1 ⟨⟨a1, m1, x1, l1⟩, k1⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (ybc_ok .xmm8 s1) fun s2 ⟨c2, g2, m2, r2, w2, x2, o2⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (Q := fun (s3 : State) => (s3.gpr .rax = BitVec.setWidth 64 (qImm - (s2.gpr .rsi).setWidth 32) ∧
       s3.mem = s2.mem ∧ s3.mxcsr = s2.mxcsr ∧ ∀ r l, s3.lane r l = s2.lane r l) ∧ Keep [.rax] s2 s3)
-    (by refine WP.keep _ ?_ (by decide); xrun; exact ⟨rfl, fun _ _ => rfl⟩) fun s3 ⟨⟨a3, m3, x3, l3⟩, k3⟩ => ?_
+    (by refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide)); xrun; exact ⟨rfl, fun _ _ => rfl⟩) fun s3 ⟨⟨a3, m3, x3, l3⟩, k3⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (ybc_ok .xmm9 s3) fun s4 ⟨c4, g4, m4, r4, w4, x4, o4⟩ => ?_
   refine WP.mono (yconst_ok .xmm10 _ s4) fun s5 ⟨c5, k5, m5, x5, o5⟩ => ?_
@@ -381,7 +382,7 @@ theorem normLtY_wp : WP isa normLtAvx2 s₀ fun s' =>
   · rw [hm', hI.mem]; exact Frame.refl _ _
 
 theorem normLtY_correct : ∃ t s', Exec isa normLtAvx2 s₀ t s' ∧ abiPreserved s₀ s' ∧ normLtK.post s₀ s' := by
-  obtain ⟨t, s', he, ⟨hv, hf⟩, hk⟩ := WP.keep [.rax, .rcx, .rsi, .rdi] (normLtY_wp hp) (by decide +kernel)
+  obtain ⟨t, s', he, ⟨hv, hf⟩, hk⟩ := WP.keep [.rax, .rcx, .rsi, .rdi] (normLtY_wp hp) (Proof.MlKem.X86_64.writesOnly_of (by decide +kernel))
   exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he (gprPreserved_of hk (by decide) hf (by simp)), hv⟩
 
 end
