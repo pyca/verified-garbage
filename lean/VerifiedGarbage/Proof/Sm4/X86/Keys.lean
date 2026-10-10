@@ -177,8 +177,8 @@ def tableBody (dir : Dir) : List Instr :=
   keyOne ++ ([addI .ecx 4, kpStep dir, subI .ebp 1] : List Instr)
 
 theorem keys_eq (dir : Dir) :
-    keys dir = .seq (.block ([.mov .ecx (.mem (argOp 0))] ++
-      kpAt (match dir with | .encrypt => tableSlot | .decrypt => tableSlot + 8 * 31) ++ [movI .ebp 32]))
+    keys dir = .seq (.block (([.mov .ecx (.mem (argOp 0))] : List Instr) ++
+      kpAt (match dir with | .encrypt => tableSlot | .decrypt => tableSlot + 8 * 31) ++ ([movI .ebp 32] : List Instr)))
       (.loop (.block (tableBody dir)) .ne) := by
   cases dir <;> rfl
 
