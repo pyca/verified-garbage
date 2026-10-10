@@ -12,7 +12,12 @@
 //! Each vector is checked in one call and split into pieces at every
 //! position.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 
 mod cryptography;
 mod draft_sca_cfrg_sm3;
