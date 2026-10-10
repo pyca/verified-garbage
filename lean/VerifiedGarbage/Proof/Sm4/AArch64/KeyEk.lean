@@ -1,9 +1,9 @@
-import VerifiedGarbage.Proof.Sm4.X86_64.KeyLoop
+import VerifiedGarbage.Proof.Sm4.AArch64.KeyLoop
 
 /-!
-# The SM4 key schedule on x86-64: the whole function
+# The SM4 key schedule on AArch64: the whole function
 
-`expandKey_wp`: with the working space as an argument (`expandKeyX86_64`),
+`expandKey_wp`: with the working space as an argument (`expandKeyAArch64`),
 `expandKey` saves the callee-saved registers, sets the masks, stores the
 table of `CK`'s planes, bitslices sixteen copies of `MK ⊕ FK`, runs the
 loop (`ekIter_ok`) and restores the registers; the schedule is the
@@ -12,34 +12,32 @@ specification's `expandKey`.
 
 namespace VG.Proof.Sm4
 
-open VG VG.X86_64 VG.Impl.Sm4.X86_64
+open VG VG.AArch64 VG.Impl.Sm4.AArch64
 
-/-- The key schedule on x86-64 with its working space at `rdx`. -/
-def expandKeyX86_64 : Contract X86_64.isa where
+/-- The key schedule on AArch64 with its working space at `x2`. -/
+def expandKeyAArch64 : Contract AArch64.isa where
   pre s :=
-    let key : Region := ⟨s.gpr .rdi, 16⟩
-    let sched : Region := ⟨s.gpr .rsi, 128⟩
-    let scratch : Region := ⟨s.gpr .rdx, 8 * slots⟩
-    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let key : Region := ⟨s.gpr .x0, 16⟩
+    let sched : Region := ⟨s.gpr .x1, 128⟩
+    let scratch : Region := ⟨s.gpr .x2, 8 * slots⟩
     s.rd = [key] ∧ s.wr = [sched, scratch] ∧ key.Disjoint sched ∧ key.Disjoint scratch ∧
-      sched.Disjoint scratch ∧ ret.Disjoint sched ∧ ret.Disjoint scratch ∧
-      (s.gpr .rdi).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + 128 ≤ 2 ^ 64 ∧
-      (s.gpr .rdx).toNat + 8 * slots ≤ 2 ^ 64
+      sched.Disjoint scratch ∧
+      (s.gpr .x0).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 128 ≤ 2 ^ 64 ∧
+      (s.gpr .x2).toNat + 8 * slots ≤ 2 ^ 64
   post s s' :=
-    Spec.Sm4.scheduleAt s'.mem (s.gpr .rsi) = Spec.Sm4.expandKey (Spec.Sm4.blockAt s.mem (s.gpr .rdi))
+    Spec.Sm4.scheduleAt s'.mem (s.gpr .x1) = Spec.Sm4.expandKey (Spec.Sm4.blockAt s.mem (s.gpr .x0))
   pub s₁ s₂ :=
-    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
-      s₁.gpr .rsp = s₂.gpr .rsp
+    s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.sp = s₂.sp
 
 end VG.Proof.Sm4
 
-namespace VG.Proof.Sm4.X86_64
+namespace VG.Proof.Sm4.AArch64
 
-open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Sm4.X86_64
-open VG.Impl.Aes.X86_64 (q sb t0 t1 movR movS st at_ setMasks)
+open VG VG.AArch64 VG.AArch64.Straight VG.Impl.Sm4.AArch64
+open VG.Impl.Aes.AArch64 (q sb t0 t1 movR ldS stS)
 open VG.Impl.Sm4 (planeOf fkWord)
 open VG.Proof.Sm4 (planeOf_rel fkWord_bit WordRel quads ofBlock outBlock keyInit rkOf readW64_bit getLsbD_wordAt ofInt_nat
-  expandKeyX86_64)
+  expandKeyAArch64)
 
 /-! ## `MK ⊕ FK` in the tail buffer -/
 
@@ -91,32 +89,31 @@ theorem entryW_slot (s : State) (e j : Nat) : entryW s.mem (s.gpr sb) e j = slot
 
 /-- The code before the loop. -/
 def ekHead : List Instr :=
-  [movR sb .rdx, movR .r8 .rsi] ++ saveRegs ++ setMasks keyMasks ++ ckTable ++ loadHalf 0 ++
-    loadHalf 1 ++ toBs ++ slotAddr .rdi tableEnd ++ slotAddr kp tableSlot
+  [movR sb .x2] ++ saveRegs ++ setSlots keyMasks ++ ckTable ++ loadHalf 0 ++
+    loadHalf 1 ++ toBs ++ slotAddr .x3 tableEnd ++ slotAddr kp tableSlot
 
-theorem ekHead_ok {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
+theorem ekHead_ok {s₀ : State} (hp : expandKeyAArch64.pre s₀) :
     ∃ s, runBlock isa ekHead s₀ = some s ∧
-      EkInv s₀ (s₀.gpr .rdx) (s₀.gpr .rsi) (Spec.Sm4.blockAt s₀.mem (s₀.gpr .rdi)) 0 s := by
-  obtain ⟨hrd, hwr, dKS, dKB, dSB, dRS, dRB, fitK, fitS, fitB⟩ := hp
-  let b := s₀.gpr .rdx
-  let S := s₀.gpr .rsi
-  let Kp := s₀.gpr .rdi
+      EkInv s₀ (s₀.gpr .x2) (s₀.gpr .x1) (Spec.Sm4.blockAt s₀.mem (s₀.gpr .x0)) 0 s := by
+  obtain ⟨hrd, hwr, dKS, dKB, dSB, fitK, fitS, fitB⟩ := hp
+  let b := s₀.gpr .x2
+  let S := s₀.gpr .x1
+  let Kp := s₀.gpr .x0
   have hwB : (⟨b, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [b]
   have hfitB := fitB
   rw [slots_eq] at hfitB
   -- The registers.
-  obtain ⟨s₁a, e₁a, r₁a, o₁a, m₁a, rd₁a, wr₁a⟩ := movR_ok s₀ sb .rdx
-  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s₁a .r8 .rsi
-  have g₁ : ∀ r, r ≠ .r9 → r ≠ .r8 → s₁.gpr r = s₀.gpr r := fun r h1 h2 => by rw [o₁ r h2, o₁a r h1]
-  have hb₁ : s₁.gpr sb = b := by rw [o₁ _ (by decide), r₁a]
-  have mem₁ : s₁.mem = s₀.mem := by rw [m₁, m₁a]
-  have wr₁' : s₁.wr = s₀.wr := by rw [wr₁, wr₁a]
-  have rd₁' : s₁.rd = s₀.rd := by rw [rd₁, rd₁a]
+  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s₀ sb .x2
+  have g₁ : ∀ r, r ≠ sb → s₁.gpr r = s₀.gpr r := o₁
+  have hb₁ : s₁.gpr sb = b := r₁
+  have mem₁ : s₁.mem = s₀.mem := m₁
+  have wr₁' : s₁.wr = s₀.wr := wr₁
+  have rd₁' : s₁.rd = s₀.rd := rd₁
   -- Saving, the masks and the table of `CK`.
-  obtain ⟨s₂, e₂, sv₂, g₂, rd₂, wr₂, f₂⟩ := save_ok (b := b) (by rw [wr₁']; exact hwB) hb₁
-  obtain ⟨s₃, e₃, v₃, k₃, g₃, rd₃, wr₃, f₃⟩ := setMasks_ok (b := b) keyMasks (by rw [g₂, hb₁])
+  obtain ⟨s₂, e₂, sv₂, g₂, rd₂, wr₂, f₂, -⟩ := save_ok (b := b) (by rw [wr₁']; exact hwB) hb₁
+  obtain ⟨s₃, e₃, v₃, k₃, g₃, rd₃, wr₃, f₃⟩ := setSlots_ok (b := b) keyMasks (by rw [g₂, hb₁])
     (by rw [wr₂, wr₁']; exact hwB) (fun kv hkv => by have := mask_lt hkv; rw [tableSlot_eq]; omega) (by decide)
-  obtain ⟨s₄, e₄, v₄, k₄, g₄, rd₄, wr₄, f₄⟩ := setMasksN_ok tableEnd (by rw [tableEnd_eq, slots_eq]; omega)
+  obtain ⟨s₄, e₄, v₄, k₄, g₄, rd₄, wr₄, f₄⟩ := setSlotsN_ok tableEnd (by rw [tableEnd_eq, slots_eq]; omega)
     ckEntries (b := b) (by rw [g₃ _ (by decide), g₂, hb₁]) (by rw [wr₃, wr₂, wr₁']; exact hwB) ckEntries_lt
     ckEntries_nodup
   have hb₄ : s₄.gpr sb = b := by rw [g₄ _ (by decide), g₃ _ (by decide), g₂, hb₁]
@@ -134,8 +131,8 @@ theorem ekHead_ok {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
       m.readW (Kp + BitVec.ofNat 64 (8 * h)) 64 = s₀.mem.readW (Kp + BitVec.ofNat 64 (8 * h)) 64 :=
     fun m hf h hh => hf.readW (r := ⟨Kp, 16⟩) (VG.Offset.contains_base _ (by omega) (by omega))
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dKB) (by decide)
-  have hrdi₄ : s₄.gpr .rdi = Kp := by
-    rw [g₄ _ (by decide), g₃ _ (by decide), g₂, g₁ _ (by decide) (by decide)]
+  have hrdi₄ : s₄.gpr .x0 = Kp := by
+    rw [g₄ _ (by decide), g₃ _ (by decide), g₂, g₁ _ (by decide)]
   obtain ⟨s₅, e₅, v₅, k₅, g₅, rd₅, wr₅, f₅⟩ := loadHalf_ok 0 (by decide) hb₄ (by rw [wr₄, wr₃, wr₂, wr₁']; exact hwB)
     (by rw [hrdi₄]; exact inK 0 (by decide))
   have hb₅ : s₅.gpr sb = b := by rw [g₅ _ (by decide) (by decide), hb₄]
@@ -169,17 +166,17 @@ theorem ekHead_ok {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
       k₄ _ (by rw [slots_eq]; omega) (notCk _ (Or.inl (by rw [tableSlot_eq]; omega))), v₃ kv hkv]
   -- The key, bitsliced.
   obtain ⟨s₇, e₇, c₇, kp₇, X₇⟩ := toBs_step hkey₆ (Ctx.refl hm₆)
-  obtain ⟨s₈, e₈, r₈, o₈, m₈, rd₈, wr₈⟩ := slotAddr_ok s₇ .rdi tableEnd (by decide)
+  obtain ⟨s₈, e₈, r₈, o₈, m₈, rd₈, wr₈⟩ := slotAddr_ok s₇ .x3 tableEnd (by decide)
   obtain ⟨s₉, e₉, r₉, o₉, m₉, rd₉, wr₉⟩ := slotAddr_ok s₈ kp tableSlot (by decide)
   have hb₇ : s₇.gpr sb = b := by rw [c₇.base, hb₆]
   have hb₉ : s₉.gpr sb = b := by rw [o₉ _ (by decide), o₈ _ (by decide), hb₇]
   have mem₉ : s₉.mem = s₇.mem := by rw [m₉, m₈]
-  have g₉ : ∀ r, r ∉ sboxWrites → r ≠ kp → r ≠ .rdi → s₉.gpr r = s₆.gpr r := fun r h1 h2 h3 => by
+  have g₉ : ∀ r, r ∉ layerWrites → r ≠ kp → r ≠ .x3 → s₉.gpr r = s₆.gpr r := fun r h1 h2 h3 => by
     rw [o₉ r h2, o₈ r h3, c₇.keep r h1 h2]
-  have g₆' : ∀ r, r ∉ sboxWrites → r ≠ .r9 → r ≠ .r8 → s₆.gpr r = s₀.gpr r := fun r h1 h2 h3 => by
+  have g₆' : ∀ r, r ∉ layerWrites → r ≠ sb → s₆.gpr r = s₀.gpr r := fun r h1 h2 => by
     have ht0 : r ≠ t0 := fun h => h1 (by subst h; decide)
     have ht1 : r ≠ t1 := fun h => h1 (by subst h; decide)
-    rw [g₆ r ht0 ht1, g₅ r ht0 ht1, g₄ r ht0, g₃ r ht0, g₂, g₁ r h2 h3]
+    rw [g₆ r ht0 ht1, g₅ r ht0 ht1, g₄ r ht0, g₃ r ht0, g₂, g₁ r h2]
   have hK : ∀ h < 2, ∀ t < 8, ∀ j < 8, (s₀.mem.readW (Kp + BitVec.ofNat 64 (8 * h)) 64).getLsbD (8 * t + j) =
       ((Spec.Sm4.blockAt s₀.mem Kp).getD (8 * h + t) 0).getLsbD j := fun h hh t ht j hj => by
     rw [readW64_bit _ _ ht hj, VG.Proof.Sm4.blockAt_getD _ _ (by omega), addr_add]
@@ -192,16 +189,14 @@ theorem ekHead_ok {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
   have hst : StRel s₉ (fun _ => quads .key Spec.Sm4.ck 0 (keyInit (Spec.Sm4.blockAt s₀.mem Kp))) := fun w hw =>
     ((X₇ w hw).congr fun j _ => by simp only [planes, slotW, mem₉, hb₉, hb₇]).congr_right fun c hc =>
       (keyInit_rel hK hT c hc w hw).symm
-  refine ⟨s₉, ?_, ⟨hb₉, ?_, ?_, ?_, ?_, ?_, ?_, hst, fun i hi => by omega, fun i hi => ?_, ?_,
+  refine ⟨s₉, ?_, ⟨hb₉, ?_, ?_, ?_, ?_, ?_, hst, fun i hi => by omega, fun i hi => ?_, ?_,
     by rw [rd₉, rd₈, c₇.rd, rd₆, rd₅, rd₄, rd₃, rd₂, rd₁'], by rw [wr₉, wr₈, c₇.wr, wr₆, wr₅, wr₄, wr₃, wr₂, wr₁']⟩⟩
   · rw [ekHead, runBlock_app, runBlock_app, runBlock_app, runBlock_app, runBlock_app, runBlock_app,
-      runBlock_app, runBlock_app,
-      show ([movR sb .rdx, movR .r8 .rsi] : List Instr) = [movR sb .rdx] ++ [movR .r8 .rsi] from rfl,
-      runBlock_app, e₁a, Option.bind_some, e₁, Option.bind_some, e₂, Option.bind_some, e₃, Option.bind_some,
-      ckTable, e₄, Option.bind_some, e₅, Option.bind_some, e₆, Option.bind_some, e₇, Option.bind_some, e₈, Option.bind_some, e₉]
-  · rw [g₉ _ (by decide) (by decide) (by decide), g₆' _ (by decide) (by decide) (by decide)]
-  · rw [g₉ _ (by decide) (by decide) (by decide), g₆ _ (by decide) (by decide), g₅ _ (by decide) (by decide),
-      g₄ _ (by decide), g₃ _ (by decide), g₂, r₁, o₁a _ (by decide)]; exact (BitVec.add_zero _).symm
+      runBlock_app, runBlock_app, e₁, Option.bind_some, e₂, Option.bind_some, e₃, Option.bind_some,
+      ckTable, e₄, Option.bind_some, e₅, Option.bind_some, e₆, Option.bind_some, e₇, Option.bind_some, e₈,
+      Option.bind_some, e₉]
+  · rw [g₉ _ (by decide) (by decide) (by decide), g₆' _ (by decide) (by decide)]
+    exact (BitVec.add_zero _).symm
   · rw [o₉ _ (by decide), r₈, hb₇]
   · rw [AtEntry, r₉, o₈ _ (by decide), hb₇]; simp; rfl
   · exact (hkey₆.of_ctx c₇) |> fun h => ⟨by rw [wr₉, wr₈, hb₉, ← hb₇]; exact h.scr, by rw [hb₉, ← hb₇]; exact h.fit,
@@ -219,8 +214,7 @@ theorem ekHead_ok {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
         k₄ _ hk (notCk _ (Or.inr (by rw [tableEnd_eq, savedSlot_eq]; omega))),
         k₃ _ hk (notMask _ (by rw [savedSlot_eq]; omega))]
     have h2 := sv₂ i hi
-    obtain ⟨n1, n2, -⟩ := sreg_ne i
-    rw [g₁ _ n1 n2] at h2
+    rw [g₁ _ (sreg_ne i hi)] at h2
     show s₉.mem.readW (wordAddr b (savedSlot + i)) 64 = _
     rw [mem₉, ← hb₇, ← h2]
     have := h7.trans h6
@@ -232,60 +226,41 @@ theorem ekHead_ok {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
     simp only [List.mem_singleton] at hr; subst hr
     rw [hb₆]; exact Region.sub_prefix (by rw [tableSlot_eq, slots_eq]; omega)
 
-
 /-! ## The loop and the whole function -/
 
 theorem ekLoop_wp {s₀ s : State} {b S : Addr} {key : Spec.Sm4.Block} (hp : EkPre s₀ b S)
     (hi : EkInv s₀ b S key 0 s) :
-    WP isa (.loop (.block keyBody) .ne) s (EkInv s₀ b S key 8) := by
+    WP isa (.loop (.block keyBody) (.nonzero .x t0)) s (EkInv s₀ b S key 8) := by
   refine WP.loop (M := isa) (fun n s => ∃ m, n = 8 - m ∧ m < 8 ∧ EkInv s₀ b S key m s)
     (fun n s hs => ?_) 8 s ⟨0, rfl, by omega, hi⟩
   obtain ⟨m, rfl, hm, hi⟩ := hs
   obtain ⟨s', e', hi', z'⟩ := ekIter_ok hp hm hi
   refine WP.of_runBlock ⟨s', e', ?_⟩
   by_cases h8 : m + 1 = 8
-  · exact .inl ⟨by simp [X86_64.eval, z', h8], by rw [h8] at hi'; exact hi'⟩
-  · exact .inr ⟨by simp [X86_64.eval, z', h8], 8 - (m + 1), by omega, m + 1, rfl, by omega, hi'⟩
+  · exact .inl ⟨by rw [eval_nonzero, z', h8]; rfl, by rw [h8] at hi'; exact hi'⟩
+  · exact .inr ⟨by rw [eval_nonzero, z']; simp [h8], 8 - (m + 1), by omega, m + 1, rfl, by omega, hi'⟩
 
-theorem expandKey_wp {s₀ : State} (hp : expandKeyX86_64.pre s₀) :
-    WP isa expandKey s₀ fun s' => gprPreserved s₀ s' ∧ expandKeyX86_64.post s₀ s' := by
+theorem expandKey_wp {s₀ : State} (hp : expandKeyAArch64.pre s₀) :
+    WP isa expandKey s₀ fun s' => (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
+      expandKeyAArch64.post s₀ s' := by
   obtain ⟨s₁, e₁, h₁⟩ := ekHead_ok hp
-  obtain ⟨hrd, hwr, dKS, dKB, dSB, dRS, dRB, fitK, fitS, fitB⟩ := hp
-  let b := s₀.gpr .rdx
-  let S := s₀.gpr .rsi
+  obtain ⟨hrd, hwr, dKS, dKB, dSB, fitK, fitS, fitB⟩ := hp
+  let b := s₀.gpr .x2
+  let S := s₀.gpr .x1
   have hwB : (⟨b, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [b]
   have hwS : (⟨S, 128⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [S]
   have pre : EkPre s₀ b S := ⟨hwB, hwS, dSB, fitB, fitS⟩
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, WP.seq (WP.mono (ekLoop_wp pre h₁) fun s₂ h₂ => ?_)⟩)
-  obtain ⟨s₃, e₃, rg₃, o₃, f₃, rd₃, wr₃⟩ := restore_ok (by rw [h₂.wr]; exact hwB) h₂.base h₂.saved
-  refine WP.of_runBlock ⟨s₃, e₃, ⟨fun r hr => ?_, ?_⟩, ?_⟩
-  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact rg₃ 0 (by omega)
-    · exact rg₃ 1 (by omega)
-    · rw [o₃ _ (fun i hi => by unfold sreg; split <;> decide), h₂.rsp]
-    · exact rg₃ 2 (by omega)
-    · exact rg₃ 3 (by omega)
-    · exact rg₃ 4 (by omega)
-    · exact rg₃ 5 (by omega)
-  · have fr : Frame [⟨b, 8 * slots⟩, ⟨S, 128⟩] s₀.mem s₃.mem :=
-      h₂.frame.trans (f₃.sub fun r hr => ⟨⟨b, 8 * slots⟩, List.mem_cons_self, by
-        simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (Nat.le_refl _)⟩)
-    refine fr.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact dRB
-    · exact dRS
-  · show Spec.Sm4.scheduleAt s₃.mem S = _
-    rw [expandKey_eq]
-    apply Vector.ext
-    intro i hi
-    apply BitVec.eq_of_getLsbD_eq
-    intro k hk
-    rw [show k = 8 * (k / 8) + k % 8 by omega, VG.Proof.Sm4.getLsbD_scheduleAt _ _ hi (by omega) (by omega),
-      Vector.getElem_ofFn,
-      f₃.bytes (R := ⟨S, 128⟩) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dSB)
-        (by simp only; omega) (by change _ < 128; omega)]
-    exact h₂.sched i (by omega) _ (by omega) _ (by omega)
+  obtain ⟨s₃, e₃, rg₃, -, m₃, -, -⟩ := restore_ok (by rw [h₂.wr]; exact hwB) h₂.base h₂.saved
+  refine WP.of_runBlock ⟨s₃, e₃, rg₃, ?_⟩
+  show Spec.Sm4.scheduleAt s₃.mem S = _
+  rw [expandKey_eq]
+  apply Vector.ext
+  intro i hi
+  apply BitVec.eq_of_getLsbD_eq
+  intro k hk
+  rw [show k = 8 * (k / 8) + k % 8 by omega, VG.Proof.Sm4.getLsbD_scheduleAt _ _ hi (by omega) (by omega),
+    Vector.getElem_ofFn, m₃]
+  exact h₂.sched i (by omega) _ (by omega) _ (by omega)
 
-end VG.Proof.Sm4.X86_64
+end VG.Proof.Sm4.AArch64

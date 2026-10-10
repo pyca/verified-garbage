@@ -4,7 +4,7 @@
 //! encryptions (A.1) and its ECB examples (A.2.1) test ECB directly; its
 //! CBC, OFB, CFB and CTR examples (A.2.2–A.2.5) are computed here from ECB.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use verified_garbage::sm4_ecb::{Error, Sm4Ecb};
 
