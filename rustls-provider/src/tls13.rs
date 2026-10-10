@@ -5,7 +5,6 @@ use rustls::crypto::cipher::{
     AeadKey, InboundOpaque, Iv, Nonce, OutboundPlain, Record, RecordDecrypter, RecordEncrypter,
     Tls13AeadAlgorithm, UnsupportedOperationError, make_tls13_aad,
 };
-use rustls::crypto::tls13::HkdfUsingHmac;
 use rustls::enums::ContentType;
 use rustls::error::Error;
 use rustls::version::TLS13_VERSION;
@@ -32,7 +31,7 @@ pub static TLS13_CHACHA20_POLY1305_SHA256: &Tls13CipherSuite = &Tls13CipherSuite
         confidentiality_limit: u64::MAX,
     },
     protocol_version: TLS13_VERSION,
-    hkdf_provider: &HkdfUsingHmac(&super::hmac::HMAC_SHA256),
+    hkdf_provider: &super::hkdf::HKDF_SHA256,
     aead_alg: &Tls13Aead(aead::Algorithm::ChaCha20Poly1305),
     quic: Some(&super::quic::KeyBuilder {
         packet_alg: aead::Algorithm::ChaCha20Poly1305,
@@ -51,7 +50,7 @@ pub static TLS13_AES_256_GCM_SHA384: &Tls13CipherSuite = &Tls13CipherSuite {
         confidentiality_limit: 1 << 24,
     },
     protocol_version: TLS13_VERSION,
-    hkdf_provider: &HkdfUsingHmac(&super::hmac::HMAC_SHA384),
+    hkdf_provider: &super::hkdf::HKDF_SHA384,
     aead_alg: &Tls13Aead(aead::Algorithm::Aes256Gcm),
     quic: Some(&super::quic::KeyBuilder {
         packet_alg: aead::Algorithm::Aes256Gcm,
@@ -70,7 +69,7 @@ pub static TLS13_AES_128_GCM_SHA256: &Tls13CipherSuite = &Tls13CipherSuite {
         confidentiality_limit: 1 << 24,
     },
     protocol_version: TLS13_VERSION,
-    hkdf_provider: &HkdfUsingHmac(&super::hmac::HMAC_SHA256),
+    hkdf_provider: &super::hkdf::HKDF_SHA256,
     aead_alg: &Tls13Aead(aead::Algorithm::Aes128Gcm),
     quic: Some(&super::quic::KeyBuilder {
         packet_alg: aead::Algorithm::Aes128Gcm,
