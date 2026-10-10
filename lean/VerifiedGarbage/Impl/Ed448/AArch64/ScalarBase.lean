@@ -1,5 +1,5 @@
 import VerifiedGarbage.Impl.Ed448.Formulas
-import VerifiedGarbage.Impl.X448.AArch64.Base
+import VerifiedGarbage.Impl.Ed448.AArch64.Point56
 import VerifiedGarbage.Spec.Ed448
 
 /-!
@@ -71,6 +71,6 @@ def baseSetup : Prog isa :=
 
 def scalarBase : Prog isa :=
   .seq baseSetup <| .seq (.loop (Impl.X448.AArch64.Base.stepN 57) (.nonzero .x .x9)) <|
-    .seq Impl.X448.AArch64.Base.combine encode
+    .seq Point56.combineCall encode
 
 end VG.Impl.Ed448.AArch64
