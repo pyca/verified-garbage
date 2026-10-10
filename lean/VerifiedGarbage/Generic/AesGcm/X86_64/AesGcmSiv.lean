@@ -1,6 +1,7 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Verified
-import VerifiedGarbage.Generic.AesGcm.X86_64.AesGcm
+import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
+import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
 
 /-!
 # AES-GCM-SIV (RFC 8452) on x86-64
@@ -33,10 +34,11 @@ def note (v : GcmImpl) : String :=
 /-- The implementation of `vg_aes_encrypt_blocks` they call. -/
 def ecbFn (v : GcmImpl) : Impl.AesGcm.X86_64.Fn := ⟨(ecbOf v).enc.name, (ecbOf v).enc.code⟩
 
-/-- The artifacts calling the implementations `v`. -/
-def artifactsOf (v : GcmImpl) : List Artifact := [
+/-- The artifacts calling the implementations `v`, named with `sfx` after its
+suffix. -/
+def artifactsOf (v : GcmImpl) (sfx : String) : List Artifact := [
   { Spec.GcmSiv.sealApi with
-    name := Spec.GcmSiv.sealApi.name ++ v.suffix
+    name := Spec.GcmSiv.sealApi.name ++ v.suffix ++ sfx
     target := X86_64.target
     doc := Spec.GcmSiv.sealApi.doc (notes := [note v])
     code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.«seal» v.callees (ecbFn v))
@@ -46,7 +48,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v (ecbOf v))
     features := features v },
   { Spec.GcmSiv.openApi with
-    name := Spec.GcmSiv.openApi.name ++ v.suffix
+    name := Spec.GcmSiv.openApi.name ++ v.suffix ++ sfx
     target := X86_64.target
     doc := Spec.GcmSiv.openApi.doc (notes := [note v,
       "It compares the tags and overwrites the data with zeros without a branch on the result."])
@@ -57,7 +59,12 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v (ecbOf v))
     features := features v }]
 
-/-- The artifacts of a variant, from the implementations it names. -/
-def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl
+/-- The artifacts of a variant, from the implementations it names: its
+`vg_aes_ctr32`, key expansion and `vg_ghash`, without its interleaved loops,
+which these do not call (so this file need not import their proofs, from
+`Generic/AesGcm/X86_64/AesGcm.lean`), named as AES-GCM's instances of the
+variant are (`GcmImpl.suffix`: the callees' suffixes, then the loops'). -/
+def artifacts (v : GcmVariant) : List Artifact :=
+  artifactsOf ⟨v.ctr, v.key, v.gh.impl, none, none, false⟩ ((v.stitch.map (·.suffix)).getD "")
 
 end VG.Generic.AesGcm.X86_64.AesGcmSiv
