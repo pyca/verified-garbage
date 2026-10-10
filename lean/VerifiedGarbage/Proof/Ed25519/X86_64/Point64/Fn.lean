@@ -95,11 +95,10 @@ def dblResult (e : Env) : Spec.Ed25519.Point :=
   let a := e 0 * e 0
   let b := e 1 * e 1
   let c := e 2 * e 2 + e 2 * e 2
-  let h := a + b
-  let x := (e 0 + e 1) * (e 0 + e 1)
-  let ee := h - x
-  let g := a - b
-  let f := c + g
+  let ee := e 0 * e 1 + e 0 * e 1
+  let g := b - a
+  let f := g - c
+  let h := g - b - b
   ⟨ee * f, g * h, f * g, ee * h⟩
 
 theorem dblOps_formula (e : Env) (t : Bool) :

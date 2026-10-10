@@ -24,12 +24,13 @@ def adxMul : String := "multiplied with BMI2's `mulx` and ADX's `adcx` and `adox
 
 /-- What the doublings run. -/
 def dblWhat (t : Bool) : String :=
-  "RFC 8032's doubling formula (§5.1.4), eight products" ++ if t then "" else ", leaving out `T`'s"
+  "RFC 8032's doubling formula (§5.1.4), with `-E = 2XY` from one product and `F`, `G` and `H` " ++
+    "negated: " ++ if t then "eight products" else "seven products, leaving out `T`'s"
 
 /-- What the additions run. -/
 def addWhat (t : Bool) : String :=
   "RFC 8032's complete addition formula of the point in slots 4–7, cached, " ++
-    (if t then "nine products" else "eight products, leaving out `T`'s")
+    (if t then "eight products" else "seven products, leaving out `T`'s")
 
 theorem doubleExt_verified : Verified X86_64.target (doubleFn baseline true)
     (doubleContract X86_64.abi true) :=
