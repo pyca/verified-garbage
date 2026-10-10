@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Impl.Ecdsa.P192.AArch64
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P192Literals
 
 /-!
 # ECDSA over p192 on AArch64: the code as a literal

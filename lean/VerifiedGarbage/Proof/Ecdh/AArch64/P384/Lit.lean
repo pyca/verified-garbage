@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Impl.Ecdh.P384.AArch64
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P384Literals
 
 /-!
 # ECDH over P-384 on AArch64: the code as a literal
