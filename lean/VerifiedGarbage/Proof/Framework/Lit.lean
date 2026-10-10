@@ -867,7 +867,9 @@ kernel's evaluation would rebuild once for every `++` above them: `N.lit_eq`
 goes through the code with each block flattened (`flattenCode`), which the
 kernel evaluates in time linear in its length. Elsewhere it costs more to
 unfold than it saves: the generators that decide much at each step, or
-nest their appends to the right. -/
+nest their appends to the right. It can cost far more: 3DES's x86-64
+literals took 0.6 s with `materialize_code` and 40 s with it. Use it only
+where measuring the file shows it faster. -/
 syntax "materialize_flat_code " ident (" := " term)? : command
 
 open Lit in
