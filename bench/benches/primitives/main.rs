@@ -33,6 +33,7 @@ mod argon2;
 mod blake2b;
 mod blake2s;
 mod blowfish_ecb;
+mod camellia_ctr;
 mod camellia_ecb;
 mod cast5_ecb;
 mod chacha20;
@@ -343,6 +344,7 @@ const BENCHES: &[Bench] = &[
     (blake2b::USES, blake2b::bench),
     (blake2s::USES, blake2s::bench),
     (blowfish_ecb::USES, blowfish_ecb::bench),
+    (camellia_ctr::USES, camellia_ctr::bench),
     (camellia_ecb::USES, camellia_ecb::bench),
     (cast5_ecb::USES, cast5_ecb::bench),
     (chacha20::USES, chacha20::bench),

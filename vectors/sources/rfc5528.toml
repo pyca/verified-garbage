@@ -1,0 +1,5 @@
+name = "RFC 5528, Camellia Counter Mode and Camellia Counter with CBC-MAC Mode Algorithms (the Camellia-CTR test vectors in Section 4.1)"
+directories = ["rfc5528"]
+url = "https://www.rfc-editor.org/rfc/rfc5528.txt"
+sha256 = "3477959e97dcadfdd78abfd106f3e9bd94dd4a40bdec279b77d84e89e83760b9"
+retrieved = 2026-10-10
