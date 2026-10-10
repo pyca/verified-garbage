@@ -89,7 +89,7 @@ theorem ltP_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base
     WP isa (.block (Impl.Ecdh.X86_64.Cfg.ltP c a)) s fun s' =>
       s'.gpr .rax = mask (wordsVal s.mem base a c.n < wordsVal s.mem base (c.sl MP) c.n) ∧
       Keeps [.rax, .rdx] s s' := by
-  obtain ⟨k, hk⟩ : ∃ k, c.n = k + 1 := ⟨c.n - 1, by omega⟩
+  obtain ⟨k, hk⟩ : ∃ k, c.n = k + 1 := ⟨c.n - 1, by omega_arith⟩
   rw [ltP_eq, WP.block_append_iff, hk]
   rw [hk] at ha hm
   refine WP.mono (ltSteps_ok hs k ha hm) fun s₁ ⟨c₁, k₁⟩ => ?_
@@ -145,14 +145,14 @@ theorem zero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s bas
   refine WP.mono (show WP isa (.block [.mov .rdx (.mem (sc a))]) s (fun s₁ =>
       s₁.gpr .rdx = word s.mem base a ∧ Keeps [.rdx] s s₁) by
     apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc_sc hs (d := a) (by omega),
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc_sc hs (d := a) (by omega_arith),
       Option.map_some, RegUpd.gpr_setReg, ite_true, Option.some.injEq, exists_eq_left']
     refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (ors_ok hs₁ (a := a) (c.n - 1) (by omega)) fun s₂ ⟨e₂, k₂⟩ => ?_
+  refine WP.mono (ors_ok hs₁ (a := a) (c.n - 1) (by omega_arith)) fun s₂ ⟨e₂, k₂⟩ => ?_
   rw [e₁, k₁.2.1] at e₂
   have hz : s₂.gpr .rdx = 0 ↔ wordsVal s.mem base a c.n = 0 := by
     rw [e₂, wordsVal_eq_zero_iff]
@@ -160,9 +160,9 @@ theorem zero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s bas
     · intro ⟨h₀, h⟩ j hj
       rcases j with _ | j
       · simpa using h₀
-      · exact h j (by omega)
+      · exact h j (by omega_arith)
     · intro h
-      exact ⟨by simpa using h 0 hn, fun j hj => h (j + 1) (by omega)⟩
+      exact ⟨by simpa using h 0 hn, fun j hj => h (j + 1) (by omega_arith)⟩
   rw [show ([.alu .cmp .rdx (.imm 1), .alu .sbb .rdx (.reg .rdx)] : List Instr) =
     [.alu .cmp .rdx (.imm 1)] ++ [.alu .sbb .rdx (.reg .rdx)] from rfl, WP.block_append_iff]
   refine WP.mono (cmpOne_ok s₂) fun s₃ ⟨c₃, k₃⟩ => ?_
@@ -232,7 +232,7 @@ theorem sv_out {base : Addr} {m m' : Mem} {j : Nat} (h : Outside base (c.sl j) (
     (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45) (hij : i ≠ j) :
     wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n := by
   have := sl_le c h7 hi
-  exact h.wordsVal (sl_apart c hij) (by omega)
+  exact h.wordsVal (sl_apart c hij) (by omega_arith)
 
 /-- The constants, the peer's `y` and the checks of its first byte, `x` and `y`. -/
 theorem peer_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {q : Addr}
@@ -252,7 +252,7 @@ theorem peer_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   have hpl := hc.p_lt
   have hp3 := hc.p_ge
   have hsz : size = 8192 := rfl
-  have hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   have hR2 := sl_le c h7 (i := R2P) (by decide)
   have hB := sl_le c h7 (i := BP) (by decide)
   have hY := sl_le c h7 (i := QY) (by decide)
@@ -260,14 +260,14 @@ theorem peer_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   have hM := sl_le c h7 (i := MP) (by decide)
   rw [peer_eq, WP.block_append_iff]
   refine WP.mono (setConst_ok hs hR2 (show c.R * c.R % c.C.p < 2 ^ (64 * c.n) from
-    Nat.lt_trans (Nat.mod_lt _ (by omega)) hpl)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+    Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hpl)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (setConst_ok hs₁ hB (show c.mont c.C.b < 2 ^ (64 * c.n) from
-    Nat.lt_trans (Nat.mod_lt _ (by omega)) hpl)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+    Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hpl)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (ptr_ok s₂ (k := 1 + c.C.len) (by omega)) fun s₃ ⟨e₃, k₃⟩ => ?_
+  refine WP.mono (ptr_ok s₂ (k := 1 + c.C.len) (by omega_arith)) fun s₃ ⟨e₃, k₃⟩ => ?_
   have hs₃ := hs₂.of_keeps k₃ (by decide)
   have hq₂ : s₂.gpr .r9 = q := by rw [k₂.gpr _ (by decide), k₁.gpr _ (by decide), hq]
   have hq₃ : s₃.gpr .r9 = q := by rw [k₃.1 _ (by decide), hq₂]
@@ -279,8 +279,8 @@ theorem peer_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   refine WP.mono (loadBytes_ok hs₃ (src := .rdx) (by decide) hY hc.len8 hc.len_lo hc.len_hi
     (fun e he => ⟨_, by rw [hrw₃]; exact hin, by
       rw [e₃, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      exact Offset.contains_base q (by omega) (by omega)⟩)
-    (by rw [e₃]; exact (hd.sub_left (Offset.sub_base q (by omega))).sub_right (Offset.sub_base base hY)))
+      exact Offset.contains_base q (by omega_arith) (by omega_arith)⟩)
+    (by rw [e₃]; exact (hd.sub_left (Offset.sub_base q (by omega_arith))).sub_right (Offset.sub_base base hY)))
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   have hs₄ := hs₃.of_keepRegs k₄ (by decide)
   have O₄' : Outside base (c.sl QY) (8 * c.n) s₂.mem s₄.mem := k₃.2.1 ▸ O₄
@@ -288,15 +288,15 @@ theorem peer_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   have hrw₄ : s₄.rd ++ s₄.wr = s.rd ++ s.wr := by rw [k₄.rd, k₄.wr, hrw₃]
   -- What the stores so far keep: everything apart from the working space.
   have W₄ : Outside base 0 size s.mem s₄.mem :=
-    ((O₁.mono (Nat.zero_le _) (by omega)).trans (O₂.mono (Nat.zero_le _) (by omega))).trans
-      (O₄'.mono (Nat.zero_le _) (by omega))
+    ((O₁.mono (Nat.zero_le _) (by omega_arith)).trans (O₂.mono (Nat.zero_le _) (by omega_arith))).trans
+      (O₄'.mono (Nat.zero_le _) (by omega_arith))
   have hq0 : s₄.mem q = s.mem q := by
-    have := keep_of_disjoint' W₄ hd (by omega) (i := 0) (by omega) (by omega)
+    have := keep_of_disjoint' W₄ hd (by omega_arith) (i := 0) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
   -- the first byte
   rw [WP.block_append_iff]
   refine WP.mono (checkLead_ok c hs₄ hq₄ ⟨_, by rw [hrw₄]; exact hin, by
-      have := Offset.contains_base q (d := 0) (n := 1) (k := 1 + 2 * c.C.len) (by omega) (by omega)
+      have := Offset.contains_base q (d := 0) (n := 1) (k := 1 + 2 * c.C.len) (by omega_arith) (by omega_arith)
       rwa [BitVec.add_zero] at this⟩ hF) fun s₅ ⟨f₅, k₅, O₅⟩ => ?_
   have hs₅ := hs₄.of_keepRegs k₅ (by decide)
   -- `x < p`
@@ -315,10 +315,10 @@ theorem peer_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
     ((sv_flag O₇ h0 h7 hn hi hf).trans (sv_flag O₆ h0 h7 hn hi hf)).trans (sv_flag O₅ h0 h7 hn hi hf)
   have flag₄ : word s₄.mem base (c.sl FLAG) = word s.mem base (c.sl FLAG) := by
     have hap : ∀ {j}, j < 45 → j ≠ FLAG → c.sl FLAG + 8 ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl FLAG :=
-      fun hj hjf => by have := sl_apart c (Ne.symm hjf) (i := FLAG); omega
-    rw [O₄'.word (hap (j := QY) (by decide) (by decide)) (by omega),
-      O₂.word (hap (j := BP) (by decide) (by decide)) (by omega),
-      O₁.word (hap (j := R2P) (by decide) (by decide)) (by omega)]
+      fun hj hjf => by have := sl_apart c (Ne.symm hjf) (i := FLAG); omega_arith
+    rw [O₄'.word (hap (j := QY) (by decide) (by decide)) (by omega_arith),
+      O₂.word (hap (j := BP) (by decide) (by decide)) (by omega_arith),
+      O₁.word (hap (j := R2P) (by decide) (by decide)) (by omega_arith)]
   refine ⟨hs₆.of_keepRegs k₇ (by decide), ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact ((((k₁.trans k₂).mono (by sub_regs)).trans ((Keeps.regs k₃).mono (by sub_regs))).trans
       ((k₄.mono (by sub_regs)).trans (k₅.trans (k₆.trans k₇))))
@@ -336,8 +336,8 @@ theorem peer_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   · show wordsVal s₇.mem _ _ _ = _
     rw [v₇ (i := QY) (by decide) (by decide), e₄, e₃, k₃.2.1]
     congr 1
-    exact bytesAt_keep (O₁.mono (Nat.zero_le _) (by omega) |>.trans (O₂.mono (Nat.zero_le _) (by omega)))
-      (hd.sub_left (Offset.sub_base q (by omega))) (by omega) (by omega)
+    exact bytesAt_keep (O₁.mono (Nat.zero_le _) (by omega_arith) |>.trans (O₂.mono (Nat.zero_le _) (by omega_arith)))
+      (hd.sub_left (Offset.sub_base q (by omega_arith))) (by omega_arith) (by omega_arith)
   · have mp₅ : wordsVal s₅.mem base (c.sl MP) c.n = c.C.p := by
       rw [sv_flag O₅ h0 h7 hn (i := MP) (by decide) (by decide)]
       exact (v₄ (i := MP) (by decide) (by decide) (by decide) (by decide)).trans hmp

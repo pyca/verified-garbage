@@ -51,7 +51,7 @@ structure Lay (dn : Nat) where
   sy : String → BitVec 32
 
 theorem Lay.he {dn : Nat} (L : Lay dn) : L.e ≤ 36 := by
-  rw [L.ew, extra]; split <;> omega
+  rw [L.ew, extra]; split <;> omega_arith
 
 namespace Lay
 
@@ -121,19 +121,19 @@ theorem nB (h : L.Ok) : L.B.toNat + (292 + 4 * L.e) ≤ 2 ^ 64 := by
   have := h.e272; have := h.e20
   rw [show L.B.toNat = L.E.toNat - (272 + 4 * L.e) by
     simp only [Lay.B, BitVec.toNat_setWidth]
-    rw [sub_toNat (by omega)]; have := L.E.isLt; omega]
-  omega
+    rw [sub_toNat (by omega_arith)]; have := L.E.isLt; omega_arith]
+  omega_arith
 
 /-- `[F + o]`, for `o` in the frame or the arguments above it. -/
 theorem addrF (h : L.Ok) {o : Nat} (ho : o < 216 + 4 * L.e) : addr L.F o = L.B + BitVec.ofNat 64 (76 + o) := by
   have := h.e272; have := h.e20
-  have hF : L.F.toNat = L.E.toNat - (196 + 4 * L.e) := sub_toNat (by omega)
-  rw [addr_eq (by rw [hF]; omega), Lay.F, Taint.sub_setWidth (by omega), h.B_eq,
-    Offset.sub_ofNat_eq _ (show 196 + 4 * L.e ≤ 272 + 4 * L.e by omega),
-    show 272 + 4 * L.e - (196 + 4 * L.e) = 76 by omega, Offset.add_add]
+  have hF : L.F.toNat = L.E.toNat - (196 + 4 * L.e) := sub_toNat (by omega_arith)
+  rw [addr_eq (by rw [hF]; omega_arith), Lay.F, Taint.sub_setWidth (by omega_arith), h.B_eq,
+    Offset.sub_ofNat_eq _ (show 196 + 4 * L.e ≤ 272 + 4 * L.e by omega_arith),
+    show 272 + 4 * L.e - (196 + 4 * L.e) = 76 by omega_arith, Offset.add_add]
 
 theorem F64 (h : L.Ok) : L.F.setWidth 64 = L.B + BitVec.ofNat 64 76 := by
-  have e := h.addrF (o := 0) (by omega)
+  have e := h.addrF (o := 0) (by omega_arith)
   rwa [addr, BitVec.add_zero] at e
 
 /-- The frame's 76 bytes below `F`, which the calls use. -/
@@ -141,7 +141,7 @@ theorem below_F (h : L.Ok) : below L.F 76 = ⟨L.B, 76⟩ := by
   have := h.e272
   show (⟨(L.F - BitVec.ofNat 32 76).setWidth 64, 76⟩ : Region) = _
   rw [Lay.F, show L.E - BitVec.ofNat 32 (196 + 4 * L.e) - BitVec.ofNat 32 76 = L.E - BitVec.ofNat 32 (272 + 4 * L.e) by
-    rw [BitVec.sub_sub, BitVec.ofNat_add_ofNat, show 196 + 4 * L.e + 76 = 272 + 4 * L.e by omega]]
+    rw [BitVec.sub_sub, BitVec.ofNat_add_ofNat, show 196 + 4 * L.e + 76 = 272 + 4 * L.e by omega_arith]]
 
 theorem stk_scr (h : L.Ok) {d n e k : Nat} (h₁ : d + n ≤ 272 + 4 * L.e) (h₂ : e + k ≤ 8192) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
@@ -186,7 +186,7 @@ theorem within_base (p : Addr) {n k : Nat} (h : n ≤ k) : Within ⟨p, n⟩ ⟨
 /-- A region of the frame. -/
 theorem within_fr (B : Addr) {d n x : Nat} (h₁ : 76 ≤ d) (h₂ : d + n ≤ 272 + x) :
     Within ⟨B + BitVec.ofNat 64 d, n⟩ ⟨B + BitVec.ofNat 64 76, 196 + x⟩ :=
-  ⟨d - 76, by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' h₁], by simp only; omega⟩
+  ⟨d - 76, by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.add_sub_cancel' h₁], by simp only; omega_arith⟩
 
 theorem covers_of {rs rs' : List Region} (h : ∀ r ∈ rs, ∃ R ∈ rs', Within r R) : Covers rs rs' :=
   Covers.of_sub fun r hr => by
@@ -224,22 +224,22 @@ theorem _root_.VG.Proof.Ecdsa.Rfc6979.X86.disjoint_join {p : Addr} {a b : Nat} {
   intro x hx
   simp only [Region.Contains] at hx
   rcases Nat.lt_or_ge (x - p).toNat a with hl | hl
-  · exact h₁ x (by simp only [Region.Contains]; omega)
+  · exact h₁ x (by simp only [Region.Contains]; omega_arith)
   · refine h₂ x ?_
-    have ha : (BitVec.ofNat 64 a).toNat = a := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+    have ha : (BitVec.ofNat 64 a).toNat = a := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
     simp only [Region.Contains]
     rw [Offset.sub_add_eq, BitVec.toNat_sub_of_le (by rw [BitVec.le_def, ha]; exact hl), ha]
-    omega
+    omega_arith
 
 /-- The saved registers are apart from every safe region. -/
 theorem saved_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
     Region.Disjoint ⟨L.B + BitVec.ofNat 64 256, 16⟩ r := by
   have nB := h.nB
   rcases hs with hs | hs | hs | hs
-  · exact (h.stk_OUT (by omega)).sub_right hs
-  · exact (h.stk_SCR (by omega)).sub_right hs
-  · exact (Offset.disjoint_base _ (by omega) (by omega)).sub_right hs
-  · exact (Offset.disjoint _ (by omega) (by omega) (by omega)).sub_right hs
+  · exact (h.stk_OUT (by omega_arith)).sub_right hs
+  · exact (h.stk_SCR (by omega_arith)).sub_right hs
+  · exact (Offset.disjoint_base _ (by omega_arith) (by omega_arith)).sub_right hs
+  · exact (Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)).sub_right hs
 
 /-- The return address and our arguments are apart from every safe region. -/
 theorem top_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
@@ -248,27 +248,27 @@ theorem top_safe (h : L.Ok) {r : Region} (hs : Safe L r) :
   have j : ∀ {r : Region}, L.RET.Disjoint r → L.ARGS.Disjoint r →
       Region.Disjoint ⟨L.B + BitVec.ofNat 64 (272 + 4 * L.e), 20⟩ r := fun h₂ h₃ =>
     disjoint_join (a := 4) (b := 16) h₂ (by
-      rw [Offset.add_add, show 272 + 4 * L.e + 4 = 276 + 4 * L.e by omega]; exact h₃)
+      rw [Offset.add_add, show 272 + 4 * L.e + 4 = 276 + 4 * L.e by omega_arith]; exact h₃)
   rcases hs with hs | hs | hs | hs
   · exact (j h.ro h.ao).sub_right hs
   · exact (j h.rc h.ac).sub_right hs
-  · exact (Offset.disjoint_base _ (by omega) (by omega)).sub_right hs
-  · exact (Offset.disjoint _ (by omega) (by omega) (by omega)).sub_right hs
+  · exact (Offset.disjoint_base _ (by omega_arith) (by omega_arith)).sub_right hs
+  · exact (Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)).sub_right hs
 
 /-- The buffers that are only read are apart from every safe region. -/
 theorem d_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.D.Disjoint r := by
   rcases hs with hs | hs | hs | hs
   · exact h.od.symm.sub_right hs
   · exact h.dc.sub_right hs
-  · exact (h.kd.symm.sub_right (Region.sub_prefix (by omega))).sub_right hs
-  · exact (h.kd.symm.sub_right (Offset.sub_base _ (by omega))).sub_right hs
+  · exact (h.kd.symm.sub_right (Region.sub_prefix (by omega_arith))).sub_right hs
+  · exact (h.kd.symm.sub_right (Offset.sub_base _ (by omega_arith))).sub_right hs
 
 theorem dg_safe (h : L.Ok) {r : Region} (hs : Safe L r) : L.DG.Disjoint r := by
   rcases hs with hs | hs | hs | hs
   · exact h.og.symm.sub_right hs
   · exact h.gc.sub_right hs
-  · exact (h.kg.symm.sub_right (Region.sub_prefix (by omega))).sub_right hs
-  · exact (h.kg.symm.sub_right (Offset.sub_base _ (by omega))).sub_right hs
+  · exact (h.kg.symm.sub_right (Region.sub_prefix (by omega_arith))).sub_right hs
+  · exact (h.kg.symm.sub_right (Offset.sub_base _ (by omega_arith))).sub_right hs
 
 end Lay.Ok
 
@@ -294,8 +294,8 @@ theorem Safe.sub_frame {dn : Nat} {L : Lay dn} {r : Region} (h : Safe L r) :
   rcases h with h | h | h | h
   · exact ⟨_, by simp, h⟩
   · exact ⟨_, by simp, h⟩
-  · exact ⟨L.STK, by simp, fun a ha => Region.sub_prefix (base := L.B) (by omega) a (h a ha)⟩
-  · exact ⟨L.STK, by simp, fun a ha => Offset.sub_base (p := L.B) (d := 272) (n := 4 * L.e) (by omega) a (h a ha)⟩
+  · exact ⟨L.STK, by simp, fun a ha => Region.sub_prefix (base := L.B) (by omega_arith) a (h a ha)⟩
+  · exact ⟨L.STK, by simp, fun a ha => Offset.sub_base (p := L.B) (d := 272) (n := 4 * L.e) (by omega_arith) a (h a ha)⟩
 
 theorem saved_off : ∀ p ∈ Impl.Ecdsa.Rfc6979.X86.saved, 180 ≤ p.2 ∧ p.2 + 4 ≤ 196 := by decide
 
@@ -312,17 +312,17 @@ theorem keep (hL : L.Ok) (hc : Ctx L g m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr
   have keep : ∀ d, 256 ≤ d → d + 4 ≤ 272 →
       t'.mem.readW (L.B + BitVec.ofNat 64 d) 32 = t.mem.readW (L.B + BitVec.ofNat 64 d) 32 :=
     fun d h₁ h₂ => hf.readW (r := ⟨L.B + BitVec.ofNat 64 256, 16⟩)
-      (Offset.contains _ h₁ (by omega) (by omega)) (fun r hr => hL.saved_safe (hs r hr)) (by decide)
+      (Offset.contains _ h₁ (by omega_arith) (by omega_arith)) (fun r hr => hL.saved_safe (hs r hr)) (by decide)
   have keepA : ∀ d, 276 + 4 * L.e ≤ d → d + 4 ≤ 292 + 4 * L.e →
       t'.mem.readW (L.B + BitVec.ofNat 64 d) 32 = t.mem.readW (L.B + BitVec.ofNat 64 d) 32 :=
     fun d h₁ h₂ => hf.readW (r := ⟨L.B + BitVec.ofNat 64 (272 + 4 * L.e), 20⟩)
-      (Offset.contains _ (by omega) (by omega) (by omega)) (fun r hr => hL.top_safe (hs r hr)) (by decide)
+      (Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)) (fun r hr => hL.top_safe (hs r hr)) (by decide)
   exact ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.esp, fun p hp => by
     have := saved_off p hp
-    rw [keep _ (by omega) (by omega)]
-    exact hc.saved p hp, (keepA _ (by omega) (by omega)).trans hc.pOut,
-    (keepA _ (by omega) (by omega)).trans hc.pD, (keepA _ (by omega) (by omega)).trans hc.pDg,
-    (keepA _ (by omega) (by omega)).trans hc.pScr,
+    rw [keep _ (by omega_arith) (by omega_arith)]
+    exact hc.saved p hp, (keepA _ (by omega_arith) (by omega_arith)).trans hc.pOut,
+    (keepA _ (by omega_arith) (by omega_arith)).trans hc.pD, (keepA _ (by omega_arith) (by omega_arith)).trans hc.pDg,
+    (keepA _ (by omega_arith) (by omega_arith)).trans hc.pScr,
     hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame),
     fun c hc' => by rw [hsy]; exact hc.sy c hc', hc.held⟩
 
@@ -340,7 +340,7 @@ theorem d_byte (hL : L.Ok) (hc : Ctx L g m₀ t) {i : Nat} (hi : i < L.q) :
     rcases hr with rfl | rfl | rfl
     · exact hL.od.symm
     · exact hL.dc
-    · exact hL.kd.symm) (by show L.q ≤ 2 ^ 64; have := hL.nd; omega) hi
+    · exact hL.kd.symm) (by show L.q ≤ 2 ^ 64; have := hL.nd; omega_arith) hi
 
 /-- A byte of `digest`, as on entry. -/
 theorem dg_byte (hL : L.Ok) (hc : Ctx L g m₀ t) {i : Nat} (hi : i < dn) :
@@ -351,36 +351,36 @@ theorem dg_byte (hL : L.Ok) (hc : Ctx L g m₀ t) {i : Nat} (hi : i < dn) :
     rcases hr with rfl | rfl | rfl
     · exact hL.og.symm
     · exact hL.gc
-    · exact hL.kg.symm) (by show dn ≤ 2 ^ 64; have := hL.ng; omega) hi
+    · exact hL.kg.symm) (by show dn ≤ 2 ^ 64; have := hL.ng; omega_arith) hi
 
 theorem inFr (hc : Ctx L g m₀ t) {d : Nat} (h₁ : 76 ≤ d) (h₂ : d + 4 ≤ 272 + 4 * L.e) (hL : L.Ok) :
     InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 d) 4 :=
-  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega) (by have := hL.nB; omega)⟩
+  ⟨L.FR, by rw [hc.rd, hc.wr]; simp, Offset.contains _ h₁ (by omega_arith) (by have := hL.nB; omega_arith)⟩
 
 theorem inFrW (hc : Ctx L g m₀ t) {d n : Nat} (h₁ : 76 ≤ d) (h₂ : d + n ≤ 272 + 4 * L.e) (hL : L.Ok) :
     InRegions t.wr (L.B + BitVec.ofNat 64 d) n :=
-  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega) (by have := hL.nB; omega)⟩
+  ⟨L.FR, by rw [hc.wr]; simp, Offset.contains _ h₁ (by omega_arith) (by have := hL.nB; omega_arith)⟩
 
 theorem inArgs (hc : Ctx L g m₀ t) {i : Nat} (hi : i < 4) (hL : L.Ok) :
     InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 (276 + 4 * L.e + 4 * i)) 4 :=
   have := L.he
-  ⟨L.ARGS, by rw [hc.rd, hc.wr]; simp, Offset.contains _ (by omega) (by omega) (by have := hL.nB; omega)⟩
+  ⟨L.ARGS, by rw [hc.rd, hc.wr]; simp, Offset.contains _ (by omega_arith) (by omega_arith) (by have := hL.nB; omega_arith)⟩
 
 theorem inScr (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ 8192) :
     InRegions (t.rd ++ t.wr) (L.scr + BitVec.ofNat 64 o) n :=
-  ⟨L.SCR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.SCR, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega_arith)⟩
 
 theorem inScrW (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ 8192) :
     InRegions t.wr (L.scr + BitVec.ofNat 64 o) n :=
-  ⟨L.SCR, by rw [hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.SCR, by rw [hc.wr]; simp, Offset.contains_base _ h (by omega_arith)⟩
 
 theorem inD (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ L.q) (ho : o ≤ 64) :
     InRegions (t.rd ++ t.wr) (L.d + BitVec.ofNat 64 o) n :=
-  ⟨L.D, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.D, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega_arith)⟩
 
 theorem inDg (hc : Ctx L g m₀ t) {o n : Nat} (h : o + n ≤ dn) (ho : o ≤ 64) :
     InRegions (t.rd ++ t.wr) (L.dg + BitVec.ofNat 64 o) n :=
-  ⟨L.DG, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  ⟨L.DG, by rw [hc.rd, hc.wr]; simp, Offset.contains_base _ h (by omega_arith)⟩
 
 /-- Regions within the buffers and the frame are permitted. -/
 theorem covers (hc : Ctx L g m₀ t) {rs : List Region}
@@ -425,7 +425,7 @@ theorem lay_ARGS {I : Spec.Ecdsa.Rfc6979.Instance} {wide : Bool} {s : State} {cs
   congr 1
   show _ = (s.gpr .esp + BitVec.ofNat 32 (4 + 4 * 0)).setWidth 64
   rw [show (s.gpr .esp + BitVec.ofNat 32 (4 + 4 * 0)).setWidth 64 = addr (s.gpr .esp) 4 from rfl,
-    addr_eq (by omega), show 276 + 4 * extra wide = (272 + 4 * extra wide) + 4 by omega, ← Offset.add_add, BitVec.sub_add_cancel]
+    addr_eq (by omega_arith), show 276 + 4 * extra wide = (272 + 4 * extra wide) + 4 by omega_arith, ← Offset.add_add, BitVec.sub_add_cancel]
 
 theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {wide : Bool} {s : State} {cs : List (String × List (BitVec 64))}
     (h : (rfcX86 I (272 + 4 * extra wide) cs).pre s) : (lay I.hashLen I.ecdsa.curve.len wide s cs).Ok := by
@@ -475,13 +475,13 @@ theorem WP.alloc {e : Nat} (he : e ≤ 36) {body : Prog isa} {s : State} {Q : St
   obtain ⟨t, s₂, he', hq⟩ := hb
   obtain ⟨-, hw⟩ := Exec.rdwr he'
   have hp := Exec.gpr hsp he'
-  have h4 : (196 + 4 * e) % 4 = 0 := by omega
+  have h4 : (196 + 4 * e) % 4 = 0 := by omega_arith
   have hpush : isa.push (.alloc (196 + 4 * e)) s = some (entered e s) := by
     simp only [isa, push]
-    exact ite_eq_left ⟨by omega, by omega, h4, hn⟩
+    exact ite_eq_left ⟨by omega_arith, by omega_arith, h4, hn⟩
   have hpop : isa.pop (.free (196 + 4 * e)) (entered e s) s₂ = some (released e s₂) := by
     simp only [isa, pop]
-    exact ite_eq_left ⟨by omega, by omega, h4, hp, hw, rfl⟩
+    exact ite_eq_left ⟨by omega_arith, by omega_arith, h4, hp, hw, rfl⟩
   exact ⟨_, _, Exec.frame hpush he' hpop, hq⟩
 
 /-- Our caller's registers, saved: `Ctx` holds. -/
@@ -496,20 +496,20 @@ theorem save_ok {I : Spec.Ecdsa.Rfc6979.Instance} {wide : Bool} {s : State} {cs 
   have hesp : (entered (extra wide) s).gpr .esp = (lay I.hashLen I.ecdsa.curve.len wide s cs).F := entered_esp _ _ wide s cs
   have hw : ∀ o, o + 4 ≤ 196 + 4 * extra wide → InRegions (entered (extra wide) s).wr (addr (lay I.hashLen I.ecdsa.curve.len wide s cs).F o) 4 := fun o ho =>
     ⟨(lay I.hashLen I.ecdsa.curve.len wide s cs).FR, by rw [entered_wr h]; simp, by
-      rw [hL.addrF (by omega)]; exact Offset.contains _ (by omega) (by omega) (by omega)⟩
+      rw [hL.addrF (by omega_arith)]; exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)⟩
   have hg : ∀ r, r ≠ .esp → (entered (extra wide) s).gpr r = s.gpr r := fun r hr => allocState_gpr _ _ hr
   simp only [Impl.Ecdsa.Rfc6979.X86.Cfg.save, Impl.Ecdsa.Rfc6979.X86.saved, Impl.Ecdsa.Rfc6979.X86.fSave,
     List.map_cons, List.map_nil, List.cons_append, List.nil_append, Impl.Ecdsa.Rfc6979.X86.stk, Nat.reduceAdd]
-  refine wp_stm hesp (hw 180 (by omega)) fun s₁ u₁ => ?_
-  refine wp_stm (B := (lay I.hashLen I.ecdsa.curve.len wide s cs).F) (by rw [u₁.gpr, hesp]) (by rw [u₁.wr]; exact hw 184 (by omega))
+  refine wp_stm hesp (hw 180 (by omega_arith)) fun s₁ u₁ => ?_
+  refine wp_stm (B := (lay I.hashLen I.ecdsa.curve.len wide s cs).F) (by rw [u₁.gpr, hesp]) (by rw [u₁.wr]; exact hw 184 (by omega_arith))
     fun s₂ u₂ => ?_
   refine wp_stm (B := (lay I.hashLen I.ecdsa.curve.len wide s cs).F) (by rw [u₂.gpr, u₁.gpr, hesp])
-    (by rw [u₂.wr, u₁.wr]; exact hw 188 (by omega)) fun s₃ u₃ => ?_
+    (by rw [u₂.wr, u₁.wr]; exact hw 188 (by omega_arith)) fun s₃ u₃ => ?_
   refine wp_stm (B := (lay I.hashLen I.ecdsa.curve.len wide s cs).F) (by rw [u₃.gpr, u₂.gpr, u₁.gpr, hesp])
-    (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hw 192 (by omega)) fun s₄ u₄ => hQ s₄ ?_ fun r hr => ?_
+    (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hw 192 (by omega_arith)) fun s₄ u₄ => hQ s₄ ?_ fun r hr => ?_
   · have sep : ∀ x y, x + 4 ≤ y ∨ y + 4 ≤ x → x + 4 ≤ 292 + 4 * extra wide → y + 4 ≤ 292 + 4 * extra wide →
         Mem.Sep ((lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 x) (32 / 8) ((lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 y) (32 / 8) :=
-      fun x y h h₁ h₂ => Offset.sep _ h (by omega) (by omega)
+      fun x y h h₁ h₂ => Offset.sep _ h (by omega_arith) (by omega_arith)
     have a : ∀ o, o < 216 + 4 * extra wide → addr (lay I.hashLen I.ecdsa.curve.len wide s cs).F o = (lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 (76 + o) :=
       fun o ho => hL.addrF ho
     have m₄ : s₄.mem = (((s.mem.writeW ((lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 256) (s.gpr .ebx)).writeW
@@ -517,48 +517,48 @@ theorem save_ok {I : Spec.Ecdsa.Rfc6979.Instance} {wide : Bool} {s : State} {cs 
         ((lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 264) (s.gpr .edi)).writeW
         ((lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 268) (s.gpr .ebp) := by
       simp only [u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₃.gpr, u₂.gpr, u₁.gpr]
-      rw [a 180 (by omega), a 184 (by omega), a 188 (by omega), a 192 (by omega),
+      rw [a 180 (by omega_arith), a 184 (by omega_arith), a 188 (by omega_arith), a 192 (by omega_arith),
         hg .ebx (by decide), hg .esi (by decide), hg .edi (by decide), hg .ebp (by decide)]
       rfl
     have pa : ∀ d i, d = 276 + 4 * extra wide + 4 * i → i < 4 →
         s₄.mem.readW ((lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 d) 32 = arg s i :=
       fun d i hd hi => by
         subst hd
-        rw [m₄, Mem.readW_writeW_sep (sep (276 + 4 * extra wide + 4 * i) 268 (by omega) (by omega) (by omega)) (by decide),
-          Mem.readW_writeW_sep (sep (276 + 4 * extra wide + 4 * i) 264 (by omega) (by omega) (by omega)) (by decide),
-          Mem.readW_writeW_sep (sep (276 + 4 * extra wide + 4 * i) 260 (by omega) (by omega) (by omega)) (by decide),
-          Mem.readW_writeW_sep (sep (276 + 4 * extra wide + 4 * i) 256 (by omega) (by omega) (by omega)) (by decide)]
+        rw [m₄, Mem.readW_writeW_sep (sep (276 + 4 * extra wide + 4 * i) 268 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+          Mem.readW_writeW_sep (sep (276 + 4 * extra wide + 4 * i) 264 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+          Mem.readW_writeW_sep (sep (276 + 4 * extra wide + 4 * i) 260 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+          Mem.readW_writeW_sep (sep (276 + 4 * extra wide + 4 * i) 256 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
         show _ = s.mem.readW (argAddr s i) 32
         congr 1
         show _ = addr (s.gpr .esp) (4 + 4 * i)
-        rw [addr_eq (by have := h.2.1; omega), hL.B_eq, le, show 276 + 4 * extra wide + 4 * i = (272 + 4 * extra wide) + (4 + 4 * i) by omega,
+        rw [addr_eq (by have := h.2.1; omega_arith), hL.B_eq, le, show 276 + 4 * extra wide + 4 * i = (272 + 4 * extra wide) + (4 + 4 * i) by omega_arith,
           ← Offset.add_add, BitVec.sub_add_cancel]
         rfl
     have ct : ∀ x, 256 ≤ x → x + 4 ≤ 272 →
         (lay I.hashLen I.ecdsa.curve.len wide s cs).STK.Contains ((lay I.hashLen I.ecdsa.curve.len wide s cs).B + BitVec.ofNat 64 x) (32 / 8) :=
-      fun x h₁ h₂ => Offset.contains_base _ (by omega) (by omega)
+      fun x h₁ h₂ => Offset.contains_base _ (by omega_arith) (by omega_arith)
     refine ⟨by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]; show s.rd = _; rw [h.2.2.1, lay_ARGS h.1 h.2.1, lay_tbls]; rfl,
       by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr, entered_wr h, h.2.2.2.1]; rfl, by
-        rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]; exact hesp, fun p hp => ?_, pa _ 0 (by omega) (by omega),
-        pa _ 1 (by omega) (by omega), pa _ 2 (by omega) (by omega), pa _ 3 (by omega) (by omega), ?_, ?_, ?_⟩
+        rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]; exact hesp, fun p hp => ?_, pa _ 0 (by omega_arith) (by omega_arith),
+        pa _ 1 (by omega_arith) (by omega_arith), pa _ 2 (by omega_arith) (by omega_arith), pa _ 3 (by omega_arith) (by omega_arith), ?_, ?_, ?_⟩
     · simp only [Impl.Ecdsa.Rfc6979.X86.saved, Impl.Ecdsa.Rfc6979.X86.fSave, List.mem_cons, List.not_mem_nil,
         or_false] at hp
       rw [m₄]
       rcases hp with rfl | rfl | rfl | rfl <;> dsimp only [Nat.reduceAdd]
-      · rw [Mem.readW_writeW_sep (sep 256 268 (by omega) (by omega) (by omega)) (by decide),
-          Mem.readW_writeW_sep (sep 256 264 (by omega) (by omega) (by omega)) (by decide),
-          Mem.readW_writeW_sep (sep 256 260 (by omega) (by omega) (by omega)) (by decide),
+      · rw [Mem.readW_writeW_sep (sep 256 268 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+          Mem.readW_writeW_sep (sep 256 264 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+          Mem.readW_writeW_sep (sep 256 260 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
           Mem.readW_writeW_self32]
-      · rw [Mem.readW_writeW_sep (sep 260 268 (by omega) (by omega) (by omega)) (by decide),
-          Mem.readW_writeW_sep (sep 260 264 (by omega) (by omega) (by omega)) (by decide),
+      · rw [Mem.readW_writeW_sep (sep 260 268 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+          Mem.readW_writeW_sep (sep 260 264 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
           Mem.readW_writeW_self32]
-      · rw [Mem.readW_writeW_sep (sep 264 268 (by omega) (by omega) (by omega)) (by decide),
+      · rw [Mem.readW_writeW_sep (sep 264 268 (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
           Mem.readW_writeW_self32]
       · rw [Mem.readW_writeW_self32]
     · rw [m₄]
       exact (((Frame.refl _ _).writeW (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)) _
-        (ct 256 (by omega) (by omega))).writeW (by simp) _ (ct 260 (by omega) (by omega))).writeW (by simp) _
-        (ct 264 (by omega) (by omega)) |>.writeW (by simp) _ (ct 268 (by omega) (by omega))
+        (ct 256 (by omega_arith) (by omega_arith))).writeW (by simp) _ (ct 260 (by omega_arith) (by omega_arith))).writeW (by simp) _
+        (ct 264 (by omega_arith) (by omega_arith)) |>.writeW (by simp) _ (ct 268 (by omega_arith) (by omega_arith))
     · intro c hc
       change c ∈ cs at hc
       rw [u₄.syms, u₃.syms, u₂.syms, u₁.syms, lay_sy I.hashLen I.ecdsa.curve.len wide s cs hc]

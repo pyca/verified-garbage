@@ -115,7 +115,7 @@ theorem verify_eq' (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.verify c =
 /-- Ranges of the working space, as one. -/
 theorem unch_whole {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
     (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) : Unch base [(0, size)] m m' :=
-  (h.outside fun w hw => ⟨Nat.zero_le _, by have := hW w hw; omega⟩).unch
+  (h.outside fun w hw => ⟨Nat.zero_le _, by have := hW w hw; omega_arith⟩).unch
 
 theorem slW_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
   intro w hw
@@ -126,7 +126,7 @@ theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 8)], w.1
   intro w hw
   rw [List.mem_singleton.mp hw]
   have := sl_le c h7 (i := FLAG) (by decide)
-  dsimp only; omega
+  dsimp only; omega_arith
 
 /-- `args`, the signature's setup and tables, `s`, and the checks of the key. -/
 theorem front_ok (hc : BaseCfgOk c) {s₀ : State} (hp : FrontPre c s₀) {rest : Prog isa}
@@ -144,21 +144,21 @@ theorem front_ok (hc : BaseCfgOk c) {s₀ : State} (hp : FrontPre c s₀) {rest 
   have hl8 := hc.len8
   have hlo := hc.len_lo
   have hhi := hc.len_hi
-  refine WP.seq (WP.mono_syms (args_ok c s₀ (by omega)) fun s₁ ⟨x4₁, x6₁, x3₁, x8₁, x2₁, k₁⟩ sy₁ => ?_)
+  refine WP.seq (WP.mono_syms (args_ok c s₀ (by omega_arith)) fun s₁ ⟨x4₁, x6₁, x3₁, x8₁, x2₁, k₁⟩ sy₁ => ?_)
   have x1₁ : s₁.gpr .x1 = s₀.gpr .x1 := k₁.gpr _ (by decide)
   have hrd₁ : s₁.rd ++ s₁.wr = s₀.rd ++ s₀.wr := by rw [k₁.rd, k₁.wr]
   have hsp : SetupPre c s₁ := by
     refine ⟨by rw [k₁.wr, hp.wr, x4₁]; simp, fun e he => ?_, fun e he => ?_, fun e he => ?_, ?_, ?_, ?_,
       by rw [x4₁]; exact hp.sc_fit⟩
     · rw [x3₁, hrd₁, hrd]
-      exact ⟨⟨s₀.gpr .x2, 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨⟨s₀.gpr .x2, 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     · rw [x1₁, hrd₁, hrd]
-      exact ⟨_, by simp, Offset.contains_base _ he (by omega)⟩
+      exact ⟨_, by simp, Offset.contains_base _ he (by omega_arith)⟩
     · rw [x2₁, hrd₁, hrd, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      exact ⟨⟨s₀.gpr .x0, 1 + 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨⟨s₀.gpr .x0, 1 + 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     · rw [x1₁, x4₁]; exact hp.dg_sc
-    · rw [x2₁, x4₁]; exact hp.pk_sc.sub_left (Offset.sub_base _ (by omega))
-    · rw [x3₁, x4₁]; exact hp.sig_sc.sub_left (Region.sub_prefix (by omega))
+    · rw [x2₁, x4₁]; exact hp.pk_sc.sub_left (Offset.sub_base _ (by omega_arith))
+    · rw [x3₁, x4₁]; exact hp.sig_sc.sub_left (Region.sub_prefix (by omega_arith))
   refine WP.seq (WP.mono (stage₁ hc (.inr (.inl rfl)) hsp (rest := .block []) (Q := St₁ c (some D) s₁ (s₁.gpr .x4))
     fun _ S => WP.block_nil S) fun s₂ S₂ => ?_)
   rw [x4₁] at S₂
@@ -171,12 +171,12 @@ theorem front_ok (hc : BaseCfgOk c) {s₀ : State} (hp : FrontPre c s₀) {rest 
   have hPT := sl_le c h7 (i := PT) (by decide)
   rw [Impl.Ecdsa.Verify.AArch64.Cfg.loadS]
   refine WP.seq (WP.mono_syms (loadBytes_ok S₂.scr (src := .x8) (by decide) (by decide) hPT (sl_mod8 c PT)
-    hl8 hlo hhi (by omega) (fun d hd => by
+    hl8 hlo hhi (by omega_arith) (fun d hd => by
       rw [hrw₂, hrd, hx8, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      exact ⟨⟨s₀.gpr .x2, 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
+      exact ⟨⟨s₀.gpr .x2, 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
     (by
       rw [hx8]
-      exact (hp.sig_sc.sub_left (Offset.sub_base _ (by omega))).sub_right
+      exact (hp.sig_sc.sub_left (Offset.sub_base _ (by omega_arith))).sub_right
         (Offset.sub_base _ hPT))) fun s₃ ⟨e₃, k₃, O₃⟩ sy₃ => ?_)
   have hs₃ := S₂.scr.of_keepRegs k₃ (by decide)
   have U₃ : Unch (s₀.gpr .x3) (slW c [PT]) s₂.mem s₃.mem := O₃.unch
@@ -184,8 +184,8 @@ theorem front_ok (hc : BaseCfgOk c) {s₀ : State} (hp : FrontPre c s₀) {rest 
   have v₃ : ∀ {i}, i < 45 → i ≠ PT → sv c (s₀.gpr .x3) s₃ i = sv c (s₀.gpr .x3) s₂ i := fun hi hl =>
     sv_unch U₃ h7 hn hi (apart_slW (by simpa using hl))
   have pt₃ : sv c (s₀.gpr .x3) s₃ PT = sigS c s₀ := by
-    rw [sv, e₃, hx8, bytesAt_keep W₂ (hp.sig_sc.sub_left (Offset.sub_base _ (by omega))) (by omega)
-      (by omega)]
+    rw [sv, e₃, hx8, bytesAt_keep W₂ (hp.sig_sc.sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith)
+      (by omega_arith)]
   -- The key.
   have hq₃ : s₃.gpr .x6 = s₀.gpr .x0 := by rw [k₃.gpr _ (by decide), S₂.gpr _ (by decide), x6₁]
   have hrw₃ : s₃.rd ++ s₃.wr = s₀.rd ++ s₀.wr := by rw [k₃.rd, k₃.wr, hrw₂]
@@ -203,10 +203,10 @@ theorem front_ok (hc : BaseCfgOk c) {s₀ : State} (hp : FrontPre c s₀) {rest 
     rw [v₃ (by decide) (by decide), S₂.e, shAt_D_E, Nat.shiftRight_zero]
     simp only [ev, k₁.mem, x2₁]
   have hq0 : s₃.mem (s₀.gpr .x0) = s₀.mem (s₀.gpr .x0) := by
-    have := keep_of_disjoint' W₃ hp.pk_sc (by omega) (i := 0) (by omega) (by omega)
+    have := keep_of_disjoint' W₃ hp.pk_sc (by omega_arith) (i := 0) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
   have y₄' : sv c (s₀.gpr .x3) s₄ QY = keyY c s₀ := by
-    rw [y₄, bytesAt_keep W₃ (hp.pk_sc.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
+    rw [y₄, bytesAt_keep W₃ (hp.pk_sc.sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith) (by omega_arith)]
   have hf₄ : word s₄.mem (s₀.gpr .x3) (c.sl FLAG) = mask (((s₀.mem (s₀.gpr .x0) = 4 ∧
       sv c (s₀.gpr .x3) s₄ E < c.C.p) ∧ sv c (s₀.gpr .x3) s₄ QY < c.C.p)) := by
     rw [f₄, flag_unch U₃ h7 h0 hn (by decide), S₂.flag, BitVec.allOnes_and, mask_and, mask_and, hq0,

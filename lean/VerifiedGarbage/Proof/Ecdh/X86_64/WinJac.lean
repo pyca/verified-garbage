@@ -51,8 +51,8 @@ theorem jwIdx_lt : ∀ i ∈ roJ ++ otherJ ++ gridJ, i < 168 ∧ i ≠ MP ∧ i 
 
 /-- Every slot below `168` is in the working space, for four or six words. -/
 theorem sl_le_jw (c : Cfg) (h46 : c.n = 4 ∨ c.n = 6) {i : Nat} (hi : i < 168) : c.sl i + 8 * c.n ≤ size := by
-  simp only [sl_eq', ix, show ¬ c.n = 9 by omega, ↓reduceIte]
-  rcases h46 with h4 | h4 <;> rw [h4] <;> show _ ≤ 8192 <;> omega
+  simp only [sl_eq', ix, show ¬ c.n = 9 by omega_arith, ↓reduceIte]
+  rcases h46 with h4 | h4 <;> rw [h4] <;> show _ ≤ 8192 <;> omega_arith
 
 theorem lay_jw (h46 : c.n = 4 ∨ c.n = 6) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = c.sl TMP)
     (hMn : M.n = c.n) {l : List Nat} (hl : ∀ i ∈ l, i < 168 ∧ i ≠ MP ∧ i ≠ TMP) :
@@ -69,7 +69,7 @@ theorem lay_jw (h46 : c.n = 4 ∨ c.n = 6) {M : Mod} (hmo : M.mo = c.sl MP) (htm
     rw [hMn, htmp]; exact sl_apart c (hl i hi).2.2
 
 theorem jwinJ_le (hc : CfgOk c) : Impl.Ecdh.X86_64.Cfg.jwinJ c ≤ 13 * c.n + 1 := by
-  unfold Impl.Ecdh.X86_64.Cfg.jwinJ; have := hc.len_hi; have := hc.nbits_le; omega
+  unfold Impl.Ecdh.X86_64.Cfg.jwinJ; have := hc.len_hi; have := hc.nbits_le; omega_arith
 
 theorem jwLayQ (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) : JacWinLay (jwQ c) size := by
   have hn := hc.n0
@@ -79,12 +79,12 @@ theorem jwLayQ (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) : JacWinLay (jwQ c) si
     unfold Impl.Ecdh.X86_64.Cfg.jwinJ
     have := hc.len8
     by_cases h : c.nbits < 8 * c.C.len
-    · have := (hc.mask h).1; omega
-    · omega
+    · have := (hc.mask h).1; omega_arith
+    · omega_arith
   have hb : (jwQ c).bits = c.sl WB := rfl
   have hK : (jwQ c).tbl = c.sl WT := rfl
   have hMn : (jwQ c).M.n = c.n := rfl
-  refine ⟨h46, ?_, ?_, ?_, ?_, rfl, ⟨by omega, by omega⟩, ?_, ?_, ?_⟩
+  refine ⟨h46, ?_, ?_, ?_, ?_, rfl, ⟨by omega_arith, by omega_arith⟩, ?_, ?_, ?_⟩
   · rw [jwSlots_eq]; exact lay_jw h46 rfl rfl rfl jwIdx_lt
   · exact map_sl_disj hn (l₁ := roJ) (l₂ := otherJ) (by decide)
   · exact map_sl_nodup hn (l := otherJ) (by decide)
@@ -93,9 +93,9 @@ theorem jwLayQ (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) : JacWinLay (jwQ c) si
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
     have key : ∀ i ∈ roJ ++ otherJ, i < WT := by decide
     rw [hK, hMn]; exact Or.inl (sl_lt c (key i hi))
-  · rw [hK]; simp (disch := sl_ne) only [sl_eq]; rcases h46 with h4 | h4 <;> rw [h4] <;> unfold WT <;> omega
+  · rw [hK]; simp (disch := sl_ne) only [sl_eq]; rcases h46 with h4 | h4 <;> rw [h4] <;> unfold WT <;> omega_arith
   · rw [hb, hJ]; simp (disch := sl_ne) only [sl_eq]
-    rcases h46 with h4 | h4 <;> rw [h4] <;> show _ ≤ 8192 <;> unfold WB <;> omega
+    rcases h46 with h4 | h4 <;> rw [h4] <;> show _ ≤ 8192 <;> unfold WB <;> omega_arith
   · intro w hw
     rw [jwW_eq] at hw
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
@@ -107,7 +107,7 @@ theorem jwLayQ (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) : JacWinLay (jwQ c) si
       dsimp only
       simp (disch := sl_ne) only [sl_eq]
       unfold WB; unfold WT at h
-      rcases h46 with h4 | h4 <;> rw [h4] <;> omega
+      rcases h46 with h4 | h4 <;> rw [h4] <;> omega_arith
 
 /-! ## The recoded scalar -/
 
@@ -119,8 +119,8 @@ theorem recodeJ_lt {k b : Nat} (hk : k < 2 ^ b) :
   have hg := Window5.geom_mul ((b + 6) / 5)
   have h4 : 2 ^ b * 4 ≤ 32 ^ ((b + 6) / 5) := by
     rw [show (32 : Nat) = 2 ^ 5 by rfl, ← Nat.pow_mul, show 2 ^ b * 4 = 2 ^ (b + 2) by rw [Nat.pow_add]]
-    exact Nat.pow_le_pow_right (by decide) (by omega)
-  omega
+    exact Nat.pow_le_pow_right (by decide) (by omega_arith)
+  omega_arith
 
 /-! ## `[d]P` and `Z^(p-2)` -/
 
@@ -140,7 +140,7 @@ theorem mulQJ_w (hc : CfgOk c) : MulW c (mulQJW c) where
     have := hc.n0
     rcases apart_append (apart_append (apart_winX (c := c) (i := FLAG) (by decide))
       (apart_slW (l := mulJI) (by decide))) (apart_pwW (by decide) (by decide)) w hw with h | h
-    · exact Or.inl (by omega)
+    · exact Or.inl (by omega_arith)
     · exact Or.inr h
 
 /-- The Jacobian window method computes `[d]P` for `d < n` (`MulOk`), for four
@@ -156,7 +156,7 @@ theorem mulQJ_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO :
   have hsz : size = 8192 := rfl
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
   have hJle := jwinJ_le hc
   unfold Impl.Ecdh.X86_64.Cfg.mulQJ
   refine WP.seq (WP.seq (WP.mono (maskK_ok hc hs (hk ▸ hk8)) fun s₁ ⟨hs₁, k₁, e₁, U₁⟩ => ?_))
@@ -171,30 +171,30 @@ theorem mulQJ_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO :
   have hK : c.winK = c.sl WK := rfl
   have hB : c.winBits = c.sl WB := rfl
   have hWK : c.sl WK + 16 * c.n ≤ size := by
-    simp (disch := sl_ne) only [sl_eq]; rcases h46 with h4 | h4 <;> rw [h4] <;> unfold WK <;> omega
+    simp (disch := sl_ne) only [sl_eq]; rcases h46 with h4 | h4 <;> rw [h4] <;> unfold WK <;> omega_arith
   have hKW := sl_lt c (show K < WK by decide)
   have h32 : (32 : Nat) ^ Impl.Ecdh.X86_64.Cfg.jwinJ c ≤ 2 ^ (64 * (c.n + 1)) := by
     rw [show (32 : Nat) = 2 ^ 5 by rfl, ← Nat.pow_mul]
-    exact Nat.pow_le_pow_right (by decide) (by omega)
-  have e82 : c.sl WK + 16 * c.n = c.sl WB := by simp (disch := sl_ne) only [sl_eq]; unfold WK WB; omega
+    exact Nat.pow_le_pow_right (by decide) (by omega_arith)
+  have e82 : c.sl WK + 16 * c.n = c.sl WB := by simp (disch := sl_ne) only [sl_eq]; unfold WK WB; omega_arith
   have hBs : c.sl WB + 80 * c.n ≤ size := by
-    simp (disch := sl_ne) only [sl_eq]; rcases h46 with h4 | h4 <;> rw [h4] <;> unfold WB <;> omega
+    simp (disch := sl_ne) only [sl_eq]; rcases h46 with h4 | h4 <;> rw [h4] <;> unfold WB <;> omega_arith
   rw [Impl.Ecdh.X86_64.Cfg.jwinPrep]
   refine WP.seq (WP.seq ?_)
   rw [hK]
   refine WP.mono (addConst_ok hs₁ (n := c.n) (src := c.sl K) (dst := c.sl WK)
-    (c := JacWinCfg.offset (Impl.Ecdh.X86_64.Cfg.jwinJ c)) h0 (sl_le c h7 (by decide)) (by omega)
-    (Or.inl (by omega)) (by omega) (by omega))
+    (c := JacWinCfg.offset (Impl.Ecdh.X86_64.Cfg.jwinJ c)) h0 (sl_le c h7 (by decide)) (by omega_arith)
+    (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith))
     fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   rw [hB]
-  refine WP.mono (bits_ok hs₂ (n := c.n + 1) (src := c.sl WK) (dst := c.sl WB) (by omega) (by omega)
-    (by omega) (by omega) (Or.inl (by omega))) fun s₃ ⟨b₃, k₃, O₃⟩ => ?_
+  refine WP.mono (bits_ok hs₂ (n := c.n + 1) (src := c.sl WK) (dst := c.sl WB) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (Or.inl (by omega_arith))) fun s₃ ⟨b₃, k₃, O₃⟩ => ?_
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
   rw [e₂] at b₃
   have U₃ : Unch base (winX c) s₁.mem s₃.mem :=
-    ((O₂.mono (o' := c.sl WK) (n' := 16 * c.n) (Nat.le_refl _) (by omega)).unch.trans
-      ((O₃.mono (o' := c.sl WB) (n' := 80 * c.n) (Nat.le_refl _) (by omega)).unch)).mono
+    ((O₂.mono (o' := c.sl WK) (n' := 16 * c.n) (Nat.le_refl _) (by omega_arith)).unch.trans
+      ((O₃.mono (o' := c.sl WB) (n' := 80 * c.n) (Nat.le_refl _) (by omega_arith)).unch)).mono
       (by intro w hw; simpa [winX, hK, hB] using hw)
   have F₃ := F₁.unch h7 hn fixedOk_winX U₃
   have e₃ : ∀ {i}, i < 45 → i ≠ K → sv c base s₃ i = sv c base s i := fun hi hne =>
@@ -208,14 +208,14 @@ theorem mulQJ_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO :
       rcases hx with rfl | rfl | rfl
       · exact lt_of_eq_of_lt (e₃ (i := PX) (by decide) (by decide)) hpx
       · exact lt_of_eq_of_lt (e₃ (i := PY) (by decide) (by decide)) hpy
-      · exact lt_of_eq_of_lt F₃.onep (Nat.mod_lt _ (by omega))
+      · exact lt_of_eq_of_lt F₃.onep (Nat.mod_lt _ (by omega_arith))
     · show Rep _ (tmv c.C c.n base s₃ (c.sl PX)) (tmv c.C c.n base s₃ (c.sl PY))
         (tmv c.C c.n base s₃ (c.sl ONEP)) P
       rw [tv (by decide) (by decide), tv (by decide) (by decide), tv (by decide) (by decide)]; exact hrep
     · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₃.mem base (c.sl ONEP) c.n) = 1
       rw [F₃.onep, show 2 ^ (64 * c.n) % c.C.p = c.mont 1 by simp [Cfg.mont, Cfg.R], toM_cmont hc]; rfl
     · rw [hJ] at ht
-      exact b₃ t (by omega)
+      exact b₃ t (by omega_arith)
   refine WP.mono (winJac_ok (jwLayQ hc h46) hpR hC hc.am3 hO hD hc.p_lt (hmont 1)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hn17 hn64 hP
     (by rw [hJ]; exact hrec) hs₃ hM₃ hF) fun s₄ ⟨K₄, U₄, M₄, L₄, R₄⟩ => ?_

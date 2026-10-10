@@ -78,10 +78,10 @@ theorem pkFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   have h16 : ∀ rd ∈ Cfg.saved, ∀ w ∈ [(size, 2 ^ 64)], rd.2 + 4 ≤ w.1 ∨ w.1 + w.2 ≤ rd.2 :=
     fun rd hrd w hw => by
       have := saved_lt rd hrd
-      simp only [List.mem_singleton] at hw; subst hw; exact .inl (by omega)
+      simp only [List.mem_singleton] at hw; subst hw; exact .inl (by omega_arith)
   rw [finish_eq]
   -- The flag, `out`, and the leading byte.
-  refine wp_movS (readSrc_sc hs (d := c.sl FLAG) (by omega)) fun s₁ u₁ _ => ?_
+  refine wp_movS (readSrc_sc hs (d := c.sl FLAG) (by omega_arith)) fun s₁ u₁ _ => ?_
   refine wp_movS (show readSrc s₁ (.mem (Cfg.argOp 0)) = some o32 by
     have hea : s₁.ea (Cfg.argOp 0) = s.ea (Cfg.argOp 0) := by
       show addr (s₁.gpr .esp) _ = addr (s.gpr .esp) _
@@ -104,54 +104,54 @@ theorem pkFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
     exact mask4 b
   refine wp_store8S (a := off out 0)
     (by show (s₄.gpr .ebx + BitVec.ofNat 32 0).setWidth 64 = _; rw [hb₄, BitVec.add_zero, hout64]; exact (BitVec.add_zero out).symm)
-    ⟨_, by rw [k₄.2.2]; exact hw, Offset.contains_base out (by omega) (by omega)⟩ fun s₅ m₅ => ?_
+    ⟨_, by rw [k₄.2.2]; exact hw, Offset.contains_base out (by omega_arith) (by omega_arith)⟩ fun s₅ m₅ => ?_
   have hs₅ := hs₄.of_keeps (m₅.keeps []) (by decide)
-  have O₅ : Outside out 0 1 s₄.mem s₅.mem := by rw [m₅.mem]; exact writeW8_outside _ _ _ (by omega)
+  have O₅ : Outside out 0 1 s₄.mem s₅.mem := by rw [m₅.mem]; exact writeW8_outside _ _ _ (by omega_arith)
   have L₅ : s₅.mem (out + BitVec.ofNat 64 0) = if b then 4 else 0 := by rw [m₅.mem, writeW8_self, ha₄]
-  have U₅ := O₅.unch_far (hd.symm.sub_right (Region.sub_prefix (by omega)))
+  have U₅ := O₅.unch_far (hd.symm.sub_right (Region.sub_prefix (by omega_arith)))
   have hb₅ : s₅.gpr .ebx = o32 := by rw [m₅.gpr, hb₄]
   have hc₅ : s₅.gpr .ecx = mask32 (b = true) := by rw [m₅.gpr, hc₄]
   have x₅ : wordsVal s₅.mem base (c.sl X) c.n = sv c base s X := by
-    rw [U₅.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega), hm₄]
+    rw [U₅.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith), hm₄]
   -- `x`, from `out + 1`.
   refine WP.block_append (WP.mono (storeBytes_ok hs₅ (dst := .ebx) (d := 1) (a := c.sl X) (by decide) (by decide) b
-    hc₅ hX (by omega) hlhi (by rw [hb₅]; omega) (fun e m he => ⟨_, by rw [m₅.wr, k₄.2.2]; exact hw, by
-      rw [hb₅, hout64, Offset.add_add]; exact Offset.contains_base out (by omega) (by omega)⟩)
-    (by rw [hb₅, hout64]; exact hdsc hX (by omega))) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_)
+    hc₅ hX (by omega_arith) hlhi (by rw [hb₅]; omega_arith) (fun e m he => ⟨_, by rw [m₅.wr, k₄.2.2]; exact hw, by
+      rw [hb₅, hout64, Offset.add_add]; exact Offset.contains_base out (by omega_arith) (by omega_arith)⟩)
+    (by rw [hb₅, hout64]; exact hdsc hX (by omega_arith))) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_)
   rw [hb₅, hout64, x₅] at e₆
   rw [hb₅, hout64] at O₆
   have hs₆ := hs₅.of_keeps k₆ (by decide)
-  have U₆ := O₆.unch_far (hscd (d := 1) (by omega))
+  have U₆ := O₆.unch_far (hscd (d := 1) (by omega_arith))
   have hb₆ : s₆.gpr .ebx = o32 := by rw [k₆.1 _ (by decide), hb₅]
   have hc₆ : s₆.gpr .ecx = mask32 (b = true) := by rw [k₆.1 _ (by decide), hc₅]
   have y₆ : wordsVal s₆.mem base (c.sl Y) c.n = sv c base s Y := by
-    rw [U₆.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega),
-      U₅.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega), hm₄]
+    rw [U₆.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith),
+      U₅.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith), hm₄]
   -- `y`, from `out + 1 + len`.
   refine WP.block_append (WP.mono (storeBytes_ok hs₆ (dst := .ebx) (d := 1 + c.C.len) (a := c.sl Y) (by decide)
-    (by decide) b hc₆ hY (by omega) hlhi (by rw [hb₆]; omega) (fun e m he => ⟨_, by rw [k₆.2.2, m₅.wr, k₄.2.2]; exact hw, by
-      rw [hb₆, hout64, Offset.add_add]; exact Offset.contains_base out (by omega) (by omega)⟩)
-    (by rw [hb₆, hout64]; exact hdsc hY (by omega))) fun s₇ ⟨e₇, k₇, O₇⟩ => ?_)
+    (by decide) b hc₆ hY (by omega_arith) hlhi (by rw [hb₆]; omega_arith) (fun e m he => ⟨_, by rw [k₆.2.2, m₅.wr, k₄.2.2]; exact hw, by
+      rw [hb₆, hout64, Offset.add_add]; exact Offset.contains_base out (by omega_arith) (by omega_arith)⟩)
+    (by rw [hb₆, hout64]; exact hdsc hY (by omega_arith))) fun s₇ ⟨e₇, k₇, O₇⟩ => ?_)
   rw [hb₆, hout64, y₆] at e₇
   rw [hb₆, hout64] at O₇
   have hs₇ := hs₆.of_keeps k₇ (by decide)
-  have U₇ := O₇.unch_far (hscd (d := 1 + c.C.len) (by omega))
+  have U₇ := O₇.unch_far (hscd (d := 1 + c.C.len) (by omega_arith))
   have hsv₇ : ∀ rd ∈ Cfg.saved, s₇.mem.readW (off base rd.2) 32 = g rd.1 := fun rd hrd => by
     have := saved_lt rd hrd
-    rw [Unch.readW32 U₇ (h16 rd hrd) (by omega), Unch.readW32 U₆ (h16 rd hrd) (by omega),
-      Unch.readW32 U₅ (h16 rd hrd) (by omega), hm₄, hsv rd hrd]
+    rw [Unch.readW32 U₇ (h16 rd hrd) (by omega_arith), Unch.readW32 U₆ (h16 rd hrd) (by omega_arith),
+      Unch.readW32 U₅ (h16 rd hrd) (by omega_arith), hm₄, hsv rd hrd]
   -- The return value and the callee-saved registers.
   refine WP.mono (tail_ok hs₇ hsv₇ b (by rw [k₇.1 _ (by decide), hc₆]))
     fun s' ⟨hm', eax', saved', others'⟩ => ⟨?_, eax', saved', fun r hr => ?_, ?_⟩
   · have lead : Spec.Ecdsa.bytesAt s₇.mem out 1 = [if b then 4 else 0] := by
-      rw [bytesAt_keep O₇ (Offset.base_disjoint out (by omega) (by omega)) (by omega) (by omega),
-        bytesAt_keep O₆ (Offset.base_disjoint out (by omega) (by omega)) (by omega) (by omega)]
+      rw [bytesAt_keep O₇ (Offset.base_disjoint out (by omega_arith) (by omega_arith)) (by omega_arith) (by omega_arith),
+        bytesAt_keep O₆ (Offset.base_disjoint out (by omega_arith) (by omega_arith)) (by omega_arith) (by omega_arith)]
       exact congrArg (· :: []) L₅
     have xs : Spec.Ecdsa.bytesAt s₇.mem (out + BitVec.ofNat 64 1) c.C.len =
         if b then toBytes c.C.len (sv c base s X) else List.replicate c.C.len 0 := by
-      rw [bytesAt_keep O₇ (Offset.disjoint out (.inl (Nat.le_refl _)) (by omega) (by omega)) (by omega)
-        (by omega), e₆]
-    rw [hm', show 1 + 2 * c.C.len = 1 + (c.C.len + c.C.len) by omega, bytesAt_add, bytesAt_add, lead, xs,
+      rw [bytesAt_keep O₇ (Offset.disjoint out (.inl (Nat.le_refl _)) (by omega_arith) (by omega_arith)) (by omega_arith)
+        (by omega_arith), e₆]
+    rw [hm', show 1 + 2 * c.C.len = 1 + (c.C.len + c.C.len) by omega_arith, bytesAt_add, bytesAt_add, lead, xs,
       Offset.add_add, e₇]
     cases b
     · simp only [Bool.false_eq_true, ite_false, List.replicate_append_replicate]
@@ -162,7 +162,7 @@ theorem pkFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
     rw [others' _ (by simp [h1, h2, h4, h5, h6, h7']), k₇.1 _ (by simp [h1, h4]), k₆.1 _ (by simp [h1, h4]),
       m₅.gpr, k₄.1 _ (by simp [h1, h2, h3])]
   · rw [hm', ← hm₄]
-    exact ((O₅.mono (Nat.zero_le _) (by omega)).trans ((O₆.shift (by omega)).mono (Nat.zero_le _) (by omega))).trans
-      ((O₇.shift (by omega)).mono (Nat.zero_le _) (by omega))
+    exact ((O₅.mono (Nat.zero_le _) (by omega_arith)).trans ((O₆.shift (by omega_arith)).mono (Nat.zero_le _) (by omega_arith))).trans
+      ((O₇.shift (by omega_arith)).mono (Nat.zero_le _) (by omega_arith))
 
 end VG.Proof.EcKey.X86
