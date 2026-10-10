@@ -82,14 +82,19 @@ Nanoseconds per operation, median of three runs; speed as above.
 | AES-256-GCM seal / open 1 KiB record | 226 / 227 | 191 / 205 | 1.18 / 1.11 |
 | ChaCha20-Poly1305 seal / open 16 KiB record | 8 425 / 7 971 | 6 393 / 6 231 | 1.32 / 1.28 |
 | ChaCha20-Poly1305 seal / open 1 KiB record | 863 / 708 | 645 / 712 | 1.34 / 0.99 |
-| HKDF-SHA256 / SHA384 extract + one expand | 643 / 2 195 | 704 / 1 967 | 0.91 / 1.12 |
-| HKDF-SHA256 / SHA384 expand (one block) | 294 / 1 112 | 212 / 567 | 1.39 / 1.96 |
+| HKDF-SHA256 / SHA384 extract + one expand | 697 / 2 192 | 639 / 2 146 | 1.09 / 1.02 |
+| HKDF-SHA256 / SHA384 expand (one block) | 329 / 1 101 | 198 / 558 | 1.66 / 1.97 |
 | transcript hash, SHA-256 / SHA-384 | 1 713 / 4 364 | 1 680 / 4 041 | 1.02 / 1.08 |
 | ticket encrypt / decrypt (200 B) | 1 149 / 468 | 478 / 165 | 2.40 / 2.84 |
 
 The open rows include copying the record into the buffer it is decrypted in.
 aws-lc-rs defers HKDF's extract to the first expand, so an extract is timed
-together with one expand of its result.
+together with one expand of its result. The HKDF rows are from a rerun after
+the provider replaced rustls's generic `HkdfUsingHmac` with its own HKDF on
+the library's HMAC (`src/hkdf.rs`), which allocates one box per extract
+instead of three and a `Vec`. With `HkdfUsingHmac`, extract + expand was
+704 / 1 967 ns (0.91 / 1.12); in one process the new one measured 18–25%
+faster.
 
 ## Library-level (`bench/aws-lc-compare`: each library's own API)
 
@@ -116,13 +121,10 @@ as many bytes in place.
 1. **ChaCha20-Poly1305 from 512 bytes to 1 KiB: 0.89–0.99** (in place: 512 B
    0.89, 640 B 0.90, 768 B 0.94), on this CPU's AVX-512 backend. Opening a
    1 KiB record is now 0.99, from 0.88 (#1482).
-2. **HKDF-SHA256 through the provider: 0.91**, while the library's own HKDF
-   is 1.14. The provider uses rustls's generic `HkdfUsingHmac`, which boxes a
-   keyed HMAC for every extract and expander.
-3. **RSA-4096 verification through the provider: 0.93**, with the
+2. **RSA-4096 verification through the provider: 0.93**, with the
    library-level row at 1.02, so likely noise. RSA verification from a
    certificate's key is otherwise at 0.96–1.05, from 0.87–0.96.
-4. **TLS 1.2 AES-256-GCM bulk: 0.91–0.97** in some scenarios, while the record
+3. **TLS 1.2 AES-256-GCM bulk: 0.91–0.97** in some scenarios, while the record
    seal and open alone are 1.05–1.11, so likely noise.
 
 The last run on a CPU without IFMA, VAES or SHA-NI (b5b67857, in the table

@@ -1,4 +1,4 @@
-//! HMAC with SHA-2: TLS 1.2's PRF and, through HKDF, TLS 1.3's key schedule.
+//! HMAC with SHA-2, for TLS 1.2's PRF.
 
 use alloc::boxed::Box;
 
