@@ -12,18 +12,6 @@ namespace VG.Proof.Modes.X86_64
 
 open VG VG.X86_64 VG.Impl.Modes.X86_64
 
-/-- A byte of a little-endian word stored from the XOR of two loads. -/
-theorem writeW_xor_apply (m m₁ m₂ : Mem) (a c e x : Addr) :
-    m.writeW a (m₁.readW c 64 ^^^ m₂.readW e 64) x =
-      if (x - a).toNat < 8 then m₁ (c + BitVec.ofNat 64 (x - a).toNat) ^^^ m₂ (e + BitVec.ofNat 64 (x - a).toNat)
-      else m x := by
-  simp only [Mem.writeW, Mem.write, BitVec.setWidth_eq]
-  split
-  · rename_i h
-    rw [BitVec.extractLsb'_xor, Mem.readW, Mem.readW, BitVec.setWidth_eq, BitVec.setWidth_eq,
-      Mem.extractLsb'_read m₁ c (n := 8) h, Mem.extractLsb'_read m₂ e (n := 8) h]
-  · rfl
-
 /-- `mov rbp, [rax + d]; xor rbp, [rbx + d]; mov [rbx + d], rbp`. -/
 theorem xorWord_ok (s : State) (d : Nat) (hr : InRegions (s.rd ++ s.wr) (s.gpr .rax + BitVec.ofNat 64 d) 8)
     (hr' : InRegions (s.rd ++ s.wr) (s.gpr .rbx + BitVec.ofNat 64 d) 8)

@@ -17,7 +17,10 @@ The scratch buffer at `x5` holds, in 8-byte slots: the S-box's spills
 (0–47, also the masks of the transposes), the masks of the round keys'
 planes (48–50), the planes of the state's four words (64–95), the tail
 buffer (96–127, sixteen blocks), the table of the 32 bitsliced round keys
-(128–383), and the callee-saved registers `x19`–`x28` (384–393).
+(128–383), and the callee-saved registers `x19`–`x28` (384–393). The modes
+(`Impl/Modes/AArch64/`), which use slots 0–383 as SM4's core, keep their
+own 12 slots after them (384–395): the callee-saved registers, then the
+running counter.
 -/
 
 namespace VG.Impl.Sm4.AArch64
@@ -45,8 +48,8 @@ def tableEnd : Nat := tableSlot + 8 * 32
 
 def savedSlot : Nat := tableEnd
 
-/-- The number of slots. -/
-def slots : Nat := savedSlot + 10
+/-- The number of slots: ECB's, and the modes' 12 after the core's. -/
+def slots : Nat := tableEnd + 12
 
 def keyMasks : List (Nat × BitVec 64) :=
   [(evenSlot, 0x00FF00FF00FF00FF), (oddSlot, 0xFF00FF00FF00FF00), (grpSlot, 0x0000FFFF0000FFFF)]
