@@ -124,12 +124,14 @@ def rounds4 (l : Lin) : List Instr :=
 
 /-! ## The round keys' planes -/
 
-/-- The planes of the round key at `r12`: eight copies, transposed, each
-plane's bytes reversed (the word's bytes are little-endian, the state's from
-the most significant). -/
-def keyLoad : List Instr :=
-  [.ldr (q 0) .r12 0] ++ ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++ ortho ++
-  (List.range 8).map fun j => .rev (q j) (q j)
+/-- The round key at `r12`, its bytes reversed (the word's bytes are
+little-endian, the state's from the most significant). -/
+def keyWord : List Instr := [.ldr (q 0) .r12 0, .rev (q 0) (q 0)]
+
+/-- Its planes: eight copies, transposed. -/
+def keyPlanes : List Instr := ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++ ortho
+
+def keyLoad : List Instr := keyWord ++ keyPlanes
 
 /-- Store the planes to the entry at `kp`. -/
 def keyStore : List Instr := (List.range 8).map fun j => .str (q j) kp (4 * j)
