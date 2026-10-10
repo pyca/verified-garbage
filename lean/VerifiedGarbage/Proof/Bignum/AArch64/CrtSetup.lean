@@ -292,6 +292,6 @@ theorem primesSetup_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {pl
         show offQ w pl + 256 + _ ≤ _ by unfold offQ offP; omega⟩
   · by_cases h : r = .x0
     · subst h; rw [hdi, hg.x0]
-    · exact kall.gpr r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)
+    · exact kall.gpr r (by revert hr h; cases r <;> decide)
 
 end VG.Proof.Bignum.AArch64

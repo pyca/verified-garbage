@@ -142,7 +142,7 @@ theorem wsNew_ok {s : State} {B : Addr} {Z o len : Nat} {slotWs slotLen : Nat} (
     all_goals exact ⟨(o, 8 * 17), by simp, by simp, by simp [sLink, sW, sArr, sFn]⟩
   · by_cases h : r = .x0
     · subst h; rw [h0', h0]
-    · exact kall.gpr r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)
+    · exact kall.gpr r (by revert hr h; cases r <;> decide)
 
 /-- `loadArr j sp sl` in a prime's workspace: the bytes whose pointer and
 length are in the modulus' header slots `sp` and `sl`, into array `j`. -/

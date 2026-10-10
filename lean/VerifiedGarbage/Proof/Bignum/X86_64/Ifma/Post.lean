@@ -181,6 +181,6 @@ theorem post_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitV
     congr 3; omega_arith
   · by_cases h : r = .rdi
     · subst h; rw [hg'.rdi, hg.rdi]
-    · exact kall.1 r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)
+    · exact kall.1 r (by revert hr h; cases r <;> decide)
 
 end VG.Proof.Bignum.X86_64

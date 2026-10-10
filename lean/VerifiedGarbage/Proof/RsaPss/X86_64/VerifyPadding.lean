@@ -230,7 +230,7 @@ theorem vpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
       (fun hany hacc => by
         have hfixed : fixed = true := by
           rw [hW3 35 (by decide) (.inr (by decide)), h35] at hany
-          cases fixed <;> simp_all
+          cases fixed <;> first | rfl | simp at hany
         rw [h33, acc1V_eq_zero] at hacc
         rw [hW3 36 (by decide) (.inr (by decide))]
         exact (hacc.2.2.2 hfixed).symm)))

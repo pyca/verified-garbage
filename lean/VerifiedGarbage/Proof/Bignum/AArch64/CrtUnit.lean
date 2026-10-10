@@ -163,6 +163,6 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
     exact f₁'.append f34
   · by_cases h : r = .x0
     · subst h; rw [hdi, hg.x0]
-    · exact kall.gpr r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)
+    · exact kall.gpr r (by revert hr h; cases r <;> decide)
 
 end VG.Proof.Bignum.AArch64
