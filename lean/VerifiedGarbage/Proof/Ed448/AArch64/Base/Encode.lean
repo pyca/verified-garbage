@@ -23,8 +23,9 @@ open VG.Impl.X448.AArch64 (ld st slot X2 T7 ACC)
 open VG.Impl.X448.AArch64.Fast (saved)
 open VG.Proof.X448.AArch64 (Scr Keeps off word limbs Outside Outside2 Saved ofs FieldMem writeW8_apply
   moveOutput_ok freeze_ok)
-open VG.Proof.X448.AArch64.Weak (Index Env invEnv invEnv_eval invEnv_x2 E_update E_outside)
-open VG.Proof.X448.AArch64.Fast (BEnv Bnd FKeep Same SavedX SavedV invert_ok IKeep env_update block_codeOf
+open VG.Proof.X448.AArch64.Weak (Index Env E_update E_outside)
+open VG.Proof.X448.AArch64.Fast (BEnv Bnd FKeep Same SavedX SavedV invert_ok invEnv invEnv_eval invEnv_x2
+  invEnv_keep IKeep env_update block_codeOf
   mulOp)
 open VG.Proof.X448.AArch64.Base (copyOp)
 open VG.Proof.Curve448.AArch64.Fast (Mb Ib)
@@ -32,8 +33,8 @@ open VG.Proof.Curve448.AArch64.Fast (Mb Ib)
 local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 
 /-- The inversion's addition chain keeps slots 0 and 3. -/
-theorem invEnv_0 (e : Env) : invEnv e 0 = e 0 := rfl
-theorem invEnv_3 (e : Env) : invEnv e 3 = e 3 := rfl
+theorem invEnv_0 (e : Env) : invEnv e 0 = e 0 := invEnv_keep e 0 (by decide)
+theorem invEnv_3 (e : Env) : invEnv e 3 = e 3 := invEnv_keep e 3 (by decide)
 
 /-- A fully reduced slot (sixteen limbs below `2^28`) is below `Ib`. -/
 theorem bnd_of_bounded {m : Mem} {base : Addr} {o : Nat} (h : VG.Proof.X448.AArch64.Bounded m base o) :

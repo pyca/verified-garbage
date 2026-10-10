@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.X448.AArch64.Fast
+import VerifiedGarbage.Impl.X448.AArch64.Field56
 import VerifiedGarbage.Impl.X448.BaseTable
 
 /-!
