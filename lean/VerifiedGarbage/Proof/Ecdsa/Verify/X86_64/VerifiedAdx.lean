@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitEraseAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 
 /-!
@@ -28,12 +29,12 @@ theorem verify_checks_adx : VerifyChecks p256x p256Table where
       (fun _ _ _ _ h => h) (by taint_decide)
     head := VG.Taint.constantTime (A := taintSym ["VG_P256_COMB"]) (Taint.ofRegs [.rdi,.rbx])
       (fun _ _ _ _ h => h) (by taint_decide)
-    tail := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi,.rbx,.rdx])
-      (fun _ _ _ _ h => h) (by taint_decide) }
-  before := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
-    (fun _ _ _ _ h => h) (by taint_decide)
-  after := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi])
-    (fun _ _ _ _ h => h) (by taint_decide)
+    tail := VG.Taint.constantTime_mapBlocks (c' := tailErasedAdx) taint_eraseInv
+      (Taint.ofRegs [.rdi,.rbx,.rdx]) rfl (fun _ _ _ _ h => h) rfl (by taint_decide) }
+  before := VG.Taint.constantTime_mapBlocks (c' := beforeErasedAdx) taint_eraseInv
+    (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx]) rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
+  after := VG.Taint.constantTime_mapBlocks (c' := afterErasedAdx) taint_eraseInv
+    (Taint.ofRegs [.rdi]) rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
 
 theorem verify_ct_adx (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)

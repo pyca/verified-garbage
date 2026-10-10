@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Timing
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 
@@ -76,20 +77,18 @@ theorem verify_x86 (hL : Weierstrass.Law Spec.P256.curve)
   verify_x86_of (p256_ok hI) hL (p256_tbls hL hT) (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
     (by lit_decide) (by lit_decide) s hs
 
-def p256Table : CombData := ⟨7,Impl.P256.p256Comb7,Impl.P256.p256Comb7Start,"VG_P256_COMB",true⟩
-
 theorem verify_checks : VerifyChecks p256 p256Table where
   comb := {
     init := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi])
       (fun _ _ _ _ h => h) (by taint_decide)
     head := VG.Taint.constantTime (A := taintSym ["VG_P256_COMB"]) (Taint.ofRegs [.rdi,.rbx])
       (fun _ _ _ _ h => h) (by taint_decide)
-    tail := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi,.rbx,.rdx])
-      (fun _ _ _ _ h => h) (by taint_decide) }
-  before := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
-    (fun _ _ _ _ h => h) (by taint_decide)
-  after := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi])
-    (fun _ _ _ _ h => h) (by taint_decide)
+    tail := VG.Taint.constantTime_mapBlocks (c' := tailErased) taint_eraseInv
+      (Taint.ofRegs [.rdi,.rbx,.rdx]) rfl (fun _ _ _ _ h => h) rfl (by taint_decide) }
+  before := VG.Taint.constantTime_mapBlocks (c' := beforeErased) taint_eraseInv
+    (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx]) rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
+  after := VG.Taint.constantTime_mapBlocks (c' := afterErased) taint_eraseInv
+    (Taint.ofRegs [.rdi]) rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
 
 /-- The shared contract declares all verification input buffers public. -/
 theorem verify_public_of_spec {s₁ s₂ : State}
