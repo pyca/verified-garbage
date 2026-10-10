@@ -1,0 +1,5 @@
+name = "pyca/cryptography SM3 vectors (GB/T 32905-2016's and the Linux kernel's, reformatted)"
+directories = ["cryptography-sm3"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/82bb0cea497734b99e8137202dbdb91e82f39160/vectors/cryptography_vectors/hashes/SM3/oscca.txt"
+sha256 = "05bc0c7ec383c2787cd03e95eed17863bee774bf27aff9b222566dea5721579e"
+retrieved = 2026-10-10
