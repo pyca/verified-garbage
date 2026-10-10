@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Rsa.KeyMath
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # An RSA key from its primes: the arithmetic
@@ -62,7 +63,7 @@ theorem halveIter_all : ∀ (k : Nat) (st : Nat × Nat × Nat),
       generalize halveIter k (st.1 / 2, st.2.1 / 2, st.2.2 / 2) = s at ih ⊢
       dsimp only at ih
       rw [Nat.pow_succ, Nat.mul_comm (2 ^ k) 2, Nat.mul_assoc, Nat.mul_assoc, ← ih.1, ← ih.2]
-      omega
+      omega_arith
     · have e : halveStep st = st := ite_eq_right_of_eq_false _ _ (eq_false hb)
       rw [e, halveIter_stuck hb] at h1 h2
       exact absurd ⟨h1, h2⟩ hb
@@ -84,13 +85,13 @@ theorem halve_end {a b K : Nat} (ha : a < 2 ^ K) (hb : b < 2 ^ K) (f : Nat) :
       · rcases Nat.eq_zero_or_pos u with h | h
         · exact h
         · have : 2 ^ K ≤ 2 ^ K * u := Nat.le_mul_of_pos_right _ h
-          omega
+          omega_arith
       · rcases Nat.eq_zero_or_pos v with h | h
         · exact h
         · have : 2 ^ K ≤ 2 ^ K * v := Nat.le_mul_of_pos_right _ h
-          omega
-    · exact Or.inr (Or.inl (by omega))
-  · exact Or.inl (by omega)
+          omega_arith
+    · exact Or.inr (Or.inl (by omega_arith))
+  · exact Or.inl (by omega_arith)
 
 /-- What the halving keeps: `a = 2^k u`, `b = 2^k v` and `f = 2^k u v`. -/
 def HalveI (a b : Nat) (st : Nat × Nat × Nat) : Prop :=
@@ -102,8 +103,8 @@ theorem halveStep_inv {a b : Nat} {st : Nat × Nat × Nat} (h : HalveI a b st) :
   dsimp only at ha hb hf
   by_cases hev : u % 2 = 0 ∧ v % 2 = 0
   · rw [halveStep, ite_eq_left_of_eq_true _ _ (eq_true hev)]
-    obtain ⟨u', rfl⟩ : ∃ u', u = 2 * u' := ⟨u / 2, by omega⟩
-    obtain ⟨v', rfl⟩ : ∃ v', v = 2 * v' := ⟨v / 2, by omega⟩
+    obtain ⟨u', rfl⟩ : ∃ u', u = 2 * u' := ⟨u / 2, by omega_arith⟩
+    obtain ⟨v', rfl⟩ : ∃ v', v = 2 * v' := ⟨v / 2, by omega_arith⟩
     have h2 : 0 < 2 := by decide
     refine ⟨k + 1, ?_, ?_, ?_⟩ <;> dsimp only <;>
       simp only [Nat.mul_div_cancel_left _ h2]
@@ -162,16 +163,16 @@ theorem lcm_eq {a b K : Nat} (ha : a < 2 ^ K) (hb : b < 2 ^ K) :
     · refine ⟨fun _ => h, ?_⟩
       split
       · next hx =>
-        have : x = 1 := by omega
+        have : x = 1 := by omega_arith
         subst this; simp
       · rw [Nat.gcd_comm]
-    · omega
+    · omega_arith
     · subst h1 h2; simp [hz rfl rfl]
   · simp only [hs, ↓reduceIte]
-    refine ⟨fun _ => by omega, ?_⟩
+    refine ⟨fun _ => by omega_arith, ?_⟩
     split
     · next hy =>
-      have : y = 1 := by omega
+      have : y = 1 := by omega_arith
       subst this; simp
     · rfl
 
@@ -186,9 +187,9 @@ theorem inverse_some {a m x : Nat} (h : Spec.Rsa.inverse a m = some x) : a * x %
   · rename_i h1
     cases h
     refine ⟨h1, fun hm => ?_⟩
-    have := Int.emod_lt_of_pos (Spec.Rsa.xgcd (a % m) 1 m 0).2 (by omega : (0 : Int) < m)
-    have := Int.emod_nonneg (Spec.Rsa.xgcd (a % m) 1 m 0).2 (by omega : (m : Int) ≠ 0)
-    omega
+    have := Int.emod_lt_of_pos (Spec.Rsa.xgcd (a % m) 1 m 0).2 (by omega_arith : (0 : Int) < m)
+    have := Int.emod_nonneg (Spec.Rsa.xgcd (a % m) 1 m 0).2 (by omega_arith : (m : Int) ≠ 0)
+    omega_arith
   · cases h
 
 /-- Modulo 0: the inverse of 1 only. -/
@@ -212,19 +213,19 @@ theorem inverse_mod_one (a : Nat) : Spec.Rsa.inverse a 1 = none := by
 /-- `e = 0`: none. -/
 theorem inverse_zero (L : Nat) : Spec.Rsa.inverse 0 L = none := by
   rcases Nat.lt_or_ge L 2 with h | h
-  · rcases (show L = 0 ∨ L = 1 by omega) with rfl | rfl
+  · rcases (show L = 0 ∨ L = 1 by omega_arith) with rfl | rfl
     · rw [inverse_mod_zero]; simp
     · exact inverse_mod_one 0
-  · exact inverse_none (by rw [Nat.gcd_zero_left]; omega)
+  · exact inverse_none (by rw [Nat.gcd_zero_left]; omega_arith)
 
 /-- `e = 1`: 1, but modulo 1. -/
 theorem inverse_one (L : Nat) : Spec.Rsa.inverse 1 L = if L = 1 then none else some 1 := by
   rcases Nat.lt_or_ge L 2 with h | h
-  · rcases (show L = 0 ∨ L = 1 by omega) with rfl | rfl
+  · rcases (show L = 0 ∨ L = 1 by omega_arith) with rfl | rfl
     · rw [inverse_mod_zero]; simp
     · rw [inverse_mod_one]; simp
-  · rw [ite_eq_right (show L ≠ 1 by omega)]
-    exact inverse_eq (by omega) (by omega) (by simp)
+  · rw [ite_eq_right (show L ≠ 1 by omega_arith)]
+    exact inverse_eq (by omega_arith) (by omega_arith) (by simp)
 
 /-- An odd `e ≥ 3` below `2⁶⁴`: from `L = e Q + R` and `x = R⁻¹ mod e`
 (`x R ≡ 1`, `x < e`), the inverse is `Q t + c` with `t = e − x` and
@@ -240,44 +241,44 @@ theorem inverse_odd {e L Q R x einv : Nat} (he3 : 3 ≤ e) (he64 : e < 2 ^ 64) (
     · subst h
       obtain ⟨c, hc⟩ := hx
       simp at hc
-      have := Int.eq_one_of_mul_eq_one_right (by omega)
+      have := Int.eq_one_of_mul_eq_one_right (by omega_arith)
         (show (e : Int) * (-c) = 1 by rw [Int.mul_neg, ← hc, Int.neg_neg])
-      omega
+      omega_arith
     · exact h
   generalize ht : e - x = t
-  have hte : t < e := by omega
+  have hte : t < e := by omega_arith
   -- `1 + R t ≡ 0 (mod e)`.
   have hdv : e ∣ 1 + R * t := by
     have : ((1 + R * t : Nat) : Int) = (e : Int) * R - ((x : Int) * R - 1) := by
-      rw [← ht]; push_cast [Nat.cast_sub (show x ≤ e by omega)]; grind
+      rw [← ht]; push_cast [Nat.cast_sub (show x ≤ e by omega_arith)]; grind
     have h' : (e : Int) ∣ ((1 + R * t : Nat) : Int) := by
       rw [this]; exact Int.dvd_sub (Int.dvd_mul_right _ _) hx
     exact Int.natCast_dvd_natCast.mp h'
   obtain ⟨y, hy⟩ := hdv
   -- `y < e`, so `c = y`.
   have hye : y < e := by
-    have : R * t ≤ (e - 1) * (e - 1) := Nat.mul_le_mul (by omega) (by omega)
+    have : R * t ≤ (e - 1) * (e - 1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
     have : e * y < e * e := by
       have : (e - 1) * (e - 1) < e * e - 1 := by
         rcases e with _ | e
-        · omega
+        · omega_arith
         · simp only [Nat.add_sub_cancel]
-          rw [Nat.mul_add, Nat.add_mul]; omega
-      omega
+          rw [Nat.mul_add, Nat.add_mul]; omega_arith
+      omega_arith
     exact Nat.lt_of_mul_lt_mul_left this
   have hc : ((R * t % 2 ^ 64 + 1) % 2 ^ 64 * einv) % 2 ^ 64 = y := by
-    rw [Nat.mod_add_mod, show R * t + 1 = 1 + R * t by omega, hy, Nat.mod_mul_mod,
+    rw [Nat.mod_add_mod, show R * t + 1 = 1 + R * t by omega_arith, hy, Nat.mod_mul_mod,
       show e * y * einv = y * (e * einv) by grind, Nat.mul_mod, hinv, Nat.mul_one, Nat.mod_mod,
-      Nat.mod_eq_of_lt (by omega)]
+      Nat.mod_eq_of_lt (by omega_arith)]
   rw [hc]
   -- `e (Q t + y) = L t + 1`.
   have hed : e * (Q * t + y) = L * t + 1 := by
     rw [Nat.mul_add, ← hy, hQR]; grind
-  refine inverse_eq (by omega) ?_ ⟨t, ?_⟩
+  refine inverse_eq (by omega_arith) ?_ ⟨t, ?_⟩
   · -- `Q t + y < L`: `e (Q t + y) = L t + 1 < L e`.
     have : L * t + 1 < L * e := by
       have : L * t + L ≤ L * e := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hte
-      omega
+      omega_arith
     have : e * (Q * t + y) < e * L := by rw [hed, Nat.mul_comm e L]; exact this
     exact Nat.lt_of_mul_lt_mul_left this
   · have : ((e * (Q * t + y) : Nat) : Int) = ((L * t + 1 : Nat) : Int) := by rw [hed]
@@ -289,8 +290,8 @@ theorem inverse_odd {e L Q R x einv : Nat} (he3 : 3 ≤ e) (he64 : e < 2 ^ 64) (
 theorem inverse_odd_none {e L Q R : Nat} (he3 : 3 ≤ e) (hQR : L = e * Q + R)
     (h : ¬ (2 ≤ L ∧ Nat.gcd R e = 1)) : Spec.Rsa.inverse e L = none := by
   rcases Nat.lt_or_ge L 2 with hl | hl
-  · rcases (show L = 0 ∨ L = 1 by omega) with rfl | rfl
-    · rw [inverse_mod_zero, ite_eq_right (show e ≠ 1 by omega)]
+  · rcases (show L = 0 ∨ L = 1 by omega_arith) with rfl | rfl
+    · rw [inverse_mod_zero, ite_eq_right (show e ≠ 1 by omega_arith)]
     · exact inverse_mod_one e
   · have hg : Nat.gcd R e ≠ 1 := fun hg => h ⟨hl, hg⟩
     refine inverse_none fun h1 => hg ?_
@@ -301,7 +302,7 @@ theorem inverse_odd_none {e L Q R : Nat} (he3 : 3 ≤ e) (hQR : L = e * Q + R)
 inverse is `x`. -/
 theorem inverse_even {e L x : Nat} (hL : 3 ≤ L) (hx : (L : Int) ∣ (x : Int) * ((e % L : Nat) : Int) - 1)
     (hxL : x < L) : Spec.Rsa.inverse e L = some x := by
-  refine inverse_eq (by omega) hxL ?_
+  refine inverse_eq (by omega_arith) hxL ?_
   obtain ⟨c, hc⟩ := hx
   have h3 : ((e % L : Nat) : Int) + (L : Int) * ((e / L : Nat) : Int) = e := by
     exact_mod_cast Nat.mod_add_div e L
@@ -315,22 +316,22 @@ theorem inverse_even {e L x : Nat} (hL : 3 ≤ L) (hx : (L : Int) ∣ (x : Int) 
 theorem inverse_even_none {e L : Nat} (he : e % 2 = 0) (h : ¬ (L % 2 = 1 ∧ 3 ≤ L ∧ Nat.gcd (e % L) L = 1)) :
     Spec.Rsa.inverse e L = none := by
   rcases Nat.lt_or_ge L 2 with hl | hl
-  · rcases (show L = 0 ∨ L = 1 by omega) with rfl | rfl
-    · rw [inverse_mod_zero, ite_eq_right (show e ≠ 1 by omega)]
+  · rcases (show L = 0 ∨ L = 1 by omega_arith) with rfl | rfl
+    · rw [inverse_mod_zero, ite_eq_right (show e ≠ 1 by omega_arith)]
     · exact inverse_mod_one e
   · refine inverse_none fun h1 => h ?_
     have hg : Nat.gcd (e % L) L = 1 := by rw [← Nat.gcd_rec, Nat.gcd_comm]; exact h1
     refine ⟨?_, ?_, hg⟩
     · -- An even `L` shares the factor 2 with `e`.
       by_contra hL
-      have : 2 ∣ Nat.gcd e L := Nat.dvd_gcd (Nat.dvd_of_mod_eq_zero he) (Nat.dvd_of_mod_eq_zero (by omega))
+      have : 2 ∣ Nat.gcd e L := Nat.dvd_gcd (Nat.dvd_of_mod_eq_zero he) (Nat.dvd_of_mod_eq_zero (by omega_arith))
       rw [h1] at this
-      omega
+      omega_arith
     · by_contra hL
-      have : L = 2 := by omega
+      have : L = 2 := by omega_arith
       subst this
       have : 2 ∣ Nat.gcd e 2 := Nat.dvd_gcd (Nat.dvd_of_mod_eq_zero he) (Nat.dvd_refl 2)
       rw [h1] at this
-      omega
+      omega_arith
 
 end VG.Proof.RsaKeyGen

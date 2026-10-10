@@ -46,23 +46,23 @@ theorem mrBitStep_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c b k n
     (hI : BitInv B Z w mi c b k nb W s₀ j s) :
     WP isa (seqs (mrExpBit M.mm)) s fun t =>
       t.zf = some (decide (j + 1 = nb)) ∧ BitInv B Z w mi c b k nb W s₀ (j + 1) t := by
-  have hjT : 64 * (w - k) + j < 64 * w := by split at hnb <;> omega
-  have hp : 1 ≤ 64 * w - 1 - (64 * (w - k) + j) := by split at hnb <;> omega
-  have hbt := shl_shr63 W (t := j) (by split at hnb <;> omega)
+  have hjT : 64 * (w - k) + j < 64 * w := by split at hnb <;> omega_arith
+  have hp : 1 ≤ 64 * w - 1 - (64 * (w - k) + j) := by split at hnb <;> omega_arith
+  have hbt := shl_shr63 W (t := j) (by split at hnb <;> omega_arith)
   have hcond : ((c - 1) / 2 ^ (64 * w - 1 - (64 * (w - k) + j)) % 2 = 1) ↔
       (W.toNat.testBit (63 - j)) = true := by
-    rw [odd_sub_one_div hodd hp, div_bit_iff, hWc (63 - j) (by omega)]
-    rw [show 64 * w - 1 - (64 * (w - k) + j) = 64 * (k - 1) + (63 - j) by split at hnb <;> omega]
+    rw [odd_sub_one_div hodd hp, div_bit_iff, hWc (63 - j) (by omega_arith)]
+    rw [show 64 * w - 1 - (64 * (w - k) + j) = 64 * (k - 1) + (63 - j) by split at hnb <;> omega_arith]
   obtain ⟨hpow, hpre⟩ := mr_step (c := c) (b := b) (T := 64 * w) (j := 64 * (w - k) + j) false hjT hcond
-  refine WP.mono (mrExpBit_ok M hd hI.ctx hodd hc1 hI.y hI.v hbt hI.flag hI.bits (by omega) (by split at hnb <;> omega))
-    fun t ⟨hct, hyt, hft, hvt, hbt', hz, hfr, kt⟩ => ⟨by rw [hz, decide_eq_decide.mpr (show nb - j - 1 = 0 ↔ j + 1 = nb by omega)], ?_⟩
+  refine WP.mono (mrExpBit_ok M hd hI.ctx hodd hc1 hI.y hI.v hbt hI.flag hI.bits (by omega_arith) (by split at hnb <;> omega_arith))
+    fun t ⟨hct, hyt, hft, hvt, hbt', hz, hfr, kt⟩ => ⟨by rw [hz, decide_eq_decide.mpr (show nb - j - 1 = 0 ↔ j + 1 = nb by omega_arith)], ?_⟩
   refine ⟨hct, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [hyt, ← hpow, show 64 * (w - k) + (j + 1) = 64 * (w - k) + j + 1 by omega]
-  · rw [hft, show 64 * (w - k) + (j + 1) = 64 * (w - k) + j + 1 by omega, hpre, ← hpow]
+  · rw [hyt, ← hpow, show 64 * (w - k) + (j + 1) = 64 * (w - k) + j + 1 by omega_arith]
+  · rw [hft, show 64 * (w - k) + (j + 1) = 64 * (w - k) + j + 1 by omega_arith, hpre, ← hpow]
   · rw [hvt, shl_succ]
-  · rw [hbt', show nb - j - 1 = nb - (j + 1) by omega]
+  · rw [hbt', show nb - j - 1 = nb - (j + 1) by omega_arith]
   · rw [hfr.word_eq (d := 8 * kWords) (by simp only [bitRanges]; rng_disj)
-    (by unfold kWords kT1 sFn; omega)]; exact hI.words
+    (by unfold kWords kT1 sFn; omega_arith)]; exact hI.words
   · exact hI.frm.trans (hfr.mono fun r hr => List.mem_append_left _ hr)
   · exact (hI.keep.trans kt).mono (by decide)
 
@@ -73,8 +73,8 @@ theorem mrBits_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c b k nb :
     (hWc : ∀ u < 64, W.toNat.testBit u = c.testBit (64 * (k - 1) + u))
     (h0 : BitInv B Z w mi c b k nb W s₀ 0 s) :
     WP isa (.loop (seqs (mrExpBit M.mm)) .ne) s (BitInv B Z w mi c b k nb W s₀ nb) := by
-  have hnb1 : 1 ≤ nb := by split at hnb <;> omega
-  exact wp_upto (a := 0) (N := nb) (by omega) (BitInv B Z w mi c b k nb W s₀)
+  have hnb1 : 1 ≤ nb := by split at hnb <;> omega_arith
+  exact wp_upto (a := 0) (N := nb) (by omega_arith) (BitInv B Z w mi c b k nb W s₀)
     (fun j _ hj s hI => mrBitStep_ok M hd hodd hc1 hk hkw hnb hWc hj hI) (fun _ h => h) h0
 
 /-- The start of a word: `kWords := k − 1`, its word into `kV`, its number
@@ -89,25 +89,25 @@ theorem wordHead_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Go
         (BitVec.ofNat 64 (if k = 1 then 63 else 64)) ∧ Keep [.rax, .rcx, .rdx] s t := by
   have hn := hg.scr.nowrap
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_arith)
   have hs : ∀ i < 32, InRegions s.wr (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.st (by have := hdr_lt_slot w 8 hi; omega)
+    hg.scr.st (by have := hdr_lt_slot w 8 hi; omega_arith)
   have sN := Nat.le_trans (slot_le (w := w) (show aN < 8 by decide)) hZ
   refine WP.mono (WP.keep [.rax, .rcx, .rdx] (Q := fun t => t.mem = ((s.mem.writeW (off B (8 * kWords))
       (BitVec.ofNat 64 (k - 1))).writeW (off B (8 * kV)) (word s.mem B (slot w aN + 8 * (k - 1)))).writeW
       (off B (8 * kBits)) (BitVec.ofNat 64 (if k = 1 then 63 else 64))) (by
     xrun [State.ea, hdr, ix, hg.rdi, hdrOff, hl kWords (by decide), hl (sArr aN) (by decide), hs kWords (by decide),
-      hs kV (by decide), hs kBits (by decide), hK, ofNat64_pred hk (by omega),
+      hs kV (by decide), hs kBits (by decide), hK, ofNat64_pred hk (by omega_arith),
       fun X => (hdrStore_hdr s.mem B X (show kWords < 32 by decide) (show sArr aN < 32 by decide) (by decide)).trans
         (hg.hdr.harr aN (by decide)),
-      addr0 rfl rfl, hg.scr.ld (d := slot w aN + 8 * (k - 1)) (by omega),
-      fun X => (writeW_outside s.mem B X (d := 8 * kWords) (by unfold kWords kT1 sFn; omega)).word
-        (d := slot w aN + 8 * (k - 1)) (Or.inr (by unfold slot kWords kT1 sFn aN hdrBytes; omega)) (by omega)]
+      addr0 rfl rfl, hg.scr.ld (d := slot w aN + 8 * (k - 1)) (by omega_arith),
+      fun X => (writeW_outside s.mem B X (d := 8 * kWords) (by unfold kWords kT1 sFn; omega_arith)).word
+        (d := slot w aN + 8 * (k - 1)) (Or.inr (by unfold slot kWords kT1 sFn aN hdrBytes; omega_arith)) (by omega_arith)]
     congr 1
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), show BitVec.toNat (1 : BitVec 64) = 1 from rfl]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith), show BitVec.toNat (1 : BitVec 64) = 1 from rfl]
     by_cases h1 : k = 1
     · simp only [h1, Nat.sub_self, Nat.zero_lt_one, decide_true, ↓reduceIte]; decide
-    · simp only [h1, show ¬ (k - 1 < 1) by omega, decide_false, ↓reduceIte]; decide) rfl)
+    · simp only [h1, show ¬ (k - 1 < 1) by omega_arith, decide_false, ↓reduceIte]; decide) rfl)
     fun t ⟨hm, k⟩ => ⟨hm, k⟩
 
 /-- After `j` of the `w` words. -/
@@ -137,15 +137,15 @@ theorem wordStart_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c b : Nat} {s₀ s
   have hg := hI.ctx.good
   have hZ := hd.z
   have hw4 := hd.w4
-  have hw' : w < 2 ^ 31 := by have := hd.w64; omega
+  have hw' : w < 2 ^ 31 := by have := hd.w64; omega_arith
   have hn := hg.scr.nowrap
-  refine WP.mono (wordHead_ok hg hZ (k := w - j) (by omega) (by omega) hw' hI.words) fun s₁ ⟨hm₁, k₁⟩ => ?_
+  refine WP.mono (wordHead_ok hg hZ (k := w - j) (by omega_arith) (by omega_arith) hw' hI.words) fun s₁ ⟨hm₁, k₁⟩ => ?_
   have hf₁ : Frm B (expRanges w) s.mem s₁.mem := by
     rw [hm₁]
-    exact ((Frm.of_outside (writeW_outside _ B _ (d := 8 * kWords) (by unfold kWords kT1 sFn; omega))
+    exact ((Frm.of_outside (writeW_outside _ B _ (d := 8 * kWords) (by unfold kWords kT1 sFn; omega_arith))
       (expRanges_hdr w (Or.inl rfl))).trans (Frm.of_outside (writeW_outside _ B _ (d := 8 * kV)
-        (by unfold kV kT0 sFn; omega)) (expRanges_hdr w (Or.inr (Or.inl rfl))))).trans
-      (Frm.of_outside (writeW_outside _ B _ (d := 8 * kBits) (by unfold kBits kT2 sFn; omega))
+        (by unfold kV kT0 sFn; omega_arith)) (expRanges_hdr w (Or.inr (Or.inl rfl))))).trans
+      (Frm.of_outside (writeW_outside _ B _ (d := 8 * kBits) (by unfold kBits kT2 sFn; omega_arith))
         (expRanges_hdr w (Or.inr (Or.inr (Or.inl rfl)))))
   have hs₁ := hg.scr.congr k₁.2.2
   have hdi₁ : s₁.gpr .rdi = B := (k₁.gpr (by decide)).trans hg.rdi
@@ -155,18 +155,18 @@ theorem wordStart_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c b : Nat} {s₀ s
     (by simp only [expRanges, bitRanges, List.cons_append, List.nil_append]; rng_disj)
     (by simp only [expRanges, bitRanges, List.cons_append, List.nil_append]; rng_disj)
   refine ⟨⟨hc₁, ?_, ?_, ?_, ?_, ?_, hI.frm.trans hf₁, (hI.keep.trans k₁).mono (by decide)⟩, fun u hu => ?_⟩
-  · rw [hm₁, hdrStore_wv _ _ _ (by decide) (by decide) (by omega), hdrStore_wv _ _ _ (by decide) (by decide) (by omega),
-      hdrStore_wv _ _ _ (by decide) (by decide) (by omega), hI.y,
-      show min (64 * j) (64 * w - 1) = 64 * (w - (w - j)) + 0 by omega]
+  · rw [hm₁, hdrStore_wv _ _ _ (by decide) (by decide) (by omega_arith), hdrStore_wv _ _ _ (by decide) (by decide) (by omega_arith),
+      hdrStore_wv _ _ _ (by decide) (by decide) (by omega_arith), hI.y,
+      show min (64 * j) (64 * w - 1) = 64 * (w - (w - j)) + 0 by omega_arith]
   · rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
       hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), hI.flag,
-      show min (64 * j) (64 * w - 1) = 64 * (w - (w - j)) + 0 by omega]
+      show min (64 * j) (64 * w - 1) = 64 * (w - (w - j)) + 0 by omega_arith]
   · rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self, BitVec.shiftLeft_zero]
   · rw [hm₁, word_writeW_self, Nat.sub_zero]
   · rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
       word_writeW_self]
-  · rw [← hI.ctx.n, testBit_wv s.mem B (slot w aN) w _ (by omega), show (64 * (w - j - 1) + u) / 64 = w - j - 1 by omega,
-      show (64 * (w - j - 1) + u) % 64 = u by omega]
+  · rw [← hI.ctx.n, testBit_wv s.mem B (slot w aN) w _ (by omega_arith), show (64 * (w - j - 1) + u) / 64 = w - j - 1 by omega_arith,
+      show (64 * (w - j - 1) + u) % 64 = u by omega_arith]
 
 /-- The end of word `w − 1 − j`: ZF set after the last. -/
 theorem wordEnd_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c b : Nat} {W : BitVec 64} {s₀ s : State}
@@ -177,20 +177,20 @@ theorem wordEnd_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c b : Nat} {W : BitV
   have hg₂ := hB.ctx.good
   have hn := hg₂.scr.nowrap
   have hZ := hd.z
-  have hw' : w < 2 ^ 31 := by have := hd.w64; omega
+  have hw' : w < 2 ^ 31 := by have := hd.w64; omega_arith
   have hl : InRegions (s.rd ++ s.wr) (off B (8 * kWords)) 8 :=
-    hg₂.scr.ld (by have := hdr_lt_slot w 8 (show kWords < 32 by decide); omega)
+    hg₂.scr.ld (by have := hdr_lt_slot w 8 (show kWords < 32 by decide); omega_arith)
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.zf = some (decide (j + 1 = w)) ∧ t.mem = s.mem) (by
-    xrun [State.ea, hdr, hg₂.rdi, hdrOff, hl, hB.words, BitVec.and_self, ofNat64_beq_zero (show w - j - 1 < 2 ^ 64 by omega)]
-    exact decide_eq_decide.mpr (by omega)) rfl) fun t ⟨⟨hz, hm⟩, k⟩ => ⟨hz, ?_⟩
+    xrun [State.ea, hdr, hg₂.rdi, hdrOff, hl, hB.words, BitVec.and_self, ofNat64_beq_zero (show w - j - 1 < 2 ^ 64 by omega_arith)]
+    exact decide_eq_decide.mpr (by omega_arith)) rfl) fun t ⟨⟨hz, hm⟩, k⟩ => ⟨hz, ?_⟩
   have e : 64 * (w - (w - j)) + (if w - j = 1 then 63 else 64) = min (64 * (j + 1)) (64 * w - 1) := by
-    split <;> omega
+    split <;> omega_arith
   refine ⟨?_, ?_, ?_, ?_, by rw [hm]; exact hB.frm, (hB.keep.trans k).mono (by decide)⟩
   · exact hB.ctx.of_frm hd (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (hg₂.scr.congr k.2.2)
       ((k.gpr (by decide)).trans hg₂.rdi) (by simp) (by simp) (by simp) (by simp) (by simp)
   · rw [hm, hB.y, e]
   · rw [hm, hB.flag, e]
-  · rw [hm, hB.words, show w - j - 1 = w - (j + 1) by omega]
+  · rw [hm, hB.words, show w - j - 1 = w - (j + 1) by omega_arith]
 
 /-- One word of the exponentiation. -/
 theorem mrWord_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c b : Nat} {s₀ s : State}
@@ -204,7 +204,7 @@ theorem mrWord_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c b : Nat}
       t.zf = some (decide (j + 1 = w)) ∧ WordInv B Z w mi c b s₀ (j + 1) t := by
   simp only [seqs]
   refine WP.seq (WP.mono (wordStart_ok hd hj hI) fun s₁ ⟨hB0, hWc⟩ => ?_)
-  exact WP.seq (WP.mono (mrBits_ok M hd hodd hc1 (by omega) (by omega) rfl hWc hB0) fun s₂ hB => wordEnd_ok hd hj hB)
+  exact WP.seq (WP.mono (mrBits_ok M hd hodd hc1 (by omega_arith) (by omega_arith) rfl hWc hB0) fun s₂ hB => wordEnd_ok hd hj hB)
 
 /-- The start of the exponentiation: `kWords := w`, the flag clear. -/
 theorem expStart_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c b : Nat} {s : State}
@@ -216,20 +216,20 @@ theorem expStart_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c b : Nat} {s : Sta
   have hZ := hd.z
   have hw4 := hd.w4
   have hn := hg.scr.nowrap
-  have hcT : c - 1 < 2 ^ (64 * w) := by rw [← hc.n]; have := wv_lt s.mem B (slot w aN) w; omega
+  have hcT : c - 1 < 2 ^ (64 * w) := by rw [← hc.n]; have := wv_lt s.mem B (slot w aN) w; omega_arith
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_arith)
   have hs : ∀ i < 32, InRegions s.wr (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.st (by have := hdr_lt_slot w 8 hi; omega)
+    hg.scr.st (by have := hdr_lt_slot w 8 hi; omega_arith)
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = (s.mem.writeW (off B (8 * kWords))
       (BitVec.ofNat 64 w)).writeW (off B (8 * kFlag)) (mask false)) (by
     xrun [State.ea, hdr, hg.rdi, hdrOff, hl sW (by decide), hs kWords (by decide), hs kFlag (by decide), hg.hdr.hw]
     rfl) rfl) fun s₁ ⟨hm₁, k₁⟩ => ?_
   have hf₁ : Frm B (expRanges w) s.mem s₁.mem := by
     rw [hm₁]
-    exact (Frm.of_outside (writeW_outside _ B _ (d := 8 * kWords) (by unfold kWords kT1 sFn; omega))
+    exact (Frm.of_outside (writeW_outside _ B _ (d := 8 * kWords) (by unfold kWords kT1 sFn; omega_arith))
       (expRanges_hdr w (Or.inl rfl))).trans (Frm.of_outside (writeW_outside _ B _ (d := 8 * kFlag)
-        (by unfold kFlag kPlen sFn; omega)) (expRanges_hdr w (Or.inr (Or.inr (Or.inr rfl)))))
+        (by unfold kFlag kPlen sFn; omega_arith)) (expRanges_hdr w (Or.inr (Or.inr (Or.inr rfl)))))
   have hs₁ := hg.scr.congr k₁.2.2
   refine ⟨hc.of_frm hd hf₁ hs₁ ((k₁.gpr (by decide)).trans hg.rdi)
     (by simp only [expRanges, bitRanges, List.cons_append, List.nil_append]; rng_disj)
@@ -238,9 +238,9 @@ theorem expStart_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c b : Nat} {s : Sta
     (by simp only [expRanges, bitRanges, List.cons_append, List.nil_append]; rng_disj)
     (by simp only [expRanges, bitRanges, List.cons_append, List.nil_append]; rng_disj), ?_, ?_, ?_, hf₁,
     k₁.mono (by decide)⟩
-  · rw [hm₁, hdrStore_wv _ _ _ (by decide) (by decide) (by omega), hdrStore_wv _ _ _ (by decide) (by decide) (by omega),
-      hY, show min (64 * 0) (64 * w - 1) = 0 by omega, mrPow_zero hcT hc1, Nat.one_mul]
-  · rw [hm₁, word_writeW_self, show min (64 * 0) (64 * w - 1) = 0 by omega]; rfl
+  · rw [hm₁, hdrStore_wv _ _ _ (by decide) (by decide) (by omega_arith), hdrStore_wv _ _ _ (by decide) (by decide) (by omega_arith),
+      hY, show min (64 * 0) (64 * w - 1) = 0 by omega_arith, mrPow_zero hcT hc1, Nat.one_mul]
+  · rw [hm₁, word_writeW_self, show min (64 * 0) (64 * w - 1) = 0 by omega_arith]; rfl
   · rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self, Nat.sub_zero]
 
 /-- The exponentiation: from `y = 1` (`R mod c` in `aY`), `y` and the flag
@@ -256,9 +256,9 @@ theorem mrExpLoop_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c b : N
   unfold mrExpLoop
   simp only [seqs]
   refine WP.seq (WP.mono (expStart_ok hd hc hc1 hY) fun s₁ hI0 => ?_)
-  refine wp_upto (a := 0) (N := w) (by omega) (WordInv B Z w mi c b s) (fun j _ hj t hI => mrWord_ok M hd hodd hc1 hj hI)
+  refine wp_upto (a := 0) (N := w) (by omega_arith) (WordInv B Z w mi c b s) (fun j _ hj t hI => mrWord_ok M hd hodd hc1 hj hI)
     (fun t hI => ?_) hI0
-  have e : min (64 * w) (64 * w - 1) = 64 * w - 1 := by omega
+  have e : min (64 * w) (64 * w - 1) = 64 * w - 1 := by omega_arith
   exact ⟨hI.ctx, by rw [hI.y, e], by rw [hI.flag, e], hI.frm, hI.keep⟩
 
 end VG.Proof.RsaKeyGen.X86_64

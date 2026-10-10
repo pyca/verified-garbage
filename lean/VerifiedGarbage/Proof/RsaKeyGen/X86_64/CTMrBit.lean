@@ -57,11 +57,11 @@ theorem bitW_mm (M : Mont) {q : BPub} {s : State} (h : BitW q s) {o a b : Nat} (
     (hB : wv s.mem q.p.B (slot q.p.w b) q.p.w < wv s.mem q.p.B (slot q.p.w aN) q.p.w) :
     WP isa (M.mm o a b) s fun t => BitW q t := by
   obtain ⟨hk, hp, hd, mi, c, bm, hc, hodd, hc1, hy⟩ := h
-  have hw' : q.p.w < 2 ^ 31 := by have := hd.w64; omega
+  have hw' : q.p.w < 2 ^ 31 := by have := hd.w64; omega_arith
   have ho8 : o < 8 := by rcases ho with rfl | rfl <;> decide
   have d1 : o ≠ aAcc := by rcases ho with rfl | rfl <;> decide
   have d2 : o ≠ aTmp := by rcases ho with rfl | rfl <;> decide
-  refine WP.mono (M.mm_ok hc.good hd.z (by have := hd.w4; omega) hw' ho8 ha hb d1 d2 d3 d4 hc.inv hB d5 d6)
+  refine WP.mono (M.mm_ok hc.good hd.z (by have := hd.w4; omega_arith) hw' ho8 ha hb d1 d2 d3 d4 hc.inv hB d5 d6)
     fun t ⟨hg, hlt, _, ha', k⟩ => ?_
   have hrs : ∀ j ∈ [aAcc, aTmp, o], (slot q.p.w j, 8 * (q.p.w + 2)) ∈ [(slot q.p.w aAcc, 8 * (q.p.w + 2)),
       (slot q.p.w aTmp, 8 * (q.p.w + 2)), (slot q.p.w o, 8 * (q.p.w + 2))] := by simp
@@ -72,7 +72,7 @@ theorem bitW_mm (M : Mont) {q : BPub} {s : State} (h : BitW q s) {o a b : Nat} (
   rcases ho with rfl | rfl
   · rw [← hc.n]; exact hlt
   · rw [hf.wv_eq (d := slot q.p.w aY) (k := q.p.w) (by rng_disj)
-      (by have := hc.good.scr.nowrap; have := slot_le (w := q.p.w) (show aY < 8 by decide); have := hd.z; omega)]
+      (by have := hc.good.scr.nowrap; have := slot_le (w := q.p.w) (show aY < 8 by decide); have := hd.z; omega_arith)]
     exact hy
 
 theorem shr63_bool (V : BitVec 64) : ∃ bt : Bool, V >>> 63 = BitVec.ofNat 64 bt.toNat := by
@@ -80,7 +80,7 @@ theorem shr63_bool (V : BitVec 64) : ∃ bt : Bool, V >>> 63 = BitVec.ofNat 64 b
   have := V.isLt
   by_cases hb : V.toNat / 2 ^ 63 = 1
   · exact ⟨true, BitVec.eq_of_toNat_eq (by rw [h, hb]; rfl)⟩
-  · exact ⟨false, BitVec.eq_of_toNat_eq (by rw [h]; show _ = 0; omega)⟩
+  · exact ⟨false, BitVec.eq_of_toNat_eq (by rw [h]; show _ = 0; omega_arith)⟩
 
 /-- The selection keeps `BitW`, with a factor below `c`. -/
 theorem bitW_sel {q : BPub} {s : State} (h : BitW q s) :
@@ -94,29 +94,29 @@ theorem bitW_sel {q : BPub} {s : State} (h : BitW q s) :
   have hg := hc.good
   have hZ := hd.z
   have hXZ := hd.x
-  have hw' : q.p.w < 2 ^ 31 := by have := hd.w64; omega
+  have hw' : q.p.w < 2 ^ 31 := by have := hd.w64; omega_arith
   have hn := hg.scr.nowrap
   obtain ⟨bt, hbt⟩ := shr63_bool (word s.mem q.p.B (8 * kV))
   refine WP.seq (WP.mono (bitSel_ok hg hZ hw' rfl hbt) fun s₂ ⟨h15, h12, hbx, h8, hsi, hm₂, k₂⟩ => ?_)
   have hs₂ := hg.scr.congr k₂.2.2
-  refine WP.mono (selLoop_ok hs₂ h8 hsi hbx h15 h12 (by have := hd.w4; omega) hw'
-    (by unfold slot aB aRm1 at *; omega) (by unfold slot aR1 aRm1 at *; omega)
-    (by have := slot_le (w := q.p.w) (show aXm < 8 by decide); omega)
-    (Or.inl (by unfold slot aXm aB; omega)) (Or.inl (by unfold slot aXm aR1; omega)))
+  refine WP.mono (selLoop_ok hs₂ h8 hsi hbx h15 h12 (by have := hd.w4; omega_arith) hw'
+    (by unfold slot aB aRm1 at *; omega_arith) (by unfold slot aR1 aRm1 at *; omega_arith)
+    (by have := slot_le (w := q.p.w) (show aXm < 8 by decide); omega_arith)
+    (Or.inl (by unfold slot aXm aB; omega_arith)) (Or.inl (by unfold slot aXm aR1; omega_arith)))
     fun t ⟨hv, hst, ho, k⟩ => ?_
   have hdi : t.gpr .rdi = q.p.B := (k.gpr (by decide)).trans ((k₂.gpr (by decide)).trans hg.rdi)
   have hf : Frm q.p.B [(slot q.p.w aXm, 8 * (q.p.w + 2))] s.mem t.mem := by
-    rw [← hm₂]; exact Frm.of_outside (ho.mono (o' := slot q.p.w aXm) (n' := 8 * (q.p.w + 2)) (Nat.le_refl _) (by omega))
+    rw [← hm₂]; exact Frm.of_outside (ho.mono (o' := slot q.p.w aXm) (n' := 8 * (q.p.w + 2)) (Nat.le_refl _) (by omega_arith))
       (by simp)
   have hgt : Good t q.p.B q.p.Z q.p.w mi := ⟨hst, hdi, Hdr.of_frm hg.hdr hf (by rng_le)⟩
   have hc' := hc.of_frm hd hf hst hdi (by rng_le) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj)
   refine ⟨⟨hk, hp.frm hf (by rng_le) q.vs_lt hdi (k.2.2.trans k₂.2.2), hd, mi, c, bm, hc', hodd, hc1, ?_⟩, ?_⟩
   · rw [hf.wv_eq (d := slot q.p.w aY) (k := q.p.w) (by rng_disj)
-      (by have := slot_le (w := q.p.w) (show aY < 8 by decide); omega)]
+      (by have := slot_le (w := q.p.w) (show aY < 8 by decide); omega_arith)]
     exact hy
-  · have hc0 : 0 < c := by omega
-    rw [hv, hm₂, hc'.n, ← hf.wv_eq (d := slot q.p.w aB) (k := q.p.w) (by rng_disj) (by unfold slot aB aRm1 at *; omega),
-      ← hf.wv_eq (d := slot q.p.w aR1) (k := q.p.w) (by rng_disj) (by unfold slot aR1 aRm1 at *; omega), hc'.b, hc'.r1]
+  · have hc0 : 0 < c := by omega_arith
+    rw [hv, hm₂, hc'.n, ← hf.wv_eq (d := slot q.p.w aB) (k := q.p.w) (by rng_disj) (by unfold slot aB aRm1 at *; omega_arith),
+      ← hf.wv_eq (d := slot q.p.w aR1) (k := q.p.w) (by rng_disj) (by unfold slot aR1 aRm1 at *; omega_arith), hc'.b, hc'.r1]
     cases bt
     · exact Nat.mod_lt _ hc0
     · exact Nat.mod_lt _ hc0

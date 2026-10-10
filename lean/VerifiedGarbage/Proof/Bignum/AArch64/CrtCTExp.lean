@@ -79,8 +79,8 @@ theorem selBody_ct : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 16 ∧ SelI
     have hn := hs.nowrap
     have hT0 := slot_le (w := q.1.wx) (show Crt.aT < 8 by decide)
     have hE := ent_le q.1.wx hj
-    have hTE := slot_sep (w := q.1.wx) (show Crt.aT ≠ 8 + q.2 by unfold Crt.aT; omega)
-    exact WP.mono (selLoop_ok hs h16 h17 h14 h15 (by omega) (by omega) (by omega) (by omega) (by omega))
+    have hTE := slot_sep (w := q.1.wx) (show Crt.aT ≠ 8 + q.2 by unfold Crt.aT; omega_arith)
+    exact WP.mono (selLoop_ok hs h16 h17 h14 h15 (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
       fun t ⟨_, _, k⟩ => (k.gpr .x0 (by decide)).trans h0
   -- The next entry, and the index.
   exact x0_ct (fun q : XPub × Nat => off q.1.B q.1.o) (fun _ _ h => h) (by taint_decide)
@@ -165,7 +165,7 @@ theorem winMid_ct : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s) (.bloc
     fun q s h => ?_
   obtain ⟨minv, X, Xc, V, hc, htab, hY, hV, hV', hw, hw', hR⟩ := h
   have hn := hc.scrT.nowrap
-  refine WP.mono (winMid_ok hc hV (by omega)) fun t ⟨hm, k⟩ => ?_
+  refine WP.mono (winMid_ok hc hV (by omega_arith)) fun t ⟨hm, k⟩ => ?_
   have o1 := writeW_outside s.mem (off q.1.B q.1.o) (d := 8 * Crt.sV) (BitVec.ofNat 64 (16 * V)) (by decide)
   have o2 := writeW_outside (s.mem.writeW (off (off q.1.B q.1.o) (8 * Crt.sV)) (BitVec.ofNat 64 (16 * V)))
     (off q.1.B q.1.o) (d := 8 * Crt.sNib) (BitVec.ofNat 64 (V / 16 % 16)) (by decide)
@@ -176,8 +176,8 @@ theorem winMid_ct : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s) (.bloc
   have hY0 := slot_le (w := q.1.wx) (show aY < 8 by decide)
   have hYe : wv t.mem (off q.1.B q.1.o) (slot q.1.wx aY) q.1.wx =
       wv s.mem (off q.1.B q.1.o) (slot q.1.wx aY) q.1.wx := by
-    rw [o2.wv (by have := hdr_lt_slot q.1.wx aY (show Crt.sNib < 32 by decide); omega) (by omega),
-      o1.wv (by have := hdr_lt_slot q.1.wx aY (show Crt.sV < 32 by decide); omega) (by omega)]
+    rw [o2.wv (by have := hdr_lt_slot q.1.wx aY (show Crt.sNib < 32 by decide); omega_arith) (by omega_arith),
+      o1.wv (by have := hdr_lt_slot q.1.wx aY (show Crt.sV < 32 by decide); omega_arith) (by omega_arith)]
   exact ⟨⟨minv, X, Xc, V / 16 % 16, hc', hw, hw', Nat.mod_lt _ (by decide), by
       rw [hm, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
         hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)]; exact htab.tab,
@@ -201,8 +201,8 @@ theorem crtWin_ct (M : Mont) :
       (fun _ _ ⟨_, _, _, _, _, _, _, hI, _⟩ => ⟨_, hI.ctx.good, Nat.le_refl _⟩)
       (M.ct (by unfold MmUse; decide))) fun q s ⟨_, t₀, minv, X, Xc, E, v, hI, hw, hw', hR, hXN, hv⟩ => by
         have hp : v * 16 ^ q.2 < 2 ^ 56 := by
-          have : 16 ^ q.2 ≤ 16 := by rcases (show q.2 = 0 ∨ q.2 = 1 by omega) with h | h <;> rw [h] <;> decide
-          have := Nat.mul_le_mul_left v this; omega
+          have : 16 ^ q.2 ≤ 16 := by rcases (show q.2 = 0 ∨ q.2 = 1 by omega_arith) with h | h <;> rw [h] <;> decide
+          have := Nat.mul_le_mul_left v this; omega_arith
         exact winSq_q M ⟨minv, X, Xc, _, hI.ctx, hI.tab, hI.ylt, hI.v, hp, hw, hw', hR⟩
   refine RelCT.seq (R := Two fun (q : XPub × Nat) s => WinS q.1 s) ?_ ?_
   · simp only [seqs]
@@ -220,7 +220,7 @@ theorem crtWin_ct (M : Mont) :
     (two_map (fun q : XPub × Nat => q.1.ws) (fun _ _ ⟨minv, _, _, hc, _⟩ => ⟨minv, hc.good, Nat.le_refl _⟩)
       (M.ct (o := aY) (a := aY) (b := Crt.aT) (by unfold MmUse; decide)))
     fun q s ⟨minv, X, Xc, hc, hT, hw, hw'⟩ => ?_) ?_
-  · exact WP.mono (M.mm_ok (o := aY) (a := aY) (b := Crt.aT) hc.good (Nat.le_refl _) hw (by omega)
+  · exact WP.mono (M.mm_ok (o := aY) (a := aY) (b := Crt.aT) hc.good (Nat.le_refl _) hw (by omega_arith)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv
       (by rw [hc.n]; exact hT)) fun t ⟨hg, _⟩ => hg.x0
   exact x0_ct (fun q : XPub × Nat => off q.1.B q.1.o) (fun _ _ h => h) (by taint_decide)
@@ -282,7 +282,7 @@ theorem byteAddr_ok {q : BPub × Nat} {s : State} (h : q.2 < q.1.len ∧ CBytesI
     WP isa (.block byteAddr) s (CHeadMid q) := by
   obtain ⟨hi, t₀, minv, X, Xc, eb, hI, hw, hw', hR, hXN, hL, -, he, hout⟩ := h
   have hc := hI.ctx
-  have hi' : q.2 < eb.length := by omega
+  have hi' : q.2 < eb.length := by omega_arith
   have hw₁ := WP.block_append_iff.mp (crtByteHead_eq ▸ crtByteHead_ok rfl hi' he.rd he.val hout hI)
   refine WP.mono (wp_and hw₁ (byteAddr_run hc hI.e hI.idx)) fun t ⟨h₂, h3, k⟩ =>
       ⟨(k.gpr .x0 (by decide)).trans hc.good.x0, h3, WP.mono h₂ fun t' ⟨_, _, hB⟩ =>
@@ -379,7 +379,7 @@ theorem buildBody_ct (M : Mont) :
       (M.ct (o := Crt.aT) (a := Crt.aT) (b := Crt.aXc) (by unfold MmUse; decide)))
       fun q s ⟨hi, t₀, minv, X, Xc, hI, hw, hw', hR, hXN⟩ => ?_
     have hc := hI.ctx
-    refine WP.mono (M.mm_ok (o := Crt.aT) (a := Crt.aT) (b := Crt.aXc) hc.good (Nat.le_refl _) hw (by omega)
+    refine WP.mono (M.mm_ok (o := Crt.aT) (a := Crt.aT) (b := Crt.aXc) hc.good (Nat.le_refl _) hw (by omega_arith)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv
       (by rw [hc.x, hc.n]; exact hXN)) fun t ⟨_, _, _, ha, k⟩ => ?_
     have f : Frm (off q.1.B q.1.o) (buildRanges q.1.wx) s.mem t.mem := Frm.of_arrays ha (by simp [buildRanges])
@@ -389,7 +389,7 @@ theorem buildBody_ct (M : Mont) :
   have entPart : RelCT isa (Two BldM) nextEnt (Two fun (q : XPub × Nat) s => EntP Crt.aT (q.1, q.2 + 2) s) :=
     two_post (x0_ct (fun q : XPub × Nat => off q.1.B q.1.o) (fun _ _ h => h.1.x0) (by taint_decide))
       fun q s ⟨hx, he, hi⟩ => WP.mono (nextEnt_post hx he) fun t ⟨hx', he'⟩ =>
-        ⟨hx', he', by simp only; omega, by decide⟩
+        ⟨hx', he', by simp only; omega_arith, by decide⟩
   -- Entry `i + 2 := T`, the count.
   have restPart : RelCT isa (Two fun (q : XPub × Nat) s => EntP Crt.aT (q.1, q.2 + 2) s)
       (seqs (toEnt Crt.aT ++ [.block [ldh .x3 Crt.sBit, .subImm .x .x3 .x3 1, sth .x3 Crt.sBit]]))
@@ -417,11 +417,11 @@ theorem toEnt_post {a : Nat} {q : XPub × Nat} {s : State} (h : EntP a q s) :
   obtain ⟨⟨minv, X, Xc, hc, hXN, hw, hw'⟩, he, hj, ha⟩ := h
   have hn := hc.scrT.nowrap
   have hE := ent_le q.1.wx hj
-  have hE8 := slot_mono q.1.wx (show 8 ≤ 8 + q.2 by omega)
+  have hE8 := slot_mono q.1.wx (show 8 ≤ 8 + q.2 by omega_arith)
   refine WP.mono (toEnt_ok hc hw hw' ha hj he) fun t ⟨_, o, k⟩ => ⟨⟨minv, X, Xc, hc.of_frm
-    (Frm.of_outside (o.mono (o' := slot q.1.wx 8) (n' := tabBytes q.1.wx) hE8 (by omega)) (by simp [crtExpRanges]))
+    (Frm.of_outside (o.mono (o' := slot q.1.wx 8) (n' := tabBytes q.1.wx) hE8 (by omega_arith)) (by simp [crtExpRanges]))
     k.wr (k.gpr .x0 (by decide)), hXN, hw, hw'⟩, fun k hk => ?_⟩
-  exact o.word (by have := hdr_lt_slot q.1.wx (8 + q.2) hk; omega) (by omega)
+  exact o.word (by have := hdr_lt_slot q.1.wx (8 + q.2) hk; omega_arith) (by omega_arith)
 
 /-- The table's first entries leak the same in runs with the same workspace. -/
 theorem tabPre_ct : RelCT isa (Two TPre) (seqs tabPre) fun _ _ => True := by
@@ -440,7 +440,7 @@ theorem tabPre_ct : RelCT isa (Two TPre) (seqs tabPre) fun _ _ => True := by
     have f : Frm (off p.B p.o) (buildRanges p.wx) s.mem t.mem :=
       (Frm.of_outside o1 (by simp [buildRanges])).trans (Frm.of_outside o2 (by simp [buildRanges]))
     exact ⟨⟨minv, X, Xc, hc.of_frm (f.mono (buildRanges_sub p.wx)) k.wr (k.gpr .x0 (by decide)), hXN, hw, hw'⟩,
-      by rw [hm, word_writeW_self]; rfl, by simp only; omega, by decide⟩
+      by rw [hm, word_writeW_self]; rfl, by simp only; omega_arith, by decide⟩
   -- `T_0 := Y`.
   refine RelCT.seqs_append (by simp [toEnt]) (by simp) (RelCT.seq (two_post
     (Ψ := fun p s => XCtx p s ∧ word s.mem (off p.B p.o) (8 * Crt.sEnt) = off (off p.B p.o) (slot p.wx (8 + 0)))
@@ -460,7 +460,7 @@ theorem tabPre_ct : RelCT isa (Two TPre) (seqs tabPre) fun _ _ => True := by
   refine RelCT.seqs_append (by simp [copyArr]) (by simp) (RelCT.seq (two_post
     (Ψ := fun p t => t.gpr .x0 = off p.B p.o) (two_map (fun p : XPub => p.ws) (fun _ _ h => h.goodW)
       (copyArr_ct (by decide) (by decide) (by taint_decide))) fun p s ⟨minv, X, Xc, hc, _, hw, hw'⟩ =>
-    WP.mono (copyArr_ok hc.good (Nat.le_refl _) (by omega) (by omega) (o := Crt.aT) (a := Crt.aXc)
+    WP.mono (copyArr_ok hc.good (Nat.le_refl _) (by omega_arith) (by omega_arith) (o := Crt.aT) (a := Crt.aXc)
       (by decide) (by decide) (by decide)) fun t ⟨_, _, k⟩ => (k.gpr .x0 (by decide)).trans hc.good.x0) ?_)
   simp only [seqs]
   exact x0_ct (fun p : XPub => off p.B p.o) (fun _ _ h => h) (by taint_decide)
@@ -509,10 +509,10 @@ theorem crtExpInit_tpre {sp sl : Nat} {a : BPub} {s : State} (h : EPre sp sl a s
   have f₁ : Frm (off a.x.B a.x.o) (crtExpRanges a.x.wx) s.mem t₁.mem :=
     ((Frm.of_outside o1 (by simp [crtExpRanges])).trans (Frm.of_outside o2 (by simp [crtExpRanges]))).trans
       (Frm.of_outside o3 (by simp [crtExpRanges]))
-  refine ⟨minv, X, _, hc₀.of_frm f₁ k₁.wr (k₁.gpr .x0 (by decide)), hxl, ?_, hw2, by omega,
+  refine ⟨minv, X, _, hc₀.of_frm f₁ k₁.wr (k₁.gpr .x0 (by decide)), hxl, ?_, hw2, by omega_arith,
     VG.Proof.Bignum.coprime_pow2 hodd _⟩
-  rw [o3.wv (by unfold Crt.sI sFn at *; omega) (by omega), o2.wv (by unfold Crt.sExpLen sFn at *; omega)
-    (by omega), o1.wv (by unfold Crt.sExp sFn at *; omega) (by omega)]
+  rw [o3.wv (by unfold Crt.sI sFn at *; omega_arith) (by omega_arith), o2.wv (by unfold Crt.sExpLen sFn at *; omega_arith)
+    (by omega_arith), o1.wv (by unfold Crt.sExp sFn at *; omega_arith) (by omega_arith)]
   exact hyl
 
 /-- `expLoop M.mm sp sl` is constant time, given that the taint analysis
@@ -547,21 +547,21 @@ theorem crtExpLoop_ct (M : Mont) {sp sl : Nat} {hc : VG.Taint.Hint VG.AArch64.Ta
     have hBn := hc.scr.nowrap
     have hi := hc.hi
     have hlo := hc.lo
-    have h256 : 256 ≤ slot a.x.wx 8 := by unfold slot hdrBytes; omega
+    have h256 : 256 ≤ slot a.x.wx 8 := by unfold slot hdrBytes; omega_arith
     have hout : ∀ i < eb.length, slot a.x.wx 8 + tabBytes a.x.wx ≤ ofs (off a.x.B a.x.o) (a.ptr + BitVec.ofNat 64 i) :=
       fun i hi' => by
         have := he.out i hi'
-        rcases ofs_rebase a.x.B (a.ptr + BitVec.ofNat 64 i) (o := a.x.o) (by omega) with ⟨_, h2⟩ | ⟨h1, _⟩
-        · omega
-        · omega
+        rcases ofs_rebase a.x.B (a.ptr + BitVec.ofNat 64 i) (o := a.x.o) (by omega_arith) with ⟨_, h2⟩ | ⟨h1, _⟩
+        · omega_arith
+        · omega_arith
     exact WP.mono (crtExpHead_ok M (Q := False) (x := 0) hc hw2 hwx hw30 hn hinv hodd hxl False.elim hyl False.elim
-      hsp hsl hep hel) fun t hI => ⟨by omega, s, minv, X, _, eb, hI, hw2, by omega,
-        VG.Proof.Bignum.coprime_pow2 hodd _, hxl, hL, by omega, he, hout⟩
+      hsp hsl hep hel) fun t hI => ⟨by omega_arith, s, minv, X, _, eb, hI, hw2, by omega_arith,
+        VG.Proof.Bignum.coprime_pow2 hodd _, hxl, hL, by omega_arith, he, hout⟩
   simp only [seqs, expBytes]
   refine (two_loop (Φ := CBytesInv) (Ψ := fun _ _ => True) (fun a => a.len) (crtByte_ct M) ?_).mono
     (fun _ _ h => h) fun _ _ _ => trivial
   rintro a i s hi ⟨t₀, minv, X, Xc, eb, hI, hw, hw', hR, hXN, hL, hL', he, hout⟩
-  exact WP.mono (crtByte_ok M hw hw' hR rfl hL' (by omega) he.rd he.val hout hI)
+  exact WP.mono (crtByte_ok M hw hw' hR rfl hL' (by omega_arith) he.rd he.val hout hI)
     fun s' ⟨hI', hz⟩ => ⟨eval_nz_count hi (by rw [← hL]; exact hz), fun _ => ⟨t₀, minv, X, Xc, eb, hI', hw, hw', hR,
       hXN, hL, hL', he, hout⟩, fun _ => trivial⟩
 

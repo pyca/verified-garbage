@@ -46,13 +46,13 @@ theorem redHead_ok {s : State} {B : Addr} {Z eA eN : Nat} (hs : Scr s B Z)
   have hl := mul_le N0 u
   have hT := T0.isLt
   have hc := addc_toNat (BitVec.ofNat 64 (N0.toNat * u.toNat)) (BitVec.ofNat 64 (N0.toNat * u.toNat / 2 ^ 64))
-    T0 (by omega)
+    T0 (by omega_arith)
   have hlow : (BitVec.ofNat 64 (N0.toNat * u.toNat) + T0).toNat = 0 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_add_mod, hu, Nat.mul_comm N0.toNat]
     exact mont_low _ _ _ hinv
   rw [hlow] at hc
   rw [Nat.mul_comm u.toNat]
-  omega
+  omega_arith
 
 /-! ## The loop -/
 
@@ -81,30 +81,30 @@ theorem redStep_ok {s₁ : State} {B : Addr} {Z w eA eN : Nat}
   have tcx : t.gpr .rcx = s₁.gpr .rcx := hI.keep.gpr (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.rax, .rdx, .rbp] (mac_ok t (src := .r10) (d := -8)
-    (addr0 t10 hI.r14) (addr0 t8 hI.r14) (addrm8 t8 hI.r14 hj1) (hI.scr.ld (by omega))
-    (hI.scr.ld (by omega)) (hI.scr.st (by omega))) rfl) fun t₁ ⟨⟨lo, hm, hv⟩, k₁⟩ => ?_
+    (addr0 t10 hI.r14) (addr0 t8 hI.r14) (addrm8 t8 hI.r14 hj1) (hI.scr.ld (by omega_arith))
+    (hI.scr.ld (by omega_arith)) (hI.scr.st (by omega_arith))) rfl) fun t₁ ⟨⟨lo, hm, hv⟩, k₁⟩ => ?_
   have t₁14 : t₁.gpr .r14 = BitVec.ofNat 64 j := (k₁.gpr (by decide)).trans hI.r14
   have t₁12 : t₁.gpr .r12 = BitVec.ofNat 64 w := (k₁.gpr (by decide)).trans t12
-  refine WP.mono (count_ok t₁ t₁14 t₁12 (by omega) (by omega)) fun t' ⟨hz, h14, hm', k'⟩ => ⟨hz, ?_⟩
+  refine WP.mono (count_ok t₁ t₁14 t₁12 (by omega_arith) (by omega_arith)) fun t' ⟨hz, h14, hm', k'⟩ => ⟨hz, ?_⟩
   have hk : Keep [.rax, .rdx, .rbp, .r14] s₁ t' := ((hI.keep.trans k₁).trans k').mono (by decide)
   have hbp : t'.gpr .rbp = t₁.gpr .rbp := k'.gpr (by decide)
   have hmem : t'.mem = t.mem.writeW (off B (eA + 8 * (j - 1))) lo := hm'.trans hm
   have hx : t.mem.readW (off B (eA + 8 * j)) 64 = word s₁.mem B (eA + 8 * j) :=
-    hI.out.word (Or.inr (by omega)) (by omega)
+    hI.out.word (Or.inr (by omega_arith)) (by omega_arith)
   have hy : t.mem.readW (off B (eN + 8 * j)) 64 = word s₁.mem B (eN + 8 * j) :=
-    hI.out.word (by omega) (by omega)
+    hI.out.word (by omega_arith) (by omega_arith)
   refine ⟨hI.scr.congr (k'.2.2.trans k₁.2.2), hk, h14, ?_, ?_⟩
   · rw [hmem]
     refine fun x hx' => ?_
-    rw [writeW_outside t.mem B lo (by omega) x (by omega)]
-    exact hI.out x (by omega)
-  · rw [hmem, show j + 1 - 1 = j - 1 + 1 by omega, wv_writeW_top _ _ _ _ _ (by omega), hbp]
+    rw [writeW_outside t.mem B lo (by omega_arith) x (by omega_arith)]
+    exact hI.out x (by omega_arith)
+  · rw [hmem, show j + 1 - 1 = j - 1 + 1 by omega_arith, wv_writeW_top _ _ _ _ _ (by omega_arith), hbp]
     simp only [wv]
     rw [hx, hy, tcx] at hv
     have hval := hI.val
     have hp : 2 ^ 64 * 2 ^ (64 * (j - 1)) = 2 ^ (64 * j) := by
-      rw [← Nat.pow_add]; congr 1; omega
-    rw [show 64 * (j - 1 + 1) = 64 * j by omega]
+      rw [← Nat.pow_add]; congr 1; omega_arith
+    rw [show 64 * (j - 1 + 1) = 64 * j by omega_arith]
     grind
 
 /-! ## The top words -/
@@ -123,14 +123,14 @@ theorem redTop_ok {t : State} {B : Addr} {Z w eA : Nat} (hs : Scr t B Z) (hw : 1
   have hn := hs.nowrap
   have hY : (t.mem.writeW (off B (eA + 8 * (w - 1))) (word t.mem B (eA + 8 * w) + t.gpr .rbp)).readW
       (off B (eA + 8 * w + 8)) 64 = word t.mem B (eA + 8 * w + 8) :=
-    (writeW_outside t.mem B _ (by omega)).word (Or.inr (by omega)) (by omega)
+    (writeW_outside t.mem B _ (by omega_arith)).word (Or.inr (by omega_arith)) (by omega_arith)
   refine WP.mono (WP.keep [.rax] (c := .block redTop) (Q := fun t' =>
     t'.mem = redTopMem t.mem B eA w (t.gpr .rbp)) ?_ rfl) fun t' ⟨h, k⟩ => ⟨h, k⟩
   unfold redTop redTopMem
   xrun [State.ea, ix, addr0 h8 h12, addr8 h8 h12, addrm8 h8 h12 hw,
-    hs.ld (show eA + 8 * w + 8 ≤ Z by omega), hs.st (show eA + 8 * w + 8 ≤ Z by omega),
-    hs.st (show eA + 8 * (w - 1) + 8 ≤ Z by omega),
-    hs.ld (show eA + 8 * w + 8 + 8 ≤ Z by omega), hs.st (show eA + 8 * w + 8 + 8 ≤ Z by omega), hY, sx0]
+    hs.ld (show eA + 8 * w + 8 ≤ Z by omega_arith), hs.st (show eA + 8 * w + 8 ≤ Z by omega_arith),
+    hs.st (show eA + 8 * (w - 1) + 8 ≤ Z by omega_arith),
+    hs.ld (show eA + 8 * w + 8 + 8 ≤ Z by omega_arith), hs.st (show eA + 8 * w + 8 + 8 ≤ Z by omega_arith), hY, sx0]
   rfl
 
 /-- The value after `redTop`, times `2⁶⁴`, if the top fits. -/
@@ -143,21 +143,21 @@ theorem redTop_val (m : Mem) (B : Addr) {Z eA w : Nat} (hn : B.toNat + Z ≤ 2 ^
   unfold redTopMem
   generalize hX : word m B (eA + 8 * w) = X at hfit
   generalize hY : word m B (eA + 8 * w + 8) = Y at hfit
-  have o1 := writeW_outside m B (X + c) (d := eA + 8 * (w - 1)) (by omega)
+  have o1 := writeW_outside m B (X + c) (d := eA + 8 * (w - 1)) (by omega_arith)
   have o2 := writeW_outside (m.writeW (off B (eA + 8 * (w - 1))) (X + c)) B
-    (Y + 0 + (BitVec.ofBool (decide (2 ^ 64 ≤ X.toNat + c.toNat))).setWidth 64) (d := eA + 8 * w) (by omega)
+    (Y + 0 + (BitVec.ofBool (decide (2 ^ 64 ≤ X.toNat + c.toNat))).setWidth 64) (d := eA + 8 * w) (by omega_arith)
   have o3 := writeW_outside ((m.writeW (off B (eA + 8 * (w - 1))) (X + c)).writeW (off B (eA + 8 * w))
     (Y + 0 + (BitVec.ofBool (decide (2 ^ 64 ≤ X.toNat + c.toNat))).setWidth 64)) B (0 : BitVec 64)
-    (d := eA + 8 * w + 8) (by omega)
-  have hc := addc_toNat X Y c (by omega)
-  have hp : 2 ^ 64 * 2 ^ (64 * (w - 1)) = 2 ^ (64 * w) := by rw [← Nat.pow_add]; congr 1; omega
-  rw [show w + 2 = w - 1 + 1 + 1 + 1 by omega, wv, wv, wv, show eA + 8 * (w - 1 + 1 + 1) = eA + 8 * w + 8 by omega,
-    show eA + 8 * (w - 1 + 1) = eA + 8 * w by omega, word_writeW_self,
-    o3.word (Or.inl (Nat.le_refl _)) (by omega), word_writeW_self,
-    o3.word (Or.inl (by omega)) (by omega), o2.word (Or.inl (by omega)) (by omega), word_writeW_self,
-    o3.wv (Or.inl (by omega)) (by omega), o2.wv (Or.inl (by omega)) (by omega),
-    o1.wv (Or.inl (Nat.le_refl _)) (by omega), show 64 * (w - 1 + 1 + 1) = 64 * w + 64 by omega,
-    show 64 * (w - 1 + 1) = 64 * w by omega, Nat.pow_add]
+    (d := eA + 8 * w + 8) (by omega_arith)
+  have hc := addc_toNat X Y c (by omega_arith)
+  have hp : 2 ^ 64 * 2 ^ (64 * (w - 1)) = 2 ^ (64 * w) := by rw [← Nat.pow_add]; congr 1; omega_arith
+  rw [show w + 2 = w - 1 + 1 + 1 + 1 by omega_arith, wv, wv, wv, show eA + 8 * (w - 1 + 1 + 1) = eA + 8 * w + 8 by omega_arith,
+    show eA + 8 * (w - 1 + 1) = eA + 8 * w by omega_arith, word_writeW_self,
+    o3.word (Or.inl (Nat.le_refl _)) (by omega_arith), word_writeW_self,
+    o3.word (Or.inl (by omega_arith)) (by omega_arith), o2.word (Or.inl (by omega_arith)) (by omega_arith), word_writeW_self,
+    o3.wv (Or.inl (by omega_arith)) (by omega_arith), o2.wv (Or.inl (by omega_arith)) (by omega_arith),
+    o1.wv (Or.inl (Nat.le_refl _)) (by omega_arith), show 64 * (w - 1 + 1 + 1) = 64 * w + 64 by omega_arith,
+    show 64 * (w - 1 + 1) = 64 * w by omega_arith, Nat.pow_add]
   rw [show (0 : BitVec 64).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero, ← hc]
   grind
 
@@ -177,7 +177,7 @@ theorem reduceRow_ok {s : State} {B : Addr} {Z w eA eN : Nat} (hs : Scr s B Z)
       Outside B eA (8 * (w + 2)) s.mem t.mem ∧ Keep [.rax, .rcx, .rdx, .rbp, .r14] s t := by
   have hn := hs.nowrap
   unfold reduceRow
-  refine WP.seq (WP.mono (redHead_ok hs h8 h10 (by omega) (by omega) hinv)
+  refine WP.seq (WP.mono (redHead_ok hs h8 h10 (by omega_arith) (by omega_arith) hinv)
     fun s₁ ⟨hm₁, hu, hc₁, k₁⟩ => ?_)
   have s₁8 : s₁.gpr .r8 = off B eA := (k₁.gpr (by decide)).trans h8
   have s₁10 : s₁.gpr .r10 = off B eN := (k₁.gpr (by decide)).trans h10
@@ -189,45 +189,45 @@ theorem reduceRow_ok {s : State} {B : Addr} {Z w eA eN : Nat} (hs : Scr s B Z)
     rw [(k.gpr (by decide) : t.gpr .rbp = s₁.gpr .rbp)]
     simp only [wv, Nat.sub_self, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero]
     rw [hc₁, hm₁]
-    omega
-  refine WP.seq (WP.mono (wordLoop_ok (start := 1) (N := w) (by omega) hw'
+    omega_arith
+  refine WP.seq (WP.mono (wordLoop_ok (start := 1) (N := w) (by omega_arith) hw'
     (RedInv s₁ B Z eA eN) h0
-    (fun j hj1 hj t hI => redStep_ok s₁8 s₁10 s₁12 (by omega) (by omega) hN (by omega) hj1 hj hI))
+    (fun j hj1 hj t hI => redStep_ok s₁8 s₁10 s₁12 (by omega_arith) (by omega_arith) hN (by omega_arith) hj1 hj hI))
     fun t hI => ?_)
   have t8 : t.gpr .r8 = off B eA := (hI.keep.gpr (by decide)).trans s₁8
   have t12 : t.gpr .r12 = BitVec.ofNat 64 w := (hI.keep.gpr (by decide)).trans s₁12
-  refine WP.mono (redTop_ok hI.scr (by omega) t8 t12 (by omega)) fun t' ⟨hm', k'⟩ => ?_
+  refine WP.mono (redTop_ok hI.scr (by omega_arith) t8 t12 (by omega_arith)) fun t' ⟨hm', k'⟩ => ?_
   have hX : word t.mem B (eA + 8 * w) = word s.mem B (eA + 8 * w) := by
-    rw [hI.out.word (Or.inr (by omega)) (by omega), hm₁]
+    rw [hI.out.word (Or.inr (by omega_arith)) (by omega_arith), hm₁]
   have hY : word t.mem B (eA + 8 * w + 8) = word s.mem B (eA + 8 * w + 8) := by
-    rw [hI.out.word (Or.inr (by omega)) (by omega), hm₁]
+    rw [hI.out.word (Or.inr (by omega_arith)) (by omega_arith), hm₁]
   have hval := hI.val
   rw [hm₁] at hval
   have hb := hbound _ (s₁.gpr .rcx).isLt
   have e2 : wv s.mem B eA (w + 2) = wv s.mem B eA w + 2 ^ (64 * w) *
       ((word s.mem B (eA + 8 * w)).toNat + 2 ^ 64 * (word s.mem B (eA + 8 * w + 8)).toNat) := by
-    rw [show w + 2 = w + 1 + 1 from rfl, wv, wv, pow64_succ, show eA + 8 * (w + 1) = eA + 8 * w + 8 by omega]
+    rw [show w + 2 = w + 1 + 1 from rfl, wv, wv, pow64_succ, show eA + 8 * (w + 1) = eA + 8 * w + 8 by omega_arith]
     grind
-  have hp : 2 ^ 64 * 2 ^ (64 * (w - 1)) = 2 ^ (64 * w) := by rw [← Nat.pow_add]; congr 1; omega
+  have hp : 2 ^ 64 * 2 ^ (64 * (w - 1)) = 2 ^ (64 * w) := by rw [← Nat.pow_add]; congr 1; omega_arith
   -- The top fits.
   have hfit : (word t.mem B (eA + 8 * w)).toNat + (t.gpr .rbp).toNat +
       2 ^ 64 * (word t.mem B (eA + 8 * w + 8)).toNat < 2 ^ 128 := by
     rw [hX, hY]
     have hlt : 2 ^ (64 * w) * ((word s.mem B (eA + 8 * w)).toNat + (t.gpr .rbp).toNat +
         2 ^ 64 * (word s.mem B (eA + 8 * w + 8)).toNat) < 2 ^ (64 * w) * 2 ^ 128 := by
-      rw [← Nat.pow_add, show 64 * w + 128 = 64 * (w + 2) by omega, Nat.mul_add, Nat.mul_add]
+      rw [← Nat.pow_add, show 64 * w + 128 = 64 * (w + 2) by omega_arith, Nat.mul_add, Nat.mul_add]
       rw [Nat.mul_add, ← Nat.mul_assoc (2 ^ 64), hp] at hval
       rw [Nat.mul_add] at e2
       omega_using [hval, hb, e2]
     exact Nat.lt_of_mul_lt_mul_left hlt
   refine ⟨?_, ?_, ((k₁.trans hI.keep).trans k').mono (by decide)⟩
-  · rw [hm', redTop_val t.mem B hn (by omega) (show eA + 8 * w + 16 ≤ Z by omega) _ hfit, hX, hY, e2, ← hu]
+  · rw [hm', redTop_val t.mem B hn (by omega_arith) (show eA + 8 * w + 16 ≤ Z by omega_arith) _ hfit, hX, hY, e2, ← hu]
     grind
   · rw [hm']
     intro x hx
     unfold redTopMem
-    rw [writeW_outside _ B _ (by omega) x (by omega), writeW_outside _ B _ (by omega) x (by omega),
-      writeW_outside _ B _ (by omega) x (by omega)]
-    exact (hI.out x (by omega)).trans (by rw [hm₁])
+    rw [writeW_outside _ B _ (by omega_arith) x (by omega_arith), writeW_outside _ B _ (by omega_arith) x (by omega_arith),
+      writeW_outside _ B _ (by omega_arith) x (by omega_arith)]
+    exact (hI.out x (by omega_arith)).trans (by rw [hm₁])
 
 end VG.Proof.Bignum.X86_64

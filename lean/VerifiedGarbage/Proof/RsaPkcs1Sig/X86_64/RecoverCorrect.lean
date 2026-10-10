@@ -32,9 +32,9 @@ theorem Env.of {s t u : State} (he : Env s t) (hp : PreR s) (hsp : u.gpr .rsp = 
   have hsl : ∀ {d}, 32 ≤ d → d + 8 ≤ oEM1 → word u.mem (fb s) d = word t.mem (fb s) d := fun hd hd' =>
     slot_keep hf fun r hr => by
       rcases hs r hr with ⟨d', n, rfl, h₁, h₂⟩ | rfl
-      · exact Offset.disjoint _ (.inl (by omega)) (by unfold frameBytes at *; omega)
-          (by unfold frameBytes at *; omega)
-      · exact (hp.dKo.sub_left (frame_sub s (by unfold oEM1 frameBytes at *; omega)))
+      · exact Offset.disjoint _ (.inl (by omega_arith)) (by unfold frameBytes at *; omega_arith)
+          (by unfold frameBytes at *; omega_arith)
+      · exact (hp.dKo.sub_left (frame_sub s (by unfold oEM1 frameBytes at *; omega_arith)))
   refine ⟨hsp.trans he.rsp, hrd.trans he.rd, hwr.trans he.wr, frame_call he.mem hf fun r hr => ?_,
     (hsl (by decide) (by decide)).trans he.sOut, (hsl (by decide) (by decide)).trans he.sOl,
     (hsl (by decide) (by decide)).trans he.sN, (hsl (by decide) (by decide)).trans he.sK,
@@ -55,12 +55,12 @@ theorem frame_bytes' {s : State} {d n : Nat} (hp : PreR s) (h : d + n ≤ frameB
   intro i hi
   refine ⟨_, List.mem_cons_self .., ?_⟩
   rw [show off (fb s) d + BitVec.ofNat 64 i = off (fb s) (d + i) from off_off _ _ _]
-  exact Offset.contains_base _ (by omega) (by unfold frameBytes at *; omega)
+  exact Offset.contains_base _ (by omega_arith) (by unfold frameBytes at *; omega_arith)
 
 /-- `out` is writable. -/
 theorem out_wr {s : State} {wr : List Region} (hwr : outR s ∈ wr) :
     ∀ i < (s.gpr .rsi).toNat, InRegions wr (s.gpr .rdi + BitVec.ofNat 64 i) 1 := fun i hi =>
-  ⟨_, hwr, Offset.contains_base _ (by omega) (by omega)⟩
+  ⟨_, hwr, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
 
 /-! ## Zeros to `out` -/
 
@@ -94,14 +94,14 @@ theorem zeroSlots_ok {s t : State} (hp : PreR s) (he : Env s t) :
     xrun [ea_sp, he.rsp, hs.ld (d := oOut) (by decide), hs.ld (d := oOl) (by decide), he.sOut, he.sOl]) rfl)
     fun t₁ ⟨⟨hm₁, hdi, hsi⟩, k₁⟩ => ?_)
   have hwr : outR s ∈ t₁.wr := by rw [k₁.2.2, he.wr, hp.hwr]; simp [outR]
-  refine WP.mono (zeroOut_ok (n := (s.gpr .rsi).toNat) (by omega) (by omega) (by rw [hsi, ofNat_toNat64])
+  refine WP.mono (zeroOut_ok (n := (s.gpr .rsi).toNat) (by omega_arith) (by omega_arith) (by rw [hsi, ofNat_toNat64])
     (by rw [hdi]; exact out_wr hwr)) fun u ⟨hK, hm, hax⟩ => ⟨?_, ?_, ?_⟩
   · refine Env.of (he.regs (k₁.gpr (by decide)) hm₁ k₁.2.1 k₁.2.2) hp (hK.gpr (by decide)) hK.2.1 hK.2.2
       (hm ▸ frame_writeBytes _ _ _) fun r hr => .inr ?_
     rw [List.mem_singleton.mp hr, hdi, List.length_replicate]; rfl
   · rw [hax]; rfl
   · rw [hm, hdi]
-    have := bytesAt_writeBytes t₁.mem (s.gpr .rdi) (List.replicate (s.gpr .rsi).toNat 0) (by simp; omega)
+    have := bytesAt_writeBytes t₁.mem (s.gpr .rdi) (List.replicate (s.gpr .rsi).toNat 0) (by simp; omega_arith)
     rwa [List.length_replicate] at this
 
 theorem valPtr_eq (p a b : Addr) (h : b.toNat ≤ a.toNat) :
@@ -109,8 +109,8 @@ theorem valPtr_eq (p a b : Addr) (h : b.toNat ≤ a.toNat) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := a.isLt; have := b.isLt; have := p.isLt
-  rw [Nat.mod_eq_of_lt (show a.toNat - b.toNat < 2 ^ 64 by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (show a.toNat - b.toNat < 2 ^ 64 by omega_arith)]
+  omega_arith
 
 /-- The hash value's place in `EM₁`. -/
 abbrev valA (s : State) : Addr := off (fb s) (oEM1 + ((s.gpr .rcx).toNat - (s.gpr .rsi).toNat))
@@ -122,7 +122,7 @@ theorem valPtr_ok {s t : State} (hp : PreR s) (hsp : t.gpr .rsp = fb s) (hcx : t
   have hk1 := hp.k1
   refine WP.mono (WP.keep [.rsi] (Q := fun u => u.mem = t.mem ∧ u.gpr .rsi = valA s) (by
     xrun [valPtr, lea, List.cons_append, List.nil_append, hsp, hcx, h9, sx_ofNat (show oEM1 < 2 ^ 31 by decide)]
-    rw [valPtr_eq _ _ _ (by omega)]; exact off_off _ _ _) rfl) fun u ⟨h, k⟩ => ⟨k, h⟩
+    rw [valPtr_eq _ _ _ (by omega_arith)]; exact off_off _ _ _) rfl) fun u ⟨h, k⟩ => ⟨k, h⟩
 
 theorem encArgs_ok {s t : State} (hp : PreR s) (he : Env s t) :
     WP isa (.block encArgs) t fun u => Keep [.r8, .rcx, .rdx, .r9, .rsi] t u ∧ u.mem = t.mem ∧
@@ -145,7 +145,7 @@ theorem encArgs_ok {s t : State} (hp : PreR s) (he : Env s t) :
 /-- The hash value's place in `EM₁` is in the frame. -/
 theorem valA_sub {s : State} (hp : PreR s) : Region.Sub ⟨valA s, (s.gpr .rsi).toNat⟩ (stkR s) := by
   have := hp.ol; have := hp.k2; have := hp.k1
-  exact frame_sub s (by unfold oEM1 frameBytes; omega)
+  exact frame_sub s (by unfold oEM1 frameBytes; omega_arith)
 
 /-- The value to `out`, and 1 returned. -/
 theorem copyOut_ok {s t : State} (hp : PreR s) (he : Env s t) (hcx : t.gpr .rcx = s.gpr .rcx) :
@@ -176,12 +176,12 @@ theorem copyOut_ok {s t : State} (hp : PreR s) (he : Env s t) (hcx : t.gpr .rcx 
     fun j hj => ⟨_, List.mem_append_right _ hfr, by
       rw [hsi₁, show valA s + BitVec.ofNat 64 j = off (fb s) (oEM1 + ((s.gpr .rcx).toNat - (s.gpr .rsi).toNat) + j)
         from off_off _ _ _]
-      exact Offset.contains_base _ (by unfold oEM1 frameBytes; omega) (by unfold oEM1 frameBytes at *; omega)⟩
+      exact Offset.contains_base _ (by unfold oEM1 frameBytes; omega_arith) (by unfold oEM1 frameBytes at *; omega_arith)⟩
   have hd : ∀ j < (s.gpr .rsi).toNat, ∀ i < (s.gpr .rsi).toNat,
       t₁.gpr .rsi + BitVec.ofNat 64 j ≠ t₁.gpr .r8 + BitVec.ofNat 64 i := fun j hj i hi => by
     rw [hsi₁, h8]
-    exact ne_of_disjoint ((hp.dKo.sub_left (valA_sub hp))) (by omega) (by omega) hj hi
-  refine WP.seq (WP.mono (copyLoop_ok hb (by omega) (by omega) (by simp) hW rfl h9 hr hd) fun t₂ hW₂ => ?_)
+    exact ne_of_disjoint ((hp.dKo.sub_left (valA_sub hp))) (by omega_arith) (by omega_arith) hj hi
+  refine WP.seq (WP.mono (copyLoop_ok hb (by omega_arith) (by omega_arith) (by simp) hW rfl h9 hr hd) fun t₂ hW₂ => ?_)
   refine WP.mono (WP.keep [.rax] (Q := fun u => u.mem = t₂.mem ∧ u.gpr .rax = 1) (by xrun) rfl)
     fun u ⟨⟨hm, hax⟩, hK⟩ => ⟨?_, by rw [hax]; rfl, ?_⟩
   · have hm' : u.mem = writeBytes t₁.mem (s.gpr .rdi)
@@ -194,7 +194,7 @@ theorem copyOut_ok {s t : State} (hp : PreR s) (he : Env s t) (hcx : t.gpr .rcx 
     rw [List.mem_singleton.mp hr, bytesAt_length]; rfl
   · rw [hm, hW₂.2.1, h8, List.nil_append, hsi₁, hm₁, hm₀]
     have := bytesAt_writeBytes t.mem (s.gpr .rdi) (Spec.Rsa.bytesAt t.mem (valA s) (s.gpr .rsi).toNat)
-      (by rw [bytesAt_length]; omega)
+      (by rw [bytesAt_length]; omega_arith)
     rwa [bytesAt_length] at this
 
 theorem cmpArgs_ok {s t : State} (he : Env s t) :
@@ -245,8 +245,8 @@ theorem tail_ok {s t₂ t₃ : State} (hp : PreR s) (he₂ : Env s t₂) (hK₃ 
   have hF := fb_toNat hp
   set k := (s.gpr .rcx).toNat with hkdef
   have dVE : (⟨valA s, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨off (fb s) oEM2, k⟩ :=
-    Offset.disjoint _ (.inl (by unfold oEM1 oEM2; omega)) (by unfold oEM1 frameBytes at *; omega)
-      (by unfold oEM2 frameBytes at *; omega)
+    Offset.disjoint _ (.inl (by unfold oEM1 oEM2; omega_arith)) (by unfold oEM1 frameBytes at *; omega_arith)
+      (by unfold oEM2 frameBytes at *; omega_arith)
   unfold tail
   refine WP.seq (WP.mono (test0_ok t₃) fun t₄ ⟨hs₄, hz₄⟩ => ?_)
   cases o with
@@ -262,7 +262,7 @@ theorem tail_ok {s t₂ t₃ : State} (hp : PreR s) (he₂ : Env s t₂) (hK₃ 
     have hl' : em'.length = k := VG.Proof.RsaPkcs1Sig.encode_length ho
     have he₃ : Env s t₃ := Env.of he₂ hp (hK₃.gpr (by decide)) hK₃.2.1 hK₃.2.2 (hm₃ ▸ frame_writeBytes _ _ _)
       fun r hr => .inl ⟨oEM2, k, by rw [List.mem_singleton.mp hr, h8₂, hl'], by decide,
-        by unfold oEM2 frameBytes; omega⟩
+        by unfold oEM2 frameBytes; omega_arith⟩
     have he₄ : Env s t₄ := he₃.regs (by rw [hs₄.1]) hs₄.2.1 hs₄.2.2.1 hs₄.2.2.2
     refine WP.ite false (by simp [eval, hz₄, hax]) (by simp) (fun _ => ?_)
     refine WP.seq (WP.mono (cmpArgs_ok he₄) fun t₅ ⟨hK₅, hm₅, hdi₅, hsi₅⟩ => ?_)
@@ -272,10 +272,10 @@ theorem tail_ok {s t₂ t₃ : State} (hp : PreR s) (he₂ : Env s t₂) (hK₃ 
     have hr5 : ∀ i < k, InRegions (t₅.rd ++ t₅.wr) (t₅.gpr .rdi + BitVec.ofNat 64 i) 1 ∧
         InRegions (t₅.rd ++ t₅.wr) (t₅.gpr .rsi + BitVec.ofNat 64 i) 1 := fun i hi => by
       rw [hdi₅, hsi₅, he₅.wr]
-      obtain ⟨r₁, h₁, c₁⟩ := frame_bytes' hp (d := oEM1) (n := k) (by unfold oEM1 frameBytes; omega) i hi
-      obtain ⟨r₂, h₂, c₂⟩ := frame_bytes' hp (d := oEM2) (n := k) (by unfold oEM2 frameBytes; omega) i hi
+      obtain ⟨r₁, h₁, c₁⟩ := frame_bytes' hp (d := oEM1) (n := k) (by unfold oEM1 frameBytes; omega_arith) i hi
+      obtain ⟨r₂, h₂, c₂⟩ := frame_bytes' hp (d := oEM2) (n := k) (by unfold oEM2 frameBytes; omega_arith) i hi
       exact ⟨⟨r₁, List.mem_append_right _ h₁, c₁⟩, ⟨r₂, List.mem_append_right _ h₂, c₂⟩⟩
-    refine WP.seq (WP.mono (compare_ok (by rw [hcx₅]) (by omega) hr5) fun t₆ ⟨hK₆, hm₆, hdx₆⟩ => ?_)
+    refine WP.seq (WP.mono (compare_ok (by rw [hcx₅]) (by omega_arith) hr5) fun t₆ ⟨hK₆, hm₆, hdx₆⟩ => ?_)
     have he₆ : Env s t₆ := he₅.regs (hK₆.gpr (by decide)) hm₆ hK₆.2.1 hK₆.2.2
     have hmem : ∀ {p : Addr} {n : Nat}, (⟨p, n⟩ : Region).Disjoint ⟨off (fb s) oEM2, em'.length⟩ → n ≤ 2 ^ 64 →
         Spec.Rsa.bytesAt t₃.mem p n = Spec.Rsa.bytesAt t₂.mem p n := fun {p n} hd hn => by
@@ -286,12 +286,12 @@ theorem tail_ok {s t₂ t₃ : State} (hp : PreR s) (he₂ : Env s t₂) (hK₃ 
           hn (List.mem_range.mp hi)
     have d12 : (⟨off (fb s) oEM1, k⟩ : Region).Disjoint ⟨off (fb s) oEM2, em'.length⟩ := by
       rw [hl']
-      exact Offset.disjoint _ (.inl (by unfold oEM1 oEM2; omega)) (by unfold oEM1 frameBytes at *; omega)
-        (by unfold oEM2 frameBytes at *; omega)
+      exact Offset.disjoint _ (.inl (by unfold oEM1 oEM2; omega_arith)) (by unfold oEM1 frameBytes at *; omega_arith)
+        (by unfold oEM2 frameBytes at *; omega_arith)
     have h1 : Spec.Rsa.bytesAt t₃.mem (off (fb s) oEM1) k = em := by
-      rw [hmem d12 (by omega), hem]
+      rw [hmem d12 (by omega_arith), hem]
     have h2 : Spec.Rsa.bytesAt t₃.mem (off (fb s) oEM2) k = em' := by
-      have := bytesAt_writeBytes t₂.mem (off (fb s) oEM2) em' (by omega)
+      have := bytesAt_writeBytes t₂.mem (off (fb s) oEM2) em' (by omega_arith)
       rw [hl'] at this
       rw [hm₃, h8₂]; exact this
     have hdiff : (t₆.gpr .rdx = 0) ↔ em = em' := by
@@ -305,7 +305,7 @@ theorem tail_ok {s t₂ t₃ : State} (hp : PreR s) (he₂ : Env s t₂) (hK₃ 
       refine WP.mono (copyOut_ok hp he₇ (by rw [hs₇.1, hK₆.gpr (by decide), hcx₅])) fun u ⟨heu, hax', hout⟩ =>
         ⟨heu, ?_⟩
       have hv : Spec.Rsa.bytesAt t₇.mem (valA s) (s.gpr .rsi).toNat = em.drop (k - (s.gpr .rsi).toNat) := by
-        rw [hs₇.2.1, hm₆, hm₅, hs₄.2.1, hmem (by rw [hl']; exact dVE) (by omega), hval]
+        rw [hs₇.2.1, hm₆, hm₅, hs₄.2.1, hmem (by rw [hl']; exact dVE) (by omega_arith), hval]
       simp only [↓reduceIte]
       exact ⟨hax', hout.trans hv⟩
     · have hne : t₆.gpr .rdx ≠ 0 := fun h' => hq (hdiff.1 h')
@@ -354,32 +354,32 @@ theorem afterPub_ok {s t : State} (hp : PreR s) (he : Env s t) {h : Hash}
     refine WP.ite false (by simp [eval, hz₁, hr]) (by simp) (fun _ => ?_)
     refine WP.seq (WP.mono (encArgs_ok hp he₁) fun t₂ ⟨hK₂, hm₂, h8₂, hcx₂, hdx₂, h9₂, hsi₂⟩ => ?_)
     have he₂ : Env s t₂ := he₁.regs (hK₂.gpr (by decide)) hm₂ hK₂.2.1 hK₂.2.2
-    have sE2 : Region.Sub ⟨off (fb s) oEM2, k⟩ (stkR s) := frame_sub s (by unfold oEM2 frameBytes; omega)
+    have sE2 : Region.Sub ⟨off (fb s) oEM2, k⟩ (stkR s) := frame_sub s (by unfold oEM2 frameBytes; omega_arith)
     have dVE : (⟨valA s, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨off (fb s) oEM2, k⟩ :=
-      Offset.disjoint _ (.inl (by unfold oEM1 oEM2; omega)) (by unfold oEM1 frameBytes at *; omega)
-        (by unfold oEM2 frameBytes at *; omega)
+      Offset.disjoint _ (.inl (by unfold oEM1 oEM2; omega_arith)) (by unfold oEM1 frameBytes at *; omega_arith)
+        (by unfold oEM2 frameBytes at *; omega_arith)
     have hfr : (⟨fb s, frameBytes⟩ : Region) ∈ t₂.wr := by rw [he₂.wr]; exact List.mem_cons_self ..
     have hpre : EPre t₂ x k := {
       rdx := by rw [hdx₂]; apply BitVec.eq_of_toNat_eq; simp [x]
       hk := by rw [hcx₂]
       kle := hk2
       buf := fun i hi => by
-        rw [h8₂, he₂.wr]; exact frame_bytes' hp (by unfold oEM2 frameBytes; omega) i hi
+        rw [h8₂, he₂.wr]; exact frame_bytes' hp (by unfold oEM2 frameBytes; omega_arith) i hi
       rd := fun j hj => by
         rw [hsi₂]
         rw [h9₂] at hj
         exact ⟨_, List.mem_append_right _ hfr, by
           rw [show valA s + BitVec.ofNat 64 j = off (fb s) (oEM1 + ((s.gpr .rcx).toNat - (s.gpr .rsi).toNat) + j)
             from off_off _ _ _]
-          exact Offset.contains_base _ (by unfold oEM1 frameBytes; omega) (by unfold oEM1 frameBytes at *; omega)⟩
+          exact Offset.contains_base _ (by unfold oEM1 frameBytes; omega_arith) (by unfold oEM1 frameBytes at *; omega_arith)⟩
       sep := fun j hj i hi => by
         rw [hsi₂, h8₂]
         rw [h9₂] at hj
-        exact ne_of_disjoint dVE (by omega) (by omega) hj hi }
+        exact ne_of_disjoint dVE (by omega_arith) (by omega_arith) hj hi }
     have hH : Spec.Rsa.bytesAt t₂.mem (t₂.gpr .rsi) (t₂.gpr .r9).toNat = em.drop (nB.length - h.len) := by
       rw [hsi₂, h9₂, hm₂, hs₁.2.1, hnl, ← hol, ← hem]
       have := bytesAt_drop t.mem (off (fb s) oEM1) (k - (s.gpr .rsi).toNat) (s.gpr .rsi).toNat
-      rw [show k - (s.gpr .rsi).toNat + (s.gpr .rsi).toNat = k by omega] at this
+      rw [show k - (s.gpr .rsi).toNat + (s.gpr .rsi).toNat = k by omega_arith] at this
       rw [this]
       exact congrArg (Spec.Rsa.bytesAt t.mem · _) (off_off _ _ _).symm
     have hE : ∀ H, encodeId x H k = Spec.RsaPkcs1Sig.encode h H k := fun H => by simp only [encodeId, hid]
@@ -416,9 +416,9 @@ theorem pubArgs_ok {s A : State} (hp : PreR s) (hA : Keep [.rax] (allocState fra
     fun r h h' => by rw [k'.gpr h']; simp [allocState_gpr, h]
   have hw : ∀ d, 32 ≤ d → d + 8 ≤ frameBytes → word t.mem (fb s) d = word t₁.mem (fb s) d := fun d hd hd' => by
     unfold frameBytes at hd'
-    rw [hm, word_wo _ _ _ (d := 24) (.inl (by omega)) (by decide) (by omega),
-      word_wo _ _ _ (d := 16) (.inl (by omega)) (by decide) (by omega),
-      word_wo _ _ _ (d := 8) (.inl (by omega)) (by decide) (by omega), word_wo0 _ _ _ (by omega) (by omega)]
+    rw [hm, word_wo _ _ _ (d := 24) (.inl (by omega_arith)) (by decide) (by omega_arith),
+      word_wo _ _ _ (d := 16) (.inl (by omega_arith)) (by decide) (by omega_arith),
+      word_wo _ _ _ (d := 8) (.inl (by omega_arith)) (by decide) (by omega_arith), word_wo0 _ _ _ (by omega_arith) (by omega_arith)]
   refine ⟨⟨(k'.gpr (by decide)).trans rfl, k'.2.1, k'.2.2, frame_of_outside ?_,
       (hw _ (by decide) (by decide)).trans hO, (hw _ (by decide) (by decide)).trans hOl,
       (hw _ (by decide) (by decide)).trans hN, (hw _ (by decide) (by decide)).trans hK,
@@ -428,11 +428,11 @@ theorem pubArgs_ok {s A : State} (hp : PreR s) (hA : Keep [.rax] (allocState fra
       simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first | decide | simp_all)⟩
   · rw [hm]
     intro x hx
-    have hx' : frameBytes ≤ ofs (fb s) x := by unfold frameBytes at hx ⊢; omega
+    have hx' : frameBytes ≤ ofs (fb s) x := by unfold frameBytes at hx ⊢; omega_arith
     unfold frameBytes at hx hx'
-    rw [writeW_outside _ _ _ (d := 24) (by omega) x (by omega), writeW_outside _ _ _ (d := 16) (by omega) x (by omega),
-      writeW_outside _ _ _ (d := 8) (by omega) x (by omega)]
-    have := writeW_outside t₁.mem (fb s) (stackArg s 1) (d := 0) (by omega) x (by omega)
+    rw [writeW_outside _ _ _ (d := 24) (by omega_arith) x (by omega_arith), writeW_outside _ _ _ (d := 16) (by omega_arith) x (by omega_arith),
+      writeW_outside _ _ _ (d := 8) (by omega_arith) x (by omega_arith)]
+    have := writeW_outside t₁.mem (fb s) (stackArg s 1) (d := 0) (by omega_arith) x (by omega_arith)
     simp only [off, BitVec.add_zero] at this
     rw [this]; exact ho₁ x hx
   · rw [hm]; simp (disch := decide) only [word_wo]; exact word_self0 _ _ _
@@ -466,7 +466,7 @@ theorem ret_frame {s : State} (hp : PreR s) {m : Mem} (h : Frame [stkR s, outR s
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · have := Offset.disjoint_below (s.gpr .rsp) (n := verStack) (d := 0) (k := 8)
-      (by unfold verStack; omega)
+      (by unfold verStack; omega_arith)
     simpa only [stkR, kb, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
   · exact hp.dRo
   · exact hp.dRs
@@ -501,7 +501,7 @@ theorem code_correct (v : PubImpl) (s : State) (h : recContract.pre s) :
         · rfl
         · exact g₀ r (by simpa using hr), k₀.2.1, by simp only [allocState, hsp₀, k₀.2.2]⟩
     have hfb : fb t₀ = fb s := by simp only [fb, hsp₀]
-    refine wp_alloc (s := t₀) (by rw [hsp₀]; have := hp.sp1; unfold verStack at this; unfold frameBytes; omega) ?_
+    refine wp_alloc (s := t₀) (by rw [hsp₀]; have := hp.sp1; unfold verStack at this; unfold frameBytes; omega_arith) ?_
     unfold body
     refine WP.seq (WP.mono_mx (by decide) (pubArgs_ok hp hA hm₀)
       fun t₁ ⟨he₁, hw0, hw1, hw2, hw3, hdi, hsi, hdx, hcx, h8, h9, hcs₁⟩ hmx₁ => ?_)
@@ -525,7 +525,7 @@ theorem code_correct (v : PubImpl) (s : State) (h : recContract.pre s) :
     · rw [hsig, recover_eq_recOut _ (by simp only [bytesAt_length])]
   · refine WP.ite true (by simp [eval, hz₀, hsig]) (fun _ => ?_) (by simp)
     have hwr : outR s ∈ t₀.wr := by rw [k₀.2.2, hp.hwr]; simp [outR]
-    refine WP.mono_mx (by decide) (zeroOut_ok (n := (s.gpr .rsi).toNat) (by omega) (by omega)
+    refine WP.mono_mx (by decide) (zeroOut_ok (n := (s.gpr .rsi).toNat) (by omega_arith) (by omega_arith)
       (by rw [g₀ _ (by decide), ofNat_toNat64]) (by rw [g₀ _ (by decide)]; exact out_wr hwr))
       fun u ⟨hK, hm, hax⟩ hmx => ⟨⟨fun r hr => ?_, ?_, by rw [hmx, hmx₀]⟩, hpost u none ⟨by rw [hax]; rfl, ?_⟩ ?_⟩
     · rw [hK.gpr (by simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp),
@@ -535,7 +535,7 @@ theorem code_correct (v : PubImpl) (s : State) (h : recContract.pre s) :
         (fun r hr => ?_) (by decide)).trans (by rw [hm₀])
       rw [List.mem_singleton.mp hr, List.length_replicate]; exact hp.dRo
     · rw [hm, g₀ _ (by decide)]
-      have := bytesAt_writeBytes t₀.mem (s.gpr .rdi) (List.replicate (s.gpr .rsi).toNat 0) (by simp; omega)
+      have := bytesAt_writeBytes t₀.mem (s.gpr .rdi) (List.replicate (s.gpr .rsi).toNat 0) (by simp; omega_arith)
       rwa [List.length_replicate] at this
     · rw [recover_len _ (by simp only [bytesAt_length]; intro h'; exact hsig (BitVec.eq_of_toNat_eq h'))]
 
@@ -554,8 +554,8 @@ theorem encDone {s t₂ t₃ : State} (hp : PreR s) (he₂ : Env s t₂) (hK₃ 
   obtain ⟨hax, hm₃⟩ := hpost
   refine ⟨Env.of he₂ hp (hK₃.gpr (by decide)) hK₃.2.1 hK₃.2.2 (hm₃ ▸ frame_writeBytes _ _ _)
       fun r hr => .inl ⟨oEM2, (s.gpr .rcx).toNat, by rw [List.mem_singleton.mp hr, h8₂, hl'], by decide,
-        by unfold oEM2 frameBytes; omega⟩, hax, ?_, fun {p n} hd hn => ?_⟩
-  · have := bytesAt_writeBytes t₂.mem (off (fb s) oEM2) em' (by omega)
+        by unfold oEM2 frameBytes; omega_arith⟩, hax, ?_, fun {p n} hd hn => ?_⟩
+  · have := bytesAt_writeBytes t₂.mem (off (fb s) oEM2) em' (by omega_arith)
     rw [hl'] at this
     rw [hm₃, h8₂]; exact this
   · rw [hm₃, h8₂]
@@ -567,14 +567,14 @@ theorem encDone {s t₂ t₃ : State} (hp : PreR s) (he₂ : Env s t₂) (hK₃ 
 theorem EM12_disjoint {s : State} (hp : PreR s) :
     (⟨off (fb s) oEM1, (s.gpr .rcx).toNat⟩ : Region).Disjoint ⟨off (fb s) oEM2, (s.gpr .rcx).toNat⟩ := by
   have hk2 := hp.k2; have := fb_toNat hp
-  exact Offset.disjoint _ (.inl (by unfold oEM1 oEM2; omega)) (by unfold oEM1 frameBytes at *; omega)
-    (by unfold oEM2 frameBytes at *; omega)
+  exact Offset.disjoint _ (.inl (by unfold oEM1 oEM2; omega_arith)) (by unfold oEM1 frameBytes at *; omega_arith)
+    (by unfold oEM2 frameBytes at *; omega_arith)
 
 theorem valA_disjoint {s : State} (hp : PreR s) :
     (⟨valA s, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨off (fb s) oEM2, (s.gpr .rcx).toNat⟩ := by
   have hk2 := hp.k2; have hk1 := hp.k1; have ol := hp.ol; have := fb_toNat hp
-  exact Offset.disjoint _ (.inl (by unfold oEM1 oEM2; omega)) (by unfold oEM1 frameBytes at *; omega)
-    (by unfold oEM2 frameBytes at *; omega)
+  exact Offset.disjoint _ (.inl (by unfold oEM1 oEM2; omega_arith)) (by unfold oEM1 frameBytes at *; omega_arith)
+    (by unfold oEM2 frameBytes at *; omega_arith)
 
 /-- The head of `copyOut`. -/
 theorem copyHead_ok {s t : State} (hp : PreR s) (he : Env s t) (hcx : t.gpr .rcx = s.gpr .rcx) :
@@ -616,18 +616,18 @@ theorem encPre {s t₂ : State} (hp : PreR s) (he₂ : Env s t₂) (h8₂ : t₂
     hk := by rw [hcx₂]
     kle := hk2
     buf := fun i hi => by
-      rw [h8₂, he₂.wr]; exact frame_bytes' hp (by unfold oEM2 frameBytes; omega) i hi
+      rw [h8₂, he₂.wr]; exact frame_bytes' hp (by unfold oEM2 frameBytes; omega_arith) i hi
     rd := fun j hj => by
       rw [hsi₂]
       rw [h9₂] at hj
       exact ⟨_, List.mem_append_right _ hfr, by
         rw [show valA s + BitVec.ofNat 64 j = off (fb s) (oEM1 + ((s.gpr .rcx).toNat - (s.gpr .rsi).toNat) + j)
           from off_off _ _ _]
-        exact Offset.contains_base _ (by unfold oEM1 frameBytes; omega) (by unfold oEM1 frameBytes at *; omega)⟩
+        exact Offset.contains_base _ (by unfold oEM1 frameBytes; omega_arith) (by unfold oEM1 frameBytes at *; omega_arith)⟩
     sep := fun j hj i hi => by
       rw [hsi₂, h8₂]
       rw [h9₂] at hj
-      exact ne_of_disjoint (valA_disjoint hp) (by omega) (by omega) hj hi }
+      exact ne_of_disjoint (valA_disjoint hp) (by omega_arith) (by omega_arith) hj hi }
 
 /-- The hash value's place in `EM₁` holds its last `out_len` bytes. -/
 theorem valBytes {s : State} (hp : PreR s) (m : Mem) :
@@ -636,7 +636,7 @@ theorem valBytes {s : State} (hp : PreR s) (m : Mem) :
   have hk1 := hp.k1
   have ol := hp.ol
   have := bytesAt_drop m (off (fb s) oEM1) ((s.gpr .rcx).toNat - (s.gpr .rsi).toNat) (s.gpr .rsi).toNat
-  rw [show (s.gpr .rcx).toNat - (s.gpr .rsi).toNat + (s.gpr .rsi).toNat = (s.gpr .rcx).toNat by omega] at this
+  rw [show (s.gpr .rcx).toNat - (s.gpr .rsi).toNat + (s.gpr .rsi).toNat = (s.gpr .rcx).toNat by omega_arith] at this
   rw [this]
   exact congrArg (Spec.Rsa.bytesAt m · _) (off_off _ _ _).symm
 

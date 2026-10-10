@@ -73,10 +73,10 @@ theorem msgAM_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t 
           (s.gpr .r8 + s.gpr .r8 + (s.gpr .r8 + s.gpr .r8))) >>> 8) = BitVec.ofNat 8 (8 * kOf s / 256) from
         BitVec.eq_of_toNat_eq (by
           simp only [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat,
-            Nat.shiftRight_eq_div_pow, hx]; omega),
+            Nat.shiftRight_eq_div_pow, hx]; omega_arith),
       show BitVec.setWidth 8 (s.gpr .r8 + s.gpr .r8 + (s.gpr .r8 + s.gpr .r8) +
           (s.gpr .r8 + s.gpr .r8 + (s.gpr .r8 + s.gpr .r8))) = BitVec.ofNat 8 (8 * kOf s) from
-        BitVec.eq_of_toNat_eq (by simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat, hx]; omega)]
+        BitVec.eq_of_toNat_eq (by simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat, hx]; omega_arith)]
     rfl
 
 
@@ -87,8 +87,8 @@ theorem KeepHi.widen {s : State} {lo lo' : List (Nat × Nat)} {m m' : Mem} (h : 
   fun a n h₀ ha hl => h a n h₀ ha fun p hp => by
     obtain ⟨q, hq, h₁, h₂⟩ := hw p hp
     rcases hl q hq with h | h
-    · exact .inl (by omega)
-    · exact .inr (by omega)
+    · exact .inl (by omega_arith)
+    · exact .inr (by omega_arith)
 
 /-- Stores to bytes of `scratch` at `[o, o + n)`. -/
 theorem keepHi_of_out {s : State} {o n : Nat} {m m' : Mem} (h : Outside (sc s) o n m m') :
@@ -98,17 +98,17 @@ theorem keepHi_of_out {s : State} {o n : Nat} {m m' : Mem} (h : Outside (sc s) o
   rw [List.mem_range] at hj
   rw [scA, off_add]
   refine h _ ?_
-  rw [ofs_off0 _ (by unfold scrBytes at ha; omega)]
+  rw [ofs_off0 _ (by unfold scrBytes at ha; omega_arith)]
   have := hl _ (List.mem_singleton_self _)
   dsimp only at this
-  omega
+  omega_arith
 
 /-- A store to the frame keeps `scratch`. -/
 theorem keepHi_of_slot {s : State} (hp : DPre s) {d : Nat} (hd : d + 8 ≤ frameBytes) {m : Mem} (v : BitVec 64) :
     KeepHi s [] m (m.writeW (off (fb s) d) v) := fun a k _ ha _ => by
   obtain ⟨h1, _⟩ := scr_len hp
   refine bytes_keep ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
-    (fun r hr => ?_) (by unfold scrBytes at ha; omega)
+    (fun r hr => ?_) (by unfold scrBytes at ha; omega_arith)
   rw [List.mem_singleton.mp hr]
   exact ((hp.dKs.sub_left (frame_sub s hd)).sub_right (sub_trans (scSub ha) (Region.sub_prefix h1))).symm
 
@@ -125,7 +125,7 @@ theorem dst_addr (x : Addr) {i d : Nat} :
       BitVec.ofNat 64 d = off x (d + 32 * i) := by
   apply BitVec.eq_of_toNat_eq
   simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem prfStart_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : Ctx s R EM t)
     {i : Nat} (hI : word t.mem (fb s) oI = BitVec.ofNat 64 i) :
@@ -151,7 +151,7 @@ theorem prfUpdArgs_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte
     fun t' ⟨h, k⟩ => ⟨hc.regs hp h.1 k (by decide), h⟩
   xrun [prfUpdArgs, scr, List.cons_append, List.nil_append, ea_sp, hc.rsp, hs.ld (d := oScr) (by decide),
     hc.slots.sScr, scA_zero, sx (d := sMsg) (by decide), sx (d := sWork) (by decide)]
-  simp; omega
+  simp; omega_arith
 
 theorem prfFinArgs_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : Ctx s R EM t)
     {L dst i : Nat} (hL : 64 + L < 2 ^ 31) (hd : dst < 2 ^ 31) (hI : word t.mem (fb s) oI = BitVec.ofNat 64 i) :
@@ -166,7 +166,7 @@ theorem prfFinArgs_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte
   xrun [prfFinArgs, scr, List.cons_append, List.nil_append, ea_sp, hc.rsp, hs.ld (d := oScr) (by decide),
     hs.ld (d := oI) (by decide), hc.slots.sScr, hI, scA_zero, sx (d := sOuter) (by decide),
     sx (d := sWork) (by decide), sx hd, dst_addr]
-  exact BitVec.eq_of_toNat_eq (by simp; omega)
+  exact BitVec.eq_of_toNat_eq (by simp; omega_arith)
 
 
 /-- The number of `AM`'s blocks. -/
@@ -198,8 +198,8 @@ theorem incr8_ok {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t :
     t'.mem = t.mem.writeW (off (fb s) oI) (BitVec.ofNat 64 (i + 1)) ∧ t'.zf = some (decide (i + 1 = 8))) ?_
       rfl).mono fun t' ⟨⟨hm, hz⟩, k⟩ => incr_post hp hc hm hz k
   xrun [incr, ea_sp, hc.rsp, hs.ld (d := oI) (by decide), hs.st (d := oI) (by decide), hI, ofNat_add_one,
-    ofNat_sub_beq (show i + 1 < 2 ^ 64 by omega) (show 8 < 2 ^ 64 by decide)]
-  exact ofNat_sub_beq (N := 8) (by omega) (by decide)
+    ofNat_sub_beq (show i + 1 < 2 ^ 64 by omega_arith) (show 8 < 2 ^ 64 by decide)]
+  exact ofNat_sub_beq (N := 8) (by omega_arith) (by decide)
 
 theorem incrNB_ok {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : Ctx s R EM t)
     {i : Nat} (hi : i < nbOf s) (hI : word t.mem (fb s) oI = BitVec.ofNat 64 i)
@@ -208,13 +208,13 @@ theorem incrNB_ok {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t 
   have hs := hc.frm hp
   have hk2 := hp.k2
   have hkk : kOf s ≤ 1024 := hk2
-  have hnb : nbOf s ≤ 33 := by unfold nbOf; omega
+  have hnb : nbOf s ≤ 33 := by unfold nbOf; omega_arith
   refine (WP.keep [.rax] (c := .block (incr (.mem (sp oNB)))) (Q := fun t' =>
     t'.mem = t.mem.writeW (off (fb s) oI) (BitVec.ofNat 64 (i + 1)) ∧ t'.zf = some (decide (i + 1 = nbOf s))) ?_
       rfl).mono fun t' ⟨⟨hm, hz⟩, k⟩ => incr_post hp hc hm hz k
   xrun [incr, ea_sp, hc.rsp, hs.ld (d := oI) (by decide), hs.st (d := oI) (by decide), hs.ld (d := oNB) (by decide),
     hI, ofNat_add_one, word_ww _ _ _ (show oNB + 8 ≤ oI ∨ oI + 8 ≤ oNB by decide) (by decide) (by decide), hNB,
-    ofNat_sub_beq (show i + 1 < 2 ^ 64 by omega) (show nbOf s < 2 ^ 64 by omega)]
+    ofNat_sub_beq (show i + 1 < 2 ^ 64 by omega_arith) (show nbOf s < 2 ^ 64 by omega_arith)]
   done
 
 
@@ -251,7 +251,7 @@ theorem prf_body {s : State} (hp : DPre s) {R : BitVec 64} {EM K : List Byte} {m
     {i : Nat} (hi : i < N) {t : State} (h : PInv v s R EM K msg dst N t₀ i t) :
     WP isa (prfBody (HH v) label lenC dst count) t fun t' =>
       t'.zf = some (decide (i + 1 = N)) ∧ PInv v s R EM K msg dst N t₀ (i + 1) t' := by
-  have hhd : sMsg + 16 ≤ dst := by unfold sMsg sKDK at *; omega
+  have hhd : sMsg + 16 ≤ dst := by unfold sMsg sKDK at *; omega_arith
   subst hL
   refine WP.seq (WP.mono (prfStart_run hp h.ctx h.sI) fun t₁ ⟨hc₁, hm₁, hdi₁, hax₁, h9₁⟩ => ?_)
   refine WP.seq (WP.mono (hmsg t₁ i hc₁ hi hdi₁ hax₁ h9₁) fun t₂ ⟨ho₂, hb₂, k₂⟩ => ?_)
@@ -266,37 +266,37 @@ theorem prf_body {s : State} (hp : DPre s) {R : BitVec 64} {EM K : List Byte} {m
     rw [kh₂ _ _ (by decide) (by decide) (by simp; decide)]; exact h.key
   obtain ⟨h1, -⟩ := scr_len hp
   have hX : Spec.Rsa.bytesAt t₂.mem (scA s sMsg) (label.length + 4) = msg i := hb₂
-  refine mac_front hp hc₂ (kOff := sKDK) (by decide) (by decide) (fun _ hc => prfUpdArgs_run hp hc (by omega))
+  refine mac_front hp hc₂ (kOff := sKDK) (by decide) (by decide) (fun _ hc => prfUpdArgs_run hp hc (by omega_arith))
     (Covers.of_sub fun r hr => ⟨scrR s, List.mem_append_right _ (by rw [hp.hwr]; simp [scrR]), sMsg,
-      by rw [List.mem_singleton.mp hr]; rfl, by rw [List.mem_singleton.mp hr]; dsimp only [scrR]; unfold scrBytes sMsg at *; omega⟩)
-    (fun a n han => scD (.inr han) (by unfold scrBytes sMsg; omega) (by unfold scrBytes sMsg at *; omega))
-    (stkD hp (by decide) (by unfold scrBytes sMsg; omega)) (by omega) fun t₃ h₃ => ?_
+      by rw [List.mem_singleton.mp hr]; rfl, by rw [List.mem_singleton.mp hr]; dsimp only [scrR]; unfold scrBytes sMsg at *; omega_arith⟩)
+    (fun a n han => scD (.inr han) (by unfold scrBytes sMsg; omega_arith) (by unfold scrBytes sMsg at *; omega_arith))
+    (stkD hp (by decide) (by unfold scrBytes sMsg; omega_arith)) (by omega_arith) fun t₃ h₃ => ?_
   rw [hk₂, hX] at h₃
   have hI₃ : word t₃.mem (fb s) oI = BitVec.ofNat 64 i := by
     rw [h₃.frm _ (by decide), fk₂ _ (by decide)]; exact h.sI
-  refine WP.seq (WP.mono (prfFinArgs_run hp h₃.ctx (L := label.length + 4) (dst := dst) (by omega)
-    (by unfold scrBytes at hd2; omega) hI₃) fun t₄ ⟨hc₄, hm₄, hdi₄, hsi₄, hdx₄, hcx₄, h8₄⟩ => ?_)
+  refine WP.seq (WP.mono (prfFinArgs_run hp h₃.ctx (L := label.length + 4) (dst := dst) (by omega_arith)
+    (by unfold scrBytes at hd2; omega_arith) hI₃) fun t₄ ⟨hc₄, hm₄, hdi₄, hsi₄, hdx₄, hcx₄, h8₄⟩ => ?_)
   have h₄ : MacMid v s R EM K (msg i) t₂ t₄ := ⟨hc₄, by rw [hm₄]; exact h₃.inner, by rw [hm₄]; exact h₃.outer,
     by rw [KeepHi, hm₄]; exact h₃.keep, by rw [FrmKeep, hm₄]; exact h₃.frm⟩
-  refine WP.seq (WP.mono (mac_fin hp h₄ (dOff := dst + 32 * i) (by unfold sMsg sKDK at *; omega)
-    (by omega) hK hdi₄ hsi₄ (by rw [hdx₄, hml]) hcx₄ h8₄ (by rw [hml]; omega))
+  refine WP.seq (WP.mono (mac_fin hp h₄ (dOff := dst + 32 * i) (by unfold sMsg sKDK at *; omega_arith)
+    (by omega_arith) hK hdi₄ hsi₄ (by rw [hdx₄, hml]) hcx₄ h8₄ (by rw [hml]; omega_arith))
     fun t₅ ⟨hc₅, hb₅, kh₅, fk₅⟩ => ?_)
   have fk₂₅ := fk₂.trans fk₅
   refine WP.mono (hincr t₅ i hc₅ hi (by rw [fk₂₅ _ (by decide)]; exact h.sI)
     (by rw [fk₂₅ _ (by decide)]; exact h.sNB)) fun t₆ h₆ => ⟨h₆.zf, ?_⟩
   have kh : KeepHi s ([(sMsg, 16)] ++ [(dst + 32 * i, 32)] ++ []) t.mem t₆.mem := (kh₂.trans kh₅).trans h₆.keep
   refine ⟨h₆.ctx, h₆.sI, by rw [h₆.sNB, fk₂₅ _ (by decide)]; exact h.sNB, ?_, ?_, ?_⟩
-  · rw [kh _ _ (by decide) (by decide) (by simp; unfold sMsg sKDK at *; omega)]; exact h.key
-  · rw [show 32 * (i + 1) = 32 * i + 32 by omega, bytesAt_add, kh _ _ (by unfold sMsg sKDK at *; omega)
-      (by omega) (by simp; omega), h.blk, scA, off_off, ← scA, h₆.keep _ _ (by unfold sMsg sKDK at *; omega)
-      (by omega) (by simp), hb₅, List.range_succ, List.flatMap_append, List.flatMap_singleton]
+  · rw [kh _ _ (by decide) (by decide) (by simp; unfold sMsg sKDK at *; omega_arith)]; exact h.key
+  · rw [show 32 * (i + 1) = 32 * i + 32 by omega_arith, bytesAt_add, kh _ _ (by unfold sMsg sKDK at *; omega_arith)
+      (by omega_arith) (by simp; omega_arith), h.blk, scA, off_off, ← scA, h₆.keep _ _ (by unfold sMsg sKDK at *; omega_arith)
+      (by omega_arith) (by simp), hb₅, List.range_succ, List.flatMap_append, List.flatMap_singleton]
   · exact (h.keep.trans kh).widen fun p hp => by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_assoc] at hp
       rcases hp with rfl | rfl | rfl | rfl
       · exact ⟨_, List.mem_cons_self .., Nat.le_refl _, Nat.le_refl _⟩
       · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Nat.le_refl _, Nat.le_refl _⟩
       · exact ⟨_, List.mem_cons_self .., Nat.le_refl _, Nat.le_refl _⟩
-      · exact ⟨(dst, 32 * N), List.mem_cons_of_mem _ (List.mem_singleton_self _), by simp, by simp; omega⟩
+      · exact ⟨(dst, 32 * N), List.mem_cons_of_mem _ (List.mem_singleton_self _), by simp, by simp; omega_arith⟩
 
 
 /-- One block, for constant time: what the loop's branch and the next
@@ -314,7 +314,7 @@ theorem prf_body_ctx {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte}
     WP isa (prfBody (HH v) label lenC dst count) t fun t' =>
       t'.zf = some (decide (i + 1 = N)) ∧ Ctx s R EM t' ∧ word t'.mem (fb s) oI = BitVec.ofNat 64 (i + 1) ∧
         word t'.mem (fb s) oNB = BitVec.ofNat 64 (nbOf s) := by
-  have hhd : sMsg + 16 ≤ dst := by unfold sMsg sKDK at *; omega
+  have hhd : sMsg + 16 ≤ dst := by unfold sMsg sKDK at *; omega_arith
   refine WP.seq (WP.mono (prfStart_run hp hc hI) fun t₁ ⟨hc₁, hm₁, hdi₁, hax₁, h9₁⟩ => ?_)
   refine WP.seq (WP.mono (hmsg t₁ i hc₁ hi hdi₁ hax₁ h9₁) fun t₂ ⟨ho₂, k₂⟩ => ?_)
   have hf₂ : Frame [⟨scA s sMsg, 16⟩] t₁.mem t₂.mem := frame_of_out ho₂ (by decide)
@@ -324,21 +324,21 @@ theorem prf_body_ctx {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte}
     (ws := [⟨scA s sMsg, 16⟩]) (n := 0) hp (by decide) (hf₂.sub fun r hr => ⟨r, List.mem_append_left _ hr,
       fun _ h => h⟩) fun r hr => ⟨sMsg, 16, List.mem_singleton.mp hr, by decide, .inr (List.mem_singleton_self _)⟩)
   obtain ⟨h1, -⟩ := scr_len hp
-  refine mac_front hp hc₂ (kOff := sKDK) (by decide) (by decide) (fun _ hc => prfUpdArgs_run hp hc (by omega))
+  refine mac_front hp hc₂ (kOff := sKDK) (by decide) (by decide) (fun _ hc => prfUpdArgs_run hp hc (by omega_arith))
     (Covers.of_sub fun r hr => ⟨scrR s, List.mem_append_right _ (by rw [hp.hwr]; simp [scrR]), sMsg,
-      by rw [List.mem_singleton.mp hr]; rfl, by rw [List.mem_singleton.mp hr]; dsimp only [scrR]; unfold scrBytes sMsg at *; omega⟩)
-    (fun a n han => scD (.inr han) (by unfold scrBytes sMsg; omega) (by unfold scrBytes sMsg at *; omega))
-    (stkD hp (by decide) (by unfold scrBytes sMsg; omega)) (by omega) fun t₃ h₃ => ?_
+      by rw [List.mem_singleton.mp hr]; rfl, by rw [List.mem_singleton.mp hr]; dsimp only [scrR]; unfold scrBytes sMsg at *; omega_arith⟩)
+    (fun a n han => scD (.inr han) (by unfold scrBytes sMsg; omega_arith) (by unfold scrBytes sMsg at *; omega_arith))
+    (stkD hp (by decide) (by unfold scrBytes sMsg; omega_arith)) (by omega_arith) fun t₃ h₃ => ?_
   have hI₃ : word t₃.mem (fb s) oI = BitVec.ofNat 64 i := by
     rw [h₃.frm _ (by decide), fk₂ _ (by decide)]; exact hI
-  refine WP.seq (WP.mono (prfFinArgs_run hp h₃.ctx (L := label.length + 4) (dst := dst) (by omega)
-    (by unfold scrBytes at hd2; omega) hI₃) fun t₄ ⟨hc₄, hm₄, hdi₄, hsi₄, hdx₄, hcx₄, h8₄⟩ => ?_)
+  refine WP.seq (WP.mono (prfFinArgs_run hp h₃.ctx (L := label.length + 4) (dst := dst) (by omega_arith)
+    (by unfold scrBytes at hd2; omega_arith) hI₃) fun t₄ ⟨hc₄, hm₄, hdi₄, hsi₄, hdx₄, hcx₄, h8₄⟩ => ?_)
   have h₄ : MacMid v s R EM (Spec.Rsa.bytesAt t₂.mem (scA s sKDK) 32)
       (Spec.Rsa.bytesAt t₂.mem (scA s sMsg) (label.length + 4)) t₂ t₄ :=
     ⟨hc₄, by rw [hm₄]; exact h₃.inner, by rw [hm₄]; exact h₃.outer,
       by rw [KeepHi, hm₄]; exact h₃.keep, by rw [FrmKeep, hm₄]; exact h₃.frm⟩
-  refine WP.seq (WP.mono (mac_fin hp h₄ (dOff := dst + 32 * i) (by unfold sMsg sKDK at *; omega)
-    (by omega) (blen _ _ _) hdi₄ hsi₄ (by rw [hdx₄, blen]) hcx₄ h8₄ (by rw [blen]; omega))
+  refine WP.seq (WP.mono (mac_fin hp h₄ (dOff := dst + 32 * i) (by unfold sMsg sKDK at *; omega_arith)
+    (by omega_arith) (blen _ _ _) hdi₄ hsi₄ (by rw [hdx₄, blen]) hcx₄ h8₄ (by rw [blen]; omega_arith))
     fun t₅ ⟨hc₅, _, _, fk₅⟩ => ?_)
   have fk₂₅ := fk₂.trans fk₅
   refine WP.mono (hincr t₅ i hc₅ hi (by rw [fk₂₅ _ (by decide)]; exact hI)

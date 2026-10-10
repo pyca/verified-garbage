@@ -93,11 +93,11 @@ theorem pcEntry_ok {s : State} {B : Addr} (hB : s.gpr .r8 = B)
 /-! ## An invalid modulus -/
 
 theorem readW_zero {m : Mem} {a : Addr} (h : ∀ i < 8, m (a + BitVec.ofNat 64 i) = 0) : m.readW a 64 = 0 :=
-  (Mem.readW_congr (m' := fun _ => 0) fun i hi => h i (by omega)).trans (by simp [Mem.readW, Mem.read])
+  (Mem.readW_congr (m' := fun _ => 0) fun i hi => h i (by omega_arith)).trans (by simp [Mem.readW, Mem.read])
 
 theorem sixteen_w (r : BitVec 64) {w : Nat} (h : r = BitVec.ofNat 64 w) :
     r + r + (r + r) + (r + r + (r + r)) + (r + r + (r + r) + (r + r + (r + r))) = BitVec.ofNat 64 (16 * w) := by
-  subst h; simp only [BitVec.ofNat_add_ofNat]; congr 1; omega
+  subst h; simp only [BitVec.ofNat_add_ofNat]; congr 1; omega_arith
 
 /-- `fail`: `16 w` zero bytes to `pre` (`2 w` words), 0 returned, and the
 saved registers restored. -/
@@ -109,16 +109,16 @@ theorem pcFail_ok {s : State} {B : Addr} {Z k : Nat} {op : Addr} (hs : Scr s B Z
     WP isa Precompute.fail s fun t =>
       PcPost s t B Z ((k + 7) / 8) op (List.replicate (2 * ((k + 7) / 8)) 0) false := by
   have hn := hs.nowrap
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_arith)
   unfold Precompute.fail
   refine WP.seq (WP.mono (WP.keep [.rsi, .rcx, .rax] (Q := fun t => t.gpr .rsi = op ∧
       t.gpr .rcx = BitVec.ofNat 64 (16 * ((k + 7) / 8)) ∧ t.gpr .rax = 0 ∧ t.mem = s.mem) (by
     xrun [State.ea, hdr, hdi, hdrOff, hl sOut (by decide), hl sK (by decide), hO, hK,
-      shr3_w k (by omega), sixteen_w _ rfl]) rfl) fun s₁ ⟨⟨hsi, hcx, hax, hm₁⟩, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (wp_upto (a := 0) (N := 16 * ((k + 7) / 8)) (by omega)
+      shr3_w k (by omega_arith), sixteen_w _ rfl]) rfl) fun s₁ ⟨⟨hsi, hcx, hax, hm₁⟩, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (wp_upto (a := 0) (N := 16 * ((k + 7) / 8)) (by omega_arith)
     (FailInv s₁ op (16 * ((k + 7) / 8))) ?_ (fun t h => h)
     ⟨Keep.refl _ _, by rw [hsi, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero], by rw [hcx, Nat.sub_zero],
-      fun i hi => absurd hi (by omega), fun x _ => rfl⟩) fun t₂ hI => ?_)
+      fun i hi => absurd hi (by omega_arith), fun x _ => rfl⟩) fun t₂ hI => ?_)
   · intro j _ hj t hI
     have hst : InRegions t.wr (op + BitVec.ofNat 64 j) 1 := by
       rw [hI.keep.2.2, k₁.2.2]; exact hout j hj
@@ -129,25 +129,25 @@ theorem pcFail_ok {s : State} {B : Addr} {Z k : Nat} {op : Addr} (hs : Scr s B Z
         t'.gpr .rcx = BitVec.ofNat 64 (16 * ((k + 7) / 8) - (j + 1)) ∧
         t'.zf = some (decide (j + 1 = 16 * ((k + 7) / 8)))) (by
       xrun [State.ea, at0, hI.rsi, hI.rcx, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero, hst, hax',
-        ofNat64_pred (show 1 ≤ 16 * ((k + 7) / 8) - j by omega) (by omega), BitVec.add_assoc, ofNat_add_one,
-        ofNat64_beq_zero (show 16 * ((k + 7) / 8) - j - 1 < 2 ^ 64 by omega)]
-      exact ⟨by rw [show 16 * ((k + 7) / 8) - j - 1 = 16 * ((k + 7) / 8) - (j + 1) by omega],
-        decide_eq_decide.mpr (by omega)⟩) rfl)
+        ofNat64_pred (show 1 ≤ 16 * ((k + 7) / 8) - j by omega_arith) (by omega_arith), BitVec.add_assoc, ofNat_add_one,
+        ofNat64_beq_zero (show 16 * ((k + 7) / 8) - j - 1 < 2 ^ 64 by omega_arith)]
+      exact ⟨by rw [show 16 * ((k + 7) / 8) - j - 1 = 16 * ((k + 7) / 8) - (j + 1) by omega_arith],
+        decide_eq_decide.mpr (by omega_arith)⟩) rfl)
       fun t' ⟨⟨hm, hsi', hcx', hz⟩, k'⟩ => ⟨hz, (hI.keep.trans k').mono (by decide), hsi', hcx', ?_, ?_⟩
     · intro i hi
       rw [hm, writeW8_apply]
       by_cases hij : i = j
       · subst hij; simp
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega) (by omega) hij))]
-        exact hI.bytes i (by omega)
+      · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega_arith) (by omega_arith) hij))]
+        exact hI.bytes i (by omega_arith)
     · intro x hx
-      rw [hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega)))]
-      exact hI.frame x fun i hi => hx i (by omega)
+      rw [hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega_arith)))]
+      exact hI.frame x fun i hi => hx i (by omega_arith)
   -- The saved registers.
   have hw₂ : ∀ i < 32, word t₂.mem B (8 * i) = word s.mem B (8 * i) := fun i hi => by
     apply Mem.readW_congr
     intro b hb
-    rw [hI.frame _ (fun j hj => scr_ne_out hsep (d := 8 * i) (i := b) (by omega) (by omega) j (by omega)), hm₁]
+    rw [hI.frame _ (fun j hj => scr_ne_out hsep (d := 8 * i) (i := b) (by omega_arith) (by omega_arith) j (by omega_arith)), hm₁]
   have k12 := k₁.trans hI.keep
   have hl₂ : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off B (8 * i)) 8 := fun i hi => by
     rw [k12.2.1, k12.2.2]; exact hl i hi
@@ -168,10 +168,10 @@ theorem pcFail_ok {s : State} {B : Addr} {Z k : Nat} {op : Addr} (hs : Scr s B Z
     refine readW_zero fun b hb => ?_
     have hi := List.mem_range.mp hi
     rw [hm, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    exact hI.bytes _ (by omega)
+    exact hI.bytes _ (by omega_arith)
   · rw [k₃.gpr (by decide), hI.keep.gpr (by decide), hax]; rfl
   · intro i hi
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl
     · exact h0
     · exact h1
     · exact h2
@@ -180,7 +180,7 @@ theorem pcFail_ok {s : State} {B : Addr} {Z k : Nat} {op : Addr} (hs : Scr s B Z
     · exact h5
   · intro x _ hx
     rw [hm, hI.frame x fun j hj he => by
-      rw [he, ofs, Mem.sub_ofNat_toNat op (by omega)] at hx; omega,
+      rw [he, ofs, Mem.sub_ofNat_toNat op (by omega_arith)] at hx; omega_arith,
       hm₁]
 
 /-! ## The whole function -/
@@ -211,13 +211,13 @@ theorem pcCtx_of {s : State} (h : pcContract.pre s) : PcCtx s := by
   unfold Spec.Rsa.precomputedWords Spec.Rsa.modulusWords at hpl
   have hs : Scr s (s.gpr .r8) ((s.gpr .r9).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hn := hs.nowrap
-  have hp8 : (s.gpr .rsi).toNat * 8 = 16 * (((s.gpr .rcx).toNat + 7) / 8) := by omega
+  have hp8 : (s.gpr .rsi).toNat * 8 = 16 * (((s.gpr .rcx).toNat + 7) / 8) := by omega_arith
   have hpre : (⟨s.gpr .rdi, (s.gpr .rsi).toNat * 8⟩ : Region) ∈ s.wr := by rw [hwr]; simp
-  refine ⟨hk1, hk2, hpl, by omega, hs, src_of_region (by rw [hrd]; simp) (by omega) dns,
-    fun i hi => ⟨_, hpre, Offset.contains_base _ (by omega) (by omega)⟩,
-    fun j hj => ⟨_, hpre, contains_byte _ (by omega) (by omega)⟩,
-    fun j hj => out_scr dPs (contains_byte _ (by omega) (by omega)), fun b hb => ?_⟩
-  have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega) (by omega)
+  refine ⟨hk1, hk2, hpl, by omega_arith, hs, src_of_region (by rw [hrd]; simp) (by omega_arith) dns,
+    fun i hi => ⟨_, hpre, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
+    fun j hj => ⟨_, hpre, contains_byte _ (by omega_arith) (by omega_arith)⟩,
+    fun j hj => out_scr dPs (contains_byte _ (by omega_arith) (by omega_arith)), fun b hb => ?_⟩
+  have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega_arith) (by omega_arith)
   exact ⟨out_scr dRs hc, hp8 ▸ out_scr dRp hc⟩
 
 theorem pcCode_correct (M : Mont) (r : R2Impl M)
@@ -235,9 +235,9 @@ theorem pcCode_correct (M : Mont) (r : R2Impl M)
   unfold Precompute.code
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (pcEntry_ok rfl fun i hi => c.hs.st (by omega))
+  refine WP.mono (pcEntry_ok rfl fun i hi => c.hs.st (by omega_arith))
     fun t₁ ⟨hdi, h0, h1, h2, h3, h4, h5, hO, hN, hK, ho₁, k₁⟩ => ?_
-  have i₁ : InScr (s.gpr .r8) ((s.gpr .r9).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega)
+  have i₁ : InScr (s.gpr .r8) ((s.gpr .r9).toNat * 8) s.mem t₁.mem := InScr.of_outside ho₁ (by omega_arith)
   have hnb₁ := c.hnb.congrK i₁ k₁
   refine WP.mono (invalid_ok ((k₁.gpr (by decide)).trans rfl) (by rw [k₁.gpr (by decide), ofNat_toNat64]) hk1 hk2
     (bytesAt_length _ _ _) (fun i hi => hnb₁.rd i (by rw [bytesAt_length]; exact hi))
@@ -248,7 +248,7 @@ theorem pcCode_correct (M : Mont) (r : R2Impl M)
   have hdi₂ : t₂.gpr .rdi = s.gpr .r8 := (k₂.gpr (by decide)).trans hdi
   have hw : ∀ i < 2 * (((s.gpr .rcx).toNat + 7) / 8), InRegions t₂.wr (off (s.gpr .rdi) (8 * i)) 8 :=
     fun i hi => by rw [kk.2.2]; exact c.hpw i hi
-  have hz : slot (((s.gpr .rcx).toNat + 7) / 8) 8 ≤ (s.gpr .r9).toNat * 8 := by unfold slot hdrBytes; omega
+  have hz : slot (((s.gpr .rcx).toNat + 7) / 8) 8 ≤ (s.gpr .r9).toNat * 8 := by unfold slot hdrBytes; omega_arith
   -- What either branch leaves.
   have fin : ∀ t (ws : List (BitVec 64)) (cb : Bool),
       PcPost t₂ t (s.gpr .r8) ((s.gpr .r9).toNat * 8) (((s.gpr .rcx).toNat + 7) / 8) (s.gpr .rdi) ws cb →
@@ -280,7 +280,7 @@ theorem pcCode_correct (M : Mont) (r : R2Impl M)
     (s.gpr .rcx).toNat) (by simp [eval, hz₂]) (fun hb => ?_) (fun hb => ?_)
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
         (s.gpr .rcx).toNat = false := by simpa using hb
-    refine WP.mono (pcFail_ok hs₂ hdi₂ (by omega) (by omega) (by omega) (by rw [hm₂]; exact hO)
+    refine WP.mono (pcFail_ok hs₂ hdi₂ (by omega_arith) (by omega_arith) (by omega_arith) (by rw [hm₂]; exact hO)
       (by rw [hm₂, hK, ofNat_toNat64]) (fun j hj => by rw [kk.2.2]; exact c.hpb j hj) c.hps)
       fun t hp => fin t _ false hp ?_ fun _ => rfl
     simp only [Spec.Rsa.publicPrecompute, bytesAt_length, hv, Bool.false_eq_true, ite_false]

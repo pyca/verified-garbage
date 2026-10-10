@@ -39,7 +39,7 @@ theorem sub_toNat (a b : BitVec 32) : (a - b).toNat = (a.toNat + 2 ^ 32 * 2 - b.
   have ha := a.isLt
   have hb := b.isLt
   rw [BitVec.toNat_sub]
-  omega
+  omega_arith
 
 /-- A word of an addition, with the carry in `cin` (none for `add`). -/
 theorem tripleAdd_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {op : AluOp} {cin : Bool}
@@ -59,25 +59,25 @@ theorem tripleAdd_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
   rcases hop with ⟨rfl, rfl⟩ | ⟨rfl, hc⟩
   · refine wp_addS (readSrc_sc hs₁ hb) fun s₂ u₂ c₂ => ?_
     have hs₂ := hs₁.of_keeps u₂.keeps (by decide)
-    refine wp_storeS (hs₂.ea (d := acc + 4 * j) (by omega)) (hs₂.write (n := 4) (by omega))
+    refine wp_storeS (hs₂.ea (d := acc + 4 * j) (by omega_arith)) (hs₂.write (n := 4) (by omega_arith))
       fun s₃ m₃ => WP.block_nil ⟨?_, ⟨_, by rw [m₃.cf, c₂], ?_⟩, (u₁.keeps.trans (u₂.keeps)).trans (m₃.keeps _)⟩
-    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega)
+    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega_arith)
     · rw [m₃.mem, w32_write_self, u₂.gpr, BitVec.toNat_add, u₁.gpr, u₁.mem]
       simp only [w32]
       by_cases h : 2 ^ 32 ≤ (s.mem.readW (off base (a + 4 * j)) 32).toNat +
           (s.mem.readW (off base (b + 4 * j)) 32).toNat <;>
-        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
   · refine wp_adcS (readSrc_sc hs₁ hb) (by rw [cf₁]; exact hc) fun s₂ u₂ c₂ => ?_
     have hs₂ := hs₁.of_keeps u₂.keeps (by decide)
-    refine wp_storeS (hs₂.ea (d := acc + 4 * j) (by omega)) (hs₂.write (n := 4) (by omega))
+    refine wp_storeS (hs₂.ea (d := acc + 4 * j) (by omega_arith)) (hs₂.write (n := 4) (by omega_arith))
       fun s₃ m₃ => WP.block_nil ⟨?_, ⟨_, by rw [m₃.cf, c₂], ?_⟩, (u₁.keeps.trans (u₂.keeps)).trans (m₃.keeps _)⟩
-    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega)
+    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega_arith)
     · rw [m₃.mem, w32_write_self, u₂.gpr, add3_toNat, u₁.gpr, u₁.mem]
       simp only [w32]
       have := Bool.toNat_le cin
       by_cases h : 2 ^ 32 ≤ (s.mem.readW (off base (a + 4 * j)) 32).toNat +
           (s.mem.readW (off base (b + 4 * j)) 32).toNat + cin.toNat <;>
-        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 /-- A word of a subtraction, with the borrow in `cin` (none for `sub`). -/
 theorem tripleSub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {op : AluOp} {cin : Bool}
@@ -97,25 +97,25 @@ theorem tripleSub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
   rcases hop with ⟨rfl, rfl⟩ | ⟨rfl, hc⟩
   · refine wp_subS (readSrc_sc hs₁ hb) fun s₂ u₂ c₂ => ?_
     have hs₂ := hs₁.of_keeps u₂.keeps (by decide)
-    refine wp_storeS (hs₂.ea (d := acc + 4 * j) (by omega)) (hs₂.write (n := 4) (by omega))
+    refine wp_storeS (hs₂.ea (d := acc + 4 * j) (by omega_arith)) (hs₂.write (n := 4) (by omega_arith))
       fun s₃ m₃ => WP.block_nil ⟨?_, ⟨_, by rw [m₃.cf, c₂], ?_⟩, (u₁.keeps.trans (u₂.keeps)).trans (m₃.keeps _)⟩
-    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega)
+    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega_arith)
     · rw [m₃.mem, w32_write_self, u₂.gpr, sub_toNat, u₁.gpr, u₁.mem]
       simp only [w32]
       by_cases h : (s.mem.readW (off base (a + 4 * j)) 32).toNat <
           (s.mem.readW (off base (b + 4 * j)) 32).toNat <;>
-        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
   · refine wp_sbbS (readSrc_sc hs₁ hb) (by rw [cf₁]; exact hc) fun s₂ u₂ c₂ => ?_
     have hs₂ := hs₁.of_keeps u₂.keeps (by decide)
-    refine wp_storeS (hs₂.ea (d := acc + 4 * j) (by omega)) (hs₂.write (n := 4) (by omega))
+    refine wp_storeS (hs₂.ea (d := acc + 4 * j) (by omega_arith)) (hs₂.write (n := 4) (by omega_arith))
       fun s₃ m₃ => WP.block_nil ⟨?_, ⟨_, by rw [m₃.cf, c₂], ?_⟩, (u₁.keeps.trans (u₂.keeps)).trans (m₃.keeps _)⟩
-    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega)
+    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega_arith)
     · rw [m₃.mem, w32_write_self, u₂.gpr, sub3_toNat, u₁.gpr, u₁.mem]
       simp only [w32]
       have := Bool.toNat_le cin
       by_cases h : (s.mem.readW (off base (a + 4 * j)) 32).toNat <
           (s.mem.readW (off base (b + 4 * j)) 32).toNat + cin.toNat <;>
-        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 /-- `[acc] = [a] + [b]` (`k + 1` words), and the carry. -/
 theorem chainAdd_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {acc a b : Nat} :
@@ -128,22 +128,22 @@ theorem chainAdd_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
       Keeps [.eax] s u
   | 0, hacc, ha, hb, _, _ => by
     rw [chainK_one]
-    refine WP.mono (tripleAdd_ok hs (.inl ⟨rfl, rfl⟩) (j := 0) (by omega) (by omega) (by omega))
+    refine WP.mono (tripleAdd_ok hs (.inl ⟨rfl, rfl⟩) (j := 0) (by omega_arith) (by omega_arith) (by omega_arith))
       fun u ⟨O, ⟨c, hc, V⟩, K⟩ => ⟨O, ⟨c, hc, ?_⟩, K⟩
     simp only [val32, Nat.mul_zero, Nat.add_zero, Bool.toNat_false] at V ⊢
     exact V
   | k + 1, hacc, ha, hb, hsa, hsb => by
     have hn := hs.nowrap
     rw [chainK_succ, ite_eq_right_of_eq_false _ _ (eq_false (Nat.add_one_ne_zero k))]
-    refine WP.block_append (WP.mono (chainAdd_ok hs k (by omega) (by omega) (by omega) (by omega) (by omega))
+    refine WP.block_append (WP.mono (chainAdd_ok hs k (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
       fun s₁ ⟨O₁, ⟨c₁, hc₁, V₁⟩, K₁⟩ => ?_)
     have hs₁ := hs.of_keeps K₁ (by decide)
-    refine WP.mono (tripleAdd_ok hs₁ (.inr ⟨rfl, hc₁⟩) (j := k + 1) (by omega) (by omega) (by omega))
-      fun u ⟨O, ⟨c, hc, V⟩, K⟩ => ⟨(O₁.mono (Nat.le_refl _) (by omega)).trans (O.mono (by omega) (by omega)),
+    refine WP.mono (tripleAdd_ok hs₁ (.inr ⟨rfl, hc₁⟩) (j := k + 1) (by omega_arith) (by omega_arith) (by omega_arith))
+      fun u ⟨O, ⟨c, hc, V⟩, K⟩ => ⟨(O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O.mono (by omega_arith) (by omega_arith)),
         ⟨c, hc, ?_⟩, K₁.trans K⟩
-    rw [O₁.w32 (d := a + 4 * (k + 1)) (by omega) (by omega), O₁.w32 (d := b + 4 * (k + 1)) (by omega) (by omega)] at V
+    rw [O₁.w32 (d := a + 4 * (k + 1)) (by omega_arith) (by omega_arith), O₁.w32 (d := b + 4 * (k + 1)) (by omega_arith) (by omega_arith)] at V
     rw [val32_succ u.mem base acc (k + 1), val32_succ s.mem base a (k + 1), val32_succ s.mem base b (k + 1),
-      O.val32 (by omega) (by omega), pow32_succ (k + 1)]
+      O.val32 (by omega_arith) (by omega_arith), pow32_succ (k + 1)]
     generalize 2 ^ (32 * (k + 1)) = P at *
     grind
 
@@ -158,22 +158,22 @@ theorem chainSub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
       Keeps [.eax] s u
   | 0, hacc, ha, hb, _, _ => by
     rw [chainK_one]
-    refine WP.mono (tripleSub_ok hs (.inl ⟨rfl, rfl⟩) (j := 0) (by omega) (by omega) (by omega))
+    refine WP.mono (tripleSub_ok hs (.inl ⟨rfl, rfl⟩) (j := 0) (by omega_arith) (by omega_arith) (by omega_arith))
       fun u ⟨O, ⟨c, hc, V⟩, K⟩ => ⟨O, ⟨c, hc, ?_⟩, K⟩
     simp only [val32, Nat.mul_zero, Nat.add_zero, Bool.toNat_false] at V ⊢
     exact V
   | k + 1, hacc, ha, hb, hsa, hsb => by
     have hn := hs.nowrap
     rw [chainK_succ, ite_eq_right_of_eq_false _ _ (eq_false (Nat.add_one_ne_zero k))]
-    refine WP.block_append (WP.mono (chainSub_ok hs k (by omega) (by omega) (by omega) (by omega) (by omega))
+    refine WP.block_append (WP.mono (chainSub_ok hs k (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
       fun s₁ ⟨O₁, ⟨c₁, hc₁, V₁⟩, K₁⟩ => ?_)
     have hs₁ := hs.of_keeps K₁ (by decide)
-    refine WP.mono (tripleSub_ok hs₁ (.inr ⟨rfl, hc₁⟩) (j := k + 1) (by omega) (by omega) (by omega))
-      fun u ⟨O, ⟨c, hc, V⟩, K⟩ => ⟨(O₁.mono (Nat.le_refl _) (by omega)).trans (O.mono (by omega) (by omega)),
+    refine WP.mono (tripleSub_ok hs₁ (.inr ⟨rfl, hc₁⟩) (j := k + 1) (by omega_arith) (by omega_arith) (by omega_arith))
+      fun u ⟨O, ⟨c, hc, V⟩, K⟩ => ⟨(O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O.mono (by omega_arith) (by omega_arith)),
         ⟨c, hc, ?_⟩, K₁.trans K⟩
-    rw [O₁.w32 (d := a + 4 * (k + 1)) (by omega) (by omega), O₁.w32 (d := b + 4 * (k + 1)) (by omega) (by omega)] at V
+    rw [O₁.w32 (d := a + 4 * (k + 1)) (by omega_arith) (by omega_arith), O₁.w32 (d := b + 4 * (k + 1)) (by omega_arith) (by omega_arith)] at V
     rw [val32_succ u.mem base acc (k + 1), val32_succ s.mem base a (k + 1), val32_succ s.mem base b (k + 1),
-      O.val32 (by omega) (by omega), pow32_succ (k + 1)]
+      O.val32 (by omega_arith) (by omega_arith), pow32_succ (k + 1)]
     generalize 2 ^ (32 * (k + 1)) = P at *
     grind
 

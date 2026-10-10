@@ -73,14 +73,14 @@ macro "k_disj" : tactic => `(tactic| (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, loadCRanges, closeRanges,
     gcdRanges, slot, hdrBytes, aN, aX, aAcc, aTmp, aY, aTab, kT0, kG, sCnt, sW, sArr, sStride, Public.sMask, sFn, kOut,
     kLen, Public.sK, kUsedP, kE, kElen, kP, kPlen, kRand, kRandLen, kUsed]
-  and_intros <;> omega))
+  and_intros <;> omega_arith))
 
 /-- Bounds of a list of literal ranges. -/
 macro "k_le" : tactic => `(tactic| (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, loadCRanges, closeRanges,
     gcdRanges, slot, hdrBytes, aN, aX, aAcc, aTmp, aY, aTab, kT0, kG, sCnt, sW, sArr, sStride, Public.sMask, sFn,
     kUsed]
-  and_intros <;> omega))
+  and_intros <;> omega_arith))
 
 /-- `kMain`. -/
 theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP : Addr} {eB pB r : List Byte}
@@ -94,28 +94,28 @@ theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP :
   have hw64 := h.w64
   have hZ := h.z
   have hrk := h.rk
-  have h256 : 8 * 32 ≤ Z := by omega
-  have hTZ : slot w aTab + 2048 ≤ Z := by simp only [slot, hdrBytes, aTab]; omega
+  have h256 : 8 * 32 ≤ Z := by omega_arith
+  have hTZ : slot w aTab + 2048 ≤ Z := by simp only [slot, hdrBytes, aTab]; omega_arith
   have hW : ∀ {rs : List (Nat × Nat)} {m m' : Mem}, Frm B rs m m' → ∀ {i : Nat}, i < 32 →
       (∀ r ∈ rs, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i) → word m' B (8 * i) = word m B (8 * i) :=
-    fun f _ hi hd => f.word_eq hd (by omega)
-  have hrest : r.length - (r.length - 8 * w) = 8 * w := by omega
+    fun f _ hi hd => f.word_eq hd (by omega_arith)
+  have hrest : r.length - (r.length - 8 * w) = 8 * w := by omega_arith
   unfold kMain
   rw [List.append_assoc]
   refine wp_seqs_append (by simp [loadC]) (by simp [closeCheck]) ?_
   -- The candidate.
   have hsrcr : Src s B Z rP (r.take (8 * w)) :=
-    ⟨fun i hi => h.rsrc.rd i (by simp at hi; omega),
-      fun i hi => by rw [h.rsrc.val i (by simp at hi; omega), List.getElem_take],
-      fun i hi => h.rsrc.out i (by simp at hi; omega)⟩
-  refine WP.mono (loadC_ok hs h.x0 hw4 (by omega) hZ h.len h.rand hsrcr (by simp; omega))
+    ⟨fun i hi => h.rsrc.rd i (by simp at hi; omega_arith),
+      fun i hi => by rw [h.rsrc.val i (by simp at hi; omega_arith), List.getElem_take],
+      fun i hi => h.rsrc.out i (by simp at hi; omega_arith)⟩
+  refine WP.mono (loadC_ok hs h.x0 hw4 (by omega_arith) hZ h.len h.rand hsrcr (by simp; omega_arith))
     fun s₁ ⟨h₁, hM₁, hc₁, hus₁, f₁, k₁⟩ => ?_
   generalize hcv : Spec.RsaKeyGen.candidate (64 * w) (Spec.Rsa.os2ip (r.take (8 * w))) = c at hc₁ ⊢
-  have hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c := hcv ▸ VG.Proof.RsaKeyGen.candidate_shape (by omega) _
+  have hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c := hcv ▸ VG.Proof.RsaKeyGen.candidate_shape (by omega_arith) _
   have hgt : 8161 < c := by
     obtain ⟨_, hlo, _⟩ := hsh
-    have : 2 ^ 13 ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by omega)
-    omega
+    have : 2 ^ 13 ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+    omega_arith
   have hin₁ : InScr B Z s.mem s₁.mem := InScr.of_frm f₁ (by have := h₁.hZ; k_le)
   have ho₁ := h.ou.congr k₁.wr
   have hP₁ : word s₁.mem B (8 * kP) = pP := (hW f₁ (by decide) (by k_disj)).trans h.p
@@ -141,7 +141,7 @@ theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP :
     simp only [↓reduceIte, CandEnd, List.length_drop]
     rwa [hrest]
   have hc₂ : wv s₂.mem B (slot w aN) w = c := by
-    rw [f₂.wv_eq (d := slot w aN) (k := w) (by k_disj) (by have := h₂.hZ; simp only [slot, hdrBytes, aN] at *; omega)]
+    rw [f₂.wv_eq (d := slot w aN) (k := w) (by k_disj) (by have := h₂.hZ; simp only [slot, hdrBytes, aN] at *; omega_arith)]
     exact hc₁
   have hrej : ∀ t, KEnd s t op up (8 * w) 3 (8 * w) none → CandEnd s t op up (8 * w) r
       (some (.rejected, r.drop (8 * w))) := fun t ht => by
@@ -167,11 +167,11 @@ theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP :
     simp only [hcl, hoc, Bool.false_eq_true, ↓reduceIte, Bool.not_true, Bool.false_and]
     exact hrej t ht
   have hc₃ : wv s₃.mem B (slot w aN) w = c := by
-    rw [f₃.wv_eq (d := slot w aN) (k := w) (by k_disj) (by have := h₂.hZ; simp only [slot, hdrBytes, aN] at *; omega)]
+    rw [f₃.wv_eq (d := slot w aN) (k := w) (by k_disj) (by have := h₂.hZ; simp only [slot, hdrBytes, aN] at *; omega_arith)]
     exact hc₂
   -- `gcd(c − 1, e)`.
   refine wp_seqs_append (by simp [gcdCheck]) (by simp) ?_
-  refine WP.mono (gcdCheck_ok h₃ (by rw [hc₃]; exact hsh.1) (by rw [hc₃]; omega)
+  refine WP.mono (gcdCheck_ok h₃ (by rw [hc₃]; exact hsh.1) (by rw [hc₃]; omega_arith)
     ((hk₃ (by decide) (by k_disj) (by k_disj)).trans h.e) ((hk₃ (by decide) (by k_disj) (by k_disj)).trans h.elen)
     h.el1 h.el8 (h.esrc.congrK hin₃ k13)) fun s₄ ⟨hz₄, h₄, f₄, k₄⟩ => ?_
   rw [hc₃] at hz₄
@@ -194,7 +194,7 @@ theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP :
     exact hrej t ht
   simp only [Bool.not_eq_false', decide_eq_true_eq] at hgc
   have hc₄ : wv s₄.mem B (slot w aN) w = c := by
-    rw [f₄.wv_eq (d := slot w aN) (k := w) (by k_disj) (by have := h₂.hZ; simp only [slot, hdrBytes, aN] at *; omega)]
+    rw [f₄.wv_eq (d := slot w aN) (k := w) (by k_disj) (by have := h₂.hZ; simp only [slot, hdrBytes, aN] at *; omega_arith)]
     exact hc₃
   have hM₄ : word s₄.mem B (8 * Public.sMask) = mask true :=
     (hW f₄ (by decide) (by k_disj)).trans ((hW f₃ (by decide) (by k_disj)).trans ((hW f₂ (by decide) (by k_disj)).trans hM₁))
