@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.X25519.Field64
 
@@ -83,6 +84,27 @@ theorem invRestores_ok (s : State) :
 
 theorem lo_append (x : BitVec 64) : ((0 : BitVec 64) ++ x).extractLsb' 0 64 = x := by
   ext i h; simp only [BitVec.getElem_extractLsb']; rw [BitVec.getLsbD_append]; simp [h]
+
+/-- `invertFn` as the inline inversion `invertDS` is to its caller: slot 17
+becomes slot 4's power `p - 2`, and only the working area `[512, 768)` and the
+registers `clob` and `rbx` change (it keeps more). -/
+theorem invertFn_pow [DivstepInv] {s : State} {base : Addr} (hs : Scr s base) :
+    WP isa invertFn s fun t =>
+      (∀ r, r ∉ clob → r ≠ .rbx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Outside base 512 256 s.mem t.mem ∧
+      E t.mem base 17 = Spec.X25519.pow (E s.mem base 4) (Spec.X25519.P - 2) := by
+  refine WP.seq (WP.mono (invSaves_ok s) fun s₁ ⟨g₁, m₁, rd₁, wr₁, _⟩ => ?_)
+  have hs₁ : Scr s₁ base := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
+  refine WP.seq (WP.mono (invertDS_pow baseline_ok hs₁) fun s₂ ⟨g₂, rd₂, wr₂, o₂, e₂⟩ => ?_)
+  refine WP.mono (invRestores_ok s₂) fun s₃ ⟨_, _, _, _, _, _, k₃, m₃, rd₃, wr₃⟩ => ?_
+  refine ⟨fun r hc hb => ?_, by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁], ?_, ?_⟩
+  · have hne : ∀ q ∈ [Reg.rbp, .r12, .r13, .r14, .r15], r ≠ q := fun q hq h => hc (by
+      subst h; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl | rfl | rfl | rfl <;> decide)
+    rw [k₃ r hb (hne _ (by simp)) (hne _ (by simp)) (hne _ (by simp)) (hne _ (by simp))
+      (hne _ (by simp)), g₂ r hc hb, g₁]
+  · rw [m₃]; rw [← m₁]; exact o₂
+  · rw [m₃, e₂, m₁]
 
 theorem invert_x64 [DivstepInv] (s : State) (hs : inv64.pre s) :
     ∃ t s', Exec isa invertFn s t s' ∧ abiPreserved s s' ∧ inv64.post s s' := by
