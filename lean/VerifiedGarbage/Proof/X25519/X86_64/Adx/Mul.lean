@@ -87,9 +87,7 @@ theorem reduceLo_ok (s : State) :
     (k3.mono (by decide))).trans (k4.mono (by decide))).trans (k5.mono (by decide))).trans
     (k6.mono (by decide))⟩
 
-theorem reduceX_eq :
-    reduceX = reduceLo ++ (([.mulx .rcx .rax (.reg .r12)] : List Instr) ++ carry19 .rbp) := by
-  simp only [reduceX, List.append_assoc]
+theorem reduceX_eq : reduceX = reduceLo ++ fold19X := rfl
 
 open VG.Spec.X25519 (P) in
 /-- The last fold: `r8–r11 + 2²⁵⁶ r12` with `r12 < 79` and `rdx = 38`, folded into `r8–r11`. -/
@@ -109,26 +107,66 @@ theorem foldX_ok (s : State) (h12 : (s.gpr .r12).toNat < 79) (hd : (s.gpr .rdx).
   rw [e8, hax, k7.1 .r8 (by decide), k7.1 .r9 (by decide), k7.1 .r10 (by decide),
     k7.1 .r11 (by decide), fold256]
 
+/-- The start of `fold19X`: `rax = 19 (2 r12 + bit 255)`, and bit 255 cleared. -/
+theorem fold19Q_ok (s : State) (h12 : (s.gpr .r12).toNat < 79) :
+    WP isa (.block [.mov .rax (.reg .r11), .shift .shr .rax 63, .alu .add .r12 (.reg .r12),
+      .alu .add .rax (.reg .r12), .mov32 .rdx (.imm 19), .imul .rax .rdx, .movImm64 .rcx low63,
+      .alu .and .r11 (.reg .rcx)]) s fun s' =>
+      (s'.gpr .rax).toNat = 19 * (2 * (s.gpr .r12).toNat + (s.gpr .r11).toNat / 2 ^ 63) ∧
+      (s'.gpr .r11).toNat = (s.gpr .r11).toNat % 2 ^ 63 ∧
+      Keeps [.r11, .r12, .rax, .rcx, .rdx] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,
+    execShift, execImul, State.setReg32, Option.map_some, Option.bind_some, RegUpd.gpr_setReg,
+    RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, ite_true, ite_false, reduceCtorEq,
+    Option.some.injEq, exists_eq_left', Nat.reduceLeDiff, and_self]
+  have hx := (s.gpr .r11).isLt
+  refine ⟨?_, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · rw [imul_toNat, BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ushiftRight,
+      Nat.shiftRight_eq_div_pow]
+    have e19 : (BitVec.setWidth 64 (19 : BitVec 32)).toNat = 19 := rfl
+    rw [e19]
+    have : (s.gpr .r11).toNat / 2 ^ 63 ≤ 1 := by omega
+    rw [Nat.mod_eq_of_lt (a := (s.gpr .r12).toNat + _) (by omega), Nat.mod_eq_of_lt (by omega),
+      Nat.mod_eq_of_lt (by omega)]
+    omega
+  · rw [BitVec.toNat_and, show low63.toNat = 2 ^ 63 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hr.1, hr.2.1,
+      hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
+
 open VG.Spec.X25519 (P) in
-/-- `reduceX`'s last fold: `r8–r11 + 2²⁵⁶ r12` with `r12 < 79` and `rdx = 38`, folded into
-`r8–r11` at bit 255, at most `2p`. -/
-theorem foldX19_ok (s : State) (h12 : (s.gpr .r12).toNat < 79) (hd : (s.gpr .rdx).toNat = 38) :
-    WP isa (.block (([.mulx .rcx .rax (.reg .r12)] : List Instr) ++ carry19 .rbp)) s fun s' =>
+/-- `fold19X`: `r8–r11 + 2²⁵⁶ r12` with `r12 < 79`, folded into `r8–r11` at bit 255, at
+most `2p`. -/
+theorem fold19X_ok (s : State) (h12 : (s.gpr .r12).toNat < 79) :
+    WP isa (.block fold19X) s fun s' =>
       val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) % P =
         (val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) + 2 ^ 256 * (s.gpr .r12).toNat) % P ∧
       val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) ≤ 2 * P ∧
-      Keeps [.r8, .r9, .r10, .r11, .rax, .rcx, .rbp] s s' := by
-  rw [WP.block_append_iff]
-  refine WP.mono (mulx_ok s rfl (noImm_reg _) (by decide)) fun s7 ⟨e7, _, _, k7⟩ => ?_
-  rw [hd] at e7
-  have hax : (s7.gpr .rax).toNat = 38 * (s.gpr .r12).toNat := by
-    have := (s7.gpr .rax).isLt
-    omega_arith
-  refine WP.mono (carry19_ok s7 (m := .rbp) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by omega_arith)) fun s8 ⟨e8, b8, k8⟩ => ?_
-  refine ⟨?_, b8, (k7.mono (by decide)).trans (k8.mono (by decide))⟩
-  rw [e8, hax, k7.1 .r8 (by decide), k7.1 .r9 (by decide), k7.1 .r10 (by decide),
-    k7.1 .r11 (by decide), fold256]
+      Keeps [.r8, .r9, .r10, .r11, .r12, .rax, .rcx, .rdx] s s' := by
+  rw [show fold19X = [.mov .rax (.reg .r11), .shift .shr .rax 63, .alu .add .r12 (.reg .r12),
+      .alu .add .rax (.reg .r12), .mov32 .rdx (.imm 19), .imul .rax .rdx, .movImm64 .rcx low63,
+      .alu .and .r11 (.reg .rcx)] ++ ([.alu .add .r8 (.reg .rax), .alu .adc .r9 (.imm 0),
+      .alu .adc .r10 (.imm 0), .alu .adc .r11 (.imm 0)] : List Instr) from rfl, WP.block_append_iff]
+  refine WP.mono (fold19Q_ok s h12) fun s1 ⟨ea, e11, k1⟩ => ?_
+  refine WP.mono (carryAdd_ok s1) fun s2 ⟨c, hc, e2, k2⟩ => ?_
+  rw [k1.1 .r8 (by decide), k1.1 .r9 (by decide), k1.1 .r10 (by decide)] at e2
+  simp only [val4] at e2 ⊢
+  rw [e11, ea] at e2
+  have := (s.gpr .r11).isLt
+  -- `r11 = 2⁶³ b + (r11 mod 2⁶³)`, and the sum does not carry out.
+  have hb : (s.gpr .r11).toNat = 2 ^ 63 * ((s.gpr .r11).toNat / 2 ^ 63) + (s.gpr .r11).toNat % 2 ^ 63 :=
+    (Nat.div_add_mod _ _).symm
+  have hb1 : (s.gpr .r11).toNat / 2 ^ 63 ≤ 1 := by omega
+  have hu : (s.gpr .r11).toNat % 2 ^ 63 < 2 ^ 63 := Nat.mod_lt _ (by decide)
+  generalize (s.gpr .r11).toNat / 2 ^ 63 = b at e2 hb hb1
+  generalize (s.gpr .r11).toNat % 2 ^ 63 = u at e2 hb hu
+  have hc0 : c = 0 := by omega
+  subst hc0
+  refine ⟨mod_of_add_mul (k := b + 2 * (s.gpr .r12).toNat) ?_, ?_,
+    (k1.mono (by decide)).trans (k2.mono (by decide))⟩
+  · rw [hb]; simp only [P]; omega
+  · simp only [P]; omega
 
 open VG.Spec.X25519 (P) in
 /-- `r8–r11 + 2²⁵⁶ r12–r15`, reduced into `r8–r11` (modulo `p`), at most `2p`. -/
@@ -141,7 +179,7 @@ theorem reduceX_ok (s : State) :
       Keeps [.r8, .r9, .r10, .r11, .r12, .rax, .rcx, .rdx, .rbp] s s' := by
   rw [reduceX_eq, WP.block_append_iff]
   refine WP.mono (reduceLo_ok s) fun s6 ⟨hv, h12, hd, k6⟩ => ?_
-  refine WP.mono (foldX19_ok s6 (by omega) hd) fun s8 ⟨e8, b8, k8⟩ => ?_
+  refine WP.mono (fold19X_ok s6 (by omega)) fun s8 ⟨e8, b8, k8⟩ => ?_
   refine ⟨?_, b8, k6.trans (k8.mono (by decide))⟩
   rw [e8, hv, fold256]
 

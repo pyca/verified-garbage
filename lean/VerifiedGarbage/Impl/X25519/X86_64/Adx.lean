@@ -11,8 +11,8 @@ chains at once, the low halves of the products through OF and the high
 halves through CF.
 
 * `mulX`: the 512-bit product, row by row into `r8–r15` (row 0 with one
-  chain), then `lo + 38 hi` with both chains, and its carry word folded as
-  in `mul`;
+  chain), then `lo + 38 hi` with both chains, and its carry word and bit 255
+  folded together as `19 (2 c + b₂₅₅)` (`fold19X`);
 * `sqrX`: the products `a_i a_j` (`i < j`) into `r9–r14`, then doubled
   through CF while the squares `a_i²` are added through OF, and reduced as
   in `mulX`.
@@ -69,8 +69,20 @@ def reduceLo : List Instr :=
   [.mov32 .rdx (.imm 38), clear] ++ madd .r8 .r9 (.reg .r12) ++ madd .r9 .r10 (.reg .r13) ++
     madd .r10 .r11 (.reg .r14) ++ maddLast .r11 .r12 (.reg .r15)
 
-/-- `reduceLo`, then `r8–r11 += 38 r12`, folded at bit 255 (at most `2p`). -/
-def reduceX : List Instr := reduceLo ++ [.mulx .rcx .rax (.reg .r12)] ++ carry19 .rbp
+/-- `r8–r11 + 2²⁵⁶ r12` (`r12` small) folded at bit 255 into `r8–r11`, at most
+`2p`: as `2²⁵⁵ ≡ 19` and `2²⁵⁶ ≡ 38`, `q = 2 r12 + bit 255` (`shr`, two
+additions), bit 255 cleared (`and` with `2⁶³ - 1`), and `19 q` (`imul`) added.
+Of its instructions only `shr` and the three `adc`s use the flags, which on
+Intel's cores share two ports with every carry of the products, where
+`mulx` and `carry19` take six. -/
+def fold19X : List Instr :=
+  [.mov .rax (.reg .r11), .shift .shr .rax 63, .alu .add .r12 (.reg .r12),
+    .alu .add .rax (.reg .r12), .mov32 .rdx (.imm 19), .imul .rax .rdx, .movImm64 .rcx low63,
+    .alu .and .r11 (.reg .rcx), .alu .add .r8 (.reg .rax), .alu .adc .r9 (.imm 0),
+    .alu .adc .r10 (.imm 0), .alu .adc .r11 (.imm 0)]
+
+/-- `reduceLo`, then `r8–r11 + 2²⁵⁶ r12` folded at bit 255 (at most `2p`). -/
+def reduceX : List Instr := reduceLo ++ fold19X
 
 /-- `r8–r12` doubled. -/
 def dbl5 : List Instr :=

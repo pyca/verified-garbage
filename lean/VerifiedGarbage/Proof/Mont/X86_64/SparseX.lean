@@ -15,15 +15,7 @@ namespace VG.Proof.Mont.X86_64
 
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono se0 add_carry adc_carry sub_borrow sbb_borrow
-  toNat_ofBool)
-
-/-- `imul`'s result: the low word of the product, signed or unsigned. -/
-theorem imul_toNat (a b : BitVec 64) :
-    (BitVec.ofInt 64 (a.toInt * b.toInt)).toNat = a.toNat * b.toNat % 2 ^ 64 := by
-  have h : BitVec.ofInt 64 (a.toInt * b.toInt) = a * b := by
-    apply BitVec.eq_of_toInt_eq
-    rw [BitVec.toInt_ofInt, BitVec.toInt_mul]
-  rw [h, BitVec.toNat_mul]
+  toNat_ofBool imul_toNat)
 
 /-- `rdx = t₀ (2³² + 1) mod 2⁶⁴`. -/
 theorem uSparseX_ok (s : State) {t0 : Reg} (hd : t0 ≠ .rdx) :

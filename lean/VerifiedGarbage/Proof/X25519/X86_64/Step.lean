@@ -86,6 +86,14 @@ theorem mulStep_ok (s : State) {t c ai : Reg} {src : Src} {v : BitVec 64}
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hr.1, hr.2.1,
       hr.2.2.1, hr.2.2.2, ite_false]
 
+/-- `imul`'s result: the low word of the product, signed or unsigned. -/
+theorem imul_toNat (a b : BitVec 64) :
+    (BitVec.ofInt 64 (a.toInt * b.toInt)).toNat = a.toNat * b.toNat % 2 ^ 64 := by
+  have h : BitVec.ofInt 64 (a.toInt * b.toInt) = a * b := by
+    apply BitVec.eq_of_toInt_eq
+    rw [BitVec.toInt_ofInt, BitVec.toInt_mul]
+  rw [h, BitVec.toNat_mul]
+
 /-- The halves of a product of two words (`mul`, `mulx`): `lo + 2⁶⁴ hi`. -/
 theorem mulx_arith (d v : BitVec 64) :
     (BitVec.ofNat 64 (d.toNat * v.toNat)).toNat +
