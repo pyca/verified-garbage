@@ -97,17 +97,28 @@ def verifySumτ (rs : List Reg) : X86_64.Taint.T :=
   { regs := .ofList (rs ++ [.rdi, .rsp]), flags := false, lens := [8192], bases := [(.rdi, 0, 0)],
     slots := [(0, PPK, 8), (0, PSIG, 8), (0, PCUR, 8), (0, CNT, 8)] }
 
+/-- What the bits' extraction and the start need public: the pointers, and the
+working space at `rdi`. -/
+def verifyPreτ : X86_64.Taint.T :=
+  { regs := .ofList [.rdi, .rsi, .rsp, .r8, .r9], flags := false, lens := [8192], bases := [(.rdi, 0, 0)] }
+
+taint_summary verifyBitsSum : taintS verifyPreτ vbits
+taint_summary verifyStartSum : taintS verifyPreτ (.block vstart)
+
 taint_summary verifyRootSum : taintS (verifySumτ []) (rootCall Impl.X448.X86_64.baseline)
 
 taint_summary verifyDecodeASum : taintS (verifySumτ [.rsi])
     (decode Impl.X448.X86_64.baseline 6 7 (rootCall Impl.X448.X86_64.baseline))
   using verifyRootSum
+taint_summary verifyDecodeBodySum : taintS (verifySumτ [])
+    (vdecodeBody Impl.X448.X86_64.baseline (rootCall Impl.X448.X86_64.baseline))
+  using verifyDecodeASum
 taint_summary verifyLoopSum : taintS (verifySumτ []) (vloop Impl.X448.X86_64.baseline)
 
 theorem verifyEquation_ct0 :
     ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub verifyEquation := by
   obtain ⟨_, hc⟩ : ∃ h, (taintS.check verifyEquationτ verifyEquation h).isSome = true := by
-    taint_decide_sum [verifyDecodeASum, verifyLoopSum]
+    taint_decide_sum [verifyBitsSum, verifyStartSum, verifyDecodeBodySum, verifyLoopSum]
   exact VG.Taint.constantTime (A := taintS) verifyEquationτ
     (fun _ _ h₁ h₂ hp => verifyEquation_agree h₁ h₂ hp) hc
 
