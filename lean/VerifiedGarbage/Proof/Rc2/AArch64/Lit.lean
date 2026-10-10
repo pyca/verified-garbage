@@ -29,8 +29,8 @@ end VG.Impl.Rc2.AArch64
 
 namespace VG
 
-materialize_code Impl.Rc2.AArch64.encryptBlock
-materialize_code Impl.Rc2.AArch64.decryptBlock
-materialize_code Impl.Rc2.AArch64.expandKey
+materialize_flat_code Impl.Rc2.AArch64.encryptBlock
+materialize_flat_code Impl.Rc2.AArch64.decryptBlock
+materialize_flat_code Impl.Rc2.AArch64.expandKey
 
 end VG

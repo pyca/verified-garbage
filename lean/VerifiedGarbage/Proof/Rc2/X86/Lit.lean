@@ -5,7 +5,7 @@ namespace VG.Impl.Rc2.X86
 
 materialize_value keyLookup
 
-materialize_code encryptBlock
-materialize_code decryptBlock
+materialize_flat_code encryptBlock
+materialize_flat_code decryptBlock
 
 end VG.Impl.Rc2.X86
