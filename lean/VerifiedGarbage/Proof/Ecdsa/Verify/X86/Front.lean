@@ -115,6 +115,17 @@ theorem VPre.setup {s : State} {extra : List Region} (hp : VPre c s extra) : Set
     (by rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := hp.sc_fit; omega_arith)]; exact hp.sc_fit)
     (by decide) hp.stk_sc
   sp_lo := hp.sp_lo
+  stk_sc := hp.stk_sc
+
+/-- The slot of an argument is apart from what the code writes. -/
+theorem vArgs_disjI {s : State} {extra : List Region} (hp : VPre c s extra) {i : Nat} (hi : i < 4) :
+    ∀ r ∈ s.wr ++ [below (s.gpr .esp) c.stk], Region.Disjoint ⟨argAddr s i, 4⟩ r := by
+  have h4 : (s.gpr .esp).toNat + 4 + 4 * 4 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
+  rw [hp.wr]
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl)
+  · exact hp.args_sc.sub_left (arg_subN h4 hi)
+  · exact (below_disjoint_args hp.sp_lo (k := 16) (by omega) (by decide)).symm.sub_left (arg_subN h4 hi)
 
 /-- Ranges of the working space, as one. -/
 theorem unch_whole {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')

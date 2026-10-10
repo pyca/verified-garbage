@@ -66,10 +66,21 @@ abbrev _root_.VG.Impl.Ecdsa.X86.Cfg.wk (c : Cfg) : Nat := Mont.own c.n
 
 /-- The bytes of stack below the return address that the code uses: the
 calls' 20 (the arguments and the return address; a fixed-base comb's
-four-byte frame, which reads the table's address, holds no call). -/
-abbrev _root_.VG.Impl.Ecdsa.X86.Cfg.stk (_ : Cfg) : Nat := 20
+four-byte frame, which reads the table's address, holds no call), or 28
+where the ladder calls the point functions (coordinates of at most 6
+words, without a comb): their argument and return address, and their own
+calls' 20. -/
+abbrev _root_.VG.Impl.Ecdsa.X86.Cfg.stk (c : Cfg) : Nat := if c.comb.isNone ∧ c.n ≤ 6 then 28 else 20
 
-theorem Cfg.stk_ge (c : Cfg) : 20 ≤ c.stk := Nat.le_refl _
+theorem Cfg.stk_ge (c : Cfg) : 20 ≤ c.stk := by
+  unfold Cfg.stk; split <;> omega
+
+theorem Cfg.stk_le (c : Cfg) : c.stk ≤ 28 := by
+  unfold Cfg.stk; split <;> omega
+
+theorem Cfg.stk_28 {c : Cfg} (hc : c.comb = none) (h6 : c.n ≤ 6) : 28 ≤ c.stk := by
+  have h : c.comb.isNone ∧ c.n ≤ 6 := ⟨by rw [hc]; rfl, h6⟩
+  unfold Cfg.stk; simp only [h, and_self, ↓reduceIte, Nat.le_refl]
 
 /-- Finds `c.n < 10` among the hypotheses, or in `CfgOk c`. -/
 macro "n10" : tactic => `(tactic| first | with_reducible assumption | exact CfgOk.n10 (by with_reducible assumption))
@@ -211,6 +222,7 @@ structure SetupPre (c : Cfg) (A : Args) (s : State) : Prop where
   sc_fit : (arg s A.sc).toNat + size ≤ 2 ^ 32
   stk : StkOk (s.gpr .esp) (ptr s A.sc) size
   sp_lo : c.stk ≤ (s.gpr .esp).toNat
+  stk_sc : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 c.stk, c.stk⟩ ⟨ptr s A.sc, size⟩
 
 /-- The words of a region are accessible. -/
 theorem inRegions_words {rs : List Region} {p : Addr} {len : Nat} (h : (⟨p, len⟩ : Region) ∈ rs)
@@ -241,6 +253,7 @@ theorem Pre.setup {c : Cfg} {s : State} {extra : List Region} (hp : Pre c s extr
     (by rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := hp.sc_fit; omega)]; exact hp.sc_fit)
     (by decide) hp.stk_sc
   sp_lo := hp.sp_lo
+  stk_sc := hp.stk_sc
 
 /-- The number in slot `i`. -/
 abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (c.sl i) c.n

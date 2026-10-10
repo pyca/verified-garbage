@@ -44,7 +44,7 @@ theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhX86.post s s' := by
         ((arg s 2).setWidth 64) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-/-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
+/-- No instruction writes `esp`, and the calls use 28 bytes of stack. -/
 theorem ecdh_sp : SpOk exchangeP256 p256.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) (hO : PrimeOrder Spec.P256.curve) (s : State) (hs : ecdhX86.pre s) :
@@ -74,7 +74,7 @@ theorem wf₀ {s : State} (hp : EPre p256 s) : VG.X86.Taint.Wf τ₀ s := by
   rw [hn4] at ho
   refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨by simp [hp.wr, τ₀, hn4], by simpa [hp.wr, hn4] using hp.out_sc, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨hs, ?_⟩, ?_⟩ fun _ => ⟨hp.sp_lo, ?_⟩
+    fun _ => ⟨hs, ?_⟩, ?_⟩ fun _ => ⟨Nat.le_trans (by decide : 20 ≤ p256.stk) hp.sp_lo, ?_⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth, hn4] <;> omega_using [hsc, ho]
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
@@ -86,9 +86,11 @@ theorem wf₀ {s : State} (hp : EPre p256 s) : VG.X86.Taint.Wf τ₀ s := by
     rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
       simp [VG.X86.Taint.region, hp.wr, addr, arg, argAddr]
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    have hsub := Offset.sub_below ((s.gpr .esp).setWidth 64) (a := 20) (n := 20) (b := p256.stk)
+      (m := p256.stk) (by decide) (by decide)
     rintro r (rfl | rfl)
-    · exact hp.stk_out
-    · exact hp.stk_sc
+    · exact hp.stk_out.sub_left hsub
+    · exact hp.stk_sc.sub_left hsub
 
 theorem agree₀ {s₁ s₂ : State} (h₁ : ecdhX86.pre s₁) (h₂ : ecdhX86.pre s₂)
     (hpub : ecdhX86.pub s₁ s₂) : VG.X86.Taint.Agree τ₀ s₁ s₂ := by
@@ -145,13 +147,13 @@ def ecdhWide : Contract isa :=
     let scratch : Region := ⟨(arg s 3).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 20, 20⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 28, 28⟩
     s.rd = [d, peer] ∧ s.wr = [out, scratch, args] ∧ out.Disjoint scratch ∧ out.Disjoint d ∧
       out.Disjoint peer ∧ d.Disjoint scratch ∧ peer.Disjoint scratch ∧
       args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 65 ≤ 2 ^ 32 ∧
       (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
-      20 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch }
+      28 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch }
 
 def ecdhRd (s : State) : List Region :=
   [⟨(arg s 1).setWidth 64, 32⟩, ⟨(arg s 2).setWidth 64, 65⟩, ⟨argAddr s 0, 16⟩]
@@ -181,7 +183,7 @@ def satState : State where
   wr := [⟨0x1000, 32⟩, ⟨0x8000, 8192⟩, ⟨0x20004, 16⟩]
 
 theorem ecdhWide_implies :
-    ecdhWide.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86.abi 20) := by
+    ecdhWide.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86.abi 28) := by
   have a0 : arg satState 0 = 0x1000 := by decide
   have a1 : arg satState 1 = 0x2000 := by decide
   have a2 : arg satState 2 = 0x3000 := by decide
@@ -193,7 +195,7 @@ theorem ecdhWide_implies :
     ecdhX86, ex] [a0, a1, a2, a3, e, esp] using satState
 
 theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) (hO : PrimeOrder Spec.P256.curve) :
-    Verified X86.target exchangeP256 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86.abi 20) := by
+    Verified X86.target exchangeP256 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86.abi 28) := by
   have hsat := ecdhWide_implies.sat_left
   have satLocal : ∃ s, ecdhX86.pre s := hsat.elim fun s h => ⟨_, ecdhWide_pre s h⟩
   have verifiedLocal : Verified X86.target exchangeP256 ecdhX86 :=

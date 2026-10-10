@@ -24,12 +24,13 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P192.curve) : List Artifact := 
       functions of `p192_mont`) with a final \
       conditional subtraction; `[d]G` is a double-and-add ladder over all 192 bits of `d`, with \
       the complete addition formulas of Renes, Costello and Batina for every addition and \
-      doubling and a masked selection for each bit; and `Z⁻¹` is Fermat's, by \
+      doubling (calls of `vg_p192_point_double` and `vg_p192_point_add`) and a masked \
+      selection for each bit; and `Z⁻¹` is Fermat's, by \
       square-and-always-multiply over the bits of `p - 2`. The result (or zeros) is selected \
       by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code := Impl.EcKey.X86.publicKeyP192
-    contract := Spec.EcKey.P192.inst.publicKeyContract X86.abi 20
-    stack := 20
+    contract := Spec.EcKey.P192.inst.publicKeyContract X86.abi 28
+    stack := 28
     verified := Proof.EcKey.X86.P192.pk_verified h.law
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

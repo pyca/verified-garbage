@@ -54,8 +54,14 @@ theorem pointsWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (hT : Comb
       obtain ⟨ht, ho, hap⟩ := hTb d hd
       refine ⟨ht.of_unch (by rw [k₁.rd, k₁.wr]) U₁
         (fun w hw => by rw [List.mem_singleton.mp hw]; exact tbl_le h7) ho, ho, ?_⟩
-      rw [k₁.wr, k₁.1 _ (by decide), hM.wr, hM.esp]; exact hap)
-    (by rw [k₁.1 _ (by decide), hM.esp]; exact hM.sp_lo) hspG)
+      rw [k₁.wr, k₁.1 _ (by decide), hM.wr, hM.esp]
+      intro r hr
+      rcases List.mem_append.mp hr with hr | hr
+      · exact hap r (List.mem_append_left _ hr)
+      · rw [List.mem_singleton.mp hr]
+        exact (hap _ (List.mem_append_right _ (List.mem_singleton_self _))).sub_right
+          (below_sub (Cfg.stk_ge c) hM.sp_lo))
+    (by rw [k₁.1 _ (by decide), hM.esp]; exact Nat.le_trans (Cfg.stk_ge c) hM.sp_lo) hspG)
     fun s₂ ⟨K₂, U₂, M₂, L₂, q₂⟩ => ?_)
   have hs₂ := hs₁.of_keeps K₂ (by decide)
   have F₂ := F₁.unch h7 hn fixedOk_gW U₂
