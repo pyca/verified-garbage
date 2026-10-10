@@ -42,18 +42,19 @@ theorem mulQJP384Cms_ok {c : Cfg} (hc : CfgOk c) (h6 : c.n = 6) (hcC : c.C = Spe
 
 theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P384.curve) (s : State) (hs : ecdhX86_64.pre s) :
-    ∃ t s', Exec isa exchangeP384Adx s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := wp_of_inline (c := exchangeP384Adx) (by lit_decide) <|
+    ∃ t s', Exec isa exchangeP384Adx.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
+  obtain ⟨t, s', he, hsv, hpost⟩ := 
     exchangeWith_ok (p384x_ok hI) hL
     (mulQJP384Cms_ok (p384x_ok hI) rfl rfl (by decide +kernel) hL hO) (mulQJA_w (p384x_ok hI)) (pre_of_x hs)
-  have hsp : ∀ i ∈ instrs exchangeP384Adx, Taint.clobbers i .rsp = false := by
+  have hsp : ∀ i ∈ instrs exchangeP384Adx.inline, Taint.clobbers i .rsp = false := by
     have h : exchangeP384Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, post_of_x hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+    ⟨fun r hr => ?_, ?_⟩, post_of_x hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -72,19 +73,21 @@ theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X8
 
 theorem ecdh_ct_adx : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP384Adx := by
   refine VG.Taint.constantTime_mapBlocks (c' := exchangeErasedAdx) taintS_eraseInv
-    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) rfl ?_ rfl (by taint_decide)
-  intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) rfl ?_ rfl (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact h1
   · exact h2
   · exact h3
   · exact h4
+  · exact h0
 
 theorem ecdh_verified_adx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P384.curve) :
-    Verified X86_64.target exchangeP384Adx (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst X86_64.abi) :=
-  Verified.of_correct (ecdh_x86_adx hL hI hO) ecdh_ct_adx implies
+    Verified X86_64.target exchangeP384Adx (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst X86_64.abi 8) :=
+  Verified.of_inline_ct (by lit_decide) (ecdh_x86_adx hL hI hO) ecdh_ct_adx implies8
+    (fun _ h => Sig.clear_of_pre h) ecdh_patch
 
 end VG.Proof.Ecdh.X86_64.P384

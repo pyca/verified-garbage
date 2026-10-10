@@ -40,15 +40,17 @@ theorem invLayJA (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) :
   have h7 := hc.n10
   have h4 : 4 ≤ c.n := by omega_arith
   have hT : bitsAt c.n 2 + invTbl c.n ≤ size := by
-    have := invTbl_below h4; have := sl_le_jw c h46 (i := WB) (by decide); omega_arith
-  have below : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ bitsAt c.n 2 := fun hi => by
-    have := sl_below_bits c hi 2 0; omega_arith
+    have := invTbl_below h4; have := sl_le_jw c h46 (i := WB) (by decide); omega
+  have below : ∀ {i}, i < 45 → i ≠ TMP → c.sl i + 8 * c.n ≤ bitsAt c.n 2 := fun hi hT => by
+    have := sl_below_bits c hi 2 0 (.inl hT); omega
   have hacc := invJA_acc c
   have above : bitsAt c.n 2 + invTbl c.n ≤ c.sl (WT + 80) := by
     have := invTbl_below h4; have := sl_lt c (show WB < WT + 80 by decide); omega_arith
   refine ⟨h4, show c.n < 10 by omega_arith, ?_, sl_le c h7 (i := RZ) (by decide), hT,
     sl_le c h7 (i := MP) (by decide), sl_le c h7 (i := TMP) (by decide), ?_, ?_,
-    Or.inl (below (by decide)), ?_, Or.inr (below (i := TMP) (by decide)), ?_, Or.inl (below (by decide)),
+    Or.inl (below (by decide) (by decide)), ?_,
+    (sl_apart_hi c (i := TMP) (by decide) (Nat.le_refl _) invW_below_tmp).symm, ?_,
+    Or.inl (below (by decide) (by decide)),
     sl_apart c (by decide)⟩ <;> rw [hacc]
   · exact sl_le_jw c h46 (by decide)
   · exact sl_apart c (by decide)
@@ -77,7 +79,7 @@ theorem invSpecJA (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) {base : Addr} :
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
       have key : ∀ i ∈ roJ ++ otherJ ++ gridJ, i < 45 ∨ WT ≤ i := by decide
       rcases key i hi with h | h
-      · exact Or.inl (show c.sl i + 8 * c.n ≤ bitsAt c.n 2 by have := sl_below_bits c h 2 0; omega_arith)
+      · exact sl_apart_hi c h (Nat.le_refl _) invW_below_tmp
       · refine Or.inr ?_
         show bitsAt c.n 2 + invTbl c.n ≤ c.sl i
         have := invTbl_below h4
@@ -95,7 +97,12 @@ theorem invSpecJA (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) {base : Addr} :
       show c.sl WB + 5 * Impl.Ecdh.X86_64.Cfg.jwinJ c ≤ (Impl.Ecdh.X86_64.Cfg.invJA c).acc
       rw [invJA_acc]; simp (disch := sl_ne) only [sl_eq]; unfold WB WT; omega_arith
     · exact Or.inr (invTbl_below h4)
-    · exact Or.inr (sl_lt c (show TMP < WB by decide))
+    · by_cases h6 : c.n = 6
+      · refine Or.inl ?_
+        show c.sl WB + 5 * Impl.Ecdh.X86_64.Cfg.jwinJ c ≤ c.sl TMP
+        rw [sl_tmp6 c h6]; simp (disch := sl_ne) only [sl_eq]; unfold WB
+        rw [h6] at hJle ⊢; omega
+      · exact Or.inr (sl_lt c (show TMP < WB by decide) (.inr (.inr ⟨h6, by decide⟩)))
 
 /-- What the window method with an affine table writes, inversion included. -/
 theorem invJA_w :

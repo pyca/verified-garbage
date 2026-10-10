@@ -52,7 +52,7 @@ theorem rounds_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (hmo : M.mo + 8 * M.n ≤ size)
     (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hok : M.ok m = true) :
     ∀ k ≤ M.n, ∀ {s : State} {base : Addr}, Scr s base size →
-      wordsVal s.mem base M.mo M.n = m → wordsVal s.mem base b M.n < m →
+      MoVal M m s.mem base → wordsVal s.mem base b M.n < m →
       regsVal s (wins M.n 0) = 0 →
       WP isa (.block ((List.range k).flatMap (round M a b))) s fun s' =>
         (∃ U, 2 ^ (64 * k) * regsVal s' (wins M.n k) =
@@ -75,7 +75,7 @@ theorem rounds_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
       · exact absurd h (by decide)
       · exact absurd h (by decide)
       · exact (acc_regs_lt _ hn _ h).2.2.2.2 rfl)
-    refine WP.mono (round_ok hs₁ hn (i := k) (by omega) hb hmo (by rw [hmem, hm]) hinv hok
+    refine WP.mono (round_ok hs₁ hn (i := k) (by omega) hb hmo (fun h => by rw [hmem]; exact hm h) hinv hok
       (by rw [hmem]; exact hB) hT) fun s₂ ⟨⟨u, eu⟩, hT₂, k₂⟩ => ?_
     rw [hmem] at eu
     refine ⟨⟨U + 2 ^ (64 * k) * u, ?_⟩, hT₂, k₁.trans (k₂.mono fun q hq => ?_)⟩

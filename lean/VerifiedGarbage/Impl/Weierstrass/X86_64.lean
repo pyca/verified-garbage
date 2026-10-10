@@ -49,7 +49,7 @@ def blocks : List (List Instr) → Prog isa
 take, else none. -/
 def opCall? (M : Mod) : FOp → Option (Prog isa)
   | .mul o a b => match Mont.callOf M with
-    | some (f, body) => if Mont.lowArgs o a b then some (Mont.mulCall f body o a b) else none
+    | some (f, body) => if Mont.lowArgs M.n o a b then some (Mont.mulCall f body o a b) else none
     | none => none
   | _ => none
 

@@ -52,7 +52,7 @@ theorem doubleHalf_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
         (doubleHalfEnv S p E p.z) (Spec.Weierstrass.add P P) := by
   rw [DoubleHalf.code]
   apply WP.seq
-  apply (fprogB_wp (callOf_of_ne (by omega)) _).mpr
+  apply (fprogB_wp (callOf_of_ne (by omega) (by omega)) _).mpr
   refine WP.mono (fprog_ok hL hm _ hI (doubleHalf_before_slots hSl)
     (readsOk_mono (doubleHalf_before_reads S p) hV))
     fun u ⟨ku,hu⟩ => ?_
@@ -61,7 +61,7 @@ theorem doubleHalf_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
   have hv1 : S.t1∈validAfter (DoubleHalf.before S p) V := by
     simp [DoubleHalf.before,validAfter,FOp.out]
   refine WP.mono (half_inv_ok hn hL hu hs1 hv1) fun v ⟨kv,hv⟩ => ?_
-  apply (fprogB_wp (callOf_of_ne (by omega)) _).mpr
+  apply (fprogB_wp (callOf_of_ne (by omega) (by omega)) _).mpr
   refine WP.mono (fprog_ok hL hm _ hv (doubleHalf_after_slots hSl) (doubleHalf_after_reads S p V))
     fun t ⟨kt,ht⟩ => ?_
   have kb : ProgKeep M base (doubleSlots S p) s u := ku.mono (by

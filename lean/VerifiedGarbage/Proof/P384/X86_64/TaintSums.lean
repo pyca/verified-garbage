@@ -10,8 +10,9 @@ the power `Z^(p-2)` (all four). Their constant-time checks
 (`taint_decide_sum`) use these summaries (`taint_summary`), analysed once
 here, in place of analysing the loops again in each check. Only the
 registers matter (the analysis knows nothing about memory): the working
-space `rdi`, the loop counter `rbx` and `out` in `rsi`, which every caller
-has public there and needs afterwards.
+space `rdi`, the loop counter `rbx`, `out` in `rsi` and `rsp` (for the calls
+of the field products), which every caller has public there and needs
+afterwards.
 
 ECDH's ladder and the power mod `n` are run by only two of the four: a
 summary costs more than their analysis in one more check (the kernel
@@ -30,7 +31,7 @@ def ladderG : Prog isa := .loop (ladderBody p384.ladderCfg) .ne
 def powP : Prog isa := .loop (powBody p384.powP) .ne
 
 /-- What is public at both loops. -/
-def τL : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .rbx, .rsi]
+def τL : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .rbx, .rsi, .rsp]
 
 taint_summary ladderGSum : taintS τL ladderG
 taint_summary powPSum : taintS τL powP

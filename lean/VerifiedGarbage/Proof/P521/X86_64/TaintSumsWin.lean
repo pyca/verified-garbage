@@ -20,7 +20,7 @@ def winLastJ : Prog isa := WinCfg.stepLast winK
 
 materialize_code winBuildJ
 
-theorem winK_ok : p521T.Ok winK.M := p521T_ok
+theorem winK_ok : p521T.Ok winK.M := p521HT_ok
 
 taint_summary winBuildJSum : taintS τB winBuildJ
 taint_summary_map winNormJSum : taintS τB winNormJ via taintS_eraseInv

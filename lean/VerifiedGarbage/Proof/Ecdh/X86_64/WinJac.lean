@@ -47,15 +47,18 @@ theorem jwSlots_eq (c : Cfg) : jwSlots (jwQ c) = (roJ ++ otherJ ++ gridJ).map c.
 theorem jwW_eq (c : Cfg) : jwW (jwQ c) = slW c (otherJ ++ gridJ ++ [TMP]) := by
   rw [jwW, jwWs, jwGrid_eq]; simp only [slW, List.map_append, List.map_map]; rfl
 
-theorem jwIdx_lt : ∀ i ∈ roJ ++ otherJ ++ gridJ, i < 168 ∧ i ≠ MP ∧ i ≠ TMP := by decide
+theorem jwIdx_lt : ∀ i ∈ roJ ++ otherJ ++ gridJ, i < 169 ∧ i ≠ MP ∧ i ≠ TMP := by decide
 
-/-- Every slot below `168` is in the working space, for four or six words. -/
-theorem sl_le_jw (c : Cfg) (h46 : c.n = 4 ∨ c.n = 6) {i : Nat} (hi : i < 168) : c.sl i + 8 * c.n ≤ size := by
-  simp only [sl_eq', ix, show ¬ c.n = 9 by omega_arith, ↓reduceIte]
-  rcases h46 with h4 | h4 <;> rw [h4] <;> show _ ≤ 8192 <;> omega_arith
+/-- Every slot below `169` is in the working space, for four or six words. -/
+theorem sl_le_jw (c : Cfg) (h46 : c.n = 4 ∨ c.n = 6) {i : Nat} (hi : i < 169) : c.sl i + 8 * c.n ≤ size := by
+  have hix : ix c i < 169 := by
+    have := tk_le c
+    rcases ix_cases c i with ⟨_, _, h⟩ | ⟨_, _, h⟩ | h <;> rw [h] <;> first | decide | omega
+  rw [sl_eq']
+  rcases h46 with h4 | h4 <;> rw [h4] <;> show _ ≤ 8192 <;> omega
 
 theorem lay_jw (h46 : c.n = 4 ∨ c.n = 6) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = c.sl TMP)
-    (hMn : M.n = c.n) {l : List Nat} (hl : ∀ i ∈ l, i < 168 ∧ i ≠ MP ∧ i ≠ TMP) :
+    (hMn : M.n = c.n) {l : List Nat} (hl : ∀ i ∈ l, i < 169 ∧ i ≠ MP ∧ i ≠ TMP) :
     Lay M size (· ∈ l.map c.sl) := by
   refine ⟨fun x hx => ?_, fun x y hx hy hxy => ?_, fun x hx => ?_, fun x hx => ?_⟩
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
@@ -102,7 +105,16 @@ theorem jwLayQ (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) : JacWinLay (jwQ c) si
     rw [hb, hJ]
     have key : ∀ i ∈ otherJ ++ gridJ ++ [TMP], i < WB ∨ WT ≤ i := by decide
     rcases key i hi with h | h
-    · exact Or.inr (sl_lt c h)
+    · by_cases h6 : i = TMP ∧ c.n = 6
+      · obtain ⟨rfl, h6⟩ := h6
+        refine Or.inl ?_
+        dsimp only
+        rw [sl_tmp6 c h6]; simp (disch := sl_ne) only [sl_eq]; unfold WB
+        rw [h6] at hJle ⊢; omega
+      · exact Or.inr (sl_lt c h (by
+          by_cases ht : i = TMP
+          · exact .inr (.inr ⟨fun e => h6 ⟨ht, e⟩, by decide⟩)
+          · exact .inl ht))
     · refine Or.inl ?_
       dsimp only
       simp (disch := sl_ne) only [sl_eq]

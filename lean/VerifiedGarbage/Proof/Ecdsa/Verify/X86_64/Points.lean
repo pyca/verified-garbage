@@ -264,7 +264,7 @@ theorem vW_le (h7 : c.n < 10) : ∀ w ∈ vW c, w.1 + w.2 ≤ size := by
         have := sl_le_win c h9.1 (i := WB + 9) (by decide)
         simp (disch := sl_ne) only [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      have lt : ∀ i ∈ vI, i < 107 := by decide
+      have lt : ∀ i ∈ vI, i < 108 := by decide
       exact sl_le_win c h9.1 (lt i hi)
   · intro w hw
     rcases List.mem_append.mp hw with hw | hw
