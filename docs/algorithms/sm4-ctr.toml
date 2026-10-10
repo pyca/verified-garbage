@@ -1,0 +1,5 @@
+name = "SM4-CTR"
+family = "Ciphers"
+specs = ["Sm4", "Ctr"]
+modules = ["src/sm4_ctr.rs"]
+asm = ["sm4_ctr"]

@@ -714,6 +714,22 @@ yours to keep:
 
 <tr>
 
+<td>SM4-CTR</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>SM4-ECB</td>
 
 <td>✅</td>
