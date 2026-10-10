@@ -36,9 +36,9 @@ theorem sparseStepAddB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base
   rcases hop with ⟨rfl, rfl⟩ | ⟨rfl, hc⟩
   · refine wp_addS hv fun s₂ u₂ c₂ => ?_
     have hb₂ := hb₁.of_keeps u₂.keeps (by decide)
-    refine wp_storeS (hb₂.ea (d := acc + 4 * j) (by omega)) (hb₂.write (n := 4) (by omega))
+    refine wp_storeS (hb₂.ea (d := acc + 4 * j) (by omega_arith)) (hb₂.write (n := 4) (by omega_arith))
       fun s₃ m₃ => WP.block_nil ⟨?_, ⟨_, by rw [m₃.cf, c₂], ?_⟩, (u₁.keeps.trans (u₂.keeps)).trans (m₃.keeps _)⟩
-    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega)
+    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega_arith)
     · rw [m₃.mem, w32_write_self, u₂.gpr, BitVec.toNat_add, u₁.gpr]
       simp only [w32]
       have hvn : (if first then s.gpr .ecx else (0 : BitVec 32)).toNat = (if first then (s.gpr .ecx).toNat else 0) := by cases first <;> rfl
@@ -46,12 +46,12 @@ theorem sparseStepAddB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base
       have hy' : (if first then (s.gpr .ecx).toNat else 0) < 2 ^ 32 := by cases first <;> simp_all
       by_cases h : 2 ^ 32 ≤ (s.mem.readW (off base (acc + 4 * j)) 32).toNat +
           (if first then (s.gpr .ecx).toNat else 0) <;>
-        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
   · refine wp_adcS hv (by rw [cf₁]; exact hc) fun s₂ u₂ c₂ => ?_
     have hb₂ := hb₁.of_keeps u₂.keeps (by decide)
-    refine wp_storeS (hb₂.ea (d := acc + 4 * j) (by omega)) (hb₂.write (n := 4) (by omega))
+    refine wp_storeS (hb₂.ea (d := acc + 4 * j) (by omega_arith)) (hb₂.write (n := 4) (by omega_arith))
       fun s₃ m₃ => WP.block_nil ⟨?_, ⟨_, by rw [m₃.cf, c₂], ?_⟩, (u₁.keeps.trans (u₂.keeps)).trans (m₃.keeps _)⟩
-    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega)
+    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega_arith)
     · rw [m₃.mem, w32_write_self, u₂.gpr, add3_toNat, u₁.gpr]
       simp only [w32]
       have := Bool.toNat_le cin
@@ -60,7 +60,7 @@ theorem sparseStepAddB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base
       have hy' : (if first then (s.gpr .ecx).toNat else 0) < 2 ^ 32 := by cases first <;> simp_all
       by_cases h : 2 ^ 32 ≤ (s.mem.readW (off base (acc + 4 * j)) 32).toNat +
           (if first then (s.gpr .ecx).toNat else 0) + cin.toNat <;>
-        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 /-- A word of a subtraction, with the borrow in `cin` (none for `sub`). -/
 theorem sparseStepSubB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base size) {op : AluOp} {cin : Bool}
@@ -83,9 +83,9 @@ theorem sparseStepSubB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base
   rcases hop with ⟨rfl, rfl⟩ | ⟨rfl, hc⟩
   · refine wp_subS hv fun s₂ u₂ c₂ => ?_
     have hb₂ := hb₁.of_keeps u₂.keeps (by decide)
-    refine wp_storeS (hb₂.ea (d := acc + 4 * j) (by omega)) (hb₂.write (n := 4) (by omega))
+    refine wp_storeS (hb₂.ea (d := acc + 4 * j) (by omega_arith)) (hb₂.write (n := 4) (by omega_arith))
       fun s₃ m₃ => WP.block_nil ⟨?_, ⟨_, by rw [m₃.cf, c₂], ?_⟩, (u₁.keeps.trans (u₂.keeps)).trans (m₃.keeps _)⟩
-    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega)
+    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega_arith)
     · rw [m₃.mem, w32_write_self, u₂.gpr, sub_toNat, u₁.gpr]
       simp only [w32]
       have hvn : (if first then s.gpr .ecx else (0 : BitVec 32)).toNat = (if first then (s.gpr .ecx).toNat else 0) := by cases first <;> rfl
@@ -93,12 +93,12 @@ theorem sparseStepSubB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base
       have hy' : (if first then (s.gpr .ecx).toNat else 0) < 2 ^ 32 := by cases first <;> simp_all
       by_cases h : (s.mem.readW (off base (acc + 4 * j)) 32).toNat <
           (if first then (s.gpr .ecx).toNat else 0) <;>
-        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
   · refine wp_sbbS hv (by rw [cf₁]; exact hc) fun s₂ u₂ c₂ => ?_
     have hb₂ := hb₁.of_keeps u₂.keeps (by decide)
-    refine wp_storeS (hb₂.ea (d := acc + 4 * j) (by omega)) (hb₂.write (n := 4) (by omega))
+    refine wp_storeS (hb₂.ea (d := acc + 4 * j) (by omega_arith)) (hb₂.write (n := 4) (by omega_arith))
       fun s₃ m₃ => WP.block_nil ⟨?_, ⟨_, by rw [m₃.cf, c₂], ?_⟩, (u₁.keeps.trans (u₂.keeps)).trans (m₃.keeps _)⟩
-    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega)
+    · rw [m₃.mem, u₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega_arith)
     · rw [m₃.mem, w32_write_self, u₂.gpr, sub3_toNat, u₁.gpr]
       simp only [w32]
       have := Bool.toNat_le cin
@@ -107,7 +107,7 @@ theorem sparseStepSubB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base
       have hy' : (if first then (s.gpr .ecx).toNat else 0) < 2 ^ 32 := by cases first <;> simp_all
       by_cases h : (s.mem.readW (off base (acc + 4 * j)) 32).toNat <
           (if first then (s.gpr .ecx).toNat else 0) + cin.toNat <;>
-        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+        simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 
 
@@ -121,7 +121,7 @@ theorem multiChainB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base si
         val32 s.mem base w (k + 1) + (s.gpr .ecx).toNat * multiWeight useQ (k + 1)) ∧ Keeps [.eax] s u
   | 0, hsz => by
     change WP isa (.block (sparseStep acc 0 .add (useQ 0))) s _
-    refine WP.mono (sparseStepAddB_ok hb (.inl ⟨rfl, rfl⟩) (useQ 0) (j := 0) (by omega))
+    refine WP.mono (sparseStepAddB_ok hb (.inl ⟨rfl, rfl⟩) (useQ 0) (j := 0) (by omega_arith))
       fun u ⟨O, ⟨c, hc, V⟩, K⟩ => ?_
     simp only [Nat.mul_zero, Nat.add_zero, hw, Bool.toNat_false] at O V
     refine ⟨O, ⟨c, hc, ?_⟩, K⟩
@@ -131,17 +131,17 @@ theorem multiChainB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base si
     have hn := hb.nowrap
     rw [multiChain_succ]
     simp only [Nat.add_one_ne_zero, ite_false]
-    refine WP.block_append (WP.mono (multiChainB_ok hb hw useQ k (by omega))
+    refine WP.block_append (WP.mono (multiChainB_ok hb hw useQ k (by omega_arith))
       fun s₁ ⟨O₁, ⟨c₁, hc₁, V₁⟩, K₁⟩ => ?_)
     have hb₁ := hb.of_keeps K₁ (by decide)
-    refine WP.mono (sparseStepAddB_ok hb₁ (.inr ⟨rfl, hc₁⟩) (useQ (k + 1)) (j := k + 1) (by omega))
+    refine WP.mono (sparseStepAddB_ok hb₁ (.inr ⟨rfl, hc₁⟩) (useQ (k + 1)) (j := k + 1) (by omega_arith))
       fun u ⟨O, ⟨c, hc, V⟩, K⟩ => ?_
-    have he : acc + 4 * (k + 1) = w + 4 * (k + 1) := by omega
+    have he : acc + 4 * (k + 1) = w + 4 * (k + 1) := by omega_arith
     rw [he] at O V
-    rw [O₁.w32 (by omega) (by omega), K₁.1 .ecx (by decide)] at V
-    refine ⟨(O₁.mono (Nat.le_refl _) (by omega)).trans (O.mono (by omega) (by omega)),
+    rw [O₁.w32 (by omega_arith) (by omega_arith), K₁.1 .ecx (by decide)] at V
+    refine ⟨(O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O.mono (by omega_arith) (by omega_arith)),
       ⟨c, hc, ?_⟩, K₁.trans K⟩
-    rw [val32_succ u.mem, val32_succ s.mem, O.val32 (by omega) (by omega), pow32_succ (k + 1), multiWeight]
+    rw [val32_succ u.mem, val32_succ s.mem, O.val32 (by omega_arith) (by omega_arith), pow32_succ (k + 1), multiWeight]
     generalize 2 ^ (32 * (k + 1)) = P at *
     cases h : useQ (k + 1) <;> simp only [h, Bool.false_eq_true, ite_false, ite_true] at V ⊢ <;> grind
 
@@ -156,7 +156,7 @@ theorem sparseChainSubB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s bas
         val32 s.mem base w (k + 1) + 2 ^ (32 * (k + 1)) * c.toNat) ∧ Keeps [.eax] s u
   | 0, hsz => by
     change WP isa (.block (sparseStep acc 0 .sub true)) s _
-    refine WP.mono (sparseStepSubB_ok hb (.inl ⟨rfl, rfl⟩) true (j := 0) (by omega))
+    refine WP.mono (sparseStepSubB_ok hb (.inl ⟨rfl, rfl⟩) true (j := 0) (by omega_arith))
       fun u ⟨O, ⟨c, hc, V⟩, K⟩ => ?_
     simp only [Nat.mul_zero, Nat.add_zero, hw, ite_true, Bool.toNat_false] at O V
     refine ⟨O, ⟨c, hc, ?_⟩, K⟩
@@ -165,18 +165,18 @@ theorem sparseChainSubB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s bas
     have hn := hb.nowrap
     rw [sparseChain_succ]
     simp only [Nat.add_one_ne_zero, ite_false, beq_eq_false_iff_ne.mpr (Nat.add_one_ne_zero k)]
-    refine WP.block_append (WP.mono (sparseChainSubB_ok hb hw k (by omega))
+    refine WP.block_append (WP.mono (sparseChainSubB_ok hb hw k (by omega_arith))
       fun s₁ ⟨O₁, ⟨c₁, hc₁, V₁⟩, K₁⟩ => ?_)
     have hb₁ := hb.of_keeps K₁ (by decide)
-    refine WP.mono (sparseStepSubB_ok hb₁ (.inr ⟨rfl, hc₁⟩) false (j := k + 1) (by omega))
+    refine WP.mono (sparseStepSubB_ok hb₁ (.inr ⟨rfl, hc₁⟩) false (j := k + 1) (by omega_arith))
       fun u ⟨O, ⟨c, hc, V⟩, K⟩ => ?_
-    have he : acc + 4 * (k + 1) = w + 4 * (k + 1) := by omega
+    have he : acc + 4 * (k + 1) = w + 4 * (k + 1) := by omega_arith
     rw [he] at O V
     simp only [Bool.false_eq_true, ite_false, Nat.add_zero] at V
-    rw [O₁.w32 (by omega) (by omega)] at V
-    refine ⟨(O₁.mono (Nat.le_refl _) (by omega)).trans (O.mono (by omega) (by omega)),
+    rw [O₁.w32 (by omega_arith) (by omega_arith)] at V
+    refine ⟨(O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O.mono (by omega_arith) (by omega_arith)),
       ⟨c, hc, ?_⟩, K₁.trans K⟩
-    rw [val32_succ u.mem, val32_succ s.mem, O.val32 (by omega) (by omega), pow32_succ (k + 1)]
+    rw [val32_succ u.mem, val32_succ s.mem, O.val32 (by omega_arith) (by omega_arith), pow32_succ (k + 1)]
     generalize 2 ^ (32 * (k + 1)) = P at *
     grind
 
@@ -189,14 +189,14 @@ theorem positiveB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base size
       (∃ c : Bool, val32 u.mem base w 10 + 2 ^ 320 * c.toNat =
         val32 s.mem base w 10 + (s.gpr .ecx).toNat * (2 ^ 96 + 2 ^ 192 + 2 ^ 256)) ∧ Keeps [.eax] s u := by
   have hn := hb.nowrap
-  refine WP.mono (multiChainB_ok hb (w := w + 12) (by omega) positiveMask 6 (by omega))
-    fun u ⟨O, ⟨c, _, V⟩, K⟩ => ⟨O.mono (by omega) (by omega), ⟨c, ?_⟩, K⟩
+  refine WP.mono (multiChainB_ok hb (w := w + 12) (by omega_arith) positiveMask 6 (by omega_arith))
+    fun u ⟨O, ⟨c, _, V⟩, K⟩ => ⟨O.mono (by omega_arith) (by omega_arith), ⟨c, ?_⟩, K⟩
   have hv : multiWeight positiveMask 7 = 1 + 2 ^ 96 + 2 ^ 160 := by decide +kernel
   rw [hv] at V
   rw [show 10 = 3 + 7 from rfl, val32_append u.mem base w 3 7, val32_append s.mem base w 3 7,
-    O.val32 (d := w) (k := 3) (by omega) (by omega)]
+    O.val32 (d := w) (k := 3) (by omega_arith) (by omega_arith)]
   simp only [Nat.reduceMul, Nat.reduceAdd] at V ⊢
-  omega
+  omega_arith
 
 theorem sparseShiftSubB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base size)
     {acc w j k N : Nat}
@@ -206,9 +206,9 @@ theorem sparseShiftSubB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s bas
       (∃ c : Bool, val32 u.mem base w N + 2 ^ (32 * j) * (s.gpr .ecx).toNat =
         val32 s.mem base w N + 2 ^ (32 * N) * c.toNat) ∧ Keeps [.eax] s u := by
   have hn := hb.nowrap
-  refine WP.mono (sparseChainSubB_ok hb (w := w + 4 * j) (by omega) k (by omega))
-    fun u ⟨O, ⟨c, _, V⟩, K⟩ => ⟨O.mono (by omega) (by omega), ⟨c, ?_⟩, K⟩
-  rw [hN, val32_append u.mem base w j (k + 1), val32_append s.mem base w j (k + 1), O.val32 (d := w) (k := j) (by omega) (by omega), pow32_add]
+  refine WP.mono (sparseChainSubB_ok hb (w := w + 4 * j) (by omega_arith) k (by omega_arith))
+    fun u ⟨O, ⟨c, _, V⟩, K⟩ => ⟨O.mono (by omega_arith) (by omega_arith), ⟨c, ?_⟩, K⟩
+  rw [hN, val32_append u.mem base w j (k + 1), val32_append s.mem base w j (k + 1), O.val32 (d := w) (k := j) (by omega_arith) (by omega_arith), pow32_add]
   generalize 2 ^ (32 * j) = P at *
   generalize 2 ^ (32 * (k + 1)) = Q at *
   grind
@@ -224,17 +224,17 @@ theorem clearLowB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base size
   have hn := hb.nowrap
   refine wp_movS rfl fun s₁ u₁ _ => ?_
   have hb₁ := hb.of_keeps u₁.keeps (by decide)
-  refine wp_storeS (hb₁.ea (d := acc) (by omega)) (hb₁.write (n := 4) (by omega))
+  refine wp_storeS (hb₁.ea (d := acc) (by omega_arith)) (hb₁.write (n := 4) (by omega_arith))
     fun u m => WP.block_nil ?_
   have hm : u.mem = s.mem.writeW (off base w) (0 : BitVec 32) := by rw [m.mem, u₁.mem, u₁.gpr, hw]
-  have O := writeW32_outside s.mem base (d := w) (0 : BitVec 32) (by omega)
+  have O := writeW32_outside s.mem base (d := w) (0 : BitVec 32) (by omega_arith)
   rw [← hm] at O
-  refine ⟨O.mono (Nat.le_refl _) (by omega), ?_, u₁.keeps.trans (m.keeps _)⟩
+  refine ⟨O.mono (Nat.le_refl _) (by omega_arith), ?_, u₁.keeps.trans (m.keeps _)⟩
   change w32 u.mem base w + 2 ^ 32 * val32 u.mem base (w + 4) 9 + _ =
     w32 s.mem base w + 2 ^ 32 * val32 s.mem base (w + 4) 9
-  rw [O.val32 (by omega) (by omega), hm, w32_write_self]
+  rw [O.val32 (by omega_arith) (by omega_arith), hm, w32_write_self]
   change 0 + _ + _ = _
-  omega
+  omega_arith
 
 theorem p256RedB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base size)
     {acc w : Nat}
@@ -257,7 +257,7 @@ theorem p256RedB_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base size)
   rw [K₁.1 .ecx (by decide)] at V₂
   rw [K₂.1 .ecx (by decide), K₁.1 .ecx (by decide)] at V₃
   have hu := val32_lt u.mem base w 10
-  omega
+  omega_arith
 
 
 end VG.Proof.Weierstrass.X86.Mont

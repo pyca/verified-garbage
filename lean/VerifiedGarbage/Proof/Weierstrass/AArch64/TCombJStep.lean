@@ -34,13 +34,13 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
   simp only [combWs, rcbW, List.cons_append, List.nil_append, List.nodup_cons, List.mem_cons,
     List.not_mem_nil, or_false, not_or] at hnd
   have hp0 : 0 < C.p := Nat.lt_of_le_of_lt (Nat.zero_le _) hV.one_lt
-  have hNZ : NeZero C.p := ⟨by omega⟩
+  have hNZ : NeZero C.p := ⟨by omega_arith⟩
   refine WP.of_syms ?_
   unfold TCombCfg.stepJWith
   refine WP.seq ?_
   have hz : wordsVal s.mem base K.zero K.M.n = 0 := by
     rw [hI.unch.wordsVal (tcombW_ro hL (x := K.zero) (by simp [combRo, TCombCfg.toComb]))
-      (by have := hle K.zero (by tcomb_mem); omega), hF.zero]
+      (by have := hle K.zero (by tcomb_mem); omega_arith), hF.zero]
   refine tentryJ_ok hL hA hC hV hpn hI.scr hI.mod hjn hI.x19 hb1 (c := true) (Or.inl ⟨rfl, hj⟩)
     hI.bits hz hI.tsym hI.tbl hF.out fun s₃ E₃ => ?_
   have hEW : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n), (K.neg, 8 * K.M.n),
@@ -69,14 +69,14 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
         · exact hL.comb.apart₂ hxs (by tcomb_mem) (by clear * - hnd hx; grind)
         · exact hL.comb.apart₂ hxs (by tcomb_mem) (by clear * - hnd hx; grind)
         · exact hL.comb.lay.tmp x (combWs_slots _ x hxs))
-        (by have := hle x (combWs_slots _ x hxs); omega)]
+        (by have := hle x (combWs_slots _ x hxs); omega_arith)]
   have U₃ : Unch base (tcombW K) s₀.mem s₃.mem :=
     (hI.unch.trans U₁₃).mono fun w hw => by
       rcases List.mem_append.mp hw with hw | hw
       · exact hw
       · exact List.mem_append_left _ hw
   have hro : ∀ x ∈ combRo K.toComb, wordsVal s₃.mem base x K.M.n = wordsVal s₀.mem base x K.M.n :=
-    fun x hx => U₃.wordsVal (tcombW_ro hL hx) (by have := hle x (combRo_slots x hx); omega)
+    fun x hx => U₃.wordsVal (tcombW_ro hL hx) (by have := hle x (combRo_slots x hx); omega_arith)
   have hSl : ∀ x ∈ rcbR K.S K.A K.E, x ∈ combSlots K.toComb := by
     intro x hx
     simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -117,7 +117,7 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
     have hxs : x ∈ combWs K.toComb := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> tcomb_mem
-    refine P₄.unch.wordsVal (fun w hw => ?_) (by have := hle x (combWs_slots _ x hxs); omega)
+    refine P₄.unch.wordsVal (fun w hw => ?_) (by have := hle x (combWs_slots _ x hxs); omega_arith)
     rcases List.mem_append.mp hw with hw | hw
     · obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hw
       have hys : y ∈ combWs K.toComb := by
@@ -129,7 +129,7 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
     · simp only [List.mem_singleton] at hw; subst hw
       exact hL.comb.lay.tmp x (combWs_slots _ x hxs)
   have hbl := hL.bits
-  have hz' : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega
+  have hz' : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega_arith
   have hw := hL.w
   have hn0 := hI.mod.n0
   -- `D = E` where `A` is `O`.
@@ -173,7 +173,7 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
         rcases hx with rfl | rfl | rfl <;> tcomb_mem
       rw [← hAx x hx, ← hAE₄ x (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; rcases hx with h | h | h <;> simp [h])]
-      refine UD₆.wordsVal (fun w hw => ?_) (by have := hle x (combWs_slots _ x hxs); omega)
+      refine UD₆.wordsVal (fun w hw => ?_) (by have := hle x (combWs_slots _ x hxs); omega_arith)
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hw with rfl | rfl | rfl <;> exact hL.comb.apart₂ hxs (by tcomb_mem) (by clear * - hnd hx; grind)
@@ -187,15 +187,15 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
       (by omega_using [hbl, hz', ht, hn])]
     exact hI.bits t ht
   have hwi : K.w * j + K.w ≤ K.w * K.J := by
-    have := Nat.mul_le_mul_left K.w (show j + 1 ≤ K.J by omega); rwa [Nat.mul_succ] at this
+    have := Nat.mul_le_mul_left K.w (show j + 1 ≤ K.J by omega_arith); rwa [Nat.mul_succ] at this
   -- The digit again, and `A = D` unless it is zero.
   rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (bdigit_ok K hs₆ (k := k) (j := j) (N := K.w * K.J) (by omega) hw.2 hwi
-    (by omega_using [hbl, hz', hn]) hb1 (by have := hL.bitsw; omega) hb₆ hbits₆ (Or.inl ⟨rfl, hj⟩)) fun s₇ ⟨r₇, k₇⟩ => ?_
+  refine WP.mono (bdigit_ok K hs₆ (k := k) (j := j) (N := K.w * K.J) (by omega_arith) hw.2 hwi
+    (by omega_using [hbl, hz', hn]) hb1 (by have := hL.bitsw; omega_arith) hb₆ hbits₆ (Or.inl ⟨rfl, hj⟩)) fun s₇ ⟨r₇, k₇⟩ => ?_
   have hs₇ := hs₆.of_keeps k₇ (by decide)
   have hmag : bmag K.w k j ≤ 128 := by
-    have := bmag_le (w:=K.w) (by omega) k j
-    exact Nat.le_trans this (Nat.le_trans (Nat.pow_le_pow_right (by decide) (show K.w - 1 ≤ 7 by omega))
+    have := bmag_le (w:=K.w) (by omega_arith) k j
+    exact Nat.le_trans this (Nat.le_trans (Nat.pow_le_pow_right (by decide) (show K.w - 1 ≤ 7 by omega_arith))
       (by decide))
   rw [WP.block_append_iff]
   refine WP.mono (booth_eqMask_ok s₇) fun s₈ ⟨c₈,k₈⟩ => ?_
@@ -205,7 +205,7 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
       constructor
       · intro h
         have := congrArg BitVec.toNat h
-        simpa only [BitVec.toNat_ofNat,show (0 : BitVec 64).toNat=0 from rfl,Nat.mod_eq_of_lt (by omega : bmag K.w k j<2^64)] using this
+        simpa only [BitVec.toNat_ofNat,show (0 : BitVec 64).toNat=0 from rfl,Nat.mod_eq_of_lt (by omega_arith : bmag K.w k j<2^64)] using this
       · intro h; rw [h]; rfl
     simpa only [he] using c₈
   have hs₈ := hs₇.of_keeps k₈ (by decide)
@@ -308,7 +308,7 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
         show toM _ _ _ = toM _ _ _
         rw [hAE₄ x (by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; rcases hx with h | h | h <;> simp [h])]
-    rw [bpart_succ_pt hC hG (by omega)]
+    rw [bpart_succ_pt hC hG (by omega_arith)]
     have hErep := E₃.rep
     have hEz : tmv C K.M.n base s₃ K.E.z=if 1≤bmag K.w k j then 1 else 0 := by
       change toM _ _ (wordsVal s₃.mem base K.E.z K.M.n)=_
@@ -325,7 +325,7 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
         split <;> rfl
       rw [hQ, add_infinity]
       exact hI.rep
-    · have h1 : 1 ≤ bmag K.w k j := by omega
+    · have h1 : 1 ≤ bmag K.w k j := by omega_arith
       simp only [decide_eq_false h0, Bool.false_eq_true, ↓reduceIte] at ex₉ ey₉ ez₉
       simp only [h1, ↓reduceIte] at hEz
       rw [hEz] at hErep
@@ -360,10 +360,10 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
         have hZ : tmv C K.M.n base s₃ K.A.z ≠ 0 := by
           rw [eA _ (by simp)]; exact fun h => hz0 (hZiff.mpr h)
         have hon : onCurve C (bentry C K.w k j) = true := by
-          rw [bentry_eq (by omega)]; exact hC.onCurve_zmul hG _
+          rw [bentry_eq (by omega_arith)]; exact hC.onCurve_zmul hG _
         have hne : zmul (bpart K.w k j) (G C) ≠ bentry C K.w k j := by
-          rw [bentry_eq (by omega)]
-          exact booth_ne hC hG hB.n hB.n0 hB.cop hB.safe (by omega) hB.J2 hB.kmax hk hj hjn h0
+          rw [bentry_eq (by omega_arith)]
+          exact booth_ne hC hG hB.n hB.n0 hB.cop hB.safe (by omega_arith) hB.J2 hB.kmax hk hj hjn h0
         rw [hQa] at hon hne ⊢
         have h := InvJ.madd hC hM3 (hC.onCurve_zmul hG _) hon hrepA hZ hne
         rw [← hD] at h

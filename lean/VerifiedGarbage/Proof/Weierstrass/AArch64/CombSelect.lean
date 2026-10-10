@@ -67,17 +67,17 @@ theorem selectCands_ok {vs : List Nat} {w a : Nat} (ha : a ≤ 8) (X₀ : BitVec
   refine WP.mono (wp_range_flatMap (M := isa) (N := i)
     (fun k t => t.gpr .x4 = X₀ ||| (if 1 ≤ a ∧ a ≤ k then wordOf (vs.getD (a - 1) 0) w else 0) ∧
       Keeps [.x2, .x4, .x9] s t) (fun k t hk ⟨t4, kt⟩ => ?_) i (Nat.le_refl _) s
-    ⟨by rw [h4]; simp [show ¬(1 ≤ a ∧ a = 0) by omega], ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩⟩)
+    ⟨by rw [h4]; simp [show ¬(1 ≤ a ∧ a = 0) by omega_arith], ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩⟩)
     fun t h => h
-  refine WP.mono (selectCand_ok t _ (m := k + 1) (by omega)) fun u ⟨u4, ku⟩ => ⟨?_, kt.trans ku⟩
-  rw [u4, t4, (hM.keep kt) (k + 1) (by omega), bmask_and, BitVec.or_assoc]
+  refine WP.mono (selectCand_ok t _ (m := k + 1) (by omega_arith)) fun u ⟨u4, ku⟩ => ⟨?_, kt.trans ku⟩
+  rw [u4, t4, (hM.keep kt) (k + 1) (by omega_arith), bmask_and, BitVec.or_assoc]
   congr 1
   by_cases h1 : a = k + 1
   · subst h1
-    simp [show ¬(k + 1 ≤ k) by omega]
+    simp [show ¬(k + 1 ≤ k) by omega_arith]
   · by_cases h2 : 1 ≤ a ∧ a ≤ k
-    · simp [h1, h2, show 1 ≤ a ∧ a ≤ k + 1 by omega]
-    · simp [h1, h2, show ¬(1 ≤ a ∧ a ≤ k + 1) by omega]
+    · simp [h1, h2, show 1 ≤ a ∧ a ≤ k + 1 by omega_arith]
+    · simp [h1, h2, show ¬(1 ≤ a ∧ a ≤ k + 1) by omega_arith]
 
 theorem wordOf_zero (w : Nat) : wordOf 0 w = 0 := by simp [wordOf]
 
@@ -118,13 +118,13 @@ theorem selectWord_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base si
   refine WP.mono (selectCands_ok (vs := vs) (w := w) ha _ 8 (Nat.le_refl _) s₂ x₂ hM₂)
     fun s₃ ⟨x₃, k₃⟩ => ?_
   have hs₃ := (hs.of_keeps k₁ (by decide)).of_keeps (k₂.trans k₃) (by decide)
-  refine WP.mono (st_out hs₃ (o := o + 8 * w) ho (by omega) .x4) fun t ⟨m, kt, _⟩ => ⟨?_, ?_⟩
+  refine WP.mono (st_out hs₃ (o := o + 8 * w) ho (by omega_arith) .x4) fun t ⟨m, kt, _⟩ => ⟨?_, ?_⟩
   · rw [m, x₃, k₃.mem, k₂.mem, k₁.mem]
     congr 1
     unfold selVal
     by_cases h : a = 0
     · subst h; simp
-    · simp [h, show 1 ≤ a ∧ a ≤ 8 by omega]
+    · simp [h, show 1 ≤ a ∧ a ≤ 8 by omega_arith]
   · exact (((Keeps.regs k₁).mono (by decide)).trans ((Keeps.regs (k₂.trans k₃)))).trans
       (kt.mono (by decide))
 
@@ -140,17 +140,17 @@ theorem selectWords_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base s
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (selectWords_ok hs ha hM z vs ho8 k (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+    refine WP.mono (selectWords_ok hs ha hM z vs ho8 k (by omega_arith)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
-    refine WP.mono (selectWord_ok hs₁ ha (hM.keepRegs k₁) z vs (w := k) (by omega) ho8)
+    refine WP.mono (selectWord_ok hs₁ ha (hM.keepRegs k₁) z vs (w := k) (by omega_arith) ho8)
       fun s₂ ⟨m₂, k₂⟩ => ?_
     have O₂ : Outside base (o + 8 * k) 8 s₁.mem s₂.mem := by
-      rw [m₂]; exact writeW_outside _ _ _ (by omega)
+      rw [m₂]; exact writeW_outside _ _ _ (by omega_arith)
     refine ⟨fun j hj => ?_, k₁.trans k₂,
-      (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
+      (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))⟩
     rcases Nat.lt_or_ge j k with h | h
-    · rw [O₂.word (by omega) (by omega), e₁ j h]
-    · obtain rfl : j = k := by omega
+    · rw [O₂.word (by omega_arith) (by omega_arith), e₁ j h]
+    · obtain rfl : j = k := by omega_arith
       rw [m₂, word_writeW_self]
 
 /-- `x4 & ~0 = x4` and `x4 & ~(all ones) = 0`. -/
@@ -187,7 +187,7 @@ theorem selectZ_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     exact RegUpd.gpr_write_of_ne _ _ _ (by simpa using hr)
   refine WP.mono hb fun s₂ ⟨x₂, k₂⟩ => ?_
   have hs₂ := hs₁.of_keeps k₂ (by decide)
-  refine WP.mono (st_out hs₂ (o := o + 8 * w) ho (by omega) .x4) fun t ⟨m, kt, _⟩ => ⟨?_, ?_⟩
+  refine WP.mono (st_out hs₂ (o := o + 8 * w) ho (by omega_arith) .x4) fun t ⟨m, kt, _⟩ => ⟨?_, ?_⟩
   · rw [m, x₂, k₂.mem, k₁.mem]
   · exact (((Keeps.regs k₁).mono (by decide)).trans ((Keeps.regs k₂).mono (by decide))).trans
       (kt.mono (by decide))
@@ -204,17 +204,17 @@ theorem selectZs_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (selectZs_ok hs K hM ho8 k (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+    refine WP.mono (selectZs_ok hs K hM ho8 k (by omega_arith)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
-    refine WP.mono (selectZ_ok hs₁ K (hM.keepRegs k₁) (w := k) (by omega) ho8)
+    refine WP.mono (selectZ_ok hs₁ K (hM.keepRegs k₁) (w := k) (by omega_arith) ho8)
       fun s₂ ⟨m₂, k₂⟩ => ?_
     have O₂ : Outside base (o + 8 * k) 8 s₁.mem s₂.mem := by
-      rw [m₂]; exact writeW_outside _ _ _ (by omega)
+      rw [m₂]; exact writeW_outside _ _ _ (by omega_arith)
     refine ⟨fun j hj => ?_, k₁.trans k₂,
-      (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
+      (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))⟩
     rcases Nat.lt_or_ge j k with h | h
-    · rw [O₂.word (by omega) (by omega), e₁ j h]
-    · obtain rfl : j = k := by omega
+    · rw [O₂.word (by omega_arith) (by omega_arith), e₁ j h]
+    · obtain rfl : j = k := by omega_arith
       rw [m₂, word_writeW_self]
 
 theorem selVal_lt {z : Nat} {vs : List Nat} {B : Nat} (hz : z < B) (hv : ∀ i, vs.getD i 0 < B)
@@ -269,10 +269,10 @@ theorem select_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   have vy : wordsVal s₂.mem base K.E.y K.M.n = selVal K.one (t.map (·.2)) a :=
     wordsVal_of_shifts _ _ _ _ _ (selVal_lt h1 (fun i => (hv i).2) a) e₂
   have vz : wordsVal s₃.mem base K.E.z K.M.n = (if a = 0 then 0 else K.one) :=
-    wordsVal_of_shifts _ _ _ _ _ (by split <;> omega) e₃
+    wordsVal_of_shifts _ _ _ _ _ (by split <;> omega_arith) e₃
   refine ⟨?_, ?_, vz, (k₁.trans k₂).trans k₃, ((hM.keepRegs k₁).keepRegs k₂).keepRegs k₃,
     (O₁.unch.trans (O₂.unch.trans O₃.unch)).mono (by simp)⟩
-  · rw [O₃.wordsVal (by omega) (by omega), O₂.wordsVal (by omega) (by omega), vx]
-  · rw [O₃.wordsVal (by omega) (by omega), vy]
+  · rw [O₃.wordsVal (by omega_arith) (by omega_arith), O₂.wordsVal (by omega_arith) (by omega_arith), vx]
+  · rw [O₃.wordsVal (by omega_arith) (by omega_arith), vy]
 
 end VG.Proof.Weierstrass.AArch64
