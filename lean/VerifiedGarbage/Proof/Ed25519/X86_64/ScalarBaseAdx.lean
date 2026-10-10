@@ -15,13 +15,13 @@ namespace VG.Proof.Ed25519.X86_64
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 
 /-- The comb with BMI2 and ADX, its entries selected with AVX2. -/
-theorem combOkY : CombOk (combMultiply Impl.X25519.X86_64.adx combSelectY) :=
+theorem combOkY : CombOk (combMultiply Impl.X25519.X86_64.adx combSelectY (Point64.bodies Impl.X25519.X86_64.adx)) :=
   ⟨fun hs hS hd hb ht hfar => combMultiplyWith_ok (fld := Impl.X25519.X86_64.adx) combSelectY_sel hs hS hd hb
       ht hfar,
     fun _ hp => taintSymFld (Taint.ofRegs [.rdi]) hp (by exact ⟨_, by taint_decide⟩)⟩
 
 theorem combY_inline : (combMultiply Impl.X25519.X86_64.adx combSelectY).inline =
-    combMultiply Impl.X25519.X86_64.adx combSelectY := Code.inline_of_noCalls rfl
+    combMultiply Impl.X25519.X86_64.adx combSelectY (Point64.bodies Impl.X25519.X86_64.adx) := rfl
 
 theorem scalarBase_adx_okI [X25519.X86_64.DivstepInv] (s : State) (hs : scalarBaseLocal.pre s) :
     ∃ t s', Exec isa scalarBase_adx.inline s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' := by

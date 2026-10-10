@@ -19,7 +19,8 @@ def artifacts : List Artifact := [
       time (every entry of the table is loaded with SSE2 and kept under a mask; a zero digit \
       selects the identity) and whose sign negates it, or not, under a mask; the odd digits are \
       added first to [G]B (G = 16 Σ 1024^j makes up for the offset), then five doublings and \
-      [G]B again, then the even ones. The working values, masks and saved registers reside in \
+      [G]B again, then the even ones. The five doublings are calls of \
+      `vg_ed25519_r64_double_ext`. The working values, masks and saved registers reside in \
       `scratch`. The point's encoding inverts Z with a call of `vg_gf25519_r64_invert`."])
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.baseline
@@ -34,7 +35,7 @@ def artifacts : List Artifact := [
     doc := Spec.Ed25519.scalarBaseApi.doc (notes := ["The code of \
       `vg_ed25519_scalar_base` but for the field multiplications and squarings, \
       which use BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once), as \
-      `vg_x25519_adx` does. Its comb selects each of the scalar's 52 signed digits' table entry \
+      `vg_x25519_adx` does, and so its doublings call `vg_ed25519_r64_double_ext_adx`. Its comb selects each of the scalar's 52 signed digits' table entry \
       in constant time from the static `VG_ED25519_COMB`, 32 bytes at a time with AVX2 (as \
       `vg_ed25519_scalar_base_ifma`'s did); the working values, masks and saved registers \
       reside in `scratch`."])

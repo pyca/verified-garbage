@@ -81,13 +81,13 @@ def UEngineOk (eng : Prog isa) : Prop :=
         Spec.X25519.encodeUCoordinate w
 
 omit [EdArith fld] in
-/-- An engine with `vg_gf25519_r64_invert`'s inlined, for a comb without calls. -/
-theorem engineOf_inline {comb : Prog isa} (hci : comb.inline = comb) :
+/-- An engine with its calls inlined, for a comb that inlines to `comb'`. -/
+theorem engineOf_inline {comb comb' : Prog isa} (hci : comb.inline = comb') :
     (engineOf fld comb).inline =
-      .seq (scalarBasePrepare fld) (.seq (.block clampBits) (.seq comb (uEncode fld).inline)) := by
+      .seq (scalarBasePrepare fld) (.seq (.block clampBits) (.seq comb' (uEncode fld).inline)) := by
   rw [engineOf]; simp only [Code.inline]; rw [scalarBasePrepare_inline, hci]
 
-theorem engineOf_ok [DivstepInv] {comb : Prog isa} (hcomb : CombOk comb) (hci : comb.inline = comb) :
+theorem engineOf_ok [DivstepInv] {comb comb' : Prog isa} (hcomb : CombOk comb') (hci : comb.inline = comb') :
     UEngineOk (engineOf fld comb).inline := by
   intro s base k T hs hp hr hd ht hfar
   have hk : (Spec.Ed25519.bytesAt s.mem k 32).length = 32 := by simp [Spec.Ed25519.bytesAt]
@@ -154,7 +154,7 @@ private theorem clamped_ok {u : State} {base T k : Addr} {m : Mem} (h : Prepped 
   · rfl
   · exact hb q (by simpa using hq)
 
-theorem engineOf_ct {comb : Prog isa} (hcomb : CombOk comb) (hci : comb.inline = comb) (base k T : Addr) :
+theorem engineOf_ct {comb comb' : Prog isa} (hcomb : CombOk comb') (hci : comb.inline = comb') (base k T : Addr) :
     RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
       (engineOf fld comb).inline (fun _ _ => True) := by
   have hc : RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
@@ -179,7 +179,7 @@ theorem engineOf_ct {comb : Prog isa} (hcomb : CombOk comb) (hci : comb.inline =
   have hcl' := (withRuns hcl (F₁ := fun _ => Clamped base T k a.mem) (F₂ := fun _ => Clamped base T k b.mem)
     fun _ _ h => ⟨clamped_ok h.1, clamped_ok h.2⟩).mono (fun _ _ h => h)
     fun _ _ ⟨_, _, _, _, hu, hv⟩ => (⟨hu, hv⟩ : Clamped base T k a.mem _ ∧ Clamped base T k b.mem _)
-  have hct : RelCT isa (fun u v => Clamped base T k a.mem u ∧ Clamped base T k b.mem v) comb
+  have hct : RelCT isa (fun u v => Clamped base T k a.mem u ∧ Clamped base T k b.mem v) comb'
       (fun _ _ => True) :=
     hcomb.ct _ (fun _ _ h => ⟨rdi_agree h.1.1.rdi h.2.1.rdi, fun n hn => by
       simp only [List.mem_singleton] at hn; subst hn

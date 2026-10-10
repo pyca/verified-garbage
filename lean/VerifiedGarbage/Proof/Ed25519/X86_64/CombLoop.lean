@@ -585,19 +585,50 @@ theorem zsmul_32 (v : ℤ) (g : Nat) (P : EPoint dZ) :
     (32 : Nat) • (v • P) + g • P = (32 * v + g) • P := by
   rw [add_smul, mul_smul, ← natCast_zsmul, ← natCast_zsmul]; rfl
 
+/-- The doubling's body (`vg_ed25519_r64_double_ext`'s) leaves slots 0–2 bounded, as the comb's
+additions need: they are products. -/
+theorem doubleFn_acc {s : State} {base : Addr} (hs : Scratch s base) :
+    WP isa (Point64.doubleFn fld true) s fun t => AccBnd t.mem base := by
+  simp only [Point64.doubleFn, Point64.fn, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (Point64.saves_ok s) fun s₁ ⟨g₁, _, _, wr₁⟩ => ?_
+  have hs₁ : Scratch s₁ base := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
+  rw [WP.block_append_iff]
+  refine WP.mono (fieldCodeWide_acc (fld := fld) _ hs₁ (by decide)) fun s₂ h₂ => ?_
+  exact WP.mono (Point64.restores_ok s₂) fun s₃ ⟨_, m₃, _, _⟩ i hi => by
+    unfold Bnd; rw [m₃]; exact h₂ i hi
+
+/-- A doubling, the body of `vg_ed25519_r64_double_ext`: `[2]` of the point in slots 0–3. -/
+theorem dblBody_ok {s : State} {base : Addr} {a : EPoint dZ} (hs : Scratch s base)
+    (ha : Rep (point (env s.mem base) 0 1 2 3) a) :
+    WP isa ((Point64.bodies fld).dbl true) s fun t => Rep (point (env t.mem base) 0 1 2 3) ((2 : Nat) • a) ∧
+      (∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i) ∧ DoubleKeep base s t ∧
+      AccBnd t.mem base := by
+  refine WP.mono (wp_and (PtOk.dbl (pt := Point64.bodies fld) hs true) (doubleFn_acc hs))
+    fun t ⟨⟨kt, vt⟩, bt⟩ => ⟨?_, fun i hi => by rw [vt]; exact point_ops_high _ (by decide) _ i hi,
+      ⟨fun r _ hc => kt.gpr r hc, kt.rd, kt.wr, kt.mem⟩, bt⟩
+  rw [vt, two_nsmul]
+  exact (dblOps_rep _ true ha.proj).2 rfl
+
 /-- Five doublings: `[32]` of the point in slots 0–3. -/
 theorem combDouble_ok {s : State} {base : Addr} {a : EPoint dZ} (hs : Scratch s base)
     (ha : Rep (point (env s.mem base) 0 1 2 3) a) :
-    WP isa (combDouble fld) s fun t => Rep (point (env t.mem base) 0 1 2 3) ((32 : Nat) • a) ∧
+    WP isa (combDouble (Point64.bodies fld)) s fun t => Rep (point (env t.mem base) 0 1 2 3) ((32 : Nat) • a) ∧
       (∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i) ∧ DoubleKeep base s t ∧
       AccBnd t.mem base := by
   rw [combDouble]
-  refine WP.seq (WP.mono (double4_ok (fld := fld) hs ha) fun b ⟨br, bh, bk⟩ => ?_)
-  refine WP.mono (wp_and (dblH_ok (fld := fld) (bk.scratch hs) true br.proj)
-    (fieldCodeWide_acc (fld := fld) _ (bk.scratch hs) (by decide))) fun t ⟨⟨kt, _, tr, th⟩, tb⟩ =>
-    ⟨?_, fun i h => (th i h).trans (bh i h), bk.trans ⟨fun r _ hc => kt.gpr r hc, kt.rd, kt.wr, kt.mem⟩, tb⟩
-  rw [show (32 : Nat) = 16 * 2 by rfl, mul_nsmul, two_nsmul]
-  exact tr rfl
+  refine WP.seq (WP.mono (dblBody_ok (fld := fld) hs ha) fun b₁ ⟨r₁, h₁, k₁, _⟩ => ?_)
+  refine WP.seq (WP.mono (dblBody_ok (fld := fld) (k₁.scratch hs) r₁) fun b₂ ⟨r₂, h₂, k₂, _⟩ => ?_)
+  have k₂' := k₁.trans k₂
+  refine WP.seq (WP.mono (dblBody_ok (fld := fld) (k₂'.scratch hs) r₂) fun b₃ ⟨r₃, h₃, k₃, _⟩ => ?_)
+  have k₃' := k₂'.trans k₃
+  refine WP.seq (WP.mono (dblBody_ok (fld := fld) (k₃'.scratch hs) r₃) fun b₄ ⟨r₄, h₄, k₄, _⟩ => ?_)
+  have k₄' := k₃'.trans k₄
+  refine WP.mono (dblBody_ok (fld := fld) (k₄'.scratch hs) r₄) fun t ⟨r₅, h₅, k₅, b₅⟩ =>
+    ⟨?_, fun i hi => (h₅ i hi).trans ((h₄ i hi).trans ((h₃ i hi).trans ((h₂ i hi).trans (h₁ i hi)))),
+      k₄'.trans k₅, b₅⟩
+  simp only [smul_smul] at r₅
+  exact r₅
 
 /-- `r8` = the magnitude in `rax`, and `rdx` = the table index in `r9`. -/
 theorem combMagIdx_ok (s : State) {m j : Nat} (ha : s.gpr .rax = BitVec.ofNat 64 m)
@@ -613,7 +644,7 @@ theorem combMagIdx_ok (s : State) {m j : Nat} (ha : s.gpr .rax = BitVec.ofNat 64
 
 theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base T : Addr} {S c : Nat}
     (h : CombInv s₀ base T S c s) (hfar : TblFar base T) (hS : S < 2 ^ 256) (hc : c < 52) :
-    WP isa (combStep fld sel) s fun t => t.zf = some (decide (c + 1 = 52)) ∧
+    WP isa (combStep fld sel (Point64.bodies fld)) s fun t => t.zf = some (decide (c + 1 = 52)) ∧
       CombInv s₀ base T S (c + 1) t := by
   rw [combStep]
   refine WP.seq (WP.mono_syms (rbxCmp_ok s c 26 (by omega) (by decide) h.counter)
@@ -621,7 +652,8 @@ theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base
   have hsa : Scratch a base := ⟨by rw [ag]; exact h.scratch.rdi, aw ▸ h.scratch.wr, h.scratch.nowrap⟩
   have kas : PowersKeep base 56 7368 s a := ⟨fun r _ _ _ => by rw [ag], ar, aw, by rw [am]; exact TableFrame.refl _ _ _ _⟩
   -- The doublings and `[G]B`, before the even digits.
-  have hite : WP isa (.ite .e (.seq (combDouble fld) (.block (combAddG fld))) (.block [])) a fun b =>
+  have hite : WP isa (.ite .e (.seq (combDouble (Point64.bodies fld)) (.block (combAddG fld))) (.block [])) a
+      fun b =>
       Scratch b base ∧ b.gpr .rbx = BitVec.ofNat 64 c ∧ env b.mem base 16 = Spec.Ed25519.d ∧
       (∀ q < 256, b.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)) ∧
       Rep (point (env b.mem base) 0 1 2 3)
@@ -784,13 +816,13 @@ theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base
 
 /-! ## The loop -/
 
-/-- `combMultiply` with the selection `sel`. -/
+/-- `combMultiply` with the selection `sel`, its doublings' calls inlined. -/
 theorem combMultiplyWith_ok {sel : List Instr} (hsel : SelOk sel) {s : State} {base T : Addr}
     (hs : Scratch s base) {S : Nat}
     (hS : S < 2 ^ (16 * 16)) (hd : env s.mem base 16 = Spec.Ed25519.d)
     (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
     (ht : CombTbl s T) (hfar : TblFar base T) :
-    WP isa (combMultiply fld sel) s fun t =>
+    WP isa (combMultiply fld sel (Point64.bodies fld)) s fun t =>
       Rep (point (env t.mem base) 0 1 2 3) (S • baseAff) ∧ PowersKeep base 56 7368 s t := by
   have hS' : S < 2 ^ 256 := hS
   rw [combMultiply]
@@ -828,7 +860,7 @@ theorem combMultiply_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : N
     (hS : S < 2 ^ (16 * 16)) (hd : env s.mem base 16 = Spec.Ed25519.d)
     (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
     (ht : CombTbl s T) (hfar : TblFar base T) :
-    WP isa (combMultiply fld) s fun t =>
+    WP isa (combMultiply fld combSelect (Point64.bodies fld)) s fun t =>
       Rep (point (env t.mem base) 0 1 2 3) (S • baseAff) ∧ PowersKeep base 56 7368 s t :=
   combMultiplyWith_ok combSelect_sel hs hS hd hb ht hfar
 

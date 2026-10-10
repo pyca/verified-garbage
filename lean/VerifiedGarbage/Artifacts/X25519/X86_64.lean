@@ -64,7 +64,8 @@ def artifacts : List Artifact := [
     doc := Spec.X25519.x25519BaseApi.doc (notes := ["Ed25519's fixed-base comb, from its \
       tables in the static `VG_ED25519_COMB`, with the scalar clamped as RFC 7748 specifies and \
       the point mapped to `(Z + Y) / (Z - Y)`, inverting with a call of `vg_gf25519_r64_invert`. \
-      The table selection is constant time; the callee-saved registers are saved in `scratch`."])
+      The table selection is constant time; the callee-saved registers are saved in `scratch`. \
+      The comb's five doublings are calls of `vg_ed25519_r64_double_ext`."])
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.X25519.X86_64.Base.x25519Base Impl.X25519.X86_64.baseline
     contract := Spec.X25519.x25519BaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8
@@ -76,7 +77,7 @@ def artifacts : List Artifact := [
     name := "vg_x25519_base_adx"
     doc := Spec.X25519.x25519BaseApi.doc (notes := ["The same fixed-base comb as \
       `vg_x25519_base`, with BMI2 and ADX field arithmetic, its table entries selected 32 bytes \
-      at a time with AVX2."])
+      at a time with AVX2, and its doublings calls of `vg_ed25519_r64_double_ext_adx`."])
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.X25519.X86_64.Base.x25519BaseAdx
     contract := Spec.X25519.x25519BaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8
