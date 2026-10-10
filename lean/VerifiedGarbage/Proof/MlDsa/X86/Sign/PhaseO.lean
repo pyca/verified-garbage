@@ -49,7 +49,7 @@ theorem coeff_slot {m : Mem} {s₀ : State} (hp : TPre (Y p) s₀) (ps : PS p) {
   have e : Buf.addr s₀ (pS (5 + i)) = Buf.addr s₀ (sc (oP 5) (1024 * p.k)) + BitVec.ofNat 64 (1024 * i) := by
     show Buf.addr s₀ (sc (oP (5 + i)) 1024) = _
     rw [show oP (5 + i) = oP 5 + 1024 * i by simp only [oP]; omega]
-    exact addr_off hp (by ofs) (by ofs)
+    exact addr_off hp (by ofsd) (by ofsd)
   simp only [coeffAt]
   rw [e, BitVec.add_assoc, ← BitVec.ofNat_add, show 1024 * i + 4 * j = 4 * (256 * i + j) by omega]
 
@@ -147,11 +147,11 @@ theorem outCopy_piece (F : PrimsOk P) (ps : PS p) (U : State → Nat) :
   have e : copyW SC (sc oCT (cLen p)) (bSig 0 (cLen p)) (cLen p / 4) =
       copyW SC ⟨SC, oCT, 4 * (cLen p / 4)⟩ ⟨3, 0, 4 * (cLen p / 4)⟩ (cLen p / 4) := rfl
   rw [e]
-  refine copy_piece SC oCT 3 0 (cLen p / 4) (by omega) (by omega) (by ofs) (fun _ _ _ h => h.ctx)
+  refine copy_piece SC oCT 3 0 (cLen p / 4) (by omega) (by omega) (by ofsd) (fun _ _ _ h => h.ctx)
     fun s₀ s s' hp h c' fr hb => ?_
   have fr' : Frame (FR s₀ [⟨3, 0, 4 * (cLen p / 4)⟩] 80) s.mem s'.mem := fr.mono (by simp)
   have hk := sigKeep hp ps h.fy h.fh (by decide) fr' fun c hc => by
-    rw [List.mem_singleton] at hc; subst hc; exact ⟨by ofs, rfl⟩
+    rw [List.mem_singleton] at hc; subst hc; exact ⟨by ofsd, rfl⟩
   refine ⟨c', hk.1, hk.2.1, h.run, h.ball, h.pass, by rw [scw, hk.2.2]; exact h.ok1, ?_⟩
   rw [e4] at hb
   simp only [Nat.mul_zero, Nat.add_zero]
@@ -166,13 +166,13 @@ theorem packZ_piece (F : PrimsOk P) (ps : PS p) (U : State → Nat) (r : Nat) (h
   have hm : zLen p * r + zLen p ≤ zLen p * p.ℓ := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hr
   have hc := ps.hcLen
   refine bp_piece F.bitPack (F.ok _ (by simp)) (p.γ₁ - 1) p.γ₁ (zLen p) ps.hz.1 ps.hz.2 ⟨by omega, by omega, by omega⟩
-    SC (oP (yB p + r)) 3 (sigZ p r) (by ofs) (fun s₀ s _ h => ⟨h.ctx, (fam_at h.fy hr).1,
+    SC (oP (yB p + r)) 3 (sigZ p r) (by ofsd) (fun s₀ s _ h => ⟨h.ctx, (fam_at h.fy hr).1,
       inRange_of_norm (fam_at h.fy hr) (h.pass.1 r hr) (by omega)⟩) fun s₀ s s' hp h c' fr hb => ?_
   have hk := sigKeep hp ps h.fy h.fh (by decide) fr fun c hc => by
-    rw [List.mem_singleton] at hc; subst hc; exact ⟨by ofs, rfl⟩
+    rw [List.mem_singleton] at hc; subst hc; exact ⟨by ofsd, rfl⟩
   refine ⟨c', hk.1, hk.2.1, h.run, h.ball, h.pass, by rw [scw, hk.2.2]; exact h.ok1, ?_⟩
   rw [bytes_split hp s'.mem (o' := sigZ p r) (l₁ := cLen p + zLen p * r) (l₂ := zLen p) (by simp only [sigZ]; omega) (by rw [Nat.mul_succ]; omega)
-    (by ofs) (by ofs), keepBytes hp (N := 80) (by show 80 + 16 ≤ 96; decide) (b := ⟨3, 0, cLen p + zLen p * r⟩) (by ofs) fr, h.sig, hb,
+    (by ofsd) (by ofsd), keepBytes hp (N := 80) (by show 80 + 16 ≤ 96; decide) (b := ⟨3, 0, cLen p + zLen p * r⟩) (by ofsd) fr, h.sig, hb,
     (fam_at h.fy hr).2, List.append_assoc]
   simp only [zEnc, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
 
@@ -191,16 +191,16 @@ theorem hpack_piece (F : PrimsOk P) (ps : PS p) (U : State → Nat)
   have hsl := ps.hsigLen
   unfold hintBitPackAt
   rw [show (sc (oP 5) (1024 * p.k)).len / 4 = 256 * p.k by show 1024 * p.k / 4 = _; omega]
-  refine hbp_piece F.hintBitPack (F.ok _ (by simp)) p.ω p.k ps.hhint SC (oP 5) 3 (sigH p) (by ofs)
+  refine hbp_piece F.hintBitPack (F.ok _ (by simp)) p.ω p.k ps.hhint SC (oP 5) 3 (sigH p) (by ofsd)
     (fun s₀ s hp h => ⟨h.ctx, ?_⟩) (fun s₀ s₀' s s' hp hp' hq h h' => ?_) fun s₀ s s' hp h c' fr hb =>
       ⟨c', by rw [scw, (sigKeep hp ps h.fy h.fh (by decide) fr fun c hc => by
-        rw [List.mem_singleton] at hc; subst hc; exact ⟨by ofs, rfl⟩).2.2]; exact h.ok1, ?_⟩
+        rw [List.mem_singleton] at hc; subst hc; exact ⟨by ofsd, rfl⟩).2.2]; exact h.ok1, ?_⟩
   · rw [hintAt_of hp ps h.fh, hintOnes_map]; exact h.pass.2.2.2
   · rw [hint_list hp ps h.fh, hint_list hp' ps h'.fh, ← hU s₀ s₀' hp hp' hq]
     exact (((run_at ps hq h.run).2 h.ball).2 h.pass)
   · rw [bytes_split hp s'.mem (o' := sigH p) (l₁ := cLen p + zLen p * p.ℓ) (l₂ := p.ω + p.k) (by simp only [sigH]; omega)
-      (by omega) (by ofs) (by ofs), keepBytes hp (N := 80) (by show 80 + 16 ≤ 96; decide)
-      (b := ⟨3, 0, cLen p + zLen p * p.ℓ⟩) (by ofs) fr, h.sig, hb, hintAt_of hp ps h.fh]
+      (by omega) (by ofsd) (by ofsd), keepBytes hp (N := 80) (by show 80 + 16 ≤ 96; decide)
+      (b := ⟨3, 0, cLen p + zLen p * p.ℓ⟩) (by ofsd) fr, h.sig, hb, hintAt_of hp ps h.fh]
 
 /-- The signature. -/
 theorem output_piece (F : PrimsOk P) (ps : PS p) (U : State → Nat)
