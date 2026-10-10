@@ -60,7 +60,7 @@ theorem Ctx.trans {s₀ s₁ s₂ : State} (h₁ : Ctx s₀ s₁) (h₂ : Ctx s�
 
 /-! ## Addresses -/
 
-theorem slots_eq : slots = 363 := rfl
+theorem slots_eq : slots = 364 := rfl
 theorem tableSlot_eq : tableSlot = 96 := rfl
 theorem tableEnd_eq : tableEnd = 352 := rfl
 theorem tailSlot_eq : tailSlot = 64 := rfl

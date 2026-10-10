@@ -48,8 +48,9 @@ def savedSlot : Nat := tableEnd
 def dSlot : Nat := savedSlot + 9
 def nSlot : Nat := dSlot + 1
 
-/-- The number of slots. -/
-def slots : Nat := nSlot + 1
+/-- The number of slots, rounded up to a whole number of 64-bit words (the
+artifacts allocate the buffer as `[u64; 182]`). -/
+def slots : Nat := nSlot + 2
 
 /-- The callee-saved registers, and their slots. -/
 def savedRegs : List (Reg × Nat) :=
