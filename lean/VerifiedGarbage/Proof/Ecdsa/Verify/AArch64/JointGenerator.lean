@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLayout
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 
 namespace VG.Proof.Ecdsa.Verify.AArch64

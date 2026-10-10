@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Timing
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStepTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeTiming

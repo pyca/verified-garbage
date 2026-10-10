@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacWindow
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombOut
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombSum
 

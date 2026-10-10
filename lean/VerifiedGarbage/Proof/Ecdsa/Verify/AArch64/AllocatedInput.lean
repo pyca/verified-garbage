@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPublic
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
 
 namespace VG.Proof.Ecdsa.Verify.AArch64
