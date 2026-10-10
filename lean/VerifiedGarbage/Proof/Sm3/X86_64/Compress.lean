@@ -101,28 +101,8 @@ theorem round_ne5 (t : Nat) :
   generalize t % 4 = c at *
   revert this; revert c; decide
 
-/-- The rotations of the code are rotations left by the complement. -/
-theorem rotl7 (x : Word) : x.rotateLeft 7 = x.rotateRight 25 := rotateLeft_eq x (by decide) (by decide)
-theorem rotl9 (x : Word) : x.rotateLeft 9 = x.rotateRight 23 := rotateLeft_eq x (by decide) (by decide)
-theorem rotl12 (x : Word) : x.rotateLeft 12 = x.rotateRight 20 := rotateLeft_eq x (by decide) (by decide)
-theorem rotl15 (x : Word) : x.rotateLeft 15 = x.rotateRight 17 := rotateLeft_eq x (by decide) (by decide)
-theorem rotl17 (x : Word) : x.rotateLeft 17 = x.rotateRight 15 := rotateLeft_eq x (by decide) (by decide)
-theorem rotl19 (x : Word) : x.rotateLeft 19 = x.rotateRight 13 := rotateLeft_eq x (by decide) (by decide)
-theorem rotl23 (x : Word) : x.rotateLeft 23 = x.rotateRight 9 := rotateLeft_eq x (by decide) (by decide)
-
 /-- The address of `W[j mod 16]`. -/
 abbrev slotAddr (scr : Addr) (j : Nat) : Addr := scr + BitVec.ofInt 64 ↑(4 * (j % 16))
-
-/-- `TT1`, in the order the code adds its terms. -/
-theorem tt1_eq (d x y w f : Word) : d + (x ^^^ y) + w + f = f + d + (y ^^^ x) + w := by
-  simp only [ac]
-
-/-- `P_0(TT2)`, in the order the code adds the terms of `TT2`. -/
-theorem tt2_eq (h s w g : Word) :
-    (h + s + w + g ^^^ (h + s + w + g).rotateRight 23) ^^^ (h + s + w + g).rotateRight 15 =
-      p0 (g + h + s + w) := by
-  rw [show h + s + w + g = g + h + s + w by simp only [ac]]
-  simp only [Spec.Sm3.p0, rotl9, rotl17]
 
 set_option hygiene false in
 /-- The symbolic execution of an iteration (`round_lo`, `round_hi`): for any
