@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
 import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.KeyGen
 import VerifiedGarbage.Spec.MlDsa.Contract
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlDsa.DecideAt
 
 /-!
 # ML-DSA key generation on x86 (32-bit): parameters and layout
@@ -29,10 +30,13 @@ structure PFacts (p : Params) : Prop where
   pk : p.pkLen = 32 + 320 * p.k
   sk : p.skLen = oT0 p + 416 * p.k
   sw : scratchWords p = 128 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32)
+  /-- Which parameter set: a check about one can be decided for each (`layd`). -/
+  mem : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87
 
 theorem pfacts {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) : PFacts p := by
+  have hm := hp
   rcases hp with rfl | rfl | rfl <;>
-    exact ⟨by decide, by decide, by decide, by decide, by decide, by decide, rfl⟩
+    exact ⟨by decide, by decide, by decide, by decide, by decide, by decide, rfl, hm⟩
 
 /-- The size of `scratch`, in bytes. -/
 abbrev scrLen (p : Params) : Nat := scratchWords p * 8
@@ -90,5 +94,14 @@ macro_rules
         | lay [($hF).pk, ($hF).sk, ($hF).sw, $ls,*]
         | rcases ($hF).eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;>
             lay [hlen, ($hF).pk, ($hF).sk, ($hF).sw, $ls,*]))
+
+/-- A check about the layout that mentions no variable but the parameter set and
+bounded indices, decided for each parameter set (`decide_at`): cheaper than
+`layp`, which unfolds it into arithmetic on the parameters for `omega`, unless
+there are many indices to try. -/
+syntax "layd" : tactic
+macro_rules
+  | `(tactic| layd) => `(tactic| (
+      have hmem := (‹VG.Proof.MlDsa.X86.KeyGen.PFacts _›).mem; decide_at hmem))
 
 end VG.Proof.MlDsa.X86.KeyGen

@@ -142,14 +142,14 @@ include hP hF
 
 theorem nttZ_piece {j : Nat} (hj : j < p.ℓ) :
     VP p (CI p · j false 0) (CI p · (j + 1) false 0) (nttAt P (pZ j)) :=
-  inPlace_piece (Y := YV p) hP.ntt vS (oP (8 + j)) vS oSS (by lv hF) (Nat.le_of_eq (YV_stk p).symm)
+  inPlace_piece (Y := YV p) hP.ntt vS (oP (8 + j)) vS oSS (by lvd) (Nat.le_of_eq (YV_stk p).symm)
     (ht := .block []) (by kernel_rfl)
     (fun _ _ _ ⟨_, _, _, h⟩ => ⟨h.ctx, by have := (h.z j hj).1; exact this⟩)
     fun s₀ s s' hp ⟨hh, A, C, h⟩ h' fr post => by
       refine ⟨hh, A, C, h.update hp (N := 80) (by omega) (by safeCs hF (Nat.zero_le p.k)) fr h' (fun i hi => ?_)
-        (keepPolyD hp (stkV (by omega)) (by lv hF) fr h.c)⟩
+        (keepPolyD hp (stkV (by omega)) (by lvd) fr h.c)⟩
       rcases (by omega : i < j ∨ i = j ∨ j < i) with hij | rfl | hij
-      · have e := keepPolyD hp (stkV (by omega)) (by lv hF) fr (h.z i hi)
+      · have e := keepPolyD hp (stkV (by omega)) (by lvd) fr (h.z i hi)
         simp only [hij, show i < j + 1 by omega, ite_true] at e ⊢
         exact e
       · rw [ite_eq_left_iff.mpr fun h => absurd (Nat.lt_succ_self i) h]
@@ -157,17 +157,17 @@ theorem nttZ_piece {j : Nat} (hj : j < p.ℓ) :
         rw [ite_eq_right_iff.mpr fun h => absurd h (Nat.lt_irrefl _)] at e
         rw [e] at post
         exact post
-      · have e := keepPolyD hp (stkV (by omega)) (by lv hF) fr (h.z i hi)
+      · have e := keepPolyD hp (stkV (by omega)) (by lvd) fr (h.z i hi)
         simp only [show ¬ i < j by omega, show ¬ i < j + 1 by omega, ite_false] at e ⊢
         exact e
 
 theorem nttC_piece : VP p (CI p · p.ℓ false 0) (CI p · p.ℓ true 0) (nttAt P pC) :=
-  inPlace_piece (Y := YV p) hP.ntt vS (oP 15) vS oSS (by lv hF) (Nat.le_of_eq (YV_stk p).symm)
+  inPlace_piece (Y := YV p) hP.ntt vS (oP 15) vS oSS (by lvd) (Nat.le_of_eq (YV_stk p).symm)
     (ht := .block []) (by kernel_rfl)
     (fun _ _ _ ⟨_, _, _, h⟩ => ⟨h.ctx, h.c.1⟩)
     fun s₀ s s' hp ⟨hh, A, C, h⟩ h' fr post => by
       refine ⟨hh, A, C, h.update hp (N := 80) (by omega) (by safeCs hF (Nat.zero_le p.k)) fr h'
-        (fun i hi => keepPolyD hp (stkV (by omega)) (by lv hF) fr (h.z i hi)) ?_⟩
+        (fun i hi => keepPolyD hp (stkV (by omega)) (by lvd) fr (h.z i hi)) ?_⟩
       have e := h.c.2
       simp only [Bool.false_eq_true, ite_false] at e
       rw [e] at post

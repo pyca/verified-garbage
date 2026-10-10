@@ -66,32 +66,32 @@ theorem expA_piece {e : Nat} (he : e < p.k * p.ℓ) : KP p (KSamp p e 0) (KSamp 
   unfold expA
   refine Piece.seq (B := fun s₀ s => KSamp p e 0 s₀ s ∧
       bytesAt s.mem (Buf.addr s₀ (sb (oSA + 32) 1)) 1 = [BitVec.ofNat 8 (e % p.ℓ)])
-    (st8_piece (Y := YK p) (oSA + 32) (e % p.ℓ) (by layp hF) (ht := .block []) (by kernel_rfl)
+    (st8_piece (Y := YK p) (oSA + 32) (e % p.ℓ) (by layd) (ht := .block []) (by kernel_rfl)
       (fun _ _ _ h => h.kb.ctx) fun s₀ s s' hp h h' m' =>
-        ⟨h.keep hp (N := 0) (by omega) ⟨by layp hF [safeKB], by layp hF, fun _ _ => by layp hF, fun _ h => absurd h (by omega)⟩
+        ⟨h.keep hp (N := 0) (by omega) ⟨by layd, by layd, fun _ _ => by layd, fun _ h => absurd h (by omega)⟩
           (m' ▸ frW8) h', by rw [m', YK_sc]; exact st8_bytes _ _ _ _ _⟩) ?_
   refine Piece.seq (B := SA2 p e)
-    (st8_piece (Y := YK p) (oSA + 33) (e / p.ℓ) (by layp hF) (ht := .block []) (by kernel_rfl)
+    (st8_piece (Y := YK p) (oSA + 33) (e / p.ℓ) (by layd) (ht := .block []) (by kernel_rfl)
       (fun _ _ _ h => h.1.kb.ctx) fun s₀ s s' hp h h' m' =>
-        ⟨h.1.keep hp (N := 0) (by omega) ⟨by layp hF [safeKB], by layp hF, fun _ _ => by layp hF,
+        ⟨h.1.keep hp (N := 0) (by omega) ⟨by layd, by layd, fun _ _ => by layd,
           fun _ h => absurd h (by omega)⟩ (m' ▸ frW8) h', ?_⟩) ?_
-  · have k32 := keepBytes hp (N := 0) (stkN (by omega)) (b := sb oSA 32) (by layp hF) (m' ▸ frW8)
-    have k1 := keepBytes hp (N := 0) (stkN (by omega)) (b := sb (oSA + 32) 1) (by layp hF) (m' ▸ frW8)
-    rw [show (34 : Nat) = 32 + (1 + 1) from rfl, bytes_cat hp _ (l₁ := 32) (by layp hF) (by layp hF),
-      bytes_cat hp _ (l₁ := 1) (l₂ := 1) (by layp hF) (by layp hF), k32, k1, h.1.kb.sa, h.2, seedA_eq, m', YK_sc,
+  · have k32 := keepBytes hp (N := 0) (stkN (by omega)) (b := sb oSA 32) (by layd) (m' ▸ frW8)
+    have k1 := keepBytes hp (N := 0) (stkN (by omega)) (b := sb (oSA + 32) 1) (by layd) (m' ▸ frW8)
+    rw [show (34 : Nat) = 32 + (1 + 1) from rfl, bytes_cat hp _ (l₁ := 32) (by layd) (by layd),
+      bytes_cat hp _ (l₁ := 1) (l₂ := 1) (by layd) (by layd), k32, k1, h.1.kb.sa, h.2, seedA_eq, m', YK_sc,
       st8_bytes]
-  refine Piece.seq (B := SA3 p e) (rejNtt_piece (Y := YK p) hP.rejNtt kS oSA kS (oP e) kS oSS (by layp hF)
+  refine Piece.seq (B := SA3 p e) (rejNtt_piece (Y := YK p) hP.rejNtt kS oSA kS (oP e) kS oSS (by layd)
     (Nat.le_of_eq (YK_stk p).symm) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.kb.ctx)
     (fun s₀ s₀' s s' _ _ hq h h' => by rw [h.seed, h'.seed, (TPub.leak hq).1])
     fun s₀ s s' hp h h' fr red out => ?_) ?_
   · obtain ⟨A, S, hA, -, hG⟩ := h.ex
-    have sf : SafeS p e 0 [aB e, ssB 2048] := ⟨by layp hF [safeKB], by layp hF, fun _ _ => by layp hF,
+    have sf : SafeS p e 0 [aB e, ssB 2048] := ⟨by layd, by layd, fun _ _ => by layp hF,
       fun _ h => absurd h (by omega)⟩
     refine ⟨h.kb.keep hp (N := 80) (by omega) sf.kb fr h', ⟨A, S, fun e' he' => keepPolyD hp (stkN (by omega))
       (sf.a e' he') fr (hA e' he'), ?_⟩, red, ?_⟩
     · rw [acc_keep hp (N := 80) (by omega) sf.acc fr]; exact hG
     · rw [← h.seed]; exact out
-  refine maskA_piece (Y := YK p) oACC (oP e) (by layp hF) (maskA_tt _) (fun _ _ _ h => h.kb.ctx)
+  refine maskA_piece (Y := YK p) oACC (oP e) (by layd) (maskA_tt _) (fun _ _ _ h => h.kb.ctx)
     fun s₀ s s' hp h h' fr ha hc => ?_
   simp only [YK_sc] at fr ha hc
   obtain ⟨A, S, hA, hG⟩ := h.ex
@@ -101,7 +101,7 @@ theorem expA_piece {e : Nat} (he : e < p.k * p.ℓ) : KP p (KSamp p e 0) (KSamp 
   obtain ⟨m1, m0⟩ := Proof.MlDsa.KeyGen.masked r01 hc
   obtain ⟨a01, aiff⟩ := Proof.MlDsa.KeyGen.acc_and (good_01 hG) r01
   have fr' := fr2 fr
-  have sk : safeKB p [sb oACC 4, aB e] = true := by layp hF [safeKB]
+  have sk : safeKB p [sb oACC 4, aB e] = true := by layd
   have sa : ∀ e' < e, (YK p).apart (aB e') [sb oACC 4, aB e] = true := fun _ _ => by layp hF
   refine ⟨h.kb.keep hp (N := 0) (by omega) sk fr' h', fun e' => if e' = e then polyAt s'.mem (Buf.addr s₀ (aB e))
     else A e', S, fun e' he' => ?_, fun _ h => absurd h (Nat.not_lt_zero _), ?_⟩
@@ -151,28 +151,28 @@ theorem expS_piece {r : Nat} (hr : r < p.ℓ + p.k) :
   have hr256 : r < 256 := by omega
   unfold expS
   refine Piece.seq (B := SS2 p r)
-    (st8_piece (Y := YK p) (oSB + 64) r (by layp hF) (ht := .block []) (by kernel_rfl)
+    (st8_piece (Y := YK p) (oSB + 64) r (by layd) (ht := .block []) (by kernel_rfl)
       (fun _ _ _ h => h.kb.ctx) fun s₀ s s' hp h h' m' =>
-        ⟨h.keep hp (N := 0) (by omega) ⟨by layp hF [safeKB], by layp hF, fun _ _ => by layp hF,
-          fun _ _ => by layp hF⟩ (m' ▸ frW8) h', ?_⟩) ?_
-  · have k64 := keepBytes hp (N := 0) (stkN (by omega)) (b := sb oSB 64) (by layp hF) (m' ▸ frW8)
-    have k65 := keepBytes hp (N := 0) (stkN (by omega)) (b := sb (oSB + 65) 1) (by layp hF) (m' ▸ frW8)
-    rw [show (66 : Nat) = 64 + (1 + 1) from rfl, bytes_cat hp _ (l₁ := 64) (by layp hF) (by layp hF),
-      bytes_cat hp _ (l₁ := 1) (l₂ := 1) (by layp hF) (by layp hF), k64, show oSB + 64 + 1 = oSB + 65 from rfl, k65,
+        ⟨h.keep hp (N := 0) (by omega) ⟨by layd, by layd, fun _ _ => by layd,
+          fun _ _ => by layd⟩ (m' ▸ frW8) h', ?_⟩) ?_
+  · have k64 := keepBytes hp (N := 0) (stkN (by omega)) (b := sb oSB 64) (by layd) (m' ▸ frW8)
+    have k65 := keepBytes hp (N := 0) (stkN (by omega)) (b := sb (oSB + 65) 1) (by layd) (m' ▸ frW8)
+    rw [show (66 : Nat) = 64 + (1 + 1) from rfl, bytes_cat hp _ (l₁ := 64) (by layd) (by layd),
+      bytes_cat hp _ (l₁ := 1) (l₂ := 1) (by layd) (by layd), k64, show oSB + 64 + 1 = oSB + 65 from rfl, k65,
       h.kb.sbb, h.kb.z, seedS_eq _ hr256, m', YK_sc, st8_bytes]
   refine Piece.seq (B := SS3 p r) (rejBounded_piece (Y := YK p) hP.rejBounded kS oSB p.η kS (oP (p.k * p.ℓ + r))
-    kS oSS (eta_of hF) (by layp hF) (Nat.le_of_eq (YK_stk p).symm) (ht := .block []) (by kernel_rfl)
+    kS oSS (eta_of hF) (by layd) (Nat.le_of_eq (YK_stk p).symm) (ht := .block []) (by kernel_rfl)
     (fun _ _ _ h => h.kb.ctx) (fun s₀ s₀' s s' _ _ hq h h' => by rw [h.seed, h'.seed, (TPub.leak hq).2 r hr])
     fun s₀ s s' hp h h' fr red out => ?_) ?_
   · obtain ⟨A, S, hA, hS, hG⟩ := h.ex
-    have sf : SafeS p (p.k * p.ℓ) r [sB p r, ssB 2048] := ⟨by layp hF [safeKB], by layp hF, fun _ _ => by layp hF,
-      fun _ _ => by layp hF⟩
+    have sf : SafeS p (p.k * p.ℓ) r [sB p r, ssB 2048] := ⟨by layd, by layd, fun _ _ => by layp hF,
+      fun _ _ => by layd⟩
     refine ⟨h.kb.keep hp (N := 80) (by omega) sf.kb fr h', ⟨A, S, fun e' he' => keepPolyD hp (stkN (by omega))
       (sf.a e' he') fr (hA e' he'), fun r' hr' => ⟨keepPolyD hp (stkN (by omega)) (sf.s r' hr') fr (hS r' hr').1,
         (hS r' hr').2⟩, ?_⟩, red, ?_⟩
     · rw [acc_keep hp (N := 80) (by omega) sf.acc fr]; exact hG
     · rw [← h.seed]; exact out
-  refine maskA_piece (Y := YK p) oACC (oP (p.k * p.ℓ + r)) (by layp hF) (maskA_tt _) (fun _ _ _ h => h.kb.ctx)
+  refine maskA_piece (Y := YK p) oACC (oP (p.k * p.ℓ + r)) (by layd) (maskA_tt _) (fun _ _ _ h => h.kb.ctx)
     fun s₀ s s' hp h h' fr ha hc => ?_
   simp only [YK_sc] at fr ha hc
   obtain ⟨A, S, hA, hS, hG⟩ := h.ex
@@ -182,9 +182,9 @@ theorem expS_piece {r : Nat} (hr : r < p.ℓ + p.k) :
   obtain ⟨m1, m0⟩ := Proof.MlDsa.KeyGen.masked r01 hc
   obtain ⟨a01, aiff⟩ := Proof.MlDsa.KeyGen.acc_and (good_01 hG) r01
   have fr' := fr2 fr
-  have sk : safeKB p [sb oACC 4, sB p r] = true := by layp hF [safeKB]
+  have sk : safeKB p [sb oACC 4, sB p r] = true := by layd
   have sa : ∀ e' < p.k * p.ℓ, (YK p).apart (aB e') [sb oACC 4, sB p r] = true := fun _ _ => by layp hF
-  have ss : ∀ r' < r, (YK p).apart (sB p r') [sb oACC 4, sB p r] = true := fun _ _ => by layp hF
+  have ss : ∀ r' < r, (YK p).apart (sB p r') [sb oACC 4, sB p r] = true := fun _ _ => by layd
   have kA : ∀ e' < p.k * p.ℓ, PolyIs s'.mem (Buf.addr s₀ (aB e')) (A e') := fun e' he' =>
     keepPolyD hp (stkN (by omega)) (sa e' he') fr' (hA e' he')
   have kS' : ∀ r' < r, PolyIs s'.mem (Buf.addr s₀ (sB p r')) (toRq (S r')) ∧ Small p.η (S r') := fun r' hr' =>
