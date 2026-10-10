@@ -1,7 +1,6 @@
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Lit
 import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
-import VerifiedGarbage.Proof.X448.X86_64.Lit
 
 /-!
 # Ed448 verification's equation on x86-64: the code as literals
