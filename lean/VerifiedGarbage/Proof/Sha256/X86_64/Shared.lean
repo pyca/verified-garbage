@@ -24,21 +24,15 @@ open VG.Proof.Sha256.X86_64 (ea_at contains_offset' writeState stateAt_writeStat
 variable (iv : Spec.Sha256.HashValue)
 
 theorem initWith_eq : initWith iv = .block [
-    .mov32 .rax (.imm iv[0]), .store32 (at_ .rdi (4 * 0)) .rax,
-    .mov32 .rax (.imm iv[1]), .store32 (at_ .rdi (4 * 1)) .rax,
-    .mov32 .rax (.imm iv[2]), .store32 (at_ .rdi (4 * 2)) .rax,
-    .mov32 .rax (.imm iv[3]), .store32 (at_ .rdi (4 * 3)) .rax,
-    .mov32 .rax (.imm iv[4]), .store32 (at_ .rdi (4 * 4)) .rax,
-    .mov32 .rax (.imm iv[5]), .store32 (at_ .rdi (4 * 5)) .rax,
-    .mov32 .rax (.imm iv[6]), .store32 (at_ .rdi (4 * 6)) .rax,
-    .mov32 .rax (.imm iv[7]), .store32 (at_ .rdi (4 * 7)) .rax] := rfl
+    .movImm64 .rax (iv[1] ++ iv[0]), .xop (.movq .xmm0 .rax), .movImm64 .rax (iv[3] ++ iv[2]),
+    .xop (.movq .xmm1 .rax), .xop (.bin .punpcklqdq .xmm0 .xmm1), .movdquStore (at_ .rdi (16 * 0)) .xmm0,
+    .movImm64 .rax (iv[5] ++ iv[4]), .xop (.movq .xmm0 .rax), .movImm64 .rax (iv[7] ++ iv[6]),
+    .xop (.movq .xmm1 .rax), .xop (.bin .punpcklqdq .xmm0 .xmm1), .movdquStore (at_ .rdi (16 * 1)) .xmm0] := rfl
 
-theorem init_post {s₀ : State}
-    (hret : Region.Disjoint ⟨s₀.gpr .rsp, 8⟩ ⟨s₀.gpr .rdi, 96⟩) (g : Reg → BitVec 64)
-    (hg : ∀ r, r ≠ .rax → g r = s₀.gpr r) :
-    gprPreserved s₀ { s₀ with gpr := g, mem := writeState s₀.mem (s₀.gpr .rdi) iv } ∧
-      (Proof.Sha256.initX86_64 iv).post s₀
-        { s₀ with gpr := g, mem := writeState s₀.mem (s₀.gpr .rdi) iv } := by
+theorem init_post {s₀ s' : State}
+    (hret : Region.Disjoint ⟨s₀.gpr .rsp, 8⟩ ⟨s₀.gpr .rdi, 96⟩) (hg : ∀ r, r ≠ .rax → s'.gpr r = s₀.gpr r)
+    (hm : s'.mem = writeState s₀.mem (s₀.gpr .rdi) iv) :
+    gprPreserved s₀ s' ∧ (Proof.Sha256.initX86_64 iv).post s₀ s' := by
   have hf : Frame [⟨s₀.gpr .rdi, 96⟩] s₀.mem (writeState s₀.mem (s₀.gpr .rdi) iv) := by
     have c : ∀ k, k < 8 → (⟨s₀.gpr .rdi, 96⟩ : Region).Contains
         (s₀.gpr .rdi + BitVec.ofInt 64 ((4 * k : Nat) : Int)) (32 / 8) :=
@@ -47,30 +41,47 @@ theorem init_post {s₀ : State}
     refine (((((((((Frame.refl _ _).writeW ?_ _ (c 0 ?_)).writeW ?_ _ (c 1 ?_)).writeW ?_ _
       (c 2 ?_)).writeW ?_ _ (c 3 ?_)).writeW ?_ _ (c 4 ?_)).writeW ?_ _ (c 5 ?_)).writeW ?_ _
       (c 6 ?_)).writeW ?_ _ (c 7 ?_)) <;> simp
-  refine ⟨⟨fun r hr => hg r ?_, ?_⟩, Stream.reprFrom_nil (stateAt_writeState _ _ _)⟩
+  refine ⟨⟨fun r hr => hg r ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-  · exact hf.readW (Region.contains_self _ _) (by simpa using hret) (by decide)
+  · rw [hm]; exact hf.readW (Region.contains_self _ _) (by simpa using hret) (by decide)
+  · have h := Stream.reprFrom_nil (stateAt_writeState s₀.mem (s₀.gpr .rdi) iv)
+    rw [← hm] at h
+    exact h
 
-theorem setWidth_32_64 (x : BitVec 32) : (x.setWidth 64).setWidth 32 = x :=
-  BitVec.eq_of_toNat_eq (by simp)
+/-- Two 16-byte stores of `iv` are `writeState`. -/
+theorem init_mem (m : Mem) (p : Addr) :
+    (m.writeW (p + BitVec.ofInt 64 ((16 * 0 : Nat) : Int))
+        (XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ (iv[1] ++ iv[0])) ((0 : BitVec 64) ++ (iv[3] ++ iv[2])))).writeW
+      (p + BitVec.ofInt 64 ((16 * 1 : Nat) : Int))
+        (XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ (iv[5] ++ iv[4])) ((0 : BitVec 64) ++ (iv[7] ++ iv[6]))) =
+      writeState m p iv := by
+  simp only [punpcklqdq_eq, (MdStream.X86_64.dword_zero_append _ _).1, (MdStream.X86_64.dword_zero_append _ _).2,
+    MdStream.X86_64.writeW_ofDwords, writeState, Proof.Sha256.X86_64.ofInt_natCast, MdStream.X86_64.add_ofNat,
+    Nat.reduceMul, Nat.reduceAdd]
 
 set_option simprocs false in
 theorem init_correct {s₀ : State} (hp : (Proof.Sha256.initX86_64 iv).pre s₀) :
     WP isa (initWith iv) s₀ fun s' => gprPreserved s₀ s' ∧ (Proof.Sha256.initX86_64 iv).post s₀ s' := by
   obtain ⟨hrd, hwr, hret⟩ := hp
-  have o : ∀ k, k < 8 → InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 :=
-    fun k hk => ⟨⟨s₀.gpr .rdi, 96⟩, by simp [hwr], contains_offset' (by omega) (by omega)⟩
-  have o0 := o 0 (by omega); have o1 := o 1 (by omega); have o2 := o 2 (by omega)
-  have o3 := o 3 (by omega); have o4 := o 4 (by omega); have o5 := o 5 (by omega)
-  have o6 := o 6 (by omega); have o7 := o 7 (by omega)
+  have o : ∀ q, q < 2 → InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofInt 64 ((16 * q : Nat) : Int)) 16 :=
+    fun q hq => ⟨⟨s₀.gpr .rdi, 96⟩, by simp [hwr], contains_offset' (by omega) (by omega)⟩
   rw [initWith_eq]
-  apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some,
-    runBlock_nil, exec, readSrc32, isa, ea_at, State.store32,
-    State.setReg32, State.setReg, o0, o1, o2, o3, o4, o5, o6, o7, ite_true, ite_false,
-    Option.map_some, Option.some.injEq, exists_eq_left', setWidth_32_64]
-  exact init_post iv hret _ fun r hr => by simp [hr]
+  refine MdStream.X86_64.wp_movImm64' (MdStream.X86_64.wp_movqx (MdStream.X86_64.wp_movImm64'
+    (MdStream.X86_64.wp_movqx (MdStream.X86_64.wp_xbin ?_))))
+  refine MdStream.X86_64.wp_movdquStore (a := s₀.gpr .rdi + BitVec.ofInt 64 ((16 * 0 : Nat) : Int)) rfl
+    (o 0 (by decide)) fun s₁ g₁ m₁ rd₁ wr₁ => ?_
+  refine MdStream.X86_64.wp_movImm64' (MdStream.X86_64.wp_movqx (MdStream.X86_64.wp_movImm64'
+    (MdStream.X86_64.wp_movqx (MdStream.X86_64.wp_xbin ?_))))
+  refine MdStream.X86_64.wp_movdquStore (a := s₀.gpr .rdi + BitVec.ofInt 64 ((16 * 1 : Nat) : Int))
+    (by simp only [ea_at, RegUpd.gpr_setXmm, RegUpd.gpr_setReg, g₁]; rfl)
+    (by simp only [RegUpd.wr_setXmm, RegUpd.wr_setReg, wr₁]; exact o 1 (by decide))
+    fun s₂ g₂ m₂ rd₂ wr₂ => WP.block_nil (init_post iv hret (fun r hr => ?_) ?_)
+  · simp only [g₂, RegUpd.gpr_setXmm, RegUpd.gpr_setReg, hr, ite_false, g₁]
+  · simp only [m₂, RegUpd.mem_setXmm, RegUpd.mem_setReg, m₁, RegUpd.xmm_setXmm_self, RegUpd.xmm_setReg,
+      RegUpd.xmm_setXmm_of_ne _ _ (show ¬ XReg.xmm0 = .xmm1 by decide), RegUpd.gpr_setReg, RegUpd.gpr_setXmm,
+      ite_true]
+    exact init_mem iv s₀.mem (s₀.gpr .rdi)
 
 /-- A state satisfying the precondition. -/
 def initSat : State where
