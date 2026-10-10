@@ -10,8 +10,10 @@ the contract of `vg_chacha20_xor`, for CPUs with AVX2.
 While at least 512 bytes of data remain, eight blocks of keystream (the
 counters `c, c + 1, …, c + 7` modulo 2³², `c` being word 12 of the state)
 are computed at once and XORed into the next 512 bytes of the data, and
-word 12 of the state is advanced by 8. The rest of the data (less than 512
-bytes) is then XORed by `Avx2Tail.tail`, four blocks at a time.
+word 12 of the state is advanced by 8. If 385 to 511 bytes remain, they are
+XORed by one more computation of eight blocks (`last8`), the first six into
+the data and the rest through `buf`; fewer bytes by `Avx2Tail.tail`, two to
+six blocks at a time.
 
 * Each of the sixteen words of the eight states is kept in an AVX register,
   lane `j` (doubleword `j % 4` of 128-bit lane `j / 4`) holding it for block
@@ -161,25 +163,30 @@ def xorRow (row : Nat) (xs : List XReg) : List Instr :=
     xor16 (xs.getD i .xmm0) (64 * i + 16 * row) ++
     ([.vop (.vextracti128 .xmm13 (xs.getD i .xmm0) 1)] : List Instr) ++ xor16 .xmm13 (64 * (i + 4) + 16 * row)
 
-/-- The rounds' result plus the input state, XORed into the next 512 bytes of
-data. Words 8 and 9 are first stored to their slots, and the third row is
+/-- The rounds' result plus the input state, each row transposed by
+`transpose` and written out by `out row` (from the four registers holding
+it). Words 8 and 9 are first stored to their slots, and the third row is
 then loaded from the slots into `ymm0 … ymm3` (free once the first row is
 done). -/
-def finish : List Instr :=
+def finishWith (out : Nat → List XReg → List Instr) : List Instr :=
   ([.vmovdquStore .l256 (at_ .rcx (slotOff 8)) .xmm12,
    .vmovdquStore .l256 (at_ .rcx (slotOff 9)) .xmm13] : List Instr) ++
   addRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] ++ transpose .xmm0 .xmm1 .xmm2 .xmm3 ++
-    xorRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] ++
+    out 0 [.xmm0, .xmm1, .xmm2, .xmm3] ++
   addRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] ++ transpose .xmm4 .xmm5 .xmm6 .xmm7 ++
-    xorRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] ++
+    out 1 [.xmm4, .xmm5, .xmm6, .xmm7] ++
   addRow 3 [.xmm8, .xmm9, .xmm10, .xmm11] ++
     ([.vmovdquLoad .l256 .xmm15 (at_ .rcx incOff), v .vpaddd .xmm8 .xmm8 .xmm15] : List Instr) ++
-    transpose .xmm8 .xmm9 .xmm10 .xmm11 ++ xorRow 3 [.xmm8, .xmm9, .xmm10, .xmm11] ++
+    transpose .xmm8 .xmm9 .xmm10 .xmm11 ++ out 3 [.xmm8, .xmm9, .xmm10, .xmm11] ++
   ([.vmovdquLoad .l256 .xmm0 (at_ .rcx (slotOff 8)), .vmovdquLoad .l256 .xmm1 (at_ .rcx (slotOff 9)),
    .vmovdquLoad .l256 .xmm2 (at_ .rcx (slotOff 10)),
    .vmovdquLoad .l256 .xmm3 (at_ .rcx (slotOff 11))] : List Instr) ++
   addRow 2 [.xmm0, .xmm1, .xmm2, .xmm3] ++ transpose .xmm0 .xmm1 .xmm2 .xmm3 ++
-    xorRow 2 [.xmm0, .xmm1, .xmm2, .xmm3]
+    out 2 [.xmm0, .xmm1, .xmm2, .xmm3]
+
+/-- The rounds' result plus the input state, XORed into the next 512 bytes of
+data. -/
+def finish : List Instr := finishWith xorRow
 
 /-- Advance the counter by 8 and the data by 512 bytes; `CF` is clear if at
 least 512 bytes remain. -/
@@ -190,8 +197,44 @@ def next : List Instr :=
 /-- Eight blocks. -/
 def body : Prog isa := .seq (.block setup) (.seq (rounds 10) (.block (finish ++ next)))
 
+/-! ## The last 385 to 511 bytes
+
+Eight blocks, computed as in `body`: the first six XORed into the data, and
+the last two into `buf`, from which as many of their bytes as remain are
+XORed (`Avx2Tail.fromBuf`). Rows 0, 1 and 3 of the last two blocks are
+written before row 2 is loaded from the slots `buf[0, 128)`, so they go
+where nothing is read after the rounds, the masks' `buf[128, 192)` and the
+tail's increments, `buf[224, 288)` (`b67Off`), and are moved to
+`buf[0, 128)` at the end (`move67`). -/
+
+/-- Where row 0 of block `6 + j` goes, before `move67`. -/
+def b67Off (j : Nat) : Nat := if j = 0 then 128 else 224
+
+/-- `xorRow`, but with blocks 6 and 7 (the high lanes of `xs[2]`, `xs[3]`)
+stored to `buf` instead. -/
+def xorRow8 (row : Nat) (xs : List XReg) : List Instr :=
+  (List.range 4).flatMap fun i =>
+    xor16 (xs.getD i .xmm0) (64 * i + 16 * row) ++
+    ([.vop (.vextracti128 .xmm13 (xs.getD i .xmm0) 1)] : List Instr) ++
+    if i < 2 then xor16 .xmm13 (64 * (i + 4) + 16 * row)
+    else [.vmovdquStore .l128 (at_ .rcx (b67Off (i - 2) + 16 * row)) .xmm13]
+
+/-- Blocks 6 and 7 to `buf[0, 128)`, through `ymm12`. -/
+def move67 : List Instr :=
+  (List.range 4).flatMap fun i =>
+    [.vmovdquLoad .l256 .xmm12 (at_ .rcx (b67Off (i / 2) + 32 * (i % 2))),
+     .vmovdquStore .l256 (at_ .rcx (32 * i)) .xmm12]
+
+/-- The last 385 to 511 bytes; then `rsi` points at `buf`, as after
+`Avx2Tail.tail`. -/
+def last8 : Prog isa :=
+  .seq (.block setup) (.seq (rounds 10) (.seq (.block (finishWith xorRow8 ++ move67 ++
+    ([.mov .r9 (.reg .rcx), .alu .add .rsi (.imm 384), .alu .sub .rdx (.imm 384)] : List Instr)))
+  (.seq Avx2Tail.fromBuf (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))))
+
 def xor : Prog isa :=
   .seq (.block (Avx2Tail.consts ++ consts ++ ([.alu .cmp .rdx (.imm 512)] : List Instr)))
-  (.seq (.ite .b (.block []) (.loop body .ae)) Avx2Tail.tail)
+  (.seq (.ite .b (.block []) (.loop body .ae))
+  (.seq (.block [.alu .cmp .rdx (.imm 385)]) (.ite .b Avx2Tail.tail last8)))
 
 end VG.Impl.ChaCha20.X86_64.Avx2

@@ -4,14 +4,12 @@ import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
 /-!
 # ChaCha20 keystream XOR with AVX2: the last bytes
 
-`tail` XORs the last `rdx` bytes of data (fewer than 512, at `rsi`) with the
-keystream of the state at `rdi`, for `vg_chacha20_xor_avx2`, in at most two
-computations of up to six blocks:
+`tail` XORs the last `rdx` bytes of data (fewer than 385, at `rsi`) with the
+keystream of the state at `rdi`, for `vg_chacha20_xor_avx2`, in one
+computation of up to six blocks (the counters `c, c + 1, …` modulo 2³², `c`
+being word 12 of the state):
 
-* if more than 384 bytes remain, four blocks (the counters `c, …, c + 3`
-  modulo 2³², `c` being word 12 of the state) are XORed into the next 256
-  bytes, and word 12 advanced by 4;
-* then, if more than 256 bytes remain, six blocks (`last3`): the first four
+* if more than 256 bytes remain, six blocks (`last3`): the first four
   XORed into the next 256 bytes, the last two computed into `buf[0, 128)`;
   as many of their bytes as remain are XORed into the data
   (`XorBuf.xorBuf`);
@@ -21,7 +19,7 @@ computations of up to six blocks:
 
 The rounds of a computation take about the same time for two, four or six
 blocks (they are bound by the latency of a quarter round, not by its
-throughput), so each pass computes as many blocks as remain.
+throughput), so it computes as many blocks as remain.
 
 The states are kept one per 128-bit lane, two to a set of four `ymm`
 registers (`ymm0 … ymm3`, and `ymm4 … ymm7` for the second two): row `r` of
@@ -158,19 +156,6 @@ def addIn : List Instr :=
    .vbroadcasti128 .xmm10 (at_ .rdi 48), v .vpaddd .xmm11 .xmm10 .xmm12, v .vpaddd .xmm3 .xmm3 .xmm11,
    v .vpaddd .xmm11 .xmm10 .xmm13, v .vpaddd .xmm7 .xmm7 .xmm11]
 
-/-- XOR the 32 bytes in `x` into the data at `rsi + off`, through `ymm11`. -/
-def xor32 (x : XReg) (off : Nat) : List Instr :=
-  [.vmovdquLoad .l256 .xmm11 (at_ .rsi off), v .vpxor .xmm11 .xmm11 x,
-   .vmovdquStore .l256 (at_ .rsi off) .xmm11]
-
-/-- The two blocks of the set `a, b, c, d`, gathered through `ymm10` and
-XORed into the data at `rsi + off`. -/
-def xorSet (a b c d : XReg) (off : Nat) : List Instr :=
-  ([.vop (.vperm2i128 .xmm10 a b 0x20)] : List Instr) ++ xor32 .xmm10 off ++
-  ([.vop (.vperm2i128 .xmm10 c d 0x20)] : List Instr) ++ xor32 .xmm10 (off + 32) ++
-  ([.vop (.vperm2i128 .xmm10 a b 0x31)] : List Instr) ++ xor32 .xmm10 (off + 64) ++
-  ([.vop (.vperm2i128 .xmm10 c d 0x31)] : List Instr) ++ xor32 .xmm10 (off + 96)
-
 /-- The two blocks of the set `a, b, c, d`, gathered through `ymm10` and
 stored to `buf + off`. -/
 def storeSet (a b c d : XReg) (off : Nat) : List Instr :=
@@ -241,7 +226,8 @@ def addIn3 : List Instr :=
 def xor32T (t x : XReg) (off : Nat) : List Instr :=
   [.vmovdquLoad .l256 t (at_ .rsi off), v .vpxor t t x, .vmovdquStore .l256 (at_ .rsi off) t]
 
-/-- `xorSet`, through `ymm12` and `ymm13`. -/
+/-- The two blocks of the set `a, b, c, d`, gathered through `ymm12` and
+XORed into the data at `rsi + off`, through `ymm13`. -/
 def xorSetT (a b c d : XReg) (off : Nat) : List Instr :=
   [.vop (.vperm2i128 .xmm12 a b 0x20)] ++ xor32T .xmm13 .xmm12 off ++
   [.vop (.vperm2i128 .xmm12 c d 0x20)] ++ xor32T .xmm13 .xmm12 (off + 32) ++
@@ -259,14 +245,6 @@ def storeSetT (a b c d : XReg) (off : Nat) : List Instr :=
 
 /-- XOR the `rdx` bytes of keystream in `buf` into the data. -/
 def fromBuf : Prog isa := XorBuf.xorBuf .rsi .r9
-
-/-- More than 256 bytes: four blocks into the next 256 bytes of data; the
-counter, the data and the length advanced. -/
-def full : Prog isa :=
-  .seq (.block setup) (.seq (rounds2 10) (.block (addIn ++
-    xorSet .xmm0 .xmm1 .xmm2 .xmm3 0 ++ xorSet .xmm4 .xmm5 .xmm6 .xmm7 128 ++
-    ([.mov32 .rax (.mem (at_ .rdi 48)), .alu32 .add .rax (.imm 4), .store32 (at_ .rdi 48) .rax,
-     .alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 256)] : List Instr))))
 
 /-- At most 256 bytes: four blocks into `buf`, and the data from there. -/
 def last : Prog isa :=
@@ -301,12 +279,10 @@ def rest : Prog isa :=
   .seq (.block [.alu .cmp .rdx (.imm 129)])
     (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) small)) last)
 
-/-- The last `rdx` bytes (fewer than 512); then `rsi` points at `buf`. -/
+/-- The last `rdx` bytes (fewer than 385); then `rsi` points at `buf`. -/
 def tail : Prog isa :=
-  .seq (.block [.mov .r9 (.reg .rcx), .alu .cmp .rdx (.imm 385)])
-  (.seq (.ite .b (.block []) full)
-  (.seq (.block [.alu .cmp .rdx (.imm 257)])
+  .seq (.block [.mov .r9 (.reg .rcx), .alu .cmp .rdx (.imm 257)])
   (.seq (.ite .b rest last3)
-    (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))))
+    (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))
 
 end VG.Impl.ChaCha20.X86_64.Avx2Tail
