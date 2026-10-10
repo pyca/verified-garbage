@@ -619,7 +619,7 @@ open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64 VG.Impl.ChaCha20Poly1305.X86_6
 theorem sealS_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     (sealStitched v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
   rcases v.fold_poly with ⟨hf, hb⟩ | ⟨hf, hb⟩ | ⟨hf, hb⟩ <;>
-    (simp only [sealStitched, prologue, cryptS, Code.all, v.spSafe, hf, hb]; decide +kernel)
+    (simp only [sealStitched, prologue, cryptS, Code.all, v.spSafe, hf, hb]; lit_decide)
 
 theorem sealS_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : sealX86_64.pre s) :
     ∃ t s', Exec isa (sealStitched v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' :=
