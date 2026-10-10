@@ -15,11 +15,11 @@
 /// * `key_len` must be 16, 24 or 32.
 /// * For a key of 16 bytes, the last 64 bytes of `schedule` are unspecified on return.
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `schedule` may overlap the return address on the stack or the 3152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `schedule` may overlap the return address on the stack or the 3216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_camellia_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3152]",
+        "lea rsp, [rsp-3216]",
         "mov rcx, rsp",
         "add rcx, 8",
         "mov r9, rcx",
@@ -3041,7 +3041,15 @@ pub(crate) unsafe extern "sysv64" fn vg_camellia_expand_key(key: *const u8, key_
         "mov QWORD PTR [rsp+3128], r11",
         "mov QWORD PTR [rsp+3136], r11",
         "mov QWORD PTR [rsp+3144], r11",
-        "lea rsp, [rsp+3152]",
+        "mov QWORD PTR [rsp+3152], r11",
+        "mov QWORD PTR [rsp+3160], r11",
+        "mov QWORD PTR [rsp+3168], r11",
+        "mov QWORD PTR [rsp+3176], r11",
+        "mov QWORD PTR [rsp+3184], r11",
+        "mov QWORD PTR [rsp+3192], r11",
+        "mov QWORD PTR [rsp+3200], r11",
+        "mov QWORD PTR [rsp+3208], r11",
+        "lea rsp, [rsp+3216]",
         "ret",
         ".p2align 6",
     )
@@ -3059,11 +3067,11 @@ pub(crate) unsafe extern "sysv64" fn vg_camellia_expand_key(key: *const u8, key_
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 3152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 3216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_camellia_ecb_encrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3152]",
+        "lea rsp, [rsp-3216]",
         "mov r8, rsp",
         "add r8, 8",
         "mov r9, r8",
@@ -6304,7 +6312,15 @@ pub(crate) unsafe extern "sysv64" fn vg_camellia_ecb_encrypt(schedule: *const [u
         "mov QWORD PTR [rsp+3128], r11",
         "mov QWORD PTR [rsp+3136], r11",
         "mov QWORD PTR [rsp+3144], r11",
-        "lea rsp, [rsp+3152]",
+        "mov QWORD PTR [rsp+3152], r11",
+        "mov QWORD PTR [rsp+3160], r11",
+        "mov QWORD PTR [rsp+3168], r11",
+        "mov QWORD PTR [rsp+3176], r11",
+        "mov QWORD PTR [rsp+3184], r11",
+        "mov QWORD PTR [rsp+3192], r11",
+        "mov QWORD PTR [rsp+3200], r11",
+        "mov QWORD PTR [rsp+3208], r11",
+        "lea rsp, [rsp+3216]",
         "ret",
         ".p2align 6",
     )
@@ -6322,11 +6338,11 @@ pub(crate) unsafe extern "sysv64" fn vg_camellia_ecb_encrypt(schedule: *const [u
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 3152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 3216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3152]",
+        "lea rsp, [rsp-3216]",
         "mov r8, rsp",
         "add r8, 8",
         "mov r9, r8",
@@ -11357,7 +11373,15 @@ pub(crate) unsafe extern "sysv64" fn vg_camellia_ecb_decrypt(schedule: *const [u
         "mov QWORD PTR [rsp+3128], r11",
         "mov QWORD PTR [rsp+3136], r11",
         "mov QWORD PTR [rsp+3144], r11",
-        "lea rsp, [rsp+3152]",
+        "mov QWORD PTR [rsp+3152], r11",
+        "mov QWORD PTR [rsp+3160], r11",
+        "mov QWORD PTR [rsp+3168], r11",
+        "mov QWORD PTR [rsp+3176], r11",
+        "mov QWORD PTR [rsp+3184], r11",
+        "mov QWORD PTR [rsp+3192], r11",
+        "mov QWORD PTR [rsp+3200], r11",
+        "mov QWORD PTR [rsp+3208], r11",
+        "lea rsp, [rsp+3216]",
         "ret",
         ".p2align 6",
     )

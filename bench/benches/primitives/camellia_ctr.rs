@@ -43,7 +43,9 @@ pub fn bench(c: &mut Criterion) {
                     let mut ctx = CipherCtx::new().unwrap();
                     ctx.encrypt_init(Some(&cipher), Some(black_box(key)), Some(black_box(&iv)))
                         .unwrap();
-                    let n = ctx.cipher_update(black_box(&data), Some(&mut output)).unwrap();
+                    let n = ctx
+                        .cipher_update(black_box(&data), Some(&mut output))
+                        .unwrap();
                     let n = n + ctx.cipher_final(&mut output[n..]).unwrap();
                     black_box(&output[..n]);
                 })
