@@ -117,7 +117,8 @@ precompileModules = true
 # The project's tactics, which run in most modules: the evaluator of
 # `sig_eval` (`Proof/Framework/SigEval.lean`), run on every contract, the
 # literal tactics (`materialize_code`, `rw_lit`, `Lit.lean`), run by every
-# `taint_decide` and `lit_decide`, and the `omega` helpers: compiled to a shared
+# `taint_decide` and `lit_decide`, the `omega` helpers, and the elaborator of
+# the comb tables (`nat_pairs%`, `Impl/NatPairs.lean`): compiled to a shared
 # library like `NativeSpec`, since the interpreter runs them an order of
 # magnitude slower. They import only Lean core and `NativeTCB`
 # (`ci/check_lean_speed.py` checks that every such module is here).
@@ -128,7 +129,7 @@ globs = ["VerifiedGarbage.Proof.Framework.SigEval", "VerifiedGarbage.Proof.Frame
   "VerifiedGarbage.Proof.Framework.LitShare",
   "VerifiedGarbage.Proof.Framework.Omega", "VerifiedGarbage.Proof.Framework.OmegaLit",
   "VerifiedGarbage.Proof.Framework.KernelRfl", "VerifiedGarbage.Proof.Framework.Sig",
-  "VerifiedGarbage.Proof.MlDsa.DecideAt"]
+  "VerifiedGarbage.Proof.MlDsa.DecideAt", "VerifiedGarbage.Impl.NatPairs"]
 precompileModules = true
 
 # The trusted base, which imports only Lean core: the code the emitter
