@@ -44,10 +44,10 @@ theorem gather_succ (m : Mem) (p : Addr) (n k : Nat) :
       gather m p n (k + 1) := by
   unfold gather
   by_cases h0 : n / 8 < k
-  · simp [h0, show ¬ n / 8 = k by omega, show n / 8 < k + 1 by omega]
+  · simp [h0, show ¬ n / 8 = k by omega_arith, show n / 8 < k + 1 by omega_arith]
   · by_cases h1 : n / 8 = k
     · subst h1; simp
-    · simp [h0, h1, show ¬ n / 8 < k + 1 by omega]
+    · simp [h0, h1, show ¬ n / 8 < k + 1 by omega_arith]
 
 /-- The mask `rowMask` leaves. -/
 theorem row_mask (idx : Byte) {k : Nat} (hk : k < 32) (y : BitVec 64) :
@@ -79,7 +79,7 @@ theorem gather_step (s : State) (idx : Byte) {k : Nat} (hk : k < 32)
       t.gpr .r9 = s.gpr .r9 ∧ t.gpr .rdi = s.gpr .rdi ∧ t.mem = s.mem ∧ t.rd = s.rd ∧
       t.wr = s.wr := by
   unfold gatherStep rowMask
-  rrun [h9, hr, sx (8 * k) (by omega)]
+  rrun [h9, hr, sx (8 * k) (by omega_arith)]
   rw [row_mask idx hk]
 
 def GInv (s₀ : State) (idx : Byte) (k : Nat) (t : State) : Prop :=
@@ -100,12 +100,12 @@ theorem gather_steps (s₀ : State) (idx : Byte) (h9 : s₀.gpr .r9 = idx.setWid
   | succ n ih =>
     intro s h
     rw [flatMap_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s h) fun t ht => ?_
+    refine WP.mono (ih (by omega_arith) s h) fun t ht => ?_
     obtain ⟨h11, h9', hdi, hm, hrd, hwr⟩ := ht
     have hq : InRegions (t.rd ++ t.wr) (t.gpr .rdi + BitVec.ofNat 64 (8 * n)) 8 := by
       rw [hrd, hwr, hdi]
-      exact region_offset _ _ _ _ _ (by omega) (by omega) hr
-    refine WP.mono (gather_step t idx (by omega) (h9'.trans h9) hq) fun u hu => ?_
+      exact region_offset _ _ _ _ _ (by omega_arith) (by omega_arith) hr
+    refine WP.mono (gather_step t idx (by omega_arith) (h9'.trans h9) hq) fun u hu => ?_
     obtain ⟨u11, u9, udi, um, urd, uwr⟩ := hu
     refine ⟨?_, u9.trans h9', udi.trans hdi, um.trans hm, urd.trans hrd, uwr.trans hwr⟩
     rw [u11, h11, hdi, hm, gather_succ]
@@ -119,10 +119,10 @@ theorem pick_succ (q : BitVec 64) (L j : Nat) :
     pick q L j ||| (if L = j then q >>> (8 * j) else 0) = pick q L (j + 1) := by
   unfold pick
   by_cases h0 : L < j
-  · simp [h0, show ¬ L = j by omega, show L < j + 1 by omega]
+  · simp [h0, show ¬ L = j by omega_arith, show L < j + 1 by omega_arith]
   · by_cases h1 : L = j
     · subst h1; simp
-    · simp [h0, h1, show ¬ L < j + 1 by omega]
+    · simp [h0, h1, show ¬ L < j + 1 by omega_arith]
 
 theorem pick_step (s : State) (idx : Byte) {j : Nat} (hj : j < 8)
     (h9 : s.gpr .r9 = idx.setWidth 64) :
@@ -132,7 +132,7 @@ theorem pick_step (s : State) (idx : Byte) {j : Nat} (hj : j < 8)
       t.gpr .r9 = s.gpr .r9 ∧ t.gpr .rdi = s.gpr .rdi ∧ t.mem = s.mem ∧ t.rd = s.rd ∧
       t.wr = s.wr := by
   unfold pickStep laneMask
-  rrun [h9, sx j (by omega)]
+  rrun [h9, sx j (by omega_arith)]
   rw [lane_mask idx hj]
 
 def PInv (s₀ : State) (q : BitVec 64) (L j : Nat) (t : State) : Prop :=
@@ -148,9 +148,9 @@ theorem pick_steps (s₀ : State) (idx : Byte) (q : BitVec 64) (h9 : s₀.gpr .r
   | succ n ih =>
     intro s h
     rw [flatMap_succ, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s h) fun t ht => ?_
+    refine WP.mono (ih (by omega_arith) s h) fun t ht => ?_
     obtain ⟨hax, h11, h9', hdi, hm, hrd, hwr⟩ := ht
-    refine WP.mono (pick_step t idx (by omega) (h9'.trans h9)) fun u hu => ?_
+    refine WP.mono (pick_step t idx (by omega_arith) (h9'.trans h9)) fun u hu => ?_
     obtain ⟨uax, u11, u9, udi, um, urd, uwr⟩ := hu
     refine ⟨?_, ?_, u9.trans h9', udi.trans hdi, um.trans hm, urd.trans hrd, uwr.trans hwr⟩
     · rw [uax, hax, h11, pick_succ]
@@ -174,7 +174,7 @@ theorem lookup_core (s : State) (idx : Byte) (h9 : s.gpr .r9 = idx.setWidth 64)
   obtain ⟨u11, u9, udi, um, urd, uwr⟩ := hu
   let q := s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (8 * (idx.toNat / 8))) 64
   have hq : u.gpr .r11 = q := by
-    rw [u11]; unfold gather; rw [ite_eq_left (by omega)]
+    rw [u11]; unfold gather; rw [ite_eq_left (by omega_arith)]
   rw [WP.block_append_iff]
   have h1 : WP isa (.block [.mov .rax (imm 0)]) u (PInv s q (idx.toNat % 8) 0) := by
     rrun [PInv, pick, hq, u9, udi, um, urd, uwr, Nat.mul_zero, BitVec.ushiftRight_zero,

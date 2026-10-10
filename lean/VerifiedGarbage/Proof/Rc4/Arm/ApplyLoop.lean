@@ -70,11 +70,11 @@ theorem apply_step_table (t : State) (i j : Byte) {P D L : BitVec 32} {k : Nat}
     fun u ⟨hum, hu4, hu5, hu0, huz, huk⟩ => ?_
   have hdk : ¬ (State.addr D + BitVec.ofNat 64 k - State.addr P).toNat < 256 := by
     have hin : (State.addr D + BitVec.ofNat 64 k - State.addr D).toNat < L.toNat := by
-      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
       exact hk
     exact fun h => he.sTD _ h hin
   have hTD : Mem.Sep (State.addr P) 256 (State.addr D + BitVec.ofNat 64 k) 1 :=
-    sep_offset_right he.sTD (by omega) (by omega)
+    sep_offset_right he.sTD (by omega_arith) (by omega_arith)
   refine ⟨?_, hu4, hu5, ?_, ?_, ?_, hu0, huz, huk⟩
   · rw [hum, table_write_sep _ _ _ _ hTD, table_swap]
   · rw [hum, write_byte, ite_eq_left rfl, swap_frame _ _ _ _ _ hdk]
@@ -88,9 +88,9 @@ theorem apply_step_table (t : State) (i j : Byte) {P D L : BitVec 32} {k : Nat}
     have hP : (⟨State.addr P, 256⟩ : Region) ∈ loopRegions P D L := List.mem_cons_self
     have hD : (⟨State.addr D, L.toNat⟩ : Region) ∈ loopRegions P D L :=
       List.mem_cons_of_mem _ List.mem_cons_self
-    refine Frame.write ?_ hD _ (Offset.contains_base _ (by omega) (by omega))
-    refine Frame.write ?_ hP _ (Offset.contains_base _ (by omega) (by omega))
-    exact Frame.write (Frame.refl _ _) hP _ (Offset.contains_base _ (by omega) (by omega))
+    refine Frame.write ?_ hD _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
+    refine Frame.write ?_ hP _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
+    exact Frame.write (Frame.refl _ _) hP _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
 
 theorem loop_step (m₀ : Mem) {P D L : BitVec 32} (b : State) (hb : StepEnv b P D L) {k : Nat}
     (hk : k < L.toNat) (t : State) (ht : LoopInv m₀ P D L b k t) :
@@ -101,7 +101,7 @@ theorem loop_step (m₀ : Mem) {P D L : BitVec 32} (b : State) (hb : StepEnv b P
       ¬ (State.addr D + BitVec.ofNat 64 x - State.addr P).toNat < 256 := by
     intro x hx
     have hin : (State.addr D + BitVec.ofNat 64 x - State.addr D).toNat < L.toNat := by
-      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
       exact hx
     exact fun h => hb.sTD _ h hin
   have hctx : (⟨(contextAt t.mem (State.addr P)).table, (upd m₀ P D k).1.i,
@@ -119,14 +119,14 @@ theorem loop_step (m₀ : Mem) {P D L : BitVec 32} (b : State) (hb : StepEnv b P
       j := by rw [upd_succ]; exact huj
       data := ?_
       tail := fun x hx hxL => by
-        rw [hkeep x hxL (by omega)]
-        exact ht.tail x (by omega) hxL
+        rw [hkeep x hxL (by omega_arith)]
+        exact ht.tail x (by omega_arith) hxL
       frame := ht.frame.trans hfr
       count := hu0
       keep := (ht.keep.trans huk).mono (by decide) }
   rw [bytes_snoc, upd_succ, hbyte, ht.tail k (Nat.le_refl _) hk, ← ht.data]
   refine congrArg (· ++ _) ?_
-  exact bytes_frame _ _ _ _ fun x hx => hkeep x (by omega) (by omega)
+  exact bytes_frame _ _ _ _ fun x hx => hkeep x (by omega_arith) (by omega_arith)
 
 theorem apply_loop (m₀ : Mem) {P D L : BitVec 32} (b : State) (hb : StepEnv b P D L) {k : Nat}
     (hk : k < L.toNat) (t : State) (ht : LoopInv m₀ P D L b k t) :
@@ -148,8 +148,8 @@ theorem apply_loop (m₀ : Mem) {P D L : BitVec 32} (b : State) (hb : StepEnv b 
       intro h
       have h' := congrArg BitVec.toNat h
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat] at h'
-      omega
-    refine ⟨?_, L.toNat - (j + 1), by omega, j + 1, by omega, rfl, hv⟩
+      omega_arith
+    refine ⟨?_, L.toNat - (j + 1), by omega_arith, j + 1, by omega_arith, rfl, hv⟩
     rw [eval_ne, hz, beq_eq_false_iff_ne.mpr hnz]
     rfl
 

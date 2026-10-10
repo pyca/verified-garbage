@@ -31,7 +31,7 @@ theorem loopFrame_slice {s s' : State} {n m i : Nat} {a b : Mem}
   · refine ⟨dataR s n, by simp [loopWrites], ?_⟩
     change Region.Sub ⟨State.addr (s'.gpr .r1), 8 * m⟩ ⟨State.addr (s.gpr .r1), 8 * n⟩
     rw [ptr]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_arith)
   · refine ⟨⟨State.addr (s.gpr .r2), 264⟩, by simp [loopWrites], ?_⟩
     rw [buf]; exact fun _ h => h
 
@@ -51,9 +51,9 @@ theorem BodyPost.tailData {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
     (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) (bound : 8 * (n + 1) ≤ 2 ^ 64) :
     Spec.Rc2.blocksAt s'.mem (State.addr (s.gpr .r1) + 8) n = Spec.Rc2.blocksAt s.mem (State.addr (s.gpr .r1) + 8) n := by
   have sub : Region.Sub ⟨State.addr (s.gpr .r1) + 8, 8 * n⟩ (dataR s (n + 1)) :=
-    Offset.sub_base _ (by change 8 + 8 * n ≤ 8 * (n + 1); omega)
+    Offset.sub_base _ (by change 8 + 8 * n ≤ 8 * (n + 1); omega_arith)
   have sep : (Region.mk (State.addr (s.gpr .r1) + 8) (8 * n)).Disjoint (dataR s) :=
-    Offset.disjoint_base _ (d := 8) (n := 8 * n) (k := 8) (by decide) (by omega)
+    Offset.disjoint_base _ (d := 8) (n := 8 * n) (k := 8) (by decide) (by omega_arith)
   apply blocksAt_frame h.mem
   simpa only [stepWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
     And.intro ((hp.ivData.sub_right sub).symm) (And.intro sep
@@ -64,12 +64,12 @@ theorem firstBlock_frame {d : Spec.Rc2.Direction} {s s' : State} {n : Nat} {m : 
     (hn : 1 ≤ n)
     (frame : Frame (loopWrites s' n) s'.mem m) :
     Spec.Rc2.blockAt m (State.addr (s.gpr .r1)) = Spec.Rc2.blockAt s'.mem (State.addr (s.gpr .r1)) := by
-  have first : Region.Sub (dataR s) (dataR s (n + 1)) := Region.sub_prefix (by change 8 ≤ 8 * (n + 1); omega)
+  have first : Region.Sub (dataR s) (dataR s (n + 1)) := Region.sub_prefix (by change 8 ≤ 8 * (n + 1); omega_arith)
   have sep : (dataR s).Disjoint ⟨State.addr (s.gpr .r1) + 8, 8 * n⟩ :=
-    Offset.base_disjoint _ (e := 8) (n := 8 * n) (k := 8) (by decide) (by omega)
+    Offset.base_disjoint _ (e := 8) (n := 8 * n) (k := 8) (by decide) (by omega_arith)
   have ptr : State.addr (s'.gpr .r1) = State.addr (s.gpr .r1) + 8 := by
     rw [h.ptr]
-    exact addr_add (k := 8) (by have := hp.dataFit; omega)
+    exact addr_add (k := 8) (by have := hp.dataFit; omega_arith)
   apply blockAt_frame frame
   have iv := h.reg .r4 (by decide) (by decide) (by decide)
   have buf := h.reg .r2 (by decide) (by decide) (by decide)
@@ -107,10 +107,10 @@ theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
     ∀ s : State, 1 ≤ n → 8 * n ≤ 2 ^ 32 → StepPre s n → s.gpr .r5 = BitVec.ofNat 32 n →
       WP isa (.loop (Impl.Rc2.Arm.Cbc.body d) .ne) s (LoopPost d s n) := by
   induction n with
-  | zero => intro s hn; omega
+  | zero => intro s hn; omega_arith
   | succ n ih =>
     intro s hn bound hp count
-    obtain ⟨t₁, s₁, exec₁, h₁⟩ := body_ok d s (n + 1) hn (by omega) count (hp.head hn)
+    obtain ⟨t₁, s₁, exec₁, h₁⟩ := body_ok d s (n + 1) hn (by omega_arith) count (hp.head hn)
     by_cases hz : n = 0
     · subst n
       refine ⟨_, s₁, Exec.loopExit exec₁ ?_, ?_⟩
@@ -122,20 +122,20 @@ theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
         · rw [blocksAt_cons]
           simp only [Spec.Rc2.blocksAt, List.range_zero, List.map_nil, Spec.Rc2.cbc]
           exact h₁.iv
-    · have hp₁ := h₁.tail hp (by omega)
-      obtain ⟨t₂, s₂, exec₂, h₂⟩ := ih s₁ (by omega) (by omega) hp₁ (by simpa using h₁.count)
+    · have hp₁ := h₁.tail hp (by omega_arith)
+      obtain ⟨t₂, s₂, exec₂, h₂⟩ := ih s₁ (by omega_arith) (by omega_arith) hp₁ (by simpa using h₁.count)
       refine ⟨_, s₂, Exec.loopNext exec₁ ?_ exec₂, ?_⟩
-      · have he : n + 1 ≠ 1 := by omega
+      · have he : n + 1 ≠ 1 := by omega_arith
         simp only [eval_nonzeroCount, h₁.flag, he, decide_false, Option.map_some, Bool.not_false]
       · have key := h₁.schedule (hp.head hn)
-        have tail := h₁.tailData hp (by omega)
+        have tail := h₁.tailData hp (by omega_arith)
         have data := h₂.data
         have iv := h₂.iv
         have ki := h₁.reg .r0 (by decide) (by decide) (by decide)
         have vi := h₁.reg .r4 (by decide) (by decide) (by decide)
         have bi := h₁.reg .r2 (by decide) (by decide) (by decide)
         have ptr : State.addr (s₁.gpr .r1) = State.addr (s.gpr .r1) + 8 := by
-          rw [h₁.ptr]; exact addr_add (k := 8) (by have := hp.dataFit; omega)
+          rw [h₁.ptr]; exact addr_add (k := 8) (by have := hp.dataFit; omega_arith)
         rw [ki, vi, ptr, key, tail, h₁.iv] at data
         rw [ki, vi, ptr, key, tail, h₁.iv] at iv
         refine ⟨?_, h₂.count, ?_, ?_, h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, ?_, ?_, ?_⟩
@@ -143,13 +143,13 @@ theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
           exact congrArg (s.gpr .r1 + ·) (by
             change BitVec.ofNat 32 8 + BitVec.ofNat 32 (8 * n) = _
             rw [← BitVec.ofNat_add]
-            exact congrArg (BitVec.ofNat 32) (by omega))
+            exact congrArg (BitVec.ofNat 32) (by omega_arith))
         · intro r hr hs hb
           exact (h₂.reg r hr hs hb).trans (h₁.reg r hr hs hb)
         · intro r hr hb
           exact (h₂.callee r hr hb).trans (h₁.callee r hr hb)
-        · exact (h₁.frame hn).trans (loopFrame_slice (i := 1) h₂.mem (by omega) vi bi ptr)
-        · have first := firstBlock_frame h₁ hp (by omega) (by omega) h₂.mem
+        · exact (h₁.frame hn).trans (loopFrame_slice (i := 1) h₂.mem (by omega_arith) vi bi ptr)
+        · have first := firstBlock_frame h₁ hp (by omega_arith) (by omega_arith) h₂.mem
           rw [blocksAt_cons, first, h₁.data, data, blocksAt_cons]
           rfl
         · rw [blocksAt_cons]
@@ -159,7 +159,7 @@ theorem maybeLoop_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (bound : 8 *
     (hp : StepPre s n) (count : s.gpr .r5 = BitVec.ofNat 32 n)
     (flag : zeroCount s = some (s.gpr .r5 == 0)) :
     WP isa (.ite .eq (.block []) (.loop (Impl.Rc2.Arm.Cbc.body d) .ne)) s (LoopPost d s n) := by
-  have eqZero := counter_eq n 0 (by omega) (by decide)
+  have eqZero := counter_eq n 0 (by omega_arith) (by decide)
   simp only [BitVec.sub_zero] at eqZero
   have flag' : zeroCount s = some (decide (n = 0)) := by
     rw [flag, count]
@@ -176,14 +176,14 @@ theorem maybeLoop_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (bound : 8 *
   · apply WP.ite false (by simp only [eval_zeroCount, flag', hz, decide_false])
     · simp
     · intro _
-      exact loop_ok d n s (by omega) bound hp count
+      exact loop_ok d n s (by omega_arith) bound hp count
 
 theorem LoopPost.scratchRead {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
     (h : LoopPost d s n s') (hp : StepPre s n) (i : Nat) (lo : 264 ≤ i) (hi : i + 4 ≤ 512) :
     s'.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 i) 32 = s.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 i) 32 := by
   have sub : Region.Sub ⟨State.addr (s.gpr .r2) + BitVec.ofNat 64 i, 4⟩ (bufR s) := Offset.sub_base _ hi
   have sep : (Region.mk (State.addr (s.gpr .r2) + BitVec.ofNat 64 i) 4).Disjoint ⟨State.addr (s.gpr .r2), 264⟩ :=
-    Offset.disjoint_base _ lo (by omega)
+    Offset.disjoint_base _ lo (by omega_arith)
   apply h.mem.readW (r := ⟨State.addr (s.gpr .r2) + BitVec.ofNat 64 i, 4⟩) (Region.contains_self _ _)
     (hn := by decide)
   simpa only [loopWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
@@ -215,11 +215,11 @@ theorem save_ok (s : State)
     (w3 : InRegions s.wr (State.addr (s.gpr .r12) + BitVec.ofNat 64 276) 4)
     (w4 : InRegions s.wr (State.addr (s.gpr .r12) + BitVec.ofNat 64 280) 4)
     : ∃ s', runBlock isa Impl.Rc2.Arm.Cbc.save s = some s' ∧ Keep [] {s with mem := savedMem s} s' := by
-  have a264 : State.addr (s.gpr .r12 + BitVec.ofNat 32 264) = State.addr (s.gpr .r12) + BitVec.ofNat 64 264 := addr_add (by omega)
-  have a268 : State.addr (s.gpr .r12 + BitVec.ofNat 32 268) = State.addr (s.gpr .r12) + BitVec.ofNat 64 268 := addr_add (by omega)
-  have a272 : State.addr (s.gpr .r12 + BitVec.ofNat 32 272) = State.addr (s.gpr .r12) + BitVec.ofNat 64 272 := addr_add (by omega)
-  have a276 : State.addr (s.gpr .r12 + BitVec.ofNat 32 276) = State.addr (s.gpr .r12) + BitVec.ofNat 64 276 := addr_add (by omega)
-  have a280 : State.addr (s.gpr .r12 + BitVec.ofNat 32 280) = State.addr (s.gpr .r12) + BitVec.ofNat 64 280 := addr_add (by omega)
+  have a264 : State.addr (s.gpr .r12 + BitVec.ofNat 32 264) = State.addr (s.gpr .r12) + BitVec.ofNat 64 264 := addr_add (by omega_arith)
+  have a268 : State.addr (s.gpr .r12 + BitVec.ofNat 32 268) = State.addr (s.gpr .r12) + BitVec.ofNat 64 268 := addr_add (by omega_arith)
+  have a272 : State.addr (s.gpr .r12 + BitVec.ofNat 32 272) = State.addr (s.gpr .r12) + BitVec.ofNat 64 272 := addr_add (by omega_arith)
+  have a276 : State.addr (s.gpr .r12 + BitVec.ofNat 32 276) = State.addr (s.gpr .r12) + BitVec.ofNat 64 276 := addr_add (by omega_arith)
+  have a280 : State.addr (s.gpr .r12 + BitVec.ofNat 32 280) = State.addr (s.gpr .r12) + BitVec.ofNat 64 280 := addr_add (by omega_arith)
   refine ⟨_, by
     simp only [Impl.Rc2.Arm.Cbc.save, runBlock_cons, runStep_some, runBlock_nil,
       exec, Nat.reduceLT, ite_true, State.store32,
@@ -286,11 +286,11 @@ theorem restore_ok (s : State) (values : Reg → BitVec 32)
     (v4 : s.mem.readW (State.addr (s.gpr .r2) + BitVec.ofNat 64 280) 32 = values .lr)
     : ∃ s', runBlock isa Impl.Rc2.Arm.Cbc.restore s = some s' ∧
       (∀ r ∈ callerSaved, s'.gpr r = values r) ∧ Keep callerSaved s s' := by
-  have a264 : State.addr (s.gpr .r2 + BitVec.ofNat 32 264) = State.addr (s.gpr .r2) + BitVec.ofNat 64 264 := addr_add (by omega)
-  have a268 : State.addr (s.gpr .r2 + BitVec.ofNat 32 268) = State.addr (s.gpr .r2) + BitVec.ofNat 64 268 := addr_add (by omega)
-  have a272 : State.addr (s.gpr .r2 + BitVec.ofNat 32 272) = State.addr (s.gpr .r2) + BitVec.ofNat 64 272 := addr_add (by omega)
-  have a276 : State.addr (s.gpr .r2 + BitVec.ofNat 32 276) = State.addr (s.gpr .r2) + BitVec.ofNat 64 276 := addr_add (by omega)
-  have a280 : State.addr (s.gpr .r2 + BitVec.ofNat 32 280) = State.addr (s.gpr .r2) + BitVec.ofNat 64 280 := addr_add (by omega)
+  have a264 : State.addr (s.gpr .r2 + BitVec.ofNat 32 264) = State.addr (s.gpr .r2) + BitVec.ofNat 64 264 := addr_add (by omega_arith)
+  have a268 : State.addr (s.gpr .r2 + BitVec.ofNat 32 268) = State.addr (s.gpr .r2) + BitVec.ofNat 64 268 := addr_add (by omega_arith)
+  have a272 : State.addr (s.gpr .r2 + BitVec.ofNat 32 272) = State.addr (s.gpr .r2) + BitVec.ofNat 64 272 := addr_add (by omega_arith)
+  have a276 : State.addr (s.gpr .r2 + BitVec.ofNat 32 276) = State.addr (s.gpr .r2) + BitVec.ofNat 64 276 := addr_add (by omega_arith)
+  have a280 : State.addr (s.gpr .r2 + BitVec.ofNat 32 280) = State.addr (s.gpr .r2) + BitVec.ofNat 64 280 := addr_add (by omega_arith)
   refine ⟨_, by
     simp only [Impl.Rc2.Arm.Cbc.restore, runBlock_cons, runStep_some, runBlock_nil,
       exec, Nat.reduceLT, ite_true, State.load32, gpr_setReg, reduceCtorEq, ite_false,
@@ -333,8 +333,8 @@ theorem bodyRel (d : Spec.Rc2.Direction) (n : Nat) :
     (body_ct d).mono (fun _ _ h => ⟨h.1.head h.2.2.2.2.2, h.2.1.head h.2.2.2.2.2, h.2.2.1⟩)
       (fun _ _ _ => trivial)
   have correct (s₁ s₂ : State) (h : LoopRel n s₁ s₂) :=
-    And.intro (body_ok d s₁ n h.2.2.2.2.2 (by have := h.1.dataFit; omega) h.2.2.2.1 (h.1.head h.2.2.2.2.2))
-      (body_ok d s₂ n h.2.2.2.2.2 (by have := h.2.1.dataFit; omega) h.2.2.2.2.1 (h.2.1.head h.2.2.2.2.2))
+    And.intro (body_ok d s₁ n h.2.2.2.2.2 (by have := h.1.dataFit; omega_arith) h.2.2.2.1 (h.1.head h.2.2.2.2.2))
+      (body_ok d s₂ n h.2.2.2.2.2 (by have := h.2.1.dataFit; omega_arith) h.2.2.2.2.1 (h.2.1.head h.2.2.2.2.2))
   apply (ct.wpDep correct).mono (fun _ _ h => h)
   rintro s₁' s₂' ⟨_, s₁, s₂, hp, h₁, h₂⟩
   have eq : EqKept s₁' s₂' := by
@@ -351,13 +351,13 @@ theorem bodyRel (d : Spec.Rc2.Direction) (n : Nat) :
   have hm : 1 ≤ n - 1 := by
     rw [eval_nonzeroCount, h₁.flag] at hcontinue
     by_contra h
-    have e : n = 1 := by omega
+    have e : n = 1 := by omega_arith
     simp only [e, decide_true, Option.map_some, Bool.not_true, Option.some.injEq, Bool.false_eq_true] at hcontinue
-  refine ⟨n - 1, by omega, ?_, ?_, eq, h₁.count, h₂.count, hm⟩
-  · have e : n = (n - 1) + 1 := by omega
+  refine ⟨n - 1, by omega_arith, ?_, ?_, eq, h₁.count, h₂.count, hm⟩
+  · have e : n = (n - 1) + 1 := by omega_arith
     rw [e] at h₁ hp
     exact h₁.tail hp.1 hm
-  · have e : n = (n - 1) + 1 := by omega
+  · have e : n = (n - 1) + 1 := by omega_arith
     rw [e] at h₂ hp
     exact h₂.tail hp.2.1 hm
 
@@ -387,7 +387,7 @@ theorem maybeLoop_ct (d : Spec.Rc2.Direction) :
       change zeroCount s₁ = some false at branch
       rw [z₁] at branch
       have hn : n ≠ 0 := by intro hz; simp [hz] at branch
-      omega
+      omega_arith
     · exact fun _ _ h => h
 
 end VG.Proof.Rc2.Arm.Cbc
@@ -450,7 +450,7 @@ theorem start_ok (d : Spec.Rc2.Direction) (s : State) (hs : (contract d).pre s) 
     _ivArgs, _dataArgs, _bufArgs, keyFit, ivFit, bufFit, _spFit, fit⟩ := hs
   have writes (i : Nat) (hi : i + 4 ≤ 512) : InRegions s.wr (State.addr (stackArg s 0) + BitVec.ofNat 64 i) 4 := by
     rw [hwr]
-    exact ⟨⟨State.addr (stackArg s 0), 512⟩, by simp, Offset.contains_base _ hi (by omega)⟩
+    exact ⟨⟨State.addr (stackArg s 0), 512⟩, by simp, Offset.contains_base _ hi (by omega_arith)⟩
   rw [startCode]
   apply WP.seq
   obtain ⟨s₀, run₀, buf₀, keep₀⟩ := loadScratch_ok s (by
@@ -614,7 +614,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
     _ivArgs, _dataArgs, _bufArgs, keyFit, ivFit, bufFit, _spFit, fit⟩ := hs
   have writes (i : Nat) (hi : i + 4 ≤ 512) : InRegions s.wr (State.addr (stackArg s 0) + BitVec.ofNat 64 i) 4 := by
     rw [hwr]
-    exact ⟨⟨State.addr (stackArg s 0), 512⟩, by simp, Offset.contains_base _ hi (by omega)⟩
+    exact ⟨⟨State.addr (stackArg s 0), 512⟩, by simp, Offset.contains_base _ hi (by omega_arith)⟩
   rw [Impl.Rc2.Arm.Cbc.cbc]
   apply WP.seq
   obtain ⟨s₀, run₀, buf₀, keep₀⟩ := loadScratch_ok s (by
@@ -666,7 +666,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
     · simpa only [ivR, bufR, iv₂, buf₂] using ivBuf
     · simpa only [dataR, bufR, data₂, buf₂] using dataBuf
   apply WP.seq
-  apply WP.mono (maybeLoop_ok d s₂ (s.gpr .r3).toNat (by omega) hp₂
+  apply WP.mono (maybeLoop_ok d s₂ (s.gpr .r3).toNat (by omega_arith) hp₂
     (by simpa using count₂) (by rw [count₂]; exact flag₂))
   intro s₃ h₃
   have rd₃ := h₃.rd.trans rd₂

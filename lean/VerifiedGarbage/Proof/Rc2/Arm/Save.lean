@@ -55,7 +55,7 @@ theorem mixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
   apply foldWords_ok (step := fun k i v => Spec.Rc2.mix k (4 * j + i) i v) _ _ _ s v hv fit readable
   intro i hi s v hv fit readable
   have bound := List.mem_range.mp hi
-  apply WP.mono (mix_ok s v hv i (4 * j + i) bound (by omega) fit readable)
+  apply WP.mono (mix_ok s v hv i (4 * j + i) bound (by omega_arith) fit readable)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
 theorem reverseMixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
@@ -69,8 +69,8 @@ theorem reverseMixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
   intro i hi s v hv fit readable
   have bound : i < 4 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    omega
-  apply WP.mono (reverseMix_ok s v hv i (4 * j + i) bound (by omega) fit readable)
+    omega_arith
+  apply WP.mono (reverseMix_ok s v hv i (4 * j + i) bound (by omega_arith) fit readable)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
 def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
@@ -100,7 +100,7 @@ theorem mashRound_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (
     | encrypt => exact List.mem_range.mp hi
     | decrypt =>
       simp only [order, List.mem_cons, List.not_mem_nil, or_false] at hi
-      omega
+      omega_arith
   apply WP.mono (mash_ok d s v hv i bound fit readable)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
@@ -143,7 +143,7 @@ theorem round_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (hv :
     exact finish s₁ _ h₁
   | decrypt =>
     rw [round, WP.block_append_iff]
-    apply WP.mono (reverseMixRound_ok s v hv (15 - j) (by omega) fit readable)
+    apply WP.mono (reverseMixRound_ok s v hv (15 - j) (by omega_arith) fit readable)
     intro s₁ h₁
     exact finish s₁ _ h₁
 
@@ -178,7 +178,7 @@ theorem decode_word (m : Mem) (p : Addr) (i : Nat) (hi : i < 4) :
   rw [Spec.Rc2.decodeBlock, getD_ofFn _ i hi]
   change ((Spec.Rc2.blockAt m p).getD (2 * i) 0).setWidth 16 |||
     ((Spec.Rc2.blockAt m p).getD (2 * i + 1) 0).setWidth 16 <<< 8 = _
-  rw [Spec.Rc2.blockAt, getD_ofFn _ _ (by omega), getD_ofFn _ _ (by omega)]
+  rw [Spec.Rc2.blockAt, getD_ofFn _ _ (by omega_arith), getD_ofFn _ _ (by omega_arith)]
 
 theorem loadWord_ok (s : State) (i : Nat) (hi : i < 4)
     (fit : (s.gpr .r1).toNat + 8 ≤ 2 ^ 32)
@@ -188,12 +188,12 @@ theorem loadWord_ok (s : State) (i : Nat) (hi : i < 4)
         ((Spec.Rc2.decodeBlock (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r1)))).getD i 0).setWidth 32 ∧
       Keep [wordReg i, .r12] s s' := by
   have sep := wordReg_separate i
-  have lo := readable (2 * i) (by omega)
-  have high := readable (2 * i + 1) (by omega)
-  have a := addr_add (a := s.gpr .r1) (k := 2 * i) (by omega)
-  have b := addr_add (a := s.gpr .r1) (k := 2 * i + 1) (by omega)
-  have loOff : 2 * i < 4096 := by omega
-  have hiOff : 2 * i + 1 < 4096 := by omega
+  have lo := readable (2 * i) (by omega_arith)
+  have high := readable (2 * i + 1) (by omega_arith)
+  have a := addr_add (a := s.gpr .r1) (k := 2 * i) (by omega_arith)
+  have b := addr_add (a := s.gpr .r1) (k := 2 * i + 1) (by omega_arith)
+  have loOff : 2 * i < 4096 := by omega_arith
+  have hiOff : 2 * i + 1 < 4096 := by omega_arith
   refine ⟨_, by
     simp only [↓reduceIte, Nat.reduceLeDiff, and_self, loadWord, runBlock_cons, runStep_some, runBlock_nil,
       exec, Op2.eval, State.load8, loOff, hiOff, a, b, lo, high, 
@@ -288,12 +288,12 @@ theorem storeWord_ok (s : State) (i : Nat) (hi : i < 4) (v : BitVec 16)
         mem := (s.mem.writeW (State.addr (s.gpr .r1) + BitVec.ofNat 64 (2 * i)) (v.setWidth 8)).writeW
           (State.addr (s.gpr .r1) + BitVec.ofNat 64 (2 * i + 1)) ((v >>> 8).setWidth 8)} s' := by
   have sep := wordReg_separate i
-  have lo := writable (2 * i) (by omega)
-  have high := writable (2 * i + 1) (by omega)
-  have a := addr_add (a := s.gpr .r1) (k := 2 * i) (by omega)
-  have b := addr_add (a := s.gpr .r1) (k := 2 * i + 1) (by omega)
-  have loOff : 2 * i < 4096 := by omega
-  have hiOff : 2 * i + 1 < 4096 := by omega
+  have lo := writable (2 * i) (by omega_arith)
+  have high := writable (2 * i + 1) (by omega_arith)
+  have a := addr_add (a := s.gpr .r1) (k := 2 * i) (by omega_arith)
+  have b := addr_add (a := s.gpr .r1) (k := 2 * i + 1) (by omega_arith)
+  have loOff : 2 * i < 4096 := by omega_arith
+  have hiOff : 2 * i + 1 < 4096 := by omega_arith
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, and_self, storeWord, runBlock_cons, runStep_some, runBlock_nil,
       exec, Op2.eval, State.store8, loOff, hiOff, a, b, lo, high, 
@@ -310,7 +310,7 @@ theorem storeWord_ok (s : State) (i : Nat) (hi : i < 4) (v : BitVec 16)
       apply BitVec.eq_of_getLsbD_eq
       intro j hj
       simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, hj,
-        show 8 + j < 32 by omega, decide_true, Bool.true_and]
+        show 8 + j < 32 by omega_arith, decide_true, Bool.true_and]
     rw [byte]
   · rfl
   · rfl
@@ -326,18 +326,18 @@ theorem storeWords_ok (n : Nat) (hn : n ≤ 4) (s : State) (v : Spec.Rc2.State) 
     exact ⟨fun _ _ => rfl, (writeBytes_nil s.mem (State.addr (s.gpr .r1))).symm, rfl, rfl⟩
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    apply WP.mono (ih (by omega) s hv fit writable)
+    apply WP.mono (ih (by omega_arith) s hv fit writable)
     intro s₁ keep₁
     have ptr₁ := keep₁.reg .r1 (by decide)
     have val₁ : s₁.gpr (wordReg n) = (v.getD n 0).setWidth 32 :=
-      (keep₁.reg _ (by simpa using (wordReg_separate n).1)).trans (hv n (by omega))
-    obtain ⟨s₂, run₂, keep₂⟩ := storeWord_ok s₁ n (by omega) _ val₁
+      (keep₁.reg _ (by simpa using (wordReg_separate n).1)).trans (hv n (by omega_arith))
+    obtain ⟨s₂, run₂, keep₂⟩ := storeWord_ok s₁ n (by omega_arith) _ val₁
       (by rw [ptr₁]; exact fit) (by rw [keep₁.wr, ptr₁]; exact writable)
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
     refine ⟨fun r hr => (keep₂.reg r hr).trans (keep₁.reg r hr), ?_,
       keep₂.rd.trans keep₁.rd, keep₂.wr.trans keep₁.wr⟩
-    rw [keep₂.mem, keep₁.mem, ptr₁, outputBytes_write _ _ _ n (by omega)]
+    rw [keep₂.mem, keep₁.mem, ptr₁, outputBytes_write _ _ _ n (by omega_arith)]
 
 theorem blockStore_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
     (fit : (s.gpr .r1).toNat + 8 ≤ 2 ^ 32)

@@ -19,7 +19,7 @@ theorem borrow_mask (p : Bool) :
 theorem toNat_lt_eight (x : BitVec 64) : x.toNat < 8 ↔ x >>> 3 = 0#64 := by
   rw [← BitVec.toNat_inj, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
   simp only [BitVec.toNat_ofNat, Nat.reducePow, Nat.zero_mod]
-  omega
+  omega_arith
 
 /-- Byte `n` of the table is in quadword `k` iff `n XOR 8k < 8`. -/
 theorem row_hit (idx : Byte) {k : Nat} (hk : k < 32) :
@@ -28,7 +28,7 @@ theorem row_hit (idx : Byte) {k : Nat} (hk : k < 32) :
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
     Nat.shiftRight_eq_div_pow, Nat.reducePow]
   have := idx.isLt
-  omega
+  omega_arith
 
 /-- Byte `n` of the table is byte `j` of its quadword iff `(n AND 7) XOR j < 1`. -/
 theorem lane_hit (idx : Byte) {j : Nat} (hj : j < 8) :
@@ -37,12 +37,12 @@ theorem lane_hit (idx : Byte) {j : Nat} (hj : j < 8) :
   have h1 : ∀ x : BitVec 64, x.toNat < 1 ↔ x = 0#64 := by
     intro x
     rw [← BitVec.toNat_inj, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   rw [h1, BitVec.xor_eq_zero_iff, ← BitVec.toNat_inj]
   simp only [BitVec.toNat_and, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   rw [show (7 % 2 ^ 64 : Nat) = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
   have := idx.isLt
-  omega
+  omega_arith
 
 /-- The quadword holding byte `n` of the table, and the byte's position in it. -/
 theorem row_lane (p : Addr) (n : Nat) :
@@ -61,7 +61,7 @@ theorem qword_byte (m : Mem) (a : Addr) {L : Nat} (hL : L < 8) :
   simp only [BitVec.getLsbD_and, h255, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_setWidth,
     BitVec.getLsbD_extractLsb', Mem.readW, Nat.reduceDiv]
   by_cases h : i < 8
-  · simp [h, show 8 * L + i < 64 by omega, show i < 64 by omega]
+  · simp [h, show 8 * L + i < 64 by omega_arith, show i < 64 by omega_arith]
   · simp [h]
 
 /-- A quadword shifted right by a byte more. -/
@@ -76,14 +76,14 @@ theorem shl_extract (c : Byte) {L e : Nat} (hL : L < 8) (he : e < 8) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, hi,
-    decide_true, Bool.true_and, show 8 * e + i < 64 by omega]
+    decide_true, Bool.true_and, show 8 * e + i < 64 by omega_arith]
   by_cases h : e = L
   · subst h
-    simp [show ¬ 8 * e + i < 8 * e by omega, show 8 * e + i - 8 * e = i by omega, hi,
-      show i < 64 by omega]
+    simp [show ¬ 8 * e + i < 8 * e by omega_arith, show 8 * e + i - 8 * e = i by omega_arith, hi,
+      show i < 64 by omega_arith]
   · by_cases hlt : e < L
-    · simp [h, show 8 * e + i < 8 * L by omega]
-    · simp [h, show ¬ 8 * e + i < 8 * L by omega, hc _ (show 8 ≤ 8 * e + i - 8 * L by omega)]
+    · simp [h, show 8 * e + i < 8 * L by omega_arith]
+    · simp [h, show ¬ 8 * e + i < 8 * L by omega_arith, hc _ (show 8 ≤ 8 * e + i - 8 * L by omega_arith)]
 
 /-- Rotating right by 56 is a shift left by a byte, while the top byte is zero. -/
 theorem rot_byte (c : Byte) {n : Nat} (hn : n < 7) :
@@ -94,12 +94,12 @@ theorem rot_byte (c : Byte) {n : Nat} (hn : n < 7) :
   simp only [BitVec.getLsbD_rotateRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth,
     show 56 % 64 = 56 from rfl, show 64 - 56 = 8 from rfl, hi, decide_true, Bool.true_and]
   by_cases h8 : i < 8
-  · simp [h8, show 56 + i < 64 by omega, show ¬ 56 + i < 8 * n by omega,
-      show i < 8 * (n + 1) by omega, hc _ (show 8 ≤ 56 + i - 8 * n by omega)]
+  · simp [h8, show 56 + i < 64 by omega_arith, show ¬ 56 + i < 8 * n by omega_arith,
+      show i < 8 * (n + 1) by omega_arith, hc _ (show 8 ≤ 56 + i - 8 * n by omega_arith)]
   · by_cases hlo : i - 8 < 8 * n
-    · simp [h8, hlo, show i - 8 < 64 by omega, show i < 8 * (n + 1) by omega]
-    · simp [h8, hlo, show i - 8 < 64 by omega, show ¬ i < 8 * (n + 1) by omega,
-        show i - 8 - 8 * n = i - 8 * (n + 1) by omega]
+    · simp [h8, hlo, show i - 8 < 64 by omega_arith, show i < 8 * (n + 1) by omega_arith]
+    · simp [h8, hlo, show i - 8 < 64 by omega_arith, show ¬ i < 8 * (n + 1) by omega_arith,
+        show i - 8 - 8 * n = i - 8 * (n + 1) by omega_arith]
 
 /-- Storing back a quadword XORed with `y` XORs each of its bytes with that of `y`. -/
 theorem writeW_xor (m : Mem) (a : Addr) (y : BitVec 64) (x : Addr) :
@@ -140,9 +140,9 @@ theorem writeW_byte (m : Mem) (p : Addr) (n : Nat) (c : Byte) :
     constructor
     · intro h
       have h' : x - q = BitVec.ofNat 64 e := by
-        apply BitVec.eq_of_toNat_eq; rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+        apply BitVec.eq_of_toNat_eq; rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
       rw [← h', BitVec.add_comm, BitVec.sub_add_cancel]
-    · intro h; rw [h, Mem.sub_ofNat_toNat q (by omega)]
+    · intro h; rw [h, Mem.sub_ofNat_toNat q (by omega_arith)]
   change (if (x - q).toNat < 8 then m x ^^^ ((c.setWidth 64) <<< (8 * (n % 8))).extractLsb'
     (8 * (x - q).toNat) 8 else m x) = _
   rw [hq]
@@ -156,6 +156,6 @@ theorem writeW_byte (m : Mem) (p : Addr) (n : Nat) (c : Byte) :
       exact he ((hiff _ (Nat.mod_lt _ (by decide))).mpr hx)
   · rw [ite_eq_right hin, ite_eq_right]
     intro hx
-    exact hin (by rw [hx, Mem.sub_ofNat_toNat q (by omega)]; exact Nat.mod_lt _ (by decide))
+    exact hin (by rw [hx, Mem.sub_ofNat_toNat q (by omega_arith)]; exact Nat.mod_lt _ (by decide))
 
 end VG.Proof.Rc4

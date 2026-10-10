@@ -19,7 +19,7 @@ def Saved (m : Mem) (S : BitVec 32) (s₀ : State) : Prop :=
     m.readW (S.setWidth 64 + BitVec.ofNat 64 12) 32 = s₀.gpr .ebp
 
 theorem save_addr {S : BitVec 32} (hS : S.toNat + 64 ≤ 2 ^ 32) {d : Nat} (hd : d < 64) :
-    addr S d = S.setWidth 64 + BitVec.ofNat 64 d := addr_of_fit (by omega)
+    addr S d = S.setWidth 64 + BitVec.ofNat 64 d := addr_of_fit (by omega_arith)
 
 theorem save_ok (s : State) (S : BitVec 32) (hS : S.toNat + 64 ≤ 2 ^ 32)
     (ha : InRegions (s.rd ++ s.wr) (addr (s.gpr .esp) 16) 4)
@@ -29,8 +29,8 @@ theorem save_ok (s : State) (S : BitVec 32) (hS : S.toNat + 64 ≤ 2 ^ 32)
       t.mem = savedMem s.mem S (s.gpr .ebx) (s.gpr .esi) (s.gpr .edi) (s.gpr .ebp) ∧
       Keep [.ecx] s t := by
   have w (d : Nat) (hd : d + 4 ≤ 64) : InRegions s.wr (addr S d) 4 := by
-    rw [save_addr hS (by omega)]
-    exact region_offset _ _ _ _ _ (by omega) hd hw
+    rw [save_addr hS (by omega_arith)]
+    exact region_offset _ _ _ _ _ (by omega_arith) hd hw
   have w0 := w 0 (by decide)
   have w4 := w 4 (by decide)
   have w8 := w 8 (by decide)
@@ -47,20 +47,20 @@ theorem saved_sep (S : BitVec 32) {d e : Nat} (h : d + 4 ≤ e ∨ e + 4 ≤ d) 
     (he : e < 64) :
     Mem.Sep (S.setWidth 64 + BitVec.ofNat 64 d) (32 / 8) (S.setWidth 64 + BitVec.ofNat 64 e)
       (32 / 8) :=
-  Offset.sep _ h (by omega) (by omega)
+  Offset.sep _ h (by omega_arith) (by omega_arith)
 
 theorem saved_savedMem (m : Mem) (S : BitVec 32) (s₀ : State) :
     Saved (savedMem m S (s₀.gpr .ebx) (s₀.gpr .esi) (s₀.gpr .edi) (s₀.gpr .ebp)) S s₀ := by
   unfold savedMem Saved
   refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [Mem.readW_writeW_sep (saved_sep S (d := 0) (e := 12) (by omega) (by omega) (by omega))
-      (by decide), Mem.readW_writeW_sep (saved_sep S (d := 0) (e := 8) (by omega) (by omega)
-      (by omega)) (by decide), Mem.readW_writeW_sep (saved_sep S (d := 0) (e := 4) (by omega)
-      (by omega) (by omega)) (by decide), Mem.readW_writeW_self32]
-  · rw [Mem.readW_writeW_sep (saved_sep S (d := 4) (e := 12) (by omega) (by omega) (by omega))
-      (by decide), Mem.readW_writeW_sep (saved_sep S (d := 4) (e := 8) (by omega) (by omega)
-      (by omega)) (by decide), Mem.readW_writeW_self32]
-  · rw [Mem.readW_writeW_sep (saved_sep S (d := 8) (e := 12) (by omega) (by omega) (by omega))
+  · rw [Mem.readW_writeW_sep (saved_sep S (d := 0) (e := 12) (by omega_arith) (by omega_arith) (by omega_arith))
+      (by decide), Mem.readW_writeW_sep (saved_sep S (d := 0) (e := 8) (by omega_arith) (by omega_arith)
+      (by omega_arith)) (by decide), Mem.readW_writeW_sep (saved_sep S (d := 0) (e := 4) (by omega_arith)
+      (by omega_arith) (by omega_arith)) (by decide), Mem.readW_writeW_self32]
+  · rw [Mem.readW_writeW_sep (saved_sep S (d := 4) (e := 12) (by omega_arith) (by omega_arith) (by omega_arith))
+      (by decide), Mem.readW_writeW_sep (saved_sep S (d := 4) (e := 8) (by omega_arith) (by omega_arith)
+      (by omega_arith)) (by decide), Mem.readW_writeW_self32]
+  · rw [Mem.readW_writeW_sep (saved_sep S (d := 8) (e := 12) (by omega_arith) (by omega_arith) (by omega_arith))
       (by decide), Mem.readW_writeW_self32]
   · rw [Mem.readW_writeW_self32]
 
@@ -80,7 +80,7 @@ theorem Saved.frame {m m' : Mem} {S : BitVec 32} {s₀ : State} {rs : List Regio
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨S.setWidth 64, 16⟩ r) : Saved m' S s₀ := by
   have e (d : Nat) (hd' : d + 4 ≤ 16) :
       m'.readW (S.setWidth 64 + BitVec.ofNat 64 d) 32 = m.readW (S.setWidth 64 + BitVec.ofNat 64 d) 32 :=
-    hf.readW (Offset.contains_base _ hd' (by omega)) hd (by decide)
+    hf.readW (Offset.contains_base _ hd' (by omega_arith)) hd (by decide)
   obtain ⟨h0, h4, h8, h12⟩ := h
   exact ⟨(e 0 (by decide)).trans h0, (e 4 (by decide)).trans h4, (e 8 (by decide)).trans h8,
     (e 12 (by decide)).trans h12⟩
@@ -93,8 +93,8 @@ theorem restore_ok (s₀ s : State) (S : BitVec 32) (hS : S.toNat + 64 ≤ 2 ^ 3
       t.gpr .ebx = s₀.gpr .ebx ∧ t.gpr .esi = s₀.gpr .esi ∧ t.gpr .edi = s₀.gpr .edi ∧
       t.gpr .ebp = s₀.gpr .ebp ∧ t.mem = s.mem ∧ Keep [.ecx, .ebx, .esi, .edi, .ebp] s t := by
   have r (d : Nat) (hd : d + 4 ≤ 64) : InRegions (s.rd ++ s.wr) (addr S d) 4 := by
-    rw [save_addr hS (by omega)]
-    exact region_offset _ _ _ _ _ (by omega) hd hr
+    rw [save_addr hS (by omega_arith)]
+    exact region_offset _ _ _ _ _ (by omega_arith) hd hr
   have r0 := r 0 (by decide)
   have r4 := r 4 (by decide)
   have r8 := r 8 (by decide)

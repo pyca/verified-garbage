@@ -43,8 +43,8 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   obtain ⟨hrd, hwr, keySep, dataSep, keyFit, dataFit, scratchFit⟩ := hs
   simp only [blockCode, List.append_assoc]
   rw [WP.block_append_iff, blockSave_eq]
-  apply WP.mono (Spill.save_block_ok blockSlots_ok (by omega) fun d _ hd => by
-    rw [hwr]; exact ⟨⟨State.addr (s.gpr .r2), 256⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
+  apply WP.mono (Spill.save_block_ok blockSlots_ok (by omega_arith) fun d _ hd => by
+    rw [hwr]; exact ⟨⟨State.addr (s.gpr .r2), 256⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
   intro s₁ h₁
   have scratchFrame : Frame [⟨State.addr (s.gpr .r2), 256⟩] s.mem s₁.mem := by
     rw [h₁.2.2.2]
@@ -60,15 +60,15 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
       InRegions (s₁.rd ++ s₁.wr) (State.addr (s₁.gpr .r1) + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [h₁.1, h₁.2.1, h₁.2.2.1, hrd, hwr]
-    exact ⟨⟨State.addr (s.gpr .r1), 8⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨State.addr (s.gpr .r1), 8⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   rw [WP.block_append_iff]
   apply WP.mono (blockLoad_ok s₁ (by rw [h₁.1]; exact dataFit) dataRead₁)
   intro s₂ h₂
   have keyPtr₂ : s₂.gpr .r0 = s.gpr .r0 := (h₂.2.reg .r0 (by decide)).trans (congrFun h₁.1 .r0)
   have read₂ : ∀ i < 128, InRegions (s₂.rd ++ s₂.wr) (State.addr (s₂.gpr .r0 + BitVec.ofNat 32 i)) 1 := by
     intro i hi
-    rw [h₂.2.rd, h₂.2.wr, keyPtr₂, h₁.2.1, h₁.2.2.1, hrd, hwr, addr_add (by omega)]
-    exact ⟨⟨State.addr (s.gpr .r0), 128⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    rw [h₂.2.rd, h₂.2.wr, keyPtr₂, h₁.2.1, h₁.2.2.1, hrd, hwr, addr_add (by omega_arith)]
+    exact ⟨⟨State.addr (s.gpr .r0), 128⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   rw [WP.block_append_iff]
   apply WP.mono (rounds_ok d s₂ _ h₂.1 (by rw [keyPtr₂]; exact keyFit) read₂)
   intro s₃ h₃
@@ -77,7 +77,7 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   have writable₃ : ∀ i < 8, InRegions s₃.wr (State.addr (s₃.gpr .r1) + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [keep₂₃.wr, h₁.2.2.1, hwr, ptr₃]
-    exact ⟨⟨State.addr (s.gpr .r1), 8⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨State.addr (s.gpr .r1), 8⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   let v := (List.range 16).foldl (fun v j => roundSpec d
     (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) j v) (Spec.Rc2.decodeBlock (Spec.Rc2.blockAt s.mem (State.addr (s.gpr .r1))))
   have words₃ : Words s₃ v := by
@@ -97,14 +97,14 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
     intro p hp
     have bound := blockSlots_ok.bound hp
     rw [mem₄, regs₄ .r2 (by decide), Mem.readW_writeW_sep
-      (dataSep.symm.sep (Offset.contains_base _ (by omega) (by omega)) (Region.contains_self _ _))
+      (dataSep.symm.sep (Offset.contains_base _ (by omega_arith) (by omega_arith)) (Region.contains_self _ _))
       (by decide), h₁.2.2.2]
     exact Spill.saveMem_saved _ _ _ _ blockSlots_ok p hp
   rw [blockRestore_eq]
-  apply WP.mono (Spill.restore_block_ok blockSlots_ok (by decide) (by rw [regs₄ .r2 (by decide)]; omega)
+  apply WP.mono (Spill.restore_block_ok blockSlots_ok (by decide) (by rw [regs₄ .r2 (by decide)]; omega_arith)
     (fun d _ hd => by
       rw [rd₄, wr₄, regs₄ .r2 (by decide), hrd, hwr]
-      exact ⟨⟨State.addr (s.gpr .r2), 256⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩) saved₄)
+      exact ⟨⟨State.addr (s.gpr .r2), 256⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩) saved₄)
   intro s₅ h₅
   have finalMem : s₅.mem = s₁.mem.writeW (State.addr (s.gpr .r1)) (pack v) := h₅.2.2.1.trans mem₄
   constructor

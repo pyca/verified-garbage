@@ -56,7 +56,7 @@ theorem ksaLane_ok {g : KGlob} (hg : g.Ok) {B l : Nat} (hl : l < 16) (hB : B + l
   have h1 : s.gpr .x1 = BitVec.ofNat 64 g.L := by
     rw [h.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide), hg.x1]
   have hkey : InRegions (s.rd ++ s.wr) g.K g.L := by rw [h.rd, h.wr]; exact hg.key
-  refine WP.seq (WP.mono (keyByte_ok hg.pos (by have := hg.le; omega) h0 h1 h.x7 h.x5 hkey h.j)
+  refine WP.seq (WP.mono (keyByte_ok hg.pos (by have := hg.le; omega_arith) h0 h1 h.x7 h.x5 hkey h.j)
     fun a ⟨aj, a7, a5, ag, av, am, ard, awr, asp⟩ => ?_)
   have hkb : s.mem (g.K + BitVec.ofNat 64 ((B + l) % g.L)) =
       g.key.getD ((B + l) % g.key.length) 0 := by
@@ -72,7 +72,7 @@ theorem ksaLane_ok {g : KGlob} (hg : g.Ok) {B l : Nat} (hl : l < 16) (hB : B + l
   have ta : TableIn a B (schedulePrefix g.key (B + l)).1 := fun k hk => by
     rw [tba k hk]; exact h.table k hk
   have sia : a.v si = bc (tbyte a.v l) := by
-    rw [av _ (by decide) (by decide), h.si, tba l (by omega)]
+    rw [av _ (by decide) (by decide), h.si, tba l (by omega_arith)]
   obtain ⟨t, run, tt, tj, tsi, to⟩ := ksaSwap_ok hl rfl hB ka ta aj' sia
   refine WP.of_runBlock ⟨t, run, ?_⟩
   have tg := to.gpr
@@ -99,7 +99,7 @@ theorem ksaLanes_ok {g : KGlob} (hg : g.Ok) {B : Nat} (hB : B + 16 ≤ 256) {n :
   induction n with
   | zero => exact WP.block_nil h
   | succ n ih =>
-    exact WP.seq (WP.mono (ih (by omega)) fun t ht => ksaLane_ok hg (by omega) (by omega) ht)
+    exact WP.seq (WP.mono (ih (by omega_arith)) fun t ht => ksaLane_ok hg (by omega_arith) (by omega_arith) ht)
 
 theorem subX4_ok (s : State) :
     WP isa (.block [.subImm .x .x4 .x4 1]) s fun t =>
@@ -110,7 +110,7 @@ theorem subX4_ok (s : State) :
 
 theorem ksaGroup_ok {g : KGlob} (hg : g.Ok) {B : Nat} (hB16 : B % 16 = 0) (hB : B < 256) {s : State}
     (h : KsaInv g B 0 s) : WP isa scheduleGroup s (KsaInv g (B + 16) 0) := by
-  apply WP.seq (WP.mono (ksaLanes_ok hg (by omega) (Nat.le_refl 16) h) fun s₁ h₁ => ?_)
+  apply WP.seq (WP.mono (ksaLanes_ok hg (by omega_arith) (Nat.le_refl 16) h) fun s₁ h₁ => ?_)
   rw [WP.block_append_iff]
   refine WP.mono (rotate_ok false h₁.consts h₁.j (NB := 0) fun e => absurd e (by decide))
     fun t ⟨tab, j, nb, x8, gg, vv, m, rd, wr, sp⟩ => ?_
@@ -120,7 +120,7 @@ theorem ksaGroup_ok {g : KGlob} (hg : g.Ok) {B : Nat} (hB16 : B % 16 = 0) (hB : 
     consts := h₁.consts.congr fun r hr => by
       rw [uv]; exact vv r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
     table := fun k hk => by
-      rw [tbu, tab k hk, h₁.table _ (by omega), ofNat_wrap]
+      rw [tbu, tab k hk, h₁.table _ (by omega_arith), ofNat_wrap]
     j := by rw [uv, j, byte_shift]
     si := by
       rw [uv, vv _ (by decide), h₁.si, tab 0 (by decide)]
@@ -132,8 +132,8 @@ theorem ksaGroup_ok {g : KGlob} (hg : g.Ok) {B : Nat} (hB16 : B % 16 = 0) (hB : 
         BitVec.ofNat_add_ofNat]
     x4 := by
       rw [u4, gg _ (by decide), h₁.x4, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
-        BitVec.ofNat_sub_ofNat_of_le _ _ (by omega) (by omega)]
-      congr 1; omega
+        BitVec.ofNat_sub_ofNat_of_le _ _ (by omega_arith) (by omega_arith)]
+      congr 1; omega_arith
     gpr := fun r r4 r5 r6 r7 r8 => by rw [ug r r4, gg r r8]; exact h₁.gpr r r4 r5 r6 r7 r8
     vkept := fun r hr => by
       rw [uv]
@@ -159,12 +159,12 @@ theorem ksaLoop_ok {g : KGlob} (hg : g.Ok) (m : Nat) {s : State} (h : KLoopInv g
   refine WP.loop (M := isa) (KLoopInv g) ?_ m s h
   intro m s ⟨B, hm, hB16, hB, h⟩
   refine WP.mono (ksaGroup_ok hg hB16 hB h) fun t ht => ?_
-  have flag := eval_nonzero' t .x4 ht.x4 (by omega)
+  have flag := eval_nonzero' t .x4 ht.x4 (by omega_arith)
   by_cases hend : B + 16 = 256
   · left
     exact ⟨by rw [flag]; simp [hend], hend ▸ ht⟩
   · right
-    exact ⟨by rw [flag]; simp; omega, 16 - (B + 16) / 16, by omega, B + 16, rfl, by omega,
-      by omega, ht⟩
+    exact ⟨by rw [flag]; simp; omega_arith, 16 - (B + 16) / 16, by omega_arith, B + 16, rfl, by omega_arith,
+      by omega_arith, ht⟩
 
 end VG.Proof.Rc4.AArch64
