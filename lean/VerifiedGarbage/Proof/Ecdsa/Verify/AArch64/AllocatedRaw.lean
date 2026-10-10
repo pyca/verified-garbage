@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedField
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
 
 namespace VG.Proof.Ecdsa.Verify.AArch64.Allocated

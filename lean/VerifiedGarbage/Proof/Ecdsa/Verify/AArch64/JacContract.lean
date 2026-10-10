@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Contract
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPublic
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 
 /-! The Jacobian verifier's relational proof uses only the bytes already
