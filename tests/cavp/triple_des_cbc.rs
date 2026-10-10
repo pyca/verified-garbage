@@ -2,7 +2,7 @@
 //! vectors/; and CBC from ECB (`TripleDesEcb`, tested on CAVP's ECB
 //! vectors) on every length up to a few dozen blocks, for each key length.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 
 use std::collections::BTreeMap;
 
