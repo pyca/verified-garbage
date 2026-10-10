@@ -2,18 +2,23 @@
 //! (`vg_ecdsa_p192_sha256_sign`, which calls `vg_ecdsa_p192_sign`), public
 //! keys (`vg_ec_p192_public_key`), and verification (`vg_ecdsa_p192_verify`).
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use super::{Error, P192, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_p192::vg_ec_p192_public_key;
 use crate::arch::ecdsa_p192::vg_ecdsa_p192_verify;
 use crate::arch::ecdsa_p192_sha256::vg_ecdsa_p192_sha256_sign;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::ecdsa_p192_sha256::vg_ecdsa_p192_sha256_sign_avx2;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p192_sha256::vg_ecdsa_p192_sha256_sign_sha2;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p192_sha256::{
-    vg_ecdsa_p192_sha256_sign_avx2, vg_ecdsa_p192_sha256_sign_shani,
-};
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+use crate::arch::ecdsa_p192_sha256::vg_ecdsa_p192_sha256_sign_shani;
 use crate::hashes::sha256::{Sha256, Sha256Backend};
 use crate::zeroize::zeroize;
 
@@ -48,7 +53,7 @@ impl sealed::Functions<P192> for Sha256 {
             Sha256Backend::Scalar => vg_ecdsa_p192_sha256_sign,
             #[cfg(target_arch = "aarch64")]
             Sha256Backend::Sha2 => vg_ecdsa_p192_sha256_sign_sha2,
-            #[cfg(target_arch = "x86_64")]
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Sha256Backend::ShaNi => vg_ecdsa_p192_sha256_sign_shani,
             #[cfg(target_arch = "x86_64")]
             Sha256Backend::Avx2 => vg_ecdsa_p192_sha256_sign_avx2,

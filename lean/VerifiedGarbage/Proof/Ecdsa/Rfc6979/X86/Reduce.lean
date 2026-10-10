@@ -248,7 +248,7 @@ theorem reduce_ok (hA : P.R.wide = false) (hL : L.Ok) {t : State} (hc : Ctx L g 
       Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t'.mem (L.B + BitVec.ofNat 64 204) (4 * P.k)) =
         Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ L.dg (4 * P.k)) % P.R.E.C.n := by
   have hk : P.k ≤ 12 := by have := (P.sizesA hA).2.1; simp only [RfcHash.k, RfcHash.w] at *; omega
-  have hk8 : 8 ≤ P.k := by have := P.R.n4; simp only [RfcHash.k]; omega
+  have hk6 : 6 ≤ P.k := by have := P.R.n3; simp only [RfcHash.k]; omega
   rw [Cfg.reduce, WP.block_append_iff, WP.block_append_iff, w_cfgOf]
   refine WP.mono (subs_ok (P := P) hL hn hk P.k (Nat.le_refl _) t
     ⟨hc, hsi, Frame.refl _ _, fun i hi => absurd hi (Nat.not_lt_zero _), fun i hi => absurd hi (Nat.not_lt_zero _),

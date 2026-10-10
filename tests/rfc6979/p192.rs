@@ -1,6 +1,11 @@
 //! RFC 6979 §A.2.3: P-192, with SHA-256.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
 
 use verified_garbage::ecdsa::{Error, P192, SigningKey, VerifyingKey};
 use verified_garbage::hashes::sha256::Sha256;
