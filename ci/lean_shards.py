@@ -5,8 +5,9 @@ CI restores the last build `main` saved, and Lake rebuilds only the modules
 whose sources changed since, and the modules importing them. The build is
 limited mostly by throughput, so the modules to rebuild are split into
 shards that build in parallel on separate runners, as many as the work
-needs: none when one would do (the `lean` job builds it), up to `MAX_SHARDS`
-when everything changed, but no more than make the build faster.
+needs: none when one would do (the `lean` job builds it), or when shards
+would save less than their own overhead, up to `MAX_SHARDS` when everything
+changed, but no more than make the build faster.
 
 `main` saves a manifest next to its build: the hash of every module's source,
 of the build's inputs, and how long each module took to build (from the shards' build logs, kept
@@ -75,17 +76,27 @@ INPUTS = ["lakefile.toml", "lean-toolchain", "lake-manifest.json"]
 # The keys of a library in the lakefile that list its modules.
 MODULE_LISTS = ("globs", "roots")
 # A shard per this much estimated build time (in seconds of `lake build`'s
-# times, which a runner's build runs about five of at once), up to
+# times, which a runner's build runs `PARALLELISM` of at once), up to
 # `MAX_SHARDS`. Never just one: a single shard builds nothing in parallel,
 # so the `lean` job builds that much itself.
 WORK_PER_SHARD = 800.0
-MAX_SHARDS = 16
+# More shards wait for runners, and build what they share again: in CI's
+# metrics, full rebuilds (about 43000 s of work) took 1360-1700 s on 16
+# shards, building 40% of the work twice, and about 1320 s on 12.
+MAX_SHARDS = 12
+# What a run with shards takes beyond its slowest shard's build, more than
+# the `lean` job takes beyond building everything itself: the shards wait
+# for runners, and upload and download their outputs (in CI's metrics, 262 s
+# beyond the slowest build, against 172 s beyond the build in the `lean`
+# job). Shards are taken only when they save more than this.
+SHARD_OVERHEAD = 90.0
 # How much slower than the fastest plan's slowest shard a plan with fewer
 # shards may be.
 SLACK = 0.05
-# How many modules a runner's build runs at once (about five, as above): a
-# shard's time is at least its work divided by this.
-PARALLELISM = 5.0
+# How many modules a runner's build runs at once (as measured: the shards'
+# module times add up to 5.4 times their builds' wall times): a shard's
+# time is at least its work divided by this.
+PARALLELISM = 5.4
 # The time to check that a module is up to date, and to build one the
 # manifest has no time for when it has none at all.
 UP_TO_DATE = 0.02
@@ -269,6 +280,9 @@ def plan(manifest: dict) -> dict:
     packs = {n: pack(n, sinks, closure, cost, path) for n in range(2, most + 1)}
     best = min((max(p[0]) for p in packs.values()), default=0.0)
     count = min((n for n, p in packs.items() if max(p[0]) <= best * (1 + SLACK)), default=0)
+    # Unless the `lean` job would build it all about as fast itself.
+    if count and max(packs[count][0]) + SHARD_OVERHEAD > estimate(work, max(path.values(), default=0.0)):
+        count = 0
     loads, targets, shards = packs[count] if count else ([], [], [])
     owner = {}
     for i, shard in enumerate(shards):
