@@ -47,13 +47,13 @@ theorem condE_ok {k : Nat} {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl al n
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) K.rd K.wr (by rw [K.mem]; exact Frame.refl _ _)
 
 /-- After the entry, the long `seal` up to the tag at `W`: `oneAad`,
-`oneBlocks` and `finish` leave what `sealRun_ok` does. -/
-theorem sealRunF_ok (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s₀ s₁ : State}
+`oneBlocks` and `finishWith ks` leave what `sealRun_ok` does. -/
+theorem sealRunF_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s₀ s₁ : State}
     {Ctx W SP Np A D : Addr} {nl al n : Nat}
     (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n) (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀)
     (E : OneEntry s₀ Ctx W SP A D n s₁)
     (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al) :
-    WP isa (.seq (oneAad v.callees) (.seq (oneBlocks B.enc) Impl.AesGcm.X86_64.Short.finish)) s₁
+    WP isa (.seq (oneAad v.callees) (.seq (oneBlocks B.enc) (Impl.AesGcm.X86_64.Short.finishWith ks))) s₁
       (SealRunPost s₀ Ctx W SP Np A D nl al n) := by
   have L := C.lay
   unfold SealRunPost
@@ -72,7 +72,7 @@ theorem sealRunF_ok (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMo
     rcases hr with rfl | rfl
     · exact X.cw
     · exact (X.ct.sub_left (below_sub (by decide) (by decide))).symm
-  refine WP.mono (WP.with_rdwr (sealBodyF_ok L B hF (icb := inc32 (Spec.Gcm.j0 H iv)) (a := a)
+  refine WP.mono (WP.with_rdwr (sealBodyF_ok L B hF hks (icb := inc32 (Spec.Gcm.j0 H iv)) (a := a)
     ⟨M.env, hRo, M.dat, M.len, hd₂, C.t_c, C.t_w, C.t_d, C.sp24, X₂⟩ M.hH M.cb hal₂ M.abs))
     fun s₄ ⟨⟨he₄, _, _, f₄, hC, hT₄⟩, hrd₄, hwr₄⟩ => ?_
   have dM : ∀ (p : Addr) (k : Nat), (⟨p, k⟩ : Region).Disjoint ⟨W, 2560⟩ → (below SP 8).Disjoint ⟨p, k⟩ →
@@ -113,7 +113,7 @@ theorem sealMid_ok (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMod
         Impl.AesGcm.X86_64.Short.sealShort)) s₁
       (SealRunPost s Ctx W SP Np A D nl al n) :=
   WP.seq (WP.mono (condE_ok C E hnl hal) fun _ ⟨hz, E₂, _⟩ =>
-    WP.ite (decide ¬IsShort _ _ _) (eval_e hz) (fun _ => sealRunF_ok hF v B C X E₂ hNp hnl hal) fun h => by
+    WP.ite (decide ¬IsShort _ _ _) (eval_e hz) (fun _ => sealRunF_ok hF finKs_ksOk v B C X E₂ hNp hnl hal) fun h => by
       have h' := Decidable.not_not.mp (of_decide_eq_false h)
       exact sealShort_ok hF C E₂ hNp hnl hal h'.1 h'.2.1 h'.2.2.1 h'.2.2.2.1)
 

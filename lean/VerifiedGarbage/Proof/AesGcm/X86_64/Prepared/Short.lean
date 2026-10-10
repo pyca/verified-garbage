@@ -14,7 +14,10 @@ theorem sealSelPrepared_framed (hF : Short.ShortFacts) :
   unfold GcmImpl.sealCode; split
   · exact sealPreparedCode_framed (sealPreparedCode_verified (Short.sealM_correct v B hF) (Short.sealM_ct hF v B))
       (Short.sealM_spSafe v B) (Short.sealM_xdepth v B)
-  · exact sealPrepared_framed v B
+  · split
+    · exact sealPreparedCode_framed (sealPreparedCode_verified (SealFin.sealFM_correct v B hF)
+        (SealFin.sealFM_ct v B hF)) (SealFin.sealFM_spSafe v B) (SealFin.sealFM_xdepth v B)
+    · exact sealPrepared_framed v B
 
 /-- `vg_aes_gcm_open_prepared`, with the short path if `v` has it. -/
 theorem openSelPrepared_framed (hF : Short.ShortFacts) :

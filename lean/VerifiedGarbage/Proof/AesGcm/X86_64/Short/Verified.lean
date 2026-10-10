@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 
 /-!
@@ -90,9 +91,11 @@ open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 
 namespace GcmImpl
 
-/-- `vg_aes_gcm_seal`'s code calling `c`, with the short path if `v` has it. -/
+/-- `vg_aes_gcm_seal`'s code calling `c`, with the short path if `v` has it,
+or else ending without calls if `v` does. -/
 def sealCode (v : GcmImpl) (c : Callees) : Prog isa :=
-  if v.short then Impl.AesGcm.X86_64.Short.«seal» c else «seal» c
+  if v.short then Impl.AesGcm.X86_64.Short.«seal» c
+  else if v.fin then Impl.AesGcm.X86_64.SealFin.«seal» c else «seal» c
 
 /-- `vg_aes_gcm_open`'s code calling `c`, with the short path if `v` has it. -/
 def openCode (v : GcmImpl) (c : Callees) : Prog isa :=
@@ -106,7 +109,9 @@ theorem sealCode_spSafe {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     (v.sealCode (v.withBlk B)).all (fun i => !X86_64.isa.writesSp i) = true := by
   unfold GcmImpl.sealCode; split
   · exact Short.sealM_spSafe v B
-  · exact sealM_spSafe v B
+  · split
+    · exact SealFin.sealFM_spSafe v B
+    · exact sealM_spSafe v B
 
 theorem openCode_spSafe {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     (v.openCode (v.withBlk B)).all (fun i => !X86_64.isa.writesSp i) = true := by
@@ -114,7 +119,8 @@ theorem openCode_spSafe {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
   · exact Short.openM_spSafe v B
   · exact openM_spSafe v B
 
-/-- `vg_aes_gcm_seal`, with the short path if `v` has it. -/
+/-- `vg_aes_gcm_seal`, with the short path if `v` has it, or ending without
+calls if `v` does. -/
 theorem sealSel_framed (hF : Short.ShortFacts) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode v.callees))
@@ -123,7 +129,11 @@ theorem sealSel_framed (hF : Short.ShortFacts) :
   · exact sealCode_framed (sealCode_verified (fun s hs => Short.sealM_correct v v.blkB hF s ⟨hs, trivial⟩)
       (ct_of_rel fun _ _ hp hp' hq => Short.sealM_rel hF v v.blkB ⟨hp, trivial⟩ ⟨hp', trivial⟩ hq))
       (Short.sealM_spSafe v v.blkB) (Short.sealM_xdepth v v.blkB)
-  · exact seal_framed v
+  · split
+    · exact sealCode_framed (sealCode_verified (fun s hs => SealFin.sealFM_correct v v.blkB hF s ⟨hs, trivial⟩)
+        (ct_of_rel fun _ _ hp hp' hq => SealFin.sealFM_rel v v.blkB hF ⟨hp, trivial⟩ ⟨hp', trivial⟩ hq))
+        (SealFin.sealFM_spSafe v v.blkB) (SealFin.sealFM_xdepth v v.blkB)
+    · exact seal_framed v
 
 /-- `vg_aes_gcm_open`, with the short path if `v` has it. -/
 theorem openSel_framed (hF : Short.ShortFacts) :
@@ -144,7 +154,10 @@ theorem sealSelP_framed (hF : Short.ShortFacts) :
   unfold GcmImpl.sealCode; split
   · exact sealPCode_framed (sealPCode_verified (Short.sealM_correct v v.blkP hF) (Short.sealM_ct hF v v.blkP))
       (Short.sealM_spSafe v v.blkP) (Short.sealM_xdepth v v.blkP)
-  · exact sealP_framed v
+  · split
+    · exact sealPCode_framed (sealPCode_verified (SealFin.sealFM_correct v v.blkP hF) (SealFin.sealFM_ct v v.blkP hF))
+        (SealFin.sealFM_spSafe v v.blkP) (SealFin.sealFM_xdepth v v.blkP)
+    · exact sealP_framed v
 
 /-- `vg_aes_gcm_open_precomputed`, with the short path if `v` has it. -/
 theorem openSelP_framed (hF : Short.ShortFacts) :

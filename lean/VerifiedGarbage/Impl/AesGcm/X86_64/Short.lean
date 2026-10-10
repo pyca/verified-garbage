@@ -341,14 +341,34 @@ def finGh1 : List Instr :=
   Gcm.X86_64.Pclmul.zero ++ Gcm.X86_64.Pclmul.acc .xmm7 .xmm3 ++ Gcm.X86_64.Pclmul.reduce .xmm2
 
 /-- The end of a long `seal`, after `oneBlocks`: the bytes left encrypted
-and the tag at `W`, without calls. -/
-def finish : Prog isa :=
+and the tag at `W`, without calls, with the keystream of `J₀` and of the
+counter block at `K` from `ks`. -/
+def finishWith (ks : Prog isa) : Prog isa :=
   .seq (.block finPow)
-  (.seq finKs
+  (.seq ks
   (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .test .rax (.reg .rax)])
     (.ite .e (.block (finLens ++ finGh1 ++ tagK 0))
       (.seq (.block finTextArgs)
         (.seq (xorText true) (.block (finLens ++ finGh2 ++ tagK 0)))))))
+
+/-- `finishWith` the keystream of `finKs`, in two lanes of `zmm5`. -/
+def finish : Prog isa := finishWith finKs
+
+/-- `J₀` and the counter block in `xmm5` and `xmm7`, and the key schedule,
+the number of rounds and the last round key's address in `rdi`, `rsi` and
+`r10`, for `AesNi.aes`. -/
+def finCtrsA : List Instr :=
+  [.movdquLoad .xmm5 (at_ .r14 0), .movdquLoad .xmm7 (at_ .r14 48),
+   .mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO)),
+   .mov .r10 (.reg .rsi), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10),
+   .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .rdi)]
+
+/-- The keystream of `J₀` and of the counter block at `K`, with AES-NI on
+128-bit registers, for the CPUs without AVX-512. -/
+def finKsA : Prog isa :=
+  .seq (.block finCtrsA)
+    (.seq (Aes.X86_64.AesNi.aes [.xmm5, .xmm7])
+      (.block [.movdquStore (at_ .r15 kO) .xmm5, .movdquStore (at_ .r15 (kO + 16)) .xmm7]))
 
 variable (c : Callees)
 

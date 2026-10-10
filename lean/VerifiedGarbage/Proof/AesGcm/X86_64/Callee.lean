@@ -459,6 +459,10 @@ structure GcmImpl where
   (`Impl/AesGcm/X86_64/Short.lean`), which needs the CPU features of the
   loops on 512-bit registers. -/
   short : Bool := false
+  /-- Whether `seal` (when not `short`) ends without calls
+  (`Impl/AesGcm/X86_64/SealFin.lean`), which needs AES-NI, PCLMULQDQ and
+  AVX. -/
+  fin : Bool := false
 
 namespace GcmImpl
 
