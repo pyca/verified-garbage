@@ -22,7 +22,7 @@ registers, and the rounds in general-purpose registers.
   (big-endian words).
 * The working variables `a … h` are renamed by the unrolled rounds as in
   `vg_sha256_compress` (`var`); `Σ₀` and `Σ₁` are three `rorx`, `Ch(e, f, g)`
-  is `(e ∧ f) + (¬e ∧ g)`, and `Maj(a, b, c)` is `((a ⊕ b) ∧ (b ⊕ c)) ⊕ b`,
+  is `(¬e ∧ g) + (e ∧ f)`, and `Maj(a, b, c)` is `((a ⊕ b) ∧ (b ⊕ c)) ⊕ b`,
   where `b ⊕ c` is the previous round's `a ⊕ b`, kept in `carry t`. `Kₜ` is
   an immediate, since the model has no constant pool.
 * If only one block is left, it is loaded into both lanes and only the
@@ -59,21 +59,23 @@ def T : Reg := .r15
 /-- Where round `t` of block `j` (0 or 1) reads `Wₜ`. -/
 def wSlot (j t : Nat) : MemOp := at_ .rcx (32 * (t / 4) + 16 * j + 4 * (t % 4))
 
-/-- Round `t` of block `j`. The additions are in the order of the specification:
-`T₁ = h + Σ₁(e) + Ch(e, f, g) + Kₜ + Wₜ`, `T₂ = Σ₀(a) + Maj(a, b, c)`. -/
+/-- Round `t` of block `j`. `T₁ = h + Kₜ + Wₜ + Ch(e, f, g) + Σ₁(e)` is summed
+in `h` in that order, so that only the last three additions wait for `e`
+(the round's longest dependency chain, through `e' = d + T₁`, is five
+operations), then `T₂ = Σ₀(a) + Maj(a, b, c)` is added to it. -/
 def round (j t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let d := var t 3
   let e := var t 4; let f := var t 5; let g := var t 6; let h := var t 7
   let x := carry t; let y := carry (t + 1)
-  [ -- h := h + Σ₁(e)
-    .rorx32 y e 6, .rorx32 T e 11, .alu32 .xor y (.reg T), .rorx32 T e 25, .alu32 .xor y (.reg T),
-    .alu32 .add h (.reg y),
-    -- h := h + Ch(e, f, g), as (e ∧ f) + (¬e ∧ g)
-    .mov32 y (.reg e), .alu32 .and y (.reg f), .andn32 T e g, .alu32 .add y (.reg T),
-    .alu32 .add h (.reg y),
-    -- h := h + Kₜ + Wₜ, which is T₁
+  [ -- h := h + Kₜ + Wₜ, independent of this round's other inputs
     .alu32 .add h (.imm (K t)),
     .alu32 .add h (.mem (wSlot j t)),
+    -- h := h + Ch(e, f, g), as (¬e ∧ g) + (e ∧ f)
+    .andn32 T e g, .alu32 .add h (.reg T),
+    .mov32 y (.reg e), .alu32 .and y (.reg f), .alu32 .add h (.reg y),
+    -- h := h + Σ₁(e), which is T₁
+    .rorx32 y e 6, .rorx32 T e 11, .alu32 .xor y (.reg T), .rorx32 T e 25, .alu32 .xor y (.reg T),
+    .alu32 .add h (.reg y),
     -- e' := d + T₁
     .alu32 .add d (.reg h),
     -- h := h + Σ₀(a)
