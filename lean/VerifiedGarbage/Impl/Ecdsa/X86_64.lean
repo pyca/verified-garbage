@@ -3,6 +3,7 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
 import VerifiedGarbage.Impl.Weierstrass.X86_64.TCombJ
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Spec.Ecdsa
+import VerifiedGarbage.Spec.Weierstrass.MulBase
 
 /-!
 # ECDSA signing on x86-64
@@ -153,6 +154,11 @@ structure Cfg where
   and the joint verifier's, write them out (`Mod.inl`, `MH`) where the
   others call the function computing them. -/
   hot : Bool := false
+  /-- The curve whose function `vg_<curve>_mul_base`
+  (`Spec/Weierstrass/MulBase.lean`) computes `[k]G` (`mulBaseFn`), which the
+  signature and public key derivation call, with the table of `k`'s bits it
+  makes; else they run them inline. -/
+  mulBase : Option Spec.Weierstrass.MulBase.Curve := none
   /-- The bits the window method's scalars have: `8 len`, but for a curve
   whose `n` has fewer bits than its `len` bytes (P-521's `n < 2⁵²¹`, in 66
   bytes), as many as `n` has. ECDH reduces its `d` below `2^nbits` before
@@ -218,10 +224,12 @@ def combJ (w : Nat) : Nat := (64 * c.n + w - 1) / w
 
 /-- The comb for `[k]G`, into `R`, from the table of the bits of `k` and the
 curve's tables of constants, the `static` `d.tsym` (`Artifact.consts`), with
-`b R mod p` in `EM` (free until `scalar`). -/
+`b R mod p` in `EM` (free until `scalar`). Its addition for `a = -3` does
+not read `a`, whose slot is `EM`'s too, so that the comb reads only `p`,
+zero and what it writes itself (`vg_<curve>_mul_base`). -/
 def combCfg (d : CombData) : TCombCfg where
   M := c.MH
-  S := { c.rcbSlots with b3 := c.sl EM }
+  S := { c.rcbSlots with a := c.sl EM, b3 := c.sl EM }
   A := c.pt RX RY RZ
   E := c.pt TX TY TZ
   D := c.pt DX DY DZ
@@ -391,13 +399,43 @@ def scalar : Prog isa :=
     Mont.X86_64.mul c.MN' (c.sl SS) (c.sl SM) (c.sl ONE),
     c.checkNonzero (c.sl SS) ++ c.finish]
 
+/-- `vg_<curve>_mul_base`'s body: the table of `k`'s bits, then `[k]G` into
+`R` (`gMulK`). -/
+def mulBaseBody : Prog isa := .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) c.gMulK
+
+/-- Where `vg_<curve>_mul_base` keeps the callee-saved registers, which it
+changes: `ACC`'s slot, part of its own working space. -/
+def mulBaseSaved : List (Reg × Nat) := saved.map fun (r, d) => (r, c.sl ACC + d)
+
+/-- `vg_<curve>_mul_base` (`_adx` with BMI2 and ADX): its body, between
+saving the callee-saved registers in `ACC`'s slot and restoring them. -/
+def mulBaseFn : Prog isa :=
+  .seq (.block (c.mulBaseSaved.map fun p => .store { base := .rdi, disp := p.2 } p.1)) <|
+  .seq c.mulBaseBody <|
+  .block (c.mulBaseSaved.map fun p => .mov p.1 (.mem { base := .rdi, disp := p.2 }))
+
+/-- The table of `k`'s bits, but nothing if `skip`. -/
+def kBitsIf (skip : Bool) : Prog isa :=
+  if skip then .block [] else bits (c.sl K) (bitsAt c.n 0) (8 * c.n)
+
+/-- The table of `k`'s bits, unless `vg_<curve>_mul_base` makes it. -/
+def kBits : Prog isa := c.kBitsIf c.mulBase.isSome
+
+/-- `R = [k]G` for a secret `k`, from the table of its bits made by `kBits`:
+a call of `vg_<curve>_mul_base` (or `_adx`), which makes the table itself,
+else inline (`gMulK`). -/
+def gMulKC : Prog isa :=
+  match c.mulBase with
+  | some C => .call (C.mulBaseApi.name ++ if c.adx then "_adx" else "") c.mulBaseFn
+  | none => c.gMulK
+
 /-- `vg_ecdsa_<curve>_sign`. -/
 def sign : Prog isa :=
   .seq (.block c.setup) <|
-  .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
+  .seq c.kBits <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq c.gMulK <|
+  .seq c.gMulKC <|
   .seq c.pPow <|
   .seq c.middle <|
   .seq c.nPow c.scalar
