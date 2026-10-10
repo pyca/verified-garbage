@@ -37,7 +37,8 @@ no stack for them), then the own working space of the functions of
 unspecified and may hold intermediate values; every other byte of `ws`
 keeps its value but the result's (`Keeps`).
 
-The result is apart from both operands. Every coordinate is below `p`, the
+The result is apart from both operands, which are the same point or apart
+from each other. Every coordinate is below `p`, the
 result's too, so that it can be an operand. Everything is secret but the
 pointer and the offsets, which are public, and the function is constant
 time.
@@ -166,10 +167,10 @@ def decPt (P : Nat × Nat × Nat) : Fin C.p × Fin C.p × Fin C.p :=
   (C.dec P.1, C.dec P.2.1, C.dec P.2.2)
 
 /-- The precondition on the offsets and the memory: the points lie below the
-constants, the result apart from both operands, and every coordinate read,
-the constants' too, is below `p`. -/
+constants, the result apart from both operands, the operands the same or
+apart, and every coordinate read, the constants' too, is below `p`. -/
 def Pre (ws : Addr) (o p q : BitVec 32) (m : Mem) : Prop :=
-  Fits C.k o ∧ Fits C.k p ∧ Fits C.k q ∧ Apart C.k o p ∧ Apart C.k o q ∧
+  Fits C.k o ∧ Fits C.k p ∧ Fits C.k q ∧ Apart C.k o p ∧ Apart C.k o q ∧ (p = q ∨ Apart C.k p q) ∧
     C.Below (C.pointAt m ws p) ∧ C.Below (C.pointAt m ws q) ∧
     C.coordAt m ws (aAt C.k) < C.p ∧ C.coordAt m ws (b3At C.k) < C.p
 
@@ -213,7 +214,8 @@ def addApi : Api where
     [s!"`o`, `p` and `q` plus {3 * elemBytes C.k} must be at most {aAt C.k}: the curve's \
         constants are at bytes {aAt C.k} to {ownAt C.k - 1}, and bytes {ownAt C.k} to 4095 of \
         `ws` are the function's own working space.",
-      s!"The point at `o` must be apart from those at `p` and `q`.",
+      s!"The point at `o` must be apart from those at `p` and `q`, and `p` must be `q` or the \
+        points at `p` and `q` apart.",
       s!"Every coordinate of the points at `p` and `q`, and the numbers at bytes {aAt C.k} and \
         {b3At C.k}, must be below {C.desc}'s prime.",
       s!"Bytes {ownAt C.k} to 4095 of `ws` are unspecified on return and may hold intermediate \
