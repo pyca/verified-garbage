@@ -74,7 +74,7 @@ theorem xorReg_ok (s : State) (d r : Reg) :
 /-- `ldr t0, [x0, #8 h]; imm t1, FK; eor t0, t0, t1`. -/
 theorem keyWord_ok (s : State) (h : Nat) (hh : h < 2)
     (hr : InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (8 * h)) 8) :
-    ∃ s', runBlock isa ([.ldr .x t0 .x0 (8 * h)] ++ imm t1 (fkWord h) ++ [eorR t0 t0 t1]) s = some s' ∧
+    ∃ s', runBlock isa (([.ldr .x t0 .x0 (8 * h)] : List Instr) ++ imm t1 (fkWord h) ++ ([eorR t0 t0 t1] : List Instr)) s = some s' ∧
       s'.gpr t0 = s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 (8 * h)) 64 ^^^ fkWord h ∧
       (∀ r, r ≠ t0 → r ≠ t1 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := loadAt_ok s t0 .x0 (8 * h) ⟨by omega, by omega⟩ hr

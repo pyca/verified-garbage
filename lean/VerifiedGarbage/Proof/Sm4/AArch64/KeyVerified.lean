@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Sm4.AArch64.KeyEk
 import VerifiedGarbage.Proof.Sm4.AArch64.Verified
+import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 
 /-!
 # SM4 key expansion on AArch64 meets its contracts
@@ -27,9 +28,9 @@ theorem expandKey_ct : ConstantTime isa expandKeyAArch64.pre expandKeyAArch64.pu
 
 theorem expandKey_correct (s : State) (hs : expandKeyAArch64.pre s) :
     ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ expandKeyAArch64.post s s' := by
-  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (expandKey_wp hs) (by decide +kernel)
-    (by decide +kernel)
-  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he (by decide +kernel)⟩, h₂⟩
+  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (expandKey_wp hs) (by lit_decide)
+    (by lit_decide)
+  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact h₁ 0 (by omega)
