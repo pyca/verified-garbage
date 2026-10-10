@@ -29,14 +29,14 @@ theorem nafPoints_ok (hc : CfgOk c) (hn4 : c.n=4) {s₀ : State} {base : Addr} {
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have F := hM.fixed
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
   have tb : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
     fun hi => apart_tbl hi 0 h7
   rw [Impl.Ecdsa.Verify.AArch64.Cfg.nafPoints]
   refine WP.seq ?_
   -- The table of `u`.
-  refine WP.seq (WP.mono_syms (bits_ok hM.scr h0 (by omega) (sl_le c h7 (i := U) (by decide))
-    (tbl_le h7) (sl_lt4096 h0 h7 (i := U) (by decide)) (by have := bitsAt0_le c h7; omega) (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega)))
+  refine WP.seq (WP.mono_syms (bits_ok hM.scr h0 (by omega_arith) (sl_le c h7 (i := U) (by decide))
+    (tbl_le h7) (sl_lt4096 h0 h7 (i := U) (by decide)) (by have := bitsAt0_le c h7; omega_arith) (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega_arith)))
     fun s₁ ⟨b₁, k₁, O₁⟩ sy₁ => ?_)
   have hs₁ := hM.scr.of_keepRegs k₁ (by decide)
   have U₁ : Unch base [(bitsAt c.n 0, 64 * c.n)] s.mem s₁.mem := O₁.unch
@@ -58,7 +58,7 @@ theorem nafPoints_ok (hc : CfgOk c) (hn4 : c.n=4) {s₀ : State} {base : Addr} {
       rcases hx with rfl | rfl | rfl
       · show wordsVal s₁.mem base (c.sl AP) c.n < _; rw [F₁.ap]; exact hmont _
       · show wordsVal s₁.mem base (c.sl BM) c.n < _; rw [F₁.bm]; exact hmont _
-      · show wordsVal s₁.mem base (c.sl ZERO) c.n < _; rw [F₁.zero]; omega
+      · show wordsVal s₁.mem base (c.sl ZERO) c.n < _; rw [F₁.zero]; omega_arith
     · intro t ht
       show s₁.mem (off base (bitsAt c.n 0 + t)) = _
       rw [b₁ t ht]
@@ -152,17 +152,17 @@ theorem nafPoints_ok (hc : CfgOk c) (hn4 : c.n=4) {s₀ : State} {base : Addr} {
         tu (by decide) (by decide) uy₃, tu (by decide) (by decide) uz₃, rcbAdd3_eq, ← hc.am3,
         ← ofNat_three_mul]
       rfl⟩, ?_, by rw [v₆ (by decide) (by decide)]; exact hM.k, rz₆.2⟩
-  · rw [UW.word (fun w hw => ?_) (by have := sl_le c h7 (i := FLAG) (by decide); omega)]
+  · rw [UW.word (fun w hw => ?_) (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith)]
     · exact hM.flag
     · simp only [List.mem_append] at hw
       rcases hw with (hw | hw) | hw
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         have := sl_below_bits c (i := FLAG) (by decide) 0 0
-        rcases hw with rfl | rfl <;> exact Or.inl (by dsimp only; omega)
+        rcases hw with rfl | rfl <;> exact Or.inl (by dsimp only; omega_arith)
       · exact (apart_winX (c := c) (i := FLAG) (by decide)) w hw |>.elim
-          (fun h => Or.inl (by omega)) (fun h => Or.inr h)
+          (fun h => Or.inl (by omega_arith)) (fun h => Or.inr h)
       · exact (apart_slW (c := c) (i := FLAG) (by decide)) w hw |>.elim
-          (fun h => Or.inl (by omega)) (fun h => Or.inr h)
+          (fun h => Or.inl (by omega_arith)) (fun h => Or.inr h)
   · refine unch_whole (hM.unch.trans UW) fun w hw => ?_
     simp only [List.mem_append] at hw
     rcases hw with hw | (hw | hw) | hw
@@ -173,17 +173,17 @@ theorem nafPoints_ok (hc : CfgOk c) (hn4 : c.n=4) {s₀ : State} {base : Addr} {
       · have := (tcombLay hc.toBaseCfgOk).bits; exact this
     · simp only [winX, List.mem_cons, List.not_mem_nil, or_false] at hw
       have := sl_le' c h7 (i := WT) (by decide)
-      have e1 : c.sl WK + 16 * c.n ≤ c.sl WT := by simp (disch := decide) only [sl_eq]; unfold WK WT; omega
+      have e1 : c.sl WK + 16 * c.n ≤ c.sl WT := by simp (disch := decide) only [sl_eq]; unfold WK WT; omega_arith
       have e2 : c.sl WB + 64 * (c.n + 1) ≤ c.sl WT := by
         simp (disch := decide) only [sl_eq]; unfold WB WT
-        have : 8 * c.n * 87 = 8 * c.n * 55 + 256 * c.n := by omega
-        omega
+        have : 8 * c.n * 87 = 8 * c.n * 55 + 256 * c.n := by omega_arith
+        omega_arith
       rcases hw with rfl | rfl
-      · show c.sl WK + 16 * c.n ≤ size; omega
-      · show c.sl WB + 64 * (c.n + 1) ≤ size; omega
+      · show c.sl WK + 16 * c.n ≤ size; omega_arith
+      · show c.sl WB + 64 * (c.n + 1) ≤ size; omega_arith
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       have hb := (show ∀ i∈ptsW++jacTblI,i<136 by decide) i hi
       change c.sl i+8*c.n≤size
-      rw [sl_eq4 c (Nat.le_of_eq hn4), hn4]; change 64+32*i+32≤8192; omega
+      rw [sl_eq4 c (Nat.le_of_eq hn4), hn4]; change 64+32*i+32≤8192; omega_arith
 
 end VG.Proof.Ecdsa.Verify.AArch64
