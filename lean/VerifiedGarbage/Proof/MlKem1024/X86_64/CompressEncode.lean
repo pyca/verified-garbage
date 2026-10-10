@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress
-import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+import VerifiedGarbage.Proof.MlKem.X86_64.Impls
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 import VerifiedGarbage.Proof.MlKem.Encode1024
 import VerifiedGarbage.Proof.MlKem1024.X86_64.Contracts
 

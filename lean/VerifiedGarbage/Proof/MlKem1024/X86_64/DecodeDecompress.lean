@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+import VerifiedGarbage.Proof.MlKem.X86_64.Impls
 import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
 
