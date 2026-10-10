@@ -1,5 +1,4 @@
-import VerifiedGarbage.Proof.Sm4.X86_64.Copy
-import VerifiedGarbage.Impl.Sm4.X86_64.Ctr
+import VerifiedGarbage.Proof.Modes.X86_64.Core
 
 /-!
 # XORing blocks on x86-64
@@ -9,11 +8,9 @@ import VerifiedGarbage.Impl.Sm4.X86_64.Ctr
 counting down `rcx`, and changes nothing else in memory.
 -/
 
-namespace VG.Proof.Sm4.X86_64
+namespace VG.Proof.Modes.X86_64
 
-open VG VG.X86_64 VG.Impl.Sm4.X86_64
-open VG.Proof.Sm4 (off_sub_toNat off_sub_not not_in_of_disjoint ofInt_nat)
-open VG.Impl.Aes.X86_64 (at_)
+open VG VG.X86_64 VG.Impl.Modes.X86_64
 
 /-- A byte of a little-endian word stored from the XOR of two loads. -/
 theorem writeW_xor_apply (m m₁ m₂ : Mem) (a c e x : Addr) :
@@ -63,11 +60,11 @@ structure XorInv (A B : Addr) (c : Nat) (s₀ : State) (j : Nat) (s : State) : P
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem xorBlocks_wp {A B : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hc16 : c ≤ 16)
+theorem xorBlocks_wp {A B : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hc16 : c < 2 ^ 59)
     (hA : ∀ t < 2 * c, InRegions (s₀.rd ++ s₀.wr) (A + BitVec.ofNat 64 (8 * t)) 8)
     (hB : ∀ t < 2 * c, InRegions s₀.wr (B + BitVec.ofNat 64 (8 * t)) 8)
     (hsep : Region.Disjoint ⟨A, 16 * c⟩ ⟨B, 16 * c⟩) (hs : XorInv A B c s₀ 0 s₀) :
-    WP isa xorBlocks s₀ (XorInv A B c s₀ c) := by
+    WP isa Core.xorBlocks s₀ (XorInv A B c s₀ c) := by
   refine WP.loop (M := isa) (fun n s => ∃ j, n = c - j ∧ j < c ∧ XorInv A B c s₀ j s)
     (fun n s hs => ?_) c s₀ ⟨0, by omega, hc, hs⟩
   obtain ⟨j, rfl, hj, hi⟩ := hs
@@ -158,4 +155,4 @@ theorem xorBlocks_wp {A B : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hc16 : 
   · refine .inl ⟨by simp [X86_64.eval, hz, hl], by rw [show j + 1 = c from hl] at hinv; exact hinv⟩
   · exact .inr ⟨by simp [X86_64.eval, hz]; omega, c - (j + 1), by omega, j + 1, rfl, by omega, hinv⟩
 
-end VG.Proof.Sm4.X86_64
+end VG.Proof.Modes.X86_64

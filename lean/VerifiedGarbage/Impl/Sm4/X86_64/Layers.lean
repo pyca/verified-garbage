@@ -22,8 +22,9 @@ S-box), the S-box's spills (1–47, also the masks of the transposes), the
 masks of the round keys' planes (48–50), the planes of the state's four
 words (64–95), the tail buffer (96–127, sixteen blocks), the table of the
 32 bitsliced round keys, eight planes each, in the order the rounds use
-them (128–383), the callee-saved registers (384–389) and CTR's running counter block
-(390–391).
+them (128–383), and the callee-saved registers (384–389). The modes
+(`Impl/Modes/X86_64/`), which use slots 0–383 as SM4's core, keep their
+own state in 384–391 (`Ctr.lean`).
 -/
 
 namespace VG.Impl.Sm4.X86_64
@@ -51,13 +52,8 @@ def tableEnd : Nat := tableSlot + 8 * 32
 
 def savedSlot : Nat := tableEnd
 
-/-- The running counter block of CTR (`Ctr.lean`): its high and low halves,
-as integers. -/
-def ctrHi : Nat := savedSlot + 6
-def ctrLo : Nat := savedSlot + 7
-
-/-- The number of slots. -/
-def slots : Nat := savedSlot + 8
+/-- The number of slots: ECB's, and the modes' 8 after the core's. -/
+def slots : Nat := tableEnd + 8
 
 def keyMasks : List (Nat × BitVec 64) :=
   [(evenSlot, 0x00FF00FF00FF00FF), (oddSlot, 0xFF00FF00FF00FF00), (grpSlot, 0x0000FFFF0000FFFF)]
