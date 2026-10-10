@@ -8,23 +8,26 @@ open AdxRotate8 (at_)
 def word (k : Nat) (hi prev col : Reg) : List Instr :=
   [.mulx hi .rsi (.mem (at_ .rbp (8*k))),.adcx col (.reg .rsi),.adox col (.reg prev)]
 
-def close (hi col : Reg) : List Instr := [.adcx col (.reg .rcx),.adox col (.reg hi)]
+/-- The last column, which is zero: its carries and the high word. -/
+def close (hi col : Reg) : List Instr := [.adcx col (.reg col),.adox col (.reg hi)]
 
 def chain (k : Nat) (hi other prev : Reg) : List Reg → List Instr
   | [] => []
   | [col] => close prev col
   | col::next::rest => word k hi prev col ++ chain (k+1) other hi hi (next::rest)
 
+/-- A row: `rax`, zero, is the first word's incoming high word. -/
 def rowCore (i : Nat) (rs : List Reg) : List Instr :=
-  ([.mov .rdx (.mem (at_ .rbp (8*i))),.alu32 .xor .rcx (.reg .rcx)] : List Instr) ++ chain (i+1) .rax .rbx .rcx rs
+  ([.mov .rdx (.mem (at_ .rbp (8*i))),.alu32 .xor .rax (.reg .rax)] : List Instr) ++ chain (i+1) .rbx .rax .rax rs
 
+/-- `rcx :=` the block's output base, which it keeps through the rows. -/
 def headBases : List Instr :=
   [.mov .rsi (.mem (hdr (sArr Public.aAcc))),.mov .rcx (.mem (hdr (sFn 12))),
-   .shift .shl .rcx 4,.alu .add .rsi (.reg .rcx)]
+   .shift .shl .rcx 4,.alu .add .rcx (.reg .rsi)]
 
-def storeHead (i : Nat) (lo hi : Reg) : Prog isa := .seq (.block headBases)
-  (.seq (.block [.store (at_ .rsi (16+8*(2*i+1))) lo])
-    (.block [.store (at_ .rsi (16+8*(2*i+2))) hi]))
+def storeHead (i : Nat) (lo hi : Reg) : Prog isa :=
+  .seq (.block [.store (at_ .rcx (16+8*(2*i+1))) lo])
+    (.block [.store (at_ .rcx (16+8*(2*i+2))) hi])
 
 def rowStep (i : Nat) (lo hi : Reg) (tail : List Reg) : Prog isa :=
   .seq (.block (rowCore i (lo::hi::tail)))
@@ -48,7 +51,7 @@ def setup (a : Nat) : List Instr :=
 its first and last: the rows then write the other fourteen, and nothing has to
 clear the whole product buffer first. `r8` is zero. -/
 def clearEnds : Prog isa := .seq (.block headBases)
-  (.seq (.block [.store (at_ .rsi 16) .r8]) (.block [.store (at_ .rsi 136) .r8]))
+  (.seq (.block [.store (at_ .rcx 16) .r8]) (.block [.store (at_ .rcx 136) .r8]))
 
 def block (a : Nat) : Prog isa :=
   .seq (.block (setup a)) (.seq (.block clearColumns) (.seq clearEnds (rows 7 0 columns)))
