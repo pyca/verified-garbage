@@ -102,17 +102,18 @@ theorem pub_agree {F S : Addr} {rest : List Region} {ws : List (Nat × BitVec 64
     (h₁ : Pub F S rest ws rs X₁ t₁) (h₂ : Pub F S rest ws rs X₂ t₂) (hr : RestOk n F rest)
     (hks : ∀ p ∈ ws, p.1 < nW) : X86_64.Taint.Agree (pT n (ws.map Prod.fst) (rs.map Prod.fst)) t₁ t₂ := by
   refine ⟨⟨fun r hr' => ?_, fun hf => by cases hf⟩, fun _ => by rw [h₁.wr, h₂.wr], pub_wf h₁ hr _ _,
-    pub_wf h₂ hr _ _, fun sl hsl => ?_, fun sl hsl k hk₁ hk₂ => ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
+    pub_wf h₂ hr _ _, X86_64.Taint.slotsOk_of_list rfl fun sl hsl => ?_, fun i k hk => ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · rcases List.mem_append.mp (RegSet.mem_ofList.mp hr') with hr' | hr'
     · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr'
       rw [h₁.regs p hp, h₂.regs p hp]
     · rw [List.mem_singleton.mp hr', h₁.L.rsp, h₂.L.rsp]
-  · simp only [pT, List.mem_map, List.map_map] at hsl
+  · simp only [List.mem_map, List.map_map] at hsl
     obtain ⟨p, hp, rfl⟩ := hsl
     have := hks p hp
     simp only [pT, List.getD_cons_zero, Function.comp]
     unfold nW frameBytes at *; omega
-  · simp only [pT, List.mem_map, List.map_map] at hsl
+  · obtain ⟨sl, hsl, rfl, hk₁, hk₂⟩ := (Slots.has_ofList _ i k).mp hk
+    simp only [List.mem_map, List.map_map] at hsl
     obtain ⟨p, hp, rfl⟩ := hsl
     have hk := hks p hp
     simp only [Function.comp_apply] at hk₁ hk₂ ⊢

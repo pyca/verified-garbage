@@ -3486,8 +3486,8 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : APre e s₁) (h₂ : APre e s₂) (
       simp only [reduceCtorEq, ↓reduceIte] <;> with_reducible assumption
   · show s₁.wr = s₂.wr
     rw [h₁.wr_eq, h₂.wr_eq, c, d, t]
-  · intro sl h; simp [τ₀] at h
-  · intro sl h; simp [τ₀] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 /-! ## The entry -/
 
@@ -3661,8 +3661,8 @@ theorem agree₁ {s₁ s₂ : State} (h₁ : After s₀ s₁) (h₂ : After s₀
     · rw [h₁.r14, h₂.r14, dp, dp, p5]
     · rw [h₁.r12, h₂.r12, tp, tp, p8]
   · rw [h₁.wr, h₂.wr, hp.wr_eq, hp'.wr_eq, c, d, t]
-  · intro sl h; simp [τ₁] at h
-  · intro sl h; simp [τ₁] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 include hp hp' hq in
 /-- The call of any implementation `v` of `vg_chacha20_xor` for the data
@@ -3749,8 +3749,8 @@ theorem agreeA {fold pass : Nat} {s₁ s₂ : State} (h₁ : AfterF fold pass s�
     · rw [h₁.rbx, h₂.rbx, ad, ad, p3]
     · rw [h₁.rbp, h₂.rbp, p4]
   · rw [h₁.wr, h₂.wr, hp.wr_eq, hp'.wr_eq, c, d, t]
-  · intro sl h; simp [τA] at h
-  · intro sl h; simp [τA] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 include hp in
 omit hp' in
@@ -3776,8 +3776,8 @@ theorem agreeS {fold pass : Nat} {s₁ s₂ : State} (h₁ : AtIte fold pass s�
     · rw [h₁.inv.r14, h₂.inv.r14, dp, dp, p5]
     · rw [h₁.inv.r12, h₂.inv.r12, tp, tp, p8]
   · rw [h₁.inv.wr, h₂.inv.wr, hp.wr_eq, hp'.wr_eq, c, d, t]
-  · intro sl h; simp [τS] at h
-  · intro sl h; simp [τS] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 omit hp' hq in
 include hp in

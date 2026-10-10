@@ -26,7 +26,7 @@ theorem agree_regs (rs : List Reg) {s₁ s₂ : State} (h : ∀ r ∈ rs, s₁.g
     X86_64.Taint.Agree (τR rs) s₁ s₂ :=
   ⟨⟨fun r hr => h r (RegSet.mem_ofList.mp hr), fun h => by cases h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ hp => by simp at hp⟩, ⟨fun h => absurd rfl h, fun _ hp => by simp at hp⟩,
-    fun _ h => by simp at h, fun _ h => by simp at h, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
+    X86_64.Taint.slotsOk_empty, X86_64.Taint.slotsAgree_empty, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
 
 /-- Constant time on narrowed permissions: runs from states narrowed to the
 regions `W` (which code that terminates from them writes in) leak the same
@@ -432,8 +432,8 @@ theorem agree₁S {s₁ s₂ : State} (h₁ : AfterS s₀ s₁) (h₂ : AfterS s
     · rw [h₁.rbx, h₂.rbx, dp, dp, p5, L, L, p6]
     · rw [h₁.rbp, h₂.rbp, L, L, p6]
   · rw [h₁.wr, h₂.wr, hp.wr_eq, hp'.wr_eq, c, d, t]
-  · intro sl h; simp [τ₁S] at h
-  · intro sl h; simp [τ₁S] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 end
 
@@ -1896,8 +1896,8 @@ theorem agreeM {s₁ s₂ : State} (h₁ : PubM s₀ s₁) (h₂ : PubM s₀' s�
     · rw [h₁.rbx, h₂.rbx, dp, dp, p5, L, L, p6]
     · rw [h₁.rbp, h₂.rbp, L, L, p6]
   · rw [h₁.wr, h₂.wr, hp.wr_eq, hp'.wr_eq, c, d, t]
-  · intro sl h; simp [τM] at h
-  · intro sl h; simp [τM] at h
+  · exact VG.X86_64.Taint.slotsOk_empty
+  · exact VG.X86_64.Taint.slotsAgree_empty
 
 omit hp' hq in
 include hp in

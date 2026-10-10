@@ -27,7 +27,7 @@ base of the working space (the second writable region), the slots of the
 public arguments `[208, 248)` and `[288, 304)` and the words at `ex` public. -/
 def ocbT (rs : List Reg) (ex : List Nat) : X86_64.Taint.T :=
   { regs := .ofList (rs ++ [.r14, .r15, .rsp]), flags := false, lens := [0, 3584], bases := [(.r15, 1, 0)],
-    slots := [(1, 208, 40), (1, 288, 16)] ++ ex.map fun d => (1, d, 8) }
+    slots := Slots.ofList ([(1, 208, 40), (1, 288, 16)] ++ ex.map fun d => (1, d, 8)) }
 
 /-- Two runs with the same public arguments: both in the environment, with
 the same slots and writable regions, agreeing on the registers `rs` and the
@@ -65,7 +65,7 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {rs 
   have hw : ∀ {k : Nat} (d : Nat), d ≤ k → W + BitVec.ofNat 64 k = W + BitVec.ofNat 64 d + BitVec.ofNat 64 (k - d) :=
     fun {k} d e => by rw [add_ofNat_assoc, show d + (k - d) = k by omega]
   refine ⟨⟨fun r hr => ?_, fun hf => by cases hf⟩, fun _ => by rw [h.wr₁, h.wr₂], wf h.e₁ h.wr₁, wf h.e₂ h.wr₂,
-    fun sl hsl => ?_, fun sl hsl k hk₁ hk₂ => ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
+    X86_64.Taint.slotsOk_of_list rfl fun sl hsl => ?_, fun i k hk => ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · rcases List.mem_append.mp (RegSet.mem_ofList.mp hr) with hr | hr
     · exact h.agree r hr
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -78,7 +78,8 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {rs 
     · simp [ocbT]
     · simp [ocbT]
     · simp only [ocbT, List.getD_cons_succ, List.getD_cons_zero]; exact (h.ex d hd).1
-  · simp only [ocbT, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, List.mem_map] at hsl
+  · obtain ⟨sl, hsl, rfl, hk₁, hk₂⟩ := (Slots.has_ofList _ i k).mp hk
+    simp only [ocbT, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, List.mem_map] at hsl
     have S₁ := h.sl₁
     have S₂ := h.sl₂
     rcases hsl with (rfl | rfl) | ⟨d, hd, rfl⟩ <;> rw [hb s₁ h.wr₁, hb s₂ h.wr₂]

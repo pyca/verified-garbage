@@ -30,13 +30,14 @@ theorem both_agree_k {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat}
     (hk₁ : s₁.mem.readW (W + BitVec.ofNat 64 216) 64 = v) (hk₂ : s₂.mem.readW (W + BitVec.ofNat 64 216) 64 = v) :
     X86_64.Taint.Agree (ccmTk rs) s₁ s₂ := by
   have a := both_agree hDW hn h
-  refine ⟨a.rf, a.wr, a.wf₁, a.wf₂, fun sl hsl => ?_, fun sl hsl k hk₁' hk₂' => ?_, a.lo, a.xr⟩
-  · simp only [ccmTk, ccmT, List.mem_cons, List.not_mem_nil, or_false] at hsl
+  refine ⟨a.rf, a.wr, a.wf₁, a.wf₂, X86_64.Taint.slotsOk_of_list rfl fun sl hsl => ?_, fun i k hk => ?_, a.lo, a.xr⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hsl
     rcases hsl with rfl | rfl | rfl <;> simp [ccmTk, ccmT]
-  · simp only [ccmTk, List.mem_cons, List.not_mem_nil, or_false] at hsl
+  · obtain ⟨sl, hsl, rfl, hk₁', hk₂'⟩ := (Slots.has_ofList _ i k).mp hk
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hsl
     rcases hsl with rfl | rfl | rfl
-    · exact a.slots _ (List.Mem.head _) k hk₁' hk₂'
-    · exact a.slots _ (List.Mem.tail _ (List.Mem.head _)) k hk₁' hk₂'
+    · exact a.slots _ k ((Slots.has_ofList _ _ k).mpr ⟨_, List.Mem.head _, rfl, hk₁', hk₂'⟩)
+    · exact a.slots _ k ((Slots.has_ofList _ _ k).mpr ⟨_, List.Mem.tail _ (List.Mem.head _), rfl, hk₁', hk₂'⟩)
     · have hb : ∀ s : State, s.wr = [⟨D, n⟩, ⟨W, 2560⟩] → X86_64.Taint.byteAddr s 1 k = W + BitVec.ofNat 64 k :=
         fun s hw => by simp only [X86_64.Taint.byteAddr, X86_64.Taint.region, hw, List.getD_cons_succ,
           List.getD_cons_zero]
