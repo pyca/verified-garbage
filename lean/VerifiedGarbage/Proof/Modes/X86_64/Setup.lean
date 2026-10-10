@@ -41,20 +41,12 @@ theorem addN_vals (V N : Nat) (hN : N < 2 ^ 64) :
         (BitVec.ofBool (decide (2 ^ 64 ≤ (loOf V).toNat + (BitVec.ofNat 64 N).toNat))).setWidth 64 =
       hiOf (V + N) := by
   have e0 : ((0 : BitVec 32).signExtend 64) = BitVec.ofNat 64 0 := rfl
-  refine ⟨by rw [loOf, loOf, BitVec.ofNat_add], ?_⟩
-  rw [e0]
+  obtain ⟨h1, h2⟩ := carry_vals V N hN
+  refine ⟨h1, ?_⟩
+  rw [e0, BitVec.add_zero, ← h2]
+  congr 1
   apply BitVec.eq_of_toNat_eq
-  simp only [hiOf, loOf, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_setWidth, BitVec.toNat_ofBool]
-  rw [Nat.mod_eq_of_lt hN]
-  by_cases h : 2 ^ 64 ≤ V % 2 ^ 64 + N
-  · rw [decide_eq_true h]
-    simp only [Bool.toNat_true]
-    have : (V + N) / 2 ^ 64 = V / 2 ^ 64 + 1 := by omega
-    rw [this]; omega
-  · rw [decide_eq_false h]
-    simp only [Bool.toNat_false]
-    have : (V + N) / 2 ^ 64 = V / 2 ^ 64 := by omega
-    rw [this]; omega
+  cases decide (2 ^ 64 ≤ (loOf V).toNat + (BitVec.ofNat 64 N).toNat) <;> rfl
 
 /-- `add rbx, nr; adc rax, 0`: the running counter stepped by `nr`. -/
 theorem addN_ok (s : State) (nr : Reg) {V N : Nat} (hN : N < 2 ^ 64) (hh : s.gpr .rax = hiOf V)
@@ -86,42 +78,6 @@ theorem addN_ok (s : State) (nr : Reg) {V N : Nat} (hN : N < 2 ^ 64) (hh : s.gpr
       RegUpd.gpr_setReg_self, hl, e1, hn]
     exact i1
   · simp only [s₂, RegUpd.gpr_setReg_of_ne _ _ h1, RegUpd.gpr_arithFlags, g₁ _ h2]
-
-/-- The counter block at `P`, as a number. -/
-abbrev ctrVal (m : Mem) (P : Addr) : Nat := Spec.Ctr.toNat (bytesAt m P 16)
-
-/-- Its halves are the byte-reversed words at `P` and `P + 8`. -/
-theorem halves (m : Mem) (P : Addr) :
-    hiOf (ctrVal m P) = bswap64 (m.readW P 64) ∧
-      loOf (ctrVal m P) = bswap64 (m.readW (P + BitVec.ofNat 64 8) 64) := by
-  have h := AesCtr.toNat_append (bytesAt m P 8) (bytesAt m (P + BitVec.ofNat 64 8) 8)
-  rw [← AesCtr.bytesAt_append, AesCtr.bytesAt_rv64, AesCtr.bytesAt_rv64, AesCtr.toNat_ofNat, AesCtr.toNat_ofNat,
-    AesCtr.length_ofNat] at h
-  have a1 := (AesCtr.rv64 (m.readW P 64)).isLt
-  have a2 := (AesCtr.rv64 (m.readW (P + BitVec.ofNat 64 8) 64)).isLt
-  simp only [Nat.reducePow] at a1 a2 h
-  rw [Nat.mod_eq_of_lt a1, Nat.mod_eq_of_lt a2] at h
-  constructor
-  · apply BitVec.eq_of_toNat_eq
-    rw [hiOf, BitVec.toNat_ofNat, ctrVal, h, show bswap64 (m.readW P 64) = AesCtr.rv64 (m.readW P 64) from rfl]
-    omega
-  · apply BitVec.eq_of_toNat_eq
-    rw [loOf, BitVec.toNat_ofNat, ctrVal, h,
-      show bswap64 (m.readW (P + BitVec.ofNat 64 8) 64) = AesCtr.rv64 (m.readW (P + BitVec.ofNat 64 8) 64) from rfl]
-    omega
-
-/-- `bytesAt` of the two words written at `P + 8` and then `P`: the
-big-endian bytes of `V`. -/
-theorem bytes_pair2 (m : Mem) (P : Addr) (V : Nat) :
-    bytesAt ((m.writeW (P + BitVec.ofNat 64 8) (bswap64 (loOf V))).writeW P (bswap64 (hiOf V))) P 16 =
-      Spec.Ctr.ofNat V 16 := by
-  rw [show (16 : Nat) = 8 + 8 from rfl, AesCtr.bytesAt_append,
-    show (bswap64 (hiOf V)) = AesCtr.rv64 (hiOf V) from rfl, AesCtr.bytesAt_writeW_rv64,
-    AesCtr.bytesAt_writeW_sep _ _ _ (by decide) (by decide),
-    show (bswap64 (loOf V)) = AesCtr.rv64 (loOf V) from rfl, AesCtr.bytesAt_writeW_rv64, AesCtr.ofNat_add]
-  congr 1
-  · exact AesCtr.ofNat_congr (by simp only [hiOf, BitVec.toNat_ofNat]; omega)
-  · exact AesCtr.ofNat_congr (by simp only [loOf, BitVec.toNat_ofNat]; omega)
 
 /-! ## Words to and from consecutive slots -/
 
@@ -262,9 +218,9 @@ theorem setup_ok (hL : Layout c) {r : CtrRegs} (hr : RegsOk r) (s : State) {B P 
   have mP0 := mP 0 (by decide)
   rw [p0] at mP0
   have rax₈ : s₈.gpr .rax = hiOf V := by
-    rw [o₈ _ (by decide), o₇ _ (by decide), r₆, r₅, P₄, p0, mP0, hv]
+    rw [o₈ _ (by decide), o₇ _ (by decide), r₆, r₅, P₄, p0, mP0, hv]; rfl
   have rbx₈ : s₈.gpr .rbx = loOf V := by
-    rw [r₈, r₇, m₆, m₅, o₆ _ hr.ctr.2.1, o₅ _ hr.ctr.2.1, P₄, mP 8 (by decide), lv]
+    rw [r₈, r₇, m₆, m₅, o₆ _ hr.ctr.2.1, o₅ _ hr.ctr.2.1, P₄, mP 8 (by decide), lv]; rfl
   have wr₈' : s₈.wr = s.wr := by rw [wr₈, wr₇, wr₆, wr₅, wr₄']
   have rd₈' : s₈.rd = s.rd := by rw [rd₈, rd₇, rd₆, rd₅, rd₄']
   have b₈ : s₈.gpr sb = B := by rw [g₈ _ (by decide) (by decide), g₄', b₁']

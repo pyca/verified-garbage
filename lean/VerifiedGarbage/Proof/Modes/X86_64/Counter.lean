@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Modes.X86_64.Core
-import VerifiedGarbage.Proof.AesCtr.Inc
+import VerifiedGarbage.Proof.Modes.Counter
 
 /-!
 # CTR on x86-64: the counter blocks
@@ -17,10 +17,6 @@ open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Modes.X86_64
 open VG.Impl.Aes.X86_64 (sb movR movS st)
 open VG.Spec.Aes (bytesAt)
 
-/-- The high and low halves of the counter block `V`. -/
-def hiOf (V : Nat) : BitVec 64 := BitVec.ofNat 64 (V / 2 ^ 64)
-def loOf (V : Nat) : BitVec 64 := BitVec.ofNat 64 V
-
 theorem incr_vals (V : Nat) :
     loOf V + (1 : BitVec 32).signExtend 64 = loOf (V + 1) ∧
     hiOf V + (0 : BitVec 32).signExtend 64 +
@@ -28,19 +24,12 @@ theorem incr_vals (V : Nat) :
       hiOf (V + 1) := by
   have e1 : ((1 : BitVec 32).signExtend 64) = BitVec.ofNat 64 1 := rfl
   have e0 : ((0 : BitVec 32).signExtend 64) = BitVec.ofNat 64 0 := rfl
-  refine ⟨by rw [e1, loOf, loOf, BitVec.ofNat_add], ?_⟩
-  rw [e0, e1]
+  obtain ⟨h1, h2⟩ := carry_vals V 1 (by decide)
+  refine ⟨by rw [e1, h1], ?_⟩
+  rw [e0, e1, BitVec.add_zero, ← h2]
+  congr 1
   apply BitVec.eq_of_toNat_eq
-  simp only [hiOf, loOf, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_setWidth, BitVec.toNat_ofBool]
-  by_cases h : V % 2 ^ 64 + 1 = 2 ^ 64
-  · rw [decide_eq_true (by omega)]
-    simp only [Bool.toNat_true]
-    have : (V + 1) / 2 ^ 64 = V / 2 ^ 64 + 1 := by omega
-    rw [this]; omega
-  · rw [decide_eq_false (by omega)]
-    simp only [Bool.toNat_false]
-    have : (V + 1) / 2 ^ 64 = V / 2 ^ 64 := by omega
-    rw [this]; omega
+  cases decide (2 ^ 64 ≤ (loOf V).toNat + (BitVec.ofNat 64 1).toNat) <;> rfl
 
 /-- `add rbx, 1; adc rax, 0`: the running counter stepped by one. -/
 theorem incr_ok (s : State) {V : Nat} (hh : s.gpr .rax = hiOf V) (hl : s.gpr .rbx = loOf V) :
@@ -71,19 +60,6 @@ theorem incr_ok (s : State) {V : Nat} (hh : s.gpr .rax = hiOf V) (hl : s.gpr .rb
       RegUpd.gpr_setReg_self, hl]
     exact i1
   · simp only [s₂, RegUpd.gpr_setReg_of_ne _ _ h1, RegUpd.gpr_arithFlags, g₁ _ h2]
-
-/-- `bytesAt` of the two words written at `P` and `P + 8`: the big-endian
-bytes of `V`. -/
-theorem bytes_pair (m : Mem) (P : Addr) (V : Nat) :
-    bytesAt ((m.writeW P (bswap64 (hiOf V))).writeW (P + BitVec.ofNat 64 8) (bswap64 (loOf V))) P 16 =
-      Spec.Ctr.ofNat V 16 := by
-  rw [show (16 : Nat) = 8 + 8 from rfl, AesCtr.bytesAt_append, bytesAt_writeW_above _ _ _ (by decide) (by decide)
-      (by decide),
-    show (bswap64 (hiOf V)) = AesCtr.rv64 (hiOf V) from rfl, AesCtr.bytesAt_writeW_rv64,
-    show (bswap64 (loOf V)) = AesCtr.rv64 (loOf V) from rfl, AesCtr.bytesAt_writeW_rv64, AesCtr.ofNat_add]
-  congr 1
-  · exact AesCtr.ofNat_congr (by simp only [hiOf, BitVec.toNat_ofNat]; omega)
-  · exact AesCtr.ofNat_congr (by simp only [loOf, BitVec.toNat_ofNat]; omega)
 
 theorem ctrBlock_eq (c : Core) (b : Nat) : c.ctrBlock b =
     ([movR .rcx .rax] : List Instr) ++ (([.bswap .rcx] : List Instr) ++ (([st (c.buf + 2 * b) .rcx] : List Instr) ++

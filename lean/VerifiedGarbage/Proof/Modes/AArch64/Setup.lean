@@ -16,42 +16,6 @@ open VG VG.AArch64 VG.AArch64.Straight VG.Impl.Modes.AArch64
 open VG.Impl.Aes.AArch64 (sb movR ldS stS)
 open VG.Spec.Aes (bytesAt)
 
-/-- The counter block at `P`, as a number. -/
-abbrev ctrVal (m : Mem) (P : Addr) : Nat := Spec.Ctr.toNat (bytesAt m P 16)
-
-/-- Its halves are the byte-reversed words at `P` and `P + 8`. -/
-theorem halves (m : Mem) (P : Addr) :
-    hiOf (ctrVal m P) = rev64 (m.readW P 64) ∧
-      loOf (ctrVal m P) = rev64 (m.readW (P + BitVec.ofNat 64 8) 64) := by
-  have h := AesCtr.toNat_append (bytesAt m P 8) (bytesAt m (P + BitVec.ofNat 64 8) 8)
-  rw [← AesCtr.bytesAt_append, AesCtr.bytesAt_rv64, AesCtr.bytesAt_rv64, AesCtr.toNat_ofNat, AesCtr.toNat_ofNat,
-    AesCtr.length_ofNat] at h
-  have a1 := (AesCtr.rv64 (m.readW P 64)).isLt
-  have a2 := (AesCtr.rv64 (m.readW (P + BitVec.ofNat 64 8) 64)).isLt
-  simp only [Nat.reducePow] at a1 a2 h
-  rw [Nat.mod_eq_of_lt a1, Nat.mod_eq_of_lt a2] at h
-  constructor
-  · apply BitVec.eq_of_toNat_eq
-    rw [hiOf, BitVec.toNat_ofNat, ctrVal, h, show rev64 (m.readW P 64) = AesCtr.rv64 (m.readW P 64) from rfl]
-    omega
-  · apply BitVec.eq_of_toNat_eq
-    rw [loOf, BitVec.toNat_ofNat, ctrVal, h,
-      show rev64 (m.readW (P + BitVec.ofNat 64 8) 64) = AesCtr.rv64 (m.readW (P + BitVec.ofNat 64 8) 64) from rfl]
-    omega
-
-/-- `bytesAt` of the two words written at `P + 8` and then `P`: the
-big-endian bytes of `V`. -/
-theorem bytes_pair2 (m : Mem) (P : Addr) (V : Nat) :
-    bytesAt ((m.writeW (P + BitVec.ofNat 64 8) (rev64 (loOf V))).writeW P (rev64 (hiOf V))) P 16 =
-      Spec.Ctr.ofNat V 16 := by
-  rw [show (16 : Nat) = 8 + 8 from rfl, AesCtr.bytesAt_append,
-    show (rev64 (hiOf V)) = AesCtr.rv64 (hiOf V) from rfl, AesCtr.bytesAt_writeW_rv64,
-    AesCtr.bytesAt_writeW_sep _ _ _ (by decide) (by decide),
-    show (rev64 (loOf V)) = AesCtr.rv64 (loOf V) from rfl, AesCtr.bytesAt_writeW_rv64, AesCtr.ofNat_add]
-  congr 1
-  · exact AesCtr.ofNat_congr (by simp only [hiOf, BitVec.toNat_ofNat]; omega)
-  · exact AesCtr.ofNat_congr (by simp only [loOf, BitVec.toNat_ofNat]; omega)
-
 /-! ## Words to and from consecutive slots -/
 
 /-- `k` stores of registers to consecutive slots from `base`. -/
@@ -192,9 +156,9 @@ theorem setup_ok (hL : Layout c) {r : CtrRegs} (hr : RegsOk r) (s : State) {B P 
   have mP0 := mP 0 (by decide)
   rw [p0] at mP0
   have x6₆ : s₆.gpr .x6 = hiOf V := by
-    rw [o₆ _ (by decide), o₅ _ (by decide), r₄, r₃, P₂, p0, mP0, hv]
+    rw [o₆ _ (by decide), o₅ _ (by decide), r₄, r₃, P₂, p0, mP0, hv]; rfl
   have x7₆ : s₆.gpr .x7 = loOf V := by
-    rw [r₆, r₅, m₄, m₃, o₄ _ c6, o₃ _ c6, P₂, mP 8 (by decide), lv]
+    rw [r₆, r₅, m₄, m₃, o₄ _ c6, o₃ _ c6, P₂, mP 8 (by decide), lv]; rfl
   have wr₆' : s₆.wr = s.wr := by rw [wr₆, wr₅, wr₄, wr₃, wr₂']
   have rd₆' : s₆.rd = s.rd := by rw [rd₆, rd₅, rd₄, rd₃, rd₂']
   have b₆ : s₆.gpr sb = B := by rw [g₆ _ (by decide) (by decide), g₂, b₁']
