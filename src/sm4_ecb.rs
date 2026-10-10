@@ -6,7 +6,7 @@
 //! ECB runs sixteen blocks at a time, computing each round bitsliced in
 //! general-purpose registers, with no table lookups.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm", target_arch = "x86"))]
 
 use crate::arch::sm4::{vg_sm4_ecb_decrypt, vg_sm4_ecb_encrypt, vg_sm4_expand_key};
 use crate::zeroize::zeroize;
