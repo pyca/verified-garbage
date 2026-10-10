@@ -127,10 +127,8 @@ as many bytes in place.
 3. **TLS 1.2 AES-256-GCM bulk: 0.91–0.97** in some scenarios, while the record
    seal and open alone are 1.05–1.11, so likely noise.
 
-The last run on a CPU without IFMA, VAES or SHA-NI (b5b67857, in the table
-below) had larger gaps there: RSA private-key operations, Ed25519 signing
-and short ChaCha20-Poly1305 messages. Those have since been worked on, but
-this CPU can't measure them.
+The code paths of a CPU without IFMA, VAES or SHA-NI are measured in the
+next section.
 
 ## Cascade Lake class, emulated (7c42c0e1)
 
