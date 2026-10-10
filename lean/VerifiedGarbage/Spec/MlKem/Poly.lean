@@ -224,16 +224,16 @@ def decodeDecompressContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract
 
 /-- The `# Safety` item of a polynomial argument whose coefficients must be
 reduced. -/
-private def reducedSafety (name : String) : String :=
+def reducedSafety (name : String) : String :=
   s!"Each of the 256 `u32`s of `{name}` must be less than 3329."
 
 /-- The `# Safety` item of `scratch`. -/
-private def scratchSafety : String :=
+def scratchSafety : String :=
   "`scratch` is working space: on return it may hold intermediate values, which the caller must \
     destroy (FIPS 203 §3.3)."
 
 /-- A constant-time polynomial primitive: the sentence that says so. -/
-private def ctDoc (contract : String) : String :=
+def ctDoc (contract : String) : String :=
   s!"\n\nContract: `VG.Spec.MlKem.{contract}`. Constant time: only the pointers may affect \
     timing, not the data."
 
