@@ -86,6 +86,12 @@ theorem prodSparse_ok (s : State) {t0 : Reg} (h0 : t0 ≠ .rax ∧ t0 ≠ .rcx �
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1,
       hr.2.2.2, ite_false]
 
+/-- `2 ^ 128` and `2 ^ 320` in words, for `grind`, which does not evaluate powers over
+`exponentiation.threshold`. -/
+theorem pow128w : (2 : Nat) ^ 128 = 2 ^ 64 * 2 ^ 64 := Nat.pow_add 2 64 64
+
+theorem pow320w : (2 : Nat) ^ 320 = 2 ^ 64 * (2 ^ 64 * (2 ^ 64 * (2 ^ 64 * 2 ^ 64))) := by omega_using []
+
 /-- `t₁ … t₇ += 2³²⁰ u - C` for `C = rbp + 2⁶⁴ rdx + 2¹²⁸ t₀` and `u` in `rcx`,
 if `C` is at most `2⁶⁶ u` (so `u = 0` gives `C = 0`, and the borrow out of
 `t₅` can be taken from `u`) and the result is below `2⁴⁴⁸`. -/
@@ -237,10 +243,8 @@ theorem subSparse_ok (s : State) {t0 t1 t2 t3 t4 t5 t6 t7 : Reg}
     have hD8 : D8 = 0 := by omega_using [h5, e6, e7, e8, hD6, hlt, k1, k2, k3, k4, k5, k6]
     subst hD6 hD8
     -- An identity in the base `2 ^ 64`: `grind`'s ring normalizer proves it at once, where
-    -- `omega` took seconds.
-    have p128 : (2 : Nat) ^ 128 = 2 ^ 64 * 2 ^ 64 := Nat.pow_add 2 64 64
-    have p320 : (2 : Nat) ^ 320 = 2 ^ 64 * (2 ^ 64 * (2 ^ 64 * (2 ^ 64 * 2 ^ 64))) := by omega_using []
-    rw [p128, p320] at h5 ⊢
+    -- `omega` took seconds (without powers over Lean's `exponentiation.threshold`).
+    rw [pow128w, pow320w] at h5 ⊢
     clear hlt hC
     grind only
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
