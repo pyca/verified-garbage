@@ -109,7 +109,7 @@ theorem StitchName.ok : (n : StitchName) → Proof.Gcm.X86_64.Stitch.StitchOk n.
 /-- The encryption loop named `n`, if it takes all the blocks, meets its
 contract for any number of them from 16 on. -/
 theorem StitchName.okFull : (n : StitchName) → n.full = true → ∀ s₀, Proof.Gcm.X86_64.Stitch.SPre s₀ →
-    WP isa n.enc s₀ (Proof.Gcm.X86_64.Stitch.EPost s₀)
+    WP X86_64.isa n.enc s₀ (Proof.Gcm.X86_64.Stitch.EPost s₀)
   | .aesniAvx, _ => fun _ hp => Proof.Gcm.X86_64.StitchAvx8.enc_ok hp
   | .vaes, h => absurd h (by decide)
   | .vaesAvx512, h => absurd h (by decide)
