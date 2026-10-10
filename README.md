@@ -236,6 +236,22 @@ yours to keep:
 
 </tr>
 
+<tr>
+
+<td>SM3</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
 </table>
 
 ### MACs

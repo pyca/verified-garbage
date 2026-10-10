@@ -1,0 +1,5 @@
+name = "SM3"
+family = "Hashes"
+specs = ["Sm3"]
+modules = ["src/hashes/sm3.rs"]
+asm = ["sm3"]
