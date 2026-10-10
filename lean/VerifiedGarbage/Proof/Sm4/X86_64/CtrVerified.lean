@@ -49,6 +49,12 @@ namespace VG.Proof.Sm4.X86_64
 open VG VG.X86_64 VG.Impl.Sm4.X86_64
 open VG.Proof.Sm4 (ctrX86_64)
 
+attribute [local irreducible] Spec.Sm4.cipher in
+/-- The core's cipher is the contract's. Proved with `Spec.Sm4.cipher`
+irreducible: otherwise the unifier unfolds it (`CoreSpec.cipher`, a
+projection, is lower) and compares the two encryptions term by term. -/
+theorem cipher_eq (k : Spec.Sm4.Schedule) : modeCoreSpec.cipher k = Spec.Sm4.cipher k := rfl
+
 theorem ctr_wp {s₀ : State} (hp : ctrX86_64.pre s₀) :
     WP isa ctr s₀ fun s' => gprPreserved s₀ s' ∧ ctrX86_64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKC, dKD, dKS, dCD, dCS, dDS, dRC, dRD, dRS, fitK, fitC, fitD, fitB⟩ := hp
@@ -61,7 +67,9 @@ theorem ctr_wp {s₀ : State} (hp : ctrX86_64.pre s₀) :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact dKS
-      · exact dKC⟩) fun s' ⟨hcs, hdata, hctr, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, hdata, hctr⟩
+      · exact dKC⟩) fun s' ⟨hcs, hdata, hctr, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_, hctr⟩
+  swap
+  · rw [cipher_eq] at hdata; exact hdata
   refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
