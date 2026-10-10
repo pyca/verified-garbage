@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Sm4.X86.Ecb
+import VerifiedGarbage.Proof.Sm4.X86.Lit
 import VerifiedGarbage.Proof.Sm4.Scratch
 import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
@@ -219,8 +220,8 @@ theorem ecb_framed (dir : Dir) :
       (Spec.Sm4.ecbContract X86.abi (specDirX86 dir) 1452) :=
   X86.Verified.stackScratchWiped (sig := Spec.Sm4.ecbSig) (nm := "scratch") (e := .u64)
     (n := 179) (post := Spec.Sm4.ecbPost (specDirX86 dir) X86.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1452) (ecb_verified dir) (by decide) (by cases dir <;> decide +kernel)
-    (by cases dir <;> decide +kernel) (by decide) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (bytes := 1452) (ecb_verified dir) (by decide) (by cases dir <;> lit_decide)
+    (by cases dir <;> lit_decide) (by decide) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Sm4.ecbPost_local _ _) (Proof.Sm4.ecbPostOut_local _ _) (ecbFrameSat_pre _)
 
 end VG.Proof.Sm4.X86
