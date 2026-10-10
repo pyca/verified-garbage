@@ -58,8 +58,8 @@ def body : Prog isa :=
     (.block [.ldr .r0 .r4 48, .dp .add .r0 .r0 (.imm 1), .str .r0 .r4 48, .cmp .r6 (.imm 0)]))))))
 
 def xor : Prog isa :=
-  .seq (.block (save ++ [.mov .r4 (.reg .r0), .mov .r5 (.reg .r1), .mov .r6 (.reg .r2),
-    .mov .r1 (.reg .r3), .cmp .r6 (.imm 0)]))
+  .seq (.block (save ++ ([.mov .r4 (.reg .r0), .mov .r5 (.reg .r1), .mov .r6 (.reg .r2),
+    .mov .r1 (.reg .r3), .cmp .r6 (.imm 0)] : List Instr)))
   (.seq (.ite .eq (.block []) (.loop body .ne))
     (.block (.mov .r0 (.reg .r4) :: restore)))
 

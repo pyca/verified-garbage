@@ -59,12 +59,12 @@ def body : Prog isa :=
 that the constant-time analysis knows it is public), the IV, the high word of
 the counter (0), and `last` tested. -/
 def setup : List Instr :=
-  [.mov32 .r8 (.reg .r8)] ++
+  ([.mov32 .r8 (.reg .r8)] : List Instr) ++
     Avx2.quad .xmm11 Spec.Blake2.b.IV[0] Spec.Blake2.b.IV[1] Spec.Blake2.b.IV[2]
       Spec.Blake2.b.IV[3] ++
     Avx2.quad .xmm12 Spec.Blake2.b.IV[4] Spec.Blake2.b.IV[5] Spec.Blake2.b.IV[6]
       Spec.Blake2.b.IV[7] ++
-    [.mov32 .rax (.imm 0), .alu .test .r8 (.reg .r8)]
+    ([.mov32 .rax (.imm 0), .alu .test .r8 (.reg .r8)] : List Instr)
 
 def compress : Prog isa :=
   .seq (.block setup) (.seq Avx2.flag

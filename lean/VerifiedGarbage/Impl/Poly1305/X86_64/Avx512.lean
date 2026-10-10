@@ -101,8 +101,8 @@ def split : List Instr := [
 /-- The eight blocks at `rsi` into `d` (block `π k` in quadword `k`), with
 the pad bit (from `r9`), added to `H`. -/
 def addGroup : List Instr :=
-  [.vmovdqu32Load (dreg 2) (at_ .rsi 0), .vmovdqu32Load (dreg 3) (at_ .rsi 64),
-   z .vpunpcklqdq (dreg 0) (dreg 2) (dreg 3), z .vpunpckhqdq (dreg 1) (dreg 2) (dreg 3)] ++ split ++
+  ([.vmovdqu32Load (dreg 2) (at_ .rsi 0), .vmovdqu32Load (dreg 3) (at_ .rsi 64),
+   z .vpunpcklqdq (dreg 0) (dreg 2) (dreg 3), z .vpunpckhqdq (dreg 1) (dreg 2) (dreg 3)] : List Instr) ++ split ++
   bcast tP .r9 ++ [z .vporq (dreg 4) (dreg 4) tP] ++
   (List.range 5).map fun i => z .vpaddq (hreg i) (hreg i) (dreg i)
 
@@ -145,7 +145,7 @@ def spread : List Instr :=
      shuf (hreg i) (hreg i) (yreg i) 0x88]) ++
   bcast tP .rax ++
   (List.range 5).flatMap fun i =>
-    [.zop (.vpbroadcastq (yreg i) (hreg i)), z .vpunpcklqdq (yreg i) (yreg i) tP] ++
+    ([.zop (.vpbroadcastq (yreg i) (hreg i)), z .vpunpcklqdq (yreg i) (yreg i) tP] : List Instr) ++
       (if i = 0 then [z .vpandnq tP tP tP] else [])
 
 /-- With `H = r^(8 - π k)` in quadword `k`: `Y` with `r⁸` (quadword 0 of
@@ -163,8 +163,8 @@ def powers : List Instr :=
 elsewhere: its words in `r10`, `r11` and `rax` (`Avx2.loadHw`), then limb 4
 is `(h₁ >> 40) | (h₂ << 24)`. -/
 def loadH : List Instr :=
-  [.vop (.vmovq (dreg 0) .r10), .vop (.vmovq (dreg 1) .r11)] ++ split ++
-  [.vop (.vmovq tP .rax), sll tP tP 24, z .vporq (dreg 4) (dreg 4) tP] ++
+  ([.vop (.vmovq (dreg 0) .r10), .vop (.vmovq (dreg 1) .r11)] : List Instr) ++ split ++
+  ([.vop (.vmovq tP .rax), sll tP tP 24, z .vporq (dreg 4) (dreg 4) tP] : List Instr) ++
   (List.range 5).map fun i => mov (hreg i) (dreg i)
 
 /-! ## The multipliers in memory
@@ -196,7 +196,7 @@ all but the first doubleword of the one before. -/
 def storeY : List Instr :=
   fiveY ++ (List.range 5).map (fun i => .vmovdquStore .l128 (mR i) (yreg i)) ++
     (List.range 4).map (fun k => .vmovdquStore .l128 (mS (k + 1)) (dreg k)) ++
-    [.store mMask .r8, .store mPad .r9]
+    ([.store mMask .r8, .store mPad .r9] : List Instr)
 
 /-- `d_j = h₀ r_j + Σ_(i < j) h_(i+1) r_(j-i-1) + Σ_(i > j) h_i (5 r_(5+j-i))`,
 the multipliers from memory. -/
@@ -223,14 +223,14 @@ def mulM : List Instr :=
 
 /-- `addGroup`, with the pad bit from memory. -/
 def addGroupM : List Instr :=
-  [.vmovdqu32Load (dreg 2) (at_ .rsi 0), .vmovdqu32Load (dreg 3) (at_ .rsi 64),
-   z .vpunpcklqdq (dreg 0) (dreg 2) (dreg 3), z .vpunpckhqdq (dreg 1) (dreg 2) (dreg 3)] ++ split ++
+  ([.vmovdqu32Load (dreg 2) (at_ .rsi 0), .vmovdqu32Load (dreg 3) (at_ .rsi 64),
+   z .vpunpcklqdq (dreg 0) (dreg 2) (dreg 3), z .vpunpckhqdq (dreg 1) (dreg 2) (dreg 3)] : List Instr) ++ split ++
   [zb .vporq (dreg 4) (dreg 4) mPad] ++
   (List.range 5).map fun i => z .vpaddq (hreg i) (hreg i) (dreg i)
 
 /-- One group of eight blocks, multiplied by `r⁸`. -/
 def groupBody : Prog isa :=
-  .block (addGroupM ++ mulM ++ [.alu .add .rsi (.imm 128), .alu .sub .rcx (.imm 1)])
+  .block (addGroupM ++ mulM ++ ([.alu .add .rsi (.imm 128), .alu .sub .rcx (.imm 1)] : List Instr))
 
 /-- The last group, multiplied quadword by quadword by the high doublewords of `Y`. -/
 def last : List Instr :=
@@ -249,11 +249,11 @@ def sumLanes : List Instr :=
 `rdx = n mod 8`. The groups before the last are counted down in `rcx`. -/
 def body : Prog isa :=
   .seq (.block (Avx2.consts ++ Avx2.mxcsrIn ++ powers ++ Avx2.loadHw ++ loadH ++ storeY ++
-    [.mov .rcx (.reg .rdx), .shift .shr .rcx 3, .alu .sub .rcx (.imm 1)]))
+    ([.mov .rcx (.reg .rdx), .shift .shr .rcx 3, .alu .sub .rcx (.imm 1)] : List Instr)))
   (.seq (.loop groupBody .ne)
     (.block (Avx2.consts2 ++ last ++ sumLanes ++ Avx2.fullCarry ++ Avx2.reduce ++ Avx2.mxcsrOut ++
       Avx2.storeH ++
-      [.vop .vzeroupper, .alu .add .rsi (.imm 128), .alu .and .rdx (.imm 7)])))
+      ([.vop .vzeroupper, .alu .add .rsi (.imm 128), .alu .and .rdx (.imm 7)] : List Instr))))
 
 def scalar : Prog isa := .call "vg_poly1305_blocks" blocks
 def avx2 : Prog isa := .call "vg_poly1305_blocks_avx2" Avx2.blocksAvx2

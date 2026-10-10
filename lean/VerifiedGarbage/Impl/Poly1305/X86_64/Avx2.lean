@@ -122,16 +122,16 @@ def split : List Instr := [
 /-- The four blocks at `rsi` into `d` (block `k` in lane `k`), with the pad
 bit (from `r9`), added to `H`. -/
 def addGroup : List Instr :=
-  [.vmovdquLoad .l256 (dreg 2) (at_ .rsi 0), .vmovdquLoad .l256 (dreg 3) (at_ .rsi 32),
+  ([.vmovdquLoad .l256 (dreg 2) (at_ .rsi 0), .vmovdquLoad .l256 (dreg 3) (at_ .rsi 32),
    v .vpunpcklqdq (dreg 0) (dreg 2) (dreg 3), v .vpunpckhqdq (dreg 1) (dreg 2) (dreg 3),
-   .vop (.vpermq (dreg 0) (dreg 0) 0xd8), .vop (.vpermq (dreg 1) (dreg 1) 0xd8)] ++ split ++
+   .vop (.vpermq (dreg 0) (dreg 0) 0xd8), .vop (.vpermq (dreg 1) (dreg 1) 0xd8)] : List Instr) ++ split ++
   bcast tP .r9 ++ [v .vpor (dreg 4) (dreg 4) tP] ++
   (List.range 5).map fun i => v .vpaddq (hreg i) (hreg i) (dreg i)
 
 /-- `r` (clamped, from the key) in every lane of `H`. -/
-def loadR : List Instr := [
+def loadR : List Instr := ([
   .movImm64 .rax 0x0ffffffc0fffffff, .mov .r10 (.mem (at_ .rdi 24)), .alu .and .r10 (.reg .rax),
-  .movImm64 .rax 0x0ffffffc0ffffffc, .mov .r11 (.mem (at_ .rdi 32)), .alu .and .r11 (.reg .rax)] ++
+  .movImm64 .rax 0x0ffffffc0ffffffc, .mov .r11 (.mem (at_ .rdi 32)), .alu .and .r11 (.reg .rax)] : List Instr) ++
   bcast (dreg 0) .r10 ++ bcast (dreg 1) .r11 ++ split ++
   (List.range 5).map fun i => .vop (.vmovdqa .l256 (hreg i) (dreg i))
 
@@ -144,7 +144,7 @@ def initY : List Instr :=
 def blendY (sel : BitVec 8) (lo : Bool) : List Instr :=
   (List.range 5).flatMap fun i =>
     [sll tP (hreg i) 32] ++ (if lo then [v .vpor tP tP (hreg i)] else []) ++
-    [.vop (.vpblendd .l256 (yreg i) (yreg i) tP sel)]
+    ([.vop (.vpblendd .l256 (yreg i) (yreg i) tP sel)] : List Instr)
 
 /-- The accumulator `h` (from the state) in lane 0 of `H`, zeros elsewhere:
 its words into `r10`, `r11` and `rax`, then limb 4 is `(h₁ >> 40) | (h₂ << 24)`. -/
@@ -152,7 +152,7 @@ def loadHw : List Instr :=
   [.mov .r10 (.mem (at_ .rdi 0)), .mov .r11 (.mem (at_ .rdi 8)), .mov .rax (.mem (at_ .rdi 16))]
 def loadH : List Instr :=
   bcastLo (dreg 0) .r10 ++ bcastLo (dreg 1) .r11 ++ split ++
-  [.vop (.vmovq tP .rax), sll tP tP 24, v .vpor (dreg 4) (dreg 4) tP] ++
+  ([.vop (.vmovq tP .rax), sll tP tP 24, v .vpor (dreg 4) (dreg 4) tP] : List Instr) ++
   (List.range 5).map fun i => .vop (.vmovdqa .l256 (hreg i) (dreg i))
 
 /-- The mask and the pad bit, in `r8` and `r9`. -/
@@ -174,7 +174,7 @@ def powers : List Instr :=
 
 /-- One group of four blocks, multiplied by `r⁴`. -/
 def groupBody : Prog isa :=
-  .block (addGroup ++ mul ++ [.alu .add .rsi (.imm 64), .alu .sub .rcx (.imm 1)])
+  .block (addGroup ++ mul ++ ([.alu .add .rsi (.imm 64), .alu .sub .rcx (.imm 1)] : List Instr))
 
 /-- The last group, multiplied lane by lane by the high doublewords of `Y`. -/
 def last : List Instr :=
@@ -225,10 +225,10 @@ def storeH : List Instr := [
 `rdx = n mod 4`. The groups before the last are counted down in `rcx`. -/
 def body : Prog isa :=
   .seq (.block (consts ++ mxcsrIn ++ powers ++ loadHw ++ loadH ++
-    [.mov .rcx (.reg .rdx), .shift .shr .rcx 2, .alu .sub .rcx (.imm 1)]))
+    ([.mov .rcx (.reg .rdx), .shift .shr .rcx 2, .alu .sub .rcx (.imm 1)] : List Instr)))
   (.seq (.loop groupBody .ne)
     (.block (consts2 ++ last ++ sumLanes ++ fullCarry ++ reduce ++ mxcsrOut ++ storeH ++
-      [.vop .vzeroupper, .alu .add .rsi (.imm 64), .alu .and .rdx (.imm 3)])))
+      ([.vop .vzeroupper, .alu .add .rsi (.imm 64), .alu .and .rdx (.imm 3)] : List Instr))))
 
 def scalar : Prog isa := .call "vg_poly1305_blocks" blocks
 

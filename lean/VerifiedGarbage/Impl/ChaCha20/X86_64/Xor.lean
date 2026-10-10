@@ -43,8 +43,8 @@ def body : Prog isa :=
       .store32 (at_ .rbx 48) .rax, .alu .add .rbp (.reg .rdx), .alu .sub .r12 (.reg .rdx)])))))
 
 def xor : Prog isa :=
-  .seq (.block (save ++ [.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx),
-    .mov .rsi (.reg .rcx), .alu .test .r12 (.reg .r12)]))
+  .seq (.block (save ++ ([.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx),
+    .mov .rsi (.reg .rcx), .alu .test .r12 (.reg .r12)] : List Instr)))
   (.seq (.ite .e (.block []) (.loop body .ne))
     (.block restore))
 

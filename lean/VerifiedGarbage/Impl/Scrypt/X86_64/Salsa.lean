@@ -41,7 +41,7 @@ def src (k : Nat) : Src := if k < 12 then .reg (wreg k) else .mem (at_ .rsi (slo
 
 /-- `x[i] ^= R(x[j] + x[k], n)`. -/
 def line (i j k n : Nat) : List Instr :=
-  [.mov32 .rax (src j), .alu32 .add .rax (src k), .shift32 .ror .rax (32 - n)] ++
+  ([.mov32 .rax (src j), .alu32 .add .rax (src k), .shift32 .ror .rax (32 - n)] : List Instr) ++
   if i < 12 then [.alu32 .xor (wreg i) (.reg .rax)]
   else [.alu32 .xor .rax (.mem (at_ .rsi (slotOff i))), .store32 (at_ .rsi (slotOff i)) .rax]
 

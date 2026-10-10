@@ -76,7 +76,7 @@ def restore : List Instr := saved.map fun (r, d) => .ldr r .r1 d
 
 /-- Copy word `k` of the input state to `buf` (words 9–11 also to their slots). -/
 def copyWord (k : Nat) : List Instr :=
-  [.ldr .r2 .r0 (4 * k), .str .r2 .r1 (inOff k)] ++
+  ([.ldr .r2 .r0 (4 * k), .str .r2 .r1 (inOff k)] : List Instr) ++
   if 9 ≤ k ∧ k ≤ 11 then [.str .r2 .r1 (slotOff k)] else []
 
 def copy : List Instr := (List.range 16).flatMap copyWord

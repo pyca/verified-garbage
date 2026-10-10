@@ -38,26 +38,26 @@ open VG.Impl.Poly1305.AArch64 (const64)
 /-- The counter set to 1, the stream's arguments set to the data (as in
 `cryptWith`), and `x5 = 1` if there are fewer than 512 bytes. -/
 def cryptSetup : List Instr :=
-  [.movz .w .x9 1 0, .str .w .x9 .x21 112, .addImm .x .x0 .x21 64, mov .x1 .x22,
-    mov .x2 .x23, .addImm .x .x3 .x21 128] ++ VG.Impl.ChaCha20.AArch64.Mixed8.check
+  ([.movz .w .x9 1 0, .str .w .x9 .x21 112, .addImm .x .x0 .x21 64, mov .x1 .x22,
+    mov .x2 .x23, .addImm .x .x3 .x21 128] : List Instr) ++ VG.Impl.ChaCha20.AArch64.Mixed8.check
 
 /-- `x27` and `x28` saved, the clamped key stored at `ctx[288, 304)`, and the
 accumulator loaded into `x21`–`x23` (`x21`, the base, last). -/
 def polyIn : List Instr :=
-  [.str .x .x27 .x21 32, .str .x .x28 .x21 40] ++
+  ([.str .x .x27 .x21 32, .str .x .x28 .x21 40] : List Instr) ++
   const64 .x24 0x0ffffffc0fffffff ++
-  [.ldr .x .x25 .x21 472, .logic .and .x .x25 .x25 .x24, .str .x .x25 .x21 288] ++
+  ([.ldr .x .x25 .x21 472, .logic .and .x .x25 .x25 .x24, .str .x .x25 .x21 288] : List Instr) ++
   const64 .x24 0x0ffffffc0ffffffc ++
-  [.ldr .x .x25 .x21 480, .logic .and .x .x25 .x25 .x24, .str .x .x25 .x21 296,
-   .ldr .x .x22 .x21 456, .ldr .x .x23 .x21 464, .ldr .x .x21 .x21 448]
+  ([.ldr .x .x25 .x21 480, .logic .and .x .x25 .x25 .x24, .str .x .x25 .x21 296,
+   .ldr .x .x22 .x21 456, .ldr .x .x23 .x21 464, .ldr .x .x21 .x21 448] : List Instr)
 
 /-- The accumulator reduced (`Poly1305.AArch64.Radix64.reduce`) and stored,
 `x21`, `x27` and `x28` restored, and in `x22`, `x23` the data not yet
 absorbed. -/
 def polyOut (enc : Bool) : List Instr :=
   [mov .x4 .x21, mov .x5 .x22, mov .x6 .x23] ++ VG.Impl.Poly1305.AArch64.Radix64.reduce ++
-  [.subImm .x .x21 .x0 64, .str .x .x4 .x21 448, .str .x .x5 .x21 456, .str .x .x6 .x21 464,
-   .ldr .x .x27 .x21 32, .ldr .x .x28 .x21 40] ++
+  ([.subImm .x .x21 .x0 64, .str .x .x4 .x21 448, .str .x .x5 .x21 456, .str .x .x6 .x21 464,
+   .ldr .x .x27 .x21 32, .ldr .x .x28 .x21 40] : List Instr) ++
   (if enc then [.subImm .x .x22 .x1 512, .addImm .x .x23 .x2 512] else [mov .x22 .x1, mov .x23 .x2])
 
 /-- The whole chunks. -/

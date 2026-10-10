@@ -159,10 +159,10 @@ def xor32 (x : XReg) (off : Nat) : List Instr :=
 /-- The two blocks of the set `a, b, c, d`, gathered through `ymm10` and
 XORed into the data at `rsi + off`. -/
 def xorSet (a b c d : XReg) (off : Nat) : List Instr :=
-  [.vop (.vperm2i128 .xmm10 a b 0x20)] ++ xor32 .xmm10 off ++
-  [.vop (.vperm2i128 .xmm10 c d 0x20)] ++ xor32 .xmm10 (off + 32) ++
-  [.vop (.vperm2i128 .xmm10 a b 0x31)] ++ xor32 .xmm10 (off + 64) ++
-  [.vop (.vperm2i128 .xmm10 c d 0x31)] ++ xor32 .xmm10 (off + 96)
+  ([.vop (.vperm2i128 .xmm10 a b 0x20)] : List Instr) ++ xor32 .xmm10 off ++
+  ([.vop (.vperm2i128 .xmm10 c d 0x20)] : List Instr) ++ xor32 .xmm10 (off + 32) ++
+  ([.vop (.vperm2i128 .xmm10 a b 0x31)] : List Instr) ++ xor32 .xmm10 (off + 64) ++
+  ([.vop (.vperm2i128 .xmm10 c d 0x31)] : List Instr) ++ xor32 .xmm10 (off + 96)
 
 /-- The two blocks of the set `a, b, c, d`, gathered through `ymm10` and
 stored to `buf + off`. -/
@@ -182,8 +182,8 @@ counter, the data and the length advanced. -/
 def full : Prog isa :=
   .seq (.block setup) (.seq (rounds2 10) (.block (addIn ++
     xorSet .xmm0 .xmm1 .xmm2 .xmm3 0 ++ xorSet .xmm4 .xmm5 .xmm6 .xmm7 128 ++
-    [.mov32 .rax (.mem (at_ .rdi 48)), .alu32 .add .rax (.imm 4), .store32 (at_ .rdi 48) .rax,
-     .alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 256)])))
+    ([.mov32 .rax (.mem (at_ .rdi 48)), .alu32 .add .rax (.imm 4), .store32 (at_ .rdi 48) .rax,
+     .alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 256)] : List Instr))))
 
 /-- At most 256 bytes: four blocks into `buf`, and the data from there. -/
 def last : Prog isa :=

@@ -126,16 +126,16 @@ def args : List Instr := [.mov .r0 (.reg .r4), .mov .r12 (.imm 0), .mov .lr (.re
 first call: the buffer, with `n` = 1 if it is full (i.e. not empty) and more
 data follows, and 0 otherwise, and the byte count as its counter. -/
 def updatePro : Prog isa :=
-  .seq (.block ([.ldrSp .r12 8] ++ save .r12 ++ [.mov .r4 (.reg .r0), .mov .r5 (.reg .r12), .ldrSp .r6 0,
-      .ldrSp .r7 4, .mov .r9 (.reg .r2), .mov .r10 (.reg .r3)]))
+  .seq (.block (([.ldrSp .r12 8] : List Instr) ++ save .r12 ++ ([.mov .r4 (.reg .r0), .mov .r5 (.reg .r12), .ldrSp .r6 0,
+      .ldrSp .r7 4, .mov .r9 (.reg .r2), .mov .r10 (.reg .r3)] : List Instr)))
   (.seq (bufLen (w := w))
   (.seq (.block [.cmp .r8 (.imm 0)])
   (.seq (.ite .eq (.block []) (fill (w := w)))
   (.seq (.block [.mov .r2 (.imm 0), .cmp .r7 (.imm 0)])
   (.seq (.ite .eq (.block []) (.seq (.block [.cmp .r8 (.imm 0)])
       (.ite .eq (.block []) (.block [.mov .r2 (.imm 1)]))))
-    (.block (args ++ [.dp .add .r1 .r4 (.imm (BitVec.ofNat 32 (N w))), .mov .r3 (.reg .r9),
-      .mov .r11 (.reg .r10)])))))))
+    (.block (args ++ ([.dp .add .r1 .r4 (.imm (BitVec.ofNat 32 (N w))), .mov .r3 (.reg .r9),
+      .mov .r11 (.reg .r10)] : List Instr))))))))
 
 /-- If more data follows, the buffer is empty now; set up the second call:
 the `(r7 - 1) / B` whole blocks of `data` but the last, whose first counter
@@ -146,7 +146,7 @@ def updateMid : Prog isa :=
   (.seq (.ite .eq (.block [.mov .r2 (.imm 0), .mov .r1 (.reg .r4)])
       (.block [.mov .r8 (.imm 0), .dp .sub .r2 .r7 (.imm 1), .mov .r2 (.shifted .r2 .lsr (lbb w)),
         .mov .r1 (.reg .r6)]))
-    (.block (args ++ [.adds .r3 .r9 (.imm (BitVec.ofNat 32 (B w))), .adc .r11 .r10 (.imm 0)])))
+    (.block (args ++ ([.adds .r3 .r9 (.imm (BitVec.ofNat 32 (B w))), .adc .r11 .r10 (.imm 0)] : List Instr))))
 
 /-- If data is left, skip the `r7 - ((r7 - 1) mod B + 1)` bytes compressed,
 and copy the rest (1 to `B` bytes) to the (empty) buffer; then restore the
@@ -175,8 +175,8 @@ def zeroLoop : Prog isa :=
 the call: the buffer, as the last block, with the byte count as its
 counter. -/
 def finalizePro : Prog isa :=
-  .seq (.block ([.ldrSp .r12 4] ++ save .r12 ++ [.mov .r4 (.reg .r0), .mov .r5 (.reg .r12), .ldrSp .r6 0,
-      .mov .r9 (.reg .r2), .mov .r10 (.reg .r3)]))
+  .seq (.block (([.ldrSp .r12 4] : List Instr) ++ save .r12 ++ ([.mov .r4 (.reg .r0), .mov .r5 (.reg .r12), .ldrSp .r6 0,
+      .mov .r9 (.reg .r2), .mov .r10 (.reg .r3)] : List Instr)))
   (.seq (bufLen (w := w))
   (.seq (.block [.mov .r12 (.imm 0), .mov .r11 (.imm (BitVec.ofNat 32 (B w))), .subs .r11 .r11 (.reg .r8)])
   (.seq (.ite .eq (.block []) (zeroLoop (w := w)))
@@ -211,19 +211,19 @@ def movImm (v : BitVec 32) : List Instr :=
 /-- `h := IV`, with the parameter block `0x0101kknn` XORed into its first
 word (`kk` = `keylen` in `r3`, `nn` = `outlen` in `r1`). -/
 def initState : List Instr :=
-  (List.range (N w / 4 - 1)).flatMap (fun j => movImm (ivWord P (j + 1)) ++ [.str .r12 .r0 (4 * (j + 1))]) ++
+  (List.range (N w / 4 - 1)).flatMap (fun j => movImm (ivWord P (j + 1)) ++ ([.str .r12 .r0 (4 * (j + 1))] : List Instr)) ++
   movImm (ivWord P 0 ^^^ 0x01010000) ++
-  [.dp .eor .r12 .r12 (.shifted .r3 .lsl 8), .dp .eor .r12 .r12 (.reg .r1), .str .r12 .r0 0]
+  ([.dp .eor .r12 .r12 (.shifted .r3 .lsl 8), .dp .eor .r12 .r12 (.reg .r1), .str .r12 .r0 0] : List Instr)
 
 /-- Zero the buffer and copy the `r3 ≥ 1` bytes of the key (at `r2`) to it. -/
 def keyBlock : Prog isa :=
   .seq (.block (.mov .r12 (.imm 0) :: (List.range (B w / 4)).map (fun j => .str .r12 .r0 (N w + 4 * j)) ++
-      [.dp .add .r1 .r0 (.imm (BitVec.ofNat 32 (N w)))]))
+      ([.dp .add .r1 .r0 (.imm (BitVec.ofNat 32 (N w)))] : List Instr)))
     (.loop (.block [.ldrb .r12 .r2 0, .strb .r12 .r1 0, .dp .add .r2 .r2 (.imm 1), .dp .add .r1 .r1 (.imm 1),
       .subs .r3 .r3 (.imm 1)]) .ne)
 
 def init : Prog isa :=
-  .seq (.block (initState P ++ [.cmp .r3 (.imm 0)])) (.ite .eq (.block []) (keyBlock (w := w)))
+  .seq (.block (initState P ++ ([.cmp .r3 (.imm 0)] : List Instr))) (.ite .eq (.block []) (keyBlock (w := w)))
 
 end
 

@@ -155,16 +155,16 @@ def pair (d t : XReg) (lo hi : BitVec 64) : List Instr :=
 
 /-- `d := (a, b, c, e)`, through `ymm10` and `ymm13`. -/
 def quad (d : XReg) (a b c e : BitVec 64) : List Instr :=
-  pair d .xmm13 a b ++ pair .xmm10 .xmm13 c e ++ [.vop (.vinserti128 d d .xmm10 1)]
+  pair d .xmm13 a b ++ pair .xmm10 .xmm13 c e ++ ([.vop (.vinserti128 d d .xmm10 1)] : List Instr)
 
 /-- `last` as a 32-bit value (whose upper half is unspecified; first, so
 that the constant-time analysis knows it is public), the masks and the IV,
 the high word of the counter (0), and `last` tested. -/
 def setup : List Instr :=
-  [.mov32 .r8 (.reg .r8)] ++ Argon2.X86_64.Avx2.masks ++
+  ([.mov32 .r8 (.reg .r8)] : List Instr) ++ Argon2.X86_64.Avx2.masks ++
     quad .xmm11 Spec.Blake2.b.IV[0] Spec.Blake2.b.IV[1] Spec.Blake2.b.IV[2] Spec.Blake2.b.IV[3] ++
     quad .xmm12 Spec.Blake2.b.IV[4] Spec.Blake2.b.IV[5] Spec.Blake2.b.IV[6] Spec.Blake2.b.IV[7] ++
-    [.mov32 .rax (.imm 0), .alu .test .r8 (.reg .r8)]
+    ([.mov32 .rax (.imm 0), .alu .test .r8 (.reg .r8)] : List Instr)
 
 /-- The final block flag in `r8`: all one bits if `last ≠ 0`; then test `n`. -/
 def flag : Prog isa :=

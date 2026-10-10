@@ -57,15 +57,15 @@ def timesR (m : BitVec 32) : List Instr := [.mov .eax (.mem (at_ .esp 8)), .mov 
 `edi = y + 64 r`, `ebp = b + 128 r - 64` (`B[2r - 1]`). -/
 def bmPrologue : List Instr :=
   .mov .eax (.mem (at_ .esp 20)) :: bmSaved.map (fun (r, d) => .store (at_ .eax d) r) ++
-    [.mov .ebx (.mem (at_ .esp 4)), .mov .esi (.mem (at_ .esp 12))] ++ timesR 64 ++
-    [.mov .edi (.reg .esi), .alu .add .edi (.reg .eax), .mov .ebp (.reg .ebx), .alu .add .ebp (.reg .eax),
-     .alu .add .ebp (.reg .eax), .alu .sub .ebp (.imm 64)]
+    ([.mov .ebx (.mem (at_ .esp 4)), .mov .esi (.mem (at_ .esp 12))] : List Instr) ++ timesR 64 ++
+    ([.mov .edi (.reg .esi), .alu .add .edi (.reg .eax), .mov .ebp (.reg .ebx), .alu .add .ebp (.reg .eax),
+     .alu .add .ebp (.reg .eax), .alu .sub .ebp (.imm 64)] : List Instr)
 
 /-- The end of a pair: the pointers move on, and `esi` is compared with
 `y + 64 r`. -/
 def bmNext : List Instr :=
-  [.mov .ebp (.reg .edi), .alu .add .ebx (.imm 64), .alu .add .esi (.imm 64), .alu .add .edi (.imm 64)] ++
-    timesR 64 ++ [.mov .ecx (.mem (at_ .esp 12)), .alu .add .eax (.reg .ecx), .alu .cmp .esi (.reg .eax)]
+  ([.mov .ebp (.reg .edi), .alu .add .ebx (.imm 64), .alu .add .esi (.imm 64), .alu .add .edi (.imm 64)] : List Instr) ++
+    timesR 64 ++ ([.mov .ecx (.mem (at_ .esp 12)), .alu .add .eax (.reg .ecx), .alu .cmp .esi (.reg .eax)] : List Instr)
 
 /-- One pair: `Y[2k]` from `X` and `B[2k]`, then `Y[2k + 1]` from it and
 `B[2k + 1]`; then the pointers move on. -/

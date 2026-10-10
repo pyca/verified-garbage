@@ -121,20 +121,20 @@ def spread (row : Nat) (src : XReg) : List Instr :=
 increments added to word 12), words 8 and 9 in `ymm12, ymm13` and words 10
 and 11 in their slots; then the rotation mask into `ymm15`. -/
 def setup : List Instr :=
-  [.vbroadcasti128 .xmm12 (at_ .rdi 0)] ++ spread 0 .xmm12 ++
-  [.vbroadcasti128 .xmm12 (at_ .rdi 16)] ++ spread 1 .xmm12 ++
-  [.vbroadcasti128 .xmm12 (at_ .rdi 48)] ++ spread 3 .xmm12 ++
-  [.vmovdquLoad .l256 .xmm13 (at_ .rcx incOff), v .vpaddd .xmm8 .xmm8 .xmm13,
+  ([.vbroadcasti128 .xmm12 (at_ .rdi 0)] : List Instr) ++ spread 0 .xmm12 ++
+  ([.vbroadcasti128 .xmm12 (at_ .rdi 16)] : List Instr) ++ spread 1 .xmm12 ++
+  ([.vbroadcasti128 .xmm12 (at_ .rdi 48)] : List Instr) ++ spread 3 .xmm12 ++
+  ([.vmovdquLoad .l256 .xmm13 (at_ .rcx incOff), v .vpaddd .xmm8 .xmm8 .xmm13,
    .vbroadcasti128 .xmm14 (at_ .rdi 32),
    .vop (.vpshufd .l256 .xmm12 .xmm14 0x00), .vop (.vpshufd .l256 .xmm13 .xmm14 0x55),
    .vop (.vpshufd .l256 .xmm15 .xmm14 0xaa), .vmovdquStore .l256 (at_ .rcx (slotOff 10)) .xmm15,
    .vop (.vpshufd .l256 .xmm15 .xmm14 0xff), .vmovdquStore .l256 (at_ .rcx (slotOff 11)) .xmm15,
-   .vmovdquLoad .l256 .xmm15 (at_ .rcx rot16Off)]
+   .vmovdquLoad .l256 .xmm15 (at_ .rcx rot16Off)] : List Instr)
 
 /-- Add row `row` of the input state (broadcast into `ymm14`, each word
 spread into `ymm15`) to the registers `xs`. -/
 def addRow (row : Nat) (xs : List XReg) : List Instr :=
-  [.vbroadcasti128 .xmm14 (at_ .rdi (16 * row))] ++
+  ([.vbroadcasti128 .xmm14 (at_ .rdi (16 * row))] : List Instr) ++
   (List.range 4).flatMap fun i =>
     [.vop (.vpshufd .l256 .xmm15 .xmm14 (BitVec.ofNat 8 (0x55 * i))),
      v .vpaddd (xs.getD i .xmm0) (xs.getD i .xmm0) .xmm15]
@@ -159,25 +159,25 @@ def xor16 (x : XReg) (off : Nat) : List Instr :=
 def xorRow (row : Nat) (xs : List XReg) : List Instr :=
   (List.range 4).flatMap fun i =>
     xor16 (xs.getD i .xmm0) (64 * i + 16 * row) ++
-    [.vop (.vextracti128 .xmm13 (xs.getD i .xmm0) 1)] ++ xor16 .xmm13 (64 * (i + 4) + 16 * row)
+    ([.vop (.vextracti128 .xmm13 (xs.getD i .xmm0) 1)] : List Instr) ++ xor16 .xmm13 (64 * (i + 4) + 16 * row)
 
 /-- The rounds' result plus the input state, XORed into the next 512 bytes of
 data. Words 8 and 9 are first stored to their slots, and the third row is
 then loaded from the slots into `ymm0 … ymm3` (free once the first row is
 done). -/
 def finish : List Instr :=
-  [.vmovdquStore .l256 (at_ .rcx (slotOff 8)) .xmm12,
-   .vmovdquStore .l256 (at_ .rcx (slotOff 9)) .xmm13] ++
+  ([.vmovdquStore .l256 (at_ .rcx (slotOff 8)) .xmm12,
+   .vmovdquStore .l256 (at_ .rcx (slotOff 9)) .xmm13] : List Instr) ++
   addRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] ++ transpose .xmm0 .xmm1 .xmm2 .xmm3 ++
     xorRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] ++
   addRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] ++ transpose .xmm4 .xmm5 .xmm6 .xmm7 ++
     xorRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] ++
   addRow 3 [.xmm8, .xmm9, .xmm10, .xmm11] ++
-    [.vmovdquLoad .l256 .xmm15 (at_ .rcx incOff), v .vpaddd .xmm8 .xmm8 .xmm15] ++
+    ([.vmovdquLoad .l256 .xmm15 (at_ .rcx incOff), v .vpaddd .xmm8 .xmm8 .xmm15] : List Instr) ++
     transpose .xmm8 .xmm9 .xmm10 .xmm11 ++ xorRow 3 [.xmm8, .xmm9, .xmm10, .xmm11] ++
-  [.vmovdquLoad .l256 .xmm0 (at_ .rcx (slotOff 8)), .vmovdquLoad .l256 .xmm1 (at_ .rcx (slotOff 9)),
+  ([.vmovdquLoad .l256 .xmm0 (at_ .rcx (slotOff 8)), .vmovdquLoad .l256 .xmm1 (at_ .rcx (slotOff 9)),
    .vmovdquLoad .l256 .xmm2 (at_ .rcx (slotOff 10)),
-   .vmovdquLoad .l256 .xmm3 (at_ .rcx (slotOff 11))] ++
+   .vmovdquLoad .l256 .xmm3 (at_ .rcx (slotOff 11))] : List Instr) ++
   addRow 2 [.xmm0, .xmm1, .xmm2, .xmm3] ++ transpose .xmm0 .xmm1 .xmm2 .xmm3 ++
     xorRow 2 [.xmm0, .xmm1, .xmm2, .xmm3]
 
@@ -191,7 +191,7 @@ def next : List Instr :=
 def body : Prog isa := .seq (.block setup) (.seq (rounds 10) (.block (finish ++ next)))
 
 def xor : Prog isa :=
-  .seq (.block (Avx2Tail.consts ++ consts ++ [.alu .cmp .rdx (.imm 512)]))
+  .seq (.block (Avx2Tail.consts ++ consts ++ ([.alu .cmp .rdx (.imm 512)] : List Instr)))
   (.seq (.ite .b (.block []) (.loop body .ae)) Avx2Tail.tail)
 
 end VG.Impl.ChaCha20.X86_64.Avx2

@@ -153,13 +153,13 @@ def finish : List Instr :=
 of blocks (setting ZF when it hits 0), in their slots. BLAKE2b's counter is
 128 bits: the carry goes to its high word. -/
 def advance : List Instr :=
-  [.mov .rsi (.mem (at_ .r9 blOff)), .alu .add .rsi (.imm (BitVec.ofNat 32 (16 * ws w))),
+  ([.mov .rsi (.mem (at_ .r9 blOff)), .alu .add .rsi (.imm (BitVec.ofNat 32 (16 * ws w))),
     .store (at_ .r9 blOff) .rsi,
     .mov .rcx (.mem (at_ .r9 tloOff)), .alu .add .rcx (.imm (BitVec.ofNat 32 (16 * ws w))),
-    .store (at_ .r9 tloOff) .rcx] ++
+    .store (at_ .r9 tloOff) .rcx] : List Instr) ++
   (if w = 64 then [.mov .r8 (.mem (at_ .r9 thiOff)), .alu .adc .r8 (.imm 0),
     .store (at_ .r9 thiOff) .r8] else []) ++
-  [.mov .rdx (.mem (at_ .r9 nOff)), .alu .sub .rdx (.imm 1), .store (at_ .r9 nOff) .rdx]
+  ([.mov .rdx (.mem (at_ .r9 nOff)), .alu .sub .rdx (.imm 1), .store (at_ .r9 nOff) .rdx] : List Instr)
 
 def body : Prog isa :=
   .seq (.block (copy (w := w) ++ init P)) (.seq (rounds P P.r) (.block (spill (w := w) ++ finish (w := w) ++ advance (w := w))))
