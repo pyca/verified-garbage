@@ -59,22 +59,22 @@ def satWith (m : Mem) (rd wr : List Region) : State where
 
 /-- `compress(0x1000, 0x2000, 0, 0, 0, 0x3000)`. -/
 def compressSat : State :=
-  satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5009 then 0x20 else if a = 0x501D then 0x30 else 0)
+  satWith (fun a => bif Nat.beq a.toNat 0x5005 then 0x10 else bif Nat.beq a.toNat 0x5009 then 0x20 else bif Nat.beq a.toNat 0x501D then 0x30 else 0)
     [⟨0x2000, 0⟩, ⟨0x5004, 28⟩] [⟨0x1000, 32⟩, ⟨0x3000, 512⟩]
 
 /-- `init(0x1000, 1, 0x2000, 0)`. -/
 def initSat : State :=
-  satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5008 then 1 else if a = 0x500D then 0x20 else 0)
+  satWith (fun a => bif Nat.beq a.toNat 0x5005 then 0x10 else bif Nat.beq a.toNat 0x5008 then 1 else bif Nat.beq a.toNat 0x500D then 0x20 else 0)
     [⟨0x2000, 0⟩, ⟨0x5004, 16⟩] [⟨0x1000, 96⟩]
 
 /-- `update(0x1000, 0, 0x2000, 0, 0x3000)`. -/
 def updateSat : State :=
-  satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5011 then 0x20 else if a = 0x5019 then 0x30 else 0)
+  satWith (fun a => bif Nat.beq a.toNat 0x5005 then 0x10 else bif Nat.beq a.toNat 0x5011 then 0x20 else bif Nat.beq a.toNat 0x5019 then 0x30 else 0)
     [⟨0x2000, 0⟩, ⟨0x5004, 24⟩] [⟨0x1000, 96⟩, ⟨0x3000, 576⟩]
 
 /-- `finalize(0x1000, 0, 0x2000, 0x3000)`. -/
 def finalizeSat : State :=
-  satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5011 then 0x20 else if a = 0x5015 then 0x30 else 0)
+  satWith (fun a => bif Nat.beq a.toNat 0x5005 then 0x10 else bif Nat.beq a.toNat 0x5011 then 0x20 else bif Nat.beq a.toNat 0x5015 then 0x30 else 0)
     [⟨0x5004, 20⟩] [⟨0x1000, 96⟩, ⟨0x2000, 32⟩, ⟨0x3000, 576⟩]
 
 /-! ## The shared contracts -/
@@ -139,12 +139,12 @@ as an argument (`update_scratch`, `finalize_scratch`); `update` and
 
 /-- `update(0x1000, 0, 0x2000, 0)`. -/
 def updateFrameSat : State :=
-  satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5011 then 0x20 else 0)
+  satWith (fun a => bif Nat.beq a.toNat 0x5005 then 0x10 else bif Nat.beq a.toNat 0x5011 then 0x20 else 0)
     [⟨0x2000, 0⟩, ⟨0x5004, 20⟩] [⟨0x1000, 96⟩]
 
 /-- `finalize(0x1000, 0, 0x2000)`. -/
 def finalizeFrameSat : State :=
-  satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5011 then 0x20 else 0)
+  satWith (fun a => bif Nat.beq a.toNat 0x5005 then 0x10 else bif Nat.beq a.toNat 0x5011 then 0x20 else 0)
     [⟨0x5004, 16⟩] [⟨0x1000, 96⟩, ⟨0x2000, 32⟩]
 
 theorem update_framed : Verified X86.target

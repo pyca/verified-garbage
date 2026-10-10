@@ -302,8 +302,8 @@ def satState : State where
     | .x0 => 0x10000 | .x2 => 0x20000 | .x4 => 1 | .x5 => 0x30000 | .x6 => 1 | .x7 => 0x40000
     | _ => 0
   sp := 0x90000
-  mem a := if a = 0x90000 then 2 else if a = 0x9000A then 5 else if a = 0x90010 then 17
-    else if a = 0x9001A then 6 else if a = 0x90020 then 1 else 0
+  mem a := bif Nat.beq a.toNat 0x90000 then 2 else bif Nat.beq a.toNat 0x9000A then 5 else bif Nat.beq a.toNat 0x90010 then 17
+    else bif Nat.beq a.toNat 0x9001A then 6 else bif Nat.beq a.toNat 0x90020 then 1 else 0
   rd := [⟨0x10000, 0⟩, ⟨0x20000, 0⟩, ⟨0x90000, 40⟩]
   wr := [⟨0x30000, 128⟩, ⟨0x40000, 256⟩, ⟨0x50000, 2176⟩, ⟨0x60000, 1⟩]
 

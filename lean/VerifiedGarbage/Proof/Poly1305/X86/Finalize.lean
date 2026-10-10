@@ -600,7 +600,7 @@ theorem finalize_agree₀ {s₁ s₂ : State} (h₁ : Proof.Poly1305.finalizeX86
 
 /-- Memory holding the arguments `0x1000, 0, 0, 0x2000, 0x3000` at `0x4004`. -/
 def finalizeSatMem : Mem := fun a =>
-  if a = 0x4005 then 0x10 else if a = 0x4011 then 0x20 else if a = 0x4015 then 0x30 else 0
+  bif Nat.beq a.toNat 0x4005 then 0x10 else bif Nat.beq a.toNat 0x4011 then 0x20 else bif Nat.beq a.toNat 0x4015 then 0x30 else 0
 
 /-- A state satisfying the precondition. -/
 def finalizeSat : State where

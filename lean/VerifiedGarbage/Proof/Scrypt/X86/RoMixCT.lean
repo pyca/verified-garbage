@@ -620,8 +620,8 @@ theorem roMix_ct : ConstantTime isa Proof.Scrypt.roMixX86.pre Proof.Scrypt.roMix
 /-- Memory holding the arguments `0x1000, 1, 0x2000, 1, 0x3000, 3` at `0x5004`: `b` at
 `0x1000`, `v` at `0x2000` (`N = 1`) and the scratch space at `0x3000` (384 bytes). -/
 def satMem : Mem := fun a =>
-  if a = 0x5005 then 0x10 else if a = 0x5008 then 1 else if a = 0x500d then 0x20 else
-  if a = 0x5010 then 1 else if a = 0x5015 then 0x30 else if a = 0x5018 then 3 else 0
+  bif Nat.beq a.toNat 0x5005 then 0x10 else bif Nat.beq a.toNat 0x5008 then 1 else bif Nat.beq a.toNat 0x500d then 0x20 else
+  bif Nat.beq a.toNat 0x5010 then 1 else bif Nat.beq a.toNat 0x5015 then 0x30 else bif Nat.beq a.toNat 0x5018 then 3 else 0
 
 /-- A state satisfying the precondition. -/
 def sat : State where

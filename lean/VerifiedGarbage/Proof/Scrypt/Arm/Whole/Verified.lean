@@ -721,9 +721,9 @@ def satState : State where
   z := false
   c := false
   v := false
-  mem a := if a = 0x9000 then 1 else if a = 0x9005 then 0x30 else if a = 0x9008 then 1
-    else if a = 0x900D then 0x40 else if a = 0x9010 then 2 else if a = 0x9015 then 0x50
-    else if a = 0x9018 then 17 else if a = 0x901D then 0x60 else if a = 0x9020 then 1 else 0
+  mem a := bif Nat.beq a.toNat 0x9000 then 1 else bif Nat.beq a.toNat 0x9005 then 0x30 else bif Nat.beq a.toNat 0x9008 then 1
+    else bif Nat.beq a.toNat 0x900D then 0x40 else bif Nat.beq a.toNat 0x9010 then 2 else bif Nat.beq a.toNat 0x9015 then 0x50
+    else bif Nat.beq a.toNat 0x9018 then 17 else bif Nat.beq a.toNat 0x901D then 0x60 else bif Nat.beq a.toNat 0x9020 then 1 else 0
   rd := [⟨0x1000, 0⟩, ⟨0x2000, 0⟩, ⟨0x9000, 36⟩]
   wr := [⟨0x3000, 128⟩, ⟨0x4000, 256⟩, ⟨0x5000, 2176⟩, ⟨0x6000, 1⟩]
 

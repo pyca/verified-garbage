@@ -49,7 +49,7 @@ def updateSat (w : Nat) : State where
   z := false
   c := false
   v := false
-  mem a := if a = 0x5001 then 0x20 else if a = 0x5009 then 0x30 else 0
+  mem a := bif Nat.beq a.toNat 0x5001 then 0x20 else bif Nat.beq a.toNat 0x5009 then 0x30 else 0
   rd := [⟨0x2000, 0⟩, ⟨0x5000, 12⟩]
   wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x3000, 576⟩]
 
@@ -63,7 +63,7 @@ def finalizeSat (w : Nat) : State where
   z := false
   c := false
   v := false
-  mem a := if a = 0x5001 then 0x20 else if a = 0x5005 then 0x30 else 0
+  mem a := bif Nat.beq a.toNat 0x5001 then 0x20 else bif Nat.beq a.toNat 0x5005 then 0x30 else 0
   rd := [⟨0x5000, 8⟩]
   wr := [⟨0x1000, bufOff w + blockBytes w⟩, ⟨0x2000, bufOff w⟩, ⟨0x3000, 576⟩]
 

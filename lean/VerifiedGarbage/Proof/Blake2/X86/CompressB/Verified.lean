@@ -281,7 +281,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : (compressX86 Spec.Blake2.b).pre s�
 
 /-- Memory holding the arguments `0x1000, 0x2000, 0, 0, 0, 0, 0x3000` at `0x4004`. -/
 def satMem : Mem := fun a =>
-  if a = 0x4005 then 0x10 else if a = 0x4009 then 0x20 else if a = 0x401D then 0x30 else 0
+  bif Nat.beq a.toNat 0x4005 then 0x10 else bif Nat.beq a.toNat 0x4009 then 0x20 else bif Nat.beq a.toNat 0x401D then 0x30 else 0
 
 /-- A state satisfying the precondition (with no blocks). -/
 def satState : State where

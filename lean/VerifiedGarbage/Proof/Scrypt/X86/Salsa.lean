@@ -474,7 +474,7 @@ theorem salsa_ct : ConstantTime isa Proof.Scrypt.salsaX86.pre Proof.Scrypt.salsa
     (by taint_decide)
 
 /-- Memory holding the arguments `0x1000, 0x2000` at `0x4004`. -/
-def satMem : Mem := fun a => if a = 0x4005 then 0x10 else if a = 0x4009 then 0x20 else 0
+def satMem : Mem := fun a => bif Nat.beq a.toNat 0x4005 then 0x10 else bif Nat.beq a.toNat 0x4009 then 0x20 else 0
 
 /-- A state satisfying the precondition. -/
 def satState : State where

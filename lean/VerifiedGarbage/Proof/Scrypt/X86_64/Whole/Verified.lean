@@ -646,9 +646,9 @@ def satState : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x90008 then 1 else if a = 0x90012 then 4 else if a = 0x90018 then 2
-    else if a = 0x90022 then 5 else if a = 0x90028 then 17 else if a = 0x90032 then 6
-    else if a = 0x90038 then 1 else 0
+  mem a := bif Nat.beq a.toNat 0x90008 then 1 else bif Nat.beq a.toNat 0x90012 then 4 else bif Nat.beq a.toNat 0x90018 then 2
+    else bif Nat.beq a.toNat 0x90022 then 5 else bif Nat.beq a.toNat 0x90028 then 17 else bif Nat.beq a.toNat 0x90032 then 6
+    else bif Nat.beq a.toNat 0x90038 then 1 else 0
   rd := [⟨0x10000, 0⟩, ⟨0x20000, 0⟩, ⟨0x90008, 56⟩]
   wr := [⟨0x30000, 128⟩, ⟨0x40000, 256⟩, ⟨0x50000, 2176⟩, ⟨0x60000, 1⟩]
 

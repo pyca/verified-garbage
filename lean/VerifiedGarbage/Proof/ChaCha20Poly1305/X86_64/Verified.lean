@@ -32,7 +32,7 @@ def sealSat : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x8009 then 0x30 else 0
+  mem a := bif Nat.beq a.toNat 0x8009 then 0x30 else 0
   rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x8008, 16⟩]
   wr := [⟨0x2100, 0⟩, ⟨0x3000, 16⟩, ⟨0, 1696⟩]
 
@@ -44,7 +44,7 @@ def openSat : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x8009 then 0x30 else 0
+  mem a := bif Nat.beq a.toNat 0x8009 then 0x30 else 0
   rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x3000, 16⟩, ⟨0x8008, 16⟩]
   wr := [⟨0x2100, 0⟩, ⟨0, 1696⟩]
 

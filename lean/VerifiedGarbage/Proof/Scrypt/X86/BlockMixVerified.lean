@@ -330,8 +330,8 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Scrypt.blockMixX86.pre s₁)
 
 /-- Memory holding the arguments `0x1000, 1, 0x2000, 1, 0x3000` at `0x5004`. -/
 def satMem : Mem := fun a =>
-  if a = 0x5005 then 0x10 else if a = 0x5008 then 1 else if a = 0x500d then 0x20 else
-  if a = 0x5010 then 1 else if a = 0x5015 then 0x30 else 0
+  bif Nat.beq a.toNat 0x5005 then 0x10 else bif Nat.beq a.toNat 0x5008 then 1 else bif Nat.beq a.toNat 0x500d then 0x20 else
+  bif Nat.beq a.toNat 0x5010 then 1 else bif Nat.beq a.toNat 0x5015 then 0x30 else 0
 
 /-- A state satisfying the precondition. -/
 def sat : State where

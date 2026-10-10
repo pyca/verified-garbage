@@ -84,7 +84,7 @@ def gatherSat : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | .x4 => 0x4000 | _ => 0
   sp := 0x9000
-  mem a := if a = 0x9001 then 0x50 else 0
+  mem a := bif Nat.beq a.toNat 0x9001 then 0x50 else 0
   rd := [⟨0x1000, 32⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x9000, 8⟩]
   wr := [⟨0, 0⟩, ⟨0x5000, 16⟩]
 

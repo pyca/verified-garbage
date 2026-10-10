@@ -263,7 +263,7 @@ theorem ret_eq (x y : BitVec 32) : (x ++ y).setWidth 32 = y := by
   rw [BitVec.getElem_setWidth, BitVec.getLsbD_append, ite_pos hi, BitVec.getLsbD_eq_getElem hi]
 
 /-- Memory whose argument slots (at `0x4004`) hold `0x1000`, `0x2000` and 0. -/
-def applySatMem : Mem := fun a => if a = 0x4005 then 0x10 else if a = 0x4009 then 0x20 else 0
+def applySatMem : Mem := fun a => bif Nat.beq a.toNat 0x4005 then 0x10 else bif Nat.beq a.toNat 0x4009 then 0x20 else 0
 
 /-- A state satisfying the precondition of `apply` (with no data). -/
 def applySat : State where

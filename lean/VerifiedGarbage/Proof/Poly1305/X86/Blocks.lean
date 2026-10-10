@@ -2977,7 +2977,7 @@ theorem blocks_agree₀ {s₁ s₂ : State} (h₁ : Proof.Poly1305.blocksX86.pre
     exacts [a0, a1, a2]
 
 /-- Memory holding the arguments `0x1000, 0x2000, 0` at `0x4004`. -/
-def blocksSatMem : Mem := fun a => if a = 0x4005 then 0x10 else if a = 0x4009 then 0x20 else 0
+def blocksSatMem : Mem := fun a => bif Nat.beq a.toNat 0x4005 then 0x10 else bif Nat.beq a.toNat 0x4009 then 0x20 else 0
 
 /-- A state satisfying the precondition (with no blocks). -/
 def blocksSat : State where

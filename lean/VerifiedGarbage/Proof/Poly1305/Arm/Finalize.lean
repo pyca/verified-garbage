@@ -766,7 +766,7 @@ def finalizeSat : State where
   z := false
   c := false
   v := false
-  mem a := if a = 0x5001 then 0x20 else if a = 0x5005 then 0x30 else 0
+  mem a := bif Nat.beq a.toNat 0x5001 then 0x20 else bif Nat.beq a.toNat 0x5005 then 0x30 else 0
   rd := [⟨0x5000, 8⟩]
   wr := [⟨0x1000, 128⟩, ⟨0x2000, 16⟩, ⟨0x3000, 128⟩]
 
