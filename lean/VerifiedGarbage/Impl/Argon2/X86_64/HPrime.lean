@@ -32,8 +32,8 @@ def saved : List (Reg × Nat) :=
 /-- Preserve the caller and retain all input arguments across hash calls. -/
 def setup : List Instr :=
   saved.map (fun (r, d) => .store (at_ .r8 d) r) ++
-    [.mov .rbx (.reg .r8), .mov .r12 (.reg .rdi), .mov .r13 (.reg .rsi),
-      .mov .r14 (.reg .rdx), .mov .r15 (.reg .rcx), .store32 (at_ .rbx 832) .rcx]
+    ([.mov .rbx (.reg .r8), .mov .r12 (.reg .rdi), .mov .r13 (.reg .rsi),
+      .mov .r14 (.reg .rdx), .mov .r15 (.reg .rcx), .store32 (at_ .rbx 832) .rcx] : List Instr)
 
 def restore : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ .rbx d))
 

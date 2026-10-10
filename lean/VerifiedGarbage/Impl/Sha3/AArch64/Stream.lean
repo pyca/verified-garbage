@@ -52,7 +52,7 @@ def save (b : Reg) : List Instr := saved.map fun (r, d) => .str .x r b d
 
 /-- Restore them from `scratch` in `x20` (`x20`, the base, last). -/
 def restore : List Instr :=
-  (saved.filter (·.1 != .x20)).map (fun (r, d) => .ldr .x r .x20 d) ++ [.ldr .x .x20 .x20 520]
+  (saved.filter (·.1 != .x20)).map (fun (r, d) => .ldr .x r .x20 d) ++ ([.ldr .x .x20 .x20 520] : List Instr)
 
 /-- Permute the state at `x19`, with scratch space `x20`. -/
 def permuteAtWith (c : Callee) : Prog isa :=

@@ -12,9 +12,9 @@ open VG.X86_64
 open VG.Impl.Argon2.X86_64 (at_)
 
 def word (xorOld : Bool) (i : Nat) : List Instr :=
-  [.mov .rax (.mem (at_ .rsi (8 * i)))] ++
+  ([.mov .rax (.mem (at_ .rsi (8 * i)))] : List Instr) ++
     (if xorOld then [.alu .xor .rax (.mem (at_ .rdi (8 * i)))] else []) ++
-    [.store (at_ .rdi (8 * i)) .rax]
+    ([.store (at_ .rdi (8 * i)) .rax] : List Instr)
 
 def words (xorOld : Bool) (n : Nat) : List Instr := (List.range n).flatMap (word xorOld)
 

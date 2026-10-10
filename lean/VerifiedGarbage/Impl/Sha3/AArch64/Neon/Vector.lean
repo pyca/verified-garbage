@@ -19,7 +19,7 @@ def parity (x : Nat) : List Instr :=
 
 def correction (x : Nat) : List Instr :=
   rol .v30 (vreg (25+(x+1)%5)) 1 ++
-  [.vop (.logic .eor .v30 (vreg (25+(x+4)%5)) .v30)] ++
+  ([.vop (.logic .eor .v30 (vreg (25+(x+4)%5)) .v30)] : List Instr) ++
     (List.range 5).map fun y => .vop (.logic .eor (vreg (x+5*y)) (vreg (x+5*y)) .v30)
 
 def theta : List Instr := (List.range 5).flatMap parity ++ (List.range 5).flatMap correction
@@ -32,9 +32,9 @@ def cycle : List (Nat × Nat) :=
 
 /-- Keep the displaced word while installing its predecessor. -/
 def rhoPiStep (p : Nat × Nat) : List Instr :=
-  [.vop (.mov .v26 (vreg p.1))] ++ rol (vreg p.1) .v25 p.2 ++ [.vop (.mov .v25 .v26)]
+  ([.vop (.mov .v26 (vreg p.1))] : List Instr) ++ rol (vreg p.1) .v25 p.2 ++ ([.vop (.mov .v25 .v26)] : List Instr)
 
-def rhoPi : List Instr := [.vop (.mov .v25 .v1)] ++ cycle.flatMap rhoPiStep
+def rhoPi : List Instr := ([.vop (.mov .v25 .v1)] : List Instr) ++ cycle.flatMap rhoPiStep
 
 /-- Preserve a row before computing its nonlinear layer. -/
 def saveRow (y : Nat) : List Instr :=

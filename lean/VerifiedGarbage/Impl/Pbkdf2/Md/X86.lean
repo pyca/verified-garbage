@@ -151,7 +151,7 @@ def xorW (k : Nat) : List Instr :=
 
 /-- `t`, then `T ← T ⊕ U` and the count. -/
 def tStep : List Instr :=
-  [.mov .edx (.mem (at_ .esp 16))] ++ (List.range (H.D / 4)).flatMap H.xorW ++ [.alu .sub .edi (.imm 1)]
+  ([.mov .edx (.mem (at_ .esp 16))] : List Instr) ++ (List.range (H.D / 4)).flatMap H.xorW ++ ([.alu .sub .edi (.imm 1)] : List Instr)
 
 /-- One step. -/
 def body : Prog isa :=
@@ -164,10 +164,10 @@ def body : Prog isa :=
 /-- Saving our caller's registers, setting up ours, and writing `U` and the
 padding into the block. -/
 def prologue : List Instr :=
-  [.mov .eax (.mem (at_ .esp 20))] ++ H.st.save ++
-    [.mov .ebp (.reg .eax), .mov .esi (.mem (at_ .esp 4)), .mov .edi (.mem (at_ .esp 12)),
-      .mov .ebx (.reg .ebp), .alu .add .ebx (.imm (BitVec.ofNat 32 H.st.buf)), .mov .edx (.mem (at_ .esp 8))] ++
-    copyW .edx 0 .ebx H.N (H.D / 4) ++ H.pad ++ [.alu .test .edi (.reg .edi)]
+  ([.mov .eax (.mem (at_ .esp 20))] : List Instr) ++ H.st.save ++
+    ([.mov .ebp (.reg .eax), .mov .esi (.mem (at_ .esp 4)), .mov .edi (.mem (at_ .esp 12)),
+      .mov .ebx (.reg .ebp), .alu .add .ebx (.imm (BitVec.ofNat 32 H.st.buf)), .mov .edx (.mem (at_ .esp 8))] : List Instr) ++
+    copyW .edx 0 .ebx H.N (H.D / 4) ++ H.pad ++ ([.alu .test .edi (.reg .edi)] : List Instr)
 
 def iterate : Prog isa :=
   .seq (.block H.prologue)
@@ -183,16 +183,16 @@ key byte, `edx` = where it goes, `ecx` = the bytes left. -/
 /-- Saving our caller's registers, and `scratch`, `inner` and `outer` into
 `ebp`, `ebx` and `esi`. -/
 def initPrologue : List Instr :=
-  [.mov .eax (.mem (at_ .esp 20))] ++ H.st.save ++
-    [.mov .ebp (.reg .eax), .mov .ebx (.mem (at_ .esp 4)), .mov .esi (.mem (at_ .esp 8))]
+  ([.mov .eax (.mem (at_ .esp 20))] : List Instr) ++ H.st.save ++
+    ([.mov .ebp (.reg .eax), .mov .ebx (.mem (at_ .esp 4)), .mov .esi (.mem (at_ .esp 8))] : List Instr)
 
 /-- `ipad` in every byte of the inner state's buffer, a word at a time;
 then the key and its length (whose flags skip the key loop for an empty
 key), and the start of the buffer. -/
 def fillIpad : List Instr :=
   .mov .ecx (.imm 0x36363636) :: (List.range (H.B / 4)).map (fun k => .store (at_ .ebx (H.N + 4 * k)) .ecx) ++
-    [.mov .edi (.mem (at_ .esp 12)), .mov .ecx (.mem (at_ .esp 16)), .mov .edx (.reg .ebx),
-      .alu .add .edx (.imm (BitVec.ofNat 32 H.N)), .alu .test .ecx (.reg .ecx)]
+    ([.mov .edi (.mem (at_ .esp 12)), .mov .ecx (.mem (at_ .esp 16)), .mov .edx (.reg .ebx),
+      .alu .add .edx (.imm (BitVec.ofNat 32 H.N)), .alu .test .ecx (.reg .ecx)] : List Instr)
 
 /-- The key bytes, XORed with `ipad`, over the start of the buffer. -/
 def keyLoop : Prog isa :=

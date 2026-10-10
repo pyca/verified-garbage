@@ -30,7 +30,7 @@ def bit (j : Nat) : List Instr := subtract j ++ select
 
 /-- All iterations are unrolled, independent of either operand. -/
 def code : Prog isa :=
-  .block ([.mov32 .r8 (.imm 0), .mov32 .r9 (.imm 0), .mov32 .rax (.imm 0), .alu .cmp .rax (.imm 0)] ++
+  .block (([.mov32 .r8 (.imm 0), .mov32 .r9 (.imm 0), .mov32 .rax (.imm 0), .alu .cmp .rax (.imm 0)] : List Instr) ++
     (List.range 32).reverse.flatMap bit)
 
 end VG.Impl.Argon2.X86_64.Divide

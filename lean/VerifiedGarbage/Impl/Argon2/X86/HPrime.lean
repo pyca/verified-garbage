@@ -49,10 +49,10 @@ def finalizeCode : Prog isa :=
 /-- Save the caller's registers in `scratch`, point `ebx` to it, and keep
 the output pointer, the output length and its prefix there. -/
 def setup : List Instr :=
-  [.mov .eax (.mem (at_ .esp 20))] ++ saved.map (fun (r, d) => .store (at_ .eax d) r) ++
-  [.mov .ebx (.reg .eax),
+  ([.mov .eax (.mem (at_ .esp 20))] : List Instr) ++ saved.map (fun (r, d) => .store (at_ .eax d) r) ++
+  ([.mov .ebx (.reg .eax),
     .mov .eax (.mem (at_ .esp 12)), .store (at_ .ebx outOff) .eax,
-    .mov .eax (.mem (at_ .esp 16)), .store (at_ .ebx leftOff) .eax, .store (at_ .ebx 832) .eax]
+    .mov .eax (.mem (at_ .esp 16)), .store (at_ .ebx leftOff) .eax, .store (at_ .ebx 832) .eax] : List Instr)
 
 /-- Restore the caller's registers, `ebx` last. -/
 def restore : List Instr :=

@@ -99,13 +99,13 @@ def copyW (src dst : Reg) (o₁ o₂ n : Nat) : List Instr := (List.range n).fla
 /-- `0x80` then zeros in the block at `r6`, from byte `a` up to byte `b`
 (`a < b`, both multiples of 4). -/
 def padFrom (a b : Nat) : List Instr :=
-  [.mov .r12 (.imm 0x80), .str .r12 .r6 a, .mov .r12 (.imm 0)] ++
+  ([.mov .r12 (.imm 0x80), .str .r12 .r6 a, .mov .r12 (.imm 0)] : List Instr) ++
     (List.range ((b - a) / 4 - 1)).map fun k => .str .r12 .r6 (a + 4 + 4 * k)
 
 /-- The constant words `ws`, stored at `[r6 + o]`, `[r6 + o + 4]`, … -/
 def constW : Nat → List (BitVec 32) → List Instr
   | _, [] => []
-  | o, w :: ws => [.movw .r12 (w.extractLsb' 0 16), .movt .r12 (w.extractLsb' 16 16), .str .r12 .r6 o] ++
+  | o, w :: ws => ([.movw .r12 (w.extractLsb' 0 16), .movt .r12 (w.extractLsb' 16 16), .str .r12 .r6 o] : List Instr) ++
       constW (o + 4) ws
 
 /-- The words of the `L`-byte length field of an `n`-byte message (its length
@@ -158,14 +158,14 @@ left; for each compression, `r0` = the state, `r6` = its buffer and `r3` =
 /-- Saving our caller's registers and our return address, and setting up
 ours. -/
 def initPrologue : List Instr :=
-  [.ldrSp .r12 0] ++ H.st.save ++ [.mov .r4 (.reg .r0), .mov .r5 (.reg .r1), .mov .r6 (.reg .r2),
-    .mov .r7 (.reg .r3), .mov .r11 (.reg .r12)]
+  ([.ldrSp .r12 0] : List Instr) ++ H.st.save ++ ([.mov .r4 (.reg .r0), .mov .r5 (.reg .r1), .mov .r6 (.reg .r2),
+    .mov .r7 (.reg .r3), .mov .r11 (.reg .r12)] : List Instr)
 
 /-- `ipad` in every byte of the inner state's buffer, a word at a time; then
 the flags of `key_len = 0`, which skip the key loop for an empty key. -/
 def fillIpad : List Instr :=
-  [.movw .r1 0x3636, .movt .r1 0x3636] ++ (List.range (H.B / 4)).map (fun k => .str .r1 .r4 (H.N + 4 * k)) ++
-    [.mov .r8 (.reg .r4), .cmp .r7 (.imm 0)]
+  ([.movw .r1 0x3636, .movt .r1 0x3636] : List Instr) ++ (List.range (H.B / 4)).map (fun k => .str .r1 .r4 (H.N + 4 * k)) ++
+    ([.mov .r8 (.reg .r4), .cmp .r7 (.imm 0)] : List Instr)
 
 /-- The key bytes, XORed with `ipad`, over the start of the buffer. -/
 def keyLoop : Prog isa :=
@@ -179,8 +179,8 @@ def opadW (k : Nat) : List Instr :=
 
 /-- The outer state's buffer, and the inner state's compression set up. -/
 def fillOpad : List Instr :=
-  [.movw .r1 0x6a6a, .movt .r1 0x6a6a] ++ (List.range (H.B / 4)).flatMap H.opadW ++
-    [.mov .r0 (.reg .r4), .dp .add .r6 .r4 (.imm (BitVec.ofNat 32 H.N)), .mov .r3 (.reg .r11)]
+  ([.movw .r1 0x6a6a, .movt .r1 0x6a6a] : List Instr) ++ (List.range (H.B / 4)).flatMap H.opadW ++
+    ([.mov .r0 (.reg .r4), .dp .add .r6 .r4 (.imm (BitVec.ofNat 32 H.N)), .mov .r3 (.reg .r11)] : List Instr)
 
 /-- The two blocks: `K₀ ⊕ ipad` in the inner state's buffer and `K₀ ⊕ opad`
 in the outer one's, the part of `init` between the calls of the streaming
@@ -208,11 +208,11 @@ def hmacInit : Prog isa :=
 /-- Saving our caller's registers, with `outer` in `r5`, `out` in `r7` and
 `scratch` in `r11`. -/
 def finPrologue : List Instr :=
-  [.ldrSp .r12 4] ++ H.st.save ++ [.mov .r5 (.reg .r1), .ldrSp .r7 0, .mov .r11 (.reg .r12)]
+  ([.ldrSp .r12 4] : List Instr) ++ H.st.save ++ ([.mov .r5 (.reg .r1), .ldrSp .r7 0, .mov .r11 (.reg .r12)] : List Instr)
 
 /-- The outer hash value, the padding after the inner digest in the block
 and `scratch` in `r3`. -/
-def finMid : List Instr := [.mov .r3 (.reg .r11)] ++ H.atHv ++ copyW .r5 .r0 0 0 (H.N / 4) ++ H.pad
+def finMid : List Instr := ([.mov .r3 (.reg .r11)] : List Instr) ++ H.atHv ++ copyW .r5 .r0 0 0 (H.N / 4) ++ H.pad
 
 /-- The MAC to `out` (through the block, if the digest is truncated), and
 our caller's registers back. -/
@@ -237,14 +237,14 @@ def body : Prog isa :=
   (.seq H.compressBlock
   (.seq (.block (H.digest ++ H.loadKey (H.N + H.B)))
   (.seq H.compressBlock
-    (.block (H.digest ++ (List.range (H.D / 4)).flatMap xorW ++ [.subs .r5 .r5 (.imm 1)])))))
+    (.block (H.digest ++ (List.range (H.D / 4)).flatMap xorW ++ ([.subs .r5 .r5 (.imm 1)] : List Instr))))))
 
 /-- Saving our caller's registers and our return address, setting up our
 registers, and writing `U` and the padding into the block. -/
 def prologue : List Instr :=
-  [.ldrSp .r12 0] ++ H.st.save ++
-    [.mov .r11 (.reg .r12), .mov .r7 (.reg .r3), .mov .r3 (.reg .r12), .mov .r4 (.reg .r0),
-      .mov .r5 (.reg .r2)] ++ H.atHv ++ copyW .r1 .r6 0 0 (H.D / 4) ++ H.pad ++ [.cmp .r5 (.imm 0)]
+  ([.ldrSp .r12 0] : List Instr) ++ H.st.save ++
+    ([.mov .r11 (.reg .r12), .mov .r7 (.reg .r3), .mov .r3 (.reg .r12), .mov .r4 (.reg .r0),
+      .mov .r5 (.reg .r2)] : List Instr) ++ H.atHv ++ copyW .r1 .r6 0 0 (H.D / 4) ++ H.pad ++ ([.cmp .r5 (.imm 0)] : List Instr)
 
 def iterate : Prog isa :=
   .seq (.block H.prologue)

@@ -207,11 +207,11 @@ def body : Prog isa :=
     (.block [.alu .add .rsi (.imm 64), .alu .sub .rdx (.imm 1)])
     (.seq (.block initCarry)
     (.seq (rounds2 64)
-      (.block (addState ++ [.alu .add .rsi (.imm 128), .alu .sub .rdx (.imm 2)]))))))))))
+      (.block (addState ++ ([.alu .add .rsi (.imm 128), .alu .sub .rdx (.imm 2)] : List Instr)))))))))))
 
 def compress : Prog isa :=
   .seq (.block (save ++ const mBswap bswapMask ++ const mBA maskBA ++ const mDC maskDC ++
-      [.alu .test .rdx (.reg .rdx)]))
-    (.seq (.ite .e (.block []) (.loop body .ne)) (.block (restore ++ [.vop .vzeroupper])))
+      ([.alu .test .rdx (.reg .rdx)] : List Instr)))
+    (.seq (.ite .e (.block []) (.loop body .ne)) (.block (restore ++ ([.vop .vzeroupper] : List Instr))))
 
 end VG.Impl.Sha256.X86_64.Avx2

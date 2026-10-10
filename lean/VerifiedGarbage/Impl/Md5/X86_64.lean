@@ -63,9 +63,9 @@ def rot (t : Nat) : Nat := (ss.getD (t / 16) []).getD (t % 4) 0
 rotation as a right rotation by `32 - s`. -/
 def step (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3
-  [.alu32 .add a (.mem (at_ .rsi (4 * ks.getD t 0))), .alu32 .add a (.imm (Ts.getD t 0))] ++
+  ([.alu32 .add a (.mem (at_ .rsi (4 * ks.getD t 0))), .alu32 .add a (.imm (Ts.getD t 0))] : List Instr) ++
   fn (t / 16) a b c d ++
-  [.shift32 .ror a (32 - rot t), .alu32 .add a (.reg b)]
+  ([.shift32 .ror a (32 - rot t), .alu32 .add a (.reg b)] : List Instr)
 
 /-- Operations `0 … n-1`. -/
 def steps : Nat → Prog isa

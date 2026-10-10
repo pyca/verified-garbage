@@ -124,7 +124,7 @@ def chi : List Op :=
 /-- Zero halfwords need no MOVK after MOVZ. The general builder also handles
 halfword2, although all 24 Keccak constants have that halfword zero. -/
 def constant (v : BitVec 64) : List Instr :=
-  [.movz .x .x16 (v.extractLsb' 0 16) 0] ++
+  ([.movz .x .x16 (v.extractLsb' 0 16) 0] : List Instr) ++
     (if v.extractLsb' 16 16 = 0 then [] else [.movk .x .x16 (v.extractLsb' 16 16) 1]) ++
     (if v.extractLsb' 32 16 = 0 then [] else [.movk .x .x16 (v.extractLsb' 32 16) 2]) ++
     (if v.extractLsb' 48 16 = 0 then [] else [.movk .x .x16 (v.extractLsb' 48 16) 3])

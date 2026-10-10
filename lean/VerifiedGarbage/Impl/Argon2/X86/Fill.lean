@@ -226,7 +226,7 @@ def setLocal (d : Nat) (v : BitVec 32) : List Instr := [.mov .eax (.imm v), st d
 /-- The first index of a segment: 2 in the first slice of the first pass
 (whose first two blocks are initialized), else 0; and a new address block. -/
 def segmentStart : Prog isa :=
-  .seq (.block (setLocal counterOff 0 ++ [.mov .eax (fr passOff), .alu .or .eax (fr sliceOff)]))
+  .seq (.block (setLocal counterOff 0 ++ ([.mov .eax (fr passOff), .alu .or .eax (fr sliceOff)] : List Instr)))
     (.ite .e (.block (setLocal indexOff 2)) (.block (setLocal indexOff 0)))
 
 def segment : Prog isa :=

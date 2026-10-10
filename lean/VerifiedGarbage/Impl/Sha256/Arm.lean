@@ -132,7 +132,7 @@ def advance : List Instr := [.dp .add .r1 .r1 (.imm 64), .subs .r2 .r2 (.imm 1)]
 def body : Prog isa := .seq (.block load) (.seq (rounds 64) (.block (update ++ advance)))
 
 def compress : Prog isa :=
-  .seq (.block (save ++ [.cmp .r2 (.imm 0)]))
+  .seq (.block (save ++ ([.cmp .r2 (.imm 0)] : List Instr)))
     (.seq (.ite .eq (.block []) (.loop body .ne)) (.block restore))
 
 end VG.Impl.Sha256.Arm

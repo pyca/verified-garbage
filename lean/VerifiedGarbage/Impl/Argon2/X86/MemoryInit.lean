@@ -23,8 +23,8 @@ def hPrimeCall : Prog isa :=
 
 /-- Zero `blocks · 256` words from `memory` on. -/
 def clearSetup : List Instr :=
-  [.mov .edi (fr (argOff memoryArg)), .mov .ecx (fr (argOff blocksArg))] ++
-    List.replicate 8 (.alu .add .ecx (.reg .ecx)) ++ [.mov .eax (.imm 0)]
+  ([.mov .edi (fr (argOff memoryArg)), .mov .ecx (fr (argOff blocksArg))] : List Instr) ++
+    List.replicate 8 (.alu .add .ecx (.reg .ecx)) ++ ([.mov .eax (.imm 0)] : List Instr)
 
 def clearWord : List Instr := [.store (at_ .edi 0) .eax, .alu .add .edi (.imm 4), .alu .sub .ecx (.imm 1)]
 

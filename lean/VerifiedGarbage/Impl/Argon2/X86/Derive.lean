@@ -24,13 +24,13 @@ open VG.Impl.Sha512.X86 (at_)
 
 /-- Zero the memory's first block. -/
 def reduceClear : List Instr :=
-  [.mov .edi (fr (argOff memoryArg)), .mov .eax (.imm 0)] ++
+  ([.mov .edi (fr (argOff memoryArg)), .mov .eax (.imm 0)] : List Instr) ++
     (List.range 256).map fun k => .store (at_ .edi (4 * k)) .eax
 
 /-- XOR the last block of lane `[ebp + laneOff]` into the first block. -/
 def reduceLane : List Instr :=
-  [.mov .eax (fr laneOff), .mov .ecx (fr laneLenOff), .alu .sub .ecx (.imm 1)] ++ blockAddr ++
-    [.mov .esi (.reg .eax), .mov .edi (fr (argOff memoryArg))] ++ writeBlock true
+  ([.mov .eax (fr laneOff), .mov .ecx (fr laneLenOff), .alu .sub .ecx (.imm 1)] : List Instr) ++ blockAddr ++
+    ([.mov .esi (.reg .eax), .mov .edi (fr (argOff memoryArg))] : List Instr) ++ writeBlock true
 
 def reduce : Prog isa :=
   .seq (.block (reduceClear ++ setLocal laneOff 0))

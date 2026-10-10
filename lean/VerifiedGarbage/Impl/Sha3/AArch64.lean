@@ -64,17 +64,17 @@ def dcol (x : Nat) : List Instr :=
 
 /-- `B[x] = ROTL^ρ(A[piSrc x y] ⊕ D[(x + 3y) mod 5])` for plane `y`. -/
 def laneB (x y : Nat) : List Instr :=
-  [.ldr .x (creg x) .x0 (8 * piSrc x y),
-    .logic .eor .x (creg x) (creg x) (dreg ((x + 3 * y) % 5))] ++
+  ([.ldr .x (creg x) .x0 (8 * piSrc x y),
+    .logic .eor .x (creg x) (creg x) (dreg ((x + 3 * y) % 5))] : List Instr) ++
     if rhoOff (piSrc x y) = 0 then [] else [.ror .x (creg x) (creg x) (64 - rhoOff (piSrc x y))]
 
 /-- Lane `(x, y)` of the output: `B[x] ⊕ ((B[x+1] ∧ B[x+2]) ⊕ B[x+2])`, and
 for lane 0 the round constant at `x2`. -/
 def chi (x y : Nat) : List Instr :=
-  [.logic .and .x T (creg ((x + 1) % 5)) (creg ((x + 2) % 5)),
-    .logic .eor .x T T (creg ((x + 2) % 5)), .logic .eor .x T T (creg x)] ++
+  ([.logic .and .x T (creg ((x + 1) % 5)) (creg ((x + 2) % 5)),
+    .logic .eor .x T T (creg ((x + 2) % 5)), .logic .eor .x T T (creg x)] : List Instr) ++
     (if x = 0 ∧ y = 0 then [.ldr .x R .x2 0, .logic .eor .x T T R] else []) ++
-    [.str .x T .x1 (8 * (x + 5 * y))]
+    ([.str .x T .x1 (8 * (x + 5 * y))] : List Instr)
 
 /-- Plane `y` of the output. -/
 def plane (y : Nat) : List Instr :=
@@ -97,7 +97,7 @@ def rcStore (k : Nat) : List Instr :=
 /-- Store the round constants, and point `x2` at the first and `x3` past the
 last. -/
 def prologue : List Instr :=
-  (List.range 24).flatMap rcStore ++ [.addImm .x .x2 .x1 200, .addImm .x .x3 .x1 392]
+  (List.range 24).flatMap rcStore ++ ([.addImm .x .x2 .x1 200, .addImm .x .x3 .x1 392] : List Instr)
 
 def permute : Prog isa :=
   .seq (.block prologue) (.loop (.block round) (.nonzero .x T))

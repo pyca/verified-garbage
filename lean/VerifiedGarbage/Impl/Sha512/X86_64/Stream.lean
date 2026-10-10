@@ -55,7 +55,7 @@ def params : Params where
   B := 128
   L := 16
   so := 1328
-  len := [.mov .rax (.reg .r12), .shift .shr .rax 61, .bswap .rax, .store (at_ .rbx 176) .rax] ++
+  len := ([.mov .rax (.reg .r12), .shift .shr .rax 61, .bswap .rax, .store (at_ .rbx 176) .rax] : List Instr) ++
     len64 184 true
   out := out64 8
 

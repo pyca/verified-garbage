@@ -125,10 +125,10 @@ def saved : List (Reg × Nat) := [(.ebx, 96), (.esi, 100), (.edi, 104), (.ebp, 1
 /-- Save the callee-saved registers, load the arguments, and set ZF if there
 are no blocks. -/
 def prologue : List Instr :=
-  [.mov .eax (.mem (at_ .esp 16))] ++
+  ([.mov .eax (.mem (at_ .esp 16))] : List Instr) ++
   saved.map (fun (r, d) => .store (at_ .eax d) r) ++
-  [.mov .esi (.reg .eax), .mov .edi (.mem (at_ .esp 8)), .mov .ebp (.mem (at_ .esp 12)),
-   .alu .test .ebp (.reg .ebp)]
+  ([.mov .esi (.reg .eax), .mov .edi (.mem (at_ .esp 8)), .mov .ebp (.mem (at_ .esp 12)),
+   .alu .test .ebp (.reg .ebp)] : List Instr)
 
 /-- Restore the callee-saved registers (`esi`, the base, last). -/
 def epilogue : List Instr :=
