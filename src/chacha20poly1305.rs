@@ -483,9 +483,10 @@ mod tests {
         let aad = [4; 20];
         for len in [
             0, 63, 64, 65, 192, 193, 255, 256, 257, 319, 320, 321, 447, 448, 449, 511, 512, 513,
-            575, 576, 577, 769, 832, 1000, 1022, 1023, 1024, 1025, 2100,
+            575, 576, 577, 769, 832, 1000, 1022, 1023, 1024, 1025, 1088, 1089, 1984, 1985, 2047,
+            2048, 2049, 2100, 4097,
         ] {
-            let msg: [u8; 2100] = core::array::from_fn(|i| (i * 31) as u8);
+            let msg: [u8; 4097] = core::array::from_fn(|i| (i * 31) as u8);
             let mut a = msg;
             let mut b = msg;
             let tag = scalar.encrypt_in_place(&nonce, &aad, &mut a[..len]);

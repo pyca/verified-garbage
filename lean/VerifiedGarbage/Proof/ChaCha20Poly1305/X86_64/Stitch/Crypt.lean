@@ -319,15 +319,15 @@ theorem Inv.step' {s₀ s s' : State} (h : Inv s₀ s)
 theorem cryptS_mx (v : Proof.ChaCha20.X86_64.XorImpl) :
     (cryptS v.callee).allInstrs (fun i => !loadsMxcsr i) = true := by
   have hb : bulk.allInstrs (fun i => !loadsMxcsr i) = true := by decide +kernel
-  simp only [cryptS, Code.allInstrs, v.mxcsr, hb]
-  rfl
+  rcases v.fold_poly with ⟨hf, hpass, -⟩ | ⟨hf, hpass, -⟩ | ⟨hf, hpass, -⟩ <;>
+    (simp only [cryptS, Code.allInstrs, v.mxcsr, hb, hf, hpass]; rfl)
 
 /-- The data encrypted, by `bulk` and the implementation `v` of
 `vg_chacha20_xor`, its first `a` bytes of ciphertext absorbed, and the
 keystream wiped. -/
 theorem cryptS_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
     (hst : stateAt s.mem (off (cx s₀) 64) = initState (K s₀) 0 (N s₀))
-    (hks : ∀ k < mOf v.callee.fold (L s₀), s.mem (off (cx s₀) (736 + k)) =
+    (hks : ∀ k < mOf v.callee.fold v.callee.pass (L s₀), s.mem (off (cx s₀) (736 + k)) =
       (keystream (initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0)
     {key msg : List Byte} (hrep : Repr s.mem (off (cx s₀) 448) key msg) :
     WP isa (cryptS v.callee) s fun s' => Inv s₀ s' ∧
@@ -338,7 +338,7 @@ theorem cryptS_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
         Repr s'.mem (off (cx s₀) 448) key (msg ++ bytesAt s'.mem (dp s₀) a) := by
   have hfl := v.fold_le
   have hL9 : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
-  have hm := mOf_le v.callee.fold (L s₀)
+  have hm := mOf_le v.callee.fold v.callee.pass (L s₀)
   unfold cryptS
   refine WP.seq (WP.mono (cmpFold_ok (fold := v.callee.fold) (by lit_omega) h.r13)
     fun s₁ ⟨g₁, rd₁, wr₁, m₁, c₁⟩ => ?_)
@@ -412,10 +412,10 @@ theorem cryptS_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
       · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
       · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))
       · exact (hp.stk_sub (by lit_omega)).symm)
-  refine WP.seq (WP.mono (foldM_ok (fold := v.callee.fold) (len := L s₀) (by lit_omega) hL9
+  refine WP.seq (WP.mono (foldM_ok (fold := v.callee.fold) (pass := v.callee.pass) (len := L s₀) (by lit_omega) (pass_of v) hL9
     (by rw [i₃.r13]; exact hL s₀)) fun s₄ ⟨d₄, g₄, rd₄, wr₄, m₄⟩ => ?_)
-  refine WP.seq (WP.mono (add64_ok (n := mOf v.callee.fold (L s₀)) d₄) fun s₅ ⟨d₅, g₅, rd₅, wr₅, m₅⟩ => ?_)
-  refine WP.mono (zeroKs_ok hp (n := 64 + mOf v.callee.fold (L s₀)) (by omega) (by lit_omega) d₅
+  refine WP.seq (WP.mono (add64_ok (n := mOf v.callee.fold v.callee.pass (L s₀)) d₄) fun s₅ ⟨d₅, g₅, rd₅, wr₅, m₅⟩ => ?_)
+  refine WP.mono (zeroKs_ok hp (n := 64 + mOf v.callee.fold v.callee.pass (L s₀)) (by omega) (by lit_omega) d₅
     (by rw [g₅ _ (by decide), g₄ _ (by decide), i₃.r15]) (by rw [wr₅, wr₄, i₃.wr]))
     fun s₆ ⟨g₆, rd₆, wr₆, f₆, _⟩ => ?_
   have g36 : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → s₆.gpr r = s₃.gpr r := fun r h1 h2 h3 => by
@@ -506,7 +506,7 @@ theorem sealStitched_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} 
   have D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by
     rw [bytesAt_frame f₃ (by rdisj_all) hL', bytesAt_frame f₂ (by rdisj_all) hL',
       bytesAt_frame h₁.fine (by rdisj_all) hL']
-  have hM := Nat.le_trans (mOf_le v.callee.fold (L s₀)) v.fold_le
+  have hM := Nat.le_trans (mOf_le v.callee.fold v.callee.pass (L s₀)) v.fold_le
   have ks₃ := ks_frame f₃ (by rdisj_all) hM (ks_frame f₂ (by rdisj_all) hM h₁.ks)
   have R₃ := Repr.frame f₃ (by rdisj_all) (r₂ (otk s₀) [] h₁.poly)
   refine WP.seq (WP.mono_mx (cryptS_mx v) (cryptS_ok v hp i₃ st₃ ks₃ R₃)

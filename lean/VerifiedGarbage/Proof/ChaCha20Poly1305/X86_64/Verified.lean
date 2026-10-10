@@ -51,13 +51,13 @@ def openSat : State where
 /-- `seal` and `open` never write the stack pointer. -/
 theorem seal_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     («seal» v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases v.fold_poly with ⟨hf, hb⟩ | ⟨hf, hb⟩ | ⟨hf, hb⟩ <;>
-    (simp only [«seal», prologue, crypt, Code.all, v.spSafe, hf, hb]; lit_decide)
+  rcases v.fold_poly with ⟨hf, hpass, hb⟩ | ⟨hf, hpass, hb⟩ | ⟨hf, hpass, hb⟩ <;>
+    (simp only [«seal», prologue, crypt, cryptBig, Code.all, v.spSafe, hf, hpass, hb]; lit_decide)
 
 theorem open_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     («open» v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases v.fold_poly with ⟨hf, hb⟩ | ⟨hf, hb⟩ | ⟨hf, hb⟩ <;>
-    (simp only [«open», prologue, crypt, Code.all, v.spSafe, hf, hb]; lit_decide)
+  rcases v.fold_poly with ⟨hf, hpass, hb⟩ | ⟨hf, hpass, hb⟩ | ⟨hf, hpass, hb⟩ <;>
+    (simp only [«open», prologue, crypt, cryptBig, Code.all, v.spSafe, hf, hpass, hb]; lit_decide)
 
 theorem seal_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : sealX86_64.pre s) :
     ∃ t s', Exec isa («seal» v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' :=
@@ -130,6 +130,8 @@ theorem open_verified (v : Proof.ChaCha20.X86_64.XorImpl) :
 /-! ## The frame -/
 
 theorem xorBuf_xdepth : (xorBufX .r14).x86_64Depth = 0 := by decide
+theorem splitM_xdepth (fold pass : Nat) : (splitM fold pass).x86_64Depth = 0 := by
+  unfold splitM; split <;> rfl
 theorem init_xdepth : Impl.Poly1305.X86_64.init.x86_64Depth = 0 := by lit_decide
 theorem finalize_xdepth : Impl.Poly1305.X86_64.finalize.x86_64Depth = 0 := by lit_decide
 
@@ -139,15 +141,15 @@ theorem blocks_xdepth (b : Impl.Poly1305.X86_64.Blocks) : b.code.x86_64Depth ≤
 theorem seal_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («seal» v.callee v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
-  simp only [«seal», prologue, prologueA, prologueB, foldM, zeroKs, macPad, macPadLengths, wholeBlocks, padTail, crypt, absorbLengths, finalizeTag, finalizeWith,
-    Code.x86_64Depth, xorBuf_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
+  simp only [«seal», prologue, prologueA, prologueB, foldM, zeroKs, macPad, macPadLengths, wholeBlocks, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTag, finalizeWith,
+    Code.x86_64Depth, xorBuf_xdepth, splitM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
   omega
 
 theorem open_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («open» v.callee v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
-  simp only [«open», prologue, prologueA, prologueB, foldM, zeroKs, macPad, macPadLengths, wholeBlocks, padTail, crypt, absorbLengths, finalizeTo, finalizeWith,
-    Code.x86_64Depth, xorBuf_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
+  simp only [«open», prologue, prologueA, prologueB, foldM, zeroKs, macPad, macPadLengths, wholeBlocks, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTo, finalizeWith,
+    Code.x86_64Depth, xorBuf_xdepth, splitM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
   omega
 
 /-- A state satisfying `seal`'s precondition, without the working space. -/
