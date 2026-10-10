@@ -3,6 +3,8 @@ import VerifiedGarbage.Impl.Ed25519.X86.PointMul
 import VerifiedGarbage.Impl.Ed25519.X86.PointEncode
 import VerifiedGarbage.Impl.Ed25519.X86.Field
 import VerifiedGarbage.Impl.Ed25519.X86.Power
+import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
 
 /-! The point arithmetic and the inversion chain as literals
 (`materialize_value`, `materialize_code`), which the literals of the code

@@ -571,7 +571,7 @@ theorem combAddG_ok {s : State} {base : Addr} (hs : Scratch s base) (_hd : env s
       (∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i) ∧ AccBnd t.mem base := by
   rw [combAddG, WP.block_append_iff]
   refine WP.mono (wp_and (fieldCodeWide_ok (fld := fld) hs _)
-    (fieldCodeWide_accKeep (fld := fld) _ hs hb (by decide))) fun a ⟨⟨ka, va⟩, ab⟩ => ?_
+    (fieldCodeWide_accKeep (fld := fld) _ hs hb (by decide) rfl)) fun a ⟨⟨ka, va⟩, ab⟩ => ?_
   have hsa := hs.of_keep ka
   have ha16 : ∀ i : Slot, 16 ≤ i.val → env a.mem base i = env s.mem base i := fun i hi => by
     rw [va]; exact point_ops_high _ (by decide) _ i hi

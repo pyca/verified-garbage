@@ -178,7 +178,7 @@ theorem tablePoint_frame {b : BitVec 32} {m m' : Mem} {rs : List Region} (hf : F
   simp only [tablePoint, h0, he 32 (by decide), he 64 (by decide), he 96 (by decide)]
 
 theorem TableFrame.point {b : BitVec 32} {o n : Nat} {m m' : Mem}
-    (h : TableFrame b o n m m') {d : Nat} (hd : 1600 ≤ d)
+    (h : TableFrame b o n m m') {d : Nat} (hd : 1632 ≤ d)
     (hsep : d + 128 ≤ o ∨ o + n ≤ d) (hb : d + 128 ≤ 8192) (hn : o + n ≤ 8192) :
     tablePoint m' b d = tablePoint m b d := by
   refine tablePoint_frame h fun r hm => ?_
@@ -188,12 +188,12 @@ theorem TableFrame.point {b : BitVec 32} {o n : Nat} {m m' : Mem}
   · exact Offset.disjoint _ hsep (by omega) (by omega)
 
 theorem workspace_tablePoint {b : BitVec 32} {m m' : Mem} (h : Frame [FA b] m m')
-    {d : Nat} (hd : 1600 ≤ d) (hb : d + 128 ≤ 8192) : tablePoint m' b d = tablePoint m b d := by
+    {d : Nat} (hd : 1632 ≤ d) (hb : d + 128 ≤ 8192) : tablePoint m' b d = tablePoint m b d := by
   refine tablePoint_frame h fun r hm => ?_
   rw [List.mem_singleton.mp hm]
   exact Offset.disjoint _ (.inr (by omega)) (by omega) (by decide)
 
-abbrev powersClob : List Reg := [.r10, .r11, .r12] ++ clob
+abbrev powersClob : List Reg := [.r10, .r11] ++ fclob
 
 structure PowersKeep (b : BitVec 32) (o n : Nat) (s t : State) : Prop where
   rest : Rest powersClob s t
@@ -225,7 +225,7 @@ theorem powerBatch_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.
     exact ⟨hlt, hv, hh, IKeep.of_keep hk⟩
 
 theorem powersBody_ok (batch : Bool) {s : State} {b : BitVec 32} (hc : Ctx b s)
-    (hl : AllLim s.mem b) (o j count : Nat) (hlo : 1600 ≤ o) (hbound : o + 128 * count ≤ 8192)
+    (hl : AllLim s.mem b) (o j count : Nat) (hlo : 1632 ≤ o) (hbound : o + 128 * count ≤ 8192)
     (hj : j < count) (hn : count ≤ 32) (h11 : s.gpr .r11 = BitVec.ofNat 32 j)
     (hd : env s.mem b 16 = Spec.Ed25519.d) :
     WP isa (powersBody o count batch) s fun t => t.gpr .r11 = BitVec.ofNat 32 (j + 1) ∧

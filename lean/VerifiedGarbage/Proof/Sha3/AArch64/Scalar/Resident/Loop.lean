@@ -86,7 +86,7 @@ theorem body_ok (b : State) (hp : BulkPre b) (c : Nat) (A : Spec.Sha3.State) (s 
     · simpa only [Ptrs, hv] using h.core.ptrs
     · simpa only [SavedVector, hv] using h.core.saved
     · intro q hq; rw [hv]; exact h.core.vec q hq
-  rw [WP.block_append_iff]
+  rw [WP.seq_iff]
   refine (unrolled_rounds_ok b _ t hct).mono fun u ⟨hcu, hku⟩ => ?_
   have hvk : ∀ q ∈ [VReg.v19, .v20, .v21, .v30, .v31], u.v q = s.v q := fun q hq => by
     obtain ⟨a, b', c', d⟩ := kept_not_temps q hq

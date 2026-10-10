@@ -27,7 +27,7 @@ def Outside (wr : List Region) (F a : Addr) : Prop :=
 theorem Outside.ne {u : State} {F S : Addr} (L : Lay u F S) {a : Addr} (h : Outside u.wr F a) {x : Nat}
     (hx : x < oRsa) : a ≠ off S x := by
   intro he
-  obtain ⟨r, hr, hc⟩ := L.sst8 (d := x) (by omega_arith)
+  obtain ⟨r, hr, hc⟩ := L.sst8 (d := x) (by omega_using [hx])
   exact h.1 r hr (he ▸ hc)
 
 theorem chain {u v v' : State} {F : Addr} (hw : v.wr = u.wr) (hsp : v.gpr .rsp = F)
@@ -49,7 +49,7 @@ theorem getD_map_range (f : Nat → Byte) (n i : Nat) :
   rw [List.getD_eq_getElem?_getD, List.getElem?_map]
   split
   · rename_i h; rw [List.getElem?_range h]; rfl
-  · rename_i h; rw [List.getElem?_eq_none (by simp; omega_arith)]; rfl
+  · rename_i h; rw [List.getElem?_eq_none (by simp; omega_using [h])]; rfl
 
 variable {H : Hash} (hH : HashOK H) (K : Callees H)
 
@@ -78,8 +78,8 @@ theorem em_bytes {G : Spec.Mgf1.Hash} {V5 V9 sf : Nat → Byte} {k lo db sl D : 
     ∀ i < k, upd V9 (oEm + lo) (V9 (oEm + lo) &&& c) (oEm + i) = RsaPss.emT lo db sl saltB h (Spec.Mgf1.mgf1 G h db) c i := by
   generalize hP : oEm + lo + db - sl - 1 = P at h9
   generalize hK : oEm + k - 1 = K at h9
-  have hP' : P + sl + 1 = oEm + lo + db := by rw [← hP]; have : oEm = 2560 := rfl; omega_arith
-  have hK' : K + 1 = oEm + k := by rw [← hK]; have : oEm = 2560 := rfl; omega_arith
+  have hP' : P + sl + 1 = oEm + lo + db := by rw [← hP]; have : oEm = 2560 := rfl; omega_using [hfit]
+  have hK' : K + 1 = oEm + k := by rw [← hK]; have : oEm = 2560 := rfl; omega_using [this]
   clear hP hK
   have c1 : oEm = 2560 := rfl
   have c3 : oDig = 2304 := rfl
@@ -94,14 +94,14 @@ theorem em_bytes {G : Spec.Mgf1.Hash} {V5 V9 sf : Nat → Byte} {k lo db sl D : 
       else V5 x := fun x => by
     simp only [cpV, upd, clrV]
     by_cases h1 : P + 1 ≤ x ∧ x < P + 1 + sl
-    · rw [ifp h1, ifp (by omega_arith), ifp (by omega_arith), hsf _ (by omega_arith), show x - (P + 1) =
-        x - ((P + 1)) by omega_arith]
+    · rw [ifp h1, ifp (by omega_using [hdb, hfit, hP', h1]), ifp (by omega_using [hP', h1]), hsf _ (by omega_using [h1]), show x - (P + 1) =
+        x - ((P + 1)) by omega_using []]
     · rw [ifn h1]
       by_cases h2 : x = P
-      · rw [ifp h2, ifp (by omega_arith), ifn (by omega_arith), ifp h2]
+      · rw [ifp h2, ifp (by omega_using [hdb, hfit, hP', h2]), ifn (by omega_using [h2]), ifp h2]
       · rw [ifn h2]
         by_cases h3 : oEm ≤ x ∧ x < oEm + k
-        · rw [ifp h3, ifp h3, ifn (by omega_arith), ifn h2]
+        · rw [ifp h3, ifp h3, ifn (by omega_using [hP', h1]), ifn h2]
         · rw [ifn h3, ifn h3]
   -- `H` after `DB`.
   have hHB : (List.range D).map (fun i => upd (cpV (cpV (upd (clrV V5 oEm k) (P) 1) sf
@@ -111,7 +111,9 @@ theorem em_bytes {G : Spec.Mgf1.Hash} {V5 V9 sf : Nat → Byte} {k lo db sl D : 
     refine List.map_congr_left fun j hj => ?_
     have hj := List.mem_range.mp hj
     simp only [upd, cpV, clrV]
-    rw [ifn (by omega_arith), ifp (by omega_arith), Nat.add_sub_cancel_left, ifn (by omega_arith), ifn (by omega_arith), ifn (by omega_arith),
+    rw [ifn (by omega_using [hdb, hK', hj]), ifp (by omega_using [hj]), Nat.add_sub_cancel_left,
+        ifn (by omega_using [hfit, hDk, hP', c1, c3, hj]), ifn (by omega_using [hfit, hDk, hP', c1, c3, hj]),
+        ifn (by omega_using [hDk, c1, c3, hj]),
       hdig j hj]
   -- `V8`, over `EM`.
   have hV8 : ∀ x, oEm ≤ x → x < oEm + k → upd (cpV (cpV (upd (clrV V5 oEm k) (P) 1) sf
@@ -126,34 +128,37 @@ theorem em_bytes {G : Spec.Mgf1.Hash} {V5 V9 sf : Nat → Byte} {k lo db sl D : 
     rw [ifn hx, ifn hx]
     simp only [cpV]
     by_cases hy : oEm + lo + db ≤ x
-    · rw [ifp (show oEm + lo + db ≤ x ∧ x < oEm + lo + db + D by omega_arith), ifp hy, ifn (by omega_arith)]
+    · rw [ifp (show oEm + lo + db ≤ x ∧ x < oEm + lo + db + D by omega_using [hdb, hK', h2, hx, hy]), ifp hy,
+        ifn (by omega_using [hdb, hfit, hDk, hP', c1, c3, h2])]
       simp only [upd, clrV]
-      rw [ifn (by omega_arith), ifn (by omega_arith), hdig _ (by omega_arith)]
-    rw [ifn (show ¬(oEm + lo + db ≤ x ∧ x < oEm + lo + db + D) by omega_arith), ifn hy]
+      rw [ifn (by omega_using [hdb, hfit, hDk, hP', c1, c3, h2]), ifn (by omega_using [hdb, hDk, c1, c3, h2]),
+          hdig _ (by omega_using [hdb, hK', h2, hx, hy])]
+    rw [ifn (show ¬(oEm + lo + db ≤ x ∧ x < oEm + lo + db + D) by omega_using [hy]), ifn hy]
     have := hV7 x
     simp only [cpV] at this
-    rw [this, ifp (show oEm ≤ x ∧ x < oEm + k by omega_arith)]
+    rw [this, ifp (show oEm ≤ x ∧ x < oEm + k by omega_using [h1, h2])]
     by_cases hz : (P + 1) ≤ x
-    · rw [ifp (show (P + 1) ≤ x ∧ x < oEm + lo + db by omega_arith), ifp hz]
-    · rw [ifn (show ¬((P + 1) ≤ x ∧ x < oEm + lo + db) by omega_arith), ifn hz]
+    · rw [ifp (show (P + 1) ≤ x ∧ x < oEm + lo + db by omega_using [hy, hz]), ifp hz]
+    · rw [ifn (show ¬((P + 1) ≤ x ∧ x < oEm + lo + db) by omega_using [hz]), ifn hz]
   intro i hi
-  have hco : ctOut (oEm + i) := ⟨by omega_arith, by omega_arith⟩
+  have hco : ctOut (oEm + i) := ⟨by omega_using [c1, c6], by omega_using [hk, c1, c7, hi]⟩
   simp only [upd, RsaPss.emT]
   by_cases hz : i = lo
   · rw [hz] at hco hi ⊢
-    rw [ifp rfl, h9 _ (by omega_arith) hco, hHB, mixV, hV8 _ (by omega_arith) (by omega_arith)]
+    rw [ifp rfl, h9 _ (by omega_using [hlo, c1, c5]) hco, hHB, mixV, hV8 _ (by omega_using []) (by omega_using [hi])]
     simp (disch := omega_arith) only [ifp, ifn, Nat.sub_self, ite_true]
     by_cases hdz : db - sl - 1 = 0
     · simp (disch := omega_arith) only [ifp, ifn]
-    · simp (disch := omega_arith) only [ifp, ifn]
-  · rw [ifn (show ¬ oEm + i = oEm + lo by omega_arith), h9 _ (by omega_arith) hco, hHB, mixV, hV8 _ (by omega_arith) (by omega_arith)]
+    · simp (disch := omega_using [hh, _hsl, hk, hlo, hdb, hfit, hD, hDk, hP', hK', c1, c3, c5, c6, c7, hi, hz, hdz]) only [ifp, ifn]
+  · rw [ifn (show ¬ oEm + i = oEm + lo by omega_using [hz]), h9 _ (by omega_using [hk, c1, c5, hi]) hco, hHB, mixV,
+      hV8 _ (by omega_using []) (by omega_using [hi])]
     rw [hh]
     by_cases hl : i < lo
     · simp (disch := omega_arith) only [ifp, ifn]
     by_cases hj : i - lo < db
-    · rw [show oEm + i - (oEm + lo) = i - lo by omega_arith]
+    · rw [show oEm + i - (oEm + lo) = i - lo by omega_using []]
       by_cases hs : db - sl ≤ i - lo
-      · rw [show oEm + i - ((P + 1)) = i - lo - (db - sl) by omega_arith]
+      · rw [show oEm + i - ((P + 1)) = i - lo - (db - sl) by omega_using [hfit, hP']]
         simp (disch := omega_arith) only [ifp, ifn]
       · by_cases ho : i - lo = db - sl - 1
         · simp (disch := omega_arith) only [ifp, ifn]
@@ -168,7 +173,7 @@ theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) 
     {W : Nat → BitVec 64} (R : Rep u.mem F S V W) {k lo sl : Nat} {c : Byte} {dig q : Addr}
     (hk : W 17 = BitVec.ofNat 64 k) (hlo : W 26 = BitVec.ofNat 64 lo) (hc : W 25 = BitVec.setWidth 64 c)
     (hdg : W 37 = dig) (hq : W 39 = q) (hsl : W 40 = BitVec.ofNat 64 sl)
-    (hk1 : 64 ≤ k) (hk2 : k ≤ 1024) (hlo1 : lo ≤ 1) (hfit : H.D + sl + 2 ≤ k - lo)
+    (_hk1 : 64 ≤ k) (hk2 : k ≤ 1024) (hlo1 : lo ≤ 1) (hfit : H.D + sl + 2 ≤ k - lo)
     (hax : u.gpr .rax = BitVec.ofNat 64 (k - lo - (H.D + 2)))
     (hdR : ∀ i < H.D, InRegions (u.rd ++ u.wr) (dig + BitVec.ofNat 64 i) 1)
     (hdO : ∀ i < H.D, Outside u.wr F (dig + BitVec.ofNat 64 i))
@@ -189,7 +194,7 @@ theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) 
   have c2 : oY = 3584 := rfl
   have c3 : oDig = 2304 := rfl
   have c5 : oRsa = 8192 := rfl
-  have hdb : k - lo - (H.D + 2) + 1 = db := by omega_arith
+  have hdb : k - lo - (H.D + 2) + 1 = db := by omega_using [hfit]
   rw [signEnc]
   simp only [seqs]
   -- `DB`'s slots.
@@ -205,20 +210,20 @@ theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) 
   refine WP.seq (WP.mono (WP.keepIn (by safe_by [copyDigest]) (by exact Nat.zero_le 8)
     (copyDigest_ok hH L2 R2 (p := dig) (by simp [upd, hdg]) hcx2
       (fun i hi => by rw [k2.2.1, k2.2.2, k1.2.1, k1.2.2]; exact hdR i hi)
-      (fun i hi j hj => Outside.ne L2 (by rw [k2.2.2, k1.2.2]; exact hdO i hi) (by omega_arith))))
+      (fun i hi j hj => Outside.ne L2 (by rw [k2.2.2, k1.2.2]; exact hdO i hi) (by omega_using [hDN, hN, c2, c5, hj]))))
     fun u3 ⟨⟨L3, k3, R3⟩, f3⟩ => ?_)
   have hS3 := chain (u := u) (k2.2.2.trans k1.2.2) L2.rsp hS2 f3
   -- The salt.
   refine WP.seq (WP.mono (WP.keepIn (by safe_by [copySaltY]) (by exact Nat.zero_le 8)
-    (copySaltY_ok hH L3 R3 (q := q) (sl := sl) (by simp [upd, hq]) (by simp [upd, hsl]) (by omega_arith)
+    (copySaltY_ok hH L3 R3 (q := q) (sl := sl) (by simp [upd, hq]) (by simp [upd, hsl]) (by omega_using [hk2, hfit])
       ((k3.gpr (by decide)).trans hcx2)
       (fun i hi => by rw [k3.2.1, k3.2.2, k2.2.1, k2.2.2, k1.2.1, k1.2.2]; exact hqR i hi)
-      (fun i hi j hj => Outside.ne L3 (by rw [k3.2.2, k2.2.2, k1.2.2]; exact hqO i hi) (by omega_arith))))
+      (fun i hi j hj => Outside.ne L3 (by rw [k3.2.2, k2.2.2, k1.2.2]; exact hqO i hi) (by omega_using [hk2, hfit, c2, c5, hj]))))
     fun u4 ⟨⟨L4, k4, R4⟩, f4⟩ => ?_)
   have hS4 := chain (u := u) (k3.2.2.trans (k2.2.2.trans k1.2.2)) L3.rsp hS3 f4
   -- The length of `M'`.
   refine WP.seq (WP.mono (WP.keepIn (by safe_by [signLen]) (by exact Nat.zero_le 8)
-    (signLen_ok hH L4 R4 (sl := sl) (by simp [upd, hsl]) (by omega_arith))) fun u5 ⟨⟨L5, k5, R5⟩, f5⟩ => ?_)
+    (signLen_ok hH L4 R4 (sl := sl) (by simp [upd, hsl]) (by omega_using [hk2, hfit]))) fun u5 ⟨⟨L5, k5, R5⟩, f5⟩ => ?_)
   have hS5 := chain (u := u) (k4.2.2.trans (k3.2.2.trans (k2.2.2.trans k1.2.2))) L4.rsp hS4 f5
   -- `H`.
   set digB := (List.range H.D).map (bytesF u.mem dig) with hdigB
@@ -232,62 +237,65 @@ theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) 
   have hnb2 := Nat.div_mul_le_self (8 + H.D + sl + H.P.L) H.P.B
   refine WP.seq (WP.mono (WP.keepIn (ctHash_safe hH K) (by rw [ctHash_xd K])
     (ctHash_ok hH K L5 R5 (msg := msg) (nbm := (8 + H.D + sl + H.P.L) / H.P.B + 1)
-      (by simp [upd, hml]) (by simp [upd]) (by rw [hml, Nat.succ_mul]; omega_arith) (by rw [Nat.succ_mul]; omega_arith)
+      (by simp [upd, hml]) (by simp [upd]) (by rw [hml, Nat.succ_mul]; omega_using [hnb1])
+          (by rw [Nat.succ_mul]; omega_using [hk2, hfit, hBl, hL, hnb2])
       (fun i hi => ?_))) fun u6 ⟨⟨L6, rd6, wr6, cs6, V5, W3, R6, hout6, hW6, hdig6⟩, f6⟩ => ?_)
-  · have hi' : i < 2048 := by rw [Nat.succ_mul] at hi; omega_arith
+  · have hi' : i < 2048 := by rw [Nat.succ_mul] at hi; omega_using [hk2, hfit, hBl, hL, hnb2, hi]
     simp only [cpV, clrV, hmsg, getD_app, List.length_append, RsaPss.zeros_length, hdigB, saltB, List.length_map,
       List.length_range, getD_map_range, bytesF]
     by_cases h1 : i < 8
-    · rw [ifn (show ¬(oY + (8 + H.D) ≤ oY + i ∧ oY + i < oY + (8 + H.D) + sl) by omega_arith),
-        ifn (show ¬(oY + 8 ≤ oY + i ∧ oY + i < oY + 8 + H.D) by omega_arith),
-        ifp (show oY ≤ oY + i ∧ oY + i < oY + 2048 by omega_arith), ifp (show i < 8 + H.D by omega_arith), ifp h1,
+    · rw [ifn (show ¬(oY + (8 + H.D) ≤ oY + i ∧ oY + i < oY + (8 + H.D) + sl) by omega_using [h1]),
+        ifn (show ¬(oY + 8 ≤ oY + i ∧ oY + i < oY + 8 + H.D) by omega_using [h1]),
+        ifp (show oY ≤ oY + i ∧ oY + i < oY + 2048 by omega_using [h1]), ifp (show i < 8 + H.D by omega_using [h1]), ifp h1,
         RsaPss.zeros_getD]
     by_cases h2 : i < 8 + H.D
-    · rw [ifn (show ¬(oY + (8 + H.D) ≤ oY + i ∧ oY + i < oY + (8 + H.D) + sl) by omega_arith),
-        ifp (show oY + 8 ≤ oY + i ∧ oY + i < oY + 8 + H.D by omega_arith), ifp h2, ifn h1,
-        ifp (show i - 8 < H.D by omega_arith), show oY + i - (oY + 8) = i - 8 by omega_arith]
-      exact hS2 _ (hdO _ (by omega_arith))
+    · rw [ifn (show ¬(oY + (8 + H.D) ≤ oY + i ∧ oY + i < oY + (8 + H.D) + sl) by omega_using [h2]),
+        ifp (show oY + 8 ≤ oY + i ∧ oY + i < oY + 8 + H.D by omega_using [h1, h2]), ifp h2, ifn h1,
+        ifp (show i - 8 < H.D by omega_using [h1, h2]), show oY + i - (oY + 8) = i - 8 by omega_using []]
+      exact hS2 _ (hdO _ (by omega_using [h1, h2]))
     by_cases h3 : i < 8 + H.D + sl
-    · rw [ifp (show oY + (8 + H.D) ≤ oY + i ∧ oY + i < oY + (8 + H.D) + sl by omega_arith), ifn h2,
-        ifp (show i - (8 + H.D) < sl by omega_arith), show oY + i - (oY + (8 + H.D)) = i - (8 + H.D) by omega_arith]
-      exact hS3 _ (hqO _ (by omega_arith))
-    · rw [ifn (show ¬(oY + (8 + H.D) ≤ oY + i ∧ oY + i < oY + (8 + H.D) + sl) by omega_arith),
-        ifn (show ¬(oY + 8 ≤ oY + i ∧ oY + i < oY + 8 + H.D) by omega_arith),
-        ifp (show oY ≤ oY + i ∧ oY + i < oY + 2048 by omega_arith), ifn h2, ifn (show ¬ i - (8 + H.D) < sl by omega_arith)]
+    · rw [ifp (show oY + (8 + H.D) ≤ oY + i ∧ oY + i < oY + (8 + H.D) + sl by omega_using [h2, h3]), ifn h2,
+        ifp (show i - (8 + H.D) < sl by omega_using [h2, h3]), show oY + i - (oY + (8 + H.D)) = i - (8 + H.D) by omega_using []]
+      exact hS3 _ (hqO _ (by omega_using [h2, h3]))
+    · rw [ifn (show ¬(oY + (8 + H.D) ≤ oY + i ∧ oY + i < oY + (8 + H.D) + sl) by omega_using [h3]),
+        ifn (show ¬(oY + 8 ≤ oY + i ∧ oY + i < oY + 8 + H.D) by omega_using [h3]),
+        ifp (show oY ≤ oY + i ∧ oY + i < oY + 2048 by omega_using [hi']), ifn h2, ifn (show ¬ i - (8 + H.D) < sl by omega_using [h3])]
   have hS6 := chain (u := u) (k5.2.2.trans (k4.2.2.trans (k3.2.2.trans (k2.2.2.trans k1.2.2)))) L5.rsp hS5 f6
   have wr6' : u6.wr = u.wr := wr6.trans (k5.2.2.trans (k4.2.2.trans (k3.2.2.trans (k2.2.2.trans k1.2.2))))
   have rd6' : u6.rd = u.rd := rd6.trans (k5.2.1.trans (k4.2.1.trans (k3.2.1.trans (k2.2.1.trans k1.2.1))))
   have hW3 : ∀ j < nW, j ≠ 23 → j ≠ 24 → j ≠ 27 → j ≠ 28 → j ≠ 29 → j ≠ 30 → W3 j = W j := fun j hj a b c d e f => by
     rw [hW6 j hj e f]; simp [upd, a, b, c, d]
   have hW3' : ∀ j, j < nW → (j < 23 ∨ j = 25 ∨ j = 26 ∨ 30 < j) → W3 j = W j := fun j hj hj' =>
-    hW3 j hj (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    hW3 j hj (by omega_using [hj']) (by omega_using [hj']) (by omega_using [hj']) (by omega_using [hj'])
+        (by omega_using [hj']) (by omega_using [hj'])
   have h23 : W3 23 = off S (oEm + lo) := by rw [hW6 23 (by decide) (by decide) (by decide)]; simp [upd]
   have h24 : W3 24 = BitVec.ofNat 64 db := by rw [hW6 24 (by decide) (by decide) (by decide)]; simp [upd]
   -- `EM` cleared.
   refine WP.seq (WP.mono (WP.keepIn (by decide) (by exact Nat.zero_le 8)
-    (clearEm_ok L6 R6 (k := k) (by rw [hW3' 17 (by decide) (by decide)]; exact hk) (by omega_arith) hk2))
+    (clearEm_ok L6 R6 (k := k) (by rw [hW3' 17 (by decide) (by decide)]; exact hk) (by omega_using [hdb]) hk2))
     fun u7 ⟨⟨L7, k7, R7⟩, f7⟩ => ?_)
   have hS7 := chain (u := u) wr6' L6.rsp hS6 f7
   -- `0x01` and the salt.
   refine WP.seq (WP.mono (putSalt_ok L7 R7 (e := oEm + lo) (db := db) (q := q) (sl := sl) h23 h24
     (by rw [hW3' 39 (by decide) (by decide)]; exact hq)
     (by rw [hW3' 40 (by decide) (by decide)]; exact hsl)
-    (by omega_arith) (by omega_arith) (fun i hi => by rw [k7.2.1, k7.2.2, rd6', wr6']; exact hqR i hi)
-    (fun i hi j hj => Outside.ne L7 (by rw [k7.2.2, wr6']; exact hqO i hi) (by omega_arith)))
+    (by omega_using [hfit]) (by omega_using [hk2, c1, c5, hdb]) (fun i hi => by rw [k7.2.1, k7.2.2, rd6', wr6']; exact hqR i hi)
+    (fun i hi j hj => Outside.ne L7 (by rw [k7.2.2, wr6']; exact hqO i hi) (by omega_using [hk2, hfit, c1, c5, hj])))
     fun u8 ⟨L8, k8, R8⟩ => ?_)
   -- `H` and `0xbc`.
   refine WP.seq (WP.mono (putH_ok hH L8 R8 (e := oEm + lo) (db := db) (k := k) h23 h24
     (by rw [hW3' 17 (by decide) (by decide)]; exact hk)
-    (by omega_arith) (by omega_arith) hk2) fun u9 ⟨L9, k9, R9⟩ => ?_)
+    (by omega_using []) (by omega_using [hdb]) hk2) fun u9 ⟨L9, k9, R9⟩ => ?_)
   -- The mask.
   refine WP.seq (WP.mono (mgfXor_ok hH K lk.hash lk.len (validG hH lk.hash lk.len) L9 R9 (e := oEm + lo) (db := db)
-    ⟨by omega_arith, by omega_arith, by omega_arith⟩ h23 h24) fun u10 ⟨L10, rd10, wr10, cs10, V9, W4, R10, hW10, hV10⟩ => ?_)
+    ⟨by omega_using [], by omega_using [hdb], by omega_using [hk2, hdb]⟩ h23 h24) fun u10 ⟨L10, rd10, wr10, cs10, V9,
+        W4, R10, hW10, hV10⟩ => ?_)
   -- The top bits.
-  have h23' : W4 23 = off S (oEm + lo) := by rw [hW10 23 (by decide) (by omega_arith), h23]
-  have h25' : W4 25 = BitVec.setWidth 64 c := by rw [hW10 25 (by decide) (by omega_arith), hW3' 25 (by decide) (by decide)]; exact hc
-  refine WP.mono (clearTop_ok L10 R10 (e := oEm + lo) (c := c) h23' h25' (by omega_arith)) fun u11 ⟨L11, k11, R11⟩ => ?_
+  have h23' : W4 23 = off S (oEm + lo) := by rw [hW10 23 (by decide) (by omega_using []), h23]
+  have h25' : W4 25 = BitVec.setWidth 64 c := by rw [hW10 25 (by decide) (by omega_using []), hW3' 25 (by decide) (by decide)]; exact hc
+  refine WP.mono (clearTop_ok L10 R10 (e := oEm + lo) (c := c) h23' h25' (by omega_using [hlo1, c1, c5])) fun u11 ⟨L11, k11, R11⟩ => ?_
   refine ⟨L11, by rw [k11.2.1, rd10, k9.2.1, k8.2.1, k7.2.1, rd6'], by rw [k11.2.2, wr10, k9.2.2, k8.2.2, k7.2.2, wr6'],
-    fun r hr => ?_, _, _, R11, fun j hj h' => by rw [hW10 j hj (by omega_arith), hW3' j hj (by omega_arith)], fun i hi => ?_⟩
+    fun r hr => ?_, _, _, R11, fun j hj h' => by rw [hW10 j hj (by omega_using [h']), hW3' j hj (by omega_using [h'])], fun i hi => ?_⟩
   · rw [keep_cs k11 (by decide) r hr, cs10 r hr, keep_cs k9 (by decide) r hr, keep_cs k8 (by decide) r hr,
       keep_cs k7 (by decide) r hr, cs6 r hr, keep_cs k5 (by decide) r hr, keep_cs k4 (by decide) r hr,
       keep_cs k3 (by decide) r hr, keep_cs k2 (by decide) r hr, keep_cs k1 (by decide) r hr]
@@ -296,7 +304,7 @@ theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) 
   have hdig : ∀ j < H.D, V5 (oDig + j) = h.getD j 0 := fun j hj => by
     rw [map_range_getD hdig6 hj, ← lk.hash]
   refine em_bytes (V5 := V5) (sf := fun j => u7.mem (q + BitVec.ofNat 64 j)) (saltB := saltB) hdig hh
-    (by simp [saltB]) (fun j hj => ?_) hk2 hlo1 (by omega_arith) (by omega_arith) hD (by omega_arith) hV10 i hi
+    (by simp [saltB]) (fun j hj => ?_) hk2 hlo1 (by omega_using [hdb]) (by omega_using [hfit]) hD (by omega_using [hDN, hN]) hV10 i hi
   simp only [saltB, getD_map_range, ifp hj, bytesF]
   exact hS7 _ (hqO j hj)
 

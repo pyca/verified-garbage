@@ -105,36 +105,38 @@ end
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
 
-def PowersFrame (x : BitVec 32) (o n : Nat) (m m' : Mem) : Prop :=
-  Frame [sub x 24 4, sub x 64 864, sub x o n] m m'
+def PowersFrame (x : BitVec 32) (s : State) (o n : Nat) (m m' : Mem) : Prop :=
+  Frame [sub x 24 4, sub x 64 960, sub x o n, callStk s] m m'
 
 structure PowersKeep (x : BitVec 32) (o n : Nat) (s t : State) : Prop where
   edi : t.gpr .edi = s.gpr .edi
   esp : t.gpr .esp = s.gpr .esp
   rd : t.rd = s.rd
   wr : t.wr = s.wr
-  frame : PowersFrame x o n s.mem t.mem
+  frame : PowersFrame x s o n s.mem t.mem
 
 theorem PowersKeep.refl (x : BitVec 32) (o n : Nat) (s : State) : PowersKeep x o n s s :=
   ⟨rfl, rfl, rfl, rfl, Frame.refl _ _⟩
 
 theorem PowersKeep.ctx {x : BitVec 32} {o n : Nat} {s t : State}
-    (h : PowersKeep x o n s t) (hc : Ctx x s) : Ctx x t := hc.keep h.edi h.wr
+    (h : PowersKeep x o n s t) (hc : Ctx x s) : Ctx x t := hc.keep h.edi h.wr h.esp
 
 theorem PowersKeep.trans {x : BitVec 32} {o n : Nat} {s t u : State}
     (h : PowersKeep x o n s t) (k : PowersKeep x o n t u) : PowersKeep x o n s u :=
-  ⟨k.edi.trans h.edi, k.esp.trans h.esp, k.rd.trans h.rd, k.wr.trans h.wr, h.frame.trans k.frame⟩
+  ⟨k.edi.trans h.edi, k.esp.trans h.esp, k.rd.trans h.rd, k.wr.trans h.wr,
+    h.frame.trans (by rw [callStk, ← h.esp]; exact k.frame)⟩
 
-theorem PowersFrame.mono {x : BitVec 32} {o n o' n' : Nat} {m m' : Mem}
-    (h : PowersFrame x o n m m') (hx : x.toNat + 8192 ≤ 2 ^ 32)
-    (ho : o' ≤ o) (hn : o + n ≤ o' + n') (hob : o < 8192) : PowersFrame x o' n' m m' := by
+theorem PowersFrame.mono {x : BitVec 32} {s : State} {o n o' n' : Nat} {m m' : Mem}
+    (h : PowersFrame x s o n m m') (hx : x.toNat + 8192 ≤ 2 ^ 32)
+    (ho : o' ≤ o) (hn : o + n ≤ o' + n') (hob : o < 8192) : PowersFrame x s o' n' m m' := by
   apply h.sub
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨sub x 24 4, by simp, fun _ ha => ha⟩
-  · exact ⟨sub x 64 864, by simp, fun _ ha => ha⟩
+  · exact ⟨sub x 64 960, by simp, fun _ ha => ha⟩
   · exact ⟨sub x o' n', by simp, sub_sub hx ho hn hob⟩
+  · exact ⟨callStk s, by simp, fun _ ha => ha⟩
 
 theorem PowersKeep.mono {x : BitVec 32} {o n o' n' : Nat} {s t : State}
     (h : PowersKeep x o n s t) (hc : Ctx x s)
@@ -143,13 +145,16 @@ theorem PowersKeep.mono {x : BitVec 32} {o n o' n' : Nat} {s t : State}
 
 theorem PowersKeep.of_ikeep {x : BitVec 32} {s t : State} (h : IKeep x s t) (o n : Nat) :
     PowersKeep x o n s t :=
-  ⟨h.edi, h.esp, h.rd, h.wr, h.frame.mono (fun _r hr => List.mem_cons_of_mem _
-    (List.mem_cons.mpr (Or.inl (List.mem_singleton.mp hr))))⟩
+  ⟨h.edi, h.esp, h.rd, h.wr, h.frame.mono fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with rfl | rfl <;> simp only [true_or, or_true]⟩
 
 theorem PowersKeep.of_copy {x : BitVec 32} {o n : Nat} {s t : State} (h : CopyKeep x o n s t) :
     PowersKeep x o n s t :=
   ⟨h.gpr _ (by decide), h.gpr _ (by decide), h.rd, h.wr,
-    h.frame.mono (fun _r hr => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr))⟩
+    h.frame.mono fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      rw [hr]; simp only [true_or, or_true]⟩
 
 theorem PowersKeep.of_counter {x : BitVec 32} {s t : State} (o n : Nat)
     (he : t.gpr .edi = s.gpr .edi) (hs : t.gpr .esp = s.gpr .esp)
@@ -159,26 +164,28 @@ theorem PowersKeep.of_counter {x : BitVec 32} {s t : State} (o n : Nat)
 
 theorem workspace_counter {x : BitVec 32} {s t : State} (h : IKeep x s t) (hc : Ctx x s) :
     wd t.mem x 24 = wd s.mem x 24 :=
-  wd_frame1 h.frame hc.fit (by decide) (by decide) (Or.inl (by decide))
+  wd_frame1s hc h.frame (by decide) (by decide) (Or.inl (by decide))
 
 theorem workspace_table {x : BitVec 32} {s t : State} (h : IKeep x s t) (hc : Ctx x s)
-    (o : Nat) (hlo : 928 ≤ o) (ho : o + 128 ≤ 8192) :
+    (o : Nat) (hlo : 1024 ≤ o) (ho : o + 128 ≤ 8192) :
     tablePoint t.mem x o = tablePoint s.mem x o :=
-  tablePoint_frame hc.fit h.frame (by decide) ho (Or.inr hlo)
+  table_point_of_words fun k hk => wd_frame1s hc h.frame (by decide) (by omega) (Or.inr (by omega))
 
-theorem PowersFrame.table {x : BitVec 32} {o n a : Nat} {m m' : Mem}
-    (h : PowersFrame x o n m m') (hx : x.toNat + 8192 ≤ 2 ^ 32)
-    (ho : o + n ≤ 8192) (ha : a + 128 ≤ 8192) (hlo : 928 ≤ a)
+theorem PowersFrame.table {x : BitVec 32} {s : State} (hc : Ctx x s) {o n a : Nat} {m m' : Mem}
+    (h : PowersFrame x s o n m m')
+    (ho : o + n ≤ 8192) (ha : a + 128 ≤ 8192) (hlo : 1024 ≤ a)
     (hsep : a + 128 ≤ o ∨ o + n ≤ a) : tablePoint m' x a = tablePoint m x a := by
+  have hx := hc.fit
   apply table_point_of_words
   intro k hk
   apply wd_frame h
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact sub_disj (by omega) (by omega) (Or.inr (by omega))
   · exact sub_disj (by omega) (by omega) (Or.inr (by omega))
   · exact sub_disj (by omega) (by omega) (by omega)
+  · exact stk_apart hc (by omega) (by decide)
 
 end VG.Proof.Ed25519.X86
 end
@@ -280,7 +287,7 @@ theorem powerBatch_ok {x : BitVec 32} {s : State} (hc : Ctx x s)
 
 theorem powersBody_ok {x : BitVec 32} {s : State} (hc : Ctx x s)
     (start count j : Nat) (batch : Bool) (hj : j < count) (hc' : count ≤ 32)
-    (hlo : 928 ≤ start) (hfit : start + 128 * count ≤ 8192)
+    (hlo : 1024 ≤ start) (hfit : start + 128 * count ≤ 8192)
     (hindex : wd s.mem x 24 = BitVec.ofNat 32 j) (hd : env s.mem x 16 = Spec.Ed25519.d) :
     WP isa (powersBody start count batch) s fun t =>
       PowersKeep x (start + 128 * j) 128 s t ∧ wd t.mem x 24 = BitVec.ofNat 32 (j + 1) ∧

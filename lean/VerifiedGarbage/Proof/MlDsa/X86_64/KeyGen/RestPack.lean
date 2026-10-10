@@ -72,8 +72,8 @@ theorem packS_ok {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {σ :
   unfold packS
   rcases hF.eta with ⟨he, hlen⟩ | ⟨he, hlen⟩ <;>
   refine WP.mono (bpAt_ok (eta_params hF) (lenS_eq p) (sc_ok _ (by simp only [oP]; omega))
-    ⟨by rw [hlen]; omega, show Reg.r13 ∉ MlKem.X86_64.argRegs by decide⟩ (by lay [hF.pk, hF.sk, hlen])
-    (by lay [hF.pk, hF.sk, hlen]) hP.bitPack S₀ (packIn_of (eta_le hF) hS (h.small r hr)))
+    ⟨by rw [hlen]; omega, show Reg.r13 ∉ MlKem.X86_64.argRegs by decide⟩ (by layd)
+    (by layd) hP.bitPack S₀ (packIn_of (eta_le hF) hS (h.small r hr)))
     fun s' ⟨hP', hx, hb⟩ => ?_ <;>
   · have hP'' : PPostB s s' [((.r13, 128 + lenS p * r), lenS p)] := hP'.b
     have hk' := h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_packS hF hr)
@@ -96,8 +96,8 @@ theorem packS_tr {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {r : 
   unfold packS
   rcases hF.eta with ⟨he, hlen⟩ | ⟨he, hlen⟩ <;>
   exact bpAt_tr (eta_params hF) (lenS_eq p) (sc_ok _ (by simp only [oP]; omega))
-    ⟨by rw [hlen]; omega, show Reg.r13 ∉ MlKem.X86_64.argRegs by decide⟩ (by lay [hF.pk, hF.sk, hlen])
-    (by lay [hF.pk, hF.sk, hlen]) hP.bitPack (show Reg.rbx ∈ kgRegs by decide) (show Reg.r13 ∈ kgRegs by decide)
+    ⟨by rw [hlen]; omega, show Reg.r13 ∉ MlKem.X86_64.argRegs by decide⟩ (by layd)
+    (by layd) hP.bitPack (show Reg.rbx ∈ kgRegs by decide) (show Reg.r13 ∈ kgRegs by decide)
 
 theorem packS_piece {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {r : Nat} (hr : r < p.ℓ + p.k) :
     Piece p (KRx p r 0 0) (KRx p (r + 1) 0 0) (packS P p r) :=
@@ -113,24 +113,24 @@ theorem nttS_ok {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {σ : 
   have hS := h.s1 j hj
   rw [ifn (Nat.lt_irrefl j)] at hS
   unfold nttS nttAt
-  refine WP.mono (ipAt_ok (t := ntt) (f := sP p j) (sc_ok _ (by simp only [oP]; omega)) (by lay) (by lay) (by lay)
+  refine WP.mono (ipAt_ok (t := ntt) (f := sP p j) (sc_ok _ (by simp only [oP]; omega)) (by layd) (by layd) (by layd)
     hP.ntt S₀ hS.1) fun s' ⟨hP', hx, hb⟩ => ?_
   have hP'' : PPostB s s' [(sP p j, 1024), (sc VG.Impl.MlKem.X86_64.oSS, 1024)] := hP'.b
   have L := S₀.lay
   have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
-  exact ⟨h.kc.step hF hp hP'' hx (by layk [hF.pk, hF.sk]), (hP'.cs .r15 (by decide)).trans h.r15, h.good,
-    h.small, fun e he => polyIs_frame' L hP'' (by layk [hF.pk, hF.sk]) (h.aS e he),
-    fun i hi => polyIs_frame' L hP'' (by layk [hF.pk, hF.sk]) (h.s2 i hi),
+  exact ⟨h.kc.step hF hp hP'' hx (by layd), (hP'.cs .r15 (by decide)).trans h.r15, h.good,
+    h.small, fun e he => polyIs_frame' L hP'' (by layd) (h.aS e he),
+    fun i hi => polyIs_frame' L hP'' (by layd) (h.s2 i hi),
     fun j' hj' => if e : j' = j then by
         subst e; rw [ifp (Nat.lt_succ_self j'), hP''.pa (p := sP p j') rbx_bases, ← hS.2]; exact hb
       else by
-        have := polyIs_frame' L hP'' (by layk [hF.pk, hF.sk]) (h.s1 j' hj')
+        have := polyIs_frame' L hP'' (by layd) (h.s1 j' hj')
         by_cases hlt : j' < j
         · rwa [ifp hlt, ← ifp (show j' < j + 1 by omega) (ntt (toRq (S j'))) (toRq (S j'))] at this
         · rwa [ifn hlt, ← ifn (show ¬ j' < j + 1 by omega) (ntt (toRq (S j'))) (toRq (S j'))] at this,
-    by rw [L.keepBytes hP'' (by layk [hF.pk, hF.sk])]; exact h.pk0,
-    by rw [L.keepBytes hP'' (by layk [hF.pk, hF.sk])]; exact h.sk0,
-    by rw [L.keepBytes hP'' (by layk [hF.pk, hF.sk])]; exact h.sk1,
+    by rw [L.keepBytes hP'' (by layd)]; exact h.pk0,
+    by rw [L.keepBytes hP'' (by layd)]; exact h.sk0,
+    by rw [L.keepBytes hP'' (by layd)]; exact h.sk1,
     fun r hr => by
       rw [L.keepBytes hP'' (by rcases hlen with hlen | hlen <;> layk [hF.pk, hF.sk, hlen])]; exact h.packs r hr,
     fun _ h => absurd h (Nat.not_lt_zero _)⟩
@@ -142,7 +142,7 @@ theorem nttS_tr {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {j : N
     fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁⟩ ⟨_, _, _, h₂⟩ => ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, (h₁.s1 j hj).1,
       (h₂.s1 j hj).1⟩
   unfold nttS nttAt
-  exact ipAt_tr (t := ntt) (f := sP p j) (sc_ok _ (by simp only [oP]; omega)) (by lay) (by lay) (by lay) hP.ntt
+  exact ipAt_tr (t := ntt) (f := sP p j) (sc_ok _ (by simp only [oP]; omega)) (by layd) (by layd) (by layd) hP.ntt
     (show Reg.rbx ∈ kgRegs by decide)
 
 theorem nttS_piece {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {j : Nat} (hj : j < p.ℓ) :

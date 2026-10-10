@@ -53,8 +53,12 @@ structure FinPre (nA w : Nat) (s : State) : Prop where
 
 theorem finPre_of {s : State} (h : finPre s) : FinPre 9 8 s := by
   simp only [finPre] at h
-  obtain ⟨hrd, hwr, d_cs, -, d_cw, -, -, d_sw, -, -, -, d_wa, -, r_s, -, r_w, -, k_c, k_s, -, k_w, -, fc, fs, -, fw,
-    sp, fa, hR⟩ := h
+  sig_split h
+  rename_i hrd hwr d_cs hdrop3 d_cw hdrop5 hdrop6 d_sw hdrop8 hdrop9 hdrop10 d_wa hdrop12 r_s hdrop14 r_w
+    hdrop16 k_c k_s hdrop19 k_w hdrop21 fc fs hdrop24 fw sp fa
+  clear hdrop3 hdrop5 hdrop6 hdrop8 hdrop9 hdrop10 hdrop12 hdrop14 hdrop16 hdrop19 hdrop21 hdrop24
+  have hR := h
+  clear h
   rw [ofNat_lit, below_eq sp] at k_c k_s k_w
   exact ⟨by rw [hrd, hwr]; exact covers_of_mem (by simp), by rw [hwr]; exact covers_of_mem (by simp),
     by rw [hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp), d_cs, d_cw, d_sw,
@@ -65,13 +69,22 @@ theorem finPre_tag {s : State} (h : finPre s) : Covers [⟨w64 (arg s 7), 16⟩]
     (arg s 7).toNat + 16 ≤ 2 ^ 32 ∧ (⟨w64 (arg s 7), 16⟩ : Region).Disjoint ⟨w64 (arg s 8), 2560⟩ ∧
     (⟨w64 (s.gpr .esp), 4⟩ : Region).Disjoint ⟨w64 (arg s 7), 16⟩ := by
   simp only [finPre] at h
-  obtain ⟨-, hwr, -, -, -, -, -, -, -, d_tw, -, -, -, -, r_t, -, -, -, -, -, -, -, -, -, ft, -, -, -, -⟩ := h
+  sig_split h
+  rename_i hdrop0 hwr hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 d_tw hdrop10 hdrop11 hdrop12 hdrop13
+    r_t hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop23 ft hdrop25 hdrop26 hdrop27
+  clear hdrop0 hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop10 hdrop11 hdrop12 hdrop13 hdrop15
+    hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop23 hdrop25 hdrop26 hdrop27
+  clear h
   exact ⟨by rw [hwr]; exact covers_of_mem (by simp), ft, d_tw, r_t⟩
 
 theorem verifyPre_of {s : State} (h : verifyPre s) : FinPre 10 9 s := by
   simp only [verifyPre] at h
-  obtain ⟨hrd, hwr, d_cs, d_cw, -, -, -, -, d_sw, -, d_wa, -, r_s, -, r_w, -, k_c, k_s, -, k_w, -, fc, fs, -, fw,
-    sp, fa, hR⟩ := h
+  sig_split h
+  rename_i hrd hwr d_cs d_cw hdrop4 hdrop5 hdrop6 hdrop7 d_sw hdrop9 d_wa hdrop11 r_s hdrop13 r_w hdrop15 k_c
+    k_s hdrop18 k_w hdrop20 fc fs hdrop23 fw sp fa
+  clear hdrop4 hdrop5 hdrop6 hdrop7 hdrop9 hdrop11 hdrop13 hdrop15 hdrop18 hdrop20 hdrop23
+  have hR := h
+  clear h
   rw [ofNat_lit, below_eq sp] at k_c k_s k_w
   exact ⟨by rw [hrd, hwr]; exact covers_of_mem (by simp), by rw [hwr]; exact covers_of_mem (by simp),
     by rw [hwr]; exact covers_of_mem (by simp), by rw [hrd, hwr]; exact covers_of_mem (by simp), d_cs, d_cw, d_sw,
@@ -82,7 +95,12 @@ theorem verifyPre_tag {s : State} (h : verifyPre s) :
     Covers [⟨w64 (arg s 7), (arg s 8).toNat⟩] (s.rd ++ s.wr) ∧ (arg s 7).toNat + (arg s 8).toNat ≤ 2 ^ 32 ∧
       (⟨w64 (arg s 7), (arg s 8).toNat⟩ : Region).Disjoint ⟨w64 (arg s 9), 2560⟩ := by
   simp only [verifyPre] at h
-  obtain ⟨hrd, hwr, -, -, -, -, d_tw, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, ft, -, -, -, -⟩ := h
+  sig_split h
+  rename_i hrd hwr hdrop2 hdrop3 hdrop4 hdrop5 d_tw hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13
+    hdrop14 hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 ft hdrop24 hdrop25 hdrop26
+  clear hdrop2 hdrop3 hdrop4 hdrop5 hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13 hdrop14 hdrop15
+    hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop24 hdrop25 hdrop26
+  clear h
   exact ⟨by rw [hrd, hwr]; exact covers_of_mem (by simp), ft, d_tw⟩
 
 theorem FinPre.lay {nA w : Nat} {s : State} (h : FinPre nA w s) :

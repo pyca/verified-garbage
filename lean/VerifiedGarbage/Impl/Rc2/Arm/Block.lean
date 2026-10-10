@@ -27,15 +27,15 @@ def rotate16 (r : Reg) (s : Nat) : List Instr :=
    .dp .orr r r (.reg .r12)] ++ mask r 16
 
 def mixInputs (j i : Nat) : List Instr :=
-  [.dp .and .r10 (wordReg (i + 3)) (.reg (wordReg (i + 2))),
+  ([.dp .and .r10 (wordReg (i + 3)) (.reg (wordReg (i + 2))),
    imm .r11 0, .dp .sub .r11 .r11 (.reg (wordReg (i + 3))), .dp .sub .r11 .r11 (.imm 1),
-   .dp .and .r11 .r11 (.reg (wordReg (i + 1))), .dp .add .r10 .r10 (.reg .r11)] ++ loadKey j
+   .dp .and .r11 .r11 (.reg (wordReg (i + 1))), .dp .add .r10 .r10 (.reg .r11)] : List Instr) ++ loadKey j
 
 def addInputs (r : Reg) : List Instr :=
-  [.dp .add r r (.reg .r8), .dp .add r r (.reg .r10)] ++ mask r 16
+  ([.dp .add r r (.reg .r8), .dp .add r r (.reg .r10)] : List Instr) ++ mask r 16
 
 def subInputs (r : Reg) : List Instr :=
-  [.dp .sub r r (.reg .r8), .dp .sub r r (.reg .r10)] ++ mask r 16
+  ([.dp .sub r r (.reg .r8), .dp .sub r r (.reg .r10)] : List Instr) ++ mask r 16
 
 def adjust (sub : Bool) (r : Reg) : List Instr :=
   [if sub then .dp .sub r r (.reg .r12) else .dp .add r r (.reg .r12)] ++ mask r 16

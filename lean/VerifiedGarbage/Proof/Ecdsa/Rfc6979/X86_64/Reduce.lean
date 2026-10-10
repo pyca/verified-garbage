@@ -209,6 +209,12 @@ theorem xw_kept (hL : L.Ok) {m m' : Mem} {n : Nat} (h : Outside L.B 24 n m m') (
         (by omega) (i := i) (by omega) (by have := hL.ng; omega)
       exact e
 
+/-- One more word of a subtraction with borrow: the words below `k` (`hs`)
+and word `k` (`e`), weighted by `Q = 2^(64 k)`. -/
+private theorem borrow_step {a b r x y z c d Q : Nat} (hs : a + r = b + Q * c)
+    (e : x + y + c = z + 2 ^ 64 * d) : a + Q * x + (r + Q * y) = b + Q * z + 2 ^ 64 * Q * d := by
+  grind
+
 /-- After `k` words: the number's in `V`'s place, and the difference in
 `K`'s with the borrow. -/
 theorem subs_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) (hL : L.Ok) (hsi : t.gpr .rsi = L.dg) (hdn : P.Q ≤ dn) :
@@ -263,7 +269,7 @@ theorem subs_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) (hL : 
       rw [hn] at e ⊢
       rw [Proof.Mont.pow64_succ]
       generalize 2 ^ (64 * k) = Q at *
-      grind
+      exact borrow_step hs e
 
 /-! ## The selection -/
 

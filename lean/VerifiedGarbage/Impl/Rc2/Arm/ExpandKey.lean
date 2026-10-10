@@ -32,7 +32,7 @@ def fillInput : List Instr :=
 def storeKey : List Instr := [.dp .add .lr .r6 (.reg .r0), .strb .r12 .lr 0]
 
 def fillFinish : List Instr :=
-  storeKey ++ [.dp .add .r0 .r0 (.imm 1), .cmp .r0 (.imm 128)]
+  storeKey ++ ([.dp .add .r0 .r0 (.imm 1), .cmp .r0 (.imm 128)] : List Instr)
 
 def fillKey : List Instr := fillInput ++ piLookup ++ fillFinish
 
@@ -53,7 +53,7 @@ def descendInput : List Instr :=
    .dp .add .lr .r6 (.reg .r9), .ldrb .r3 .lr 0, .dp .eor .r12 .r12 (.reg .r3)]
 
 def descendKey : List Instr :=
-  descendInput ++ piLookup ++ (storeKey ++ [.cmp .r0 (.imm 0)])
+  descendInput ++ piLookup ++ (storeKey ++ ([.cmp .r0 (.imm 0)] : List Instr))
 
 def expandCopyFill : Prog isa :=
   .seq (.loop (.block copyKey) .ne)

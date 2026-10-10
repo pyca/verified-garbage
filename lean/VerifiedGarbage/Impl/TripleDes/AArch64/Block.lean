@@ -12,23 +12,23 @@ def blockSave : List Instr := savedRegs.zipIdx.map fun (r, i) => .str .x r .x2 (
 def blockRestore : List Instr := savedRegs.zipIdx.map fun (r, i) => .ldr .x r .x2 (8 * i)
 
 def blockLoad : List Instr :=
-  [.ldr .x .x3 .x1 0, .rev .x3 .x3] ++
+  ([.ldr .x .x3 .x1 0, .rev .x3 .x3] : List Instr) ++
     permuteCode Spec.TripleDes.ip 64 .x10 .x3 .x11 .x12 ++
-    [.lsr .x .x19 .x10 32, rr .x20 .x10] ++ mask .x20 32
+    ([.lsr .x .x19 .x10 32, rr .x20 .x10] : List Instr) ++ mask .x20 32
 
 def sboxInputs (i : Nat) : List Instr :=
-  [.ldr .x .x10 .x22 0, imm .x12 1] ++ (List.range 6).flatMap fun j =>
+  ([.ldr .x .x10 .x22 0, imm .x12 1] : List Instr) ++ (List.range 6).flatMap fun j =>
     let k := 6 * i + 5 - j
     [rr (q j) .x20] ++ shr (q j) (32 - Spec.TripleDes.expansion.getD k 1) ++
       [rr .x11 .x10] ++ shr .x11 (47 - k) ++
-      [.logic .eor .x (q j) (q j) .x11, .logic .and .x (q j) (q j) .x12]
+      ([.logic .eor .x (q j) (q j) .x11, .logic .and .x (q j) (q j) .x12] : List Instr)
 
 def sboxOutputs (i : Nat) : List Instr :=
   [imm .x10 1] ++ (List.range 4).flatMap fun j =>
     let position := 4 * i + 4 - j
     let dst := (Spec.TripleDes.p.toList.findIdx? (· == position)).getD 0
-    [.logic .and .x (q j) (q j) .x10] ++ placeBit (q j) (31 - dst) ++
-      [.logic .eor .x .x19 .x19 (q j)]
+    ([.logic .and .x (q j) (q j) .x10] : List Instr) ++ placeBit (q j) (31 - dst) ++
+      ([.logic .eor .x .x19 .x19 (q j)] : List Instr)
 
 def box (i : Nat) : List Instr := sboxInputs i ++ sboxCode i ++ sboxOutputs i
 
@@ -54,12 +54,12 @@ def blockBody (d : Direction) : Prog isa :=
   | .decrypt => .seq (pass 2 .decrypt) (.seq (pass 1 .encrypt) (pass 0 .decrypt))
 
 def blockStore : List Instr :=
-  [.lsl .x .x3 .x19 32, .logic .eor .x .x3 .x3 .x20] ++
-    permuteCode Spec.TripleDes.fp 64 .x10 .x3 .x11 .x12 ++ [.rev .x3 .x10]
+  ([.lsl .x .x3 .x19 32, .logic .eor .x .x3 .x3 .x20] : List Instr) ++
+    permuteCode Spec.TripleDes.fp 64 .x10 .x3 .x11 .x12 ++ ([.rev .x3 .x10] : List Instr)
 
 def block (d : Direction) : Prog isa :=
   .seq (.block (blockSave ++ blockLoad))
-    (.seq (blockBody d) (.block (blockStore ++ blockRestore ++ [.str .x .x3 .x1 0])))
+    (.seq (blockBody d) (.block (blockStore ++ blockRestore ++ ([.str .x .x3 .x1 0] : List Instr))))
 
 def encryptBlock : Prog isa := block .encrypt
 def decryptBlock : Prog isa := block .decrypt

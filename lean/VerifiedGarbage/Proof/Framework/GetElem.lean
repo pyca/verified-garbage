@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.InstancePriority
 /-!
 # Index bounds by `decide`
 

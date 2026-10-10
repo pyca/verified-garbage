@@ -178,6 +178,6 @@ def storeHalf (d : Nat) : List Instr := (List.range 8).map fun j => stS (d + j) 
 one at word 0, and on to the next entries; the state is left holding `D1`. -/
 def flLayer : List Instr :=
   loadHalf d2Slot ++ flinvCode 8 ++ storeHalf d2Slot ++
-  loadHalf d1Slot ++ flCode 0 ++ storeHalf d1Slot ++ [.addImm .x kp kp 128]
+  loadHalf d1Slot ++ flCode 0 ++ storeHalf d1Slot ++ ([.addImm .x kp kp 128] : List Instr)
 
 end VG.Impl.Camellia.AArch64

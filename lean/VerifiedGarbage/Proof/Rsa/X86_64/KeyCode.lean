@@ -122,9 +122,10 @@ structure KeyArgs (s : State) : Prop where
 
 theorem keyArgs_of {s : State} (h : keyContract.pre s) : KeyArgs s := by
   simp only [keyContract] at h
-  obtain ⟨hsp, hrd, hwr, dns, des, dds, dps, dqs, ddps, ddqs, dqis, dsa,
-    dRn, dRe, dRd, dRp, dRq, dRdp, dRdq, dRqi, dRs, dRa, wN, wE, wD, wP, wQ, wDp, wDq, wQi, wS, hk,
-    hel1, hel2, hdl1, hdl2, hpl1, hpl2, hql1, hql2, hdpl, hqil, hdql, hsl⟩ := h
+  sig_split h
+  rename_i hsp hrd hwr dns des dds dps dqs ddps ddqs dqis dsa dRn dRe dRd dRp dRq dRdp dRdq dRqi dRs
+    dRa wN wE wD wP wQ wDp wDq wQi wS hk hel1 hel2 hdl1 hdl2 hpl1 hpl2 hql1 hql2 hdpl hqil hdql
+  have hsl := h
   obtain ⟨hk1, hk2⟩ := hk
   unfold Spec.Rsa.scratchWords at hsl
   have hs : Scr s (stackArg s 10) ((stackArg s 11).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS

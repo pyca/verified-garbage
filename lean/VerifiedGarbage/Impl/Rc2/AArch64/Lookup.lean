@@ -34,9 +34,9 @@ def quarters (full : Bool) : List Instr :=
 
 /-- PITABLE of the low byte of `x8`, returned in `x8`. -/
 def piLookup : List Instr :=
-  loadTable (fun k => Spec.Rc2.piTable.getD k 0) ++ [.vop (.dup .b16 .v0 .x8)] ++ quarters true ++
+  loadTable (fun k => Spec.Rc2.piTable.getD k 0) ++ ([.vop (.dup .b16 .v0 .x8)] : List Instr) ++ quarters true ++
     select true ++
-    [.umov .w .x8 .v0 0] ++ mask .x8 8
+    ([.umov .w .x8 .v0 0] : List Instr) ++ mask .x8 8
 
 /-- Load schedule word `i` at `x0` into `x4`, using byte accesses. -/
 def loadKey (i : Nat) : List Instr :=
@@ -52,6 +52,6 @@ def loadSchedule : List Instr := (List.range 8).map fun r => .ldrq (treg r) .x0 
 def keyLookup : List Instr :=
   mask .x8 6 ++ loadSchedule ++
   [imm .x3 514, imm .x6 256, .madd .x .x8 .x8 .x3 .x6, .vop (.dup .s4 .v0 .x8)] ++
-  quarters false ++ select false ++ [.umov .w .x8 .v0 0] ++ mask .x8 16
+  quarters false ++ select false ++ ([.umov .w .x8 .v0 0] : List Instr) ++ mask .x8 16
 
 end VG.Impl.Rc2.AArch64

@@ -44,8 +44,8 @@ theorem square_col_sum (s : State) (x : BitVec 32) (a : Nat) :
   exact sqr_identity (fun i => wv s.mem x (a + 4 * i))
 
 /-- Full 512-bit square, with no carry beyond the output. -/
-theorem square_columns_ok {W : Nat} {x : BitVec 32} {s : State}
-    (hc : Ctx W x s) {o a : Nat} (ha : a + 32 ≤ 4096) (hoa : o + 64 ≤ a) :
+theorem square_columns_ok {W : Nat} {c : Bool} {x : BitVec 32} {s : State}
+    (hc : Ctx W x s c) {o a : Nat} (ha : a + 32 ≤ 4096) (hoa : o + 64 ≤ a) :
     WP isa (.block (zeroAcc ++ cols o 16 (sqrTerms a))) s fun u =>
       Keep s u ∧ Frame [sub x o 64] s.mem u.mem ∧
       num (fun k => wv u.mem x (o + 4 * k)) 16 = fe s.mem x a * fe s.mem x a ∧ acc u = 0 := by

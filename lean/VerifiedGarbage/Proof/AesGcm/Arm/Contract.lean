@@ -306,7 +306,11 @@ def openArm : Contract isa where
 /-! ## The shared preconditions, from each function's -/
 
 theorem streamFinishPreArm.fin {s : State} (h : streamFinishPreArm s) : finPre 6 5 s := by
-  obtain ⟨hrd, hwr, cs, -, cw, -, sw, sa, -, ta, wa, bc, bs, -, bw, fc, fs, -, fw, sp8, spf, hR⟩ := h
+  sig_split h
+  rename_i hrd hwr cs hdrop3 cw hdrop5 sw sa hdrop8 ta wa bc bs hdrop13 bw fc fs hdrop17 fw sp8 spf
+  clear hdrop3 hdrop5 hdrop8 hdrop13 hdrop17
+  have hR := h
+  clear h
   refine ⟨⟨by rw [hrd]; simp, by rw [hrd]; simp⟩, ⟨by rw [hwr]; simp, by rw [hwr]; simp, fun r hr => ?_⟩,
     cs, cw, sw, sa, wa, bc, bs, bw, fc, fs, fw, sp8, spf, hR⟩
   rw [hwr] at hr
@@ -317,7 +321,11 @@ theorem streamFinishPreArm.fin {s : State} (h : streamFinishPreArm s) : finPre 6
   · exact wa.symm
 
 theorem streamVerifyPreArm.fin {s : State} (h : streamVerifyPreArm s) : finPre 7 6 s := by
-  obtain ⟨hrd, hwr, cs, cw, -, sw, sa, -, wa, bc, bs, -, bw, fc, fs, -, fw, sp8, spf, hR⟩ := h
+  sig_split h
+  rename_i hrd hwr cs cw hdrop4 sw sa hdrop7 wa bc bs hdrop11 bw fc fs hdrop15 fw sp8 spf
+  clear hdrop4 hdrop7 hdrop11 hdrop15
+  have hR := h
+  clear h
   refine ⟨⟨by rw [hrd]; simp, by rw [hrd]; simp⟩, ⟨by rw [hwr]; simp, by rw [hwr]; simp, fun r hr => ?_⟩,
     cs, cw, sw, sa, wa, bc, bs, bw, fc, fs, fw, sp8, spf, hR⟩
   rw [hwr] at hr
@@ -327,8 +335,12 @@ theorem streamVerifyPreArm.fin {s : State} (h : streamVerifyPreArm s) : finPre 7
   · exact wa.symm
 
 theorem sealPreArm.one {s : State} (h : sealPreArm s) : onePre 6 5 s := by
-  obtain ⟨hrd, hwr, cd, -, cw, nd, -, nw, ad, -, aw, -, dw, da, -, ta, wa, bc, bn, ba, bd, -, bw, fc, fn, fa, fd,
-    -, fw, sp8, spf, hR⟩ := h
+  sig_split h
+  rename_i hrd hwr cd hdrop3 cw nd hdrop6 nw ad hdrop9 aw hdrop11 dw da hdrop14 ta wa bc bn ba bd hdrop21 bw
+    fc fn fa fd hdrop27 fw sp8 spf
+  clear hdrop3 hdrop6 hdrop9 hdrop11 hdrop14 hdrop21 hdrop27
+  have hR := h
+  clear h
   refine ⟨⟨by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp⟩,
     ⟨by rw [hwr]; simp, by rw [hwr]; simp, fun r hr => ?_⟩,
     cd, cw, nd, nw, ad, aw, dw, da, wa, bc, bn, ba, bd, bw, fc, fn, fa, fd, fw, sp8, spf, hR⟩
@@ -340,8 +352,12 @@ theorem sealPreArm.one {s : State} (h : sealPreArm s) : onePre 6 5 s := by
   · exact wa.symm
 
 theorem openPreArm.one {s : State} (h : openPreArm s) : onePre 7 6 s := by
-  obtain ⟨hrd, hwr, cd, cw, nd, nw, ad, aw, -, dw, da, -, wa, bc, bn, ba, bd, -, bw, fc, fn, fa, fd, -, fw, sp8, spf,
-    hR⟩ := h
+  sig_split h
+  rename_i hrd hwr cd cw nd nw ad aw hdrop8 dw da hdrop11 wa bc bn ba bd hdrop17 bw fc fn fa fd hdrop23 fw sp8
+    spf
+  clear hdrop8 hdrop11 hdrop17 hdrop23
+  have hR := h
+  clear h
   refine ⟨⟨by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp⟩,
     ⟨by rw [hwr]; simp, by rw [hwr]; simp, fun r hr => ?_⟩,
     cd, cw, nd, nw, ad, aw, dw, da, wa, bc, bn, ba, bd, bw, fc, fn, fa, fd, fw, sp8, spf, hR⟩

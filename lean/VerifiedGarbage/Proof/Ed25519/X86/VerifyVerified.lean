@@ -154,9 +154,10 @@ theorem decodeLoad_at {u x : State} (hu : VerifyPre u) {k : Nat} (hk : k < 2) (h
 
 theorem pointDecode_at {u x : State} (hu : VerifyPre u) {k : Nat} (hx : LoadedAt u k x) :
     WP isa pointDecode x (DecodedAt u k) := by
-  refine WP.mono (pointDecode_ok (hx.1.ctx hu.scratch.fit hu.scratch.wr)) fun t ht => ?_
+  have cx := hx.1.ctx hu.scratch.fit hu.scratch.wr hu.scratch.stk
+  refine WP.mono (pointDecode_ok cx) fun t ht => ?_
   refine ⟨hx.1.mulkeep hu.scratch.fit ht.1, ?_⟩
-  rw [wd_frame1 ht.1.frame hu.scratch.fit (by decide) (by decide) (Or.inr (by decide))]
+  rw [wd_frame1s cx ht.1.frame (by decide) (by decide) (Or.inr (by decide))]
   exact hx.2.2
 
 theorem decodeLoad_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {k : Nat} (hk : k < 2) :
@@ -224,15 +225,16 @@ theorem decodeBody_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {k : Nat
   rw [decodeBody]
   refine seq_runs (decodeLoad_ct h hk) (fun x hx => decodeLoad_at ps hk hx) (fun y hy => decodeLoad_at pt hk hy) ?_
   refine seq_runs ?_ (fun x hx => pointDecode_at ps hx) (fun y hy => pointDecode_at pt hy) (decodeNext_ct h)
-  refine (pointDecode_ct (arg s₀ 3) (Spec.Ed25519.decodeLE
+  refine (pointDecode_ct (arg s₀ 3) (s₀.gpr .esp) s₀.wr (Spec.Ed25519.decodeLE
     (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ k + BitVec.ofNat 32 0).setWidth 64) 32))).mono ?_ (fun _ _ h => h)
   intro x y ⟨hx, hy⟩
-  refine ⟨⟨hx.1.ctx ps.scratch.fit ps.scratch.wr, hx.2.1⟩, ?_⟩
   have e3 := h.args 3 (by decide)
-  have cy := hy.1.ctx pt.scratch.fit pt.scratch.wr
+  have cy := verify_pointCTCtx h.right hy.1
   rw [← e3] at cy
-  refine ⟨cy, ?_⟩
-  rw [e3, hy.2.1, hb]
+  refine ⟨⟨⟨verify_pointCTCtx h.left hx.1, hx.1.esp, hx.1.wr⟩, hx.2.1⟩,
+    ⟨⟨cy, hy.1.esp.trans h.pub.1.symm, hy.1.wr.trans ?_⟩, ?_⟩⟩
+  · rw [h.right.2.1, h.left.2.1, e3]
+  · rw [e3, hy.2.1, hb]
 
 theorem decodeLoop_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
     RelCT isa (fun x y => DecAt s₀ 0 x ∧ DecAt t₀ 0 y) (.loop decodeBody .ne)
@@ -270,7 +272,7 @@ theorem okTest_ok {u x : State} (hu : VerifyPre u) (hx : DecAt u 2 x) :
       Saved u (arg u 3) t ∧ t.mem = x.mem ∧ t.zf.map (!·) = some (decOk u 2) :=
   loadWd_ok hu hx.saved (d := DOK) (by decide) .eax (by decide) fun b hb eb _ mb =>
     Wp.wp_test fun c hc zc => WP.block_nil ⟨⟨by rw [hc.gpr]; exact hb.edi, by rw [hc.gpr]; exact hb.esp,
-      hc.rd.trans hb.rd, hc.wr.trans hb.wr, by rw [hc.mem]; exact hb.frame, by rw [hc.mem]; exact hb.saved⟩,
+      hc.rd.trans hb.rd, hc.wr.trans hb.wr, by rw [hc.mem]; exact hb.frame, by rw [hc.mem]; exact hb.saved, hb.stk⟩,
       hc.mem.trans mb, by rw [zc, eb, hx.ok, BitVec.and_self]; cases decOk u 2 <;> rfl⟩
 
 theorem verifyDecode_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
@@ -428,12 +430,14 @@ def verifyWide : Contract isa :=
     let scratch := scR 8192 (arg s 3)
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stk : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 8, 8⟩
     s.rd = [pk, sig, challenge] ∧ s.wr = [scratch, args] ∧
       pk.Disjoint scratch ∧ sig.Disjoint scratch ∧ challenge.Disjoint scratch ∧
       args.Disjoint scratch ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 64 ≤ 2 ^ 32 ∧
       (arg s 2).toNat + 64 ≤ 2 ^ 32 ∧ (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧
-      (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 }
+      (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧ 8 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint scratch ∧
+      stk.Disjoint pk ∧ stk.Disjoint sig ∧ stk.Disjoint challenge }
 
 def verifyRd (s : State) : List Region :=
   [sub (arg s 0) 0 32, sub (arg s 1) 0 64, sub (arg s 2) 0 64, ⟨argAddr s 0, 16⟩]
@@ -441,9 +445,14 @@ def verifyWr (s : State) : List Region := [sub (arg s 3) 0 0, scR 8192 (arg s 3)
 
 theorem verifyWide_pre (s : State) (h : verifyWide.pre s) :
     verifyLocal.pre (s.withRegions (verifyRd s) (verifyWr s)) := by
+  obtain ⟨-, -, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h20, ks, kp, kg, kc⟩ := h
   simp only [verifyLocal, verifyRd, verifyWr, arg_withRegions, argAddr_withRegions,
     State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr]
-  exact ⟨True.intro, True.intro, h.2.2⟩
+  have be : ∀ rd wr, callStk (s.withRegions rd wr) =
+      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 8, 8⟩ := fun _ _ => by
+    simp only [callStk, State.withRegions_gpr, VG.X86.Taint.sub_setWidth h20]
+  exact ⟨True.intro, True.intro, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h20, by rw [be]; exact ks,
+    by rw [be]; exact kp, by rw [be]; exact kg, by rw [be]; exact kc⟩
 
 def verifySatMem : Mem := fun a =>
   if a = 0x8005 then 0x10 else if a = 0x8009 then 0x20 else
@@ -465,11 +474,11 @@ private theorem byteMap_inj : ∀ {xs ys : List Byte}, xs.map (·.toNat) = ys.ma
     simp only [List.map_cons, List.cons.injEq] at h
     rw [BitVec.eq_of_toNat_eq h.1, byteMap_inj h.2]
 
-theorem verifyWide_implies : verifyWide.Implies (Spec.Ed25519.verifyEquationContract X86.abi) where
+theorem verifyWide_implies : verifyWide.Implies (Spec.Ed25519.verifyEquationContract X86.abi 8) where
   pre := by
     sig_implies_pre [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
       Spec.Ed25519.scratchWords, verifyWide, verifyLocal, sub, addr_zero,
-      X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+      X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow]
   post s t _ h := by
     sig_post [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
@@ -496,7 +505,7 @@ theorem verifyWide_implies : verifyWide.Implies (Spec.Ed25519.verifyEquationCont
     have esp : verifySatState.gpr .esp = 0x8000 := rfl
     sig_implies_sat [Spec.Ed25519.verifyEquationContract, Spec.Ed25519.verifyEquationSig,
       Spec.Ed25519.scratchWords, verifyWide, verifyLocal, sub, addr_zero,
-      X86.abi, X86.argSlots, X86.argVal, X86.argBytes] [a0, a1, a2, a3, e, esp] using verifySatState
+      X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow] [a0, a1, a2, a3, e, esp] using verifySatState
 
 end VG.Proof.Ed25519.X86
 end
@@ -540,7 +549,7 @@ open VG VG.X86 VG.Impl.Ed25519.X86
 theorem verify_verified_of_correct
     (correct : ∀ s, verifyLocal.pre s → WP isa verifyEquation s fun t => abiPreserved s t ∧ verifyLocal.post s t)
     (ct : ConstantTime isa verifyLocal.pre verifyLocal.pub verifyEquation) :
-    Verified X86.target verifyEquation (Spec.Ed25519.verifyEquationContract X86.abi) := by
+    Verified X86.target verifyEquation (Spec.Ed25519.verifyEquationContract X86.abi 8) := by
   have hsat := verifyWide_implies.sat_left
   have satLocal : ∃ s, verifyLocal.pre s := hsat.elim fun s h => ⟨_, verifyWide_pre s h⟩
   have verifiedLocal : Verified X86.target verifyEquation verifyLocal :=
@@ -553,7 +562,7 @@ theorem verify_verified_of_correct
     simpa only [verifyWide, verifyLocal, arg_withRegions, State.withRegions_gpr, State.withRegions_mem] using h
 
 theorem verify_verified : Verified X86.target verifyEquation
-    (Spec.Ed25519.verifyEquationContract X86.abi) :=
+    (Spec.Ed25519.verifyEquationContract X86.abi 8) :=
   verify_verified_of_correct (fun _ h => verify_correct h) verify_ct
 
 end VG.Proof.Ed25519.X86

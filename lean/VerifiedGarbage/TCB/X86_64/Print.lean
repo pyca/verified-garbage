@@ -284,6 +284,7 @@ def Instr.asm : Instr → List String
   | .ldmxcsr m => [s!"ldmxcsr {m.str32}"]
   | .lfence => ["lfence"]
   | .mul r => [s!"mul {r.name}"]
+  | .imul d r => [s!"imul {d.name}, {r.name}"]
   | .mulx hi lo s => [s!"mulx {hi.name}, {lo.name}, {s.str}"]
   | .adcx d s => [s!"adcx {d.name}, {s.str}"]
   | .adox d s => [s!"adox {d.name}, {s.str}"]
@@ -320,7 +321,7 @@ def Instr.memOps : Instr → List MemOp
   | .stmxcsr m | .ldmxcsr m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
   | .shift .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _ | .vpmovmskb .. | .zop _ | .eop _
-  | .lfence | .mul _
+  | .lfence | .mul _ | .imul ..
   | .push _ | .pop .. | .alloc _ | .free _ => []
 
 def printer : Printer isa where

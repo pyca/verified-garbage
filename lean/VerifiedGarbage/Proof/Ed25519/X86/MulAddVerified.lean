@@ -25,12 +25,14 @@ def scalarMulAddLocal : Contract isa where
     let scratch : Region := ⟨(arg s 4).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 20⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stk : Region := callStk s
     s.rd = [r, k, a, args] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
       r.Disjoint scratch ∧ k.Disjoint scratch ∧ a.Disjoint scratch ∧
       args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 32 ≤ 2 ^ 32 ∧
       (arg s 2).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 3).toNat + 32 ≤ 2 ^ 32 ∧
-      (arg s 4).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32
+      (arg s 4).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧
+      8 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint scratch ∧ stk.Disjoint r ∧ stk.Disjoint k ∧ stk.Disjoint a
   post s t := Spec.Ed25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 =
     Spec.Ed25519.scalarMulAdd (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
       (Spec.Ed25519.bytesAt s.mem ((arg s 2).setWidth 64) 32)
@@ -40,9 +42,11 @@ def scalarMulAddLocal : Contract isa where
 
 theorem scalarMulAdd_pre {s : State} (h : scalarMulAddLocal.pre s) :
     ScratchPre s 4 5 ∧ InputPre s 4 2 8 ∧ InputPre s 4 3 8 ∧ InputPre s 4 1 8 ∧ OutputPre s 4 := by
-  obtain ⟨rd, wr, os, rs, ks, ss, _, ars, ro, rsc, ofit, rfit, kfit, afit, sfit, spfit⟩ := h
-  refine ⟨⟨by decide, ?_, sfit, ?_, by omega_using [spfit], ars, rsc⟩,
-    ⟨?_, kfit, ?_⟩, ⟨?_, afit, ?_⟩, ⟨?_, rfit, ?_⟩, ⟨?_, ofit, os, ro⟩⟩
+  obtain ⟨rd, wr, os, rs, ks, ss, _, ars, ro, rsc, ofit, rfit, kfit, afit, sfit, spfit, h20, stk, tr, tk,
+    ta⟩ := h
+  refine ⟨⟨by decide, ?_, sfit, ?_, by omega_using [spfit], ars, rsc, h20, stk.symm⟩,
+    ⟨?_, kfit, ?_, by rw [sub, addr_zero]; exact tk.symm⟩, ⟨?_, afit, ?_, by rw [sub, addr_zero]; exact ta.symm⟩,
+    ⟨?_, rfit, ?_, by rw [sub, addr_zero]; exact tr.symm⟩, ⟨?_, ofit, os, ro⟩⟩
   · rw [wr]; simp
   · rw [rd]; simp
   · rw [sub, addr_zero, rd]; simp
@@ -185,9 +189,9 @@ theorem scalarMulAdd_correct {s : State} (h : scalarMulAddLocal.pre s) :
   simp only [scalarMulAdd, List.append_assoc]
   refine WP.seq (WP.block_append (WP.mono (abiSave_ok hp) fun u hu => ?_))
   refine WP.block_append (WP.mono (scalarMulInputs_ok hp hA hB hC hu) fun v ⟨hv, evA, evB, evC⟩ => ?_)
-  refine WP.mono (scalarWideMul_ok (hv.ctx hp.fit hp.wr)) fun w ⟨kw, fw, ew⟩ => ?_
+  refine WP.mono (scalarWideMul_ok (hv.ctx hp.fit hp.wr hp.stk)) fun w ⟨kw, fw, ew⟩ => ?_
   have hw := hv.of_offset hp.fit (Keep.scalar kw) fw (by decide) (by decide) (by decide)
-  refine WP.seq (WP.mono (scalarEngine_ok (hw.ctx hp.fit hp.wr)) fun z ⟨kz, fz, ez⟩ => ?_)
+  refine WP.seq (WP.mono (scalarEngine_ok (hw.ctx hp.fit hp.wr hp.stk)) fun z ⟨kz, fz, ez⟩ => ?_)
   have hz := hw.scalarEngine hp.fit kz fz
   refine WP.mono (finishWords_ok hp ho hz (src := scalarR) (by decide)) fun t ⟨abi_t, et⟩ => ⟨abi_t, ?_⟩
   change Spec.Ed25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 = _
@@ -245,23 +249,30 @@ def scalarMulAddWide : Contract isa :=
     let scratch : Region := ⟨(arg s 4).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 20⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stk : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 8, 8⟩
     s.rd = [r, k, a] ∧ s.wr = [out, scratch, args] ∧ out.Disjoint scratch ∧
       r.Disjoint scratch ∧ k.Disjoint scratch ∧ a.Disjoint scratch ∧
       args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 32 ≤ 2 ^ 32 ∧
       (arg s 2).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 3).toNat + 32 ≤ 2 ^ 32 ∧
-      (arg s 4).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 }
+      (arg s 4).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧
+      8 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint scratch ∧ stk.Disjoint r ∧ stk.Disjoint k ∧ stk.Disjoint a }
 
 def scalarMulAddRd (s : State) : List Region := [⟨(arg s 1).setWidth 64, 32⟩, ⟨(arg s 2).setWidth 64, 32⟩, ⟨(arg s 3).setWidth 64, 32⟩, ⟨argAddr s 0, 20⟩]
 def scalarMulAddWr (s : State) : List Region := [⟨(arg s 0).setWidth 64, 32⟩, ⟨(arg s 4).setWidth 64, 8192⟩]
 
 theorem scalarMulAddWide_pre (s : State) (h : scalarMulAddWide.pre s) :
     scalarMulAddLocal.pre (s.withRegions (scalarMulAddRd s) (scalarMulAddWr s)) := by
+  obtain ⟨-, -, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h20, ks, kr, kk, ka⟩ := h
   simp only [scalarMulAddLocal, scalarMulAddRd, scalarMulAddWr, arg_withRegions, argAddr_withRegions,
     State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr]
-  exact ⟨True.intro, True.intro, h.2.2⟩
+  have be : ∀ rd wr, callStk (s.withRegions rd wr) =
+      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 8, 8⟩ := fun _ _ => by
+    simp only [callStk, State.withRegions_gpr, VG.X86.Taint.sub_setWidth h20]
+  exact ⟨True.intro, True.intro, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h20,
+    by rw [be]; exact ks, by rw [be]; exact kr, by rw [be]; exact kk, by rw [be]; exact ka⟩
 
-theorem scalarMulAddWide_implies : scalarMulAddWide.Implies (Spec.Ed25519.scalarMulAddContract X86.abi) := by
+theorem scalarMulAddWide_implies : scalarMulAddWide.Implies (Spec.Ed25519.scalarMulAddContract X86.abi 8) := by
     have a0 : arg mulAddSatState 0 = 0x1000 := by decide
     have a1 : arg mulAddSatState 1 = 0x2000 := by decide
     have a2 : arg mulAddSatState 2 = 0x3000 := by decide
@@ -270,10 +281,10 @@ theorem scalarMulAddWide_implies : scalarMulAddWide.Implies (Spec.Ed25519.scalar
     have e : argAddr mulAddSatState 0 = 0x8004 := by decide
     have esp : mulAddSatState.gpr .esp = 0x8000 := rfl
     sig_implies [Spec.Ed25519.scalarMulAddContract, Spec.Ed25519.scalarMulAddSig,
-      Spec.Ed25519.scratchWords, scalarMulAddWide, scalarMulAddLocal, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      [a0, a1, a2, a3, a4, e, esp] using mulAddSatState
+      Spec.Ed25519.scratchWords, scalarMulAddWide, scalarMulAddLocal, X86.abi, X86.argSlots, X86.argVal, X86.argBytes,
+      stackBelow] [a0, a1, a2, a3, a4, e, esp] using mulAddSatState
 
-theorem scalarMulAdd_verified : Verified X86.target scalarMulAdd (Spec.Ed25519.scalarMulAddContract X86.abi) := by
+theorem scalarMulAdd_verified : Verified X86.target scalarMulAdd (Spec.Ed25519.scalarMulAddContract X86.abi 8) := by
   have hsat := scalarMulAddWide_implies.sat_left
   have satLocal : ∃ s, scalarMulAddLocal.pre s := hsat.elim fun s h => ⟨_, scalarMulAddWide_pre s h⟩
   have verifiedLocal : Verified X86.target scalarMulAdd scalarMulAddLocal :=

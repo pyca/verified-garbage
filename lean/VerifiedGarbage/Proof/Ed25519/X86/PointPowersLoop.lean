@@ -17,7 +17,7 @@ structure PowersInv (s₀ : State) (x : BitVec 32) (o count n : Nat) (batch : Bo
   keep : PowersKeep x o (128 * count) s₀ s
 
 theorem powersLoop_ok (batch : Bool) {s₀ : State} {x : BitVec 32} (hc : Ctx x s₀)
-    (o count : Nat) (hlo : 928 ≤ o) (hbound : o + 128 * count ≤ 8192)
+    (o count : Nat) (hlo : 1024 ≤ o) (hbound : o + 128 * count ≤ 8192)
     (hn0 : 0 < count) (hn : count ≤ 32) (hcounter : wd s₀.mem x 24 = 0)
     (hd : env s₀.mem x 16 = Spec.Ed25519.d) :
     WP isa (.loop (powersBody o count batch) .ne) s₀ fun t =>
@@ -42,7 +42,7 @@ theorem powersLoop_ok (batch : Bool) {s₀ : State} {x : BitVec 32} (hc : Ctx x 
         powerPoint (point (env s₀.mem x) 0 1 2 3) (powerStride batch * j) := by
       intro j hj
       by_cases hj' : j < count - (k + 1)
-      · rw [kt.frame.table hc.fit (by omega) (by omega) (by omega) (Or.inl (by omega)), hi.table j hj']
+      · rw [kt.frame.table hi.scratch (by omega) (by omega) (by omega) (Or.inl (by omega)), hi.table j hj']
       · have he : j = count - (k + 1) := by omega
         rw [he, tt, hi.value]
     have hh : ∀ i : Slot, 16 ≤ i.val → env t.mem x i = env s₀.mem x i :=
@@ -59,7 +59,7 @@ theorem powersLoop_ok (batch : Bool) {s₀ : State} {x : BitVec 32} (hc : Ctx x 
     · intro j hj; omega
 
 theorem pointPowers_ok (batch : Bool) {s : State} {x : BitVec 32} (hc : Ctx x s)
-    (o count : Nat) (hlo : 928 ≤ o) (hbound : o + 128 * count ≤ 8192)
+    (o count : Nat) (hlo : 1024 ≤ o) (hbound : o + 128 * count ≤ 8192)
     (hn0 : 0 < count) (hn : count ≤ 32) (hd : env s.mem x 16 = Spec.Ed25519.d) :
     WP isa (pointPowers o count batch) s fun t =>
       PowersKeep x o (128 * count) s t ∧

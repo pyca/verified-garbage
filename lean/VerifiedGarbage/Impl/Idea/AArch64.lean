@@ -72,7 +72,7 @@ def movConst (c : Nat) : List Instr :=
 
 /-- One group into `x9`, masked, then into `x11` (the first by `and`). -/
 def groupCode (first : Bool) (g : Nat × Nat × Nat) : List Instr :=
-  [.ldr .x .x9 .x0 (8 * g.1)] ++
+  ([.ldr .x .x9 .x0 (8 * g.1)] : List Instr) ++
   (if g.2.1 = 0 then [] else [.ror .x .x9 .x9 g.2.1]) ++
   movConst g.2.2 ++
   [if first then .logic .and .x .x11 .x9 .x10 else .logic .and .x .x9 .x9 .x10] ++
@@ -83,7 +83,7 @@ def expandWord (q : Nat) : List Instr :=
   (expandGroups q).zipIdx.flatMap fun (g, k) => groupCode (k = 0) g
 
 def expandKey : Prog isa :=
-  .block ((List.range 13).flatMap fun q => expandWord q ++ [.str .x .x11 .x1 (8 * q)])
+  .block ((List.range 13).flatMap fun q => expandWord q ++ ([.str .x .x11 .x1 (8 * q)] : List Instr))
 
 /-! ## Inversion -/
 
@@ -95,15 +95,15 @@ def loadKey (r : Reg) (k : Nat) : List Instr :=
 
 /-- `t := (t ⊙ t) ⊙ a` with `t = x6`, `a = x5`, and the count in `x7`. -/
 def invStep : List Instr :=
-  mulCode .x6 .x6 .x6 ++ mulCode .x6 .x6 .x5 ++ [.subImm .x .x7 .x7 1]
+  mulCode .x6 .x6 .x6 ++ mulCode .x6 .x6 .x5 ++ ([.subImm .x .x7 .x7 1] : List Instr)
 
 /-- Decryption subkey `n` into `x3`, zero-extended. -/
 def invWord (n : Nat) : Prog isa :=
   match invOp n with
-  | (.copy, k) => .block (loadKey .x3 k ++ [.logic .and .x .x3 .x3 .x15])
+  | (.copy, k) => .block (loadKey .x3 k ++ ([.logic .and .x .x3 .x3 .x15] : List Instr))
   | (.neg, k) => .block (loadKey .x4 k ++
-      [.movz .x .x3 0 0, .sub .x .x3 .x3 .x4, .logic .and .x .x3 .x3 .x15])
-  | (.inv, k) => .seq (.block (loadKey .x5 k ++ [.addImm .x .x6 .x5 0, .movz .x .x7 15 0]))
+      ([.movz .x .x3 0 0, .sub .x .x3 .x3 .x4, .logic .and .x .x3 .x3 .x15] : List Instr))
+  | (.inv, k) => .seq (.block (loadKey .x5 k ++ ([.addImm .x .x6 .x5 0, .movz .x .x7 15 0] : List Instr)))
       (.seq (.loop (.block invStep) (.nonzero .x .x7)) (.block [.addImm .x .x3 .x6 0]))
 
 /-- Decryption subkey `n` into its place in `x9`. -/
@@ -127,18 +127,18 @@ def addKey (r k : Reg) : List Instr := [.add .x r r k, .logic .and .x r r .x15]
 /-- Round `j` (0–7), its subkeys at `x0 + 12 j`, on `x3`–`x6`. -/
 def round (j : Nat) : List Instr :=
   let o := 12 * j
-  [.ldr .w .x8 .x0 o, .ldr .w .x9 .x0 (o + 4), .ldr .w .x13 .x0 (o + 8)] ++
+  ([.ldr .w .x8 .x0 o, .ldr .w .x9 .x0 (o + 4), .ldr .w .x13 .x0 (o + 8)] : List Instr) ++
   mulCode .x3 .x3 .x8 ++
-  [.lsr .x .x14 .x9 16] ++ mulCode .x6 .x6 .x14 ++
-  [.lsr .x .x14 .x8 16] ++ addKey .x4 .x14 ++
+  ([.lsr .x .x14 .x9 16] : List Instr) ++ mulCode .x6 .x6 .x14 ++
+  ([.lsr .x .x14 .x8 16] : List Instr) ++ addKey .x4 .x14 ++
   addKey .x5 .x9 ++
-  [.logic .eor .x .x7 .x3 .x5] ++ mulCode .x7 .x7 .x13 ++
-  [.logic .eor .x .x14 .x4 .x6, .add .x .x14 .x14 .x7, .lsr .x .x10 .x13 16] ++
+  ([.logic .eor .x .x7 .x3 .x5] : List Instr) ++ mulCode .x7 .x7 .x13 ++
+  ([.logic .eor .x .x14 .x4 .x6, .add .x .x14 .x14 .x7, .lsr .x .x10 .x13 16] : List Instr) ++
   mulCode .x14 .x14 .x10 ++
-  [.add .x .x7 .x7 .x14, .logic .and .x .x7 .x7 .x15,
+  ([.add .x .x7 .x7 .x14, .logic .and .x .x7 .x7 .x15,
    .logic .eor .x .x3 .x3 .x14, .logic .eor .x .x5 .x5 .x14,
    .logic .eor .x .x4 .x4 .x7, .logic .eor .x .x6 .x6 .x7,
-   .addImm .x .x14 .x4 0, .addImm .x .x4 .x5 0, .addImm .x .x5 .x14 0]
+   .addImm .x .x14 .x4 0, .addImm .x .x4 .x5 0, .addImm .x .x5 .x14 0] : List Instr)
 
 /-- Word `k` of the block at `x1` into `r`, big-endian (through `x7`). -/
 def loadWord (r : Reg) (k : Nat) : List Instr :=
@@ -151,10 +151,10 @@ def load : List Instr :=
 /-- The output transformation (subkeys 48–51 in the quadword at 96), with
 the middle words exchanged back: `x5` gets `X₃ ⊞ Z₅₀`, `x4` `X₂ ⊞ Z₅₁`. -/
 def output : List Instr :=
-  [.ldr .x .x8 .x0 96] ++ mulCode .x3 .x3 .x8 ++
-  [.lsr .x .x14 .x8 48] ++ mulCode .x6 .x6 .x14 ++
-  [.lsr .x .x14 .x8 16] ++ addKey .x5 .x14 ++
-  [.lsr .x .x14 .x8 32] ++ addKey .x4 .x14
+  ([.ldr .x .x8 .x0 96] : List Instr) ++ mulCode .x3 .x3 .x8 ++
+  ([.lsr .x .x14 .x8 48] : List Instr) ++ mulCode .x6 .x6 .x14 ++
+  ([.lsr .x .x14 .x8 16] : List Instr) ++ addKey .x5 .x14 ++
+  ([.lsr .x .x14 .x8 32] : List Instr) ++ addKey .x4 .x14
 
 /-- The word in `r` to word `k` of the block at `x1`, big-endian (through `x14`). -/
 def storeWord (r : Reg) (k : Nat) : List Instr :=
@@ -170,6 +170,6 @@ def cryptBlock : List Instr :=
 def ecb : Prog isa :=
   .ite (.zero .x .x2) (.block [])
     (.seq (.block [setMask])
-      (.loop (.block (cryptBlock ++ [.addImm .x .x1 .x1 8, .subImm .x .x2 .x2 1])) (.nonzero .x .x2)))
+      (.loop (.block (cryptBlock ++ ([.addImm .x .x1 .x1 8, .subImm .x .x2 .x2 1] : List Instr))) (.nonzero .x .x2)))
 
 end VG.Impl.Idea.AArch64

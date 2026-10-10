@@ -52,7 +52,7 @@ def advance : List Instr :=
    .vop (.dup .d2 .v19 .x26), .vop (.dup .d2 .v20 .x27),
    .sub .x .x26 .x27 .x28, .lsr .x .x26 .x26 63]
 
-def body : Prog isa := .seq xorBlock (.block (unrolledRounds ++ advance))
+def body : Prog isa := .seq xorBlock (.seq (.block unrolledRounds) (.block advance))
 
 /-- Store the lanes, restore the callee-saved registers, and the arguments
 `Sha3.Vector.Resident`'s caller expects (`x2 = 0`, `x5 = x1`). -/

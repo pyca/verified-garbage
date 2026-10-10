@@ -8,8 +8,8 @@ namespace VG.Impl.TripleDes.X86_64.BitsliceAvx512
 
 open VG.X86_64
 
--- The circuits' code, once, which the literals below and the functions'
--- literals (`Lit`) read rather than run the register allocator again.
+-- The circuits' code (written out in `Impl`), as one table, which the literals
+-- below and the functions' literals (`Lit`) read.
 materialize_table sboxCode 8
 
 -- The transposition, once.

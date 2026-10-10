@@ -447,6 +447,29 @@ mod tests {
         );
     }
 
+    /// `encrypt` agrees with `encrypt_in_place` at every length up to 300
+    /// bytes, written at outputs of every alignment the copy distinguishes.
+    #[test]
+    fn encrypt_lengths() {
+        let aead = ChaCha20Poly1305::new(&core::array::from_fn(|i| (i * 3) as u8));
+        let nonce = [9; 12];
+        let msg: [u8; 300] = core::array::from_fn(|i| (i * 13) as u8);
+        for len in 0..=300 {
+            let mut want = msg;
+            let want_tag = aead
+                .encrypt_in_place(&nonce, &[], &mut want[..len])
+                .unwrap();
+            for offset in [0, 1, 8, 31, 63] {
+                let mut out = [0u8; 364];
+                let tag = aead.encrypt(&nonce, &[], &[&msg[..len]], &mut out[offset..offset + len]);
+                assert_eq!(
+                    (&out[offset..offset + len], tag),
+                    (&want[..len], Ok(want_tag))
+                );
+            }
+        }
+    }
+
     /// Every implementation gives the same ciphertext and tag as the scalar
     /// one, and decrypts what any of them encrypted.
     #[test]

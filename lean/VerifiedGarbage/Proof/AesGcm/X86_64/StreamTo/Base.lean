@@ -86,8 +86,11 @@ theorem SP'.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.streamToPreM M s) : 
   simp only [Proof.AesGcm.streamToPreM, Proof.AesGcm.args, Proof.AesGcm.arg, Proof.AesGcm.ret,
     Proof.AesGcm.stkS, Proof.AesGcm.rounds] at h
   have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
-    a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂⟩ := h
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
+    a₂₈ a₂₉ a₃₀ a₃₁
+  have a₃₂ := h
+  clear h
   rw [hA] at a₁ a₁₀ a₁₄ a₁₅
   rw [a₃] at a₂ a₅ a₈ a₁₁ a₁₃ a₁₄ a₁₇ a₂₂ a₂₇
   exact ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
@@ -109,6 +112,9 @@ structure Kept (s : State) (o : Nat) (m : Mem) : Prop where
 
 /-- The slots of the arguments kept. -/
 abbrev kR' (s : State) : Region := ⟨W s, 72⟩
+
+/-- The slot of the number of bytes of the head, across its call. -/
+abbrev hR (s : State) : Region := ⟨W s + BitVec.ofNat 64 72, 8⟩
 
 /-- The working space of `vg_aes_gcm_encrypt_blocks_to`. -/
 abbrev scR (s : State) : Region := ⟨W s + BitVec.ofNat 64 80, 2112⟩
@@ -135,6 +141,12 @@ theorem scR_sub : (scR s).Sub (wkR s) := Offset.sub_base _ (by decide)
 
 omit hp in
 theorem kR'_scR : (kR' s).Disjoint (scR s) := Offset.base_disjoint _ (by decide) (by decide)
+
+omit hp in
+theorem hR_sub : (hR s).Sub (wkR s) := Offset.sub_base _ (by decide)
+
+omit hp in
+theorem kR'_hR : (kR' s).Disjoint (hR s) := Offset.base_disjoint _ (by decide) (by decide)
 
 /-- What a frame of the regions written and the stack below keeps: the
 stack arguments. -/

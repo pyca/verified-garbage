@@ -126,6 +126,7 @@ pub mod rsa_pkcs1_sig;
 pub mod rsa_pss;
 pub mod scrypt;
 pub mod seed_ecb;
+pub mod sm4_ecb;
 pub mod triple_des_ecb;
 pub mod x25519;
 pub mod x448;

@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Camellia.AArch64.ExpandKey
 import VerifiedGarbage.Spec.Camellia.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 
 /-!
 # The Camellia key schedule on AArch64: contract and constant time

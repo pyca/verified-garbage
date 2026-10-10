@@ -48,7 +48,8 @@ def cOp (d : Nat) : List Instr :=
 def ldC (d j : Nat) : List Instr := .mov .eax (.mem (at_ .esi (4 * j))) :: cOp d
 
 /-- `ebx ← ebx · 2ᵈ + Compress_d(f[o + j])`. -/
-def accS (d o j : Nat) : List Instr := ldC d (o + j) +++ [.shift .ror .ebx (32 - d), .alu .add .ebx (.reg .eax)]
+def accS (d o j : Nat) : List Instr := ldC d (o + j) +++ ([.shift .ror .ebx (32 - d),
+    .alu .add .ebx (.reg .eax)] : List Instr)
 
 /-- `accS` for `o + j - 1` down to `o`. -/
 def accSs (d o : Nat) : Nat → List Instr
@@ -71,19 +72,21 @@ def nextG (c b : Nat) : List Instr :=
 
 /-- Five bytes of eight coefficients of 5 bits. -/
 def pack5Body : List Instr :=
-  ldC 5 7 +++ [.mov .ebp (.reg .eax), .shift .ror .ebp 29] +++
-  ldC 5 6 +++ [.mov .ebx (.reg .eax), .alu .and .ebx (.imm 3), .shift .shr .eax 2, .alu .add .ebp (.reg .eax)] +++
-  accSs 5 0 6 +++ st4 0 +++ [.mov .eax (.reg .ebp), .store8 (at_ .edi 4) .al] +++ nextG 32 5
+  ldC 5 7 +++ ([.mov .ebp (.reg .eax), .shift .ror .ebp 29] : List Instr) +++
+  ldC 5 6 +++ ([.mov .ebx (.reg .eax), .alu .and .ebx (.imm 3), .shift .shr .eax 2,
+      .alu .add .ebp (.reg .eax)] : List Instr) +++
+  accSs 5 0 6 +++ st4 0 +++ ([.mov .eax (.reg .ebp), .store8 (at_ .edi 4) .al] : List Instr) +++ nextG 32 5
 
 /-- Eleven bytes of eight coefficients of 11 bits. -/
 def pack11Body : List Instr :=
-  ldC 11 2 +++ [.mov .ebp (.reg .eax), .shift .shr .ebp 10, .mov .ebx (.reg .eax), .alu .and .ebx (.imm 1023)] +++
+  ldC 11 2 +++ ([.mov .ebp (.reg .eax), .shift .shr .ebp 10, .mov .ebx (.reg .eax),
+      .alu .and .ebx (.imm 1023)] : List Instr) +++
   accSs 11 0 2 +++ st4 0 +++
-  ldC 11 5 +++ [.mov .ebx (.reg .eax), .alu .and .ebx (.imm 511)] +++ accSs 11 3 2 +++
-  [.shift .ror .ebx 31, .alu .add .ebx (.reg .ebp)] +++ st4 4 +++
-  ldC 11 5 +++ [.shift .shr .eax 9, .mov .ebp (.reg .eax)] +++
-  ldC 11 7 +++ [.mov .ebx (.reg .eax)] +++ accSs 11 6 1 +++
-  [.shift .ror .ebx 30, .alu .add .ebx (.reg .ebp)] +++ st3 8 +++ nextG 32 11
+  ldC 11 5 +++ ([.mov .ebx (.reg .eax), .alu .and .ebx (.imm 511)] : List Instr) +++ accSs 11 3 2 +++
+  ([.shift .ror .ebx 31, .alu .add .ebx (.reg .ebp)] : List Instr) +++ st4 4 +++
+  ldC 11 5 +++ ([.shift .shr .eax 9, .mov .ebp (.reg .eax)] : List Instr) +++
+  ldC 11 7 +++ ([.mov .ebx (.reg .eax)] : List Instr) +++ accSs 11 6 1 +++
+  ([.shift .ror .ebx 30, .alu .add .ebx (.reg .ebp)] : List Instr) +++ st3 8 +++ nextG 32 11
 
 /-- `esi = f`, `edi = out`, `eax = d`, and compare it with 5. -/
 def ceInit5 : List Instr :=
@@ -104,7 +107,7 @@ def bySteps (o : Nat) : Nat → List Instr
 def ldW (o n : Nat) : List Instr := .movzx8 .ebx (at_ .esi (o + n)) :: bySteps o n
 
 /-- `f[j] ← Decompress_d(eax)`, with `edi` at `f`. -/
-def decSt (d j : Nat) : List Instr := decompOp d +++ [.store (at_ .edi (4 * j)) .eax]
+def decSt (d j : Nat) : List Instr := decompOp d +++ ([.store (at_ .edi (4 * j)) .eax] : List Instr)
 
 /-- `f[j] ← Decompress_d((ebx >> s) mod 2ᵈ)`. -/
 def fieldAt (d s j : Nat) : List Instr :=
@@ -112,8 +115,8 @@ def fieldAt (d s j : Nat) : List Instr :=
 
 /-- `f[j] ← Decompress_d((ebx >> s) + 2ᵏ · (b[o] mod 2ᵉ))`. -/
 def crossAt (d s o e k j : Nat) : List Instr :=
-  [.movzx8 .edx (at_ .esi o), .alu .and .edx (.imm (BitVec.ofNat 32 (2 ^ e - 1))), .shift .ror .edx (32 - k),
-    .mov .eax (.reg .ebx), .shift .shr .eax s, .alu .add .eax (.reg .edx)] +++ decSt d j
+  ([.movzx8 .edx (at_ .esi o), .alu .and .edx (.imm (BitVec.ofNat 32 (2 ^ e - 1))), .shift .ror .edx (32 - k),
+    .mov .eax (.reg .ebx), .shift .shr .eax s, .alu .add .eax (.reg .edx)] : List Instr) +++ decSt d j
 
 /-- Eight coefficients of 5 bits from five bytes. -/
 def unpack5Body : List Instr :=

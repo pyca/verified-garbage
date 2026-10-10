@@ -10,13 +10,13 @@ def save : List Instr := savedRegs.zipIdx.map fun (r, i) => .str .x r .x3 (8 * i
 def restore : List Instr := savedRegs.zipIdx.map fun (r, i) => .ldr .x r .x3 (8 * i)
 
 def load (offset component : Nat) : List Instr :=
-  [.ldr .x .x4 .x0 offset, .rev .x4 .x4] ++
+  ([.ldr .x .x4 .x0 offset, .rev .x4 .x4] : List Instr) ++
     permuteCode Spec.TripleDes.pc1 64 .x5 .x4 .x6 .x7 ++
-    [.lsr .x .x19 .x5 28, rr .x20 .x5] ++ mask .x20 28 ++
+    ([.lsr .x .x19 .x5 28, rr .x20 .x5] : List Instr) ++ mask .x20 28 ++
     [imm .x21 0, .addImm .x .x22 .x2 (128 * component)]
 
 def rotate28 (r : Reg) (n : Nat) : List Instr :=
-  [.lsr .x .x4 r (28 - n), .ror .x r r (64 - n), .logic .eor .x r r .x4] ++ mask r 28
+  ([.lsr .x .x4 r (28 - n), .ror .x r r (64 - n), .logic .eor .x r r .x4] : List Instr) ++ mask r 28
 
 def rotate (n : Nat) : Prog isa := .block (rotate28 .x19 n ++ rotate28 .x20 n)
 
@@ -29,10 +29,10 @@ def rotation : Prog isa :=
             (.ite (.zero .x .x4) (rotate 1) (rotate 2))))))
 
 def storeRound : List Instr :=
-  [.lsl .x .x4 .x19 28, .logic .eor .x .x4 .x4 .x20] ++
+  ([.lsl .x .x4 .x19 28, .logic .eor .x .x4 .x4 .x20] : List Instr) ++
     permuteCode Spec.TripleDes.pc2 56 .x5 .x4 .x6 .x7 ++
-    [.str .x .x5 .x22 0, .addImm .x .x22 .x22 8, .addImm .x .x21 .x21 1,
-      .subImm .x .x4 .x21 16]
+    ([.str .x .x5 .x22 0, .addImm .x .x22 .x22 8, .addImm .x .x21 .x21 1,
+      .subImm .x .x4 .x21 16] : List Instr)
 
 def component (offset index : Nat) : Prog isa :=
   .seq (.block (load offset index)) (.loop (.seq rotation (.block storeRound)) (.nonzero .x .x4))

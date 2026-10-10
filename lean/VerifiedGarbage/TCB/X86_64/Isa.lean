@@ -285,6 +285,9 @@ inductive Instr
   | lfence
   /-- `mul r64` (REX.W + F7 /4): the unsigned product `RDX:RAX := RAX * r64`. -/
   | mul (src : Reg)
+  /-- `imul r64, r64` (`REX.W 0F AF /r`): the low 64 bits of the product
+  `dst := dst * src`, the same for signed and unsigned operands. -/
+  | imul (dst src : Reg)
   /-- `mulx hi, lo, src` (`VEX.LZ.F2.0F38.W1 F6 /r`, BMI2): the unsigned
   product `hi:lo := RDX * src`, without affecting the flags. `src` is a
   register or memory. -/
@@ -568,6 +571,7 @@ def exec : Instr → State → Option State
     if v.extractLsb' 16 16 = 0 then some { s with mxcsr := v } else none
   | .lfence, s => some s
   | .mul r, s => some (execMul r s)
+  | .imul d r, s => some (execImul d r s)
   | .mulx hi lo src, s => execMulx hi lo src s
   | .adcx d src, s => execAdcx d src s
   | .adox d src, s => execAdox d src s
@@ -619,6 +623,7 @@ def addrs : Instr → State → List Addr
   | .ldmxcsr m, s => [s.ea m]
   | .lfence, _ => []
   | .mul _, _ => []
+  | .imul .., _ => []
   | .mulx _ _ src, s => srcAddrs s src
   | .adcx _ src, s => srcAddrs s src
   | .adox _ src, s => srcAddrs s src
@@ -721,7 +726,7 @@ def Instr.dst : Instr → Option Reg
   | .mov d _ | .alu _ d _ | .mov32 d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
   | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _ | .pop d _
-  | .vpmovmskb _ d _ | .movqR d _ => some d
+  | .vpmovmskb _ d _ | .movqR d _ | .imul d _ => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..

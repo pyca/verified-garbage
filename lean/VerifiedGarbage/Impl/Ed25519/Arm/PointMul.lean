@@ -16,7 +16,7 @@ def pointMulBody : Prog isa :=
     (.seq (.block batchBits) (.seq accumulate16 (.block batchTest))))
 
 def pointMultiply (count : Nat) : Prog isa :=
-  .seq (pointPowers 1600 count true)
+  .seq (pointPowers 1632 count true)
     (.seq (constPoint Spec.Ed25519.identity)
       (.seq (.block [.movw .r11 (BitVec.ofNat 16 count), .str .r11 .r0 56])
         (.loop pointMulBody .ne)))

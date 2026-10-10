@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.Ecdh.X86.JacMain
 import VerifiedGarbage.Proof.Ecdh.X86.Contract
 import VerifiedGarbage.Proof.Ecdh.X86.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86.Verified
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.SseTaintMono
 import VerifiedGarbage.Proof.Framework.X86.Inline
 
 /-!
@@ -112,9 +112,27 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : ecdhX86.pre s₁) (h₂ : ecdhX86.p
     · exact congrArg _ a2
     · exact congrArg _ a3
 
-theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeP256 :=
-  VG.Taint.constantTime (A := sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
-    (by taint_decide)
+/-- What is public on entry to 94 of the 95 calls of the field arithmetic
+(all but one multiplication, which also has `ebp` as a base): the stack
+pointer and the four words of its arguments' frame, below the return
+address. The summaries analyse each function once, in place of its body at
+every call. -/
+def τCall : VG.X86.Taint.T :=
+  { regs := ⟨215⟩, flags := false, lens := [16, 32, 8192], bases := [(.edi, 2, 0), (.esp, 0, 4)],
+    slots := [(0, 12, 4), (0, 8, 4), (0, 4, 4), (0, 0, 4)], wbases := [(0, 0, 2)], argLen := 20,
+    argBases := [(4, 1), (16, 2)], stk := [none, some 16], room := 20 }
+
+taint_summary mulSum : sseTaint τCall
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p256p.k Spec.Weierstrass.Mont.p256p.m)
+taint_summary addSum : sseTaint τCall
+  (Impl.Weierstrass.X86.Mont.addFn Spec.Weierstrass.Mont.p256p.k Spec.Weierstrass.Mont.p256p.m)
+taint_summary subSum : sseTaint τCall
+  (Impl.Weierstrass.X86.Mont.subFn Spec.Weierstrass.Mont.p256p.k Spec.Weierstrass.Mont.p256p.m)
+
+theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeP256 := by
+  obtain ⟨_, hc⟩ : ∃ h, (sseTaint.check τ₀ exchangeP256 h).isSome = true := by
+    taint_decide_sum [mulSum, addSum, subSum]
+  exact VG.Taint.constantTime (A := sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/

@@ -56,7 +56,10 @@ theorem args_of {s : State} (h : oneFacts s)
     (mwr : ∀ r ∈ [aData s, aWork s], Covers [r] s.wr) :
     Args s (s.gpr .x0) (stackArg s 2) (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (s.gpr .x1).toNat (s.gpr .x3).toNat
       (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat (stackArg s 0) := by
-  obtain ⟨d3, d4, d5, d6, d7, d8, t1, t2, d9, d10, d11, b12, b13, b14, b15, bt, b16, _, hR, hv⟩ := h
+  sig_split h
+  rename_i d3 d4 d5 d6 d7 d8 t1 t2 d9 d10 d11 b12 b13 b14 b15 bt b16 _ hR
+  have hv := h
+  clear h
   simp only [Spec.Ocb.lengthsOk, Bool.and_eq_true, decide_eq_true_eq] at hv
   obtain ⟨⟨⟨ht1, ht16⟩, hn1⟩, hn15⟩ := hv
   have sp0 : stackArgAddr s 0 = s.sp := by simp [stackArgAddr]

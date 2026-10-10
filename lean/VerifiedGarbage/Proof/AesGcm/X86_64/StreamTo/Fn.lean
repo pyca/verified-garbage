@@ -1,11 +1,12 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Blocks
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Rest
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Head
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: correctness
 
-Untrusted: everything here is checked by Lean. The entry, the whole blocks
-(if any), and the bytes left (`encrypt_wp`).
+Untrusted: everything here is checked by Lean. The entry, the bytes that end
+the block the text so far ends inside (if any), the whole blocks (if any),
+and the bytes left (`encrypt_wp`).
 -/
 
 namespace VG.Proof.AesGcm.X86_64.StreamTo
@@ -20,8 +21,7 @@ theorem encrypt_wp {M : CtxMode} (T : BlkToFn M) (E : EncFn M) {s : State}
   have M₁ := mid_entry hp (hg _ (by decide) (by decide) (by decide))
     (fun r hr => hg r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)
       (by rintro rfl; simp [calleeSaved] at hr)) hk hf hrd hwr
-  exact WP.seq (WP.mono (blocks_ok hp T M₁ h11 (hg _ (by decide) (by decide) (by decide))
-      (hg _ (by decide) (by decide) (by decide)))
-    fun _ ⟨_, M⟩ => rest_ok hp E M)
+  exact WP.seq (WP.mono (head_ok hp E ⟨M₁, h11, hg _ (by decide) (by decide) (by decide)⟩)
+    fun _ ⟨_, M₂⟩ => WP.seq (WP.mono (blocks_ok hp T M₂) fun _ ⟨_, M⟩ => rest_ok hp E M))
 
 end VG.Proof.AesGcm.X86_64.StreamTo

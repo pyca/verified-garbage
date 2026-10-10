@@ -16,16 +16,20 @@ Its frame pushes the six argument registers: `key`, `nonce`, `aad` and
 16 at the call, with `tag` pushed for it. Our stack arguments are then at
 `rsp + 56` … `rsp + 72`. The copy has `r11` at the next descriptor, `r9` the
 number of slices left and `rdi` where the next slice goes; each slice is
-copied from `rsi`, its length in `rcx` (`copyBytes`), with the index in
-`r10`: as many bytes as possible at a time through `xmm0`, as wide as the
-CPUs of the implementation of `vg_chacha20_poly1305_seal` called have
-(`Width`: 16 bytes with SSE2's `movdqu`, 32 with AVX's `vmovdqu` of `ymm0`,
-64 with AVX-512's `vmovdqu32` of `zmm0`); then, after a wider copy, 16
-bytes at a time with AVX's `vmovdqu` of `xmm0` (not SSE2's, which would pay
-for the dirty upper half of the register) and `vzeroupper`; then the last
-`len mod 16` bytes one at a time. Every register the function writes is
-caller-saved, and the branches are on `src_count` and the slices' lengths
-alone.
+copied from `rsi`, its length in `rcx` (`copyBytes`), as wide as the CPUs
+of the implementation of `vg_chacha20_poly1305_seal` called allow (`Width`:
+`c` = 16 bytes with SSE2's `movdqu`, 32 with AVX's `vmovdqu` of a `ymm`
+register, 64 with AVX-512's `vmovdqu32` of a `zmm` register). With at
+least `2 c` bytes, it copies the first `c`, then `2 c` at a time through
+`xmm0` and `xmm1`, with the index in `r10`, from the first offset at which
+the stores are aligned, while `2 c` remain, then the last `2 c`, which may
+overlap what was copied before (`big`). With fewer, it copies the first and
+the last `c'` bytes, overlapping, for the largest width `c'` (32, 16, 8 or 4
+bytes, the last two through `rax` and `r8`) at most the length (`ladder`),
+and fewer than 4 bytes one at a time. After a copy wider than 16 bytes,
+`vzeroupper`. Every register the function writes is caller-saved, and the
+branches are on `src_count`, the slices' lengths and the addresses in `dst`
+they go to alone.
 -/
 
 namespace VG.Impl.ChaCha20Poly1305.X86_64.SealGather
@@ -56,42 +60,102 @@ def Width.log : Width → Nat
   | .y32 => 5
   | .z64 => 6
 
-/-- The loop's body: `2 ^ w.log` bytes from `[rsi + r10]` to `[rdi + r10]`
-through `xmm0`, and the index advanced. -/
-def wideBody : Width → List Instr
-  | .x16 => [.movdquLoad .xmm0 srcB, .movdquStore dstB .xmm0, .alu .add .r10 (imm 16),
-      .alu .cmp .r10 (.reg .r8)]
-  | .y32 => [.vmovdquLoad .l256 .xmm0 srcB, .vmovdquStore .l256 dstB .xmm0, .alu .add .r10 (imm 32),
-      .alu .cmp .r10 (.reg .r8)]
-  | .z64 => [.vmovdqu32Load .xmm0 srcB, .vmovdqu32Store dstB .xmm0, .alu .add .r10 (imm 64),
-      .alu .cmp .r10 (.reg .r8)]
+/-- `[base + index + d]`. -/
+def at2 (base index : Reg) (d : Int) : MemOp := { base := base, index := some index, disp := d }
 
-/-- After a wider copy: 16 bytes at a time with AVX's `vmovdqu`, from `r10`
-to `r8 = 16 ⌊rcx / 16⌋`. -/
-def vex16Body : List Instr :=
-  [.vmovdquLoad .l128 .xmm0 srcB, .vmovdquStore .l128 dstB .xmm0, .alu .add .r10 (imm 16),
-    .alu .cmp .r10 (.reg .r8)]
+/-- A load of `2 ^ w.log` bytes into `x`, and a store of them: SSE2's
+`movdqu`, AVX's `vmovdqu` of a `ymm` register, AVX-512's `vmovdqu32` of a
+`zmm` register. -/
+def ldW : Width → XReg → MemOp → Instr
+  | .x16, x, m => .movdquLoad x m
+  | .y32, x, m => .vmovdquLoad .l256 x m
+  | .z64, x, m => .vmovdqu32Load x m
+def stW : Width → MemOp → XReg → Instr
+  | .x16, m, x => .movdquStore m x
+  | .y32, m, x => .vmovdquStore .l256 m x
+  | .z64, m, x => .vmovdqu32Store m x
 
-/-- The last bytes, one at a time, from `r10` to `rcx`. -/
+/-- 16 bytes: SSE2's `movdqu`, or, after a wider copy may have dirtied the
+upper halves, AVX's `vmovdqu` of `xmm`. -/
+def ld16 : Width → XReg → MemOp → Instr
+  | .x16, x, m => .movdquLoad x m
+  | _, x, m => .vmovdquLoad .l128 x m
+def st16 : Width → MemOp → XReg → Instr
+  | .x16, m, x => .movdquStore m x
+  | _, m, x => .vmovdquStore .l128 m x
+
+/-- Bytes `[0, c)` and `[rcx - c, rcx)` (overlapping, for `c ≤ rcx ≤ 2 c`),
+`c` the width of the loads `ld` and stores `st` given, through `xmm0` and
+`xmm1`. -/
+def pairX (c : Nat) (ld : XReg → MemOp → Instr) (st : MemOp → XReg → Instr) : List Instr :=
+  [ld .xmm0 (at_ .rsi 0), ld .xmm1 (at2 .rsi .rcx (-(c : Int))),
+   st (at_ .rdi 0) .xmm0, st (at2 .rdi .rcx (-(c : Int))) .xmm1]
+
+/-- The same for 8 bytes, through `rax` and `r8`. -/
+def pair8 : List Instr :=
+  [.mov .rax (.mem (at_ .rsi 0)), .mov .r8 (.mem (at2 .rsi .rcx (-8))),
+   .store (at_ .rdi 0) .rax, .store (at2 .rdi .rcx (-8)) .r8]
+
+/-- The same for 4 bytes. -/
+def pair4 : List Instr :=
+  [.mov32 .rax (.mem (at_ .rsi 0)), .mov32 .r8 (.mem (at2 .rsi .rcx (-4))),
+   .store32 (at_ .rdi 0) .rax, .store32 (at2 .rdi .rcx (-4)) .r8]
+
+/-- The bytes from `r10` to `rcx`, one at a time. -/
 def copyTail : Prog isa :=
   .seq (.block [.alu .cmp .r10 (.reg .rcx)])
     (.ite .e (.block [])
       (.loop (.block [.movzx8 .rax srcB, .store8 dstB .rax, .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)])
         .ne))
 
-/-- Copies the `rcx` bytes at `rsi` to `rdi`: `2 ^ w.log` at a time (to
-`r8 = 2 ^ w.log ⌊rcx / 2 ^ w.log⌋`, through `xmm0`), then, after a wider
-copy, 16 at a time with AVX and `vzeroupper`, then one at a time, from
-`r10 = 0`. -/
+/-- Fewer than 4 bytes, one at a time. -/
+def copyFew : Prog isa := .seq (.block [.mov32 .r10 (imm 0)]) copyTail
+
+/-- `rcx < c₂` bytes: `rcx ≥ c₁` with `pair`, else `rest`. -/
+def ladderStep (c : Nat) (pair : List Instr) (rest : Prog isa) : Prog isa :=
+  .seq (.block [.alu .cmp .rcx (imm c)]) (.ite .b rest (.block pair))
+
+/-- Fewer than 16 bytes. -/
+def ladder16 : Prog isa := ladderStep 8 pair8 (ladderStep 4 pair4 copyFew)
+
+/-- Fewer than `2 ^ (w.log + 1)` bytes: two overlapping copies of the
+largest width at most `rcx`. -/
+def ladder32 : Prog isa :=
+  ladderStep 32 (pairX 32 (ldW .y32) (stW .y32)) (ladderStep 16 (pairX 16 (ld16 .y32) (st16 .y32)) ladder16)
+
+def ladder : Width → Prog isa
+  | .x16 => ladderStep 16 (pairX 16 (ld16 .x16) (st16 .x16)) ladder16
+  | .y32 => ladder32
+  | .z64 => ladderStep 64 (pairX 64 (ldW .z64) (stW .z64)) ladder32
+
+/-- Bytes `[r10 + d, r10 + d + 2 c)` from `rsi` to `rdi`, `c = 2 ^ w.log`,
+through `xmm0` and `xmm1`. -/
+def quadAt (w : Width) (i : Reg) (d : Int) : List Instr :=
+  [ldW w .xmm0 (at2 .rsi i d), ldW w .xmm1 (at2 .rsi i (d + 2 ^ w.log)),
+   stW w (at2 .rdi i d) .xmm0, stW w (at2 .rdi i (d + 2 ^ w.log)) .xmm1]
+
+/-- At least `2 c` bytes, `c = 2 ^ w.log`: the first `c`; then `2 c` at a
+time from the first offset at which the stores are aligned (`r10`, below
+`c`), while `2 c` remain (to `r8 = rcx - 2 c`; `CF` clear while
+`r10 ≤ r8`); then the last `2 c`. -/
+def big (w : Width) : Prog isa :=
+  .seq (.block [ldW w .xmm0 (at_ .rsi 0), stW w (at_ .rdi 0) .xmm0])
+  (.seq (.block [.mov32 .r10 (imm 0), .alu .sub .r10 (.reg .rdi), .alu .and .r10 (imm (2 ^ w.log - 1)),
+    .mov .r8 (.reg .rcx), .alu .sub .r8 (imm (2 * 2 ^ w.log)), .alu .cmp .r8 (.reg .r10)])
+  (.seq (.ite .b (.block [])
+    (.loop (.seq (.block (quadAt w .r10 0))
+      (.block [.alu .add .r10 (imm (2 * 2 ^ w.log)), .alu .cmp .r8 (.reg .r10)])) .ae))
+    (.block (quadAt w .rcx (-(2 * 2 ^ w.log : Nat))))))
+
+/-- Copies the `rcx` bytes at `rsi` to `rdi`: with at least `2 c` bytes,
+`c = 2 ^ w.log`, by `big`, else by `ladder`; every byte is stored with its
+own value, some twice. After a wider copy, `vzeroupper`. -/
 def copyBytes (w : Width) : Prog isa :=
-  .seq (.block [.mov32 .r10 (imm 0), .mov .r8 (.reg .rcx), .shift .shr .r8 w.log, .shift .shl .r8 w.log,
-    .alu .cmp .r8 (imm 0)])
-  (.seq (.ite .e (.block []) (.loop (.block (wideBody w)) .ne))
-  (match w with
-    | .x16 => copyTail
-    | _ => .seq (.block [.mov .r8 (.reg .rcx), .shift .shr .r8 4, .shift .shl .r8 4, .alu .cmp .r10 (.reg .r8)])
-        (.seq (.ite .e (.block []) (.loop (.block vex16Body) .ne))
-        (.seq (.block [.vop .vzeroupper]) copyTail))))
+  .seq (.block [.alu .cmp .rcx (imm (2 * 2 ^ w.log))])
+  (.seq (.ite .b (ladder w) (big w))
+    (match w with
+      | .x16 => .block []
+      | _ => .block [.vop .vzeroupper]))
 
 /-- The next descriptor: the slice's address in `rsi` and length in `rcx`. -/
 def next : List Instr := [.mov .rsi (.mem (at_ .r11 0)), .mov .rcx (.mem (at_ .r11 8)), .alu .add .r11 (imm 16)]

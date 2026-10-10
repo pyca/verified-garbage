@@ -264,6 +264,10 @@ def step (τ : T) : Instr → Option T
   | .andn32 d a b | .andn d a b =>
     let p := pub τ a && pub τ b
     some { τ with regs := set τ d p, flags := p, bases := kill τ d, lo := .empty }
+  -- `imul` sets CF and OF from its operands, and leaves ZF and SF undefined.
+  | .imul d r =>
+    let p := pub τ d && pub τ r
+    some { τ with regs := set τ d p, flags := p, bases := kill τ d, lo := .empty }
   | .movImm64 d _ => some { τ with regs := set τ d true, bases := kill τ d, lo := .empty }
   -- The analysis does not track the addresses of statics.
   | .leaSym d _ => some { τ with regs := set τ d false, bases := kill τ d, lo := .empty }
@@ -765,7 +769,7 @@ def dstOf : Instr → Option Reg
   | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
   | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _ | .vpmovmskb _ d _
-  | .movqR d _ => some d
+  | .movqR d _ | .imul d _ => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _ | .vop _
   | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _ | .vmovdqu32Load ..
   | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load .. | .stmxcsr _ | .ldmxcsr _
@@ -920,6 +924,9 @@ theorem exec_nonstore_xmm {i : Instr} {d : Reg} (hd : dstOf i = some d) {s s' : 
     · cases h
   case andn a b =>
     simp only [exec, execAndn, Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case imul r =>
+    simp only [exec, execImul, Option.some.injEq] at h
     subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
   case movzx8 m =>
     simp only [exec, Option.map_eq_some_iff] at h
@@ -1528,6 +1535,17 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       simp only [Bool.and_eq_true] at hp; rw [ha.reg hp.1, ha.reg hp.2]
     refine ⟨regs_set (fun r hr => ha.rf.1 r hr) fun hp => by rw [hv hp], fun hp => ?_⟩
     simp only [State.setReg, hv hp, arithFlags, State.setFlags, and_self]
+  | imul d r =>
+    simp only [step, Option.some.injEq] at hs
+    subst hs
+    refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
+    simp only [exec, execImul, Option.some.injEq] at e₁ e₂
+    subst e₁ e₂
+    have hv : (pub τ d && pub τ r) = true →
+        (s₁.gpr d).toInt * (s₁.gpr r).toInt = (s₂.gpr d).toInt * (s₂.gpr r).toInt := fun hp => by
+      simp only [Bool.and_eq_true] at hp; rw [ha.reg hp.1, ha.reg hp.2]
+    refine ⟨regs_set (fun r hr => ha.rf.1 r hr) fun hp => by rw [hv hp], fun hp => ?_⟩
+    simp only [State.setReg, hv hp, State.setFlags, and_self]
   | movzx8 d m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
@@ -1865,6 +1883,9 @@ def stepK (τ : T) : Instr → Option T
   | .andn32 d a b | .andn d a b =>
     let p := pub τ a && pub τ b
     some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }
+  | .imul d r =>
+    let p := pub τ d && pub τ r
+    some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }
   | .movImm64 d _ => some { τ with regs := setK τ d true, bases := killK τ d, lo := .empty }
   | .leaSym d _ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }
   | .movzx8 d m =>
@@ -2101,6 +2122,9 @@ def stepKDFn : Instr → Step
     some { τ with regs := setK τ d (pub τ r), bases := killK τ d, lo := .empty }⟩
   | .andn32 d a b | .andn d a b => ⟨fun τ =>
     let p := pub τ a && pub τ b
+    some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }⟩
+  | .imul d r => ⟨fun τ =>
+    let p := pub τ d && pub τ r
     some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }⟩
   | .movImm64 d _ => ⟨fun τ => some { τ with regs := setK τ d true, bases := killK τ d, lo := .empty }⟩
   | .leaSym d _ => ⟨fun τ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }⟩

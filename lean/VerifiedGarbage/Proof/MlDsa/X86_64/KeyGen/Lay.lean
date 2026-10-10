@@ -29,9 +29,13 @@ structure PFacts (p : Params) : Prop where
   eta : (p.η = 2 ∧ lenS p = 96) ∨ (p.η = 4 ∧ lenS p = 128)
   pk : p.pkLen = 32 + 320 * p.k
   sk : p.skLen = oT0 p + 416 * p.k
+  /-- Which parameter set: a check about one can be decided for each (`layd`). -/
+  mem : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87
 
 theorem pfacts {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) : PFacts p := by
-  rcases hp with rfl | rfl | rfl <;> exact ⟨by decide, by decide, by decide, by decide, by decide, by decide⟩
+  have hm := hp
+  rcases hp with rfl | rfl | rfl <;>
+    exact ⟨by decide, by decide, by decide, by decide, by decide, by decide, hm⟩
 
 /-! ## The contract -/
 

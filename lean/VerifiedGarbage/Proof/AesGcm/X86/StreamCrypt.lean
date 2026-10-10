@@ -36,8 +36,12 @@ structure CrPure (p : BitVec 32 × (Nat → BitVec 32)) : Prop where
 theorem crPure_of {p : BitVec 32 × (Nat → BitVec 32)} {s : State} (h : streamCryptPre s) (hp : pubOf 10 s = p) :
     CrPure p := by
   simp only [streamCryptPre] at h
-  obtain ⟨-, -, d_cs, d_cd, d_cw, -, d_sd, d_sw, -, d_dw, -, -, -, r_s, r_d, r_w, -, k_c, k_s, k_d, k_w, -,
-    fc, fs, fd, fw, sp, -, hR⟩ := h
+  sig_split h
+  rename_i hdrop0 hdrop1 d_cs d_cd d_cw hdrop5 d_sd d_sw hdrop8 d_dw hdrop10 hdrop11 hdrop12 r_s r_d r_w
+    hdrop16 k_c k_s k_d k_w hdrop21 fc fs fd fw sp hdrop27
+  clear hdrop0 hdrop1 hdrop5 hdrop8 hdrop10 hdrop11 hdrop12 hdrop16 hdrop21 hdrop27
+  have hR := h
+  clear h
   rw [ofNat_lit, below_eq sp] at k_c k_s k_d k_w
   have a0 := pubOf_arg hp (i := 0) (by decide); have a1 := pubOf_arg hp (i := 1) (by decide)
   have a2 := pubOf_arg hp (i := 2) (by decide); have a7 := pubOf_arg hp (i := 7) (by decide)
@@ -68,7 +72,13 @@ theorem crEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   · subst s
     have hp := hpre
     simp only [streamCryptPre] at hp
-    obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, -, d_wa, -, -, -, -, -, -, -, -, -, -, -, -, -, fw, -, fa, hR⟩ := hp
+    sig_split hp
+    rename_i hrd hwr hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 d_wa hdrop12 hdrop13
+      hdrop14 hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop23 hdrop24 fw hdrop26 fa
+    clear hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 hdrop12 hdrop13 hdrop14 hdrop15
+      hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop23 hdrop24 hdrop26
+    have hR := hp
+    clear hp
     have a : ∀ i, i < 10 → arg s₀ i = p.2 i := fun i hi => pubOf_arg hpub hi
     have esp := pubOf_esp hpub
     have wW : Covers [⟨w64 (arg s₀ 9), 2560⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
@@ -104,7 +114,13 @@ theorem crEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     subst s
     have hp := hpre
     simp only [streamCryptPre] at hp
-    obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fa, -⟩ := hp
+    sig_split hp
+    rename_i hrd hwr hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13
+      hdrop14 hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop23 hdrop24 hdrop25 hdrop26
+      fa
+    clear hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13 hdrop14
+      hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop23 hdrop24 hdrop25 hdrop26
+    clear hp
     have rA : Covers [argsR (s₀.gpr .esp) 10] (s₀.rd ++ s₀.wr) := by
       rw [argsR_eq, hrd, hwr]; exact covers_of_mem (by simp)
     exact WP.mono (arg0_ok (argIn_of rA (by omega) (by decide))) fun s' ⟨ax, sp⟩ =>

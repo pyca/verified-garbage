@@ -97,6 +97,7 @@ mod sha384;
 mod sha512;
 mod sha512_224;
 mod sha512_256;
+mod sm4_ecb;
 mod triple_des_ecb;
 mod x25519;
 mod x448;
@@ -382,6 +383,7 @@ const BENCHES: &[Bench] = &[
     (rsa_public::USES, rsa_public::bench),
     (triple_des_ecb::USES, triple_des_ecb::bench),
     (seed_ecb::USES, seed_ecb::bench),
+    (sm4_ecb::USES, sm4_ecb::bench),
     (argon2::USES, argon2::bench),
     (scrypt::USES, scrypt::bench),
     (sha1::USES, sha1::bench),

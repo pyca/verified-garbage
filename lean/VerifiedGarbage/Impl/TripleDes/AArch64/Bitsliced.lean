@@ -61,7 +61,201 @@ def zeroReg : VReg := .v31
 /-- A temporary for the state words. -/
 def tmpReg : VReg := .v29
 
-def sboxCompiled (j : Nat) : List Instr × List VReg :=
+/-! The code of the S-boxes, as `compile` allocates it for their circuits. It is written
+out (and `#guard` checks that it is what `compile` produces) so that the kernel, which
+evaluates the code in the proofs, does not have to run the allocator. -/
+
+/-- The code of S-box 1. -/
+def sboxCode0 : List Instr := [
+  .vop (.logic .bic .v6 .v5 .v1), .vop (.logic .eor .v7 .v2 .v6), .vop (.logic .orr .v16 .v3 .v0),
+  .vop (.logic .eor .v17 .v5 .v3), .vop (.logic .and .v18 .v16 .v17),
+  .vop (.logic .eor .v19 .v2 .v18), .vop (.logic .bic .v20 .v19 .v7),
+  .vop (.logic .eor .v21 .v1 .v0), .vop (.logic .eor .v22 .v3 .v21),
+  .vop (.logic .bic .v22 .v7 .v22), .vop (.logic .orr .v18 .v0 .v18),
+  .vop (.logic .eor .v18 .v22 .v18), .vop (.logic .bic .v22 .v18 .v20),
+  .vop (.logic .orr .v0 .v5 .v0), .vop (.logic .orr .v23 .v18 .v0),
+  .vop (.logic .bic .v19 .v1 .v19), .vop (.logic .eor .v24 .v23 .v19),
+  .vop (.logic .bic .v0 .v2 .v0), .vop (.logic .eor .v0 .v19 .v0),
+  .vop (.logic .bic .v17 .v21 .v17), .vop (.logic .orr .v17 .v0 .v17),
+  .vop (.logic .bic .v6 .v3 .v6), .vop (.logic .eor .v3 .v7 .v23), .vop (.logic .bic .v6 .v3 .v6),
+  .vop (.not .v3 .v6), .vop (.logic .and .v18 .v16 .v18), .vop (.logic .eor .v18 .v3 .v18),
+  .vop (.logic .bic .v24 .v24 .v4), .vop (.logic .eor .v24 .v24 .v18),
+  .vop (.logic .eor .v6 .v21 .v6), .vop (.logic .orr .v6 .v19 .v6), .vop (.logic .eor .v6 .v16 .v6),
+  .vop (.logic .eor .v6 .v5 .v6), .vop (.logic .eor .v18 .v18 .v6),
+  .vop (.logic .orr .v20 .v20 .v4), .vop (.logic .eor .v20 .v20 .v18),
+  .vop (.logic .eor .v23 .v16 .v23), .vop (.logic .orr .v23 .v17 .v23),
+  .vop (.logic .eor .v23 .v6 .v23), .vop (.logic .orr .v18 .v21 .v18),
+  .vop (.logic .eor .v18 .v23 .v18), .vop (.logic .orr .v21 .v22 .v4),
+  .vop (.logic .eor .v18 .v21 .v18), .vop (.logic .orr .v7 .v1 .v7),
+  .vop (.logic .bic .v23 .v7 .v23), .vop (.logic .and .v6 .v22 .v6),
+  .vop (.logic .eor .v6 .v23 .v6), .vop (.logic .orr .v4 .v6 .v4), .vop (.logic .eor .v17 .v4 .v17)]
+
+/-- The code of S-box 2. -/
+def sboxCode1 : List Instr := [
+  .vop (.logic .eor .v6 .v4 .v1), .vop (.logic .bic .v7 .v5 .v0), .vop (.logic .bic .v7 .v1 .v7),
+  .vop (.logic .orr .v16 .v4 .v7), .vop (.logic .bic .v17 .v6 .v0), .vop (.logic .and .v18 .v5 .v6),
+  .vop (.logic .eor .v18 .v1 .v18), .vop (.logic .bic .v1 .v18 .v17),
+  .vop (.logic .and .v19 .v3 .v0), .vop (.logic .eor .v17 .v7 .v17),
+  .vop (.logic .and .v17 .v16 .v17), .vop (.logic .bic .v7 .v17 .v19),
+  .vop (.logic .and .v20 .v3 .v17), .vop (.not .v5 .v5), .vop (.logic .eor .v5 .v20 .v5),
+  .vop (.logic .eor .v0 .v0 .v6), .vop (.logic .bic .v21 .v0 .v19),
+  .vop (.logic .eor .v22 .v5 .v21), .vop (.logic .bic .v7 .v2 .v7), .vop (.logic .eor .v7 .v7 .v22),
+  .vop (.logic .bic .v21 .v4 .v21), .vop (.logic .eor .v18 .v18 .v21),
+  .vop (.logic .bic .v5 .v5 .v18), .vop (.logic .eor .v3 .v3 .v0), .vop (.logic .eor .v5 .v5 .v3),
+  .vop (.logic .bic .v4 .v16 .v2), .vop (.logic .eor .v4 .v4 .v5),
+  .vop (.logic .eor .v21 .v20 .v21), .vop (.logic .orr .v21 .v3 .v21),
+  .vop (.logic .eor .v16 .v16 .v22), .vop (.logic .orr .v19 .v19 .v16),
+  .vop (.logic .eor .v3 .v21 .v19), .vop (.logic .eor .v22 .v17 .v22),
+  .vop (.logic .eor .v22 .v5 .v22), .vop (.logic .and .v22 .v19 .v22),
+  .vop (.logic .and .v21 .v6 .v21), .vop (.logic .eor .v21 .v22 .v21),
+  .vop (.logic .orr .v22 .v21 .v2), .vop (.logic .eor .v3 .v22 .v3),
+  .vop (.logic .bic .v18 .v21 .v18), .vop (.logic .orr .v16 .v0 .v16),
+  .vop (.logic .eor .v16 .v18 .v16), .vop (.logic .orr .v2 .v1 .v2),
+  .vop (.logic .eor .v16 .v2 .v16)]
+
+/-- The code of S-box 3. -/
+def sboxCode2 : List Instr := [
+  .vop (.logic .bic .v6 .v5 .v4), .vop (.logic .eor .v7 .v3 .v0), .vop (.logic .orr .v16 .v6 .v7),
+  .vop (.logic .eor .v17 .v2 .v0), .vop (.logic .bic .v18 .v17 .v5),
+  .vop (.logic .eor .v19 .v16 .v18), .vop (.logic .eor .v20 .v4 .v7),
+  .vop (.logic .bic .v21 .v20 .v0), .vop (.logic .eor .v21 .v16 .v21),
+  .vop (.logic .bic .v16 .v19 .v21), .vop (.logic .and .v22 .v0 .v19),
+  .vop (.logic .orr .v22 .v2 .v22), .vop (.logic .and .v22 .v5 .v22),
+  .vop (.logic .eor .v22 .v20 .v22), .vop (.logic .bic .v23 .v19 .v1),
+  .vop (.logic .eor .v23 .v23 .v22), .vop (.logic .and .v17 .v7 .v17),
+  .vop (.logic .eor .v7 .v5 .v2), .vop (.logic .eor .v24 .v21 .v7),
+  .vop (.logic .orr .v24 .v3 .v24), .vop (.logic .bic .v17 .v24 .v17),
+  .vop (.logic .orr .v7 .v18 .v7), .vop (.logic .bic .v18 .v22 .v7), .vop (.logic .and .v0 .v2 .v0),
+  .vop (.logic .bic .v24 .v0 .v4), .vop (.logic .eor .v24 .v18 .v24),
+  .vop (.logic .and .v21 .v21 .v24), .vop (.logic .orr .v0 .v20 .v0),
+  .vop (.logic .bic .v21 .v0 .v21), .vop (.logic .eor .v21 .v5 .v21),
+  .vop (.logic .and .v17 .v17 .v1), .vop (.logic .eor .v17 .v17 .v21), .vop (.not .v19 .v19),
+  .vop (.logic .orr .v4 .v4 .v19), .vop (.logic .orr .v4 .v3 .v4), .vop (.logic .eor .v4 .v20 .v4),
+  .vop (.logic .eor .v7 .v7 .v4), .vop (.logic .bic .v16 .v1 .v16), .vop (.logic .eor .v7 .v16 .v7),
+  .vop (.logic .and .v19 .v2 .v19), .vop (.logic .eor .v19 .v22 .v19),
+  .vop (.logic .orr .v19 .v4 .v19), .vop (.logic .eor .v21 .v6 .v21),
+  .vop (.logic .eor .v21 .v19 .v21), .vop (.logic .orr .v1 .v24 .v1),
+  .vop (.logic .eor .v21 .v1 .v21)]
+
+/-- The code of S-box 4. -/
+def sboxCode3 : List Instr := [
+  .vop (.logic .eor .v5 .v5 .v3), .vop (.logic .eor .v3 .v3 .v1), .vop (.logic .orr .v6 .v4 .v2),
+  .vop (.logic .eor .v6 .v1 .v6), .vop (.logic .bic .v6 .v3 .v6), .vop (.logic .bic .v7 .v3 .v4),
+  .vop (.logic .eor .v16 .v2 .v7), .vop (.logic .orr .v17 .v5 .v16),
+  .vop (.logic .bic .v17 .v17 .v6), .vop (.logic .eor .v18 .v4 .v17),
+  .vop (.logic .and .v16 .v16 .v18), .vop (.logic .bic .v3 .v3 .v16),
+  .vop (.logic .eor .v5 .v5 .v18), .vop (.logic .bic .v3 .v5 .v3), .vop (.logic .eor .v3 .v6 .v3),
+  .vop (.logic .eor .v2 .v4 .v2), .vop (.logic .orr .v7 .v1 .v7), .vop (.logic .eor .v7 .v5 .v7),
+  .vop (.logic .bic .v5 .v7 .v2), .vop (.logic .eor .v5 .v17 .v5), .vop (.logic .bic .v17 .v0 .v3),
+  .vop (.logic .eor .v17 .v17 .v5), .vop (.not .v5 .v5), .vop (.logic .bic .v1 .v3 .v0),
+  .vop (.logic .eor .v1 .v1 .v5), .vop (.logic .eor .v5 .v3 .v5), .vop (.logic .bic .v2 .v5 .v2),
+  .vop (.logic .orr .v2 .v16 .v2), .vop (.logic .eor .v2 .v7 .v2), .vop (.logic .orr .v7 .v18 .v0),
+  .vop (.logic .eor .v7 .v7 .v2), .vop (.logic .and .v18 .v0 .v18), .vop (.logic .eor .v2 .v18 .v2)]
+
+/-- The code of S-box 5. -/
+def sboxCode4 : List Instr := [
+  .vop (.logic .orr .v6 .v5 .v3), .vop (.logic .bic .v7 .v6 .v0), .vop (.logic .eor .v16 .v5 .v7),
+  .vop (.logic .eor .v17 .v3 .v16), .vop (.logic .orr .v18 .v2 .v17),
+  .vop (.logic .bic .v7 .v7 .v2), .vop (.logic .eor .v7 .v3 .v7), .vop (.logic .and .v3 .v1 .v7),
+  .vop (.logic .orr .v17 .v5 .v17), .vop (.logic .eor .v3 .v3 .v17), .vop (.logic .eor .v3 .v2 .v3),
+  .vop (.logic .eor .v0 .v0 .v3), .vop (.logic .orr .v19 .v16 .v0),
+  .vop (.logic .and .v20 .v1 .v19), .vop (.logic .eor .v21 .v16 .v20),
+  .vop (.logic .and .v22 .v2 .v17), .vop (.logic .eor .v22 .v21 .v22),
+  .vop (.logic .bic .v19 .v19 .v5), .vop (.logic .eor .v21 .v7 .v19),
+  .vop (.logic .eor .v1 .v1 .v18), .vop (.logic .bic .v21 .v1 .v21), .vop (.not .v21 .v21),
+  .vop (.logic .bic .v21 .v21 .v4), .vop (.logic .eor .v3 .v21 .v3),
+  .vop (.logic .bic .v21 .v7 .v20), .vop (.logic .eor .v19 .v19 .v1),
+  .vop (.logic .orr .v19 .v22 .v19), .vop (.logic .bic .v21 .v19 .v21),
+  .vop (.logic .bic .v19 .v18 .v21), .vop (.logic .and .v0 .v0 .v21),
+  .vop (.logic .eor .v0 .v1 .v0), .vop (.logic .and .v17 .v7 .v17),
+  .vop (.logic .orr .v17 .v0 .v17), .vop (.logic .eor .v17 .v20 .v17),
+  .vop (.logic .and .v17 .v17 .v4), .vop (.logic .eor .v22 .v17 .v22),
+  .vop (.logic .eor .v6 .v5 .v6), .vop (.logic .eor .v6 .v21 .v6), .vop (.logic .and .v2 .v2 .v0),
+  .vop (.logic .eor .v2 .v6 .v2), .vop (.logic .orr .v19 .v19 .v4),
+  .vop (.logic .eor .v19 .v19 .v2), .vop (.logic .eor .v7 .v18 .v7), .vop (.logic .bic .v2 .v7 .v2),
+  .vop (.logic .eor .v0 .v16 .v0), .vop (.logic .eor .v0 .v2 .v0), .vop (.logic .and .v4 .v18 .v4),
+  .vop (.logic .eor .v0 .v4 .v0)]
+
+/-- The code of S-box 6. -/
+def sboxCode5 : List Instr := [
+  .vop (.logic .eor .v6 .v4 .v1), .vop (.logic .orr .v7 .v4 .v0), .vop (.logic .and .v7 .v5 .v7),
+  .vop (.logic .eor .v6 .v6 .v7), .vop (.logic .eor .v16 .v0 .v6), .vop (.logic .bic .v17 .v1 .v16),
+  .vop (.logic .and .v16 .v5 .v16), .vop (.logic .eor .v18 .v4 .v16),
+  .vop (.logic .eor .v19 .v5 .v3), .vop (.logic .orr .v20 .v18 .v19),
+  .vop (.logic .eor .v21 .v6 .v20), .vop (.logic .and .v22 .v3 .v21),
+  .vop (.logic .bic .v23 .v22 .v0), .vop (.logic .orr .v18 .v17 .v18),
+  .vop (.logic .eor .v24 .v23 .v18), .vop (.logic .and .v25 .v24 .v2),
+  .vop (.logic .eor .v25 .v25 .v21), .vop (.logic .eor .v20 .v4 .v20),
+  .vop (.logic .bic .v26 .v0 .v20), .vop (.logic .eor .v26 .v3 .v26),
+  .vop (.logic .bic .v3 .v1 .v22), .vop (.logic .orr .v3 .v26 .v3),
+  .vop (.logic .orr .v19 .v4 .v19), .vop (.logic .eor .v24 .v24 .v19),
+  .vop (.logic .orr .v7 .v7 .v3), .vop (.logic .eor .v7 .v24 .v7), .vop (.logic .orr .v21 .v5 .v21),
+  .vop (.logic .and .v21 .v18 .v21), .vop (.logic .eor .v21 .v26 .v21),
+  .vop (.logic .bic .v23 .v21 .v23), .vop (.logic .orr .v17 .v17 .v2),
+  .vop (.logic .eor .v23 .v17 .v23), .vop (.logic .eor .v21 .v6 .v21),
+  .vop (.logic .bic .v21 .v1 .v21), .vop (.not .v19 .v19), .vop (.logic .eor .v19 .v20 .v19),
+  .vop (.logic .eor .v21 .v21 .v19), .vop (.logic .bic .v21 .v21 .v2),
+  .vop (.logic .eor .v7 .v21 .v7), .vop (.logic .eor .v16 .v0 .v16),
+  .vop (.logic .eor .v26 .v5 .v26), .vop (.logic .and .v26 .v16 .v26),
+  .vop (.logic .eor .v19 .v22 .v19), .vop (.logic .eor .v19 .v26 .v19),
+  .vop (.logic .bic .v2 .v3 .v2), .vop (.logic .eor .v19 .v2 .v19)]
+
+/-- The code of S-box 7. -/
+def sboxCode6 : List Instr := [
+  .vop (.logic .eor .v6 .v2 .v1), .vop (.logic .eor .v7 .v3 .v6), .vop (.logic .and .v16 .v0 .v7),
+  .vop (.logic .and .v17 .v2 .v6), .vop (.logic .eor .v18 .v4 .v17),
+  .vop (.logic .and .v19 .v16 .v18), .vop (.logic .and .v20 .v0 .v17),
+  .vop (.logic .eor .v21 .v3 .v20), .vop (.logic .orr .v22 .v18 .v21),
+  .vop (.logic .eor .v6 .v0 .v6), .vop (.logic .eor .v23 .v22 .v6),
+  .vop (.logic .bic .v24 .v5 .v19), .vop (.logic .eor .v23 .v24 .v23),
+  .vop (.logic .bic .v7 .v1 .v7), .vop (.logic .orr .v24 .v18 .v7),
+  .vop (.logic .eor .v21 .v16 .v21), .vop (.logic .eor .v24 .v24 .v21),
+  .vop (.logic .eor .v6 .v16 .v6), .vop (.logic .bic .v2 .v2 .v6), .vop (.logic .bic .v16 .v18 .v2),
+  .vop (.logic .eor .v21 .v1 .v21), .vop (.logic .eor .v21 .v16 .v21),
+  .vop (.logic .bic .v20 .v6 .v20), .vop (.logic .orr .v2 .v2 .v20),
+  .vop (.logic .eor .v22 .v4 .v22), .vop (.logic .and .v22 .v21 .v22),
+  .vop (.logic .eor .v22 .v2 .v22), .vop (.logic .and .v6 .v22 .v5),
+  .vop (.logic .eor .v6 .v6 .v21), .vop (.logic .bic .v3 .v18 .v3), .vop (.logic .orr .v3 .v20 .v3),
+  .vop (.logic .orr .v21 .v17 .v21), .vop (.logic .and .v21 .v3 .v21),
+  .vop (.logic .eor .v22 .v22 .v21), .vop (.logic .eor .v2 .v7 .v2), .vop (.logic .and .v2 .v0 .v2),
+  .vop (.logic .orr .v2 .v19 .v2), .vop (.logic .eor .v21 .v21 .v2),
+  .vop (.logic .bic .v19 .v21 .v5), .vop (.logic .eor .v19 .v19 .v24),
+  .vop (.logic .and .v2 .v4 .v2), .vop (.not .v24 .v24), .vop (.logic .eor .v24 .v2 .v24),
+  .vop (.logic .eor .v24 .v21 .v24), .vop (.logic .orr .v5 .v22 .v5),
+  .vop (.logic .eor .v24 .v5 .v24)]
+
+/-- The code of S-box 8. -/
+def sboxCode7 : List Instr := [
+  .vop (.logic .bic .v6 .v3 .v4), .vop (.logic .bic .v7 .v1 .v3), .vop (.logic .eor .v7 .v2 .v7),
+  .vop (.logic .and .v16 .v5 .v7), .vop (.logic .bic .v17 .v16 .v6),
+  .vop (.logic .bic .v18 .v4 .v7), .vop (.logic .orr .v19 .v5 .v18),
+  .vop (.logic .bic .v20 .v4 .v3), .vop (.logic .eor .v20 .v1 .v20),
+  .vop (.logic .and .v21 .v19 .v20), .vop (.logic .orr .v16 .v16 .v21), .vop (.not .v7 .v7),
+  .vop (.logic .eor .v7 .v21 .v7), .vop (.logic .bic .v19 .v3 .v19),
+  .vop (.logic .eor .v19 .v7 .v19), .vop (.logic .eor .v6 .v6 .v19),
+  .vop (.logic .orr .v7 .v17 .v0), .vop (.logic .eor .v7 .v7 .v6), .vop (.logic .eor .v6 .v5 .v6),
+  .vop (.logic .and .v3 .v1 .v6), .vop (.logic .eor .v19 .v4 .v19), .vop (.logic .eor .v3 .v3 .v19),
+  .vop (.logic .eor .v18 .v18 .v3), .vop (.logic .eor .v3 .v16 .v3), .vop (.logic .orr .v3 .v4 .v3),
+  .vop (.logic .eor .v6 .v1 .v6), .vop (.logic .eor .v6 .v3 .v6), .vop (.logic .and .v16 .v16 .v0),
+  .vop (.logic .eor .v16 .v16 .v6), .vop (.logic .eor .v20 .v20 .v18),
+  .vop (.logic .orr .v19 .v2 .v19), .vop (.logic .eor .v19 .v20 .v19),
+  .vop (.logic .eor .v5 .v5 .v19), .vop (.logic .and .v5 .v5 .v0), .vop (.logic .eor .v5 .v5 .v18),
+  .vop (.logic .bic .v2 .v20 .v2), .vop (.logic .and .v2 .v6 .v2),
+  .vop (.logic .eor .v19 .v17 .v19), .vop (.logic .eor .v19 .v2 .v19),
+  .vop (.logic .orr .v0 .v19 .v0), .vop (.logic .eor .v18 .v0 .v18)]
+
+/-- Each S-box's code and the registers of its outputs. -/
+def sboxCompiled : Nat → List Instr × List VReg
+  | 0 => (sboxCode0, [.v17, .v24, .v18, .v20])
+  | 1 => (sboxCode1, [.v16, .v3, .v7, .v4])
+  | 2 => (sboxCode2, [.v23, .v21, .v17, .v7])
+  | 3 => (sboxCode3, [.v2, .v7, .v1, .v17])
+  | 4 => (sboxCode4, [.v22, .v3, .v0, .v19])
+  | 5 => (sboxCode5, [.v25, .v23, .v7, .v19])
+  | 6 => (sboxCode6, [.v23, .v6, .v24, .v19])
+  | _ => (sboxCode7, [.v5, .v16, .v7, .v18])
+
+#guard (List.range 8).all fun j => sboxCompiled j ==
   compile (box j) ((List.range 6).map fun i => (i, inReg i)) (outputs j) freeRegs
 
 def sboxCode (j : Nat) : List Instr := (sboxCompiled j).1
@@ -102,7 +296,7 @@ def round (d : Direction) (ρ : Role) : List Instr :=
 
 /-- Two rounds, and the count of pairs left. -/
 def roundPair (d : Direction) : List Instr :=
-  round d .ba ++ round d .ab ++ [.subImm .x .x7 .x7 1]
+  round d .ba ++ round d .ab ++ ([.subImm .x .x7 .x7 1] : List Instr)
 
 /-- Exchange the halves. -/
 def swapHalves : List Instr :=
@@ -164,7 +358,7 @@ def transpose : List Instr :=
 
 /-- Three passes on the 128 blocks at `x4`. -/
 def batch (d : Direction) : Prog isa :=
-  .seq (.block (transpose ++ [.vop (.movi0 zeroReg)])) (.seq (passes d) (.block transpose))
+  .seq (.block (transpose ++ ([.vop (.movi0 zeroReg)] : List Instr))) (.seq (passes d) (.block transpose))
 
 /-- `x10 := n / 128`, whether a whole batch is left. -/
 def wholeLeft : Instr := .lsr .x .x10 .x2 7

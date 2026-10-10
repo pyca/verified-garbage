@@ -32,10 +32,10 @@ theorem squareInit_ok {s : State} {base : Addr} {a : Nat} (hb : Bx s base 8192)
   refine wp_movS rfl fun v R _ => ?_
   have hv : v.mem = t.mem := R.mem
   have he : v.gpr .edi = s.gpr .ebp := by rw [R.gpr, K.1 _ (by decide)]
-  have hc : VG.Proof.X25519.X86.Ctx 8192 (s.gpr .ebp) v :=
+  have hc : VG.Proof.X25519.X86.Ctx 8192 (s.gpr .ebp) v false :=
     ⟨he, by rw [hb.ebp_toNat]; exact hn,
       by change (⟨(s.gpr .ebp).setWidth 64, 8192⟩ : Region) ∈ v.wr
-         rw [R.wr, K.2.2, hb.ebp]; exact hb.wr, by decide⟩
+         rw [R.wr, K.2.2, hb.ebp]; exact hb.wr, by decide, nofun⟩
   refine WP.block_append (WP.mono (squareProduct_ok hc) fun w ⟨hbw, K', O', V'', Z⟩ => ?_)
   rw [hb.ebp] at hbw O' V''
   rw [hv, V'] at V''

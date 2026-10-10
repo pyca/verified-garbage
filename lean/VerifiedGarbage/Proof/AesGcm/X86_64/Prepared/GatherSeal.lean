@@ -21,8 +21,11 @@ open VG.Proof.AesGcm (arg args ret rounds)
 
 theorem sealSpecR_pre {s : State} (h : sealPreK CtxMode.prepared s) :
     (Spec.Gcm.sealPreparedContract X86_64.abi 2624).pre s := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
-    a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂⟩ := h
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
+    a₂₈ a₂₉ a₃₀ a₃₁
+  have a₃₂ := h
+  clear h
   sig_pre [Spec.Gcm.sealPreparedContract, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPreparedPre,
     X86_64.abi, X86_64.argRegs]
   sig_reduce [Spec.Gcm.sealPreparedContract, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPreparedPre,

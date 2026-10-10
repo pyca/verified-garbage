@@ -65,9 +65,9 @@ def lanes (r : Reg) : List Instr :=
 `r9` (shifted right by `b` so far): rotate by `2 ^ b` if bit 0 of `r9` is set.
 `r14` := 0 if it is, all ones if not; the rotation is in `r15`. -/
 def rotateStep (b : Nat) : List Instr :=
-  [.mov32 .r14 (.reg .r9), .alu32 .and .r14 (imm 1), .alu32 .sub .r14 (imm 1),
+  ([.mov32 .r14 (.reg .r9), .alu32 .and .r14 (imm 1), .alu32 .sub .r14 (imm 1),
    .mov32 .r15 (.reg .rax), .shift32 .ror .r15 (32 - 2 ^ b),
-   .alu32 .xor .rax (.reg .r15), .alu32 .and .rax (.reg .r14), .alu32 .xor .rax (.reg .r15)] ++
+   .alu32 .xor .rax (.reg .r15), .alu32 .and .rax (.reg .r14), .alu32 .xor .rax (.reg .r15)] : List Instr) ++
   (if b < 4 then [.shift32 .shr .r9 1] else [])
 
 /-- `eax` rotated left by the low 5 bits of `r9`. Clobbers `r9`, `r14`, `r15`. -/
@@ -179,10 +179,10 @@ def extraOff : Nat := 48
 /-- The lanes `S8[d], S7[c], S6[b], S5[a]` of a scan of `VG_CAST5_S5678`, for
 the bytes `a, b, c, d`. Clobbers `rax`, `r9`, `r10`, `xmm4`. -/
 def gather (a b c d : Pos) : List Instr :=
-  [.movzx8 .r9 (at_ .rcx (srcOff d)), .movzx8 .rax (at_ .rcx (srcOff c)),
+  ([.movzx8 .r9 (at_ .rcx (srcOff d)), .movzx8 .rax (at_ .rcx (srcOff c)),
    .shift .shl .rax 32, .alu .or .r9 (.reg .rax),
    .movzx8 .r10 (at_ .rcx (srcOff b)), .movzx8 .rax (at_ .rcx (srcOff a)),
-   .shift .shl .rax 32, .alu .or .rax (.reg .r10)] ++ lanes .rax
+   .shift .shl .rax 32, .alu .or .rax (.reg .r10)] : List Instr) ++ lanes .rax
 
 /-- A line `S5[a] ^ S6[b] ^ S7[c] ^ S8[d] ^ Sₑ[f] ^ w`, into `eax`: `Sₑ[f]` from
 the group's extra lookups (lane `8 - e` of those at `rcx + 48`), `w` the

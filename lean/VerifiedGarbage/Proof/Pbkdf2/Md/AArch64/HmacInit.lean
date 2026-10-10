@@ -68,7 +68,7 @@ theorem wp_movzk {d : Reg} {lo hi : BitVec 16}
     (k _ ?_)
   · simp only [exec, State.read, State.write, Size.bits]
     simp only [show 16 * 1 < 32 by decide, ↓reduceIte, Option.some.injEq]
-    congr 1
+    refine congrArg (fun g => ({ s with gpr := g } : State)) ?_
     funext r'
     by_cases h : r' = d
     · simp only [h, ↓reduceIte]; exact movzk_val lo hi

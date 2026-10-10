@@ -54,8 +54,10 @@ def callPre (s : State) : Prop :=
 theorem stackArgs_one (s : State) : List.map (stackArg s) (List.range 1) = [stackArg s 0] := rfl
 
 theorem sealSpec_pre {s : State} (h : callPre s) : (Spec.Gcm.sealContract AArch64.abi 2576).pre s := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁,
-    a₂₂, a₂₃, a₂₄, a₂₅⟩ := h
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄
+  have a₂₅ := h
+  clear h
   sig_pre [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, AArch64.abi, AArch64.argRegs,
     stackArgs_one, List.append_eq]
   sig_reduce [Spec.Gcm.sealContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, List.getD]

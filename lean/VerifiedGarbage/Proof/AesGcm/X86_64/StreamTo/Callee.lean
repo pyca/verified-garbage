@@ -63,7 +63,9 @@ def encK (M : CtxMode) : Contract isa where
 
 theorem encSpec_pre {s : State} (h : encCallPre CtxMode.base s) :
     (Spec.Gcm.streamEncryptContract X86_64.abi 2608).pre s := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, -⟩ := h
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁
+  clear h
   sig_pre [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre, X86_64.abi,
     X86_64.argRegs]
   sig_reduce [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre, X86_64.abi,
@@ -78,7 +80,10 @@ theorem encSpec_pre {s : State} (h : encCallPre CtxMode.base s) :
 
 theorem encSpecP_pre {s : State} (h : encCallPre CtxMode.powers s) :
     (Spec.Gcm.streamEncryptPrecomputedContract X86_64.abi 2608).pre s := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂⟩ := h
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁
+  have a₂₂ := h
+  clear h
   sig_pre [Spec.Gcm.streamEncryptPrecomputedContract, Spec.Gcm.streamCryptPrecomputedSig,
     Spec.Gcm.streamTextPrecomputedPre, X86_64.abi, X86_64.argRegs]
   sig_reduce [Spec.Gcm.streamEncryptPrecomputedContract, Spec.Gcm.streamCryptPrecomputedSig,

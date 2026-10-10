@@ -7,18 +7,21 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the blocks of Poly1305
 
-`Stitch.absorbs j k` absorbs `k` blocks at `rsi + 16 j` with the scalar
-Poly1305 (`absorbAt_ok`), as `vg_poly1305_blocks` does, into the
-accumulator in `r11`, `rbx`, `rbp`, under the clamped key in `r8`–`r10`
-(`Acc`). It reads memory and writes only Poly1305's registers
-(`absorbRegs`), and no vector register (`WP.vecKeep`), so ChaCha20's
-rounds, which it runs between, keep their state.
+A chunk's double rounds absorb the blocks at `rsi + 16 j` with the scalar
+Poly1305, as `vg_poly1305_blocks` does, into the accumulator in `r11`,
+`rbx`, `rbp`, under the clamped key in `r8`–`r10` (`Acc`), each in two
+pieces: `Stitch.addProd j` (`addProd_ok`, from `prods_ok`), which leaves the
+products of the sum (`Half`), and the carry (`carry1_ok`, from `carryP_ok`).
+The pieces read memory and write only Poly1305's registers (`absorbRegs`),
+and no vector register (`WP.vecKeep`), so ChaCha20's quarter rounds, which
+they run between, keep their state; `Acc` and `Half` read only registers,
+which the quarter rounds keep.
 -/
 
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
-open VG.Proof.Poly1305.X86_64 (hval absorbAt_ok Keeps absorbRegs)
+open VG.Proof.Poly1305.X86_64 (hval prods_ok carryP_ok Prods Keeps absorbRegs)
 open VG.Spec.Poly1305 (P leNum bytesAt)
 open VG.Proof.Poly1305 (absorbAll)
 
@@ -44,12 +47,13 @@ structure Acc (R0 R1 : BitVec 64) (X : Nat) (s : State) : Prop where
   h2 : (s.gpr .rbp).toNat ≤ 4
   val : hval s % P = X % P
 
-theorem scal_absorbAt (b : Reg) (d : Nat) (pad : BitVec 32) :
-    scalCode (.block (Impl.Poly1305.X86_64.absorbAt b d pad)) = true := by
-  simp only [scalCode, Impl.Poly1305.X86_64.absorbAt, Impl.Poly1305.X86_64.addBlockAt,
+theorem scal_addProd (j : Nat) : scalCode (.block (addProd j)) = true := by
+  simp only [scalCode, addProd, Impl.Poly1305.X86_64.addBlockAt,
     Impl.Poly1305.X86_64.products, Impl.Poly1305.X86_64.mulTo, Impl.Poly1305.X86_64.mulAdd,
-    Impl.Poly1305.X86_64.carry, List.cons_append, List.nil_append, List.all_cons, List.all_nil, scalarI,
-    Bool.and_true]
+    List.cons_append, List.nil_append, List.all_cons, List.all_nil, scalarI, Bool.and_true]
+
+theorem scal_carry : scalCode (.block Impl.Poly1305.X86_64.carry) = true := by
+  simp only [scalCode, Impl.Poly1305.X86_64.carry, List.all_cons, List.all_nil, scalarI, Bool.and_true]
 
 /-- A block's two words and the bit above them, as `leNum` of its bytes and `0x01`. -/
 theorem block_num (m : Mem) (p : Addr) (d : Nat) :
@@ -65,62 +69,69 @@ theorem block_num (m : Mem) (p : Addr) (d : Nat) :
   have h2 : (1 : BitVec 32).toNat = 1 := rfl
   rw [h1, h2]
 
-/-- One block at `rsi + d`. -/
-theorem absorb1_ok {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : Nat} {s : State} (h : Acc R0 R1 X s)
-    {p : Addr} (hp : s.gpr .rsi = p) {d : Nat}
-    (hin : ∀ e, e + 8 ≤ 16 → InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 (d + e)) 8) :
-    WP isa (.block (Impl.Poly1305.X86_64.absorbAt .rsi d 1)) s fun s' =>
-      Acc R0 R1 (absorbAll (rN R0 R1) X (bytesAt s.mem (p + BitVec.ofNat 64 d) 16)) s' ∧
+/-- Halfway through a block (after `addProd`): the products of the sum of the
+accumulator and the block, whose carry leaves an accumulator congruent to
+`Y`, under the key. -/
+structure Half (R0 R1 : BitVec 64) (Y : Nat) (s : State) : Prop where
+  r8 : s.gpr .r8 = R0
+  r9 : s.gpr .r9 = R1
+  r10 : (s.gpr .r10).toNat = 5 * (R1.toNat / 4)
+  prods : ∃ a0 a1 a2, ((a0 + 2 ^ 64 * a1 + 2 ^ 128 * a2) * rN R0 R1) % P = Y % P ∧
+    Prods a0 a1 a2 R0.toNat (R1.toNat / 4) s
+
+/-- `Acc` and `Half` read only registers. -/
+theorem Acc.of_gpr {R0 R1 : BitVec 64} {X : Nat} {s s' : State} (hg : s'.gpr = s.gpr)
+    (h : Acc R0 R1 X s) : Acc R0 R1 X s' :=
+  ⟨by rw [hg]; exact h.r8, by rw [hg]; exact h.r9, by rw [hg]; exact h.r10, by rw [hg]; exact h.h2,
+    by simp only [hval, hg]; exact h.val⟩
+
+theorem Half.of_gpr {R0 R1 : BitVec 64} {Y : Nat} {s s' : State} (hg : s'.gpr = s.gpr)
+    (h : Half R0 R1 Y s) : Half R0 R1 Y s' := by
+  obtain ⟨a0, a1, a2, e, hP⟩ := h.prods
+  exact ⟨by rw [hg]; exact h.r8, by rw [hg]; exact h.r9, by rw [hg]; exact h.r10, a0, a1, a2, e,
+    ⟨hP.ha0, hP.ha1, hP.ha2, hP.hr0, hP.hq, by rw [hg]; exact hP.x, by rw [hg]; exact hP.y,
+      by rw [hg]; exact hP.z⟩⟩
+
+/-- The first piece of the block at `rsi + 16 j`. -/
+theorem addProd_ok {R0 R1 : BitVec 64} (hk : Key R0 R1) {X : Nat} {s : State} (h : Acc R0 R1 X s)
+    {p : Addr} (hp : s.gpr .rsi = p) {j : Nat}
+    (hin : ∀ e, e + 8 ≤ 16 → InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 (16 * j + e)) 8) :
+    WP isa (.block (addProd j)) s fun s' =>
+      Half R0 R1 (absorbAll (rN R0 R1) X (bytesAt s.mem (p + BitVec.ofNat 64 (16 * j)) 16)) s' ∧
       Keeps absorbRegs s s' ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi := by
   have hq : R1.toNat / 4 < 2 ^ 58 := by have := hk.r1; omega
   have hr1 : (s.gpr .r9).toNat = 4 * (R1.toNat / 4) := by rw [h.r9]; have := hk.r1_mod; omega
   have i0 := hin 0 (by decide)
   have i8 := hin 8 (by decide)
   rw [Nat.add_zero] at i0
-  refine WP.mono (WP.vecKeep (scal_absorbAt _ _ _) (absorbAt_ok s (b := .rsi) (d := d) (by decide)
+  refine WP.mono (WP.vecKeep (scal_addProd _) (prods_ok s (b := .rsi) (d := 16 * j) (by decide)
     (Or.inr rfl) (by rw [h.r8]; exact hk.r0) hr1 hq h.r10
     (by rw [hp, Proof.Poly1305.X86_64.ofInt_natCast]; exact i0)
     (by rw [hp, Proof.Poly1305.X86_64.ofInt_natCast]; exact i8)))
     fun s' ⟨⟨ha, k⟩, vx, vy⟩ => ⟨?_, k, vx, vy⟩
-  obtain ⟨hv, hb⟩ := ha h.h2
+  obtain ⟨a0, a1, a2, ea, hP⟩ := ha h.h2
+  rw [h.r8] at hP
+  refine ⟨by rw [k.gpr' (r := .r8), h.r8], by rw [k.gpr' (r := .r9), h.r9],
+    by rw [k.gpr' (r := .r10), h.r10], a0, a1, a2, ?_, hP⟩
+  have hb1 : 0 < (bytesAt s.mem (p + BitVec.ofNat 64 (16 * j)) 16).length := by
+    rw [VG.Proof.Poly1305.length_bytesAt]; decide
+  have hb2 : (bytesAt s.mem (p + BitVec.ofNat 64 (16 * j)) 16).length ≤ 16 := by
+    rw [VG.Proof.Poly1305.length_bytesAt]
+  rw [ea, hp, block_num, mod_step h.val, VG.Proof.Poly1305.absorbAll_block hb1 hb2, Nat.mod_mod]
+
+/-- The second piece, the carry. -/
+theorem carry1_ok {R0 R1 : BitVec 64} (hk : Key R0 R1) {Y : Nat} {s : State} (h : Half R0 R1 Y s) :
+    WP isa (.block Impl.Poly1305.X86_64.carry) s fun s' =>
+      Acc R0 R1 Y s' ∧ Keeps absorbRegs s s' ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi := by
+  obtain ⟨a0, a1, a2, ea, hP⟩ := h.prods
+  refine WP.mono (WP.vecKeep scal_carry (carryP_ok s a0 a1 a2 R0.toNat (R1.toNat / 4)))
+    fun s' ⟨⟨hc, k⟩, vx, vy⟩ => ⟨?_, k, vx, vy⟩
+  obtain ⟨m, hb⟩ := hc hP
+  have hr : R0.toNat + 2 ^ 64 * (4 * (R1.toNat / 4)) = rN R0 R1 := by
+    have := hk.r1_mod; simp only [rN]; omega
   refine ⟨by rw [k.gpr' (r := .r8), h.r8], by rw [k.gpr' (r := .r9), h.r9],
     by rw [k.gpr' (r := .r10), h.r10], hb, ?_⟩
-  have hb1 : 0 < (bytesAt s.mem (p + BitVec.ofNat 64 d) 16).length := by
-    rw [VG.Proof.Poly1305.length_bytesAt]; decide
-  have hb2 : (bytesAt s.mem (p + BitVec.ofNat 64 d) 16).length ≤ 16 := by
-    rw [VG.Proof.Poly1305.length_bytesAt]
-  rw [hv, hp, ← h.r8, ← h.r9, block_num, mod_step h.val, VG.Proof.Poly1305.absorbAll_block hb1 hb2,
-    Nat.mod_mod, h.r8, h.r9]
-
-theorem absorbs_succ (j k : Nat) :
-    absorbs j (k + 1) = absorbs j k ++ Impl.Poly1305.X86_64.absorbAt .rsi (16 * (j + k)) 1 := by
-  simp [absorbs, List.range_succ, List.flatMap_append]
-
-/-- `k` blocks at `rsi + 16 j`. -/
-theorem absorbs_ok {R0 R1 : BitVec 64} (hk : Key R0 R1) {p : Addr} (j : Nat) :
-    ∀ (k : Nat) {X : Nat} {s : State}, Acc R0 R1 X s → s.gpr .rsi = p →
-    (∀ e, e + 8 ≤ 16 * k → InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 (16 * j + e)) 8) →
-    WP isa (.block (absorbs j k)) s fun s' =>
-      Acc R0 R1 (absorbAll (rN R0 R1) X (bytesAt s.mem (p + BitVec.ofNat 64 (16 * j)) (16 * k))) s' ∧
-      Keeps absorbRegs s s' ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi
-  | 0, X, s, h, _, _ => WP.block_nil ⟨by simpa [bytesAt, VG.Proof.Poly1305.absorbAll_nil] using h, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩, rfl, rfl⟩
-  | k + 1, X, s, h, hp, hin => by
-    rw [absorbs_succ]
-    refine WP.block_append (WP.mono (absorbs_ok hk j k h hp fun e he => hin e (by omega))
-      fun s₁ ⟨h₁, k₁, x₁, y₁⟩ => ?_)
-    have rd₁ : s₁.rd = s.rd := k₁.2.2.1
-    have wr₁ : s₁.wr = s.wr := k₁.2.2.2
-    refine WP.mono (absorb1_ok hk h₁ (p := p) (by rw [k₁.gpr' (r := .rsi), hp]) (d := 16 * (j + k)) fun e he => by
-      rw [rd₁, wr₁, show 16 * (j + k) + e = 16 * j + (16 * k + e) by omega]
-      exact hin _ (by omega)) fun s₂ ⟨h₂, k₂, x₂, y₂⟩ => ⟨?_, (k₁.trans k₂).mono (by simp), by rw [x₂, x₁],
-        by rw [y₂, y₁]⟩
-    rw [k₁.2.1] at h₂
-    have hl : (bytesAt s.mem (p + BitVec.ofNat 64 (16 * j)) (16 * k)).length % 16 = 0 := by
-      rw [VG.Proof.Poly1305.length_bytesAt]; omega
-    rw [show 16 * (k + 1) = 16 * k + 16 by omega, VG.Proof.Poly1305.bytesAt_add,
-      VG.Proof.Poly1305.absorbAll_append hl, BitVec.add_assoc, ← BitVec.ofNat_add,
-      show 16 * j + 16 * k = 16 * (j + k) by omega]
-    exact h₂
+  rw [m, hr, ea]
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
@@ -130,23 +141,27 @@ end VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 `Stitch.chunk` but for its counter update (`Stitch.next`): the AVX2
 kernel's eight blocks (`Avx2.setup_ok`, `Avx2.doubleRound_ok`,
 `Avx2.finish_ok`) XORed into the 512 bytes after `rsi`, with the 32 blocks at
-`rsi` absorbed between the double rounds (`absorbs_ok`).
+`rsi` absorbed, in pieces, between the quarter rounds (`sround4_ok`,
+`sround3_ok`).
 
 The kernel's lemmas take the registers they use and the memory they read
-from the state they start from, and the Poly1305 blocks keep both (they
+from the state they start from, and the pieces of Poly1305 keep both (they
 write only Poly1305's registers, `absorbRegs`, and no memory or vector
-register), so the double rounds and the blocks compose step by step
-(`srounds_ok`).
+register), while the quarter rounds and swaps keep every general-purpose
+register, on which alone Poly1305's state depends, and write only the
+slots, apart from the blocks: so they compose step by step, under an
+invariant of both (`SI`).
 -/
 
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
 open VG.Proof.ChaCha20.X86_64.Avx2 (Holds RI M8 Consts Incs stR bufR slotsR dR5 DWin W2 plus hiR
-  setup_ok doubleRound_ok finish_ok W2_frame incs_frame slots_m8 hiR_slots hiR_sub slotsR_sub)
+  setup_ok finish_ok W2_frame incs_frame slots_m8 hiR_slots hiR_sub slotsR_sub QSide quarter_step
+  swap_step)
 open VG.Proof.ChaCha20 (CState ctr)
 open VG.Proof.Poly1305.X86_64 (hval Keeps absorbRegs)
-open VG.Spec.ChaCha20 (stateAt serialize innerBlock)
+open VG.Spec.ChaCha20 (stateAt serialize innerBlock qround)
 open VG.Spec.Poly1305 (P bytesAt)
 open VG.Proof.Poly1305 (absorbAll)
 
@@ -186,55 +201,186 @@ theorem bytes_frame {m m' : Mem} (hf : Frame [slotsR buf] m m') (hd : (dR5 q).Di
     intro hc
     exact hd.symm _ hc (Offset.contains_base q (d := j) (n := 1) (k := 512) (by omega) (by lit_omega))
 
-theorem srounds_ok (hk : Key R0 R1) (hrcx : s₁.gpr .rcx = buf) (hrsi : s₁.gpr .rsi = q)
-    (hb : bufR buf ∈ s₁.wr) (h8 : M8 s₁.mem buf) (hd : (dR5 q).Disjoint (slotsR buf))
-    (hin : ∀ off n, off + n ≤ 512 → InRegions (s₁.rd ++ s₁.wr) (q + BitVec.ofNat 64 off) n) :
-    ∀ n, n ≤ 10 → SR buf q R0 R1 X V s₁ 0 s₁ → WP isa (srounds n) s₁ (SR buf q R0 R1 X V s₁ n)
+/-- Within a double round: the eight states `vs` in layout `p` and the
+kernel's registers as in `SR`, and Poly1305's registers satisfying `Q`. -/
+structure SI (buf : Addr) (s₁ : State) (p : Bool) (vs : Nat → CState) (Q : State → Prop)
+    (s : State) : Prop where
+  holds : Holds buf p vs s
+  m16 : ∀ l, s.lane .xmm15 l = rot16Mask
+  frame : Frame [slotsR buf] s₁.mem s.mem
+  gpr : ∀ r, r ∉ absorbRegs → s.gpr r = s₁.gpr r
+  rd : s.rd = s₁.rd
+  wr : s.wr = s₁.wr
+  poly : Q s
+
+theorem SI.m8 {p : Bool} {vs : Nat → CState} {Q : State → Prop} {s : State}
+    (h : SI buf s₁ p vs Q s) (h8 : M8 s₁.mem buf) : M8 s.mem buf := by
+  have e : s.mem.readW (buf + BitVec.ofNat 64 160) 256 = s₁.mem.readW (buf + BitVec.ofNat 64 160) 256 :=
+    h.frame.readW (Region.contains_self _ _) (by simpa using slots_m8 buf) (by decide)
+  exact ⟨by rw [e]; exact h8.1, by rw [e]; exact h8.2⟩
+
+theorem quarter_si {p : Bool} {x y z w : Nat} (hx : x < 16) (hy : y < 16) (hz : z < 16)
+    (hw : w < 16) (hq : QSide p x y z w = true) {vs : Nat → CState} {Q : State → Prop}
+    (hQ : ∀ s s' : State, s'.gpr = s.gpr → Q s → Q s') (hrcx : s₁.gpr .rcx = buf)
+    (hb : bufR buf ∈ s₁.wr) (h8 : M8 s₁.mem buf) {s : State} (h : SI buf s₁ p vs Q s) :
+    WP isa (Impl.ChaCha20.X86_64.Avx2.quarter x y z w) s
+      (SI buf s₁ p (fun j => qround (vs j) ⟨x, hx⟩ ⟨y, hy⟩ ⟨z, hz⟩ ⟨w, hw⟩) Q) :=
+  WP.mono (quarter_step hx hy hz hw hq (s₀ := s) ⟨h.holds, h.m16, Frame.refl _ _, rfl, rfl, rfl⟩
+    (by rw [h.gpr _ (by decide), hrcx]) (by rw [h.wr]; exact hb) (h.m8 h8))
+    fun s' r => ⟨r.holds, r.m16, h.frame.trans r.frame, fun r' hr' => by rw [r.gpr, h.gpr r' hr'],
+      by rw [r.rd, h.rd], by rw [r.wr, h.wr], hQ s s' r.gpr h.poly⟩
+
+theorem swap_si {p : Bool} {vs : Nat → CState} {Q : State → Prop}
+    (hQ : ∀ s s' : State, s'.gpr = s.gpr → Q s → Q s') (hrcx : s₁.gpr .rcx = buf)
+    (hb : bufR buf ∈ s₁.wr) {s : State} (h : SI buf s₁ p vs Q s) :
+    WP isa (Impl.ChaCha20.X86_64.Avx2.swap (if p then 10 else 8) (if p then 8 else 10)) s
+      (SI buf s₁ (!p) vs Q) :=
+  WP.mono (swap_step (s₀ := s) ⟨h.holds, h.m16, Frame.refl _ _, rfl, rfl, rfl⟩
+    (by rw [h.gpr _ (by decide), hrcx]) (by rw [h.wr]; exact hb))
+    fun s' r => ⟨r.holds, r.m16, h.frame.trans r.frame, fun r' hr' => by rw [r.gpr, h.gpr r' hr'],
+      by rw [r.rd, h.rd], by rw [r.wr, h.wr], hQ s s' r.gpr h.poly⟩
+
+/-- A piece of Poly1305 keeps the kernel's state. -/
+theorem SI.piece {p : Bool} {vs : Nat → CState} {Q Q' : State → Prop} {s s' : State}
+    (h : SI buf s₁ p vs Q s) (hq : Q' s') (k : Keeps absorbRegs s s') (hx : s'.xmm = s.xmm)
+    (hy : s'.ymmHi = s.ymmHi) : SI buf s₁ p vs Q' s' := by
+  refine ⟨fun k' hk' l q' hl hq' => ?_, fun l => ?_, by rw [k.2.1]; exact h.frame,
+    fun r hr => by rw [k.1 r hr, h.gpr r hr], by rw [k.2.2.1, h.rd], by rw [k.2.2.2, h.wr], hq⟩
+  · have e := h.holds k' hk' l q' hl hq'
+    split
+    · rename_i hreg
+      simp only [hreg, ite_true] at e
+      simpa only [Proof.ChaCha20.X86_64.Avx2.vw, State.lane, hx, hy] using e
+    · rename_i hreg
+      simp only [hreg] at e
+      rw [k.2.1]; exact e
+  · simp only [State.lane, hx, hy]; exact h.m16 l
+
+/-- The blocks before `j` absorbed. -/
+abbrev AccTo (q : Addr) (R0 R1 : BitVec 64) (X : Nat) (s₁ : State) (j : Nat) : State → Prop :=
+  Acc R0 R1 (absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * j)))
+
+/-- Block `j` halfway. -/
+abbrev HalfTo (q : Addr) (R0 R1 : BitVec 64) (X : Nat) (s₁ : State) (j : Nat) : State → Prop :=
+  Half R0 R1 (absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * (j + 1))))
+
+theorem acc_gpr {R0 R1 : BitVec 64} {X : Nat} {j : Nat} :
+    ∀ s s' : State, s'.gpr = s.gpr → AccTo q R0 R1 X s₁ j s → AccTo q R0 R1 X s₁ j s' :=
+  fun _ _ hg h => h.of_gpr hg
+
+theorem half_gpr {R0 R1 : BitVec 64} {X : Nat} {j : Nat} :
+    ∀ s s' : State, s'.gpr = s.gpr → HalfTo q R0 R1 X s₁ j s → HalfTo q R0 R1 X s₁ j s' :=
+  fun _ _ hg h => h.of_gpr hg
+
+theorem addProd_si {R0 R1 : BitVec 64} {X : Nat} (hk : Key R0 R1) (hrsi : s₁.gpr .rsi = q)
+    (hd : (dR5 q).Disjoint (slotsR buf))
+    (hin : ∀ off n, off + n ≤ 512 → InRegions (s₁.rd ++ s₁.wr) (q + BitVec.ofNat 64 off) n)
+    {j : Nat} (hj : j < 32) {p : Bool} {vs : Nat → CState} {s : State}
+    (h : SI buf s₁ p vs (AccTo q R0 R1 X s₁ j) s) :
+    WP isa (.block (addProd j)) s (SI buf s₁ p vs (HalfTo q R0 R1 X s₁ j)) := by
+  refine WP.mono (addProd_ok hk h.poly (p := q) (by rw [h.gpr _ (by decide), hrsi]) (j := j)
+    fun e he => by rw [h.rd, h.wr]; exact hin _ _ (by omega)) fun s' ⟨a, k, x, y⟩ => h.piece ?_ k x y
+  show Half R0 R1 (absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * (j + 1)))) s'
+  rw [Nat.mul_add, VG.Proof.Poly1305.bytesAt_add,
+    VG.Proof.Poly1305.absorbAll_append (by rw [VG.Proof.Poly1305.length_bytesAt]; omega),
+    ← bytes_frame h.frame hd (j := 16 * j) (n := 16) (by omega)]
+  exact a
+
+theorem carry_si {R0 R1 : BitVec 64} {X : Nat} (hk : Key R0 R1) {j : Nat} {p : Bool}
+    {vs : Nat → CState} {s : State} (h : SI buf s₁ p vs (HalfTo q R0 R1 X s₁ j) s) :
+    WP isa (.block Impl.Poly1305.X86_64.carry) s (SI buf s₁ p vs (AccTo q R0 R1 X s₁ (j + 1))) :=
+  WP.mono (carry1_ok hk h.poly) fun _ ⟨a, k, x, y⟩ => h.piece a k x y
+
+section
+variable (hk : Key R0 R1) (hrcx : s₁.gpr .rcx = buf)
+  (hrsi : s₁.gpr .rsi = q) (hb : bufR buf ∈ s₁.wr) (h8 : M8 s₁.mem buf)
+  (hd : (dR5 q).Disjoint (slotsR buf))
+  (hin : ∀ off n, off + n ≤ 512 → InRegions (s₁.rd ++ s₁.wr) (q + BitVec.ofNat 64 off) n)
+include hk hrcx hrsi hb h8 hd hin
+
+theorem sround4_ok {j : Nat} (hj : j + 4 ≤ 32) {vs : Nat → CState} {s : State}
+    (h : SI buf s₁ false vs (AccTo q R0 R1 X s₁ j) s) :
+    WP isa (sround4 j) s (SI buf s₁ false (fun i => innerBlock (vs i)) (AccTo q R0 R1 X s₁ (j + 4))) := by
+  unfold sround4
+  refine WP.seq (WP.mono (quarter_si (x := 0) (y := 4) (z := 8) (w := 12) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h) fun t₁ h₁ => ?_)
+  refine WP.seq (WP.mono (addProd_si hk hrsi hd hin (by omega) h₁) fun t₂ h₂ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 1) (y := 5) (z := 9) (w := 13) (by decide) (by decide)
+    (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₂) fun t₃ h₃ => ?_)
+  refine WP.seq (WP.mono (carry_si hk h₃) fun t₄ h₄ => ?_)
+  refine WP.seq (WP.mono (swap_si (p := false) acc_gpr hrcx hb h₄) fun t₅ h₅ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 2) (y := 6) (z := 10) (w := 14) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₅) fun t₆ h₆ => ?_)
+  refine WP.seq (WP.mono (addProd_si hk hrsi hd hin (by omega) h₆) fun t₇ h₇ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 3) (y := 7) (z := 11) (w := 15) (by decide) (by decide)
+    (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₇) fun t₈ h₈ => ?_)
+  refine WP.seq (WP.mono (carry_si hk h₈) fun t₉ h₉ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 0) (y := 5) (z := 10) (w := 15) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₉) fun t₁₀ h₁₀ => ?_)
+  refine WP.seq (WP.mono (addProd_si hk hrsi hd hin (by omega) h₁₀) fun t₁₁ h₁₁ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 1) (y := 6) (z := 11) (w := 12) (by decide) (by decide)
+    (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₁₁) fun t₁₂ h₁₂ => ?_)
+  refine WP.seq (WP.mono (carry_si hk h₁₂) fun t₁₃ h₁₃ => ?_)
+  refine WP.seq (WP.mono (swap_si (p := true) acc_gpr hrcx hb h₁₃) fun t₁₄ h₁₄ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 2) (y := 7) (z := 8) (w := 13) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₁₄) fun t₁₅ h₁₅ => ?_)
+  refine WP.seq (WP.mono (addProd_si hk hrsi hd hin (by omega) h₁₅) fun t₁₆ h₁₆ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 3) (y := 4) (z := 9) (w := 14) (by decide) (by decide)
+    (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₁₆) fun t₁₇ h₁₇ => ?_)
+  exact carry_si hk h₁₇
+
+theorem sround3_ok {j : Nat} (hj : j + 3 ≤ 32) {vs : Nat → CState} {s : State}
+    (h : SI buf s₁ false vs (AccTo q R0 R1 X s₁ j) s) :
+    WP isa (sround3 j) s (SI buf s₁ false (fun i => innerBlock (vs i)) (AccTo q R0 R1 X s₁ (j + 3))) := by
+  unfold sround3
+  refine WP.seq (WP.mono (quarter_si (x := 0) (y := 4) (z := 8) (w := 12) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h) fun t₁ h₁ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 1) (y := 5) (z := 9) (w := 13) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₁) fun t₂ h₂ => ?_)
+  refine WP.seq (WP.mono (addProd_si hk hrsi hd hin (by omega) h₂) fun t₃ h₃ => ?_)
+  refine WP.seq (WP.mono (swap_si (p := false) half_gpr hrcx hb h₃) fun t₄ h₄ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 2) (y := 6) (z := 10) (w := 14) (by decide) (by decide)
+    (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₄) fun t₅ h₅ => ?_)
+  refine WP.seq (WP.mono (carry_si hk h₅) fun t₆ h₆ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 3) (y := 7) (z := 11) (w := 15) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₆) fun t₇ h₇ => ?_)
+  refine WP.seq (WP.mono (addProd_si hk hrsi hd hin (by omega) h₇) fun t₈ h₈ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 0) (y := 5) (z := 10) (w := 15) (by decide) (by decide)
+    (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₈) fun t₉ h₉ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 1) (y := 6) (z := 11) (w := 12) (by decide) (by decide)
+    (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₉) fun t₁₀ h₁₀ => ?_)
+  refine WP.seq (WP.mono (carry_si hk h₁₀) fun t₁₁ h₁₁ => ?_)
+  refine WP.seq (WP.mono (swap_si (p := true) acc_gpr hrcx hb h₁₁) fun t₁₂ h₁₂ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 2) (y := 7) (z := 8) (w := 13) (by decide) (by decide)
+    (by decide) (by decide) (by decide) acc_gpr hrcx hb h8 h₁₂) fun t₁₃ h₁₃ => ?_)
+  refine WP.seq (WP.mono (addProd_si hk hrsi hd hin (by omega) h₁₃) fun t₁₄ h₁₄ => ?_)
+  refine WP.seq (WP.mono (quarter_si (x := 3) (y := 4) (z := 9) (w := 14) (by decide) (by decide)
+    (by decide) (by decide) (by decide) half_gpr hrcx hb h8 h₁₄) fun t₁₅ h₁₅ => ?_)
+  exact carry_si hk h₁₅
+
+theorem srounds_ok : ∀ n, n ≤ 10 → SR buf q R0 R1 X V s₁ 0 s₁ → WP isa (srounds n) s₁ (SR buf q R0 R1 X V s₁ n)
   | 0, _, h => WP.block_nil h
   | n + 1, hn, h => by
-    refine WP.seq (WP.mono (srounds_ok hk hrcx hrsi hb h8 hd hin n (by omega) h) fun s hs => ?_)
-    have rcx : s.gpr .rcx = buf := by rw [hs.gpr _ (by decide), hrcx]
-    have wb : bufR buf ∈ s.wr := by rw [hs.wr]; exact hb
-    have m8 : M8 s.mem buf := by
-      have e : s.mem.readW (buf + BitVec.ofNat 64 160) 256 = s₁.mem.readW (buf + BitVec.ofNat 64 160) 256 :=
-        hs.frame.readW (Region.contains_self _ _) (by simpa using slots_m8 buf) (by decide)
-      exact ⟨by rw [e]; exact h8.1, by rw [e]; exact h8.2⟩
-    refine WP.seq (WP.mono (doubleRound_ok (s₀ := s) ⟨hs.holds, hs.m16, Frame.refl _ _, rfl, rfl, rfl⟩
-      rcx wb m8) fun s' hr => ?_)
-    have rsi' : s'.gpr .rsi = q := by rw [hr.gpr, hs.gpr _ (by decide), hrsi]
-    refine WP.mono (absorbs_ok hk (p := q) (firstBlock n) (blocks n) (s := s')
-      (X := absorbAll (rN R0 R1) X (bytesAt s₁.mem q (16 * firstBlock n))) ?_ rsi' fun e he => ?_)
-      fun s'' ⟨a'', k'', x'', y''⟩ => ?_
-    · have := hs.acc
-      exact ⟨by rw [hr.gpr]; exact this.r8, by rw [hr.gpr]; exact this.r9,
-        by rw [hr.gpr]; exact this.r10, by rw [hr.gpr]; exact this.h2,
-        by simp only [hval, hr.gpr]; exact this.val⟩
-    · rw [hr.rd, hr.wr, hs.rd, hs.wr]
-      have hb' : firstBlock n + blocks n ≤ 32 := by
-        rw [← firstBlock_succ]; unfold firstBlock; split <;> omega
-      exact hin _ _ (by omega)
-    · have F : Frame [slotsR buf] s₁.mem s''.mem := by rw [k''.2.1]; exact hs.frame.trans hr.frame
-      refine ⟨?_, fun l => ?_, F, fun r hr' => ?_, by rw [k''.2.2.1, hr.rd, hs.rd],
-        by rw [k''.2.2.2, hr.wr, hs.wr], ?_⟩
-      · show Holds buf false (fun j => innerBlock (Nat.repeat innerBlock n (V j))) s''
-        intro k hk' l' q' hl hq
-        have e := hr.holds k hk' l' q' hl hq
-        split
-        · rename_i hreg
-          simp only [hreg, ite_true] at e
-          simpa only [Proof.ChaCha20.X86_64.Avx2.vw, State.lane, x'', y''] using e
-        · rename_i hreg
-          simp only [hreg] at e
-          rw [k''.2.1]; exact e
-      · simp only [State.lane, x'', y'']; exact hr.m16 l
-      · rw [k''.1 r hr', hr.gpr, hs.gpr r hr']
-      · rw [firstBlock_succ, Nat.mul_add, VG.Proof.Poly1305.bytesAt_add,
-          VG.Proof.Poly1305.absorbAll_append (by rw [VG.Proof.Poly1305.length_bytesAt]; omega)]
-        have hb' : firstBlock n + blocks n ≤ 32 := by
-          rw [← firstBlock_succ]; unfold firstBlock; split <;> omega
-        rw [← bytes_frame (hs.frame.trans hr.frame) hd (j := 16 * firstBlock n) (n := 16 * blocks n)
-          (by omega)]
-        exact a''
+    refine WP.seq (WP.mono (srounds_ok n (by omega) h) fun s hs => ?_)
+    have hs' : SI buf s₁ false (fun j => Nat.repeat innerBlock n (V j)) (AccTo q R0 R1 X s₁ (firstBlock n)) s :=
+      ⟨hs.holds, hs.m16, hs.frame, hs.gpr, hs.rd, hs.wr, hs.acc⟩
+    have hb' : firstBlock n + blocks n ≤ 32 := by
+      rw [← firstBlock_succ]; unfold firstBlock; split <;> omega
+    have fin : ∀ {s'}, SI buf s₁ false (fun j => Nat.repeat innerBlock (n + 1) (V j))
+        (AccTo q R0 R1 X s₁ (firstBlock n + blocks n)) s' → SR buf q R0 R1 X V s₁ (n + 1) s' :=
+      fun h' => ⟨h'.holds, h'.m16, h'.frame, h'.gpr, h'.rd, h'.wr, by rw [firstBlock_succ]; exact h'.poly⟩
+    show WP isa (if n < 2 then sround4 (firstBlock n) else sround3 (firstBlock n)) s _
+    split
+    · rename_i hn2
+      have e : blocks n = 4 := by unfold blocks; exact ite_eq_left_iff.mpr fun h => absurd hn2 h
+      rw [e] at hb' fin
+      exact WP.mono (sround4_ok hk hrcx hrsi hb h8 hd hin hb' hs') fun _ h' => fin h'
+    · rename_i hn2
+      have e : blocks n = 3 := by unfold blocks; exact ite_eq_right_iff.mpr fun h => absurd h hn2
+      rw [e] at hb' fin
+      exact WP.mono (sround3_ok hk hrcx hrsi hb h8 hd hin hb' hs') fun _ h' => fin h'
+
+end
 
 end
 
