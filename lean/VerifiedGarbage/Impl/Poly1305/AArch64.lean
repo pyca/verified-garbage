@@ -79,8 +79,8 @@ def sOff (j : Nat) : Nat := 88 + 4 * j
 
 /-- `r` clamped, in `x14, x15`. -/
 def clampR : List Instr :=
-  const64 .x16 0x0ffffffc0fffffff ++ [.logic .and .x .x14 .x14 .x16] ++
-  const64 .x16 0x0ffffffc0ffffffc ++ [.logic .and .x .x15 .x15 .x16]
+  const64 .x16 0x0ffffffc0fffffff ++ ([.logic .and .x .x14 .x14 .x16] : List Instr) ++
+  const64 .x16 0x0ffffffc0ffffffc ++ ([.logic .and .x .x15 .x15 .x16] : List Instr)
 
 /-- `sj = 5 rj` into `x4`–`x7`, from `rj` in `x10`–`x13`. -/
 def times5 : List Instr :=
@@ -130,7 +130,7 @@ def mac (d h : Reg) (off : Nat) : List Instr := [.ldr .w .x14 .x0 off, .madd .x 
 
 /-- `dk = Σ hi · coef k i`, into `x(9+k)`. -/
 def dsum (k : Nat) : List Instr :=
-  [.ldr .w .x14 .x0 (coef k 0), .mul .x (D.getD k .x9) .x4 .x14] ++
+  ([.ldr .w .x14 .x0 (coef k 0), .mul .x (D.getD k .x9) .x4 .x14] : List Instr) ++
     (List.range 4).flatMap fun i => mac (D.getD k .x9) (H.getD (i + 1) .x4) (coef k (i + 1))
 
 def products : List Instr := (List.range 5).flatMap dsum
@@ -144,8 +144,8 @@ def carryStep (d h d' : Reg) : List Instr :=
 def carry : List Instr :=
   carryStep .x9 .x4 .x10 ++ carryStep .x10 .x5 .x11 ++ carryStep .x11 .x6 .x12 ++
   carryStep .x12 .x7 .x13 ++
-  [.lsr .x .x14 .x13 26, .logic .and .x .x8 .x13 .x17, .lsl .x .x15 .x14 2,
-    .add .x .x14 .x14 .x15, .add .x .x4 .x4 .x14] ++
+  ([.lsr .x .x14 .x13 26, .logic .and .x .x8 .x13 .x17, .lsl .x .x15 .x14 2,
+    .add .x .x14 .x14 .x15, .add .x .x4 .x4 .x14] : List Instr) ++
   carryStep .x4 .x4 .x5
 
 /-- Absorbing the block at `x1`, with `pad` for a whole block (the `0x01`
@@ -240,14 +240,14 @@ def fill : Prog isa :=
   .seq count
   (.seq (.ite (.zero .x .x10) (.block []) copyIn)
   (.seq (.block [.addImm .x .x2 .x1 0, .subImm .x .x12 .x9 16])
-    (.ite (.zero .x .x12) (.block ([.addImm .x .x1 .x0 56] ++ absorb true)) (.block []))))
+    (.ite (.zero .x .x12) (.block (([.addImm .x .x1 .x0 56] : List Instr) ++ absorb true)) (.block []))))
 
 /-- Absorbs the whole blocks of the data, from `x1`, counting them in `x2`. -/
 def whole : Prog isa :=
   .seq (.block [.addImm .x .x1 .x2 0, .lsr .x .x2 .x3 4])
     (.ite (.zero .x .x2) (.block [])
-      (.loop (.block (absorb true ++ [.addImm .x .x1 .x1 16, .subImm .x .x3 .x3 16,
-        .lsr .x .x2 .x3 4])) (.nonzero .x .x2)))
+      (.loop (.block (absorb true ++ ([.addImm .x .x1 .x1 16, .subImm .x .x3 .x3 16,
+        .lsr .x .x2 .x3 4] : List Instr))) (.nonzero .x .x2)))
 
 /-- Copies the rest of the data into the (empty) buffer. -/
 def rest : Prog isa :=
@@ -255,7 +255,7 @@ def rest : Prog isa :=
     (.seq (.block [.addImm .x .x10 .x3 0, .addImm .x .x11 .x0 0]) copyIn)
 
 def update : Prog isa :=
-  .seq (.block (setup ++ [.movz .x .x9 15 0, .logic .and .x .x9 .x1 .x9]))
+  .seq (.block (setup ++ ([.movz .x .x9 15 0, .logic .and .x .x9 .x1 .x9] : List Instr)))
   (.seq (.ite (.zero .x .x9) (.block []) fill)
   (.seq whole
   (.seq rest
@@ -274,7 +274,7 @@ def zeroBody : List Instr := [.strb .x11 .x9 56, .addImm .x .x9 .x9 1, .subImm .
 def lastBlock : Prog isa :=
   .seq (.block [.movz .x .x11 0 0, .add .x .x9 .x0 .x2, .movz .x .x10 16 0, .sub .x .x10 .x10 .x2])
   (.seq (.loop (.block zeroBody) (.nonzero .x .x10))
-    (.block ([.movz .x .x11 1 0, .add .x .x9 .x0 .x2, .strb .x11 .x9 56, .addImm .x .x1 .x0 56] ++
+    (.block (([.movz .x .x11 1 0, .add .x .x9 .x0 .x2, .strb .x11 .x9 56, .addImm .x .x1 .x0 56] : List Instr) ++
       absorb false)))
 
 /-- `h += s`, with the carries propagated up to `h4`. -/
@@ -284,7 +284,7 @@ def addS : List Instr := load2 .x0 40 ++ split ++ addLimbs ++ carryStep .x4 .x4 
 def storeTag : List Instr := [.str .x .x14 .x3 0, .str .x .x15 .x3 8]
 
 def finalize : Prog isa :=
-  .seq (.block ([.addImm .x .x3 .x2 0, .movz .x .x2 15 0, .logic .and .x .x2 .x1 .x2] ++ setup))
+  .seq (.block (([.addImm .x .x3 .x2 0, .movz .x .x2 15 0, .logic .and .x .x2 .x1 .x2] : List Instr) ++ setup))
   (.seq (.ite (.zero .x .x2) (.block []) lastBlock)
     (.block (reduce ++ addS ++ pack ++ storeTag)))
 

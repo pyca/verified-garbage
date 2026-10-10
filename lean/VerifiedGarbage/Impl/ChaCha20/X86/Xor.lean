@@ -77,8 +77,8 @@ def restore : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ .eax d))
 /-- With `buf` in `eax`: save our caller's registers, and load the other
 arguments. -/
 def prologue : List Instr :=
-  save ++ [.mov .edi (.reg .eax), .mov .ebx (.mem (at_ .esp 4)), .mov .esi (.mem (at_ .esp 8)),
-    .mov .ebp (.mem (at_ .esp 12))]
+  save ++ ([.mov .edi (.reg .eax), .mov .ebx (.mem (at_ .esp 4)), .mov .esi (.mem (at_ .esp 8)),
+    .mov .ebp (.mem (at_ .esp 12))] : List Instr)
 
 /-- `vg_chacha20_block(state, buf)`: the keystream block into `buf`. -/
 def callBlock : Prog isa :=

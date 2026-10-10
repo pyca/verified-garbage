@@ -84,7 +84,7 @@ def keyNonce : List Instr := [.mov .ecx (.mem (at_ .esp 4)), .mov .edx (.mem (at
 one-time key and the Poly1305 state for it. -/
 def prologue : Prog isa :=
   .seq (.block [.mov .eax (.mem (at_ .esp 32))])
-  (.seq (.block (save ++ [.mov .edi (.reg .eax)] ++ keyNonce))
+  (.seq (.block (save ++ ([.mov .edi (.reg .eax)] : List Instr) ++ keyNonce))
   (.seq (.block (initState ++ ptr .ecx .edi 64 ++ ptr .edx .edi 128))
   (.seq (callWith [.edx, .ecx] "vg_chacha20_block" Impl.ChaCha20.X86.block)
   (.seq (.block (ptr .ecx .edi 128 ++ ptr .edx .edi 448))
@@ -92,16 +92,16 @@ def prologue : Prog isa :=
 
 /-- The 16 bytes at `edi + k` absorbed as one block. -/
 def absorbOne (k : Nat) : Prog isa :=
-  .seq (.block ([.mov .eax (.imm 1)] ++ ptr .ecx .edi k ++ ptr .edx .edi 448))
+  .seq (.block (([.mov .eax (.imm 1)] : List Instr) ++ ptr .ecx .edi k ++ ptr .edx .edi 448))
     (callWith [.eax, .ecx, .edx] "vg_poly1305_blocks" Impl.Poly1305.X86.blocks)
 
 /-- The last `edx` bytes (1 to 15) of the `ebp` bytes at `ebx`, padded with
 zeros, absorbed: they are copied (from `esi`, to `ecx`) into the zeroed
 `ctx[48, 64)`. -/
 def padTail : Prog isa :=
-  .seq (.block ([.mov .esi (.reg .ebp), .alu .sub .esi (.reg .edx), .alu .add .esi (.reg .ebx),
+  .seq (.block (([.mov .esi (.reg .ebp), .alu .sub .esi (.reg .edx), .alu .add .esi (.reg .ebx),
     .mov .eax (.imm 0), .store (at_ .edi 48) .eax, .store (at_ .edi 52) .eax,
-    .store (at_ .edi 56) .eax, .store (at_ .edi 60) .eax] ++ ptr .ecx .edi 48))
+    .store (at_ .edi 56) .eax, .store (at_ .edi 60) .eax] : List Instr) ++ ptr .ecx .edi 48))
   (.seq (.loop (.block [.movzx8 .eax (at_ .esi 0), .store8 (at_ .ecx 0) .al, .alu .add .esi (.imm 1),
     .alu .add .ecx (.imm 1), .alu .sub .edx (.imm 1)]) .ne)
     (absorbOne 48))
@@ -109,8 +109,8 @@ def padTail : Prog isa :=
 /-- The bytes whose address and length are the stack arguments at `esp + p`
 and `esp + n`, padded with zeros to a multiple of 16, absorbed. -/
 def macPad (p n : Nat) : Prog isa :=
-  .seq (.block ([.mov .ebx (.mem (at_ .esp p)), .mov .ebp (.mem (at_ .esp n)), .mov .eax (.reg .ebp),
-    .shift .shr .eax 4] ++ ptr .ecx .edi 448))
+  .seq (.block (([.mov .ebx (.mem (at_ .esp p)), .mov .ebp (.mem (at_ .esp n)), .mov .eax (.reg .ebp),
+    .shift .shr .eax 4] : List Instr) ++ ptr .ecx .edi 448))
   (.seq (callWith [.eax, .ebx, .ecx] "vg_poly1305_blocks" Impl.Poly1305.X86.blocks)
   (.seq (.block [.mov .edx (.reg .ebp), .alu .and .edx (.imm 15)])
     (.ite .e (.block []) padTail)))
@@ -123,15 +123,15 @@ def lengths : List Instr :=
 
 /-- The ChaCha20 counter set to 1, and the data encrypted or decrypted. -/
 def crypt (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
-  .seq (.block ([.mov .eax (.imm 1), .store (at_ .edi 112) .eax] ++ ptr .eax .edi 64 ++
-    [.mov .ecx (.mem (at_ .esp 20)), .mov .edx (.mem (at_ .esp 24))] ++ ptr .esi .edi 128))
+  .seq (.block (([.mov .eax (.imm 1), .store (at_ .edi 112) .eax] : List Instr) ++ ptr .eax .edi 64 ++
+    ([.mov .ecx (.mem (at_ .esp 20)), .mov .edx (.mem (at_ .esp 24))] : List Instr) ++ ptr .esi .edi 128))
     (callWith [.esi, .edx, .ecx, .eax] v.name v.code)
 
 /-- The tag written to `out`, which `out` puts in `ecx`: the message is whole
 blocks, so its length (`count`, both of whose words are `eax`) is 0 modulo
 16, and nothing is buffered. -/
 def finalizeWith (out : List Instr) : Prog isa :=
-  .seq (.block (ptr .ebx .edi 576 ++ out ++ [.mov .eax (.imm 0)] ++ ptr .esi .edi 448))
+  .seq (.block (ptr .ebx .edi 576 ++ out ++ ([.mov .eax (.imm 0)] : List Instr) ++ ptr .esi .edi 448))
     (callWith [.ebx, .ecx, .eax, .eax, .esi] "vg_poly1305_finalize_scratch" Impl.Poly1305.X86.finalize)
 
 /-- The tag written to `tag`. -/
@@ -162,9 +162,9 @@ def loadTag : List Instr := [.mov .edx (.mem (at_ .esp 28))]
 differences are ORed together, and `eax - 1` borrows if and only if that is
 zero. -/
 def compare : List Instr :=
-  diff .eax 0 ++ diff .ecx 1 ++ [.alu .or .eax (.reg .ecx)] ++ diff .ecx 2 ++ [.alu .or .eax (.reg .ecx)] ++
-  diff .ecx 3 ++ [.alu .or .eax (.reg .ecx), .alu .cmp .eax (.imm 1), .mov .eax (.imm 0),
-    .alu .adc .eax (.imm 0)]
+  diff .eax 0 ++ diff .ecx 1 ++ ([.alu .or .eax (.reg .ecx)] : List Instr) ++ diff .ecx 2 ++ ([.alu .or .eax (.reg .ecx)] : List Instr) ++
+  diff .ecx 3 ++ ([.alu .or .eax (.reg .ecx), .alu .cmp .eax (.imm 1), .mov .eax (.imm 0),
+    .alu .adc .eax (.imm 0)] : List Instr)
 
 def «open» (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
   .seq prologue

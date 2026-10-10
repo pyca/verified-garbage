@@ -53,8 +53,8 @@ def xorLoop : Prog isa :=
 `nLoop`. -/
 def rmPrologue : List Instr :=
   .mov .eax (.mem (at_ .esp 20)) :: rmSaved.map (fun (r, d) => .store (at_ .eax d) r) ++
-    [.mov .eax (.mem (at_ .esp 8)), .mov .ecx (.imm 1), .mov .edx (.mem (at_ .esp 16)),
-     .alu .add .edx (.reg .edx)]
+    ([.mov .eax (.mem (at_ .esp 8)), .mov .ecx (.imm 1), .mov .edx (.mem (at_ .esp 16)),
+     .alu .add .edx (.reg .edx)] : List Instr)
 
 /-- `ecx ← 2 N`: doubling `eax` (from `r`) and `ecx` (from 1) until `eax = 2 vlen`. -/
 def nLoop : Prog isa :=
@@ -76,10 +76,10 @@ def blockMixTo (blockMix : Prog isa) : Prog isa :=
 
 /-- Step 2, once: `V[i] = X`, `X = scryptBlockMix (V[i])`, `esi = V[i + 1]`. -/
 def step2 (blockMix : Prog isa) : Prog isa :=
-  .seq (.block (timesR 8 ++ [.mov .edx (.reg .eax), .mov .eax (.mem (at_ .esp 4)), .mov .ecx (.reg .esi)])) <|
+  .seq (.block (timesR 8 ++ ([.mov .edx (.reg .eax), .mov .eax (.mem (at_ .esp 4)), .mov .ecx (.reg .esi)] : List Instr))) <|
   .seq copyLoop <|
   .seq (blockMixTo blockMix)
-    (.block (timesR 128 ++ [.alu .add .esi (.reg .eax), .alu .sub .ebx (.imm 1)]))
+    (.block (timesR 128 ++ ([.alu .add .esi (.reg .eax), .alu .sub .ebx (.imm 1)] : List Instr)))
 
 /-- Between the steps: the count is `N` again. -/
 def rmMid : List Instr := [.mov .ebx (.reg .ebp)]
@@ -87,9 +87,9 @@ def rmMid : List Instr := [.mov .ebx (.reg .ebp)]
 /-- `eax ← j`: the low 4 bytes of `X`'s last 64-byte block, masked with
 `N - 1`; `edi = 128 r`. -/
 def jBlock : List Instr :=
-  timesR 128 ++ [.mov .edi (.reg .eax), .mov .ecx (.mem (at_ .esp 4)), .alu .add .eax (.reg .ecx),
+  timesR 128 ++ ([.mov .edi (.reg .eax), .mov .ecx (.mem (at_ .esp 4)), .alu .add .eax (.reg .ecx),
     .alu .sub .eax (.imm 64), .mov .eax (.mem (at_ .eax 0)), .mov .ecx (.reg .ebp), .alu .sub .ecx (.imm 1),
-    .alu .and .eax (.reg .ecx)]
+    .alu .and .eax (.reg .ecx)] : List Instr)
 
 /-- `ecx = V[j] = v + j * 128 r`, and the other operands of `xorLoop`:
 `eax = X`, `edx = T`, `edi = 8 r` blocks of 16 bytes. -/

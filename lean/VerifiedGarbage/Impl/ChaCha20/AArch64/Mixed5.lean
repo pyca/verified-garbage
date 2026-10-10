@@ -23,9 +23,9 @@ def leave : List Instr := [.ldr .x .x20 .x3 256, .ldr .x .x19 .x3 264, .ldr .x .
 def saveArgs : List Instr := [.addImm .x .x19 .x2 0, .addImm .x .x26 .x1 0]
 
 def counter (n : Nat) (subtract : Bool := false) : List Instr :=
-  [.ldr .w .x4 .x0 48] ++
+  ([.ldr .w .x4 .x0 48] : List Instr) ++
   (if subtract then [.subImm .w .x4 .x4 n] else [.addImm .w .x4 .x4 n]) ++
-  [.str .w .x4 .x0 48]
+  ([.str .w .x4 .x0 48] : List Instr)
 
 /-- The scalar block follows the same four-quarter schedule as the vector
 blocks, exposing independent dependency chains in both register banks. -/
@@ -53,8 +53,8 @@ def restoreArgs : List Instr :=
   [.addImm .x .x1 .x26 0, .addImm .x .x2 .x19 0, .addImm .x .x3 .x20 0]
 
 def xorLastRow (r : Fin 4) : List Instr :=
-  [.ldrq (VG.Impl.ChaCha20.AArch64.Neon4.vreg
-    (VG.Impl.ChaCha20.AArch64.Neon4.rowWord r 0)) .x3 (16 * r)] ++
+  ([.ldrq (VG.Impl.ChaCha20.AArch64.Neon4.vreg
+    (VG.Impl.ChaCha20.AArch64.Neon4.rowWord r 0)) .x3 (16 * r)] : List Instr) ++
     VG.Impl.ChaCha20.AArch64.Neon4.xorRow r 0
 
 def prepare : Prog isa :=
@@ -73,7 +73,7 @@ def last : Prog isa := .seq (.block [.addImm .x .x1 .x1 256])
 def chunk : Prog isa := .seq prepare (.seq (rounds 10) (.seq spill (.seq finish last)))
 
 def next : List Instr := counter 5 ++
-  [.addImm .x .x1 .x1 320, .subImm .x .x2 .x2 320] ++ check
+  ([.addImm .x .x1 .x1 320, .subImm .x .x2 .x2 320] : List Instr) ++ check
 
 def body : Prog isa := .seq chunk (.block next)
 

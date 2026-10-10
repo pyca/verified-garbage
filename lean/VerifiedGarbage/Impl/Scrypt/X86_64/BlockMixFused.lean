@@ -7,9 +7,9 @@ namespace VG.Impl.Scrypt.X86_64
 open VG.X86_64
 
 def fusedSetup : List Instr :=
-  [.store (at_ .r13 16) .rbx, .store (at_ .r13 24) .rbp,
+  ([.store (at_ .r13 16) .rbx, .store (at_ .r13 24) .rbp,
    .store (at_ .r13 32) .r12, .store (at_ .r13 40) .r14,
-   .mov .rsi (.reg .r13), .mov .rdi (.reg .r15)] ++ load
+   .mov .rsi (.reg .r13), .mov .rdi (.reg .r15)] : List Instr) ++ load
 
 /-- XOR the retained X with the next input and save the feed-forward words. -/
 def fusedXorWord (k : Nat) : List Instr :=
@@ -20,8 +20,8 @@ def fusedXorWord (k : Nat) : List Instr :=
      .store32 (at_ .rdi (4 * k)) .rcx, .store32 (at_ .rsi (slotOff k)) .rcx]
 
 def fusedXor : List Instr :=
-  (List.range 12).flatMap fusedXorWord ++ [.store (at_ .rsi 48) .rcx] ++
-  (List.range 4).flatMap (fun k => fusedXorWord (12 + k)) ++ [.mov .rcx (.mem (at_ .rsi 48))]
+  (List.range 12).flatMap fusedXorWord ++ ([.store (at_ .rsi 48) .rcx] : List Instr) ++
+  (List.range 4).flatMap (fun k => fusedXorWord (12 + k)) ++ ([.mov .rcx (.mem (at_ .rsi 48))] : List Instr)
 
 def fusedFinishWord (k : Nat) : List Instr :=
   finishWord k ++ if k < 12 then [] else [.store32 (at_ .rsi (slotOff k)) .rax]
@@ -42,7 +42,7 @@ def fusedAdvance (off inc : Nat) : List Instr :=
 
 def fusedTail : List Instr :=
   fusedAdvance 16 128 ++ fusedAdvance 24 64 ++ fusedAdvance 32 64 ++
-    [.mov .rax (.mem (at_ .rsi 40)), .alu .sub .rax (.imm 1), .store (at_ .rsi 40) .rax]
+    ([.mov .rax (.mem (at_ .rsi 40)), .alu .sub .rax (.imm 1), .store (at_ .rsi 40) .rax] : List Instr)
 
 def fusedBody : Prog isa :=
   .seq (fusedHalf 0 false) <| .seq (fusedHalf 64 true) (.block fusedTail)

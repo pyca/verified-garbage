@@ -181,15 +181,15 @@ Uses only `x0`–`x3` and `x9`–`x12`. -/
 (`kk` = `keylen` in `x3`, `nn` = `outlen` in `x1`). -/
 def initState : List Instr :=
   (List.finRange 7).flatMap (fun i =>
-    movImm64 .x9 ((P.IV[i.1 + 1]'(by omega)).setWidth 64) ++ [.str (sz w) .x9 .x0 (ws w * (i.1 + 1))]) ++
+    movImm64 .x9 ((P.IV[i.1 + 1]'(by omega)).setWidth 64) ++ ([.str (sz w) .x9 .x0 (ws w * (i.1 + 1))] : List Instr)) ++
   movImm64 .x9 ((P.IV[0] ^^^ 0x01010000).setWidth 64) ++
-  [.lsl (sz w) .x10 .x3 8, .logic .eor (sz w) .x9 .x9 .x10, .logic .eor (sz w) .x9 .x9 .x1,
-    .str (sz w) .x9 .x0 0]
+  ([.lsl (sz w) .x10 .x3 8, .logic .eor (sz w) .x9 .x9 .x10, .logic .eor (sz w) .x9 .x9 .x1,
+    .str (sz w) .x9 .x0 0] : List Instr)
 
 /-- Zero the buffer and copy the `x3 ≥ 1` bytes of the key (at `x2`) to it. -/
 def keyBlock : Prog isa :=
   .seq (.block (.movz .x .x9 0 0 :: ((List.range (B w / 8)).map fun j => .str .x .x9 .x0 (N w + 8 * j)) ++
-      [.addImm .x .x12 .x0 (N w)]))
+      ([.addImm .x .x12 .x0 (N w)] : List Instr)))
     (.loop (.block [.ldrb .x9 .x2 0, .strb .x9 .x12 0, .addImm .x .x2 .x2 1, .addImm .x .x12 .x12 1,
       .subImm .x .x3 .x3 1]) (.nonzero .x .x3))
 
