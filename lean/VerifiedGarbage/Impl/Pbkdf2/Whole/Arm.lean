@@ -76,8 +76,8 @@ def intO : Nat := F.hkO + F.H.F
 /-- Our caller's registers into `scratch`, which `r11` then holds; the
 arguments into the registers that keep them. -/
 def prologue : List Instr :=
-  [.ldrSp .r12 12] ++ F.L.save ++
-    [.mov .r11 (.reg .r12), .mov .r8 (.reg .r0), .mov .r9 (.reg .r1), .mov .r5 (.reg .r2), .mov .r6 (.reg .r3)]
+  ([.ldrSp .r12 12] : List Instr) ++ F.L.save ++
+    ([.mov .r11 (.reg .r12), .mov .r8 (.reg .r0), .mov .r9 (.reg .r1), .mov .r5 (.reg .r2), .mov .r6 (.reg .r3)] : List Instr)
 
 /-- `Z` is whether `password_len < B + 1`. -/
 def cmpPw : List Instr :=
@@ -91,22 +91,22 @@ def hashKey : Prog isa :=
   (.seq (.block [.mov .r0 (.reg .r4), .mov .r1 (.reg .r8), .mov .r7 (.reg .r9), .mov .r10 (.reg .r11),
       .mov .r2 (.imm 0), .mov .r3 (.imm 0)])
   (.seq (.frame (.push [.r1, .r7, .r10, .r12]) (.call F.H.updN F.H.updC) (.pop .r1 16))
-  (.seq (.block ([.mov .r0 (.reg .r4)] ++ scrAt .r1 F.hkO ++ [.mov .r12 (.reg .r11), .mov .r2 (.reg .r9),
-      .mov .r3 (.imm 0)]))
+  (.seq (.block (([.mov .r0 (.reg .r4)] : List Instr) ++ scrAt .r1 F.hkO ++ ([.mov .r12 (.reg .r11), .mov .r2 (.reg .r9),
+      .mov .r3 (.imm 0)] : List Instr)))
   (.seq (.frame (.push [.r1, .r12]) (.call F.H.finN F.H.finC) (.pop .r1 8))
-    (.block (scrAt .r2 F.hkO ++ [.movw .r3 (BitVec.ofNat 16 F.H.D)])))))))
+    (.block (scrAt .r2 F.hkO ++ ([.movw .r3 (BitVec.ofNat 16 F.H.D)] : List Instr))))))))
 
 /-- The key, at `r2`, of `r3` bytes. -/
 def key : Prog isa :=
   .seq (.block F.cmpPw) (.ite .eq (.block [.mov .r2 (.reg .r8), .mov .r3 (.reg .r9)]) F.hashKey)
 
 /-- HMAC's `init`'s arguments: the key's states and `scratch`. -/
-def initArgs : List Instr := scrAt .r0 F.st0O ++ scrAt .r1 F.st1O ++ [.mov .r12 (.reg .r11)]
+def initArgs : List Instr := scrAt .r0 F.st0O ++ scrAt .r1 F.st1O ++ ([.mov .r12 (.reg .r11)] : List Instr)
 
 /-- `update`'s arguments for the salt. -/
 def saltArgs : List Instr :=
-  scrAt .r0 F.stSO ++ [.mov .r1 (.reg .r5), .mov .r7 (.reg .r6), .mov .r10 (.reg .r11),
-    .movw .r2 (BitVec.ofNat 16 F.H.B), .mov .r3 (.imm 0)]
+  scrAt .r0 F.stSO ++ ([.mov .r1 (.reg .r5), .mov .r7 (.reg .r6), .mov .r10 (.reg .r11),
+    .movw .r2 (BitVec.ofNat 16 F.H.B), .mov .r3 (.imm 0)] : List Instr)
 
 /-- HMAC's states for the key, and the inner one after the salt. -/
 def setup : Prog isa :=
@@ -123,19 +123,19 @@ def loopInit : List Instr :=
 
 /-- `update`'s arguments: the working state, `INT (i)`, and the bytes absorbed. -/
 def updArgs : List Instr :=
-  scrAt .r0 F.stWO ++ scrAt .r1 F.intO ++ [.mov .r7 (.imm 4), .mov .r10 (.reg .r11),
-    .dp .add .r2 .r6 (.imm (BitVec.ofNat 32 F.H.B)), .mov .r3 (.imm 0)]
+  scrAt .r0 F.stWO ++ scrAt .r1 F.intO ++ ([.mov .r7 (.imm 4), .mov .r10 (.reg .r11),
+    .dp .add .r2 .r6 (.imm (BitVec.ofNat 32 F.H.B)), .mov .r3 (.imm 0)] : List Instr)
 
 /-- HMAC's `finalize`'s arguments: the working state, the outer state, the
 bytes absorbed, `U` and `scratch`. -/
 def finArgs : List Instr :=
-  scrAt .r0 F.stWO ++ scrAt .r1 F.st1O ++ scrAt .r10 F.uO ++ [.mov .r12 (.reg .r11),
-    .dp .add .r2 .r6 (.imm (BitVec.ofNat 32 (F.H.B + 4))), .mov .r3 (.imm 0)]
+  scrAt .r0 F.stWO ++ scrAt .r1 F.st1O ++ scrAt .r10 F.uO ++ ([.mov .r12 (.reg .r11),
+    .dp .add .r2 .r6 (.imm (BitVec.ofNat 32 (F.H.B + 4))), .mov .r3 (.imm 0)] : List Instr)
 
 /-- `iterate`'s arguments: the key's states, `U`, `c - 1`, `T` and `scratch`. -/
 def iterArgs : List Instr :=
-  scrAt .r0 F.st0O ++ scrAt .r1 F.uO ++ scrAt .r3 F.tO ++ [.ldrSp .r2 0, .dp .sub .r2 .r2 (.imm 1),
-    .mov .r12 (.reg .r11)]
+  scrAt .r0 F.st0O ++ scrAt .r1 F.uO ++ scrAt .r3 F.tO ++ ([.ldrSp .r2 0, .dp .sub .r2 .r2 (.imm 1),
+    .mov .r12 (.reg .r11)] : List Instr)
 
 /-- The bytes of `T` the output still needs, `min (out_len - r4, D)`, in `r9`. -/
 def outLen : Prog isa :=

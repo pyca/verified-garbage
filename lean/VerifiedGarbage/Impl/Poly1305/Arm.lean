@@ -110,7 +110,7 @@ def addWords : List Instr := (List.range 4).flatMap addWord
 
 /-- Column 9 from memory, plus limb 9 (and `2¹²⁸` if `pad`), into `r1`. -/
 def addTop (pad : Bool) : List Instr :=
-  [.ldr .r1 .r0 d9Off, .dp .add .r1 .r1 (.shifted .r2 .lsr 21)] ++
+  ([.ldr .r1 .r0 d9Off, .dp .add .r1 .r1 (.shifted .r2 .lsr 21)] : List Instr) ++
   if pad then [.dp .add .r1 .r1 (.imm 2048)] else []
 
 /-- Zero `r3`–`r11`. -/
@@ -129,8 +129,8 @@ def carryStep (k : Nat) : List Instr :=
 column 0, and then column 0 is carried once more. -/
 def carryFold : List Instr :=
   mask :: (List.range 9).flatMap carryStep ++
-  [.mov .r12 (.shifted .r1 .lsr 13), .dp .and .r1 .r1 (.reg .r2),
-   .dp .add .r12 .r12 (.shifted .r12 .lsl 2), .dp .add .r3 .r3 (.reg .r12)] ++ carryStep 0
+  ([.mov .r12 (.shifted .r1 .lsr 13), .dp .and .r1 .r1 (.reg .r2),
+   .dp .add .r12 .r12 (.shifted .r12 .lsl 2), .dp .add .r3 .r3 (.reg .r12)] : List Instr) ++ carryStep 0
 
 /-! ## Absorbing a block -/
 
@@ -163,31 +163,31 @@ def multiply : List Instr := zeroX ++ (List.range 10).flatMap row
 /-- Absorbing the 16 bytes at `r1` (plus `2¹²⁸` if `pad`) into the columns:
 `d0`–`d8` in `r3`–`r11` and `d9` in memory, before and after. -/
 def absorb (pad : Bool) : List Instr :=
-  addWords ++ addTop pad ++ carryFold ++ pack ++ multiply ++ [.str .r12 .r0 d9Off]
+  addWords ++ addTop pad ++ carryFold ++ pack ++ multiply ++ ([.str .r12 .r0 d9Off] : List Instr)
 
 /-! ## Setup -/
 
 /-- The clamped `r`, as four words at `[88, 104)`. -/
 def clampWords : List Instr :=
-  [.movw .r2 0xffff, .movt .r2 0x0fff, .ldr .r1 .r0 24, .dp .and .r1 .r1 (.reg .r2), .str .r1 .r0 88,
-   .movw .r2 0xfffc, .movt .r2 0x0fff] ++
+  ([.movw .r2 0xffff, .movt .r2 0x0fff, .ldr .r1 .r0 24, .dp .and .r1 .r1 (.reg .r2), .str .r1 .r0 88,
+   .movw .r2 0xfffc, .movt .r2 0x0fff] : List Instr) ++
   (List.range 3).flatMap fun i =>
     [.ldr .r1 .r0 (28 + 4 * i), .dp .and .r1 .r1 (.reg .r2), .str .r1 .r0 (92 + 4 * i)]
 
 /-- The limbs of the clamped `r`. -/
 def setupR : List Instr :=
-  clampWords ++ zeroY ++ [.dp .add .r1 .r0 (.imm 88)] ++ addWords ++ [.mov .r1 (.shifted .r2 .lsr 21)] ++
-  [.str .r3 .r0 88, .str .r4 .r0 92, .str .r5 .r0 96, .str .r6 .r0 100, .strb .r7 .r0 120,
-   .str .r8 .r0 104, .str .r9 .r0 108, .str .r10 .r0 112, .str .r11 .r0 116, .strb .r1 .r0 121]
+  clampWords ++ zeroY ++ ([.dp .add .r1 .r0 (.imm 88)] : List Instr) ++ addWords ++ ([.mov .r1 (.shifted .r2 .lsr 21)] : List Instr) ++
+  ([.str .r3 .r0 88, .str .r4 .r0 92, .str .r5 .r0 96, .str .r6 .r0 100, .strb .r7 .r0 120,
+   .str .r8 .r0 104, .str .r9 .r0 108, .str .r10 .r0 112, .str .r11 .r0 116, .strb .r1 .r0 121] : List Instr)
 
 /-- The limbs of the stored accumulator as the columns: `d0`–`d8` in
 `r3`–`r11`, `d9` in memory. Only the low two bits of its word 4 are used (the
 accumulator is below `2¹³⁰`), so the columns are below `2¹³` whatever the
 state holds. -/
 def loadAcc : List Instr :=
-  zeroY ++ [.mov .r1 (.reg .r0)] ++ addWords ++
-  [.mov .r1 (.shifted .r2 .lsr 21), .ldr .r2 .r0 16, .mov .r2 (.shifted .r2 .lsl 30),
-   .dp .add .r1 .r1 (.shifted .r2 .lsr 19), .str .r1 .r0 d9Off]
+  zeroY ++ ([.mov .r1 (.reg .r0)] : List Instr) ++ addWords ++
+  ([.mov .r1 (.shifted .r2 .lsr 21), .ldr .r2 .r0 16, .mov .r2 (.shifted .r2 .lsl 30),
+   .dp .add .r1 .r1 (.shifted .r2 .lsr 19), .str .r1 .r0 d9Off] : List Instr)
 
 /-! ## The final reduction -/
 
@@ -205,7 +205,7 @@ def addC : List Instr :=
    .dp .add .r3 .r3 (.reg .r12)]
 
 /-- Carry every limb, dropping bit 130. -/
-def carry3 : List Instr := (List.range 9).flatMap carryStep ++ [.dp .and .r1 .r1 (.reg .r2)]
+def carry3 : List Instr := (List.range 9).flatMap carryStep ++ ([.dp .and .r1 .r1 (.reg .r2)] : List Instr)
 
 /-- The columns carried into limbs below `2¹³` (the top one at most `2¹³`),
 then reduced fully: `c = ⌊(h + 5) / 2¹³⁰⌋` is 1 if `h ≥ p` (else 0), and
@@ -235,16 +235,16 @@ def init : Prog isa := .block (
 /-! ## `blocks(state = r0, blocks = r1, n = r2)` -/
 
 def body : Prog isa := .block (
-  [.ldr .r1 .r0 ptrOff, .dp .add .r2 .r1 (.imm 16), .str .r2 .r0 ptrOff] ++ absorb true ++
-  [.ldr .r1 .r0 cntOff, .subs .r1 .r1 (.imm 1), .str .r1 .r0 cntOff])
+  ([.ldr .r1 .r0 ptrOff, .dp .add .r2 .r1 (.imm 16), .str .r2 .r0 ptrOff] : List Instr) ++ absorb true ++
+  ([.ldr .r1 .r0 cntOff, .subs .r1 .r1 (.imm 1), .str .r1 .r0 cntOff] : List Instr))
 
 def blocks : Prog isa :=
-  .seq (.block (saveRegs ++ [.str .r1 .r0 ptrOff, .str .r2 .r0 cntOff] ++ setupR ++ loadAcc ++
-    [.ldr .r1 .r0 cntOff, .cmp .r1 (.imm 0)]))
+  .seq (.block (saveRegs ++ ([.str .r1 .r0 ptrOff, .str .r2 .r0 cntOff] : List Instr) ++ setupR ++ loadAcc ++
+    ([.ldr .r1 .r0 cntOff, .cmp .r1 (.imm 0)] : List Instr)))
   (.seq (.ite .eq (.block []) (.loop body .ne))
     (.block (reduce ++ toWords ++
-      [.str .r3 .r0 0, .str .r5 .r0 4, .str .r7 .r0 8, .str .r10 .r0 12, .str .r1 .r0 16,
-       .mov .r2 (.imm 0), .str .r2 .r0 20] ++ restoreRegs)))
+      ([.str .r3 .r0 0, .str .r5 .r0 4, .str .r7 .r0 8, .str .r10 .r0 12, .str .r1 .r0 16,
+       .mov .r2 (.imm 0), .str .r2 .r0 20] : List Instr) ++ restoreRegs)))
 
 /-! ## `update(state = r0, count = r2:r3, data = [sp], len = [sp, #4], scratch = [sp, #8])`
 
@@ -299,18 +299,18 @@ def storeAcc : List Instr :=
    .mov .r2 (.imm 0), .str .r2 .r0 20]
 
 def update : Prog isa :=
-  .seq (.block ([.ldrSp .r12 8] ++ saveScr ++
-      [.dp .and .r4 .r2 (.imm 15), .ldrSp .r5 0, .ldrSp .r6 4, .cmp .r4 (.imm 0)]))
+  .seq (.block (([.ldrSp .r12 8] : List Instr) ++ saveScr ++
+      ([.dp .and .r4 .r2 (.imm 15), .ldrSp .r5 0, .ldrSp .r6 4, .cmp .r4 (.imm 0)] : List Instr)))
   (.seq (.ite .eq (.block []) fill)
-  (.seq (.block ([.mov .r1 (.shifted .r6 .lsr 4), .str .r5 .r0 ptrOff, .str .r6 .r0 lenOff,
-      .str .r1 .r0 cntOff, .str .r4 .r0 fillOff] ++ setupR ++ loadAcc ++
-      [.ldr .r1 .r0 fillOff, .cmp .r1 (.imm 16)]))
+  (.seq (.block (([.mov .r1 (.shifted .r6 .lsr 4), .str .r5 .r0 ptrOff, .str .r6 .r0 lenOff,
+      .str .r1 .r0 cntOff, .str .r4 .r0 fillOff] : List Instr) ++ setupR ++ loadAcc ++
+      ([.ldr .r1 .r0 fillOff, .cmp .r1 (.imm 16)] : List Instr)))
   (.seq (.ite .eq (.block (.dp .add .r1 .r0 (.imm 56) :: absorb true)) (.block []))
   (.seq (.block [.ldr .r1 .r0 cntOff, .cmp .r1 (.imm 0)])
   (.seq (.ite .eq (.block []) (.loop body .ne))
   (.seq (.block (reduce ++ toWords ++ storeAcc ++
-      [.ldr .r8 .r0 lenOff, .dp .and .r8 .r8 (.imm 15), .ldr .r5 .r0 ptrOff, .mov .r1 (.reg .r0),
-       .cmp .r8 (.imm 0)]))
+      ([.ldr .r8 .r0 lenOff, .dp .and .r8 .r8 (.imm 15), .ldr .r5 .r0 ptrOff, .mov .r1 (.reg .r0),
+       .cmp .r8 (.imm 0)] : List Instr)))
   (.seq (.ite .eq (.block []) copyIn)
     (.block (.ldrSp .r12 8 :: restoreScr)))))))))
 
@@ -330,13 +330,13 @@ def padBuf : Prog isa :=
     (.block [.mov .r12 (.imm 1), .dp .add .r1 .r0 (.reg .r4), .strb .r12 .r1 56]))
 
 def finalize : Prog isa :=
-  .seq (.block ([.ldrSp .r12 4] ++ saveScr ++ [.dp .and .r4 .r2 (.imm 15), .cmp .r4 (.imm 0)]))
+  .seq (.block (([.ldrSp .r12 4] : List Instr) ++ saveScr ++ ([.dp .and .r4 .r2 (.imm 15), .cmp .r4 (.imm 0)] : List Instr)))
   (.seq (.ite .eq (.block []) padBuf)
-  (.seq (.block (.str .r4 .r0 ptrOff :: setupR ++ loadAcc ++ [.ldr .r1 .r0 ptrOff, .cmp .r1 (.imm 0)]))
+  (.seq (.block (.str .r4 .r0 ptrOff :: setupR ++ loadAcc ++ ([.ldr .r1 .r0 ptrOff, .cmp .r1 (.imm 0)] : List Instr)))
   (.seq (.ite .eq (.block []) (.block (.dp .add .r1 .r0 (.imm 56) :: absorb false)))
-    (.block (reduce ++ [.str .r1 .r0 d9Off, .dp .add .r1 .r0 (.imm 40)] ++ addWords ++ addTop false ++
+    (.block (reduce ++ ([.str .r1 .r0 d9Off, .dp .add .r1 .r0 (.imm 40)] : List Instr) ++ addWords ++ addTop false ++
       mask :: (List.range 9).flatMap carryStep ++ toWords ++
-      [.ldrSp .r2 0, .str .r3 .r2 0, .str .r5 .r2 4, .str .r7 .r2 8, .str .r10 .r2 12, .ldrSp .r12 4] ++
+      ([.ldrSp .r2 0, .str .r3 .r2 0, .str .r5 .r2 4, .str .r7 .r2 8, .str .r10 .r2 12, .ldrSp .r12 4] : List Instr) ++
       restoreScr)))))
 
 end VG.Impl.Poly1305.Arm

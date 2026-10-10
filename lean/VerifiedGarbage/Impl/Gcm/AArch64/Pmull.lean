@@ -103,7 +103,7 @@ def load (j : Nat) : List Instr := loadRev A .x2 (16 * j)
 
 /-- `H'ᵏ = mul(H'ⁱ, H'ʲ)`, and its halves swapped. -/
 def pow (k i j : Nat) : List Instr :=
-  mul (sReg k) (sReg i) (sReg j) (tReg j) ++ [.vop (.ext (tReg k) (sReg k) (sReg k) 8)]
+  mul (sReg k) (sReg i) (sReg j) (tReg j) ++ ([.vop (.ext (tReg k) (sReg k) (sReg k) 8)] : List Instr)
 
 /-- The reduction constant in both halves of `v1`, and `x⁻²` in
 `v17` and, its halves swapped, in `v25`. -/
@@ -116,7 +116,7 @@ def consts : List Instr :=
 /-- `H` (as loaded), the constants, `H' = mul(H, x⁻²)` and `Y`. -/
 def prologue : List Instr :=
   loadRev A .x0 0 ++ consts ++ mul (sReg 1) A (sReg 2) (tReg 2) ++
-  [.vop (.ext (tReg 1) (sReg 1) (sReg 1) 8)] ++ loadRev Y .x1 0 ++ [.lsr .x .x5 .x3 3]
+  ([.vop (.ext (tReg 1) (sReg 1) (sReg 1) 8)] : List Instr) ++ loadRev Y .x1 0 ++ ([.lsr .x .x5 .x3 3] : List Instr)
 
 /-- `H'²` to `H'⁸`. -/
 def powers : List Instr :=
@@ -133,7 +133,7 @@ def advance (k : Nat) : List Instr :=
 block, which `Y` is added to, goes last, so that only its products and the
 reduction wait for the previous `Y`. -/
 def body (k : Nat) : List Instr :=
-  zero ++ (List.range (k - 1)).flatMap (blk k) ++ load 0 ++ [.vop (.logic .eor A A Y)] ++
+  zero ++ (List.range (k - 1)).flatMap (blk k) ++ load 0 ++ ([.vop (.logic .eor A A Y)] : List Instr) ++
   acc A (sReg k) (tReg k) ++ reduce Y ++ advance k
 
 def epilogue : List Instr := [.vop (.rev .rev64b Y Y), .strq Y .x1 0]

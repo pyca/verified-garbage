@@ -83,7 +83,7 @@ def bufLen : Prog isa :=
 `args` set the blocks (`rsi`), their number (`rdx`), the counter (`rcx`) and
 the final block flag (`r8`). -/
 def compressWith (callee : Callee) (args : List Instr) : Prog isa :=
-  .seq (.block ([.mov .rdi (.reg .rbx)] ++ args ++ [.mov .r9 (.reg .r15)]))
+  .seq (.block (([.mov .rdi (.reg .rbx)] : List Instr) ++ args ++ ([.mov .r9 (.reg .r15)] : List Instr)))
     (.seq (.call callee.name callee.code)
       (.block [.mov .rbx (.reg .rdi), .mov .r15 (.reg .r9)]))
 
@@ -146,8 +146,8 @@ def rest (callee : Callee) : Prog isa :=
 
 /-- Save registers and set up ours. -/
 def updateStart : List Instr :=
-  save .r8 ++ [.mov .rbx (.reg .rdi), .mov .r15 (.reg .r8), .mov .rbp (.reg .rdx),
-    .mov .r12 (.reg .rcx), .mov .r14 (.reg .rsi)]
+  save .r8 ++ ([.mov .rbx (.reg .rdi), .mov .r15 (.reg .r8), .mov .rbp (.reg .rdx),
+    .mov .r12 (.reg .rcx), .mov .r14 (.reg .rsi)] : List Instr)
 
 def update (callee : Callee := scalar P) : Prog isa :=
   .seq (.block updateStart) (.seq (bufLen (w := w))
@@ -179,8 +179,8 @@ def output : List Instr :=
     [.mov .rax (.mem (at_ .rbx (8 * k))), .store (at_ .rbp (8 * k)) .rax]
 
 def finalize (callee : Callee := scalar P) : Prog isa :=
-  .seq (.block (save .rcx ++ [.mov .rbx (.reg .rdi), .mov .r15 (.reg .rcx), .mov .rbp (.reg .rdx),
-      .mov .r14 (.reg .rsi)]))
+  .seq (.block (save .rcx ++ ([.mov .rbx (.reg .rdi), .mov .r15 (.reg .rcx), .mov .rbp (.reg .rdx),
+      .mov .r14 (.reg .rsi)] : List Instr)))
     (.seq (bufLen (w := w)) (.seq (pad (w := w)) (.seq (compressLast (w := w) callee)
       (.block (output (w := w) ++ restore)))))
 
@@ -209,7 +209,7 @@ def keyBlock : Prog isa :=
         .alu .add .r8 (.imm 1), .alu .sub .rcx (.imm 1)]) .ne))
 
 def init : Prog isa :=
-  .seq (.block (initState P ++ [.alu .test .rcx (.reg .rcx)]))
+  .seq (.block (initState P ++ ([.alu .test .rcx (.reg .rcx)] : List Instr)))
     (.ite .e (.block []) (keyBlock (w := w)))
 
 end

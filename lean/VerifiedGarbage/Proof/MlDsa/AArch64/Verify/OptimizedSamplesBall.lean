@@ -41,12 +41,12 @@ theorem ballTail_vpiece : VPiece p S (VB1 p) (VB p) (.seq (.block and24) (VG.Imp
   have L := h.1.vz.vc.lay hF hp
   obtain ⟨hv, hred, hout⟩ := h
   have hr01 := Proof.MlDsa.KeyGen.outcome_01 hout
-  refine WP.mono (tail_ok L (a := cP p) (by vlay) (by vlay) hr01) fun s' ⟨hP', x', hco⟩ => ?_
+  refine WP.mono (tail_ok L (a := cP p) (by vlayd) (by vlayd) hr01) fun s' ⟨hP', x', hco⟩ => ?_
   have hvz := hv.vz.keep hF hp hP' (by vzchk hF)
   have e' : pa s' (cP p) = pa s (cP p) := sc_pa hP' _
   obtain ⟨q, hq, h1, h0⟩ := hv.ok
   rw [hq] at x'
-  refine ⟨hvz, hv.nok, fun e he => L.keepRed hP' (by vlay) (hv.red e he), ?_, q && ((s.gpr .x0).setWidth 32 == 1), ?_, fun hq' => ⟨fun e he => ?_, ?_⟩,
+  refine ⟨hvz, hv.nok, fun e he => L.keepRed hP' (by vlayd) (hv.red e he), ?_, q && ((s.gpr .x0).setWidth 32 == 1), ?_, fun hq' => ⟨fun e he => ?_, ?_⟩,
     fun hq' => ?_⟩
   · rw [e']
     by_cases h1 : (s.gpr .x0).setWidth 32 = 1
@@ -56,7 +56,7 @@ theorem ballTail_vpiece : VPiece p S (VB1 p) (VB p) (.seq (.block and24) (VG.Imp
     exact flag_congr (by simp)
   · simp only [Bool.and_eq_true, beq_iff_eq] at hq'
     obtain ⟨b, hb⟩ := h1 hq'.1 e he
-    exact ⟨b, by rw [hb, L.keepPolyAt hP' (by vlay)]⟩
+    exact ⟨b, by rw [hb, L.keepPolyAt hP' (by vlayd)]⟩
   · simp only [Bool.and_eq_true, beq_iff_eq] at hq'
     rcases hout with ⟨_, b, hb⟩ | ⟨h0', _⟩
     · exact ⟨b, by rw [e', (Proof.MlDsa.KeyGen.masked_one hq'.2 hco).1]; exact hb⟩

@@ -297,7 +297,7 @@ theorem keyStep_ok {s₀ : State} (hp : IPre s₀) {i : Nat} (hi : i < 3) {s : S
   have rdwr : s.rd ++ s.wr = [ikeyR s₀, outR s₀, iscrR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
   have scrIn : ∀ d, d + 4 ≤ 640 → InRegions (s.rd ++ s.wr) (State.addr (Sc s₀) + BitVec.ofNat 64 d) 4 :=
     fun d hd => by rw [rdwr]; exact in_rw (r := iscrR s₀) (by simp) (Offset.contains_base _ hd (by omega))
-  rw [keysBody, List.append_assoc]
+  rw [keysBody, List.append_assoc, List.cons_append, List.cons_append, List.nil_append]
   refine wp_ldr (a := State.addr (Sc s₀) + BitVec.ofNat 64 (88 + 8 * i)) (by decide)
     (by rw [h.r4, add0, hp.scrAddr (by omega)]) (scrIn _ (by omega)) fun s₁ u₁ => ?_
   refine wp_ldr (a := State.addr (Sc s₀) + BitVec.ofNat 64 (92 + 8 * i)) (by decide)

@@ -163,12 +163,12 @@ and `rdx`: word `j` is word `j` shifted right, or the low `sh` bits of word
 `j + 1` rotated to the top (`x86-64` has no `shl` here). -/
 def shrWords (n o sh : Nat) : List Instr :=
   (List.range n).flatMap fun j =>
-    [.mov .rax (.mem (sc (o + 8 * j))), .shift .shr .rax sh] ++
-    (if j + 1 < n then
+    ([.mov .rax (.mem (sc (o + 8 * j))), .shift .shr .rax sh] : List Instr) ++
+    ((if j + 1 < n then
       [.mov .rdx (.mem (sc (o + 8 * (j + 1)))), .alu .and .rdx (.imm (BitVec.ofNat 32 (2 ^ sh - 1))),
         .shift .ror .rdx sh, .alu .or .rax (.reg .rdx)]
-    else []) ++
-    [.store (sc (o + 8 * j)) .rax]
+    else []) : List Instr) ++
+    ([.store (sc (o + 8 * j)) .rax] : List Instr)
 
 /-- `[dst + d] = ` the `n`-word number at `[rdi + a]` masked with `rcx`,
 big-endian in `len` bytes (`8 (n - 1) ≤ len ≤ 8 n`): word `j` byte-reversed
@@ -180,11 +180,12 @@ def storeBytes (len n : Nat) (dst : Reg) (d a : Nat) : List Instr :=
       [.mov .rax (.mem (sc (a + 8 * j))), .alu .and .rax (.reg .rcx), .bswap .rax,
         .store { base := dst, disp := ((d + (len - 8 * (j + 1)) : Nat) : Int) } .rax]
     else
-      [.mov .rax (.mem (sc (a + 8 * j))), .alu .and .rax (.reg .rcx)] ++
+      ([.mov .rax (.mem (sc (a + 8 * j))), .alu .and .rax (.reg .rcx)] : List Instr) ++
       (List.range (len - 8 * j)).flatMap fun i =>
-        [.mov .rdx (.reg .rax)] ++
-        (if len - 8 * j - 1 - i = 0 then [] else [.shift .shr .rdx (8 * (len - 8 * j - 1 - i))]) ++
-        [.store8 { base := dst, disp := ((d + i : Nat) : Int) } .rdx]
+        ([.mov .rdx (.reg .rax)] : List Instr) ++
+        ((if len - 8 * j - 1 - i = 0 then [] else [.shift .shr .rdx (8 * (len - 8 * j - 1 - i))])
+          : List Instr) ++
+        ([.store8 { base := dst, disp := ((d + i : Nat) : Int) } .rdx] : List Instr)
 
 /-- `[rdi + o] = x`, `n` words. -/
 def setConst (n : Nat) (o x : Nat) : List Instr :=

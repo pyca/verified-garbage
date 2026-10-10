@@ -127,22 +127,22 @@ def chunk : Prog isa := .seq chunkMain (.block next)
 the key and the accumulator loaded from the Poly1305 state (`ctx + 448`,
 through `rdi`, which then points at the ChaCha20 state again). -/
 def enter : List Instr :=
-  [.store (at_ .rcx r12Off) .r12, .store (at_ .rcx r13Off) .r13, .store (at_ .rcx r14Off) .r14,
-   .store (at_ .rcx lenOff) .rdx] ++ ChaCha20.X86_64.Avx2.consts ++
-  [.mov .rdi (.reg .rcx), .alu .add .rdi (.imm 320)] ++ Poly1305.X86_64.setup ++
-  [.mov .rdi (.reg .rcx), .alu .sub .rdi (.imm 64)]
+  ([.store (at_ .rcx r12Off) .r12, .store (at_ .rcx r13Off) .r13, .store (at_ .rcx r14Off) .r14,
+   .store (at_ .rcx lenOff) .rdx] : List Instr) ++ ChaCha20.X86_64.Avx2.consts ++
+  ([.mov .rdi (.reg .rcx), .alu .add .rdi (.imm 320)] : List Instr) ++ Poly1305.X86_64.setup ++
+  ([.mov .rdi (.reg .rcx), .alu .sub .rdi (.imm 64)] : List Instr)
 
 /-- The accumulator reduced and stored, `r12`–`r14` and `r15` (the context)
 restored, `rbx`, `rbp` the ciphertext not yet absorbed and `rsi`, `rdx` the
 data not yet encrypted. -/
 def leave : List Instr :=
   Poly1305.X86_64.reduce ++
-  [.store (at_ .rcx accOff) .r11, .store (at_ .rcx (accOff + 8)) .rbx,
+  ([.store (at_ .rcx accOff) .r11, .store (at_ .rcx (accOff + 8)) .rbx,
    .store (at_ .rcx (accOff + 16)) .rbp,
    .mov .rbx (.reg .rsi), .mov .rbp (.mem (at_ .rcx lenOff)), .alu .add .rbp (.imm 512),
    .mov .rdx (.mem (at_ .rcx lenOff)), .alu .add .rsi (.imm 512),
    .mov .r12 (.mem (at_ .rcx r12Off)), .mov .r13 (.mem (at_ .rcx r13Off)),
-   .mov .r14 (.mem (at_ .rcx r14Off)), .mov .r15 (.reg .rcx), .alu .sub .r15 (.imm 128)]
+   .mov .r14 (.mem (at_ .rcx r14Off)), .mov .r15 (.reg .rcx), .alu .sub .r15 (.imm 128)] : List Instr)
 
 /-- The whole chunks of at least 512 bytes of data. -/
 def bulk : Prog isa :=
@@ -161,9 +161,9 @@ the implementation `x` of `vg_chacha20_xor`. -/
 def cryptS (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (x.fold + 1)))])
   (.seq (.ite .b
-    (.seq (.block (ptr .rsi .r15 736 ++ [.mov .rdx (.reg .r13)]))
+    (.seq (.block (ptr .rsi .r15 736 ++ ([.mov .rdx (.reg .r13)] : List Instr)))
       (.seq (xorBufX .r14) (.block (ptr .rsi .r15 128 ++ whole))))
-    (.seq (.block (cryptArgs ++ [.alu .cmp .rdx (.imm 512)]))
+    (.seq (.block (cryptArgs ++ ([.alu .cmp .rdx (.imm 512)] : List Instr)))
       (.seq (.ite .b (.block whole) bulk) (.call x.name x.code))))
   (.seq (.block (anchor .rsi 128))
   (.seq (foldM x.fold x.pass)

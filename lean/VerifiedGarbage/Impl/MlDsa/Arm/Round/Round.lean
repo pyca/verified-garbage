@@ -76,7 +76,7 @@ def addMaskM (g : Nat) (r t : Reg) : List Instr :=
 
 /-- `r ← r - m`, plus `m` if that is negative, with `t` as the mask. -/
 def csubM (g : Nat) (r t : Reg) : List Instr :=
-  [.dp .sub r r (.imm (BitVec.ofNat 32 (dMod g))), .mov t (.shifted r .lsr 31)] ++ addMaskM g r t
+  ([.dp .sub r r (.imm (BitVec.ofNat 32 (dMod g))), .mov t (.shifted r .lsr 31)] : List Instr) ++ addMaskM g r t
 
 /-- `x ← f` for `a = x`, with `t` a temporary. -/
 def hbRaw (g : Nat) (x t : Reg) : List Instr :=
@@ -93,11 +93,11 @@ def load2g (g : Nat) (r : Reg) : List Instr :=
 /-! ## The functions -/
 
 def p2rBody : List Instr :=
-  [.ldr .r12 .r0 0, .dp .add .r12 .r12 (.imm 4096), .dp .sub .r12 .r12 (.imm 1), .mov .r4 (.shifted .r12 .lsr 13),
+  ([.ldr .r12 .r0 0, .dp .add .r12 .r12 (.imm 4096), .dp .sub .r12 .r12 (.imm 1), .mov .r4 (.shifted .r12 .lsr 13),
    .str .r4 .r1 0, .mov .r12 (.shifted .r12 .lsl 19), .mov .r12 (.shifted .r12 .lsr 19),
-   .dp .sub .r12 .r12 (.imm 4096), .dp .add .r12 .r12 (.imm 1)] ++ fixupS .r12 .r4 ++
-  [.str .r12 .r2 0, .dp .add .r0 .r0 (.imm 4), .dp .add .r1 .r1 (.imm 4), .dp .add .r2 .r2 (.imm 4),
-   .subs .r3 .r3 (.imm 1)]
+   .dp .sub .r12 .r12 (.imm 4096), .dp .add .r12 .r12 (.imm 1)] : List Instr) ++ fixupS .r12 .r4 ++
+  ([.str .r12 .r2 0, .dp .add .r0 .r0 (.imm 4), .dp .add .r1 .r1 (.imm 4), .dp .add .r2 .r2 (.imm 4),
+   .subs .r3 .r3 (.imm 1)] : List Instr)
 
 def power2Round : Prog isa := saving [.r4] (mapLoop .r3 p2rBody)
 
@@ -107,15 +107,15 @@ def gammaCmp (r : Reg) : Instr := .cmp r (.imm (BitVec.ofNat 32 g88))
 /-- The end of an iteration with two pointers `r0` and `r2`, `r1` counting. -/
 def tail02 : List Instr := [.dp .add .r0 .r0 (.imm 4), .dp .add .r2 .r2 (.imm 4), .subs .r1 .r1 (.imm 1)]
 
-def hbBody (g : Nat) : List Instr := [.ldr .r3 .r0 0] ++ hb g .r3 .r12 ++ [.str .r3 .r2 0] ++ tail02
+def hbBody (g : Nat) : List Instr := ([.ldr .r3 .r0 0] : List Instr) ++ hb g .r3 .r12 ++ ([.str .r3 .r2 0] : List Instr) ++ tail02
 
 def highBits : Prog isa :=
   .seq (.block [gammaCmp .r1]) (.ite .eq (mapLoop .r1 (hbBody g88)) (mapLoop .r1 (hbBody g32)))
 
 def lbBody (g : Nat) : List Instr :=
-  [.ldr .r3 .r0 0] ++ hb g .r3 .r12 ++ load2g g .r12 ++
-    [.mul .r3 .r3 .r12, .ldr .r12 .r0 0, .dp .sub .r3 .r12 (.reg .r3)] ++ fixupS .r3 .r12 ++
-    [.str .r3 .r2 0] ++ tail02
+  ([.ldr .r3 .r0 0] : List Instr) ++ hb g .r3 .r12 ++ load2g g .r12 ++
+    ([.mul .r3 .r3 .r12, .ldr .r12 .r0 0, .dp .sub .r3 .r12 (.reg .r3)] : List Instr) ++ fixupS .r3 .r12 ++
+    ([.str .r3 .r2 0] : List Instr) ++ tail02
 
 def lowBits : Prog isa :=
   .seq (.block [gammaCmp .r1]) (.ite .eq (mapLoop .r1 (lbBody g88)) (mapLoop .r1 (lbBody g32)))
@@ -134,22 +134,22 @@ def tail013 : List Instr :=
   [.dp .add .r0 .r0 (.imm 4), .dp .add .r1 .r1 (.imm 4), .dp .add .r3 .r3 (.imm 4), .subs .r2 .r2 (.imm 1)]
 
 def mhBody (g : Nat) : List Instr :=
-  [.ldr .r5 .r1 0] ++ hb g .r5 .r12 ++ [.ldr .r6 .r1 0, .ldr .r12 .r0 0, .dp .add .r6 .r6 (.reg .r12)] ++
+  ([.ldr .r5 .r1 0] : List Instr) ++ hb g .r5 .r12 ++ ([.ldr .r6 .r1 0, .ldr .r12 .r0 0, .dp .add .r6 .r6 (.reg .r12)] : List Instr) ++
     subQ .r6 ++ fixupS .r6 .r12 ++ hb g .r6 .r12 ++
-    [.dp .eor .r6 .r6 (.reg .r5), .dp .add .r6 .r6 (.imm 63), .mov .r6 (.shifted .r6 .lsr 6), .str .r6 .r3 0,
-     .dp .add .r4 .r4 (.reg .r6)] ++ tail013
+    ([.dp .eor .r6 .r6 (.reg .r5), .dp .add .r6 .r6 (.imm 63), .mov .r6 (.shifted .r6 .lsr 6), .str .r6 .r3 0,
+     .dp .add .r4 .r4 (.reg .r6)] : List Instr) ++ tail013
 
 def makeHint : Prog isa :=
   saving [.r4, .r5, .r6] (.seq (.block [gammaCmp .r2, .mov .r4 (.imm 0)])
     (.seq (.ite .eq (mapLoop .r2 (mhBody g88)) (mapLoop .r2 (mhBody g32))) (.block [.mov .r0 (.reg .r4)])))
 
 def uhBody (g : Nat) : List Instr :=
-  [.ldr .r12 .r1 0] ++ hbRaw g .r12 .r4 ++ load2g g .r4 ++
-    [.mul .r4 .r4 .r12, .ldr .r5 .r1 0, .cmp .r4 (.reg .r5), .mov .r4 (.imm 0), .adc .r4 .r4 (.imm 0),
+  ([.ldr .r12 .r1 0] : List Instr) ++ hbRaw g .r12 .r4 ++ load2g g .r4 ++
+    ([.mul .r4 .r4 .r12, .ldr .r5 .r1 0, .cmp .r4 (.reg .r5), .mov .r4 (.imm 0), .adc .r4 .r4 (.imm 0),
      .mov .r5 (.imm 1), .dp .sub .r5 .r5 (.shifted .r4 .lsl 1), .ldr .r4 .r0 0, .mov .r6 (.imm 0),
      .dp .sub .r6 .r6 (.reg .r4), .dp .orr .r6 .r6 (.reg .r4), .mov .r6 (.shifted .r6 .lsr 31), .mul .r5 .r5 .r6,
-     .dp .add .r12 .r12 (.reg .r5), .dp .add .r12 .r12 (.imm (BitVec.ofNat 32 (dMod g)))] ++
-    csubM g .r12 .r4 ++ csubM g .r12 .r4 ++ [.str .r12 .r3 0] ++ tail013
+     .dp .add .r12 .r12 (.reg .r5), .dp .add .r12 .r12 (.imm (BitVec.ofNat 32 (dMod g)))] : List Instr) ++
+    csubM g .r12 .r4 ++ csubM g .r12 .r4 ++ ([.str .r12 .r3 0] : List Instr) ++ tail013
 
 def useHint : Prog isa :=
   saving [.r4, .r5, .r6] (.seq (.block [gammaCmp .r2])

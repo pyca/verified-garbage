@@ -66,14 +66,14 @@ def rot (t : Nat) : Nat := (ss.getD (t / 16) []).getD (t % 4) 0
 rotation as a right rotation by `32 - s`. -/
 def step (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3
-  [.ldr .w T1 .x1 (4 * ks.getD t 0),
+  ([.ldr .w T1 .x1 (4 * ks.getD t 0),
     .add .w a a T1,
     .movz .w T1 ((Ts.getD t 0).extractLsb' 0 16) 0,
     .movk .w T1 ((Ts.getD t 0).extractLsb' 16 16) 1,
-    .add .w a a T1] ++
+    .add .w a a T1] : List Instr) ++
   fn (t / 16) a b c d ++
-  [.ror .w a a (32 - rot t),
-    .add .w a a b]
+  ([.ror .w a a (32 - rot t),
+    .add .w a a b] : List Instr)
 
 /-- Operations `0 … n-1`. -/
 def steps : Nat → Prog isa
@@ -87,7 +87,7 @@ def ones : BitVec 32 := 0xffffffff
 after the 64 operations), and set `Ones`. -/
 def load : List Instr :=
   (List.range 4).map (fun k => .ldr .w (var 0 k) .x0 (4 * k)) ++
-  [.movz .w Ones (ones.extractLsb' 0 16) 0, .movk .w Ones (ones.extractLsb' 16 16) 1]
+  ([.movz .w Ones (ones.extractLsb' 0 16) 0, .movk .w Ones (ones.extractLsb' 16 16) 1] : List Instr)
 
 /-- Add the words into the MD buffer (loading all of it before storing any
 of it), and store the result. -/

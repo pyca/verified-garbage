@@ -24,14 +24,14 @@ def savedVec (i : Nat) : VReg :=
 
 def save : List Instr :=
   (List.range 11).map (fun i => .vop (.dup .d2 (savedVec i) (savedReg i))) ++
-    [.vop (.dup .d2 .v30 .x0),.vop (.dup .d2 .v31 .x1)]
+    ([.vop (.dup .d2 .v30 .x0),.vop (.dup .d2 .v31 .x1)] : List Instr)
 
 def load : List Instr :=
-  [.addImm .x .x30 .x0 0] ++
+  ([.addImm .x .x30 .x0 0] : List Instr) ++
     (List.range 25).map (fun i => .ldr .x (laneReg i) .x30 (8 * i))
 
 def store : List Instr :=
-  [.umov .x .x30 .v30 0] ++
+  ([.umov .x .x30 .v30 0] : List Instr) ++
     (List.range 25).map (fun i => .str .x (laneReg i) .x30 (8 * i))
 
 /-- Restore the ABI words from caller-saved vectors without memory traffic. -/

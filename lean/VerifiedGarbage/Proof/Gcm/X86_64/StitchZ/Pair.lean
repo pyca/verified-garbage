@@ -139,7 +139,10 @@ theorem pair_ok {ka kb g : Nat} (first : Bool) (t : State) (h0 : ∀ l < 4, t.zl
       keep .xmm0 (by decide) (by decide) (by decide) (by decide) l hl, h0 l hl,
       keep .xmm2 (by decide) (by decide) (by decide) (by decide) l hl]
     rw [← blockAt_eq, ← blockAt_eq]
-  · refine ⟨hk'.gpr, hk'.mem, hk'.rd, hk'.wr, fun r hr l hl => ?_⟩
+  · have e₄ : t₄.gpr = t.gpr ∧ t₄.mem = t.mem ∧ t₄.rd = t.rd ∧ t₄.wr = t.wr := by
+      simp only [t₄, t₃, t₂, t₁, ldZ, State.setZ_gpr, State.setZ_mem, State.setZ_rd, State.setZ_wr, and_self]
+    refine ⟨hk'.gpr.trans e₄.1, hk'.mem.trans e₄.2.1, hk'.rd.trans e₄.2.2.1, hk'.wr.trans e₄.2.2.2,
+      fun r hr l hl => ?_⟩
     have := (hq l hl).2.xmm r (fun h => hr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢
       rcases h with h | h | h | h | h | h | h <;> simp [h]))

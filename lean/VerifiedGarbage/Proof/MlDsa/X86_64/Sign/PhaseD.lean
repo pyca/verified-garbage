@@ -117,7 +117,7 @@ def dChk (p : Params) : Bool :=
     decide ((p.η, p.η) ∈ bitPackParams) && decide (64 ≤ p.skLen)
 
 theorem dChk_ok {p : Params} (h : Ok3 p) : dChk p = true := by
-  rcases h with rfl | rfl | rfl <;> decide
+  rcases h with rfl | rfl | rfl <;> decide +kernel
 
 /-- Decoded: `Â`, `ŝ₁`, `ŝ₂`, `t̂₀`, and `ρ″` at `MS`. -/
 structure IK (p : Params) (D : Nat) (σ s : State) : Prop where

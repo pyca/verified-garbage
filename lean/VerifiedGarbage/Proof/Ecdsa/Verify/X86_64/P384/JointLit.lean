@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
 import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
 import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
 

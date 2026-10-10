@@ -91,7 +91,7 @@ theorem decOne_piece {P : Prims} (F : PrimsOk P) (ps : PS p) {A B : State → St
       fun s₀ s s' hp ha c' fr hq => ⟨s, ha, c', fr.mono (by simp), by rw [← sk_slice hp (hA _ _ hp ha) hol hlen]; exact hq⟩) ?_
   refine inPlace_piece (t := ntt) F.ntt (F.ok _ (by simp)) (pS j) rfl (by
       have := slot_ok ps hj; have := sc_ok ps (o := oPS) (n := 1024) (by decide) (by decide)
-      simp only [Bool.and_eq_true, *, true_and]; ofs)
+      simp only [Bool.and_eq_true, *, true_and]; ofsd)
     (fun s₀ s₁ hp ⟨_, _, c, _, hq⟩ => ⟨c, hq.1⟩) fun s₀ s₁ s' hp ⟨s, ha, c, fr, hq⟩ c' fr' post => ?_
   rw [hq.2] at post
   exact hQ s₀ s s' hp ha c' (fr.trans fr') post
@@ -116,8 +116,8 @@ theorem decS1s_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
       exact decOne_piece F ps (s1B p + r) (skS1 p r) (sLen p) p.η p.η ps.hη.1 ps.hη.2.1
         ⟨ps.hη.2.2, ps.hη.2.2, hl.2⟩ (by simp only [nS, s1B]; omega) (by simp only [skS1]; omega) hl.1
         (fun _ _ _ h => h.1) fun s₀ s s' hp h c' fr hq => ⟨c',
-          { (h.2.keep hp ps (by omega) (by omega) (by omega) (by decide) fr (by ofs)) with
-            f1 := (h.2.f1.keep hp ps (by decide) fr (by simp only [nS, s1B]; omega) (by ofs)).snoc hq }⟩
+          { (h.2.keep hp ps (by omega) (by omega) (by omega) (by decide) fr (by ofsd)) with
+            f1 := (h.2.f1.keep hp ps (by decide) fr (by simp only [nS, s1B]; omega) (by ofsd)).snoc hq }⟩
   simpa using this
 
 /-- `ŝ₂`. -/
@@ -133,8 +133,8 @@ theorem decS2s_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
       exact decOne_piece F ps (s2B p + r) (skS2 p r) (sLen p) p.η p.η ps.hη.1 ps.hη.2.1
         ⟨ps.hη.2.2, ps.hη.2.2, hl.2⟩ (by simp only [nS, s2B]; omega) (by simp only [skS2]; omega) hl.1
         (fun _ _ _ h => h.1) fun s₀ s s' hp h c' fr hq => ⟨c',
-          { (h.2.keep hp ps (Nat.le_refl _) (by omega) (by omega) (by decide) fr (by ofs)) with
-            f2 := (h.2.f2.keep hp ps (by decide) fr (by simp only [nS, s2B]; omega) (by ofs)).snoc hq }⟩
+          { (h.2.keep hp ps (Nat.le_refl _) (by omega) (by omega) (by decide) fr (by ofsd)) with
+            f2 := (h.2.f2.keep hp ps (by decide) fr (by simp only [nS, s2B]; omega) (by ofsd)).snoc hq }⟩
   simpa using this
 
 theorem t0F_eq (sk : List Byte) (i : Nat) :
@@ -156,8 +156,8 @@ theorem decT0s_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
       exact decOne_piece F ps (t0B p + r) (skT0 p r) 416 4095 4096 ps.ht0.1 ps.ht0.2
         ⟨by decide, by decide, by decide⟩ (by simp only [nS, t0B]; omega) (by simp only [skT0, Nat.mul_add]; omega) (by decide)
         (fun _ _ _ h => h.1) fun s₀ s s' hp h c' fr hq => ⟨c',
-          { (h.2.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (by omega) (by decide) fr (by ofs)) with
-            f0 := (h.2.f0.keep hp ps (by decide) fr (by simp only [nS, t0B]; omega) (by ofs)).snoc
+          { (h.2.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (by omega) (by decide) fr (by ofsd)) with
+            f0 := (h.2.f0.keep hp ps (by decide) fr (by simp only [nS, t0B]; omega) (by ofsd)).snoc
               (by show PolyIs _ _ (t0F p _ r); rw [t0F_eq]; exact hq) }⟩
   simpa using this
 
@@ -171,26 +171,26 @@ theorem rpp_piece (ps : PS p) :
   have hk := ps_sk ps
   refine Piece.seq (B := fun s₀ s => Ctx (Y p) s₀ s ∧ DK p p.ℓ p.k p.k s₀ s.mem ∧
       bytesAt s.mem (Buf.addr s₀ (sc oHIN 32)) 32 = ((skOf p s₀).drop 32).take 32)
-    (copy_piece 0 32 SC oHIN 8 (by decide) (by decide) (by ofs) (fun _ _ _ h => h.1)
+    (copy_piece 0 32 SC oHIN 8 (by decide) (by decide) (by ofsd) (fun _ _ _ h => h.1)
       fun s₀ s s' hp h c' fr hb => ⟨c', h.2.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (N := 80)
-        (by decide) (show Frame (FR s₀ [sc oHIN 32] 80) s.mem s'.mem from fr.mono (by simp)) (by ofs), by
+        (by decide) (show Frame (FR s₀ [sc oHIN 32] 80) s.mem s'.mem from fr.mono (by simp)) (by ofsd), by
           show bytesAt s'.mem (Buf.addr s₀ ⟨SC, oHIN, 4 * 8⟩) (4 * 8) = _
           rw [hb]; exact sk_slice hp h.1 (by omega) (by decide)⟩) ?_
   refine Piece.seq (B := fun s₀ s => Ctx (Y p) s₀ s ∧ DK p p.ℓ p.k p.k s₀ s.mem ∧
       bytesAt s.mem (Buf.addr s₀ (sc oHIN 64)) 64 = ((skOf p s₀).drop 32).take 32 ++ rndOf s₀)
-    (copy_piece 2 0 SC (oHIN + 32) 8 (by decide) (by decide) (by ofs) (fun _ _ _ h => h.1)
+    (copy_piece 2 0 SC (oHIN + 32) 8 (by decide) (by decide) (by ofsd) (fun _ _ _ h => h.1)
       fun s₀ s s' hp h c' fr hb => ⟨c', h.2.1.keep hp ps (Nat.le_refl _) (Nat.le_refl _) (Nat.le_refl _) (N := 80)
-        (by decide) (show Frame (FR s₀ [sc (oHIN + 32) 32] 80) s.mem s'.mem from fr.mono (by simp)) (by ofs), by
+        (by decide) (show Frame (FR s₀ [sc (oHIN + 32) 32] 80) s.mem s'.mem from fr.mono (by simp)) (by ofsd), by
           rw [bytes_split hp s'.mem (o' := oHIN + 32) (l₁ := 32) (l₂ := 32) rfl rfl (sc_ok' ps (by decide) (by decide))
             (sc_ok' ps (by decide) (by decide)), keepB hp (N := 80) (by decide) (show Frame (FR s₀ [sc (oHIN + 32) 32] 80) s.mem s'.mem from fr.mono (by simp))
-            (sc_ok' ps (by decide) (by decide)) (by ofs), h.2.2]
+            (sc_ok' ps (by decide) (by decide)) (by ofsd), h.2.2]
           have : bytesAt s'.mem (Buf.addr s₀ ⟨SC, oHIN + 32, 4 * 8⟩) (4 * 8) = _ := hb
-          rw [this, h.1.roBytes hp (b := ⟨2, 0, 4 * 8⟩) (by ofs) rfl]⟩) ?_
-  refine hash2_piece' 136 0x1f (sc oHIN 64) bMu (sc oMS 64) (by decide) (by ofs) (by decide) (by decide) (by decide)
+          rw [this, h.1.roBytes hp (b := ⟨2, 0, 4 * 8⟩) (by ofsd) rfl]⟩) ?_
+  refine hash2_piece' 136 0x1f (sc oHIN 64) bMu (sc oMS 64) (by decide) (by ofsd) (by decide) (by decide) (by decide)
     (fun _ _ _ h => h.1) fun s₀ s s' hp h c' fr hb => ⟨c', h.2.1.keep hp ps (Nat.le_refl _) (Nat.le_refl _)
-      (Nat.le_refl _) (by decide) fr (by ofs), ?_⟩
+      (Nat.le_refl _) (by decide) fr (by ofsd), ?_⟩
   have e : BitVec.setWidth 8 (31#32) = Spec.Sha3.shakeSuffix := by decide
-  rw [hb, h.2.2, h.1.roBytes hp (b := bMu) (by ofs) rfl, e, rppS, rppV, VG.Proof.MlDsa.Sample.H_eq]
+  rw [hb, h.2.2, h.1.roBytes hp (b := bMu) (by ofsd) rfl, e, rppS, rppV, VG.Proof.MlDsa.Sample.H_eq]
 
 /-- The setup after `ExpandA`. -/
 theorem decode_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :

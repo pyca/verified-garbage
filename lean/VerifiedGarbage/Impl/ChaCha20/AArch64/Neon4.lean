@@ -36,7 +36,7 @@ inductive Op
 def Op.code : Op → List Instr
   | .add d a b => [.vop (.add .s4 (vreg d) (vreg a) (vreg b))]
   | .xorRol d a b n =>
-    [.vop (.logic .eor .v31 (vreg a) (vreg b))] ++
+    ([.vop (.logic .eor .v31 (vreg a) (vreg b))] : List Instr) ++
     if n.val = 16 then [.vop (.rev .rev32h (vreg d) .v31)]
     else if n.val = 8 then [.vop (.tbl (vreg d) .v31 .v30)]
     else [.vop (.shift .ushr .s4 (vreg d) .v31 (32 - n)),
@@ -69,7 +69,7 @@ def roundLoop : Prog isa :=
 
 /-- Broadcast an input word; word 12 instead has consecutive counters. -/
 def inputWordInto (k : Fin 16) (d : VReg) : List Instr :=
-  [.ldr .w .x4 .x0 (4 * k), .vop (.dup .s4 d .x4)] ++
+  ([.ldr .w .x4 .x0 (4 * k), .vop (.dup .s4 d .x4)] : List Instr) ++
   if k = 12 then
     [.addImm .w .x4 .x4 1, .vop (.ins .s4 d 1 .x4),
      .addImm .w .x4 .x4 1, .vop (.ins .s4 d 2 .x4),
@@ -82,7 +82,7 @@ def setupWord (k : Fin 16) : List Instr := inputWordInto k (vreg k)
 def setup : List Instr := (List.finRange 16).flatMap setupWord ++ setupTable
 
 def addWord (k : Fin 16) : List Instr :=
-  inputWord k ++ [.vop (.add .s4 (vreg k) (vreg k) .v31)]
+  inputWord k ++ ([.vop (.add .s4 (vreg k) (vreg k) .v31)] : List Instr)
 
 /-- Transpose four words from four blocks into four contiguous output rows. -/
 def transposePrep (a b c d : VReg) : List Instr :=

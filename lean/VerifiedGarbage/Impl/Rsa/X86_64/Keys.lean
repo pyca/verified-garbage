@@ -52,7 +52,7 @@ def ws : List Instr := [.mov .r12 (.mem (hdr sW)), .mov .r9 (.mem (hdr sStride))
 
 /-- The base of array `j` into `r`: `rdi + 256 + j · r9`. -/
 def base (j : Nat) (r : Reg) : List Instr :=
-  [.mov r (.reg .rdi), .alu .add r (.imm (BitVec.ofNat 32 hdrBytes))] ++ List.replicate j (.alu .add r (.reg .r9))
+  ([.mov r (.reg .rdi), .alu .add r (.imm (BitVec.ofNat 32 hdrBytes))] : List Instr) ++ List.replicate j (.alu .add r (.reg .r9))
 
 /-- `[j] := 0` (`w + 2` words). -/
 def zeroA (j : Nat) : Prog isa := .seq (.block (ws ++ base j .r8)) zeroAccLoop
@@ -109,15 +109,15 @@ def xorBody : List Instr :=
 /-- `([r], [q]) := 2 ([r], [q])`, `[r]` over `w + 1` words (`r12` left at
 `w + 1`). -/
 def divShiftP (iQ iR : Nat) : List (Prog isa) := [
-  .block ([.mov32 .rbp (.imm 0)] ++ base iQ .rbx),
+  .block (([.mov32 .rbp (.imm 0)] : List Instr) ++ base iQ .rbx),
   wordLoop 0 shlBody,
-  .block (base iR .rbx ++ [.alu .add .r12 (.imm 1)]),
+  .block (base iR .rbx ++ ([.alu .add .r12 (.imm 1)] : List Instr)),
   wordLoop 0 shlBody]
 
 /-- `[t] := [r] - [d]` over `w + 1` words, then `[r] := [t]` if it does not
 borrow, `rbp` the mask of the borrow. -/
 def divSubP (iR iD iT : Nat) : List (Prog isa) := [
-  .block ([.alu .sub .r12 (.imm 1), .mov32 .rbp (.imm 0)] ++ base iR .r8 ++ base iD .r10 ++ base iT .rsi),
+  .block (([.alu .sub .r12 (.imm 1), .mov32 .rbp (.imm 0)] : List Instr) ++ base iR .r8 ++ base iD .r10 ++ base iT .rsi),
   wordLoop 0 subBody,
   .block [.mov .rax (.mem (ix .r8 .r12)), cfFromRbp, .alu .sbb .rax (.imm 0), .store (ix .rsi .r12) .rax, cfToRbp,
     .alu .add .r12 (.imm 1)],
@@ -126,17 +126,17 @@ def divSubP (iR iD iT : Nat) : List (Prog isa) := [
 /-- `[q] += 1` if it did not borrow, `r12 := w`, and the step counter `r13`
 against `r11`. -/
 def divBitP (iQ : Nat) : List Instr :=
-  [.alu .sub .r12 (.imm 1), .mov .rax (.reg .rbp), .alu .add .rax (.imm 1)] ++ base iQ .rbx ++
-    [.mov .rdx (.mem (at0 .rbx)), .alu .add .rdx (.reg .rax), .store (at0 .rbx) .rdx,
-      .alu .add .r13 (.imm 1), .alu .cmp .r13 (.reg .r11)]
+  ([.alu .sub .r12 (.imm 1), .mov .rax (.reg .rbp), .alu .add .rax (.imm 1)] : List Instr) ++ base iQ .rbx ++
+    ([.mov .rdx (.mem (at0 .rbx)), .alu .add .rdx (.reg .rax), .store (at0 .rbx) .rdx,
+      .alu .add .r13 (.imm 1), .alu .cmp .r13 (.reg .r11)] : List Instr)
 
 /-- One step of the division. -/
 def divStep (iQ iR iD iT : Nat) : Prog isa := seqs (divShiftP iQ iR ++ (divSubP iR iD iT ++ [.block (divBitP iQ)]))
 
 /-- `w` and the stride, `r8 := [r]`, `r11 := 64 w`, `r13 := 0`. -/
 def divInit (iR : Nat) : List Instr :=
-  ws ++ base iR .r8 ++ [.mov .r11 (.reg .r12)] ++ List.replicate 6 (.alu .add .r11 (.reg .r11)) ++
-    [.mov32 .r13 (.imm 0)]
+  ws ++ base iR .r8 ++ ([.mov .r11 (.reg .r12)] : List Instr) ++ List.replicate 6 (.alu .add .r11 (.reg .r11)) ++
+    ([.mov32 .r13 (.imm 0)] : List Instr)
 
 /-- `[r] := [q] mod [d]` and `[q] := [q] / [d]`, `[t]` working space:
 `64 w` steps. -/
@@ -148,8 +148,8 @@ def divmod (iQ iR iD iT : Nat) : Prog isa :=
 /-- The mask of `u` odd into `sMo`, the mask of `u < v` into `rbp`, and the
 swaps of `(u, v)` and `(x₁, x₂)` under both. -/
 def invSwapP (iU iV iX₁ iX₂ : Nat) : List (Prog isa) := [
-  .block (base iU .rbx ++ [.mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm 1), .mov32 .rdx (.imm 0),
-    .alu .sub .rdx (.reg .rax), .store (hdr sMo) .rdx] ++ base iV .r10 ++ [.mov32 .rbp (.imm 0)]),
+  .block (base iU .rbx ++ ([.mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm 1), .mov32 .rdx (.imm 0),
+    .alu .sub .rdx (.reg .rax), .store (hdr sMo) .rdx] : List Instr) ++ base iV .r10 ++ ([.mov32 .rbp (.imm 0)] : List Instr)),
   wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)), cfToRbp],
   .block [.mov .r15 (.reg .rbp), .alu .and .r15 (.mem (hdr sMo))],
   wordLoop 0 cswapBody,
@@ -158,14 +158,14 @@ def invSwapP (iU iV iX₁ iX₂ : Nat) : List (Prog isa) := [
 
 /-- `u -= v`, if `u` is odd. -/
 def invSubUP (iU iV : Nat) : List (Prog isa) := [
-  .block ([.mov .r15 (.mem (hdr sMo)), .mov32 .rbp (.imm 0)] ++ base iU .r8 ++ base iV .r10 ++ base iU .rsi),
+  .block (([.mov .r15 (.mem (hdr sMo)), .mov32 .rbp (.imm 0)] : List Instr) ++ base iU .r8 ++ base iV .r10 ++ base iU .rsi),
   wordLoop 0 subMBody]
 
 /-- `x₁ -= x₂ (mod m)`, if `u` is odd (the mask in `r15`). -/
 def invSubXP (iX₁ iX₂ iM iT : Nat) : List (Prog isa) := [
-  .block ([.mov32 .rbp (.imm 0)] ++ base iX₁ .r8 ++ base iX₂ .r10 ++ base iT .rsi),
+  .block (([.mov32 .rbp (.imm 0)] : List Instr) ++ base iX₁ .r8 ++ base iX₂ .r10 ++ base iT .rsi),
   wordLoop 0 subMBody,
-  .block ([.mov .r15 (.reg .rbp), .mov32 .rbp (.imm 0)] ++ base iT .r8 ++ base iM .r10 ++ base iX₁ .rbx),
+  .block (([.mov .r15 (.reg .rbp), .mov32 .rbp (.imm 0)] : List Instr) ++ base iT .r8 ++ base iM .r10 ++ base iX₁ .rbx),
   wordLoop 0 addMBody]
 
 /-- `u -= v` and `x₁ -= x₂ (mod m)`, if `u` is odd. -/
@@ -177,10 +177,10 @@ def invHalfUP (iU : Nat) : List (Prog isa) := [.block (base iU .r8 ++ base iU .r
 /-- `x₁ := x₁ / 2 (mod m)`: `t := x₁ + m` if `x₁` is odd (`w + 1` words),
 then `x₁ := t / 2`. -/
 def invHalfXP (iX₁ iM iT : Nat) : List (Prog isa) := [
-  .block (base iX₁ .r8 ++ [.mov .rax (.mem (at0 .r8)), .alu .and .rax (.imm 1), .mov32 .r15 (.imm 0),
-    .alu .sub .r15 (.reg .rax), .mov32 .rbp (.imm 0)] ++ base iM .r10 ++ base iT .rbx),
+  .block (base iX₁ .r8 ++ ([.mov .rax (.mem (at0 .r8)), .alu .and .rax (.imm 1), .mov32 .r15 (.imm 0),
+    .alu .sub .r15 (.reg .rax), .mov32 .rbp (.imm 0)] : List Instr) ++ base iM .r10 ++ base iT .rbx),
   wordLoop 0 addMBody,
-  .block ([.mov32 .rax (.imm 0), cfFromRbp, .alu .adc .rax (.imm 0), .store (ix .rbx .r12) .rax] ++ base iT .r8 ++
+  .block (([.mov32 .rax (.imm 0), cfFromRbp, .alu .adc .rax (.imm 0), .store (ix .rbx .r12) .rax] : List Instr) ++ base iT .r8 ++
     base iX₁ .rsi),
   wordLoop 0 shrBody]
 
@@ -196,7 +196,7 @@ def invStep (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
 
 /-- `w` and the stride, `r11 := 128 w`, `r13 := 0`. -/
 def invInit : List Instr :=
-  ws ++ [.mov .r11 (.reg .r12)] ++ List.replicate 7 (.alu .add .r11 (.reg .r11)) ++ [.mov32 .r13 (.imm 0)]
+  ws ++ ([.mov .r11 (.reg .r12)] : List Instr) ++ List.replicate 7 (.alu .add .r11 (.reg .r11)) ++ ([.mov32 .r13 (.imm 0)] : List Instr)
 
 /-- `128 w` steps of the binary extended Euclidean algorithm. -/
 def inverse (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
@@ -206,28 +206,28 @@ def inverse (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
 
 /-- `rbp = 0` iff `[a] = [b]` over `w` words. -/
 def eqA (a b : Nat) : List (Prog isa) :=
-  [.block (ws ++ base a .rbx ++ base b .r10 ++ [.mov32 .rbp (.imm 0)]), wordLoop 0 xorBody]
+  [.block (ws ++ base a .rbx ++ base b .r10 ++ ([.mov32 .rbp (.imm 0)] : List Instr)), wordLoop 0 xorBody]
 
 /-- `[j] := 1`, for `[j] = 0`. -/
-def setOneA (j : Nat) : List Instr := ws ++ base j .rbx ++ [.mov32 .rax (.imm 1), .store (at0 .rbx) .rax]
+def setOneA (j : Nat) : List Instr := ws ++ base j .rbx ++ ([.mov32 .rax (.imm 1), .store (at0 .rbx) .rax] : List Instr)
 
 /-- The low word of `[j]` minus one (`[j] - 1` for a `[j]` whose low word
 is not zero). -/
 def decA (j : Nat) : List Instr :=
-  ws ++ base j .rbx ++ [.mov .rax (.mem (at0 .rbx)), .alu .sub .rax (.imm 1), .store (at0 .rbx) .rax]
+  ws ++ base j .rbx ++ ([.mov .rax (.mem (at0 .rbx)), .alu .sub .rax (.imm 1), .store (at0 .rbx) .rax] : List Instr)
 
 /-! ## Bytes -/
 
 /-- `[j] := ` the number of the bytes whose pointer and length are in the
 header slots `sPtr` and `sLen`. -/
 def loadA (j sPtr sLen : Nat) : List (Prog isa) :=
-  [zeroA j, .block (ws ++ base j .rbx ++ [.mov .rsi (.mem (hdr sPtr)), .mov .rcx (.mem (hdr sLen))]), loadBE]
+  [zeroA j, .block (ws ++ base j .rbx ++ ([.mov .rsi (.mem (hdr sPtr)), .mov .rcx (.mem (hdr sLen))] : List Instr)), loadBE]
 
 /-- `[j]` masked by the header slot `sMsk`, to the bytes whose pointer and
 length are in the header slots `sPtr` and `sLen`. -/
 def storeA (j sPtr sLen sMsk : Nat) : List (Prog isa) :=
-  [.block (ws ++ base j .rbx ++ [.mov .rsi (.mem (hdr sPtr)), .mov .rcx (.mem (hdr sLen)),
-    .mov .r15 (.mem (hdr sMsk))]), storeBE]
+  [.block (ws ++ base j .rbx ++ ([.mov .rsi (.mem (hdr sPtr)), .mov .rcx (.mem (hdr sLen)),
+    .mov .r15 (.mem (hdr sMsk))] : List Instr)), storeBE]
 
 /-- Zeros to the bytes whose pointer and length are in the header slots
 `sPtr` and `sLen` (at least one). -/
@@ -236,7 +236,7 @@ def zeroOut (sPtr sLen : Nat) : Prog isa :=
     (.loop (.block [.store8 (at0 .rsi) .rax, .alu .add .rsi (.imm 1), .alu .sub .rcx (.imm 1)]) .ne)
 
 /-- The mask's low bit returned, and the saved registers restored. -/
-def retMask : List Instr := [.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] ++ exit
+def retMask : List Instr := ([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit
 
 /-! ## `vg_rsa_crt_values` -/
 
@@ -274,9 +274,9 @@ def stk (i : Nat) : MemOp := { base := .rsp, disp := 8 * i }
 `scratch`, with its base in `rdi`. `dp_len` and `dq_len` are `p_len` and
 `q_len`. -/
 def entry : List Instr :=
-  [.mov .r11 (.mem (stk 9))] ++
+  ([.mov .r11 (.mem (stk 9))] : List Instr) ++
   (saved.zipIdx.map fun (r, i) => .store { base := .r11, disp := 8 * i } r) ++
-  [.store { base := .r11, disp := 8 * sDp } .rdi, .store { base := .r11, disp := 8 * sPl } .rsi,
+  ([.store { base := .r11, disp := 8 * sDp } .rdi, .store { base := .r11, disp := 8 * sPl } .rsi,
     .store { base := .r11, disp := 8 * sDq } .rdx, .store { base := .r11, disp := 8 * sQl } .rcx,
     .store { base := .r11, disp := 8 * sQi } .r8,
     .mov .rax (.mem (stk 1)), .store { base := .r11, disp := 8 * sN } .rax,
@@ -284,18 +284,18 @@ def entry : List Instr :=
     .mov .rax (.mem (stk 3)), .store { base := .r11, disp := 8 * sP } .rax,
     .mov .rax (.mem (stk 5)), .store { base := .r11, disp := 8 * sQ } .rax,
     .mov .rax (.mem (stk 7)), .store { base := .r11, disp := 8 * sD } .rax,
-    .mov .rax (.mem (stk 8)), .store { base := .r11, disp := 8 * sDl } .rax, .mov .rdi (.reg .r11)]
+    .mov .rax (.mem (stk 8)), .store { base := .r11, disp := 8 * sDl } .rax, .mov .rdi (.reg .r11)] : List Instr)
 
 /-- Zeros to `dp`, `dq` and `qinv`, and 0 returned. -/
-def fail : Prog isa := seqs [zeroOut sDp sPl, zeroOut sDq sQl, zeroOut sQi sPl, .block ([.mov32 .rax (.imm 0)] ++ exit)]
+def fail : Prog isa := seqs [zeroOut sDp sPl, zeroOut sDq sQl, zeroOut sQi sPl, .block (([.mov32 .rax (.imm 0)] : List Instr) ++ exit)]
 
 /-- `w`, the arrays' bases and the stride, and the mask all ones. -/
 def head : List Instr :=
-  [.mov .rcx (.mem (hdr sK)), .mov .r12 (.reg .rcx), .alu .add .r12 (.imm 7), .shift .shr .r12 3,
-    .store (hdr sW) .r12] ++ setBases ++
-  [.mov .rax (.reg .r12), .alu .add .rax (.imm 2), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+  ([.mov .rcx (.mem (hdr sK)), .mov .r12 (.reg .rcx), .alu .add .r12 (.imm 7), .shift .shr .r12 3,
+    .store (hdr sW) .r12] : List Instr) ++ setBases ++
+  ([.mov .rax (.reg .r12), .alu .add .rax (.imm 2), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
     .alu .add .rax (.reg .rax), .store (hdr sStride) .rax, .mov .rax (.imm (BitVec.ofInt 32 (-1))),
-    .store (hdr sMask) .rax]
+    .store (hdr sMask) .rax] : List Instr)
 
 /-- The constant array `aC` (9): zero, or one. -/
 def aC : Nat := 9
@@ -306,8 +306,8 @@ def andZero : List Instr :=
 
 /-- The mask of `[j]` odd and'ed into `sMask`. -/
 def andOdd (j : Nat) : List Instr :=
-  ws ++ base j .rbx ++ [.mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm 1), .mov32 .rdx (.imm 0),
-    .alu .sub .rdx (.reg .rax), .alu .and .rdx (.mem (hdr sMask)), .store (hdr sMask) .rdx]
+  ws ++ base j .rbx ++ ([.mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm 1), .mov32 .rdx (.imm 0),
+    .alu .sub .rdx (.reg .rax), .alu .and .rdx (.mem (hdr sMask)), .store (hdr sMask) .rdx] : List Instr)
 
 /-- The mask of `p q = n` and'ed into `sMask`, as `n mod p = 0`,
 `n / p = q` and `p` odd (which `p q = n` implies, `n` being odd). -/
@@ -337,7 +337,7 @@ def main : Prog isa := seqs ([
 
 /-- `vg_rsa_crt_values`. -/
 def code : Prog isa :=
-  .seq (.block (entry ++ [.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] ++ invalid)) (.ite .ne fail main)
+  .seq (.block (entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid)) (.ite .ne fail main)
 
 end CrtValues
 

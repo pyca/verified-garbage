@@ -97,7 +97,7 @@ def round (t : Nat) : List Instr :=
     .add .x h h T1] ++
   -- h := h + Kₜ + Wₜ, which is T₁
   movImm64 T1 (K t) ++
-  [ .add .x h h T1,
+  ([ .add .x h h T1,
     .add .x h h T0,
     -- e' := d + T₁
     .add .x d d h,
@@ -113,7 +113,7 @@ def round (t : Nat) : List Instr :=
     .logic .and .x T1 T1 c,
     .logic .and .x T2 a b,
     .logic .orr .x T1 T1 T2,
-    .add .x h h T1]
+    .add .x h h T1] : List Instr)
 
 /-- Rounds `0 … n-1`. -/
 def rounds : Nat → Prog isa

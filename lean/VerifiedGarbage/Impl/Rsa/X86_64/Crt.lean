@@ -57,13 +57,13 @@ def stk (i : Nat) : MemOp := { base := .rsp, disp := 8 * i }
 /-- Save the callee-saved registers and the arguments in the header at
 `scratch`, with its base in `rdi`. -/
 def entry : List Instr :=
-  [.mov .r11 (.mem (stk 11))] ++
+  ([.mov .r11 (.mem (stk 11))] : List Instr) ++
   (saved.zipIdx.map fun (r, i) => .store { base := .r11, disp := 8 * i } r) ++
-  [.store (ws .r11 sOut) .rdi, .store (ws .r11 sN) .rdx, .store (ws .r11 sK) .rcx, .store (ws .r11 sIn) .r8,
+  ([.store (ws .r11 sOut) .rdi, .store (ws .r11 sN) .rdx, .store (ws .r11 sK) .rcx, .store (ws .r11 sIn) .r8,
     .mov .rax (.mem (stk 1)), .store (ws .r11 sP) .rax, .mov .rax (.mem (stk 2)), .store (ws .r11 sPlen) .rax,
     .mov .rax (.mem (stk 3)), .store (ws .r11 sQ) .rax, .mov .rax (.mem (stk 4)), .store (ws .r11 sQlen) .rax,
     .mov .rax (.mem (stk 5)), .store (ws .r11 sDp) .rax, .mov .rax (.mem (stk 7)), .store (ws .r11 sDq) .rax,
-    .mov .rax (.mem (stk 9)), .store (ws .r11 sQinv) .rax, .mov .rdi (.reg .r11)]
+    .mov .rax (.mem (stk 9)), .store (ws .r11 sQinv) .rax, .mov .rdi (.reg .r11)] : List Instr)
 
 /-! ## `n`'s workspace -/
 
@@ -80,8 +80,8 @@ def nSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
     .mov .r10 (.mem (hdr (sArr aN))), .mov32 .rbp (.imm 0)],
   wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)),
     cfToRbp],
-  .block ([.store (hdr sMask) .rbp, .mov .rbx (.mem (at0 .r10))] ++ minv ++
-    [.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)]),
+  .block (([.store (hdr sMask) .rbp, .mov .rbx (.mem (at0 .r10))] : List Instr) ++ minv ++
+    ([.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)] : List Instr)),
   setWord aOne .rcx,
   R2Words.choice mul,
   mul aXm aX aR2]
@@ -97,8 +97,8 @@ def wsEnd : List Instr :=
 /-- `rax := ` the end of a prime's workspace at `rdx`: its arrays, then the
 16 entries of the window's table (`8 (w + 2)` bytes each). -/
 def wsEndT : List Instr :=
-  wsEnd ++ [.alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx),
-    .alu .add .rdx (.reg .rdx), .alu .add .rax (.reg .rdx)]
+  wsEnd ++ ([.alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx),
+    .alu .add .rdx (.reg .rdx), .alu .add .rax (.reg .rdx)] : List Instr)
 
 /-- A workspace at `rax` (its base stored in slot `slotWs`) for a number of
 the byte length in slot `slotLen`: `w = max(2, ⌈len / 8⌉)`, its arrays'
@@ -107,8 +107,8 @@ def wsNew (slotWs slotLen : Nat) : List (Prog isa) := [
   .block [.store (hdr slotWs) .rax, .mov .r12 (.mem (hdr slotLen)), .alu .add .r12 (.imm 7), .shift .shr .r12 3,
     .alu .cmp .r12 (.imm 2)],
   .ite .b (.block [.mov32 .r12 (.imm 2)]) (.block []),
-  .block ([.mov .rsi (.reg .rdi), .mov .rdi (.reg .rax), .store (hdr sLink) .rsi, .store (hdr sW) .r12] ++ setBases ++
-    [.mov .rdi (.reg .rsi)])]
+  .block (([.mov .rsi (.reg .rdi), .mov .rdi (.reg .rax), .store (hdr sLink) .rsi, .store (hdr sW) .r12] : List Instr) ++ setBases ++
+    ([.mov .rdi (.reg .rsi)] : List Instr))]
 
 /-- `[j] := 0` in the current workspace (`w + 2` words). -/
 def zeroArr (j : Nat) : Prog isa :=
@@ -129,8 +129,8 @@ def leave : Instr := .mov .rdi (.mem (hdr sLink))
 
 /-- The workspaces, `p`, `q` and `qInv` (into `p`'s chunk array). -/
 def primesSetup : List (Prog isa) :=
-  [.block ([.mov .rdx (.reg .rdi)] ++ wsEnd)] ++ wsNew sWsP sPlen ++
-  [.block ([.mov .rdx (.mem (hdr sWsP))] ++ wsEndT)] ++ wsNew sWsQ sQlen ++
+  [.block (([.mov .rdx (.reg .rdi)] : List Instr) ++ wsEnd)] ++ wsNew sWsP sPlen ++
+  [.block (([.mov .rdx (.mem (hdr sWsP))] : List Instr) ++ wsEndT)] ++ wsNew sWsQ sQlen ++
   [.block [enterP]] ++ loadArr aN sP sPlen ++ loadArr aChunk sQinv sPlen ++ [.block [leave, enterQ]] ++
   loadArr aN sQ sQlen ++ [.block [leave]]
 
@@ -184,9 +184,9 @@ the number 1. -/
 def primeFix : List (Prog isa) :=
   [.block [.mov .rax (.mem (hdr sLink)), .mov .rax (.mem (ws .rax sMask)), .store (hdr sMaskX) .rax]] ++
   maskArr aN ++
-  [.block ([.mov .rax (.reg .r15), .alu .xor .rax (.imm (BitVec.ofInt 32 (-1))), .alu .and .rax (.imm 3),
-      .alu .or .rax (.mem (at0 .rbx)), .store (at0 .rbx) .rax, .mov .rbx (.reg .rax)] ++ minv ++
-      [.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)]),
+  [.block (([.mov .rax (.reg .r15), .alu .xor .rax (.imm (BitVec.ofInt 32 (-1))), .alu .and .rax (.imm 3),
+      .alu .or .rax (.mem (at0 .rbx)), .store (at0 .rbx) .rax, .mov .rbx (.reg .rax)] : List Instr) ++ minv ++
+      ([.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)] : List Instr)),
     setWord aOne .rcx]
 
 /-- The checks and the fixes. -/
@@ -438,7 +438,7 @@ def finish : List (Prog isa) := zeroAccs ++ [
   .block [.mov .rbx (.mem (hdr (sArr aAcc))), .mov .rsi (.mem (hdr sOut)), .mov .rcx (.mem (hdr sK)),
     .mov .r15 (.mem (hdr sMask))],
   storeBE,
-  .block ([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] ++ exit)]
+  .block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)]
 
 /-- The computation, once `n` is known valid. -/
 def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
@@ -446,7 +446,7 @@ def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
 
 /-- `vg_rsa_private_crt`. -/
 def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (.block (entry ++ [.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] ++ invalid))
+  .seq (.block (entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
     (.ite .ne fail (main mul))
 
 end VG.Impl.Rsa.X86_64.Crt

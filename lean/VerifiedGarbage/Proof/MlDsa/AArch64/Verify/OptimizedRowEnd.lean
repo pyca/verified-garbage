@@ -41,8 +41,8 @@ theorem inverse_ok {p : Params} (hF : VFacts p) {S : Nat} {σ s : State} (hp : v
       PolyIs t.mem (pa t (wP p)) (Proof.MlDsa.Verify.wRow p (vPk p σ) (vSig p σ) A' (ntt c0) r) := by
   have L:=hs.vc.lay hF hp
   have hk:=hF.k;have hl:=hF.l;have hkl:=hF.kl;have hsc:=hF.scr
-  have rd : inB (vR p++vW p) (wP p) 1024=true := by vlay
-  have wr : inB (vW p) (wP p) 1024=true := by vlay
+  have rd : inB (vR p++vW p) (wP p) 1024=true := by vlayd
+  have wr : inB (vW p) (wP p) 1024=true := by vlayd
   have held : InverseTable.Artifact s.mem (s.syms "VG_MLDSA_INV_FOLDED") := by
     intro j hj
     have eq (xs : List (BitVec 64)) (j : Nat) (hj : j<xs.length) : xs.getD j 0=xs[j]! := by

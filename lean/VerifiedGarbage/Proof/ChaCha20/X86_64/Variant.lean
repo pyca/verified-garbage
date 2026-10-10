@@ -61,7 +61,7 @@ structure XorImpl where
   constant-time analysis checks (it runs on code with the comparisons
   against `fold` and the mask `pass - 1` in it). -/
   fold_poly : (callee.fold = 0 ∧ callee.pass = 0 ∧ poly = .scalar) ∨
-    (callee.fold = 192 ∧ callee.pass = 0 ∧ poly = .avx2) ∨
+    (callee.fold = 448 ∧ callee.pass = 0 ∧ poly = .avx2) ∨
     (callee.fold = 960 ∧ callee.pass = 1024 ∧ poly = .avx512)
 
 namespace XorImpl

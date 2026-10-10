@@ -175,9 +175,9 @@ def ivPair (i : Nat) : BitVec 64 :=
 that the constant-time analysis knows it is public), the masks and the IV,
 and `last` tested. -/
 def setup : List Instr :=
-  [.mov32 .r8 (.reg .r8)] ++ pair64 .xmm14 rot16Lo rot16Hi ++ pair64 .xmm15 rotr8Lo rotr8Hi ++
+  ([.mov32 .r8 (.reg .r8)] : List Instr) ++ pair64 .xmm14 rot16Lo rot16Hi ++ pair64 .xmm15 rotr8Lo rotr8Hi ++
     pair64 .xmm11 (ivPair 0) (ivPair 2) ++ pair64 .xmm12 (ivPair 4) (ivPair 6) ++
-    [.alu .test .r8 (.reg .r8)]
+    ([.alu .test .r8 (.reg .r8)] : List Instr)
 
 /-- The final block flag in `r8`: `0xffffffff` if `last ≠ 0`; then test `n`. -/
 def flag : Prog isa :=

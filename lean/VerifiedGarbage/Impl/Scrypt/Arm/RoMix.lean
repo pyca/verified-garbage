@@ -60,8 +60,8 @@ def mulLoop : Prog isa :=
 for `nLoop`. -/
 def rmPrologue : List Instr :=
   .ldrSp .r12 0 :: rmSaved.map (fun (r, d) => .str r .r12 d) ++
-    [.mov .r4 (.reg .r0), .mov .r5 (.reg .r2), .mov .r6 (.reg .r12), .mov .r7 (.shifted .r1 .lsl 7),
-     .mov .r0 (.reg .r1), .mov .r1 (.imm 1), .dp .add .r2 .r3 (.reg .r3)]
+    ([.mov .r4 (.reg .r0), .mov .r5 (.reg .r2), .mov .r6 (.reg .r12), .mov .r7 (.shifted .r1 .lsl 7),
+     .mov .r0 (.reg .r1), .mov .r1 (.imm 1), .dp .add .r2 .r3 (.reg .r3)] : List Instr)
 
 /-- `r1 ← 2 N`: doubling `r0` (from `r`) and `r1` (from 1) until `r0 = 2 vlen`. -/
 def nLoop : Prog isa :=
@@ -74,7 +74,7 @@ def rmSetup : List Instr :=
 /-- `vg_scrypt_blockmix(src, r, dst = b, r, scratch)`, `scratch` being our
 own stack argument. -/
 def blockMixTo (blockMix : Prog isa) (src : List Instr) : Prog isa :=
-  .seq (.block (src ++ [.mov .r1 (.shifted .r7 .lsr 7), .mov .r2 (.reg .r4), .mov .r3 (.reg .r1)]))
+  .seq (.block (src ++ ([.mov .r1 (.shifted .r7 .lsr 7), .mov .r2 (.reg .r4), .mov .r3 (.reg .r1)] : List Instr)))
     (.call "vg_scrypt_blockmix" blockMix)
 
 /-- Step 2, once: `V[i] = X`, `X = scryptBlockMix (V[i])`. -/

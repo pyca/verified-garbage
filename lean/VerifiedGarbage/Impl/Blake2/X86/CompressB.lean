@@ -178,16 +178,16 @@ def saved : List (Reg × Nat) := [(.ebx, 288), (.esi, 292), (.edi, 296), (.ebp, 
 high 64 bits of the counter start at 0; the flag is `0 - (0 < last)`, all one
 bits if `last ≠ 0`), and set ZF if there are no blocks. -/
 def prologue : List Instr :=
-  [.mov .eax (.mem (at_ .esp 28))] +++
+  ([.mov .eax (.mem (at_ .esp 28))] : List Instr) +++
   saved.map (fun (r, d) => .store (at_ .eax d) r) +++
-  [.mov .esi (.reg .eax),
+  ([.mov .esi (.reg .eax),
     .mov .eax (.mem (at_ .esp 8)), .store (at_ .esi blOff) .eax,
     .mov .eax (.mem (at_ .esp 16)), .store (at_ .esi tOff) .eax,
     .mov .eax (.mem (at_ .esp 20)), .store (at_ .esi (tOff + 4)) .eax,
     .mov .eax (.imm 0), .store (at_ .esi (tOff + 8)) .eax, .store (at_ .esi (tOff + 12)) .eax,
     .mov .eax (.mem (at_ .esp 24)), .mov .ecx (.imm 0), .alu .cmp .ecx (.reg .eax),
     .alu .sbb .ecx (.reg .ecx), .store (at_ .esi fOff) .ecx, .store (at_ .esi (fOff + 4)) .ecx,
-    .mov .eax (.mem (at_ .esp 12)), .store (at_ .esi nOff) .eax, .alu .test .eax (.reg .eax)]
+    .mov .eax (.mem (at_ .esp 12)), .store (at_ .esi nOff) .eax, .alu .test .eax (.reg .eax)] : List Instr)
 
 /-- Restore the callee-saved registers (`esi`, the base, last). -/
 def epilogue : List Instr :=

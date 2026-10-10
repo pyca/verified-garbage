@@ -27,7 +27,7 @@ inductive Op
 def Op.code : Op → List Instr
   | .add d a b => [.vop (.add .s4 (vreg d) (vreg a) (vreg b))]
   | .xorRol d a b n =>
-    [.vop (.logic .eor .v31 (vreg a) (vreg b))] ++
+    ([.vop (.logic .eor .v31 (vreg a) (vreg b))] : List Instr) ++
     if n.val = 16 then [.vop (.rev .rev32h (vreg d) .v31)]
     else if n.val = 8 then [.vop (.tbl (vreg d) .v31 .v30)]
     else [.vop (.shift .ushr .s4 (vreg d) .v31 (32 - n)),
@@ -69,7 +69,7 @@ def rounds : Nat → Prog isa
 /-- Load one contiguous state row; lane zero of the final row receives
 this block's counter offset. -/
 def inputRowInto (k : Fin 24) (d : VReg) : List Instr :=
-  [.ldrq d .x0 (16 * (k.val % 4))] ++
+  ([.ldrq d .x0 (16 * (k.val % 4))] : List Instr) ++
   if k.val % 4 = 3 then
     [.ldr .w .x4 .x0 48, .addImm .w .x4 .x4 (k.val / 4), .vop (.ins .s4 d 0 .x4)]
   else []
@@ -79,11 +79,11 @@ def setupRow (k : Fin 24) : List Instr := inputRowInto k (vreg k)
 def setup : List Instr := (List.finRange 24).flatMap setupRow ++ Neon4.setupTable
 
 def addRow (k : Fin 24) : List Instr := inputRowInto k .v31 ++
-  [.vop (.add .s4 (vreg k) (vreg k) .v31)]
+  ([.vop (.add .s4 (vreg k) (vreg k) .v31)] : List Instr)
 
 /-- Load each common row once for its six independent additions. -/
 def cachedFeedRow (r : Fin 3) : List Instr :=
-  [.ldrq .v31 .x0 (16 * r.val)] ++
+  ([.ldrq .v31 .x0 (16 * r.val)] : List Instr) ++
     (List.finRange 6).map fun b => Instr.vop (.add .s4
       (vreg (row b ⟨r.val, by omega⟩)) (vreg (row b ⟨r.val, by omega⟩)) .v31)
 
@@ -106,8 +106,8 @@ def check : List Instr :=
   [.lsr .x .x5 .x2 6,.subImm .x .x5 .x5 6,.lsr .x .x5 .x5 63]
 
 def next : List Instr :=
-  [.ldr .w .x4 .x0 48,.addImm .w .x4 .x4 6,.str .w .x4 .x0 48,
-   .addImm .x .x1 .x1 384,.subImm .x .x2 .x2 384] ++ check
+  ([.ldr .w .x4 .x0 48,.addImm .w .x4 .x4 6,.str .w .x4 .x0 48,
+   .addImm .x .x1 .x1 384,.subImm .x .x2 .x2 384] : List Instr) ++ check
 
 def body : Prog isa := .seq chunk (.block next)
 

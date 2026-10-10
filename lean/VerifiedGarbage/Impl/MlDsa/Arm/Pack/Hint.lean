@@ -95,7 +95,7 @@ def hbuMore : List Instr := ltBit .r7 .r1 .r4
 
 /-- A coefficient after the first: `y[index - 1] < y[index]`, or fail. -/
 def hbuNext : Prog isa :=
-  .seq (.block ([.dp .add .r12 .r0 (.reg .r1), .ldrb .r7 .r12 0, .dp .sub .r12 .r12 (.imm 1), .ldrb .r12 .r12 0] ++
+  .seq (.block (([.dp .add .r12 .r0 (.reg .r1), .ldrb .r7 .r12 0, .dp .sub .r12 .r12 (.imm 1), .ldrb .r12 .r12 0] : List Instr) ++
       ltBit .r7 .r12 .r7))
     (.seq (.ite .eq hbuFail (.block hbuSet)) (.block hbuMore))
 
@@ -111,7 +111,7 @@ against the index and `ω`, and the coefficients up to it. -/
 def hbuPoly : Prog isa :=
   .seq (.block (ltBit .r7 .r2 .r1))
     (.ite .eq
-      (.seq (.block ([.ldrb .r4 .r5 0] ++ ltBit .r7 .r4 .r1))
+      (.seq (.block (([.ldrb .r4 .r5 0] : List Instr) ++ ltBit .r7 .r4 .r1))
         (.ite .eq (.seq (.block (ltBit .r7 .r2 .r4)) (.ite .eq hbuCoefs hbuFail)) hbuFail))
       (.block []))
 

@@ -155,10 +155,10 @@ def rest (name : String) (code : Prog isa) : Prog isa :=
 
 /-- Save registers, set up ours, and keep the byte count in `scratch`. -/
 def updateStart : List Instr :=
-  [.mov .eax (.mem (at_ .esp 24))] ++ save ++
-  [.mov .ebp (.reg .eax), .mov .ebx (.mem (at_ .esp 4)), .mov .esi (.mem (at_ .esp 16)),
+  ([.mov .eax (.mem (at_ .esp 24))] : List Instr) ++ save ++
+  ([.mov .ebp (.reg .eax), .mov .ebx (.mem (at_ .esp 4)), .mov .esi (.mem (at_ .esp 16)),
    .mov .edi (.mem (at_ .esp 20)), .mov .eax (.mem (at_ .esp 8)), .store (at_ .ebp cloOff) .eax,
-   .mov .ecx (.mem (at_ .esp 12)), .store (at_ .ebp chiOff) .ecx]
+   .mov .ecx (.mem (at_ .esp 12)), .store (at_ .ebp chiOff) .ecx] : List Instr)
 
 def update (name : String) (code : Prog isa) : Prog isa :=
   .seq (.block updateStart) (.seq (bufLen w)
@@ -193,9 +193,9 @@ def output : List Instr :=
     [.mov .ecx (.mem (at_ .ebx (4 * k))), .store (at_ .eax (4 * k)) .ecx]
 
 def finalizeStart : List Instr :=
-  [.mov .eax (.mem (at_ .esp 20))] ++ save ++
-  [.mov .ebp (.reg .eax), .mov .ebx (.mem (at_ .esp 4)), .mov .eax (.mem (at_ .esp 8)),
-   .mov .ecx (.mem (at_ .esp 12))]
+  ([.mov .eax (.mem (at_ .esp 20))] : List Instr) ++ save ++
+  ([.mov .ebp (.reg .eax), .mov .ebx (.mem (at_ .esp 4)), .mov .eax (.mem (at_ .esp 8)),
+   .mov .ecx (.mem (at_ .esp 12))] : List Instr)
 
 def finalize (name : String) (code : Prog isa) : Prog isa :=
   .seq (.block finalizeStart) (.seq (bufLen w) (.seq (pad w) (.seq (compressLast w name code)
@@ -222,16 +222,16 @@ def ivWord (k : Nat) : BitVec 32 := (P.IV[k / (w / 32)]!).extractLsb' (32 * (k %
 low 32-bit word changes. -/
 def initState : List Instr :=
   (List.range (N w / 4)).flatMap (fun k => [.mov .ecx (.imm (ivWord P k)), .store (at_ .eax (4 * k)) .ecx]) ++
-  [.mov .ecx (.mem (at_ .eax 0)), .alu .xor .ecx (.imm 0x01010000), .mov .edx (.mem (at_ .esp 16)),
+  ([.mov .ecx (.mem (at_ .eax 0)), .alu .xor .ecx (.imm 0x01010000), .mov .edx (.mem (at_ .esp 16)),
    .shift .ror .edx 24, .alu .xor .ecx (.reg .edx), .alu .xor .ecx (.mem (at_ .esp 8)),
-   .store (at_ .eax 0) .ecx]
+   .store (at_ .eax 0) .ecx] : List Instr)
 
 /-- Zero the buffer and copy the `ecx ≥ 1` bytes of the key to it (with the
 state at `eax`), through `ebx`. -/
 def keyBlock : Prog isa :=
   .seq (.block (.mov .edx (.imm 0) :: ((List.range (B w / 4)).flatMap fun j =>
       [.store (at_ .eax (N w + 4 * j)) .edx]) ++
-      [.store (at_ .eax 0) .ebx, .mov .edx (.mem (at_ .esp 12))]))
+      ([.store (at_ .eax 0) .ebx, .mov .edx (.mem (at_ .esp 12))] : List Instr)))
     (.seq (copyLoop w .edx .eax .ecx .bl)
       (.block [.mov .eax (.mem (at_ .esp 4)), .mov .ebx (.mem (at_ .eax 0))]))
 

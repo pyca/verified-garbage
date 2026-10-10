@@ -111,13 +111,13 @@ def callInit (st : Reg) : Prog isa :=
 /-- A call of `finalize` on the state at `rdi` (set by `st`), with the count
 `count` (set by `count`) and the digest to `scratch + o`. -/
 def callFin (st count : List Instr) (o : Nat) : Prog isa :=
-  .seq (.block (st ++ count ++ scr .rdx o ++ [.mov .rcx (.reg .r15)])) (.call H.finN H.finC)
+  .seq (.block (st ++ count ++ scr .rdx o ++ ([.mov .rcx (.reg .r15)] : List Instr))) (.call H.finN H.finC)
 
 /-- Saving our caller's registers and setting up ours for HMAC's `finalize`:
 `rbx` = `inner`, `r12` = `outer`, `r13` = `out`, `r15` = `scratch`. -/
 def finPrologue : List Instr :=
-  H.save ++ [.mov .rbx (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rcx),
-    .mov .r15 (.reg .r8)]
+  H.save ++ ([.mov .rbx (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rcx),
+    .mov .r15 (.reg .r8)] : List Instr)
 
 end Stream
 
@@ -177,15 +177,15 @@ makes the state represent that block. -/
 
 /-- Saving our caller's registers, and setting up ours. -/
 def initPrologue : List Instr :=
-  H.stream.save ++ [.mov .rbx (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r15 (.reg .r8),
-    .mov .rbp (.reg .rdx), .mov .r13 (.reg .rcx)]
+  H.stream.save ++ ([.mov .rbx (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r15 (.reg .r8),
+    .mov .rbp (.reg .rdx), .mov .r13 (.reg .rcx)] : List Instr)
 
 /-- `ipad` into every byte of the inner buffer, a word at a time; then the
 byte index for the key, and whether there is a key byte at all. -/
 def ipadFill : List Instr :=
   .mov32 .rax (.imm 0x36363636) ::
     (List.range (H.P.B / 4)).map (fun k => .store32 (at_ .rbx (H.P.N + 4 * k)) .rax) ++
-    [.mov32 .r14 (.imm 0), .alu .test .r13 (.reg .r13)]
+    ([.mov32 .r14 (.imm 0), .alu .test .r13 (.reg .r13)] : List Instr)
 
 /-- The key bytes, XORed with `ipad`, over the first `key_len` bytes of the
 inner buffer. -/
@@ -203,7 +203,7 @@ def opadW (k : Nat) : List Instr :=
 function. -/
 def opadFill : List Instr :=
   (List.range (H.P.B / 4)).flatMap H.opadW ++
-    [.mov .rsi (.reg .rbx), .alu .add .rsi (.imm (BitVec.ofNat 32 H.P.N))]
+    ([.mov .rsi (.reg .rbx), .alu .add .rsi (.imm (BitVec.ofNat 32 H.P.N))] : List Instr)
 
 /-- Both padded keys into the buffers: the part of `init` between its calls. -/
 def initKeys : Prog isa :=
@@ -239,8 +239,8 @@ buffer, then the padding after it (`padLen`), and the block's address for
 the compression function. -/
 def finMid : List Instr :=
   copy32 .r12 0 .rbx 0 (H.P.N / 4) ++ copy32 .r15 H.stream.buf .rbx H.P.N (H.D / 4) ++
-    [.mov .rbp (.reg .rbx), .alu .add .rbp (.imm (BitVec.ofNat 32 H.P.N))] ++
-    Impl.Pbkdf2.X86_64.padLen H.P H.D ++ [.mov .rsi (.reg .rbp)]
+    ([.mov .rbp (.reg .rbx), .alu .add .rbp (.imm (BitVec.ofNat 32 H.P.N))] : List Instr) ++
+    Impl.Pbkdf2.X86_64.padLen H.P H.D ++ ([.mov .rsi (.reg .rbp)] : List Instr)
 
 /-- The MAC to `out`: the digest of the hash value, written there directly,
 or for a digest shorter than the hash value (`P.out` writes `N` bytes) into
@@ -304,21 +304,21 @@ def loadScr : List Instr := [.mov .r10 (.reg .r8), .mov .r8 (.mem (at_ .rsp 16))
 then compare the password's length with the block size. -/
 def entry : List Instr :=
   H.hh.save ++
-    [.mov .r15 (.reg .r8), .store (at_ .r15 H.outO) .r9, .mov32 .rax (.reg .r10),
+    ([.mov .r15 (.reg .r8), .store (at_ .r15 H.outO) .r9, .mov32 .rax (.reg .r10),
       .alu .sub .rax (.imm 1), .store (at_ .r15 H.cO) .rax,
       .mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx), .mov .r13 (.reg .rcx),
-      .alu .cmp .rbp (.imm (BitVec.ofNat 32 (H.P.B + 1)))]
+      .alu .cmp .rbp (.imm (BitVec.ofNat 32 (H.P.B + 1)))] : List Instr)
 
 /-- A password longer than a block: its digest, into `scratch`, is the key. -/
 def hashKey : Prog isa :=
   .seq (.block (scr .rdi H.stWO))
   (.seq (.call H.initN H.initC)
-  (.seq (.block (scr .rdi H.stWO ++ [.mov32 .rsi (.imm 0), .mov .rdx (.reg .rbx), .mov .rcx (.reg .rbp),
-      .mov .r8 (.reg .r15)]))
+  (.seq (.block (scr .rdi H.stWO ++ ([.mov32 .rsi (.imm 0), .mov .rdx (.reg .rbx), .mov .rcx (.reg .rbp),
+      .mov .r8 (.reg .r15)] : List Instr)))
   (.seq (.call H.updN H.updC)
-  (.seq (.block (scr .rdi H.stWO ++ [.mov .rsi (.reg .rbp)] ++ scr .rdx H.hkO ++ [.mov .rcx (.reg .r15)]))
+  (.seq (.block (scr .rdi H.stWO ++ ([.mov .rsi (.reg .rbp)] : List Instr) ++ scr .rdx H.hkO ++ ([.mov .rcx (.reg .r15)] : List Instr)))
   (.seq (.call H.finN H.finC)
-    (.block (scr .rdx H.hkO ++ [.mov32 .rcx (.imm (BitVec.ofNat 32 H.D))])))))))
+    (.block (scr .rdx H.hkO ++ ([.mov32 .rcx (.imm (BitVec.ofNat 32 H.D))] : List Instr))))))))
 
 /-- The key (at `rdx`, `rcx` bytes). -/
 def key : Prog isa :=
@@ -326,11 +326,11 @@ def key : Prog isa :=
 
 /-- HMAC's states for the key, then the inner one after the salt. -/
 def setup : Prog isa :=
-  .seq (.block (scr .rdi H.st0O ++ scr .rsi H.st1O ++ [.mov .r8 (.reg .r15)]))
+  .seq (.block (scr .rdi H.st0O ++ scr .rsi H.st1O ++ ([.mov .r8 (.reg .r15)] : List Instr)))
   (.seq (.call H.hmacInitN H.hmacInit)
   (.seq (copy .r15 H.st0O .r15 H.stSO H.S)
-  (.seq (.block (scr .rdi H.stSO ++ [.mov32 .rsi (.imm (BitVec.ofNat 32 H.P.B)), .mov .rdx (.reg .r12),
-      .mov .rcx (.reg .r13), .mov .r8 (.reg .r15)]))
+  (.seq (.block (scr .rdi H.stSO ++ ([.mov32 .rsi (.imm (BitVec.ofNat 32 H.P.B)), .mov .rdx (.reg .r12),
+      .mov .rcx (.reg .r13), .mov .r8 (.reg .r15)] : List Instr)))
     (.call H.updN H.updC))))
 
 /-- The registers of the loop over the blocks of the output. -/
@@ -346,21 +346,21 @@ def outLoop : Prog isa :=
 
 /-- `INT (i)`, and `update`'s arguments: the working state and `INT (i)`. -/
 def intArgs : List Instr :=
-  [.mov32 .rax (.reg .rbx), .bswap32 .rax, .store32 (at_ .r15 H.intO) .rax] ++
-    scr .rdi H.stWO ++ [.mov .rsi (.reg .rbp), .alu .add .rsi (.imm (BitVec.ofNat 32 H.P.B))] ++
-    scr .rdx H.intO ++ [.mov32 .rcx (.imm 4), .mov .r8 (.reg .r15)]
+  ([.mov32 .rax (.reg .rbx), .bswap32 .rax, .store32 (at_ .r15 H.intO) .rax] : List Instr) ++
+    scr .rdi H.stWO ++ ([.mov .rsi (.reg .rbp), .alu .add .rsi (.imm (BitVec.ofNat 32 H.P.B))] : List Instr) ++
+    scr .rdx H.intO ++ ([.mov32 .rcx (.imm 4), .mov .r8 (.reg .r15)] : List Instr)
 
 /-- HMAC's `finalize`'s arguments: the working state, the outer state, the
 bytes absorbed and `U`. -/
 def finArgs : List Instr :=
   scr .rdi H.stWO ++ scr .rsi H.st1O ++
-    [.mov .rdx (.reg .rbp), .alu .add .rdx (.imm (BitVec.ofNat 32 (H.P.B + 4)))] ++ scr .rcx H.uO ++
-    [.mov .r8 (.reg .r15)]
+    ([.mov .rdx (.reg .rbp), .alu .add .rdx (.imm (BitVec.ofNat 32 (H.P.B + 4)))] : List Instr) ++ scr .rcx H.uO ++
+    ([.mov .r8 (.reg .r15)] : List Instr)
 
 /-- `iterate`'s arguments: the key's states, `U`, `c - 1` and `T`. -/
 def iterArgs : List Instr :=
-  scr .rdi H.st0O ++ scr .rsi H.uO ++ [.mov .rdx (.mem (at_ .r15 H.cO))] ++ scr .rcx H.tO ++
-    [.mov .r8 (.reg .r15)]
+  scr .rdi H.st0O ++ scr .rsi H.uO ++ ([.mov .rdx (.mem (at_ .r15 H.cO))] : List Instr) ++ scr .rcx H.tO ++
+    ([.mov .r8 (.reg .r15)] : List Instr)
 
 /-- The bytes of `T` the output still needs: `min (r12, D)`. -/
 def outLen : Prog isa :=

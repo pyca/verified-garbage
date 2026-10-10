@@ -1,3 +1,5 @@
+import Mathlib.Data.Fintype.Fin
+import Mathlib.Tactic.FinCases
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedScaleBank
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Paired

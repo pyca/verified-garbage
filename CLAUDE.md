@@ -341,6 +341,15 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   Keep writes folded throughout the block; expand the final state once only
   if the postcondition needs it. Preserve this behavior in shared symbolic
   execution tactics so every caller benefits.
+* **Frame facts through writes:** prove `s'.mem = s.mem` (and the other
+  fields a frame keeps) for a state `s'` built by writes with the `RegUpd`
+  lemmas given their arguments, or `simp only [mem_setV, …]` (`upd_frame` on
+  AArch64), never `rfl` or a `.trans` chain of the lemmas with `_`
+  arguments: unification unfolds the writes into structure literals and
+  first tries to unify the states (seconds for a few vector instructions).
+  On AArch64, `Proof/Framework/AArch64/Seal.lean` makes `State.setV`
+  irreducible for elaboration in the modules that import it, which rules
+  this out; import it once a module's proofs no longer unfold `setV`.
 * **Addresses at offsets:** don't prove that ranges at `p + BitVec.ofNat 64 d`
   are separate, disjoint or contained, or their distances, with `bv_omega`
   (a second or more each, and a large term for the kernel): use `VG.Offset`
@@ -484,12 +493,13 @@ while measuring) before a declaration prints the heartbeats it uses
 against the 200000 budget.
 
 For allocation-based work comparisons without adding an import, use Lean's
-heartbeat profiler. From `lean/`, build the module first to obtain its setup
-file, which supplies the same options and imports as Lake:
+heartbeat profiler. From `lean/`, write the module's setup file, which
+supplies the same options and imports as Lake (`lake setup-file` builds the
+module's imports, not the module, and prints it; the build cache keeps none):
 
 ```sh
-lake build --log-level=warning +VerifiedGarbage.Proof.MlKem.Arm.Mul
-lake env lean --setup .lake/build/ir/VerifiedGarbage/Proof/MlKem/Arm/Mul.setup.json \
+lake setup-file --log-level=warning VerifiedGarbage/Proof/MlKem/Arm/Mul.lean > .lake/setup.json
+lake env lean --setup .lake/setup.json \
   -j1 -DElab.async=false -Dtrace.profiler=true \
   -Dtrace.profiler.useHeartbeats=true -Dtrace.profiler.threshold=1000000000 \
   -Dtrace.Elab.command=true -Dtrace.Kernel=true \

@@ -69,10 +69,10 @@ def preg16 : Nat → XReg
 def powers : List Instr :=
   mul .xmm12 .xmm6 .xmm3 ++ mul .xmm13 .xmm6 .xmm4 ++ mul .xmm14 .xmm6 .xmm5 ++
   mul .xmm15 .xmm6 .xmm6 ++
-  [.vop (.vinserti128 .xmm15 .xmm15 .xmm14 1), .vop (.vinserti128 .xmm14 .xmm13 .xmm12 1),
+  ([.vop (.vinserti128 .xmm15 .xmm15 .xmm14 1), .vop (.vinserti128 .xmm14 .xmm13 .xmm12 1),
    .vop (.vinserti128 .xmm13 .xmm6 .xmm5 1), .vop (.vinserti128 .xmm12 .xmm4 .xmm3 1),
    .vop (.vinserti128 .xmm0 .xmm0 .xmm0 1), .vop (.vinserti128 .xmm1 .xmm1 .xmm1 1),
-   .vop (.vmovdqa .l128 .xmm2 .xmm2)]
+   .vop (.vmovdqa .l128 .xmm2 .xmm2)] : List Instr)
 
 /-- Clear the products of both lanes. -/
 def zero : List Instr :=
@@ -94,14 +94,14 @@ def fold : List Instr :=
 
 /-- Each lane's product, reduced, into that lane of `d`. -/
 def reduce (d : XReg) : List Instr :=
-  [.vop (.vshift .psrldq .l256 .xmm11 .xmm9 8), .vop (.vbin .vpxor .l256 .xmm10 .xmm10 .xmm11),
-   .vop (.vshift .pslldq .l256 .xmm9 .xmm9 8), .vop (.vbin .vpxor .l256 .xmm8 .xmm8 .xmm9)] ++
-  fold ++ fold ++ [.vop (.vbin .vpxor .l256 d .xmm10 .xmm8)]
+  ([.vop (.vshift .psrldq .l256 .xmm11 .xmm9 8), .vop (.vbin .vpxor .l256 .xmm10 .xmm10 .xmm11),
+   .vop (.vshift .pslldq .l256 .xmm9 .xmm9 8), .vop (.vbin .vpxor .l256 .xmm8 .xmm8 .xmm9)] : List Instr) ++
+  fold ++ fold ++ ([.vop (.vbin .vpxor .l256 d .xmm10 .xmm8)] : List Instr)
 
 /-- Blocks `2k` and `2k + 1` into the lanes of `ymm7`, as field elements
 (with `Y` added to block 0), and their products with the powers in `p`. -/
 def ld (k : Nat) (p : XReg) : List Instr :=
-  [.vmovdquLoad .l256 .xmm7 (at_ .rdx (32 * k)), .vop (.vbin .vpshufb .l256 .xmm7 .xmm7 .xmm0)] ++
+  ([.vmovdquLoad .l256 .xmm7 (at_ .rdx (32 * k)), .vop (.vbin .vpshufb .l256 .xmm7 .xmm7 .xmm0)] : List Instr) ++
   (if k = 0 then [.vop (.vbin .vpxor .l256 .xmm7 .xmm7 .xmm2)] else []) ++ acc .xmm7 p
 
 /-- The `k`-th load of an eight-block body. -/
@@ -126,7 +126,7 @@ def mulPair (d p : XReg) : List Instr := zero ++ acc p .xmm7 ++ reduce d
 
 /-- `H'⁹`–`H'¹⁶`, paired in the lanes of `ymm3`–`ymm6`. -/
 def powers16 : List Instr :=
-  [.vop (.vinserti128 .xmm7 .xmm15 .xmm15 1)] ++ mulPair .xmm3 .xmm15 ++ mulPair .xmm4 .xmm14 ++
+  ([.vop (.vinserti128 .xmm7 .xmm15 .xmm15 1)] : List Instr) ++ mulPair .xmm3 .xmm15 ++ mulPair .xmm4 .xmm14 ++
   mulPair .xmm5 .xmm13 ++ mulPair .xmm6 .xmm12
 
 def next16 : List Instr :=
@@ -145,7 +145,7 @@ def restore : List Instr :=
 /-- With eight blocks or more (from `ghash`, 32 or more): the powers, sixteen blocks
 at a time, then eight. -/
 def wide : Prog isa :=
-  .seq (.block (powers ++ [.alu .cmp .rcx (.imm 16)]))
+  .seq (.block (powers ++ ([.alu .cmp .rcx (.imm 16)] : List Instr)))
     (.seq (.ite .b (.block []) (.seq (.block powers16) (.seq (.loop (.block body16) .ae) (.block restore))))
       (.seq (.block [.alu .cmp .rcx (.imm 8)]) (.ite .b (.block []) (.loop (.block body8) .ae))))
 

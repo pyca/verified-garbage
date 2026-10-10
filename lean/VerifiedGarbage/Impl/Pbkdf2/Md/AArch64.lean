@@ -99,7 +99,7 @@ def callInit (st : Reg) : Prog isa :=
 /-- A call of `finalize` on the state at `x0` (set by `st`), with the count
 `count` (set by `count`) and the digest to `scratch + o`. -/
 def callFin (st count : List Instr) (o : Nat) : Prog isa :=
-  .seq (.block (st ++ count ++ [.addImm .x .x2 .x23 o, mov .x3 .x23])) (.call H.finN H.finC)
+  .seq (.block (st ++ count ++ ([.addImm .x .x2 .x23 o, mov .x3 .x23] : List Instr))) (.call H.finN H.finC)
 
 /-- Saving our caller's registers and setting up ours for HMAC's `finalize`:
 `x19` = `inner`, `x20` = `outer`, `x21` = `out`, `x23` = `scratch`. -/
@@ -169,8 +169,8 @@ def initPrologue : List Instr :=
 /-- `ipad` into every byte of the inner buffer, a word at a time (`x14` =
 `ipad` in every byte of its low word); then the byte index for the key. -/
 def ipadFill : List Instr :=
-  [.movz .w .x14 0x3636 0, .movk .w .x14 0x3636 1] ++
-    (List.range (H.P.B / 4)).map (fun k => .str .w .x14 .x19 (H.P.N + 4 * k)) ++ [.movz .x .x10 0 0]
+  ([.movz .w .x14 0x3636 0, .movk .w .x14 0x3636 1] : List Instr) ++
+    (List.range (H.P.B / 4)).map (fun k => .str .w .x14 .x19 (H.P.N + 4 * k)) ++ ([.movz .x .x10 0 0] : List Instr)
 
 /-- The key bytes, XORed with `ipad`, over the first `key_len` bytes of the
 inner buffer. -/
@@ -187,8 +187,8 @@ def opadW (k : Nat) : List Instr :=
 /-- The outer buffer, and the inner block's address for the compression
 function. -/
 def opadFill : List Instr :=
-  [.movz .w .x15 0x6a6a 0, .movk .w .x15 0x6a6a 1] ++ (List.range (H.P.B / 4)).flatMap H.opadW ++
-    [.addImm .x .x1 .x19 H.P.N]
+  ([.movz .w .x15 0x6a6a 0, .movk .w .x15 0x6a6a 1] : List Instr) ++ (List.range (H.P.B / 4)).flatMap H.opadW ++
+    ([.addImm .x .x1 .x19 H.P.N] : List Instr)
 
 /-- Both padded keys into the buffers: the part of `init` between its calls. -/
 def initKeys : Prog isa :=
@@ -342,8 +342,8 @@ def initArgs : List Instr := [.addImm .x .x0 .x23 H.st0O, .addImm .x .x1 .x23 H.
 /-- The inner state copied, and `update`'s arguments: the copy and the salt. -/
 def saltArgs : List Instr :=
   copy32 .x23 H.st0O .x23 H.stSO (H.S / 4) ++
-    [.addImm .x .x0 .x23 H.stSO, .movz .x .x1 (BitVec.ofNat 16 H.P.B) 0, mov .x2 .x21, mov .x3 .x22,
-      mov .x4 .x23]
+    ([.addImm .x .x0 .x23 H.stSO, .movz .x .x1 (BitVec.ofNat 16 H.P.B) 0, mov .x2 .x21, mov .x3 .x22,
+      mov .x4 .x23] : List Instr)
 
 /-- HMAC's states for the key, then the inner one after the salt. -/
 def setup : Prog isa :=
@@ -367,8 +367,8 @@ def outLoop : Prog isa :=
 arguments: the working state and `INT (i)`. -/
 def intArgs : List Instr :=
   copy32 .x23 H.stSO .x23 H.stWO (H.S / 4) ++
-    [.rev32 .x9 .x19, .str .w .x9 .x23 H.intO, .addImm .x .x0 .x23 H.stWO, .addImm .x .x1 .x20 H.P.B,
-      .addImm .x .x2 .x23 H.intO, .movz .x .x3 4 0, mov .x4 .x23]
+    ([.rev32 .x9 .x19, .str .w .x9 .x23 H.intO, .addImm .x .x0 .x23 H.stWO, .addImm .x .x1 .x20 H.P.B,
+      .addImm .x .x2 .x23 H.intO, .movz .x .x3 4 0, mov .x4 .x23] : List Instr)
 
 /-- HMAC's `finalize`'s arguments: the working state, the outer state, the
 bytes absorbed and `U`. -/
@@ -380,8 +380,8 @@ def finArgs : List Instr :=
 `T`. -/
 def iterArgs : List Instr :=
   copy32 .x23 H.uO .x23 H.tO (H.D / 4) ++
-    [.addImm .x .x0 .x23 H.st0O, .addImm .x .x1 .x23 H.uO, .ldr .x .x2 .x23 H.cO, .addImm .x .x3 .x23 H.tO,
-      mov .x4 .x23]
+    ([.addImm .x .x0 .x23 H.st0O, .addImm .x .x1 .x23 H.uO, .ldr .x .x2 .x23 H.cO, .addImm .x .x3 .x23 H.tO,
+      mov .x4 .x23] : List Instr)
 
 /-- The bytes of `T` the output still needs: `min (x21, D)`, from the sign of
 `x21 - D` (`x21` is below 2⁶³). -/

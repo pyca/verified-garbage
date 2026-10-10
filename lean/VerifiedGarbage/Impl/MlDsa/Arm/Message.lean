@@ -79,11 +79,11 @@ def stkSaves : List (Reg × Nat) := [(.r0, fCtxLen), (.r1, fRnd), (.r2, fSig), (
 into `r0`–`r3` (from the offsets `ss`) and save them; and store
 `0 ‖ ctx_len`. -/
 def enter (so : Nat) (p : Params) (ss : List (Reg × Nat)) : List Instr :=
-  [.ldrSp .r12 so, .str .r7 .r12 0, .movw .r7 (BitVec.ofNat 16 (oE p)),
-    .movt .r7 (BitVec.ofNat 16 (oE p / 65536)), .dp .add .r7 .r12 (.reg .r7), .ldr .r12 .r12 0] ++
+  ([.ldrSp .r12 so, .str .r7 .r12 0, .movw .r7 (BitVec.ofNat 16 (oE p)),
+    .movt .r7 (BitVec.ofNat 16 (oE p / 65536)), .dp .add .r7 .r12 (.reg .r7), .ldr .r12 .r12 0] : List Instr) ++
   regSaves.map (fun a => .str a.1 .r7 a.2) ++ ss.map (fun a => .ldrSp a.1 a.2) ++
   stkSaves.map (fun a => .str a.1 .r7 a.2) ++
-  [.mov .r12 (.imm 0), .strb .r12 .r7 oHdr, .strb .r0 .r7 (oHdr + 1)]
+  ([.mov .r12 (.imm 0), .strb .r12 .r7 oHdr, .strb .r0 .r7 (oHdr + 1)] : List Instr)
 
 /-- Restore `lr`, then `r7`. -/
 def leave : List Instr := [.ldr .lr .r7 oLR, .ldr .r7 .r7 oR7]

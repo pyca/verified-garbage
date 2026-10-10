@@ -65,7 +65,7 @@ def cfToRbp : Instr := .alu .sbb .rbp (.reg .rbp)
 /-- `do body; r14 += 1 while r14 ≠ r12`, starting at `r14 = start`. -/
 def wordLoop (start : Nat) (body : List Instr) : Prog isa :=
   .seq (.block [.mov .r14 (.imm (BitVec.ofNat 32 start))])
-    (.loop (.block (body ++ [.alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r12)])) .ne)
+    (.loop (.block (body ++ ([.alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r12)] : List Instr))) .ne)
 
 /-- Load the bases of `o`, `a`, `b`, `m`, the accumulator and the temporary
 from the header: `rbx`, `r11`, `r9`, `r10`, `r8`, `rsi`. All loads from the
@@ -204,9 +204,9 @@ def setBase (j : Nat) : List Instr := [.store (hdr (sArr j)) .rdx, .alu .add .rd
 /-- The arrays' bases, `w + 2` words apart after the header, into slots
 `sArr 0` to `sArr 7`; `w` in `r12`. -/
 def setBases : List Instr :=
-  [.mov .rax (.reg .r12), .alu .add .rax (.imm 2), .alu .add .rax (.reg .rax),
+  ([.mov .rax (.reg .r12), .alu .add .rax (.imm 2), .alu .add .rax (.reg .rax),
     .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .mov .rdx (.reg .rdi),
-    .alu .add .rdx (.imm (BitVec.ofNat 32 hdrBytes))] ++ (List.range 8).flatMap setBase
+    .alu .add .rdx (.imm (BitVec.ofNat 32 hdrBytes))] : List Instr) ++ (List.range 8).flatMap setBase
 
 /-- A step of Newton's iteration: `rcx := rcx (2 - rbx rcx)`. -/
 def newton : List Instr :=
@@ -217,8 +217,8 @@ def newton : List Instr :=
 iteration `x ↦ x (2 - m₀ x)` five times from `x = m₀`, which is right
 modulo 8, then the negation. -/
 def minv : List Instr :=
-  [.mov .rcx (.reg .rbx)] ++ newton ++ newton ++ newton ++ newton ++ newton ++
-  [.mov32 .r15 (.imm 0), .alu .sub .r15 (.reg .rcx)]
+  ([.mov .rcx (.reg .rbx)] : List Instr) ++ newton ++ newton ++ newton ++ newton ++ newton ++
+  ([.mov32 .r15 (.imm 0), .alu .sub .r15 (.reg .rcx)] : List Instr)
 
 /-- `[o] := 0` but its word `i`, which is `rdx`. `w` in `r12`. -/
 def setWord (o : Nat) (i : Reg) : Prog isa :=
@@ -261,12 +261,12 @@ def mm (o a b : Nat) : Prog isa := montMul aN aAcc aTmp o a b
 /-- Save the callee-saved registers and the arguments in the header, with
 the working space's base in `rdi`. -/
 def entry : List Instr :=
-  [.mov .r11 (.mem { base := .rsp, disp := 24 })] ++
+  ([.mov .r11 (.mem { base := .rsp, disp := 24 })] : List Instr) ++
   (saved.zipIdx.map fun (r, i) => .store { base := .r11, disp := 8 * i } r) ++
-  [.store { base := .r11, disp := 8 * sOut } .rdi, .store { base := .r11, disp := 8 * sN } .rdx,
+  ([.store { base := .r11, disp := 8 * sOut } .rdi, .store { base := .r11, disp := 8 * sN } .rdx,
     .store { base := .r11, disp := 8 * sK } .rcx, .store { base := .r11, disp := 8 * sE } .r8,
     .store { base := .r11, disp := 8 * sElen } .r9, .mov .rax (.mem { base := .rsp, disp := 8 }),
-    .store { base := .r11, disp := 8 * sIn } .rax, .mov .rdi (.reg .r11)]
+    .store { base := .r11, disp := 8 * sIn } .rax, .mov .rdi (.reg .r11)] : List Instr)
 
 /-- Restore the callee-saved registers. -/
 def exit : List Instr := saved.zipIdx.map fun (r, i) => .mov r (.mem (hdr i))
@@ -320,9 +320,9 @@ def expLoop : Prog isa :=
 /-- The computation, once `m` is known valid. -/
 def main : Prog isa := seqs [
   -- `w`, the bases, `m` and the input.
-  .block ([.mov .rcx (.mem (hdr sK)), .mov .r12 (.reg .rcx), .alu .add .r12 (.imm 7),
-    .shift .shr .r12 3, .store (hdr sW) .r12] ++ setBases ++
-    [.mov .rsi (.mem (hdr sN)), .mov .rbx (.mem (hdr (sArr aN)))]),
+  .block (([.mov .rcx (.mem (hdr sK)), .mov .r12 (.reg .rcx), .alu .add .r12 (.imm 7),
+    .shift .shr .r12 3, .store (hdr sW) .r12] : List Instr) ++ setBases ++
+    ([.mov .rsi (.mem (hdr sN)), .mov .rbx (.mem (hdr (sArr aN)))] : List Instr)),
   loadBE,
   .block [.mov .rsi (.mem (hdr sIn)), .mov .rcx (.mem (hdr sK)), .mov .rbx (.mem (hdr (sArr aX)))],
   loadBE,
@@ -332,8 +332,8 @@ def main : Prog isa := seqs [
   wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)),
     cfToRbp],
   -- `-m⁻¹`, and the number 1.
-  .block ([.store (hdr sMask) .rbp, .mov .rbx (.mem (at0 .r10))] ++ minv ++
-    [.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)]),
+  .block (([.store (hdr sMask) .rbp, .mov .rbx (.mem (at0 .r10))] : List Instr) ++ minv ++
+    ([.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)] : List Instr)),
   setWord aOne .rcx,
   -- `2^(b - 1)` for the bit length `b` of `m`, into the array of `R² mod m`.
   .block [.mov .rax (.mem (ix .r10 .r12 (-8)))],
@@ -350,11 +350,11 @@ def main : Prog isa := seqs [
   .block [.mov .rbx (.mem (hdr (sArr aY))), .mov .rsi (.mem (hdr sOut)), .mov .rcx (.mem (hdr sK)),
     .mov .r15 (.mem (hdr sMask))],
   storeBE,
-  .block ([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] ++ exit)]
+  .block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)]
 
 /-- `vg_rsa_public`. -/
 def code : Prog isa :=
-  .seq (.block (entry ++ [.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] ++ invalid))
+  .seq (.block (entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
     (.ite .ne fail main)
 
 end Public

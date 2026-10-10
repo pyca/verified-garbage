@@ -158,13 +158,13 @@ def restore : List Instr := saved.map fun (r, d) => .ldr r .r3 d
 registers, and store the flag word `0 - ((0 - last) | last) >> 31` and zero.
 The stack arguments are read before the registers are saved, through `r12`. -/
 def setup : List Instr :=
-  [.ldrSp .r3 12, .ldrSp .r12 0, .str .r12 .r3 ctrLo, .ldrSp .r12 4, .str .r12 .r3 (ctrLo + 4),
-   .ldrSp .r12 8] ++ save ++
-  [.mov .r6 (.imm 0), .str .r6 .r3 ctrHi, .str .r6 .r3 (ctrHi + 4), .str .r6 .r3 zeroOff,
+  ([.ldrSp .r3 12, .ldrSp .r12 0, .str .r12 .r3 ctrLo, .ldrSp .r12 4, .str .r12 .r3 (ctrLo + 4),
+   .ldrSp .r12 8] : List Instr) ++ save ++
+  ([.mov .r6 (.imm 0), .str .r6 .r3 ctrHi, .str .r6 .r3 (ctrHi + 4), .str .r6 .r3 zeroOff,
    .str .r6 .r3 (zeroOff + 4),
    .dp .sub .r8 .r6 (.reg .r12), .dp .orr .r8 .r8 (.reg .r12),
    .mov .r8 (.shifted .r8 .lsr 31), .dp .sub .r8 .r6 (.reg .r8),
-   .str .r8 .r3 flagOff, .str .r8 .r3 (flagOff + 4), .cmp .r2 (.imm 0)]
+   .str .r8 .r3 flagOff, .str .r8 .r3 (flagOff + 4), .cmp .r2 (.imm 0)] : List Instr)
 
 def compress : Prog isa :=
   .seq (.block setup) (.seq (.ite .eq (.block []) (.loop body .ne)) (.block restore))

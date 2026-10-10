@@ -66,20 +66,20 @@ def saved : List (Reg × Nat) := [(.ebx, 116), (.esi, 120), (.edi, 124), (.ebp, 
 /-! ## `init(state, key)` -/
 
 def init : Prog isa := .block (
-  [.mov .eax (.mem (at_ .esp 4)), .mov .ecx (.mem (at_ .esp 8))] ++
+  ([.mov .eax (.mem (at_ .esp 4)), .mov .ecx (.mem (at_ .esp 8))] : List Instr) ++
   (List.range 8).flatMap (fun j => [.mov .edx (.mem (at_ .ecx (4 * j))), .store (at_ .eax (24 + 4 * j)) .edx]) ++
-  [.mov .edx (.imm 0)] ++ (List.range 6).map fun j => .store (at_ .eax (4 * j)) .edx)
+  ([.mov .edx (.imm 0)] : List Instr) ++ (List.range 6).map fun j => .store (at_ .eax (4 * j)) .edx)
 
 /-! ## Common parts -/
 
 /-- `state` into `edi`, saving `ebx, esi, edi, ebp` in it (via `eax`). -/
 def save : List Instr :=
-  .mov .eax (.mem (at_ .esp 4)) :: saved.map (fun (r, d) => .store (at_ .eax d) r) ++ [.mov .edi (.reg .eax)]
+  .mov .eax (.mem (at_ .esp 4)) :: saved.map (fun (r, d) => .store (at_ .eax d) r) ++ ([.mov .edi (.reg .eax)] : List Instr)
 
 /-- Restore them (via `eax`, from `edi`), and zero the word that held `ebp`. -/
 def restore : List Instr :=
   .mov .eax (.reg .edi) :: saved.map (fun (r, d) => .mov r (.mem (at_ .eax d))) ++
-    [.mov .ecx (.imm 0), .store (at_ .eax 20) .ecx]
+    ([.mov .ecx (.imm 0), .store (at_ .eax 20) .ecx] : List Instr)
 
 /-- `r0` clamped. -/
 def clamp0 : List Instr :=
@@ -105,7 +105,7 @@ def addWord (b : Reg) (d i : Nat) : List Instr :=
 /-- `h += m + pad · 2¹²⁸` for the block `m` at `b + d`. -/
 def addBlock (b : Reg) (d : Nat) (pad : BitVec 32) : List Instr :=
   addWord b d 0 ++ addWord b d 1 ++ addWord b d 2 ++ addWord b d 3 ++
-  [.mov .eax (.mem (at_ .edi (hOff 4))), .alu .adc .eax (.imm pad), .store (at_ .edi (hOff 4)) .eax]
+  ([.mov .eax (.mem (at_ .edi (hOff 4))), .alu .adc .eax (.imm pad), .store (at_ .edi (hOff 4)) .eax] : List Instr)
 
 /-- `ebx:ebp += hi · c`, the coefficient `c` at `[edi + off]`. -/
 def mac (i off : Nat) : List Instr :=
@@ -123,20 +123,20 @@ def nterms (k : Nat) : Nat := if k = 0 then 4 else 5
 moved to `ebx` as the carry into `d(k+1)`. -/
 def dsum (k : Nat) : List Instr :=
   (List.range (nterms k)).flatMap (fun i => mac i (coef k i)) ++
-  [.store (at_ .edi (tOff k)) .ebx, .mov .ebx (.reg .ebp), .mov .ebp (.imm 0)]
+  ([.store (at_ .edi (tOff k)) .ebx, .mov .ebx (.reg .ebp), .mov .ebp (.imm 0)] : List Instr)
 
 /-- `d0, …, d3`, then `d4 = h4 r0` plus the carry, in `ebx`. -/
 def products : List Instr :=
-  [.mov .ebx (.imm 0), .mov .ebp (.imm 0)] ++ (List.range 4).flatMap dsum ++ mac 4 (rOff 0)
+  ([.mov .ebx (.imm 0), .mov .ebp (.imm 0)] : List Instr) ++ (List.range 4).flatMap dsum ++ mac 4 (rOff 0)
 
 /-- `h = t0 + 2³² t1 + 2⁶⁴ t2 + 2⁹⁶ t3 + 2¹²⁸ (d4 mod 4) + 5 ⌊d4 / 4⌋`. -/
 def carry : List Instr :=
-  [.mov .eax (.reg .ebx), .shift .shr .eax 2, .mov .ecx (.reg .eax), .alu .add .eax (.reg .eax),
+  ([.mov .eax (.reg .ebx), .shift .shr .eax 2, .mov .ecx (.reg .eax), .alu .add .eax (.reg .eax),
     .alu .add .eax (.reg .eax), .alu .add .eax (.reg .ecx), .alu .and .ebx (.imm 3),
-    .alu .add .eax (.mem (at_ .edi (tOff 0))), .store (at_ .edi (hOff 0)) .eax] ++
+    .alu .add .eax (.mem (at_ .edi (tOff 0))), .store (at_ .edi (hOff 0)) .eax] : List Instr) ++
   (List.range 3).flatMap (fun k => [.mov .eax (.mem (at_ .edi (tOff (k + 1)))), .alu .adc .eax (.imm 0),
     .store (at_ .edi (hOff (k + 1))) .eax]) ++
-  [.alu .adc .ebx (.imm 0), .store (at_ .edi (hOff 4)) .ebx]
+  ([.alu .adc .ebx (.imm 0), .store (at_ .edi (hOff 4)) .ebx] : List Instr)
 
 /-- Absorbing the block at `b + d`, with `pad = 1` for a whole block (the
 `0x01` byte appended to it is `2¹²⁸`) and `pad = 0` for a padded last block
@@ -151,11 +151,11 @@ def absorb (pad : BitVec 32) : List Instr := absorbAt .esi 0 pad
 /-- `g = h + 5`: its low words stored at `tOff`, its top word in `edx`, and
 the mask `-⌊g / 2¹³⁰⌋` in `ebp`. -/
 def plus5 : List Instr :=
-  [.mov .eax (.mem (at_ .edi (hOff 0))), .alu .add .eax (.imm 5), .store (at_ .edi (tOff 0)) .eax] ++
+  ([.mov .eax (.mem (at_ .edi (hOff 0))), .alu .add .eax (.imm 5), .store (at_ .edi (tOff 0)) .eax] : List Instr) ++
   (List.range 3).flatMap (fun k => [.mov .eax (.mem (at_ .edi (hOff (k + 1)))), .alu .adc .eax (.imm 0),
     .store (at_ .edi (tOff (k + 1))) .eax]) ++
-  [.mov .eax (.mem (at_ .edi (hOff 4))), .alu .adc .eax (.imm 0), .mov .edx (.reg .eax),
-    .shift .shr .eax 2, .mov .ebp (.imm 0), .alu .sub .ebp (.reg .eax)]
+  ([.mov .eax (.mem (at_ .edi (hOff 4))), .alu .adc .eax (.imm 0), .mov .edx (.reg .eax),
+    .shift .shr .eax 2, .mov .ebp (.imm 0), .alu .sub .ebp (.reg .eax)] : List Instr)
 
 /-- Word `k < 4` of `h` replaced by that of `g` where the mask is set. -/
 def selectWord (k : Nat) : List Instr :=
@@ -183,11 +183,11 @@ def atEnd : List Instr :=
     .alu .add .eax (.reg .ecx), .alu .cmp .eax (.reg .esi)]
 
 def body : Prog isa :=
-  .block (absorb 1 ++ [.alu .add .esi (.imm 16)] ++ atEnd)
+  .block (absorb 1 ++ ([.alu .add .esi (.imm 16)] : List Instr) ++ atEnd)
 
 def blocks : Prog isa :=
-  .seq (.block (setup ++ [.mov .esi (.mem (at_ .esp 8)), .mov .ecx (.mem (at_ .esp 12)),
-    .alu .test .ecx (.reg .ecx)]))
+  .seq (.block (setup ++ ([.mov .esi (.mem (at_ .esp 8)), .mov .ecx (.mem (at_ .esp 12)),
+    .alu .test .ecx (.reg .ecx)] : List Instr)))
   (.seq (.ite .e (.block []) (.loop body .ne))
     (.block (reduce ++ restore)))
 
@@ -230,18 +230,18 @@ def fill : Prog isa :=
 
 /-- Absorbs the whole blocks of the data. -/
 def whole : Prog isa :=
-  .seq (.block (left ++ [.alu .cmp .eax (.imm 16)]))
+  .seq (.block (left ++ ([.alu .cmp .eax (.imm 16)] : List Instr)))
     (.ite .b (.block [])
-      (.loop (.block (absorb 1 ++ [.alu .add .esi (.imm 16)] ++ left ++ [.alu .cmp .eax (.imm 16)])) .ae))
+      (.loop (.block (absorb 1 ++ ([.alu .add .esi (.imm 16)] : List Instr) ++ left ++ ([.alu .cmp .eax (.imm 16)] : List Instr))) .ae))
 
 /-- Copies the rest of the data into the (empty) buffer. -/
 def rest : Prog isa :=
-  .seq (.block (left ++ [.alu .test .eax (.reg .eax)]))
+  .seq (.block (left ++ ([.alu .test .eax (.reg .eax)] : List Instr)))
     (.ite .e (.block []) (.seq (.block [.mov .edx (.reg .edi)]) copyIn))
 
 def update : Prog isa :=
-  .seq (.block (setup ++ [.mov .esi (.mem (at_ .esp 16)), .mov .edx (.mem (at_ .esp 8)),
-    .alu .and .edx (.imm 15), .alu .test .edx (.reg .edx)]))
+  .seq (.block (setup ++ ([.mov .esi (.mem (at_ .esp 16)), .mov .edx (.mem (at_ .esp 8)),
+    .alu .and .edx (.imm 15), .alu .test .edx (.reg .edx)] : List Instr)))
   (.seq (.ite .e (.block []) fill)
   (.seq whole
   (.seq rest
@@ -262,8 +262,8 @@ def zeroLoop : Prog isa :=
 def lastBlock : Prog isa :=
   .seq (.block [.mov .eax (.imm 0), .mov .ecx (.reg .edx), .alu .add .ecx (.reg .edi)])
   (.seq zeroLoop
-    (.block ([.mov .eax (.imm 1), .mov .ecx (.mem (at_ .esp 8)), .alu .and .ecx (.imm 15),
-      .alu .add .ecx (.reg .edi), .store8 (at_ .ecx 56) .al] ++ absorbAt .edi 56 0)))
+    (.block (([.mov .eax (.imm 1), .mov .ecx (.mem (at_ .esp 8)), .alu .and .ecx (.imm 15),
+      .alu .add .ecx (.reg .edi), .store8 (at_ .ecx 56) .al] : List Instr) ++ absorbAt .edi 56 0)))
 
 /-- The tag, `h + s` modulo `2¹²⁸`, into `out`. -/
 def addS : List Instr :=
@@ -272,8 +272,8 @@ def addS : List Instr :=
     .alu (if k = 0 then .add else .adc) .eax (.mem (at_ .edi (40 + 4 * k))), .store (at_ .esi (4 * k)) .eax]
 
 def finalize : Prog isa :=
-  .seq (.block (setup ++ [.mov .edx (.mem (at_ .esp 8)), .alu .and .edx (.imm 15),
-    .alu .test .edx (.reg .edx)]))
+  .seq (.block (setup ++ ([.mov .edx (.mem (at_ .esp 8)), .alu .and .edx (.imm 15),
+    .alu .test .edx (.reg .edx)] : List Instr)))
   (.seq (.ite .e (.block []) lastBlock)
     (.block (reduce ++ addS ++ restore)))
 

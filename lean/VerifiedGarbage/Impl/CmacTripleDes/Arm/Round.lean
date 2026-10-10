@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.CmacTripleDes.Index
+import VerifiedGarbage.Impl.CmacTripleDes.Sbox
 import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
@@ -99,9 +100,9 @@ def boxOf (h j : Nat) : Nat := 7 - 4 * h - j
 def leaf (h e : Nat) : Nat :=
   (List.range 4).foldl (fun c j =>
     let i := boxOf h j
-    let v := Spec.TripleDes.sBox i (BitVec.ofNat 6 e)
+    let v := sboxOut i (e % 64)
     (List.range 4).foldl (fun c b =>
-      if v.getLsbD b then c ||| 2 ^ (6 * j + off i b) else c) c) 0
+      if v.testBit b then c ||| 2 ^ (6 * j + off i b) else c) c) 0
 
 /-- The registers of the multiplexer tree: level `l`'s second operand is
 in `muxReg l`. -/

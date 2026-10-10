@@ -65,11 +65,11 @@ def chunk (sve : Bool) : Prog isa := .seq prepare (.seq (phase sve .x26)
 def check : List Instr :=
   [.lsr .x .x5 .x2 6,.subImm .x .x5 .x5 8,.lsr .x .x5 .x5 63]
 
-def enter : List Instr := Mixed5.enter ++ [.strq .v8 .x3 128,.strq .v9 .x3 144]
-def leave : List Instr := [.ldrq .v8 .x3 128,.ldrq .v9 .x3 144] ++ Mixed5.leave
+def enter : List Instr := Mixed5.enter ++ ([.strq .v8 .x3 128,.strq .v9 .x3 144] : List Instr)
+def leave : List Instr := ([.ldrq .v8 .x3 128,.ldrq .v9 .x3 144] : List Instr) ++ Mixed5.leave
 
 def next : List Instr := Mixed5.counter 8 ++
-  [.addImm .x .x1 .x1 512,.subImm .x .x2 .x2 512] ++ check
+  ([.addImm .x .x1 .x1 512,.subImm .x .x2 .x2 512] : List Instr) ++ check
 
 def body (sve : Bool) : Prog isa := .seq (chunk sve) (.block next)
 

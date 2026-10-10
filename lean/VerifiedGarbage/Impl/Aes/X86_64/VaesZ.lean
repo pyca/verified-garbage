@@ -31,10 +31,10 @@ def roundZ (k : XReg) (regs : List XReg) (j : Nat) : List Instr := keyOpZ k regs
 round keys in `k`, and the instructions `g j` after round `j`. -/
 def aesZ (k : XReg) (regs : List XReg) (g : Nat → List Instr := fun _ => []) : Prog isa :=
   .seq (.block (keyOpZ k regs .vpxord (at_ .rdi 0) ++
-      (List.range 9).flatMap (fun j => roundZ k regs (j + 1) ++ g (j + 1)) ++ [.alu .cmp .rsi (.imm 10)]))
+      (List.range 9).flatMap (fun j => roundZ k regs (j + 1) ++ g (j + 1)) ++ ([.alu .cmp .rsi (.imm 10)] : List Instr)))
     (.seq
       (.ite .e (.block [])
-        (.seq (.block (roundZ k regs 10 ++ roundZ k regs 11 ++ [.alu .cmp .rsi (.imm 12)]))
+        (.seq (.block (roundZ k regs 10 ++ roundZ k regs 11 ++ ([.alu .cmp .rsi (.imm 12)] : List Instr)))
           (.ite .e (.block []) (.block (roundZ k regs 12 ++ roundZ k regs 13)))))
       (.block (keyOpZ k regs .vaesenclast (at_ .r10 0))))
 
@@ -42,13 +42,13 @@ def aesZ (k : XReg) (regs : List XReg) (g : Nat → List Instr := fun _ => []) :
 byte-reversed with the mask in `m`, and the counters advance by four (`i`). -/
 def ctrsZ (c m i : XReg) : List XReg → List Instr
   | [] => []
-  | b :: bs => [.zop (.zbin .vpshufb b c m), .zop (.zbin .vpaddd c c i)] ++ ctrsZ c m i bs
+  | b :: bs => ([.zop (.zbin .vpshufb b c m), .zop (.zbin .vpaddd c c i)] : List Instr) ++ ctrsZ c m i bs
 
 /-- XOR block register `i` into the four data blocks at `base + 64 (j + i)`,
 through `t`. -/
 def xorDataZ (t : XReg) (base : Reg) : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => [.vmovdqu32Load t (at_ base (64 * j)), .zop (.zbin .vpxord b b t),
-      .vmovdqu32Store (at_ base (64 * j)) b] ++ xorDataZ t base bs (j + 1)
+  | b :: bs, j => ([.vmovdqu32Load t (at_ base (64 * j)), .zop (.zbin .vpxord b b t),
+      .vmovdqu32Store (at_ base (64 * j)) b] : List Instr) ++ xorDataZ t base bs (j + 1)
 
 end VG.Impl.Aes.X86_64.VaesZ

@@ -82,11 +82,11 @@ moves up a word, and `ebp` is compared with `edi + 4N` (the end of the
 loop). -/
 def row (M : Mod) (acc a b : Nat) : List Instr :=
   let N := words M
-  [.mov .ecx (.mem (at_ .ebp a))] ++ mulRow acc b N ++
+  ([.mov .ecx (.mem (at_ .ebp a))] : List Instr) ++ mulRow acc b N ++
   redDigit M acc ++
     redRow M acc ++
-  [.alu .add .ebp (.imm 4), .mov .edx (.reg .edi), .alu .add .edx (.imm (BitVec.ofNat 32 (4 * N))),
-    .alu .cmp .ebp (.reg .edx)]
+  ([.alu .add .ebp (.imm 4), .mov .edx (.reg .edi), .alu .add .edx (.imm (BitVec.ofNat 32 (4 * N))),
+    .alu .cmp .ebp (.reg .edx)] : List Instr)
 
 /-- `[acc]`, `k` words, cleared (through `eax`). -/
 def zeros (acc k : Nat) : List Instr :=
@@ -110,13 +110,13 @@ reduced modulo `m` into `[o]`: the difference with `m` is computed into
 `[tmp]`; `eax` is all ones if it did not borrow, and selects it. -/
 def csub (M : Mod) (src o : Nat) : List Instr :=
   diffs M src ++
-  [.mov .eax (.mem (sc (src + 4 * words M))), .alu .sbb .eax (.imm 0), .alu .sbb .eax (.reg .eax),
-    .alu .xor .eax (.imm (-1))] ++
+  ([.mov .eax (.mem (sc (src + 4 * words M))), .alu .sbb .eax (.imm 0), .alu .sbb .eax (.reg .eax),
+    .alu .xor .eax (.imm (-1))] : List Instr) ++
   selects M src o
 
 /-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`). -/
 def mul (M : Mod) (acc o a b : Nat) : Prog isa :=
-  .seq (.block (zeros acc (2 * words M + 1) ++ [.mov .ebp (.reg .edi)])) <|
+  .seq (.block (zeros acc (2 * words M + 1) ++ ([.mov .ebp (.reg .edi)] : List Instr))) <|
   .seq (.loop (.block (row M acc a b)) .ne) <|
     .block (csub M (acc + 4 * words M) o)
 
@@ -130,7 +130,7 @@ def chain (M : Mod) (op op' : AluOp) (acc a b : Nat) : List Instr :=
 /-- `[o] = [a] + [b] mod m`. -/
 def add (M : Mod) (acc o a b : Nat) : List Instr :=
   chain M .add .adc acc a b ++
-  [.mov .eax (.imm 0), .alu .adc .eax (.imm 0), .store (sc (acc + 4 * words M)) .eax] ++
+  ([.mov .eax (.imm 0), .alu .adc .eax (.imm 0), .store (sc (acc + 4 * words M)) .eax] : List Instr) ++
   csub M acc o
 
 /-- `[tmp] = [mo]` masked with `eax`, `N` words. -/
@@ -141,7 +141,7 @@ def masked (M : Mod) : List Instr :=
 /-- `[o] = [a] - [b] mod m`: the difference, and `m` added under the mask
 `eax` of its borrow (through `[tmp]`). -/
 def sub (M : Mod) (acc o a b : Nat) : List Instr :=
-  chain M .sub .sbb acc a b ++ [.alu .sbb .eax (.reg .eax)] ++ masked M ++
+  chain M .sub .sbb acc a b ++ ([.alu .sbb .eax (.reg .eax)] : List Instr) ++ masked M ++
   chain M .add .adc o acc M.tmp
 
 end VG.Impl.Mont.X86

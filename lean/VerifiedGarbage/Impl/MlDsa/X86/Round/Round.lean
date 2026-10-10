@@ -103,10 +103,10 @@ def cntTail : List Instr :=
 /-! ## `power2Round` -/
 
 def p2rBody : List Instr :=
-  [.mov .eax (.mem (at_ .esi 0)), .alu .add .eax (.imm 4095), .mov .edx (.reg .eax), .shift .shr .edx 13,
-    .store (at_ .edi 0) .edx, .alu .and .eax (.imm 8191)] +++ condAdd .eax (.imm 4095) .edx qImm +++
-  [.store (at_ .ebp 0) .eax, .alu .add .esi (.imm 4), .alu .add .edi (.imm 4), .alu .add .ebp (.imm 4),
-    .alu .sub .ecx (.imm 1)]
+  ([.mov .eax (.mem (at_ .esi 0)), .alu .add .eax (.imm 4095), .mov .edx (.reg .eax), .shift .shr .edx 13,
+    .store (at_ .edi 0) .edx, .alu .and .eax (.imm 8191)] : List Instr) +++ condAdd .eax (.imm 4095) .edx qImm +++
+  ([.store (at_ .ebp 0) .eax, .alu .add .esi (.imm 4), .alu .add .edi (.imm 4), .alu .add .ebp (.imm 4),
+    .alu .sub .ecx (.imm 1)] : List Instr)
 
 /-- `esi = t`, `edi = t1`, `ebp = t0`. -/
 def p2rInit : List Instr :=
@@ -126,9 +126,9 @@ def hbCore (g : Nat) : List Instr := .mov .eax (.mem (at_ .esi 0)) :: hb g
 
 /-- `eax ← r₀` of `[esi]`, modulo `q`. -/
 def lbCore (g : Nat) : List Instr :=
-  [.mov .eax (.mem (at_ .esi 0)), .mov .ebx (.reg .eax)] +++ hb g +++
-  [.mov .edx (.imm (BitVec.ofNat 32 (2 * g))), .mul .edx] +++ condAdd .ebx (.reg .eax) .edx qImm +++
-  [.mov .eax (.reg .ebx)]
+  ([.mov .eax (.mem (at_ .esi 0)), .mov .ebx (.reg .eax)] : List Instr) +++ hb g +++
+  ([.mov .edx (.imm (BitVec.ofNat 32 (2 * g))), .mul .edx] : List Instr) +++ condAdd .ebx (.reg .eax) .edx qImm +++
+  ([.mov .eax (.reg .ebx)] : List Instr)
 
 def highBits : Prog isa :=
   leaf (.seq (.block bitsInit) (.ite .e (cntLoop (hbCore g32 +++ cntTail)) (cntLoop (hbCore g88 +++ cntTail))))
@@ -163,17 +163,17 @@ def hintInit : List Instr :=
 /-- `eax ← MakeHint` of `[esi]` and `[edi]`, and `ecx` counts it. -/
 def mhCore (g : Nat) : List Instr :=
   .mov .eax (.mem (at_ .edi 0)) :: hb g +++
-  [.mov .ebx (.reg .eax), .mov .eax (.mem (at_ .edi 0)), .alu .add .eax (.mem (at_ .esi 0))] +++
+  ([.mov .ebx (.reg .eax), .mov .eax (.mem (at_ .edi 0)), .alu .add .eax (.mem (at_ .esi 0))] : List Instr) +++
   condAdd .eax (.imm qImm) .edx qImm +++ hb g +++
-  [.alu .xor .eax (.reg .ebx), .alu .add .eax (.imm 63), .shift .shr .eax 6, .alu .add .ecx (.reg .eax)]
+  ([.alu .xor .eax (.reg .ebx), .alu .add .eax (.imm 63), .shift .shr .eax 6, .alu .add .ecx (.reg .eax)] : List Instr)
 
 /-- `eax ← UseHint` of `[esi]` and `[edi]`. -/
 def uhCore (g : Nat) : List Instr :=
-  [.mov .eax (.mem (at_ .edi 0)), .mov .ebx (.reg .eax)] +++ hbRaw g +++
-  [.mov .ecx (.reg .eax), .mov .edx (.imm (BitVec.ofNat 32 (2 * g))), .mul .edx, .alu .sub .eax (.reg .ebx),
+  ([.mov .eax (.mem (at_ .edi 0)), .mov .ebx (.reg .eax)] : List Instr) +++ hbRaw g +++
+  ([.mov .ecx (.reg .eax), .mov .edx (.imm (BitVec.ofNat 32 (2 * g))), .mul .edx, .alu .sub .eax (.reg .ebx),
     .alu .sbb .eax (.reg .eax), .alu .and .eax (.imm 2), .alu .sub .eax (.imm 1), .mov .ebx (.imm 0),
     .alu .sub .ebx (.mem (at_ .esi 0)), .alu .sbb .ebx (.reg .ebx), .alu .and .eax (.reg .ebx),
-    .alu .add .eax (.reg .ecx), .alu .add .eax (.imm (BitVec.ofNat 32 (dMod g)))] +++
+    .alu .add .eax (.reg .ecx), .alu .add .eax (.imm (BitVec.ofNat 32 (dMod g)))] : List Instr) +++
   condAdd .eax (.imm (BitVec.ofNat 32 (dMod g))) .edx (BitVec.ofNat 32 (dMod g)) +++
   condAdd .eax (.imm (BitVec.ofNat 32 (dMod g))) .edx (BitVec.ofNat 32 (dMod g))
 

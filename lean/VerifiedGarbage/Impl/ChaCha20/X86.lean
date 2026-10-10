@@ -33,10 +33,10 @@ def qr : List Instr := [
 
 /-- `QUARTERROUND(x, y, z, w)` (RFC 8439 §2.2) on the words in `buf`. -/
 def quarter (x y z w : Nat) : Prog isa := .block (
-  [.mov .eax (.mem (at_ .esi (4 * x))), .mov .ebx (.mem (at_ .esi (4 * y))),
-   .mov .ecx (.mem (at_ .esi (4 * z))), .mov .edx (.mem (at_ .esi (4 * w)))] ++ qr ++
-  [.store (at_ .esi (4 * x)) .eax, .store (at_ .esi (4 * y)) .ebx,
-   .store (at_ .esi (4 * z)) .ecx, .store (at_ .esi (4 * w)) .edx])
+  ([.mov .eax (.mem (at_ .esi (4 * x))), .mov .ebx (.mem (at_ .esi (4 * y))),
+   .mov .ecx (.mem (at_ .esi (4 * z))), .mov .edx (.mem (at_ .esi (4 * w)))] : List Instr) ++ qr ++
+  ([.store (at_ .esi (4 * x)) .eax, .store (at_ .esi (4 * y)) .ebx,
+   .store (at_ .esi (4 * z)) .ecx, .store (at_ .esi (4 * w)) .edx] : List Instr))
 
 /-- `inner_block` (RFC 8439 §2.3.1): a column round and a diagonal round. -/
 def doubleRound : Prog isa :=

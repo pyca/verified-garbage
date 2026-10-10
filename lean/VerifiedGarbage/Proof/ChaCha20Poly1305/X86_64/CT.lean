@@ -3885,7 +3885,7 @@ taint_summary finalizeSumO : taintS τF
 /-- The pairs of `fold` and implementation of `vg_poly1305_blocks` the checks
 below cover (`XorImpl.fold_poly`). -/
 abbrev FoldPoly (fold pass : Nat) (b : Impl.Poly1305.X86_64.Blocks) : Prop :=
-  (fold = 0 ∧ pass = 0 ∧ b = .scalar) ∨ (fold = 192 ∧ pass = 0 ∧ b = .avx2) ∨
+  (fold = 0 ∧ pass = 0 ∧ b = .scalar) ∨ (fold = 448 ∧ pass = 0 ∧ b = .avx2) ∨
     (fold = 960 ∧ pass = 1024 ∧ b = .avx512)
 
 theorem prologueA_taint (enc : Bool) {fold pass : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass b) :

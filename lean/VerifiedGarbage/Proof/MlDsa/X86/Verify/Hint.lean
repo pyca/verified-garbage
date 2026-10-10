@@ -31,7 +31,7 @@ include hF hp h
 theorem sig_slice {o l : Nat} (hok : (YV p).ok ⟨2, o, l⟩ = true) :
     bytesAt s.mem (Buf.addr s₀ ⟨2, o, l⟩) l = ((vSig p s₀).drop o).take l := by
   obtain ⟨-, -, hl⟩ := Lay.ok_iff.mp hok
-  have e := bytes_sub hp s₀.mem (a := 2) (o := 0) (k := o) (c := l) (L := p.sigLen) hl (by lv hF)
+  have e := bytes_sub hp s₀.mem (a := 2) (o := 0) (k := o) (c := l) (L := p.sigLen) hl (by lvd)
     (by rw [Nat.zero_add]; exact hok)
   rw [Nat.zero_add] at e
   exact (h.roBytes hp hok rfl).trans e
@@ -39,7 +39,7 @@ theorem sig_slice {o l : Nat} (hok : (YV p).ok ⟨2, o, l⟩ = true) :
 theorem pk_slice {o l : Nat} (hok : (YV p).ok ⟨0, o, l⟩ = true) :
     bytesAt s.mem (Buf.addr s₀ ⟨0, o, l⟩) l = ((vPk p s₀).drop o).take l := by
   obtain ⟨-, -, hl⟩ := Lay.ok_iff.mp hok
-  have e := bytes_sub hp s₀.mem (a := 0) (o := 0) (k := o) (c := l) (L := p.pkLen) hl (by lv hF)
+  have e := bytes_sub hp s₀.mem (a := 0) (o := 0) (k := o) (c := l) (L := p.pkLen) hl (by lvd)
     (by rw [Nat.zero_add]; exact hok)
   rw [Nat.zero_add] at e
   exact (h.roBytes hp hok rfl).trans e
@@ -97,24 +97,24 @@ theorem hint_piece : VP p (Ctx (YV p)) (H1 p) (hint P p) := by
   unfold hint
   refine Piece.seq (B := fun s₀ s => Ctx (YV p) s₀ s ∧ ((s.gpr .eax = 1 ∧ HOk p s₀ s) ∨
       (s.gpr .eax = 0 ∧ hOf p s₀ = none)))
-    (hu_piece hP.hintUnpack 2 (oHint p) p.ω p.k vS (oP 0) hF.hint (by lv hF) (Nat.le_of_eq (YV_stk p).symm)
+    (hu_piece hP.hintUnpack 2 (oHint p) p.ω p.k vS (oP 0) hF.hint (by lvd) (Nat.le_of_eq (YV_stk p).symm)
       (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h)
       (fun s₀ s₀' s s' hp hp' hq h h' => by
-        rw [sig_slice hF hp h (by lv hF), sig_slice hF hp' h' (by lv hF), (inputs_pub hq).2.2])
+        rw [sig_slice hF hp h (by lvd), sig_slice hF hp' h' (by lvd), (inputs_pub hq).2.2])
       fun s₀ s s' hp h h' fr post => ⟨h', ?_⟩) ?_
-  · rw [sig_slice hF hp h (by lv hF)] at post
+  · rw [sig_slice hF hp h (by lvd)] at post
     change (match vHint p (vSig p s₀) with
       | some hint => s'.gpr .eax = 1 ∧ HintIs s'.mem (Buf.addr s₀ (hB p.k)) p.k hint
       | none => s'.gpr .eax = 0) at post
     cases e : vHint p (vSig p s₀) with
     | none => rw [e] at post; exact .inr ⟨post, e⟩
     | some hh => rw [e] at post; exact .inl ⟨post.1, hh, e, post.2⟩
-  refine stAcc_piece (Y := YV p) (by lv hF) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.1)
+  refine stAcc_piece (Y := YV p) (by lvd) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.1)
     fun s₀ s s' hp h h' g m' => ⟨h', ?_⟩
   have ea : accV s₀ s' = s.gpr .eax := by rw [accV, m', acc_write]
   have fr : Frame (FR s₀ [sb oACC 4] 0) s.mem s'.mem := by rw [m']; exact frW32 (Y := YV p)
   rcases h.2 with ⟨e, ho⟩ | ⟨e, hn⟩
-  · exact .inl ⟨by rw [ea, e], ho.keep hp (N := 0) (by omega) (by lv hF) fr⟩
+  · exact .inl ⟨by rw [ea, e], ho.keep hp (N := 0) (by omega) (by lvd) fr⟩
   · exact .inr ⟨by rw [ea, e], hn⟩
 
 end
@@ -165,27 +165,27 @@ theorem zOne_piece {i : Nat} (hi : i < p.ℓ) : VP p (ZI p · i) (ZI p · (i + 1
   unfold zOne
   refine Piece.seq (B := fun s₀ s => ZI p s₀ i s ∧ PolyIs s.mem (Buf.addr s₀ (pZ i)) (toRq (vZ p (vSig p s₀) i)))
     (bu_piece hP.bitUnpack 2 (p.ctildeLen + lenZ p * i) (lenZ p) (p.γ₁ - 1) p.γ₁ vS (oP (8 + i)) hF.bp.1 hF.bp.2
-      (by lv hF) (Nat.le_of_eq (YV_stk p).symm) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.ctx)
-      fun s₀ s s' hp h h' fr post => ⟨h.keep hp (N := 80) (by omega) (by lv hF) (by lv hF)
-        (fun j hj => by lv hF) fr h', ?_⟩) ?_
-  · rw [sig_slice hF hp h.ctx (by lv hF)] at post
+      (by lvd) (Nat.le_of_eq (YV_stk p).symm) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.ctx)
+      fun s₀ s s' hp h h' fr post => ⟨h.keep hp (N := 80) (by omega) (by lvd) (by lvd)
+        (fun j hj => by lvd) fr h', ?_⟩) ?_
+  · rw [sig_slice hF hp h.ctx (by lvd)] at post
     exact post
   refine Piece.seq (B := fun s₀ s => (ZI p s₀ i s ∧ PolyIs s.mem (Buf.addr s₀ (pZ i)) (toRq (vZ p (vSig p s₀) i))) ∧
       s.gpr .eax = if normRq [toRq (vZ p (vSig p s₀) i)] < p.γ₁ - p.β then 1 else 0)
-    (normLt_piece hP.normLt vS (oP (8 + i)) (p.γ₁ - p.β) hF.beta.2 (by lv hF) (Nat.le_of_eq (YV_stk p).symm)
+    (normLt_piece hP.normLt vS (oP (8 + i)) (p.γ₁ - p.β) hF.beta.2 (by lvd) (Nat.le_of_eq (YV_stk p).symm)
       (ht := .block []) (by kernel_rfl) (fun _ _ _ h => ⟨h.1.ctx, h.2.1⟩)
-      fun s₀ s s' hp h h' fr e => ⟨⟨h.1.keep hp (N := 80) (by omega) (by lv hF) (by lv hF)
-        (fun j hj => by lv hF) fr h', keepPolyD hp (stkV (by omega)) (by lv hF) fr h.2⟩, ?_⟩) ?_
+      fun s₀ s s' hp h h' fr e => ⟨⟨h.1.keep hp (N := 80) (by omega) (by lvd) (by lvd)
+        (fun j hj => by lvd) fr h', keepPolyD hp (stkV (by omega)) (by lvd) fr h.2⟩, ?_⟩) ?_
   · rw [e, h.2.2]
-  refine accAnd_piece (Y := YV p) (by lv hF) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.1.1.ctx)
+  refine accAnd_piece (Y := YV p) (by lvd) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.1.1.ctx)
     fun s₀ s s' hp h h' m' => ?_
   have fr : Frame (FR s₀ [sb oACC 4] 0) s.mem s'.mem := by rw [m']; exact frW32 (Y := YV p)
   obtain ⟨⟨hz, hzi⟩, he⟩ := h
-  refine ⟨h', hz.hint.keep hp (N := 0) (by omega) (by lv hF) fr, fun j hj => ?_, ?_⟩
+  refine ⟨h', hz.hint.keep hp (N := 0) (by omega) (by lvd) fr, fun j hj => ?_, ?_⟩
   · rcases (by omega : j < i ∨ j = i) with hj | rfl
-    · have : (YV p).apart (pZ j) [sb oACC 4] = true := by lv hF
+    · have : (YV p).apart (pZ j) [sb oACC 4] = true := by lvd
       exact keepPolyD hp (stkV (by omega)) this fr (hz.z j hj)
-    · have : (YV p).apart (pZ j) [sb oACC 4] = true := by lv hF
+    · have : (YV p).apart (pZ j) [sb oACC 4] = true := by lvd
       exact keepPolyD hp (stkV (by omega)) this fr hzi
   · rw [accV, m', acc_write, accB_YV, ← accV, hz.acc, he, ite_and_ite]
     exact ite_congr (propext normsOk_succ) (fun _ => rfl) (fun _ => rfl)

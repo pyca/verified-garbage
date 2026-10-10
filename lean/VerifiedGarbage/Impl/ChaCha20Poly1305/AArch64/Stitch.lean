@@ -30,8 +30,8 @@ def absorb3 : List Instr := Poly.block ++ Poly.block ++ Poly.block
 
 /-- A counted phase with Poly1305: `start` sets `x20` to the first block. -/
 def phase (sve : Bool) (start : Instr) (restore : Reg) : Prog isa :=
-  .seq (.block ([start] ++ Poly.block ++ [.movz .x .x1 5 0]))
-    (.seq (.loop (.seq (Mixed8.parallelRound sve) (.block (absorb3 ++ [.subImm .x .x1 .x1 1])))
+  .seq (.block ([start] ++ Poly.block ++ ([.movz .x .x1 5 0] : List Instr)))
+    (.seq (.loop (.seq (Mixed8.parallelRound sve) (.block (absorb3 ++ ([.subImm .x .x1 .x1 1] : List Instr))))
         (.nonzero .x .x1))
       (.block [.addImm .x .x20 .x0 64, .addImm .x .x1 restore 0]))
 

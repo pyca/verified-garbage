@@ -104,10 +104,10 @@ def ctrArgs : List Instr :=
 `W + 176`, and the arguments of `vg_aes_ctr32` with the key-generating key's
 schedule. -/
 def deriveBlock : List Instr :=
-  [.ldr .r0 .r10 0, .ldr .r1 .r10 4, .ldr .r2 .r10 8, .str .r4 .r11 ccO, .str .r0 .r11 (ccO + 4),
-    .str .r1 .r11 (ccO + 8), .str .r2 .r11 (ccO + 12)] ++ zero16 bO ++
-    [.mov .r0 (.reg .r9), .mov .r1 (.reg .r8), addI .r2 .r11 ccO, addI .r3 .r11 bO, .mov .r12 (imm 1),
-     addI .lr .r11 scrO]
+  ([.ldr .r0 .r10 0, .ldr .r1 .r10 4, .ldr .r2 .r10 8, .str .r4 .r11 ccO, .str .r0 .r11 (ccO + 4),
+    .str .r1 .r11 (ccO + 8), .str .r2 .r11 (ccO + 12)] : List Instr) ++ zero16 bO ++
+    ([.mov .r0 (.reg .r9), .mov .r1 (.reg .r8), addI .r2 .r11 ccO, addI .r3 .r11 bO, .mov .r12 (imm 1),
+     addI .lr .r11 scrO] : List Instr)
 
 /-- The first 8 bytes of the block kept at `W + 16 + 8 r4`, the next `r4`,
 and `Z` set after the last block (`rounds / 2 - 1` of them). -/
@@ -133,14 +133,14 @@ def expand : Prog isa := .seq (.block expandArgs) (.call "vg_aes_expand_key_scra
 number, in the words `r0`–`r3`), in GHASH's order at `W + 64`, and its
 accumulator zeroed. -/
 def hkey : List Instr :=
-  [.ldr .r0 .r11 akO, .ldr .r1 .r11 (akO + 4), .ldr .r2 .r11 (akO + 8), .ldr .r3 .r11 (akO + 12),
+  ([.ldr .r0 .r11 akO, .ldr .r1 .r11 (akO + 4), .ldr .r2 .r11 (akO + 8), .ldr .r3 .r11 (akO + 12),
     .dp .and .r12 .r0 (imm 1), .mov .lr (imm 0), .dp .sub .r12 .lr (.reg .r12),
     .mov .r0 (.shifted .r0 .lsr 1), .dp .orr .r0 .r0 (.shifted .r1 .lsl 31),
     .mov .r1 (.shifted .r1 .lsr 1), .dp .orr .r1 .r1 (.shifted .r2 .lsl 31),
     .mov .r2 (.shifted .r2 .lsr 1), .dp .orr .r2 .r2 (.shifted .r3 .lsl 31),
     .mov .r3 (.shifted .r3 .lsr 1), .dp .and .r12 .r12 (imm 0xE1000000), .dp .eor .r3 .r3 (.reg .r12),
     .rev .r0 .r0, .rev .r1 .r1, .rev .r2 .r2, .rev .r3 .r3,
-    .str .r3 .r11 hO, .str .r2 .r11 (hO + 4), .str .r1 .r11 (hO + 8), .str .r0 .r11 (hO + 12)] ++ zero16 yO
+    .str .r3 .r11 hO, .str .r2 .r11 (hO + 4), .str .r1 .r11 (hO + 8), .str .r0 .r11 (hO + 12)] : List Instr) ++ zero16 yO
 
 /-- The keys and GHASH's key. -/
 def keys : Prog isa := .seq derive (.seq expand (.block hkey))
@@ -181,7 +181,7 @@ def chunk : Prog isa := .seq chunkPre (.seq ghFrame (.block wholeLeft))
 /-- The last `r5` (1 to 15) bytes at `r4`, padded with zeros at `W + 176`,
 as the 16 bytes to absorb. -/
 def absTailPre : Prog isa :=
-  .seq (.block (zero16 bO ++ [.mov .r1 (.reg .r4), addI .r2 .r11 bO, .mov .r3 (.reg .r5)]))
+  .seq (.block (zero16 bO ++ ([.mov .r1 (.reg .r4), addI .r2 .r11 bO, .mov .r3 (.reg .r5)] : List Instr)))
   (.seq copyLoop (.block [addI .r4 .r11 bO, .mov .r5 (imm 16)]))
 
 /-- The last `r5` (1 to 15) bytes at `r4`, padded with zeros at `W + 176`,
@@ -234,14 +234,14 @@ def tag (o : Nat) : Prog isa :=
 byte set, and the data as the bytes to encrypt; `Z` set if it has no whole
 block. -/
 def cryptHead : List Instr :=
-  [.ldrSp .r4 4, .ldrSp .r5 8, .ldr .r0 .r11 tagO, .ldr .r1 .r11 (tagO + 4), .ldr .r2 .r11 (tagO + 8),
+  ([.ldrSp .r4 4, .ldrSp .r5 8, .ldr .r0 .r11 tagO, .ldr .r1 .r11 (tagO + 4), .ldr .r2 .r11 (tagO + 8),
    .ldr .r3 .r11 (tagO + 12), .dp .orr .r3 .r3 (imm 0x80000000), .str .r0 .r11 cbO, .str .r1 .r11 (cbO + 4),
-   .str .r2 .r11 (cbO + 8), .str .r3 .r11 (cbO + 12)] ++ wholeLeft
+   .str .r2 .r11 (cbO + 8), .str .r3 .r11 (cbO + 12)] : List Instr) ++ wholeLeft
 
 /-- After a block: the counter block's first word incremented, `r4` and `r5`
 past the block, and `Z` set if no whole block is left. -/
 def blockNext : List Instr :=
-  [.ldr .r0 .r11 cbO, addI .r0 .r0 1, .str .r0 .r11 cbO, addI .r4 .r4 16, .dp .sub .r5 .r5 (imm 16)] ++ wholeLeft
+  ([.ldr .r0 .r11 cbO, addI .r0 .r0 1, .str .r0 .r11 cbO, addI .r4 .r4 16, .dp .sub .r5 .r5 (imm 16)] : List Instr) ++ wholeLeft
 
 /-- One block at `r4` encrypted in place from the counter block, which is
 then incremented; `r4` and `r5` past it, and `Z` set if no whole block is
@@ -270,11 +270,11 @@ def xorW (d : Reg) (k : Nat) : List Instr :=
 /-- `r0 = 1` if the tags at `W` and `W + 176` are equal, 0 if not, without a
 branch (`1 - ((x | -x) >> 31)` of the OR `x` of the XORs of their words). -/
 def cmp : List Instr :=
-  xorW .r0 0 ++ xorW .r1 1 ++ [.dp .orr .r0 .r0 (.reg .r1)] ++ xorW .r1 2 ++
-    [.dp .orr .r0 .r0 (.reg .r1)] ++ xorW .r1 3 ++
-    [.dp .orr .r0 .r0 (.reg .r1), .mov .r1 (imm 0), .dp .sub .r1 .r1 (.reg .r0),
+  xorW .r0 0 ++ xorW .r1 1 ++ ([.dp .orr .r0 .r0 (.reg .r1)] : List Instr) ++ xorW .r1 2 ++
+    ([.dp .orr .r0 .r0 (.reg .r1)] : List Instr) ++ xorW .r1 3 ++
+    ([.dp .orr .r0 .r0 (.reg .r1), .mov .r1 (imm 0), .dp .sub .r1 .r1 (.reg .r0),
      .dp .orr .r0 .r0 (.reg .r1), .mov .r0 (.shifted .r0 .lsr 31), .mov .r1 (imm 1),
-     .dp .sub .r0 .r1 (.reg .r0)]
+     .dp .sub .r0 .r1 (.reg .r0)] : List Instr)
 
 /-- Every byte of the data ANDed with `0 − r0`. -/
 def mask : Prog isa :=
@@ -289,7 +289,7 @@ def mask : Prog isa :=
 `r7`–`r11`. -/
 def entry : List Instr :=
   .ldrSp .r12 16 :: save .r12 ++
-    [.mov .r11 (.reg .r12), .mov .r10 (.reg .r2), .mov .r9 (.reg .r0), .mov .r8 (.reg .r1), .mov .r7 (.reg .r3)]
+    ([.mov .r11 (.reg .r12), .mov .r10 (.reg .r2), .mov .r9 (.reg .r0), .mov .r8 (.reg .r1), .mov .r7 (.reg .r3)] : List Instr)
 
 /-- The received tag copied from `tag`, at `[sp + 12]`, to `W`. -/
 def recv : List Instr :=

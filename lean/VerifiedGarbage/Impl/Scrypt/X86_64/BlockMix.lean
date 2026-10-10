@@ -49,11 +49,11 @@ def times64 : List Instr := (List.range 6).map fun _ => .alu .add .rsi (.reg .rs
 `r12 = y + 64 r`, `r15 = b + 128 r - 64` (`B[2r - 1]`). -/
 def bmPrologue : List Instr :=
   bmSaved.map (fun (r, d) => .store (at_ .r8 d) r) ++
-    [.mov .r14 (.reg .rsi), .mov .rbx (.reg .rdi), .mov .rbp (.reg .rdx), .mov .r13 (.reg .r8)] ++
+    ([.mov .r14 (.reg .rsi), .mov .rbx (.reg .rdi), .mov .rbp (.reg .rdx), .mov .r13 (.reg .r8)] : List Instr) ++
     times64 ++
-    [.mov .r12 (.reg .rdx), .alu .add .r12 (.reg .rsi),
+    ([.mov .r12 (.reg .rdx), .alu .add .r12 (.reg .rsi),
      .mov .r15 (.reg .rdi), .alu .add .r15 (.reg .rsi), .alu .add .r15 (.reg .rsi),
-     .alu .sub .r15 (.imm 64)]
+     .alu .sub .r15 (.imm 64)] : List Instr)
 
 /-- One pair: `Y[2k]` from `X` and `B[2k]`, then `Y[2k + 1]` from it and
 `B[2k + 1]`; then the pointers move on and the count goes down. -/

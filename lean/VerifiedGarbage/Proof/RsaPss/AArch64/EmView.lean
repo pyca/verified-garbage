@@ -22,6 +22,11 @@ theorem em_view {V9 : Nat → Byte} {k lo db sl D : Nat} {h saltB mk : List Byte
       else if x = oEm + lo + db - sl - 1 then 1 else 0) :
     ∀ i < k, upd (mixV V9 mk (oEm + lo) db) (oEm + lo) (mixV V9 mk (oEm + lo) db (oEm + lo) &&& c) (oEm + i) =
       RsaPss.emT lo db sl saltB h mk c i := by
+  generalize hS : oEm + lo + db - sl = S at h9
+  generalize hK : oEm + k - 1 = K at h9
+  have hS' : S + sl = oEm + lo + db := by rw [← hS]; have : oEm = 2560 := rfl; omega
+  have hK' : K + 1 = oEm + k := by rw [← hK]; have : oEm = 2560 := rfl; omega
+  clear hS hK
   intro i hi
   simp only [upd, mixV, RsaPss.emT, hh]
   by_cases hl : i < lo
@@ -35,7 +40,7 @@ theorem em_view {V9 : Nat → Byte} {k lo db sl D : Nat} {h saltB mk : List Byte
   by_cases hj : i - lo < db
   · by_cases hs : db - sl ≤ i - lo
     · simp (disch := omega) only [h9, ite_eq_left, ite_eq_right]
-      rw [e1, show oEm + i - (oEm + lo + db - sl) = i - lo - (db - sl) by omega]
+      rw [e1, show oEm + i - (S) = i - lo - (db - sl) by omega]
     · by_cases ho : i - lo = db - sl - 1
       · simp (disch := omega) only [h9, ite_eq_left, ite_eq_right]
         rw [e1]

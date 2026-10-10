@@ -198,7 +198,7 @@ variable (c : Callees)
 
 /-- `vg_ghash` of the block at `b + o` into the accumulator at `r14 + yo`. -/
 def ghash1 (yo : Nat) (b : Reg) (o : Nat) : Prog isa :=
-  .seq (.block (ptr .rdi .r13 240 ++ ptr .rsi .r14 yo ++ ptr .rdx b o ++ [.mov32 .rcx (imm 1)] ++
+  .seq (.block (ptr .rdi .r13 240 ++ ptr .rsi .r14 yo ++ ptr .rdx b o ++ ([.mov32 .rcx (imm 1)] : List Instr) ++
     ptr .r8 .r15 scrO))
     (.call c.gh.name c.gh.code)
 
@@ -214,7 +214,7 @@ def absorbHead (yo : Nat) : Prog isa :=
 
 /-- The whole blocks at `r12` absorbed. -/
 def absorbWhole (yo : Nat) : Prog isa :=
-  .seq (.block (splitWhole .rdx .rcx ++ [.alu .test .rcx (.reg .rcx)]))
+  .seq (.block (splitWhole .rdx .rcx ++ ([.alu .test .rcx (.reg .rcx)] : List Instr)))
     (.ite .e (.block [])
       (.seq (.block (ptr .rdi .r13 240 ++ ptr .rsi .r14 yo ++ ptr .r8 .r15 scrO))
         (.call c.gh.name c.gh.code)))
@@ -222,7 +222,7 @@ def absorbWhole (yo : Nat) : Prog isa :=
 /-- The last `rbp` bytes at `r12` buffered. -/
 def absorbTail : Prog isa :=
   .seq (.block [.mov .rcx (.reg .rbp), .alu .test .rcx (.reg .rcx)])
-    (.ite .e (.block []) (.seq (.block (ptr .rdi .r14 32 ++ [.mov .rsi (.reg .r12)])) copyLoop))
+    (.ite .e (.block []) (.seq (.block (ptr .rdi .r14 32 ++ ([.mov .rsi (.reg .r12)] : List Instr))) copyLoop))
 
 def absorb (yo : Nat) : Prog isa :=
   .seq (.block [.alu .test .rbp (.reg .rbp)])
@@ -235,8 +235,8 @@ def absorb (yo : Nat) : Prog isa :=
 def flush (yo : Nat) : Prog isa :=
   .seq (.block [.alu .test .rbx (.reg .rbx)])
     (.ite .e (.block [])
-      (.seq (.block ([.mov32 .rax (imm 0), .store (at_ .r15 tO) .rax, .store (at_ .r15 (tO + 8)) .rax] ++
-          ptr .rdi .r15 tO ++ ptr .rsi .r14 32 ++ [.mov .rcx (.reg .rbx)]))
+      (.seq (.block (([.mov32 .rax (imm 0), .store (at_ .r15 tO) .rax, .store (at_ .r15 (tO + 8)) .rax] : List Instr) ++
+          ptr .rdi .r15 tO ++ ptr .rsi .r14 32 ++ ([.mov .rcx (.reg .rbx)] : List Instr)))
       (.seq copyLoop (ghash1 c yo .r15 tO))))
 
 /-- `8 r`, big-endian, into `W + o`. -/
@@ -259,9 +259,9 @@ def cryptHead : Prog isa :=
 
 /-- Whole blocks at `r12`, by `vg_aes_ctr32`. -/
 def cryptWhole : Prog isa :=
-  .seq (.block (splitWhole .rcx .r8 ++ [.alu .test .r8 (.reg .r8)]))
+  .seq (.block (splitWhole .rcx .r8 ++ ([.alu .test .r8 (.reg .r8)] : List Instr)))
     (.ite .e (.block [])
-      (.seq (.block ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r14 48 ++
+      (.seq (.block (([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r14 48 ++
           ptr .r9 .r15 scrO))
         (.call c.ctr.name c.ctr.code)))
 
@@ -269,11 +269,11 @@ def cryptWhole : Prog isa :=
 def cryptTail : Prog isa :=
   .seq (.block [.alu .test .rbp (.reg .rbp)])
     (.ite .e (.block [])
-      (.seq (.block ([.mov32 .rax (imm 0), .store (at_ .r14 64) .rax, .store (at_ .r14 72) .rax,
-          .mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r14 48 ++
-          ptr .rcx .r14 64 ++ [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO))
+      (.seq (.block (([.mov32 .rax (imm 0), .store (at_ .r14 64) .rax, .store (at_ .r14 72) .rax,
+          .mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r14 48 ++
+          ptr .rcx .r14 64 ++ ([.mov32 .r8 (imm 1)] : List Instr) ++ ptr .r9 .r15 scrO))
       (.seq (.call c.ctr.name c.ctr.code)
-        (.seq (.block ([.mov .rdi (.reg .r12)] ++ ptr .rsi .r14 64 ++ [.mov .rcx (.reg .rbp)])) xorLoop))))
+        (.seq (.block (([.mov .rdi (.reg .r12)] : List Instr) ++ ptr .rsi .r14 64 ++ ([.mov .rcx (.reg .rbp)] : List Instr))) xorLoop))))
 
 def crypt : Prog isa :=
   .seq (.block [.alu .test .rbp (.reg .rbp)])
@@ -287,9 +287,9 @@ def crypt : Prog isa :=
 /-- The tag into `W + o`. -/
 def tag (o : Nat) : Prog isa :=
   .seq (lens c 16)
-  (.seq (.block ([.mov .rax (.mem (at_ .r14 16)), .store (at_ .r15 o) .rax, .mov .rax (.mem (at_ .r14 24)),
+  (.seq (.block (([.mov .rax (.mem (at_ .r14 16)), .store (at_ .r15 o) .rax, .mov .rax (.mem (at_ .r14 24)),
       .store (at_ .r15 (o + 8)) .rax, .mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO)),
-      .mov .rdx (.reg .r14)] ++ ptr .rcx .r15 o ++ [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO))
+      .mov .rdx (.reg .r14)] : List Instr) ++ ptr .rcx .r15 o ++ ([.mov32 .r8 (imm 1)] : List Instr) ++ ptr .r9 .r15 scrO))
     (.call c.ctr.name c.ctr.code))
 
 /-- `J₀` of a 12-byte nonce: its three words and `0x00000001` (big-endian). -/
@@ -324,15 +324,15 @@ def j0 : Prog isa :=
 
 /-- The `rbx` bytes of the received tag (at `rsi`), padded with zeros at `W + rO`. -/
 def recv : Prog isa :=
-  .seq (.block ([.mov32 .rax (imm 0), .store (at_ .r15 rO) .rax, .store (at_ .r15 (rO + 8)) .rax] ++
-    ptr .rdi .r15 rO ++ [.mov .rcx (.reg .rbx)]))
+  .seq (.block (([.mov32 .rax (imm 0), .store (at_ .r15 rO) .rax, .store (at_ .r15 (rO + 8)) .rax] : List Instr) ++
+    ptr .rdi .r15 rO ++ ([.mov .rcx (.reg .rbx)] : List Instr)))
     copyLoop
 
 /-- The first `rbx` bytes of the tag at `W + o`, padded with zeros at
 `W + vO`, compared with the received one: `eax = 1` if they are equal. -/
 def cmp (o : Nat) : Prog isa :=
-  .seq (.block ([.mov32 .rax (imm 0), .store (at_ .r15 vO) .rax, .store (at_ .r15 (vO + 8)) .rax] ++
-    ptr .rdi .r15 vO ++ ptr .rsi .r15 o ++ [.mov .rcx (.reg .rbx)]))
+  .seq (.block (([.mov32 .rax (imm 0), .store (at_ .r15 vO) .rax, .store (at_ .r15 (vO + 8)) .rax] : List Instr) ++
+    ptr .rdi .r15 vO ++ ptr .rsi .r15 o ++ ([.mov .rcx (.reg .rbx)] : List Instr)))
   (.seq copyLoop
     (.block [.mov .rax (.mem (at_ .r15 vO)), .alu .xor .rax (.mem (at_ .r15 rO)),
       .mov .rdx (.mem (at_ .r15 (vO + 8))), .alu .xor .rdx (.mem (at_ .r15 (rO + 8))),
@@ -358,24 +358,24 @@ def tagLenOk : Prog isa :=
 
 /-- `vg_aes_gcm_init(key = rdi, key_len = rsi, ctx = rdx, scratch = rcx)`. -/
 def init : Prog isa :=
-  .seq (.block (save .rcx ++ [.mov .r15 (.reg .rcx), .mov .r13 (.reg .rdx), .mov .rbx (.reg .rsi),
-      .shift .shr .rbx 2, .alu .add .rbx (imm 6)] ++ ptr .rcx .r15 scrO))
+  .seq (.block (save .rcx ++ ([.mov .r15 (.reg .rcx), .mov .r13 (.reg .rdx), .mov .rbx (.reg .rsi),
+      .shift .shr .rbx 2, .alu .add .rbx (imm 6)] : List Instr) ++ ptr .rcx .r15 scrO))
   (.seq (.call c.key.name c.key.code)
-  (.seq (.block ([.mov32 .rax (imm 0), .store (at_ .r13 240) .rax, .store (at_ .r13 248) .rax,
+  (.seq (.block (([.mov32 .rax (imm 0), .store (at_ .r13 240) .rax, .store (at_ .r13 248) .rax,
       .store (at_ .r15 tO) .rax, .store (at_ .r15 (tO + 8)) .rax, .mov .rdi (.reg .r13),
-      .mov .rsi (.reg .rbx)] ++ ptr .rdx .r15 tO ++ ptr .rcx .r13 240 ++ [.mov32 .r8 (imm 1)] ++
+      .mov .rsi (.reg .rbx)] : List Instr) ++ ptr .rdx .r15 tO ++ ptr .rcx .r13 240 ++ ([.mov32 .r8 (imm 1)] : List Instr) ++
       ptr .r9 .r15 scrO))
   (.seq (.call c.ctr.name c.ctr.code)
     (.block restore))))
 
 /-- `init` with `t` in place of its exit. -/
 def initWith (t : Prog isa) : Prog isa :=
-  .seq (.block (save .rcx ++ [.mov .r15 (.reg .rcx), .mov .r13 (.reg .rdx), .mov .rbx (.reg .rsi),
-      .shift .shr .rbx 2, .alu .add .rbx (imm 6)] ++ ptr .rcx .r15 scrO))
+  .seq (.block (save .rcx ++ ([.mov .r15 (.reg .rcx), .mov .r13 (.reg .rdx), .mov .rbx (.reg .rsi),
+      .shift .shr .rbx 2, .alu .add .rbx (imm 6)] : List Instr) ++ ptr .rcx .r15 scrO))
   (.seq (.call c.key.name c.key.code)
-  (.seq (.block ([.mov32 .rax (imm 0), .store (at_ .r13 240) .rax, .store (at_ .r13 248) .rax,
+  (.seq (.block (([.mov32 .rax (imm 0), .store (at_ .r13 240) .rax, .store (at_ .r13 248) .rax,
       .store (at_ .r15 tO) .rax, .store (at_ .r15 (tO + 8)) .rax, .mov .rdi (.reg .r13),
-      .mov .rsi (.reg .rbx)] ++ ptr .rdx .r15 tO ++ ptr .rcx .r13 240 ++ [.mov32 .r8 (imm 1)] ++
+      .mov .rsi (.reg .rbx)] : List Instr) ++ ptr .rdx .r15 tO ++ ptr .rcx .r13 240 ++ ([.mov32 .r8 (imm 1)] : List Instr) ++
       ptr .r9 .r15 scrO))
   (.seq (.call c.ctr.name c.ctr.code) t)))
 
@@ -403,24 +403,24 @@ def initPrecomputed : Prog isa :=
 
 /-- `vg_aes_gcm_stream_init(ctx = rdi, nonce = rsi, nonce_len = rdx, state = rcx, scratch = r8)`. -/
 def streamInit : Prog isa :=
-  .seq (.block (save .r8 ++ [.mov .r15 (.reg .r8), .mov .r14 (.reg .rcx), .mov .r13 (.reg .rdi),
-      .mov .r12 (.reg .rsi), .mov .rbp (.reg .rdx)]))
+  .seq (.block (save .r8 ++ ([.mov .r15 (.reg .r8), .mov .r14 (.reg .rcx), .mov .r13 (.reg .rdi),
+      .mov .r12 (.reg .rsi), .mov .rbp (.reg .rdx)] : List Instr)))
   (.seq (j0 c) (.block restore))
 
 /-- `vg_aes_gcm_stream_aad(ctx = rdi, state = rsi, aad_len = rdx, data = rcx, len = r8, scratch = r9)`. -/
 def streamAad : Prog isa :=
-  .seq (.block (save .r9 ++ [.mov .r15 (.reg .r9), .mov .r14 (.reg .rsi), .mov .r13 (.reg .rdi),
-      .mov .r12 (.reg .rcx), .mov .rbp (.reg .r8), .mov .rbx (.reg .rdx), .alu .and .rbx (imm 15)]))
+  .seq (.block (save .r9 ++ ([.mov .r15 (.reg .r9), .mov .r14 (.reg .rsi), .mov .r13 (.reg .rdi),
+      .mov .r12 (.reg .rcx), .mov .rbp (.reg .r8), .mov .rbx (.reg .rdx), .alu .and .rbx (imm 15)] : List Instr)))
   (.seq (absorb c 16) (.block restore))
 
 /-- The entry of `encrypt` and `decrypt`: `(ctx = rdi, rounds = rsi, state = rdx,
 aad_len = rcx, text_len = r8, data = r9, len = [rsp + 8], scratch = [rsp + 16])`. -/
 def cryptEntry : List Instr :=
-  [.mov .rax (.mem (at_ .rsp 16))] ++ save .rax ++
-    [.mov .r15 (.reg .rax), .mov .r14 (.reg .rdx), .mov .r13 (.reg .rdi),
+  ([.mov .rax (.mem (at_ .rsp 16))] : List Instr) ++ save .rax ++
+    ([.mov .r15 (.reg .rax), .mov .r14 (.reg .rdx), .mov .r13 (.reg .rdi),
       .store (at_ .r15 roundsO) .rsi, .store (at_ .r15 alenO) .rcx, .store (at_ .r15 tlenO) .r8,
       .store (at_ .r15 dataO) .r9, .mov .rbp (.mem (at_ .rsp 8)), .store (at_ .r15 lenO) .rbp,
-      .mov .r12 (.reg .r9), .mov .rbx (.reg .r8), .alu .and .rbx (imm 15)]
+      .mov .r12 (.reg .r9), .mov .rbx (.reg .r8), .alu .and .rbx (imm 15)] : List Instr)
 
 /-- The additional data padded, before the first text. -/
 def firstFlush : Prog isa :=
@@ -456,8 +456,8 @@ whole blocks. -/
 def streamBlocks (f : Fn) : Prog isa :=
   .seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .shift .shr .rax 4, .alu .test .rax (.reg .rax)])
     (.ite .e (.block [])
-      (.seq (.block ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r14 48 ++
-          ptr .rcx .r14 16 ++ [.mov .r8 (.mem (at_ .r15 dataO)), .mov .r9 (.reg .rax)] ++ ptr .rax .r15 bScrO))
+      (.seq (.block (([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r14 48 ++
+          ptr .rcx .r14 16 ++ ([.mov .r8 (.mem (at_ .r15 dataO)), .mov .r9 (.reg .rax)] : List Instr) ++ ptr .rax .r15 bScrO))
       (.seq (.frame (.push [.rax]) (.call f.name f.code) (.pop .rax 1))
         (.block [.mov .rax (.mem (at_ .r15 lenO)), .mov .rcx (.reg .rax), .alu .and .rcx (imm 15),
           .store (at_ .r15 lenO) .rcx, .alu .sub .rax (.reg .rcx), .mov .rcx (.mem (at_ .r15 dataO)),
@@ -503,9 +503,9 @@ def streamDecrypt : Prog isa :=
 /-- The entry of `finish` and `verify`: `(ctx = rdi, rounds = rsi, state = rdx,
 aad_len = rcx, text_len = r8, tag = r9)`, and `work` at `[rsp + wo]`. -/
 def finEntry (wo : Nat) : List Instr :=
-  [.mov .rax (.mem (at_ .rsp wo))] ++ save .rax ++ [.mov .r15 (.reg .rax), .mov .r14 (.reg .rdx),
+  ([.mov .rax (.mem (at_ .rsp wo))] : List Instr) ++ save .rax ++ ([.mov .r15 (.reg .rax), .mov .r14 (.reg .rdx),
     .mov .r13 (.reg .rdi), .store (at_ .r15 roundsO) .rsi, .store (at_ .r15 alenO) .rcx,
-    .store (at_ .r15 tlenO) .r8]
+    .store (at_ .r15 tlenO) .r8] : List Instr)
 
 /-- The buffered bytes padded and absorbed, and the tag into `W + o`. -/
 def finTag (o : Nat) : Prog isa :=
@@ -520,12 +520,12 @@ def finTag (o : Nat) : Prog isa :=
 /-- `vg_aes_gcm_stream_finish`, with `work = [rsp + 8]`: the tag computed at
 `W` and copied to `tag`. -/
 def streamFinish : Prog isa :=
-  .seq (.block (finEntry 8 ++ [.store (at_ .r15 tagPO) .r9]))
+  .seq (.block (finEntry 8 ++ ([.store (at_ .r15 tagPO) .r9] : List Instr)))
     (.seq (.seq (finTag c 0) (.block (tagOut (at_ .r15 tagPO)))) (.block restore))
 
 /-- `vg_aes_gcm_stream_verify`, with `tag_len = [rsp + 8]` and `work = [rsp + 16]`. -/
 def streamVerify : Prog isa :=
-  .seq (.block (finEntry 16 ++ [.mov .rbx (.mem (at_ .rsp 8)), .store (at_ .r15 tlO) .rbx, .mov .rsi (.reg .r9)]))
+  .seq (.block (finEntry 16 ++ ([.mov .rbx (.mem (at_ .rsp 8)), .store (at_ .r15 tlO) .rbx, .mov .rsi (.reg .r9)] : List Instr)))
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov32 .rax (imm 0)])
       (.seq recv
@@ -538,12 +538,12 @@ def streamVerify : Prog isa :=
 nonce_len = rcx, aad = r8, aad_len = r9, data = [rsp + 8], len = [rsp + 16],
 tag = [rsp + 24])`, and `work` at `[rsp + wo]`. The state is at `W + 16`. -/
 def oneEntry (wo : Nat) : List Instr :=
-  [.mov .rax (.mem (at_ .rsp wo))] ++ save .rax ++
-    [.mov .r15 (.reg .rax)] ++ ptr .r14 .r15 stO ++
-    [.mov .r13 (.reg .rdi), .store (at_ .r15 roundsO) .rsi, .store (at_ .r15 aadO) .r8,
+  ([.mov .rax (.mem (at_ .rsp wo))] : List Instr) ++ save .rax ++
+    ([.mov .r15 (.reg .rax)] : List Instr) ++ ptr .r14 .r15 stO ++
+    ([.mov .r13 (.reg .rdi), .store (at_ .r15 roundsO) .rsi, .store (at_ .r15 aadO) .r8,
       .store (at_ .r15 alenO) .r9, .mov .rax (.mem (at_ .rsp 8)), .store (at_ .r15 dataO) .rax,
       .mov .rax (.mem (at_ .rsp 16)), .store (at_ .r15 lenO) .rax, .mov .r12 (.reg .rdx),
-      .mov .rbp (.reg .rcx)]
+      .mov .rbp (.reg .rcx)] : List Instr)
 
 /-- `J₀`, then the additional data absorbed and padded. -/
 def oneAad : Prog isa :=
@@ -563,8 +563,8 @@ def oneBlocks (f : Fn) : Prog isa :=
   .seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .store (at_ .r15 tlenO) .rax, .shift .shr .rax 4,
       .alu .test .rax (.reg .rax)])
     (.ite .e (.block [])
-      (.seq (.block ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r14 48 ++
-          ptr .rcx .r14 16 ++ [.mov .r8 (.mem (at_ .r15 dataO)), .mov .r9 (.reg .rax)] ++ ptr .rax .r15 bScrO))
+      (.seq (.block (([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r14 48 ++
+          ptr .rcx .r14 16 ++ ([.mov .r8 (.mem (at_ .r15 dataO)), .mov .r9 (.reg .rax)] : List Instr) ++ ptr .rax .r15 bScrO))
         (.seq (.frame (.push [.rax]) (.call f.name f.code) (.pop .rax 1))
           (.block [.mov .rax (.mem (at_ .r15 lenO)), .mov .rcx (.reg .rax), .alu .and .rcx (imm 15),
             .store (at_ .r15 lenO) .rcx, .alu .sub .rax (.reg .rcx), .alu .add .rax (.mem (at_ .r15 dataO)),
@@ -594,7 +594,7 @@ def oneUndo : Prog isa :=
       .alu .sub .rax (.reg .rcx), .mov .rcx (.mem (at_ .r15 dataO)), .alu .sub .rcx (.reg .rax),
       .shift .shr .rax 4, .mov .r8 (.reg .rax), .alu .test .rax (.reg .rax)]))
     (.ite .e (.block [])
-      (.seq (.block ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO)), .mov .rdx (.reg .r14)] ++
+      (.seq (.block (([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO)), .mov .rdx (.reg .r14)] : List Instr) ++
           ptr .r9 .r15 scrO))
         (.call c.ctr.name c.ctr.code)))
 
@@ -606,7 +606,7 @@ def «seal» : Prog isa :=
 
 /-- `vg_aes_gcm_open`, with `tag_len = [rsp + 32]` and `work = [rsp + 40]`. -/
 def «open» : Prog isa :=
-  .seq (.block (oneEntry 40 ++ [.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx]))
+  .seq (.block (oneEntry 40 ++ ([.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx] : List Instr)))
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov32 .rax (imm 0)])
       (.seq (oneAad c)

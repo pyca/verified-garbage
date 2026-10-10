@@ -103,7 +103,7 @@ def oChk (p : Params) : Bool :=
     keepB (sgB p) [((.r8, sigH p), p.ω + p.k)] (.r8, 0) (cLen p + zLen p * p.ℓ)
 
 theorem oChk_ok {p : Params} (h : Ok3 p) : oChk p = true := by
-  rcases h with rfl | rfl | rfl <;> decide
+  rcases h with rfl | rfl | rfl <;> decide +kernel
 
 /-- `sigEncode` of what the passing iteration returns. -/
 abbrev sigV (p : Params) (σ : State) (κ : Nat) : List Byte :=

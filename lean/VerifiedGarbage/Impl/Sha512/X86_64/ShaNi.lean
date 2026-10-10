@@ -48,7 +48,7 @@ def const2 (x : XReg) (c₀ c₁ : BitVec 64) : List Instr :=
 /-- `Kᵢ … Kᵢ₊₃` into `ymm0`, `Kᵢ` in bits 63:0, through `xmm12`. -/
 def kQuad (i : Nat) : List Instr :=
   const2 .xmm0 (K i) (K (i + 1)) ++ const2 .xmm12 (K (i + 2)) (K (i + 3)) ++
-  [.vop (.vinserti128 .xmm0 .xmm0 .xmm12 1)]
+  ([.vop (.vinserti128 .xmm0 .xmm0 .xmm12 1)] : List Instr)
 
 /-- The `vpshufb` mask that reverses the bytes of each quadword. -/
 def bswapMask : BitVec 128 := 0x08090a0b0c0d0e0f0001020304050607#128
@@ -88,19 +88,19 @@ def body : Prog isa :=
 /-- The mask into both lanes of `ymm8`. -/
 def mask : List Instr :=
   const2 .xmm8 (bswapMask.extractLsb' 0 64) (bswapMask.extractLsb' 64 64) ++
-  [.vop (.vinserti128 .xmm8 .xmm8 .xmm8 1)]
+  ([.vop (.vinserti128 .xmm8 .xmm8 .xmm8 1)] : List Instr)
 
 /-- Load the hash value `H₀ … H₇` as `ABEF` (`H₀, H₁, H₄, H₅` from quadword 3
 down) into `ymm1` and `CDGH` (`H₂, H₃, H₆, H₇`) into `ymm2`. -/
 def load : List Instr :=
   mask ++
-  [.vmovdquLoad .l256 .xmm1 (at_ .rdi 0), .vmovdquLoad .l256 .xmm2 (at_ .rdi 32),
+  ([.vmovdquLoad .l256 .xmm1 (at_ .rdi 0), .vmovdquLoad .l256 .xmm2 (at_ .rdi 32),
    -- ymm7 := H₄ H₅ H₀ H₁ (from quadword 0), ymm2 := H₆ H₇ H₂ H₃
    .vop (.vperm2i128 .xmm7 .xmm2 .xmm1 0x20),
    .vop (.vperm2i128 .xmm2 .xmm2 .xmm1 0x31),
    -- each lane's two quadwords swapped: ABEF = H₅ H₄ H₁ H₀, CDGH = H₇ H₆ H₃ H₂
    .vop (.vpermq .xmm1 .xmm7 0xb1),
-   .vop (.vpermq .xmm2 .xmm2 0xb1)]
+   .vop (.vpermq .xmm2 .xmm2 0xb1)] : List Instr)
 
 /-- Store `ABEF` and `CDGH` back as the hash value, and clear the upper
 halves. -/
@@ -113,7 +113,7 @@ def store : List Instr :=
    .vop .vzeroupper]
 
 def compress : Prog isa :=
-  .seq (.block (load ++ [.alu .test .rdx (.reg .rdx)]))
+  .seq (.block (load ++ ([.alu .test .rdx (.reg .rdx)] : List Instr)))
     (.seq (.ite .e (.block []) (.loop body .ne)) (.block store))
 
 end VG.Impl.Sha512.X86_64.ShaNi

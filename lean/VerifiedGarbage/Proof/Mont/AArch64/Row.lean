@@ -31,9 +31,11 @@ theorem Fresh.head {t : Reg} {ts : List Reg} (h : Fresh (t :: ts)) :
     t ∉ ts ∧ t ∉ [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x24, .x25] :=
   ⟨(List.nodup_cons.mp h.1).1, h.2 t (List.mem_cons_self ..)⟩
 
-/-- Closes `∀ r ∈ rs, r ∈ rs'` for literal lists of registers and variables. -/
-macro "sub_regs" : tactic => `(tactic| (intro q hq; simp only [List.mem_cons, List.mem_append,
-  List.mem_singleton, List.not_mem_nil, or_false] at hq ⊢; grind))
+/-- Closes `∀ r ∈ rs, r ∈ rs'` for literal lists of registers and variables: by
+`decide` for literal registers (most uses, and much cheaper than `grind`),
+else by `grind` on the memberships. -/
+macro "sub_regs" : tactic => `(tactic| first | decide | (intro q hq; simp only [List.mem_cons,
+  List.mem_append, List.mem_singleton, List.not_mem_nil, or_false] at hq ⊢; grind))
 
 /-! ## Pieces -/
 

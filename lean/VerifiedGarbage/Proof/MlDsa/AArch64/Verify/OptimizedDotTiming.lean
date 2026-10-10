@@ -26,10 +26,10 @@ theorem dot_ready {p : Params} (hF : VFacts p) {S : Nat} {σ s : State} (hp : vP
     rw [Nat.mul_succ,Nat.mul_comm p.ℓ p.k] at hm
     exact hm
   have hn : p.ℓ=4∨p.ℓ=5∨p.ℓ=7 := by rcases hF.mem with rfl|rfl|rfl <;> decide
-  have ro : inB (vR p++vW p) (wP p) 1024=true := by vlay
-  have ra : inB (vR p++vW p) (aP (p.ℓ*r)) (1024*p.ℓ)=true := by vlay
-  have rb : inB (vR p++vW p) (zP p 0) (1024*p.ℓ)=true := by vlay
-  have wo : inB (vW p) (wP p) 1024=true := by vlay
+  have ro : inB (vR p++vW p) (wP p) 1024=true := by vlayd
+  have ra : inB (vR p++vW p) (aP (p.ℓ*r)) (1024*p.ℓ)=true := by vlayd
+  have rb : inB (vR p++vW p) (zP p 0) (1024*p.ℓ)=true := by vlayd
+  have wo : inB (vW p) (wP p) 1024=true := by vlayd
   have hA j (hj : j<p.ℓ) : PolyIs s.mem (pa s (aP (p.ℓ*r))+BitVec.ofNat 64 (1024*j)) (A' r j) := by
     have hv:=hs.a r hr j hj
     change PolyIs s.mem (pa s (VG.Impl.MlDsa.AArch64.Call.sc (oP (p.ℓ*r+j)))) _ at hv
@@ -42,7 +42,7 @@ theorem dot_ready {p : Params} (hF : VFacts p) {S : Nat} {σ s : State} (hp : vP
     rw [he,poly_addr] at hv
     simpa only [zP,vP,Nat.add_zero] using hv
   have ready : MontDot.Ready p.ℓ (wP p) (aP (p.ℓ*r)) (zP p 0) s :=
-    ⟨L.nwp ro,L.nwp ra,L.nwp rb,L.disj (by vlay),L.disj (by vlay),
+    ⟨L.nwp ro,L.nwp ra,L.nwp rb,L.disj (by vlayd),L.disj (by vlayd),
       fun j hj=>(PosPolyIs.of_canonical (hA j hj)).bound,fun j hj=>(hB j hj).bound,
       Covers.cons (L.cR ra) (Covers.cons (L.cR rb) (L.cR ro)),L.cW wo⟩
   exact ready

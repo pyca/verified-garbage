@@ -41,9 +41,9 @@ def bBody : Prog isa :=
 /-- The loop's registers: the sign bits, `i = 256 - τ`, and `x2` at the byte
 after them. -/
 def bSetup : List Instr :=
-  [.ldr .x .x9 .x25 840, .movz .x .x10 256 0, .sub .x .x10 .x10 .x27, mov .x11 .x27,
-    .addImm .x .x2 .x25 848, .movz .x .x5 264 0] ++ movQ .x12 ++
-    [.subImm .x .x12 .x12 2, .movz .x .x15 1 0]
+  ([.ldr .x .x9 .x25 840, .movz .x .x10 256 0, .sub .x .x10 .x10 .x27, mov .x11 .x27,
+    .addImm .x .x2 .x25 848, .movz .x .x5 264 0] : List Instr) ++ movQ .x12 ++
+    ([.subImm .x .x12 .x12 2, .movz .x .x15 1 0] : List Instr)
 
 def bLoop : Prog isa := .seq (.block bSetup) (.loop bBody (.nonzero .x .x5))
 

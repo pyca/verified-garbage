@@ -89,9 +89,9 @@ def term (q k t : Nat) : List Instr := [
 
 /-- The products of class `k`, masked and added to the result. -/
 def clsCode (q k : Nat) : List Instr :=
-  [.mov AL (.imm 0), .mov AH (.imm 0)] ++ (List.range 8).flatMap (term q k) ++
-  [.movImm64 .rax (cls k), .alu .and AL (.reg .rax), .alu .and AH (.reg .rax),
-   .alu .xor PL (.reg AL), .alu .xor PH (.reg AH)]
+  ([.mov AL (.imm 0), .mov AH (.imm 0)] : List Instr) ++ (List.range 8).flatMap (term q k) ++
+  ([.movImm64 .rax (cls k), .alu .and AL (.reg .rax), .alu .and AH (.reg .rax),
+   .alu .xor PL (.reg AL), .alu .xor PH (.reg AH)] : List Instr)
 
 /-- The classes of the second factor `y`. -/
 def split (y : Src) : List Instr :=
@@ -99,7 +99,7 @@ def split (y : Src) : List Instr :=
 
 /-- `PH:PL` := the carry-less product of table `q`'s word and `y`. -/
 def product (y : Src) (q : Nat) : List Instr :=
-  split y ++ [.mov PL (.imm 0), .mov PH (.imm 0)] ++ (List.range 4).flatMap (clsCode q)
+  split y ++ ([.mov PL (.imm 0), .mov PH (.imm 0)] : List Instr) ++ (List.range 4).flatMap (clsCode q)
 
 /-- `x¹²⁸ · w` added to `lo` and `hi` (the next 64 powers): `lo ⊕= w ⊕
 (w >> 1) ⊕ (w >> 2) ⊕ (w >> 7)`, `hi ⊕= (w << 63) ⊕ (w << 62) ⊕ (w << 57)`. -/
@@ -190,7 +190,7 @@ def entry (u : Nat) : List Instr := [
 /-- Save registers, compute the tables, move `data` to `rdi` (`mul` writes
 `rdx`) and test `n`. -/
 def setup : List Instr :=
-  save ++ hInv ++ (List.range 24).flatMap entry ++ [.mov .rdi (.reg .rdx), .alu .test .rcx (.reg .rcx)]
+  save ++ hInv ++ (List.range 24).flatMap entry ++ ([.mov .rdi (.reg .rdx), .alu .test .rcx (.reg .rcx)] : List Instr)
 
 def ghash : Prog isa :=
   .seq (.block setup)

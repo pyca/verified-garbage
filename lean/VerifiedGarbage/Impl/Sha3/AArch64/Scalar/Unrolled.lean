@@ -19,7 +19,7 @@ open VG VG.AArch64
 
 /-- Round `r`: theta, rho, pi and chi, then iota from an immediate. -/
 def unrolledRound (r : Nat) : List Instr :=
-  vectorCoreInstrs ++ (Control.constant (Spec.Sha3.RC r) ++ [.logic .eor .x .x0 .x0 .x26])
+  vectorCoreInstrs ++ (Control.constant (Spec.Sha3.RC r) ++ ([.logic .eor .x .x0 .x0 .x26] : List Instr))
 
 /-- The 24 rounds. -/
 def unrolledRounds : List Instr := (List.range 24).flatMap unrolledRound

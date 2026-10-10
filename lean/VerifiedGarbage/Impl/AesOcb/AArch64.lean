@@ -146,7 +146,7 @@ def low1 : List Instr := [imm .x12 1, .logic .and .x .x12 .x14 .x12]
 bit of `x14` (from `i`, shifted right each time) is zero. -/
 def lNtz : Prog isa :=
   .seq (.block (copy16 l0O lO ++ [mov .x14 .x25] ++ low1))
-    (.ite (.zero .x .x12) (.loop (.block (dbl .x19 lO lO ++ [.lsr .x .x14 .x14 1] ++ low1)) (.zero .x .x12))
+    (.ite (.zero .x .x12) (.loop (.block (dbl .x19 lO lO ++ ([.lsr .x .x14 .x14 1] : List Instr) ++ low1)) (.zero .x .x12))
       (.block []))
 
 /-! ## Calls -/
@@ -192,15 +192,15 @@ low): shifted left by `a` bits if bit `k` of `bottom` (in `x12`) is set.
 `x13`–`x15` are temporaries. -/
 def stage (k a : Nat) : List Instr :=
   -- The mask: all ones if bit `k` is set.
-  [.lsr .x .x13 .x12 k, imm .x14 1, .logic .and .x .x13 .x13 .x14, imm .x14 0,
-   .sub .x .x13 .x14 .x13] ++
+  ([.lsr .x .x13 .x12 k, imm .x14 1, .logic .and .x .x13 .x13 .x14, imm .x14 0,
+   .sub .x .x13 .x14 .x13] : List Instr) ++
   -- Each word, from the high one: `x ← x ⊕ ((x' ⊕ x) ∧ mask)`, where
   -- `x' = (x ⋘ a) ∨ (next ⋙ (64 − a))`.
   ([(Reg.x9, Reg.x10), (.x10, .x11)].flatMap fun (x, y) =>
     [.lsl .x .x14 x a, .lsr .x .x15 y (64 - a), .logic .orr .x .x14 .x14 .x15,
      .logic .eor .x .x14 .x14 x, .logic .and .x .x14 .x14 .x13, .logic .eor .x x x .x14]) ++
-  [.lsl .x .x14 .x11 a, .logic .eor .x .x14 .x14 .x11, .logic .and .x .x14 .x14 .x13,
-   .logic .eor .x .x11 .x11 .x14]
+  ([.lsl .x .x14 .x11 a, .logic .eor .x .x14 .x14 .x11, .logic .and .x .x14 .x14 .x13,
+   .logic .eor .x .x11 .x11 .x14] : List Instr)
 
 /-- `Offset_0` from `Ktop` at `W + tmpO` and `bottom` at `W + botO`, to
 `W + ofsO` and `W + o0O`: `Stretch = Ktop ‖ (Ktop[1..64] ⊕ Ktop[9..72])`
@@ -211,8 +211,8 @@ def offset0 : List Instr :=
    .lsl .x .x11 .x9 8, .lsr .x .x13 .x10 56, .logic .orr .x .x11 .x11 .x13,
    .logic .eor .x .x11 .x11 .x9, ld .x12 .x19 botO] ++
   stage 0 1 ++ stage 1 2 ++ stage 2 4 ++ stage 3 8 ++ stage 4 16 ++ stage 5 32 ++
-  [.rev .x9 .x9, .rev .x10 .x10, st .x19 ofsO .x9, st .x19 (ofsO + 8) .x10, st .x19 o0O .x9,
-   st .x19 (o0O + 8) .x10]
+  ([.rev .x9 .x9, .rev .x10 .x10, st .x19 ofsO .x9, st .x19 (ofsO + 8) .x10, st .x19 o0O .x9,
+   st .x19 (o0O + 8) .x10] : List Instr)
 
 variable (c : Callees)
 
@@ -292,8 +292,8 @@ def passScalar (body : List Instr) : Prog isa :=
 /-- Cache the three most frequent offset increments for an eight-block batch. -/
 def passCacheInit : Prog isa :=
   .seq (.block [.ldrq .v0 .x19 l0O])
-    (.seq (.block (dbl .x19 l0O lO ++ [.ldrq .v1 .x19 lO]))
-      (.block (dbl .x19 lO lO ++ [.ldrq .v2 .x19 lO])))
+    (.seq (.block (dbl .x19 l0O lO ++ ([.ldrq .v1 .x19 lO] : List Instr)))
+      (.block (dbl .x19 lO lO ++ ([.ldrq .v2 .x19 lO] : List Instr))))
 
 /-- Transfer a cached increment through scalar registers so the following
 scalar loads can forward from stores of the same width. -/
@@ -305,7 +305,7 @@ its two already computed doublings. -/
 def batchLastIncrement : Prog isa :=
   .seq (.block (cachedIncrement .v2))
     (.seq (.block [.lsr .x .x14 .x25 2])
-      (.loop (.block (dbl .x19 lO lO ++ [.lsr .x .x14 .x14 1] ++ low1)) (.zero .x .x12)))
+      (.loop (.block (dbl .x19 lO lO ++ ([.lsr .x .x14 .x14 1] : List Instr) ++ low1)) (.zero .x .x12)))
 
 /-- Where a pass accumulates the checksum relative to XORing the offset. -/
 inductive CkMode where
@@ -314,14 +314,14 @@ inductive CkMode where
 
 /-- v3 retains the offset and v5 the checksum across the whole pass. -/
 def residentBody (mode : CkMode) : List Instr :=
-  [.ldrq .v4 .x23 0] ++
+  ([.ldrq .v4 .x23 0] : List Instr) ++
   (if mode = .before then [.vop (.logic .eor .v5 .v5 .v4)] else []) ++
-  [.vop (.logic .eor .v4 .v4 .v3)] ++
+  ([.vop (.logic .eor .v4 .v4 .v3)] : List Instr) ++
   (if mode = .after then [.vop (.logic .eor .v5 .v5 .v4)] else []) ++
-  [.strq .v4 .x23 0]
+  ([.strq .v4 .x23 0] : List Instr)
 
 def residentStep (v : VReg) (mode : CkMode) : Prog isa :=
-  .block ([.vop (.logic .eor .v3 .v3 v)] ++ residentBody mode ++ nextBlock)
+  .block (([.vop (.logic .eor .v3 .v3 v)] : List Instr) ++ residentBody mode ++ nextBlock)
 
 def residentLast (mode : CkMode) : Prog isa :=
   .seq batchLastIncrement (.seq (.block [.ldrq .v6 .x19 lO]) (residentStep .v6 mode))
@@ -385,7 +385,7 @@ tag_len = [sp + 8], work = [sp + 16])`: the registers saved in `W`, the data
 and its length in `x21` and `x28`, the other arguments but `tag` kept in
 `W`, `L_$` and `L_0`, the checksum zeroed. -/
 def entry : List Instr :=
-  [.ldrSp .x9 16] ++ save .x9 ++
+  ([.ldrSp .x9 16] : List Instr) ++ save .x9 ++
   [mov .x19 .x9, mov .x20 .x0, mov .x21 .x6, mov .x22 .x1, mov .x28 .x7, st .x19 nO .x2,
    st .x19 nlO .x3, st .x19 aadO .x4, st .x19 alenO .x5, .ldrSp .x10 8, st .x19 tlO .x10] ++
   lsetup ++ zero16 ckO

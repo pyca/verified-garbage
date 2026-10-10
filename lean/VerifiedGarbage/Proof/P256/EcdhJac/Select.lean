@@ -74,9 +74,9 @@ theorem acc_mem : ∀ i<10,acc i∈vectorAcc := by decide
 theorem load_mem : ∀ i<10,load i∈vectorLoad := by decide
 
 def row (tbl r : Nat) : List Instr :=
-  [.vop (.add .d2 .v28 .v28 .v31),.vop (.cmeq .d2 .v29 .v28 .v30)] ++
-  (List.range 10).map (fun i => .ldrq (load i) .x0 (tbl+160*r+16*i)) ++
-  (List.range 10).map (fun i => .vop (.bsel .bit (acc i) (load i) .v29))
+  ([.vop (.add .d2 .v28 .v28 .v31),.vop (.cmeq .d2 .v29 .v28 .v30)] : List Instr) ++
+  ((List.range 10).map (fun i => .ldrq (load i) .x0 (tbl+160*r+16*i)) : List Instr) ++
+  ((List.range 10).map (fun i => .vop (.bsel .bit (acc i) (load i) .v29)) : List Instr)
 
 theorem row_ok {s : State} {tbl r a : Nat} (ha : a<2^64) (hr : r+1<2^64)
     (hidx : s.v .v28=dup2 (BitVec.ofNat 64 r))
@@ -246,9 +246,9 @@ theorem cachePtr_ok (s : State) :
 def output (j : Nat) := if j<12 then 704+8*j else 5400+8*(j-12)
 def outputRanges : List (Nat×Nat) := [(704,96),(5400,64)]
 def store : List Instr :=
-  (List.range 6).map (fun i=>.strq (acc i) .x0 (704+16*i)) ++
-  [.movz .x .x17 5400 0,.add .x .x17 .x0 .x17] ++
-  (List.range 4).map (fun i=>.strq (acc (i+6)) .x17 (16*i))
+  ((List.range 6).map (fun i=>.strq (acc i) .x0 (704+16*i)) : List Instr) ++
+  ([.movz .x .x17 5400 0,.add .x .x17 .x0 .x17] : List Instr) ++
+  ((List.range 4).map (fun i=>.strq (acc (i+6)) .x17 (16*i)) : List Instr)
 
 theorem stores_ok {s : State} {base : Addr} (hs : Scr s base 8192) :
     WP isa (.block store) s fun t=>

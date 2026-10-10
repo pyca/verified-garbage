@@ -42,33 +42,33 @@ theorem seeds_piece (hF : PFacts p) :
     KP p (Ctx (YK p)) (fun s₀ s => KB p s₀ s ∧ accV s₀ s = 1) (seeds p) := by
   have hk := hF.k; have hl := hF.l
   unfold seeds
-  refine Piece.seq (B := A1 p) (st32_piece (Y := YK p) oACC 1 (by layp hF) (by taint_decide) (fun _ _ _ h => h)
+  refine Piece.seq (B := A1 p) (st32_piece (Y := YK p) oACC 1 (by layd) (by taint_decide) (fun _ _ _ h => h)
     fun s₀ s s' hp _ h' m' => ⟨h', by rw [accV, m']; exact Mem.readW_writeW_self32 _ _ _⟩) ?_
   refine Piece.seq (B := fun s₀ s => A1 p s₀ s ∧ bytesAt s.mem (Buf.addr s₀ (sb oKL 1)) 1 = [BitVec.ofNat 8 p.k])
-    (st8_piece (Y := YK p) oKL p.k (by layp hF) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.1)
-      fun s₀ s s' hp h h' m' => ⟨⟨h', by rw [acc_keep hp (N := 0) (by omega) (by layp hF) (m' ▸ frW8)]; exact h.2⟩,
+    (st8_piece (Y := YK p) oKL p.k (by layd) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.1)
+      fun s₀ s s' hp h h' m' => ⟨⟨h', by rw [acc_keep hp (N := 0) (by omega) (by layd) (m' ▸ frW8)]; exact h.2⟩,
         by rw [m', YK_sc]; exact st8_bytes _ _ _ _ _⟩) ?_
   refine Piece.seq (B := fun s₀ s => A1 p s₀ s ∧ bytesAt s.mem (Buf.addr s₀ (sb oKL 2)) 2 =
       integerToBytes p.k 1 ++ integerToBytes p.ℓ 1)
-    (st8_piece (Y := YK p) (oKL + 1) p.ℓ (by layp hF) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.1.1)
-      fun s₀ s s' hp h h' m' => ⟨⟨h', by rw [acc_keep hp (N := 0) (by omega) (by layp hF) (m' ▸ frW8)]; exact h.1.2⟩,
+    (st8_piece (Y := YK p) (oKL + 1) p.ℓ (by layd) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.1.1)
+      fun s₀ s s' hp h h' m' => ⟨⟨h', by rw [acc_keep hp (N := 0) (by omega) (by layd) (m' ▸ frW8)]; exact h.1.2⟩,
         ?_⟩) ?_
-  · rw [bytes_cat hp _ (l₁ := 1) (l₂ := 1) (by layp hF) (by layp hF), Proof.MlDsa.KeyGen.integerToBytes_one,
-      Proof.MlDsa.KeyGen.integerToBytes_one, keepBytes hp (N := 0) (stkN (by omega)) (by layp hF) (m' ▸ frW8), h.2, m', YK_sc,
+  · rw [bytes_cat hp _ (l₁ := 1) (l₂ := 1) (by layd) (by layd), Proof.MlDsa.KeyGen.integerToBytes_one,
+      Proof.MlDsa.KeyGen.integerToBytes_one, keepBytes hp (N := 0) (stkN (by omega)) (by layd) (m' ▸ frW8), h.2, m', YK_sc,
       st8_bytes]
   refine Piece.seq (B := fun s₀ s => A1 p s₀ s ∧ bytesAt s.mem (Buf.addr s₀ (sb oHX 128)) 128 = hxOf p s₀)
-    (hash2_piece (Y := YK p) 0 200 136 0x1f ⟨0, 0, 32⟩ (sb oKL 2) (sb oHX 128) Proof.MlKem.rate136 (by layp hF)
+    (hash2_piece (Y := YK p) 0 200 136 0x1f ⟨0, 0, 32⟩ (sb oKL 2) (sb oHX 128) Proof.MlKem.rate136 (by layd)
       (by rw [YK_stk]; omega) (by decide) (by decide) (by decide) (by taint_decide)
       (h₁ := .block []) (by kernel_rfl) (h₂ := .block []) (by kernel_rfl) (h₃ := .block []) (by kernel_rfl)
       (h₄ := .block []) (by kernel_rfl) (fun _ _ _ h => h.1.1) fun s₀ s s' hp h h' fr out => ⟨⟨h',
-        by rw [acc_keep hp (N := 40) (by omega) (by layp hF) fr]; exact h.1.2⟩, ?_⟩) ?_
-  · rw [out, h.2, Ctx.roBytes hp h.1.1 (b := ⟨0, 0, 32⟩) (by layp hF) rfl, sponge_H, hxOf, List.append_assoc]
+        by rw [acc_keep hp (N := 40) (by omega) (by layd) fr]; exact h.1.2⟩, ?_⟩) ?_
+  · rw [out, h.2, Ctx.roBytes hp h.1.1 (b := ⟨0, 0, 32⟩) (by layd) rfl, sponge_H, hxOf, List.append_assoc]
   refine Piece.seq (B := fun s₀ s => A1 p s₀ s ∧ bytesAt s.mem (Buf.addr s₀ (sb oHX 128)) 128 = hxOf p s₀ ∧
       bytesAt s.mem (Buf.addr s₀ (sb oSA 32)) 32 = rhoOf p s₀)
-    (copyW_piece (Y := YK p) kS oHX kS oSA 8 (by decide) (by decide) (by layp hF) (h₁ := .block []) (by kernel_rfl)
+    (copyW_piece (Y := YK p) kS oHX kS oSA 8 (by decide) (by decide) (by layd) (h₁ := .block []) (by kernel_rfl)
       (by taint_decide) (fun _ _ _ h => h.1.1) fun s₀ s s' hp h h' fr cp => ⟨⟨h',
-        by rw [acc_keep hp (N := 0) (by omega) (by layp hF) (fr1 fr)]; exact h.1.2⟩,
-        by rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oHX 128) (by layp hF) (fr1 fr)]; exact h.2, ?_⟩) ?_
+        by rw [acc_keep hp (N := 0) (by omega) (by layd) (fr1 fr)]; exact h.1.2⟩,
+        by rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oHX 128) (by layd) (fr1 fr)]; exact h.2, ?_⟩) ?_
   · show bytesAt s'.mem (Buf.addr s₀ (sb oSA 32)) 32 = _
     rw [cp]
     show bytesAt s.mem (Buf.addr s₀ (sb oHX 32)) 32 = (keyGenSeeds p (xiOf s₀)).1
@@ -78,24 +78,24 @@ theorem seeds_piece (hF : PFacts p) :
   refine Piece.seq (B := fun s₀ s => A1 p s₀ s ∧ bytesAt s.mem (Buf.addr s₀ (sb oHX 128)) 128 = hxOf p s₀ ∧
       bytesAt s.mem (Buf.addr s₀ (sb oSA 32)) 32 = rhoOf p s₀ ∧
       bytesAt s.mem (Buf.addr s₀ (sb oSB 64)) 64 = rho'Of p s₀)
-    (copyW_piece (Y := YK p) kS (oHX + 32) kS oSB 16 (by decide) (by decide) (by layp hF) (h₁ := .block [])
+    (copyW_piece (Y := YK p) kS (oHX + 32) kS oSB 16 (by decide) (by decide) (by layd) (h₁ := .block [])
       (by kernel_rfl) (by taint_decide) (fun _ _ _ h => h.1.1) fun s₀ s s' hp h h' fr cp => ⟨⟨h',
-        by rw [acc_keep hp (N := 0) (by omega) (by layp hF) (fr1 fr)]; exact h.1.2⟩,
-        by rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oHX 128) (by layp hF) (fr1 fr)]; exact h.2.1,
-        by rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oSA 32) (by layp hF) (fr1 fr)]; exact h.2.2, ?_⟩) ?_
+        by rw [acc_keep hp (N := 0) (by omega) (by layd) (fr1 fr)]; exact h.1.2⟩,
+        by rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oHX 128) (by layd) (fr1 fr)]; exact h.2.1,
+        by rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oSA 32) (by layd) (fr1 fr)]; exact h.2.2, ?_⟩) ?_
   · show bytesAt s'.mem (Buf.addr s₀ (sb oSB 64)) 64 = _
     rw [cp]
     show bytesAt s.mem (Buf.addr s₀ (sb (oHX + 32) 64)) 64 = (keyGenSeeds p (xiOf s₀)).2.1
     rw [seeds_eq]
     show _ = ((hxOf p s₀).drop 32).take 64
-    rw [← h.2.1, bytes_sub hp _ (k := 32) (c := 64) (L := 128) (by decide) (by layp hF) (by layp hF)]
-  refine st8_piece (Y := YK p) (oSB + 65) 0 (by layp hF) (by taint_decide) (fun _ _ _ h => h.1.1)
+    rw [← h.2.1, bytes_sub hp _ (k := 32) (c := 64) (L := 128) (by decide) (by layd) (by layd)]
+  refine st8_piece (Y := YK p) (oSB + 65) 0 (by layd) (by taint_decide) (fun _ _ _ h => h.1.1)
     fun s₀ s s' hp h h' m' => ⟨⟨h', ?_, ?_, ?_, ?_⟩, ?_⟩
-  · rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oHX 128) (by layp hF) (m' ▸ frW8)]; exact h.2.1
-  · rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oSA 32) (by layp hF) (m' ▸ frW8)]; exact h.2.2.1
-  · rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oSB 64) (by layp hF) (m' ▸ frW8)]; exact h.2.2.2
+  · rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oHX 128) (by layd) (m' ▸ frW8)]; exact h.2.1
+  · rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oSA 32) (by layd) (m' ▸ frW8)]; exact h.2.2.1
+  · rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oSB 64) (by layd) (m' ▸ frW8)]; exact h.2.2.2
   · rw [m', YK_sc, st8_bytes]; rfl
-  · rw [acc_keep hp (N := 0) (by omega) (by layp hF) (m' ▸ frW8)]; exact h.1.2
+  · rw [acc_keep hp (N := 0) (by omega) (by layd) (m' ▸ frW8)]; exact h.1.2
 
 end
 

@@ -26,15 +26,15 @@ def rest (mm : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
     .mov .r10 (.mem (hdr (sArr aN))), .mov32 .rbp (.imm 0)],
   Compare8.code,
   -- `-m⁻¹`, and the number 1.
-  .block ([.store (hdr sMask) .rbp, .mov .rbx (.mem (at0 .r10))] ++ minv ++
-    [.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)]),
+  .block (([.store (hdr sMask) .rbp, .mov .rbx (.mem (at0 .r10))] : List Instr) ++ minv ++
+    ([.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)] : List Instr)),
   setWord aOne .rcx,
   -- `X = input R mod m`, the exponentiation, and the result.
   mm aXm aX aR2, exp65537 mm,
   .block [.mov .rbx (.mem (hdr (sArr aY))), .mov .rsi (.mem (hdr sOut)), .mov .rcx (.mem (hdr sK)),
     .mov .r15 (.mem (hdr sMask))],
   WordIO.store,
-  .block ([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] ++ exit)]
+  .block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)]
 
 def code (mm : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (.block Precomputed.entry)

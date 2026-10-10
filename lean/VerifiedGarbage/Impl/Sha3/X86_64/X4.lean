@@ -96,8 +96,8 @@ def plane (y : Nat) : List Instr :=
 round constant (setting ZF after the last). -/
 def round : List Instr :=
   (List.range 5).flatMap column ++ (List.range 5).flatMap dcol ++ (List.range 5).flatMap plane ++
-    [.mov .rax (.reg .rdi), .mov .rdi (.reg .rsi), .mov .rsi (.reg .rax),
-      .alu .add .rdx (.imm 32), .alu .cmp .rdx (.reg .rcx)]
+    ([.mov .rax (.reg .rdi), .mov .rdi (.reg .rsi), .mov .rsi (.reg .rax),
+      .alu .add .rdx (.imm 32), .alu .cmp .rdx (.reg .rcx)] : List Instr)
 
 /-- The 24 rounds, from `rdi` (and back to it), with the table at `rdx`
 and its end in `rcx`. -/

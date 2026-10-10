@@ -149,18 +149,18 @@ byte-reversed back; the carry out of the first reduces the last by `{87}`
 through a mask (in `edx`). The words are written in order, each after the
 next is read, so `b + s` may be `W + d`. -/
 def dbl (b : Reg) (s d : Nat) : List Instr :=
-  [.mov .eax (.mem (at_ b s)), .bswap .eax, .shift .shr .eax 31, .mov .edx (imm 0), .alu .sub .edx (.reg .eax),
-   .alu .and .edx (imm 0x87)] ++
+  ([.mov .eax (.mem (at_ b s)), .bswap .eax, .shift .shr .eax 31, .mov .edx (imm 0), .alu .sub .edx (.reg .eax),
+   .alu .and .edx (imm 0x87)] : List Instr) ++
   dblW b s d 0 ++ dblW b s d 1 ++ dblW b s d 2 ++
-  [.mov .eax (.mem (at_ b (s + 12))), .bswap .eax, .alu .add .eax (.reg .eax), .alu .xor .eax (.reg .edx),
-   .bswap .eax, .store (at_ .ebp (d + 12)) .eax]
+  ([.mov .eax (.mem (at_ b (s + 12))), .bswap .eax, .alu .add .eax (.reg .eax), .alu .xor .eax (.reg .edx),
+   .bswap .eax, .store (at_ .ebp (d + 12)) .eax] : List Instr)
 
 /-- `W + lO ← L_{ntz(i)}` for `i ≥ 1` in `edi`: `L_0` doubled while the
 low bit of `i` (at `W + kO`, shifted right each time) is zero. -/
 def lNtz : Prog isa :=
-  .seq (.block (copy16 l0O lO ++ [.mov .eax (.reg .edi), .store (at_ .ebp kO) .eax, .alu .test .eax (imm 1)]))
-    (.ite .e (.loop (.block (dbl .ebp lO lO ++ [.mov .eax (slot kO), .shift .shr .eax 1,
-        .store (at_ .ebp kO) .eax, .alu .test .eax (imm 1)])) .e)
+  .seq (.block (copy16 l0O lO ++ ([.mov .eax (.reg .edi), .store (at_ .ebp kO) .eax, .alu .test .eax (imm 1)] : List Instr)))
+    (.ite .e (.loop (.block (dbl .ebp lO lO ++ ([.mov .eax (slot kO), .shift .shr .eax 1,
+        .store (at_ .ebp kO) .eax, .alu .test .eax (imm 1)] : List Instr))) .e)
       (.block []))
 
 /-! ## Calls -/
@@ -176,7 +176,7 @@ def blocksFrame (f : Fn) : Prog isa :=
 (set up by `args`), with the key context's schedule and the working space
 at `W + scrO`. -/
 def callBlocks (f : Fn) (args : List Instr) : Prog isa :=
-  .seq (.block (args ++ [.mov .eax (slot ctxO), .mov .ecx (slot rndO), .alu .add .ebp (imm scrO)]))
+  .seq (.block (args ++ ([.mov .eax (slot ctxO), .mov .ecx (slot rndO), .alu .add .ebp (imm scrO)] : List Instr)))
     (.seq (blocksFrame f) (.block [.alu .sub .ebp (imm scrO)]))
 
 end
@@ -187,13 +187,13 @@ def oneBlock (d : Nat) : List Instr := [.mov .edx (.reg .ebp), .alu .add .edx (i
 /-! ## `L_$`, `L_0` and `Offset_0` -/
 
 /-- `L_$` and `L_0` from `L_*` (bytes 240–255 of the key context). -/
-def lsetup : List Instr := [.mov .ebx (slot ctxO)] ++ dbl .ebx 240 ldO ++ dbl .ebp ldO l0O
+def lsetup : List Instr := ([.mov .ebx (slot ctxO)] : List Instr) ++ dbl .ebx 240 ldO ++ dbl .ebp ldO l0O
 
 /-- `W + d ← pad(S)` (§4.1), `S` the bytes at `esi`, as many as `W + cO`
 says (1 to 15): zeros, the bytes copied, and `0x80` after them. -/
 def padTo (d cO : Nat) : Prog isa :=
-  .seq (.block (zero4 d ++ [.mov .edi (.reg .esi), .mov .edx (.reg .ebp), .alu .add .edx (imm d),
-      .mov .ecx (slot cO)]))
+  .seq (.block (zero4 d ++ ([.mov .edi (.reg .esi), .mov .edx (.reg .ebp), .alu .add .edx (imm d),
+      .mov .ecx (slot cO)] : List Instr)))
     (.seq copyLoop (.block [.mov .eax (imm 0x80), .store8 (at_ .edx 0) .al]))
 
 /-- The nonce block (§4.2), `num2str(TAGLEN mod 128, 7) ‖ zeros ‖ 1 ‖ N`, at
@@ -201,8 +201,8 @@ def padTo (d cO : Nat) : Prog isa :=
 in the byte before them, and `TAGLEN`'s bits in the top of the first byte.
 Then `bottom` (its last 6 bits) to `W + botO`, and those bits cleared. -/
 def nonceBlock : Prog isa :=
-  .seq (.block (zero4 tmpO ++ [.mov .edi (slot nO), .mov .ecx (slot nlO), .mov .edx (.reg .ebp),
-      .alu .add .edx (imm (tmpO + 16)), .alu .sub .edx (.reg .ecx)]))
+  .seq (.block (zero4 tmpO ++ ([.mov .edi (slot nO), .mov .ecx (slot nlO), .mov .edx (.reg .ebp),
+      .alu .add .edx (imm (tmpO + 16)), .alu .sub .edx (.reg .ecx)] : List Instr)))
     (.seq copyLoop
       (.block [.mov .ecx (slot nlO), .mov .edx (.reg .ebp), .alu .add .edx (imm (tmpO + 15)),
         .alu .sub .edx (.reg .ecx), .mov .eax (imm 1), .store8 (at_ .edx 0) .al,
@@ -225,34 +225,34 @@ def selW (j : Nat) : List Instr :=
 /-- Word `j` (below 5) of the shift by `a` (from 1 to 31):
 `x' = (x << a) ∨ (next >> (32 − a))`. -/
 def stageW (a j : Nat) : List Instr :=
-  [.mov .eax (slot (stO + 4 * j)), .mov .ecx (.reg .eax)] ++ shlEcx a ++
-  [.mov .edx (slot (stO + 4 * j + 4)), .shift .shr .edx (32 - a), .alu .or .ecx (.reg .edx)] ++ selW j
+  ([.mov .eax (slot (stO + 4 * j)), .mov .ecx (.reg .eax)] : List Instr) ++ shlEcx a ++
+  ([.mov .edx (slot (stO + 4 * j + 4)), .shift .shr .edx (32 - a), .alu .or .ecx (.reg .edx)] : List Instr) ++ selW j
 
 /-- The mask of a stage, all ones if bit `k` of `bottom` is set, to `ebx`. -/
 def stageMask (k : Nat) : List Instr :=
-  [.mov .eax (slot botO)] ++ (if k = 0 then [] else [.shift .shr .eax k]) ++
-  [.alu .and .eax (imm 1), .mov .ebx (imm 0), .alu .sub .ebx (.reg .eax)]
+  ([.mov .eax (slot botO)] : List Instr) ++ (if k = 0 then [] else [.shift .shr .eax k]) ++
+  ([.alu .and .eax (imm 1), .mov .ebx (imm 0), .alu .sub .ebx (.reg .eax)] : List Instr)
 
 /-- One stage of the shift of `Stretch`: left by `a` (from 1 to 31) bits if
 bit `k` of `bottom` is set. -/
 def stage (k a : Nat) : List Instr :=
   stageMask k ++ stageW a 0 ++ stageW a 1 ++ stageW a 2 ++ stageW a 3 ++ stageW a 4 ++
-  [.mov .eax (slot (stO + 20)), .mov .ecx (.reg .eax)] ++ shlEcx a ++ selW 5
+  ([.mov .eax (slot (stO + 20)), .mov .ecx (.reg .eax)] : List Instr) ++ shlEcx a ++ selW 5
 
 /-- Word `j` (below 5) of the shift by 32: `x' = next`. -/
-def stage32W (j : Nat) : List Instr := [.mov .eax (slot (stO + 4 * j)), .mov .ecx (slot (stO + 4 * j + 4))] ++ selW j
+def stage32W (j : Nat) : List Instr := ([.mov .eax (slot (stO + 4 * j)), .mov .ecx (slot (stO + 4 * j + 4))] : List Instr) ++ selW j
 
 /-- The last stage: left by 32 bits if bit 5 of `bottom` is set. -/
 def stage32 : List Instr :=
   stageMask 5 ++ stage32W 0 ++ stage32W 1 ++ stage32W 2 ++ stage32W 3 ++ stage32W 4 ++
-  [.mov .eax (slot (stO + 20)), .mov .ecx (imm 0)] ++ selW 5
+  ([.mov .eax (slot (stO + 20)), .mov .ecx (imm 0)] : List Instr) ++ selW 5
 
 /-- Word `j` of `Stretch`'s tail: `((x << 8) ∨ (y >> 24)) ⊕ x`, `x` and `y`
 words `j` and `j + 1` of `Ktop`. -/
 def tailW (j : Nat) : List Instr :=
-  [.mov .eax (slot (stO + 4 * j)), .mov .ecx (.reg .eax)] ++ shlEcx 8 ++
-  [.mov .edx (slot (stO + 4 * j + 4)), .shift .shr .edx 24, .alu .or .ecx (.reg .edx), .alu .xor .ecx (.reg .eax),
-   .store (at_ .ebp (stO + 16 + 4 * j)) .ecx]
+  ([.mov .eax (slot (stO + 4 * j)), .mov .ecx (.reg .eax)] : List Instr) ++ shlEcx 8 ++
+  ([.mov .edx (slot (stO + 4 * j + 4)), .shift .shr .edx 24, .alu .or .ecx (.reg .edx), .alu .xor .ecx (.reg .eax),
+   .store (at_ .ebp (stO + 16 + 4 * j)) .ecx] : List Instr)
 
 /-- `Stretch = Ktop ‖ (Ktop[1..64] ⊕ Ktop[9..72])` from `Ktop` at `W + tmpO`,
 to `W + stO`, as numbers. -/
@@ -281,16 +281,16 @@ def nonce : Prog isa :=
 `ebx` blocks are done). -/
 def hashFill : Prog isa :=
   .seq lNtz
-    (.block (xor16 .ebp lO ohO ++ [.mov .edx (slot fpO)] ++
+    (.block (xor16 .ebp lO ohO ++ ([.mov .edx (slot fpO)] : List Instr) ++
       [0, 4, 8, 12].flatMap (fun k => [.mov .eax (.mem (at_ .esi k)), .alu .xor .eax (slot (ohO + k)),
         .store (at_ .edx k) .eax]) ++
-      [.alu .add .edx (imm 16), .store (at_ .ebp fpO) .edx, .alu .add .esi (imm 16), .alu .add .edi (imm 1),
-       .alu .sub .ebx (imm 1)]))
+      ([.alu .add .edx (imm 16), .store (at_ .ebp fpO) .edx, .alu .add .esi (imm 16), .alu .add .edi (imm 1),
+       .alu .sub .ebx (imm 1)] : List Instr)))
 
 /-- Add the `W + cntO` blocks at `W + bufO` to the sum. -/
 def hashSum : Prog isa :=
   .seq (.block [.mov .ebx (slot cntO), .mov .edx (.reg .ebp), .alu .add .edx (imm bufO)])
-    (.loop (.block (xor16 .edx 0 sumO ++ [.alu .add .edx (imm 16), .alu .sub .ebx (imm 1)])) .ne)
+    (.loop (.block (xor16 .edx 0 sumO ++ ([.alu .add .edx (imm 16), .alu .sub .ebx (imm 1)] : List Instr))) .ne)
 
 /-- A chunk of up to 8 blocks: `min(8, blocks left)`, fill, encipher, add;
 then on to the next (ZF set when none are left). -/
@@ -307,7 +307,7 @@ def hashChunk : Prog isa :=
 /-- The rest of the associated data (`W + restO` bytes at `esi`), padded,
 XORed with the offset `⊕ L_*`, enciphered and added to the sum. -/
 def hashRest : Prog isa :=
-  .seq (.block ([.mov .ebx (slot ctxO)] ++ xor16 .ebx 240 ohO))
+  .seq (.block (([.mov .ebx (slot ctxO)] : List Instr) ++ xor16 .ebx 240 ohO))
     (.seq (padTo bufO restO)
       (.seq (.block (xor16 .ebp ohO bufO))
         (.seq (callBlocks c.enc (oneBlock bufO)) (.block (xor16 .ebp bufO sumO)))))
@@ -315,9 +315,9 @@ def hashRest : Prog isa :=
 /-- `HASH(K, A)` to `W + sumO`. -/
 def hash : Prog isa :=
   .seq (.block (zero4 sumO ++ zero4 ohO ++
-      [.mov .esi (slot aadO), .mov .eax (slot alenO), .mov .ecx (.reg .eax), .alu .and .ecx (imm 15),
+      ([.mov .esi (slot aadO), .mov .eax (slot alenO), .mov .ecx (.reg .eax), .alu .and .ecx (imm 15),
        .store (at_ .ebp restO) .ecx, .shift .shr .eax 4, .store (at_ .ebp hlO) .eax, .mov .edi (imm 1),
-       .alu .test .eax (.reg .eax)]))
+       .alu .test .eax (.reg .eax)] : List Instr)))
     (.seq (.ite .e (.block []) (.loop (hashChunk c) .ne))
       (.seq (.block [.mov .eax (slot restO), .alu .test .eax (.reg .eax)])
         (.ite .e (.block []) (hashRest c))))
@@ -375,7 +375,7 @@ Offset ⊕ L_*`, `Pad = ENCIPHER(K, Offset_*)`; for `seal` (`enc`) the
 checksum of the plaintext, then the XOR; for `open`, the XOR, then the
 checksum. -/
 def rest (enc : Bool) : Prog isa :=
-  .seq (.block ([.mov .ebx (slot ctxO)] ++ xor16 .ebx 240 ofsO ++ copy16 ofsO tmpO))
+  .seq (.block (([.mov .ebx (slot ctxO)] : List Instr) ++ xor16 .ebx 240 ofsO ++ copy16 ofsO tmpO))
     (.seq (callBlocks c.enc (oneBlock tmpO))
       (if enc then .seq padCk xorPad else .seq xorPad padCk))
 
@@ -438,7 +438,7 @@ def mask : Prog isa :=
         .alu .add .edi (imm 1), .alu .sub .ecx (imm 1)]) .ne))
 
 def «open» : Prog isa :=
-  .seq (front c false t2O) (.seq recv (.seq cmp (.seq mask (.block ([.mov .eax (slot okO)] ++ restore)))))
+  .seq (front c false t2O) (.seq recv (.seq cmp (.seq mask (.block (([.mov .eax (slot okO)] : List Instr) ++ restore)))))
 
 /-! ## The key setup -/
 
@@ -458,7 +458,7 @@ def init : Prog isa :=
             .store (at_ .edx 240) .eax, .store (at_ .edx 244) .eax, .store (at_ .edx 248) .eax,
             .store (at_ .edx 252) .eax, .mov .eax (.reg .edx), .mov .ecx (slot nlO), .shift .shr .ecx 2,
             .alu .add .ecx (imm 6), .alu .add .edx (imm 240), .mov .ebx (imm 1), .alu .add .ebp (imm scrO)])
-          (.seq (blocksFrame c.enc) (.block ([.alu .sub .ebp (imm scrO)] ++ restore))))))
+          (.seq (blocksFrame c.enc) (.block (([.alu .sub .ebp (imm scrO)] : List Instr) ++ restore))))))
 
 end
 

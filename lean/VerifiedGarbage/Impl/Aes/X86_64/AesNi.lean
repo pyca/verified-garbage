@@ -77,7 +77,7 @@ def rcReg : Nat → XReg
 
 /-- `Rcon[1]` … `Rcon[8]` (`{01}` … `{80}`) into `rcReg 0` … `rcReg 7`. -/
 def rcons : List Instr :=
-  [.xop (.bin .pcmpeqd .xmm5 .xmm5), .xop (.shift .psrld .xmm5 31)] ++
+  ([.xop (.bin .pcmpeqd .xmm5 .xmm5), .xop (.shift .psrld .xmm5 31)] : List Instr) ++
   (List.range 7).flatMap fun j =>
     [.xop (.bin .movdqa (rcReg (j + 1)) (rcReg j)), .xop (.bin .paddd (rcReg (j + 1)) (rcReg (j + 1)))]
 
@@ -91,7 +91,7 @@ def rcons128 : List Instr :=
 def kgen (s : XReg) (sel : BitVec 8) (rot : Bool) (k : XReg) : List Instr :=
   .xop (.pshufd .xmm3 s sel) ::
     ((if rot then [.xop (.shift .psrldq .xmm3 1), .xop (.pshufd .xmm3 .xmm3 0)] else []) ++
-      [.xop (.bin .aesenclast .xmm3 k)])
+      ([.xop (.bin .aesenclast .xmm3 k)] : List Instr))
 
 /-- `d ← prefixXor(d) ⊕ xmm3`, then store `d` at `schedule + off`. `xmm4` is
 a temporary. -/
@@ -116,13 +116,13 @@ def kstepB6 (off : Nat) : List Instr :=
 
 /-- AES-128: 11 round keys. -/
 def expand128 : List Instr :=
-  rcons128 ++ [.movdquLoad .xmm1 (at_ .rdi 0), .movdquStore (at_ .rdx 0) .xmm1] ++
+  rcons128 ++ ([.movdquLoad .xmm1 (at_ .rdi 0), .movdquStore (at_ .rdx 0) .xmm1] : List Instr) ++
   (List.range 10).flatMap fun k => kstep .xmm1 .xmm1 0xff true (rcReg k) (16 * (k + 1))
 
 /-- AES-192: 13 round keys (52 words), 6 words at a time. -/
 def expand192 : List Instr :=
-  [.movdquLoad .xmm1 (at_ .rdi 0), .movdquLoad .xmm2 (at_ .rdi 8), .xop (.shift .psrldq .xmm2 8),
-   .movdquStore (at_ .rdx 0) .xmm1, .movdquStore (at_ .rdx 16) .xmm2] ++
+  ([.movdquLoad .xmm1 (at_ .rdi 0), .movdquLoad .xmm2 (at_ .rdi 8), .xop (.shift .psrldq .xmm2 8),
+   .movdquStore (at_ .rdx 0) .xmm1, .movdquStore (at_ .rdx 16) .xmm2] : List Instr) ++
   (List.range 7).flatMap (fun k =>
     kstep .xmm1 .xmm2 0x55 true (rcReg k) (24 * (k + 1)) ++ kstepB6 (24 * (k + 1) + 16)) ++
   kstep .xmm1 .xmm2 0x55 true (rcReg 7) 192
@@ -130,15 +130,15 @@ def expand192 : List Instr :=
 /-- AES-256: 15 round keys (60 words), 8 words at a time; the steps without
 a round constant use `aesenclast` with zero, in `xmm15`. -/
 def expand256 : List Instr :=
-  [.xop (.bin .pxor .xmm15 .xmm15), .movdquLoad .xmm1 (at_ .rdi 0), .movdquLoad .xmm2 (at_ .rdi 16),
-   .movdquStore (at_ .rdx 0) .xmm1, .movdquStore (at_ .rdx 16) .xmm2] ++
+  ([.xop (.bin .pxor .xmm15 .xmm15), .movdquLoad .xmm1 (at_ .rdi 0), .movdquLoad .xmm2 (at_ .rdi 16),
+   .movdquStore (at_ .rdx 0) .xmm1, .movdquStore (at_ .rdx 16) .xmm2] : List Instr) ++
   (List.range 6).flatMap (fun k =>
     kstep .xmm1 .xmm2 0xff true (rcReg k) (32 * (k + 1)) ++
     kstep .xmm2 .xmm1 0xff false .xmm15 (32 * (k + 1) + 16)) ++
   kstep .xmm1 .xmm2 0xff true (rcReg 6) 224
 
 def expandKey : Prog isa :=
-  .seq (.block (rcons ++ [.alu .cmp .rsi (.imm 24)]))
+  .seq (.block (rcons ++ ([.alu .cmp .rsi (.imm 24)] : List Instr)))
     (.ite .e (.block expand192)
       (.seq (.block [.alu .cmp .rsi (.imm 32)]) (.ite .e (.block expand256) (.block expand128))))
 
@@ -165,10 +165,10 @@ def round (regs : List XReg) (j : Nat) : List Instr := keyOp regs .aesenc (at_ .
 key schedule at `rdi`, and its last round key at `r10`. -/
 def aes (regs : List XReg) : Prog isa :=
   .seq (.block (keyOp regs .pxor (at_ .rdi 0) ++ (List.range 9).flatMap (fun j => round regs (j + 1)) ++
-      [.alu .cmp .rsi (.imm 10)]))
+      ([.alu .cmp .rsi (.imm 10)] : List Instr)))
     (.seq
       (.ite .e (.block [])
-        (.seq (.block (round regs 10 ++ round regs 11 ++ [.alu .cmp .rsi (.imm 12)]))
+        (.seq (.block (round regs 10 ++ round regs 11 ++ ([.alu .cmp .rsi (.imm 12)] : List Instr)))
           (.ite .e (.block []) (.block (round regs 12 ++ round regs 13)))))
       (.block (keyOp regs .aesenclast (at_ .r10 0))))
 
@@ -176,14 +176,14 @@ def aes (regs : List XReg) : Prog isa :=
 byte-reversed, and the counter is incremented (`inc₃₂`). -/
 def ctrs : List XReg → List Instr
   | [] => []
-  | b :: bs => [.xop (.bin .movdqa b .xmm9), .xop (.bin .pshufb b .xmm10),
-      .xop (.bin .paddd .xmm9 .xmm11)] ++ ctrs bs
+  | b :: bs => ([.xop (.bin .movdqa b .xmm9), .xop (.bin .pshufb b .xmm10),
+      .xop (.bin .paddd .xmm9 .xmm11)] : List Instr) ++ ctrs bs
 
 /-- XOR block register `i` into the data block `rcx + 16 (j + i)`. -/
 def xorData : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => [.movdquLoad .xmm8 (at_ .rcx (16 * j)), .xop (.bin .pxor b .xmm8),
-      .movdquStore (at_ .rcx (16 * j)) b] ++ xorData bs (j + 1)
+  | b :: bs, j => ([.movdquLoad .xmm8 (at_ .rcx (16 * j)), .xop (.bin .pxor b .xmm8),
+      .movdquStore (at_ .rcx (16 * j)) b] : List Instr) ++ xorData bs (j + 1)
 
 def regs8 : List XReg := [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7]
 
@@ -191,22 +191,22 @@ def regs8 : List XReg := [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7
 def body8 : Prog isa :=
   .seq (.block (ctrs regs8))
     (.seq (aes regs8)
-      (.block (xorData regs8 0 ++ [.alu .add .rcx (.imm 128), .alu .sub .r8 (.imm 8),
-        .alu .cmp .r8 (.imm 8)])))
+      (.block (xorData regs8 0 ++ ([.alu .add .rcx (.imm 128), .alu .sub .r8 (.imm 8),
+        .alu .cmp .r8 (.imm 8)] : List Instr))))
 
 /-- One block. -/
 def body1 : Prog isa :=
   .seq (.block (ctrs [.xmm0]))
     (.seq (aes [.xmm0])
-      (.block (xorData [.xmm0] 0 ++ [.alu .add .rcx (.imm 16), .alu .sub .r8 (.imm 1)])))
+      (.block (xorData [.xmm0] 0 ++ ([.alu .add .rcx (.imm 16), .alu .sub .r8 (.imm 1)] : List Instr))))
 
 def ctrLoad : List Instr :=
   const .xmm10 revMask ++
-  [.movImm64 .rax 1, .xop (.movq .xmm11 .rax),
+  ([.movImm64 .rax 1, .xop (.movq .xmm11 .rax),
    .movdquLoad .xmm9 (at_ .rdx 0), .xop (.bin .pshufb .xmm9 .xmm10),
    .mov .r10 (.reg .rsi), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10),
    .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .rdi),
-   .alu .cmp .r8 (.imm 8)]
+   .alu .cmp .r8 (.imm 8)] : List Instr)
 
 def ctrStore : List Instr :=
   [.xop (.bin .pshufb .xmm9 .xmm10), .movdquStore (at_ .rdx 0) .xmm9]

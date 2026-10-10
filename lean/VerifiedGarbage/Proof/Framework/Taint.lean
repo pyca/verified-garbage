@@ -63,6 +63,20 @@ structure Taint (M : ISA) where
 
 namespace Taint
 
+/-- `filter p l` for a domain's step, but `l` itself when `p` keeps every
+element. A step that rebuilds a list it does not change (e.g. the public
+slots, on a secret store that overlaps none) makes the kernel build and
+then walk a new copy at every later access. -/
+def filterKeep {α : Type} (p : α → Bool) (l : List α) : List α :=
+  bif KList.all l p then l else KList.filter p l
+
+theorem filterKeep_eq {α : Type} (p : α → Bool) (l : List α) : filterKeep p l = l.filter p := by
+  unfold filterKeep
+  cases h : KList.all l p
+  · exact KList.filter_eq p l
+  · rw [KList.all_eq, List.all_eq_true] at h
+    exact (List.filter_eq_self.mpr h).symm
+
 /-- Precomputed results of the analysis, for `check`: each block's interval and
 intermediate taints, the taint between parts of a `seq`, and loop invariants.
 The checker validates every interval; choosing its size changes no soundness

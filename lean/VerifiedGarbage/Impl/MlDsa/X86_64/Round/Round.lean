@@ -50,7 +50,7 @@ def condAdd (r : Reg) (x : Src) (m : Reg) (k : BitVec 32) : List Instr :=
 
 /-- The loop over the coefficients: `body`, then `rcx` counts down. -/
 def mapLoop (body : List Instr) : Prog isa :=
-  .seq (.block [.mov32 .rcx (.imm 256)]) (.loop (.block (body ++ [.alu .sub .rcx (.imm 1)])) .ne)
+  .seq (.block [.mov32 .rcx (.imm 256)]) (.loop (.block (body ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) .ne)
 
 /-! ## `Decompose` -/
 
@@ -82,27 +82,27 @@ def g88 : Nat := 95232
 /-! ## The functions -/
 
 def p2rBody : List Instr :=
-  [.mov32 .rax (.mem (cf .rdi)), .alu .add .rax (.imm 4095), .mov .r8 (.reg .rax), .shift .shr .r8 13,
-    .store32 (cf .rsi) .r8, .alu .and .rax (.imm 8191)] ++ condAdd .rax (.imm 4095) .r9 qImm ++
-    [.store32 (cf .rdx) .rax]
+  ([.mov32 .rax (.mem (cf .rdi)), .alu .add .rax (.imm 4095), .mov .r8 (.reg .rax), .shift .shr .r8 13,
+    .store32 (cf .rsi) .r8, .alu .and .rax (.imm 8191)] : List Instr) ++ condAdd .rax (.imm 4095) .r9 qImm ++
+    ([.store32 (cf .rdx) .rax] : List Instr)
 
 def power2Round : Prog isa := mapLoop p2rBody
 
 /-- `γ₂` (in `rsi` or `rdx`), zero-extended, compared with `(q - 1)/32`. -/
 def gammaCmp (r : Reg) : List Instr := [.mov32 r (.reg r), .alu32 .cmp r (.imm (BitVec.ofNat 32 g32))]
 
-def hbBody (g : Nat) : List Instr := [.mov32 .rax (.mem (cf .rdi))] ++ hb g ++ [.store32 (cf .r10) .rax]
+def hbBody (g : Nat) : List Instr := ([.mov32 .rax (.mem (cf .rdi))] : List Instr) ++ hb g ++ ([.store32 (cf .r10) .rax] : List Instr)
 
 def highBits : Prog isa :=
-  .seq (.block (gammaCmp .rsi ++ [.mov .r10 (.reg .rdx)])) (.ite .e (mapLoop (hbBody g32)) (mapLoop (hbBody g88)))
+  .seq (.block (gammaCmp .rsi ++ ([.mov .r10 (.reg .rdx)] : List Instr))) (.ite .e (mapLoop (hbBody g32)) (mapLoop (hbBody g88)))
 
 def lbBody (g : Nat) : List Instr :=
-  [.mov32 .rax (.mem (cf .rdi)), .mov .r11 (.reg .rax)] ++ hb g ++
-    [.mov32 .r8 (.imm (BitVec.ofNat 32 (2 * g))), .mul .r8] ++ condAdd .r11 (.reg .rax) .r8 qImm ++
-    [.store32 (cf .r10) .r11]
+  ([.mov32 .rax (.mem (cf .rdi)), .mov .r11 (.reg .rax)] : List Instr) ++ hb g ++
+    ([.mov32 .r8 (.imm (BitVec.ofNat 32 (2 * g))), .mul .r8] : List Instr) ++ condAdd .r11 (.reg .rax) .r8 qImm ++
+    ([.store32 (cf .r10) .r11] : List Instr)
 
 def lowBits : Prog isa :=
-  .seq (.block (gammaCmp .rsi ++ [.mov .r10 (.reg .rdx)])) (.ite .e (mapLoop (lbBody g32)) (mapLoop (lbBody g88)))
+  .seq (.block (gammaCmp .rsi ++ ([.mov .r10 (.reg .rdx)] : List Instr))) (.ite .e (mapLoop (lbBody g32)) (mapLoop (lbBody g88)))
 
 def nlBody : List Instr :=
   [.mov32 .rax (.mem (cf .rdi)), .mov32 .rdx (.imm qImm), .alu .sub .rdx (.reg .rax), .alu .sub .rax (.reg .rsi),
@@ -113,27 +113,27 @@ def normLt : Prog isa :=
     (.seq (mapLoop nlBody) (.block [.mov .rax (.reg .r9), .shift .shr .rax 63]))
 
 def mhBody (g : Nat) : List Instr :=
-  [.mov32 .rax (.mem (cf .rsi))] ++ hb g ++
-    [.mov .r11 (.reg .rax), .mov32 .rax (.mem (cf .rsi)), .alu32 .add .rax (.mem (cf .rdi))] ++
+  ([.mov32 .rax (.mem (cf .rsi))] : List Instr) ++ hb g ++
+    ([.mov .r11 (.reg .rax), .mov32 .rax (.mem (cf .rsi)), .alu32 .add .rax (.mem (cf .rdi))] : List Instr) ++
     condAdd .rax (.imm qImm) .r8 qImm ++ hb g ++
-    [.alu .xor .rax (.reg .r11), .alu .add .rax (.imm 63), .shift .shr .rax 6, .store32 (cf .r10) .rax,
-      .alu .add .r9 (.reg .rax)]
+    ([.alu .xor .rax (.reg .r11), .alu .add .rax (.imm 63), .shift .shr .rax 6, .store32 (cf .r10) .rax,
+      .alu .add .r9 (.reg .rax)] : List Instr)
 
 def makeHint : Prog isa :=
-  .seq (.block (gammaCmp .rdx ++ [.mov .r10 (.reg .rcx), .mov32 .r9 (.imm 0)]))
+  .seq (.block (gammaCmp .rdx ++ ([.mov .r10 (.reg .rcx), .mov32 .r9 (.imm 0)] : List Instr)))
     (.seq (.ite .e (mapLoop (mhBody g32)) (mapLoop (mhBody g88))) (.block [.mov .rax (.reg .r9)]))
 
 def uhBody (g : Nat) : List Instr :=
-  [.mov32 .rax (.mem (cf .rsi)), .mov .r11 (.reg .rax)] ++ hbRaw g ++
-    [.mov .r9 (.reg .rax), .mov32 .r8 (.imm (BitVec.ofNat 32 (2 * g))), .mul .r8, .alu .sub .rax (.reg .r11),
+  ([.mov32 .rax (.mem (cf .rsi)), .mov .r11 (.reg .rax)] : List Instr) ++ hbRaw g ++
+    ([.mov .r9 (.reg .rax), .mov32 .r8 (.imm (BitVec.ofNat 32 (2 * g))), .mul .r8, .alu .sub .rax (.reg .r11),
       .alu .sbb .rax (.reg .rax), .alu .and .rax (.imm 2), .alu .sub .rax (.imm 1),
       .mov32 .r11 (.mem (cf .rdi)), .mov32 .r8 (.imm 0), .alu .sub .r8 (.reg .r11), .alu .sbb .r8 (.reg .r8),
-      .alu .and .rax (.reg .r8), .alu .add .rax (.reg .r9), .alu .add .rax (.imm (BitVec.ofNat 32 (dMod g)))] ++
+      .alu .and .rax (.reg .r8), .alu .add .rax (.reg .r9), .alu .add .rax (.imm (BitVec.ofNat 32 (dMod g)))] : List Instr) ++
     condAdd .rax (.imm (BitVec.ofNat 32 (dMod g))) .r8 (BitVec.ofNat 32 (dMod g)) ++
     condAdd .rax (.imm (BitVec.ofNat 32 (dMod g))) .r8 (BitVec.ofNat 32 (dMod g)) ++
-    [.store32 (cf .r10) .rax]
+    ([.store32 (cf .r10) .rax] : List Instr)
 
 def useHint : Prog isa :=
-  .seq (.block (gammaCmp .rdx ++ [.mov .r10 (.reg .rcx)])) (.ite .e (mapLoop (uhBody g32)) (mapLoop (uhBody g88)))
+  .seq (.block (gammaCmp .rdx ++ ([.mov .r10 (.reg .rcx)] : List Instr))) (.ite .e (mapLoop (uhBody g32)) (mapLoop (uhBody g88)))
 
 end VG.Impl.MlDsa.X86_64.Round

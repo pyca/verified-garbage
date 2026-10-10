@@ -50,11 +50,11 @@ def consts : List Instr :=
 /-- `d ← d mod q` for `d < q²`, with a temporary `t`, and `q`, `-q` and `M` in
 `x9`, `x10` and `x11`. -/
 def reduce (d t : Reg) : List Instr :=
-  [.lsr .x t d 22, .mul .x t t .x11, .lsr .x t t 40, .madd .x d t .x10 d] ++ csub d t .x9
+  ([.lsr .x t d 22, .mul .x t t .x11, .lsr .x t t 40, .madd .x d t .x10 d] : List Instr) ++ csub d t .x9
 
 /-- `t i` to `[b + 4i]`, through `x9`. -/
 def tabStep (t : Nat → Nat) (b : Reg) (i : Nat) : List Instr :=
-  movW .x9 (BitVec.ofNat 32 (t i)) ++ [.str .w .x9 b (4 * i)]
+  movW .x9 (BitVec.ofNat 32 (t i)) ++ ([.str .w .x9 b (4 * i)] : List Instr)
 
 /-- The table `t 0, …, t (n - 1)` at `b`. -/
 def storeTab (t : Nat → Nat) (n : Nat) (b : Reg) : List Instr := (List.range n).flatMap (tabStep t b)
