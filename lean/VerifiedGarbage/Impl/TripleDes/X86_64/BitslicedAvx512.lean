@@ -273,7 +273,7 @@ def keyLoad : List Instr :=
 
 def round (ρ : Role) : List Instr := keyLoad ++ (List.range 8).flatMap (sboxStep ρ)
 
-def roundPair : List Instr := round .ba ++ round .ab ++ [.alu .sub .r10 (.imm 1)]
+def roundPair : List Instr := round .ba ++ round .ab ++ ([.alu .sub .r10 (.imm 1)] : List Instr)
 
 def swapHalves : List Instr :=
   (List.range 32).flatMap fun q =>
@@ -293,7 +293,7 @@ def passStart (d : Direction) : Prog isa :=
 
 def pass (d : Direction) : Prog isa :=
   .seq (passStart d) (.seq (.loop (.block roundPair) .ne)
-    (.block (swapHalves ++ [.alu .sub .r11 (.imm 1)])))
+    (.block (swapHalves ++ ([.alu .sub .r11 (.imm 1)] : List Instr))))
 
 /-! ## Transposition -/
 
@@ -325,10 +325,10 @@ def transpose : List Instr :=
 /-! ## Batches -/
 
 def batch (d : Direction) : Prog isa :=
-  .seq (.block (transpose ++ [.mov .r11 (.imm 3)]))
+  .seq (.block (transpose ++ ([.mov .r11 (.imm 3)] : List Instr)))
     (.seq (.loop (pass d) .ne)
       (.block (transpose ++
-        [.alu .add .rsi (.imm 4096), .alu .sub .rdx (.imm 512), .alu .cmp .rdx (.imm 512)])))
+        ([.alu .add .rsi (.imm 4096), .alu .sub .rdx (.imm 512), .alu .cmp .rdx (.imm 512)] : List Instr))))
 
 def wide (d : Direction) : Prog isa :=
   .seq (.block [.alu .cmp .rdx (.imm 512)])

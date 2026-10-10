@@ -296,7 +296,7 @@ def round (d : Direction) (ρ : Role) : List Instr :=
 
 /-- Two rounds, and the count of pairs left. -/
 def roundPair (d : Direction) : List Instr :=
-  round d .ba ++ round d .ab ++ [.subImm .x .x7 .x7 1]
+  round d .ba ++ round d .ab ++ ([.subImm .x .x7 .x7 1] : List Instr)
 
 /-- Exchange the halves. -/
 def swapHalves : List Instr :=
@@ -358,7 +358,7 @@ def transpose : List Instr :=
 
 /-- Three passes on the 128 blocks at `x4`. -/
 def batch (d : Direction) : Prog isa :=
-  .seq (.block (transpose ++ [.vop (.movi0 zeroReg)])) (.seq (passes d) (.block transpose))
+  .seq (.block (transpose ++ ([.vop (.movi0 zeroReg)] : List Instr))) (.seq (passes d) (.block transpose))
 
 /-- `x10 := n / 128`, whether a whole batch is left. -/
 def wholeLeft : Instr := .lsr .x .x10 .x2 7

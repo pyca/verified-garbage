@@ -86,7 +86,7 @@ def loadQuarter (sch : Reg) (j b q : Nat) : List Instr :=
 def lookupPlane (sch : Reg) (j b : Nat) : List Instr :=
   (List.range 4).flatMap fun q =>
     loadQuarter sch j b q ++
-      [.vop (.tblN (q != 0) 4 (outReg b) (tReg 0) (if q = 0 then idxReg j else qReg q))]
+      ([.vop (.tblN (q != 0) 4 (outReg b) (tReg 0) (if q = 0 then idxReg j else qReg q))] : List Instr)
 
 /-- S-box `j` at the indices in `idxReg j`, in byte planes in `outReg`. -/
 def lookup (sch : Reg) (j : Nat) : List Instr :=
@@ -129,14 +129,14 @@ def round (sch : Reg) (up : Bool) (L R : Nat → VReg) : List Instr :=
 
 /-- Two rounds, the halves trading places twice; `x7` counts the pairs. -/
 def roundPair (sch : Reg) (up : Bool) : List Instr :=
-  round sch up aReg bReg ++ round sch up bReg aReg ++ [.subImm .x .x7 .x7 1]
+  round sch up aReg bReg ++ round sch up bReg aReg ++ ([.subImm .x .x7 .x7 1] : List Instr)
 
 /-- The last swap undone: xR (in `A`) ^= P₁₇ and xL (in `B`) ^= P₁₈ when
 encrypting, P₂ and P₁ when decrypting. -/
 def finish (sch : Reg) (up : Bool) : List Instr :=
-  [.ldr .w .x6 sch (pOff + 4 * (if up then 16 else 1)), .vop (.dup .s4 .v0 .x6)] ++
+  ([.ldr .w .x6 sch (pOff + 4 * (if up then 16 else 1)), .vop (.dup .s4 .v0 .x6)] : List Instr) ++
   (List.range 4).map (fun k => veor (aReg k) (aReg k) .v0) ++
-  [.ldr .w .x6 sch (pOff + 4 * (if up then 17 else 0)), .vop (.dup .s4 .v0 .x6)] ++
+  ([.ldr .w .x6 sch (pOff + 4 * (if up then 17 else 0)), .vop (.dup .s4 .v0 .x6)] : List Instr) ++
   (List.range 4).map (fun k => veor (bReg k) (bReg k) .v0)
 
 /-- The sixteen rounds on xL in `A` and xR in `B`, leaving xL in `B` and xR
@@ -243,7 +243,7 @@ def copyPlanes : Prog isa :=
   .seq (.block [.movz .x .x11 64 0])
     (.loop (.block ((List.range 4).map (fun r => .ldrq (tReg r) .x9 (16 * r)) ++
         (List.range 4).map (fun r => .strq (tReg r) .x12 (16 * r)) ++
-        [.addImm .x .x9 .x9 64, .addImm .x .x12 .x12 64, .subImm .x .x11 .x11 1]))
+        ([.addImm .x .x9 .x9 64, .addImm .x .x12 .x12 64, .subImm .x .x11 .x11 1] : List Instr)))
       (.nonzero .x .x11))
 
 /-- One P-array entry: the next four key bytes into `w8`, XORed with the
@@ -274,7 +274,7 @@ def replace : Prog isa :=
         (.block [.str .w .x6 .x12 0, .str .w .x8 .x12 4, .addImm .x .x12 .x12 8,
           .subImm .x .x9 .x9 1])
         (.seq (.block (storeEntry .x6 0 ++ storeEntry .x8 1 ++
-            [.addImm .x .x14 .x14 2, .subImm .x .x10 .x10 2]))
+            ([.addImm .x .x14 .x14 2, .subImm .x .x10 .x10 2] : List Instr)))
           (.ite (.zero .x .x10) (.block [.addImm .x .x14 .x14 768, .movz .x .x10 256 0])
             (.block []))))
       (.block [.vop (.mov .v0 (aReg 0)), .vop (.mov (aReg 0) (bReg 0)),
@@ -283,8 +283,8 @@ def replace : Prog isa :=
 /-- The 521 encryptions, from the all-zero block. -/
 def encryptions : Prog isa :=
   .seq (.block ((List.range 4).flatMap (fun k => [.vop (.movi0 (aReg k)), .vop (.movi0 (bReg k))]) ++
-      [.movz .x .x9 9 0, .addImm .x .x12 .x2 2048, .addImm .x .x12 .x12 2048,
-       .addImm .x .x14 .x2 0, .movz .x .x10 256 0, .movz .x .x15 521 0]))
+      ([.movz .x .x9 9 0, .addImm .x .x12 .x2 2048, .addImm .x .x12 .x12 2048,
+       .addImm .x .x14 .x2 0, .movz .x .x10 256 0, .movz .x .x15 521 0] : List Instr)))
     (.loop (.seq (cipher .x2 true) replace) (.nonzero .x .x15))
 
 /-- The low halves of `v8`–`v14` (which the calling convention preserves) into
@@ -293,12 +293,12 @@ the general-purpose registers the encryptions leave alone, and `v15` into
 def keepRegs : List (Reg × VReg) :=
   [(.x0, .v8), (.x1, .v9), (.x3, .v10), (.x4, .v11), (.x11, .v12), (.x16, .v13), (.x17, .v14)]
 def saveLow : List Instr :=
-  keepRegs.map (fun (x, v) => .umov .x x v 0) ++ [.vop (.mov .v27 .v15)]
+  keepRegs.map (fun (x, v) => .umov .x x v 0) ++ ([.vop (.mov .v27 .v15)] : List Instr)
 def restoreLow : List Instr :=
-  keepRegs.map (fun (x, v) => .vop (.dup .d2 v x)) ++ [.vop (.mov .v15 .v27)]
+  keepRegs.map (fun (x, v) => .vop (.dup .d2 v x)) ++ ([.vop (.mov .v15 .v27)] : List Instr)
 
 def expandKey : Prog isa :=
-  .seq (.block (constants ++ [.adrSym .x9 initSym, .addImm .x .x12 .x2 0]))
+  .seq (.block (constants ++ ([.adrSym .x9 initSym, .addImm .x .x12 .x2 0] : List Instr)))
     (.seq copyPlanes (.seq keyP (.seq (.block saveLow) (.seq encryptions (.block restoreLow)))))
 
 end VG.Impl.Blowfish.AArch64

@@ -20,7 +20,7 @@ def mask (r : Reg) (n : Nat) : List Instr :=
 def permuteCode {m : Nat} (positions : Vector Nat m) (n : Nat) (dst src tmp bit : Reg) : List Instr :=
   [imm dst 0, imm bit 1] ++ (List.range m).flatMap fun j =>
     [rr tmp src] ++ shr tmp (n - positions.getD j 1) ++
-      [.logic .and .x tmp tmp bit] ++ placeBit tmp (m - 1 - j) ++
-      [.logic .eor .x dst dst tmp]
+      ([.logic .and .x tmp tmp bit] : List Instr) ++ placeBit tmp (m - 1 - j) ++
+      ([.logic .eor .x dst dst tmp] : List Instr)
 
 end VG.Impl.TripleDes.AArch64

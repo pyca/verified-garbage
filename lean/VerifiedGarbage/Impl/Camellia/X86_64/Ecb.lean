@@ -38,9 +38,9 @@ inductive Dir | encrypt | decrypt
 /-- Bitslice the subkey at `[rdi + d]` into the entry at `rsi`, and step
 `rsi` to the next entry. -/
 def keyOne (d : Nat) : List Instr :=
-  [.mov (q 0) (.mem (at_ .rdi d))] ++ ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++
+  ([.mov (q 0) (.mem (at_ .rdi d))] : List Instr) ++ ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++
   toBs ++ (List.range 8).map (fun j => .store (slotAt .rsi j) (q j)) ++
-  [.alu .add .rsi (.imm 64)]
+  ([.alu .add .rsi (.imm 64)] : List Instr)
 
 /-- `rsi := ` the table. -/
 def tableSetup : List Instr := [movR .rsi sb, .alu .add .rsi (.imm (BitVec.ofNat 32 (8 * keySlot)))]
@@ -52,16 +52,16 @@ def endAddr (g : Nat) : List Instr :=
 
 /-- Encryption's table, for `g` groups: the `8 g + 2` subkeys in order. -/
 def encKeys (g : Nat) : Prog isa :=
-  .seq (.block (tableSetup ++ [.movImm64 t1 (BitVec.ofNat 64 (8 * g + 2))]))
-    (.loop (.block (keyOne 0 ++ [.alu .add .rdi (.imm 8), .alu .sub t1 (.imm 1)])) .ne)
+  .seq (.block (tableSetup ++ ([.movImm64 t1 (BitVec.ofNat 64 (8 * g + 2))] : List Instr)))
+    (.loop (.block (keyOne 0 ++ ([.alu .add .rdi (.imm 8), .alu .sub t1 (.imm 1)] : List Instr))) .ne)
 
 /-- Decryption's table, for `g` groups: `kw3, kw4` (words `8 g`, `8 g + 1`),
 words `8 g - 1` down to 2, then `kw1, kw2`. -/
 def decKeys (g : Nat) : Prog isa :=
-  .seq (.block (tableSetup ++ [.alu .add .rdi (.imm (BitVec.ofNat 32 (64 * g)))] ++
-      keyOne 0 ++ keyOne 8 ++ [.alu .sub .rdi (.imm 8), .movImm64 t1 (BitVec.ofNat 64 (8 * g - 2))]))
-    (.seq (.loop (.block (keyOne 0 ++ [.alu .sub .rdi (.imm 8), .alu .sub t1 (.imm 1)])) .ne)
-      (.block ([.alu .sub .rdi (.imm 8)] ++ keyOne 0 ++ keyOne 8)))
+  .seq (.block (tableSetup ++ ([.alu .add .rdi (.imm (BitVec.ofNat 32 (64 * g)))] : List Instr) ++
+      keyOne 0 ++ keyOne 8 ++ ([.alu .sub .rdi (.imm 8), .movImm64 t1 (BitVec.ofNat 64 (8 * g - 2))] : List Instr)))
+    (.seq (.loop (.block (keyOne 0 ++ ([.alu .sub .rdi (.imm 8), .alu .sub t1 (.imm 1)] : List Instr))) .ne)
+      (.block (([.alu .sub .rdi (.imm 8)] : List Instr) ++ keyOne 0 ++ keyOne 8)))
 
 def keys (dir : Dir) (g : Nat) : Prog isa :=
   .seq (match dir with | .encrypt => encKeys g | .decrypt => decKeys g) (.block (endAddr g))
@@ -85,12 +85,12 @@ whiten them with the first two entries; `kp` is left at the first round's. -/
 def head : List Instr :=
   [movR kp sb, .alu .add kp (.imm (BitVec.ofNat 32 (8 * keySlot)))] ++
   loadWords 1 ++ toBs ++ storeHalf d2Slot ++ loadWords 0 ++ toBs ++ whiten ++
-  [.alu .add kp (.imm 128)]
+  ([.alu .add kp (.imm 128)] : List Instr)
 
 /-- Two rounds: `D2 ^= F(D1, k)`, `D1 ^= F(D2, k')`, with the state holding
 `D1` before and after; loops until `kp` reaches `rdi`. -/
 def pairBody : List Instr :=
-  round 0 d2Slot ++ round 8 d1Slot ++ [.alu .add kp (.imm 128), .alu .cmp kp (.reg .rdi)]
+  round 0 d2Slot ++ round 8 d1Slot ++ ([.alu .add kp (.imm 128), .alu .cmp kp (.reg .rdi)] : List Instr)
 
 /-- Six rounds, then FL and FLINV unless they were the last; loops until
 `kp` is at the postwhitening's entry. -/
@@ -154,7 +154,8 @@ def group : Prog isa :=
 
 /-- The whole function: the table for 18 or 24 rounds, then the groups. -/
 def ecb (dir : Dir) : Prog isa :=
-  .seq (.block ([movR .r9 .r8, movR .r8 .rcx] ++ saveRegs ++ setMasks layerMasks ++ [.alu .cmp .rsi (.imm 18)]))
+  .seq (.block ([movR .r9 .r8, movR .r8 .rcx] ++ saveRegs ++ setMasks layerMasks ++
+    ([.alu .cmp .rsi (.imm 18)] : List Instr)))
     (.seq (.ite .e (keys dir 3) (keys dir 4))
       (.seq (.block [.alu .test .r8 (.reg .r8)])
         (.seq (.ite .e (.block []) (.loop group .ne)) (.block restoreRegs))))

@@ -35,8 +35,8 @@ def rotate16 (r : Reg) (s : Nat) : List Instr :=
 /-- `a & b` into `x6` and `c & ~a` into `x7` (`a`, `b`, `c` the words
 before `i`), and the key word `j` into `x4`. -/
 def mixInputs (j i : Nat) : List Instr :=
-  [.logic .and .x .x6 (wordReg (i + 3)) (wordReg (i + 2)),
-   .bicRor .x .x7 (wordReg (i + 1)) (wordReg (i + 3)) 0] ++ loadKey j
+  ([.logic .and .x .x6 (wordReg (i + 3)) (wordReg (i + 2)),
+   .bicRor .x .x7 (wordReg (i + 1)) (wordReg (i + 3)) 0] : List Instr) ++ loadKey j
 
 def addInputs (r : Reg) : List Instr :=
   [.add .x r r .x4, .add .x r r .x6, .add .x r r .x7, .logic .and .x r r .x9]
@@ -67,7 +67,7 @@ def packWord (i : Nat) : List Instr :=
   [.ror .x .x3 (wordReg i) (64 - 16 * i), .logic .orr .x .x8 .x8 .x3]
 
 def blockStore : List Instr :=
-  [rr .x8 (wordReg 0)] ++ [1, 2, 3].flatMap packWord ++ [.str .x .x8 .x1 0]
+  [rr .x8 (wordReg 0)] ++ [1, 2, 3].flatMap packWord ++ ([.str .x .x8 .x1 0] : List Instr)
 
 def blockCode (direction : Spec.Rc2.Direction) : List Instr :=
   blockSave ++ blockLoad ++ (List.range 16).flatMap (round direction) ++ blockStore ++ blockRestore

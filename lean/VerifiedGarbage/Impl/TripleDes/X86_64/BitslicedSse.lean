@@ -328,7 +328,7 @@ def keyLoad : List Instr :=
 def round (ρ : Role) : List Instr := keyLoad ++ (List.range 8).flatMap (sboxStep ρ)
 
 /-- Two rounds, and the count of pairs left. -/
-def roundPair : List Instr := round .ba ++ round .ab ++ [.alu .sub .r10 (.imm 1)]
+def roundPair : List Instr := round .ba ++ round .ab ++ ([.alu .sub .r10 (.imm 1)] : List Instr)
 
 /-- Exchange the halves. -/
 def swapHalves : List Instr :=
@@ -351,7 +351,7 @@ def passStart (d : Direction) : Prog isa :=
 
 def pass (d : Direction) : Prog isa :=
   .seq (passStart d) (.seq (.loop (.block roundPair) .ne)
-    (.block (swapHalves ++ [.alu .sub .r11 (.imm 1)])))
+    (.block (swapHalves ++ ([.alu .sub .r11 (.imm 1)] : List Instr))))
 
 /-! ## Transposition -/
 
@@ -391,10 +391,10 @@ def transpose : List Instr :=
 
 /-- Three passes on 128 blocks, then the next 128. -/
 def batch (d : Direction) : Prog isa :=
-  .seq (.block (transpose ++ bcast ones (BitVec.allOnes 64) ++ [.mov .r11 (.imm 3)]))
+  .seq (.block (transpose ++ bcast ones (BitVec.allOnes 64) ++ ([.mov .r11 (.imm 3)] : List Instr)))
     (.seq (.loop (pass d) .ne)
       (.block (transpose ++
-        [.alu .add .rsi (.imm 1024), .alu .sub .rdx (.imm 128), .alu .cmp .rdx (.imm 128)])))
+        ([.alu .add .rsi (.imm 1024), .alu .sub .rdx (.imm 128), .alu .cmp .rdx (.imm 128)] : List Instr))))
 
 /-- Batches of 128 blocks while there are that many. -/
 def wide (d : Direction) : Prog isa :=

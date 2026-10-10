@@ -71,27 +71,27 @@ too, already added, in the key schedule), `S[j]` into `v5`, `S[j] :=
 S[i]`, the next `S[i]` (lane `l + 1`) into `v4`, and `S[i] := S[j]`. In
 the PRGA (`prga`), `S[i] + S[j] - B` is left in `v6`. -/
 def swapStep (prga : Bool) (l : Nat) : List Instr :=
-  [.vop (.add .b16 (dq 0) (dq 0) si)] ++ quarters (dq 0) (dq 1) (dq 2) (dq 3) ++
+  ([.vop (.add .b16 (dq 0) (dq 0) si)] : List Instr) ++ quarters (dq 0) (dq 1) (dq 2) (dq 3) ++
   lookup .v5 .v6 (dq 0) (dq 1) (dq 2) (dq 3) ++ writeJ ++
   (if prga then [.vop (.add .b16 .v6 si .v5), .vop (.add .b16 .v6 .v6 negBase)] else []) ++
-  [.vop (.dupE .b16 si (treg ((l + 1) / 16)) ((l + 1) % 16)),
-   .vop (.insE .b16 (treg 0) l .v5 0)]
+  ([.vop (.dupE .b16 si (treg ((l + 1) / 16)) ((l + 1) % 16)),
+   .vop (.insE .b16 (treg 0) l .v5 0)] : List Instr)
 
 /-- The keystream byte `S[S[i] + S[j]]` (index in `v6`), XORed into the next
 byte of the data at `x1`; advances `x1` and counts `x2` down. -/
 def output : List Instr :=
   quarters .v6 .v1 .v2 .v3 ++ lookup .v7 .v1 .v6 .v1 .v2 .v3 ++
-  [.umov .w .x6 .v7 0, .ldrb .x7 .x1 0, .logic .eor .w .x7 .x7 .x6, .strb .x7 .x1 0,
-   .addImm .x .x1 .x1 1, .subImm .x .x2 .x2 1]
+  ([.umov .w .x6 .v7 0, .ldrb .x7 .x1 0, .logic .eor .w .x7 .x7 .x6, .strb .x7 .x1 0,
+   .addImm .x .x1 .x1 1, .subImm .x .x2 .x2 1] : List Instr)
 
 /-- Rotate the table registers by one, and move `j` (and, in the PRGA,
 `-B`) back by 16: the base advances by 16 (in `x8`). -/
 def rotate (prga : Bool) : List Instr :=
-  [.vop (.sub .b16 .v7 (lanes 1) (lanes 0)), .vop (.sub .b16 (dq 0) (dq 0) .v7)] ++
+  ([.vop (.sub .b16 .v7 (lanes 1) (lanes 0)), .vop (.sub .b16 (dq 0) (dq 0) .v7)] : List Instr) ++
   (if prga then [.vop (.sub .b16 negBase negBase .v7)] else []) ++
-  [.vop (.mov .v7 (treg 0))] ++
+  ([.vop (.mov .v7 (treg 0))] : List Instr) ++
   (List.range 15).map (fun r => .vop (.mov (treg r) (treg (r + 1)))) ++
-  [.vop (.mov (treg 15) .v7), .addImm .x .x8 .x8 16]
+  ([.vop (.mov (treg 15) .v7), .addImm .x .x8 .x8 16] : List Instr)
 
 /-! ## Constants -/
 
@@ -104,11 +104,11 @@ def const64 (r : Reg) (v : BitVec 64) : List Instr :=
 `v13`, through `x6`, `x7` and `v7` (16 in every byte). -/
 def constants : List Instr :=
   const64 .x6 0x0706050403020100 ++ const64 .x7 0x0f0e0d0c0b0a0908 ++
-  [.vop (.ins .d2 (lanes 0) 0 .x6), .vop (.ins .d2 (lanes 0) 1 .x7),
+  ([.vop (.ins .d2 (lanes 0) 0 .x6), .vop (.ins .d2 (lanes 0) 1 .x7),
    .movz .x .x6 16 0, .vop (.dup .b16 .v7 .x6),
    .vop (.add .b16 (lanes 1) (lanes 0) .v7), .vop (.add .b16 (lanes 2) (lanes 1) .v7),
    .vop (.add .b16 (lanes 3) (lanes 2) .v7),
-   .movz .x .x6 64 0, .vop (.dup .b16 c64 .x6), .movz .x .x6 128 0, .vop (.dup .b16 c128 .x6)]
+   .movz .x .x6 64 0, .vop (.dup .b16 c64 .x6), .movz .x .x6 128 0, .vop (.dup .b16 c128 .x6)] : List Instr)
 
 /-- The callee-saved registers `v8`–`v13` (and `v14` in the PRGA) used, and
 where their low halves are kept. -/
@@ -138,31 +138,31 @@ def group : Prog isa := .seq (lanesFrom 16) (.block (rotate true))
 def rowAddr (r : Nat) : List Instr :=
   [.addImm .x .x6 .x8 (16 * r), .logic .and .x .x6 .x6 .x9, .add .x .x7 .x0 .x6]
 
-def loadTable : List Instr := (List.range 16).flatMap fun r => rowAddr r ++ [.ldrq (treg r) .x7 0]
-def storeTable : List Instr := (List.range 16).flatMap fun r => rowAddr r ++ [.strq (treg r) .x7 0]
+def loadTable : List Instr := (List.range 16).flatMap fun r => rowAddr r ++ ([.ldrq (treg r) .x7 0] : List Instr)
+def storeTable : List Instr := (List.range 16).flatMap fun r => rowAddr r ++ ([.strq (treg r) .x7 0] : List Instr)
 
 /-- Save the callee-saved vector registers; read `i` and `j`; `x4 := i + len`,
 the final `i`; `x5 := (i + 1) mod 16`, the lanes to skip; and
 `x8 := B = (i + 1) mod 256 - x5`. -/
 def applyLoad : List Instr :=
   save true ++
-  [.ldrb .x12 .x0 256, .ldrb .x13 .x0 257, .movz .x .x9 255 0,
+  ([.ldrb .x12 .x0 256, .ldrb .x13 .x0 257, .movz .x .x9 255 0,
    .add .x .x4 .x12 .x2,
    .addImm .x .x6 .x12 1, .logic .and .x .x6 .x6 .x9,
-   .movz .x .x7 15 0, .logic .and .x .x5 .x6 .x7, .sub .x .x8 .x6 .x5]
+   .movz .x .x7 15 0, .logic .and .x .x5 .x6 .x7, .sub .x .x8 .x6 .x5] : List Instr)
 
 /-- The table from `B`; the constants; `j - B` broadcast; `-B` broadcast;
 and `S[i + 1]` broadcast, by a one-register `tbl` of `v16`. -/
 def applySetup : List Instr :=
   loadTable ++ constants ++
-  [.sub .x .x6 .x13 .x8, .vop (.dup .b16 (dq 0) .x6),
+  ([.sub .x .x6 .x13 .x8, .vop (.dup .b16 (dq 0) .x6),
    .sub .x .x6 .x9 .x8, .addImm .x .x6 .x6 1, .vop (.dup .b16 negBase .x6),
-   .vop (.dup .b16 .v7 .x5), .vop (.tbl si (treg 0) .v7)]
+   .vop (.dup .b16 .v7 .x5), .vop (.tbl si (treg 0) .v7)] : List Instr)
 
 /-- Store the table, `i` and `j = (j - B) + B`. -/
 def applyFinish : List Instr :=
   storeTable ++
-  [.strb .x4 .x0 256, .umov .w .x6 (dq 0) 0, .add .x .x6 .x6 .x8, .strb .x6 .x0 257] ++
+  ([.strb .x4 .x0 256, .umov .w .x6 (dq 0) 0, .add .x .x6 .x6 .x8, .strb .x6 .x0 257] : List Instr) ++
   restore true
 
 /-- Everything after `applyLoad`, whose timing depends only on what it
@@ -191,7 +191,7 @@ def scheduleLanes : Nat → Prog isa
 
 /-- Sixteen key-schedule swaps, then the rotation; `x4` counts the groups. -/
 def scheduleGroup : Prog isa :=
-  .seq (scheduleLanes 16) (.block (rotate false ++ [.subImm .x .x4 .x4 1]))
+  .seq (scheduleLanes 16) (.block (rotate false ++ ([.subImm .x .x4 .x4 1] : List Instr)))
 
 /-- The identity table, `j = 0`, `S[0] = 0`, the key pointer and length,
 and 16 groups. -/
@@ -201,14 +201,14 @@ def scheduleSetup : List Instr :=
   (List.range 4).map (fun r => eorV (treg (4 + r)) (lanes r) c64) ++
   (List.range 4).map (fun r => eorV (treg (8 + r)) (lanes r) c128) ++
   (List.range 4).map (fun r => eorV (treg (12 + r)) (treg (4 + r)) c128) ++
-  [.vop (.movi0 (dq 0)), .vop (.movi0 si),
-   .addImm .x .x7 .x0 0, .addImm .x .x5 .x1 0, .movz .x .x4 16 0, .movz .x .x8 0 0]
+  ([.vop (.movi0 (dq 0)), .vop (.movi0 si),
+   .addImm .x .x7 .x0 0, .addImm .x .x5 .x1 0, .movz .x .x4 16 0, .movz .x .x8 0 0] : List Instr)
 
 /-- The table (whose registers are back where they started: `x8 = 256`) at
 `x0 := ctx`, and zero for both PRGA indices and the result. -/
 def scheduleFinish : List Instr :=
-  [.addImm .x .x0 .x2 0, .movz .x .x9 255 0] ++ storeTable ++
-  [.movz .w .x6 0 0, .strb .x6 .x0 256, .strb .x6 .x0 257, .movz .w .x0 0 0] ++ restore false
+  ([.addImm .x .x0 .x2 0, .movz .x .x9 255 0] : List Instr) ++ storeTable ++
+  ([.movz .w .x6 0 0, .strb .x6 .x0 256, .strb .x6 .x0 257, .movz .w .x0 0 0] : List Instr) ++ restore false
 
 /-- Key scheduling after the public key-length check succeeds. -/
 def initValid : Prog isa :=

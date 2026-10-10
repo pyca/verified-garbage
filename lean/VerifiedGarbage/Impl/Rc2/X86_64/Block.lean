@@ -18,10 +18,10 @@ def blockRestore : List Instr :=
 def unpackWord (i : Nat) : List Instr :=
   [rr (wordReg i) .rax] ++
     (if i = 0 then [] else [.shift .shr (wordReg i) (16 * i)]) ++
-    [.alu .and (wordReg i) (.imm 65535)]
+    ([.alu .and (wordReg i) (.imm 65535)] : List Instr)
 
 def blockLoad : List Instr :=
-  [.mov .rax (.mem (memOp .rsi 0))] ++ (List.range 4).flatMap unpackWord
+  ([.mov .rax (.mem (memOp .rsi 0))] : List Instr) ++ (List.range 4).flatMap unpackWord
 
 /-- Rotate a zero-extended 16-bit word left by `s` (1–15), with `rax` as
 temporary. A 64-bit rotate implements the left shift because the input's
@@ -44,13 +44,13 @@ def mix (j i : Nat) : List Instr :=
 
 def reverseMix (j i : Nat) : List Instr :=
   rotate16 (wordReg i) (16 - Spec.Rc2.rotation i) ++ mixInputs j i ++
-    [.alu .sub (wordReg i) (.reg .r8), .alu .sub (wordReg i) (.reg .r10),
-     .alu .and (wordReg i) (.imm 65535)]
+    ([.alu .sub (wordReg i) (.reg .r8), .alu .sub (wordReg i) (.reg .r10),
+     .alu .and (wordReg i) (.imm 65535)] : List Instr)
 
 def mash (direction : Spec.Rc2.Direction) (i : Nat) : List Instr :=
   [rr .rax (wordReg (i + 3))] ++ Sse2.keyLookup ++
-    [.alu (if direction = .encrypt then .add else .sub) (wordReg i) (.reg .rax),
-     .alu .and (wordReg i) (.imm 65535)]
+    ([.alu (if direction = .encrypt then .add else .sub) (wordReg i) (.reg .rax),
+     .alu .and (wordReg i) (.imm 65535)] : List Instr)
 
 def round (direction : Spec.Rc2.Direction) (j : Nat) : List Instr :=
   match direction with
@@ -63,7 +63,7 @@ def packWord (i : Nat) : List Instr :=
   [rr .rcx (wordReg i), .shift .ror .rcx (64 - 16 * i), .alu .or .rax (.reg .rcx)]
 
 def blockStore : List Instr :=
-  [rr .rax (wordReg 0)] ++ [1, 2, 3].flatMap packWord ++ [.store (memOp .rsi 0) .rax]
+  [rr .rax (wordReg 0)] ++ [1, 2, 3].flatMap packWord ++ ([.store (memOp .rsi 0) .rax] : List Instr)
 
 def blockCode (direction : Spec.Rc2.Direction) : List Instr :=
   blockSave ++ blockLoad ++ (List.range 16).flatMap (round direction) ++ blockStore ++ blockRestore

@@ -38,8 +38,8 @@ def kbSlot : Nat := tailSlot + 8
 
 /-- The planes of the constant `x` to the entry at `kp`, and on to the next. -/
 def sigmaOne (x : BitVec 64) : List Instr :=
-  (List.range 8).flatMap (fun j => imm t0 (keyPlane x j) ++ [.str .x t0 kp (8 * j)]) ++
-  [.addImm .x kp kp 64]
+  (List.range 8).flatMap (fun j => imm t0 (keyPlane x j) ++ ([.str .x t0 kp (8 * j)] : List Instr)) ++
+  ([.addImm .x kp kp 64] : List Instr)
 
 /-- Load the key: `KL`, and `KR` by the key's length (in `x3`). -/
 def loadKey : Prog isa :=
@@ -53,7 +53,7 @@ def loadKey : Prog isa :=
 
 /-- The word at `[x0 + d]` in all eight lanes, bitsliced. -/
 def spread (d : Nat) : List Instr :=
-  [.ldr .x (q 0) .x0 d] ++ ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++ toBs
+  ([.ldr .x (q 0) .x0 d] : List Instr) ++ ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++ toBs
 
 /-- `w := w ^ x`, for the two words at slots `w` and `x`. -/
 def xorWords (w x : Nat) : List Instr :=
@@ -75,7 +75,7 @@ pair `KL` is XORed in, after the second it is `KA`, and `KA ^ KR` goes on;
 after the third it is `KB`. `x4` counts the pairs down from 3. -/
 def kaKb : Prog isa :=
   .seq (.block (copyWords wSlot klSlot ++ xorWords wSlot krSlot ++
-      [.movz .x .x4 3 0, movR .x0 sb, .addImm .x .x0 .x0 (8 * wSlot)]))
+      ([.movz .x .x4 3 0, movR .x0 sb, .addImm .x .x0 .x0 (8 * wSlot)] : List Instr)))
     (.loop (.seq (.block (pairPlain ++ [lsrI t1 .x4 1]))
       (.seq (.ite (.nonzero .x t1)
           (.seq (.block [.subImm .x t1 .x4 3])
@@ -99,7 +99,7 @@ def subkey (i v r : Nat) (hi : Bool) : List Instr :=
   let (a, b) := if (r < 64) = hi then (hiReg v, loReg v) else (loReg v, hiReg v)
   let r' := r % 64
   (if r' = 0 then [movR t0 a] else [.lsl .x t0 a r', .lsr .x t1 b (64 - r'), orrR t0 t0 t1]) ++
-  [.rev t0 t0, .str .x t0 .x2 (8 * i)]
+  ([.rev t0 t0, .str .x t0 .x2 (8 * i)] : List Instr)
 
 def storeSubkeys (ks : List (Nat × Nat × Bool)) : List Instr :=
   ks.zipIdx.flatMap fun ((v, r, hi), i) => subkey i v r hi
@@ -110,7 +110,7 @@ def expandKey : Prog isa :=
     (.seq loadKey
       (.seq (.block tableSetup)
         (.seq kaKb
-          (.seq (.block (loadValues ++ [.subImm .x t0 .x3 16]))
+          (.seq (.block (loadValues ++ ([.subImm .x t0 .x3 16] : List Instr)))
             (.seq (.ite (.zero .x t0) (.block (storeSubkeys subkeys128)) (.block (storeSubkeys subkeys256)))
               (.block restoreRegs))))))
 

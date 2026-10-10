@@ -55,7 +55,7 @@ def scan (sym : String) : Prog isa :=
 `w13` (shifted right by `b` so far): rotate by `2 ^ b` if bit 0 of `w13` is
 set. Clobbers `w14`, `w15`. -/
 def rotateStep (b : Nat) : List Instr :=
-  [.movz .w .x14 1 0, .tst .w .x13 .x14, .ror .w .x15 .x4 (32 - 2 ^ b), .cselc .w .x4 .x15 .x4 .ne] ++
+  ([.movz .w .x14 1 0, .tst .w .x13 .x14, .ror .w .x15 .x4 (32 - 2 ^ b), .cselc .w .x4 .x15 .x4 .ne] : List Instr) ++
   (if b < 4 then [.lsr .w .x13 .x13 1] else [])
 
 /-- `w4` rotated left by the low 5 bits of `w13`. Clobbers `w13`. -/
