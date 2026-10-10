@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
 import VerifiedGarbage.Proof.TripleDes.SboxTables
 import VerifiedGarbage.Proof.CmacTripleDes.Des
+import VerifiedGarbage.Proof.CmacTripleDes.Rows
 import VerifiedGarbage.Proof.Framework.X86_64.Linear
 import VerifiedGarbage.Proof.Framework.Bitslice.Rows
 
@@ -84,7 +85,7 @@ theorem inputs_ok {s : State} (hok : Ok rCfg s) :
 /-! ## The S-boxes -/
 
 /-- Slot `t` on row `c`, at every position: bit `t` of `c`. -/
-def rowIn (t : Nat) : Nat := tableOf (fun a => (a / 64).testBit t) 4096
+def rowIn (t : Nat) : Nat := rowsOf 64 (fun c => c.testBit t) 64
 
 def sbEnv : Env Nat := { reg := fun _ => none, slot := fun t => if t < 6 then some (rowIn t) else none }
 
@@ -135,7 +136,7 @@ theorem sboxes_ok {s : State} (hok : Ok rCfg s) :
       cases h
       show (rowIn t).testBit (64 * (boxIn s p).toNat + p) = (slotW s t).getLsbD p
       have hc := (boxIn s p).isLt
-      rw [rowIn, testBit_tableOf, decide_eq_true (by omega : 64 * (boxIn s p).toNat + p < 4096),
+      rw [rowIn, testBit_rowsOf, decide_eq_true (by omega : 64 * (boxIn s p).toNat + p < 64 * 64),
         Bool.true_and, show (64 * (boxIn s p).toNat + p) / 64 = (boxIn s p).toNat by omega,
         BitVec.testBit_toNat, boxIn, getLsbD_ofBits, decide_eq_true ht6, Bool.true_and]
     · cases h

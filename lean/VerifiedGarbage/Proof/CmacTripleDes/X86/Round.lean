@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
 import VerifiedGarbage.Proof.TripleDes.SboxTables
 import VerifiedGarbage.Proof.CmacTripleDes.Des
+import VerifiedGarbage.Proof.CmacTripleDes.Rows
 import VerifiedGarbage.Proof.Framework.X86.Linear
 import VerifiedGarbage.Proof.Framework.Bitslice.Rows
 import VerifiedGarbage.Proof.Framework.Offset
@@ -65,7 +66,7 @@ theorem inputs_check :
 /-! ## The S-boxes -/
 
 /-- Slot `t` on row `c`, at every position: bit `t % 7` of `c`. -/
-def rowIn (t : Nat) : Nat := tableOf (fun a => (a / 32).testBit (t % 7)) 2048
+def rowIn (t : Nat) : Nat := rowsOf 32 (fun c => c.testBit (t % 7)) 64
 
 /-- Half `h`'s input slots. -/
 def sbEnv (h : Nat) : Env Nat :=
@@ -239,7 +240,7 @@ theorem sbox_ok {h : Nat} (hh : h < 2) {s : State} (hok : Ok (sCfg h) s) :
       show (rowIn t).testBit (32 * (boxIn h s p).toNat + p) = (slotW s t).getLsbD p
       have hc := (boxIn h s p).isLt
       obtain ⟨u, rfl, hu⟩ : ∃ u, t = 7 * h + u ∧ u < 6 := ⟨t - 7 * h, by omega, by omega⟩
-      rw [rowIn, testBit_tableOf, decide_eq_true (by omega : 32 * (boxIn h s p).toNat + p < 2048),
+      rw [rowIn, testBit_rowsOf, decide_eq_true (by omega : 32 * (boxIn h s p).toNat + p < 32 * 64),
         Bool.true_and, show (32 * (boxIn h s p).toNat + p) / 32 = (boxIn h s p).toNat by omega,
         BitVec.testBit_toNat, boxIn, getLsbD_ofBits, show (7 * h + u) % 7 = u by omega,
         decide_eq_true hu, Bool.true_and]
