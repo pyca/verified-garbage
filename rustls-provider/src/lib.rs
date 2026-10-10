@@ -33,6 +33,7 @@ use rustls::ticketer::TicketRotator;
 mod aead;
 mod der;
 mod hash;
+mod hkdf;
 mod hmac;
 mod kx;
 mod quic;
