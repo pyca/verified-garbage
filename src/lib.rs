@@ -131,6 +131,7 @@ pub mod seed_ecb;
 pub mod sm4_cbc;
 pub mod sm4_ctr;
 pub mod sm4_ecb;
+pub mod triple_des_cbc;
 pub mod triple_des_ecb;
 pub mod x25519;
 pub mod x448;

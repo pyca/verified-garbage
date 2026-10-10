@@ -121,8 +121,8 @@ structure CInv (cs : CoreSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.K
   dataR : s.gpr c.dataReg = D + BitVec.ofNat 64 (16 * (c.G * g))
   leftR : s.gpr c.leftReg = BitVec.ofNat 64 (n - c.G * g)
   lt : c.G * g < n
-  chain : ∀ u < 16, s.mem (chainAddr c B + BitVec.ofNat 64 u) = (cbcPrev s₀.mem D iv (c.G * g)).getD u 0
-  data : DInv s₀.mem s.mem D n (c.G * g) (cbcOut (cs.cipher k) s₀.mem D iv)
+  chain : ∀ u < 16, s.mem (chainAddr c B + BitVec.ofNat 64 u) = (cbcPrev 16 s₀.mem D iv (c.G * g)).getD u 0
+  data : DInv 16 s₀.mem s.mem D n (c.G * g) (cbcOut 16 (cs.cipher k) s₀.mem D iv)
   frame : Frame [⟨B, 8 * c.total⟩, ⟨D, 16 * n⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
@@ -132,7 +132,7 @@ structure CDone (cs : CoreSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.
     Prop where
   base : s.gpr sb = B
   saved : ∀ i < 10, s.mem.readW (wordAddr B (c.slots + i)) 64 = s₀.mem.readW (wordAddr B (c.slots + i)) 64
-  data : DInv s₀.mem s.mem D n n (cbcOut (cs.cipher k) s₀.mem D iv)
+  data : DInv 16 s₀.mem s.mem D n n (cbcOut 16 (cs.cipher k) s₀.mem D iv)
   frame : Frame [⟨B, 8 * c.total⟩, ⟨D, 16 * n⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
@@ -294,7 +294,7 @@ theorem cbcDecGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {
       h₃.copied _ (by omega), mem₂, addr_add, addr_add,
       show 16 * (c.G * g) + (16 * (t / 16) + u) = 16 * (c.G * g + t / 16) + u by omega,
       dat0 _ (by omega) (by omega)]
-  have hdata : DInv s₀.mem s₈.mem D n (c.G * g + cc) (cbcOut (cs.cipher k) s₀.mem D iv) := by
+  have hdata : DInv 16 s₀.mem s₈.mem D n (c.G * g + cc) (cbcOut 16 (cs.cipher k) s₀.mem D iv) := by
     intro i hin
     rw [m₈]
     by_cases hin1 : 16 * (c.G * g) ≤ i ∧ i < 16 * (c.G * g) + 16 * cc
@@ -325,7 +325,7 @@ theorem cbcDecGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {
       · rw [ite_eq_left h2, ite_eq_left (show i < 16 * (c.G * g + cc) by omega)]
       · rw [ite_eq_right h2, ite_eq_right (show ¬ i < 16 * (c.G * g + cc) by omega)]
   -- The chaining value: the group's last ciphertext block.
-  have chain₈ : ∀ u < 16, s₈.mem (H + BitVec.ofNat 64 u) = (cbcPrev s₀.mem D iv (c.G * g + cc)).getD u 0 := by
+  have chain₈ : ∀ u < 16, s₈.mem (H + BitVec.ofNat 64 u) = (cbcPrev 16 s₀.mem D iv (c.G * g + cc)).getD u 0 := by
     intro u hu
     rw [m₈, h₇.chain u hu, ite_eq_right (by omega), mem₆, addr_add, dat₄ (16 * (c.G * g) + (16 * (cc - 1) + u))
       (by omega), dat0 (16 * (c.G * g) + (16 * (cc - 1) + u)) (by omega) (by omega), cbcPrev,

@@ -39,10 +39,19 @@ open VG.X86_64 VG.Impl.Aes.X86_64
 
 def at_ (b : Reg) (d : Nat) : MemOp := { base := b, disp := d }
 
+/-- Word `w` of the block at `rs + os` to the one at `rd + od`, through `t`. -/
+def copyW (t rd rs : Reg) (od os w : Nat) : List Instr :=
+  [.mov t (.mem (at_ rs (os + 8 * w))), .store (at_ rd (od + 8 * w)) t]
+
+/-- Word `w` of the block at `rs + os` XORed into the one at `rd + od`,
+through `t`. -/
+def xorW (t rd rs : Reg) (od os w : Nat) : List Instr :=
+  [.mov t (.mem (at_ rd (od + 8 * w))), .alu .xor t (.mem (at_ rs (os + 8 * w))), .store (at_ rd (od + 8 * w)) t]
+
 /-- A block cipher's core for the modes: with the scratch buffer of `total`
 slots at `sb`, `prepare` makes the key, given by the registers `keyRegs`,
 ready in the core's slots `[0, slots)`, and `crypt` replaces the `G`
-16-byte blocks of the buffer at slot `buf` (`2 G` slots) with their
+blocks of `bw` words of the buffer at slot `buf` (`bw G` slots) with their
 encryptions. Both keep `dataReg` and `leftReg`. A mode keeps its own slots
 in `[slots, total)`. -/
 structure Core where
@@ -55,6 +64,9 @@ structure Core where
   keyRegs : List Reg
   dataReg : Reg
   leftReg : Reg
+  /-- The number of 8-byte words in a block (2 for 16-byte blocks, as CTR
+  needs, or 1). -/
+  bw : Nat := 2
 
 /-- Where a mode's arguments are: the counter block's address, the data's
 address, the number of blocks and the scratch buffer's address. -/

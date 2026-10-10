@@ -341,6 +341,9 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Nat × List (BitVec 64)} 
     simp only [Proof.Camellia.X86_64.blk, rdx₅, rdx₄] at e5
     rw [ha, dirCipher_bytes d hRr, bytesAt_eq_blockAt, mem₆, e5, tail₄ j hj8]
 
+/-- The core's blocks are two words. -/
+@[simp] theorem dirCore_bw (d : Dir) : (dirCore d).bw = 2 := rfl
+
 /-- Camellia's core for the direction `d` meets what the modes need. -/
 def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
   Key := Nat × List (BitVec 64)
