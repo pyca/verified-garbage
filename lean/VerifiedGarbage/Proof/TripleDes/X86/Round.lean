@@ -1,5 +1,3 @@
-import VerifiedGarbage.Proof.TripleDes.X86.RoundInput
-import VerifiedGarbage.Proof.TripleDes.X86.RoundOutput
 import VerifiedGarbage.Proof.TripleDes.X86.Sbox
 import VerifiedGarbage.Proof.TripleDes.X86.Spills
 import VerifiedGarbage.Proof.TripleDes.Permutation

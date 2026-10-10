@@ -1,5 +1,4 @@
 import VerifiedGarbage.Proof.TripleDes.X86.Body
-import VerifiedGarbage.Proof.TripleDes.X86.Initial
 import VerifiedGarbage.Proof.TripleDes.X86.Save
 
 namespace VG.Proof.TripleDes.X86

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.TripleDes.X86.Lit
+import VerifiedGarbage.Proof.TripleDes.X86.Sbox
 import VerifiedGarbage.Proof.TripleDes.Permutation
 import VerifiedGarbage.Proof.TripleDes.X86.Linear
 
