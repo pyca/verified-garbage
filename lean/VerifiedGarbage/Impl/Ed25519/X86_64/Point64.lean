@@ -20,12 +20,14 @@ namespace VG.Impl.Ed25519.X86_64
 
 open VG.X86_64
 
-/-- Doubles slots 0–3 in place with RFC 8032's formula (§5.1.4): `A = X²`, `B = Y²`,
+/-- Doubles slots 0–3 in place, to RFC 8032's coordinates (§5.1.4: `A = X²`, `B = Y²`,
 `C = 2Z²`, `H = A + B`, `E = H - (X + Y)²`, `G = A - B`, `F = C + G`, and `X = EF`, `Y = GH`,
-`Z = FG`, and `T = EH` if `t` (only an addition reads `T`). -/
+`Z = FG`, `T = EH`), with `-E = 2XY` from one product rather than a square and two additions:
+`-G = B - A`, `-F = -G - C` and `-H = -G - B - B`, so that `X = (-E)(-F)`, `Y = (-G)(-H)`,
+`Z = (-F)(-G)`, and `T = (-E)(-H)` if `t` (only an addition reads `T`). -/
 def dblOps (t : Bool) : List FieldOp :=
-  [.sqr 8 0, .sqr 9 1, .sqr2 10 2, .add 14 8 9, .add 11 0 1, .sqr 11 11, .sub 11 14 11,
-    .sub 12 8 9, .add 13 10 12, .mul 0 11 13, .mul 1 12 14, .mul 2 13 12] ++
+  [.sqr 8 0, .sqr 9 1, .sqr2 10 2, .mul2 11 0 1, .sub 12 9 8, .sub 13 12 10, .sub 14 12 9,
+    .sub 14 14 9, .mul 0 11 13, .mul 1 12 14, .mul 2 13 12] ++
     if t then [.mul 3 11 14] else []
 
 /-- Adds the point whose cached form `[Y - X, Y + X, 2dT, 2Z]` is in slots 4–7 to slots 0–3,
