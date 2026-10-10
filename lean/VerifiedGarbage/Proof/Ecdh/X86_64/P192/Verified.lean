@@ -2,6 +2,8 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 import VerifiedGarbage.Proof.Ecdh.X86_64.P192.Contract
 import VerifiedGarbage.Proof.Ecdh.X86_64.P192.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
+import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+import VerifiedGarbage.Proof.Framework.LitShare
 
 /-!
 # ECDH over p192 on x86-64: `Verified`
@@ -64,8 +66,16 @@ theorem ecdh_x86 (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64
       · exact hro
       · exact hrs) (by decide)
 
+/-- `exchangeP192` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+def exchangeP192Erased : Prog isa := Code.erase exchangeP192
+
+materialize_shared exchangeP192Erased
+
 theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP192 := by
-  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ (by taint_decide)
+  refine VG.Taint.constantTime_mapBlocks (c' := exchangeP192Erased) taintS_eraseInv
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) rfl ?_ rfl (by taint_decide)
   intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

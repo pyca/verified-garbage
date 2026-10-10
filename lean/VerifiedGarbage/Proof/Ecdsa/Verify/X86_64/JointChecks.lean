@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.P256.X86_64.JointFrame
 import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublicTiming
 import VerifiedGarbage.Proof.P256.X86_64.NafTableTiming
 import VerifiedGarbage.Proof.P256.X86_64.FastNafTiming
+import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+import VerifiedGarbage.Proof.Framework.LitShare
 
 /-! Concrete timing checks for baseline and ADX public joint verification. -/
 namespace VG.Proof.Ecdsa.Verify.X86_64
@@ -36,22 +38,50 @@ theorem joint_adx_doubler (hc : CfgOk p256x) (hC : Weierstrass.Law p256x.C) :
   p256_doubler joint_adx_layout rfl (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3 joint_adx_double_nodup
     doubleHalfPublic_adx_ct
 
+/-- `jointPrefix p256` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+def jointPrefixErased : Prog isa := Code.erase (jointPrefix p256)
+
+materialize_shared jointPrefixErased
+
 theorem joint_before_ct : ConstantTime isa (fun _ => True)
     (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (jointPrefix p256) :=
-  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
-    (fun _ _ _ _ h => h) (by taint_decide)
+  VG.Taint.constantTime_mapBlocks (c' := jointPrefixErased) taint_eraseInv (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
+    rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
+
+/-- `jointPrefix p256x` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+def jointPrefixAdxErased : Prog isa := Code.erase (jointPrefix p256x)
+
+materialize_shared jointPrefixAdxErased
 
 theorem joint_adx_before_ct : ConstantTime isa (fun _ => True)
     (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (jointPrefix p256x) :=
-  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
-    (fun _ _ _ _ h => h) (by taint_decide)
+  VG.Taint.constantTime_mapBlocks (c' := jointPrefixAdxErased) taint_eraseInv (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
+    rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
+
+/-- `(Cfg.jointTail p256).inline` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+def jointTailErased : Prog isa := Code.erase (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256).inline
+
+materialize_shared jointTailErased
 
 theorem joint_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256).inline :=
-  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
-    (fun _ _ _ _ h => h) (by taint_decide)
+  VG.Taint.constantTime_mapBlocks (c' := jointTailErased) taint_eraseInv (Taint.ofRegs [.rdi])
+    rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
+
+/-- `(Cfg.jointTail p256x).inline` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+def jointTailAdxErased : Prog isa := Code.erase (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256x).inline
+
+materialize_shared jointTailAdxErased
 
 theorem joint_adx_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256x).inline :=
-  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
-    (fun _ _ _ _ h => h) (by taint_decide)
+  VG.Taint.constantTime_mapBlocks (c' := jointTailAdxErased) taint_eraseInv (Taint.ofRegs [.rdi])
+    rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
 
 end VG.Proof.Ecdsa.Verify.X86_64

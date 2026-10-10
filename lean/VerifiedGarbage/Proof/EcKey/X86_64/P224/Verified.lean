@@ -3,6 +3,8 @@ import VerifiedGarbage.Proof.EcKey.X86_64.P224.Contract
 import VerifiedGarbage.Proof.EcKey.X86_64.P224.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+import VerifiedGarbage.Proof.Framework.LitShare
 
 /-!
 # P-224 public keys on x86-64: `Verified`
@@ -77,15 +79,23 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.P224.curve)
       · exact hro
       · exact hrs) (by decide)
 
+/-- `publicKeyP224` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+def publicKeyP224Erased : Prog isa := Code.erase publicKeyP224
+
+materialize_shared publicKeyP224Erased
+
 theorem pk_ct : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyP224 :=
-  VG.Taint.constantTime (A := taintSym ["VG_P224_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx])
+  VG.Taint.constantTime_mapBlocks (c' := publicKeyP224Erased) (taintSym_eraseInv ["VG_P224_COMB"])
+    (Taint.ofRegs [.rdi, .rsi, .rdx]) rfl
     (fun _ _ _ _ ⟨_, h1, h2, h3, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact h1
       · exact h2
       · exact h3, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
-    (by taint_decide)
+    rfl (by taint_decide)
 
 theorem pk_verified (hL : Weierstrass.Law Spec.P224.curve)
     (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
