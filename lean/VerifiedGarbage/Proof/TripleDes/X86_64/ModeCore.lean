@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.Pre
 import VerifiedGarbage.Proof.Modes.X86_64.Core
 import VerifiedGarbage.Proof.Modes.X86_64.Words
 import VerifiedGarbage.Impl.TripleDes.X86_64.Cbc
-import VerifiedGarbage.Spec.TripleDes.Cbc
+import VerifiedGarbage.Proof.TripleDes.CbcBlocks
 
 /-!
 # Triple DES's core for the modes on x86-64
@@ -37,50 +37,12 @@ def KeyArgs (s : State) (rs : List Region) (k : Spec.TripleDes.Schedule) : Prop 
 def ReadyAt (m : Mem) (B : Addr) (k : Spec.TripleDes.Schedule) : Prop :=
   Spec.TripleDes.scheduleAt m (schedAddr B) = k
 
-/-- The cipher of the direction `d`. -/
-def dirCipher : Direction → Spec.TripleDes.Schedule → Spec.Cbc.Cipher
-  | .encrypt => Spec.TripleDes.cipher
-  | .decrypt => Spec.TripleDes.invCipher
-
 /-- The core's blocks are one word. -/
 @[simp] theorem dirCore_bw (d : Direction) : (dirCore d).bw = 1 := rfl
 
-theorem bytesAt_eq (m : Mem) (p : Addr) : Spec.Aes.bytesAt m p 8 = (Spec.TripleDes.blockAt m p).toList := by
-  apply List.ext_getElem (by simp [Spec.Aes.bytesAt])
-  intro i _ _
-  simp [Spec.Aes.bytesAt, Spec.TripleDes.blockAt]
-
-theorem cbcBlocksAt_eq (m : Mem) (p : Addr) (n : Nat) :
-    Spec.TripleDes.cbcBlocksAt m p n = Modes.blocksOf 8 m p n := by
-  simp only [Spec.TripleDes.cbcBlocksAt, Spec.TripleDes.blocksAt, Modes.blocksOf, List.map_map]
-  exact List.map_congr_left fun i _ => (bytesAt_eq m _).symm
-
 theorem dirCipher_bytes (d : Direction) (k : Spec.TripleDes.Schedule) (m : Mem) (p : Addr) :
     dirCipher d k (Spec.Aes.bytesAt m p 8) = (blockResult k d (Spec.TripleDes.blockAt m p)).toList := by
-  have h : (Vector.ofFn fun i : Fin 8 => (Spec.Aes.bytesAt m p 8).getD i.val 0) = Spec.TripleDes.blockAt m p := by
-    ext i hi; simp [Spec.Aes.bytesAt, Spec.TripleDes.blockAt]
-  cases d <;> simp only [dirCipher, Spec.TripleDes.cipher, Spec.TripleDes.invCipher, blockResult, h]
-
-theorem read_copy {m m' : Mem} : ∀ {n : Nat} {a b : Addr},
-    (∀ i < n, m' (a + BitVec.ofNat 64 i) = m (b + BitVec.ofNat 64 i)) → m'.read a n = m.read b n
-  | 0, _, _, _ => rfl
-  | n + 1, a, b, h => by
-    simp only [Mem.read]
-    have h0 := h 0 (by omega)
-    simp only [BitVec.add_zero] at h0
-    rw [h0, read_copy fun i hi => ?_]
-    have := h (i + 1) (by omega)
-    rwa [Offset.add_ofNat_succ, Offset.add_ofNat_succ] at this
-
-/-- A copy of a schedule is the schedule. -/
-theorem scheduleAt_copy {m m' : Mem} {p q : Addr} (h : ∀ i < 384, m' (q + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
-    Spec.TripleDes.scheduleAt m' q = Spec.TripleDes.scheduleAt m p := by
-  apply Vector.ext
-  intro i hi
-  rw [scheduleAt_readW _ _ i hi, scheduleAt_readW _ _ i hi]
-  simp only [Mem.readW]
-  exact congrArg (BitVec.setWidth 64) (read_copy fun j hj => by
-    rw [Offset.add_add, Offset.add_add]; exact h _ (by omega))
+  cases d <;> simp only [dirCipher, Spec.TripleDes.cipher, Spec.TripleDes.invCipher, blockResult, ofFn_bytesAt]
 
 /-- The core's slots, its buffer and the schedule's copy. -/
 theorem core_eq (d : Direction) (B : Addr) : coreRegion (dirCore d) B = ⟨B, 904⟩ := rfl

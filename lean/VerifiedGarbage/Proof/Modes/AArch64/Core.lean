@@ -193,4 +193,22 @@ theorem regsOk_ne {c : Core} (h : regsOk c = true) :
   · simp [e] at h1
   · simp [e] at h3
 
+/-- The callee-saved registers the modes keep, and the link register. -/
+theorem preserved_of {s s' : State} (h₁ : ∀ i < 10, s'.gpr (Core.savedRegs.getD i .x19) =
+    s.gpr (Core.savedRegs.getD i .x19)) (h₃ : ∀ r ∈ [Reg.x30], s'.gpr r = s.gpr r) :
+    ∀ r ∈ preserved, s'.gpr r = s.gpr r := fun r hr => by
+  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact h₁ 0 (by omega)
+  · exact h₁ 1 (by omega)
+  · exact h₁ 2 (by omega)
+  · exact h₁ 3 (by omega)
+  · exact h₁ 4 (by omega)
+  · exact h₁ 5 (by omega)
+  · exact h₁ 6 (by omega)
+  · exact h₁ 7 (by omega)
+  · exact h₁ 8 (by omega)
+  · exact h₁ 9 (by omega)
+  · exact h₃ _ (by simp)
+
 end VG.Proof.Modes.AArch64

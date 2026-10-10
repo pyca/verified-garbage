@@ -75,24 +75,6 @@ theorem encCipher_eq (m : Mem) (p : Addr) (R : Nat) :
     ((dirCoreSpec .encrypt).toBlock rfl).cipher (R, schedWords m p R) = Spec.Camellia.cipher (Spec.Camellia.subkeysAt m p R) :=
   rfl
 
-/-- The callee-saved registers the modes keep, and the link register. -/
-theorem preserved_of {s s' : State} (h₁ : ∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
-    s.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) (h₃ : ∀ r ∈ [Reg.x30], s'.gpr r = s.gpr r) :
-    ∀ r ∈ preserved, s'.gpr r = s.gpr r := fun r hr => by
-  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact h₁ 0 (by omega)
-  · exact h₁ 1 (by omega)
-  · exact h₁ 2 (by omega)
-  · exact h₁ 3 (by omega)
-  · exact h₁ 4 (by omega)
-  · exact h₁ 5 (by omega)
-  · exact h₁ 6 (by omega)
-  · exact h₁ 7 (by omega)
-  · exact h₁ 8 (by omega)
-  · exact h₁ 9 (by omega)
-  · exact h₃ _ (by simp)
-
 theorem cbcTaint_agree (s₁ s₂ : State) (_ : cbcDecAArch64.pre s₁) (_ : cbcDecAArch64.pre s₂)
     (hp : cbcDecAArch64.pub s₁ s₂) :
     VG.AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5]) s₁ s₂ := by
@@ -146,7 +128,7 @@ theorem cbcDecrypt_ct : ConstantTime isa cbcDecAArch64.pre cbcDecAArch64.pub cbc
 theorem cbcDecrypt_correct (s : State) (hs : cbcDecAArch64.pre s) :
     ∃ t s', Exec isa cbcDecrypt s t s' ∧ abiPreserved s s' ∧ cbcDecAArch64.post s s' := by
   obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cbcDecrypt_wp hs) (by lit_decide) (by lit_decide)
-  exact ⟨t, s', he, ⟨preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
+  exact ⟨t, s', he, ⟨Proof.Modes.AArch64.preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem cbcDecrypt_verified :
     Verified AArch64.target cbcDecrypt (Proof.Camellia.cbcDecScratchContract AArch64.abi slots) :=
@@ -199,7 +181,7 @@ theorem cbcEncrypt_ct : ConstantTime isa cbcEncAArch64.pre cbcEncAArch64.pub cbc
 theorem cbcEncrypt_correct (s : State) (hs : cbcEncAArch64.pre s) :
     ∃ t s', Exec isa cbcEncrypt s t s' ∧ abiPreserved s s' ∧ cbcEncAArch64.post s s' := by
   obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cbcEncrypt_wp hs) (by lit_decide) (by lit_decide)
-  exact ⟨t, s', he, ⟨preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
+  exact ⟨t, s', he, ⟨Proof.Modes.AArch64.preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem cbcEncrypt_verified :
     Verified AArch64.target cbcEncrypt (Proof.Camellia.cbcEncScratchContract AArch64.abi slots) :=
