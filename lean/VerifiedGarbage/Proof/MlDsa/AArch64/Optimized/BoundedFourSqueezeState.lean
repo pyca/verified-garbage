@@ -11,15 +11,17 @@ structure SqueezeCfg where
  b : Addr
  c : Addr
  d : Addr
+ /-- `vg_keccak_f1600_x2`'s working space, and the return address. -/
+ w : Addr
 
 def SqueezeCfg.out (c : SqueezeCfg) (i : Nat) : Addr :=
  if i=0 then c.a else if i=1 then c.b else if i=2 then c.c else c.d
 
 def SqueezeCfg.at (c : SqueezeCfg) (i j : Nat) : Addr := c.out i+BitVec.ofNat 64 (136*j)
 def SqueezeCfg.writes (c : SqueezeCfg) : List Region :=
- [pairR c.p,pairR c.q,⟨c.a,272⟩,⟨c.b,272⟩,⟨c.c,272⟩,⟨c.d,272⟩]
+ [pairR c.p,pairR c.q,⟨c.a,272⟩,⟨c.b,272⟩,⟨c.c,272⟩,⟨c.d,272⟩,X2.callR c.w]
 def SqueezeCfg.stepWrites (c : SqueezeCfg) (j : Nat) : List Region :=
- pairWrites c.p (c.at 0 j) (c.at 1 j)++pairWrites c.q (c.at 2 j) (c.at 3 j)
+ pairWrites c.p (c.at 0 j) (c.at 1 j)++pairWrites c.q (c.at 2 j) (c.at 3 j)++[X2.callR c.w]
 
 structure SqueezeLayout (σ : State) (c : SqueezeCfg) : Prop where
  left : ∀j<2,PairLayout σ c.p (c.at 0 j) (c.at 1 j)
@@ -28,6 +30,11 @@ structure SqueezeLayout (σ : State) (c : SqueezeCfg) : Prop where
    ∀t∈pairWrites c.q (c.at 2 j) (c.at 3 j),r.Disjoint t
  past : ∀i<4,∀k j,k<j→j<2→∀r∈c.stepWrites j,(rateR (c.at i k)).Disjoint r
  covers : ∀j<2,∀r∈c.stepWrites j,∃t∈c.writes,Region.Sub r t
+ base : σ.gpr .x19+BitVec.ofNat 64 Impl.MlDsa.AArch64.Optimized.BoundedFour.oX2=c.w
+ scratch : ∀j<2,∀r∈pairWrites c.p (c.at 0 j) (c.at 1 j)++pairWrites c.q (c.at 2 j) (c.at 3 j),
+   r.Disjoint (X2.callR c.w)
+ callP : Covers [pairR c.p,X2.callR c.w] σ.wr
+ callQ : Covers [pairR c.q,X2.callR c.w] σ.wr
 
 structure SqueezeInv (σ s : State) (c : SqueezeCfg) (A : Nat→Spec.Sha3.State) (j : Nat) : Prop where
  bound : j≤2

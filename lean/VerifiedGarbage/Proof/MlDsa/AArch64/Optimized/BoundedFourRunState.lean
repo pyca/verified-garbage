@@ -25,12 +25,13 @@ theorem Ready.running {σ s : State} (h : Ready σ s) : SamplerRun σ s (sampler
 theorem squeezeWrites_sub {b : Addr} {off : Nat} (ho : off≤272) {r : Region}
     (hr : r∈(squeezeCfg b off).writes) : Region.Sub r ⟨b,4096⟩ := by
   simp only [SqueezeCfg.writes,squeezeCfg,pairR,List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl|rfl|rfl|rfl|rfl|rfl
+  rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl
   · exact Region.sub_prefix (by decide)
   · exact Offset.sub_base b (d := 400) (n := 400) (k := 4096) (by decide)
   · exact Offset.sub_base b (d := 840+off) (n := 272) (k := 4096) (by omega)
   · exact Offset.sub_base b (d := 1384+off) (n := 272) (k := 4096) (by omega)
   · exact Offset.sub_base b (d := 1928+off) (n := 272) (k := 4096) (by omega)
   · exact Offset.sub_base b (d := 2472+off) (n := 272) (k := 4096) (by omega)
+  · exact Offset.sub_base b (d := 3024) (n := 136) (k := 4096) (by decide)
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour

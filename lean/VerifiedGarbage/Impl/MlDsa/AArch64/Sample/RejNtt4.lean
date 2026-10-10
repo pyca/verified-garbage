@@ -1,5 +1,5 @@
 import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Pair
+import VerifiedGarbage.Impl.Sha3.AArch64.Neon.X2
 
 /-! Four independent SHAKE128 samplers, computed as two pairs of NEON lanes.
 The 1008 bytes per stream and rejection loop match the single-stream sampler. -/
@@ -10,6 +10,8 @@ open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg)
 
 abbrev oBuf : Nat := 840
 abbrev oSave : Nat := 7968
+/-- `vg_keccak_f1600_x2`'s working space, and the return address during its calls. -/
+abbrev oX2 : Nat := 4880
 
 def saved : List Reg := [.x19,.x20,.x21,.x22,.x23,.x24,.x25,.x26,.x27,.x28]
 
@@ -74,9 +76,13 @@ def advance : List Instr :=
   [.addImm .x .x24 .x24 168,.addImm .x .x25 .x25 168,.addImm .x .x26 .x26 168,
    .addImm .x .x27 .x27 168,.subImm .x .x28 .x28 1]
 
+/-- One permutation of the pair at `p`, by a call, and a rate block of each state to `a`, `b`. -/
+def pairStep (sha3 : Bool) (p a b : Reg) : Prog isa :=
+  .seq (Impl.Sha3.AArch64.Neon.X2.call sha3 p .x19 oX2)
+    (.block (Impl.Sha3.AArch64.Neon.X2.squeeze 21 p a b))
+
 def squeezeStepWith (sha3 : Bool) : Prog isa :=
-  .seq (Impl.Sha3.AArch64.Neon.Pair.progWith sha3 .x22 .x24 .x25)
-    (.seq (Impl.Sha3.AArch64.Neon.Pair.progWith sha3 .x23 .x26 .x27) (.block advance))
+  .seq (pairStep sha3 .x22 .x24 .x25) (.seq (pairStep sha3 .x23 .x26 .x27) (.block advance))
 
 def squeezeStep : Prog isa := squeezeStepWith false
 

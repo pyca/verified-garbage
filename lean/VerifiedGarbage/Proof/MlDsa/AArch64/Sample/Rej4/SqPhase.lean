@@ -4,7 +4,7 @@ namespace VG.Proof.MlDsa.AArch64.Sample.Rej4
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 open VG.Proof.Sha3 (iterF byteOf)
-open VG.Impl.MlDsa.AArch64.Sample.Rej4 (oBuf)
+open VG.Impl.MlDsa.AArch64.Sample.Rej4 (oBuf oX2)
 
 def F (σ : State) (k j : Nat) : Byte := (Spec.MlDsa.G (B σ k) 1008).getD j 0
 
@@ -41,14 +41,14 @@ theorem buf_byte_address (σ : State) (k n j : Nat) (hj : 168*n ≤ j) :
 /-- A pair's rate writes preserve all preceding bytes and every other stream. -/
 theorem old_byte {σ : State} {p n k j : Nat} (hp : p < 2) (hn : n < 6) (hk : k < 4) (hj : j < 1008)
     (ho : j < 168*n ∨ (k ≠ 2*p ∧ k ≠ 2*p+1)) {m m' : Mem}
-    (hf : Frame [pairR (stateP σ p),outR (bufAt σ (2*p) n),outR (bufAt σ (2*p+1) n)] m m') :
+    (hf : Frame (blockW σ p n) m m') :
     m' (bufP σ k+BitVec.ofNat 64 j) = m (bufP σ k+BitVec.ofNat 64 j) := by
   have haddr : bufP σ k+BitVec.ofNat 64 j = at' σ (oBuf+1008*k+j) := by
     unfold bufP at'; rw [Offset.add_add]
   rw [haddr]
   refine hf _ (fun r hr => ?_)
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  simp only [blockW,List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
   · exact (Offset.disjoint (scr σ) (d := oBuf+1008*k+j) (n := 1) (e := 400*p) (k := 400)
       (by dsimp only [oBuf]; omega) (by dsimp only [oBuf]; omega) (by omega)) _ (Region.contains_self _ _)
   · exact (Offset.disjoint (scr σ) (d := oBuf+1008*k+j) (n := 1) (e := oBuf+1008*(2*p)+168*n) (k := 168)
@@ -56,5 +56,8 @@ theorem old_byte {σ : State} {p n k j : Nat} (hp : p < 2) (hn : n < 6) (hk : k 
       _ (Region.contains_self _ _)
   · exact (Offset.disjoint (scr σ) (d := oBuf+1008*k+j) (n := 1) (e := oBuf+1008*(2*p+1)+168*n) (k := 168)
       (by rcases ho with h | ⟨_,h⟩ <;> omega) (by dsimp only [oBuf]; omega) (by dsimp only [oBuf]; omega))
+      _ (Region.contains_self _ _)
+  · exact (Offset.disjoint (scr σ) (d := oBuf+1008*k+j) (n := 1) (e := oX2) (k := 136)
+      (by dsimp only [oBuf,oX2]; omega) (by dsimp only [oBuf]; omega) (by decide))
       _ (Region.contains_self _ _)
 end VG.Proof.MlDsa.AArch64.Sample.Rej4

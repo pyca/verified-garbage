@@ -11,7 +11,7 @@ theorem lastWrites_count {σ : State} {p : Nat} (hp : p<2) :
     ∀r∈lastWrites σ p,(countR σ).Disjoint r := by
   intro r hr
   simp only [lastWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact (pair_count_disjoint σ hp).symm
   · rw [lastPtr_eq]
     exact Offset.disjoint (scr σ) (d := 7904) (e := 1680+1008*(2*p))
@@ -19,6 +19,8 @@ theorem lastWrites_count {σ : State} {p : Nat} (hp : p<2) :
   · rw [lastPtr_eq]
     exact Offset.disjoint (scr σ) (d := 7904) (e := 1680+1008*(2*p+1))
       (n := 32) (k := 168) (by omega) (by decide) (by omega)
+  · exact Offset.disjoint (scr σ) (d := 7904) (e := 4880) (n := 32) (k := 136)
+      (by decide) (by decide) (by decide)
 
 theorem last_count_keep {σ : State} {p k : Nat} {s t : State}
     (hp : p<2) (hk : k<4) (hf : Frame (lastWrites σ p) s.mem t.mem) :
@@ -36,7 +38,7 @@ theorem last_pair_keep {σ : State} {p q : Nat} {s t : State} {A B : Spec.Sha3.S
   rw [hf.read (pair_contains (stateP σ q) hi) (by
     intro r hr
     simp only [lastWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl
     · exact Offset.disjoint (scr σ) (d := 400*q) (e := 400*p) (n := 400) (k := 400)
         (by omega) (by omega) (by omega)
     · rw [lastPtr_eq]
@@ -44,7 +46,9 @@ theorem last_pair_keep {σ : State} {p q : Nat} {s t : State} {A B : Spec.Sha3.S
         (by omega) (by omega) (by omega)
     · rw [lastPtr_eq]
       exact Offset.disjoint (scr σ) (d := 400*q) (e := 1680+1008*(2*p+1)) (n := 400) (k := 168)
-        (by omega) (by omega) (by omega)) (by decide)]
+        (by omega) (by omega) (by omega)
+    · exact Offset.disjoint (scr σ) (d := 400*q) (e := 4880) (n := 400) (k := 136)
+        (by omega) (by omega) (by decide)) (by decide)]
   exact hpair i hi
 
 theorem last_buffer_keep {σ : State} {p k j n : Nat} {s t : State}
@@ -56,7 +60,7 @@ theorem last_buffer_keep {σ : State} {p k j n : Nat} {s t : State}
   intro r hr
   have hd : (Region.mk (bufP σ k) n).Disjoint r := by
     simp only [lastWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl
     · exact Offset.disjoint (scr σ) (d := 840+1008*k) (e := 400*p) (n := n) (k := 400)
         (by omega) (by omega) (by omega)
     · rw [lastPtr_eq]
@@ -65,6 +69,8 @@ theorem last_buffer_keep {σ : State} {p k j n : Nat} {s t : State}
     · rw [lastPtr_eq]
       exact Offset.disjoint (scr σ) (d := 840+1008*k) (e := 1680+1008*(2*p+1)) (n := n) (k := 168)
         (by omega) (by omega) (by omega)
+    · exact Offset.disjoint (scr σ) (d := 840+1008*k) (e := 4880) (n := n) (k := 136)
+        (by omega) (by omega) (by decide)
   exact hd _ (Offset.contains_base (bufP σ k) (by omega) (by omega))
 
 theorem last_stored_keep {v p k : Nat} {σ s t : State} {L : List Zq}
