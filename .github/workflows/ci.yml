@@ -92,7 +92,7 @@ jobs:
           if [ -n "$MATCHED" ]; then
             echo "build-key=lean-build-${MATCHED#lean-manifest-}" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: ./.github/actions/upload-artifact
         with:
           name: lean-plan
           path: ${{ runner.temp }}/lean-plan.json
@@ -122,7 +122,7 @@ jobs:
       # On a push to main, the merge queue run's outputs of this commit: its
       # shards' and its final ones (`lean-build-final-*`, extracted last).
       # Lake rebuilds whatever doesn't match the sources.
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: ./.github/actions/download-artifact
         if: ${{ steps.here.outputs.build == 'true' && steps.reuse.outputs.run-id != '' }}
         with:
           pattern: lean-build-*
@@ -188,7 +188,7 @@ jobs:
           restore-keys: |
             ${{ needs.lean.outputs.build-key }}
             ${{ needs.lean.outputs.build-cache-prefix }}
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: ./.github/actions/download-artifact
         with:
           name: lean-plan
           path: ${{ runner.temp }}
@@ -216,7 +216,7 @@ jobs:
           find . -type f -newer "$RUNNER_TEMP/before-build" -printf '%P\n' \
             | python3 ../../../ci/lean_shards.py outputs "$RUNNER_TEMP/lean-plan.json" "$SHARD" \
             | tar --zstd -cf "$RUNNER_TEMP/lean-build-$SHARD.tar.zst" -T -
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: ./.github/actions/upload-artifact
         with:
           name: lean-build-${{ matrix.shard }}
           path: |
@@ -256,7 +256,7 @@ jobs:
           echo "Every shard's outputs are uploaded: this shard assembles the build."
           echo "all=true" >> "$GITHUB_OUTPUT"
       - if: ${{ steps.all-uploaded.outputs.all == 'true' }}
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: ./.github/actions/download-artifact
         with:
           pattern: lean-build-*
           merge-multiple: true
@@ -276,7 +276,7 @@ jobs:
         env:
           SHARD: ${{ matrix.shard }}
       - if: ${{ steps.all-uploaded.outputs.all == 'true' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: ./.github/actions/upload-artifact
         with:
           name: lean-assembled-${{ matrix.shard }}
           path: ${{ runner.temp }}/lean-assembled
@@ -402,7 +402,7 @@ jobs:
       - name: Export coverage
         shell: bash
         run: $(command -v python3 || command -v python) ci/export_rust_coverage.py .rust-cov
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: ./.github/actions/upload-artifact
         with:
           name: coverage-data-${{ strategy.job-index }}
           path: "*.lcov"
@@ -788,14 +788,14 @@ jobs:
           TIMES: ${{ needs.cpu-features-times.outputs.times }}
           JOB: ${{ strategy.job-index }}
       # For `cpu-features-times-save`, on `main`.
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: ./.github/actions/upload-artifact
         with:
           name: cpu-features-times-${{ strategy.job-index }}
           path: cpu-features-times-${{ strategy.job-index }}.json
           retention-days: 1
           if-no-files-found: error
       # For `coverage`'s check of ci/cpu_tests.py's groups.
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: ./.github/actions/upload-artifact
         with:
           name: cpu-tests-${{ strategy.job-index }}
           path: cpu-tests-${{ strategy.job-index }}.json
@@ -803,7 +803,7 @@ jobs:
           if-no-files-found: error
       - name: Export coverage
         run: python3 ci/export_rust_coverage.py .rust-cov --features cpu-features-env
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: ./.github/actions/upload-artifact
         with:
           name: coverage-data-cpu-features-${{ strategy.job-index }}
           path: "*.lcov"
@@ -827,7 +827,7 @@ jobs:
           path: .cpu-features-times
           key: cpu-features-times-${{ github.run_id }}
           restore-keys: cpu-features-times-
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: ./.github/actions/download-artifact
         with:
           pattern: cpu-features-times-*
           merge-multiple: true
@@ -854,7 +854,7 @@ jobs:
       - run: |
           python3 -m venv .venv
           .venv/bin/pip install -r ci/requirements-coverage.txt
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: ./.github/actions/download-artifact
         with:
           pattern: coverage-data-*
           merge-multiple: true
@@ -862,7 +862,7 @@ jobs:
       # Every path of ci/cpu_tests.py's groups selects a test on some CPU of
       # `rust-cpu-features`, from the tests each one listed: a test renamed
       # or moved out of its group fails here, not by running less.
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: ./.github/actions/download-artifact
         with:
           pattern: cpu-tests-*
           merge-multiple: true
@@ -885,7 +885,7 @@ jobs:
           exit $COV_EXIT_CODE
       - name: Upload HTML report
         if: ${{ failure() && steps.combinecoverage.outcome == 'failure' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: ./.github/actions/upload-artifact
         with:
           name: _html-coverage-report
           path: htmlcov
@@ -947,7 +947,7 @@ jobs:
           restore-keys: |
             ${{ needs.lean.outputs.build-key }}
             ${{ needs.lean.outputs.build-cache-prefix }}
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: ./.github/actions/download-artifact
         if: ${{ steps.check.outputs.assemble == 'true' }}
         with:
           pattern: lean-build-*
