@@ -9,8 +9,9 @@ checks inverts the caching) and `checkTables` walks the tables once: within
 table `j`, each entry is the previous one plus the first, with the
 specification's addition, compared projectively; the first entry of table `j +
 1` is `[1024]` of table `j`'s, with the specification's `pointMul`. `combG` and
-`combStart` are compared with `pointMul` of the base point, and `[32 G']B` with
-`[33 G]B` (`combStart_32`): `G'` is `33 G / 32` modulo the group's order.
+`combStart b` are compared with `pointMul` of the base point, and `[32]` of the
+start with `[W b]B` (`combStart_32`), `W b = 33 G + 32^51 (b - 16)`: the start is
+`W b / 32` modulo the group's order.
 -/
 
 namespace VG.Proof.Ed25519.X86_64
@@ -152,36 +153,45 @@ theorem combG_ok : Rep combG (combGVal • baseAff) := by
 
 theorem combGCached_eq : combGCached = cache combG := by decide +kernel
 
-/-- `G' = 33 G / 32` modulo the group's order: where the comb starts. -/
-def combStartVal : Nat := 4552309959934810102337972192881883473972992010722727002078999847075266157651
+/-- The multiple of `B` the comb starts at, for bit 255 `b`: `(W b) / 32` modulo the group's order
+(`combStartW`), so that its five doublings give `[W b]B`. -/
+def combStartVal (b : Bool) : Nat :=
+  if b then 6361561354267875655831268833642632034291304792232850229338932348362443402247
+  else 4552309959934810102337972192881883474083961281832216416222407598238800751623
 
-private def combStartCheck (p : Point) : Bool :=
-  combStart.X * p.Z == p.X && combStart.Y * p.Z == p.Y && p.Z != 0
+/-- `33 G + 32 (b - 16) 1024^25`: the offset `33 G` of the digits, and `32^51` times the top
+chunk's digit, `b - 16`. -/
+def combStartW (b : Bool) : Nat := 33 * combGVal + 32 * (if b then 1 else 0) * 1024 ^ 25 - 512 * 1024 ^ 25
 
-private theorem combStart_check : combStartCheck (pointMul combStartVal basePoint) = true := by decide +kernel
+private def combStartCheck (b : Bool) (p : Point) : Bool :=
+  (combStart b).X * p.Z == p.X && (combStart b).Y * p.Z == p.Y && p.Z != 0
 
-theorem combStart_ok : Rep combStart (combStartVal • baseAff) := by
-  have hp := pointMul_rep combStartVal basePoint_rep
-  have hc := combStart_check
+private theorem combStart_check : ∀ b, combStartCheck b (pointMul (combStartVal b) basePoint) = true := by
+  decide +kernel
+
+theorem combStart_ok (b : Bool) : Rep (combStart b) (combStartVal b • baseAff) := by
+  have hp := pointMul_rep (combStartVal b) basePoint_rep
+  have hc := combStart_check b
   simp only [combStartCheck, Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at hc
   obtain ⟨⟨hx, hy⟩, _⟩ := hc
   refine hp.of_proj (show toZ 1 ≠ 0 by decide) ?_ ?_ ?_
-  · show toZ combStart.X * toZ _ = toZ _ * toZ 1
+  · show toZ (combStart b).X * toZ _ = toZ _ * toZ 1
     rw [toZ_one, mul_one, ← toZ_mul, hx]
-  · show toZ combStart.Y * toZ _ = toZ _ * toZ 1
+  · show toZ (combStart b).Y * toZ _ = toZ _ * toZ 1
     rw [toZ_one, mul_one, ← toZ_mul, hy]
-  · show toZ (combStartAff.1 * combStartAff.2) * toZ 1 = toZ combStartAff.1 * toZ combStartAff.2
+  · show toZ ((combStartAff b).1 * (combStartAff b).2) * toZ 1 = toZ (combStartAff b).1 * toZ (combStartAff b).2
     rw [toZ_mul, toZ_one, mul_one]
 
-private theorem combStart_32_check :
-    pointEqual (pointMul (32 * combStartVal) basePoint) (pointMul (33 * combGVal) basePoint) = true := by
+private theorem combStart_32_check : ∀ b,
+    pointEqual (pointMul (32 * combStartVal b) basePoint) (pointMul (combStartW b) basePoint) = true := by
   decide +kernel
 
-/-- Five doublings of `[G']B` give `[33 G]B`: `32 G' ≡ 33 G` modulo the group's order. -/
-theorem combStart_32 : (32 * combStartVal) • baseAff = (33 * combGVal) • baseAff := by
-  have hp := pointMul_rep (32 * combStartVal) basePoint_rep
-  have hq := pointMul_rep (33 * combGVal) basePoint_rep
-  have h := combStart_32_check
+/-- Five doublings of the start give `[W b]B`: `32 (combStartVal b) ≡ W b` modulo the group's
+order. -/
+theorem combStart_32 (b : Bool) : (32 * combStartVal b) • baseAff = (combStartW b) • baseAff := by
+  have hp := pointMul_rep (32 * combStartVal b) basePoint_rep
+  have hq := pointMul_rep (combStartW b) basePoint_rep
+  have h := combStart_32_check b
   simp only [pointEqual, Bool.and_eq_true, beq_iff_eq] at h
   have e1 := congrArg toZ h.1
   have e2 := congrArg toZ h.2

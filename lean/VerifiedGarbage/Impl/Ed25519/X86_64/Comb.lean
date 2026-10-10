@@ -11,13 +11,15 @@ scratch, one per byte; chunk 51 is bit 255 alone) give
 `[s]B = Σ n_i [32^i]B = Σ d_i [32^i]B + [32 G + G]B` for the digits
 `d_i = n_i - 16`, from `-16` to `15`, and `G = 16 Σ_{j < 26} 1024^j`.
 Table `j` holds `[k]([1024^j]B)` for `k ≤ 16`, so, from `[G']B`, for
-`G' = 33 G / 32` modulo the group's order (`combStart`), the odd digits
-`d_{2j+1}` are added first, one from each table, as the entry `|d|` or its
-negation; five doublings multiply their sum by 32, which makes `[G']B` into
-`[33 G]B`; then the even digits `d_{2j}` are added from the same tables. That
-is 52 additions of affine cached points and five doublings, which are calls of
-`vg_ed25519_r64_double_ext` (`Point64.calls`): only five run, so a call's cost
-is negligible next to the copies of the doubling it saves.
+`G' = 33 G / 32` modulo the group's order, the odd digits `d_{2j+1}` are added
+first, one from each table, as the entry `|d|` or its negation; five doublings
+multiply their sum by 32, which makes `[G']B` into `[33 G]B`; then the even
+digits `d_{2j}` are added from the same tables. The top digit, `d_51`, is
+bit 255 minus 16, so the comb starts at `[G' + d_51 1024^25]B`, one of two
+constants (`combStart`) chosen in constant time, and its step (`rbx = 25`)
+adds nothing. That is 51 additions of affine cached points and five
+doublings, which are calls of `vg_ed25519_r64_add_affine_ext` and
+`vg_ed25519_r64_double_ext` (`Point64.calls`).
 
 The digit is secret: the tables are in the static `combSym` (`combWords`),
 and the entry of table `j` for the digit's magnitude is selected in constant
@@ -28,7 +30,7 @@ selects zeros, which become the identity's `[1, 1, 0]`. The entry is negated,
 or not, with the mask of the digit's sign (at byte 1152) by exchanging `Y - X`
 and `Y + X` and choosing between `2dT` and its negation. The entries are
 affine (`Z = 1`), so an addition multiplies by `2Z = 2` with an addition
-(`pointAddAffine`). The loop's counter `rbx`, the bit index `rcx` and the
+(`pointAddAffineOps`). The loop's counter `rbx`, the bit index `rcx` and the
 table index `r9` are public.
 -/
 
@@ -165,23 +167,47 @@ def combChunk : Prog isa :=
 def combDouble (pt : Point64.Ops) : Prog isa :=
   .seq (pt.dbl true) (.seq (pt.dbl true) (.seq (pt.dbl true) (.seq (pt.dbl true) (pt.dbl true))))
 
-/-- Step `rbx`: before the even digits, the five doublings; then the digit's entry
-of table `r9` (selected by `sel`, `combSelect` or `combSelectY`), negated for a negative digit,
-added; the doublings are `pt`'s. -/
-def combStep (fld : Arith) (sel : List Instr) (pt : Point64.Ops) : Prog isa :=
+/-- The digit of step `rbx` (five bits: not the top chunk's): the entry of table `r9`
+(selected by `sel`, `combSelect` or `combSelectY`), negated for a negative digit, added by
+`pt`. -/
+def combAdd (sel : List Instr) (pt : Point64.Ops) : Prog isa :=
+  .seq combIndex <|
+  .seq (.block combDigit) <|
+  .seq (.block (combSign ++ [.mov .r8 (.reg .rax), .mov .rdx (.reg .r9)] ++ sel ++ combNeg)) pt.aff
+
+/-- Step `rbx`: before the even digits, the five doublings; then the digit's addition
+(`combAdd`), but for the top chunk's (`rbx = 25`), which the start holds. The doublings and
+additions are `pt`'s. -/
+def combStep (sel : List Instr) (pt : Point64.Ops) : Prog isa :=
   .seq (.block [.alu .cmp .rbx (.imm 26)]) <|
   .seq (.ite .e (combDouble pt) (.block [])) <|
-  .seq combIndex <|
-  .seq combChunk <|
-  .seq (.block (combSign ++ [.mov .r8 (.reg .rax), .mov .rdx (.reg .r9)] ++ sel)) <|
-  .block (combNeg ++ pointAddAffine fld ++ [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 52)])
+  .seq (.block [.alu .cmp .rbx (.imm 25)]) <|
+  .seq (.ite .e (.block []) (combAdd sel pt)) <|
+  .block [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 52)]
+
+/-- `rcx` = the mask of bit 255 of the scalar (byte 1023), through `rax`. -/
+def combTopMask : List Instr := [.movzx8 .rax (sc 1023), .mov32 .rcx (.imm 0), .alu .sub .rcx (.reg .rax)]
+
+/-- Coordinate `i` of the comb's start into slot `i`: both candidates' into slots `i` and
+`i + 1`, exchanged under the mask of bit 255 (`swapFieldX`). -/
+def combStartCoord (fld : Arith) (i : Slot) (i' : Slot) (v₀ v₁ : Spec.X25519.Fe) : List Instr :=
+  fieldCode fld [.const i v₀, .const i' v₁] ++ combTopMask ++ swapFieldX (offset i)
+
+/-- The comb's start into slots 0–3: `combStart b` for bit 255 of the scalar, `b`, a coordinate
+at a time (slot 4 is temporary). -/
+def combStartSel (fld : Arith) : List Instr :=
+  combStartCoord fld 0 1 (combStart false).X (combStart true).X ++
+  combStartCoord fld 1 2 (combStart false).Y (combStart true).Y ++
+  combStartCoord fld 2 3 (combStart false).Z (combStart true).Z ++
+  combStartCoord fld 3 4 (combStart false).T (combStart true).T
 
 /-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 768 onward, the entries
-selected by `sel`, the doublings `pt`'s: calls of `vg_ed25519_r64_double_ext` (or `_adx`, with
-`fld`'s field multiplications), or their bodies, which the proofs read. -/
+selected by `sel`, the doublings and additions `pt`'s: calls of `vg_ed25519_r64_double_ext` and
+`_add_affine_ext` (or `_adx`, with `fld`'s field multiplications), or their bodies, which the
+proofs read. -/
 def combMultiply (fld : Arith) (sel : List Instr := combSelect) (pt : Point64.Ops := Point64.calls fld) :
     Prog isa :=
-  .seq (.block (constPoint fld combStart ++ [.mov32 .rbx (.imm 0)]))
-    (.loop (combStep fld sel pt) .ne)
+  .seq (.block (combStartSel fld ++ [.mov32 .rbx (.imm 0)]))
+    (.loop (combStep sel pt) .ne)
 
 end VG.Impl.Ed25519.X86_64

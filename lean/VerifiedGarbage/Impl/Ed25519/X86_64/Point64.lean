@@ -1,21 +1,24 @@
 import VerifiedGarbage.Impl.Ed25519.X86_64.Field
+import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
 import VerifiedGarbage.Spec.Ed25519.Point64
 
 /-!
 # Ed25519's point doubling and cached addition on x86-64, as functions
 
-`vg_ed25519_r64_double_ext`, `_double_proj`, `_add_cached_ext` and
-`_add_cached_proj` (`Spec/Ed25519/Point64.lean`), each with the baseline's
+`vg_ed25519_r64_double_ext`, `_double_proj`, `_add_cached_ext`,
+`_add_cached_proj` and `_add_affine_ext` (`Spec/Ed25519/Point64.lean`), each with the baseline's
 field multiplications and with BMI2 and ADX's (`_adx`): `ws` is in `rdi`,
 where the Ed25519 code keeps it. Each keeps the callee-saved registers the
 field arithmetic writes (`rbp`, `r12`–`r15`) in `xmm0`–`xmm4`, which are
 caller-saved, runs the field program the code inlined (`dblOps`,
-`addCachedOps`: slots 0–3 are the point, slots 4–7 the cached operand, slots
+`addCachedOps`, `pointAddAffineOps`: slots 0–3 are the point, slots 4–7 the cached operand, slots
 8–15 the temporaries), and restores them. It uses no stack and never writes
 `rdi`, every address is `rdi` plus a constant, and it has no branch: only the
 pointer may affect timing. Verification calls `_double_ext` for its table and
 both additions; its chain of doublings stays inline, so `_double_proj` is not
-registered on x86-64.
+registered on x86-64. The comb of the base-point multiplications calls
+`_double_ext` for its doublings and `_add_affine_ext` for its additions of
+affine table entries.
 -/
 
 namespace VG.Impl.Ed25519.X86_64
@@ -61,6 +64,11 @@ def doubleFn (fld : Arith) (t : Bool) : Prog isa := fn fld (dblOps t)
 /-- The cached addition, computing `T` if `t`. -/
 def addFn (fld : Arith) (t : Bool) : Prog isa := fn fld (addCachedOps t)
 
+/-- The addition of an affine cached point, `[Y - X, Y + X, 2dT]` in slots 4–6 (`Z = 1`, so
+`Z₁ · 2Z₂ = Z₁ + Z₁`): seven products, with `T`. Its sums and differences are folded as
+`fieldCode` folds them, for any operands. -/
+def addAffineFn (fld : Arith) : Prog isa := fn fld pointAddAffineOps
+
 /-- The doubling's name, with the field multiplications' suffix `fs`. -/
 def doubleName (t : Bool) (fs : String) : String :=
   (if t then Spec.Ed25519.Point64.doubleExtApi.name else Spec.Ed25519.Point64.doubleProjApi.name) ++ fs
@@ -69,23 +77,30 @@ def doubleName (t : Bool) (fs : String) : String :=
 def addName (t : Bool) (fs : String) : String :=
   (if t then Spec.Ed25519.Point64.addCachedExtApi.name else Spec.Ed25519.Point64.addCachedProjApi.name) ++ fs
 
+/-- The affine addition's name, with the field multiplications' suffix `fs`. -/
+def addAffineName (fs : String) : String := Spec.Ed25519.Point64.addAffineExtApi.name ++ fs
+
 /-- A call of the doubling with the field multiplications `fld`. -/
 def doubleCall (fld : Arith) (t : Bool) : Prog isa := .call (doubleName t fld.suffix) (doubleFn fld t)
 
 /-- A call of the cached addition with the field multiplications `fld`. -/
 def addCall (fld : Arith) (t : Bool) : Prog isa := .call (addName t fld.suffix) (addFn fld t)
 
+/-- A call of the affine addition with the field multiplications `fld`. -/
+def addAffineCall (fld : Arith) : Prog isa := .call (addAffineName fld.suffix) (addAffineFn fld)
+
 /-- The point operations a caller runs: the doubling and the cached addition, computing `T` if
-their argument is `true`. -/
+their argument is `true`, and the addition of an affine cached point. -/
 structure Ops where
   dbl : Bool → Prog isa
   add : Bool → Prog isa
+  aff : Prog isa
 
 /-- The operations as calls of the functions. -/
-def calls (fld : Arith) : Ops := ⟨doubleCall fld, addCall fld⟩
+def calls (fld : Arith) : Ops := ⟨doubleCall fld, addCall fld, addAffineCall fld⟩
 
 /-- The operations as the functions' code, as the calls run it (`Code.inline`). -/
-def bodies (fld : Arith) : Ops := ⟨doubleFn fld, addFn fld⟩
+def bodies (fld : Arith) : Ops := ⟨doubleFn fld, addFn fld, addAffineFn fld⟩
 
 end Point64
 

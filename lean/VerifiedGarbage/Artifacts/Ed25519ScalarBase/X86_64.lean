@@ -18,9 +18,12 @@ def artifacts : List Artifact := [
       255 alone) gives the digit n - 16, whose magnitude selects its table entry in constant \
       time (every entry of the table is loaded with SSE2 and kept under a mask; a zero digit \
       selects the identity) and whose sign negates it, or not, under a mask; the odd digits are \
-      added first to [G']B, then five doublings, which make it [33 G]B (G = 16 Σ 1024^j: 33 G \
-      makes up for the offset; G' = 33 G / 32 modulo the group's order), then the even ones. The five doublings are calls of \
-      `vg_ed25519_r64_double_ext`. The working values, masks and saved registers reside in \
+      added first, then five doublings make their sum 32 times as large, then the even ones \
+      are added. The comb starts at [G' + (b - 16) 1024^25]B for bit 255 b, the top digit's \
+      share, one of two constants chosen in constant time, so that the doublings make up for \
+      the offset of the digits, 33 G (G = 16 Σ 1024^j; G' = 33 G / 32 modulo the group's \
+      order): 51 additions, calls of `vg_ed25519_r64_add_affine_ext`, and five doublings, calls \
+      of `vg_ed25519_r64_double_ext`. The working values, masks and saved registers reside in \
       `scratch`. The point's encoding inverts Z with a call of `vg_gf25519_r64_invert`."])
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.baseline
@@ -35,7 +38,8 @@ def artifacts : List Artifact := [
     doc := Spec.Ed25519.scalarBaseApi.doc (notes := ["The code of \
       `vg_ed25519_scalar_base` but for the field multiplications and squarings, \
       which use BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once), as \
-      `vg_x25519_adx` does, and so its doublings call `vg_ed25519_r64_double_ext_adx`. Its comb selects each of the scalar's 52 signed digits' table entry \
+      `vg_x25519_adx` does, and so its doublings and additions call \
+      `vg_ed25519_r64_double_ext_adx` and `vg_ed25519_r64_add_affine_ext_adx`. Its comb selects each of the scalar's 52 signed digits' table entry \
       in constant time from the static `VG_ED25519_COMB`, 32 bytes at a time with AVX2 (as \
       `vg_ed25519_scalar_base_ifma`'s did); the working values, masks and saved registers \
       reside in `scratch`."])

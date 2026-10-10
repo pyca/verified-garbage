@@ -18,5 +18,7 @@ materialize_code doubleExtAdxLit := doubleFn adx true
 materialize_code doubleProjAdxLit := doubleFn adx false
 materialize_code addExtAdxLit := addFn adx true
 materialize_code addProjAdxLit := addFn adx false
+materialize_code addAffineLit := addAffineFn baseline
+materialize_code addAffineAdxLit := addAffineFn adx
 
 end VG.Impl.Ed25519.X86_64.Point64

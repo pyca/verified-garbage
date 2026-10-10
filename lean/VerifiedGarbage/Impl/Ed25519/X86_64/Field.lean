@@ -103,9 +103,6 @@ def fieldCodeFrom (fld : Arith) : (Slot → Bool) → List FieldOp → List Inst
 (`fieldCodeFrom`, from no slot bounded). -/
 def fieldCode (fld : Arith) (ops : List FieldOp) : List Instr := fieldCodeFrom fld (fun _ => false) ops
 
-/-- `fieldCode` with the sums and differences folded once (`FieldOp.codeB`). -/
-def fieldCodeL (fld : Arith) (ops : List FieldOp) : List Instr := ops.flatMap (FieldOp.codeB fld true)
-
 /-- Add the points in slots 0–3 and 4–7 into slots 0–3. The coordinates
 are X,Y,Z,T. Slot 16 holds d; slots 8–15 are temporary. Both points are
 read before the result overwrites the first. -/
