@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+import VerifiedGarbage.Impl.X448.AArch64.Base
 import VerifiedGarbage.Impl.X448.AArch64.Field56
 import VerifiedGarbage.Spec.Ed448.Point56
 
@@ -49,6 +49,24 @@ def doubleFn : Prog isa := asFn false (X448.AArch64.Fast.ops (dblOps (slot 3) (s
 
 def addCall : Prog isa := fnCall Spec.Ed448.Point56.addApi.name addFn
 def doubleCall : Prog isa := fnCall Spec.Ed448.Point56.doubleApi.name doubleFn
+
+/-- The three slots from `a` copied to the three from `o`. -/
+def copy3 (o a : Nat) : List Instr :=
+  Curve448.AArch64.copy (slot o) (slot a) ++ Curve448.AArch64.copy (slot (o + 1)) (slot (a + 1)) ++
+    Curve448.AArch64.copy (slot (o + 2)) (slot (a + 2))
+
+/-- The comb's `A := 16 A + B` (X448's `Base.combine`, `A` in slots 0–2 and `B` in 3–5) by calls of
+`vg_ed448_r56_point_add`: `B` kept in slots 0–2 and `A` moved to slots 3–5; `A` added to itself
+(a copy in slots 6–8) four times, counted by `x1`, which the calls keep; `B` added; and the sum moved
+to slots 0–2. -/
+def combineMid : Prog isa :=
+  .seq (.block (copy3 6 0 ++ copy3 0 3 ++ copy3 3 6 ++ [.movz .w .x1 4 0])) <|
+  .seq (.loop (.seq (.block (copy3 6 3)) (.seq addCall (.block [.subImm .x .x1 .x1 1]))) (.nonzero .x .x1)) <|
+  .seq (.block (copy3 6 0)) <| .seq addCall (.block (copy3 0 3))
+
+/-- `combineMid`, with the return address kept in a lane of `v8`, which the calls keep. -/
+def combineCall : Prog isa :=
+  .seq (.block [.vop (.ins .d2 .v8 0 .x30)]) <| .seq combineMid (.block [.umov .x .x30 .v8 0])
 
 end Point56
 
