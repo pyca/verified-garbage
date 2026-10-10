@@ -64,11 +64,11 @@ open VG.Proof.Sm4 (cbcDecAArch64 cbcEncAArch64)
 
 attribute [local irreducible] Spec.Sm4.invCipher in
 /-- The core's cipher is the contract's, without unfolding it (as `cipher_eq`). -/
-theorem invCipher_eq (k : Spec.Sm4.Schedule) : (dirCoreSpec .decrypt).cipher k = Spec.Sm4.invCipher k := rfl
+theorem invCipher_eq (k : Spec.Sm4.Schedule) : ((dirCoreSpec .decrypt).toBlock rfl).cipher k = Spec.Sm4.invCipher k := rfl
 
 attribute [local irreducible] Spec.Sm4.cipher in
 /-- The core's cipher is the contract's, without unfolding it (as `cipher_eq`). -/
-theorem encCipher_eq (k : Spec.Sm4.Schedule) : (dirCoreSpec .encrypt).cipher k = Spec.Sm4.cipher k := rfl
+theorem encCipher_eq (k : Spec.Sm4.Schedule) : ((dirCoreSpec .encrypt).toBlock rfl).cipher k = Spec.Sm4.cipher k := rfl
 
 /-- The callee-saved registers the modes keep, and the link register. -/
 theorem preserved_of {s s' : State} (h₁ : ∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
@@ -122,7 +122,7 @@ theorem cbcDecrypt_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcDecAArch64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB⟩ := hp
   have hwS : (⟨s₀.gpr .x4, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Proof.Modes.AArch64.cbcDecrypt_wp (dirCoreSpec .decrypt) (r := ⟨.x1, .x2, .x3, .x4⟩)
+  refine WP.mono (Proof.Modes.AArch64.cbcDecrypt_wp ((dirCoreSpec .decrypt).toBlock rfl) (r := ⟨.x1, .x2, .x3, .x4⟩)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .x4) (P := s₀.gpr .x1) (D := s₀.gpr .x2) (n := (s₀.gpr .x3).toNat)
     (k := Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .x0)) rfl rfl rfl rfl ⟨hwS, fitB⟩
@@ -166,7 +166,7 @@ theorem cbcEncrypt_wp {s₀ : State} (hp : cbcEncAArch64.pre s₀) :
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcEncAArch64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB⟩ := hp
   have hwS : (⟨s₀.gpr .x4, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Proof.Modes.AArch64.cbcEncrypt_wp (dirCoreSpec .encrypt) (r := ⟨.x1, .x2, .x3, .x4⟩)
+  refine WP.mono (Proof.Modes.AArch64.cbcEncrypt_wp ((dirCoreSpec .encrypt).toBlock rfl) (r := ⟨.x1, .x2, .x3, .x4⟩)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .x4) (P := s₀.gpr .x1) (D := s₀.gpr .x2) (n := (s₀.gpr .x3).toNat)
     (k := Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .x0)) rfl rfl rfl rfl ⟨hwS, fitB⟩

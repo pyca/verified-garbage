@@ -1,7 +1,7 @@
 import VerifiedGarbage.Impl.Modes.AArch64.Ctr
 
 /-!
-# CBC decryption on AArch64, for any block cipher with 16-byte blocks
+# CBC decryption on AArch64, for any block cipher with blocks of 8 or 16 bytes
 
 `cbcDecrypt core regs`: CBC decryption (SP 800-38A §6.2) over a block
 cipher's core (`Core`, as for CTR), whose `crypt` here applies the inverse
@@ -9,8 +9,9 @@ cipher `CIPH⁻¹_K` to the `G` blocks of its buffer. Each group of up to `G`
 blocks is decrypted at once: decryption, unlike encryption, needs no block's
 result for the next. As on x86-64 (`Impl/Modes/X86_64/Cbc.lean`).
 
+Blocks are `bw` 8-byte words, moved a word at a time (`copyW`, `xorW`).
 The mode's slots hold the callee-saved registers (`savedSlot`) and the
-chaining value `Cⱼ₋₁` (`hiSlot`, `loSlot`: its bytes 0–7 and 8–15).
+chaining value `Cⱼ₋₁` (`hiSlot`, and `loSlot` for a second word).
 
 * The scratch buffer moves to `sb`, the callee-saved registers to the
   mode's slots, the IV (`r.ctr`, only read) to the chaining value's. The
@@ -35,31 +36,28 @@ variable (c : Core)
 
 /-- The IV at `r.ctr` to the chaining value's slots. -/
 def cbcSetup (r : CtrRegs) : List Instr :=
-  [.ldr .x .x6 r.ctr 0, .ldr .x .x7 r.ctr 8, stS c.hiSlot .x6, stS c.loSlot .x7]
+  (List.range c.bw).flatMap (copyW .x6 sb r.ctr (8 * c.hiSlot) 0)
+
+/-- Past a block at `x14` and `x15`, one fewer in `x17`. -/
+def nextBlock : List Instr :=
+  [.addImm .x .x14 .x14 (8 * c.bw), .addImm .x .x15 .x15 (8 * c.bw), .subImm .x .x17 .x17 1]
 
 /-- Copy `x17` blocks at `x15` to `x14` (through `x8`). -/
 def copyBlocks : Prog isa :=
-  .loop (.block [.ldr .x .x8 .x15 0, .str .x .x8 .x14 0, .ldr .x .x8 .x15 8, .str .x .x8 .x14 8,
-      .addImm .x .x14 .x14 16, .addImm .x .x15 .x15 16, .subImm .x .x17 .x17 1]) (.nonzero .x .x17)
+  .loop (.block ((List.range c.bw).flatMap (copyW .x8 .x14 .x15 0 0) ++ c.nextBlock)) (.nonzero .x .x17)
 
-/-- Word `w` (0 or 1) of a block: the decrypted word at `x14` XORed with the
-chaining value's, back to `x14`; the ciphertext's word at `x15` to the
-chaining value; the plaintext's from `x14` to `x15`. -/
-def unchainWord (w : Nat) : List Instr :=
-  [.ldr .x .x8 .x14 (8 * w), ldS .x9 (c.hiSlot + w), eorR .x8 .x8 .x9, .str .x .x8 .x14 (8 * w),
-   .ldr .x .x8 .x15 (8 * w), stS (c.hiSlot + w) .x8,
-   .ldr .x .x8 .x14 (8 * w), .str .x .x8 .x15 (8 * w)]
-
-/-- `x17` blocks: the decryptions at `x14`, the ciphertexts at `x15`. -/
+/-- `x17` blocks: the decryptions at `x14`, the ciphertexts at `x15`. Each
+block: the chaining value XORed into the decryption, the ciphertext to the
+chaining value, the plaintext to the data (through `x8`, `x9`). -/
 def unchainBlocks : Prog isa :=
-  .loop (.block (c.unchainWord 0 ++ c.unchainWord 1 ++
-    ([.addImm .x .x14 .x14 16, .addImm .x .x15 .x15 16, .subImm .x .x17 .x17 1] : List Instr)))
-    (.nonzero .x .x17)
+  .loop (.block ((List.range c.bw).flatMap (xorW .x8 .x9 .x14 sb 0 (8 * c.hiSlot)) ++
+    (List.range c.bw).flatMap (copyW .x8 sb .x15 (8 * c.hiSlot) 0) ++
+    (List.range c.bw).flatMap (copyW .x8 .x15 .x14 0 0) ++ c.nextBlock)) (.nonzero .x .x17)
 
 /-- One group: its ciphertext blocks to the buffer, decrypted, and the
 plaintext blocks back to the data. -/
 def cbcDecGroup : Prog isa :=
-  .seq c.groupCount (.seq (.block c.xorArgs) (.seq copyBlocks (.seq c.crypt
+  .seq c.groupCount (.seq (.block c.xorArgs) (.seq c.copyBlocks (.seq c.crypt
     (.seq c.groupCount (.seq (.block c.xorArgs) (.seq c.unchainBlocks (.block c.advance)))))))
 
 /-- The whole function: the chaining value, the key, then the groups. -/

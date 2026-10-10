@@ -112,6 +112,77 @@ structure CoreSpec (c : Core) where
       (∀ j < c.G, bytesAt s'.mem (bufAddr c B j) 16 = cipher k (bytesAt s.mem (bufAddr c B j) 16)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr
 
+/-! ## Blocks of `bw` words, for CBC
+
+As on x86-64: `BlockSpec` is `CoreSpec` with blocks of `8 bw` bytes, which a
+core of 16-byte blocks has (`CoreSpec.toBlock`). -/
+
+/-- Block `j` of the core's buffer, of `bw` words. -/
+abbrev blkAddr (c : Core) (B : Addr) (j : Nat) : Addr := B + BitVec.ofNat 64 (8 * c.buf + 8 * c.bw * j)
+
+/-- The core's buffer, of `G` blocks of `bw` words. -/
+abbrev blkRegion (c : Core) (B : Addr) : Region := ⟨B + BitVec.ofNat 64 (8 * c.buf), 8 * c.bw * c.G⟩
+
+/-- `Layout` for blocks of `bw` words, at most the 2 of the chaining
+value's slots. -/
+structure BLayout (c : Core) : Prop where
+  lgG_lt : c.lgG < 16
+  bw_pos : 0 < c.bw
+  bw_le : c.bw ≤ 2
+  buf_le : c.buf + c.bw * c.G ≤ c.slots
+  room : c.slots + 12 ≤ c.total
+  small : 8 * c.total < 32768
+  bufImm : 8 * c.buf < 4096
+
+theorem BLayout.G_pos {c : Core} (_ : BLayout c) : 0 < c.G := Nat.two_pow_pos _
+theorem BLayout.G_lt {c : Core} (h : BLayout c) : c.G < 2 ^ 16 := Nat.pow_lt_pow_right (by decide) h.lgG_lt
+
+/-- `CoreSpec` for blocks of `bw` words. -/
+structure BlockSpec (c : Core) where
+  Key : Type
+  cipher : Key → Spec.Cbc.Cipher
+  KeyArgs : State → List Region → Key → Prop
+  Ready : State → Addr → Key → Prop
+  cipher_len : ∀ k b, (cipher k b).length = 8 * c.bw
+  layout : BLayout c
+  keyRegs_ok : c.keyRegs.all (fun r => r != sb && r != .x6 && r != .x7 && r != .x10) = true
+  regs_ok : regsOk c = true
+  keyArgs_congr : ∀ {s s' : State} {rs : List Region} {k : Key}, KeyArgs s rs k →
+    (∀ r ∈ c.keyRegs, s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → Frame rs s.mem s'.mem →
+    KeyArgs s' rs k
+  ready_frame : ∀ {s s' : State} {B : Addr} {k : Key} {rs : List Region}, Ready s B k → Frame rs s.mem s'.mem →
+    (∀ r ∈ rs, Region.Disjoint (coreRegion c B) r ∨ Region.Sub r (blkRegion c B)) →
+    (∀ r, r ∉ modeRegs c → s'.gpr r = s.gpr r) → Ready s' B k
+  prepare_wp : ∀ {s : State} {B : Addr} {rs : List Region} {k : Key}, s.gpr sb = B →
+    ScrIn s B c.total → (⟨B, 8 * c.total⟩ : Region) ∈ rs → KeyArgs s rs k →
+    WP isa c.prepare s fun s' => Ready s' B k ∧ s'.gpr sb = B ∧
+      s'.gpr c.dataReg = s.gpr c.dataReg ∧ s'.gpr c.leftReg = s.gpr c.leftReg ∧
+      Frame [coreRegion c B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr
+  crypt_wp : ∀ {s : State} {B : Addr} {k : Key}, s.gpr sb = B → ScrIn s B c.total → Ready s B k →
+    WP isa c.crypt s fun s' => s'.gpr sb = B ∧
+      s'.gpr c.dataReg = s.gpr c.dataReg ∧ s'.gpr c.leftReg = s.gpr c.leftReg ∧ Ready s' B k ∧
+      Frame [coreRegion c B] s.mem s'.mem ∧
+      (∀ j < c.G, bytesAt s'.mem (blkAddr c B j) (8 * c.bw) =
+        cipher k (bytesAt s.mem (blkAddr c B j) (8 * c.bw))) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr
+
+/-- A core of 16-byte blocks, as one of blocks of `bw = 2` words. -/
+def CoreSpec.toBlock {c : Core} (cs : CoreSpec c) (h : c.bw = 2) : BlockSpec c where
+  Key := cs.Key
+  cipher := cs.cipher
+  KeyArgs := cs.KeyArgs
+  Ready := cs.Ready
+  cipher_len k b := by rw [h, cs.cipher_len]
+  layout := ⟨cs.layout.lgG_lt, by omega, by omega, by have := cs.layout.buf_le; rw [h]; omega, cs.layout.room,
+    cs.layout.small, cs.layout.bufImm⟩
+  keyRegs_ok := cs.keyRegs_ok
+  regs_ok := cs.regs_ok
+  keyArgs_congr := cs.keyArgs_congr
+  ready_frame hr hf hd hg := cs.ready_frame hr hf (by simpa only [blkRegion, h] using hd) hg
+  prepare_wp := cs.prepare_wp
+  crypt_wp hB hs hr := WP.mono (cs.crypt_wp hB hs hr) fun _ ⟨b, d, l, r, f, e, rd, wr⟩ =>
+    ⟨b, d, l, r, f, by simpa only [blkAddr, bufAddr, h] using e, rd, wr⟩
+
 /-- What `regsOk` says, one register at a time. -/
 theorem regsOk_ne {c : Core} (h : regsOk c = true) :
     (∀ r ∈ [c.dataReg, c.leftReg], r ∉ ownRegs ∧ r ≠ sb ∧ r ∉ c.keyRegs) ∧ c.dataReg ≠ c.leftReg := by

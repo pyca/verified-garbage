@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Modes.Unchain
+import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Modes.Ctr
 
 /-!
@@ -13,6 +13,16 @@ time; `over_step` adds the next word's 8 bytes, so a loop's memory is
 namespace VG.Proof.Modes
 
 open VG
+
+theorem off_self (p : Addr) {i : Nat} (hi : i < 2 ^ 64) : (p + BitVec.ofNat 64 i - p).toNat = i := by
+  rw [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hi]
+
+/-- A byte of one region is not within `n` bytes of another's (disjoint)
+region's address `q`. -/
+theorem not_near {p q : Addr} {np nq i n : Nat} (hd : Region.Disjoint ⟨p, np⟩ ⟨q, nq⟩) (hi : i < np)
+    (hn : n ≤ nq) (hnp : np ≤ 2 ^ 64) : ¬ (p + BitVec.ofNat 64 i - q).toNat < n := fun h =>
+  hd (p + BitVec.ofNat 64 i) (by simp only [Region.Contains]; rw [off_self p (by omega)]; omega)
+    (by simp only [Region.Contains]; omega)
 
 /-- The memory `m` with the `n` bytes at `P` given by `f`. -/
 def over (m : Mem) (P : Addr) (n : Nat) (f : Nat → Byte) : Mem :=

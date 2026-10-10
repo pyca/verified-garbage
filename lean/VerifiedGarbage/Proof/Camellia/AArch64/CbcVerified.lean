@@ -66,13 +66,13 @@ open VG.Proof.Camellia (cbcDecAArch64 cbcEncAArch64 schedWords)
 attribute [local irreducible] Spec.Camellia.invCipher in
 /-- The core's cipher is the contract's, without unfolding it (as `cipher_eq`). -/
 theorem invCipher_eq (m : Mem) (p : Addr) (R : Nat) :
-    (dirCoreSpec .decrypt).cipher (R, schedWords m p R) = Spec.Camellia.invCipher (Spec.Camellia.subkeysAt m p R) :=
+    ((dirCoreSpec .decrypt).toBlock rfl).cipher (R, schedWords m p R) = Spec.Camellia.invCipher (Spec.Camellia.subkeysAt m p R) :=
   rfl
 
 attribute [local irreducible] Spec.Camellia.cipher in
 /-- The core's cipher is the contract's, without unfolding it (as `cipher_eq`). -/
 theorem encCipher_eq (m : Mem) (p : Addr) (R : Nat) :
-    (dirCoreSpec .encrypt).cipher (R, schedWords m p R) = Spec.Camellia.cipher (Spec.Camellia.subkeysAt m p R) :=
+    ((dirCoreSpec .encrypt).toBlock rfl).cipher (R, schedWords m p R) = Spec.Camellia.cipher (Spec.Camellia.subkeysAt m p R) :=
   rfl
 
 /-- The callee-saved registers the modes keep, and the link register. -/
@@ -127,7 +127,7 @@ theorem cbcDecrypt_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcDecAArch64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB, hR⟩ := hp
   have hwS : (⟨s₀.gpr .x5, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Proof.Modes.AArch64.cbcDecrypt_wp (dirCoreSpec .decrypt) (r := ⟨.x2, .x3, .x4, .x5⟩)
+  refine WP.mono (Proof.Modes.AArch64.cbcDecrypt_wp ((dirCoreSpec .decrypt).toBlock rfl) (r := ⟨.x2, .x3, .x4, .x5⟩)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .x5) (P := s₀.gpr .x2) (D := s₀.gpr .x3) (n := (s₀.gpr .x4).toNat)
     (k := ((s₀.gpr .x1).toNat, schedWords s₀.mem (s₀.gpr .x0) (s₀.gpr .x1).toNat))
@@ -176,7 +176,7 @@ theorem cbcEncrypt_wp {s₀ : State} (hp : cbcEncAArch64.pre s₀) :
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcEncAArch64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB, hR⟩ := hp
   have hwS : (⟨s₀.gpr .x5, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Proof.Modes.AArch64.cbcEncrypt_wp (dirCoreSpec .encrypt) (r := ⟨.x2, .x3, .x4, .x5⟩)
+  refine WP.mono (Proof.Modes.AArch64.cbcEncrypt_wp ((dirCoreSpec .encrypt).toBlock rfl) (r := ⟨.x2, .x3, .x4, .x5⟩)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .x5) (P := s₀.gpr .x2) (D := s₀.gpr .x3) (n := (s₀.gpr .x4).toNat)
     (k := ((s₀.gpr .x1).toNat, schedWords s₀.mem (s₀.gpr .x0) (s₀.gpr .x1).toNat))
