@@ -84,7 +84,7 @@ def table : Prog isa := .seq (.block tabInit) (.loop tabBody (.nonzero .x .x9))
 `16 A + B`: `[S]B` in slots 0–2. -/
 def sBase : Prog isa :=
   .seq (.block (Impl.X448.AArch64.Base.accs Impl.X448.baseG57)) <|
-  .seq (.loop (Impl.X448.AArch64.Base.stepN 57) (.nonzero .x .x9)) Point56.combineCall
+  .seq (Point56.combLoop 57) Point56.combineCall
 
 /-! ## `[k](-A)` -/
 

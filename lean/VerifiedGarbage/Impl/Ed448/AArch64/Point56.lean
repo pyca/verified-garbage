@@ -68,6 +68,47 @@ def combineMid : Prog isa :=
 def combineCall : Prog isa :=
   .seq (.block [.vop (.ins .d2 .v8 0 .x30)]) <| .seq combineMid (.block [.umov .x .x30 .v8 0])
 
+/-! ## The comb's additions -/
+
+/-- Where `vg_ed448_r56_comb_add` keeps `v8`–`v15`, with `x21`–`x28` in their upper halves: bytes
+3968 to 4095 of its own working space, which its products do not write. -/
+def CSAVE : Nat := 3968
+
+/-- `ws` into `x3` and the mask into `x12`, `x21`–`x28` into the upper halves of `v8`–`v15`
+(whose lower halves are callee-saved), and `v8`–`v15` stored at `CSAVE`. -/
+def csave : List Instr :=
+  [.addImm .x .x3 .x0 0, .movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1] ++
+  (List.range 8).map (fun k => .vop (.ins .d2 (Curve448.AArch64.Neon.V (8 + k)) 1
+    (Impl.X448.AArch64.Fast.saved k))) ++
+  (List.range 8).map (fun k => Curve448.AArch64.Neon.stq (8 + k) (CSAVE + 16 * k))
+
+/-- `v8`–`v15` loaded back, and `x21`–`x28` from their upper halves. -/
+def crestore : List Instr :=
+  (List.range 8).map (fun k => Curve448.AArch64.Neon.ldq (8 + k) (CSAVE + 16 * k)) ++
+  (List.range 8).map (fun k => .umov .x (Impl.X448.AArch64.Fast.saved k) (Curve448.AArch64.Neon.V (8 + k)) 1)
+
+/-- `vg_ed448_r56_comb_add`: the comb's two affine additions (`Base.addAffine`), slots 6–7 to slots
+0–2 and slots 8–9 to slots 3–5, whose AdvSIMD products use every vector register. -/
+def combAddFn : Prog isa :=
+  .seq (.block csave) <|
+  .seq (.block (Impl.X448.AArch64.Base.addAffine (slot 0) (slot 1) (slot 2) (slot 6) (slot 7) ++
+    Impl.X448.AArch64.Base.addAffine (slot 3) (slot 4) (slot 5) (slot 8) (slot 9))) (.block crestore)
+
+def combAddCall : Prog isa := fnCall Spec.Ed448.Point56.combAddApi.name combAddFn
+
+/-- X448's comb step (`Base.stepN`), its entries both negated before one call of
+`vg_ed448_r56_comb_add` adds them. -/
+def combStep (n : Nat) : Prog isa :=
+  .seq (.block Impl.X448.AArch64.Base.digits) <| .seq (.block Impl.X448.AArch64.Base.select) <|
+  .seq (.block (Impl.X448.AArch64.Base.negate (slot 6) (Impl.X448.AArch64.BITS + 4) (slot 10) ++
+    Impl.X448.AArch64.Base.negate (slot 8) Impl.X448.AArch64.BITS (slot 10))) <|
+  .seq combAddCall <| .block [.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 n]
+
+/-- The comb's `n` steps, with the return address kept in a lane of `v8`, which the calls keep. -/
+def combLoop (n : Nat) : Prog isa :=
+  .seq (.block [.vop (.ins .d2 .v8 0 .x30)]) <|
+  .seq (.loop (combStep n) (.nonzero .x .x9)) (.block [.umov .x .x30 .v8 0])
+
 end Point56
 
 end VG.Impl.Ed448.AArch64

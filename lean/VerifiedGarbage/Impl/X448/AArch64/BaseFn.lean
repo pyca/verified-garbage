@@ -13,6 +13,6 @@ namespace VG.Impl.X448.AArch64.Base
 open VG.AArch64
 
 def x448Base : Prog isa :=
-  .seq setup <| .seq (.loop step (.nonzero .x .x9)) <| .seq Ed448.AArch64.Point56.combineCall finish
+  .seq setup <| .seq (Ed448.AArch64.Point56.combLoop 56) <| .seq Ed448.AArch64.Point56.combineCall finish
 
 end VG.Impl.X448.AArch64.Base

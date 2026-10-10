@@ -51,7 +51,7 @@ theorem sBase_ct : ∃ h, ((taintS [Impl.X448.AArch64.Base.combSym]).check (Tain
   refine Split.exists_map_le (c' := ?c') ?s ⟨?h, ?g⟩
   case s =>
     simp only [sBase, Code.eraseT]
-    exact .seq (.refl _) (.seq (.loop _ (stepN_split 57)) (.refl _))
+    exact .seq (.refl _) (.seq (.refl _) (.refl _))
   case g => taint_decide
 
 end VG.Proof.Ed448.AArch64

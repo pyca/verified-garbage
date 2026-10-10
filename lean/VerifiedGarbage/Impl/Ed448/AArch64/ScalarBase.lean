@@ -70,7 +70,6 @@ def baseSetup : Prog isa :=
     .block (Impl.X448.AArch64.Base.accs Impl.X448.baseG57)
 
 def scalarBase : Prog isa :=
-  .seq baseSetup <| .seq (.loop (Impl.X448.AArch64.Base.stepN 57) (.nonzero .x .x9)) <|
-    .seq Point56.combineCall encode
+  .seq baseSetup <| .seq (Point56.combLoop 57) <| .seq Point56.combineCall encode
 
 end VG.Impl.Ed448.AArch64

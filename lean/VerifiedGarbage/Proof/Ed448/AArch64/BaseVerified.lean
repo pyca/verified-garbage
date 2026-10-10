@@ -33,7 +33,7 @@ theorem scalarBase_check :
   refine Split.exists_isSome (c' := ?c') ?s ⟨?h, ?g⟩
   case s =>
     simp only [scalarBase, encode, Code.eraseT, Impl.X448.AArch64.Fast.invert, ops_eraseT, sqn_eraseT]
-    exact .seq (.refl _) (.seq (.loop _ (stepN_split 57)) (.seq (.refl _) (.refl _)))
+    exact .seq (.refl _) (.seq (.refl _) (.seq (.refl _) (.refl _)))
   case g => taint_decide
 
 theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub scalarBase :=
