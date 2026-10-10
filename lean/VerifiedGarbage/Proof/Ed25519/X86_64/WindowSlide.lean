@@ -17,7 +17,7 @@ namespace VG.Proof.Ed25519.X86_64
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Proof.Ed25519 Edwards
 open VG.Proof.X25519.X86_64 (off ofs Keeps clob Outside)
 
-variable {fld : Arith} [EdArith fld]
+variable {fld : Arith} [EdArith fld] {pt : Point64.Ops} [PtOk pt]
 
 /-- What a position of the windows may change. -/
 structure ByteKeep (base : Addr) (s t : State) : Prop where
@@ -161,7 +161,7 @@ structure WinHalf (s₀ : State) (base kp sp T : Addr) (A : EPoint dZ) (fA fB : 
 theorem addA_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top p : Nat}
     {tb : Bool} (hdg : Digits fA fB top) (hp : p ≤ top) (h : WinMid s₀ base kp sp T A fA fB top p s)
     (htb : fB p ≠ 0 → tb = true) :
-    WP isa (.seq (.block (digitAt 0)) (addDigit 5376 (fieldCode fld (addCachedOps tb)))) s
+    WP isa (.seq (.block (digitAt 0)) (addDigit 5376 (pt.add tb))) s
       (WinHalf s₀ base kp sp T A fA fB top p) := by
   have hdA : dig s.mem base 0 p = fA p := (h.digits p (by have := hdg.top; omega)).1
   refine WP.seq (WP.mono (digitAt_ok h.ctx.scratch (by have := hdg.top; omega) (by decide) h.counter)
@@ -170,7 +170,7 @@ theorem addA_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : 
   have kaw : WinKeep base s a := WinKeep.of_keeps ka (by decide)
   have ha := h.ctx.of_keep kaw
   have aenv : env a.mem base = env s.mem base := by rw [ka.2.1]
-  refine WP.mono (addDigit_ok (a := (2 : Int) • winVal A fA fB top (p + 1)) (addCachedT_spec (fld := fld) tb)
+  refine WP.mono (addDigit_ok (a := (2 : Int) • winVal A fA fB top (p + 1)) (addCachedT_spec (pt := pt) tb)
     ha.scratch (by decide) (by decide) ha.aTab (fA p) (hdg.a p) ab az (by rw [aenv]; exact h.d)
     (by rw [aenv]; exact h.value) (fun hv => by rw [aenv]; exact h.full (Or.inl hv)))
     fun b ⟨bp, bf, bd, kb⟩ => ?_
@@ -183,9 +183,10 @@ theorem addA_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : 
   · exact Or.inl ⟨htb hv, hA⟩
 
 /-- `S`'s digit at `p` added, without `T`. -/
-theorem addB_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top p : Nat}
+theorem addB_ok {badd : Prog isa} (hb : AddAffSpec badd) {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ}
+    {fA fB : Nat → Nat} {top p : Nat}
     (hdg : Digits fA fB top) (hp : p ≤ top) (h : WinHalf s₀ base kp sp T A fA fB top p s) :
-    WP isa (.seq (.block (digitAt 1)) (addBase fld)) s (WinLoop s₀ base kp sp T A fA fB top p) := by
+    WP isa (.seq (.block (digitAt 1)) (addBase badd)) s (WinLoop s₀ base kp sp T A fA fB top p) := by
   have hdB : dig s.mem base 1 p = fB p := (h.digits p (by have := hdg.top; omega)).2
   refine WP.seq (WP.mono (digitAt_ok h.ctx.scratch (by have := hdg.top; omega) (by decide) h.counter)
     fun c ⟨cb, cz, kc⟩ => ?_)
@@ -193,7 +194,7 @@ theorem addB_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : 
   have kcw : WinKeep base s c := WinKeep.of_keeps kc (by decide)
   have hc' := h.ctx.of_keep kcw
   have cenv : env c.mem base = env s.mem base := by rw [kc.2.1]
-  refine WP.mono (addBase_ok (fld := fld) (a := (2 : Int) • winVal A fA fB top (p + 1) + (Recode.dec (fA p)) • A)
+  refine WP.mono (addBase_ok hb (a := (2 : Int) • winVal A fA fB top (p + 1) + (Recode.dec (fA p)) • A)
     hc'.scratch hc'.bHeader hc'.bTab (fB p) (hdg.b p) cb cz
     (by rw [cenv]; exact h.d) (by rw [cenv]; exact h.value) (fun hv => by rw [cenv]; exact h.full hv))
     fun t ⟨tp, td, kt⟩ => ?_
@@ -204,9 +205,10 @@ theorem addB_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : 
 
 /-- The digits at `p` added: from before them to after `p`. `S`'s digit is read first: if it is
 zero, `k`'s addition is the last and computes no `T`. -/
-theorem addsAt_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top p : Nat}
+theorem addsAt_ok {badd : Prog isa} (hb : AddAffSpec badd) {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ}
+    {fA fB : Nat → Nat} {top p : Nat}
     (hdg : Digits fA fB top) (hp : p ≤ top) (h : WinMid s₀ base kp sp T A fA fB top p s) :
-    WP isa (addsAt fld) s (WinLoop s₀ base kp sp T A fA fB top p) := by
+    WP isa (addsAt pt badd) s (WinLoop s₀ base kp sp T A fA fB top p) := by
   rw [addsAt]
   refine WP.seq (WP.mono (digitAt_ok h.ctx.scratch (by have := hdg.top; omega) (by decide) h.counter)
     fun a ⟨_, az, ka⟩ => ?_)
@@ -214,7 +216,7 @@ theorem addsAt_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB 
   have ha := h.of_byte (ByteKeep.of_keeps ka (by decide)) (fun i _ => by rw [ka.2.1]) (by rw [ka.2.1])
   refine WP.ite (!decide (fB p = 0)) (by simp only [eval, az, Option.map_some]) (fun hz => ?_) (fun hz => ?_)
   · apply WP.assoc
-    exact WP.seq (WP.mono (addA_ok (tb := true) hdg hp ha fun _ => rfl) fun _ hh => addB_ok hdg hp hh)
+    exact WP.seq (WP.mono (addA_ok (tb := true) hdg hp ha fun _ => rfl) fun _ hh => addB_ok hb hdg hp hh)
   · have h0 : fB p = 0 := by simpa using hz
     refine WP.mono (addA_ok (tb := false) hdg hp ha fun hf => absurd h0 hf) fun t ht => ?_
     have e : winVal A fA fB top p = (2 : Int) • winVal A fA fB top (p + 1) + (Recode.dec (fA p)) • A := by
@@ -252,16 +254,16 @@ theorem dblAt_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB :
       h.digits.of_byte kt'.mem, tp, fun hf => tf (hbz hf), h.keep.trans kt'⟩
   refine WP.ite (!decide (fA p = 0 ∧ fB p = 0)) (by simp only [eval, az, Option.map_some]) (fun hz => ?_)
     (fun hz => ?_)
-  · refine WP.mono (dbl_ok (fld := fld) ha.scratch true hv) fun t ⟨kt, tp, tf, th⟩ => ?_
+  · refine WP.mono (dblH_ok (fld := fld) ha.scratch true hv) fun t ⟨kt, tp, tf, th⟩ => ?_
     exact fin t true kt tp tf th fun _ => rfl
   · have h0 : fA p = 0 ∧ fB p = 0 := by simpa using hz
-    refine WP.mono (dbl_ok (fld := fld) ha.scratch false hv) fun t ⟨kt, tp, tf, th⟩ => ?_
+    refine WP.mono (dblH_ok (fld := fld) ha.scratch false hv) fun t ⟨kt, tp, tf, th⟩ => ?_
     exact fin t false kt tp tf th fun hf => by omega
 
 /-- The position below: from after `p + 1` to after `p`, ZF set if `p` is zero. -/
 theorem stepAt_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top p : Nat}
     (hdg : Digits fA fB top) (hp : p ≤ top) (h : WinLoop s₀ base kp sp T A fA fB top (p + 1) s) :
-    WP isa (stepAt fld) s fun t => t.zf = some (decide (p = 0)) ∧ WinLoop s₀ base kp sp T A fA fB top p t := by
+    WP isa (stepAt fld pt) s fun t => t.zf = some (decide (p = 0)) ∧ WinLoop s₀ base kp sp T A fA fB top p t := by
   have hb := h.ctx.scratch.nowrap
   rw [stepAt]
   refine WP.seq (WP.mono (batchBegin_ok h.ctx.scratch p h.counter) fun a ⟨_, ac, ag, ar, aw, am⟩ => ?_)
@@ -270,7 +272,7 @@ theorem stepAt_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB 
     ⟨h.ctx.of_byte ka, by rw [header_env am]; exact h.d, ac, h.digits.of_byte ka.mem,
       by rw [header_env am]; exact h.value, h.keep.trans ka⟩
   refine WP.seq (WP.mono (dblAt_ok hdg hp ha) fun b hb' => ?_)
-  refine WP.seq (WP.mono (addsAt_ok hdg hp hb') fun c hc => ?_)
+  refine WP.seq (WP.mono (addsAt_ok addAff_aff hdg hp hb') fun c hc => ?_)
   refine WP.mono (counterTest_ok hc.ctx.scratch (by have := hdg.top; omega) hc.counter) fun t ⟨tz, kt⟩ => ?_
   have kt' := ByteKeep.of_keeps (base := base) kt (by decide)
   exact ⟨tz, hc.ctx.of_byte kt', by rw [kt.2.1]; exact hc.d, by rw [kt.2.1]; exact hc.counter,
@@ -362,8 +364,8 @@ theorem skipTop_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB
 /-- The windows, from one above `top` with the identity, to after position 0. -/
 theorem windows_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top : Nat}
     (hdg : Digits fA fB top) (h : SkipAt s₀ base kp sp T A fA fB top (top + 1) s) :
-    WP isa (windows fld) s (WinLoop s₀ base kp sp T A fA fB top 0) := by
-  rw [windows]
+    WP isa (windowsWith fld pt) s (WinLoop s₀ base kp sp T A fA fB top 0) := by
+  rw [windowsWith]
   refine WP.seq (WP.mono (show WP isa (.loop skipTop .ne) s fun t =>
       ∃ p, p ≤ top ∧ WinMid s₀ base kp sp T A fA fB top p t by
     apply WP.loop (fun q t => SkipAt s₀ base kp sp T A fA fB top q t) (n := top + 1)
@@ -375,7 +377,7 @@ theorem windows_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB
       · exact Or.inr ⟨by simp only [eval, uz, hs, Option.map_some, Bool.not_false], p, by omega, uf hs⟩
       · exact Or.inl ⟨by simp only [eval, uz, hs, Option.map_some, Bool.not_true], p, by omega, ut hs⟩
     · exact h) fun a ⟨p, hp, ha⟩ => ?_)
-  refine WP.seq (WP.mono (addsAt_ok hdg hp ha) fun b hb => ?_)
+  refine WP.seq (WP.mono (addsAt_ok addCached_aff hdg hp ha) fun b hb => ?_)
   refine WP.seq (WP.mono (counterTest_ok hb.ctx.scratch (by have := hdg.top; omega) hb.counter)
     fun c ⟨cz, kc⟩ => ?_)
   have kc' := ByteKeep.of_keeps (base := base) kc (by decide)

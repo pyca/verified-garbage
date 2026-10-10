@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Args
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
 import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyVerified
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-! Merged from `Proof.Ed25519.X86_64.VerifyMessage.Body`. -/
@@ -391,7 +391,7 @@ end
 namespace VG.Proof.Ed25519.X86_64.VerifyMessage
 
 variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
-variable {win : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdWindows win]
+variable {win : VG.Prog VG.X86_64.isa}
 open VG VG.X86_64
 open VG.Impl.Ed25519.X86_64 (verifyEquation)
 open VG.Impl.Ed25519.X86_64.VerifyMessage
@@ -456,23 +456,49 @@ theorem eq_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : EqArgs L t
     by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 8192) (by omega) (by omega), hL.nc,
     hL.ts, hh⟩
 
-/-- What the call of the equation checker `c` needs of its code, beyond its
-correctness: it restores MXCSR (`ctlOk`), writes `rsp` only as calls and
-returns do, nests no calls, and writes no stack pointer. Decided for each
-checker in the registration file. -/
-structure EqCode (c : Prog isa) : Prop where
-  mx : VG.Proof.Ed25519.X86_64.MxcsrOk c
-  noSp : c.allInstrs (fun i => !Taint.clobbers i .rsp) = true
-  depth : c.depth ≤ 1
-  spSafe : c.all (fun i => !isa.writesSp i) = true
+/-- The 8 bytes below the checker's `rsp`, for its calls' return address, are apart from every
+region it may access. -/
+theorem eq_clear (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
+    Clear (hole ((t.callEntry.withRegions (eqRd L) (eqWr L)).gpr .rsp))
+      (t.callEntry.withRegions (eqRd L) (eqWr L)) := by
+  have e0 : L.B + BitVec.ofNat 64 0 = L.B := by simp
+  have hh : hole ((t.callEntry.withRegions (eqRd L) (eqWr L)).gpr .rsp) = ⟨L.B, 8⟩ := by
+    rw [rsp_ce, hc.rsp, sub8]
+    show (⟨L.B + BitVec.ofNat 64 8 - 8, 8⟩ : Region) = _
+    rw [PublicKey.sub88]
+  rw [hh]
+  intro r hr
+  simp only [State.withRegions_rd, State.withRegions_wr, eqRd, eqWr, List.cons_append, List.nil_append,
+    List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · have := hL.stk_input (r := L.PK) (by simp [Lay.inputs]) (d := 0) (n := 8) (by omega)
+    rw [e0] at this; exact this.symm
+  · have := hL.stk_input (r := L.SIG) (by simp [Lay.inputs]) (d := 0) (n := 8) (by omega)
+    rw [e0] at this; exact this.symm
+  · exact Offset.disjoint_base _ (by omega) (by omega)
+  · have := Offset.sub_base L.B (d := 0) (n := 8) (k := 184) (by omega)
+    rw [e0] at this; exact hL.tk.sub_right this
+  · have := hL.stk_scr (d := 0) (n := 8) (e := 0) (k := 8192) (by omega) (by omega)
+    rw [e0, show L.scr + BitVec.ofNat 64 0 = L.scr by simp] at this
+    exact this.symm
 
-theorem eq_call (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld win)) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : EqArgs L t)
+/-- What the call of the equation checker `verifyEquation fld win` needs of its code, beyond its
+correctness: what its calls inline to (`CallCode`), and it writes `rsp` only as calls and returns
+do, nests calls at most once, and writes no stack pointer. Decided for each checker in the
+registration file. -/
+structure EqCode (fld : Impl.Ed25519.X86_64.Arith) (win : Prog isa) : Prop where
+  call : CallCode fld win
+  noSp : (verifyEquation fld win).allInstrs (fun i => !Taint.clobbers i .rsp) = true
+  depth : (verifyEquation fld win).depth ≤ 1
+  spSafe : (verifyEquation fld win).all (fun i => !isa.writesSp i) = true
+
+theorem eq_call (hq : EqCode fld win) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : EqArgs L t)
     {challenge : List Byte} (hh : Spec.Ed25519.bytesAt t.mem (L.B + BitVec.ofNat 64 16) 64 = challenge) :
     WP isa (.call ("vg_ed25519_verify_equation" ++ fs) (verifyEquation fld win)) t fun t' => Ctx L g mx m₀ t' ∧
       t'.gpr .rax = Proof.Ed25519.X86_64.signWord (Spec.Ed25519.verifyEquation
         (Spec.Ed25519.bytesAt m₀ L.pk 32) (Spec.Ed25519.bytesAt m₀ L.sig 64) challenge) := by
-  refine call_ok hL (verify_ok hq.mx) (Proof.Pbkdf2.Md.X86_64.nosp_of hq.noSp)
-    hq.depth hc (eq_pre hL hc ha) ?_ ?_
+  refine call_ok hL hq.call.verified.1 (Proof.Pbkdf2.Md.X86_64.nosp_of hq.noSp)
+    hq.depth hc ⟨eq_pre hL hc ha, eq_clear hL hc⟩ ?_ ?_
     fun s' hc' _ _ ⟨s₂, _, hg, hpost⟩ => ⟨hc', ?_⟩
   · intro r hr
     simp only [eqRd, eqWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -512,7 +538,7 @@ end
 namespace VG.Proof.Ed25519.X86_64.VerifyMessage
 
 variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
-variable {win : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdWindows win]
+variable {win : VG.Prog VG.X86_64.isa}
 open VG VG.X86_64
 open VG.Impl.Ed25519.X86_64.VerifyMessage
 open VG.Proof.Sha512.X86_64 (Compress)
@@ -556,7 +582,7 @@ theorem challengeInput_eq : challengeInput L m₀ =
   rw [h]
   rfl
 
-theorem body_ok (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld win)) (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
+theorem body_ok (hq : EqCode fld win) (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     (hlen : 64 + L.len.toNat < 2 ^ 64) :
     WP isa (body fld win fs v.callee v.suffix) t fun t' => Ctx L g mx m₀ t' ∧
       t'.gpr .rax = Proof.Ed25519.X86_64.signWord (Spec.Ed25519.verify
@@ -712,7 +738,7 @@ section
 namespace VG.Proof.Ed25519.X86_64.VerifyMessage
 
 variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
-variable {win : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdWindows win]
+variable {win : VG.Prog VG.X86_64.isa}
 open VG VG.X86_64
 open VG.Impl.Ed25519.X86_64.VerifyMessage
 open VG.Proof.Sha512.X86_64 (Compress)
@@ -721,7 +747,7 @@ theorem pop_rsp (B : Addr) :
     B + BitVec.ofNat 64 16 + BitVec.ofNat 64 (8 * 21) = B + BitVec.ofNat 64 184 := by
   rw [PublicKey.add_add]
 
-theorem verifyMessage_ok (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld win)) (v : Compress) {s : State} (h : verifyMessageLocal.pre s) :
+theorem verifyMessage_ok (hq : EqCode fld win) (v : Compress) {s : State} (h : verifyMessageLocal.pre s) :
     WP isa (code fld win fs v.callee v.suffix) s fun s' => abiPreserved s s' ∧ verifyMessageLocal.post s s' := by
   have hL := lay_ok h
   have hc := push_ctx h
@@ -1016,7 +1042,7 @@ end
 namespace VG.Proof.Ed25519.X86_64.VerifyMessage
 
 variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
-variable {win : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdWindows win]
+variable {win : VG.Prog VG.X86_64.isa}
 open VG VG.X86_64
 open VG.Impl.Ed25519.X86_64 (scalarReduce verifyEquation callWith)
 open VG.Impl.Ed25519.X86_64.VerifyMessage
@@ -1082,10 +1108,10 @@ theorem ce_challenge {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : 
     (by rw [hc.ret]; exact Offset.disjoint _ (by omega) (by omega) (by omega))
     (by decide : 64 ≤ 2 ^ 64) (List.mem_range.mp hi)
 
-theorem equation_ct (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld win)) : RelCT isa (Two EquationReady)
+theorem equation_ct (hq : EqCode fld win) : RelCT isa (Two EquationReady)
     (.call ("vg_ed25519_verify_equation" ++ fs) (verifyEquation fld win)) fun _ _ => True := by
-  refine two_call (verify_ok hq.mx) verify_ct eqRd eqWr
-    (fun _ _ _ _ _ hL hc ha => eq_pre hL hc ha.1) ?_ eq_access
+  refine two_call (k := verifyLocal8) hq.call.verified.1 hq.call.verified.2 eqRd eqWr
+    (fun _ _ _ _ _ hL hc ha => ⟨eq_pre hL hc ha.1, eq_clear hL hc⟩) ?_ eq_access
   intro L t₁ t₂ g₁ g₂ mx₁ mx₂ m₁ m₂ hL hi c₁ c₂ a₁ a₂
   obtain ⟨d₁, s₁, x₁, r₁⟩ := eq_regs a₁.1 (eqRd L) (eqWr L)
   obtain ⟨d₂, s₂, x₂, r₂⟩ := eq_regs a₂.1 (eqRd L) (eqWr L)
@@ -1107,7 +1133,7 @@ theorem equation_ct (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld win)
       ce_challenge c₂ a₂.2, hi.challenge]
   · exact c₁.sym.trans c₂.sym.symm
 
-theorem body_ct (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld win)) (v : Compress) : RelCT isa (Two fun _ _ _ => True)
+theorem body_ct (hq : EqCode fld win) (v : Compress) : RelCT isa (Two fun _ _ _ => True)
     (body fld win fs v.callee v.suffix) fun _ _ => True := by
   have h := (prepare_ct v).seq (equationArgs_ct.seq (equation_ct (fs := fs) hq))
   have reassoc : ∀ {s t s'}, Exec isa (body fld win fs v.callee v.suffix) s t s' →
@@ -1123,7 +1149,7 @@ theorem body_ct (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld win)) (v
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp he₁ he₂
   exact h _ _ _ _ _ _ hp (reassoc he₁) (reassoc he₂)
 
-theorem verifyMessage_ct (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld win)) (v : Compress) :
+theorem verifyMessage_ct (hq : EqCode fld win) (v : Compress) :
     ConstantTime isa verifyMessageLocal.pre verifyMessageLocal.pub (code fld win fs v.callee v.suffix) := by
   refine RelCT.constantTime (RelCT.frame (fun _ _ h => h.2.2.1)
     (RelCT.mono (body_ct hq v) ?_ fun _ _ _ => trivial))

@@ -165,8 +165,8 @@ theorem prefixK_ct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi) (.block (dig
 /-! ## Windows -/
 
 theorem addDigitA_ct (tb : Bool) : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi ∧ x.gpr .rbx = y.gpr .rbx)
-    (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
-      fieldCode fld (addCachedOps tb)))
+    (.seq (.block [.alu .sub .rbx (.imm 1)]) (.seq (.block (tableAddr 5376 ++ pointFromTableQ))
+      (Point64.addFn fld tb)))
     (fun _ _ => True) := by
   apply taintFld (Taint.ofRegs [.rdi, .rbx]) _ (by cases tb <;> fld_taint_decide)
   intro x y h
@@ -189,7 +189,18 @@ theorem baseAddrPart_ct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi ∧ x.gp
   · exact h.2
 
 theorem baseAddPart_ct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi ∧ x.gpr .rax = y.gpr .rax)
-    (.block (pointFromTableQ ++ fieldCode fld (addCachedOps false))) (fun _ _ => True) := by
+    (.seq (.block pointFromTableQ) (Point64.addFn fld false)) (fun _ _ => True) := by
+  apply taintFld (Taint.ofRegs [.rdi, .rax]) _ (by fld_taint_decide)
+  intro x y h
+  apply Taint.agree_ofRegs
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact h.1
+  · exact h.2
+
+theorem baseAddAffPart_ct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi ∧ x.gpr .rax = y.gpr .rax)
+    (.seq (.block pointFromTableQ) (addAffIn fld)) (fun _ _ => True) := by
   apply taintFld (Taint.ofRegs [.rdi, .rax]) _ (by fld_taint_decide)
   intro x y h
   apply Taint.agree_ofRegs
@@ -209,8 +220,11 @@ structure BasePre (base T : Addr) (v : Nat) (x : State) : Prop where
 
 /-- The addition of `S`'s digit: the branch is on its byte, its entry's address `T + 128 (v - 1)`
 the same in both runs. -/
-theorem addBase_ct {base T : Addr} {v : Nat} :
-    RelCT isa (fun x y => BasePre base T v x ∧ BasePre base T v y) (addBase fld) (fun _ _ => True) := by
+theorem addBase_ct {add : Prog isa}
+    (hadd : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi ∧ x.gpr .rax = y.gpr .rax)
+      (.seq (.block pointFromTableQ) add) (fun _ _ => True)) {base T : Addr} {v : Nat} :
+    RelCT isa (fun x y => BasePre base T v x ∧ BasePre base T v y) (addBase add)
+      (fun _ _ => True) := by
   rw [addBase]
   refine VG.RelCT.ite (fun x y h => by simp only [eval, h.1.zf, h.2.zf]) ?_
     (VG.RelCT.block_nil fun _ _ _ => trivial)
@@ -223,18 +237,15 @@ theorem addBase_ct {base T : Addr} {v : Nat} :
     refine WP.mono (baseAddr_ok (T := T) (h.scratch.of_keeps kb (by decide)) (by rw [kb.2.1]; exact h.header) n
       (by have := h.bound; omega) bc) fun u ⟨ua, ku⟩ => ?_
     exact ⟨(ku.1 _ (by decide)).trans ((kb.1 _ (by decide)).trans h.scratch.rdi), ua⟩
-  rw [show (([.alu .sub .rbx (.imm 1)] : List Instr) ++ baseAddr ++ pointFromTableQ ++
-      fieldCode fld (addCachedOps false)) =
-    (([.alu .sub .rbx (.imm 1)] : List Instr) ++ baseAddr) ++ (pointFromTableQ ++ fieldCode fld (addCachedOps false)) by
-      simp only [List.append_assoc]]
+  refine reassoc_ct ?_
   have hv (x : State) (h : BasePre base T v x) (he : isa.eval .ne x = some true) : v ≠ 0 := by
     intro h0
     simp only [eval, h.zf, h0, decide_true, Option.map_some, Bool.not_true, Option.some.injEq,
       Bool.false_eq_true] at he
-  refine blockAppend_ct ((VG.RelCT.wp (baseAddrPart_ct.mono (fun x y h =>
+  refine VG.RelCT.seq ((VG.RelCT.wp (baseAddrPart_ct.mono (fun x y h =>
     ⟨h.1.1.scratch.rdi.trans h.1.2.scratch.rdi.symm, h.1.1.rbx.trans h.1.2.rbx.symm⟩) (fun _ _ h => h))
     fun x y h => ⟨hw x h.1.1 (hv x h.1.1 h.2), hw y h.1.2 (hv x h.1.1 h.2)⟩).mono (fun _ _ h => h) ?_)
-    baseAddPart_ct
+    hadd
   intro x y ⟨_, hx, hy⟩
   exact ⟨hx.1.trans hy.1.symm, hx.2.trans hy.2.symm⟩
 

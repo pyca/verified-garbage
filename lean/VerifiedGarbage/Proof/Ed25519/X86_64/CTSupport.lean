@@ -46,6 +46,32 @@ theorem execBlock_append_seq {xs ys : List Instr} {s t : State} {tr : List Leak}
   cases he
   exact .seq (.block hu) (.block hv)
 
+theorem exec_block_append {xs ys : List Instr} {s u t : State} {t₁ t₂ : List Leak}
+    (h₁ : Exec isa (.block xs) s t₁ u) (h₂ : Exec isa (.block ys) u t₂ t) :
+    Exec isa (.block (xs ++ ys)) s (t₁ ++ t₂) t := by
+  rw [Exec.block_iff] at h₁ h₂ ⊢
+  rw [execBlock_append, h₁]
+  simp only [Option.bind_some, h₂, Option.map_some]
+
+/-- A run of `a`, then `b ++ c`, then `d` is one of `a ++ b`, then `c`, then `d`. -/
+theorem exec_reassoc {a b c : List Instr} {d : Prog isa} {s s' : State} {tr : List Leak}
+    (h : Exec isa (.seq (.block a) (.seq (.block (b ++ c)) d)) s tr s') :
+    Exec isa (.seq (.block (a ++ b)) (.seq (.block c) d)) s tr s' := by
+  cases h with
+  | seq ha hr =>
+    cases hr with
+    | seq hbc hd =>
+      cases execBlock_append_seq hbc with
+      | seq hb hc =>
+        rw [show ∀ t₁ t₂ t₃ t₄ : List Leak, t₁ ++ ((t₂ ++ t₃) ++ t₄) = (t₁ ++ t₂) ++ (t₃ ++ t₄) by
+          intros; simp only [List.append_assoc]]
+        exact .seq (exec_block_append ha hb) (.seq hc hd)
+
+theorem reassoc_ct {P Q : State → State → Prop} {a b c : List Instr} {d : Prog isa}
+    (h : RelCT isa P (.seq (.block (a ++ b)) (.seq (.block c) d)) Q) :
+    RelCT isa P (.seq (.block a) (.seq (.block (b ++ c)) d)) Q :=
+  fun _ _ _ _ _ _ hp ex ey => h _ _ _ _ _ _ hp (exec_reassoc ex) (exec_reassoc ey)
+
 theorem blockAppend_ct {P R Q : State → State → Prop} {xs ys : List Instr}
     (hx : RelCT isa P (.block xs) R) (hy : RelCT isa R (.block ys) Q) :
     RelCT isa P (.block (xs ++ ys)) Q :=

@@ -159,7 +159,7 @@ def combChunk : Prog isa :=
 
 /-- Five doublings: `double4`'s, and one with `T`. -/
 def combDouble (fld : Arith) : Prog isa :=
-  .seq (double4 fld) (.block (fieldCode fld (dblOps true)))
+  .seq (double4 fld) (.block (fieldCode fld (dblOpsH true)))
 
 /-- `[G]B` added to slots 0–3. -/
 def combAddG (fld : Arith) : List Instr :=

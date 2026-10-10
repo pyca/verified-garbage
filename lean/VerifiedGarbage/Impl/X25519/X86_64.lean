@@ -259,6 +259,9 @@ structure Field where
   mul2 : Nat → Nat → Nat → List Instr
   /-- `[o] = 2 · [a]²` (Ed25519's doublings) -/
   sqr2 : Nat → Nat → List Instr
+  /-- The suffix of the functions built on these multiplications (`""` for the baseline's,
+  `_adx` for BMI2 and ADX's). -/
+  suffix : String := ""
 
 /-- The baseline's: `mul`, `sqr` and `mulSmall`, and a product doubled by `add`. -/
 def baseline : Field where

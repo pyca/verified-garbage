@@ -3,6 +3,7 @@ import VerifiedGarbage.Impl.X25519.X86_64.Adx
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
 
 /-! Checked literals for the verifier's fixed control-flow pieces. -/
 
@@ -45,25 +46,25 @@ materialize_code verifyScalarTail := (.block (loadScalarWords ++ scalarSubtract)
 materialize_code verifyFinishBlock :=
   (.block (([.mov .rdx (.reg .rdi)] : List Instr) ++ scalarRestore) : Prog isa)
 materialize_code windowPrepLit :=
-  (.seq (.seq (.block windowSetup) (aTable Impl.X25519.X86_64.baseline)) (.block (windowInit Impl.X25519.X86_64.baseline)) : Prog isa)
+  (.seq (.seq (.block windowSetup) (aTable Impl.X25519.X86_64.baseline (Point64.bodies Impl.X25519.X86_64.baseline))) (.block (windowInit Impl.X25519.X86_64.baseline)) : Prog isa)
 materialize_code windowPrepLitAdx :=
-  (.seq (.seq (.block windowSetup) (aTable Impl.X25519.X86_64.adx)) (.block (windowInit Impl.X25519.X86_64.adx)) : Prog isa)
+  (.seq (.seq (.block windowSetup) (aTable Impl.X25519.X86_64.adx (Point64.bodies Impl.X25519.X86_64.adx))) (.block (windowInit Impl.X25519.X86_64.adx)) : Prog isa)
 materialize_code addDigitA :=
-  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
-    fieldCode Impl.X25519.X86_64.baseline (addCachedOps true)) : Prog isa)
+  (.seq (.block [.alu .sub .rbx (.imm 1)]) (.seq (.block (tableAddr 5376 ++ pointFromTableQ))
+    (Point64.addFn Impl.X25519.X86_64.baseline true)) : Prog isa)
 materialize_code addDigitAAdx :=
-  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
-    fieldCode Impl.X25519.X86_64.adx (addCachedOps true)) : Prog isa)
+  (.seq (.block [.alu .sub .rbx (.imm 1)]) (.seq (.block (tableAddr 5376 ++ pointFromTableQ))
+    (Point64.addFn Impl.X25519.X86_64.adx true)) : Prog isa)
 materialize_code addDigitALast :=
-  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
-    fieldCode Impl.X25519.X86_64.baseline (addCachedOps false)) : Prog isa)
+  (.seq (.block [.alu .sub .rbx (.imm 1)]) (.seq (.block (tableAddr 5376 ++ pointFromTableQ))
+    (Point64.addFn Impl.X25519.X86_64.baseline false)) : Prog isa)
 materialize_code addDigitALastAdx :=
-  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
-    fieldCode Impl.X25519.X86_64.adx (addCachedOps false)) : Prog isa)
+  (.seq (.block [.alu .sub .rbx (.imm 1)]) (.seq (.block (tableAddr 5376 ++ pointFromTableQ))
+    (Point64.addFn Impl.X25519.X86_64.adx false)) : Prog isa)
 materialize_code baseAddLit :=
-  (.block (pointFromTableQ ++ fieldCode Impl.X25519.X86_64.baseline (addCachedOps false)) : Prog isa)
+  (.seq (.block pointFromTableQ) (Point64.addFn Impl.X25519.X86_64.baseline false) : Prog isa)
 materialize_code baseAddLitAdx :=
-  (.block (pointFromTableQ ++ fieldCode Impl.X25519.X86_64.adx (addCachedOps false)) : Prog isa)
+  (.seq (.block pointFromTableQ) (Point64.addFn Impl.X25519.X86_64.adx false) : Prog isa)
 materialize_code negRBlock := (.block (negR Impl.X25519.X86_64.baseline) : Prog isa)
 materialize_code negRBlockAdx := (.block (negR Impl.X25519.X86_64.adx) : Prog isa)
 
