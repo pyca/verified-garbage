@@ -1,0 +1,5 @@
+name = "Camellia-OFB (128-, 192- and 256-bit keys)"
+family = "Ciphers"
+specs = ["Camellia", "Ofb"]
+modules = ["src/camellia_ofb.rs"]
+asm = ["camellia_ofb"]
