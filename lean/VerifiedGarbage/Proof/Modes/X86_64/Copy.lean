@@ -6,23 +6,12 @@ import VerifiedGarbage.Impl.Modes.X86_64.Cbc
 
 `copyBlocks_wp`: the loop `copyBlocks` copies `c ≥ 1` blocks of 16 bytes at
 `rbx` to `rax` (areas that do not overlap), through `rbp`, counting down
-`rcx`, and changes nothing else in memory. `writeW_readW_apply`: the bytes
-of a stored load.
+`rcx`, and changes nothing else in memory.
 -/
 
 namespace VG.Proof.Modes.X86_64
 
 open VG VG.X86_64 VG.Impl.Modes.X86_64
-
-/-- A byte of a little-endian word stored from a load. -/
-theorem writeW_readW_apply (m m₁ : Mem) (a c x : Addr) :
-    m.writeW a (m₁.readW c 64) x =
-      if (x - a).toNat < 8 then m₁ (c + BitVec.ofNat 64 (x - a).toNat) else m x := by
-  simp only [Mem.writeW, Mem.write, BitVec.setWidth_eq]
-  split
-  · rename_i h
-    rw [Mem.readW, BitVec.setWidth_eq, Mem.extractLsb'_read m₁ c (n := 8) h]
-  · rfl
 
 /-- `mov rbp, [rbx + d]; mov [rax + d], rbp`. -/
 theorem copyWord_ok (s : State) (d : Nat) (hr : InRegions (s.rd ++ s.wr) (s.gpr .rbx + BitVec.ofNat 64 d) 8)
