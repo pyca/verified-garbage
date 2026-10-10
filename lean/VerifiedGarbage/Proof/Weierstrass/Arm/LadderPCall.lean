@@ -140,7 +140,7 @@ theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} {m k : Nat} [NeZero m] (hm
   by_cases h12 : r = .r12
   · subst h12
     rw [u₈.other _ (by decide), R]
-  have hpres : r ∈ preserved := by cases r <;> simp_all [preserved]
+  have hpres : r ∈ preserved := by revert h10 h0 h1 h2 h3 h12 hlr; cases r <;> decide
   rw [u₈.other _ hlr, hp₇ r hpres hlr, k₂.gpr r (by simp [h10, h0])]
 
 end VG.Proof.Weierstrass.Arm.Point

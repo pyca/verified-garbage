@@ -80,7 +80,7 @@ theorem callR_ok {enc : Nat → Nat} {f : String} {body : Prog isa} (hn : body.n
   refine ⟨⟨⟨fun r hr => ?_, by rw [r₇, k₄.rd], by rw [w₇, k₄.wr], by rw [p₇, k₄.sp]⟩, R, K⟩, W⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   obtain ⟨h0, h1, h2, h3, h12, hlr⟩ := hr
-  have hpres : r ∈ preserved := by cases r <;> simp_all [preserved]
+  have hpres : r ∈ preserved := by revert h0 h1 h2 h3 h12 hlr; cases r <;> decide
   rw [hp₇ r hpres hlr, k₄.gpr r (by simp [h0, h1, h2, h3])]
 
 /-- The arguments of a call, as the functions' precondition has them. -/
