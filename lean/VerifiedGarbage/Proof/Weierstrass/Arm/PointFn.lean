@@ -32,34 +32,31 @@ theorem lay_nums {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) :
 /-- The slots the function reads first lie below its own working space. -/
 theorem enc_rIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
     ∀ x ∈ rIds, enc k dbl x + 8 * k ≤ Spec.Weierstrass.Point.ownAt k := by
-  have := lay_nums hk3 hk6
-  intro x hx
-  simp only [rIds, List.mem_cons, List.not_mem_nil, or_false] at hx
-  cases dbl <;> rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [enc, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero, Bool.false_eq_true] <;> omega
+  have h : ∀ k < 7, 3 ≤ k → ∀ dbl : Bool, ∀ x ∈ rIds, enc k dbl x + 8 * k ≤ Spec.Weierstrass.Point.ownAt k := by
+    decide +kernel
+  exact h k (by omega) hk3 dbl
 
 /-- The slots `enc` gives are laid out as the program needs, and those it
 writes lie apart from the saved `lr` and within `O` or the own working
 space. -/
 theorem enc_lay {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) : LayR k 17 wIds (enc k dbl) := by
-  have := lay_nums hk3 hk6
-  refine ⟨fun x hx => ?_, fun w hw x hx hne => ?_⟩
-  · rcases (show x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 ∨ x = 4 ∨ x = 5 ∨ x = 6 ∨ x = 7 ∨ x = 8 ∨ x = 9 ∨ x = 10 ∨ x = 11 ∨ x = 12 ∨ x = 13 ∨ x = 14 ∨ x = 15 ∨ x = 16 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> cases dbl <;>
-      simp only [enc, Impl.Weierstrass.Arm.Point.tmpAt, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero, Bool.false_eq_true] <;> omega
-  · simp only [wIds, List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases (show x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 ∨ x = 4 ∨ x = 5 ∨ x = 6 ∨ x = 7 ∨ x = 8 ∨ x = 9 ∨ x = 10 ∨ x = 11 ∨ x = 12 ∨ x = 13 ∨ x = 14 ∨ x = 15 ∨ x = 16 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> cases dbl <;>
-      simp only [enc, Impl.Weierstrass.Arm.Point.tmpAt, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero, Bool.false_eq_true] at hne ⊢ <;> omega
+  -- A finite fact for each `k` and `dbl`: one evaluation by the kernel, where a case split
+  -- into 306 goals ran `simp` and `omega` on each.
+  have h : ∀ k < 7, 3 ≤ k → ∀ dbl : Bool, (∀ x < 17, enc k dbl x + 8 * k ≤ own k) ∧
+      ∀ w ∈ wIds, ∀ x < 17, x ≠ w → enc k dbl x + 8 * k ≤ enc k dbl w ∨ enc k dbl w + 8 * k ≤ enc k dbl x := by
+    decide +kernel
+  exact ⟨(h k (by omega) hk3 dbl).1, (h k (by omega) hk3 dbl).2⟩
 
 theorem enc_wIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
     ∀ w ∈ wIds, (enc k dbl w + 8 * k ≤ Spec.Weierstrass.Point.ownAt k ∨ Spec.Weierstrass.Point.ownAt k + 4 ≤ enc k dbl w) ∧
       ((Spec.Weierstrass.Point.oAt k ≤ enc k dbl w ∧ enc k dbl w + 8 * k ≤ Spec.Weierstrass.Point.pAt k) ∨
         (Spec.Weierstrass.Point.ownAt k ≤ enc k dbl w ∧ enc k dbl w + 8 * k ≤ 4096)) := by
-  have := lay_nums hk3 hk6
-  intro w hw
-  simp only [wIds, List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [enc, Impl.Weierstrass.Arm.Point.tmpAt, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero] <;> omega
+  have h : ∀ k < 7, 3 ≤ k → ∀ dbl : Bool,
+    ∀ w ∈ wIds, (enc k dbl w + 8 * k ≤ Spec.Weierstrass.Point.ownAt k ∨ Spec.Weierstrass.Point.ownAt k + 4 ≤ enc k dbl w) ∧
+        ((Spec.Weierstrass.Point.oAt k ≤ enc k dbl w ∧ enc k dbl w + 8 * k ≤ Spec.Weierstrass.Point.pAt k) ∨
+          (Spec.Weierstrass.Point.ownAt k ≤ enc k dbl w ∧ enc k dbl w + 8 * k ≤ 4096)) := by
+    decide +kernel
+  exact h k (by omega) hk3 dbl
 
 /-- The precondition of the function, on the state: the working space at
 `r0`, its `8192` bytes writable, and the numbers it reads below `m`. -/
