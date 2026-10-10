@@ -80,12 +80,20 @@ theorem reduce (p : Nat) (hp : p ≤ 2 ^ 32) (m : BitVec 64) (hm : m.toNat = 655
   · have hR : (2 ^ 64 - H + L) % 2 ^ 64 = 2 ^ 64 - (H - L) := by
       rw [Nat.mod_eq_of_lt (by omega)]; omega
     have ht : (2 ^ 64 - (H - L)) / 2 ^ 63 = 1 := by omega
-    rw [hR, ht, Nat.mod_mod_of_dvd _ (by decide : 65536 ∣ 2 ^ 64)]
-    omega
+    rw [hR, ht, Nat.mod_mod_of_dvd _ (by decide : 65536 ∣ 2 ^ 64),
+      show 1 * 2 ^ 16 % 2 ^ 64 = 65536 * 1 from rfl, Nat.add_mul_mod_self_left,
+      Nat.mod_mod_of_dvd _ (by decide : 65536 ∣ 2 ^ 64),
+      show 2 ^ 64 - (H - L) + 1 = (L + 65537 - H) + 65536 * (2 ^ 48 - 1) by omega,
+      Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (a := L + 65537 - H) (b := 65537) (by omega)]
+    exact (Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (show 65536 > 0 by decide)) (show 65536 ≤ 2 ^ 64 by decide))).symm
   · have hR : (2 ^ 64 - H + L) % 2 ^ 64 = L - H := by omega
     have ht : (L - H) / 2 ^ 63 = 0 := by omega
     rw [hR, ht, Nat.mod_mod_of_dvd _ (by decide : 65536 ∣ 2 ^ 64)]
-    omega
+    simp only [Nat.add_zero, Nat.zero_mul, Nat.zero_mod]
+    rw [Nat.mod_eq_of_lt (a := L - H) (b := 2 ^ 64) (by omega),
+      show L + 65537 - H = (L - H) + 65537 * 1 by omega, Nat.add_mul_mod_self_left,
+      Nat.mod_eq_of_lt (a := L - H) (b := 65537) (by omega)]
+    exact (Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (show 65536 > 0 by decide)) (show 65536 ≤ 2 ^ 64 by decide))).symm
 
 theorem mul_toNat (a b : Spec.Idea.Word) :
     (Spec.Idea.mul a b).setWidth 64 =

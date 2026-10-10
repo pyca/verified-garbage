@@ -126,12 +126,12 @@ theorem lattice {n : Nat} {x y : Int} (hy : y ≠ 0) {t : ℚ} (ht : 0 < t) (h :
         obtain ⟨bx, bY⟩ := H1_box h'
         rw [abs_le] at bx bY
         have hx : x = -1 ∨ x = 0 ∨ x = 1 := by
-          have : (-2 : ℚ) < x ∧ (x : ℚ) < 2 := by constructor <;> linarith [bx.1, bx.2]
+          have : (-2 : ℚ) < x ∧ (x : ℚ) < 2 := by constructor <;> linarith only [bx.1, bx.2]
           have a : (-2 : Int) < x := by exact_mod_cast this.1
           have b : x < (2 : Int) := by exact_mod_cast this.2
           omega
         have hyv : y = -1 ∨ y = 1 := by
-          have : (-2 : ℚ) < y ∧ (y : ℚ) < 2 := by constructor <;> linarith [bY.1, bY.2]
+          have : (-2 : ℚ) < y ∧ (y : ℚ) < 2 := by constructor <;> linarith only [bY.1, bY.2]
           have a : (-2 : Int) < y := by exact_mod_cast this.1
           have b : y < (2 : Int) := by exact_mod_cast this.2
           omega
@@ -144,12 +144,12 @@ theorem lattice {n : Nat} {x y : Int} (hy : y ≠ 0) {t : ℚ} (ht : 0 < t) (h :
         have hs2 : s ^ 2 = 954973097164321 / 1743039955072900 := by unfold s sn sd; norm_num
         rw [hs2] at bx bY
         have hx : x = -2 ∨ x = -1 ∨ x = 0 ∨ x = 1 ∨ x = 2 := by
-          have : (-3 : ℚ) < x ∧ (x : ℚ) < 3 := by constructor <;> linarith [bx.1, bx.2]
+          have : (-3 : ℚ) < x ∧ (x : ℚ) < 3 := by constructor <;> linarith only [bx.1, bx.2]
           have a : (-3 : Int) < x := by exact_mod_cast this.1
           have b : x < (3 : Int) := by exact_mod_cast this.2
           omega
         have hyv : y = -1 ∨ y = 1 := by
-          have : (-2 : ℚ) < y ∧ (y : ℚ) < 2 := by constructor <;> linarith [bY.1, bY.2]
+          have : (-2 : ℚ) < y ∧ (y : ℚ) < 2 := by constructor <;> linarith only [bY.1, bY.2]
           have a : (-2 : Int) < y := by exact_mod_cast this.1
           have b : y < (2 : Int) := by exact_mod_cast this.2
           omega
@@ -163,12 +163,12 @@ theorem lattice {n : Nat} {x y : Int} (hy : y ≠ 0) {t : ℚ} (ht : 0 < t) (h :
       have : |(y : ℚ)| * (4 * s ^ 4) / Lsc ≤ 379 / 512 := by
         rw [abs_div, abs_mul, abs_mul, abs_of_pos (show (0 : ℚ) < Lsc by norm_num),
           abs_of_pos (show (0 : ℚ) < 4 by norm_num), abs_of_pos (by positivity : (0 : ℚ) < s ^ 4)] at bY
-        linarith [bY]
+        linarith only [bY]
       have : |(y : ℚ)| < 1 := by
         rw [div_le_iff₀ (by norm_num)] at this
         rw [div_lt_one (by positivity)] at hs4
-        nlinarith
-      linarith
+        nlinarith only [this, hs4, abs_nonneg (y : ℚ)]
+      exact absurd hy1 (not_le.mpr this)
   · rw [ite_f (by omega)] at h
     have h' := H1_atL (a := c32 * x * s ^ (2 * n)) (b := c32 * y * 2 ^ n * s ^ (2 * n)) (u := t * s ^ n)
       (inP_congr h (by rw [pow_mul']; fsr) (by rw [pow_mul', mul_pow]; fsr)) hu hc
@@ -183,9 +183,9 @@ theorem lattice {n : Nat} {x y : Int} (hy : y ≠ 0) {t : ℚ} (ht : 0 < t) (h :
       rw [abs_div, abs_mul, abs_mul, abs_of_pos (show (0 : ℚ) < Lsc by norm_num),
         abs_of_pos (show (0 : ℚ) < c32 by norm_num), abs_of_pos hpn, div_le_iff₀ (by norm_num)] at bY
       unfold c32 at bY
-      linarith [abs_nonneg (y : ℚ)]
+      linarith only [bY, abs_nonneg (y : ℚ)]
     rw [div_lt_one hp0] at hb
-    nlinarith [abs_nonneg (y : ℚ)]
+    nlinarith only [this, hb, hp, hy1, hp0, abs_nonneg (y : ℚ)]
 
 /-- `j(i)`: `i` for `i ≥ 0`, `-i - 1` else. -/
 def J (i : Int) : Nat := if 0 ≤ i then i.toNat else (-i).toNat - 1
