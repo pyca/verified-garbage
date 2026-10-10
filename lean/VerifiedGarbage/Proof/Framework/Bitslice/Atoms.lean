@@ -19,7 +19,7 @@ namespace VG.Bitslice
 bits `(w + 1) t`. -/
 def diagW (w : Nat) : Nat → Nat
   | 0 => 0
-  | n + 1 => diagW w n ^^^ 2 ^ ((w + 1) * n)
+  | n + 1 => diagW w n ^^^ (2 ^ ((w + 1) * n))
 
 /-- Input word `i` of `w` bits: bit `t` is atom `w i + t`. Word `0`'s lanes
 shifted to word `i`'s, so the kernel evaluates one shift of a `w (w + 1)`-bit
