@@ -135,13 +135,13 @@ def selEntry (o c : Nat) (G : SelGroup) (m : Nat) : List Instr :=
 odd entries into `A`, the even ones into `B` (their indices from `-1` and
 `0`), then both combined. -/
 def selPass (o c : Nat) : List Instr :=
-  [.vop (.movi0 (selA c).idx), .vop (.sub .d2 (selA c).idx (selA c).idx .v28),
-    .vop (.movi0 (selB c).idx)] ++
-  ((selA c).acc ++ (selB c).acc).map (fun v => .vop (.movi0 v)) ++
-  (List.range (K.H / 2)).flatMap (fun m =>
-    K.selEntry o c (selA c) (2 * m + 1) ++ K.selEntry o c (selB c) (2 * m + 2)) ++
-  (List.range c).map fun i =>
-    .vop (.logic .orr ((selA c).acc.getD i .v0) ((selA c).acc.getD i .v0) ((selB c).acc.getD i .v0))
+  ([.vop (.movi0 (selA c).idx), .vop (.sub .d2 (selA c).idx (selA c).idx .v28),
+    .vop (.movi0 (selB c).idx)] : List Instr) ++
+  (((selA c).acc ++ (selB c).acc).map (fun v => .vop (.movi0 v)) : List Instr) ++
+  ((List.range (K.H / 2)).flatMap (fun m =>
+    K.selEntry o c (selA c) (2 * m + 1) ++ K.selEntry o c (selB c) (2 * m + 2)) : List Instr) ++
+  ((List.range c).map fun i =>
+    .vop (.logic .orr ((selA c).acc.getD i .v0) ((selA c).acc.getD i .v0) ((selB c).acc.getD i .v0)) : List Instr)
 
 /-- `x16` = table `x19`'s address, from the static `tsym`'s, with `x7 = 0`,
 `x5 = 1` and `x1 = 0`, through `x17`. -/

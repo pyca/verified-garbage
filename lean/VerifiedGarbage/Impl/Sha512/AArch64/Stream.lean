@@ -27,7 +27,7 @@ open VG.Impl.Sha512.AArch64 (movImm64 scratchBytes)
 open VG.Impl.MdStream.AArch64 (Params len128 out64)
 
 def init (iv : Spec.Sha512.HashValue) : Prog isa :=
-  .block ((List.range 8).flatMap fun k => movImm64 .x9 iv[k]! ++ [.str .x .x9 .x0 (8 * k)])
+  .block ((List.range 8).flatMap fun k => movImm64 .x9 iv[k]! ++ ([.str .x .x9 .x0 (8 * k)] : List Instr))
 
 /-- The sizes, the length field and the digest. -/
 def params : Params where

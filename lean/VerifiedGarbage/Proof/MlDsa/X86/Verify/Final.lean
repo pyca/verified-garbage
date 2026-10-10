@@ -49,20 +49,20 @@ theorem hash_piece : VP p (CI p · p.ℓ true p.k) (CH p)
     (hash2 vS 0 200 136 0x1f ⟨1, 0, 64⟩ (sb oB (p.k * w1Len p)) (sb oCT p.ctildeLen)) := by
   have hw := hF.w1; have hct := hF.ct
   refine hash2_piece (Y := YV p) 0 200 136 0x1f ⟨1, 0, 64⟩ (sb oB (p.k * w1Len p)) (sb oCT p.ctildeLen)
-    Proof.MlKem.rate136 (by lv hF) (by rw [YV_stk]; omega) (by decide) (by show p.k * w1Len p < 2 ^ 32; omega)
+    Proof.MlKem.rate136 (by lvd) (by rw [YV_stk]; omega) (by decide) (by show p.k * w1Len p < 2 ^ 32; omega)
     (by show p.ctildeLen < 2 ^ 32; omega) (by taint_decide) (h₁ := .block []) (by kernel_rfl)
     (h₂ := .block []) (by kernel_rfl) (h₃ := .block []) (by kernel_rfl) (h₄ := .block []) (by kernel_rfl)
     (fun _ _ _ ⟨_, _, _, h⟩ => h.ctx) fun s₀ s s' hp ⟨hh, A, C, h⟩ h' fr out => ⟨hh, A, C,
-      h.keep hp (N := 40) (by omega) (by safeCs hF (Nat.le_refl p.k)) (fun i hi => by lv hF) (by lv hF) fr h', ?_⟩
-  rw [out, sponge_H, Ctx.roBytes hp h.ctx (b := ⟨1, 0, 64⟩) (by lv hF) rfl]
+      h.keep hp (N := 40) (by omega) (by safeCs hF (Nat.le_refl p.k)) (fun i hi => by lvd) (by lvd) fr h', ?_⟩
+  rw [out, sponge_H, Ctx.roBytes hp h.ctx (b := ⟨1, 0, 64⟩) (by lvd) rfl]
   refine congrArg (fun x => Spec.MlDsa.H (vMu s₀ ++ x) p.ctildeLen) ?_
-  have a0 := Buf.addr_eq hp (b := sb oB (p.k * w1Len p)) (by lv hF)
+  have a0 := Buf.addr_eq hp (b := sb oB (p.k * w1Len p)) (by lvd)
   show bytesAt s.mem (Buf.addr s₀ (sb oB (p.k * w1Len p))) (p.k * w1Len p) = _
   rw [a0, Nat.mul_comm, Proof.MlDsa.KeyGen.bytesAt_pieces]
   refine flatMap_congr_mem' fun r hr => ?_
   have hr := List.mem_range.mp hr
   have := w_rows hr (Nat.le_refl _)
-  rw [← Buf.addr_eq hp (b := wB p r) (by lv hF)]
+  rw [← Buf.addr_eq hp (b := wB p r) (by lvd)]
   exact h.w r hr
 
 omit hF in
@@ -74,15 +74,15 @@ theorem mask_and {P : Prop} [Decidable P] {x : Bool} (hx : x = true ↔ P) :
 
 theorem cmp_piece' : VP p (CH p) (VFin p) (cmpAnd (sb oCT p.ctildeLen) ⟨2, 0, p.ctildeLen⟩ p.ctildeLen) := by
   have hct := hF.ct
-  refine cmpAnd_piece (Y := YV p) (a := sb oCT p.ctildeLen) (b := ⟨2, 0, p.ctildeLen⟩) rfl (by lv hF) (by lv hF)
-    (by lv hF) rfl (by show p.ctildeLen < 2 ^ 32; omega) (h₁ := .block []) (by kernel_rfl) (by taint_decide)
+  refine cmpAnd_piece (Y := YV p) (a := sb oCT p.ctildeLen) (b := ⟨2, 0, p.ctildeLen⟩) rfl (by lvd) (by lvd)
+    (by lvd) rfl (by show p.ctildeLen < 2 ^ 32; omega) (h₁ := .block []) (by kernel_rfl) (by taint_decide)
     (by taint_decide) (fun _ _ _ ⟨_, _, _, h, _⟩ => h.ctx) fun s₀ s s' hp ⟨hh, A, C, h, hct'⟩ h' m' => ⟨h', ?_⟩
   have ea : accV s₀ s' = accV s₀ s &&& Proof.MlKem.X86.Decaps.mask
       (ctOf p s₀ hh A C = vCt p (vSig p s₀)) := by
     rw [accV, m', acc_write]
     show _ &&& Proof.MlKem.X86.Decaps.mask (bytesAt s.mem (Buf.addr s₀ (sb oCT p.ctildeLen)) p.ctildeLen =
       bytesAt s.mem (Buf.addr s₀ ⟨2, 0, p.ctildeLen⟩) p.ctildeLen) = _
-    rw [hct', sig_slice hF hp h.ctx (by lv hF), List.drop_zero]
+    rw [hct', sig_slice hF hp h.ctx (by lvd), List.drop_zero]
     rfl
   rw [ea]
   rcases h.gc with ⟨h1, b, c, hA, hc, rfl⟩ | ⟨h0, hn⟩

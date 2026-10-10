@@ -84,13 +84,13 @@ def mcOut (j : Nat) : Reg := if j = 0 then t0 else if j = 1 then t1 else q (j - 
 `{02}` of `uⱼ` moves bit `j - 1` to `j` and reduces by `{1b}`). `q (j - 1)`
 holds `uⱼ₋₁`, and `q j` is left holding `uⱼ`. -/
 def mcWord (j : Nat) : List Instr :=
-  [.mov (mcOut j) (rorOp (q j) 8), eorR (q j) (q j) (mcOut j)] ++
+  ([.mov (mcOut j) (rorOp (q j) 8), eorR (q j) (q j) (mcOut j)] : List Instr) ++
   (if j = 0 then [] else [eorR (mcOut j) (mcOut j) (q (j - 1))]) ++
   (if j = 0 ∨ j = 1 ∨ j = 3 ∨ j = 4 then [eorR (mcOut j) (mcOut j) u7] else []) ++
-  [.dp .eor (mcOut j) (mcOut j) (rorOp (q j) 16)]
+  ([.dp .eor (mcOut j) (mcOut j) (rorOp (q j) 16)] : List Instr)
 
 def mixColumns : List Instr :=
-  [.dp .eor u7 (q 7) (rorOp (q 7) 8)] ++
+  ([.dp .eor u7 (q 7) (rorOp (q 7) 8)] : List Instr) ++
   (List.range 8).flatMap mcWord ++
   ((List.range 8).reverse.map fun j => movR (q j) (mcOut j))
 

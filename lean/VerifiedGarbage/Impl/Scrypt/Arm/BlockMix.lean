@@ -47,9 +47,9 @@ def salsaAt (salsa : Prog isa) (dst : Reg) : Prog isa :=
 ours: `r6 = y + 64 r`, `r9 = b + 128 r - 64` (`B[2r - 1]`). -/
 def bmPrologue : List Instr :=
   .ldrSp .r12 0 :: bmSaved.map (fun (r, d) => .str r .r12 d) ++
-    [.mov .r8 (.reg .r1), .mov .r4 (.reg .r0), .mov .r5 (.reg .r2), .mov .r7 (.reg .r12),
+    ([.mov .r8 (.reg .r1), .mov .r4 (.reg .r0), .mov .r5 (.reg .r2), .mov .r7 (.reg .r12),
      .dp .add .r6 .r2 (.shifted .r1 .lsl 6), .dp .add .r9 .r0 (.shifted .r1 .lsl 7),
-     .dp .sub .r9 .r9 (.imm 64)]
+     .dp .sub .r9 .r9 (.imm 64)] : List Instr)
 
 /-- One pair: `Y[2k]` from `X` and `B[2k]`, then `Y[2k + 1]` from it and
 `B[2k + 1]`; then the pointers move on and the count goes down. -/

@@ -8,9 +8,9 @@ namespace VG.Impl.TripleDes.AArch64.BitsliceNeon
 
 open VG.AArch64
 
--- The circuits' code and output registers, once, which the literals below,
--- `outRegsTable` and the functions' literals (`Lit`) read rather than run the
--- register allocator again.
+-- The circuits' code and output registers (written out in `Impl`), as one
+-- table, which the literals below, `outRegsTable` and the functions' literals
+-- (`Lit`) read.
 materialize_table sboxCompiled 8
 
 -- The transposition, once.

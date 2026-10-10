@@ -164,7 +164,7 @@ branch: `r12` is the OR of the XORs of their bytes (`cmpBody`), so 0 exactly
 when they are equal, and then `(r12 - 1) >> 31` is 1 (and 0 otherwise, as
 `r12 < 256`). -/
 def cmpAnd (a b : Ptr) (n : Nat) : Prog isa :=
-  .seq (.block (Arg.instrs .r0 (.ptr a) ++ Arg.instrs .r1 (.ptr b) ++ ldc .r9 n ++ [.mov .r12 (.imm 0)]))
+  .seq (.block (Arg.instrs .r0 (.ptr a) ++ Arg.instrs .r1 (.ptr b) ++ ldc .r9 n ++ ([.mov .r12 (.imm 0)] : List Instr)))
     (.seq (.loop (.block cmpBody) .ne)
       (.block [.dp .sub .r12 .r12 (.imm 1), .mov .r12 (.shifted .r12 .lsr 31), .dp .and .r11 .r11 (.reg .r12)]))
 

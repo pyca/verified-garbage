@@ -54,7 +54,7 @@ def rbBound : Nat → BitVec 32
 /-- Store the coefficient of the half-byte `edx` to `a[j]` if it is accepted. -/
 def rbTry (η : Nat) : Prog isa :=
   .seq (.block [.alu .cmp .edx (.imm (rbBound η))])
-    (.ite .b (.block (rbVal η ++ [.store (at_ .edi 0) .ebx, .alu .add .edi (.imm 4), .alu .add .ecx (.imm 1)]))
+    (.ite .b (.block (rbVal η ++ ([.store (at_ .edi 0) .ebx, .alu .add .edi (.imm 4), .alu .add .ecx (.imm 1)] : List Instr)))
       (.block []))
 
 /-- The byte at `esi` in `eax`, its low half-byte in `edx`, and `j < 256` in CF. -/

@@ -105,8 +105,8 @@ def ctrArgs : List Instr := [ptr .x0 .x19 skO, mov .x1 .x22, ptr .x2 .x19 ccO, i
 `W + 224`, and the arguments of `vg_aes_ctr32` with the key-generating key's
 schedule. -/
 def deriveBlock : List Instr :=
-  [.ldr .w .x9 .x20 0, .ldr .w .x10 .x20 4, .ldr .w .x11 .x20 8, .str .w .x27 .x19 ccO,
-    .str .w .x9 .x19 (ccO + 4), .str .w .x10 .x19 (ccO + 8), .str .w .x11 .x19 (ccO + 12)] ++ zero16 bO ++
+  ([.ldr .w .x9 .x20 0, .ldr .w .x10 .x20 4, .ldr .w .x11 .x20 8, .str .w .x27 .x19 ccO,
+    .str .w .x9 .x19 (ccO + 4), .str .w .x10 .x19 (ccO + 8), .str .w .x11 .x19 (ccO + 12)] : List Instr) ++ zero16 bO ++
     [mov .x0 .x21, mov .x1 .x22, ptr .x2 .x19 ccO, ptr .x3 .x19 bO, imm .x4 1, ptr .x5 .x19 scrO]
 
 /-- The first 8 bytes of the block kept at `W + 16 + 8 x27`, the next `x27`,
@@ -131,11 +131,11 @@ def expand : Prog isa := .seq (.block expandArgs) (callKey c)
 /-- GHASH's key, `H · x` for the authentication key `H` (as a little-endian
 number), in GHASH's order at `W + 64`, and its accumulator zeroed. -/
 def hkey : List Instr :=
-  [.ldr .x .x9 .x19 akO, .ldr .x .x10 .x19 (akO + 8), imm .x11 1, .logic .and .x .x12 .x9 .x11,
+  ([.ldr .x .x9 .x19 akO, .ldr .x .x10 .x19 (akO + 8), imm .x11 1, .logic .and .x .x12 .x9 .x11,
     imm .x13 0, .sub .x .x12 .x13 .x12, .lsr .x .x9 .x9 1, .logic .and .x .x13 .x10 .x11,
     .ror .x .x13 .x13 1, .logic .orr .x .x9 .x9 .x13, .lsr .x .x10 .x10 1, .movz .x .x11 0xE100 3,
     .logic .and .x .x11 .x11 .x12, .logic .eor .x .x10 .x10 .x11, .rev .x10 .x10, .rev .x9 .x9,
-    .str .x .x10 .x19 hO, .str .x .x9 .x19 (hO + 8)] ++ zero16 yO
+    .str .x .x10 .x19 hO, .str .x .x9 .x19 (hO + 8)] : List Instr) ++ zero16 yO
 
 /-- The keys and GHASH's key. -/
 def keys : Prog isa := .seq (derive c) (.seq (expand c) (.block hkey))
@@ -160,7 +160,7 @@ def revLoop : Prog isa :=
 /-- After the copies: `x27` and `x28` past the blocks, and the arguments of
 `vg_ghash`. -/
 def chunkArgs : List Instr :=
-  [.lsl .x .x9 .x10 4, .add .x .x27 .x27 .x9, .sub .x .x28 .x28 .x9] ++ ghArgs ++
+  ([.lsl .x .x9 .x10 4, .add .x .x27 .x27 .x9, .sub .x .x28 .x28 .x9] : List Instr) ++ ghArgs ++
     [ptr .x2 .x19 revO, mov .x3 .x10]
 
 /-- Up to 64 of the whole blocks of the `x28` bytes at `x27` reversed at
@@ -275,7 +275,7 @@ def mask : Prog isa :=
 len = x6, tag = x7, work = [sp])`: our caller's registers saved in `W`, the
 arguments kept in `x19`–`x26`, and `tag` at `W + 216`. -/
 def entry : List Instr :=
-  [.ldrSp .x9 0] ++ save .x9 ++ [mov .x19 .x9, mov .x20 .x2, mov .x21 .x0, mov .x22 .x1, mov .x23 .x3,
+  ([.ldrSp .x9 0] : List Instr) ++ save .x9 ++ [mov .x19 .x9, mov .x20 .x2, mov .x21 .x0, mov .x22 .x1, mov .x23 .x3,
     mov .x24 .x4, mov .x25 .x5, mov .x26 .x6, .str .x .x7 .x19 tagPO]
 
 /-- The received tag copied from `tag` to `W`. -/

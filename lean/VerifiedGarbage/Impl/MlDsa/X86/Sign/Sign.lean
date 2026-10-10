@@ -171,7 +171,7 @@ def hR (i : Nat) : Prog isa :=
 
 /-- `OK ← OK ∧ (ONES ≤ ω)`: `ONES - (ω + 1)` is negative exactly then. -/
 def onesOk : List Instr :=
-  [.mov .eax (.mem (at_ .esi oONES)), .alu .sub .eax (.imm (BitVec.ofNat 32 (p.ω + 1))), .shift .shr .eax 31] ++
+  ([.mov .eax (.mem (at_ .esi oONES)), .alu .sub .eax (.imm (BitVec.ofNat 32 (p.ω + 1))), .shift .shr .eax 31] : List Instr) ++
     andOK
 
 /-- `κ ← κ + ℓ`. -/

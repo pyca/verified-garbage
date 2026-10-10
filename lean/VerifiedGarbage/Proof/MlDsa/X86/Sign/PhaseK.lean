@@ -131,7 +131,7 @@ omit c' in
 theorem CS.ct_keep (hb : ∀ c ∈ bs, Out p oCT (oCT + 64) c) :
     bytesAt s'.mem (Buf.addr s₀ (sc oCT (cLen p))) (cLen p) = CTv p s₀ (p.ℓ * t) := by
   have := ps.hcLen
-  rw [keepB hp hN fr (by ofs) fun c hc => ⟨(hb c hc).1, fun e => by
+  rw [keepB hp hN fr (by ofsd) fun c hc => ⟨(hb c hc).1, fun e => by
     have := (hb c hc).2 e; simp only [oCT] at this ⊢; omega⟩, h.ct]
 
 theorem CS.keep (hb : ∀ c ∈ bs, OutC p nh c) : CS p t fY fW nh okb ones s₀ s' := by
@@ -177,19 +177,19 @@ theorem CC.keep {t : Nat} {s₀ s s' : State} (hp : TPre (Y p) s₀) (ps : PS p)
     (hb : ∀ c ∈ bs, (OutI p c ∧ Out p (oP (yB p)) (oP (wB p + p.k)) c) ∧ Out p oCT (oCT + 64) c) : CC p t s₀ s' := by
   have := ps.hcLen
   exact ⟨h.cw.keep hp ps (Nat.le_refl _) c' hN fr fun c hc => (hb c hc).1, by
-    rw [keepB hp hN fr (by ofs) fun c hc => ⟨(hb c hc).2.1, fun e => by
+    rw [keepB hp hN fr (by ofsd) fun c hc => ⟨(hb c hc).2.1, fun e => by
       have := (hb c hc).2.2 e; simp only [oCT] at this ⊢; omega⟩, h.ct]⟩
 
 /-- `c = SampleInBall(c̃)` to `ĉ`'s slot. -/
 theorem ballCall_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
     SP p (fun s₀ s => CC p t s₀ s ∧ Run p F t s₀) (IB p F t) (ballAt P (cLen p) p.τ cP) := by
   have := ps.hcLen
-  refine ball_piece F.ball (F.ok _ (by simp)) (cLen p) p.τ ps.hball SC oCT SC (oP 0) SC oPS (by ofs)
+  refine ball_piece F.ball (F.ok _ (by simp)) (cLen p) p.τ ps.hball SC oCT SC (oP 0) SC oPS (by ofsd)
     (fun _ _ _ h => h.1.cw.cm.it.kd.ctx) (fun s₀ s₀' s s' hp hp' hq h h' => ?_)
     fun s₀ s s' hp h c' fr heax hred hout => ?_
   · rw [h.1.ct, h'.1.ct]; exact (run_at ps hq h.2).1
   · rw [h.1.ct] at heax hout
-    refine ⟨h.1.keep hp ps c' (by decide) fr (by ofs), h.2, heax, fun hy => ?_, fun hn => ?_⟩
+    refine ⟨h.1.keep hp ps c' (by decide) fr (by ofsd), h.2, heax, fun hy => ?_, fun hn => ?_⟩
     · rw [hy] at heax; simp only [↓reduceIte] at heax
       exact ⟨hred heax, ball_val hout heax (F.ballMax _ _ hy)⟩
     · rw [hn] at heax
@@ -268,13 +268,13 @@ theorem checksInit_piece (ps : PS p) (t : Nat) :
   refine wp_st32 hp h.1.cw.cm.it.kd.ctx (sc_ok ps (by decide) (by decide)) 1 fun s₁ c₁ f₁ v₁ => ?_
   rw [← List.append_nil (st32 oONES 0)]
   refine wp_st32 hp c₁ (sc_ok ps (by decide) (by decide)) 0 fun s₂ c₂ f₂ v₂ => WP.block_nil_iff.mpr ?_
-  have g₁ := (h.1.keep hp ps c₁ (N := 80) (by decide) (fr0 hp (by decide) f₁) (by ofs))
-  have g₂ := (g₁.keep hp ps c₂ (N := 80) (by decide) (fr0 hp (by decide) f₂) (by ofs))
-  have hc := keepP hp ps (N := 80) (by decide) (fr0 hp (by decide) f₁) (j := 0) (by simp only [nS]; omega) (by ofs) h.2
-  have hc' := keepP hp ps (N := 80) (by decide) (fr0 hp (by decide) f₂) (j := 0) (by simp only [nS]; omega) (by ofs) hc
+  have g₁ := (h.1.keep hp ps c₁ (N := 80) (by decide) (fr0 hp (by decide) f₁) (by ofsd))
+  have g₂ := (g₁.keep hp ps c₂ (N := 80) (by decide) (fr0 hp (by decide) f₂) (by ofsd))
+  have hc := keepP hp ps (N := 80) (by decide) (fr0 hp (by decide) f₁) (j := 0) (by simp only [nS]; omega) (by ofsd) h.2
+  have hc' := keepP hp ps (N := 80) (by decide) (fr0 hp (by decide) f₂) (j := 0) (by simp only [nS]; omega) (by ofsd) hc
   refine ⟨g₂.cw.cm.it, g₂.ct, hc', g₂.cw.cm.fy.congr fun j hj => by simp, g₂.cw.fw, fun j hj => absurd hj (Nat.not_lt_zero _),
     ?_, v₂, Nat.zero_le _⟩
-  rw [scw, keepW' hp (N := 80) (by decide) (fr0 hp (by decide) f₂) (sc_ok' ps (by decide) (by decide)) (by ofs)]
+  rw [scw, keepW' hp (N := 80) (by decide) (fr0 hp (by decide) f₂) (sc_ok' ps (by decide) (by decide)) (by ofsd)]
   exact v₁
 
 /-! ## Norms -/
@@ -286,14 +286,14 @@ theorem CS.setOK {t nh : Nat} {fY fW : State → Nat → Poly} {okb : State → 
     (v : scw s₀ s' oOK = scw s₀ s oOK &&& s.gpr .eax) (he : s.gpr .eax = if b s₀ then 1 else 0) :
     CS p t fY fW nh (fun s₀ => okb s₀ && b s₀) ones s₀ s' := by
   have := h.nh
-  refine ⟨h.it.keep hp ps c' (N := 80) (by decide) (fr0 hp (by decide) fr) (by ofs),
-    h.ct_keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by ofs),
-    keepP hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (j := 0) (by simp only [nS]; omega) (by ofs) h.c,
-    h.fy.keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by simp only [nS, yB]; omega) (by ofs),
-    h.fw.keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by simp only [nS, wB]; omega) (by ofs),
-    h.fh.keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by simp only [nS]; omega) (by ofs),
+  refine ⟨h.it.keep hp ps c' (N := 80) (by decide) (fr0 hp (by decide) fr) (by ofsd),
+    h.ct_keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by ofsd),
+    keepP hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (j := 0) (by simp only [nS]; omega) (by ofsd) h.c,
+    h.fy.keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by simp only [nS, yB]; omega) (by ofsd),
+    h.fw.keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by simp only [nS, wB]; omega) (by ofsd),
+    h.fh.keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by simp only [nS]; omega) (by ofsd),
     by rw [v, h.ok, he, and01], ?_, h.nh⟩
-  rw [scw, keepW' hp (N := 80) (by decide) (fr0 hp (by decide) fr) (sc_ok' ps (by decide) (by decide)) (by ofs)]
+  rw [scw, keepW' hp (N := 80) (by decide) (fr0 hp (by decide) fr) (sc_ok' ps (by decide) (by decide)) (by ofsd)]
   exact h.ones
 
 /-- `OK ← OK ∧ ‖f‖∞ < bnd`, for the polynomial `v` in slot `j`, which stays. -/
@@ -309,7 +309,7 @@ theorem normAnd_piece (F : PrimsOk P) (ps : PS p) {t nh : Nat} {fY fW : State �
         keepP hp ps (by decide) fr hj (by simp) h.2⟩, by rw [he, h.2.2]⟩) ?_
   refine blk_piece (fun _ _ _ h => h.1.1.it.kd.ctx) (fun s₀ s hp h => wp_andOK hp h.1.1.it.kd.ctx ps
     fun s' c' fr v' => ⟨h.1.1.setOK hp ps c' fr (fun s₀ => decide (normRq [v s₀] < bnd)) v' ?_,
-      keepP hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) hj (by ofs) h.1.2⟩) rfl
+      keepP hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) hj (by ofsd) h.1.2⟩) rfl
   rw [h.2]; by_cases e : normRq [v s₀] < bnd <;> simp [e]
 
 theorem CS.congr {t nh : Nat} {fY fY' fW fW' : State → Nat → Poly} {okb okb' : State → Bool} {ones : State → Nat}
@@ -324,13 +324,13 @@ theorem CS.updY {t nh r : Nat} {fY fW : State → Nat → Poly} {okb : State →
     (hv : PolyIs s'.mem (Buf.addr s₀ (pS (yB p + r))) (fY' s₀ r)) (hg : ∀ j < p.ℓ, j ≠ r → fY' s₀ j = fY s₀ j) :
     CS p t fY' fW nh okb ones s₀ s' := by
   have := h.nh
-  refine ⟨h.it.keep hp ps c' (by decide) fr (by ofs), h.ct_keep hp ps (by decide) fr (by ofs),
-    keepP hp ps (by decide) fr (j := 0) (by simp only [nS]; omega) (by ofs) h.c,
-    h.fy.upd hp ps (by decide) fr (by simp only [nS, yB]; omega) hr (by ofs) hv hg,
-    h.fw.keep hp ps (by decide) fr (by simp only [nS, wB]; omega) (by ofs),
-    h.fh.keep hp ps (by decide) fr (by simp only [nS]; omega) (by ofs),
-    by rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofs)]; exact h.ok,
-    by rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofs)]; exact h.ones, h.nh⟩
+  refine ⟨h.it.keep hp ps c' (by decide) fr (by ofsd), h.ct_keep hp ps (by decide) fr (by ofsd),
+    keepP hp ps (by decide) fr (j := 0) (by simp only [nS]; omega) (by ofsd) h.c,
+    h.fy.upd hp ps (by decide) fr (by simp only [nS, yB]; omega) hr (by ofsd) hv hg,
+    h.fw.keep hp ps (by decide) fr (by simp only [nS, wB]; omega) (by ofsd),
+    h.fh.keep hp ps (by decide) fr (by simp only [nS]; omega) (by ofsd),
+    by rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd)]; exact h.ok,
+    by rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd)]; exact h.ones, h.nh⟩
 
 /-- Slot `i` of `w` changed. -/
 theorem CS.updW {t nh i : Nat} {fY fW : State → Nat → Poly} {okb : State → Bool} {ones : State → Nat}
@@ -339,13 +339,13 @@ theorem CS.updW {t nh i : Nat} {fY fW : State → Nat → Poly} {okb : State →
     (hv : PolyIs s'.mem (Buf.addr s₀ (pS (wB p + i))) (fW' s₀ i)) (hg : ∀ j < p.k, j ≠ i → fW' s₀ j = fW s₀ j) :
     CS p t fY fW' nh okb ones s₀ s' := by
   have := h.nh
-  refine ⟨h.it.keep hp ps c' (by decide) fr (by ofs), h.ct_keep hp ps (by decide) fr (by ofs),
-    keepP hp ps (by decide) fr (j := 0) (by simp only [nS]; omega) (by ofs) h.c,
-    h.fy.keep hp ps (by decide) fr (by simp only [nS, yB]; omega) (by ofs),
-    h.fw.upd hp ps (by decide) fr (by simp only [nS, wB]; omega) hi (by ofs) hv hg,
-    h.fh.keep hp ps (by decide) fr (by simp only [nS]; omega) (by ofs),
-    by rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofs)]; exact h.ok,
-    by rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofs)]; exact h.ones, h.nh⟩
+  refine ⟨h.it.keep hp ps c' (by decide) fr (by ofsd), h.ct_keep hp ps (by decide) fr (by ofsd),
+    keepP hp ps (by decide) fr (j := 0) (by simp only [nS]; omega) (by ofsd) h.c,
+    h.fy.keep hp ps (by decide) fr (by simp only [nS, yB]; omega) (by ofsd),
+    h.fw.upd hp ps (by decide) fr (by simp only [nS, wB]; omega) hi (by ofsd) hv hg,
+    h.fh.keep hp ps (by decide) fr (by simp only [nS]; omega) (by ofsd),
+    by rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd)]; exact h.ok,
+    by rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd)]; exact h.ones, h.nh⟩
 
 /-! ## `z` -/
 
@@ -360,18 +360,18 @@ theorem zR_piece (F : PrimsOk P) (ps : PS p) (t r : Nat) (hr : r < p.ℓ) :
   refine Piece.seq (B := fun s₀ s => CS p t (zY p t r) (fun s₀ => Wv p s₀ (p.ℓ * t)) 0
       (fun s₀ => okZ p s₀ (p.ℓ * t) r) (fun _ => 0) s₀ s ∧
       PolyIs s.mem (Buf.addr s₀ t1P) (multiplyNTT (chF (Cv p s₀ (p.ℓ * t))) (S1 p s₀ r)))
-    (mul_piece F.mul (F.ok _ (by simp)) SC (oP 1) SC (oP 0) SC (oP (s1B p + r)) (by ofs)
+    (mul_piece F.mul (F.ok _ (by simp)) SC (oP 1) SC (oP 0) SC (oP (s1B p + r)) (by ofsd)
       (fun _ _ _ h => ⟨h.it.kd.ctx, h.c.1, (fam_at h.it.kd.dk.f1 hr).1⟩)
-      fun s₀ s s' hp h c' fr hq => ⟨h.keep hp ps c' (by decide) fr (by ofs), by
+      fun s₀ s s' hp h c' fr hq => ⟨h.keep hp ps c' (by decide) fr (by ofsd), by
         rw [h.c.2, (fam_at h.it.kd.dk.f1 hr).2] at hq; exact hq⟩) ?_
   refine Piece.seq (B := fun s₀ s => CS p t (zY p t r) (fun s₀ => Wv p s₀ (p.ℓ * t)) 0
       (fun s₀ => okZ p s₀ (p.ℓ * t) r) (fun _ => 0) s₀ s ∧
       PolyIs s.mem (Buf.addr s₀ t1P) (nttInv (multiplyNTT (chF (Cv p s₀ (p.ℓ * t))) (S1 p s₀ r))))
-    (inPlace_piece (t := nttInv) F.invNtt (F.ok _ (by simp)) t1P rfl (by ofs) (fun _ _ _ h => ⟨h.1.it.kd.ctx, h.2.1⟩)
-      fun s₀ s s' hp h c' fr hq => ⟨h.1.keep hp ps c' (by decide) fr (by ofs), by rw [h.2.2] at hq; exact hq⟩) ?_
+    (inPlace_piece (t := nttInv) F.invNtt (F.ok _ (by simp)) t1P rfl (by ofsd) (fun _ _ _ h => ⟨h.1.it.kd.ctx, h.2.1⟩)
+      fun s₀ s s' hp h c' fr hq => ⟨h.1.keep hp ps c' (by decide) fr (by ofsd), by rw [h.2.2] at hq; exact hq⟩) ?_
   refine Piece.seq (B := CS p t (zY p t (r + 1)) (fun s₀ => Wv p s₀ (p.ℓ * t)) 0
       (fun s₀ => okZ p s₀ (p.ℓ * t) r) (fun _ => 0))
-    (acc_piece (op := add) F.add (F.ok _ (by simp)) SC (oP (yB p + r)) SC (oP 1) (by ofs)
+    (acc_piece (op := add) F.add (F.ok _ (by simp)) SC (oP (yB p + r)) SC (oP 1) (by ofsd)
       (fun _ _ _ h => ⟨h.1.it.kd.ctx, (fam_at h.1.fy hr).1, h.2.1⟩)
       fun s₀ s s' hp h c' fr hq => h.1.updY hp ps c' hr fr (by
         rw [(fam_at h.1.fy hr).2, h.2.2, zY_ge (Nat.lt_irrefl r)] at hq
@@ -393,18 +393,18 @@ theorem r0R_piece (F : PrimsOk P) (ps : PS p) (t i : Nat) (hi : i < p.k) :
   refine Piece.seq (B := fun s₀ s => CS p t (zY p t p.ℓ) (rW p t i) 0
       (fun s₀ => okZ p s₀ (p.ℓ * t) p.ℓ && okR p s₀ (p.ℓ * t) i) (fun _ => 0) s₀ s ∧
       PolyIs s.mem (Buf.addr s₀ t1P) (multiplyNTT (chF (Cv p s₀ (p.ℓ * t))) (S2 p s₀ i)))
-    (mul_piece F.mul (F.ok _ (by simp)) SC (oP 1) SC (oP 0) SC (oP (s2B p + i)) (by ofs)
+    (mul_piece F.mul (F.ok _ (by simp)) SC (oP 1) SC (oP 0) SC (oP (s2B p + i)) (by ofsd)
       (fun _ _ _ h => ⟨h.it.kd.ctx, h.c.1, (fam_at h.it.kd.dk.f2 hi).1⟩)
-      fun s₀ s s' hp h c' fr hq => ⟨h.keep hp ps c' (by decide) fr (by ofs), by
+      fun s₀ s s' hp h c' fr hq => ⟨h.keep hp ps c' (by decide) fr (by ofsd), by
         rw [h.c.2, (fam_at h.it.kd.dk.f2 hi).2] at hq; exact hq⟩) ?_
   refine Piece.seq (B := fun s₀ s => CS p t (zY p t p.ℓ) (rW p t i) 0
       (fun s₀ => okZ p s₀ (p.ℓ * t) p.ℓ && okR p s₀ (p.ℓ * t) i) (fun _ => 0) s₀ s ∧
       PolyIs s.mem (Buf.addr s₀ t1P) (nttInv (multiplyNTT (chF (Cv p s₀ (p.ℓ * t))) (S2 p s₀ i))))
-    (inPlace_piece (t := nttInv) F.invNtt (F.ok _ (by simp)) t1P rfl (by ofs) (fun _ _ _ h => ⟨h.1.it.kd.ctx, h.2.1⟩)
-      fun s₀ s s' hp h c' fr hq => ⟨h.1.keep hp ps c' (by decide) fr (by ofs), by rw [h.2.2] at hq; exact hq⟩) ?_
+    (inPlace_piece (t := nttInv) F.invNtt (F.ok _ (by simp)) t1P rfl (by ofsd) (fun _ _ _ h => ⟨h.1.it.kd.ctx, h.2.1⟩)
+      fun s₀ s s' hp h c' fr hq => ⟨h.1.keep hp ps c' (by decide) fr (by ofsd), by rw [h.2.2] at hq; exact hq⟩) ?_
   refine Piece.seq (B := CS p t (zY p t p.ℓ) (rW p t (i + 1)) 0
       (fun s₀ => okZ p s₀ (p.ℓ * t) p.ℓ && okR p s₀ (p.ℓ * t) i) (fun _ => 0))
-    (acc_piece (op := sub) F.sub (F.ok _ (by simp)) SC (oP (wB p + i)) SC (oP 1) (by ofs)
+    (acc_piece (op := sub) F.sub (F.ok _ (by simp)) SC (oP (wB p + i)) SC (oP 1) (by ofsd)
       (fun _ _ _ h => ⟨h.1.it.kd.ctx, (fam_at h.1.fw hi).1, h.2.1⟩)
       fun s₀ s s' hp h c' fr hq => h.1.updW hp ps c' hi fr (by
         rw [(fam_at h.1.fw hi).2, h.2.2, rW_ge (Nat.lt_irrefl i)] at hq
@@ -412,9 +412,9 @@ theorem r0R_piece (F : PrimsOk P) (ps : PS p) (t i : Nat) (hi : i < p.k) :
   refine Piece.seq (B := fun s₀ s => CS p t (zY p t p.ℓ) (rW p t (i + 1)) 0
       (fun s₀ => okZ p s₀ (p.ℓ * t) p.ℓ && okR p s₀ (p.ℓ * t) i) (fun _ => 0) s₀ s ∧
       PolyIs s.mem (Buf.addr s₀ t2P) (R0v p s₀ (p.ℓ * t) i))
-    (lb_piece F.lowBits (F.ok _ (by simp)) p.γ₂ ps.hγ₂ SC (oP (wB p + i)) SC (oP 2) (by ofs)
+    (lb_piece F.lowBits (F.ok _ (by simp)) p.γ₂ ps.hγ₂ SC (oP (wB p + i)) SC (oP 2) (by ofsd)
       (fun _ _ _ h => ⟨h.it.kd.ctx, (fam_at h.fw hi).1⟩)
-      fun s₀ s s' hp h c' fr hq => ⟨h.keep hp ps c' (by decide) fr (by ofs), by
+      fun s₀ s s' hp h c' fr hq => ⟨h.keep hp ps c' (by decide) fr (by ofsd), by
         rw [(fam_at h.fw hi).2, rW_lt (Nat.lt_succ_self i)] at hq; exact hq⟩) ?_
   refine (normAnd_piece F ps 2 (by simp only [nS]; omega) (p.γ₂ - p.β) (by omega) (fun s₀ => R0v p s₀ (p.ℓ * t) i)).mono
     (fun s₀ s _ h => h) fun s₀ s _ h => h.1.congr (fun _ _ => rfl) (fun _ _ => rfl)
@@ -456,13 +456,13 @@ theorem CS.addOnes {t nh : Nat} {fY fW : State → Nat → Poly} {okb : State �
     (v : scw s₀ s' oONES = scw s₀ s oONES + s.gpr .eax) (he : (s.gpr .eax).toNat = x s₀)
     (hb : ones s₀ + x s₀ < 2 ^ 32) : CS p t fY fW nh okb (fun s₀ => ones s₀ + x s₀) s₀ s' := by
   have := h.nh
-  refine ⟨h.it.keep hp ps c' (N := 80) (by decide) (fr0 hp (by decide) fr) (by ofs),
-    h.ct_keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by ofs),
-    keepP hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (j := 0) (by simp only [nS]; omega) (by ofs) h.c,
-    h.fy.keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by simp only [nS, yB]; omega) (by ofs),
-    h.fw.keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by simp only [nS, wB]; omega) (by ofs),
-    h.fh.keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by simp only [nS]; omega) (by ofs), ?_, ?_, h.nh⟩
-  · rw [scw, keepW' hp (N := 80) (by decide) (fr0 hp (by decide) fr) (sc_ok' ps (by decide) (by decide)) (by ofs)]
+  refine ⟨h.it.keep hp ps c' (N := 80) (by decide) (fr0 hp (by decide) fr) (by ofsd),
+    h.ct_keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by ofsd),
+    keepP hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (j := 0) (by simp only [nS]; omega) (by ofsd) h.c,
+    h.fy.keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by simp only [nS, yB]; omega) (by ofsd),
+    h.fw.keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by simp only [nS, wB]; omega) (by ofsd),
+    h.fh.keep hp ps (N := 80) (by decide) (fr0 hp (by decide) fr) (by simp only [nS]; omega) (by ofsd), ?_, ?_, h.nh⟩
+  · rw [scw, keepW' hp (N := 80) (by decide) (fr0 hp (by decide) fr) (sc_ok' ps (by decide) (by decide)) (by ofsd)]
     exact h.ok
   · rw [v, h.ones]
     apply BitVec.eq_of_toNat_eq
@@ -475,7 +475,7 @@ theorem CS.addHint {t nh : Nat} {fY fW : State → Nat → Poly} {okb : State �
     (hn : nh < p.k) (fr : Frame (FR s₀ [pS (5 + nh)] 80) s.mem s'.mem)
     (hh : HintIs s'.mem (Buf.addr s₀ (pS (5 + nh))) 1 [Hv p s₀ (p.ℓ * t) nh]) :
     CS p t fY fW (nh + 1) okb ones s₀ s' :=
-  have k := h.keep hp ps c' (by decide) fr (by ofs)
+  have k := h.keep hp ps c' (by decide) fr (by ofsd)
   { k with fh := k.fh.snoc hh, nh := hn }
 
 /-- The okays of the checks of `ct₀` so far. -/
@@ -498,41 +498,41 @@ theorem hR_piece (F : PrimsOk P) (ps : PS p) (t i : Nat) (hi : i < p.k) :
     (fun s₀ => okH p t i s₀ && decide (normRq [CT0v p s₀ (p.ℓ * t) i] < p.γ₂)) (fun s₀ => onesS p s₀ (p.ℓ * t) i)
   refine Piece.seq (B := fun s₀ s => H0 s₀ s ∧
       PolyIs s.mem (Buf.addr s₀ t3P) (multiplyNTT (chF (Cv p s₀ (p.ℓ * t))) (T0 p s₀ i)))
-    (mul_piece F.mul (F.ok _ (by simp)) SC (oP 3) SC (oP 0) SC (oP (t0B p + i)) (by ofs)
+    (mul_piece F.mul (F.ok _ (by simp)) SC (oP 3) SC (oP 0) SC (oP (t0B p + i)) (by ofsd)
       (fun _ _ _ h => ⟨h.it.kd.ctx, h.c.1, (fam_at h.it.kd.dk.f0 hi).1⟩)
-      fun s₀ s s' hp h c' fr hq => ⟨h.keep hp ps c' (by decide) fr (by ofs), by
+      fun s₀ s s' hp h c' fr hq => ⟨h.keep hp ps c' (by decide) fr (by ofsd), by
         rw [h.c.2, (fam_at h.it.kd.dk.f0 hi).2] at hq; exact hq⟩) ?_
   refine Piece.seq (B := fun s₀ s => H0 s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (pS 3)) (CT0v p s₀ (p.ℓ * t) i))
-    (inPlace_piece (t := nttInv) F.invNtt (F.ok _ (by simp)) t3P rfl (by ofs) (fun _ _ _ h => ⟨h.1.it.kd.ctx, h.2.1⟩)
-      fun s₀ s s' hp h c' fr hq => ⟨h.1.keep hp ps c' (by decide) fr (by ofs), by rw [h.2.2] at hq; exact hq⟩) ?_
+    (inPlace_piece (t := nttInv) F.invNtt (F.ok _ (by simp)) t3P rfl (by ofsd) (fun _ _ _ h => ⟨h.1.it.kd.ctx, h.2.1⟩)
+      fun s₀ s s' hp h c' fr hq => ⟨h.1.keep hp ps c' (by decide) fr (by ofsd), by rw [h.2.2] at hq; exact hq⟩) ?_
   refine Piece.seq (B := fun s₀ s => H1 s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (pS 3)) (CT0v p s₀ (p.ℓ * t) i))
     (normAnd_piece F ps 3 (by simp only [nS]; omega) p.γ₂ (by omega) (fun s₀ => CT0v p s₀ (p.ℓ * t) i)) ?_
   refine Piece.seq (B := fun s₀ s => (H1 s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (pS 3)) (CT0v p s₀ (p.ℓ * t) i)) ∧
       PolyIs s.mem (Buf.addr s₀ t4P) (W'v p s₀ (p.ℓ * t) i))
-    (copy_piece SC (oP (wB p + i)) SC (oP 4) 256 (by decide) (by decide) (by ofs) (fun _ _ _ h => h.1.it.kd.ctx)
+    (copy_piece SC (oP (wB p + i)) SC (oP 4) 256 (by decide) (by decide) (by ofsd) (fun _ _ _ h => h.1.it.kd.ctx)
       fun s₀ s s' hp h c' fr hb => by
         have fr' : Frame (FR s₀ [t4P] 80) s.mem s'.mem := fr.mono (by simp)
         have hw := fam_at h.1.fw hi
         rw [hW_ge (Nat.lt_irrefl i)] at hw
-        exact ⟨⟨h.1.keep hp ps c' (by decide) fr' (by ofs), keepP hp ps (by decide) fr' (by simp only [nS]; omega)
-          (by ofs) h.2⟩, polyIs_of_bytes hb hw⟩) ?_
+        exact ⟨⟨h.1.keep hp ps c' (by decide) fr' (by ofsd), keepP hp ps (by decide) fr' (by simp only [nS]; omega)
+          (by ofsd) h.2⟩, polyIs_of_bytes hb hw⟩) ?_
   refine Piece.seq (B := fun s₀ s => H2 s₀ s ∧ PolyIs s.mem (Buf.addr s₀ t4P) (W'v p s₀ (p.ℓ * t) i))
-    (acc_piece (op := add) F.add (F.ok _ (by simp)) SC (oP (wB p + i)) SC (oP 3) (by ofs)
+    (acc_piece (op := add) F.add (F.ok _ (by simp)) SC (oP (wB p + i)) SC (oP 3) (by ofsd)
       (fun _ _ _ h => ⟨h.1.1.it.kd.ctx, (fam_at h.1.1.fw hi).1, h.1.2.1⟩)
       fun s₀ s s' hp h c' fr hq => ⟨h.1.1.updW hp ps c' hi fr (by
         rw [(fam_at h.1.1.fw hi).2, h.1.2.2, hW_ge (Nat.lt_irrefl i)] at hq
         rw [hW_lt (Nat.lt_succ_self i)]; exact hq) fun j _ hji => upd_step hji,
-        keepP hp ps (by decide) fr (by simp only [nS]; omega) (by ofs) h.2⟩) ?_
+        keepP hp ps (by decide) fr (by simp only [nS]; omega) (by ofsd) h.2⟩) ?_
   refine Piece.seq (B := fun s₀ s => H2 s₀ s ∧ PolyIs s.mem (Buf.addr s₀ t4P) (neg (CT0v p s₀ (p.ℓ * t) i)))
-    (acc_piece (op := sub) F.sub (F.ok _ (by simp)) SC (oP 4) SC (oP (wB p + i)) (by ofs)
+    (acc_piece (op := sub) F.sub (F.ok _ (by simp)) SC (oP 4) SC (oP (wB p + i)) (by ofsd)
       (fun _ _ _ h => ⟨h.1.it.kd.ctx, h.2.1, (fam_at h.1.fw hi).1⟩)
-      fun s₀ s s' hp h c' fr hq => ⟨h.1.keep hp ps c' (by decide) fr (by ofs), by
+      fun s₀ s s' hp h c' fr hq => ⟨h.1.keep hp ps c' (by decide) fr (by ofsd), by
         rw [h.2.2, (fam_at h.1.fw hi).2, hW_lt (Nat.lt_succ_self i)] at hq
         rw [← sub_add_neg]; exact hq⟩) ?_
   refine Piece.seq (B := fun s₀ s => CS p t (zY p t p.ℓ) (hW p t (i + 1)) (i + 1)
       (fun s₀ => okH p t i s₀ && decide (normRq [CT0v p s₀ (p.ℓ * t) i] < p.γ₂)) (fun s₀ => onesS p s₀ (p.ℓ * t) i) s₀ s ∧
       (s.gpr .eax).toNat = hintOnes [Hv p s₀ (p.ℓ * t) i])
-    (hint_piece F.makeHint (F.ok _ (by simp)) p.γ₂ ps.hγ₂ SC (oP 4) SC (oP (wB p + i)) SC (oP (5 + i)) (by ofs)
+    (hint_piece F.makeHint (F.ok _ (by simp)) p.γ₂ ps.hγ₂ SC (oP 4) SC (oP (wB p + i)) SC (oP (5 + i)) (by ofsd)
       (fun _ _ _ h => ⟨h.1.it.kd.ctx, h.2.1, (fam_at h.1.fw hi).1⟩)
       fun s₀ s s' hp h c' fr hh he => by
         rw [h.2.2, (fam_at h.1.fw hi).2, hW_lt (Nat.lt_succ_self i)] at hh he
@@ -664,12 +664,12 @@ theorem checksEnd_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
     have hc : contS p F t s₀ = false := by
       simp only [contS, contV, hb.2.2, decide_true, Bool.not_true, Bool.and_false]
     have hk := h₁.nh
-    refine ⟨h₁.it.kd.keep hp ps c' (by decide) fr' (by ofs), hb.1, by rw [hc, v]; rfl, (fun e => by rw [hc] at e; cases e),
-      ?_, fun _ _ => ⟨?_, h₁.fh.keep hp ps (by decide) fr' (by simp only [nS]; omega) (by ofs),
-        h₁.ct_keep hp ps (by decide) fr' (by ofs)⟩, (fun e => by rw [hb.2.1] at e; cases e)⟩
-    · rw [scw, keepW' hp (by decide) fr' (sc_ok' ps (by decide) (by decide)) (by ofs), ← scw, h₁.ok, okAll_eq,
+    refine ⟨h₁.it.kd.keep hp ps c' (by decide) fr' (by ofsd), hb.1, by rw [hc, v]; rfl, (fun e => by rw [hc] at e; cases e),
+      ?_, fun _ _ => ⟨?_, h₁.fh.keep hp ps (by decide) fr' (by simp only [nS]; omega) (by ofsd),
+        h₁.ct_keep hp ps (by decide) fr' (by ofsd)⟩, (fun e => by rw [hb.2.1] at e; cases e)⟩
+    · rw [scw, keepW' hp (by decide) fr' (sc_ok' ps (by decide) (by decide)) (by ofsd), ← scw, h₁.ok, okAll_eq,
         hb.2.1, Bool.true_and]
-    · exact (h₁.fy.keep hp ps (by decide) fr' (by simp only [nS, yB]; omega) (by ofs)).congr fun j hj => zY_lt hj
+    · exact (h₁.fy.keep hp ps (by decide) fr' (by simp only [nS, yB]; omega) (by ofsd)).congr fun j hj => zY_lt hj
   · refine blk_piece (fun _ _ _ h => h.1.choose_spec.2.1) (fun s₀ s₁ hp h => ?_) rfl
     obtain ⟨⟨s, ha, c₁, m₁⟩, hb⟩ := h
     have h₁ := ha.1.ofMem hp ps c₁ m₁
@@ -685,11 +685,11 @@ theorem checksEnd_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
     refine wp_stsc hp c₃ (sc_ok ps (by decide) (by decide)) fun s' c' g' m' => WP.block_nil_iff.mpr ?_
     have fr : Frame (FR s₀ [sc oKAP 4] 80) s₁.mem s'.mem := fr0 hp (by decide) (by
       rw [m', o.mem]; exact frW32 (Y := Y p))
-    refine ⟨h₁.it.kd.keep hp ps c' (by decide) fr (by ofs), ha.2.1, ?_, fun _ => ?_, ?_,
+    refine ⟨h₁.it.kd.keep hp ps c' (by decide) fr (by ofsd), ha.2.1, ?_, fun _ => ?_, ?_,
       (fun _ e => absurd e hpass), (fun e => by rw [ha.2.2] at e; cases e)⟩
-    · rw [hc, scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofs), ← scw, h₁.it.cnt]; rfl
+    · rw [hc, scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd), ← scw, h₁.it.cnt]; rfl
     · rw [scw, m', Mem.readW_writeW_self32, v₃, v₂, h₁.it.kap, ← BitVec.ofNat_add, Nat.mul_succ]
-    · rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofs), ← scw, h₁.ok, okAll_eq,
+    · rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd), ← scw, h₁.ok, okAll_eq,
         decide_eq_false hpass, Bool.and_false]
 
 /-! ## The checks -/
@@ -703,8 +703,8 @@ theorem checks_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
   let φ : State → Prop := fun s₀ => Run p F t s₀ ∧ F.ballF p.τ (CTv p s₀ (p.ℓ * t)) = true
   unfold checks
   refine Piece.seq (B := fun s₀ s => (CC p t s₀ s ∧ PolyIs s.mem (Buf.addr s₀ cP) (chF (Cv p s₀ (p.ℓ * t)))) ∧ φ s₀)
-    ((inPlace_piece (t := ntt) F.ntt (F.ok _ (by simp)) cP rfl (by ofs) (fun _ _ _ h => ⟨h.1.cc.cw.cm.it.kd.ctx, h.2.1⟩)
-      fun s₀ s s' hp h c' fr hq => ⟨h.1.cc.keep hp ps c' (by decide) fr (by ofs), by rw [h.2.2] at hq; exact hq⟩).mono
+    ((inPlace_piece (t := ntt) F.ntt (F.ok _ (by simp)) cP rfl (by ofsd) (fun _ _ _ h => ⟨h.1.cc.cw.cm.it.kd.ctx, h.2.1⟩)
+      fun s₀ s s' hp h c' fr hq => ⟨h.1.cc.keep hp ps c' (by decide) fr (by ofsd), by rw [h.2.2] at hq; exact hq⟩).mono
         (fun _ _ _ h => h) (fun _ _ _ h => h) |> sp_pure φ |>.mono (fun _ _ _ h => ⟨h, h.1.run, h.1.ball⟩)
         fun _ _ _ h => h) ?_
   refine Piece.seq (B := fun s₀ s => CS p t (zY p t 0) (fun s₀ => Wv p s₀ (p.ℓ * t)) 0

@@ -84,7 +84,7 @@ def mulAdd (lo hi a b : Reg) : List Instr :=
 def products : List Instr :=
   mulTo .r12 .r13 .r11 .r8 ++ mulAdd .r12 .r13 .rbx .r10 ++
   mulTo .r14 .r15 .r11 .r9 ++ mulAdd .r14 .r15 .rbx .r8 ++ mulAdd .r14 .r15 .rbp .r10 ++
-  [.mov .rax (.reg .rbp), .mul .r8]
+  ([.mov .rax (.reg .rbp), .mul .r8] : List Instr)
 
 /-- `h = x + 2⁶⁴ y + 2¹²⁸ h2 r0`, with its top word `t` replaced by `t mod 4`
 and `5 ⌊t / 4⌋` added to the bottom. -/
@@ -124,13 +124,13 @@ def bufAt (i : Reg) : MemOp := { base := .rdi, index := some i, disp := 56 }
 /-! ## `blocks(state = rdi, blocks = rsi, n = rdx)` -/
 
 def body : Prog isa :=
-  .block (absorb 1 ++ [.alu .add .rsi (.imm 16), .alu .sub .rcx (.imm 1)])
+  .block (absorb 1 ++ ([.alu .add .rsi (.imm 16), .alu .sub .rcx (.imm 1)] : List Instr))
 
 def blocks : Prog isa :=
-  .seq (.block (save ++ [.mov .rcx (.reg .rdx)] ++ setup ++ [.alu .test .rcx (.reg .rcx)]))
+  .seq (.block (save ++ ([.mov .rcx (.reg .rdx)] : List Instr) ++ setup ++ ([.alu .test .rcx (.reg .rcx)] : List Instr)))
   (.seq (.ite .e (.block []) (.loop body .ne))
-    (.block (reduce ++ [.store (at_ .rdi 0) .r11, .store (at_ .rdi 8) .rbx,
-      .store (at_ .rdi 16) .rbp] ++ restore)))
+    (.block (reduce ++ ([.store (at_ .rdi 0) .r11, .store (at_ .rdi 8) .rbx,
+      .store (at_ .rdi 16) .rbp] : List Instr) ++ restore)))
 
 /-! ## `update(state = rdi, count = rsi, data = rdx, len = rcx, scratch = r8)`
 
@@ -176,10 +176,10 @@ state (`setup`), and stores `h`, reduced fully. `rsi`, `rcx` and `r8`, which
 `setup` and the absorption overwrite, are kept in the state's working space
 meanwhile. -/
 def absorbBuf : List Instr :=
-  [.store (at_ .rdi 72) .rsi, .store (at_ .rdi 80) .rcx, .store (at_ .rdi 88) .r8] ++ setup ++
+  ([.store (at_ .rdi 72) .rsi, .store (at_ .rdi 80) .rcx, .store (at_ .rdi 88) .r8] : List Instr) ++ setup ++
     absorbAt .rdi 56 1 ++ reduce ++
-    [.store (at_ .rdi 0) .r11, .store (at_ .rdi 8) .rbx, .store (at_ .rdi 16) .rbp,
-      .mov .rsi (.mem (at_ .rdi 72)), .mov .rcx (.mem (at_ .rdi 80)), .mov .r8 (.mem (at_ .rdi 88))]
+    ([.store (at_ .rdi 0) .r11, .store (at_ .rdi 8) .rbx, .store (at_ .rdi 16) .rbp,
+      .mov .rsi (.mem (at_ .rdi 72)), .mov .rcx (.mem (at_ .rdi 80)), .mov .r8 (.mem (at_ .rdi 88))] : List Instr)
 
 /-- Fills the buffer with `min(16 - r12, rcx)` bytes of the data, and absorbs
 it if that fills it. -/
@@ -210,8 +210,8 @@ def rest : Prog isa :=
 
 /-- `update` up to the call. -/
 def updatePre : Prog isa :=
-  .seq (.block (saveS ++ [.mov .r12 (.reg .rsi), .alu .and .r12 (.imm 15), .mov .rsi (.reg .rdx),
-    .alu .test .r12 (.reg .r12)]))
+  .seq (.block (saveS ++ ([.mov .r12 (.reg .rsi), .alu .and .r12 (.imm 15), .mov .rsi (.reg .rdx),
+    .alu .test .r12 (.reg .r12)] : List Instr)))
   (.seq (.ite .e (.block []) fill) (.block callArgs))
 
 /-- `update` after the call. -/
@@ -236,13 +236,13 @@ def zeroLoop : Prog isa :=
 def lastBlock : Prog isa :=
   .seq (.block [.mov32 .rax (.imm 0), .mov .r12 (.reg .rdx)])
   (.seq zeroLoop
-    (.block ([.mov32 .rax (.imm 1), .store8 (bufAt .rdx) .rax] ++ absorbAt .rdi 56 0)))
+    (.block (([.mov32 .rax (.imm 1), .store8 (bufAt .rdx) .rax] : List Instr) ++ absorbAt .rdi 56 0)))
 
 def finalize : Prog isa :=
-  .seq (.block ([.mov .rcx (.reg .rdx), .mov .rdx (.reg .rsi), .alu .and .rdx (.imm 15)] ++ save ++
-    setup ++ [.alu .test .rdx (.reg .rdx)]))
+  .seq (.block (([.mov .rcx (.reg .rdx), .mov .rdx (.reg .rsi), .alu .and .rdx (.imm 15)] : List Instr) ++ save ++
+    setup ++ ([.alu .test .rdx (.reg .rdx)] : List Instr)))
   (.seq (.ite .e (.block []) lastBlock)
-    (.block (reduce ++ [.alu .add .r11 (.mem (at_ .rdi 40)), .alu .adc .rbx (.mem (at_ .rdi 48)),
-      .store (at_ .rcx 0) .r11, .store (at_ .rcx 8) .rbx] ++ restore)))
+    (.block (reduce ++ ([.alu .add .r11 (.mem (at_ .rdi 40)), .alu .adc .rbx (.mem (at_ .rdi 48)),
+      .store (at_ .rcx 0) .r11, .store (at_ .rcx 8) .rbx] : List Instr) ++ restore)))
 
 end VG.Impl.Poly1305.X86_64

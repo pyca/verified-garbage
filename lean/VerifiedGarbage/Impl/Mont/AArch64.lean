@@ -93,7 +93,7 @@ def dRegs (n : Nat) : List Reg := [.x1, .x3, .x4, .x5, .x6, .x16, .x17, .x24, .x
 registers: the difference with `m` into `dRegs n`, and selected where it did
 not borrow (the carry is set). -/
 def csubR (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
-  diffsR true ts (dRegs M.n) M.mo ++ [.sbcs .x .x2 top .x7] ++ selectsR ts (dRegs M.n)
+  diffsR true ts (dRegs M.n) M.mo ++ ([.sbcs .x .x2 top .x7] : List Instr) ++ selectsR ts (dRegs M.n)
 
 /-- `[rn + o] = ts`. -/
 def storesR (rn : Reg) : List Reg → Nat → List Instr
@@ -169,8 +169,8 @@ inductive Piece
 /-- The piece of the multiplier `x` into `x2` (`self` is `x` itself), its
 source's memory at `rm`. -/
 def Piece.code (rm x : Reg) : Piece → List Instr
-  | .lo s => s.fetch rm ++ [.mul .x .x2 x s.out]
-  | .hi s => s.fetch rm ++ [.umulh .x2 x s.out]
+  | .lo s => s.fetch rm ++ ([.mul .x .x2 x s.out] : List Instr)
+  | .hi s => s.fetch rm ++ ([.umulh .x2 x s.out] : List Instr)
   | .shl k => [.lsl .x .x2 x k]
   | .shr k => [.lsr .x .x2 x k]
   | .self => []
@@ -294,7 +294,7 @@ def prodWins (M : Mod) (i : Nat) : List Reg :=
 /-- `T += a_i [b]`: the first row straight into the cleared accumulator when
 `[b]` is in registers, else a row. -/
 def prodRow (M : Mod) (ra rb : Reg) (a b i : Nat) : List Instr :=
-  [.ldr .x .x1 ra (a + 8 * i)] ++
+  ([.ldr .x .x1 ra (a + 8 * i)] : List Instr) ++
     if i = 0 ∧ M.n ≤ 4 then rowInit .x1 ((wins M.n 0).take (M.n + 1)) (bRegs.take M.n)
     else row rb .x1 (prodWins M i) (bWords b 0 M.n)
 
@@ -308,7 +308,7 @@ def round (M : Mod) (ra rb : Reg) (a b i : Nat) : List Instr :=
     | .general => .mul .x .x1 (win M.n i 0) .x6 :: row .x0 .x1 (wins M.n i) (mWords M.mo 0 M.n)
     | .friendly ws =>
       row .x0 (win M.n i 0) (wins M.n i).tail (ws.map (fWord (firstGen ws))) ++
-        [.movz .x (win M.n i 0) 0 0]
+        ([.movz .x (win M.n i 0) 0 0] : List Instr)
 
 /-- `x7 = 0`, the words of `[rb + b]` in `bRegs` (all of them for `n ≤ 4`),
 `x6` and the accumulator cleared. -/
@@ -338,7 +338,7 @@ def top (n : Nat) : Reg := (acc n).getD n .x8
 /-- `[o] = [a] + [b] mod m`. -/
 def add (M : Mod) (o a b : Nat) : List Instr :=
   zero7 :: loads (low M.n) a ++ chain (.adds .x) (.adcs .x) (low M.n) b ++
-    [.adc .x (top M.n) .x7 .x7] ++ csubR M (low M.n) (top M.n) ++ stores (low M.n) o
+    ([.adc .x (top M.n) .x7 .x7] : List Instr) ++ csubR M (low M.n) (top M.n) ++ stores (low M.n) o
 
 /-- `ts += [mo]` masked with `x17`, word by word through `x2`. -/
 def addMasked (first : Bool) : List Reg → Nat → List Instr
@@ -350,6 +350,6 @@ def addMasked (first : Bool) : List Reg → Nat → List Instr
 `x17` of its borrow. -/
 def sub (M : Mod) (o a b : Nat) : List Instr :=
   zero7 :: loads (low M.n) a ++ chain (.subs .x) (.sbcs .x) (low M.n) b ++
-    [.sbc .x .x17 .x7 .x7] ++ addMasked true (low M.n) M.mo ++ stores (low M.n) o
+    ([.sbc .x .x17 .x7 .x7] : List Instr) ++ addMasked true (low M.n) M.mo ++ stores (low M.n) o
 
 end VG.Impl.Mont.AArch64

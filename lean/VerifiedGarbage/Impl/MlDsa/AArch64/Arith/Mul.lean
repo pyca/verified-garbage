@@ -23,14 +23,14 @@ def step3 : List Instr :=
 def mulHead : List Instr := [.ldr .w .x13 .x1 0, .ldr .w .x14 .x2 0, .mul .x .x13 .x13 .x14]
 
 /-- `f[i] · g[i] + h[i]`, in `x13`. -/
-def mulAddHead : List Instr := mulHead ++ [.ldr .w .x14 .x0 0, .add .x .x13 .x13 .x14]
+def mulAddHead : List Instr := mulHead ++ ([.ldr .w .x14 .x0 0, .add .x .x13 .x13 .x14] : List Instr)
 
-def mulBody : List Instr := mulHead ++ reduce .x13 .x14 ++ [.str .w .x13 .x0 0] ++ step3
+def mulBody : List Instr := mulHead ++ reduce .x13 .x14 ++ ([.str .w .x13 .x0 0] : List Instr) ++ step3
 
-def mulAddBody : List Instr := mulAddHead ++ reduce .x13 .x14 ++ [.str .w .x13 .x0 0] ++ step3
+def mulAddBody : List Instr := mulAddHead ++ reduce .x13 .x14 ++ ([.str .w .x13 .x0 0] : List Instr) ++ step3
 
 /-- The constants, and 256 in `x12`. -/
-def mulPro : List Instr := consts ++ [.movz .x .x12 256 0]
+def mulPro : List Instr := consts ++ ([.movz .x .x12 256 0] : List Instr)
 
 def mul : Prog isa := .seq (.block mulPro) (.loop (.block mulBody) (.nonzero .x .x12))
 

@@ -112,7 +112,7 @@ def stSrc (k : Nat) : List Instr :=
   else [.ldr .r12 .r1 (4 * (k - 13))]
 
 /-- Word `k` of the ChaCha20 state, at `r7 + stOff + 4k`. -/
-def stW (k : Nat) : List Instr := stSrc k ++ [.str .r12 .r7 (stOff + 4 * k)]
+def stW (k : Nat) : List Instr := stSrc k ++ ([.str .r12 .r7 (stOff + 4 * k)] : List Instr)
 
 /-- The ChaCha20 state for counter 0. -/
 def initState : List Instr := (List.range 16).flatMap stW
@@ -189,9 +189,9 @@ state (`r0`), the length of the message in `r2:r3`, and `out` (`r1`, which
 (`r12`) to push. -/
 def finalizeArgs (out : Instr) : List Instr :=
   ceil16 .r2 .r3 .r9 ++ ceil16 .r0 .r1 .r11 ++
-  [.dp .add .r2 .r2 (.reg .r0), .dp .add .r2 .r2 (.imm 1), .mov .r3 (.shifted .r2 .lsr 28),
+  ([.dp .add .r2 .r2 (.reg .r0), .dp .add .r2 .r2 (.imm 1), .mov .r3 (.shifted .r2 .lsr 28),
    .mov .r2 (.shifted .r2 .lsl 4), .mov .r0 (.reg .r7),
-   out, .dp .add .r12 .r7 (.imm (BitVec.ofNat 32 scrOff))]
+   out, .dp .add .r12 .r7 (.imm (BitVec.ofNat 32 scrOff))] : List Instr)
 
 /-- The tag computed: `out` and `scratch` pushed as the stack arguments. -/
 def finalize : Prog isa :=
@@ -235,12 +235,12 @@ def openMain : Prog isa :=
 `tag`, loaded into `r3`), else 0, without a branch: with `x` the OR of the
 XORs of their words, `(x | -x) >> 31` is 0 if `x = 0` and 1 otherwise. -/
 def compare : List Instr :=
-  [.ldrSp .r3 8, .ldr .r0 .r7 tagOff, .ldr .r1 .r3 0, .dp .eor .r0 .r0 (.reg .r1)] ++
+  ([.ldrSp .r3 8, .ldr .r0 .r7 tagOff, .ldr .r1 .r3 0, .dp .eor .r0 .r0 (.reg .r1)] : List Instr) ++
   (List.range 3).flatMap (fun i =>
     [.ldr .r1 .r7 (tagOff + 4 * (i + 1)), .ldr .r2 .r3 (4 * (i + 1)),
      .dp .eor .r1 .r1 (.reg .r2), .dp .orr .r0 .r0 (.reg .r1)]) ++
-  [.mov .r1 (.imm 0), .dp .sub .r1 .r1 (.reg .r0), .dp .orr .r0 .r0 (.reg .r1),
-   .mov .r0 (.shifted .r0 .lsr 31), .mov .r1 (.imm 1), .dp .sub .r0 .r1 (.reg .r0)]
+  ([.mov .r1 (.imm 0), .dp .sub .r1 .r1 (.reg .r0), .dp .orr .r0 .r0 (.reg .r1),
+   .mov .r0 (.shifted .r0 .lsr 31), .mov .r1 (.imm 1), .dp .sub .r0 .r1 (.reg .r0)] : List Instr)
 
 /-- The data decrypted, the tags compared, and the registers restored. -/
 def openEnd : Prog isa := .seq crypt (.block (compare ++ restore))

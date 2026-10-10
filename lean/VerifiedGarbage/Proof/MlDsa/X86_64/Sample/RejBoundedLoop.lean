@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
 import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejBounded
 import VerifiedGarbage.Proof.MlDsa.Sample.RejBounded
@@ -68,11 +69,11 @@ theorem rbVal_ok {η : Nat} (hη : η = 2 ∨ η = 4) (s : State) :
       (s'.gpr .r8 = BitVec.setWidth 64 (rbF η ((s.gpr .rdx).setWidth 32)) ∧ s'.mem = s.mem) ∧
         Keep [.rdx, .r8] s s' := by
   rcases hη with rfl | rfl
-  · refine WP.keep _ ?_ (by decide)
+  · refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
     simp only [rbVal, csub, etaSub, List.cons_append, List.nil_append]
     xrun
     all_goals rfl
-  · refine WP.keep _ ?_ (by decide)
+  · refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
     simp only [rbVal, etaSub]
     xrun
     all_goals rfl
@@ -120,7 +121,7 @@ theorem rbLoad_ok (s : State) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 1) :
         (s'.gpr .rdx).setWidth 32 = BitVec.ofNat 32 ((s.mem (s.gpr .rsi)).toNat % 16) ∧
         s'.cf = some (decide ((s.gpr .rdi).toNat < 256)) ∧ s'.mem = s.mem ∧ s'.gpr .rdi = s.gpr .rdi) ∧
       Keep [.rax, .rdx, .rdi] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   unfold rbLoad
   xrun [h0, sx256, show (256 : BitVec 64).toNat = 256 from rfl]
   apply BitVec.eq_of_toNat_eq
@@ -132,7 +133,7 @@ theorem rbHi_ok (s : State) {z : Byte} (hax : s.gpr .rax = BitVec.setWidth 64 z)
       ((s'.gpr .rdx).setWidth 32 = BitVec.ofNat 32 (z.toNat / 16) ∧
         s'.cf = some (decide ((s.gpr .rdi).toNat < 256)) ∧ s'.mem = s.mem ∧ s'.gpr .rdi = s.gpr .rdi) ∧
       Keep [.rax, .rdx, .rdi] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   unfold rbHi
   xrun [hax, sx256, show (256 : BitVec 64).toNat = 256 from rfl]
   apply BitVec.eq_of_toNat_eq

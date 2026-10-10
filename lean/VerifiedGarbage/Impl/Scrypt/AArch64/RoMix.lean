@@ -62,7 +62,7 @@ def rmSetup : List Instr :=
 
 /-- `vg_scrypt_blockmix(src, r, dst = b, r, scratch)`. -/
 def blockMixTo (blockMix : Prog isa) (src : List Instr) : Prog isa :=
-  .seq (.block (src ++ [.lsr .x .x1 .x22 7, mov .x2 .x19, mov .x3 .x1, mov .x4 .x21]))
+  .seq (.block (src ++ ([.lsr .x .x1 .x22 7, mov .x2 .x19, mov .x3 .x1, mov .x4 .x21] : List Instr)))
     (.call "vg_scrypt_blockmix" blockMix)
 
 /-- Step 2, once: `V[i] = X`, `X = scryptBlockMix (V[i])`. -/

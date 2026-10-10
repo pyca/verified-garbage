@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Camellia.X86_64.ExpandKey
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Camellia.X86_64.Lit
 
 /-!
 # The Camellia key schedule on x86-64 meets its contracts
@@ -18,7 +19,7 @@ open VG VG.X86_64 VG.Impl.Camellia.X86_64
 theorem expandKey_correct (s : State) (hs : expandKeyX86_64.pre s) :
     ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ expandKeyX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hpost⟩ := expandKey_wp hs
-  exact ⟨t, s', he, abiPreserved_of_exec (c := expandKey) (by decide +kernel) he hg, hpost⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (c := expandKey) (by lit_decide) he hg, hpost⟩
 
 /-- A state satisfying the precondition (a key of 16 bytes). -/
 def expandKeySat : State where
@@ -64,7 +65,7 @@ theorem expandKey_framed :
     (n := 393) (pre := Spec.Camellia.expandKeyPre X86_64.abi.ptrBits)
     (post := Spec.Camellia.expandKeyPost X86_64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 3152) (by rw [← Proof.Camellia.expandKeyScratchContract_eq]; exact expandKey_verified)
-    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by decide +kernel))
-    (by decide +kernel) (by decide) (Proof.Camellia.expandKeyPostOut_local _) expandKeyFrameSat_pre
+    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    (by lit_decide) (by decide) (Proof.Camellia.expandKeyPostOut_local _) expandKeyFrameSat_pre
 
 end VG.Proof.Camellia.X86_64

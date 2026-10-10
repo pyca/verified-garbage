@@ -38,7 +38,7 @@ def mOut (o : Nat) : Prop := ¬ inR hashR o
 theorem mOut_iff (o : Nat) : mOut o ↔ o < oSt ∨ (oDig + 64 ≤ o ∧ o < oCtr) ∨ (oCtr + 4 ≤ o ∧ o < oW) ∨
     oW + 2048 ≤ o := by
   simp only [mOut, hashR, inR_cons, inR_nil, or_false, oSt, oDig, oCtr, oW]
-  omega
+  omega_using []
 
 /-- `src` and `dst`, below the hash functions' ranges and apart. -/
 structure MFit (src srcLen dst dstLen : Nat) : Prop where
@@ -58,8 +58,8 @@ structure MArgs (W : Nat → BitVec 64) (S : Addr) (src srcLen dst dstLen : Nat)
 theorem MArgs.of_eq {W W' : Nat → BitVec 64} {S : Addr} {src srcLen dst dstLen : Nat}
     (h : MArgs W S src srcLen dst dstLen) (hW : ∀ k, 15 ≤ k → k ≤ 18 → W' k = W k) :
     MArgs W' S src srcLen dst dstLen :=
-  ⟨(hW 15 (by omega) (by omega)).trans h.hsrc, (hW 16 (by omega) (by omega)).trans h.hsl,
-    (hW 17 (by omega) (by omega)).trans h.hdst, (hW 18 (by omega) (by omega)).trans h.hdl⟩
+  ⟨(hW 15 (by omega_using []) (by omega_using [])).trans h.hsrc, (hW 16 (by omega_using []) (by omega_using [])).trans h.hsl,
+    (hW 17 (by omega_using []) (by omega_using [])).trans h.hdst, (hW 18 (by omega_using []) (by omega_using [])).trans h.hdl⟩
 
 /-- A slot, read through `Rep`. -/
 theorem Rep.slot {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep m F S V W) {d k : Nat}
@@ -122,9 +122,9 @@ theorem updCtr_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
       VG.Proof.MlKem.X86_64.sx_ofNat (show oCtr < 2 ^ 31 by decide),
       VG.Proof.MlKem.X86_64.sx_ofNat (show oW < 2 ^ 31 by decide),
       L.sst8 (d := oCtr + 3) (by decide), L.sst8 (d := oCtr + 2) (by decide), L.sst8 (d := oCtr + 1) (by decide),
-      L.sst8 (d := oCtr) (by decide), trunc_ofNat, shr_ofNat 8 (show c < 2 ^ 64 by omega),
-      shr_ofNat 8 (show c / 2 ^ 8 < 2 ^ 64 by omega), shr_ofNat 8 (show c / 2 ^ 8 / 2 ^ 8 < 2 ^ 64 by omega),
-      zx32 (show 4 < 2 ^ 32 by omega), show off S oCtr + 0 = off S oCtr from BitVec.add_zero _]
+      L.sst8 (d := oCtr) (by decide), trunc_ofNat, shr_ofNat 8 (show c < 2 ^ 64 by omega_using [hc32]),
+      shr_ofNat 8 (show c / 2 ^ 8 < 2 ^ 64 by omega_using [hc32]), shr_ofNat 8 (show c / 2 ^ 8 / 2 ^ 8 < 2 ^ 64 by omega_using [hc32]),
+      zx32 (show 4 < 2 ^ 32 by omega_using []), show off S oCtr + 0 = off S oCtr from BitVec.add_zero _]
     have w14 : W 14 = S := (R.rd 14 rfl (by decide)).symm.trans hs
     simp only [show S + BitVec.ofNat 64 oCtr = off S oCtr from rfl, R1.slot (d := sScr) (k := 14) rfl (by decide) w14,
       R1.slot (d := sSrcLen) (k := 16) rfl (by decide) hl]
@@ -138,12 +138,12 @@ theorem updCtr_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
     have e3 : c / 2 ^ 8 = c / 256 ^ 1 := rfl
     simp only [upd, ctrV, Spec.Rsa.i2osp, List.getD_eq_getElem?_getD, List.getElem?_map]
     rcases (show x = oCtr ∨ x = oCtr + 1 ∨ x = oCtr + 2 ∨ x = oCtr + 3 ∨
-        ¬(oCtr ≤ x ∧ x < oCtr + 4) by omega) with h | h | h | h | h
+        ¬(oCtr ≤ x ∧ x < oCtr + 4) by omega_using []) with h | h | h | h | h
     · subst h; simp [e1]
     · subst h; simp [e2]
     · subst h; simp [e3]
     · subst h; simp
-    · rw [ifn h, ifn (by omega), ifn (by omega), ifn (by omega), ifn (by omega)]
+    · rw [ifn h, ifn (by omega_using [h]), ifn (by omega_using [h]), ifn (by omega_using [h]), ifn (by omega_using [h])]
 
 theorem finA_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {srcLen : Nat} (hl : W 16 = BitVec.ofNat 64 srcLen) :
@@ -183,22 +183,22 @@ theorem xorOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
       L.ld (d := sDst) (by decide), L.ld (d := sDone) (by decide), L.ld (d := sDstLen) (by decide),
       R.slot (d := sDst) (k := 17) rfl (by decide) he, R.slot (d := sDstLen) (k := 18) rfl (by decide) hdb,
       R.slot (d := sDone) (k := 20) rfl (by decide) hdn,
-      VG.Offset.ofNat_sub_ofNat (show done ≤ dstLen by omega), zx32 (show G.D < 2 ^ 32 by omega), off_plus]
-    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+      VG.Offset.ofNat_sub_ofNat (show done ≤ dstLen by omega_using [hlt]), zx32 (show G.D < 2 ^ 32 by omega_using [hDF]), off_plus]
+    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hfit, c1]), Nat.mod_eq_of_lt (by omega_using [hDF])]
   have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
   have Rv : Rep v.mem F S V W := hm ▸ R
-  have hmin : 0 < min G.D (dstLen - done) := by omega
+  have hmin : 0 < min G.D (dstLen - done) := by omega_using [hD, hlt]
   refine WP.seq (WP.mono (Q := fun (w : State) => Keep [.r10] v w ∧ w.mem = v.mem ∧
       w.gpr .r10 = BitVec.ofNat 64 (min G.D (dstLen - done))) ?_ fun w ⟨kw, hmw, h10⟩ => ?_)
   · refine WP.ite (M := isa) _ (show isa.eval .b v = _ from h₅) (fun hb => ?_) (fun hb => ?_)
     · rw [decide_eq_true_eq] at hb
       refine WP.mono (WP.keep [.r10] (Q := fun w => w.mem = v.mem ∧ w.gpr .r10 = BitVec.ofNat 64 (dstLen - done))
-        ?_ rfl) fun w ⟨⟨hm', h'⟩, k'⟩ => ⟨k', hm', by rw [h', Nat.min_eq_right (by omega)]⟩
+        ?_ rfl) fun w ⟨⟨hm', h'⟩, k'⟩ => ⟨k', hm', by rw [h', Nat.min_eq_right (by omega_using [hb])]⟩
       xrun [h₃]
     · rw [decide_eq_false_iff_not] at hb
       refine WP.mono (WP.keep [] (Q := fun w => w = v) ?_ rfl) fun w ⟨hw, _⟩ => ?_
       · xrun
-      · subst hw; exact ⟨Keep.refl _ _, rfl, by rw [h₄, Nat.min_eq_left (by omega)]⟩
+      · subst hw; exact ⟨Keep.refl _ _, rfl, by rw [h₄, Nat.min_eq_left (by omega_using [hb])]⟩
   have Lw : Lay w F S := Lv.congr (kw.gpr (by decide)) kw.2.2 (by rw [hmw])
   have Rw : Rep w.mem F S V W := hmw ▸ Rv
   refine WP.seq (WP.mono (WP.keep [.r8] (Q := fun x => x.gpr .r8 = BitVec.ofNat 64 0 ∧ x.mem = w.mem) ?_ rfl)
@@ -208,8 +208,8 @@ theorem xorOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
   have Rx : Rep x.mem F S V W := hmx ▸ Rw
   have kvx := kw.trans kx
   refine WP.mono (xor_ok Lx Rx (a := oDig) (b := dst + done) (n := min G.D (dstLen - done))
-    (stepR_ok (by omega) x (show Reg.r10 ∉ [Reg.rax, .rdx, .r8] by decide) (by decide)
-      ((kx.gpr (by decide)).trans h10)) hmin (by unfold oRsa; omega) (by unfold oRsa; omega) (by omega)
+    (stepR_ok (by omega_using [hDF]) x (show Reg.r10 ∉ [Reg.rax, .rdx, .r8] by decide) (by decide)
+      ((kx.gpr (by decide)).trans h10)) hmin (by unfold oRsa; omega_using [hDF, c3]) (by unfold oRsa; omega_using [hfit, c1, hmin]) (by omega_using [hfit, c1, c3])
     ((kvx.gpr (by decide)).trans h₁) ((kvx.gpr (by decide)).trans h₂) h8)
     fun y ⟨Ly, ky, Ry⟩ => ⟨Ly, ?_, Ry⟩
   exact (hk.trans (kvx.trans ky)).mono (by decide)
@@ -241,7 +241,7 @@ theorem nextCtr_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
       L.ld (d := sDstLen) (by decide), L.st (d := sCtr) (by decide), L.st (d := sDone) (by decide),
       R.slot (d := sCtr) (k := 19) rfl (by decide) hc, h20, h18,
       ofNat_add_lit, VG.Proof.MlKem.X86_64.sx_ofNat hD, BitVec.ofNat_add_ofNat]
-    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hd']), Nat.mod_eq_of_lt (by omega_using [hdb'])]
   · refine L.congr (hk.gpr (by decide)) hk.2.2 ?_
     have h1 := R2.fr 14 (by decide)
     rw [← hm] at h1
@@ -300,10 +300,10 @@ theorem round_ok {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x)
   have hdb := hf.dstB
   have hcD : c ≤ c * G.D := Nat.le_mul_of_pos_right c hzD
   obtain ⟨V1, W1, R1, h19, h20, hW, hV⟩ := I.rep
-  have A1 : MArgs W1 S src srcLen dst dstLen := A.of_eq fun k h1 h2 => hW k (by unfold nW frameBytes; omega)
-    (by omega) (by omega)
+  have A1 : MArgs W1 S src srcLen dst dstLen := A.of_eq fun k h1 h2 => hW k (by unfold nW frameBytes; omega_using [h2])
+    (by omega_using [h2]) (by omega_using [h2])
   have hsrc1 : ∀ i < srcLen, V1 (src + i) = V (src + i) := fun i hi => by
-    rw [hV _ (by omega) ((mOut_iff _).mpr (by omega)), mixV, ifn (by omega)]
+    rw [hV _ (by omega_using [c1, c5, hfs, hi]) ((mOut_iff _).mpr (by omega_using [hfs, hi])), mixV, ifn (by omega_using [hsep, hi])]
   unfold round seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs
   -- `init`.
   refine WP.seq (WP.mono (scr_ok I.L (d := .rdi) (by decide) (o := oSt) (by decide)) fun u1 ⟨hdi1, hm1, k1⟩ => ?_)
@@ -316,17 +316,21 @@ theorem round_ok {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x)
   have L3 : Lay u3 F S := L2.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
   have R3 : Rep u3.mem F S V2 W1 := hm3 ▸ R2
   have hr3 : hG.SH.Repr u3.mem (off S oSt) [] := hm3 ▸ hr2
-  refine WP.seq (WP.mono (upd_ok hG L3 R3 (a := src) (len := srcLen) (by omega) (by omega) (by omega)
+  refine WP.seq (WP.mono (upd_ok hG L3 R3 (a := src) (len := srcLen) (by omega_using [c1, c5, hfs])
+      (by omega_using [hfs]) (by omega_using [c1, c4, hfs])
     hdi3 hdx3 hcx3 h83) fun u4 ⟨L4, rd4, wr4, cs4, R4, hr4⟩ => ?_)
   have hR4 := hr4 [] hr3 (by rw [hsi3]; rfl)
   obtain ⟨V4, R4, hV4, hV4'⟩ := Rep.ex R4
   -- The counter, and `update` with it.
-  refine WP.seq (WP.mono (updCtr_ok L4 R4 A1.hsl h19 (by omega)) fun u5 ⟨L5, hdi5, hsi5, hdx5, hcx5, h85, k5, R5⟩ => ?_)
+  refine WP.seq (WP.mono (updCtr_ok L4 R4 A1.hsl h19 (by omega_using [hc, hdb, hcD])) fun u5 ⟨L5, hdi5, hsi5, hdx5,
+      hcx5, h85, k5, R5⟩ => ?_)
   have hst5 : ∀ i < G.S, u5.mem (off S oSt + BitVec.ofNat 64 i) = u4.mem (off S oSt + BitVec.ofNat 64 i) :=
     fun i hi => by
-      rw [off_plus, R5.scr _ (by omega), R4.scr _ (by omega), ctrV, ifn (by omega)]
+      rw [off_plus, R5.scr _ (by omega_using [hzS, c1, c5, hi]), R4.scr _ (by omega_using [hzS, c1, c5, hi]), ctrV,
+          ifn (by omega_using [hzS, c1, c3, hi])]
   have hR5 := hG.repr _ _ _ _ _ hst5 hR4
-  refine WP.seq (WP.mono (upd_ok hG L5 R5 (a := oCtr) (len := 4) (by omega) (by omega) (by omega)
+  refine WP.seq (WP.mono (upd_ok hG L5 R5 (a := oCtr) (len := 4) (by omega_using [c3, c5])
+      (by omega_using [hzS, c1, c3]) (by omega_using [c3, c4])
     hdi5 hdx5 hcx5 h85) fun u6 ⟨L6, rd6, wr6, cs6, R6, hr6⟩ => ?_)
   have hR6 : hG.SH.Repr u6.mem (off S oSt) (srcB V src srcLen ++ Spec.Rsa.i2osp c 4) := repr_congr ?msg
     (hr6 _ hR5 (by rw [hsi5, List.nil_append, List.length_map, List.length_range]))
@@ -335,29 +339,30 @@ theorem round_ok {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x)
     refine (congrArg (· ++ _) ?_).trans (congrArg (_ ++ ·) ?_)
     · refine List.map_congr_left fun i hi => ?_
       have := List.mem_range.mp hi
-      rw [hV2 _ (by simp only [inR_cons, inR_nil, or_false]; omega), hsrc1 i this]
+      rw [hV2 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hfs, this]), hsrc1 i this]
     · refine (List.map_congr_left fun i hi => ?_).trans ((range_map_getD (n := 4) (xs := Spec.Rsa.i2osp c 4)
         (by rw [Proof.Mgf1.i2osp_length])).trans (List.take_of_length_le (by rw [Proof.Mgf1.i2osp_length])))
       have := List.mem_range.mp hi
-      rw [ctrV, ifp (by omega), Nat.add_sub_cancel_left]
+      rw [ctrV, ifp (by omega_using [this]), Nat.add_sub_cancel_left]
   obtain ⟨V6, R6, hV6, -⟩ := Rep.ex R6
   -- `finalize`.
   refine WP.seq (WP.mono (finA_ok L6 R6 A1.hsl) fun u7 ⟨hdi7, hsi7, hdx7, hcx7, hm7, k7⟩ => ?_)
   have L7 : Lay u7 F S := L6.congr (k7.gpr (by decide)) k7.2.2 (by rw [hm7])
   have R7 : Rep u7.mem F S V6 W1 := hm7 ▸ R6
   have hR7 : hG.SH.Repr u7.mem (off S oSt) (srcB V src srcLen ++ Spec.Rsa.i2osp c 4) := hm7 ▸ hR6
-  refine WP.seq (WP.mono (fin_ok hG L7 R7 (o := oDig) (by omega) hdi7 hdx7 hcx7)
+  refine WP.seq (WP.mono (fin_ok hG L7 R7 (o := oDig) (by omega_using [c1, c2, c4]) hdi7 hdx7 hcx7)
     fun u8 ⟨L8, rd8, wr8, cs8, R8, hr8⟩ => ?_)
   have hml : (srcB V src srcLen ++ Spec.Rsa.i2osp c 4).length = srcLen + 4 := by
     rw [List.length_append, srcB, List.length_map, List.length_range, Proof.Mgf1.i2osp_length]
-  have hdig := hr8 _ hR7 (by rw [hml]; omega) (by rw [hsi7, hml])
+  have hdig := hr8 _ hR7 (by rw [hml]; omega_using [c1, hfs]) (by rw [hsi7, hml])
   obtain ⟨V8, R8, hV8, hV8'⟩ := Rep.ex R8
   -- Into `dst`.
   have hlt : c * G.D < dstLen := hc
-  refine WP.seq (WP.mono (xorOut_ok L8 R8 (dst := dst) (dstLen := dstLen) (done := c * G.D) hfd hzD (by omega)
+  refine WP.seq (WP.mono (xorOut_ok L8 R8 (dst := dst) (dstLen := dstLen) (done := c * G.D) hfd hzD (by omega_using [hzF, hzDF])
     A1.hdst A1.hdl h20 hlt) fun u9 ⟨L9, k9, R9⟩ => ?_)
   -- The next counter.
-  refine WP.mono (nextCtr_ok L9 R9 h19 h20 A1.hdl (by omega) (by omega) (by omega)) fun u10 ⟨L10, k10, cf10, R10⟩ => ?_
+  refine WP.mono (nextCtr_ok L9 R9 h19 h20 A1.hdl (by omega_using [hzF, hzDF, hdb, hlt]) (by omega_using [hdb])
+      (by omega_using [hzF, hzDF])) fun u10 ⟨L10, k10, cf10, R10⟩ => ?_
   have hs1 : (c + 1) * G.D = c * G.D + G.D := Nat.succ_mul _ _
   refine ⟨by rw [cf10, hs1], L10, ?_, ?_, ?_, _, _, R10, by simp [upd], by simp [upd, hs1], ?_, ?_⟩
   · rw [k10.2.1, k9.2.1, rd8, k7.2.1, rd6, k5.2.1, rd4, k3.2.1, rd2, k1.2.1, I.rd]
@@ -373,27 +378,28 @@ theorem round_ok {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x)
     have hold : ∀ x, mOut x → V8 x = V1 x := by
       intro x hx
       have := (mOut_iff x).mp hx
-      rw [hV8 _ (by simp only [inR_cons, inR_nil, or_false]; omega),
-        hV6 _ (by simp only [inR_cons, inR_nil, or_false]; omega), ctrV, ifn (by omega),
-        hV4 _ (by simp only [inR_cons, inR_nil, or_false]; omega),
-        hV2 _ (by simp only [inR_cons, inR_nil, or_false]; omega)]
+      rw [hV8 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, hzF, hzW, c1, c2, c3, c4, this]),
+        hV6 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, hzW, c1, c2, c3, c4, this]), ctrV,
+            ifn (by omega_using [c1, c3, c4, this]),
+        hV4 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, hzW, c1, c2, c3, c4, this]),
+        hV2 _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzS, c1, c2, c3, c4, this])]
     have hdg : ∀ j < G.D, V8 (oDig + j) = (Gs.hash (srcB V src srcLen ++ Spec.Rsa.i2osp c 4)).getD j 0 :=
       fun j hj => by
-        rw [hV8' _ (by simp only [inR_cons, inR_nil, or_false]; omega), hdig j hj, hGh]
+        rw [hV8' _ (by simp only [inR_cons, inR_nil, or_false]; omega_using [hzDF, hj]), hdig j hj, hGh]
     simp only [xorV]
     by_cases hx : dst + c * G.D ≤ o ∧ o < dst + c * G.D + min G.D (dstLen - c * G.D)
     · have hq : (o - dst) / G.D = c :=
-        Nat.div_eq_of_lt_le (by omega) (by omega)
+        Nat.div_eq_of_lt_le (by omega_using [hx]) (by omega_using [hs1, hx])
       have hr : (o - dst) % G.D = o - (dst + c * G.D) := by
-        rw [Nat.mod_eq_sub_mul_div, hq, Nat.mul_comm]; omega
+        rw [Nat.mod_eq_sub_mul_div, hq, Nat.mul_comm]; omega_using []
       rw [ifp hx, hold o hmo, hV o ho hmo, mixV, mixV,
-        ifn (show ¬ (dst ≤ o ∧ o < dst + min (c * G.D) dstLen) by omega),
-        ifp (show dst ≤ o ∧ o < dst + min ((c + 1) * G.D) dstLen by omega), hdg _ (by omega),
-        Proof.Mgf1.mgf1_getD hGv _ (show o - dst < dstLen by omega), hGl, hq, hr]
+        ifn (show ¬ (dst ≤ o ∧ o < dst + min (c * G.D) dstLen) by omega_using [hx]),
+        ifp (show dst ≤ o ∧ o < dst + min ((c + 1) * G.D) dstLen by omega_using [hs1, hx]), hdg _ (by omega_using [hx]),
+        Proof.Mgf1.mgf1_getD hGv _ (show o - dst < dstLen by omega_using [hx]), hGl, hq, hr]
     · rw [ifn hx, hold o hmo, hV o ho hmo, mixV, mixV]
       by_cases hy : dst ≤ o ∧ o < dst + min (c * G.D) dstLen
-      · rw [ifp hy, ifp (by omega)]
-      · rw [ifn hy, ifn (by omega)]
+      · rw [ifp hy, ifp (by omega_using [hs1, hy])]
+      · rw [ifn hy, ifn (by omega_using [hs1, hx, hy])]
 
 /-! ## MGF1 -/
 
@@ -414,7 +420,7 @@ theorem mgfHead_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
     rw [slot_eq sScr 14 rfl, slot_eq sScr 14 rfl, R2'.fr 14 (by decide), R.fr 14 (by decide)]; simp [upd])
   exact ⟨Lv, hk.2.1, hk.2.2, keep_cs' hk (cs_disj _ (by decide)), _, _, R2', by simp [upd], by simp [upd],
     fun k _ h1 h2 => by simp only [upd, ifn h2, ifn h1],
-    fun o _ _ => by simp only [mixV, Nat.zero_mul, Nat.zero_min, Nat.add_zero]; rw [ifn (by omega)]⟩
+    fun o _ _ => by simp only [mixV, Nat.zero_mul, Nat.zero_min, Nat.add_zero]; rw [ifn (by omega_using [])]⟩
 
 include hG in
 /-- `dst ⊕= MGF1(src, dstLen)`. -/
@@ -431,16 +437,16 @@ theorem mgfXor_ok {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x
     fun v I0 => ?_)
   refine WP.loop (M := isa) (fun n w => ∃ c, n = dstLen - c * G.D ∧ c * G.D < dstLen ∧
       MgfI u F S V W (Spec.Mgf1.mgf1 Gs (srcB V src srcLen) dstLen) dst dstLen G.D c w)
-    ?_ (dstLen - 0 * G.D) v ⟨0, rfl, by omega, I0⟩
+    ?_ (dstLen - 0 * G.D) v ⟨0, rfl, by omega_using [hpos], I0⟩
   rintro n w ⟨c, rfl, hc, I⟩
   refine WP.mono (round_ok hG hGh hGl hGv hf A I hc) fun w' ⟨hcf, I'⟩ => ?_
   have hD := (sizes hG).2.2.2.2
   have hs1 : (c + 1) * G.D = c * G.D + G.D := Nat.succ_mul _ _
   by_cases h : (c + 1) * G.D < dstLen
   · refine .inr ⟨by simp only [eval, hcf, h, decide_true], _, ?_, c + 1, rfl, h, I'⟩
-    omega
+    omega_using [hD, hs1, h]
   · refine .inl ⟨by simp only [eval, hcf, h, decide_false], I'.L, I'.rd, I'.wr, I'.cs, ?_⟩
     obtain ⟨V', W', R', _, _, hW', hV'⟩ := I'.rep
-    exact ⟨V', W', R', hW', fun o ho hco => by rw [hV' o ho hco, Nat.min_eq_right (by omega)]⟩
+    exact ⟨V', W', R', hW', fun o ho hco => by rw [hV' o ho hco, Nat.min_eq_right (by omega_using [h])]⟩
 
 end VG.Proof.RsaOaep.X86_64

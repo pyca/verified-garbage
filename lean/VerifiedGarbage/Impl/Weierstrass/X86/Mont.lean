@@ -121,9 +121,9 @@ def stepsZ (acc : Nat) : Nat → List Instr
 /-- Row 0's product: the window at `[ebp + acc]` `= ecx · [esi]`, `N + 2`
 words (the top one zero). -/
 def rowZ (acc N : Nat) : List Instr :=
-  [.mov .eax (.mem (at_ .esi 0)), .mul .ecx, .store (bp acc) .eax, .mov .ebx (.reg .edx)] ++
+  ([.mov .eax (.mem (at_ .esi 0)), .mul .ecx, .store (bp acc) .eax, .mov .ebx (.reg .edx)] : List Instr) ++
     stepsZ acc (N - 1) ++
-    [.store (bp (acc + 4 * N)) .ebx, .mov .eax (.imm 0), .store (bp (acc + 4 * N + 4)) .eax]
+    ([.store (bp (acc + 4 * N)) .ebx, .mov .eax (.imm 0), .store (bp (acc + 4 * N + 4)) .eax] : List Instr)
 
 /-- `[esi + 4j]`. -/
 def bWord (j : Nat) : Src := .mem (at_ .esi (4 * j))

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Blocks
 
 /-!
@@ -118,6 +119,17 @@ macro "ofs" : tactic => do
     Y_n, Y_alen0, Y_alen1, Y_alen2, Y_alen3, Y_alen4, Y_awr0, Y_awr1, Y_awr2, Y_awr3, Y_awr4,
     oP, SC, oPS, oRS, oHIN, oMS, oCT, oW1, oST, oWK, oOK, oCNT, oKAP, oONES, skS1, skS2, skT0, sigZ, sigH, aBase, s1B, s2B, t0B, OutK, OutI, OutC, yB, yhB, wB, bMu, bRnd, bSk, bSig]
   omega_arith))
+
+/-- A check of offsets that mentions no variable but the parameter set and
+bounded indices, decided for each parameter set (`decide_at`): cheaper than
+`ofs`, which unfolds it into arithmetic on the parameters for `omega`, unless
+there are many indices to try. Each conjunct is decided on its own. -/
+macro "ofsd" : tactic => `(tactic| (
+  try dsimp only [VG.Proof.MlDsa.X86.Sign.Out, VG.Proof.MlDsa.X86.Sign.In, VG.Proof.MlDsa.X86.Sign.OutK,
+    VG.Proof.MlDsa.X86.Sign.OutI, VG.Proof.MlDsa.X86.Sign.OutC]
+  try simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true, true_implies]
+  and_intros
+  all_goals (have hmem := (‹VG.Proof.MlDsa.X86.Sign.PS _›).mem; decide_at hmem)))
 
 /-! ## Slots -/
 

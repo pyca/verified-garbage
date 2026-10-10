@@ -123,7 +123,7 @@ def finish : List Instr := (List.range 8).flatMap fun i => finishChunk (i / 4) (
 def body : Prog isa :=
   .seq (.block ((List.range 16).flatMap initChunk)) <|
   .seq rowPass <| .seq colPass <|
-  .block (finish ++ [.vop .vzeroupper])
+  .block (finish ++ ([.vop .vzeroupper] : List Instr))
 
 /-- `body` between Intel's MXCSR prologue and epilogue, those of the AVX2
 code. -/

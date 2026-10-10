@@ -1,10 +1,9 @@
-import Mathlib.Data.Fintype.Fin
-import Mathlib.Tactic.FinCases
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedGroupRun
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStage
+import VerifiedGarbage.Proof.MlDsa.Arith.Pairs
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
-open VG VG.AArch64
+open VG VG.AArch64 VG.Proof.MlDsa.Pairs
 
 def stagePairs (i : Fin 7) : List (Fin 8 × Fin 8) :=
   match i.val with
@@ -19,16 +18,35 @@ def stagePairs (i : Fin 7) : List (Fin 8 × Fin 8) :=
 theorem stagePairs_ne (i : Fin 7) : ∀p∈stagePairs i,p.1≠p.2 := by
   exact (show ∀i:Fin 7,∀p∈stagePairs i,p.1≠p.2 by decide) i
 
+theorem groupValues_eq (v : Vector (BitVec 128) 8) (z : Nat → Int) (ps : List (Fin 8 × Fin 8)) :
+    groupValues v z ps = pairsApply (fun a b => (VArr.s4.map2 (fun _ a b => a+b) a b,
+      fastVector (VArr.s4.map2 (fun _ a b => a-b) a b) z)) v ps := by
+  induction ps generalizing v with
+  | nil => rfl
+  | cons p ps ih => obtain ⟨i, j⟩ := p; exact ih _
+
+/-- Which pair of stage `i` holds each entry: a finite fact. -/
+theorem stagePairs_pairOf : ∀ i : Fin 7, ∀ k : Fin 8,
+    (entries (stagePairs i)).Nodup ∧
+    pairOf (stagePairs i) k = (if Inverse.leftSide i.val k.val ∨ Inverse.rightSide i.val k.val then
+      some (Inverse.leftSource i.val k, Inverse.rightSource i.val k) else none) ∧
+    (Inverse.leftSide i.val k.val → Inverse.leftSource i.val k = k) ∧
+    (Inverse.rightSide i.val k.val → ¬Inverse.leftSide i.val k.val ∧ Inverse.leftSource i.val k ≠ k) := by
+  decide +kernel
+
 /-- The paired in-place scheduling has the same logical bank transition as
     the already verified register-renamed inverse groups. -/
 theorem groupValues_stage (i : Fin 7) (v : Vector (BitVec 128) 8) (z : Nat → Int) :
     groupValues v z (stagePairs i)=Inverse.stageValues i.val v z := by
-  have he (i : Fin 7) (j : Fin 8) :
-      (groupValues v z (stagePairs i))[j.val]=(Inverse.stageValues i.val v z)[j.val] := by
-    fin_cases i <;> fin_cases j <;>
-      simp [stagePairs,groupValues,pairValues,Inverse.stageValues,Inverse.leftSide,
-        Inverse.rightSide,Inverse.leftSource,Inverse.rightSource,Inverse.steps]
-  exact Vector.ext fun j hj => he i ⟨j,hj⟩
+  refine Vector.ext fun k hk => ?_
+  obtain ⟨hd, hp, hl, hr⟩ := stagePairs_pairOf i ⟨k, hk⟩
+  rw [groupValues_eq, pairsApply_get _ _ hd ⟨k, hk⟩, hp]
+  simp only [Inverse.stageValues, Vector.getElem_ofFn]
+  by_cases h1 : Inverse.leftSide i.val k
+  · simp only [h1, true_or, ite_true, hl h1]
+  · by_cases h2 : Inverse.rightSide i.val k
+    · simp only [h1, h2, or_true, ite_true, ite_false, (hr h2).2]
+    · simp only [h1, h2, or_self, ite_false]
 
 open VG.Proof.MlKem.AArch64 (VChg)
 

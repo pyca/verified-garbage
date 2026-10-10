@@ -52,14 +52,14 @@ def advance : List Instr :=
    .vop (.dup .d2 .v19 .x26), .vop (.dup .d2 .v20 .x27),
    .sub .x .x26 .x27 .x28, .lsr .x .x26 .x26 63]
 
-def body : Prog isa := .seq xorBlock (.block (unrolledRounds ++ advance))
+def body : Prog isa := .seq xorBlock (.seq (.block unrolledRounds) (.block advance))
 
 /-- Store the lanes, restore the callee-saved registers, and the arguments
 `Sha3.Vector.Resident`'s caller expects (`x2 = 0`, `x5 = x1`). -/
 def finish : List Instr :=
   Boundary.store ++ Boundary.restore ++
-  [.umov .x .x0 .v30 0, .umov .x .x1 .v31 0, .umov .x .x3 .v19 0, .umov .x .x4 .v20 0,
-   .umov .x .x6 .v21 0, mov .x5 .x1, .movz .x .x2 0 0]
+  ([.umov .x .x0 .v30 0, .umov .x .x1 .v31 0, .umov .x .x3 .v19 0, .umov .x .x4 .v20 0,
+   .umov .x .x6 .v21 0, mov .x5 .x1, .movz .x .x2 0 0] : List Instr)
 
 def bulk : Prog isa := .seq (.block setup) (.seq (.loop body (.zero .x .x26)) (.block finish))
 

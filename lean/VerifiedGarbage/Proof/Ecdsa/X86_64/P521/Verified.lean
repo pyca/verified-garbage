@@ -95,6 +95,9 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p521 s := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp [h]
 
+/-- `InlineOk`, checked once for every theorem that needs it. -/
+theorem sign_inlineOk : signP521.InlineOk = true := by lit_decide
+
 theorem sign_x86 (hL : Law Spec.P521.curve)
     (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : InvSounds) (s : State)
@@ -106,7 +109,7 @@ theorem sign_x86 (hL : Law Spec.P521.curve)
     rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  have F := (Exec.regions he (Code.noCalls_inline sign_inlineOk)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
@@ -177,7 +180,7 @@ theorem sign_call_x86 (hL : Law Spec.P521.curve)
     (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : InvSounds) (s : State) (hs : signX86_64.pre s) (hc : Clear (hole (s.gpr .rsp)) s) :
     ∃ t s', Exec isa signP521 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  ok_of_inline (k := signX86_64) (by lit_decide) (sign_x86 hL hT hI)
+  ok_of_inline (k := signX86_64) sign_inlineOk (sign_x86 hL hT hI)
     (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
 theorem sign_verified (hL : Law Spec.P521.curve)
@@ -185,7 +188,7 @@ theorem sign_verified (hL : Law Spec.P521.curve)
     (hI : InvSounds) :
     Verified X86_64.target signP521
       (Spec.Ecdsa.P521.inst.signContract (X86_64.abi.withConsts p521.combConsts) 8) :=
-  Verified.of_inline_ct (by lit_decide) (sign_x86 hL hT hI) sign_ct implies8
+  Verified.of_inline_ct sign_inlineOk (sign_x86 hL hT hI) sign_ct implies8
     (fun _ h => Sig.clear_of_pre_consts h) sign_patch
 
 end VG.Proof.Ecdsa.X86_64.P521

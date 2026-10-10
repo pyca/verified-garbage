@@ -27,7 +27,7 @@ def movV (d : Reg) (v : Nat) : List Instr :=
 
 /-- `d ← b + off` (for `d ≠ b`). -/
 def lea (d b : Reg) (off : Nat) : List Instr :=
-  if off < 4096 then [.addImm .x d b off] else movV d off ++ [.add .x d b d]
+  if off < 4096 then [.addImm .x d b off] else movV d off ++ ([.add .x d b d] : List Instr)
 
 /-- An argument: a pointer, or an integer (an immediate). -/
 inductive Arg

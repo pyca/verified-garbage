@@ -106,7 +106,7 @@ theorem inputStep_run {K : BitVec 64} {s : State} (h : Room s) (hk : KeyRegs K s
     (wr_setV _ _ _).trans <| (wr_setV _ _ _).trans <| (wr_setV _ _ _).trans <|
       (wr_setV _ _ _).trans <| wr_setV _ _ _,
     (sp_setV _ _ _).trans <| (sp_setV _ _ _).trans <| (sp_setV _ _ _).trans <|
-      (sp_setV _ _ _).trans <| sp_setV _ _ _, rfl⟩
+      (sp_setV _ _ _).trans <| sp_setV _ _ _, by simp only [s₅, s₄, s₃, s₂, s₁, State.setV]⟩
   · rw [runBlock_cons, e₁, runStep_some, runBlock_cons, e₂, runStep_some, runBlock_cons, e₃,
       runStep_some, runBlock_cons, e₄, runStep_some, runBlock_cons, e₅, runStep_some, runBlock_nil]
   · have hv₁ : ∀ q < 2, vdword v₁ q = K <<< (63 - b) := by

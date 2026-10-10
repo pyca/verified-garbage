@@ -59,13 +59,14 @@ def satState (G : Spec.Mgf1.Hash) : State where
     | .x0 => 0x5000 | .x1 => 64 | .x2 => 0x1000 | .x3 => 64 | .x4 => 0x2000 | .x5 => 1 | .x6 => 0x3000
     | .x7 => 1 | _ => 0
   sp := 0x10000000000
-  mem a := if a = 0x10000000001 then 0x60 else if a = 0x10000000008 then 1
-    else if a = 0x10000000011 then 0x70 else if a = 0x10000000018 then 1
-    else if a = 0x10000000021 then 0x80 else if a = 0x10000000028 then 1
-    else if a = 0x10000000031 then 0x90 else if a = 0x10000000038 then 1
-    else if a = 0x10000000041 then 0xA0 else if a = 0x10000000049 then 0xB0
-    else if a = 0x10000000050 then 1 else if a = 0x1000000005A then 1
-    else if a = 0x10000000061 then 8 else 0
+  mem a := bif Nat.beq a.toNat 0x10000000001 then 0x60 else bif Nat.beq a.toNat 0x10000000008 then 1
+    else bif Nat.beq a.toNat 0x10000000011 then 0x70 else bif Nat.beq a.toNat 0x10000000018 then 1
+    else bif Nat.beq a.toNat 0x10000000021 then 0x80 else bif Nat.beq a.toNat 0x10000000028 then 1
+    else bif Nat.beq a.toNat 0x10000000031 then 0x90 else bif Nat.beq a.toNat 0x10000000038 then 1
+    else bif Nat.beq a.toNat 0x10000000041 then 0xA0
+    else bif Nat.beq a.toNat 0x10000000049 then 0xB0 else bif Nat.beq a.toNat 0x10000000050 then 1
+    else bif Nat.beq a.toNat 0x1000000005A then 1 else bif Nat.beq a.toNat 0x10000000061 then 8
+    else 0
   rd := [⟨0x1000, 64⟩, ⟨0x2000, 1⟩, ⟨0x3000, 1⟩, ⟨0x6000, 1⟩, ⟨0x7000, 1⟩, ⟨0x8000, 1⟩, ⟨0x9000, 1⟩,
     ⟨0xA000, G.len⟩, ⟨0xB000, 1⟩, ⟨0x10000000000, 104⟩]
   wr := [⟨0x5000, 64⟩, ⟨0x10000, 2048 * 8⟩]

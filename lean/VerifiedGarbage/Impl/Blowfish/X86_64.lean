@@ -111,7 +111,7 @@ def reduce (b : Nat) : List Instr :=
 def lookup (sch : Reg) (j : Nat) : Prog isa :=
   .seq (.block (index (3 - j) ++ loadConst kReg evenStart ++
       (List.range 4).map (fun b => bin .pxor (accReg b) (accReg b)) ++
-      [.mov32 .r8 (.imm 0), .mov32 .r9 (.imm 16)]))
+      ([.mov32 .r8 (.imm 0), .mov32 .r9 (.imm 16)] : List Instr)))
     (.seq (.loop (.block (row sch j)) .ne)
       (.block ((List.range 4).flatMap reduce ++
         [shift .pslld (accReg 1) 8, shift .pslld (accReg 2) 16, shift .pslld (accReg 3) 24,
@@ -179,7 +179,7 @@ def ecb (up : Bool) : Prog isa :=
     (.seq (.block [.alu .test .rdx (.reg .rdx)])
       (.ite .e (.block [])
         (.loop (.seq (.block loadBlock) (.seq (cipher .rdi up)
-            (.block (storeBlock ++ [.alu .add .rsi (.imm 8), .alu .sub .rdx (.imm 1)])))) .ne)))
+            (.block (storeBlock ++ ([.alu .add .rsi (.imm 8), .alu .sub .rdx (.imm 1)] : List Instr))))) .ne)))
 
 def encrypt : Prog isa := ecb true
 def decrypt : Prog isa := ecb false
@@ -223,10 +223,10 @@ def outWords : List Instr :=
 /-- The output's two words into P-array entries `rdi / 4` and `rdi / 4 + 1`. -/
 def storeP : List Instr :=
   outWords ++
-  [.mov32 .r11 (.mem (mem .rcx 0)), .xop (.movq xL .r11),
+  ([.mov32 .r11 (.mem (mem .rcx 0)), .xop (.movq xL .r11),
    .store32 { base := .rdx, index := some .rdi, disp := Int.ofNat pOff } .r11,
    .mov32 .r11 (.mem (mem .rcx 16)), .xop (.movq xR .r11),
-   .store32 { base := .rdx, index := some .rdi, disp := Int.ofNat (pOff + 4) } .r11]
+   .store32 { base := .rdx, index := some .rdi, disp := Int.ofNat (pOff + 4) } .r11] : List Instr)
 
 /-- The bytes of the word in `r11` into the planes of the S-box entry at
 `rdx + rdi + e`. -/
@@ -238,14 +238,15 @@ def storeEntry (e : Nat) : List Instr :=
 
 /-- The output's two words into the S-box entries at `rdi` and `rdi + 1`. -/
 def storeS : List Instr :=
-  outWords ++ [.mov32 .r11 (.mem (mem .rcx 0)), .xop (.movq xL .r11)] ++ storeEntry 0 ++
-    [.mov32 .r11 (.mem (mem .rcx 16)), .xop (.movq xR .r11)] ++ storeEntry 1
+  outWords ++ ([.mov32 .r11 (.mem (mem .rcx 0)), .xop (.movq xL .r11)] : List Instr) ++ storeEntry 0 ++
+    ([.mov32 .r11 (.mem (mem .rcx 16)), .xop (.movq xR .r11)] : List Instr) ++ storeEntry 1
 
 /-- The first nine encryptions replace the P-array, a pair of entries each;
 `rsi` counts them. -/
 def encryptP : Prog isa :=
   .seq (.block [.mov32 .rdi (.imm 0), .mov32 .rsi (.imm 9)])
-    (.loop (.seq (cipher .rdx true) (.block (storeP ++ [.alu .add .rdi (.imm 8), .alu .sub .rsi (.imm 1)])))
+    (.loop (.seq (cipher .rdx true) (.block (storeP ++ ([.alu .add .rdi (.imm 8),
+        .alu .sub .rsi (.imm 1)] : List Instr))))
       .ne)
 
 /-- The other 512 replace the S-boxes; `rdi` skips the other planes after
@@ -253,7 +254,7 @@ each S-box's last entry. -/
 def encryptS : Prog isa :=
   .seq (.block [.mov32 .rdi (.imm 0), .mov32 .rsi (.imm 512)])
     (.loop (.seq (cipher .rdx true)
-        (.seq (.block (storeS ++ [.alu .add .rdi (.imm 2), .alu .test .rdi (.imm 255)]))
+        (.seq (.block (storeS ++ ([.alu .add .rdi (.imm 2), .alu .test .rdi (.imm 255)] : List Instr)))
           (.seq (.ite .e (.block [.alu .add .rdi (.imm 768)]) (.block []))
             (.block [.alu .sub .rsi (.imm 1)]))))
       .ne)

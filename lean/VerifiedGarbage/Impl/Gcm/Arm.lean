@@ -86,33 +86,33 @@ def step : List Instr := [
 /-- The next byte, inverted, at the top of `x`; the 8 steps; and whether
 the block is done. -/
 def steps : List Instr :=
-  [.ldrb XR XP 0, .dp .eor XR XR (.imm 0xFF), .mov XR (.shifted XR .lsl 24),
-   .dp .add XP XP (.imm 1)] ++
-  (List.range 8).flatMap (fun _ => step) ++ [.dp .sub T XP (.reg YP), .cmp T (.imm 16)]
+  ([.ldrb XR XP 0, .dp .eor XR XR (.imm 0xFF), .mov XR (.shifted XR .lsl 24),
+   .dp .add XP XP (.imm 1)] : List Instr) ++
+  (List.range 8).flatMap (fun _ => step) ++ ([.dp .sub T XP (.reg YP), .cmp T (.imm 16)] : List Instr)
 
 /-- `Y := Y ⊕ X`, `V := H`, `Z := 0`, and `x` at the first byte. -/
 def load : List Instr :=
-  [.ldr M SB (4 * dSlot)] ++
+  ([.ldr M SB (4 * dSlot)] : List Instr) ++
   ((List.range 4).flatMap fun k =>
     [.ldr XR YP (4 * k), .ldr T M (4 * k), .dp .eor XR XR (.reg T), .str XR YP (4 * k)]) ++
-  [.ldr M SB (4 * hSlot)] ++
+  ([.ldr M SB (4 * hSlot)] : List Instr) ++
   ((List.range 4).flatMap fun k => [.ldr (V k) M (4 * k), .rev (V k) (V k)]) ++
   ((List.range 4).map fun k => .mov (Z k) (.imm 0)) ++
-  [.mov XP (.reg YP)]
+  ([.mov XP (.reg YP)] : List Instr)
 
 /-- Store `Z` as the new `Y`, advance to the next block and count it. -/
 def store : List Instr :=
   ((List.range 4).flatMap fun k => [.rev (Z k) (Z k), .str (Z k) YP (4 * k)]) ++
-  [.ldr T SB (4 * dSlot), .dp .add T T (.imm 16), .str T SB (4 * dSlot),
-   .ldr T SB (4 * nSlot), .subs T T (.imm 1), .str T SB (4 * nSlot)]
+  ([.ldr T SB (4 * dSlot), .dp .add T T (.imm 16), .str T SB (4 * dSlot),
+   .ldr T SB (4 * nSlot), .subs T T (.imm 1), .str T SB (4 * nSlot)] : List Instr)
 
 /-- One block. -/
 def body : Prog isa := .seq (.block load) (.seq (.loop (.block steps) .ne) (.block store))
 
 def ghash : Prog isa :=
-  .seq (.block ([.ldrSp SB 0] ++ savedRegs.map (fun (r, k) => .str r SB (4 * k)) ++
-      [.str .r0 SB (4 * hSlot), .str .r2 SB (4 * dSlot), .str .r3 SB (4 * nSlot),
-       .cmp .r3 (.imm 0)]))
+  .seq (.block (([.ldrSp SB 0] : List Instr) ++ savedRegs.map (fun (r, k) => .str r SB (4 * k)) ++
+      ([.str .r0 SB (4 * hSlot), .str .r2 SB (4 * dSlot), .str .r3 SB (4 * nSlot),
+       .cmp .r3 (.imm 0)] : List Instr)))
     (.seq (.ite .eq (.block []) (.loop body .ne))
       (.block (savedRegs.map fun (r, k) => .ldr r SB (4 * k))))
 

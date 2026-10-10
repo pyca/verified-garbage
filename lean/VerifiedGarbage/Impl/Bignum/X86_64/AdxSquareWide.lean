@@ -6,7 +6,7 @@ open VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Adx
 
 /-- Store each low word without changing either carry flag. -/
 def word (k : Nat) (hi prev : Reg) : List Instr :=
-  wordA k hi .r11 prev ++ [.store (ix .r8 .r14 (8 * k)) .r11]
+  wordA k hi .r11 prev ++ ([.store (ix .r8 .r14 (8 * k)) .r11] : List Instr)
 
 def pair (k : Nat) : List Instr := word k .rax .rcx ++ word (k + 1) .rcx .rax
 
@@ -15,8 +15,8 @@ def chain : Nat → Nat → List Instr
   | 0, _ => []
   | n + 1, k => pair k ++ chain n (k + 2)
 
-def block : List Instr := [.alu32 .xor .rsi (.reg .rsi)] ++ chain 8 0 ++ close .rcx ++
-  [.alu .add .r14 (.imm 16), .alu .cmp .r14 (.reg .rbx)]
+def block : List Instr := ([.alu32 .xor .rsi (.reg .rsi)] : List Instr) ++ chain 8 0 ++ close .rcx ++
+  ([.alu .add .r14 (.imm 16), .alu .cmp .r14 (.reg .rbx)] : List Instr)
 
 /-- Multiples of sixteen use the longer chain; other sizes use the
 four-word row, including its exact remainder handling. -/

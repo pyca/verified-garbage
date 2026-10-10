@@ -20,13 +20,13 @@ def store (n : Reg) (off : Nat) (d : Reg) : List Instr := [.str .x d n off]
 def store32 (n : Reg) (off : Nat) (d : Reg) : List Instr := [.str .w d n off]
 def mark (d : Reg) : List Instr := mov .x15 d
 
-def add (d n : Reg) : List Instr := [.add .x d d n] ++ mark d
+def add (d n : Reg) : List Instr := ([.add .x d d n] : List Instr) ++ mark d
 def addi (d : Reg) (n : Nat) : List Instr :=
-  (if n < 4096 then [.addImm .x d d n] else imm .x12 n ++ [.add .x d d .x12]) ++ mark d
-def sub (d n : Reg) : List Instr := [.subs .x d d n] ++ mark d
+  (if n < 4096 then [.addImm .x d d n] else imm .x12 n ++ ([.add .x d d .x12] : List Instr)) ++ mark d
+def sub (d n : Reg) : List Instr := ([.subs .x d d n] : List Instr) ++ mark d
 def subi (d : Reg) (n : Nat) : List Instr := imm .x12 n ++ sub d .x12
 
-def logic (op : LogicOp) (d n : Reg) : List Instr := [.logic op .x d d n] ++ mark d
+def logic (op : LogicOp) (d n : Reg) : List Instr := ([.logic op .x d d n] : List Instr) ++ mark d
 def logici (op : LogicOp) (d : Reg) (n : Nat) : List Instr := imm .x12 n ++ logic op d .x12
 
 def compare (d n : Reg) : List Instr :=
@@ -34,9 +34,9 @@ def compare (d n : Reg) : List Instr :=
 def comparei (d : Reg) (n : Nat) : List Instr := imm .x13 n ++ compare d .x13
 def comparem (d n : Reg) (off : Nat := 0) : List Instr := load .x13 n off ++ compare d .x13
 
-def sbb (d : Reg) : List Instr := [.sbcs .x d d d] ++ mark d
+def sbb (d : Reg) : List Instr := ([.sbcs .x d d d] : List Instr) ++ mark d
 def mul (n : Reg) : List Instr := [.umulh .x2 .x8 n, .mul .x .x8 .x8 n]
-def shr (d : Reg) (n : Nat) : List Instr := [.lsr .x d d n] ++ mark d
+def shr (d : Reg) (n : Nat) : List Instr := ([.lsr .x d d n] : List Instr) ++ mark d
 
 def xorm (d n : Reg) (off : Nat) : List Instr := load .x13 n off ++ logic .eor d .x13
 end VG.Impl.Argon2.AArch64.Instructions

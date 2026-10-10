@@ -81,7 +81,7 @@ def stSrc (k : Nat) : List Instr :=
   else [.ldr .w .x9 .x1 (4 * (k - 13))]
 
 /-- Word `k` of the ChaCha20 state, at `x21 + 64 + 4k`. -/
-def stW (k : Nat) : List Instr := stSrc k ++ [.str .w .x9 .x21 (64 + 4 * k)]
+def stW (k : Nat) : List Instr := stSrc k ++ ([.str .w .x9 .x21 (64 + 4 * k)] : List Instr)
 
 /-- The ChaCha20 state for counter 0. -/
 def initState : List Instr := (List.range 16).flatMap stW
@@ -89,7 +89,7 @@ def initState : List Instr := (List.range 16).flatMap stW
 /-- Saves the registers, moves the arguments, and computes the one-time key
 and the Poly1305 state for it. -/
 def prologue : Prog isa :=
-  .seq (.block (save ++ moves ++ initState ++ [.addImm .x .x0 .x21 64, .addImm .x .x1 .x21 128]))
+  .seq (.block (save ++ moves ++ initState ++ ([.addImm .x .x0 .x21 64, .addImm .x .x1 .x21 128] : List Instr)))
   (.seq (.call "vg_chacha20_block" VG.Impl.ChaCha20.AArch64.block)
   (.seq (.block [.addImm .x .x0 .x21 448, .addImm .x .x1 .x21 128])
     (.call "vg_poly1305_init" Impl.Poly1305.AArch64.init)))

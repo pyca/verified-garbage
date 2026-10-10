@@ -104,6 +104,7 @@ theorem stores_ok {B : Addr} {Z w : Nat} {c : Bool} {Q : State → Prop} :
         rw [f₁.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)]
     · intro x hx
       rw [xt x fun e' he' => hx e' (List.mem_cons_of_mem _ he'), x₁ x (hx e List.mem_cons_self)]
+termination_by structural L => L
 
 /-- `kOk`'s low bit returned and the saved registers restored. -/
 theorem keyExit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {c : Bool}

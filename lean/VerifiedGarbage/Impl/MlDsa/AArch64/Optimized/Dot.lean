@@ -6,7 +6,7 @@ open VG VG.AArch64
 /-- One term of the selected fused dot/inverse accumulator. Both polynomial
 families are contiguous, with 1024 bytes per polynomial. -/
 def dotTerm (off k : Nat) : List Instr :=
-  [.ldrq .v16 .x13 (1024*k+off),.ldrq .v17 .x14 (1024*k+off)] ++
+  ([.ldrq .v16 .x13 (1024*k+off),.ldrq .v17 .x14 (1024*k+off)] : List Instr) ++
   (if k=0 then [.vop (.umull false .v18 .v16 .v17),.vop (.umull true .v19 .v16 .v17)]
    else [.vop (.umlal false .v18 .v16 .v17),.vop (.umlal true .v19 .v16 .v17)])
 

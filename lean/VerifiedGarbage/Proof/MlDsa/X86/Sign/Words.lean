@@ -109,7 +109,7 @@ theorem fr0 {s₀ : State} (hp : TPre (Y p) s₀) {bs : List Buf} {N : Nat} (hN 
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
         stk_sub hp (Nat.zero_le N) (by show N + 16 ≤ 96; omega)⟩
 
-theorem scr_ge (ps : PS p) : oP (nS p) ≤ scrLen p := by ofs
+theorem scr_ge (ps : PS p) : oP (nS p) ≤ scrLen p := by ofsd
 
 /-- The frame of a piece that writes only in `scratch[lo : hi]`, as that buffer. -/
 theorem frSc {s₀ : State} (hp : TPre (Y p) s₀) {bs : List Buf} {N M : Nat} (hNM : N ≤ M) (hM : M ≤ 80)

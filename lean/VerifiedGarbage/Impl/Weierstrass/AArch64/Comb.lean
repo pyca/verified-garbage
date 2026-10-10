@@ -60,11 +60,11 @@ def magnitude : List Instr :=
 `maskReg m = [|d| < m] - [|d| < m + 1]` for `m = 1 … 7` and
 `maskReg 8 = [|d| < 8] - 1`: all ones exactly for `m = |d|`. -/
 def masks : List Instr :=
-  ((List.range 8).flatMap fun i =>
-    [.subImm .x (maskReg (i + 1)) .x2 (i + 1), .lsr .x (maskReg (i + 1)) (maskReg (i + 1)) 63]) ++
-  [.sub .x (maskReg 0) .x9 (maskReg 1)] ++
-  ((List.range 7).map fun i => .sub .x (maskReg (i + 1)) (maskReg (i + 1)) (maskReg (i + 2))) ++
-  [.subImm .x (maskReg 8) (maskReg 8) 1]
+  (((List.range 8).flatMap fun i =>
+    [.subImm .x (maskReg (i + 1)) .x2 (i + 1), .lsr .x (maskReg (i + 1)) (maskReg (i + 1)) 63]) : List Instr) ++
+  ([.sub .x (maskReg 0) .x9 (maskReg 1)] : List Instr) ++
+  (((List.range 7).map fun i => .sub .x (maskReg (i + 1)) (maskReg (i + 1)) (maskReg (i + 2))) : List Instr) ++
+  ([.subImm .x (maskReg 8) (maskReg 8) 1] : List Instr)
 
 /-- The digit's masks: its nibble, its magnitude and the masks. -/
 def digit (bits : Nat) : List Instr := nibble bits ++ magnitude ++ masks

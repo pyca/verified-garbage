@@ -63,9 +63,22 @@ theorem ghashFrom_zeros (H : Block) (k : Nat) (xs : List Block) :
     simp only [ghashFrom, List.foldl_cons, List.foldl_nil, BitVec.xor_self]
     exact mul_zero_left H
 
+/-- `T` multiplies as `H' = H · x⁻¹`: one product with it, reduced, is a
+step of `GHASH`. -/
+def IsH1 (H T : Block) : Prop :=
+  ∀ Y X : Block, VG.Proof.Gcm.X86_64.Pclmul.reduce (VG.Proof.Gcm.X86_64.Pclmul.Prod.zero.acc (Y ^^^ X) T) =
+    ghashFrom H Y [X]
+
+/-- `T₂` multiplies as `H'²` and `T₁` as `H'`: two products, added and
+reduced once, are two steps of `GHASH`. -/
+def IsH2 (H T₁ T₂ : Block) : Prop :=
+  ∀ Y X₁ X₂ : Block, VG.Proof.Gcm.X86_64.Pclmul.reduce
+    ((VG.Proof.Gcm.X86_64.Pclmul.Prod.zero.acc (Y ^^^ X₁) T₂).acc X₂ T₁) = ghashFrom H Y [X₁, X₂]
+
 /-- What the short path's proofs need from the algebra of the field: the
 table `powers` writes (`powers_ok`), the registers its first block leaves
-(`powHead_ok`), and `GHASH` of `G` from the table (`gacc_ghash`). -/
+(`powHead_ok`), `GHASH` of `G` from the table (`gacc_ghash`), and the
+powers `H'` and `H'²` that the end of a long `seal` computes (`finPow_facts`). -/
 structure ShortFacts : Prop where
   powers : ∀ {Ctx W SP : Addr} {g : Nat} (s : State), Env Ctx (W + BitVec.ofNat 64 16) W SP s →
     s.mem.readW (W + BitVec.ofNat 64 288) 64 = BitVec.ofNat 64 (4 * g) → 1 ≤ g → g ≤ 8 →
@@ -81,5 +94,12 @@ structure ShortFacts : Prop where
   ghash : ∀ {m : Mem} {G T : Addr} {H : Block} {g : Nat}, TabOk m T H g →
     (reduceB (gacc m G T g 0 g) ^^^ reduceB (gacc m G T g 2 g)) ^^^
       (reduceB (gacc m G T g 1 g) ^^^ reduceB (gacc m G T g 3 g)) = ghashFrom H 0 (blocksAt m G (4 * g))
+  finPow : ∀ (s : State), InRegions (s.rd ++ s.wr) (s.gpr .r13 + BitVec.ofInt 64 ((240 : Nat) : Int)) 16 →
+    WP isa (.block Impl.AesGcm.X86_64.Short.finPow) s fun t =>
+      t.xmm .xmm0 = revMask ∧ t.xmm .xmm1 = poly ∧
+      IsH1 (blockAt s.mem (s.gpr .r13 + BitVec.ofInt 64 ((240 : Nat) : Int))) (t.xmm .xmm3) ∧
+      IsH2 (blockAt s.mem (s.gpr .r13 + BitVec.ofInt 64 ((240 : Nat) : Int))) (t.xmm .xmm3) (t.xmm .xmm6) ∧
+      VG.Proof.Gcm.X86_64.Pclmul.Only
+        [.xmm0, .xmm1, .xmm3, .xmm6, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11, .xmm12, .xmm13, .xmm14] s t
 
 end VG.Proof.AesGcm.X86_64.Short

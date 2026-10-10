@@ -120,13 +120,13 @@ def lds : Nat → Prog isa
 
 /-- Word `k` (8–11) of the work vector: `IV[k - 8]`. -/
 def ivC (k : Nat) : List Instr :=
-  movImm T (Spec.Blake2.s.IV.toList.getD (k - 8) 0) ++ [.str T S (cOff k)]
+  movImm T (Spec.Blake2.s.IV.toList.getD (k - 8) 0) ++ ([.str T S (cOff k)] : List Instr)
 
 /-- Word `k` (12–15) of the work vector, rotated left by 8: `IV[k - 8]` XORed
 with the word at `xOff k`. -/
 def ivD (k : Nat) : List Instr :=
   movImm (wreg k) ((Spec.Blake2.s.IV.toList.getD (k - 8) 0).rotateLeft 8) ++
-    [.ldr T S (xOff k), .dp .eor (wreg k) (wreg k) (.shifted T .ror 24)]
+    ([.ldr T S (xOff k), .dp .eor (wreg k) (wreg k) (.shifted T .ror 24)] : List Instr)
 
 /-- Words `8 … n+7` of the work vector. -/
 def ivCs : Nat → Prog isa
@@ -160,7 +160,7 @@ def finLo (k : Nat) : List Instr :=
 /-- XOR the work vector into the state (at `r8`), with the block pointer and
 the count of blocks left in `r9` and `r10` (see `advance`). -/
 def fin : Prog isa :=
-  .seq (.block (finX 4 ++ finX 5 ++ finX 6 ++ finX 7 ++ [.ldr .r8 S stOff, .ldr .r9 S blkOff, .ldr .r10 S nOff])) <|
+  .seq (.block (finX 4 ++ finX 5 ++ finX 6 ++ finX 7 ++ ([.ldr .r8 S stOff, .ldr .r9 S blkOff, .ldr .r10 S nOff] : List Instr))) <|
   .seq (.block (finHi 4)) <| .seq (.block (finHi 5)) <| .seq (.block (finHi 6)) <|
   .seq (.block (finHi 7)) <| .seq (.block (finLo 0)) <| .seq (.block (finLo 1)) <|
   .seq (.block (finLo 2)) (.block (finLo 3))
@@ -187,10 +187,10 @@ def restore : List Instr := saved.map fun (r, d) => .ldr r S d
 in it, and the flag word: with `z` = `last`, `0 - ((0 - z | z) >> 31)`; and
 a zero word. The stack arguments are read first, through `r3`. -/
 def setup : List Instr :=
-  [.ldrSp S 12, .ldrSp .r3 0, .str .r3 S tOff, .ldrSp .r3 4, .str .r3 S (tOff + 4), .ldrSp .r3 8] ++ save ++
-  [.str .r0 S stOff, .str .r1 S blkOff, .str .r2 S nOff, .mov T (.imm 0), .dp .sub T T (.reg .r3),
+  ([.ldrSp S 12, .ldrSp .r3 0, .str .r3 S tOff, .ldrSp .r3 4, .str .r3 S (tOff + 4), .ldrSp .r3 8] : List Instr) ++ save ++
+  ([.str .r0 S stOff, .str .r1 S blkOff, .str .r2 S nOff, .mov T (.imm 0), .dp .sub T T (.reg .r3),
     .dp .orr T T (.reg .r3), .mov T (.shifted T .lsr 31), .mov .r3 (.imm 0), .dp .sub T .r3 (.reg T),
-    .str T S fOff, .str .r3 S (fOff + 4), .cmp .r2 (.imm 0)]
+    .str T S fOff, .str .r3 S (fOff + 4), .cmp .r2 (.imm 0)] : List Instr)
 
 def compress : Prog isa :=
   .seq (.block setup) (.seq (.ite .eq (.block []) (.loop body .ne)) (.block restore))

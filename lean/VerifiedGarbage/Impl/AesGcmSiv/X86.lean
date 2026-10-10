@@ -137,11 +137,11 @@ def ctrArgs (o : Nat) : List Instr :=
 first), a zero block at `W + 224`, and the arguments of `vg_aes_ctr32` with
 the key-generating key's schedule. -/
 def deriveBlock : List Instr :=
-  [.mov .eax (slot nonceO), .mov .ecx (.mem (at_ .eax 0)), .mov .edx (.mem (at_ .eax 4)),
+  ([.mov .eax (slot nonceO), .mov .ecx (.mem (at_ .eax 0)), .mov .edx (.mem (at_ .eax 4)),
    .mov .ebx (.mem (at_ .eax 8)), .store (at_ .ebp (ccO + 4)) .ecx, .store (at_ .ebp (ccO + 8)) .edx,
-   .store (at_ .ebp (ccO + 12)) .ebx, .mov .eax (slot iO), .store (at_ .ebp ccO) .eax] ++ zero4 bO ++
-    [.mov .eax (slot ctxO), .mov .ecx (slot roundsO), .mov .edx (.reg .ebp), .alu .add .edx (imm ccO),
-     .mov .ebx (.reg .ebp), .alu .add .ebx (imm bO), .mov .edi (imm 1)]
+   .store (at_ .ebp (ccO + 12)) .ebx, .mov .eax (slot iO), .store (at_ .ebp ccO) .eax] : List Instr) ++ zero4 bO ++
+    ([.mov .eax (slot ctxO), .mov .ecx (slot roundsO), .mov .edx (.reg .ebp), .alu .add .edx (imm ccO),
+     .mov .ebx (.reg .ebp), .alu .add .ebx (imm bO), .mov .edi (imm 1)] : List Instr)
 
 /-- The first 8 bytes of the block kept at `W + 16 + 8 i`, the next `i`,
 and ZF set after the last block (`rounds / 2 - 1` of them). -/
@@ -176,9 +176,9 @@ def hkeyW (k : Nat) : List Instr :=
 number), in GHASH's order at `W + 64`, and its accumulator zeroed. -/
 def hkey : List Instr :=
   hkeyW 0 ++ hkeyW 1 ++ hkeyW 2 ++
-    [.mov .eax (slot (akO + 12)), .shift .shr .eax 1, .mov .ecx (slot akO), .alu .and .ecx (imm 1),
+    ([.mov .eax (slot (akO + 12)), .shift .shr .eax 1, .mov .ecx (slot akO), .alu .and .ecx (imm 1),
      .mov .edx (imm 0), .alu .sub .edx (.reg .ecx), .alu .and .edx (imm 0xE1000000), .alu .xor .eax (.reg .edx),
-     .bswap .eax, .store (at_ .ebp hO) .eax] ++ zero4 yO
+     .bswap .eax, .store (at_ .ebp hO) .eax] : List Instr) ++ zero4 yO
 
 /-- The keys and GHASH's key. -/
 def keys : Prog isa := .seq (derive c) (.seq (expand c) (.block hkey))
@@ -224,8 +224,8 @@ def anyLeft : List Instr := [.mov .ecx (slot nO), .alu .test .ecx (.reg .ecx)]
 /-- The last `nO` (1 to 15) bytes at `esi`, padded with zeros at
 `W + 224`, as the 16 bytes to absorb. -/
 def absTailPre : Prog isa :=
-  .seq (.block (zero4 bO ++ [.mov .edi (.reg .esi), .mov .edx (.reg .ebp), .alu .add .edx (imm bO),
-      .mov .ecx (slot nO)]))
+  .seq (.block (zero4 bO ++ ([.mov .edi (.reg .esi), .mov .edx (.reg .ebp), .alu .add .edx (imm bO),
+      .mov .ecx (slot nO)] : List Instr)))
     (.seq copyLoop (.block [.mov .esi (.reg .ebp), .alu .add .esi (imm bO), .mov .eax (imm 16),
       .store (at_ .ebp nO) .eax]))
 
@@ -248,7 +248,7 @@ def le64At (s o : Nat) : List Instr :=
 the 16 bytes to absorb. -/
 def lensBlock : List Instr :=
   le64At alenO bO ++ le64At lenO (bO + 8) ++
-    [.mov .esi (.reg .ebp), .alu .add .esi (imm bO), .mov .eax (imm 16), .store (at_ .ebp nO) .eax]
+    ([.mov .esi (.reg .ebp), .alu .add .esi (imm bO), .mov .eax (imm 16), .store (at_ .ebp nO) .eax] : List Instr)
 
 /-- The lengths block absorbed. -/
 def lens : Prog isa := .seq (.block lensBlock) (chunk c)
@@ -263,9 +263,9 @@ of the accumulator in the other order, each reversed), its first 12 bytes
 XORed with the nonce (loaded first) and the top bit of its last byte
 cleared. -/
 def tagIn : List Instr :=
-  [.mov .ecx (slot nonceO), .mov .edx (.mem (at_ .ecx 0)), .mov .ebx (.mem (at_ .ecx 4)),
-   .mov .edi (.mem (at_ .ecx 8))] ++ tagInW 0 .edx ++ tagInW 1 .ebx ++ tagInW 2 .edi ++
-    [.mov .eax (slot yO), .bswap .eax, .alu .and .eax (imm 0x7FFFFFFF), .store (at_ .ebp (cbO + 12)) .eax]
+  ([.mov .ecx (slot nonceO), .mov .edx (.mem (at_ .ecx 0)), .mov .ebx (.mem (at_ .ecx 4)),
+   .mov .edi (.mem (at_ .ecx 8))] : List Instr) ++ tagInW 0 .edx ++ tagInW 1 .ebx ++ tagInW 2 .edi ++
+    ([.mov .eax (slot yO), .bswap .eax, .alu .and .eax (imm 0x7FFFFFFF), .store (at_ .ebp (cbO + 12)) .eax] : List Instr)
 
 /-- The string at `W + s` (`W + l` bytes) as the bytes to absorb. -/
 def onStr (s l : Nat) : List Instr := [.mov .esi (slot s), .mov .eax (slot l), .store (at_ .ebp nO) .eax]
@@ -290,20 +290,20 @@ def tag (o : Nat) : Prog isa :=
 byte set, and the data as the bytes to encrypt; ZF set if it has no whole
 block. -/
 def cryptHead : List Instr :=
-  [.mov .eax (slot tagO), .store (at_ .ebp cbO) .eax, .mov .eax (slot (tagO + 4)), .store (at_ .ebp (cbO + 4)) .eax,
+  ([.mov .eax (slot tagO), .store (at_ .ebp cbO) .eax, .mov .eax (slot (tagO + 4)), .store (at_ .ebp (cbO + 4)) .eax,
    .mov .eax (slot (tagO + 8)), .store (at_ .ebp (cbO + 8)) .eax, .mov .eax (slot (tagO + 12)),
-   .alu .or .eax (imm 0x80000000), .store (at_ .ebp (cbO + 12)) .eax] ++ onStr dataO lenO ++ wholeLeft
+   .alu .or .eax (imm 0x80000000), .store (at_ .ebp (cbO + 12)) .eax] : List Instr) ++ onStr dataO lenO ++ wholeLeft
 
 /-- The arguments of `vg_aes_ctr32` for the block at `esi`. -/
 def blockArgs : List Instr :=
-  copy16 cbO ccO ++ [.mov .eax (.reg .ebp), .alu .add .eax (imm skO), .mov .ecx (slot roundsO),
-    .mov .edx (.reg .ebp), .alu .add .edx (imm ccO), .mov .ebx (.reg .esi), .mov .edi (imm 1)]
+  copy16 cbO ccO ++ ([.mov .eax (.reg .ebp), .alu .add .eax (imm skO), .mov .ecx (slot roundsO),
+    .mov .edx (.reg .ebp), .alu .add .edx (imm ccO), .mov .ebx (.reg .esi), .mov .edi (imm 1)] : List Instr)
 
 /-- After a block: the counter block's first word incremented, `esi` and
 `nO` past the block, and ZF set if no whole block is left. -/
 def blockNext : List Instr :=
-  [.mov .eax (slot cbO), .alu .add .eax (imm 1), .store (at_ .ebp cbO) .eax, .alu .add .esi (imm 16),
-   .mov .eax (slot nO), .alu .sub .eax (imm 16), .store (at_ .ebp nO) .eax] ++ wholeLeft
+  ([.mov .eax (slot cbO), .alu .add .eax (imm 1), .store (at_ .ebp cbO) .eax, .alu .add .esi (imm 16),
+   .mov .eax (slot nO), .alu .sub .eax (imm 16), .store (at_ .ebp nO) .eax] : List Instr) ++ wholeLeft
 
 /-- One block at `esi` encrypted in place from the counter block, which is
 then incremented; `esi` and `nO` past it, and ZF set if no whole block is

@@ -22,8 +22,8 @@ def permuteCode {m : Nat} (positions : Vector Nat m) (n srcSplit dstSplit : Nat)
     let output := m - 1 - k
     [rr tmp (if source < srcSplit then srcLo else srcHi)] ++
       shr tmp (if source < srcSplit then source else source - srcSplit) ++
-      [.dp .and tmp tmp (.reg bit)] ++
+      ([.dp .and tmp tmp (.reg bit)] : List Instr) ++
       placeBit tmp (if output < dstSplit then output else output - dstSplit) ++
-      [.dp .eor (if output < dstSplit then lo else hi)
-        (if output < dstSplit then lo else hi) (.reg tmp)]
+      ([.dp .eor (if output < dstSplit then lo else hi)
+        (if output < dstSplit then lo else hi) (.reg tmp)] : List Instr)
 end VG.Impl.TripleDes.Arm

@@ -77,7 +77,7 @@ def intO : Nat := F.hkO + F.H.F
 def argM (i : Nat) : Src := .mem (at_ .esp (4 + 4 * i))
 
 /-- Our caller's registers into `scratch`, which `ebp` then holds. -/
-def prologue : List Instr := [.mov .eax (argM 7)] ++ F.L.save ++ [.mov .ebp (.reg .eax)]
+def prologue : List Instr := ([.mov .eax (argM 7)] : List Instr) ++ F.L.save ++ ([.mov .ebp (.reg .eax)] : List Instr)
 
 /-- `password_len`, compared with `B + 1`. -/
 def cmpPw : List Instr := [.mov .ecx (argM 1), .alu .cmp .ecx (.imm (BitVec.ofNat 32 (F.H.B + 1)))]
@@ -88,9 +88,9 @@ def hashKey : Prog isa :=
   (.seq (F.H.callInit .edi)
   (.seq (.block [.mov .eax (.imm 0), .mov .esi (.imm 0), .mov .ecx (argM 1), .mov .edx (argM 0)])
   (.seq (.frame (.push [.ebp, .ecx, .edx, .eax, .esi, .edi]) (.call F.H.updN F.H.updC) (.pop .eax 6))
-  (.seq (.block ([.mov .eax (argM 1), .mov .ecx (.imm 0)] ++ scr .edx F.hkO))
+  (.seq (.block (([.mov .eax (argM 1), .mov .ecx (.imm 0)] : List Instr) ++ scr .edx F.hkO))
   (.seq (.frame (.push [.ebp, .edx, .ecx, .eax, .edi]) (.call F.H.finN F.H.finC) (.pop .eax 5))
-    (.block (scr .edx F.hkO ++ [.mov .ecx (.imm (BitVec.ofNat 32 F.H.D))])))))))
+    (.block (scr .edx F.hkO ++ ([.mov .ecx (.imm (BitVec.ofNat 32 F.H.D))] : List Instr))))))))
 
 /-- The key, at `edx`, of `ecx` bytes. -/
 def key : Prog isa :=
@@ -101,8 +101,8 @@ def setup : Prog isa :=
   .seq (.block (scr .edi F.st0O ++ scr .esi F.st1O))
   (.seq (.frame (.push [.ebp, .ecx, .edx, .esi, .edi]) (.call F.hiN F.hiC) (.pop .eax 5))
   (.seq (copy .ebp F.st0O .ebp F.stSO F.H.S)
-  (.seq (.block (scr .edi F.stSO ++ [.mov .eax (.imm 0), .mov .esi (.imm (BitVec.ofNat 32 F.H.B)),
-      .mov .ecx (argM 3), .mov .edx (argM 2)]))
+  (.seq (.block (scr .edi F.stSO ++ ([.mov .eax (.imm 0), .mov .esi (.imm (BitVec.ofNat 32 F.H.B)),
+      .mov .ecx (argM 3), .mov .edx (argM 2)] : List Instr)))
     (.frame (.push [.ebp, .ecx, .edx, .eax, .esi, .edi]) (.call F.H.updN F.H.updC) (.pop .eax 6)))))
 
 /-- `INT (1)`, no bytes written, and whether `out_len` is 0. -/
@@ -112,18 +112,18 @@ def loopInit : List Instr :=
 
 /-- `update`'s arguments: the working state, the bytes it has absorbed, and `INT (i)`. -/
 def updArgs : List Instr :=
-  scr .edi F.stWO ++ [.mov .esi (argM 3), .alu .add .esi (.imm (BitVec.ofNat 32 F.H.B)), .mov .eax (.imm 0),
-    .mov .ecx (.imm 4)] ++ scr .edx F.intO
+  scr .edi F.stWO ++ ([.mov .esi (argM 3), .alu .add .esi (.imm (BitVec.ofNat 32 F.H.B)), .mov .eax (.imm 0),
+    .mov .ecx (.imm 4)] : List Instr) ++ scr .edx F.intO
 
 /-- HMAC's `finalize`'s arguments: the working state, the outer state, the
 bytes absorbed and `U`. -/
 def finArgs : List Instr :=
-  scr .edx F.stWO ++ scr .esi F.st1O ++ [.mov .eax (argM 3), .alu .add .eax (.imm (BitVec.ofNat 32 (F.H.B + 4))),
-    .mov .ecx (.imm 0)] ++ scr .edi F.uO
+  scr .edx F.stWO ++ scr .esi F.st1O ++ ([.mov .eax (argM 3), .alu .add .eax (.imm (BitVec.ofNat 32 (F.H.B + 4))),
+    .mov .ecx (.imm 0)] : List Instr) ++ scr .edi F.uO
 
 /-- `iterate`'s arguments: the key's states, `U`, `c - 1` and `T`. -/
 def iterArgs : List Instr :=
-  scr .esi F.st0O ++ scr .eax F.uO ++ [.mov .ecx (argM 4), .alu .sub .ecx (.imm 1)] ++ scr .edx F.tO
+  scr .esi F.st0O ++ scr .eax F.uO ++ ([.mov .ecx (argM 4), .alu .sub .ecx (.imm 1)] : List Instr) ++ scr .edx F.tO
 
 /-- The bytes of `T` the output still needs, `min (out_len - ebx, D)`, in `ecx`. -/
 def outLen : Prog isa :=

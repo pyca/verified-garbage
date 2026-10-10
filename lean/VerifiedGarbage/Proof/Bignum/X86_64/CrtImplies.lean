@@ -28,10 +28,12 @@ def crtSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x6009 then 0x40 else if a = 0x6010 then 1 else if a = 0x6019 then 0x41
-    else if a = 0x6020 then 1 else if a = 0x6029 then 0x42 else if a = 0x6030 then 1
-    else if a = 0x6039 then 0x43 else if a = 0x6040 then 1 else if a = 0x6049 then 0x44
-    else if a = 0x6050 then 1 else if a = 0x6059 then 0x80 else if a = 0x6061 then 0x04 else 0
+  mem a := bif Nat.beq a.toNat 0x6009 then 0x40 else bif Nat.beq a.toNat 0x6010 then 1
+    else bif Nat.beq a.toNat 0x6019 then 0x41 else bif Nat.beq a.toNat 0x6020 then 1
+    else bif Nat.beq a.toNat 0x6029 then 0x42 else bif Nat.beq a.toNat 0x6030 then 1
+    else bif Nat.beq a.toNat 0x6039 then 0x43 else bif Nat.beq a.toNat 0x6040 then 1
+    else bif Nat.beq a.toNat 0x6049 then 0x44 else bif Nat.beq a.toNat 0x6050 then 1
+    else bif Nat.beq a.toNat 0x6059 then 0x80 else bif Nat.beq a.toNat 0x6061 then 0x04 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 64⟩, ⟨0x4000, 1⟩, ⟨0x4100, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩,
     ⟨0x6008, 96⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x8000, 8192⟩]

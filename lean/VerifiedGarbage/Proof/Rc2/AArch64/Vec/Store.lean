@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Load
 import VerifiedGarbage.Proof.Rc2.CbcMemory
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Storing a group of eight blocks
@@ -33,13 +34,13 @@ theorem vbyte_lw (x : BitVec 128) (b : Nat) {c : Nat} (hc : c < 2) :
   apply BitVec.eq_of_getLsbD_eq; intro t ht
   simp only [vbyte, lw, vword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth,
     BitVec.getLsbD_ushiftRight, ht, decide_true, Bool.true_and]
-  simp [show 8 * c + t < 16 by omega, show 8 * c + t < 32 by omega,
-    show 8 * (4 * b + c) + t = 32 * b + (8 * c + t) by omega]
+  simp [show 8 * c + t < 16 by omega_arith, show 8 * c + t < 32 by omega_arith,
+    show 8 * (4 * b + c) + t = 32 * b + (8 * c + t) by omega_arith]
 
 theorem outIndex_byte (k : Nat) (hk : k < 2) {e : Nat} (he : e < 16) :
     (vbyte (outIndex k) e).toNat = 16 * (e % 8 / 2) + 4 * (2 * k + e / 8) + e % 2 := by
   rw [outIndex, vbyte_ofVBytes _ he, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 theorem repeat_wreg : ∀ h < 2, ∀ w < 4, Nat.repeat VReg.succ w (wreg h 0) = wreg h w := by
   decide
@@ -52,12 +53,12 @@ theorem scatter_byte {v : VReg → BitVec 128} {h k : Nat} (hh : h < 2) (hk : k 
       if (vbyte (v .v4) e).toNat < 16 * 4 then tableByte v (wreg h 0) (vbyte (v .v4) e).toNat else 0) e =
       encByte (R (4 * h + 2 * k + e / 8)) (e % 8) := by
   rw [vbyte_ofVBytes _ he, hix, outIndex_byte k hk he,
-    ite_eq_left (show 16 * (e % 8 / 2) + 4 * (2 * k + e / 8) + e % 2 < 16 * 4 by omega), tableByte,
-    show (16 * (e % 8 / 2) + 4 * (2 * k + e / 8) + e % 2) / 16 = e % 8 / 2 by omega,
-    show (16 * (e % 8 / 2) + 4 * (2 * k + e / 8) + e % 2) % 16 = 4 * (2 * k + e / 8) + e % 2 by omega,
-    repeat_wreg h hh _ (by omega), vbyte_lw _ _ (by omega), hw _ (by omega) _ (by omega), encByte,
-    show 4 * h + (2 * k + e / 8) = 4 * h + 2 * k + e / 8 by omega,
-    show e % 8 % 2 = e % 2 by omega]
+    ite_eq_left (show 16 * (e % 8 / 2) + 4 * (2 * k + e / 8) + e % 2 < 16 * 4 by omega_arith), tableByte,
+    show (16 * (e % 8 / 2) + 4 * (2 * k + e / 8) + e % 2) / 16 = e % 8 / 2 by omega_arith,
+    show (16 * (e % 8 / 2) + 4 * (2 * k + e / 8) + e % 2) % 16 = 4 * (2 * k + e / 8) + e % 2 by omega_arith,
+    repeat_wreg h hh _ (by omega_arith), vbyte_lw _ _ (by omega_arith), hw _ (by omega_arith) _ (by omega_arith), encByte,
+    show 4 * h + (2 * k + e / 8) = 4 * h + 2 * k + e / 8 by omega_arith,
+    show e % 8 % 2 = e % 2 by omega_arith]
 
 /-- The scattering: the blocks into `v0`–`v3`. -/
 def scatterCode : List Instr :=
@@ -133,7 +134,7 @@ theorem scatter_ok (t : State) {R : Nat → Spec.Rc2.State} (hS : Sets t R) :
     rw [this, show c₁.v .v0 = _ from v_setV_self _ _ _,
       scatter_byte (h := 0) (k := 0) (by decide) (by decide) a4
         (hw a.v (fun h hh i hi => (ws h hh i hi).1) 0 (by decide)) he,
-      show 4 * 0 + 2 * 0 + e / 8 = e / 8 by omega]
+      show 4 * 0 + 2 * 0 + e / 8 = e / 8 by omega_arith]
   · rw [show d₂.v .v1 = d₁.v .v1 from v_setV_of_ne _ _ (by decide),
       show d₁.v .v1 = _ from v_setV_self _ _ _,
       scatter_byte (h := 0) (k := 1) (by decide) (by decide) b4
@@ -176,12 +177,12 @@ theorem write16_at (m : Mem) (q : Addr) {d j : Nat} (hd : d + 16 ≤ 64) (hj : j
       if d ≤ j ∧ j < d + 16 then vbyte v (j - d) else m (q + BitVec.ofNat 64 j) := by
   simp only [Mem.write, Offset.add_sub_add_left]
   by_cases h : d ≤ j ∧ j < d + 16
-  · rw [Offset.ofNat_sub_ofNat h.1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    simp only [show j - d < 16 by omega, h, and_self, ite_true]
+  · rw [Offset.ofNat_sub_ofNat h.1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+    simp only [show j - d < 16 by omega_arith, h, and_self, ite_true]
     rfl
   · have : ¬ (BitVec.ofNat 64 j - BitVec.ofNat 64 d).toNat < 16 := by
       rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      omega
+      omega_arith
     simp only [this, h, ite_false]
 
 theorem write4_at (m : Mem) (q : Addr) (V0 V1 V2 V3 : BitVec (8 * 16)) {o : Nat} (ho : o < 64) :
@@ -190,9 +191,9 @@ theorem write4_at (m : Mem) (q : Addr) (V0 V1 V2 V3 : BitVec (8 * 16)) {o : Nat}
       vbyte (if o < 16 then V0 else if o < 32 then V1 else if o < 48 then V2 else V3) (o % 16) := by
   rw [write16_at _ _ (by decide) ho, write16_at _ _ (by decide) ho, write16_at _ _ (by decide) ho,
     write16_at _ _ (by decide) ho]
-  rcases (by omega : o < 16 ∨ (16 ≤ o ∧ o < 32) ∨ (32 ≤ o ∧ o < 48) ∨ 48 ≤ o) with h | h | h | h <;>
-    simp (disch := omega) only [ite_eq_left, ite_eq_right] <;>
-    exact congrArg _ (by omega)
+  rcases (by omega_arith : o < 16 ∨ (16 ≤ o ∧ o < 32) ∨ (32 ≤ o ∧ o < 48) ∨ 48 ≤ o) with h | h | h | h <;>
+    simp (disch := omega_arith) only [ite_eq_left, ite_eq_right] <;>
+    exact congrArg _ (by omega_arith)
 
 theorem vbyte_ofVDwords (a b : BitVec 64) {e : Nat} (he : e < 16) :
     vbyte (ofVDwords a b) e =
@@ -201,10 +202,10 @@ theorem vbyte_ofVDwords (a b : BitVec 64) {e : Nat} (he : e < 16) :
   simp only [vbyte, ofVDwords, BitVec.getLsbD_extractLsb', ht, decide_true, Bool.true_and,
     BitVec.getLsbD_append]
   by_cases h : e < 8
-  · simp only [h, ite_true, show 8 * e + t < 64 by omega, BitVec.getLsbD_extractLsb', ht,
+  · simp only [h, ite_true, show 8 * e + t < 64 by omega_arith, BitVec.getLsbD_extractLsb', ht,
       decide_true, Bool.true_and]
-  · simp only [h, ite_false, show ¬ 8 * e + t < 64 by omega, BitVec.getLsbD_extractLsb', ht,
-      decide_true, Bool.true_and, show 8 * e + t - 64 = 8 * (e - 8) + t by omega]
+  · simp only [h, ite_false, show ¬ 8 * e + t < 64 by omega_arith, BitVec.getLsbD_extractLsb', ht,
+      decide_true, Bool.true_and, show 8 * e + t - 64 = 8 * (e - 8) + t by omega_arith]
 
 /-- The ciphertext byte before byte `o` of the group: the chaining value's
 in the first block. -/
@@ -299,26 +300,26 @@ theorem xorStore_ok (t : State) {R : Nat → Spec.Rc2.State} (hsc : Scattered t.
   refine ⟨d₁₆, run, fun o ho => ?_, ?_, ?_, fun g h9 h11 h12 => ?_, fun w h0 h1 h2 h3 h4 h5 => ?_,
     rfl, rfl, rfl⟩
   · rw [mem, write4_at _ _ _ _ _ _ ho, prevByte]
-    rcases (by omega : o < 16 ∨ (16 ≤ o ∧ o < 32) ∨ (32 ≤ o ∧ o < 48) ∨ 48 ≤ o) with h | h | h | h <;>
-      simp (disch := omega) only [ite_eq_left, ite_eq_right]
-    · rw [V0, vbyte_xor, (hsc _ (by omega)).1, vbyte_ofVDwords _ _ (by omega),
-        show o % 16 = o by omega]
+    rcases (by omega_arith : o < 16 ∨ (16 ≤ o ∧ o < 32) ∨ (32 ≤ o ∧ o < 48) ∨ 48 ≤ o) with h | h | h | h <;>
+      simp (disch := omega_arith) only [ite_eq_left, ite_eq_right]
+    · rw [V0, vbyte_xor, (hsc _ (by omega_arith)).1, vbyte_ofVDwords _ _ (by omega_arith),
+        show o % 16 = o by omega_arith]
       by_cases h8 : o < 8
       · simp only [h8, ite_true] <;> rfl
       · simp only [h8, ite_false]
-        rw [read64_byte _ _ _ (by omega), Offset.add_add, show 0 + (o - 8) = o - 8 by omega]
-    · rw [V1, vbyte_xor, (hsc _ (by omega)).2.1, vbyte_read _ _ (by omega), Offset.add_add,
-        Offset.add_add, show o / 8 = 2 + o % 16 / 8 by omega, show o % 8 = o % 16 % 8 by omega,
-        show 8 + (0 + o % 16) = o - 8 by omega]
-    · rw [V2, vbyte_xor, (hsc _ (by omega)).2.2.1, vbyte_read _ _ (by omega), Offset.add_add,
-        Offset.add_add, show o / 8 = 4 + o % 16 / 8 by omega, show o % 8 = o % 16 % 8 by omega,
-        show 8 + (16 + o % 16) = o - 8 by omega]
-    · rw [V3, vbyte_xor, (hsc _ (by omega)).2.2.2, vbyte_read _ _ (by omega), Offset.add_add,
-        Offset.add_add, show o / 8 = 6 + o % 16 / 8 by omega, show o % 8 = o % 16 % 8 by omega,
-        show 8 + (32 + o % 16) = o - 8 by omega]
+        rw [read64_byte _ _ _ (by omega_arith), Offset.add_add, show 0 + (o - 8) = o - 8 by omega_arith]
+    · rw [V1, vbyte_xor, (hsc _ (by omega_arith)).2.1, vbyte_read _ _ (by omega_arith), Offset.add_add,
+        Offset.add_add, show o / 8 = 2 + o % 16 / 8 by omega_arith, show o % 8 = o % 16 % 8 by omega_arith,
+        show 8 + (0 + o % 16) = o - 8 by omega_arith]
+    · rw [V2, vbyte_xor, (hsc _ (by omega_arith)).2.2.1, vbyte_read _ _ (by omega_arith), Offset.add_add,
+        Offset.add_add, show o / 8 = 4 + o % 16 / 8 by omega_arith, show o % 8 = o % 16 % 8 by omega_arith,
+        show 8 + (16 + o % 16) = o - 8 by omega_arith]
+    · rw [V3, vbyte_xor, (hsc _ (by omega_arith)).2.2.2, vbyte_read _ _ (by omega_arith), Offset.add_add,
+        Offset.add_add, show o / 8 = 6 + o % 16 / 8 by omega_arith, show o % 8 = o % 16 % 8 by omega_arith,
+        show 8 + (32 + o % 16) = o - 8 by omega_arith]
   · rw [mem]
     have c : ∀ d, d + 16 ≤ 64 → (⟨q, 64⟩ : Region).Contains (q + BitVec.ofNat 64 d) 16 :=
-      fun d h => Offset.contains_base q h (by omega)
+      fun d h => Offset.contains_base q h (by omega_arith)
     exact (((((Frame.refl _ M).write (List.mem_singleton_self _) _ (c 0 (by decide))).write
       (List.mem_singleton_self _) _ (c 16 (by decide))).write (List.mem_singleton_self _) _
       (c 32 (by decide))).write (List.mem_singleton_self _) _ (c 48 (by decide)))

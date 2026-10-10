@@ -52,7 +52,7 @@ def savedRegs : List (Reg × Nat) := [(.ebx, 256), (.esi, 260), (.edi, 264), (.e
 
 /-- Load the scratch pointer (argument `k`) into `edi`, saving the registers. -/
 def saveRegs (k : Nat) : List Instr :=
-  [.mov .eax (.mem (argOp k))] ++ savedRegs.map (fun (r, d) => .store (at_ .eax d) r) ++
+  ([.mov .eax (.mem (argOp k))] : List Instr) ++ savedRegs.map (fun (r, d) => .store (at_ .eax d) r) ++
     [movR .edi .eax]
 
 /-- Restore the registers (`edi`, the base, last). -/
@@ -88,12 +88,12 @@ def keySetup : List Instr := [.mov .esi (.mem (argOp 1))]
 /-- The round key `esi` of the schedule, as two blocks for `ortho`: its word
 `w` in slots `2w` and `2w + 1`. -/
 def keyLoad : List Instr :=
-  [movR .eax .esi] ++ dbl .eax 4 ++ [.mov .ebx (.mem (argOp 0)), addR .eax .ebx] ++
+  [movR .eax .esi] ++ dbl .eax 4 ++ ([.mov .ebx (.mem (argOp 0)), addR .eax .ebx] : List Instr) ++
   (List.range 4).flatMap fun w => [.mov .ebx (.mem (at_ .eax (4 * w))), st (2 * w) .ebx, st (2 * w + 1) .ebx]
 
 /-- Store the bitsliced round key `esi` at `lastKey - 32 (rounds - esi)`. -/
 def keyStore : List Instr :=
-  [.mov .eax (.mem (argOp 1)), subR .eax .esi] ++ dbl .eax 5 ++
+  ([.mov .eax (.mem (argOp 1)), subR .eax .esi] : List Instr) ++ dbl .eax 5 ++
   [movR .ebx .edi, addI .ebx (BitVec.ofNat 32 lastKey), subR .ebx .eax] ++
   (List.range 8).flatMap fun k => [movS .eax k, .store (at_ .ebx (4 * k)) .eax]
 
@@ -109,15 +109,15 @@ def groupSetup : List Instr :=
 and `c := c + 2`. -/
 def ctrBlock (b : Nat) : List Instr :=
   ((List.range 3).flatMap fun w => [.mov .eax (.mem (at_ .edi (cwOff w))), st (2 * w + b) .eax]) ++
-  [.mov .eax (.mem (at_ .edi cNum)), addI .eax (BitVec.ofNat 32 b), .bswap .eax, st (6 + b) .eax]
+  ([.mov .eax (.mem (at_ .edi cNum)), addI .eax (BitVec.ofNat 32 b), .bswap .eax, st (6 + b) .eax] : List Instr)
 
 def ctrBlocks : List Instr :=
   ctrBlock 0 ++ ctrBlock 1 ++
-  [.mov .eax (.mem (at_ .edi cNum)), addI .eax 2, .store (at_ .edi cNum) .eax]
+  ([.mov .eax (.mem (at_ .edi cNum)), addI .eax 2, .store (at_ .edi cNum) .eax] : List Instr)
 
 /-- `esi :=` the first round key, `edi + lastKey - 32 rounds`. -/
 def keyStart : List Instr :=
-  [.mov .esi (.mem (argOp 1))] ++ dbl .esi 5 ++
+  ([.mov .esi (.mem (argOp 1))] : List Instr) ++ dbl .esi 5 ++
   [movR .eax .edi, addI .eax (BitVec.ofNat 32 lastKey), subR .eax .esi, movR .esi .eax]
 
 /-- A middle round, with `esi` at the previous round key; loops until `esi`

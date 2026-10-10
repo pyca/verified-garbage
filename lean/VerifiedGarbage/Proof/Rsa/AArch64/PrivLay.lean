@@ -149,9 +149,12 @@ theorem lay_args (s : State) : (lay s).B + BitVec.ofNat 64 stackBytes = stackArg
   simp only [lay, stackArgAddr]; bv_omega
 
 theorem lay_ok {s : State} (h : chkA.pre s) : (lay s).Ok := by
-  obtain ⟨hst, h96, -, -, on, oe, oi, op, oq, odp, odq, oqi, osc, oa, nsc, esc, isc, psc, qsc, dpsc, dqsc,
-    qisc, sca, ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ksc, -, bo, bn, be, bi, bp, bq, bdp, bdq, bqi, bsc,
-    ⟨klo, khi⟩, olk, ilk, el1, elk, pl1, plk, ql1, qlk, dpl, qil, dql, slk⟩ := h
+  sig_split h
+  rename_i hst h96 _ _ on oe oi op oq odp odq oqi osc oa nsc esc isc psc qsc dpsc dqsc qisc sca ko
+    kn ke ki kp kq kdp kdq kqi ksc _ bo bn be bi bp bq bdp bdq bqi bsc _ob1 olk ilk el1 elk pl1 plk
+    ql1 qlk dpl qil dql
+  obtain ⟨klo, khi⟩ := _ob1
+  have slk := h
   have ea : (lay s).ARGS = ⟨stackArgAddr s 0, 96⟩ := by simp only [Lay.ARGS, lay_args]
   have nB : (lay s).B.toNat + 3344 ≤ 2 ^ 64 := by
     simp only [lay]

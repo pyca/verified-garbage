@@ -1,14 +1,64 @@
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterRun
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalSlice
+import VerifiedGarbage.Proof.MlDsa.Arith.Pairs
 
 namespace VG.Proof.MlDsa.AArch64.Optimized
-open VG VG.AArch64
+open VG VG.AArch64 VG.Proof.MlDsa.Pairs
 open VG.Impl.MlDsa.AArch64.Optimized.Ntt
 
 /-- A uniform signed bound for the eight logical SIMD registers. -/
 def BankBound (v : Vector (BitVec 128) 8) (b : Int) : Prop :=
   ∀ i : Fin 8, ∀ e<4, -b≤(vword v[i.val] e).toInt ∧ (vword v[i.val] e).toInt≤b
+
+theorem afterValues_eq (v : Vector (BitVec 128) 8) (ps : List (Fin 8 × Fin 8)) :
+    afterValues v ps = pairsApply (fun a b => (VArr.s4.map2 (fun _ a b => a+b) a b,
+      VArr.s4.map2 (fun _ a b => a-b) a b)) v ps := by
+  induction ps generalizing v with
+  | nil => rfl
+  | cons p ps ih => obtain ⟨i, j⟩ := p; exact ih _
+
+/-- Entry `k` is the first of a pair of the group: its pair and which entries are products. -/
+def LeftFacts (gap g : Nat) : Prop := ∀ k : Fin 8, 2*gap*g≤k.val ∧ k.val<2*gap*g+gap →
+  pairOf (groupSteps gap g) k = some (k, ⟨(k.val+gap)%8, Nat.mod_lt _ (by decide)⟩) ∧ k.val+gap<8 ∧
+  k ∉ (groupIndexedProducts gap g).map Prod.fst ∧
+  (⟨(k.val+gap)%8, Nat.mod_lt _ (by decide)⟩ : Fin 8) ∈ (groupIndexedProducts gap g).map Prod.fst
+
+/-- Entry `k` is the second of a pair of the group. -/
+def RightFacts (gap g : Nat) : Prop := ∀ k : Fin 8, 2*gap*g+gap≤k.val ∧ k.val<2*gap*g+2*gap →
+  pairOf (groupSteps gap g) k = some (⟨(k.val-gap)%8, Nat.mod_lt _ (by decide)⟩, k) ∧ gap≤k.val ∧
+  (⟨(k.val-gap)%8, Nat.mod_lt _ (by decide)⟩ : Fin 8) ≠ k ∧
+  (⟨(k.val-gap)%8, Nat.mod_lt _ (by decide)⟩ : Fin 8) ∉ (groupIndexedProducts gap g).map Prod.fst ∧
+  k ∈ (groupIndexedProducts gap g).map Prod.fst
+
+/-- Entry `k` is in no pair of the group. -/
+def RestFacts (gap g : Nat) : Prop := ∀ k : Fin 8,
+  ¬(2*gap*g≤k.val ∧ k.val<2*gap*g+gap) → ¬(2*gap*g+gap≤k.val ∧ k.val<2*gap*g+2*gap) →
+  pairOf (groupSteps gap g) k = none ∧ k ∉ (groupIndexedProducts gap g).map Prod.fst
+
+/-- Where each entry of a butterfly group comes from: finite facts for each valid group. -/
+theorem groupFacts {gap g : Nat} (hg : ValidGroup gap g) : (entries (groupSteps gap g)).Nodup ∧
+    LeftFacts gap g ∧ RightFacts gap g ∧ RestFacts gap g := by
+  have h : ∀ p ∈ [(4,0),(2,0),(2,1),(1,0),(1,1),(1,2),(1,3)], (entries (groupSteps p.1 p.2)).Nodup ∧
+      LeftFacts p.1 p.2 ∧ RightFacts p.1 p.2 ∧ RestFacts p.1 p.2 := by
+    have h0 : ∀ p ∈ [(4,0),(2,0),(2,1),(1,0),(1,1),(1,2),(1,3)], (entries (groupSteps p.1 p.2)).Nodup := by
+      decide +kernel
+    have h1 : ∀ p ∈ [(4,0),(2,0),(2,1),(1,0),(1,1),(1,2),(1,3)], LeftFacts p.1 p.2 := by
+      unfold LeftFacts; decide +kernel
+    have h2 : ∀ p ∈ [(4,0),(2,0),(2,1),(1,0),(1,1),(1,2),(1,3)], RightFacts p.1 p.2 := by
+      unfold RightFacts; decide +kernel
+    have h3 : ∀ p ∈ [(4,0),(2,0),(2,1),(1,0),(1,1),(1,2),(1,3)], RestFacts p.1 p.2 := by
+      unfold RestFacts; decide +kernel
+    exact fun p hp => ⟨h0 p hp, h1 p hp, h2 p hp, h3 p hp⟩
+  rcases hg with ⟨rfl,rfl⟩ | ⟨rfl,rfl|rfl⟩ | ⟨rfl,hg⟩
+  · exact h (4,0) (by simp)
+  · exact h (2,0) (by simp)
+  · exact h (2,1) (by simp)
+  · rcases (show g=0 ∨ g=1 ∨ g=2 ∨ g=3 by omega) with rfl|rfl|rfl|rfl
+    · exact h (1,0) (by simp)
+    · exact h (1,1) (by simp)
+    · exact h (1,2) (by simp)
+    · exact h (1,3) (by simp)
 
 /-- Exact word result of one independent butterfly group. -/
 theorem coreValues_word (v : Vector (BitVec 128) 8) {gap g : Nat} (hg : ValidGroup gap g)
@@ -19,21 +69,25 @@ theorem coreValues_word (v : Vector (BitVec 128) 8) {gap g : Nat} (hg : ValidGro
       else if 2*gap*g+gap≤i.val ∧ i.val<2*gap*g+2*gap then
         vword v[i.val-gap]! e - fastMulWord (vword v[i.val] e) (z e)
       else vword v[i.val] e := by
-  rcases i with ⟨i,hi⟩
-  have hs : i=0 ∨ i=1 ∨ i=2 ∨ i=3 ∨ i=4 ∨ i=5 ∨ i=6 ∨ i=7 := by omega
-  rcases hg with ⟨rfl,rfl⟩ | ⟨rfl,hg⟩ | ⟨rfl,hg⟩
-  · rcases hs with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp [coreValues,groupIndexedProducts,groupSteps,afterValues,pairValues,productValues,
-        prodTemps,show (3 : Fin 8).val=3 from rfl,show (4 : Fin 8).val=4 from rfl,show (5 : Fin 8).val=5 from rfl,show (6 : Fin 8).val=6 from rfl,show (7 : Fin 8).val=7 from rfl, fastVector_word _ _ he, vword_map2 _ _ _ he]
-  · rcases hg with rfl | rfl <;>
-      rcases hs with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp [coreValues,groupIndexedProducts,groupSteps,afterValues,pairValues,productValues,
-        prodTemps,show (3 : Fin 8).val=3 from rfl,show (4 : Fin 8).val=4 from rfl,show (5 : Fin 8).val=5 from rfl,show (6 : Fin 8).val=6 from rfl,show (7 : Fin 8).val=7 from rfl, fastVector_word _ _ he, vword_map2 _ _ _ he]
-  · have hs' : g=0 ∨ g=1 ∨ g=2 ∨ g=3 := by omega
-    rcases hs' with rfl | rfl | rfl | rfl <;>
-      rcases hs with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp [coreValues,groupIndexedProducts,groupSteps,afterValues,pairValues,productValues,
-        prodTemps,show (3 : Fin 8).val=3 from rfl,show (4 : Fin 8).val=4 from rfl,show (5 : Fin 8).val=5 from rfl,show (6 : Fin 8).val=6 from rfl,show (7 : Fin 8).val=7 from rfl, fastVector_word _ _ he, vword_map2 _ _ _ he]
+  obtain ⟨hd, hL, hR, hN⟩ := groupFacts hg
+  rw [coreValues, afterValues_eq, pairsApply_get _ _ hd i]
+  by_cases h1 : 2*gap*g≤i.val ∧ i.val<2*gap*g+gap
+  · obtain ⟨hp, hlt, hni, hj⟩ := hL i h1
+    simp only [Nat.mod_eq_of_lt hlt] at hp hj
+    rw [hp]
+    simp only [h1, and_self, ite_true, productValues, Vector.getElem_ofFn, hni, hj, ite_false, vword_map2 _ _ _ he,
+      fastVector_word _ _ he, getElem!_pos v (i.val+gap) hlt]
+  · simp only [h1, ite_false]
+    by_cases h2 : 2*gap*g+gap≤i.val ∧ i.val<2*gap*g+2*gap
+    · obtain ⟨hp, hle, hne, hni, hj⟩ := hR i h2
+      have hlt : i.val-gap<8 := by omega
+      simp only [Nat.mod_eq_of_lt hlt] at hp hne hni
+      rw [hp]
+      simp only [h2, and_self, hne, ite_false, productValues, Vector.getElem_ofFn, hni, hj, ite_true, vword_map2 _ _ _ he,
+        fastVector_word _ _ he, getElem!_pos v (i.val-gap) hlt]
+    · obtain ⟨hp, hni⟩ := hN i h1 h2
+      rw [hp]
+      simp only [h2, productValues, Vector.getElem_ofFn, hni, ite_false]
 
 theorem ValidGroup.bounds {gap g : Nat} (hg : ValidGroup gap g) :
     0<gap ∧ 2*gap*g+2*gap≤8 := by

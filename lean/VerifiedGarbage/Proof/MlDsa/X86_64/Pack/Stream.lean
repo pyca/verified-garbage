@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Stream
 import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 import VerifiedGarbage.Proof.MlDsa.Pack.Stream
@@ -37,7 +38,7 @@ theorem shiftAdd_ok {sh : Nat} (hsh : sh < 64) (s : State) (hx : (s.gpr .rax).to
         Keep [.rax, .r10] s s' := by
   by_cases h : sh = 0
   · subst h
-    refine WP.keep _ ?_ (by decide)
+    refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
     simp only [shiftAdd, ite_true, List.nil_append]
     xrun
     rw [BitVec.toNat_add]

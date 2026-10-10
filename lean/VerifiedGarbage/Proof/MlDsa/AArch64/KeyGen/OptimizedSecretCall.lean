@@ -10,14 +10,14 @@ theorem boundedReady {S : Nat} {p : Params} (hF : PFacts p) {s : State}
     (L : Lay S kgR (kgW p) s) {r : Nat} (hr : r+4≤p.ℓ+p.k+1) :
     BoundedFour.CallReady (sc 1408) (sP p r) (sc (oR4 p)) s := by
   have hkl:=hF.kl; have hl:=hF.l; have hk:=hF.k; have hsc:=scr_eq p
-  have hs : inB (kgR++kgW p) (sc 1408) 264=true := by lay
-  have ho : inB (kgR++kgW p) (sP p r) 4096=true := by lay
-  have hw : inB (kgR++kgW p) (sc (oR4 p)) 8192=true := by lay
-  have hwo : inB (kgW p) (sP p r) 4096=true := by lay
-  have hww : inB (kgW p) (sc (oR4 p)) 8192=true := by lay
-  have hso : sepB kgR (kgW p) (sc 1408) 264 (sP p r) 4096=true := by lay
-  have hsw : sepB kgR (kgW p) (sc 1408) 264 (sc (oR4 p)) 8192=true := by lay
-  have how : sepB kgR (kgW p) (sP p r) 4096 (sc (oR4 p)) 8192=true := by lay
+  have hs : inB (kgR++kgW p) (sc 1408) 264=true := by layd
+  have ho : inB (kgR++kgW p) (sP p r) 4096=true := by layd
+  have hw : inB (kgR++kgW p) (sc (oR4 p)) 8192=true := by layd
+  have hwo : inB (kgW p) (sP p r) 4096=true := by layd
+  have hww : inB (kgW p) (sc (oR4 p)) 8192=true := by layd
+  have hso : sepB kgR (kgW p) (sc 1408) 264 (sP p r) 4096=true := by layd
+  have hsw : sepB kgR (kgW p) (sc 1408) 264 (sc (oR4 p)) 8192=true := by layd
+  have how : sepB kgR (kgW p) (sP p r) 4096 (sc (oR4 p)) 8192=true := by layd
   exact ⟨L.nwp hs,L.nwp ho,L.nwp hw,L.disj hso,L.disj hsw,L.disj how,
     Covers.cons (L.cR hs) (Covers.cons (L.cR ho) (L.cR hw)),Covers.cons (L.cW hwo) (L.cW hww)⟩
 
@@ -34,9 +34,9 @@ theorem boundedAt_layout {S : Nat} {p : Params} (hF : PFacts p) {s : State}
         ((t.gpr .x0).setWidth 32)
         ((List.range 4).map fun i=>polyAt t.mem (pa s (sP p r)+BitVec.ofNat 64 (1024*i))) := by
   have hkl:=hF.kl; have hl:=hF.l; have hk:=hF.k; have hsc:=scr_eq p
-  have hs : inB (kgR++kgW p) (sc 1408) 264=true := by lay
-  have ho : inB (kgR++kgW p) (sP p r) 4096=true := by lay
-  have hw : inB (kgR++kgW p) (sc (oR4 p)) 8192=true := by lay
+  have hs : inB (kgR++kgW p) (sc 1408) 264=true := by layd
+  have ho : inB (kgR++kgW p) (sP p r) 4096=true := by layd
+  have hw : inB (kgR++kgW p) (sc (oR4 p)) 8192=true := by layd
   have hη : p.η=2∨p.η=4 := by rcases hF.eta with h|h; exact Or.inl h.1; exact Or.inr h.1
   refine WP.mono (BoundedFour.samplerAt_ok L.s64 c.pairedSha3 hη
     (ptr_ok (L.ptrBs hs)) (ptr_ok (L.ptrBs ho)) (ptr_ok (L.ptrBs hw)) (boundedReady hF L hr))

@@ -29,7 +29,12 @@ variable {n wi : Nat}
 abbrev oSt (s₀ : State) (wi : Nat) : BitVec 32 := arg s₀ wi + BitVec.ofNat 32 16
 
 theorem oneLay {s₀ : State} (h : onePre n wi s₀) : Lay (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp := by
-  obtain ⟨-, -, -, dcW, -, -, -, -, -, -, -, bc, -, -, -, bW, fc, -, -, -, fW, sp8, -, -⟩ := h
+  sig_split h
+  rename_i hdrop0 hdrop1 hdrop2 dcW hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 bc hdrop12 hdrop13
+    hdrop14 bW fc hdrop17 hdrop18 hdrop19 fW sp8 hdrop22
+  clear hdrop0 hdrop1 hdrop2 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 hdrop12 hdrop13 hdrop14 hdrop17
+    hdrop18 hdrop19 hdrop22
+  clear h
   exact initLay fc fW sp8 dcW bc bW
 
 theorem oSt_addr {s₀ : State} (h : onePre n wi s₀) :
@@ -150,7 +155,12 @@ theorem oneAad_ok {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 
   have spf := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have hin : args s₀ n ∈ s₀.rd := h.1.2.2.2
   have hp := h
-  obtain ⟨hrd, -, -, -, -, dnW, -, daW, -, -, -, -, bn, ba, -, -, -, fn, fa, -, -, -, -, -⟩ := hp
+  sig_split hp
+  rename_i hrd hdrop1 hdrop2 hdrop3 hdrop4 dnW hdrop6 daW hdrop8 hdrop9 hdrop10 hdrop11 bn ba hdrop14 hdrop15
+    hdrop16 fn fa hdrop19 hdrop20 hdrop21 hdrop22
+  clear hdrop1 hdrop2 hdrop3 hdrop4 hdrop6 hdrop8 hdrop9 hdrop10 hdrop11 hdrop14 hdrop15 hdrop16 hdrop19
+    hdrop20 hdrop21 hdrop22
+  clear hp
   have hH₁ := ctxH_keep h1.frame (ctx_saved L)
   have ji : J0In (s₀.gpr .r0) (oSt s₀ wi) (arg s₀ wi) s₀.sp (s₀.gpr .r7) (s₀.gpr .r1)
       (ctxH s₀.mem (State.addr (s₀.gpr .r0))) (s₀.gpr .r2) (s₀.gpr .r3).toNat s₁ :=
@@ -247,7 +257,12 @@ theorem oneAad_ok {s₀ s₁ : State} (h : onePre n wi s₀) (hn : 5 ≤ n) (h1 
 theorem one_dataOk {s₀ s : State} (h : onePre n wi s₀) (hk : ArgsKeep n s₀ s) :
     DataOk (oSt s₀ wi) (arg s₀ wi) s₀.sp s (arg s₀ 2) (arg s₀ 3).toNat := by
   have hp := h
-  obtain ⟨-, hwr, -, -, -, -, -, -, dDW, -, -, -, -, -, bD, -, -, -, -, fD, -, -, -, -⟩ := hp
+  sig_split hp
+  rename_i hdrop0 hwr hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 dDW hdrop9 hdrop10 hdrop11 hdrop12 hdrop13 bD
+    hdrop15 hdrop16 hdrop17 hdrop18 fD hdrop20 hdrop21 hdrop22
+  clear hdrop0 hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13 hdrop15
+    hdrop16 hdrop17 hdrop18 hdrop20 hdrop21 hdrop22
+  clear hp
   exact ⟨by rw [hk.rd, hk.wr]; exact covers_left (covers_of_mem hwr.1), (arg s₀ 3).isLt, fD,
     oSt_disj h dDW, dDW, bD⟩
 

@@ -235,8 +235,10 @@ structure RpCtx (s : State) : Prop where
 
 theorem rpCtx_of {s : State} (h : rpContract.pre s) : RpCtx s := by
   simp only [rpContract] at h
-  obtain ⟨hsp, hrd, hwr, dpq, dpn, dpe, dpd, dps, dpa, dqn, dqe, dqd, dqs, dqa, dns, des, dds, dsa,
-    dRp, dRq, dRn, dRe, dRd, dRs, dRa, wP, wQ, wN, wE, wD, wS, hk, hsi, hcx, hel1, hel2, hdl1, hdl2, hsl⟩ := h
+  sig_split h
+  rename_i hsp hrd hwr dpq dpn dpe dpd dps dpa dqn dqe dqd dqs dqa dns des dds dsa dRp dRq dRn dRe
+    dRd dRs dRa wP wQ wN wE wD wS hk hsi hcx hel1 hel2 hdl1 hdl2
+  have hsl := h
   obtain ⟨hk1, hk2⟩ := hk
   unfold Spec.Rsa.scratchWords at hsl
   have hs : Scr s (stackArg s 4) ((stackArg s 5).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS

@@ -19,6 +19,6 @@ materialize_value Impl.CmacTripleDes.X86_64.sboxes
 materialize_value Impl.CmacTripleDes.X86_64.output
 materialize_value Impl.CmacTripleDes.X86_64.ipCode
 materialize_value Impl.CmacTripleDes.X86_64.fpCode
-materialize_code Impl.CmacTripleDes.X86_64.block
+materialize_flat_code Impl.CmacTripleDes.X86_64.block
 
 end VG

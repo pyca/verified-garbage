@@ -59,7 +59,7 @@ structure XorImpl where
   /-- Its `fold` with the implementation of `vg_poly1305_blocks` it comes
   with: one of the pairs whose ChaCha20-Poly1305 the constant-time analysis
   checks (it runs on code with the comparison against `fold` in it). -/
-  fold_poly : (callee.fold = 0 ∧ poly = .scalar) ∨ (callee.fold = 192 ∧ poly = .avx2) ∨
+  fold_poly : (callee.fold = 0 ∧ poly = .scalar) ∨ (callee.fold = 448 ∧ poly = .avx2) ∨
     (callee.fold = 960 ∧ poly = .avx512)
 
 namespace XorImpl

@@ -769,9 +769,9 @@ theorem checks_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : ks
   exact WP.seq (WP.mono (onesOk_ok hc hs6) fun s7 h7 => kBranch_ok hc h7)
 
 theorem ksChk_ok {p : Params} (h : Ok3 p) : ksChk p = true := by
-  rcases h with rfl | rfl | rfl <;> decide
+  rcases h with rfl | rfl | rfl <;> decide +kernel
 
 theorem bChk_ok {p : Params} (h : Ok3 p) : bChk p = true := by
-  rcases h with rfl | rfl | rfl <;> decide
+  rcases h with rfl | rfl | rfl <;> decide +kernel
 
 end VG.Proof.MlDsa.Arm.Sign

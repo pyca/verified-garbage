@@ -45,7 +45,7 @@ def params : Params where
   B := 128
   L := 16
   so := 224
-  len := [.mov .r9 (.imm 0), .str .r9 .r0 176, .mov .r9 (.shifted .r5 .lsr 29), .rev .r9 .r9, .str .r9 .r0 180] ++
+  len := ([.mov .r9 (.imm 0), .str .r9 .r0 176, .mov .r9 (.shifted .r5 .lsr 29), .rev .r9 .r9, .str .r9 .r0 180] : List Instr) ++
     len64 184 true
   out := (List.range 8).flatMap outW
 

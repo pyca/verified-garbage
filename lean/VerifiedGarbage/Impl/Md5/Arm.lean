@@ -59,14 +59,14 @@ rotation as a right rotation by `32 - s`. The additions are in the order of
 the specification. -/
 def step (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3
-  fn (t / 16) b c d ++ [
+  fn (t / 16) b c d ++ ([
     .dp .add a a (.reg T0),
     .ldr T1 .r1 (4 * ks.getD t 0),
     .dp .add a a (.reg T1),
     .movw T1 ((Ts.getD t 0).extractLsb' 0 16),
     .movt T1 ((Ts.getD t 0).extractLsb' 16 16),
     .dp .add a a (.reg T1),
-    .dp .add a b (.shifted a .ror (32 - rot t))]
+    .dp .add a b (.shifted a .ror (32 - rot t))] : List Instr)
 
 /-- Operations `0 … n-1`. -/
 def steps : Nat → Prog isa
@@ -86,7 +86,7 @@ def restore : List Instr := saved.map fun (r, d) => .ldr r .r3 d
 after the 64 operations), and set `Ones`. -/
 def load : List Instr :=
   (List.range 4).map (fun k => .ldr (var 0 k) .r0 (4 * k)) ++
-  [.movw Ones (ones.extractLsb' 0 16), .movt Ones (ones.extractLsb' 16 16)]
+  ([.movw Ones (ones.extractLsb' 0 16), .movt Ones (ones.extractLsb' 16 16)] : List Instr)
 
 /-- Add the MD buffer into the words and store the result. -/
 def update : List Instr :=
@@ -102,7 +102,7 @@ def advance : List Instr := [.dp .add .r1 .r1 (.imm 64), .subs .r2 .r2 (.imm 1)]
 def body : Prog isa := .seq (.block load) (.seq (steps 64) (.block (update ++ advance)))
 
 def compress : Prog isa :=
-  .seq (.block (save ++ [.cmp .r2 (.imm 0)]))
+  .seq (.block (save ++ ([.cmp .r2 (.imm 0)] : List Instr)))
     (.seq (.ite .eq (.block []) (.loop body .ne)) (.block restore))
 
 end VG.Impl.Md5.Arm

@@ -54,8 +54,8 @@ def addWord (k : Nat) : List Instr :=
 
 /-- Store word 0 to free `w2`, finish words 1–15, then finish word 0. -/
 def finish : List Instr :=
-  [.str .w .x2 .x1 0] ++ (List.range 15).flatMap (fun i => addWord (i + 1)) ++
-  [.ldr .w .x2 .x0 0, .ldr .w .x3 .x1 0, .add .w .x2 .x3 .x2, .str .w .x2 .x1 0]
+  ([.str .w .x2 .x1 0] : List Instr) ++ (List.range 15).flatMap (fun i => addWord (i + 1)) ++
+  ([.ldr .w .x2 .x0 0, .ldr .w .x3 .x1 0, .add .w .x2 .x3 .x2, .str .w .x2 .x1 0] : List Instr)
 
 def block : Prog isa := .seq (.block load) (.seq (rounds 10) (.block finish))
 

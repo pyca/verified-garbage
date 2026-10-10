@@ -167,11 +167,11 @@ def saved : List (Reg × Nat) := [(.ebx, 80), (.esi, 84), (.edi, 88)]
 /-- Save the callee-saved registers (with `scratch` in `eax`), keep the
 offset counter in `scratch`, and test `last`. -/
 def prologue : List Instr :=
-  [.mov .eax (.mem (at_ .esp 28))] ++ saved.map (fun (r, d) => .store (at_ .eax d) r) ++
-  [.mov .esi (.reg .eax), .mov .edi (.mem (at_ .esp 8)),
+  ([.mov .eax (.mem (at_ .esp 28))] : List Instr) ++ saved.map (fun (r, d) => .store (at_ .eax d) r) ++
+  ([.mov .esi (.reg .eax), .mov .edi (.mem (at_ .esp 8)),
    .mov .eax (.mem (at_ .esp 16)), .store (at_ .esi tloOff) .eax,
    .mov .eax (.mem (at_ .esp 20)), .store (at_ .esi thiOff) .eax,
-   .mov .ecx (.imm 0), .mov .eax (.mem (at_ .esp 24)), .alu .test .eax (.reg .eax)]
+   .mov .ecx (.imm 0), .mov .eax (.mem (at_ .esp 24)), .alu .test .eax (.reg .eax)] : List Instr)
 
 /-- The final block flag (all one bits if `last ≠ 0`), and the count of
 blocks, setting ZF if it is 0. -/

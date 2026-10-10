@@ -37,7 +37,7 @@ def kbSlot : Nat := tailSlot + 8
 /-- The planes of the constant `x` to the entry at `rsi`, and on to the next. -/
 def sigmaOne (x : BitVec 64) : List Instr :=
   (List.range 8).flatMap (fun j => [.movImm64 .rax (keyPlane x j), .store (slotAt .rsi j) .rax]) ++
-  [.alu .add .rsi (.imm 64)]
+  ([.alu .add .rsi (.imm 64)] : List Instr)
 
 /-- Load the key: `KL`, and `KR` by the key's length (in `rsi`). -/
 def loadKey : Prog isa :=
@@ -50,7 +50,7 @@ def loadKey : Prog isa :=
 
 /-- The word at `[rdi + d]` in all eight lanes, bitsliced. -/
 def spread (d : Nat) : List Instr :=
-  [.mov (q 0) (.mem (at_ .rdi d))] ++ ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++ toBs
+  ([.mov (q 0) (.mem (at_ .rdi d))] : List Instr) ++ ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++ toBs
 
 /-- `w := w ^ x`, for the two words at slots `w` and `x`. -/
 def xorWords (w x : Nat) : List Instr :=
@@ -70,8 +70,8 @@ def pairPlain : List Instr :=
 pair `KL` is XORed in, after the second it is `KA`, and `KA ^ KR` goes on;
 after the third it is `KB`. `r8` counts the pairs down from 3. -/
 def kaKb : Prog isa :=
-  .seq (.block (copyWords wSlot klSlot ++ xorWords wSlot krSlot ++ [.movImm64 .r8 3, movR .rdi sb,
-      .alu .add .rdi (.imm (BitVec.ofNat 32 (8 * wSlot)))]))
+  .seq (.block (copyWords wSlot klSlot ++ xorWords wSlot krSlot ++ ([.movImm64 .r8 3, movR .rdi sb,
+      .alu .add .rdi (.imm (BitVec.ofNat 32 (8 * wSlot)))] : List Instr)))
     (.loop (.seq (.block pairPlain)
       (.seq (.block [.alu .cmp .r8 (.imm 2)])
         (.seq (.ite .ae
@@ -97,7 +97,7 @@ def subkey (i v r : Nat) (hi : Bool) : List Instr :=
   let r' := r % 64
   [movR t0 a] ++
   (if r' = 0 then [] else [.shift .shl t0 r', movR t1 b, .shift .shr t1 (64 - r'), .alu .or t0 (.reg t1)]) ++
-  [.bswap t0, .store (at_ .rdx (8 * i)) t0]
+  ([.bswap t0, .store (at_ .rdx (8 * i)) t0] : List Instr)
 
 def storeSubkeys (ks : List (Nat × Nat × Bool)) : List Instr :=
   ks.zipIdx.flatMap fun ((v, r, hi), i) => subkey i v r hi

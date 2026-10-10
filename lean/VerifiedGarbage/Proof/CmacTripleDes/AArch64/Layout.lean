@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
 import VerifiedGarbage.Proof.CmacTripleDes.Des
 import VerifiedGarbage.Proof.Framework.Bitslice.Table
@@ -87,7 +88,12 @@ theorem index_byte (k : BitVec 64) (r : BitVec 32) {l : Nat} (hl : l < 8) :
 theorem sTable_bit : ∀ i < 8, ∀ x < 64, ∀ q < 4,
     (sTable (2 ^ 6 * boxTable i + x)).getLsbD (posOf i q) =
       (Spec.TripleDes.sBox i (BitVec.ofNat 6 x)).getLsbD q := by
-  lit_decide
+  -- Against the S-boxes' materialized truth tables, not the specification.
+  have h : ∀ i < 8, ∀ x < 64, ∀ q < 4,
+      (sTable (2 ^ 6 * boxTable i + x)).getLsbD (posOf i q) = (Proof.TripleDes.outputTable i q).testBit x := by
+    lit_decide
+  intro i hi x hx q hq
+  rw [h i hi x hx q hq, Proof.TripleDes.testBit_outputTable hx]
 
 /-! ## `P` -/
 

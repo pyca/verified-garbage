@@ -139,12 +139,12 @@ theorem loadBytes_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
 
 /-- One word of `shrWords`. -/
 def shrStep (n o sh j : Nat) : List Instr :=
-  [.mov .eax (.mem (sc (o + 4 * j))), .shift .shr .eax sh] ++
-  (if j + 1 < 2 * n then
+  ([.mov .eax (.mem (sc (o + 4 * j))), .shift .shr .eax sh] : List Instr) ++
+  ((if j + 1 < 2 * n then
     [.mov .edx (.mem (sc (o + 4 * (j + 1)))), .alu .and .edx (.imm (BitVec.ofNat 32 (2 ^ sh - 1))),
       .shift .ror .edx sh, .alu .or .eax (.reg .edx)]
-  else []) ++
-  [.store (sc (o + 4 * j)) .eax]
+  else []) : List Instr) ++
+  ([.store (sc (o + 4 * j)) .eax] : List Instr)
 
 theorem shrWords_eq (n o sh : Nat) : shrWords n o sh = (List.range (2 * n)).flatMap (shrStep n o sh) := rfl
 
@@ -230,8 +230,8 @@ def stStepW (len : Nat) (dst : Reg) (d a j : Nat) : List Instr :=
 
 /-- Byte `i` of a word of `t` bytes in `eax`. -/
 def stByte (t : Nat) (dst : Reg) (d i : Nat) : List Instr :=
-  [.mov .edx (.reg .eax)] ++ (if t - 1 - i = 0 then [] else [.shift .shr .edx (8 * (t - 1 - i))]) ++
-    [.store8 (at_ dst (d + i)) .dl]
+  ([.mov .edx (.reg .eax)] : List Instr) ++ ((if t - 1 - i = 0 then [] else [.shift .shr .edx (8 * (t - 1 - i))]) : List Instr) ++
+    ([.store8 (at_ dst (d + i)) .dl] : List Instr)
 
 /-- A word of `t` bytes. -/
 def stTop (t : Nat) (dst : Reg) (d a j : Nat) : List Instr :=

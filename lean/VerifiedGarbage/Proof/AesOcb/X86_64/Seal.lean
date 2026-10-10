@@ -59,8 +59,10 @@ theorem args_of {s : State} (h : oneFacts s)
     (mwr : ∀ r ∈ [aData s, aWork s], Covers [r] s.wr) :
     Args s (s.gpr .rdi) (arg s 4) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .r8) (arg s 0) (s.gpr .rsi).toNat
       (s.gpr .rcx).toNat (s.gpr .r9).toNat (arg s 1).toNat (arg s 3).toNat (arg s 2) := by
-  obtain ⟨d3, d4, d5, d6, d7, d8, t1, t2, d9, _, d11, d12, d13, t3, d14, d15, d16, d17, d18, t4, b19, b20, b21, b22,
-    bt, b23, b24, _, hR, hv⟩ := h
+  sig_split h
+  rename_i d3 d4 d5 d6 d7 d8 t1 t2 d9 _ d11 d12 d13 t3 d14 d15 d16 d17 d18 t4 b19 b20 b21 b22 bt b23 b24 _ hR
+  have hv := h
+  clear h
   simp only [Spec.Ocb.lengthsOk, Bool.and_eq_true, decide_eq_true_eq] at hv
   obtain ⟨⟨⟨ht1, ht16⟩, hn1⟩, hn15⟩ := hv
   exact {

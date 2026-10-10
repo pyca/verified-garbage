@@ -117,7 +117,7 @@ def bitPackAt (c : Prog isa) (f : Ptr) (a b : Nat) (out : Ptr) (len : Nat) : Pro
 /-- `r15 ← r15 ∧ eax`, and the polynomial at `a` (or the `N` coefficients from `a`) ANDed with `-eax`
 (`eax` is 0 or 1). -/
 def mask (a : Ptr) (N : Nat := 256) : Prog isa :=
-  .seq (.block ([.alu32 .and .r15 (.reg .rax), .mov32 .r8 (.imm 0), .alu32 .sub .r8 (.reg .rax)] ++
+  .seq (.block (([.alu32 .and .r15 (.reg .rax), .mov32 .r8 (.imm 0), .alu32 .sub .r8 (.reg .rax)] : List Instr) ++
       lea .rdi a ++ imm .rcx N))
     (.loop (.block [.mov32 .rax (.mem (at_ .rdi 0)), .alu32 .and .rax (.reg .r8), .store32 (at_ .rdi 0) .rax,
       .alu .add .rdi (.imm 4), .alu .sub .rcx (.imm 1)]) .ne)

@@ -219,7 +219,7 @@ def aChk (p : Params) : Bool :=
     stChk p [(sc oRS, 32)] && decide (32 ≤ p.skLen)
 
 theorem aChk_ok {p : Params} (h : Ok3 p) : aChk p = true := by
-  rcases h with rfl | rfl | rfl <;> decide
+  rcases h with rfl | rfl | rfl <;> decide +kernel
 
 theorem expandA_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : aChk p = true) {σ s : State}
     (hs : St p D σ s) (h15 : s.gpr .r11 = 1) : WP isa (Impl.MlDsa.Arm.Sign.expandA P p) s (IA p D σ (p.k * p.ℓ)) := by

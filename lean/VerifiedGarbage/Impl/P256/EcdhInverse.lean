@@ -903,7 +903,7 @@ def restoreExtra : List Instr := extra.zipIdx.map fun (r,i) => ld r (7800+8*i)
 
 /-- Ten fixed batches, including zero inputs. No secret controls the number of steps. -/
 def inverse : Prog isa :=
-  .seq (.block (saveExtra ++ [.movz .x .x27 0 0] ++ P.init)) <|
+  .seq (.block (saveExtra ++ ([.movz .x .x27 0 0] : List Instr) ++ P.init)) <|
   .seq (.loop batch (.nonzero .x .x19)) <|
   .block (P.finish ++ restoreExtra)
 end VG.Impl.P256.EcdhInverse

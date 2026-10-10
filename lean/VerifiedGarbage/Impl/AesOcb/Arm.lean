@@ -134,8 +134,8 @@ def low1 : List Instr := [.dp .and .r12 .lr (imm 1), .cmp .r12 (imm 0)]
 /-- `W + lO ← L_{ntz(i)}` for `i ≥ 1` in `r6`: `L_0` doubled while the low
 bit of `lr` (from `i`, shifted right each time) is zero. -/
 def lNtz : Prog isa :=
-  .seq (.block (copy16 l0O lO ++ [.mov .lr (.reg .r6)] ++ low1))
-    (.ite .eq (.loop (.block (dbl .r11 lO lO ++ [.mov .lr (.shifted .lr .lsr 1)] ++ low1)) .eq) (.block []))
+  .seq (.block (copy16 l0O lO ++ ([.mov .lr (.reg .r6)] : List Instr) ++ low1))
+    (.ite .eq (.loop (.block (dbl .r11 lO lO ++ ([.mov .lr (.shifted .lr .lsr 1)] : List Instr) ++ low1)) .eq) (.block []))
 
 /-! ## Calls -/
 
@@ -184,7 +184,7 @@ def nonceBlock : Prog isa :=
 /-- `r7 := 0 − bit k of bottom` (in `r6`): all ones if it is set. -/
 def stageMask (k : Nat) : List Instr :=
   (if k = 0 then [.dp .and .r7 .r6 (imm 1)] else [.mov .r7 (.shifted .r6 .lsr k), .dp .and .r7 .r7 (imm 1)]) ++
-    [.mov .r8 (imm 0), .dp .sub .r7 .r8 (.reg .r7)]
+    ([.mov .r8 (imm 0), .dp .sub .r7 .r8 (.reg .r7)] : List Instr)
 
 /-- `x ← x ⊕ ((x' ⊕ x) ∧ mask)`, `x'` in `r8`: `x'` if the mask (in `r7`) is
 all ones, `x` if it is zero. -/
@@ -199,30 +199,30 @@ word at a time from the high one, `x' = (x ⋘ a) ∨ (next ⋙ (32 − a))`. -/
 def stage (k a : Nat) : List Instr :=
   stageMask k ++
   ([(Reg.r0, Reg.r1), (.r1, .r2), (.r2, .r3), (.r3, .r4), (.r4, .r5)].flatMap fun (x, y) =>
-    [.mov .r8 (.shifted x .lsl a), .dp .orr .r8 .r8 (.shifted y .lsr (32 - a))] ++ sel x) ++
-  [.mov .r8 (.shifted .r5 .lsl a)] ++ sel .r5
+    ([.mov .r8 (.shifted x .lsl a), .dp .orr .r8 .r8 (.shifted y .lsr (32 - a))] : List Instr) ++ sel x) ++
+  ([.mov .r8 (.shifted .r5 .lsl a)] : List Instr) ++ sel .r5
 
 /-- The last stage: shifted left by 32 bits (a word) if bit 5 of `bottom` is
 set. -/
 def stage32 : List Instr :=
   stageMask 5 ++
   ([(Reg.r0, Reg.r1), (.r1, .r2), (.r2, .r3), (.r3, .r4), (.r4, .r5)].flatMap fun (x, y) =>
-    [.mov .r8 (.reg y)] ++ sel x) ++
-  [.mov .r8 (imm 0)] ++ sel .r5
+    ([.mov .r8 (.reg y)] : List Instr) ++ sel x) ++
+  ([.mov .r8 (imm 0)] : List Instr) ++ sel .r5
 
 /-- `Offset_0` from `Ktop` at `W + tmpO` and `bottom` at `W + botO`, to
 `W + ofsO` and `W + o0O`: `Stretch = Ktop ‖ (Ktop[1..64] ⊕ Ktop[9..72])`
 in `r0`–`r5`, shifted left by `bottom`, of which the high 128 bits. -/
 def offset0 : List Instr :=
-  [.ldr .r0 .r11 tmpO, .ldr .r1 .r11 (tmpO + 4), .ldr .r2 .r11 (tmpO + 8), .ldr .r3 .r11 (tmpO + 12),
+  ([.ldr .r0 .r11 tmpO, .ldr .r1 .r11 (tmpO + 4), .ldr .r2 .r11 (tmpO + 8), .ldr .r3 .r11 (tmpO + 12),
    .rev .r0 .r0, .rev .r1 .r1, .rev .r2 .r2, .rev .r3 .r3,
    .mov .r4 (.shifted .r0 .lsl 8), .dp .orr .r4 .r4 (.shifted .r1 .lsr 24), .dp .eor .r4 .r4 (.reg .r0),
    .mov .r5 (.shifted .r1 .lsl 8), .dp .orr .r5 .r5 (.shifted .r2 .lsr 24), .dp .eor .r5 .r5 (.reg .r1),
-   .ldr .r6 .r11 botO] ++
+   .ldr .r6 .r11 botO] : List Instr) ++
   stage 0 1 ++ stage 1 2 ++ stage 2 4 ++ stage 3 8 ++ stage 4 16 ++ stage32 ++
-  [.rev .r0 .r0, .rev .r1 .r1, .rev .r2 .r2, .rev .r3 .r3,
+  ([.rev .r0 .r0, .rev .r1 .r1, .rev .r2 .r2, .rev .r3 .r3,
    .str .r0 .r11 ofsO, .str .r1 .r11 (ofsO + 4), .str .r2 .r11 (ofsO + 8), .str .r3 .r11 (ofsO + 12),
-   .str .r0 .r11 o0O, .str .r1 .r11 (o0O + 4), .str .r2 .r11 (o0O + 8), .str .r3 .r11 (o0O + 12)]
+   .str .r0 .r11 o0O, .str .r1 .r11 (o0O + 4), .str .r2 .r11 (o0O + 8), .str .r3 .r11 (o0O + 12)] : List Instr)
 
 /-- `Offset_0`, for the `r5` bytes of nonce at `r4`. -/
 def nonce : Prog isa := .seq nonceBlock (.seq (encOne tmpO) (.block offset0))
@@ -265,7 +265,7 @@ def hashRest : Prog isa :=
 `[sp + 4]`. -/
 def hash : Prog isa :=
   .seq (.block (zero16 sumO ++ zero16 ohO ++
-      [.ldrSp .r4 0, .ldrSp .r7 4, .mov .r7 (.shifted .r7 .lsr 4), .mov .r6 (imm 1), .cmp .r7 (imm 0)]))
+      ([.ldrSp .r4 0, .ldrSp .r7 4, .mov .r7 (.shifted .r7 .lsr 4), .mov .r6 (imm 1), .cmp .r7 (imm 0)] : List Instr)))
     (.seq (.ite .eq (.block []) (.loop hashChunk .ne))
       (.seq (.block [.ldrSp .r5 4, .dp .and .r5 .r5 (imm 15), .cmp .r5 (imm 0)])
         (.ite .eq (.block []) hashRest)))
@@ -298,7 +298,7 @@ third pass, the offsets recomputed from `Offset_0`); `r7` their number,
 def whole (f : Prog isa) (pre post : List Instr) : Prog isa :=
   .seq (.block passStart)
     (.seq (pass pre)
-      (.seq (.block (callArgs ++ [.mov .r2 (.reg .r8), .mov .r3 (.reg .r7)]))
+      (.seq (.block (callArgs ++ ([.mov .r2 (.reg .r8), .mov .r3 (.reg .r7)] : List Instr)))
         (.seq f
           (.seq (.block (copy16 o0O ofsO ++ passStart))
             (pass post)))))
@@ -336,7 +336,7 @@ number of rounds in `r10` and `r9`, the nonce and its length in `r4` and
 `r5`, `L_$` and `L_0`, the checksum zeroed. -/
 def entry : List Instr :=
   .ldrSp .r12 24 :: save .r12 ++
-    [.mov .r11 (.reg .r12), .mov .r10 (.reg .r0), .mov .r9 (.reg .r1), .mov .r4 (.reg .r2), .mov .r5 (.reg .r3)] ++
+    ([.mov .r11 (.reg .r12), .mov .r10 (.reg .r0), .mov .r9 (.reg .r1), .mov .r4 (.reg .r2), .mov .r5 (.reg .r3)] : List Instr) ++
     lsetup ++ zero16 ckO
 
 /-- The data: whole blocks, then the rest. -/
@@ -360,7 +360,7 @@ def «seal» : Prog isa := .seq (front true tagO) (.seq tagOut (.block restore))
 
 /-- The received tag, the `tag_len` bytes at `tag`, padded with zeros at `W`. -/
 def recv : Prog isa :=
-  .seq (.block (zero16 tagO ++ [.ldrSp .r1 16, .mov .r2 (.reg .r11), .ldrSp .r3 20])) copyLoop
+  .seq (.block (zero16 tagO ++ ([.ldrSp .r1 16, .mov .r2 (.reg .r11), .ldrSp .r3 20] : List Instr))) copyLoop
 
 /-- Word `k` of the XOR of the two padded tags into `d`. -/
 def xorT (d : Reg) (k : Nat) : List Instr :=
@@ -370,11 +370,11 @@ def xorT (d : Reg) (k : Nat) : List Instr :=
 without a branch (`1 - ((x | -x) >> 31)` of the OR `x` of the XORs of their
 words). -/
 def cmpTail : List Instr :=
-  xorT .r0 0 ++ xorT .r1 1 ++ [.dp .orr .r0 .r0 (.reg .r1)] ++ xorT .r1 2 ++
-    [.dp .orr .r0 .r0 (.reg .r1)] ++ xorT .r1 3 ++
-    [.dp .orr .r0 .r0 (.reg .r1), .mov .r1 (imm 0), .dp .sub .r1 .r1 (.reg .r0),
+  xorT .r0 0 ++ xorT .r1 1 ++ ([.dp .orr .r0 .r0 (.reg .r1)] : List Instr) ++ xorT .r1 2 ++
+    ([.dp .orr .r0 .r0 (.reg .r1)] : List Instr) ++ xorT .r1 3 ++
+    ([.dp .orr .r0 .r0 (.reg .r1), .mov .r1 (imm 0), .dp .sub .r1 .r1 (.reg .r0),
      .dp .orr .r0 .r0 (.reg .r1), .mov .r0 (.shifted .r0 .lsr 31), .mov .r1 (imm 1),
-     .dp .sub .r0 .r1 (.reg .r0)]
+     .dp .sub .r0 .r1 (.reg .r0)] : List Instr)
 
 /-- The first `tag_len` bytes of the tag at `W + t2O`, padded with zeros at
 `W + vO`, compared with the received one: `r0 = 1` if they are equal. -/

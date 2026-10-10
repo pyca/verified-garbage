@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
 import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt
 import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
@@ -49,7 +50,7 @@ theorem rnLoad_ok (s : State) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 1)
           (s.mem (s.gpr .rsi + BitVec.ofNat 64 2))) ∧
         s'.cf = some (decide ((s.gpr .rdi).toNat < 256)) ∧ s'.mem = s.mem ∧ s'.gpr .rdi = s.gpr .rdi) ∧
       Keep [.rax, .rdx, .r8, .rdi] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   unfold rnLoad
   xrun [h0, h1, h2, sx256, rnw, show (256 : BitVec 64).toNat = 256 from rfl]
 

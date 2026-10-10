@@ -43,7 +43,7 @@ inductive Arg
 
 /-- `d ← a`. -/
 def Arg.instrs (d : Reg) : Arg → List Instr
-  | .ptr p => ldc d p.2 ++ [.dp .add d p.1 (.reg d)]
+  | .ptr p => ldc d p.2 ++ ([.dp .add d p.1 (.reg d)] : List Instr)
   | .imm v => ldc d v
 
 /-- The moves of the arguments `as` into their registers. -/
@@ -80,8 +80,8 @@ def maskBody : List Instr :=
 that wrote it: unchanged if 1, and zero if 0, so that it is reduced either
 way, without a branch. `r12 ← -r0`, then each coefficient `∧ r12`. -/
 def mask (a : Ptr) : Prog isa :=
-  .seq (.block ([.mov .r12 (.imm 0), .dp .sub .r12 .r12 (.reg .r0)] ++ Arg.instrs .r1 (.ptr a) ++
-      [.mov .r2 (.imm 256)]))
+  .seq (.block (([.mov .r12 (.imm 0), .dp .sub .r12 .r12 (.reg .r0)] : List Instr) ++ Arg.instrs .r1 (.ptr a) ++
+      ([.mov .r2 (.imm 256)] : List Instr)))
     (.loop (.block maskBody) .ne)
 
 /-- A sampler's call, its result ANDed into `r11`, and its output masked. -/

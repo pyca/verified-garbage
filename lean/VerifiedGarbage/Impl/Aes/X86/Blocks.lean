@@ -84,7 +84,7 @@ def kpLast : List Instr := [movR kp .edi, addI kp (BitVec.ofNat 32 lastKey)]
 
 /-- Compare `kp` with round key 1, `edi + lastKey + 32 - 32 rounds`. -/
 def cmpFirst : List Instr :=
-  [.mov .ebx (.mem (argOp 1))] ++ dbl .ebx 5 ++
+  ([.mov .ebx (.mem (argOp 1))] : List Instr) ++ dbl .ebx 5 ++
   [movR .eax .edi, addI .eax (BitVec.ofNat 32 (lastKey + 32)), subR .eax .ebx, .alu .cmp kp (.reg .eax)]
 
 /-- A middle round of the inverse cipher, with `kp` at the previous round

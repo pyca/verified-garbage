@@ -48,14 +48,14 @@ XORed in. -/
 def pass : Prog isa := .loop (.block passBody) .ne
 
 /-- `T` saved, and the data pointer and number of blocks kept. -/
-def saveT : List Instr := copy .r15 cOff .r12 0 ++ [.mov .r10 (.reg .r13), .mov .r11 (.reg .r14)]
+def saveT : List Instr := copy .r15 cOff .r12 0 ++ ([.mov .r10 (.reg .r13), .mov .r11 (.reg .r14)] : List Instr)
 
 /-- The data pointer and number of blocks back, `T` restored, and the
 arguments of the block function on all the blocks. -/
 def callArgs : List Instr :=
-  [.mov .r13 (.reg .r10), .mov .r14 (.reg .r11)] ++ copy .r12 0 .r15 cOff ++
-  [.mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp), .mov .rdx (.reg .r13), .mov .rcx (.reg .r14),
-   .mov .r8 (.reg .r15)]
+  ([.mov .r13 (.reg .r10), .mov .r14 (.reg .r11)] : List Instr) ++ copy .r12 0 .r15 cOff ++
+  ([.mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp), .mov .rdx (.reg .r13), .mov .rcx (.reg .r14),
+   .mov .r8 (.reg .r15)] : List Instr)
 
 /-- The blocks (at least one): the tweaks XORed in, enciphered (or
 deciphered) by `b`, and the tweaks XORed in again. -/

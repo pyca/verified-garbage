@@ -32,7 +32,7 @@ def sealSat : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x8009 then 0x30 else 0
+  mem a := bif Nat.beq a.toNat 0x8009 then 0x30 else 0
   rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x8008, 16⟩]
   wr := [⟨0x2100, 0⟩, ⟨0x3000, 16⟩, ⟨0, 1696⟩]
 
@@ -44,7 +44,7 @@ def openSat : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x8009 then 0x30 else 0
+  mem a := bif Nat.beq a.toNat 0x8009 then 0x30 else 0
   rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x3000, 16⟩, ⟨0x8008, 16⟩]
   wr := [⟨0x2100, 0⟩, ⟨0, 1696⟩]
 
@@ -52,12 +52,12 @@ def openSat : State where
 theorem seal_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     («seal» v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
   rcases v.fold_poly with ⟨hf, hb⟩ | ⟨hf, hb⟩ | ⟨hf, hb⟩ <;>
-    (simp only [«seal», prologue, crypt, Code.all, v.spSafe, hf, hb]; decide +kernel)
+    (simp only [«seal», prologue, crypt, Code.all, v.spSafe, hf, hb]; lit_decide)
 
 theorem open_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     («open» v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
   rcases v.fold_poly with ⟨hf, hb⟩ | ⟨hf, hb⟩ | ⟨hf, hb⟩ <;>
-    (simp only [«open», prologue, crypt, Code.all, v.spSafe, hf, hb]; decide +kernel)
+    (simp only [«open», prologue, crypt, Code.all, v.spSafe, hf, hb]; lit_decide)
 
 theorem seal_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : sealX86_64.pre s) :
     ∃ t s', Exec isa («seal» v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' :=

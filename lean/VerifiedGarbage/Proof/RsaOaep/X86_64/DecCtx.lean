@@ -214,7 +214,13 @@ structure DPre (s : State) : Prop where
 
 theorem DPre.of {s : State} (h : (decK H G).pre s) : DPre s := by
   simp only [decK] at h
-  obtain ⟨sp1, sp2, hrd, hwr, dOM, dOn, dOe, dOp, dOq, dOdp, dOdq, dOqi, dOlb, dOct, dOs, dOa, dMn, dMe, dMp, dMq, dMdp, dMdq, dMqi, dMlb, dMct, dMs, dMa, dns, des, dps, dqs, ddps, ddqs, dqis, dlbs, dcts, dsa, dRO, dRM, dRs, dKO, dKM, dKn, dKe, dKp, dKq, dKdp, dKdq, dKqi, dKlb, dKct, dKs, dKa, wO, wM, wN, wE, wP, wQ, wDp, wDq, wQi, wL, wC, wS, lv, hsi, hcl, el1, el2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsw⟩ := h
+  sig_split h
+  rename_i sp1 sp2 hrd hwr dOM dOn dOe dOp dOq dOdp dOdq dOqi dOlb dOct dOs dOa dMn dMe dMp dMq dMdp dMdq dMqi
+    dMlb dMct dMs dMa dns des dps dqs ddps ddqs dqis dlbs dcts dsa dRO dRM dRs dKO dKM dKn dKe dKp dKq dKdp
+    dKdq dKqi dKlb dKct dKs dKa wO wM wN wE wP wQ wDp wDq wQi wL wC wS lv hsi hcl el1 el2 pl1 pl2 ql1 ql2 hdpl
+    hqil hdql
+  have hsw := h
+  clear h
   exact ⟨sp1, sp2, hrd, hwr, dOM, dOn, dOe, dOp, dOq, dOdp, dOdq, dOqi, dOlb, dOct, dOs, dOa, dMn, dMe, dMp, dMq, dMdp, dMdq, dMqi, dMlb, dMct, dMs, dMa, dns, des, dps, dqs, ddps, ddqs, dqis, dlbs, dcts, dsa, dRO, dRM, dRs, dKO, dKM, dKn, dKe, dKp, dKq, dKdp, dKdq, dKqi, dKlb, dKct, dKs, dKa, wO, wM, wN, wE, wP, wQ, wDp, wDq, wQi, wL, wC, wS, lv, hsi, hcl, el1, el2, pl1, pl2, ql1, ql2, hdpl, hqil, hdql, hsw⟩
 
 /-- A state meeting `decK.pre`: a 512-bit modulus, one-byte `e`, primes,
@@ -227,12 +233,14 @@ def decSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x10008 then 1 else if a = 0x10011 then 0x41 else if a = 0x10018 then 1
-    else if a = 0x10021 then 0x42 else if a = 0x10028 then 1 else if a = 0x10031 then 0x43
-    else if a = 0x10038 then 1 else if a = 0x10041 then 0x44 else if a = 0x10048 then 1
-    else if a = 0x10051 then 0x45 else if a = 0x10058 then 1 else if a = 0x10061 then 0x46
-    else if a = 0x10071 then 0x47 else if a = 0x10078 then 64 else if a = 0x10082 then 0x02
-    else if a = 0x10089 then 0x08 else 0
+  mem a := bif Nat.beq a.toNat 0x10008 then 1 else bif Nat.beq a.toNat 0x10011 then 0x41
+    else bif Nat.beq a.toNat 0x10018 then 1 else bif Nat.beq a.toNat 0x10021 then 0x42
+    else bif Nat.beq a.toNat 0x10028 then 1 else bif Nat.beq a.toNat 0x10031 then 0x43
+    else bif Nat.beq a.toNat 0x10038 then 1 else bif Nat.beq a.toNat 0x10041 then 0x44
+    else bif Nat.beq a.toNat 0x10048 then 1 else bif Nat.beq a.toNat 0x10051 then 0x45
+    else bif Nat.beq a.toNat 0x10058 then 1 else bif Nat.beq a.toNat 0x10061 then 0x46
+    else bif Nat.beq a.toNat 0x10071 then 0x47 else bif Nat.beq a.toNat 0x10078 then 64
+    else bif Nat.beq a.toNat 0x10082 then 0x02 else bif Nat.beq a.toNat 0x10089 then 0x08 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4100, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩, ⟨0x4500, 1⟩,
     ⟨0x4600, 0⟩, ⟨0x4700, 64⟩, ⟨0x10008, 136⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1800, 8⟩, ⟨0x20000, 2048 * 8⟩]
@@ -262,8 +270,10 @@ theorem dec_implies : (decK H G).Implies (Spec.RsaOaep.decryptContract H G abi d
     sig_pub [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, abi, argRegs, decK, decStack, privStack,
       Impl.RsaOaep.X86_64.frameBytes, stackArgs_seventeen, List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
-    obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14,
-      a15, a16⟩ := h
+    sig_split h
+    rename_i hsp hl hdi hsi hdx hcx h8 h9 a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15
+    have a16 := h
+    clear h
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, h8]) hl
     refine ⟨?_, by simp only [stackArgs_seventeen, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14,
       a15, a16], hn, he⟩

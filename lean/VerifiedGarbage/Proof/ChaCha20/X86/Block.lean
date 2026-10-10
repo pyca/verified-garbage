@@ -543,7 +543,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
 
 /-- Memory whose two argument slots (at `0x4004`) hold `0x1000` and `0x2000`. -/
 def satMem : Mem := fun a =>
-  if a = 0x4005 then 0x10 else if a = 0x4009 then 0x20 else 0
+  bif Nat.beq a.toNat 0x4005 then 0x10 else bif Nat.beq a.toNat 0x4009 then 0x20 else 0
 
 /-- A state satisfying the precondition. -/
 def satState : State where

@@ -135,19 +135,19 @@ def fr (d : Reg) (o : Nat) : List Instr :=
 /-- The arguments of HMAC's `init`: the states, the key `K` of `D` bytes,
 the working space. -/
 def hmacArgs₁ (D : Nat) : List Instr :=
-  scr .rdi sInner ++ scr .rsi sOuter ++ fr .rdx fK ++ [.mov32 .rcx (.imm (BitVec.ofNat 32 D))] ++ scr .r8 sWork
+  scr .rdi sInner ++ scr .rsi sOuter ++ fr .rdx fK ++ ([.mov32 .rcx (.imm (BitVec.ofNat 32 D))] : List Instr) ++ scr .r8 sWork
 
 /-- The arguments of the streaming `update`: the inner state, the `B` bytes
 it holds, the data (at the address `dataA` sets `rdx` to) of `len` bytes,
 the working space. -/
 def hmacArgs₂ (B : Nat) (dataA : List Instr) (len : Nat) : List Instr :=
-  scr .rdi sInner ++ [.mov32 .rsi (.imm (BitVec.ofNat 32 B))] ++ dataA ++
-    [.mov32 .rcx (.imm (BitVec.ofNat 32 len))] ++ scr .r8 sWork
+  scr .rdi sInner ++ ([.mov32 .rsi (.imm (BitVec.ofNat 32 B))] : List Instr) ++ dataA ++
+    ([.mov32 .rcx (.imm (BitVec.ofNat 32 len))] : List Instr) ++ scr .r8 sWork
 
 /-- The arguments of HMAC's `finalize`: the states, the `B + len` bytes the
 inner one holds, the MAC's place in the frame, the working space. -/
 def hmacArgs₃ (B len dst : Nat) : List Instr :=
-  scr .rdi sInner ++ scr .rsi sOuter ++ [.mov32 .rdx (.imm (BitVec.ofNat 32 (B + len)))] ++ fr .rcx dst ++
+  scr .rdi sInner ++ scr .rsi sOuter ++ ([.mov32 .rdx (.imm (BitVec.ofNat 32 (B + len)))] : List Instr) ++ fr .rcx dst ++
     scr .r8 sWork
 
 /-- `HMAC_K(data)` into the frame at `dst`, for `len` bytes of `data` at the
@@ -181,7 +181,7 @@ def copyBytes (len : Nat) (src : Reg) (so : Nat) (dst : Reg) (d : Nat) : List In
 if `wide`, `digest` in `rdx` (loaded first, so that every address the
 message's block computes is from them or `rsp`). -/
 def msgPtrs (wide : Bool) : List Instr :=
-  [.mov .rdi (.mem (stk fScratch)), .mov .rsi (.mem (stk fD))] ++
+  ([.mov .rdi (.mem (stk fScratch)), .mov .rsi (.mem (stk fD))] : List Instr) ++
     (if wide then [.mov .rdx (.mem (stk fDigest))] else [])
 
 /-- The message `V ‖ b` (and `‖ d ‖ h` if `full`, `Q` bytes each) at
@@ -191,11 +191,11 @@ and `h` from the frame, or, if `wide`, `Q - D` zero bytes (a zero word,
 which the digest's words then overwrite but for them) and the digest. -/
 def msg (Q D b : Nat) (full wide : Bool) : List Instr :=
   copyBytes D .rsp fV .rdi sMsg ++
-    [.mov32 .rax (.imm (BitVec.ofNat 32 b)), .store8 (at_ .rdi (sMsg + D)) .rax] ++
+    ([.mov32 .rax (.imm (BitVec.ofNat 32 b)), .store8 (at_ .rdi (sMsg + D)) .rax] : List Instr) ++
     (if full then
       (if wide then
         copyBytes Q .rsi 0 .rdi (sMsg + D + 1) ++
-          [.alu32 .xor .rax (.reg .rax), .store (at_ .rdi (sMsg + D + 1 + Q)) .rax] ++
+          ([.alu32 .xor .rax (.reg .rax), .store (at_ .rdi (sMsg + D + 1 + Q)) .rax] : List Instr) ++
           copyN (D / 8) .rdx 0 .rdi (sMsg + 1 + 2 * Q)
       else copyBytes Q .rsi 0 .rdi (sMsg + D + 1) ++ copyBytes Q .rsp fH .rdi (sMsg + D + 1 + Q))
     else [])
@@ -215,7 +215,7 @@ def nWord (j : Nat) : BitVec 64 := BitVec.ofNat 64 (c.n >>> (64 * j))
 
 /-- `digest` in `rsi`, and, if `wide`, `scratch` in `rdi`. -/
 def digestPtr : List Instr :=
-  [.mov .rsi (.mem (stk fDigest))] ++ (if c.wide then [.mov .rdi (.mem (stk fScratch))] else [])
+  ([.mov .rsi (.mem (stk fDigest))] : List Instr) ++ (if c.wide then [.mov .rdi (.mem (stk fScratch))] else [])
 
 /-- `scratch` in `rdi`. -/
 def scrPtr : List Instr := [.mov .rdi (.mem (stk fScratch))]
@@ -225,14 +225,14 @@ bits in place, through the words at `scratch + sSlot` (with `scratch` in
 `rdi`). -/
 def conv (o s : Nat) : List Instr :=
   fr .rsi o ++ Impl.Weierstrass.X86_64.loadBytes c.len c.w sSlot .rsi ++
-    Impl.Weierstrass.X86_64.shrWords c.w sSlot s ++ [.movImm64 .rcx (BitVec.allOnes 64)] ++
+    Impl.Weierstrass.X86_64.shrWords c.w sSlot s ++ ([.movImm64 .rcx (BitVec.allOnes 64)] : List Instr) ++
     Impl.Weierstrass.X86_64.storeBytes c.len c.w .rsp o sSlot
 
 /-- If `wide`: the digest for `core`, the digest (at `rsi`) then `Q - D`
 zero bytes, shifted right by `8 (Q - D) - sh` bits: the digest's integer
 shifted left by `sh` bits. -/
 def coreDigest : List Instr :=
-  [.alu32 .xor .rax (.reg .rax), .store (stk (fX + c.len - 8)) .rax] ++
+  ([.alu32 .xor .rax (.reg .rax), .store (stk (fX + c.len - 8)) .rax] : List Instr) ++
     copyN (c.H.D / 8) .rsi 0 .rsp fX ++ c.conv fX (8 * (c.len - c.H.D) - c.sh)
 
 /-- Word `j` of the `Q`-byte number at `digest` (in `rsi`), least
@@ -249,9 +249,9 @@ def loadWord (j : Nat) : List Instr :=
 to `V`'s place, and word `j` of it minus `n` (with the borrow of the words
 before) to `K`'s: `rax` and `rdx` change, and the borrow is the carry flag. -/
 def subWord (j : Nat) : List Instr :=
-  c.loadWord j ++ [.store (stk (fV + 8 * j)) .rax,
+  c.loadWord j ++ ([.store (stk (fV + 8 * j)) .rax,
     .movImm64 .rdx (c.nWord j), .alu (if j = 0 then .sub else .sbb) .rax (.reg .rdx),
-    .store (stk (fK + 8 * j)) .rax]
+    .store (stk (fK + 8 * j)) .rax] : List Instr)
 
 /-- Word `j` of the result, by the mask `rdx` (all ones if subtracting `n`
 borrowed): the number's word if so, the difference's if not, big-endian to
@@ -267,11 +267,11 @@ def selWord (j : Nat) : List Instr :=
 minus `n` if that does not borrow, big-endian into the frame's `Q` bytes at
 `h`. -/
 def reduce : List Instr :=
-  (List.range c.w).flatMap c.subWord ++ [.alu .sbb .rdx (.reg .rdx)] ++ (List.range c.w).flatMap c.selWord
+  (List.range c.w).flatMap c.subWord ++ ([.alu .sbb .rdx (.reg .rdx)] : List Instr) ++ (List.range c.w).flatMap c.selWord
 
 /-- `V = 0x01…`, `K = 0x00…`, all 64 bytes of each. -/
 def initKV : List Instr :=
-  [.movImm64 .rax (BitVec.ofNat 64 0x0101010101010101), .alu32 .xor .rcx (.reg .rcx)] ++
+  ([.movImm64 .rax (BitVec.ofNat 64 0x0101010101010101), .alu32 .xor .rcx (.reg .rcx)] : List Instr) ++
     (List.range 8).flatMap fun j => [.store (stk (fV + 8 * j)) .rax, .store (stk (fK + 8 * j)) .rcx]
 
 /-- The candidates left. -/
@@ -281,9 +281,9 @@ def initCnt : List Instr :=
 /-- `core(out, d, digest, k, scratch)`: `k = V`, or, if `wide`, the digest
 and the candidate above the pointers. -/
 def coreArgs : List Instr :=
-  [.mov .rdi (.mem (stk fOut)), .mov .rsi (.mem (stk fD))] ++
+  ([.mov .rdi (.mem (stk fOut)), .mov .rsi (.mem (stk fD))] : List Instr) ++
     (if c.wide then fr .rdx fX ++ fr .rcx fKb else .mov .rdx (.mem (stk fDigest)) :: fr .rcx fV) ++
-    [.mov .r8 (.mem (stk fScratch))]
+    ([.mov .r8 (.mem (stk fScratch))] : List Instr)
 
 /-- If `wide`: `V`'s first `D` bytes to the candidate's place. -/
 def keepV : List Instr := copyN (c.H.D / 8) .rsp fV .rsp fKb
@@ -291,7 +291,7 @@ def keepV : List Instr := copyN (c.H.D / 8) .rsp fV .rsp fKb
 /-- If `wide`: the next eight bytes of the candidate from `V`, then the
 candidate's `Q` bytes shifted right by `sh` bits. -/
 def candTop : List Instr :=
-  [.mov .rax (.mem (stk fV)), .store (stk (fKb + c.H.D)) .rax] ++ c.conv fKb c.sh
+  ([.mov .rax (.mem (stk fV)), .store (stk (fKb + c.H.D)) .rax] : List Instr) ++ c.conv fKb c.sh
 
 /-- The candidate: `V = HMAC_K(V)`, which is `k`; or, if `wide`, the
 leftmost `Q` bytes of `V = HMAC_K(V)` then `V = HMAC_K(V)` again, shifted
@@ -329,7 +329,7 @@ def extra : Nat := if c.wide then 18 else 0
 /-- `K`, `V` and `h` cleared, and the words above the pointers (`rax`, the
 result, kept). -/
 def wipe : List Instr :=
-  [.alu32 .xor .rcx (.reg .rcx)] ++ (List.range 22).map (fun j => .store (stk (8 * j)) .rcx) ++
+  ([.alu32 .xor .rcx (.reg .rcx)] : List Instr) ++ (List.range 22).map (fun j => .store (stk (8 * j)) .rcx) ++
     (List.range c.extra).map fun j => .store (stk (fX + 8 * j)) .rcx
 
 /-- The frame's body. -/

@@ -39,9 +39,9 @@ theorem group_tr (c : Impl.Sha3.AArch64.Callee) {p : Params} (hF : PFacts p)
     (fun _ _ hp hs=>secretSeeds_ok hF hp (by omega)
       (fun i hi=>by have:=secretLane_lt (i := i) hn; omega) hs)
     (secretSeeds_tr hF _)) ?_
-  have hseed : inB (kgR++kgW p) (sc 1408) 264=true := by lay
+  have hseed : inB (kgR++kgW p) (sc 1408) 264=true := by layd
   have hout : inB (kgR++kgW p) (sP p r) 4096=true := by lay
-  have hwork : inB (kgR++kgW p) (sc (oR4 p)) 8192=true := by lay
+  have hwork : inB (kgR++kgW p) (sc (oR4 p)) 8192=true := by layd
   have hb0 := ptr_bs (kgOk p) hseed
   have hb1 := ptr_bs (kgOk p) hout
   have hb2 := ptr_bs (kgOk p) hwork

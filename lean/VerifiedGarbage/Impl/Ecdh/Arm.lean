@@ -80,22 +80,22 @@ def checkLtP (a : Nat) : List Instr := c.ltM (c.sl MP) a ++ c.andFlag
 /-- `[a] = 0`: the flag `&=` its mask, `-(-m) - 1` of `nonzero`'s mask `m`
 (through `r4`). -/
 def checkZero (a : Nat) : List Instr :=
-  c.nonzero a ++ [.mov .r4 (.imm 0), .dp .sub .r5 .r4 (.reg .r5), .dp .sub .r5 .r5 (.imm 1)] ++ c.andFlag
+  c.nonzero a ++ ([.mov .r4 (.imm 0), .dp .sub .r5 .r4 (.reg .r5), .dp .sub .r5 .r5 (.imm 1)] : List Instr) ++ c.andFlag
 
 /-- The first byte of the key `q` points to is `04`: the flag `&=` its mask,
 through `r4` and `r5` (all ones iff `byte ^ 4 = 0`, the top bit of
 `(byte ^ 4) - 1`, negated). -/
 def checkLead (q : Reg) : List Instr :=
-  [.ldrb .r4 q 0, .dp .eor .r4 .r4 (.imm 4), .dp .sub .r4 .r4 (.imm 1), .mov .r4 (.shifted .r4 .lsr 31),
-    .mov .r5 (.imm 0), .dp .sub .r5 .r5 (.reg .r4)] ++ c.andFlag
+  ([.ldrb .r4 q 0, .dp .eor .r4 .r4 (.imm 4), .dp .sub .r4 .r4 (.imm 1), .mov .r4 (.shifted .r4 .lsr 31),
+    .mov .r5 (.imm 0), .dp .sub .r5 .r5 (.reg .r4)] : List Instr) ++ c.andFlag
 
 /-- The constants, the `x` and `y` of the key `q` points to (through `r6`,
 from its byte 1), and the checks of its first byte, `x` and `y` (also
 signature verification's, with its key). -/
 def peerAt (q : Reg) : List Instr :=
   (consts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-  [.dp .add .r6 q (.imm 1)] ++ loadBytes c.C.len c.n (c.sl E) .r6 ++
-  [.dp .add .r6 .r6 (.imm (BitVec.ofNat 32 c.C.len))] ++ loadBytes c.C.len c.n (c.sl QY) .r6 ++
+  ([.dp .add .r6 q (.imm 1)] : List Instr) ++ loadBytes c.C.len c.n (c.sl E) .r6 ++
+  ([.dp .add .r6 .r6 (.imm (BitVec.ofNat 32 c.C.len))] : List Instr) ++ loadBytes c.C.len c.n (c.sl QY) .r6 ++
   checkLead c q ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
 
 /-- The peer's key: `peerAt` its argument, `r2`. -/
@@ -111,7 +111,7 @@ def curveOps : List FOp :=
 /-- The point to the ladder's slots: the peer's if the flag is set, else
 `G` (the flag is the mask `r10`). -/
 def select : List Instr :=
-  [.ldr .r10 wb (c.sl FLAG)] ++
+  ([.ldr .r10 wb (c.sl FLAG)] : List Instr) ++
   sel (2 * c.n) (c.sl PX) (c.sl GX) (c.sl QXM) ++ sel (2 * c.n) (c.sl PY) (c.sl GY) (c.sl QYM)
 
 /-- `x` and `y` into Montgomery's form, the check that the point is on the
@@ -127,8 +127,8 @@ def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
 /-- `x` (or zeros) to `out` (in `lr`), the flag's low bit to `r0`, and the
 callee-saved registers restored. -/
 def finish : List Instr :=
-  [.ldr .r10 wb (c.sl FLAG)] ++ storeBytes c.C.len c.n .lr 0 (c.sl X) ++
-  [.dp .and .r0 .r10 (.imm 1)] ++ Impl.Ecdsa.Arm.Cfg.restore
+  ([.ldr .r10 wb (c.sl FLAG)] : List Instr) ++ storeBytes c.C.len c.n .lr 0 (c.sl X) ++
+  ([.dp .and .r0 .r10 (.imm 1)] : List Instr) ++ Impl.Ecdsa.Arm.Cfg.restore
 
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, the checks
 of `d` and `Z`, and the result. -/

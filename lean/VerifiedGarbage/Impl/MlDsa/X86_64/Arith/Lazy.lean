@@ -20,8 +20,8 @@ def reduceLazy : List Instr := [xmov .xmm1 .xmm0, .xop (.shift .psrld .xmm1 23),
 
 def normalizeLazy : Prog isa :=
   .seq (.block [.mov .rdx (.reg .rdi)])
-    (rcxLoop 32 ([.vmovdquLoad .l256 .xmm0 (at_ .rdx 0)] ++ toY reduceLazy ++
-      [.vmovdquStore .l256 (at_ .rdx 0) .xmm0, .alu .add .rdx (.imm 32)]))
+    (rcxLoop 32 (([.vmovdquLoad .l256 .xmm0 (at_ .rdx 0)] : List Instr) ++ toY reduceLazy ++
+      ([.vmovdquStore .l256 (at_ .rdx 0) .xmm0, .alu .add .rdx (.imm 32)] : List Instr)))
 
 def lazyNtt : Prog isa := withMxcsr .rsi 768 <|
   .seq (.block ypro) (.seq (.block (yconst .xmm11 16760834))

@@ -28,9 +28,9 @@ def eightW : List Instr :=
 arrays' bases, then the base of `m`'s array into `rbx` and the pointer in
 slot `sN` into `rsi`. -/
 def head : List Instr :=
-  [.mov .rcx (.mem (hdr sK)), .mov .r12 (.reg .rcx), .alu .add .r12 (.imm 7),
-    .shift .shr .r12 3, .store (hdr sW) .r12] ++ setBases ++
-  [.mov .rsi (.mem (hdr sN)), .mov .rbx (.mem (hdr (sArr aN)))]
+  ([.mov .rcx (.mem (hdr sK)), .mov .r12 (.reg .rcx), .alu .add .r12 (.imm 7),
+    .shift .shr .r12 3, .store (hdr sW) .r12] : List Instr) ++ setBases ++
+  ([.mov .rsi (.mem (hdr sN)), .mov .rbx (.mem (hdr (sArr aN)))] : List Instr)
 
 /-! ## `vg_rsa_public_precompute`
 
@@ -45,8 +45,8 @@ variable (mul : Nat → Nat → Nat → Prog isa)
 `scratch` (`r8`), with its base in `rdi`. -/
 def entry : List Instr :=
   (saved.zipIdx.map fun (r, i) => .store { base := .r8, disp := 8 * i } r) ++
-  [.store { base := .r8, disp := 8 * sOut } .rdi, .store { base := .r8, disp := 8 * sN } .rdx,
-    .store { base := .r8, disp := 8 * sK } .rcx, .mov .rdi (.reg .r8)]
+  ([.store { base := .r8, disp := 8 * sOut } .rdi, .store { base := .r8, disp := 8 * sN } .rdx,
+    .store { base := .r8, disp := 8 * sK } .rcx, .mov .rdi (.reg .r8)] : List Instr)
 
 /-- Zeros to the `16 ⌈k / 8⌉` bytes of `pre`, and 0 returned. -/
 def fail : Prog isa :=
@@ -57,25 +57,25 @@ def fail : Prog isa :=
       (.block exit))
 
 /-- The computation, once `m` is known valid: `m` into its array, `-m⁻¹`,
-`R² mod m` (`R2Words.choice`), then `m` and `R² mod m` to `pre`, and 1
-returned. -/
-def main : Prog isa := seqs [
+`R² mod m` (`r2`: `R2Words.choice`, or another computation of it, such as
+`R2Adx.choice` with ADX), then `m` and `R² mod m` to `pre`, and 1 returned. -/
+def main (r2 : Prog isa := R2Words.choice mul) : Prog isa := seqs [
   .block head,
   loadBE,
-  .block ([.mov .r10 (.reg .rbx), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (at0 .rbx))] ++
-    minv ++ [.store (hdr sMinv) .r15]),
+  .block (([.mov .r10 (.reg .rbx), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (at0 .rbx))] : List Instr) ++
+    minv ++ ([.store (hdr sMinv) .r15] : List Instr)),
   -- `R² mod m`, by word steps when `m`'s top bit is set and `w` a multiple of 4.
-  R2Words.choice mul,
+  r2,
   -- `m`, then `R² mod m`, to `pre`.
   .block [.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aN))), .mov .rbx (.mem (hdr sOut))],
   copyWords,
-  .block (eightW ++ [.alu .add .rbx (.reg .rax), .mov .rsi (.mem (hdr (sArr aR2)))]),
+  .block (eightW ++ ([.alu .add .rbx (.reg .rax), .mov .rsi (.mem (hdr (sArr aR2)))] : List Instr)),
   copyWords,
-  .block ([.mov32 .rax (.imm 1)] ++ exit)]
+  .block (([.mov32 .rax (.imm 1)] : List Instr) ++ exit)]
 
 /-- `vg_rsa_public_precompute`. -/
-def code : Prog isa :=
-  .seq (.block (entry ++ invalid)) (.ite .ne fail (main mul))
+def code (r2 : Prog isa := R2Words.choice mul) : Prog isa :=
+  .seq (.block (entry ++ invalid)) (.ite .ne fail (main mul r2))
 
 end Precompute
 
@@ -95,12 +95,12 @@ export VG.Impl.Bignum.Public (sStarted)
 /-- Save the callee-saved registers and the arguments in the header, with
 the working space's base in `rdi`. -/
 def entry : List Instr :=
-  [.mov .r11 (.mem { base := .rsp, disp := 24 })] ++
+  ([.mov .r11 (.mem { base := .rsp, disp := 24 })] : List Instr) ++
   (saved.zipIdx.map fun (r, i) => .store { base := .r11, disp := 8 * i } r) ++
-  [.store { base := .r11, disp := 8 * sOut } .rdi, .store { base := .r11, disp := 8 * sN } .rdx,
+  ([.store { base := .r11, disp := 8 * sOut } .rdi, .store { base := .r11, disp := 8 * sN } .rdx,
     .store { base := .r11, disp := 8 * sK } .rsi, .store { base := .r11, disp := 8 * sE } .r8,
     .store { base := .r11, disp := 8 * sElen } .r9, .mov .rax (.mem { base := .rsp, disp := 8 }),
-    .store { base := .r11, disp := 8 * sIn } .rax, .mov .rdi (.reg .r11)]
+    .store { base := .r11, disp := 8 * sIn } .rax, .mov .rdi (.reg .r11)] : List Instr)
 
 /-- `m` and `R² mod m` from `pre` into their arrays, then ZF set unless `m`
 is odd, its top word is not zero and `R² mod m < m`: the values of no
@@ -108,7 +108,7 @@ modulus are refused before any arithmetic on them. -/
 def loadWith (cmp : Prog isa) : List (Prog isa) := [
   .block head,
   copyWords,
-  .block (eightW ++ [.alu .add .rsi (.reg .rax), .mov .rbx (.mem (hdr (sArr aR2)))]),
+  .block (eightW ++ ([.alu .add .rsi (.reg .rax), .mov .rbx (.mem (hdr (sArr aR2)))] : List Instr)),
   copyWords,
   .block [.mov .r10 (.mem (hdr (sArr aN))), .mov32 .rbp (.imm 0)],
   cmp,
@@ -158,15 +158,15 @@ def rest : Prog isa := seqs [
   wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)),
     cfToRbp],
   -- `-m⁻¹`, and the number 1.
-  .block ([.store (hdr sMask) .rbp, .mov .rbx (.mem (at0 .r10))] ++ minv ++
-    [.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)]),
+  .block (([.store (hdr sMask) .rbp, .mov .rbx (.mem (at0 .r10))] : List Instr) ++ minv ++
+    ([.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)] : List Instr)),
   setWord aOne .rcx,
   -- `X = input R mod m`, the exponentiation, and the result.
   mul aXm aX aR2, expLoop mul, finish mul,
   .block [.mov .rbx (.mem (hdr (sArr aY))), .mov .rsi (.mem (hdr sOut)), .mov .rcx (.mem (hdr sK)),
     .mov .r15 (.mem (hdr sMask))],
   storeBE,
-  .block ([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] ++ exit)]
+  .block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)]
 
 /-- `vg_rsa_public_precomputed`. -/
 def code : Prog isa :=

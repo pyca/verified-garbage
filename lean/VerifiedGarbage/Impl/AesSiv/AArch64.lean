@@ -195,7 +195,7 @@ bytes (none for the empty string), and the arguments of
 `vg_cmac_aes_update(schedule = x0, rounds = x1, state = x2, data = x3, n = x4, scratch = x5)`
 for them. -/
 def cmacPre (st : Nat) : Prog isa :=
-  .seq (.block (zero16 st ++ [.movz .x .x28 0 0]))
+  .seq (.block (zero16 st ++ ([.movz .x .x28 0 0] : List Instr)))
     (.seq (.ite (.zero .x .x23) (.block [])
         (.block [.subImm .x .x28 .x23 1, .movz .x .x9 15 0, .logic .and .x .x9 .x28 .x9,
           .sub .x .x28 .x28 .x9]))
@@ -220,9 +220,9 @@ def copy : Prog isa := Impl.CmacAes.Stream.AArch64.copy
 /-- The short case, `L < 16`: the tail is `pad(P)`; then `D`, copied to
 `x19 + 144` and doubled there, is XORed into it. -/
 def shortTail : Prog isa :=
-  .seq (.block (zero16 tailOff ++ [.addImm .x .x6 .x19 tailOff, mov .x7 .x22, mov .x8 .x23]))
+  .seq (.block (zero16 tailOff ++ ([.addImm .x .x6 .x19 tailOff, mov .x7 .x22, mov .x8 .x23] : List Instr)))
     (.seq copy
-      (.block ([.add .x .x6 .x19 .x23, .addImm .x .x6 .x6 tailOff, .movz .x .x9 0x80 0, .strb .x9 .x6 0] ++
+      (.block (([.add .x .x6 .x19 .x23, .addImm .x .x6 .x6 tailOff, .movz .x .x9 0x80 0, .strb .x9 .x6 0] : List Instr) ++
         copy16 dOff dbOff ++ Impl.CmacAes.AArch64.dbl dbOff dbOff ++ xor2 .x19 .x19 .x19 tailOff dbOff tailOff)))
 
 /-- `16 k` in `x28`: `((L − 1) >> 4) − 1` shifted left by 4, or 0 if that is
@@ -236,7 +236,7 @@ string to `x19 + 32`. -/
 def tailArgs : List Instr := [.addImm .x .x6 .x19 tailOff, .add .x .x7 .x22 .x28, .sub .x .x8 .x23 .x28]
 
 /-- `D` XORed into the last 16 bytes of the tail, at `x19 + 16 + (L − 16 k)`. -/
-def tailXor : List Instr := [.sub .x .x6 .x23 .x28, .add .x .x6 .x19 .x6] ++ xor2 .x6 .x19 .x6 16 dOff 16
+def tailXor : List Instr := ([.sub .x .x6 .x23 .x28, .add .x .x6 .x19 .x6] : List Instr) ++ xor2 .x6 .x19 .x6 16 dOff 16
 
 /-- The long case, `L ≥ 16`: `16 k` in `x28`; the last `L − 16 k` bytes
 copied to the tail; `D` XORed into the last 16 bytes of the tail. -/
@@ -245,8 +245,8 @@ def longTail : Prog isa := .seq kBlock (.seq (.block tailArgs) (.seq copy (.bloc
 /-- The state at `x19 + out` zeroed, and the arguments of
 `vg_cmac_aes_update` over the `k` blocks of the string. -/
 def longArgs₁ (out : Nat) : List Instr :=
-  zero16 out ++ [.lsr .x .x4 .x28 4, mov .x0 .x20, mov .x1 .x21, .addImm .x .x2 .x19 out, mov .x3 .x22,
-    .addImm .x .x5 .x19 csOff]
+  zero16 out ++ ([.lsr .x .x4 .x28 4, mov .x0 .x20, mov .x1 .x21, .addImm .x .x2 .x19 out, mov .x3 .x22,
+    .addImm .x .x5 .x19 csOff] : List Instr)
 
 /-- `j` in `x25`: 1 if `L > 16`, else 0. -/
 def jBlock : Prog isa :=
@@ -304,8 +304,8 @@ def counter (src : Nat) : List Instr :=
 block, the keystream block, one block and the working space. -/
 def ctrPre : List Instr :=
   zero16 ksOff ++ copy16 cntOff cbOff ++
-  [.addImm .x .x0 .x20 272, mov .x1 .x21, .addImm .x .x2 .x19 cbOff, .addImm .x .x3 .x19 ksOff,
-   .movz .x .x4 1 0, .addImm .x .x5 .x19 csOff]
+  ([.addImm .x .x0 .x20 272, mov .x1 .x21, .addImm .x .x2 .x19 cbOff, .addImm .x .x3 .x19 ksOff,
+   .movz .x .x4 1 0, .addImm .x .x5 .x19 csOff] : List Instr)
 
 /-- `min(16, left)` in `x8`, and the data and the keystream block in `x6` and
 `x7`. -/
@@ -372,7 +372,7 @@ def adNext : List Instr := [.ldr .x .x22 .x24 0, .ldr .x .x23 .x24 8]
 fewer left. -/
 def adStep : List Instr :=
   Impl.CmacAes.AArch64.dbl dOff dOff ++ xor2 .x19 .x19 .x19 dOff stOff dOff ++
-  [.addImm .x .x24 .x24 16, .subImm .x .x25 .x25 1]
+  ([.addImm .x .x24 .x24 16, .subImm .x .x25 .x25 1] : List Instr)
 
 /-- S2V of the components of associated data, from `D`'s first state. -/
 def s2vAds (u : Impl.CmacAes.AArch64.Update) (c : Ctr32) (sfx : String) : Prog isa :=

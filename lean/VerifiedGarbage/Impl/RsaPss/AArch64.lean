@@ -148,19 +148,19 @@ def ctInit : Prog isa := .seq (.block [mov .x0 .x19]) (.call H.initN H.initC)
 def pad80 : Prog isa :=
   .seq (.block [.addImm .x .x10 .x20 oY, movi .x11 0, ld .x12 sNb, .lsl .x .x12 .x12 (lgB H)])
     (.loop (.block (.ldrb .x13 .x10 0 :: eq1 .x14 .x11 .x22 ++
-      [.lsl .x .x14 .x14 7, .logic .orr .x .x13 .x13 .x14, .strb .x13 .x10 0, .addImm .x .x10 .x10 1,
-        .addImm .x .x11 .x11 1, .subImm .x .x12 .x12 1])) (.nonzero .x .x12))
+      ([.lsl .x .x14 .x14 7, .logic .orr .x .x13 .x13 .x14, .strb .x13 .x10 0, .addImm .x .x10 .x10 1,
+        .addImm .x .x11 .x11 1, .subImm .x .x12 .x12 1] : List Instr))) (.nonzero .x .x12))
 
 /-- The length field of `ℓ` to `scratch + oLen` (`P.len`, with `x19` placed
 so that it writes there). -/
 def lenField : List Instr :=
-  [.addImm .x .x19 .x20 (oLen - (H.P.N + H.P.B - H.P.L))] ++ H.P.len ++ [.addImm .x .x19 .x20 oSt]
+  ([.addImm .x .x19 .x20 (oLen - (H.P.N + H.P.B - H.P.L))] : List Instr) ++ H.P.len ++ ([.addImm .x .x19 .x20 oSt] : List Instr)
 
 /-- The length field ORed into the last `L` bytes of block `b` (`x11`, at
 `x10`) under the mask of `b = ⌊(ℓ + L) / B⌋` (`x15`), for every block. -/
 def lenLoop : Prog isa :=
-  .seq (.block ([.addImm .x .x10 .x20 (oY + H.P.B - H.P.L), movi .x11 0, ld .x12 sNb] ++ lastBlk H .x15))
-    (.loop (.seq (.block (eqMask .x13 .x11 .x15 ++ [.addImm .x .x14 .x20 oLen, mov .x16 .x10, movi .x17 H.P.L]))
+  .seq (.block (([.addImm .x .x10 .x20 (oY + H.P.B - H.P.L), movi .x11 0, ld .x12 sNb] : List Instr) ++ lastBlk H .x15))
+    (.loop (.seq (.block (eqMask .x13 .x11 .x15 ++ ([.addImm .x .x14 .x20 oLen, mov .x16 .x10, movi .x17 H.P.L] : List Instr)))
       (.seq (.loop (.block [.ldrb .x9 .x14 0, .logic .and .x .x9 .x9 .x13, .ldrb .x8 .x16 0,
           .logic .orr .x .x8 .x8 .x9, .strb .x8 .x16 0, .addImm .x .x14 .x14 1, .addImm .x .x16 .x16 1,
           .subImm .x .x17 .x17 1]) (.nonzero .x .x17))
@@ -174,7 +174,7 @@ def compArgs : List Instr := [.lsl .x .x1 .x27 (lgB H), .add .x .x1 .x1 .x20, .a
 `b = ⌊(ℓ + L) / B⌋`. -/
 def select : Prog isa :=
   .seq (.block (lastBlk H .x15 ++ eqMask .x13 .x27 .x15 ++
-      [.addImm .x .x10 .x20 oSt, .addImm .x .x11 .x20 oSel, movi .x12 H.P.N]))
+      ([.addImm .x .x10 .x20 oSt, .addImm .x .x11 .x20 oSel, movi .x12 H.P.N] : List Instr)))
     (.loop (.block [.ldrb .x14 .x10 0, .ldrb .x15 .x11 0, .logic .eor .x .x14 .x14 .x15,
       .logic .and .x .x14 .x14 .x13, .logic .eor .x .x15 .x15 .x14, .strb .x15 .x11 0, .addImm .x .x10 .x10 1,
       .addImm .x .x11 .x11 1, .subImm .x .x12 .x12 1]) (.nonzero .x .x12))
@@ -189,7 +189,7 @@ def compLoop : Prog isa :=
       (.nonzero .x .x9))
 
 /-- The digest of the selected hash value to `scratch + oDig` (`x21`). -/
-def digestOut : List Instr := [.addImm .x .x19 .x20 oSel] ++ H.P.out ++ [.addImm .x .x19 .x20 oSt]
+def digestOut : List Instr := ([.addImm .x .x19 .x20 oSel] : List Instr) ++ H.P.out ++ ([.addImm .x .x19 .x20 oSt] : List Instr)
 
 /-- The hash computation, with its padding step. -/
 def ctHashWith (padding : Prog isa) : Prog isa :=
@@ -225,9 +225,9 @@ def copyH : Prog isa :=
 /-- The counter (`x28`), big-endian, after `H` in `Y`; the message's length,
 `hLen + 4`, and its `mgfNb` blocks, for `mgfHash`. -/
 def counter : List Instr :=
-  [.addImm .x .x10 .x20 (oY + H.D), .lsr .x .x9 .x28 24, .strb .x9 .x10 0, .lsr .x .x9 .x28 16,
+  ([.addImm .x .x10 .x20 (oY + H.D), .lsr .x .x9 .x28 24, .strb .x9 .x10 0, .lsr .x .x9 .x28 16,
     .strb .x9 .x10 1, .lsr .x .x9 .x28 8, .strb .x9 .x10 2, .strb .x28 .x10 3, movi .x22 (H.D + 4),
-    movi .x9 (mgfNb H)] ++ st .x9 sNb
+    movi .x9 (mgfNb H)] : List Instr) ++ st .x9 sNb
 
 /-- The first `min(hLen, dbLen - done)` bytes of the digest XORed into `DB`
 at `done`. -/
@@ -240,8 +240,8 @@ def xorOut : Prog isa :=
 
 /-- The next counter, and `x10` nonzero while `done < dbLen`. -/
 def nextCtr : List Instr :=
-  [.addImm .x .x28 .x28 1, ld .x9 sDone, .addImm .x .x9 .x9 H.D] ++ st .x9 sDone ++
-    [.sub .x .x10 .x9 .x25, .lsr .x .x10 .x10 63]
+  ([.addImm .x .x28 .x28 1, ld .x9 sDone, .addImm .x .x9 .x9 H.D] : List Instr) ++ st .x9 sDone ++
+    ([.sub .x .x10 .x9 .x25, .lsr .x .x10 .x10 63] : List Instr)
 
 /-- `DB ⊕= MGF1(H, dbLen)`. -/
 def mgfXor : Prog isa :=
@@ -268,7 +268,7 @@ nonzero if `emLen < hLen + 2`. -/
 def emLen : Prog isa :=
   .seq (.ite (.zero .x .x11) (.block [movi .x11 0xFF, movi .x12 1]) (.block [movi .x12 0]))
     (.block (st .x11 sC ++ st .x12 sLo ++
-      [.sub .x .x9 .x23 .x12, .subImm .x .x10 .x9 (H.D + 2), .lsr .x .x10 .x10 63]))
+      ([.sub .x .x9 .x23 .x12, .subImm .x .x10 .x9 (H.D + 2), .lsr .x .x10 .x10 63] : List Instr)))
 
 /-- `x9 := emLen - hLen - 2`, the longest salt, and `x10` nonzero if it is
 less than the salt's length in `x12` (any 64-bit value: its top bit is
@@ -309,10 +309,10 @@ def arg (r : Reg) (j : Nat) : Instr := .ldrSp r (frameBytes + 8 * j)
 
 /-- The registers saved, and the arguments into their places. -/
 def signPrologue : List Instr :=
-  save ++ [.str .x .x0 .x16 sOut, .str .x .x2 .x16 sN, .str .x .x4 .x16 sE, .str .x .x5 .x16 sEl,
+  save ++ ([.str .x .x0 .x16 sOut, .str .x .x2 .x16 sN, .str .x .x4 .x16 sE, .str .x .x5 .x16 sEl,
     .str .x .x6 .x16 sP, .str .x .x7 .x16 sPl, mov .x23 .x3, arg .x9 8, .str .x .x9 .x16 sDig,
     arg .x9 9, .str .x .x9 .x16 sSalt, arg .x9 10, .str .x .x9 .x16 sSaltLen, arg .x20 11, arg .x9 12,
-    .str .x .x9 .x16 sScrLen] ++ regsUp
+    .str .x .x9 .x16 sScrLen] : List Instr) ++ regsUp
 
 /-- Zeros to `out` and 0 returned. -/
 def signFail : Prog isa :=
@@ -325,7 +325,7 @@ def copySaltY : Prog isa :=
 
 /-- `ℓ = 8 + hLen + sLen` and `nbm = ⌊(ℓ + L) / B⌋ + 1`. -/
 def signLen : List Instr :=
-  [ld .x9 sSaltLen, .addImm .x .x22 .x9 (8 + H.D)] ++ lastBlk H .x9 ++ [.addImm .x .x9 .x9 1] ++ st .x9 sNb
+  [ld .x9 sSaltLen, .addImm .x .x22 .x9 (8 + H.D)] ++ lastBlk H .x9 ++ ([.addImm .x .x9 .x9 1] : List Instr) ++ st .x9 sNb
 
 /-- `EM`'s `k` bytes cleared. -/
 def clearEm : Prog isa := .seq (.block [.addImm .x .x14 .x20 oEm, mov .x13 .x23, movi .x15 0]) psLoop
@@ -345,7 +345,7 @@ def putH : Prog isa :=
 /-- The arguments of `vg_rsa_private_checked`: `out`, `n` (`k` bytes), `e`,
 `EM` as the input (`k` bytes), the private key, and the rest of `scratch`. -/
 def privArgs : List Instr :=
-  [.addSp .x16 0, ld .x9 sP, .str .x .x9 .x16 0, ld .x9 sPl, .str .x .x9 .x16 8] ++
+  ([.addSp .x16 0, ld .x9 sP, .str .x .x9 .x16 0, ld .x9 sPl, .str .x .x9 .x16 8] : List Instr) ++
     (List.range 8).flatMap (fun j => [arg .x9 j, .str .x .x9 .x16 (16 + 8 * j)]) ++
     [movi .x9 oRsa, .add .x .x9 .x20 .x9, .str .x .x9 .x16 80, ld .x9 sScrLen, .subImm .x .x9 .x9 1024,
       .str .x .x9 .x16 88, ld .x0 sOut, mov .x1 .x23, ld .x2 sN, mov .x3 .x23, ld .x4 sE, ld .x5 sEl,
@@ -381,10 +381,10 @@ pre, pre_len)`, the last five on the stack. -/
 /-- The registers saved, and the arguments into their places; `sAny` is
 `any_salt_len`'s 32 bits, and `sSaltLen` is `salt_len`. -/
 def verifyPrologue : List Instr :=
-  save ++ [.str .x .x0 .x16 sN, .str .x .x2 .x16 sE, .str .x .x3 .x16 sEl, .str .x .x4 .x16 sDig,
+  save ++ ([.str .x .x0 .x16 sN, .str .x .x2 .x16 sE, .str .x .x3 .x16 sEl, .str .x .x4 .x16 sDig,
     .str .x .x5 .x16 sOut, .str .x .x7 .x16 sSaltLen, mov .x23 .x1, arg .x9 0,
     .addImm .w .x9 .x9 0, .str .x .x9 .x16 sAny, arg .x20 1, arg .x9 2, .str .x .x9 .x16 sScrLen,
-    arg .x9 3, .str .x .x9 .x16 sPre, arg .x9 4, .str .x .x9 .x16 sPreLen] ++ regsUp
+    arg .x9 3, .str .x .x9 .x16 sPre, arg .x9 4, .str .x .x9 .x16 sPreLen] : List Instr) ++ regsUp
 
 /-- `x12 :=` the expected salt length for the check, 0 if any. -/
 def expLen : Prog isa :=
@@ -428,7 +428,7 @@ one. -/
 def posCheck : Prog isa :=
   .seq (.block ([movi .x9 1, .logic .eor .x .x15 .x15 .x9, .lsr .x .x13 .x13 63, .logic .orr .x .x15 .x15 .x13,
       .logic .orr .x .x26 .x26 .x15] ++ st .x14 sPos ++
-      [.sub .x .x11 .x25 .x14, .subImm .x .x11 .x11 1, ld .x9 sAny]))
+      ([.sub .x .x11 .x25 .x14, .subImm .x .x11 .x11 1, ld .x9 sAny] : List Instr)))
     (.ite (.zero .x .x9) (.block [ld .x12 sSaltLen, .logic .eor .x .x12 .x12 .x11,
       .logic .orr .x .x26 .x26 .x12]) (.block []))
 
@@ -459,7 +459,7 @@ def shift : Prog isa :=
 /-- `nbm = ⌊(8 + hLen + dbLen - 1 + L) / B⌋ + 1`, enough for the longest
 salt. -/
 def verifyNb : List Instr :=
-  [.addImm .x .x9 .x25 (7 + H.D + H.P.L), .lsr .x .x9 .x9 (lgB H), .addImm .x .x9 .x9 1] ++ st .x9 sNb
+  ([.addImm .x .x9 .x25 (7 + H.D + H.P.L), .lsr .x .x9 .x9 (lgB H), .addImm .x .x9 .x9 1] : List Instr) ++ st .x9 sNb
 
 /-- `acc` ORed with the digest `⊕ H`, and the result: 1 if `acc = 0`. -/
 def cmpH : Prog isa :=

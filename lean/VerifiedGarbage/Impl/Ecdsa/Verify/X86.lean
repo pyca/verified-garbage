@@ -82,7 +82,7 @@ def prefix' : Prog isa :=
 
 /-- `s`, from `sig + len` through `ebx`, into `PT`. -/
 def loadS : List Instr :=
-  [.mov .ebx (.mem (Cfg.argOp 2)), .alu .add .ebx (.imm (BitVec.ofNat 32 c.C.len))] ++
+  ([.mov .ebx (.mem (Cfg.argOp 2)), .alu .add .ebx (.imm (BitVec.ofNat 32 c.C.len))] : List Instr) ++
   loadBytes c.C.len c.n (c.sl PT) .ebx
 
 /-- The checks of `r` and `s`, and `s R mod n`. -/
@@ -113,7 +113,7 @@ def sum : Prog isa :=
 
 /-- The flag's low bit to `eax`, and the callee-saved registers restored. -/
 def finish : List Instr :=
-  [.mov .ecx (.mem (sc (c.sl FLAG))), .mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] ++
+  ([.mov .ecx (.mem (sc (c.sl FLAG))), .mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] : List Instr) ++
     Impl.Ecdsa.X86.Cfg.restore
 
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, `x R mod n`
@@ -141,10 +141,10 @@ def projectiveOps (sl : Nat → Nat) : List FOp :=
 /-- Accept the first equality, or the second when `r+n < p`, together with
 all earlier validity checks and `Z ≠ 0`. -/
 def projectiveMatch : List Instr :=
-  c.nonzero (c.sl W) ++ [.alu .xor .edx (.imm (-1)), .mov .ebx (.reg .edx)] ++
+  c.nonzero (c.sl W) ++ ([.alu .xor .edx (.imm (-1)), .mov .ebx (.reg .edx)] : List Instr) ++
   c.ltN (c.sl K) ++
   c.nonzero (c.sl XN) ++
-  [.alu .xor .edx (.imm (-1)), .alu .and .edx (.reg .eax), .alu .or .edx (.reg .ebx)]
+  ([.alu .xor .edx (.imm (-1)), .alu .and .edx (.reg .eax), .alu .or .edx (.reg .ebx)] : List Instr)
 
 def projectiveChecks : List Instr :=
   projectiveMatch c ++ c.andFlag ++ c.checkNonzero (c.sl RZ) ++ finish c

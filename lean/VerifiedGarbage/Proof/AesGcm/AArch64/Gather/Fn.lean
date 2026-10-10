@@ -110,8 +110,11 @@ structure Lay (s : State) : Prop where
   ods : (Src s).toNat + Cnt s * 16 ≤ 2 ^ 64
 
 theorem lay {s : State} (hs : gatherPre s) : Lay s := by
-  obtain ⟨rd, wr, kd, kt, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, bk, bn, ba, bds, bl, barg, bd, bt,
-    ok, on, oa, ods, ol, od, ot, w₁, w₂, hR, hgl⟩ := hs
+  sig_split hs
+  rename_i rd wr kd kt nd nt ad at_ dsd dst lsdt dt darg targ bk bn ba bds bl barg bd bt ok on oa ods ol od ot
+    w₁ w₂ hR
+  have hgl := hs
+  clear hs
   have hB : s.sp = Bs s + BitVec.ofNat 64 2592 := (BitVec.sub_add_cancel s.sp _).symm
   have hBn : (Bs s).toNat + 2616 ≤ 2 ^ 64 := by
     have e := congrArg BitVec.toNat hB

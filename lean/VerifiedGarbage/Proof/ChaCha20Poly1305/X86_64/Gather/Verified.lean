@@ -93,7 +93,7 @@ def gatherSat : State where
   zf := none
   sf := none
   of := none
-  mem a := if 0x9000 ≤ a.toNat then (if a = 0x9009 then 0x40 else if a = 0x9019 then 0x50 else 0) else 0
+  mem a := if 0x9000 ≤ a.toNat then (bif Nat.beq a.toNat 0x9009 then 0x40 else bif Nat.beq a.toNat 0x9019 then 0x50 else 0) else 0
   rd := [⟨0x1000, 32⟩, ⟨0x2000, 12⟩, ⟨0x3000, 0⟩, ⟨0x3100, 0⟩, ⟨0x9008, 24⟩]
   wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩]
 

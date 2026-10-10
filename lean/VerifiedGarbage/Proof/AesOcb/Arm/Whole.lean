@@ -216,8 +216,7 @@ theorem whole_ok (F : BlkFn) {pre post : List Instr} {fC1 fC2 : Block → Block 
     rw [X₄ k hk]
   · simp only [wholeRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     have hk : r ∈ keptRegs := by
-      simp only [keptRegs, List.mem_cons, List.not_mem_nil, or_false]
-      cases r <;> simp_all
+      revert hr; cases r <;> decide
     rw [P₅.gpr r (by simp [passRegs, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1,
         hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2]),
       R₄'.gpr r (by simp [hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1]),

@@ -64,7 +64,7 @@ theorem packS_piece {r : Nat} (hr : r < p.ℓ + p.k) : KP p (KRx p r 0 0) (KRx p
   refine Piece.mono (A := fun s₀ s => ∃ A S, KR p A S r 0 0 s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (sB p r)) (toRq (S r)))
     ?_ (fun s₀ s _ ⟨A, S, h⟩ => ⟨A, S, h, h.sPoly hr⟩) fun _ _ _ h => h
   refine bp_piece (Y := YK p) hP.bitPack kS (oP (p.k * p.ℓ + r)) p.η p.η 2 (128 + lenS p * r) (lenS p)
-    (eta_params hF) (lenS_eq p) (by layp hF) (Nat.le_of_eq (YK_stk p).symm) (ht := .block []) (by kernel_rfl)
+    (eta_params hF) (lenS_eq p) (by layd) (Nat.le_of_eq (YK_stk p).symm) (ht := .block []) (by kernel_rfl)
     (fun s₀ s _ ⟨A, S, h, hs⟩ => ⟨h.ctx, hs.1, packIn (eta_le hF) hs (h.small r hr)⟩)
     fun s₀ s s' hp ⟨A, S, h, hs⟩ h' fr out => ⟨A, S, ?_⟩
   have hpos : 0 < lenS p := by rcases hF.eta with ⟨_, e⟩ | ⟨_, e⟩ <;> omega
@@ -72,7 +72,7 @@ theorem packS_piece {r : Nat} (hr : r < p.ℓ + p.k) : KP p (KRx p r 0 0) (KRx p
     simp only [oT0]; rw [Nat.add_assoc, ← Nat.mul_succ]; exact Nat.add_le_add_left (Nat.mul_le_mul_left _ hr) _
   have hsf : SafeR p r 0 [⟨2, 128 + lenS p * r, lenS p⟩] := SafeR.sk hF (Nat.le_of_lt hr) (Nat.zero_le _) hpos
     (by omega) (.inr (Nat.le_refl _)) (.inl hle) (by rw [hF.sk]; omega)
-  have k := h.keep hp (N := 80) (by omega) hsf (fun _ _ => by layp hF) fr h'
+  have k := h.keep hp (N := 80) (by omega) hsf (fun _ _ => by layd) fr h'
   refine { k with packs := fun r' hr' => ?_ }
   rcases (by omega : r' < r ∨ r' = r) with hr' | rfl
   · exact k.packs r' hr'
@@ -84,7 +84,7 @@ theorem nttS_piece {j : Nat} (hj : j < p.ℓ) :
   unfold nttS
   refine Piece.mono (A := fun s₀ s => ∃ A S, KR p A S (p.ℓ + p.k) j 0 s₀ s)
     ?_ (fun _ _ _ h => h) fun _ _ _ h => h
-  refine inPlace_piece (Y := YK p) hP.ntt kS (oP (p.k * p.ℓ + j)) kS oSS (by layp hF) (Nat.le_of_eq (YK_stk p).symm)
+  refine inPlace_piece (Y := YK p) hP.ntt kS (oP (p.k * p.ℓ + j)) kS oSS (by layd) (Nat.le_of_eq (YK_stk p).symm)
     (ht := .block []) (by kernel_rfl)
     (fun s₀ s _ ⟨A, S, h⟩ => ⟨h.ctx, (h.s1 j hj).1⟩)
     fun s₀ s s' hp ⟨A, S, h⟩ h' fr out => ⟨A, S, ?_⟩
@@ -103,7 +103,7 @@ theorem nttS_piece {j : Nat} (hj : j < p.ℓ) :
           s1 := fun j' hj' => if e : j' = j then by
               subst e; rw [ifp (Nat.lt_succ_self j'), ← hS.2]; exact out
             else by
-              have := keepPolyD hp (stkN (by omega)) (by layp hF) fr (h.s1 j' hj')
+              have := keepPolyD hp (stkN (by omega)) (by layd) fr (h.s1 j' hj')
               by_cases hlt : j' < j
               · rwa [ifp hlt, ← ifp (show j' < j + 1 by omega) (ntt (toRq (S j'))) (toRq (S j'))] at this
               · rwa [ifn hlt, ← ifn (show ¬ j' < j + 1 by omega) (ntt (toRq (S j'))) (toRq (S j'))] at this

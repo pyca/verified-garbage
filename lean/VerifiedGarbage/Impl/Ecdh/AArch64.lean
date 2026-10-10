@@ -85,7 +85,7 @@ def ltP (a : Nat) : List Instr :=
   zero7 :: ((List.range c.n).flatMap fun j =>
     [ld .x1 (a + 8 * j), ld .x2 (c.sl MP + 8 * j),
       if j = 0 then .subs .x .x16 .x1 .x2 else .sbcs .x .x16 .x1 .x2]) ++
-  [.sbc .x .x2 .x7 .x7]
+  ([.sbc .x .x2 .x7 .x7] : List Instr)
 
 /-- `[a] < p`: the flag `&=` its mask. -/
 def checkLtP (a : Nat) : List Instr := ltP c a ++ c.andFlag
@@ -109,7 +109,7 @@ def checkLead : List Instr :=
 and `y`. -/
 def peer : List Instr :=
   (consts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-  [.addImm .x .x2 .x6 (1 + c.C.len)] ++
+  ([.addImm .x .x2 .x6 (1 + c.C.len)] : List Instr) ++
   loadBytes c.C.len c.n (c.sl QY) .x2 ++ checkLead c ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
 
 /-- `y² - (x³ + a x + b)`, from `x R` and `y R`, to `W1`. -/
@@ -137,7 +137,7 @@ flag's low bit to `x0`. -/
 def finish : List Instr :=
   [ld .x3 (c.sl FLAG)] ++ storeBytes c.C.len c.n .x20 0 (c.sl X) ++
   Impl.Ecdsa.AArch64.Cfg.saved.map (fun (r, d) => ld r d) ++
-  [.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1]
+  ([.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1] : List Instr)
 
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, the checks
 of `d` and `Z`, and the result. -/

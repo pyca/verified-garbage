@@ -45,7 +45,7 @@ theorem mont_low32 (t0 minv m : Nat) (h : (m * minv + 1) % 2 ^ 32 = 0) :
     (t0 + t0 * minv % 2 ^ 32 * m) % 2 ^ 32 = 0 := by
   rw [Nat.add_mod, Nat.mul_mod (t0 * minv % 2 ^ 32), Nat.mod_mod, ← Nat.mul_mod,
     ← Nat.add_mod, show t0 + t0 * minv * m = t0 * (m * minv + 1) by
-      rw [Nat.mul_add, Nat.mul_one, Nat.mul_assoc, Nat.mul_comm minv m]; omega,
+      rw [Nat.mul_add, Nat.mul_one, Nat.mul_assoc, Nat.mul_comm minv m]; omega_using [],
     Nat.mul_mod, h, Nat.mul_zero, Nat.zero_mod]
 
 /-- `-m⁻¹ mod 2⁶⁴` gives `-m⁻¹ mod 2³²`. -/
@@ -57,9 +57,9 @@ theorem minv32_inv {M : Mod} {m : Nat} (h : (m * M.minv.toNat + 1) % 2 ^ 64 = 0)
 /-- A row's sum stays below `2m` once divided. -/
 theorem row_lt {T a B q m : Nat} (hT : T < 2 * m) (ha : a < 2 ^ 32) (hB : B < m) (hq : q < 2 ^ 32) :
     T + a * B + q * m < 2 ^ 32 * (2 * m) := by
-  have h1 : a * B ≤ (2 ^ 32 - 1) * B := Nat.mul_le_mul_right _ (by omega)
-  have h2 : q * m ≤ (2 ^ 32 - 1) * m := Nat.mul_le_mul_right _ (by omega)
-  omega
+  have h1 : a * B ≤ (2 ^ 32 - 1) * B := Nat.mul_le_mul_right _ (by omega_using [ha])
+  have h2 : q * m ≤ (2 ^ 32 - 1) * m := Nat.mul_le_mul_right _ (by omega_using [hq])
+  omega_using [hT, hB, h1, h2]
 
 /-- The offsets of a multiplication: `[a]`, `[b]` and the modulus (`N`
 words) in the working space and apart from the accumulator (`2N + 1` words
@@ -87,7 +87,7 @@ theorem row_ebp (e : BitVec 32) (i : Nat) :
   apply BitVec.eq_of_toNat_eq
   have : (4 : BitVec 32).toNat = 4 := rfl
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, this]
-  omega
+  omega_using []
 
 /-- An iteration of the loop. -/
 theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {N acc a b i m : Nat}
@@ -120,27 +120,27 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   -- The window: the accumulator's words from `i`, of which only the low
   -- `N + 2` may be nonzero.
   obtain ⟨w, hw⟩ : ∃ w, 4 * i + acc = w := ⟨_, rfl⟩
-  have ew : acc + 4 * i = w := by omega
+  have ew : acc + 4 * i = w := by omega_using [hw]
   rw [ew] at hT
   have hsplit : ∀ mem : Mem, val32 mem base w (2 * N + 1 - i) =
       val32 mem base w (N + 2) + 2 ^ (32 * (N + 2)) * val32 mem base (w + 4 * (N + 2)) (N - 1 - i) := by
     intro mem
-    rw [show 2 * N + 1 - i = (N + 2) + (N - 1 - i) by omega, val32_append]
+    rw [show 2 * N + 1 - i = (N + 2) + (N - 1 - i) by omega_using [hi], val32_append]
   have habove : val32 s.mem base (w + 4 * (N + 2)) (N - 1 - i) = 0 := by
     rw [hsplit] at hT
     rcases Nat.eq_zero_or_pos (val32 s.mem base (w + 4 * (N + 2)) (N - 1 - i)) with h | h
     · exact h
     · have : 2 ^ (32 * (N + 2)) * 1 ≤ 2 ^ (32 * (N + 2)) * val32 s.mem base (w + 4 * (N + 2)) (N - 1 - i) :=
         Nat.mul_le_mul_left _ h
-      have : 2 * 2 ^ (32 * N) ≤ 2 ^ (32 * (N + 2)) := by rw [hpow]; omega
-      omega
+      have : 2 * 2 ^ (32 * N) ≤ 2 ^ (32 * (N + 2)) := by rw [hpow]; omega_using []
+      omega_arith
   have hTw : val32 s.mem base w (N + 2) = val32 s.mem base w (2 * N + 1 - i) := by
-    rw [hsplit s.mem, habove]; omega
+    rw [hsplit s.mem, habove]; omega_using []
   simp only [row]
   rw [hNw]
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   -- `ecx = a_i`.
-  refine wp_movS (readSrc_at hs hp (d := a) (by omega)) fun s₁ u₁ _ => ?_
+  refine wp_movS (readSrc_at hs hp (d := a) (by omega_arith)) fun s₁ u₁ _ => ?_
   have k₁ : Keeps clob s s₁ := u₁.keeps.mono (by decide)
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hp₁ : s₁.gpr .ebp = s₁.gpr .edi + BitVec.ofNat 32 (4 * i) := by
@@ -152,11 +152,11 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     rw [mem₁, hTw, ecx₁, hpow]
     have := (s.mem.readW (off base (a + 4 * i)) 32).isLt
     have : w32 s.mem base (a + 4 * i) * val32 s.mem base b N ≤ (2 ^ 32 - 1) * val32 s.mem base b N :=
-      Nat.mul_le_mul_right _ (by omega)
+      Nat.mul_le_mul_right _ (by omega_using [ecx₁])
     have : 2 ^ (32 * N) * 2 ^ 32 ≤ 2 ^ (32 * N) * 2 ^ 64 := Nat.mul_le_mul_left _ (by decide)
     have : m * 2 ^ 32 < 2 ^ (32 * N) * 2 ^ 32 := Nat.mul_lt_mul_of_pos_right hmP (by decide)
-    omega
-  refine WP.block_append (WP.mono (mulRow_ok hs₁ hp₁ hw hL.b_le (by omega) (by omega) hlt₁)
+    omega_arith
+  refine WP.block_append (WP.mono (mulRow_ok hs₁ hp₁ hw hL.b_le (by omega_arith) (by omega_arith) hlt₁)
     fun s₂ ⟨O₂, V₂, K₂⟩ => ?_)
   have k₂ : Keeps clob s s₂ := k₁.widen K₂
   have hs₂ := hs.of_keeps k₂ (by decide)
@@ -165,7 +165,7 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   rw [mem₁, hTw, ecx₁] at V₂
   rw [mem₁] at O₂
   -- `ecx = q`, from the window's low word.
-  refine WP.block_append (WP.mono (redDigit_ok (M := M) hs₂ hp₂ (by omega)) fun s₆ ⟨q₆, K₆, mem₆⟩ => ?_)
+  refine WP.block_append (WP.mono (redDigit_ok (M := M) hs₂ hp₂ (by omega_arith)) fun s₆ ⟨q₆, K₆, mem₆⟩ => ?_)
   have k₆ : Keeps clob s s₆ := k₂.widen K₆
   have hs₆ := hs.of_keeps k₆ (by decide)
   have hp₆ : s₆.gpr .ebp = s₆.gpr .edi + BitVec.ofNat 32 (4 * i) := by
@@ -174,20 +174,20 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     rw [hw, val32]
     have := (s₂.mem.readW (off base w) 32).isLt
     simp only [w32]
-    omega
+    omega_using []
   have ecx₆ : (s₆.gpr .ecx).toNat = val32 s₂.mem base w (N + 2) % 2 ^ 32 * (minv32 M).toNat % 2 ^ 32 := by
     rw [q₆, t0]
   -- The window `+= q m`.
-  have hmo₂ : val32 s₂.mem base M.mo N = m := by rw [O₂.val32 (by omega) (by omega), hm]
+  have hmo₂ : val32 s₂.mem base M.mo N = m := by rw [O₂.val32 (by omega_using [hi, this, ew]) (by omega_arith), hm]
   have hq : (s₆.gpr .ecx).toNat < 2 ^ 32 := (s₆.gpr .ecx).isLt
   have hW1 := row_lt (q := 0) (a := w32 s.mem base (a + 4 * i)) hT (s.mem.readW (off base (a + 4 * i)) 32).isLt hB (by decide)
   have hlt₆ : val32 s₆.mem base w (N + 2) + (s₆.gpr .ecx).toNat * val32 s₆.mem base M.mo N < 2 ^ (32 * (N + 2)) := by
     rw [mem₆, V₂, hmo₂, hpow]
-    have : (s₆.gpr .ecx).toNat * m ≤ (2 ^ 32 - 1) * m := Nat.mul_le_mul_right _ (by omega)
+    have : (s₆.gpr .ecx).toNat * m ≤ (2 ^ 32 - 1) * m := Nat.mul_le_mul_right _ (by omega_using [])
     have : m * 2 ^ 32 < 2 ^ (32 * N) * 2 ^ 32 := Nat.mul_lt_mul_of_pos_right hmP (by decide)
     have : 2 ^ (32 * N) * 2 ^ 32 ≤ 2 ^ (32 * N) * 2 ^ 64 := Nat.mul_le_mul_left _ (by decide)
-    omega
-  refine WP.block_append (WP.mono (redRow_ok hs₆ hNw hp₆ hw hL.mo_le (by omega) (by omega)
+    omega_arith
+  refine WP.block_append (WP.mono (redRow_ok hs₆ hNw hp₆ hw hL.mo_le (by omega_arith) (by omega_using [hi, this, ew])
     (by rw [mem₆]; exact hmo₂) hred
     (by rw [mem₆]; simpa only [hw, w32] using q₆) hlt₆)
     fun s₇ ⟨O₇, V₇, K₇⟩ => ?_)
@@ -210,12 +210,12 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     rw [f₁₁.gpr, u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.gpr]
   have edx₁₀ : s₁₀.gpr .edx = s₇.gpr .edi + BitVec.ofNat 32 (4 * N) := by
     rw [u₁₀.gpr, u₉.gpr, u₈.other _ (by decide)]
-  have hN32 : 4 * N < 2 ^ 32 := by omega
+  have hN32 : 4 * N < 2 ^ 32 := by omega_arith
   -- The new window.
   have hO : Outside base w (4 * N + 8) s.mem s₁₁.mem := by
     rw [mem₁₁]; exact O₂.trans O₇
   have habove' : val32 s₁₁.mem base (w + 4 * (N + 2)) (N - 1 - i) = 0 := by
-    rw [hO.val32 (by omega) (by omega), habove]
+    rw [hO.val32 (by omega_using []) (by omega_arith), habove]
   have hW2 : val32 s₁₁.mem base w (N + 2) = val32 s.mem base w (2 * N + 1 - i) +
       w32 s.mem base (a + 4 * i) * val32 s.mem base b N + (s₆.gpr .ecx).toNat * m := by
     rw [mem₁₁, V₇]
@@ -223,14 +223,14 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     rw [hW2, ← V₂, ecx₆, ← Nat.mod_add_mod]; exact mont_low32 _ _ _ hinv
   have hT' : val32 s₁₁.mem base (acc + 4 * (i + 1)) (2 * N + 1 - (i + 1)) =
       val32 s₁₁.mem base (w + 4) (N + 1) := by
-    rw [show acc + 4 * (i + 1) = w + 4 by omega, show 2 * N + 1 - (i + 1) = (N + 1) + (N - 1 - i) by omega,
-      val32_append, show w + 4 + 4 * (N + 1) = w + 4 * (N + 2) by omega, habove', Nat.mul_zero, Nat.add_zero]
+    rw [show acc + 4 * (i + 1) = w + 4 by omega_using [ew], show 2 * N + 1 - (i + 1) = (N + 1) + (N - 1 - i) by omega_using [hi],
+      val32_append, show w + 4 + 4 * (N + 1) = w + 4 * (N + 2) by omega_using [], habove', Nat.mul_zero, Nat.add_zero]
   have hsh : val32 s₁₁.mem base w (N + 2) = w32 s₁₁.mem base w + 2 ^ 32 * val32 s₁₁.mem base (w + 4) (N + 1) :=
     rfl
   have h32 : w32 s₁₁.mem base w < 2 ^ 32 := (s₁₁.mem.readW (off base w) 32).isLt
-  have hW : 2 ^ 32 * val32 s₁₁.mem base (w + 4) (N + 1) = val32 s₁₁.mem base w (N + 2) := by omega
+  have hW : 2 ^ 32 * val32 s₁₁.mem base (w + 4) (N + 1) = val32 s₁₁.mem base w (N + 2) := by omega_using [hlow, hsh, h32]
   have hlt := row_lt (a := w32 s.mem base (a + 4 * i)) hT (s.mem.readW (off base (a + 4 * i)) 32).isLt hB hq
-  refine ⟨?_, ?_, hO.mono (by omega) (by omega), ⟨(s₆.gpr .ecx).toNat, ?_⟩, ?_, k₁₁⟩
+  refine ⟨?_, ?_, hO.mono (by omega_using [ew]) (by omega_using [hi, ew]), ⟨(s₆.gpr .ecx).toNat, ?_⟩, ?_, k₁₁⟩
   · rw [ebp₁₁, edi₁₁, hp₇, row_ebp]
   · have ebp₁₀ : s₁₀.gpr .ebp = s₇.gpr .ebp + 4 := by
       rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.gpr]
@@ -238,7 +238,7 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   · rw [hT', hW, hW2, ew]
   · rw [hT']
     rw [← hW2, ← hW] at hlt
-    omega
+    omega_using [hlt]
 
 /-- The invariant of the loop, before iteration `i`: the accumulator's
 words from `i` up hold `T < 2m` with `2^(32 i) T ≡ A_i B`, for the low `i`
@@ -269,9 +269,9 @@ theorem loop_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     (fun n t' => ∃ i, n = N - i ∧ i < N ∧ LoopInv base N acc a b m i s t') ?_ N t ⟨0, rfl, hN, h0⟩
   rintro n t' ⟨i, rfl, hi, I⟩
   have ht := hs.of_keeps I.keeps (by decide)
-  have hm' : val32 t'.mem base M.mo N = m := by rw [I.out.val32 (by omega) (by omega), hm]
-  have hb' : val32 t'.mem base b N = val32 s.mem base b N := I.out.val32 (by omega) (by omega)
-  have ha' : w32 t'.mem base (a + 4 * i) = w32 s.mem base (a + 4 * i) := I.out.w32 (by omega) (by omega)
+  have hm' : val32 t'.mem base M.mo N = m := by rw [I.out.val32 (by omega_using [this]) (by omega_arith), hm]
+  have hb' : val32 t'.mem base b N = val32 s.mem base b N := I.out.val32 (by omega_arith) (by omega_arith)
+  have ha' : w32 t'.mem base (a + 4 * i) = w32 s.mem base (a + 4 * i) := I.out.w32 (by omega_arith) (by omega_arith)
   refine WP.mono (row_ok ht hNw hL hi I.ebp hred hm' hinv (hb' ▸ hB) I.lt)
     fun u ⟨hp, hz, O, ⟨q, hq⟩, hT, K⟩ => ?_
   rw [hb', ha'] at hq
@@ -285,6 +285,6 @@ theorem loop_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   by_cases hNi : i + 1 = N
   · refine .inl ⟨by simp only [eval, hz, hNi, decide_true, Option.map_some, Bool.not_true], hNi ▸ I'⟩
   · exact .inr ⟨by simp only [eval, hz, decide_eq_false hNi, Option.map_some, Bool.not_false],
-      N - (i + 1), by omega, i + 1, rfl, by omega, I'⟩
+      N - (i + 1), by omega_using [hi], i + 1, rfl, by omega_using [hi, hNi], I'⟩
 
 end VG.Proof.Mont.X86

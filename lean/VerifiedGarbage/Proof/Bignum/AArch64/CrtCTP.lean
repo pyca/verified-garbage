@@ -107,8 +107,12 @@ theorem o3_of (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64
 theorem o0_of (M : Mont) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M p s := by
   obtain ⟨⟨B, Z, w, minv, N, o, wx, ep, len⟩, oq, wq, qp⟩ := p
   dsimp only [PPre] at h
-  obtain ⟨mx, mq, X, C, eb, qib, c, hg, hw, hw28, hlo, hhi, hqhi, hwx2, hwx, hwq, hwq', hslv, hws, hslq, hwsq, hN,
-    hodd, hN1, hXm, hX, hX1, hXodd, hmask, hc, hep, hel, rfl, hL1, hL2, he, hqp, hql, hqs, hqw, hqi⟩ := h
+  obtain ⟨mx, mq, X, C, eb, qib, c, h⟩ := h
+  sig_split h
+  rename_i hg hw hw28 hlo hhi hqhi hwx2 hwx hwq hwq' hslv hws hslq hwsq hN hodd hN1 hXm hX hX1 hXodd
+    hmask hc hep hel _ob1 hL1 hL2 he hqp hql hqs hqw
+  obtain rfl := _ob1
+  have hqi := h
   have hs := hg.scr
   have hn := hs.nowrap
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)

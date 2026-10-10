@@ -115,9 +115,10 @@ structure CalleeOk (P : Params w) (code : Prog isa) : Prop where
 theorem CalleeOk.of_verified {code : Prog isa}
     (hv : ∀ s, (compressX86_64 P).pre s →
       ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (compressX86_64 P).post s s')
-    (hk : ((instrs code).all fun i => !Taint.clobbers i .rdi && !Taint.clobbers i .r9 &&
+    (hk : (code.allInstrs fun i => !Taint.clobbers i .rdi && !Taint.clobbers i .r9 &&
       !Taint.clobbers i .rsp) = true)
     (hd : code.depth = 0) : CalleeOk P code := by
+  rw [Code.allInstrs_eq] at hk
   have h := fun i hi => List.all_eq_true.mp hk i hi
   simp only [Bool.and_eq_true, Bool.not_eq_true'] at h
   exact ⟨hv, fun i hi => (h i hi).2, hd, fun i hi => (h i hi).1.1, fun i hi => (h i hi).1.2⟩

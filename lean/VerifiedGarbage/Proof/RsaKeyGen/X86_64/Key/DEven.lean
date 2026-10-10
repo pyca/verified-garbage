@@ -111,7 +111,7 @@ theorem dEven_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat}
         xrun [State.ea, at0, (ku₃.gpr (by decide)).trans hbx, show BitVec.ofInt 64 0 = 0#64 from rfl,
           BitVec.add_zero, hs₃.ld (d := slot I.W aM) (by omega), hs₃.st (d := slot I.W aM) (by omega), h15, hmu]
         rw [or_and1_mask]) rfl)
-      fun t ⟨hm, k⟩ => ⟨hm, (((ku₁.trans ku₂).trans ku₃).trans k).mono (by simp)⟩
+      fun t ⟨hm, k⟩ => ⟨hm, (((ku₁.trans ku₂).trans ku₃).trans k).mono (by decide)⟩
   have o₇ := writeW_outside s₆.mem I.B (if decide (L = 0) then word s₆.mem I.B (slot I.W aM) ||| 1 else
     word s₆.mem I.B (slot I.W aM)) (d := slot I.W aM) (by omega)
   rw [← m₇] at o₇
@@ -247,7 +247,7 @@ theorem dEven_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat}
   · have f₆' : KF I.B I.W [.arr aC] s₃.mem s₆.mem := by rw [← m₄, ← m₅]; exact f₆
     exact (((((((((((((((((((f₁.trans f₂).trans f₃).trans f₆').trans f₇).trans f₈).trans
       f₉).trans f₁₀).trans f₁₁).trans f₁₂).trans f₁₃).trans f₁₄₁₆).trans f₁₇).trans f₁₈).trans f₁₉).trans f₂₀).trans
-      f₂₁).trans f₂₂).trans f₂₃).trans f₂₄).mono (by simp)
+      f₂₁).trans f₂₂).trans f₂₃).trans f₂₄).mono (by decide)
   · -- The inverse exists iff `L` is odd, at least 3, and the gcd is 1.
     constructor
     · rintro ⟨d, hd⟩

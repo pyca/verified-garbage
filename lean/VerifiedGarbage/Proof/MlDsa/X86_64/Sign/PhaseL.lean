@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseK
 
 /-!
@@ -113,7 +114,7 @@ def lChk (p : Params) : Bool :=
     keepB (sgB p) [(sc oKAP, 8)] (sc oCNT) 8 && inB (sgW p) (sc oKAP) 8 && ikChk p [(sc oKAP, 8)]
 
 theorem lChk_ok {p : Params} (h : Ok3 p) : lChk p = true := by
-  rcases h with rfl | rfl | rfl <;> decide
+  rcases h with rfl | rfl | rfl <;> decide +kernel
 
 theorem ofNat64_sub_one {k : Nat} (h : 1 ≤ k) (hk : k < 2 ^ 64) : BitVec.ofNat 64 k - 1 = BitVec.ofNat 64 (k - 1) :=
   VG.Proof.MlKem.X86_64.ofNat64_pred h hk
@@ -159,7 +160,7 @@ theorem dec_end {D : Nat} {p : Params} (hp : ParamsOk p) (hc : lChk p = true) {�
 theorem testRax_ok (s : State) : WP isa (.block [.alu32 .test .rax (.reg .rax)]) s fun s₁ =>
     (s₁.mem = s.mem ∧ s₁.gpr .rax = s.gpr .rax ∧
       s₁.zf = some (((s.gpr .rax).setWidth 32 &&& (s.gpr .rax).setWidth 32) == 0)) ∧ Keep [.rax] s s₁ :=
-  WP.keep [.rax] (by xrun) (by decide)
+  WP.keep [.rax] (by xrun) (Proof.MlKem.X86_64.writesOnly_of (by decide))
 
 theorem IB.step0 {p : Params} {D : Nat} {σ s s' : State} {t : Nat} (h : IB p D σ t s) (hc : lChk p = true)
     (hP : PPostB D s s' []) (hax : s'.gpr .rax = s.gpr .rax) : IB p D σ t s' := by
@@ -192,7 +193,7 @@ theorem else_ok {D : Nat} {p : Params} (hc4 : lChk p = true) {σ : State} {t : N
   simp only [lChk, Bool.and_eq_true] at hc4'
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨w1, -⟩, k1⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, -⟩, k0⟩, -⟩, -⟩, -⟩ := hc4'
   rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.r15] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .r15 = 0) (by xrun) (by decide))
+  refine WP.mono (WP.keep [.r15] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .r15 = 0) (by xrun) (Proof.MlKem.X86_64.writesOnly_of (by decide)))
     fun s4 ⟨⟨hm4, h154⟩, k4⟩ => ?_
   have hP4 : PPostB D s s4 [] := (postB15 k4 hm4 _).1
   have K4 := h.c.l.k.step hP4 k0

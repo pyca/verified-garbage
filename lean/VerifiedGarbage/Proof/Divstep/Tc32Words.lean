@@ -137,7 +137,7 @@ theorem comb_range {u v f g : Int} {p A : Nat} (huv : |u| + |v| ≤ 2 ^ 30) (hf 
   have hpA' : (p : Int) < A := by exact_mod_cast hpA
   have hp0 : (0 : Int) ≤ p := Int.natCast_nonneg _
   push_cast
-  constructor <;> nlinarith
+  constructor <;> linarith
 
 /-! ## Bounds over a run -/
 

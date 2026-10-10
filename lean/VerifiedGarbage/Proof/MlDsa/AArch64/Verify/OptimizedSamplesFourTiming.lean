@@ -20,7 +20,7 @@ theorem vcall4_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF :
     vrel_of (Q := fun x y => VTwo p S x y ∧ bytesAt x.mem (pa x (sc oSA4)) 136 = bytesAt y.mem (pa y (sc oSA4)) 136) ?_
       (fun _ _ _ _ hp hp' hq h h' => ⟨vc_two hF hp hp' hq h.va.vz.vc h'.va.vz.vc,by
         rw [h.seeds,h'.seeds]; simp only [seedOf,(vPub_eq hq).2.1]⟩)⟩
-  have hc : rej4Chk (vR p) (vW p) (sc oSA4) (aP (4*g)) (sc (oR4 p)) = true := by unfold rej4Chk; vlay
+  have hc : rej4Chk (vR p) (vW p) (sc oSA4) (aP (4*g)) (sc (oR4 p)) = true := by unfold rej4Chk; vlayd
   have ok := fun x (L : Lay S (vR p) (vW p) x) => WP.mono (rej4At_ok hP.s64 hP.rej4 L hc)
     fun _ h => (⟨_,h.1⟩ : ∃ W,PostB S x _ W)
   have tail : RelCT isa (VTwo p S) (.seq (.block and24) (VG.Impl.MlDsa.AArch64.Optimized.MatrixMask.code (aP (4*g)) 1024)) fun _ _ => True := by

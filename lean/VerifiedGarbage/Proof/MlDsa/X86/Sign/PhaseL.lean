@@ -103,19 +103,19 @@ theorem tail_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
       · rw [decide_eq_false e', show 814 - t = 1 by omega]; rfl
   refine ⟨⟨hrun.1, ht, fun ht' => ?_, fun ht' => ?_⟩, hz⟩
   · have hc : contS p F t s₀ = true := (hnext.mp ht').1
-    refine ⟨h.kd.keep hp ps c' (by decide) fr (by ofs), ?_, ?_, (hnext.mp ht').2⟩
-    · rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofs)]; exact h.kap hc
+    refine ⟨h.kd.keep hp ps c' (by decide) fr (by ofsd), ?_, ?_, (hnext.mp ht').2⟩
+    · rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd)]; exact h.kap hc
     · rw [hcnt, h.cnt, hc]
       simp only [↓reduceIte]
       rw [ofNat_sub_one (by omega) (by omega), Nat.sub_sub]
   · rw [← ht', Nat.add_sub_cancel]
     refine ⟨c', hrun, ?_, fun hb hq => ?_, h.none⟩
-    · rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofs)]; exact h.ok
+    · rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd)]; exact h.ok
     · obtain ⟨f1, f2, f3⟩ := h.out hb hq
       have := ps.hcLen
-      exact ⟨f1.keep hp ps (by decide) fr (by simp only [nS, yB]; omega) (by ofs),
-        f2.keep hp ps (by decide) fr (by simp only [nS]; omega) (by ofs),
-        by rw [keepB hp (by decide) fr (by ofs) (by ofs), f3]⟩
+      exact ⟨f1.keep hp ps (by decide) fr (by simp only [nS, yB]; omega) (by ofsd),
+        f2.keep hp ps (by decide) fr (by simp only [nS]; omega) (by ofsd),
+        by rw [keepB hp (by decide) fr (by ofsd) (by ofsd), f3]⟩
 
 /-- `OK ← 0` and `CNT ← 1`, when `SampleInBall` failed. -/
 theorem ballFail_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
@@ -129,11 +129,11 @@ theorem ballFail_piece (F : PrimsOk P) (ps : PS p) (t : Nat) :
   refine wp_st32 hp c (sc_ok ps (by decide) (by decide)) 0 fun s₁ c₁ f₁ v₁ => ?_
   rw [← List.append_nil (st32 oCNT 1)]
   refine wp_st32 hp c₁ (sc_ok ps (by decide) (by decide)) 1 fun s₂ c₂ f₂ v₂ => WP.block_nil_iff.mpr ?_
-  have kd₁ := kd.keep hp ps c₁ (N := 80) (by decide) (fr0 hp (by decide) f₁) (by ofs)
+  have kd₁ := kd.keep hp ps c₁ (N := 80) (by decide) (fr0 hp (by decide) f₁) (by ofsd)
   have hc : contS p F t s₀ = false := by simp only [contS, contV, hf, Bool.false_and]
-  refine ⟨kd₁.keep hp ps c₂ (N := 80) (by decide) (fr0 hp (by decide) f₂) (by ofs), ib.run, by rw [hc, v₂]; rfl,
+  refine ⟨kd₁.keep hp ps c₂ (N := 80) (by decide) (fr0 hp (by decide) f₂) (by ofsd), ib.run, by rw [hc, v₂]; rfl,
     (fun e => by rw [hc] at e; cases e), ?_, (fun e => by rw [hf] at e; cases e), fun _ => ib.no hf⟩
-  rw [scw, keepW' hp (N := 80) (by decide) (fr0 hp (by decide) f₂) (sc_ok' ps (by decide) (by decide)) (by ofs), ← scw,
+  rw [scw, keepW' hp (N := 80) (by decide) (fr0 hp (by decide) f₂) (sc_ok' ps (by decide) (by decide)) (by ofsd), ← scw,
     v₁, hf, Bool.false_and]; rfl
 
 /-- Iteration `t`. -/
@@ -166,11 +166,11 @@ theorem signLoop_piece (F : PrimsOk P) (ps : PS p) :
   refine wp_st32 hp h.1.ctx (sc_ok ps (by decide) (by decide)) 0 fun s₁ c₁ f₁ v₁ => ?_
   rw [← List.append_nil (st32 oCNT 814)]
   refine wp_st32 hp c₁ (sc_ok ps (by decide) (by decide)) 814 fun s₂ c₂ f₂ v₂ => WP.block_nil_iff.mpr ?_
-  have kd₁ := h.1.keep hp ps c₁ (N := 80) (by decide) (fr0 hp (by decide) f₁) (by ofs)
+  have kd₁ := h.1.keep hp ps c₁ (N := 80) (by decide) (fr0 hp (by decide) f₁) (by ofsd)
   have hpos := NI_pos (p := p) F s₀
-  refine ⟨h.2, Nat.zero_le _, fun _ => ⟨kd₁.keep hp ps c₂ (N := 80) (by decide) (fr0 hp (by decide) f₂) (by ofs),
+  refine ⟨h.2, Nat.zero_le _, fun _ => ⟨kd₁.keep hp ps c₂ (N := 80) (by decide) (fr0 hp (by decide) f₂) (by ofsd),
     ?_, v₂, by decide⟩, fun e => absurd e (by omega)⟩
-  rw [scw, keepW' hp (N := 80) (by decide) (fr0 hp (by decide) f₂) (sc_ok' ps (by decide) (by decide)) (by ofs), ← scw,
+  rw [scw, keepW' hp (N := 80) (by decide) (fr0 hp (by decide) f₂) (sc_ok' ps (by decide) (by decide)) (by ofsd), ← scw,
     v₁]; rfl
 
 end VG.Proof.MlDsa.X86.Sign

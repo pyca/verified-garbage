@@ -297,11 +297,11 @@ def xorW (d : Reg) (k : Nat) : List Instr :=
 
 /-- `r0 = 1` if the padded tags are equal, else 0, without a branch. -/
 def cmpTail : List Instr :=
-  xorW .r0 0 ++ xorW .r1 1 ++ [.dp .orr .r0 .r0 (.reg .r1)] ++ xorW .r1 2 ++
-    [.dp .orr .r0 .r0 (.reg .r1)] ++ xorW .r1 3 ++
-    [.dp .orr .r0 .r0 (.reg .r1), .mov .r1 (imm 0), .dp .sub .r1 .r1 (.reg .r0),
+  xorW .r0 0 ++ xorW .r1 1 ++ ([.dp .orr .r0 .r0 (.reg .r1)] : List Instr) ++ xorW .r1 2 ++
+    ([.dp .orr .r0 .r0 (.reg .r1)] : List Instr) ++ xorW .r1 3 ++
+    ([.dp .orr .r0 .r0 (.reg .r1), .mov .r1 (imm 0), .dp .sub .r1 .r1 (.reg .r0),
      .dp .orr .r0 .r0 (.reg .r1), .mov .r0 (.shifted .r0 .lsr 31), .mov .r1 (imm 1),
-     .dp .sub .r0 .r1 (.reg .r0)]
+     .dp .sub .r0 .r1 (.reg .r0)] : List Instr)
 
 /-- The first `r6` bytes of the tag at `W + o`, padded with zeros at
 `W + vO`, compared with the received one: `r0 = 1` if they are equal. -/
@@ -324,8 +324,8 @@ def tagLenOk : Prog isa :=
 
 /-- `vg_aes_gcm_init(key = r0, key_len = r1, ctx = r2, scratch = r3)`. -/
 def initPre : List Instr :=
-  save .r3 ++ [.mov .r11 (.reg .r3), .mov .r9 (.reg .r2), .mov .r8 (.shifted .r1 .lsr 2), addI .r8 .r8 6,
-    addI .r3 .r11 scrO]
+  save .r3 ++ ([.mov .r11 (.reg .r3), .mov .r9 (.reg .r2), .mov .r8 (.shifted .r1 .lsr 2), addI .r8 .r8 6,
+    addI .r3 .r11 scrO] : List Instr)
 
 /-- The hash subkey's block and `T` zeroed, and the arguments of
 `vg_aes_ctr32` on them. -/
@@ -343,7 +343,7 @@ def init : Prog isa :=
 /-- `vg_aes_gcm_stream_init(ctx = r0, nonce = r1, nonce_len = r2, state = r3, scratch = [sp])`. -/
 def streamInitPre : List Instr :=
   .ldrSp .r12 0 :: save .r12 ++
-    [.mov .r11 (.reg .r12), .mov .r10 (.reg .r3), .mov .r9 (.reg .r0), .mov .r4 (.reg .r1), .mov .r5 (.reg .r2)]
+    ([.mov .r11 (.reg .r12), .mov .r10 (.reg .r3), .mov .r9 (.reg .r0), .mov .r4 (.reg .r1), .mov .r5 (.reg .r2)] : List Instr)
 
 def streamInit : Prog isa :=
   .seq (.block streamInitPre) (.seq j0 (.block restore))
@@ -352,8 +352,8 @@ def streamInit : Prog isa :=
 scratch = [sp + 8])`. -/
 def streamAadPre : List Instr :=
   .ldrSp .r12 8 :: save .r12 ++
-    [.mov .r11 (.reg .r12), .mov .r10 (.reg .r1), .mov .r9 (.reg .r0), .ldrSp .r4 0, .ldrSp .r5 4,
-     .dp .and .r6 .r2 (imm 15)]
+    ([.mov .r11 (.reg .r12), .mov .r10 (.reg .r1), .mov .r9 (.reg .r0), .ldrSp .r4 0, .ldrSp .r5 4,
+     .dp .and .r6 .r2 (imm 15)] : List Instr)
 
 def streamAad : Prog isa :=
   .seq (.block streamAadPre) (.seq (absorb 16) (.block restore))
@@ -363,7 +363,7 @@ aad_len = [sp]:[sp + 4], text_len = [sp + 8]:[sp + 12], data = [sp + 16], len = 
 scratch = [sp + 24])`. -/
 def cryptEntry : List Instr :=
   .ldrSp .r12 24 :: save .r12 ++
-    [.mov .r11 (.reg .r12), .mov .r10 (.reg .r2), .mov .r9 (.reg .r0), .mov .r8 (.reg .r1)]
+    ([.mov .r11 (.reg .r12), .mov .r10 (.reg .r2), .mov .r9 (.reg .r0), .mov .r8 (.reg .r1)] : List Instr)
 
 /-- The arguments of `crypt` or `absorb` for the text: the data, its length,
 and the length of the text so far modulo 16. -/
@@ -396,7 +396,7 @@ def streamDecrypt : Prog isa :=
 aad_len = [sp]:[sp + 4], text_len = [sp + 8]:[sp + 12], tag = [sp + 16], …, work = [sp + off])`. -/
 def finEntry (off : Nat) : List Instr :=
   .ldrSp .r12 off :: save .r12 ++
-    [.mov .r11 (.reg .r12), .mov .r10 (.reg .r2), .mov .r9 (.reg .r0), .mov .r8 (.reg .r1)]
+    ([.mov .r11 (.reg .r12), .mov .r10 (.reg .r2), .mov .r9 (.reg .r0), .mov .r8 (.reg .r1)] : List Instr)
 
 /-- The buffered bytes padded and absorbed, and the tag into `W + o`. -/
 def finTag (o : Nat) : Prog isa :=
@@ -418,7 +418,7 @@ def streamFinish : Prog isa :=
 
 /-- `vg_aes_gcm_stream_verify`, with `tag_len = [sp + 20]` and `work = [sp + 24]`. -/
 def streamVerify : Prog isa :=
-  .seq (.block (finEntry 24 ++ [.ldrSp .r6 20]))
+  .seq (.block (finEntry 24 ++ ([.ldrSp .r6 20] : List Instr)))
   (.seq tagLenOk
   (.seq (.ite .eq (.block [.mov .r0 (imm 0)])
       (.seq recv
@@ -432,8 +432,8 @@ nonce_len = r3, aad = [sp], aad_len = [sp + 4], data = [sp + 8], len = [sp + 12]
 tag = [sp + 16], …, work = [sp + off])`. The state is at `W + 16`. -/
 def oneEntry (off : Nat) : List Instr :=
   .ldrSp .r12 off :: save .r12 ++
-    [.mov .r11 (.reg .r12), addI .r10 .r11 16, .mov .r9 (.reg .r0), .mov .r8 (.reg .r1),
-     .mov .r4 (.reg .r2), .mov .r5 (.reg .r3)]
+    ([.mov .r11 (.reg .r12), addI .r10 .r11 16, .mov .r9 (.reg .r0), .mov .r8 (.reg .r1),
+     .mov .r4 (.reg .r2), .mov .r5 (.reg .r3)] : List Instr)
 
 /-- `J₀`, then the additional data absorbed and padded. -/
 def oneAad : Prog isa :=
@@ -465,7 +465,7 @@ def «seal» : Prog isa :=
 
 /-- `vg_aes_gcm_open`, with `tag_len = [sp + 20]` and `work = [sp + 24]`. -/
 def «open» : Prog isa :=
-  .seq (.block (oneEntry 24 ++ [.ldrSp .r6 20]))
+  .seq (.block (oneEntry 24 ++ ([.ldrSp .r6 20] : List Instr)))
   (.seq tagLenOk
   (.seq (.ite .eq (.block [.mov .r0 (imm 0)])
       (.seq oneAad

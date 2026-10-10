@@ -99,7 +99,7 @@ theorem zeroA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} (
     (by have := h.w2; omega) (by omega)) fun t ⟨hz, o, k₄⟩ => ?_
   rw [m₃, m₂, m₁] at o
   exact ⟨hz, o, (k₄.gpr .x12 (by decide)).trans e12, (k₄.gpr .x11 (by decide)).trans e11,
-    (k₄.gpr .x7 (by decide)).trans h7, (k13.trans k₄).mono (by simp)⟩
+    (k₄.gpr .x7 (by decide)).trans h7, (k13.trans k₄).mono (by decide)⟩
 
 /-- Two bases. -/
 theorem base2_ok {s : State} {B : Addr} {w : Nat} (i j : Nat) (r₁ r₂ : Reg) (h0 : s.gpr .x0 = B)
@@ -147,7 +147,7 @@ theorem copyA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {o a : Nat}
     (fun i hi b hb => by rw [ofs_off B (by omega)]; omega)) fun t ⟨hv, _, o', _, _, k₃⟩ => ?_
   rw [m₂, m₁] at hv o'
   exact ⟨hv, o', (k₃.gpr .x12 (by decide)).trans e12, (k₃.gpr .x11 (by decide)).trans e11,
-    ((k₁.trans k₂).trans k₃).mono (by simp)⟩
+    ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 /-! ## Bytes -/
 
@@ -191,7 +191,7 @@ theorem loadA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr sLe
   rw [m₄, m₃, m₂] at o
   have k25 := (k₃.trans k₄).trans k₅
   refine ⟨?_, fun x hx => by rw [o x (by omega), o₁ x hx], (k25.gpr .x12 (by decide)).trans h12,
-    (k25.gpr .x11 (by decide)).trans h11, (k14.trans k₅).mono (by simp)⟩
+    (k25.gpr .x11 (by decide)).trans h11, (k14.trans k₅).mono (by decide)⟩
   -- The words above the loaded ones are still zero.
   have hz' : ∀ q < w + 2, word s₁.mem B (slot w j + 8 * q) = 0 := (wv_eq_zero_iff _ _ _ _).mp hz
   have e := wv_add t.mem B (slot w j) ((len + 7) / 8) (w - (len + 7) / 8)
@@ -233,7 +233,7 @@ theorem storeA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr sL
     hl1 (by omega) rfl (by omega) (fun i hi => by rw [k24.wr]; exact hout i hi) hsep)
     fun t ⟨hb, hx, hwr, hrd, k₅⟩ => ?_
   rw [m₄, m₃, m₂] at hb hx
-  exact ⟨hb, hx, hwr.trans k24.wr, hrd.trans k24.rd, (k24.trans k₅).mono (by simp)⟩
+  exact ⟨hb, hx, hwr.trans k24.wr, hrd.trans k24.rd, (k24.trans k₅).mono (by decide)⟩
 
 /-- A number below `2^(64 v)` is its low `v` words. -/
 theorem wv_low_of_lt {m : Mem} {B : Addr} {e v w : Nat} (hv : v ≤ w) (h : wv m B e w < 2 ^ (64 * v)) :

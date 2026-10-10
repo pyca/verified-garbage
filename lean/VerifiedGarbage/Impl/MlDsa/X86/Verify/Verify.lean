@@ -142,7 +142,7 @@ are equal (`sub edx, 1` borrows then), and `eax` the mask `-borrow`. -/
 def cmpAnd (a b : Buf) (n : Nat) : Prog isa :=
   .seq (.block (ptrTo vS .edi a ++ ptrTo vS .ebp b ++
       ([.mov .ecx (.imm (BitVec.ofNat 32 n)), .mov .edx (.imm 0)] : List Instr)))
-    (.seq (.loop (.block cmpBody) .ne) (.block ([.alu .sub .edx (.imm 1), .alu .sbb .eax (.reg .eax)] ++ accAnd)))
+    (.seq (.loop (.block cmpBody) .ne) (.block (([.alu .sub .edx (.imm 1), .alu .sbb .eax (.reg .eax)] : List Instr) ++ accAnd)))
 
 /-! ## The pieces -/
 

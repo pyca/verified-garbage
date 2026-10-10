@@ -110,11 +110,11 @@ def store (a b c d : XReg) : List Instr :=
 /-- The rounds' result plus the input states (through `zmm4 … zmm8`), and the
 four blocks gathered, into `buf[0, 256)`. -/
 def finish : List Instr :=
-  [.vbroadcasti32x4 .xmm4 (at_ .rdi 0), .vbroadcasti32x4 .xmm5 (at_ .rdi 16),
+  ([.vbroadcasti32x4 .xmm4 (at_ .rdi 0), .vbroadcasti32x4 .xmm5 (at_ .rdi 16),
    .vbroadcasti32x4 .xmm6 (at_ .rdi 32), .vbroadcasti32x4 .xmm7 (at_ .rdi 48),
    .vmovdqu32Load .xmm8 (at_ .r9 incOff), z .vpaddd .xmm7 .xmm7 .xmm8,
    z .vpaddd .xmm0 .xmm0 .xmm4, z .vpaddd .xmm1 .xmm1 .xmm5,
-   z .vpaddd .xmm2 .xmm2 .xmm6, z .vpaddd .xmm3 .xmm3 .xmm7] ++
+   z .vpaddd .xmm2 .xmm2 .xmm6, z .vpaddd .xmm3 .xmm3 .xmm7] : List Instr) ++
   gather .xmm0 .xmm1 .xmm2 .xmm3 .xmm4 .xmm5 .xmm6 .xmm7 ++ store .xmm0 .xmm1 .xmm2 .xmm3
 
 /-! ## Eight blocks -/
@@ -151,14 +151,14 @@ def setup2 : List Instr :=
 /-- The rounds' result plus the input states (through `zmm8 … zmm13`), and
 each set's blocks gathered (through `zmm8 … zmm11`). -/
 def finish2 : List Instr :=
-  [.vbroadcasti32x4 .xmm8 (at_ .rdi 0), .vbroadcasti32x4 .xmm9 (at_ .rdi 16),
+  ([.vbroadcasti32x4 .xmm8 (at_ .rdi 0), .vbroadcasti32x4 .xmm9 (at_ .rdi 16),
    .vbroadcasti32x4 .xmm10 (at_ .rdi 32), .vbroadcasti32x4 .xmm11 (at_ .rdi 48),
    z .vpaddd .xmm0 .xmm0 .xmm8, z .vpaddd .xmm1 .xmm1 .xmm9, z .vpaddd .xmm2 .xmm2 .xmm10,
    z .vpaddd .xmm4 .xmm4 .xmm8, z .vpaddd .xmm5 .xmm5 .xmm9, z .vpaddd .xmm6 .xmm6 .xmm10,
    .vmovdqu32Load .xmm12 (at_ .r9 incOff), z .vpaddd .xmm12 .xmm12 .xmm11,
    z .vpaddd .xmm3 .xmm3 .xmm12,
    .vmovdqu32Load .xmm13 (at_ .r9 inc2Off), z .vpaddd .xmm13 .xmm13 .xmm11,
-   z .vpaddd .xmm7 .xmm7 .xmm13] ++
+   z .vpaddd .xmm7 .xmm7 .xmm13] : List Instr) ++
   gather .xmm0 .xmm1 .xmm2 .xmm3 .xmm8 .xmm9 .xmm10 .xmm11 ++
   gather .xmm4 .xmm5 .xmm6 .xmm7 .xmm8 .xmm9 .xmm10 .xmm11
 
@@ -180,8 +180,8 @@ the length advanced. -/
 def full : Prog isa :=
   .seq (.block setup2) (.seq (rounds2 10) (.block (finish2 ++
     xor256 .xmm0 .xmm1 .xmm2 .xmm3 0 ++ xor256 .xmm4 .xmm5 .xmm6 .xmm7 256 ++
-    [.mov32 .rax (.mem (at_ .rdi 48)), .alu32 .add .rax (.imm 8), .store32 (at_ .rdi 48) .rax,
-     .alu .add .rsi (.imm 512), .alu .sub .rdx (.imm 512)])))
+    ([.mov32 .rax (.mem (at_ .rdi 48)), .alu32 .add .rax (.imm 8), .store32 (at_ .rdi 48) .rax,
+     .alu .add .rsi (.imm 512), .alu .sub .rdx (.imm 512)] : List Instr))))
 
 /-- More than 256 bytes and fewer than 512: eight blocks, the first four into
 the next 256 bytes of data, the others into `buf` and the rest of the data
@@ -189,7 +189,7 @@ from there. -/
 def part : Prog isa :=
   .seq (.block setup2) (.seq (rounds2 10) (.seq (.block (finish2 ++
     xor256 .xmm0 .xmm1 .xmm2 .xmm3 0 ++ store .xmm4 .xmm5 .xmm6 .xmm7 ++
-    [.alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 256)])) fromBuf))
+    ([.alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 256)] : List Instr))) fromBuf))
 
 /-- At most 256 bytes: four blocks into `buf`, and the data from there. -/
 def last : Prog isa :=

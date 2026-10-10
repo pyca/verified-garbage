@@ -190,7 +190,11 @@ structure ESym where
 
 def ESym.init : ESym := ⟨.reg, .gpr .rax⟩
 
-def ESym.set (σ : ESym) (d : VReg) (t : T) : ESym := { σ with reg := fun r => if r = vi d then t else σ.reg r }
+/-- (`Nat.beq` rather than `if r = vi d`: the kernel evaluates every lookup
+through every write, in `checkStep`, and `Nat.decEq` costs it several
+reductions more.) -/
+def ESym.set (σ : ESym) (d : VReg) (t : T) : ESym :=
+  { σ with reg := fun r => bif Nat.beq r (vi d) then t else σ.reg r }
 
 def ESym.eop (σ : ESym) : EOp → Option ESym
   | .bin .vpxorq d a b => if a = b then some (σ.set d .zero) else none
@@ -271,7 +275,7 @@ theorem SRel.set {σ : ESym} {s₀ s : State} (h : SRel σ s₀ s) {d : VReg} {t
     (hv : ∀ k, k < 4 → qword256 v k = t.eval s₀ k) : SRel (σ.set d t) s₀ (s.setVy d v) := by
   refine ⟨fun r k hk => ?_, (gpr_setVy s d v .rax).trans h.rax, vr_setVy h.eq d v⟩
   rw [qv_setVy]
-  simp only [ESym.set, vi_inj]
+  simp only [ESym.set, Bool.cond_eq_ite, Nat.beq_eq, vi_inj]
   split
   · exact hv k hk
   · exact h.reg r k hk

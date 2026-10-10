@@ -64,10 +64,12 @@ theorem kApart_of {o₁ o₂ : Addr} {l₁ l₂ : Nat} (hd : (⟨o₁, l₁⟩ :
 
 theorem keyCtx_of {s : State} (h : keyPre s) : KCtx s := by
   simp only [keyPre] at h
-  obtain ⟨hsp, hrd, hwr, dnd, dnp, dnq, dndp, dndq, dnqi, dne, dns, dna, ddp, ddq, dddp, dddq, ddqi, dde, dds, dda,
-    dpq, dpdp, dpdq, dpqi, dpe, dps, dpa, dqdp, dqdq, dqqi, dqe, dqs, dqa, dpdq', dpqi', dpe', dps', dpa', dqqi', dqe',
-    dqs', dqa', dqie, dqis, dqia, des, dsa, dRn, dRd, dRp, dRq, dRdp, dRdq, dRqi, dRe, dRs, dRa,
-    wn, wd, wp, wq, wdp, wdq, wqi, we, ws, hpl, hsi, hcx, hql, hdpl, hdql, hqil, hel1, hel8, hsl⟩ := h
+  sig_split h
+  rename_i hsp hrd hwr dnd dnp dnq dndp dndq dnqi dne dns dna ddp ddq dddp dddq ddqi dde dds dda dpq
+    dpdp dpdq dpqi dpe dps dpa dqdp dqdq dqqi dqe dqs dqa dpdq' dpqi' dpe' dps' dpa' dqqi' dqe' dqs'
+    dqa' dqie dqis dqia des dsa dRn dRd dRp dRq dRdp dRdq dRqi dRe dRs dRa wn wd wp wq wdp wdq wqi
+    we ws hpl hsi hcx hql hdpl hdql hqil hel1 hel8
+  have hsl := h
   obtain ⟨hpl1, hpl2, hpl8⟩ := hpl
   unfold Spec.Rsa.scratchWords at hsl
   have hs : Scr s (arg s 10) ((arg s 11).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) ws

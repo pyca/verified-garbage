@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
 import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 
@@ -117,7 +118,7 @@ theorem kzero_ok {s : State} (L : Lay D rbs wbs s) (hk : kChk (rbs ++ wbs) wbs =
       stateAt s'.mem (pa s (sc 0)) = Spec.Sha3.zero := by
   obtain ⟨w0, _, _, _, _⟩ := kChk_spec hk
   rw [kzero, ← List.singleton_append, WP.block_append_iff]
-  refine WP.mono (WP.keep [.rax] (Q := fun s1 => s1.mem = s.mem ∧ s1.gpr .rax = 0) (by xrun) (by decide))
+  refine WP.mono (WP.keep [.rax] (Q := fun s1 => s1.mem = s.mem ∧ s1.gpr .rax = 0) (by xrun) (Proof.MlKem.X86_64.writesOnly_of (by decide)))
     fun s1 ⟨⟨hm, hax⟩, k1⟩ => ?_
   have hbx : s1.gpr .rbx = s.gpr .rbx := k1.gpr (by decide)
   refine WP.mono (zeroSt_ok .rbx 0 s1 hax fun i hi => ?_) fun s2 ⟨hz, hf, k2⟩ => ?_

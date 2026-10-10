@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Mont.X86_64.Sparse
 # Montgomery arithmetic on x86-64: P-384's reduction with BMI2
 
 `redSparse` with the multiplier's ports doing the work the flags' ports did:
-`u = t₀ (2³² + 1) mod 2⁶⁴` is one `mulx` (`uSparseX_ok`), and the two
+`u = t₀ (2³² + 1) mod 2⁶⁴` is one `imul` (`uSparseX_ok`), and the two
 products of `u` by `c = 2³⁸⁴ - p`'s words are by `mulx`, their halves added in
 one carry chain (`prodSparseX_ok`), then subtracted (`subSparseX_ok`):
 `redSX_ok` is `redS_ok` for `redSparseX`. `redShortX_ok` is the round on six
@@ -17,17 +17,25 @@ open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono se0 add_carry adc_carry sub_borrow sbb_borrow
   toNat_ofBool)
 
+/-- `imul`'s result: the low word of the product, signed or unsigned. -/
+theorem imul_toNat (a b : BitVec 64) :
+    (BitVec.ofInt 64 (a.toInt * b.toInt)).toNat = a.toNat * b.toNat % 2 ^ 64 := by
+  have h : BitVec.ofInt 64 (a.toInt * b.toInt) = a * b := by
+    apply BitVec.eq_of_toInt_eq
+    rw [BitVec.toInt_ofInt, BitVec.toInt_mul]
+  rw [h, BitVec.toNat_mul]
+
 /-- `rdx = t₀ (2³² + 1) mod 2⁶⁴`. -/
-theorem uSparseX_ok (s : State) {t0 : Reg} (ha : t0 ≠ .rax) :
+theorem uSparseX_ok (s : State) {t0 : Reg} (hd : t0 ≠ .rdx) :
     WP isa (.block (uSparseX t0)) s fun s' =>
       (s'.gpr .rdx).toNat = (s.gpr t0).toNat * (2 ^ 32 + 1) % 2 ^ 64 ∧ Keeps [.rax, .rdx] s s' := by
   apply WP.of_runBlock
-  simp only [uSparseX, runBlock_cons, runStep_some, runBlock_nil, exec, execMulx, readSrc, Option.map_some,
-    RegUpd.gpr_setReg, ha, reduceCtorEq, ↓reduceIte, Option.some.injEq, exists_eq_left']
+  simp only [uSparseX, runBlock_cons, runStep_some, runBlock_nil, exec, execImul, RegUpd.gpr_setReg, hd,
+    ↓reduceIte, Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
-  · rw [BitVec.toNat_ofNat, show sparseK.toNat = 2 ^ 32 + 1 from rfl]
+  · rw [imul_toNat, show sparseK.toNat = 2 ^ 32 + 1 from rfl, Nat.mul_comm]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [RegUpd.gpr_setReg, hr.1, hr.2, ite_false]
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr.2, ite_false]
 
 /-- `rax + 2⁶⁴ rcx + 2¹²⁸ rbp` is `⌊u c / 2⁶⁴⌋` for `u` in `rdx` (kept), with
 `u c mod 2⁶⁴` below. -/
@@ -268,7 +276,7 @@ theorem redSX_ok {s : State} {n i m : Nat} (hn : n = 6)
       rcases hq with h | h | h | h | h | h | h <;> subst h
       exacts [n01 rfl, n02 rfl, n03 rfl, n04 rfl, n05 rfl, n06 rfl, n07 rfl]
   rw [redSparseX, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (uSparseX_ok s ha0) fun s₁ ⟨e₁, k₁⟩ => ?_
+  refine WP.mono (uSparseX_ok s hd0) fun s₁ ⟨e₁, k₁⟩ => ?_
   refine WP.mono (prodSparseX_ok s₁ ⟨ha0, hc0, hd0, hb0⟩) fun s₂ ⟨e₂, k₂⟩ => ?_
   have g₁ : ∀ q ∈ [t1, t2, t3, t4, t5, t6, t7], s₂.gpr q = s.gpr q := fun q hq => by
     obtain ⟨qa, qc, qd, qb, q0⟩ := hR q hq
@@ -452,7 +460,7 @@ theorem redShortX_ok {s : State} {d0 d1 d2 d3 d4 d5 : Reg} (hf : Fresh [d0, d1, 
       rcases hq with h | h | h | h | h <;> subst h
       exacts [n01 rfl, n02 rfl, n03 rfl, n04 rfl, n05 rfl]
   rw [redShortX, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (uSparseX_ok s ha0) fun s₁ ⟨e₁, k₁⟩ => ?_
+  refine WP.mono (uSparseX_ok s hd0) fun s₁ ⟨e₁, k₁⟩ => ?_
   refine WP.mono (prodSparseX_ok s₁ ⟨ha0, hc0, hd0, hb0⟩) fun s₂ ⟨e₂, k₂⟩ => ?_
   have g₁ : ∀ q ∈ [d1, d2, d3, d4, d5], s₂.gpr q = s.gpr q := fun q hq => by
     obtain ⟨qa, qc, qd, qb, q0⟩ := hR q hq

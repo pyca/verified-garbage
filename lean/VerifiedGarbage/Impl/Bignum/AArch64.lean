@@ -61,7 +61,7 @@ def next (p : Reg) : Instr := .addImm .x p p 8
 
 /-- `do body; cnt -= 1 while cnt ≠ 0`, for `cnt` at least 1. -/
 def countLoop (cnt : Reg) (body : List Instr) : Prog isa :=
-  .loop (.block (body ++ [.subImm .x cnt cnt 1])) (.nonzero .x cnt)
+  .loop (.block (body ++ ([.subImm .x cnt cnt 1] : List Instr))) (.nonzero .x cnt)
 
 /-! ## Montgomery multiplication -/
 
@@ -210,7 +210,7 @@ def setBase (j : Nat) : List Instr := [sth .x4 (sArr j), .add .x .x4 .x4 .x3]
 /-- The arrays' bases, `w + 2` words apart after the header, into slots
 `sArr 0` to `sArr 7`; `w` in `x12`. -/
 def setBases : List Instr :=
-  [.addImm .x .x3 .x12 2, .lsl .x .x3 .x3 3, .addImm .x .x4 .x0 hdrBytes] ++ (List.range 8).flatMap setBase
+  ([.addImm .x .x3 .x12 2, .lsl .x .x3 .x3 3, .addImm .x .x4 .x0 hdrBytes] : List Instr) ++ (List.range 8).flatMap setBase
 
 /-- A step of Newton's iteration: `x4 := x4 (2 - x3 x4)`. -/
 def newton : List Instr :=

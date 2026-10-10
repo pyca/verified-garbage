@@ -15,7 +15,7 @@ def positiveRowChk (p : Params) (i : Nat) : Bool :=
     famChk (sgR p) (sgW p) (dotWrites p i) (wBase p) i
 
 theorem positiveRowChk_ok {p : Params} (hp : Ok3 p) : ∀i<p.k,positiveRowChk p i=true := by
-  rcases hp with rfl | rfl | rfl <;> decide
+  rcases hp with rfl | rfl | rfl <;> decide +kernel
 
 theorem positiveRowW_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
     (hp : Ok3 p) (hi : i<p.k) (h : PositiveICw p S σ t i s) :

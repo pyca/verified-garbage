@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Sponge
 import VerifiedGarbage.Proof.MlDsa.Sample.Mem
 
@@ -58,7 +59,7 @@ theorem pro_J0 {s : State}
 theorem epi_ok {s : State} (he : Env P σ s) :
     WP isa (.block epi) s fun s' => (s'.gpr .rbx = σ.gpr .rbx ∧ s'.gpr .rbp = σ.gpr .rbp ∧
       s'.gpr .r12 = σ.gpr .r12 ∧ s'.mem = s.mem) ∧ Keep [.rbp, .r12, .rbx] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   have e := he.saved
   unfold epi
   xrun [he.rbx, inScrRd hp he (a := 2024) (n := 8) (by omega), inScrRd hp he (a := 2032) (n := 8) (by omega),
@@ -88,7 +89,7 @@ theorem gpr_end {s s' : State} (he : Env P σ s) (hbx : s'.gpr .rbx = σ.gpr .rb
 omit hp in
 theorem retJ_ok (s : State) :
     WP isa (.block retJ) s fun s' => (s'.gpr .rax = s.gpr .rdi >>> 8 ∧ s'.mem = s.mem) ∧ Keep [.rax] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   unfold retJ
   xrun
 

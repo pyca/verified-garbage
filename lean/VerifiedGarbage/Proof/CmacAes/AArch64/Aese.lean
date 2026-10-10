@@ -107,6 +107,11 @@ structure Inv (s₀ : State) (k : Nat) (s : State) : Prop where
   state : bytes (s.v .v0 ^^^ s.v .v30) = Spec.Cmac.chain (ciph s₀)
     (Spec.Aes.bytesAt s₀.mem (St s₀) 16) ((blks s₀).take k)
 
+theorem vframe_setV {rs : List VReg} {s t : State} (h : VFrame rs s t) {d : VReg} (hd : d ∈ rs)
+    (x : BitVec 128) : VFrame rs s (t.setV d x) :=
+  ⟨h.gpr, h.sp, h.mem, h.rd, h.wr, fun r hr => by
+    rw [v_setV_of_ne (h := fun e => hr (by rw [e]; exact hd)), h.v r hr]⟩
+
 theorem setup_ok {s₀ : State} (hp : UPre s₀) : WP isa (.block setup) s₀ (Inv s₀ 0) := by
   rw [setup, WP.block_append_iff]
   refine WP.mono (setupKeys_ok hp) fun s h => ?_
@@ -116,13 +121,19 @@ theorem setup_ok {s₀ : State} (hp : UPre s₀) : WP isa (.block setup) s₀ (I
   refine ⟨_, rfl, WP.block_nil ?_⟩
   have vf : VFrame [.v0, .v31] s
       ((s.setV .v31 (s.v .v16 ^^^ s.v .v30)).setV .v0 (s.v .v0 ^^^ s.v .v30)) := by
-    refine ⟨rfl, rfl, rfl, rfl, rfl, ?_⟩
-    intro r hr
-    simp only [List.mem_cons, not_or] at hr
-    simp [State.setV, hr.1, hr.2]
+    exact vframe_setV (vframe_setV (VFrame.refl _ s) (by decide) _) (by decide) _
   refine ⟨h.keys.of_frame vf ⟨by decide, by decide⟩, ?_, h.x2, h.x3, h.x4, h.mem, h.rd, h.wr, ?_⟩
   · simp [State.setV]
   · simpa [State.setV, BitVec.xor_assoc] using h.state
+
+theorem exec_eor16 (s : State) (d n m : VReg) :
+    exec (.vop (.logic .eor d n m)) s = some (s.setV d (s.v n ^^^ s.v m)) := rfl
+
+theorem exec_aese (s : State) (d n : VReg) :
+    exec (.vop (.aese d n)) s = some (s.setV d (aesMapBytes aesSbox (aesShiftRows (s.v d ^^^ s.v n)))) := rfl
+
+theorem exec_aesmc (s : State) (d n : VReg) :
+    exec (.vop (.aesmc d n)) s = some (s.setV d (aesMixColumns (s.v n))) := rfl
 
 theorem folded_xor (a m k l : BitVec 128) :
     a ^^^ (m ^^^ (k ^^^ l)) = ((a ^^^ l) ^^^ m) ^^^ k := by
@@ -138,18 +149,16 @@ theorem absorb_ok {nr : Nat} {w : List Byte} (s : State)
       VFrame [.v0, .v1] s s' := by
   rw [absorb, WP.block_cons_iff]
   refine ⟨_, exec_ldrq (by decide) hin, ?_⟩
-  rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
-  rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
-  rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ?_⟩
-  refine ⟨?_, ⟨rfl, rfl, rfl, rfl, rfl, ?_⟩⟩
-  · intro b hb
-    simp only [List.mem_singleton] at hb; subst hb
-    simp only [State.setV, ite_true, reduceCtorEq, ite_false, BitVec.add_zero, hc]
-    rw [folded_xor]
-    exact round_st (hK.full 0 (by have := hK.rounds; omega)) (rnds_zero w _).symm
-  · intro r hr
-    simp only [List.mem_cons, not_or] at hr
-    simp [State.setV, hr.1, hr.2]
+  rw [WP.block_cons_iff]; refine ⟨_, exec_eor16 _ _ _ _, ?_⟩
+  rw [WP.block_cons_iff]; refine ⟨_, exec_aese _ _ _, ?_⟩
+  rw [WP.block_cons_iff]; refine ⟨_, exec_aesmc _ _ _, WP.block_nil ?_⟩
+  refine ⟨?_, vframe_setV (vframe_setV (vframe_setV (vframe_setV (VFrame.refl _ s) (by decide) _)
+    (by decide) _) (by decide) _) (by decide) _⟩
+  intro b hb
+  simp only [List.mem_singleton] at hb; subst hb
+  simp only [State.setV, ite_true, reduceCtorEq, ite_false, BitVec.add_zero, hc]
+  rw [folded_xor]
+  exact round_st (hK.full 0 (by have := hK.rounds; omega)) (rnds_zero w _).symm
 
 theorem rounds_tail_ok {nr : Nat} {w : List Byte} {x : VReg → Spec.Aes.State} {s : State}
     (hK : Keys nr w s) (hI : RInv [.v0] w x 1 s) :

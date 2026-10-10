@@ -143,9 +143,9 @@ and the rounds (`key_len / 8 + 6`) in `r14`; then the arguments of
 for `K1`. -/
 def initPre : List Instr :=
   saveCode .rcx initSaved ++
-  [.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .shift .shr .rbp 1, .mov .r12 (.reg .rdx),
+  ([.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .shift .shr .rbp 1, .mov .r12 (.reg .rdx),
    .mov .r13 (.reg .rcx), .mov .r14 (.reg .rsi), .shift .shr .r14 3, .alu .add .r14 (imm 6),
-   .mov .rsi (.reg .rbp), .alu .add .rcx (imm csOff)]
+   .mov .rsi (.reg .rbp), .alu .add .rcx (imm csOff)] : List Instr)
 
 /-- The arguments of `vg_cmac_aes_subkeys(schedule = rdi, rounds = rsi, subkeys = rdx, scratch = rcx)`. -/
 def initMid₁ : List Instr :=
@@ -173,8 +173,8 @@ def init (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa :=
 `vg_cmac_aes_finalize(key = rdi, rounds = rsi, state = rdx, last = rcx, last_len = r8, scratch = r9)`
 for the zero block (the key and the rounds are ours). -/
 def startPre : List Instr :=
-  zero16 .rcx zOff ++ [.store (at_ .rdx 0) .rax, .store (at_ .rdx 8) .rax,
-    .mov .r9 (.reg .rcx), .alu .add .r9 (imm csOff), .alu .add .rcx (imm zOff), .mov32 .r8 (imm 16)]
+  zero16 .rcx zOff ++ ([.store (at_ .rdx 0) .rax, .store (at_ .rdx 8) .rax,
+    .mov .r9 (.reg .rcx), .alu .add .r9 (imm csOff), .alu .add .rcx (imm zOff), .mov32 .r8 (imm 16)] : List Instr)
 
 /-! ## The CMAC of a string -/
 
@@ -184,7 +184,7 @@ def startPre : List Instr :=
 last 1 to 16 bytes (none for the empty string), and the arguments of
 `vg_cmac_aes_update` for them. -/
 def cmacPre (st : Nat) : Prog isa :=
-  .seq (.block (zero16 .r15 st ++ [.mov32 .rcx (.imm 0), .alu .test .r14 (.reg .r14)]))
+  .seq (.block (zero16 .r15 st ++ ([.mov32 .rcx (.imm 0), .alu .test .r14 (.reg .r14)] : List Instr)))
     (.seq (.ite .e (.block [])
         (.block [.mov .rcx (.reg .r14), .alu .sub .rcx (imm 1), .mov .rax (.reg .rcx),
           .alu .and .rax (imm 15), .alu .sub .rcx (.reg .rax)]))
@@ -212,17 +212,17 @@ def copy : Prog isa := Impl.CmacAes.Stream.X86_64.copy
 `r15 + 144` with `rbx` holding the working space, the context saved at
 `r15 + 224`) is XORed into it. -/
 def shortTail : Prog isa :=
-  .seq (.block (zero16 .r15 tailOff ++ [.mov .rdx (.reg .r15), .alu .add .rdx (imm tailOff),
-      .mov .rcx (.reg .r14)]))
+  .seq (.block (zero16 .r15 tailOff ++ ([.mov .rdx (.reg .r15), .alu .add .rdx (imm tailOff),
+      .mov .rcx (.reg .r14)] : List Instr)))
     (.seq copy
-      (.block ([.mov32 .rax (imm 0x80), .store8 { base := .r15, index := some .r14, disp := tailOff } .rax,
+      (.block (([.mov32 .rax (imm 0x80), .store8 { base := .r15, index := some .r14, disp := tailOff } .rax,
         .mov .rax (.mem (at_ .r12 0)), .store (at_ .r15 dbOff) .rax, .mov .rax (.mem (at_ .r12 8)),
-        .store (at_ .r15 (dbOff + 8)) .rax, .store (at_ .r15 ctxOff) .rbx, .mov .rbx (.reg .r15)] ++
+        .store (at_ .r15 (dbOff + 8)) .rax, .store (at_ .r15 ctxOff) .rbx, .mov .rbx (.reg .r15)] : List Instr) ++
         Impl.CmacAes.X86_64.dbl dbOff dbOff ++
-        [.mov .rbx (.mem (at_ .r15 ctxOff)),
+        ([.mov .rbx (.mem (at_ .r15 ctxOff)),
          .mov .rax (.mem (at_ .r15 tailOff)), .alu .xor .rax (.mem (at_ .r15 dbOff)),
          .store (at_ .r15 tailOff) .rax, .mov .rax (.mem (at_ .r15 (tailOff + 8))),
-         .alu .xor .rax (.mem (at_ .r15 (dbOff + 8))), .store (at_ .r15 (tailOff + 8)) .rax])))
+         .alu .xor .rax (.mem (at_ .r15 (dbOff + 8))), .store (at_ .r15 (tailOff + 8)) .rax] : List Instr))))
 
 /-- The long case, `L ≥ 16`: `16 k` in `rax`, saved at `r15 + 144` and kept
 in `r11`; the last `L − 16 k` bytes copied to the tail (the string pointer
@@ -248,9 +248,9 @@ then over the first `j` blocks of the tail (`j` is 1 if `L > 16`, else 0),
 then `vg_cmac_aes_finalize` of the rest of the tail, into `r15 + out`. -/
 def longMac (u : Impl.CmacAes.X86_64.Update) (c : Ctr32) (sfx : String) (out : Nat) : Prog isa :=
   .seq (.block (zero16 .r15 out ++
-      [.mov .r8 (.mem (at_ .r15 dbOff)), .shift .shr .r8 4, .mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp),
+      ([.mov .r8 (.mem (at_ .r15 dbOff)), .shift .shr .r8 4, .mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp),
        .mov .rdx (.reg .r15), .alu .add .rdx (imm out), .mov .rcx (.reg .r13), .mov .r9 (.reg .r15),
-       .alu .add .r9 (imm csOff)]))
+       .alu .add .r9 (imm csOff)] : List Instr)))
     (.seq (callUpdate u)
       (.seq (.block [.mov32 .r8 (.imm 0), .alu .cmp .r14 (imm 17)])
         (.seq (.ite .b (.block []) (.block [.mov32 .r8 (imm 1)]))
@@ -270,9 +270,9 @@ def longMac (u : Impl.CmacAes.X86_64.Update) (c : Ctr32) (sfx : String) (out : N
 block, from a zero state at `r15 + out`. -/
 def shortMac (c : Ctr32) (sfx : String) (out : Nat) : Prog isa :=
   .seq (.block (zero16 .r15 out ++
-      [.mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp), .mov .rdx (.reg .r15), .alu .add .rdx (imm out),
+      ([.mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp), .mov .rdx (.reg .r15), .alu .add .rdx (imm out),
        .mov .rcx (.reg .r15), .alu .add .rcx (imm tailOff), .mov32 .r8 (imm 16), .mov .r9 (.reg .r15),
-       .alu .add .r9 (imm csOff)]))
+       .alu .add .r9 (imm csOff)] : List Instr)))
     (callFinalize c sfx)
 
 /-- S2V finished with the string at `r13` (`r14` bytes) from `D` at `r12`,
@@ -305,11 +305,11 @@ def xorBytes : Prog isa :=
 block, the keystream block, one block and the working space. -/
 def ctrPre : List Instr :=
   zero16 .r15 ksOff ++
-  [.mov .rax (.mem (at_ .r15 cntOff)), .store (at_ .r15 cbOff) .rax,
+  ([.mov .rax (.mem (at_ .r15 cntOff)), .store (at_ .r15 cbOff) .rax,
    .mov .rax (.mem (at_ .r15 (cntOff + 8))), .store (at_ .r15 (cbOff + 8)) .rax,
    .mov .rdi (.reg .rbx), .alu .add .rdi (imm 272), .mov .rsi (.reg .rbp), .mov .rdx (.reg .r15),
    .alu .add .rdx (imm cbOff), .mov .rcx (.reg .r15), .alu .add .rcx (imm ksOff), .mov32 .r8 (imm 1),
-   .mov .r9 (.reg .r15), .alu .add .r9 (imm csOff)]
+   .mov .r9 (.reg .r15), .alu .add .r9 (imm csOff)] : List Instr)
 
 /-- `min(16, left)` in `rcx`. -/
 def ctrMin : Prog isa :=
@@ -336,21 +336,21 @@ def wholeCount : List Instr :=
 `K2`'s schedule, the rounds, the counter block, the data, `k` blocks and
 the working space. -/
 def wholePre : List Instr :=
-  [.mov .rax (.mem (at_ .r15 cntOff)), .store (at_ .r15 cbOff) .rax,
-   .mov .rax (.mem (at_ .r15 (cntOff + 8))), .store (at_ .r15 (cbOff + 8)) .rax] ++ wholeCount ++
-  [.mov .r8 (.reg .rcx), .mov .rdi (.reg .rbx), .alu .add .rdi (imm 272), .mov .rsi (.reg .rbp),
+  ([.mov .rax (.mem (at_ .r15 cntOff)), .store (at_ .r15 cbOff) .rax,
+   .mov .rax (.mem (at_ .r15 (cntOff + 8))), .store (at_ .r15 (cbOff + 8)) .rax] : List Instr) ++ wholeCount ++
+  ([.mov .r8 (.reg .rcx), .mov .rdi (.reg .rbx), .alu .add .rdi (imm 272), .mov .rsi (.reg .rbp),
    .mov .rdx (.reg .r15), .alu .add .rdx (imm cbOff), .mov .rcx (.reg .r13), .mov .r9 (.reg .r15),
-   .alu .add .r9 (imm csOff)]
+   .alu .add .r9 (imm csOff)] : List Instr)
 
 /-- `k` again; the counter `Q + k` as a 128-bit big-endian integer; the data
 advanced past the `16 k` bytes done (ZF set when no data is left). -/
 def wholePost : List Instr :=
   wholeCount ++
-  [.mov .rax (.mem (at_ .r15 (cntOff + 8))), .bswap .rax, .mov .rdx (.mem (at_ .r15 cntOff)), .bswap .rdx,
+  ([.mov .rax (.mem (at_ .r15 (cntOff + 8))), .bswap .rax, .mov .rdx (.mem (at_ .r15 cntOff)), .bswap .rdx,
    .alu .add .rax (.reg .rcx), .alu .adc .rdx (imm 0), .bswap .rax, .bswap .rdx,
    .store (at_ .r15 cntOff) .rdx, .store (at_ .r15 (cntOff + 8)) .rax,
    .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx),
-   .alu .add .rcx (.reg .rcx), .alu .add .r13 (.reg .rcx), .alu .sub .r14 (.reg .rcx)]
+   .alu .add .rcx (.reg .rcx), .alu .add .r13 (.reg .rcx), .alu .sub .r14 (.reg .rcx)] : List Instr)
 
 /-- The first `k` whole blocks of the data, by one call of `vg_aes_ctr32`
 from `Q` (none if `k` is 0). `Q`'s last 32 bits are below `2³¹` and
@@ -416,12 +416,12 @@ components and their number at `r15 + 112` and `r15 + 120`. Then the
 arguments of `startPre`: the context, the rounds, `D` and the working
 space. -/
 def encPre : List Instr :=
-  [.mov .rax (.mem (at_ .rsp 16))] ++ save .rax ++
-  [.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r15 (.reg .rax), .mov .r12 (.reg .rax),
+  ([.mov .rax (.mem (at_ .rsp 16))] : List Instr) ++ save .rax ++
+  ([.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r15 (.reg .rax), .mov .r12 (.reg .rax),
    .alu .add .r12 (imm dOff), .mov .r13 (.reg .r8), .mov .r14 (.reg .r9),
    .store (at_ .r15 dataOff) .r13, .store (at_ .r15 lenOff) .r14,
    .store (at_ .r15 adsOff) .rdx, .store (at_ .r15 leftOff) .rcx,
-   .mov .rdx (.reg .r12), .mov .rcx (.reg .r15)]
+   .mov .rdx (.reg .r12), .mov .rcx (.reg .r15)] : List Instr)
 
 /-- The next component: its address in `r13` and its length in `r14`, from
 the descriptor `r15 + 112` points to. -/
@@ -432,12 +432,12 @@ def adNext : List Instr :=
 at `r15 + 224` while `rbx` holds `D`); then the next
 descriptor, and one fewer left (ZF set when none is). -/
 def adStep : List Instr :=
-  [.store (at_ .r15 ctxOff) .rbx, .mov .rbx (.reg .r12)] ++ Impl.CmacAes.X86_64.dbl 0 0 ++
-  [.mov .rax (.mem (at_ .r12 0)), .alu .xor .rax (.mem (at_ .r15 stOff)), .store (at_ .r12 0) .rax,
+  ([.store (at_ .r15 ctxOff) .rbx, .mov .rbx (.reg .r12)] : List Instr) ++ Impl.CmacAes.X86_64.dbl 0 0 ++
+  ([.mov .rax (.mem (at_ .r12 0)), .alu .xor .rax (.mem (at_ .r15 stOff)), .store (at_ .r12 0) .rax,
    .mov .rax (.mem (at_ .r12 8)), .alu .xor .rax (.mem (at_ .r15 (stOff + 8))),
    .store (at_ .r12 8) .rax, .mov .rbx (.mem (at_ .r15 ctxOff)),
    .mov .rax (.mem (at_ .r15 adsOff)), .alu .add .rax (imm 16), .store (at_ .r15 adsOff) .rax,
-   .mov .rax (.mem (at_ .r15 leftOff)), .alu .sub .rax (imm 1), .store (at_ .r15 leftOff) .rax]
+   .mov .rax (.mem (at_ .r15 leftOff)), .alu .sub .rax (imm 1), .store (at_ .r15 leftOff) .rax] : List Instr)
 
 /-- S2V of the components of associated data, from `D`'s first state. -/
 def s2vAds (u : Impl.CmacAes.X86_64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
@@ -481,7 +481,7 @@ def openTail (u : Impl.CmacAes.X86_64.Update) (c : Ctr32) (sfx : String) : Prog 
     (.seq (ctr c)
       (.seq (finish u c sfx tOff)
         (.seq (.block compare)
-          (.seq maskData (.block ([.mov .rax (.mem (at_ .r15 dbOff))] ++ restore))))))
+          (.seq maskData (.block (([.mov .rax (.mem (at_ .r15 dbOff))] : List Instr) ++ restore))))))
 
 def decrypt (u : Impl.CmacAes.X86_64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
   .seq (encS2v u c sfx) (.seq (.block sivIn) (openTail u c sfx))

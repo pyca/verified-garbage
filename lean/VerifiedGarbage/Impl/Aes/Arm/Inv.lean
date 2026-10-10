@@ -35,7 +35,7 @@ def invSlot (k : Nat) : Nat := 20 + k
 ones in `t1`. -/
 def invAff : List Instr :=
   (List.range 8).map (fun k => stS (invSlot k) (q k)) ++
-  [.mov t1 (.imm 0), .dp .sub t1 t1 (.imm 1)] ++
+  ([.mov t1 (.imm 0), .dp .sub t1 t1 (.imm 1)] : List Instr) ++
   (List.range 8).flatMap fun i =>
     [ldS (q i) (invSlot ((i + 2) % 8)), ldS t0 (invSlot ((i + 5) % 8)), eorR (q i) (q i) t0,
       ldS t0 (invSlot ((i + 7) % 8)), eorR (q i) (q i) t0] ++

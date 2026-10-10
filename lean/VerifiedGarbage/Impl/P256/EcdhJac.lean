@@ -15,13 +15,13 @@ def arithmetic (ops : List FOp) : Prog isa :=
 def buildStep : Prog isa :=
   .seq (.block [.addImm .x .x19 .x19 1]) <|
   .seq (EcdhTable.program false) <|
-  .block (storeEntry ++ [.subImm .x .x4 .x19 16])
+  .block (storeEntry ++ ([.subImm .x .x4 .x19 16] : List Instr))
 def build : Prog isa :=
   .seq (.block (copyPt 4 K.E K.P ++ copy 4 z2 K.P.z ++ copy 4 zz K.P.z ++
-    [.movz .x .x19 1 0] ++ storeEntry)) <|
+    ([.movz .x .x19 1 0] : List Instr) ++ storeEntry)) <|
   .seq (EcdhTable.program true) <|
   .seq (.block (copy 4 K.D.x K.S.t3 ++ copy 4 K.D.y K.S.t2 ++
-    [.movz .x .x19 2 0] ++ storeEntry)) <|
+    ([.movz .x .x19 2 0] : List Instr) ++ storeEntry)) <|
   .loop (buildStep) (.nonzero .x .x4)
 
 def double : Prog isa := EcdhDouble.program
@@ -41,7 +41,7 @@ def step : Prog isa :=
     [zero7,.movz .x .x5 1 0,.subs .x .x16 .x2 .x5,.sbc .x .x3 .x7 .x7] ++
     selPt 4 K.R K.D K.R)
 def first : List Instr :=
-  [.movz .x .x19 51 0] ++ tc.digit ++ select ++ negYW K.M 5 K.neg K.zero K.E.y K.bits ++ copyPt 4 K.R K.E
+  ([.movz .x .x19 51 0] : List Instr) ++ tc.digit ++ select ++ negYW K.M 5 K.neg K.zero K.E.y K.bits ++ copyPt 4 K.R K.E
 
 def window : Prog isa :=
   .seq (build) <| .seq (.block (first)) <|

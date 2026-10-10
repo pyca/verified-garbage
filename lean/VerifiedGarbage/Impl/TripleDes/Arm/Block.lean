@@ -10,25 +10,25 @@ def blockSave : List Instr := savedRegs.zipIdx.map fun (r, i) => .str r .r2 (4 *
 def blockRestore : List Instr := savedRegs.zipIdx.map fun (r, i) => .ldr r .r2 (4 * i)
 
 def blockLoad : List Instr :=
-  [.ldr .r4 .r1 0, .ldr .r5 .r1 4, .rev .r4 .r4, .rev .r5 .r5] ++
+  ([.ldr .r4 .r1 0, .ldr .r5 .r1 4, .rev .r4 .r4, .rev .r5 .r5] : List Instr) ++
     permuteCode Spec.TripleDes.ip 64 32 32 .r11 .r10 .r5 .r4 .r12 .r9
 
 def sboxInputs (i : Nat) : List Instr :=
   (List.range 6).flatMap fun j =>
     let k := 6 * i + 5 - j
     let bit := 47 - k
-    [.ldr .lr .r0 (if bit < 32 then 0 else 4), rr (q j) .r11] ++
+    ([.ldr .lr .r0 (if bit < 32 then 0 else 4), rr (q j) .r11] : List Instr) ++
       shr (q j) (32 - Spec.TripleDes.expansion.getD k 1) ++
-      [.dp .eor (q j) (q j)
+      ([.dp .eor (q j) (q j)
         (if bit % 32 = 0 then .reg .lr else .shifted .lr .lsr (bit % 32)),
-        .dp .and (q j) (q j) (.imm 1)]
+        .dp .and (q j) (q j) (.imm 1)] : List Instr)
 
 def sboxOutputs (i : Nat) : List Instr :=
   (List.range 4).flatMap fun j =>
     let position := 4 * i + 4 - j
     let dst := (Spec.TripleDes.p.toList.findIdx? (· == position)).getD 0
-    [.dp .and (q j) (q j) (.imm 1)] ++ placeBit (q j) (31 - dst) ++
-      [.dp .eor .r10 .r10 (.reg (q j))]
+    ([.dp .and (q j) (q j) (.imm 1)] : List Instr) ++ placeBit (q j) (31 - dst) ++
+      ([.dp .eor .r10 .r10 (.reg (q j))] : List Instr)
 
 def box (i : Nat) : List Instr := sboxInputs i ++ sboxCode i ++ sboxOutputs i
 
@@ -54,9 +54,9 @@ def blockBody (d : Direction) : Prog isa :=
 
 def blockStore (d : Direction) : List Instr :=
   permuteCode Spec.TripleDes.fp 64 32 32 .r5 .r4 .r11 .r10 .r12 .r9 ++
-    [.rev .r4 .r4, .rev .r5 .r5, .str .r4 .r1 0, .str .r5 .r1 4,
+    ([.rev .r4 .r4, .rev .r5 .r5, .str .r4 .r1 0, .str .r5 .r1 4,
       .dp (if d = .encrypt then .sub else .add) .r0 .r0
-        (.imm (if d = .encrypt then 384 else 8))]
+        (.imm (if d = .encrypt then 384 else 8))] : List Instr)
 
 def block (d : Direction) : Prog isa :=
   .seq (.block (blockSave ++ blockLoad))

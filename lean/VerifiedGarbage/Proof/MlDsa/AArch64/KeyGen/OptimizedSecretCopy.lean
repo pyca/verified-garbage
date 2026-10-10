@@ -19,9 +19,9 @@ theorem secretCopyPart_ok {S : Nat} {p : Params} (hF : PFacts p) {s : State}
   have hb64 : b+32≤64 := by omega
   have hb8 : b%8=0 := by rcases hb with rfl|rfl <;> decide
   have he : pa s (sc (1408+66*j))+BitVec.ofNat 64 b=pa s (sc (1408+66*j+b)) := sc_add _ _ _
-  have hsep : sepB kgR (kgW p) (sc (oSB+b)) 32 (sc (1408+66*j+b)) 32=true := by lay
-  have hread : inB (kgR++kgW p) (sc (oSB+b)) 32=true := by lay
-  have hwrite : inB (kgW p) (sc (1408+66*j+b)) 32=true := by lay
+  have hsep : sepB kgR (kgW p) (sc (oSB+b)) 32 (sc (1408+66*j+b)) 32=true := by layd
+  have hread : inB (kgR++kgW p) (sc (oSB+b)) 32=true := by layd
+  have hwrite : inB (kgW p) (sc (1408+66*j+b)) 32=true := by layd
   refine WP.mono (Proof.MlKem.AArch64.KeyGen.copy_ok (S := s.gpr .x28)
     (D := pa s (sc (1408+66*j))) (sb := .x28) (db := .x10) (so := oSB+b) (dO := b)
     (by decide) (by decide) (by dsimp only [oSB]; omega) ⟨hb8,by omega⟩
@@ -55,8 +55,8 @@ theorem secretSeedCopy_ok {S : Nat} {p : Params} (hF : PFacts p) {s : State}
   refine ⟨PPostB.trans hP1 hP23 (by simp) (by simp) (fun _ h=>h),
     ((h1.keep.trans hk2).trans hk3).mono (by simp),?_⟩
   rw [VG.Proof.MlKem.bytesAt_add t.mem _ 32 32,VG.Proof.MlKem.bytesAt_add s.mem _ 32 32,sc_add,sc_add]
-  have hkeep : keepB kgR (kgW p) [(sc (1408+66*j+32),32)] (sc (1408+66*j)) 32=true := by lay
-  have hsrc : keepB kgR (kgW p) [(sc (1408+66*j),32)] (sc (oSB+32)) 32=true := by lay
+  have hkeep : keepB kgR (kgW p) [(sc (1408+66*j+32),32)] (sc (1408+66*j)) 32=true := by layd
+  have hsrc : keepB kgR (kgW p) [(sc (1408+66*j),32)] (sc (oSB+32)) 32=true := by layd
   have hlo:=L2.keepBytes hP3 hkeep
   have hhi:=L1.keepBytes hP2 hsrc
   simp only [sc_pa hP3,sc_pa hP2,sc_pa hP1,Nat.add_zero] at hlo hhi hb2 hb3

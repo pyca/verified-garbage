@@ -52,7 +52,7 @@ def pregs : List XReg := [.xmm3, .xmm4, .xmm5, .xmm6, .xmm15, .xmm14, .xmm13, .x
 computes them, in `ymm3`–`ymm6` and `ymm12`–`ymm15`. -/
 def setupG : List Instr :=
   Pclmul.const .xmm0 revMask ++ Pclmul.const .xmm1 poly ++
-  [.movdquLoad .xmm7 (at_ .rdi 240), .xop (.bin .pshufb .xmm7 .xmm0)] ++ hInv ++
+  ([.movdquLoad .xmm7 (at_ .rdi 240), .xop (.bin .pshufb .xmm7 .xmm0)] : List Instr) ++ hInv ++
   Pclmul.pows ++ powers ++ powers16
 
 /-- `Y`, the counter pair, the increment, the last round key's address, and

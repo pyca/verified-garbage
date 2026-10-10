@@ -20,15 +20,15 @@ open VG.Impl.MlKem.AArch64 (csub)
 def step2 : List Instr := [.addImm .x .x0 .x0 4, .addImm .x .x1 .x1 4, .subImm .x .x10 .x10 1]
 
 def addBody : List Instr :=
-  [.ldr .w .x11 .x0 0, .ldr .w .x12 .x1 0, .add .x .x11 .x11 .x12] ++ csub .x11 .x12 .x9 ++
-    [.str .w .x11 .x0 0] ++ step2
+  ([.ldr .w .x11 .x0 0, .ldr .w .x12 .x1 0, .add .x .x11 .x11 .x12] : List Instr) ++ csub .x11 .x12 .x9 ++
+    ([.str .w .x11 .x0 0] : List Instr) ++ step2
 
 def subBody : List Instr :=
-  [.ldr .w .x11 .x0 0, .ldr .w .x12 .x1 0, .add .x .x11 .x11 .x9, .sub .x .x11 .x11 .x12] ++
-    csub .x11 .x12 .x9 ++ [.str .w .x11 .x0 0] ++ step2
+  ([.ldr .w .x11 .x0 0, .ldr .w .x12 .x1 0, .add .x .x11 .x11 .x9, .sub .x .x11 .x11 .x12] : List Instr) ++
+    csub .x11 .x12 .x9 ++ ([.str .w .x11 .x0 0] : List Instr) ++ step2
 
 /-- `q` in `x9`, and 256 in `x10`. -/
-def accPro : List Instr := movW .x9 (BitVec.ofNat 32 qNat) ++ [.movz .x .x10 256 0]
+def accPro : List Instr := movW .x9 (BitVec.ofNat 32 qNat) ++ ([.movz .x .x10 256 0] : List Instr)
 
 def add : Prog isa := .seq (.block accPro) (.loop (.block addBody) (.nonzero .x .x10))
 

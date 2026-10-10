@@ -61,7 +61,7 @@ def quotMG : List Instr :=
     .mov .r15 (.reg .rsi), .alu .sub .r15 (.imm 1), .alu .cmp .r15 (.reg .r14), .alu .adc .rcx (.imm 0)]
 
 /-- `q̂` into `rcx`: the quotient, all ones if `u₂ = d`. -/
-def quot : List Instr := quotHead ++ quotMG ++ [.alu .or .rcx (.reg .r9)]
+def quot : List Instr := quotHead ++ quotMG ++ ([.alu .or .rcx (.reg .r9)] : List Instr)
 
 /-- A bit of restoring division by `d` (`rsi`) of the remainder `r < d`
 (`rdx`) and the next bit of `u₁` (the top of `rax`): `r := 2 r + bit`, with

@@ -122,7 +122,7 @@ def skipTest : List Instr :=
 /-! ## `m = 2^t r` -/
 
 /-- `x6 := 64 Bw` halvings, and `t := 0`. -/
-def halfInit : List Instr := ws ++ bw ++ [.lsl .x .x6 .x14 6, movi .x3 0, sth .x3 sT]
+def halfInit : List Instr := ws ++ bw ++ ([.lsl .x .x6 .x14 6, movi .x3 0, sth .x3 sT] : List Instr)
 
 /-- `[aH] := m / 2` over `Bw` words; `x15` the mask of `m` even; `t += 1`
 if it is; and the bases for `m := [aH]` under the mask. -/
@@ -204,19 +204,19 @@ def sqMasks : List Instr :=
     ldh .x3 sC1, ldh .x4 sT, .subs .x .x3 .x3 .x4] ++ borrowMask ++ [mov .x5 .x15,
     ldh .x3 sC1, .addImm .x .x3 .x3 1, ldh .x4 sT, .logic .eor .x .x3 .x3 .x4, movi .x4 1, .subs .x .x3 .x3 .x4] ++
     borrowMask ++
-  [.logic .orr .x .x10 .x10 .x15,
+  ([.logic .orr .x .x10 .x10 .x15,
     .subImm .x .x4 .x7 1, ldh .x3 sC2, .logic .eor .x .x3 .x3 .x4, .logic .and .x .x5 .x5 .x3,
     ldh .x2 sMask, .logic .and .x .x13 .x5 .x2,
     .logic .orr .x .x3 .x2 .x10, .logic .and .x .x3 .x3 .x5, ldh .x1 sC2, .logic .orr .x .x3 .x3 .x1, sth .x3 sC2,
     ldh .x3 sC3, .logic .orr .x .x3 .x3 .x13, sth .x3 sC3,
-    .logic .orr .x .x3 .x2 .x10, .logic .eor .x .x3 .x3 .x4, .logic .and .x .x15 .x5 .x3]
+    .logic .orr .x .x3 .x2 .x10, .logic .eor .x .x3 .x3 .x4, .logic .and .x .x15 .x5 .x3] : List Instr)
 
 /-- `sqMasks`, then the bases of `x` and `y`. -/
 def sqLogic : List Instr := sqMasks ++ (ws ++ base aX .x16 ++ base aY .x17 ++ [mov .x14 .x12])
 
 /-- `k += 1`, and `64 Bw - k` into `x3`. -/
 def sqNext : List Instr :=
-  ws ++ bw ++ [.lsl .x .x4 .x14 6, ldh .x3 sC1, .addImm .x .x3 .x3 1, sth .x3 sC1, .sub .x .x3 .x4 .x3]
+  ws ++ bw ++ ([.lsl .x .x4 .x14 6, ldh .x3 sC1, .addImm .x .x3 .x3 1, sth .x3 sC1, .sub .x .x3 .x4 .x3] : List Instr)
 
 /-- A squaring: `x := y²`, the masks of `x = ±1`, and `y := x` if the
 squarings continue. -/
