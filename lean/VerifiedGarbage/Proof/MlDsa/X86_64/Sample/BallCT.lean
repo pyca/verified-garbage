@@ -33,9 +33,9 @@ theorem RelCT.keeps {c : Prog isa} (rs : List Reg) (hc : writesOnly rs c = true)
     (fun r hr => Exec.gpr (fun i hi => ?_) e₂)⟩ <;>
   · unfold writesOnly at hc
     rw [Code.allInstrs_eq, List.all_eq_true] at hc
-    have := List.all_eq_true.mp (hc i hi) r (mem_allRegs r)
-    simp only [Bool.or_eq_true, List.contains_iff_mem, hr, false_or, Bool.not_eq_true'] at this
-    exact this
+    cases hcl : Taint.clobbers i r
+    · rfl
+    · exact absurd (List.contains_iff_mem.mp (writesIn_sound (hc i hi) hcl)) hr
 
 namespace BallCT
 
