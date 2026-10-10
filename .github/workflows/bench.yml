@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        run: [1, 2, 3, 4, 5, 6, 7, 8]
+        run: [1, 2, 3, 4, 5, 6]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -24,4 +24,4 @@ jobs:
           persist-credentials: false
       - run: grep -m1 "model name" /proc/cpuinfo; nproc
       - run: cd exp-bench && cargo build --release -q
-      - run: cd exp-bench && grep -m1 "model name" /proc/cpuinfo >> $GITHUB_STEP_SUMMARY && ./target/release/exp | tee -a out.txt && ./target/release/exp | tee -a out.txt && sed 's/^/    /' out.txt >> $GITHUB_STEP_SUMMARY
+      - run: cd exp-bench && grep -m1 "model name" /proc/cpuinfo >> $GITHUB_STEP_SUMMARY && ./target/release/exp > /dev/null && ./target/release/exp | tee -a out.txt && sed 's/^/    /' out.txt >> $GITHUB_STEP_SUMMARY
