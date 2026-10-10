@@ -25,23 +25,23 @@ theorem batchStart_ok {P : InvCfg} {s : State} {base : Addr} {size : Nat}
   have eG : P.sG = P.tbl + 36 := rfl
   unfold InvCfg.batchStart
   refine WP.block_append (WP.block_append (WP.mono
-    (copy_ok 1 hs (o := P.sW + 4) (a := P.sF) (by omega) (by omega) (by omega))
+    (copy_ok 1 hs (o := P.sW + 4) (a := P.sF) (by omega_arith) (by omega_arith) (by omega_arith))
     fun s₁ ⟨F₁, K₁, O₁⟩ => ?_))
   simp only [val32, Nat.mul_zero, Nat.add_zero] at F₁
   have hs₁ := hs.of_keeps K₁ (by decide)
-  refine WP.mono (copy_ok 1 hs₁ (o := P.sW + 8) (a := P.sG) (by omega) (by omega) (by omega))
+  refine WP.mono (copy_ok 1 hs₁ (o := P.sW + 8) (a := P.sG) (by omega_arith) (by omega_arith) (by omega_arith))
     fun s₂ ⟨G₂, K₂, O₂⟩ => ?_
   simp only [val32, Nat.mul_zero, Nat.add_zero] at G₂
-  rw [O₁.w32 (by omega) (by omega)] at G₂
+  rw [O₁.w32 (by omega_arith) (by omega_arith)] at G₂
   have hs₂ := hs₁.of_keeps K₂ (by decide)
-  refine WP.mono (setMatrix_ok hs₂ (dst := P.sW + 12) (by omega))
+  refine WP.mono (setMatrix_ok hs₂ (dst := P.sW + 12) (by omega_arith))
     fun u ⟨U, V, Q, R, K₃, O₃⟩ => ⟨?_, (K₁.trans K₂).trans K₃, ?_⟩
   · have D : w32 u.mem base P.sW = w32 s.mem base P.sW := by
-      rw [O₃.w32 (by omega) (by omega), O₂.w32 (by omega) (by omega), O₁.w32 (by omega) (by omega)]
+      rw [O₃.w32 (by omega_arith) (by omega_arith), O₂.w32 (by omega_arith) (by omega_arith), O₁.w32 (by omega_arith) (by omega_arith)]
     have F : w32 u.mem base (P.sW + 4) = w32 s.mem base P.sF := by
-      rw [O₃.w32 (by omega) (by omega), O₂.w32 (by omega) (by omega), F₁]
+      rw [O₃.w32 (by omega_arith) (by omega_arith), O₂.w32 (by omega_arith) (by omega_arith), F₁]
     have G : w32 u.mem base (P.sW + 8) = w32 s.mem base P.sG := by
-      rw [O₃.w32 (by omega) (by omega), G₂]
+      rw [O₃.w32 (by omega_arith) (by omega_arith), G₂]
     simp only [wordState, atWord, Divstep.W32.WSt.mk.injEq, Nat.reduceMul, Nat.add_zero]
     refine ⟨BitVec.eq_of_toNat_eq D, BitVec.eq_of_toNat_eq F, BitVec.eq_of_toNat_eq G,
       BitVec.eq_of_toNat_eq U, ?_, ?_, ?_⟩
@@ -55,7 +55,7 @@ theorem batchStart_ok {P : InvCfg} {s : State} {base : Addr} {size : Nat}
       change w32 u.mem base (P.sW + 24) = 1
       simpa only [Nat.add_assoc, Nat.reduceAdd] using R
   · intro x hx
-    rw [O₃ x (by omega), O₂ x (by omega), O₁ x (by omega)]
+    rw [O₃ x (by omega_arith), O₂ x (by omega_arith), O₁ x (by omega_arith)]
 
 end VG.Proof.Weierstrass.X86.Inv
 
@@ -90,13 +90,13 @@ theorem words_ok {P : InvCfg} {s : State} {base : Addr} {size : Nat} {I : Divste
     rw [V₁]
     refine ⟨hI.d, rfl, rfl, rfl, rfl, low_cong32 hI.f, low_cong32 hI.g⟩
   have matrix := Divstep.W32.wsteps_rel (by decide) rel hd hf 30 (by decide)
-  refine WP.mono (wordSteps_ok (hs.of_keeps K₁ (by decide)) (by omega) (by decide) (by decide))
+  refine WP.mono (wordSteps_ok (hs.of_keeps K₁ (by decide)) (by omega_arith) (by decide) (by decide))
     fun z ⟨V₂, K₂, O₂⟩ => ⟨?_, (K₁.mono (by decide)).trans K₂, ?_⟩
   · rw [← V₂] at matrix
     obtain ⟨D, U, V, Q, R, _, _⟩ := matrix
     exact ⟨D, U, V, Q, R⟩
   · intro x hx
-    rw [O₂ x hx, O₁ x (by omega)]
+    rw [O₂ x hx, O₁ x (by omega_arith)]
 
 end VG.Proof.Weierstrass.X86.Inv
 
@@ -120,7 +120,7 @@ theorem batchEnd_ok {P : InvCfg} {s : State} {base : Addr} {size j : Nat}
   have hn := hs.nowrap
   have ec : P.sCount = P.tbl + 316 := rfl
   unfold InvCfg.batchEnd
-  refine wp_movS (readSrc_sc hs (by omega)) fun s₁ U₁ _ => ?_
+  refine wp_movS (readSrc_sc hs (by omega_arith)) fun s₁ U₁ _ => ?_
   have J : s₁.gpr .esi = BitVec.ofNat 32 j := by
     rw [U₁.gpr]
     apply BitVec.eq_of_toNat_eq
@@ -129,13 +129,13 @@ theorem batchEnd_ok {P : InvCfg} {s : State} {base : Addr} {size j : Nat}
   refine wp_decCounter hj J fun s₂ J₂ K₂ M₂ => ?_
   have K := U₁.keeps.trans K₂
   have hs₂ := hs.of_keeps K (by decide)
-  refine wp_storeS (hs₂.ea (by omega)) (hs₂.write (by omega)) fun s₃ U₃ => ?_
+  refine wp_storeS (hs₂.ea (by omega_arith)) (hs₂.write (by omega_arith)) fun s₃ U₃ => ?_
   have J₃ : s₃.gpr .esi = BitVec.ofNat 32 (j - 1) := by rw [U₃.gpr, J₂]
-  refine wp_testCounter (by omega) J₃ fun z F hz => WP.block_nil ⟨?_, hz, ?_, ?_⟩
-  · rw [F.mem, U₃.mem, w32_write_self, J₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  refine wp_testCounter (by omega_arith) J₃ fun z F hz => WP.block_nil ⟨?_, hz, ?_, ?_⟩
+  · rw [F.mem, U₃.mem, w32_write_self, J₂, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
   · exact (K.trans (U₃.keeps _)).trans (F.keeps _)
   · rw [F.mem, U₃.mem, M₂, U₁.mem]
-    exact writeW32_outside _ _ _ (by omega)
+    exact writeW32_outside _ _ _ (by omega_arith)
 
 end VG.Proof.Weierstrass.X86.Inv
 

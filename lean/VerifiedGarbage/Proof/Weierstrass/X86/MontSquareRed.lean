@@ -15,18 +15,18 @@ theorem square_clear_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base s
   have hn := hb.nowrap
   refine wp_movS rfl fun s₁ u₁ _ => ?_
   have hb₁ := hb.of_keeps u₁.keeps (by decide)
-  refine wp_storeS (hb₁.ea (d := acc) (by omega)) (hb₁.write (n := 4) (by omega))
+  refine wp_storeS (hb₁.ea (d := acc) (by omega_arith)) (hb₁.write (n := 4) (by omega_arith))
     fun u m => WP.block_nil ?_
   have hm : u.mem = s.mem.writeW (off base w) (0 : BitVec 32) := by rw [m.mem, u₁.mem, u₁.gpr, hw]
-  have O := writeW32_outside s.mem base (d := w) (0 : BitVec 32) (by omega)
+  have O := writeW32_outside s.mem base (d := w) (0 : BitVec 32) (by omega_arith)
   rw [← hm] at O
-  refine ⟨O.mono (Nat.le_refl _) (by omega), ?_, u₁.keeps.trans (m.keeps _)⟩
-  rw [show 10 + extra = (9 + extra) + 1 by omega]
+  refine ⟨O.mono (Nat.le_refl _) (by omega_arith), ?_, u₁.keeps.trans (m.keeps _)⟩
+  rw [show 10 + extra = (9 + extra) + 1 by omega_arith]
   change w32 u.mem base w + 2 ^ 32 * val32 u.mem base (w + 4) (9 + extra) + _ =
     w32 s.mem base w + 2 ^ 32 * val32 s.mem base (w + 4) (9 + extra)
-  rw [O.val32 (by omega) (by omega), hm, w32_write_self]
+  rw [O.val32 (by omega_arith) (by omega_arith), hm, w32_write_self]
   change 0 + _ + _ = _
-  omega
+  omega_arith
 
 theorem square_positive_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base size)
     {w extra : Nat} (he : extra ≤ 7) (hsz : w + 4 * (10 + extra) ≤ size) :
@@ -36,18 +36,18 @@ theorem square_positive_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s bas
         val32 s.mem base w (10 + extra) + (s.gpr .ecx).toNat *
           (2 ^ 96 + 2 ^ 192 + 2 ^ 256)) ∧ Keeps [.eax] s u := by
   have hn := hb.nowrap
-  have hlen : 7 + extra = (6 + extra) + 1 := by omega
+  have hlen : 7 + extra = (6 + extra) + 1 := by omega_arith
   rw [hlen]
-  refine WP.mono (multiChainB_ok hb rfl positiveMask (6 + extra) (by omega))
-    fun u ⟨O, ⟨c, _, V⟩, K⟩ => ⟨O.mono (by omega) (by omega), ⟨c, ?_⟩, K⟩
+  refine WP.mono (multiChainB_ok hb rfl positiveMask (6 + extra) (by omega_arith))
+    fun u ⟨O, ⟨c, _, V⟩, K⟩ => ⟨O.mono (by omega_arith) (by omega_arith), ⟨c, ?_⟩, K⟩
   have hv : multiWeight positiveMask ((6 + extra) + 1) = 1 + 2 ^ 96 + 2 ^ 160 := by
     have h : ∀ e < 8, multiWeight positiveMask ((6 + e) + 1) = 1 + 2 ^ 96 + 2 ^ 160 := by decide +kernel
-    exact h extra (by omega)
+    exact h extra (by omega_arith)
   rw [hv] at V
-  have heq : 10 + extra = 3 + ((6 + extra) + 1) := by omega
+  have heq : 10 + extra = 3 + ((6 + extra) + 1) := by omega_arith
   rw [heq, val32_append u.mem base w 3 _, val32_append s.mem base w 3 _,
-    O.val32 (d := w) (k := 3) (by omega) (by omega)]
-  rcases (show extra = 0 ∨ extra = 1 ∨ extra = 2 ∨ extra = 3 ∨ extra = 4 ∨ extra = 5 ∨ extra = 6 ∨ extra = 7 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Nat.reduceAdd, Nat.reduceMul] at V ⊢ <;> omega
+    O.val32 (d := w) (k := 3) (by omega_arith) (by omega_arith)]
+  rcases (show extra = 0 ∨ extra = 1 ∨ extra = 2 ∨ extra = 3 ∨ extra = 4 ∨ extra = 5 ∨ extra = 6 ∨ extra = 7 by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Nat.reduceAdd, Nat.reduceMul] at V ⊢ <;> omega_arith
 
 theorem squareRed_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base size)
     {w extra : Nat} (he : extra ≤ 7) (hsz : w + 4 * (10 + extra) ≤ size)
@@ -64,13 +64,13 @@ theorem squareRed_ok {s : State} {base : Addr} {size : Nat} (hb : Bx s base size
   refine WP.block_append (WP.mono (square_positive_ok hb₁ he hsz)
     fun s₂ ⟨O₂, ⟨c₂, V₂⟩, K₂⟩ => ?_)
   have hb₂ := hb₁.of_keeps K₂ (by decide)
-  have hlen : 3 + extra = (2 + extra) + 1 := by omega
+  have hlen : 3 + extra = (2 + extra) + 1 := by omega_arith
   rw [hlen]
-  refine WP.mono (sparseShiftSubB_ok hb₂ rfl (N := 10 + extra) (j := 7) (k := 2 + extra) (by omega) hsz)
+  refine WP.mono (sparseShiftSubB_ok hb₂ rfl (N := 10 + extra) (j := 7) (k := 2 + extra) (by omega_arith) hsz)
     fun u ⟨O₃, ⟨c₃, V₃⟩, K₃⟩ => ⟨(O₁.trans O₂).trans O₃, ?_, (K₁.trans K₂).trans K₃⟩
   rw [K₁.1 .ecx (by decide)] at V₂
   rw [K₂.1 .ecx (by decide), K₁.1 .ecx (by decide)] at V₃
   have hu := val32_lt u.mem base w (10 + extra)
-  rcases (show extra = 0 ∨ extra = 1 ∨ extra = 2 ∨ extra = 3 ∨ extra = 4 ∨ extra = 5 ∨ extra = 6 ∨ extra = 7 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Nat.reduceAdd, Nat.reduceMul] at V₁ V₂ V₃ hu hlt ⊢ <;> omega
+  rcases (show extra = 0 ∨ extra = 1 ∨ extra = 2 ∨ extra = 3 ∨ extra = 4 ∨ extra = 5 ∨ extra = 6 ∨ extra = 7 by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Nat.reduceAdd, Nat.reduceMul] at V₁ V₂ V₃ hu hlt ⊢ <;> omega_arith
 
 end VG.Proof.Weierstrass.X86.Mont

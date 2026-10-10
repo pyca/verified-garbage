@@ -21,9 +21,9 @@ theorem combJLoop_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
   have hJ2 := hB.J2
   refine WP.loop (M:=isa) (fun r s' => 1≤r ∧ r≤K.J-1 ∧
     TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s' (K.J-r))
-    (fun r s' ⟨hr,hrJ,hi⟩ => ?_) (K.J-1) s ⟨by omega,by omega,by simpa [show K.J-(K.J-1)=1 by omega] using hI⟩
+    (fun r s' ⟨hr,hrJ,hi⟩ => ?_) (K.J-1) s ⟨by omega_arith,by omega_arith,by simpa [show K.J-(K.J-1)=1 by omega_arith] using hI⟩
   refine WP.mono (stepJWith_ok hL hA hcompiler hJenc hC hM3 hG hV hpn hb1 hB hk hF
-    (j:=K.J-r) (by omega) (by omega) hi) fun t ⟨ht,hx⟩ => ?_
+    (j:=K.J-r) (by omega_arith) (by omega_arith) hi) fun t ⟨ht,hx⟩ => ?_
   have hz : (t.read .x .x4 != 0)=decide (r-1≠0) := by
     rw [read_x,hx]
     apply Bool.eq_iff_iff.mpr
@@ -32,21 +32,21 @@ theorem combJLoop_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
       constructor
       · intro h
         have := congrArg BitVec.toNat h
-        simpa only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega : K.J-r+1<2^64),
-          Nat.mod_eq_of_lt (by omega : K.J<2^64)] using this
+        simpa only [BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_arith : K.J-r+1<2^64),
+          Nat.mod_eq_of_lt (by omega_arith : K.J<2^64)] using this
       · exact congrArg (BitVec.ofNat 64)
     change (¬BitVec.ofNat 64 (K.J-r+1) = (0#64) + BitVec.ofNat 64 K.J) ↔ ¬r-1=0
     rw [BitVec.zero_add, eqn]
-    omega
+    omega_arith
   by_cases hr1 : r-1=0
   · refine Or.inl ⟨?_,?_⟩
     · show some (t.read .x .x4 != 0)=some false
       rw [hz,hr1]; rfl
-    · simpa only [show K.J-r+1=K.J by omega] using ht
-  · refine Or.inr ⟨?_,r-1,by omega,by omega,by omega,?_⟩
+    · simpa only [show K.J-r+1=K.J by omega_arith] using ht
+  · refine Or.inr ⟨?_,r-1,by omega_arith,by omega_arith,by omega_arith,?_⟩
     · show some (t.read .x .x4 != 0)=some true
       rw [hz,decide_eq_true hr1]
-    · simpa only [show K.J-(r-1)=K.J-r+1 by omega] using ht
+    · simpa only [show K.J-(r-1)=K.J-r+1 by omega_arith] using ht
 
 /-- `[k]G` into `A`, in projective coordinates, for `k < kmax` (`BoothOk`)
 whose bits are the table at `K.bits`; only `tcombClob` and `tcombW` change. -/
@@ -74,18 +74,18 @@ theorem tcombJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg
     List.not_mem_nil, or_false, not_or] at hnd
   have hle : ∀ x, x ∈ combSlots K.toComb → x + 8 * K.M.n ≤ size := fun x hx => hL.comb.lay.le x hx
   have hp0 : 0 < C.p := Nat.lt_of_le_of_lt (Nat.zero_le _) hV.one_lt
-  have hNZ : NeZero C.p := ⟨by omega⟩
+  have hNZ : NeZero C.p := ⟨by omega_arith⟩
   unfold TCombCfg.combJWith
   refine WP.seq (WP.mono (firstJ_ok hL hA hC hG hV hpn hb1 hs hM hF) fun s₁ I₁ => ?_)
   refine WP.seq (WP.mono (combJLoop_ok hL hA hcompiler hJenc hC hM3 hG hV hpn hb1 hB hk hF I₁) fun s₂ I₂ => ?_)
   -- `Y = 1` where `Z = 0`.
   have hz₂ : wordsVal s₂.mem base K.zero K.M.n = 0 := by
     rw [I₂.unch.wordsVal (tcombW_ro hL (x := K.zero) (by simp [combRo, TCombCfg.toComb]))
-      (by have := hle K.zero (by tcomb_mem); omega), hF.zero]
+      (by have := hle K.zero (by tcomb_mem); omega_arith), hF.zero]
   have ayz : K.A.y + 8 * K.M.n ≤ K.zero ∨ K.zero + 8 * K.M.n ≤ K.A.y := by
     have := combW_ro hL.comb (x := K.zero) (by simp [combRo, TCombCfg.toComb]) (K.A.y, 8 * K.M.n)
       (by simp [combW, combWs, TCombCfg.toComb])
-    dsimp only [TCombCfg.toComb] at this; omega
+    dsimp only [TCombCfg.toComb] at this; omega_arith
   refine WP.seq (WP.mono (outFix_ok K I₂.scr hn0 (Nat.lt_trans hV.one_lt hpn) (hle _ (by tcomb_mem))
     (hle _ (by tcomb_mem)) (hle _ (by tcomb_mem)) (hA.sl _ (by tcomb_mem)) (hA.sl _ (by tcomb_mem))
     (hA.sl _ (by tcomb_mem)) ayz hz₂) fun s₃ ⟨ey₃, k₃, O₃⟩ => ?_)
@@ -184,6 +184,6 @@ theorem tcombJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg
       show toM _ _ _ = toM _ _ _; rw [ez₃]
     rw [hy, ex, ez]
     have h := InvJ.out hC I₂.rep
-    rwa [bpart_top (by omega) (Nat.lt_of_lt_of_le hk hB.kmax), zmul_natCast] at h
+    rwa [bpart_top (by omega_arith) (Nat.lt_of_lt_of_le hk hB.kmax), zmul_natCast] at h
 
 end VG.Proof.Weierstrass.AArch64

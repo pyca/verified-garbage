@@ -54,7 +54,7 @@ theorem Unch.split3 {base : Addr} {o k : Nat} {m m' : Mem} (h : Unch base [(o, 3
   have h1 := hx _ (List.mem_cons_self ..)
   have h2 := hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
   have h3 := hx _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
-  dsimp only at h1 h2 h3 ⊢; omega
+  dsimp only at h1 h2 h3 ⊢; omega_arith
 
 /-- What the selection leaves: in `E`, entry `a`'s coordinates if `a ≥ 1`,
 else `(0, R, 0)`. -/
@@ -76,9 +76,9 @@ theorem winSelect_ok (K : WinCfg) {s : State} {base : Addr} {size : Nat} (hs : S
   have hnp : WinCfg.np K = (3 * K.M.n + 1) / 2 := rfl
   have hpo : ∀ c, WinCfg.po K c = if c + 1 < WinCfg.np K then 16 * c else 24 * K.M.n - 16 := fun _ => rfl
   have hpo16 : ∀ c < WinCfg.np K, WinCfg.po K c + 16 ≤ 24 * K.M.n := fun c hc => by
-    rw [hpo]; rw [hnp] at hc ⊢; split <;> omega
+    rw [hpo]; rw [hnp] at hc ⊢; split <;> omega_arith
   have hlast : WinCfg.po K (WinCfg.np K - 1) = 24 * K.M.n - 16 := by
-    rw [hpo, ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+    rw [hpo, ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
   rw [WinCfg.select, List.append_assoc, WP.block_append_iff]
   refine WP.mono (winSelSetup_ok K s hs.rdi ht) fun s₁ ⟨x₁, k₁, _⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
@@ -90,31 +90,31 @@ theorem winSelect_ok (K : WinCfg) {s : State} {base : Addr} {size : Nat} (hs : S
     intro e he c hc
     rw [Offset.add_add]
     have := hpo16 c hc
-    have := Nat.mul_le_mul_left (24 * K.M.n) (show e + 1 ≤ 8 by omega)
+    have := Nat.mul_le_mul_left (24 * K.M.n) (show e + 1 ≤ 8 by omega_arith)
     rw [Nat.mul_succ] at this
-    exact ⟨_, List.mem_append_right _ (k₁.2.2.2 ▸ hs.wr), hs.contains (by omega) (by decide)⟩
-  refine WP.mono (selLoad_ok (st := 24 * K.M.n) (H := 8) (by rw [hnp]; omega) (by decide) (by omega)
+    exact ⟨_, List.mem_append_right _ (k₁.2.2.2 ▸ hs.wr), hs.contains (by omega_arith) (by decide)⟩
+  refine WP.mono (selLoad_ok (st := 24 * K.M.n) (H := 8) (by rw [hnp]; omega_arith) (by decide) (by omega_arith)
     h8₁ x₁ hr) fun s₂l ⟨a₂, k₂l, m₂l⟩ => ?_
   have hs₂l : Scr s₂l base size := hs₁.of_keepRegs k₂l (by decide)
   -- The pieces but the last are `16` bytes apart; the last ends the entry.
-  rw [show WinCfg.np K = (WinCfg.np K - 1) + 1 by rw [hnp]; omega, List.range_succ, List.map_append,
+  rw [show WinCfg.np K = (WinCfg.np K - 1) + 1 by rw [hnp]; omega_arith, List.range_succ, List.map_append,
     List.map_singleton, WP.block_append_iff,
     List.map_congr_left (l := List.range (WinCfg.np K - 1))
       (g := fun c => Instr.movdquStore (sc (K.E.x + 16 * c)) (selAcc c)) fun c hc => by
-        rw [List.mem_range] at hc; rw [hpo, ite_eq_left_of_eq_true _ _ (eq_true (by omega))]]
-  refine WP.mono (storeAcc_ok (o := K.E.x) (WinCfg.np K - 1) s₂l hs₂l (by rw [hnp]; omega))
+        rw [List.mem_range] at hc; rw [hpo, ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith))]]
+  refine WP.mono (storeAcc_ok (o := K.E.x) (WinCfg.np K - 1) s₂l hs₂l (by rw [hnp]; omega_arith))
     fun s₂f ⟨a₃, O₃f, g₃, r₃, w₃, x₃⟩ => ?_
   have hs₂f : Scr s₂f base size := ⟨by rw [g₃]; exact hs₂l.rdi, by rw [w₃]; exact hs₂l.wr, hnw⟩
   refine WP.mono (store128_ok (d := K.E.x + WinCfg.po K (WinCfg.np K - 1)) s₂f hs₂f
-    (by rw [hlast]; omega) _) fun s₂ ⟨a₄, O₄, g₄, r₄, w₄, x₄⟩ => ?_
+    (by rw [hlast]; omega_arith) _) fun s₂ ⟨a₄, O₄, g₄, r₄, w₄, x₄⟩ => ?_
   have k₂ : KeepRegs [.rcx] s₁ s₂ :=
     ⟨fun r hr => by rw [g₄, g₃, k₂l.gpr r hr], by rw [r₄, r₃, k₂l.rd], by rw [w₄, w₃, k₂l.wr]⟩
   have O₂ : Outside base K.E.x (24 * K.M.n) s₁.mem s₂.mem := by
     rw [← m₂l]
-    exact (O₃f.mono (Nat.le_refl _) (by rw [hnp]; omega)).trans (O₄.mono (by omega) (by rw [hlast]; omega))
+    exact (O₃f.mono (Nat.le_refl _) (by rw [hnp]; omega_arith)).trans (O₄.mono (by omega_arith) (by rw [hlast]; omega_arith))
   have hs₂ : Scr s₂ base size := hs₁.of_keepRegs k₂ (by decide)
   have h8₂ : s₂.gpr .r8 = BitVec.ofNat 64 a := by rw [k₂.gpr _ (by decide), h8₁]
-  refine WP.mono (ySel0_ok K hs₂ (by omega) h8₂ (by omega)) fun t ⟨ey, k₃, O₃⟩ => ?_
+  refine WP.mono (ySel0_ok K hs₂ (by omega_arith) h8₂ (by omega_arith)) fun t ⟨ey, k₃, O₃⟩ => ?_
   have hX : ∀ d, word s.mem (base + BitVec.ofNat 64 K.tbl) d = word s.mem base (K.tbl + d) := fun d => by
     rw [Mont.word, Mont.word, off, off, Offset.add_add]
   -- The words of `E`, from the table at `s`.
@@ -126,24 +126,24 @@ theorem winSelect_ok (K : WinCfg) {s : State} {base : Addr} {size : Nat} (hs : S
       rw [a₂ c hc, k₁.2.1]
     by_cases hi2 : 3 * K.M.n - 2 ≤ i
     · have h := a₄
-      rw [x₃, e₂ _ (by rw [hnp]; omega)] at h
-      have w := accVal_word1 (q := i - (3 * K.M.n - 2)) h (by omega)
-      rw [hlast, show K.E.x + (24 * K.M.n - 16) + 8 * (i - (3 * K.M.n - 2)) = K.E.x + 8 * i by omega,
+      rw [x₃, e₂ _ (by rw [hnp]; omega_arith)] at h
+      have w := accVal_word1 (q := i - (3 * K.M.n - 2)) h (by omega_arith)
+      rw [hlast, show K.E.x + (24 * K.M.n - 16) + 8 * (i - (3 * K.M.n - 2)) = K.E.x + 8 * i by omega_arith,
         hX] at w
       rw [w, show K.tbl + (24 * K.M.n * (a - 1) + (24 * K.M.n - 16) + 8 * (i - (3 * K.M.n - 2))) =
-        K.tbl + 24 * K.M.n * (a - 1) + 8 * i by omega]
-    · have hc : i / 2 + 1 < WinCfg.np K := by rw [hnp]; omega
-      have h := a₃ (i / 2) (by omega)
-      rw [e₂ _ (by omega)] at h
+        K.tbl + 24 * K.M.n * (a - 1) + 8 * i by omega_arith]
+    · have hc : i / 2 + 1 < WinCfg.np K := by rw [hnp]; omega_arith
+      have h := a₃ (i / 2) (by omega_arith)
+      rw [e₂ _ (by omega_arith)] at h
       have w := accVal_word1 (q := i % 2) h (Nat.mod_lt _ (by decide))
-      rw [hpo, ite_eq_left_of_eq_true _ _ (eq_true hc), show K.E.x + 16 * (i / 2) + 8 * (i % 2) = K.E.x + 8 * i by omega, hX] at w
-      rw [O₄.word (by rw [hlast]; omega) (by omega), w,
+      rw [hpo, ite_eq_left_of_eq_true _ _ (eq_true hc), show K.E.x + 16 * (i / 2) + 8 * (i % 2) = K.E.x + 8 * i by omega_arith, hX] at w
+      rw [O₄.word (by rw [hlast]; omega_arith) (by omega_arith), w,
         show K.tbl + (24 * K.M.n * (a - 1) + 16 * (i / 2) + 8 * (i % 2)) =
-          K.tbl + 24 * K.M.n * (a - 1) + 8 * i by omega]
+          K.tbl + 24 * K.M.n * (a - 1) + 8 * i by omega_arith]
   have hxw : ∀ i < K.M.n, word t.mem base (K.E.x + 8 * i) = word s₂.mem base (K.E.x + 8 * i) := fun i hi =>
-    O₃.word (by omega) (by omega)
+    O₃.word (by omega_arith) (by omega_arith)
   have hzw : ∀ i < K.M.n, word t.mem base (K.E.z + 8 * i) = word s₂.mem base (K.E.z + 8 * i) := fun i hi =>
-    O₃.word (by omega) (by omega)
+    O₃.word (by omega_arith) (by omega_arith)
   have tx : (K.tblPt a).x = K.tbl + 24 * K.M.n * (a - 1) := rfl
   have ty : (K.tblPt a).y = K.tbl + 24 * K.M.n * (a - 1) + 8 * K.M.n := rfl
   have tz : (K.tblPt a).z = K.tbl + 24 * K.M.n * (a - 1) + 16 * K.M.n := rfl
@@ -151,49 +151,49 @@ theorem winSelect_ok (K : WinCfg) {s : State} {base : Addr} {size : Nat} (hs : S
   · by_cases h1 : 1 ≤ a
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), tx]
       exact wordsVal_congr₂ _ _ _ fun i hi => by
-        rw [hxw i hi, hW i (by omega), ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩)]
+        rw [hxw i hi, hW i (by omega_arith), ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩)]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
       exact wordsVal_zeros fun i hi => by
-        rw [hxw i hi, hW i (by omega), ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+        rw [hxw i hi, hW i (by omega_arith), ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
   · have hyw : ∀ i < K.M.n, word s₂.mem base (K.E.y + 8 * i) =
         if 1 ≤ a ∧ a ≤ 8 then word s.mem base (K.tbl + 24 * K.M.n * (a - 1) + 8 * K.M.n + 8 * i) else 0 :=
       fun i hi => by
-        rw [hexy, show K.E.x + 8 * K.M.n + 8 * i = K.E.x + 8 * (K.M.n + i) by omega, hW _ (by omega),
+        rw [hexy, show K.E.x + 8 * K.M.n + 8 * i = K.E.x + 8 * (K.M.n + i) by omega_arith, hW _ (by omega_arith),
           show K.tbl + 24 * K.M.n * (a - 1) + 8 * (K.M.n + i) =
-            K.tbl + 24 * K.M.n * (a - 1) + 8 * K.M.n + 8 * i by omega]
+            K.tbl + 24 * K.M.n * (a - 1) + 8 * K.M.n + 8 * i by omega_arith]
     by_cases h1 : 1 ≤ a
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ty]
       exact wordsVal_congr₂ _ _ _ fun i hi => by
         rw [ey i hi, hyw i hi, ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩),
-          decide_eq_false (show ¬ a = 0 by omega), bv_and_or_false]
+          decide_eq_false (show ¬ a = 0 by omega_arith), bv_and_or_false]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
       exact wordsVal_wordOf hone fun i hi => by
-        rw [ey i hi, hyw i hi, ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
-          decide_eq_true (show a = 0 by omega), bv_and_or_true, bv_or_zero]
+        rw [ey i hi, hyw i hi, ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)),
+          decide_eq_true (show a = 0 by omega_arith), bv_and_or_true, bv_or_zero]
   · have hzw' : ∀ i < K.M.n, word s₂.mem base (K.E.z + 8 * i) =
         if 1 ≤ a ∧ a ≤ 8 then word s.mem base (K.tbl + 24 * K.M.n * (a - 1) + 16 * K.M.n + 8 * i) else 0 :=
       fun i hi => by
-        rw [hexz, show K.E.x + 16 * K.M.n + 8 * i = K.E.x + 8 * (2 * K.M.n + i) by omega, hW _ (by omega),
+        rw [hexz, show K.E.x + 16 * K.M.n + 8 * i = K.E.x + 8 * (2 * K.M.n + i) by omega_arith, hW _ (by omega_arith),
           show K.tbl + 24 * K.M.n * (a - 1) + 8 * (2 * K.M.n + i) =
-            K.tbl + 24 * K.M.n * (a - 1) + 16 * K.M.n + 8 * i by omega]
+            K.tbl + 24 * K.M.n * (a - 1) + 16 * K.M.n + 8 * i by omega_arith]
     by_cases h1 : 1 ≤ a
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), tz]
       exact wordsVal_congr₂ _ _ _ fun i hi => by
         rw [hzw i hi, hzw' i hi, ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩)]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
       exact wordsVal_zeros fun i hi => by
-        rw [hzw i hi, hzw' i hi, ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+        rw [hzw i hi, hzw' i hi, ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
   · exact ((Keeps.regs k₁).mono (by decide)).trans ((k₂.mono (by decide)).trans (k₃.mono (by decide)))
   · rw [← k₁.2.1]
     have U₂ : Unch base [(K.E.x, 3 * (8 * K.M.n))] s₁.mem s₂.mem := by
       have := O₂.unch
-      rwa [show 24 * K.M.n = 3 * (8 * K.M.n) by omega] at this
+      rwa [show 24 * K.M.n = 3 * (8 * K.M.n) by omega_arith] at this
     refine ((Unch.split3 U₂).trans O₃.unch).mono fun w hw => ?_
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
     rcases hw with (rfl | rfl | rfl) | rfl
     · exact Or.inl rfl
-    · exact Or.inr (Or.inl (Prod.ext (by dsimp only; omega) rfl))
-    · exact Or.inr (Or.inr (Prod.ext (by dsimp only; omega) rfl))
+    · exact Or.inr (Or.inl (Prod.ext (by dsimp only; omega_arith) rfl))
+    · exact Or.inr (Or.inr (Prod.ext (by dsimp only; omega_arith) rfl))
     · exact Or.inr (Or.inl rfl)
 
 /-- After the selection and the negation: `E` represents the point of digit
@@ -272,8 +272,8 @@ theorem winEntryR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL
   have htb : K.tbl + 192 * K.M.n ≤ size := by
     have := hL.lay.le _ (show K.tbl + 8 * K.M.n * 23 ∈ winSlots K by
       simp only [winSlots, List.mem_append]; exact Or.inr (winTbl_mem K (by decide)))
-    omega
-  have hwi : 4 * i + 4 ≤ 4 * K.J := by omega
+    omega_arith
+  have hwi : 4 * i + 4 ≤ 4 * K.J := by omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (digit_ok (WinCfg.tc K) hs (k := k) (j := i) (N := 4 * K.J) (by show 1 ≤ 4; decide)
     (by show 4 < 9; decide) hwi
@@ -281,7 +281,7 @@ theorem winEntryR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hx₁ : s₁.gpr .rbx = BitVec.ofNat 64 i := by rw [k₁.1 _ (by decide), hx]
   have hw4 : combWin 4 k i = nib k i := combWin_four k i
-  have hmag : magH 8 (nib k i) ≤ 8 := magH_le (by have := nib_lt k i; omega)
+  have hmag : magH 8 (nib k i) ≤ 8 := magH_le (by have := nib_lt k i; omega_arith)
   have m₁' : s₁.gpr .r8 = BitVec.ofNat 64 (magH 8 (nib k i)) := by
     rw [m₁, show (WinCfg.tc K).H = 8 from rfl, show (WinCfg.tc K).w = 4 from rfl, hw4]
   refine WP.mono (winSelect_ok K hs₁ hX.n hX.tbl htb hX.exy hX.exz hEz (Nat.lt_trans hone_lt hpn) m₁' hmag)
@@ -294,16 +294,16 @@ theorem winEntryR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL
       K.M.mo + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ K.M.mo := fun w hw => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl
-    · have := mo K.E.x (by simp); dsimp only; omega
-    · have := mo K.E.y (by simp); dsimp only; omega
-    · have := mo K.E.z (by simp); dsimp only; omega
+    · have := mo K.E.x (by simp); dsimp only; omega_arith
+    · have := mo K.E.y (by simp); dsimp only; omega_arith
+    · have := mo K.E.z (by simp); dsimp only; omega_arith
   have hM₂ : ModOkW K.M size C.p s₂.mem base := hM.unch U₂ hmoE hn
   have hz₂ : wordsVal s₂.mem base K.zero K.M.n = 0 := by
     have hzW := hL.ro_w (x := K.zero) (by simp [winRo])
     rw [U₂.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl <;>
-        exact hzW _ (List.mem_append_left _ (List.mem_map_of_mem (wE _ (by simp))))) (by omega), hz]
+        exact hzW _ (List.mem_append_left _ (List.mem_map_of_mem (wE _ (by simp))))) (by omega_arith), hz]
   -- The entry's numbers, below `p`.
   have Ta := fun (h : 1 ≤ a) => hT a h hmag
   have hEy₂ : wordsVal s₂.mem base K.E.y K.M.n < C.p := by
@@ -328,14 +328,14 @@ theorem winEntryR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL
     rw [U₃.byte (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl
-        · have := hW K.neg (by simp); dsimp only; omega
-        · dsimp only at hT' ⊢; omega) (by omega),
+        · have := hW K.neg (by simp); dsimp only; omega_arith
+        · dsimp only at hT' ⊢; omega_arith) (by omega_arith),
       U₂.byte (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl | rfl
-        · have := hW K.E.x (by simp); dsimp only; omega
-        · have := hW K.E.y (by simp); dsimp only; omega
-        · have := hW K.E.z (by simp); dsimp only; omega) (by omega)]
+        · have := hW K.E.x (by simp); dsimp only; omega_arith
+        · have := hW K.E.y (by simp); dsimp only; omega_arith
+        · have := hW K.E.z (by simp); dsimp only; omega_arith) (by omega_arith)]
     exact hbits t ht
   rw [WP.block_append_iff]
   refine WP.mono (signMask_ok (WinCfg.tc K) hs₃ (k := k) (j := i) (N := 4 * K.J) (by show 1 ≤ 4; decide)
@@ -343,29 +343,29 @@ theorem winEntryR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL
     hL.bits hx₃ hbits₃) fun s₄ ⟨x₄, k₄⟩ => ?_
   have hs₄ := hs₃.of_keeps k₄ (by decide)
   refine WP.mono (sel_ok (decide (combWin (WinCfg.tc K).w k i < 2 ^ ((WinCfg.tc K).w - 1))) K.M.n hs₄ x₄
-    (o := K.E.y) (a := K.E.y) (b := K.neg) hEy hEy hneg (Or.inl (Nat.le_refl _)) (by omega))
+    (o := K.E.y) (a := K.E.y) (b := K.neg) hEy hEy hneg (Or.inl (Nat.le_refl _)) (by omega_arith))
     fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   rw [show (WinCfg.tc K).w = 4 from rfl, hw4] at e₅
   -- The values.
   have m₄ : s₄.mem = s₃.mem := k₄.2.1
   have vx : wordsVal s₅.mem base K.E.x K.M.n = wordsVal s₂.mem base K.E.x K.M.n := by
-    rw [O₅.wordsVal (by omega) (by omega), m₄, U₃.wordsVal (fun w hw => by
+    rw [O₅.wordsVal (by omega_arith) (by omega_arith), m₄, U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
-      · dsimp only; omega
-      · have := tmp K.E.x (by simp); dsimp only; omega) (by omega)]
+      · dsimp only; omega_arith
+      · have := tmp K.E.x (by simp); dsimp only; omega_arith) (by omega_arith)]
   have vz : wordsVal s₅.mem base K.E.z K.M.n = wordsVal s₂.mem base K.E.z K.M.n := by
-    rw [O₅.wordsVal (by omega) (by omega), m₄, U₃.wordsVal (fun w hw => by
+    rw [O₅.wordsVal (by omega_arith) (by omega_arith), m₄, U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
-      · dsimp only; omega
-      · have := tmp K.E.z (by simp); dsimp only; omega) (by omega)]
+      · dsimp only; omega_arith
+      · have := tmp K.E.z (by simp); dsimp only; omega_arith) (by omega_arith)]
   have vy₃ : wordsVal s₃.mem base K.E.y K.M.n = wordsVal s₂.mem base K.E.y K.M.n :=
     U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
-      · dsimp only; omega
-      · have := tmp K.E.y (by simp); dsimp only; omega) (by omega)
+      · dsimp only; omega_arith
+      · have := tmp K.E.y (by simp); dsimp only; omega_arith) (by omega_arith)
   have vy : wordsVal s₅.mem base K.E.y K.M.n = if decide (nib k i < 2 ^ (4 - 1)) then
       (0 + C.p - wordsVal s₂.mem base K.E.y K.M.n) % C.p else wordsVal s₂.mem base K.E.y K.M.n := by
     rw [e₅, m₄, e₃, hz₂, vy₃]
@@ -377,9 +377,9 @@ theorem winEntryR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL
     by_cases h1 : 1 ≤ a
     · simp only [h1, ↓reduceIte]
       exact (Ta h1).2
-    · have h0 : a = 0 := by omega
+    · have h0 : a = 0 := by omega_arith
       subst h0
-      simp only [show ¬ 1 ≤ 0 by omega, ↓reduceIte, toM_zero, hone, mul_zero_pt']
+      simp only [show ¬ 1 ≤ 0 by omega_arith, ↓reduceIte, toM_zero, hone, mul_zero_pt']
       exact hRp0
   have hcl : ∀ r ∈ [Reg.rax, .rcx, .rdx, .r8], r ∈ clob K.M.n := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -420,7 +420,7 @@ theorem winEntryR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL
     by_cases h8 : 8 ≤ nib k i
     · have hy : tmv C K.M.n base s₅ K.E.y = tmv C K.M.n base s₂ K.E.y := by
         show toM _ _ _ = toM _ _ _
-        rw [vy, decide_eq_false (show ¬ nib k i < 2 ^ (4 - 1) by omega)]; rfl
+        rw [vy, decide_eq_false (show ¬ nib k i < 2 ^ (4 - 1) by omega_arith)]; rfl
       rw [hy]
       simp only [h8, ↓reduceIte]
       have : a = nib k i - 8 := by rw [← ha, magH]; simp [h8]
@@ -428,9 +428,9 @@ theorem winEntryR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL
       exact hR
     · have hy : tmv C K.M.n base s₅ K.E.y = -tmv C K.M.n base s₂ K.E.y := by
         show toM _ _ _ = -toM _ _ _
-        rw [vy, decide_eq_true (show nib k i < 2 ^ (4 - 1) by omega)]
+        rw [vy, decide_eq_true (show nib k i < 2 ^ (4 - 1) by omega_arith)]
         simp only [↓reduceIte]
-        rw [toM_sub (by omega), toM_zero]
+        rw [toM_sub (by omega_arith), toM_zero]
         grind
       rw [hy]
       simp only [h8, ↓reduceIte]

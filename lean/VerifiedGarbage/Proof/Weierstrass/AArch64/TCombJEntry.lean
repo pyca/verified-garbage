@@ -42,13 +42,13 @@ theorem tentryJ_after_digit_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k 
   rw [TCombCfg.toComb_J] at hJ
   have hw := hL.w
   have hn4 := hL.n8
-  have hzw : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega
+  have hzw : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega_arith
   have hbits' := hL.bits
   have hbitsw := hL.bitsw
   have hH2 : 2 ^ K.w = 2 * K.H := by
-    unfold TCombCfg.H; rw [← Nat.pow_succ']; congr 1; omega
+    unfold TCombCfg.H; rw [← Nat.pow_succ']; congr 1; omega_arith
   have hHle : K.H ≤ 128 := by
-    unfold TCombCfg.H; exact Nat.le_trans (Nat.pow_le_pow_right (by decide) (show K.w - 1 ≤ 7 by omega))
+    unfold TCombCfg.H; exact Nat.le_trans (Nat.pow_le_pow_right (by decide) (show K.w - 1 ≤ 7 by omega_arith))
       (by decide)
   have hle : ∀ x, x ∈ combSlots K.toComb → x + 8 * K.M.n ≤ size := fun x hx => hL.comb.lay.le x hx
   have htmp : ∀ x, x ∈ combSlots K.toComb → x + 8 * K.M.n ≤ K.M.tmp ∨ K.M.tmp + 8 * K.M.n ≤ x :=
@@ -57,14 +57,14 @@ theorem tentryJ_after_digit_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k 
   dsimp only [TCombCfg.toComb] at hE hap
   have hwi : K.w * i + K.w ≤ K.w * K.J := by
     have := Nat.mul_le_mul_left K.w (show i + 1 ≤ K.J from hi); rwa [Nat.mul_succ] at this
-  have hwJ : K.w ≤ K.w * K.J := by have := Nat.mul_le_mul_left K.w (show 1 ≤ K.J by omega); omega
+  have hwJ : K.w ≤ K.w * K.J := by have := Nat.mul_le_mul_left K.w (show 1 ≤ K.J by omega_arith); omega_arith
   let s₁ := s
   have m₁ : s₁.gpr .x2 = BitVec.ofNat 64 (bmag K.w k i) := hm
   have k₁ : Keeps [.x2,.x3,.x4,.x9,.x16] s s₁ := ⟨fun _ _ => rfl,rfl,rfl,rfl,rfl⟩
   have sy₁ : s₁.syms = s.syms := rfl
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hx₁ : s₁.gpr .x19 = BitVec.ofNat 64 i := by rw [k₁.gpr _ (by decide), hx]
-  have hmag : bmag K.w k i ≤ K.H := bmag_le (by omega) k i
+  have hmag : bmag K.w k i ≤ K.H := bmag_le (by omega_arith) k i
   have hlen := tcombWords_length (n := K.M.n) (R := 2 ^ (64 * K.M.n)) (p := C.p) hV.len hV.lenH
   have hreg : InRegions (s₁.rd ++ s₁.wr) (T + BitVec.ofNat 64 (i * K.tblBytes)) (16 * K.M.n * K.H) := by
     obtain ⟨r, hr, hc⟩ := hTM.rd
@@ -75,9 +75,9 @@ theorem tentryJ_after_digit_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k 
     have e : 16 * K.M.n * K.H = 8 * (K.H * (2 * K.M.n)) := by
       rw [Nat.mul_comm K.H, ← Nat.mul_assoc, ← Nat.mul_assoc]
     rw [Nat.mul_left_comm 8 K.J, ← e]
-    omega
+    omega_arith
   have hHe : K.H % 2 = 0 := by
-    unfold TCombCfg.H; rw [show K.w - 1 = (K.w - 2) + 1 by omega, Nat.pow_succ]; omega
+    unfold TCombCfg.H; rw [show K.w - 1 = (K.w - 2) + 1 by omega_arith, Nat.pow_succ]; omega_arith
   have hout' : ∀ e < K.H, ∀ i' < 2 * K.M.n, ∀ b < 8, size ≤ ofs base
       (T + BitVec.ofNat 64 (i * K.tblBytes) + BitVec.ofNat 64 (16 * K.M.n * e + 8 * i') + BitVec.ofNat 64 b) :=
     fun e he i' hi' b hb => by
@@ -86,10 +86,10 @@ theorem tentryJ_after_digit_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k 
       rw [hlen]
       have h1 : i * (K.H * (2 * K.M.n)) + e * (2 * K.M.n) + i' < i * (K.H * (2 * K.M.n)) + K.H * (2 * K.M.n) := by
         have := Nat.mul_le_mul_right (2 * K.M.n) (show e + 1 ≤ K.H from he)
-        rw [Nat.succ_mul] at this; omega
+        rw [Nat.succ_mul] at this; omega_arith
       have h2 := Nat.mul_le_mul_right (K.H * (2 * K.M.n)) (show i + 1 ≤ K.J from hi)
       rw [Nat.succ_mul] at h2
-      omega
+      omega_arith
   have WSelect : WP isa (.block K.select) s₁ fun t =>
       wordsVal t.mem base K.E.x K.M.n = (if 1 ≤ bmag K.w k i then
         wordsVal s₁.mem (T + BitVec.ofNat 64 (i * K.tblBytes))
@@ -100,7 +100,7 @@ theorem tentryJ_after_digit_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k 
       wordsVal t.mem base K.E.z K.M.n = (if 1 ≤ bmag K.w k i then K.one else 0) ∧
       KeepRegs (.x1 :: .x2 :: .x3 :: .x4 :: .x5 :: .x6 :: .x7 :: .x16 :: .x17 :: entryRegs K.M.n) s₁ t ∧
       Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)] s₁.mem t.mem := by
-    exact tselect_ok K hn4 hL.n2 hs₁ hx₁ m₁ hmag hHe hL.tbl.1 hL.tbl.2 (by omega)
+    exact tselect_ok K hn4 hL.n2 hs₁ hx₁ m₁ hmag hHe hL.tbl.1 hL.tbl.2 (by omega_arith)
       (by rw [sy₁]; exact hT) hE hL.e16 hap (Nat.lt_trans hV.one_lt hpn) hreg hout'
   refine WP.mono WSelect fun s₂ h₂ => ?_
   obtain ⟨ex₂, ey₂, ez₂, k₂, U₂⟩ := h₂
@@ -113,7 +113,7 @@ theorem tentryJ_after_digit_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k 
       wordsVal s.mem (T + BitVec.ofNat 64 (i * K.tblBytes)) (16 * K.M.n * (a - 1) + 8 * K.M.n) K.M.n =
         (combAt tbl i (a - 1)).2 * 2 ^ (64 * K.M.n) % C.p := fun h1 => by
     rw [TCombCfg.tblBytes]
-    exact tbl_entry hTM hV.len hV.lenH hi (by omega) (Nat.lt_trans (Nat.mod_lt _ hp0) hpn)
+    exact tbl_entry hTM hV.len hV.lenH hi (by omega_arith) (Nat.lt_trans (Nat.mod_lt _ hp0) hpn)
       (Nat.lt_trans (Nat.mod_lt _ hp0) hpn)
   have hs₂ := hs₁.of_keepRegs k₂ (sel_regs hn4 (Or.inl rfl))
   have hEW := entryW_sub (K := K.toComb)
@@ -125,7 +125,7 @@ theorem tentryJ_after_digit_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k 
   have hzW := combW_ro hL.comb (x := K.zero) (by simp [combRo, TCombCfg.toComb])
   dsimp only [TCombCfg.toComb] at hzW
   have hz₂ : wordsVal s₂.mem base K.zero K.M.n = 0 := by
-    rw [U₂'.wordsVal hzW (by have := hle K.zero (by tcomb_mem); omega), hz]
+    rw [U₂'.wordsVal hzW (by have := hle K.zero (by tcomb_mem); omega_arith), hz]
   have hEy₂ : wordsVal s₂.mem base K.E.y K.M.n < C.p := by
     rw [ey₂]; split
     · rw [(hent ‹_›).2]; exact Nat.mod_lt _ hp0
@@ -150,10 +150,10 @@ theorem tentryJ_after_digit_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k 
     rw [k₃.gpr _ (x19_not_clob _), k₂.gpr _ (sel_regs hn4 (Or.inr rfl)), hx₁]
   have hbits₃ : ∀ t < K.w * K.J, s₃.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0 :=
     fun t ht => by
-      rw [U₂₃.byte (fun w hw => by have := hL.bits_w w hw; omega) (by omega)]; exact hbits t ht
+      rw [U₂₃.byte (fun w hw => by have := hL.bits_w w hw; omega_arith) (by omega_arith)]; exact hbits t ht
   rw [WP.block_append_iff]
-  have W4 := bsignMask_ok K hs₃ (k := k) (j := i) (N := K.w * K.J) (by omega) (by omega)
-    hwi (by omega) (by omega) hx₃ hbits₃
+  have W4 := bsignMask_ok K hs₃ (k := k) (j := i) (N := K.w * K.J) (by omega_arith) (by omega_arith)
+    hwi (by omega_arith) (by omega_arith) hx₃ hbits₃
   refine WP.mono W4 fun s₄ h₄ => ?_
   obtain ⟨x₄, k₄⟩ := h₄
   have hs₄ := hs₃.of_keeps k₄ (by decide)
@@ -176,23 +176,23 @@ theorem tentryJ_after_digit_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k 
   dsimp only [TCombCfg.toComb] at yneg xneg zneg
   have W5 := sel_ok (decide (bcar K.w k (i+1)=1)) K.M.n hs₄ (by rw [x₄]; rfl) (o := K.E.y)
     (a := K.E.y) (b := K.neg) hEy.1 hEy.1 hneg hEy.2 hEy.2 (hA.sl _ (by tcomb_mem))
-    (Or.inl (Nat.le_refl _)) (by omega)
+    (Or.inl (Nat.le_refl _)) (by omega_arith)
   refine WP.mono W5 fun s₅ h₅ => h s₅ ?_
   obtain ⟨e₅, k₅, O₅⟩ := h₅
   -- The values.
   have m₄ : s₄.mem = s₃.mem := k₄.mem
   have vx : wordsVal s₅.mem base K.E.x K.M.n = wordsVal s₂.mem base K.E.x K.M.n := by
-    rw [O₅.wordsVal (by omega) (by omega), m₄, U₃.wordsVal (fun w hw => by
+    rw [O₅.wordsVal (by omega_arith) (by omega_arith), m₄, U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> dsimp only <;> omega) (by omega)]
+      rcases hw with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)]
   have vz : wordsVal s₅.mem base K.E.z K.M.n = wordsVal s₂.mem base K.E.z K.M.n := by
-    rw [O₅.wordsVal (by omega) (by omega), m₄, U₃.wordsVal (fun w hw => by
+    rw [O₅.wordsVal (by omega_arith) (by omega_arith), m₄, U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> dsimp only <;> omega) (by omega)]
+      rcases hw with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)]
   have vy₃ : wordsVal s₃.mem base K.E.y K.M.n = wordsVal s₂.mem base K.E.y K.M.n :=
     U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> dsimp only <;> omega) (by omega)
+      rcases hw with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
   have vy : wordsVal s₅.mem base K.E.y K.M.n = if decide (bcar K.w k (i+1)=1) then
       (0 + C.p - wordsVal s₂.mem base K.E.y K.M.n) % C.p else wordsVal s₂.mem base K.E.y K.M.n := by
     rw [e₅, m₄, e₃, hz₂, vy₃]
@@ -213,11 +213,11 @@ theorem tentryJ_after_digit_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k 
     by_cases h1 : 1 ≤ a
     · obtain ⟨hx, hy⟩ := hent h1
       simp only [h1, ↓reduceIte, hx, hy, toM_mont hV.unit, hV.one]
-      have := hV.entry i hi (a - 1) (by omega)
+      have := hV.entry i hi (a - 1) (by omega_arith)
       rwa [Nat.sub_add_cancel h1] at this
-    · have h0 : a = 0 := by omega
+    · have h0 : a = 0 := by omega_arith
       subst h0
-      simp only [show ¬ 1 ≤ 0 by omega, ↓reduceIte, toM_zero, hV.one]
+      simp only [show ¬ 1 ≤ 0 by omega_arith, ↓reduceIte, toM_zero, hV.one]
       rw [show combPtW C K.w i 0 = .infinity by simp [combPtW, Spec.Weierstrass.mul]]
       exact rep_infinity' hC
   refine ⟨hs₄.of_keepRegs k₅ (by decide), ?_, hk, ?_, ?_, ?_, ?_⟩
@@ -288,12 +288,12 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
     have := hL.bits
     have := hL.kbytes
     unfold TCombCfg.zw at *
-    omega
+    omega_arith
   have hwb : K.bits + K.w ≤ 4096 := by
     have := hL.bitsw
-    omega
+    omega_arith
   refine WP.mono_syms (bdigit_ok K hs (k := k) (j := i) (N := K.w * K.J)
-    (by omega) (by omega) hwi hb hb1 hwb hx hbits hc) fun t ⟨hm,hk⟩ hsy => ?_
+    (by omega_arith) (by omega_arith) hwi hb hb1 hwb hx hbits hc) fun t ⟨hm,hk⟩ hsy => ?_
   have hs' := hs.of_keeps hk (by decide)
   have hM' : ModOkA K.M size C.p t.mem base := hk.mem ▸ hM
   refine tentryJ_after_digit_ok hL hA hC hV hpn hs' hM' hi
