@@ -1,7 +1,158 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLowRooted
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLowCheck
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedLow
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
+
+/-! ## From `OptimizedPairedLowLayout.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Sign
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.Call (Ptr Arg callAt)
+open VG.Proof.MlDsa.AArch64.Optimized
+
+theorem pairedLowReady_layout {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State}
+    (L : Lay S rbs wbs s) {c secret out low work : Ptr} {g B : Nat}
+    (hc : inB (rbs++wbs) c 1024=true)
+    (hsecret : inB (rbs++wbs) secret 2048=true)
+    (hout : inB (rbs++wbs) out 2048=true)
+    (hlow : inB (rbs++wbs) low 2048=true)
+    (hwork : inB (rbs++wbs) work 2176=true)
+    (hwout : inB wbs out 2048=true)
+    (hwlow : inB wbs low 2048=true)
+    (hwwork : inB wbs work 2176=true)
+    (hc_out : sepB rbs wbs c 1024 out 2048=true)
+    (hc_low : sepB rbs wbs c 1024 low 2048=true)
+    (hc_work : sepB rbs wbs c 1024 work 2176=true)
+    (hsecret_out : sepB rbs wbs secret 2048 out 2048=true)
+    (hsecret_low : sepB rbs wbs secret 2048 low 2048=true)
+    (hsecret_work : sepB rbs wbs secret 2048 work 2176=true)
+    (hout_low : sepB rbs wbs out 2048 low 2048=true)
+    (hout_work : sepB rbs wbs out 2048 work 2176=true)
+    (hlow_work : sepB rbs wbs low 2048 work 2176=true)
+    (held : ∀i<512,s.mem.readW (s.syms "VG_MLDSA_INV_PAIR"+BitVec.ofNat 64 (8*i)) 64=
+      VG.Impl.MlDsa.AArch64.Optimized.Paired.expandedWords.getD i 0)
+    (hfit : (s.syms "VG_MLDSA_INV_PAIR").toNat+4096≤2^64)
+    (hsep : ∀r∈[⟨pa s out,2048⟩,⟨pa s low,2048⟩,⟨pa s work,2176⟩],
+      (⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩:Region).Disjoint r)
+    (ht : Covers [⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩] (s.rd++s.wr))
+    (hprod : pairedProductsReduced s.mem (pa s c) (pa s secret))
+    (hdata : ∀j<2,Reduced s.mem (pairPolyPtr (pa s out) j))
+    (hg : g∈gamma2s) (hB : 1≤B) (hB' : B≤524288) :
+    Paired.PairedLowReady c secret out low work g B s := by
+  refine ⟨L.nwp hc,L.nwp hsecret,L.nwp hout,L.nwp hlow,L.nwp hwork,held,hfit,hsep,
+    L.disj hc_out,L.disj hc_low,L.disj hc_work,L.disj hsecret_out,L.disj hsecret_low,L.disj hsecret_work,L.disj hout_low,L.disj hout_work,L.disj hlow_work,
+    hprod,hdata,hg,hB,hB',?_,?_⟩
+  · exact Covers.cons (L.cR hc) (Covers.cons (L.cR hsecret) (Covers.cons ht
+      (Covers.cons (L.cR hout) (Covers.cons (L.cR hlow) (L.cR hwork)))))
+  · exact Covers.cons (L.cW hwout) (Covers.cons (L.cW hwlow) (L.cW hwwork))
+
+theorem pairedLowAt_layout {S : Nat} {rbs wbs : List (Reg × Nat)} {s : State}
+    (L : Lay S rbs wbs s) {c secret out low work : Ptr} {g B : Nat}
+    (hc : inB (rbs++wbs) c 1024=true)
+    (hsecret : inB (rbs++wbs) secret 2048=true)
+    (hout : inB (rbs++wbs) out 2048=true)
+    (hlow : inB (rbs++wbs) low 2048=true)
+    (hwork : inB (rbs++wbs) work 2176=true)
+    (h : Paired.PairedLowReady c secret out low work g B s) :
+    WP isa (callAt "vg_mldsa_fused_pair_r0"
+      (VG.Impl.MlDsa.AArch64.Optimized.Paired.selected .r0)
+      (Paired.pairedLowArgs c secret out low work g B)) s fun t =>
+      PPostB S s t [(out,2048),(low,2048),(work,2176)] ∧ t.gpr .x24=s.gpr .x24 ∧
+      Paired.PairedLowPost g B s.mem t.mem (pa s c) (pa s secret) (pa s out) (pa s low) ((t.gpr .x0).setWidth 32) := by
+  refine WP.mono (Paired.pairedLowAt_ok L.s64
+    (ptr_ok (L.ptrBs hc)) (ptr_ok (L.ptrBs hsecret)) (ptr_ok (L.ptrBs hout))
+    (ptr_ok (L.ptrBs hlow)) (ptr_ok (L.ptrBs hwork)) h) fun t ⟨hp,hv⟩ => ?_
+  exact ⟨hp.b,hp.cs .x24 (by decide) (by decide),hv⟩
+
+end VG.Proof.MlDsa.AArch64.Sign
+
+end
+
+/-! ## From `OptimizedPairedLowCheck.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Sign
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.Sign
+
+def pairedLowChk (p : Params) (i : Nat) : Bool :=
+  inB (sgR p++sgW p) cP 1024 && inB (sgR p++sgW p) (s2P p i) 2048 &&
+  inB (sgR p++sgW p) (wP p i) 2048 && inB (sgR p++sgW p) (hP i) 2048 &&
+  inB (sgR p++sgW p) t1P 2176 && inB (sgW p) (wP p i) 2048 &&
+  inB (sgW p) (hP i) 2048 && inB (sgW p) t1P 2176 &&
+  sepB (sgR p) (sgW p) cP 1024 (wP p i) 2048 &&
+  sepB (sgR p) (sgW p) cP 1024 (hP i) 2048 &&
+  sepB (sgR p) (sgW p) cP 1024 t1P 2176 &&
+  sepB (sgR p) (sgW p) (s2P p i) 2048 (wP p i) 2048 &&
+  sepB (sgR p) (sgW p) (s2P p i) 2048 (hP i) 2048 &&
+  sepB (sgR p) (sgW p) (s2P p i) 2048 t1P 2176 &&
+  sepB (sgR p) (sgW p) (wP p i) 2048 (hP i) 2048 &&
+  sepB (sgR p) (sgW p) (wP p i) 2048 t1P 2176 &&
+  sepB (sgR p) (sgW p) (hP i) 2048 t1P 2176 &&
+  stChk p [(wP p i,2048),(hP i,2048),(t1P,2176)]
+
+theorem pairedLowChk_ok {p : Params} (hp : Ok3 p) : ∀i<p.k-1,pairedLowChk p i=true := by
+  rcases hp with rfl|rfl|rfl <;> decide
+
+end VG.Proof.MlDsa.AArch64.Sign
+
+end
+
+/-! ## From `OptimizedPairedLowRooted.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Sign
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.Call (Ptr Arg callAt)
+open VG.Impl.MlDsa.AArch64.Sign
+open VG.Proof.MlDsa.AArch64.Optimized
+
+theorem pairedLow_rooted {p : Params} {S : Nat} {σ s : State} {i : Nat}
+    (hchk : pairedLowChk p i=true) (hstate : RootedSt p S σ s) (hroots : PairedRoots S s)
+    (hprod : pairedProductsReduced s.mem (pa s cP) (pa s (s2P p i)))
+    (hcan : ∀j<2,Reduced s.mem (pairPolyPtr (pa s (wP p i)) j))
+    (hg : p.γ₂∈gamma2s) (hB : 1≤p.γ₂-p.β) (hB' : p.γ₂-p.β≤524288) :
+    WP isa (callAt "vg_mldsa_fused_pair_r0" (VG.Impl.MlDsa.AArch64.Optimized.Paired.selected .r0)
+      (Paired.pairedLowArgs cP (s2P p i) (wP p i) (hP i) t1P p.γ₂ (p.γ₂-p.β))) s fun t =>
+      RootedSt p S σ t ∧ PairedRoots S t ∧ t.gpr .x24=s.gpr .x24 ∧
+      Paired.PairedLowPost p.γ₂ (p.γ₂-p.β) s.mem t.mem (pa t cP) (pa t (s2P p i))
+        (pa t (wP p i)) (pa t (hP i)) ((t.gpr .x0).setWidth 32) := by
+  simp only [pairedLowChk,Bool.and_eq_true] at hchk
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hc,hs⟩,ho⟩,hl⟩,hw⟩,hwo⟩,hwl⟩,hww⟩,hco⟩,hcl⟩,hcw⟩,hso⟩,hsl⟩,hsw⟩,hol⟩,how⟩,hlw⟩,hst⟩ := hchk
+  have hsep : ∀r∈[⟨pa s (wP p i),2048⟩,⟨pa s (hP i),2048⟩,⟨pa s t1P,2176⟩],
+      (⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩:Region).Disjoint r := by
+    intro r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl
+    · exact hroots.apart_write (hstate.1.lay.inW hwo)
+    · exact hroots.apart_write (hstate.1.lay.inW hwl)
+    · exact hroots.apart_write (hstate.1.lay.inW hww)
+  have hready := pairedLowReady_layout hstate.1.lay hc hs ho hl hw hwo hwl hww
+    hco hcl hcw hso hsl hsw hol how hlw hroots.held hroots.fit hsep hroots.readable hprod hcan hg hB hB'
+  refine WP.mono_syms (pairedLowAt_layout hstate.1.lay hc hs ho hl hw hready) fun t ⟨hp,h24,hv⟩ hy => ?_
+  have hwrites : ∀w∈[(wP p i,2048),(hP i,2048),(t1P,2176)],inB (sgW p) w.1 w.2=true := by
+    simpa only [List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq] using And.intro hwo (And.intro hwl hww)
+  refine ⟨hstate.step hp hy hst hwrites,hroots.step hp hy ?_,h24,?_⟩
+  · intro w hm
+    exact hstate.1.lay.inW (hwrites w hm)
+  · rw [hp.pa (hstate.1.lay.ptrBs hc),hp.pa (hstate.1.lay.ptrBs hs),
+      hp.pa (hstate.1.lay.ptrBs ho),hp.pa (hstate.1.lay.ptrBs hl)]
+    exact hv
+
+end VG.Proof.MlDsa.AArch64.Sign
+
+end
+
+/-! ## From `OptimizedPairedR0.lean` -/
+
+section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 open VG VG.AArch64 VG.Spec.MlDsa
@@ -101,3 +252,5 @@ theorem optimizedR0_pair_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
   rw [pairedZ_norm (by omega : 0<p.γ₂-p.β),and_assoc,pairedZ_prefix]
 
 end VG.Proof.MlDsa.AArch64.Sign
+
+end
