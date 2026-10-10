@@ -31,12 +31,9 @@ Functions on this representation take and keep `Bounded` for all 22 slots.
 The working space holds the functions' operands and results at fixed slots,
 where that code keeps them, and their own bytes (`Keeps`, which keeps every
 byte of `ws` outside a list of ranges): the 1152 bytes from byte 3584
-(`accAt`), where the products accumulate, and the 64 bytes from byte 3008
-(`saveAt`), where a function saves the registers it must preserve, so that
-it needs no stack. `pow_p34` reads `a` in slot 12 and writes the power to
-slot 21, with temporaries in slots 14 to 20, and saves one more register at
-byte 24 (`save19At`). On return the function's own bytes are unspecified and
-may hold intermediate values.
+(`accAt`), where the products accumulate. `pow_p34` reads `a` in slot 12 and
+writes the power to slot 21, with temporaries in slots 14 to 20. On return
+the function's own bytes are unspecified and may hold intermediate values.
 
 Everything is secret but the pointer, which is public, and the functions are
 constant time.
@@ -64,15 +61,6 @@ def accAt : Nat := 3584
 
 /-- Where the products' bytes end. -/
 def accEnd : Nat := 4736
-
-/-- Where a function saves the registers it must preserve, for 64 bytes. -/
-def saveAt : Nat := 3008
-
-/-- Where they end. -/
-def saveEnd : Nat := 3072
-
-/-- Where `pow_p34` saves one more register. -/
-def save19At : Nat := 24
 
 /-- The bound of an operand's limbs: `3·2^56 + 2^9`. -/
 def opBound : Nat := 3 * 2 ^ 56 + 2 ^ 9
@@ -107,8 +95,8 @@ def Keeps (ws : Addr) (rs : List (Nat × Nat)) (m m' : Mem) : Prop :=
   ∀ i < wsBytes, (∀ r ∈ rs, i < r.1 ∨ r.2 ≤ i) →
     m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
 
-/-- What the products and the saved registers change. -/
-def own : List (Nat × Nat) := [(accAt, accEnd), (saveAt, saveEnd)]
+/-- What the products change. -/
+def own : List (Nat × Nat) := [(accAt, accEnd)]
 
 /-! ## `pow_p34` -/
 
@@ -132,7 +120,7 @@ def powContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
     (pre := fun ws m => Bounded m ws)
     (post := fun ws m m' _ =>
       Bounded m' ws ∧ elemAt m' ws (slotAt oSlot) = pow (elemAt m ws (slotAt aSlot)) ((P - 3) / 4) ∧
-        Keeps ws (powSlots :: (save19At, save19At + 8) :: own) m m')
+        Keeps ws (powSlots :: own) m m')
     (stack := stack)
 
 /-- What the functions on this representation require. -/
@@ -146,8 +134,7 @@ their elements. -/
 def elemDoc : String :=
   "An element is eight 64-bit little-endian words, least significant first, each a limb: the \
     number `Σ l_i 2^(56 i)`, standing for its residue modulo `p = 2^448 - 2^224 - 1`, not \
-    necessarily reduced. Bytes 3008 to 3071 and 3584 to 4735 of `ws` are the function's own \
-    working space."
+    necessarily reduced. Bytes 3584 to 4735 of `ws` are the function's own working space."
 
 /-- `vg_gf448_r56_pow_p34` on every target. -/
 def powApi : Api where
@@ -158,14 +145,12 @@ def powApi : Api where
   summary := "A power in curve448's field: for `a` the element in slot 12 (byte 1600) of the \
     working space `ws`, writes `a^((p-3)/4)` to slot 21 (byte 2752), the exponent of RFC 8032's \
     square root for decoding points. " ++ elemDoc ++ " Every byte of `ws` but slots 14 to 21 \
-    (bytes 1856 to 2879), bytes 24 to 31 and the function's own working space keeps its \
-    value.\n\n\
+    (bytes 1856 to 2879) and the function's own working space keeps its value.\n\n\
     Contract: `powContract` of `VG.Spec.X448.Field56`. Constant time: only the pointer may \
     affect timing."
   safety :=
     [boundedDoc,
-      "Bytes 24 to 31, 1856 to 2751, 3008 to 3071 and 3584 to 4735 of `ws` are unspecified on \
-        return and may hold intermediate values, which the caller must destroy if they are \
-        secret."]
+      "Bytes 1856 to 2751 and 3584 to 4735 of `ws` are unspecified on return and may hold \
+        intermediate values, which the caller must destroy if they are secret."]
 
 end VG.Spec.X448.Field56

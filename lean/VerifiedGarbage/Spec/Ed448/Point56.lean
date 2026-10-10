@@ -108,13 +108,13 @@ def elemDoc : String :=
     each a limb: the number `Σ l_i 2^(56 i)`, standing for its residue modulo \
     `p = 2^448 - 2^224 - 1`, not necessarily reduced. The result's limbs are below \
     `2^56 + 2^8`. Every byte of `ws` but the result's, slots 10 to 18 (bytes 1344 to 2495) and \
-    the function's own working space (bytes 3008 to 3071 and 3584 to 4735) keeps its value."
+    the function's own working space (bytes 3584 to 4735) keeps its value."
 
 /-- What both functions require. -/
 def safetyDoc (more : String) : List String :=
   [X448.Field56.boundedDoc, more,
-    "Bytes 1344 to 2495, 3008 to 3071 and 3584 to 4735 of `ws` are unspecified on return and may \
-      hold intermediate values, which the caller must destroy if they are secret."]
+    "Bytes 1344 to 2495 and 3584 to 4735 of `ws` are unspecified on return and may hold \
+      intermediate values, which the caller must destroy if they are secret."]
 
 /-- `vg_ed448_r56_point_add` on every target. -/
 def addApi : Api where
