@@ -484,12 +484,13 @@ while measuring) before a declaration prints the heartbeats it uses
 against the 200000 budget.
 
 For allocation-based work comparisons without adding an import, use Lean's
-heartbeat profiler. From `lean/`, build the module first to obtain its setup
-file, which supplies the same options and imports as Lake:
+heartbeat profiler. From `lean/`, write the module's setup file, which
+supplies the same options and imports as Lake (`lake setup-file` builds the
+module's imports, not the module, and prints it; the build cache keeps none):
 
 ```sh
-lake build --log-level=warning +VerifiedGarbage.Proof.MlKem.Arm.Mul
-lake env lean --setup .lake/build/ir/VerifiedGarbage/Proof/MlKem/Arm/Mul.setup.json \
+lake setup-file --log-level=warning VerifiedGarbage/Proof/MlKem/Arm/Mul.lean > .lake/setup.json
+lake env lean --setup .lake/setup.json \
   -j1 -DElab.async=false -Dtrace.profiler=true \
   -Dtrace.profiler.useHeartbeats=true -Dtrace.profiler.threshold=1000000000 \
   -Dtrace.Elab.command=true -Dtrace.Kernel=true \
