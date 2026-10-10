@@ -33,10 +33,14 @@ def scalar : Instr → Bool
 def afterV (τ : RegSet VReg) (i : Instr) : RegSet VReg :=
   if scalar i then τ else RegSet.ofList []
 
+/-- The taint after `i`. It takes `τ` apart rather than projecting its
+components: a component the step keeps would otherwise be stored as a
+projection of the previous taint, and after `n` steps the kernel would walk
+`n` projections at every access. -/
 def step (τ : T) : Instr → Option T
-  | .vop (.dup _ d n) => some (τ.1, setV τ.2 d (Taint.pub τ.1 n))
-  | .umov _ d n _ => some (Taint.set τ.1 d (τ.2.mem n), τ.2)
-  | i => (Taint.step τ.1 i).map (fun g => (g, afterV τ.2 i))
+  | .vop (.dup _ d n) => match τ with | (g, v) => some (g, setV v d (Taint.pub g n))
+  | .umov _ d n _ => match τ with | (g, v) => some (Taint.set g d (v.mem n), v)
+  | i => match τ with | (g, v) => (Taint.step g i).map (fun g' => (g', afterV v i))
 
 private theorem scalar_vectors {i : Instr} {s s' : State}
     (hi : scalar i = true) (he : exec i s = some s') : s'.v = s.v := by
