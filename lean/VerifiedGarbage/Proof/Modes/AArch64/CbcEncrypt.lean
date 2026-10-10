@@ -184,7 +184,7 @@ theorem cbcEncrypt_wp (cs : CoreSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.d
       simp only [List.mem_singleton] at hx; subst hx
       exact (sDS.sub_right (VG.Offset.sub_base B (show 8 * (c.slots + i) + 8 ≤ 8 * c.total by
         omega))).symm) (by decide)
-  · rw [m₇]; exact cbcEnc_of_dinv (cs.cipher_len k) d₆.data
+  · rw [m₇, ← blocksOf_16]; exact cbcEnc_of_dinv (cs.cipher_len k) d₆.data
   · rw [m₇]
     exact (f₃.trans (f₄.sub fun x hx => ⟨⟨B, 8 * c.total⟩, List.mem_cons_self, by
         simp only [List.mem_singleton] at hx; subst hx; exact Region.sub_prefix (by omega)⟩)).trans d₆.frame
