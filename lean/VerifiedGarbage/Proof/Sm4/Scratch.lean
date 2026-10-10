@@ -1,4 +1,5 @@
 import VerifiedGarbage.Spec.Sm4.Contract
+import VerifiedGarbage.Spec.Sm4.Ctr
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
@@ -8,11 +9,12 @@ import VerifiedGarbage.Proof.Framework.Offset
 frame of their own (`Verified.stackScratchWiped`), around code proved with
 the working space as an argument: `expandKeyScratchContract n` and
 `ecbScratchContract n` are the shared contracts with a `scratch` buffer of
-`n` words appended, whatever it holds (each target lays out its own).
+`n` words appended, whatever it holds (each target lays out its own), and
+so is `ctrScratchContract n`.
 
 The frames zero the working space before returning, which needs the
 postconditions to read the memory on return only within the functions'
-buffers (`expandKeyPostOut_local`, `ecbPostOut_local`).
+buffers (`expandKeyPostOut_local`, `ecbPostOut_local`, `ctrPostOut_local`).
 -/
 
 namespace VG.Proof.Sm4
@@ -44,6 +46,23 @@ def ecbScratchContract {M : ISA} (A : Abi M) (direction : Direction) (n : Nat) (
     Contract M :=
   (ecbScratchSig n).contract A
     (post := fun schedule data len _scratch => ecbPost direction A.ptrBits schedule data len)
+    (writeArgs := true) (stack := stack)
+
+/-- `vg_sm4_ctr` with `scratch: *mut [u64; n]`. -/
+def ctrScratchSig (n : Nat) : Sig where
+  params := [("schedule", .array false .u8 128), ("ctr", .array true .u8 16),
+    ("data", .slice true (.array .u8 16) "n"), ("scratch", .array true .u64 n)]
+
+/-- `ctrContract`'s postcondition. -/
+def ctrPost (pb : Nat) : ctrSig.Post pb := fun schedule ctr data n m m' _ =>
+  Spec.Cbc.blocksAt m' data n.toNat =
+      Spec.Ctr.crypt (cipher (scheduleAt m schedule)) (Spec.Aes.bytesAt m ctr 16) (Spec.Cbc.blocksAt m data n.toNat) ∧
+    Spec.Aes.bytesAt m' ctr 16 = Spec.Ctr.next (Spec.Aes.bytesAt m ctr 16) n.toNat
+
+/-- `ctrContract`, whatever `scratch` is. -/
+def ctrScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Contract M :=
+  (ctrScratchSig n).contract A
+    (post := fun schedule ctr data len _scratch => ctrPost A.ptrBits schedule ctr data len)
     (writeArgs := true) (stack := stack)
 
 /-! ## Locality -/
@@ -87,6 +106,21 @@ private theorem blockAt_congr (h : ∀ i < 16, m₂ (p + BitVec.ofNat 64 i) = m�
   congr 1
   funext j
   exact h _ j.isLt
+
+private theorem bytesAt_congr {k : Nat}
+    (h : ∀ i < k, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
+    Spec.Aes.bytesAt m₂ p k = Spec.Aes.bytesAt m₁ p k := by
+  simp only [Spec.Aes.bytesAt]
+  exact List.map_congr_left fun i hi => h i (List.mem_range.mp hi)
+
+private theorem cbcBlocksAt_congr {n : Nat}
+    (h : ∀ i < n * 16, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
+    Spec.Cbc.blocksAt m₂ p n = Spec.Cbc.blocksAt m₁ p n := by
+  simp only [Spec.Cbc.blocksAt]
+  refine List.map_congr_left fun i hi => bytesAt_congr fun j hj => ?_
+  have := List.mem_range.mp hi
+  rw [Offset.add_add]
+  exact h _ (by omega)
 
 /-- The memory agrees on the `n` bytes at `p`, from its agreeing on the
 region. -/
@@ -135,6 +169,25 @@ theorem ecbPostOut_local (direction : Direction) : ∀ vs m m₁ m₂ r,
     have := Nat.mod_le n.toNat (2 ^ pb)
     rw [blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
       rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 16 this; omega)]
+    exact h
+
+theorem ctrPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ctrSig.words pb).length →
+    (∀ b ∈ Sig.bufs ctrSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ctrSig.words pb) (ctrPost pb) vs m m₁ r →
+      Curry.apply (ctrSig.words pb) (ctrPost pb) vs m m₂ r
+  | [_, ctr, data, n], m, m₁, m₂, r, _, hb, h => by
+    simp only [ctrSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hc := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ctrPost pb) _
+      m m₁ r at h
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ctrPost pb) _
+      m m₂ r
+    dsimp only [Curry.apply, ctrPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    rw [cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
+      rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 16 this; omega), bytesAt_congr hc]
     exact h
 
 /-- `expandKeyPost` reads the memory on entry only within the key. -/
