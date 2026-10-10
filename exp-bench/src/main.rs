@@ -1,3 +1,4 @@
+mod okern;
 mod ossl;
 macro_rules! variant {
     ($name:ident, $file:literal) => {
@@ -67,6 +68,7 @@ fn main() {
             }
         }
         ossl::bench(w, f);
+        okern::bench(w, f);
         for (k, (name, _)) in vs.iter().enumerate() {
             println!("w={w} {name}: sq {:.0} cyc  mul {:.0} cyc", best[k].0 * f, best[k].1 * f);
         }
