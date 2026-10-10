@@ -77,7 +77,7 @@ theorem stepA_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem ba
         let e := Function.update e 16 (e 9 + Spec.X448.a24 * e 11)
         Function.update (Function.update e 12 (e 8 * e 5)) 13 (e 7 * e 6) := by
   rw [stepA_eq]
-  refine WP.weave (by decide +kernel) (WP.mono (block_codeOf (opsA_ok hs hb)) fun t ⟨tk, tb, ts, t1, te⟩ => ?_)
+  refine WP.weave (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)) (WP.mono (block_codeOf (opsA_ok hs hb)) fun t ⟨tk, tb, ts, t1, te⟩ => ?_)
   refine WP.mono (mul2E (tk.scr hs) tb 12 8 5 13 7 6 (by decide)) fun u ⟨uk, ub, u12, u13, us, ue⟩ =>
     ⟨tk.trans uk, ub, ts.append us, us.bnd (by decide) t1, u12, u13, ?_⟩
   rw [ue, te]
@@ -113,7 +113,7 @@ theorem stepB_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem ba
         let e := Function.update e 4 (e 0 * e 15)
         Function.update (Function.update e 2 (e 11 * e 16)) 3 (e 14 * e 14) := by
   rw [stepB_eq]
-  refine WP.weave (by decide +kernel) (WP.mono (block_codeOf (opsB_ok hs hb)) fun t ⟨tk, tb, ts, t4, te⟩ => ?_)
+  refine WP.weave (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)) (WP.mono (block_codeOf (opsB_ok hs hb)) fun t ⟨tk, tb, ts, t4, te⟩ => ?_)
   refine WP.mono (mul2E (tk.scr hs) tb 2 11 16 3 14 14 (by decide)) fun u ⟨uk, ub, u2, u3, us, ue⟩ =>
     ⟨tk.trans uk, ub, ts.append us, u2, u3, us.bnd (by decide) t4, ?_⟩
   rw [ue, te]

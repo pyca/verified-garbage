@@ -24,7 +24,7 @@ open VG.Proof.X448.AArch64.Fast
 open VG.Proof.Curve448.AArch64.Fast (Mb Ib)
 open VG.Impl.X448.AArch64.Fast (ops codeOf weave)
 open VG.Impl.Curve448.AArch64.Neon (mul2)
-open VG.AArch64.Interleave (blockFp)
+open VG.AArch64.Interleave (Indeps)
 
 local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 
@@ -90,9 +90,8 @@ theorem ops1_ok (z1 : Index) (hs : Scr s base) (hb : BEnv s.mem base) :
 
 /-- The first part: `b = Z²`, then `c = X x` and `e = Y y` in AdvSIMD. -/
 theorem part1_ok (x1 y1 z1 x2 y2 : Index) (hs : Scr s base) (hb : BEnv s.mem base)
-    (hind : ((blockFp (codeOf [.mul (slot (10 : Index).val) (slot z1.val) (slot z1.val)])).bind fun A =>
-      (blockFp (mul2 (slot (11 : Index).val) (slot x1.val) (slot x2.val) (slot (12 : Index).val)
-        (slot y1.val) (slot y2.val))).map fun B => A.indep B) = some true) :
+    (hind : Indeps (codeOf [.mul (slot (10 : Index).val) (slot z1.val) (slot z1.val)]) (mul2 (slot (11 : Index).val) (slot x1.val) (slot x2.val) (slot (12 : Index).val)
+        (slot y1.val) (slot y2.val))) :
     WP isa (.block (weave (codeOf [.mul (slot (10 : Index).val) (slot z1.val) (slot z1.val)])
         (mul2 (slot (11 : Index).val) (slot x1.val) (slot x2.val) (slot (12 : Index).val) (slot y1.val)
           (slot y2.val)))) s fun t =>
@@ -137,12 +136,11 @@ theorem ops2_ok (hs : Scr s base) (hb : BEnv s.mem base) (h10 : Bnd Mb s.mem bas
 /-- The second part: `ops2`, then `X y` and `Y x` in AdvSIMD. -/
 theorem part2_ok (x1 y1 x2 y2 : Index) (hs : Scr s base) (hb : BEnv s.mem base)
     (h10 : Bnd Mb s.mem base (slot (10 : Index).val)) (h19 : Bnd Mb s.mem base (slot (19 : Index).val))
-    (hind : ((blockFp (codeOf [.mul (slot (13 : Index).val) (slot (11 : Index).val) (slot (12 : Index).val),
+    (hind : Indeps (codeOf [.mul (slot (13 : Index).val) (slot (11 : Index).val) (slot (12 : Index).val),
         .small (slot (14 : Index).val) (slot (10 : Index).val) (slot (13 : Index).val),
         .sub (slot (15 : Index).val) (slot (19 : Index).val) (slot (13 : Index).val),
-        .small (slot (10 : Index).val) (slot (10 : Index).val) (slot (15 : Index).val)])).bind fun A =>
-      (blockFp (mul2 (slot (16 : Index).val) (slot x1.val) (slot y2.val) (slot (17 : Index).val)
-        (slot y1.val) (slot x2.val))).map fun B => A.indep B) = some true) :
+        .small (slot (10 : Index).val) (slot (10 : Index).val) (slot (15 : Index).val)]) (mul2 (slot (16 : Index).val) (slot x1.val) (slot y2.val) (slot (17 : Index).val)
+        (slot y1.val) (slot x2.val))) :
     WP isa (.block (weave (codeOf [.mul (slot (13 : Index).val) (slot (11 : Index).val) (slot (12 : Index).val),
         .small (slot (14 : Index).val) (slot (10 : Index).val) (slot (13 : Index).val),
         .sub (slot (15 : Index).val) (slot (19 : Index).val) (slot (13 : Index).val),
@@ -194,9 +192,8 @@ theorem ops4_ok (hs : Scr s base) (hb : BEnv s.mem base) :
 
 /-- The fourth part: `f·g`, then `Z f` and `Z g` in AdvSIMD. -/
 theorem part4_ok (z1 : Index) (hs : Scr s base) (hb : BEnv s.mem base)
-    (hind : ((blockFp (codeOf [.mul (slot (18 : Index).val) (slot (14 : Index).val) (slot (10 : Index).val)])).bind
-      fun A => (blockFp (mul2 (slot (11 : Index).val) (slot z1.val) (slot (14 : Index).val)
-        (slot (12 : Index).val) (slot z1.val) (slot (10 : Index).val))).map fun B => A.indep B) = some true) :
+    (hind : Indeps (codeOf [.mul (slot (18 : Index).val) (slot (14 : Index).val) (slot (10 : Index).val)]) (mul2 (slot (11 : Index).val) (slot z1.val) (slot (14 : Index).val)
+        (slot (12 : Index).val) (slot z1.val) (slot (10 : Index).val))) :
     WP isa (.block (weave (codeOf [.mul (slot (18 : Index).val) (slot (14 : Index).val) (slot (10 : Index).val)])
         (mul2 (slot (11 : Index).val) (slot z1.val) (slot (14 : Index).val) (slot (12 : Index).val)
           (slot z1.val) (slot (10 : Index).val)))) s fun t =>
@@ -224,9 +221,8 @@ theorem ops5_ok (z1 : Index) (hs : Scr s base) (hb : BEnv s.mem base)
 /-- The fifth part: `Z := f·g`, then `X := (Z f) k` and `Y := (Z g)(e - c)` in AdvSIMD. -/
 theorem part5_ok (x1 y1 z1 : Index) (hxy : x1 ≠ y1) (hzx : z1 ≠ x1) (hzy : z1 ≠ y1)
     (hs : Scr s base) (hb : BEnv s.mem base) (h18 : Bnd Mb s.mem base (slot (18 : Index).val))
-    (hind : ((blockFp (codeOf [.copy (slot z1.val) (slot (18 : Index).val)])).bind fun A =>
-      (blockFp (mul2 (slot x1.val) (slot (11 : Index).val) (slot (13 : Index).val) (slot y1.val)
-        (slot (12 : Index).val) (slot (17 : Index).val))).map fun B => A.indep B) = some true) :
+    (hind : Indeps (codeOf [.copy (slot z1.val) (slot (18 : Index).val)]) (mul2 (slot x1.val) (slot (11 : Index).val) (slot (13 : Index).val) (slot y1.val)
+        (slot (12 : Index).val) (slot (17 : Index).val))) :
     WP isa (.block (weave (codeOf [.copy (slot z1.val) (slot (18 : Index).val)])
         (mul2 (slot x1.val) (slot (11 : Index).val) (slot (13 : Index).val) (slot y1.val)
           (slot (12 : Index).val) (slot (17 : Index).val)))) s fun t =>
@@ -246,21 +242,17 @@ to `(X : Y : Z)` (slots `x1`, `y1`, `z1`), given zero's bound in slot 19 and the
 independence of each part's two streams (`hind₁`–`hind₅`). -/
 theorem addAffine_ok (x1 y1 z1 x2 y2 : Index) (hxy : x1 ≠ y1) (hzx : z1 ≠ x1) (hzy : z1 ≠ y1)
     (hs : Scr s base) (hb : BEnv s.mem base) (h19 : Bnd Mb s.mem base (slot (19 : Index).val))
-    (hind₁ : ((blockFp (codeOf [.mul (slot (10 : Index).val) (slot z1.val) (slot z1.val)])).bind fun A =>
-      (blockFp (mul2 (slot (11 : Index).val) (slot x1.val) (slot x2.val) (slot (12 : Index).val)
-        (slot y1.val) (slot y2.val))).map fun B => A.indep B) = some true)
-    (hind₂ : ((blockFp (codeOf [.mul (slot (13 : Index).val) (slot (11 : Index).val) (slot (12 : Index).val),
+    (hind₁ : Indeps (codeOf [.mul (slot (10 : Index).val) (slot z1.val) (slot z1.val)]) (mul2 (slot (11 : Index).val) (slot x1.val) (slot x2.val) (slot (12 : Index).val)
+        (slot y1.val) (slot y2.val)))
+    (hind₂ : Indeps (codeOf [.mul (slot (13 : Index).val) (slot (11 : Index).val) (slot (12 : Index).val),
         .small (slot (14 : Index).val) (slot (10 : Index).val) (slot (13 : Index).val),
         .sub (slot (15 : Index).val) (slot (19 : Index).val) (slot (13 : Index).val),
-        .small (slot (10 : Index).val) (slot (10 : Index).val) (slot (15 : Index).val)])).bind fun A =>
-      (blockFp (mul2 (slot (16 : Index).val) (slot x1.val) (slot y2.val) (slot (17 : Index).val)
-        (slot y1.val) (slot x2.val))).map fun B => A.indep B) = some true)
-    (hind₄ : ((blockFp (codeOf [.mul (slot (18 : Index).val) (slot (14 : Index).val) (slot (10 : Index).val)])).bind
-      fun A => (blockFp (mul2 (slot (11 : Index).val) (slot z1.val) (slot (14 : Index).val)
-        (slot (12 : Index).val) (slot z1.val) (slot (10 : Index).val))).map fun B => A.indep B) = some true)
-    (hind₅ : ((blockFp (codeOf [.copy (slot z1.val) (slot (18 : Index).val)])).bind fun A =>
-      (blockFp (mul2 (slot x1.val) (slot (11 : Index).val) (slot (13 : Index).val) (slot y1.val)
-        (slot (12 : Index).val) (slot (17 : Index).val))).map fun B => A.indep B) = some true) :
+        .small (slot (10 : Index).val) (slot (10 : Index).val) (slot (15 : Index).val)]) (mul2 (slot (16 : Index).val) (slot x1.val) (slot y2.val) (slot (17 : Index).val)
+        (slot y1.val) (slot x2.val)))
+    (hind₄ : Indeps (codeOf [.mul (slot (18 : Index).val) (slot (14 : Index).val) (slot (10 : Index).val)]) (mul2 (slot (11 : Index).val) (slot z1.val) (slot (14 : Index).val)
+        (slot (12 : Index).val) (slot z1.val) (slot (10 : Index).val)))
+    (hind₅ : Indeps (codeOf [.copy (slot z1.val) (slot (18 : Index).val)]) (mul2 (slot x1.val) (slot (11 : Index).val) (slot (13 : Index).val) (slot y1.val)
+        (slot (12 : Index).val) (slot (17 : Index).val))) :
     WP isa (.block (Impl.X448.AArch64.Base.addAffine (slot x1.val) (slot y1.val) (slot z1.val) (slot x2.val)
         (slot y2.val))) s fun t =>
       FKeep base s t ∧ BEnv t.mem base ∧ Same base (temps ++ [z1, x1, y1]) s.mem t.mem ∧

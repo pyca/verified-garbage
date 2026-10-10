@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Framework.AArch64.Interleave
 import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Bounds
 
 /-!
 # X448 on AArch64: interleaved code
@@ -26,10 +27,9 @@ theorem weaveGo_merge (n m : Nat) : ∀ f i j (a b : List Instr), Merge (weaveGo
 theorem weave_merge (a b : List Instr) : Merge (weave a b) a b := weaveGo_merge _ _ _ _ _ _ _
 
 /-- Independent blocks, interleaved, run as the first and then the second. -/
-theorem WP.weave {a b : List Instr}
-    (hind : ((blockFp a).bind fun A => (blockFp b).map fun B => A.indep B) = some true) {s : State}
+theorem WP.weave {a b : List Instr} (hind : Indeps a b) {s : State}
     {Q : State → Prop} (h : WP isa (.block a) s fun t => WP isa (.block b) t Q) : WP isa (.block (weave a b)) s Q :=
-  WP.merge (weave_merge a b) (indeps_of_check hind) (WP.block_append_iff.mpr h)
+  WP.merge (weave_merge a b) hind (WP.block_append_iff.mpr h)
 
 theorem block_codeOf {l : List Impl.X448.AArch64.Fast.Op} {s : State} {Q : State → Prop}
     (h : WP isa (ops l) s Q) : WP isa (.block (codeOf l)) s Q := by
