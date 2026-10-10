@@ -31,8 +31,7 @@ unspecified and may hold intermediate values; every other byte of `ws` keeps
 its value but the result's (`Keeps`).
 
 The inversion's elements are at fixed offsets instead, those where that code
-keeps them, in a working space of its own size, 768 bytes (`[u64; 96]`): it
-reads `z` at byte 128 (`zAt`) and writes `z^(p-2)` at byte 544 (`invAt`);
+keeps them, in a working space of the same 4096 bytes: it reads `z` at byte 128 (`zAt`) and writes `z^(p-2)` at byte 544 (`invAt`);
 bytes 512 to 767 (`invOwnAt` to `invOwnEnd`) are its own working space and its
 result. On return those bytes but the result are unspecified and may hold
 intermediate values; every other byte of `ws` keeps its value (`InvKeeps`).
@@ -131,9 +130,6 @@ def mul2Api : Api where
 
 /-! ## Inversion -/
 
-/-- The bytes of the inversion's working space. -/
-def invBytes : Nat := 768
-
 /-- Where `vg_gf25519_r64_invert` reads `z`. -/
 def zAt : BitVec 32 := 128
 
@@ -143,18 +139,18 @@ def invAt : BitVec 32 := 544
 /-- Where its own working space, and its result, start. -/
 def invOwnAt : Nat := 512
 
-/-- Where they end: the end of its working space. -/
+/-- Where they end. -/
 def invOwnEnd : Nat := 768
 
 /-- Every byte of `ws` but those of the inversion's own working space and
 result (bytes 512 to 767) keeps its value. -/
 def InvKeeps (ws : Addr) (m m' : Mem) : Prop :=
-  ∀ i < invBytes, (i < invOwnAt ∨ invOwnEnd ≤ i) →
+  ∀ i < wsBytes, (i < invOwnAt ∨ invOwnEnd ≤ i) →
     m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
 
-/-- `ws: *mut [u64; 96]`, the pointer public. -/
+/-- `ws: *mut [u64; 512]`, the pointer public. -/
 def invSig : Sig where
-  params := [("ws", .array true .u64 96)]
+  params := [("ws", .array true .u64 512)]
 
 /-- `invert`: the element at `invAt` is congruent to `z^(p-2)` modulo `P`, for
 `z` the element at `zAt`: the inverse of `z` if `z` is not a multiple of `P`,
