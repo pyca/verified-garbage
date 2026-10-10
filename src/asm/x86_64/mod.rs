@@ -161,6 +161,9 @@ pub(crate) mod ed25519_r64;
 pub(crate) mod ed448;
 
 #[rustfmt::skip]
+pub(crate) mod ed448_r64;
+
+#[rustfmt::skip]
 pub(crate) mod gcm;
 
 #[rustfmt::skip]

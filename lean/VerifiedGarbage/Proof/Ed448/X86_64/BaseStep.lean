@@ -1,13 +1,16 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
 import VerifiedGarbage.Proof.X448.X86_64.Iter
 
 /-!
 # Ed448 base-point multiplication on x86-64: one bit
 
 `step`: the counter `rbx` counts down to the bit `t`; `R` (slots 0–2) is
-doubled, `T = R + Q` computed into slots 3–5, and `T` swapped into `R` with
-the mask of byte `t` of `BITS` (the bit). Only the slots, the product's
-words, the counter and the registers `clob` change.
+doubled, `T = R + Q` computed into slots 3–5 (`Q` with `Z = 1`), by any point
+operations that run the field programs `doubleOps` and `addAffineOps`
+(`PointOk`: the functions' code, as their calls run it), and `T` swapped into
+`R` with the mask of byte `t` of `BITS` (the bit). Only the slots, the
+product's words, the counter and the registers `clob` change.
 -/
 
 namespace VG.Proof.Ed448.X86_64
@@ -51,16 +54,9 @@ theorem bitMask_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [hr.1, hr.2, ite_false]
 
-variable {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld)
-
-theorem step_eq : step fld = ([.alu .sub .rbx (.imm 1)] : List Instr) ++ (fieldCode fld doubleOps ++
-    (fieldCode fld addOps ++ (bitMask ++ (cswap (slot 0) (slot 3) ++ (cswap (slot 1) (slot 4) ++
-    (cswap (slot 2) (slot 5) ++ ([.alu .test .rbx (.reg .rbx)] : List Instr))))))) := by
-  simp only [step, List.append_assoc]
-
 /-- The slots after an iteration, for the bit `sw`. -/
 def stepEnv (sw : Bool) (e : Env) : Env :=
-  opSwap 2 5 sw (opSwap 1 4 sw (opSwap 0 3 sw (evalOps addOps (evalOps doubleOps e))))
+  opSwap 2 5 sw (opSwap 1 4 sw (opSwap 0 3 sw (evalOps addAffineOps (evalOps doubleOps e))))
 
 theorem testRbx_ok (s : State) (n : Nat) (hn : n < 456) (hb : s.gpr .rbx = BitVec.ofNat 64 n) :
     WP isa (.block ([.alu .test .rbx (.reg .rbx)] : List Instr)) s fun t =>
@@ -75,24 +71,23 @@ theorem testRbx_ok (s : State) (n : Nat) (hn : n < 456) (hb : s.gpr .rbx = BitVe
     Option.bind_some, Option.some.injEq, exists_eq_left', RegUpd.zf_arithFlags, hb, e]
   exact ⟨trivial, fun _ => rfl, rfl, rfl, rfl⟩
 
-include hf in
+variable {P : Point64.Ops} (hP : Point64.PointOk P)
+
+include hP in
 /-- An iteration, for the bit `t` (`b`). -/
 theorem step_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t < 456)
     (hb : s.gpr .rbx = BitVec.ofNat 64 (t + 1)) {b : Nat} (hb2 : b < 2)
     (hbit : s.mem (off base (BITS + t)) = BitVec.ofNat 8 b) :
-    WP isa (.block (step fld)) s fun s' =>
+    WP isa (step P) s fun s' =>
       s'.gpr .rbx = BitVec.ofNat 64 t ∧ s'.zf = some (decide (t = 0)) ∧
       (∀ r, r ∉ .rbx :: clob → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Proof.X448.X86_64.Outside base 64 1584 s.mem s'.mem ∧
       E s'.mem base = stepEnv (decide (b = 1)) (E s.mem base) := by
-  rw [step_eq, WP.block_append_iff]
-  refine WP.mono (dec_ok s hb) fun s1 ⟨b1, g1, m1, rd1, wr1⟩ => ?_
+  refine WP.seq (WP.mono (dec_ok s hb) fun s1 ⟨b1, g1, m1, rd1, wr1⟩ => ?_)
   have hs1 : Scr s1 base := ⟨(g1 _ (by decide)).trans hs.rdi, wr1 ▸ hs.wr, hs.nowrap⟩
-  rw [WP.block_append_iff]
-  refine WP.mono (fieldCode_ok hf doubleOps doubleOps_valid hs1) fun s2 ⟨k2, e2⟩ => ?_
+  refine WP.seq (WP.mono (hP.dbl hs1) fun s2 ⟨k2, e2⟩ => ?_)
   have hs2 := k2.scr hs1
-  rw [WP.block_append_iff]
-  refine WP.mono (fieldCode_ok hf addOps addOps_valid hs2) fun s3 ⟨k3, e3⟩ => ?_
+  refine WP.seq (WP.mono (hP.add hs2) fun s3 ⟨k3, e3⟩ => ?_)
   have hs3 := k3.scr hs2
   have b3 : s3.gpr .rbx = BitVec.ofNat 64 t := by
     rw [k3.gpr _ (by decide), k2.gpr _ (by decide)]; exact b1
@@ -103,7 +98,7 @@ theorem step_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t < 
     Or.inr (by rw [hofs]; simp only [BITS]; omega)
   have hbit3 : s3.mem (off base (BITS + t)) = BitVec.ofNat 8 b := by
     rw [k3.mem _ hout, k2.mem _ hout, m1, hbit]
-  rw [WP.block_append_iff]
+  rw [stepSwap, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (bitMask_ok hs3 ht b3 hb2 hbit3) fun s4 ⟨c4, g4, m4, rd4, wr4⟩ => ?_
   have hs4 : Scr s4 base := ⟨(g4 _ (by decide)).trans hs3.rdi, wr4 ▸ hs3.wr, hs3.nowrap⟩
   rw [WP.block_append_iff]

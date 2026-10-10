@@ -17,8 +17,9 @@ def artifacts : List Artifact := [
     target := X86_64.target
     doc := Spec.Ed448.scalarBaseApi.doc (notes := ["Expands the scalar's 456 bits into \
       bytes, then for each bit from the top doubles `R` and adds the base point to it with \
-      RFC 8032's projective formulas, and swaps the sum into `R` with a mask of the bit: the \
-      same operations for every bit. Field elements are X448's seven 64-bit words, multiplied \
+      RFC 8032's projective formulas, by calls of `vg_ed448_r64_point_double` and \
+      `vg_ed448_r64_point_add_affine` (the base point has `Z = 1`), and swaps the sum into `R` \
+      with a mask of the bit: the same operations for every bit. Field elements are X448's seven 64-bit words, multiplied \
       with `mul` by columns; `Z` is inverted with X448's addition chain for `p - 2`, its part \
       shared with the square root by a call of `vg_gf448_r64_pow223`. \
       Callee-saved registers are saved in the first 48 bytes of `scratch`, and the output's \
