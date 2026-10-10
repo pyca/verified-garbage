@@ -1,142 +1,27 @@
 name: Benchmarks
-
-# Compares the performance of a pull request with its base, on each
-# architecture whose code it changes (see ci/bench_arches.py), and fails if a
-# benchmark slowed down by more than ci/bench_compare.py's threshold. The
-# results are in the run's summary. Not part of `all-green`: it only runs for
-# some pull requests.
-#
-# It can also be run by hand (Actions > Benchmarks > Run workflow), comparing
-# the chosen branch with any earlier commit on every architecture, e.g. to
-# measure the total speedup of a series of pull requests; or, with no
-# commit, measuring the chosen branch alone, next to OpenSSL and aws-lc-rs.
-# A targeted run can name the architectures, the `VG_CPU_FEATURES`
-# configurations and the library modules to run (`python3 ci/bench_arches.py
-# --choices` lists them), e.g. from the command line:
-#
-#   gh workflow run bench.yml --ref BRANCH -f base_commit=SHA \
-#     -f arches=aarch64 -f cpu_features='- neon' -f modules=chacha20
+# Experiment branch only (never merged): times Montgomery-reduction variants
+# of vg_rsa_mont_mul_adx on the x86-64 runners.
 on:
-  pull_request:
-    paths:
-      - "src/**"
-      - "bench/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "ci/bench_compare.py"
-      - "ci/bench_arches.py"
-      - ".github/workflows/bench.yml"
   workflow_dispatch:
     inputs:
-      base_commit:
-        description: The commit to compare against (empty to run the branch alone, next to OpenSSL and aws-lc-rs)
-        required: false
-      arches:
-        description: Space-separated architectures to run (x86_64 aarch64 x86 arm; empty for all)
-        required: false
-      cpu_features:
-        description: Space-separated VG_CPU_FEATURES configurations to run on each, `-` for none (empty for those that choose among the modules' implementations; `python3 ci/bench_arches.py --choices` lists them)
-        required: false
-      modules:
-        description: Space-separated library modules whose benchmarks run, e.g. `chacha20 poly1305` (empty for every benchmark; `python3 ci/bench_arches.py --choices` lists them)
-        required: false
-
+      base_commit: {required: false}
+      arches: {required: false}
+      cpu_features: {required: false}
+      modules: {required: false}
 permissions:
   contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
-  arches:
-    name: Choose architectures
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      matrix: ${{ steps.arches.outputs.matrix }}
-      base: ${{ steps.arches.outputs.base }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # A pull request's checkout is its merge with the base branch's
-          # current tip, which is the merge's first parent.
-          fetch-depth: 2
-          persist-credentials: false
-      - id: arches
-        env:
-          BASE_COMMIT: ${{ inputs.base_commit }}
-          ARCHES: ${{ inputs.arches }}
-          CPU_FEATURES: ${{ inputs.cpu_features }}
-          MODULES: ${{ inputs.modules }}
-        run: |
-          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
-            base=$BASE_COMMIT
-            matrix=$(python3 ci/bench_arches.py --all --arches "$ARCHES" --cpu-features "$CPU_FEATURES" --modules "$MODULES")
-          else
-            # Not `pull_request.base.sha`: it can be an older commit of the
-            # base branch, whose later changes would then count as the pull
-            # request's (selecting every benchmark) and be measured as such.
-            base=$(git rev-parse HEAD^1)
-            matrix=$(git diff --name-only "$base" HEAD | python3 ci/bench_arches.py --base "$base")
-          fi
-          echo "$matrix"
-          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
-          echo "base=$base" >> "$GITHUB_OUTPUT"
-
-  compare:
-    needs: arches
-    if: ${{ needs.arches.outputs.matrix != '[]' }}
+  exp:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(needs.arches.outputs.matrix) }}
-    name: Compare with base (${{ matrix.arch }}${{ matrix.cpu-features && format(', VG_CPU_FEATURES={0}', matrix.cpu-features) || '' }}${{ matrix.shard && format(', shard {0}', matrix.shard) || '' }})
-    runs-on: ${{ matrix.os }}
-    # Running every benchmark took 25-30 minutes on every runner with 3
-    # rounds; with 2, about 20-25, until the x86-64 configurations outgrew
-    # the timeout. One round with a shorter warm-up and measurement, and no
-    # OpenSSL or aws-lc-rs reference on pull requests (bench_compare.py), take
-    # about half. If it outgrows the timeout again, set BENCHMARKS_PER_JOB
-    # (ci/bench_arches.py) to split configurations into shards.
-    timeout-minutes: 30
-    # With an empty image the job runs directly on the runner.
-    container:
-      image: ${{ matrix.image || '' }}
-      options: ${{ matrix.options || '' }}
-    env:
-      # Selects the toolchain without `rustup default`, which refuses 32-bit
-      # toolchains on a 64-bit kernel.
-      RUSTUP_TOOLCHAIN: stable
-      # Restricts the CPU features the library uses, to benchmark other
-      # implementations (see ci/bench_arches.py); empty restricts nothing.
-      VG_CPU_FEATURES: ${{ matrix.cpu-features }}
+        run: [1, 2, 3, 4, 5, 6]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          path: head
           persist-credentials: false
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: ${{ needs.arches.outputs.base }}
-        with:
-          ref: ${{ needs.arches.outputs.base }}
-          path: base
-          persist-credentials: false
-      - name: Record CPU and OpenSSL capabilities
-        run: |
-          openssl version -a
-          python3 -c 'from pathlib import Path; print(Path("/proc/cpuinfo").read_text().split("\n\n", 1)[0])'
-      - name: Install Rust
-        # ci.yml's `rust` job lints the benchmarks, once per architecture.
-        run: rustup toolchain install stable --profile minimal
-      - name: Benchmark base and head
-        env:
-          MODULES: ${{ matrix.modules }}
-          SHARD: ${{ matrix.shard }}
-          # OpenSSL's and aws-lc-rs's times are a reference for manual runs; a
-          # pull request needs only its comparison with the base.
-          OPENSSL: ${{ github.event_name == 'workflow_dispatch' && '--openssl' || '' }}
-        run: python3 head/ci/bench_compare.py base head --modules "$MODULES" --shard "$SHARD" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL
+      - run: grep -m1 "model name" /proc/cpuinfo; nproc
+      - run: cd exp-bench && cargo build --release -q
+      - run: cd exp-bench && grep -m1 "model name" /proc/cpuinfo >> $GITHUB_STEP_SUMMARY && ./target/release/exp | tee -a out.txt && ./target/release/exp | tee -a out.txt && sed 's/^/    /' out.txt >> $GITHUB_STEP_SUMMARY
