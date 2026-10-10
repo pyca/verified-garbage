@@ -230,6 +230,6 @@ theorem checks_ok {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {o
     exact (((g1.trans g2).trans g4).trans g5).trans g7
   · by_cases h : r = .rdi
     · subst h; rw [hdi, hg.rdi]
-    · exact kall.1 r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)
+    · exact kall.1 r (by revert hr h; cases r <;> decide)
 
 end VG.Proof.Bignum.X86_64

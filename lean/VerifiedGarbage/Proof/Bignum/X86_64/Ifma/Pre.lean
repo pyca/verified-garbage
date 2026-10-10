@@ -202,7 +202,7 @@ theorem prep_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 
     congr 3; omega_using []
   · by_cases h : r = .rdi
     · subst h; rw [hg'.rdi, hg.rdi]
-    · exact kall.1 r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)
+    · exact kall.1 r (by revert hr h; cases r <;> decide)
   · have hmx : 8 * sMaskX + 8 ≤ 8 * 31 + 8 := by unfold sMaskX sFn; omega_using []
     rw [hm', ha₆.hslot (by decide), ho₅.word (.inl (by omega_using [hC0, hmx])) (by omega_using [hmx]), ha₄.hslot (by decide),
       r₃.word_eq hrm (by omega_using [hmx]), ho₂.word (.inl (by omega_using [hY0, hmx])) (by omega_using [hmx]),
