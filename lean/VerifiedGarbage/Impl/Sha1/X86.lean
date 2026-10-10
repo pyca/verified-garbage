@@ -109,12 +109,12 @@ def saved : List (Reg × Nat) := [(.ebx, 64), (.esi, 68), (.edi, 72), (.ebp, 76)
 /-- Save the callee-saved registers, point `ebp` at the scratch buffer, keep
 the block pointer and count there, and set ZF if there are no blocks. -/
 def prologue : List Instr :=
-  [.mov .eax (.mem (at_ .esp 16))] ++
+  ([.mov .eax (.mem (at_ .esp 16))] : List Instr) ++
   saved.map (fun (r, d) => .store (at_ .eax d) r) ++
-  [.mov .ebp (.reg .eax),
+  ([.mov .ebp (.reg .eax),
    .mov .ecx (.mem (at_ .esp 8)), .store (at_ .ebp bpOff) .ecx,
    .mov .ecx (.mem (at_ .esp 12)), .store (at_ .ebp nOff) .ecx,
-   .alu .test .ecx (.reg .ecx)]
+   .alu .test .ecx (.reg .ecx)] : List Instr)
 
 /-- Restore the callee-saved registers (`ebp`, the base, last). -/
 def epilogue : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ .ebp d))

@@ -8,7 +8,7 @@ open VG.Impl.MlDsa.AArch64.Arith (movW)
 
 def consts : List Instr :=
   movW .x9 8380417 ++ movW .x10 4236238847 ++
-    [.vop (.dup .s4 .v16 .x9), .vop (.dup .s4 .v17 .x10)]
+    ([.vop (.dup .s4 .v16 .x9), .vop (.dup .s4 .v17 .x10)] : List Instr)
 
 /-- Reduce lanes below 2q, with q in v16. -/
 def csub (d t : VReg) : List Instr :=
@@ -25,12 +25,12 @@ def mont (d z : VReg) : List Instr :=
 /-- Forward butterflies: v0 = a+z*b, v5 = a-z*b, both canonical. -/
 def bfly : List Instr :=
   mont .v1 .v18 ++ csub .v1 .v4 ++
-  [.vop (.mov .v5 .v0), .vop (.add .s4 .v0 .v0 .v1)] ++ csub .v0 .v4 ++
-  [.vop (.add .s4 .v5 .v5 .v16), .vop (.sub .s4 .v5 .v5 .v1)] ++ csub .v5 .v4
+  ([.vop (.mov .v5 .v0), .vop (.add .s4 .v0 .v0 .v1)] : List Instr) ++ csub .v0 .v4 ++
+  ([.vop (.add .s4 .v5 .v5 .v16), .vop (.sub .s4 .v5 .v5 .v1)] : List Instr) ++ csub .v5 .v4
 
 /-- Inverse butterflies with the negated zeta in Montgomery form. -/
 def bflyInv : List Instr :=
-  [.vop (.add .s4 .v5 .v0 .v16), .vop (.sub .s4 .v5 .v5 .v1),
-   .vop (.add .s4 .v0 .v0 .v1)] ++ csub .v0 .v4 ++
+  ([.vop (.add .s4 .v5 .v0 .v16), .vop (.sub .s4 .v5 .v5 .v1),
+   .vop (.add .s4 .v0 .v0 .v1)] : List Instr) ++ csub .v0 .v4 ++
   mont .v5 .v18 ++ csub .v5 .v4
 end VG.Impl.MlDsa.AArch64.Arith.Neon

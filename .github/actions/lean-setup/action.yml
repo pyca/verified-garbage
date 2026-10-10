@@ -1,9 +1,11 @@
 name: Set up Lean and Mathlib
 description: >
-  Installs elan (and so the toolchain `lean/lean-toolchain` names), and
-  restores (or clones) Mathlib and its dependencies in `lean/.lake/packages`.
-  It runs no Lake command; `lean-mathlib`, after it, makes sure Mathlib is
-  built. Jobs run both through `lean-prepare`.
+  Waits for elan (and so the toolchain `lean/lean-toolchain` names) and the
+  list of modules the proofs import from outside the project, which
+  `lean-prepare` starts in the background, and restores (or clones) Mathlib
+  and its dependencies in `lean/.lake/packages`. It runs no Lake command;
+  `lean-mathlib`, after it, makes sure Mathlib is built. Jobs run both
+  through `lean-prepare`.
 
 outputs:
   mods:
@@ -19,22 +21,23 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Install elan
-      shell: bash
-      run: |
-        curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
-        echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
     - name: List the modules the proofs import from outside the project
       id: mods
       shell: bash
-      working-directory: lean
       run: |
-        # Every module the Lean files import from outside this project and
-        # Lean itself, as Lean's own parser reads their headers.
-        mods=$(git ls-files '*.lean' | xargs lean --deps-json \
-          | jq -r '.imports[].result.imports[].module
-                   | select(test("^(VerifiedGarbage[A-Za-z]*|Init|Std|Lean)(\\.|$)") | not)' \
-          | sort -u)
+        # A background process that died would never write its status: give
+        # up long after it normally finishes (in under a minute).
+        for _ in $(seq 600); do
+          [ -f "$RUNNER_TEMP/lean-setup.status" ] && break
+          sleep 1
+        done
+        cat "$RUNNER_TEMP/lean-setup.log" 2>/dev/null || true
+        status=$(cat "$RUNNER_TEMP/lean-setup.status" 2>/dev/null || echo "no status")
+        if [ "$status" != 0 ]; then
+          echo "::error::Installing elan or listing the imports failed ($status)."
+          exit 1
+        fi
+        mods=$(cat "$RUNNER_TEMP/lean-mods")
         echo "$mods"
         echo "mods=$(echo $mods)" >> "$GITHUB_OUTPUT"
         echo "hash=$(echo "$mods" | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"

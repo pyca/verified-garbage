@@ -105,7 +105,7 @@ def keyBack : Direction → Instr
 
 /-- One round, with its key at `x0`; advances `x0` and counts down `x4`. -/
 def round (d : Direction) : List Instr :=
-  [.ldr .w .x16 .x0 0, .ldr .w .x17 .x0 4] ++
+  ([.ldr .w .x16 .x0 0, .ldr .w .x17 .x0 4] : List Instr) ++
   lanes16 step1 ++ g16 ++ lanes16 step2 ++ g16 ++ lanes16 step3 ++ g16 ++ lanes16 step4 ++
   swapHalves ++ [keyNext d, .subImm .x .x4 .x4 1]
 
@@ -126,13 +126,13 @@ byte-reversed; move on to the next. -/
 def copyInBody : List Instr :=
   ((List.range 4).flatMap fun w =>
     [.ldr .w .x14 .x3 (4 * w), .rev32 .x14 .x14, .str .w .x14 .x4 (8 * arrSlot w)]) ++
-  [.addImm .x .x3 .x3 16, .addImm .x .x4 .x4 4, .subImm .x .x15 .x15 1]
+  ([.addImm .x .x3 .x3 16, .addImm .x .x4 .x4 4, .subImm .x .x15 .x15 1] : List Instr)
 
 /-- Copy a lane out to one block, `R` first (see the rounds). -/
 def copyOutBody : List Instr :=
   ((List.range 4).flatMap fun w =>
     [.ldr .w .x14 .x4 (8 * arrSlot ((w + 2) % 4)), .rev32 .x14 .x14, .str .w .x14 .x3 (4 * w)]) ++
-  [.addImm .x .x3 .x3 16, .addImm .x .x4 .x4 4, .subImm .x .x15 .x15 1]
+  ([.addImm .x .x3 .x3 16, .addImm .x .x4 .x4 4, .subImm .x .x15 .x15 1] : List Instr)
 
 def copyStart : List Instr := [movR .x3 .x1, movR .x4 sb]
 
@@ -153,7 +153,7 @@ def saveRegs : List Instr := savedRegs.map fun (r, k) => stS k r
 def restore : List Instr := savedRegs.map fun (r, k) => ldS r k
 
 def setup (d : Direction) : List Instr :=
-  [movR sb .x3] ++ saveRegs ++ [.addImm .x .x0 .x0 (keyStart d)]
+  [movR sb .x3] ++ saveRegs ++ ([.addImm .x .x0 .x0 (keyStart d)] : List Instr)
 
 def ecb (d : Direction) : Prog isa :=
   .seq (.block (setup d)) (.seq (.ite (.zero .x .x2) (.block []) (.loop (batch d) (.nonzero .x .x2)))

@@ -65,10 +65,10 @@ for `VEX.128`), with `rounds` (10, 12 or 14) in `rsi`, the key schedule at
 instructions `g j` after round `j`. -/
 def aesL (len : VLen) (k : XReg) (regs : List XReg) (g : Nat → List Instr := fun _ => []) : Prog isa :=
   .seq (.block (keyOpL len k regs .vpxor (at_ .rdi 0) ++
-      (List.range 9).flatMap (fun j => roundL len k regs (j + 1) ++ g (j + 1)) ++ [.alu .cmp .rsi (.imm 10)]))
+      (List.range 9).flatMap (fun j => roundL len k regs (j + 1) ++ g (j + 1)) ++ ([.alu .cmp .rsi (.imm 10)] : List Instr)))
     (.seq
       (.ite .e (.block [])
-        (.seq (.block (roundL len k regs 10 ++ roundL len k regs 11 ++ [.alu .cmp .rsi (.imm 12)]))
+        (.seq (.block (roundL len k regs 10 ++ roundL len k regs 11 ++ ([.alu .cmp .rsi (.imm 12)] : List Instr)))
           (.ite .e (.block []) (.block (roundL len k regs 12 ++ roundL len k regs 13)))))
       (.block (keyOpL len k regs .vaesenclast (at_ .r10 0))))
 
@@ -88,14 +88,14 @@ def aesK (k : XReg) (regs : List XReg) (g : Nat → List Instr := fun _ => []) :
 byte-reversed with the mask in `m`, and both counters advance by two (`i`). -/
 def ctrsK (c m i : XReg) : List XReg → List Instr
   | [] => []
-  | b :: bs => [.vop (.vbin .vpshufb .l256 b c m), .vop (.vbin .vpaddd .l256 c c i)] ++ ctrsK c m i bs
+  | b :: bs => ([.vop (.vbin .vpshufb .l256 b c m), .vop (.vbin .vpaddd .l256 c c i)] : List Instr) ++ ctrsK c m i bs
 
 /-- XOR block register `i` into the data blocks `base + 32 (j + i)` and the
 next, through `t`. -/
 def xorDataK (t : XReg) (base : Reg) : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => [.vmovdquLoad .l256 t (at_ base (32 * j)), .vop (.vbin .vpxor .l256 b b t),
-      .vmovdquStore .l256 (at_ base (32 * j)) b] ++ xorDataK t base bs (j + 1)
+  | b :: bs, j => ([.vmovdquLoad .l256 t (at_ base (32 * j)), .vop (.vbin .vpxor .l256 b b t),
+      .vmovdquStore .l256 (at_ base (32 * j)) b] : List Instr) ++ xorDataK t base bs (j + 1)
 
 /-- A round key into both lanes of `ymm8`, then `op b, b, ymm8` for each
 block register `b`. -/
@@ -122,17 +122,17 @@ def regs8 : List XReg := [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7
 def body16 : Prog isa :=
   .seq (.block (ctrs regs8))
     (.seq (aes regs8)
-      (.block (xorData regs8 0 ++ [.alu .add .rcx (.imm 256), .alu .sub .r8 (.imm 16),
-        .alu .cmp .r8 (.imm 16)])))
+      (.block (xorData regs8 0 ++ ([.alu .add .rcx (.imm 256), .alu .sub .r8 (.imm 16),
+        .alu .cmp .r8 (.imm 16)] : List Instr))))
 
 def ctrLoad : List Instr :=
-  const .xmm10 revMask ++ [.vop (.vinserti128 .xmm10 .xmm10 .xmm10 1)] ++
-  [.movImm64 .rax 1, .vop (.vmovq .xmm11 .rax),
+  const .xmm10 revMask ++ ([.vop (.vinserti128 .xmm10 .xmm10 .xmm10 1)] : List Instr) ++
+  ([.movImm64 .rax 1, .vop (.vmovq .xmm11 .rax),
    .movImm64 .rax 2, .vop (.vmovq .xmm12 .rax), .vop (.vinserti128 .xmm12 .xmm12 .xmm12 1),
    .vmovdquLoad .l128 .xmm9 (at_ .rdx 0), .vop (.vbin .vpshufb .l128 .xmm9 .xmm9 .xmm10),
    .vop (.vbin .vpaddd .l128 .xmm13 .xmm9 .xmm11), .vop (.vinserti128 .xmm9 .xmm9 .xmm13 1),
    .mov .r10 (.reg .rsi), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10),
-   .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .rdi)]
+   .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .r10), .alu .add .r10 (.reg .rdi)] : List Instr)
 
 def ctr32 : Prog isa :=
   .seq (.block [.alu .cmp .r8 (.imm 16)])

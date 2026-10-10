@@ -25,11 +25,11 @@ def accTail : List Instr :=
   [.movdquStore (at_ .rdi 0) .xmm0, .alu .add .rdi (.imm 16), .alu .add .rsi (.imm 16)]
 
 def addBody : List Instr :=
-  [.movdquLoad .xmm0 (at_ .rdi 0), .movdquLoad .xmm1 (at_ .rsi 0), xb .paddd .xmm0 .xmm1] ++
+  ([.movdquLoad .xmm0 (at_ .rdi 0), .movdquLoad .xmm1 (at_ .rsi 0), xb .paddd .xmm0 .xmm1] : List Instr) ++
     vcsub .xmm0 .xmm2 ++ accTail
 
 def subBody : List Instr :=
-  [.movdquLoad .xmm0 (at_ .rdi 0), .movdquLoad .xmm1 (at_ .rsi 0), xb .psubd .xmm0 .xmm1] ++
+  ([.movdquLoad .xmm0 (at_ .rdi 0), .movdquLoad .xmm1 (at_ .rsi 0), xb .psubd .xmm0 .xmm1] : List Instr) ++
     vcadd .xmm0 .xmm2 ++ accTail
 
 def add : Prog isa := .seq (.block qPro) (rcxLoop 64 addBody)

@@ -84,7 +84,7 @@ def step : List Instr := [
 
 /-- `unroll` steps, then the count. -/
 def steps : List Instr :=
-  (List.range unroll).flatMap (fun _ => step) ++ [.subImm .x CNT CNT 1]
+  (List.range unroll).flatMap (fun _ => step) ++ ([.subImm .x CNT CNT 1] : List Instr)
 
 /-- Load `Y ⊕ X`, `V := H`, `Z := 0`, `R`, zero and the count. -/
 def load : List Instr := [

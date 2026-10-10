@@ -24,5 +24,5 @@ def convert : List Instr :=
 def init (c : Callees) : Prog isa :=
   initWith c (.seq (.block (([.mov .rax (.mem (at_ .r13 240)), .store (at_ .r13 256) .rax,
       .mov .rax (.mem (at_ .r13 248)), .store (at_ .r13 264) .rax] : List Instr) ++ ptr .rbp .r13 272))
-    (.seq (powSteps c 47) (.block ([.mov .rdi (.reg .r13)] ++ convert ++ restore))))
+    (.seq (powSteps c 47) (.block (([.mov .rdi (.reg .r13)] : List Instr) ++ convert ++ restore))))
 end VG.Impl.AesGcm.X86_64.Prepared

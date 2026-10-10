@@ -55,8 +55,8 @@ def blocksLoad : List Instr :=
 def blocks16 (f : List XReg → Prog isa) : Prog isa :=
   .seq (.block (loadData regs8 0))
     (.seq (f regs8)
-      (.block (storeData regs8 0 ++ [.alu .add .rdx (.imm 256), .alu .sub .rcx (.imm 16),
-        .alu .cmp .rcx (.imm 16)])))
+      (.block (storeData regs8 0 ++ ([.alu .add .rdx (.imm 256), .alu .sub .rcx (.imm 16),
+        .alu .cmp .rcx (.imm 16)] : List Instr))))
 
 /-- The blocks: sixteen at a time through `f16`, then the AES-NI loops
 through `f`. -/
@@ -75,7 +75,7 @@ def dround (regs : List XReg) (j : Nat) : List Instr := keyOpK .xmm8 regs .vaesd
 in `rsi`, the key schedule at `rdi`, its last round key at `r10`, and round
 keys 1 … `Nr − 1` through `aesimc` in the scratch buffer at `r8`. -/
 def aesDec (regs : List XReg) : Prog isa :=
-  .seq (.block (keyOpK .xmm8 regs .vpxor (at_ .r10 0) ++ [.alu .cmp .rsi (.imm 10)]))
+  .seq (.block (keyOpK .xmm8 regs .vpxor (at_ .r10 0) ++ ([.alu .cmp .rsi (.imm 10)] : List Instr)))
     (.seq
       (.ite .e (.block [])
         (.seq (.block [.alu .cmp .rsi (.imm 12)])

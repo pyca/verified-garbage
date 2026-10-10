@@ -69,10 +69,10 @@ or `out`, `edi` = its length; store `state + pos` and `rate` in `scratch`;
 then test `edi`. -/
 def setup : List Instr :=
   .mov .eax (.mem (at_ .esp 24)) :: save ++
-    [.mov .ebp (.reg .eax), .mov .ebx (.mem (at_ .esp 4)), .mov .ecx (.mem (at_ .esp 12)),
+    ([.mov .ebp (.reg .eax), .mov .ebx (.mem (at_ .esp 4)), .mov .ecx (.mem (at_ .esp 12)),
       .alu .add .ecx (.reg .ebx), .store (at_ .ebp pOff) .ecx, .mov .ecx (.mem (at_ .esp 8)),
       .store (at_ .ebp rOff) .ecx, .mov .esi (.mem (at_ .esp 16)), .mov .edi (.mem (at_ .esp 20)),
-      .alu .test .edi (.reg .edi)]
+      .alu .test .edi (.reg .edi)] : List Instr)
 
 /-- Return the position, and restore the registers. -/
 def epilogue : List Instr :=

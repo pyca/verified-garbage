@@ -54,9 +54,9 @@ def finalizeCode : Prog isa :=
 input, the output pointer and length in `r5`–`r8`, and the length prefix in
 `scratch`. -/
 def setup : List Instr :=
-  [.ldrSp .r12 0] ++ ((Reg.r4, baseSlot) :: saved).map (fun p => .str p.1 .r12 p.2) ++
-  [.mov .r4 (.reg .r12), .mov .r5 (.reg .r0), .mov .r6 (.reg .r1), .mov .r7 (.reg .r2),
-    .mov .r8 (.reg .r3), .str .r3 .r4 pfxOff]
+  ([.ldrSp .r12 0] : List Instr) ++ ((Reg.r4, baseSlot) :: saved).map (fun p => .str p.1 .r12 p.2) ++
+  ([.mov .r4 (.reg .r12), .mov .r5 (.reg .r0), .mov .r6 (.reg .r1), .mov .r7 (.reg .r2),
+    .mov .r8 (.reg .r3), .str .r3 .r4 pfxOff] : List Instr)
 
 /-- Restore the caller's registers, `r4` last. -/
 def restore : List Instr := (saved ++ [(Reg.r4, baseSlot)]).map fun p => .ldr p.1 .r4 p.2

@@ -144,7 +144,7 @@ def cols : Prog isa := (List.range 8).foldr (fun j rest => .seq (col j) rest) (.
 def body : Prog isa :=
   .seq (.block (masks ++ (List.range 32).flatMap initChunk)) <|
   .seq rows <| .seq cols <|
-  .block ((List.range 32).flatMap finishChunk ++ [.vop .vzeroupper])
+  .block ((List.range 32).flatMap finishChunk ++ ([.vop .vzeroupper] : List Instr))
 
 /-- The offset in scratch of the caller's MXCSR; `0x1FBF` is 4 bytes above. -/
 def mxcsrOff : Nat := 2048

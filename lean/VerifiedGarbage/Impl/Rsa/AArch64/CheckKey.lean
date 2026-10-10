@@ -85,8 +85,8 @@ bases and the stride `8 (W + 2)`, and the mask all ones. -/
 def head : List Instr :=
   [ldh .x3 Public.sK, .addImm .x .x12 .x3 7, .lsr .x .x12 .x12 3, .add .x .x12 .x12 .x12, .addImm .x .x12 .x12 2,
     sth .x12 sW] ++ setBases ++
-  [.addImm .x .x3 .x12 2, .lsl .x .x3 .x3 3, sth .x3 sStride, movi .x7 0, .subImm .x .x4 .x7 1,
-    sth .x4 Public.sMask]
+  ([.addImm .x .x3 .x12 2, .lsl .x .x3 .x3 3, sth .x3 sStride, movi .x7 0, .subImm .x .x4 .x7 1,
+    sth .x4 Public.sMask] : List Instr)
 
 /-- `x12 := w` from `W = 2 w + 2` in `x12`. -/
 def narrow : List Instr := [.subImm .x .x12 .x12 2, .lsr .x .x12 .x12 1]

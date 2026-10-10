@@ -9,16 +9,35 @@ def canonicalValues (v : Vector (BitVec 128) 8) (q : BitVec 128) : Vector (BitVe
 
 def finalStoreCode : List Instr := halfCode 0 ++ halfCode 1
 
-theorem halfWrite_both (v : Vector (BitVec 128) 8) (q : BitVec 128) (p : Addr) (m : Mem) :
-    halfWrite 1 (halfValues 1 (halfValues 0 v q) q) p (halfWrite 0 (halfValues 0 v q) p m)=
-      writeBank (canonicalValues v q) p 128 m := by rfl
-
 theorem halfValues_both (v : Vector (BitVec 128) 8) (q : BitVec 128) :
     halfValues 1 (halfValues 0 v q) q=canonicalValues v q := by
-  apply Vector.ext
-  intro i hi
-  have h : i=0 ∨ i=1 ∨ i=2 ∨ i=3 ∨ i=4 ∨ i=5 ∨ i=6 ∨ i=7 := by omega
-  rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+  refine Vector.ext fun j hj => ?_
+  simp only [halfValues, canonicalValues, Vector.getElem_ofFn, Fin.isValue, Fin.val_zero, Fin.val_one,
+    Nat.mul_zero, Nat.zero_add, Nat.zero_le, true_and, Nat.mul_one]
+  by_cases h : j < 4
+  · simp only [h, ite_true, show ¬(4 ≤ j ∧ j < 8) by omega, ite_false]
+  · simp only [h, ite_false, show 4 ≤ j ∧ j < 8 by omega, and_self, ite_true]
+
+/-- The two halves of a bank write the whole bank. -/
+theorem halfWrite_halves (c : Vector (BitVec 128) 8) (p : Addr) (m : Mem) :
+    halfWrite 1 c p (halfWrite 0 c p m) = writeBank c p 128 m := rfl
+
+theorem halfWrite_congr {half : Fin 2} {v w : Vector (BitVec 128) 8}
+    (h : ∀ j : Fin 4, v[4*half.val+j.val] = w[4*half.val+j.val]) (p : Addr) (m : Mem) :
+    halfWrite half v p m = halfWrite half w p m := by
+  unfold halfWrite
+  congr 1
+  funext m j
+  rw [h j]
+
+theorem halfWrite_both (v : Vector (BitVec 128) 8) (q : BitVec 128) (p : Addr) (m : Mem) :
+    halfWrite 1 (halfValues 1 (halfValues 0 v q) q) p (halfWrite 0 (halfValues 0 v q) p m)=
+      writeBank (canonicalValues v q) p 128 m := by
+  have h0 : halfWrite 0 (halfValues 0 v q) p m = halfWrite 0 (canonicalValues v q) p m :=
+    halfWrite_congr (fun j => by
+      simp only [halfValues, canonicalValues, Vector.getElem_ofFn, Fin.isValue, Fin.val_zero,
+        Nat.mul_zero, Nat.zero_add, Nat.zero_le, true_and, j.isLt, ite_true]) p m
+  rw [halfValues_both, h0, halfWrite_halves]
 
 theorem finalStore_ok {s : State} {rest : List Instr} {Q : State → Prop}
     {v : Vector (BitVec 128) 8} (hb : Bank s (regs 7) v)

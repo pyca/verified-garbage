@@ -33,7 +33,7 @@ def ireg : Nat → Reg
 /-- The inverse of the S-box's affine transformation on every byte:
 `bᵢ ← b₍ᵢ₊₂₎ mod 8 ⊕ b₍ᵢ₊₅₎ mod 8 ⊕ b₍ᵢ₊₇₎ mod 8 ⊕ dᵢ`, `d = {05}`. -/
 def invAff : List Instr :=
-  [.movz .x ones 0 0, .subImm .x ones ones 1] ++ (List.range 8).map (fun k => movR (ireg k) (q k)) ++
+  ([.movz .x ones 0 0, .subImm .x ones ones 1] : List Instr) ++ (List.range 8).map (fun k => movR (ireg k) (q k)) ++
   (List.range 8).flatMap fun i =>
     [eorR (q i) (ireg ((i + 2) % 8)) (ireg ((i + 5) % 8)), eorR (q i) (q i) (ireg ((i + 7) % 8))] ++
     (if i = 0 ∨ i = 2 then [eorR (q i) (q i) ones] else [])

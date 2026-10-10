@@ -12,14 +12,14 @@ namespace VG.Proof.Weierstrass.X86.MontLit.P521
 
 open VG
 
-materialize_code pMul := Impl.Weierstrass.X86.Mont.mulFn
+materialize_flat_code pMul := Impl.Weierstrass.X86.Mont.mulFn
   Spec.Weierstrass.Mont.p521p.k Spec.Weierstrass.Mont.p521p.m
 materialize_code pAdd := Impl.Weierstrass.X86.Mont.addFn
   Spec.Weierstrass.Mont.p521p.k Spec.Weierstrass.Mont.p521p.m
 materialize_code pSub := Impl.Weierstrass.X86.Mont.subFn
   Spec.Weierstrass.Mont.p521p.k Spec.Weierstrass.Mont.p521p.m
 
-materialize_code nMul := Impl.Weierstrass.X86.Mont.mulFn
+materialize_flat_code nMul := Impl.Weierstrass.X86.Mont.mulFn
   Spec.Weierstrass.Mont.p521n.k Spec.Weierstrass.Mont.p521n.m
 materialize_code nAdd := Impl.Weierstrass.X86.Mont.addFn
   Spec.Weierstrass.Mont.p521n.k Spec.Weierstrass.Mont.p521n.m

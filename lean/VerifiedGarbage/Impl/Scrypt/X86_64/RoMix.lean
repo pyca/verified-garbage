@@ -54,9 +54,9 @@ def mulLoop : Prog isa :=
 `r14 = 128 r`; `rax = 2 r`, `rdx = 2`, `rcx = 2 vlen` for `nLoop`. -/
 def rmPrologue : List Instr :=
   rmSaved.map (fun (r, d) => .store (at_ .r8 d) r) ++
-    [.mov .rbx (.reg .rdi), .mov .r12 (.reg .rdx), .mov .r13 (.reg .r8), .mov .r14 (.reg .rsi)] ++
+    ([.mov .rbx (.reg .rdi), .mov .r12 (.reg .rdx), .mov .r13 (.reg .r8), .mov .r14 (.reg .rsi)] : List Instr) ++
     (List.range 7).map (fun _ => .alu .add .r14 (.reg .r14)) ++
-    [.mov .rax (.reg .rsi), .mov32 .rdx (.imm 1), .alu .add .rcx (.reg .rcx)]
+    ([.mov .rax (.reg .rsi), .mov32 .rdx (.imm 1), .alu .add .rcx (.reg .rcx)] : List Instr)
 
 /-- `rdx ← 2 N`: doubling `rax` (from `r`) and `rdx` (from 1) until `rax = 2 vlen`. -/
 def nLoop : Prog isa :=
@@ -69,8 +69,8 @@ def rmSetup : List Instr :=
 
 /-- `vg_scrypt_blockmix(src, r, dst = b, r, scratch)`. -/
 def blockMixTo (blockMix : Prog isa) (src : List Instr) : Prog isa :=
-  .seq (.block (src ++ [.mov .rsi (.reg .r14), .shift .shr .rsi 7, .mov .rcx (.reg .rsi),
-    .mov .rdx (.reg .rbx), .mov .r8 (.reg .r13)])) (.call "vg_scrypt_blockmix" blockMix)
+  .seq (.block (src ++ ([.mov .rsi (.reg .r14), .shift .shr .rsi 7, .mov .rcx (.reg .rsi),
+    .mov .rdx (.reg .rbx), .mov .r8 (.reg .r13)] : List Instr))) (.call "vg_scrypt_blockmix" blockMix)
 
 /-- Step 2, once: `V[i] = X`, `X = scryptBlockMix (V[i])`. -/
 def step2 (blockMix : Prog isa) : Prog isa :=

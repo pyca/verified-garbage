@@ -52,8 +52,8 @@ def vredc (d t : XReg) : List Instr :=
 /-- `d ← d · z · 2⁻³² mod q`, in `[0, 2q)`, with the odd doublewords of `z`
 in the even doublewords of `zo`, and temporaries `t` and `u`. -/
 def vmont (d z zo t u : XReg) : List Instr :=
-  [.xop (.pshufd u d 0xF5), xb .pmuludq d z, xb .pmuludq u zo] ++ vredc d t ++
-    [.xop (.shift .psrlq d 32)] ++ vredc u t ++ [xb .por d u]
+  ([.xop (.pshufd u d 0xF5), xb .pmuludq d z, xb .pmuludq u zo] : List Instr) ++ vredc d t ++
+    ([.xop (.shift .psrlq d 32)] : List Instr) ++ vredc u t ++ [xb .por d u]
 
 /-- `d ← d + q` for the negative doublewords of `d`, with a temporary `t`. -/
 def vcadd (d t : XReg) : List Instr :=

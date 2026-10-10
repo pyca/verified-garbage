@@ -75,8 +75,8 @@ def ord : Nat → Nat
 field elements (with `Y` added to block 0), and their products (written, for
 the first load, `ord 0`). -/
 def ghLoad (k : Nat) : List Instr :=
-  [.vmovdqu32Load .xmm12 (at_ .r11 (64 * k)), .vmovdqu32Load .xmm7 (at_ .rdx (64 * k)),
-   .zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0)] ++
+  ([.vmovdqu32Load .xmm12 (at_ .r11 (64 * k)), .vmovdqu32Load .xmm7 (at_ .rdx (64 * k)),
+   .zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0)] : List Instr) ++
   (if k = 0 then [.zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] else []) ++
   (if k = ord 0 then accInit .xmm7 .xmm12 else acc .xmm7 .xmm12)
 
@@ -158,8 +158,8 @@ def prodPair (first : Bool) (d : XReg) (selA selB : BitVec 8) (a pa b pb : XReg)
 added to the first, for the first pair), and the products of `zmm7` with
 `zmm12` and of `zmm1` with `zmm13`. -/
 def pairZ (first : Bool) : List Instr :=
-  [.zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0)] ++ (if first then [.zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] else []) ++
-  [.zop (.zbin .vpshufb .xmm1 .xmm1 .xmm0)] ++
+  ([.zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0)] : List Instr) ++ (if first then [.zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] else []) ++
+  ([.zop (.zbin .vpshufb .xmm1 .xmm1 .xmm0)] : List Instr) ++
   prodPair first .xmm8 0x00 0x00 .xmm7 .xmm12 .xmm1 .xmm13 ++
   prodPair first .xmm10 0x11 0x11 .xmm7 .xmm12 .xmm1 .xmm13 ++
   prodPair first .xmm9 0x01 0x10 .xmm7 .xmm12 .xmm7 .xmm12 ++
@@ -168,8 +168,8 @@ def pairZ (first : Bool) : List Instr :=
 /-- Loads `ka` and `kb` of group `g` (at `rdx + 256 g`) into `zmm7` and
 `zmm1`, their powers into `zmm12` and `zmm13`, and their products. -/
 def pair (ka kb g : Nat) (first : Bool) : List Instr :=
-  [.vmovdqu32Load .xmm12 (at_ .r11 (tab g + 64 * ka)), .vmovdqu32Load .xmm7 (at_ .rdx (256 * g + 64 * ka)),
-   .vmovdqu32Load .xmm13 (at_ .r11 (tab g + 64 * kb)), .vmovdqu32Load .xmm1 (at_ .rdx (256 * g + 64 * kb))] ++
+  ([.vmovdqu32Load .xmm12 (at_ .r11 (tab g + 64 * ka)), .vmovdqu32Load .xmm7 (at_ .rdx (256 * g + 64 * ka)),
+   .vmovdqu32Load .xmm13 (at_ .r11 (tab g + 64 * kb)), .vmovdqu32Load .xmm1 (at_ .rdx (256 * g + 64 * kb))] : List Instr) ++
   pairZ first
 
 /-- The reduction constant reloaded, and the reduction into `Y`. -/
@@ -184,15 +184,15 @@ def gq48 (b j : Nat) : List Instr :=
 each lane, stored to `scratch + d + 64 k`. -/
 def powLoad (d k : Nat) : List Instr :=
   .vmovdqu32Load .xmm7 (at_ .r11 (64 * k)) :: (accInit .xmm7 .xmm12 ++ reduceZ ++
-    [.vmovdqu32Store (at_ .r11 (d + 64 * k)) .xmm10])
+    ([.vmovdqu32Store (at_ .r11 (d + 64 * k)) .xmm10] : List Instr))
 
 /-- `H'³²`–`H'¹⁷` and `H'⁴⁸`–`H'³³`: the powers at `scratch` times `H'¹⁶`
 (lane 0 of the first load), then times `H'³²`; and the reduction
 constant, saved. -/
 def pow48 : List Instr :=
-  [.vbroadcasti32x4 .xmm12 (at_ .r11 0)] ++ (List.range 4).flatMap (powLoad 256) ++
-  [.vbroadcasti32x4 .xmm12 (at_ .r11 256)] ++ (List.range 4).flatMap (powLoad 512) ++
-  [.vmovdqu32Store (at_ .r11 832) .xmm1]
+  ([.vbroadcasti32x4 .xmm12 (at_ .r11 0)] : List Instr) ++ (List.range 4).flatMap (powLoad 256) ++
+  ([.vbroadcasti32x4 .xmm12 (at_ .r11 256)] : List Instr) ++ (List.range 4).flatMap (powLoad 512) ++
+  ([.vmovdqu32Store (at_ .r11 832) .xmm1] : List Instr)
 
 /-- Three groups encrypted (at `rdx + 768`) and the three before hashed (at
 `rdx`). -/

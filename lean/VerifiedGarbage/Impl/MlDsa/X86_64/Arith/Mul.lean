@@ -26,7 +26,7 @@ open VG.Impl.MlKem.X86_64 (xb xmov withMxcsr rcxLoop)
 
 /-- The constants and `2⁶⁴ mod q` in the doublewords of `xmm11`. -/
 def mulPro : List Instr :=
-  vconsts ++ [.mov32 .rax (.imm 2365951), .xop (.movq .xmm11 .rax), .xop (.pshufd .xmm11 .xmm11 0)]
+  vconsts ++ ([.mov32 .rax (.imm 2365951), .xop (.movq .xmm11 .rax), .xop (.pshufd .xmm11 .xmm11 0)] : List Instr)
 
 /-- The coefficients of `f`, `g` and `h` to `xmm3`, `xmm13` and `xmm5`. -/
 def mulLoads : List Instr :=
@@ -34,7 +34,7 @@ def mulLoads : List Instr :=
 
 /-- `f · g` for four coefficients, in `[0, q)`, in `xmm3`. -/
 def mulCore : List Instr :=
-  [.xop (.pshufd .xmm12 .xmm13 0xF5)] ++ vmont .xmm3 .xmm13 .xmm12 .xmm2 .xmm4 ++
+  ([.xop (.pshufd .xmm12 .xmm13 0xF5)] : List Instr) ++ vmont .xmm3 .xmm13 .xmm12 .xmm2 .xmm4 ++
     vmont .xmm3 .xmm11 .xmm11 .xmm2 .xmm4 ++ vcsub .xmm3 .xmm2
 
 /-- `h + f · g` for four coefficients, in `[0, q)`, in `xmm3`. -/
@@ -47,7 +47,7 @@ def mulTail : List Instr :=
 
 /-- The last four coefficients, with those of `h` in `xmm6`, to `xmm3`. -/
 def mulLast (core : List Instr) : List Instr :=
-  [.movdquLoad .xmm3 (at_ .rsi 0), .movdquLoad .xmm13 (at_ .rdx 0), xmov .xmm5 .xmm6] ++ core
+  ([.movdquLoad .xmm3 (at_ .rsi 0), .movdquLoad .xmm13 (at_ .rdx 0), xmov .xmm5 .xmm6] : List Instr) ++ core
 
 /-- A function of `h`, `f` and `g` four coefficients at a time by `core`. -/
 def mulFn (core : List Instr) : Prog isa :=

@@ -143,7 +143,7 @@ structure RB (p : Params) (F : List Byte → Bool) (e : Nat) (s₀ s : State) : 
 theorem rej_lay (ps : PS p) {e : Nat} (he : e < p.k * p.ℓ) :
     ((Y p).ok ⟨SC, oRS, 34⟩ && (Y p).okW ⟨SC, oP (aBase p + e), 1024⟩ && (Y p).okW ⟨SC, oPS, 2048⟩ &&
       (Y p).sep ⟨SC, oRS, 34⟩ ⟨SC, oP (aBase p + e), 1024⟩ && (Y p).sep ⟨SC, oRS, 34⟩ ⟨SC, oPS, 2048⟩ &&
-      (Y p).sep ⟨SC, oP (aBase p + e), 1024⟩ ⟨SC, oPS, 2048⟩) = true := by ofs
+      (Y p).sep ⟨SC, oP (aBase p + e), 1024⟩ ⟨SC, oPS, 2048⟩) = true := by ofsd
 
 /-- The call of entry `e`. -/
 theorem rejCall_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e < p.k * p.ℓ) :
@@ -156,9 +156,9 @@ theorem rejCall_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e 
     fun s₀ s s' hp ⟨h, hs⟩ c' fr heax hred hout => ?_
   rw [hs] at heax hout
   have hj : aBase p + e < nS p := by simp only [nS, aBase]; omega
-  refine ⟨⟨c', by rw [keepB hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofs), h.rs],
-    by rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofs)]; exact h.ok,
-    fun hk => (h.fam hk).keep hp ps (by decide) fr (by omega) (by ofs), h.bad⟩, heax, fun hy => ?_, fun hn => ?_⟩
+  refine ⟨⟨c', by rw [keepB hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd), h.rs],
+    by rw [scw, keepW' hp (by decide) fr (sc_ok' ps (by decide) (by decide)) (by ofsd)]; exact h.ok,
+    fun hk => (h.fam hk).keep hp ps (by decide) fr (by omega) (by ofsd), h.bad⟩, heax, fun hy => ?_, fun hn => ?_⟩
   · rw [hy] at heax; simp only [↓reduceIte] at heax
     refine ⟨hred heax, ?_⟩
     rw [rej_val hout heax (F.rejMax _ hy)]
@@ -175,11 +175,11 @@ theorem rejAnd_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e <
   have hj : aBase p + e < nS p := by simp only [nS, aBase]; omega
   have fr' := fr0 hp (N := 80) (by decide) fr
   have hfam : okE p F.rejF s₀ e = true → Fam s₀ s'.mem (aBase p) e (aVal p s₀) := fun hk =>
-    (h.ia.fam hk).keep hp ps (by decide) fr' (by omega) (by ofs)
-  refine ⟨c', by rw [keepB hp (by decide) fr' (sc_ok' ps (by decide) (by decide)) (by ofs), h.ia.rs], ?_, fun hk => ?_, fun hk => ?_⟩
+    (h.ia.fam hk).keep hp ps (by decide) fr' (by omega) (by ofsd)
+  refine ⟨c', by rw [keepB hp (by decide) fr' (sc_ok' ps (by decide) (by decide)) (by ofsd), h.ia.rs], ?_, fun hk => ?_, fun hk => ?_⟩
   · rw [ok', h.ia.ok, h.eax, and01, okE_succ]
   · rw [okE_succ, Bool.and_eq_true] at hk
-    exact (hfam hk.1).snoc (keepP hp ps (by decide) fr' hj (by ofs) (h.yes hk.2))
+    exact (hfam hk.1).snoc (keepP hp ps (by decide) fr' hj (by ofsd) (h.yes hk.2))
   · rw [okE_succ, Bool.and_eq_false_iff] at hk
     rcases hk with hk | hk
     · obtain ⟨e', he', hn⟩ := h.ia.bad hk
@@ -200,15 +200,15 @@ theorem sampleE_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (e : Nat) (he : e 
 theorem expandA_piece {P : Prims} (F : PrimsOk P) (ps : PS p) :
     SP p (fun s₀ s => Ctx (Y p) s₀ s ∧ scw s₀ s oOK = 1) (IA p F.rejF (p.k * p.ℓ)) (Impl.MlDsa.X86.Sign.expandA P p) := by
   unfold Impl.MlDsa.X86.Sign.expandA
-  refine Piece.seq (B := IA p F.rejF 0) (copy_piece 0 0 SC oRS 8 (by decide) (by decide) (by ofs)
+  refine Piece.seq (B := IA p F.rejF 0) (copy_piece 0 0 SC oRS 8 (by decide) (by decide) (by ofsd)
     (fun _ _ _ h => h.1) fun s₀ s s' hp h c' fr hb => ?_)
     (by simpa using seqR_piece (I := IA p F.rejF) 0 (p.k * p.ℓ) fun e _ he => sampleE_piece F ps e (by omega))
   have fr' : Frame (FR s₀ [sc oRS 32] 80) s.mem s'.mem := fr.mono (by simp)
   refine ⟨c', ?_, ?_, fun _ j hj => absurd hj (Nat.not_lt_zero _), fun hk => absurd hk (by simp [okE])⟩
   · show bytesAt s'.mem (Buf.addr s₀ ⟨SC, oRS, 4 * 8⟩) (4 * 8) = _
-    rw [hb, h.1.roBytes hp (b := ⟨0, 0, 4 * 8⟩) (by ofs) rfl]
+    rw [hb, h.1.roBytes hp (b := ⟨0, 0, 4 * 8⟩) (by ofsd) rfl]
     exact (VG.Proof.MlKem.bytesAt_take _ _ (skLen_ge ps)).symm
-  · rw [scw, keepW' hp (by decide) fr' (sc_ok' ps (by decide) (by decide)) (by ofs)]
+  · rw [scw, keepW' hp (by decide) fr' (sc_ok' ps (by decide) (by decide)) (by ofsd)]
     simp [okE, h.2]
 
 end VG.Proof.MlDsa.X86.Sign

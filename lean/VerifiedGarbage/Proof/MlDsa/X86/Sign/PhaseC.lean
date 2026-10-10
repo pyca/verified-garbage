@@ -103,8 +103,8 @@ theorem setKappa_piece (ps : PS p) (t r : Nat) (hr : r < p.ℓ) :
   have hhi : oMS + 66 ≤ scrLen p := by have := scr_ge ps; simp only [oP, oMS, nS] at this ⊢; omega
   have f := (frSc hp (M := 80) (by decide) (by decide) (by decide) hhi (fs _ (.inl rfl)) fr₃).trans
     (frSc hp (M := 80) (by decide) (by decide) (by decide) hhi (fs _ (.inr rfl)) fr₅)
-  refine ⟨⟨h.keep hp ps c₅ (by decide) f (by ofs), hc.fy.keep hp ps (by decide) f (by simp only [nS, yB]; omega) (by ofs),
-    hc.fyh.keep hp ps (by decide) f (by simp only [nS, yhB]; omega) (by ofs)⟩, ?_⟩
+  refine ⟨⟨h.keep hp ps c₅ (by decide) f (by ofsd), hc.fy.keep hp ps (by decide) f (by simp only [nS, yB]; omega) (by ofsd),
+    hc.fyh.keep hp ps (by decide) f (by simp only [nS, yhB]; omega) (by ofsd)⟩, ?_⟩
   have b0 : bytesAt s₃.mem (Buf.addr s₀ (sc (oMS + 64) 1)) 1 = [BitVec.ofNat 8 (p.ℓ * t + r)] := by
     rw [m₃, bytes1_write]; show [(s₂.gpr .eax).setWidth 8] = _; rw [ex, setWidth8_ofNat]
   have b0' : bytesAt s₅.mem (Buf.addr s₀ (sc (oMS + 64) 1)) 1 = [BitVec.ofNat 8 (p.ℓ * t + r)] := by
@@ -117,7 +117,7 @@ theorem setKappa_piece (ps : PS p) (t r : Nat) (hr : r < p.ℓ) :
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat]
     omega
   have hm : bytesAt s₅.mem (Buf.addr s₀ (sc oMS 64)) 64 = rppS p s₀ := by
-    rw [keepB hp (by decide) f (sc_ok' ps (by decide) (by decide)) (by ofs), h.kd.ms]
+    rw [keepB hp (by decide) f (sc_ok' ps (by decide) (by decide)) (by ofsd), h.kd.ms]
   rw [bytes_split hp s₅.mem (o' := oMS + 64) (l₁ := 64) (l₂ := 2) rfl rfl (sc_ok' ps (by decide) (by decide))
     (sc_ok' ps (by decide) (by decide)), hm,
     bytes_split hp s₅.mem (o' := oMS + 65) (l₁ := 1) (l₂ := 1) rfl rfl (sc_ok' ps (by decide) (by decide))
@@ -131,25 +131,25 @@ theorem maskR_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (t r : Nat) (hr : r 
   have hj' : yhB p + r < nS p := by simp only [nS, yhB]; omega
   refine (setKappa_piece ps t r hr).seq ?_
   refine Piece.seq (B := fun s₀ s => CM p t r s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (pS (yB p + r))) (Yv p s₀ (p.ℓ * t) r))
-    (mask_piece F.expandMask (F.ok _ (by simp)) p.γ₁ ps.hγ₁ SC oMS SC (oP (yB p + r)) SC oPS (by ofs)
-      (fun _ _ _ h => h.1.it.kd.ctx) fun s₀ s s' hp h c' fr hq => ⟨⟨h.1.it.keep hp ps c' (by decide) fr (by ofs),
-        h.1.fy.keep hp ps (by decide) fr (by simp only [nS, yB]; omega) (by ofs),
-        h.1.fyh.keep hp ps (by decide) fr (by simp only [nS, yhB]; omega) (by ofs)⟩, by rw [h.2] at hq; exact hq⟩) ?_
+    (mask_piece F.expandMask (F.ok _ (by simp)) p.γ₁ ps.hγ₁ SC oMS SC (oP (yB p + r)) SC oPS (by ofsd)
+      (fun _ _ _ h => h.1.it.kd.ctx) fun s₀ s s' hp h c' fr hq => ⟨⟨h.1.it.keep hp ps c' (by decide) fr (by ofsd),
+        h.1.fy.keep hp ps (by decide) fr (by simp only [nS, yB]; omega) (by ofsd),
+        h.1.fyh.keep hp ps (by decide) fr (by simp only [nS, yhB]; omega) (by ofsd)⟩, by rw [h.2] at hq; exact hq⟩) ?_
   refine Piece.seq (B := fun s₀ s => CM p t r s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (pS (yB p + r))) (Yv p s₀ (p.ℓ * t) r) ∧
       PolyIs s.mem (Buf.addr s₀ (pS (yhB p + r))) (Yv p s₀ (p.ℓ * t) r))
-    (copy_piece SC (oP (yB p + r)) SC (oP (yhB p + r)) 256 (by decide) (by decide) (by ofs)
+    (copy_piece SC (oP (yB p + r)) SC (oP (yhB p + r)) 256 (by decide) (by decide) (by ofsd)
       (fun _ _ _ h => h.1.it.kd.ctx) fun s₀ s s' hp h c' fr hb => ?_) ?_
   · have fr' : Frame (FR s₀ [pS (yhB p + r)] 80) s.mem s'.mem := fr.mono (by simp)
-    exact ⟨⟨h.1.it.keep hp ps c' (by decide) fr' (by ofs),
-      h.1.fy.keep hp ps (by decide) fr' (by simp only [nS, yB]; omega) (by ofs),
-      h.1.fyh.keep hp ps (by decide) fr' (by simp only [nS, yhB]; omega) (by ofs)⟩,
-      keepP hp ps (by decide) fr' hj (by ofs) h.2, polyIs_of_bytes hb h.2⟩
-  refine inPlace_piece (t := ntt) F.ntt (F.ok _ (by simp)) (pS (yhB p + r)) rfl (by ofs)
+    exact ⟨⟨h.1.it.keep hp ps c' (by decide) fr' (by ofsd),
+      h.1.fy.keep hp ps (by decide) fr' (by simp only [nS, yB]; omega) (by ofsd),
+      h.1.fyh.keep hp ps (by decide) fr' (by simp only [nS, yhB]; omega) (by ofsd)⟩,
+      keepP hp ps (by decide) fr' hj (by ofsd) h.2, polyIs_of_bytes hb h.2⟩
+  refine inPlace_piece (t := ntt) F.ntt (F.ok _ (by simp)) (pS (yhB p + r)) rfl (by ofsd)
     (fun _ _ _ h => ⟨h.1.it.kd.ctx, h.2.2.1⟩) fun s₀ s s' hp h c' fr hq => ?_
   rw [h.2.2.2] at hq
-  exact ⟨h.1.it.keep hp ps c' (by decide) fr (by ofs),
-    (h.1.fy.keep hp ps (by decide) fr (by simp only [nS, yB]; omega) (by ofs)).snoc (keepP hp ps (by decide) fr hj (by ofs) h.2.1),
-    (h.1.fyh.keep hp ps (by decide) fr (by simp only [nS, yhB]; omega) (by ofs)).snoc hq⟩
+  exact ⟨h.1.it.keep hp ps c' (by decide) fr (by ofsd),
+    (h.1.fy.keep hp ps (by decide) fr (by simp only [nS, yB]; omega) (by ofsd)).snoc (keepP hp ps (by decide) fr hj (by ofsd) h.2.1),
+    (h.1.fyh.keep hp ps (by decide) fr (by simp only [nS, yhB]; omega) (by ofsd)).snoc hq⟩
 
 /-! ## `w` -/
 
@@ -200,9 +200,9 @@ theorem rowW_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (t i : Nat) (hi : i <
   simp only [aP_eq]
   refine Piece.seq (B := fun s₀ s => CW p t i s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (pS (wB p + i))) (wAcc p s₀ (p.ℓ * t) i 1))
     (mul_piece F.mul (F.ok _ (by simp)) SC (oP (wB p + i)) SC (oP (aBase p + (p.ℓ * i + 0))) SC (oP (yhB p + 0))
-      (by have := ha 0 (by omega); ofs)
+      (by have := ha 0 (by omega); ofsd)
       (fun _ _ _ h => ⟨h.cm.it.kd.ctx, (fam_at h.cm.it.kd.dk.fa (ha 0 (by omega))).1, (fam_at h.cm.fyh (by omega)).1⟩)
-      fun s₀ s s' hp h c' fr hq => ⟨h.keep hp ps (by omega) c' (by decide) fr (by ofs), ?_⟩) ?_
+      fun s₀ s s' hp h c' fr hq => ⟨h.keep hp ps (by omega) c' (by decide) fr (by ofsd), ?_⟩) ?_
   · rw [(fam_at h.cm.it.kd.dk.fa (ha 0 (by omega))).2, (fam_at h.cm.fyh (by omega)).2, aVal_ij (by omega)] at hq
     rw [wAcc_one]; exact hq
   refine Piece.seq (B := fun s₀ s => CW p t i s₀ s ∧ PolyIs s.mem (Buf.addr s₀ (pS (wB p + i))) (wAcc p s₀ (p.ℓ * t) i p.ℓ))
@@ -210,19 +210,19 @@ theorem rowW_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (t i : Nat) (hi : i <
   · have := seqR_piece (p := p) (I := fun j s₀ s => CW p t i s₀ s ∧
         PolyIs s.mem (Buf.addr s₀ (pS (wB p + i))) (wAcc p s₀ (p.ℓ * t) i j)) 1 (p.ℓ - 1) fun j hj1 hj2 =>
       mulAdd_piece (nm := "vg_mldsa_multiply_add_ntt") F.mulAdd (F.ok _ (by simp)) SC (oP (wB p + i)) SC (oP (aBase p + (p.ℓ * i + j))) SC (oP (yhB p + j))
-        (by have := ha j (by omega); ofs)
+        (by have := ha j (by omega); ofsd)
         (fun _ _ _ h => ⟨h.1.cm.it.kd.ctx, h.2.1, (fam_at h.1.cm.it.kd.dk.fa (ha j (by omega))).1,
           (fam_at h.1.cm.fyh (by omega)).1⟩)
-        fun s₀ s s' hp h c' fr hq => ⟨h.1.keep hp ps (by omega) c' (by decide) fr (by ofs), by
+        fun s₀ s s' hp h c' fr hq => ⟨h.1.keep hp ps (by omega) c' (by decide) fr (by ofsd), by
           rw [h.2.2, (fam_at h.1.cm.it.kd.dk.fa (ha j (by omega))).2, (fam_at h.1.cm.fyh (by omega)).2,
             aVal_ij (by omega)] at hq
           rw [wAcc_succ]; exact hq⟩
     rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega] at this
-  refine inPlace_piece (t := nttInv) F.invNtt (F.ok _ (by simp)) (pS (wB p + i)) rfl (by ofs)
+  refine inPlace_piece (t := nttInv) F.invNtt (F.ok _ (by simp)) (pS (wB p + i)) rfl (by ofsd)
     (fun _ _ _ h => ⟨h.1.cm.it.kd.ctx, h.2.1⟩) fun s₀ s s' hp h c' fr hq => ?_
   rw [h.2.2] at hq
-  exact ⟨(h.1.keep hp ps (by omega) c' (by decide) fr (by ofs)).cm, (h.1.keep hp ps (by omega) c' (by decide) fr
-    (by ofs)).fw.snoc hq⟩
+  exact ⟨(h.1.keep hp ps (by omega) c' (by decide) fr (by ofsd)).cm, (h.1.keep hp ps (by omega) c' (by decide) fr
+    (by ofsd)).fw.snoc hq⟩
 
 /-! ## `w₁` and `c̃` -/
 
@@ -252,19 +252,19 @@ theorem w1R_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (t i : Nat) (hi : i < 
   have hwp : 0 < w1Len p := by rcases ps.hw1Len with h | h <;> omega
   refine Piece.seq (B := fun s₀ s => CH p t i s₀ s ∧
       NatPolyIs s.mem (Buf.addr s₀ t1P) (w1F p (Am p s₀) (rppS p s₀) (p.ℓ * t) i))
-    (hb_piece F.highBits (F.ok _ (by simp)) p.γ₂ ps.hγ₂ SC (oP (wB p + i)) SC (oP 1) (by ofs)
+    (hb_piece F.highBits (F.ok _ (by simp)) p.γ₂ ps.hγ₂ SC (oP (wB p + i)) SC (oP 1) (by ofsd)
       (fun _ _ _ h => ⟨h.cw.cm.it.kd.ctx, (fam_at h.cw.fw hi).1⟩) fun s₀ s s' hp h c' fr hq =>
-      ⟨⟨h.cw.keep hp ps (Nat.le_refl _) c' (by decide) fr (by ofs), by
-        rw [keepB0 hp (by decide) fr 1024 (by have := scr_ge ps; simp only [oP, oW1, nS] at this ⊢; omega) (by ofs)]
+      ⟨⟨h.cw.keep hp ps (Nat.le_refl _) c' (by decide) fr (by ofsd), by
+        rw [keepB0 hp (by decide) fr 1024 (by have := scr_ge ps; simp only [oP, oW1, nS] at this ⊢; omega) (by ofsd)]
         exact h.w1⟩, by rw [(fam_at h.cw.fw hi).2] at hq; exact hq⟩) ?_
   refine sbp_piece F.simpleBitPack (F.ok _ (by simp)) (w1Max p) (w1Len p) ps.hw1Max.1 ps.hw1Max.2 SC (oP 1) SC
-    (oW1 + w1Len p * i) (by ofs) (fun _ _ _ h => ⟨h.1.cw.cm.it.kd.ctx, fun j hj => by
+    (oW1 + w1Len p * i) (by ofsd) (fun _ _ _ h => ⟨h.1.cw.cm.it.kd.ctx, fun j hj => by
       rw [natPolyIs_coeff h.2 hj, w1F, Vector.getElem_map]; exact highBits_le ps.hγ₂ _⟩)
-    fun s₀ s s' hp h c' fr hq => ⟨h.1.cw.keep hp ps (Nat.le_refl _) c' (by decide) fr (by ofs), ?_⟩
+    fun s₀ s s' hp h c' fr hq => ⟨h.1.cw.keep hp ps (Nat.le_refl _) c' (by decide) fr (by ofsd), ?_⟩
   have e : Buf.addr s₀ (sc (oW1 + w1Len p * i) (w1Len p)) = Buf.addr s₀ (sc oW1 1024) + BitVec.ofNat 64 (w1Len p * i) :=
-    addr_off hp (sc_ok' ps (by decide) (by decide)) (by ofs)
+    addr_off hp (sc_ok' ps (by decide) (by decide)) (by ofsd)
   rw [Nat.mul_succ, VG.Proof.MlKem.bytesAt_add, ← e, hq, h.2,
-    keepB0 hp (by decide) fr 1024 (by have := scr_ge ps; simp only [oP, oW1, nS] at this ⊢; omega) (by ofs), h.1.w1,
+    keepB0 hp (by decide) fr 1024 (by have := scr_ge ps; simp only [oP, oW1, nS] at this ⊢; omega) (by ofsd), h.1.w1,
     w1Enc, w1Enc, List.range_succ, List.flatMap_append, List.flatMap_singleton]
 
 /-- Iteration `t`, with `y`, `w` and `c̃`. -/
@@ -292,14 +292,14 @@ theorem commit_piece {P : Prims} (F : PrimsOk P) (ps : PS p) (t : Nat) :
   · have := seqR_piece (p := p) (I := CH p t) 0 p.k fun i _ hi => w1R_piece F ps t i (by omega)
     simp only [Nat.zero_add] at this
     exact this.mono (fun _ _ _ h => ⟨h, rfl⟩) fun _ _ _ h => h
-  refine hash2_piece' 136 0x1f bMu (sc oW1 (p.k * w1Len p)) (sc oCT (cLen p)) (by decide) (by ofs) (by decide)
+  refine hash2_piece' 136 0x1f bMu (sc oW1 (p.k * w1Len p)) (sc oCT (cLen p)) (by decide) (by ofsd) (by decide)
     (by show p.k * w1Len p < 2 ^ 32; omega) (by show cLen p < 2 ^ 32; omega) (fun _ _ _ h => h.cw.cm.it.kd.ctx)
-    fun s₀ s s' hp h c' fr hb => ⟨h.cw.keep hp ps (Nat.le_refl _) c' (by decide) fr (by ofs), ?_⟩
+    fun s₀ s s' hp h c' fr hb => ⟨h.cw.keep hp ps (Nat.le_refl _) c' (by decide) fr (by ofsd), ?_⟩
   have e : BitVec.setWidth 8 (31#32) = Spec.Sha3.shakeSuffix := by decide
   have hw1 : bytesAt s.mem (Buf.addr s₀ (sc oW1 (p.k * w1Len p))) (p.k * w1Len p) = w1Enc p s₀ (p.ℓ * t) p.k := by
     rw [Nat.mul_comm]; exact h.w1
   simp only [sc, bMu] at hb hw1 ⊢
-  rw [hb, hw1, h.cw.cm.it.kd.ctx.roBytes hp (b := bMu) (by ofs) rfl, e, w1Enc_eq, CTv, ctF,
+  rw [hb, hw1, h.cw.cm.it.kd.ctx.roBytes hp (b := bMu) (by ofsd) rfl, e, w1Enc_eq, CTv, ctF,
     VG.Proof.MlDsa.Sample.H_eq]
 
 end VG.Proof.MlDsa.X86.Sign

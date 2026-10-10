@@ -27,12 +27,12 @@ def fr (d : Nat) : Src := .mem (at_ .ebp d)
 /-! ## The parameters -/
 
 def parameters : List Instr :=
-  [.mov .eax (fr (argOff lanesArg)), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
-    .store (at_ .ebp divisorOff) .eax, .mov .ecx (fr (argOff memoryCostArg))] ++
+  ([.mov .eax (fr (argOff lanesArg)), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
+    .store (at_ .ebp divisorOff) .eax, .mov .ecx (fr (argOff memoryCostArg))] : List Instr) ++
   Divide.code divisorOff ++
-  [.store (at_ .ebp segLenOff) .ecx, .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .ecx),
-    .store (at_ .ebp laneLenOff) .ecx] ++
-  List.replicate 10 (.alu .add .ecx (.reg .ecx)) ++ [.store (at_ .ebp strideOff) .ecx]
+  ([.store (at_ .ebp segLenOff) .ecx, .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .ecx),
+    .store (at_ .ebp laneLenOff) .ecx] : List Instr) ++
+  List.replicate 10 (.alu .add .ecx (.reg .ecx)) ++ ([.store (at_ .ebp strideOff) .ecx] : List Instr)
 
 /-! ## H₀ -/
 
@@ -69,7 +69,7 @@ def absorb (ptr len : Nat) : Prog isa :=
       .mov .edx (fr countHiOff), .mov .esi (.reg .ebx), .alu .add .esi (.imm 792), .mov .edi (.imm 4)])
   (.seq HPrime.update
   (.seq (.block (addCount (.imm 4) ++
-      [.mov .esi (fr (argOff ptr)), .mov .edi (fr (argOff len))]))
+      ([.mov .esi (fr (argOff ptr)), .mov .edi (fr (argOff len))] : List Instr)))
   (.seq HPrime.update (.block (addCount (fr (argOff len)))))))
 
 /-- Copy the digest's word `j` to the locals. -/

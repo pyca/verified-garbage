@@ -86,16 +86,16 @@ def ctrBlock (b : Nat) : List Instr :=
 /-- The four counter blocks, and `c := c + 4`. -/
 def ctrBlocks : List Instr :=
   ctrBlock 0 ++ ctrBlock 1 ++ ctrBlock 2 ++ ctrBlock 3 ++
-  [.ldr .w t0 sb (8 * cNum), .addImm .w t0 t0 4, .str .w t0 sb (8 * cNum)]
+  ([.ldr .w t0 sb (8 * cNum), .addImm .w t0 t0 4, .str .w t0 sb (8 * cNum)] : List Instr)
 
 /-- A middle round, with `kp` at the previous round key; loops until `kp`
 is at the last round key but one (`t0 = 0`). -/
 def roundBody : List Instr :=
-  [.addImm .x kp kp 64] ++ sboxCode ++ shiftRows ++ mixColumns ++ addRoundKey ++
-  [.sub .x t0 kp sb, .subImm .x t0 t0 (lastKey - 64)]
+  ([.addImm .x kp kp 64] : List Instr) ++ sboxCode ++ shiftRows ++ mixColumns ++ addRoundKey ++
+  ([.sub .x t0 kp sb, .subImm .x t0 t0 (lastKey - 64)] : List Instr)
 
 /-- The last round. -/
-def lastRound : List Instr := [.addImm .x kp kp 64] ++ sboxCode ++ shiftRows ++ addRoundKey
+def lastRound : List Instr := ([.addImm .x kp kp 64] : List Instr) ++ sboxCode ++ shiftRows ++ addRoundKey
 
 /-- Encrypt the four blocks in `q 0 … q 7` (as `toBs` takes them). -/
 def encrypt4 : Prog isa :=
@@ -109,12 +109,12 @@ def xorBlock (b : Nat) : List Instr :=
 
 /-- Four blocks, and on to the next four. -/
 def xorFull : List Instr :=
-  (List.range 4).flatMap xorBlock ++ [.addImm .x .x3 .x3 64, .subImm .x .x4 .x4 4]
+  (List.range 4).flatMap xorBlock ++ ([.addImm .x .x3 .x3 64, .subImm .x .x4 .x4 4] : List Instr)
 
 /-- The last one to three blocks (and none left). -/
 def xorTail : Prog isa :=
-  .seq (.block (xorBlock 0 ++ [.subImm .x t0 .x4 1]))
-    (.seq (.ite (.nonzero .x t0) (.seq (.block (xorBlock 1 ++ [.subImm .x t0 .x4 2]))
+  .seq (.block (xorBlock 0 ++ ([.subImm .x t0 .x4 1] : List Instr)))
+    (.seq (.ite (.nonzero .x t0) (.seq (.block (xorBlock 1 ++ ([.subImm .x t0 .x4 2] : List Instr)))
         (.ite (.nonzero .x t0) (.block (xorBlock 2)) (.block [])))
       (.block []))
     (.block [.movz .x .x4 0 0]))

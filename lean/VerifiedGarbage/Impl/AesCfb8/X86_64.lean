@@ -35,8 +35,8 @@ function for it: the schedule, the rounds, the block, `n = 1`, and the
 working space. -/
 def pre : List Instr :=
   copy .r15 cOff .r12 0 ++
-  [.mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp), .mov .rdx (.reg .r15), .alu .add .rdx (.imm cOff),
-   .mov32 .rcx (.imm 1), .mov .r8 (.reg .r15)]
+  ([.mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp), .mov .rdx (.reg .r15), .alu .add .rdx (.imm cOff),
+   .mov32 .rcx (.imm 1), .mov .r8 (.reg .r15)] : List Instr)
 
 /-- The input block at `r12` shifted left by a byte, with `al` shifted in:
 the words at `r12 + 1` and `r12 + 8` stored at `r12` and `r12 + 7`. -/
@@ -49,13 +49,13 @@ def advance : List Instr := [.alu .add .r13 (.imm 1), .alu .sub .r14 (.imm 1)]
 
 /-- `C#ⱼ = P#ⱼ ⊕ MSB₈(Oⱼ)`, shifted into the input block. -/
 def encPost : List Instr :=
-  [.movzx8 .rax (at_ .r13 0), .movzx8 .rcx (at_ .r15 cOff), .alu .xor .rax (.reg .rcx),
-   .store8 (at_ .r13 0) .rax] ++ shift ++ advance
+  ([.movzx8 .rax (at_ .r13 0), .movzx8 .rcx (at_ .r15 cOff), .alu .xor .rax (.reg .rcx),
+   .store8 (at_ .r13 0) .rax] : List Instr) ++ shift ++ advance
 
 /-- `P#ⱼ = C#ⱼ ⊕ MSB₈(Oⱼ)`, and `C#ⱼ` shifted into the input block. -/
 def decPost : List Instr :=
-  [.movzx8 .rax (at_ .r13 0), .movzx8 .rcx (at_ .r15 cOff), .alu .xor .rcx (.reg .rax),
-   .store8 (at_ .r13 0) .rcx] ++ shift ++ advance
+  ([.movzx8 .rax (at_ .r13 0), .movzx8 .rcx (at_ .r15 cOff), .alu .xor .rcx (.reg .rax),
+   .store8 (at_ .r13 0) .rcx] : List Instr) ++ shift ++ advance
 
 /-- One byte: the input block enciphered in the scratch buffer, and `post`. -/
 def body (b : Blocks) (post : List Instr) : Prog isa :=

@@ -116,7 +116,7 @@ def advance : List Instr := [.alu .add .rsi (.imm 64), .alu .sub .rdx (.imm 1)]
 def body : Prog isa := .seq (.block load) (.seq (rounds 80) (.block (update ++ advance)))
 
 def compress : Prog isa :=
-  .seq (.block (save ++ [.alu .test .rdx (.reg .rdx)]))
+  .seq (.block (save ++ ([.alu .test .rdx (.reg .rdx)] : List Instr)))
     (.seq (.ite .e (.block []) (.loop body .ne)) (.block restore))
 
 end VG.Impl.Sha1.X86_64

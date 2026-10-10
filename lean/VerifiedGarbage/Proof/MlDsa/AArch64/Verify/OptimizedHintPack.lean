@@ -20,8 +20,8 @@ theorem hintPack_ok {p : Params} (hF : VFacts p) {S : Nat} {σ s : State} (hp : 
   have hkw:=hF.w1
   have ro : inB (vR p++vW p) (rowP p r) (w1Len p)=true := by
     rcases hF.wl with he|he <;> vlay [he]
-  have ra : inB (vR p++vW p) (hP p r) 1024=true := by vlay
-  have rb : inB (vR p++vW p) (wP p) 1024=true := by vlay
+  have ra : inB (vR p++vW p) (hP p r) 1024=true := by vlayd
+  have rb : inB (vR p++vW p) (wP p) 1024=true := by vlayd
   have wo : inB (vW p) (rowP p r) (w1Len p)=true := by
     rcases hF.wl with he|he <;> vlay [he]
   have plen : UseHintPack.packLen p.γ₂=w1Len p := rfl

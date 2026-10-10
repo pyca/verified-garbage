@@ -179,7 +179,8 @@ theorem step_ok {n : Nat} (hn : n ≤ 57) {s₀ s : State} {base : Addr} {k j : 
     rw [s3 19 (by decide) w hw]; exact z2 w hw
   rw [WP.block_append_iff]
   refine WP.mono (addAffine_ok 0 1 2 6 7 (by decide) (by decide) (by decide) hs3 b3 (zero_env z3).2
-    (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
+    (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)) (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel))
+    (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)) (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)))
     fun t4 ⟨k4, b4, s4, _, _, _, e4⟩ => ?_
   have hs4 := k4.scr hs3
   have z4 : ∀ w < 8, limbs t4.mem base (slot (19 : Index).val) w = 0 := fun w hw => by
@@ -198,7 +199,8 @@ theorem step_ok {n : Nat} (hn : n ≤ 57) {s₀ s : State} {base : Addr} {k j : 
     rw [s5 19 (by decide) w hw]; exact z4 w hw
   rw [WP.block_append_iff]
   refine WP.mono (addAffine_ok 3 4 5 8 9 (by decide) (by decide) (by decide) hs5 b5 (zero_env z5).2
-    (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
+    (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)) (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel))
+    (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)) (indeps_ops_mul2 _ _ _ _ _ _ _ (by decide +kernel)))
     fun t6 ⟨k6, b6, s6, _, _, _, e6⟩ => ?_
   have hs6 := k6.scr hs5
   -- The counter.

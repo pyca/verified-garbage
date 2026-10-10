@@ -56,12 +56,12 @@ rotation as a right rotation by `32 - s`. The additions are in the order of
 the specification. -/
 def step (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3
-  fn (t / 16) b c d ++ [
+  fn (t / 16) b c d ++ ([
     .alu .add a (.reg T0),
     .alu .add a (.mem (at_ .esi (4 * ks.getD t 0))),
     .alu .add a (.imm (Ts.getD t 0)),
     .shift .ror a (32 - rot t),
-    .alu .add a (.reg b)]
+    .alu .add a (.reg b)] : List Instr)
 
 /-- Operations `0 … n-1`. -/
 def steps : Nat → Prog isa
@@ -74,9 +74,9 @@ def saved : List (Reg × Nat) := [(.ebx, 0), (.esi, 4), (.edi, 8), (.ebp, 12)]
 /-- Save the callee-saved registers, load the block pointer and count, and
 set ZF if there are no blocks. -/
 def prologue : List Instr :=
-  [.mov .eax (.mem (at_ .esp 16))] ++
+  ([.mov .eax (.mem (at_ .esp 16))] : List Instr) ++
   saved.map (fun (r, d) => .store (at_ .eax d) r) ++
-  [.mov .esi (.mem (at_ .esp 8)), .mov .ebp (.mem (at_ .esp 12)), .alu .test .ebp (.reg .ebp)]
+  ([.mov .esi (.mem (at_ .esp 8)), .mov .ebp (.mem (at_ .esp 12)), .alu .test .ebp (.reg .ebp)] : List Instr)
 
 /-- Restore the callee-saved registers. -/
 def epilogue : List Instr :=

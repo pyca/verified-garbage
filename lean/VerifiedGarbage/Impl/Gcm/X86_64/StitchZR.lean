@@ -42,7 +42,7 @@ def powPair (g m : Nat) : List Instr :=
 saved. -/
 def powP48 : List Instr :=
   (List.range 8).flatMap (powPair 1) ++ (List.range 8).flatMap (powPair 0) ++
-  [.vmovdqu32Store (at_ .r11 832) .xmm1]
+  ([.vmovdqu32Store (at_ .r11 832) .xmm1] : List Instr)
 
 /-- `StitchZ.big` with the tables loaded. -/
 def bigP : Prog isa :=

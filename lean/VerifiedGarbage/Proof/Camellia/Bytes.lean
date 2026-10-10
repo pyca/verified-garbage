@@ -58,11 +58,11 @@ theorem getLsbD_byteOf_f (x k : BitVec 64) {i j : Nat} (hi : i < 8) (hj : j < 8)
   have ht : ∀ n, 1 ≤ n → n ≤ 8 →
       ((x ^^^ k) >>> (64 - 8 * n)).setWidth 8 = byteOf (x ^^^ k) (n - 1) := fun n h1 h2 => by
     simp only [byteOf]; congr 2; omega
-  simp only [f]
-  rw [ht 1 (by omega) (by omega), ht 2 (by omega) (by omega), ht 3 (by omega) (by omega),
+  -- In one pass: each `rw` would rebuild the whole (large) goal.
+  simp only [f, ht 1 (by omega) (by omega), ht 2 (by omega) (by omega), ht 3 (by omega) (by omega),
     ht 4 (by omega) (by omega), ht 5 (by omega) (by omega), ht 6 (by omega) (by omega),
-    ht 7 (by omega) (by omega), ht 8 (by omega) (by omega), getLsbD_byteOf _ hi hj,
-    getLsbD_cat8 _ _ _ _ _ _ _ _ hi hj]
+    ht 7 (by omega) (by omega), ht 8 (by omega) (by omega)]
+  rw [getLsbD_byteOf _ hi hj, getLsbD_cat8 _ _ _ _ _ _ _ _ hi hj]
   generalize byteOf (x ^^^ k) = b
   rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>

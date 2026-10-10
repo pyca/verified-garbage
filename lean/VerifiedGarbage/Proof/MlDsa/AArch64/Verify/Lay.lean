@@ -195,6 +195,15 @@ macro_rules
         VG.Impl.MlDsa.AArch64.Verify.oHint, or_true, true_or, and_true, true_and, $ls,*]
       and_intros <;> omega_arith))
 
+/-- A check about the layout that mentions no variable but the parameter set and
+bounded indices, decided for each parameter set (`decide_at`): cheaper than
+`vlay`, which unfolds it into arithmetic on the parameters for `omega`, unless
+there are many indices to try. -/
+syntax "vlayd" : tactic
+macro_rules
+  | `(tactic| vlayd) => `(tactic| (
+      have hmem := (‹VG.Proof.MlDsa.AArch64.Verify.VFacts _›).mem; decide_at hmem))
+
 /-! ## What holds throughout -/
 
 /-- What holds throughout, from the entry state `σ`: `Top`, and the inputs. -/

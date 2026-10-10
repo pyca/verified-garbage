@@ -33,14 +33,15 @@ theorem foldl_congr_fn {α β : Type} {f g : α → β → α} (h : ∀ a b, f a
   | nil => rfl
   | cons b l ih => simp only [List.foldl_cons, h, ih]
 
+/-- The step of `expandKey`'s fold is `ksStep`. -/
+theorem expandKey_step : (fun ((k : Schedule), xL, xR) j =>
+    let (xL, xR) := encryptWords k xL xR
+    ((k.set! (2 * j) xL).set! (2 * j + 1) xR, xL, xR)) = ksStep := by
+  funext ⟨k, xL, xR⟩ j; rfl
+
 theorem expandKey_eq (key : List Byte) : expandKey key = (ksIter key 521).1 := by
-  have hf : (fun ((k : Schedule), xL, xR) j =>
-      let (xL, xR) := encryptWords k xL xR
-      ((k.set! (2 * j) xL).set! (2 * j + 1) xR, xL, xR)) = ksStep := by
-    funext ⟨k, xL, xR⟩ j; rfl
-  unfold expandKey ksIter
-  dsimp only
-  rw [hf]
-  rfl
+  -- Rewriting `keyed` too leaves both sides the same term, which the kernel
+  -- then compares without evaluating the 1042 entries of the initial schedule.
+  rw [expandKey, ksIter, ← expandKey_step, keyed]
 
 end VG.Proof.Blowfish

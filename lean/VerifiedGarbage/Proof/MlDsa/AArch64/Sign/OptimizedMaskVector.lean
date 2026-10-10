@@ -14,7 +14,7 @@ def optimizedMaskVectorChk (p : Params) (r : Nat) : Bool :=
 
 theorem optimizedMaskVectorChk_ok {p : Params} (hp : Ok3 p) :
     ∀ r<p.ℓ,optimizedMaskVectorChk p r=true := by
-  rcases hp with rfl | rfl | rfl <;> decide
+  rcases hp with rfl | rfl | rfl <;> decide +kernel
 
 /-- One copy-free mask transform advances the positive vector invariant.
 The canonical mask prefix is available to the later response calculation. -/

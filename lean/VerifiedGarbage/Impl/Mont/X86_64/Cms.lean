@@ -27,17 +27,17 @@ P-384's `c = 2³⁸⁴ - p`: `h` times `c`'s words `C0` and `C1` by `mulx`
 `r14`. -/
 def cmsFold : List Instr :=
   [Impl.X25519.X86_64.clear, .movImm64 .rax sparseC0] ++ Impl.X25519.X86_64.madd .r8 .r9 (.reg .rax) ++
-    [.mov32 .rax (.imm sparseC1)] ++ Impl.X25519.X86_64.madd .r9 .r10 (.reg .rax) ++
-    [.adox .r10 (.reg .rdx), .mov32 .r14 (.imm 0),
+    ([.mov32 .rax (.imm sparseC1)] : List Instr) ++ Impl.X25519.X86_64.madd .r9 .r10 (.reg .rax) ++
+    ([.adox .r10 (.reg .rdx), .mov32 .r14 (.imm 0),
       .adcx .r11 (.reg .rbp), .adox .r11 (.reg .rbp), .adcx .r12 (.reg .rbp), .adox .r12 (.reg .rbp),
-      .adcx .r13 (.reg .rbp), .adox .r13 (.reg .rbp), .adcx .r14 (.reg .rbp), .adox .r14 (.reg .rbp)]
+      .adcx .r13 (.reg .rbp), .adox .r13 (.reg .rbp), .adcx .r14 (.reg .rbp), .adox .r14 (.reg .rbp)] : List Instr)
 
 /-- `[o] = (C [a] - D [b]) mod p` for P-384's `p`, with BMI2 and ADX (`o` may
 be `b`, but `a` must be apart from the temporary area). -/
 def cms (M : Mod) (o C a D b : Nat) : List Instr :=
   loads (low 6) M.mo ++ chain .sub .sbb (low 6) b ++ stores (low 6) M.tmp ++
-    [.mov32 .rdx (.imm (BitVec.ofNat 32 D))] ++ rowS0 M.tmp ++
-    [.mov32 .rdx (.imm (BitVec.ofNat 32 C))] ++ rowX 6 (acc 6) a ++
-    [.mov .rdx (.reg .r14)] ++ cmsFold ++ csub M (low 6) .r14 ++ stores (low 6) o
+    ([.mov32 .rdx (.imm (BitVec.ofNat 32 D))] : List Instr) ++ rowS0 M.tmp ++
+    ([.mov32 .rdx (.imm (BitVec.ofNat 32 C))] : List Instr) ++ rowX 6 (acc 6) a ++
+    ([.mov .rdx (.reg .r14)] : List Instr) ++ cmsFold ++ csub M (low 6) .r14 ++ stores (low 6) o
 
 end VG.Impl.Mont.X86_64

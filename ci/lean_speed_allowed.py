@@ -43,7 +43,7 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/Blake2/Arm/CompressB.lean": 9,
     "VerifiedGarbage/Proof/Blake2/Arm/CompressS/Compress.lean": 11,
     "VerifiedGarbage/Proof/Blake2/X86/CompressB/Verified.lean": 3,
-    "VerifiedGarbage/Proof/Blake2/X86_64/Compress.lean": 14,
+    "VerifiedGarbage/Proof/Blake2/X86_64/Compress.lean": 1,
     "VerifiedGarbage/Proof/Blake2/X86_64/Stream/Update.lean": 4,
     "VerifiedGarbage/Proof/ChaCha20/AArch64/Mixed5/Args.lean": 1,
     "VerifiedGarbage/Proof/ChaCha20/AArch64/Mixed8/Last.lean": 1,

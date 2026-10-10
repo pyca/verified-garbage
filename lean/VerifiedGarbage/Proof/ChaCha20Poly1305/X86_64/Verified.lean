@@ -52,12 +52,12 @@ def openSat : State where
 theorem seal_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     («seal» v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
   rcases v.fold_poly with ⟨hf, hb⟩ | ⟨hf, hb⟩ | ⟨hf, hb⟩ <;>
-    (simp only [«seal», prologue, crypt, Code.all, v.spSafe, hf, hb]; decide +kernel)
+    (simp only [«seal», prologue, crypt, Code.all, v.spSafe, hf, hb]; lit_decide)
 
 theorem open_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     («open» v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
   rcases v.fold_poly with ⟨hf, hb⟩ | ⟨hf, hb⟩ | ⟨hf, hb⟩ <;>
-    (simp only [«open», prologue, crypt, Code.all, v.spSafe, hf, hb]; decide +kernel)
+    (simp only [«open», prologue, crypt, Code.all, v.spSafe, hf, hb]; lit_decide)
 
 theorem seal_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : sealX86_64.pre s) :
     ∃ t s', Exec isa («seal» v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' :=

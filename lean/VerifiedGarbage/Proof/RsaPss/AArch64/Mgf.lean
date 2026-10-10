@@ -100,12 +100,12 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
     refine List.map_congr_left fun i hi => ?_
     have := List.mem_range.mp hi
     simp only [clr]
-    rw [ite_eq_right (by omega), I.em _ (by omega) (by omega)]
+    rw [ite_eq_right (by omega_using [hfit, this]), I.em _ (by omega_using [he1]) (by omega_using [hfit, this])]
     simp only [mixV]
-    rw [ite_eq_right (by omega)]
+    rw [ite_eq_right (by omega_using [])]
   rw [hs] at R2
   -- The counter.
-  refine WP.seq (WP.mono (counter_ok hH L2 R2 (c := c) (by rw [k2.get .x28, k1.get .x28, I.x28]) (by omega))
+  refine WP.seq (WP.mono (counter_ok hH L2 R2 (c := c) (by rw [k2.get .x28, k1.get .x28, I.x28]) (by omega_using [hc, hfit, c2, hcD]))
     fun u3 ⟨k3, x22₃, nb₃, f3, R3⟩ => ?_)
   have L3 := L2.congr k3.sp k3.wr (k3.get .x20)
   have hsl : seed.length = H.D := by rw [← hseed, List.length_map, List.length_range]
@@ -119,16 +119,16 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
   -- The digest of `H ‖ C`.
   refine WP.seq (WP.mono (mgfHash_ok hH L3 R3 (msg := seed ++ Spec.Rsa.i2osp c 4) hml
     (by rw [g3 .x19 (by decide), h19]) (by rw [g3 .x21 (by decide), h21]) (by rw [x22₃, hml]) nb₃
-    (by rw [hml]; omega) (by omega) (fun i hi => ?_)) fun u4 ⟨O4, d4⟩ => ?_)
+    (by rw [hml]; omega_using [hnb1]) (by omega_using [hnb]) (fun i hi => ?_)) fun u4 ⟨O4, d4⟩ => ?_)
   · rw [getD_app, hsl]
     by_cases h1 : i < H.D
-    · simp (disch := omega) only [ctrV, updL, ite_eq_left, ite_eq_right]
+    · simp (disch := omega_arith) only [ctrV, updL, ite_eq_left, ite_eq_right]
       rw [Nat.add_sub_cancel_left]
     · by_cases h2 : i < H.D + 4
-      · simp (disch := omega) only [ctrV, ite_eq_left, ite_eq_right]
-        rw [show oY + i - (oY + H.D) = i - H.D by omega]
-      · simp (disch := omega) only [ctrV, updL, clr, ite_eq_left, ite_eq_right]
-        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by rw [i2osp_len]; omega)]
+      · simp (disch := omega_arith) only [ctrV, ite_eq_left, ite_eq_right]
+        rw [show oY + i - (oY + H.D) = i - H.D by omega_using []]
+      · simp (disch := omega_arith) only [ctrV, updL, clr, ite_eq_left, ite_eq_right]
+        rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by rw [i2osp_len]; omega_using [h2])]
         rfl
   have L4 := L3.congr O4.sp O4.wr (O4.cs .x20 (by decide))
   have g4 : ∀ r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25, .x26], u4.gpr r = t.gpr r := by
@@ -148,7 +148,7 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
   -- The next counter.
   refine WP.mono (nextCtr_ok hH L5 (c := c) (db := db)
     (by rw [k5.get .x28, O4.cs .x28 (by decide), k3.get .x28, k2.get .x28, k1.get .x28, I.x28])
-    (by rw [k5.get .x25, g4 .x25 (by decide), h25]) done₅ (by omega) (by omega))
+    (by rw [k5.get .x25, g4 .x25 (by decide), h25]) done₅ (by omega_using [hc, hfit, c2]) (by omega_using [hfit, c2]))
     fun u6 ⟨k6, x28₆, x10₆, m6⟩ => ⟨by rw [x10₆, hs1], ?_⟩
   have R6 : Rep u6.mem S _ := R5.frame (m' := u6.mem) (rs := [slotR F sDone])
     (by rw [m6]; exact frame_slot _ F sDone _) (L.slotS (by decide))
@@ -170,23 +170,24 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
   · -- The bytes of `EM`: `DB` with one more digest XORed in.
     have hV4 : u4.mem (off S o) = mixV V mk e (min (c * H.D) db) o := by
       rw [O4.em o ho₁ ho₂]
-      simp (disch := omega) only [ctrV, updL, clr, ite_eq_right]
+      simp (disch := omega_using [ho₂]) only [ctrV, updL, clr, ite_eq_right]
       exact I.em o ho₁ ho₂
-    rw [R6 o (by omega)]
+    rw [R6 o (by omega_using [c2, c6, ho₂])]
     simp only [xorV]
     by_cases hx : e + c * H.D ≤ o ∧ o < e + c * H.D + min H.D (db - c * H.D)
     · rw [ite_eq_left hx, hV4]
-      have hk : o - (e + c * H.D) < H.D := by omega
+      have hk : o - (e + c * H.D) < H.D := by omega_using [hx]
       rw [← off_add, byte_of_bytesAt (p := off S oDig) d4 hk]
       simp only [mixV]
-      rw [ite_eq_right (by omega), ite_eq_left ⟨by omega, by omega⟩, ← hmk, mgf1_getD hG _ (by omega), hGh, hGl]
-      have e1 : o - e = H.D * c + (o - (e + c * H.D)) := by rw [Nat.mul_comm]; omega
+      rw [ite_eq_right (by omega_using [hx]), ite_eq_left ⟨by omega_using [hx], by omega_using [hs1, hx]⟩, ← hmk,
+          mgf1_getD hG _ (by omega_using [hx]), hGh, hGl]
+      have e1 : o - e = H.D * c + (o - (e + c * H.D)) := by rw [Nat.mul_comm]; omega_using [hx]
       rw [e1, Nat.mul_add_div hD, Nat.div_eq_of_lt hk, Nat.add_zero, Nat.mul_add_mod, Nat.mod_eq_of_lt hk]
     · rw [ite_eq_right hx, hV4]
       simp only [mixV]
       by_cases hy : e ≤ o ∧ o < e + min (c * H.D) db
-      · rw [ite_eq_left hy, ite_eq_left ⟨hy.1, by omega⟩]
-      · rw [ite_eq_right hy, ite_eq_right (by omega)]
+      · rw [ite_eq_left hy, ite_eq_left ⟨hy.1, by omega_using [hs1, hy]⟩]
+      · rw [ite_eq_right hy, ite_eq_right (by omega_using [hs1, hx, hy])]
 
 /-- `DB ⊕= MGF1(H, dbLen)`, where `H` is the `hLen` bytes after `DB`. -/
 theorem mgfXor_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
@@ -221,20 +222,20 @@ theorem mgfXor_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) 
     · rw [hm, Mem.readW_writeW_self64, Nat.zero_mul]
     · rw [hm]; exact (frame_slot _ F sDone _).mono (by simp)
     · have R' : Rep v.mem S V := R.frame (by rw [hm]; exact frame_slot _ F sDone _) (L.slotS (by decide))
-      rw [R' o (by omega)]
+      rw [R' o (by omega_using [c2, c6, ho₂])]
       simp only [mixV, Nat.zero_mul, Nat.zero_min, Nat.add_zero]
-      rw [ite_eq_right (by omega)]
+      rw [ite_eq_right (by omega_using [])]
   refine WP.loop (M := isa) (fun n w => ∃ c, n = db - c * H.D ∧ c * H.D < db ∧ MgfI t F S V mk e db H.D c w)
-    ?_ (db - 0 * H.D) v ⟨0, rfl, by omega, I0⟩
+    ?_ (db - 0 * H.D) v ⟨0, rfl, by omega_using [hdb1], I0⟩
   rintro n w ⟨c, rfl, hc, I⟩
   subst hmk
   refine WP.mono (round_ok hH hGh hGl hG L hd h19 h21 h24 h25 I hc) fun w' ⟨hx, I'⟩ => ?_
   have hs1 : (c + 1) * H.D = c * H.D + H.D := Nat.succ_mul _ _
   by_cases h : (c + 1) * H.D < db
-  · exact .inr ⟨by rw [eval_nonzero, hx, decide_eq_true h], _, by omega, c + 1, rfl, h, I'⟩
+  · exact .inr ⟨by rw [eval_nonzero, hx, decide_eq_true h], _, by omega_using [hD, hs1, h], c + 1, rfl, h, I'⟩
   · refine .inl ⟨by rw [eval_nonzero, hx, decide_eq_false h], I'.sp, I'.rd, I'.wr, I'.cs, I'.vec, I'.fr,
       fun o ho₁ ho₂ => ?_⟩
-    rw [I'.em o ho₁ ho₂, Nat.min_eq_right (by omega)]
+    rw [I'.em o ho₁ ho₂, Nat.min_eq_right (by omega_using [h])]
 
 end
 

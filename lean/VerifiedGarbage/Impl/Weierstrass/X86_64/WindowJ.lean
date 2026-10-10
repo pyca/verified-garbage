@@ -80,8 +80,8 @@ def quadJ : Prog isa := .seq (.block [.alu .add .rbx (.imm 8192)]) (.loop (jacPa
 
 /-- The mask `rdx` of `[z] = 0` (all ones if it is), as `zeroMask`. -/
 def zmask (z : Nat) : List Instr :=
-  [.mov .rdx (.mem (sc z))] ++ ((List.range (K.M.n - 1)).map fun j => .alu .or .rdx (.mem (sc (z + 8 * (j + 1))))) ++
-  [.alu .cmp .rdx (.imm 1), .alu .sbb .rdx (.reg .rdx)]
+  ([.mov .rdx (.mem (sc z))] : List Instr) ++ (((List.range (K.M.n - 1)).map fun j => .alu .or .rdx (.mem (sc (z + 8 * (j + 1))))) : List Instr) ++
+  ([.alu .cmp .rdx (.imm 1), .alu .sbb .rdx (.reg .rdx)] : List Instr)
 
 /-- After the Jacobian addition into `D`: `D = R` where `E` is `O`, then
 `R = E` where `R` is `O`, else `D` (the masks in `rcx`). -/

@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Sm4.X86_64.Ecb
+import VerifiedGarbage.Proof.Sm4.Planes
 
 /-!
 # The start of the SM4 key schedule on x86-64
@@ -13,24 +14,9 @@ namespace VG.Proof.Sm4.X86_64
 
 open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Sm4.X86_64
 open VG.Impl.Aes.X86_64 (q sb t0 t1 movR movS st at_ xorR setMasks)
-open VG.Proof.Sm4 (WordRel ofBlock keyInit readW64_bit getLsbD_wordAt blockAt_getD ofInt_nat)
-
-/-! ## Planes of constants -/
-
-theorem planeOf_bit (x : BitVec 32) (j : Nat) {p : Nat} (hp : p < 64) :
-    (planeOf x j).getLsbD p = x.getLsbD (8 * (3 - p / 16) + j) := by
-  rw [planeOf, BitVec.getLsbD_setWidth, BitVec.getLsbD_ofBoolListLE, List.getD_eq_getElem?_getD,
-    List.getElem?_map, List.getElem?_range hp]
-  simp [hp]
-
-theorem planeOf_rel (x : BitVec 32) : WordRel (planeOf x) (fun _ => x) := fun b _ i hi j _ => by
-  rw [planeOf_bit x j (by omega), show (16 * i + b) / 16 = i by omega]
-
-theorem fkWord_bit {h t : Nat} (ht : t < 64) :
-    (fkWord h).getLsbD t = (Spec.Sm4.fk.getD (2 * h + t / 32) 0).getLsbD (8 * (3 - t % 32 / 8) + t % 8) := by
-  rw [fkWord, BitVec.getLsbD_setWidth, BitVec.getLsbD_ofBoolListLE, List.getD_eq_getElem?_getD,
-    List.getElem?_map, List.getElem?_range ht]
-  simp [ht]
+open VG.Impl.Sm4 (planeOf fkWord)
+open VG.Proof.Sm4 (WordRel ofBlock keyInit readW64_bit getLsbD_wordAt blockAt_getD ofInt_nat planeOf_bit
+  planeOf_rel fkWord_bit)
 
 /-! ## Stores of a register -/
 

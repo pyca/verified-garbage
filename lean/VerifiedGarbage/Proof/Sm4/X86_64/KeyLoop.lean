@@ -13,6 +13,7 @@ namespace VG.Proof.Sm4.X86_64
 
 open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Sm4.X86_64
 open VG.Impl.Aes.X86_64 (q sb t0 t1 movR movS st at_)
+open VG.Impl.Sm4 (planeOf fkWord)
 open VG.Proof.Sm4 (WordRel quads ofBlock outBlock keyInit rkOf readW64_bit getLsbD_outBlock' ofInt_nat)
 
 /-! ## Bytes -/

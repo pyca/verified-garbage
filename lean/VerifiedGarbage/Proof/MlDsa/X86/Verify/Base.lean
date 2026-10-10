@@ -67,11 +67,14 @@ structure VFacts (p : Params) : Prop where
   beta : 0 < p.γ₁ - p.β ∧ p.γ₁ - p.β < 2 ^ 32
   g2 : p.γ₂ ∈ Spec.MlDsa.gamma2s
   sbp : w1Max p ∈ Spec.MlDsa.simpleBitPackBounds ∧ w1Len p = 32 * Spec.MlDsa.bitlen (w1Max p)
+  /-- Which parameter set: a check about one can be decided for each (`lvd`). -/
+  mem : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87
 
 theorem vfacts {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) : VFacts p := by
+  have hm := hp
   rcases hp with rfl | rfl | rfl <;>
     exact ⟨by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide, rfl,
-      by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩
+      by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide, hm⟩
 
 /-! ## The layout -/
 
@@ -182,6 +185,15 @@ macro_rules
           VG.Impl.MlDsa.X86.Verify.oCT, VG.Impl.MlDsa.X86.Verify.oACC, VG.Impl.MlDsa.X86.Verify.oSS,
           VG.Impl.MlDsa.X86.Verify.oHint]
         omega_arith)))
+
+/-- A check about the layout that mentions no variable but the parameter set and
+bounded indices, decided for each parameter set (`decide_at`): cheaper than
+`lv`, which unfolds it into arithmetic on the parameters for `omega`, unless
+there are many indices to try. -/
+syntax "lvd" : tactic
+macro_rules
+  | `(tactic| lvd) => `(tactic| (
+      have hmem := (‹VG.Proof.MlDsa.X86.Verify.VFacts _›).mem; decide_at hmem))
 
 /-- Proves checks of buffers against the layout (`ok`, `okW`, `sep`, `apart`),
 from arithmetic on their offsets closed by `omega`, with the facts of the

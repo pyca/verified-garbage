@@ -79,7 +79,7 @@ def restore : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ .rsi d))
 
 /-- Copy word `k` of the input state to `buf` (words 10 and 11 also to their slots). -/
 def copyWord (k : Nat) : List Instr :=
-  [.mov32 .rax (.mem (at_ .rdi (4 * k))), .store32 (at_ .rsi (inOff k)) .rax] ++
+  ([.mov32 .rax (.mem (at_ .rdi (4 * k))), .store32 (at_ .rsi (inOff k)) .rax] : List Instr) ++
   if k = 10 ∨ k = 11 then [.store32 (at_ .rsi (slotOff k)) .rax] else []
 
 def copy : List Instr := (List.range 16).flatMap copyWord

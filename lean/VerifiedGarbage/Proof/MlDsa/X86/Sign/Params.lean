@@ -43,12 +43,15 @@ structure PS (p : Params) : Prop where
   hok : ParamsOk p
   hβ : 1 ≤ p.β ∧ p.β < p.γ₂ ∧ p.γ₁ < 2 ^ 20 ∧ p.γ₂ < 2 ^ 20
   hscr : scrLen p = 1024 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32)
+  /-- Which parameter set: a check about one can be decided for each (`ofsd`). -/
+  mem : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87
 
 theorem PS.of {p : Params} (h : Ok3 p) : PS p := by
+  have hm : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87 := h
   rcases h with rfl | rfl | rfl <;>
     exact ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel,
       by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel,
-      ⟨by decide +kernel, by decide +kernel, by decide +kernel⟩, by decide +kernel, rfl⟩
+      ⟨by decide +kernel, by decide +kernel, by decide +kernel⟩, by decide +kernel, rfl, hm⟩
 
 /-- The layout, as numbers. -/
 theorem Y_n (p : Params) : (Y p).n = 5 := rfl

@@ -192,7 +192,7 @@ def save : List Instr := saved.map fun (r, d) => .str r .r3 d
 def restore : List Instr := saved.map fun (r, d) => .ldr r .r3 d
 
 def compress : Prog isa :=
-  .seq (.block (save ++ [.mov .r4 (.reg .r1), .mov .r5 (.reg .r2), .cmp .r2 (.imm 0)]))
+  .seq (.block (save ++ ([.mov .r4 (.reg .r1), .mov .r5 (.reg .r2), .cmp .r2 (.imm 0)] : List Instr)))
     (.seq (.ite .eq (.block []) (.loop body .ne)) (.block restore))
 
 end VG.Impl.Sha512.Arm

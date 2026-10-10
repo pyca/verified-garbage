@@ -64,11 +64,12 @@ theorem saveLow_run (t : State) :
       runBlock_cons, exec_umov_x0, runStep_some, runBlock_cons, exec_umov_x0, runStep_some,
       runBlock_cons, exec_umov_x0, runStep_some, runBlock_cons, exec_umov_x0, runStep_some,
       runBlock_cons, exec_umov_x0, runStep_some, runBlock_cons, exec_vmov, runStep_some, runBlock_nil]
-  all_goals first
-    | (simp only [keepGprs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-       simp [t₈, t₇, t₆, t₅, t₄, t₃, t₂, t₁, State.write, State.setV, hr])
-    | simp [t₈, t₇, t₆, t₅, t₄, t₃, t₂, t₁, State.write, State.setV, hr]
-    | simp [t₈, t₇, t₆, t₅, t₄, t₃, t₂, t₁, State.write, State.setV]
+  rotate_right 2
+  · simp only [keepGprs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [t₈, t₇, t₆, t₅, t₄, t₃, t₂, t₁, gpr_setV, gpr_write, hr, ↓reduceIte]
+  · simp only [t₈, t₇, t₆, t₅, t₄, t₃, t₂, t₁, v_setV, v_write, hr, ↓reduceIte]
+  all_goals simp only [t₈, t₇, t₆, t₅, t₄, t₃, t₂, t₁, gpr_setV, gpr_write, v_write, low,
+    BitVec.setWidth_eq, reduceCtorEq, ↓reduceIte]
 
 theorem restoreLow_run (t : State) :
     ∃ t', runBlock isa restoreLow t = some t' ∧
@@ -88,7 +89,10 @@ theorem restoreLow_run (t : State) :
       runBlock_cons, exec_dup_d2, runStep_some, runBlock_cons, exec_dup_d2, runStep_some,
       runBlock_cons, exec_dup_d2, runStep_some, runBlock_cons, exec_dup_d2, runStep_some,
       runBlock_cons, exec_dup_d2, runStep_some, runBlock_cons, exec_vmov, runStep_some, runBlock_nil]
-  all_goals simp [low, t₈, t₇, t₆, t₅, t₄, t₃, t₂, t₁, State.setV, low_ofVDwords]
+  rotate_right
+  · simp only [t₈, t₇, t₆, t₅, t₄, t₃, t₂, t₁, State.setV]
+  all_goals simp only [low, t₈, t₇, t₆, t₅, t₄, t₃, t₂, t₁, v_setV, gpr_setV, low_ofVDwords, reduceCtorEq,
+    ↓reduceIte]
 
 /-! ## The function -/
 

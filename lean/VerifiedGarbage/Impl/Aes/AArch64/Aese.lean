@@ -98,22 +98,22 @@ def regs8 : List VReg := [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7]
 def body8 : Prog isa :=
   .seq (.block (ctrs regs8 0))
     (.seq (aes regs8)
-      (.block (xorData regs8 0 ++ [.addImm .w .x10 .x10 8, .addImm .x .x3 .x3 128,
-        .subImm .x .x4 .x4 8, .lsr .x .x13 .x4 3])))
+      (.block (xorData regs8 0 ++ ([.addImm .w .x10 .x10 8, .addImm .x .x3 .x3 128,
+        .subImm .x .x4 .x4 8, .lsr .x .x13 .x4 3] : List Instr))))
 
 /-- One block. -/
 def body1 : Prog isa :=
   .seq (.block (ctrs [.v0] 0))
     (.seq (aes [.v0])
-      (.block (xorData [.v0] 0 ++ [.addImm .w .x10 .x10 1, .addImm .x .x3 .x3 16,
-        .subImm .x .x4 .x4 1])))
+      (.block (xorData [.v0] 0 ++ ([.addImm .w .x10 .x10 1, .addImm .x .x3 .x3 16,
+        .subImm .x .x4 .x4 1] : List Instr))))
 
 /-- Load the round keys, and set up `x6`, `x7`, the counter `w10` and `x13 = n / 8`. -/
 def setup : List Instr :=
   (List.range 13).map (fun j => .ldrq (kreg j) .x0 (16 * j)) ++
-  [.lsl .x .x9 .x1 4, .add .x .x9 .x0 .x9, .ldrq .v30 .x9 0, .subImm .x .x9 .x9 16,
+  ([.lsl .x .x9 .x1 4, .add .x .x9 .x0 .x9, .ldrq .v30 .x9 0, .subImm .x .x9 .x9 16,
    .ldrq .v29 .x9 0, .subImm .x .x6 .x1 10, .subImm .x .x7 .x1 12,
-   .ldr .w .x10 .x2 12, .rev32 .x10 .x10, .lsr .x .x13 .x4 3]
+   .ldr .w .x10 .x2 12, .rev32 .x10 .x10, .lsr .x .x13 .x4 3] : List Instr)
 
 /-- Write the final counter back. -/
 def ctrStore : List Instr := [.rev32 .x12 .x10, .str .w .x12 .x2 12]
@@ -145,10 +145,10 @@ def word (nk i : Nat) : List Instr :=
   let p := wreg nk (i - 1)
   (if i < nk then [.ldr .w r .x0 (4 * i)]
    else if i % nk = 0 then
-     subW p ++ [.ror .w .x9 .x9 8, .movz .w .x10 ((rc (i / nk)).setWidth 16) 0,
-       .logic .eor .w .x9 .x9 .x10, .logic .eor .w r r .x9]
-   else if nk > 6 ∧ i % nk = 4 then subW p ++ [.logic .eor .w r r .x9]
-   else [.logic .eor .w r r p]) ++ [.str .w r .x2 (4 * i)]
+     subW p ++ ([.ror .w .x9 .x9 8, .movz .w .x10 ((rc (i / nk)).setWidth 16) 0,
+       .logic .eor .w .x9 .x9 .x10, .logic .eor .w r r .x9] : List Instr)
+   else if nk > 6 ∧ i % nk = 4 then subW p ++ ([.logic .eor .w r r .x9] : List Instr)
+   else [.logic .eor .w r r p]) ++ ([.str .w r .x2 (4 * i)] : List Instr)
 
 /-- The `4 (Nk + 7)` words of the schedule of an `Nk`-word key. -/
 def expandN (nk : Nat) : List Instr := (List.range (4 * (nk + 7))).flatMap (word nk)

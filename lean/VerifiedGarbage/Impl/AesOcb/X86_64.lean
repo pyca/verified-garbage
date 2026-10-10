@@ -182,8 +182,8 @@ def table : Prog isa :=
       .shift .shr .r9 5, mvr .r10 .r15, addi .r10 tblO, .mov .r11 (.imm 1), .movImm64 .rsi debruijn,
       .alu .test .r9 (.reg .r9)]))
     (.ite .e (.block [])
-      (.loop (.block ([.alu .add .r11 (.reg .r11), mvr .rax .r11, .mul .rsi] ++ slotOf ++
-          [.alu .add .rax (.reg .r15), mvr .rdi .rax] ++ dbl .r10 0 .rdi tblO ++
+      (.loop (.block (([.alu .add .r11 (.reg .r11), mvr .rax .r11, .mul .rsi] : List Instr) ++ slotOf ++
+          ([.alu .add .rax (.reg .r15), mvr .rdi .rax] : List Instr) ++ dbl .r10 0 .rdi tblO ++
           [mvr .r10 .rdi, addi .r10 tblO, .shift .shr .r9 1, .alu .test .r9 (.reg .r9)])) .ne))
 
 /-- The `r12` bytes at `rbx` copied to `rsi`, from `rcx = 0` (`r12 > 0`). -/
@@ -220,9 +220,9 @@ low): shifted left by `a` bits if bit `k` of `bottom` (in `rbx`) is set.
 def stage (k a : Nat) : List Instr :=
   -- The mask: all ones if bit `k` is set.
   [mvr .r9 .rbx] ++ (if k = 0 then [] else [.shift .shr .r9 k]) ++
-  [.alu .and .r9 (.imm 1), .alu .xor .r10 (.reg .r10), .alu .sub .r10 (.reg .r9),
+  ([.alu .and .r9 (.imm 1), .alu .xor .r10 (.reg .r10), .alu .sub .r10 (.reg .r9),
    -- `r11` keeps the bits above the `a` lowest.
-   .movImm64 .r11 (BitVec.allOnes 64 <<< a)] ++
+   .movImm64 .r11 (BitVec.allOnes 64 <<< a)] : List Instr) ++
   -- Each word, from the high one: `x ← x ⊕ ((x' ⊕ x) ∧ mask)`, where
   -- `x' = (x ⋘ a) ∨ (next ⋙ (64 − a))`.
   ([(Reg.rax, Reg.rdx), (.rdx, .rcx)].flatMap fun (x, y) =>
@@ -242,8 +242,8 @@ def offset0 : List Instr :=
    .alu .and .rcx (.reg .r8), mvr .r8 .rdx, .shift .shr .r8 56, .alu .or .rcx (.reg .r8),
    .alu .xor .rcx (.reg .rax), ld .rbx .r15 botO] ++
   stage 0 1 ++ stage 1 2 ++ stage 2 4 ++ stage 3 8 ++ stage 4 16 ++ stage 5 32 ++
-  [.bswap .rax, .bswap .rdx, st .r15 ofsO .rax, st .r15 (ofsO + 8) .rdx, st .r15 o0O .rax,
-   st .r15 (o0O + 8) .rdx]
+  ([.bswap .rax, .bswap .rdx, st .r15 ofsO .rax, st .r15 (ofsO + 8) .rdx, st .r15 o0O .rax,
+   st .r15 (o0O + 8) .rdx] : List Instr)
 
 variable (c : Callees)
 
@@ -304,7 +304,7 @@ def hash : Prog isa :=
 
 /-- The offset of block `i` (in `rbp`): `Offset ← Offset ⊕ L_{ntz(i)}`, in
 `xmm0`. -/
-def nextOffset : List Instr := lAddr ++ [.movdquLoad .xmm2 (at_ .rcx tblO), .xop (.bin .pxor .xmm0 .xmm2)]
+def nextOffset : List Instr := lAddr ++ ([.movdquLoad .xmm2 (at_ .rcx tblO), .xop (.bin .pxor .xmm0 .xmm2)] : List Instr)
 
 /-- The checksum, in `xmm1`, `⊕=` the block in `xmm3`. -/
 def addCk : Instr := .xop (.bin .pxor .xmm1 .xmm3)
@@ -321,14 +321,14 @@ def ofsX (x : XReg) : List Instr := [.xop (.bin .pxor .xmm0 x)]
 /-- One block: its offset (`ofs`), then loaded to `xmm3` from `rbx`, through
 `body`, stored back, and on to the next. -/
 def blockStep (ofs body : List Instr) : List Instr :=
-  ofs ++ [.movdquLoad .xmm3 (at_ .rbx 0)] ++ body ++ [.movdquStore (at_ .rbx 0) .xmm3] ++ nextBlock
+  ofs ++ ([.movdquLoad .xmm3 (at_ .rbx 0)] : List Instr) ++ body ++ ([.movdquStore (at_ .rbx 0) .xmm3] : List Instr) ++ nextBlock
 
 /-- Four blocks, `i = 4k + 1` to `4k + 4`, whose `ntz(i)` are 0, 1, 0 and at
 least 2: `L_0` and `L_1` are in `xmm4` and `xmm5`. Then CF is set if fewer
 than 4 blocks are left. -/
 def quad (body : List Instr) : List Instr :=
   blockStep (ofsX .xmm4) body ++ blockStep (ofsX .xmm5) body ++ blockStep (ofsX .xmm4) body ++
-    blockStep nextOffset body ++ [.alu .sub .r12 (.imm 4), .alu .cmp .r12 (.imm 4)]
+    blockStep nextOffset body ++ ([.alu .sub .r12 (.imm 4), .alu .cmp .r12 (.imm 4)] : List Instr)
 
 /-- A pass over the `r12` whole blocks of the data at `rbx` (`r12 > 0`),
 with `i` from 1 in `rbp`, the offset and the checksum in `xmm0` and `xmm1`
@@ -339,7 +339,7 @@ def pass (body : List Instr) : Prog isa :=
       .movdquLoad .xmm4 (at_ .r15 tblO), .movdquLoad .xmm5 (at_ .r15 (tblO + 16)), .alu .cmp .r12 (.imm 4)])
     (.seq (.ite .b (.block []) (.loop (.block (quad body)) .ae))
       (.seq (.block [.alu .test .r12 (.reg .r12)])
-        (.seq (.ite .e (.block []) (.loop (.block (blockStep nextOffset body ++ [.alu .sub .r12 (.imm 1)])) .ne))
+        (.seq (.ite .e (.block []) (.loop (.block (blockStep nextOffset body ++ ([.alu .sub .r12 (.imm 1)] : List Instr))) .ne))
           (.block [.movdquStore (at_ .r15 ofsO) .xmm0, .movdquStore (at_ .r15 ckO) .xmm1]))))
 
 /-- The whole blocks: `pre` (the first pass), `f` on all of them, `post` (the
@@ -386,7 +386,7 @@ def tag (d : Nat) : Prog isa :=
 registers saved, the arguments kept in `W`, `L_$` and `L_0`, the checksum
 zeroed. -/
 def entry : List Instr :=
-  [.mov .rax (.mem (at_ .rsp 40))] ++ save .rax ++
+  ([.mov .rax (.mem (at_ .rsp 40))] : List Instr) ++ save .rax ++
   [mvr .r15 .rax, mvr .r14 .rdi, st .r15 rndO .rsi, st .r15 nO .rdx, st .r15 nlO .rcx,
    st .r15 aadO .r8, st .r15 alenO .r9,
    ld .rax .rsp 8, st .r15 dataO .rax, ld .rax .rsp 16, st .r15 lenO .rax, ld .rax .rsp 32,

@@ -16,9 +16,9 @@ def arithmetic : List Instr :=
     .vop (.umin .v0 .v0 .v4)]
 
 def body : List Instr :=
-  [.ldrq .v0 .x1 0,.ldrq .v1 .x2 0] ++ arithmetic ++
-    [.strq .v0 .x0 0,.addImm .x .x0 .x0 16,.addImm .x .x1 .x1 16,
-      .addImm .x .x2 .x2 16,.subImm .x .x12 .x12 1]
+  ([.ldrq .v0 .x1 0,.ldrq .v1 .x2 0] : List Instr) ++ arithmetic ++
+    ([.strq .v0 .x0 0,.addImm .x .x0 .x0 16,.addImm .x .x1 .x1 16,
+      .addImm .x .x2 .x2 16,.subImm .x .x12 .x12 1] : List Instr)
 
 def code : Prog isa := .seq (.block setup) (.loop (.block body) (.nonzero .x .x12))
 

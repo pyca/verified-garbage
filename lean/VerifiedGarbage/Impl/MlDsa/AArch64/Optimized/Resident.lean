@@ -31,8 +31,8 @@ def streamWith (core : Prog isa) (words blocks : Nat) (a b : Reg) : Prog isa :=
   if blocks=0 then .block [] else
   .seq (.block [.movz .x .x28 (BitVec.ofNat 16 blocks) 0]) <|
     .loop (.seq core (.block (squeeze words a b ++
-      [.addImm .x a a (8*words), .addImm .x b b (8*words),
-       .subImm .x .x28 .x28 1]))) (.nonzero .x .x28)
+      ([.addImm .x a a (8*words), .addImm .x b b (8*words),
+       .subImm .x .x28 .x28 1] : List Instr)))) (.nonzero .x .x28)
 
 /-- The original schedule remains the default. -/
 def stream (words blocks : Nat) (a b : Reg) : Prog isa := streamWith permute words blocks a b

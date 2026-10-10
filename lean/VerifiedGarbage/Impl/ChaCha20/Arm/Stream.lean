@@ -68,7 +68,7 @@ def setNonceInstrs : List Instr :=
 def setNonce : Prog isa := .block setNonceInstrs
 
 /-- The key at `r1` into words 4–11, and the nonce pointer into `r1`. -/
-def keyInstrs : List Instr := copyWords .r3 .r1 .r0 0 16 8 ++ [.mov .r1 (.reg .r2)]
+def keyInstrs : List Instr := copyWords .r3 .r1 .r0 0 16 8 ++ ([.mov .r1 (.reg .r2)] : List Instr)
 
 def init : Prog isa := .block (keyInstrs ++ setNonceInstrs)
 
@@ -109,8 +109,8 @@ def part1 : Prog isa :=
 and the arguments of `vg_chacha20_xor`; their length is kept in `r7`. -/
 def blocksArgs : List Instr :=
   copyWords .r0 .r4 .r4 0 192 16 ++
-  [.ldr .r0 .r4 48, .mov .r1 (.shifted .r2 .lsr 6), .dp .add .r0 .r0 (.reg .r1), .str .r0 .r4 48,
-   .mov .r7 (.reg .r2), .dp .add .r0 .r4 (.imm 192), .mov .r1 (.reg .r5), .dp .add .r3 .r4 (.imm 256)]
+  ([.ldr .r0 .r4 48, .mov .r1 (.shifted .r2 .lsr 6), .dp .add .r0 .r0 (.reg .r1), .str .r0 .r4 48,
+   .mov .r7 (.reg .r2), .dp .add .r0 .r4 (.imm 192), .mov .r1 (.reg .r5), .dp .add .r3 .r4 (.imm 256)] : List Instr)
 
 def part2 : Prog isa :=
   .ite .eq (.block [])

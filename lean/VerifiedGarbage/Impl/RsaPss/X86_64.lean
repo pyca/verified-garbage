@@ -187,8 +187,8 @@ def ctInit : Prog isa := .seq (.block (scr .rdi oSt)) (.call H.initN H.initC)
 
 /-- `0x80` ORed into byte `ℓ` of `Y`, a mask for each of its `nbm B` bytes. -/
 def pad80 : Prog isa :=
-  .seq (.block (scr .rcx oY ++ [.mov .rdx (.mem (sp sL)), .mov .r10 (.mem (sp sNb)),
-      .shift .ror .r10 (64 - lgB H), .mov32 .r8 (.imm 0)]))
+  .seq (.block (scr .rcx oY ++ ([.mov .rdx (.mem (sp sL)), .mov .r10 (.mem (sp sNb)),
+      .shift .ror .r10 (64 - lgB H), .mov32 .r8 (.imm 0)] : List Instr)))
     (byteLoop ([.mov .rax (.reg .r8), .alu .xor .rax (.reg .rdx), .alu .cmp .rax (.imm 1),
       .alu .sbb .rax (.reg .rax), .alu .and .rax (.imm 0x80), .movzx8 .r9 (ix .rcx .r8),
       .alu .or .r9 (.reg .rax), .store8 (ix .rcx .r8) .r9]) (.reg .r10))
@@ -197,16 +197,16 @@ def pad80 : Prog isa :=
 so that it writes there), and the last block's index `⌊(ℓ + L) / B⌋` to
 `sFb`. -/
 def lenField : List Instr :=
-  scr .rbx (oLen - (H.P.N + H.P.B - H.P.L)) ++ [.mov .r12 (.mem (sp sL))] ++ H.P.len ++
-    [.mov .rax (.mem (sp sL)), .alu .add .rax (.imm (BitVec.ofNat 32 H.P.L)), .shift .shr .rax (lgB H),
-      .store (sp sFb) .rax]
+  scr .rbx (oLen - (H.P.N + H.P.B - H.P.L)) ++ ([.mov .r12 (.mem (sp sL))] : List Instr) ++ H.P.len ++
+    ([.mov .rax (.mem (sp sL)), .alu .add .rax (.imm (BitVec.ofNat 32 H.P.L)), .shift .shr .rax (lgB H),
+      .store (sp sFb) .rax] : List Instr)
 
 /-- The length field ORed into the last `L` bytes of block `b` (`r8`, the
 counter, at `rcx`) under the mask of `b = ⌊(ℓ + L) / B⌋`, for every block. -/
 def lenLoop : Prog isa :=
   .seq (.block (scr .rcx (oY + H.P.B - H.P.L) ++ scr .rsi oLen ++
-      [.mov .rdx (.mem (sp sFb)), .mov .r10 (.mem (sp sNb)), .mov32 .r8 (.imm 0)]))
-    (.loop (.seq (.block (eqMask .r11 .r8 (.reg .rdx) ++ [.mov32 .r9 (.imm 0)]))
+      ([.mov .rdx (.mem (sp sFb)), .mov .r10 (.mem (sp sNb)), .mov32 .r8 (.imm 0)] : List Instr)))
+    (.loop (.seq (.block (eqMask .r11 .r8 (.reg .rdx) ++ ([.mov32 .r9 (.imm 0)] : List Instr)))
       (.seq (.loop (.block [.movzx8 .rax (ix .rsi .r9), .alu .and .rax (.reg .r11), .movzx8 .rdi (ix .rcx .r9),
           .alu .or .rdi (.reg .rax), .store8 (ix .rcx .r9) .rdi, .alu .add .r9 (.imm 1),
           .alu .cmp .r9 (.imm (BitVec.ofNat 32 H.P.L))]) .ne)
@@ -216,8 +216,8 @@ def lenLoop : Prog isa :=
 /-- The arguments of the compression function: the hash value at
 `scratch + oSt`, block `b` (`sB`) of `Y`, one block, the working space. -/
 def compArgs : List Instr :=
-  scr .rdi oSt ++ [.mov .rcx (.mem (sp sScr)), .mov .rsi (.mem (sp sB)), .shift .ror .rsi (64 - lgB H),
-    .alu .add .rsi (.reg .rcx), .alu .add .rsi (.imm (BitVec.ofNat 32 oY)), .mov32 .rdx (.imm 1)]
+  scr .rdi oSt ++ ([.mov .rcx (.mem (sp sScr)), .mov .rsi (.mem (sp sB)), .shift .ror .rsi (64 - lgB H),
+    .alu .add .rsi (.reg .rcx), .alu .add .rsi (.imm (BitVec.ofNat 32 oY)), .mov32 .rdx (.imm 1)] : List Instr)
 
 /-- The hash value copied to `scratch + oSel` under the mask of
 `b = ⌊(ℓ + L) / B⌋`. -/
@@ -286,7 +286,7 @@ def mgfNb : Nat := (H.D + 4 + H.P.L) / H.P.B + 1
 
 /-- `Y`'s first `mgfNb` blocks cleared, and `rcx` = `Y`. -/
 def clearBlock : Prog isa :=
-  .seq (.block (scr .rcx oY ++ [.mov32 .rax (.imm 0), .mov32 .r8 (.imm 0)]))
+  .seq (.block (scr .rcx oY ++ ([.mov32 .rax (.imm 0), .mov32 .r8 (.imm 0)] : List Instr)))
     (.loop (.block [.store (ix .rcx .r8) .rax, .alu .add .r8 (.imm 8),
       .alu .cmp .r8 (.imm (BitVec.ofNat 32 (mgfNb H * H.P.B)))]) .ne)
 
@@ -314,9 +314,9 @@ def counter : List Instr :=
 /-- The first `min(hLen, dbLen - done)` bytes of the digest XORed into `DB`
 at `done`. -/
 def xorArgs : List Instr :=
-  scr .rcx oDig ++ [.mov .rdx (.mem (sp sDone)), .mov .rdi (.mem (sp sEb)), .alu .add .rdi (.reg .rdx),
+  scr .rcx oDig ++ ([.mov .rdx (.mem (sp sDone)), .mov .rdi (.mem (sp sEb)), .alu .add .rdi (.reg .rdx),
     .mov .rax (.mem (sp sDb)), .alu .sub .rax (.reg .rdx), .mov32 .r10 (.imm (BitVec.ofNat 32 H.D)),
-    .alu .cmp .rax (.reg .r10)]
+    .alu .cmp .rax (.reg .r10)] : List Instr)
 
 def xorOutBytes : Prog isa :=
   seqs [.block (xorArgs H),
@@ -372,14 +372,14 @@ def saltFits : List Instr :=
 /-- `dbLen = emLen - hLen - 1` (from `rax = emLen - hLen - 2`) and
 `DB = scratch + oEm + lo` into their slots. -/
 def dbSlots : List Instr :=
-  [.alu .add .rax (.imm 1), .store (sp sDb) .rax] ++ scr .rax oEm ++
-    [.mov .rdx (.mem (sp sLo)), .alu .add .rax (.reg .rdx), .store (sp sEb) .rax]
+  ([.alu .add .rax (.imm 1), .store (sp sDb) .rax] : List Instr) ++ scr .rax oEm ++
+    ([.mov .rdx (.mem (sp sLo)), .alu .add .rax (.reg .rdx), .store (sp sEb) .rax] : List Instr)
 
 /-! ## Common pieces -/
 
 /-- `Y` cleared (2048 bytes, a word at a time), and `rcx` = `Y`. -/
 def clearY : Prog isa :=
-  .seq (.block (scr .rcx oY ++ [.mov32 .rax (.imm 0), .mov32 .r8 (.imm 0)]))
+  .seq (.block (scr .rcx oY ++ ([.mov32 .rax (.imm 0), .mov32 .r8 (.imm 0)] : List Instr)))
     (.loop (.block [.store (ix .rcx .r8) .rax, .alu .add .r8 (.imm 8), .alu .cmp .r8 (.imm 2048)]) .ne)
 
 /-- The digest `mHash` after the 8 zero bytes of `Y` (in `rcx`). -/
@@ -402,10 +402,10 @@ salt_len, scratch, scratch_len)`, the last fifteen on the stack. -/
 
 /-- The arguments into their slots. -/
 def signPrologue : List Instr :=
-  saveRegs ++ [.store (sp sOut) .rdi, .store (sp sN) .rdx, .store (sp sK) .rcx, .store (sp sE) .r8,
+  saveRegs ++ ([.store (sp sOut) .rdi, .store (sp sN) .rdx, .store (sp sK) .rcx, .store (sp sE) .r8,
     .store (sp sEl) .r9, .mov .rax (.mem (arg 10)), .store (sp sDig) .rax, .mov .rax (.mem (arg 11)),
     .store (sp sSalt) .rax, .mov .rax (.mem (arg 12)), .store (sp sSaltLen) .rax, .mov .rax (.mem (arg 13)),
-    .store (sp sScr) .rax, .mov .rax (.mem (arg 14)), .store (sp sScrLen) .rax]
+    .store (sp sScr) .rax, .mov .rax (.mem (arg 14)), .store (sp sScrLen) .rax] : List Instr)
 
 /-- Zeros to `out` and 0 returned. -/
 def signFail : Prog isa :=
@@ -429,7 +429,7 @@ def signLen : List Instr := hashSaltLen H 40
 
 /-- `EM`'s `k` bytes cleared. -/
 def clearEm : Prog isa :=
-  .seq (.block (scr .rcx oEm ++ [.mov .r10 (.mem (sp sK)), .mov32 .rax (.imm 0), .mov32 .r8 (.imm 0)]))
+  .seq (.block (scr .rcx oEm ++ ([.mov .r10 (.mem (sp sK)), .mov32 .rax (.imm 0), .mov32 .r8 (.imm 0)] : List Instr)))
     (byteLoop [.store8 (ix .rcx .r8) .rax] (.reg .r10))
 
 /-- `0x01` at `DB + dbLen - sLen - 1`, and the salt after it. -/
@@ -443,22 +443,22 @@ def putSalt : Prog isa :=
 
 /-- `H` (the digest) at `DB + dbLen`, and `0xbc` at `EM`'s last byte. -/
 def putH : Prog isa :=
-  .seq (.block ([.mov .rdi (.mem (sp sEb)), .mov .rax (.mem (sp sDb)), .alu .add .rdi (.reg .rax)] ++ scr .rsi oDig ++
-      [.mov32 .r8 (.imm 0)]))
+  .seq (.block (([.mov .rdi (.mem (sp sEb)), .mov .rax (.mem (sp sDb)), .alu .add .rdi (.reg .rax)] : List Instr) ++ scr .rsi oDig ++
+      ([.mov32 .r8 (.imm 0)] : List Instr)))
     (.seq (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rdi .r8) .rax] (.imm (BitVec.ofNat 32 H.D)))
-      (.block (scr .rdi oEm ++ [.mov .rax (.mem (sp sK)), .alu .add .rdi (.reg .rax), .alu .sub .rdi (.imm 1),
+      (.block (scr .rdi oEm ++ ([.mov .rax (.mem (sp sK)), .alu .add .rdi (.reg .rax), .alu .sub .rdi (.imm 1),
         .mov32 .rax (.imm 0xbc),
-        .store8 (at_ .rdi) .rax])))
+        .store8 (at_ .rdi) .rax] : List Instr))))
 
 /-- The arguments of `vg_rsa_private_checked`: `out`, `n` (`k` bytes), `e`,
 `EM` as the input (`k` bytes), the private key, and the rest of `scratch`. -/
 def privArgs : List Instr :=
   (List.range 10).flatMap (fun j => [.mov .rax (.mem (arg j)), .store (sp (16 + 8 * j)) .rax]) ++
-  scr .rax oEm ++ [.store (sp 0) .rax, .mov .rax (.mem (sp sK)), .store (sp 8) .rax] ++
-  scr .rax oRsa ++ [.store (sp 96) .rax, .mov .rax (.mem (sp sScrLen)), .alu .sub .rax (.imm 1024),
-    .store (sp 104) .rax] ++
-  [.mov .rdi (.mem (sp sOut)), .mov .rsi (.mem (sp sK)), .mov .rdx (.mem (sp sN)), .mov .rcx (.mem (sp sK)),
-    .mov .r8 (.mem (sp sE)), .mov .r9 (.mem (sp sEl))]
+  scr .rax oEm ++ ([.store (sp 0) .rax, .mov .rax (.mem (sp sK)), .store (sp 8) .rax] : List Instr) ++
+  scr .rax oRsa ++ ([.store (sp 96) .rax, .mov .rax (.mem (sp sScrLen)), .alu .sub .rax (.imm 1024),
+    .store (sp 104) .rax] : List Instr) ++
+  ([.mov .rdi (.mem (sp sOut)), .mov .rsi (.mem (sp sK)), .mov .rdx (.mem (sp sN)), .mov .rcx (.mem (sp sK)),
+    .mov .r8 (.mem (sp sE)), .mov .r9 (.mem (sp sEl))] : List Instr)
 
 variable (privN : String) (privC : Prog isa)
 
@@ -474,7 +474,7 @@ def signMain : Prog isa := seqs [signEnc H, .block privArgs, .call privN privC]
 def signBody : Prog isa :=
   seqs [.block (signPrologue ++ n0),
     .ite .e signFail (seqs [.block smear, emLen H,
-      .ite .b signFail (seqs [.block ([.mov .rdx (.mem (sp sSaltLen))] ++ saltFits H),
+      .ite .b signFail (seqs [.block (([.mov .rdx (.mem (sp sSaltLen))] : List Instr) ++ saltFits H),
         .ite .b signFail (signMain H privN privC)])]),
     .block restoreRegs]
 
@@ -488,9 +488,9 @@ sig_len, salt_len, any_salt_len, scratch, scratch_len)`, the last five on
 the stack. -/
 
 def verifyPrologue : List Instr :=
-  saveRegs ++ [.store (sp sN) .rdi, .store (sp sK) .rsi, .store (sp sE) .rdx, .store (sp sEl) .rcx,
+  saveRegs ++ ([.store (sp sN) .rdi, .store (sp sK) .rsi, .store (sp sE) .rdx, .store (sp sEl) .rcx,
     .store (sp sDig) .r8, .store (sp sSig) .r9, .mov .rax (.mem (arg 3)), .store (sp sScr) .rax,
-    .mov .rax (.mem (arg 4)), .store (sp sScrLen) .rax]
+    .mov .rax (.mem (arg 4)), .store (sp sScrLen) .rax] : List Instr)
 
 /-- `sAny := any_salt_len ≠ 0` and `sSlen := salt_len`; `rdx` the expected
 length for the check, 0 if any. -/
@@ -506,22 +506,22 @@ def verifyFail : Prog isa := .block [.mov32 .rax (.imm 0)]
 /-- The arguments of `vg_rsa_public_checked`: `EM`'s place (`k` bytes),
 `n`, `e`, the signature (`k` bytes), and the rest of `scratch`. -/
 def pubArgs : List Instr :=
-  [.mov .rax (.mem (sp sSig)), .store (sp 0) .rax, .mov .rax (.mem (sp sK)), .store (sp 8) .rax] ++
-  scr .rax oRsa ++ [.store (sp 16) .rax, .mov .rax (.mem (sp sScrLen)), .alu .sub .rax (.imm 1024),
-    .store (sp 24) .rax] ++ scr .rdi oEm ++
-  [.mov .rsi (.mem (sp sK)), .mov .rdx (.mem (sp sN)), .mov .rcx (.mem (sp sK)), .mov .r8 (.mem (sp sE)),
-    .mov .r9 (.mem (sp sEl))]
+  ([.mov .rax (.mem (sp sSig)), .store (sp 0) .rax, .mov .rax (.mem (sp sK)), .store (sp 8) .rax] : List Instr) ++
+  scr .rax oRsa ++ ([.store (sp 16) .rax, .mov .rax (.mem (sp sScrLen)), .alu .sub .rax (.imm 1024),
+    .store (sp 24) .rax] : List Instr) ++ scr .rdi oEm ++
+  ([.mov .rsi (.mem (sp sK)), .mov .rdx (.mem (sp sN)), .mov .rcx (.mem (sp sK)), .mov .r8 (.mem (sp sE)),
+    .mov .r9 (.mem (sp sEl))] : List Instr)
 
 /-- `acc :=` the leading byte if `lo = 1`, `EM`'s last byte `⊕ 0xbc`, and the
 top bits of `maskedDB`'s first byte. -/
 def acc0 : List Instr :=
-  scr .rcx oEm ++ [.mov .rdi (.mem (sp sK)), .alu .add .rdi (.reg .rcx), .alu .sub .rdi (.imm 1),
+  scr .rcx oEm ++ ([.mov .rdi (.mem (sp sK)), .alu .add .rdi (.reg .rcx), .alu .sub .rdi (.imm 1),
     .movzx8 .rax (at_ .rdi), .alu .xor .rax (.imm 0xbc),
     .movzx8 .r9 (at_ .rcx), .mov .r10 (.mem (sp sLo)), .mov32 .r11 (.imm 0), .alu .sub .r11 (.reg .r10),
     .alu .and .r9 (.reg .r11),
     .alu .or .rax (.reg .r9),
     .mov .rdi (.mem (sp sEb)), .movzx8 .r9 (at_ .rdi), .mov .r11 (.mem (sp sC)), .alu .xor .r11 (.imm 0xFF),
-    .alu .and .r9 (.reg .r11), .alu .or .rax (.reg .r9), .store (sp sAcc) .rax]
+    .alu .and .r9 (.reg .r11), .alu .or .rax (.reg .r9), .store (sp sAcc) .rax] : List Instr)
 
 /-- The first nonzero byte of `DB`: its index into `rsi`, its value into
 `r11`, and `rdx` all ones if there is one. -/
@@ -553,9 +553,9 @@ def copyDb : Prog isa :=
 /-- One pass of the shift: every byte of `DB`'s place in `Y` replaced by
 the one `d` (`sD`) bytes after it if bit 0 of `a` (`sA`) is set. -/
 def shiftPass : Prog isa :=
-  .seq (.block (scr .rcx (oY + 8 + H.D) ++ [.mov .rsi (.mem (sp sD)), .alu .add .rsi (.reg .rcx),
+  .seq (.block (scr .rcx (oY + 8 + H.D) ++ ([.mov .rsi (.mem (sp sD)), .alu .add .rsi (.reg .rcx),
       .mov .r11 (.mem (sp sA)), .alu .and .r11 (.imm 1), .mov32 .r9 (.imm 0), .alu .sub .r9 (.reg .r11),
-      .mov .r10 (.mem (sp sDb)), .mov32 .r8 (.imm 0)]))
+      .mov .r10 (.mem (sp sDb)), .mov32 .r8 (.imm 0)] : List Instr)))
     (byteLoop [.movzx8 .rax (ix .rcx .r8), .movzx8 .rdi (ix .rsi .r8), .alu .xor .rdi (.reg .rax),
       .alu .and .rdi (.reg .r9), .alu .xor .rax (.reg .rdi), .store8 (ix .rcx .r8) .rax] (.reg .r10))
 
@@ -579,8 +579,8 @@ def verifyNb : List Instr :=
 
 /-- `acc` ORed with the digest `⊕ H`, and the result: 1 if `acc = 0`. -/
 def cmpH : Prog isa :=
-  .seq (.block (scr .rcx oDig ++ [.mov .rdi (.mem (sp sEb)), .mov .rdx (.mem (sp sDb)), .alu .add .rdi (.reg .rdx),
-      .mov .rdx (.mem (sp sAcc)), .mov32 .r8 (.imm 0)]))
+  .seq (.block (scr .rcx oDig ++ ([.mov .rdi (.mem (sp sEb)), .mov .rdx (.mem (sp sDb)), .alu .add .rdi (.reg .rdx),
+      .mov .rdx (.mem (sp sAcc)), .mov32 .r8 (.imm 0)] : List Instr)))
     (.seq (byteLoop [.movzx8 .rax (ix .rcx .r8), .movzx8 .r9 (ix .rdi .r8), .alu .xor .rax (.reg .r9),
         .alu .or .rdx (.reg .rax)] (.imm (BitVec.ofNat 32 H.D)))
       (.block [.alu .cmp .rdx (.imm 1), .alu .sbb .rax (.reg .rax), .alu .and .rax (.imm 1)]))
@@ -622,8 +622,8 @@ def verifyMain : Prog isa :=
 def verifyBody : Prog isa :=
   seqs [.block (verifyPrologue ++ n0),
     .ite .e verifyFail (seqs [.block smear, emLen H,
-      .ite .b verifyFail (seqs [anyArgs, .block ([.mov .rax (.mem (sp sK)), .mov .r8 (.mem (sp sLo)),
-          .alu .sub .rax (.reg .r8)] ++
+      .ite .b verifyFail (seqs [anyArgs, .block (([.mov .rax (.mem (sp sK)), .mov .r8 (.mem (sp sLo)),
+          .alu .sub .rax (.reg .r8)] : List Instr) ++
           saltFits H),
         .ite .b verifyFail (verifyMain H pubN pubC)])]),
     .block restoreRegs]

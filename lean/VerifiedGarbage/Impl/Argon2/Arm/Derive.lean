@@ -31,7 +31,7 @@ def reduceClear : List Instr :=
 /-- XOR the last block of lane `[r11, #laneOff]` into the first block. -/
 def reduceLane : List Instr :=
   [ld .r0 laneOff, ld .r1 laneLenOff, .dp .sub .r1 .r1 (.imm 1)] ++ blockAddr ++
-    [.mov .r1 (.reg .r0), ld .r3 (argOff memoryArg)] ++ writeBlock true
+    ([.mov .r1 (.reg .r0), ld .r3 (argOff memoryArg)] : List Instr) ++ writeBlock true
 
 def reduce : Prog isa :=
   .seq (.block (reduceClear ++ setLocal laneOff 0))

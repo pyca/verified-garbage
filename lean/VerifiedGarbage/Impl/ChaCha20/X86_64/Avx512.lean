@@ -94,7 +94,7 @@ def consts : List Instr := Avx2.storeQ incOff incQ
 /-- Row `row` of the input state, each word spread into all of `xs`,
 broadcast through the last of them. -/
 def spread (row : Nat) (xs : List XReg) : List Instr :=
-  [.vbroadcasti32x4 (xs.getD 3 .xmm0) (at_ .rdi (16 * row))] ++
+  ([.vbroadcasti32x4 (xs.getD 3 .xmm0) (at_ .rdi (16 * row))] : List Instr) ++
   (List.range 4).map fun i =>
     .zop (.vpshufd (xs.getD i .xmm0) (xs.getD 3 .xmm0) (BitVec.ofNat 8 (0x55 * i)))
 
@@ -102,7 +102,7 @@ def spread (row : Nat) (xs : List XReg) : List Instr :=
 (in the `buf` at `b`) added to word 12. -/
 def setupB (b : Reg) : List Instr :=
   spread 3 [.xmm12, .xmm13, .xmm14, .xmm15] ++
-  [.vmovdqu32Load .xmm0 (at_ b incOff), z .vpaddd .xmm12 .xmm12 .xmm0] ++
+  ([.vmovdqu32Load .xmm0 (at_ b incOff), z .vpaddd .xmm12 .xmm12 .xmm0] : List Instr) ++
   spread 0 [.xmm0, .xmm1, .xmm2, .xmm3] ++ spread 1 [.xmm4, .xmm5, .xmm6, .xmm7] ++
   spread 2 [.xmm8, .xmm9, .xmm10, .xmm11]
 
@@ -112,7 +112,7 @@ def setup : List Instr := setupB .rcx
 /-- Add row `row` of the input state (broadcast into `t`, each word spread
 into `u`) to the registers `xs`. -/
 def addRow (row : Nat) (xs : List XReg) (t u : XReg) : List Instr :=
-  [.vbroadcasti32x4 t (at_ .rdi (16 * row))] ++
+  ([.vbroadcasti32x4 t (at_ .rdi (16 * row))] : List Instr) ++
   (List.range 4).flatMap fun i =>
     [.zop (.vpshufd u t (BitVec.ofNat 8 (0x55 * i))), z .vpaddd (xs.getD i .xmm0) (xs.getD i .xmm0) u]
 
@@ -133,10 +133,10 @@ def xor64 (x t : XReg) (off : Nat) : List Instr :=
 `a, b, c, d` (see `transpose`), gathered through `t0, t1` and XORed into the
 data (through `a`). -/
 def gather (i : Nat) (a b c d t0 t1 : XReg) : List Instr :=
-  [.zop (.vshufi32x4 t0 a b 0x44), .zop (.vshufi32x4 a a b 0xee),
+  ([.zop (.vshufi32x4 t0 a b 0x44), .zop (.vshufi32x4 a a b 0xee),
    .zop (.vshufi32x4 t1 c d 0x44), .zop (.vshufi32x4 c c d 0xee),
    .zop (.vshufi32x4 b t0 t1 0x88), .zop (.vshufi32x4 d t0 t1 0xdd),
-   .zop (.vshufi32x4 t0 a c 0x88), .zop (.vshufi32x4 t1 a c 0xdd)] ++
+   .zop (.vshufi32x4 t0 a c 0x88), .zop (.vshufi32x4 t1 a c 0xdd)] : List Instr) ++
   xor64 b a (64 * i) ++ xor64 d a (64 * (i + 4)) ++
   xor64 t0 a (64 * (i + 8)) ++ xor64 t1 a (64 * (i + 12))
 
@@ -146,22 +146,22 @@ of data. The registers holding row `r` after its transpose are, for
 `buf`), row 1 `zmm4, zmm1, zmm6, zmm7`, row 2 `zmm8, zmm5, zmm10, zmm11`,
 row 3 `zmm12, zmm2, zmm9, zmm15`. -/
 def finish : List Instr :=
-  [.vmovdqu32Store (at_ .rcx save0Off) .xmm14, .vmovdqu32Store (at_ .rcx save1Off) .xmm15] ++
+  ([.vmovdqu32Store (at_ .rcx save0Off) .xmm14, .vmovdqu32Store (at_ .rcx save1Off) .xmm15] : List Instr) ++
   addRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] .xmm14 .xmm15 ++
     transpose .xmm0 .xmm1 .xmm2 .xmm3 .xmm14 .xmm15 ++
   addRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] .xmm1 .xmm15 ++
     transpose .xmm4 .xmm5 .xmm6 .xmm7 .xmm1 .xmm15 ++
   addRow 2 [.xmm8, .xmm9, .xmm10, .xmm11] .xmm5 .xmm15 ++
     transpose .xmm8 .xmm9 .xmm10 .xmm11 .xmm5 .xmm15 ++
-  [.vmovdqu32Load .xmm9 (at_ .rcx save0Off), .vmovdqu32Load .xmm15 (at_ .rcx save1Off),
-   .vmovdqu32Store (at_ .rcx save0Off) .xmm2, .vmovdqu32Store (at_ .rcx save1Off) .xmm3] ++
+  ([.vmovdqu32Load .xmm9 (at_ .rcx save0Off), .vmovdqu32Load .xmm15 (at_ .rcx save1Off),
+   .vmovdqu32Store (at_ .rcx save0Off) .xmm2, .vmovdqu32Store (at_ .rcx save1Off) .xmm3] : List Instr) ++
   addRow 3 [.xmm12, .xmm13, .xmm9, .xmm15] .xmm2 .xmm3 ++
-    [.vmovdqu32Load .xmm3 (at_ .rcx incOff), z .vpaddd .xmm12 .xmm12 .xmm3] ++
+    ([.vmovdqu32Load .xmm3 (at_ .rcx incOff), z .vpaddd .xmm12 .xmm12 .xmm3] : List Instr) ++
     transpose .xmm12 .xmm13 .xmm9 .xmm15 .xmm2 .xmm3 ++
   gather 0 .xmm0 .xmm4 .xmm8 .xmm12 .xmm13 .xmm3 ++
   gather 1 .xmm14 .xmm1 .xmm5 .xmm2 .xmm13 .xmm3 ++
-  [.vmovdqu32Load .xmm0 (at_ .rcx save0Off)] ++ gather 2 .xmm0 .xmm6 .xmm10 .xmm9 .xmm13 .xmm3 ++
-  [.vmovdqu32Load .xmm0 (at_ .rcx save1Off)] ++ gather 3 .xmm0 .xmm7 .xmm11 .xmm15 .xmm13 .xmm3
+  ([.vmovdqu32Load .xmm0 (at_ .rcx save0Off)] : List Instr) ++ gather 2 .xmm0 .xmm6 .xmm10 .xmm9 .xmm13 .xmm3 ++
+  ([.vmovdqu32Load .xmm0 (at_ .rcx save1Off)] : List Instr) ++ gather 3 .xmm0 .xmm7 .xmm11 .xmm15 .xmm13 .xmm3
 
 /-- Advance the counter by 16 and the data by 1024 bytes; `CF` is clear if at
 least 1024 bytes remain. -/
@@ -177,10 +177,10 @@ def body : Prog isa := .seq (.block setup) (.seq (rounds 10) (.block (finish ++ 
 /-- As `gather`, but only blocks `i` and `i + 4` are XORed into the data;
 blocks `i + 8` and `i + 12` are left in `t0` and `t1`. -/
 def gatherH (i : Nat) (a b c d t0 t1 : XReg) : List Instr :=
-  [.zop (.vshufi32x4 t0 a b 0x44), .zop (.vshufi32x4 a a b 0xee),
+  ([.zop (.vshufi32x4 t0 a b 0x44), .zop (.vshufi32x4 a a b 0xee),
    .zop (.vshufi32x4 t1 c d 0x44), .zop (.vshufi32x4 c c d 0xee),
    .zop (.vshufi32x4 b t0 t1 0x88), .zop (.vshufi32x4 d t0 t1 0xdd),
-   .zop (.vshufi32x4 t0 a c 0x88), .zop (.vshufi32x4 t1 a c 0xdd)] ++
+   .zop (.vshufi32x4 t0 a c 0x88), .zop (.vshufi32x4 t1 a c 0xdd)] : List Instr) ++
   xor64 b a (64 * i) ++ xor64 d a (64 * (i + 4))
 
 /-- As `finish`, with `buf` at `r9`, but only blocks 0–7 are XORed into the
@@ -188,22 +188,22 @@ data (the first 512 bytes, all of which exist); block `j` of blocks 8–15 is
 left in `blkReg j`. Each `gatherH` takes as `t0, t1` two registers freed by
 the ones before. -/
 def finishP : List Instr :=
-  [.vmovdqu32Store (at_ .r9 save0Off) .xmm14, .vmovdqu32Store (at_ .r9 save1Off) .xmm15] ++
+  ([.vmovdqu32Store (at_ .r9 save0Off) .xmm14, .vmovdqu32Store (at_ .r9 save1Off) .xmm15] : List Instr) ++
   addRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] .xmm14 .xmm15 ++
     transpose .xmm0 .xmm1 .xmm2 .xmm3 .xmm14 .xmm15 ++
   addRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] .xmm1 .xmm15 ++
     transpose .xmm4 .xmm5 .xmm6 .xmm7 .xmm1 .xmm15 ++
   addRow 2 [.xmm8, .xmm9, .xmm10, .xmm11] .xmm5 .xmm15 ++
     transpose .xmm8 .xmm9 .xmm10 .xmm11 .xmm5 .xmm15 ++
-  [.vmovdqu32Load .xmm9 (at_ .r9 save0Off), .vmovdqu32Load .xmm15 (at_ .r9 save1Off),
-   .vmovdqu32Store (at_ .r9 save0Off) .xmm2, .vmovdqu32Store (at_ .r9 save1Off) .xmm3] ++
+  ([.vmovdqu32Load .xmm9 (at_ .r9 save0Off), .vmovdqu32Load .xmm15 (at_ .r9 save1Off),
+   .vmovdqu32Store (at_ .r9 save0Off) .xmm2, .vmovdqu32Store (at_ .r9 save1Off) .xmm3] : List Instr) ++
   addRow 3 [.xmm12, .xmm13, .xmm9, .xmm15] .xmm2 .xmm3 ++
-    [.vmovdqu32Load .xmm3 (at_ .r9 incOff), z .vpaddd .xmm12 .xmm12 .xmm3] ++
+    ([.vmovdqu32Load .xmm3 (at_ .r9 incOff), z .vpaddd .xmm12 .xmm12 .xmm3] : List Instr) ++
     transpose .xmm12 .xmm13 .xmm9 .xmm15 .xmm2 .xmm3 ++
   gatherH 0 .xmm0 .xmm4 .xmm8 .xmm12 .xmm13 .xmm3 ++
   gatherH 1 .xmm14 .xmm1 .xmm5 .xmm2 .xmm0 .xmm8 ++
-  [.vmovdqu32Load .xmm4 (at_ .r9 save0Off)] ++ gatherH 2 .xmm4 .xmm6 .xmm10 .xmm9 .xmm12 .xmm14 ++
-  [.vmovdqu32Load .xmm4 (at_ .r9 save1Off)] ++ gatherH 3 .xmm4 .xmm7 .xmm11 .xmm15 .xmm5 .xmm1
+  ([.vmovdqu32Load .xmm4 (at_ .r9 save0Off)] : List Instr) ++ gatherH 2 .xmm4 .xmm6 .xmm10 .xmm9 .xmm12 .xmm14 ++
+  ([.vmovdqu32Load .xmm4 (at_ .r9 save1Off)] : List Instr) ++ gatherH 3 .xmm4 .xmm7 .xmm11 .xmm15 .xmm5 .xmm1
 
 /-- Where `finishP` leaves block `j` (8–15). -/
 def blkReg : Nat → XReg
@@ -241,7 +241,7 @@ def last16 : Prog isa :=
       (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))))))
 
 def xor : Prog isa :=
-  .seq (.block (Avx512Tail.consts ++ consts ++ [.alu .cmp .rdx (.imm 1024)]))
+  .seq (.block (Avx512Tail.consts ++ consts ++ ([.alu .cmp .rdx (.imm 1024)] : List Instr)))
   (.seq (.ite .b (.block []) (.loop body .ae))
   (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b Avx512Tail.tail last16)))
 

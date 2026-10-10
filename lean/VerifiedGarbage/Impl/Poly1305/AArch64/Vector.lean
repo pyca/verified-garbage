@@ -149,7 +149,7 @@ def loadH : List Instr :=
 /-- The multipliers: `[r⁴, r⁴, r², r²]` in `R`, `[r⁴, r³, r², r]` in the
 last group's, and `5 R` in `S`. -/
 def powers : List Instr :=
-  [.addImm .x .x4 .x7 0, .addImm .x .x5 .x8 0, .movz .x .x6 0 0] ++ limbs ++ insLimbs fV 3 ++
+  ([.addImm .x .x4 .x7 0, .addImm .x .x5 .x8 0, .movz .x .x6 0 0] : List Instr) ++ limbs ++ insLimbs fV 3 ++
   mulKey ++ limbs ++ insLimbs rV 2 ++ insLimbs rV 3 ++ insLimbs fV 2 ++
   mulKey ++ limbs ++ insLimbs fV 1 ++
   mulKey ++ limbs ++ insLimbs rV 0 ++ insLimbs rV 1 ++ insLimbs fV 0
@@ -185,13 +185,13 @@ def fold6 : List Instr := [
 
 def finish : List Instr :=
   times5 fV sV ++ group fV sV ++
-  [.addImm .x .x2 .x2 64, .movz .x .x9 63 0, .logic .and .x .x3 .x3 .x9] ++
+  ([.addImm .x .x2 .x2 64, .movz .x .x9 63 0, .logic .and .x .x3 .x3 .x9] : List Instr) ++
   sumLanes ++ pack ++ fold6 ++ restore
 
 /-- The first `4 ⌊n / 4⌋` of the `n ≥ 8` whole blocks at `x2`. -/
 def vec : Prog isa :=
   .seq (.block setup)
-  (.seq (.loop (.block (group rV sV ++ [.addImm .x .x2 .x2 64, .subImm .x .x9 .x9 1])) (.nonzero .x .x9))
+  (.seq (.loop (.block (group rV sV ++ ([.addImm .x .x2 .x2 64, .subImm .x .x9 .x9 1] : List Instr))) (.nonzero .x .x9))
     (.block finish))
 
 /-! ## `update` -/
@@ -204,7 +204,7 @@ def whole : Prog isa :=
     Radix64.whole)
 
 def update : Prog isa :=
-  .seq (.block (Radix64.setup ++ [.movz .x .x9 15 0, .logic .and .x .x9 .x1 .x9]))
+  .seq (.block (Radix64.setup ++ ([.movz .x .x9 15 0, .logic .and .x .x9 .x1 .x9] : List Instr)))
   (.seq (.ite (.zero .x .x9) (.block []) Radix64.fill)
   (.seq whole
   (.seq Radix64.rest

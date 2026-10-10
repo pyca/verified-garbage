@@ -9,6 +9,12 @@ def fiveCode : List Instr := packedCode packedSteps ++ runCode (localPlan 0).loa
 def fiveValues (u : Nat) (v : Vector (BitVec 128) 8) : Vector (BitVec 128) 8 :=
   runValues (localRoot u) 0 7 (packedRunValues v (packedRoot u) packedSteps)
 
+/-- A table plan's loads do not depend on its roots. Stated for any roots: checking
+`(localPlan u).load = (localPlan 0).load` by `rfl` first compares the roots,
+unfolding the modular arithmetic of the table for seconds before it fails. -/
+theorem tablePlan_load {offset : Nat → Nat} {z z' : Nat → Nat → Int} {ha hi hz hz'} :
+    (tablePlan offset z ha hi hz).load = (tablePlan offset z' ha hi hz').load := rfl
+
 theorem five_ok (u : Nat) {s : State} {rest : List Instr} {Q : State → Prop}
     {v : Vector (BitVec 128) 8} (hb : Bank s (regs 0) v)
     (hp : PackedRoots s (packedRoot u)) (hl : TableRoots localOffset (localRoot u) s)
@@ -18,7 +24,8 @@ theorem five_ok (u : Nat) {s : State} {rest : List Instr} {Q : State → Prop}
   rw [List.append_assoc]
   refine packedRun_ok packedSteps packedSteps_valid hb hp fun s₁ hc₁ _ hb₁ => ?_
   have hl₁ := hl.frame hc₁ (by decide)
-  have code_eq : runCode (localPlan u).load 0 7=runCode (localPlan 0).load 0 7 := rfl
+  have code_eq : runCode (localPlan u).load 0 7=runCode (localPlan 0).load 0 7 :=
+    congrArg (fun l => runCode l 0 7) tablePlan_load
   rw [← code_eq]
   refine run_ok (localPlan u) 0 7 (by decide) hb₁ hl₁ fun t hc₂ _ hb₂ => ?_
   refine k t (VChg.mono (hc₁.trans hc₂) ?_) hb₂

@@ -114,7 +114,7 @@ bound `ebx`: the first, then the others. -/
 def hbuCoefs : Prog isa :=
   .seq (.block [.alu .cmp .eax (.reg .ebx)])
     (.ite .b
-      (.seq (.block hbuFirst) (.seq (.block (hbuSet ++ [.alu .cmp .eax (.reg .ebx)]))
+      (.seq (.block hbuFirst) (.seq (.block (hbuSet ++ ([.alu .cmp .eax (.reg .ebx)] : List Instr)))
         (.ite .b (.loop hbuNext .b) (.block []))))
       (.block []))
 

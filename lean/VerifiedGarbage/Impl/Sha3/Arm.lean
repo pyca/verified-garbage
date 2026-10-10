@@ -83,9 +83,9 @@ def rot (l h : Reg) (n : Nat) : List Instr :=
 
 /-- `B[x] = ROTL^ρ(A[piSrc x y] ⊕ D[(x + 3y) mod 5])` for plane `y`. -/
 def laneB (src dst : Reg) (x y : Nat) : List Instr :=
-  [.ldr T1 src (8 * piSrc x y), .ldr T2 dst (dOff ((x + 3 * y) % 5)), .dp .eor T1 T1 (.reg T2),
+  ([.ldr T1 src (8 * piSrc x y), .ldr T2 dst (dOff ((x + 3 * y) % 5)), .dp .eor T1 T1 (.reg T2),
     .ldr T2 src (8 * piSrc x y + 4), .ldr (cl x) dst (dOff ((x + 3 * y) % 5) + 4),
-    .dp .eor T2 T2 (.reg (cl x))] ++ rot (cl x) (ch x) (rhoOff (piSrc x y))
+    .dp .eor T2 T2 (.reg (cl x))] : List Instr) ++ rot (cl x) (ch x) (rhoOff (piSrc x y))
 
 /-- A half of lane `(x, y)` of the output: `B[x] ⊕ ((B[x+1] ∧ B[x+2]) ⊕ B[x+2])`
 in the registers `r`, and for lane 0 the half at `off` of the round

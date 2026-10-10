@@ -52,7 +52,7 @@ def rbBound : Nat → BitVec 32
 /-- Store the coefficient of the half-byte `rdx` to `a[j]` if it is accepted. -/
 def rbTry (η : Nat) : Prog isa :=
   .seq (.block [.alu32 .cmp .rdx (.imm (rbBound η))])
-    (.ite .b (.block (rbVal η ++ [.store32 aJ .r8, .alu .add .rdi (.imm 1)])) (.block []))
+    (.ite .b (.block (rbVal η ++ ([.store32 aJ .r8, .alu .add .rdi (.imm 1)] : List Instr))) (.block []))
 
 /-- The byte at `rsi` in `rax`, its low half-byte in `rdx`, and `j < 256` in CF. -/
 def rbLoad : List Instr :=

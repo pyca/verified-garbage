@@ -34,9 +34,9 @@ open VG.Impl.AesCbc.X86 (cOff whole blkCall)
 function: the schedule and the rounds (our stack arguments 0 and 1), the
 copy, `n = 1`, and the working space (our stack argument 5). -/
 def pre : List Instr :=
-  [.mov .ebp (argOp 5), .mov .ebx (argOp 2)] ++ zero4 .ebp cOff ++ xor4 .ebp .ebx .ebp cOff 0 cOff ++
-  [.mov .eax (argOp 0), .mov .ecx (argOp 1), .mov .ebx (.reg .ebp), .alu .add .ebx (.imm 2048),
-   .mov .edi (.imm 1)]
+  ([.mov .ebp (argOp 5), .mov .ebx (argOp 2)] : List Instr) ++ zero4 .ebp cOff ++ xor4 .ebp .ebx .ebp cOff 0 cOff ++
+  ([.mov .eax (argOp 0), .mov .ecx (argOp 1), .mov .ebx (.reg .ebp), .alu .add .ebx (.imm 2048),
+   .mov .edi (.imm 1)] : List Instr)
 
 /-- The counter block at `ebx` plus 1, modulo `2¹²⁸`, big-endian. -/
 def incr : List Instr :=
@@ -50,7 +50,7 @@ def incr : List Instr :=
 /-- The output block XORed into the data block, the counter block
 incremented, and on to the next block. -/
 def post : List Instr :=
-  [.mov .ebp (argOp 5)] ++ xor4 .esi .ebp .esi 0 cOff 0 ++ [.mov .ebx (argOp 2)] ++ incr ++ advance
+  ([.mov .ebp (argOp 5)] : List Instr) ++ xor4 .esi .ebp .esi 0 cOff 0 ++ ([.mov .ebx (argOp 2)] : List Instr) ++ incr ++ advance
 
 /-- One block. -/
 def body (b : Blocks) : Prog isa := .seq (.block pre) (.seq (blkCall b) (.block post))

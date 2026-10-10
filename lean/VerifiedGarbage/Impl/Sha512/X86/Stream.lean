@@ -41,8 +41,8 @@ def params : Params where
   B := 128
   L := 16
   so := 224
-  len := loadCount 224 ++ [.mov .edx (.imm 0), .store (at_ .ebx 176) .edx,
-    .mov .edx (.reg .ecx), .shift .shr .edx 29, .bswap .edx, .store (at_ .ebx 180) .edx] ++ len64Of 184 true
+  len := loadCount 224 ++ ([.mov .edx (.imm 0), .store (at_ .ebx 176) .edx,
+    .mov .edx (.reg .ecx), .shift .shr .edx 29, .bswap .edx, .store (at_ .ebx 180) .edx] : List Instr) ++ len64Of 184 true
   out := out64 8
 
 def update : Prog isa := MdStream.X86.update params "vg_sha512_compress" compress

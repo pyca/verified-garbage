@@ -62,33 +62,33 @@ into lane 0 of `ymm13` and with `o₁` into lane 1 (through `ymm2`), and its
 odd doublewords in the even ones of `ymm12`. -/
 def yzetaS (o₀ o₁ : BitVec 8) : List Instr :=
   .vbroadcasti128 .xmm13 (at_ .r8 0) ::
-    toY [.xop (.pshufd .xmm2 .xmm13 o₁), .xop (.pshufd .xmm13 .xmm13 o₀)] ++
-    [.vop (.vpblendd .l256 .xmm13 .xmm13 .xmm2 0xF0)] ++ toY [.xop (.pshufd .xmm12 .xmm13 0xF5)]
+    toY ([.xop (.pshufd .xmm2 .xmm13 o₁), .xop (.pshufd .xmm13 .xmm13 o₀)] : List Instr) ++
+    ([.vop (.vpblendd .l256 .xmm13 .xmm13 .xmm2 0xF0)] : List Instr) ++ toY [.xop (.pshufd .xmm12 .xmm13 0xF5)]
 
 /-- A layer with `len ≥ 8` and butterflies `bf`: its `128 / len` blocks, the
 first with the zeta `k`, the zeta pointer moving by `dz` bytes. -/
 def ylay (bf : List Instr) (len k : Nat) (dz : BitVec 32) : Prog isa :=
-  .seq (.block ([.mov .rdx (.reg .rdi)] ++ leaR .r8 .rsi (4 * k) ++
-    [.mov32 .rax (.imm (BitVec.ofNat 32 (128 / len)))])) <|
-  .loop (.seq (.block (yzeta1 ++ [.alu .add .r8 (.imm dz)]))
-    (.seq (rcxLoop (len / 8) ([.vmovdquLoad .l256 .xmm0 (at_ .rdx 0),
-        .vmovdquLoad .l256 .xmm1 (at_ .rdx (4 * len))] ++ toY bf ++
-        [.vmovdquStore .l256 (at_ .rdx 0) .xmm0, .vmovdquStore .l256 (at_ .rdx (4 * len)) .xmm3,
-          .alu .add .rdx (.imm 32)]))
+  .seq (.block (([.mov .rdx (.reg .rdi)] : List Instr) ++ leaR .r8 .rsi (4 * k) ++
+    ([.mov32 .rax (.imm (BitVec.ofNat 32 (128 / len)))] : List Instr))) <|
+  .loop (.seq (.block (yzeta1 ++ ([.alu .add .r8 (.imm dz)] : List Instr)))
+    (.seq (rcxLoop (len / 8) (([.vmovdquLoad .l256 .xmm0 (at_ .rdx 0),
+        .vmovdquLoad .l256 .xmm1 (at_ .rdx (4 * len))] : List Instr) ++ toY bf ++
+        ([.vmovdquStore .l256 (at_ .rdx 0) .xmm0, .vmovdquStore .l256 (at_ .rdx (4 * len)) .xmm3,
+          .alu .add .rdx (.imm 32)] : List Instr)))
       (.block [.alu .add .rdx (.imm (BitVec.ofNat 32 (4 * len))), .alu .sub .rax (.imm 1)]))) .ne
 
 /-- The layer with `len = 4`, two blocks at a time: the first with the zeta
 `k`, the zetas of a pair at `[r8]` arranged by `yzetaS o₀ o₁`, the zeta
 pointer moving by `dz` bytes. -/
 def ylay4 (bf : List Instr) (k : Nat) (o₀ o₁ : BitVec 8) (dz : BitVec 32) : Prog isa :=
-  .seq (.block ([.mov .rdx (.reg .rdi)] ++ leaR .r8 .rsi (4 * k))) <|
-  rcxLoop 16 ([.vmovdquLoad .l256 .xmm4 (at_ .rdx 0), .vmovdquLoad .l256 .xmm5 (at_ .rdx 32)] ++
+  .seq (.block (([.mov .rdx (.reg .rdi)] : List Instr) ++ leaR .r8 .rsi (4 * k))) <|
+  rcxLoop 16 (([.vmovdquLoad .l256 .xmm4 (at_ .rdx 0), .vmovdquLoad .l256 .xmm5 (at_ .rdx 32)] : List Instr) ++
     yzetaS o₀ o₁ ++
-    [.alu .add .r8 (.imm dz), .vop (.vperm2i128 .xmm0 .xmm4 .xmm5 0x20),
-      .vop (.vperm2i128 .xmm1 .xmm4 .xmm5 0x31)] ++ toY bf ++
-    [.vop (.vperm2i128 .xmm4 .xmm0 .xmm3 0x20), .vop (.vperm2i128 .xmm5 .xmm0 .xmm3 0x31),
+    ([.alu .add .r8 (.imm dz), .vop (.vperm2i128 .xmm0 .xmm4 .xmm5 0x20),
+      .vop (.vperm2i128 .xmm1 .xmm4 .xmm5 0x31)] : List Instr) ++ toY bf ++
+    ([.vop (.vperm2i128 .xmm4 .xmm0 .xmm3 0x20), .vop (.vperm2i128 .xmm5 .xmm0 .xmm3 0x31),
       .vmovdquStore .l256 (at_ .rdx 0) .xmm4, .vmovdquStore .l256 (at_ .rdx 32) .xmm5,
-      .alu .add .rdx (.imm 64)])
+      .alu .add .rdx (.imm 64)] : List Instr))
 
 /-- `vlay2`'s gathering of the halves of two blocks (`Ntt.lean`). -/
 def gath2 : List Instr := [xmov .xmm2 .xmm0, xb .punpcklqdq .xmm0 .xmm1, xb .punpckhqdq .xmm2 .xmm1, xmov .xmm1 .xmm2]
@@ -100,10 +100,10 @@ def scat2 : List Instr := [xmov .xmm1 .xmm0, xb .punpcklqdq .xmm0 .xmm3, xb .pun
 two (`gath2`, `bf`, `scat2`), with their zetas from `[r8]` arranged by
 `yzetaS o₀ o₁`, the zeta pointer moving by `dz` bytes. -/
 def ylay2 (bf : List Instr) (k : Nat) (o₀ o₁ : BitVec 8) (dz : BitVec 32) : Prog isa :=
-  .seq (.block ([.mov .rdx (.reg .rdi)] ++ leaR .r8 .rsi (4 * k))) <|
-  rcxLoop 16 ([.vmovdquLoad .l256 .xmm0 (at_ .rdx 0), .vmovdquLoad .l256 .xmm1 (at_ .rdx 32)] ++
-    yzetaS o₀ o₁ ++ [.alu .add .r8 (.imm dz)] ++ toY (gath2 ++ bf ++ scat2) ++
-    [.vmovdquStore .l256 (at_ .rdx 0) .xmm0, .vmovdquStore .l256 (at_ .rdx 32) .xmm1, .alu .add .rdx (.imm 64)])
+  .seq (.block (([.mov .rdx (.reg .rdi)] : List Instr) ++ leaR .r8 .rsi (4 * k))) <|
+  rcxLoop 16 (([.vmovdquLoad .l256 .xmm0 (at_ .rdx 0), .vmovdquLoad .l256 .xmm1 (at_ .rdx 32)] : List Instr) ++
+    yzetaS o₀ o₁ ++ ([.alu .add .r8 (.imm dz)] : List Instr) ++ toY (gath2 ++ bf ++ scat2) ++
+    ([.vmovdquStore .l256 (at_ .rdx 0) .xmm0, .vmovdquStore .l256 (at_ .rdx 32) .xmm1, .alu .add .rdx (.imm 64)] : List Instr))
 
 /-- `vlay1`'s gathering of the pairs of four blocks (`Ntt.lean`). -/
 def gath1 : List Instr :=
@@ -117,29 +117,29 @@ def scat1 : List Instr := [xmov .xmm1 .xmm0, xb .punpckldq .xmm0 .xmm3, xb .punp
 for `NTT`: the first two and the fifth and sixth in lane 0, the others in
 lane 1 (`vpermq`). -/
 def yzeta8 : List Instr :=
-  [.vmovdquLoad .l256 .xmm13 (at_ .r8 0), .vop (.vpermq .xmm13 .xmm13 0xD8)] ++
+  ([.vmovdquLoad .l256 .xmm13 (at_ .r8 0), .vop (.vpermq .xmm13 .xmm13 0xD8)] : List Instr) ++
     toY [.xop (.pshufd .xmm12 .xmm13 0xF5)]
 
 /-- The same for `NTT⁻¹`, whose blocks take the zetas in decreasing order:
 the eighth, seventh, fourth and third in lane 0, the others in lane 1. -/
 def yzeta8R : List Instr :=
-  [.vmovdquLoad .l256 .xmm13 (at_ .r8 0), .vop (.vpermq .xmm13 .xmm13 0x27)] ++
+  ([.vmovdquLoad .l256 .xmm13 (at_ .r8 0), .vop (.vpermq .xmm13 .xmm13 0x27)] : List Instr) ++
     toY [.xop (.pshufd .xmm13 .xmm13 0xB1), .xop (.pshufd .xmm12 .xmm13 0xF5)]
 
 /-- The layer with `len = 1`, eight blocks at a time: in each lane,
 `vlay1`'s four, with their zetas from `[r8]` (`zl`), the zeta pointer moving
 by `dz` bytes. -/
 def ylay1 (bf : List Instr) (k : Nat) (zl : List Instr) (dz : BitVec 32) : Prog isa :=
-  .seq (.block ([.mov .rdx (.reg .rdi)] ++ leaR .r8 .rsi (4 * k))) <|
-  rcxLoop 16 ([.vmovdquLoad .l256 .xmm0 (at_ .rdx 0), .vmovdquLoad .l256 .xmm2 (at_ .rdx 32)] ++ zl ++
-    [.alu .add .r8 (.imm dz)] ++ toY (gath1 ++ bf ++ scat1) ++
-    [.vmovdquStore .l256 (at_ .rdx 0) .xmm0, .vmovdquStore .l256 (at_ .rdx 32) .xmm1, .alu .add .rdx (.imm 64)])
+  .seq (.block (([.mov .rdx (.reg .rdi)] : List Instr) ++ leaR .r8 .rsi (4 * k))) <|
+  rcxLoop 16 (([.vmovdquLoad .l256 .xmm0 (at_ .rdx 0), .vmovdquLoad .l256 .xmm2 (at_ .rdx 32)] : List Instr) ++ zl ++
+    ([.alu .add .r8 (.imm dz)] : List Instr) ++ toY (gath1 ++ bf ++ scat1) ++
+    ([.vmovdquStore .l256 (at_ .rdx 0) .xmm0, .vmovdquStore .l256 (at_ .rdx 32) .xmm1, .alu .add .rdx (.imm 64)] : List Instr))
 
 /-- Every coefficient times `256⁻¹ mod q`: `vscale` in each lane. -/
 def yscale : Prog isa :=
-  .seq (.block ([.mov .rdx (.reg .rdi)] ++ yconst .xmm13 16382 ++ [.vop (.vmovdqa .l256 .xmm12 .xmm13)]))
-    (rcxLoop 32 ([.vmovdquLoad .l256 .xmm3 (at_ .rdx 0)] ++ toY (vmont .xmm3 .xmm13 .xmm12 .xmm2 .xmm4 ++
-      vcsub .xmm3 .xmm2) ++ [.vmovdquStore .l256 (at_ .rdx 0) .xmm3, .alu .add .rdx (.imm 32)]))
+  .seq (.block (([.mov .rdx (.reg .rdi)] : List Instr) ++ yconst .xmm13 16382 ++ ([.vop (.vmovdqa .l256 .xmm12 .xmm13)] : List Instr)))
+    (rcxLoop 32 (([.vmovdquLoad .l256 .xmm3 (at_ .rdx 0)] : List Instr) ++ toY (vmont .xmm3 .xmm13 .xmm12 .xmm2 .xmm4 ++
+      vcsub .xmm3 .xmm2) ++ ([.vmovdquStore .l256 (at_ .rdx 0) .xmm3, .alu .add .rdx (.imm 32)] : List Instr)))
 
 /-- The table and the constants. -/
 def ypro : List Instr := dwordTab zmTab 256 .rsi ++ yconsts
@@ -172,15 +172,15 @@ def ymulTail : List Instr :=
 
 /-- The last eight coefficients, with those of `h` in `ymm6`, to `ymm3`. -/
 def ymulLast (core : List Instr) : List Instr :=
-  [.vmovdquLoad .l256 .xmm3 (at_ .rsi 0), .vmovdquLoad .l256 .xmm13 (at_ .rdx 0),
-    .vop (.vmovdqa .l256 .xmm5 .xmm6)] ++ toY core
+  ([.vmovdquLoad .l256 .xmm3 (at_ .rsi 0), .vmovdquLoad .l256 .xmm13 (at_ .rdx 0),
+    .vop (.vmovdqa .l256 .xmm5 .xmm6)] : List Instr) ++ toY core
 
 /-- `mulFn` on eight coefficients at a time. -/
 def ymulFn (core : List Instr) : Prog isa :=
   .seq (.block [.mov .r8 (.reg .rdi), .vmovdquLoad .l256 .xmm6 (at_ .rdi 992)])
     (.seq (withMxcsr .r8 1016
         (.seq (.block ymulPro) (.seq (rcxLoop 31 (ymulLoads ++ toY core ++ ymulTail)) (.block (ymulLast core)))))
-      (.block ([.vmovdquStore .l256 (at_ .rdi 0) .xmm3] ++ yepi)))
+      (.block (([.vmovdquStore .l256 (at_ .rdi 0) .xmm3] : List Instr) ++ yepi)))
 
 def mulAvx2 : Prog isa := ymulFn mulCore
 
@@ -190,8 +190,8 @@ def mulAddAvx2 : Prog isa := ymulFn mulAddCore
 
 /-- The body of `add` and `sub` on eight coefficients at a time. -/
 def yaccBody (op : XBinOp) (fix : List Instr) : List Instr :=
-  [.vmovdquLoad .l256 .xmm0 (at_ .rdi 0), .vmovdquLoad .l256 .xmm1 (at_ .rsi 0)] ++ toY (xb op .xmm0 .xmm1 :: fix) ++
-    [.vmovdquStore .l256 (at_ .rdi 0) .xmm0, .alu .add .rdi (.imm 32), .alu .add .rsi (.imm 32)]
+  ([.vmovdquLoad .l256 .xmm0 (at_ .rdi 0), .vmovdquLoad .l256 .xmm1 (at_ .rsi 0)] : List Instr) ++ toY (xb op .xmm0 .xmm1 :: fix) ++
+    ([.vmovdquStore .l256 (at_ .rdi 0) .xmm0, .alu .add .rdi (.imm 32), .alu .add .rsi (.imm 32)] : List Instr)
 
 def addAvx2 : Prog isa :=
   .seq (.block (yconst .xmm15 8380417)) (.seq (rcxLoop 32 (yaccBody .paddd (vcsub .xmm0 .xmm2))) (.block yepi))

@@ -71,18 +71,18 @@ def ws (i : Nat) : MemOp := { base := .r11, disp := 8 * i }
 `scratch`, with its base in `rdi`; then `e` and `e_len` into `r8` and `r9`
 for `expCheck`. -/
 def entry : List Instr :=
-  [.mov .r11 (.mem (stk 11))] ++
+  ([.mov .r11 (.mem (stk 11))] : List Instr) ++
   (saved.zipIdx.map fun (r, i) => .store (ws i) r) ++
-  [.store (ws sN) .rdi, .store (ws sK) .rsi, .store (ws sE) .rdx, .store (ws sElen) .rcx,
+  ([.store (ws sN) .rdi, .store (ws sK) .rsi, .store (ws sE) .rdx, .store (ws sElen) .rcx,
     .store (ws sD) .r8, .store (ws sDlen) .r9,
     .mov .rax (.mem (stk 1)), .store (ws sP) .rax, .mov .rax (.mem (stk 2)), .store (ws sPlen) .rax,
     .mov .rax (.mem (stk 3)), .store (ws sQ) .rax, .mov .rax (.mem (stk 4)), .store (ws sQlen) .rax,
     .mov .rax (.mem (stk 5)), .store (ws sDP) .rax, .mov .rax (.mem (stk 7)), .store (ws sDQ) .rax,
     .mov .rax (.mem (stk 9)), .store (ws sQI) .rax,
-    .mov .rdi (.reg .r11), .mov .r8 (.reg .rdx), .mov .r9 (.reg .rcx)]
+    .mov .rdi (.reg .r11), .mov .r8 (.reg .rdx), .mov .r9 (.reg .rcx)] : List Instr)
 
 /-- 0 returned. -/
-def fail : List Instr := [.mov32 .rax (.imm 0)] ++ exit
+def fail : List Instr := ([.mov32 .rax (.imm 0)] : List Instr) ++ exit
 
 /-! ## The pieces -/
 
@@ -149,9 +149,9 @@ the instructions that compute it from `w` in `r13`), by restoring division:
 `r := 0`, then `wordStep` for each word, from the top. -/
 def reduce (cnt : List Instr) : List (Prog isa) := [
   Crt.zeroArr aR,
-  .block ([.mov .rbx (.mem (hdr (sArr aR))), .mov .r10 (.mem (hdr (sArr aM))), .mov .r8 (.mem (hdr (sArr aX))),
+  .block (([.mov .rbx (.mem (hdr (sArr aR))), .mov .r10 (.mem (hdr (sArr aM))), .mov .r8 (.mem (hdr (sArr aX))),
     .mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aT))), .mov .r9 (.mem (hdr (sArr aAcc))),
-    .mov .r13 (.reg .r12)] ++ cnt),
+    .mov .r13 (.reg .r12)] : List Instr) ++ cnt),
   .loop wordStep .ne]
 
 /-- `w + 2` and `2 w + 2` words, from `w` in `r13`. -/
@@ -190,14 +190,14 @@ def main : Prog isa := seqs (
   -- `qInv < p` and `q qInv ≡ 1 (mod p)`
   loadNum aM sP sPlen ++ loadNum aX sQI sPlen ++ ltMask aX aM ++
   loadNum aR sQ sQlen ++ mulXR ++ reduce cntXR ++ eqOne ++
-  [.block ([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] ++ exit)])
+  [.block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)])
 
 /-- `vg_rsa_check_key`. -/
 def code : Prog isa := seqs [
   .block entry,
   Checked.expCheck,
   .ite .ne (.block fail)
-    (seqs [.block ([.store (hdr sEv) .r11, .mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] ++ invalid),
+    (seqs [.block (([.store (hdr sEv) .r11, .mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid),
       .ite .ne (.block fail) main])]
 
 end VG.Impl.Rsa.X86_64.CheckKey

@@ -72,7 +72,7 @@ def xpub (τ : T) (r : XReg) : Bool := τ.xregs.mem r
 /-- `τ` after a write to the vector registers other than `movq xmm, r64`. It
 does not look at `τ`, so the kernel does no more work on vector code than
 before SSE registers were tracked. -/
-def noX (τ : T) : T := { τ with xregs := .empty }
+def noX (τ : T) : T := match τ with | ⟨rg, f, l, b, sl, lo, _⟩ => ⟨rg, f, l, b, sl, lo, .empty⟩
 
 theorem noX_eq (τ : T) : noX τ = { τ with xregs := .empty } := rfl
 
@@ -1819,23 +1819,30 @@ def storeSlotsK (τ : T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat × 
   | none => bif p then τ.slots else []
 
 def storeStepK (τ : T) (m : MemOp) (w : Nat) (p : Bool) : Option T :=
-  bif memPub τ m then some { τ with slots := storeSlotsK τ m w p } else none
+  match τ with
+  | ⟨rg, f, l, b, _, lo, x⟩ => bif memPub τ m then some ⟨rg, f, l, b, storeSlotsK τ m w p, lo, x⟩ else none
 
 def mulxStepK (τ : T) (hi lo : Reg) (src : Src) : T :=
   let p := pub τ .rdx && srcPub τ src
-  { τ with regs := bif p then (τ.regs.insert lo).insert hi else (τ.regs.erase lo).erase hi,
-           bases := filter (fun p => !regEq p.1 lo) (killK τ hi), lo := .empty }
+  match τ with
+  | ⟨rg, f, l, _, sl, _, x⟩ =>
+    ⟨bif p then (rg.insert lo).insert hi else (rg.erase lo).erase hi, f, l,
+      filter (fun p => !regEq p.1 lo) (killK τ hi), sl, .empty, x⟩
 
 def adxStepK (τ : T) (d : Reg) (src : Src) : Option T :=
   bif srcOkK τ src then
-    let p := pub τ d && srcPub τ src && τ.flags
-    some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }
+    match τ with
+    | ⟨_, f, l, _, sl, _, x⟩ =>
+      let p := pub τ d && srcPub τ src && f
+      some ⟨setK τ d p, p, l, killK τ d, sl, .empty, x⟩
   else none
 
 def cmovStepK (τ : T) (d : Reg) (src : Src) : Option T :=
   bif srcOkK τ src then
-    let p := pub τ d && (srcPub τ src || loadPubK τ 8 src) && τ.flags
-    some { τ with regs := setK τ d p, bases := killK τ d, lo := .empty }
+    match τ with
+    | ⟨_, f, l, _, sl, _, x⟩ =>
+      let p := pub τ d && (srcPub τ src || loadPubK τ 8 src) && f
+      some ⟨setK τ d p, f, l, killK τ d, sl, .empty, x⟩
   else none
 
 def aluBasesK (τ : T) (op : AluOp) (d : Reg) (src : Src) (wide : Bool) : List (Reg × Nat × Nat) :=
@@ -1853,10 +1860,10 @@ def aluBasesK (τ : T) (op : AluOp) (d : Reg) (src : Src) (wide : Bool) : List (
 
 def aluStepK (τ : T) (op : AluOp) (d : Reg) (src : Src) (wide : Bool) : Option T :=
   bif srcOkK τ src then
-    let p := pub τ d && srcPub τ src && (!usesCarry op || τ.flags)
-    some { τ with
-      regs := bif writes op then setK τ d p else τ.regs, flags := p, bases := aluBasesK τ op d src wide,
-      lo := .empty }
+    match τ with
+    | ⟨rg, f, l, _, sl, _, x⟩ =>
+      let p := pub τ d && srcPub τ src && (!usesCarry op || f)
+      some ⟨bif writes op then setK τ d p else rg, p, l, aluBasesK τ op d src wide, sl, .empty, x⟩
   else none
 
 def stepK (τ : T) : Instr → Option T
@@ -2077,13 +2084,26 @@ def storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat ×
   | some (i, d) =>
     bif Nat.ble (d + w) (τ.lens.getD i 0) then
       bif p then (bif mem3 (i, d, w) τ.slots then τ.slots else (i, d, w) :: τ.slots)
-      else KList.filter (fun sl => p || !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
+      else VG.Taint.filterKeep (fun sl => !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
         Nat.ble (sl.2.1 + sl.2.2) d) τ.slots
     else bif p then τ.slots else []
   | none => bif p then τ.slots else []
 
 def storeStepKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) : Option T :=
-  bif memPub τ m then some { τ with slots := storeSlotsKD τ m w p } else none
+  match τ with
+  | ⟨rg, f, l, b, _, lo, x⟩ => bif memPub τ m then some ⟨rg, f, l, b, storeSlotsKD τ m w p, lo, x⟩ else none
+
+def mulStepKD (τ : T) (r : Reg) : T :=
+  match τ with
+  | ⟨rg, _, l, _, sl, _, x⟩ =>
+    let p := pub τ .rax && pub τ r
+    ⟨bif p then (rg.insert .rax).insert .rdx else (rg.erase .rax).erase .rdx, p, l,
+      KList.filter (fun q => !regEq q.1 .rdx) (killK τ .rax), sl, .empty, x⟩
+
+theorem mulStepKD_eq : mulStepKD = mulStep := by
+  funext τ r
+  obtain ⟨rg, f, l, b, sl, lo, x⟩ := τ
+  simp only [mulStepKD, mulStep, killK_eq, KList.filter_eq, regEq_eq, Bool.cond_eq_ite, bne]
 
 /-- An instruction transfer function, independent of the incoming taint. -/
 structure Step where
@@ -2093,7 +2113,8 @@ structure Step where
 others in a match of its own, so that the kernel does not unfold a larger
 match on every instruction. -/
 def xopStepFn : XOp → Step
-  | .movq d r => ⟨fun τ => some { τ with xregs := setXK τ d (pub τ r) }⟩
+  | .movq d r => ⟨fun τ => match τ with
+    | ⟨rg, f, l, b, sl, lo, _⟩ => some ⟨rg, f, l, b, sl, lo, setXK τ d (pub τ r)⟩⟩
   | _ => ⟨fun τ => some (noX τ)⟩
 
 /-- Classify an instruction before substituting its incoming taint, so the
@@ -2102,13 +2123,15 @@ Stores retain the duplicate-slot optimization of `storeStepKD`. -/
 def stepKDFn : Instr → Step
   | .mov d src => ⟨fun τ =>
     bif srcOkK τ src then
-      some { τ with
-        regs := setK τ d (srcPub τ src || loadPubK τ 8 src), bases := movBasesK τ d src, lo := .empty }
+      match τ with
+      | ⟨_, f, l, _, sl, _, x⟩ =>
+        some ⟨setK τ d (srcPub τ src || loadPubK τ 8 src), f, l, movBasesK τ d src, sl, .empty, x⟩
     else none⟩
   | .mov32 d src => ⟨fun τ =>
     bif srcOkK τ src then
-      some { τ with
-        regs := setK τ d (srcPub τ src || loadPubK τ 4 src || loPub τ src), bases := killK τ d, lo := .empty }
+      match τ with
+      | ⟨_, f, l, _, sl, _, x⟩ =>
+        some ⟨setK τ d (srcPub τ src || loadPubK τ 4 src || loPub τ src), f, l, killK τ d, sl, .empty, x⟩
     else none⟩
   | .store m r => ⟨fun τ => storeStepKD τ m 8 (pub τ r)⟩
   | .store32 m r => ⟨fun τ => storeStepKD τ m 4 (pub τ r)⟩
@@ -2116,41 +2139,54 @@ def stepKDFn : Instr → Step
   | .alu op d src => ⟨fun τ => aluStepK τ op d src true⟩
   | .alu32 op d src => ⟨fun τ => aluStepK τ op d src false⟩
   | .shift32 _ d _ | .shift _ d _ => ⟨fun τ =>
-    some { τ with flags := τ.flags && pub τ d, bases := killK τ d, lo := .empty }⟩
-  | .bswap32 d | .bswap d => ⟨fun τ => some { τ with bases := killK τ d, lo := .empty }⟩
+    match τ with
+    | ⟨rg, f, l, _, sl, _, x⟩ => some ⟨rg, f && pub τ d, l, killK τ d, sl, .empty, x⟩⟩
+  | .bswap32 d | .bswap d => ⟨fun τ => match τ with
+    | ⟨rg, f, l, _, sl, _, x⟩ => some ⟨rg, f, l, killK τ d, sl, .empty, x⟩⟩
   | .rorx32 d r _ | .rorx d r _ => ⟨fun τ =>
-    some { τ with regs := setK τ d (pub τ r), bases := killK τ d, lo := .empty }⟩
+    match τ with
+    | ⟨_, f, l, _, sl, _, x⟩ => some ⟨setK τ d (pub τ r), f, l, killK τ d, sl, .empty, x⟩⟩
   | .andn32 d a b | .andn d a b => ⟨fun τ =>
-    let p := pub τ a && pub τ b
-    some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }⟩
+    match τ with
+    | ⟨_, _, l, _, sl, _, x⟩ =>
+      let p := pub τ a && pub τ b
+      some ⟨setK τ d p, p, l, killK τ d, sl, .empty, x⟩⟩
   | .imul d r => ⟨fun τ =>
-    let p := pub τ d && pub τ r
-    some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }⟩
-  | .movImm64 d _ => ⟨fun τ => some { τ with regs := setK τ d true, bases := killK τ d, lo := .empty }⟩
-  | .leaSym d _ => ⟨fun τ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }⟩
+    match τ with
+    | ⟨_, _, l, _, sl, _, x⟩ =>
+      let p := pub τ d && pub τ r
+      some ⟨setK τ d p, p, l, killK τ d, sl, .empty, x⟩⟩
+  | .movImm64 d _ => ⟨fun τ => match τ with
+    | ⟨_, f, l, _, sl, _, x⟩ => some ⟨setK τ d true, f, l, killK τ d, sl, .empty, x⟩⟩
+  | .leaSym d _ => ⟨fun τ => match τ with
+    | ⟨_, f, l, _, sl, _, x⟩ => some ⟨setK τ d false, f, l, killK τ d, sl, .empty, x⟩⟩
   | .movzx8 d m => ⟨fun τ =>
-    bif memPub τ m then some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty } else none⟩
-  | .vpmovmskb _ d _ => ⟨fun τ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }⟩
-  | .movqR d r => ⟨fun τ => some { τ with regs := setK τ d (xpub τ r), bases := killK τ d, lo := .empty }⟩
+    match τ with
+    | ⟨_, f, l, _, sl, _, x⟩ =>
+      bif memPub τ m then some ⟨setK τ d false, f, l, killK τ d, sl, .empty, x⟩ else none⟩
+  | .vpmovmskb _ d _ => ⟨fun τ => match τ with
+    | ⟨_, f, l, _, sl, _, x⟩ => some ⟨setK τ d false, f, l, killK τ d, sl, .empty, x⟩⟩
+  | .movqR d r => ⟨fun τ => match τ with
+    | ⟨_, f, l, _, sl, _, x⟩ => some ⟨setK τ d (xpub τ r), f, l, killK τ d, sl, .empty, x⟩⟩
   | .movdquLoad _ m => ⟨fun τ => bif memPub τ m then some (noX τ) else none⟩
-  | .movdquStore m _ => ⟨fun τ => storeStepK τ m 16 false⟩
+  | .movdquStore m _ => ⟨fun τ => storeStepKD τ m 16 false⟩
   | .xop op => xopStepFn op
   | .vop _ => ⟨fun τ => some (noX τ)⟩
   | .vmovdquLoad _ _ m | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m =>
     ⟨fun τ => bif memPub τ m then some (noX τ) else none⟩
-  | .vmovdquStore .l128 m _ => ⟨fun τ => storeStepK τ m 16 false⟩
-  | .vmovdquStore .l256 m _ => ⟨fun τ => storeStepK τ m 32 false⟩
+  | .vmovdquStore .l128 m _ => ⟨fun τ => storeStepKD τ m 16 false⟩
+  | .vmovdquStore .l256 m _ => ⟨fun τ => storeStepKD τ m 32 false⟩
   | .zop _ => ⟨fun τ => some (noX τ)⟩
   | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m => ⟨fun τ =>
     bif memPub τ m then some (noX τ) else none⟩
-  | .vmovdqu32Store m _ => ⟨fun τ => storeStepK τ m 64 false⟩
+  | .vmovdqu32Store m _ => ⟨fun τ => storeStepKD τ m 64 false⟩
   | .eop _ => ⟨fun τ => some (noX τ)⟩
   | .evLoad _ m | .evMadd52Load _ _ _ m => ⟨fun τ => bif memPub τ m then some (noX τ) else none⟩
-  | .evStore m _ => ⟨fun τ => storeStepK τ m 32 false⟩
-  | .stmxcsr m => ⟨fun τ => storeStepK τ m 4 false⟩
+  | .evStore m _ => ⟨fun τ => storeStepKD τ m 32 false⟩
+  | .stmxcsr m => ⟨fun τ => storeStepKD τ m 4 false⟩
   | .ldmxcsr m => ⟨fun τ => bif memPub τ m then some τ else none⟩
   | .lfence => ⟨fun τ => some τ⟩
-  | .mul r => ⟨fun τ => some (mulStep τ r)⟩
+  | .mul r => ⟨fun τ => some (mulStepKD τ r)⟩
   | .mulx hi lo src => ⟨fun τ => bif srcOkK τ src then some (mulxStepK τ hi lo src) else none⟩
   | .adcx d src | .adox d src => ⟨fun τ => adxStepK τ d src⟩
   | .cmov _ d src => ⟨fun τ => cmovStepK τ d src⟩
@@ -2193,6 +2229,7 @@ theorem mem_storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) (x : Nat × N
     obtain ⟨i, d⟩ := id
     simp only
     cases Nat.ble (d + w) (τ.lens.getD i 0) <;> cases p <;> simp only [Bool.cond_false, Bool.cond_true]
+    · simp only [VG.Taint.filterKeep_eq, KList.filter_eq, Bool.false_or]
     rw [show KList.filter (fun sl => true || !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
       Nat.ble (sl.2.1 + sl.2.2) d) τ.slots = τ.slots by
         simp only [KList.filter_eq, Bool.true_or]; exact List.filter_eq_self.mpr fun _ _ => rfl]
@@ -2222,8 +2259,13 @@ theorem stepKD_spec (τ : T) (i : Instr) :
   case store m r => exact st m 8 _
   case store32 m r => exact st m 4 _
   case store8 m r => exact st m 1 _
-  case vmovdquStore l _ _ => cases l <;> exact other rfl
+  case movdquStore m _ => exact st m 16 _
+  case vmovdquStore l m _ => cases l <;> [exact st m 16 _; exact st m 32 _]
+  case vmovdqu32Store m _ => exact st m 64 _
+  case evStore m _ => exact st m 32 _
+  case stmxcsr m => exact st m 4 _
   case xop op => cases op <;> exact other rfl
+  case mul r => exact other (by rw [stepKD, stepKDFn, stepK, mulStepKD_eq])
   all_goals exact other rfl
 
 end Taint

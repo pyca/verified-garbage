@@ -45,12 +45,12 @@ structure VAChk (p : Params) (e : Nat) (ws : List (Ptr × Nat)) : Prop where
   rho : keepB (vR p) (vW p) ws (sc oSA) 32 = true
   a : ∀ e' < e, keepB (vR p) (vW p) ws (aP e') 1024 = true
 
-/-- Proves a `VAChk`. -/
+/-- Proves a `VAChk`: each check decided for each parameter set if it can be (`vlayd`). -/
 syntax "vachk " term:max : tactic
 macro_rules
   | `(tactic| vachk $hF) => `(tactic| (
       have := ($hF).k; have := ($hF).l; have := ($hF).kl; have := ($hF).scr; have := ($hF).small
-      refine ⟨⟨?_, ?_, ?_⟩, ?_, ?_⟩ <;> intros <;> (try unfold VG.Proof.MlDsa.AArch64.Verify.vcChk) <;> vlay))
+      refine ⟨⟨?_, ?_, ?_⟩, ?_, ?_⟩ <;> intros <;> (try unfold VG.Proof.MlDsa.AArch64.Verify.vcChk) <;> first | vlayd | vlay))
 
 theorem VA.keep {p : Params} (hF : VFacts p) {S : Nat} {σ : State} (hp : vPre p S σ) {e : Nat} {s s' : State}
     (h : VA p σ e s) {ws : List (Ptr × Nat)} (hP : PPostB S s s' ws) (hc : VAChk p e ws)
@@ -67,7 +67,7 @@ theorem VA.keep {p : Params} (hF : VFacts p) {S : Nat} {σ : State} (hp : vPre p
 theorem copyRho_vpiece {p : Params} (hF : VFacts p) {S : Nat} :
     VPiece p S (fun σ s => Z0 p p.ℓ σ s ∧ normOk p σ p.ℓ) (VA p · 0) (.block (copy32 .x25 0 .x28 oSA)) := by
   have hc : copyPChk (vR p) (vW p) (sc oSA) (.x25, 0) = true := by
-    have := hF.k; have := hF.l; have := hF.scr; have := hF.pk; unfold copyPChk; vlay
+    have := hF.k; have := hF.l; have := hF.scr; have := hF.pk; unfold copyPChk; vlayd
   refine ⟨fun σ s hp h => ?_, taintRel [.x25, .x28] (fun x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ => ?_)
     (by taint_decide)⟩
   · have L := h.1.1.vc.lay hF hp
@@ -128,16 +128,16 @@ theorem seed_vpiece : VPiece p S (VA p · e) (VA1 p e)
   refine ⟨fun σ s hp h => ?_, taintRel [.x28] (fun x y ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ =>
     (vc_two hF p₁ p₂ pub h₁.vz.vc h₂.vz.vc).x28) (setIJ_taint _ (by omega) _ (by omega))⟩
   have L := h.vz.vc.lay hF hp
-  refine WP.mono (vsetTwo_ok L (o := oSA + 32) (a := e % p.ℓ) (b := e / p.ℓ) (by decide) (by vlay) (by vlay))
+  refine WP.mono (vsetTwo_ok L (o := oSA + 32) (a := e % p.ℓ) (b := e / p.ℓ) (by decide) (by vlayd) (by vlayd))
     fun s' ⟨hP', k', hb⟩ => ⟨h.keep hF hp hP' (by vachk hF) (k'.get .x24), ?_⟩
-  rw [bytes34, L.keepBytes hP' (by vlay), h.rho, sc_add, sc_pa hP', hb, seedOf, Proof.MlDsa.Verify.aSeed,
+  rw [bytes34, L.keepBytes hP' (by vlayd), h.rho, sc_add, sc_pa hP', hb, seedOf, Proof.MlDsa.Verify.aSeed,
     integerToBytes_one, integerToBytes_one, List.append_assoc]
   rfl
 
 omit hP in
 theorem rej_chk : rejNttChk (vR p) (vW p) (sc oSA) (aP e) (sc oSS) = true := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := hF.scr
-  unfold rejNttChk; vlay
+  unfold rejNttChk; vlayd
 
 theorem rej_vpiece : VPiece p S (VA1 p e) (VA2 p e) (rejNttAt P (sc oSS) (sc oSA) (aP e)) := by
   have hc := rej_chk hF he
@@ -160,14 +160,14 @@ theorem tail_vpiece : VPiece p S (VA2 p e) (VA p · (e + 1)) (.seq (.block and24
   have L := h.1.vz.vc.lay hF hp
   obtain ⟨hv, hred, hout⟩ := h
   have hr01 := Proof.MlDsa.KeyGen.outcome_01 hout
-  refine WP.mono (tail_ok L (a := aP e) (by vlay) (by vlay) hr01) fun s' ⟨hP', x', hco⟩ => ?_
+  refine WP.mono (tail_ok L (a := aP e) (by vlayd) (by vlayd) hr01) fun s' ⟨hP', x', hco⟩ => ?_
   have hvz := hv.vz.keep hF hp hP' (by vzchk hF)
   have e' : pa s' (aP e) = pa s (aP e) := sc_pa hP' _
   obtain ⟨q, hq, h1, h0⟩ := hv.ok
   rw [hq] at x'
   have hA : ∀ e' < e, polyAt s'.mem (pa s' (aP e')) = polyAt s.mem (pa s (aP e')) := fun e' he' =>
     L.keepPolyAt hP' (by vlay)
-  refine ⟨hvz, hv.nok, by rw [L.keepBytes hP' (by vlay)]; exact hv.rho, fun e'' he'' => ?_, q && ((s.gpr .x0).setWidth 32 == 1), ?_, fun hq' e'' he'' => ?_,
+  refine ⟨hvz, hv.nok, by rw [L.keepBytes hP' (by vlayd)]; exact hv.rho, fun e'' he'' => ?_, q && ((s.gpr .x0).setWidth 32 == 1), ?_, fun hq' e'' he'' => ?_,
     fun hq' => ?_⟩
   · rcases (by omega : e'' < e ∨ e'' = e) with he'' | rfl
     · exact L.keepRed hP' (by vlay) (hv.red e'' he'')
@@ -226,7 +226,7 @@ include hP hF
 omit hP in
 theorem ball_chk : ballChk (vR p) (vW p) (.x27, 0) p.ctildeLen (cP p) (sc oSS) = true := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := hF.scr; have := hF.ct; have := hF.sig
-  unfold ballChk; vlay
+  unfold ballChk; vlayd
 
 omit hP in
 theorem ctOf_eq {σ s : State} (h : VC p σ s) : bytesAt s.mem (pa s (.x27, 0)) p.ctildeLen = ctOf p σ := by
@@ -255,12 +255,12 @@ theorem ballTail_vpiece : VPiece p S (VB1 p) (VB p) (.seq (.block and24) (mask (
   have L := h.1.vz.vc.lay hF hp
   obtain ⟨hv, hred, hout⟩ := h
   have hr01 := Proof.MlDsa.KeyGen.outcome_01 hout
-  refine WP.mono (tail_ok L (a := cP p) (by vlay) (by vlay) hr01) fun s' ⟨hP', x', hco⟩ => ?_
+  refine WP.mono (tail_ok L (a := cP p) (by vlayd) (by vlayd) hr01) fun s' ⟨hP', x', hco⟩ => ?_
   have hvz := hv.vz.keep hF hp hP' (by vzchk hF)
   have e' : pa s' (cP p) = pa s (cP p) := sc_pa hP' _
   obtain ⟨q, hq, h1, h0⟩ := hv.ok
   rw [hq] at x'
-  refine ⟨hvz, hv.nok, fun e he => L.keepRed hP' (by vlay) (hv.red e he), ?_, q && ((s.gpr .x0).setWidth 32 == 1), ?_, fun hq' => ⟨fun e he => ?_, ?_⟩,
+  refine ⟨hvz, hv.nok, fun e he => L.keepRed hP' (by vlayd) (hv.red e he), ?_, q && ((s.gpr .x0).setWidth 32 == 1), ?_, fun hq' => ⟨fun e he => ?_, ?_⟩,
     fun hq' => ?_⟩
   · rw [e']
     by_cases h1 : (s.gpr .x0).setWidth 32 = 1
@@ -270,7 +270,7 @@ theorem ballTail_vpiece : VPiece p S (VB1 p) (VB p) (.seq (.block and24) (mask (
     exact flag_congr (by simp)
   · simp only [Bool.and_eq_true, beq_iff_eq] at hq'
     obtain ⟨b, hb⟩ := h1 hq'.1 e he
-    exact ⟨b, by rw [hb, L.keepPolyAt hP' (by vlay)]⟩
+    exact ⟨b, by rw [hb, L.keepPolyAt hP' (by vlayd)]⟩
   · simp only [Bool.and_eq_true, beq_iff_eq] at hq'
     rcases hout with ⟨_, b, hb⟩ | ⟨h0', _⟩
     · exact ⟨b, by rw [e', (Proof.MlDsa.KeyGen.masked_one hq'.2 hco).1]; exact hb⟩

@@ -78,18 +78,18 @@ def vCarry (k : Nat) : List Instr :=
 /-- One step of Algorithm 1. -/
 def step : List Instr :=
   -- m := −xᵢ, and the first word of X shifted left
-  [.mov .esi (.mem (at_ .edi 0)), .alu .add .esi (.reg .esi), .store (at_ .edi 0) .esi,
-   .alu .sbb .ebp (.reg .ebp)] ++
+  ([.mov .esi (.mem (at_ .edi 0)), .alu .add .esi (.reg .esi), .store (at_ .edi 0) .esi,
+   .alu .sbb .ebp (.reg .ebp)] : List Instr) ++
   -- Z := Z ⊕ (V ∧ m)
   zUpd 0 ++ zUpd 1 ++ zUpd 2 ++ zUpd 3 ++
   -- m := −LSB₁(V), and V := (V >> 1) ⊕ (R ∧ m)
-  [.shift .shr .edx 1, .alu .sbb .ebp (.reg .ebp)] ++ vCarry 2 ++ vCarry 1 ++ vCarry 0 ++
-  [.alu .and .ebp (.imm rTop), .alu .xor .eax (.reg .ebp)]
+  ([.shift .shr .edx 1, .alu .sbb .ebp (.reg .ebp)] : List Instr) ++ vCarry 2 ++ vCarry 1 ++ vCarry 0 ++
+  ([.alu .and .ebp (.imm rTop), .alu .xor .eax (.reg .ebp)] : List Instr)
 
 /-- `unroll` steps, then the count (ZF is set after the last iteration). -/
 def steps : List Instr :=
   (List.range unroll).flatMap (fun _ => step) ++
-  [.mov .esi (.mem (at_ .edi scOff)), .alu .sub .esi (.imm 1), .store (at_ .edi scOff) .esi]
+  ([.mov .esi (.mem (at_ .edi scOff)), .alu .sub .esi (.imm 1), .store (at_ .edi scOff) .esi] : List Instr)
 
 /-- After a word: move the next words down, and count it. -/
 def nextWord : List Instr :=
@@ -110,21 +110,21 @@ def loadX (w : Nat) : List Instr :=
 
 /-- Load `Y ⊕ X`, `Z := 0`, `V := H`, and the word count. -/
 def load : List Instr :=
-  [.mov .esi (.mem (at_ .edi dOff)), .mov .ebp (.mem (argOp 1))] ++
+  ([.mov .esi (.mem (at_ .edi dOff)), .mov .ebp (.mem (argOp 1))] : List Instr) ++
   loadX 0 ++ loadX 1 ++ loadX 2 ++ loadX 3 ++
-  [.mov .eax (.imm 0)] ++ (List.range 4).map (fun k => .store (at_ .edi (zOff k)) .eax) ++
-  [.mov .ebp (.mem (argOp 0))] ++
+  ([.mov .eax (.imm 0)] : List Instr) ++ (List.range 4).map (fun k => .store (at_ .edi (zOff k)) .eax) ++
+  ([.mov .ebp (.mem (argOp 0))] : List Instr) ++
   (List.range 4).flatMap (fun k => [.mov (vReg k) (.mem (at_ .ebp (4 * k))), .bswap (vReg k)]) ++
-  [.mov .esi (.imm 4), .store (at_ .edi wcOff) .esi]
+  ([.mov .esi (.imm 4), .store (at_ .edi wcOff) .esi] : List Instr)
 
 /-- Store `Z` as the new `Y`, advance to the next block and count it (ZF is
 set after the last block). -/
 def store : List Instr :=
-  [.mov .esi (.mem (argOp 1))] ++
+  ([.mov .esi (.mem (argOp 1))] : List Instr) ++
   (List.range 4).flatMap (fun k =>
     [.mov .eax (.mem (at_ .edi (zOff k))), .bswap .eax, .store (at_ .esi (4 * k)) .eax]) ++
-  [.mov .esi (.mem (at_ .edi dOff)), .alu .add .esi (.imm 16), .store (at_ .edi dOff) .esi,
-   .mov .esi (.mem (at_ .edi nOff)), .alu .sub .esi (.imm 1), .store (at_ .edi nOff) .esi]
+  ([.mov .esi (.mem (at_ .edi dOff)), .alu .add .esi (.imm 16), .store (at_ .edi dOff) .esi,
+   .mov .esi (.mem (at_ .edi nOff)), .alu .sub .esi (.imm 1), .store (at_ .edi nOff) .esi] : List Instr)
 
 /-- One block. -/
 def body : Prog isa := .seq (.block load) (.seq (.loop word .ne) (.block store))
@@ -135,9 +135,9 @@ def savedRegs : List (Reg × Nat) := [(.ebx, 32), (.esi, 36), (.edi, 40), (.ebp,
 /-- Save the registers, point `edi` at the scratch buffer, and store the data
 pointer and the count (ZF is set if it is zero). -/
 def prologue : List Instr :=
-  [.mov .eax (.mem (argOp 4))] ++ savedRegs.map (fun (r, d) => .store (at_ .eax d) r) ++
-  [.mov .edi (.reg .eax), .mov .eax (.mem (argOp 2)), .store (at_ .edi dOff) .eax,
-   .mov .eax (.mem (argOp 3)), .store (at_ .edi nOff) .eax, .alu .test .eax (.reg .eax)]
+  ([.mov .eax (.mem (argOp 4))] : List Instr) ++ savedRegs.map (fun (r, d) => .store (at_ .eax d) r) ++
+  ([.mov .edi (.reg .eax), .mov .eax (.mem (argOp 2)), .store (at_ .edi dOff) .eax,
+   .mov .eax (.mem (argOp 3)), .store (at_ .edi nOff) .eax, .alu .test .eax (.reg .eax)] : List Instr)
 
 /-- Restore the registers (`edi`, the base, last). -/
 def restore : List Instr :=

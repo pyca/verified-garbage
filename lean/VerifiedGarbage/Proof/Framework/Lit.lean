@@ -243,14 +243,28 @@ def unfoldToLits (N : Name) (x : Expr) : MetaM (Option (Expr × Expr)) := do
     if r && !(← hasProofFields d.type.getForallBody.getAppFn) then headReach := headReach.insert c
   let memo' := memo
   let headReach' := headReach
+  -- The templates (`materialize_template`): their applications are found up to
+  -- definitional equality of the fixed arguments, and are not unfolded either.
+  let tpls ← atoms.filterM fun (_, l) => do return (← whnfD (← inferType l)).isForall
+  let isTplApp (l t : Expr) : Bool := t.getAppFn == l.getAppFn && t.getAppNumArgs == l.getAppNumArgs
   let isAtom (t : Expr) : Bool :=
-    t.getAppFn.isConst && heads.contains t.getAppFn.constName! && atoms.any (·.2 == t)
+    t.getAppFn.isConst && heads.contains t.getAppFn.constName! &&
+      (atoms.any (·.2 == t) || tpls.any fun (_, l) => isTplApp l t)
   let e := unfoldWhere env (fun c => memo'.find? c == some true || headReach'.contains c) x isAtom
   -- What is rewritten to a literal: the constants with one, then the applications.
   let mut items : Array (Expr × Name) :=
     (e.getUsedConstants.filter targets.contains).map fun c => (mkConst c, c)
   for (M, lhs) in atoms do
     if (e.find? (· == lhs)).isSome then items := items.push (lhs, M)
+  for (M, lhs) in tpls do
+    let found ← IO.mkRef (#[] : Array Expr)
+    e.forEach fun t => do
+      if isTplApp lhs t && t != lhs && !t.hasLooseBVars then found.modify (·.push t)
+    for t in ← found.get do
+      -- By the kernel's check (as the proof will be), which decides closed terms
+      -- (moduli, offsets) by evaluation, faster than `isDefEq`.
+      if !items.any (·.1 == t) && Kernel.isDefEqGuarded (← getEnv) {} t lhs then
+        items := items.push (t, M)
   if items.isEmpty then return none
   let ty ← inferType x
   let u ← getLevel ty
@@ -278,10 +292,296 @@ def unfoldToLits (N : Name) (x : Expr) : MetaM (Option (Expr × Expr)) := do
         (mkConst (M ++ `lit)) motive (mkConst (M ++ `lit_eq))) prf
   return some (inst items.size none, prf)
 
+/-! ### Templates
+
+Code built by a function of a few offsets (`mulG M o a b`, a product of the
+operands at `a` and `b` into `o`) is evaluated by the kernel once for each
+call, in every literal of the code that calls it: P-384's ECDH evaluates over
+a hundred products. `materialize_template N := f x₁ … xₖ`, for
+`f x₁ … xₖ : Nat → … → Nat → α`, evaluates it once instead, with the offsets
+variables: `N.lit` is a function whose body is the code with each offset
+`oᵢ + c` written as such (found by evaluating the code at a few offsets far
+apart and comparing them, `antiUnify`), and the kernel checks
+`N.lit_eq : f x₁ … xₖ = N.lit` with the offsets free. A literal of code that
+calls it then evaluates `N.lit o a b`, the body with the offsets added
+(`unfoldToLits`), rather than `f`.
+
+The function must not decide anything on its offsets (the kernel could not
+decide it with them free): give a name to the code of each case
+(`mulR`'s `mulG`), and a template to that. `unfoldToLits` rewrites the
+applications of `f` whose fixed arguments are `x₁ … xₖ` up to definitional
+equality (the modulus is reached by many paths: `p384.MP'`,
+`(jwinCfg p384).M`, …). -/
+
+/-- `(T, n)` if `e` is the literal `OfNat.ofNat T n _` (`ToExpr` of `Nat`
+and of a nonnegative `Int`). -/
+def natLitOf? (e : Expr) : Option (Expr × Nat) :=
+  if e.isAppOfArity ``OfNat.ofNat 3 then
+    match e.appFn!.appArg! with
+    | .lit (.natVal n) => some (e.appFn!.appFn!.appArg!, n)
+    | _ => none
+  else none
+
+/-- The offsets a template is evaluated at: sample `j`'s offset `i` is
+`2⁴⁰ (1 + j (i + 1)) + 2³⁶ i`, so that no two offsets differ by the same
+amount in every sample. -/
+def tplSamples (k : Nat) : Array (Array Nat) :=
+  (Array.range 3).map fun j => (Array.range k).map fun i => 0x10000000000 * (1 + j * (i + 1)) + 0x1000000000 * i
+
+/-- The value at the same place in the samples `es` of a template (of the
+parameters `xs`), the same in each, but for each number that differs between
+them, which is `xᵢ + c` for one `xᵢ` and `c < 2³²` in every sample. -/
+partial def antiUnify (xs : Array Expr) (samples : Array (Array Nat)) (es : Array Expr) :
+    StateT (Std.HashMap (Array Expr) Expr) MetaM Expr := do
+  let e0 := es[0]!
+  if es.all (· == e0) then return e0
+  if let some r := (← get)[es]? then return r
+  let r ← do
+    if let some (T, _) := natLitOf? e0 then
+      let ns := es.filterMap fun e => (natLitOf? e).map (·.2)
+      unless ns.size == es.size do
+        throwError "materialize_template: a number in one sample, not in another"
+      let follows (i : Nat) : Option Nat := Id.run do
+        let c : Int := (ns[0]! : Int) - samples[0]![i]!
+        unless 0 ≤ c && c < 0x100000000 do return none
+        for j in [1:ns.size] do
+          unless (ns[j]! : Int) - samples[j]![i]! == c do return none
+        return some c.toNat
+      let some (i, c) := (List.range xs.size).findSome? fun i => (follows i).map (i, ·)
+        | throwError "materialize_template: a number that follows no parameter: {ns}"
+      let s := mkApp6 (mkConst ``HAdd.hAdd [0, 0, 0]) (mkConst ``Nat) (mkConst ``Nat) (mkConst ``Nat)
+        (mkApp2 (mkConst ``instHAdd [0]) (mkConst ``Nat) (mkConst ``instAddNat)) xs[i]! (mkNatLit c)
+      if T.isConstOf ``Nat then pure s
+      else if T.isConstOf ``Int then pure (mkApp (mkConst ``Int.ofNat) s)
+      else throwError "materialize_template: a number of type {T}"
+    else
+      let f := e0.getAppFn
+      let n := e0.getAppNumArgs
+      unless e0.isApp && es.all fun e => e.getAppFn == f && e.getAppNumArgs == n do
+        throwError "materialize_template: the samples differ in shape (does the code decide on its offsets?)"
+      let mut args := #[]
+      for i in [0:n] do
+        args := args.push (← antiUnify xs samples (es.map (·.getArg! i)))
+      pure (mkAppN f args)
+  modify (·.insert es r)
+  return r
+
+/-- `materialize_template N := f`: `N.lit` and `N.lit_eq : f = N.lit`, for `f`
+a function of offsets (`Nat`), as above. -/
+def materializeTemplate (N : Name) (f : Expr) : MetaM Unit := do
+  if f.hasMVar || f.hasFVar then throwError "materialize_template: {f} is not closed"
+  let ty ← inferType f
+  forallTelescopeReducing ty fun xs body => do
+    if xs.isEmpty then throwError "materialize_template: {f} is not a function"
+    for x in xs do
+      unless (← whnfD (← inferType x)).isConstOf ``Nat do
+        throwError "materialize_template: a parameter is not a number: {x}"
+    let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) body)
+    let samples := tplSamples xs.size
+    let es ← samples.mapM fun s => unsafe evalExpr Expr (mkConst ``Expr)
+      (mkApp3 (mkConst ``ToExpr.toExpr [0]) body inst (mkAppN f (Array.map mkNatLit s)))
+    let (b, _) ← (antiUnify xs samples es).run {}
+    addDecl <| .defnDecl {
+      name := N ++ `lit, levelParams := [], type := ty
+      value := ← mkLambdaFVars xs (ShareCommon.shareCommon' b)
+      hints := .abbrev, safety := .safe }
+    let u ← getLevel ty
+    addDecl <| .thmDecl {
+      name := N ++ `lit_eq, levelParams := [],
+      type := mkApp3 (mkConst ``Eq [u]) ty f (mkConst (N ++ `lit)),
+      value := mkApp2 (mkConst ``Eq.refl [u]) ty f }
+
+/-! ### Code with its appends flattened
+
+The kernel checks `N.lit_eq` by evaluating the code, and code is built with
+`++` (`rowsF k m (r + 1) = rowsF k m r ++ rowF k m r`), nested to the left
+as often as not: each instruction of `a` in `(a ++ b) ++ c` is then rebuilt
+once for every `++` above it, time quadratic in the nesting (P-521's x86
+multiplication: 18 rows, each with 17 nested steps, 9 s). `flattenCode`
+proves, without evaluating anything, that the code is equal to the same code
+with each block's list written as `List.flatten [c₁, …, cₙ]` (its pieces,
+nested to the right), which the kernel then evaluates in time linear in its
+length (P-521's multiplication: under 1 s).
+
+`materialize_flat_code` uses it; `materialize_code` does not. The unfolding
+runs `whnf` at the meta level, slower than the kernel, at every append and
+every decision: for code nested to the right, or that decides much at each
+step (selections of table entries, …), it costs more than it saves. -/
+
+theorem flat_app {α : Type} {a b : List α} {La Lb : List (List α)}
+    (ha : a = La.flatten) (hb : b = Lb.flatten) : a ++ b = (La ++ Lb).flatten := by
+  rw [ha, hb, List.flatten_append]
+
+theorem flat_nil {α : Type} : ([] : List α) = ([] : List (List α)).flatten := rfl
+
+theorem flat_leaf {α : Type} (l : List α) : l = [l].flatten := by
+  simp only [List.flatten_cons, List.flatten_nil, List.append_nil]
+
+theorem Code.block_congr {I C : Type} {l l' : List I} (h : l = l') :
+    (Code.block l : Code I C) = .block l' := h ▸ rfl
+theorem Code.seq_congr {I C : Type} {a a' b b' : Code I C} (ha : a = a') (hb : b = b') :
+    Code.seq a b = .seq a' b' := ha ▸ hb ▸ rfl
+theorem Code.ite_congr {I C : Type} {c : C} {a a' b b' : Code I C} (ha : a = a') (hb : b = b') :
+    Code.ite c a b = .ite c a' b' := ha ▸ hb ▸ rfl
+theorem Code.loop_congr {I C : Type} {c : C} {a a' : Code I C} (ha : a = a') :
+    Code.loop a c = .loop a' c := ha ▸ rfl
+theorem Code.frame_congr {I C : Type} {p q : I} {a a' : Code I C} (ha : a = a') :
+    Code.frame p a q = .frame p a' q := ha ▸ rfl
+
+/-- `++`, which `whnfNoAppend` never unfolds. -/
+def appendConsts : NameSet := NameSet.empty |>.insert ``HAppend.hAppend |>.insert ``Append.append
+  |>.insert ``List.append |>.insert ``instHAppendOfAppend |>.insert ``List.instAppend
+
+/-- `whnf`, but never through `++`: a list built with `++` is left an append. -/
+def whnfNoAppend (e : Expr) : MetaM Expr :=
+  withCanUnfoldPred (fun cfg ci => do
+    if appendConsts.contains ci.name then return false else canUnfoldDefault cfg ci) (whnf e)
+
+/-- `whnfNoAppend`, or `none` where it fails (a number past the threshold of
+`Nat.pow`'s evaluation, …): such a term is left for the kernel. Its messages
+(that threshold's warning) are dropped: it only looks ahead. -/
+def whnfNoAppend? (e : Expr) : MetaM (Option Expr) := do
+  let msgs := (← getThe Core.State).messages
+  let r ← tryCatchRuntimeEx (some <$> whnfNoAppend e) fun _ => pure none
+  modifyThe Core.State fun s => { s with messages := msgs }
+  return r
+
+/-- The elements of the cons prefix of `l`, and its tail. -/
+def consPrefix (l : Expr) : Array Expr × Expr := Id.run do
+  let mut xs := #[]
+  let mut t := l
+  while t.isAppOfArity ``List.cons 3 do
+    xs := xs.push (t.getArg! 1)
+    t := t.appArg!
+  return (xs, t)
+
+/-- What `flatList` and `flattenCode` have done so far: the calls of `whnf`
+(within a budget, past which they give up), and the deepest nesting of `++`
+to the left that they have undone. -/
+structure FlatState where
+  whnfs : Nat := 0
+  leftDepth : Nat := 0
+  /-- Whether a definition may build a list with `++` (memoized). -/
+  appends : NameMap Bool := {}
+
+abbrev FlatM := StateT FlatState MetaM
+
+/-- The calls of `whnf` `flattenCode` may make, a bound on its time. -/
+def flatBudget : Nat := 100000
+
+/-- The functions that build lists with `++`. -/
+def appendBuilders : NameSet := appendConsts |>.insert ``List.flatten |>.insert ``List.flatMap
+
+/-- Whether the definition `c` may build a list with `++`, directly or through
+the definitions it uses: a list whose term uses none is left to the kernel
+whole, without unfolding it at the meta level. -/
+partial def mayAppend (c : Name) : FlatM Bool := do
+  if appendBuilders.contains c then return true
+  if let some b := (← get).appends.find? c then return b
+  modify fun s => { s with appends := s.appends.insert c false }
+  let some (.defnInfo d) := (← getEnv).find? c | return false
+  let mut r := false
+  for v in d.value.getUsedConstants do
+    if ← mayAppend v then r := true; break
+  modify fun s => { s with appends := s.appends.insert c r }
+  return r
+
+/-- `whnfNoAppend?`, counted against the budget (an exception past it). -/
+def flatWhnf (e : Expr) : FlatM (Option Expr) := do
+  let s ← get
+  if s.whnfs ≥ flatBudget then throwError "flattenCode: over budget"
+  set { s with whnfs := s.whnfs + 1 }
+  whnfNoAppend? e
+
+/-- For a list `l : List α`, pieces `L`, a proof of `l = L.flatten` (by
+`flat_app`, `flat_leaf` and unfolding, which the kernel checks without
+evaluating the pieces), and the depth of `++` nested to the left in `l`.
+Below `depth` nested appends (a long chain nested to the right, which the
+kernel evaluates in linear time anyway), the list is one piece: the proof
+stays shallow enough for the kernel. -/
+partial def flatList (α : Expr) (l : Expr) (depth : Nat := 64) :
+    FlatM (Array Expr × Expr × Nat) := do
+  let lα := mkApp (mkConst ``List [0]) α
+  let toL (cs : Array Expr) : Expr :=
+    cs.foldr (fun c acc => mkApp3 (mkConst ``List.cons [0]) lα c acc)
+      (mkApp (mkConst ``List.nil [0]) lα)
+  let leaf (x : Expr) : Array Expr × Expr × Nat := (#[x], mkApp2 (mkConst ``flat_leaf) α x, 0)
+  if depth == 0 then return leaf l
+  let app (a b : Expr) : FlatM (Array Expr × Expr × Nat) := do
+    let (ca, pa, da) ← flatList α a (depth - 1)
+    let (cb, pb, db) ← flatList α b (depth - 1)
+    let d := max (da + 1) db
+    modify fun s => { s with leftDepth := max s.leftDepth d }
+    return (ca ++ cb, mkAppN (mkConst ``flat_app) #[α, a, b, toL ca, toL cb, pa, pb], d)
+  if (consPrefix l).2.isAppOfArity ``List.nil 1 then return leaf l
+  unless ← l.getUsedConstants.anyM mayAppend do return leaf l
+  let some w ← flatWhnf l | return leaf l
+  if w.isAppOfArity ``HAppend.hAppend 6 then return ← app (w.getArg! 4) (w.getArg! 5)
+  if w.isAppOfArity ``List.append 3 then return ← app (w.getArg! 1) (w.getArg! 2)
+  if w.isAppOfArity ``List.nil 1 then return (#[], mkApp (mkConst ``flat_nil) α, 0)
+  if w.isAppOfArity ``List.cons 3 then
+    let (xs, t) := consPrefix w
+    if t.isAppOfArity ``List.nil 1 then return leaf w
+    -- `x₁ :: … :: xₖ :: t` is `[x₁, …, xₖ] ++ t` (the kernel appends `k` elements).
+    let pre := xs.foldr (fun x acc => mkApp3 (mkConst ``List.cons [0]) α x acc)
+      (mkApp (mkConst ``List.nil [0]) α)
+    return ← app pre t
+  return leaf w
+
+/-- For code `c : Code I C`, the same code with each block's list flattened
+(`flatList`), and a proof of `c = c'`; the bodies of calls are left as they
+are (the literals of their callees, or code the kernel compares as it is).
+Code nested deeper than `depth` is left as it is, as `flatList` leaves lists. -/
+partial def flattenCode (I C : Expr) (c : Expr) (depth : Nat := 64) : FlatM (Expr × Expr) := do
+  let codeTy := mkApp2 (mkConst ``Code) I C
+  let refl (x : Expr) := (x, mkApp2 (mkConst ``Eq.refl [1]) codeTy x)
+  if depth == 0 then return refl c
+  let some w ← flatWhnf c | return refl c
+  match w.getAppFn.constName?, w.getAppNumArgs with
+  | some ``Code.block, 3 =>
+    let (cs, p, _) ← flatList I (w.getArg! 2)
+    let lI := mkApp (mkConst ``List [0]) I
+    let L := cs.foldr (fun x acc => mkApp3 (mkConst ``List.cons [0]) lI x acc)
+      (mkApp (mkConst ``List.nil [0]) lI)
+    let l' := mkApp2 (mkConst ``List.flatten [0]) I L
+    return (mkApp3 (mkConst ``Code.block) I C l',
+      mkAppN (mkConst ``Code.block_congr) #[I, C, w.getArg! 2, l', p])
+  | some ``Code.seq, 4 =>
+    let (a, pa) ← flattenCode I C (w.getArg! 2) (depth - 1)
+    let (b, pb) ← flattenCode I C (w.getArg! 3) (depth - 1)
+    return (mkApp4 (mkConst ``Code.seq) I C a b,
+      mkAppN (mkConst ``Code.seq_congr) #[I, C, w.getArg! 2, a, w.getArg! 3, b, pa, pb])
+  | some ``Code.ite, 5 =>
+    let (a, pa) ← flattenCode I C (w.getArg! 3) (depth - 1)
+    let (b, pb) ← flattenCode I C (w.getArg! 4) (depth - 1)
+    return (mkApp5 (mkConst ``Code.ite) I C (w.getArg! 2) a b,
+      mkAppN (mkConst ``Code.ite_congr) #[I, C, w.getArg! 2, w.getArg! 3, a, w.getArg! 4, b, pa, pb])
+  | some ``Code.loop, 4 =>
+    let (a, pa) ← flattenCode I C (w.getArg! 2) (depth - 1)
+    return (mkApp4 (mkConst ``Code.loop) I C a (w.getArg! 3),
+      mkAppN (mkConst ``Code.loop_congr) #[I, C, w.getArg! 3, w.getArg! 2, a, pa])
+  | some ``Code.frame, 5 =>
+    let (a, pa) ← flattenCode I C (w.getArg! 3) (depth - 1)
+    return (mkApp5 (mkConst ``Code.frame) I C (w.getArg! 2) a (w.getArg! 4),
+      mkAppN (mkConst ``Code.frame_congr) #[I, C, w.getArg! 2, w.getArg! 4, w.getArg! 3, a, pa])
+  | _, _ => return refl c
+
+/-- The depth of `++` nested to the left from which flattening pays: below
+it, the kernel's evaluation of the code as it is costs little more than its
+evaluation flattened, and the unfolding is extra work. -/
+def flatMinDepth : Nat := 4
+
+/-- `flattenCode`, if it pays (`flatMinDepth`) and stays within its budget. -/
+def flattenCode? (I C c : Expr) : MetaM (Option (Expr × Expr)) := do
+  let r ← tryCatch (some <$> (flattenCode I C c).run {}) fun _ => pure none
+  let some ((c', prf), s) := r | return none
+  if s.leftDepth < flatMinDepth then return none
+  return some (c', prf)
+
 /-- Defines `N.lit`, the value of the closed code term `code` as a literal
 (calling the literals of the code materialized so far), and
 `N.lit_eq : code = N.lit`. -/
-def materialize (N : Name) (code : Expr) : MetaM Unit := do
+def materialize (N : Name) (code : Expr) (flat : Bool := false) : MetaM Unit := do
   let ty ← inferType code
   let codeTy ← whnfD ty
   unless codeTy.isAppOfArity ``Code 2 do
@@ -314,13 +614,24 @@ def materialize (N : Name) (code : Expr) : MetaM Unit := do
   let eqTy (rhs : Expr) := mkApp3 (mkConst ``Eq [1]) ty code rhs
   -- If the code reaches literals: `code = e'` by unfolding (`unfoldToLits`),
   -- and `e' = N.lit` by evaluation.
-  if let some (_, prf) ← unfoldToLits N code then
+  let I := codeTy.appFn!.appArg!
+  let C := codeTy.appArg!
+  if let some (e, prf) ← unfoldToLits N code then
+    -- `code = e` by unfolding, `e = e'` by flattening its blocks, and `e' = N.lit`
+    -- by evaluation.
+    let prf := match ← (if flat then flattenCode? I C e else pure none) with
+      | some (e', q) => mkApp6 (mkConst ``Eq.trans [1]) ty code e e' prf q
+      | none => prf
     addDecl <| .thmDecl {
       name := N ++ `lit_eq, levelParams := [], type := eqTy (mkConst (N ++ `lit)),
       value := ShareCommon.shareCommon' prf }
     return
-  -- `code = abs[callees]` by evaluation, then each callee rewritten to its literal.
-  let mut prf := mkApp2 (mkConst ``Eq.refl [1]) ty code
+  -- `code = code'` by flattening its blocks, `code' = abs[callees]` by evaluation,
+  -- then each callee rewritten to its literal.
+  let mut prf := match ← (if flat then flattenCode? I C code else pure none) with
+    | some (code', q) => mkApp6 (mkConst ``Eq.trans [1]) ty code code' (inst fun i => lhss[i]!) q
+        (mkApp2 (mkConst ``Eq.refl [1]) ty code')
+    | none => mkApp2 (mkConst ``Eq.refl [1]) ty code
   for i in [0:gs.size] do
     -- The code with the literals of the first `i` callees, and `x` for the `i`-th.
     let motive := Expr.lam `x ty
@@ -548,6 +859,40 @@ elab_rules : command
     let e ← instantiateMVars (← Term.elabTermAndSynthesize t none)
     if e.hasMVar || e.hasFVar then throwError "materialize_code: {e} is not closed"
     materialize ((← getCurrNamespace) ++ id.getId) e
+
+open Lit in
+/-- `materialize_flat_code` is `materialize_code` for code whose blocks are
+built with `++` nested to the left (rows appended one by one, …), which the
+kernel's evaluation would rebuild once for every `++` above them: `N.lit_eq`
+goes through the code with each block flattened (`flattenCode`), which the
+kernel evaluates in time linear in its length. Elsewhere it costs more to
+unfold than it saves: the generators that decide much at each step, or
+nest their appends to the right. -/
+syntax "materialize_flat_code " ident (" := " term)? : command
+
+open Lit in
+elab_rules : command
+  | `(materialize_flat_code $id:ident) => liftTermElabM do
+    let foo ← realizeGlobalConstNoOverloadWithInfo id
+    materialize foo (mkConst foo) (flat := true)
+  | `(materialize_flat_code $id:ident := $t) => liftTermElabM do
+    let e ← instantiateMVars (← Term.elabTermAndSynthesize t none)
+    if e.hasMVar || e.hasFVar then throwError "materialize_flat_code: {e} is not closed"
+    materialize ((← getCurrNamespace) ++ id.getId) e (flat := true)
+
+open Lit in
+/-- `materialize_template N := f x₁ … xₖ`, for code that is a function of
+offsets (`Nat → … → Nat → α`): `N.lit`, that function as a literal with the
+offsets free, and `N.lit_eq : f x₁ … xₖ = N.lit`, which the literals of code
+calling `f x₁ … xₖ` then read rather than evaluating `f` at each call (see
+"Templates" in `Lit.lean`). -/
+syntax "materialize_template " ident " := " term : command
+
+open Lit in
+elab_rules : command
+  | `(materialize_template $id:ident := $t) => liftTermElabM do
+    let e ← instantiateMVars (← Term.elabTermAndSynthesize t none)
+    materializeTemplate ((← getCurrNamespace) ++ id.getId) e
 
 open Elab Tactic Lit in
 /-- Rewrites each code of the goal that has a literal (`materialize_code`) to it. -/

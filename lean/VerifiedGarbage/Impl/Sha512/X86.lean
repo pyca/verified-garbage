@@ -199,7 +199,7 @@ def rounds : Nat → Prog isa
 
 /-- `Wₜ` for `t < 16`, from the block's bytes at `[edi + i]`, stored at `[esi + o]`. -/
 def loadW (i o : Nat) : List Instr :=
-  [.mov Z0 (.mem (at_ .edi (i + 4))), .mov Z1 (.mem (at_ .edi i)), .bswap Z0, .bswap Z1] ++ st Z0 Z1 o
+  ([.mov Z0 (.mem (at_ .edi (i + 4))), .mov Z1 (.mem (at_ .edi i)), .bswap Z0, .bswap Z1] : List Instr) ++ st Z0 Z1 o
 
 /-- The block's sixteen words, and the copy of `W₀`. -/
 def loadWs : List Instr := (List.range 16).flatMap (fun t => loadW (8 * t) (wOff t)) ++ loadW 0 mirOff
@@ -240,10 +240,10 @@ def saved : List (Reg × Nat) := [(.ebx, 200), (.esi, 204), (.edi, 208), (.ebp, 
 /-- Save the callee-saved registers, load the arguments, and set ZF if there
 are no blocks. -/
 def prologue : List Instr :=
-  [.mov .eax (.mem (at_ .esp 16))] ++
+  ([.mov .eax (.mem (at_ .esp 16))] : List Instr) ++
   saved.map (fun (r, d) => .store (at_ .eax d) r) ++
-  [.mov .esi (.reg .eax), .mov .edi (.mem (at_ .esp 8)), .mov .eax (.mem (at_ .esp 12)),
-   .store (at_ .esi cntOff) .eax, .alu .test .eax (.reg .eax)]
+  ([.mov .esi (.reg .eax), .mov .edi (.mem (at_ .esp 8)), .mov .eax (.mem (at_ .esp 12)),
+   .store (at_ .esi cntOff) .eax, .alu .test .eax (.reg .eax)] : List Instr)
 
 /-- Restore the callee-saved registers (`esi`, the base, last). -/
 def epilogue : List Instr :=

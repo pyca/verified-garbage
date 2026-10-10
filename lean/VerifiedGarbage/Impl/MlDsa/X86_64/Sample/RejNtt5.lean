@@ -47,8 +47,8 @@ def fallback : Prog isa :=
 
 /-- Check the five-block result and finish with the original six-block bound. -/
 def finish : Prog isa :=
-  .seq (.block (flags ++ [.alu32 .cmp .r14 (.imm 0)]))
-    (.seq (.ite .e fallback (.block [])) (.block ([.vop .vzeroupper] ++ VG.Impl.MlKem.X86_64.Sample4.epi)))
+  .seq (.block (flags ++ ([.alu32 .cmp .r14 (.imm 0)] : List Instr)))
+    (.seq (.ite .e fallback (.block [])) (.block (([.vop .vzeroupper] : List Instr) ++ VG.Impl.MlKem.X86_64.Sample4.epi)))
 
 def rejNTT4Avx2 : Prog isa :=
   .seq (.block (VG.Impl.MlKem.X86_64.Sample4.pro ++ rcTable .rbx (oRc / 32) ++ absorb4))

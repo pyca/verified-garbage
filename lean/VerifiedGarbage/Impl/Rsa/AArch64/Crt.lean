@@ -85,7 +85,7 @@ def wsEnd : List Instr :=
 
 /-- `x4 := ` the end of a prime's workspace at `x5`: its arrays, then the 16
 entries of the window's table (`8 (w + 2)` bytes each). -/
-def wsEndT : List Instr := wsEnd ++ [.lsl .x .x6 .x6 4, .add .x .x4 .x4 .x6]
+def wsEndT : List Instr := wsEnd ++ ([.lsl .x .x6 .x6 4, .add .x .x4 .x4 .x6] : List Instr)
 
 /-- A workspace at `x4` (its base stored in slot `slotWs`) for a number of
 the byte length in slot `slotLen`: `w = max(2, ⌈len / 8⌉)`, its arrays'

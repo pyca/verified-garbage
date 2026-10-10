@@ -150,7 +150,7 @@ def round (s d : Reg) (k : Nat) : List Instr := roundA s ++ iota k :: roundB s d
 
 /-- Two rounds, from `state` to the second state and back, and the next pair
 of round constants (setting ZF after the last). -/
-def body : List Instr := round .rdi .rsi 0 ++ round .rsi .rdi 1 ++ [.alu .add .r15 (.imm 16)]
+def body : List Instr := round .rdi .rsi 0 ++ round .rsi .rdi 1 ++ ([.alu .add .r15 (.imm 16)] : List Instr)
 
 /-- The callee-saved registers we use, and where they are saved. -/
 def saved : List (Reg × Nat) :=
@@ -168,7 +168,7 @@ def loadRow : List Instr := [ld .rbx .rdi 21, ld .rcx .rdi 22, ld .rdx .rdi 23, 
 def setup : List Instr :=
   saved.map (fun (r, d) => .store (at_ .rsi d) r) ++
   (List.range 24).flatMap (fun k => [.movImm64 .rax (Spec.Sha3.RC k), .store (at_ .rsi (200 + 8 * k)) .rax]) ++
-  [.mov .r15 (.imm (-192))]
+  ([.mov .r15 (.imm (-192))] : List Instr)
 
 /-- Restore the registers. -/
 def restore : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ .rsi d))

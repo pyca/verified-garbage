@@ -61,11 +61,11 @@ def lastKey : Nat := 2016
 counter block (`r2`) into its slots, and write the final counter
 `(c + n) mod 2³²` back. -/
 def prologue : List Instr :=
-  [.ldrSp .r12 4] ++ saveRegs .r12 ++
-  [.ldr t0 .r2 0, .str t0 .r12 (4 * cW 0), .ldr t0 .r2 4, .str t0 .r12 (4 * cW 1),
+  ([.ldrSp .r12 4] : List Instr) ++ saveRegs .r12 ++
+  ([.ldr t0 .r2 0, .str t0 .r12 (4 * cW 0), .ldr t0 .r2 4, .str t0 .r12 (4 * cW 1),
    .ldr t0 .r2 8, .str t0 .r12 (4 * cW 2),
    .ldr t0 .r2 12, .rev t0 t0, .str t0 .r12 (4 * cNum),
-   .ldrSp t1 0, .dp .add t0 t0 (.reg t1), .rev t0 t0, .str t0 .r2 12]
+   .ldrSp t1 0, .dp .add t0 t0 (.reg t1), .rev t0 t0, .str t0 .r2 12] : List Instr)
 
 /-- Set up the key loop: `kp := scratch + lastKey`, `r12 := schedule + 16
 rounds`, `lr := rounds + 1` (the round keys left), `r8 := data`. -/
@@ -105,11 +105,11 @@ def ctrBlocks : List Instr :=
 /-- A middle round, with `kp` at the previous round key; loops until `kp`
 is at the last round key but one. -/
 def roundBody : List Instr :=
-  [.dp .add kp kp (.imm 32)] ++ sboxCode ++ shiftRows ++ mixColumns ++ addRoundKey ++
-  [.dp .sub t0 kp (.reg sb), .cmp t0 (.imm (BitVec.ofNat 32 (lastKey - 32)))]
+  ([.dp .add kp kp (.imm 32)] : List Instr) ++ sboxCode ++ shiftRows ++ mixColumns ++ addRoundKey ++
+  ([.dp .sub t0 kp (.reg sb), .cmp t0 (.imm (BitVec.ofNat 32 (lastKey - 32)))] : List Instr)
 
 /-- The last round. -/
-def lastRound : List Instr := [.dp .add kp kp (.imm 32)] ++ sboxCode ++ shiftRows ++ addRoundKey
+def lastRound : List Instr := ([.dp .add kp kp (.imm 32)] : List Instr) ++ sboxCode ++ shiftRows ++ addRoundKey
 
 /-- Encrypt the two blocks in `q 0 … q 7` (as `ortho` takes them), with
 `kp` at the first round key. -/
@@ -124,10 +124,10 @@ def xorBlock (b : Nat) : List Instr :=
 
 /-- Two blocks, and on to the next two. -/
 def xorFull : List Instr :=
-  xorBlock 0 ++ xorBlock 1 ++ [.dp .add .r10 .r10 (.imm 32), .dp .sub .r11 .r11 (.imm 2)]
+  xorBlock 0 ++ xorBlock 1 ++ ([.dp .add .r10 .r10 (.imm 32), .dp .sub .r11 .r11 (.imm 2)] : List Instr)
 
 /-- The last block (and none left). -/
-def xorTail : List Instr := xorBlock 0 ++ [.mov .r11 (.imm 0)]
+def xorTail : List Instr := xorBlock 0 ++ ([.mov .r11 (.imm 0)] : List Instr)
 
 /-- Store the data pointer, the blocks left and the first round key, and
 point `kp` at the first round key. -/
@@ -141,13 +141,13 @@ def groupLoad : List Instr := [ldS .r10 dSlot, ldS .r11 lSlot, ldS .r12 fkSlot]
 def group : Prog isa :=
   .seq (.block (groupSave ++ ctrBlocks))
     (.seq encrypt2
-      (.seq (.block (groupLoad ++ [.mov kp (lsrOp .r11 1), .cmp kp (.imm 0)]))
+      (.seq (.block (groupLoad ++ ([.mov kp (lsrOp .r11 1), .cmp kp (.imm 0)] : List Instr)))
         (.seq (.ite .ne (.block xorFull) (.block xorTail)) (.block [.cmp .r11 (.imm 0)]))))
 
 def ctr32 : Prog isa :=
   .seq (.block (prologue ++ keySetup))
     (.seq (.loop (.block keyBody) .ne)
-      (.seq (.block (keyDone ++ [.cmp .r11 (.imm 0)]))
+      (.seq (.block (keyDone ++ ([.cmp .r11 (.imm 0)] : List Instr)))
         (.seq (.ite .eq (.block []) (.loop group .ne))
           (.block (.ldrSp .r12 4 :: restoreRegs .r12)))))
 

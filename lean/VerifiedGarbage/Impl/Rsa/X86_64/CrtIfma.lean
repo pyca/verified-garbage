@@ -159,13 +159,13 @@ def ammStep (i : Nat) : List Instr :=
 /-- A block: `R` steps, then the next block's limbs of the second operand
 and the count of blocks. -/
 def ammBlock : List Instr :=
-  (List.range l.R).flatMap (ammStep l) ++ [.alu .add .r9 (.imm 8), .alu .sub .rcx (.imm 1)]
+  (List.range l.R).flatMap (ammStep l) ++ ([.alu .add .r9 (.imm 8), .alu .sub .rcx (.imm 1)] : List Instr)
 
 /-- The accumulators' limbs, carried in order into limbs below `2⁵²`, at
 `r11` and `r11 + D`, the two chains interleaved (carries in `rdx` and
 `rsi`); `r12` holds `2⁵² - 1`. -/
 def carryOut : List Instr :=
-  [.mov32 .rdx (.imm 0), .mov32 .rsi (.imm 0)] ++ (List.range l.L).flatMap fun j =>
+  ([.mov32 .rdx (.imm 0), .mov32 .rsi (.imm 0)] : List Instr) ++ (List.range l.L).flatMap fun j =>
     [.alu .add .rdx (.mem (at_ .r11 (l.off j))), .mov .rax (.reg .rdx), .alu .and .rax (.reg .r12),
      .store (at_ .r11 (l.off j)) .rax, .shift .shr .rdx 52,
      .alu .add .rsi (.mem (at_ .r11 (l.D + l.off j))), .mov .rcx (.reg .rsi), .alu .and .rcx (.reg .r12),
@@ -173,12 +173,12 @@ def carryOut : List Instr :=
 
 /-- `[r11] := [r8] [r9] 2^(-208 R)` modulo each prime, almost (`rbx` the area). -/
 def ammCore : Prog isa :=
-  .seq (.block ([.mov .r10 (.reg .rbx), .mov32 .rcx (.imm 4)] ++
+  .seq (.block (([.mov .r10 (.reg .rbx), .mov32 .rcx (.imm 4)] : List Instr) ++
       (List.range (2 * l.R + 5)).map fun r => .eop (.bin .vpxorq (vreg r) (vreg r) (vreg r))))
     (.seq (.loop (.block (ammBlock l)) .ne)
       (.block (((List.range 2).flatMap fun p => (List.range l.R).map fun k =>
           .evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k 0)) ++
-        [.movImm64 .r12 mask52] ++ carryOut l)))
+        ([.movImm64 .r12 mask52] : List Instr) ++ carryOut l)))
 
 /-- `[o] := [a] [b] 2^(-208 R)`, the offsets in `p`'s region. -/
 def amm (o a b : Nat) : Prog isa :=
@@ -218,7 +218,7 @@ def to64 : List Instr :=
       (if lo ≤ 52 * j then (if 52 * j = lo then [] else shl .rcx (52 * j - lo))
         else [.shift .shr .rcx (lo - 52 * j)]) ++
       ([.alu .or .rax (.reg .rcx)] : List Instr)) ++
-    [.store (at_ .r8 (8 * w)) .rax]
+    ([.store (at_ .r8 (8 * w)) .rax] : List Instr)
 
 /-! ## Before the vector code, in a prime's workspace (`rdi`) -/
 
@@ -229,14 +229,14 @@ def k1 : List (Prog isa) :=
 /-- Array `j` into the limbs at offset `o` of the region at `r11`'s base
 `rbx + p D`. -/
 def arr52 (p j o : Nat) : List Instr :=
-  [.mov .rsi (.mem (hdr (sArr j))), .mov .r11 (.mem (hdr sIfma)),
-    .alu .add .r11 (.imm (BitVec.ofNat 32 (l.D * p + o))), .movImm64 .r12 mask52] ++ to52 l
+  ([.mov .rsi (.mem (hdr (sArr j))), .mov .r11 (.mem (hdr sIfma)),
+    .alu .add .r11 (.imm (BitVec.ofNat 32 (l.D * p + o))), .movImm64 .r12 mask52] : List Instr) ++ to52 l
 
 /-- `k₀` (the low 52 bits of the inverse) in each quadword of `oK0`, `r11`
 the region (`r12` holds `2⁵² - 1`). -/
 def k0St (p : Nat) : List Instr :=
-  [.mov .r11 (.mem (hdr sIfma)), .alu .add .r11 (.imm (BitVec.ofNat 32 (l.D * p))),
-    .mov .rax (.mem (hdr sMinv)), .alu .and .rax (.reg .r12)] ++
+  ([.mov .r11 (.mem (hdr sIfma)), .alu .add .r11 (.imm (BitVec.ofNat 32 (l.D * p))),
+    .mov .rax (.mem (hdr sMinv)), .alu .and .rax (.reg .r12)] : List Instr) ++
   (List.range 4).map (fun i => .store (at_ .r11 (l.oK0 + 8 * i)) .rax)
 
 /-- Zeros where the exponent goes. -/
@@ -246,7 +246,7 @@ def eZero : List Instr :=
 /-- `q`'s last multiplier, 1 (`rax` is 0). -/
 def finOne : List Instr :=
   (List.range l.L).map (fun j => .store (at_ .r11 (l.oFin + l.off j)) .rax) ++
-    [.mov32 .rax (.imm 1), .store (at_ .r11 l.oFin) .rax]
+    ([.mov32 .rax (.imm 1), .store (at_ .r11 l.oFin) .rax] : List Instr)
 
 /-- The exponent's bytes (pointer and length in `n`'s slots `slotPtr`,
 `slotLen`) at the end of the `E` at `oE`. -/
@@ -271,15 +271,15 @@ def region (p slotPtr slotLen : Nat) : List (Prog isa) :=
 for each entry `j`, OR'ed in under the mask of `j = v`, in registers
 `0`–`R - 1`, with the mask in `R` and a temporary in `R + 1`. -/
 def select (p : Nat) : List (Prog isa) :=
-  [.block ([.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 (l.D * p + l.oTab))),
+  [.block (([.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 (l.D * p + l.oTab))),
       .mov .rdx (.mem (at_ .rbx (l.D * p + l.oV))), .shift .shr .rdx 60,
-      .mov32 .rcx (.imm 0)] ++ (List.range l.R).map fun k => .eop (.bin .vpxorq (vreg k) (vreg k) (vreg k))),
-    .loop (.block ([.mov .rax (.reg .rcx), .alu .xor .rax (.reg .rdx), .alu .cmp .rax (.imm 1),
-        .alu .sbb .rax (.reg .rax), .eop (.vmovq (vreg l.R) .rax), .eop (.vpbroadcastq (vreg l.R) (vreg l.R))] ++
+      .mov32 .rcx (.imm 0)] : List Instr) ++ (List.range l.R).map fun k => .eop (.bin .vpxorq (vreg k) (vreg k) (vreg k))),
+    .loop (.block (([.mov .rax (.reg .rcx), .alu .xor .rax (.reg .rdx), .alu .cmp .rax (.imm 1),
+        .alu .sbb .rax (.reg .rax), .eop (.vmovq (vreg l.R) .rax), .eop (.vpbroadcastq (vreg l.R) (vreg l.R))] : List Instr) ++
       ((List.range l.R).flatMap fun k => [.evLoad (vreg (l.R + 1)) (at_ .r8 (32 * k)),
         .eop (.bin .vpandq (vreg (l.R + 1)) (vreg (l.R + 1)) (vreg l.R)),
         .eop (.bin .vporq (vreg k) (vreg k) (vreg (l.R + 1)))]) ++
-      [.alu .add .r8 (.imm (BitVec.ofNat 32 l.NB)), .alu .add .rcx (.imm 1), .alu .cmp .rcx (.imm 16)])) .ne,
+      ([.alu .add .r8 (.imm (BitVec.ofNat 32 l.NB)), .alu .add .rcx (.imm 1), .alu .cmp .rcx (.imm 16)] : List Instr))) .ne,
     .block ((List.range l.R).map fun k => .evStore (at_ .rbx (l.D * p + l.oS + 32 * k)) (vreg k))]
 
 /-- `[o] := [a]` (a number) in both regions. -/
@@ -291,7 +291,7 @@ def copyN (o a : Nat) : List Instr :=
 offset of `T_i`). -/
 def tabBuild : List (Prog isa) :=
   [.block (copyN l l.oTab l.oY ++ copyN l (l.oTab + l.NB) l.oX ++
-      [.mov32 .r13 (.imm (BitVec.ofNat 32 (l.oTab + 2 * l.NB)))]),
+      ([.mov32 .r13 (.imm (BitVec.ofNat 32 (l.oTab + 2 * l.NB)))] : List Instr)),
     .loop (.seq (.block [.mov .r8 (.reg .rbx), .alu .add .r8 (.reg .r13), .alu .sub .r8 (.imm (BitVec.ofNat 32 l.NB)),
         .mov .r9 (.reg .rbx), .alu .add .r9 (.imm (BitVec.ofNat 32 l.oX)), .mov .r11 (.reg .rbx),
         .alu .add .r11 (.reg .r13)])
@@ -333,10 +333,10 @@ def vec : Prog isa :=
 
 /-- In a prime's workspace: the result into `aY`, reduced below `X`. -/
 def result (p : Nat) : List (Prog isa) :=
-  [.block ([.mov .r11 (.mem (hdr sIfma)), .alu .add .r11 (.imm (BitVec.ofNat 32 (l.D * p + l.oY))),
-      .mov .r8 (.mem (hdr (sArr aAcc)))] ++ to64 l ++
-      [.mov .rbx (.mem (hdr (sArr aY))), .mov .r10 (.mem (hdr (sArr aN))), .mov .r12 (.mem (hdr sW)),
-        .mov .rsi (.mem (hdr (sArr aTmp)))]),
+  [.block (([.mov .r11 (.mem (hdr sIfma)), .alu .add .r11 (.imm (BitVec.ofNat 32 (l.D * p + l.oY))),
+      .mov .r8 (.mem (hdr (sArr aAcc)))] : List Instr) ++ to64 l ++
+      ([.mov .rbx (.mem (hdr (sArr aY))), .mov .r10 (.mem (hdr (sArr aN))), .mov .r12 (.mem (hdr sW)),
+        .mov .rsi (.mem (hdr (sArr aTmp)))] : List Instr)),
     subMod, selectAcc]
 
 /-! ## The phases -/
@@ -356,8 +356,8 @@ def pre (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
 /-- The IFMA area after `q`'s workspace, its base into both prime
 workspaces; the regions; the vector code; the results. -/
 def ifma : List (Prog isa) :=
-  [.block ([.mov .rdx (.mem (hdr sWsQ))] ++ wsEndT ++ [.mov .rdx (.mem (hdr sWsP)), .store (ws .rdx sIfma) .rax,
-      .mov .rdx (.mem (hdr sWsQ)), .store (ws .rdx sIfma) .rax, enterP])] ++
+  [.block (([.mov .rdx (.mem (hdr sWsQ))] : List Instr) ++ wsEndT ++ ([.mov .rdx (.mem (hdr sWsP)), .store (ws .rdx sIfma) .rax,
+      .mov .rdx (.mem (hdr sWsQ)), .store (ws .rdx sIfma) .rax, enterP] : List Instr))] ++
   region l 0 sDp sPlen ++ [.block [leave, enterQ]] ++ region l 1 sDq sQlen ++
   [.block [.mov .rbx (.mem (hdr sIfma))], vec l] ++
   result l 1 ++ [.block [leave, enterP]] ++ result l 0 ++ [.block [leave]]
@@ -410,7 +410,7 @@ def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
 
 /-- `vg_rsa_private_crt_ifma`. -/
 def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (.block (Crt.entry ++ [.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] ++ invalid))
+  .seq (.block (Crt.entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
     (.ite .ne fail (main mul))
 
 end VG.Impl.Rsa.X86_64.CrtIfma

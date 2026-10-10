@@ -108,4 +108,84 @@ theorem engineOf_ok [DivstepInv] {comb : Prog isa} (hcomb : CombOk comb) : UEngi
 
 theorem engine_ok [DivstepInv] : UEngineOk (engine fld) := engineOf_ok combOk
 
+/-! ## Constant time
+
+The comb's constant time is its own (`CombOk.ct`), as Ed25519's fixed-base
+engine uses it (`scalarBaseEngineOf_ct`): only the preparation, the clamping
+and the encoding are analysed here. -/
+
+/-- A run after the preparation, from the scalar at `k` in `m`. -/
+private def Prepped (base T k : Addr) (m : Mem) (u : State) : Prop :=
+  Scratch u base ∧ env u.mem base 16 = Spec.Ed25519.d ∧
+    (∀ q < 16 * 16, u.mem (off base (768 + q)) =
+      BitVec.ofNat 8 ((Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m k 32) / 2 ^ q) % 2)) ∧
+    CombTbl u T ∧ TblFar base T
+
+/-- A run after the clamping: what the comb starts from. -/
+private def Clamped (base T k : Addr) (m : Mem) (c : State) : Prop :=
+  Scratch c base ∧ env c.mem base 16 = Spec.Ed25519.d ∧
+    (∀ q < 256, c.mem (off base (768 + q)) =
+      BitVec.ofNat 8 ((decodeScalar25519 (Spec.Ed25519.bytesAt m k 32) / 2 ^ q) % 2)) ∧
+    decodeScalar25519 (Spec.Ed25519.bytesAt m k 32) < 2 ^ 256 ∧ CombTbl c T ∧ TblFar base T
+
+private theorem clamped_ok {u : State} {base T k : Addr} {m : Mem} (h : Prepped base T k m u) :
+    WP isa (.block clampBits) u (Clamped base T k m) := by
+  obtain ⟨hs, hd, hb, ht, hfar⟩ := h
+  have hk : (Spec.Ed25519.bytesAt m k 32).length = 32 := by simp [Spec.Ed25519.bytesAt]
+  have hS : decodeScalar25519 (Spec.Ed25519.bytesAt m k 32) < 2 ^ 256 := by
+    have h := Edwards.decodeScalar25519_shift hk
+    rw [Nat.shiftRight_eq_div_pow] at h
+    have := (Nat.div_eq_zero_iff_lt (by positivity)).mp h
+    omega
+  refine WP.mono_syms (clampBits_ok hs) fun c ⟨kbc, cd, cbits⟩ csy =>
+    ⟨kbc.scratch hs, cd.trans hd, fun q hq => ?_, hS, ht.keep hfar kbc csy, hfar⟩
+  rw [cbits q hq, clamped_bit hk hq]
+  split_ifs
+  · rfl
+  · rfl
+  · exact hb q (by simpa using hq)
+
+theorem engineOf_ct {comb : Prog isa} (hcomb : CombOk comb) (base k T : Addr) :
+    RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
+      (engineOf fld comb) (fun _ _ => True) := by
+  have hc : RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
+      (scalarBasePrepare fld) (fun _ _ => True) := by
+    apply taintFld (Taint.ofRegs [.rdi, .rsi]) _ (by fld_taint_decide)
+    intro x y h
+    apply Taint.agree_ofRegs
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h.1.1.rdi.trans h.2.1.rdi.symm
+    · exact h.1.2.1.trans h.2.2.1.symm
+  have hp := withRuns hc (fun x y h =>
+    ⟨scalarBasePrepareT_ok (fld := fld) h.1.1 h.1.2.1 h.1.2.2.1 h.1.2.2.2.1 h.1.2.2.2.2.1 h.1.2.2.2.2.2,
+     scalarBasePrepareT_ok (fld := fld) h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2⟩)
+  rw [engineOf]
+  refine VG.RelCT.seq hp ?_
+  intro x y tx ty x' y' ⟨_, a, b, hab, hx, hy⟩ ex ey
+  have hcl : RelCT isa (fun u v => Prepped base T k a.mem u ∧ Prepped base T k b.mem v)
+      (.block clampBits) (fun _ _ => True) :=
+    taintFld (Taint.ofRegs [.rdi]) (fun _ _ h => rdi_agree h.1.1.rdi h.2.1.rdi) ⟨_, by taint_decide⟩
+  have hcl' := (withRuns hcl (F₁ := fun _ => Clamped base T k a.mem) (F₂ := fun _ => Clamped base T k b.mem)
+    fun _ _ h => ⟨clamped_ok h.1, clamped_ok h.2⟩).mono (fun _ _ h => h)
+    fun _ _ ⟨_, _, _, _, hu, hv⟩ => (⟨hu, hv⟩ : Clamped base T k a.mem _ ∧ Clamped base T k b.mem _)
+  have hct : RelCT isa (fun u v => Clamped base T k a.mem u ∧ Clamped base T k b.mem v) comb
+      (fun _ _ => True) :=
+    hcomb.ct _ (fun _ _ h => ⟨rdi_agree h.1.1.rdi h.2.1.rdi, fun n hn => by
+      simp only [List.mem_singleton] at hn; subst hn
+      exact h.1.2.2.2.2.1.sym.trans h.2.2.2.2.2.1.sym.symm⟩)
+  have hct' := (withRuns hct fun u v h =>
+    ⟨hcomb.ok h.1.1 h.1.2.2.2.1 h.1.2.1 h.1.2.2.1 h.1.2.2.2.2.1 h.1.2.2.2.2.2,
+     hcomb.ok h.2.1 h.2.2.2.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2⟩).mono (fun _ _ h => h)
+    fun _ _ ⟨_, c, d, hcd, hu, hv⟩ => And.intro (hu.2.scratch hcd.1.1).rdi (hv.2.scratch hcd.2.1).rdi
+  have he : RelCT isa (fun u v => u.gpr .rdi = base ∧ v.gpr .rdi = base) (uEncode fld)
+      (fun _ _ => True) := by
+    apply taintFld (Taint.ofRegs [.rdi]) _ (by fld_taint_decide)
+    intro u v h
+    exact rdi_agree h.1 h.2
+  exact (VG.RelCT.seq hcl' (VG.RelCT.seq hct' he)) _ _ _ _ _ _
+    ⟨⟨hx.1.1.scratch hab.1.1, hx.1.2.2.1, hx.1.2.2.2.1, hx.2, hab.1.2.2.2.2.2⟩,
+     ⟨hy.1.1.scratch hab.2.1, hy.1.2.2.1, hy.1.2.2.2.1, hy.2, hab.2.2.2.2.2.2⟩⟩ ex ey
+
 end VG.Proof.X25519.X86_64.Base

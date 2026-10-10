@@ -86,8 +86,8 @@ def absorbBody : Prog isa :=
       (.block [.alu .test .r14 (.reg .r14)])))
 
 def absorb : Prog isa :=
-  .seq (.block (save .r9 ++ [.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx),
-      .mov .r13 (.reg .rcx), .mov .r14 (.reg .r8), .mov .r15 (.reg .r9), .alu .test .r14 (.reg .r14)]))
+  .seq (.block (save .r9 ++ ([.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx),
+      .mov .r13 (.reg .rcx), .mov .r14 (.reg .r8), .mov .r15 (.reg .r9), .alu .test .r14 (.reg .r14)] : List Instr)))
   (.seq (.ite .e (.block []) (.loop absorbBody .ne))
     (.block (.mov .rax (.reg .r12) :: restore)))
 
@@ -122,8 +122,8 @@ def squeezeBody : Prog isa :=
     (.seq (.block wordTest) (.ite .e (.block squeezeWord) (.block squeezeByte))))
 
 def squeeze : Prog isa :=
-  .seq (.block (save .r9 ++ [.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx),
-      .mov .r13 (.reg .rcx), .mov .r14 (.reg .r8), .mov .r15 (.reg .r9), .alu .test .r14 (.reg .r14)]))
+  .seq (.block (save .r9 ++ ([.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx),
+      .mov .r13 (.reg .rcx), .mov .r14 (.reg .r8), .mov .r15 (.reg .r9), .alu .test .r14 (.reg .r14)] : List Instr)))
   (.seq (.ite .e (.block []) (.loop squeezeBody .ne))
     (.block (.mov .rax (.reg .r12) :: restore)))
 

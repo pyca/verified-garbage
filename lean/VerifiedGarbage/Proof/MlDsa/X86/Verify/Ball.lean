@@ -36,15 +36,15 @@ variable {P : Prims} (hP : PrimsOk P) {p : Params} (hF : VFacts p)
 include hF
 
 theorem rho_piece : VP p (fun s₀ s => VB p s₀ s ∧ accV s₀ s = 1) (SA p · 0) (copyW vS ⟨0, 0, 32⟩ (sb oSB 32) 8) :=
-  copyW_piece (Y := YV p) 0 0 vS oSB 8 (by decide) (by decide) (by lv hF) (h₁ := .block []) (by kernel_rfl)
+  copyW_piece (Y := YV p) 0 0 vS oSB 8 (by decide) (by decide) (by lvd) (h₁ := .block []) (by kernel_rfl)
     (by taint_decide) (fun _ _ _ h => h.1.ctx) fun s₀ s s' hp h h' fr cp => by
       have fr' : Frame (FR s₀ [sb oSB 32] 0) s.mem s'.mem := fr1 fr
-      refine ⟨h.1.keep hp (N := 0) (by omega) (by lv hF) (fun j hj => by lv hF) fr' h', ?_,
+      refine ⟨h.1.keep hp (N := 0) (by omega) (by lvd) (fun j hj => by lvd) fr' h', ?_,
         fun _ _ => toRq Proof.MlDsa.KeyGen.zeroI, fun r s hb => absurd hb.2 (by omega),
-        .inl ⟨by rw [acc_keepV hp (N := 0) (by omega) (by lv hF) fr']; exact h.2, minBounds,
+        .inl ⟨by rw [acc_keepV hp (N := 0) (by omega) (by lvd) fr']; exact h.2, minBounds,
           fun r s hb => absurd hb.2 (by omega)⟩⟩
       rw [show (32 : Nat) = 4 * 8 from rfl, cp, ← show (32 : Nat) = 4 * 8 from rfl,
-        pk_slice hF hp h.1.ctx (by lv hF), List.drop_zero]
+        pk_slice hF hp h.1.ctx (by lvd), List.drop_zero]
       rfl
 
 include hP
@@ -52,23 +52,23 @@ include hP
 theorem ball_call : VP p (SA p · (8 * p.k)) (SB p)
     (Impl.MlDsa.X86.KeyGen.callPR vS "vg_mldsa_sample_in_ball" P.ball
       [.buf ⟨2, 0, p.ctildeLen⟩, .imm p.ctildeLen, .imm p.τ, .buf pC, .buf (ssB 2048)]) :=
-  ball_piece (Y := YV p) hP.ball 2 0 p.ctildeLen p.τ vS (oP 15) vS oSS hF.ball (by lv hF)
+  ball_piece (Y := YV p) hP.ball 2 0 p.ctildeLen p.τ vS (oP 15) vS oSS hF.ball (by lvd)
     (Nat.le_of_eq (YV_stk p).symm) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.vb.ctx)
     (fun s₀ s₀' s s' hp hp' hq h h' => by
-      rw [sig_slice hF hp h.vb.ctx (by lv hF), sig_slice hF hp' h'.vb.ctx (by lv hF), (inputs_pub hq).2.2])
+      rw [sig_slice hF hp h.vb.ctx (by lvd), sig_slice hF hp' h'.vb.ctx (by lvd), (inputs_pub hq).2.2])
     fun s₀ s s' hp h h' fr red out => by
       obtain ⟨A, hA, hG⟩ := h.ex
-      refine ⟨h.vb.keep hp (N := 80) (by omega) (by lv hF) (fun j hj => by lv hF) fr h',
+      refine ⟨h.vb.keep hp (N := 80) (by omega) (by lvd) (fun j hj => by lvd) fr h',
         ⟨A, fun r s hb => keepPolyD hp (stkV (by omega)) (by have := hb.1; have := hb.2; lv hF) fr (hA r s hb), ?_⟩,
         red, ?_⟩
-      · rw [acc_keepV hp (N := 80) (by omega) (by lv hF) fr]; exact hG
-      · rw [sig_slice hF hp h.vb.ctx (by lv hF), List.drop_zero] at out
+      · rw [acc_keepV hp (N := 80) (by omega) (by lvd) fr]; exact hG
+      · rw [sig_slice hF hp h.vb.ctx (by lvd), List.drop_zero] at out
         exact out
 
 omit hP in
 theorem ball_mask : VP p (SB p) (SC p) (maskA oACC (oP 15)) := by
   have hl := hF.l
-  refine maskA_piece (Y := YV p) oACC (oP 15) (by lv hF) (maskA_tt _) (fun _ _ _ h => h.vb.ctx)
+  refine maskA_piece (Y := YV p) oACC (oP 15) (by lvd) (maskA_tt _) (fun _ _ _ h => h.vb.ctx)
     fun s₀ s s' hp h h' fr ha hc => ?_
   simp only [YV_sc] at fr ha hc
   obtain ⟨A, hA, hG⟩ := h.ex
@@ -83,8 +83,8 @@ theorem ball_mask : VP p (SB p) (SC p) (maskA oACC (oP 15)) := by
   have fr' : Frame (FR s₀ [sb oACC 4, pC] 0) s.mem s'.mem := fr2 fr
   have ea : accV s₀ s' = accV s₀ s &&& s.gpr .eax := ha
   have bf : ∀ r < p.k, ∀ s < p.ℓ, Before p (8 * p.k) r s := fun r hr s hs => ⟨hs, by omega⟩
-  refine ⟨h.vb.keep hp (N := 0) (by omega) (by lv hF) (fun j hj => by lv hF) fr' h', A,
-    polyAt s'.mem (Buf.addr s₀ pC), fun r hr s hs => keepPolyD hp (stkV (by omega)) (by lv hF) fr'
+  refine ⟨h.vb.keep hp (N := 0) (by omega) (by lvd) (fun j hj => by lvd) fr' h', A,
+    polyAt s'.mem (Buf.addr s₀ pC), fun r hr s hs => keepPolyD hp (stkV (by omega)) (by lvd) fr'
       (hA r s (bf r hr s hs)), ⟨?_, rfl⟩, ?_⟩
   · rcases r01 with e0 | e1
     · exact (m0 e0).1

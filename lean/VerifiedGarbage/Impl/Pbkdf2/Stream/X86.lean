@@ -100,8 +100,8 @@ Registers: `ebx` = `inner`, `esi` = `outer`, `edi` = `out`, `ebp` =
 `scratch`. The inner digest is written to `scratch + buf`. -/
 
 def finPrologue : List Instr :=
-  [.mov .eax (.mem (at_ .esp 24))] ++ H.save ++ [.mov .ebp (.reg .eax), .mov .ebx (.mem (at_ .esp 4)),
-    .mov .esi (.mem (at_ .esp 8)), .mov .edi (.mem (at_ .esp 20))]
+  ([.mov .eax (.mem (at_ .esp 24))] : List Instr) ++ H.save ++ ([.mov .ebp (.reg .eax), .mov .ebx (.mem (at_ .esp 4)),
+    .mov .esi (.mem (at_ .esp 8)), .mov .edi (.mem (at_ .esp 20))] : List Instr)
 
 /-- Our `count` argument, as `finalize`'s. -/
 def count1 : List Instr := [.mov .eax (.mem (at_ .esp 12)), .mov .ecx (.mem (at_ .esp 16))]

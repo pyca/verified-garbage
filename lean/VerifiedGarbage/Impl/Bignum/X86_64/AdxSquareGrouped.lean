@@ -13,11 +13,11 @@ def injectCarry : List Instr :=
 def addPair : List Instr := word .r11 .rcx ++ word .r12 .rax
 
 def initialPair : List Instr :=
-  [.mulx .rax .rcx (.reg .rdx)] ++ injectCarry ++
-  [.alu32 .xor .rsi (.reg .rsi)] ++ addPair
+  ([.mulx .rax .rcx (.reg .rdx)] : List Instr) ++ injectCarry ++
+  ([.alu32 .xor .rsi (.reg .rsi)] : List Instr) ++ addPair
 
 def pair : List Instr :=
-  [.mulx .rax .rcx (.reg .rdx)] ++ word .r11 .rcx ++ word .r12 .rax
+  ([.mulx .rax .rcx (.reg .rdx)] : List Instr) ++ word .r11 .rcx ++ word .r12 .rax
 
 def close : List Instr :=
   [.mov32 .r15 (.imm 0), .adcx .r15 (.reg .rsi), .adox .r15 (.reg .rsi)]
@@ -34,7 +34,7 @@ def step (k : Nat) (core : List Instr) : Prog isa :=
   .seq (.block (head k)) (.seq (.block core) (.block (store k)))
 
 def group : Prog isa := seqs [step 0 initialPair, step 1 pair, step 2 pair, step 3 pair,
-  .block (close ++ [.alu .add .rbp (.imm 4), .alu .add .r14 (.imm 8), .alu .cmp .rbp (.reg .r10)])]
+  .block (close ++ ([.alu .add .rbp (.imm 4), .alu .add .r14 (.imm 8), .alu .cmp .rbp (.reg .r10)] : List Instr))]
 
 def diagonal : Prog isa :=
   .seq (.block [.mov32 .r15 (.imm 0), .mov32 .rbp (.imm 0), .mov32 .r14 (.imm 0)])

@@ -109,8 +109,8 @@ open Impl.CmacAes.Stream.X86 (save call4) in
 /-- Saves the registers (at `scratch + 2176`), and the arguments of
 `vg_aes_expand_key_scratch(key, key_len / 2, ctx, scratch)` for `K1`. -/
 def initPre : List Instr :=
-  [.mov .eax (argOp 3)] ++ save ++
-    [.mov .eax (argOp 0), .mov .ecx (argOp 1), .shift .shr .ecx 1, .mov .edx (argOp 2), .mov .ebx (argOp 3)]
+  ([.mov .eax (argOp 3)] : List Instr) ++ save ++
+    ([.mov .eax (argOp 0), .mov .ecx (argOp 1), .shift .shr .ecx 1, .mov .edx (argOp 2), .mov .ebx (argOp 3)] : List Instr)
 
 /-- The arguments of `vg_cmac_aes_subkeys(ctx, key_len / 8 + 6, ctx + 240, scratch)`. -/
 def initMid₁ : List Instr :=
@@ -196,7 +196,7 @@ def macArgs (st : Nat) : List Instr :=
 zero block from a zero state into `D`. -/
 def start : Prog isa :=
   .seq (.block (zero4 zOff ++ zero4 dOff ++ macArgs dOff ++
-      [.mov .ebx (.reg .ebp), .alu .add .ebx (imm zOff), .mov .esi (imm 16)]))
+      ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm zOff), .mov .esi (imm 16)] : List Instr)))
     (finCall c sfx)
 
 /-! ## The CMAC of a string -/
@@ -205,15 +205,15 @@ def start : Prog isa :=
 whole blocks before the last 1 to 16 bytes of the string (none for the
 empty string), and `vg_cmac_aes_update` over them. -/
 def cmacPre (st : Nat) : Prog isa :=
-  .seq (.block (zero4 st ++ [.mov .ecx (imm 0), .mov .eax (slot slenO), .alu .test .eax (.reg .eax)]))
+  .seq (.block (zero4 st ++ ([.mov .ecx (imm 0), .mov .eax (slot slenO), .alu .test .eax (.reg .eax)] : List Instr)))
     (.seq (.ite .e (.block [])
         (.block [.mov .ecx (.reg .eax), .alu .sub .ecx (imm 1), .alu .and .ecx (imm 0xfffffff0)]))
-      (.block ([.store (at_ .ebp nbO) .ecx, .mov .esi (.reg .ecx), .shift .shr .esi 4, .mov .ebx (slot strO)] ++
+      (.block (([.store (at_ .ebp nbO) .ecx, .mov .esi (.reg .ecx), .shift .shr .esi 4, .mov .ebx (slot strO)] : List Instr) ++
         macArgs st)))
 
 /-- `vg_cmac_aes_finalize` of the last `L − 16 nb` bytes. -/
 def cmacMid (st : Nat) : List Instr :=
-  [.mov .ebx (slot strO), .alu .add .ebx (slot nbO), .mov .esi (slot slenO), .alu .sub .esi (slot nbO)] ++ macArgs st
+  ([.mov .ebx (slot strO), .alu .add .ebx (slot nbO), .mov .esi (slot slenO), .alu .sub .esi (slot nbO)] : List Instr) ++ macArgs st
 
 /-- `AES-CMAC(K1, S)` into the 16 bytes at `W + st`, for the string `S` at
 `W + strO`. -/
@@ -225,8 +225,8 @@ def cmacOf (st : Nat) : Prog isa :=
 /-- `dbl` of the block at `W + o` in place (AES-CMAC's, with `ebx` its base;
 it overwrites `ebp`, which is `W` again after it). -/
 def dblAt (o : Nat) : List Instr :=
-  [.mov .ebx (.reg .ebp), .alu .add .ebx (imm o)] ++ Impl.CmacAes.X86.dbl 0 0 ++
-    [.mov .ebp (.reg .ebx), .alu .sub .ebp (imm o)]
+  ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm o)] : List Instr) ++ Impl.CmacAes.X86.dbl 0 0 ++
+    ([.mov .ebp (.reg .ebx), .alu .sub .ebp (imm o)] : List Instr)
 
 /-- The 16 bytes at `W + src` XORed into those at `edx + d`. -/
 def xorInto (src d : Nat) : List Instr :=
@@ -246,9 +246,9 @@ def adNext : List Instr :=
 /-- `D = dbl(D) XOR` the CMAC state; then the next descriptor, and one fewer
 left (ZF set when none is). -/
 def adStep : List Instr :=
-  dblAt dOff ++ [.mov .edx (.reg .ebp), .alu .add .edx (imm dOff)] ++ xorInto stOff 0 ++
-  [.mov .eax (slot adsO), .alu .add .eax (imm 8), .store (at_ .ebp adsO) .eax,
-   .mov .eax (slot leftO), .alu .sub .eax (imm 1), .store (at_ .ebp leftO) .eax]
+  dblAt dOff ++ ([.mov .edx (.reg .ebp), .alu .add .edx (imm dOff)] : List Instr) ++ xorInto stOff 0 ++
+  ([.mov .eax (slot adsO), .alu .add .eax (imm 8), .store (at_ .ebp adsO) .eax,
+   .mov .eax (slot leftO), .alu .sub .eax (imm 1), .store (at_ .ebp leftO) .eax] : List Instr)
 
 /-- S2V of the components of associated data, from `D`'s first state. -/
 def s2vAds : Prog isa :=
@@ -265,20 +265,20 @@ def copyN : Prog isa := .seq (.block [.alu .test .ecx (.reg .ecx)]) (.ite .e (.b
 at `W + 160`) is XORed into it. -/
 def shortTail : Prog isa :=
   .seq (.block (zero4 tailOff ++ zero4 (tailOff + 16) ++
-      [.mov .edi (slot strO), .mov .edx (.reg .ebp), .alu .add .edx (imm tailOff), .mov .ecx (slot slenO)]))
+      ([.mov .edi (slot strO), .mov .edx (.reg .ebp), .alu .add .edx (imm tailOff), .mov .ecx (slot slenO)] : List Instr)))
     (.seq copyN
-      (.block ([.mov .edx (.reg .ebp), .alu .add .edx (slot slenO), .mov .eax (imm 0x80),
+      (.block (([.mov .edx (.reg .ebp), .alu .add .edx (slot slenO), .mov .eax (imm 0x80),
         .store8 (at_ .edx tailOff) .al,
         .mov .eax (slot dOff), .store (at_ .ebp dbOff) .eax, .mov .eax (slot (dOff + 4)),
         .store (at_ .ebp (dbOff + 4)) .eax, .mov .eax (slot (dOff + 8)), .store (at_ .ebp (dbOff + 8)) .eax,
-        .mov .eax (slot (dOff + 12)), .store (at_ .ebp (dbOff + 12)) .eax] ++ dblAt dbOff ++
-        [.mov .edx (.reg .ebp)] ++ xorInto dbOff tailOff)))
+        .mov .eax (slot (dOff + 12)), .store (at_ .ebp (dbOff + 12)) .eax] : List Instr) ++ dblAt dbOff ++
+        ([.mov .edx (.reg .ebp)] : List Instr) ++ xorInto dbOff tailOff)))
 
 /-- The short case's call: `vg_cmac_aes_finalize` of the tail, one complete
 block, from a zero state at `W + out`. -/
 def shortMac (out : Nat) : Prog isa :=
-  .seq (.block (zero4 out ++ macArgs out ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm tailOff),
-      .mov .esi (imm 16)]))
+  .seq (.block (zero4 out ++ macArgs out ++ ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm tailOff),
+      .mov .esi (imm 16)] : List Instr)))
     (finCall c sfx)
 
 /-- The long case, `L ≥ 16`: `16 k` at `W + nbO`; the last `L − 16 k` bytes
@@ -291,24 +291,24 @@ def longTail : Prog isa :=
       (.seq (.block [.store (at_ .ebp nbO) .eax, .mov .edi (slot strO), .alu .add .edi (.reg .eax),
           .alu .sub .ecx (.reg .eax), .mov .edx (.reg .ebp), .alu .add .edx (imm tailOff)])
         (.seq copyLoop
-          (.block ([.mov .edx (.reg .ebp), .alu .add .edx (slot slenO), .alu .sub .edx (slot nbO)] ++
+          (.block (([.mov .edx (.reg .ebp), .alu .add .edx (slot slenO), .alu .sub .edx (slot nbO)] : List Instr) ++
             xorInto dOff (tailOff - 16))))))
 
 /-- The long case's calls: `vg_cmac_aes_update` over the `k` blocks of `P`,
 then over the first `j` blocks of the tail (`j` is 1 if `L > 16`, else 0),
 then `vg_cmac_aes_finalize` of the rest of the tail, into `W + out`. -/
 def longMac (out : Nat) : Prog isa :=
-  .seq (.block (zero4 out ++ [.mov .esi (slot nbO), .shift .shr .esi 4, .mov .ebx (slot strO)] ++ macArgs out))
+  .seq (.block (zero4 out ++ ([.mov .esi (slot nbO), .shift .shr .esi 4, .mov .ebx (slot strO)] : List Instr) ++ macArgs out))
     (.seq (updCall c sfx)
       (.seq (.block [.mov .esi (imm 0), .mov .ecx (slot slenO), .alu .cmp .ecx (imm 17)])
         (.seq (.ite .b (.block []) (.block [.mov .esi (imm 1)]))
-          (.seq (.block ([.store (at_ .ebp jO) .esi, .mov .ebx (.reg .ebp), .alu .add .ebx (imm tailOff)] ++
+          (.seq (.block (([.store (at_ .ebp jO) .esi, .mov .ebx (.reg .ebp), .alu .add .ebx (imm tailOff)] : List Instr) ++
               macArgs out))
             (.seq (updCall c sfx)
-              (.seq (.block ([.mov .eax (slot jO), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
+              (.seq (.block (([.mov .eax (slot jO), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
                   .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .mov .esi (slot slenO),
                   .alu .sub .esi (slot nbO), .alu .sub .esi (.reg .eax), .mov .ebx (.reg .ebp),
-                  .alu .add .ebx (imm tailOff), .alu .add .ebx (.reg .eax)] ++ macArgs out))
+                  .alu .add .ebx (imm tailOff), .alu .add .ebx (.reg .eax)] : List Instr) ++ macArgs out))
                 (finCall c sfx)))))))
 
 /-- S2V finished with the string at `W + strO` (`W + slenO` bytes) from `D`,
@@ -337,7 +337,7 @@ def ctrArgs : List Instr :=
 which it leaves after them. -/
 def ctrWhole : Prog isa :=
   .seq (.block [.mov .edi (slot lenO), .shift .shr .edi 4, .alu .test .edi (.reg .edi)])
-    (.ite .e (.block []) (.seq (.block (ctrArgs ++ [.mov .ebx (slot dataO)])) (ctrCall c)))
+    (.ite .e (.block []) (.seq (.block (ctrArgs ++ ([.mov .ebx (slot dataO)] : List Instr))) (ctrCall c)))
 
 /-- The last `len mod 16` bytes of the data, XORed with the keystream block
 of the counter block, which `vg_aes_ctr32` computes on a zero block at
@@ -345,8 +345,8 @@ of the counter block, which `vg_aes_ctr32` computes on a zero block at
 def ctrTail : Prog isa :=
   .seq (.block [.mov .ecx (slot lenO), .alu .and .ecx (imm 15)])
     (.ite .e (.block [])
-      (.seq (.block (zero4 ksOff ++ ctrArgs ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksOff),
-          .mov .edi (imm 1)]))
+      (.seq (.block (zero4 ksOff ++ ctrArgs ++ ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksOff),
+          .mov .edi (imm 1)] : List Instr)))
         (.seq (ctrCall c)
           (.seq (.block [.mov .ecx (slot lenO), .alu .and .ecx (imm 15), .mov .edx (.reg .ebp),
               .alu .add .edx (imm ksOff), .mov .edi (slot dataO), .alu .add .edi (slot lenO),
@@ -419,7 +419,7 @@ def decrypt : Prog isa :=
         (.seq (.block [.mov .eax (slot dataO), .store (at_ .ebp strO) .eax, .mov .eax (slot lenO),
             .store (at_ .ebp slenO) .eax])
           (.seq (finish c sfx tOff)
-            (.seq (.block compare) (.seq mask (.block ([.mov .eax (slot okO)] ++ restore)))))))))
+            (.seq (.block compare) (.seq mask (.block (([.mov .eax (slot okO)] : List Instr) ++ restore)))))))))
 
 end
 

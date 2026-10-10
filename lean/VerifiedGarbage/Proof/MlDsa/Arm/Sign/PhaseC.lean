@@ -371,7 +371,7 @@ def cChk (p : Params) : Bool :=
     icwChk p [(sc 0, 200), (sc 200, 640), (sc oCT, cLen p)] p.k
 
 theorem cChk_ok {p : Params} (h : Ok3 p) : cChk p = true := by
-  rcases h with rfl | rfl | rfl <;> decide
+  rcases h with rfl | rfl | rfl <;> decide +kernel
 
 theorem commit_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : cChk p = true) {σ : State} {t : Nat}
     {s : State} (h : IL p D σ t s) : WP isa (commit P p) s (IC p D σ t) := by
