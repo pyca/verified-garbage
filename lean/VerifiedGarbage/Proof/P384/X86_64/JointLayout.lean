@@ -22,7 +22,7 @@ theorem joint_lookup_layout : JointLookupLayout publicJoint 8192 :=
     by decide,by decide,by decide,by decide⟩
 
 theorem joint_add_layout : JointAddLayout publicJoint 8192 := by
-  refine ⟨joint_lookup_layout,?_,by decide,by decide,by decide,by decide⟩
+  refine ⟨joint_lookup_layout,?_,by decide,by decide,by decide,by decide,⟨fun _ _ => ⟨by decide +kernel,by decide +kernel,by decide⟩⟩⟩
   constructor <;> decide +kernel
 
 theorem joint_adx_layout : JointLayout publicJointAdx 8192 :=
@@ -35,7 +35,8 @@ theorem joint_adx_lookup_layout : JointLookupLayout publicJointAdx 8192 :=
 
 theorem joint_adx_add_layout : JointAddLayout publicJointAdx 8192 :=
   ⟨joint_adx_lookup_layout,joint_add_layout.addApart,joint_add_layout.cache2Apart,
-    joint_add_layout.cache3Apart,joint_add_layout.accumNodup,joint_add_layout.copyApart⟩
+    joint_add_layout.cache3Apart,joint_add_layout.accumNodup,joint_add_layout.copyApart,
+    ⟨fun _ _ => ⟨by decide +kernel,by decide +kernel,by decide⟩⟩⟩
 
 private theorem naf_lay : Lay publicJoint.K.M 8192 (·∈nafSlots publicJoint.K) := by
   have hs : ∀ x∈nafSlots publicJoint.K,x∈jointSlots publicJoint := fun _ hx =>

@@ -22,7 +22,7 @@ theorem joint_lookup_layout : JointLookupLayout publicJoint 8192 :=
     by decide,by decide,by decide,by decide⟩
 
 theorem joint_add_layout : JointAddLayout publicJoint 8192 := by
-  refine ⟨joint_lookup_layout,?_,by decide,by decide,by decide,by decide⟩
+  refine ⟨joint_lookup_layout,?_,by decide,by decide,by decide,by decide,⟨fun _ h => by cases h⟩⟩
   constructor <;> decide +kernel
 
 private theorem naf_lay : Lay publicJoint.K.M 8192 (·∈nafSlots publicJoint.K) := by

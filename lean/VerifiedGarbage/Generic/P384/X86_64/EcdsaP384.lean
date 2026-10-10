@@ -81,10 +81,12 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
       nonzero digits. Generator digits directly index odd multiples among the 64 affine entries \
       of the first row of the existing static `VG_P384_COMB`, added by mixed additions; peer \
       digits index eight odd multiples of `Q` in `scratch`, with cached squares and cubes of \
-      their Z coordinates. Complete point operations cover infinity, equal points and opposite \
-      points. Doubling is Jacobian, for `a = -3`, with `Z' = 2YZ` as a direct product, into a \
-      temporary point copied back to the accumulator; on six words no register values are \
-      forwarded between field operations. The final comparison squares the Jacobian Z \
+      their Z coordinates. The digits' additions are calls of \
+      `vg_p384_jac_add_cached` (the peer's digits) and `vg_p384_jac_add_affine` (the generator's)" ++
+      (if adx then ", their `_adx` forms," else "") ++ " which cover infinity, equal points and \
+      opposite points; the doubling and the table of odd multiples are inline. Doubling is Jacobian, for \
+      `a = -3`, with `Z' = 2YZ` as a direct product, into a temporary point copied back to the \
+      accumulator; on six words no register values are forwarded between field operations. The final comparison squares the Jacobian Z \
       coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p` (P-384 has \
       `n < p ≤ 2n`), without a field inversion. It rejects infinity and returns the \
       conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend \
