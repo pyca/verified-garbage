@@ -26,8 +26,8 @@ the working space, each an element of `Spec/X448/Field56.lean` (eight limbs
 of 56 bits), with limbs below `2^56 + 2^8` (`Field56.Res`). The function
 needs and keeps `Field56.Bounded` (every limb of every slot below
 `3·2^56 + 2^9`) and 0, with limbs below that bound, in slot 19. It writes
-slots 0 to 18, the 56 bytes from byte 3528, where it saves registers, and
-its own bytes (`Field56.own`); on return those, but the result, are
+slots 0 to 18, the 8 bytes from byte 2816 (in slot 21, after its element's
+64 bytes), where it saves a register, and its own bytes (`Field56.own`); on return those, but the result, are
 unspecified and may hold intermediate values, and every other byte of `ws`
 keeps its value (`Field56.Keeps`).
 
@@ -43,8 +43,8 @@ open Point56 (pointAt zeroSlot)
 /-- Where the scalar's bits are, a byte each. -/
 def bitsOff : Nat := 3072
 
-/-- Where the function saves registers, for 56 bytes. -/
-def saveOff : Nat := 3528
+/-- Where the function saves a register, for 8 bytes: in slot 21, after its element. -/
+def saveOff : Nat := 2816
 
 /-- The scalar whose `t` bits are the bytes from `bitsOff`, least significant first. -/
 def bitsAt (m : Mem) (ws : Addr) : Nat → Nat
@@ -55,9 +55,9 @@ def bitsAt (m : Mem) (ws : Addr) : Nat → Nat
 def IsBits (m : Mem) (ws : Addr) (t : Nat) : Prop :=
   ∀ i < t, (m (ws + BitVec.ofNat 64 (bitsOff + i))).toNat < 2
 
-/-- What the function changes: the result and the slots up to 18, the saved registers, and its
-own bytes. -/
-def written : List (Nat × Nat) := (slotAt 0, slotAt 19) :: (saveOff, X448.Field56.accAt) :: own
+/-- What the function changes: the result and the slots up to 18, the saved register, and its own
+bytes. -/
+def written : List (Nat × Nat) := (slotAt 0, slotAt 19) :: (saveOff, saveOff + 8) :: own
 
 /-- `ws: *mut [u64; 1024]` and `n: usize`, both public. -/
 def sig : Sig where
@@ -91,7 +91,7 @@ def combBaseApi : Api where
     little-endian words, least significant first, each a limb: the number `Σ l_i 2^(56 i)`, \
     standing for its residue modulo `p = 2^448 - 2^224 - 1`, not necessarily reduced. The \
     result's limbs are below `2^56 + 2^8`. Every byte of `ws` but slots 0 to 18 (bytes 64 to \
-    2495), bytes 3528 to 3583 and the function's own working space (bytes 3584 to 4735) keeps \
+    2495), bytes 2816 to 2823 and the function's own working space (bytes 3584 to 4735) keeps \
     its value.\n\n\
     Contract: `combBaseContract` of `VG.Spec.Ed448.Comb56`. Constant time: only the pointer and \
     `n` may affect timing."
@@ -99,7 +99,7 @@ def combBaseApi : Api where
     "`n` must be 56 or 57, and each of bytes 3072 to `3072 + 8 n - 1` of `ws` must be 0 or 1.",
     "Slot 19 of `ws` (byte 2496) must hold an element congruent to 0, with limbs below \
       `2^56 + 2^8`.",
-    "Bytes 64 to 2495 and 3528 to 4735 of `ws` but the result are unspecified on return and may \
-      hold intermediate values, which the caller must destroy if they are secret."]
+    "Bytes 64 to 2495, 2816 to 2823 and 3584 to 4735 of `ws` but the result are unspecified on \
+      return and may hold intermediate values, which the caller must destroy if they are secret."]
 
 end VG.Spec.Ed448.Comb56
