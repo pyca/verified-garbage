@@ -81,7 +81,11 @@ theorem rowS0_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   have := (s₄.gpr .r14).isLt
   rw [show v * (w + 2 ^ 64 * W) = v * w + 2 ^ 64 * (v * W) by rw [Nat.mul_add, Nat.mul_left_comm]]
   cases c₄ <;> simp only [Bool.toNat_false, Bool.toNat_true] at e₄ <;>
-    simp only [show (0 : BitVec 64).toNat = 0 from rfl] <;> omega
+    simp only [show (0 : BitVec 64).toNat = 0 from rfl]
+  · rw [e₄]
+    generalize (2 : Nat) ^ 64 = B at e₂ e₃ ⊢
+    grind only
+  · omega_using [e₃, e₄, key, (s₂.gpr .r9).isLt, Bool.toNat_le c₃]
 
 /-- Row 0: `r8 … r15 = a₀ [b]`. -/
 theorem mulRow0_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a b : Nat}
