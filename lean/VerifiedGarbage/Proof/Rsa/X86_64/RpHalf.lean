@@ -60,7 +60,7 @@ theorem halfHead_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Na
     fun t ⟨⟨h12, hbp, mt⟩, k₅⟩ => ⟨(k₅.gpr (by decide)).trans h8₄,
       (k₅.gpr (by decide)).trans ((k₄.gpr (by decide)).trans hsi), h12, hbp,
       (k₅.gpr (by decide)).trans ((k₄.gpr (by decide)).trans ((k₃.gpr (by decide)).trans ((k₂.gpr (by decide)).trans hdi₁))),
-      by rw [mt, m₄, m₃, m₂, m₁], ((k13.trans k₄).trans k₅).mono (by simp)⟩
+      by rw [mt, m₄, m₃, m₂, m₁], ((k13.trans k₄).trans k₅).mono (by decide)⟩
 
 /-- After `j` halvings of `m`, from `s₁`. -/
 structure HalfInv (s₁ : State) (B : Addr) (Z w m : Nat) (j : Nat) (t : State) : Prop where
@@ -193,7 +193,7 @@ theorem halfStep_ok {s₁ t : State} {B : Addr} {Z w m el j : Nat} (hI : HalfInv
     · exact RMut.ofSlot _ _ _
     · exact RMut.ofSlot _ _ _
     · exact RMut.hdr (by decide)
-  refine ⟨h.congrR hf hrm (((k₁.trans k₂).trans k₃).trans k₄) (by decide), (k03.trans k₄).mono (by simp), h13,
+  refine ⟨h.congrR hf hrm (((k₁.trans k₂).trans k₃).trans k₄) (by decide), (k03.trans k₄).mono (by decide), h13,
     hI.frm.trans hf, ?_, ?_⟩
   · -- `m`.
     have hfull : ∀ mm : Mem, wv mm B (slot w aM) (2 * (w + 2)) =
@@ -249,7 +249,7 @@ theorem halfInit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Na
     xrun [State.ea, hdr, hdi₁, hdrOff, hs₁.st (d := 8 * sT) (by simp only [sT, sFn]; omega_using [h256]), hax, ofNat_dbl, dbl6,
       m₁]
     rfl) rfl)
-    fun t ⟨q, k₂⟩ => ⟨q.1, q.2.1, q.2.2, (k₁.trans k₂).mono (by simp)⟩
+    fun t ⟨q, k₂⟩ => ⟨q.1, q.2.1, q.2.2, (k₁.trans k₂).mono (by decide)⟩
 
 /-- `halving`: `m = 2^t r` with `r` odd, for `0 < m < 2^(64 Bw)` in `M`. -/
 theorem halving_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el m : Nat}
@@ -293,6 +293,6 @@ theorem halving_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el m : N
   have hval := hI.val
   have htv := hI.tv
   rw [hd] at hval htv
-  exact ⟨hI.ws, hval, htv, hf₁.trans hI.frm, (k₁.trans hI.keep).mono (by simp)⟩
+  exact ⟨hI.ws, hval, htv, hf₁.trans hI.frm, (k₁.trans hI.keep).mono (by decide)⟩
 
 end VG.Proof.Rsa.X86_64

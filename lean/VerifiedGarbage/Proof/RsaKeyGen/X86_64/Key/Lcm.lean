@@ -31,11 +31,11 @@ theorem divInit_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (iT : Nat
   refine WP.mono (WP.keep [.r13] (Q := fun t => t.gpr .r13 = BitVec.ofNat 64 0 ∧ t.mem = s₄.mem)
     (by xrun) rfl) fun t ⟨⟨h13, m₅⟩, k₅⟩ => ?_
   exact ⟨(k₅.gpr (by decide)).trans h11', h13, by rw [m₅, m₄, m₃, m₂, m₁],
-    ((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).mono (by simp)⟩
+    ((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).mono (by decide)⟩
 
 theorem TwoP.trans {I : KIn} {m₀ : Mem} {s t u : State} (h₁ : TwoP I m₀ s t) (h₂ : TwoP I m₀ t u) :
     TwoP I m₀ s u :=
-  ⟨h₂.1, (h₁.2.1.trans h₂.2.1).mono (by simp), h₂.2.2⟩
+  ⟨h₂.1, (h₁.2.1.trans h₂.2.1).mono (by decide), h₂.2.2⟩
 
 /-- `twos`: `64 W` steps of the halving. -/
 theorem twos_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : atop I s.mem aU = 0)
@@ -52,7 +52,7 @@ theorem twos_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : atop 
     (fun j t => t.gpr .r11 = BitVec.ofNat 64 (64 * I.W) ∧ t.gpr .r13 = BitVec.ofNat 64 j ∧ TwoP I m₀ s t ∧
       (av I t.mem aU, av I t.mem aV, av I t.mem aL) = halveIter j (av I s.mem aU, av I s.mem aV, av I s.mem aL))
     (fun j _ hj t ⟨t11, t13, tp, tv⟩ => ?_) (fun t ⟨_, _, tp, tv⟩ => ⟨tp, tv⟩)
-    ⟨h11, h13, ⟨h₁, by rw [m₁]; exact (KF.refl _ _ _).mono (by simp), by rw [m₁]; exact hU0, by rw [m₁]; exact hV0,
+    ⟨h11, h13, ⟨h₁, by rw [m₁]; exact (KF.refl _ _ _).mono (by decide), by rw [m₁]; exact hU0, by rw [m₁]; exact hV0,
       by rw [m₁]; exact hL0⟩, by rw [m₁]; rfl⟩
   refine WP.mono (twoStep_k tp.1 tp.2.2.1 tp.2.2.2.1 tp.2.2.2.2 t13 t11 hj) fun t' ⟨hz, h13', h11', tp', tv'⟩ =>
     ⟨hz, h11', h13', tp.trans tp', ?_⟩
@@ -111,7 +111,7 @@ theorem gcdUV_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : atop
     refine WP.mono (base_ok aV (r := .r10) (by decide) ((k₃.gpr (by decide)).trans hdi₂)
       ((k₃.gpr (by decide)).trans h9₂)) fun t ⟨h10, m₄, k₄⟩ => ⟨by rw [m₄, m₃, m₂, m₁],
         ((k₃.trans k₄).gpr (by decide)).trans h15, (k₄.gpr (by decide)).trans hbx, h10,
-        (((k₂.trans k₃).trans k₄).gpr (by decide)).trans h12, (((k₁.trans k₂).trans k₃).trans k₄).mono (by simp)⟩
+        (((k₂.trans k₃).trans k₄).gpr (by decide)).trans h12, (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)⟩
   refine wp_seqs_append (by simp) (by simp [constA]) ?_
   simp only [seqs]
   refine WP.seq (WP.mono hb fun s₁ ⟨m₁, h15, hbx, h10, h12, k₁⟩ => ?_)
@@ -177,7 +177,7 @@ theorem gcdUV_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : atop
     fun s₈ ⟨h₈, f₈', vM₈, _, _⟩ => WP.seq (WP.mono (zeroA_k h₈ (j := aX₁) (by decide)) fun s₉ ⟨h₉, f₉, z₉, _⟩ =>
       WP.seq (WP.mono (setOne_k h₉ (j := aX₁) (by decide) z₉) fun s₁₀ ⟨h₁₀, f₁₀, o₁₀, _⟩ =>
         WP.seq (WP.mono (zeroA_k h₁₀ (j := aX₂) (by decide)) fun s₁₁ ⟨h₁₁, f₁₁, z₁₁, _⟩ => ?_)))))
-  have f₈ : KF I.B I.W [.arr aM] s₇.mem s₈.mem := (f₇'.trans f₈').mono (by simp)
+  have f₈ : KF I.B I.W [.arr aM] s₇.mem s₈.mem := (f₇'.trans f₈').mono (by decide)
   rw [f₇'.av (by decide) (j := aV) (by decide) (by decide) hZ] at vM₈
   have hokM : [Rc.arr aM].all Rc.ok = true := by decide
   have hok1 : [Rc.arr aX₁].all Rc.ok = true := by decide
@@ -228,7 +228,7 @@ theorem gcdUV_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : atop
   have f₁₅' : KF I.B I.W [.arr aV] s₁₃.mem t.mem := by rw [← m₁₄]; exact f₁₅
   refine ⟨ht, ?_, ?_⟩
   · exact (((((((((((f₂.trans f₃).trans f₅').trans f₆).trans f₇).trans f₈).trans f₉).trans f₁₀).trans f₁₁).trans
-      f₁₂).trans f₁₃).trans f₁₅').mono (by simp)
+      f₁₂).trans f₁₃).trans f₁₅').mono (by decide)
   · rw [vV, m₁₄, c1, f₁₃.av hokC (by decide) (by decide) hZ, hg]
     by_cases hv : v1 < 2
     · simp [hv, show v1 ≤ 1 by omega_using [hv]]
@@ -332,7 +332,7 @@ theorem lcm_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {w : Nat} (hW
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
     fun t ⟨ht, f₈, hd⟩ => ⟨ht, ?_, ?_⟩
   · have f₂₅ := ((f₂.trans f₃).trans f₄).trans f₅
-    exact ((((f₁.trans f₂₅).trans f₆).trans f₇).trans f₈).mono (by simp)
+    exact ((((f₁.trans f₂₅).trans f₆).trans f₇).trans f₈).mono (by decide)
   · rw [vV₇] at hd
     rw [(hd hg0).2, vL₇, hle.2]
 

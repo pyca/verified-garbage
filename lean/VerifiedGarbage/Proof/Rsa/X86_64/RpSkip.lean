@@ -70,7 +70,7 @@ theorem skipBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat
         hs₂.st (d := 8 * sC2) (by omega)]
       rw [low_sub_one]) rfl)
     fun t ⟨⟨hbp, h12, mt⟩, k₃⟩ => ⟨(k₃.gpr (by decide)).trans hbx, hbp, h12, (k₃.gpr (by decide)).trans hdi₂,
-      by rw [mt, m₂, m₁], (k12.trans k₃).mono (by simp)⟩
+      by rw [mt, m₂, m₁], (k12.trans k₃).mono (by decide)⟩
 
 /-- The loop of `orBody`: `rbp = 0` iff the `N` words at `rbx` are. -/
 theorem orLoop_ok {s : State} {B : Addr} {Z N e : Nat} (hs : Scr s B Z) (hbx : s.gpr .rbx = off B e)
@@ -156,7 +156,7 @@ theorem skip_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat}
   rw [wv_low_of_lt (by omega) hlt, hm] at hz
   refine WP.mono (skipTest_ok (hs₁.congr k₂.2.2) ((k₂.gpr (by decide)).trans hdi) h256 hz
     (c := decide (wv s.mem B (slot w aM) (2 * (w + 2)) % 2 = 0)) (by rw [m₂]; exact hc)) fun t ⟨hzf, mt, k₃⟩ => ⟨?_, by rw [mt, m₂, hm], ?_,
-      (k₃.gpr (by decide)).trans ((k₂.gpr (by decide)).trans hdi), ((k₁.trans k₂).trans k₃).mono (by simp)⟩
+      (k₃.gpr (by decide)).trans ((k₂.gpr (by decide)).trans hdi), ((k₁.trans k₂).trans k₃).mono (by decide)⟩
   · rw [hzf]
     congr 1
     simp only [decide_eq_decide, decide_eq_false_iff_not]
