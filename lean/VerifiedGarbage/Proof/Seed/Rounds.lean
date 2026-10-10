@@ -36,4 +36,15 @@ theorem crypt_eq (key : Nat → Word × Word) (b : Block) :
   rw [roundsN_succ]
   simp only [crypt, roundsN, decodeQ, encodeSwapped, round]
 
+theorem roundsN_congr {k₁ k₂ : Nat → Word × Word} :
+    ∀ (n : Nat) (q : Quad), (∀ j < n, k₁ j = k₂ j) → roundsN k₁ n q = roundsN k₂ n q := by
+  intro n q h
+  induction n with
+  | zero => exact (rfl : roundsN k₁ 0 q = q).trans (rfl : q = roundsN k₂ 0 q)
+  | succ n ih => rw [roundsN_succ, roundsN_succ, h n (by omega), ih fun j hj => h j (by omega)]
+
+theorem crypt_congr {k₁ k₂ : Nat → Word × Word} (h : ∀ j < 16, k₁ j = k₂ j)
+    (b : Block) : crypt k₁ b = crypt k₂ b := by
+  rw [crypt_eq, crypt_eq, roundsN_congr 16 _ h]
+
 end VG.Proof.Seed
