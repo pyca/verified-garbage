@@ -32,10 +32,6 @@ theorem ByteKeep.bytesS {base kp sp T : Addr} {A : EPoint dZ} {s t : State} (h :
     Spec.Ed25519.bytesAt t.mem (off sp 32) 32 = Spec.Ed25519.bytesAt s.mem (off sp 32) 32 :=
   outside_bytes k.mem (by decide) h.sFar
 
-theorem BaseTbl.of_powers {s t : State} {base T : Addr} {o n : Nat} (h : BaseTbl s base T)
-    (k : PowersKeep base o n s t) (hn : o + n ≤ 8192) : BaseTbl t base T :=
-  h.of_mem k.rd k.wr fun p hp => k.mem p (by omega) (Or.inr (by omega))
-
 theorem counterCmp_ok {s : State} {base : Addr} (hs : Scratch s base) (i : Nat) (hi : i ≤ 64)
     (hc : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 i) :
     WP isa (.block [.mov .rbx (.mem (Impl.X25519.X86_64.sc 56)), .alu .cmp .rbx (.imm 32)]) s

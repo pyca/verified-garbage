@@ -1,4 +1,5 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowStep
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombConstants
 import VerifiedGarbage.Proof.Ed25519.X86_64.CombNeg
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointSelect
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
