@@ -1,6 +1,6 @@
 # rustls benchmarks: verified-garbage vs aws-lc-rs
 
-The latest run, in detail: main at 7c42c0e1, measured with `bench/run.sh 5`
+The run at 7c42c0e1, in detail (a refresh at ecd4fc1e follows first): measured with `bench/run.sh 5`
 on a 2.1 GHz Intel Xeon (Emerald Rapids) with SHA-NI, AVX-512 (IFMA, VAES,
 VPCLMULQDQ) and ADX, with rustls 91aebe5d and aws-lc-rs 1.18.1, each
 benchmark on one core (`taskset -c 2`). The a70d41fa run before it had the same
@@ -34,6 +34,49 @@ The provider seals every record of both AEADs out of place, at every length:
 `AesGcm::encrypt` and `ChaCha20Poly1305::encrypt` read the payload's chunks
 and the content type byte where they are and write only the record. Only a
 payload of 64 chunks or more is copied first.
+
+## Refresh at ecd4fc1e (noisy host)
+
+The same machine, after main gained AES-GCM's AES-NI + AVX loop for every
+block from the 16th and its call-free seal (#1684, #1688), SHA-256's
+shorter AVX2 rounds and wider copies (#1671, #1683, #1686), RSA squaring
+changes (#1695, #1696; #1685 was reverted by #1693 for slowing Zen 4 and 5)
+and an X25519 ladder change (#1682). **The host was noisy:** a primitive's
+time moved by up to 1.5x between rounds (RSA-2048 verification 21–34 µs), so
+single primitive rows are rough. The handshake and bulk geometric means,
+over many scenarios, are steadier.
+
+| rustls-bench, full CPU | client, full | server, full | client, mutual | server, mutual | resumed (TLS 1.3) | resumed (TLS 1.2) |
+|---|---:|---:|---:|---:|---:|---:|
+| ECDSA P-256 | 1.24–1.30 | 1.22–1.27 | 1.30–1.38 | 1.30–1.38 | 1.20–1.32 | 1.14–1.38 |
+| ECDSA P-384 (TLS 1.2 only) | 1.21 | 1.50 | 1.23 | 1.25 | | 1.16–1.39 |
+| RSA-2048 | 1.12–1.22 | 1.03–1.13 | 1.03–1.12 | 1.02–1.11 | 1.13–1.27 | 1.08–1.55 |
+| Ed25519 | 1.31–1.44 | 1.18–1.24 | 1.33 | 1.34 | 1.16–1.31 | 1.19–1.50 |
+
+| rustls-bench, Cascade Lake class (emulated) | client, full | server, full | client, mutual | server, mutual | resumed (TLS 1.3) | resumed (TLS 1.2) |
+|---|---:|---:|---:|---:|---:|---:|
+| ECDSA P-256 | 1.28–1.34 | 1.10–1.29 | 1.22–1.30 | 1.25–1.29 | 1.10–1.28 | 1.11–1.57 |
+| ECDSA P-384 (TLS 1.2 only) | 1.26 | 1.46 | 1.36 | 1.36 | | 1.01–1.49 |
+| RSA-2048 | 1.04–1.12 | 0.90–0.93 | 0.96–0.97 | 0.96 | 1.12–1.32 | 1.13–1.75 |
+| Ed25519 | 1.17–1.22 | 1.11–1.20 | 1.11–1.21 | 1.14–1.17 | 1.15–1.34 | 1.15–1.61 |
+
+| Bulk, send / receive | full CPU, 16 KiB | full CPU, 10000 B | Cascade Lake, 16 KiB | Cascade Lake, 10000 B |
+|---|---:|---:|---:|---:|
+| TLS 1.3 AES-GCM | 1.03–1.05 / 0.99–1.03 | 1.02–1.04 / 0.93–1.02 | 0.95–0.98 / 1.03–1.07 | 0.80–0.89 / 0.89–1.01 |
+| TLS 1.3 ChaCha20-Poly1305 | 1.41 / 1.49 | 1.33 / 1.34 | 1.31 / 1.34 | 1.21 / 1.26 |
+| TLS 1.2 AES-GCM | 1.01–1.03 / 0.97–1.01 | 0.97–1.01 / 0.95–1.00 | 0.90–0.94 / 0.99–1.03 | 0.90–0.93 / 1.01–1.06 |
+| TLS 1.2 ChaCha20-Poly1305 | 1.28–1.32 / 1.28–1.31 | 1.30–1.31 / 1.37 | 1.27–1.37 / 1.25–1.38 | 1.24 / 1.30 |
+
+Every handshake on the full CPU is now faster than aws-lc-rs's (1.02–1.55),
+and ChaCha20-Poly1305 bulk is 1.28–1.49. What remains below parity:
+
+* **Cascade Lake class, AES-GCM sending: 0.80–0.98** (10000-byte records
+  worst), and out-of-place sealing at 4096+1 B (0.75–0.94 across rounds).
+* **Cascade Lake class, RSA private-key operations: 0.83–0.95** (signing at
+  every size), hence RSA-2048 server handshakes at 0.90–0.93.
+* **Within noise or single rounds:** P-384 ECDH (0.85–1.02), X25519 Diffie-Hellman
+  on the Cascade Lake class (0.93), AES-GCM receive with 10000-byte records
+  (0.89–1.02).
 
 ## rustls-bench (`--api buffered`, median of 5 runs)
 
@@ -184,15 +227,15 @@ and the b5b67857 run's host was noisy. The provider sealed every record with
 a copy before 93f54441, and short AES-GCM records and every
 ChaCha20-Poly1305 record until a70d41fa.
 
-| | 8532494 (first run) | 36ff93f9 | 7cdac586 | 93f54441 | b5b67857 (noisy) | a70d41fa | 7c42c0e1 |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| P-256 full handshake, client / server | 0.11–0.15 / 0.16–0.24 | 0.52–0.60 / 0.74–0.91 | 0.71–0.77 / 0.99–1.00 | 1.25–1.27 / 1.20–1.23 | 0.90–1.27 / 0.80–1.22 | 1.23–1.28 / 1.15–1.26 | 1.10–1.37 / 1.04–1.29 |
-| RSA-2048 full handshake, client / server | 0.42–0.47 / 0.93 | 0.48–0.55 / 0.58–0.59 | 0.91–0.96 / 1.02–1.05 | 1.06 / 1.08 | 0.84–1.03 / 0.71–0.86 | 1.07–1.11 / 1.05–1.07 | 1.19–1.22 / 1.12–1.15 |
-| Ed25519 full handshake, client / server | 0.73–0.74 / 0.78–0.83 | 0.64–0.73 / 0.76–0.91 | 1.14–1.22 / 1.01–1.04 | 1.26–1.29 / 1.08–1.13 | 1.18–1.21 / 1.02–1.10 | 1.28–1.62 / 1.16–1.38 | 1.18–1.34 / 1.00–1.22 |
-| Bulk AES-GCM / ChaCha20-Poly1305 (16 KiB) | 0.76–0.83 / 0.98–1.01 | 0.88–0.93 / 1.37–1.39 | 0.85–0.95 / 1.30–1.31 | 0.89–0.94 / 1.24–1.27 | 0.72–1.01 / 1.08–1.09 | 0.96–1.02 / 1.32–1.36 | 1.02–1.05 / 1.09–1.18 |
-| AES-128/256-GCM 16 KiB record seal | 0.72 / 0.78 | 0.88 / 0.86 | 0.85 / 0.86 | 0.97 / 1.02 | 0.79 / 0.80 | 1.03 / 1.06 | 1.12 / 1.11 |
-| ECDSA P-256 sign / verify | 0.05 / 0.08 | 0.56 / 0.44 | 1.03 / 0.67 | 1.27 / 1.24 | 1.01 / 1.13 | 1.30 / 1.22 | 1.33 / 1.18 |
-| ECDSA P-521 sign / verify | 0.03 / 0.04 | 0.04 / 0.05 | 0.57 / 0.31 | 1.77 / 1.05 | 2.04 / 1.28 | 1.91 / 1.22 | 1.89 / 1.14 |
-| RSA-2048 PSS verify | 0.23 | 0.25 | 0.71 | 0.83 | 0.94 | 0.94 | 1.05 |
-| Ed25519 sign / verify | 0.60 / 0.65 | 0.55 / 0.57 | 1.06 / 1.43 | 1.18 / 1.57 | 0.79 / 1.28 | 1.31 / 1.66 | 1.22 / 1.74 |
-| X25519 keygen | 0.33 | 0.54 | 1.21 | 1.29 | 0.82 | 1.29 | 1.16 |
+| | 8532494 (first run) | 36ff93f9 | 7cdac586 | 93f54441 | b5b67857 (noisy) | a70d41fa | 7c42c0e1 | ecd4fc1e (noisy) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| P-256 full handshake, client / server | 0.11–0.15 / 0.16–0.24 | 0.52–0.60 / 0.74–0.91 | 0.71–0.77 / 0.99–1.00 | 1.25–1.27 / 1.20–1.23 | 0.90–1.27 / 0.80–1.22 | 1.23–1.28 / 1.15–1.26 | 1.10–1.37 / 1.04–1.29 | 1.24–1.30 / 1.22–1.27 |
+| RSA-2048 full handshake, client / server | 0.42–0.47 / 0.93 | 0.48–0.55 / 0.58–0.59 | 0.91–0.96 / 1.02–1.05 | 1.06 / 1.08 | 0.84–1.03 / 0.71–0.86 | 1.07–1.11 / 1.05–1.07 | 1.19–1.22 / 1.12–1.15 | 1.12–1.22 / 1.03–1.13 |
+| Ed25519 full handshake, client / server | 0.73–0.74 / 0.78–0.83 | 0.64–0.73 / 0.76–0.91 | 1.14–1.22 / 1.01–1.04 | 1.26–1.29 / 1.08–1.13 | 1.18–1.21 / 1.02–1.10 | 1.28–1.62 / 1.16–1.38 | 1.18–1.34 / 1.00–1.22 | 1.31–1.44 / 1.18–1.24 |
+| Bulk AES-GCM / ChaCha20-Poly1305 (16 KiB) | 0.76–0.83 / 0.98–1.01 | 0.88–0.93 / 1.37–1.39 | 0.85–0.95 / 1.30–1.31 | 0.89–0.94 / 1.24–1.27 | 0.72–1.01 / 1.08–1.09 | 0.96–1.02 / 1.32–1.36 | 1.02–1.05 / 1.09–1.18 | 1.03–1.05 / 1.41–1.49 |
+| AES-128/256-GCM 16 KiB record seal | 0.72 / 0.78 | 0.88 / 0.86 | 0.85 / 0.86 | 0.97 / 1.02 | 0.79 / 0.80 | 1.03 / 1.06 | 1.12 / 1.11 | 1.06 / 1.07 |
+| ECDSA P-256 sign / verify | 0.05 / 0.08 | 0.56 / 0.44 | 1.03 / 0.67 | 1.27 / 1.24 | 1.01 / 1.13 | 1.30 / 1.22 | 1.33 / 1.18 | 1.41 / 1.30 |
+| ECDSA P-521 sign / verify | 0.03 / 0.04 | 0.04 / 0.05 | 0.57 / 0.31 | 1.77 / 1.05 | 2.04 / 1.28 | 1.91 / 1.22 | 1.89 / 1.14 | 2.19 / 1.11 |
+| RSA-2048 PSS verify | 0.23 | 0.25 | 0.71 | 0.83 | 0.94 | 0.94 | 1.05 | 1.06 |
+| Ed25519 sign / verify | 0.60 / 0.65 | 0.55 / 0.57 | 1.06 / 1.43 | 1.18 / 1.57 | 0.79 / 1.28 | 1.31 / 1.66 | 1.22 / 1.74 | 1.31 / 1.58 |
+| X25519 keygen | 0.33 | 0.54 | 1.21 | 1.29 | 0.82 | 1.29 | 1.16 | 1.54 |
