@@ -41,6 +41,7 @@ mod sha384;
 mod sha512;
 mod sha512_224;
 mod sha512_256;
+mod sm4_ctr;
 mod sm4_ecb;
 mod triple_des_ecb;
 
