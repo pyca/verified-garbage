@@ -95,7 +95,7 @@ theorem p384Add_ok (s : State) {ts : List Reg} (hlen : ts.length = 6) (hf : Fres
     generalize decide (2 ^ 64 ≤ (s.gpr t4).toNat + w.toNat + k₄.toNat) = k₅ at e5 ⊢
     have e6 := adc_carry (s.gpr t5) w k₅
     generalize decide (2 ^ 64 ≤ (s.gpr t5).toNat + w.toNat + k₅.toNat) = k₆ at e6 ⊢
-    omega_using [e1, e2, e3, e4, e5, e6]
+    grind only
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1,
       hr.2.2.2.2.2, ite_false]

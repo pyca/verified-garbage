@@ -147,7 +147,10 @@ theorem subShortM_ok (s : State) {d0 d1 d2 d3 d4 d5 : Reg} (hf : Fresh [d0, d1, 
         X1 + 2 ^ 64 * (X2 + 2 ^ 64 * (X3 + 2 ^ 64 * (X4 + 2 ^ 64 * X5))) + 2 ^ 320 * B5 := by
       omega_using [e1, e2, e3, e4, e5]
     have hD6 : D6 = 0 := by omega_using [h5, e6, hC, k1, k2, k3, k4, k5, k6, q5]
-    omega_using [h5, e6, hD6]
+    subst hD6
+    rw [pow128w, pow320w] at h5 ⊢
+    clear hC
+    grind only
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1,
       hr.2.2.2.2.2, ite_false]

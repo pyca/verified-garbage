@@ -30,7 +30,7 @@ theorem cross_arith {v1 v2 v3 v4 v5 v6 k7 v7 v8 v9 k10 v10 v11 v12 _k13 v13 v14 
     (b4 : P4 ≤ (2^64-1)*(2^64-1))
     (b5 : P5 ≤ (2^64-1)*(2^64-1)) :
     v1 + 2^64*v7 + 2^128*v19 + 2^192*v21 + 2^256*v23 + (2^256*2^64)*v25 = P0 + 2^64*P1 + 2^128*P2 + 2^128*P3 + 2^192*P4 + 2^256*P5 := by
-  omega
+  grind
 
 theorem cross_value (a0 a1 a2 a3 : BitVec 64) :
     let v1 := a1 * a0
@@ -234,6 +234,6 @@ theorem product_ok (s : State) (hz : s.gpr .x7 = 0) :
   have hb := val4_lt (s.gpr .x4) (s.gpr .x5) (s.gpr .x16) (s.gpr .x17)
   have hbb := Nat.mul_lt_mul'' hb hb
   simp only [val4] at e₂ e₃ hbb ⊢
-  omega_using [e₁, e₃, m0, m1, m2, m3, he, hbb]
+  with_reducible omega_using [e₁, e₃, m0, m1, m2, m3, he, hbb]
 
 end VG.Proof.Mont.AArch64.P256Square
