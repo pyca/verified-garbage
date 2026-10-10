@@ -27,7 +27,7 @@ theorem init_keepsV (v : Ctr32Impl) : (init v.expand v.callee v.suffix).allInstr
 
 theorem encrypt_keepsV (v : Proof.CmacAes.AArch64.UpdateImpl) :
     (encrypt v.callee v.ctr.callee v.ctr.suffix).allInstrs keepsV = true := by
-  simp only [encrypt, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, ctr,
+  simp only [encrypt, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, ctr, ctrWhole,
     ctrBody, ctrMin, ctrLeft, xorBytes, callUpdate, callFinalize, Code.allInstrs, v.keepsV,
     Proof.CmacAes.AArch64.finalize_keepsV v.ctr, v.ctr.keepsV]
   decide +kernel
@@ -35,7 +35,7 @@ theorem encrypt_keepsV (v : Proof.CmacAes.AArch64.UpdateImpl) :
 theorem decrypt_keepsV (v : Proof.CmacAes.AArch64.UpdateImpl) :
     (decrypt v.callee v.ctr.callee v.ctr.suffix).allInstrs keepsV = true := by
   simp only [decrypt, openTail, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac,
-    ctr, ctrBody, ctrMin, ctrLeft, xorBytes, maskData, callUpdate, callFinalize, Code.allInstrs, v.keepsV,
+    ctr, ctrWhole, ctrBody, ctrMin, ctrLeft, xorBytes, maskData, callUpdate, callFinalize, Code.allInstrs, v.keepsV,
     Proof.CmacAes.AArch64.finalize_keepsV v.ctr, v.ctr.keepsV]
   decide +kernel
 
