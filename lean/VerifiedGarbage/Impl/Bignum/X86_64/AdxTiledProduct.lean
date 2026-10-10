@@ -2,6 +2,7 @@ import VerifiedGarbage.Impl.Bignum.X86_64.AdxHeader
 import VerifiedGarbage.Impl.Bignum.X86_64.AdxCarry8
 import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
 import VerifiedGarbage.Impl.Bignum.X86_64.AdxFinish8
+import VerifiedGarbage.Impl.Bignum.X86_64.AdxRowRedc
 
 /-! Full raw multiplication from eight-word rectangular rows. -/
 namespace VG.Impl.Bignum.X86_64.AdxTiledProduct
@@ -37,9 +38,11 @@ def rawProduct (a b : Nat) : Prog isa :=
     (.seq AdxHeader.save (.seq (rows a b) AdxHeader.restore)))
 
 /-- The reduction of the raw product in the accumulator into `o`: shared by
-products and squares. -/
+products and squares. Rows of eight-word blocks (`AdxRowRedc.redc`), whose
+multiply-adds out-of-order execution overlaps across rows, are faster than
+`AdxRotate8.redc`'s register tiles, which wait on each tile's multipliers. -/
 def redcFinish (o : Nat) : Prog isa :=
-  .seq AdxRotate8.redc (.seq (.block [.mov .r10 (.mem (hdr (sArr Public.aN)))]) (Adx.finish8 o))
+  .seq AdxRowRedc.redc (.seq (.block [.mov .r10 (.mem (hdr (sArr Public.aN)))]) (Adx.finish8 o))
 
 def montMul (o a b : Nat) : Prog isa := .seq (rawProduct a b) (redcFinish o)
 
