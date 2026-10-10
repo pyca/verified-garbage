@@ -458,6 +458,22 @@ yours to keep:
 
 <tr>
 
+<td>3DES-CBC</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>3DES-ECB</td>
 
 <td>✅</td>
