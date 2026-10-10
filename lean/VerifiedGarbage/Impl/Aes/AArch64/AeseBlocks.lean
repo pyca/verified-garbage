@@ -37,11 +37,11 @@ open VG.AArch64
 last one, `x6 = rounds − 10`, `x7 = rounds − 12` and `x13 = n / 8`. -/
 def keysCommon : List Instr :=
   (List.range 13).map (fun j => .ldrq (kreg j) .x0 (16 * j)) ++
-  [.lsl .x .x9 .x1 4, .add .x .x9 .x0 .x9, .ldrq .v30 .x9 0, .subImm .x .x6 .x1 10,
-   .subImm .x .x7 .x1 12, .lsr .x .x13 .x3 3]
+  ([.lsl .x .x9 .x1 4, .add .x .x9 .x0 .x9, .ldrq .v30 .x9 0, .subImm .x .x6 .x1 10,
+   .subImm .x .x7 .x1 12, .lsr .x .x13 .x3 3] : List Instr)
 
 /-- The round keys for encryption: also `k_{Nr−1}` in `v29`. -/
-def encSetup : List Instr := keysCommon ++ [.subImm .x .x9 .x9 16, .ldrq .v29 .x9 0]
+def encSetup : List Instr := keysCommon ++ ([.subImm .x .x9 .x9 16, .ldrq .v29 .x9 0] : List Instr)
 
 /-- The register of round key `j` (`1 ≤ j ≤ 13`) for decryption, through
 `InvMixColumns`. -/
@@ -50,7 +50,7 @@ def dreg (j : Nat) : VReg := if j = 13 then .v29 else kreg j
 /-- The round keys for decryption: `k₁₃` in `v29`, and `k₁ … k₁₃` through
 `InvMixColumns`. -/
 def decSetup : List Instr :=
-  keysCommon ++ [.ldrq .v29 .x0 208] ++
+  keysCommon ++ ([.ldrq .v29 .x0 208] : List Instr) ++
   (List.range 13).map fun j => .vop (.aesimc (dreg (j + 1)) (dreg (j + 1)))
 
 /-- A middle round of the inverse cipher with the round key in `k`, of each
@@ -87,12 +87,12 @@ def stData : List VReg → Nat → List Instr
 def blk8 (f : List VReg → Prog isa) : Prog isa :=
   .seq (.block (ldData regs8 0))
     (.seq (f regs8)
-      (.block (stData regs8 0 ++ [.addImm .x .x2 .x2 128, .subImm .x .x3 .x3 8, .lsr .x .x13 .x3 3])))
+      (.block (stData regs8 0 ++ ([.addImm .x .x2 .x2 128, .subImm .x .x3 .x3 8, .lsr .x .x13 .x3 3] : List Instr))))
 
 /-- One block through `f`. -/
 def blk1 (f : List VReg → Prog isa) : Prog isa :=
   .seq (.block (ldData [.v0] 0))
-    (.seq (f [.v0]) (.block (stData [.v0] 0 ++ [.addImm .x .x2 .x2 16, .subImm .x .x3 .x3 1])))
+    (.seq (f [.v0]) (.block (stData [.v0] 0 ++ ([.addImm .x .x2 .x2 16, .subImm .x .x3 .x3 1] : List Instr))))
 
 /-- The blocks, eight and then one at a time, after `setup`. -/
 def blocks (setup : List Instr) (f : List VReg → Prog isa) : Prog isa :=

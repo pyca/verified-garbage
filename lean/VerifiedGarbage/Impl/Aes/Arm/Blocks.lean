@@ -37,7 +37,7 @@ namespace VG.Impl.Aes.Arm
 open VG.Arm
 
 /-- Load the scratch buffer's base (to `r12`) and save the registers. -/
-def blocksPrologue : List Instr := [.ldrSp .r12 0] ++ saveRegs .r12
+def blocksPrologue : List Instr := ([.ldrSp .r12 0] : List Instr) ++ saveRegs .r12
 
 /-- Set up the key loop as `keySetup` does, with the data pointer (`r2`) to
 `r8`, and with `n` in the key loop's counter: `lr := 16 n + rounds + 1`. -/
@@ -69,41 +69,41 @@ def storeBlock (b : Nat) : List Instr :=
 
 /-- Two blocks, and on to the next two. -/
 def storeFull : List Instr :=
-  storeBlock 0 ++ storeBlock 1 ++ [.dp .add .r10 .r10 (.imm 32), .dp .sub .r11 .r11 (.imm 2)]
+  storeBlock 0 ++ storeBlock 1 ++ ([.dp .add .r10 .r10 (.imm 32), .dp .sub .r11 .r11 (.imm 2)] : List Instr)
 
 /-- The last block (and none left). -/
-def storeTail : List Instr := storeBlock 0 ++ [.mov .r11 (.imm 0)]
+def storeTail : List Instr := storeBlock 0 ++ ([.mov .r11 (.imm 0)] : List Instr)
 
 /-- One group of (up to) two blocks, through `crypt2`. -/
 def blockGroup (crypt2 : Prog isa) : Prog isa :=
-  .seq (.block (groupSave ++ [.mov .lr (lsrOp .r11 1), .cmp .lr (.imm 0)]))
+  .seq (.block (groupSave ++ ([.mov .lr (lsrOp .r11 1), .cmp .lr (.imm 0)] : List Instr)))
     (.seq (.ite .ne (.block (loadBlock 0 ++ loadBlock 1)) (.block (loadBlock 0)))
       (.seq crypt2
-        (.seq (.block (groupLoad ++ [.mov kp (lsrOp .r11 1), .cmp kp (.imm 0)]))
+        (.seq (.block (groupLoad ++ ([.mov kp (lsrOp .r11 1), .cmp kp (.imm 0)] : List Instr)))
           (.seq (.ite .ne (.block storeFull) (.block storeTail)) (.block [.cmp .r11 (.imm 0)])))))
 
 /-- The whole function, around `crypt2`. -/
 def blocks (crypt2 : Prog isa) : Prog isa :=
   .seq (.block (blocksPrologue ++ blocksKeySetup))
     (.seq (.loop (.block blocksKeyBody) .ne)
-      (.seq (.block (blocksKeyDone ++ [.cmp .r11 (.imm 0)]))
+      (.seq (.block (blocksKeyDone ++ ([.cmp .r11 (.imm 0)] : List Instr)))
         (.seq (.ite .eq (.block []) (.loop (blockGroup crypt2) .ne))
           (.block (.ldrSp .r12 0 :: restoreRegs .r12)))))
 
 /-- A middle round of the inverse cipher, with `kp` at the previous round
 key; loops until `kp` is at round key 1. -/
 def invRoundBody : List Instr :=
-  [.dp .sub kp kp (.imm 32)] ++ invShiftRows ++ invSboxCode ++ addRoundKey ++ invMixColumns ++
+  ([.dp .sub kp kp (.imm 32)] : List Instr) ++ invShiftRows ++ invSboxCode ++ addRoundKey ++ invMixColumns ++
   [ldS t0 fkSlot, .dp .sub t0 kp (.reg t0), .cmp t0 (.imm 32)]
 
 /-- The last round of the inverse cipher, with round key 0. -/
 def invLastRound : List Instr :=
-  [.dp .sub kp kp (.imm 32)] ++ invShiftRows ++ invSboxCode ++ addRoundKey
+  ([.dp .sub kp kp (.imm 32)] : List Instr) ++ invShiftRows ++ invSboxCode ++ addRoundKey
 
 /-- Decrypt the two blocks in `q 0 … q 7` (as `ortho` takes them), with
 the first round key's address in slot `fkSlot`. -/
 def decrypt2 : Prog isa :=
-  .seq (.block (ortho ++ [.dp .add kp sb (.imm (BitVec.ofNat 32 lastKey))] ++ addRoundKey))
+  .seq (.block (ortho ++ ([.dp .add kp sb (.imm (BitVec.ofNat 32 lastKey))] : List Instr) ++ addRoundKey))
     (.seq (.loop (.block invRoundBody) .ne) (.block (invLastRound ++ ortho)))
 
 def encryptBlocks : Prog isa := blocks encrypt2

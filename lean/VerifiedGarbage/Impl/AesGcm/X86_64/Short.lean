@@ -120,7 +120,7 @@ def gText : List Instr :=
 
 /-- The text (the ciphertext, when decrypting) copied to `G`. -/
 def copyC : Prog isa :=
-  .seq (.block (gText ++ [.mov .rsi (.mem (at_ .r15 dataO)), .mov .rcx (.mem (at_ .r15 lenO))])) copyBytes
+  .seq (.block (gText ++ ([.mov .rsi (.mem (at_ .r15 dataO)), .mov .rcx (.mem (at_ .r15 lenO))] : List Instr))) copyBytes
 
 /-! ## The powers -/
 
@@ -128,7 +128,7 @@ def copyC : Prog isa :=
 at `ctx + 240`, and `H'²`–`H'⁴` (`vg_ghash_pclmul`'s code, in SSE). -/
 def powSse : List Instr :=
   Gcm.X86_64.Pclmul.const .xmm0 revMask ++ Gcm.X86_64.Pclmul.const .xmm1 poly ++
-  [.movdquLoad .xmm7 (at_ .r13 240), .xop (.bin .pshufb .xmm7 .xmm0)] ++ hInv ++ pows
+  ([.movdquLoad .xmm7 (at_ .r13 240), .xop (.bin .pshufb .xmm7 .xmm0)] : List Instr) ++ hInv ++ pows
 
 /-- `H'⁴`, `H'³`, `H'²`, `H'` in the lanes of `zmm8`, stored at the table's
 start (`r11`), and the mask and the reduction constant in every lane of
@@ -145,17 +145,17 @@ one 4, 8 or 16 below it (`StitchZ.powLoad`), as far as needed. -/
 def powMore : Prog isa :=
   .seq (.block [.alu .cmp .rax (imm 5)])
     (.ite .b (.block [])
-      (.seq (.block ([.vbroadcasti32x4 .xmm12 (at_ .r11 0)] ++ Gcm.X86_64.StitchZ.powLoad 64 0 ++
-          [.alu .cmp .rax (imm 9)]))
+      (.seq (.block (([.vbroadcasti32x4 .xmm12 (at_ .r11 0)] : List Instr) ++ Gcm.X86_64.StitchZ.powLoad 64 0 ++
+          ([.alu .cmp .rax (imm 9)] : List Instr)))
         (.ite .b (.block [])
-          (.seq (.block ([.vbroadcasti32x4 .xmm12 (at_ .r11 64)] ++ (List.range 2).flatMap (Gcm.X86_64.StitchZ.powLoad 128) ++
-              [.alu .cmp .rax (imm 17)]))
+          (.seq (.block (([.vbroadcasti32x4 .xmm12 (at_ .r11 64)] : List Instr) ++ (List.range 2).flatMap (Gcm.X86_64.StitchZ.powLoad 128) ++
+              ([.alu .cmp .rax (imm 17)] : List Instr)))
             (.ite .b (.block [])
               (.block (.vbroadcasti32x4 .xmm12 (at_ .r11 192) :: (List.range 4).flatMap (Gcm.X86_64.StitchZ.powLoad 256))))))))
 
 /-- The table of powers, at `W + tbO`. -/
 def powers : Prog isa :=
-  .seq (.block (powSse ++ ptr .r11 .r15 tbO ++ pow4 ++ [.mov .rax (.mem (at_ .r15 mpO))])) powMore
+  .seq (.block (powSse ++ ptr .r11 .r15 tbO ++ pow4 ++ ([.mov .rax (.mem (at_ .r15 mpO))] : List Instr))) powMore
 
 /-! ## The keystream -/
 
@@ -166,11 +166,11 @@ schedule, the number of rounds and the last round key's address in `rdi`,
 blocks: `Stitch.setupC` (which also loads `xmm2`, unused here), then the
 first half of `StitchZ.setupZ`. -/
 def ksSetup : List Instr :=
-  [.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO)), .mov .rdx (.reg .r14), .mov .rcx (.reg .r14)] ++
+  ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO)), .mov .rdx (.reg .r14), .mov .rcx (.reg .r14)] : List Instr) ++
   ptr .r8 .r15 kO ++ Gcm.X86_64.Stitch.setupC ++
-  [.vop (.vbin .vpaddd .l256 .xmm13 .xmm14 .xmm15), .zop (.vshufi32x4 .xmm14 .xmm14 .xmm13 0x44),
+  ([.vop (.vbin .vpaddd .l256 .xmm13 .xmm14 .xmm15), .zop (.vshufi32x4 .xmm14 .xmm14 .xmm13 0x44),
    .vop (.vbin .vpaddd .l256 .xmm15 .xmm15 .xmm15), .zop (.vshufi32x4 .xmm15 .xmm15 .xmm15 0x44),
-   .mov .r9 (.mem (at_ .r15 ncO)), .alu .add .r9 (imm 4), .shift .shr .r9 2]
+   .mov .r9 (.mem (at_ .r15 ncO)), .alu .add .r9 (imm 4), .shift .shr .r9 2] : List Instr)
 
 /-- Four keystream blocks, stored at `rdx`, then the next four counters. -/
 def ksBody : Prog isa :=
@@ -195,15 +195,15 @@ before the powers of its first group, `r9` the groups, and the products
 cleared. -/
 def ghSetup : List Instr :=
   ptr .rdx .r15 (gO - 128) ++
-  [.mov .r9 (.mem (at_ .r15 mpO)), .shift .shr .r9 2, .mov .r11 (.reg .r9), .shift .shl .r11 6,
+  ([.mov .r9 (.mem (at_ .r15 mpO)), .shift .shr .r9 2, .mov .r11 (.reg .r9), .shift .shl .r11 6,
    .alu .add .r11 (.reg .r15), .alu .add .r11 (imm (tbO - 192)),
    .zop (.zbin .vpxord .xmm8 .xmm8 .xmm8), .zop (.zbin .vpxord .xmm9 .xmm9 .xmm9),
-   .zop (.zbin .vpxord .xmm10 .xmm10 .xmm10)]
+   .zop (.zbin .vpxord .xmm10 .xmm10 .xmm10)] : List Instr)
 
 /-- A group of four blocks, byte-reversed, times its powers, added to the
 products (`StitchZ.ghLoad 2`, which adds rather than writes, without `Y`). -/
 def ghBody : List Instr :=
-  Gcm.X86_64.StitchZ.ghLoad 2 ++ [.alu .add .rdx (imm 64), .alu .sub .r11 (imm 64), .alu .sub .r9 (imm 1)]
+  Gcm.X86_64.StitchZ.ghLoad 2 ++ ([.alu .add .rdx (imm 64), .alu .sub .r11 (imm 64), .alu .sub .r9 (imm 1)] : List Instr)
 
 /-- The groups hashed, then the products reduced and added into `xmm2`
 (`StitchZ.fin`). -/
@@ -227,20 +227,20 @@ a time. -/
 def xorText (g : Bool) : Prog isa :=
   .seq (.block [.mov32 .r10 (imm 0), .mov .r8 (.reg .rcx), .shift .shr .r8 4, .shift .shl .r8 4, .alu .cmp .r8 (imm 0)])
   (.seq (.ite .e (.block [])
-      (.loop (.block ([.vmovdquLoad .l128 .xmm4 srcB, .vbinLoad .vpxor .l128 .xmm4 .xmm4 kB,
-          .vmovdquStore .l128 srcB .xmm4] ++
+      (.loop (.block (([.vmovdquLoad .l128 .xmm4 srcB, .vbinLoad .vpxor .l128 .xmm4 .xmm4 kB,
+          .vmovdquStore .l128 srcB .xmm4] : List Instr) ++
           (if g then [.vmovdquStore .l128 dstB .xmm4] else []) ++
-          [.alu .add .r10 (imm 16), .alu .cmp .r10 (.reg .r8)])) .ne))
+          ([.alu .add .r10 (imm 16), .alu .cmp .r10 (.reg .r8)] : List Instr))) .ne))
   (.seq (.block [.alu .cmp .r10 (.reg .rcx)])
     (.ite .e (.block [])
-      (.loop (.block ([.movzx8 .rax srcB, .movzx8 .r9 kB, .alu .xor .rax (.reg .r9), .store8 srcB .rax] ++
+      (.loop (.block (([.movzx8 .rax srcB, .movzx8 .r9 kB, .alu .xor .rax (.reg .r9), .store8 srcB .rax] : List Instr) ++
           (if g then [.store8 dstB .rax] else []) ++
-          [.alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)])) .ne))))
+          ([.alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)] : List Instr))) .ne))))
 
 /-- The arguments of `xorText`: the data, `K[1]`, the text's blocks in `G`
 and the length. -/
 def textArgs : List Instr :=
-  gText ++ [.mov .rsi (.mem (at_ .r15 dataO))] ++ ptr .rdx .r15 (kO + 16) ++ [.mov .rcx (.mem (at_ .r15 lenO))]
+  gText ++ ([.mov .rsi (.mem (at_ .r15 dataO))] : List Instr) ++ ptr .rdx .r15 (kO + 16) ++ ([.mov .rcx (.mem (at_ .r15 lenO))] : List Instr)
 
 /-! ## `seal` and `open` -/
 
@@ -263,7 +263,7 @@ def openChk : Prog isa :=
   .seq copyC
   (.seq (.block lens)
   (.seq ghash
-  (.seq (.block (tagK uO ++ [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))]))
+  (.seq (.block (tagK uO ++ ([.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))] : List Instr)))
   (.seq recv
   (.seq (cmp uO)
     (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)]))))))
@@ -288,7 +288,7 @@ def «seal» : Prog isa :=
 
 /-- `open` with the short path (`cond`), or else the other instances' body. -/
 def «open» : Prog isa :=
-  .seq (.block (oneEntry 40 ++ [.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx]))
+  .seq (.block (oneEntry 40 ++ ([.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx] : List Instr)))
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov32 .rax (imm 0)])
       (.seq cond (.ite .e

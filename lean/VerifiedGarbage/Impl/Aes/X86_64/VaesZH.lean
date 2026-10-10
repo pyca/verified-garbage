@@ -23,7 +23,7 @@ def loadKey (j : Nat) : Instr := .vbroadcasti32x4H (keyReg j) (at_ .rdi (16 * j)
 
 /-- `rsi` is the round count and `r10` points to the final key. -/
 def loadKeys : Prog isa :=
-  .seq (.block ((List.range 10).map loadKey ++ [.alu .cmp .rsi (.imm 10)]))
+  .seq (.block ((List.range 10).map loadKey ++ ([.alu .cmp .rsi (.imm 10)] : List Instr)))
     (.seq
       (.ite .e (.block [])
         (.seq (.block [loadKey 10, loadKey 11, .alu .cmp .rsi (.imm 12)])
@@ -39,10 +39,10 @@ def round (regs : List XReg) (j : Nat) : List Instr := keyOp (keyReg j) regs .va
 loading the round key again for each batch. -/
 def aes (regs : List XReg) (g : Nat → List Instr := fun _ => []) : Prog isa :=
   .seq (.block (keyOp (keyReg 0) regs .vpxord ++
-      (List.range 9).flatMap (fun j => round regs (j + 1) ++ g (j + 1)) ++ [.alu .cmp .rsi (.imm 10)]))
+      (List.range 9).flatMap (fun j => round regs (j + 1) ++ g (j + 1)) ++ ([.alu .cmp .rsi (.imm 10)] : List Instr)))
     (.seq
       (.ite .e (.block [])
-        (.seq (.block (round regs 10 ++ round regs 11 ++ [.alu .cmp .rsi (.imm 12)]))
+        (.seq (.block (round regs 10 ++ round regs 11 ++ ([.alu .cmp .rsi (.imm 12)] : List Instr)))
           (.ite .e (.block []) (.block (round regs 12 ++ round regs 13)))))
       (.block (keyOp .xmm31 regs .vaesenclast)))
 

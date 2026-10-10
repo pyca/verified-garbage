@@ -68,10 +68,10 @@ def whole (body : Prog isa) : Prog isa :=
 /-! ## `vg_aes_cbc_encrypt` -/
 
 /-- `Pⱼ ⊕ Cⱼ₋₁` in place, and the arguments of the call. -/
-def encPre : List Instr := [.mov .ebx (argOp 2)] ++ xor4 .esi .ebx .esi 0 0 0 ++ callArgs
+def encPre : List Instr := ([.mov .ebx (argOp 2)] : List Instr) ++ xor4 .esi .ebx .esi 0 0 0 ++ callArgs
 
 /-- The block copied to the chaining value, and on to the next block. -/
-def encPost : List Instr := [.mov .ebx (argOp 2)] ++ zero4 .ebx 0 ++ xor4 .ebx .esi .ebx 0 0 0 ++ advance
+def encPost : List Instr := ([.mov .ebx (argOp 2)] : List Instr) ++ zero4 .ebx 0 ++ xor4 .ebx .esi .ebx 0 0 0 ++ advance
 
 /-- One block: `Pⱼ ⊕ Cⱼ₋₁`, enciphered, and the result the chaining value. -/
 def encBody (b : Blocks) : Prog isa := .seq (.block encPre) (.seq (blkCall b) (.block encPost))
@@ -81,12 +81,12 @@ def encrypt (b : Blocks) : Prog isa := whole (encBody b)
 /-! ## `vg_aes_cbc_decrypt` -/
 
 /-- `Cⱼ` saved in the scratch buffer, and the arguments of the call. -/
-def decPre : List Instr := [.mov .ebp (argOp 5)] ++ zero4 .ebp cOff ++ xor4 .ebp .esi .ebp cOff 0 cOff ++ callArgs
+def decPre : List Instr := ([.mov .ebp (argOp 5)] : List Instr) ++ zero4 .ebp cOff ++ xor4 .ebp .esi .ebp cOff 0 cOff ++ callArgs
 
 /-- `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁` in place, the saved `Cⱼ` copied to the chaining
 value, and on to the next block. -/
 def decPost : List Instr :=
-  [.mov .ebx (argOp 2)] ++ xor4 .esi .ebx .esi 0 0 0 ++ [.mov .ebp (argOp 5)] ++ zero4 .ebx 0 ++
+  ([.mov .ebx (argOp 2)] : List Instr) ++ xor4 .esi .ebx .esi 0 0 0 ++ ([.mov .ebp (argOp 5)] : List Instr) ++ zero4 .ebx 0 ++
     xor4 .ebx .ebp .ebx 0 cOff 0 ++ advance
 
 /-- One block: `Cⱼ` saved, deciphered, XORed with `Cⱼ₋₁`, and the saved `Cⱼ`

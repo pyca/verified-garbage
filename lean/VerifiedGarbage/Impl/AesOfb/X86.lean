@@ -35,7 +35,7 @@ def ivArgs : List Instr :=
   [.mov .eax (argOp 0), .mov .ecx (argOp 1), .mov .ebx (argOp 2), .mov .edi (.imm 1), .mov .ebp (argOp 5)]
 
 /-- The output block XORed into the data block, and on to the next block. -/
-def post : List Instr := [.mov .ebx (argOp 2)] ++ xor4 .esi .ebx .esi 0 0 0 ++ advance
+def post : List Instr := ([.mov .ebx (argOp 2)] : List Instr) ++ xor4 .esi .ebx .esi 0 0 0 ++ advance
 
 /-- One block: the output block `Oⱼ = CIPH_K(Oⱼ₋₁)` in place, XORed into the
 data block. -/

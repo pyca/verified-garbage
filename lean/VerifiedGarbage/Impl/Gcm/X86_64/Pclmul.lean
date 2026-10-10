@@ -79,9 +79,9 @@ def fold : List Instr :=
 
 /-- The product, reduced, into `d`. -/
 def reduce (d : XReg) : List Instr :=
-  [.xop (.bin .movdqa .xmm11 .xmm9), .xop (.shift .psrldq .xmm11 8), .xop (.bin .pxor .xmm10 .xmm11),
-   .xop (.shift .pslldq .xmm9 8), .xop (.bin .pxor .xmm8 .xmm9)] ++ fold ++ fold ++
-  [.xop (.bin .movdqa d .xmm10), .xop (.bin .pxor d .xmm8)]
+  ([.xop (.bin .movdqa .xmm11 .xmm9), .xop (.shift .psrldq .xmm11 8), .xop (.bin .pxor .xmm10 .xmm11),
+   .xop (.shift .pslldq .xmm9 8), .xop (.bin .pxor .xmm8 .xmm9)] : List Instr) ++ fold ++ fold ++
+  ([.xop (.bin .movdqa d .xmm10), .xop (.bin .pxor d .xmm8)] : List Instr)
 
 /-- `d ← mul(a, b)`. -/
 def mul (d a b : XReg) : List Instr := zero ++ acc a b ++ reduce d
@@ -93,18 +93,18 @@ def load (j : Nat) : List Instr :=
 /-- `H' = H · x⁻¹` into `xmm3`, from `H` in `xmm7`. -/
 def hInv : List Instr :=
   const .xmm13 xInv ++
-  [.movImm64 .rax 0xffffffffffffffff, .xop (.movq .xmm14 .rax), .xop (.bin .punpcklqdq .xmm14 .xmm14),
+  ([.movImm64 .rax 0xffffffffffffffff, .xop (.movq .xmm14 .rax), .xop (.bin .punpcklqdq .xmm14 .xmm14),
    .xop (.bin .movdqa .xmm3 .xmm7), .xop (.shift .psllq .xmm3 1),
    .xop (.bin .movdqa .xmm11 .xmm7), .xop (.shift .psrlq .xmm11 63), .xop (.shift .pslldq .xmm11 8),
    .xop (.bin .por .xmm3 .xmm11),
    .xop (.pshufd .xmm11 .xmm7 0xff), .xop (.shift .psrld .xmm11 31), .xop (.bin .paddd .xmm11 .xmm14),
-   .xop (.bin .pandn .xmm11 .xmm13), .xop (.bin .pxor .xmm3 .xmm11)]
+   .xop (.bin .pandn .xmm11 .xmm13), .xop (.bin .pxor .xmm3 .xmm11)] : List Instr)
 
 /-- The constants, `H'` into `xmm3`, `Y` into `xmm2`, and `cmp rcx, 4`. -/
 def prologue : List Instr :=
   const .xmm0 revMask ++ const .xmm1 poly ++
-  [.movdquLoad .xmm7 (at_ .rdi 0), .xop (.bin .pshufb .xmm7 .xmm0)] ++ hInv ++
-  [.movdquLoad .xmm2 (at_ .rsi 0), .xop (.bin .pshufb .xmm2 .xmm0), .alu .cmp .rcx (.imm 4)]
+  ([.movdquLoad .xmm7 (at_ .rdi 0), .xop (.bin .pshufb .xmm7 .xmm0)] : List Instr) ++ hInv ++
+  ([.movdquLoad .xmm2 (at_ .rsi 0), .xop (.bin .pshufb .xmm2 .xmm0), .alu .cmp .rcx (.imm 4)] : List Instr)
 
 /-- `H'²`, then `H'³` and `H'⁴`, both from `H'²`, into `xmm4`–`xmm6`. -/
 def pows : List Instr := mul .xmm4 .xmm3 .xmm3 ++ mul .xmm5 .xmm4 .xmm3 ++ mul .xmm6 .xmm4 .xmm4
@@ -116,14 +116,14 @@ def withPows (rest : Prog isa) : Prog isa :=
 
 /-- Four blocks. -/
 def body4 : List Instr :=
-  zero ++ load 0 ++ [.xop (.bin .pxor .xmm7 .xmm2)] ++ acc .xmm7 .xmm6 ++
+  zero ++ load 0 ++ ([.xop (.bin .pxor .xmm7 .xmm2)] : List Instr) ++ acc .xmm7 .xmm6 ++
   load 1 ++ acc .xmm7 .xmm5 ++ load 2 ++ acc .xmm7 .xmm4 ++ load 3 ++ acc .xmm7 .xmm3 ++
-  reduce .xmm2 ++ [.alu .add .rdx (.imm 64), .alu .sub .rcx (.imm 4), .alu .cmp .rcx (.imm 4)]
+  reduce .xmm2 ++ ([.alu .add .rdx (.imm 64), .alu .sub .rcx (.imm 4), .alu .cmp .rcx (.imm 4)] : List Instr)
 
 /-- One block. -/
 def body1 : List Instr :=
-  zero ++ load 0 ++ [.xop (.bin .pxor .xmm7 .xmm2)] ++ acc .xmm7 .xmm3 ++
-  reduce .xmm2 ++ [.alu .add .rdx (.imm 16), .alu .sub .rcx (.imm 1)]
+  zero ++ load 0 ++ ([.xop (.bin .pxor .xmm7 .xmm2)] : List Instr) ++ acc .xmm7 .xmm3 ++
+  reduce .xmm2 ++ ([.alu .add .rdx (.imm 16), .alu .sub .rcx (.imm 1)] : List Instr)
 
 def epilogue : List Instr :=
   [.xop (.bin .pshufb .xmm2 .xmm0), .movdquStore (at_ .rsi 0) .xmm2]

@@ -31,8 +31,8 @@ open VG.Impl.Gcm.X86_64.Vpclmul (zero)
 `base + 32 (j + i)` (`Vaes.xorDataK` out of place). -/
 def xorDataKTo (t : XReg) (base idx : Reg) : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => [.vmovdquLoad .l256 t (atIx base idx (32 * j)), .vop (.vbin .vpxor .l256 b b t),
-      .vmovdquStore .l256 (at_ base (32 * j)) b] ++ xorDataKTo t base idx bs (j + 1)
+  | b :: bs, j => ([.vmovdquLoad .l256 t (atIx base idx (32 * j)), .vop (.vbin .vpxor .l256 b b t),
+      .vmovdquStore .l256 (at_ base (32 * j)) b] : List Instr) ++ xorDataKTo t base idx bs (j + 1)
 
 /-- `Stitch.setup`, out of place. -/
 def setup : List Instr := setupG ++ storesK .r11 pregs 0 ++ setupCTo

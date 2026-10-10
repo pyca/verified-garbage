@@ -57,14 +57,14 @@ def blocksRestore : List Instr := [.mov .esi (.mem (at_ .edx 0)), .mov .edi (.me
 def blocks6 (f : List XReg → Prog isa) : Prog isa :=
   .seq (.block (loadData regs6 0))
     (.seq (f regs6)
-      (.block (storeData regs6 0 ++ [.alu .add .esi (.imm 96), .alu .sub .edi (.imm 6),
-        .alu .cmp .edi (.imm 6)])))
+      (.block (storeData regs6 0 ++ ([.alu .add .esi (.imm 96), .alu .sub .edi (.imm 6),
+        .alu .cmp .edi (.imm 6)] : List Instr))))
 
 /-- One block through `f`. -/
 def blocks1 (f : List XReg → Prog isa) : Prog isa :=
   .seq (.block (loadData [.xmm0] 0))
     (.seq (f [.xmm0])
-      (.block (storeData [.xmm0] 0 ++ [.alu .add .esi (.imm 16), .alu .sub .edi (.imm 1)])))
+      (.block (storeData [.xmm0] 0 ++ ([.alu .add .esi (.imm 16), .alu .sub .edi (.imm 1)] : List Instr))))
 
 /-- The blocks, six and then one at a time, after `cmp edi, 6`. -/
 def blocksTail (f : List XReg → Prog isa) : Prog isa :=
@@ -86,9 +86,9 @@ def copyLast (nr : Nat) : List Instr :=
 /-- Round keys 1 … `Nr − 1` through `aesimc`, and the last round key, for
 `rounds` (10, 12 or 14) in `ecx`. -/
 def imcKeys : Prog isa :=
-  .seq (.block ((List.range 9).flatMap (fun j => imcKey (j + 1)) ++ [.alu .cmp .ecx (.imm 10)]))
+  .seq (.block ((List.range 9).flatMap (fun j => imcKey (j + 1)) ++ ([.alu .cmp .ecx (.imm 10)] : List Instr)))
     (.ite .e (.block (copyLast 10))
-      (.seq (.block (imcKey 10 ++ imcKey 11 ++ [.alu .cmp .ecx (.imm 12)]))
+      (.seq (.block (imcKey 10 ++ imcKey 11 ++ ([.alu .cmp .ecx (.imm 12)] : List Instr)))
         (.ite .e (.block (copyLast 12)) (.block (imcKey 12 ++ imcKey 13 ++ copyLast 14)))))
 
 /-- `op` with the round key at `m` into each block register, through `xmm6`. -/
@@ -103,7 +103,7 @@ def dround (regs : List XReg) (j : Nat) : List Instr := keyOpAt regs .aesdec (at
 key schedule at `eax`, and round keys 1 … `Nr − 1` through `aesimc` and the
 last round key in the scratch buffer at `edx`. -/
 def aesDec (regs : List XReg) : Prog isa :=
-  .seq (.block (keyOpAt regs .pxor (at_ .edx 224) ++ [.alu .cmp .ecx (.imm 10)]))
+  .seq (.block (keyOpAt regs .pxor (at_ .edx 224) ++ ([.alu .cmp .ecx (.imm 10)] : List Instr)))
     (.seq
       (.ite .e (.block [])
         (.seq (.block [.alu .cmp .ecx (.imm 12)])

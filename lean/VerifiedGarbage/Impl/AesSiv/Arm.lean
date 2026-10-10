@@ -174,14 +174,14 @@ bytes (none for the empty string), and the arguments of
 `vg_cmac_aes_update(schedule = r0, rounds = r1, state = r2, data = r3, n = [sp], scratch = [sp + 4])`
 for them. -/
 def cmacPre (st : Nat) : Prog isa :=
-  .seq (.block (zero16 st ++ [.mov .r4 (imm 0), .cmp .r5 (imm 0)]))
+  .seq (.block (zero16 st ++ ([.mov .r4 (imm 0), .cmp .r5 (imm 0)] : List Instr)))
     (.seq (.ite .eq (.block [])
         (.block [.dp .sub .r4 .r5 (imm 1), .mov .r4 (.shifted .r4 .lsr 4), .mov .r4 (.shifted .r4 .lsl 4)]))
       (.block (macArgs st ++ [mov .r3 .r6, .mov .r12 (.shifted .r4 .lsr 4)])))
 
 /-- The arguments of `vg_cmac_aes_finalize` for the last bytes. -/
 def cmacMid (st : Nat) : List Instr :=
-  macArgs st ++ [.dp .add .r3 .r6 (.reg .r4), .dp .sub .r12 .r5 (.reg .r4)]
+  macArgs st ++ ([.dp .add .r3 .r6 (.reg .r4), .dp .sub .r12 .r5 (.reg .r4)] : List Instr)
 
 /-- `AES-CMAC(K1, S)` into the 16 bytes at `W + st`. -/
 def cmacOf (st : Nat) : Prog isa :=
@@ -195,7 +195,7 @@ it. -/
 def shortTail : Prog isa :=
   .seq (.block (zero16 tailOff ++ [mov .r1 .r6, addI .r2 .r11 tailOff, mov .r3 .r5, .cmp .r5 (imm 0)]))
     (.seq (.ite .eq (.block []) copyLoop)
-      (.block ([.dp .add .r2 .r11 (.reg .r5), .mov .r12 (imm 0x80), .strb .r12 .r2 tailOff, mov .r6 .r11] ++
+      (.block (([.dp .add .r2 .r11 (.reg .r5), .mov .r12 (imm 0x80), .strb .r12 .r2 tailOff, mov .r6 .r11] : List Instr) ++
         Impl.CmacAes.Arm.dbl dOff dbOff ++ xor4 .r11 .r11 .r11 tailOff dbOff tailOff)))
 
 /-- `16 k` in `r4`: `((L − 1) >> 4) − 1` shifted left by 4, or 0 if that is
@@ -210,7 +210,7 @@ tail, and `D` XORed into its last 16 bytes, at `W + 16 + (L − 16 k)`. -/
 def tailCopy : Prog isa :=
   .seq (.block [.dp .add .r1 .r6 (.reg .r4), addI .r2 .r11 tailOff, .dp .sub .r3 .r5 (.reg .r4)])
     (.seq copyLoop
-      (.block ([.dp .sub .r0 .r5 (.reg .r4), .dp .add .r0 .r11 (.reg .r0)] ++ xor4 .r0 .r11 .r0 16 dOff 16)))
+      (.block (([.dp .sub .r0 .r5 (.reg .r4), .dp .add .r0 .r11 (.reg .r0)] : List Instr) ++ xor4 .r0 .r11 .r0 16 dOff 16)))
 
 /-- The long case, `L ≥ 16`: `16 k` in `r4`, and the tail. -/
 def longTail : Prog isa := .seq kBlock tailCopy
@@ -296,7 +296,7 @@ def ctrTail : Prog isa :=
 /-- The data (`len` bytes at `data`, into `r6` and `r5`) XORed with the
 keystream of CTR under `K2` from the counter `Q` the IV at `W + src` gives. -/
 def ctr (src : Nat) : Prog isa :=
-  .seq (.block (counter src ++ [.ldrSp .r6 0, .ldrSp .r5 4]))
+  .seq (.block (counter src ++ ([.ldrSp .r6 0, .ldrSp .r5 4] : List Instr)))
     (.seq ctrWhole ctrTail)
 
 /-! ## Comparing the IVs and masking the data -/
@@ -308,11 +308,11 @@ def xorW (d : Reg) (k : Nat) : List Instr :=
 /-- `r0 = 1` if the IVs at `W` and `W + 112` are equal, else 0, without a
 branch: `a` the OR of the XORs of their words, `1 − ((a | (0 − a)) >> 31)`. -/
 def compare : List Instr :=
-  xorW .r0 0 ++ xorW .r1 1 ++ [.dp .orr .r0 .r0 (.reg .r1)] ++ xorW .r1 2 ++
-    [.dp .orr .r0 .r0 (.reg .r1)] ++ xorW .r1 3 ++
-    [.dp .orr .r0 .r0 (.reg .r1), .mov .r1 (imm 0), .dp .sub .r1 .r1 (.reg .r0),
+  xorW .r0 0 ++ xorW .r1 1 ++ ([.dp .orr .r0 .r0 (.reg .r1)] : List Instr) ++ xorW .r1 2 ++
+    ([.dp .orr .r0 .r0 (.reg .r1)] : List Instr) ++ xorW .r1 3 ++
+    ([.dp .orr .r0 .r0 (.reg .r1), .mov .r1 (imm 0), .dp .sub .r1 .r1 (.reg .r0),
      .dp .orr .r0 .r0 (.reg .r1), .mov .r0 (.shifted .r0 .lsr 31), .mov .r1 (imm 1),
-     .dp .sub .r0 .r1 (.reg .r0)]
+     .dp .sub .r0 .r1 (.reg .r0)] : List Instr)
 
 /-- Every byte of the data (`r5` of them, at `r6`) ANDed with the mask
 `0 − r0`. -/
@@ -361,6 +361,6 @@ def decrypt : Prog isa :=
   .seq encS2v
     (.seq (.block sivIn) (.seq (ctr 0)
       (.seq (.block [.ldrSp .r6 0, .ldrSp .r5 4])
-        (.seq (finish tOff) (.seq (.block (compare ++ [.ldrSp .r6 0, .ldrSp .r5 4])) (.seq maskData (.block restore)))))))
+        (.seq (finish tOff) (.seq (.block (compare ++ ([.ldrSp .r6 0, .ldrSp .r5 4] : List Instr))) (.seq maskData (.block restore)))))))
 
 end VG.Impl.AesSiv.Arm

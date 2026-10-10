@@ -154,6 +154,6 @@ def compile (sb : Reg) (gs : List Gate) (ins outs : List (Nat × Reg)) (free : L
     { regs := ins.map (fun (v, r) => (r, v)), slots := [], free := free, freeSlots := spill, code := [] }
   let a := Alloc.gates sb ones outs (Rest.ofGates gs) init gs
   let a := Alloc.place sb a outs
-  [.movImm64 r (BitVec.allOnes 64), .store (slotAt sb ones) r] ++ a.code.reverse
+  ([.movImm64 r (BitVec.allOnes 64), .store (slotAt sb ones) r] : List Instr) ++ a.code.reverse
 
 end VG.Impl.Aes.X86_64

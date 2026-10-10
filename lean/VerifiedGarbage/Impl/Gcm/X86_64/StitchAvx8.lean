@@ -41,9 +41,9 @@ def fold : List Instr :=
    .vop (.vbin .vpxor .l128 .xmm8 .xmm8 .xmm11)]
 
 def reduce (d : XReg) : List Instr :=
-  [.vop (.vshift .psrldq .l128 .xmm11 .xmm9 8), .vop (.vbin .vpxor .l128 .xmm10 .xmm10 .xmm11),
-   .vop (.vshift .pslldq .l128 .xmm9 .xmm9 8), .vop (.vbin .vpxor .l128 .xmm8 .xmm8 .xmm9)] ++
-  fold ++ fold ++ [.vop (.vbin .vpxor .l128 d .xmm10 .xmm8)]
+  ([.vop (.vshift .psrldq .l128 .xmm11 .xmm9 8), .vop (.vbin .vpxor .l128 .xmm10 .xmm10 .xmm11),
+   .vop (.vshift .pslldq .l128 .xmm9 .xmm9 8), .vop (.vbin .vpxor .l128 .xmm8 .xmm8 .xmm9)] : List Instr) ++
+  fold ++ fold ++ ([.vop (.vbin .vpxor .l128 d .xmm10 .xmm8)] : List Instr)
 
 def mul (d a b : XReg) : List Instr := zero ++ acc a b ++ reduce d
 
@@ -54,14 +54,14 @@ def const (x : XReg) (c : BitVec 128) : List Instr :=
 
 def hInv : List Instr :=
   const .xmm13 xInv ++
-  [.movImm64 .rax 0xffffffffffffffff, .vop (.vmovq .xmm14 .rax),
+  ([.movImm64 .rax 0xffffffffffffffff, .vop (.vmovq .xmm14 .rax),
    .vop (.vbin .vpunpcklqdq .l128 .xmm14 .xmm14 .xmm14),
    .vop (.vshift .psllq .l128 .xmm3 .xmm7 1),
    .vop (.vshift .psrlq .l128 .xmm11 .xmm7 63), .vop (.vshift .pslldq .l128 .xmm11 .xmm11 8),
    .vop (.vbin .vpor .l128 .xmm3 .xmm3 .xmm11),
    .vop (.vpshufd .l128 .xmm11 .xmm7 0xff), .vop (.vshift .psrld .l128 .xmm11 .xmm11 31),
    .vop (.vbin .vpaddd .l128 .xmm11 .xmm11 .xmm14),
-   .vop (.vbin .vpandn .l128 .xmm11 .xmm11 .xmm13), .vop (.vbin .vpxor .l128 .xmm3 .xmm3 .xmm11)]
+   .vop (.vbin .vpandn .l128 .xmm11 .xmm11 .xmm13), .vop (.vbin .vpxor .l128 .xmm3 .xmm3 .xmm11)] : List Instr)
 
 def preg : Nat → XReg
   | 0 => .xmm3 | 1 => .xmm4 | 2 => .xmm5 | 3 => .xmm6 | 4 => .xmm12 | 5 => .xmm13 | 6 => .xmm14
@@ -69,7 +69,7 @@ def preg : Nat → XReg
 
 def setupG : List Instr :=
   const .xmm0 revMask ++ const .xmm1 poly ++
-  [.vmovdquLoad .l128 .xmm7 (at_ .rdi 240), .vop (.vbin .vpshufb .l128 .xmm7 .xmm7 .xmm0)] ++ hInv ++
+  ([.vmovdquLoad .l128 .xmm7 (at_ .rdi 240), .vop (.vbin .vpshufb .l128 .xmm7 .xmm7 .xmm0)] : List Instr) ++ hInv ++
   mul .xmm4 .xmm3 .xmm3 ++ mul .xmm5 .xmm4 .xmm3 ++ mul .xmm6 .xmm4 .xmm4 ++ mul .xmm12 .xmm6 .xmm3 ++
   mul .xmm13 .xmm6 .xmm4 ++ mul .xmm14 .xmm6 .xmm5 ++ mul .xmm15 .xmm6 .xmm6
 
@@ -86,15 +86,15 @@ def prepCounter (i : Nat) : List Instr :=
    .store32 (at_ .r11 (652+16*i)) .rax]
 
 def initCounter : List Instr :=
-  [.store (at_ .r11 808) .rdx, .store (at_ .r11 800) .rsi, .mov .rsi (.reg .rax),
+  ([.store (at_ .r11 808) .rdx, .store (at_ .r11 800) .rsi, .mov .rsi (.reg .rax),
    .vmovdquLoad .l128 .xmm7 (at_ .rax 0),
-   .mov32 .r8 (.mem (at_ .rax 12)), .bswap32 .r8] ++
+   .mov32 .r8 (.mem (at_ .rax 12)), .bswap32 .r8] : List Instr) ++
   (List.range 8).map (fun i => .vmovdquStore .l128 (at_ .r11 (640+16*i)) .xmm7) ++
-  (List.range 8).flatMap prepCounter ++ [.alu32 .add .r8 (.imm 8)]
+  (List.range 8).flatMap prepCounter ++ ([.alu32 .add .r8 (.imm 8)] : List Instr)
 
 def setup : List Instr := setupG ++ lows 8 ++ setupC ++
-  [.vmovdquStore .l128 (at_ .r11 768) .xmm0,
-   .vmovdquStore .l128 (at_ .r11 784) .xmm1] ++ initCounter
+  ([.vmovdquStore .l128 (at_ .r11 768) .xmm0,
+   .vmovdquStore .l128 (at_ .r11 784) .xmm1] : List Instr) ++ initCounter
 
 def reduceFinal : List Instr :=
   [.vmovdquLoad .l128 .xmm1 (at_ .r11 784),
@@ -109,8 +109,8 @@ def reduceFinal : List Instr :=
 
 def xorData : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => [.vbinLoad .vpxor .l128 b b (at_ .rdx (16*j)),
-      .vmovdquStore .l128 (at_ .rdx (16*j)) b] ++ xorData bs (j+1)
+  | b :: bs, j => ([.vbinLoad .vpxor .l128 b b (at_ .rdx (16*j)),
+      .vmovdquStore .l128 (at_ .rdx (16*j)) b] : List Instr) ++ xorData bs (j+1)
 
 def aesFixed (nr : Nat) (regs : List XReg) (g : Nat → List Instr) : Prog isa :=
   .block (VG.Impl.Aes.X86_64.Vaes.keyOpL .l128 .xmm1 regs .vpxor (at_ .rdi 0) ++
@@ -121,11 +121,11 @@ def batch (nr n j : Nat) (g : Nat → List Instr) : Prog isa :=
   .seq (.block ((List.range n).map (fun i => .vmovdquLoad .l128 (aregs.getD i .xmm3) (at_ .r11 (640+16*i)))))
     (.seq (aesFixed nr (aregs.take n) (fun j => g j ++
        (if 1 ≤ j ∧ j ≤ 2 then (List.range 4).flatMap (fun i => prepCounter (4*(j-1)+i)) else [])))
-     (.block (xorData (aregs.take n) j ++ [.alu32 .add .r8 (.imm 8)])))
+     (.block (xorData (aregs.take n) j ++ ([.alu32 .add .r8 (.imm 8)] : List Instr))))
 
 def finish : List Instr :=
-  [.mov .rax (.reg .rsi), .alu32 .sub .r8 (.imm 8), .bswap32 .r8,
-   .store32 (at_ .rax 12) .r8, .vmovdquLoad .l128 .xmm0 (at_ .r11 768)] ++ Stitch.storeY ++ [.mov .r8 (.mem (at_ .r11 808)), .mov .rsi (.mem (at_ .r11 800))]
+  ([.mov .rax (.reg .rsi), .alu32 .sub .r8 (.imm 8), .bswap32 .r8,
+   .store32 (at_ .rax 12) .r8, .vmovdquLoad .l128 .xmm0 (at_ .r11 768)] : List Instr) ++ Stitch.storeY ++ ([.mov .r8 (.mem (at_ .r11 808)), .mov .rsi (.mem (at_ .r11 800))] : List Instr)
 
 def prepare (k : Nat) : List Instr :=
   [.mov .rax (.mem (at_ .rdx (16*k+8))), .bswap .rax,
@@ -141,8 +141,8 @@ def accInit (a b : XReg) : List Instr :=
    .vop (.vbin .vpxor .l128 .xmm9 .xmm9 .xmm11)]
 
 def gh8 (k : Nat) : List Instr :=
-  [.vmovdquLoad .l128 .xmm12 (at_ .r11 (16*(8+k%8))),
-   .vmovdquLoad .l128 .xmm7 (at_ .r11 (512+16*(k%8)))] ++
+  ([.vmovdquLoad .l128 .xmm12 (at_ .r11 (16*(8+k%8))),
+   .vmovdquLoad .l128 .xmm7 (at_ .r11 (512+16*(k%8)))] : List Instr) ++
    (if k % 8 = 0 then [.vop (.vbin .vpxor .l128 .xmm7 .xmm7 .xmm2)] else []) ++ (if k%8 = 1 then accInit .xmm7 .xmm12 else acc .xmm7 .xmm12)
 
 def q8 (nr : Nat) (more : Bool) (j : Nat) : List Instr :=
@@ -178,7 +178,7 @@ def encBody8 (nr : Nat) : Prog isa :=
 
 def encFor (nr : Nat) : Prog isa :=
   .seq (.block setup) (.seq (batch nr 8 0 (fun _ => [])) (.seq (batch nr 8 8 (fun _ => []))
-    (.seq (.block ((List.range 8).flatMap prepare ++ [.alu .cmp .r9 (.imm 24)]))
+    (.seq (.block ((List.range 8).flatMap prepare ++ ([.alu .cmp .r9 (.imm 24)] : List Instr)))
       (.seq (.ite .b (.block []) (.loop (encBody8 nr) .ae))
         (.block (hash8 ++ (List.range 8).flatMap (fun i => prepare (8+i)) ++ hash8 ++ finish))))))
 

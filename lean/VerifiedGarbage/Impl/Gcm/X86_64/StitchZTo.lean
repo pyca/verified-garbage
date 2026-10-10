@@ -34,8 +34,8 @@ def atIx (base idx : Reg) (d : Nat) : MemOp := { base, index := some idx, disp :
 `base + 64 (j + i)` (`VaesZ.xorDataZ` out of place). -/
 def xorDataZTo (t : XReg) (base idx : Reg) : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => [.vmovdqu32Load t (atIx base idx (64 * j)), .zop (.zbin .vpxord b b t),
-      .vmovdqu32Store (at_ base (64 * j)) b] ++ xorDataZTo t base idx bs (j + 1)
+  | b :: bs, j => ([.vmovdqu32Load t (atIx base idx (64 * j)), .zop (.zbin .vpxord b b t),
+      .vmovdqu32Store (at_ base (64 * j)) b] : List Instr) ++ xorDataZTo t base idx bs (j + 1)
 
 /-- `Y`, the four counters, the increment, `src - dst` in `r8`, `dst` in
 `rdx` and the last round key's address in `r10`. -/
