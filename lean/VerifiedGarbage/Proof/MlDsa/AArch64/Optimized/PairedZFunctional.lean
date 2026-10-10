@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZEntryFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowEntryState
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZAccess
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZAllFields
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZReturnSemantic

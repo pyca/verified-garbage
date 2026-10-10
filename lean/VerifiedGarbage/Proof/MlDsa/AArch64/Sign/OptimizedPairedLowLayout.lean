@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCallTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 open VG VG.AArch64 VG.Spec.MlDsa

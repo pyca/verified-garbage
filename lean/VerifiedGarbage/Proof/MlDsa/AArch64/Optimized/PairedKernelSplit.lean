@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstKernel
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalReturn
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowReturn
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMiddle
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
