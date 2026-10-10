@@ -52,7 +52,7 @@ def expandKeySat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 16⟩]
-  wr := [⟨0x2000, 128⟩, ⟨0x3000, 8 * 394⟩]
+  wr := [⟨0x2000, 128⟩, ⟨0x3000, 8 * 396⟩]
 
 theorem expandKey_verified :
     Verified AArch64.target expandKey (Proof.Sm4.expandKeyScratchContract AArch64.abi slots) :=
@@ -71,17 +71,17 @@ def expandKeyFrameSat : State where
   rd := [⟨0x1000, 16⟩]
   wr := [⟨0x2000, 128⟩]
 
-theorem expandKeyFrameSat_pre : ∃ s, (Spec.Sm4.expandKeyContract AArch64.abi 3152).pre s := by
+theorem expandKeyFrameSat_pre : ∃ s, (Spec.Sm4.expandKeyContract AArch64.abi 3168).pre s := by
   implies_sat [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, AArch64.abi, AArch64.argRegs]
     [expandKeyFrameSat] using expandKeyFrameSat
 
 /-- Key expansion, with its working space on the stack. -/
 theorem expandKey_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3152 .x2 394 expandKey)
-      (Spec.Sm4.expandKeyContract AArch64.abi 3152) :=
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3168 .x2 396 expandKey)
+      (Spec.Sm4.expandKeyContract AArch64.abi 3168) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.Sm4.expandKeySig) (nm := "scratch") (e := .u64)
-    (n := 394) (post := Proof.Sm4.expandKeyPost AArch64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 3152) expandKey_verified
+    (n := 396) (post := Proof.Sm4.expandKeyPost AArch64.abi.ptrBits) (wa := false) (stack := 0)
+    (bytes := 3168) expandKey_verified
     (by decide) (by decide) (by decide) (Proof.Sm4.expandKeyPostOut_local _) expandKeyFrameSat_pre
 
 end VG.Proof.Sm4.AArch64

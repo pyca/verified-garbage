@@ -1,28 +1,28 @@
-import VerifiedGarbage.Proof.Sm4.X86_64.GroupStep
-import VerifiedGarbage.Proof.Modes.X86_64.Core
-import VerifiedGarbage.Impl.Sm4.X86_64.Ctr
+import VerifiedGarbage.Proof.Sm4.AArch64.Group
+import VerifiedGarbage.Proof.Modes.AArch64.Core
+import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
 import VerifiedGarbage.Proof.Sm4.CtrCipher
 
 /-!
-# SM4's core for the modes on x86-64
+# SM4's core for the modes on AArch64
 
-`modeCoreSpec`: SM4's core (`Impl.Sm4.X86_64.modeCore`) meets what the
-modes need of a core (`Proof.Modes.X86_64.CoreSpec`), with the key a
+`modeCoreSpec`: SM4's core (`Impl.Sm4.AArch64.modeCore`) meets what the
+modes need of a core (`Proof.Modes.AArch64.CoreSpec`), with the key a
 schedule, its cipher `Spec.Sm4.cipher`, and the key ready when the masks
 and the table of round keys in encryption order are in the scratch buffer.
 -/
 
-namespace VG.Proof.Sm4.X86_64
+namespace VG.Proof.Sm4.AArch64
 
-open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Sm4.X86_64
-open VG.Impl.Aes.X86_64 (sb t0)
-open VG.Proof.Modes.X86_64 (ScrIn coreRegion bufRegion bufAddr Layout CoreSpec)
+open VG VG.AArch64 VG.AArch64.Straight VG.Impl.Sm4.AArch64
+open VG.Impl.Aes.AArch64 (sb t0)
+open VG.Proof.Modes.AArch64 (ScrIn coreRegion bufRegion bufAddr Layout CoreSpec)
 open VG.Proof.Sm4 (scheduleAt_congr bytesAt_eq_blockAt cipher_bytes)
 open VG.Spec.Aes (bytesAt)
 
-/-- The schedule at `rdi`, outside the regions `rs`. -/
+/-- The schedule at `x0`, outside the regions `rs`. -/
 def KeyArgs (s : State) (rs : List Region) (k : Spec.Sm4.Schedule) : Prop :=
-  ∃ p : Addr, s.gpr .rdi = p ∧ k = Spec.Sm4.scheduleAt s.mem p ∧ (⟨p, 128⟩ : Region) ∈ s.rd ∧
+  ∃ p : Addr, s.gpr .x0 = p ∧ k = Spec.Sm4.scheduleAt s.mem p ∧ (⟨p, 128⟩ : Region) ∈ s.rd ∧
     p.toNat + 128 ≤ 2 ^ 64 ∧ ∀ r ∈ rs, Region.Disjoint ⟨p, 128⟩ r
 
 /-- The masks and the table of round keys in encryption order. -/
@@ -40,8 +40,9 @@ theorem word_disjoint {B : Addr} {d : Nat} (hd : d + 8 ≤ 8 * tableEnd)
   rcases hr with h | h
   · exact h.sub_left (VG.Offset.sub_base B hd)
   · refine Region.Disjoint.sub_right ?_ h
-    exact VG.Offset.disjoint B (by simp only [modeCore, tailSlot_eq] at hout ⊢; omega)
-      (by simp only [tableEnd_eq] at hd; omega) (by simp only [modeCore, tailSlot_eq]; omega)
+    show Region.Disjoint ⟨B + BitVec.ofNat 64 d, 8⟩ ⟨B + BitVec.ofNat 64 (8 * tailSlot), 256⟩
+    exact VG.Offset.disjoint B (by simp only [tailSlot_eq] at hout ⊢; omega)
+      (by simp only [tableEnd_eq] at hd; omega) (by simp only [tailSlot_eq]; decide)
 
 theorem readyAt_frame {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {rs : List Region} (h : ReadyAt m B k)
     (hf : Frame rs m m')
@@ -61,35 +62,32 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.Sm4.Schedule} 
     (hr : ∀ r ∈ modeCore.keyRegs, s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd) (_ : s'.wr = s.wr)
     (hf : Frame rs s.mem s'.mem) : KeyArgs s' rs k := by
   obtain ⟨p, hp, hk, hin, hfit, hdis⟩ := h
-  refine ⟨p, by rw [hr .rdi List.mem_cons_self, hp], ?_, by rw [hrd]; exact hin, hfit, hdis⟩
+  refine ⟨p, by rw [hr .x0 List.mem_cons_self, hp], ?_, by rw [hrd]; exact hin, hfit, hdis⟩
   rw [hk]
   exact (scheduleAt_congr fun i hi => hf.bytes (R := ⟨p, 128⟩) hdis (by show 128 ≤ 2 ^ 64; omega) hi).symm
 
 theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
     (hs : ScrIn s B modeCore.total) (hR : (⟨B, 8 * modeCore.total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
-    WP isa modeCore.prepare s fun s' => ReadyAt s'.mem B k ∧ s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
+    WP isa modeCore.prepare s fun s' => ReadyAt s'.mem B k ∧ s'.gpr sb = B ∧
       s'.gpr modeCore.dataReg = s.gpr modeCore.dataReg ∧ s'.gpr modeCore.leftReg = s.gpr modeCore.leftReg ∧
       Frame [coreRegion modeCore B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨p, hp, rfl, hin, hfit, hdis⟩ := hk
   have hw : (⟨B, 8 * slots⟩ : Region) ∈ s.wr := hs.wr
-  obtain ⟨s₁, e₁, v₁, -, g₁, rd₁, wr₁, f₁⟩ := setMasks_ok (b := B) keyMasks hB hw
+  obtain ⟨s₁, e₁, v₁, -, g₁, rd₁, wr₁, f₁⟩ := setSlots_ok (b := B) keyMasks hB hw
     (fun kv hkv => by have := mask_lt hkv; rw [tableSlot_eq]; omega) (by decide)
   have hsep : Region.Disjoint ⟨p, 128⟩ ⟨B, 8 * slots⟩ := hdis _ hR
-  have hsch : Spec.Sm4.scheduleAt s₁.mem p = Spec.Sm4.scheduleAt s.mem p :=
-    scheduleAt_congr fun i hi => f₁.bytes (R := ⟨p, 128⟩) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact hsep.sub_right (Region.sub_prefix (by rw [tableSlot_eq, slots_eq]; omega))) (by show 128 ≤ 2 ^ 64; omega) hi
   have b₁ : s₁.gpr sb = B := by rw [g₁ _ (by decide), hB]
   have hpre : SchedPre s₁ B p := ⟨b₁, by rw [wr₁]; exact hw, by have := hs.fit; exact this,
     List.mem_append_left _ (by rw [rd₁]; exact hin), hfit, hsep⟩
+  have hsch : Spec.Sm4.scheduleAt s₁.mem p = Spec.Sm4.scheduleAt s.mem p :=
+    hpre.sched_eq' (n := tableSlot) (by rw [tableSlot_eq, slots_eq]; omega) f₁
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
   refine WP.mono (keys_wp .encrypt hpre (by rw [g₁ _ (by decide), hp]) v₁) fun s₂ k₂ => ?_
   have b₂ : s₂.gpr sb = B := k₂.pre.base
-  have keep : ∀ r, r ∉ sboxWrites → r ≠ .rsi → r ≠ .rdi → r ≠ t0 → s₂.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
-    rw [k₂.regs r h1 h2 h3, g₁ r h4]
-  refine ⟨⟨k₂.masks.at b₂, fun e he => ?_⟩, b₂, keep _ (by decide) (by decide) (by decide) (by decide),
-    keep _ (by decide) (by decide) (by decide) (by decide), keep _ (by decide) (by decide) (by decide) (by decide),
-    ?_, by rw [k₂.rd, rd₁], by rw [k₂.wr, wr₁]⟩
+  have keep : ∀ r, r ∉ layerWrites → r ≠ kp → r ≠ .x0 → r ≠ .x3 → r ≠ t0 → s₂.gpr r = s.gpr r :=
+    fun r h1 h2 h3 h4 h5 => by rw [k₂.regs r h1 h2 h3 h4, g₁ r h5]
+  refine ⟨⟨k₂.masks.at b₂, fun e he => ?_⟩, b₂, keep _ (by decide) (by decide) (by decide) (by decide) (by decide),
+    keep _ (by decide) (by decide) (by decide) (by decide) (by decide), ?_, by rw [k₂.rd, rd₁], by rw [k₂.wr, wr₁]⟩
   · have := k₂.key.keys e he
     rw [b₂, hsch] at this
     exact this
@@ -100,14 +98,14 @@ theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Spec.Sm4.Sched
 
 theorem crypt_wp {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
     (hs : ScrIn s B modeCore.total) (hr : ReadyAt s.mem B k) :
-    WP isa modeCore.crypt s fun s' => s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
+    WP isa modeCore.crypt s fun s' => s'.gpr sb = B ∧
       s'.gpr modeCore.dataReg = s.gpr modeCore.dataReg ∧ s'.gpr modeCore.leftReg = s.gpr modeCore.leftReg ∧
       ReadyAt s'.mem B k ∧
       Frame [coreRegion modeCore B] s.mem s'.mem ∧
       (∀ j < modeCore.G, bytesAt s'.mem (bufAddr modeCore B j) 16 =
         Spec.Sm4.cipher k (bytesAt s.mem (bufAddr modeCore B j) 16)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := slotAddr_ok s .rdi tableEnd (by decide)
+  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := slotAddr_ok s .x3 tableEnd (by decide)
   have b₁ : s₁.gpr sb = B := by rw [o₁ _ (by decide), hB]
   have hkey : KeyCtx s₁ (dirKeys .encrypt k) :=
     { scr := by rw [b₁, wr₁]; exact hs.wr
@@ -123,9 +121,8 @@ theorem crypt_wp {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : s.gpr sb =
       simp only [List.mem_singleton] at hr; subst hr
       exact Region.sub_prefix (by show 8 * tableSlot ≤ 8 * tableEnd; rw [tableSlot_eq, tableEnd_eq]; omega)⟩
   refine ⟨base₂, by rw [c₂.keep _ (by decide) (by decide), o₁ _ (by decide)],
-    by rw [c₂.keep _ (by decide) (by decide), o₁ _ (by decide)], by rw [c₂.keep _ (by decide) (by decide), o₁ _ (by decide)],
-    ⟨c₂.masks.at base₂, ?_⟩, f₀₂,
-    fun j hj => ?_, by rw [c₂.rd, rd₁], by rw [c₂.wr, wr₁]⟩
+    by rw [c₂.keep _ (by decide) (by decide), o₁ _ (by decide)],
+    ⟨c₂.masks.at base₂, ?_⟩, f₀₂, fun j hj => ?_, by rw [c₂.rd, rd₁], by rw [c₂.wr, wr₁]⟩
   · intro e he
     refine (hr.2 e he).congr fun i hi => ?_
     rw [← m₁]
@@ -145,7 +142,7 @@ def modeCoreSpec : CoreSpec modeCore where
   KeyArgs := KeyArgs
   Ready s B k := ReadyAt s.mem B k
   cipher_len _ _ := by simp [Spec.Sm4.cipher]
-  layout := ⟨by decide, by decide, by decide, by decide⟩
+  layout := ⟨by decide, by decide, by decide, by decide, by decide⟩
   keyRegs_ok := by decide
   regs_ok := by decide
   keyArgs_congr := keyArgs_congr
@@ -153,4 +150,4 @@ def modeCoreSpec : CoreSpec modeCore where
   prepare_wp := prepare_wp
   crypt_wp := crypt_wp
 
-end VG.Proof.Sm4.X86_64
+end VG.Proof.Sm4.AArch64

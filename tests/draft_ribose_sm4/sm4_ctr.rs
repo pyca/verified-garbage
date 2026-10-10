@@ -4,7 +4,7 @@
 //! (`Sm4Ecb`, tested on the draft's ECB examples) on every length up to
 //! a few groups of sixteen blocks and across the carries of the counter.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use verified_garbage::sm4_ctr::Sm4Ctr;
 use verified_garbage::sm4_ecb::Sm4Ecb;

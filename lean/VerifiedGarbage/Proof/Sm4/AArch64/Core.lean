@@ -57,7 +57,7 @@ theorem Ctx.step {s₀ s s' : State} (hc : Ctx s₀ s) (hrd : s'.rd = s.rd) (hwr
 
 /-! ## Addresses -/
 
-theorem slots_eq : slots = 394 := rfl
+theorem slots_eq : slots = 396 := rfl
 theorem tableSlot_eq : tableSlot = 128 := rfl
 theorem tableEnd_eq : tableEnd = 384 := rfl
 theorem tailSlot_eq : tailSlot = 96 := rfl

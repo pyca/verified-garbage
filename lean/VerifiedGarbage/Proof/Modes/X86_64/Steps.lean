@@ -155,24 +155,4 @@ theorem readW_slot_write {m : Mem} {b : Addr} {j k : Nat} (v : BitVec 64) (hj : 
   · rename_i h; subst h; exact Mem.readW_writeW_self64 _ _ _
   · rename_i h; exact Mem.readW_writeW_sep (slot_sep b hj hk h) (by decide)
 
-/-- Bytes below a store. -/
-theorem bytesAt_writeW_above (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {d n : Nat} (hn : n ≤ d)
-    (hw : 0 < w / 8) (hd : d + w / 8 ≤ 2 ^ 64) :
-    bytesAt (m.writeW (P + BitVec.ofNat 64 d) v) P n = bytesAt m P n := by
-  apply List.ext_getElem (by simp [bytesAt])
-  intro i h₁ _
-  simp only [bytesAt, List.length_map, List.length_range] at h₁
-  simp only [bytesAt, List.getElem_map, List.getElem_range, Mem.writeW]
-  apply Mem.write_apply
-  exact off_sub_not P (t := i) (e := d) (n := w / 8) (Or.inl (by omega)) (by omega) hw hd
-
-/-- Bytes outside a frame. -/
-theorem bytesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, n⟩ r) (hn : n ≤ 2 ^ 64) : bytesAt m' p n = bytesAt m p n := by
-  apply List.ext_getElem (by simp [bytesAt])
-  intro i h₁ _
-  simp only [bytesAt, List.length_map, List.length_range] at h₁
-  simp only [bytesAt, List.getElem_map, List.getElem_range]
-  exact hf.bytes (R := ⟨p, n⟩) hd hn h₁
-
 end VG.Proof.Modes.X86_64
