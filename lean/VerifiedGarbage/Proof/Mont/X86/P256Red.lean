@@ -53,6 +53,17 @@ theorem p256Red_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   rw [K₁.1 .ecx (by decide)] at V₂
   rw [K₂.1 .ecx (by decide), K₁.1 .ecx (by decide)] at V₃
   have hu := val32_lt u.mem base w 10
-  omega
+  have h2 := Bool.toNat_le c₂
+  have h3 := Bool.toNat_le c₃
+  rw [← hq] at V₁
+  -- Plain numbers: `omega` unfolded the memory reads for seconds to compare them as atoms.
+  generalize val32 u.mem base w 10 = U at *
+  generalize val32 s₂.mem base w 10 = A₂ at *
+  generalize val32 s₁.mem base w 10 = A₁ at *
+  generalize val32 s.mem base w 10 = S at *
+  generalize (s.gpr .ecx).toNat = q at *
+  generalize c₂.toNat = C₂ at *
+  generalize c₃.toNat = C₃ at *
+  grind
 
 end VG.Proof.Mont.X86
