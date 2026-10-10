@@ -867,7 +867,9 @@ kernel's evaluation would rebuild once for every `++` above them: `N.lit_eq`
 goes through the code with each block flattened (`flattenCode`), which the
 kernel evaluates in time linear in its length. Elsewhere it costs more to
 unfold than it saves: the generators that decide much at each step, or
-nest their appends to the right. -/
+nest their appends to the right. It can cost far more: 3DES's x86-64
+literals took 0.6 s with `materialize_code` and 40 s with it. Use it only
+where measuring the file shows it faster. -/
 syntax "materialize_flat_code " ident (" := " term)? : command
 
 open Lit in
@@ -894,12 +896,73 @@ elab_rules : command
     let e ← instantiateMVars (← Term.elabTermAndSynthesize t none)
     materializeTemplate ((← getCurrNamespace) ++ id.getId) e
 
+namespace Lit
+
+/-- The value `v` of a constant with a literal, and the code it unfolds to, a
+few definitions deep (each with its head unfolded, while that is a definition
+of this project's code): a goal can name any of them for the constant, as a
+generic proof's `exchangeWith c mq` for `exchangeP256 := Cfg.exchangeJA p256 …`,
+which unfolds to it. -/
+def unfoldChain (env : Environment) (mods : Array Name) (v : Expr) (depth : Nat := 4) :
+    Array Expr := Id.run do
+  let ok (e : Expr) := e.isApp && e.getAppFn.isConst && !e.hasLooseBVars
+  unless ok v do return #[]
+  let mut out := #[v]
+  let mut cur := v
+  for _ in [0:depth] do
+    let .const g ls := cur.getAppFn | break
+    unless codeModule env mods g do break
+    let some (.defnInfo d) := env.find? g | break
+    let next := ((d.value.instantiateLevelParams d.levelParams ls).betaRev cur.getAppRevArgs).headBeta
+    unless ok next do break
+    out := out.push next
+    cur := next
+  return out
+
+/-- The closed subterms of `tgt` that are `v` up to its arguments: the same
+head and number of arguments, each argument the same, or (an argument that is
+not code, whose comparison could build it) definitionally equal by the
+kernel's check (a configuration written another way). -/
+def unfoldedOccurrences (tgt v : Expr) : MetaM (Array Expr) := do
+  let f := v.getAppFn
+  let n := v.getAppNumArgs
+  let found ← IO.mkRef (#[] : Array Expr)
+  tgt.forEach fun t => do
+    if t.getAppFn == f && t.getAppNumArgs == n && !t.hasLooseBVars && !t.hasMVar then
+      found.modify fun a => if a.contains t then a else a.push t
+  let env ← getEnv
+  let mut out := #[]
+  for t in ← found.get do
+    let mut same := true
+    for i in [0:n] do
+      let a := t.getArg! i
+      let b := v.getArg! i
+      if a == b then continue
+      let ty ← whnfR (← inferType a)
+      if ty.isAppOf ``Code || ty.isAppOf ``List || a.hasFVar ||
+          !Kernel.isDefEqGuarded env {} a b then
+        same := false
+        break
+    if same then out := out.push t
+  return out
+
+/-- With `VG_RW_LIT_REPORT` set to a file, a line there for each code that
+`rw_lit` found unfolded (`unfoldChain`) rather than named: where a proof
+names the code by its generator. -/
+def reportUnfolded (N : Name) (v : Expr) : MetaM Unit := do
+  let some path ← IO.getEnv "VG_RW_LIT_REPORT" | return
+  let h ← IO.FS.Handle.mk path .append
+  h.putStrLn s!"{← getMainModule} {N} {v.getAppFn.constName!}"
+
+end Lit
+
 open Elab Tactic Lit in
 /-- Rewrites each code of the goal that has a literal (`materialize_code`) to it. -/
 elab "rw_lit" : tactic => withMainContext do
   -- Only code whose head constant the goal mentions can occur in it.
   let used := (← instantiateMVars (← getMainTarget)).getUsedConstantsAsSet
   let env ← getEnv
+  let mods := env.header.moduleNames
   for N in litNames env do
     let lhs ← lhsOf N
     -- A constant's code as the goal may have it unfolded: a generic proof's
@@ -909,18 +972,24 @@ elab "rw_lit" : tactic => withMainContext do
     -- functions it is made of (e.g. 30 s rather than 2 s for P-384's verification).
     if let .const c [] := lhs then
       if let some (.defnInfo d) := env.find? c then
-        let v := d.value
-        if d.levelParams.isEmpty && v.isApp && v.getAppFn.isConst && !v.hasLooseBVars &&
-            used.contains v.getAppFn.constName! then
-          let tgt ← instantiateMVars (← getMainTarget)
-          if (tgt.find? (· == v)).isSome then
-            let ty ← inferType lhs
-            let prf ← mkExpectedTypeHint (mkConst (N ++ `lit_eq))
-              (mkApp3 (mkConst ``Eq [← getLevel ty]) ty v (mkConst (N ++ `lit)))
-            let g ← getMainGoal
-            let r ← g.rewrite tgt prf
-            let g' ← g.replaceTargetEq r.eNew r.eqProof
-            replaceMainGoal (g' :: r.mvarIds)
+        if d.levelParams.isEmpty then
+          for v in unfoldChain env mods d.value do
+            unless used.contains v.getAppFn.constName! do continue
+            let tgt ← instantiateMVars (← getMainTarget)
+            for t in ← unfoldedOccurrences tgt v do
+              let tgt ← instantiateMVars (← getMainTarget)
+              let ty ← inferType lhs
+              let u ← getLevel ty
+              -- `N.lit_eq` at `t = N.lit`, which the kernel checks by delta.
+              let prf ← mkExpectedTypeHint (mkConst (N ++ `lit_eq))
+                (mkApp3 (mkConst ``Eq [u]) ty t (mkConst (N ++ `lit)))
+              let motive ← withLocalDeclD `y ty fun y =>
+                mkLambdaFVars #[y] (tgt.replace fun x => if x == t then some y else none)
+              let g ← getMainGoal
+              let tgt' := tgt.replace fun x => if x == t then some (mkConst (N ++ `lit)) else none
+              replaceMainGoal [← g.replaceTargetEq tgt'
+                (mkApp6 (mkConst ``congrArg [u, 1]) ty (mkSort 0) t (mkConst (N ++ `lit)) motive prf)]
+              reportUnfolded N v
     unless lhs.getAppFn.isConst && used.contains lhs.getAppFn.constName! do continue
     let tgt ← instantiateMVars (← getMainTarget)
     if (tgt.find? (· == lhs)).isNone then continue
