@@ -1,0 +1,5 @@
+name = "Camellia-CTR (128-, 192- and 256-bit keys)"
+family = "Ciphers"
+specs = ["Camellia", "Ctr"]
+modules = ["src/camellia_ctr.rs"]
+asm = ["camellia_ctr"]
