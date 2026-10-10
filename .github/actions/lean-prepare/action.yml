@@ -1,9 +1,9 @@
 name: Prepare the Lean build
 description: >
   Restores this project's last build into `lean/.lake/build` (Lake rebuilds
-  only what changed since: mostly extraction), then installs Lean and
-  Mathlib (`lean-setup`, `lean-mathlib`). Every job that builds the proofs
-  starts with it, after checking out the repository.
+  only what changed since: mostly extraction), installing Lean meanwhile,
+  then installs Mathlib (`lean-setup`, `lean-mathlib`). Every job that
+  builds the proofs starts with it, after checking out the repository.
 
 inputs:
   key:
@@ -27,6 +27,35 @@ outputs:
 runs:
   using: composite
   steps:
+    # Installing elan and the toolchain, and listing the modules the proofs
+    # import from outside the project, need nothing restored: they run in
+    # the background while the build restores (writing about 10 GB, which
+    # takes a minute), and `lean-setup` waits for them. A process started in
+    # a step outlives it; the runner stops what is left at the end of the
+    # job. Its output goes to a file: holding the step's open would make the
+    # step wait for it.
+    - name: Install elan and list the imports, in the background
+      shell: bash
+      working-directory: lean
+      run: |
+        echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+        (
+          # Not `-e` (bash steps run with it): a failure must still write
+          # the status, or `lean-setup` would wait for it.
+          set +e -o pipefail
+          {
+            curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+              | sh -s -- -y --default-toolchain none &&
+            # Every module the Lean files import from outside this project
+            # and Lean itself, as Lean's own parser reads their headers.
+            git ls-files '*.lean' | xargs "$HOME/.elan/bin/lean" --deps-json \
+              | jq -r '.imports[].result.imports[].module
+                       | select(test("^(VerifiedGarbage[A-Za-z]*|Init|Std|Lean)(\\.|$)") | not)' \
+              | sort -u > "$RUNNER_TEMP/lean-mods"
+          } > "$RUNNER_TEMP/lean-setup.log" 2>&1
+          echo $? > "$RUNNER_TEMP/lean-setup.status.tmp"
+          mv "$RUNNER_TEMP/lean-setup.status.tmp" "$RUNNER_TEMP/lean-setup.status"
+        ) < /dev/null > /dev/null 2>&1 &
     - name: Restore this project's build
       id: lean-build
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
