@@ -1,10 +1,13 @@
 core::arch::global_asm!(include_str!("../ossl/mont.s"), options(att_syntax));
 core::arch::global_asm!(include_str!("../ossl/mont5.s"), options(att_syntax));
+core::arch::global_asm!(include_str!("../ossl/mont_r.s"), options(att_syntax));
+core::arch::global_asm!(include_str!("../ossl/mont5_r.s"), options(att_syntax));
 #[unsafe(no_mangle)]
 pub static mut OPENSSL_ia32cap_P: [u32; 4] = [0, 0, (1 << 3) | (1 << 8) | (1 << 19), 0];
 unsafe extern "C" {
     fn bn_mul_mont(rp: *mut u64, ap: *const u64, bp: *const u64, np: *const u64, n0: *const u64, num: i32) -> i32;
     fn bn_power5(rp: *mut u64, ap: *const u64, table: *const u64, np: *const u64, n0: *const u64, num: i32, power: i32);
+    fn bn_mul_mont_r(rp: *mut u64, ap: *const u64, bp: *const u64, np: *const u64, n0: *const u64, num: i32) -> i32;
     fn bn_scatter5(inp: *const u64, num: usize, table: *mut u64, power: usize);
 }
 /// Cycles of OpenSSL's x86-64 Montgomery kernels (ADX paths), without the BN wrappers.
@@ -24,12 +27,15 @@ pub fn bench(w: usize, f: f64) {
     let off = (8 - (tab.as_ptr() as usize / 8) % 8) % 8;
     for k in 0..32 { let e: Vec<u64> = (0..w).map(|_| rnd() >> 2).collect(); unsafe { bn_scatter5(e.as_ptr(), w, tab.as_mut_ptr().add(off), k) }; }
     let iters = 20000;
-    let (mut sq, mut mu, mut p5) = (f64::MAX, f64::MAX, f64::MAX);
+    let (mut sq, mut mu, mut p5, mut sqr) = (f64::MAX, f64::MAX, f64::MAX, f64::MAX);
     unsafe {
         for _ in 0..15 {
             let t = std::time::Instant::now();
             for _ in 0..iters { bn_mul_mont(r.as_mut_ptr(), a.as_ptr(), a.as_ptr(), n.as_ptr(), n0.as_ptr(), w as i32); }
             sq = sq.min(t.elapsed().as_nanos() as f64 / iters as f64);
+            let t = std::time::Instant::now();
+            for _ in 0..iters { bn_mul_mont_r(r.as_mut_ptr(), a.as_ptr(), a.as_ptr(), n.as_ptr(), n0.as_ptr(), w as i32); }
+            sqr = sqr.min(t.elapsed().as_nanos() as f64 / iters as f64);
             let t = std::time::Instant::now();
             for _ in 0..iters { bn_mul_mont(r.as_mut_ptr(), a.as_ptr(), b.as_ptr(), n.as_ptr(), n0.as_ptr(), w as i32); }
             mu = mu.min(t.elapsed().as_nanos() as f64 / iters as f64);
@@ -39,5 +45,5 @@ pub fn bench(w: usize, f: f64) {
             p5 = p5.min(t.elapsed().as_nanos() as f64 / (iters / 5) as f64);
         }
     }
-    println!("w={w} openssl kernels: sq {:.0} cyc  mul {:.0} cyc  power5 {:.0} cyc ({:.0} cyc/bit)", sq * f, mu * f, p5 * f, p5 * f / 5.0);
+    println!("w={w} openssl kernels: sq {:.0} cyc  sq-without-redc {:.0} cyc  mul {:.0} cyc  power5 {:.0} cyc ({:.0} cyc/bit)", sq * f, sqr * f, mu * f, p5 * f, p5 * f / 5.0);
 }
