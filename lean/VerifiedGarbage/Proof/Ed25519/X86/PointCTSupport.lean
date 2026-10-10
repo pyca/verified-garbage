@@ -16,7 +16,7 @@ theorem regsTaint_agree {rs : List Reg} {s t : State}
     (h : ∀ r ∈ rs, s.gpr r = t.gpr r) : VG.X86.Taint.Agree (regsTaint rs) s t :=
   ⟨⟨fun r hr => h r (RegSet.mem_ofList.mp hr), fun h => (by cases h)⟩,
     fun h => absurd rfl h, regsTaint_wf rs s, regsTaint_wf rs t,
-    fun _ h => (by cases h), fun _ h => (by cases h), fun h => (by cases h),
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun h => (by cases h),
     fun n _ h => (Nat.not_lt_zero n h).elim⟩
 
 def pointTaint (o : Nat) : VG.X86.Taint.T :=
@@ -57,11 +57,13 @@ theorem pointTaint_agree {x : BitVec 32} {s t : State} {o : Nat}
   · intro r hr
     simp only [pointTaint, RegSet.mem_ofList, List.mem_singleton] at hr
     subst r; exact hs.ctx.edi.trans ht.ctx.edi.symm
-  · intro sl hsl
-    simp only [pointTaint, List.mem_singleton] at hsl
+  · refine VG.X86.Taint.slotsOk_of_list rfl fun sl hsl => ?_
+    simp only [List.mem_singleton] at hsl
     subst sl; exact ho
-  · intro sl hsl k hlo hhi
-    simp only [pointTaint, List.mem_singleton] at hsl
+  · intro i k hk
+    rw [show (pointTaint o).slots = VG.Slots.ofList [(1, o, 4)] from rfl, VG.Slots.has_ofList] at hk
+    obtain ⟨sl, hsl, rfl, hlo, hhi⟩ := hk
+    simp only [List.mem_singleton] at hsl
     subst sl
     change o ≤ k at hlo
     change k < o + 4 at hhi
@@ -106,7 +108,7 @@ theorem callTaint_agree {x : BitVec 32} {s t : State} {o : Nat}
 
 /-- `callTaint` with no public word of the workspace, and the registers `rs` public too. -/
 def callTaintR (rs : List Reg) : VG.X86.Taint.T :=
-  { callTaint 0 with regs := .ofList (.esp :: .edi :: rs), slots := [] }
+  { callTaint 0 with regs := .ofList (.esp :: .edi :: rs), slots := .empty }
 
 /-- `callTaint` with no public word of the workspace. -/
 abbrev callTaint₀ : VG.X86.Taint.T := callTaintR []
@@ -132,7 +134,7 @@ theorem callTaintR_agree {x : BitVec 32} {s t : State} {rs : List Reg} (h : Call
     subst p
     rw [hu.ctx.edi, addr_zero, hu.region]
   refine ⟨⟨fun r hq => ?_, fun h => (by cases h)⟩, fun _ => hw, wf hs, wf ht,
-    fun _ h => (by cases h), fun _ h => (by cases h), fun h => (by cases h),
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun h => (by cases h),
     fun n _ h => (Nat.not_lt_zero n h).elim⟩
   simp only [callTaintR, RegSet.mem_ofList, List.mem_cons] at hq
   rcases hq with rfl | rfl | hq

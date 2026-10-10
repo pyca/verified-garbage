@@ -17,13 +17,13 @@ open VG.X86.Taint
 private theorem ite_t {α : Type} {c : Prop} [Decidable c] (h : c) {a b : α} :
     (if c then a else b) = a := by simp [h]
 
-theorem memPub_upd {τ : T} {r : RegSet Reg} {f : Bool} {sl : List (Nat × Nat × Nat)}
+theorem memPub_upd {τ : T} {r : RegSet Reg} {f : Bool} {sl : Slots}
     (hr : τ.regs.subset r = true) {m : MemOp} (h : memPub τ m = true) :
     memPub (upd τ r f sl) m = true := pub_upd hr h
 
-theorem step_upd {τ : T} {r : RegSet Reg} {f : Bool} {sl : List (Nat × Nat × Nat)}
+theorem step_upd {τ : T} {r : RegSet Reg} {f : Bool} {sl : Slots}
     (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = true)
-    (hsl : ∀ x ∈ τ.slots, x ∈ sl) (i : Instr) {τ' : T} (hs : step τ i = some τ') :
+    (hsl : τ.slots.Sub sl) (i : Instr) {τ' : T} (hs : step τ i = some τ') :
     ∃ σ', step (upd τ r f sl) i = some σ' ∧ LeR τ' σ' := by
   have hst : ∀ m w, storeStepK τ m w false [] = some τ' →
       ∃ σ', storeStepK (upd τ r f sl) m w false [] = some σ' ∧ LeR τ' σ' := fun m w h => by

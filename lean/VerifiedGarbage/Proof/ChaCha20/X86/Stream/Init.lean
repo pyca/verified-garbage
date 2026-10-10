@@ -401,7 +401,7 @@ theorem agreeN {s₁ s₂ : State} (h₁ : Proof.ChaCha20.setNonceX86.pre s₁)
   have f₁ : (s₁.gpr .esp).toNat + 12 ≤ 2 ^ 32 := hp₁.sp_hi
   have f₂ : (s₂.gpr .esp).toNat + 12 ≤ 2 ^ 32 := hp₂.sp_hi
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, wfN hp₁, wfN hp₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
   · simp only [τN, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp
@@ -600,7 +600,7 @@ theorem agreeI {s₁ s₂ : State} (h₁ : Proof.ChaCha20.initX86.pre s₁)
   have f₁ : (s₁.gpr .esp).toNat + 16 ≤ 2 ^ 32 := hp₁.sp_hi
   have f₂ : (s₂.gpr .esp).toNat + 16 ≤ 2 ^ 32 := hp₂.sp_hi
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, wfI hp₁, wfI hp₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
   · simp only [τI, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp

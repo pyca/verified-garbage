@@ -90,8 +90,8 @@ slots and stored base addresses. -/
 def weak (τ : VG.X86.Taint.T) : VG.X86.Taint.T :=
   let P := p256.invP
   if τ.stk = [] then
-    { τ with slots := τ.slots.filter (fun p => p.2.1 == P.sCount || p.2.1 == P.sU + 32 ||
-        (P.sNG ≤ p.2.1 && p.2.1 < P.sNG + 32)), wbases := [] }
+    { τ with slots := τ.slots.keepAll (Nat.lor (Nat.lor (Slots.bits P.sCount 4) (Slots.bits (P.sU + 32) 4))
+        (Slots.bits P.sNG 32)), wbases := [] }
   else τ
 
 /-- The taint analysis starts with the stack arguments public, and the words
@@ -128,7 +128,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : signX86.pre s₁) (h₂ : signX86.p
   obtain ⟨hesp, a0, a1, a2, a3, a4⟩ := hpub
   have hp₁ := pre_of h₁; have hp₂ := pre_of h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ hp₁, wf₀ hp₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp

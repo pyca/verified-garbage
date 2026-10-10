@@ -541,7 +541,7 @@ theorem agree_argTaint {rs : List Reg} {k : Nat} {s₁ s₂ : State} (h : ∀ r 
     VG.X86.Taint.Wf.entry rfl rfl ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim,
       fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨hs.1, hs.2⟩, fun _ h => (List.not_mem_nil h).elim⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, wf s₁ hw₁, wf s₂ hw₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hsp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hsp,
     fun j h4 hj => ?_⟩
   · simp only [argTaint, RegSet.mem_ofList, List.mem_cons] at hr
     rcases hr with rfl | hr

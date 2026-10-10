@@ -140,7 +140,7 @@ theorem verifyTaint_agree {s t : State} (hs : verifyEquationLocal.pre s) (ht : v
     rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
     exacts [a0, a1, a2, a3]
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, verifyTaint_wf hs, verifyTaint_wf ht,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hsp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hsp,
     fun k h4 hk => ?_⟩
   · simp only [verifyTaint, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hsp

@@ -352,7 +352,7 @@ theorem verifyEntryTaint_wf {s : State} (h : verifyLocal.pre s) : VG.X86.Taint.W
 theorem verifyEntryTaint_agree {s t : State} (h : VerifyCTFacts s t) : VG.X86.Taint.Agree verifyEntryTaint s t := by
   refine ⟨⟨?_, fun h => (by cases h)⟩, fun h => absurd rfl h,
     verifyEntryTaint_wf h.left, verifyEntryTaint_wf h.right,
-    fun _ h => (by cases h), fun _ h => (by cases h), fun _ => h.pub.1, ?_⟩
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => h.pub.1, ?_⟩
   · intro r hr
     simp only [verifyEntryTaint, RegSet.mem_ofList, List.mem_singleton] at hr
     subst r

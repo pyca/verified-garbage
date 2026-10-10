@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.RegSet
+import VerifiedGarbage.Proof.Framework.SlotsK
 import VerifiedGarbage.Proof.Framework.KernelList
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.X86.Exec
@@ -75,8 +76,9 @@ structure T where
   lens : List Nat := []
   /-- `(r, i, k)`: `r + k` is the base address of writable region `i`. -/
   bases : List (Reg × Nat × Nat) := []
-  /-- `(i, o, n)`: the `n` bytes at offset `o` of writable region `i` are public. -/
-  slots : List (Nat × Nat × Nat) := []
+  /-- The public bytes of the writable regions (written as ranges `(i, o, n)`: the `n`
+  bytes at offset `o` of writable region `i`). -/
+  slots : Slots := .empty
   /-- `(j, o, i)`: the word at offset `o` of writable region `j` is the base address
   of writable region `i`. -/
   wbases : List (Nat × Nat × Nat) := []
@@ -190,12 +192,11 @@ theorem Wf.entry {τ : T} {s : State} (hstk : τ.stk = []) (hroom : τ.room = 0)
     Wf τ s :=
   Wf.entryRoom hstk h fun h => by omega
 
-/-- Every slot lies within its region. -/
-def SlotsOk (τ : T) : Prop := ∀ sl ∈ τ.slots, sl.2.1 + sl.2.2 ≤ τ.lens.getD sl.1 0
+/-- Every public byte lies within its region. -/
+def SlotsOk (τ : T) : Prop := ∀ i k, τ.slots.has i k = true → k < τ.lens.getD i 0
 
 def SlotsAgree (τ : T) (s₁ s₂ : State) : Prop :=
-  ∀ sl ∈ τ.slots, ∀ k, sl.2.1 ≤ k → k < sl.2.1 + sl.2.2 →
-    s₁.mem (byteAddr s₁ sl.1 k) = s₂.mem (byteAddr s₂ sl.1 k)
+  ∀ i k, τ.slots.has i k = true → s₁.mem (byteAddr s₁ i k) = s₂.mem (byteAddr s₂ i k)
 
 structure Agree (τ : T) (s₁ s₂ : State) : Prop where
   rf : AgreeRF τ.regs τ.flags s₁ s₂
@@ -207,6 +208,33 @@ structure Agree (τ : T) (s₁ s₂ : State) : Prop where
   sp : 0 < τ.argLen → s₁.gpr .esp = s₂.gpr .esp
   argMem : ∀ k, 4 ≤ k → k < τ.argLen →
     s₁.mem (argByte s₁ (depth τ.stk + k)) = s₂.mem (argByte s₂ (depth τ.stk + k))
+
+/-- A taint without public slots: its slots lie within their regions. -/
+theorem slotsOk_empty {τ : T} (h : τ.slots = .empty := by rfl) : SlotsOk τ := by
+  intro i k hk; rw [h, Slots.has_empty] at hk; cases hk
+
+/-- A taint without public slots: its slots agree. -/
+theorem slotsAgree_empty {τ : T} {s₁ s₂ : State} (h : τ.slots = .empty := by rfl) :
+    SlotsAgree τ s₁ s₂ := by
+  intro i k hk; rw [h, Slots.has_empty] at hk; cases hk
+
+/-- Slots written as ranges `L` (`slots := L`, a coercion) lie within their
+regions if each range does. -/
+theorem slotsOk_of_list {τ : T} {L : List (Nat × Nat × Nat)} (hs : τ.slots = Slots.ofList L)
+    (h : ∀ sl ∈ L, sl.2.1 + sl.2.2 ≤ τ.lens.getD sl.1 0) : SlotsOk τ := by
+  intro i k hk
+  rw [hs, Slots.has_ofList] at hk
+  obtain ⟨sl, hsl, rfl, h₁, h₂⟩ := hk
+  have := h sl hsl
+  omega
+
+/-- A nonempty range of slots written as ranges `L` lies within its region. -/
+theorem SlotsOk.of_mem {τ : T} {L : List (Nat × Nat × Nat)} (hok : SlotsOk τ)
+    (hs : τ.slots = Slots.ofList L) {sl : Nat × Nat × Nat} (hsl : sl ∈ L) (hn : 0 < sl.2.2) :
+    sl.2.1 + sl.2.2 ≤ τ.lens.getD sl.1 0 := by
+  have := hok sl.1 (sl.2.1 + sl.2.2 - 1) (by
+    rw [hs, Slots.has_ofList]; exact ⟨sl, hsl, rfl, by omega, by omega⟩)
+  omega
 
 /-- The public registers after writing `r`, with a public value iff `p`. -/
 def set (τ : T) (r : Reg) (p : Bool) : RegSet Reg :=
@@ -225,7 +253,7 @@ def addrOf (τ : T) (m : MemOp) : Option (Nat × Nat) :=
 /-- `w` bytes at `m` are within a public slot. -/
 def slotPub (τ : T) (m : MemOp) (w : Nat) : Bool :=
   match addrOf τ m with
-  | some (i, d) => τ.slots.any fun sl => sl.1 == i && sl.2.1 ≤ d && d + w ≤ sl.2.1 + sl.2.2
+  | some (i, d) => τ.slots.covers i d w
   | none => false
 
 /-- `w` bytes at `m` are within the stack arguments. -/
@@ -266,14 +294,13 @@ def regBases (τ : T) (r : Reg) : List Nat :=
   (τ.bases.filter fun p => p.1 == r && p.2.2 == 0).map (·.2.1)
 
 /-- The public slots after storing `w` bytes at `m`, a public value iff `p`. -/
-def storeSlots (τ : T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat × Nat) :=
+def storeSlots (τ : T) (m : MemOp) (w : Nat) (p : Bool) : Slots :=
   match addrOf τ m with
   | some (i, d) =>
     if d + w ≤ τ.lens.getD i 0 then
-      let kept := τ.slots.filter fun sl => p || sl.1 != i || d + w ≤ sl.2.1 || sl.2.1 + sl.2.2 ≤ d
-      if p then (i, d, w) :: kept else kept
-    else if p then τ.slots else []
-  | none => if p then τ.slots else []
+      if p then τ.slots.add i d w else τ.slots.remove i d w
+    else if p then τ.slots else .empty
+  | none => if p then τ.slots else .empty
 
 /-- The known base-address words after storing `w` bytes at `m`, the base
 address of each region in `nb`. -/
@@ -333,7 +360,7 @@ def meet (τ₁ τ₂ : T) : T where
   flags := τ₁.flags && τ₂.flags
   lens := if τ₁.lens = τ₂.lens then τ₁.lens else []
   bases := τ₁.bases.filter (τ₂.bases.contains ·)
-  slots := if τ₁.lens = τ₂.lens then τ₁.slots.filter (τ₂.slots.contains ·) else []
+  slots := if τ₁.lens = τ₂.lens then τ₁.slots.inter τ₂.slots else .empty
   wbases := if τ₁.lens = τ₂.lens then τ₁.wbases.filter (τ₂.wbases.contains ·) else []
   argLen := if τ₁.argLen = τ₂.argLen ∧ τ₁.stk = τ₂.stk then τ₁.argLen else 0
   argBases := if τ₁.argLen = τ₂.argLen ∧ τ₁.stk = τ₂.stk then
@@ -343,7 +370,7 @@ def meet (τ₁ τ₂ : T) : T where
 
 def le (τ σ : T) : Bool :=
   τ.regs.subset σ.regs && (!τ.flags || σ.flags) && τ.lens == σ.lens &&
-    τ.bases.all (σ.bases.contains ·) && τ.slots.all (σ.slots.contains ·) &&
+    τ.bases.all (σ.bases.contains ·) && τ.slots.subset σ.slots &&
     τ.wbases.all (σ.wbases.contains ·) && τ.argLen == σ.argLen &&
     τ.argBases.all (σ.argBases.contains ·) && τ.stk == σ.stk && decide (τ.room ≤ σ.room)
 
@@ -473,15 +500,14 @@ theorem Agree.readW {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {m : 
   unfold slotPub at hp
   split at hp <;> [skip; cases hp]
   rename_i i d h
-  simp only [List.any_eq_true, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hp
-  obtain ⟨sl, hsl, ⟨rfl, ho⟩, hd⟩ := hp
-  have hok := ha.ok sl hsl
+  have hc := (Slots.covers_iff _ _ _ _).mp hp
+  have hok := ha.ok i (d + 3) (hc _ (by omega) (by omega))
   rw [ea_of_addrOf ha.wf₁ h (by omega), ea_of_addrOf ha.wf₂ h (by omega),
-    ha.byteAddr_eq (n := sl.2.1 + sl.2.2) (by omega) hok d]
+    ha.byteAddr_eq (n := d + 4) (by omega) hok d]
   refine Mem.readW_congr fun k hk => ?_
   rw [byteAddr_add]
-  have := ha.slots sl hsl (d + k) (by omega) (by omega)
-  rwa [ha.byteAddr_eq (n := sl.2.1 + sl.2.2) (by omega) hok (d + k)] at this
+  have := ha.slots i (d + k) (hc _ (by omega) (by omega))
+  rwa [ha.byteAddr_eq (n := d + 4) (by omega) hok (d + k)] at this
 
 /-- The word `o` bytes above the stack pointer on entry, byte by byte. -/
 theorem argWord {τ : T} {s : State} (hw : Wf τ s) {o : Nat} (ho : o + 4 ≤ τ.argLen) (k : Nat) :
@@ -540,10 +566,10 @@ theorem Agree.keep {τ τ' : T} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s
   wr h := by rw [hw₁, hw₂]; exact ha.wr (hl ▸ h)
   wf₁ := ha.wf₁.keep hl hwb hargs hab hw₁ hm₁ hsp₁ hb₁ hstk hroom
   wf₂ := ha.wf₂.keep hl hwb hargs hab hw₂ hm₂ hsp₂ hb₂ hstk hroom
-  ok sl h := by rw [hl]; exact ha.ok sl (hs ▸ h)
-  slots sl h k h₁ h₂ := by
+  ok i k h := by rw [hl]; exact ha.ok i k (hs ▸ h)
+  slots i k h := by
     simp only [byteAddr, region, hw₁, hw₂, hm₁, hm₂]
-    exact ha.slots sl (hs ▸ h) k h₁ h₂
+    exact ha.slots i k (hs ▸ h)
   sp h := by rw [hsp₁, hsp₂]; exact ha.sp (hargs ▸ h)
   argMem k h4 hk := by
     simp only [argByte, hsp₁, hsp₂, hm₁, hm₂, hstk]
@@ -601,17 +627,20 @@ theorem write_same {m₁ m₂ : Mem} {A X : Addr} {n : Nat} (V : BitVec (8 * n))
 
 theorem storeSlots_ok {τ : T} (hok : SlotsOk τ) (m : MemOp) (w : Nat) (p : Bool) (wb : List (Nat × Nat × Nat)) :
     SlotsOk { τ with slots := storeSlots τ m w p, wbases := wb } := by
-  intro sl hsl
-  simp only [storeSlots] at hsl
-  split at hsl
-  · split at hsl
-    · split at hsl
-      · rcases List.mem_cons.mp hsl with rfl | hsl
-        · assumption
-        · exact hok sl (List.mem_filter.mp hsl).1
-      · exact hok sl (List.mem_filter.mp hsl).1
-    · split at hsl <;> [exact hok sl hsl; cases hsl]
-  · split at hsl <;> [exact hok sl hsl; cases hsl]
+  intro j k hk
+  simp only [storeSlots] at hk
+  split at hk
+  · split at hk
+    · split at hk
+      · rw [Slots.has_add] at hk
+        rcases Bool.or_eq_true _ _ ▸ hk with hk | hk
+        · exact hok j k hk
+        · simp only [Bool.and_eq_true, decide_eq_true_eq] at hk
+          obtain ⟨⟨rfl, -⟩, hk⟩ := hk; simp only; omega
+      · rw [Slots.has_remove, Bool.and_eq_true] at hk
+        exact hok j k hk.1
+    · split at hk <;> [exact hok j k hk; simp at hk]
+  · split at hk <;> [exact hok j k hk; simp at hk]
 
 /-- A write within a writable region leaves the stack arguments alone. -/
 theorem write_arg {τ : T} {s : State} (hw : Wf τ s) {A : Addr} {n : Nat} (hA : InRegions s.wr A n)
@@ -703,56 +732,53 @@ theorem Agree.store {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {m : 
     rw [write_arg ha.wf₁ hA₁ V₁ hk, write_arg ha.wf₂ hA₂ V₂ hk]
     exact ha.argMem k h4 hk
   slots := by
-    intro sl hsl k hk₁ hk₂
+    intro j k hk
     have hE : s₁.ea m = s₂.ea m := ha.ea hr
-    have same : sl ∈ τ.slots → p = true →
-        s₁.mem.write (s₁.ea m) n V₁ (byteAddr s₁ sl.1 k) =
-          s₂.mem.write (s₂.ea m) n V₂ (byteAddr s₂ sl.1 k) :=
+    have same : τ.slots.has j k = true → p = true →
+        s₁.mem.write (s₁.ea m) n V₁ (byteAddr s₁ j k) =
+          s₂.mem.write (s₂.ea m) n V₂ (byteAddr s₂ j k) :=
       fun h hp => by
-        have hok := ha.ok sl h
-        have hb := ha.byteAddr_eq (n := sl.2.1 + sl.2.2) (by omega) hok k
+        have hok := ha.ok j k h
+        have hb := ha.byteAddr_eq (n := k + 1) (by omega) hok k
         rw [hE, hv hp, hb]
-        exact write_same _ (hb ▸ ha.slots sl h k hk₁ hk₂)
-    show s₁.mem.write _ n V₁ (byteAddr s₁ sl.1 k) = s₂.mem.write _ n V₂ (byteAddr s₂ sl.1 k)
-    simp only [storeSlots] at hsl
-    split at hsl
+        exact write_same _ (hb ▸ ha.slots j k h)
+    show s₁.mem.write _ n V₁ (byteAddr s₁ j k) = s₂.mem.write _ n V₂ (byteAddr s₂ j k)
+    simp only [storeSlots] at hk
+    split at hk
     · rename_i i d had
-      split at hsl
+      split at hk
       · rename_i hfit
         have e₁ := ea_of_addrOf ha.wf₁ had (by omega)
         have e₂ := ea_of_addrOf ha.wf₂ had (by omega)
-        have hsl' : (p = true ∧ sl = (i, d, n)) ∨ (sl ∈ τ.slots ∧
-            (p = true ∨ sl.1 ≠ i ∨ d + n ≤ sl.2.1 ∨ sl.2.1 + sl.2.2 ≤ d)) := by
-          split at hsl
-          · rename_i hp
-            rcases List.mem_cons.mp hsl with h | h
-            · exact .inl ⟨hp, h⟩
-            · simp only [List.mem_filter, Bool.or_eq_true, bne_iff_ne, decide_eq_true_eq, or_assoc] at h
-              exact .inr h
-          · simp only [List.mem_filter, Bool.or_eq_true, bne_iff_ne, decide_eq_true_eq, or_assoc] at hsl
-            exact .inr hsl
-        rcases hsl' with ⟨hp, rfl⟩ | ⟨h, hsep⟩
-        · simp only at hk₁ hk₂
-          simp only [e₁, e₂, Mem.write, hv hp]
-          have hd : ∀ s : State, byteAddr s i k - byteAddr s i d = BitVec.ofNat 64 (k - d) :=
-            fun s => (Offset.add_sub_add_left _ _ _).trans (Offset.ofNat_sub_ofNat (by omega))
-          have hlt : (BitVec.ofNat 64 (k - d)).toNat < n := by
-            rw [BitVec.toNat_ofNat]; exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (by omega)
-          rw [hd, hd]; simp only [hlt, ite_true]
-        · by_cases hp : p = true
-          · exact same h hp
-          have hsep : sl.1 ≠ i ∨ k < d ∨ d + n ≤ k := by
-            rcases hsep with h' | h' | h' | h'
-            · exact absurd h' hp
-            · exact .inl h'
-            · exact .inr (.inr (by omega))
-            · exact .inr (.inl (by omega))
-          have hk := ha.ok sl h
-          rw [e₁, e₂, write_other ha.wf₁ hn hfit (by omega) hsep,
-            write_other ha.wf₂ hn hfit (by omega) hsep]
-          exact ha.slots sl h k hk₁ hk₂
-      · split at hsl <;> [exact same hsl ‹_›; cases hsl]
-    · split at hsl <;> [exact same hsl ‹_›; cases hsl]
+        split at hk
+        · rename_i hp
+          rw [Slots.has_add] at hk
+          rcases Bool.or_eq_true _ _ ▸ hk with hk | hk
+          · exact same hk hp
+          · simp only [Bool.and_eq_true, decide_eq_true_eq] at hk
+            obtain ⟨⟨rfl, hk₁⟩, hk₂⟩ := hk
+            simp only [e₁, e₂, Mem.write, hv hp]
+            have hd : ∀ s : State, byteAddr s j k - byteAddr s j d = BitVec.ofNat 64 (k - d) :=
+              fun s => (Offset.add_sub_add_left _ _ _).trans (Offset.ofNat_sub_ofNat (by omega))
+            have hlt : (BitVec.ofNat 64 (k - d)).toNat < n := by
+              rw [BitVec.toNat_ofNat]; exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (by omega)
+            rw [hd, hd]; simp only [hlt, ite_true]
+        · rw [Slots.has_remove, Bool.and_eq_true] at hk
+          obtain ⟨hk, hout⟩ := hk
+          have hsep : j ≠ i ∨ k < d ∨ d + n ≤ k := by
+            by_cases h1 : j = i
+            · subst h1
+              by_cases h2 : d ≤ k
+              · by_cases h3 : k < d + n
+                · simp [h2, h3] at hout
+                · exact .inr (.inr (by omega))
+              · exact .inr (.inl (by omega))
+            · exact .inl h1
+          have hkl := ha.ok j k hk
+          rw [e₁, e₂, write_other ha.wf₁ hn hfit hkl hsep, write_other ha.wf₂ hn hfit hkl hsep]
+          exact ha.slots j k hk
+      · split at hk <;> [exact same hk ‹_›; simp at hk]
+    · split at hk <;> [exact same hk ‹_›; simp at hk]
 
 /-! ### ALU instructions, uniformly -/
 
@@ -1194,7 +1220,8 @@ theorem Wf.mono {τ τ' : T} {s : State} (hw : Wf τ s) (hl : τ'.lens = τ.lens
 
 theorem Agree.mono {τ τ' : T} {s₁ s₂ : State} (h : Agree τ s₁ s₂) (hr : ∀ r ∈ τ'.regs, r ∈ τ.regs)
     (hf : τ'.flags = true → τ.flags = true) (hl : τ'.lens = τ.lens ∨ τ'.lens = [])
-    (hb : ∀ p ∈ τ'.bases, p ∈ τ.bases) (hs : ∀ sl ∈ τ'.slots, sl ∈ τ.slots ∧ τ'.lens = τ.lens)
+    (hb : ∀ p ∈ τ'.bases, p ∈ τ.bases)
+    (hs : ∀ i k, τ'.slots.has i k = true → τ.slots.has i k = true ∧ τ'.lens = τ.lens)
     (hwb : ∀ p ∈ τ'.wbases, p ∈ τ.wbases ∧ τ'.lens = τ.lens)
     (hargs : τ'.argLen = 0 ∨ τ'.argLen = τ.argLen ∧ τ'.stk = τ.stk)
     (hab : ∀ p ∈ τ'.argBases, p ∈ τ.argBases ∧ τ'.argLen = τ.argLen ∧ τ'.stk = τ.stk)
@@ -1206,8 +1233,8 @@ theorem Agree.mono {τ τ' : T} {s₁ s₂ : State} (h : Agree τ s₁ s₂) (hr
     · exact absurd hl hne
   wf₁ := h.wf₁.mono hl hb hwb hargs hab hsr
   wf₂ := h.wf₂.mono hl hb hwb hargs hab hsr
-  ok sl hsl := by obtain ⟨hsl, hl⟩ := hs sl hsl; rw [hl]; exact h.ok sl hsl
-  slots sl hsl := h.slots sl (hs sl hsl).1
+  ok i k hk := by obtain ⟨hk, hl⟩ := hs i k hk; rw [hl]; exact h.ok i k hk
+  slots i k hk := h.slots i k (hs i k hk).1
   sp hpos := by
     rcases hargs with h0 | ⟨ha, -⟩
     · omega
@@ -1219,11 +1246,12 @@ theorem Agree.mono {τ τ' : T} {s₁ s₂ : State} (h : Agree τ s₁ s₂) (hr
 
 theorem meet_left {τ₁ τ₂ : T} {s₁ s₂ : State} (h : Agree τ₁ s₁ s₂) : Agree (meet τ₁ τ₂) s₁ s₂ := by
   refine h.mono (fun r h => (RegSet.mem_inter.mp h).1) (fun hf => ?_) ?_ (fun p hp => (List.mem_filter.mp hp).1)
-    (fun sl hsl => ?_) (fun p hp => ?_) ?_ (fun p hp => ?_) ?_ <;> simp only [meet] at *
+    (fun i k hk => ?_) (fun p hp => ?_) ?_ (fun p hp => ?_) ?_ <;> simp only [meet] at *
   · simp only [Bool.and_eq_true] at hf; exact hf.1
   · split <;> simp
-  · split at hsl <;> [rename_i he; cases hsl]
-    exact ⟨(List.mem_filter.mp hsl).1, by simp [he]⟩
+  · split at hk <;> [rename_i he; simp at hk]
+    rw [Slots.has_inter, Bool.and_eq_true] at hk
+    exact ⟨hk.1, by simp [he]⟩
   · split at hp <;> [rename_i he; cases hp]
     exact ⟨(List.mem_filter.mp hp).1, by simp [he]⟩
   · split <;> simp_all
@@ -1234,11 +1262,12 @@ theorem meet_left {τ₁ τ₂ : T} {s₁ s₂ : State} (h : Agree τ₁ s₁ s�
 theorem meet_right {τ₁ τ₂ : T} {s₁ s₂ : State} (h : Agree τ₂ s₁ s₂) : Agree (meet τ₁ τ₂) s₁ s₂ := by
   refine h.mono (fun r h => (RegSet.mem_inter.mp h).2) (fun hf => ?_) ?_
     (fun p hp => by simpa using (List.mem_filter.mp hp).2)
-    (fun sl hsl => ?_) (fun p hp => ?_) ?_ (fun p hp => ?_) ?_ <;> simp only [meet] at *
+    (fun i k hk => ?_) (fun p hp => ?_) ?_ (fun p hp => ?_) ?_ <;> simp only [meet] at *
   · simp only [Bool.and_eq_true] at hf; exact hf.2
   · split <;> simp_all
-  · split at hsl <;> [rename_i he; cases hsl]
-    exact ⟨by simpa using (List.mem_filter.mp hsl).2, by simp [he]⟩
+  · split at hk <;> [rename_i he; simp at hk]
+    rw [Slots.has_inter, Bool.and_eq_true] at hk
+    exact ⟨hk.2, by simp [he]⟩
   · split at hp <;> [rename_i he; cases hp]
     exact ⟨by simpa using (List.mem_filter.mp hp).2, by simp [he]⟩
   · split <;> simp_all
@@ -1251,7 +1280,7 @@ theorem le_sound {τ σ : T} {s₁ s₂ : State} (hle : le τ σ = true) (h : Ag
   simp only [le, Bool.and_eq_true, List.all_eq_true, Bool.or_eq_true, Bool.not_eq_true',
     beq_iff_eq, List.contains_iff_mem, decide_eq_true_eq] at hle
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨hr, hf⟩, hl⟩, hb⟩, hs⟩, hwb⟩, ha⟩, hab⟩, hst⟩, hro⟩ := hle
-  refine h.mono (fun r h => RegSet.mem_of_subset hr h) (fun hf' => ?_) (.inl hl) hb (fun sl h => ⟨hs sl h, hl⟩) (fun p h => ⟨hwb p h, hl⟩)
+  refine h.mono (fun r h => RegSet.mem_of_subset hr h) (fun hf' => ?_) (.inl hl) hb (fun i k h => ⟨(Slots.subset_iff _ _).mp hs i k h, hl⟩) (fun p h => ⟨hwb p h, hl⟩)
     (.inr ⟨ha, hst⟩) (fun p h => ⟨hab p h, ha, hst⟩) (.inl ⟨hst, hro⟩)
   rcases hf with hf | hf
   · simp [hf'] at hf
@@ -1498,14 +1527,14 @@ theorem Agree.moveSp {τ τ' : T} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ
   wr h := by rw [hw₁, hw₂]; exact ha.wr (hl ▸ h)
   wf₁ := ha.wf₁.moveSp hl hwb hargs hab hroom hnf hE₁ hw₁ hm₁ hf₁ hb₁
   wf₂ := ha.wf₂.moveSp hl hwb hargs hab hroom hnf hE₂ hw₂ hm₂ hf₂ hb₂
-  ok sl h := by rw [hl]; exact ha.ok sl (hs ▸ h)
-  slots sl h k h₁ h₂ := by
+  ok i k h := by rw [hl]; exact ha.ok i k (hs ▸ h)
+  slots i k h := by
     rw [hs] at h
-    have hk := ha.ok sl h
-    have e₁ : byteAddr s₁' sl.1 k = byteAddr s₁ sl.1 k := by simp only [byteAddr, region, hw₁]
-    have e₂ : byteAddr s₂' sl.1 k = byteAddr s₂ sl.1 k := by simp only [byteAddr, region, hw₂]
+    have hk := ha.ok i k h
+    have e₁ : byteAddr s₁' i k = byteAddr s₁ i k := by simp only [byteAddr, region, hw₁]
+    have e₂ : byteAddr s₂' i k = byteAddr s₂ i k := by simp only [byteAddr, region, hw₂]
     rw [e₁, e₂, hm₁ _ (.inl (ha.wf₁.byte_mem (by omega))), hm₂ _ (.inl (ha.wf₂.byte_mem (by omega)))]
-    exact ha.slots sl h k h₁ h₂
+    exact ha.slots i k h
   sp h := hsp (hargs ▸ h)
   argMem k h4 hk := by
     rw [hargs] at hk
@@ -1792,7 +1821,7 @@ def popStep (τ : T) : Instr → Option T
           lens := τ.lens.tail
           bases := ((τ.bases.filter fun p => p.1 != .esp && p.1 != r && p.2.1 != 0).map
             fun p => (p.1, p.2.1 - 1, p.2.2)) ++ stkBases stk
-          slots := (τ.slots.filter (·.1 != 0)).map fun sl => (sl.1 - 1, sl.2)
+          slots := τ.slots.pop
           wbases := (τ.wbases.filter fun p => p.1 != 0 && p.2.2 != 0).map
             fun p => (p.1 - 1, p.2.1, p.2.2 - 1)
           argBases := (τ.argBases.filter (·.2 != 0)).map fun p => (p.1, p.2 - 1) }
@@ -1814,7 +1843,7 @@ theorem Wf.pop {τ : T} {n : Nat} {stk : List (Option Nat)} (hstk : τ.stk = som
       lens := τ.lens.tail
       bases := ((τ.bases.filter fun p => p.1 != .esp && p.1 != r && p.2.1 != 0).map
         fun p => (p.1, p.2.1 - 1, p.2.2)) ++ stkBases stk
-      slots := (τ.slots.filter (·.1 != 0)).map fun sl => (sl.1 - 1, sl.2)
+      slots := τ.slots.pop
       wbases := (τ.wbases.filter fun p => p.1 != 0 && p.2.2 != 0).map
         fun p => (p.1 - 1, p.2.1, p.2.2 - 1)
       argBases := (τ.argBases.filter (·.2 != 0)).map fun p => (p.1, p.2 - 1) } s' := by
@@ -1918,8 +1947,8 @@ theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Stat
     (hsp' ha.wf₂ hc₂) hg
   have hE : ∀ {b : State}, (({ popReg b r k with wr := b.wr.tail } : State).gpr .esp) =
       b.gpr .esp + BitVec.ofNat 32 (4 * k) := (popReg_eq _ r k).2.2.1
-  refine ⟨by simp [addrs, hsp], ⟨⟨fun q hq => ?_, fun hf => ?_⟩, fun hne => ?_, w₁, w₂, fun sl hsl => ?_,
-    fun sl hsl t h₁ h₂ => ?_, fun _ => by rw [hE, hE, hsp], fun t h4 ht => ?_⟩⟩
+  refine ⟨by simp [addrs, hsp], ⟨⟨fun q hq => ?_, fun hf => ?_⟩, fun hne => ?_, w₁, w₂, fun i t hsl => ?_,
+    fun i t hsl => ?_, fun _ => by rw [hE, hE, hsp], fun t h4 ht => ?_⟩⟩
   · simp only [RegSet.mem_erase] at hq
     by_cases h : q = .esp
     · subst h; rw [hE, hE, hsp]
@@ -1932,20 +1961,17 @@ theorem pop_sound {τ τ' : T} {j : Instr} {a₁ a₂ b₁ b₂ c₁ c₂ : Stat
   · have hne' : τ.lens ≠ [] := fun h => hne (by simp [h])
     show b₁.wr.tail = b₂.wr.tail
     rw [ha.wr hne']
-  · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hsl
-    simp only [List.mem_filter, bne_iff_ne, ne_eq] at hq
-    have := ha.ok q hq.1
+  · rw [Slots.has_pop] at hsl
+    have := ha.ok (i + 1) t hsl
     simp only [List.getD_eq_getElem?_getD, List.getElem?_tail] at this ⊢
-    rw [Nat.sub_add_cancel (Nat.pos_of_ne_zero hq.2)]; exact this
-  · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hsl
-    simp only [List.mem_filter, bne_iff_ne, ne_eq] at hq
+    exact this
+  · rw [Slots.has_pop] at hsl
     have e : ∀ b : State,
-        byteAddr ({ popReg b r k with wr := b.wr.tail } : State) (q.1 - 1) t = byteAddr b q.1 t :=
-      fun b => by
-        simp only [byteAddr]; rw [region_tail b _ rfl, Nat.sub_add_cancel (Nat.pos_of_ne_zero hq.2)]
-    show (popReg b₁ r k).mem (byteAddr _ (q.1 - 1) t) = (popReg b₂ r k).mem (byteAddr _ (q.1 - 1) t)
+        byteAddr ({ popReg b r k with wr := b.wr.tail } : State) i t = byteAddr b (i + 1) t :=
+      fun b => by simp only [byteAddr]; rw [region_tail b _ rfl]
+    show (popReg b₁ r k).mem (byteAddr _ i t) = (popReg b₂ r k).mem (byteAddr _ i t)
     rw [e, e, (popReg_rest _ r k).1, (popReg_rest _ r k).1]
-    exact ha.slots q hq.1 t h₁ h₂
+    exact ha.slots (i + 1) t hsl
   · have e₁ : ((({ popReg b₁ r k with wr := b₁.wr.tail } : State).gpr .esp)).toNat + depth stk =
         (b₁.gpr .esp).toNat + depth τ.stk := by
       rw [hsp' ha.wf₁ hc₁, hstk, depth, itemSize]; omega
@@ -1975,7 +2001,7 @@ def pushed (τ : T) (rs : List Reg) : T :=
     stk := some n :: τ.stk
     lens := n :: τ.lens
     bases := (kill τ .esp).map (fun p => (p.1, p.2.1 + 1, p.2.2)) ++ stkBases (some n :: τ.stk)
-    slots := pushSlots τ rs n ++ τ.slots.map fun sl => (sl.1 + 1, sl.2)
+    slots := τ.slots.push ((Slots.ofList (pushSlots τ rs n)).get 0)
     wbases := pushWbases τ rs n ++ τ.wbases.map fun p => (p.1 + 1, p.2.1, p.2.2 + 1)
     argBases := τ.argBases.map fun p => (p.1, p.2 + 1) }
 
@@ -2184,7 +2210,7 @@ theorem push_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
   have hrc₁ := region_cons s₁ (pushState s₁ rs) _ rfl
   have hrc₂ := region_cons s₂ (pushState s₂ rs) _ rfl
   refine ⟨by simp [addrs, hsp], ⟨⟨fun q hq => ?_, fun hf => ?_⟩, fun _ => ?_, ha.wf₁.push hrs hne hroom hl,
-    ha.wf₂.push hrs hne hroom hl, fun sl hsl => ?_, fun sl hsl t h₁ h₂ => ?_,
+    ha.wf₂.push hrs hne hroom hl, fun x t hsl => ?_, fun x t hsl => ?_,
     fun _ => by rw [hesp, hesp, hsp], fun t h4 ht => ?_⟩⟩
   · by_cases h : q = .esp
     · subst h; rw [hesp, hesp, hsp]
@@ -2196,13 +2222,23 @@ theorem push_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       f₄.trans (h₄.trans g₄.symm)⟩
   · show belowSp s₁ _ :: s₁.wr = belowSp s₂ _ :: s₂.wr
     simp only [belowSp, hsp, ha.wr hl]
-  · rcases List.mem_append.mp hsl with hsl | hsl
-    · obtain ⟨j, hj, -, rfl⟩ := pushSlots_mem hsl
+  · cases x with
+    | zero =>
+      rw [show (pushed τ rs).slots = τ.slots.push _ from rfl, Slots.has_push_zero, ← Slots.has_eq,
+        Slots.has_ofList] at hsl
+      obtain ⟨sl, hsl, -, h₁, h₂⟩ := hsl
+      obtain ⟨j, hj, -, rfl⟩ := pushSlots_mem hsl
+      simp only at h₁ h₂
       simp [pushed]; omega
-    · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hsl
-      simpa [pushed] using ha.ok q hq
-  · rcases List.mem_append.mp hsl with hsl | hsl
-    · obtain ⟨j, hj, hpj, rfl⟩ := pushSlots_mem hsl
+    | succ q =>
+      rw [show (pushed τ rs).slots = τ.slots.push _ from rfl, Slots.has_push_succ] at hsl
+      simpa [pushed] using ha.ok q t hsl
+  · cases x with
+    | zero =>
+      rw [show (pushed τ rs).slots = τ.slots.push _ from rfl, Slots.has_push_zero, ← Slots.has_eq,
+        Slots.has_ofList] at hsl
+      obtain ⟨sl, hsl, -, h₁, h₂⟩ := hsl
+      obtain ⟨j, hj, hpj, rfl⟩ := pushSlots_mem hsl
       simp only at h₁ h₂
       obtain ⟨i, hi, rfl⟩ : ∃ i < 4, t = 4 * rs.length - 4 * (j + 1) + i := ⟨t - (4 * rs.length - 4 * (j + 1)), by omega, by omega⟩
       simp only [byteAddr, region, List.getD_eq_getElem?_getD, List.getElem?_cons_zero, Option.getD_some,
@@ -2211,13 +2247,13 @@ theorem push_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       show (pushRegs s₁ rs).mem _ = (pushRegs s₂ rs).mem _
       rw [Mem.readW_byte (pushRegs s₁ rs).mem _ hi, Mem.readW_byte (pushRegs s₂ rs).mem _ hi,
         ← hsp, (pushRegs_mem s₁ rs hrs hle₁).2 j hj, hsp, (pushRegs_mem s₂ rs hrs hle₂).2 j hj, ha.reg hpj]
-    · obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hsl
-      have hk := ha.ok q hq
-      simp only at h₁ h₂ ⊢
+    | succ q =>
+      rw [show (pushed τ rs).slots = τ.slots.push _ from rfl, Slots.has_push_succ] at hsl
+      have hk := ha.ok q t hsl
       rw [byteAddr_cons s₁ (pushState s₁ rs) _ rfl, byteAddr_cons s₂ (pushState s₂ rs) _ rfl,
         hk₁ _ (.inl (ha.wf₁.byte_mem (by omega))),
         hk₂ _ (.inl (ha.wf₂.byte_mem (by omega)))]
-      exact ha.slots q hq t h₁ h₂
+      exact ha.slots q t hsl
   · rw [argByte_move hE₁, argByte_move hE₂, hk₁ _ (.inr ⟨t, ht, rfl⟩), hk₂ _ (.inr ⟨t, ht, rfl⟩)]
     exact ha.argMem t h4 ht
 
@@ -2245,8 +2281,7 @@ def addrOfK (τ : T) (m : MemOp) : Option (Nat × Nat) :=
 
 def slotPubK (τ : T) (m : MemOp) (w : Nat) : Bool :=
   match addrOfK τ m with
-  | some (i, d) =>
-    any τ.slots fun sl => Nat.beq sl.1 i && Nat.ble sl.2.1 d && Nat.ble (d + w) (sl.2.1 + sl.2.2)
+  | some (i, d) => τ.slots.coversK i d w
   | none => false
 
 def argPubK (τ : T) (m : MemOp) (w : Nat) : Bool :=
@@ -2278,15 +2313,13 @@ def movBasesK (τ : T) (d : Reg) : Src → List (Reg × Nat × Nat)
 def regBasesK (τ : T) (r : Reg) : List Nat :=
   map (·.2.1) (filter (fun p => regEq p.1 r && Nat.beq p.2.2 0) τ.bases)
 
-def storeSlotsK (τ : T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat × Nat) :=
+def storeSlotsK (τ : T) (m : MemOp) (w : Nat) (p : Bool) : Slots :=
   match addrOfK τ m with
   | some (i, d) =>
     bif Nat.ble (d + w) (τ.lens.getD i 0) then
-      let kept := filter (fun sl => p || !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
-        Nat.ble (sl.2.1 + sl.2.2) d) τ.slots
-      bif p then (i, d, w) :: kept else kept
-    else bif p then τ.slots else []
-  | none => bif p then τ.slots else []
+      (bif p then τ.slots.addK i d w else τ.slots.removeK i d w)
+    else bif p then τ.slots else .empty
+  | none => bif p then τ.slots else .empty
 
 def storeWbasesK (τ : T) (m : MemOp) (w : Nat) (nb : List Nat) : List (Nat × Nat × Nat) :=
   match addrOfK τ m with
@@ -2338,7 +2371,7 @@ def mem2 (a : Nat × Nat) (l : List (Nat × Nat)) : Bool :=
 
 def leK (τ σ : T) : Bool :=
   τ.regs.subset σ.regs && (!τ.flags || σ.flags) && τ.lens == σ.lens &&
-    all τ.bases (memB · σ.bases) && all τ.slots (mem3 · σ.slots) && all τ.wbases (mem3 · σ.wbases) &&
+    all τ.bases (memB · σ.bases) && τ.slots.subsetK σ.slots && all τ.wbases (mem3 · σ.wbases) &&
     Nat.beq τ.argLen σ.argLen && all τ.argBases (mem2 · σ.argBases) && τ.stk == σ.stk &&
     Nat.ble τ.room σ.room
 
@@ -2355,8 +2388,7 @@ theorem addrOfK_eq : addrOfK = addrOf := by
   funext τ m; simp only [addrOfK, addrOf, find?_eq, regEq_eq, ble_eq]
 
 theorem slotPubK_eq : slotPubK = slotPub := by
-  funext τ m w; simp only [slotPubK, slotPub, addrOfK_eq]
-  rcases addrOf τ m with _ | ⟨i, d⟩ <;> simp only [any_eq, beq_eq, ble_eq]
+  funext τ m w; simp only [slotPubK, slotPub, addrOfK_eq, Slots.coversK_eq]
 
 theorem srcOkK_eq : srcOkK = srcOk := by
   funext τ src; cases src <;> rfl
@@ -2377,7 +2409,8 @@ theorem regBasesK_eq : regBasesK = regBases := by
 
 theorem storeSlotsK_eq : storeSlotsK = storeSlots := by
   funext τ m w p; simp only [storeSlotsK, storeSlots, addrOfK_eq]
-  rcases addrOf τ m with _ | ⟨i, d⟩ <;> simp only [filter_eq, beq_eq, ble_eq, Bool.cond_eq_ite, decide_eq_true_eq, bne]
+  rcases addrOf τ m with _ | ⟨i, d⟩ <;> simp only [ble_eq, Bool.cond_eq_ite, decide_eq_true_eq, Slots.addK_eq,
+    Slots.removeK_eq]
 
 theorem storeWbasesK_eq : storeWbasesK = storeWbases := by
   funext τ m w nb; simp only [storeWbasesK, storeWbases, addrOfK_eq]
@@ -2410,28 +2443,53 @@ theorem mem2_eq (a : Nat × Nat) (l : List (Nat × Nat)) : mem2 a l = l.contains
 
 theorem leK_eq : leK = le := by
   funext τ σ
-  simp only [leK, le, memB_eq, mem3_eq, mem2_eq, all_eq, beq_eq, ble_eq]
+  simp only [leK, le, memB_eq, mem3_eq, mem2_eq, all_eq, beq_eq, ble_eq, Slots.subsetK_eq]
 
 end
 
-/-! ## Stores of public values, without repeats
+/-! ## Stores, keeping the base-address words they do not change
 
-A store of a public value adds its slot, even when the slot is public
-already: code that keeps a public value in a scratch word, storing it again
-in every round, makes the list of slots grow, and every later access and
-comparison slower. `stepKD` adds a slot only if it is not there: the same
-slots (`Sim`), so the same analysis. -/
+`stepKD` is `stepK` but for stores, which keep the public slots and the
+list of base-address words themselves when they change none of them
+(`storeSlotsKD`, `storeWbasesKD`): the kernel then finds what it computed about
+them before in its cache, instead of evaluating a new term with the same
+value. The same public bytes and the same taint otherwise (`Sim`), so the
+same analysis. -/
 
-/-- The slots after a store, without adding one that is there. -/
-def storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat × Nat) :=
+/-- `storeSlotsK`, keeping the slots when the store changes none of their bytes. -/
+def storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) : Slots :=
   match addrOfK τ m with
   | some (i, d) =>
     bif Nat.ble (d + w) (τ.lens.getD i 0) then
-      bif p then (bif mem3 (i, d, w) τ.slots then τ.slots else (i, d, w) :: τ.slots)
-      else VG.Taint.filterKeep (fun sl => !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
-        Nat.ble (sl.2.1 + sl.2.2) d) τ.slots
-    else bif p then τ.slots else []
-  | none => bif p then τ.slots else []
+      (bif p then (bif τ.slots.coversK i d w then τ.slots else τ.slots.addK i d w)
+       else (bif τ.slots.touchesK i d w then τ.slots.removeK i d w else τ.slots))
+    else bif p then τ.slots else .empty
+  | none => bif p then τ.slots else .empty
+
+theorem has_storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) (j k : Nat) :
+    (storeSlotsKD τ m w p).has j k = (storeSlotsK τ m w p).has j k := by
+  unfold storeSlotsKD storeSlotsK
+  rcases addrOfK τ m with _ | ⟨i, d⟩
+  · rfl
+  · simp only
+    cases Nat.ble (d + w) (τ.lens.getD i 0) <;> simp only [Bool.cond_false, Bool.cond_true]
+    cases p <;> simp only [Bool.cond_false, Bool.cond_true]
+    · cases ht : τ.slots.touchesK i d w <;> simp only [Bool.cond_false, Bool.cond_true]
+      rw [Slots.removeK_eq, Slots.has_remove]
+      by_cases hr : j = i ∧ d ≤ k ∧ k < d + w
+      · obtain ⟨rfl, h₁, h₂⟩ := hr
+        rw [Slots.not_has_of_touchesK ht h₁ h₂]; rfl
+      · have : (decide (j = i) && decide (d ≤ k) && decide (k < d + w)) = false := by
+          simp only [Bool.and_eq_false_iff, decide_eq_false_iff_not]; omega
+        rw [this, Bool.not_false, Bool.and_true]
+    · cases hc : τ.slots.coversK i d w <;> simp only [Bool.cond_false, Bool.cond_true]
+      rw [Slots.addK_eq, Slots.has_add]
+      by_cases hr : j = i ∧ d ≤ k ∧ k < d + w
+      · obtain ⟨rfl, h₁, h₂⟩ := hr
+        rw [Slots.has_of_coversK hc h₁ h₂]; rfl
+      · have : (decide (j = i) && decide (d ≤ k) && decide (k < d + w)) = false := by
+          simp only [Bool.and_eq_false_iff, decide_eq_false_iff_not]; omega
+        rw [this, Bool.or_false]
 
 /-- `storeWbasesK`, keeping the list when the store overwrites none of its words. -/
 def storeWbasesKD (τ : T) (m : MemOp) (w : Nat) (nb : List Nat) : List (Nat × Nat × Nat) :=
@@ -2506,50 +2564,26 @@ def stepKDFn : Instr → Step
 def stepKD (τ : T) (i : Instr) : Option T := (stepKDFn i).run τ
 
 
-/-- The same taints, but for repeated slots. -/
+/-- The same taints. -/
 structure Sim (a b : T) : Prop where
   regs : a.regs = b.regs
   flags : a.flags = b.flags
   lens : a.lens = b.lens
   bases : a.bases = b.bases
-  slots : ∀ x, x ∈ a.slots ↔ x ∈ b.slots
+  slots : ∀ i k, a.slots.has i k = b.slots.has i k
   wbases : a.wbases = b.wbases
   argLen : a.argLen = b.argLen
   argBases : a.argBases = b.argBases
   stk : a.stk = b.stk
   room : a.room = b.room
 
-theorem Sim.refl (a : T) : Sim a a := ⟨rfl, rfl, rfl, rfl, fun _ => Iff.rfl, rfl, rfl, rfl, rfl, rfl⟩
+theorem Sim.refl (a : T) : Sim a a := ⟨rfl, rfl, rfl, rfl, fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl⟩
 
-theorem Sim.agree {a b : T} {s₁ s₂ : State} (h : Sim a b) (hb : Agree b s₁ s₂) : Agree a s₁ s₂ := by
-  refine le_sound ?_ hb
-  have hs : ∀ x ∈ a.slots, x ∈ b.slots := fun x hx => (h.slots x).mp hx
-  simp only [le, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true', List.all_eq_true,
-    List.contains_iff_mem, decide_eq_true_eq, h.regs, h.flags, h.lens, h.bases, h.wbases, h.argLen,
-    h.argBases, h.stk, h.room, RegSet.subset_eq, Nat.and_self, Nat.le_refl, beq_self_eq_true]
-  have hf : b.flags = false ∨ b.flags = true := by cases b.flags <;> simp
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨trivial, hf⟩, trivial⟩, fun _ hx => hx⟩, hs⟩, fun _ hx => hx⟩, trivial⟩, fun _ hx => hx⟩,
-    trivial⟩, trivial⟩
-
-theorem mem_storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) (x : Nat × Nat × Nat) :
-    x ∈ storeSlotsKD τ m w p ↔ x ∈ storeSlots τ m w p := by
-  rw [← storeSlotsK_eq]
-  unfold storeSlotsKD storeSlotsK
-  cases addrOfK τ m with
-  | none => exact Iff.rfl
-  | some id =>
-    obtain ⟨i, d⟩ := id
-    simp only
-    cases Nat.ble (d + w) (τ.lens.getD i 0) <;> cases p <;> simp only [Bool.cond_false, Bool.cond_true]
-    · simp only [VG.Taint.filterKeep_eq, KList.filter_eq, Bool.false_or]
-    rw [show filter (fun sl => true || !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
-      Nat.ble (sl.2.1 + sl.2.2) d) τ.slots = τ.slots by
-        simp only [KList.filter_eq, Bool.true_or]; exact List.filter_eq_self.mpr fun _ _ => rfl]
-    cases hm : mem3 (i, d, w) τ.slots
-    · exact Iff.rfl
-    · rw [mem3_eq, List.contains_iff_mem] at hm
-      simp only [Bool.cond_true, List.mem_cons, iff_or_self]
-      rintro rfl; exact hm
+theorem Sim.agree {a b : T} {s₁ s₂ : State} (h : Sim a b) (hb : Agree b s₁ s₂) : Agree a s₁ s₂ :=
+  hb.mono (fun _ hr => h.regs ▸ hr) (fun e => h.flags ▸ e) (.inl h.lens) (fun _ hp => h.bases ▸ hp)
+    (fun i k hk => ⟨(h.slots i k) ▸ hk, h.lens⟩) (fun _ hp => ⟨h.wbases ▸ hp, h.lens⟩)
+    (.inr ⟨h.argLen, h.stk⟩) (fun _ hp => ⟨h.argBases ▸ hp, h.argLen, h.stk⟩)
+    (.inl ⟨h.stk, Nat.le_of_eq h.room⟩)
 
 theorem stepKD_spec (τ : T) (i : Instr) :
     (stepKD τ i = none ∧ step τ i = none) ∨ ∃ a b, stepKD τ i = some a ∧ step τ i = some b ∧ Sim a b := by
@@ -2560,7 +2594,7 @@ theorem stepKD_spec (τ : T) (i : Instr) :
     unfold storeStepKD storeStepK
     cases pub τ m.base
     · exact .inl ⟨rfl, rfl⟩
-    · exact .inr ⟨_, _, rfl, rfl, ⟨rfl, rfl, rfl, rfl, fun x => by rw [storeSlotsK_eq]; exact mem_storeSlotsKD τ m w p x,
+    · exact .inr ⟨_, _, rfl, rfl, ⟨rfl, rfl, rfl, rfl, has_storeSlotsKD τ m w p,
         congrFun (congrFun (congrFun (congrFun storeWbasesKD_eq τ) m) w) nb, rfl, rfl, rfl, rfl⟩⟩
   have other : ∀ {i}, stepKD τ i = stepK τ i →
       (stepKD τ i = none ∧ step τ i = none) ∨ ∃ a b, stepKD τ i = some a ∧ step τ i = some b ∧ Sim a b := by

@@ -30,12 +30,14 @@ abbrev slx (ex : List Nat) : List (Nat × Nat × Nat) := sl0 ++ ex.map fun d => 
 
 theorem slotsOkX {ex : List Nat} (hex : ∀ d ∈ ex, d % 4 = 0 ∧ d + 4 ≤ 144) (rs : List Reg) :
     VG.X86.Taint.SlotsOk (τB (slx ex) rs) := by
-  intro x hx
-  simp only [τB, slx, List.append_assoc, List.mem_append, List.mem_map] at hx
+  refine VG.X86.Taint.slotsOk_of_list rfl fun x hx => ?_
+  simp only [slx, List.append_assoc, List.mem_append, List.mem_map] at hx
   rcases hx with hx | ⟨d, hd, rfl⟩ | hx
-  · exact slotsOk0 rs x (by simp only [τB]; exact List.mem_append_left _ hx)
+  · exact (slotsOk0 rs).of_mem rfl (List.mem_append_left _ hx) (by
+      simp only [sl0, List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl <;> decide)
   · have := hex d hd; simp [τB]; omega
-  · exact slotsOk0 rs x (by simp only [τB]; exact List.mem_append_right _ hx)
+  · exact (slotsOk0 rs).of_mem rfl (List.mem_append_right _ hx) (by
+      simp only [List.mem_singleton] at hx; subst hx; decide)
 
 namespace Two
 variable {s₀₁ s₀₂ : State} (T : Two s₀₁ s₀₂)

@@ -229,7 +229,7 @@ theorem wfS {s : State} (hp : Pre s) : VG.X86.Taint.Wf τS s := by
 theorem agreeS {s₁ s₂ : State} (hp₁ : Pre s₁) (hp₂ : Pre s₂) (q : Same s₁ s₂) :
     VG.X86.Taint.Agree τS s₁ s₂ := by
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wfS hp₁, wfS hp₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => q.esp.symm,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => q.esp.symm,
     fun k h4 hk => ?_⟩
   · simp only [τS, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact q.esp.symm

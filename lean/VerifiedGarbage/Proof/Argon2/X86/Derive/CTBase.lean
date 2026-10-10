@@ -57,7 +57,7 @@ def wide (s₀ : State) : List Region :=
 `rs` public. -/
 def τB (sl : List (Nat × Nat × Nat)) (rs : List Reg := []) : VG.X86.Taint.T :=
   { regs := .ofList (.esp :: .ebp :: rs), flags := false, lens := [160, 1024, 16384, 0, 72],
-    bases := [(.ebp, 4, 164), (.ebp, 0, 0), (.esp, 4, 164), (.esp, 0, 0)], slots := sl ++ [(4, 0, 72)],
+    bases := [(.ebp, 4, 164), (.ebp, 0, 0), (.esp, 4, 164), (.esp, 0, 0)], slots := VG.Slots.ofList (sl ++ [(4, 0, 72)]),
     wbases := [(4, 52, 1), (4, 60, 2), (4, 64, 3)] }
 
 
@@ -252,17 +252,19 @@ theorem agreeB {s₀₁ s₀₂ s₁ s₂ : State} (hp₁ : DPre s₀₁) (hp₂
       VG.X86.Taint.Agree (τB sl rs) (s₁.withRegions s₁.rd w₁) (s₂.withRegions s₂.rd w₂) := by
   refine ⟨wide s₀₁, wide s₀₂, by rw [h₁.wr]; exact covers_wide hp₁, by rw [h₂.wr]; exact covers_wide hp₂,
     ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => pb.wide_eq, wf_wide hp₁ sl rs h₁, wf_wide hp₂ sl rs h₂, hok,
-      fun x hx k hk₁ hk₂ => ?_, fun h0 => absurd h0 (Nat.lt_irrefl 0),
+      fun i k hk => ?_, fun h0 => absurd h0 (Nat.lt_irrefl 0),
       fun _ _ h0 => absurd h0 (Nat.not_lt_zero _)⟩⟩
   · simp only [τB, RegSet.mem_ofList, List.mem_cons] at hr
     rcases hr with rfl | rfl | hr
     · rw [State.withRegions_gpr, State.withRegions_gpr, h₁.esp, h₂.esp, pb.E]
     · rw [State.withRegions_gpr, State.withRegions_gpr, h₁.ebp, h₂.ebp, pb.E]
     · rw [State.withRegions_gpr, State.withRegions_gpr]; exact hrs r hr
-  · simp only [τB, List.mem_append, List.mem_singleton] at hx
+  · have hlen := hok i k hk
+    rw [show (τB sl rs).slots = VG.Slots.ofList (sl ++ [(4, 0, 72)]) from rfl, VG.Slots.has_ofList] at hk
+    obtain ⟨x, hx, rfl, hk₁, hk₂⟩ := hk
+    simp only [List.mem_append, List.mem_singleton] at hx
     rcases hx with hx | rfl
     · obtain ⟨x0, hk⟩ := hsl x hx
-      have hlen := hok x (by simp [τB, hx])
       rw [x0] at hlen
       simp only [τB, List.getD_cons_zero] at hlen
       have k160 : k < 160 := by omega

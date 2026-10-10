@@ -135,7 +135,7 @@ theorem init_agree₀ (iv : HashValue) {s₁ s₂ : State} (h₁ : (Proof.Sha512
       subst hp'; refine ⟨by decide, ?_⟩
       simp [VG.X86.Taint.region, hw, addr, arg, argAddr]
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf _ h₁, wf _ h₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
   · simp only [initτ₀, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp

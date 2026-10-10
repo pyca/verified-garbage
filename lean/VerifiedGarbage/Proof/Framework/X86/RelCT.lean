@@ -136,8 +136,8 @@ theorem agree_regs {rs : List Reg} {x y : State} (h : ∀ r ∈ rs, x.gpr r = y.
       fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (Nat.lt_irrefl 0),
       fun _ h => (List.not_mem_nil h).elim⟩
   exact ⟨⟨fun r hr => h r (by simpa [τr, RegSet.mem_ofList] using hr), fun h => nomatch h⟩,
-    fun h => absurd rfl h, wf x, wf y, fun _ h => (List.not_mem_nil h).elim,
-    fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (Nat.lt_irrefl 0),
+    fun h => absurd rfl h, wf x, wf y, VG.X86.Taint.slotsOk_empty,
+    VG.X86.Taint.slotsAgree_empty, fun h => absurd h (Nat.lt_irrefl 0),
     fun _ _ h => absurd h (Nat.not_lt_zero _)⟩
 
 /-- An empty block. -/

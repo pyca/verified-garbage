@@ -932,7 +932,7 @@ theorem agree₀D (hd : Dims P S) (hDN : D ≤ P.N) {s₁ s₂ : State} (h₁ : 
   obtain ⟨hesp, ha⟩ := hpub
   have hp₁ := pre_ofD h₁; have hp₂ := pre_ofD h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀D hd hDN h₁, wf₀D hd hDN h₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
   · simp only [τ₀D, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp
@@ -952,7 +952,7 @@ theorem agree₀ (hd : Dims P S) {s₁ s₂ : State} (h₁ : (finK H S).pre s₁
   obtain ⟨hesp, ha⟩ := hpub
   have hp₁ := pre_of h₁; have hp₂ := pre_of h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ hd h₁, wf₀ hd h₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp

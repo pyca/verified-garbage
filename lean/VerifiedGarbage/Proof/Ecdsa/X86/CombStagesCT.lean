@@ -68,7 +68,7 @@ theorem argAgree {rs : List Reg} {n room : Nat} {s t : State}
     (ha : ∀ j < n, arg s j = arg t j) : VG.X86.Taint.Agree (argτ rs n room) s t := by
   refine ⟨⟨fun r h => hr r (by simpa only [argτ, RegSet.mem_ofList] using h),
     fun h => by cases h⟩, fun h => False.elim (h rfl), ws, wt,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => he, ?_⟩
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => he, ?_⟩
   intro k hlo hhi
   have hs := (ws.args (show 0 < 4 + 4 * n by omega)).1
   have ht := (wt.args (show 0 < 4 + 4 * n by omega)).1
@@ -92,7 +92,7 @@ theorem scratchArgAgree {n : Nat} {second : Bool} {s t : State}
     (a : VG.X86.Taint.Agree (argτ [.esp, .edi] n) s t)
     (ws : VG.X86.Taint.Wf (combτAt second) s) (wt : VG.X86.Taint.Wf (combτAt second) t)
     (hw : s.wr = t.wr) : VG.X86.Taint.Agree (scratchArgτ n second) s t :=
-  ⟨a.rf, fun _ => hw, scratchArgWf a.wf₁ ws, scratchArgWf a.wf₂ wt, (fun _ h => (List.not_mem_nil h).elim), a.slots, a.sp, a.argMem⟩
+  ⟨a.rf, fun _ => hw, scratchArgWf a.wf₁ ws, scratchArgWf a.wf₂ wt, (VG.X86.Taint.slotsOk_empty), a.slots, a.sp, a.argMem⟩
 
 /-- The functional stage invariant restores public cdecl arguments. -/
 theorem keepArgAgree {c : Cfg} {s₀ t₀ s t : State} {extra₁ extra₂ : List Region}

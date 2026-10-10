@@ -492,7 +492,7 @@ theorem τ0_agree {s₁ s₂ : State} (f₁ : (s₁.gpr .esp).toNat + 32 ≤ 2 ^
     (sp : s₁.gpr .esp = s₂.gpr .esp) (args : ∀ i < 7, arg s₁ i = arg s₂ i) :
     VG.X86.Taint.Agree τ0 s₁ s₂ := by
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, τ0_wf f₁ d₁, τ0_wf f₂ d₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => sp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => sp,
     fun k h4 hk => ?_⟩
   · simp only [τ0, RegSet.mem_ofList, List.mem_singleton] at hr
     subst r; exact sp
