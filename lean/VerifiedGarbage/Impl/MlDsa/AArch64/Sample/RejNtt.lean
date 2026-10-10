@@ -40,8 +40,8 @@ def rnBody : Prog isa := .seq (.block rnChunk) (.ite (.zero .x .x4) (.block []) 
 
 /-- The loop's registers. -/
 def rnSetup : List Instr :=
-  [.addImm .x .x2 .x25 840, mov .x3 .x26, .movz .x .x4 256 0, .movz .x .x5 336 0] ++ movQ .x9 ++
-    [.movz .x .x10 127 0]
+  ([.addImm .x .x2 .x25 840, mov .x3 .x26, .movz .x .x4 256 0, .movz .x .x5 336 0] : List Instr) ++ movQ .x9 ++
+    ([.movz .x .x10 127 0] : List Instr)
 
 def rnLoop : Prog isa := .seq (.block rnSetup) (.loop rnBody (.nonzero .x .x5))
 

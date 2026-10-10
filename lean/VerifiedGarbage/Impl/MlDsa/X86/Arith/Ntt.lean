@@ -102,26 +102,26 @@ def table (T : List Nat) : List Instr :=
 
 /-- The butterfly of `NTT` on `[esi]` and `[edi]` with the zeta at `[ebp]`. -/
 def bflyBody : List Instr :=
-  [.mov .eax (.mem (at_ .edi 0)), .mov .edx (.mem (at_ .ebp 0)), .mul .edx] +++ mred .ebx +++
-  [.mov .eax (.mem (at_ .esi 0)), .alu .add .eax (.imm qImm), .alu .sub .eax (.reg .ebx)] +++
+  ([.mov .eax (.mem (at_ .edi 0)), .mov .edx (.mem (at_ .ebp 0)), .mul .edx] : List Instr) +++ mred .ebx +++
+  ([.mov .eax (.mem (at_ .esi 0)), .alu .add .eax (.imm qImm), .alu .sub .eax (.reg .ebx)] : List Instr) +++
   csubQ .eax .edx +++
-  [.store (at_ .edi 0) .eax, .mov .eax (.mem (at_ .esi 0)), .alu .add .eax (.reg .ebx)] +++
+  ([.store (at_ .edi 0) .eax, .mov .eax (.mem (at_ .esi 0)), .alu .add .eax (.reg .ebx)] : List Instr) +++
   csubQ .eax .edx +++
-  [.store (at_ .esi 0) .eax, .alu .add .esi (.imm 4), .alu .add .edi (.imm 4), .alu .sub .ecx (.imm 1)]
+  ([.store (at_ .esi 0) .eax, .alu .add .esi (.imm 4), .alu .add .edi (.imm 4), .alu .sub .ecx (.imm 1)] : List Instr)
 
 /-- The butterfly of `NTT⁻¹` on `[esi]` and `[edi]` with the zeta at `[ebp]`. -/
 def ibflyBody : List Instr :=
-  [.mov .ebx (.mem (at_ .esi 0)), .alu .add .ebx (.imm qImm), .alu .sub .ebx (.mem (at_ .edi 0)),
-    .mov .eax (.mem (at_ .esi 0)), .alu .add .eax (.mem (at_ .edi 0))] +++ csubQ .eax .edx +++
-  [.store (at_ .esi 0) .eax, .mov .eax (.reg .ebx), .mov .edx (.mem (at_ .ebp 0)), .mul .edx] +++
+  ([.mov .ebx (.mem (at_ .esi 0)), .alu .add .ebx (.imm qImm), .alu .sub .ebx (.mem (at_ .edi 0)),
+    .mov .eax (.mem (at_ .esi 0)), .alu .add .eax (.mem (at_ .edi 0))] : List Instr) +++ csubQ .eax .edx +++
+  ([.store (at_ .esi 0) .eax, .mov .eax (.reg .ebx), .mov .edx (.mem (at_ .ebp 0)), .mul .edx] : List Instr) +++
   mred .ebx +++
-  [.store (at_ .edi 0) .ebx, .alu .add .esi (.imm 4), .alu .add .edi (.imm 4), .alu .sub .ecx (.imm 1)]
+  ([.store (at_ .edi 0) .ebx, .alu .add .esi (.imm 4), .alu .add .edi (.imm 4), .alu .sub .ecx (.imm 1)] : List Instr)
 
 /-- The table `T`, `ebp` at entry `z`, and `f + 1024` in the slot of `scratch`. -/
 def nttSetup (T : List Nat) (z : Nat) : List Instr :=
   table T +++
-  [.mov .ebp (.reg .eax), .alu .add .ebp (.imm (BitVec.ofNat 32 (4 * z))), .mov .edx (.mem (at_ .esp 20)),
-    .alu .add .edx (.imm 1024), .store (at_ .esp 24) .edx]
+  ([.mov .ebp (.reg .eax), .alu .add .ebp (.imm (BitVec.ofNat 32 (4 * z))), .mov .edx (.mem (at_ .esp 20)),
+    .alu .add .edx (.imm 1024), .store (at_ .esp 24) .edx] : List Instr)
 
 def ntt : Prog isa :=
   leaf (.seq (.block ldScratch) (.seq (.block (nttSetup montZetaTable 1))
@@ -129,8 +129,8 @@ def ntt : Prog isa :=
 
 /-- `[esi] ← [esi] · 8347681 mod q`, and on to the next coefficient. -/
 def scaleBody : List Instr :=
-  [.mov .eax (.mem (at_ .esi 0)), .mov .edx (.imm scaleImm), .mul .edx] +++ mred .ebx +++
-  [.store (at_ .esi 0) .ebx, .alu .add .esi (.imm 4), .alu .sub .ecx (.imm 1)]
+  ([.mov .eax (.mem (at_ .esi 0)), .mov .edx (.imm scaleImm), .mul .edx] : List Instr) +++ mred .ebx +++
+  ([.store (at_ .esi 0) .ebx, .alu .add .esi (.imm 4), .alu .sub .ecx (.imm 1)] : List Instr)
 
 def nttInv : Prog isa :=
   leaf (.seq (.block ldScratch) (.seq (.block (nttSetup montNegZetaTable 255))

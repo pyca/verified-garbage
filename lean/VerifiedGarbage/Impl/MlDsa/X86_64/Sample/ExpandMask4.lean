@@ -50,20 +50,20 @@ def saved : List Reg := [.rbx, .rbp, .r12, .r13, .r14]
 /-- Save the callee-saved registers, and keep the pointers and `γ₁`. -/
 def pro : List Instr :=
   (List.range 5).map (fun k => .store (at_ .rcx (oSave + 8 * k)) (saved.getD k .rbx)) ++
-    [.mov .rbx (.reg .rcx), .mov .r12 (.reg .rdi), .mov .r13 (.reg .rdx), .mov .r14 (.reg .rsi)]
+    ([.mov .rbx (.reg .rcx), .mov .r12 (.reg .rdi), .mov .r13 (.reg .rdx), .mov .r14 (.reg .rsi)] : List Instr)
 
 /-- Restore the callee-saved registers (`rbx` last). -/
 def epi : List Instr :=
   ((List.range 4).map fun k => .mov (saved.getD (4 - k) .rbx) (.mem (at_ .rbx (oSave + 8 * (4 - k))))) ++
-    [.mov .rbx (.mem (at_ .rbx oSave))]
+    ([.mov .rbx (.mem (at_ .rbx oSave))] : List Instr)
 
 /-- Bytes 0 to 65 of state `k`: the 66 bytes of seed `k`, as eight lanes and
 two bytes. -/
 def seedLanes (k : Nat) : List Instr :=
   (List.range 8).flatMap (fun i =>
     [.mov .rax (.mem (at_ .r12 (66 * k + 8 * i))), .store (at_ .rbx (32 * i + 8 * k)) .rax]) ++
-  [.movzx8 .rax (at_ .r12 (66 * k + 64)), .store8 (at_ .rbx (256 + 8 * k)) .rax,
-    .movzx8 .rax (at_ .r12 (66 * k + 65)), .store8 (at_ .rbx (256 + 8 * k + 1)) .rax]
+  ([.movzx8 .rax (at_ .r12 (66 * k + 64)), .store8 (at_ .rbx (256 + 8 * k)) .rax,
+    .movzx8 .rax (at_ .r12 (66 * k + 65)), .store8 (at_ .rbx (256 + 8 * k + 1)) .rax] : List Instr)
 
 /-- The padded blocks of the four seeds, XORed into the zero states: the
 seeds, SHAKE's suffix at byte 66 (byte 2 of lane 8) and `0x80` at byte 135

@@ -46,7 +46,7 @@ open VG.Impl.MlDsa.AArch64.Arith (movW qNat)
 and the counter `cnt` counts down from 256. -/
 def mapLoop (ptrs : List Reg) (cnt : Reg) (body : List Instr) : Prog isa :=
   .seq (.block [.movz .x cnt 256 0])
-    (.loop (.block (body ++ ptrs.map (fun p => .addImm .x p p 4) ++ [.subImm .x cnt cnt 1]))
+    (.loop (.block (body ++ ptrs.map (fun p => .addImm .x p p 4) ++ ([.subImm .x cnt cnt 1] : List Instr)))
       (.nonzero .x cnt))
 
 /-- `d ← d mod m` for `d < 2m`, with `m` in `mr` and a temporary `t`. -/
@@ -81,12 +81,12 @@ def hbRaw (g : Nat) (f a rm ra : Reg) : List Instr :=
 
 /-- `f ← r₁ = f mod m` of `a`, with a temporary `t`. -/
 def hb (g : Nat) (f a t rm ra : Reg) : List Instr :=
-  hbRaw g f a rm ra ++ [.subImm .x t f (dMod g), .lsr .x t t 63, .mul .x f f t]
+  hbRaw g f a rm ra ++ ([.subImm .x t f (dMod g), .lsr .x t t 63, .mul .x f f t] : List Instr)
 
 /-- The branch on `γ₂` (in `gr`, zero-extended), through `t`: `arm g32` if
 it is `(q - 1)/32`, else `arm g88`. -/
 def onGamma (gr t : Reg) (arm : Nat → Prog isa) : Prog isa :=
-  .seq (.block (movW t (BitVec.ofNat 32 g32) ++ [.sub .x t gr t])) (.ite (.zero .x t) (arm g32) (arm g88))
+  .seq (.block (movW t (BitVec.ofNat 32 g32) ++ ([.sub .x t gr t] : List Instr))) (.ite (.zero .x t) (arm g32) (arm g88))
 
 /-- `γ₂` in `gr` zero-extended first, then `main`. -/
 def zext (gr : Reg) (main : Prog isa) : Prog isa := .seq (.block [.addImm .w gr gr 0]) main
@@ -103,15 +103,15 @@ def power2Round : Prog isa :=
 
 /-! ## `highBits` and `lowBits` -/
 
-def hbBody (g : Nat) : List Instr := [.ldr .w .x11 .x0 0] ++ hb g .x12 .x11 .x13 .x4 .x5 ++ [.str .w .x12 .x2 0]
+def hbBody (g : Nat) : List Instr := ([.ldr .w .x11 .x0 0] : List Instr) ++ hb g .x12 .x11 .x13 .x4 .x5 ++ ([.str .w .x12 .x2 0] : List Instr)
 
 def highBits : Prog isa :=
   zext .x1 <| onGamma .x1 .x3 fun g => .seq (.block (hbConsts g .x4 .x5)) (mapLoop [.x0, .x2] .x6 (hbBody g))
 
 def lbBody (g : Nat) : List Instr :=
-  [.ldr .w .x11 .x0 0] ++ hb g .x12 .x11 .x13 .x4 .x5 ++
-    [.mul .x .x12 .x12 .x7, .sub .x .x11 .x11 .x12, .lsr .x .x13 .x11 63, .madd .x .x11 .x13 .x9 .x11,
-      .str .w .x11 .x2 0]
+  ([.ldr .w .x11 .x0 0] : List Instr) ++ hb g .x12 .x11 .x13 .x4 .x5 ++
+    ([.mul .x .x12 .x12 .x7, .sub .x .x11 .x11 .x12, .lsr .x .x13 .x11 63, .madd .x .x11 .x13 .x9 .x11,
+      .str .w .x11 .x2 0] : List Instr)
 
 /-- `M`, `2^(S-1)`, `2γ₂` and `q`. -/
 def lbConsts (g : Nat) : List Instr :=
@@ -127,21 +127,21 @@ def nlBody : List Instr :=
     .logic .orr .x .x13 .x13 .x14, .logic .and .x .x10 .x10 .x13]
 
 def normLt : Prog isa :=
-  .seq (.block ([.addImm .w .x1 .x1 0] ++ movW .x9 (BitVec.ofNat 32 qNat) ++
-      [.movz .x .x10 0 0, .subImm .x .x10 .x10 1]))
+  .seq (.block (([.addImm .w .x1 .x1 0] : List Instr) ++ movW .x9 (BitVec.ofNat 32 qNat) ++
+      ([.movz .x .x10 0 0, .subImm .x .x10 .x10 1] : List Instr)))
     (.seq (mapLoop [.x0] .x11 nlBody) (.block [.lsr .x .x0 .x10 63]))
 
 /-! ## `makeHint` -/
 
 def mhBody (g : Nat) : List Instr :=
-  [.ldr .w .x11 .x1 0] ++ hb g .x12 .x11 .x13 .x5 .x6 ++
-    [.ldr .w .x14 .x0 0, .add .x .x11 .x11 .x14] ++ csub .x11 .x13 .x9 ++ hb g .x14 .x11 .x13 .x5 .x6 ++
-    [.logic .eor .x .x14 .x14 .x12, .addImm .x .x14 .x14 63, .lsr .x .x14 .x14 6, .str .w .x14 .x3 0,
-      .add .x .x8 .x8 .x14]
+  ([.ldr .w .x11 .x1 0] : List Instr) ++ hb g .x12 .x11 .x13 .x5 .x6 ++
+    ([.ldr .w .x14 .x0 0, .add .x .x11 .x11 .x14] : List Instr) ++ csub .x11 .x13 .x9 ++ hb g .x14 .x11 .x13 .x5 .x6 ++
+    ([.logic .eor .x .x14 .x14 .x12, .addImm .x .x14 .x14 63, .lsr .x .x14 .x14 6, .str .w .x14 .x3 0,
+      .add .x .x8 .x8 .x14] : List Instr)
 
 /-- `M`, `2^(S-1)`, `q`, and the count of 1s. -/
 def mhConsts (g : Nat) : List Instr :=
-  hbConsts g .x5 .x6 ++ movW .x9 (BitVec.ofNat 32 qNat) ++ [.movz .x .x8 0 0]
+  hbConsts g .x5 .x6 ++ movW .x9 (BitVec.ofNat 32 qNat) ++ ([.movz .x .x8 0 0] : List Instr)
 
 def makeHint : Prog isa :=
   zext .x2 <| .seq (onGamma .x2 .x4 fun g => .seq (.block (mhConsts g)) (mapLoop [.x0, .x1, .x3] .x7 (mhBody g)))
@@ -150,16 +150,16 @@ def makeHint : Prog isa :=
 /-! ## `useHint` -/
 
 def uhBody (g : Nat) : List Instr :=
-  [.ldr .w .x11 .x1 0] ++ hbRaw g .x12 .x11 .x5 .x6 ++
-    [.mul .x .x13 .x12 .x7, .sub .x .x13 .x13 .x11, .lsr .x .x13 .x13 63, .lsl .x .x13 .x13 1,
+  ([.ldr .w .x11 .x1 0] : List Instr) ++ hbRaw g .x12 .x11 .x5 .x6 ++
+    ([.mul .x .x13 .x12 .x7, .sub .x .x13 .x13 .x11, .lsr .x .x13 .x13 63, .lsl .x .x13 .x13 1,
       .subImm .x .x13 .x13 1, .ldr .w .x14 .x0 0, .sub .x .x14 .x9 .x14, .lsr .x .x14 .x14 63,
-      .mul .x .x13 .x13 .x14, .add .x .x13 .x13 .x12, .addImm .x .x13 .x13 (dMod g)] ++
-    csubR .x13 .x14 .x10 ++ csubR .x13 .x14 .x10 ++ [.str .w .x13 .x3 0]
+      .mul .x .x13 .x13 .x14, .add .x .x13 .x13 .x12, .addImm .x .x13 .x13 (dMod g)] : List Instr) ++
+    csubR .x13 .x14 .x10 ++ csubR .x13 .x14 .x10 ++ ([.str .w .x13 .x3 0] : List Instr)
 
 /-- `M`, `2^(S-1)`, `2γ₂`, zero and `m`. -/
 def uhConsts (g : Nat) : List Instr :=
   hbConsts g .x5 .x6 ++ movW .x7 (BitVec.ofNat 32 (2 * g)) ++
-    [.movz .x .x9 0 0, .movz .x .x10 (BitVec.ofNat 16 (dMod g)) 0]
+    ([.movz .x .x9 0 0, .movz .x .x10 (BitVec.ofNat 16 (dMod g)) 0] : List Instr)
 
 def useHint : Prog isa :=
   zext .x2 <| onGamma .x2 .x4 fun g => .seq (.block (uhConsts g)) (mapLoop [.x0, .x1, .x3] .x8 (uhBody g))

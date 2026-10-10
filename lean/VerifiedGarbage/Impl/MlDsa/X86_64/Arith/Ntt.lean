@@ -52,31 +52,31 @@ def vzeta (o : BitVec 8) : List Instr :=
 /-- A layer with `len ≥ 4` and butterflies `bf`: its `128 / len` blocks, the
 first with the zeta `k`, the zeta pointer moving by `dz` bytes. -/
 def vlay (bf : List Instr) (len k : Nat) (dz : BitVec 32) : Prog isa :=
-  .seq (.block ([.mov .rdx (.reg .rdi)] ++ leaR .r8 .rsi (4 * k) ++
-    [.mov32 .rax (.imm (BitVec.ofNat 32 (128 / len)))])) <|
-  .loop (.seq (.block (vzeta 0 ++ [.alu .add .r8 (.imm dz)]))
-    (.seq (rcxLoop (len / 4) ([.movdquLoad .xmm0 (at_ .rdx 0), .movdquLoad .xmm1 (at_ .rdx (4 * len))] ++
-        bf ++ [.movdquStore (at_ .rdx 0) .xmm0, .movdquStore (at_ .rdx (4 * len)) .xmm3,
-          .alu .add .rdx (.imm 16)]))
+  .seq (.block (([.mov .rdx (.reg .rdi)] : List Instr) ++ leaR .r8 .rsi (4 * k) ++
+    ([.mov32 .rax (.imm (BitVec.ofNat 32 (128 / len)))] : List Instr))) <|
+  .loop (.seq (.block (vzeta 0 ++ ([.alu .add .r8 (.imm dz)] : List Instr)))
+    (.seq (rcxLoop (len / 4) (([.movdquLoad .xmm0 (at_ .rdx 0), .movdquLoad .xmm1 (at_ .rdx (4 * len))] : List Instr) ++
+        bf ++ ([.movdquStore (at_ .rdx 0) .xmm0, .movdquStore (at_ .rdx (4 * len)) .xmm3,
+          .alu .add .rdx (.imm 16)] : List Instr)))
       (.block [.alu .add .rdx (.imm (BitVec.ofNat 32 (4 * len))), .alu .sub .rax (.imm 1)]))) .ne
 
 /-- The layer with `len = 2`, two blocks at a time: the zetas at `[r8]`
 arranged by `pshufd` with `o`, the zeta pointer moving by `dz` bytes. -/
 def vlay2 (bf : List Instr) (k : Nat) (o : BitVec 8) (dz : BitVec 32) : Prog isa :=
-  .seq (.block ([.mov .rdx (.reg .rdi)] ++ leaR .r8 .rsi (4 * k))) <|
-  rcxLoop 32 ([.movdquLoad .xmm0 (at_ .rdx 0), .movdquLoad .xmm1 (at_ .rdx 16)] ++ vzeta o ++
-    [.alu .add .r8 (.imm dz), xmov .xmm2 .xmm0, xb .punpcklqdq .xmm0 .xmm1, xb .punpckhqdq .xmm2 .xmm1,
-      xmov .xmm1 .xmm2] ++ bf ++
+  .seq (.block (([.mov .rdx (.reg .rdi)] : List Instr) ++ leaR .r8 .rsi (4 * k))) <|
+  rcxLoop 32 (([.movdquLoad .xmm0 (at_ .rdx 0), .movdquLoad .xmm1 (at_ .rdx 16)] : List Instr) ++ vzeta o ++
+    ([.alu .add .r8 (.imm dz), xmov .xmm2 .xmm0, xb .punpcklqdq .xmm0 .xmm1, xb .punpckhqdq .xmm2 .xmm1,
+      xmov .xmm1 .xmm2] : List Instr) ++ bf ++
     [xmov .xmm1 .xmm0, xb .punpcklqdq .xmm0 .xmm3, xb .punpckhqdq .xmm1 .xmm3,
       .movdquStore (at_ .rdx 0) .xmm0, .movdquStore (at_ .rdx 16) .xmm1, .alu .add .rdx (.imm 32)])
 
 /-- The layer with `len = 1`, four blocks at a time: the zetas at `[r8]`
 arranged by `pshufd` with `o`, the zeta pointer moving by `dz` bytes. -/
 def vlay1 (bf : List Instr) (k : Nat) (o : BitVec 8) (dz : BitVec 32) : Prog isa :=
-  .seq (.block ([.mov .rdx (.reg .rdi)] ++ leaR .r8 .rsi (4 * k))) <|
-  rcxLoop 32 ([.movdquLoad .xmm0 (at_ .rdx 0), .movdquLoad .xmm2 (at_ .rdx 16)] ++ vzeta o ++
-    [.alu .add .r8 (.imm dz), .xop (.pshufd .xmm0 .xmm0 0xD8), .xop (.pshufd .xmm2 .xmm2 0xD8),
-      xmov .xmm1 .xmm0, xb .punpcklqdq .xmm0 .xmm2, xb .punpckhqdq .xmm1 .xmm2] ++ bf ++
+  .seq (.block (([.mov .rdx (.reg .rdi)] : List Instr) ++ leaR .r8 .rsi (4 * k))) <|
+  rcxLoop 32 (([.movdquLoad .xmm0 (at_ .rdx 0), .movdquLoad .xmm2 (at_ .rdx 16)] : List Instr) ++ vzeta o ++
+    ([.alu .add .r8 (.imm dz), .xop (.pshufd .xmm0 .xmm0 0xD8), .xop (.pshufd .xmm2 .xmm2 0xD8),
+      xmov .xmm1 .xmm0, xb .punpcklqdq .xmm0 .xmm2, xb .punpckhqdq .xmm1 .xmm2] : List Instr) ++ bf ++
     [xmov .xmm1 .xmm0, xb .punpckldq .xmm0 .xmm3, xb .punpckhdq .xmm1 .xmm3,
       .movdquStore (at_ .rdx 0) .xmm0, .movdquStore (at_ .rdx 16) .xmm1, .alu .add .rdx (.imm 32)])
 
@@ -84,8 +84,8 @@ def vlay1 (bf : List Instr) (k : Nat) (o : BitVec 8) (dz : BitVec 32) : Prog isa
 def vscale : Prog isa :=
   .seq (.block [.mov .rdx (.reg .rdi), .mov32 .rax (.imm 16382), .xop (.movq .xmm13 .rax),
       .xop (.pshufd .xmm13 .xmm13 0), xmov .xmm12 .xmm13])
-    (rcxLoop 64 ([.movdquLoad .xmm3 (at_ .rdx 0)] ++ vmont .xmm3 .xmm13 .xmm12 .xmm2 .xmm4 ++
-      vcsub .xmm3 .xmm2 ++ [.movdquStore (at_ .rdx 0) .xmm3, .alu .add .rdx (.imm 16)]))
+    (rcxLoop 64 (([.movdquLoad .xmm3 (at_ .rdx 0)] : List Instr) ++ vmont .xmm3 .xmm13 .xmm12 .xmm2 .xmm4 ++
+      vcsub .xmm3 .xmm2 ++ ([.movdquStore (at_ .rdx 0) .xmm3, .alu .add .rdx (.imm 16)] : List Instr)))
 
 /-- The table and the constants. -/
 def vpro : List Instr := dwordTab zmTab 256 .rsi ++ vconsts

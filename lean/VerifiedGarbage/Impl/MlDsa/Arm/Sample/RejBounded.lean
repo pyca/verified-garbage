@@ -34,15 +34,15 @@ open VG.Impl.MlDsa.Arm.Pack (addQNeg)
 /-- `r9 ← r9 - s` if `s ≤ r9` (`r9 < 2³¹`), with `r11` as the sign bit, for
 `s` 10 or 5. -/
 def csub (s : Nat) : List Instr :=
-  [.dp .sub .r9 .r9 (.imm (BitVec.ofNat 32 s)), .mov .r11 (.shifted .r9 .lsr 31)] ++
+  ([.dp .sub .r9 .r9 (.imm (BitVec.ofNat 32 s)), .mov .r11 (.shifted .r9 .lsr 31)] : List Instr) ++
     (if s = 10 then [.dp .add .r9 .r9 (.shifted .r11 .lsl 3), .dp .add .r9 .r9 (.shifted .r11 .lsl 1)]
       else [.dp .add .r9 .r9 (.shifted .r11 .lsl 2), .dp .add .r9 .r9 (.reg .r11)])
 
 /-- The coefficient of an accepted half-byte `r9`, modulo `q`, in `r10`:
 `η - (b mod 5)` for `η = 2`, `η - b` for `η = 4`. -/
 def rbVal : Nat → List Instr
-  | 2 => csub 10 ++ csub 5 ++ [.mov .r10 (.imm 2), .dp .sub .r10 .r10 (.reg .r9)] ++ addQNeg .r10 .r11
-  | _ => [.mov .r10 (.imm 4), .dp .sub .r10 .r10 (.reg .r9)] ++ addQNeg .r10 .r11
+  | 2 => csub 10 ++ csub 5 ++ ([.mov .r10 (.imm 2), .dp .sub .r10 .r10 (.reg .r9)] : List Instr) ++ addQNeg .r10 .r11
+  | _ => ([.mov .r10 (.imm 4), .dp .sub .r10 .r10 (.reg .r9)] : List Instr) ++ addQNeg .r10 .r11
 
 /-- The half-bytes `CoeffFromHalfByte` accepts: those less than this. -/
 def rbBound : Nat → Nat
@@ -57,7 +57,7 @@ def rbTry (η : Nat) : Prog isa :=
 
 /-- The byte at `r0` in `r8`, its low half-byte in `r9`, and `Z` set iff `j ≥ 256`. -/
 def rbLoad : List Instr :=
-  [.ldrb .r8 .r0 0, .mov .r9 (.shifted .r8 .lsl 28), .mov .r9 (.shifted .r9 .lsr 28)] ++ jFull
+  ([.ldrb .r8 .r0 0, .mov .r9 (.shifted .r8 .lsl 28), .mov .r9 (.shifted .r9 .lsr 28)] : List Instr) ++ jFull
 
 /-- The high half-byte in `r9`, and `Z` set iff `j ≥ 256`. -/
 def rbHi : List Instr := .mov .r9 (.shifted .r8 .lsr 4) :: jFull

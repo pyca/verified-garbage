@@ -224,7 +224,7 @@ def kapAdd : List Instr := [.ldr .x .x9 .x28 oKAP, .addImm .x .x9 .x9 p.ℓ, .st
 /-- The validity checks of an iteration, combined into `x24`; then, if they
 passed, `CNT ← 1` (the loop ends with `w24 = 1`), and otherwise `κ ← κ + ℓ`. -/
 def checks : Prog isa :=
-  .seq (nttAt P cP) (.seq (.block ([.movz .x .x24 1 0] ++ setQ (sc oONES) 0))
+  .seq (nttAt P cP) (.seq (.block (([.movz .x .x24 1 0] : List Instr) ++ setQ (sc oONES) 0))
     (.seq (seqR (zR P p) 0 p.ℓ) (.seq (seqR (r0R P p) 0 p.k) (.seq (seqR (hR P p) 0 p.k)
       (.seq (.block (onesOk p)) (ifOkElse (.block (setQ (sc oCNT) 1)) (.block (kapAdd p))))))))
 
@@ -235,7 +235,7 @@ def cntDec : List Instr := [.ldr .x .x9 .x28 oCNT, .subImm .x .x9 .x9 1, .str .x
 succeeded (and otherwise `x24 ← 0`, `CNT ← 1`); then `CNT ← CNT - 1`. -/
 def iterWith : Prog isa :=
   .seq ((commitWith c) P p) (.seq (ballAt P (cLen p) p.τ cP)
-    (.seq (.ite (.nonzero .w .x0) (checks P p) (.block ([.movz .x .x24 0 0] ++ setQ (sc oCNT) 1)))
+    (.seq (.ite (.nonzero .w .x0) (checks P p) (.block (([.movz .x .x24 0 0] : List Instr) ++ setQ (sc oCNT) 1)))
       (.block cntDec)))
 
 /-- The rejection sampling loop: `κ ← 0`, `CNT ← 814`, and iterations while

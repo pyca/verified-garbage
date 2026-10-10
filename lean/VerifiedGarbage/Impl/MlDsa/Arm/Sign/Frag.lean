@@ -81,13 +81,13 @@ abbrev sc (off : Nat) : Ptr := (.r7, off)
 def movi (d : Reg) (v : Nat) : List Instr := [.movw d (BitVec.ofNat 16 v), .movt d (BitVec.ofNat 16 (v / 65536))]
 
 /-- `d ← p.1 + p.2` (`d` is not `p.1`). -/
-def lea (d : Reg) (p : Ptr) : List Instr := movi d p.2 ++ [.dp .add d p.1 (.reg d)]
+def lea (d : Reg) (p : Ptr) : List Instr := movi d p.2 ++ ([.dp .add d p.1 (.reg d)] : List Instr)
 
 /-- The byte `v` (below 256) to `p`. -/
 def setB (p : Ptr) (v : Nat) : List Instr := [.mov .r0 (.imm (BitVec.ofNat 32 v)), .strb .r0 p.1 p.2]
 
 /-- The word `v` to `p`. -/
-def setW (p : Ptr) (v : Nat) : List Instr := movi .r0 v ++ [.str .r0 p.1 p.2]
+def setW (p : Ptr) (v : Nat) : List Instr := movi .r0 v ++ ([.str .r0 p.1 p.2] : List Instr)
 
 /-- Copy `n` bytes from `src` to `dst`, one at a time. -/
 def copy (dst src : Ptr) (n : Nat) : Prog isa :=
@@ -236,8 +236,8 @@ def ifOk (c : Prog isa) : Prog isa := ifOkElse c (.block [])
 caller's `r4`–`r11` and `lr` at `scratch + 840`, keep `scratch` in `r7` and
 the pointers in `r4`, `r5`, `r6` and `r8` (from `r0`–`r3`), and `r11 ← 1`. -/
 def pro : List Instr :=
-  [.ldrSp .r12 0] ++ saveRegs .r12 oSV ++
-    [.str .lr .r12 (oSV + 32), .mov .r7 (.reg .r12), .mov .r4 (.reg .r0), .mov .r5 (.reg .r1),
-      .mov .r6 (.reg .r2), .mov .r8 (.reg .r3), .mov .r11 (.imm 1)]
+  ([.ldrSp .r12 0] : List Instr) ++ saveRegs .r12 oSV ++
+    ([.str .lr .r12 (oSV + 32), .mov .r7 (.reg .r12), .mov .r4 (.reg .r0), .mov .r5 (.reg .r1),
+      .mov .r6 (.reg .r2), .mov .r8 (.reg .r3), .mov .r11 (.imm 1)] : List Instr)
 
 end VG.Impl.MlDsa.Arm.Sign

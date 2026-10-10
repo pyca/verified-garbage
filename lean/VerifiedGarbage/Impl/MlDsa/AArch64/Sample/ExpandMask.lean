@@ -27,13 +27,13 @@ open VG.Impl.MlKem.AArch64 (mov)
 /-- The bytes of the group at `x2`: the first 8 in `x6`, the 9th in `x7`,
 the 10th in `x11` (`c = 20`). -/
 def emLoad (c : Nat) : List Instr :=
-  [.ldr .x .x6 .x2 0, .ldrb .x7 .x2 8] ++ (if c = 20 then [.ldrb .x11 .x2 9] else [])
+  ([.ldr .x .x6 .x2 0, .ldrb .x7 .x2 8] : List Instr) ++ (if c = 20 then [.ldrb .x11 .x2 9] else [])
 
 /-- Field `k` of the group into `x12`. -/
 def emField (c k : Nat) : List Instr :=
   if k = 0 then [.logic .and .x .x12 .x6 .x8]
   else if k < 3 then [.lsr .x .x12 .x6 (c * k), .logic .and .x .x12 .x12 .x8]
-  else [.lsr .x .x12 .x6 (3 * c), .lsl .x .x13 .x7 (64 - 3 * c), .add .x .x12 .x12 .x13] ++
+  else ([.lsr .x .x12 .x6 (3 * c), .lsl .x .x13 .x7 (64 - 3 * c), .add .x .x12 .x12 .x13] : List Instr) ++
     (if c = 20 then [.lsl .x .x13 .x11 12, .add .x .x12 .x12 .x13] else [])
 
 /-- `γ₁` (in `x27`) minus the field `x12`, modulo `q`, to coefficient `k` of
@@ -44,12 +44,12 @@ def emStore (k : Nat) : List Instr :=
 /-- An iteration: 4 coefficients. -/
 def emBody (c : Nat) : List Instr :=
   emLoad c ++ (List.range 4).flatMap (fun k => emField c k ++ emStore k) ++
-    [.addImm .x .x2 .x2 (c / 2), .addImm .x .x3 .x3 16, .subImm .x .x5 .x5 1]
+    ([.addImm .x .x2 .x2 (c / 2), .addImm .x .x3 .x3 16, .subImm .x .x5 .x5 1] : List Instr)
 
 /-- The 64 iterations, from the XOF output at `scratch + 840`. -/
 def emLoop (c : Nat) : Prog isa :=
-  .seq (.block ([.addImm .x .x2 .x25 840, mov .x3 .x26, .movz .x .x5 64 0,
-      .movz .x .x8 (BitVec.ofNat 16 (2 ^ (c - 16) - 1)) 1, .movk .x .x8 0xffff 0] ++ movQ .x9))
+  .seq (.block (([.addImm .x .x2 .x25 840, mov .x3 .x26, .movz .x .x5 64 0,
+      .movz .x .x8 (BitVec.ofNat 16 (2 ^ (c - 16) - 1)) 1, .movk .x .x8 0xffff 0] : List Instr) ++ movQ .x9))
     (.loop (.block (emBody c)) (.nonzero .x .x5))
 
 def expandMaskTailWith (c : Impl.Sha3.AArch64.Callee) : Prog isa :=

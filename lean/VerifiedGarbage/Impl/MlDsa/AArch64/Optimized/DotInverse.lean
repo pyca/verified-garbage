@@ -24,13 +24,13 @@ def firstBlock (count : Nat) : List Instr :=
   inverseDotLoads count ++ firstArithmetic ++ firstAdvance
 
 def setup : List Instr :=
-  movW .x10 4236238847 ++ [.vop (.dup .s4 .v30 .x10)] ++ movW .x9 8380417 ++
-  [.vop (.dup .s4 .v31 .x9),mov .x3 .x1,.addImm .x .x4 .x1 512,
-   .addImm .x .x5 .x1 768,.addImm .x .x6 .x1 896,.addImm .x .x7 .x1 960,.movz .x .x11 8 0]
+  movW .x10 4236238847 ++ ([.vop (.dup .s4 .v30 .x10)] : List Instr) ++ movW .x9 8380417 ++
+  ([.vop (.dup .s4 .v31 .x9),mov .x3 .x1,.addImm .x .x4 .x1 512,
+   .addImm .x .x5 .x1 768,.addImm .x .x6 .x1 896,.addImm .x .x7 .x1 960,.movz .x .x11 8 0] : List Instr)
 
 def finalSetup : List Instr :=
-  [.subImm .x .x0 .x0 1024,mov .x2 .x0,.movz .x .x12 8 0,
-   .ldrq .v22 .x1 0,.ldrq .v23 .x1 16,.ldrq .v28 .x1 32,.ldrq .v29 .x1 48] ++
+  ([.subImm .x .x0 .x0 1024,mov .x2 .x0,.movz .x .x12 8 0,
+   .ldrq .v22 .x1 0,.ldrq .v23 .x1 16,.ldrq .v28 .x1 32,.ldrq .v29 .x1 48] : List Instr) ++
   cv .v30 [16382,bar 16382,(z 1*16382)%8380417,bar ((z 1*16382)%8380417)]
 
 def core (count : Nat) : Prog isa :=

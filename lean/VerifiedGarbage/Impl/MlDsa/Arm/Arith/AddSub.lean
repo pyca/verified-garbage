@@ -33,11 +33,11 @@ def accTail : List Instr :=
   [.str .r3 .r0 0, .dp .add .r0 .r0 (.imm 4), .dp .add .r1 .r1 (.imm 4), .subs .r2 .r2 (.imm 1)]
 
 def addBody : List Instr :=
-  [.ldr .r3 .r0 0, .ldr .r12 .r1 0, .dp .add .r3 .r3 (.reg .r12)] ++ subQ .r3 ++ fixupS .r3 .r12 ++
+  ([.ldr .r3 .r0 0, .ldr .r12 .r1 0, .dp .add .r3 .r3 (.reg .r12)] : List Instr) ++ subQ .r3 ++ fixupS .r3 .r12 ++
     accTail
 
 def subBody : List Instr :=
-  [.ldr .r3 .r0 0, .ldr .r12 .r1 0, .dp .sub .r3 .r3 (.reg .r12)] ++ fixupS .r3 .r12 ++ accTail
+  ([.ldr .r3 .r0 0, .ldr .r12 .r1 0, .dp .sub .r3 .r3 (.reg .r12)] : List Instr) ++ fixupS .r3 .r12 ++ accTail
 
 def add : Prog isa := .seq (.block [.mov .r2 (.imm 256)]) (.loop (.block addBody) .ne)
 

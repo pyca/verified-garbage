@@ -196,8 +196,8 @@ address in `x28` and the other pointers in `x25`, `x26`, `x27` and `x23`, and
 `x24 ← 1`. -/
 def pro : List Instr :=
   (List.range 7).map (fun k => .str .x (savedRegs.getD k .x0) .x4 (oSV + 8 * k)) ++
-    [.addImm .x .x28 .x4 0, .addImm .x .x25 .x0 0, .addImm .x .x26 .x1 0, .addImm .x .x27 .x2 0,
-      .addImm .x .x23 .x3 0, .movz .x .x24 1 0]
+    ([.addImm .x .x28 .x4 0, .addImm .x .x25 .x0 0, .addImm .x .x26 .x1 0, .addImm .x .x27 .x2 0,
+      .addImm .x .x23 .x3 0, .movz .x .x24 1 0] : List Instr)
 
 /-- Return `x24` (in `x0`), and restore the caller's registers (`x28` last). -/
 def epi : List Instr :=

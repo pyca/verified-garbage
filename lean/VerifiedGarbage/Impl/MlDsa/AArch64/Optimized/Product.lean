@@ -11,10 +11,10 @@ def productMont (d : VReg) : List Instr :=
    .vop (.perm .uzp2 .s4 d .v18 .v19)]
 
 def productCentered (d : VReg) : List Instr :=
-  productMont d ++ [.vop (.sub .s4 d d .v31)]
+  productMont d ++ ([.vop (.sub .s4 d d .v31)] : List Instr)
 
 /-- Load one four-coefficient group directly into the fused inverse bank. -/
 def productLoad (d : VReg) (off : Nat) : List Instr :=
-  [.ldrq .v16 .x13 off, .ldrq .v17 .x14 off] ++ productCentered d
+  ([.ldrq .v16 .x13 off, .ldrq .v17 .x14 off] : List Instr) ++ productCentered d
 
 end VG.Impl.MlDsa.AArch64.Optimized

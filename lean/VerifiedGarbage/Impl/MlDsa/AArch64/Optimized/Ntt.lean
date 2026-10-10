@@ -11,7 +11,7 @@ open VG.Impl.MlDsa.AArch64.Arith
 def fastMul (d : VReg) : List Instr := Optimized.fastMul d .v4 .v18 .v19 .v16
 def canon (d : VReg) : List Instr := Optimized.positive d .v4 .v16
 def fastConsts : List Instr :=
- Neon.consts ++ movW .x9 2149582593 ++ [.vop (.dup .s4 .v20 .x9)]
+ Neon.consts ++ movW .x9 2149582593 ++ ([.vop (.dup .s4 .v20 .x9)] : List Instr)
 
 def zetaTab (m : Nat) : Nat := 1753 ^ Spec.MlDsa.bitRev8 m % 8380417
 
@@ -70,14 +70,14 @@ def outerRenamed : Prog isa :=
  .loop (.block (
   (dataRegs.zipIdx.flatMap fun (v,i) => [.ldrq v .x2 (128*i)]) ++ r.code ++
   (r.data.toList.zipIdx.flatMap fun (v,i) => [.strq v .x2 (128*i)]) ++
-  [.addImm .x .x2 .x2 16,.subImm .x .x5 .x5 1])) (.nonzero .x .x5)
+  ([.addImm .x .x2 .x2 16,.subImm .x .x5 .x5 1] : List Instr))) (.nonzero .x .x5)
 
 def renInnerPair (a b tmp : VReg) (len : Nat) : List Instr :=
- [ .vop (.perm (if len=2 then .trn1 else .uzp1) (if len=2 then .d2 else .s4) .v25 a b),
-   .vop (.perm (if len=2 then .trn2 else .uzp2) (if len=2 then .d2 else .s4) .v26 a b)] ++ fastMul .v26 ++
- [.vop (.sub .s4 tmp .v25 .v26),.vop (.add .s4 .v25 .v25 .v26),
+ ([ .vop (.perm (if len=2 then .trn1 else .uzp1) (if len=2 then .d2 else .s4) .v25 a b),
+   .vop (.perm (if len=2 then .trn2 else .uzp2) (if len=2 then .d2 else .s4) .v26 a b)] : List Instr) ++ fastMul .v26 ++
+ ([.vop (.sub .s4 tmp .v25 .v26),.vop (.add .s4 .v25 .v25 .v26),
   .vop (.perm (if len=2 then .trn1 else .zip1) (if len=2 then .d2 else .s4) a .v25 tmp),
-  .vop (.perm (if len=2 then .trn2 else .zip2) (if len=2 then .d2 else .s4) b .v25 tmp)]
+  .vop (.perm (if len=2 then .trn2 else .zip2) (if len=2 then .d2 else .s4) b .v25 tmp)] : List Instr)
 
 def renFiveBody  : List Instr :=
  let r := renThree false
@@ -88,13 +88,13 @@ def renFiveBody  : List Instr :=
    packedAt .x8 1 (4*j) ++
     renInnerPair r.data[2*j]! r.data[2*j+1]! r.free 1) ++
  (r.data.toList.flatMap fun v => canon v) ++
- (r.data.toList.zipIdx.flatMap fun (v,i) => [.strq v .x2 (16*i)]) ++ [.addImm .x .x2 .x2 128]
+ (r.data.toList.zipIdx.flatMap fun (v,i) => [.strq v .x2 (16*i)]) ++ ([.addImm .x .x2 .x2 128] : List Instr)
 
 def renFive  : Prog isa :=
   .seq (.block [mov .x2 .x0,mov .x3 .x1,.addImm .x .x4 .x1 32,.addImm .x .x5 .x1 96,
    .addImm .x .x7 .x1 224,.addImm .x .x8 .x1 352,.movz .x .x10 8 0])
-  (.loop (.block (renFiveBody ++ [.addImm .x .x3 .x3 480,.addImm .x .x4 .x4 480,
-   .addImm .x .x5 .x5 480,.addImm .x .x7 .x7 480,.addImm .x .x8 .x8 480,.subImm .x .x10 .x10 1])) (.nonzero .x .x10))
+  (.loop (.block (renFiveBody ++ ([.addImm .x .x3 .x3 480,.addImm .x .x4 .x4 480,
+   .addImm .x .x5 .x5 480,.addImm .x .x7 .x7 480,.addImm .x .x8 .x8 480,.subImm .x .x10 .x10 1] : List Instr))) (.nonzero .x .x10))
 
 def renamedNtt  : Prog isa :=
  .seq (.block fastConsts) (.seq outerRenamed (renFive))
@@ -121,7 +121,7 @@ def outerOut : Prog isa :=
  .loop (.block (
   (dataRegs.zipIdx.flatMap fun (v,i) => [.ldrq v .x11 (128*i)]) ++ r.code ++
   (r.data.toList.zipIdx.flatMap fun (v,i) => [.strq v .x2 (128*i)]) ++
-  [.addImm .x .x2 .x2 16,.addImm .x .x11 .x11 16,.subImm .x .x5 .x5 1])) (.nonzero .x .x5)
+  ([.addImm .x .x2 .x2 16,.addImm .x .x11 .x11 16,.subImm .x .x5 .x5 1] : List Instr))) (.nonzero .x .x5)
 
 def outNtt : Prog isa :=
  .seq (.block [.addImm .x .x11 .x1 0,.adrSym .x1 "VG_MLDSA_NTT_EXPANDED"])

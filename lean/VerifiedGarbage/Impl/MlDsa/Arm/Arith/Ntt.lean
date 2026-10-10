@@ -55,23 +55,23 @@ def nttSaved : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9, .r10]
 /-- A butterfly of `NTT` on `[r0]` and `[r0 + 4len]`, with the pieces of the
 zeta in `r5`–`r7`. -/
 def bfly (len : Nat) : List Instr :=
-  [.ldr .r8 .r0 (4 * len)] ++ mulz .r9 .r8 .r12 ++ csub .r9 .r12 .r4 ++
-    [.ldr .r8 .r0 0, .dp .sub .r10 .r8 (.reg .r9)] ++ fixup .r10 .r12 .r4 ++
-    [.str .r10 .r0 (4 * len), .dp .add .r8 .r8 (.reg .r9)] ++ csub .r8 .r12 .r4 ++
-    [.str .r8 .r0 0, .dp .add .r0 .r0 (.imm 4), .subs .r3 .r3 (.imm 1)]
+  ([.ldr .r8 .r0 (4 * len)] : List Instr) ++ mulz .r9 .r8 .r12 ++ csub .r9 .r12 .r4 ++
+    ([.ldr .r8 .r0 0, .dp .sub .r10 .r8 (.reg .r9)] : List Instr) ++ fixup .r10 .r12 .r4 ++
+    ([.str .r10 .r0 (4 * len), .dp .add .r8 .r8 (.reg .r9)] : List Instr) ++ csub .r8 .r12 .r4 ++
+    ([.str .r8 .r0 0, .dp .add .r0 .r0 (.imm 4), .subs .r3 .r3 (.imm 1)] : List Instr)
 
 /-- A butterfly of `NTT⁻¹` on `[r0]` and `[r0 + 4len]`, with the pieces of the
 zeta in `r5`–`r7`. -/
 def bflyInv (len : Nat) : List Instr :=
-  [.ldr .r8 .r0 0, .ldr .r9 .r0 (4 * len), .dp .add .r10 .r8 (.reg .r9)] ++ csub .r10 .r12 .r4 ++
-    [.str .r10 .r0 0, .dp .sub .r8 .r8 (.reg .r9)] ++ fixup .r8 .r12 .r4 ++ mulz .r9 .r8 .r12 ++
-    csub .r9 .r12 .r4 ++ [.str .r9 .r0 (4 * len), .dp .add .r0 .r0 (.imm 4), .subs .r3 .r3 (.imm 1)]
+  ([.ldr .r8 .r0 0, .ldr .r9 .r0 (4 * len), .dp .add .r10 .r8 (.reg .r9)] : List Instr) ++ csub .r10 .r12 .r4 ++
+    ([.str .r10 .r0 0, .dp .sub .r8 .r8 (.reg .r9)] : List Instr) ++ fixup .r8 .r12 .r4 ++ mulz .r9 .r8 .r12 ++
+    csub .r9 .r12 .r4 ++ ([.str .r9 .r0 (4 * len), .dp .add .r0 .r0 (.imm 4), .subs .r3 .r3 (.imm 1)] : List Instr)
 
 /-- A block of `len` butterflies `b`: the pieces of its zeta, at `r1`, which
 then moves by 4 bytes (`op` is `add` or `sub`). -/
 def nttBlk (b : List Instr) (len : Nat) (op : DpOp) : Prog isa :=
-  .seq (.block ([.ldr .r8 .r1 0] ++ zPieces .r8 ++
-      [.dp op .r1 .r1 (.imm 4), .mov .r3 (.imm (BitVec.ofNat 32 len))]))
+  .seq (.block (([.ldr .r8 .r1 0] : List Instr) ++ zPieces .r8 ++
+      ([.dp op .r1 .r1 (.imm 4), .mov .r3 (.imm (BitVec.ofNat 32 len))] : List Instr)))
     (.seq (.loop (.block b) .ne)
       (.block [.dp .add .r0 .r0 (.imm (BitVec.ofNat 32 (4 * len))), .subs .r2 .r2 (.imm 1)]))
 
@@ -91,16 +91,16 @@ def nttInvLays : List Nat → Prog isa
   | len :: lens => .seq (nttLay (bflyInv len) len .sub) (nttInvLays lens)
 
 def ntt : Prog isa :=
-  saving nttSaved (.seq (.block (storeTab zetaTab 256 ++ loadQ .r4 ++ [.dp .add .r1 .r1 (.imm 4)]))
+  saving nttSaved (.seq (.block (storeTab zetaTab 256 ++ loadQ .r4 ++ ([.dp .add .r1 .r1 (.imm 4)] : List Instr)))
     (nttLays [128, 64, 32, 16, 8, 4, 2, 1]))
 
 /-- A coefficient times `8347681`, reduced. -/
 def scaleBody : List Instr :=
-  [.ldr .r8 .r0 0] ++ mulz .r9 .r8 .r12 ++ csub .r9 .r12 .r4 ++
-    [.str .r9 .r0 0, .dp .add .r0 .r0 (.imm 4), .subs .r3 .r3 (.imm 1)]
+  ([.ldr .r8 .r0 0] : List Instr) ++ mulz .r9 .r8 .r12 ++ csub .r9 .r12 .r4 ++
+    ([.str .r9 .r0 0, .dp .add .r0 .r0 (.imm 4), .subs .r3 .r3 (.imm 1)] : List Instr)
 
 def nttInv : Prog isa :=
-  saving nttSaved (.seq (.block (storeTab negZetaTab 256 ++ loadQ .r4 ++ [.dp .add .r1 .r1 (.imm 1020)]))
+  saving nttSaved (.seq (.block (storeTab negZetaTab 256 ++ loadQ .r4 ++ ([.dp .add .r1 .r1 (.imm 1020)] : List Instr)))
     (.seq (nttInvLays [1, 2, 4, 8, 16, 32, 64, 128])
       (.seq (.block [.movw .r5 509, .movw .r6 64, .movw .r7 33, .mov .r3 (.imm 256)])
         (.loop (.block scaleBody) .ne))))

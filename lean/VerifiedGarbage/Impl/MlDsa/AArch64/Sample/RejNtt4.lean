@@ -32,9 +32,9 @@ def restoreV : List Instr :=
 def restoreG : List Instr :=
   (List.range 9).map (fun i => .ldr .x (saved[i+1]!) .x19 (oSave+8*(i+1)))
 
-def epi : List Instr := [mov .x0 .x27] ++ restoreV ++ restoreG ++ [.ldr .x .x19 .x19 oSave]
+def epi : List Instr := [mov .x0 .x27] ++ restoreV ++ restoreG ++ ([.ldr .x .x19 .x19 oSave] : List Instr)
 
-def zeroStates : List Instr := [.vop (.movi0 .v0)] ++
+def zeroStates : List Instr := ([.vop (.movi0 .v0)] : List Instr) ++
   (List.range 50).map fun i => .strq .v0 .x19 (16*i)
 
 /-- Load corresponding full words of the two 34-byte seeds. -/
@@ -83,7 +83,7 @@ def squeezeStep : Prog isa := squeezeStepWith false
 /-- Reuse the verified single-stream rejection loop on stream k's output. -/
 def sample (k : Nat) : Prog isa :=
   .seq (.block [.addImm .x .x25 .x19 (1008*k),.addImm .x .x26 .x21 (1024*k)])
-    (.seq zeroPoly (.seq rnLoop (.block (retZ ++ [.logic .and .x .x27 .x27 .x0]))))
+    (.seq zeroPoly (.seq rnLoop (.block (retZ ++ ([.logic .and .x .x27 .x27 .x0] : List Instr)))))
 
 def init : List Instr := pro ++ zeroStates ++ absorbPair 0 ++ absorbPair 1
 

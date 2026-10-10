@@ -41,7 +41,7 @@ def csubQ (r m : Reg) : List Instr :=
 subtracted from the copy of `rax` in `r10`, then `csubQ`. Uses `rdx` and
 `r11`. -/
 def reduce : List Instr :=
-  [.mov .r10 (.reg .rax), .movImm64 .r11 barrettImm, .mul .r11, .mov .rax (.reg .rdx),
-    .mov .r11 (.imm qImm), .mul .r11, .alu .sub .r10 (.reg .rax)] ++ csubQ .r10 .r11
+  ([.mov .r10 (.reg .rax), .movImm64 .r11 barrettImm, .mul .r11, .mov .rax (.reg .rdx),
+    .mov .r11 (.imm qImm), .mul .r11, .alu .sub .r10 (.reg .rax)] : List Instr) ++ csubQ .r10 .r11
 
 end VG.Impl.MlDsa.X86_64.Arith

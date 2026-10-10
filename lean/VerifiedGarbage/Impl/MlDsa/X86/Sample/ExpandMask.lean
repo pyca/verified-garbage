@@ -24,16 +24,16 @@ open VG.Impl.MlKem.X86 (at_ leaf)
 
 /-- Coefficient `k` of a group of 4 of `c` bits from `esi`, to `[edi + 4k]`. -/
 def emCoef (c k : Nat) : List Instr :=
-  [.mov .eax (.mem (at_ .esi (c * k / 8)))] ++
+  ([.mov .eax (.mem (at_ .esi (c * k / 8)))] : List Instr) ++
     (if c * k % 8 = 0 then [] else [.shift .shr .eax (c * k % 8)]) ++
-    [.alu .and .eax (.imm (BitVec.ofNat 32 (2 ^ c - 1))), .mov .edx (.imm (BitVec.ofNat 32 (2 ^ (c - 1)))),
+    ([.alu .and .eax (.imm (BitVec.ofNat 32 (2 ^ c - 1))), .mov .edx (.imm (BitVec.ofNat 32 (2 ^ (c - 1)))),
       .alu .sub .edx (.reg .eax), .alu .sbb .eax (.reg .eax), .alu .and .eax (.imm qImm),
-      .alu .add .edx (.reg .eax), .store (at_ .edi (4 * k)) .edx]
+      .alu .add .edx (.reg .eax), .store (at_ .edi (4 * k)) .edx] : List Instr)
 
 /-- An iteration: 4 coefficients. -/
 def emBody (c : Nat) : List Instr :=
   (List.range 4).flatMap (emCoef c) ++
-    [.alu .add .esi (.imm (BitVec.ofNat 32 (c / 2))), .alu .add .edi (.imm 16), .alu .sub .ecx (.imm 1)]
+    ([.alu .add .esi (.imm (BitVec.ofNat 32 (c / 2))), .alu .add .edi (.imm 16), .alu .sub .ecx (.imm 1)] : List Instr)
 
 /-- The 64 iterations, from the XOF output at `esi + 840`, to `a` at `edi`. -/
 def emLoop (c : Nat) : Prog isa :=
