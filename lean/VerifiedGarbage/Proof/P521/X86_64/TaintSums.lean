@@ -32,7 +32,7 @@ their field products of slots past the functions' as one template each
 product; the table's products are calls, whose code is shared already.
 
 The summaries of the comb and the inversion are here; those of ECDH's window
-method in `TaintSumsWin`, checked in parallel.
+method in `TaintSumsWin` and `TaintSumsWinNorm`, checked in parallel.
 -/
 
 namespace VG.Proof.P521.X86_64

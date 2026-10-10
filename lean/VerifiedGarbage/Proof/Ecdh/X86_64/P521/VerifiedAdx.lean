@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Verified
 import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
+import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinNormAdx
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 
