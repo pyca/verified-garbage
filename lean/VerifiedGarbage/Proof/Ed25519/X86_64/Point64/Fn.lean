@@ -97,8 +97,8 @@ def dblResult (e : Env) : Spec.Ed25519.Point :=
   let c := e 2 * e 2 + e 2 * e 2
   let ee := e 0 * e 1 + e 0 * e 1
   let g := b - a
-  let f := g - c
-  let h := g - b - b
+  let f := c - g
+  let h := a + b
   ⟨ee * f, g * h, f * g, ee * h⟩
 
 theorem dblOps_formula (e : Env) (t : Bool) :

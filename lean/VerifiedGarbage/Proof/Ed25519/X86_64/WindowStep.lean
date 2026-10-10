@@ -143,40 +143,27 @@ theorem dblOpsH_eval (e : Env) :
     evalOps (dblOpsH false) e 2 = (dblPoint (point e 0 1 2 3)).Z :=
   ⟨rfl, rfl, rfl, rfl⟩
 
-/-- RFC 8032's doubling (`dblOps`) is `dbl-2008-hwcd` (`dblPoint`) with every coordinate
-negated. -/
-theorem dblOps_neg (e : Env) (t : Bool) :
-    evalOps (dblOps t) e 0 = -(dblPoint (point e 0 1 2 3)).X ∧
-      evalOps (dblOps t) e 1 = -(dblPoint (point e 0 1 2 3)).Y ∧
-      evalOps (dblOps t) e 2 = -(dblPoint (point e 0 1 2 3)).Z ∧
-      (t = true → evalOps (dblOps t) e 3 = -(dblPoint (point e 0 1 2 3)).T) := by
-  obtain ⟨h0, h1, h2, h3⟩ := Point64.dblOps_formula e t
-  refine ⟨h0.trans ?_, h1.trans ?_, h2.trans ?_, fun ht => (h3 ht).trans ?_⟩ <;>
-    (simp only [Point64.dblResult, dblPoint, point]; grind)
-
-theorem toZ_neg (a : Spec.X25519.Fe) : toZ (-a) = -toZ a := rfl
+theorem dblOps_eq (t : Bool) : dblOps t = dblOpsH t := by cases t <;> rfl
 
 /-- `dblOps` doubles what the slots represent. -/
 theorem dblOps_rep (e : Env) (t : Bool) {a : EPoint dZ} (ha : RepP (point e 0 1 2 3) a) :
     RepP (point (evalOps (dblOps t) e) 0 1 2 3) (a + a) ∧
       (t = true → Rep (point (evalOps (dblOps t) e) 0 1 2 3) (a + a)) := by
   have hr := dblPoint_rep ha
-  obtain ⟨n0, n1, n2, n3⟩ := dblOps_neg e t
-  refine ⟨⟨?_, ?_, ?_⟩, fun ht => ⟨?_, ?_, ?_, ?_⟩⟩
-  · show toZ (evalOps _ _ 2) ≠ 0
-    rw [n2, toZ_neg]; exact neg_ne_zero.mpr hr.z
-  · show toZ (evalOps _ _ 0) = _ * toZ (evalOps _ _ 2)
-    rw [n0, n2, toZ_neg, toZ_neg, hr.x, mul_neg]
-  · show toZ (evalOps _ _ 1) = _ * toZ (evalOps _ _ 2)
-    rw [n1, n2, toZ_neg, toZ_neg, hr.y, mul_neg]
-  · show toZ (evalOps _ _ 2) ≠ 0
-    rw [n2, toZ_neg]; exact neg_ne_zero.mpr hr.z
-  · show toZ (evalOps _ _ 0) = _ * toZ (evalOps _ _ 2)
-    rw [n0, n2, toZ_neg, toZ_neg, hr.x, mul_neg]
-  · show toZ (evalOps _ _ 1) = _ * toZ (evalOps _ _ 2)
-    rw [n1, n2, toZ_neg, toZ_neg, hr.y, mul_neg]
-  · show toZ (evalOps _ _ 3) = _ * toZ (evalOps _ _ 2)
-    rw [n3 ht, n2, toZ_neg, toZ_neg, hr.t, mul_neg]
+  rw [dblOps_eq]
+  refine ⟨?_, fun ht => ?_⟩
+  · cases t
+    · obtain ⟨_, ex, ey, ez⟩ := dblOpsH_eval e
+      refine ⟨?_, ?_, ?_⟩
+      · show toZ (evalOps _ _ 2) ≠ 0
+        rw [ez]; exact hr.z
+      · show toZ (evalOps _ _ 0) = _ * toZ (evalOps _ _ 2)
+        rw [ex, ez]; exact hr.x
+      · show toZ (evalOps _ _ 1) = _ * toZ (evalOps _ _ 2)
+        rw [ey, ez]; exact hr.y
+    · rw [(dblOpsH_eval _).1]; exact hr.proj
+  · subst ht
+    rw [(dblOpsH_eval _).1]; exact hr
 
 /-- The cached addition of the point operations, as `pointAddCachedWide_ok`. -/
 theorem addPtWide_ok {s : State} {base : Addr} (hs : Scratch s base)

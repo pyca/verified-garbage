@@ -50,10 +50,10 @@ def pointDouble (p : Point) : Point :=
   let a := p.X * p.X
   let b := p.Y * p.Y
   let c := 2 * (p.Z * p.Z)
+  let e := 2 * (p.X * p.Y)
+  let g := b - a
+  let f := c - g
   let h := a + b
-  let e := h - (p.X + p.Y) * (p.X + p.Y)
-  let g := a - b
-  let f := c + g
   ⟨e * f, g * h, f * g, e * h⟩
 
 /-- The cached form of `q`, `[Y - X, Y + X, 2dT, 2Z]`: the factors of `q` in

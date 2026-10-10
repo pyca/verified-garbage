@@ -26,8 +26,8 @@ open VG.X86_64
 `-G = B - A`, `-F = -G - C` and `-H = -G - B - B`, so that `X = (-E)(-F)`, `Y = (-G)(-H)`,
 `Z = (-F)(-G)`, and `T = (-E)(-H)` if `t` (only an addition reads `T`). -/
 def dblOps (t : Bool) : List FieldOp :=
-  [.sqr 8 0, .sqr 9 1, .sqr2 10 2, .mul2 11 0 1, .sub 12 9 8, .sub 13 12 10, .sub 14 12 9,
-    .sub 14 14 9, .mul 0 11 13, .mul 1 12 14, .mul 2 13 12] ++
+  [.sqr 8 0, .sqr 9 1, .sqr2 10 2, .mul2 11 0 1, .sub 12 9 8, .sub 13 10 12, .add 14 8 9,
+    .mul 0 11 13, .mul 1 12 14, .mul 2 13 12] ++
     if t then [.mul 3 11 14] else []
 
 /-- Adds the point whose cached form `[Y - X, Y + X, 2dT, 2Z]` is in slots 4–7 to slots 0–3,
