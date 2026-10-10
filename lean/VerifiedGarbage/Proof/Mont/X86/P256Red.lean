@@ -64,6 +64,8 @@ theorem p256Red_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   generalize (s.gpr .ecx).toNat = q at *
   generalize c₂.toNat = C₂ at *
   generalize c₃.toNat = C₃ at *
-  grind
+  have key : U + 2 ^ 320 * C₂ + q * 2 ^ 224 + q = S + q * (2 ^ 96 + 2 ^ 192 + 2 ^ 256) + 2 ^ 320 * C₃ := by
+    omega_using [V₁, V₂, V₃]
+  omega_using [key, hu, hlt, h2, h3]
 
 end VG.Proof.Mont.X86
