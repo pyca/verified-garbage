@@ -174,7 +174,7 @@ theorem loads_ok {B : Addr} (base : Nat) (g : Nat → Reg) : ∀ (k : Nat) (s : 
 /-! ## Entry -/
 
 /-- The mode's slots. -/
-abbrev modeRegion (c : Core) (B : Addr) : Region := ⟨B + BitVec.ofNat 64 (8 * c.slots), 80⟩
+abbrev modeRegion (c : Core) (B : Addr) : Region := ⟨B + BitVec.ofNat 64 (8 * c.slots), 64⟩
 
 theorem ctrSetup_eq (c : Core) (r : CtrRegs) : c.ctrSetup r =
     ([.mov .rax (.mem (at_ r.ctr 0))] : List Instr) ++ (([.bswap .rax] : List Instr) ++
@@ -185,8 +185,8 @@ theorem ctrSetup_eq (c : Core) (r : CtrRegs) : c.ctrSetup r =
       (([.store (at_ r.ctr 8) .rbx] : List Instr) ++ ([.store (at_ r.ctr 0) .rax] : List Instr)))))))))) := rfl
 
 theorem ctrEntry_eq (c : Core) (r : CtrRegs) : c.ctrEntry r =
-    ([movR sb r.scr] : List Instr) ++ (((List.range 6).map fun i => st (c.slots + i) (Core.savedRegs.getD i .rbx)) ++
-      (([st c.dataSlot r.data] : List Instr) ++ ([st c.leftSlot r.n] : List Instr))) := rfl
+    ([movR sb r.scr] : List Instr) ++ ((List.range 6).map fun i => st (c.slots + i) (Core.savedRegs.getD i .rbx)) :=
+  rfl
 
 /-- The registers of a mode's arguments: none of them `sb`, `rax` or `rbx`. -/
 structure RegsOk (r : CtrRegs) : Prop where
@@ -202,19 +202,16 @@ theorem setup_ok (hL : Layout c) {r : CtrRegs} (hr : RegsOk r) (s : State) {B P 
     (hsep : Region.Disjoint ⟨P, 16⟩ ⟨B, 8 * c.ctrSlots⟩) :
     ∃ s', runBlock isa (c.ctrEntry r ++ c.ctrSetup r) s = some s' ∧ s'.gpr sb = B ∧
       (∀ i < 6, s'.mem.readW (wordAddr B (c.slots + i)) 64 = s.gpr (Core.savedRegs.getD i .rbx)) ∧
-      s'.mem.readW (wordAddr B c.dataSlot) 64 = s.gpr r.data ∧
-      s'.mem.readW (wordAddr B c.leftSlot) 64 = s.gpr r.n ∧
       s'.mem.readW (wordAddr B c.hiSlot) 64 = hiOf (ctrVal s.mem P) ∧
       s'.mem.readW (wordAddr B c.loSlot) 64 = loOf (ctrVal s.mem P) ∧
       bytesAt s'.mem P 16 = Spec.Ctr.ofNat (ctrVal s.mem P + (s.gpr r.n).toNat) 16 ∧
       Frame [modeRegion c B, ⟨P, 16⟩] s.mem s'.mem ∧
       (∀ x, x ≠ sb → x ≠ .rax → x ≠ .rbx → s'.gpr x = s.gpr x) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hsm := hL.small
+  have hroom := hL.room
   have hN : 8 * c.ctrSlots < 2 ^ 64 := by simp only [Core.ctrSlots]; omega
   have sl : ∀ k, c.slots ≤ k → k < c.ctrSlots → InRegions s.wr (wordAddr B k) 8 := fun k _ hk =>
     slot_wr hs.wr hN hk
-  have hmode : ∀ k, c.slots ≤ k → k < c.ctrSlots → Region.Sub ⟨wordAddr B k, 8⟩ (modeRegion c B) :=
-    fun k h1 h2 => VG.Offset.sub B (by omega) (by simp only [Core.ctrSlots] at h2; omega)
   have p0 : P + BitVec.ofNat 64 0 = P := by simp
   -- The scratch buffer to `sb`.
   obtain ⟨s₁, e₁, b₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s sb r.scr
@@ -224,31 +221,18 @@ theorem setup_ok (hL : Layout c) {r : CtrRegs} (hr : RegsOk r) (s : State) {B P 
   obtain ⟨s₂, e₂, v₂, f₂, g₂, rd₂, wr₂⟩ := stores_ok (B := B) c.slots (fun i => Core.savedRegs.getD i .rbx) 6 s₁ b₁'
     (fun i hi => by rw [wr₁]; exact sl _ (by omega) (by simp only [Core.ctrSlots]; omega))
     (by omega)
-  -- The data's address and `n`.
-  obtain ⟨s₃, e₃, m₃, g₃, rd₃, wr₃⟩ := stReg_ok (s := s₂) (b := B) (k := c.dataSlot) r.data (by rw [g₂, b₁'])
-    (by
-      rw [wr₂, wr₁]
-      exact sl _ (by simp only [Core.dataSlot]; omega) (by simp only [Core.dataSlot, Core.ctrSlots]; omega))
-  obtain ⟨s₄, e₄, m₄, g₄, rd₄, wr₄⟩ := stReg_ok (s := s₃) (b := B) (k := c.leftSlot) r.n (by rw [g₃, g₂, b₁'])
-    (by
-      rw [wr₃, wr₂, wr₁]
-      exact sl _ (by simp only [Core.leftSlot]; omega) (by simp only [Core.leftSlot, Core.ctrSlots]; omega))
-  have g₄' : s₄.gpr = s₁.gpr := by rw [g₄, g₃, g₂]
-  have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, wr₁]
-  have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, rd₁]
+  let s₄ := s₂
+  have m₄e : s₄.mem = s₂.mem := rfl
+  have g₄' : s₄.gpr = s₁.gpr := g₂
+  have wr₄' : s₄.wr = s.wr := by rw [show s₄.wr = s₂.wr from rfl, wr₂, wr₁]
+  have rd₄' : s₄.rd = s.rd := by rw [show s₄.rd = s₂.rd from rfl, rd₂, rd₁]
   have keep₄ : ∀ x, x ≠ sb → s₄.gpr x = s.gpr x := fun x hx => by rw [g₄', keep₁ x hx]
   have P₄ : s₄.gpr r.ctr = P := by rw [keep₄ _ hr.ctr.1, hP]
   have fe : Frame [modeRegion c B] s.mem s₄.mem := by
     rw [← m₁]
-    refine (f₂.sub fun x hx => ⟨_, List.mem_singleton_self _, ?_⟩).trans ?_
-    · simp only [List.mem_singleton] at hx; subst hx
-      exact VG.Offset.sub B (by omega) (by omega)
-    · rw [m₄, m₃]
-      exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-        (VG.Offset.contains B (by simp only [Core.dataSlot]; omega) (by simp only [Core.dataSlot]; omega)
-          (by omega))).writeW (List.mem_singleton_self _) _
-        (VG.Offset.contains B (by simp only [Core.leftSlot]; omega) (by simp only [Core.leftSlot]; omega)
-          (by omega))
+    exact f₂.sub fun x hx => ⟨_, List.mem_singleton_self _, by
+      simp only [List.mem_singleton] at hx; subst hx
+      exact VG.Offset.sub B (by omega) (by omega)⟩
   have dP : ∀ k, c.slots ≤ k → k < c.ctrSlots → ∀ x ∈ [(⟨P, 16⟩ : Region)],
       Region.Disjoint ⟨wordAddr B k, 8⟩ x := fun k h1 h2 x hx => by
     simp only [List.mem_singleton] at hx; subst hx
@@ -329,10 +313,9 @@ theorem setup_ok (hL : Layout c) {r : CtrRegs} (hr : RegsOk r) (s : State) {B P 
       s₁₀.mem.readW (wordAddr B k) 64 = s₄.mem.readW (wordAddr B k) 64 := fun k h1 h2 hh hl => by
     rw [mem₁₀, readW_slot_write _ (b8 k h2) (b8 _ hLo), ite_eq_right hl, readW_slot_write _ (b8 k h2) (b8 _ hH), ite_eq_right hh]
   have hsv : ∀ i < 6, Core.savedRegs.getD i .rbx ≠ sb := by decide
-  refine ⟨s₁₅, ?_, ?_, fun i hi => ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun x h1 h2 h3 => ?_,
+  refine ⟨s₁₅, ?_, ?_, fun i hi => ?_, ?_, ?_, ?_, ?_, fun x h1 h2 h3 => ?_,
     by rw [rd₁₅, rd₁₄, rd₁₃, rd₁₂, rd₁₁, rd₁₀, rd₉, rd₈'], by rw [wr₁₅, wr₁₄, wr₁₃']⟩
-  · rw [runBlock_app, ctrEntry_eq, runBlock_app, e₁, Option.bind_some, runBlock_app, e₂, Option.bind_some,
-      runBlock_app, e₃, Option.bind_some, e₄, Option.bind_some, ctrSetup_eq,
+  · rw [runBlock_app, ctrEntry_eq, runBlock_app, e₁, Option.bind_some, e₂, Option.bind_some, ctrSetup_eq,
       runBlock_app, e₅, Option.bind_some, runBlock_app, e₆, Option.bind_some, runBlock_app, e₇, Option.bind_some,
       runBlock_app, e₈, Option.bind_some, runBlock_app, e₉, Option.bind_some, runBlock_app, e₁₀, Option.bind_some,
       runBlock_app, e₁₁, Option.bind_some, runBlock_app, e₁₂, Option.bind_some, runBlock_app, e₁₃,
@@ -341,22 +324,7 @@ theorem setup_ok (hL : Layout c) {r : CtrRegs} (hr : RegsOk r) (s : State) {B P 
   · have k1 : c.slots ≤ c.slots + i := by omega
     have k2 : c.slots + i < c.ctrSlots := by simp only [Core.ctrSlots]; omega
     rw [thruP _ k1 k2, mem10 _ k1 k2 (by simp only [Core.hiSlot]; omega) (by simp only [Core.loSlot]; omega),
-      m₄, readW_slot_write _ (b8 _ k2) (b8 _ (by simp only [Core.leftSlot, Core.ctrSlots]; omega)),
-      ite_eq_right (by simp only [Core.leftSlot]; omega), m₃,
-      readW_slot_write _ (b8 _ k2) (b8 _ (by simp only [Core.dataSlot, Core.ctrSlots]; omega)),
-      ite_eq_right (by simp only [Core.dataSlot]; omega), v₂ i hi, keep₁ _ (hsv i hi)]
-  · have k1 : c.slots ≤ c.dataSlot := by simp only [Core.dataSlot]; omega
-    have k2 : c.dataSlot < c.ctrSlots := by simp only [Core.dataSlot, Core.ctrSlots]; omega
-    rw [thruP _ k1 k2, mem10 _ k1 k2 (by simp only [Core.hiSlot, Core.dataSlot]; omega)
-        (by simp only [Core.loSlot, Core.dataSlot]; omega),
-      m₄, readW_slot_write _ (b8 _ k2) (b8 _ (by simp only [Core.leftSlot, Core.ctrSlots]; omega)),
-      ite_eq_right (by simp only [Core.leftSlot, Core.dataSlot]; omega), m₃, Mem.readW_writeW_self64, g₂,
-      keep₁ _ hr.data.1]
-  · have k1 : c.slots ≤ c.leftSlot := by simp only [Core.leftSlot]; omega
-    have k2 : c.leftSlot < c.ctrSlots := by simp only [Core.leftSlot, Core.ctrSlots]; omega
-    rw [thruP _ k1 k2, mem10 _ k1 k2 (by simp only [Core.hiSlot, Core.leftSlot]; omega)
-        (by simp only [Core.loSlot, Core.leftSlot]; omega), m₄, Mem.readW_writeW_self64, g₃, g₂,
-      keep₁ _ hr.n.1]
+      m₄e, v₂ i hi, keep₁ _ (hsv i hi)]
   · rw [thruP _ (by simp only [Core.hiSlot]; omega) hH, mem₁₀,
       readW_slot_write _ (b8 _ hH) (b8 _ hLo), ite_eq_right (by simp only [Core.hiSlot, Core.loSlot]; omega),
       Mem.readW_writeW_self64]
@@ -368,5 +336,18 @@ theorem setup_ok (hL : Layout c) {r : CtrRegs} (hr : RegsOk r) (s : State) {B P 
         simp only [List.mem_singleton] at hx; rw [hx]; exact List.mem_cons_of_mem _ List.mem_cons_self,
         fun _ h => h⟩)
   · rw [g₁₅, g₁₄, keep₁₃ x h2 h3, g₈ x h2 h3, keep₄ x h1]
+
+/-- The data's address and `n` to `dataReg` and `leftReg`. -/
+theorem ctrArgs_ok (s : State) (r : CtrRegs) (hd : c.dataReg ≠ r.n) (hdl : c.dataReg ≠ c.leftReg) :
+    ∃ s', runBlock isa (c.ctrArgs r) s = some s' ∧ s'.gpr c.dataReg = s.gpr r.data ∧
+      s'.gpr c.leftReg = s.gpr r.n ∧ (∀ x, x ≠ c.dataReg → x ≠ c.leftReg → s'.gpr x = s.gpr x) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s c.dataReg r.data
+  obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := movR_ok s₁ c.leftReg r.n
+  refine ⟨s₂, ?_, ?_, by rw [r₂, o₁ _ (Ne.symm hd)], fun x h1 h2 => by rw [o₂ x h2, o₁ x h1], by rw [m₂, m₁],
+    by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
+  · rw [Core.ctrArgs, show ([movR c.dataReg r.data, movR c.leftReg r.n] : List Instr) =
+      [movR c.dataReg r.data] ++ [movR c.leftReg r.n] from rfl, runBlock_app, e₁, Option.bind_some, e₂]
+  · rw [o₂ _ hdl, r₁]
 
 end VG.Proof.Modes.X86_64

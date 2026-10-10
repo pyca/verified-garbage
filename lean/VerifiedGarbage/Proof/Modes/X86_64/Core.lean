@@ -19,8 +19,9 @@ else: the modes are proven once, for any core, and each cipher proves
   outside `rs` in memory.
 * `Ready m B k`: the key `k` is ready in the memory `m` at `B`. It depends
   only on the core's slots outside its buffer (`ready_frame`).
-* `prepare_wp`, `crypt_wp`: each changes only the core's slots in memory,
-  and keeps `sb` and `rsp`; every other register may change.
+* `prepare_wp`, `crypt_wp`: with the scratch buffer of `total` slots, each
+  changes only the core's slots in memory, and keeps `sb`, `rsp`,
+  `dataReg` and `leftReg`; every other register may change.
 -/
 
 namespace VG.Proof.Modes.X86_64
@@ -44,12 +45,21 @@ abbrev coreRegion (c : Core) (B : Addr) : Region := ⟨B, 8 * c.slots⟩
 /-- The core's buffer. -/
 abbrev bufRegion (c : Core) (B : Addr) : Region := ⟨B + BitVec.ofNat 64 (8 * c.buf), 16 * c.G⟩
 
-/-- A core's layout: a buffer of at least one block within its slots, and
-the slots of a mode after them within reach of a 32-bit displacement. -/
+/-- A core's layout: a buffer of at least one block within its slots, room
+for a mode's 8 slots after them, and the whole scratch buffer within reach
+of a 32-bit displacement. -/
 structure Layout (c : Core) : Prop where
   G_pos : 0 < c.G
   buf_le : c.buf + 2 * c.G ≤ c.slots
-  small : 8 * (c.slots + 10) < 2 ^ 31
+  room : c.slots + 8 ≤ c.total
+  small : 8 * c.total < 2 ^ 31
+
+/-- The registers a core keeps for a mode: neither among the registers the
+modes use (`rax`, `rbx`, `rcx`, `rbp`, `r10`), `sb` or `rsp`, nor a key
+argument, nor the same. -/
+def regsOk (c : Core) : Bool :=
+  [c.dataReg, c.leftReg].all (fun r => !([Reg.rax, .rbx, .rcx, .rbp, .r10, sb, .rsp].contains r) &&
+    !(c.keyRegs.contains r)) && c.dataReg != c.leftReg
 
 /-- What the modes need of the core `c` (see above). -/
 structure CoreSpec (c : Core) where
@@ -60,20 +70,31 @@ structure CoreSpec (c : Core) where
   cipher_len : ∀ k b, (cipher k b).length = 16
   layout : Layout c
   keyRegs_ok : c.keyRegs.all (fun r => r != .rax && r != .rbx && r != sb) = true
+  regs_ok : regsOk c = true
   keyArgs_congr : ∀ {s s' : State} {rs : List Region} {k : Key}, KeyArgs s rs k →
     (∀ r ∈ c.keyRegs, s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → Frame rs s.mem s'.mem →
     KeyArgs s' rs k
   ready_frame : ∀ {m m' : Mem} {B : Addr} {k : Key} {rs : List Region}, Ready m B k → Frame rs m m' →
     (∀ r ∈ rs, Region.Disjoint (coreRegion c B) r ∨ Region.Sub r (bufRegion c B)) → Ready m' B k
-  prepare_wp : ∀ {s : State} {B : Addr} {n : Nat} {rs : List Region} {k : Key}, s.gpr sb = B → c.slots ≤ n →
-    ScrIn s B n → (⟨B, 8 * n⟩ : Region) ∈ rs → KeyArgs s rs k →
+  prepare_wp : ∀ {s : State} {B : Addr} {rs : List Region} {k : Key}, s.gpr sb = B →
+    ScrIn s B c.total → (⟨B, 8 * c.total⟩ : Region) ∈ rs → KeyArgs s rs k →
     WP isa c.prepare s fun s' => Ready s'.mem B k ∧ s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
+      s'.gpr c.dataReg = s.gpr c.dataReg ∧ s'.gpr c.leftReg = s.gpr c.leftReg ∧
       Frame [coreRegion c B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr
-  crypt_wp : ∀ {s : State} {B : Addr} {n : Nat} {k : Key}, s.gpr sb = B → c.slots ≤ n → ScrIn s B n →
-    Ready s.mem B k →
-    WP isa c.crypt s fun s' => s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧ Ready s'.mem B k ∧
+  crypt_wp : ∀ {s : State} {B : Addr} {k : Key}, s.gpr sb = B → ScrIn s B c.total → Ready s.mem B k →
+    WP isa c.crypt s fun s' => s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
+      s'.gpr c.dataReg = s.gpr c.dataReg ∧ s'.gpr c.leftReg = s.gpr c.leftReg ∧ Ready s'.mem B k ∧
       Frame [coreRegion c B] s.mem s'.mem ∧
       (∀ j < c.G, bytesAt s'.mem (bufAddr c B j) 16 = cipher k (bytesAt s.mem (bufAddr c B j) 16)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr
+
+/-- What `regsOk` says, one register at a time. -/
+theorem regsOk_ne {c : Core} (h : regsOk c = true) :
+    (∀ r ∈ [c.dataReg, c.leftReg], r ≠ .rax ∧ r ≠ .rbx ∧ r ≠ .rcx ∧ r ≠ .rbp ∧ r ≠ .r10 ∧ r ≠ sb ∧ r ≠ .rsp ∧
+      r ∉ c.keyRegs) ∧ c.dataReg ≠ c.leftReg := by
+  simp only [regsOk, Bool.and_eq_true, List.all_eq_true, bne_iff_ne, ne_eq] at h
+  refine ⟨fun r hr => ?_, h.2⟩
+  have := h.1 r hr
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> intro e <;> simp_all
 
 end VG.Proof.Modes.X86_64

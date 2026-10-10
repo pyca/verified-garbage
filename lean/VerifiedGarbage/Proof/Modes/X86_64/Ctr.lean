@@ -49,7 +49,7 @@ theorem keyRegs_ne {c : Core} (h : c.keyRegs.all (fun r => r != .rax && r != .rb
   exact ⟨this.2, this.1.1, this.1.2⟩
 
 /-- `CoreSpec.Ready`, `prepare`'s and the test's states, and the loop. -/
-theorem ctr_wp (cs : CoreSpec c) {r : CtrRegs} (hr : RegsOk r) {s₀ : State} {B P D : Addr} {n : Nat}
+theorem ctr_wp (cs : CoreSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.dataReg ≠ r.n) {s₀ : State} {B P D : Addr} {n : Nat}
     {k : cs.Key} (hB : s₀.gpr r.scr = B) (hP : s₀.gpr r.ctr = P) (hD : s₀.gpr r.data = D)
     (hn : (s₀.gpr r.n).toNat = n) (hs : ScrIn s₀ B c.ctrSlots) (hwP : (⟨P, 16⟩ : Region) ∈ s₀.wr)
     (hwD : (⟨D, 16 * n⟩ : Region) ∈ s₀.wr) (sPS : Region.Disjoint ⟨P, 16⟩ ⟨B, 8 * c.ctrSlots⟩)
@@ -62,26 +62,40 @@ theorem ctr_wp (cs : CoreSpec c) {r : CtrRegs} (hr : RegsOk r) {s₀ : State} {B
       Frame [⟨B, 8 * c.ctrSlots⟩, ⟨P, 16⟩, ⟨D, 16 * n⟩] s₀.mem s'.mem ∧ s'.rd = s₀.rd ∧ s'.wr = s₀.wr := by
   have hL := cs.layout
   have hsm := hL.small
+  have hroom := hL.room
   have hN : 8 * c.ctrSlots < 2 ^ 64 := by simp only [Core.ctrSlots]; omega
   have hNs : c.slots ≤ c.ctrSlots := by simp only [Core.ctrSlots]; omega
   have b8 : ∀ j, j < c.ctrSlots → 8 * j < 2 ^ 64 := fun j hj => by omega
+  obtain ⟨hregs, hdl⟩ := regsOk_ne cs.regs_ok
+  obtain ⟨da, db, -, -, -, dsb, dsp, dk⟩ := hregs c.dataReg List.mem_cons_self
+  obtain ⟨la, lb, -, -, -, lsb, lsp, lk⟩ := hregs c.leftReg (List.mem_cons_of_mem _ List.mem_cons_self)
   -- The entry.
-  obtain ⟨s₁, e₁, b₁, sv₁, dp₁, lf₁, hi₁, lo₁, bP₁, f₁, g₁, rd₁, wr₁⟩ := setup_ok hL hr s₀ hB hs hP hwP sPS
+  obtain ⟨s₁a, e₁a, b₁a, sv₁, hi₁, lo₁, bP₁, f₁, g₁a, rd₁a, wr₁a⟩ := setup_ok hL hr s₀ hB hs hP hwP sPS
+  obtain ⟨s₁, e₁b, dr₁, lr₁, g₁b, m₁b, rd₁b, wr₁b⟩ := ctrArgs_ok s₁a r hdn hdl
+  have g₁ : ∀ x, x ≠ sb → x ≠ .rax → x ≠ .rbx → x ≠ c.dataReg → x ≠ c.leftReg → s₁.gpr x = s₀.gpr x :=
+    fun x h1 h2 h3 h4 h5 => by rw [g₁b x h4 h5, g₁a x h1 h2 h3]
+  have b₁ : s₁.gpr sb = B := by rw [g₁b _ (Ne.symm dsb) (Ne.symm lsb), b₁a]
+  have rd₁ : s₁.rd = s₀.rd := by rw [rd₁b, rd₁a]
+  have wr₁ : s₁.wr = s₀.wr := by rw [wr₁b, wr₁a]
+  have mem₁ : s₁.mem = s₁a.mem := m₁b
   unfold Core.ctr
-  refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
+  refine WP.seq (WP.of_runBlock ⟨s₁, by rw [runBlock_app, e₁a, Option.bind_some, e₁b], ?_⟩)
   have kr := keyRegs_ne cs.keyRegs_ok
   have subMode : Region.Sub (modeRegion c B) ⟨B, 8 * c.ctrSlots⟩ :=
     VG.Offset.sub_base B (by simp only [Core.ctrSlots]; omega)
-  have f₁' : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨P, 16⟩] s₀.mem s₁.mem := f₁.sub fun x hx => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl
-    · exact ⟨_, List.mem_cons_self, subMode⟩
-    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
+  have f₁' : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨P, 16⟩] s₀.mem s₁.mem := by
+    rw [mem₁]
+    exact f₁.sub fun x hx => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl
+      · exact ⟨_, List.mem_cons_self, subMode⟩
+      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
   have hk₁ : cs.KeyArgs s₁ [⟨B, 8 * c.ctrSlots⟩, ⟨P, 16⟩] k :=
-    cs.keyArgs_congr hk (fun x hx => g₁ x (kr x hx).1 (kr x hx).2.1 (kr x hx).2.2) rd₁ wr₁ f₁'
+    cs.keyArgs_congr hk (fun x hx => g₁ x (kr x hx).1 (kr x hx).2.1 (kr x hx).2.2 (fun e => dk (e ▸ hx))
+      (fun e => lk (e ▸ hx))) rd₁ wr₁ f₁'
   -- The key.
-  refine WP.seq (WP.mono (cs.prepare_wp b₁ hNs ⟨by rw [wr₁]; exact hs.wr, hs.fit⟩ List.mem_cons_self hk₁)
-    fun s₂ ⟨ready₂, b₂, rsp₂, f₂, rd₂, wr₂⟩ => ?_)
+  refine WP.seq (WP.mono (cs.prepare_wp b₁ ⟨by rw [wr₁]; exact hs.wr, hs.fit⟩ List.mem_cons_self hk₁)
+    fun s₂ ⟨ready₂, b₂, rsp₂, dr₂, lr₂, f₂, rd₂, wr₂⟩ => ?_)
   have keep₂ : ∀ j, c.slots ≤ j → j < c.ctrSlots →
       s₂.mem.readW (wordAddr B j) 64 = s₁.mem.readW (wordAddr B j) 64 := fun j h1 h2 =>
     f₂.readW (Region.contains_self _ _) (fun x hx => by
@@ -90,27 +104,20 @@ theorem ctr_wp (cs : CoreSpec c) {r : CtrRegs} (hr : RegsOk r) {s₀ : State} {B
   have wr₂' : s₂.wr = s₀.wr := by rw [wr₂, wr₁]
   have rd₂' : s₂.rd = s₀.rd := by rw [rd₂, rd₁]
   -- Any blocks?
-  have hlS : c.leftSlot < c.ctrSlots := by simp only [Core.leftSlot, Core.ctrSlots]; omega
-  obtain ⟨s₃a, e₃a, r₃a, o₃a, m₃a, rd₃a, wr₃a⟩ := movS_ok (s := s₂) (b := B) (k := c.leftSlot) .rcx b₂
-    (by rw [rd₂', wr₂']; exact inRd (slot_wr hs.wr hN hlS))
-  obtain ⟨s₃, e₃, z₃, g₃, m₃, rd₃, wr₃⟩ := testSelf_ok s₃a .rcx
-  refine WP.seq (WP.of_runBlock ⟨s₃, by
-    rw [show ([movS .rcx c.leftSlot, .alu .test .rcx (.reg .rcx)] : List Instr) =
-      [movS .rcx c.leftSlot] ++ [.alu .test .rcx (.reg .rcx)] from rfl, runBlock_app, e₃a, Option.bind_some, e₃],
-    ?_⟩)
-  have left₃ : s₃.gpr .rcx = s₀.gpr r.n := by
-    rw [g₃, r₃a, keep₂ _ (by simp only [Core.leftSlot]; omega) hlS, lf₁]
+  obtain ⟨s₃, e₃, z₃, g₃, m₃, rd₃, wr₃⟩ := testSelf_ok s₂ c.leftReg
+  refine WP.seq (WP.of_runBlock ⟨s₃, e₃, ?_⟩)
+  have left₃ : s₃.gpr c.leftReg = s₀.gpr r.n := by rw [g₃, lr₂, lr₁, g₁a _ hr.n.1 hr.n.2.1 hr.n.2.2]
   have hz₃ : s₃.zf = some (decide (n = 0)) := by
     rw [z₃, ← g₃, left₃]
     congr 1
     rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
     exact ⟨fun h => by rw [← hn, h]; rfl, fun h => BitVec.eq_of_toNat_eq (by rw [hn, h]; rfl)⟩
-  have mem₃ : s₃.mem = s₂.mem := by rw [m₃, m₃a]
-  have b₃ : s₃.gpr sb = B := by rw [g₃, o₃a _ (by decide), b₂]
+  have mem₃ : s₃.mem = s₂.mem := m₃
+  have b₃ : s₃.gpr sb = B := by rw [g₃, b₂]
   have rsp₃ : s₃.gpr .rsp = s₀.gpr .rsp := by
-    rw [g₃, o₃a _ (by decide), rsp₂, g₁ _ (by decide) (by decide) (by decide)]
-  have rd₃' : s₃.rd = s₀.rd := by rw [rd₃, rd₃a, rd₂']
-  have wr₃' : s₃.wr = s₀.wr := by rw [wr₃, wr₃a, wr₂']
+    rw [g₃, rsp₂, g₁ _ (by decide) (by decide) (by decide) (Ne.symm dsp) (Ne.symm lsp)]
+  have rd₃' : s₃.rd = s₀.rd := by rw [rd₃, rd₂']
+  have wr₃' : s₃.wr = s₀.wr := by rw [wr₃, wr₂']
   let V := ctrVal s₀.mem P
   have hp : GPre c s₃ B D n := ⟨⟨by rw [wr₃']; exact hs.wr, hs.fit⟩, by rw [wr₃']; exact hwD, sDS, fitD⟩
   -- The groups.
@@ -119,19 +126,17 @@ theorem ctr_wp (cs : CoreSpec c) {r : CtrRegs} (hr : RegsOk r) {s₀ : State} {B
   · have hn0 : n = 0 := by simpa using h0
     exact WP.block_nil ⟨b₃, rfl, fun _ _ => rfl, fun i hi' => by omega, Frame.refl _ _, rfl, rfl⟩
   · have hn0 : n ≠ 0 := by simpa using h0
-    have hsl : ∀ j, j = c.dataSlot ∨ j = c.leftSlot ∨ j = c.hiSlot ∨ j = c.loSlot →
+    have hsl : ∀ j, j = c.hiSlot ∨ j = c.loSlot →
         s₃.mem.readW (wordAddr B j) 64 = s₁.mem.readW (wordAddr B j) 64 := fun j hj => by
       rw [mem₃]
-      exact keep₂ j (by rcases hj with rfl | rfl | rfl | rfl <;>
-          simp only [Core.dataSlot, Core.leftSlot, Core.hiSlot, Core.loSlot] <;> omega)
-        (by rcases hj with rfl | rfl | rfl | rfl <;>
-          simp only [Core.dataSlot, Core.leftSlot, Core.hiSlot, Core.loSlot, Core.ctrSlots] <;> omega)
+      exact keep₂ j (by rcases hj with rfl | rfl <;> simp only [Core.hiSlot, Core.loSlot] <;> omega)
+        (by rcases hj with rfl | rfl <;> simp only [Core.hiSlot, Core.loSlot, Core.ctrSlots] <;> omega)
     refine ctrLoop_wp cs hp ⟨b₃, rfl, by rw [mem₃]; exact ready₂, fun _ _ => rfl, ?_, ?_, by omega, ?_, ?_,
       fun i _ => by rw [ite_eq_right (by omega)], Frame.refl _ _, rfl, rfl⟩
-    · rw [hsl _ (.inl rfl), dp₁, hD]; simp
-    · rw [hsl _ (.inr (.inl rfl)), lf₁, Nat.mul_zero, Nat.sub_zero, ← hn]; simp
-    · rw [hsl _ (.inr (.inr (.inl rfl))), hi₁, Nat.mul_zero, Nat.add_zero]
-    · rw [hsl _ (.inr (.inr (.inr rfl))), lo₁, Nat.mul_zero, Nat.add_zero]
+    · rw [g₃, dr₂, dr₁, g₁a _ hr.data.1 hr.data.2.1 hr.data.2.2, hD]; simp
+    · rw [left₃, Nat.mul_zero, Nat.sub_zero, ← hn]; simp
+    · rw [hsl _ (.inl rfl), mem₁, hi₁, Nat.mul_zero, Nat.add_zero]
+    · rw [hsl _ (.inr rfl), mem₁, lo₁, Nat.mul_zero, Nat.add_zero]
   -- The exit.
   have hsv : ∀ i < 6, Core.savedRegs.getD i .rbx ≠ sb := by decide
   have hinj : ∀ i < 6, ∀ j < 6, Core.savedRegs.getD i .rbx = Core.savedRegs.getD j .rbx → i = j := by decide
@@ -143,7 +148,8 @@ theorem ctr_wp (cs : CoreSpec c) {r : CtrRegs} (hr : RegsOk r) {s₀ : State} {B
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hx
     have hsaved : ∀ i < 6, s₅.gpr (Core.savedRegs.getD i .rbx) = s₀.gpr (Core.savedRegs.getD i .rbx) :=
       fun i hi' => by
-        rw [v₅ i hi', d₄.saved i hi', mem₃, keep₂ _ (by omega) (by simp only [Core.ctrSlots]; omega), sv₁ i hi']
+        rw [v₅ i hi', d₄.saved i hi', mem₃, keep₂ _ (by omega) (by simp only [Core.ctrSlots]; omega), mem₁,
+          sv₁ i hi']
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsaved 0 (by decide)
     · exact hsaved 1 (by decide)
@@ -169,7 +175,7 @@ theorem ctr_wp (cs : CoreSpec c) {r : CtrRegs} (hr : RegsOk r) {s₀ : State} {B
         · exact sPD) (by decide), mem₃,
       bytesAt_frame f₂ (fun x hx => by
         simp only [List.mem_singleton] at hx; subst hx; exact sPS.sub_right (Region.sub_prefix (by omega)))
-        (by decide), bP₁, AesCtr.next_eq (by simp [bytesAt]), hn]
+        (by decide), mem₁, bP₁, AesCtr.next_eq (by simp [bytesAt]), hn]
   · rw [m₅]
     refine ((f₁'.sub fun x hx => ⟨x, by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hx

@@ -102,6 +102,7 @@ theorem ctrBlock_ok (hL : Layout c) (s : State) {B : Addr} {V b : Nat} (hb : b <
       Frame [⟨bufAddr c B b, 16⟩] s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .rcx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hs := hL.small
+  have hroom := hL.room
   have hbuf := hL.buf_le
   have hN : 8 * c.ctrSlots < 2 ^ 64 := by simp only [Core.ctrSlots]; omega
   have h0 : c.buf + 2 * b < c.ctrSlots := by simp only [Core.ctrSlots]; omega
@@ -154,6 +155,7 @@ theorem ctrLoop_ok (hL : Layout c) {B : Addr} : ∀ (k : Nat), k ≤ c.G → ∀
   | 0, _, s, V, _, _, hh, hl => ⟨s, rfl, hh, hl, fun j hj => by omega, Frame.refl _ _, fun _ _ _ _ => rfl, rfl, rfl⟩
   | k + 1, hk, s, V, hB, hw, hh, hl => by
     have hs := hL.small
+    have hroom := hL.room
     have hbuf := hL.buf_le
     obtain ⟨s₁, e₁, h₁, l₁, b₁, f₁, o₁, rd₁, wr₁⟩ := ctrLoop_ok hL k (by omega) s V hB hw hh hl
     obtain ⟨s₂, e₂, h₂, l₂, b₂, f₂, o₂, rd₂, wr₂⟩ := ctrBlock_ok hL s₁ (V := V + k) (b := k) (by omega)
@@ -189,6 +191,7 @@ theorem ctrBlocks_ok (hL : Layout c) (s : State) {B : Addr} {V : Nat} (hB : s.gp
       Frame [bufRegion c B, ctrRegion c B] s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .rcx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hs := hL.small
+  have hroom := hL.room
   have hbuf := hL.buf_le
   have hN : 8 * c.ctrSlots < 2 ^ 64 := by simp only [Core.ctrSlots]; omega
   have hH : c.hiSlot < c.ctrSlots := by simp only [Core.hiSlot, Core.ctrSlots]; omega
