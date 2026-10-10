@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
 import VerifiedGarbage.Proof.Ed448.Ref
-import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+import VerifiedGarbage.Impl.Ed448.AArch64.Point56
 
 /-!
 # Ed448 verification on AArch64: doubling with the register-resident arithmetic

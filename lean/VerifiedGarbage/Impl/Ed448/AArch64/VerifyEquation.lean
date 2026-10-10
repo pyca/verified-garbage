@@ -1,5 +1,4 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
-import VerifiedGarbage.Impl.X448.AArch64.Fast
+import VerifiedGarbage.Impl.Ed448.AArch64.Point56
 
 /-!
 # Ed448 verification's equation on AArch64: the checks, the decodings and the entry
@@ -17,8 +16,8 @@ it passes.
   `yo` (`decode`): the eight seven-byte chunks of `y` into slot `yo`; `y < p`
   (`y + 2^224 + 1` does not carry) and bits 448–454 of the encoding 0; the sign
   bit kept in `x17`; `u = y² - 1`, `v = d y² - 1`, the candidate root `x = u³v
-  (u⁵v³)^((p-3)/4)` (`root`: X448's addition chain until `2^223 - 1`, then 223
-  squarings), the check `v x² = u`, the check that `x = 0` comes with the
+  (u⁵v³)^((p-3)/4)` (a call of `vg_gf448_r56_pow_p34`, `Point56.lean`, which runs `root`:
+  X448's addition chain until `2^223 - 1`, then 223 squarings), the check `v x² = u`, the check that `x = 0` comes with the
   sign bit 0, and `x` swapped with `-x` by a mask (kept in `x17` while `-x`
   is computed) if its low bit is not the sign bit. A comparison or a low bit
   uses `x`, or the elements compared, fully reduced into `X2` (slot 1) as
@@ -75,26 +74,6 @@ def sCheck : List Instr :=
 
 /-! ## Decoding a point -/
 
-/-- `[T7] = [z]^((p-3)/4)`: X448's addition chain (`Fast.invert`) as far as
-`z^(2^223 - 1)` in `T7` and `z^(2^222 - 1)` in `T6`, then
-`(z^(2^223 - 1))^(2^223) · z^(2^222 - 1)`, with the register-resident products. -/
-def root (z : Nat) : Prog isa :=
-  .seq (X448.AArch64.Fast.ops [.copy T0 (slot z)]) <| .seq (X448.AArch64.Fast.sqn T0 1) <|
-  .seq (X448.AArch64.Fast.ops [.mul T0 T0 (slot z), .copy T1 T0]) <|
-  .seq (X448.AArch64.Fast.sqn T1 2) <| .seq (X448.AArch64.Fast.ops [.mul T1 T1 T0, .copy T2 T1]) <|
-  .seq (X448.AArch64.Fast.sqn T2 4) <| .seq (X448.AArch64.Fast.ops [.mul T2 T2 T1, .copy T3 T2]) <|
-  .seq (X448.AArch64.Fast.sqn T3 8) <| .seq (X448.AArch64.Fast.ops [.mul T3 T3 T2, .copy T4 T3]) <|
-  .seq (X448.AArch64.Fast.sqn T4 16) <| .seq (X448.AArch64.Fast.ops [.mul T4 T4 T3, .copy T5 T4]) <|
-  .seq (X448.AArch64.Fast.sqn T5 32) <| .seq (X448.AArch64.Fast.ops [.mul T5 T5 T4, .copy T6 T5]) <|
-  .seq (X448.AArch64.Fast.sqn T6 64) <| .seq (X448.AArch64.Fast.ops [.mul T6 T6 T5]) <|
-  .seq (X448.AArch64.Fast.sqn T6 64) <| .seq (X448.AArch64.Fast.ops [.mul T6 T6 T5]) <|
-  .seq (X448.AArch64.Fast.sqn T6 16) <| .seq (X448.AArch64.Fast.ops [.mul T6 T6 T3]) <|
-  .seq (X448.AArch64.Fast.sqn T6 8) <| .seq (X448.AArch64.Fast.ops [.mul T6 T6 T2]) <|
-  .seq (X448.AArch64.Fast.sqn T6 4) <| .seq (X448.AArch64.Fast.ops [.mul T6 T6 T1]) <|
-  .seq (X448.AArch64.Fast.sqn T6 2) <| .seq (X448.AArch64.Fast.ops [.mul T6 T6 T0, .copy T7 T6]) <|
-  .seq (X448.AArch64.Fast.sqn T7 1) <| .seq (X448.AArch64.Fast.ops [.mul T7 T7 (slot z)]) <|
-  .seq (X448.AArch64.Fast.sqn T7 223) (X448.AArch64.Fast.ops [.mul T7 T7 T6])
-
 /-- `decodeUV yo xo` (`Formulas.lean`) with the register-resident operations, whose
 difference may not write an operand: `d y²` goes through slot 4. `u = y² - 1` in 13, `v = d y² - 1`
 in 3, `(uv)²` in 4, `u³` in 5, `u³v` in `xo` and `u⁵v³` in 12. -/
@@ -142,7 +121,7 @@ bound), the sign bit is kept at `SIGN`, and `-x` is `0 - x`, from zero written i
 once compared). -/
 def decode (rp : Reg) (xo yo : Nat) : Prog isa :=
   .seq (.block (decodeY rp yo ++ [st .x17 SIGN] ++ Impl.X448.AArch64.Base.constSlot (slot 10) 1)) <|
-  .seq (X448.AArch64.Fast.ops (decodeUVOps yo xo)) <| .seq (root 12) <|
+  .seq (X448.AArch64.Fast.ops (decodeUVOps yo xo)) <| .seq Point56.powCall <|
   .seq (X448.AArch64.Fast.ops (decodeXOps xo)) <|
   .seq (.block (eqSlots 12 13 ++ Impl.X448.AArch64.Base.constSlot (slot 13) 0)) <|
   .seq (X448.AArch64.Fast.ops [.sub (slot 12) (slot 13) (slot xo)]) <|
@@ -164,10 +143,14 @@ def bitsAt (src : Reg) (so d1 d2 : Nat) : Prog isa :=
 
 /-! ## The entry -/
 
-/-- `x12 = 2^28 - 1`, `x19` and `x20` saved, `x20 = 0`, and every slot zeroed;
-then `B` and the constants 1 and `d`. -/
+/-- Where the return address is kept, since the function calls others: after the challenge's
+copy. -/
+def LRS : Nat := 3008
+
+/-- `x12 = 2^28 - 1`, `x19`, `x20` and the return address saved, `x20 = 0`, and every slot
+zeroed; then `B` and the constants 1 and `d`. -/
 def ventry : List Instr :=
-  [.movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1, st .x19 0, st .x20 8, .movz .x .x20 0 0,
+  [.movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1, st .x19 0, st .x20 8, st .x30 LRS, .movz .x .x20 0 0,
     .movz .x .x4 0 0] ++
   (List.range 352).map (fun i => st .x4 (slot 0 + 8 * i)) ++
   Impl.X448.AArch64.Base.constSlot (slot 8) Spec.Ed448.basePoint.X ++

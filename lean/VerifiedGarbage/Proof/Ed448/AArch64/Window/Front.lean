@@ -37,6 +37,11 @@ theorem Saved.dframe {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : DFr
   ⟨(h.word (Or.inl (by decide)) (Or.inl (by decide)) (Or.inl (by decide)) (by decide)).trans hs.1,
     (h.word (Or.inl (by decide)) (Or.inl (by decide)) (Or.inl (by decide)) (by decide)).trans hs.2⟩
 
+theorem LrSaved.dframe {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : DFrame base m m')
+    (hs : LrSaved base g m) : LrSaved base g m' :=
+  (h.word (Or.inr (by simp only [LRS]; omega)) (Or.inl (by simp only [ACC, LRS]; omega))
+    (Or.inl (by simp only [CAN, LRS]; omega)) (by simp only [LRS]; omega)).trans hs
+
 theorem SavedX.dframe {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : DFrame base m m') (hs : SavedX base g m) :
     SavedX base g m' := fun k hk =>
   (h.word (Or.inr (by simp only [SAVE]; omega)) (Or.inl (by simp only [ACC, SAVE]; omega))
@@ -87,7 +92,7 @@ structure FrontOut (s : State) (base : Addr) (t : State) : Prop where
   saved : Saved base s.gpr t.mem
   savedX : SavedX base s.gpr t.mem
   savedV : SavedV base s.v t.mem
-  lr : t.gpr .x30 = s.gpr .x30
+  lrs : LrSaved base s.gpr t.mem
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   mem : Outside base 0 8192 s.mem t.mem
@@ -102,6 +107,7 @@ structure EntryOut (s : State) (base : Addr) (t : State) : Prop where
   bnd : BoundedEnv t.mem base
   saved : Saved base s.gpr t.mem
   savedX : SavedX base s.gpr t.mem
+  lrs : LrSaved base s.gpr t.mem
   x20 : t.gpr .x20 = 0
   kb : KBytes base t.mem fun i => s.mem (s.gpr .x2 + BitVec.ofNat 64 i)
   regs : Keeps [.x12, .x20, .x4] s t
@@ -117,7 +123,7 @@ theorem prefix_ok {s : State} {base : Addr} (hb3 : s.gpr .x3 = base) (hw : (⟨b
     WP isa (.block (ventry ++ ((List.range 57).flatMap fun i => [.ldrb .x4 .x2 i, .strb .x4 .x3 (KB + i)]) ++
       Impl.X448.AArch64.Fast.save)) s (EntryOut s base) := by
   rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (ventry_ok hb3 hw hn) fun s1 ⟨hs1, b1, sv1, x20₁, k1, o1, z1, pB1, d1⟩ => ?_
+  refine WP.mono (ventry_ok hb3 hw hn) fun s1 ⟨hs1, b1, sv1, lr1, x20₁, k1, o1, z1, pB1, d1⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (copyK_ok hs1 (k1.1 _ (by decide)) (fun i hi => by rw [k1.2.1, k1.2.2]; exact rch i hi) fch)
     fun s2 ⟨kb2, o2, k2⟩ => ?_
@@ -128,8 +134,9 @@ theorem prefix_ok {s : State} {base : Addr} (hb3 : s.gpr .x3 = base) (hw : (⟨b
       (o3.mono (Nat.le_refl _) (by omega))
   have keepSlot : ∀ i : Fin 22, E t.mem base i = E s1.mem base i := fun i =>
     VG.Proof.X448.AArch64.Weak.E_outside o13 i (Or.inl (by have := i.isLt; simp only [slot, SAVE]; omega))
-  refine ⟨hs2.of_keeps (rs := []) ⟨fun r _ => congrFun g3 r, rd3, wr3⟩ (by decide), fun i j hj => ?_, ?_, ?_, ?_,
-    fun i hi => ?_, ?_, ?_, by rw [keepSlot]; exact z1, ?_, by rw [keepSlot]; exact d1⟩
+  refine ⟨hs2.of_keeps (rs := []) ⟨fun r _ => congrFun g3 r, rd3, wr3⟩ (by decide), fun i j hj => ?_, ?_, ?_,
+    lr1.outside o13 (Or.inr (by decide)), ?_, fun i hi => ?_, ?_, ?_, by rw [keepSlot]; exact z1, ?_,
+    by rw [keepSlot]; exact d1⟩
   · rw [o13.limbs (Or.inl (by have := i.isLt; simp only [slot, SAVE]; omega)) (by have := i.isLt; simp only [slot]; omega)
       (by omega)]
     exact b1 i j hj
@@ -160,7 +167,8 @@ theorem entry_ok {s : State} {base : Addr} (hb3 : s.gpr .x3 = base) (hw : (⟨ba
   have hV : VSAVE = 4736 := rfl
   have k4 : Keeps [] s3 s4 := ⟨fun r _ => congrFun g4 r, rd4, wr4⟩
   refine ⟨⟨E3.scr.of_keeps k4 (by decide), fun i j hj => ?_, E3.saved.outside o4 (by decide),
-    E3.savedX.outside o4 (Or.inr (by decide)), by rw [congrFun g4]; exact E3.x20,
+    E3.savedX.outside o4 (Or.inr (by decide)), E3.lrs.outside o4 (Or.inl (by decide)),
+    by rw [congrFun g4]; exact E3.x20,
     E3.kb.of_frame fun i hi => o4 _ (Or.inl (by rw [kb_ofs base hi]; simp only [KB]; omega)),
     E3.regs.trans (k4.mono (by decide)), E3.mem.trans (o4.mono (by decide) (by decide)), ?_, ?_, ?_⟩,
     fun k hk => by rw [svv k hk, v3 _ (V_preserved k hk)]⟩
@@ -255,7 +263,7 @@ theorem wfront_ok (hR : VG.Proof.Ed448.RecoverOk) {s : State} {base : Addr} (hb3
   · exact Saved.dframe ft (Saved.dframe f7 (by rw [m6]; exact E4.saved.outside o45 (by decide)))
   · exact SavedX.dframe ft (SavedX.dframe f7 (by rw [m6]; exact E4.savedX.outside o45 (Or.inr (by decide))))
   · exact SavedV.dframe ft (SavedV.dframe f7 (by rw [m6]; exact sv4.outside o45 (Or.inl (by decide))))
-  · rw [gt.1 _ (by decide), k7.1 _ (by decide), k6.1 _ (by decide), g5 _ (by decide), E4.regs.1 _ (by decide)]
+  · exact LrSaved.dframe ft (LrSaved.dframe f7 (by rw [m6]; exact E4.lrs.outside o45 (Or.inl (by decide))))
   · rw [gt.2.1, k7.2.1, k6.2.1, rd5, E4.regs.2.1]
   · rw [gt.2.2, k7.2.2, k6.2.2, wr5, E4.regs.2.2]
   · exact O7.trans ft.whole

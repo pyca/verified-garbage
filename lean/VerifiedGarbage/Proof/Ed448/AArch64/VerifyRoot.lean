@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
 import VerifiedGarbage.Proof.Ed448.Root
-import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
+import VerifiedGarbage.Impl.Ed448.AArch64.Point56
 
 /-!
 # Ed448 verification's equation on AArch64: the square root's power

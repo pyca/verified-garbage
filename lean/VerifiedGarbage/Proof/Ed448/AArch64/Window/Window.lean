@@ -2,14 +2,15 @@ import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Digit
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 
 /-!
 # Ed448 verification on AArch64: one window of the challenge
 
 Untrusted: everything here is checked by Lean. `window sh`, in the windows'
-state `WCtx` (the table of `tabPts P` stored, 1 in slot 20, zero in slot 19): `Q` (slots 3–5) doubled four times, the
-entry of the challenge's digit selected into slots 6–8, and added
-(`window_ok`): `Q` becomes `wstep P Q n`, and slots 0–2 are kept.
+state `WCtx` (the table of `tabPts P` stored, 1 in slot 20, zero in slot 19): `Q` (slots 3–5) doubled four times
+(calls of `vg_ed448_r56_point_double`), the entry of the challenge's digit selected into slots 6–8, and added
+(a call of `vg_ed448_r56_point_add`, `window_ok`): `Q` becomes `wstep P Q n`, and slots 0–2 are kept.
 -/
 
 namespace VG.Proof.Ed448.AArch64.Window
@@ -55,17 +56,15 @@ structure WCtx (s₀ : State) (base : Addr) (P : Point) (s : State) : Prop where
   one : EV s.mem base 20 = 1
   z5 : Bnd Mb s.mem base (slot (5 : Index).val)
   tab : TabOk s.mem base P 16
-  lr : s.gpr .x30 = s₀.gpr .x30
   chk : s.gpr .x20 = s₀.gpr .x20
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   mem : Outside2 base 64 2816 ACC 1152 s₀.mem s.mem
 
-theorem WCtx.of_fkeep {s₀ s t : State} {base : Addr} {P : Point} (h : WCtx s₀ base P s)
-    (k : FKeep base s t) (b : BEnv t.mem base) (z : ∀ w < 8, limbs t.mem base (slot (19 : Index).val) w = 0)
+theorem WCtx.of_ckeep {s₀ s t : State} {base : Addr} {P : Point} (h : WCtx s₀ base P s)
+    (k : Point56.CKeep base s t) (b : BEnv t.mem base) (z : ∀ w < 8, limbs t.mem base (slot (19 : Index).val) w = 0)
     (o : EV t.mem base 20 = 1) (z5 : Bnd Mb t.mem base (slot (5 : Index).val)) : WCtx s₀ base P t :=
-  ⟨k.scr h.scr, b, z, o, z5, h.tab.of_outside2 k.mem (by decide),
-    (k.regs.1 _ (by decide)).trans h.lr, (k.regs.1 _ (by decide)).trans h.chk,
+  ⟨k.scr h.scr, b, z, o, z5, h.tab.of_outside2 k.mem (by decide), (k.regs.1 _ (by decide)).trans h.chk,
     k.regs.2.1.trans h.rd, k.regs.2.2.trans h.wr, h.mem.trans k.mem⟩
 
 /-- Slots other than 3–5 and the temporaries, kept. -/
@@ -85,12 +84,11 @@ theorem Kept.env {base : Addr} {m m' : Mem} (h : Kept base m m') {i : Index} (hi
 /-! ## The doublings -/
 
 theorem dbl_step {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base P s) :
-    WP isa (ops (Impl.Ed448.AArch64.dblOps (slot (3 : Index).val) (slot (4 : Index).val) (slot (5 : Index).val))) s
+    WP isa Point56.doubleCall s
       fun t => WCtx s₀ base P t ∧ pt (EV t.mem base) 3 4 5 = VG.Proof.Ed448.double (pt (EV s.mem base) 3 4 5) ∧
         Kept base s.mem t.mem ∧ t.gpr .x19 = s.gpr .x19 ∧ t.gpr .x1 = s.gpr .x1 := by
-  refine WP.mono (dblOps_ok 3 4 5 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) h.scr
-    h.env h.z5) fun t ⟨k, b, sm, _, _, mz, e⟩ => ?_
-  refine ⟨h.of_fkeep k b (fun w hw => by rw [sm 19 (by decide) w hw]; exact h.zero w hw)
+  refine WP.mono (Point56.doubleCall_ok h.scr h.env h.z5) fun t ⟨k, b, sm, _, _, mz, e, _⟩ => ?_
+  refine ⟨h.of_ckeep k b (fun w hw => by rw [sm 19 (by decide) w hw]; exact h.zero w hw)
     (by rw [Same.env sm (i := 20) (by decide)]; exact h.one) mz, ?_,
     Kept.of_same sm (by decide), k.regs.1 _ (by decide), k.regs.1 _ (by decide)⟩
   rw [e, dblEnv_345, h.one, dblPt_eq]
@@ -130,7 +128,7 @@ theorem dbl4_ok {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base P
   have h₁ : WCtx s₀ base P s₁ :=
     ⟨h.scr.of_keeps k₁ (by decide), by rw [m₁]; exact h.env, by rw [m₁]; exact h.zero,
       by rw [m₁]; exact h.one, by rw [m₁]; exact h.z5, by rw [m₁]; exact h.tab,
-      by rw [k₁.1 _ (by decide)]; exact h.lr, by rw [k₁.1 _ (by decide)]; exact h.chk,
+      by rw [k₁.1 _ (by decide)]; exact h.chk,
       by rw [k₁.2.1]; exact h.rd, by rw [k₁.2.2]; exact h.wr, by rw [m₁]; exact h.mem⟩
   refine WP.loop (M := isa) (fun n (t : State) => 1 ≤ n ∧ n ≤ 4 ∧ t.gpr .x1 = BitVec.ofNat 64 n ∧
       WCtx s₀ base P t ∧ pt (EV t.mem base) 3 4 5 = dblN (pt (EV s.mem base) 3 4 5) (4 - n) ∧
@@ -139,14 +137,14 @@ theorem dbl4_ok {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base P
       k₁.1 _ (by decide)⟩
   intro n t ⟨n1, n4, ct, ht, qt, kt, xt⟩
   obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-  rw [WP.block_append_iff]
-  refine WP.mono (block_codeOf (dbl_step ht)) fun u ⟨hu, qu, ku, xu, x1u⟩ => ?_
+  rw [WP.seq_iff]
+  refine WP.mono (dbl_step ht) fun u ⟨hu, qu, ku, xu, x1u⟩ => ?_
   have cu : u.gpr .x1 = BitVec.ofNat 64 (k + 1) := x1u.trans ct
   refine WP.mono (decX1_ok u (by omega) cu) fun v ⟨cv, kv, mv⟩ => ?_
   have hv : WCtx s₀ base P v :=
     ⟨hu.scr.of_keeps kv (by decide), by rw [mv]; exact hu.env, by rw [mv]; exact hu.zero,
       by rw [mv]; exact hu.one, by rw [mv]; exact hu.z5, by rw [mv]; exact hu.tab,
-      by rw [kv.1 _ (by decide)]; exact hu.lr, by rw [kv.1 _ (by decide)]; exact hu.chk,
+      by rw [kv.1 _ (by decide)]; exact hu.chk,
       by rw [kv.2.1]; exact hu.rd, by rw [kv.2.2]; exact hu.wr, by rw [mv]; exact hu.mem⟩
   have qv : pt (EV v.mem base) 3 4 5 = dblN (pt (EV s.mem base) 3 4 5) (4 - k) := by
     rw [mv, qu, qt, show 4 - k = (4 - (k + 1)) + 1 by omega]; rfl
@@ -204,8 +202,7 @@ theorem window_ok {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base
       pt (EV t.mem base) 0 1 2 = pt (EV s.mem base) 0 1 2 ∧ t.gpr .x19 = s.gpr .x19 := by
   unfold window
   refine WP.seq (WP.mono (dbl4_ok h) fun t1 ⟨h1, q1, k1, c1⟩ => ?_)
-  simp only [List.append_assoc]
-  rw [WP.block_append_iff]
+  rw [WP.seq_iff, WP.block_append_iff]
   refine WP.mono (digitOf_ok h1.scr hj (c1.trans hc) hsh) fun t2 ⟨d2, k2, m2⟩ => ?_
   have hs2 : Scr t2 base := h1.scr.of_keeps k2 (by decide)
   -- The byte read is the copy's at the windows' start.
@@ -215,7 +212,6 @@ theorem window_ok {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base
     exact h1.mem _ (Or.inr (by rw [ho]; simp only [KB]; omega)) (Or.inl (by rw [ho]; simp only [KB, ACC]; omega))
   rw [hbyte] at d2
   have hn := nibOf_lt (s₀.mem (off base (KB + j))) sh
-  rw [WP.block_append_iff]
   refine WP.mono (selectEntry_ok hs2 hn d2) fun t3 ⟨w3, o3, k3⟩ => ?_
   have hs3 : Scr t3 base := hs2.of_keeps k3 (by decide)
   obtain ⟨b3, e3, kp3, kk3⟩ := select_env hn w3 o3 (by rw [m2]; exact h1.env) (by rw [m2]; exact h1.tab)
@@ -228,14 +224,12 @@ theorem window_ok {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base
       by rw [keepE 20 (by decide)]; exact h1.one,
       fun w hw => by rw [kk3 5 (by decide) w hw, m2]; exact h1.z5 w hw,
       (by rw [m2] at o3'; exact h1.tab.of_outside2 o3' (by decide)),
-      by rw [k3.1 _ (by decide), k2.1 _ (by decide)]; exact h1.lr,
       by rw [k3.1 _ (by decide), k2.1 _ (by decide)]; exact h1.chk,
       by rw [k3.2.1, k2.2.1]; exact h1.rd, by rw [k3.2.2, k2.2.2]; exact h1.wr,
       by rw [m2] at o3'; exact h1.mem.trans o3'⟩
-  refine WP.mono (block_codeOf (addOps_ok 3 4 5 6 7 8 (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) hs3 b3 (zero_env h3.zero).2))
-    fun t4 ⟨k4, b4, s4, _, _, m5, e4⟩ => ?_
-  refine ⟨h3.of_fkeep k4 b4 (fun w hw => by rw [s4 19 (by decide) w hw]; exact h3.zero w hw)
+  refine WP.mono (Point56.addCall_ok hs3 b3 (zero_env h3.zero).2)
+    fun t4 ⟨k4, b4, s4, _, _, m5, e4, _⟩ => ?_
+  refine ⟨h3.of_ckeep k4 b4 (fun w hw => by rw [s4 19 (by decide) w hw]; exact h3.zero w hw)
     (by rw [Same.env s4 (i := 20) (by decide)]; exact h3.one) m5, ?_, ?_, ?_⟩
   · rw [e4, genEnv_345, (zero_env h3.zero).1, VG.Proof.X448.AArch64.Base.genPt_eq, e3, wstep, ← q1]
     simp only [pt]

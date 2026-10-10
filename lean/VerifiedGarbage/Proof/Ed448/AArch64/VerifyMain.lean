@@ -72,7 +72,7 @@ theorem verifyEquation_correct (hR : RecoverOk) {s : State} (hp : verifyEquation
   have B1 : VG.Proof.X448.AArch64.Base.Bits 57 base S s1.mem := by
     rw [← hS]; exact F.bits
   have P1 : Persist base s.gpr s.v (fun i => s.mem (s.gpr .x2 + BitVec.ofNat 64 i)) s1.mem :=
-    ⟨F.saved, F.savedX, F.savedV, F.kb⟩
+    ⟨F.saved, F.savedX, F.savedV, F.lrs, F.kb⟩
   -- The table.
   refine WP.seq (WP.seq (WP.mono_syms (tabInit_ok F.scr F.bnd) fun s2 I sy2 =>
     WP.mono_syms (tabLoop_ok 14 s2 (by decide) (by decide) I.inv) fun s3 T sy3 => ?_))
@@ -87,10 +87,10 @@ theorem verifyEquation_correct (hR : RecoverOk) {s : State} (hp : verifyEquation
       F.mem x (Or.inr hx)]
   -- `[S]B`.
   refine WP.seq (WP.mono (sBase_ok T.scr T.env T.zero hSlt B3 tb3)
-    fun s4 ⟨hs4, b4, z4, rep4, o4, lr4, x4, rd4, wr4⟩ => ?_)
+    fun s4 ⟨hs4, b4, z4, rep4, o4, _, x4, rd4, wr4⟩ => ?_)
   -- `[k](-A)`, added.
   refine WP.seq (WP.seq (WP.mono (kInit_ok hs4 b4 z4 (T.tab.of_outside2 o4 (by decide)) rfl)
-    fun s5 ⟨K5, o5, lr5, x5, rd5, wr5⟩ => WP.mono (kLoop_ok 57 s5 (by decide) (by decide) K5) fun s6 K6 => ?_))
+    fun s5 ⟨K5, o5, x5, rd5, wr5⟩ => WP.mono (kLoop_ok 57 s5 (by decide) (by decide) K5) fun s6 K6 => ?_))
   have P6 := ((P3.outside2 o4).outside2 o5).outside2 K6.ctx.mem
   have hrl : ∀ o, o = RX ∨ o = RY → ∀ i < 8, limbs s6.mem base o i = limbs s2.mem base o i := fun o ho i hi => by
     rw [rlimbs_outside2 K6.ctx.mem ho hi, rlimbs_outside2 o5 ho hi, rlimbs_outside2 o4 ho hi,
@@ -100,16 +100,14 @@ theorem verifyEquation_correct (hR : RecoverOk) {s : State} (hp : verifyEquation
   have hry : ∀ i < 8, limbs s6.mem base RY i = limbs s1.mem base (slot 9) i := fun i hi =>
     (hrl _ (.inr rfl) i hi).trans (I.ry i hi)
   -- The comparison and the result.
-  rw [WP.block_append_iff]
+  rw [WP.seq_iff]
   refine WP.mono (wcross_ok K6.ctx.scr K6.ctx.env K6.ctx.zero K6.ctx.one
     (ib_of_limbs hrx (F.bnd 8)) (ib_of_limbs hry (F.bnd 9)))
     fun s7 ⟨hs7, k7, o7, c7, b7⟩ => ?_
   have P7 := P6.outside2 o7
   refine WP.mono (wfinish_ok hs7 (fun i h1 h2 j hj => Nat.lt_trans (b7 i h1 h2 j hj) (by decide))
-    P7.saved P7.savedX P7.savedV) fun t ⟨t0, t19, t20, tx, tv, t30, _, _, _⟩ => ⟨?_, ?_, ?_⟩
+    P7.saved P7.savedX P7.lrs P7.savedV) fun t ⟨t0, t19, t20, tx, tv, t30, _, _, _⟩ => ⟨?_, ?_, ?_⟩
   · intro r hr
-    have lr : t.gpr .x30 = s.gpr .x30 := by
-      rw [t30, k7.1 _ (by decide), K6.ctx.lr, lr5, lr4, T.lr, I.lr, F.lr]
     simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact t19
@@ -122,7 +120,7 @@ theorem verifyEquation_correct (hR : RecoverOk) {s : State} (hp : verifyEquation
     · exact tx 5 (by decide)
     · exact tx 6 (by decide)
     · exact tx 7 (by decide)
-    · exact lr
+    · exact t30
   · intro r hr
     simp only [preservedV, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
 import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
 
 /-!
 # Ed448 verification on AArch64: the result
@@ -40,6 +41,11 @@ theorem CFrame.saved {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : CFr
   ⟨(h.word (Or.inl (by decide)) (Or.inl (by decide)) (Or.inl (by decide)) (by decide)).trans hs.1,
     (h.word (Or.inl (by decide)) (Or.inl (by decide)) (Or.inl (by decide)) (by decide)).trans hs.2⟩
 
+theorem CFrame.lrs {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : CFrame base m m')
+    (hs : VG.Proof.Ed448.AArch64.LrSaved base g m) : VG.Proof.Ed448.AArch64.LrSaved base g m' :=
+  (h.word (Or.inr (by simp only [X2, slot, LRS]; omega)) (Or.inl (by simp only [CAN, LRS]; omega))
+    (Or.inl (by simp only [ACC, LRS]; omega)) (by simp only [LRS]; omega)).trans hs
+
 theorem CFrame.savedX {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : CFrame base m m') (hs : SavedX base g m) :
     SavedX base g m' := fun k hk =>
   (h.word (Or.inr (by simp only [X2, slot, Impl.X448.AArch64.Fast.SAVE]; omega))
@@ -56,14 +62,15 @@ theorem CFrame.savedV {base : Addr} {v : VReg → BitVec 128} {m m' : Mem} (h : 
     (by rw [ho]; simp only [ACC]; omega)
 
 theorem wfinish_eq : wfinish = eqSlots 12 13 ++ (eqSlots 14 15 ++ (([.addImm .x .x5 .x20 0] : List Instr) ++ (isZero ++
-    (([.addImm .x .x0 .x5 0] : List Instr) ++ (([ld .x19 0, ld .x20 8] : List Instr) ++ (Impl.X448.AArch64.Fast.restore ++
-      Impl.X448.AArch64.Fast.vrestore)))))) := by
+    (([.addImm .x .x0 .x5 0] : List Instr) ++ (([ld .x19 0, ld .x20 8] : List Instr) ++ (([ld .x30 LRS] : List Instr) ++
+      (Impl.X448.AArch64.Fast.restore ++ Impl.X448.AArch64.Fast.vrestore))))))) := by
   simp only [wfinish, List.append_assoc]; rfl
 
 /-- **The result** of the comparisons, and the registers restored. -/
 theorem wfinish_ok {s : State} {base : Addr} (hs : Scr s base)
     (hb : ∀ i : Index, 12 ≤ i.val → i.val < 16 → ∀ j < 8, limbs s.mem base (slot i.val) j < 2 ^ 118)
     {g : Reg → BitVec 64} (sv : Saved base g s.mem) (svx : SavedX base g s.mem)
+    (lrs : VG.Proof.Ed448.AArch64.LrSaved base g s.mem)
     {gv : VReg → BitVec 128} (svv : SavedV base gv s.mem) :
     WP isa (.block wfinish) s fun t =>
       t.gpr .x0 = (if s.gpr .x20 = 0 ∧ EV s.mem base 12 = EV s.mem base 13 ∧ EV s.mem base 14 = EV s.mem base 15
@@ -71,7 +78,7 @@ theorem wfinish_ok {s : State} {base : Addr} (hs : Scr s base)
       t.gpr .x19 = g .x19 ∧ t.gpr .x20 = g .x20 ∧ (∀ k < 8, t.gpr (saved k) = g (saved k)) ∧
       (∀ k < 8, (t.v (VG.Impl.Curve448.AArch64.Neon.V (8 + k))).extractLsb' 0 64 =
         (gv (VG.Impl.Curve448.AArch64.Neon.V (8 + k))).extractLsb' 0 64) ∧
-      t.gpr .x30 = s.gpr .x30 ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ CFrame base s.mem t.mem := by
+      t.gpr .x30 = g .x30 ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ CFrame base s.mem t.mem := by
   rw [wfinish_eq, WP.block_append_iff]
   refine WP.mono (eqSlotsF_ok hs 12 13 (hb 12 (by decide) (by decide)) (hb 13 (by decide) (by decide))
     (by decide) (by decide)) fun s1 ⟨⟨c1, hc1, x1⟩, k1, _⟩ => ?_
@@ -98,20 +105,24 @@ theorem wfinish_ok {s : State} {base : Addr} (hs : Scr s base)
   refine WP.mono (restore_ok hs5 (g := g) (by rw [m25]; exact CFrame.saved f02 sv)) fun s6 ⟨t19, t20, m6, k6⟩ => ?_
   have hs6 : Scr s6 base := hs5.of_keeps k6 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (restoreX_ok hs6 (g := g) (by rw [m6, m25]; exact CFrame.savedX f02 svx)) fun s7 ⟨tx, m7, k7⟩ => ?_
-  have hs7 : Scr s7 base := hs6.of_keeps k7 (by decide)
-  refine WP.mono (VG.Proof.X448.AArch64.Fast.vrestore_ok hs7 (by rw [m7, m6, m25]; exact CFrame.savedV f02 svv))
+  refine WP.mono (VG.Proof.Curve448.AArch64.Fast.ld_ok hs6 .x30 (d := LRS) (by decide) (by decide))
+    fun s6' ⟨t30, m6', k6'⟩ => ?_
+  have hs6' : Scr s6' base := hs6.of_keeps k6' (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (restoreX_ok hs6' (g := g) (by rw [m6', m6, m25]; exact CFrame.savedX f02 svx))
+    fun s7 ⟨tx, m7, k7⟩ => ?_
+  have hs7 : Scr s7 base := hs6'.of_keeps k7 (by decide)
+  refine WP.mono (VG.Proof.X448.AArch64.Fast.vrestore_ok hs7 (by rw [m7, m6', m6, m25]; exact CFrame.savedV f02 svv))
     fun t ⟨tv, mt, gt, rdt, wrt⟩ => ⟨?_, ?_, ?_, fun k hk => by rw [gt]; exact tx k hk, tv, ?_, ?_, ?_, ?_⟩
   · have hx : s2.gpr .x20 = s.gpr .x20 ||| c1 ||| c2 := by rw [x2, x1]
-    rw [gt, k7.1 _ (by decide), k6.1 _ (by decide), v5, v4, v3, hx]
+    rw [gt, k7.1 _ (by decide), k6'.1 _ (by decide), k6.1 _ (by decide), v5, v4, v3, hx]
     refine if_congr ?_ rfl rfl
     rw [or_eq_zero64, or_eq_zero64, hc1, hc2, and_assoc, k1.mem.E (i := 14) (by decide), k1.mem.E (i := 15) (by decide)]
-  · rw [gt, k7.1 _ (by decide)]; exact t19
-  · rw [gt, k7.1 _ (by decide)]; exact t20
-  · rw [gt, k7.1 _ (by decide), k6.1 _ (by decide), k25.1 _ (by decide), k2.regs.1 _ (by decide),
-      k1.regs.1 _ (by decide)]
-  · rw [rdt, k7.2.1, k6.2.1, k25.2.1, k2.regs.2.1, k1.regs.2.1]
-  · rw [wrt, k7.2.2, k6.2.2, k25.2.2, k2.regs.2.2, k1.regs.2.2]
-  · rw [mt, m7, m6, m25]; exact f02
+  · rw [gt, k7.1 _ (by decide), k6'.1 _ (by decide)]; exact t19
+  · rw [gt, k7.1 _ (by decide), k6'.1 _ (by decide)]; exact t20
+  · rw [gt, k7.1 _ (by decide), t30, m6, m25]; exact CFrame.lrs f02 lrs
+  · rw [rdt, k7.2.1, k6'.2.1, k6.2.1, k25.2.1, k2.regs.2.1, k1.regs.2.1]
+  · rw [wrt, k7.2.2, k6'.2.2, k6.2.2, k25.2.2, k2.regs.2.2, k1.regs.2.2]
+  · rw [mt, m7, m6', m6, m25]; exact f02
 
 end VG.Proof.Ed448.AArch64.Window
