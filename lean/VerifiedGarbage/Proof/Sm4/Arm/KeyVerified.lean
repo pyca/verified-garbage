@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Sm4.Arm.KeyEk
 import VerifiedGarbage.Proof.Sm4.Arm.Verified
+import VerifiedGarbage.Proof.Sm4.Arm.Lit
 
 /-!
 # SM4 key expansion on ARMv7 meets its contracts

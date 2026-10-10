@@ -13,8 +13,8 @@ code again.
 
 namespace VG.Proof.Sm4.AArch64
 
-materialize_code expandKeyCode := Impl.Sm4.AArch64.expandKey
-materialize_code ecbEncrypt := Impl.Sm4.AArch64.ecb .encrypt
-materialize_code ecbDecrypt := Impl.Sm4.AArch64.ecb .decrypt
+materialize_flat_code expandKeyCode := Impl.Sm4.AArch64.expandKey
+materialize_flat_code ecbEncrypt := Impl.Sm4.AArch64.ecb .encrypt
+materialize_flat_code ecbDecrypt := Impl.Sm4.AArch64.ecb .decrypt
 
 end VG.Proof.Sm4.AArch64

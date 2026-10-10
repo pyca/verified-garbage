@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Sm4.Scratch
 import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sm4.X86_64.Lit
 
 /-!
 # SM4 ECB on x86-64 meets its contracts
@@ -79,7 +80,7 @@ theorem ecb_correct (dir : Dir) (s : State) (hs : (ecbX86_64 dir).pre s) :
     ∃ t s', Exec isa (ecb dir) s t s' ∧ abiPreserved s s' ∧ (ecbX86_64 dir).post s s' := by
   obtain ⟨t, s', he, hg, hpost⟩ := ecb_wp dir hs
   refine ⟨t, s', he, abiPreserved_of_exec (c := ecb dir) ?_ he hg, hpost⟩
-  cases dir <;> decide +kernel
+  cases dir <;> lit_decide
 
 /-- A state satisfying the precondition (one block). -/
 def ecbSat : State where
@@ -107,7 +108,7 @@ theorem ecb_framed (dir : Dir) :
   X86_64.Verified.stackScratchWiped (sig := Spec.Sm4.ecbSig) (nm := "scratch") (e := .u64)
     (n := 392) (post := Spec.Sm4.ecbPost (specDir dir) X86_64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3144) (ecb_verified dir) (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by cases dir <;> decide +kernel)) (by cases dir <;> decide +kernel) (by decide)
+    (Code.all_of_allInstrs (by cases dir <;> lit_decide)) (by cases dir <;> lit_decide) (by decide)
     (Proof.Sm4.ecbPostOut_local _ _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

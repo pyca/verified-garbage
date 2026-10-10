@@ -84,7 +84,10 @@ theorem ckEntries_lt : ∀ kv ∈ ckEntries, kv.1 < tableEnd := by decide +kerne
 
 theorem ckEntries_ge : ∀ kv ∈ ckEntries, tableSlot ≤ kv.1 := by decide +kernel
 
-theorem ckEntries_nodup : (ckEntries.map (·.1)).Nodup := by decide +kernel
+theorem ckEntries_nodup : (ckEntries.map (·.1)).Nodup := by
+  -- The slots are consecutive: a linear check, not the quadratic `Nodup` search.
+  rw [show ckEntries.map (·.1) = List.range' tableSlot 256 by decide +kernel]
+  exact List.nodup_range'
 
 theorem entryW_slot (s : State) (e j : Nat) : entryW s.mem (s.gpr sb) e j = slotW s (tableSlot + 8 * e + j) := by
   simp only [entryW, slotW, wordAddr]; rw [show 8 * (tableSlot + 8 * e + j) = 8 * tableSlot + 64 * e + 8 * j by omega]

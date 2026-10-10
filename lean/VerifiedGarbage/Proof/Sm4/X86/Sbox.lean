@@ -35,7 +35,7 @@ def sboxPost (e : Env Nat) : Bool :=
 
 theorem sbox_check :
     check (table 32 256) sboxCfg (fun _ => none) sboxCode sboxEnv sboxPost = true := by
-  decide +kernel
+  lit_decide
 
 /-- The registers the layers may write. -/
 theorem not_tmp (r : Reg) (hr : r ∉ tmpRegs) : r ∈ [Reg.esp, .esi, .edi] := by
@@ -75,7 +75,7 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
     have hb : s''.gpr sb = s.gpr sb := p₁.base
     simp only [TableRel, sboxCfg, hb] at this
     rw [slotW, hb, ← this, sboxT, testBit_tableOf]
-    simp [hc]
+    simp [hc, sboxN_eq hc, BitVec.testBit_toNat]
   · have h : ([Reg.esp, .esi, .edi].all fun r => sboxCode.all fun i => i.dst != some r) = true := by
       decide +kernel
     simp [List.all_eq_true.mp h r (not_tmp r hr)]
