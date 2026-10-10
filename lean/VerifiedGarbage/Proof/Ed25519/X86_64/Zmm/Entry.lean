@@ -170,7 +170,7 @@ theorem ventryN_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx 
   have e₃ : ∀ l < 4, fe5 (lanes s₃ 5 l) = fe5 (lanes s₂ 5 l) := fun l hl => by
     rw [fe5_congr (fun i hi => (u₃ l hl i hi).1), fe5_carry _ (b₂ l hl 4 (by decide))]
   have q₃ : lanePt5 s₃ = negIf b (lanePt5 s) := by
-    conv_lhs => simp only [lanePt5]
+    conv => lhs; simp only [lanePt5]
     rw [e₃ 0 (by decide), e₃ 1 (by decide), e₃ 2 (by decide), e₃ 3 (by decide), f₂ 0 (by decide),
       f₂ 1 (by decide), f₂ 2 (by decide), f₂ 3 (by decide)]
     rfl

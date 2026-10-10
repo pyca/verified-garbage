@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Ed25519.Group.Double
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombAdd
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombSelect
 import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
