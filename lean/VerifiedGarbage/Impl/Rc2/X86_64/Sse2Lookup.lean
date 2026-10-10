@@ -24,9 +24,9 @@ def piValues (n : Nat) : BitVec 128 :=
   ofWords fun j => (VG.Spec.Rc2.piTable.getD (8 * n + j) 0).setWidth 16
 
 def start (scratch : Reg) (mask : Nat) : List Instr :=
-  [.movdquLoad .xmm8 (memOp scratch 64), .alu .and .rax (.imm (BitVec.ofNat 32 mask)),
+  ([.movdquLoad .xmm8 (memOp scratch 64), .alu .and .rax (.imm (BitVec.ofNat 32 mask)),
    .xop (.movq .xmm0 .rax), .xop (.bin .punpcklwd .xmm0 .xmm0),
-   .xop (.pshufd .xmm0 .xmm0 0), .xop (.bin .pxor .xmm1 .xmm1)] ++
+   .xop (.pshufd .xmm0 .xmm0 0), .xop (.bin .pxor .xmm1 .xmm1)] : List Instr) ++
    loadConst .xmm2 (indices 0) ++ loadConst .xmm6 ones ++ loadConst .xmm7 eights
 
 def select : List Instr :=
@@ -43,8 +43,8 @@ def reduceOr : List Instr :=
      .xop (.bin .por .xmm1 .xmm3)]
 
 def finish (scratch : Reg) : List Instr := reduceOr ++
-  [.movdquStore (memOp scratch 64) .xmm1, .mov .rax (.mem (memOp scratch 64)),
-   .alu .and .rax (.imm 65535), .movdquStore (memOp scratch 64) .xmm8]
+  ([.movdquStore (memOp scratch 64) .xmm1, .mov .rax (.mem (memOp scratch 64)),
+   .alu .and .rax (.imm 65535), .movdquStore (memOp scratch 64) .xmm8] : List Instr)
 
 def piLookup : List Instr :=
   start .r8 255 ++ (List.range 32).flatMap piStep ++ finish .r8

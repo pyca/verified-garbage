@@ -33,7 +33,7 @@ def piStep (i : Nat) : List Instr :=
 /-- PITABLE of the low byte of `rax`, returned in `rax`. Clobbers only
 `rax`, `rcx`, `r10`, `r11`, and flags; accesses no memory. -/
 def piLookup : List Instr :=
-  [.alu .and .rax (.imm 255), imm .rcx 0] ++
+  ([.alu .and .rax (.imm 255), imm .rcx 0] : List Instr) ++
     (List.range 256).flatMap piStep ++ [rr .rax .rcx]
 
 /-- Load a little-endian 16-bit word at the public offset `2*i` of `rdi`
@@ -50,7 +50,7 @@ def keyStep (i : Nat) : List Instr :=
 /-- Select schedule word `rax & 63`, returned in `rax`, from all 64 words
 at `rdi`. Clobbers `rax`, `rcx`, `r8`–`r11`, and flags. -/
 def keyLookup : List Instr :=
-  [.alu .and .rax (.imm 63), imm .rcx 0] ++
+  ([.alu .and .rax (.imm 63), imm .rcx 0] : List Instr) ++
     (List.range 64).flatMap keyStep ++ [rr .rax .rcx]
 
 end VG.Impl.Rc2.X86_64

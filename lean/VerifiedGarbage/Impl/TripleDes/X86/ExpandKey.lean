@@ -35,7 +35,7 @@ def component (offset index : Nat) : Prog isa :=
 def copyWords (n : Nat) : List Instr :=
   (List.range n).flatMap fun j =>
     [.mov .eax (.mem (memOp .edx (4 * j))), .store (memOp .edx (256 + 4 * j)) .eax]
-def copyThird : List Instr := [.mov .edx (.mem (memOp .esp 12))] ++ copyWords 32
+def copyThird : List Instr := ([.mov .edx (.mem (memOp .esp 12))] : List Instr) ++ copyWords 32
 def expandKey : Prog isa :=
   .seq (.block save) (.seq (component 0 0) (.seq (component 8 1)
     (.seq (.block [.mov .eax (.mem (memOp .esp 8)), .alu .cmp .eax (.imm 16)])

@@ -133,10 +133,10 @@ def cmpA (a b : Nat) : List (Prog isa) :=
   [.block (ws ++ [movi .x7 0, mov .x14 .x12, .subs .x .x3 .x7 .x7] ++ base a .x16 ++ base b .x17), cmpLoop]
 
 /-- `x15 := ` the mask of `[a] < [b]` over `W` words. -/
-def ltA (a b : Nat) : List (Prog isa) := cmpA a b ++ [.block borrowMask]
+def ltA (a b : Nat) : List (Prog isa) := cmpA a b ++ ([.block borrowMask] : List (Prog isa))
 
 /-- `x15 := ` the mask of `[a] ≥ [b]` over `W` words. -/
-def geA (a b : Nat) : List (Prog isa) := cmpA a b ++ [.block carryMask]
+def geA (a b : Nat) : List (Prog isa) := cmpA a b ++ ([.block carryMask] : List (Prog isa))
 
 /-- `x15 := ` the mask of `x9 = 0` (`x9 − 1` borrows). -/
 def zeroMask : List Instr := [movi .x7 0, movi .x4 1, .subs .x .x3 .x9 .x4] ++ borrowMask
@@ -145,10 +145,10 @@ def zeroMask : List Instr := [movi .x7 0, movi .x4 1, .subs .x .x3 .x9 .x4] ++ b
 def nonzeroMask : List Instr := [movi .x7 0, movi .x4 1, .subs .x .x3 .x9 .x4] ++ carryMask
 
 /-- `x15 := ` the mask of `[a] = [b]` over `W` words. -/
-def eqMask (a b : Nat) : List (Prog isa) := eqA a b ++ [.block zeroMask]
+def eqMask (a b : Nat) : List (Prog isa) := eqA a b ++ ([.block zeroMask] : List (Prog isa))
 
 /-- `x15 := ` the mask of `[a] ≠ [b]` over `W` words. -/
-def neMask (a b : Nat) : List (Prog isa) := eqA a b ++ [.block nonzeroMask]
+def neMask (a b : Nat) : List (Prog isa) := eqA a b ++ ([.block nonzeroMask] : List (Prog isa))
 
 /-- `x15 := ~x15`. -/
 def notMask : List Instr := [movi .x7 0, .subImm .x .x4 .x7 1, .logic .eor .x .x15 .x15 .x4]
@@ -172,14 +172,15 @@ def evenMaskOf (j : Nat) : List Instr :=
 
 /-- `p` and `q` swapped under the mask of `p < q`. -/
 def order : List (Prog isa) :=
-  ltA aPa aQa ++ [.block (ws ++ [mov .x14 .x12] ++ base aPa .x16 ++ base aQa .x17), countLoop .x14 cswapBody]
+  ltA aPa aQa ++ ([.block (ws ++ [mov .x14 .x12] ++ base aPa .x16 ++ base aQa .x17),
+      countLoop .x14 cswapBody] : List (Prog isa))
 
 /-- `[o] := [j] - 1`, or 0 for `[j] = 0`: `[j]` minus `[aC] = 1` and'ed
 with the mask of `[j] ≠ 0`. -/
 def decTo (o j : Nat) : List (Prog isa) :=
   [zeroA o, copyA o j] ++ constA 0 ++ neMask j aC ++ constA 1 ++
-    [.block (ws ++ [movi .x7 0, mov .x14 .x12, .subs .x .x3 .x7 .x7] ++ base o .x16 ++ base aC .x17 ++ base o .x8),
-      countLoop .x14 subMBody]
+    ([.block (ws ++ [movi .x7 0, mov .x14 .x12, .subs .x .x3 .x7 .x7] ++ base o .x16 ++ base aC .x17 ++ base o .x8),
+      countLoop .x14 subMBody] : List (Prog isa))
 
 /-! ## `lcm(p − 1, q − 1)` -/
 
@@ -200,22 +201,24 @@ def halfIf (j : Nat) : List (Prog isa) :=
 /-- One step of the halving: the mask of `u` and `v` both even into `x15`,
 then `u`, `v` and `φ` halved under it, and the step counter `x6` counted
 down. -/
-def twoStep : Prog isa := seqs ([
+def twoStep : Prog isa := seqs (([
   .block (ws ++ base aU .x16 ++ base aV .x17 ++ [ld .x3 .x16, ld .x4 .x17, .logic .orr .x .x3 .x3 .x4, movi .x4 1,
-    .logic .and .x .x3 .x3 .x4, .subImm .x .x15 .x3 1])] ++
-  halfIf aU ++ halfIf aV ++ halfIf aL ++ [.block [.subImm .x .x6 .x6 1]])
+    .logic .and .x .x3 .x3 .x4, .subImm .x .x15 .x3 1])] : List (Prog isa)) ++
+  halfIf aU ++ halfIf aV ++ halfIf aL ++ ([.block [.subImm .x .x6 .x6 1]] : List (Prog isa)))
 
 /-- `64 W` steps of the halving. -/
-def twos : List (Prog isa) := [.block (ws ++ [.lsl .x .x6 .x12 6]), .loop twoStep (.nonzero .x .x6)]
+def twos : List (Prog isa) := [.block (ws ++ ([.lsl .x .x6 .x12 6] : List Instr)), .loop twoStep (.nonzero .x .x6)]
 
 /-- `[aV] := gcd(u, v)`, or 1 for `v < 2`, after the halving: `v` made odd
 by a swap, `inverse` modulo `v` (3 for `v < 2`), and the result 1 for
 `v < 2` (whose mask `kOk` holds). -/
 def gcdUV : List (Prog isa) :=
-  [.block (evenMaskOf aV ++ [mov .x14 .x12] ++ base aU .x16 ++ base aV .x17), countLoop .x14 cswapBody] ++
-  constA 2 ++ ltA aV aC ++ [.block [sth .x15 kOk]] ++ constA 3 ++ [.block [ldh .x15 kOk]] ++ selC aV ++
+  ([.block (evenMaskOf aV ++ [mov .x14 .x12] ++ base aU .x16 ++ base aV .x17),
+      countLoop .x14 cswapBody] : List (Prog isa)) ++
+  constA 2 ++ ltA aV aC ++ ([.block [sth .x15 kOk]] : List (Prog isa)) ++ constA 3 ++
+    ([.block [ldh .x15 kOk]] : List (Prog isa)) ++ selC aV ++
   [zeroA aM, copyA aM aV, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂, inverse aU aV aX₁ aX₂ aM aT] ++
-  constA 1 ++ [.block [ldh .x15 kOk]] ++ selC aV
+  constA 1 ++ ([.block [ldh .x15 kOk]] : List (Prog isa)) ++ selC aV
 
 /-- `[aL] := lcm(p − 1, q − 1)`. -/
 def lcmPart : List (Prog isa) :=
@@ -228,14 +231,14 @@ def loadEv : List (Prog isa) :=
   [zeroA aE, .block (ws ++ base aE .x16 ++ [ldh .x3 kEv, st .x3 .x16])]
 
 /-- `kOk := ` the mask of `L ≥ 2`. -/
-def lGe2 : List (Prog isa) := constA 2 ++ geA aL aC ++ [.block [sth .x15 kOk]]
+def lGe2 : List (Prog isa) := constA 2 ++ geA aL aC ++ ([.block [sth .x15 kOk]] : List (Prog isa))
 
 /-- `e = 0`: no inverse. -/
 def dZero : List Instr := [movi .x3 0, sth .x3 kOk]
 
 /-- `e = 1`: `d = 1`, for `L ≠ 1`. -/
 def dOne : List (Prog isa) :=
-  constA 1 ++ neMask aL aC ++ [.block [sth .x15 kOk], zeroA aDd, .block (setOneA aDd)]
+  constA 1 ++ neMask aL aC ++ ([.block [sth .x15 kOk], zeroA aDd, .block (setOneA aDd)] : List (Prog isa))
 
 /-- `inverse`'s start for `[aU]` modulo `[j]`: `v := [j]`, `x₁ := 1`,
 `x₂ := 0`. -/
@@ -244,7 +247,7 @@ def invFrom (j : Nat) : List (Prog isa) :=
 
 /-- `kOk &= ` the mask of `[aV] = 1`. -/
 def gcdIsOne : List (Prog isa) :=
-  constA 1 ++ eqMask aV aC ++ [.block [ldh .x3 kOk, .logic .and .x .x15 .x15 .x3, sth .x15 kOk]]
+  constA 1 ++ eqMask aV aC ++ ([.block [ldh .x3 kOk, .logic .and .x .x15 .x15 .x3, sth .x15 kOk]] : List (Prog isa))
 
 /-- `e` odd, at least 3: `L = e Q + R`, `x = R⁻¹ mod e`, `t = e − x` (in
 `x1`), then `d = Q t + c` with `c = (1 + R t) e⁻¹ mod 2⁶⁴` (in `x10`; `e⁻¹`
@@ -252,27 +255,29 @@ is `minv`'s `x4`). -/
 def dOdd : List (Prog isa) :=
   loadEv ++ [zeroA aQt, copyA aQt aL, divmod aQt aR aE aT, zeroA aU, copyA aU aR] ++ invFrom aE ++
   [inverse aU aV aX₁ aX₂ aE aT] ++ lGe2 ++ gcdIsOne ++
-  [.block ([ldh .x3 kEv] ++ minv ++ ws ++ base aX₂ .x16 ++ base aR .x17 ++
+  ([.block ([ldh .x3 kEv] ++ minv ++ ws ++ base aX₂ .x16 ++ base aR .x17 ++
       [ldh .x1 kEv, ld .x3 .x16, .sub .x .x1 .x1 .x3, ld .x3 .x17, .mul .x .x3 .x3 .x1, .addImm .x .x3 .x3 1,
         .mul .x .x10 .x3 .x4]),
     zeroA aDd,
     .block (ws ++ base aDd .x8 ++ [st .x10 .x8] ++ base aQt .x9 ++ [movi .x7 0]),
-    mulAddRow]
+    mulAddRow] : List (Prog isa))
 
 /-- `[aM] := [j]`, or 1 for `[j] = 0`. -/
 def divisorOf (j : Nat) : List (Prog isa) :=
   [zeroA aM, copyA aM j] ++ constA 0 ++ eqMask j aC ++
-  [.block (ws ++ base aM .x16 ++ [ld .x3 .x16, movi .x4 1, .logic .and .x .x4 .x15 .x4, .logic .orr .x .x3 .x3 .x4,
-      st .x3 .x16])]
+  ([.block (ws ++ base aM .x16 ++ [ld .x3 .x16, movi .x4 1, .logic .and .x .x4 .x15 .x4, .logic .orr .x .x3 .x3 .x4,
+      st .x3 .x16])] : List (Prog isa))
 
 /-- `e` even: `d = (e mod L)⁻¹ mod L` for an odd `L ≥ 3`. -/
 def dEven : List (Prog isa) :=
   loadEv ++ divisorOf aL ++ [zeroA aQt, copyA aQt aE, divmod aQt aR aM aT, zeroA aU, copyA aU aR] ++
   -- `x15 := ` the mask of `L` even or below 3, `kOk` its complement; `[aM] := L`, or 3.
   constA 3 ++ ltA aL aC ++
-  [.block ([mov .x10 .x15] ++ evenMaskOf aL ++ [.logic .orr .x .x15 .x15 .x10, mov .x10 .x15] ++ notMask ++
+  ([.block ([mov .x10 .x15] ++ evenMaskOf aL ++ ([.logic .orr .x .x15 .x15 .x10, mov .x10 .x15] : List Instr) ++
+    notMask ++
       [sth .x15 kOk, mov .x15 .x10]),
-    zeroA aM, copyA aM aL] ++ selC aM ++ invFrom aM ++ [inverse aU aV aX₁ aX₂ aM aT] ++ gcdIsOne ++
+    zeroA aM, copyA aM aL] : List (Prog isa)) ++ selC aM ++ invFrom aM ++
+  [inverse aU aV aX₁ aX₂ aM aT] ++ gcdIsOne ++
   [zeroA aDd, copyA aDd aX₂]
 
 /-- `d` and `kOk`, by `e`. -/
@@ -290,15 +295,16 @@ def dPart : Prog isa :=
 `w = W / 2` of `[aC]` set). -/
 def smallMask : List (Prog isa) :=
   constA 1 ++
-  [.block (ws ++ base aC .x16 ++ [.lsr .x .x3 .x12 1, .lsl .x .x3 .x3 3, .add .x .x16 .x16 .x3, movi .x3 1,
-      st .x3 .x16])] ++
-  ltA aDd aC ++ [.block [ldh .x3 kOk, .logic .and .x .x15 .x15 .x3]]
+  ([.block (ws ++ base aC .x16 ++ ([.lsr .x .x3 .x12 1, .lsl .x .x3 .x3 3, .add .x .x16 .x16 .x3, movi .x3 1,
+      st .x3 .x16] : List Instr))] : List (Prog isa)) ++
+  ltA aDd aC ++ ([.block [ldh .x3 kOk, .logic .and .x .x15 .x15 .x3]] : List (Prog isa))
 
 /-- `qInv` into `aX₂` (modulo `p`, or 3 for a `p` even or below 3) and
 `kOk &= ` the mask of `gcd(q, p) = 1`. -/
 def qinvPart : List (Prog isa) :=
   [zeroA aU, copyA aU aQa] ++ constA 3 ++ ltA aPa aC ++
-  [.block ([mov .x10 .x15] ++ evenMaskOf aPa ++ [.logic .orr .x .x15 .x15 .x10]), zeroA aM, copyA aM aPa] ++
+  ([.block ([mov .x10 .x15] ++ evenMaskOf aPa ++ ([.logic .orr .x .x15 .x15 .x10] : List Instr)), zeroA aM,
+      copyA aM aPa] : List (Prog isa)) ++
   selC aM ++ invFrom aM ++ [inverse aU aV aX₁ aX₂ aM aT] ++ gcdIsOne
 
 /-- `dP` into `aX₁` and `dQ` into `aV`. -/
@@ -313,29 +319,30 @@ def nPart : List (Prog isa) := mulTo aQt aPa aQa
 (`Rsa.exponentValid`: odd, at least 3 and below `2^33`), and'ed in `x10`. -/
 def finalMask : List Instr :=
   ws ++ base aQt .x16 ++
-  [.lsl .x .x3 .x12 3, .add .x .x16 .x16 .x3, .subImm .x .x16 .x16 8, ld .x3 .x16, .lsr .x .x3 .x3 63, movi .x7 0,
-    .sub .x .x10 .x7 .x3, ldh .x3 kOk, .logic .and .x .x10 .x10 .x3] ++
-  oddMaskOf aPa ++ [.logic .and .x .x10 .x10 .x15] ++ oddMaskOf aQa ++ [.logic .and .x .x10 .x10 .x15] ++
+  ([.lsl .x .x3 .x12 3, .add .x .x16 .x16 .x3, .subImm .x .x16 .x16 8, ld .x3 .x16, .lsr .x .x3 .x3 63, movi .x7 0,
+    .sub .x .x10 .x7 .x3, ldh .x3 kOk, .logic .and .x .x10 .x10 .x3] : List Instr) ++
+  oddMaskOf aPa ++ ([.logic .and .x .x10 .x10 .x15] : List Instr) ++ oddMaskOf aQa ++
+    ([.logic .and .x .x10 .x10 .x15] : List Instr) ++
   -- `e`: odd, `e − 3` without a borrow, `(e >> 33) − 1` with one.
-  [ldh .x3 kEv] ++ oddMask ++ [.logic .and .x .x10 .x10 .x15] ++
-  [ldh .x3 kEv, movi .x4 3, .subs .x .x3 .x3 .x4] ++ carryMask ++ [.logic .and .x .x10 .x10 .x15] ++
+  [ldh .x3 kEv] ++ oddMask ++ ([.logic .and .x .x10 .x10 .x15] : List Instr) ++
+  [ldh .x3 kEv, movi .x4 3, .subs .x .x3 .x3 .x4] ++ carryMask ++ ([.logic .and .x .x10 .x10 .x15] : List Instr) ++
   [ldh .x3 kEv, .lsr .x .x3 .x3 33, movi .x4 1, .subs .x .x3 .x3 .x4] ++ borrowMask ++
-  [.logic .and .x .x10 .x10 .x15, sth .x10 kOk]
+  ([.logic .and .x .x10 .x10 .x15, sth .x10 kOk] : List Instr)
 
 /-- The seven outputs under `kOk`, and its low bit returned. -/
 def outputs : List (Prog isa) :=
   storeA aQt kNo kNl kOk ++ storeA aDd kDo kNl kOk ++ storeA aPa kPp kPl kOk ++ storeA aQa kQp kPl kOk ++
   storeA aX₁ kDp kPl kOk ++ storeA aV kDq kPl kOk ++ storeA aX₂ kQi kPl kOk ++
-  [.block [ldh .x3 kOk, movi .x4 1, .logic .and .x .x0 .x3 .x4]]
+  ([.block [ldh .x3 kOk, movi .x4 1, .logic .and .x .x0 .x3 .x4]] : List (Prog isa))
 
 /-- Once `d` is not too small, or does not exist. -/
 def keyPart : Prog isa :=
-  seqs (qinvPart ++ crtPart ++ nPart ++ [.block finalMask] ++ outputs)
+  seqs (qinvPart ++ crtPart ++ nPart ++ ([.block finalMask] : List (Prog isa)) ++ outputs)
 
 /-- `vg_rsa_keygen_key`. -/
 def code : Prog isa :=
-  seqs ([.block (entry ++ Keys.head)] ++ loadA aPa kPp kPl ++ loadA aQa kQp kPl ++ loadE ++
-    [.block [sth .x3 kEv]] ++ order ++ decTo aPm aPa ++ decTo aQm aQa ++ lcmPart ++ [dPart] ++
-    smallMask ++ [.ite (.nonzero .x .x15) (zeros 2) keyPart])
+  seqs (([.block (entry ++ Keys.head)] : List (Prog isa)) ++ loadA aPa kPp kPl ++ loadA aQa kQp kPl ++ loadE ++
+    ([.block [sth .x3 kEv]] : List (Prog isa)) ++ order ++ decTo aPm aPa ++ decTo aQm aQa ++ lcmPart ++ [dPart] ++
+    smallMask ++ ([.ite (.nonzero .x .x15) (zeros 2) keyPart] : List (Prog isa)))
 
 end VG.Impl.RsaKeyGen.AArch64.Key

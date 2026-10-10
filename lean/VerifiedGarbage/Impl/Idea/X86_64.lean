@@ -64,17 +64,17 @@ def mulCode : List Instr := [
 
 /-- One group into `rdx`, masked, then into `rax` (the first by `mov`). -/
 def groupCode (first : Bool) (g : Nat × Nat × Nat) : List Instr :=
-  [.mov .rdx (.mem (at_ .rdi (8 * g.1)))] ++
+  ([.mov .rdx (.mem (at_ .rdi (8 * g.1)))] : List Instr) ++
   (if g.2.1 = 0 then [] else [.shift .ror .rdx g.2.1]) ++
-  [.movImm64 .rcx (BitVec.ofNat 64 g.2.2), .alu .and .rdx (.reg .rcx),
-   if first then .mov .rax (.reg .rdx) else .alu .xor .rax (.reg .rdx)]
+  ([.movImm64 .rcx (BitVec.ofNat 64 g.2.2), .alu .and .rdx (.reg .rcx),
+   if first then .mov .rax (.reg .rdx) else .alu .xor .rax (.reg .rdx)] : List Instr)
 
 /-- Schedule quadword `q` into `rax`. -/
 def expandWord (q : Nat) : List Instr :=
   (expandGroups q).zipIdx.flatMap fun (g, k) => groupCode (k = 0) g
 
 def expandKey : Prog isa :=
-  .block ((List.range 13).flatMap fun q => expandWord q ++ [.store (at_ .rsi (8 * q)) .rax])
+  .block ((List.range 13).flatMap fun q => expandWord q ++ ([.store (at_ .rsi (8 * q)) .rax] : List Instr))
 
 /-! ## Inversion -/
 
@@ -86,17 +86,17 @@ def loadKey (r : Reg) (k : Nat) : List Instr :=
 
 /-- `t := (t ⊙ t) ⊙ a` with `t = r9`, `a = r8`, and the count in `rcx`. -/
 def invStep : List Instr :=
-  [.mov .rax (.reg .r9), .mov .rdx (.reg .r9)] ++ mulCode ++
-  [.mov .rax (.reg .rdx), .mov .rdx (.reg .r8)] ++ mulCode ++
-  [.mov .r9 (.reg .rdx), .alu .sub .rcx (.imm 1)]
+  ([.mov .rax (.reg .r9), .mov .rdx (.reg .r9)] : List Instr) ++ mulCode ++
+  ([.mov .rax (.reg .rdx), .mov .rdx (.reg .r8)] : List Instr) ++ mulCode ++
+  ([.mov .r9 (.reg .rdx), .alu .sub .rcx (.imm 1)] : List Instr)
 
 /-- Decryption subkey `n` into `rdx`, zero-extended. -/
 def invWord (n : Nat) : Prog isa :=
   match invOp n with
-  | (.copy, k) => .block (loadKey .rdx k ++ [.alu .and .rdx (.imm 0xffff)])
+  | (.copy, k) => .block (loadKey .rdx k ++ ([.alu .and .rdx (.imm 0xffff)] : List Instr))
   | (.neg, k) => .block (loadKey .r11 k ++
-      [.mov32 .rdx (.imm 0), .alu .sub .rdx (.reg .r11), .alu .and .rdx (.imm 0xffff)])
-  | (.inv, k) => .seq (.block (loadKey .r8 k ++ [.mov .r9 (.reg .r8), .mov32 .rcx (.imm 15)]))
+      ([.mov32 .rdx (.imm 0), .alu .sub .rdx (.reg .r11), .alu .and .rdx (.imm 0xffff)] : List Instr))
+  | (.inv, k) => .seq (.block (loadKey .r8 k ++ ([.mov .r9 (.reg .r8), .mov32 .rcx (.imm 15)] : List Instr)))
       (.seq (.loop (.block invStep) .ne) (.block [.mov .rdx (.reg .r9)]))
 
 /-- Decryption subkey `n` into its place in `r10`. -/
@@ -116,7 +116,7 @@ def invertKey : Prog isa :=
 
 /-- `r := r ⊙ subkey` (at offset `d` from `rdi`). -/
 def mulKey (r : Reg) (d : Nat) : List Instr :=
-  [.mov .rax (.reg r), .mov .rdx (.mem (at_ .rdi d))] ++ mulCode ++ [.mov r (.reg .rdx)]
+  ([.mov .rax (.reg r), .mov .rdx (.mem (at_ .rdi d))] : List Instr) ++ mulCode ++ ([.mov r (.reg .rdx)] : List Instr)
 
 /-- `r := r ⊞ subkey` (at offset `d` from `rdi`), zero-extended. -/
 def addKey (r : Reg) (d : Nat) : List Instr :=
@@ -126,16 +126,16 @@ def addKey (r : Reg) (d : Nat) : List Instr :=
 def round (j : Nat) : List Instr :=
   let o := 12 * j
   mulKey .r8 o ++ mulKey .r11 (o + 6) ++ addKey .r9 (o + 2) ++ addKey .r10 (o + 4) ++
-  [.mov .rax (.reg .r8), .alu .xor .rax (.reg .r10), .mov .rdx (.mem (at_ .rdi (o + 8)))] ++
+  ([.mov .rax (.reg .r8), .alu .xor .rax (.reg .r10), .mov .rdx (.mem (at_ .rdi (o + 8)))] : List Instr) ++
   mulCode ++
-  [.mov .rbx (.reg .rdx),
+  ([.mov .rbx (.reg .rdx),
    .mov .rax (.reg .r9), .alu .xor .rax (.reg .r11), .alu .add .rax (.reg .rbx),
-   .mov .rdx (.mem (at_ .rdi (o + 10)))] ++
+   .mov .rdx (.mem (at_ .rdi (o + 10)))] : List Instr) ++
   mulCode ++
-  [.alu .add .rbx (.reg .rdx), .alu .and .rbx (.imm 0xffff),
+  ([.alu .add .rbx (.reg .rdx), .alu .and .rbx (.imm 0xffff),
    .alu .xor .r8 (.reg .rdx), .alu .xor .r10 (.reg .rdx),
    .alu .xor .r9 (.reg .rbx), .alu .xor .r11 (.reg .rbx),
-   .mov .rax (.reg .r9), .mov .r9 (.reg .r10), .mov .r10 (.reg .rax)]
+   .mov .rax (.reg .r9), .mov .r9 (.reg .r10), .mov .r10 (.reg .rax)] : List Instr)
 
 /-- Word `k` of the block at `rsi` into `r`, big-endian (through `rax`). -/
 def loadWord (r : Reg) (k : Nat) : List Instr :=
@@ -150,12 +150,12 @@ def load : List Instr :=
 the middle words exchanged back: `r9` gets `X₂ ⊞ Z₅₁`, `r10` `X₃ ⊞ Z₅₀`. -/
 def output : List Instr :=
   mulKey .r8 96 ++
-  [.mov .rax (.reg .r11), .mov .rdx (.mem (at_ .rdi 96)), .shift .shr .rdx 48] ++ mulCode ++
-  [.mov .r11 (.reg .rdx),
+  ([.mov .rax (.reg .r11), .mov .rdx (.mem (at_ .rdi 96)), .shift .shr .rdx 48] : List Instr) ++ mulCode ++
+  ([.mov .r11 (.reg .rdx),
    .mov .rdx (.mem (at_ .rdi 96)), .shift .shr .rdx 16, .alu .add .r10 (.reg .rdx),
    .alu .and .r10 (.imm 0xffff),
    .mov .rdx (.mem (at_ .rdi 96)), .shift .shr .rdx 32, .alu .add .r9 (.reg .rdx),
-   .alu .and .r9 (.imm 0xffff)]
+   .alu .and .r9 (.imm 0xffff)] : List Instr)
 
 /-- The word in `r` to word `k` of the block at `rsi`, big-endian (through `rax`). -/
 def storeWord (r : Reg) (k : Nat) : List Instr :=
@@ -173,7 +173,7 @@ def ecb : Prog isa :=
   .seq (.block [.alu .test .rdx (.reg .rdx)])
     (.ite .e (.block [])
       (.seq (.block [.store (at_ .rcx 0) .rbx, .store (at_ .rcx 8) .rbp, .mov .rbp (.reg .rdx)])
-        (.seq (.loop (.block (cryptBlock ++ [.alu .add .rsi (.imm 8), .alu .sub .rbp (.imm 1)])) .ne)
+        (.seq (.loop (.block (cryptBlock ++ ([.alu .add .rsi (.imm 8), .alu .sub .rbp (.imm 1)] : List Instr))) .ne)
           (.block [.mov .rbx (.mem (at_ .rcx 0)), .mov .rbp (.mem (at_ .rcx 8))]))))
 
 end VG.Impl.Idea.X86_64

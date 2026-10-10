@@ -78,8 +78,8 @@ def checks : Prog isa :=
 /-- The IV to `ctx + 128`, our caller's registers saved, and the arguments of
 `vg_rc2_expand_key(key, key_len, effective_bits, ctx, scratch)`. -/
 def initArgs : List Instr :=
-  [.mov .eax (.mem (argOp 3)), .mov .ecx (.mem (argOp 5)), .mov .edx (.mem (memOp .eax 0)),
-   .store (memOp .ecx 128) .edx, .mov .edx (.mem (memOp .eax 4)), .store (memOp .ecx 132) .edx] ++
+  ([.mov .eax (.mem (argOp 3)), .mov .ecx (.mem (argOp 5)), .mov .edx (.mem (memOp .eax 0)),
+   .store (memOp .ecx 128) .edx, .mov .edx (.mem (memOp .eax 4)), .store (memOp .ecx 132) .edx] : List Instr) ++
   save ++
   [rr .ebx .eax, rr .esi .ecx, .mov .edx (.mem (argOp 2)), .mov .ecx (.mem (argOp 1)),
    .mov .eax (.mem (argOp 0))]
@@ -100,7 +100,7 @@ def cbcCall (d : Spec.Rc2.Direction) : Prog isa :=
   | .decrypt => call5 "vg_rc2_cbc_decrypt" Cbc.decrypt
 
 /-- Our caller's registers saved; ZF set if `out_len` is 0. -/
-def entry : List Instr := save ++ [.mov .ecx (.mem (argOp 5)), .alu .test .ecx (.reg .ecx)]
+def entry : List Instr := save ++ ([.mov .ecx (.mem (argOp 5)), .alu .test .ecx (.reg .ecx)] : List Instr)
 
 /-- No complete block: the `len` bytes of data after the `pending_len`
 pending bytes. -/

@@ -21,11 +21,11 @@ def savedRegs : List Reg := [.rbx, .rbp, .r12, .r13, .r14, .r15]
 
 def blockSave : List Instr :=
   (savedRegs.zipIdx.map fun (r, i) => .store (memOp .rdx (8 * i)) r) ++
-    [.store (memOp .rdx 48) .rdi]
+    ([.store (memOp .rdx 48) .rdi] : List Instr)
 
 def blockRestore : List Instr :=
   (savedRegs.zipIdx.map fun (r, i) => .mov r (.mem (memOp .rdx (8 * i)))) ++
-    [.mov .rdi (.mem (memOp .rdx 48))]
+    ([.mov .rdi (.mem (memOp .rdx 48))] : List Instr)
 
 def blockLoad : List Instr :=
   ([.mov .rax (.mem (memOp .rsi 0)), .bswap .rax] : List Instr) ++
@@ -40,7 +40,7 @@ def sboxInputs (i : Nat) : List Instr :=
     let k := 6 * i + 5 - j
     [rr (q j) .r13] ++ shr (q j) (32 - Spec.TripleDes.expansion.getD k 1) ++
       [rr .rbp .rbx] ++ shr .rbp (47 - k) ++
-      [.alu .xor (q j) (.reg .rbp), .alu .and (q j) (.imm 1)]
+      ([.alu .xor (q j) (.reg .rbp), .alu .and (q j) (.imm 1)] : List Instr)
 
 /-- Deposit each output's low bit directly into its destination in L.
 The P table contains all 32 positions, so each destination is unique. -/
@@ -48,7 +48,7 @@ def sboxOutputs (i : Nat) : List Instr :=
   (List.range 4).flatMap fun j =>
     let position := 4 * i + 4 - j
     let dst := (Spec.TripleDes.p.toList.findIdx? (· == position)).getD 0
-    [.alu .and (q j) (.imm 1)] ++ placeBit (q j) (31 - dst) ++
+    ([.alu .and (q j) (.imm 1)] : List Instr) ++ placeBit (q j) (31 - dst) ++
       ([.alu .xor .r12 (.reg (q j))] : List Instr)
 
 def box (i : Nat) : List Instr := sboxInputs i ++ sboxCode i ++ sboxOutputs i
@@ -78,7 +78,7 @@ def pass (component : Nat) (direction : Direction) : Prog isa :=
 def blockStore : List Instr :=
   [rr .rax .r12, .shift .ror .rax 32, .alu .xor .rax (.reg .r13)] ++
     permuteCode Spec.TripleDes.fp 64 .rbx .rax .rbp ++
-    [.bswap .rbx, rr .rax .rbx]
+    ([.bswap .rbx, rr .rax .rbx] : List Instr)
 
 def blockBody (direction : Direction) : Prog isa :=
   match direction with

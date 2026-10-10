@@ -106,8 +106,9 @@ def aTab : Nat := 11
 /-- The base of array `j ≥ 7` into `r`: array 7's plus `j − 7` arrays of
 `8 (w + 2)` bytes. Clobbers `rax`. -/
 def extBase (j : Nat) (r : Reg) : List Instr :=
-  [.mov .rax (.mem (hdr sW)), .alu .add .rax (.imm 2), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
-    .alu .add .rax (.reg .rax), .mov r (.mem (hdr (sArr aOne)))] ++ List.replicate (j - 7) (.alu .add r (.reg .rax))
+  ([.mov .rax (.mem (hdr sW)), .alu .add .rax (.imm 2), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+    .alu .add .rax (.reg .rax), .mov r (.mem (hdr (sArr aOne)))] : List Instr) ++
+      List.replicate (j - 7) (.alu .add r (.reg .rax))
 
 /-! ## The table of small primes (`Impl/RsaKeyGen/Primes.lean`) -/
 
@@ -126,14 +127,15 @@ def kStk (i : Nat) : MemOp := { base := .rsp, disp := 8 * i }
 /-- Save the callee-saved registers and the arguments in the header at
 `scratch`, with its base in `rdi`. -/
 def kEntry : List Instr :=
-  [.mov .r11 (.mem (kStk 4))] ++
+  ([.mov .r11 (.mem (kStk 4))] : List Instr) ++
   (saved.zipIdx.map fun (r, i) => .store { base := .r11, disp := 8 * i } r) ++
-  [.store { base := .r11, disp := 8 * kOut } .rdi, .store { base := .r11, disp := 8 * kLen } .rsi,
+  ([.store { base := .r11, disp := 8 * kOut } .rdi, .store { base := .r11, disp := 8 * kLen } .rsi,
     .store { base := .r11, disp := 8 * kUsedP } .rdx, .store { base := .r11, disp := 8 * kE } .rcx,
     .store { base := .r11, disp := 8 * kElen } .r8, .store { base := .r11, disp := 8 * kP } .r9,
     .mov .rax (.mem (kStk 1)), .store { base := .r11, disp := 8 * kPlen } .rax,
     .mov .rax (.mem (kStk 2)), .store { base := .r11, disp := 8 * kRand } .rax,
-    .mov .rax (.mem (kStk 3)), .store { base := .r11, disp := 8 * kRandLen } .rax, .mov .rdi (.reg .r11)]
+    .mov .rax (.mem (kStk 3)), .store { base := .r11, disp := 8 * kRandLen } .rax,
+        .mov .rdi (.reg .r11)] : List Instr)
 
 /-- Zeros to the `out_len` bytes of `out`. -/
 def zeroOut : Prog isa :=
@@ -143,13 +145,14 @@ def zeroOut : Prog isa :=
 /-- `rax` to `used`, the status `st` returned, the callee-saved registers
 restored. -/
 def finish (st : Nat) : List Instr :=
-  [.mov .rdx (.mem (hdr kUsedP)), .store (at0 .rdx) .rax, .mov32 .rax (.imm (BitVec.ofNat 32 st))] ++ exit
+  ([.mov .rdx (.mem (hdr kUsedP)), .store (at0 .rdx) .rax, .mov32 .rax (.imm (BitVec.ofNat 32 st))] : List Instr) ++
+    exit
 
 /-- Status 0: `used` is 0. -/
-def finNone : Prog isa := .block ([.mov32 .rax (.imm 0)] ++ finish 0)
+def finNone : Prog isa := .block (([.mov32 .rax (.imm 0)] : List Instr) ++ finish 0)
 
 /-- Status `st` (2 or 3): `used` is the octets read. -/
-def finUsed (st : Nat) : Prog isa := .block ([.mov .rax (.mem (hdr kUsed))] ++ finish st)
+def finUsed (st : Nat) : Prog isa := .block (([.mov .rax (.mem (hdr kUsed))] : List Instr) ++ finish st)
 
 /-- Status 1: `used` the octets read, and `c` to `out` (the bases and the
 length loaded first, so that none is read from the header once memory
@@ -158,7 +161,7 @@ def finPrime : Prog isa :=
   .seq (.block [.mov .rbx (.mem (hdr (sArr aN))), .mov .rsi (.mem (hdr kOut)), .mov .rcx (.mem (hdr kLen)),
       .mov .r15 (.imm (BitVec.ofInt 32 (-1))), .mov .rax (.mem (hdr kUsed)), .mov .rdx (.mem (hdr kUsedP)),
       .store (at0 .rdx) .rax])
-    (.seq storeBE (.block ([.mov32 .rax (.imm 1)] ++ exit)))
+    (.seq storeBE (.block (([.mov32 .rax (.imm 1)] : List Instr) ++ exit)))
 
 /-! ## The candidate -/
 
@@ -166,8 +169,9 @@ def finPrime : Prog isa :=
 the first `out_len` octets of `rand` with its two top bits and its low bit
 set, and `used := out_len`. -/
 def loadC : List (Prog isa) := [
-  .block ([.mov .rcx (.mem (hdr kLen)), .mov .r12 (.reg .rcx), .shift .shr .r12 3, .store (hdr sW) .r12] ++
-    setBases ++ [.mov .rsi (.mem (hdr kRand)), .mov .rbx (.mem (hdr (sArr aN)))]),
+  .block (([.mov .rcx (.mem (hdr kLen)), .mov .r12 (.reg .rcx), .shift .shr .r12 3,
+      .store (hdr sW) .r12] : List Instr) ++
+    setBases ++ ([.mov .rsi (.mem (hdr kRand)), .mov .rbx (.mem (hdr (sArr aN)))] : List Instr)),
   loadBE,
   .block [.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aN))),
     .movImm64 .rdx (BitVec.ofNat 64 (3 * 2 ^ 62)), .alu .or .rdx (.mem (ix .rbx .r12 (-8))),
@@ -196,17 +200,17 @@ bound in `aTmp` (word `w − 2` is `2^28`), then the mask of
 `bound < |c − p|`, inverted. -/
 def closeCheck : List (Prog isa) :=
   [.block [.mov .rax (.mem (hdr kPlen)), .alu .test .rax (.reg .rax), .mov32 .rbp (.imm 0)],
-   .ite .ne (seqs ([
+   .ite .ne (seqs (([
       .block [.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr kP)), .mov .rcx (.mem (hdr kLen)),
         .mov .rbx (.mem (hdr (sArr aX)))],
-      loadBE] ++ diffLoop ++ negLoop ++ [
+      loadBE] : List (Prog isa)) ++ diffLoop ++ negLoop ++ ([
       .block [.mov .r12 (.mem (hdr sW)), .mov .rcx (.reg .r12), .alu .sub .rcx (.imm 2),
         .mov32 .rdx (.imm (BitVec.ofNat 32 (2 ^ 28)))],
       setWord aTmp .rcx,
       .block [.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aTmp))), .mov .r10 (.mem (hdr (sArr aAcc))),
         .mov32 .rbp (.imm 0)],
       wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)), cfToRbp],
-      .block [.alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]]))
+      .block [.alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa))))
     (.block []),
    .block [.alu .test .rbp (.reg .rbp)]]
 
@@ -223,11 +227,11 @@ def redc32 : List Instr :=
 `r15`, `acc` over `c`'s halves, and the mask of `acc ∈ {0, s}` or'ed into
 `kT2`. -/
 def trialEntry (j : Nat) : List (Prog isa) := [
-  .block ([.mov .rbx (.mem (hdr kT1))] ++ (if j = 0 then [] else [.shift .shr .rbx (16 * j)]) ++
-    [.alu .and .rbx (.imm 0xFFFF)] ++ minv ++
-    [.mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aN))), .mov32 .rbp (.imm 0)]),
-  wordLoop 0 ([.mov .rsi (.mem (ix .r8 .r14)), .mov32 .rax (.reg .rsi)] ++ redc32 ++
-    [.mov .rax (.reg .rsi), .shift .shr .rax 32] ++ redc32),
+  .block (([.mov .rbx (.mem (hdr kT1))] : List Instr) ++ (if j = 0 then [] else [.shift .shr .rbx (16 * j)]) ++
+    ([.alu .and .rbx (.imm 0xFFFF)] : List Instr) ++ minv ++
+    ([.mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aN))), .mov32 .rbp (.imm 0)] : List Instr)),
+  wordLoop 0 (([.mov .rsi (.mem (ix .r8 .r14)), .mov32 .rax (.reg .rsi)] : List Instr) ++ redc32 ++
+    ([.mov .rax (.reg .rsi), .shift .shr .rax 32] : List Instr) ++ redc32),
   .block [.mov .rax (.reg .rbp), .alu .cmp .rax (.imm 1), .alu .sbb .rdx (.reg .rdx), .alu .xor .rax (.reg .rbx),
     .alu .cmp .rax (.imm 1), .alu .sbb .rcx (.reg .rcx), .alu .or .rdx (.reg .rcx), .alu .or .rdx (.mem (hdr kT2)),
     .store (hdr kT2) .rdx]]
@@ -236,12 +240,14 @@ def trialEntry (j : Nat) : List (Prog isa) := [
 `w > 16`, in `kT0`) its four entries; ZF clear if one divides `c`. -/
 def trial : List (Prog isa) := [
   .block (extBase aTab .rbx ++ tabWrite ++
-    [.mov32 .rax (.imm 128), .mov .rcx (.mem (hdr sW)), .alu .cmp .rcx (.imm 17)]),
+    ([.mov32 .rax (.imm 128), .mov .rcx (.mem (hdr sW)), .alu .cmp .rcx (.imm 17)] : List Instr)),
   .ite .b (.block []) (.block [.mov32 .rax (.imm 256)]),
   .block [.store (hdr kT0) .rax, .mov32 .rax (.imm 0), .store (hdr kT2) .rax, .mov32 .r13 (.imm 0)],
-  .loop (seqs ([.block (extBase aTab .rbx ++ [.mov .rax (.mem (ix .rbx .r13)), .store (hdr kT1) .rax])] ++
+  .loop (seqs (([.block (extBase aTab .rbx ++ ([.mov .rax (.mem (ix .rbx .r13)),
+      .store (hdr kT1) .rax] : List Instr))] : List (Prog isa)) ++
       trialEntry 0 ++ trialEntry 1 ++ trialEntry 2 ++ trialEntry 3 ++
-      [.block [.alu .add .r13 (.imm 1), .mov .rax (.mem (hdr kT0)), .alu .cmp .r13 (.reg .rax)]])) .ne,
+      ([.block [.alu .add .r13 (.imm 1), .mov .rax (.mem (hdr kT0)),
+          .alu .cmp .r13 (.reg .rax)]] : List (Prog isa)))) .ne,
   .block [.mov .rax (.mem (hdr kT2)), .alu .test .rax (.reg .rax)]]
 
 /-! ## `gcd(c − 1, e)` -/
@@ -264,7 +270,7 @@ def modBit : List Instr :=
 def modWord : Prog isa :=
   .seq (.block [.mov .rax (.reg .r12), .alu .sub .rax (.imm 1), .alu .sub .rax (.reg .r14),
       .mov .rdx (.mem (ix .r8 .rax)), .mov32 .r13 (.imm 64)])
-    (.loop (.block (modBit ++ [.alu .sub .r13 (.imm 1)])) .ne)
+    (.loop (.block (modBit ++ ([.alu .sub .r13 (.imm 1)] : List Instr))) .ne)
 
 /-- `rsi := (c − 1) mod e` for `e` in `kG` and `rbx`. -/
 def modLoop : List (Prog isa) := [
@@ -288,27 +294,28 @@ def bgcdStep : List Instr :=
 /-- `kG := gcd(c − 1, e)` for the odd `e > 1` in `rbx`: `(c − 1) mod e`, then
 128 steps. -/
 def gcdE : List (Prog isa) :=
-  [.block [.store (hdr kG) .rbx]] ++ modLoop ++
-  [.block [.mov .rbx (.mem (hdr kG)), .mov32 .r13 (.imm 128)],
-   .loop (.block (bgcdStep ++ [.alu .sub .r13 (.imm 1)])) .ne,
-   .block [.store (hdr kG) .rbx]]
+  ([.block [.store (hdr kG) .rbx]] : List (Prog isa)) ++ modLoop ++
+  ([.block [.mov .rbx (.mem (hdr kG)), .mov32 .r13 (.imm 128)],
+   .loop (.block (bgcdStep ++ ([.alu .sub .r13 (.imm 1)] : List Instr))) .ne,
+   .block [.store (hdr kG) .rbx]] : List (Prog isa))
 
 /-- `gcd(c − 1, e)` into `kG`, or an even number for an even `e`; then ZF
 clear unless it is 1. -/
 def gcdCheck : List (Prog isa) :=
-  loadE ++ [
+  loadE ++ ([
   .block [.store (hdr kG) .rbx, .mov .rax (.reg .rbx), .alu .and .rax (.imm 1)],
   .ite .e (.block [])
     (seqs [.block [.alu .cmp .rbx (.imm 1)], .ite .e (.block []) (seqs gcdE)]),
-  .block [.mov .rax (.mem (hdr kG)), .alu .cmp .rax (.imm 1)]]
+  .block [.mov .rax (.mem (hdr kG)), .alu .cmp .rax (.imm 1)]] : List (Prog isa))
 
 /-! ## Montgomery arithmetic modulo `c` -/
 
 /-- `-c⁻¹`, the number 1, `R² mod c`, `R mod c` into `aR1` and `c − R mod c`
 into `aRm1`, and the number of uniform witnesses needed. -/
 def montSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
-  .block ([.mov .r10 (.mem (hdr (sArr aN))), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (at0 .r10))] ++ minv ++
-    [.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)]),
+  .block (([.mov .r10 (.mem (hdr (sArr aN))), .mov .r12 (.mem (hdr sW)),
+      .mov .rbx (.mem (at0 .r10))] : List Instr) ++ minv ++
+    ([.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)] : List Instr)),
   setWord aOne .rcx,
   .block [.movImm64 .rdx (BitVec.ofNat 64 (2 ^ 63)), .mov .rcx (.reg .r12), .alu .sub .rcx (.imm 1)],
   setWord aR2 .rcx,
@@ -316,10 +323,11 @@ def montSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   doubles aN aAcc aTmp aR2 kT0,
   mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2,
   mul aY aR2 aOne,
-  .block ([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aY)))] ++ extBase aR1 .rbx),
+  .block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aY)))] : List Instr) ++ extBase aR1 .rbx),
   copyWords,
-  .block ([.mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aN)))] ++ extBase aR1 .r10 ++ extBase aRm1 .rsi ++
-    [.mov32 .rbp (.imm 0)]),
+  .block (([.mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aN)))] : List Instr) ++ extBase aR1 .r10 ++
+    extBase aRm1 .rsi ++
+    ([.mov32 .rbp (.imm 0)] : List Instr)),
   wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .r8 .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)),
     .store (ix .rsi .r14) .rax, cfToRbp],
   .block [.mov .rcx (.mem (hdr sW)), .mov32 .rax (.imm 27), .alu .cmp .rcx (.imm 5)],
@@ -341,7 +349,8 @@ def montSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
 /-- The mask of `[aY] = [j]` over `w` words into `rbp` (`j` an extra array,
 its base into `r10`). -/
 def eqMask (j : Nat) : List (Prog isa) := [
-  .block ([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] ++ extBase j .r10 ++ [.mov32 .rbp (.imm 0)]),
+  .block (([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] : List Instr) ++ extBase j .r10 ++
+    ([.mov32 .rbp (.imm 0)] : List Instr)),
   wordLoop 0 [.mov .rax (.mem (ix .rbx .r14)), .alu .xor .rax (.mem (ix .r10 .r14)), .alu .or .rbp (.reg .rax)],
   .block [.alu .cmp .rbp (.imm 1), .alu .sbb .rbp (.reg .rbp)]]
 
@@ -350,18 +359,19 @@ def eqMask (j : Nat) : List (Prog isa) := [
 `kV := 2 kV` and `kBits := kBits − 1` (ZF set when it is 0). -/
 def mrExpBit (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   mul aY aY aY,
-  .block ([.mov .rax (.mem (hdr kV)), .shift .shr .rax 63, .mov32 .r15 (.imm 0), .alu .sub .r15 (.reg .rax),
-    .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aXm)))] ++ extBase aB .r8 ++ extBase aR1 .rsi),
+  .block (([.mov .rax (.mem (hdr kV)), .shift .shr .rax 63, .mov32 .r15 (.imm 0), .alu .sub .r15 (.reg .rax),
+    .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aXm)))] : List Instr) ++ extBase aB .r8 ++
+      extBase aR1 .rsi),
   wordLoop 0 [.mov .rax (.mem (ix .r8 .r14)), .mov .rdx (.mem (ix .rsi .r14)), .alu .xor .rax (.reg .rdx),
     .alu .and .rax (.reg .r15), .alu .xor .rax (.reg .rdx), .store (ix .rbx .r14) .rax],
   mul aY aY aXm] ++
-  eqMask aRm1 ++ [.block [.store (hdr kG) .rbp]] ++ eqMask aR1 ++ [
+  eqMask aRm1 ++ ([.block [.store (hdr kG) .rbp]] : List (Prog isa)) ++ eqMask aR1 ++ ([
   .block [.mov .rax (.mem (hdr kV)), .shift .shr .rax 63, .mov32 .r15 (.imm 0), .alu .sub .r15 (.reg .rax),
     .mov .rdx (.mem (hdr kG)), .alu .or .rbp (.reg .rdx), .alu .and .rbp (.reg .r15),
     .mov .rax (.mem (hdr kFlag)), .alu .or .rax (.reg .rdx), .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1))),
     .alu .and .rax (.reg .r15), .alu .or .rax (.reg .rbp), .store (hdr kFlag) .rax,
     .mov .rax (.mem (hdr kV)), .alu .add .rax (.reg .rax), .store (hdr kV) .rax,
-    .mov .rax (.mem (hdr kBits)), .alu .sub .rax (.imm 1), .store (hdr kBits) .rax]]
+    .mov .rax (.mem (hdr kBits)), .alu .sub .rax (.imm 1), .store (hdr kBits) .rax]] : List (Prog isa))
 
 /-- The flag over the bits of `c` from the top down to bit 1: its words from
 the top, 64 bits each but 63 of the last. -/
@@ -393,7 +403,8 @@ def mrWitness : List (Prog isa) := [
   wordLoop 1 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)), cfToRbp],
   .block [.alu .and .r15 (.reg .rbp), .store (hdr kU) .r15, .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1))),
     .mov .rax (.reg .r15), .alu .and .rax (.imm 2), .alu .or .rax (.mem (at0 .rbx)), .store (at0 .rbx) .rax,
-    .movImm64 .rax (BitVec.ofNat 64 (2 ^ 63)), .alu .and .rax (.reg .r15), .alu .xor .rax (.imm (BitVec.ofInt 32 (-1))),
+    .movImm64 .rax (BitVec.ofNat 64 (2 ^ 63)), .alu .and .rax (.reg .r15),
+        .alu .xor .rax (.imm (BitVec.ofInt 32 (-1))),
     .alu .and .rax (.mem (ix .rbx .r12 (-8))), .store (ix .rbx .r12 (-8)) .rax]]
 
 /-- One witness: its Montgomery form into `aXm` and `aB`, `y := 1`, the flag;
@@ -402,11 +413,11 @@ to go on (fewer than 16 witnesses, or fewer uniform ones than needed) or 1. -/
 def mrRound (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
   mrWitness ++ [
   mul aXm aX aR2,
-  .block ([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] ++ extBase aB .rbx),
+  .block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] : List Instr) ++ extBase aB .rbx),
   copyWords,
-  .block ([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] ++ extBase aR1 .rsi),
+  .block (([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] : List Instr) ++ extBase aR1 .rsi),
   copyWords] ++
-  mrExpLoop mul ++ [
+  mrExpLoop mul ++ ([
   .block [.mov32 .rcx (.imm 3), .mov .rax (.mem (hdr kFlag)), .alu .test .rax (.reg .rax)],
   .ite .e (.block [])
     (.block [.mov .rax (.mem (hdr kI)), .alu .add .rax (.imm 1), .store (hdr kI) .rax,
@@ -414,7 +425,7 @@ def mrRound (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
       -- `rcx := 4` if `i ≤ 16` or `uniform < checks`, else 1.
       .alu .cmp .rax (.imm 17), .alu .sbb .rcx (.reg .rcx), .alu .cmp .rdx (.mem (hdr kChecks)),
       .alu .sbb .rax (.reg .rax), .alu .or .rcx (.reg .rax), .alu .and .rcx (.imm 3), .alu .add .rcx (.imm 1)]),
-  .block [.store (hdr kStat) .rcx]]
+  .block [.store (hdr kStat) .rcx]] : List (Prog isa))
 
 /-- Miller–Rabin: witnesses while `kStat = 4`; 0 when fewer than `out_len`
 octets of `rand` are left (`rand_len − used`, which does not wrap). -/
@@ -435,9 +446,10 @@ def mrResult : Prog isa :=
 
 /-- Once `rand` has the candidate's octets. -/
 def kMain (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  seqs (loadC ++ closeCheck ++ [.ite .ne (finUsed 2) (seqs (trial ++
-    [.ite .ne (finUsed 3) (seqs (gcdCheck ++
-      [.ite .ne (finUsed 3) (seqs (montSetup mul ++ millerRabin mul ++ [mrResult]))]))]))])
+  seqs (loadC ++ closeCheck ++ ([.ite .ne (finUsed 2) (seqs (trial ++
+    ([.ite .ne (finUsed 3) (seqs (gcdCheck ++
+      ([.ite .ne (finUsed 3) (seqs (montSetup mul ++ millerRabin mul ++
+        [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))
 
 /-- `vg_rsa_keygen_candidate`. -/
 def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=

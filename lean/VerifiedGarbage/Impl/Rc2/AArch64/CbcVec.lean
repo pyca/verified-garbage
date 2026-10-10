@@ -43,7 +43,7 @@ def kb : VReg := .v7
 /-- Key word `k` into every lane of `kb` (in the low 16 bits): the 32-bit
 lane of the schedule holding it, its halves exchanged if `k` is odd. -/
 def keyBcast (k : Nat) : List Instr :=
-  [.vop (.dupE .s4 kb (treg (k / 8)) (k % 8 / 2))] ++
+  ([.vop (.dupE .s4 kb (treg (k / 8)) (k % 8 / 2))] : List Instr) ++
     (if k % 2 = 1 then [.vop (.rev .rev32h kb kb)] else [])
 
 /-- The reverse mix of word `i` of set `h`, with the key word in `kb`. -/
@@ -67,7 +67,7 @@ def rmash (h i : Nat) : List Instr :=
   [imm .x9 63, .vop (.dup .s4 .v1 .x9), .vop (.logic .and .v0 (wreg h (i + 3)) .v1),
    imm .x9 514, .vop (.dup .s4 .v4 .x9), .vop (.mul .v0 .v0 .v4),
    imm .x9 256, .vop (.dup .s4 .v1 .x9), .vop (.add .s4 .v0 .v0 .v1)] ++
-  quarters false ++ select false ++ [.vop (.sub .s4 (wreg h i) (wreg h i) .v0)]
+  quarters false ++ select false ++ ([.vop (.sub .s4 (wreg h i) (wreg h i) .v0)] : List Instr)
 
 /-- The reverse mashing round, on both sets. -/
 def rmashRound : List Instr := [3, 2, 1, 0].flatMap fun i => rmash 0 i ++ rmash 1 i
@@ -84,9 +84,9 @@ def inIndex (i : Nat) : BitVec 128 :=
 
 /-- The eight blocks at `x1`, their words gathered into the sets. -/
 def loadGroup : List Instr :=
-  [.ldrq .v0 .x1 0, .ldrq .v1 .x1 16, .ldrq .v2 .x1 32, .ldrq .v3 .x1 48] ++
+  ([.ldrq .v0 .x1 0, .ldrq .v1 .x1 16, .ldrq .v2 .x1 32, .ldrq .v3 .x1 48] : List Instr) ++
   (List.range 4).flatMap fun i => const128 .v4 (inIndex i) ++
-    [.vop (.tblN false 2 (wreg 0 i) .v0 .v4), .vop (.tblN false 2 (wreg 1 i) .v2 .v4)]
+    ([.vop (.tblN false 2 (wreg 0 i) .v0 .v4), .vop (.tblN false 2 (wreg 1 i) .v2 .v4)] : List Instr)
 
 /-- The index scattering a set's words back into blocks `2 k`, `2 k + 1`. -/
 def outIndex (k : Nat) : BitVec 128 :=
@@ -97,20 +97,20 @@ def outIndex (k : Nat) : BitVec 128 :=
 ciphertext block into `x11`. -/
 def storeGroup : List Instr :=
   const128 .v4 (outIndex 0) ++
-  [.vop (.tblN false 4 .v0 (wreg 0 0) .v4), .vop (.tblN false 4 .v2 (wreg 1 0) .v4)] ++
+  ([.vop (.tblN false 4 .v0 (wreg 0 0) .v4), .vop (.tblN false 4 .v2 (wreg 1 0) .v4)] : List Instr) ++
   const128 .v4 (outIndex 1) ++
-  [.vop (.tblN false 4 .v1 (wreg 0 0) .v4), .vop (.tblN false 4 .v3 (wreg 1 0) .v4),
+  ([.vop (.tblN false 4 .v1 (wreg 0 0) .v4), .vop (.tblN false 4 .v3 (wreg 1 0) .v4),
    .ldr .x .x9 .x1 0, .vop (.ins .d2 .v4 0 .x11), .vop (.ins .d2 .v4 1 .x9),
    .addImm .x .x12 .x1 8, .ldrq .v5 .x12 0,
    .vop (.logic .eor .v0 .v0 .v4), .vop (.logic .eor .v1 .v1 .v5),
    .ldrq .v4 .x12 16, .ldrq .v5 .x12 32,
    .vop (.logic .eor .v2 .v2 .v4), .vop (.logic .eor .v3 .v3 .v5),
    .ldr .x .x11 .x1 56,
-   .strq .v0 .x1 0, .strq .v1 .x1 16, .strq .v2 .x1 32, .strq .v3 .x1 48]
+   .strq .v0 .x1 0, .strq .v1 .x1 16, .strq .v2 .x1 32, .strq .v3 .x1 48] : List Instr)
 
 /-- One group of eight blocks, and on to the next. -/
 def group : List Instr :=
-  loadGroup ++ rounds ++ storeGroup ++ [.addImm .x .x1 .x1 64, .subImm .x .x10 .x10 1]
+  loadGroup ++ rounds ++ storeGroup ++ ([.addImm .x .x1 .x1 64, .subImm .x .x10 .x10 1] : List Instr)
 
 /-- The schedule into `v16`–`v23`, `0xffff` into `m16`, and the chaining
 value into `x11`. -/
