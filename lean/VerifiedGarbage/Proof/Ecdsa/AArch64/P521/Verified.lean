@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.P521.AArch64.TaintSums
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
@@ -93,8 +94,11 @@ theorem sign_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch6
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p521_ok hI) hL hT (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, hpost⟩
 
-theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP521 :=
-  VG.Taint.constantTime (A := taintS [p521.tsym]) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP521 := by
+  obtain ⟨_, hc⟩ : ∃ h, ((taintS [p521.tsym]).check (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) signP521 h).isSome = true := by
+    taint_decide_sum [Proof.P521.AArch64.pPowSum, Proof.P521.AArch64.nPowSum,
+      Proof.P521.AArch64.combSum]
+  exact VG.Taint.constantTime (A := taintS [p521.tsym]) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     (fun _ _ _ _ ⟨h0, h1, h2, h3, h4, hsp, hsy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -103,7 +107,7 @@ theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP521 :=
       · exact h2
       · exact h3
       · exact h4⟩, fun n hn => by
-      simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
+      simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) hc
 
 theorem sign_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :

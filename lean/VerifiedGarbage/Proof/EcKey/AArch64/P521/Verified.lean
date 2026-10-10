@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.P521.AArch64.TaintSums
 import VerifiedGarbage.Proof.EcKey.AArch64.Main
 import VerifiedGarbage.Proof.EcKey.AArch64.P521.Contract
 import VerifiedGarbage.Proof.EcKey.AArch64.P521.Lit
@@ -48,15 +49,18 @@ theorem pk_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.
   obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p521_ok hI) hL hT (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
 
-theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP521 :=
-  VG.Taint.constantTime (A := taintS [p521.tsym]) (Taint.ofRegs [.x0, .x1, .x2])
+theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP521 := by
+  obtain ⟨_, hc⟩ : ∃ h, ((taintS [p521.tsym]).check (Taint.ofRegs [.x0, .x1, .x2]) publicKeyP521 h).isSome = true := by
+    taint_decide_sum [Proof.P521.AArch64.pPowSum, Proof.P521.AArch64.nPowSum,
+      Proof.P521.AArch64.combSum]
+  exact VG.Taint.constantTime (A := taintS [p521.tsym]) (Taint.ofRegs [.x0, .x1, .x2])
     (fun _ _ _ _ ⟨h0, h1, h2, hsp, hsy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact h0
       · exact h1
       · exact h2⟩, fun n hn => by
-      simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
+      simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) hc
 
 theorem pk_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
