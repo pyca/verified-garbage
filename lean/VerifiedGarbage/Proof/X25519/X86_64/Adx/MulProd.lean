@@ -106,35 +106,35 @@ local macro "nm" : tactic =>
     (repeat' constructor) <;>
     first | with_reducible assumption | exact Ne.symm (by with_reducible assumption) | decide))
 
+/-- A row's multiply-adds, for any five registers: `r0–r3 + rdx · [a]` into `r0–r4`. -/
+def maddRow (a : Nat) (r0 r1 r2 r3 r4 : Reg) : List Instr :=
+  [clear] ++ (madd r0 r1 (.mem (sc a)) ++ (madd r1 r2 (.mem (sc (a + 8))) ++
+    (madd r2 r3 (.mem (sc (a + 16))) ++ maddLast r3 r4 (.mem (sc (a + 24))))))
+
 /-- A row `i ≥ 1`, for any five registers. -/
 def rowR' (a b i : Nat) (r0 r1 r2 r3 r4 : Reg) : List Instr :=
-  [.mov .rdx (.mem (sc (b + 8 * i)))] ++ ([clear] ++ (madd r0 r1 (.mem (sc a)) ++
-    (madd r1 r2 (.mem (sc (a + 8))) ++ (madd r2 r3 (.mem (sc (a + 16))) ++
-      maddLast r3 r4 (.mem (sc (a + 24)))))))
+  [.mov .rdx (.mem (sc (b + 8 * i)))] ++ maddRow a r0 r1 r2 r3 r4
 
 theorem rowX_eq (a b i : Nat) :
     rowX a b i = rowR' a b i (t i) (t (i + 1)) (t (i + 2)) (t (i + 3)) (t (i + 4)) := by
-  simp only [rowX, rowR', List.append_assoc]; rfl
+  simp only [rowX, rowR', maddRow, List.append_assoc]; rfl
 
-/-- A row: `r0–r3 + b_i · a` into `r0–r4`. -/
-theorem rowR'_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a b i : Nat}
-    (ha : a + 32 ≤ size) (hb : b + 8 * i + 8 ≤ size) {r0 r1 r2 r3 r4 : Reg}
+/-- A row's multiply-adds: `r0–r3 + rdx · [a]` into `r0–r4`, `rdx` kept. -/
+theorem maddRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a : Nat}
+    (ha : a + 32 ≤ size) {r0 r1 r2 r3 r4 : Reg}
     (hd : ([r0, r1, r2, r3, r4, .rax, .rcx, .rdx, .rbp, .rdi] : List Reg).Nodup) :
-    WP isa (.block (rowR' a b i r0 r1 r2 r3 r4)) s fun s' =>
+    WP isa (.block (maddRow a r0 r1 r2 r3 r4)) s fun s' =>
       val4 (s'.gpr r0) (s'.gpr r1) (s'.gpr r2) (s'.gpr r3) + 2 ^ 256 * (s'.gpr r4).toNat =
         val4 (s.gpr r0) (s.gpr r1) (s.gpr r2) (s.gpr r3) +
-          (word s.mem base (b + 8 * i)).toNat * fe s.mem base a ∧
-      Keeps [r0, r1, r2, r3, r4, .rax, .rcx, .rdx, .rbp] s s' := by
+          (s.gpr .rdx).toNat * fe s.mem base a ∧
+      Keeps [r0, r1, r2, r3, r4, .rax, .rcx, .rbp] s s' := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hd
   obtain ⟨⟨h01, h02, h03, h04, h0a, h0c, h0d, h0b, h0i⟩, ⟨h12, h13, h14, h1a, h1c, h1d, h1b, h1i⟩,
     ⟨h23, h24, h2a, h2c, h2d, h2b, h2i⟩, ⟨h34, h3a, h3c, h3d, h3b, h3i⟩,
     ⟨h4a, h4c, h4d, h4b, h4i⟩, -⟩ := hd
-  rw [rowR', WP.block_append_iff]
-  refine WP.mono (movRdx_ok s (readSrc_sc hs hb)) fun s1 ⟨d1, _, _, k1⟩ => ?_
-  have hs1 := hs.of_keeps k1 (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (clear_ok s1) fun s2 ⟨z2, c2, o2, k2⟩ => ?_
-  have hs2 := hs1.of_keeps k2 (by decide)
+  rw [maddRow, WP.block_append_iff]
+  refine WP.mono (clear_ok s) fun s2 ⟨z2, c2, o2, k2⟩ => ?_
+  have hs2 := hs.of_keeps k2 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (madd_ok s2 (readSrc_sc hs2 (by omega)) (noImm_mem _) c2 o2
     (by nm) (by nm) (by nm) (by nm) (by nm)) fun s3 ⟨c3, o3, hc3, ho3, e3, k3⟩ => ?_
@@ -151,24 +151,24 @@ theorem rowR'_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     rw [k5.1 _ (by nm), k4.1 _ (by nm), k3.1 _ (by nm), z2]
   refine WP.mono (maddLast_ok s5 (readSrc_sc hs5 (by omega)) (noImm_mem _) hc5 ho5 z5
     (by nm) (by nm) (by nm) (by nm) (by nm)) fun s6 ⟨c6, o6, _, _, e6, k6⟩ => ?_
-  have K : Keeps [r0, r1, r2, r3, r4, .rax, .rcx, .rdx, .rbp] s s6 :=
-    (((((k1.mono (by simp)).trans (k2.mono (by simp))).trans (k3.mono (by simp))).trans
+  have K : Keeps [r0, r1, r2, r3, r4, .rax, .rcx, .rbp] s s6 :=
+    ((((k2.mono (by simp)).trans (k3.mono (by simp))).trans
       (k4.mono (by simp))).trans (k5.mono (by simp))).trans (k6.mono (by simp))
   refine ⟨?_, K⟩
   -- `rdx`, the memory and the registers along the way.
-  have D2 : s2.gpr .rdx = word s.mem base (b + 8 * i) := (k2.1 _ (by nm)).trans d1
-  have D3 : s3.gpr .rdx = word s.mem base (b + 8 * i) := (k3.1 _ (by nm)).trans D2
-  have D4 : s4.gpr .rdx = word s.mem base (b + 8 * i) := (k4.1 _ (by nm)).trans D3
-  have D5 : s5.gpr .rdx = word s.mem base (b + 8 * i) := (k5.1 _ (by nm)).trans D4
-  have M2 : s2.mem = s.mem := k2.2.1.trans k1.2.1
+  have D2 : s2.gpr .rdx = s.gpr .rdx := k2.1 _ (by nm)
+  have D3 : s3.gpr .rdx = s.gpr .rdx := (k3.1 _ (by nm)).trans D2
+  have D4 : s4.gpr .rdx = s.gpr .rdx := (k4.1 _ (by nm)).trans D3
+  have D5 : s5.gpr .rdx = s.gpr .rdx := (k5.1 _ (by nm)).trans D4
+  have M2 : s2.mem = s.mem := k2.2.1
   have M3 : s3.mem = s.mem := k3.2.1.trans M2
   have M4 : s4.mem = s.mem := k4.2.1.trans M3
   have M5 : s5.mem = s.mem := k5.2.1.trans M4
-  rw [D2, M2, k2.1 r0 (by nm), k1.1 r0 (by nm), k2.1 r1 (by nm), k1.1 r1 (by nm)] at e3
-  rw [D3, M3, k3.1 r2 (by nm), k2.1 r2 (by nm), k1.1 r2 (by nm)] at e4
-  rw [D4, M4, k4.1 r3 (by nm), k3.1 r3 (by nm), k2.1 r3 (by nm), k1.1 r3 (by nm)] at e5
+  rw [D2, M2, k2.1 r0 (by nm), k2.1 r1 (by nm)] at e3
+  rw [D3, M3, k3.1 r2 (by nm), k2.1 r2 (by nm)] at e4
+  rw [D4, M4, k4.1 r3 (by nm), k3.1 r3 (by nm), k2.1 r3 (by nm)] at e5
   rw [D5, M5] at e6
-  have b1 := word_mul_lt (word s.mem base (b + 8 * i)) _ (fe_lt s.mem base a)
+  have b1 := word_mul_lt (s.gpr .rdx) _ (fe_lt s.mem base a)
   have b2 : val4 (s.gpr r0) (s.gpr r1) (s.gpr r2) (s.gpr r3) < 2 ^ 256 := by
     simp only [val4]
     have := (s.gpr r0).isLt; have := (s.gpr r1).isLt; have := (s.gpr r2).isLt
@@ -180,6 +180,26 @@ theorem rowR'_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   simp only [Bool.toNat_false, Nat.add_zero, Nat.mul_zero] at e3
   have := Bool.toNat_le c6; have := Bool.toNat_le o6
   omega_arith
+
+/-- A row: `r0–r3 + b_i · a` into `r0–r4`. -/
+theorem rowR'_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a b i : Nat}
+    (ha : a + 32 ≤ size) (hb : b + 8 * i + 8 ≤ size) {r0 r1 r2 r3 r4 : Reg}
+    (hd : ([r0, r1, r2, r3, r4, .rax, .rcx, .rdx, .rbp, .rdi] : List Reg).Nodup) :
+    WP isa (.block (rowR' a b i r0 r1 r2 r3 r4)) s fun s' =>
+      val4 (s'.gpr r0) (s'.gpr r1) (s'.gpr r2) (s'.gpr r3) + 2 ^ 256 * (s'.gpr r4).toNat =
+        val4 (s.gpr r0) (s.gpr r1) (s.gpr r2) (s.gpr r3) +
+          (word s.mem base (b + 8 * i)).toNat * fe s.mem base a ∧
+      Keeps [r0, r1, r2, r3, r4, .rax, .rcx, .rdx, .rbp] s s' := by
+  have hd' := hd
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hd'
+  rw [rowR', WP.block_append_iff]
+  refine WP.mono (movRdx_ok s (readSrc_sc hs hb)) fun s1 ⟨d1, _, _, k1⟩ => ?_
+  have hs1 := hs.of_keeps k1 (by decide)
+  refine WP.mono (maddRow_ok hs1 ha hd) fun s2 ⟨e2, k2⟩ => ⟨?_, (k1.mono (by simp)).trans (k2.mono (by simp))⟩
+  rw [e2, d1, k1.2.1, k1.1 r0 (fun h => by simp at h; exact hd'.1.2.2.2.2.2.2.1 h),
+    k1.1 r1 (fun h => by simp at h; exact hd'.2.1.2.2.2.2.2.1 h),
+    k1.1 r2 (fun h => by simp at h; exact hd'.2.2.1.2.2.2.2.1 h),
+    k1.1 r3 (fun h => by simp at h; exact hd'.2.2.2.1.2.2.2.1 h)]
 
 /-! ## The product -/
 

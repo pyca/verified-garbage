@@ -8,25 +8,39 @@ namespace VG.Proof.X25519.X86_64
 
 open VG VG.X86_64 VG.Impl.X25519.X86_64 VG.Proof.X25519
 
-theorem mulSmall_eq (o a : Nat) (k : BitVec 32) : mulSmall o a k =
-    zero4 ++ (([.mov32 .rcx (.imm k), .mov32 .rbp (.imm 0)] : List Instr) ++
+theorem mulSmallAdd_eq (o b a : Nat) (k : BitVec 32) : mulSmallAdd o b a k =
+    loads b .r8 .r9 .r10 .r11 ++ (([.mov32 .rcx (.imm k), .mov32 .rbp (.imm 0)] : List Instr) ++
       (mulStep .r8 .rbp .rcx (.mem (sc (a + 8 * 0))) ++ (mulStep .r9 .rbp .rcx (.mem (sc (a + 8 * 1))) ++
         (mulStep .r10 .rbp .rcx (.mem (sc (a + 8 * 2))) ++
           (mulStep .r11 .rbp .rcx (.mem (sc (a + 8 * 3))) ++
             (([.mov32 .rcx (.imm 38)] : List Instr) ++ (fold ++ store4 o))))))) := by
-  simp only [mulSmall, List.append_assoc]
+  simp only [mulSmallAdd, List.append_assoc]
   rfl
 
-/-- `k · [a]` into `r8–r11` and the carry word `rbp`, with `r8–r11 = 0`. -/
+/-- `[b]` into `r8–r11`. -/
+theorem loads4_ok {s : State} {base : Addr} (hs : Scr s base) {b : Nat} (hb : Slot b) :
+    WP isa (.block (loads b .r8 .r9 .r10 .r11)) s fun s' =>
+      val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) = fe s.mem base b ∧
+      Keeps [.r8, .r9, .r10, .r11] s s' := by
+  apply WP.of_runBlock
+  simp only [loads, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_sc,
+    RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, hs.rdi,
+    ld_sc hs (d := b) (by omega), ld_sc hs (d := b + 8) (by omega),
+    ld_sc hs (d := b + 16) (by omega), ld_sc hs (d := b + 24) (by omega), ite_true, ite_false,
+    reduceCtorEq, Option.map_some, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_setReg, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
+
+/-- `r8–r11 + k · [a]` into `r8–r11` and the carry word `rbp`. -/
 theorem smallSteps_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : Slot a)
-    (k : BitVec 32) (h0 : s.gpr .r8 = 0) (h1 : s.gpr .r9 = 0) (h2 : s.gpr .r10 = 0)
-    (h3 : s.gpr .r11 = 0) :
+    (k : BitVec 32) :
     WP isa (.block (([.mov32 .rcx (.imm k), .mov32 .rbp (.imm 0)] : List Instr) ++
       (mulStep .r8 .rbp .rcx (.mem (sc (a + 8 * 0))) ++ (mulStep .r9 .rbp .rcx (.mem (sc (a + 8 * 1))) ++
         (mulStep .r10 .rbp .rcx (.mem (sc (a + 8 * 2))) ++
           mulStep .r11 .rbp .rcx (.mem (sc (a + 8 * 3)))))))) s fun s' =>
       val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) + 2 ^ 256 * (s'.gpr .rbp).toNat =
-        k.toNat * fe s.mem base a ∧
+        val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) + k.toNat * fe s.mem base a ∧
       Keeps [.r8, .r9, .r10, .r11, .rax, .rdx, .rcx, .rbp] s s' := by
   have g : ∀ {x y : State} {rs : List Reg} (k : Keeps rs x y) (r : Reg), r ∉ rs → y.gpr r = x.gpr r :=
     fun k r h => k.1 r h
@@ -67,12 +81,11 @@ theorem smallSteps_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha 
   have z : (0 : BitVec 64).toNat = 0 := rfl
   have hk : (k.setWidth 64).toNat = k.toNat := by
     rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le k.isLt (by decide))]
-  rw [g k1 .r8 (by decide), h0] at e2
-  rw [g k2 .r9 (by decide), g k1 .r9 (by decide), h1] at e3
-  rw [g k3 .r10 (by decide), g k2 .r10 (by decide), g k1 .r10 (by decide), h2] at e4
-  rw [g k4 .r11 (by decide), g k3 .r11 (by decide), g k2 .r11 (by decide), g k1 .r11 (by decide),
-    h3] at e5
-  simp only [M1, M2, M3, M4, C2, C3, C4, c1, b1, z, hk, Nat.mul_zero, Nat.add_zero, Nat.zero_add,
+  rw [g k1 .r8 (by decide)] at e2
+  rw [g k2 .r9 (by decide), g k1 .r9 (by decide)] at e3
+  rw [g k3 .r10 (by decide), g k2 .r10 (by decide), g k1 .r10 (by decide)] at e4
+  rw [g k4 .r11 (by decide), g k3 .r11 (by decide), g k2 .r11 (by decide), g k1 .r11 (by decide)] at e5
+  simp only [M1, M2, M3, M4, C2, C3, C4, c1, b1, z, hk, Nat.mul_zero, Nat.add_zero,
     Nat.mul_one, Nat.reduceMul, word] at e2 e3 e4 e5
   simp only [val4, fe, word, g k5 .r8 (by decide), g k4 .r8 (by decide), g k3 .r8 (by decide),
     g k5 .r9 (by decide), g k4 .r9 (by decide), g k5 .r10 (by decide)]
@@ -81,19 +94,19 @@ theorem smallSteps_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha 
   rw [hp]
   omega
 
-/-- `[o] = a24 · [a]`. -/
-theorem mulA24_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : Slot o)
-    (ha : Slot a) :
-    WP isa (.block (mulSmall o a a24)) s fun s' =>
-      Op base o s s' ∧ F s'.mem base o = Spec.X25519.a24 * F s.mem base a := by
+/-- `[o] = [b] + a24 · [a]`. -/
+theorem mulA24Add_ok {s : State} {base : Addr} (hs : Scr s base) {o b a : Nat} (ho : Slot o)
+    (hb : Slot b) (ha : Slot a) :
+    WP isa (.block (mulSmallAdd o b a a24)) s fun s' =>
+      Op base o s s' ∧ F s'.mem base o = F s.mem base b + Spec.X25519.a24 * F s.mem base a := by
   have g : ∀ {x y : State} {rs : List Reg} (k : Keeps rs x y) (r : Reg), r ∉ rs → y.gpr r = x.gpr r :=
     fun k r h => k.1 r h
-  rw [mulSmall_eq, WP.block_append_iff]
-  refine WP.mono (zero4_ok s) fun s₀ ⟨z8, z9, z10, z11, k0⟩ => ?_
+  rw [mulSmallAdd_eq, WP.block_append_iff]
+  refine WP.mono (loads4_ok hs hb) fun s₀ ⟨l0, k0⟩ => ?_
   have hs₀ := hs.of_keeps k0 (by decide)
   rw [← List.append_assoc, ← List.append_assoc, ← List.append_assoc, ← List.append_assoc,
     WP.block_append_iff]
-  refine WP.mono (smallSteps_ok hs₀ ha a24 z8 z9 z10 z11) fun s₁ ⟨e1, k1⟩ => ?_
+  refine WP.mono (smallSteps_ok hs₀ ha a24) fun s₁ ⟨e1, k1⟩ => ?_
   have hs₁ := hs₀.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (show WP isa (.block [.mov32 .rcx (.imm 38)]) s₁
@@ -105,13 +118,11 @@ theorem mulA24_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s₂ ⟨c2, k2⟩ => ?_
   have hs₂ := hs₁.of_keeps k2 (by decide)
+  rw [l0, k0.2.1] at e1
   have hc : (s₂.gpr .rbp).toNat < 2 ^ 52 := by
     rw [g k2 .rbp (by decide)]
-    have hA : fe s₀.mem base a < 2 ^ 256 := by
-      simp only [X86_64.fe, val4]
-      have := (word s₀.mem base a).isLt; have := (word s₀.mem base (a + 8)).isLt
-      have := (word s₀.mem base (a + 16)).isLt; have := (word s₀.mem base (a + 24)).isLt
-      omega
+    have hA := fe_lt4 s.mem base a
+    have hB := fe_lt4 s.mem base b
     have h24 : a24.toNat = 121665 := rfl
     rw [h24] at e1
     simp only [val4] at e1
@@ -129,8 +140,8 @@ theorem mulA24_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : 
   · rw [wr4, k3.2.2.2, k2.2.2.2, k1.2.2.2, k0.2.2.2]
   · rw [m4, k3.2.1, k2.2.1, k1.2.1, k0.2.1]; exact st4_outside _ _ (by omega) _ _ _ _
   · simp only [F]
-    apply toFe_a24
-    rw [m4, fe_st4 _ _ (by omega), e3, ← k0.2.1, g k2 .r8 (by decide), g k2 .r9 (by decide),
+    apply toFe_addA24
+    rw [m4, fe_st4 _ _ (by omega), e3, g k2 .r8 (by decide), g k2 .r9 (by decide),
       g k2 .r10 (by decide), g k2 .r11 (by decide), g k2 .rbp (by decide),
       show (121665 : Nat) = a24.toNat from rfl, ← e1, fold256]
 

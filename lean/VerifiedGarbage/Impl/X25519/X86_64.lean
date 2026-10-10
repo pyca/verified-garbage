@@ -18,7 +18,7 @@ read (`out` then in `rsi`):
   byte `t` is bit `t` of `k`).
 
 The arithmetic (registers `rax, rdx, rcx, rbp, r8–r15`), whose
-multiplications (`mul`, `sqr`, and `mulSmall` by `a24`) are the
+multiplications (`mul`, `sqr`, and `mulSmallAdd` by `a24`) are the
 `Field` `baseline`; the rest of the code takes them as a parameter
 (`x25519With`), so that `vg_x25519_adx` (`X86_64/Adx.lean`) is this code with
 other multiplications:
@@ -31,7 +31,8 @@ other multiplications:
   operand is at most `2p`, as products are;
 * `sqr`: the products `a_i a_j` for `i < j` once, as rows of `mul`, then
   doubled, and the squares `a_i²` added; reduced as `mul`;
-* `mulSmall`: by a one-word constant (`a24`), folded as for `mul`;
+* `mulSmallAdd`: an element plus another by a one-word constant (`a24`),
+  folded as for `mul`;
 * `cswap`: with the mask `-swap`, as RFC 7748 §5 describes;
 * `freeze`: the full reduction of the result, by folding bit 255 in as 19,
   then selecting `x + 19 - 2²⁵⁵` with a mask if it is not negative.
@@ -182,9 +183,10 @@ def sqr (o a : Nat) : List Instr :=
   sq1 a ++ sq2 a ++ sq3 a ++ sqDbl ++ diag .r8 .r9 a ++ diag .r10 .r11 (a + 8) ++
     diag .r12 .r13 (a + 16) ++ diag .r14 .r15 (a + 24) ++ reduce ++ store4 o
 
-/-- `[o] = k · [a]`, for a constant `k < 2³¹`. -/
-def mulSmall (o a : Nat) (k : BitVec 32) : List Instr :=
-  zero4 ++ [.mov32 .rcx (.imm k), .mov32 .rbp (.imm 0)] ++
+/-- `[o] = [b] + k · [a]`, for a constant `k < 2³¹`: `[b]` into `r8–r11`, then
+`k · [a]` added word by word, and the carry word folded. -/
+def mulSmallAdd (o b a : Nat) (k : BitVec 32) : List Instr :=
+  loads b .r8 .r9 .r10 .r11 ++ [.mov32 .rcx (.imm k), .mov32 .rbp (.imm 0)] ++
     ((List.range 4).flatMap fun j => mulStep (t j) .rbp .rcx (.mem (sc (a + 8 * j)))) ++
     [.mov32 .rcx (.imm 38)] ++ fold ++ store4 o
 
@@ -280,8 +282,8 @@ structure Field where
   mul : Nat → Nat → Nat → List Instr
   /-- `[o] = [a]²` -/
   sqr : Nat → Nat → List Instr
-  /-- `[o] = a24 · [a]` -/
-  a24 : Nat → Nat → List Instr
+  /-- `[o] = [b] + a24 · [a]` -/
+  a24add : Nat → Nat → Nat → List Instr
   /-- `[o] = 2 · [a] · [b]` (Ed25519's doublings) -/
   mul2 : Nat → Nat → Nat → List Instr
   /-- `[o] = 2 · [a]²` (Ed25519's doublings) -/
@@ -290,11 +292,11 @@ structure Field where
   `_adx` for BMI2 and ADX's). -/
   suffix : String := ""
 
-/-- The baseline's: `mul`, `sqr` and `mulSmall`, and a product doubled by `add`. -/
+/-- The baseline's: `mul`, `sqr` and `mulSmallAdd`, and a product doubled by `add`. -/
 def baseline : Field where
   mul := mul
   sqr := sqr
-  a24 o a := mulSmall o a a24
+  a24add o b a := mulSmallAdd o b a a24
   mul2 o a b := mul o a b ++ add o o o
   sqr2 o a := sqr o a ++ add o o o
 
@@ -313,7 +315,8 @@ them, and so on, so that independent multiplications are next to each other
 and the processor overlaps them (the longest chain, to `z_3`, is three
 multiplications). The sums and differences fold once (`addCmov`, `subCmov`): `z_2`
 and `z_3` are products, at most `2p`, and so is an operand of each other sum
-and the subtrahend of each other difference (`AA`, `BB`, `CB`). -/
+and the subtrahend of each other difference (`BB`, `CB`). `AA + a24 E` is one
+multiply-add (`a24add`). -/
 def step (F : Field) : List Instr :=
   [.alu .sub .rbx (.imm 1), .movzx8 .rax { base := .rdi, index := some .rbx, disp := BITS },
     .mov .rdx (.mem (sc SWAP)), .alu .xor .rdx (.reg .rax), .store (sc SWAP) .rax,
@@ -321,8 +324,8 @@ def step (F : Field) : List Instr :=
   cswap X2 X3 ++ cswap Z2 Z3 ++
   addCmov A X2 Z2 ++ subCmov B X2 Z2 ++ addCmov C X3 Z3 ++ subCmov D X3 Z3 ++
   F.sqr AA A ++ F.sqr BB B ++ F.mul DA D A ++ F.mul CB C B ++
-  subCmov E AA BB ++ subCmov Z3 DA CB ++ addCmov X3 DA CB ++ F.a24 Z2 E ++
-  F.sqr Z3 Z3 ++ F.sqr X3 X3 ++ addCmov Z2 AA Z2 ++ F.mul Z3 X1 Z3 ++
+  subCmov E AA BB ++ subCmov Z3 DA CB ++ addCmov X3 DA CB ++ F.a24add Z2 AA E ++
+  F.sqr Z3 Z3 ++ F.sqr X3 X3 ++ F.mul Z3 X1 Z3 ++
   F.mul X2 AA BB ++ F.mul Z2 E Z2 ++
   [.alu .test .rbx (.reg .rbx)]
 

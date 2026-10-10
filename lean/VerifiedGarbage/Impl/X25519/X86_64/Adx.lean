@@ -115,14 +115,13 @@ def sqrD (a : Nat) : List Instr :=
 doubled while the squares are added, and reduced. -/
 def sqrX (o a : Nat) : List Instr := sqrA a ++ sqrB a ++ sqrC a ++ sqrD a ++ reduceX ++ store4 o
 
-/-- `[o] = a24 · [a]`: `r8–r12 = a24 · [a]` through CF, then `r12` folded as
-38. -/
-def a24X (o a : Nat) : List Instr :=
-  [.mov32 .rdx (.imm a24), clear, .mulx .r9 .r8 (.mem (sc a))] ++
-    mulAcc .r9 .r10 (.mem (sc (a + 8))) ++ mulAcc .r10 .r11 (.mem (sc (a + 16))) ++
-    mulAcc .r11 .r12 (.mem (sc (a + 24))) ++
-    [.adcx .r12 (.reg .rbp), .mov32 .rdx (.imm 38), .mulx .rcx .rax (.reg .r12)] ++ carry38 ++
-    store4 o
+/-- `[o] = [b] + a24 · [a]`: `[b]` into `r8–r11`, then `a24 · [a]` added as a
+row of `mulX` (`r8–r12`), and `r12` folded as 38. -/
+def a24addX (o b a : Nat) : List Instr :=
+  [.mov32 .rdx (.imm a24)] ++ loads b .r8 .r9 .r10 .r11 ++ [clear] ++
+    madd .r8 .r9 (.mem (sc a)) ++ madd .r9 .r10 (.mem (sc (a + 8))) ++
+    madd .r10 .r11 (.mem (sc (a + 16))) ++ maddLast .r11 .r12 (.mem (sc (a + 24))) ++
+    [.mov32 .rdx (.imm 38), .mulx .rcx .rax (.reg .r12)] ++ carry38 ++ store4 o
 
 /-- `[o] = 2 · [a] · [b]`: `mulX`, doubled in its reduction. -/
 def mul2X (o a b : Nat) : List Instr :=
@@ -135,7 +134,7 @@ def sqr2X (o a : Nat) : List Instr := sqrA a ++ sqrB a ++ sqrC a ++ sqrD a ++ re
 def adx : Field where
   mul := mulX
   sqr := sqrX
-  a24 := a24X
+  a24add := a24addX
   mul2 := mul2X
   sqr2 := sqr2X
   suffix := "_adx"

@@ -54,6 +54,12 @@ theorem toFe_sub {a b c : Nat} (h : (c + b) % P = a % P) : toFe c = toFe a - toF
       show P - y + (x + y - P) = x by omega, Nat.mod_eq_of_lt hx]
 
 /-- A multiplication by `a24`, written as the spec writes it. -/
+theorem toFe_addA24 {a b c : Nat} (h : c % P = (b + 121665 * a) % P) :
+    toFe c = toFe b + a24 * toFe a := by
+  apply Fin.ext
+  show c % P = (b % P + (121665 % P) * (a % P) % P) % P
+  rw [h, Nat.add_mod, Nat.mul_mod]
+
 theorem toFe_a24 {a c : Nat} (h : c % P = 121665 * a % P) : toFe c = a24 * toFe a := by
   apply Fin.ext
   show c % P = (121665 % P) * (a % P) % P
