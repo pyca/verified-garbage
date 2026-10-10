@@ -1,6 +1,7 @@
 import Batteries.Tactic.Init
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import VerifiedGarbage.Spec.RsaOaep
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSAES-OAEP: masking and unmasking `EM`, whatever the target
@@ -59,31 +60,31 @@ theorem em_mask {G : Hash} (hG : Valid G) {V₁ : Nat → Byte} {D k : Nat} {sd 
   have e2 : srcB (mixV V₁ (mgf1 G sd (k - D - 1)) (1 + D) (k - D - 1)) (1 + D) (k - D - 1) =
       xorBytes db (mgf1 G sd (k - D - 1)) := by
     refine srcB_eq hmdb fun i hi => ?_
-    rw [mixV, ifp (by omega), Nat.add_sub_cancel_left, hd i hi,
-      xorBytes_getD (by omega) (by omega)]
+    rw [mixV, ifp (by omega_arith), Nat.add_sub_cancel_left, hd i hi,
+      xorBytes_getD (by omega_arith) (by omega_arith)]
   rw [e1, e2]
   have hm2 := mgf1_length hG (xorBytes db (mgf1 G sd (k - D - 1))) D
   have hms : (xorBytes sd (mgf1 G (xorBytes db (mgf1 G sd (k - D - 1))) D)).length = D := by
     rw [Proof.Mgf1.xorBytes_length, hsd, hm2, Nat.min_self]
-  refine range_ext (by simp only [List.length_cons, List.length_append, hms, hmdb]; omega) fun i hi => ?_
+  refine range_ext (by simp only [List.length_cons, List.length_append, hms, hmdb]; omega_arith) fun i hi => ?_
   rcases Nat.eq_zero_or_pos i with rfl | hi0
-  · simp only [mixV]; rw [ifn (by omega), ifn (by omega), h0]; rfl
+  · simp only [mixV]; rw [ifn (by omega_arith), ifn (by omega_arith), h0]; rfl
   rw [show (0 :: xorBytes sd (mgf1 G (xorBytes db (mgf1 G sd (k - D - 1))) D) ++
       xorBytes db (mgf1 G sd (k - D - 1))).getD i 0 =
       (xorBytes sd (mgf1 G (xorBytes db (mgf1 G sd (k - D - 1))) D) ++
         xorBytes db (mgf1 G sd (k - D - 1))).getD (i - 1) 0 by
     cases i with
-    | zero => omega
+    | zero => omega_arith
     | succ j => simp [List.getD_eq_getElem?_getD]]
   rw [getD_append, hms]
   by_cases h1 : i - 1 < D
-  · rw [ifp h1, mixV, ifp (by omega), mixV, ifn (by omega),
-      xorBytes_getD (by omega) (by omega), show i - 1 = i - 1 from rfl]
-    rw [show i = 1 + (i - 1) by omega, hs _ h1, Nat.add_sub_cancel_left]
-  · rw [ifn h1, mixV, ifn (by omega), mixV, ifp (by omega)]
-    rw [xorBytes_getD (by omega) (by omega)]
-    rw [show i = 1 + D + (i - 1 - D) by omega, hd _ (by omega)]
-    congr 2 <;> omega
+  · rw [ifp h1, mixV, ifp (by omega_arith), mixV, ifn (by omega_arith),
+      xorBytes_getD (by omega_arith) (by omega_arith), show i - 1 = i - 1 from rfl]
+    rw [show i = 1 + (i - 1) by omega_arith, hs _ h1, Nat.add_sub_cancel_left]
+  · rw [ifn h1, mixV, ifn (by omega_arith), mixV, ifp (by omega_arith)]
+    rw [xorBytes_getD (by omega_arith) (by omega_arith)]
+    rw [show i = 1 + D + (i - 1 - D) by omega_arith, hd _ (by omega_arith)]
+    congr 2 <;> omega_arith
 
 theorem map_range_getD' (V : Nat → Byte) {k i : Nat} (hi : i < k) : ((List.range k).map V).getD i 0 = V i := by
   simp [List.getD_eq_getElem?_getD, hi]
@@ -106,9 +107,9 @@ theorem unmask {G : Hash} (hG : Valid G) (V : Nat → Byte) {D k : Nat} (hk : 2 
           (k - D - 1)) := by
   have hlen : ((List.range k).map V).length = k := by simp
   have e1 : srcB V (1 + D) (k - D - 1) = ((List.range k).map V).drop (D + 1) := by
-    refine srcB_eq (by simp; omega) fun i hi => ?_
-    rw [drop_getD', map_range_getD' V (by omega)]; congr 1; omega
-  have hms : ((((List.range k).map V).drop 1).take D).length = D := by simp; omega
+    refine srcB_eq (by simp; omega_arith) fun i hi => ?_
+    rw [drop_getD', map_range_getD' V (by omega_arith)]; congr 1; omega_arith
+  have hms : ((((List.range k).map V).drop 1).take D).length = D := by simp; omega_arith
   have hm1 := mgf1_length hG (((List.range k).map V).drop (D + 1)) D
   have hseedl : (xorBytes ((((List.range k).map V).drop 1).take D)
       (mgf1 G (((List.range k).map V).drop (D + 1)) D)).length = D := by
@@ -116,22 +117,22 @@ theorem unmask {G : Hash} (hG : Valid G) (V : Nat → Byte) {D k : Nat} (hk : 2 
   have e2 : srcB (mixV V (mgf1 G (srcB V (1 + D) (k - D - 1)) D) 1 D) 1 D =
       xorBytes ((((List.range k).map V).drop 1).take D) (mgf1 G (((List.range k).map V).drop (D + 1)) D) := by
     refine srcB_eq hseedl fun i hi => ?_
-    rw [mixV, ifp (by omega), e1, xorBytes_getD (by omega) (by omega), take_getD' _ hi, drop_getD',
-      map_range_getD' V (by omega), Nat.add_sub_cancel_left]
+    rw [mixV, ifp (by omega_arith), e1, xorBytes_getD (by omega_arith) (by omega_arith), take_getD' _ hi, drop_getD',
+      map_range_getD' V (by omega_arith), Nat.add_sub_cancel_left]
   refine ⟨e2, ?_⟩
   rw [e2]
-  have hmdb : (((List.range k).map V).drop (D + 1)).length = k - D - 1 := by simp; omega
+  have hmdb : (((List.range k).map V).drop (D + 1)).length = k - D - 1 := by simp; omega_arith
   refine srcB_eq (by rw [Proof.Mgf1.xorBytes_length, hmdb, mgf1_length hG, Nat.min_self]) fun i hi => ?_
-  rw [mixV, ifp (by omega), mixV, ifn (by omega), xorBytes_getD (by omega) (by rw [mgf1_length hG]; omega),
-    drop_getD', map_range_getD' V (by omega), Nat.add_sub_cancel_left]
-  congr 2; omega
+  rw [mixV, ifp (by omega_arith), mixV, ifn (by omega_arith), xorBytes_getD (by omega_arith) (by rw [mgf1_length hG]; omega_arith),
+    drop_getD', map_range_getD' V (by omega_arith), Nat.add_sub_cancel_left]
+  congr 2; omega_arith
 
 theorem range_map_getD {xs : List Byte} {n : Nat} (h : n ≤ xs.length) :
     (List.range n).map (fun i => xs.getD i 0) = xs.take n := by
-  apply List.ext_getElem (by simp; omega)
+  apply List.ext_getElem (by simp; omega_arith)
   intro i h₁ h₂
   simp only [List.getElem_map, List.getElem_range, List.getElem_take, List.getD_eq_getElem?_getD]
-  rw [List.getElem?_eq_getElem (by simp at h₁; omega)]
+  rw [List.getElem?_eq_getElem (by simp at h₁; omega_arith)]
   rfl
 
 end VG.Proof.RsaOaep

@@ -92,22 +92,22 @@ theorem mrWitness_ct : RelCT isa (Two R0) (seqs mrWitness) (Two fun q s => W1 q 
     rintro q s ⟨hk, hp, hd, mi, c, bm, r, uni, hc, -, -, -, hsrc, -, hlen, -⟩
     have hm := (hp0 hp).mrh
     have hw4 := hd.w4
-    refine WP.mono (witLoad_ok hc.good hd.z (by omega) (by have := hd.w64; omega) hm.rand hm.used hm.len
+    refine WP.mono (witLoad_ok hc.good hd.z (by omega_arith) (by have := hd.w64; omega_arith) hm.rand hm.used hm.len
       (VG.Proof.RsaKeyGen.X86_64.Src.seg hsrc hlen) (by
-        simp only [VG.Proof.RsaKeyGen.seg, List.length_take, List.length_drop]; omega))
+        simp only [VG.Proof.RsaKeyGen.seg, List.length_take, List.length_drop]; omega_arith))
       fun t ⟨_, hu, hf, hg, k⟩ => ⟨hk, hp_used hp hg k.2.2 hf (by rng_disj) hu⟩
   · exact kt_ct (fun q : RPub => q.p.B) (fun q => q.p.wr) mrS (fun q => q.p.vs q.i (q.u + 8 * q.p.w)) [] (by decide)
       (fun q => vs_fst0 _ _ _) (fun _ _ h => h) (pins_nil _) (by taint_decide)
   · rintro q s ⟨hk, hp, hd, mi, c, bm, r, uni, hc, hR2, hc1, hsh, hsrc, -, hlen, -⟩
     have hm := (hp0 hp).mrh
     have hw4 := hd.w4
-    obtain ⟨_, hb, _⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega) hsh
+    obtain ⟨_, hb, _⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega_arith) hsh
     refine WP.mono (mrWitness_ok hd hc hsh.1 hb hm.rand hm.used hm.len (VG.Proof.RsaKeyGen.X86_64.Src.seg hsrc hlen) (by
-        simp only [VG.Proof.RsaKeyGen.seg, List.length_take, List.length_drop]; omega))
+        simp only [VG.Proof.RsaKeyGen.seg, List.length_take, List.length_drop]; omega_arith))
       fun t ⟨hc', _, _, hu, hf, k⟩ => ⟨⟨hk, hp_used hp hc'.good k.2.2 hf (witRanges_mrh _) hu⟩, hd, mi, c, _, hc', ?_⟩
     rw [hc'.n, hf.wv_eq (d := slot q.p.w aR2) (k := q.p.w) (by simp only [witRanges]; rng_disj)
-      (by have := hc.good.scr.nowrap; have := slot_le (w := q.p.w) (show aR2 < 8 by decide); have := hd.z; omega), hR2]
-    exact Nat.mod_lt _ (by omega)
+      (by have := hc.good.scr.nowrap; have := slot_le (w := q.p.w) (show aR2 < 8 by decide); have := hd.z; omega_arith), hR2]
+    exact Nat.mod_lt _ (by omega_arith)
 
 /-- Between the copies. -/
 def W3 (q : RPub) (s : State) : Prop := W1 q s ∧ MrDims q.p.B q.p.Z q.p.w ∧ ∃ mi, Good s q.p.B q.p.Z q.p.w mi
@@ -128,8 +128,8 @@ theorem roundPre_ct (M : Mont) : RelCT isa (Two R0) (seqs (mrWitness ++ [M.mm aX
       (fun _ _ h => let ⟨_, hd, mi, _, _, hc, _⟩ := h; ⟨mi, hc.good, hd.z⟩)
       (M.ct (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨rfl, rfl, rfl⟩))))))) ?_) (RelCT.assoc (RelCT.seq (R := Two W3) ?_ ?_))
     · rintro q s ⟨⟨hk, hp⟩, hd, mi, c, bm, hc, hlt⟩
-      have hw' : q.p.w < 2 ^ 31 := by have := hd.w64; omega
-      refine WP.mono (M.mm_ok hc.good hd.z (by have := hd.w4; omega) hw' (o := aXm) (a := aX) (b := aR2) (by decide)
+      have hw' : q.p.w < 2 ^ 31 := by have := hd.w64; omega_arith
+      refine WP.mono (M.mm_ok hc.good hd.z (by have := hd.w4; omega_arith) hw' (o := aXm) (a := aX) (b := aR2) (by decide)
         (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv hlt)
         fun t ⟨hg, _, _, ha, k⟩ => ⟨⟨hk, hp.frm (Frm.of_arrays ha (rs := [(slot q.p.w aAcc, 8 * (q.p.w + 2)),
           (slot q.p.w aTmp, 8 * (q.p.w + 2)), (slot q.p.w aXm, 8 * (q.p.w + 2))]) (by simp)) (by rng_le)
@@ -137,12 +137,12 @@ theorem roundPre_ct (M : Mont) : RelCT isa (Two R0) (seqs (mrWitness ++ [M.mm aX
     · refine kt_piece (fun q : RPub => q.p.B) (fun q => q.p.wr) mrS (fun q => q.p.vs q.i (q.u + 8 * q.p.w)) []
         (by decide) (fun q => vs_fst0 _ _ _) (fun _ _ h => h.1) (pins_nil _) (by taint_decide) ?_
       rintro q s ⟨⟨hk, hp⟩, hd, mi, hg⟩
-      have hw' : q.p.w < 2 ^ 31 := by have := hd.w64; omega
+      have hw' : q.p.w < 2 ^ 31 := by have := hd.w64; omega_arith
       have hn := hg.scr.nowrap
-      refine WP.mono (copyToExt_ok hg hd.z (by have := hd.w4; omega) hw' (a := aXm) (d := aB) (by decide) (by decide)
-        (by have := hd.x; unfold slot aB aRm1 at *; omega)) fun t ⟨_, ho, k⟩ => ?_
+      refine WP.mono (copyToExt_ok hg hd.z (by have := hd.w4; omega_arith) hw' (a := aXm) (d := aB) (by decide) (by decide)
+        (by have := hd.x; unfold slot aB aRm1 at *; omega_arith)) fun t ⟨_, ho, k⟩ => ?_
       have hf : Frm q.p.B [(slot q.p.w aB, 8 * (q.p.w + 2))] s.mem t.mem :=
-        Frm.of_outside (ho.mono (o' := slot q.p.w aB) (n' := 8 * (q.p.w + 2)) (Nat.le_refl _) (by omega)) (by simp)
+        Frm.of_outside (ho.mono (o' := slot q.p.w aB) (n' := 8 * (q.p.w + 2)) (Nat.le_refl _) (by omega_arith)) (by simp)
       exact ⟨⟨hk, hp.frm hf (by rng_le) (q.p.vs_lt _ _ [] (by simp) |> fun h e he => h e (by simpa using he))
         ((k.gpr (by decide)).trans hg.rdi) k.2.2⟩, hd, mi, hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
         Hdr.of_frm hg.hdr hf (by rng_le)⟩
@@ -151,7 +151,7 @@ theorem roundPre_ct (M : Mont) : RelCT isa (Two R0) (seqs (mrWitness ++ [M.mm aX
   · rintro q s ⟨hk, hp, hd, mi, c, bm, r, uni, hc, hR2, hc1, hsh, hsrc, -, hlen, -⟩
     have hm := (hp0 hp).mrh
     have hw4 := hd.w4
-    obtain ⟨_, hb, _⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega) hsh
+    obtain ⟨_, hb, _⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega_arith) hsh
     refine WP.mono (roundPre_ok M hd hc hR2 hsh.1 hc1 hb hm.rand hm.used hm.len hsrc hlen)
       fun t ⟨hc', hy, _, _, hu, hf, k⟩ => ⟨hk, hp_used hp hc'.good k.2.2 hf (preRanges_mrh _) hu, hd, mi, c, _, hc',
         hsh.1, hc1, hy⟩
@@ -189,7 +189,7 @@ theorem flagTest_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Go
       t.zf = some (!f) ∧ t.mem = s.mem ∧ Keep [.rcx, .rax] s t := by
   have hn := hg.scr.nowrap
   have hl : InRegions (s.rd ++ s.wr) (off B (8 * kFlag)) 8 :=
-    hg.scr.ld (by have := hdr_lt_slot w 8 (show kFlag < 32 by decide); omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 (show kFlag < 32 by decide); omega_arith)
   refine WP.mono (WP.keep [.rcx, .rax] (Q := fun t => t.zf = some (!f) ∧ t.mem = s.mem) (by
     xrun [State.ea, hdr, hg.rdi, hdrOff, hl, hF, BitVec.and_self]
     cases f <;> decide) rfl) fun t ⟨⟨hz, hm⟩, k⟩ => ⟨hz, hm, k⟩

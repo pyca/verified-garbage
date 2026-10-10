@@ -25,9 +25,9 @@ theorem mac4_ok {s : State} {B : Addr} {Z e eb j : Nat} (hs : Scr s B Z) (h8 : s
           (s.gpr .rcx).toNat ∧
       Keeps [.rsi, .rax, .r11, .r12, .r13, .r15, .rcx] s t := by
   have rb : ∀ k : Nat, k < 4 → readSrc s (.mem (ix .r9 .r14 (8 * (k : Int)))) = some (word s.mem B (eb + 8 * j + 8 * k)) :=
-    fun k hk => readSrc_word hs (ea_ixk s h9 h14 k) (by omega)
+    fun k hk => readSrc_word hs (ea_ixk s h9 h14 k) (by omega_arith)
   have rt : ∀ k : Nat, k < 4 → readSrc s (.mem (ix .r8 .r14 (8 * (k : Int)))) = some (word s.mem B (e + 8 * j + 8 * k)) :=
-    fun k hk => readSrc_word hs (ea_ixk s h8 h14 k) (by omega)
+    fun k hk => readSrc_word hs (ea_ixk s h8 h14 k) (by omega_arith)
   -- Reads through registers the steps keep.
   have kr : ∀ {rs : List Reg} {t : State}, Keeps rs s t → .r8 ∉ rs → .r9 ∉ rs → .r14 ∉ rs →
       (∀ k : Nat, k < 4 → readSrc t (.mem (ix .r9 .r14 (8 * (k : Int)))) = some (word s.mem B (eb + 8 * j + 8 * k))) ∧
@@ -82,8 +82,8 @@ theorem mac4_ok {s : State} {B : Addr} {Z e eb j : Nat} (hs : Scr s B Z) (h8 : s
   rw [c₀] at e₀
   simp only [Bool.toNat_false] at e₀
   have hb : ∀ k, (s.gpr .rdx).toNat * (word s.mem B (eb + 8 * j + 8 * k)).toNat ≤
-      (2 ^ 64 - 1) * (2 ^ 64 - 1) := fun k => Nat.mul_le_mul (by have := (s.gpr .rdx).isLt; omega)
-        (by have := (word s.mem B (eb + 8 * j + 8 * k)).isLt; omega)
+      (2 ^ 64 - 1) * (2 ^ 64 - 1) := fun k => Nat.mul_le_mul (by have := (s.gpr .rdx).isLt; omega_arith)
+        (by have := (word s.mem B (eb + 8 * j + 8 * k)).isLt; omega_arith)
   obtain ⟨z₁, z₂, e⟩ := halfA_arith (hb 0) (hb 1) (hb 2) (hb 3) (word s.mem B (e + 8 * j + 8 * 0)).isLt
     (word s.mem B (e + 8 * j + 8 * 1)).isLt (word s.mem B (e + 8 * j + 8 * 2)).isLt
     (word s.mem B (e + 8 * j + 8 * 3)).isLt (s.gpr .rcx).isLt (s₃.gpr .r11).isLt (s₄.gpr .r12).isLt
@@ -115,12 +115,12 @@ theorem mac4Store_ok {s : State} {B : Addr} {Z e eb j w : Nat} (hs : Scr s B Z)
   refine WP.mono (tail_ok (hs.congr ka.2.2.2) ((ka.gpr (by decide)).trans h8)
     ((ka.gpr (by decide)).trans h14) ((ka.gpr (by decide)).trans hbx) hZ hj hw)
     fun t ⟨hm, h14', hz, kt⟩ => ?_
-  obtain ⟨hv, ho⟩ := write4 a.mem B (e + 8 * j) (a.gpr .r11) (a.gpr .r12) (a.gpr .r13) (a.gpr .r15) (by omega)
+  obtain ⟨hv, ho⟩ := write4 a.mem B (e + 8 * j) (a.gpr .r11) (a.gpr .r12) (a.gpr .r13) (a.gpr .r15) (by omega_arith)
   rw [← hm] at hv ho
   rw [ka.2.1] at ho
   refine ⟨?_, ho, h14', hz, (ka.keep.trans kt).mono (by decide)⟩
   rw [hv, kt.gpr (by decide), wv4 s.mem B (e + 8 * j), wv4 s.mem B (eb + 8 * j), mul_w4]
-  omega
+  omega_arith
 
 /-- The single-word remainder has the same multiply-add equation. -/
 theorem mac1_ok {s : State} {B : Addr} {Z e eb j : Nat} (hs : Scr s B Z)
@@ -155,14 +155,14 @@ theorem mac1_ok {s : State} {B : Addr} {Z e eb j : Nat} (hs : Scr s B Z)
   rw [dx, ra] at eb'
   simp only [Bool.toNat_false] at eb'
   have hp : (s.gpr .rdx).toNat * (word s.mem B (eb + 8 * j)).toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) :=
-    Nat.mul_le_mul (by have := (s.gpr .rdx).isLt; omega) (by have := (word s.mem B (eb + 8 * j)).isLt; omega)
+    Nat.mul_le_mul (by have := (s.gpr .rdx).isLt; omega_arith) (by have := (word s.mem B (eb + 8 * j)).isLt; omega_arith)
   have ht := (word s.mem B (e + 8 * j)).isLt
   have hc := (s.gpr .rcx).isLt
-  have zl : c'.toNat = 0 ∧ o'.toNat = 0 := by omega
+  have zl : c'.toNat = 0 ∧ o'.toNat = 0 := by omega_arith
   refine ⟨?_, ?_, ?_, ((ka.trans kb).trans kt).mono (by decide)⟩
   · rw [ct]; cases c' <;> simp_all
   · rw [ot]; cases o' <;> simp_all
-  · rw [lo]; omega
+  · rw [lo]; omega_arith
 
 /-- The remainder word, including its store and loop count. -/
 theorem mac1Store_ok {s : State} {B : Addr} {Z e eb j w : Nat} (hs : Scr s B Z)
@@ -189,11 +189,11 @@ theorem mac1Store_ok {s : State} {B : Addr} {Z e eb j w : Nat} (hs : Scr s B Z)
       t.gpr .r14 = BitVec.ofNat 64 (j + 1) ∧ t.zf = some (decide (j + 1 = w)))
     (by xrun [State.ea, ix, a8, a14, addrK0, Nat.mul_zero, Nat.add_zero, hsa.st hZ, a14, abx, ofNat_add_one, ofNat_sub_beq hj hw]) rfl)
     fun t ⟨⟨hm, h14', hz⟩, kt⟩ => ?_
-  have ho := writeW_outside a.mem B (a.gpr .r11) (d := e + 8 * j) (by omega)
+  have ho := writeW_outside a.mem B (a.gpr .r11) (d := e + 8 * j) (by omega_arith)
   rw [← hm, ka.2.1] at ho
   refine ⟨?_, ho, h14', hz, (ka.keep.trans kt).mono (by decide)⟩
   simp only [wv, Nat.mul_zero, Nat.pow_zero, Nat.add_zero, Nat.one_mul, Nat.zero_add]
   rw [hm, word_writeW_self, kt.gpr (by decide)]
-  omega
+  omega_arith
 
 end VG.Proof.Bignum.X86_64.AdxSquare

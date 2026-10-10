@@ -100,7 +100,7 @@ theorem passBody_ct : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 2 ∧ Gath
   -- The pairs.
   refine RelCT.seq (two_post (Ψ := GathE) (two_taint _ pins_GathB (by taint_decide))
     fun q s ⟨v, hG, hs, h14, h11, h15, hdi, hw, hw', hp⟩ =>
-      WP.mono (gLoop_ok hs hG hp h14 (by omega) hw') fun t hL =>
+      WP.mono (gLoop_ok hs hG hp h14 (by omega_arith) hw') fun t hL =>
         ⟨by rw [hL.gpr _ (by decide)]; exact hdi, by rw [hL.gpr _ (by decide)]; exact hG.base 7 (by decide),
           by rw [hL.gpr _ (by decide)]; exact h11, by rw [hL.gpr _ (by decide)]; exact h15⟩) ?_
   -- The next pass.
@@ -196,8 +196,8 @@ theorem crtWin_ct (M : Mont) :
       (fun _ _ ⟨_, _, _, _, _, _, _, hI, _⟩ => ⟨_, hI.ctx.good, Nat.le_refl _⟩)
       (M.ct (by unfold MmUse; decide))) fun q s ⟨_, t₀, minv, X, Xc, E, v, hI, hw, hw', hR, hXN, hv⟩ => by
         have hp : v * 16 ^ q.2 < 2 ^ 56 := by
-          have : 16 ^ q.2 ≤ 16 := by rcases (show q.2 = 0 ∨ q.2 = 1 by omega) with h | h <;> rw [h] <;> decide
-          have := Nat.mul_le_mul_left v this; omega
+          have : 16 ^ q.2 ≤ 16 := by rcases (show q.2 = 0 ∨ q.2 = 1 by omega_arith) with h | h <;> rw [h] <;> decide
+          have := Nat.mul_le_mul_left v this; omega_arith
         exact winSq_q M ⟨minv, X, Xc, _, hI.ctx, hI.tab, hI.ylt, hI.v, hp, hw, hw', hR⟩
   -- The window, and `sV` up.
   have mid : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s)
@@ -209,7 +209,7 @@ theorem crtWin_ct (M : Mont) :
       fun q s h => ?_
     obtain ⟨minv, X, Xc, V, hc, htab, hY, hV, hV', hw, hw', hR⟩ := h
     have hn := hc.scrT.nowrap
-    refine WP.mono (winMid_ok hc hV (by omega)) fun t ⟨hm, k⟩ => ?_
+    refine WP.mono (winMid_ok hc hV (by omega_arith)) fun t ⟨hm, k⟩ => ?_
     have o1 := writeW_outside s.mem (off q.1.B q.1.o) (d := 8 * Crt.sV) (BitVec.ofNat 64 (16 * V)) (by decide)
     have o2 := writeW_outside (s.mem.writeW (off (off q.1.B q.1.o) (8 * Crt.sV)) (BitVec.ofNat 64 (16 * V)))
       (off q.1.B q.1.o) (d := 8 * Crt.sNib) (BitVec.ofNat 64 (V / 16 % 16)) (by decide)
@@ -220,8 +220,8 @@ theorem crtWin_ct (M : Mont) :
     have hY0 := slot_le (w := q.1.wx) (show Public.aY < 8 by decide)
     have hYe : wv t.mem (off q.1.B q.1.o) (slot q.1.wx Public.aY) q.1.wx =
         wv s.mem (off q.1.B q.1.o) (slot q.1.wx Public.aY) q.1.wx := by
-      rw [o2.wv (by have := hdr_lt_slot q.1.wx Public.aY (show Crt.sNib < 32 by decide); omega) (by omega),
-        o1.wv (by have := hdr_lt_slot q.1.wx Public.aY (show Crt.sV < 32 by decide); omega) (by omega)]
+      rw [o2.wv (by have := hdr_lt_slot q.1.wx Public.aY (show Crt.sNib < 32 by decide); omega_arith) (by omega_arith),
+        o1.wv (by have := hdr_lt_slot q.1.wx Public.aY (show Crt.sV < 32 by decide); omega_arith) (by omega_arith)]
     exact ⟨⟨minv, X, Xc, V / 16 % 16, hc', hw, hw', Nat.mod_lt _ (by decide), by
         rw [hm, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
           hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)]; exact htab.tab,
@@ -243,7 +243,7 @@ theorem crtWin_ct (M : Mont) :
     (two_map (fun q : XPub × Nat => q.1.ws) (fun _ _ ⟨minv, _, _, hc, _⟩ => ⟨minv, hc.good, Nat.le_refl _⟩)
       (M.ct (o := Public.aY) (a := Public.aY) (b := Crt.aT) (by unfold MmUse; decide)))
     fun q s ⟨minv, X, Xc, hc, hT, hw, hw'⟩ => ?_) ?_
-  · exact WP.mono (M.mm_ok (o := Public.aY) (a := Public.aY) (b := Crt.aT) hc.good (Nat.le_refl _) hw (by omega)
+  · exact WP.mono (M.mm_ok (o := Public.aY) (a := Public.aY) (b := Crt.aT) hc.good (Nat.le_refl _) hw (by omega_arith)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv
       (by rw [hc.n]; exact hT)) fun t ⟨hg, _⟩ => hg.rdi
   exact rdi_ct (fun q : XPub × Nat => off q.1.B q.1.o) (fun _ _ h => h) (by taint_decide)
@@ -302,7 +302,7 @@ theorem crtByte_ct (M : Mont) : RelCT isa (Two fun (q : BPub × Nat) s => q.2 < 
       WP isa (.block [.movzx8 .rax { base := .rax, index := some .rcx }, .store (hdr Crt.sV) .rax,
         .mov32 .rax (.imm 2), .store (hdr Crt.sBit) .rax]) s fun t => 0 < 2 ∧ WinI q.1.x 0 t := by
     rintro q s ⟨hi, ⟨t₀, minv, X, Xc, eb, hI, hw, hw', hR, hXN, hL, -, he, hout⟩, hax, hcx⟩
-    have hi' : q.2 < eb.length := by omega
+    have hi' : q.2 < eb.length := by omega_arith
     exact WP.mono (crtByteHead2_ok rfl hi' he.rd he.val hout hI hax hcx) fun t ⟨_, _, hB⟩ =>
       ⟨by decide, t, minv, X, Xc, _, _, hB, hw, hw', hR, hXN, (eb[q.2]'hi').isLt⟩
   have h₃ : RelCT isa (Two fun (p : XPub) s => WinI p 2 s)
@@ -347,7 +347,7 @@ theorem toEnt_ct {a : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
   exact WP.mono (WP.keep [.r12, .rsi, .rbx] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 q.1.wx ∧
       t.gpr .rsi = off (off q.1.B q.1.o) (slot q.1.wx a) ∧
       t.gpr .rbx = off (off q.1.B q.1.o) (slot q.1.wx (8 + q.2)))
-    (by xrun [State.ea, hdr, hc.good.rdi, hdrOff, hc.ld (i := sArr a) (by unfold sArr; omega),
+    (by xrun [State.ea, hdr, hc.good.rdi, hdrOff, hc.ld (i := sArr a) (by unfold sArr; omega_arith),
       hc.ld (i := Crt.sEnt) (by decide), hc.ld (i := sW) (by decide), hc.good.hdr.harr a ha, he,
       hc.good.hdr.hw]) rfl) fun t ⟨h, _⟩ => h
 
@@ -373,7 +373,7 @@ theorem buildBody_ct (M : Mont) :
       (M.ct (o := Crt.aT) (a := Crt.aT) (b := Crt.aXc) (by unfold MmUse; decide)))
       fun q s ⟨hi, t₀, minv, X, Xc, hI, hw, hw', hR, hXN⟩ => ?_
     have hc := hI.ctx
-    refine WP.mono (M.mm_ok (o := Crt.aT) (a := Crt.aT) (b := Crt.aXc) hc.good (Nat.le_refl _) hw (by omega)
+    refine WP.mono (M.mm_ok (o := Crt.aT) (a := Crt.aT) (b := Crt.aXc) hc.good (Nat.le_refl _) hw (by omega_arith)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv
       (by rw [hc.x, hc.n]; exact hXN)) fun t ⟨_, _, _, ha, k⟩ => ?_
     have f : Frm (off q.1.B q.1.o) (buildRanges q.1.wx) s.mem t.mem := Frm.of_arrays ha (by simp [buildRanges])
@@ -388,7 +388,7 @@ theorem buildBody_ct (M : Mont) :
       (off (off q.1.B q.1.o) (slot q.1.wx (8 + (q.2 + 1)) + 8 * (q.1.wx + 2))) (by decide)
     rw [← hm] at o
     exact ⟨⟨minv, X, Xc, hc.of_frm (Frm.of_outside o (by simp [crtExpRanges, crtWinRanges])) k.2.2
-      (k.gpr (by decide)), hXN, hw, hw'⟩, by rw [hm, word_writeW_self, ← slot_succ]; rfl, by simp only; omega,
+      (k.gpr (by decide)), hXN, hw, hw'⟩, by rw [hm, word_writeW_self, ← slot_succ]; rfl, by simp only; omega_arith,
       by decide⟩
   -- Entry `i + 2 := T`, the count.
   have restPart : RelCT isa (Two fun (q : XPub × Nat) s => EntP Crt.aT (q.1, q.2 + 2) s)
@@ -418,11 +418,11 @@ theorem toEnt_post {a : Nat} {q : XPub × Nat} {s : State} (h : EntP a q s) :
   obtain ⟨⟨minv, X, Xc, hc, hXN, hw, hw'⟩, he, hj, ha⟩ := h
   have hn := hc.scrT.nowrap
   have hE := ent_le q.1.wx hj
-  have hE8 := slot_mono q.1.wx (show 8 ≤ 8 + q.2 by omega)
+  have hE8 := slot_mono q.1.wx (show 8 ≤ 8 + q.2 by omega_arith)
   refine WP.mono (toEnt_ok hc hw hw' ha hj he) fun t ⟨_, o, k⟩ => ⟨⟨minv, X, Xc, hc.of_frm
-    (Frm.of_outside (o.mono (o' := slot q.1.wx 8) (n' := tabBytes q.1.wx) hE8 (by omega)) (by simp [crtExpRanges]))
+    (Frm.of_outside (o.mono (o' := slot q.1.wx 8) (n' := tabBytes q.1.wx) hE8 (by omega_arith)) (by simp [crtExpRanges]))
     k.2.2 (k.gpr (by decide)), hXN, hw, hw'⟩, fun k hk => ?_⟩
-  exact o.word (by have := hdr_lt_slot q.1.wx (8 + q.2) hk; omega) (by omega)
+  exact o.word (by have := hdr_lt_slot q.1.wx (8 + q.2) hk; omega_arith) (by omega_arith)
 
 /-- The table's first entries leak the same in runs with the same workspace. -/
 theorem tabPre_ct : RelCT isa (Two TPre) (seqs tabPre) fun _ _ => True := by
@@ -441,7 +441,7 @@ theorem tabPre_ct : RelCT isa (Two TPre) (seqs tabPre) fun _ _ => True := by
     have f : Frm (off p.B p.o) (buildRanges p.wx) s.mem t.mem :=
       (Frm.of_outside o1 (by simp [buildRanges])).trans (Frm.of_outside o2 (by simp [buildRanges]))
     exact ⟨⟨minv, X, Xc, hc.of_frm (f.mono (buildRanges_sub p.wx)) k.2.2 (k.gpr (by decide)), hXN, hw, hw'⟩,
-      by rw [hm, word_writeW_self]; rfl, by simp only; omega, by decide⟩
+      by rw [hm, word_writeW_self]; rfl, by simp only; omega_arith, by decide⟩
   -- `T_0 := Y`.
   refine RelCT.seqs_append (by simp [Crt.toEnt]) (by simp) (RelCT.seq (two_post
     (Ψ := fun p s => XCtx p s ∧ word s.mem (off p.B p.o) (8 * Crt.sEnt) = off (off p.B p.o) (slot p.wx 8))
@@ -458,7 +458,7 @@ theorem tabPre_ct : RelCT isa (Two TPre) (seqs tabPre) fun _ _ => True := by
       (off (off p.B p.o) (slot p.wx 8 + 8 * (p.wx + 2))) (by decide)
     rw [← hm] at o
     exact ⟨⟨minv, X, Xc, hc.of_frm (Frm.of_outside o (by simp [crtExpRanges, crtWinRanges])) k.2.2
-      (k.gpr (by decide)), hXN, hw, hw'⟩, by rw [hm, word_writeW_self, ← slot_succ], by simp only; omega,
+      (k.gpr (by decide)), hXN, hw, hw'⟩, by rw [hm, word_writeW_self, ← slot_succ], by simp only; omega_arith,
       by decide⟩
   -- `T_1 := Xc`.
   refine RelCT.seqs_append (by simp [Crt.toEnt]) (by simp [Crt.copyArr]) (RelCT.seq (two_post
@@ -468,7 +468,7 @@ theorem tabPre_ct : RelCT isa (Two TPre) (seqs tabPre) fun _ _ => True := by
   refine RelCT.seqs_append (by simp [Crt.copyArr]) (by simp) (RelCT.seq (two_post
     (Ψ := fun p t => t.gpr .rdi = off p.B p.o) (two_map (fun p : XPub => p.ws) (fun _ _ h => h.goodW)
       (copyArr_ct (by decide) (by decide) (by taint_decide))) fun p s ⟨minv, X, Xc, hc, _, hw, hw'⟩ =>
-    WP.mono (copyArr_ok hc.good (Nat.le_refl _) (by omega) (by omega) (o := Crt.aT) (a := Crt.aXc)
+    WP.mono (copyArr_ok hc.good (Nat.le_refl _) (by omega_arith) (by omega_arith) (o := Crt.aT) (a := Crt.aXc)
       (by decide) (by decide) (by decide)) fun t ⟨_, _, k⟩ => (k.gpr (by decide)).trans hc.good.rdi) ?_)
   simp only [seqs]
   exact rdi_ct (fun p : XPub => off p.B p.o) (fun _ _ h => h) (by taint_decide)
@@ -509,7 +509,7 @@ theorem crtLink_ok {sp sl : Nat} {a : BPub} {s : State} (h : EPre sp sl a s) :
   have hi := hc.hi
   have hlo := hc.lo
   have hl : InRegions (s.rd ++ s.wr) (off (off a.x.B a.x.o) (8 * Crt.sLink)) 8 :=
-    hc.good.scr.ld (by have := hdr_lt_slot a.x.wx 8 (show Crt.sLink < 32 by decide); omega)
+    hc.good.scr.ld (by have := hdr_lt_slot a.x.wx 8 (show Crt.sLink < 32 by decide); omega_arith)
   exact WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = a.x.B)
     (by xrun [State.ea, hdr, hc.rdi, hdrOff, hl, hc.link]) rfl)
     fun t ⟨h, k⟩ => ⟨(k.gpr (by decide)).trans hc.rdi, h⟩
@@ -536,10 +536,10 @@ theorem crtExpInit_tpre {sp sl : Nat} {a : BPub} {s : State} (h : EPre sp sl a s
   have f₁ : Frm (off a.x.B a.x.o) (crtExpRanges a.x.wx) s.mem t₁.mem :=
     ((Frm.of_outside o1 (by simp [crtExpRanges])).trans (Frm.of_outside o2 (by simp [crtExpRanges]))).trans
       (Frm.of_outside o3 (by simp [crtExpRanges]))
-  refine ⟨minv, X, _, hc₀.of_frm f₁ k₁.2.2 (k₁.gpr (by decide)), hxl, ?_, hw2, by omega,
+  refine ⟨minv, X, _, hc₀.of_frm f₁ k₁.2.2 (k₁.gpr (by decide)), hxl, ?_, hw2, by omega_arith,
     VG.Proof.Bignum.coprime_pow2 hodd _⟩
-  rw [o3.wv (by unfold Crt.sI sFn at *; omega) (by omega), o2.wv (by unfold Crt.sExpLen sFn at *; omega)
-    (by omega), o1.wv (by unfold Crt.sExp sFn at *; omega) (by omega)]
+  rw [o3.wv (by unfold Crt.sI sFn at *; omega_arith) (by omega_arith), o2.wv (by unfold Crt.sExpLen sFn at *; omega_arith)
+    (by omega_arith), o1.wv (by unfold Crt.sExp sFn at *; omega_arith) (by omega_arith)]
   exact hyl
 
 /-- `expLoop M.mm sp sl` is constant time, given that the taint analysis
@@ -574,21 +574,21 @@ theorem crtExpLoop_ct (M : Mont) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Tai
     have hBn := hc.scr.nowrap
     have hi := hc.hi
     have hlo := hc.lo
-    have h256 : 256 ≤ slot a.x.wx 8 := by unfold slot hdrBytes; omega
+    have h256 : 256 ≤ slot a.x.wx 8 := by unfold slot hdrBytes; omega_arith
     have hout : ∀ i < eb.length, slot a.x.wx 8 + tabBytes a.x.wx ≤ ofs (off a.x.B a.x.o) (a.ptr + BitVec.ofNat 64 i) :=
       fun i hi' => by
         have := he.out i hi'
-        rcases ofs_rebase a.x.B (a.ptr + BitVec.ofNat 64 i) (o := a.x.o) (by omega) with ⟨_, h2⟩ | ⟨h1, _⟩
-        · omega
-        · omega
+        rcases ofs_rebase a.x.B (a.ptr + BitVec.ofNat 64 i) (o := a.x.o) (by omega_arith) with ⟨_, h2⟩ | ⟨h1, _⟩
+        · omega_arith
+        · omega_arith
     exact WP.mono (crtExpHead_ok M (Q := False) (x := 0) hc hw2 hwx hw30 hn hinv hodd hxl False.elim hyl False.elim
-      hsp hsl hep hel he) fun t hI => ⟨by omega, s, minv, X, _, eb, hI, hw2, by omega,
-        VG.Proof.Bignum.coprime_pow2 hodd _, hxl, hL, by omega, he, hout⟩
+      hsp hsl hep hel he) fun t hI => ⟨by omega_arith, s, minv, X, _, eb, hI, hw2, by omega_arith,
+        VG.Proof.Bignum.coprime_pow2 hodd _, hxl, hL, by omega_arith, he, hout⟩
   simp only [seqs, expBytes]
   refine (two_loop (Φ := CBytesInv) (Ψ := fun _ _ => True) (fun a => a.len) (crtByte_ct M) ?_).mono
     (fun _ _ h => h) fun _ _ _ => trivial
   rintro a i s hi ⟨t₀, minv, X, Xc, eb, hI, hw, hw', hR, hXN, hL, hL', he, hout⟩
-  exact WP.mono (crtByte_ok M hw hw' hR rfl hL' (by omega) he.rd he.val hout hI)
+  exact WP.mono (crtByte_ok M hw hw' hR rfl hL' (by omega_arith) he.rd he.val hout hI)
     fun s' ⟨hz, hI'⟩ => ⟨eval_ne_count hi (by rw [hz, hL]), fun _ => ⟨t₀, minv, X, Xc, eb, hI', hw, hw', hR, hXN, hL,
       hL', he, hout⟩, fun _ => trivial⟩
 

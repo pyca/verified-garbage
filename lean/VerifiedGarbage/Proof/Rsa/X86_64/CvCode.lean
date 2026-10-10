@@ -164,7 +164,7 @@ theorem cvEntry_ok {s : State} {B : Addr} (hB : stackArg s 8 = B)
       (stackArg s 2) (stackArg s 4) (stackArg s 6) (stackArg s 7)
   refine ⟨hdi, fun i hi => ?_, hDp, hPl, hDq, hQl, hQi, hN, hK, hP, hQ, hD, hDl, ho,
     ((k₁.trans k₂).trans k₃).mono (by decide)⟩
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_arith) with rfl | rfl | rfl | rfl | rfl | rfl
   · exact h0
   · exact h1
   · exact h2
@@ -222,7 +222,7 @@ theorem bytesAt_zero {m : Mem} {p : Addr} {n : Nat} (h : ∀ i < n, m (p + BitVe
 
 theorem stkAddr_eq (s : State) (j : Nat) : stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
   simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  rw [show 8 * (0 + 1) + 8 * j = 8 * (j + 1) by omega]
+  rw [show 8 * (0 + 1) + 8 * j = 8 * (j + 1) by omega_arith]
 
 theorem stkAddr_add (s : State) (j b : Nat) :
     stackArgAddr s j + BitVec.ofNat 64 b = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j + b) := by
@@ -295,27 +295,27 @@ theorem cvCtx_of {s : State} (h : cvContract.pre s) : CvCtx s := by
   rw [hcx] at d12 d23 d2n d2p d2q d2d d2s d2a dR2 w2
   rw [hr9] at d13 d23 d3n d3p d3q d3d d3s d3a dR3 w3
   refine ⟨⟨hk1, hk2, hpl1, hpl2, hql1, hql2, hdl1, hdl2, bytesAt_length _ _ _, bytesAt_length _ _ _,
-      bytesAt_length _ _ _, bytesAt_length _ _ _, by simp only [cvIn]; omega⟩, hsi, hcx, hs,
-    fun j hj => ⟨_, hargs, by rw [stkAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩,
+      bytesAt_length _ _ _, bytesAt_length _ _ _, by simp only [cvIn]; omega_arith⟩, hsi, hcx, hs,
+    fun j hj => ⟨_, hargs, by rw [stkAddr_eq s j]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)⟩,
     fun j hj m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
-      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 80) (by omega) (by omega))
-      rw [← stkAddr_add s j b] at this; omega)),
-    src_of_region (by rw [hrd]; simp) (by omega) dns,
-    src_of_region (by rw [hrd]; simp) (by omega) dps,
-    src_of_region (by rw [hrd]; simp) (by omega) dqs,
-    src_of_region (by rw [hrd]; simp) (by omega) dds,
-    ⟨fun j hj => ⟨_, by rw [hwr, hsi, hcx, hr9]; simp, contains_byte _ hj (by omega)⟩,
-      fun j hj => out_scr d3s (contains_byte _ hj (by omega))⟩,
-    ⟨fun j hj => ⟨_, by rw [hwr, hsi, hcx, hr9]; simp, contains_byte _ hj (by omega)⟩,
-      fun j hj => out_scr d1s (contains_byte _ hj (by omega))⟩,
-    ⟨fun j hj => ⟨_, by rw [hwr, hsi, hcx, hr9]; simp, contains_byte _ hj (by omega)⟩,
-      fun j hj => out_scr d2s (contains_byte _ hj (by omega))⟩,
-    apart_of (fun a h₁ h₂ => d13 a h₂ h₁) (by omega) (by omega), apart_of (fun a h₁ h₂ => d23 a h₂ h₁) (by omega) (by omega),
-    apart_of d12 (by omega) (by omega), fun b hb => ?_⟩
-  have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega) (by omega)
-  exact ⟨out_scr dRs hc, fun j hj he => dR3 _ hc (by rw [he]; exact contains_byte _ hj (by omega)),
-    fun j hj he => dR1 _ hc (by rw [he]; exact contains_byte _ hj (by omega)),
-    fun j hj he => dR2 _ hc (by rw [he]; exact contains_byte _ hj (by omega))⟩
+      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 80) (by omega_arith) (by omega_arith))
+      rw [← stkAddr_add s j b] at this; omega_arith)),
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dns,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dps,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dqs,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dds,
+    ⟨fun j hj => ⟨_, by rw [hwr, hsi, hcx, hr9]; simp, contains_byte _ hj (by omega_arith)⟩,
+      fun j hj => out_scr d3s (contains_byte _ hj (by omega_arith))⟩,
+    ⟨fun j hj => ⟨_, by rw [hwr, hsi, hcx, hr9]; simp, contains_byte _ hj (by omega_arith)⟩,
+      fun j hj => out_scr d1s (contains_byte _ hj (by omega_arith))⟩,
+    ⟨fun j hj => ⟨_, by rw [hwr, hsi, hcx, hr9]; simp, contains_byte _ hj (by omega_arith)⟩,
+      fun j hj => out_scr d2s (contains_byte _ hj (by omega_arith))⟩,
+    apart_of (fun a h₁ h₂ => d13 a h₂ h₁) (by omega_arith) (by omega_arith), apart_of (fun a h₁ h₂ => d23 a h₂ h₁) (by omega_arith) (by omega_arith),
+    apart_of d12 (by omega_arith) (by omega_arith), fun b hb => ?_⟩
+  have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega_arith) (by omega_arith)
+  exact ⟨out_scr dRs hc, fun j hj he => dR3 _ hc (by rw [he]; exact contains_byte _ hj (by omega_arith)),
+    fun j hj he => dR1 _ hc (by rw [he]; exact contains_byte _ hj (by omega_arith)),
+    fun j hj he => dR2 _ hc (by rw [he]; exact contains_byte _ hj (by omega_arith))⟩
 
 /-- After `entry` and the reloads of `n` and `k`, from `s`. -/
 structure CvHeadPost (s t : State) : Prop where
@@ -335,7 +335,7 @@ theorem cvHead_ok' {s : State} (c : CvCtx s) :
   have hn := c.hs.nowrap
   have hZ : 128 * (stackArg s 1).toNat ≤ (stackArg s 9).toNat * 8 := c.L.z
   have hk1 : 64 ≤ (stackArg s 1).toNat := c.L.k1
-  have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 8) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+  have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 8) (8 * i)) 8 := fun i hi => c.hs.st (by omega_arith)
   rw [WP.block_append_iff]
   refine WP.mono (cvEntry_ok rfl hw c.ha c.hsep) fun t₀ ⟨hdi, hsv, hDp, hPl, hDq, hQl, hQi, hN, hK, hP, hQ, hD,
     hDl, ho₀, k₀⟩ => ?_
@@ -344,8 +344,8 @@ theorem cvHead_ok' {s : State} (c : CvCtx s) :
   have eK : Impl.Bignum.X86_64.Public.sK = 18 := rfl
   refine WP.mono (WP.keep [.rdx, .rcx] (Q := fun t => t.gpr .rdx = stackArg s 0 ∧
       t.gpr .rcx = stackArg s 1 ∧ t.mem = t₀.mem) (by
-    xrun [State.ea, hdr, hdi, hdrOff, hs₀.ld (d := 8 * Impl.Bignum.X86_64.Public.sN) (by omega),
-      hs₀.ld (d := 8 * Impl.Bignum.X86_64.Public.sK) (by omega), hN, hK]) rfl)
+    xrun [State.ea, hdr, hdi, hdrOff, hs₀.ld (d := 8 * Impl.Bignum.X86_64.Public.sN) (by omega_arith),
+      hs₀.ld (d := 8 * Impl.Bignum.X86_64.Public.sK) (by omega_arith), hN, hK]) rfl)
     fun t₁ ⟨⟨hdx, hcx, hm⟩, k₁⟩ => ?_
   rw [← hm] at hsv hDp hPl hDq hQl hQi hN hK hP hQ hD hDl
   refine ⟨hs₀.congr k₁.2.2, (k₁.gpr (by decide)).trans hdi, hdx, by rw [hcx, ofNat_toNat64],
@@ -357,7 +357,7 @@ theorem cvHead_ok' {s : State} (c : CvCtx s) :
         rw [hQl, ← c.rcx, ofNat_toNat64], hD,
       show Bignum.word _ (stackArg s 8) _ = BitVec.ofNat 64 (stackArg s 7).toNat by rw [hDl, ofNat_toNat64],
       hsv⟩,
-    by rw [hm]; exact InScr.of_outside ho₀ (by omega), (k₀.trans k₁).mono (by decide)⟩
+    by rw [hm]; exact InScr.of_outside ho₀ (by omega_arith), (k₀.trans k₁).mono (by decide)⟩
 
 /-- `main`'s hypotheses after the head and the modulus' check. -/
 theorem cvPre_of {s t₁ t : State} (c : CvCtx s) (h : CvHeadPost s t₁) (hm : t.mem = t₁.mem)
@@ -426,8 +426,8 @@ theorem cvCode_correct (hmx : CrtValues.code.allInstrs (fun i => !loadsMxcsr i) 
     have ql2 : (stackArg s 5).toNat < (stackArg s 1).toNat := c.L.ql2
     have k2 : (stackArg s 1).toNat ≤ 1024 := c.L.k2
     have k1 : 64 ≤ (stackArg s 1).toNat := c.L.k1
-    exact WP.mono (cvFail_ok hpre.scr hpre.rdi (show 8 * 32 ≤ (stackArg s 9).toNat * 8 by omega) hpre.args c.L.pl1
-      (show (stackArg s 3).toNat < 2 ^ 31 by omega) c.L.ql1 (show (stackArg s 5).toNat < 2 ^ 31 by omega)
+    exact WP.mono (cvFail_ok hpre.scr hpre.rdi (show 8 * 32 ≤ (stackArg s 9).toNat * 8 by omega_arith) hpre.args c.L.pl1
+      (show (stackArg s 3).toNat < 2 ^ 31 by omega_arith) c.L.ql1 (show (stackArg s 5).toNat < 2 ^ 31 by omega_arith)
       hpre.oQi hpre.oDp hpre.oDq hpre.a1 hpre.a2 hpre.a3)
       fun t ⟨z1, z2, z3, hax, hsv, hfr, hsp⟩ => ⟨cvGpr_of c hsv hsp hsp₂ fun x hx n1 n2 n3 => by
         rw [hfr x n1 n2 n3, hm₂]; exact h₁.inScr x hx, by

@@ -28,8 +28,8 @@ theorem ea_ixk (s : State) {b i : Reg} {p : Addr} {e j : Nat} (hb : s.gpr b = of
 theorem ea_below (s : State) {b : Reg} {p : Addr} {e d : Nat} (hb : s.gpr b = off p e) (hd : d ≤ e) :
     s.ea { base := b, disp := -(d : Int) } = off p (e - d) := by
   simp only [State.ea, hb, off, BitVec.ofInt_neg, BitVec.ofInt_natCast]
-  rw [BitVec.add_assoc, ← BitVec.sub_eq_add_neg, show e = (e - d) + d by omega, BitVec.ofNat_add,
-    BitVec.add_sub_cancel, show e - d + d - d = e - d by omega]
+  rw [BitVec.add_assoc, ← BitVec.sub_eq_add_neg, show e = (e - d) + d by omega_arith, BitVec.ofNat_add,
+    BitVec.add_sub_cancel, show e - d + d - d = e - d by omega_arith]
 
 /-- A word of the working space, read through a memory operand. -/
 theorem readSrc_word {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) {m : MemOp} {d : Nat}
@@ -55,7 +55,7 @@ theorem halfA_arith {X b₀ b₁ b₂ b₃ t₀ t₁ t₂ t₃ h C₀ C₁ C₂ 
       C₀ + 2 ^ 64 * C₁ + 2 ^ 128 * C₂ + 2 ^ 192 * C₃ + 2 ^ 256 * h' =
         X * b₀ + 2 ^ 64 * (X * b₁) + 2 ^ 128 * (X * b₂) + 2 ^ 192 * (X * b₃) +
           (t₀ + 2 ^ 64 * t₁ + 2 ^ 128 * t₂ + 2 ^ 192 * t₃) + h := by
-  omega
+  omega_arith
 
 /-- A block's second half: `C + U M + h` over four words fits in five. -/
 theorem halfB_arith {U m₀ m₁ m₂ m₃ C₀ C₁ C₂ C₃ h D₀ D₁ D₂ D₃ G₀ G₁ G₂ G₃ h' : Nat}
@@ -72,7 +72,7 @@ theorem halfB_arith {U m₀ m₁ m₂ m₃ C₀ C₁ C₂ C₃ h D₀ D₁ D₂ 
     D₀ + 2 ^ 64 * D₁ + 2 ^ 128 * D₂ + 2 ^ 192 * D₃ + 2 ^ 256 * h' =
       (C₀ + 2 ^ 64 * C₁ + 2 ^ 128 * C₂ + 2 ^ 192 * C₃) +
         (U * m₀ + 2 ^ 64 * (U * m₁) + 2 ^ 128 * (U * m₂) + 2 ^ 192 * (U * m₃)) + h := by
-  omega
+  omega_arith
 
 /-! ## The first half -/
 
@@ -98,11 +98,11 @@ theorem halfA_ok {s : State} {B : Addr} {Z e eb j : Nat} (hs : Scr s B Z) (h8 : 
           (s.gpr .rcx).toNat ∧
       Keeps [.rsi, .rdx, .rax, .r11, .r12, .r13, .r15, .rcx] s t := by
   have rb : ∀ k : Nat, k < 4 → readSrc s (.mem (ix .r9 .r14 (8 * (k : Int)))) = some (word s.mem B (eb + 8 * j + 8 * k)) :=
-    fun k hk => readSrc_word hs (ea_ixk s h9 h14 k) (by omega)
+    fun k hk => readSrc_word hs (ea_ixk s h9 h14 k) (by omega_arith)
   have rt : ∀ k : Nat, k < 4 → readSrc s (.mem (ix .r8 .r14 (8 * (k : Int)))) = some (word s.mem B (e + 8 * j + 8 * k)) :=
-    fun k hk => readSrc_word hs (ea_ixk s h8 h14 k) (by omega)
+    fun k hk => readSrc_word hs (ea_ixk s h8 h14 k) (by omega_arith)
   have rx : readSrc s (.mem xSlot) = some (word s.mem B (e - 16)) :=
-    readSrc_word hs (ea_below s (d := 16) h8 he) (by omega)
+    readSrc_word hs (ea_below s (d := 16) h8 he) (by omega_arith)
   -- Reads through registers the steps keep.
   have kr : ∀ {rs : List Reg} {t : State}, Keeps rs s t → .r8 ∉ rs → .r9 ∉ rs → .r14 ∉ rs →
       (∀ k : Nat, k < 4 → readSrc t (.mem (ix .r9 .r14 (8 * (k : Int)))) = some (word s.mem B (eb + 8 * j + 8 * k))) ∧
@@ -161,8 +161,8 @@ theorem halfA_ok {s : State} {B : Addr} {Z e eb j : Nat} (hs : Scr s B Z) (h8 : 
   rw [c₀] at e₀
   simp only [Bool.toNat_false] at e₀
   have hb : ∀ k, (word s.mem B (e - 16)).toNat * (word s.mem B (eb + 8 * j + 8 * k)).toNat ≤
-      (2 ^ 64 - 1) * (2 ^ 64 - 1) := fun k => Nat.mul_le_mul (by have := (word s.mem B (e - 16)).isLt; omega)
-        (by have := (word s.mem B (eb + 8 * j + 8 * k)).isLt; omega)
+      (2 ^ 64 - 1) * (2 ^ 64 - 1) := fun k => Nat.mul_le_mul (by have := (word s.mem B (e - 16)).isLt; omega_arith)
+        (by have := (word s.mem B (eb + 8 * j + 8 * k)).isLt; omega_arith)
   obtain ⟨z₁, z₂, e⟩ := halfA_arith (hb 0) (hb 1) (hb 2) (hb 3) (word s.mem B (e + 8 * j + 8 * 0)).isLt
     (word s.mem B (e + 8 * j + 8 * 1)).isLt (word s.mem B (e + 8 * j + 8 * 2)).isLt
     (word s.mem B (e + 8 * j + 8 * 3)).isLt (s.gpr .rcx).isLt (s₃.gpr .r11).isLt (s₄.gpr .r12).isLt
@@ -198,9 +198,9 @@ theorem halfB_ok {s : State} {B : Addr} {Z e eN j : Nat} (hs : Scr s B Z) (h8 : 
       Keeps [.rdx, .rax, .rsi, .r11, .r12, .r13, .r15, .rbp] s t := by
   have rm : ∀ k : Nat, k < 4 → readSrc s (.mem (ix .r10 .r14 (8 * (k : Int)))) =
       some (word s.mem B (eN + 8 * j + 8 * k)) :=
-    fun k hk => readSrc_word hs (ea_ixk s h10 h14 k) (by omega)
+    fun k hk => readSrc_word hs (ea_ixk s h10 h14 k) (by omega_arith)
   have ru : readSrc s (.mem uSlot) = some (word s.mem B (e - 8)) :=
-    readSrc_word hs (ea_below s (d := 8) h8 (by omega)) (by omega)
+    readSrc_word hs (ea_below s (d := 8) h8 (by omega_arith)) (by omega_arith)
   have kr : ∀ {rs : List Reg} {t : State}, Keeps rs s t → .r10 ∉ rs → .r14 ∉ rs →
       ∀ k : Nat, k < 4 → readSrc t (.mem (ix .r10 .r14 (8 * (k : Int)))) = some (word s.mem B (eN + 8 * j + 8 * k)) :=
     fun K a c k hk => (K.readMem (by simpa [ix] using a) (by
@@ -248,8 +248,8 @@ theorem halfB_ok {s : State} {B : Addr} {Z e eN j : Nat} (hs : Scr s B Z) (h8 : 
   rw [x₄, d₁, i15] at e₃
   simp only [Bool.toNat_false] at e₀
   have hm : ∀ k, (word s.mem B (e - 8)).toNat * (word s.mem B (eN + 8 * j + 8 * k)).toNat ≤
-      (2 ^ 64 - 1) * (2 ^ 64 - 1) := fun k => Nat.mul_le_mul (by have := (word s.mem B (e - 8)).isLt; omega)
-        (by have := (word s.mem B (eN + 8 * j + 8 * k)).isLt; omega)
+      (2 ^ 64 - 1) * (2 ^ 64 - 1) := fun k => Nat.mul_le_mul (by have := (word s.mem B (e - 8)).isLt; omega_arith)
+        (by have := (word s.mem B (eN + 8 * j + 8 * k)).isLt; omega_arith)
   have e := halfB_arith (hm 0) (hm 1) (hm 2) (hm 3) (s.gpr .r11).isLt (s.gpr .r12).isLt (s.gpr .r13).isLt
     (s.gpr .r15).isLt (s.gpr .rbp).isLt (s₂.gpr .r11).isLt (s₃.gpr .r12).isLt (s₄.gpr .r13).isLt
     (s₅.gpr .r15).isLt (t.gpr .rbp).isLt e₀ e₁ e₂ e₃ e₄
@@ -289,7 +289,7 @@ theorem tail_ok {s : State} {B : Addr} {Z e j w : Nat} (hs : Scr s B Z) (h8 : s.
         (s.gpr .r12)).writeW (off B (e + 8 * j + 8 * 2)) (s.gpr .r13)).writeW (off B (e + 8 * j + 8 * 3))
         (s.gpr .r15) ∧
       t.gpr .r14 = BitVec.ofNat 64 (j + 4) ∧ t.zf = some (decide (j + 4 = w)) ∧ Keep [.r14] s t := by
-  have hst : ∀ k, k < 4 → InRegions s.wr (off B (e + 8 * j + 8 * k)) 8 := fun k hk => hs.st (by omega)
+  have hst : ∀ k, k < 4 → InRegions s.wr (off B (e + 8 * j + 8 * k)) 8 := fun k hk => hs.st (by omega_arith)
   refine WP.mono (WP.keep [.r14] (Q := fun t => t.mem = (((s.mem.writeW (off B (e + 8 * j + 8 * 0)) (s.gpr .r11)).writeW
       (off B (e + 8 * j + 8 * 1)) (s.gpr .r12)).writeW (off B (e + 8 * j + 8 * 2)) (s.gpr .r13)).writeW
       (off B (e + 8 * j + 8 * 3)) (s.gpr .r15) ∧
@@ -319,14 +319,14 @@ theorem write4 (m : Mem) (B : Addr) (d : Nat) (v₀ v₁ v₂ v₃ : BitVec 64) 
     wv m' B d 4 = v₀.toNat + 2 ^ 64 * v₁.toNat + 2 ^ 128 * v₂.toNat + 2 ^ 192 * v₃.toNat ∧ Outside B d 32 m m' := by
   intro m'
   refine ⟨?_, ?_⟩
-  · rw [show (4 : Nat) = 3 + 1 from rfl, wv_writeW_top _ _ _ _ _ (by omega), show (3 : Nat) = 2 + 1 from rfl,
-      wv_writeW_top _ _ _ _ _ (by omega), show (2 : Nat) = 1 + 1 from rfl, wv_writeW_top _ _ _ _ _ (by omega),
-      show (1 : Nat) = 0 + 1 from rfl, wv_writeW_top _ _ _ _ _ (by omega)]
+  · rw [show (4 : Nat) = 3 + 1 from rfl, wv_writeW_top _ _ _ _ _ (by omega_arith), show (3 : Nat) = 2 + 1 from rfl,
+      wv_writeW_top _ _ _ _ _ (by omega_arith), show (2 : Nat) = 1 + 1 from rfl, wv_writeW_top _ _ _ _ _ (by omega_arith),
+      show (1 : Nat) = 0 + 1 from rfl, wv_writeW_top _ _ _ _ _ (by omega_arith)]
     simp only [wv, Nat.zero_add, Nat.mul_zero, Nat.pow_zero, Nat.one_mul]
-  · exact (((writeW_outside m B v₀ (d := d + 8 * 0) (by omega)).mono (by omega) (by omega)).trans
-      ((writeW_outside _ B v₁ (d := d + 8 * 1) (by omega)).mono (by omega) (by omega))).trans
-      ((writeW_outside _ B v₂ (d := d + 8 * 2) (by omega)).mono (by omega) (by omega)) |>.trans
-      ((writeW_outside _ B v₃ (d := d + 8 * 3) (by omega)).mono (by omega) (by omega))
+  · exact (((writeW_outside m B v₀ (d := d + 8 * 0) (by omega_arith)).mono (by omega_arith) (by omega_arith)).trans
+      ((writeW_outside _ B v₁ (d := d + 8 * 1) (by omega_arith)).mono (by omega_arith) (by omega_arith))).trans
+      ((writeW_outside _ B v₂ (d := d + 8 * 2) (by omega_arith)).mono (by omega_arith) (by omega_arith)) |>.trans
+      ((writeW_outside _ B v₃ (d := d + 8 * 3) (by omega_arith)).mono (by omega_arith) (by omega_arith))
 
 /-- A block: `a_i` times four words of `b` and `u` times four words of `m`
 added to four words of the window and the carries. -/
@@ -347,12 +347,12 @@ theorem block_ok {s : State} {B : Addr} {Z e eb eN j w : Nat} (hs : Scr s B Z) (
   rw [WP.block_append_iff]
   have hsa : Scr a B Z := hs.congr ka.2.2.2
   refine WP.mono (halfB_ok hsa ((ka.gpr (by decide)).trans h8) ((ka.gpr (by decide)).trans h10)
-    ((ka.gpr (by decide)).trans h14) he (by omega) hZN ca oa) fun b ⟨eb', kb⟩ => ?_
+    ((ka.gpr (by decide)).trans h14) he (by omega_arith) hZN ca oa) fun b ⟨eb', kb⟩ => ?_
   have hsb : Scr b B Z := hsa.congr kb.2.2.2
   have kab := ka.trans kb
   refine WP.mono (tail_ok hsb ((kab.gpr (by decide)).trans h8) ((kab.gpr (by decide)).trans h14)
-    ((kab.gpr (by decide)).trans hbx) hZ (by omega) (by omega)) fun t ⟨hm, h14', hz, kt⟩ => ?_
-  obtain ⟨hv, ho⟩ := write4 b.mem B (e + 8 * j) (b.gpr .r11) (b.gpr .r12) (b.gpr .r13) (b.gpr .r15) (by omega)
+    ((kab.gpr (by decide)).trans hbx) hZ (by omega_arith) (by omega_arith)) fun t ⟨hm, h14', hz, kt⟩ => ?_
+  obtain ⟨hv, ho⟩ := write4 b.mem B (e + 8 * j) (b.gpr .r11) (b.gpr .r12) (b.gpr .r13) (b.gpr .r15) (by omega_arith)
   have mb : b.mem = s.mem := kab.2.1
   have ma : a.mem = s.mem := ka.2.1
   rw [← hm] at hv ho
@@ -364,6 +364,6 @@ theorem block_ok {s : State} {B : Addr} {Z e eb eN j w : Nat} (hs : Scr s B Z) (
   rw [rbp₀] at eb'
   refine ⟨?_, ho, h14', hz, (kab.keep.trans kt).mono (by decide)⟩
   rw [hv, rcx, rbp, wv4 s.mem B (e + 8 * j), wv4 s.mem B (eb + 8 * j), wv4 s.mem B (eN + 8 * j), mul_w4, mul_w4]
-  omega
+  omega_arith
 
 end VG.Proof.Bignum.X86_64

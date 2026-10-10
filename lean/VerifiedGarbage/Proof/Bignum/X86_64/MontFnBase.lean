@@ -20,7 +20,7 @@ theorem qword_movq (v : BitVec 64) : qword ((0 : BitVec 64) ++ v) 0 = v := by
   ext i hi; simp only [qword, BitVec.getElem_extractLsb']; rw [BitVec.getLsbD_append]; simp [hi]
 
 theorem ofNat32_64 {o : Nat} (h : o < 2 ^ 32) : (BitVec.ofNat 32 o).setWidth 64 = BitVec.ofNat 64 o := by
-  apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_setWidth]; omega
+  apply BitVec.eq_of_toNat_eq; simp [BitVec.toNat_setWidth]; omega_arith
 
 theorem arr_off (B : Addr) {j : Nat} (hj : j < 2 ^ 32) :
     off (B + (BitVec.ofNat 32 j).setWidth 64 * 8#64) (8 * sArr 0) = off B (8 * sArr j) := by
@@ -29,7 +29,7 @@ theorem arr_off (B : Addr) {j : Nat} (hj : j < 2 ^ 32) :
   congr 1
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat, Nat.reducePow]
-  omega
+  omega_arith
 
 /-- `enter` and `basesR`: the bases of the arrays whose indices are in `edx`,
 `ecx` and `r8d`, as `bases` gives them, and the callee-saved registers in
@@ -46,7 +46,7 @@ theorem fnHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
       t.xmm .xmm0 = s.gpr .rbp ++ s.gpr .rbx ∧ t.xmm .xmm1 = s.gpr .r13 ++ s.gpr .r12 ∧
       t.xmm .xmm2 = s.gpr .r15 ++ s.gpr .r14 := by
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hs.ld (by have := hdr_lt_slot w 8 hi; omega)
+    hs.ld (by have := hdr_lt_slot w 8 hi; omega_arith)
   refine WP.mono (WP.keep [.rdx, .rcx, .r8, .rbx, .r11, .r9, .r10, .r12, .r15, .rsi] (c := .block (enter ++ basesR))
     (Q := fun t => t.gpr .rbx = off B (slot w o) ∧ t.gpr .r11 = off B (slot w a) ∧
       t.gpr .r9 = off B (slot w b) ∧ t.gpr .r10 = off B (slot w aN) ∧ t.gpr .r8 = off B (slot w aAcc) ∧
@@ -58,9 +58,9 @@ theorem fnHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
   unfold enter zext saves basesR
   simp only [List.cons_append, List.nil_append]
   xrun [XOp.exec, setXmm_gpr, setXmm_mem, setXmm_rd, setXmm_wr, setXmm_xmm, setReg_xmm, XBinOp.eval, qword_movq,
-    State.ea, arrAt, hdr, hdi, hdx, hcx, h8, hdrOff, arr_off B (show o < 2 ^ 32 by omega),
-    arr_off B (show a < 2 ^ 32 by omega), arr_off B (show b < 2 ^ 32 by omega),
-    hl (sArr o) (by unfold sArr; omega), hl (sArr a) (by unfold sArr; omega), hl (sArr b) (by unfold sArr; omega),
+    State.ea, arrAt, hdr, hdi, hdx, hcx, h8, hdrOff, arr_off B (show o < 2 ^ 32 by omega_arith),
+    arr_off B (show a < 2 ^ 32 by omega_arith), arr_off B (show b < 2 ^ 32 by omega_arith),
+    hl (sArr o) (by unfold sArr; omega_arith), hl (sArr a) (by unfold sArr; omega_arith), hl (sArr b) (by unfold sArr; omega_arith),
     hl (sArr aN) (by decide), hl (sArr aAcc) (by decide), hl (sArr aTmp) (by decide), hl sW (by decide),
     hl sMinv (by decide), hH.harr o ho, hH.harr a ha, hH.harr b hb, hH.harr aN (by decide),
     hH.harr aAcc (by decide), hH.harr aTmp (by decide), hH.hw, hH.hminv]
@@ -74,12 +74,12 @@ theorem fnReadW_writeW128 (m : Mem) (a : Addr) (v : BitVec 128) {j : Nat} (hj : 
   have : (Mem.write m a 16 (BitVec.setWidth (8 * 16) v)).read (a + BitVec.ofNat 64 j) 8 = v.extractLsb' (8 * j) 64 := by
     refine Mem.read_eq_of_bytes fun i hi => ?_
     simp only [Mem.write]
-    rw [Offset.add_add, Mem.sub_ofNat_toNat a (by omega)]
-    simp only [show j + i < 16 by omega, ite_true]
+    rw [Offset.add_add, Mem.sub_ofNat_toNat a (by omega_arith)]
+    simp only [show j + i < 16 by omega_arith, ite_true]
     ext k hk
     simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth]
-    simp [show 8 * (j + i) + k < 128 by omega, show 8 * i + k < 64 by omega]
-    congr 1; omega
+    simp [show 8 * (j + i) + k < 128 by omega_arith, show 8 * i + k < 64 by omega_arith]
+    congr 1; omega_arith
   exact this
 
 theorem fnExtract_lo (hi lo : BitVec 64) : (hi ++ lo).extractLsb' 0 64 = lo := by
@@ -108,14 +108,14 @@ theorem writeW_outsideN (m : Mem) (base : Addr) {d w : Nat} (v : BitVec w) (h : 
   apply Mem.write_apply
   simp only [ofs] at hx
   have : (x - off base d).toNat = (2 ^ 64 - d + (x - base).toNat) % 2 ^ 64 :=
-    Offset.toNat_sub_add x base (by omega)
+    Offset.toNat_sub_add x base (by omega_arith)
   rw [this]
   have := (x - base).isLt
   rcases hx with hx | hx
-  · rw [Nat.mod_eq_of_lt (by omega)]; omega
-  · rw [show 2 ^ 64 - d + (x - base).toNat = (x - base).toNat - d + 2 ^ 64 by omega,
-      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
-    omega
+  · rw [Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
+  · rw [show 2 ^ 64 - d + (x - base).toNat = (x - base).toNat - d + 2 ^ 64 by omega_arith,
+      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
 
 /-- `leave`: the callee-saved registers from `xmm0`–`xmm2`, through the
 first four words of the accumulator and two of the temporary. -/
@@ -129,7 +129,7 @@ theorem fnLeave_ok {t : State} {B : Addr} {Z w : Nat} (hs : Scr t B Z) (hZ : slo
   have hn := hs.nowrap
   have sa := slot_le (w := w) (show aAcc < 8 by decide)
   have st := slot_le (w := w) (show aTmp < 8 by decide)
-  have sat : slot w aAcc + 8 * (w + 2) ≤ slot w aTmp := by unfold slot aAcc aTmp; omega
+  have sat : slot w aAcc + 8 * (w + 2) ≤ slot w aTmp := by unfold slot aAcc aTmp; omega_arith
   have hst : ∀ {d n}, d + n ≤ Z → 0 < n → InRegions t.wr (off B d) n := fun {d n} h hn =>
     let ⟨_, hm, hc⟩ := hs.region (d := d) (n := n) (by simpa using h) hn
     ⟨_, hm, by simpa [off] using hc⟩
@@ -145,19 +145,19 @@ theorem fnLeave_ok {t : State} {B : Addr} {Z w : Nat} (hs : Scr t B Z) (hZ : slo
       Mem.Sep (off B d) (64 / 8) (off B e) (128 / 8) := fun h h₁ h₂ => Offset.sep B h h₁ h₂
   have r₀ : m₃.readW (off B (slot w aAcc)) 64 = (t.xmm .xmm0).extractLsb' 0 64 := by
     simp only [m₃]
-    rw [Mem.readW_writeW_sep (sep (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep (by omega) (by omega) (by omega)) (by decide), word_lo128]
+    rw [Mem.readW_writeW_sep (sep (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep (by omega_arith) (by omega_arith) (by omega_arith)) (by decide), word_lo128]
   have r₁ : m₃.readW (off B (slot w aAcc + 8)) 64 = (t.xmm .xmm0).extractLsb' 64 64 := by
     simp only [m₃]
-    rw [Mem.readW_writeW_sep (sep (by omega) (by omega) (by omega)) (by decide),
-      Mem.readW_writeW_sep (sep (by omega) (by omega) (by omega)) (by decide), word_hi128]
+    rw [Mem.readW_writeW_sep (sep (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      Mem.readW_writeW_sep (sep (by omega_arith) (by omega_arith) (by omega_arith)) (by decide), word_hi128]
   have r₂ : m₃.readW (off B (slot w aAcc + 16)) 64 = (t.xmm .xmm1).extractLsb' 0 64 := by
     simp only [m₃]
-    rw [Mem.readW_writeW_sep (sep (by omega) (by omega) (by omega)) (by decide), word_lo128]
+    rw [Mem.readW_writeW_sep (sep (by omega_arith) (by omega_arith) (by omega_arith)) (by decide), word_lo128]
   have r₃ : m₃.readW (off B (slot w aAcc + 24)) 64 = (t.xmm .xmm1).extractLsb' 64 64 := by
     simp only [m₃]
-    rw [Mem.readW_writeW_sep (sep (by omega) (by omega) (by omega)) (by decide),
-      show slot w aAcc + 24 = slot w aAcc + 16 + 8 by omega, word_hi128]
+    rw [Mem.readW_writeW_sep (sep (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+      show slot w aAcc + 24 = slot w aAcc + 16 + 8 by omega_arith, word_hi128]
   have r₄ : m₃.readW (off B (slot w aTmp)) 64 = (t.xmm .xmm2).extractLsb' 0 64 := word_lo128 _ _ _ _
   have r₅ : m₃.readW (off B (slot w aTmp + 8)) 64 = (t.xmm .xmm2).extractLsb' 64 64 := word_hi128 _ _ _ _
   refine WP.mono (WP.keep [.rbx, .rbp, .r12, .r13, .r14, .r15] (c := .block leave)
@@ -167,22 +167,22 @@ theorem fnLeave_ok {t : State} {B : Addr} {Z w : Nat} (hs : Scr t B Z) (hZ : slo
       t'.mem = m₃) ?_ rfl) fun t' ⟨⟨h1, h2, h3, h4, h5, h6, hm⟩, k⟩ => ⟨h1, h2, h3, h4, h5, h6, ?_, k⟩
   · unfold leave
     xrun [State.ea, at_, State.store128, h8, hsi, e0, e8, e16, e24,
-      hst (d := slot w aAcc) (n := 16) (by omega) (by decide),
-      hst (d := slot w aAcc + 16) (n := 16) (by omega) (by decide),
-      hst (d := slot w aTmp) (n := 16) (by omega) (by decide), hld (d := slot w aAcc) (by omega),
-      hld (d := slot w aAcc + 8) (by omega), hld (d := slot w aAcc + 16) (by omega),
-      hld (d := slot w aAcc + 24) (by omega), hld (d := slot w aTmp) (by omega),
-      hld (d := slot w aTmp + 8) (by omega)]
+      hst (d := slot w aAcc) (n := 16) (by omega_arith) (by decide),
+      hst (d := slot w aAcc + 16) (n := 16) (by omega_arith) (by decide),
+      hst (d := slot w aTmp) (n := 16) (by omega_arith) (by decide), hld (d := slot w aAcc) (by omega_arith),
+      hld (d := slot w aAcc + 8) (by omega_arith), hld (d := slot w aAcc + 16) (by omega_arith),
+      hld (d := slot w aAcc + 24) (by omega_arith), hld (d := slot w aTmp) (by omega_arith),
+      hld (d := slot w aTmp + 8) (by omega_arith)]
     exact ⟨r₀, r₁, r₂, r₃, r₄, r₅, rfl⟩
   · rw [hm]
-    have o₁ := writeW_outsideN t.mem B (d := slot w aAcc) (t.xmm .xmm0) (by omega) (by decide)
+    have o₁ := writeW_outsideN t.mem B (d := slot w aAcc) (t.xmm .xmm0) (by omega_arith) (by decide)
     have o₂ := writeW_outsideN (t.mem.writeW (off B (slot w aAcc)) (t.xmm .xmm0)) B
-      (d := slot w aAcc + 16) (t.xmm .xmm1) (by omega) (by decide)
+      (d := slot w aAcc + 16) (t.xmm .xmm1) (by omega_arith) (by decide)
     have o₃ := writeW_outsideN ((t.mem.writeW (off B (slot w aAcc)) (t.xmm .xmm0)).writeW
-      (off B (slot w aAcc + 16)) (t.xmm .xmm1)) B (d := slot w aTmp) (t.xmm .xmm2) (by omega) (by decide)
-    refine ((Arrays.of_outside (j := aAcc) (by simp) o₁ (Nat.le_refl _) (by omega)).trans
-      (Arrays.of_outside (j := aAcc) (by simp) o₂ (by omega) (by omega))).trans
-      (Arrays.of_outside (j := aTmp) (by simp) o₃ (Nat.le_refl _) (by omega))
+      (off B (slot w aAcc + 16)) (t.xmm .xmm1)) B (d := slot w aTmp) (t.xmm .xmm2) (by omega_arith) (by decide)
+    refine ((Arrays.of_outside (j := aAcc) (by simp) o₁ (Nat.le_refl _) (by omega_arith)).trans
+      (Arrays.of_outside (j := aAcc) (by simp) o₂ (by omega_arith) (by omega_arith))).trans
+      (Arrays.of_outside (j := aTmp) (by simp) o₃ (Nat.le_refl _) (by omega_arith))
 
 /-- `vg_rsa_mont_mul`'s code: `[o] = [a] [b] R⁻¹ mod m` for the arrays whose
 indices are in `edx`, `ecx` and `r8d`, as `montMul` computes it, changing
@@ -212,7 +212,7 @@ theorem mulBase_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : S
   refine WP.mono (fnLeave_ok (hs₁.congr k₂.2.2) hZ hw ((k₂'.gpr (by decide)).trans h8₁) ((k₂'.gpr (by decide)).trans hsi₁))
     fun t ⟨r1, r2, r3, r4, r5, r6, har₂, k₃⟩ => ?_
   have hv : wv t.mem B (slot w o) w = wv s₂.mem B (slot w o) w :=
-    har₂.wv_of_not_mem ho (by simp [ho1, ho2]) (by omega)
+    har₂.wv_of_not_mem ho (by simp [ho1, ho2]) (by omega_arith)
   rw [hm₁] at hlt heq har
   refine ⟨by rw [hv]; exact hlt, by rw [hv]; exact heq, har.trans (har₂.mono (by simp)),
     ((k₁.trans k₂).trans k₃).mono (by decide), ?_⟩

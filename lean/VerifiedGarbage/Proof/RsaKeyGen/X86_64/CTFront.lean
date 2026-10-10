@@ -88,7 +88,7 @@ structure FDims (q : FPub) : Prop where
   pl : q.pl = 0 ∨ q.pl = 8 * q.w
 
 theorem FDims.td {q : FPub} (h : FDims q) : TDims q.tp :=
-  ⟨by have := h.z; unfold slot aTab at *; dsimp only; omega, by have := h.z; unfold slot aTab aRm1 at *; dsimp only; omega,
+  ⟨by have := h.z; unfold slot aTab at *; dsimp only; omega_arith, by have := h.z; unfold slot aTab aRm1 at *; dsimp only; omega_arith,
     h.w4, h.w64⟩
 
 /-- Between the stages: `Good`, the header words, the candidate in `aN`, the
@@ -125,8 +125,8 @@ theorem KSt.step {q : FPub} {s t : State} {rs : List (Nat × Nat)} {regs : List 
   refine ⟨hk, k.2.2.trans hw, hd, mi', pB, r, hg', fun e he => ?_, ?_, hp.congrK hin k, he.congrK hin k,
     hr.congrK hin k, hpl, hrl, hS⟩
   · have := avs_le e he
-    rw [hf.word_eq (fun r hr => Or.inl (by have := h208 r hr; omega)) (by omega)]; exact ha e he
-  · rw [hf.wv_eq hN (by unfold slot aTab at *; omega)]; exact hc
+    rw [hf.word_eq (fun r hr => Or.inl (by have := h208 r hr; omega_arith)) (by omega_arith)]; exact ha e he
+  · rw [hf.wv_eq hN (by unfold slot aTab at *; omega_arith)]; exact hc
 
 /-- The words of `avs`. -/
 structure AvsW (q : FPub) (m : Mem) : Prop where
@@ -159,12 +159,12 @@ theorem KSt.cand {q : FPub} {s : State} (h : KSt q s) :
 
 theorem cand_shape {w : Nat} (hw : 4 ≤ w) (x : Nat) :
     VG.Proof.RsaKeyGen.PrimeShape (64 * w) (Spec.RsaKeyGen.candidate (64 * w) x) :=
-  VG.Proof.RsaKeyGen.candidate_shape (by omega) _
+  VG.Proof.RsaKeyGen.candidate_shape (by omega_arith) _
 
 theorem cand_gt {w : Nat} (hw : 4 ≤ w) (x : Nat) : 8161 < Spec.RsaKeyGen.candidate (64 * w) x := by
   obtain ⟨_, hlo, _⟩ := cand_shape hw x
-  have : 2 ^ 13 ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by omega)
-  omega
+  have : 2 ^ 13 ≤ 2 ^ (64 * w - 2) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  omega_arith
 
 /-- `closeCheck`, from `KSt`: ZF clear iff the candidate is too close. -/
 theorem closeStage_ok {q : FPub} {s : State} (h : KSt q s) :
@@ -173,16 +173,16 @@ theorem closeStage_ok {q : FPub} {s : State} (h : KSt q s) :
   have hd := h.2.2.1
   have hz := hd.z
   have hw4 := hd.w4
-  have hZ : slot q.w 8 ≤ q.Z := by unfold slot aTab at *; omega
+  have hZ : slot q.w 8 ≤ q.Z := by unfold slot aTab at *; omega_arith
   have hsch : q.sch.close = Spec.RsaKeyGen.tooClose (64 * q.w) (Spec.RsaKeyGen.otherPrime pB)
       (Spec.RsaKeyGen.candidate (64 * q.w) (Spec.Rsa.os2ip (r.take (8 * q.w)))) := by
-    rw [← hS, sched_close, show 8 * (8 * q.w) = 64 * q.w by omega]
+    rw [← hS, sched_close, show 8 * (8 * q.w) = 64 * q.w by omega_arith]
   have ha' := avsW_of ha
   refine WP.mono (closeCheck_ok hg hZ hw4 hd.w64 ha'.p ha'.len (by rw [hpl]; exact ha'.plen)
     (by rw [hpl]; exact hd.pl) hp) fun t ⟨hzf, hgt, hf, k⟩ => ⟨?_, ?_⟩
   · refine h.step ⟨mi, hgt⟩ hf (by simp only [closeRanges]; rng_le) (fun r hr => ?_) (by simp only [closeRanges]; rng_disj) k
     have : r.1 + r.2 ≤ slot q.w aTab + 2048 := by revert r hr; simp only [closeRanges]; rng_le
-    omega
+    omega_arith
   · rw [hzf, hc, hsch]
 
 /-- `trial`, from `KSt` and a candidate not too close: ZF clear iff it is
@@ -193,16 +193,16 @@ theorem trialStage_ok {q : FPub} {s : State} (h : KSt q s) (hcl : q.sch.close = 
   have hd := h.2.2.1
   have hz := hd.z
   have hw4 := hd.w4
-  have hZ : slot q.w 8 ≤ q.Z := by unfold slot aTab at *; omega
+  have hZ : slot q.w 8 ≤ q.Z := by unfold slot aTab at *; omega_arith
   have hcl' := hcl
   rw [← hS, sched_close] at hcl'
   have hsch : q.sch.comp = Spec.RsaKeyGen.obviouslyComposite (64 * q.w)
       (Spec.RsaKeyGen.candidate (64 * q.w) (Spec.Rsa.os2ip (r.take (8 * q.w)))) := by
-    rw [← hS, sched_comp hcl', show 8 * (8 * q.w) = 64 * q.w by omega]
-  refine WP.mono (trial_ok hg hZ hz (by omega) hd.w64) fun t ⟨hzf, hgt, hf, k⟩ => ⟨?_, ?_⟩
+    rw [← hS, sched_comp hcl', show 8 * (8 * q.w) = 64 * q.w by omega_arith]
+  refine WP.mono (trial_ok hg hZ hz (by omega_arith) hd.w64) fun t ⟨hzf, hgt, hf, k⟩ => ⟨?_, ?_⟩
   · refine h.step ⟨mi, hgt⟩ hf (by rng_le) (fun r hr => ?_) (by rng_disj) k
     have : r.1 + r.2 ≤ slot q.w aTab + 2048 := by revert r hr; rng_le
-    omega
+    omega_arith
   · rw [hzf, hc, trialAny_eq (cand_gt hw4 _), hsch]
 
 /-- `gcdCheck`, from `KSt` and a candidate neither too close nor obviously
@@ -213,23 +213,23 @@ theorem gcdStage_ok {q : FPub} {s : State} (h : KSt q s) (hcl : q.sch.close = fa
   have hd := h.2.2.1
   have hz := hd.z
   have hw4 := hd.w4
-  have hZ : slot q.w 8 ≤ q.Z := by unfold slot aTab at *; omega
+  have hZ : slot q.w 8 ≤ q.Z := by unfold slot aTab at *; omega_arith
   have hcl' := hcl
   rw [← hS, sched_close] at hcl'
   have hco' := hco
   rw [← hS, sched_comp hcl'] at hco'
   have hsch : q.sch.gbad = !(Nat.gcd (Spec.RsaKeyGen.candidate (64 * q.w) (Spec.Rsa.os2ip (r.take (8 * q.w))) - 1)
       (Spec.Rsa.os2ip q.eB) == 1) := by
-    rw [← hS, sched_gbad hcl' hco', show 8 * (8 * q.w) = 64 * q.w by omega]
+    rw [← hS, sched_gbad hcl' hco', show 8 * (8 * q.w) = 64 * q.w by omega_arith]
   obtain ⟨hodd, -, -⟩ := cand_shape hw4 (Spec.Rsa.os2ip (r.take (8 * q.w)))
   have h3 := cand_gt hw4 (Spec.Rsa.os2ip (r.take (8 * q.w)))
   have ha' := avsW_of ha
   have := hd.w64
-  refine WP.mono (gcdCheck_ok hg hZ (by omega) (by omega) (by rw [hc]; exact hodd) (by rw [hc]; omega)
+  refine WP.mono (gcdCheck_ok hg hZ (by omega_arith) (by omega_arith) (by rw [hc]; exact hodd) (by rw [hc]; omega_arith)
     ha'.e ha'.elen hd.el1 hd.el8 he) fun t ⟨hzf, hgt, hf, k⟩ => ⟨?_, ?_⟩
   · refine h.step ⟨mi, hgt⟩ hf (by rng_le) (fun r hr => ?_) (by rng_disj) k
     have : r.1 + r.2 ≤ slot q.w aTab + 2048 := by revert r hr; rng_le
-    omega
+    omega_arith
   · rw [hzf, hc, hsch, decide_gcd]
 
 /-- Montgomery setup's precondition, from `KSt` and a candidate that passed
@@ -249,14 +249,14 @@ theorem tailPre {q : FPub} {s : State} (h : KSt q s) (hcl : q.sch.close = false)
   have hres : mrRest (Spec.RsaKeyGen.candidate (64 * q.w) (Spec.Rsa.os2ip (r.take (8 * q.w))))
       (Proof.RsaKeyGen.checksW q.w) r 1 0 (8 * q.w) = Spec.RsaKeyGen.primalityTest
         (Spec.RsaKeyGen.candidate (64 * q.w) (Spec.Rsa.os2ip (r.take (8 * q.w)))) (r.drop (8 * q.w)) := by
-    rw [VG.Proof.RsaKeyGen.primalityTest_cand (by omega) hsh, checksW_eq q.w (by have := hd.w64; omega) hw4]
+    rw [VG.Proof.RsaKeyGen.primalityTest_cand (by omega_arith) hsh, checksW_eq q.w (by have := hd.w64; omega_arith) hw4]
   have ha' := avsW_of ha
   refine ⟨h.gw, hd.rl, mi, _, r, hg, hc, hsh, ha'.out, ha'.usedP, ha'.rand, ha'.len, by rw [hrl]; exact ha'.rlen,
     ha'.used, hr, hrl,
     by rw [hrl]; exact hd.rk, ?_⟩
   rw [hres]
   have := sched_mr hcl' hco' hgb'
-  rw [hS, show 8 * (8 * q.w) = 64 * q.w by omega] at this
+  rw [hS, show 8 * (8 * q.w) = 64 * q.w by omega_arith] at this
   exact this.symm
 
 /-! ## `closeCheck` -/
@@ -293,8 +293,8 @@ theorem closeLoad_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg :
         .mov .rbx (.mem (hdr (sArr aX)))], loadBE]) s fun t => Good t B Z w minv ∧ t.wr = s.wr := by
   have hn := hg.scr.nowrap
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
-  have hw8 : (8 * w + 7) / 8 = w := by omega
+    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_arith)
+  have hw8 : (8 * w + 7) / 8 = w := by omega_arith
   simp only [seqs]
   refine WP.seq (WP.mono (WP.keep [.r12, .rsi, .rcx, .rbx] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 w ∧
       t.gpr .rsi = pP ∧ t.gpr .rcx = BitVec.ofNat 64 (8 * w) ∧ t.gpr .rbx = off B (slot w aX) ∧ t.mem = s.mem) (by
@@ -303,7 +303,7 @@ theorem closeLoad_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg :
     fun s₁ ⟨⟨_, hsi₁, hcx₁, hbx₁, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hg.scr.congr k₁.2.2
   refine WP.mono (loadArr_ok (j := aX) hs₁ (by decide) (by rw [hw8]; exact hZ)
-    (hsrc.congrK (by rw [hm₁]; exact InScr.refl _ _ _) k₁) hpl (by omega) (by omega) hsi₁ hcx₁
+    (hsrc.congrK (by rw [hm₁]; exact InScr.refl _ _ _) k₁) hpl (by omega_arith) (by omega_arith) hsi₁ hcx₁
     (by rw [hw8]; exact hbx₁)) fun s₂ ⟨_, ha₂, k₂⟩ => ?_
   rw [hw8] at ha₂
   exact ⟨⟨hs₁.congr k₂.2.2, (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hg.rdi),
@@ -324,7 +324,7 @@ theorem closeCheck_ct : RelCT isa (Two KSt) (seqs closeCheck) fun _ _ => True :=
     have hd := h.2.2.1
     have hn := hg.scr.nowrap
     have hl : InRegions (s.rd ++ s.wr) (off q.B (8 * kPlen)) 8 :=
-      hg.scr.ld (by have := hdr_lt_slot q.w 8 (show kPlen < 32 by decide); have := hd.z; unfold slot aTab at *; omega)
+      hg.scr.ld (by have := hdr_lt_slot q.w 8 (show kPlen < 32 by decide); have := hd.z; unfold slot aTab at *; omega_arith)
     refine WP.mono (WP.keep [.rax, .rbp] (Q := fun t => t.zf = some (BitVec.ofNat 64 q.pl == 0) ∧ t.mem = s.mem) (by
       xrun [State.ea, hdr, hg.rdi, hdrOff, hl, (avsW_of ha).plen, BitVec.and_self]) rfl)
       fun t ⟨⟨hz, hm⟩, k⟩ => ⟨h.congr hm k (k.gpr (by decide)), hz⟩
@@ -342,24 +342,24 @@ theorem closeCheck_ct : RelCT isa (Two KSt) (seqs closeCheck) fun _ _ => True :=
         have hd := h.2.2.1
         have hpl8 : q.pl = 8 * q.w := hd.pl.resolve_left fun h0 => by
           rw [h0] at hz; simp [eval, hz] at he
-        exact WP.mono (closeLoad_ok hg (by have := hd.z; unfold slot aTab at *; omega) hd.w4 hd.w64 (avsW_of ha).p
+        exact WP.mono (closeLoad_ok hg (by have := hd.z; unfold slot aTab at *; omega_arith) hd.w4 hd.w64 (avsW_of ha).p
           (avsW_of ha).len (hpl.trans hpl8) hp) fun t ⟨hgt, hw⟩ => h.gw.of_good hgt hw
       · refine kt_piece (fun q : FPub => q.B) (fun q => q.wr) gS (fun q => gvs q.B q.w) [] (by decide)
           (fun _ => gvs_fst _ _) (fun _ _ h => h.hp) (pins_nil _) (by taint_decide) ?_
         rintro q s h
         obtain ⟨-, -, hd, mi, hg⟩ := id h
-        exact WP.mono (diff_ok hg hd.z (by have := hd.w4; omega) (by have := hd.w64; omega))
+        exact WP.mono (diff_ok hg hd.z (by have := hd.w4; omega_arith) (by have := hd.w64; omega_arith))
           fun t ⟨b, hb, _, ho, h12, k⟩ => ⟨h.of_good ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
-            Hdr.outside hg.hdr ho (by unfold slot; omega)⟩ k.2.2, h12, b, hb⟩
+            Hdr.outside hg.hdr ho (by unfold slot; omega_arith)⟩ k.2.2, h12, b, hb⟩
     · refine kt_piece (fun q : FPub => q.B) (fun q => q.wr) gS (fun q => gvs q.B q.w) [.r12] (by decide)
         (fun _ => gvs_fst _ _) (fun _ _ h => h.1.hp)
         (fun _ _ _ h₁ h₂ r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.1, h₂.2.1])
         (by taint_decide) ?_
       rintro q s ⟨h, h12, b, hb⟩
       obtain ⟨-, -, hd, mi, hg⟩ := id h
-      exact WP.mono (neg_ok hg hd.z (by have := hd.w4; omega) (by have := hd.w64; omega) hb h12)
+      exact WP.mono (neg_ok hg hd.z (by have := hd.w4; omega_arith) (by have := hd.w64; omega_arith) hb h12)
         fun t ⟨_, ho, k⟩ => h.of_good ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
-          Hdr.outside hg.hdr ho (by unfold slot; omega)⟩ k.2.2
+          Hdr.outside hg.hdr ho (by unfold slot; omega_arith)⟩ k.2.2
 
 /-! ## `gcdCheck` -/
 
@@ -377,7 +377,7 @@ theorem gcdFront_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : 
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s₁.mem.writeW (off B (8 * kG)) (s₁.gpr .rbx) ∧
       t.zf = some (decide (Spec.Rsa.os2ip eB % 2 = 0)) ∧ t.gpr .rbx = s₁.gpr .rbx) (by
     have hst : InRegions s₁.wr (off B (8 * kG)) 8 := by
-      rw [k₁.2.2]; exact hg.scr.st (by have := hdr_lt_slot w 8 (show kG < 32 by decide); omega)
+      rw [k₁.2.2]; exact hg.scr.st (by have := hdr_lt_slot w 8 (show kG < 32 by decide); omega_arith)
     xrun [State.ea, hdr, hg₁.rdi, hdrOff, hst, sx1]
     rw [← hbx₁]
     refine Bool.eq_iff_iff.mpr ?_
@@ -408,7 +408,7 @@ theorem gcdCheck_ct {Φ : FPub → State → Prop} (hΦ : ∀ q s, Φ q s → KS
     have h := hΦ q s h
     obtain ⟨mi, -, -, hg, ha, -, -, he, -⟩ := h.cand
     have hd := h.2.2.1
-    exact WP.mono (gcdFront_ok hg (by have := hd.z; unfold slot aTab at *; omega) (avsW_of ha).e (avsW_of ha).elen
+    exact WP.mono (gcdFront_ok hg (by have := hd.z; unfold slot aTab at *; omega_arith) (avsW_of ha).e (avsW_of ha).elen
       hd.el1 hd.el8 he) fun t ⟨hgt, hw, hz, hbx⟩ => ⟨⟨h.gw.of_good hgt hw, hbx, hd.el8⟩, hz⟩
   refine two_ite_seq (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_
   · exact kt_ct (fun q : FPub => q.B) (fun q => q.wr) gS (fun q => gvs q.B q.w) [] (by decide) (fun _ => gvs_fst _ _)
@@ -514,7 +514,7 @@ theorem K0.hp {q : FPub} {s : State} (h : K0 q s) : KW q.B q.wr ∧ HP q.B q.wr 
 theorem K0.src {q : FPub} {s : State} {pB r : List Byte}
     (h : MainCtx s q.B q.Z (8 * q.w) q.op q.up q.eP q.pP q.rP q.eB pB r) :
     Src s q.B q.Z q.rP (r.take (8 * q.w)) := by
-  have := VG.Proof.RsaKeyGen.X86_64.Src.seg h.rsrc (a := 0) (n := 8 * q.w) (by have := h.rk; omega)
+  have := VG.Proof.RsaKeyGen.X86_64.Src.seg h.rsrc (a := 0) (n := 8 * q.w) (by have := h.rk; omega_arith)
   rwa [seg_zero, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero] at this
 
 /-- `loadC`, from `K0`. -/
@@ -524,19 +524,19 @@ theorem loadCStage_ok {q : FPub} {s : State} (h : K0 q s) : WP isa (seqs loadC) 
   have hz := hd.z
   have hw4 := hd.w4
   have hw64 := hd.w64
-  have hw8 : 8 * q.w / 8 = q.w := by omega
-  refine WP.mono (loadC_ok hm.scr hm.rdi (by rw [hw8]; unfold slot aTab at *; omega) (by omega) (by omega) (by omega)
-    hm.len hm.rand (K0.src hm) (by simp; have := hm.rk; omega)) fun t ⟨hc, hU, hW, hA, hf, hdi, _, k⟩ => ?_
+  have hw8 : 8 * q.w / 8 = q.w := by omega_arith
+  refine WP.mono (loadC_ok hm.scr hm.rdi (by rw [hw8]; unfold slot aTab at *; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    hm.len hm.rand (K0.src hm) (by simp; have := hm.rk; omega_arith)) fun t ⟨hc, hU, hW, hA, hf, hdi, _, k⟩ => ?_
   rw [hw8] at hc hW hA hf
-  rw [show 8 * (8 * q.w) = 64 * q.w by omega] at hc
+  rw [show 8 * (8 * q.w) = 64 * q.w by omega_arith] at hc
   have hsl : ∀ r ∈ loadCRanges q.w, r.1 + r.2 ≤ q.Z := fun r hr => by
     have : r.1 + r.2 ≤ slot q.w aTab + 2048 := by revert r hr; simp only [loadCRanges]; rng_le
-    omega
+    omega_arith
   have hin := InScr.of_frm hf hsl
   have hh : ∀ {i}, i = kOut ∨ i = kLen ∨ i = kUsedP ∨ i = kE ∨ i = kElen ∨ i = kP ∨ i = kPlen ∨ i = kRand ∨
       i = kRandLen → word t.mem q.B (8 * i) = word s.mem q.B (8 * i) := fun {i} hi => by
     have hi32 : i < 32 := by rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    refine hf.word_eq ?_ (by omega)
+    refine hf.word_eq ?_ (by omega_arith)
     simp only [loadCRanges]
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rng_disj
   refine ⟨hk, k.2.2.trans hw, hd, word t.mem q.B (8 * sMinv), pB, r, ⟨hm.scr.congr k.2.2, hdi, ⟨hW, rfl, hA⟩⟩,
@@ -572,9 +572,9 @@ theorem loadC_ct : RelCT isa (Two K0) (seqs loadC) fun _ _ => True := by
   have hz := hd.z
   have hw4 := hd.w4
   have hw64 := hd.w64
-  have hw8 : 8 * q.w / 8 = q.w := by omega
-  refine WP.mono (loadCFront_ok hm.scr hm.rdi (by rw [hw8]; unfold slot aTab at *; omega) (by omega) (by omega)
-    (by omega) hm.len hm.rand (K0.src hm) (by simp; have := hm.rk; omega)) fun t ⟨_, _, hdi, hW, hA, hhd, _, k⟩ => ?_
+  have hw8 : 8 * q.w / 8 = q.w := by omega_arith
+  refine WP.mono (loadCFront_ok hm.scr hm.rdi (by rw [hw8]; unfold slot aTab at *; omega_arith) (by omega_arith) (by omega_arith)
+    (by omega_arith) hm.len hm.rand (K0.src hm) (by simp; have := hm.rk; omega_arith)) fun t ⟨_, _, hdi, hW, hA, hhd, _, k⟩ => ?_
   rw [hw8] at hW hA
   refine ⟨hk, hdi, k.2.2.trans hw, fun e he => ?_⟩
   simp only [lvs, List.mem_cons, List.not_mem_nil, or_false] at he
