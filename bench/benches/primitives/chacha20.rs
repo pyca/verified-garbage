@@ -4,17 +4,33 @@
 //! protection (one 5-byte mask), not as a stream cipher, so there is nothing
 //! of its to compare with.
 
-use std::hint::black_box;
-
-use criterion::{BenchmarkId, Criterion, Throughput};
-use openssl::symm::{Cipher, Crypter, Mode};
-use verified_garbage::chacha20::ChaCha20;
-
-use crate::{OPENSSL, SIZES, VG};
+use criterion::Criterion;
 
 pub const USES: &[&str] = &["chacha20"];
 
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+)))]
+pub fn bench(_: &mut Criterion) {}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 pub fn bench(c: &mut Criterion) {
+    use std::hint::black_box;
+
+    use criterion::{BenchmarkId, Throughput};
+    use openssl::symm::{Cipher, Crypter, Mode};
+    use verified_garbage::chacha20::ChaCha20;
+
+    use crate::{OPENSSL, SIZES, VG};
+
     let key = [0x42; 32];
     let nonce = [0x24; 16];
     let mut g = c.benchmark_group("chacha20");

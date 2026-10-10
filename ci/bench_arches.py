@@ -815,6 +815,10 @@ def arches(changed, base=None):
                     need(a, module)
         elif asm and asm[1] in PLATFORMS:
             need_asm(asm[1], asm[2])
+        elif asm:
+            # The assembly of an architecture that is not benchmarked (e.g.
+            # PPC64LE) needs no benchmark.
+            pass
         elif path == HASHES:
             for a in targets:
                 for name in hashes():
