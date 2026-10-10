@@ -20,7 +20,7 @@ theorem getLsbD_byteRev64 (w : BitVec 64) {i : Nat} (hi : i < 64) :
     (byteRev64 w).getLsbD i = w.getLsbD (8 * (7 - i / 8) + i % 8) := by
   have hj : i % 8 < 8 := Nat.mod_lt _ (by decide)
   simp only [byteRev64, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  split_ifs <;> (rw [decide_eq_true (by omega_arith), Bool.true_and]; congr 1; omega_arith)
+  split_ifs <;> (rw [decide_eq_true (by omega), Bool.true_and]; congr 1; omega)
 
 theorem getLsbD_foldl_bytes (L : List Byte) (init : BitVec 64) {i : Nat} (hi : i < 64) :
     (L.foldl (fun (out : BitVec 64) (byte : Byte) => (out <<< 8) ||| byte.zeroExtend 64) init).getLsbD i =
@@ -32,22 +32,22 @@ theorem getLsbD_foldl_bytes (L : List Byte) (init : BitVec 64) {i : Nat} (hi : i
     rw [List.foldl_cons, ih]
     simp only [List.length_cons, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth]
     by_cases h₁ : i < 8 * L.length
-    · rw [ite_eq_left h₁, ite_eq_left (by omega_arith)]
-      rw [show L.length + 1 - 1 - i / 8 = (L.length - 1 - i / 8) + 1 by omega_arith]
+    · rw [ite_eq_left h₁, ite_eq_left (by omega)]
+      rw [show L.length + 1 - 1 - i / 8 = (L.length - 1 - i / 8) + 1 by omega]
       simp
     · rw [ite_eq_right h₁]
       by_cases h₂ : i < 8 * (L.length + 1)
-      · rw [ite_eq_left h₂, show L.length + 1 - 1 - i / 8 = 0 by omega_arith, decide_eq_true (by omega_arith : i - 8 * L.length < 64),
-          decide_eq_true (by omega_arith : i - 8 * L.length < 8), show i - 8 * L.length = i % 8 by omega_arith]
+      · rw [ite_eq_left h₂, show L.length + 1 - 1 - i / 8 = 0 by omega, decide_eq_true (by omega : i - 8 * L.length < 64),
+          decide_eq_true (by omega : i - 8 * L.length < 8), show i - 8 * L.length = i % 8 by omega]
         simp
-      · rw [ite_eq_right h₂, decide_eq_true (by omega_arith : i - 8 * L.length < 64),
-          decide_eq_false (by omega_arith : ¬ i - 8 * L.length < 8), BitVec.getLsbD_of_ge b _ (by omega_arith),
-          show i - 8 * L.length - 8 = i - 8 * (L.length + 1) by omega_arith]
+      · rw [ite_eq_right h₂, decide_eq_true (by omega : i - 8 * L.length < 64),
+          decide_eq_false (by omega : ¬ i - 8 * L.length < 8), BitVec.getLsbD_of_ge b _ (by omega),
+          show i - 8 * L.length - 8 = i - 8 * (L.length + 1) by omega]
         simp
 
 theorem getLsbD_decode (v : Block) {i : Nat} (hi : i < 64) :
     (decodeBlock v).getLsbD i = (v.toList.getD (7 - i / 8) 0).getLsbD (i % 8) := by
-  rw [decodeBlock, getLsbD_foldl_bytes _ _ hi, Vector.length_toList, ite_eq_left (by omega_arith)]
+  rw [decodeBlock, getLsbD_foldl_bytes _ _ hi, Vector.length_toList, ite_eq_left (by omega)]
 
 theorem getD_le8_bit (w : BitVec 64) {k j : Nat} (hk : k < 8) (hj : j < 8) :
     ((le8 w).getD k 0).getLsbD j = w.getLsbD (8 * k + j) := by
@@ -58,8 +58,8 @@ theorem decode_le8 (w : BitVec 64) : decodeBlock (Vector.ofFn fun i => (le8 w).g
   intro i hi
   rw [getLsbD_decode _ hi, getLsbD_byteRev64 _ hi, Vector.toList_ofFn, List.getD_eq_getElem?_getD,
     List.getElem?_ofFn]
-  simp only [show 7 - i / 8 < 8 by omega_arith, dite_true, Option.getD_some]
-  rw [getD_le8_bit _ (by omega_arith) (Nat.mod_lt _ (by decide))]
+  simp only [show 7 - i / 8 < 8 by omega, dite_true, Option.getD_some]
+  rw [getD_le8_bit _ (by omega) (Nat.mod_lt _ (by decide))]
 
 theorem encode_le8 (y : BitVec 64) : (encodeBlock y).toList = le8 (byteRev64 y) := by
   apply List.ext_getElem (by simp [le8])
@@ -68,9 +68,9 @@ theorem encode_le8 (y : BitVec 64) : (encodeBlock y).toList = le8 (byteRev64 y) 
   simp only [le8, List.getElem_map, List.getElem_range, encodeBlock, Vector.toList_ofFn, List.getElem_ofFn]
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
-  rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, getLsbD_byteRev64 _ (by omega_arith),
+  rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, getLsbD_byteRev64 _ (by omega),
     BitVec.getLsbD_setWidth, decide_eq_true hj, Bool.true_and, BitVec.getLsbD_ushiftRight]
-  congr 1; omega_arith
+  congr 1; omega
 
 theorem tdesWith_le8 (S : Schedule) (w : BitVec 64) :
     Spec.Cmac.tdesWith S (le8 w) = le8 (byteRev64 (tdes S (byteRev64 w))) := by
@@ -80,8 +80,8 @@ theorem tdesWith_le8 (S : Schedule) (w : BitVec 64) :
 /-- Bit `j` of byte `k` of a block as a big-endian integer. -/
 theorem le8_rev_bit (y : BitVec 64) {k j : Nat} (hk : k < 8) (hj : j < 8) :
     ((le8 (byteRev64 y)).getD k 0).getLsbD j = y.getLsbD (8 * (7 - k) + j) := by
-  rw [getD_le8_bit _ hk hj, getLsbD_byteRev64 _ (by omega_arith)]
-  congr 1; omega_arith
+  rw [getD_le8_bit _ hk hj, getLsbD_byteRev64 _ (by omega)]
+  congr 1; omega
 
 /-- The 64-bit doubling. -/
 def dbl64 (y : BitVec 64) : BitVec 64 := (y <<< 1) ^^^ (if y.msb then 0x1b else 0)
@@ -90,7 +90,7 @@ theorem ext8 {x y : List Byte} (hx : x.length = 8) (hy : y.length = 8)
     (h : ∀ k < 8, x.getD k 0 = y.getD k 0) : x = y := by
   apply List.ext_getElem (by rw [hx, hy])
   intro k h₁ h₂
-  have := h k (by omega_arith)
+  have := h k (by omega)
   simpa [List.getD_eq_getElem?_getD, h₁, h₂] using this
 
 theorem getD_rb8 : ∀ k < 8, (rb 8).getD k 0 = if k = 7 then 0x1b else 0 := by decide
@@ -135,18 +135,18 @@ theorem dbl_le8 (y : BitVec 64) : dbl 8 (le8 (byteRev64 y)) = le8 (byteRev64 (db
     · simp
   rcases Nat.lt_or_ge k 7 with hk7 | hk7
   · have hm0 : (if y.msb = true then (if k = 7 then (0x1b : Byte) else 0) else 0).getLsbD j = false := by
-      simp [show k ≠ 7 by omega_arith]
+      simp [show k ≠ 7 by omega]
     have hnext : ((le8 (byteRev64 y)).drop 1 ++ [0]).getD k 0 = (le8 (byteRev64 y)).getD (k + 1) 0 := by
       simp [List.getD_eq_getElem?_getD, List.getElem?_append, hL, hk7,
-        List.getElem?_eq_getElem (show k + 1 < (le8 (byteRev64 y)).length by omega_arith)]
-    rw [hm0, hm _ (by omega_arith), Bool.xor_false, Bool.xor_false, hnext]
+        List.getElem?_eq_getElem (show k + 1 < (le8 (byteRev64 y)).length by omega)]
+    rw [hm0, hm _ (by omega), Bool.xor_false, Bool.xor_false, hnext]
     rcases Nat.eq_zero_or_pos j with rfl | hj0
-    · rw [show 8 * (7 - k) + 0 - 1 = 8 * (7 - (k + 1)) + 7 by omega_arith, ← le8_rev_bit y (by omega_arith) (by decide)]
-      simp [show ¬ 8 * (7 - k) < 1 by omega_arith, show 8 * (7 - k) < 64 by omega_arith]
-    · rw [show 8 * (7 - k) + j - 1 = 8 * (7 - k) + (j - 1) by omega_arith, ← le8_rev_bit y hk (by omega_arith),
-        BitVec.getLsbD_of_ge _ (7 + j) (by omega_arith)]
-      simp [show ¬ j < 1 by omega_arith, show ¬ 8 * (7 - k) + j < 1 by omega_arith, show 8 * (7 - k) + j < 64 by omega_arith]
-  · have hk' : k = 7 := by omega_arith
+    · rw [show 8 * (7 - k) + 0 - 1 = 8 * (7 - (k + 1)) + 7 by omega, ← le8_rev_bit y (by omega) (by decide)]
+      simp [show ¬ 8 * (7 - k) < 1 by omega, show 8 * (7 - k) < 64 by omega]
+    · rw [show 8 * (7 - k) + j - 1 = 8 * (7 - k) + (j - 1) by omega, ← le8_rev_bit y hk (by omega),
+        BitVec.getLsbD_of_ge _ (7 + j) (by omega)]
+      simp [show ¬ j < 1 by omega, show ¬ 8 * (7 - k) + j < 1 by omega, show 8 * (7 - k) + j < 64 by omega]
+  · have hk' : k = 7 := by omega
     subst hk'
     have hnext : ((le8 (byteRev64 y)).drop 1 ++ [0]).getD 7 0 = 0 := by
       simp [List.getD_eq_getElem?_getD, hL]
@@ -155,10 +155,10 @@ theorem dbl_le8 (y : BitVec 64) : dbl 8 (le8 (byteRev64 y)) = le8 (byteRev64 (db
     · cases hb : y.msb
       · simp
       · simp
-    · rw [show 8 * (7 - 7) + j - 1 = 8 * (7 - 7) + (j - 1) by omega_arith, ← le8_rev_bit y (k := 7) (by decide) (by omega_arith)]
+    · rw [show 8 * (7 - 7) + j - 1 = 8 * (7 - 7) + (j - 1) by omega, ← le8_rev_bit y (k := 7) (by decide) (by omega)]
       cases hb : y.msb
-      · simp [show ¬ j < 1 by omega_arith, show j < 64 by omega_arith]
-      · simp [show ¬ j < 1 by omega_arith, show j < 64 by omega_arith]
+      · simp [show ¬ j < 1 by omega, show j < 64 by omega]
+      · simp [show ¬ j < 1 by omega, show j < 64 by omega]
         exact (bit_0x1b j hj).symm
 
 end VG.Proof.CmacTripleDes

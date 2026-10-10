@@ -77,7 +77,7 @@ theorem call_ok (d : Spec.Rc2.Direction) (s : State) (hp : CallPre s) :
       hp.keyFit, hp.dataFit, hp.bufFit, ?_⟩
     rw [sub_toNat hp.stackLo]
     have := (s.gpr .esp).isLt
-    omega
+    omega_arith
   · intro a n ⟨r, hr, hc⟩
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -127,14 +127,14 @@ theorem halves {rs : List Region} {p : Addr} (h : InRegions rs p 8) :
     InRegions rs p 4 ∧ InRegions rs (p + BitVec.ofNat 64 4) 4 := by
   obtain ⟨r, hr, hc⟩ := h
   constructor
-  · exact ⟨r, hr, by unfold Region.Contains at hc ⊢; omega⟩
+  · exact ⟨r, hr, by unfold Region.Contains at hc ⊢; omega_arith⟩
   · refine ⟨r, hr, ?_⟩
     unfold Region.Contains at hc ⊢
     rw [BitVec.add_sub_comm, BitVec.toNat_add]
     have bound := Nat.mod_le ((p - r.base).toNat + (BitVec.ofNat 64 4).toNat) (2 ^ 64)
     change ((p - r.base).toNat + 4) % 2 ^ 64 + 4 ≤ r.len
     change ((p - r.base).toNat + 4) % 2 ^ 64 ≤ (p - r.base).toNat + 4 at bound
-    omega
+    omega_arith
 
 theorem loadPair_ok (s : State) (lo hi src : Reg) (a : Nat)
     (different : lo ≠ hi) (sep : src ≠ lo)
@@ -146,14 +146,14 @@ theorem loadPair_ok (s : State) (lo hi src : Reg) (a : Nat)
       Keep [lo, hi] s s' := by
   obtain ⟨rd0, rd4⟩ := halves readable
   rw [BitVec.add_assoc, ← BitVec.ofNat_add] at rd4
-  rw [runBlock_cons, exec_load s lo src a (by omega) rd0, runStep_some]
+  rw [runBlock_cons, exec_load s lo src a (by omega_arith) rd0, runStep_some]
   have rd4' : InRegions ((s.setReg lo (s.mem.readW (addr32 (s.gpr src) + BitVec.ofNat 64 a) 32)).rd ++
       (s.setReg lo (s.mem.readW (addr32 (s.gpr src) + BitVec.ofNat 64 a) 32)).wr)
       (addr32 ((s.setReg lo (s.mem.readW (addr32 (s.gpr src) + BitVec.ofNat 64 a) 32)).gpr src) +
         BitVec.ofNat 64 (a + 4)) 4 := by
     simpa only [rd_setReg, wr_setReg, gpr_setReg_of_ne _ _ sep] using rd4
   rw [runBlock_cons, exec_load _ hi src (a + 4)
-    (by rw [gpr_setReg_of_ne _ _ sep]; omega) rd4', runStep_some, runBlock_nil]
+    (by rw [gpr_setReg_of_ne _ _ sep]; omega_arith) rd4', runStep_some, runBlock_nil]
   refine ⟨_, rfl, ?_, ?_, ?_⟩
   · rw [gpr_setReg_of_ne _ _ different, gpr_setReg_self]
   · rw [gpr_setReg_self, gpr_setReg_of_ne _ _ sep, mem_setReg]
@@ -171,8 +171,8 @@ theorem storePair_ok (s : State) (lo hi dst : Reg) (b : Nat)
           (s.gpr hi ++ s.gpr lo)} s' := by
   obtain ⟨wr0, wr4⟩ := halves writable
   rw [BitVec.add_assoc, ← BitVec.ofNat_add] at wr4
-  rw [runBlock_cons, exec_store s lo dst b (by omega) wr0, runStep_some,
-    runBlock_cons, exec_store {s with mem := s.mem.writeW (addr32 (s.gpr dst) + BitVec.ofNat 64 b) (s.gpr lo)} hi dst (b + 4) (by change (s.gpr dst).toNat + (b + 4) < 2 ^ 32; omega) wr4,
+  rw [runBlock_cons, exec_store s lo dst b (by omega_arith) wr0, runStep_some,
+    runBlock_cons, exec_store {s with mem := s.mem.writeW (addr32 (s.gpr dst) + BitVec.ofNat 64 b) (s.gpr lo)} hi dst (b + 4) (by change (s.gpr dst).toNat + (b + 4) < 2 ^ 32; omega_arith) wr4,
     runStep_some, runBlock_nil]
   refine ⟨_, rfl, fun _ _ => rfl, ?_, rfl, rfl⟩
   rw [write64_pair, BitVec.add_assoc, ← BitVec.ofNat_add]
@@ -233,9 +233,9 @@ theorem xorPair_ok (s : State) (iv : Reg) (ivSep : iv ≠ .eax ∧ iv ≠ .edx)
       s'.gpr .edx = s.gpr .edx ^^^ s.mem.readW (addr32 (s.gpr iv) + BitVec.ofNat 64 4) 32 ∧
       Keep temps s s' := by
   obtain ⟨rd0, rd4⟩ := halves rd
-  rw [runBlock_cons, exec_xorMem s .eax iv 0 (by omega) (by simpa only [BitVec.add_zero] using rd0), runStep_some]
+  rw [runBlock_cons, exec_xorMem s .eax iv 0 (by omega_arith) (by simpa only [BitVec.add_zero] using rd0), runStep_some]
   rw [runBlock_cons, exec_xorMem _ .edx iv 4
-    (by simp only [gpr_setReg, gpr_arithFlags, ivSep.1, ite_false]; omega)
+    (by simp only [gpr_setReg, gpr_arithFlags, ivSep.1, ite_false]; omega_arith)
     (by simpa only [rd_setReg, wr_setReg, rd_arithFlags, wr_arithFlags, gpr_setReg, gpr_arithFlags, ivSep.1, ite_false] using rd4),
     runStep_some, runBlock_nil]
   refine ⟨_, rfl, ?_, ?_, ?_⟩
@@ -401,7 +401,7 @@ theorem StepPre.call {s : State} (hp : StepPre s) : CallPre s := by
   · exact hp.dataBuf.sub_right (Region.sub_prefix (by decide))
   · exact hp.keyFit
   · simpa only [Nat.mul_one] using hp.dataFit
-  · have := hp.bufFit; omega
+  · have := hp.bufFit; omega_arith
   · exact hp.stackLo
   · exact hp.stackKey
   · exact hp.stackData
@@ -421,11 +421,11 @@ theorem StepPre.writeIv {s : State} (hp : StepPre s) : InRegions s.wr (addr32 (s
 
 theorem StepPre.readBuf {s : State} (hp : StepPre s) (i : Nat) (hi : i + 8 ≤ 512) :
     InRegions (s.rd ++ s.wr) (addr32 (s.gpr .ebp) + BitVec.ofNat 64 i) 8 :=
-  hp.reads _ _ ⟨bufR s, by simp, Offset.contains_base _ hi (by omega)⟩
+  hp.reads _ _ ⟨bufR s, by simp, Offset.contains_base _ hi (by omega_arith)⟩
 
 theorem StepPre.writeBuf {s : State} (hp : StepPre s) (i : Nat) (hi : i + 8 ≤ 512) :
     InRegions s.wr (addr32 (s.gpr .ebp) + BitVec.ofNat 64 i) 8 :=
-  hp.writes _ _ ⟨bufR s, by simp, Offset.contains_base _ hi (by omega)⟩
+  hp.writes _ _ ⟨bufR s, by simp, Offset.contains_base _ hi (by omega_arith)⟩
 
 end VG.Proof.Rc2.X86.Cbc
 
@@ -519,7 +519,7 @@ theorem call_stash {d : Spec.Rc2.Direction} {s s' : State} (hp : StepPre s) (h :
   apply blockAt_frame h.mem
   have sep : (stashR s).Disjoint ⟨addr32 (s.gpr .ebp), 256⟩ := by
     have h := Offset.disjoint (addr32 (s.gpr .ebp)) (d := 256) (n := 8) (e := 0) (k := 256)
-      (by omega) (by decide) (by decide)
+      (by omega_arith) (by decide) (by decide)
     simpa using h
   simpa only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
     And.intro ((hp.dataBuf.sub_right (stash_sub s)).symm) (And.intro sep
@@ -530,7 +530,7 @@ theorem decryptStep_ok (s : State) (hp : StepPre s) :
   rw [Impl.Rc2.X86.Cbc.step]
   apply WP.seq
   apply WP.mono (copy64_ok s .esi .ebp 0 256 (by decide) (by decide)
-    (by simpa using hp.dataFit) (by have := hp.bufFit; omega) (by simpa using hp.readData) (hp.writeBuf 256 (by decide)))
+    (by simpa using hp.dataFit) (by have := hp.bufFit; omega_arith) (by simpa using hp.readData) (hp.writeBuf 256 (by decide)))
   intro s₁ keep₁
   simp only [BitVec.add_zero] at keep₁
   have frame₁ : Frame [stashR s] s.mem s₁.mem := by
@@ -584,7 +584,7 @@ theorem decryptStep_ok (s : State) (hp : StepPre s) :
   simp only [pin₂.reg .ebp (by decide)] at stash₃
   have stash₃' := stash₃.trans stash₂'
   apply WP.mono (copy64_ok s₃ .ebp .ecx 256 0 (by decide) (by decide)
-    (by have := hp₃.bufFit; omega) (by simpa using hp₃.ivFit) (hp₃.readBuf 256 (by decide)) (by simpa using hp₃.writeIv))
+    (by have := hp₃.bufFit; omega_arith) (by simpa using hp₃.ivFit) (hp₃.readBuf 256 (by decide)) (by simpa using hp₃.writeIv))
   intro s₄ keep₄
   simp only [BitVec.add_zero] at keep₄
   have frame₄ : Frame [ivR s₃] s₃.mem s₄.mem := by
@@ -620,14 +620,14 @@ theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i
   have ptrAddr : addr32 (s'.gpr .esi) = addr32 (s.gpr .esi) + BitVec.ofNat 64 (8 * i) := by
     rw [ptr]; exact addr_add startFit
   have fit : (s'.gpr .esi).toNat + 8 * m ≤ 2 ^ 32 := by
-    rw [ptr, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * i) (by omega),
+    rw [ptr, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * i) (by omega_arith),
       Nat.mod_eq_of_lt startFit]
     have := hp.dataFit
-    omega
+    omega_arith
   have sub : Region.Sub (dataR s' m) (dataR s n) := by
     change Region.Sub ⟨addr32 (s'.gpr .esi), 8 * m⟩ ⟨addr32 (s.gpr .esi), 8 * n⟩
     rw [ptrAddr]
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_arith)
   constructor
   · rw [key]; exact hp.keyFit
   · rw [iv]; exact hp.ivFit
@@ -640,7 +640,7 @@ theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i
       rcases hr with rfl | rfl | rfl | rfl
       · exact ⟨keyR s, by simp, 0, by simp [key], by simp⟩
       · exact ⟨ivR s, by simp, 0, by simp [iv], by simp⟩
-      · exact ⟨dataR s n, by simp, 8 * i, ptrAddr, by change 8 * i + 8 * m ≤ 8 * n; omega⟩
+      · exact ⟨dataR s n, by simp, 8 * i, ptrAddr, by change 8 * i + 8 * m ≤ 8 * n; omega_arith⟩
       · exact ⟨bufR s, by simp, 0, by simp [buf], by simp⟩
     rw [rd, wr]
     exact fun a k h => hp.reads a k (hc a k h)
@@ -650,7 +650,7 @@ theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨ivR s, by simp, 0, by simp [iv], by simp⟩
-      · exact ⟨dataR s n, by simp, 8 * i, ptrAddr, by change 8 * i + 8 * m ≤ 8 * n; omega⟩
+      · exact ⟨dataR s n, by simp, 8 * i, ptrAddr, by change 8 * i + 8 * m ≤ 8 * n; omega_arith⟩
       · exact ⟨bufR s, by simp, 0, by simp [buf], by simp⟩
     rw [wr]
     exact fun a k h => hp.writes a k (hc a k h)
@@ -765,11 +765,11 @@ theorem body_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (hn : 1 ≤ n) (b
   refine ⟨by rw [ptr₂, h₁.reg .esi (by decide)], count₂.trans count', ?_, ?_, ?_,
     keep₂.rd.trans h₁.rd, keep₂.wr.trans h₁.wr, ?_, ?_, ?_⟩
   · rw [zeroCount, flag₂, count']
-    have eqZero := counter_eq (n - 1) 0 (by omega) (by decide)
+    have eqZero := counter_eq (n - 1) 0 (by omega_arith) (by decide)
     simp only [BitVec.sub_zero] at eqZero
     change some (BitVec.ofNat 32 (n - 1) == 0#32) = _
     rw [eqZero]
-    have he : n - 1 = 0 ↔ n = 1 := by omega
+    have he : n - 1 = 0 ↔ n = 1 := by omega_arith
     simp only [he]
   · intro r hr hs hb
     exact (keep₂.reg r (by simp [hs, hb])).trans (h₁.reg r hr)
@@ -781,7 +781,7 @@ theorem body_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (hn : 1 ≤ n) (b
 
 theorem BodyPost.tail {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
     (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) (hn : 1 ≤ n) : StepPre s' n :=
-  hp.slice (i := 1) (by omega) (by have := hp.dataFit; omega) h.rd h.wr
+  hp.slice (i := 1) (by omega_arith) (by have := hp.dataFit; omega_arith) h.rd h.wr
     (h.reg .ebx (by decide) (by decide) (by decide))
     (h.reg .ecx (by decide) (by decide) (by decide))
     (h.reg .ebp (by decide) (by decide) (by decide))

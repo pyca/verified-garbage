@@ -25,10 +25,10 @@ theorem gather_succ (m : Mem) (p : Addr) (n k : Nat) :
       gather m p n (k + 1) := by
   unfold gather
   by_cases h0 : n / 4 < k
-  · simp [h0, show ¬ n / 4 = k by omega_arith, show n / 4 < k + 1 by omega_arith]
+  · simp [h0, show ¬ n / 4 = k by omega, show n / 4 < k + 1 by omega]
   · by_cases h1 : n / 4 = k
     · subst h1; simp
-    · simp [h0, h1, show ¬ n / 4 < k + 1 by omega_arith]
+    · simp [h0, h1, show ¬ n / 4 < k + 1 by omega]
 
 theorem flatMap_succ {α : Type} (f : Nat → List α) (n : Nat) :
     (List.range (n + 1)).flatMap f = (List.range n).flatMap f ++ f n := by
@@ -41,10 +41,10 @@ theorem pick_succ (q : BitVec 32) (L j : Nat) :
     pick q L j ||| (if L = j then q >>> (8 * j) else 0) = pick q L (j + 1) := by
   unfold pick
   by_cases h0 : L < j
-  · simp [h0, show ¬ L = j by omega_arith, show L < j + 1 by omega_arith]
+  · simp [h0, show ¬ L = j by omega, show L < j + 1 by omega]
   · by_cases h1 : L = j
     · subst h1; simp
-    · simp [h0, h1, show ¬ L < j + 1 by omega_arith]
+    · simp [h0, h1, show ¬ L < j + 1 by omega]
 
 /-- The difference `c`, once lanes `3, …, jj` are visited: shifted to lane `L`
 by the lanes visited below it. -/
@@ -61,13 +61,13 @@ theorem spread_succ (c : Byte) {L j : Nat} (hL : L < 4) :
       spread c L j := by
   unfold spread
   by_cases h1 : j + 1 ≤ L
-  · rw [ite_eq_left h1, rot_byte32 c (by omega_arith), ite_eq_right (show ¬ L = j by omega_arith),
-      or_zero', ite_eq_left (show j ≤ L by omega_arith), show L - (j + 1) + 1 = L - j by omega_arith]
+  · rw [ite_eq_left h1, rot_byte32 c (by omega), ite_eq_right (show ¬ L = j by omega),
+      or_zero', ite_eq_left (show j ≤ L by omega), show L - (j + 1) + 1 = L - j by omega]
   · rw [ite_eq_right h1, rot_zero, zero_or']
     by_cases h2 : L = j
-    · rw [ite_eq_left h2, ite_eq_left (show j ≤ L by omega_arith), h2, Nat.sub_self, Nat.mul_zero,
+    · rw [ite_eq_left h2, ite_eq_left (show j ≤ L by omega), h2, Nat.sub_self, Nat.mul_zero,
         BitVec.shiftLeft_zero]
-    · rw [ite_eq_right h2, ite_eq_right (show ¬ j ≤ L by omega_arith)]
+    · rw [ite_eq_right h2, ite_eq_right (show ¬ j ≤ L by omega)]
 
 /-- The memory once doublewords `0, …, k - 1` are stored back, XORed with `d`
 where they hold byte `n`. -/
@@ -83,13 +83,13 @@ theorem scatter_succ (m : Mem) (p : Addr) (n : Nat) (d : BitVec 32) (k : Nat) :
         (scatter m p n d k).readW (p + BitVec.ofNat 64 (4 * k)) 32) = scatter m p n d (k + 1) := by
   unfold scatter
   by_cases h0 : n / 4 < k
-  · rw [ite_eq_left h0, ite_eq_right (show ¬ n / 4 = k by omega_arith), zero_xor', writeW_readW32,
-      ite_eq_left (show n / 4 < k + 1 by omega_arith)]
+  · rw [ite_eq_left h0, ite_eq_right (show ¬ n / 4 = k by omega), zero_xor', writeW_readW32,
+      ite_eq_left (show n / 4 < k + 1 by omega)]
   · rw [ite_eq_right h0]
     by_cases h1 : n / 4 = k
-    · rw [ite_eq_left h1, ite_eq_left (show n / 4 < k + 1 by omega_arith), BitVec.xor_comm, h1]
+    · rw [ite_eq_left h1, ite_eq_left (show n / 4 < k + 1 by omega), BitVec.xor_comm, h1]
     · rw [ite_eq_right h1, zero_xor', writeW_readW32,
-        ite_eq_right (show ¬ n / 4 < k + 1 by omega_arith)]
+        ite_eq_right (show ¬ n / 4 < k + 1 by omega)]
 
 theorem xor_byte32 (a b : Byte) : a.setWidth 32 ^^^ b.setWidth 32 = (a ^^^ b).setWidth 32 := by
   rw [BitVec.setWidth_xor]
@@ -104,13 +104,13 @@ theorem low_byte32 (b : Byte) : (b.setWidth 32).setWidth 8 = b := by
 theorem ofNat_low32 (r : Nat) : (BitVec.ofNat 32 r).setWidth 8 = BitVec.ofNat 8 r := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega_arith
+  omega
 
 theorem mask255_32 (x : BitVec 32) : x &&& BitVec.ofNat 32 255 = (x.setWidth 8).setWidth 32 := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_and, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   rw [show (255 % 2 ^ 32 : Nat) = 2 ^ 8 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  omega_arith
+  omega
 
 theorem byte_add32 (a b : Byte) :
     a.setWidth 32 + b.setWidth 32 &&& BitVec.ofNat 32 255 = (a + b).setWidth 32 := by
@@ -118,7 +118,7 @@ theorem byte_add32 (a b : Byte) :
   congr 1
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add]
-  omega_arith
+  omega
 
 theorem byte_add3_32 (j a k : Byte) :
     j.setWidth 32 + a.setWidth 32 + k.setWidth 32 &&& BitVec.ofNat 32 255 =
@@ -127,12 +127,12 @@ theorem byte_add3_32 (j a k : Byte) :
   congr 1
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add]
-  omega_arith
+  omega
 
 /-- A word outside the table is unchanged by writes within the table. -/
 theorem table_frame_readW {p a : Addr} {m m' : Mem} (h : TableFrame p m m')
     (hs : Mem.Sep a 4 p 256) : m'.readW a 32 = m.readW a 32 :=
-  Mem.readW_congr fun i hi => h _ (hs _ (by rw [Mem.sub_ofNat_toNat a (by omega_arith)]; exact hi))
+  Mem.readW_congr fun i hi => h _ (hs _ (by rw [Mem.sub_ofNat_toNat a (by omega)]; exact hi))
 
 /-- The key offset after `r`, advanced: back to 0 at the key length. -/
 theorem key_next32 (r len : Nat) (hl : 0 < len) (hlen : len ≤ 256) :
@@ -140,9 +140,9 @@ theorem key_next32 (r len : Nat) (hl : 0 < len) (hlen : len ≤ 256) :
       else 0#32) = BitVec.ofNat 32 ((r + 1) % len) := by
   have hb := Nat.mod_lt r hl
   have ht : (BitVec.ofNat 32 (r % len) + 1#32).toNat = r % len + 1 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show r % len < 2 ^ 32 by omega_arith)]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show r % len < 2 ^ 32 by omega)]
     change (r % len + 1) % 2 ^ 32 = _
-    omega_arith
+    omega
   rw [ht]
   have ha : (r + 1) % len = (r % len + 1) % len := by
     simp only [Nat.add_mod, Nat.mod_mod]
@@ -150,8 +150,8 @@ theorem key_next32 (r len : Nat) (hl : 0 < len) (hlen : len ≤ 256) :
   · rw [ite_eq_left h]
     apply BitVec.eq_of_toNat_eq
     rw [ht, BitVec.toNat_ofNat, ha, Nat.mod_eq_of_lt h,
-      Nat.mod_eq_of_lt (show r % len + 1 < 2 ^ 32 by omega_arith)]
-  · rw [ite_eq_right h, ha, show r % len + 1 = len by omega_arith, Nat.mod_self]
+      Nat.mod_eq_of_lt (show r % len + 1 < 2 ^ 32 by omega)]
+  · rw [ite_eq_right h, ha, show r % len + 1 = len by omega, Nat.mod_self]
 
 theorem byte_inc32 (i : Byte) :
     i.setWidth 32 + BitVec.ofNat 32 1 &&& BitVec.ofNat 32 255 = (i + 1#8).setWidth 32 := by
@@ -186,7 +186,7 @@ theorem data_ne {D : BitVec 32} {L : BitVec 32} {x k : Nat}
   intro h
   have h' := congrArg (fun y => (y - D.setWidth 64).toNat) h
   simp only [Offset.add_sub_cancel_left, BitVec.toNat_ofNat] at h'
-  rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)] at h'
+  rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at h'
   exact hne h'
 
 /-- The context is unchanged by writes outside its 258 bytes. -/
@@ -198,13 +198,13 @@ theorem contextAt_frame {rs : List Region} {m m' : Mem} {p : Addr} (hf : Frame r
   · apply Vector.ext
     intro k hk
     simp only [contextAt, Vector.getElem_ofFn]
-    exact e k (by omega_arith)
+    exact e k (by omega)
   · exact e 256 (by decide)
   · exact e 257 (by decide)
 
 theorem frame_of_table {p : Addr} {m m' : Mem} (h : TableFrame p m m') :
     Frame [⟨p, 258⟩] m m' := fun x hx =>
-  h x fun hlt => hx ⟨p, 258⟩ List.mem_cons_self (by simp only [Region.Contains]; omega_arith)
+  h x fun hlt => hx ⟨p, 258⟩ List.mem_cons_self (by simp only [Region.Contains]; omega)
 
 theorem frame_finish {p : Addr} {m m' : Mem} (h : Frame [⟨p, 258⟩] m m') (a b : Byte) :
     Frame [⟨p, 258⟩] m ((m'.write (p + 256#64) 1 a).write (p + 257#64) 1 b) :=
@@ -217,6 +217,6 @@ theorem ret_low (a b : BitVec 32) : BitVec.setWidth 32 (a ++ b) = b := by
   rw [BitVec.toNat_setWidth, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt b.isLt,
     Nat.shiftLeft_eq]
   have := b.isLt
-  omega_arith
+  omega
 
 end VG.Proof.Rc4

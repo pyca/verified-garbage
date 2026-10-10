@@ -39,7 +39,7 @@ theorem quarter_run {s : State} {sch : Reg} (hR : Readable s sch) {j b q : Nat} 
         else if q != 0 then vbyte (s.v d) e else 0) ∧
       VOnly [.v28, .v29, .v30, .v31, d] s s' := by
   let base := planeOff j b + 64 * q
-  have hbase : base + 64 ≤ 4096 := by simp only [base, planeOff]; omega_arith
+  have hbase : base + 64 ≤ 4096 := by simp only [base, planeOff]; omega
   let ld (r : Nat) := s.mem.read (s.gpr sch + BitVec.ofNat 64 (base + 16 * r)) 16
   let s₁ := s.setV .v28 (ld 0)
   let s₂ := s₁.setV .v29 (ld 1)
@@ -47,7 +47,7 @@ theorem quarter_run {s : State} {sch : Reg} (hR : Readable s sch) {j b q : Nat} 
   let s₄ := s₃.setV .v31 (ld 3)
   have hv : ∀ r < 4, s₄.v (tReg r) = ld r := by
     intro r hr
-    rcases (by omega_arith : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;> rfl
+    rcases (by omega : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;> rfl
   have hv' : ∀ x, (∀ r < 4, x ≠ tReg r) → s₄.v x = s.v x := by
     intro x hx
     have h0 : x ≠ .v28 := hx 0 (by decide)
@@ -60,9 +60,9 @@ theorem quarter_run {s : State} {sch : Reg} (hR : Readable s sch) {j b q : Nat} 
       if (vbyte (s₄.v m) i).toNat < 16 * 4 then tableByte s₄.v (tReg 0) (vbyte (s₄.v m) i).toNat
       else if (q != 0) then vbyte (s₄.v d) i else 0)
   have rd : ∀ r < 4, InRegions (s.rd ++ s.wr) (s.gpr sch + BitVec.ofNat 64 (base + 16 * r)) 16 :=
-    fun r hr => hR _ (by omega_arith)
+    fun r hr => hR _ (by omega)
   have ho : ∀ r < 4, (base + 16 * r) % 16 = 0 ∧ base + 16 * r < 65536 := fun r hr => by
-    simp only [base, planeOff]; omega_arith
+    simp only [base, planeOff]; omega
   refine ⟨s₅, ?_, ?_, ?_⟩
   · have e₁ : exec (.ldrq .v28 sch (planeOff j b + 64 * q + 16 * 0)) s = some s₁ :=
       exec_ldrq (ho 0 (by decide)) (rd 0 (by decide))
@@ -82,9 +82,9 @@ theorem quarter_run {s : State} {sch : Reg} (hR : Readable s sch) {j b q : Nat} 
     rw [vbyte_ofVBytes _ he, hv' m hm, hv' d hd]
     split
     · rename_i h
-      rw [tableByte, repeat_succ_v28 _ (by omega_arith), hv _ (by omega_arith), vbyte_read16 _ _ (by omega_arith),
+      rw [tableByte, repeat_succ_v28 _ (by omega), hv _ (by omega), vbyte_read16 _ _ (by omega),
         Offset.add_add]
-      exact congrArg _ (congrArg _ (congrArg _ (by omega_arith)))
+      exact congrArg _ (congrArg _ (congrArg _ (by omega)))
     · rfl
   · refine ((((VOnly.setV s (by simp) _).trans (VOnly.setV _ (by simp) _)).trans
       (VOnly.setV _ (by simp) _)).trans (VOnly.setV _ (by simp) _)).trans (VOnly.setV _ (by simp) _)
@@ -101,17 +101,17 @@ theorem tbx_chain (T : Nat → BitVec 8) (X : Nat) (hX : X < 256) :
   obtain ⟨h2, e2⟩ := q 2 (by decide)
   obtain ⟨h3, e3⟩ := q 3 (by decide)
   simp only [Nat.mul_one] at h1 e1
-  rcases (by omega_arith : X / 64 = 0 ∨ X / 64 = 1 ∨ X / 64 = 2 ∨ X / 64 = 3) with h | h | h | h
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false (fun h' => by have := h3.mp h'; omega_arith)), ite_eq_right_of_eq_false _ _ (eq_false (fun h' => by have := h2.mp h'; omega_arith)),
-      ite_eq_right_of_eq_false _ _ (eq_false (fun h' => by have := h1.mp h'; omega_arith)), ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith))]
-    exact congrArg T (by omega_arith)
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false (fun h' => by have := h3.mp h'; omega_arith)), ite_eq_right_of_eq_false _ _ (eq_false (fun h' => by have := h2.mp h'; omega_arith)),
+  rcases (by omega : X / 64 = 0 ∨ X / 64 = 1 ∨ X / 64 = 2 ∨ X / 64 = 3) with h | h | h | h
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false (fun h' => by have := h3.mp h'; omega)), ite_eq_right_of_eq_false _ _ (eq_false (fun h' => by have := h2.mp h'; omega)),
+      ite_eq_right_of_eq_false _ _ (eq_false (fun h' => by have := h1.mp h'; omega)), ite_eq_left_of_eq_true _ _ (eq_true (by omega))]
+    exact congrArg T (by omega)
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false (fun h' => by have := h3.mp h'; omega)), ite_eq_right_of_eq_false _ _ (eq_false (fun h' => by have := h2.mp h'; omega)),
       ite_eq_left_of_eq_true _ _ (eq_true (h1.mpr h)), e1 h]
-    exact congrArg T (by omega_arith)
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false (fun h' => by have := h3.mp h'; omega_arith)), ite_eq_left_of_eq_true _ _ (eq_true (h2.mpr h)), e2 h]
-    exact congrArg T (by omega_arith)
+    exact congrArg T (by omega)
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false (fun h' => by have := h3.mp h'; omega)), ite_eq_left_of_eq_true _ _ (eq_true (h2.mpr h)), e2 h]
+    exact congrArg T (by omega)
   · rw [ite_eq_left_of_eq_true _ _ (eq_true (h3.mpr h)), e3 h]
-    exact congrArg T (by omega_arith)
+    exact congrArg T (by omega)
 
 theorem out_ne_t : ∀ b < 4, ∀ r < 4, outReg b ≠ tReg r := by decide
 theorem idx_ne_t : ∀ j < 4, ∀ r < 4, idxReg j ≠ tReg r := by decide
@@ -188,7 +188,7 @@ theorem lookupPlane_run {s : State} {sch : Reg} (hR : Readable s sch) {j b : Nat
     have hX : X.toNat < 256 := X.isLt
     have hxq : ∀ q < 4, 0 < q → (vbyte (s.v (qReg q)) e).toNat = X.toNat ^^^ 64 * q := by
       intro q hq0 hq1
-      rw [hq q hq0 hq1 e he, VG.AArch64.Tbl.toNat_xor_lit _ _ (by omega_arith)]
+      rw [hq q hq0 hq1 e he, VG.AArch64.Tbl.toNat_xor_lit _ _ (by omega)]
     rw [v₄ e he, q₃, hxq 3 (by decide) (by decide), v₃ e he, q₂, hxq 2 (by decide) (by decide),
       v₂ e he, q₁, hxq 1 (by decide) (by decide), v₁ e he, m₃, m₂, m₁, g₃, g₂, g₁]
     simp only [show (3 != 0) = true from rfl, show (2 != 0) = true from rfl,

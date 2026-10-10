@@ -12,7 +12,7 @@ open VG VG.Arm VG.Arm.RegUpd VG.Impl.Rc4.Arm VG.Spec.Rc4 VG.Proof.Rc4
 theorem idx_addr' {P : BitVec 32} (hP : P.toNat + 256 ≤ 2 ^ 32) {r : Nat} (hr : r < 256) :
     State.addr (P + BitVec.ofNat 32 r + BitVec.ofNat 32 0) = State.addr P + BitVec.ofNat 64 r := by
   rw [BitVec.add_zero]
-  exact addr_add (by omega_arith)
+  exact addr_add (by omega)
 
 /-! ## The identity permutation -/
 
@@ -29,7 +29,7 @@ theorem identity_step (s₀ s : State) {r : Nat} (hr : r < 256)
   have h12 : s.gpr .r12 = s₀.gpr .r12 := hk.gpr (by decide)
   have hw : InRegions s.wr (State.addr (s.gpr .r12 + BitVec.ofNat 32 r + BitVec.ofNat 32 0)) 1 := by
     rw [h12, idx_addr' hfit hr, hk.2.2.1]
-    exact region_offset _ _ _ _ _ (by omega_arith) (by omega_arith) hp
+    exact region_offset _ _ _ _ _ (by omega) (by omega) hp
   have hadd : BitVec.ofNat 32 r + BitVec.ofNat 32 1 = BitVec.ofNat 32 (r + 1) := by
     rw [← BitVec.ofNat_add]
   refine WP.mono (WP.keep (Q := fun t =>
@@ -62,8 +62,8 @@ theorem identity_loop (s₀ s : State) {r : Nat} (hr : r < 256)
       intro h
       have h' := congrArg BitVec.toNat h
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat] at h'
-      omega_arith
-    refine ⟨?_, 256 - (j + 1), by omega_arith, j + 1, by omega_arith, rfl, hu⟩
+      omega
+    refine ⟨?_, 256 - (j + 1), by omega, j + 1, by omega, rfl, hu⟩
     rw [eval_ne, hz, beq_eq_false_iff_ne.mpr hnz]
     rfl
 
@@ -117,10 +117,10 @@ theorem schedule_before (s : State) (i j : Byte) {P K Lk : BitVec 32} {o : Nat}
   have hka : State.addr (K + BitVec.ofNat 32 o + BitVec.ofNat 32 0) =
       State.addr K + BitVec.ofNat 64 o := by
     rw [BitVec.add_zero]
-    exact addr_add (by have := he.keyFit; omega_arith)
+    exact addr_add (by have := he.keyFit; omega)
   have hk : InRegions (t.rd ++ t.wr) (State.addr (K + BitVec.ofNat 32 o + BitVec.ofNat 32 0)) 1 := by
     rw [hka, tk.2.1, tk.2.2.1]
-    exact region_offset _ _ _ _ _ (by have := he.keyFit; omega_arith) (by omega_arith) he.key
+    exact region_offset _ _ _ _ _ (by have := he.keyFit; omega) (by omega) he.key
   refine WP.mono (WP.keep (Q := fun u => u.gpr .r5 = (j + s.mem (State.addr P +
       BitVec.ofNat 64 i.toNat) + s.mem (State.addr K + BitVec.ofNat 64 o)).setWidth 32 ∧
       u.gpr .r6 = u.gpr .r5 ∧ u.mem = s.mem) [.r5, .r6, .r9] ?_ (by decide))
@@ -135,8 +135,8 @@ theorem next_off (x L : BitVec 32) :
       if x.toNat < L.toNat then x else 0#32 := by
   rw [adc_mask']
   by_cases h : x.toNat < L.toNat
-  · rw [ite_eq_right (by simp only [decide_eq_true_eq]; omega_arith), ite_eq_left h]
-  · rw [ite_eq_left (by simp only [decide_eq_true_eq]; omega_arith), ite_eq_right h]
+  · rw [ite_eq_right (by simp only [decide_eq_true_eq]; omega), ite_eq_left h]
+  · rw [ite_eq_left (by simp only [decide_eq_true_eq]; omega), ite_eq_right h]
     rfl
 
 theorem schedule_after (s : State) (i b : Byte) {P K Lk : BitVec 32}
@@ -152,7 +152,7 @@ theorem schedule_after (s : State) (i b : Byte) {P K Lk : BitVec 32}
       Keep [.r2, .r4, .r9] s t := by
   have hw : InRegions s.wr (State.addr (P + i.setWidth 32 + BitVec.ofNat 32 0)) 1 := by
     rw [idx_addr he.fit i]
-    exact region_offset _ _ _ _ _ (by have := i.isLt; omega_arith) (by have := i.isLt; omega_arith) he.table
+    exact region_offset _ _ _ _ _ (by have := i.isLt; omega) (by have := i.isLt; omega) he.table
   refine WP.mono (WP.keep (Q := fun t =>
       t.mem = s.mem.write (State.addr P + BitVec.ofNat 64 i.toNat) 1 b ∧
       t.gpr .r2 = (if (s.gpr .r2 + BitVec.ofNat 32 1).toNat < Lk.toNat then
@@ -218,11 +218,11 @@ theorem schedule_inv_step (s₀ s : State) {P K Lk : BitVec 32} {r : Nat} (hr : 
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hr]
   have hi : s.gpr .r4 = (BitVec.ofNat 8 r).setWidth 32 := by
     rw [h.i, byte32, hrt]
-  have hmod := Nat.mod_lt r (show 0 < Lk.toNat by omega_arith)
+  have hmod := Nat.mod_lt r (show 0 < Lk.toNat by omega)
   have hkeybyte : s.mem (State.addr K + BitVec.ofNat 64 (r % Lk.toNat)) =
       key.getD (r % key.length) 0 := by
     have hsep := he₀.keySep (State.addr K + BitVec.ofNat 64 (r % Lk.toNat))
-      (by rw [Mem.sub_ofNat_toNat _ (by omega_arith)]; exact hmod)
+      (by rw [Mem.sub_ofNat_toNat _ (by omega)]; exact hmod)
     rw [h.frame _ hsep]
     dsimp only [key, keyOf]
     rw [bytes_length, bytes_get _ _ _ _ hmod]
@@ -244,7 +244,7 @@ theorem schedule_inv_step (s₀ s : State) {P K Lk : BitVec 32} {r : Nat} (hr : 
   · rw [t5, hrt, htablebyte, hkeybyte, hnext]
   · rw [t4, hcast]
   · rw [t2]
-    exact key_next32 r _ (by omega_arith) hlen.2
+    exact key_next32 r _ (by omega) hlen.2
   · rw [tz, hcast]
 
 /-- All 256 scheduling rounds realize the complete specified permutation. -/
@@ -265,8 +265,8 @@ theorem schedule_loop (s₀ s : State) {P K Lk : BitVec 32} {r : Nat} (hr : r < 
       intro h
       have h' := congrArg BitVec.toNat h
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat] at h'
-      omega_arith
-    refine ⟨?_, 256 - (j + 1), by omega_arith, j + 1, by omega_arith, rfl, hu⟩
+      omega
+    refine ⟨?_, 256 - (j + 1), by omega, j + 1, by omega, rfl, hu⟩
     rw [eval_ne, hz, beq_eq_false_iff_ne.mpr hnz]
     rfl
 

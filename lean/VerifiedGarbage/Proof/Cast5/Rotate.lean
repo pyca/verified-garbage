@@ -23,12 +23,12 @@ theorem rotateLeft_rotateLeft_lt (x : BitVec 32) {m n : Nat} (hm : m < 32) (hn :
   intro i hi
   rw [getLsbD_rotateLeft_lt _ hn hi, getLsbD_rotateLeft_lt _ (Nat.mod_lt _ (by decide)) hi]
   split
-  · rw [getLsbD_rotateLeft_lt _ hm (by omega_arith)]
+  · rw [getLsbD_rotateLeft_lt _ hm (by omega)]
     repeat' split
-    all_goals first | omega_arith | exact congrArg _ (by omega_arith)
-  · rw [getLsbD_rotateLeft_lt _ hm (by omega_arith)]
+    all_goals first | omega | exact congrArg _ (by omega)
+  · rw [getLsbD_rotateLeft_lt _ hm (by omega)]
     repeat' split
-    all_goals first | omega_arith | exact congrArg _ (by omega_arith)
+    all_goals first | omega | exact congrArg _ (by omega)
 
 /-- Rotations compose. -/
 theorem rotateLeft_rotateLeft (x : BitVec 32) (m n : Nat) :
@@ -37,22 +37,22 @@ theorem rotateLeft_rotateLeft (x : BitVec 32) (m n : Nat) :
     rotateLeft_rotateLeft_lt _ (Nat.mod_lt _ (by decide)) (Nat.mod_lt _ (by decide)),
     ← BitVec.rotateLeft_mod_eq_rotateLeft (r := m + n)]
   congr 1
-  omega_arith
+  omega
 
 theorem rotateRight_eq_rotateLeft (x : BitVec 32) {n : Nat} (h0 : 0 < n) (hn : n ≤ 32) :
     x.rotateRight (32 - n) = x.rotateLeft n := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  rw [BitVec.getLsbD_rotateRight, BitVec.getLsbD_rotateLeft, Nat.mod_eq_of_lt (show 32 - n < 32 by omega_arith),
+  rw [BitVec.getLsbD_rotateRight, BitVec.getLsbD_rotateLeft, Nat.mod_eq_of_lt (show 32 - n < 32 by omega),
     decide_eq_true hi, Bool.true_and, Bool.true_and]
   by_cases h : n = 32
   · subst h
     simp only [Nat.sub_self, Nat.mod_self, Nat.not_lt_zero, ite_false, Nat.sub_zero,
       Nat.zero_add]
-    split <;> first | omega_arith | exact congrArg _ (by omega_arith)
-  · rw [Nat.mod_eq_of_lt (show n < 32 by omega_arith)]
+    split <;> first | omega | exact congrArg _ (by omega)
+  · rw [Nat.mod_eq_of_lt (show n < 32 by omega)]
     repeat' split
-    all_goals first | omega_arith | exact congrArg _ (by omega_arith)
+    all_goals first | omega | exact congrArg _ (by omega)
 
 /-- Step `b` of the rotation of `a` by `k`: rotate by `2 ^ b` (as a rotation
 right by `32 - 2 ^ b`), keeping it under the mask that is zero exactly if
@@ -67,7 +67,7 @@ theorem step_eq (a kb : BitVec 32) {b : Nat} (hb : b < 5) :
     step a kb b = a.rotateLeft (2 ^ b * (kb.toNat % 2)) := by
   have hr : a.rotateRight (32 - 2 ^ b) = a.rotateLeft (2 ^ b) :=
     rotateRight_eq_rotateLeft a (Nat.pow_pos (by decide)) (by
-      rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega_arith) with h | h | h | h | h <;>
+      rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega) with h | h | h | h | h <;>
         subst h <;> decide)
   unfold step
   rw [hr]
@@ -98,7 +98,7 @@ theorem steps_eq (a k : BitVec 32) :
     step_eq _ _ (show 4 < 5 by decide), rotateLeft_rotateLeft, BitVec.toNat_ushiftRight]
   congr 1
   simp only [Nat.shiftRight_eq_div_pow]
-  omega_arith
+  omega
 
 /-- Step `b` as a selection: the rotation by `2 ^ b` if bit 0 of `kb` is set. -/
 def selStep (a kb : BitVec 32) (b : Nat) : BitVec 32 :=
@@ -107,7 +107,7 @@ def selStep (a kb : BitVec 32) (b : Nat) : BitVec 32 :=
 theorem selStep_eq_step (a kb : BitVec 32) {b : Nat} (hb : b < 5) : selStep a kb b = step a kb b := by
   have hr : a.rotateRight (32 - 2 ^ b) = a.rotateLeft (2 ^ b) :=
     rotateRight_eq_rotateLeft a (Nat.pow_pos (by decide)) (by
-      rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega_arith) with h | h | h | h | h <;>
+      rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega) with h | h | h | h | h <;>
         subst h <;> decide)
   rw [step_eq _ _ hb, selStep]
   rcases Nat.mod_two_eq_zero_or_one kb.toNat with h | h

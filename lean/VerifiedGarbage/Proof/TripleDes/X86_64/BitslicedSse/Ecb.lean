@@ -39,10 +39,10 @@ theorem ecb_post (d : Direction) {s : State} (E : WideEnv s)
   have hdi := g .rdi (by simp [WideRegs, PassRegs])
   have hsp := g .rsp (by simp [WideRegs, PassRegs])
   have hm : (s₁.gpr .rdx).toNat = n % 128 := by
-    rw [w.rdx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+    rw [w.rdx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   have hD₁ : s₁.gpr .rsi = wAt D k := w.rsi
   have sub₁ : Region.Sub ⟨s₁.gpr .rsi, 8 * (s₁.gpr .rdx).toNat⟩ ⟨D, 8 * n⟩ := by
-    rw [hD₁, hm]; exact Offset.sub_base _ (by omega_arith)
+    rw [hD₁, hm]; exact Offset.sub_base _ (by omega)
   have pre₁ : EcbPre s₁ := by
     refine ⟨by rw [hc, w.wr]; exact E.scratch, fun i hi => ?_,
       fun i hi => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -52,7 +52,7 @@ theorem ecb_post (d : Direction) {s : State} (E : WideEnv s)
       have e : wAt D (k + i) = rb + BitVec.ofNat 64 (o + 8 * (k + i)) := by
         simp only [wAt, D, hb, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       rw [e]
-      exact Offset.contains_base _ (by simp only at hor; omega_arith) (by simp only at hrl hor; omega_arith)
+      exact Offset.contains_base _ (by simp only at hor; omega) (by simp only at hrl hor; omega)
     · rw [hdi, w.rd, w.wr]; exact E.keyIn i hi
     · rw [hdi]; exact keyData.sub_right sub₁
     · rw [hdi, hc]; exact keyBuf
@@ -61,12 +61,12 @@ theorem ecb_post (d : Direction) {s : State} (E : WideEnv s)
     · rw [hsp, hc]; exact retBuf
     · rw [hD₁, hm]
       have hfit : D.toNat + 8 * n ≤ 2 ^ 64 := fit
-      have hk : k + n % 128 = n := by omega_arith
+      have hk : k + n % 128 = n := by omega
       simp only [wAt, BitVec.toNat_add, BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (show 8 * k < 2 ^ 64 by omega_arith)]
+      rw [Nat.mod_eq_of_lt (show 8 * k < 2 ^ 64 by omega)]
       by_cases hw : D.toNat + 8 * k < 2 ^ 64
-      · rw [Nat.mod_eq_of_lt hw]; omega_arith
-      · rw [show D.toNat + 8 * k = 2 ^ 64 by omega_arith, Nat.mod_self]; omega_arith
+      · rw [Nat.mod_eq_of_lt hw]; omega
+      · rw [show D.toNat + 8 * k = 2 ^ 64 by omega, Nat.mod_self]; omega
   apply WP.mono (VG.Proof.TripleDes.X86_64.Bitsliced.ecb_ok d pre₁)
   intro s' t
   have scr₁ : VG.Proof.TripleDes.X86_64.Bitsliced.scratchR s₁ = scratchR s := by
@@ -86,17 +86,17 @@ theorem ecb_post (d : Direction) {s : State} (E : WideEnv s)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact retBuf
-    · exact retData.sub_right (Region.sub_prefix (by omega_arith))
+    · exact retData.sub_right (Region.sub_prefix (by omega))
   · by_cases hbk : b < k
     · rw [← w.done b hbk]
       refine blockAt_frame tf fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact dataB.sub_left (Offset.sub_base _ (by omega_arith))
+      · exact dataB.sub_left (Offset.sub_base _ (by omega))
       · rw [hD₁, hm]
-        exact Offset.disjoint D (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith)
-    · obtain ⟨j, rfl⟩ : ∃ j, b = k + j := ⟨b - k, by omega_arith⟩
-      have e := t.done j (by rw [hm]; omega_arith)
+        exact Offset.disjoint D (Or.inl (by omega)) (by omega) (by omega)
+    · obtain ⟨j, rfl⟩ : ∃ j, b = k + j := ⟨b - k, by omega⟩
+      have e := t.done j (by rw [hm]; omega)
       rw [hD₁, wAt_wAt, hdi] at e
       rw [e]
       have hK : scheduleAt s₁.mem S = scheduleAt s.mem S :=
@@ -104,19 +104,19 @@ theorem ecb_post (d : Direction) {s : State} (E : WideEnv s)
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
           · exact keyBuf
-          · exact keyData.sub_right (Region.sub_prefix (by omega_arith))
+          · exact keyData.sub_right (Region.sub_prefix (by omega))
       have hB : blockAt s₁.mem (wAt D (k + j)) = blockAt s.mem (wAt D (k + j)) :=
         blockAt_frame w.frame fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
-          · exact dataB.sub_left (Offset.sub_base _ (by omega_arith))
-          · exact Offset.disjoint_base D (by omega_arith) (by omega_arith)
+          · exact dataB.sub_left (Offset.sub_base _ (by omega))
+          · exact Offset.disjoint_base D (by omega) (by omega)
       rw [hK, hB]
   · have a : Frame [scratchR s, ⟨D, 8 * n⟩] s.mem s₁.mem := w.frame.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨scratchR s, List.mem_cons_self, fun _ h => h⟩
-      · exact ⟨⟨D, 8 * n⟩, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix (by omega_arith)⟩
+      · exact ⟨⟨D, 8 * n⟩, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix (by omega)⟩
     have b : Frame [scratchR s, ⟨D, 8 * n⟩] s₁.mem s'.mem := tf.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -136,7 +136,7 @@ theorem WideEnv.of_regions {s : State} (hrd : s.rd = [⟨s.gpr .rdi, 384⟩])
     ⟨_, by rw [hwr]; exact List.mem_cons_self, 0, by simp, by simp, hl⟩, fun i hi => ?_,
     dataBuf, keyBuf, keyData, fit⟩
   rw [hrd]
-  exact ⟨_, List.mem_cons_self, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  exact ⟨_, List.mem_cons_self, Offset.contains_base _ (by omega) (by omega)⟩
 
 theorem ecb_ok (d : Direction) {s : State} (hrd : s.rd = [⟨s.gpr .rdi, 384⟩])
     (hwr : s.wr = [⟨s.gpr .rsi, 8 * (s.gpr .rdx).toNat⟩, ⟨s.gpr .rcx, 1024⟩])

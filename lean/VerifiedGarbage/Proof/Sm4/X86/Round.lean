@@ -80,9 +80,9 @@ theorem xorBits_terms (W S : Nat → BitVec 32) (hS : ∀ i < 8, W i = S i) (l :
     simp only [List.mem_map] at hwt; obtain ⟨sm, hsm, rfl⟩ := hwt; exact hl sm hsm
 
 theorem ok_sbox {s : State} (h : Ok layerCfg s) : Ok sboxCfg s where
-  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, tableSlot] at hk ⊢; omega_arith)
+  slotIn k hk := h.slotIn k (by simp [sboxCfg, layerCfg, tableSlot] at hk ⊢; omega)
   extIn k hk := by simp [sboxCfg] at hk
-  fit := by have := h.fit; simp [sboxCfg, layerCfg, tableSlot] at this ⊢; omega_arith
+  fit := by have := h.fit; simp [sboxCfg, layerCfg, tableSlot] at this ⊢; omega
   sep k _ j hj := by simp [sboxCfg] at hj
 
 theorem ok_lin {s : State} (h : Ok layerCfg s) : Ok linCfg s where
@@ -105,13 +105,13 @@ theorem runBlock_app (a b : List Instr) (s : State) :
 theorem slot_above {m m' : Mem} {b : BitVec 32} {n k : Nat} (hf : Frame [⟨b.setWidth 64, 4 * n⟩] m m')
     (hk : n ≤ k) (hfit : b.toNat + 4 * k + 4 ≤ 2 ^ 32) :
     m'.readW (wordAddr b k) 32 = m.readW (wordAddr b k) 32 := by
-  have e : wordAddr b k = b.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_eq (by omega_arith)
+  have e : wordAddr b k = b.setWidth 64 + BitVec.ofNat 64 (4 * k) := addr_eq (by omega)
   rw [e]
   exact hf.readW (r := ⟨b.setWidth 64 + BitVec.ofNat 64 (4 * k), 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       have : (b.setWidth 64).toNat = b.toNat := by
-        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_arith)]
-      exact VG.Offset.disjoint_base _ (by omega_arith) (by omega_arith)) (by decide)
+        rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+      exact VG.Offset.disjoint_base _ (by omega) (by omega)) (by decide)
 
 /-- A round, with the round key at entry `a` of `kp`. -/
 theorem round_ok (l : Lin) {a b c d : Nat} (ha : a < 4)
@@ -141,34 +141,34 @@ theorem round_ok (l : Lin) {a b c d : Nat} (ha : a < 4)
   obtain ⟨s₁, h₁, x₁, rd₁, wr₁, o₁, f₁⟩ := linear_ok hpre hok W₁
     (fun j i hji hj => by
       obtain ⟨k, hk, rfl, rfl⟩ := stateIns_mem hji
-      exact ⟨by omega_arith, by simp [W₁, hk]; rfl⟩)
+      exact ⟨by omega, by simp [W₁, hk]; rfl⟩)
     (fun j hj => by
       simp only [layerCfg] at hj
-      exact ⟨by omega_arith, by simp [W₁, show ¬ 32 + j < 32 by omega_arith]; rfl⟩)
+      exact ⟨by omega, by simp [W₁, show ¬ 32 + j < 32 by omega]; rfl⟩)
   simp only [layerCfg] at x₁
   have b₁ : s₁.gpr sb = s.gpr sb := o₁ _ (hall' sb hsb).1
   have kp₁ : s₁.gpr kp = s.gpr kp := o₁ _ (hall' kp hkp).1
   have hW₁ : ∀ w < 4, ∀ j < 8, W₁ (8 * w + j) = planes s w j := fun w hw j hj => by
-    simp only [W₁, show 8 * w + j < 32 by omega_arith, ↓reduceIte, planes_eq]
+    simp only [W₁, show 8 * w + j < 32 by omega, ↓reduceIte, planes_eq]
   have hXb : ∀ j < 8, ∀ p < 32, (slotW s₁ j).getLsbD p =
       ((((planes s b j).getLsbD p ^^ (planes s c j).getLsbD p) ^^ (planes s d j).getLsbD p) ^^
         (keyW s (8 * a + j)).getLsbD p) := by
     intro j hj p hp
-    have hb4 : b < 4 := by omega_arith
-    have hc4 : c < 4 := by omega_arith
-    have hd4 : d < 4 := by omega_arith
+    have hb4 : b < 4 := by omega
+    have hc4 : c < 4 := by omega
+    have hd4 : d < 4 := by omega
     rw [slotW, b₁, x₁ j (preG a b c d j) (List.mem_append_left _
         (by simp only [List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)) p hp,
       preG, xorBits_cons, xorBits_cons, xorBits_cons, xorBits_cons, xorBits_nil, bitOf_word _ _ _ hp,
       bitOf_word _ _ _ hp, bitOf_word _ _ _ hp, bitOf_word _ _ _ hp, hW₁ b hb4 j hj, hW₁ c hc4 j hj,
       hW₁ d hd4 j hj]
-    simp only [W₁, show ¬ 32 + 8 * a + j < 32 by omega_arith, ↓reduceIte, show 32 + 8 * a + j - 32 = 8 * a + j by omega_arith,
+    simp only [W₁, show ¬ 32 + 8 * a + j < 32 by omega, ↓reduceIte, show 32 + 8 * a + j - 32 = 8 * a + j by omega,
       Bool.xor_false, Bool.xor_assoc]
   have hok₁ : Ok layerCfg s₁ := hok.congr b₁ kp₁ rd₁ wr₁
   have keep₁ : ∀ k < 32, slotW s₁ (32 + k) = slotW s (32 + k) := fun k hk => by
     rw [slotW, b₁]
     exact keep_word (W := W₁) (i := 0 + k) (by simp [W₁, hk])
-      (x₁ (32 + k) _ (List.mem_append_right _ (stateKeep_mem (x := 0) (a := 4) hk (by omega_arith))))
+      (x₁ (32 + k) _ (List.mem_append_right _ (stateKeep_mem (x := 0) (a := 4) hk (by omega))))
   -- The S-box.
   obtain ⟨s₂, h₂, sx₂, rd₂, wr₂, o₂, f₂⟩ := sbox_ok (ok_sbox hok₁)
   have b₂ : s₂.gpr sb = s.gpr sb := (o₂ sb hsb).trans b₁
@@ -176,17 +176,17 @@ theorem round_ok (l : Lin) {a b c d : Nat} (ha : a < 4)
   have keep₂ : ∀ k < 32, slotW s₂ (32 + k) = slotW s (32 + k) := fun k hk => by
     rw [← keep₁ k hk]
     simp only [slotW, o₂ sb hsb]
-    refine slot_above (n := 32) (by simpa [slotRegion, sboxCfg] using f₂) (by omega_arith) ?_
-    rw [b₁]; omega_arith
+    refine slot_above (n := 32) (by simpa [slotRegion, sboxCfg] using f₂) (by omega) ?_
+    rw [b₁]; omega
   -- The linear layer, into word `a`.
   let W₃ : Nat → BitVec 32 := fun i => if i < 8 then slotW s₂ i else slotW s₂ (32 + (i - 8))
   obtain ⟨s₃, h₃, y₃, rd₃, wr₃, o₃, f₃⟩ := linear_ok hlin (ok_lin hok₂) W₃
     (fun j i hji hj => by
       simp only [linIns, List.mem_append, List.mem_map, List.mem_range, Prod.mk.injEq] at hji
       rcases hji with ⟨k, hk, rfl, rfl⟩ | hji
-      · exact ⟨by omega_arith, by simp [W₃, hk]; rfl⟩
+      · exact ⟨by omega, by simp [W₃, hk]; rfl⟩
       · obtain ⟨k, hk, rfl, rfl⟩ := stateIns_mem hji
-        exact ⟨by omega_arith, by simp [W₃, show ¬ 8 + k < 8 by omega_arith]; rfl⟩)
+        exact ⟨by omega, by simp [W₃, show ¬ 8 + k < 8 by omega]; rfl⟩)
     (fun j hj => by simp [linCfg] at hj)
   simp only [linCfg] at y₃
   have b₃ : s₃.gpr sb = s.gpr sb := (o₃ _ ((hall' sb hsb).2)).trans b₂
@@ -197,22 +197,22 @@ theorem round_ok (l : Lin) {a b c d : Nat} (ha : a < 4)
       (by simp only [List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)) p hp
     rw [planes, slotW, b₃, ← b₂, this, linG, xorBits_cons, bitOf_word _ _ _ hp,
       xorBits_terms W₃ (slotW s₂) (fun i hi => by simp [W₃, hi]) _ (Proof.Sm4.terms_lt l j hj)]
-    simp only [W₃, show ¬ 8 + 8 * a + j < 8 by omega_arith, ↓reduceIte, show 32 + (8 + 8 * a + j - 8) = 32 + (8 * a + j) by omega_arith,
-      keep₂ _ (show 8 * a + j < 32 by omega_arith), planes_eq]
+    simp only [W₃, show ¬ 8 + 8 * a + j < 8 by omega, ↓reduceIte, show 32 + (8 + 8 * a + j - 8) = 32 + (8 * a + j) by omega,
+      keep₂ _ (show 8 * a + j < 32 by omega), planes_eq]
   refine ⟨s₃, ?_, fun w hw => ?_, by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁], fun r hr => ?_, ?_⟩
   · rw [round, runBlock_app, runBlock_app, h₁, Option.bind_some, h₂, Option.bind_some, h₃]
   · by_cases hwa : w = a
     · subst hwa
-      have hr := W32.round_rel l (hX b (by omega_arith)) (hX c (by omega_arith)) (hX d (by omega_arith)) hK (hX w hw) hXb sx₂ hA'
+      have hr := W32.round_rel l (hX b (by omega)) (hX c (by omega)) (hX d (by omega)) hK (hX w hw) hXb sx₂ hA'
       refine hr.congr_right fun b' _ => ?_
       simp only [sround, ↓reduceIte, hb, hc, hd]
     · refine (hX w hw).congr (fun j hj => ?_) |>.congr_right fun b' _ => by simp only [sround, hwa, ↓reduceIte]
       show planes s₃ w j = planes s w j
-      have hk : 8 * w + j < 32 := by omega_arith
+      have hk : 8 * w + j < 32 := by omega
       rw [planes_eq, planes_eq, slotW, b₃, ← b₂,
         keep_word (W := W₃) (i := 8 + (8 * w + j)) (v := slotW s₂ (32 + (8 * w + j)))
-          (by simp [W₃, show ¬ 8 + (8 * w + j) < 8 by omega_arith])
-          (y₃ _ _ (List.mem_append_right _ (stateKeep_mem (x := 8) (a := a) hk (by omega_arith)))),
+          (by simp [W₃, show ¬ 8 + (8 * w + j) < 8 by omega])
+          (y₃ _ _ (List.mem_append_right _ (stateKeep_mem (x := 8) (a := a) hk (by omega)))),
         keep₂ _ hk]
   · rw [o₃ r (hall' r hr).2, o₂ r hr, o₁ r (hall' r hr).1]
   · have e₂ : slotRegion linCfg s₂ = slotRegion layerCfg s := by simp only [slotRegion, linCfg, layerCfg, b₂]

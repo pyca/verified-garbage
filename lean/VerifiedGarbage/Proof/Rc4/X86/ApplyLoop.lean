@@ -50,10 +50,10 @@ theorem arg_contains' {s : State} (hsp : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32) {i 
     (⟨argAddr s 0, 16⟩ : Region).Contains (argAddr s i) 4 := by
   have h : argAddr s i = argAddr s 0 + BitVec.ofNat 64 (4 * i) := by
     unfold argAddr
-    rw [VG.Proof.MlKem.X86.ea_off (by omega_arith), VG.Proof.MlKem.X86.ea_off (by omega_arith),
+    rw [VG.Proof.MlKem.X86.ea_off (by omega), VG.Proof.MlKem.X86.ea_off (by omega),
       BitVec.add_assoc, ← BitVec.ofNat_add]
   rw [h]
-  exact Offset.contains_base _ (by omega_arith) (by omega_arith)
+  exact Offset.contains_base _ (by omega) (by omega)
 
 namespace ApplyPre
 
@@ -66,7 +66,7 @@ theorem arg_in (hp : ApplyPre s P D L Sc) {i : Nat} (hi : i < 4) :
   refine ⟨r, List.mem_append_left _ hr, ?_⟩
   simp only [Region.Contains] at hc hc' ⊢
   rw [← Offset.sub_add_sub_cancel (argAddr s i) (argAddr s 0) r.base, BitVec.toNat_add]
-  omega_arith
+  omega
 
 theorem arg_disjoint (hp : ApplyPre s P D L Sc) :
     ∀ r ∈ applyRegions P D L Sc, Region.Disjoint ⟨argAddr s 0, 16⟩ r := by
@@ -94,7 +94,7 @@ theorem env {t : State} (hp : ApplyPre s P D L Sc) (hf : Frame (applyRegions P D
     contains_prefix _ (Nat.le_refl _)
   refine
     { p := hdi
-      pfit := by have := hp.ctxFit; omega_arith
+      pfit := by have := hp.ctxFit; omega
       sfit := hp.scratchFit
       dfit := hp.dataFit
       table := ?_
@@ -189,11 +189,11 @@ theorem apply_step_table (t : State) (i j : Byte) (P D L Sc : BitVec 32) (k : Na
   have hdk : ¬ (D.setWidth 64 + BitVec.ofNat 64 k - P.setWidth 64).toNat < 256 ∧
       ¬ (D.setWidth 64 + BitVec.ofNat 64 k - (Sc.setWidth 64 + BitVec.ofNat 64 16)).toNat < 4 := by
     have hin : (D.setWidth 64 + BitVec.ofNat 64 k - D.setWidth 64).toNat < L.toNat := by
-      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
       exact hk
     exact ⟨fun h => he.sTD _ h hin, fun h => he.sSD _ h hin⟩
   have hTD : Mem.Sep (P.setWidth 64) 256 (D.setWidth 64 + BitVec.ofNat 64 k) 1 :=
-    sep_offset_right he.sTD (by omega_arith) (by omega_arith)
+    sep_offset_right he.sTD (by omega) (by omega)
   refine ⟨?_, husi, hubp, ?_, ?_, ?_, hurd, huwr, hudi, husp, hubx, huz⟩
   · rw [hum]
     unfold Mem.writeW
@@ -214,10 +214,10 @@ theorem apply_step_table (t : State) (i j : Byte) (P D L Sc : BitVec 32) (k : Na
       List.mem_cons_of_mem _ List.mem_cons_self
     have hD : (⟨D.setWidth 64, L.toNat⟩ : Region) ∈ loopRegions P D L Sc :=
       List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
-    refine Frame.write ?_ hD _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
+    refine Frame.write ?_ hD _ (Offset.contains_base _ (by omega) (by omega))
     refine Frame.writeW ?_ hS _ (contains_prefix _ (by decide))
-    refine Frame.write ?_ hP _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
-    exact Frame.write (Frame.refl _ _) hP _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
+    refine Frame.write ?_ hP _ (Offset.contains_base _ (by omega) (by omega))
+    exact Frame.write (Frame.refl _ _) hP _ (Offset.contains_base _ (by omega) (by omega))
 
 theorem loop_step (s : State) (P D L Sc : BitVec 32) (m₁ : Mem) (hp : ApplyPre s P D L Sc)
     (hb : Frame (applyRegions P D L Sc) s.mem m₁) {k : Nat} (hk : k < L.toNat) (t : State)
@@ -232,7 +232,7 @@ theorem loop_step (s : State) (P D L Sc : BitVec 32) (m₁ : Mem) (hp : ApplyPre
       ¬ (D.setWidth 64 + BitVec.ofNat 64 x - (Sc.setWidth 64 + BitVec.ofNat 64 16)).toNat < 4 := by
     intro x hx
     have hin : (D.setWidth 64 + BitVec.ofNat 64 x - D.setWidth 64).toNat < L.toNat := by
-      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+      rw [Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
       exact hx
     exact ⟨fun h => he.sTD _ h hin, fun h => he.sSD _ h hin⟩
   have hctx : (⟨(contextAt t.mem (P.setWidth 64)).table, (upd s P D k).1.i, (upd s P D k).1.j⟩ :
@@ -251,8 +251,8 @@ theorem loop_step (s : State) (P D L Sc : BitVec 32) (m₁ : Mem) (hp : ApplyPre
       j := by rw [upd_succ]; exact huj
       data := ?_
       tail := fun x hx hxL => by
-        rw [hkeep x hxL (by omega_arith)]
-        exact ht.tail x (by omega_arith) hxL
+        rw [hkeep x hxL (by omega)]
+        exact ht.tail x (by omega) hxL
       frame := ht.frame.trans hfr
       bx := hubx
       p := hudi
@@ -261,7 +261,7 @@ theorem loop_step (s : State) (P D L Sc : BitVec 32) (m₁ : Mem) (hp : ApplyPre
       wr := huwr.trans ht.wr }
   rw [bytes_snoc, upd_succ, hbyte, ht.tail k (Nat.le_refl _) hk, ← ht.data]
   refine congrArg (· ++ _) ?_
-  exact bytes_frame _ _ _ _ fun x hx => hkeep x (by omega_arith) (by omega_arith)
+  exact bytes_frame _ _ _ _ fun x hx => hkeep x (by omega) (by omega)
 
 theorem apply_loop (s : State) (P D L Sc : BitVec 32) (m₁ : Mem) (hp : ApplyPre s P D L Sc)
     (hb : Frame (applyRegions P D L Sc) s.mem m₁) {k : Nat} (hk : k < L.toNat) (t : State)
@@ -284,8 +284,8 @@ theorem apply_loop (s : State) (P D L Sc : BitVec 32) (m₁ : Mem) (hp : ApplyPr
       intro h
       have h' := congrArg BitVec.toNat h
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat] at h'
-      omega_arith
-    refine ⟨?_, L.toNat - (j + 1), by omega_arith, j + 1, by omega_arith, rfl, hv⟩
+      omega
+    refine ⟨?_, L.toNat - (j + 1), by omega, j + 1, by omega, rfl, hv⟩
     simp only [eval, hz, Option.map_some, beq_eq_false_iff_ne.mpr hnz, Bool.not_false]
 
 end VG.Proof.Rc4.X86

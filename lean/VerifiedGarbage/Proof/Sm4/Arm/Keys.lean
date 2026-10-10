@@ -47,8 +47,8 @@ theorem SchedPre.keyIn {s : State} {b sched : BitVec 32} (h : SchedPre s b sched
     InRegions (s.rd ++ s.wr) (State.addr (sched + BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 0)) 4 :=
   ⟨_, h.sch, by
     have := h.schFit
-    rw [BitVec.add_zero, addr_add (by omega_arith)]
-    exact VG.Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+    rw [BitVec.add_zero, addr_add (by omega)]
+    exact VG.Offset.contains_base _ (by omega) (by omega)⟩
 
 /-- The word at round key `i` is round key `i`. -/
 theorem key_word (m : Mem) {sched : BitVec 32} (hfit : sched.toNat + 128 ≤ 2 ^ 32) {i : Nat} (hi : i < 32) :
@@ -56,15 +56,15 @@ theorem key_word (m : Mem) {sched : BitVec 32} (hfit : sched.toNat + 128 ≤ 2 ^
       (Spec.Sm4.scheduleAt m (State.addr sched)).getD i 0 := by
   apply BitVec.eq_of_getLsbD_eq
   intro k hk
-  rw [VG.Proof.Aes.getD_eq _ hi, show k = 8 * (k / 8) + k % 8 by omega_arith,
-    getLsbD_scheduleAt _ _ hi (by omega_arith) (by omega_arith), readW_bit _ _ (by omega_arith) (by omega_arith),
-    BitVec.add_zero, addr_add (by omega_arith), BitVec.add_assoc, ← BitVec.ofNat_add]
+  rw [VG.Proof.Aes.getD_eq _ hi, show k = 8 * (k / 8) + k % 8 by omega,
+    getLsbD_scheduleAt _ _ hi (by omega) (by omega), readW_bit _ _ (by omega) (by omega),
+    BitVec.add_zero, addr_add (by omega), BitVec.add_assoc, ← BitVec.ofNat_add]
 
 /-- The table's entry `e` at `b`. -/
 theorem entry_addr {b : BitVec 32} {e j : Nat} :
     wordAddr (b + BitVec.ofNat 32 (4 * tableSlot + 32 * e)) j = wordAddr b (tableSlot + 8 * e + j) := by
   simp only [wordAddr]
-  rw [add_ofNat_ofNat, show 4 * tableSlot + 32 * e + 4 * j = 4 * (tableSlot + 8 * e + j) by omega_arith]
+  rw [add_ofNat_ofNat, show 4 * tableSlot + 32 * e + 4 * j = 4 * (tableSlot + 8 * e + j) by omega]
 
 /-- The round key at `r12` to the entry at `kp`. -/
 theorem keyOne_step {s : State} {b sched : BitVec 32} {e i : Nat} (hp : SchedPre s b sched)
@@ -86,12 +86,12 @@ theorem keyOne_step {s : State} {b sched : BitVec 32} {e i : Nat} (hp : SchedPre
     { slotIn := fun k hk => by
         simp only [entryCfg] at hk ⊢
         rw [wr₁, kp₁, hkp, entry_addr]
-        exact slot_in hp.scr hp.fit (by rw [slots_eq, tableSlot_eq]; omega_arith)
+        exact slot_in hp.scr hp.fit (by rw [slots_eq, tableSlot_eq]; omega)
       extIn := fun k hk => by simp [entryCfg] at hk
       slots := by
         simp only [entryCfg]; rw [kp₁, hkp, BitVec.toNat_add, BitVec.toNat_ofNat, tableSlot_eq]
         have := b.isLt
-        rw [Nat.mod_eq_of_lt (show 384 + 32 * e < 2 ^ 32 by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
+        rw [Nat.mod_eq_of_lt (show 384 + 32 * e < 2 ^ 32 by omega), Nat.mod_eq_of_lt (by omega)]; omega
       sep := fun k _ j hj => by simp [entryCfg] at hj }
   have hchk := keyPlanes_check
   unfold keyEnv at hchk
@@ -106,7 +106,7 @@ theorem keyOne_step {s : State} {b sched : BitVec 32} {e i : Nat} (hp : SchedPre
       (Spec.Sm4.scheduleAt s.mem (State.addr sched)) i 0)).getLsbD (8 * (p / 8) + j) := fun j hj p hp => by
     have h := hso₂ j (keyBsG j) (by simp only [List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩) hj p hp
     rw [keyBsG, xorBits_cons, xorBits_nil, Bool.xor_false,
-      show 8 * (p / 8) + j = 32 * 0 + (8 * (p / 8) + j) by omega_arith, bitOf_word _ _ _ (by omega_arith), x₁, kp₁, hkp,
+      show 8 * (p / 8) + j = 32 * 0 + (8 * (p / 8) + j) by omega, bitOf_word _ _ _ (by omega), x₁, kp₁, hkp,
       entry_addr] at h
     rw [entryW, h]
   have hall₂ : ([Reg.r1, .r2, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r12, .lr].all fun r =>
@@ -119,7 +119,7 @@ theorem keyOne_step {s : State} {b sched : BitVec 32} {e i : Nat} (hp : SchedPre
     simp only [slotRegion, List.mem_singleton] at hr; subst hr
     rw [kp₁, hkp]; exact List.mem_singleton_self _
   · intro b' hb' i' hi' j hj
-    rw [he₂ j hj _ (by omega_arith), show (8 * i' + b') / 8 = i' by omega_arith, rev_bit _ hi' hj]
+    rw [he₂ j hj _ (by omega), show (8 * i' + b') / 8 = i' by omega, rev_bit _ hi' hj]
 
 /-! ## The loop -/
 
@@ -149,15 +149,15 @@ theorem keys_eq (dir : Dir) :
 
 theorem kpAtIter_ent (dir : Dir) {m : Nat} (hm : m < 32) :
     kpAtIter dir m = 4 * tableSlot + 32 * entOf dir m := by
-  cases dir <;> simp only [kpAtIter, entOf, tableSlot_eq] <;> omega_arith
+  cases dir <;> simp only [kpAtIter, entOf, tableSlot_eq] <;> omega
 
-theorem entOf_lt (dir : Dir) {i : Nat} (hi : i < 32) : entOf dir i < 32 := by cases dir <;> simp [entOf] <;> omega_arith
+theorem entOf_lt (dir : Dir) {i : Nat} (hi : i < 32) : entOf dir i < 32 := by cases dir <;> simp [entOf] <;> omega
 
 theorem entOf_inj (dir : Dir) {i i' : Nat} (hi : i < 32) (hi' : i' < 32) (h : entOf dir i = entOf dir i') :
-    i = i' := by cases dir <;> simp [entOf] at h <;> omega_arith
+    i = i' := by cases dir <;> simp [entOf] at h <;> omega
 
 theorem entOf_entOf (dir : Dir) {e : Nat} (he : e < 32) : entOf dir (entOf dir e) = e := by
-  cases dir <;> simp [entOf] <;> omega_arith
+  cases dir <;> simp [entOf] <;> omega
 
 /-- `kp ± 32`. -/
 theorem kpStep_ok (dir : Dir) (s : State) {b : BitVec 32} {m : Nat} (hm : m < 32)
@@ -168,13 +168,13 @@ theorem kpStep_ok (dir : Dir) (s : State) {b : BitVec 32} {m : Nat} (hm : m < 32
   · obtain ⟨s', e', r', o', m', rd', wr', sp'⟩ := addImm_ok s kp kp 32 (by decide)
     refine ⟨s', e', ?_, o', m', rd', wr', sp'⟩
     rw [r', hkp, show (32 : BitVec 32) = BitVec.ofNat 32 32 from rfl, add_ofNat_ofNat]
-    simp only [kpAtIter]; rw [show 4 * tableSlot + 32 * m + 32 = 4 * tableSlot + 32 * (m + 1) by omega_arith]
+    simp only [kpAtIter]; rw [show 4 * tableSlot + 32 * m + 32 = 4 * tableSlot + 32 * (m + 1) by omega]
   · obtain ⟨s', e', r', o', m', rd', wr', sp'⟩ := subImm_ok s kp kp 32 (by decide)
     refine ⟨s', e', ?_, o', m', rd', wr', sp'⟩
     simp only [kpAtIter] at hkp ⊢
     rw [r', hkp, show (32 : BitVec 32) = BitVec.ofNat 32 32 from rfl,
       show 4 * tableSlot - 32 + 32 * (32 - m) = (4 * tableSlot - 32 + 32 * (32 - (m + 1))) + 32 by
-        rw [tableSlot_eq]; omega_arith, ← add_ofNat_ofNat, BitVec.add_sub_cancel]
+        rw [tableSlot_eq]; omega, ← add_ofNat_ofNat, BitVec.add_sub_cancel]
 
 /-- `subs d, n, #1`. -/
 theorem subs1_ok (s : State) (d : Reg) :
@@ -191,20 +191,20 @@ theorem entryW_frame {m m' : Mem} {b : BitVec 32} (hfit : b.toNat + 4 * slots �
     (hi : i < 32) (he : e < 32) (hie : i ≠ e) {j : Nat} (hj : j < 8) : entryW m' b i j = entryW m b i j := by
   rw [slots_eq] at hfit
   have hb := addr_toNat b
-  rw [addr_add (by rw [tableSlot_eq]; omega_arith)] at hf
+  rw [addr_add (by rw [tableSlot_eq]; omega)] at hf
   simp only [entryW]
-  rw [slot_addr (by rw [tableSlot_eq]; omega_arith)]
+  rw [slot_addr (by rw [tableSlot_eq]; omega)]
   refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_singleton] at hr; subst hr
   rw [tableSlot_eq]
-  exact VG.Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+  exact VG.Offset.disjoint _ (by omega) (by omega) (by omega)
 
 /-- The table's entry `e` is inside the table. -/
 theorem entry_sub {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) {e : Nat} (he : e < 32) :
     Region.Sub ⟨State.addr (b + BitVec.ofNat 32 (4 * tableSlot + 32 * e)), 32⟩ ⟨State.addr b, 4 * tableEnd⟩ := by
   rw [slots_eq] at hfit
-  rw [addr_add (by rw [tableSlot_eq]; omega_arith), tableSlot_eq, tableEnd_eq]
-  exact VG.Offset.sub_base _ (by omega_arith)
+  rw [addr_add (by rw [tableSlot_eq]; omega), tableSlot_eq, tableEnd_eq]
+  exact VG.Offset.sub_base _ (by omega)
 
 theorem ofNat32_beq_zero {x : Nat} (hx : x < 2 ^ 32) : (BitVec.ofNat 32 x == 0) = decide (x = 0) := by
   rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
@@ -231,11 +231,11 @@ theorem SchedPre.sched_eq {s : State} {b sched : BitVec 32} (h : SchedPre s b sc
   have hb : ∀ k < 128, m' (State.addr sched + BitVec.ofNat 64 k) = m (State.addr sched + BitVec.ofNat 64 k) :=
     fun k hk => hf.bytes (R := ⟨State.addr sched, 128⟩) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact h.sep.sub_right (Region.sub_prefix (by omega_arith))) (by show 128 ≤ 2 ^ 64; omega_arith) hk
+      exact h.sep.sub_right (Region.sub_prefix (by omega))) (by show 128 ≤ 2 ^ 64; omega) hk
   apply Vector.ext
   intro i hi
   simp only [Spec.Sm4.scheduleAt, Vector.getElem_ofFn, List.range, List.range.loop, List.foldl]
-  rw [hb (4 * i + 0) (by omega_arith), hb (4 * i + 1) (by omega_arith), hb (4 * i + 2) (by omega_arith), hb (4 * i + 3) (by omega_arith)]
+  rw [hb (4 * i + 0) (by omega), hb (4 * i + 1) (by omega), hb (4 * i + 2) (by omega), hb (4 * i + 3) (by omega)]
 
 /-- One iteration: round key `m`. -/
 theorem keyIter_ok (dir : Dir) {s₀ s : State} {b sched : BitVec 32} {m : Nat} (hm : m < 32)
@@ -246,7 +246,7 @@ theorem keyIter_ok (dir : Dir) {s₀ s : State} {b sched : BitVec 32} {m : Nat} 
   have hfit := hpre.fit
   have he := entOf_lt dir hm
   have hsched : Spec.Sm4.scheduleAt s.mem (State.addr sched) = Spec.Sm4.scheduleAt s₀.mem (State.addr sched) :=
-    hpre.sched_eq (by rw [tableEnd_eq, slots_eq]; omega_arith) hi.frame
+    hpre.sched_eq (by rw [tableEnd_eq, slots_eq]; omega) hi.frame
   obtain ⟨s₁, e₁, o₁, rd₁, wr₁, sp₁, f₁, E₁⟩ := keyOne_step (e := entOf dir m) hpre
     (by rw [hi.kpv, kpAtIter_ent dir hm]) he hi.ptr hm
   rw [hsched] at E₁
@@ -272,28 +272,28 @@ theorem keyIter_ok (dir : Dir) {s₀ s : State} {b sched : BitVec 32} {m : Nat} 
         [.dp .add .r12 .r12 (.imm 4)] ++ ([kpStep dir] ++ [.subs .lr .lr (.imm 1)]) from rfl,
       runBlock_app, e₂, Option.bind_some, runBlock_app, e₃, Option.bind_some, e₄]
   · rw [o₄ _ (by decide), o₃ _ (by decide), r₂, ko .r12 (by decide) (by decide) (by decide), hi.ptr,
-      show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, add_ofNat_ofNat, show 4 * m + 4 = 4 * (m + 1) by omega_arith]
-  · rw [c₄, hc₃, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega_arith),
-      show 32 - m - 1 = 32 - (m + 1) by omega_arith]
+      show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, add_ofNat_ofNat, show 4 * m + 4 = 4 * (m + 1) by omega]
+  · rw [c₄, hc₃, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega),
+      show 32 - m - 1 = 32 - (m + 1) by omega]
   · rw [hmem]
-    rcases (show i < m ∨ i = m by omega_arith) with hlt | rfl
-    · exact (hi.ent i hlt).congr fun j hj => entryW_frame hfit f₁ (entOf_lt dir (by omega_arith)) he
-        (fun h => by have := entOf_inj dir (by omega_arith) hm h; omega_arith) hj
+    rcases (show i < m ∨ i = m by omega) with hlt | rfl
+    · exact (hi.ent i hlt).congr fun j hj => entryW_frame hfit f₁ (entOf_lt dir (by omega)) he
+        (fun h => by have := entOf_inj dir (by omega) hm h; omega) hj
     · exact E₁
-  · rw [z₄, hc₃, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega_arith),
-      ofNat32_beq_zero (by omega_arith)]
-    simp only [decide_eq_decide]; omega_arith
+  · rw [z₄, hc₃, show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega),
+      ofNat32_beq_zero (by omega)]
+    simp only [decide_eq_decide]; omega
 
 theorem keyLoop_wp (dir : Dir) {s₀ s : State} {b sched : BitVec 32} (hi : KInv s₀ b sched dir 0 s) :
     WP isa (.loop (.block (tableBody dir)) .ne) s (KInv s₀ b sched dir 32) := by
   refine WP.loop (M := isa) (fun n s => ∃ m, n = 32 - m ∧ m < 32 ∧ KInv s₀ b sched dir m s)
-    (fun n s hs => ?_) 32 s ⟨0, rfl, by omega_arith, hi⟩
+    (fun n s hs => ?_) 32 s ⟨0, rfl, by omega, hi⟩
   obtain ⟨m, rfl, hm, hi⟩ := hs
   obtain ⟨s', e', hi', z'⟩ := keyIter_ok dir hm hi
   refine WP.of_runBlock ⟨s', e', ?_⟩
   by_cases h32 : m + 1 = 32
   · exact .inl ⟨by rw [eval_ne, z', h32]; rfl, by rw [h32] at hi'; exact hi'⟩
-  · exact .inr ⟨by rw [eval_ne, z']; simp [h32], 32 - (m + 1), by omega_arith, m + 1, rfl, by omega_arith, hi'⟩
+  · exact .inr ⟨by rw [eval_ne, z']; simp [h32], 32 - (m + 1), by omega, m + 1, rfl, by omega, hi'⟩
 
 /-- The round keys in the order the rounds use them. -/
 def dirKeys (dir : Dir) (sch : Spec.Sm4.Schedule) (e : Nat) : Spec.Sm4.Word := sch.getD (entOf dir e) 0
@@ -328,7 +328,7 @@ theorem keys_wp (dir : Dir) {s₀ : State} {b sched : BitVec 32} (hp : SchedPre 
     refine ⟨hp.congr (by rw [o₂ _ (by decide), o₁ _ (by decide)]) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]),
       by rw [o₂ _ (by decide), k₁, hp.base]; cases dir <;> rfl,
       by rw [o₂ _ (by decide), o₁ _ (by decide), hr]; simp,
-      by rw [l₂]; rfl, fun i hi => by omega_arith, by rw [m₂, m₁]; exact Frame.refl _ _,
+      by rw [l₂]; rfl, fun i hi => by omega, by rw [m₂, m₁]; exact Frame.refl _ _,
       fun r _ _ _ _ hk hl => by rw [o₂ r hl, o₁ r hk], by rw [rd₂, rd₁], by rw [wr₂, wr₁], by rw [sp₂, sp₁]⟩
   refine WP.seq (WP.of_runBlock ⟨s₂, ?_, WP.mono (keyLoop_wp dir hinv) fun s h => ?_⟩)
   · rw [show ([kpAt k, .mov .lr (.imm 32)] : List Instr) = [kpAt k] ++ [.mov .lr (.imm 32)] from rfl,

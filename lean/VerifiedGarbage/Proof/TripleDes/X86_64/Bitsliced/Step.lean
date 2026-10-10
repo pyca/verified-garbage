@@ -24,21 +24,21 @@ theorem add_self_eq (x : BitVec 64) : x + x = x <<< 1 := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.pow_one]
   congr 1
-  omega_arith
+  omega
 
 theorem add_self_carry (a : BitVec 64) : decide (2 ^ 64 ≤ a.toNat + a.toNat) = a.msb := by
   rw [BitVec.msb_eq_decide]
   have := a.isLt
   simp only [Nat.add_one_sub_one]
   apply decide_eq_decide.mpr
-  constructor <;> intro h <;> omega_arith
+  constructor <;> intro h <;> omega
 
 theorem sbb_self (a : BitVec 64) (c : Bool) : a - a - (BitVec.ofBool c).setWidth 64 = maskVal c := by
   cases c <;> simp [maskVal]
 
 theorem msb_shiftLeft (R : BitVec 64) {n : Nat} (hn : n < 64) : (R <<< n).msb = R.getLsbD (63 - n) := by
   rw [BitVec.msb_eq_getLsbD_last, BitVec.getLsbD_shiftLeft]
-  have : ¬ 63 < n := by omega_arith
+  have : ¬ 63 < n := by omega
   simp [this, show (63 : Nat) < 64 by decide]
 
 theorem getLsbD_mask (b : Bool) {p : Nat} (hp : p < 64) : (maskVal b).getLsbD p = b := by
@@ -118,24 +118,24 @@ theorem inputsN_ok (ρ : Role) {j : Nat} (hj : j < 8) {n : Nat} (hn : n ≤ 6) {
       s'.gpr .rcx = s.gpr .rcx ∧ s'.gpr .rsp = s.gpr .rsp ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   induction n with
-  | zero => exact ⟨s, runBlock_nil, by simp, fun m hm => by omega_arith, rfl, rfl, rfl, rfl, rfl⟩
+  | zero => exact ⟨s, runBlock_nil, by simp, fun m hm => by omega, rfl, rfl, rfl, rfl, rfl⟩
   | succ n ih =>
-    obtain ⟨s₁, run₁, k₁, in₁, c₁, sp₁, m₁, rd₁, wr₁⟩ := ih (by omega_arith)
+    obtain ⟨s₁, run₁, k₁, in₁, c₁, sp₁, m₁, rd₁, wr₁⟩ := ih (by omega)
     have h₁ : Room s₁ := h.congr c₁ wr₁
-    obtain ⟨hq, hc, hsp⟩ := inReg_ne (5 - n) (by omega_arith)
+    obtain ⟨hq, hc, hsp⟩ := inReg_ne (5 - n) (by omega)
     obtain ⟨s₂, run₂, k₂, q₂, o₂, m₂, rd₂, wr₂⟩ :=
       inputStep_run h₁ hq hc (w := stSlot (readWord ρ (eBit (inBit j (5 - n)))))
-        (by have := readSlot_lt ρ j hj (5 - n) (by omega_arith); omega_arith)
+        (by have := readSlot_lt ρ j hj (5 - n) (by omega); omega)
     refine ⟨s₂, ?_, ?_, fun m hm => ?_, ?_, ?_, m₂.trans m₁, rd₂.trans rd₁, wr₂.trans wr₁⟩
     · rw [inputsN_succ]; exact runBlock_cat_some run₁ run₂
     · rw [k₂, k₁, ← BitVec.shiftLeft_add]
     · by_cases he : m = n
       · subst he
-        rw [q₂, k₁, msb_shiftLeft _ (by omega_arith)]
+        rw [q₂, k₁, msb_shiftLeft _ (by omega)]
         simp only [sl, m₁, c₁]
       · have hne : inReg (5 - m) ≠ inReg (5 - n) := by
-          intro e; have := inReg_inj' _ (by omega_arith) _ (by omega_arith) e; omega_arith
-        rw [o₂ _ hne (inReg_ne (5 - m) (by omega_arith)).1, in₁ m (by omega_arith)]
+          intro e; have := inReg_inj' _ (by omega) _ (by omega) e; omega
+        rw [o₂ _ hne (inReg_ne (5 - m) (by omega)).1, in₁ m (by omega)]
     · rw [o₂ _ (Ne.symm hc) (by decide)]; exact c₁
     · rw [o₂ _ (Ne.symm hsp) (by decide)]; exact sp₁
 
@@ -182,10 +182,10 @@ theorem outputs_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) :
       split at hi
       · exact outIdx_lt ρ j _ i hi
       · cases hi
-    rw [xorSet_two_pow_xor (by simp [varN, outRegs]; omega_arith) (by simp [varN, outRegs]; omega_arith)]
-    have e1 : ¬ 128 + i < 128 := by omega_arith
+    rw [xorSet_two_pow_xor (by simp [varN, outRegs]; omega) (by simp [varN, outRegs]; omega)]
+    have e1 : ¬ 128 + i < 128 := by omega
     simp only [varVals, hk, ite_true, e1, ite_false, Nat.add_sub_cancel_left, outReg]
-  · rw [xorSet_two_pow _ (by simp [varN]; omega_arith)]
+  · rw [xorSet_two_pow _ (by simp [varN]; omega)]
     simp only [varVals, hk, ite_true]
 
 /-! ## One S-box -/
@@ -211,16 +211,16 @@ theorem sboxStep_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) 
   have hin : ∀ i < 6, s₁.gpr (inReg i) =
       maskVal (k.getLsbD (inBit j i)) ^^^ sl s (stSlot (readWord ρ (eBit (inBit j i)))) := by
     intro i hi
-    have e := in₁ (5 - i) (by omega_arith)
-    rw [show 5 - (5 - i) = i by omega_arith] at e
-    rw [e, show 63 - (5 - i) = 58 + i by omega_arith, hkey i hi]
+    have e := in₁ (5 - i) (by omega)
+    rw [show 5 - (5 - i) = i by omega] at e
+    rw [e, show 63 - (5 - i) = 58 + i by omega, hkey i hi]
   refine ⟨s₃, ?_, fun x hx => ?_, fun x hx hl => ?_, ?_, rd₃.trans (rd₂.trans rd₁),
     wr₃.trans (wr₂.trans wr₁), c₃.trans (c₂.trans c₁), sp₃.trans (sp₂.trans sp₁), ?_⟩
   · rw [sboxStep, inputCode_eq]; exact runBlock_cat_some (runBlock_cat_some run₁ run₂) run₃
-  · have hs : stSlot x < 128 := by unfold stSlot; omega_arith
-    have e₂ : sl s₂ (stSlot x) = words s x := sl₂ _ hs (by unfold stSlot spills; omega_arith)
+  · have hs : stSlot x < 128 := by unfold stSlot; omega
+    have e₂ : sl s₂ (stSlot x) = words s x := sl₂ _ hs (by unfold stSlot spills; omega)
     have hos : outSlot ρ j (stSlot x) = outIdx ρ j x := by
-      simp only [outSlot, stSlot, show 8 ≤ 8 + x ∧ 8 + x < 72 by omega_arith, and_self, ite_true,
+      simp only [outSlot, stSlot, show 8 ≤ 8 + x ∧ 8 + x < 72 by omega, and_self, ite_true,
         Nat.add_sub_cancel_left]
     simp only [words]
     rw [sl₃ _ hs, hos]
@@ -243,9 +243,9 @@ theorem sboxStep_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) 
       rw [Bool.xor_comm]
   · rw [sl₃ x hx]
     have : outSlot ρ j x = none := by
-      simp only [outSlot, show ¬ (8 ≤ x ∧ x < 72) by omega_arith, ite_false]
+      simp only [outSlot, show ¬ (8 ≤ x ∧ x < 72) by omega, ite_false]
     rw [this]
-    exact sl₂ x hx (by unfold spills; omega_arith)
+    exact sl₂ x hx (by unfold spills; omega)
   · rw [k₃, k₂, k₁]
   · have g₁ : Frame [scratchR s] s.mem s₁.mem := by rw [m₁]; exact Frame.refl _ _
     have g₂ : Frame [scratchR s] s₁.mem s₂.mem := by
@@ -282,11 +282,11 @@ theorem swapHalves_ok {s : State} (h : Room s) :
     simp only [varVals, swapSlot_lt k hk, ite_true]
   refine ⟨s', hrun, fun x hx => ?_, fun x hx hl => ?_, p.rd, p.wr, p.base, p.ext, p.frame⟩
   · simp only [words, stSlot]
-    rw [key _ (by omega_arith)]
-    simp only [swapW, swapSlot, show 8 ≤ 8 + x ∧ 8 + x < 72 by omega_arith, and_self, ite_true,
+    rw [key _ (by omega)]
+    simp only [swapW, swapSlot, show 8 ≤ 8 + x ∧ 8 + x < 72 by omega, and_self, ite_true,
       Nat.add_sub_cancel_left]
     rcases partner x with _ | y <;> rfl
   · rw [key x hx]
-    simp only [swapSlot, show ¬ (8 ≤ x ∧ x < 72) by omega_arith, ite_false]
+    simp only [swapSlot, show ¬ (8 ≤ x ∧ x < 72) by omega, ite_false]
 
 end VG.Proof.TripleDes.X86_64.Bitsliced

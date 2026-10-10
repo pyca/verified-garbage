@@ -24,10 +24,10 @@ theorem lane_eq (J : BitVec 8) {r e : Nat} (hr : r < 16) (he : e < 16) :
     BitVec.ofNat 8 (16 * (r % 4) + e) = J ^^^ BitVec.ofNat 8 (64 * (r / 4)) ↔ 16 * r + e = J.toNat := by
   have hJ := J.isLt
   have hq : (BitVec.ofNat 8 (64 * (r / 4))).toNat = 64 * (r / 4) := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   have ha : (BitVec.ofNat 8 (16 * (r % 4) + e)).toNat = 16 * (r % 4) + e := by
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
-  have low := xor_low (16 * (r % 4) + e) (by omega_arith) (r / 4) (by omega_arith)
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  have low := xor_low (16 * (r % 4) + e) (by omega) (r / 4) (by omega)
   constructor
   · intro h
     have h' := congrArg BitVec.toNat h
@@ -35,10 +35,10 @@ theorem lane_eq (J : BitVec 8) {r e : Nat} (hr : r < 16) (he : e < 16) :
     have : J.toNat = (16 * (r % 4) + e) ^^^ 64 * (r / 4) := by
       rw [h', Nat.xor_assoc, Nat.xor_self, Nat.xor_zero]
     rw [low] at this
-    omega_arith
+    omega
   · intro h
     apply BitVec.eq_of_toNat_eq
-    rw [ha, BitVec.toNat_xor, hq, ← h, show 16 * r + e = 64 * (r / 4) + (16 * (r % 4) + e) by omega_arith,
+    rw [ha, BitVec.toNat_xor, hq, ← h, show 16 * r + e = 64 * (r / 4) + (16 * (r % 4) + e) by omega,
       ← low, Nat.xor_assoc, Nat.xor_self, Nat.xor_zero]
 
 def writeN (n : Nat) : List Instr :=
@@ -70,7 +70,7 @@ theorem writeN_run {s : State} (hk : Consts s) {J V : BitVec 8} (hq : Quarters s
   induction n with
   | zero => exact ⟨s, runBlock_nil, fun k _ => by simp, Only.refl _ _⟩
   | succ n ih =>
-    obtain ⟨s₁, run₁, t₁, o₁⟩ := ih (by omega_arith)
+    obtain ⟨s₁, run₁, t₁, o₁⟩ := ih (by omega)
     have notW : ∀ r, r ∉ writeRegs → s₁.v r = s.v r := o₁.2
     let m := VArr.b16.map2 (fun w a b => if a = b then BitVec.allOnes w else 0)
       (s₁.v (lanes (n % 4))) (s₁.v (dq (n / 4)))
@@ -79,39 +79,39 @@ theorem writeN_run {s : State} (hk : Consts s) {J V : BitVec 8} (hq : Quarters s
     have e₂ : exec (.vop (.cmeq .b16 .v7 (lanes (n % 4)) (dq (n / 4)))) s₁ = some s₂ := rfl
     have e₃ : exec (.vop (.bsel .bit (treg n) si .v7)) s₂ = some s₃ := rfl
     have l₁ : s₁.v (lanes (n % 4)) = laneNums (n % 4) := by
-      rw [notW _ (lanes_notW _ (by omega_arith))]; exact hk.lns _ (by omega_arith)
+      rw [notW _ (lanes_notW _ (by omega))]; exact hk.lns _ (by omega)
     have d₁ : s₁.v (dq (n / 4)) = bc (J ^^^ BitVec.ofNat 8 (64 * (n / 4))) := by
-      rw [notW _ (dq_notW _ (by omega_arith))]
-      exact hq _ (by omega_arith)
+      rw [notW _ (dq_notW _ (by omega))]
+      exact hq _ (by omega)
     have v₂ : s₂.v si = bc V := by
       rw [v_setV_of_ne _ _ (by decide), notW _ (by decide)]; exact hv
     have m_byte : ∀ e < 16, vbyte (s₂.v .v7) e =
         if 16 * n + e = J.toNat then BitVec.allOnes 8 else 0 := by
       intro e he
       rw [v_setV_self, vbyte_cmeq _ _ he, l₁, d₁, laneNums, vbyte_ofVBytes _ he, vbyte_bc _ he]
-      simp only [lane_eq J (by omega_arith : n < 16) he]
+      simp only [lane_eq J (by omega : n < 16) he]
     refine ⟨s₃, by rw [writeN_succ]; exact runBlock_cat_some run₁ (by
       rw [runBlock_cons, e₂, runStep_some, runBlock_cons, e₃, runStep_some, runBlock_nil]), ?_, ?_⟩
     · intro k hk
       by_cases hkn : k / 16 = n
       · have b₃ : tbyte s₃.v k = vbyte (VSelOp.bit.eval (s₂.v (treg n)) (s₂.v si) (s₂.v .v7)) (k % 16) := by
           simp only [tbyte, hkn, s₃, v_setV_self]
-        rw [b₃, vbyte_bit _ _ _ (16 * n + k % 16 = J.toNat) (m_byte _ (by omega_arith)), v₂,
-          vbyte_bc _ (by omega_arith)]
+        rw [b₃, vbyte_bit _ _ _ (16 * n + k % 16 = J.toNat) (m_byte _ (by omega)), v₂,
+          vbyte_bc _ (by omega)]
         have old : vbyte (s₂.v (treg n)) (k % 16) = tbyte s.v k := by
           rw [v_setV_of_ne _ _ (notTable_v7.ne n)]
           have := t₁ k hk
-          simp only [show ¬ k / 16 < n by omega_arith, false_and, ite_false] at this
+          simp only [show ¬ k / 16 < n by omega, false_and, ite_false] at this
           rw [← this]; simp only [tbyte, hkn]
         rw [old]
-        exact ite_iff ⟨fun h => ⟨by omega_arith, by omega_arith⟩, fun h => by omega_arith⟩ _ _
-      · have ne : treg (k / 16) ≠ treg n := fun h => hkn (treg_inj _ (by omega_arith) _ (by omega_arith) h)
+        exact ite_iff ⟨fun h => ⟨by omega, by omega⟩, fun h => by omega⟩ _ _
+      · have ne : treg (k / 16) ≠ treg n := fun h => hkn (treg_inj _ (by omega) _ (by omega) h)
         have keep : s₃.v (treg (k / 16)) = s₁.v (treg (k / 16)) := by
           rw [v_setV_of_ne _ _ ne, v_setV_of_ne _ _ (notTable_v7.ne _)]
         have : tbyte s₃.v k = tbyte s₁.v k := by simp only [tbyte, keep]
         rw [this, t₁ k hk]
-        have e : (k / 16 < n + 1) ↔ (k / 16 < n) := by omega_arith
+        have e : (k / 16 < n + 1) ↔ (k / 16 < n) := by omega
         simp only [e]
-    · exact (o₁.trans (Only.setV _ (by decide) _)).trans (Only.setV _ (treg_mem n (by omega_arith)) _)
+    · exact (o₁.trans (Only.setV _ (by decide) _)).trans (Only.setV _ (treg_mem n (by omega)) _)
 
 end VG.Proof.Rc4.AArch64

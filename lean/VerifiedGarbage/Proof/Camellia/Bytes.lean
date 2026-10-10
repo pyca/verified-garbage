@@ -45,26 +45,26 @@ set_option linter.unusedSimpArgs false in
 theorem getLsbD_cat8 (y0 y1 y2 y3 y4 y5 y6 y7 : Byte) {i j : Nat} (hi : i < 8) (hj : j < 8) :
     (y0 ++ y1 ++ y2 ++ y3 ++ y4 ++ y5 ++ y6 ++ y7).getLsbD (56 - 8 * i + j) =
       ([y0, y1, y2, y3, y4, y5, y6, y7].getD i 0).getLsbD j := by
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp only [BitVec.getLsbD_append, List.getD_cons_succ, List.getD_cons_zero] <;>
-  simp (disch := omega_arith) only [ite_eq_right_of_eq_false, ite_eq_left_of_eq_true, eq_false, eq_true,
+  simp (disch := omega) only [ite_eq_right_of_eq_false, ite_eq_left_of_eq_true, eq_false, eq_true,
     Nat.reduceMul, Nat.reduceSub, ite_true, ite_false] <;>
-  congr 1 <;> omega_arith
+  congr 1 <;> omega
 
 theorem getLsbD_byteOf_f (x k : BitVec 64) {i j : Nat} (hi : i < 8) (hj : j < 8) :
     (byteOf (f x k) i).getLsbD j =
       xorRow (fun i' => sboxAt i' (byteOf (x ^^^ k) i')) (pRow i) j := by
   have ht : ∀ n, 1 ≤ n → n ≤ 8 →
       ((x ^^^ k) >>> (64 - 8 * n)).setWidth 8 = byteOf (x ^^^ k) (n - 1) := fun n h1 h2 => by
-    simp only [byteOf]; congr 2; omega_arith
+    simp only [byteOf]; congr 2; omega
   -- In one pass: each `rw` would rebuild the whole (large) goal.
-  simp only [f, ht 1 (by omega_arith) (by omega_arith), ht 2 (by omega_arith) (by omega_arith), ht 3 (by omega_arith) (by omega_arith),
-    ht 4 (by omega_arith) (by omega_arith), ht 5 (by omega_arith) (by omega_arith), ht 6 (by omega_arith) (by omega_arith),
-    ht 7 (by omega_arith) (by omega_arith), ht 8 (by omega_arith) (by omega_arith)]
+  simp only [f, ht 1 (by omega) (by omega), ht 2 (by omega) (by omega), ht 3 (by omega) (by omega),
+    ht 4 (by omega) (by omega), ht 5 (by omega) (by omega), ht 6 (by omega) (by omega),
+    ht 7 (by omega) (by omega), ht 8 (by omega) (by omega)]
   rw [getLsbD_byteOf _ hi hj, getLsbD_cat8 _ _ _ _ _ _ _ _ hi hj]
   generalize byteOf (x ^^^ k) = b
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega_arith) with
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 by omega) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp only [List.getD_cons_succ, List.getD_cons_zero, BitVec.getLsbD_xor, xorRow, pRow, sboxAt,
     List.foldr_cons, List.foldr_nil, Bool.xor_false, Bool.xor_assoc]
@@ -76,39 +76,39 @@ Bit `n` of a 64-bit value; bits `32 … 63` are `x1` (`y1`), `0 … 31` are
 
 theorem getLsbD_fl_lo (x k : BitVec 64) {n : Nat} (hn : n < 32) :
     (fl x k).getLsbD n = (x.getLsbD n ^^ (x.getLsbD (32 + (n + 31) % 32) && k.getLsbD (32 + (n + 31) % 32))) := by
-  have hm : (n + 31) % 32 < 32 := Nat.mod_lt _ (by omega_arith)
+  have hm : (n + 31) % 32 < 32 := Nat.mod_lt _ (by omega)
   simp only [fl, BitVec.getLsbD_append, hn, ite_true, BitVec.getLsbD_xor, BitVec.getLsbD_setWidth,
     BitVec.getLsbD_rotateLeft, BitVec.getLsbD_and, BitVec.getLsbD_ushiftRight, decide_true, Bool.true_and]
   split
-  · rw [show 32 - 1 % 32 + n = (n + 31) % 32 by omega_arith]; simp [hm]
-  · rw [show n - 1 % 32 = (n + 31) % 32 by omega_arith]; simp [hm]
+  · rw [show 32 - 1 % 32 + n = (n + 31) % 32 by omega]; simp [hm]
+  · rw [show n - 1 % 32 = (n + 31) % 32 by omega]; simp [hm]
 
 theorem getLsbD_fl_hi (x k : BitVec 64) {n : Nat} (hn : 32 ≤ n) (hn' : n < 64) :
     (fl x k).getLsbD n = (x.getLsbD n ^^ ((fl x k).getLsbD (n - 32) || k.getLsbD (n - 32))) := by
-  have h1 : ¬ n < 32 := by omega_arith
-  have h2 : n - 32 < 32 := by omega_arith
+  have h1 : ¬ n < 32 := by omega
+  have h2 : n - 32 < 32 := by omega
   simp only [fl, BitVec.getLsbD_append, h1, h2, ite_true, ite_false, BitVec.getLsbD_xor, BitVec.getLsbD_setWidth,
     BitVec.getLsbD_or, BitVec.getLsbD_ushiftRight, decide_true, Bool.true_and]
-  rw [show 32 + (n - 32) = n by omega_arith]
+  rw [show 32 + (n - 32) = n by omega]
 
 theorem getLsbD_flinv_hi (x k : BitVec 64) {n : Nat} (hn : 32 ≤ n) (hn' : n < 64) :
     (flinv x k).getLsbD n = (x.getLsbD n ^^ (x.getLsbD (n - 32) || k.getLsbD (n - 32))) := by
-  have h1 : ¬ n < 32 := by omega_arith
-  have h2 : n - 32 < 32 := by omega_arith
+  have h1 : ¬ n < 32 := by omega
+  have h2 : n - 32 < 32 := by omega
   simp only [flinv, BitVec.getLsbD_append, h1, h2, ite_false, BitVec.getLsbD_xor, BitVec.getLsbD_setWidth,
     BitVec.getLsbD_or, BitVec.getLsbD_ushiftRight, decide_true, Bool.true_and]
-  rw [show 32 + (n - 32) = n by omega_arith]
+  rw [show 32 + (n - 32) = n by omega]
 
 theorem getLsbD_flinv_lo (x k : BitVec 64) {n : Nat} (hn : n < 32) :
     (flinv x k).getLsbD n = (x.getLsbD n ^^
       ((flinv x k).getLsbD (32 + (n + 31) % 32) && k.getLsbD (32 + (n + 31) % 32))) := by
-  have hm : (n + 31) % 32 < 32 := Nat.mod_lt _ (by omega_arith)
-  have h1 : ¬ 32 + (n + 31) % 32 < 32 := by omega_arith
-  have h2 : 32 + (n + 31) % 32 - 32 < 32 := by omega_arith
+  have hm : (n + 31) % 32 < 32 := Nat.mod_lt _ (by omega)
+  have h1 : ¬ 32 + (n + 31) % 32 < 32 := by omega
+  have h2 : 32 + (n + 31) % 32 - 32 < 32 := by omega
   simp only [flinv, BitVec.getLsbD_append, hn, h1, h2, ite_true, ite_false, BitVec.getLsbD_xor, BitVec.getLsbD_setWidth,
     BitVec.getLsbD_rotateLeft, BitVec.getLsbD_and, BitVec.getLsbD_or, BitVec.getLsbD_ushiftRight, decide_true, Bool.true_and]
   split
-  · rw [show 32 - 1 % 32 + n = (n + 31) % 32 by omega_arith]; simp [hm]
-  · rw [show n - 1 % 32 = (n + 31) % 32 by omega_arith]; simp [hm]
+  · rw [show 32 - 1 % 32 + n = (n + 31) % 32 by omega]; simp [hm]
+  · rw [show n - 1 % 32 = (n + 31) % 32 by omega]; simp [hm]
 
 end VG.Proof.Camellia

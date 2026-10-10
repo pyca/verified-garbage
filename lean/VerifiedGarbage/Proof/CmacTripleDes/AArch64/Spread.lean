@@ -38,9 +38,9 @@ def shr2 (x : BitVec 128) (k : Nat) : BitVec 128 :=
 theorem getLsbD_ofVDwords (a b : BitVec 64) {h j : Nat} (hh : h < 2) (hj : j < 64) :
     (ofVDwords a b).getLsbD (64 * h + j) = if h = 0 then a.getLsbD j else b.getLsbD j := by
   simp only [ofVDwords, BitVec.getLsbD_append]
-  rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl
+  rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl
   · simp [hj]
-  · simp [show ¬ 64 + j < 64 by omega_arith]
+  · simp [show ¬ 64 + j < 64 by omega]
 
 theorem getLsbD_vdword (x : BitVec 128) {h j : Nat} (hj : j < 64) :
     (vdword x h).getLsbD j = x.getLsbD (64 * h + j) := by
@@ -49,17 +49,17 @@ theorem getLsbD_vdword (x : BitVec 128) {h j : Nat} (hj : j < 64) :
 theorem getLsbD_shr2 (x : BitVec 128) (k : Nat) {h j : Nat} (hh : h < 2) (hj : j < 64) :
     (shr2 x k).getLsbD (64 * h + j) = (decide (2 * k + j < 64) && x.getLsbD (64 * h + (2 * k + j))) := by
   rw [shr2, getLsbD_ofVDwords _ _ hh hj]
-  rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl <;>
+  rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl <;>
   · simp only [BitVec.getLsbD_ushiftRight, ite_true, ite_false, show (1 : Nat) ≠ 0 by decide]
     by_cases h' : 2 * k + j < 64
     · rw [getLsbD_vdword _ h', decide_eq_true h', Bool.true_and]
-    · rw [decide_eq_false h', Bool.false_and, BitVec.getLsbD_of_ge _ _ (by omega_arith)]
+    · rw [decide_eq_false h', Bool.false_and, BitVec.getLsbD_of_ge _ _ (by omega)]
 
 theorem shr2_zero (x : BitVec 128) : shr2 x 0 = x := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  have := getLsbD_shr2 x 0 (h := i / 64) (j := i % 64) (by omega_arith) (by omega_arith)
-  rw [show 64 * (i / 64) + i % 64 = i by omega_arith, show 64 * (i / 64) + (2 * 0 + i % 64) = i by omega_arith,
-    decide_eq_true (by omega_arith), Bool.true_and] at this
+  have := getLsbD_shr2 x 0 (h := i / 64) (j := i % 64) (by omega) (by omega)
+  rw [show 64 * (i / 64) + i % 64 = i by omega, show 64 * (i / 64) + (2 * 0 + i % 64) = i by omega,
+    decide_eq_true (by omega), Bool.true_and] at this
   exact this
 
 /-- The table registers of the gathering `tbl`: `v0`–`v3`. -/
@@ -84,7 +84,7 @@ theorem spreadV_ok (s : State) (hG : s.v .v5 = ofVBytes gatherIndex) (hM : s.v .
   let s₆ := s₅.setV .v4 (s₅.v .v4 ^^^ s₅.v .v7)
   have r₃ : ∀ k < 4, s₃.v ([VReg.v0, .v1, .v2, .v3].getD k .v0) = shr2 x k := by
     intro k hk
-    rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl
     · simp only [List.getD_cons_zero, s₃, s₂, s₁, v_setV_of_ne _ _ (by decide : VReg.v0 ≠ .v3),
         v_setV_of_ne _ _ (by decide : VReg.v0 ≠ .v2), v_setV_of_ne _ _ (by decide : VReg.v0 ≠ .v1),
         shr2_zero]
@@ -119,63 +119,63 @@ theorem spreadV_ok (s : State) (hG : s.v .v5 = ofVBytes gatherIndex) (hM : s.v .
     intro i hi
     -- In the half `h` of the key, position `j`, byte `e`, bit `t`.
     obtain ⟨h, j, hh, hj, rfl⟩ : ∃ h j, h < 2 ∧ j < 64 ∧ i = 64 * h + j :=
-      ⟨i / 64, i % 64, by omega_arith, by omega_arith, by omega_arith⟩
-    have he : 8 * h + j / 8 < 16 := by omega_arith
+      ⟨i / 64, i % 64, by omega, by omega, by omega⟩
+    have he : 8 * h + j / 8 < 16 := by omega
     obtain ⟨g64, ghalf, gpos⟩ := gather_facts (8 * h + j / 8) he
     have hT : T.getLsbD (64 * h + j) = (vbyte (shr2 x ((gatherIndex (8 * h + j / 8)).toNat / 16))
         ((gatherIndex (8 * h + j / 8)).toNat % 16)).getLsbD (j % 8) := by
       have := getLsbD_ofVBytes (fun i =>
         let idx := (vbyte (s₃.v .v5) i).toNat
-        if idx < 16 * 4 then tableByte s₃.v .v0 idx else 0) he (show j % 8 < 8 by omega_arith)
-      rw [show 8 * (8 * h + j / 8) + j % 8 = 64 * h + j by omega_arith] at this
+        if idx < 16 * 4 then tableByte s₃.v .v0 idx else 0) he (show j % 8 < 8 by omega)
+      rw [show 8 * (8 * h + j / 8) + j % 8 = 64 * h + j by omega] at this
       rw [show T = _ from rfl, this]
       simp only
-      rw [v5₃, vbyte_ofVBytes _ he, ite_eq_left (by omega_arith), tableByte,
-        repeat_v0 _ (by omega_arith), r₃ _ (by omega_arith)]
+      rw [v5₃, vbyte_ofVBytes _ he, ite_eq_left (by omega), tableByte,
+        repeat_v0 _ (by omega), r₃ _ (by omega)]
     have hbc : (bc 63).getLsbD (64 * h + j) = decide (j % 8 < 6) := by
-      have := getLsbD_ofVBytes (fun _ => (63 : BitVec 8)) he (show j % 8 < 8 by omega_arith)
-      rw [show 8 * (8 * h + j / 8) + j % 8 = 64 * h + j by omega_arith] at this
+      have := getLsbD_ofVBytes (fun _ => (63 : BitVec 8)) he (show j % 8 < 8 by omega)
+      rw [show 8 * (8 * h + j / 8) + j % 8 = 64 * h + j by omega] at this
       rw [bc, this]
       have : ∀ t < 8, (63 : BitVec 8).getLsbD t = decide (t < 6) := by decide
-      exact this _ (by omega_arith)
+      exact this _ (by omega)
     rw [BitVec.getLsbD_xor, BitVec.getLsbD_and, hT, hbc, getLsbD_ofVDwords _ _ hh hj,
       getLsbD_ofVDwords _ _ hh hj]
-    have hj8 : j = 8 * (j / 8) + j % 8 := by omega_arith
+    have hj8 : j = 8 * (j / 8) + j % 8 := by omega
     have hsp : ∀ (K : BitVec 64), (spread K).getLsbD j =
         if j % 8 < 6 then K.getLsbD (6 * (7 - boxOf (j / 8)) + j % 8) else offsets.getLsbD j := by
       intro K
-      rw [hj8, getLsbD_spread K (by omega_arith) (by omega_arith), offsets_bits _ (by omega_arith) _ (by omega_arith)]
-      simp only [show (8 * (j / 8) + j % 8) % 8 = j % 8 by omega_arith,
-        show (8 * (j / 8) + j % 8) / 8 = j / 8 by omega_arith]
+      rw [hj8, getLsbD_spread K (by omega) (by omega), offsets_bits _ (by omega) _ (by omega)]
+      simp only [show (8 * (j / 8) + j % 8) % 8 = j % 8 by omega,
+        show (8 * (j / 8) + j % 8) / 8 = j / 8 by omega]
       by_cases h6 : j % 8 < 6
       · simp [h6]
-      · simp [h6, show 6 ≤ j % 8 by omega_arith]
+      · simp [h6, show 6 ≤ j % 8 by omega]
     have hoff : j % 8 < 6 → offsets.getLsbD j = false := by
       intro h6
-      rw [hj8, offsets_bits _ (by omega_arith) _ (by omega_arith), decide_eq_false (by omega_arith), Bool.false_and]
-    have hbox : (8 * h + j / 8) % 8 = j / 8 := by omega_arith
+      rw [hj8, offsets_bits _ (by omega) _ (by omega), decide_eq_false (by omega), Bool.false_and]
+    have hbox : (8 * h + j / 8) % 8 = j / 8 := by omega
     rw [hbox] at gpos
     -- The gathered bit.
     have hg : j % 8 < 6 → (vbyte (shr2 x ((gatherIndex (8 * h + j / 8)).toNat / 16))
         ((gatherIndex (8 * h + j / 8)).toNat % 16)).getLsbD (j % 8) =
         (vdword x h).getLsbD (6 * (7 - boxOf (j / 8)) + j % 8) := by
       intro h6
-      rw [vbyte, BitVec.getLsbD_extractLsb', decide_eq_true (by omega_arith), Bool.true_and,
+      rw [vbyte, BitVec.getLsbD_extractLsb', decide_eq_true (by omega), Bool.true_and,
         show 8 * ((gatherIndex (8 * h + j / 8)).toNat % 16) + j % 8 =
-          64 * h + (8 * ((gatherIndex (8 * h + j / 8)).toNat % 8) + j % 8) by omega_arith,
-        getLsbD_shr2 _ _ hh (by omega_arith), decide_eq_true (by omega_arith), Bool.true_and,
-        getLsbD_vdword _ (by omega_arith)]
+          64 * h + (8 * ((gatherIndex (8 * h + j / 8)).toNat % 8) + j % 8) by omega,
+        getLsbD_shr2 _ _ hh (by omega), decide_eq_true (by omega), Bool.true_and,
+        getLsbD_vdword _ (by omega)]
       congr 1
-      omega_arith
+      omega
     have hite : ∀ (a b : BitVec 64), (if h = 0 then a.getLsbD j else b.getLsbD j) =
         ([a, b].getD h 0).getLsbD j := by
-      intro a b; rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl <;> rfl
+      intro a b; rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl <;> rfl
     have hvd : ∀ h' < 2, vdword x h' = [vdword x 0, vdword x 1].getD h' 0 := by
-      intro h' hh'; rcases (by omega_arith : h' = 0 ∨ h' = 1) with rfl | rfl <;> rfl
+      intro h' hh'; rcases (by omega : h' = 0 ∨ h' = 1) with rfl | rfl <;> rfl
     have hsp' : ([spread (vdword x 0), spread (vdword x 1)].getD h 0) = spread (vdword x h) := by
-      rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl <;> rfl
+      rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl <;> rfl
     rw [hite, hite, hsp', show ([offsets, offsets].getD h 0) = offsets by
-      rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl <;> rfl, hsp]
+      rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl <;> rfl, hsp]
     by_cases h6 : j % 8 < 6
     · rw [decide_eq_true h6, Bool.and_true, hg h6, hoff h6, Bool.xor_false, ite_eq_left h6]
     · rw [decide_eq_false h6, Bool.and_false, Bool.false_xor, ite_eq_right h6]

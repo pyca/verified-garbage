@@ -77,7 +77,7 @@ theorem steps_read (ρ : Role) (k : BitVec 48) {n q : Nat} (hn : n ≤ 8) (hq : 
     (W : Nat → BitVec w) : steps ρ k n W (readWord ρ q) = W (readWord ρ q) := by
   induction n with
   | zero => rfl
-  | succ n ih => rw [steps_succ, step_read ρ k (by omega_arith) hq, ih (by omega_arith)]
+  | succ n ih => rw [steps_succ, step_read ρ k (by omega) hq, ih (by omega)]
 
 theorem sboxIn_steps (ρ : Role) (k : BitVec 48) {n j : Nat} (hn : n ≤ 8) (hj : j < 8)
     (W : Nat → BitVec w) (b : Nat) : sboxIn ρ k j (steps ρ k n W) b = sboxIn ρ k j W b := by
@@ -96,17 +96,17 @@ theorem steps_write (ρ : Role) (k : BitVec 48) {n q : Nat} (hn : n ≤ 8) (hq :
   | zero => simp [steps]
   | succ n ih =>
     rw [steps_succ]
-    simp only [step, outIdx_write ρ n (by omega_arith) q hq]
+    simp only [step, outIdx_write ρ n (by omega) q hq]
     have hs := (src_spec q hq).1
     by_cases he : n = src q / 4
     · subst he
-      simp only [ite_true, BitVec.getLsbD_xor, ih (by omega_arith), sboxOut, getLsbD_ofBits,
-        sboxIn_steps ρ k (n := src q / 4) (j := src q / 4) (by omega_arith) (by omega_arith)]
-      have h1 : ¬ src q / 4 < src q / 4 := by omega_arith
-      have h2 : src q / 4 < src q / 4 + 1 := by omega_arith
+      simp only [ite_true, BitVec.getLsbD_xor, ih (by omega), sboxOut, getLsbD_ofBits,
+        sboxIn_steps ρ k (n := src q / 4) (j := src q / 4) (by omega) (by omega)]
+      have h1 : ¬ src q / 4 < src q / 4 := by omega
+      have h2 : src q / 4 < src q / 4 + 1 := by omega
       simp [h1, h2]
-    · simp only [he, ite_false, ih (by omega_arith)]
-      have : (src q / 4 < n + 1) ↔ (src q / 4 < n) := by omega_arith
+    · simp only [he, ite_false, ih (by omega)]
+      have : (src q / 4 < n + 1) ↔ (src q / 4 < n) := by omega
       simp only [decide_eq_decide.mpr this]
 
 /-! ## The round function, lane by lane -/
@@ -131,14 +131,14 @@ theorem roundFunction_lane (ρ : Role) (k : BitVec 48) (W : Nat → BitVec w) (b
     (hq : q < 32) : (roundFunction (half (readWord ρ) W b) k).getLsbD q =
       (sBox (src q / 4) (sboxIn ρ k (src q / 4) W b)).getLsbD (src q % 4) := by
   obtain ⟨hs, ho⟩ := src_spec q hq
-  have hj : src q / 4 < 8 := by omega_arith
+  have hj : src q / 4 < 8 := by omega
   have hi : src q % 4 < 4 := Nat.mod_lt _ (by decide)
   have spec := outBit_spec _ hj _ hi
   rw [ho] at spec
   rw [roundFunction_bit _ _ q hq, sboxIn_eq ρ k hj]
   simp only [spec]
-  have e1 : 7 - (4 * (7 - src q / 4) + src q % 4) / 4 = src q / 4 := by omega_arith
-  have e2 : (4 * (7 - src q / 4) + src q % 4) % 4 = src q % 4 := by omega_arith
+  have e1 : 7 - (4 * (7 - src q / 4) + src q % 4) / 4 = src q / 4 := by omega
+  have e2 : (4 * (7 - src q / 4) + src q % 4) % 4 = src q % 4 := by omega
   rw [e1, e2]
 
 /-- A round XORs DES's `f` of the half it reads into the half it writes,
@@ -150,7 +150,7 @@ theorem roundW_half (ρ : Role) (k : BitVec 48) (W : Nat → BitVec w) {b : Nat}
   constructor
   · apply BitVec.eq_of_getLsbD_eq
     intro q hq
-    have hj : src q / 4 < 8 := by have := (src_spec q hq).1; omega_arith
+    have hj : src q / 4 < 8 := by have := (src_spec q hq).1; omega
     have l1 : (half (writeWord ρ) (roundW ρ k W) b).getLsbD q =
         (roundW ρ k W (writeWord ρ q)).getLsbD b := by
       simp only [half, getLsbD_ofBits, hq, decide_true, Bool.true_and]
@@ -204,9 +204,9 @@ theorem steps_congr (ρ : Role) (k : BitVec 48) {n : Nat} (hn : n ≤ 8) {W W' :
   | zero => exact hW
   | succ n ih =>
     intro x hx
-    have ih' := ih (by omega_arith)
+    have ih' := ih (by omega)
     rw [steps_succ, steps_succ]
-    exact step_congr ρ k (by omega_arith) ih' (ih' x hx)
+    exact step_congr ρ k (by omega) ih' (ih' x hx)
 
 theorem steps_high (ρ : Role) (k : BitVec 48) {n : Nat} (hn : n ≤ 8) (W : Nat → BitVec w)
     {x : Nat} (hx : 64 ≤ x) : steps ρ k n W x = W x := by
@@ -218,9 +218,9 @@ theorem steps_high (ρ : Role) (k : BitVec 48) {n : Nat} (hn : n ≤ 8) (W : Nat
       cases h : outIdx ρ n x with
       | none => rfl
       | some i =>
-        have := outIdx_lt64 ρ n (by omega_arith) x (by rw [h]; exact Option.some_ne_none i)
-        omega_arith
-    simp only [step, this, ih (by omega_arith)]
+        have := outIdx_lt64 ρ n (by omega) x (by rw [h]; exact Option.some_ne_none i)
+        omega
+    simp only [step, this, ih (by omega)]
 
 /-- The words of neither half are left alone. -/
 theorem roundW_other (ρ : Role) (k : BitVec 48) (W : Nat → BitVec w) {x : Nat}
@@ -236,9 +236,9 @@ theorem roundW_other (ρ : Role) (k : BitVec 48) (W : Nat → BitVec w) {x : Nat
         rw [List.find?_eq_none]
         intro i hi
         simp only [List.mem_range] at hi
-        have := hx (outBit n i) (outBit_lt n (by omega_arith) i hi)
+        have := hx (outBit n i) (outBit_lt n (by omega) i hi)
         simp [Ne.symm this]
-      simp only [step, this, ih (by omega_arith)]
+      simp only [step, this, ih (by omega)]
   exact key 8 (Nat.le_refl _)
 
 end VG.Proof.TripleDes.Bitslice

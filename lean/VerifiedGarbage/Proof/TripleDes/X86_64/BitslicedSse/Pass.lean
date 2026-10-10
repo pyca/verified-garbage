@@ -140,9 +140,9 @@ theorem pairLoop_ok {s₀ : State} (hk : ∀ r < 16,
   have hδ : s.gpr .r9 = δ := hs.gpr _ (by decide) (by decide) (by decide) (by decide)
   have hc : s.gpr .rcx = s₀.gpr .rcx := hs.gpr _ (by decide) (by decide) (by decide) (by decide)
   have hsi : s.gpr .rsi = s₀.gpr .rsi := hs.gpr _ (by decide) (by decide) (by decide) (by decide)
-  have n16 : 2 * (8 - m) + 1 < 16 := by have := hs.pos; omega_arith
+  have n16 : 2 * (8 - m) + 1 < 16 := by have := hs.pos; omega
   have a₁ : Apart s (s.gpr .r8) := by
-    rw [hs.key]; exact (hk _ (by omega_arith)).congr hc hsi hs.rd hs.wr
+    rw [hs.key]; exact (hk _ (by omega)).congr hc hsi hs.rd hs.wr
   have a₂ : Apart s (s.gpr .r8 + s.gpr .r9) := by
     rw [hs.key, hδ, kptr_succ]; exact (hk _ n16).congr hc hsi hs.rd hs.wr
   obtain ⟨s', run', w', key', cnt', zf', g', o', rd', wr', f'⟩ := roundPair_ok hs.room hs.ones a₁ a₂
@@ -154,7 +154,7 @@ theorem pairLoop_ok {s₀ : State} (hk : ∀ r < 16,
     exact this.trans f'
   have k1 : (s.mem.readW (s.gpr .r8) 64).setWidth 48 = keyAt s₀.mem a₀ δ (2 * (8 - m)) := by
     rw [hs.key]; simp only [keyAt]
-    rw [((hk _ (by omega_arith)).readW hs.frame)]
+    rw [((hk _ (by omega)).readW hs.frame)]
   have k2 : (s.mem.readW (s.gpr .r8 + s.gpr .r9) 64).setWidth 48 =
       keyAt s₀.mem a₀ δ (2 * (8 - m) + 1) := by
     rw [hs.key, hδ, kptr_succ]; simp only [keyAt]
@@ -179,8 +179,8 @@ theorem pairLoop_ok {s₀ : State} (hk : ∀ r < 16,
     show s'.zf.map (!·) = some false
     rw [zf', cntv]; rfl
   · right
-    refine ⟨?_, m - 1, by omega_arith, ⟨room', ones', rd'.trans hs.rd, wr'.trans hs.wr, by omega_arith,
-      by have := hs.le; omega_arith, ?_, ?_, ?_, gpr', frame'⟩⟩
+    refine ⟨?_, m - 1, by omega, ⟨room', ones', rd'.trans hs.rd, wr'.trans hs.wr, by omega,
+      by have := hs.le; omega, ?_, ?_, ?_, gpr', frame'⟩⟩
     · show s'.zf.map (!·) = some true
       rw [zf', cntv]
       have : (BitVec.ofNat 64 (m - 1) == 0) = false := by
@@ -190,15 +190,15 @@ theorem pairLoop_ok {s₀ : State} (hk : ∀ r < 16,
         have := congrArg BitVec.toNat h0
         have z : (0 : BitVec 64).toNat = 0 := rfl
         simp only [BitVec.toNat_ofNat] at this
-        rw [z, Nat.mod_eq_of_lt (by omega_arith)] at this
+        rw [z, Nat.mod_eq_of_lt (by omega)] at this
         have := hs.pos
-        omega_arith
+        omega
       rw [this]; rfl
-    · have e : 8 - (m - 1) = 8 - m + 1 := by have := hs.le; omega_arith
+    · have e : 8 - (m - 1) = 8 - m + 1 := by have := hs.le; omega
       rw [e]; exact words'
     · rw [key', hs.key, hδ, kptr_succ, kptr_succ]
       congr 3
-      have := hs.le; omega_arith
+      have := hs.le; omega
     · rw [cnt', cntv]
 
 /-! ## The start of a pass -/
@@ -218,7 +218,7 @@ theorem passKey_imm : ∀ d : Spec.TripleDes.Direction, ∀ p, 1 ≤ p → p ≤
     (BitVec.ofNat 32 (passKey d p).1).signExtend 64 = BitVec.ofNat 64 (passKey d p).1 ∧
     (BitVec.ofInt 32 (passKey d p).2).signExtend 64 = BitVec.ofInt 64 (passKey d p).2 := by
   intro d p h1 h3
-  cases d <;> (rcases p with _ | _ | _ | _ | p) <;> first | omega_arith | decide
+  cases d <;> (rcases p with _ | _ | _ | _ | p) <;> first | omega | decide
 
 /-- A comparison of a register with an immediate. -/
 def cmpState (s : State) (r : Reg) (v : BitVec 32) : State :=
@@ -271,7 +271,7 @@ theorem passStart_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ 
     show t₁.zf = _
     simp only [t₁, cmpState, zf_arithFlags, hc]
     rcases hp with ⟨h1, h3⟩
-    rcases p with _ | _ | _ | _ | p <;> first | omega_arith | decide
+    rcases p with _ | _ | _ | _ | p <;> first | omega | decide
   apply WP.ite (p == 3) zf₁
   · intro h3
     have : p = 3 := by simpa using h3
@@ -287,7 +287,7 @@ theorem passStart_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ 
       show t₂.zf = _
       simp only [t₂, t₁, cmpState, zf_arithFlags, gpr_arithFlags, hc]
       rcases hp with ⟨h1, h3⟩
-      rcases p with _ | _ | _ | _ | p <;> first | omega_arith | decide
+      rcases p with _ | _ | _ | _ | p <;> first | omega | decide
     have g₂ : t₂.gpr = s.gpr := by simp [t₂, t₁, cmpState]
     have m₂ : t₂.mem = s.mem := by simp [t₂, t₁, cmpState, mem_arithFlags]
     have rd₂ : t₂.rd = s.rd := by simp [t₂, t₁, cmpState, rd_arithFlags]
@@ -299,7 +299,7 @@ theorem passStart_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ 
       exact branch t₂ g₂ m₂ rd₂ wr₂ (fun _ => rfl)
     · intro h2
       have : p = 1 := by have : p ≠ 2 := by simpa using h2
-                         omega_arith
+                         omega
       subst this
       exact branch t₂ g₂ m₂ rd₂ wr₂ (fun _ => rfl)
 
@@ -363,7 +363,7 @@ theorem pass_ok (d : Spec.TripleDes.Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤
     rw [e, sw₃ x hx]
     apply swapW_congr _ x hx
     intro y hy
-    rw [p₂.words y hy, pairs_keys_congr 8 (fun r hr => keys r (by omega_arith))]
+    rw [p₂.words y hy, pairs_keys_congr 8 (fun r hr => keys r (by omega))]
     exact pairs_congr _ 8 state₁ y hy
   · rw [cnt₄, r11₃]
   · rw [zf₄, r11₃]

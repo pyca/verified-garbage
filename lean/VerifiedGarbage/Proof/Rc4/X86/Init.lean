@@ -30,8 +30,8 @@ def InitFrame (s : State) (m : Mem) : Prop :=
 theorem InitPre.arg_off {s : State} (hp : InitPre s) (i : Nat) (hi : i < 4) :
     argAddr s i = argAddr s 0 + BitVec.ofNat 64 (4 * i) := by
   unfold argAddr
-  rw [VG.Proof.MlKem.X86.ea_off (by have := hp.spFit; omega_arith),
-    VG.Proof.MlKem.X86.ea_off (by have := hp.spFit; omega_arith), BitVec.add_assoc,
+  rw [VG.Proof.MlKem.X86.ea_off (by have := hp.spFit; omega),
+    VG.Proof.MlKem.X86.ea_off (by have := hp.spFit; omega), BitVec.add_assoc,
     ← BitVec.ofNat_add]
 
 /-- An argument, read from memory changed only within the context and `scratch`. -/
@@ -39,7 +39,7 @@ theorem InitPre.arg_eq {s : State} (hp : InitPre s) {m : Mem} (hf : InitFrame s 
     (hi : i < 4) : m.readW (argAddr s i) 32 = arg s i := by
   refine hf.readW (r := ⟨argAddr s 0, 16⟩) ?_ ?_ (by decide)
   · rw [hp.arg_off i hi]
-    exact Offset.contains_base _ (by omega_arith) (by omega_arith)
+    exact Offset.contains_base _ (by omega) (by omega)
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -48,7 +48,7 @@ theorem InitPre.arg_eq {s : State} (hp : InitPre s) {m : Mem} (hf : InitFrame s 
 
 theorem InitPre.arg_in {s : State} (hp : InitPre s) {i : Nat} (hi : i < 4) :
     InRegions (s.rd ++ s.wr) (argAddr s i) 4 := by
-  have h := region_offset _ _ _ (4 * i) 4 (by omega_arith) (by omega_arith) hp.args
+  have h := region_offset _ _ _ (4 * i) 4 (by omega) (by omega) hp.args
   rw [← hp.arg_off i hi] at h
   obtain ⟨r, hr, hc⟩ := h
   exact ⟨r, List.mem_append_left _ hr, hc⟩
@@ -60,16 +60,16 @@ theorem InitFrame.table {s : State} {m m' : Mem} (hf : InitFrame s m)
   intro hlt
   apply hx ⟨(arg s 2).setWidth 64, 258⟩ List.mem_cons_self
   simp only [Region.Contains]
-  omega_arith
+  omega
 
 theorem InitPre.arg_contains {s : State} (hp : InitPre s) {i : Nat} (hi : i < 4) :
     (⟨argAddr s 0, 16⟩ : Region).Contains (argAddr s i) 4 := by
   rw [hp.arg_off i hi]
-  exact Offset.contains_base _ (by omega_arith) (by omega_arith)
+  exact Offset.contains_base _ (by omega) (by omega)
 
 theorem InitPre.arg_sep {s : State} (hp : InitPre s) {i : Nat} (hi : i < 4) :
     Mem.Sep (argAddr s i) 4 ((arg s 2).setWidth 64) 256 := fun x h₁ h₂ =>
-  hp.argsCtx x ((hp.arg_contains hi).byte h₁) (by simp only [Region.Contains]; omega_arith)
+  hp.argsCtx x ((hp.arg_contains hi).byte h₁) (by simp only [Region.Contains]; omega)
 
 theorem init_finish (s : State) (hfit : (s.gpr .edi).toNat + 258 ≤ 2 ^ 32)
     (hp : InRegions s.wr ((s.gpr .edi).setWidth 64) 258) :
@@ -79,8 +79,8 @@ theorem init_finish (s : State) (hfit : (s.gpr .edi).toNat + 258 ≤ 2 ^ 32)
           ((s.gpr .edi).setWidth 64 + 257#64) 1 0#8 ∧ Keep [.eax] s t := by
   have h256 := region_offset _ _ _ 256 1 (by decide) (by decide) hp
   have h257 := region_offset _ _ _ 257 1 (by decide) (by decide) hp
-  have a256 : addr (s.gpr .edi) 256 = (s.gpr .edi).setWidth 64 + 256#64 := addr_of_fit (by omega_arith)
-  have a257 : addr (s.gpr .edi) 257 = (s.gpr .edi).setWidth 64 + 257#64 := addr_of_fit (by omega_arith)
+  have a256 : addr (s.gpr .edi) 256 = (s.gpr .edi).setWidth 64 + 256#64 := addr_of_fit (by omega)
+  have a257 : addr (s.gpr .edi) 257 = (s.gpr .edi).setWidth 64 + 257#64 := addr_of_fit (by omega)
   refine WP.mono (WP.keep (Q := fun t => t.gpr .eax = 0#32 ∧
       t.mem = (s.mem.write ((s.gpr .edi).setWidth 64 + 256#64) 1 0#8).write
         ((s.gpr .edi).setWidth 64 + 257#64) 1 0#8) [.eax] ?_ (by decide +kernel))
@@ -115,7 +115,7 @@ theorem init_valid (s : State) (hp : InitPre s)
     have v12 : a.mem.readW (addr (s.gpr .esp) 12) 32 = (arg s 2) := hp.arg_eq haf (i := 2) (by decide)
     rrun [hasp, hak.2.1, hak.2.2, h12, v12]
   refine WP.mono hb fun b ⟨hbm, hbr, hbw, hbdi, hbsi, hbsp⟩ => ?_
-  have hfit : (b.gpr .edi).toNat + 256 ≤ 2 ^ 32 := by rw [hbdi]; have := hp.ctxFit; omega_arith
+  have hfit : (b.gpr .edi).toNat + 256 ≤ 2 ^ 32 := by rw [hbdi]; have := hp.ctxFit; omega
   have hpb : InRegions b.wr ((b.gpr .edi).setWidth 64) 256 := by
     rw [hbw, hbdi]
     have h' := region_offset _ _ _ 0 256 (by decide) (by decide) hp.ctx
@@ -144,16 +144,16 @@ theorem init_valid (s : State) (hp : InitPre s)
     exact hdf _ fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact hp.keyCtx _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
-      · exact hp.keyScratch _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
+      · exact hp.keyCtx _ (Offset.contains_base _ (by omega) (by omega))
+      · exact hp.keyScratch _ (Offset.contains_base _ (by omega) (by omega))
   have hpre : SchedulePre d (arg s 0) (arg s 1) := by
-    refine ⟨hlen, by rw [hdC]; have := hp.ctxFit; omega_arith, by rw [hdwr, hdC, ← hbdi, ← hbw]; exact hpb, ?_,
+    refine ⟨hlen, by rw [hdC]; have := hp.ctxFit; omega, by rw [hdwr, hdC, ← hbdi, ← hbw]; exact hpb, ?_,
       hp.keyFit, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [hdrd, hdwr]
       obtain ⟨r, hr, hc⟩ := hp.key
       exact ⟨r, List.mem_append_left _ hr, hc⟩
     · rw [hdC]
-      exact fun x h₁ h₂ => hp.keyCtx x h₁ (by simp only [Region.Contains] at h₂ ⊢; omega_arith)
+      exact fun x h₁ h₂ => hp.keyCtx x h₁ (by simp only [Region.Contains] at h₂ ⊢; omega)
     · rw [hdrd, hdwr, hdS]; exact hp.arg_in (i := 0) (by decide)
     · rw [hdS]; exact hp.arg_eq hdf (i := 0) (by decide)
     · rw [hdrd, hdwr, hdS]; exact hp.arg_in (i := 1) (by decide)
@@ -192,7 +192,7 @@ theorem init_valid (s : State) (hp : InitPre s)
     intro r hr
     simp only [List.mem_singleton] at hr
     subst hr
-    exact fun x h₁ h₂ => hp.ctxScratch x h₂ (by simp only [Region.Contains] at h₁ ⊢; omega_arith)
+    exact fun x h₁ h₂ => hp.ctxScratch x h₂ (by simp only [Region.Contains] at h₁ ⊢; omega)
   have hff : InitFrame s f.mem := by
     intro x hx
     rw [hctxf x (fun r hr => by

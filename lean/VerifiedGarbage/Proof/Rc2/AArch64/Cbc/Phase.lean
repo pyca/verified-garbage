@@ -14,7 +14,7 @@ namespace VG.Proof.Rc2.AArch64.Cbc
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc2.AArch64 VG.Proof.Rc2 VG.Proof.Rc2.AArch64.Vec
 
 theorem contains_prefix {a : Addr} {n k : Nat} (h : n ≤ k) : (⟨a, k⟩ : Region).Contains a n := by
-  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith
 
 /-- A region disjoint from a 128-byte one is shorter than the address space. -/
 theorem Region.len_lt_of_disjoint {r r' : Region} (h : r.Disjoint r') (hr : 0 < r.len) :
@@ -24,7 +24,7 @@ theorem Region.len_lt_of_disjoint {r r' : Region} (h : r.Disjoint r') (hr : 0 < 
   apply h r.base (contains_prefix hr)
   simp only [Region.Contains]
   have := (r.base - r'.base).isLt
-  omega
+  omega_arith
 
 structure PhasePost (s : State) (n : Nat) (s' : State) : Prop where
   ptr : s'.gpr .x1 = s.gpr .x1 + BitVec.ofNat 64 (8 * (8 * (n / 8)))
@@ -50,7 +50,7 @@ theorem ofNat_shift3 {n : Nat} (hn : n < 2 ^ 64) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
     Nat.mod_eq_of_lt hn]
-  rw [Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem ofNat_mask3 {n : Nat} (hn : n < 2 ^ 64) :
     BitVec.ofNat 64 n <<< (64 - 3) >>> (64 - 3) = BitVec.ofNat 64 (n % 8) := by
@@ -107,10 +107,10 @@ theorem groups_ok (s s₁ : State) {n : Nat} (hp : StepPre s n) (bound : 8 * n <
   have b3g : ∀ r, r ≠ .x9 → r ≠ .x11 → b₃.gpr r = s₁.gpr r := fun r h9 h11 => by
     simp only [b₃, b₂, b₁, gpr_write_of_ne _ _ _ h11, gpr_setV, gpr_write_of_ne _ _ _ h9, ag]
   have x1 : b₃.gpr .x1 = s.gpr .x1 := (b3g _ (by decide) (by decide)).trans (s₁g _ (by decide))
-  have hdata : (dataR s n).Contains (s.gpr .x1) (64 * g) := contains_prefix (by omega)
-  have big : 64 * g < 2 ^ 64 := by omega
+  have hdata : (dataR s n).Contains (s.gpr .x1) (64 * g) := contains_prefix (by omega_arith)
+  have big : 64 * g < 2 ^ 64 := by omega_arith
   apply WP.seq
-  refine WP.mono (loopV_ok s.mem (s.gpr .x0) g b₃ (by omega) big ?_ ?_ ?_ ?_ ?_) fun c hc => ?_
+  refine WP.mono (loopV_ok s.mem (s.gpr .x0) g b₃ (by omega_arith) big ?_ ?_ ?_ ?_ ?_) fun c hc => ?_
   · intro r hr
     have hne := (treg_ne_kb r hr).2
     simp only [b₃, b₂, b₁, v_write, v_setV_of_ne _ _ hne]
@@ -139,9 +139,9 @@ theorem groups_ok (s s₁ : State) {n : Nat} (hp : StepPre s n) (bound : 8 * n <
     rw [runBlock_cons, exec_str_x c .x11 .x23 0 ⟨by decide, by decide⟩ ivw, runStep_some, runBlock_nil], ?_⟩
   simp only [cx23, z]
   have ivFrame := frame_store64 c.mem (s.gpr .x23) (c.gpr .x11)
-  have sub : Region.Sub (dataR s (8 * g)) (dataR s n) := Region.sub_prefix (by omega)
+  have sub : Region.Sub (dataR s (8 * g)) (dataR s n) := Region.sub_prefix (by omega_arith)
   refine ⟨?_, fun r h1 h6 h7 h9 h10 h11 h12 => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [hc.ptr, x1, show 64 * g = 8 * (8 * g) by omega]
+  · rw [hc.ptr, x1, show 64 * g = 8 * (8 * g) by omega_arith]
   · rw [hc.reg r h1 h6 h7 h9 h10 h11 h12, b3g r h9 h11, s₁g r h10]
   · rw [hc.rd]; exact ard
   · rw [hc.wr]; exact awr
@@ -152,7 +152,7 @@ theorem groups_ok (s s₁ : State) {n : Nat} (hp : StepPre s n) (bound : 8 * n <
       exact this.sub fun r hr => by
         simp only [List.mem_singleton] at hr
         subst hr
-        exact ⟨dataR s (8 * g), by simp, Region.sub_prefix (by omega)⟩
+        exact ⟨dataR s (8 * g), by simp, Region.sub_prefix (by omega_arith)⟩
     exact f₁.writeW (r := ivR s) (by simp) _ (Region.contains_self _ _)
   · rw [blocksAt_frame ivFrame _ _ (by
       intro r hr
@@ -182,7 +182,7 @@ theorem phase_ok (s : State) {n : Nat} (hp : StepPre s n) (bound : 8 * n < 2 ^ 6
   let s₁ := s.write .x .x10 (s.gpr .x24 >>> 3)
   refine WP.of_runBlock ⟨s₁, by rw [runBlock_cons, exec_lsr _ _ _ (by decide), runStep_some,
     runBlock_nil], ?_⟩
-  have x10 : s.gpr .x24 >>> 3 = BitVec.ofNat 64 (n / 8) := by rw [count, ofNat_shift3 (by omega)]
+  have x10 : s.gpr .x24 >>> 3 = BitVec.ofNat 64 (n / 8) := by rw [count, ofNat_shift3 (by omega_arith)]
   have s₁g : ∀ r, r ≠ .x10 → s₁.gpr r = s.gpr r := fun r h => gpr_write_of_ne _ _ _ h
   apply WP.seq
   -- What the masking leaves, from a state with the blocks done.
@@ -205,7 +205,7 @@ theorem phase_ok (s : State) {n : Nat} (hp : StepPre s n) (bound : 8 * n < 2 ^ 6
     refine ⟨by rw [g₃ _ (by decide), ptr], ?_, fun r hr h1 h24 => ?_, fun r hr h24 => ?_,
       rd₃.trans rd, wr₃.trans wr, by rw [m₃]; exact fr, by rw [m₃]; exact data, by rw [m₃]; exact iv⟩
     · rw [c₃, reg _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
-        count, ofNat_mask3 (by omega)]
+        count, ofNat_mask3 (by omega_arith)]
     · have : ∀ r ∈ kept, r ≠ .x1 → r ≠ .x24 → r ≠ .x6 ∧ r ≠ .x7 ∧ r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧
           r ≠ .x12 := by decide
       obtain ⟨a, b, c, d, e, f⟩ := this r hr h1 h24
@@ -225,10 +225,10 @@ theorem phase_ok (s : State) {n : Nat} (hp : StepPre s n) (bound : 8 * n < 2 ^ 6
     · intro h; cases h
   · apply WP.ite false (by
       simp [eval, State.read, s₁, gpr_write_self, x10]
-      exact ofNat_ne_zero (by omega) (by omega))
+      exact ofNat_ne_zero (by omega_arith) (by omega_arith))
     · intro h; cases h
     · intro _
-      refine WP.mono (groups_ok s s₁ hp bound (by omega) (by rw [← x10])) fun s₂ h => ?_
+      refine WP.mono (groups_ok s s₁ hp bound (by omega_arith) (by rw [← x10])) fun s₂ h => ?_
       obtain ⟨ptr, reg, rd, wr, _, fr, data, iv⟩ := h
       exact finish s₂ ptr reg rd wr fr data iv
 
@@ -245,11 +245,11 @@ theorem phaseLoop_ok (s : State) (n : Nat) (bound : 8 * n ≤ 2 ^ 64) (hp : Step
   have iv' := h'.reg .x23 (by decide) (by decide) (by decide)
   have buf' := h'.reg .x2 (by decide) (by decide) (by decide)
   have hp' : StepPre s' (n % 8) :=
-    hp.slice (i := 8 * g) (by omega) h'.rd h'.wr key' iv' buf' h'.ptr
-  refine WP.mono (maybeLoop_ok .decrypt s' (n % 8) (by omega) hp' h'.count) fun s'' h'' => ?_
-  have subG : Region.Sub (dataR s (8 * g)) (dataR s n) := Region.sub_prefix (by omega)
+    hp.slice (i := 8 * g) (by omega_arith) h'.rd h'.wr key' iv' buf' h'.ptr
+  refine WP.mono (maybeLoop_ok .decrypt s' (n % 8) (by omega_arith) hp' h'.count) fun s'' h'' => ?_
+  have subG : Region.Sub (dataR s (8 * g)) (dataR s n) := Region.sub_prefix (by omega_arith)
   have restSub : Region.Sub ⟨s.gpr .x1 + BitVec.ofNat 64 (8 * (8 * g)), 8 * (n % 8)⟩ (dataR s n) :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_arith)
   have keyFrame : Spec.Rc2.scheduleAt s'.mem (s.gpr .x0) = Spec.Rc2.scheduleAt s.mem (s.gpr .x0) :=
     scheduleAt_frame h'.mem _ (by
       intro r hr
@@ -264,7 +264,7 @@ theorem phaseLoop_ok (s : State) (n : Nat) (bound : 8 * n ≤ 2 ^ 64) (hp : Step
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact (hp.ivData.sub_right restSub).symm
-      · exact Offset.disjoint_base _ (by omega) (by omega))
+      · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith))
   have firstKeep : Spec.Rc2.blocksAt s''.mem (s.gpr .x1) (8 * g) =
       Spec.Rc2.blocksAt s'.mem (s.gpr .x1) (8 * g) :=
     blocksAt_frame h''.mem _ _ (by
@@ -272,12 +272,12 @@ theorem phaseLoop_ok (s : State) (n : Nat) (bound : 8 * n ≤ 2 ^ 64) (hp : Step
       simp only [loopWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · simp only [ivR, iv']; exact (hp.ivData.sub_right subG).symm
-      · simp only [dataR, h'.ptr]; exact Offset.base_disjoint _ (by omega) (by omega)
+      · simp only [dataR, h'.ptr]; exact Offset.base_disjoint _ (by omega_arith) (by omega_arith)
       · simp only [buf']
         exact (hp.dataBuf.sub_left subG).sub_right (Region.sub_prefix (by decide : 264 ≤ 512)))
   have split : ∀ (mm : Mem) (q : Addr), Spec.Rc2.blocksAt mm q n =
       Spec.Rc2.blocksAt mm q (8 * g) ++ Spec.Rc2.blocksAt mm (q + BitVec.ofNat 64 (8 * (8 * g))) (n % 8) :=
-    fun mm q => by rw [← blocksAt_add]; exact congrArg _ (by omega)
+    fun mm q => by rw [← blocksAt_add]; exact congrArg _ (by omega_arith)
   have data'' := h''.data
   have ivOut := h''.iv
   rw [h'.ptr, key', iv', keyFrame, h'.iv, restKeep] at data'' ivOut
@@ -285,8 +285,8 @@ theorem phaseLoop_ok (s : State) (n : Nat) (bound : 8 * n ≤ 2 ^ 64) (hp : Step
     fun r hr h24 => (h''.callee r hr h24).trans (h'.callee r hr h24), h''.rd.trans h'.rd,
     h''.wr.trans h'.wr, ?_, ?_, ?_⟩
   · rw [h''.ptr, h'.ptr, Offset.add_add]
-    exact congrArg _ (congrArg _ (by omega))
-  · refine (h'.mem.sub fun r hr => ?_).trans (loopFrame_slice (i := 8 * g) h''.mem (by omega) iv' buf' h'.ptr)
+    exact congrArg _ (congrArg _ (by omega_arith))
+  · refine (h'.mem.sub fun r hr => ?_).trans (loopFrame_slice (i := 8 * g) h''.mem (by omega_arith) iv' buf' h'.ptr)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨ivR s, by simp [loopWrites], fun _ h => h⟩

@@ -34,9 +34,9 @@ theorem bitMask (K : BitVec 64) {b : Nat} (hb : b < 64) :
     by_cases h0 : i = 0
     · subst h0
       simp only [Nat.add_zero, show (63 : Nat) < 64 by decide, decide_true, Bool.true_and,
-        show ¬ (63 < 63 - b) by omega_arith, decide_false, Bool.not_false, show 63 - (63 - b) = b by omega_arith]
+        show ¬ (63 < 63 - b) by omega, decide_false, Bool.not_false, show 63 - (63 - b) = b by omega]
       split <;> simp_all
-    · simp only [show ¬ (63 + i < 64) by omega_arith, decide_false, Bool.false_and]
+    · simp only [show ¬ (63 + i < 64) by omega, decide_false, Bool.false_and]
       split <;> simp [BitVec.getLsbD_one, h0]
   rw [h]
   split <;> simp
@@ -47,7 +47,7 @@ theorem vdword_maskX (c : Bool) {q : Nat} (hq : q < 2) :
   · simp only [maskX, Bool.false_eq_true, ite_false]; exact vdword_zero q
   · apply BitVec.eq_of_getLsbD_eq; intro i hi
     simp only [maskX, ite_true, vdword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_allOnes, hi,
-      decide_true, Bool.true_and, show 64 * q + i < 128 by omega_arith]
+      decide_true, Bool.true_and, show 64 * q + i < 128 by omega]
 
 /-- The facts the code of an S-box needs: the round key broadcast in `v30`
 and zero in `v31`. -/
@@ -78,7 +78,7 @@ theorem inputStep_run {K : BitVec 64} {s : State} (h : Room s) (hk : KeyRegs K s
   let v₁ := VArr.d2.map2 (fun w a b' => VShiftOp.shl.eval (63 - b) w a b') (s.v x) (s.v keyReg)
   let s₁ := s.setV x v₁
   have e₁ : exec (.vop (.shift .shl .d2 x keyReg (63 - b))) s = some s₁ := by
-    rw [exec_vop]; simp only [VOp.eval, VArr.esize, VShiftOp.ok, show 63 - b < 64 by omega_arith,
+    rw [exec_vop]; simp only [VOp.eval, VArr.esize, VShiftOp.ok, show 63 - b < 64 by omega,
       decide_true, ite_true, Option.map_some]; rfl
   let v₂ := VArr.d2.map2 (fun w a b' => VShiftOp.ushr.eval 63 w a b') (s₁.v x) (s₁.v x)
   let s₂ := s₁.setV x v₂
@@ -90,7 +90,7 @@ theorem inputStep_run {K : BitVec 64} {s : State} (h : Room s) (hk : KeyRegs K s
   have hin : InRegions (s₃.rd ++ s₃.wr) (vAddr (s₃.gpr .x4) w) 16 := word_in h hw
   let s₄ := s₃.setV tmpReg (s₃.mem.readW (vAddr (s₃.gpr .x4) w) 128)
   have e₄ : exec (.ldrq tmpReg .x4 (16 * w)) s₃ = some s₄ := by
-    simp only [exec, addr_slot (show 16 * w < 65536 by omega_arith), Option.bind_some, State.load, hin,
+    simp only [exec, addr_slot (show 16 * w < 65536 by omega), Option.bind_some, State.load, hin,
       ite_true, Option.map_some, read16_readW]
     rfl
   let s₅ := s₄.setV x (s₄.v x ^^^ s₄.v tmpReg)
@@ -151,14 +151,14 @@ theorem inputsN_ok (ρ : Role) {j : Nat} (hj : j < 8) {n : Nat} (hn : n ≤ 6) {
       KeyRegs K s' ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       s'.sp = s.sp ∧ s'.c = s.c := by
   induction n with
-  | zero => exact ⟨s, runBlock_nil, fun m hm => by omega_arith, hk, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  | zero => exact ⟨s, runBlock_nil, fun m hm => by omega, hk, rfl, rfl, rfl, rfl, rfl, rfl⟩
   | succ n ih =>
-    obtain ⟨s₁, run₁, in₁, k₁, g₁, m₁, rd₁, wr₁, sp₁, c₁⟩ := ih (by omega_arith)
+    obtain ⟨s₁, run₁, in₁, k₁, g₁, m₁, rd₁, wr₁, sp₁, c₁⟩ := ih (by omega)
     have h₁ : Room s₁ := room_congr h (by rw [g₁]) wr₁
-    obtain ⟨hxk, hxz, hxt⟩ := inReg_ne n (by omega_arith)
+    obtain ⟨hxk, hxz, hxt⟩ := inReg_ne n (by omega)
     obtain ⟨s₂, run₂, q₂, y₂, g₂, m₂, rd₂, wr₂, sp₂, c₂⟩ :=
       inputStep_run h₁ k₁ ⟨hxk, hxz, hxt⟩ (w := readWord ρ (eBit (inBit j n)))
-        (readWord_lt ρ j hj _ (by omega_arith)) (inBit_lt' j hj n (by omega_arith))
+        (readWord_lt ρ j hj _ (by omega)) (inBit_lt' j hj n (by omega))
     refine ⟨s₂, ?_, fun m hm => ?_, k₁.congr (y₂ _ (Ne.symm hxk) (by decide))
         (y₂ _ (Ne.symm hxz) (by decide)), g₂.trans g₁, m₂.trans m₁, rd₂.trans rd₁, wr₂.trans wr₁,
       sp₂.trans sp₁, c₂.trans c₁⟩
@@ -168,8 +168,8 @@ theorem inputsN_ok (ρ : Role) {j : Nat} (hj : j < 8) {n : Nat} (hn : n ≤ 6) {
         rw [q₂]
         simp only [words, m₁, g₁]
       · have hne : inReg m ≠ inReg n := by
-          intro e; have := inReg_inj' _ (by omega_arith) _ (by omega_arith) e; omega_arith
-        rw [y₂ _ hne (inReg_ne m (by omega_arith)).2.2, in₁ m (by omega_arith)]
+          intro e; have := inReg_inj' _ (by omega) _ (by omega) e; omega
+        rw [y₂ _ hne (inReg_ne m (by omega)).2.2, in₁ m (by omega)]
 
 /-! ## Outputs -/
 
@@ -232,10 +232,10 @@ theorem outputs_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) :
   split
   · rename_i i hi
     have hi4 := outIdx_lt ρ j k i hi
-    rw [xorSet_two_pow_xor (by simp [varN, outRegs]; omega_arith) (by simp [varN, outRegs]; omega_arith)]
-    simp only [varVals, hk, ite_true, show ¬ 64 + i < 64 by omega_arith, ite_false,
+    rw [xorSet_two_pow_xor (by simp [varN, outRegs]; omega) (by simp [varN, outRegs]; omega)]
+    simp only [varVals, hk, ite_true, show ¬ 64 + i < 64 by omega, ite_false,
       Nat.add_sub_cancel_left, vdword_xor, laneW, outRegs_getD j hi4]
-  · rw [xorSet_two_pow _ (by simp [varN]; omega_arith)]
+  · rw [xorSet_two_pow _ (by simp [varN]; omega)]
     simp only [varVals, hk, ite_true, laneW]
 
 /-! ## One S-box -/
@@ -325,7 +325,7 @@ theorem swapHalves_ok {s : State} (h : Room s) :
   simp only [VarRel] at hs
   have e : vdword (words s' x) q = vdword (s'.mem.readW (vAddr (s'.gpr stateCfg.base) x) 128) q := by
     simp only [words, stateCfg]
-  rw [e, hs, xorSet_two_pow _ (by simp [varN]; have := swapSlot_lt x hx; omega_arith)]
+  rw [e, hs, xorSet_two_pow _ (by simp [varN]; have := swapSlot_lt x hx; omega)]
   simp only [varVals, swapSlot_lt x hx, ite_true, laneW]
   unfold swapW swapSlot
   cases partner x <;> rfl

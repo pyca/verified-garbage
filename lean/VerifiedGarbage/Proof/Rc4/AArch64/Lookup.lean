@@ -133,22 +133,22 @@ theorem quarters_byte (T : Nat → BitVec 8) (X : BitVec 8) (p p' : BitVec 8) :
   have n1 : X.toNat / 64 ≠ 1 → ¬ (X.toNat ^^^ 64 < 64) := fun h h' => h (h1.mp h')
   have n2 : X.toNat / 64 ≠ 2 → ¬ (X.toNat ^^^ 128 < 64) := fun h h' => h (h2.mp h')
   have n3 : X.toNat / 64 ≠ 3 → ¬ (X.toNat ^^^ 192 < 64) := fun h h' => h (h3.mp h')
-  rcases (by omega_arith : X.toNat / 64 = 0 ∨ X.toNat / 64 = 1 ∨ X.toNat / 64 = 2 ∨ X.toNat / 64 = 3)
+  rcases (by omega : X.toNat / 64 = 0 ∨ X.toNat / 64 = 1 ∨ X.toNat / 64 = 2 ∨ X.toNat / 64 = 3)
     with h | h | h | h
-  · simp only [show X.toNat < 64 by omega_arith, n1 (by omega_arith), n2 (by omega_arith), n3 (by omega_arith), ite_true,
+  · simp only [show X.toNat < 64 by omega, n1 (by omega), n2 (by omega), n3 (by omega), ite_true,
       ite_false, Bool.false_eq_true, Nat.mul_zero, Nat.zero_add, or_zero8]
-  · simp only [show ¬ X.toNat < 64 by omega_arith, h1.mpr h, n2 (by omega_arith), n3 (by omega_arith), ite_true,
+  · simp only [show ¬ X.toNat < 64 by omega, h1.mpr h, n2 (by omega), n3 (by omega), ite_true,
       ite_false, Bool.false_eq_true]
     rw [e1 h, or_zero8]
-    exact congrArg T (by omega_arith)
-  · simp only [show ¬ X.toNat < 64 by omega_arith, n1 (by omega_arith), h2.mpr h, n3 (by omega_arith), ite_true,
+    exact congrArg T (by omega)
+  · simp only [show ¬ X.toNat < 64 by omega, n1 (by omega), h2.mpr h, n3 (by omega), ite_true,
       ite_false, Bool.false_eq_true]
     rw [e2 h, zero_or8]
-    exact congrArg T (by omega_arith)
-  · simp only [show ¬ X.toNat < 64 by omega_arith, n1 (by omega_arith), n2 (by omega_arith), h3.mpr h, ite_true,
+    exact congrArg T (by omega)
+  · simp only [show ¬ X.toNat < 64 by omega, n1 (by omega), n2 (by omega), h3.mpr h, ite_true,
       ite_false, Bool.false_eq_true]
     rw [e3 h, zero_or8]
-    exact congrArg T (by omega_arith)
+    exact congrArg T (by omega)
 
 theorem xor_toNat (X : BitVec 8) (k : BitVec 8) : (X ^^^ k).toNat = X.toNat ^^^ k.toNat :=
   BitVec.toNat_xor _ _

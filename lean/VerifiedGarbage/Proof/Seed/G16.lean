@@ -28,9 +28,9 @@ open VG VG.Bitslice VG.Impl.Seed VG.Proof.Aes
 /-- Byte `n`'s position in the planes (and back: `laneOf_laneOf`). -/
 def laneOf (n : Nat) : Nat := 8 * (n % 8) + n / 8
 
-theorem laneOf_lt {n : Nat} (hn : n < 64) : laneOf n < 64 := by unfold laneOf; omega_arith
+theorem laneOf_lt {n : Nat} (hn : n < 64) : laneOf n < 64 := by unfold laneOf; omega
 
-theorem laneOf_laneOf {n : Nat} (hn : n < 64) : laneOf (laneOf n) = n := by unfold laneOf; omega_arith
+theorem laneOf_laneOf {n : Nat} (hn : n < 64) : laneOf (laneOf n) = n := by unfold laneOf; omega
 
 /-- Byte `n` of the eight words. -/
 def byteQ (In : Nat → BitVec 64) (n : Nat) : Byte := ((In (n / 8)) >>> (8 * (n % 8))).setWidth 8
@@ -78,7 +78,7 @@ theorem xorBits_byte (In : Nat → BitVec 64) {n : Nat} {l : List Nat} (hl : ∀
     congr 1
     simp only [bitOf, byteQ, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, hb, decide_true,
       Bool.true_and]
-    rw [show (8 * n + b) / 64 = n / 8 by omega_arith, show (8 * n + b) % 64 = 8 * (n % 8) + b by omega_arith]
+    rw [show (8 * n + b) / 64 = n / 8 by omega, show (8 * n + b) % 64 = 8 * (n % 8) + b by omega]
 
 /-- Bits `l` (each below 8) of the planes `S` at `p`. -/
 theorem xorBits_planes (S : Nat → BitVec 64) {p : Nat} (hp : p < 64) {l : List Nat}
@@ -91,7 +91,7 @@ theorem xorBits_planes (S : Nat → BitVec 64) {p : Nat} (hp : p < 64) {l : List
       getLsbD_bsByte _ _ hj]
     congr 1
     simp only [bitOf]
-    rw [show (64 * j + p) / 64 = j by omega_arith, show (64 * j + p) % 64 = p by omega_arith]
+    rw [show (64 * j + p) / 64 = j by omega, show (64 * j + p) % 64 = p by omega]
 
 theorem rows_getD_lt {rows : List (List Nat)} (hr : ∀ l ∈ rows, ∀ i ∈ l, i < 8) (j : Nat) :
     ∀ i ∈ rows.getD j [], i < 8 := by
@@ -99,7 +99,7 @@ theorem rows_getD_lt {rows : List (List Nat)} (hr : ∀ l ∈ rows, ∀ i ∈ l,
   by_cases hj : j < rows.length
   · rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hj, Option.getD_some] at h
     exact hr _ (List.getElem_mem hj) i h
-  · rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega_arith), Option.getD_none] at h
+  · rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega), Option.getD_none] at h
     cases h
 
 theorem pRows_lt (odd : Bool) : ∀ l ∈ pRows odd, ∀ i ∈ l, i < 8 := by
@@ -112,9 +112,9 @@ theorem byteQ_eq_byteOf (In : Nat → BitVec 64) {w a : Nat} (ha : a < 4) :
   refine byte_ext fun b hb => ?_
   rw [getLsbD_byteOf _ hb]
   simp only [byteQ, wordQ, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, hb, decide_true,
-    Bool.true_and, show 8 * a + b < 32 by omega_arith, decide_true]
-  rw [show (8 * (w / 2) + 4 * (w % 2) + a) / 8 = w / 2 by omega_arith,
-    show 8 * ((8 * (w / 2) + 4 * (w % 2) + a) % 8) + b = 32 * (w % 2) + (8 * a + b) by omega_arith]
+    Bool.true_and, show 8 * a + b < 32 by omega, decide_true]
+  rw [show (8 * (w / 2) + 4 * (w % 2) + a) / 8 = w / 2 by omega,
+    show 8 * ((8 * (w / 2) + 4 * (w % 2) + a) % 8) + b = 32 * (w % 2) + (8 * a + b) by omega]
 
 /-- `gConst`'s bits: the S-boxes' constants, mixed as `G` mixes. -/
 theorem gConst_bits : ∀ h < 2, ∀ a' < 4, ∀ tb < 8, gConst.getLsbD (32 * h + 8 * a' + tb) =
@@ -145,15 +145,15 @@ theorem g16_words {In Pl S Out : Nat → BitVec 64}
   intro w hw
   apply BitVec.eq_of_getLsbD_eq
   intro t' ht'
-  have hi : w / 2 < 8 := by omega_arith
-  have ht : 32 * (w % 2) + t' < 64 := by omega_arith
+  have hi : w / 2 < 8 := by omega
+  have ht : 32 * (w % 2) + t' < 64 := by omega
   have hwq : (wordQ Out w).getLsbD t' = (Out (w / 2)).getLsbD (32 * (w % 2) + t') := by
     simp only [wordQ, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, ht', decide_true,
       Bool.true_and]
-  rw [hwq, h2 _ hi _ ht, show t' = 8 * (t' / 8) + t' % 8 by omega_arith,
-    getLsbD_g _ (by omega_arith) (Nat.mod_lt _ (by omega_arith))]
-  rw [show 32 * (w % 2) + (8 * (t' / 8) + t' % 8) = 32 * (w % 2) + 8 * (t' / 8) + t' % 8 by omega_arith,
-    gConst_bits _ (Nat.mod_lt _ (by omega_arith)) _ (by omega_arith) _ (Nat.mod_lt _ (by omega_arith))]
+  rw [hwq, h2 _ hi _ ht, show t' = 8 * (t' / 8) + t' % 8 by omega,
+    getLsbD_g _ (by omega) (Nat.mod_lt _ (by omega))]
+  rw [show 32 * (w % 2) + (8 * (t' / 8) + t' % 8) = 32 * (w % 2) + 8 * (t' / 8) + t' % 8 by omega,
+    gConst_bits _ (Nat.mod_lt _ (by omega)) _ (by omega) _ (Nat.mod_lt _ (by omega))]
   -- The S-box outputs of byte `a`.
   have hbyte : ∀ a < 4, xorBits S
       (((pRows (a % 2 == 1)).getD (t' % 8) []).map fun j =>
@@ -161,20 +161,20 @@ theorem g16_words {In Pl S Out : Nat → BitVec 64}
       (linB (pRows (a % 2 == 1)) (Spec.Aes.sbox (linB mRows (byteOf (wordQ In w) a)))).getLsbD
         (t' % 8) := by
     intro a ha
-    have hn : 8 * (w / 2) + 4 * (w % 2) + a < 64 := by omega_arith
+    have hn : 8 * (w / 2) + 4 * (w % 2) + a < 64 := by omega
     rw [xorBits_planes _ (laneOf_lt hn) (rows_getD_lt (pRows_lt _) _), hSb _ (laneOf_lt hn),
       hPl _ (laneOf_lt hn), laneOf_laneOf hn, byteQ_eq_byteOf _ ha,
-      getLsbD_linB _ _ (Nat.mod_lt _ (by omega_arith))]
+      getLsbD_linB _ _ (Nat.mod_lt _ (by omega))]
   have hl2 : xorBits S (l2 (w / 2) (32 * (w % 2) + 8 * (t' / 8) + t' % 8)) =
       xor4 fun a => (maskOf ((a + t' / 8) % 4)).getLsbD (t' % 8) &&
         (linB (pRows (a % 2 == 1)) (Spec.Aes.sbox (linB mRows (byteOf (wordQ In w) a)))).getLsbD
           (t' % 8) := by
-    have e1 : (32 * (w % 2) + 8 * (t' / 8) + t' % 8) % 32 / 8 = t' / 8 := by omega_arith
-    have e2 : (32 * (w % 2) + 8 * (t' / 8) + t' % 8) % 8 = t' % 8 := by omega_arith
-    have e3 : (32 * (w % 2) + 8 * (t' / 8) + t' % 8) / 32 = w % 2 := by omega_arith
+    have e1 : (32 * (w % 2) + 8 * (t' / 8) + t' % 8) % 32 / 8 = t' / 8 := by omega
+    have e2 : (32 * (w % 2) + 8 * (t' / 8) + t' % 8) % 8 = t' % 8 := by omega
+    have e3 : (32 * (w % 2) + 8 * (t' / 8) + t' % 8) / 32 = w % 2 := by omega
     rw [l2, e1, e2, e3, xorBits_range4]
     simp only [xor4, xorBits_ite]
-    rw [hbyte 0 (by omega_arith), hbyte 1 (by omega_arith), hbyte 2 (by omega_arith), hbyte 3 (by omega_arith)]
+    rw [hbyte 0 (by omega), hbyte 1 (by omega), hbyte 2 (by omega), hbyte 3 (by omega)]
   rw [hl2]
   simp only [sOf, sbox_eq, BitVec.getLsbD_xor]
   rw [xor4_split, Bool.xor_comm]
