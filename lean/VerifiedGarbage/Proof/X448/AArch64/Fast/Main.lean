@@ -13,7 +13,7 @@ open VG VG.AArch64 VG.Proof.X448
 open VG.Impl.X448.AArch64 (ld st slot SWAP BITS)
 open VG.Proof.X448.AArch64 (Keeps Scr word off Outside Outside2 limbs FieldMem ofs Slot Saved Pre far
   far_output bytesAt_outside pointR scalarR outR scR bits_ok moveOutput_ok bitRegs)
-open VG.Proof.X448.AArch64.Weak (Index Env E_outside cswap_fst invEnv invEnv_x2 invEnv_eval opSwap)
+open VG.Proof.X448.AArch64.Weak (Index Env E_outside cswap_fst opSwap)
 open VG.Impl.X448.AArch64.Fast (saved)
 
 local notation "EV" => VG.Proof.X448.AArch64.Weak.E
@@ -119,7 +119,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   · change Spec.X448.bytesAt s'.mem (s₀.gpr .x0) 56 = _
     rw [result, x448_eq]
     apply congrArg Spec.X448.encodeUCoordinate
-    rw [e₆, VG.Proof.X448.AArch64.Weak.invEnv_x2, VG.Proof.X448.AArch64.Weak.invEnv_eval, e₅]
+    rw [e₆, invEnv_x2, invEnv_eval, e₅]
     simp (config := {decide := true}) only [opSwap, Function.update_apply, ite_true, ite_false]
     rw [L.x2, L.x3, L.z2, L.z3, cswap_fst, cswap_fst]
 

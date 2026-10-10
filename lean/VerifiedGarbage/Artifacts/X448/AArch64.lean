@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Impl.X448.AArch64.Fast
+import VerifiedGarbage.Impl.X448.AArch64.Field56
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Verified
 import VerifiedGarbage.Proof.X448.AArch64.Base.Verified
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
