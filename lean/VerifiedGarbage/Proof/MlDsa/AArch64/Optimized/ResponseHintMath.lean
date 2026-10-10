@@ -16,8 +16,9 @@ theorem hbF_mod_hbM {g a : Nat} (hg : IsG g) (ha : a < q) :
   · exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_ne (hbF_le (mem_of_isG hg) ha) ‹_›)
 
 /-- By cases on whether `r` and `r + c` are at the top of their range (`f = m`), for
-each `γ₂`, the sign of `c` and the carry of `r + c` past `q`: with no `%` left,
-`omega` decides each case on a few linear facts. -/
+each `γ₂`, and the carry of `r + c` past `q`: with no `%` left, `omega` decides
+each case on a few linear facts (splitting on the sign of `c` only in the cases
+that need it, which halves the cases and their certificates). -/
 theorem hint_high_change {g : Nat} (hg : IsG g) (r : Zq) (c : Int)
     (hc : -4202495≤c ∧ c≤4210685) :
     highBits g (r+ofInt c)≠highBits g r ↔
@@ -37,8 +38,8 @@ theorem hint_high_change {g : Nat} (hg : IsG g) (r : Zq) (c : Int)
     simp only [hbF, hbM, q, Impl.MlDsa.AArch64.Round.g32, Impl.MlDsa.AArch64.Round.g88, Nat.reduceMul,
       Nat.reduceSub, Nat.reduceDiv] at * <;>
     simp (disch := decide) only [Nat.add_sub_assoc, Nat.reduceSub] at * <;>
-    rcases Int.lt_or_le c 0 with hc0 | hc0 <;> rcases Nat.lt_or_ge (a + x) 8380417 with hs | hs <;>
+    rcases Nat.lt_or_ge (a + x) 8380417 with hs | hs <;>
     (first | rw [Nat.mod_eq_of_lt hs] at * | rw [Nat.mod_eq_sub_mod hs, Nat.mod_eq_of_lt (by omega)] at *) <;>
-    omega
+    first | omega | (rcases Int.lt_or_le c 0 with hc0 | hc0 <;> omega)
 
 end VG.Proof.MlDsa.AArch64.Optimized.Response
