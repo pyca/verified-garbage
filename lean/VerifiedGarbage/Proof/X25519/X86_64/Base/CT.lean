@@ -121,8 +121,9 @@ theorem x25519BaseWith_ct (eng : Prog isa) (heng : UEngineOk eng)
 
 theorem x25519Base_ct [DivstepInv]
     (engineCT : ∀ base k T, RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
-      (engine fld) (fun _ _ => True)) :
-    ConstantTime isa baseLocal.pre baseLocal.pub (x25519Base fld) :=
-  x25519BaseWith_ct _ engine_ok engineCT
+      (engine fld).inline (fun _ _ => True)) :
+    ConstantTime isa baseLocal.pre baseLocal.pub (x25519Base fld).inline := by
+  rw [x25519Base, scalarBaseWith_inline]
+  exact x25519BaseWith_ct _ engine_ok engineCT
 
 end VG.Proof.X25519.X86_64.Base

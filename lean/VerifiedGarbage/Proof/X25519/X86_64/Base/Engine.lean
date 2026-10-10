@@ -57,11 +57,12 @@ theorem uOps_eval (e : Ed25519.X86_64.Env) :
   simp [uOps, evalOps, evalOp, Function.update]
 
 theorem uEncode_ok [DivstepInv] {s : State} {base : Addr} (hs : Scratch s base) :
-    WP isa (uEncode fld) s fun t => RbxKeep base s t ∧
+    WP isa (uEncode fld).inline s fun t => RbxKeep base s t ∧
       val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) =
         ((env s.mem base 2 + env s.mem base 1) *
           Spec.X25519.pow (env s.mem base 2 - env s.mem base 1) (P - 2)).val := by
   rw [uEncode]
+  simp only [Code.inline]
   refine WP.seq (WP.mono (fieldCodeWide_ok hs uOps) fun a ⟨ka, va⟩ => ?_)
   have kac : RbxKeep base s a := ⟨fun r hc _ => ka.gpr r hc, ka.rd, ka.wr, ka.mem⟩
   refine WP.seq (WP.mono (pointAffine_ok (kac.scratch hs)) fun b ⟨kb, bx, _⟩ => ?_)
@@ -79,11 +80,19 @@ def UEngineOk (eng : Prog isa) : Prop :=
       Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem k 32) Spec.X25519.basePoint =
         Spec.X25519.encodeUCoordinate w
 
-theorem engineOf_ok [DivstepInv] {comb : Prog isa} (hcomb : CombOk comb) : UEngineOk (engineOf fld comb) := by
+omit [EdArith fld] in
+/-- An engine with `vg_gf25519_r64_invert`'s inlined, for a comb without calls. -/
+theorem engineOf_inline {comb : Prog isa} (hci : comb.inline = comb) :
+    (engineOf fld comb).inline =
+      .seq (scalarBasePrepare fld) (.seq (.block clampBits) (.seq comb (uEncode fld).inline)) := by
+  rw [engineOf]; simp only [Code.inline]; rw [scalarBasePrepare_inline, hci]
+
+theorem engineOf_ok [DivstepInv] {comb : Prog isa} (hcomb : CombOk comb) (hci : comb.inline = comb) :
+    UEngineOk (engineOf fld comb).inline := by
   intro s base k T hs hp hr hd ht hfar
   have hk : (Spec.Ed25519.bytesAt s.mem k 32).length = 32 := by simp [Spec.Ed25519.bytesAt]
   set kb := Spec.Ed25519.bytesAt s.mem k 32
-  rw [engineOf]
+  rw [engineOf_inline hci]
   refine WP.seq (WP.mono_syms (scalarBasePrepare_ok hs hp hr hd) fun b ⟨kab, _, bd, bbits, _⟩ bsy => ?_)
   have hsb := kab.scratch hs
   refine WP.seq (WP.mono_syms (clampBits_ok hsb) fun c ⟨kbc, cd, cbits⟩ csy => ?_)
@@ -106,7 +115,7 @@ theorem engineOf_ok [DivstepInv] {comb : Prog isa} (hcomb : CombOk comb) : UEngi
   refine ⟨((kab.trans kbc).trans kd).trans (PowersKeep.of_rbx kt), _, tv, ?_⟩
   exact VG.Proof.X25519.Edwards.x25519_basePoint hk _ (u_rep dp)
 
-theorem engine_ok [DivstepInv] : UEngineOk (engine fld) := engineOf_ok combOk
+theorem engine_ok [DivstepInv] : UEngineOk (engine fld).inline := engineOf_ok combOk combMultiply_inline
 
 /-! ## Constant time
 
@@ -145,9 +154,9 @@ private theorem clamped_ok {u : State} {base T k : Addr} {m : Mem} (h : Prepped 
   · rfl
   · exact hb q (by simpa using hq)
 
-theorem engineOf_ct {comb : Prog isa} (hcomb : CombOk comb) (base k T : Addr) :
+theorem engineOf_ct {comb : Prog isa} (hcomb : CombOk comb) (hci : comb.inline = comb) (base k T : Addr) :
     RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
-      (engineOf fld comb) (fun _ _ => True) := by
+      (engineOf fld comb).inline (fun _ _ => True) := by
   have hc : RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
       (scalarBasePrepare fld) (fun _ _ => True) := by
     apply taintFld (Taint.ofRegs [.rdi, .rsi]) _ (by fld_taint_decide)
@@ -161,7 +170,7 @@ theorem engineOf_ct {comb : Prog isa} (hcomb : CombOk comb) (base k T : Addr) :
   have hp := withRuns hc (fun x y h =>
     ⟨scalarBasePrepareT_ok (fld := fld) h.1.1 h.1.2.1 h.1.2.2.1 h.1.2.2.2.1 h.1.2.2.2.2.1 h.1.2.2.2.2.2,
      scalarBasePrepareT_ok (fld := fld) h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2⟩)
-  rw [engineOf]
+  rw [engineOf_inline hci]
   refine VG.RelCT.seq hp ?_
   intro x y tx ty x' y' ⟨_, a, b, hab, hx, hy⟩ ex ey
   have hcl : RelCT isa (fun u v => Prepped base T k a.mem u ∧ Prepped base T k b.mem v)
@@ -179,7 +188,7 @@ theorem engineOf_ct {comb : Prog isa} (hcomb : CombOk comb) (base k T : Addr) :
     ⟨hcomb.ok h.1.1 h.1.2.2.2.1 h.1.2.1 h.1.2.2.1 h.1.2.2.2.2.1 h.1.2.2.2.2.2,
      hcomb.ok h.2.1 h.2.2.2.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2⟩).mono (fun _ _ h => h)
     fun _ _ ⟨_, c, d, hcd, hu, hv⟩ => And.intro (hu.2.scratch hcd.1.1).rdi (hv.2.scratch hcd.2.1).rdi
-  have he : RelCT isa (fun u v => u.gpr .rdi = base ∧ v.gpr .rdi = base) (uEncode fld)
+  have he : RelCT isa (fun u v => u.gpr .rdi = base ∧ v.gpr .rdi = base) (uEncode fld).inline
       (fun _ _ => True) := by
     apply taintFld (Taint.ofRegs [.rdi]) _ (by fld_taint_decide)
     intro u v h

@@ -20,13 +20,13 @@ def artifacts : List Artifact := [
       selects the identity) and whose sign negates it, or not, under a mask; the odd digits are \
       added first to [G]B (G = 16 Σ 1024^j makes up for the offset), then five doublings and \
       [G]B again, then the even ones. The working values, masks and saved registers reside in \
-      `scratch`."])
+      `scratch`. The point's encoding inverts Z with a call of `vg_gf25519_r64_invert`."])
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.baseline
-    contract := Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts)
+    contract := Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8
     verified := Proof.Ed25519.X86_64.scalarBase_precomputed_verified
       (fld := Impl.X25519.X86_64.baseline)
-    stack := 0
+    stack := 8
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Ed25519.scalarBaseApi with
     target := X86_64.target
@@ -40,10 +40,10 @@ def artifacts : List Artifact := [
       reside in `scratch`."])
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.Ed25519.X86_64.scalarBase_adx
-    contract := Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts)
+    contract := Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8
     verified := Proof.Ed25519.X86_64.scalarBase_adx_verified
     features := ["avx", "avx2", "bmi2", "adx"]
-    stack := 0
+    stack := 8
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Ed25519.scalarBaseApi with
     target := X86_64.target
@@ -62,10 +62,10 @@ def artifacts : List Artifact := [
       multiplications."])
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.Ed25519.X86_64.scalarBase_ifma
-    contract := Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts)
+    contract := Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8
     verified := Proof.Ed25519.X86_64.Ifma.scalarBase_ifma_verified
     features := ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]
-    stack := 0
+    stack := 8
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Ed25519ScalarBase.X86_64

@@ -39,15 +39,32 @@ structure CombOk (comb : Prog isa) : Prop where
     (∀ s₁ s₂, P s₁ s₂ → VG.X86_64.Taint.AgreeS [combSym] (Taint.ofRegs [.rdi]) s₁ s₂) →
     RelCT isa P comb fun _ _ => True
 
-theorem scalarBaseEngineOf_ok [X25519.X86_64.DivstepInv] {comb : Prog isa} (hc : CombOk comb) {s : State} {base k T : Addr}
+omit [EdArith fld] in
+/-- The scalar's bits and the start, without calls. -/
+theorem scalarBasePrepare_inline : (scalarBasePrepare fld).inline = scalarBasePrepare fld :=
+  Code.inline_of_noCalls rfl
+
+omit [EdArith fld] in
+/-- An engine with `vg_gf25519_r64_invert`'s inlined, for a comb without calls. -/
+theorem scalarBaseEngineOf_inline {comb : Prog isa} (hci : comb.inline = comb) :
+    (scalarBaseEngineOf fld comb).inline = .seq (scalarBasePrepare fld) (.seq comb (pointEncode fld).inline) := by
+  rw [scalarBaseEngineOf]; simp only [Code.inline]; rw [scalarBasePrepare_inline, hci]
+
+/-- `scalarBaseWith`'s frame has no calls but the engine's. -/
+theorem scalarBaseWith_inline (engine : Prog isa) :
+    (scalarBaseWith engine).inline = scalarBaseWith engine.inline := by
+  simp only [scalarBaseWith, scalarBaseFinish, Code.inline]
+
+theorem scalarBaseEngineOf_ok [X25519.X86_64.DivstepInv] {comb : Prog isa} (hc : CombOk comb)
+    (hci : comb.inline = comb) {s : State} {base k T : Addr}
     (hs : Scratch s base) (hp : s.gpr .rsi = k)
     (hr : ∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1)
     (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) (ht : CombTbl s T) (hfar : TblFar base T) :
-    WP isa (scalarBaseEngineOf fld comb) s fun t => PowersKeep base 56 7368 s t ∧
+    WP isa (scalarBaseEngineOf fld comb).inline s fun t => PowersKeep base 56 7368 s t ∧
       val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) =
         encodedValue (Spec.Ed25519.pointMul (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem k 32))
           Spec.Ed25519.basePoint) := by
-  rw [scalarBaseEngineOf]
+  rw [scalarBaseEngineOf_inline hci]
   refine WP.seq (WP.mono_syms (scalarBasePrepare_ok hs hp hr hd)
     fun b ⟨kab, _, bd, bbits, hscalar⟩ bsy => ?_)
   refine WP.seq (WP.mono (hc.ok (kab.scratch hs) hscalar bd bbits (ht.keep hfar kab bsy) hfar)
@@ -86,9 +103,10 @@ theorem taintSymFld {P : State → State → Prop} {c : Prog isa} (τ : VG.X86_6
     RelCT isa P c fun _ _ => True :=
   let ⟨_, h⟩ := h; VG.RelCT.taint (A := taintSym [combSym]) τ hp h
 
-theorem scalarBaseEngineOf_ct {comb : Prog isa} (hcomb : CombOk comb) (base k T : Addr) :
+theorem scalarBaseEngineOf_ct {comb : Prog isa} (hcomb : CombOk comb) (hci : comb.inline = comb)
+    (base k T : Addr) :
     RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
-      (scalarBaseEngineOf fld comb) (fun _ _ => True) := by
+      (scalarBaseEngineOf fld comb).inline (fun _ _ => True) := by
   have hc : RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
       (scalarBasePrepare fld) (fun _ _ => True) := by
     apply taintFld (Taint.ofRegs [.rdi, .rsi]) _ (by fld_taint_decide)
@@ -102,7 +120,7 @@ theorem scalarBaseEngineOf_ct {comb : Prog isa} (hcomb : CombOk comb) (base k T 
   have hp := withRuns hc (fun x y h =>
     ⟨scalarBasePrepareT_ok (fld := fld) h.1.1 h.1.2.1 h.1.2.2.1 h.1.2.2.2.1 h.1.2.2.2.2.1 h.1.2.2.2.2.2,
      scalarBasePrepareT_ok (fld := fld) h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2⟩)
-  rw [scalarBaseEngineOf]
+  rw [scalarBaseEngineOf_inline hci]
   refine VG.RelCT.seq hp ?_
   intro x y tx ty x' y' ⟨_, a, b, hab, hx, hy⟩ ex ey
   have hct : RelCT isa (fun u v =>
@@ -124,7 +142,7 @@ theorem scalarBaseEngineOf_ct {comb : Prog isa} (hcomb : CombOk comb) (base k T 
     ⟨hcomb.ok h.1.1 h.1.2.2.2.1 h.1.2.1 h.1.2.2.1 h.1.2.2.2.2.1 h.1.2.2.2.2.2,
      hcomb.ok h.2.1 h.2.2.2.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2⟩)
   have he : RelCT isa (fun u v => u.gpr .rdi = base ∧ v.gpr .rdi = base)
-      (pointEncode fld) (fun _ _ => True) := by
+      (pointEncode fld).inline (fun _ _ => True) := by
     apply taintFld (Taint.ofRegs [.rdi]) _ (by fld_taint_decide)
     intro u v h
     exact Taint.agree_ofRegs (by
@@ -142,17 +160,22 @@ theorem combOk : CombOk (combMultiply fld) :=
   ⟨fun hs hS hd hb ht hfar => combMultiply_ok hs hS hd hb ht hfar,
     fun _ hp => taintSymFld (Taint.ofRegs [.rdi]) hp (by fld_taint_decide)⟩
 
-theorem scalarBasePrecomputedEngine_ok [X25519.X86_64.DivstepInv] : BaseEngineCorrect (scalarBasePrecomputedEngine fld) :=
-  fun hs hp hr hd ht hfar => scalarBaseEngineOf_ok combOk hs hp hr hd ht hfar
+omit [EdArith fld] in
+theorem combMultiply_inline : (combMultiply fld).inline = combMultiply fld := Code.inline_of_noCalls rfl
+
+theorem scalarBasePrecomputedEngine_ok [X25519.X86_64.DivstepInv] :
+    BaseEngineCorrect (scalarBasePrecomputedEngine fld).inline :=
+  fun hs hp hr hd ht hfar => scalarBaseEngineOf_ok combOk combMultiply_inline hs hp hr hd ht hfar
 
 theorem scalarBasePrecomputedEngine_ct (base k T : Addr) :
     RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
-      (scalarBasePrecomputedEngine fld) (fun _ _ => True) :=
-  scalarBaseEngineOf_ct combOk base k T
+      (scalarBasePrecomputedEngine fld).inline (fun _ _ => True) :=
+  scalarBaseEngineOf_ct combOk combMultiply_inline base k T
 
+/-- Constant time of the code with `vg_gf25519_r64_invert`'s inlined. -/
 theorem scalarBase_precomputed_ct [X25519.X86_64.DivstepInv] : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub
-    (scalarBase_precomputed fld) :=
-  scalarBase_ct_of_engine (scalarBasePrecomputedEngine fld) scalarBasePrecomputedEngine_ok
-    scalarBasePrecomputedEngine_ct
+    (scalarBase_precomputed fld).inline := by
+  rw [scalarBase_precomputed, scalarBaseWith_inline]
+  exact scalarBase_ct_of_engine _ scalarBasePrecomputedEngine_ok scalarBasePrecomputedEngine_ct
 
 end VG.Proof.Ed25519.X86_64

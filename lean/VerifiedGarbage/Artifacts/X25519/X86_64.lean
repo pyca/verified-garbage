@@ -63,11 +63,12 @@ def artifacts : List Artifact := [
     target := X86_64.target
     doc := Spec.X25519.x25519BaseApi.doc (notes := ["Ed25519's fixed-base comb, from its \
       tables in the static `VG_ED25519_COMB`, with the scalar clamped as RFC 7748 specifies and \
-      the point mapped to `(Z + Y) / (Z - Y)`. The table selection is constant time; the \
-      callee-saved registers are saved in `scratch`."])
+      the point mapped to `(Z + Y) / (Z - Y)`, inverting with a call of `vg_gf25519_r64_invert`. \
+      The table selection is constant time; the callee-saved registers are saved in `scratch`."])
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.X25519.X86_64.Base.x25519Base Impl.X25519.X86_64.baseline
-    contract := Spec.X25519.x25519BaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts)
+    contract := Spec.X25519.x25519BaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8
+    stack := 8
     verified := Proof.X25519.X86_64.Base.x25519Base_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.X25519.x25519BaseApi with
@@ -78,7 +79,8 @@ def artifacts : List Artifact := [
       at a time with AVX2."])
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.X25519.X86_64.Base.x25519BaseAdx
-    contract := Spec.X25519.x25519BaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts)
+    contract := Spec.X25519.x25519BaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8
+    stack := 8
     verified := Proof.X25519.X86_64.Base.x25519BaseAdx_verified
     features := ["avx", "avx2", "bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by lit_decide) },
@@ -94,7 +96,8 @@ def artifacts : List Artifact := [
       `scratch` and restored."])
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.X25519.X86_64.Base.x25519BaseIfma
-    contract := Spec.X25519.x25519BaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts)
+    contract := Spec.X25519.x25519BaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 8
+    stack := 8
     verified := Proof.X25519.X86_64.Base.x25519BaseIfma_verified
     features := ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
