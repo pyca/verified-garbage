@@ -1,5 +1,6 @@
-//! The provider's signature verification algorithms against Wycheproof's
-//! test vectors (`WYCHEPROOF_ROOT`: a checkout of C2SP/wycheproof).
+//! The provider's signature verification algorithms and TLS 1.3 HKDF
+//! against Wycheproof's test vectors (`WYCHEPROOF_ROOT`: a checkout of
+//! C2SP/wycheproof).
 
 use std::path::PathBuf;
 
@@ -186,5 +187,42 @@ fn ml_dsa() {
         ("mldsa_87_verify_test.json", provider::ML_DSA_87),
     ] {
         check(file, alg);
+    }
+}
+
+/// HKDF through each TLS 1.3 suite's `hkdf_provider`: an extract, then an
+/// expand to the test's length, which fails past 255 blocks.
+#[test]
+fn hkdf() {
+    use provider::cipher_suite::{TLS13_AES_128_GCM_SHA256, TLS13_AES_256_GCM_SHA384};
+    for (file, suite) in [
+        ("hkdf_sha256_test.json", TLS13_AES_128_GCM_SHA256),
+        ("hkdf_sha384_test.json", TLS13_AES_256_GCM_SHA384),
+    ] {
+        let data = std::fs::read(root().join(file)).unwrap();
+        let json: Value = serde_json::from_slice(&data).unwrap();
+        let mut n = 0;
+        for group in json["testGroups"].as_array().unwrap() {
+            for test in group["tests"].as_array().unwrap() {
+                let ikm = hex(test["ikm"].as_str().unwrap());
+                let salt = hex(test["salt"].as_str().unwrap());
+                let info = hex(test["info"].as_str().unwrap());
+                let size = test["size"].as_u64().unwrap() as usize;
+                let expander = suite.hkdf_provider.extract_from_secret(Some(&salt), &ikm);
+                let mut okm = vec![0u8; size];
+                let ok = expander.expand_slice(&[&info], &mut okm).is_ok();
+                let id = &test["tcId"];
+                match test["result"].as_str().unwrap() {
+                    "valid" => {
+                        assert!(ok, "{file} test {id}: rejected");
+                        assert_eq!(okm, hex(test["okm"].as_str().unwrap()), "{file} test {id}");
+                    }
+                    "invalid" => assert!(!ok, "{file} test {id}: accepted"),
+                    _ => {}
+                }
+                n += 1;
+            }
+        }
+        assert!(n > 0, "{file}: no tests");
     }
 }
