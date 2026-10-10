@@ -40,7 +40,8 @@ def artifacts : List Artifact := [
     code := Impl.Rsa.X86_64.Precompute.code Proof.Rsa.X86_64.CallMont.base.mm
     contract := Spec.Rsa.publicPrecomputeContract X86_64.abi 8
     stack := 8
-    verified := Proof.Rsa.X86_64.pc_call_verified Proof.Bignum.X86_64.Mont.fnBase (by decide +kernel) rfl
+    verified := Proof.Rsa.X86_64.pc_call_verified Proof.Bignum.X86_64.Mont.fnBase (Proof.Bignum.X86_64.R2Impl.words _)
+      (by decide +kernel) rfl
       (by decide +kernel)
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.publicPrecomputeApi with
@@ -48,11 +49,16 @@ def artifacts : List Artifact := [
     name := Spec.Rsa.publicPrecomputeApi.name ++ "_adx"
     doc := Spec.Rsa.publicPrecomputeApi.doc
       (notes := ["`vg_rsa_public_precompute`'s code, with Montgomery multiplication by calls of \
-        `vg_rsa_mont_mul_adx`."])
+        `vg_rsa_mont_mul_adx`, and, for n whose top bit is set and whose number of words is a multiple of 4, \
+        R² mod n from R - n by w steps of long division and no squarings: each quotient digit as there, \
+        and the step `x 2^64 - q n` in one pass over the words with MULX and two carry chains (ADCX, ADOX), \
+        n added back by a branch when the result is negative (n is public)."])
     code := Impl.Rsa.X86_64.Precompute.code Proof.Rsa.X86_64.CallMont.adx.mm
+      (Impl.Bignum.X86_64.R2Adx.choice Proof.Rsa.X86_64.CallMont.adx.mm)
     contract := Spec.Rsa.publicPrecomputeContract X86_64.abi 8
     stack := 8
-    verified := Proof.Rsa.X86_64.pc_call_verified Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel) rfl
+    verified := Proof.Rsa.X86_64.pc_call_verified Proof.Bignum.X86_64.Mont.fnAdx (Proof.Bignum.X86_64.R2Impl.adx _)
+      (by decide +kernel) rfl
       (by decide +kernel)
     features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
