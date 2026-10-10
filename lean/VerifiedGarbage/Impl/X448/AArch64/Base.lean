@@ -242,7 +242,4 @@ def finish : Prog isa :=
     AArch64.freeze ++ (List.range 8).flatMap AArch64.packPair ++ [ld .x19 0, ld .x20 8] ++
     restore ++ Fast.vrestore)
 
-def x448Base : Prog isa :=
-  .seq setup <| .seq (.loop step (.nonzero .x .x9)) <| .seq combine finish
-
 end VG.Impl.X448.AArch64.Base
