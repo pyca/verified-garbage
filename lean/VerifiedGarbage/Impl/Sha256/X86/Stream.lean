@@ -114,8 +114,8 @@ def finalizeBody : Prog isa :=
     (.block [.mov .edi (.imm 0), .alu .sub .esi (.imm 1)]))))))))
 
 def finalize : Prog isa :=
-  .seq (.block ([.mov .eax (.mem (at_ .esp 20))] ++ save .eax ++
-      [.mov .ebp (.reg .eax), .mov .ebx (.mem (at_ .esp 4)),
+  .seq (.block (([.mov .eax (.mem (at_ .esp 20))] : List Instr) ++ save .eax ++
+      ([.mov .ebp (.reg .eax), .mov .ebx (.mem (at_ .esp 4)),
        .mov .ecx (.mem (at_ .esp 8)), .store (at_ .ebp 128) .ecx,
        .mov .ecx (.mem (at_ .esp 12)), .store (at_ .ebp 132) .ecx,
        .mov .ecx (.mem (at_ .esp 16)), .store (at_ .ebp 136) .ecx,
@@ -124,13 +124,13 @@ def finalize : Prog isa :=
        .mov .edx (.reg .ebx), .alu .add .edx (.reg .edi), .mov .ecx (.imm 0x80),
        .store8 (at_ .edx 32) .cl, .alu .add .edi (.imm 1),
        -- Two blocks if it leaves fewer than 8 bytes for the length.
-       .mov .esi (.imm 0), .alu .cmp .edi (.imm 57)]))
+       .mov .esi (.imm 0), .alu .cmp .edi (.imm 57)] : List Instr)))
   (.seq (.ite .ae (.block [.mov .esi (.imm 1)]) (.block []))
   (.seq (.loop finalizeBody .e)
     (.block (.mov .eax (.mem (at_ .ebp 136)) ::
       (List.range 8).flatMap (fun k =>
         [.mov .ecx (.mem (at_ .ebx (4 * k))), .bswap .ecx, .store (at_ .eax (4 * k)) .ecx]) ++
-      [.mov .ebx (.mem (at_ .ebp 112)), .mov .esi (.mem (at_ .ebp 116)),
-       .mov .edi (.mem (at_ .ebp 120)), .mov .ebp (.mem (at_ .ebp 124))]))))
+      ([.mov .ebx (.mem (at_ .ebp 112)), .mov .esi (.mem (at_ .ebp 116)),
+       .mov .edi (.mem (at_ .ebp 120)), .mov .ebp (.mem (at_ .ebp 124))] : List Instr)))))
 
 end VG.Impl.Sha256.X86.Stream

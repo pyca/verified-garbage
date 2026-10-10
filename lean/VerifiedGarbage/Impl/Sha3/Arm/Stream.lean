@@ -55,9 +55,9 @@ def permuteCall : Prog isa := .call "vg_keccak_f1600" permute
 position in the block, `r6` = `data` or `out`, `r7` = bytes of it left;
 then test `r7`. -/
 def setup : List Instr :=
-  [.ldrSp .r12 4] ++ save ++
-    [.mov .r4 (.reg .r1), .mov .r1 (.reg .r12), .mov .r5 (.reg .r2), .mov .r6 (.reg .r3),
-      .ldrSp .r7 0, .cmp .r7 (.imm 0)]
+  ([.ldrSp .r12 4] : List Instr) ++ save ++
+    ([.mov .r4 (.reg .r1), .mov .r1 (.reg .r12), .mov .r5 (.reg .r2), .mov .r6 (.reg .r3),
+      .ldrSp .r7 0, .cmp .r7 (.imm 0)] : List Instr)
 
 /-- Return the position, and restore the registers. -/
 def epilogue : List Instr := .mov .r0 (.reg .r5) :: restore

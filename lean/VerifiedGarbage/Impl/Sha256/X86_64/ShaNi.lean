@@ -61,10 +61,10 @@ def schedule (i : Nat) : List Instr :=
 /-- Rounds `4i … 4i+3`, with `W₄ᵢ … W₄ᵢ₊₃` in `msg i`. -/
 def rounds4 (i : Nat) : List Instr :=
   const .xmm0 (kQuad (4 * i)) ++
-  [.xop (.bin .paddd .xmm0 (msg i)),
+  ([.xop (.bin .paddd .xmm0 (msg i)),
    .xop (.sha256rnds2 .xmm2 .xmm1),
    .xop (.pshufd .xmm0 .xmm0 0x0e),
-   .xop (.sha256rnds2 .xmm1 .xmm2)]
+   .xop (.sha256rnds2 .xmm1 .xmm2)] : List Instr)
 
 /-- Rounds `0 … 4n-1`. -/
 def rounds : Nat → Prog isa
@@ -81,12 +81,12 @@ def body : Prog isa :=
 /-- Load the hash value `H₀ … H₇` as `ABEF` into `xmm1` and `CDGH` into `xmm2`. -/
 def load : List Instr :=
   const .xmm8 bswapMask ++
-  [.movdquLoad .xmm1 (at_ .rdi 0), .movdquLoad .xmm2 (at_ .rdi 16),
+  ([.movdquLoad .xmm1 (at_ .rdi 0), .movdquLoad .xmm2 (at_ .rdi 16),
    .xop (.pshufd .xmm1 .xmm1 0xb1), .xop (.pshufd .xmm2 .xmm2 0xb1),
    .xop (.bin .movdqa .xmm7 .xmm2),
    .xop (.bin .punpcklqdq .xmm7 .xmm1),
    .xop (.bin .punpckhqdq .xmm2 .xmm1),
-   .xop (.bin .movdqa .xmm1 .xmm7)]
+   .xop (.bin .movdqa .xmm1 .xmm7)] : List Instr)
 
 /-- Store `ABEF` and `CDGH` back as the hash value. -/
 def store : List Instr :=
@@ -97,7 +97,7 @@ def store : List Instr :=
    .movdquStore (at_ .rdi 0) .xmm7, .movdquStore (at_ .rdi 16) .xmm1]
 
 def compress : Prog isa :=
-  .seq (.block (load ++ [.alu .test .rdx (.reg .rdx)]))
+  .seq (.block (load ++ ([.alu .test .rdx (.reg .rdx)] : List Instr)))
     (.seq (.ite .e (.block []) (.loop body .ne)) (.block store))
 
 end VG.Impl.Sha256.X86_64.ShaNi

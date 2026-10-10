@@ -91,7 +91,7 @@ def callInit (st : Reg) : Prog isa :=
 count in `r2:r3` (set by `count`) and the digest to `scratch + o`: `out` and
 `scratch` are pushed. -/
 def callFin (st count : List Instr) (o : Nat) : Prog isa :=
-  .seq (.block (st ++ count ++ scrAt .r1 o ++ [.mov .r12 (.reg .r11)]))
+  .seq (.block (st ++ count ++ scrAt .r1 o ++ ([.mov .r12 (.reg .r11)] : List Instr)))
     (.frame (.push [.r1, .r12]) (.call H.finN H.finC) (.pop .r1 8))
 
 end Hash

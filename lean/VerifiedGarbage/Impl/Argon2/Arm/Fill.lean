@@ -164,7 +164,7 @@ def countSelect : List Instr :=
 /-- `r0 := count - 1 - ⌊count · ⌊J₁² / 2³²⌋ / 2³²⌋`. -/
 def relative : List Instr :=
   [ld .r4 j1Off] ++ mulHi .r4 .r4 .r0 .r1 .r2 .r3 .r12 ++ [ld .r5 countOff, .mov .r6 (.reg .r2)] ++
-    mulHi .r5 .r6 .r0 .r1 .r2 .r3 .r12 ++ [.dp .sub .r0 .r5 (.imm 1), .dp .sub .r0 .r0 (.reg .r2)]
+    mulHi .r5 .r6 .r0 .r1 .r2 .r3 .r12 ++ ([.dp .sub .r0 .r5 (.imm 1), .dp .sub .r0 .r0 (.reg .r2)] : List Instr)
 
 /-- `r0 := (start + r0) mod laneLen`, by one masked subtraction. -/
 def wrap : List Instr :=
@@ -173,7 +173,7 @@ def wrap : List Instr :=
     .dp .add .r0 .r0 (.reg .r3)]
 
 /-- The reference block's address, to `[r11, #tmpOff]`. -/
-def refPointer : List Instr := [.mov .r1 (.reg .r0), ld .r0 refLaneOff] ++ blockAddr ++ [st tmpOff .r0]
+def refPointer : List Instr := ([.mov .r1 (.reg .r0), ld .r0 refLaneOff] : List Instr) ++ blockAddr ++ [st tmpOff .r0]
 
 /-- The current block's address, to `[r11, #curOff]`. -/
 def curPointer : List Instr := column ++ ld .r0 laneOff :: blockAddr ++ [st curOff .r0]
@@ -193,7 +193,7 @@ def fillCompress : Prog isa :=
 def writeWord (xorOld : Bool) (k : Nat) : List Instr :=
   .ldr .r0 .r1 (4 * k) ::
     ((if xorOld then [.ldr .r2 .r3 (4 * k), .dp .eor .r0 .r0 (.reg .r2)] else []) ++
-      [.str .r0 .r3 (4 * k)])
+      ([.str .r0 .r3 (4 * k)] : List Instr))
 
 def writeBlock (xorOld : Bool) : List Instr := (List.range 256).flatMap (writeWord xorOld)
 

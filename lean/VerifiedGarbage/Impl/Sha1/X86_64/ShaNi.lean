@@ -83,9 +83,9 @@ def body : Prog isa :=
 127:96 of `xmm1`. -/
 def load : List Instr :=
   const .xmm7 bswapMask ++
-  [.movdquLoad .xmm0 (at_ .rdi 0), .xop (.pshufd .xmm0 .xmm0 0x1b),
+  ([.movdquLoad .xmm0 (at_ .rdi 0), .xop (.pshufd .xmm0 .xmm0 0x1b),
    .movdquLoad .xmm1 (at_ .rdi 4), .xop (.shift .psrldq .xmm1 12),
-   .xop (.shift .pslldq .xmm1 12)]
+   .xop (.shift .pslldq .xmm1 12)] : List Instr)
 
 /-- Store `ABCD` and `E` back as the hash value: `H₁ … H₄` at `state + 4`,
 then `H₀ … H₃` at `state`. -/
@@ -97,7 +97,7 @@ def store : List Instr :=
    .movdquStore (at_ .rdi 4) .xmm2, .movdquStore (at_ .rdi 0) .xmm0]
 
 def compress : Prog isa :=
-  .seq (.block (load ++ [.alu .test .rdx (.reg .rdx)]))
+  .seq (.block (load ++ ([.alu .test .rdx (.reg .rdx)] : List Instr)))
     (.seq (.ite .e (.block []) (.loop body .ne)) (.block store))
 
 end VG.Impl.Sha1.X86_64.ShaNi

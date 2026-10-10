@@ -92,7 +92,7 @@ def loadKey (o : Nat) : List Instr := (List.range (P.N / 4)).flatMap (cp32 .x22 
 /-- `0x80` then zeros in the block, from byte `a` up to byte `b` (`a < b`,
 both multiples of 4). -/
 def padFrom (a b : Nat) : List Instr :=
-  [.movz .x .x9 0x80 0, .str .w .x9 .x21 a, .movz .x .x9 0 0] ++
+  ([.movz .x .x9 0x80 0, .str .w .x9 .x21 a, .movz .x .x9 0 0] : List Instr) ++
     (List.range ((b - a) / 4 - 1)).map fun k => .str .w .x9 .x21 (a + 4 + 4 * k)
 
 /-- The rest of the block after its first `D` bytes, the end of a
@@ -101,7 +101,7 @@ stores from `x22` at `x19 + N + B - L`, the end of the block at
 `x21 = x19 + N`. HMAC's `finalize` (`Impl/Pbkdf2/Md/AArch64.lean`) pads its
 outer block the same way. -/
 def padLen : List Instr :=
-  padFrom D (P.B - P.L) ++ [.movz .x .x22 (BitVec.ofNat 16 (P.B + D)) 0] ++ P.len
+  padFrom D (P.B - P.L) ++ ([.movz .x .x22 (BitVec.ofNat 16 (P.B + D)) 0] : List Instr) ++ P.len
 
 /-- The digest of the hash value into the block, and the padding it
 overwrote written back. -/
@@ -122,14 +122,14 @@ def body (name : String) (code : Prog isa) : Prog isa :=
   (.seq (compressBlock name code)
   (.seq (.block (digest P D ++ loadKey P (P.N + P.B)))
   (.seq (compressBlock name code)
-    (.block (digest P D ++ (List.range (D / 4)).flatMap xorW ++ [.subImm .x .x24 .x24 1])))))
+    (.block (digest P D ++ (List.range (D / 4)).flatMap xorW ++ ([.subImm .x .x24 .x24 1] : List Instr))))))
 
 /-- Saving our caller's registers and our return address, setting up our
 registers, and writing `U` and the padding into the block (`padLen`). -/
 def prologue : List Instr :=
   save P.md .x4 ++
-    [.str .x .x30 .x4 (raO P), .addImm .x .x19 .x4 (hvO P), mov .x20 .x4,
-      .addImm .x .x21 .x4 (blkO P), mov .x23 .x3, mov .x24 .x2] ++
+    ([.str .x .x30 .x4 (raO P), .addImm .x .x19 .x4 (hvO P), mov .x20 .x4,
+      .addImm .x .x21 .x4 (blkO P), mov .x23 .x3, mov .x24 .x2] : List Instr) ++
     (List.range (D / 4)).flatMap (cp32 .x1 .x21 0 0) ++ padLen P D ++ [mov .x22 .x0]
 
 /-- Restoring our return address and our caller's registers. -/
