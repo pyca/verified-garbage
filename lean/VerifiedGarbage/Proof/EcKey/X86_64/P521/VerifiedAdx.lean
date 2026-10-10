@@ -39,6 +39,9 @@ theorem post_of_x {s s' : State} (h : PkPost p521x s s') : pkX86_64.post s s' :=
   rw [show Spec.EcKey.publicKey p521x.C (dk p521x s) = pk s.mem (s.gpr .rsi) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
+/-- `InlineOk`, checked once for every theorem that needs it. -/
+theorem pk_inlineOk_adx : publicKeyP521Adx.InlineOk = true := by lit_decide
+
 theorem pk_x86_adx (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : pkX86_64.pre s) :
@@ -49,7 +52,7 @@ theorem pk_x86_adx (hL : Weierstrass.Law Spec.P521.curve)
     rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  have F := (Exec.regions he (Code.noCalls_inline pk_inlineOk_adx)).2.2
   obtain ⟨-, hwr, -, -, -, hro, hrs, -, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
     ⟨fun r hr => ?_, ?_⟩, post_of_x hpost⟩
@@ -87,7 +90,7 @@ theorem pk_verified_adx (hL : Weierstrass.Law Spec.P521.curve)
     (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target publicKeyP521Adx
       (Spec.EcKey.P521.inst.publicKeyContract (X86_64.abi.withConsts p521.combConsts) 8) :=
-  Verified.of_inline_ct (by lit_decide) (pk_x86_adx hL hT hI) pk_ct_adx implies8
+  Verified.of_inline_ct pk_inlineOk_adx (pk_x86_adx hL hT hI) pk_ct_adx implies8
     (fun _ h => Sig.clear_of_pre_consts h) pk_patch
 
 end VG.Proof.EcKey.X86_64.P521
