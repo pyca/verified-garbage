@@ -125,6 +125,25 @@ theorem ScrOk.frame {s₀ : State} {b : BitVec 32} {E : Nat → Spec.Sm4.Word} {
     exact slot_keep hfit (by decide) hf hd (by rw [savedSlot_eq, tableSlot_eq]; omega)
       (by rw [savedSlot_eq, dSlot_eq]; omega)
 
+/-- The slots of the data pointer and the count are in the scratch buffer. -/
+theorem dn_sub {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) :
+    ∀ r ∈ [(⟨wordAddr b dSlot, 4⟩ : Region), ⟨wordAddr b nSlot, 4⟩],
+      Region.Sub r ⟨b.setWidth 64, 4 * slots⟩ := fun r hr => by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact slot_sub hfit (by decide)
+  · exact slot_sub hfit (by decide)
+
+/-- … and apart from the table and the saved registers. -/
+theorem dn_disj {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) :
+    ∀ r ∈ [(⟨wordAddr b dSlot, 4⟩ : Region), ⟨wordAddr b nSlot, 4⟩],
+      (slotsRegion b tableSlot dSlot).Disjoint r := fun r hr => by
+  rw [slots_eq] at hfit
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl <;> rw [slot_addr (by (try simp only [dSlot_eq, nSlot_eq]); omega)] <;>
+    exact VG.Offset.disjoint _ (by (try simp only [tableSlot_eq, dSlot_eq, nSlot_eq]); omega)
+      (by (try simp only [tableSlot_eq, dSlot_eq]); omega) (by (try simp only [dSlot_eq, nSlot_eq]); omega)
+
 /-! ## The data loop -/
 
 /-- Each block, transformed: the output of the 32 rounds with the round keys `E`. -/
@@ -215,18 +234,8 @@ theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {E : Nat → Spe
     VG.Offset.sub _ (by decide) (by decide)
   have dD : ∀ {rs : List Region}, (∀ r ∈ rs, Region.Sub r ⟨b.setWidth 64, 4 * slots⟩) →
       ∀ r ∈ rs, Region.Disjoint ⟨D.setWidth 64, 16 * n⟩ r := fun h r hr => hp.sep.sub_right (h r hr)
-  have hsub : ∀ r ∈ [(⟨wordAddr b dSlot, 4⟩ : Region), ⟨wordAddr b nSlot, 4⟩],
-      Region.Sub r ⟨b.setWidth 64, 4 * slots⟩ := fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact slot_sub hfit' (by decide)
-    · exact slot_sub hfit' (by decide)
-  have dsTab : ∀ r ∈ [(⟨wordAddr b dSlot, 4⟩ : Region), ⟨wordAddr b nSlot, 4⟩],
-      (slotsRegion b tableSlot dSlot).Disjoint r := fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> rw [slot_addr (by (try simp only [dSlot_eq, nSlot_eq]); omega)] <;>
-      exact VG.Offset.disjoint _ (by (try simp only [tableSlot_eq, dSlot_eq, nSlot_eq]); omega)
-        (by (try simp only [tableSlot_eq, dSlot_eq]); omega) (by (try simp only [dSlot_eq, nSlot_eq]); omega)
+  have hsub := dn_sub hfit'
+  have dsTab := dn_disj hfit'
   unfold group copyIn
   -- The group's blocks to the tail buffer.
   refine WP.seq (WP.seq (WP.mono (groupCount_wp hi.base hwS hi.dp hi.np hv)
