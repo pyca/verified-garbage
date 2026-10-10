@@ -149,6 +149,11 @@ theorem rotl23 (x : Word) : x.rotateLeft 23 = x.rotateRight 9 := rotateLeft_eq x
 theorem tt1_eq (d x y w f : Word) : d + (x ^^^ y) + w + f = f + d + (y ^^^ x) + w := by
   simp only [ac]
 
+/-- `TT1`, in the order the implementations add its terms, with `SS2` as
+the specification orders it. -/
+theorem tt1_eq' (d x y w f : Word) : d + (y ^^^ x) + w + f = f + d + (y ^^^ x) + w := by
+  simp only [ac]
+
 /-- `P_0(TT2)`, in the order the implementations add the terms of `TT2`. -/
 theorem tt2_eq (h s w g : Word) :
     (h + s + w + g ^^^ (h + s + w + g).rotateRight 23) ^^^ (h + s + w + g).rotateRight 15 =
