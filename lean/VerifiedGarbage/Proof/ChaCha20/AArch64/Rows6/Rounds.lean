@@ -60,10 +60,102 @@ def roundE (f : ES) : ES :=
 def vars : ER := fun j k => .var (16 * (k / 4) + 4 * (k % 4) + j)
 def target : ER := fun j k => roundE (fun w => .var (16 * (k / 4) + w)) (4 * (k % 4) + j)
 
-def equal (f g : ER) : Bool := (List.finRange 24).all fun k =>
-  (List.finRange 4).all fun j => f j k == g j k
+/-! The schedule is checked by the kernel on a concrete state, a list of the
+24 rows of 4 terms (`EL`), which it builds once per operation: on the
+functions `ER`, every read at the end would run the whole schedule again. -/
 
-theorem schedule_equal : equal (roundOps.foldl stepE vars) target = true := by decide +kernel
+/-- Structural equality of terms, which the kernel evaluates faster than
+the derived `DecidableEq`. -/
+def E.beq : E → E → Bool
+  | .var a, .var b => a == b
+  | .add a b, .add c d => E.beq a c && E.beq b d
+  | .xor a b, .xor c d => E.beq a c && E.beq b d
+  | .rol a n, .rol b m => n == m && E.beq a b
+  | _, _ => false
+
+theorem E.eq_of_beq : ∀ {a b : E}, E.beq a b = true → a = b
+  | .var _, .var _, h => by simp only [E.beq, beq_iff_eq] at h; rw [h]
+  | .add _ _, .add _ _, h => by
+    simp only [E.beq, Bool.and_eq_true] at h; rw [E.eq_of_beq h.1, E.eq_of_beq h.2]
+  | .xor _ _, .xor _ _, h => by
+    simp only [E.beq, Bool.and_eq_true] at h; rw [E.eq_of_beq h.1, E.eq_of_beq h.2]
+  | .rol _ _, .rol _ _, h => by
+    simp only [E.beq, Bool.and_eq_true, beq_iff_eq] at h; rw [h.1, E.eq_of_beq h.2]
+  | .var _, .add _ _, h | .var _, .xor _ _, h | .var _, .rol _ _, h | .add _ _, .var _, h
+  | .add _ _, .xor _ _, h | .add _ _, .rol _ _, h | .xor _ _, .var _, h | .xor _ _, .add _ _, h
+  | .xor _ _, .rol _ _, h | .rol _ _, .var _, h | .rol _ _, .add _ _, h | .rol _ _, .xor _ _, h => by
+    simp [E.beq] at h
+
+/-- A state of terms as rows: `L[k][j]` is word `j` of row `k`. -/
+abbrev EL := List (List E)
+
+def look (L : EL) (j k : Nat) : E := (L.getD k []).getD j (.var 0)
+
+def stepL (L : EL) : Op → EL
+  | .add d a b => L.modify d.val fun _ => (List.range 4).map fun j => .add (look L j a) (look L j b)
+  | .xorRol d a b n => L.modify d.val fun _ =>
+      (List.range 4).map fun j => .rol (.xor (look L j a) (look L j b)) n
+  | .permute d n => L.modify d.val fun _ => (List.range 4).map fun j => look L ((j + n.val) % 4) d
+
+/-- The function `f` and the rows `L` agree on the 24 rows. -/
+def Agree (f : ER) (L : EL) : Prop := L.length = 24 ∧ ∀ k : Fin 24, ∀ j, j < 4 → f j k = look L j k
+
+theorem look_modify {L : EL} {d : Fin 24} (hl : L.length = 24) (g : List E → List E) (j k : Nat) :
+    look (L.modify d.val g) j k = if k = d.val then (g (L.getD k [])).getD j (.var 0) else look L j k := by
+  simp only [look, List.getD_eq_getElem?_getD, List.getElem?_modify]
+  split
+  · rename_i h; subst h
+    have : d.val < L.length := by rw [hl]; exact d.isLt
+    simp [List.getElem?_eq_getElem this]
+  · rename_i h; simp [Ne.symm h]
+
+theorem getD_range_map (g : Nat → E) {j : Nat} (hj : j < 4) :
+    ((List.range 4).map g).getD j (.var 0) = g j := by
+  simp [List.getD_eq_getElem?_getD, hj]
+
+theorem Agree.step {f : ER} {L : EL} (h : Agree f L) (op : Op) : Agree (stepE f op) (stepL L op) := by
+  obtain ⟨hl, h⟩ := h
+  cases op with
+  | add d a b =>
+    refine ⟨by simp [stepL, hl], fun k j hj => ?_⟩
+    simp only [stepE, stepL, look_modify hl, getD_range_map _ hj]
+    split
+    · rw [h a j hj, h b j hj]
+    · exact h k j hj
+  | xorRol d a b n =>
+    refine ⟨by simp [stepL, hl], fun k j hj => ?_⟩
+    simp only [stepE, stepL, look_modify hl, getD_range_map _ hj]
+    split
+    · rw [h a j hj, h b j hj]
+    · exact h k j hj
+  | permute d n =>
+    refine ⟨by simp [stepL, hl], fun k j hj => ?_⟩
+    simp only [stepE, stepL, look_modify hl, getD_range_map _ hj]
+    split
+    · exact h d _ (Nat.mod_lt _ (by decide))
+    · exact h k j hj
+
+theorem Agree.foldl {f : ER} {L : EL} (h : Agree f L) :
+    ∀ ops : List Op, Agree (ops.foldl stepE f) (ops.foldl stepL L)
+  | [] => h
+  | op :: ops => (h.step op).foldl ops
+
+def varsL : EL := (List.range 24).map fun k => (List.range 4).map fun j => .var (16 * (k / 4) + 4 * (k % 4) + j)
+
+theorem agree_vars : Agree vars varsL :=
+  ⟨by decide, by decide⟩
+
+def equal (L : EL) (g : ER) : Bool := (List.finRange 24).all fun k =>
+  (List.finRange 4).all fun j => E.beq (look L j k) (g j k)
+
+theorem schedule_equalL : equal (roundOps.foldl stepL varsL) target = true := by decide +kernel
+
+theorem schedule_equal (k : Fin 24) (j : Nat) (hj : j < 4) :
+    roundOps.foldl stepE vars j k = target j k := by
+  have he := schedule_equalL
+  simp only [equal, List.all_eq_true, List.mem_finRange, true_implies] at he
+  rw [(agree_vars.foldl roundOps).2 k j hj]
+  exact E.eq_of_beq (he k ⟨j, hj⟩)
 
 def LocalRel (env : Nat → Word) (f : ES) (v : CState) : Prop :=
   ∀ k (hk : k < 16), eval env (f k) = v[k]
@@ -125,9 +217,7 @@ theorem target_rel (blocks : Nat → CState) :
 theorem round_eq (blocks : Nat → CState) (k : Fin 24) (j : Nat) (hj : j < 4) :
     (roundOps.foldl step (pack blocks) j)[k] = (pack (fun b => innerBlock (blocks b)) j)[k] := by
   have h := ((vars_rel blocks).foldl roundOps) k j hj
-  have he := Symbolic.schedule_equal
-  simp only [Symbolic.equal, List.all_eq_true, List.mem_finRange, beq_iff_eq] at he
-  rw [he k (by simp) ⟨j,hj⟩ (by simp)] at h
+  rw [Symbolic.schedule_equal k j hj] at h
   exact h.symm.trans (target_rel blocks k j hj)
 
 theorem doubleRound_ok {blocks : Nat → CState} {s : State} (h : Holds (pack blocks) s)
