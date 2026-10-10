@@ -11,14 +11,14 @@ index efbf1ef6..6710c589 100644
 +[patch."https://github.com/rustls/rustls"]
 +rustls = { path = "rustls" }
 diff --git a/rustls-bench/Cargo.toml b/rustls-bench/Cargo.toml
-index f21627e3..a4197a10 100644
+index f21627e3..2f9876d6 100644
 --- a/rustls-bench/Cargo.toml
 +++ b/rustls-bench/Cargo.toml
 @@ -9,6 +9,7 @@ clap = { workspace = true }
  rustls = { path = "../rustls" }
  rustls-aws-lc-rs = { path = "../rustls-aws-lc-rs", optional = true }
  rustls-ring = { path = "../rustls-ring", optional = true }
-+rustls-verified-garbage = { path = "@VG_PROVIDER@", optional = true }
++rustls-verified-garbage = { path = "@VG_PROVIDER@", optional = true, features = ["cpu-features-env"] }
  rustls-graviola = { workspace = true, optional = true }
  rustls-test = { workspace = true, default-features = false }
  
