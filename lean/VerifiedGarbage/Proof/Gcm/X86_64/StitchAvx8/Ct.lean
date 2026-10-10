@@ -7,6 +7,8 @@ import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 
 The counter value in `r8` is secret; its arithmetic never controls an
 address or branch. The original counter pointer stays public in `rsi`.
+Encryption is checked as `Blocks.stitchPart` runs it with `full`: the number
+of blocks after the pipeline's, in `r9`, is public.
 
 Each loop is checked six times, so it is built once, as a literal.
 -/
@@ -24,7 +26,7 @@ open VG VG.X86_64
 open VG.Proof.AesGcm.X86_64 (Piece)
 open VG.Impl.Gcm.X86_64.StitchAvx8 (enc dec)
 
-theorem enc_piece : Piece enc :=
+theorem enc_piece : Piece enc false true :=
   ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide,
     by lit_decide, ⟨_, by taint_decide⟩⟩
 

@@ -1899,6 +1899,35 @@ mod tests {
         }
     }
 
+    /// Every number of whole blocks from 16 to 41, alone or with part of a
+    /// block after them, encrypts as the baseline does on every backend the
+    /// CPU can run, for each key size: interleaved loops that take every
+    /// block from 16 on end with each number of blocks left over.
+    #[test]
+    fn block_counts_agree() {
+        let msg: [u8; 661] = core::array::from_fn(|i| (i * 11 + 5) as u8);
+        let nonce = [6u8; 12];
+        for key_len in [16, 24, 32] {
+            let k = AesGcm::new(&[0x2d; 32][..key_len]).unwrap();
+            let base = k.with_backend(Backend::Scalar);
+            for &(b, need) in Backend::ALL {
+                if !detected().contains(need) {
+                    continue;
+                }
+                let k = k.with_backend(b);
+                for len in (256..=656).step_by(16).flat_map(|l| [l, l + 5]) {
+                    let mut want = msg;
+                    let want_tag = base
+                        .encrypt_in_place(&nonce, b"", &mut want[..len])
+                        .unwrap();
+                    let mut ct = msg;
+                    let tag = k.encrypt_in_place(&nonce, b"", &mut ct[..len]).unwrap();
+                    assert_eq!((&ct[..len], tag), (&want[..len], want_tag), "{b:?}");
+                }
+            }
+        }
+    }
+
     /// All partial tails, including no tail and a suffix completing a
     /// block, agree with the existing in-place AEAD on every backend.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]

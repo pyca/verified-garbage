@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
+import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 
 /-!
 # Eight-block AES-NI/GHASH pipeline
@@ -14,6 +15,11 @@ Scratch holds eight hash powers at 128–255, reversed hash inputs at
 Counter words are prepared early for the next batch, using full inc32
 arithmetic with no counter-dependent branches. Encryption runs sixteen
 blocks ahead of hashing; decryption hashes ciphertext before overwriting it.
+
+Encryption takes any number of blocks from 16 on: once the pipeline stops,
+with `t = n mod 8` blocks left, it encrypts the eight counters it prepared
+next, stores their keystream at 832–959, and adds it to the `t` blocks one at
+a time, hashing each with the power `H'ᵗ⁻ⁱ` (`StitchZH.remBody`).
 
 The entry and exit follow Stitch's internal interface; scratch fits its
 1024-byte region, and the input data register r8 is restored on exit.
@@ -176,11 +182,46 @@ def encBody8 (nr : Nat) : Prog isa :=
   .seq (.block []) (.seq (batch nr 8 16 (q8 nr true))
     (.block [.alu .add .rdx (.imm 128), .alu .sub .r9 (.imm 8), .alu .cmp .r9 (.imm 24)]))
 
+/-- The keystream of the eight counters prepared after the last batch,
+stored to `scratch + 832`. -/
+def ksTail (nr : Nat) : Prog isa :=
+  .seq (.block ((List.range 8).map (fun i => .vmovdquLoad .l128 (aregs.getD i .xmm3) (at_ .r11 (640+16*i)))))
+    (.seq (aesFixed nr aregs (fun _ => []))
+      (.block ((List.range 8).map (fun i => .vmovdquStore .l128 (at_ .r11 (832+16*i)) (aregs.getD i .xmm3)))))
+
+/-- For the `t = r9 - 16` blocks after the pipeline's: the counter advanced
+by `t`, the powers `H'ᵗ` … `H'` at `rax = scratch + 256 - 16 t`, `rdx` at
+the `t` blocks, `r10 = 0`, the mask and the reduction constant loaded, and
+`r11` moved up 64 bytes, so that the keystream is at `r11 + 768`, as
+`StitchZH.remBody` reads it. -/
+def tailSetup : List Instr :=
+  [.mov .r10 (.reg .r9), .alu .sub .r10 (.imm 16), .alu32 .add .r8 (.reg .r10), .shift .shl .r10 4,
+   .mov .rax (.reg .r11), .alu .add .rax (.imm 256), .alu .sub .rax (.reg .r10),
+   .alu .add .rdx (.imm 256), .mov32 .r10 (.imm 0),
+   .vmovdquLoad .l128 .xmm0 (at_ .r11 768), .vmovdquLoad .l128 .xmm1 (at_ .r11 784),
+   .alu .add .r11 (.imm 64)]
+
+/-- After the `t` blocks: `r11` back, their products reduced into `Y`, and
+the last round key's address back in `r10`. -/
+def tailEnd (nr : Nat) : List Instr :=
+  ([.alu .sub .r11 (.imm 64)] : List Instr) ++ StitchAvx.reduceHash ++
+  ([.mov .r10 (.reg .rdi), .alu .add .r10 (.imm (BitVec.ofNat 32 (16 * nr)))] : List Instr)
+
+/-- The blocks after the pipeline's, if any: `r9 - 16` of them, at
+`rdx + 256`. -/
+def tailT (nr : Nat) : Prog isa :=
+  .seq (.block [.alu .cmp .r9 (.imm 16)])
+    (.ite .e (.block [])
+      (.seq (ksTail nr)
+        (.seq (.block (tailSetup ++ StitchAvx.zero))
+          (.seq (.loop (.block (StitchZH.remBody .rdx ++ StitchZH.remNext)) .ne) (.block (tailEnd nr))))))
+
 def encFor (nr : Nat) : Prog isa :=
   .seq (.block setup) (.seq (batch nr 8 0 (fun _ => [])) (.seq (batch nr 8 8 (fun _ => []))
     (.seq (.block ((List.range 8).flatMap prepare ++ ([.alu .cmp .r9 (.imm 24)] : List Instr)))
       (.seq (.ite .b (.block []) (.loop (encBody8 nr) .ae))
-        (.block (hash8 ++ (List.range 8).flatMap (fun i => prepare (8+i)) ++ hash8 ++ finish))))))
+        (.seq (.block (hash8 ++ (List.range 8).flatMap (fun i => prepare (8+i)) ++ hash8))
+          (.seq (tailT nr) (.block finish)))))))
 
 def decBody8 (nr : Nat) : Prog isa :=
   .seq (.block []) (.seq (batch nr 8 0 (q8 nr true))

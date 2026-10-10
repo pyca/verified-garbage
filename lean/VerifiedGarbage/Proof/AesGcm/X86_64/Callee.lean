@@ -377,7 +377,11 @@ structure StitchImpl where
   enc : Prog isa
   dec : Prog isa
   ok : Gcm.X86_64.Stitch.StitchOk enc dec
-  encP : Piece enc
+  /-- Whether `enc` takes any number of blocks from 16 on (`Blocks.stitchPart`'s
+  `full`), and not only multiples of 16. -/
+  full : Bool
+  okFull : full = true → ∀ s₀, Gcm.X86_64.Stitch.SPre s₀ → WP isa enc s₀ (Gcm.X86_64.Stitch.EPost s₀)
+  encP : Piece enc false full
   decP : Piece dec
 
 open Gcm.X86_64.Stitch (CtxMode StitchOkM) in
@@ -395,18 +399,28 @@ structure StitchCode (M : CtxMode) (aligned : Bool := false) where
 def encFull {M : Gcm.X86_64.Stitch.CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) : Bool :=
   st.any (·.full)
 
+open Gcm.X86_64.Stitch (CtxMode StitchOkM) in
+/-- The loops `st` meet their contracts for a key context of kind `M`. -/
+theorem StitchImpl.okM (st : StitchImpl) (M : CtxMode) :
+    StitchOkM M st.enc st.dec (if st.full then 1 else 16) := by
+  by_cases h : st.full = true
+  · rw [ite_eq_left h]
+    exact ⟨fun s₀ hp _ => st.okFull h s₀ hp.base, (st.ok.toM M).2⟩
+  · rw [ite_eq_right h]
+    exact st.ok.toM M
+
 open Gcm.X86_64.Stitch (CtxMode) in
 /-- The loops `st`, for a key context of kind `M` (they read only its first
 256 bytes). -/
 def StitchImpl.code (st : StitchImpl) (M : CtxMode) : StitchCode M :=
-  ⟨st.enc, st.dec, false, st.ok.toM M, st.encP, st.decP⟩
+  ⟨st.enc, st.dec, st.full, st.okM M, st.encP, st.decP⟩
 
 namespace StitchImpl
 
 theorem any_false {α : Type} (st : Option α) : st.any (fun _ => false) = false := by cases st <;> rfl
 
 theorem encFull_code (st : Option StitchImpl) (M : Gcm.X86_64.Stitch.CtxMode) :
-    encFull (st.map (·.code M)) = false := by cases st <;> rfl
+    encFull (st.map (·.code M)) = st.any (·.full) := by cases st <;> rfl
 
 variable {aligned : Bool} {α : Type} (st : Option α) {f : α → Prog isa} {g : α → Bool}
   (hf : ∀ i, Piece (f i) aligned (g i))
@@ -474,7 +488,8 @@ def suffix : String := v.ctr.suffix ++ v.gh.suffix ++ (v.stitch.map (·.suffix))
 def callees : Callees :=
   ⟨⟨v.ctr.callee.name, v.ctr.callee.code⟩, v.key.fn, v.gh.fn,
     ⟨Spec.Gcm.encryptBlocksApi.name ++ v.suffix,
-      Impl.AesGcm.X86_64.Blocks.encrypt ⟨v.ctr.callee.name, v.ctr.callee.code⟩ v.gh.fn (v.stitch.map (·.enc))⟩,
+      Impl.AesGcm.X86_64.Blocks.encrypt ⟨v.ctr.callee.name, v.ctr.callee.code⟩ v.gh.fn (v.stitch.map (·.enc)) false
+        (v.stitch.any (·.full))⟩,
     ⟨Spec.Gcm.decryptBlocksApi.name ++ v.suffix,
       Impl.AesGcm.X86_64.Blocks.decrypt ⟨v.ctr.callee.name, v.ctr.callee.code⟩ v.gh.fn (v.stitch.map (·.dec))⟩⟩
 

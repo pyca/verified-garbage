@@ -3,7 +3,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Tail
 
 /-! # Eight-state AES-NI/GHASH correctness
 
@@ -325,6 +325,53 @@ theorem setup_ok {s₀ : State} (hp : SPre s₀) :
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
+/-!
+# The powers of the blocks after the pipeline's
+
+The products of the last `r < 8` blocks with the powers `H'ʳ` … `H'` of the
+pipeline (`P (8 - r)` … `P 7`), added and reduced, are `GHASH` over them.
+-/
+
+namespace VG.Proof.Gcm.X86_64.StitchAvx8
+
+open VG VG.Proof.Gcm.Poly
+open VG.Proof.Gcm.X86_64.Stitch (hk)
+open VG.Proof.Gcm.X86_64.Pclmul (Prod φ_reduceB)
+open VG.Proof.Gcm.X86_64.StitchZH (accR)
+open VG.Spec.Gcm (Block ghashFrom)
+
+theorem tailLaw {s₀ : X86_64.State} {P : Nat → Block}
+    (hP : ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) : TailLaw s₀ P := by
+  intro r hr1 hr7 X y
+  let T : Nat → BitVec 128 := fun j => P (8 - r + j)
+  have hT : ∀ j < r, x * φ (T j) = φ (hk s₀) ^ (r - j) := fun j hj => by
+    have := hP (8 - r + j) (by omega)
+    rwa [show 8 - (8 - r + j) = r - j by omega] at this
+  have key : ∀ n, 1 ≤ n → n ≤ r →
+      (accR X T y n).val = φ (hk s₀) ^ (r - n) * φ (ghashFrom (hk s₀) y ((List.range n).map X)) := by
+    intro n
+    induction n with
+    | zero => intro h; omega
+    | succ n ih =>
+      intro _ hn
+      rcases Nat.eq_zero_or_pos n with rfl | hpos
+      · have h0 := hT 0 (by omega)
+        simp only [accR, ↓reduceIte, Prod.val_acc, Prod.val_zero, zero_add, List.range_one, List.map_cons,
+          List.map_nil, ghashFrom, List.foldl_cons, List.foldl_nil, φ_mul, Nat.sub_zero] at h0 ⊢
+        rw [show r = (r - (0 + 1)) + 1 by omega, pow_succ] at h0
+        linear_combination φ (y ^^^ X 0) * h0
+      · have hn' := hT n (by omega)
+        rw [show r - n = (r - (n + 1)) + 1 by omega, pow_succ] at hn'
+        simp only [accR, show n ≠ 0 by omega, ↓reduceIte, Prod.val_acc, ih hpos (by omega), List.range_succ,
+          List.map_append, List.map_cons, List.map_nil, ghashFrom, List.foldl_append, List.foldl_cons,
+          List.foldl_nil, φ_mul, φ_xor, φ_zero, zero_add]
+        rw [show r - n = (r - (n + 1)) + 1 by omega, pow_succ]
+        linear_combination φ (X n) * hn'
+  apply φ_inj
+  rw [φ_reduceB, key r hr1 (Nat.le_refl _), Nat.sub_self, pow_zero, one_mul]
+
+end VG.Proof.Gcm.X86_64.StitchAvx8
+
 /-! # Complete fixed-key-size encrypt and decrypt loops -/
 
 namespace VG.Proof.Gcm.X86_64.StitchAvx8
@@ -339,17 +386,15 @@ private theorem prefixContinue {a b z : Prog isa} {xs ys : List Instr} {s : Stat
     WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h =>
       WP.seq (WP.block_append_iff.mpr (WP.mono h fun _ h => WP.seq_iff.mp h))))
 
-theorem encFor_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
-    WP isa (encFor (nr s₀)) s₀ (EPost s₀) := by
+theorem encFor_ok {s₀ : State} (hp : SPre s₀) : WP isa (encFor (nr s₀)) s₀ (EPost s₀) := by
   rw [encFor]
   refine WP.seq (WP.mono (setup_ok hp) fun s ⟨P, hR, hP⟩ => ?_)
   have hlaw : HashLaw s₀ P := fun X y => finishHash X P (hk s₀) y hP
   apply prefixContinue
   refine WP.mono (firstEnc_ok hp hR) fun t hI => ?_
   refine WP.seq (WP.mono hI.compare fun u ⟨hu, hcf⟩ => ?_)
-  have hl := loopMaybe_ok hp hm hlaw hu hcf
-  refine WP.seq (WP.mono hl fun v ⟨g, hg, hv⟩ => ?_)
-  exact finalEnc_ok hp hlaw hv hg
+  refine WP.seq (WP.mono (loopMaybe_ok hp hlaw hu hcf) fun v ⟨g, hg, hv⟩ => ?_)
+  exact WP.seq (WP.mono (finalHash_ok hp hlaw hv hg) fun w hw => tail_ok hp (tailLaw hP) hw)
 
 theorem decFor_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
     WP isa (decFor (nr s₀)) s₀ (DPost s₀) := by
@@ -357,9 +402,12 @@ theorem decFor_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
   refine WP.mono (setup_ok hp) fun s ⟨P, hR, hP⟩ => ?_
   have hlaw : HashLaw s₀ P := fun X y => finishHash X P (hk s₀) y hP
   refine WP.mono (firstDec_ok hp hR) fun t hI => ?_
-  have hl := loopRun_ok hp hm hlaw hI hp.nb16
+  have hl := loopRun_ok hp hlaw hI hp.nb16
   refine WP.seq (WP.mono hl fun u ⟨g, hg, hu⟩ => ?_)
-  exact WP.seq (WP.block_nil (finalDec_ok hp hlaw hu hg))
+  have h8 := hu.multiple
+  have ht := hu.tail_le
+  simp only [threshold, tailSize, ite_true] at hg ht
+  exact WP.seq (WP.block_nil (finalDec_ok hp hlaw hu (by omega)))
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -370,15 +418,19 @@ open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch
 open VG.Impl.Gcm.X86_64.StitchAvx8 (enc dec)
 
+/-- Encryption of any number of blocks from 16 on. -/
+theorem enc_ok {s₀ : State} (hp : SPre s₀) : WP isa enc s₀ (EPost s₀) := by
+  apply dispatch_ok hp <;> intro t hf hn
+  all_goals
+    have ht : nr t = nr s₀ := by simp only [nr, hf.gpr]
+    have hw := encFor_ok (pre_same hp hf)
+    rw [ht, hn] at hw
+    exact WP.mono hw fun u hu => epost_same hf hu
+
 theorem stitch_ok : StitchOk enc dec := by
   constructor
-  · intro s₀ hp hm
-    apply dispatch_ok hp <;> intro t hf hn
-    all_goals
-      have ht : nr t = nr s₀ := by simp only [nr, hf.gpr]
-      have hw := encFor_ok (pre_same hp hf) (by simp only [nb, hf.gpr]; exact hm)
-      rw [ht, hn] at hw
-      exact WP.mono hw fun u hu => epost_same hf hu
+  · intro s₀ hp _
+    exact enc_ok hp
   · intro s₀ hp hm
     apply dispatch_ok hp <;> intro t hf hn
     all_goals
