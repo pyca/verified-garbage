@@ -26,9 +26,8 @@ The scalar is given as its bits, a byte each, least significant first,
 from byte 3072 of the working space (`bitsAt`): the code reads them as the
 comb's digits. A point is three coordinates `X, Y, Z` in consecutive slots of
 the working space, each an element of `Spec/X448/Field56.lean` (eight limbs
-of 56 bits): `A` in slots 0 to 2 and `C` in slots 3 to 5, with limbs below
-`2^56 + 2^8` (`Field56.Res`). The function needs and keeps
-`Field56.Bounded` (every limb of every slot below `3·2^56 + 2^9`) and slot
+of 56 bits): `A` in slots 0 to 2 and `C` in slots 3 to 5. The function needs
+and keeps `Field56.Bounded` (every limb of every slot below `3·2^56 + 2^9`) and slot
 19 zero, every limb 0. It writes the 22 slots (bytes 64 to 2879) and its
 own bytes (`Field56.own`); on return those, but the results, are
 unspecified and may hold intermediate values, and every other byte of `ws`
@@ -40,7 +39,7 @@ function is constant time.
 
 namespace VG.Spec.Ed448.Comb56
 
-open X448.Field56 (slotAt limbAt limbs elemAt Bounded Res Keeps own)
+open X448.Field56 (slotAt limbAt limbs elemAt Bounded Keeps own)
 open Point56 (pointAt zeroSlot)
 
 /-- Where the scalar's bits are, a byte each. -/
@@ -78,14 +77,13 @@ def sig : Sig where
 /-- The comb's sums: for `n` 56 or 57, with `8 n` bits of `k` from byte `bitsOff`, every slot
 `Bounded` and every limb of slot 19 zero, the point in slots 0 to 2 equals
 `pointMul (oddNibbles k n) basePoint` and the point in slots 3 to 5 equals
-`pointMul (evenNibbles k n) basePoint`, each with `Z` nonzero and limbs below `resBound`. -/
+`pointMul (evenNibbles k n) basePoint`, each with `Z` nonzero. -/
 def combBaseContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
   sig.contract A
     (pre := fun ws n m => (n.toNat = 56 ∨ n.toNat = 57) ∧ IsBits m ws (8 * n.toNat) ∧
       Bounded m ws ∧ ∀ i < limbs, limbAt m ws (slotAt zeroSlot) i = 0)
     (post := fun ws n m m' _ =>
-      Bounded m' ws ∧ (∀ i < 6, Res m' ws i) ∧
-        elemAt m' ws (slotAt 2) ≠ 0 ∧ elemAt m' ws (slotAt 5) ≠ 0 ∧
+      Bounded m' ws ∧ elemAt m' ws (slotAt 2) ≠ 0 ∧ elemAt m' ws (slotAt 5) ≠ 0 ∧
         pointEqual (pointAt m' ws 0)
           (pointMul (oddNibbles (bitsAt m ws (8 * n.toNat)) n.toNat) basePoint) = true ∧
         pointEqual (pointAt m' ws 3)
@@ -108,8 +106,7 @@ def combBaseApi : Api where
     representation of each point: only the points are specified. Slot `n` of `ws` is the first \
     64 bytes from byte `64 + 128 n`, eight 64-bit little-endian words, least significant first, \
     each a limb: the number `Σ l_i 2^(56 i)`, standing for its residue modulo \
-    `p = 2^448 - 2^224 - 1`, not necessarily reduced. The results' limbs are below \
-    `2^56 + 2^8`. Every byte of `ws` but the 22 slots (bytes 64 to 2879) and the function's own \
+    `p = 2^448 - 2^224 - 1`, not necessarily reduced. Every byte of `ws` but the 22 slots (bytes 64 to 2879) and the function's own \
     working space (bytes 3584 to 4735) keeps its value.\n\n\
     Contract: `combBaseContract` of `VG.Spec.Ed448.Comb56`. Constant time: only the pointer and \
     `n` may affect timing."
