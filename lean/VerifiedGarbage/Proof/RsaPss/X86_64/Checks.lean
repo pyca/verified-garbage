@@ -1,5 +1,5 @@
 import VerifiedGarbage.Impl.RsaPss.X86_64
-import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # RSASSA-PSS on x86-64: the taint checks of each hash function
@@ -9,7 +9,9 @@ hash function (its sizes, as immediates) are checked by the taint analysis
 once for each hash function (`by taint_decide`, in its file under
 `Proof/Pbkdf2/Md/X86_64/Hashes/`): `PssChecks P D`, for the parameters `P`
 of its streaming code and its digest size `D`. The code of a hash function
-`H` is that of `ckH H.P H.D`, by definition.
+`H` is that of `ckH H.P H.D`, by definition. The taint they start from,
+`pT`, is defined here too, with no proofs, so that the hash functions' files
+import this file without the proofs of RSA's code (`CtBase.lean`).
 -/
 
 namespace VG.Proof.RsaPss.X86_64
@@ -17,6 +19,11 @@ namespace VG.Proof.RsaPss.X86_64
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 open VG.Impl.MdStream.X86_64 (Params)
+
+/-- The taint at the start of a piece. -/
+def pT (n : Nat) (ks : List Nat) (rs : List Reg) : X86_64.Taint.T :=
+  { regs := .ofList (rs ++ [.rsp]), flags := false, lens := frameBytes :: List.replicate n 0,
+    bases := [(.rsp, 0, 0)], slots := ks.map fun k => (0, 8 * k, 8) }
 
 /-- A hash function with the parameters `P` and the digest size `D`, and no
 functions to call. -/

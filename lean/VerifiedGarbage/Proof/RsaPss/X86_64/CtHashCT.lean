@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
-import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
+import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 

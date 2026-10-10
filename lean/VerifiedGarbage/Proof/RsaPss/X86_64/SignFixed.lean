@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
+import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
 
 /-!
 # RSASSA-PSS signing on x86-64: the taint checks of the pieces that do not
