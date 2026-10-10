@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHintConstants
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowConstants
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckRun
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowReady
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowRun
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Paired

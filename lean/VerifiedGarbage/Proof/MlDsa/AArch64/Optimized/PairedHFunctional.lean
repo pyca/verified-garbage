@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHintFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowEntryState
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHintAccess
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHAllFields
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHReturnSemantic

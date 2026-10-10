@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLowRooted
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 open VG VG.AArch64 VG.Spec.MlDsa

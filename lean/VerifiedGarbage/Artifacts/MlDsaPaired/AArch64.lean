@@ -1,7 +1,7 @@
 import VerifiedGarbage.Spec.MlDsa.PairedApi
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
 
 namespace VG.Artifacts.MlDsaPaired.AArch64
 

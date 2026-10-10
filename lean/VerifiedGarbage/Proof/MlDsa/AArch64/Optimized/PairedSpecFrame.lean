@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowSpecPre
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowKernel
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
 open VG VG.AArch64 VG.Spec.MlDsa

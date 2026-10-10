@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinishSemantic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckFlags
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowFlagValue
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowRun
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
 open VG VG.AArch64

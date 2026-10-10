@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowRun
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
 open VG VG.AArch64

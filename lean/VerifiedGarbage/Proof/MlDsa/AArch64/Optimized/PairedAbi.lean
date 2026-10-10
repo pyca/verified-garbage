@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowEntry
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowKernel
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
 open VG VG.AArch64
