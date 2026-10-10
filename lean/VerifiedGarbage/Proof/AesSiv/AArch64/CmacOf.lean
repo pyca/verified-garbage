@@ -135,7 +135,8 @@ theorem cmacPre_wp (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P 
       rcases hr' with rfl | rfl | rfl | rfl | rfl <;> simp [gpr_write]
     · rw [← k₁ r hr' h28]
       simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr'
-      rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all [gpr_write]
+      rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        first | exact absurd rfl h28 | simp [gpr_write]
     · simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq, mz15]
       rw [chainedLen_pos (by omega), g₁ _ (by decide), hr.x23, sub_and15]
       have : (BitVec.ofNat 64 L - 1#64).toNat = L - 1 := by

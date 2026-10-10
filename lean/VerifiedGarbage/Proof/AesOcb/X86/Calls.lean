@@ -143,7 +143,7 @@ theorem blocksCall_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Sta
   · rw [m₃, P₂.out, m₁]
   · by_cases h₄ : r = .ebp
     · subst h₄; rw [bp₃, E.ebp]
-    · rw [g₃ r h₄, P₂.saved r (by cases r <;> simp_all [calleeSaved]), g₁ r h₁ h₂ h₄]
+    · rw [g₃ r h₄, P₂.saved r (by revert h₁ h₂ h₃ h₄; cases r <;> decide), g₁ r h₁ h₂ h₄]
 
 /-- `callBlocks`: `args`, which leaves the blocks' address in `edx` and their
 number in `ebx`, then the call. -/
