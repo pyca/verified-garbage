@@ -1,5 +1,5 @@
 import VerifiedGarbage.Impl.Sm4.X86_64.Ecb
-import VerifiedGarbage.Spec.Sm4
+import VerifiedGarbage.Impl.Sm4.Planes
 
 /-!
 # The SM4 key schedule on x86-64
@@ -26,18 +26,7 @@ anything else.
 namespace VG.Impl.Sm4.X86_64
 
 open VG.X86_64 VG.Impl.Aes.X86_64
-open VG.Impl.Sm4 (Lin)
-
-/-- Plane `j` of the 32-bit word `x` in every block: bit `16 i + b` is bit
-`j` of its byte `i`, from the most significant. -/
-def planeOf (x : BitVec 32) (j : Nat) : BitVec 64 :=
-  (BitVec.ofBoolListLE ((List.range 64).map fun p => x.getLsbD (8 * (3 - p / 16) + j))).setWidth 64
-
-/-- `FK`'s words `2 h` and `2 h + 1` as a block stores them (each big-endian),
-read as a little-endian word. -/
-def fkWord (h : Nat) : BitVec 64 :=
-  (BitVec.ofBoolListLE ((List.range 64).map fun t =>
-    (Spec.Sm4.fk.getD (2 * h + t / 32) 0).getLsbD (8 * (3 - t % 32 / 8) + t % 8))).setWidth 64
+open VG.Impl.Sm4 (Lin planeOf fkWord)
 
 /-- Half `h` of the key, XOR `FK`, to the sixteen blocks of the tail buffer. -/
 def loadHalf (h : Nat) : List Instr :=
