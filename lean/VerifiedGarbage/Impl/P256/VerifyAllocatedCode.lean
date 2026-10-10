@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Impl.AArch64Instrs
 
 /-! Lean-generated output of VerifyRegisters.optimize. These literal instruction
 blocks are untrusted input to the checked arithmetic certificates. -/
@@ -6,7 +7,7 @@ namespace VG.Impl.P256.VerifyAllocatedCode
 open VG VG.AArch64
 
 def doubleRR : List Instr :=
-[.ldr .x .x1 .x0 576,
+aarch64_instrs% [.ldr .x .x1 .x0 576,
  .ldr .x .x2 .x0 584,
  .ldr .x .x3 .x0 592,
  .ldr .x .x4 .x0 600,
@@ -1036,7 +1037,7 @@ def doubleRR : List Instr :=
  .str .x .x1 .x0 568]
 
 def mixedHead : List Instr :=
-[.ldr .x .x1 .x0 576,
+aarch64_instrs% [.ldr .x .x1 .x0 576,
  .ldr .x .x2 .x0 584,
  .ldr .x .x3 .x0 592,
  .ldr .x .x4 .x0 600,
@@ -1538,7 +1539,7 @@ def mixedHead : List Instr :=
  .str .x .x4 .x0 984]
 
 def mixedTail : List Instr :=
-[.ldr .x .x1 .x0 896,
+aarch64_instrs% [.ldr .x .x1 .x0 896,
  .ldr .x .x2 .x0 904,
  .ldr .x .x3 .x0 912,
  .ldr .x .x4 .x0 920,
@@ -2423,7 +2424,7 @@ def mixedTail : List Instr :=
  .str .x .x12 .x0 696]
 
 def jacTail : List Instr :=
-[.ldr .x .x1 .x0 896,
+aarch64_instrs% [.ldr .x .x1 .x0 896,
  .ldr .x .x2 .x0 904,
  .ldr .x .x3 .x0 912,
  .ldr .x .x4 .x0 920,
@@ -3429,7 +3430,7 @@ def jacTail : List Instr :=
  .str .x .x9 .x0 696]
 
 def cachedHead : List Instr :=
-[.ldr .x .x1 .x0 576,
+aarch64_instrs% [.ldr .x .x1 .x0 576,
  .ldr .x .x2 .x0 584,
  .ldr .x .x3 .x0 592,
  .ldr .x .x4 .x0 600,
@@ -4195,7 +4196,7 @@ def cachedHead : List Instr :=
  .str .x .x4 .x0 984]
 
 def inverseUpdate : List Instr :=
-[.ldr .x .x2 .x0 2272,
+aarch64_instrs% [.ldr .x .x2 .x0 2272,
  .ldr .x .x3 .x0 2280,
  .ldr .x .x8 .x0 2288,
  .umulh .x9 .x4 .x2,

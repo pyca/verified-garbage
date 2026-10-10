@@ -62,7 +62,7 @@ private def render (code : List Instr) : String := Id.run do
     s := s.replace s!"(VG.AArch64.Reg.x{i})" s!".x{i}"
   for op in ["and","orr","eor"] do
     s := s.replace s!"(VG.AArch64.LogicOp.{op})" s!".{op}"
-  return s
+  return "aarch64_instrs% " ++ s
 
 private def doubleCode : List Instr :=
   ((do
@@ -80,7 +80,7 @@ private def inverseUpdate : List Instr :=
 
 def main : IO Unit := do
   let cases := [("update",inverseUpdate),("double",doubleCode),("dblu",VerifyRegisters.optimize [] pool (EcdhTable.keep true) (EcdhTable.raw true)),("zaddu",VerifyRegisters.optimize [] pool (EcdhTable.keep false) (EcdhTable.raw false))]
-  let mut text := "import VerifiedGarbage.TCB.AArch64.Isa\n\n/-! Lean-generated register allocations, checked independently against their raw arithmetic. -/\nnamespace VG.Impl.P256.EcdhAllocatedCode\nopen VG VG.AArch64\n\n"
+  let mut text := "import VerifiedGarbage.TCB.AArch64.Isa\nimport VerifiedGarbage.Impl.AArch64Instrs\n\n/-! Lean-generated register allocations, checked independently against their raw arithmetic. -/\nnamespace VG.Impl.P256.EcdhAllocatedCode\nopen VG VG.AArch64\n\n"
   for (name,code) in cases do
     text := text ++ "def " ++ name ++ " : List Instr :=\n" ++ render code ++ "\n\n"
   IO.FS.writeFile "VerifiedGarbage/Impl/P256/EcdhAllocatedCode.lean" (text++"end VG.Impl.P256.EcdhAllocatedCode\n")

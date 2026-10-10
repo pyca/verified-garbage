@@ -1,11 +1,12 @@
 import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Impl.AArch64Instrs
 
 /-! Lean-generated register allocations, checked independently against their raw arithmetic. -/
 namespace VG.Impl.P256.EcdhAllocatedCode
 open VG VG.AArch64
 
 def update : List Instr :=
-[.ldr .x .x2 .x0 2272,
+aarch64_instrs% [.ldr .x .x2 .x0 2272,
  .ldr .x .x3 .x0 2280,
  .ldr .x .x8 .x0 2288,
  .umulh .x9 .x4 .x2,
@@ -712,7 +713,7 @@ def update : List Instr :=
  .str .x .x2 .x0 2376]
 
 def double : List Instr :=
-[.ldr .x .x1 .x0 576,
+aarch64_instrs% [.ldr .x .x1 .x0 576,
  .ldr .x .x2 .x0 584,
  .ldr .x .x3 .x0 592,
  .ldr .x .x4 .x0 600,
@@ -1800,7 +1801,7 @@ def double : List Instr :=
  .str .x .x6 .x0 568]
 
 def dblu : List Instr :=
-[.ldr .x .x1 .x0 1280,
+aarch64_instrs% [.ldr .x .x1 .x0 1280,
  .ldr .x .x2 .x0 1288,
  .ldr .x .x3 .x0 1296,
  .ldr .x .x4 .x0 1304,
@@ -2824,7 +2825,7 @@ def dblu : List Instr :=
  .str .x .x9 .x0 5456]
 
 def zaddu : List Instr :=
-[.ldr .x .x1 .x0 608,
+aarch64_instrs% [.ldr .x .x1 .x0 608,
  .ldr .x .x2 .x0 704,
  .ldr .x .x3 .x0 616,
  .ldr .x .x4 .x0 712,
