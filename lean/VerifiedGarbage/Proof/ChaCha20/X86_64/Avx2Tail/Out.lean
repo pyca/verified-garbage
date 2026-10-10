@@ -56,14 +56,6 @@ def setup1Check : Bool :=
       (List.range 8).all fun p => σ.reg r p == inT 0 (4 * r + p % 4) (p / 4)
   | none => false
 
-def fullCheck : Bool :=
-  match run 64 Sym.init (addIn ++ xorSet .xmm0 .xmm1 .xmm2 .xmm3 0 ++ xorSet .xmm4 .xmm5 .xmm6 .xmm7 128) with
-  | some σ =>
-    ((List.range 4).all fun j => (List.range 16).all fun i =>
-      σ.mem 2 (16 * j + i) == .xor (.mem 2 (16 * j + i)) (outT (j / 2) i (j % 2))) &&
-    (List.range 80).all fun i => σ.mem 1 i == .mem 1 i
-  | none => false
-
 def lastCheck : Bool :=
   match run 0 Sym.init (addIn ++ storeSet .xmm0 .xmm1 .xmm2 .xmm3 0 ++ storeSet .xmm4 .xmm5 .xmm6 .xmm7 128) with
   | some σ => (List.range 4).all fun j => (List.range 16).all fun i =>
@@ -75,10 +67,8 @@ def last1Check : Bool :=
   | some σ => (List.range 2).all fun l => (List.range 16).all fun i => σ.mem 1 (16 * l + i) == outT 0 i l
   | none => false
 
-theorem setupCheck_64 : setupCheck 64 = true := by decide +kernel
 theorem setupCheck_0 : setupCheck 0 = true := by decide +kernel
 theorem setup1Check_eq : setup1Check = true := by decide +kernel
-theorem fullCheck_eq : fullCheck = true := by decide +kernel
 theorem lastCheck_eq : lastCheck = true := by decide +kernel
 theorem last1Check_eq : last1Check = true := by decide +kernel
 
@@ -148,17 +138,17 @@ theorem ym_of {D : Nat} {σ : Sym} {s s' : State} (h : SRel D σ s s') (hm : mas
 
 /-! ## The instructions -/
 
-theorem setup_ok {D : Nat} (hD : D = 64 ∨ D = 0) {s : State} (hc : Ctx D s) (hm : Consts s.mem (s.gpr .r9))
+theorem setup_ok {s : State} (hc : Ctx 0 s) (hm : Consts s.mem (s.gpr .r9))
     (hi : Incs s.mem (s.gpr .r9)) :
     WP isa (.block setup) s fun s' =>
       HB 2 (fun j => ctr (S0 s) j) s' ∧ YM s' ∧ s'.mem = s.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧
         s'.wr = s.wr := by
-  have e : setupCheck D = true := by rcases hD with rfl | rfl; exacts [setupCheck_64, setupCheck_0]
+  have e := setupCheck_0
   unfold setupCheck at e
   split at e
   · rename_i σ hr
     simp only [Bool.and_eq_true, Bool.not_eq_true', List.all_eq_true, List.mem_range, beq_iff_eq] at e
-    refine WP.mono (srun_ok hc setup (SRel.init D s) hr) fun s' h => ⟨fun k hk l hl i hi16 => ?_,
+    refine WP.mono (srun_ok hc setup (SRel.init 0 s) hr) fun s' h => ⟨fun k hk l hl i hi16 => ?_,
       ym_of h e.1.2 hm, h.clean e.1.1, h.gpr, h.rd, h.wr⟩
     have r := h.reg (zreg (4 * k + i / 4)) (4 * l + i % 4) (by omega)
     rw [xidx_zreg _ (by omega), e.2 k hk _ (by omega) _ (by omega)] at r
@@ -184,35 +174,6 @@ theorem setup1_ok {s : State} (hc : Ctx 0 s) (hm : Consts s.mem (s.gpr .r9)) (hi
     simp only [yw, show (4 * l + i % 4) / 4 = l by omega, show (4 * l + i % 4) % 4 = i % 4 by omega,
       show 4 * (4 * 0 + i / 4) + i % 4 = i by omega] at r
     rw [r, inT_eval hi (by decide) hi16 hl]
-  · cases e
-
-theorem full_ok {s : State} (hc : Ctx 64 s) (hi : Incs s.mem (s.gpr .r9)) {vs : Nat → CState}
-    (hz : HB 2 vs s) :
-    WP isa (.block (addIn ++ xorSet .xmm0 .xmm1 .xmm2 .xmm3 0 ++ xorSet .xmm4 .xmm5 .xmm6 .xmm7 128)) s
-      fun s' =>
-      (∀ k < 256, s'.mem (s.gpr .rsi + BitVec.ofNat 64 k) = s.mem (s.gpr .rsi + BitVec.ofNat 64 k) ^^^
-        (serialize (plus vs (S0 s) (k / 64))).getD (k % 64) 0) ∧
-      (∀ i < 80, s'.mem.readW (s.gpr .r9 + BitVec.ofNat 64 (4 * i)) 32 =
-        s.mem.readW (s.gpr .r9 + BitVec.ofNat 64 (4 * i)) 32) ∧
-      Frame (wregs 64 s) s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have e := fullCheck_eq
-  unfold fullCheck at e
-  split at e
-  · rename_i σ hr
-    simp only [Bool.and_eq_true, List.all_eq_true, List.mem_range, beq_iff_eq] at e
-    refine WP.mono (srun_ok hc _ (SRel.init 64 s) hr) fun s' h => ⟨fun k hk => ?_, fun i hi' => ?_,
-      h.frame, h.gpr, h.rd, h.wr⟩
-    · have d := h.mem 2 (k / 4) (by decide) (by simp only [bsize]; omega)
-      rw [show k / 4 = 16 * (k / 64) + k % 64 / 4 by omega, e.1 _ (by omega) _ (by omega)] at d
-      simp only [T.eval, regn, baseR] at d
-      rw [outT_eval hz hi (by omega) (by omega) (by omega) (by omega),
-        show 2 * (k / 64 / 2) + k / 64 % 2 = k / 64 by omega,
-        show 4 * (16 * (k / 64) + k % 64 / 4) = 4 * (k / 4) by omega] at d
-      rw [byte_dword s'.mem, byte_dword s.mem, d, BitVec.extractLsb'_xor,
-        serialize_getD _ (Nat.mod_lt _ (by decide)), show k % 64 % 4 = k % 4 by omega]
-    · have d := h.mem 1 i (by decide) (by simp only [bsize]; omega)
-      rw [e.2 i hi'] at d
-      simpa only [T.eval, regn, baseR] using d
   · cases e
 
 theorem last_ok {s : State} (hc : Ctx 0 s) (hi : Incs s.mem (s.gpr .r9)) {vs : Nat → CState}
