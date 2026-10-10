@@ -17,7 +17,11 @@ every use:
 * `vg_ed25519_r64_add_cached_ext`: the sum `p + q`, by the specification's
   complete addition formula (`pointAdd`), for `q` given in the cached form
   `[Y - X, Y + X, 2dT, 2Z]` (`cache`), which a table of points to add keeps;
-* `vg_ed25519_r64_add_cached_proj`: the same, but for `T`.
+* `vg_ed25519_r64_add_cached_proj`: the same, but for `T`;
+* `vg_ed25519_r64_add_affine_ext`: the sum `p + q`, as `_add_cached_ext`
+  computes it, for `q` with `Z = 1`, given by the first three coordinates of
+  its cached form, `[Y - X, Y + X, 2dT]`, which a table of affine points
+  keeps: its `2Z` is `2`.
 
 A doubling or an addition that only a doubling (or a comparison) follows need
 not compute `T`, which only an addition reads.
@@ -124,6 +128,19 @@ def addCachedContract {I : ISA} (A : Abi I) (ext : Bool) (stack : Nat := 0) : Co
         Keeps ws m m')
     (stack := stack)
 
+/-- `pointAdd` of an affine point: for every point `q` with `Z = 1` whose cached form's first
+three coordinates, `[Y - X, Y + X, 2dT]`, are at `qAt`, the point at `pAt` becomes the sum of it
+and `q` (but for `T`, unless `ext`). The cached form's fourth coordinate, `2Z = 2`, is not read. -/
+def addAffineContract {I : ISA} (A : Abi I) (ext : Bool) (stack : Nat := 0) : Contract I :=
+  sig.contract A
+    (pre := fun _ _ => True)
+    (post := fun ws m m' _ =>
+      (∀ q : Point, q.Z = 1 → elemAt m ws qAt = q.Y - q.X → elemAt m ws (qAt + elemBytes) = q.Y + q.X →
+        elemAt m ws (qAt + 2 * elemBytes) = q.T * 2 * d →
+        PointIs ext m' ws pAt (pointAdd (pointAt m ws pAt) q)) ∧
+        Keeps ws m m')
+    (stack := stack)
+
 /-- The Rust module of the functions. -/
 def module : String := "ed25519_r64"
 
@@ -154,6 +171,14 @@ def addSummary : String :=
   "Point addition on edwards25519: replaces the point at byte 64 of the working space `ws` \
     with its sum with the point `q` whose cached form, `[Y - X, Y + X, 2dT, 2Z]`, is at byte \
     192, by RFC 8032's complete addition formula in extended coordinates. "
+
+/-- What the affine additions' documentation says they compute. -/
+def addAffineSummary : String :=
+  "Point addition on edwards25519: replaces the point at byte 64 of the working space `ws` \
+    with its sum with the point `q` with `Z = 1` whose cached form's first three coordinates, \
+    `[Y - X, Y + X, 2dT]`, are at byte 192, by RFC 8032's complete addition formula in \
+    extended coordinates. The 32 bytes at byte 288, where its `2Z` would be, need not hold \
+    anything. "
 
 /-- `vg_ed25519_r64_double_ext` on every target. -/
 def doubleExtApi : Api where
@@ -197,6 +222,17 @@ def addCachedProjApi : Api where
   summary := addSummary ++ elemDoc ++ projDoc ++ "\n\n\
     Contract: `addCachedContract` (`ext := false`) of `VG.Spec.Ed25519.Point64`. Constant \
     time: only the pointer may affect timing."
+  safety := safety
+
+/-- `vg_ed25519_r64_add_affine_ext` on every target. -/
+def addAffineExtApi : Api where
+  module := module
+  name := "vg_ed25519_r64_add_affine_ext"
+  sig := sig
+  contracts := some fun A stack => addAffineContract A true stack
+  summary := addAffineSummary ++ elemDoc ++ "\n\n\
+    Contract: `addAffineContract` (`ext := true`) of `VG.Spec.Ed25519.Point64`. Constant time: \
+    only the pointer may affect timing."
   safety := safety
 
 end VG.Spec.Ed25519.Point64
