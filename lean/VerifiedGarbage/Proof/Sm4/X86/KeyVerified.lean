@@ -138,7 +138,7 @@ theorem expandKey_framed :
       (Spec.Sm4.expandKeyContract X86.abi 1448) :=
   X86.Verified.stackScratchWiped (sig := Spec.Sm4.expandKeySig) (nm := "scratch") (e := .u64)
     (n := 179) (post := Proof.Sm4.expandKeyPost X86.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 1448) expandKey_verified (by decide) (by decide +kernel) (by decide +kernel) (by decide)
+    (bytes := 1448) expandKey_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
     (Proof.Sm4.expandKeyPost_local _) (Proof.Sm4.expandKeyPostOut_local _) expandKeyFrameSat_pre
 
