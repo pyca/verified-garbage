@@ -91,7 +91,7 @@ theorem callOp_ok {f : String} {body : Prog isa} (hn : body.noCalls = true) {n :
   by_cases h12 : r = .r12
   · subst h12
     rw [u₈.other _ (by decide), R]
-  have h11 : r = .r11 := by cases r <;> simp_all
+  have h11 : r = .r11 := by cases r <;> first | rfl | contradiction
   subst h11
   rw [u₈.other _ (by decide), hp₇ _ (by decide) (by decide), k₅.gpr _ (by decide)]
 

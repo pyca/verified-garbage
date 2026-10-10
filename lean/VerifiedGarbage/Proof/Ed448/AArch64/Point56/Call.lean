@@ -35,18 +35,20 @@ theorem genEnv_pt (e : Env) :
         (VG.Proof.X448.AArch64.Base.pt e 6 7 8) (e 19) := rfl
 
 /-- What a call keeps: every register but `x30` and the field operations' (`fclob`, which has
-`x0`, `x16` and `x17`), the stack pointer, and the memory outside the slots and the products'
-coefficients. -/
+`x0`, `x16` and `x17`), the stack pointer, the memory outside the slots and the products'
+coefficients, and the low halves of `v8`–`v15`. -/
 structure CKeep (base : Addr) (s t : State) : Prop where
   regs : Keeps (.x30 :: fclob) s t
   sp : t.sp = s.sp
   mem : Outside2 base 64 2816 ACC 1152 s.mem t.mem
+  v : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
 
 theorem CKeep.scr {base : Addr} {s t : State} (h : CKeep base s t) (hs : Scr s base) : Scr t base :=
   hs.of_keeps h.regs (by decide)
 
 theorem CKeep.trans {base : Addr} {s t u : State} (h : CKeep base s t) (h' : CKeep base t u) :
-    CKeep base s u := ⟨h.regs.trans h'.regs, h'.sp.trans h.sp, h.mem.trans h'.mem⟩
+    CKeep base s u :=
+  ⟨h.regs.trans h'.regs, h'.sp.trans h.sp, h.mem.trans h'.mem, fun r hr => (h'.v r hr).trans (h.v r hr)⟩
 
 /-- The contract of a call, from the function's own proof: from `ws` (`base`) in `x0` and every
 slot's limbs below `Ib`, and `P` of the memory, `FnPost` with `Q` of the memories. -/
@@ -86,9 +88,10 @@ theorem fnCall_ok {name : String} {c : Bool} {rs : List Reg} {fn : Prog isa} {ba
   have r1 : s1.rd = s.rd := by rw [← hs1]; rfl
   have w1 : s1.wr = s.wr := by rw [← hs1]; rfl
   have sp1 : s1.sp = s.sp := by rw [← hs1]; rfl
+  have v1 : s1.v = s.v := by rw [← hs1]; rfl
   have hcov : Covers [⟨base, 8192⟩] s1.wr := Covers.of_mem fun r hr => by
     rw [List.mem_singleton.mp hr, w1]; exact hs.wr
-  refine WP.call (k := fnK c rs base P Q) (rd := []) (wr := [⟨base, 8192⟩]) ?hv
+  refine WP.callV (k := fnK c rs base P Q) (rd := []) (wr := [⟨base, 8192⟩]) ?hv
     ⟨rfl, rfl, by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), g0], hs.nowrap,
       by rw [State.withRegions_mem, State.callEntry_mem, m1]; exact hb,
       by rw [State.withRegions_mem, State.callEntry_mem, m1]; exact hp⟩
@@ -100,9 +103,10 @@ theorem fnCall_ok {name : String} {c : Bool} {rs : List Reg} {fn : Prog isa} {ba
     obtain ⟨tr, t', he, hpost, hv⟩ := WP.preservedV (hfn t fp hx0 hpt) hkv
     exact ⟨tr, t', he, ⟨fun r hr => hpost.1 r (hpres r hr).1 (hpres r hr).2.1 (hpres r hr).2.2,
       hpost.2.2.2.2.2.1, hv⟩, hpost⟩
-  intro t hrd hwr hsp _ _ _ ⟨hg, h3, h12, _, _, _, hq⟩
+  intro t hrd hwr hsp _ _ _ hv ⟨hg, h3, h12, _, _, _, hq⟩
   simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, m1] at hg h3 h12 hq
-  refine ⟨⟨⟨fun r hr => ?_, by rw [hrd, r1], by rw [hwr, w1]⟩, by rw [hsp, sp1], hframe _ _ hq⟩, hq⟩
+  refine ⟨⟨⟨fun r hr => ?_, by rw [hrd, r1], by rw [hwr, w1]⟩, by rw [hsp, sp1], hframe _ _ hq,
+    fun r hr => by rw [hv r hr, v1]⟩, hq⟩
   by_cases e3 : r = .x3
   · subst e3; rw [h3, State.callEntry_gpr _ (by decide), g0, hs.x3]
   by_cases e12 : r = .x12

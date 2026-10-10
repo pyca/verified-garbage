@@ -22,7 +22,7 @@ namespace VG.Generic.P384.X86_64.EcdhP384
 `rsp` (`hsp`). -/
 def exchange (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
-      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst X86_64.abi))
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst X86_64.abi 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
   { Spec.Ecdh.P384.exchangeApi with
     name := Spec.Ecdh.P384.exchangeApi.name ++ (if adx then "_adx" else "")
@@ -49,7 +49,8 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
       `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of the \
       checks, `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code
-    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst X86_64.abi
+    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst X86_64.abi 8
+    stack := 8
     verified := hv
     spSafe := hsp
     features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }

@@ -40,4 +40,14 @@ def diagonal : Prog isa :=
   .seq (.block [.mov32 .r15 (.imm 0), .mov32 .rbp (.imm 0), .mov32 .r14 (.imm 0)])
     (.loop group .ne)
 
+/-- Eight words a group: half as many closes of the two carry chains, whose
+carry feeds the next group's first word. -/
+def group8 : Prog isa := seqs [step 0 initialPair, step 1 pair, step 2 pair, step 3 pair,
+  step 4 pair, step 5 pair, step 6 pair, step 7 pair,
+  .block (close ++ ([.alu .add .rbp (.imm 8), .alu .add .r14 (.imm 16), .alu .cmp .rbp (.reg .r10)] : List Instr))]
+
+def diagonal8 : Prog isa :=
+  .seq (.block [.mov32 .r15 (.imm 0), .mov32 .rbp (.imm 0), .mov32 .r14 (.imm 0)])
+    (.loop group8 .ne)
+
 end VG.Impl.Bignum.X86_64.AdxSquareGrouped

@@ -19,7 +19,7 @@ open VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Weierstrass VG.Proof.Weierstrass.A
   VG.Proof.Weierstrass.Arm.Mont
 open VG.Proof.X25519.Arm (Rest Upd Mupd wp_mov op2_reg wp_str wp_ldr)
 
-/-- The numbers of the layout, for `omega`. -/
+/-- The numbers of the layout, for `omega_arith`. -/
 theorem lay_nums {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) :
     Spec.Weierstrass.Point.ownAt k + 64 + 6 * Spec.Weierstrass.Point.elemBytes k = own k ∧ own k + 64 * k = 4096 ∧ Spec.Weierstrass.Point.elemBytes k = 8 * k ∧
     Spec.Weierstrass.Point.b3At k + Spec.Weierstrass.Point.elemBytes k = Spec.Weierstrass.Point.ownAt k ∧ Spec.Weierstrass.Point.aAt k + Spec.Weierstrass.Point.elemBytes k = Spec.Weierstrass.Point.b3At k ∧
@@ -27,7 +27,7 @@ theorem lay_nums {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) :
     Spec.Weierstrass.Point.oAt k + 3 * Spec.Weierstrass.Point.elemBytes k = Spec.Weierstrass.Point.pAt k ∧ 1000 ≤ Spec.Weierstrass.Point.oAt k := by
   unfold Spec.Weierstrass.Point.oAt Spec.Weierstrass.Point.pAt Spec.Weierstrass.Point.qAt Spec.Weierstrass.Point.aAt Spec.Weierstrass.Point.b3At Spec.Weierstrass.Point.ownAt Spec.Weierstrass.Point.elemBytes own Spec.Weierstrass.Mont.ownAt
     Spec.Weierstrass.Mont.ownBytes
-  omega
+  omega_arith
 
 /-- The slots the function reads first lie below its own working space. -/
 theorem enc_rIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
@@ -36,20 +36,14 @@ theorem enc_rIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
   intro x hx
   simp only [rIds, List.mem_cons, List.not_mem_nil, or_false] at hx
   cases dbl <;> rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [enc, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero, Bool.false_eq_true] <;> omega
+    simp only [enc, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero, Bool.false_eq_true] <;> omega_arith
 
 /-- The slots `enc` gives are laid out as the program needs, and those it
 writes lie apart from the saved `lr` and within `O` or the own working
 space. -/
 theorem enc_lay {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) : LayR k 17 wIds (enc k dbl) := by
-  have := lay_nums hk3 hk6
-  refine ⟨fun x hx => ?_, fun w hw x hx hne => ?_⟩
-  · rcases (show x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 ∨ x = 4 ∨ x = 5 ∨ x = 6 ∨ x = 7 ∨ x = 8 ∨ x = 9 ∨ x = 10 ∨ x = 11 ∨ x = 12 ∨ x = 13 ∨ x = 14 ∨ x = 15 ∨ x = 16 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> cases dbl <;>
-      simp only [enc, Impl.Weierstrass.Arm.Point.tmpAt, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero, Bool.false_eq_true] <;> omega
-  · simp only [wIds, List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases (show x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 ∨ x = 4 ∨ x = 5 ∨ x = 6 ∨ x = 7 ∨ x = 8 ∨ x = 9 ∨ x = 10 ∨ x = 11 ∨ x = 12 ∨ x = 13 ∨ x = 14 ∨ x = 15 ∨ x = 16 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> cases dbl <;>
-      simp only [enc, Impl.Weierstrass.Arm.Point.tmpAt, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero, Bool.false_eq_true] at hne ⊢ <;> omega
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega
+  all_goals cases dbl <;> exact ⟨by decide, by decide⟩
 
 theorem enc_wIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
     ∀ w ∈ wIds, (enc k dbl w + 8 * k ≤ Spec.Weierstrass.Point.ownAt k ∨ Spec.Weierstrass.Point.ownAt k + 4 ≤ enc k dbl w) ∧
@@ -59,7 +53,7 @@ theorem enc_wIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
   intro w hw
   simp only [wIds, List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [enc, Impl.Weierstrass.Arm.Point.tmpAt, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero] <;> omega
+    simp only [enc, Impl.Weierstrass.Arm.Point.tmpAt, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero] <;> omega_arith
 
 /-- The precondition of the function, on the state: the working space at
 `r0`, its `8192` bytes writable, and the numbers it reads below `m`. -/
@@ -91,8 +85,8 @@ theorem entry_ok {k m : Nat} {dbl : Bool} {s : State} (hp : PrePt k m dbl s) :
   have hown : own k ≤ 4096 := Nat.sub_le _ _
   refine wp_mov (op2_reg _ _) fun s₁ u₁ => ?_
   have hs₁ : Scr s₁ (State.addr (s.gpr .r0)) 4096 := ⟨by rw [u₁.gpr], ⟨8192, by decide, by decide,
-    by rw [u₁.wr, hp.wr]; simp⟩, by rw [VG.Proof.X25519.Arm.addr_toNat]; omega, by decide⟩
-  refine VG.Proof.X25519.Arm.WP.append (strs_ok hs₁ [(.lr, Spec.Weierstrass.Point.ownAt k)] (by simp; omega) (by simp))
+    by rw [u₁.wr, hp.wr]; simp⟩, by rw [VG.Proof.X25519.Arm.addr_toNat]; omega_arith, by decide⟩
+  refine VG.Proof.X25519.Arm.WP.append (strs_ok hs₁ [(.lr, Spec.Weierstrass.Point.ownAt k)] (by simp; omega_arith) (by simp))
     fun s₂ ⟨K₂, O₂, V₂⟩ => WP.block_nil ?_
   refine ⟨hs₁.of_rest K₂ (by simp), ⟨by rw [K₂.wr, u₁.wr, hp.wr]; simp,
     by rw [VG.Proof.X25519.Arm.addr_toNat]; exact hp.fit⟩, by rw [K₂.gpr _ (by simp), u₁.gpr],
@@ -134,22 +128,22 @@ theorem fn_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S
     have heq : ∀ x ∈ rIds, wordsVal s₁.mem (State.addr (s.gpr .r0)) (enc S.k dbl x) S.k =
         wordsVal s.mem (State.addr (s.gpr .r0)) (enc S.k dbl x) S.k := fun x hx =>
       Outs.wordsVal E.mem (fun r hr => by
-        rw [List.mem_singleton] at hr; subst hr; exact .inl (hR x hx)) (by have := hR x hx; omega)
+        rw [List.mem_singleton] at hr; subst hr; exact .inl (hR x hx)) (by have := hR x hx; omega_arith)
     exact ⟨E.scr, E.far, rIds_lt, fun x hx => by rw [heq x hx]; exact hp.lt x hx,
       fun x hx => by rw [heq x hx]; rfl⟩
   refine WP.seq (WP.mono (rcbR_ok hM rfl (enc_lay hp.k3 hp.k6 dbl) (unitMod_pow_two hodd _) hI)
     fun s₂ ⟨K, I₂, hEq⟩ => ?_)
-  refine WP.mono (ldrs_ok I₂.scr [(.lr, Spec.Weierstrass.Point.ownAt S.k)] (by simp; omega) (by simp) (by simp))
+  refine WP.mono (ldrs_ok I₂.scr [(.lr, Spec.Weierstrass.Point.ownAt S.k)] (by simp; omega_arith) (by simp) (by simp))
     fun s₃ ⟨M₃, K₃, V₃⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_, ?_, fun j hj => ?_, ?_⟩
   · -- The callee-saved registers.
     by_cases hlr : r = .lr
     · subst hlr
       rw [V₃ (.lr, Spec.Weierstrass.Point.ownAt S.k) (by simp), ← E.saved]
-      refine Unch.readW32 (Outs.unch K.mem) (fun w hw => ?_) (by omega)
+      refine Unch.readW32 (Outs.unch K.mem) (fun w hw => ?_) (by omega_arith)
       simp only [List.mem_append, List.mem_map, List.mem_singleton] at hw
       rcases hw with ⟨x, hx, rfl⟩ | rfl
-      · rcases (hW x hx).1 with h | h <;> [exact .inr (by dsimp only; omega); exact .inl (by dsimp only; omega)]
-      · exact .inl (by dsimp only; omega)
+      · rcases (hW x hx).1 with h | h <;> [exact .inr (by dsimp only; omega_arith); exact .inl (by dsimp only; omega_arith)]
+      · exact .inl (by dsimp only; omega_arith)
     · have hr' : r ∉ [Reg.r0, .r1, .r2, .r3, .r12, .lr] := by
         simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
@@ -160,13 +154,13 @@ theorem fn_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S
     refine (Outs.sub (rs := [(Spec.Weierstrass.Point.ownAt S.k, 4)]) E.mem fun r hr => ?_).trans
       (Outs.sub K.mem fun r hr => ?_)
     · rw [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Nat.le_refl _, by dsimp only; omega⟩
+      exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Nat.le_refl _, by dsimp only; omega_arith⟩
     · simp only [List.mem_append, List.mem_map, List.mem_singleton] at hr
       rcases hr with ⟨x, hx, rfl⟩ | rfl
       · rcases (hW x hx).2 with h | h
-        · exact ⟨_, List.mem_cons_self, h.1, by dsimp only; omega⟩
-        · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.1, by dsimp only; omega⟩
-      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by dsimp only; omega, by dsimp only; omega⟩
+        · exact ⟨_, List.mem_cons_self, h.1, by dsimp only; omega_arith⟩
+        · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.1, by dsimp only; omega_arith⟩
+      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by dsimp only; omega_arith, by dsimp only; omega_arith⟩
   · rw [K₃.gpr _ (by simp), K.r12, E.r12]
   · rw [M₃]; exact I₂.lt j (out_valid j hj)
   · rw [M₃, I₂.val 0 (out_valid 0 (by decide)), I₂.val 1 (out_valid 1 (by decide)),

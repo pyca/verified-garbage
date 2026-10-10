@@ -66,10 +66,10 @@ theorem pkFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   have h16 : ∀ rd ∈ Cfg.saved, ∀ w ∈ [(size, 2 ^ 64)], rd.2 + 4 ≤ w.1 ∨ w.1 + w.2 ≤ rd.2 :=
     fun rd hrd w hw => by
       have := saved_lt rd hrd
-      simp only [List.mem_singleton] at hw; subst hw; exact .inl (by omega)
+      simp only [List.mem_singleton] at hw; subst hw; exact .inl (by omega_arith)
   rw [finish_eq]
   -- The flag and the leading byte.
-  refine wp_ldr (hs.off_lt (by omega)) (hs.ea (by omega)) (hs.read (d := c.sl FLAG) (n := 4) (by omega))
+  refine wp_ldr (hs.off_lt (by omega_arith)) (hs.ea (by omega_arith)) (hs.read (d := c.sl FLAG) (n := 4) (by omega_arith))
     fun s₁ u₁ => ?_
   refine wp_mov (op2_imm (by decide)) fun s₂ u₂ => ?_
   refine wp_dp (op2_reg _ _) fun s₃ u₃ => ?_
@@ -83,60 +83,60 @@ theorem pkFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
     rw [u₃.gpr, dpVal, u₂.gpr, u₂.other .r10 (by decide), u₁.gpr, ← flagW, hf]
     exact mask4 b
   refine wp_strb (by decide) (a := off out 0)
-    (by rw [hb₃, addr_add (by omega), hout64])
-    ⟨_, by rw [k₃.wr]; exact hw, Offset.contains_base out (by omega) (by omega)⟩ fun s₄ m₄ => ?_
+    (by rw [hb₃, addr_add (by omega_arith), hout64])
+    ⟨_, by rw [k₃.wr]; exact hw, Offset.contains_base out (by omega_arith) (by omega_arith)⟩ fun s₄ m₄ => ?_
   have hs₄ := hs₃.of_rest (m₄.rest []) (by decide)
-  have O₄ : Outside out 0 1 s₃.mem s₄.mem := by rw [m₄.mem]; exact writeW8_outside _ _ _ (by omega)
+  have O₄ : Outside out 0 1 s₃.mem s₄.mem := by rw [m₄.mem]; exact writeW8_outside _ _ _ (by omega_arith)
   have L₄ : s₄.mem (out + BitVec.ofNat 64 0) = if b then 4 else 0 := by rw [m₄.mem, writeW8_self, ha₃]
-  have U₄ := O₄.unch_far (hd.symm.sub_right (Region.sub_prefix (by omega)))
+  have U₄ := O₄.unch_far (hd.symm.sub_right (Region.sub_prefix (by omega_arith)))
   have hb₄ : s₄.gpr .lr = o32 := by rw [m₄.gpr, hb₃]
   have hc₄ : s₄.gpr .r10 = mask32 (b = true) := by rw [m₄.gpr, hc₃]
   have x₄ : wordsVal s₄.mem base (c.sl X) c.n = sv c base s X := by
-    rw [U₄.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega), hm₃]
+    rw [U₄.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith), hm₃]
   -- `x`, from `out + 1`.
   refine VG.Proof.X25519.Arm.WP.append (storeBytes_ok hs₄ (dst := .lr) (d := 1) (a := c.sl X) (by decide)
-    (by decide) b hc₄ hX (by omega) hlhi (by rw [hb₄]; omega) (by omega) (fun e m he => ⟨_, by rw [m₄.wr, k₃.wr]; exact hw, by
-      rw [hb₄, hout64, Offset.add_add]; exact Offset.contains_base out (by omega) (by omega)⟩)
-    (by rw [hb₄, hout64]; exact hdsc hX (by omega))) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
+    (by decide) b hc₄ hX (by omega_arith) hlhi (by rw [hb₄]; omega_arith) (by omega_arith) (fun e m he => ⟨_, by rw [m₄.wr, k₃.wr]; exact hw, by
+      rw [hb₄, hout64, Offset.add_add]; exact Offset.contains_base out (by omega_arith) (by omega_arith)⟩)
+    (by rw [hb₄, hout64]; exact hdsc hX (by omega_arith))) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   rw [hb₄, hout64, x₄] at e₅
   rw [hb₄, hout64] at O₅
   have hs₅ := hs₄.of_rest k₅ (by decide)
-  have U₅ := O₅.unch_far (hscd (d := 1) (by omega))
+  have U₅ := O₅.unch_far (hscd (d := 1) (by omega_arith))
   have hb₅ : s₅.gpr .lr = o32 := by rw [k₅.gpr _ (by decide), hb₄]
   have hc₅ : s₅.gpr .r10 = mask32 (b = true) := by rw [k₅.gpr _ (by decide), hc₄]
   have y₅ : wordsVal s₅.mem base (c.sl Y) c.n = sv c base s Y := by
-    rw [U₅.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega),
-      U₄.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega), hm₃]
+    rw [U₅.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith),
+      U₄.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith), hm₃]
   -- `y`, from `out + 1 + len`.
   refine VG.Proof.X25519.Arm.WP.append (storeBytes_ok hs₅ (dst := .lr) (d := 1 + c.C.len) (a := c.sl Y)
-    (by decide) (by decide) b hc₅ hY (by omega) hlhi (by rw [hb₅]; omega) (by omega) (fun e m he => ⟨_, by rw [k₅.wr, m₄.wr, k₃.wr]; exact hw, by
-      rw [hb₅, hout64, Offset.add_add]; exact Offset.contains_base out (by omega) (by omega)⟩)
-    (by rw [hb₅, hout64]; exact hdsc hY (by omega))) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
+    (by decide) (by decide) b hc₅ hY (by omega_arith) hlhi (by rw [hb₅]; omega_arith) (by omega_arith) (fun e m he => ⟨_, by rw [k₅.wr, m₄.wr, k₃.wr]; exact hw, by
+      rw [hb₅, hout64, Offset.add_add]; exact Offset.contains_base out (by omega_arith) (by omega_arith)⟩)
+    (by rw [hb₅, hout64]; exact hdsc hY (by omega_arith))) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
   rw [hb₅, hout64, y₅] at e₆
   rw [hb₅, hout64] at O₆
   have hs₆ := hs₅.of_rest k₆ (by decide)
-  have U₆ := O₆.unch_far (hscd (d := 1 + c.C.len) (by omega))
+  have U₆ := O₆.unch_far (hscd (d := 1 + c.C.len) (by omega_arith))
   have hsv₆ : ∀ rd ∈ Cfg.saved, s₆.mem.readW (off base rd.2) 32 = g rd.1 := fun rd hrd => by
     have := saved_lt rd hrd
-    rw [Unch.readW32 U₆ (h16 rd hrd) (by omega), Unch.readW32 U₅ (h16 rd hrd) (by omega),
-      Unch.readW32 U₄ (h16 rd hrd) (by omega), hm₃, hsv rd hrd]
+    rw [Unch.readW32 U₆ (h16 rd hrd) (by omega_arith), Unch.readW32 U₅ (h16 rd hrd) (by omega_arith),
+      Unch.readW32 U₄ (h16 rd hrd) (by omega_arith), hm₃, hsv rd hrd]
   -- The return value and the callee-saved registers.
   refine wp_dp (op2_imm (by decide)) fun s₇ u₇ => ?_
   have hs₇ := hs₆.of_rest (u₇.rest (ws := [.r0]) (by simp)) (by decide)
   have r0₇ : s₇.gpr .r0 = if b then 1 else 0 := by
     rw [u₇.gpr, dpVal, k₆.gpr _ (by decide), hc₅]; exact mask_bit b
   rw [restore_eq]
-  refine WP.mono (ldrs_ok hs₇ Cfg.saved (fun p hp => by have := saved_lt p hp; omega) saved_nodup
+  refine WP.mono (ldrs_ok hs₇ Cfg.saved (fun p hp => by have := saved_lt p hp; omega_arith) saved_nodup
     (fun p hp => (saved_r12 p hp).1)) fun s' ⟨m', K', V'⟩ => ⟨?_, ?_, fun rd hrd => ?_, ?_, ?_⟩
   · have lead : Spec.Ecdsa.bytesAt s₆.mem out 1 = [if b then 4 else 0] := by
-      rw [bytesAt_keep O₆ (Offset.base_disjoint out (by omega) (by omega)) (by omega) (by omega),
-        bytesAt_keep O₅ (Offset.base_disjoint out (by omega) (by omega)) (by omega) (by omega)]
+      rw [bytesAt_keep O₆ (Offset.base_disjoint out (by omega_arith) (by omega_arith)) (by omega_arith) (by omega_arith),
+        bytesAt_keep O₅ (Offset.base_disjoint out (by omega_arith) (by omega_arith)) (by omega_arith) (by omega_arith)]
       exact congrArg (· :: []) L₄
     have xs : Spec.Ecdsa.bytesAt s₆.mem (out + BitVec.ofNat 64 1) c.C.len =
         if b then toBytes c.C.len (sv c base s X) else List.replicate c.C.len 0 := by
-      rw [bytesAt_keep O₆ (Offset.disjoint out (.inl (Nat.le_refl _)) (by omega) (by omega)) (by omega)
-        (by omega), e₅]
-    rw [m', u₇.mem, show 1 + 2 * c.C.len = 1 + (c.C.len + c.C.len) by omega, bytesAt_add, bytesAt_add, lead, xs,
+      rw [bytesAt_keep O₆ (Offset.disjoint out (.inl (Nat.le_refl _)) (by omega_arith) (by omega_arith)) (by omega_arith)
+        (by omega_arith), e₅]
+    rw [m', u₇.mem, show 1 + 2 * c.C.len = 1 + (c.C.len + c.C.len) by omega_arith, bytesAt_add, bytesAt_add, lead, xs,
       Offset.add_add, e₆]
     cases b
     · simp only [Bool.false_eq_true, ite_false, List.replicate_append_replicate]
@@ -147,7 +147,7 @@ theorem pkFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   · exact (((k₃.mono (by simp)).trans ((m₄.rest _).trans ((k₅.mono (by simp)).trans (k₆.mono (by simp))))).trans
       ((u₇.rest (by simp)).trans (K'.mono (by decide))))
   · rw [m', u₇.mem, ← hm₃]
-    exact ((O₄.mono (Nat.zero_le _) (by omega)).trans ((outside_shift O₅ (by omega)).mono (Nat.zero_le _)
-      (by omega))).trans ((outside_shift O₆ (by omega)).mono (Nat.zero_le _) (by omega))
+    exact ((O₄.mono (Nat.zero_le _) (by omega_arith)).trans ((outside_shift O₅ (by omega_arith)).mono (Nat.zero_le _)
+      (by omega_arith))).trans ((outside_shift O₆ (by omega_arith)).mono (Nat.zero_le _) (by omega_arith))
 
 end VG.Proof.EcKey.Arm

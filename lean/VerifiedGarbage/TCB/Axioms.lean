@@ -1,4 +1,6 @@
-import Lean
+module
+
+public meta import Lean
 
 /-!
 # Axiom audit
@@ -9,6 +11,8 @@ axioms. In particular this rejects `sorry` (`sorryAx`) and anything proven by
 `native_decide`/`bv_decide`, which rely on `Lean.ofReduceBool` and thus trust
 the compiler.
 -/
+
+public meta section
 
 namespace VG
 

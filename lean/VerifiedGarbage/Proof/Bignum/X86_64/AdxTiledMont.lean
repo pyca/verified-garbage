@@ -3,7 +3,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareMont
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFinish8
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRowRedc
 
 /-! Correctness of Montgomery squaring with BMI2 and ADX. -/
 
@@ -44,7 +43,7 @@ theorem redcFinish_ok {s s₁ : State} {B : Addr} {Z w n : Nat} {minv : BitVec 6
   have hH₁ := hH.of_outside ho₁ hg
   have hn₁ : word s₁.mem B (slot w aN) = word s.mem B (slot w aN) := ho₁.word (by omega) (by omega)
   unfold AdxTiledProduct.redcFinish
-  refine WP.seq (WP.mono (AdxRowRedc.redc_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi) hH₁ hZ hwN hnN)
+  refine WP.seq (WP.mono (AdxRotate8.redc_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi) hH₁ hZ hwN hnN)
     fun s₂ ⟨vred,ho₂,k₂⟩ => ?_)
   obtain ⟨q,hq,heq⟩ := vred (by rw [hn₁]; exact hinv)
   have hN₁ : wv s₁.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho₁.wv (by omega) (by omega)

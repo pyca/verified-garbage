@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Print
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.TCB.X86_64.Print
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # The x86-64 System V target
@@ -29,6 +31,8 @@ clear on entry and exit), the x87 control word (never modified), and the
 red zone: a contract that grants write access below `rsp` must keep it within
 the 128-byte red zone.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

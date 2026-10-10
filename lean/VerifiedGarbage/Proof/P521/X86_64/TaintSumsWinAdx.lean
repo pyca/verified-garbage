@@ -22,7 +22,7 @@ def winLastJX : Prog isa := WinCfg.stepLast winKX
 
 materialize_code winBuildJX
 
-theorem winKX_ok : p521XT.Ok winKX.M := p521XT_ok
+theorem winKX_ok : p521XT.Ok winKX.M := p521XHT_ok
 
 taint_summary winBuildJXSum : taintS τB winBuildJX
 taint_summary_map winNormJXSum : taintS τB winNormJX via taintS_eraseInv

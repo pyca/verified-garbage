@@ -149,17 +149,110 @@ def mulCall (f : String) (body : Prog isa) (o a b : Nat) : Prog isa :=
       .mov32 .rdx (.imm (BitVec.ofNat 32 a)), .mov32 .rcx (.imm (BitVec.ofNat 32 b))])
     (.seq (.call f body) (.block [.mov .rsi (.reg .r12)]))
 
+/-! ## P-384's `p`: the inline product, relocated
+
+`vg_p384_mul_mod_p(ws, o, a, b)` and `vg_p384_mul_mod_p_adx` run the inline
+products of `Impl/Mont/X86_64.lean` for P-384's `p` (`mulRounds`, `sqrSA`),
+which use every register but `rbx`, `rsi`, `rdi` and `rsp`, with their
+operands read through registers: the inline code, made at the offsets `mA`,
+`mB` and `mO` (markers, which no operand may be at), with each operand at a
+marker moved to a register (`relocTo`), `[a]` through `rbx = ws + a`, `[b]`
+through `rsi = ws + b` and `[o]` through `rsi = ws + o` (`o` kept in `xmm6`
+meanwhile, for a product); the temporary area stays at `rdi = ws`. The
+final reduction is `csubR`, which builds `p` in registers, as the function
+has no modulus in memory. -/
+
+/-- The temporary area of the function's products: the last six words below
+byte 4096. -/
+def fnTmp6 : Nat := 4096 - 48
+
+/-- P-384's `p` as the function takes it. -/
+def fnMod6 (adx : Bool) : Mod where
+  n := 6
+  mo := 0
+  tmp := fnTmp6
+  minv := BitVec.ofNat 64 0x100000001
+  adx := adx
+  sparse := true
+
+/-- The memory operand with `f` applied to its memory operand, if any. -/
+def _root_.VG.X86_64.Src.mapMem (f : MemOp → MemOp) : Src → Src
+  | .mem m => .mem (f m)
+  | s => s
+
+/-- The instruction with `f` applied to its memory operand (those of the
+integer instructions). -/
+def _root_.VG.X86_64.Instr.mapMem (f : MemOp → MemOp) : Instr → Instr
+  | .mov d s => .mov d (s.mapMem f)
+  | .mov32 d s => .mov32 d (s.mapMem f)
+  | .store m r => .store (f m) r
+  | .store32 m r => .store32 (f m) r
+  | .store8 m r => .store8 (f m) r
+  | .alu op d s => .alu op d (s.mapMem f)
+  | .alu32 op d s => .alu32 op d (s.mapMem f)
+  | .movzx8 d m => .movzx8 d (f m)
+  | .mulx hi lo s => .mulx hi lo (s.mapMem f)
+  | .adcx d s => .adcx d (s.mapMem f)
+  | .adox d s => .adox d (s.mapMem f)
+  | .cmov c d s => .cmov c d (s.mapMem f)
+  | i => i
+
+/-- The markers: where the inline code the function runs has `[a]`, `[b]`
+and `[o]`. -/
+def mA : Nat := 1048576
+def mB : Nat := 2097152
+def mO : Nat := 4194304
+
+/-- An operand `[rdi + d]` with `d` within 4096 bytes past a marker `V`
+of `ps`, through that marker's register instead: `[r + d - V]`. -/
+def relocTo (ps : List (Nat × Reg)) (m : MemOp) : MemOp :=
+  match m.index, ps.find? (fun p => decide ((p.1 : Int) ≤ m.disp ∧ m.disp < p.1 + 4096)) with
+  | none, some p => if m.base = .rdi then { m with base := p.2, disp := m.disp - p.1 } else m
+  | _, _ => m
+
+/-- Code with its operands at the markers `ps` relocated. -/
+def reloc (ps : List (Nat × Reg)) (is : List Instr) : List Instr := is.map (Instr.mapMem (relocTo ps))
+
+/-- The low words and the top word of the product's accumulator. -/
+def low6 : List Reg := (List.range 6).map (win 6 6)
+def top6 : Reg := win 6 6 6
+
+/-- The square: `rsi = ws + o`, `sqrSA` with `[a]` through `rbx` and `[o]`
+through `rsi`, `csubR`, and the result stored through `rsi`. -/
+def sqr6 (adx : Bool) : List Instr :=
+  [.alu .add .rsi (.reg .rdi)] ++ reloc [(mA, .rbx), (mO, .rsi)] (sqrSA (fnMod6 adx) mO mA) ++
+    csubR sqWin6 .r8 ++ reloc [(mO, .rsi)] (stores sqWin6 mO)
+
+/-- The product: `o` into `xmm6` and `rsi = ws + b`, `mulRounds` with `[a]`
+through `rbx` and `[b]` through `rsi`, `csubR`, then `rsi = ws + o` and the
+result stored through it. -/
+def mul6 (adx : Bool) : List Instr :=
+  [.xop (.movq .xmm6 .rsi), .mov .rsi (.reg .rcx)] ++ reloc [(mA, .rbx), (mB, .rsi)] (mulRounds (fnMod6 adx) mA mB) ++
+    csubR low6 top6 ++ [.movqR .rsi .xmm6, .alu .add .rsi (.reg .rdi)] ++ reloc [(mO, .rsi)] (stores low6 mO)
+
+/-- `vg_p384_mul_mod_p` (`adx` false) and `vg_p384_mul_mod_p_adx`. -/
+def mulFn6 (adx : Bool) : Prog isa :=
+  .seq (.block zext) (.seq (.block setup) (.seq (.ite .e (.block (sqr6 adx)) (.block (mul6 adx))) (.block restores)))
+
 /-- The function the products modulo `M` call, and its code: P-521's `p`, with
-the temporary area the functions' (`fnTmp`), with or without BMI2 and ADX;
-none for any other modulus. -/
+the temporary area the functions' (`fnTmp`), or P-384's (`fnTmp6`) unless its
+products are written out (`Mod.inl`), with or without BMI2 and ADX; none for
+any other modulus. -/
 def callOf (M : Mod) : Option (String × Prog isa) :=
   if M.n = 9 ∧ M.red = .friendly p521Ws ∧ M.tmp = fnTmp then
     some (if M.adx then (Spec.Weierstrass.Mont.p521p.mulApi.name ++ "_adx", mulFnX)
       else (Spec.Weierstrass.Mont.p521p.mulApi.name, mulFn))
+  else if M.n = 6 ∧ M.sparse ∧ M.tmp = fnTmp6 ∧ M.inl = false then
+    some (if M.adx then (Spec.Weierstrass.Mont.p384p.mulApi.name ++ "_adx", mulFn6 true)
+      else (Spec.Weierstrass.Mont.p384p.mulApi.name, mulFn6 false))
   else none
 
-/-- Whether a product's offsets lie below the functions' own working space, as
-their arguments must. -/
-def lowArgs (o a b : Nat) : Bool := o + 72 ≤ 3520 && a + 72 ≤ 3520 && b + 72 ≤ 3520
+/-- Whether a product's offsets suit the functions of `n` words: below their
+own working space for nine words; for six, apart from their temporary area
+and within an immediate's reach. -/
+def lowArgs (n o a b : Nat) : Bool :=
+  if n = 9 then o + 72 ≤ 3520 && a + 72 ≤ 3520 && b + 72 ≤ 3520
+  else (o + 48 ≤ fnTmp6 || 4096 ≤ o && o < 2 ^ 31) && (a + 48 ≤ fnTmp6 || 4096 ≤ a && a < 2 ^ 31) &&
+    (b + 48 ≤ fnTmp6 || 4096 ≤ b && b < 2 ^ 31)
 
 end VG.Impl.Weierstrass.X86_64.Mont

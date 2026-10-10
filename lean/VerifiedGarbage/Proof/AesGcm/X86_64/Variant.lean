@@ -80,6 +80,12 @@ def fin : StitchName → Bool
   | .aesniAvx => true
   | _ => false
 
+/-- Whether the encryption loop named `n` takes all the blocks, from 16 on
+(`Blocks.stitchPart`'s `full`), and not only the first `16 ⌊n / 16⌋`. -/
+def full : StitchName → Bool
+  | .aesniAvx => true
+  | _ => false
+
 /-- Decryption using a prepared context. -/
 def decR : StitchName → Prog isa
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.dec
@@ -167,7 +173,7 @@ structure StitchPart where
   suffix : String
   /-- The CPU features they need beyond the callees'. -/
   features : List String
-  encP : Piece name.enc
+  encP : Piece name.enc false name.full
   decP : Piece name.dec
   /-- The same, of the loops for a key context of
   `vg_aes_gcm_init_precomputed`, for the loops that read the powers of the

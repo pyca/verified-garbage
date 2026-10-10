@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRowRedcCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 
 namespace VG.Proof.Bignum.X86_64.AdxTiledProduct
@@ -16,28 +16,28 @@ theorem raw_fw {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) 
   exact WP.mono (rawProduct_ok hg.scr hg.rdi hg.hdr hv pa pb L.hZ L.hw L.hwN L.hn ha hb ha1 ha2 hb1 hb2)
     fun _ ⟨_,_,o,k⟩ => GoodV.of_outside ⟨⟨mi,hg⟩,hv⟩ o k
 
-theorem redc_ct : RelCT isa (Two GoodL) AdxRowRedc.redc (Two GoodL) := by
+theorem redc_ct : RelCT isa (Two GoodL) AdxRotate8.redc (Two GoodL) := by
   apply two_post ?_ ?_
   · refine two_map (fun L : Layout => (⟨⟨L.B,L.Z,L.w⟩,L.n,L.hwN,L.hn⟩ : AdxRotate8.W8)) ?_
-      (AdxRowRedc.redc_ct.mono (fun _ _ h => h) (fun _ _ _ => True.intro))
+      (AdxRotate8.redc_ct.mono (fun _ _ h => h) (fun _ _ _ => True.intro))
     rintro L s ⟨mi,hg⟩; exact ⟨mi,hg,L.hZ⟩
   · rintro L s ⟨mi,hg⟩
-    exact WP.mono (AdxRowRedc.redc_ok hg.scr hg.rdi hg.hdr L.hZ L.hwN L.hn) fun _ ⟨_,o,k⟩ =>
+    exact WP.mono (AdxRotate8.redc_ok hg.scr hg.rdi hg.hdr L.hZ L.hwN L.hn) fun _ ⟨_,o,k⟩ =>
       ⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hg.hdr.of_outside o (by unfold slot; omega)⟩
 
 /-- `redc_ct`, keeping the operands' slots. -/
-theorem redcV_ct {ps : List (Nat × Nat)} : RelCT isa (Two (GoodV ps)) AdxRowRedc.redc (Two (GoodV ps)) := by
+theorem redcV_ct {ps : List (Nat × Nat)} : RelCT isa (Two (GoodV ps)) AdxRotate8.redc (Two (GoodV ps)) := by
   apply two_post ((redc_ct.mono (fun _ _ ⟨L,hs,ht⟩ => ⟨L,hs.1,ht.1⟩) (fun _ _ _ => True.intro)))
   rintro L s ⟨⟨mi,hg⟩,hv⟩
-  exact WP.mono (AdxRowRedc.redc_ok hg.scr hg.rdi hg.hdr L.hZ L.hwN L.hn) fun _ ⟨_,o,k⟩ =>
+  exact WP.mono (AdxRotate8.redc_ok hg.scr hg.rdi hg.hdr L.hZ L.hwN L.hn) fun _ ⟨_,o,k⟩ =>
     GoodV.of_outside ⟨⟨mi,hg⟩,hv⟩ o k
 
 /-- `redcV_ct`, for slots and layouts given by any public data `x`. -/
 theorem redcV_ct' {α : Type} {P : α → List (Nat × Nat)} {L : α → Layout} :
-    RelCT isa (Two fun x s => GoodV (P x) (L x) s) AdxRowRedc.redc (Two fun x s => GoodV (P x) (L x) s) := by
+    RelCT isa (Two fun x s => GoodV (P x) (L x) s) AdxRotate8.redc (Two fun x s => GoodV (P x) (L x) s) := by
   apply two_post (redc_ct.mono (fun _ _ ⟨x,hs,ht⟩ => ⟨L x,hs.1,ht.1⟩) (fun _ _ _ => True.intro))
   rintro x s ⟨⟨mi,hg⟩,hv⟩
-  exact WP.mono (AdxRowRedc.redc_ok hg.scr hg.rdi hg.hdr (L x).hZ (L x).hwN (L x).hn) fun _ ⟨_,o,k⟩ =>
+  exact WP.mono (AdxRotate8.redc_ok hg.scr hg.rdi hg.hdr (L x).hZ (L x).hwN (L x).hn) fun _ ⟨_,o,k⟩ =>
     GoodV.of_outside ⟨⟨mi,hg⟩,hv⟩ o k
 
 /-- `redcFinish`, for slots and layouts given by any public data `x`. -/

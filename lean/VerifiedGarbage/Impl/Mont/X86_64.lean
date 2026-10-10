@@ -370,6 +370,20 @@ the mask of its borrow. -/
 def csubS (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
   chain .sub .sbb ts M.mo ++ ([.alu .sbb top (.imm 0), .alu .sbb .rax (.reg .rax)] : List Instr) ++ p384Mask ++ p384Add ts
 
+/-- `ts -= ` P-384's `p` as `p384Mask` leaves it in registers (for `rax`
+all ones). -/
+def p384Sub : List Reg → List Instr
+  | [t0, t1, t2, t3, t4, t5] => [.alu .sub t0 (.reg .rcx), .alu .sbb t1 (.reg .rdx), .alu .sbb t2 (.reg .rbp),
+      .alu .sbb t3 (.reg .rax), .alu .sbb t4 (.reg .rax), .alu .sbb t5 (.reg .rax)]
+  | _ => []
+
+/-- `csubS` without the modulus in memory: P-384's `p` into registers
+(`p384Mask` of all ones), subtracted, and added back under the mask of the
+borrow. -/
+def csubR (ts : List Reg) (top : Reg) : List Instr :=
+  ([.mov .rax (.imm (-1))] : List Instr) ++ p384Mask ++ p384Sub ts ++
+    ([.alu .sbb top (.imm 0), .alu .sbb .rax (.reg .rax)] : List Instr) ++ p384Mask ++ p384Add ts
+
 /-- `ts` (and the top word `top`), below `2m`, reduced modulo `m`: by `csubC`
 for at most four words, by `csubS` for P-384's `p`, else by `csubM`. -/
 def csub (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
@@ -580,15 +594,21 @@ def sqWins (i : Nat) : List Reg := (List.range 6).map (sqW i)
 /-- `k` rounds of `redShort` from the window `sqWin6`. -/
 def redsShort (x : Bool) (k : Nat) : List Instr := (List.range k).flatMap fun i => redShort x (sqWins i)
 
+/-- `sqrS` but its final reduction: the square, its high half stored at `[o]`,
+the low half reduced by six rounds of `redShort` and the high half added, into
+`sqWin6` and its carry into `r8`. -/
+def sqrSA (M : Mod) (o a : Nat) : List Instr :=
+  sqrRow0' M.adx a ++ stores [.r8, .r9] (M.tmp + 8) ++ sqrRows M.adx a ++ sqrDbl' M.adx M.tmp a ++
+    stores sqHigh6 o ++ loads [.r13, .r14, .r15] M.tmp ++ redsShort M.adx 6 ++ ([.mov32 .r8 (.imm 0)] : List Instr) ++
+    chain .add .adc sqWin6 o ++ ([.alu .adc .r8 (.imm 0)] : List Instr)
+
 /-- `[o] = [a]² R⁻¹ mod p` for P-384's `p`, with BMI2 and ADX or without (the
 parts chosen by `M.adx`): the square's words 0 to 2 at `[tmp]` and 3 to 11 in
 `r10–r15`, `r8`, `r9`, `rcx`; its high half stored at `[o]`, the low half into
 the six words `sqWin6` and reduced by six rounds of `redShort`, the high half
 added (its carry into `r8`), and `csub`. -/
 def sqrS (M : Mod) (o a : Nat) : List Instr :=
-  sqrRow0' M.adx a ++ stores [.r8, .r9] (M.tmp + 8) ++ sqrRows M.adx a ++ sqrDbl' M.adx M.tmp a ++
-    stores sqHigh6 o ++ loads [.r13, .r14, .r15] M.tmp ++ redsShort M.adx 6 ++ ([.mov32 .r8 (.imm 0)] : List Instr) ++
-    chain .add .adc sqWin6 o ++ ([.alu .adc .r8 (.imm 0)] : List Instr) ++ csub M sqWin6 .r8 ++ stores sqWin6 o
+  sqrSA M o a ++ csub M sqWin6 .r8 ++ stores sqWin6 o
 
 /-- `r8 … r14 = rdx · [b]` in one carry chain (`r15 = 0`), with no
 accumulator to clear or add to. -/

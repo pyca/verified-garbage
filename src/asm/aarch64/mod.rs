@@ -50,6 +50,9 @@ pub(crate) mod blowfish;
 pub(crate) mod camellia;
 
 #[rustfmt::skip]
+pub(crate) mod camellia_cbc;
+
+#[rustfmt::skip]
 pub(crate) mod camellia_ctr;
 
 #[rustfmt::skip]
@@ -159,6 +162,9 @@ pub(crate) mod ed448_r56;
 
 #[rustfmt::skip]
 pub(crate) mod gcm;
+
+#[rustfmt::skip]
+pub(crate) mod gf25519_r64;
 
 #[rustfmt::skip]
 pub(crate) mod gf448_r56;
@@ -348,6 +354,9 @@ pub(crate) mod sha512;
 
 #[rustfmt::skip]
 pub(crate) mod sm4;
+
+#[rustfmt::skip]
+pub(crate) mod sm4_cbc;
 
 #[rustfmt::skip]
 pub(crate) mod sm4_ctr;

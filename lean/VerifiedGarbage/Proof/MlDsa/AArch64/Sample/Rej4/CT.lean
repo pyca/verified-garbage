@@ -46,16 +46,17 @@ theorem init_ct : RelCT isa (Rel2 r4K.pre r4K.pub (fun σ s => s = σ))
       · exact hq.2.2.1⟩
 
 theorem squeeze_ctFor (sha3 : Bool) {hint : VG.Taint.Hint VectorTaint.T}
-    (hcheck : (VectorTaint.taint.check (VectorTaint.ofRegs [.x22,.x23,.x24,.x25,.x26,.x27,.x28])
+    (hcheck : (VectorTaint.taint.check (VectorTaint.ofRegs [.x19,.x22,.x23,.x24,.x25,.x26,.x27,.x28])
       (.loop (squeezeStepWith sha3) (.nonzero .x .x28)) hint).isSome = true) : RelCT isa (Rel2 r4K.pre r4K.pub (fun σ => Phase σ 0 0))
     (.loop (squeezeStepWith sha3) (.nonzero .x .x28)) (Rel2 r4K.pre r4K.pub Ready) := by
-  refine vectorRelTaintStep (hc := hint) [.x22,.x23,.x24,.x25,.x26,.x27,.x28]
+  refine vectorRelTaintStep (hc := hint) [.x19,.x22,.x23,.x24,.x25,.x26,.x27,.x28]
     (fun _ _ hp h => WP.mono (squeeze_ok sha3 hp h) fun _ ht =>
       ⟨ht.env,fun k hk j hj => ht.out k hk j (by simpa using hj)⟩)
     (fun σ τ s t _ _ hq hs ht => ?_) ?_
   · refine ⟨by rw [hs.env.sp,ht.env.sp,hq.2.2.2.1],fun r hr => ?_⟩
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · rw [hs.env.x19,ht.env.x19,hq.2.2.1]
     · rw [hs.x22,ht.x22]; unfold stateP at'; rw [hq.2.2.1]
     · rw [hs.x23,ht.x23]; unfold stateP at'; rw [hq.2.2.1]
     · change s.gpr (bReg 0) = t.gpr (bReg 0)

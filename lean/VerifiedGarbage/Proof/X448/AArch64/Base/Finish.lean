@@ -15,7 +15,7 @@ namespace VG.Proof.X448.AArch64.Base
 
 open VG VG.AArch64 VG.Impl.X448.AArch64 VG.Impl.X448.AArch64.Base
 open VG.Proof.X448.AArch64 (Scr Keeps off word limbs Outside Outside2 Saved ofs)
-open VG.Proof.X448.AArch64.Weak (Index Env invEnv invEnv_eval invEnv_x2)
+open VG.Proof.X448.AArch64.Weak (Index Env)
 open VG.Proof.X448.AArch64.Fast
 open VG.Proof.Curve448.AArch64.Fast (Mb Ib)
 

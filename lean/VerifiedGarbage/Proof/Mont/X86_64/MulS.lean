@@ -104,7 +104,7 @@ theorem rounds1_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (hmo : M.mo + 8 * M.n ≤ size)
     (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hok : M.ok m = true) :
     ∀ k, k + 1 ≤ M.n → ∀ {s : State} {base : Addr}, Scr s base size →
-      wordsVal s.mem base M.mo M.n = m → wordsVal s.mem base b M.n < m →
+      MoVal M m s.mem base → wordsVal s.mem base b M.n < m →
       (∃ U, 2 ^ 64 * regsVal s (wins M.n 1) = wordsVal s.mem base a 1 * wordsVal s.mem base b M.n + U * m) →
       regsVal s (wins M.n 1) < 2 * m →
       WP isa (.block ((List.range k).flatMap (fun i => round M a b (i + 1)))) s fun s' =>
@@ -127,7 +127,7 @@ theorem rounds1_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
       · exact absurd h (by decide)
       · exact absurd h (by decide)
       · exact (acc_regs_lt _ hn _ h).2.2.2.2 rfl)
-    refine WP.mono (round_ok hs₁ hn (i := k + 1) (by omega) hb hmo (by rw [hmem, hm]) hinv hok
+    refine WP.mono (round_ok hs₁ hn (i := k + 1) (by omega) hb hmo (fun h => by rw [hmem]; exact hm h) hinv hok
       (by rw [hmem]; exact hB) hT) fun s₂ ⟨⟨u, eu⟩, hT₂, k₂⟩ => ?_
     rw [hmem] at eu
     refine ⟨⟨U + 2 ^ (64 * (k + 1)) * u, ?_⟩, hT₂, k₁.trans (k₂.mono fun q hq => ?_)⟩
@@ -158,7 +158,7 @@ theorem keeps_mulS {s s₁ s₂ s₃ : State}
 
 /-- The rounds of the multiplication: `2^(64n) T = A B + U m`, `T < 2m`. -/
 theorem mulRounds_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) {a b : Nat} (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size)
+    (hM : ModOkR M size m s.mem base) {a b : Nat} (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size)
     (hB : wordsVal s.mem base b M.n < m) :
     WP isa (.block (mulRounds M a b)) s fun s' =>
       (∃ U, 2 ^ (64 * M.n) * regsVal s' (wins M.n M.n) =
@@ -191,7 +191,7 @@ theorem mulRounds_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
       rw [hmem, h1, ← e₁]; exact eu
     rw [← h6] at hT1 hU1
     refine WP.mono (rounds1_ok (M := M) hM.n7 ha hb hM.mo hM.inv hM.red 5 (by omega) hs₂
-      (by rw [hmem]; exact hM.val) (by rw [hmem]; exact hB) ⟨u, hU1⟩ hT1)
+      (fun h => by rw [hmem]; exact hM.val h) (by rw [hmem]; exact hB) ⟨u, hU1⟩ hT1)
       fun s₃ ⟨⟨U, eU⟩, hT, k₃⟩ => ?_
     rw [hmem] at eU
     simp only [Nat.reduceAdd] at eU hT
@@ -202,7 +202,7 @@ theorem mulRounds_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
     have hs₁ := hs.of_keeps k₁ (fun h => (acc_regs_lt _ hM.n7 _ h).2.2.2.2 rfl)
     have h0 : regsVal s₁ (wins M.n 0) = 0 := regsVal_zero fun r hr => z₁ r (wins_sub_acc hM.n7 0 r hr)
     refine WP.mono (rounds_ok hM.n7 ha hb hM.mo hM.inv hM.red M.n (Nat.le_refl _) hs₁
-      (by rw [k₁.2.1]; exact hM.val) (by rw [k₁.2.1]; exact hB) h0) fun s₂ ⟨⟨U, eU⟩, hT, k₂⟩ => ?_
+      (fun h => by rw [k₁.2.1]; exact hM.val h) (by rw [k₁.2.1]; exact hB) h0) fun s₂ ⟨⟨U, eU⟩, hT, k₂⟩ => ?_
     rw [k₁.2.1] at eU
     exact ⟨⟨U, eU⟩, hT, (k₁.mono (by sub_regs)).trans k₂⟩
 

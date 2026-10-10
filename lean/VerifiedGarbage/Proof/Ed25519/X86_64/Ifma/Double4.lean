@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Stage
-import VerifiedGarbage.Proof.Ed25519.Group.Double
+import VerifiedGarbage.Proof.Ed25519.DblPoint
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
 
 /-! Merged from `Proof.Ed25519.X86_64.Ifma.Block`. -/
@@ -289,7 +289,7 @@ theorem prodBound_le (i : Nat) : prodBound ≤ kbv i := by
   have := kbv_ge i; simp only [prodBound]; omega
 
 theorem fe_add_sub (a b c : Spec.X25519.Fe) : a + (b - c) = a - (c - b) :=
-  toZ_inj.1 (by rw [toZ_add, toZ_sub, toZ_sub, toZ_sub]; ring)
+  by grind
 
 /-- `(E, G, F, E)` and `(F, H, G, H)` as field elements, from `(A, B, C', P)`. -/
 theorem ops_fe (x : Nat → Nat → Nat) (hx : ∀ l < 4, ∀ i < 5, x l i < prodBound) :
@@ -433,7 +433,7 @@ the lanes back (`vstore_wp`), and the MXCSR prologue and epilogue around them.
 
 namespace VG.Proof.Ed25519.X86_64.Ifma
 
-open VG VG.X86_64 VG.Impl.Ed25519.X86_64.Ifma VG.Proof.Ed25519 VG.Proof.Ed25519.X86_64 Edwards
+open VG VG.X86_64 VG.Impl.Ed25519.X86_64.Ifma VG.Proof.Ed25519 VG.Proof.Ed25519.X86_64
 open VG.Impl.X25519.X86_64.Ifma (KM K19 KB0 KB1 OPL OPV kb ord mul4 carry)
 open VG.Proof.X25519.X86_64.Ifma (Sym T Env Bnds EnvOK symOf symOf_eq lanes slotv CConsts carryNat fe5 fe5_congr
   fe5_carry carryI_wp vm vm_gpr vm_rd vm_wr envOK_of envOf envOf_m lt64 run_ok stores_mq stores_outside nat_ok

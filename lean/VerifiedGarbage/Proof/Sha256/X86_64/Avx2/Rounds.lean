@@ -8,8 +8,9 @@ import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
 /-!
 # SHA-256 with AVX2 on x86-64: one round
 
-`round j t` computes `roundKW`, with `Σ₀` and `Σ₁` as three `rorx`, `Ch` as a
-sum of two disjoint masks and `Maj` from the previous round's `a ⊕ b`.
+`round j t` computes `roundKW`, with its additions reordered, `Σ₀` and `Σ₁` as
+three `rorx`, `Ch` as a sum of two disjoint masks and `Maj` from the previous
+round's `a ⊕ b`.
 -/
 
 namespace VG.Proof.Sha256.X86_64.Avx2
@@ -50,7 +51,7 @@ theorem round_nodup (t : Nat) :
   generalize t % 8 = c at *
   revert h8; revert c; decide +kernel
 
-theorem ch_add (e f g : Word) : ch e f g = (e &&& f) + (~~~e &&& g) := by
+theorem ch_add (e f g : Word) : ch e f g = (~~~e &&& g) + (e &&& f) := by
   rw [BitVec.add_eq_or_of_and_eq_zero]
   · ext i hi
     simp only [ch, BitVec.getElem_xor, BitVec.getElem_or, BitVec.getElem_and, BitVec.getElem_not]
@@ -63,6 +64,15 @@ theorem maj_carry (a b c : Word) : maj a b c = (b ^^^ c) &&& (a ^^^ b) ^^^ b := 
   ext i hi
   simp only [maj, BitVec.getElem_xor, BitVec.getElem_and]
   cases a[i] <;> cases b[i] <;> cases c[i] <;> rfl
+
+/-- `T₁` in the order the round adds it. -/
+theorem sum_T₁ (h k w c₁ c₂ s : Word) : h + k + w + c₁ + c₂ + s = h + s + (c₁ + c₂) + k + w := by
+  ac_rfl
+
+/-- `T₁ + T₂` in the order the round adds it. -/
+theorem sum_T₁T₂ (h k w c₁ c₂ s s₀ m : Word) :
+    h + k + w + c₁ + c₂ + s + s₀ + m = h + s + (c₁ + c₂) + k + w + (s₀ + m) := by
+  ac_rfl
 
 /-- The round is symbolically executed once, for any registers `a … h`
 (which `round_nodup` says are different from each other and the others). -/
@@ -111,8 +121,9 @@ theorem round_ok (j t : Nat) (s : State) (v : HashValue) (w : Word)
   · simp only [pubRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [hd']
   · simp only [roundKW, Vector.getElem_mk, List.getElem_toArray, List.getElem_cons_zero,
-      List.getElem_cons_succ, ch_add, maj_carry, bsig0, bsig1, BitVec.add_assoc,
-      and_self]
+      List.getElem_cons_succ, ch_add, maj_carry, bsig0, bsig1,
+      and_true, true_and]
+    exact ⟨congrArg _ (sum_T₁T₂ ..), congrArg _ (congrArg _ (sum_T₁ ..))⟩
 
 /-! ## Rounds of a block -/
 

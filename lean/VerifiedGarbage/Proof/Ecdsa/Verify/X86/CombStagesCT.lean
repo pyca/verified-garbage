@@ -16,7 +16,7 @@ theorem vFrontWf {s : State} {extra : List Region} (hp : VPre c s extra) : VG.X8
   have hsc := hp.sc_fit; have hs := hp.sp_fit
   refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨by simp [hp.wr, vFrontτ], by simp [hp.wr], ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨hs, ?_⟩, ?_⟩ fun _ => ⟨hp.sp_lo, ?_⟩
+    fun _ => ⟨hs, ?_⟩, ?_⟩ fun _ => ⟨Nat.le_trans (Cfg.stk_ge c) hp.sp_lo, ?_⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r rfl; simp only [ptr, BitVec.toNat_setWidth]; omega_using [hsc]
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
@@ -29,7 +29,8 @@ theorem vFrontWf {s : State} {extra : List Region} (hp : VPre c s extra) : VG.X8
     simp [VG.X86.Taint.region, hp.wr, addr, arg, argAddr, ptr]
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r rfl
-    exact hp.stk_sc
+    have := Cfg.stk_ge c
+    exact hp.stk_sc.sub_left (Offset.sub_below _ (a := 20) (n := 20) this (by omega))
 
 /-- Equal stack pointers and arguments establish the front's agreement. -/
 theorem vFrontAgree {s t : State} {extra₁ extra₂ : List Region} (hp : VPre c s extra₁)
@@ -65,7 +66,7 @@ theorem vKeep_arg {s₀ s : State} {extra : List Region}
 
 theorem vArgWf {s₀ s : State} {extra : List Region} (rs : List Reg)
     (hp : VPre c s₀ extra) (he : s.gpr .esp = s₀.gpr .esp) (hw : s.wr = s₀.wr) :
-    VG.X86.Taint.Wf (argτ rs 4) s := by
+    VG.X86.Taint.Wf (argτ rs 4 c.stk) s := by
   refine VG.X86.Taint.Wf.entryRoom rfl ⟨?_, ?_, ?_, ?_, ?_⟩ fun _ => ⟨by rw [he]; exact hp.sp_lo, ?_⟩
   rotate_right
   · rw [he, hw, hp.wr]
@@ -87,7 +88,7 @@ theorem vKeepArgAgree {s₀ t₀ s t : State} {extra₁ extra₂ : List Region}
     (hp : VPre c s₀ extra₁) (hq : VPre c t₀ extra₂)
     (ks : Keep c s₀ (ptr s₀ 3) s) (kt : Keep c t₀ (ptr t₀ 3) t)
     (he : s₀.gpr .esp = t₀.gpr .esp) (ha : ∀ j < 4, arg s₀ j = arg t₀ j) :
-    VG.X86.Taint.Agree (argτ [.esp, .edi] 4) s t := by
+    VG.X86.Taint.Agree (argτ [.esp, .edi] 4 c.stk) s t := by
   have esp : s.gpr .esp = t.gpr .esp := ks.esp.trans (he.trans kt.esp.symm)
   have edi : s.gpr .edi = t.gpr .edi := widen32_inj (ks.scr.edi.trans
     ((congrArg (BitVec.setWidth 64) (ha 3 (by decide))).trans kt.scr.edi.symm))

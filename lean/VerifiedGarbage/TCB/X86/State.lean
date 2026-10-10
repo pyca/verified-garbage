@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Code
+module
+
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # IA-32 machine state
@@ -8,6 +10,8 @@ with legacy SSE's eight 128-bit XMM registers (Intel SDM Vol. 1 §10.2.1),
 all caller-saved in the System V i386 ABI, and the eight 64-bit MMX
 registers (SDM Vol. 1 §9.2.2).
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

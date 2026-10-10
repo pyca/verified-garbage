@@ -2,14 +2,17 @@ import VerifiedGarbage.Proof.Sm4.AArch64.Group
 import VerifiedGarbage.Proof.Modes.AArch64.Core
 import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
 import VerifiedGarbage.Proof.Sm4.CtrCipher
+import VerifiedGarbage.Spec.Sm4.Cbc
 
 /-!
 # SM4's core for the modes on AArch64
 
-`modeCoreSpec`: SM4's core (`Impl.Sm4.AArch64.modeCore`) meets what the
-modes need of a core (`Proof.Modes.AArch64.CoreSpec`), with the key a
-schedule, its cipher `Spec.Sm4.cipher`, and the key ready when the masks
-and the table of round keys in encryption order are in the scratch buffer.
+`dirCoreSpec d`: SM4's core for the direction `d`
+(`Impl.Sm4.AArch64.dirCore d`) meets what the modes need of a core
+(`Proof.Modes.AArch64.CoreSpec`), with the key a schedule, its cipher
+`Spec.Sm4.cipher` for encryption and `Spec.Sm4.invCipher` for decryption,
+and the key ready when the masks and the table of round keys in `d`'s
+order are in the scratch buffer. `modeCoreSpec` is encryption's, for CTR.
 -/
 
 namespace VG.Proof.Sm4.AArch64
@@ -17,7 +20,7 @@ namespace VG.Proof.Sm4.AArch64
 open VG VG.AArch64 VG.AArch64.Straight VG.Impl.Sm4.AArch64
 open VG.Impl.Aes.AArch64 (sb t0)
 open VG.Proof.Modes.AArch64 (ScrIn coreRegion bufRegion bufAddr Layout CoreSpec)
-open VG.Proof.Sm4 (scheduleAt_congr bytesAt_eq_blockAt cipher_bytes)
+open VG.Proof.Sm4 (scheduleAt_congr bytesAt_eq_blockAt ofFn_toList crypt_eq)
 open VG.Spec.Aes (bytesAt)
 
 /-- The schedule at `x0`, outside the regions `rs`. -/
@@ -25,17 +28,29 @@ def KeyArgs (s : State) (rs : List Region) (k : Spec.Sm4.Schedule) : Prop :=
   ∃ p : Addr, s.gpr .x0 = p ∧ k = Spec.Sm4.scheduleAt s.mem p ∧ (⟨p, 128⟩ : Region) ∈ s.rd ∧
     p.toNat + 128 ≤ 2 ^ 64 ∧ ∀ r ∈ rs, Region.Disjoint ⟨p, 128⟩ r
 
-/-- The masks and the table of round keys in encryption order. -/
-def ReadyAt (m : Mem) (B : Addr) (k : Spec.Sm4.Schedule) : Prop :=
-  MasksAt m B ∧ ∀ e < 32, VG.Proof.Sm4.WordRel (entryW m B e) fun _ => dirKeys .encrypt k e
+/-- The masks and the table of round keys in the order of `d`. -/
+def ReadyAt (d : Dir) (m : Mem) (B : Addr) (k : Spec.Sm4.Schedule) : Prop :=
+  MasksAt m B ∧ ∀ e < 32, VG.Proof.Sm4.WordRel (entryW m B e) fun _ => dirKeys d k e
 
-theorem dirKeys_encrypt (k : Spec.Sm4.Schedule) : dirKeys .encrypt k = fun i => k.getD i 0 := rfl
+/-- The cipher of the direction `d`. -/
+def dirCipher : Dir → Spec.Sm4.Schedule → Spec.Cbc.Cipher
+  | .encrypt => Spec.Sm4.cipher
+  | .decrypt => Spec.Sm4.invCipher
+
+/-- The cipher of `d` on the 16 bytes at `p`: the 32 rounds with the round
+keys in `d`'s order. -/
+theorem dirCipher_bytes (d : Dir) (k : Spec.Sm4.Schedule) (m : Mem) (p : Addr) :
+    dirCipher d k (bytesAt m p 16) =
+      (outBlock (quads .enc (dirKeys d k) 8 (ofBlock (Spec.Sm4.blockAt m p)))).toList := by
+  cases d
+  · rw [dirCipher, Spec.Sm4.cipher, bytesAt_eq_blockAt, ofFn_toList, Spec.Sm4.encryptBlock, crypt_eq]; rfl
+  · rw [dirCipher, Spec.Sm4.invCipher, bytesAt_eq_blockAt, ofFn_toList, Spec.Sm4.decryptBlock, crypt_eq]; rfl
 
 /-- A word of the core's slots outside the tail buffer is outside the regions
 that are disjoint from the core's slots or within the tail buffer. -/
-theorem word_disjoint {B : Addr} {d : Nat} (hd : d + 8 ≤ 8 * tableEnd)
+theorem word_disjoint {dir : Dir} {B : Addr} {d : Nat} (hd : d + 8 ≤ 8 * tableEnd)
     (hout : d + 8 ≤ 8 * tailSlot ∨ 8 * tailSlot + 256 ≤ d) {r : Region}
-    (hr : Region.Disjoint (coreRegion modeCore B) r ∨ Region.Sub r (bufRegion modeCore B)) :
+    (hr : Region.Disjoint (coreRegion (dirCore dir) B) r ∨ Region.Sub r (bufRegion (dirCore dir) B)) :
     Region.Disjoint ⟨B + BitVec.ofNat 64 d, 8⟩ r := by
   rcases hr with h | h
   · exact h.sub_left (VG.Offset.sub_base B hd)
@@ -44,10 +59,10 @@ theorem word_disjoint {B : Addr} {d : Nat} (hd : d + 8 ≤ 8 * tableEnd)
     exact VG.Offset.disjoint B (by simp only [tailSlot_eq] at hout ⊢; omega)
       (by simp only [tableEnd_eq] at hd; omega) (by simp only [tailSlot_eq]; decide)
 
-theorem readyAt_frame {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {rs : List Region} (h : ReadyAt m B k)
-    (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion modeCore B) r ∨ Region.Sub r (bufRegion modeCore B)) :
-    ReadyAt m' B k := by
+theorem readyAt_frame {dir : Dir} {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {rs : List Region}
+    (h : ReadyAt dir m B k) (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore dir) B) r ∨ Region.Sub r (bufRegion (dirCore dir) B)) :
+    ReadyAt dir m' B k := by
   have hR : ∀ d, d + 8 ≤ 8 * tableEnd → (d + 8 ≤ 8 * tailSlot ∨ 8 * tailSlot + 256 ≤ d) →
       m'.readW (B + BitVec.ofNat 64 d) 64 = m.readW (B + BitVec.ofNat 64 d) 64 := fun d h1 h2 =>
     hf.readW (Region.contains_self _ _) (fun r hr => word_disjoint h1 h2 (hd r hr)) (by decide)
@@ -59,18 +74,18 @@ theorem readyAt_frame {m m' : Mem} {B : Addr} {k : Spec.Sm4.Schedule} {rs : List
       (.inr (by rw [tailSlot_eq, tableSlot_eq]; omega))
 
 theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.Sm4.Schedule} (h : KeyArgs s rs k)
-    (hr : ∀ r ∈ modeCore.keyRegs, s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd) (_ : s'.wr = s.wr)
+    (hr : ∀ r ∈ [Reg.x0], s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd) (_ : s'.wr = s.wr)
     (hf : Frame rs s.mem s'.mem) : KeyArgs s' rs k := by
   obtain ⟨p, hp, hk, hin, hfit, hdis⟩ := h
   refine ⟨p, by rw [hr .x0 List.mem_cons_self, hp], ?_, by rw [hrd]; exact hin, hfit, hdis⟩
   rw [hk]
   exact (scheduleAt_congr fun i hi => hf.bytes (R := ⟨p, 128⟩) hdis (by show 128 ≤ 2 ^ 64; omega) hi).symm
 
-theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
-    (hs : ScrIn s B modeCore.total) (hR : (⟨B, 8 * modeCore.total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
-    WP isa modeCore.prepare s fun s' => ReadyAt s'.mem B k ∧ s'.gpr sb = B ∧
-      s'.gpr modeCore.dataReg = s.gpr modeCore.dataReg ∧ s'.gpr modeCore.leftReg = s.gpr modeCore.leftReg ∧
-      Frame [coreRegion modeCore B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
+    (hs : ScrIn s B (dirCore d).total) (hR : (⟨B, 8 * (dirCore d).total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
+    WP isa (dirCore d).prepare s fun s' => ReadyAt d s'.mem B k ∧ s'.gpr sb = B ∧
+      s'.gpr .x1 = s.gpr .x1 ∧ s'.gpr .x2 = s.gpr .x2 ∧
+      Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨p, hp, rfl, hin, hfit, hdis⟩ := hk
   have hw : (⟨B, 8 * slots⟩ : Region) ∈ s.wr := hs.wr
   obtain ⟨s₁, e₁, v₁, -, g₁, rd₁, wr₁, f₁⟩ := setSlots_ok (b := B) keyMasks hB hw
@@ -82,7 +97,7 @@ theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Spec.Sm4.Sched
   have hsch : Spec.Sm4.scheduleAt s₁.mem p = Spec.Sm4.scheduleAt s.mem p :=
     hpre.sched_eq' (n := tableSlot) (by rw [tableSlot_eq, slots_eq]; omega) f₁
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
-  refine WP.mono (keys_wp .encrypt hpre (by rw [g₁ _ (by decide), hp]) v₁) fun s₂ k₂ => ?_
+  refine WP.mono (keys_wp d hpre (by rw [g₁ _ (by decide), hp]) v₁) fun s₂ k₂ => ?_
   have b₂ : s₂.gpr sb = B := k₂.pre.base
   have keep : ∀ r, r ∉ layerWrites → r ≠ kp → r ≠ .x0 → r ≠ .x3 → r ≠ t0 → s₂.gpr r = s.gpr r :=
     fun r h1 h2 h3 h4 h5 => by rw [k₂.regs r h1 h2 h3 h4, g₁ r h5]
@@ -96,18 +111,18 @@ theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Spec.Sm4.Sched
       exact Region.sub_prefix (by rw [tableSlot_eq]; show 8 * 128 ≤ 8 * tableEnd; rw [tableEnd_eq]; omega)⟩).trans
       k₂.frame
 
-theorem crypt_wp {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
-    (hs : ScrIn s B modeCore.total) (hr : ReadyAt s.mem B k) :
-    WP isa modeCore.crypt s fun s' => s'.gpr sb = B ∧
-      s'.gpr modeCore.dataReg = s.gpr modeCore.dataReg ∧ s'.gpr modeCore.leftReg = s.gpr modeCore.leftReg ∧
-      ReadyAt s'.mem B k ∧
-      Frame [coreRegion modeCore B] s.mem s'.mem ∧
-      (∀ j < modeCore.G, bytesAt s'.mem (bufAddr modeCore B j) 16 =
-        Spec.Sm4.cipher k (bytesAt s.mem (bufAddr modeCore B j) 16)) ∧
+theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
+    (hs : ScrIn s B (dirCore d).total) (hr : ReadyAt d s.mem B k) :
+    WP isa (dirCore d).crypt s fun s' => s'.gpr sb = B ∧
+      s'.gpr .x1 = s.gpr .x1 ∧ s'.gpr .x2 = s.gpr .x2 ∧
+      ReadyAt d s'.mem B k ∧
+      Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧
+      (∀ j < (dirCore d).G, bytesAt s'.mem (bufAddr (dirCore d) B j) 16 =
+        dirCipher d k (bytesAt s.mem (bufAddr (dirCore d) B j) 16)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := slotAddr_ok s .x3 tableEnd (by decide)
   have b₁ : s₁.gpr sb = B := by rw [o₁ _ (by decide), hB]
-  have hkey : KeyCtx s₁ (dirKeys .encrypt k) :=
+  have hkey : KeyCtx s₁ (dirKeys d k) :=
     { scr := by rw [b₁, wr₁]; exact hs.wr
       fit := by rw [b₁]; exact hs.fit
       keys := fun e he => by rw [b₁, m₁]; exact hr.2 e he }
@@ -132,22 +147,26 @@ theorem crypt_wp {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : s.gpr sb =
   · have hj' : j < 16 := hj
     have e₁ := b₂ j hj'
     simp only [tailBlock, base₂, b₁] at e₁
-    have ha : bufAddr modeCore B j = B + BitVec.ofNat 64 (8 * tailSlot + 16 * j) := rfl
-    rw [ha, cipher_bytes, bytesAt_eq_blockAt, ← m₁, e₁, dirKeys_encrypt]
+    have ha : bufAddr (dirCore d) B j = B + BitVec.ofNat 64 (8 * tailSlot + 16 * j) := rfl
+    rw [ha, dirCipher_bytes, bytesAt_eq_blockAt, ← m₁, e₁]
 
-/-- SM4's core meets what the modes need. -/
-def modeCoreSpec : CoreSpec modeCore where
+/-- SM4's core for the direction `d` meets what the modes need. -/
+def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
   Key := Spec.Sm4.Schedule
-  cipher := Spec.Sm4.cipher
+  cipher := dirCipher d
   KeyArgs := KeyArgs
-  Ready s B k := ReadyAt s.mem B k
-  cipher_len _ _ := by simp [Spec.Sm4.cipher]
-  layout := ⟨by decide, by decide, by decide, by decide, by decide⟩
-  keyRegs_ok := by decide
-  regs_ok := by decide
+  Ready s B k := ReadyAt d s.mem B k
+  cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.Sm4.cipher, Spec.Sm4.invCipher]
+  layout := ⟨by cases d <;> decide, by cases d <;> decide, by cases d <;> decide, by cases d <;> decide,
+    by cases d <;> decide⟩
+  keyRegs_ok := by cases d <;> decide
+  regs_ok := by cases d <;> decide
   keyArgs_congr := keyArgs_congr
   ready_frame h hf hd _ := readyAt_frame h hf hd
-  prepare_wp := prepare_wp
-  crypt_wp := crypt_wp
+  prepare_wp := prepare_wp d
+  crypt_wp := crypt_wp d
+
+/-- SM4's core for encryption, for CTR. -/
+abbrev modeCoreSpec : CoreSpec modeCore := dirCoreSpec .encrypt
 
 end VG.Proof.Sm4.AArch64

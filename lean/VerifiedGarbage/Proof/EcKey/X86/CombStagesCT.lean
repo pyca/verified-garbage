@@ -38,7 +38,7 @@ theorem pkKeep_arg {c : Cfg} {s₀ s : State} {extra : List Region}
 /-- The public argument area is disjoint from every writable buffer. -/
 theorem pkArgWf {c : Cfg} {s₀ s : State} {extra : List Region} (rs : List Reg)
     (hp : PkPre c s₀ extra) (he : s.gpr .esp = s₀.gpr .esp) (hw : s.wr = s₀.wr) :
-    VG.X86.Taint.Wf (argτ rs 3) s := by
+    VG.X86.Taint.Wf (argτ rs 3 c.stk) s := by
   refine VG.X86.Taint.Wf.entryRoom rfl ⟨?_, ?_, ?_, ?_, ?_⟩ fun _ => ⟨by rw [he]; exact hp.sp_lo, ?_⟩
   rotate_right
   · rw [he, hw, hp.wr]
@@ -63,7 +63,7 @@ theorem pkKeepArgAgree {c : Cfg} {s₀ t₀ s t : State} {extra₁ extra₂ : Li
     (hp : PkPre c s₀ extra₁) (hq : PkPre c t₀ extra₂)
     (ks : Keep c s₀ (ptr s₀ 2) s) (kt : Keep c t₀ (ptr t₀ 2) t)
     (he : s₀.gpr .esp = t₀.gpr .esp) (ha : ∀ j < 3, arg s₀ j = arg t₀ j) :
-    VG.X86.Taint.Agree (argτ [.esp, .edi] 3) s t := by
+    VG.X86.Taint.Agree (argτ [.esp, .edi] 3 c.stk) s t := by
   have esp : s.gpr .esp = t.gpr .esp := ks.esp.trans (he.trans kt.esp.symm)
   have edi : s.gpr .edi = t.gpr .edi := widen32_inj (ks.scr.edi.trans
     ((congrArg (BitVec.setWidth 64) (ha 2 (by decide))).trans kt.scr.edi.symm))

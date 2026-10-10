@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeLoop
-import VerifiedGarbage.Proof.Ed25519.Window
+import VerifiedGarbage.Proof.Ed25519.ScalarBytes
 import VerifiedGarbage.Proof.Ed25519.X86_64.Bits
 
 /-!
@@ -92,7 +92,7 @@ theorem zeroDigits_ok {s : State} {base : Addr} (hs : Scratch s base) :
     refine ⟨rfl, fun r hr => ?_, rfl, rfl, rfl⟩
     simp only [List.mem_singleton] at hr
     simp only [RegUpd.gpr_setReg, hr, ite_false]) fun a ⟨az, ka⟩ => ?_
-  refine WP.mono (zeroPrefix_ok (hs.of_keeps ka (by decide)) az 132 (le_refl _))
+  refine WP.mono (zeroPrefix_ok (hs.of_keeps ka (by decide)) az 132 (Nat.le_refl _))
     fun t ⟨th, tg, tr, tw⟩ => ?_
   refine ⟨⟨th.1, fun x hx => by rw [th.2 x hx, ka.2.1]⟩, fun r hr => by rw [tg, ka.1 r (by simpa using hr)],
     by rw [tg, az], tr.trans ka.2.2.1, tw.trans ka.2.2.2⟩

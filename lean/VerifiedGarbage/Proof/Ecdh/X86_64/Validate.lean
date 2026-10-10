@@ -341,7 +341,7 @@ theorem ladLayQ (hc : BaseCfgOk c) : LadLay (Impl.Ecdh.X86_64.Cfg.ladderQ c) siz
       have hl : ∀ i ∈ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX,
           TY, TZ], i < 45 := by decide
       exact Or.inr (sl_below_bits c (hl i hi) 0 0 (.inl fun h => by subst h; exact absurd hi (by decide)))
-    · rcases tmp_apart_bits c (j := 0) (.inl (by decide)) (64 * c.n) (by omega) with h | h
+    · rcases tmp_apart_bits c (j := 0) (.inl (by decide)) (by decide) (64 * c.n) (by omega) with h | h
       · exact Or.inr (by show c.sl TMP + 8 * c.n ≤ bitsAt c.n 0; exact h)
       · exact Or.inl (by show bitsAt c.n 0 + 64 * c.n ≤ c.sl TMP; exact h)
 

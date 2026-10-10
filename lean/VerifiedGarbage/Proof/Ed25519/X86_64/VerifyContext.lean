@@ -1,7 +1,8 @@
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
+import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
 import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointDecode
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyPoints
 
 /-! Merged from `Proof.Ed25519.X86_64.VerifyTables`. -/
 section

@@ -10,8 +10,8 @@ of ECDSA's signature (`Impl/Ecdsa/X86.lean`), as on x86-64 and AArch64
 
 1. the signature's code up to `Z^(p-2)`, with its setup reading the working
    space from `scratch` and `k`, `d` and the hash all from `d`
-   (`Args.publicKey`): its tables of bits, `Q = [d]G` by its ladder, and its
-   power;
+   (`Args.publicKey`): its tables of bits, `Q = [d]G` by its ladder (calling
+   the point functions, `Impl/Weierstrass/X86/LadderP.lean`), and its power;
 2. `x = X Z^(p-2)` and `y = Y Z^(p-2)`, each left Montgomery's form by a
    multiplication by 1;
 3. the flag, `d` in `[1, n-1]` and `Z ≠ 0`, as a mask, selects `04 ‖ x ‖ y`
@@ -49,7 +49,7 @@ def upToPow : Prog isa :=
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq (ladder c.ladderCfg c.SP) <|
+  .seq (Point.ladderP c.ladderCfg c.SP Args.publicKey.ao) <|
   .seq c.pPow (.block [])
 
 /-- `04 ‖ x ‖ y` (or zeros) to `out` (through `ebx`), the flag's low bit to

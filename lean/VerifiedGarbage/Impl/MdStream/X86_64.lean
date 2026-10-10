@@ -15,10 +15,11 @@ followed by a `B`-byte buffer.
 * `update(state = rdi, count = rsi, data = rdx, len = rcx, scratch = r8)`
   compresses, in each iteration, every whole block left in `data` with one
   call if the buffer is empty (so that implementations that process several
-  blocks at once can), and otherwise copies bytes into the buffer,
-  compressing it once it is full.
+  blocks at once can), and otherwise copies bytes into the buffer (eight at a
+  time, then one at a time), compressing it once it is full.
 * `finalize(state = rdi, count = rsi, out = rdx, scratch = rcx)` pads the
-  buffered bytes (one or two blocks), compresses them and writes the digest.
+  buffered bytes (one or two blocks; the zeros eight at a time, then one at a
+  time), compresses them and writes the digest.
 
 The compression function (`name`, `code`) is called with `scratch` as its
 scratch space; it preserves `rbx, rbp, r12–r15`, so our own variables live
@@ -95,18 +96,32 @@ def direct : List Instr :=
     .mov .r14 (.reg .r12), .alu .sub .r14 (.reg .rax), .alu .add .rbp (.reg .r14), .mov .r12 (.reg .rax),
     .shift .shr .r14 (Nat.log2 P.B)]
 
+/-- The loop copying eight bytes of `data` at a time into the buffer, while
+at least eight of the `rax` left remain. -/
+def copyWords : Prog isa :=
+  .loop (.block [.mov .r9 (.mem { base := .rbp }), .store (bufByte P) .r9,
+    .alu .add .rbp (.imm 8), .alu .add .r13 (.imm 8), .alu .sub .rax (.imm 8), .alu .cmp .rax (.imm 8)]) .ae
+
 /-- The loop copying bytes of `data` into the buffer. -/
 def copyLoop : Prog isa :=
   .loop (.block [.movzx8 .r9 { base := .rbp }, .store8 (bufByte P) .r9,
     .alu .add .rbp (.imm 1), .alu .add .r13 (.imm 1), .alu .sub .rax (.imm 1)]) .ne
+
+/-- Copy `rax` bytes of `data` into the buffer: eight at a time, then one at
+a time. -/
+def copy : Prog isa :=
+  .seq (.block [.alu .cmp .rax (.imm 8)])
+  (.seq (.ite .b (.block []) (copyWords P))
+  (.seq (.block [.alu .test .rax (.reg .rax)])
+    (.ite .e (.block []) (copyLoop P))))
 
 /-- Copy `min(B - r13, r12)` bytes of `data` into the buffer; if that fills it,
 compress it. -/
 def fill : Prog isa :=
   .seq (.block [.mov32 .rax (.imm (BitVec.ofNat 32 P.B)), .alu .sub .rax (.reg .r13), .alu .cmp .r12 (.reg .rax)])
   (.seq (.ite .b (.block [.mov .rax (.reg .r12)]) (.block []))
-  (.seq (.block [.alu .sub .r12 (.reg .rax), .alu .test .rax (.reg .rax)])
-  (.seq (.ite .e (.block []) (copyLoop P))
+  (.seq (.block [.alu .sub .r12 (.reg .rax)])
+  (.seq (copy P)
   (.seq (.block [.mov32 .r14 (.imm 0), .alu .cmp .r13 (.imm (BitVec.ofNat 32 P.B))])
     (.ite .e (.block [.mov .rsi (.reg .rbx), .alu .add .rsi (.imm (BitVec.ofNat 32 P.N)), .mov32 .r13 (.imm 0),
         .mov32 .r14 (.imm 1)]) (.block []))))))
@@ -141,9 +156,23 @@ def update (name : String) (code : Prog isa) : Prog isa :=
 Registers: `rbp` = `out`, `r12` = `count`, `r13` = bytes in the buffer,
 `r14` = 1 while the block being padded is not the last one. -/
 
+/-- The loop zeroing the buffer from `r13` on, eight bytes at a time, while
+at least eight of the `rax` left remain. -/
+def zeroWords : Prog isa :=
+  .loop (.block [.store (bufByte P) .r9, .alu .add .r13 (.imm 8), .alu .sub .rax (.imm 8),
+    .alu .cmp .rax (.imm 8)]) .ae
+
 /-- The loop zeroing the buffer from `r13` on, `rax` bytes. -/
 def zeroLoop : Prog isa :=
   .loop (.block [.store8 (bufByte P) .r9, .alu .add .r13 (.imm 1), .alu .sub .rax (.imm 1)]) .ne
+
+/-- Zero `rax` bytes of the buffer from `r13` on (with `r9 = 0`): eight at a
+time, then one at a time. -/
+def zero : Prog isa :=
+  .seq (.block [.alu .cmp .rax (.imm 8)])
+  (.seq (.ite .b (.block []) (zeroWords P))
+  (.seq (.block [.alu .test .rax (.reg .rax)])
+    (.ite .e (.block []) (zeroLoop P))))
 
 /-- Pad the block, up to the call of the compression function. -/
 def finalizePad : Prog isa :=
@@ -151,7 +180,7 @@ def finalizePad : Prog isa :=
   .seq (.block [.mov32 .rax (.imm (BitVec.ofNat 32 P.B)), .alu .test .r14 (.reg .r14)])
   (.seq (.ite .e (.block [.mov32 .rax (.imm (BitVec.ofNat 32 (P.B - P.L)))]) (.block []))
   (.seq (.block [.mov32 .r9 (.imm 0), .alu .sub .rax (.reg .r13)])
-  (.seq (.ite .e (.block []) (zeroLoop P))
+  (.seq (zero P)
   -- In the last block, the length field.
   (.seq (.block [.alu .test .r14 (.reg .r14)])
   (.seq (.ite .e (.block P.len) (.block []))

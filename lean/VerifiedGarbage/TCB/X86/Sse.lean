@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86.State
+module
+
+public import VerifiedGarbage.TCB.X86.State
 
 /-!
 # IA-32 legacy SSE and cryptographic instructions
@@ -12,6 +14,8 @@ No vector integer multiplication instructions with Intel's MCDT hazard
 are included. These are the same bit-value semantics as the x86-64 model,
 restricted to the instructions the 32-bit implementations need.
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

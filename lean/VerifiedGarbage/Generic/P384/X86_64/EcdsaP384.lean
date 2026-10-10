@@ -26,7 +26,7 @@ and selecting the comb's entries with AVX2 (`adx`, `_adx`) or not: its `code`,
 proven (`hv`), with no instruction writing `rsp` (`hsp`). -/
 def sign (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
-      (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts)))
+      (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
   { Spec.Ecdsa.P384.signApi with
     name := Spec.Ecdsa.P384.signApi.name ++ (if adx then "_adx" else "")
@@ -54,7 +54,8 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
     consts := Impl.Ecdsa.X86_64.p384.combConsts
     code
     contract := Spec.Ecdsa.P384.inst.signContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts)
+      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 8
+    stack := 8
     verified := hv
     spSafe := hsp
     features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
@@ -64,7 +65,7 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
 `rsp` (`hsp`). -/
 def verify (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
-      (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts)))
+      (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
   { Spec.Ecdsa.P384.verifyApi with
     name := Spec.Ecdsa.P384.verifyApi.name ++ (if adx then "_adx" else "")
@@ -91,7 +92,8 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
     consts := Impl.Ecdsa.X86_64.p384.combConsts
     code
     contract := Spec.Ecdsa.P384.inst.verifyContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts)
+      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 8
+    stack := 8
     verified := hv
     spSafe := hsp
     features := if adx then ["bmi2", "adx"] else [] }

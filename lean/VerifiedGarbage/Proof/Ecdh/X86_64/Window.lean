@@ -53,21 +53,22 @@ theorem winWs_eq (c : Cfg) : winWs (winQ c) = (otherI ++ tblI).map c.sl := by
   rw [winWs, winTblSlots_eq, List.map_append]; rfl
 
 /-- The indices of the window method's slots. -/
-theorem winIdx_lt : ∀ i ∈ roI ++ otherI ++ tblI, i < 107 ∧ i ≠ MP ∧ i ≠ TMP := by decide
+theorem winIdx_lt : ∀ i ∈ roI ++ otherI ++ tblI, i < 108 ∧ i ≠ MP ∧ i ≠ TMP := by decide
 
-/-- Every slot below `107` is in the working space, for up to nine words. -/
-theorem sl_le_win (c : Cfg) (h9 : c.n ≤ 9) {i : Nat} (hi : i < 107) : c.sl i + 8 * c.n ≤ size := by
-  have hix : ix c i < 107 := by
+/-- Every slot below `108` is in the working space, for up to nine words. -/
+theorem sl_le_win (c : Cfg) (h9 : c.n ≤ 9) {i : Nat} (hi : i < 108) : c.sl i + 8 * c.n ≤ size := by
+  have hix : ix c i < 108 := by
+    have := tk_le c
     rcases ix_cases c i with ⟨_, _, h⟩ | ⟨_, _, h⟩ | h <;> rw [h] <;> first | decide | omega
   rw [sl_eq']
   have := Nat.mul_le_mul_left (8 * c.n) hix
   rw [Nat.mul_succ] at this
-  have : 8 * c.n * 107 ≤ 8 * 9 * 107 := Nat.mul_le_mul_right _ (by omega)
+  have : 8 * c.n * 108 ≤ 8 * 9 * 108 := Nat.mul_le_mul_right _ (by omega)
   show _ ≤ 8192
-  omega
+  omega_arith
 
 theorem lay_win (h9 : c.n ≤ 9) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = c.sl TMP)
-    (hMn : M.n = c.n) {l : List Nat} (hl : ∀ i ∈ l, i < 107 ∧ i ≠ MP ∧ i ≠ TMP) :
+    (hMn : M.n = c.n) {l : List Nat} (hl : ∀ i ∈ l, i < 108 ∧ i ≠ MP ∧ i ≠ TMP) :
     Lay M size (· ∈ l.map c.sl) := by
   refine ⟨fun x hx => ?_, fun x y hx hy hxy => ?_, fun x hx => ?_, fun x hx => ?_⟩
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
@@ -87,12 +88,12 @@ theorem winLayQ (hc : BaseCfgOk c) (h9 : c.n ≤ 9) : WinLay (winQ c) size := by
   have hn := hc.n0
   have hJ : (winQ c).J = c.winJ := rfl
   have hJle : c.winJ ≤ 16 * c.n + 1 := by
-    unfold Cfg.winJ; have := hc.len_hi; have := hc.nbits_le; omega
-  have hJ1 : 1 ≤ c.winJ := by unfold Cfg.winJ; omega
+    unfold Cfg.winJ; have := hc.len_hi; have := hc.nbits_le; omega_arith
+  have hJ1 : 1 ≤ c.winJ := by unfold Cfg.winJ; omega_arith
   have hb : (winQ c).bits = c.sl WB := rfl
   have hK : (winQ c).tbl = c.sl WT := rfl
   have hMn : (winQ c).M.n = c.n := rfl
-  refine ⟨?_, ?_, ?_, ?_, hn, ⟨by omega, by omega⟩, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, hn, ⟨by omega_arith, by omega_arith⟩, ?_, ?_⟩
   · rw [winSlots_eq]; exact lay_win h9 rfl rfl rfl winIdx_lt
   · exact map_sl_disj hn (l₁ := roI) (l₂ := otherI) (by decide)
   · exact map_sl_nodup hn (l := otherI) (by decide)
@@ -103,29 +104,41 @@ theorem winLayQ (hc : BaseCfgOk c) (h9 : c.n ≤ 9) : WinLay (winQ c) size := by
     have := key i hi
     rw [hK, hMn]; exact Or.inl (sl_lt c this)
   · rw [hb, hJ]; simp (disch := sl_ne) only [sl_eq]; show 64 + 8 * c.n * 73 + _ ≤ 8192
-    have : 8 * c.n * 73 ≤ 8 * 9 * 73 := Nat.mul_le_mul_right _ (by omega)
-    omega
+    have : 8 * c.n * 73 ≤ 8 * 9 * 73 := Nat.mul_le_mul_right _ (by omega_arith)
+    omega_arith
   · intro w hw
     rw [winW_eq] at hw
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
     rw [hb, hJ]
     have key : ∀ i ∈ otherI ++ tblI ++ [TMP], i < WB ∨ WT ≤ i := by decide
     rcases key i hi with h | h
-    · exact Or.inr (sl_lt c h)
+    · by_cases h6 : i = TMP ∧ c.n = 6
+      · obtain ⟨rfl, h6⟩ := h6
+        refine Or.inl ?_
+        dsimp only
+        rw [sl_eq' c TMP, ix_tmp6 c h6]
+        simp (disch := sl_ne) only [sl_eq]
+        show 64 + 8 * c.n * 73 + 4 * c.winJ ≤ 64 + 8 * c.n * 83
+        have : 8 * c.n * 83 = 8 * c.n * 73 + 80 * c.n := by omega
+        omega
+      · exact Or.inr (sl_lt c h (by
+          by_cases ht : i = TMP
+          · exact .inr (.inr ⟨fun e => h6 ⟨ht, e⟩, by decide⟩)
+          · exact .inl ht))
     · refine Or.inl ?_
       have := Nat.mul_le_mul_left (8 * c.n) h
       dsimp only
       simp (disch := sl_ne) only [sl_eq]
       show 64 + 8 * c.n * 73 + 4 * c.winJ ≤ 64 + 8 * c.n * i
-      have : 8 * c.n * 83 ≤ 8 * c.n * i := this
-      have : 8 * c.n * 83 = 8 * c.n * 73 + 80 * c.n := by omega
+      have : 8 * c.n * 84 ≤ 8 * c.n * i := this
+      have : 8 * c.n * 84 = 8 * c.n * 73 + 88 * c.n := by omega
       omega
 
 theorem winXQ (hc : BaseCfgOk c) (h9 : c.n ≤ 9) : WinX (winQ c) size where
   n := by show 1 ≤ c.n ∧ c.n ≤ 9; exact ⟨hc.n0, h9⟩
   tbl := by
     show c.sl WT < 2 ^ 31
-    simp (disch := sl_ne) only [sl_eq]; unfold WT; have : 8 * c.n * 83 ≤ 8 * 9 * 83 := Nat.mul_le_mul_right _ (by omega); omega
+    simp (disch := sl_ne) only [sl_eq]; unfold WT; have : 8 * c.n * 84 ≤ 8 * 9 * 84 := Nat.mul_le_mul_right _ (by omega); omega
   exy := by show c.sl TY = c.sl TX + 8 * c.n; simp (disch := sl_ne) only [sl_eq]; unfold TX TY; omega
   exz := by show c.sl TZ = c.sl TX + 16 * c.n; simp (disch := sl_ne) only [sl_eq]; unfold TX TZ; omega
 
@@ -146,18 +159,43 @@ theorem apart_winX {i : Nat} (hi : i < 45) :
     ∀ w ∈ winX c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
   simp only [winX, List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with rfl | rfl
-  · exact Or.inl (sl_lt c (show i < WK by unfold WK; omega))
-  · exact Or.inl (sl_lt c (show i < WB by unfold WB; omega))
+  by_cases h6 : i = TMP ∧ c.n = 6
+  · obtain ⟨rfl, h6⟩ := h6
+    rw [sl_eq' c TMP, ix_tmp6 c h6]
+    rcases hw with rfl | rfl
+    · refine Or.inr ?_
+      show c.winK + 16 * c.n ≤ _
+      unfold Cfg.winK; simp (disch := sl_ne) only [sl_eq]; unfold WK; omega
+    · refine Or.inr ?_
+      show c.winBits + 80 * c.n ≤ _
+      unfold Cfg.winBits; simp (disch := sl_ne) only [sl_eq]; unfold WB; omega
+  · have hT : i ≠ TMP ∨ 83 < WK ∨ (c.n ≠ 6 ∧ 55 < WK) := by
+      by_cases ht : i = TMP
+      · exact .inr (.inr ⟨fun e => h6 ⟨ht, e⟩, by decide⟩)
+      · exact .inl ht
+    have hT' : i ≠ TMP ∨ 83 < WB ∨ (c.n ≠ 6 ∧ 55 < WB) := by
+      by_cases ht : i = TMP
+      · exact .inr (.inr ⟨fun e => h6 ⟨ht, e⟩, by decide⟩)
+      · exact .inl ht
+    rcases hw with rfl | rfl
+    · exact Or.inl (sl_lt c (show i < WK by unfold WK; omega) hT)
+    · exact Or.inl (sl_lt c (show i < WB by unfold WB; omega) hT')
 
-/-- Slot `i ≥ 71` is past the tables of bits `j < 3`. -/
-theorem bits_le_sl {j t i : Nat} (hj : j < 3) (ht : t < 64 * c.n) (hi : 71 ≤ i) :
+/-- Slot `i ≥ 71` is past the tables of bits `j < 3` (but slot `83` for six
+words, in the temporary area's place). -/
+theorem bits_le_sl {j t i : Nat} (hj : j < 3) (ht : t < 64 * c.n) (hi : 71 ≤ i)
+    (h83 : i ≠ 83 ∨ c.n ≠ 6 := by first | exact .inl (by decide) | exact .inr (by omega)) :
     bitsAt c.n j + t + 1 ≤ c.sl i := by
-  rw [bitsAt_eq]; simp (disch := sl_ne) only [sl_eq]
+  have hix : ix c i = i := by
+    have hT : TMP = 2 := rfl
+    unfold ix
+    repeat' split
+    all_goals omega
+  rw [bitsAt_eq, sl_eq', hix]
   have := Nat.mul_le_mul_left (64 * c.n + 8) (show j ≤ 2 by omega)
   have := Nat.mul_le_mul_left (8 * c.n) hi
-  have : 8 * c.n * 71 = 8 * c.n * 45 + 208 * c.n := by omega
-  omega
+  have : 8 * c.n * 71 = 8 * c.n * 45 + 208 * c.n := by omega_arith
+  omega_arith
 
 theorem tbl_apart_winX {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n) :
     ∀ w ∈ winX c, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
@@ -171,21 +209,32 @@ theorem tbl_apart_winX {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n) :
 inversion's working area. -/
 theorem tbl_apart_slW' {l : List Nat} (hl : ∀ i ∈ l, i < 45 ∨ 71 ≤ i) {j t : Nat} (hj : j < 3)
     (ht : t < 64 * c.n) (hT : TMP ∉ l ∨ j ≠ 1 ∨ c.n ≠ 9 := by
-      first | exact .inl (by decide) | exact .inr (.inl (by decide)) | exact .inr (.inr (by omega))) :
+      first | exact .inl (by decide) | exact .inr (.inl (by decide)) | exact .inr (.inr (by omega_arith))) :
     ∀ w ∈ slW c l, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
   intro w hw
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
   rcases hl i hi with h | h
-  · rcases sl_apart_bits c h (hT.elim (fun h' => .inl fun e => h' (e ▸ hi)) .inr) (t + 1) (by omega)
+  · rcases sl_apart_bits c h (hT.elim (fun h' => .inl fun e => h' (e ▸ hi)) .inr) (t + 1) (by omega_arith)
       with h' | h'
-    · exact Or.inr (by dsimp only; omega)
+    · exact Or.inr (by dsimp only; omega_arith)
     · exact Or.inl h'
-  · exact Or.inl (bits_le_sl hj ht h)
+  · by_cases h6 : i = 83 ∧ c.n = 6
+    · obtain ⟨rfl, h6⟩ := h6
+      refine Or.inr ?_
+      dsimp only
+      rw [sl_eq' c 83, ix_83 c h6, bitsAt_eq]
+      show 64 + 8 * c.n * 2 + 8 * c.n ≤ _
+      have : 8 * c.n * 45 = 8 * c.n * 2 + 8 * c.n * 43 := by omega
+      omega
+    · exact Or.inl (bits_le_sl hj ht h (by
+        by_cases e : i = 83
+        · exact .inr fun h' => h6 ⟨e, h'⟩
+        · exact .inl e))
 
 theorem offset_eq (J : Nat) : WinCfg.offset J = 8 * geom J := by
   have := geom_mul J
   unfold WinCfg.offset
-  omega
+  omega_arith
 
 /-- The recoded scalar below `2^b`: `k + 8 Σ_{j<J} 16^j < 16^J` for
 `J = ⌈(b + 2) / 4⌉` (`Cfg.winJ`). -/
@@ -194,21 +243,21 @@ theorem recode_lt_bits {k b : Nat} (hk : k < 2 ^ b) :
   have hg := geom_mul ((b + 5) / 4)
   have h4 : 2 ^ b * 4 ≤ 16 ^ ((b + 5) / 4) := by
     rw [show (16 : Nat) = 2 ^ 4 by rfl, ← Nat.pow_mul, show 2 ^ b * 4 = 2 ^ (b + 2) by rw [Nat.pow_add]]
-    exact Nat.pow_le_pow_right (by decide) (by omega)
-  omega
+    exact Nat.pow_le_pow_right (by decide) (by omega_arith)
+  omega_arith
 
 /-! ## `d` below `2^nbits` -/
 
 theorem se_mask {m : Nat} (hm : m < 31) :
     (BitVec.ofNat 32 (2 ^ m - 1)).signExtend 64 = BitVec.ofNat 64 (2 ^ m - 1) := by
   have h : 2 ^ m - 1 < 2 ^ 31 := by
-    have := Nat.pow_lt_pow_right (show 1 < 2 by decide) hm; omega
+    have := Nat.pow_lt_pow_right (show 1 < 2 by decide) hm; omega_arith
   have hm' : (BitVec.ofNat 32 (2 ^ m - 1)).msb = false := by
-    rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat, decide_eq_false_iff_not]; omega
+    rw [BitVec.msb_eq_decide]; simp only [BitVec.toNat_ofNat, decide_eq_false_iff_not]; omega_arith
   rw [BitVec.signExtend_eq_setWidth_of_msb_false hm']
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- `r8 = [d] mod 2^m`. -/
 theorem movAnd_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d m : Nat}
@@ -221,7 +270,7 @@ theorem movAnd_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · have h64 : 2 ^ m - 1 < 2 ^ 64 := by
-      have := Nat.pow_lt_pow_right (show 1 < 2 by decide) (show m < 64 by omega); omega
+      have := Nat.pow_lt_pow_right (show 1 < 2 by decide) (show m < 64 by omega_arith); omega_arith
     rw [se_mask hm, BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h64,
       Nat.and_two_pow_sub_one_eq_mod]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -234,10 +283,10 @@ theorem mask_arith {L B T m : Nat} (hL : L < B) :
   have hlt : L + B * (T % 2 ^ m) < B * 2 ^ m := by
     have := Nat.mod_lt T hp
     have : B * (T % 2 ^ m) + B ≤ B * 2 ^ m := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ this
-    omega
+    omega_arith
   rw [show L + B * T = L + B * (T % 2 ^ m) + B * 2 ^ m * (T / 2 ^ m) by
     conv_lhs => rw [← hT]
-    rw [Nat.mul_add, Nat.mul_assoc]; omega]
+    rw [Nat.mul_add, Nat.mul_assoc]; omega_arith]
   rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hlt]
 
 /-- ECDH's `d` at `K` reduced below `2^nbits` (`maskK`). -/
@@ -255,8 +304,8 @@ theorem maskK_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base s
     obtain ⟨hm1, hm2⟩ := hc.mask hlt
     have hK := sl_le c h7 (i := K) (by decide)
     have hd : c.sl K + 8 * (c.n - 1) + 8 ≤ size := by
-      have : 8 * (c.n - 1) + 8 = 8 * c.n := by omega
-      omega
+      have : 8 * (c.n - 1) + 8 = 8 * c.n := by omega_arith
+      omega_arith
     rw [show ([.mov .r8 (.mem (sc (c.sl K + 8 * (c.n - 1)))),
         .alu .and .r8 (.imm (BitVec.ofNat 32 (2 ^ (c.nbits - 64 * (c.n - 1)) - 1))),
         .store (sc (c.sl K + 8 * (c.n - 1))) .r8] : List Instr) =
@@ -268,24 +317,24 @@ theorem maskK_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base s
     refine WP.mono (storeX_ok hs₁ .r8 hd) fun s₂ ⟨m₂, g₂, _, _, rd₂, wr₂⟩ => ?_
     have hs₂ : Scr s₂ base size := ⟨by rw [g₂]; exact hs₁.rdi, by rw [wr₂]; exact hs₁.wr, hs₁.nowrap⟩
     have O₂ : Outside base (c.sl K + 8 * (c.n - 1)) 8 s.mem s₂.mem := by
-      rw [m₂, k₁.2.1]; exact writeW_outside _ _ _ (by omega)
+      rw [m₂, k₁.2.1]; exact writeW_outside _ _ _ (by omega_arith)
     refine ⟨hs₂, ⟨fun r hr => by rw [g₂]; exact k₁.1 r hr, by rw [rd₂, k₁.2.2.1], by rw [wr₂, k₁.2.2.2]⟩,
       ?_, fun x hx => ?_⟩
     · -- The low words are kept, and the top word masked.
-      obtain ⟨k, hk⟩ : ∃ k, c.n = k + 1 := ⟨c.n - 1, by omega⟩
+      obtain ⟨k, hk⟩ : ∃ k, c.n = k + 1 := ⟨c.n - 1, by omega_arith⟩
       simp only [sv]
-      rw [hk, wordsVal_succ_top, wordsVal_succ_top, show k = c.n - 1 by omega,
-        O₂.wordsVal (by omega) (by omega), m₂, word_writeW_self]
+      rw [hk, wordsVal_succ_top, wordsVal_succ_top, show k = c.n - 1 by omega_arith,
+        O₂.wordsVal (by omega_arith) (by omega_arith), m₂, word_writeW_self]
       change _ + _ * (s₁.gpr .r8).toNat = _
       have hb : 2 ^ c.nbits = 2 ^ (64 * (c.n - 1)) * 2 ^ (c.nbits - 64 * (c.n - 1)) := by
-        rw [← Nat.pow_add]; congr 1; omega
+        rw [← Nat.pow_add]; congr 1; omega_arith
       rw [e₁, hb, mask_arith (wordsVal_lt _ _ _ _)]
     · rw [O₂ x (by
         have := hx _ (List.mem_singleton_self _)
         dsimp only at this
-        omega)]
+        omega_arith)]
   · rename_i hlt
-    have he : c.nbits = 8 * c.C.len := by have := hc.nbits_le; omega
+    have he : c.nbits = 8 * c.C.len := by have := hc.nbits_le; omega_arith
     refine WP.block_nil ⟨hs, ⟨fun _ _ => rfl, rfl, rfl⟩, ?_, Unch.refl _ _ _⟩
     rw [he, Nat.mod_eq_of_lt hk8]
 
@@ -309,7 +358,7 @@ theorem winMul_ok (hc : BaseCfgOk c) (hA : AM3 c.C) (h9 : c.n ≤ 9) (hC : Law c
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
       (tmv c.C c.n base s (c.sl ONEP)) P) {ks : Nat} (hks : ks < 45)
     (hk8 : sv c base s ks < 2 ^ c.nbits) {rest : Prog isa} {R : State → Prop}
-    (h : ∀ s', WinMulPost c base P (sv c base s ks) s s' → WP isa rest s' R) :
+    (h : ∀ s', WinMulPost c base P (sv c base s ks) s s' → WP isa rest s' R) (hkT : ks ≠ TMP := by decide) :
     WP isa (.seq (.seq (c.winPrep (c.sl ks)) (WinCfg.window (winQ c)).inline) rest) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
@@ -317,41 +366,41 @@ theorem winMul_ok (hc : BaseCfgOk c) (hA : AM3 c.C) (h9 : c.n ≤ 9) (hC : Law c
   have hsz : size = 8192 := rfl
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
   have hrec : wordsVal s.mem base (c.sl ks) c.n + 8 * geom c.winJ < 16 ^ c.winJ := recode_lt_bits hk8
   have hJle : c.winJ ≤ 16 * c.n + 1 := by
-    unfold Cfg.winJ; have := hc.len_hi; have := hc.nbits_le; omega
+    unfold Cfg.winJ; have := hc.len_hi; have := hc.nbits_le; omega_arith
   have hWK : c.sl WK + 16 * c.n ≤ size := by
     have := sl_le_win c h9 (i := WK + 1) (by decide)
     simp (disch := sl_ne) only [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
-  have hKW := sl_lt c (show ks < WK by unfold WK; omega)
+  have hKW := sl_lt c (show ks < WK by unfold WK; omega) (.inl hkT)
   have h16 : (16 : Nat) ^ c.winJ ≤ 2 ^ (64 * (c.n + 1)) := by
     rw [show (16 : Nat) = 2 ^ 4 by rfl, ← Nat.pow_mul]
-    exact Nat.pow_le_pow_right (by decide) (by omega)
+    exact Nat.pow_le_pow_right (by decide) (by omega_arith)
   have hJ : (winQ c).J = c.winJ := rfl
   have hK : c.winK = c.sl WK := rfl
   have hB : c.winBits = c.sl WB := rfl
-  have e82 : c.sl WK + 16 * c.n = c.sl WB := by simp (disch := sl_ne) only [sl_eq]; unfold WK WB; omega
-  have h4 := (hc.inv (by omega)).1
-  have hB8 : c.sl WB + 64 * (c.n + 1) ≤ c.sl WB + 80 * c.n := by omega
+  have e82 : c.sl WK + 16 * c.n = c.sl WB := by simp (disch := sl_ne) only [sl_eq]; unfold WK WB; omega_arith
+  have h4 := (hc.inv (by omega_arith)).1
+  have hB8 : c.sl WB + 64 * (c.n + 1) ≤ c.sl WB + 80 * c.n := by omega_arith
   have hBs : c.sl WB + 80 * c.n ≤ size := by
     have := sl_le_win c h9 (i := WB + 9) (by decide)
-    simp (disch := sl_ne) only [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
+    simp (disch := sl_ne) only [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega_arith
   rw [Cfg.winPrep]
   refine WP.seq (WP.seq (WP.seq ?_))
   rw [hK, offset_eq]
   refine WP.mono (addConst_ok hs (n := c.n) (src := c.sl ks) (dst := c.sl WK)
-    (c := 8 * geom c.winJ) h0 (sl_le c h7 hks) (by omega)
-    (Or.inl (by omega)) (by omega) (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+    (c := 8 * geom c.winJ) h0 (sl_le c h7 hks) (by omega_arith)
+    (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [hB]
-  refine WP.mono (bits_ok hs₁ (n := c.n + 1) (src := c.sl WK) (dst := c.sl WB) (by omega) (by omega)
-    (by omega) (by omega) (Or.inl (by omega))) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_
+  refine WP.mono (bits_ok hs₁ (n := c.n + 1) (src := c.sl WK) (dst := c.sl WB) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (Or.inl (by omega_arith))) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   rw [e₁] at b₂
   have U₂ : Unch base (winX c) s.mem s₂.mem :=
-    ((O₁.mono (o' := c.sl WK) (n' := 16 * c.n) (Nat.le_refl _) (by omega)).unch.trans
-      ((O₂.mono (o' := c.sl WB) (n' := 80 * c.n) (Nat.le_refl _) (by omega)).unch)).mono
+    ((O₁.mono (o' := c.sl WK) (n' := 16 * c.n) (Nat.le_refl _) (by omega_arith)).unch.trans
+      ((O₂.mono (o' := c.sl WB) (n' := 80 * c.n) (Nat.le_refl _) (by omega_arith)).unch)).mono
       (by intro w hw; simpa [winX, hK, hB] using hw)
   have F₂ := F.unch h7 hn fixedOk_winX U₂
   have e₂ : ∀ {i}, i < 45 → sv c base s₂ i = sv c base s i := fun hi =>
@@ -367,17 +416,17 @@ theorem winMul_ok (hc : BaseCfgOk c) (hA : AM3 c.C) (h9 : c.n ≤ 9) (hC : Law c
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
       · exact lt_of_eq_of_lt F₂.ap (hmont _)
       · exact lt_of_eq_of_lt ((e₂ (i := BP) (by decide)).trans hbp) (hmont _)
-      · exact lt_of_eq_of_lt F₂.zero (by omega)
+      · exact lt_of_eq_of_lt F₂.zero (by omega_arith)
       · exact lt_of_eq_of_lt (e₂ (i := PX) (by decide)) hpx
       · exact lt_of_eq_of_lt (e₂ (i := PY) (by decide)) hpy
-      · exact lt_of_eq_of_lt F₂.onep (Nat.mod_lt _ (by omega))
+      · exact lt_of_eq_of_lt F₂.onep (Nat.mod_lt _ (by omega_arith))
     · show Rep _ (tmv c.C c.n base s₂ (c.sl PX)) (tmv c.C c.n base s₂ (c.sl PY))
         (tmv c.C c.n base s₂ (c.sl ONEP)) P
       rw [tv (by decide), tv (by decide), tv (by decide)]; exact hrep
     · rw [hJ] at ht
-      exact b₂ t (by omega)
+      exact b₂ t (by omega_arith)
   refine WP.mono (window_ok (winLayQ hc h9) (winXQ hc h9) hpR hC hA hP hc.p_lt (hmont 1)
-    (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hs₂ hM₂ hF
+    (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hs₂ (hM₂.inl c.hot) hF
     (by rw [hJ]; exact hrec) (Nat.le_add_left _ _)) fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_
   rw [winW_eq] at U₃
   rw [hJ, Nat.add_sub_cancel] at R₃
@@ -390,7 +439,7 @@ theorem winMul_ok (hc : BaseCfgOk c) (hA : AM3 c.C) (h9 : c.n ≤ 9) (hC : Law c
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp [powClob, clob]
   exact ⟨hs₂.of_keepRegs K₃ (rdi_not_powClob _), ((k₁.mono c₁).trans (k₂.mono c₂)).trans K₃,
-    U₂.trans U₃, M₃, L₃, R₃⟩
+    U₂.trans U₃, M₃.of_inl, L₃, R₃⟩
 
 /-! ## `[d]P`, by windows or the ladder, and `Z^(p-2)` -/
 

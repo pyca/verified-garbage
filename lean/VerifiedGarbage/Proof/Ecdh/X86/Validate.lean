@@ -371,6 +371,20 @@ theorem ladWkQ (hc : CfgOk c) : LadWk (Impl.Ecdh.X86.Cfg.ladderQ c) c.SP c.C.p s
   bits := wk_below_bits c 0
   bits_top := by have := bitsAt_le c hc.n10 (j := 0) (by decide); exact this
 
+/-- The ladder's slots are below the point functions'. -/
+theorem ladPtQ (h : 3 ≤ c.n ∧ c.n ≤ 6) : Point.LadPt (Impl.Ecdh.X86.Cfg.ladderQ c) where
+  k3 := h.1
+  sl := by
+    have e : ladSlots (Impl.Ecdh.X86.Cfg.ladderQ c) = [AP, B3P, PX, PY, ONEP, RX, RY, RZ, T0, T1, T2, T3,
+      T4, T5, DX, DY, DZ, TX, TY, TZ].map c.sl := rfl
+    rw [e]
+    intro x hx
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+    have : ∀ i ∈ [AP, B3P, PX, PY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ],
+      i < 45 := by decide
+    exact sl_below_pt h.2 (this i hi)
+  mo := sl_below_pt h.2 (i := MP) (by decide)
+
 theorem ladWxQ_eq (c : Cfg) : ladWx (Impl.Ecdh.X86.Cfg.ladderQ c) c.wk = slW c [RX, RY, RZ, T0, T1, T2, T3,
     T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] ++ wkW c := rfl
 
@@ -381,7 +395,7 @@ structure LadPost (c : Cfg) (base : Addr) (Q : Nat → Fe c.C → Fe c.C → Fe 
   gpr : ∀ r, r ∉ powClob → s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
-  unch : Unch base (slWk c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
+  unch : Unch base (slWkP c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
     TX, TY, TZ, TMP] ++ pwW c) s.mem s'.mem
   q : Q 0 (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY)) (tmv c.C c.n base s' (c.sl RZ))
   acc_lt : sv c base s' ACC < c.C.p
@@ -391,7 +405,8 @@ structure LadPost (c : Cfg) (base : Addr) (Q : Nat → Fe c.C → Fe c.C → Fe 
 /-- The ladder, from `R = O`, then `Z^(p-2)`, for any invariant `Q` that an
 iteration keeps and that `Q (64 n)` accepts `O`. -/
 theorem ladPow_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : Keep c s₀ base s)
-    (hsp₁ : SpOk (ladder (Impl.Ecdh.X86.Cfg.ladderQ c) c.SP) c.stk) (hsp₂ : SpOk c.pPow c.stk) {k : Nat} {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
+    (hA : 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s base Impl.Ecdh.X86.Args.ecdh.ao)
+    (hsp₁ : SpOk (Point.ladderP (Impl.Ecdh.X86.Cfg.ladderQ c) c.SP Impl.Ecdh.X86.Args.ecdh.ao) c.stk) (hsp₂ : SpOk c.pPow c.stk) {k : Nat} {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
     (hstep : Step (Impl.Ecdh.X86.Cfg.ladderQ c) c.C base s k Q) (hO : Q (64 * c.n) 0 1 0)
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
@@ -400,7 +415,8 @@ theorem ladPow_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : K
     {rest : Prog isa} {R : State → Prop}
     (h : ∀ s', LadPost c base Q s s' → Frame (s₀.wr ++ [below (s₀.gpr .esp) c.stk]) s₀.mem s'.mem →
       WP isa rest s' R) :
-    WP isa (.seq (ladder (Impl.Ecdh.X86.Cfg.ladderQ c) c.SP) (.seq c.pPow rest)) s R := by
+    WP isa (.seq (Point.ladderP (Impl.Ecdh.X86.Cfg.ladderQ c) c.SP Impl.Ecdh.X86.Args.ecdh.ao)
+      (.seq c.pPow rest)) s R := by
   have hs := K.scr
   have F := K.fixed
   have h0 := hc.n0
@@ -429,12 +445,12 @@ theorem ladPow_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : K
     show Q _ (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ))
     rw [hrx, hry, hrz, toM_cmont hc, toM_zero]
     exact hO
-  refine WP.seq (K.withSp hsp₁ (WP.mono (ladder_ok (L := Impl.Ecdh.X86.Cfg.ladderQ c) (k := k) (ladLayQ hc)
-    (ladWkQ hc) hpR hs (modP_of hc F.mp) hlt hstep hR ht₀)
-    fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ f₅ => ?_))
-  rw [ladWxQ_eq] at U₅
+  refine WP.seq (K.withSp hsp₁ (WP.mono (Point.ladderP_ok (L := Impl.Ecdh.X86.Cfg.ladderQ c) (k := k)
+    (ladLayQ hc) (ladWkQ hc) ladPtQ hpR hs hA (modP_of hc F.mp) hlt hstep hR ht₀)
+    fun s₅ ⟨K₅, U₅, M₅, L₅, R₅, _⟩ f₅ => ?_))
+  rw [Point.ladWp, ladWxQ_eq] at U₅
   have hs₅ := hs.of_keeps K₅ (by decide)
-  have F₅ := F.unch h7 hn (fixedOk_slWk (by decide)) U₅
+  have F₅ := F.unch h7 hn (fixedOk_slWkP (by decide)) U₅
   have k₅ : Keep c s₀ base s₅ := ⟨hs₅, by rw [K₅.1 _ (by decide), K.esp], by rw [K₅.2.1, K.rd],
     by rw [K₅.2.2, K.wr], F₅, f₅, K.sp_lo⟩
   have rz₅ : wordsVal s₅.mem base (c.sl RZ) c.n < c.C.p :=
@@ -442,7 +458,7 @@ theorem ladPow_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : K
   refine WP.seq (k₅.withSp hsp₂ (WP.mono (pPow_ok hc hs₅ M₅ rz₅
     F₅.onep (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht)]
+      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWkP (by decide) (by decide) ht)]
       exact ht₁ t ht)
     (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ f₆ => h s₆ ?_ f₆))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>

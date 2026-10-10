@@ -6,7 +6,7 @@ import VerifiedGarbage.TCB.X86_64.Isa
 
 `scalCode` holds of code whose every instruction is one of a few scalar ones
 (moves, loads and stores of general-purpose registers, their arithmetic,
-`lea` of a static, `mul`, `mulx`, `adcx`, `adox`, `cmov`, 32-bit arithmetic):
+`lea` of a static, `mul`, `imul`, `mulx`, `adcx`, `adox`, `cmov`, 32-bit arithmetic):
 such code leaves `xmm` and `ymmHi` as they are (`WP.vecKeep`), which a proof
 about it need not state.
 -/
@@ -16,7 +16,7 @@ namespace VG.X86_64
 /-- The instructions that read and write only general-purpose registers, flags and memory. -/
 def scalarI : Instr → Bool
   | .mov .. | .store .. | .alu .. | .mov32 .. | .movzx8 .. | .movImm64 .. | .leaSym .. | .mul ..
-  | .store8 .. | .shift .. | .mulx .. | .adcx .. | .adox .. | .cmov .. | .alu32 .. => true
+  | .store8 .. | .shift .. | .mulx .. | .adcx .. | .adox .. | .cmov .. | .alu32 .. | .imul .. => true
   | _ => false
 
 theorem execAlu32_vec {op : AluOp} {d : Reg} {src : Src} {s t : State} (h : execAlu32 op d src s = some t) :

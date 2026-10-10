@@ -83,4 +83,33 @@ theorem Scr.of_keeps {rs : List Reg} {s s' : State} {base : Addr} {size : Nat}
     (hs : Scr s base size) (h : Keeps rs s s') (hr : .rdi ∉ rs) : Scr s' base size :=
   ⟨(h.1 _ hr).trans hs.rdi, h.2.2.2 ▸ hs.wr, hs.nowrap⟩
 
+/-- The modulus's `n` words at `M.mo`, unless it is P-384's `p` (`M.sparse`),
+whose reductions never read them. -/
+def MoVal (M : Mod) (m : Nat) (mem : Mem) (base : Addr) : Prop :=
+  M.sparse = false → wordsVal mem base M.mo M.n = m
+
+theorem MoVal.lt {M : Mod} {m : Nat} {mem : Mem} {base : Addr} (hok : M.ok m = true)
+    (h : MoVal M m mem base) : m < 2 ^ (64 * M.n) := by
+  cases hs : M.sparse
+  · exact (h hs) ▸ wordsVal_lt _ _ _ _
+  · obtain ⟨hn, rfl⟩ := Mod.ok_sparse hok hs
+    rw [hn]; decide +kernel
+
+theorem MoVal.of_val {M : Mod} {m : Nat} {mem : Mem} {base : Addr}
+    (h : wordsVal mem base M.mo M.n = m) : MoVal M m mem base := fun _ => h
+
+/-- `ModOk` for the products' rounds: the modulus's words in memory only if
+the reduction reads them (`MoVal`). -/
+structure ModOkR (M : Mod) (size m : Nat) (mem : Mem) (base : Addr) : Prop where
+  n0 : 0 < M.n
+  n7 : M.n < 7
+  mo : M.mo + 8 * M.n ≤ size
+  val : MoVal M m mem base
+  inv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0
+  red : M.ok m = true
+
+theorem _root_.VG.Proof.Mont.ModOk.toR {M : Mod} {size m : Nat} {mem : Mem} {base : Addr}
+    (h : ModOk M size m mem base) : ModOkR M size m mem base :=
+  ⟨h.n0, h.n7, h.mo, .of_val h.val, h.inv, h.red⟩
+
 end VG.Proof.Mont.X86_64

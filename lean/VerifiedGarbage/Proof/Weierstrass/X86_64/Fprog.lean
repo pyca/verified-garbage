@@ -48,6 +48,22 @@ structure ProgKeep (M : Mod) (base : Addr) (W : List Nat) (s s' : State) : Prop 
   mem : ∀ x, (∀ w ∈ W, ofs base x < w ∨ w + 8 * M.n ≤ ofs base x) →
     (ofs base x < M.tmp ∨ M.tmp + 8 * M.n ≤ ofs base x) → s'.mem x = s.mem x
 
+/-- `Inv` and `ProgKeep` do not depend on whether the products are written
+out (`Mod.inl`). -/
+theorem Inv.inl {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} {V : List Nat}
+    {E : Nat → Fin m} {s : State} (b : Bool) (h : Inv M base size m Sl V E s) :
+    Inv { M with inl := b } base size m Sl V E s :=
+  ⟨h.scr, h.mod.inl b, h.sl, h.lt, h.val⟩
+
+theorem Inv.of_inl {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} {V : List Nat}
+    {E : Nat → Fin m} {s : State} {b : Bool} (h : Inv { M with inl := b } base size m Sl V E s) :
+    Inv M base size m Sl V E s :=
+  ⟨h.scr, h.mod.of_inl, h.sl, h.lt, h.val⟩
+
+theorem ProgKeep.of_inl {M : Mod} {base : Addr} {W : List Nat} {s s' : State} {b : Bool}
+    (h : ProgKeep { M with inl := b } base W s s') : ProgKeep M base W s s' :=
+  ⟨h.gpr, h.rd, h.wr, h.mem⟩
+
 theorem ProgKeep.refl (M : Mod) (base : Addr) (W : List Nat) (s : State) : ProgKeep M base W s s :=
   ⟨fun _ _ => rfl, rfl, rfl, fun _ _ _ => rfl⟩
 
@@ -182,8 +198,8 @@ theorem fprog_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat →
     rw [k₂.mem x (fun w hw => hx w (List.mem_cons_of_mem _ hw)) ht,
       k₁.mem x (hx _ (List.mem_cons_self ..)) ht]
 
-/-- One operation, a call for a product modulo P-521's `p` with the functions'
-temporary area (`opProg`), inlined (`Code.inline`). -/
+/-- One operation, a call for a product modulo P-521's or P-384's `p` with the
+functions' temporary area (`opProg`), inlined (`Code.inline`). -/
 theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hm : UnitMod m (2 ^ (64 * M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) {op : FOp} (hS : ∀ x ∈ op.out :: op.ins, Sl x)
@@ -206,14 +222,23 @@ theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
           cases hc
           simp only [Option.getD_some]
           unfold Mont.callOf at hcall
+          simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
+            forall_eq_or_imp, forall_eq] at hS hR
           split at hcall
           · rename_i hM
-            obtain ⟨-, hred, ht⟩ := hM
+            obtain ⟨hn9, hred, ht⟩ := hM
             have hbody : body = Mont.mulFn ∨ body = Mont.mulFnX := by
               split at hcall <;> (cases hcall; simp)
-            simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
-              forall_eq_or_imp, forall_eq] at hS hR
-            refine WP.mono (Mont.mulCall_ok hbody hI.scr hI.mod hred ht hlow (hI.lt b hR.2))
+            refine WP.mono (Mont.mulCall_ok hbody hI.scr hI.mod hred ht (hn9 ▸ hlow) (hI.lt b hR.2))
+              fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+            rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
+          split at hcall
+          · rename_i hM
+            obtain ⟨hn6, hsp, ht, -⟩ := hM
+            have hbody : body = Mont.mulFn6 false ∨ body = Mont.mulFn6 true := by
+              split at hcall <;> (cases hcall; simp)
+            refine WP.mono (Mont.mulCall6_ok hbody hI.scr hI.mod hsp ht (hn6 ▸ hlow) (hL.le o hS.1)
+              (hL.le a hS.2.1) (hL.le b hS.2.2) (hI.lt b hR.2))
               fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
             rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
           · cases hcall

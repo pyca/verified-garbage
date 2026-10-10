@@ -30,7 +30,7 @@ theorem slotMulJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
     {s : State} (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base) {o a b : Nat}
     (ho : o ∈ jwWs K) (ha : a ∈ jwSlots K) (hb : b ∈ jwSlots K) (hla : wordsVal s.mem base a K.M.n < C.p)
     (hlb : wordsVal s.mem base b K.M.n < C.p) :
-    WP isa (.block (opCode K.M (.mul o a b))) s fun s' => Scr s' base size ∧
+    WP isa (opProg K.M (.mul o a b)).inline s fun s' => Scr s' base size ∧
       KeepRegs (clob K.M.n) s s' ∧ Unch base (jwW K) s.mem s'.mem ∧
       ModOkW K.M size C.p s'.mem base ∧ wordsVal s'.mem base o K.M.n < C.p ∧
       tmv C K.M.n base s' o = tmv C K.M.n base s a * tmv C K.M.n base s b ∧
@@ -46,7 +46,7 @@ theorem slotMulJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
       · exact hla
       · exact hlb
   have hSo : o ∈ jwSlots K := ws_mem ho
-  refine WP.mono (fop_ok hL.lay hp I (op := .mul o a b) (fun x hx => by
+  refine WP.mono (opProg_ok hL.lay hp I (op := .mul o a b) (fun x hx => by
       simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl
       · exact hSo
@@ -68,6 +68,13 @@ theorem slotMulJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
     rcases hw with rfl | rfl
     · exact hL.lay.apart x o hx hSo hxo
     · exact hL.lay.tmp x hx
+
+theorem fprogB_single (M : Mod) (op : FOp) : fprogB M [op] = opProg M op := rfl
+
+theorem map_eq_flatMapJ (l : List Nat) (f : Nat → FOp) : l.map f = l.flatMap fun i => [f i] := by
+  induction l with
+  | nil => rfl
+  | cons a l ih => simp only [List.map_cons, List.flatMap_cons, ih, List.singleton_append]
 
 theorem jwW_append : ∀ w ∈ jwW K ++ jwW K, w ∈ jwW K := fun _ hw =>
   (List.mem_append.mp hw).elim id id
@@ -222,11 +229,12 @@ theorem prodJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {
     {s₀ : State} (hs : Scr s₀ base size) (hM : ModOkW K.M size C.p s₀.mem base)
     (hT : JTblOk K C base P 16 s₀) :
     WP isa (fprogB K.M K.prodOps).inline s₀ (PreInvJ K C base size s₀ 15) := by
-  rw [fprogB_wp (callOf_of_ne (by rcases hL.n46 with h | h <;> omega)), JacWinCfg.prodOps, fprog, List.flatMap_map]
+  rw [JacWinCfg.prodOps, map_eq_flatMapJ]
   have I₀ : PreInvJ K C base size s₀ 0 s₀ :=
     ⟨hs, ⟨fun _ _ => rfl, rfl, rfl⟩, Unch.refl _ _ _, hM, fun j h2 h1 => absurd h2 (by omega),
       fun j h2 h1 => absurd h2 (by omega), fun _ _ _ => rfl⟩
-  refine block_range_ok (N := 15) (fun i hi t I => ?_) 15 (Nat.le_refl _) s₀ I₀
+  refine fprogB_range_ok (N := 15) (fun i hi t I => ?_) 15 (Nat.le_refl _) s₀ I₀
+  rw [fprogB_single]
   -- `Z_{i+2}` is as at `s₀`.
   have zS := ent_slots (K := K) (m := i + 2) (c := 2) (by omega) (by omega) (by decide)
   have ez : wordsVal t.mem base (K.ent (i + 2) 2) K.M.n = wordsVal s₀.mem base (K.ent (i + 2) 2) K.M.n :=
@@ -340,7 +348,7 @@ theorem keep6 {t t₁ t₂ t₃ t₄ t₅ t₆ : State} {base : Addr} {m : Nat}
 theorem backJ_step (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) {base : Addr}
     {u₀ : State} {X Y Z : Nat → Fe C} (B : BackStartJ K C base u₀ X Y Z) {i : Nat} (hi : i < 15) {t : State}
     (I : BackInvJ K C base size u₀ X Y Z i t) :
-    WP isa (.block (fprog K.M (K.backOps (16 - i)))) t (BackInvJ K C base size u₀ X Y Z (i + 1)) := by
+    WP isa (fprogB K.M (K.backOps (16 - i))).inline t (BackInvJ K C base size u₀ X Y Z (i + 1)) := by
   generalize hm : 16 - i = m
   have hm2 : 2 ≤ m := by omega
   have hm16 : m ≤ 16 := by omega
@@ -381,22 +389,22 @@ theorem backJ_step (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
   have nz := cprod_ne_zero16 hC B.nz (m - 1) hm1' hm15
   obtain ⟨tr1, tr2⟩ := trick_step hC nz (B.nz m hm1 hm16)
   rw [← hcm] at tr1 tr2
-  rw [JacWinCfg.backOps, fprog_cons, WP.block_append_iff]
+  rw [JacWinCfg.backOps, fprogB_cons_iff]
   -- `D.x = E.x c_{m-1}`.
   refine WP.mono (slotMulJ_ok hL hp I.scr I.mod Dw Es cS I.ex_lt
     (by rw [ec]; exact (B.c _ hm1' hm15').1)) fun t₁ ⟨s₁, k₁, U₁, M₁, l₁, v₁, e₁⟩ => ?_
-  rw [fprog_cons, WP.block_append_iff]
+  rw [fprogB_cons_iff]
   have ex₁ := e₁ _ Es dxe.symm
   -- `E.x = E.x Z_m`.
   refine WP.mono (slotMulJ_ok hL hp s₁ M₁ Ew Es zS (by rw [ex₁]; exact I.ex_lt)
     (by rw [e₁ _ zS (dm 2 (by decide)).1.symm, ez]; exact (B.z m hm1 hm16).1))
     fun t₂ ⟨s₂, k₂, U₂, M₂, l₂, v₂, e₂⟩ => ?_
-  rw [fprog_cons, WP.block_append_iff]
+  rw [fprogB_cons_iff]
   have dx₂ := e₂ _ Ds dxe
   -- `D.y = D.x²`.
   refine WP.mono (slotMulJ_ok hL hp s₂ M₂ Dyw Ds Ds (by rw [dx₂]; exact l₁) (by rw [dx₂]; exact l₁))
     fun t₃ ⟨s₃, k₃, U₃, M₃, l₃, v₃, e₃⟩ => ?_
-  rw [fprog_cons, WP.block_append_iff]
+  rw [fprogB_cons_iff]
   have xx₃ : wordsVal t₃.mem base (K.ent m 0) K.M.n = wordsVal u₀.mem base (K.ent m 0) K.M.n := by
     rw [e₃ _ (ws_mem xw) (dm 0 (by decide)).2.1.symm, e₂ _ (ws_mem xw) (dm 0 (by decide)).2.2.2.symm,
       e₁ _ (ws_mem xw) (dm 0 (by decide)).1.symm, ex0]
@@ -404,14 +412,14 @@ theorem backJ_step (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
   refine WP.mono (slotMulJ_ok hL hp s₃ M₃ xw (ws_mem xw) Dys
     (by rw [xx₃]; exact (B.x m hm1 hm16).1) l₃)
     fun t₄ ⟨s₄, k₄, U₄, M₄, l₄, v₄, e₄⟩ => ?_
-  rw [fprog_cons, WP.block_append_iff]
+  rw [fprogB_cons_iff]
   have dy₄ := e₄ _ Dys (dm 0 (by decide)).2.1
   have dx₄ : wordsVal t₄.mem base K.D.x K.M.n = wordsVal t₂.mem base K.D.x K.M.n := by
     rw [e₄ _ Ds (dm 0 (by decide)).1, e₃ _ Ds dxy]
   -- `D.z = D.y D.x`.
   refine WP.mono (slotMulJ_ok hL hp s₄ M₄ Dzw Dys Ds (by rw [dy₄]; exact l₃) (by rw [dx₄, dx₂]; exact l₁))
     fun t₅ ⟨s₅, k₅, U₅, M₅, l₅, v₅, e₅⟩ => ?_
-  rw [fprog_cons, fprog, List.flatMap_nil, List.append_nil]
+  rw [fprogB_single]
   have yy₅ : wordsVal t₅.mem base (K.ent m 1) K.M.n = wordsVal u₀.mem base (K.ent m 1) K.M.n := by
     rw [e₅ _ (ws_mem yw) (dm 1 (by decide)).2.2.1.symm,
       e₄ _ (ws_mem yw) (ent_ne hL hm1 hm1 (by decide) (by decide) (Or.inr (by decide))),
@@ -475,11 +483,11 @@ theorem backJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
     WP isa (fprogB K.M K.normOps).inline u₀ fun t => Scr t base size ∧
       KeepRegs (clob K.M.n) u₀ t ∧ Unch base (jwW K) u₀.mem t.mem ∧ ModOkW K.M size C.p t.mem base ∧
       ∀ j, 1 ≤ j → j ≤ 16 → DoneJ K C base X Y Z t j := by
-  rw [fprogB_wp (callOf_of_ne (by rcases hL.n46 with h | h <;> omega)), JacWinCfg.normOps, fprog_append, fprog_flatMapJ, WP.block_append_iff]
+  rw [JacWinCfg.normOps, fprogB_append_iff]
   have I₀ : BackInvJ K C base size u₀ X Y Z 0 u₀ :=
     ⟨hs, ⟨fun _ _ => rfl, rfl, rfl⟩, Unch.refl _ _ _, hM, hel, hev, fun j hj hj' => absurd hj' (by omega),
       fun _ _ _ _ => rfl⟩
-  refine WP.mono (block_range_ok (N := 15) (fun i hi t I => backJ_step hL hp hC B hi I) 15 (Nat.le_refl _) u₀ I₀)
+  refine WP.mono (fprogB_range_ok (N := 15) (fun i hi t I => backJ_step hL hp hC B hi I) 15 (Nat.le_refl _) u₀ I₀)
     fun t I => ?_
   obtain ⟨dxy, dxz, dyz, dxe, dye, dze⟩ := DEJ_ne hL
   obtain ⟨Dw, Dyw, Dzw, Ew⟩ := DE_ws hL
@@ -498,23 +506,23 @@ theorem backJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
       ⟨ent_ne hL (by omega) (by omega) (by decide) (by decide) (Or.inl (by omega)),
         ent_ne hL (by omega) (by omega) (by decide) (by decide) (Or.inl (by omega))⟩
   have hex : tmv C K.M.n base t K.E.x = Z 1 ^ (C.p - 2) := by rw [I.ex]; rfl
-  rw [fprog_cons, WP.block_append_iff]
+  rw [fprogB_cons_iff]
   -- `D.y = E.x²`.
   refine WP.mono (slotMulJ_ok hL hp I.scr I.mod Dyw Es Es I.ex_lt I.ex_lt)
     fun t₁ ⟨s₁, k₁, U₁, M₁, l₁, v₁, e₁⟩ => ?_
-  rw [fprog_cons, WP.block_append_iff]
+  rw [fprogB_cons_iff]
   -- `X_1 = X_1 D.y`.
   refine WP.mono (slotMulJ_ok hL hp s₁ M₁ xw (ws_mem xw) Dys
     (by rw [e₁ _ (ws_mem xw) (d1 0 (by decide)).2.1.symm, ex1]; exact (B.x 1 (Nat.le_refl _) (by omega)).1) l₁)
     fun t₂ ⟨s₂, k₂, U₂, M₂, l₂, v₂, e₂⟩ => ?_
-  rw [fprog_cons, WP.block_append_iff]
+  rw [fprogB_cons_iff]
   have dy₂ := e₂ _ Dys (d1 0 (by decide)).2.1
   have ee₂ : wordsVal t₂.mem base K.E.x K.M.n = wordsVal t.mem base K.E.x K.M.n := by
     rw [e₂ _ Es (d1 0 (by decide)).2.2.2, e₁ _ Es dye.symm]
   -- `D.z = D.y E.x`.
   refine WP.mono (slotMulJ_ok hL hp s₂ M₂ Dzw Dys Es (by rw [dy₂]; exact l₁) (by rw [ee₂]; exact I.ex_lt))
     fun t₃ ⟨s₃, k₃, U₃, M₃, l₃, v₃, e₃⟩ => ?_
-  rw [fprog_cons, fprog, List.flatMap_nil, List.append_nil]
+  rw [fprogB_single]
   have yy₃ : wordsVal t₃.mem base (K.ent 1 1) K.M.n = wordsVal t.mem base (K.ent 1 1) K.M.n := by
     rw [e₃ _ (ws_mem yw) (d1 1 (by decide)).2.2.1.symm,
       e₂ _ (ws_mem yw) (ent_ne hL (Nat.le_refl _) (Nat.le_refl _) (by decide) (by decide) (Or.inr (by decide))),

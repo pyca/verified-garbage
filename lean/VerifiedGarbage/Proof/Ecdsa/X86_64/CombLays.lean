@@ -54,7 +54,13 @@ theorem tmp_apart_comb {d : CombData} (hd : CombOk c d) :
     have := hd.cover
     rw [ix_tmp c h9, h9] at *
     omega
-  · right; rw [ix_of_ne c (.inr h9)]; simp only [TMP]; omega
+  · by_cases h6 : c.n = 6
+    · left
+      have hw := Nat.mul_le_mul_right (c.combJ d.w) hd.w.1
+      have := hd.cover
+      rw [ix_tmp6 c h6, h6] at *
+      omega
+    · right; rw [ix_of_ne c (.inr fun e => e.elim h9 h6)]; simp only [TMP]; omega
 
 theorem combLay {d : CombData} (hc : BaseCfgOk c) (hd : CombOk c d) : CombLay (c.combCfg d).toComb size := by
   have hn := hc.n0
@@ -100,7 +106,7 @@ theorem tcombLay {d : CombData} (hc : BaseCfgOk c) (hd : CombOk c d) : TCombLay 
     rw [hbits, hk]
     by_cases hT : i = TMP
     · subst hT
-      rcases tmp_apart_bits c (j := 0) (.inl (by decide)) (64 * c.n + 8 * (c.combCfg d).zw) (by omega) with h | h
+      rcases tmp_apart_bits c (j := 0) (.inl (by decide)) (by decide) (64 * c.n + 8 * (c.combCfg d).zw) (by omega) with h | h
       · exact Or.inr (by dsimp only; omega)
       · exact Or.inl (by dsimp only; omega)
     · exact Or.inr (sl_below_bits c (hl i hi) 0 0 (.inl hT))
@@ -193,7 +199,7 @@ theorem apart_zw {d : CombData} (hd : CombOk c d) {i : Nat} (hi : i < 45) :
   by_cases hT : i = TMP
   · subst hT
     have := zw_le hd
-    rcases tmp_apart_bits c (j := 0) (.inl (by decide)) (64 * c.n + 8 * (c.combCfg d).zw) (by omega) with h | h
+    rcases tmp_apart_bits c (j := 0) (.inl (by decide)) (by decide) (64 * c.n + 8 * (c.combCfg d).zw) (by omega) with h | h
     · exact Or.inl (by dsimp only; omega)
     · exact Or.inr (by dsimp only; omega)
   · exact Or.inl (sl_below_bits c hi 0 _ (.inl hT))

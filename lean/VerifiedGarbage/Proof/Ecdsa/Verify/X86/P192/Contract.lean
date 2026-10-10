@@ -30,12 +30,12 @@ def verifyX86 : Contract X86.isa where
     let scratch : Region := ⟨(arg s 3).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 20, 20⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 28, 28⟩
     s.rd = [pk, digest, sig, args] ∧ s.wr = [scratch] ∧ pk.Disjoint scratch ∧ digest.Disjoint scratch ∧
       sig.Disjoint scratch ∧ args.Disjoint scratch ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 49 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 24 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 48 ≤ 2 ^ 32 ∧
       (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
-      20 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint scratch
+      28 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint scratch
   post s s' := BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) =
     if vf s.mem ((arg s 0).setWidth 64) ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) then 1 else 0
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧

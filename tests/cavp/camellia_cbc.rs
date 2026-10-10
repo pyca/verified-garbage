@@ -3,7 +3,7 @@
 //! RFC 3713's and NTT's vectors) on every length up to a few groups of eight
 //! blocks, for each key length.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use verified_garbage::camellia_cbc::{CamelliaCbc, Error};
 use verified_garbage::camellia_ecb::CamelliaEcb;

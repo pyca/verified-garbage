@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Impl.X448.AArch64.Fast
+import VerifiedGarbage.Impl.X448.AArch64.Field56
 
 /-!
 # X448 on AArch64: the code as a literal

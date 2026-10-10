@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
 import VerifiedGarbage.Proof.Ecdsa.X86.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
 
 /-!
 # ECDSA on x86 (32-bit): the setup and the tables of bits
@@ -56,6 +57,22 @@ theorem Keep.withSp {s₀ : State} {base : Addr} {s : State} (hK : Keep c s₀ b
   WP.mono (WP.spFrame hsp (by rw [hK.esp]; exact hK.sp_lo) h) fun s' ⟨q, f⟩ =>
     q (hK.whole.trans (by rw [hK.wr, hK.esp] at f; exact f))
 
+/-- The argument holding the working space, for the ladder's calls of the
+point functions, after code that changed memory only where the stages may. -/
+theorem Keep.ladArg {s₀ s : State} (K : Keep c s₀ (ptr s₀ A.sc) s) (hp : SetupPre c A s₀)
+    (hd : ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) c.stk], Region.Disjoint ⟨argAddr s₀ A.sc, 4⟩ r)
+    (h28 : 28 ≤ c.stk) : Point.LadArg s (ptr s₀ A.sc) A.ao := by
+  have hsc : A.sc ∈ A.idx := List.mem_cons_self
+  have hv : s.mem.readW (argAddr s₀ A.sc) 32 = arg s₀ A.sc :=
+    K.whole.readW (Region.contains_self _ _) hd (by decide)
+  have he : s.gpr .edi = arg s₀ A.sc := by
+    have := congrArg (BitVec.setWidth 32) K.scr.edi
+    simpa only [ptr, BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64), BitVec.setWidth_eq] using this
+  refine Point.LadArg.of h28 (by rw [K.esp]; exact hp.sp_lo)
+    (by rw [K.esp]; have := hp.sp_fit _ hsc; simp only [Args.ao]; omega) K.scr.nowrap
+    (by rw [K.esp]; exact hp.stk_sc) (by rw [K.esp, K.rd, K.wr]; exact hp.arg_in _ hsc)
+    (by rw [K.esp, he]; exact hv) (by rw [K.esp]; exact hp.arg_sc _ hsc)
+
 /-- A change only in `[q, q + n)`, one of the regions `L`. -/
 theorem frame_of_outside {L : List Region} {q : Addr} {n : Nat} {m m' : Mem}
     (ho : Outside q 0 n m m') (hin : (⟨q, n⟩ : Region) ∈ L) : Frame L m m' := fun x hx => by
@@ -90,6 +107,9 @@ structure St₁ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : 
   gpr : ∀ r, r ∉ [.eax, .ebx, .edx, .esi, .edi] → s.gpr r = s₀.gpr r
   /-- The setup and the tables write only the working space. -/
   ws : Outside base 0 size s₀.mem s.mem
+  /-- The argument holding the working space, for the ladder's calls of the
+  point functions. -/
+  arg : 28 ≤ c.stk → Point.LadArg s base A.ao
 
 /-- The setup, then the three tables. -/
 theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : Prog isa} {Q : State → Prop}
@@ -148,7 +168,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
     by rw [v₄ (by decide), P.k], by rw [v₄ (by decide), P.d], by rw [v₄ (by decide), P.e],
     by rw [v₄ (by decide)]; exact hc' (RX, 0) (by simp [Cfg.consts]),
     by rw [v₄ (by decide)]; exact hc' (RY, c.mont 1) (by simp [Cfg.consts]),
-    by rw [v₄ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, K₄.1, hws⟩
+    by rw [v₄ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, K₄.1, hws, ?_⟩
   · exact (fx.unch h7 hn (fixedOk_tbl 0) u₂ |>.unch h7 hn (fixedOk_tbl 1) u₃).unch h7 hn (fixedOk_tbl 2) u₄
   · have hF := sl_le c h7 (i := FLAG) (by decide)
     have ap : ∀ j, ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG :=
@@ -166,6 +186,20 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
       ← v₂ (by decide)]
   · intro t ht
     rw [b₄ t ht, hn2, ← v₃ (by decide)]
+  · intro h28
+    have esp₄ : s₄.gpr .esp = s₀.gpr .esp := K₄.1 _ (by decide)
+    have hsc : A.sc ∈ A.idx := List.mem_cons_self
+    have hs₄ := hs₃.of_keeps k₄ (by decide)
+    have hv : s₄.mem.readW (argAddr s₀ A.sc) 32 = arg s₀ A.sc :=
+      (frame_of_outside hws (List.mem_singleton_self _)).readW (Region.contains_self _ _) (fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact hp.arg_sc _ hsc) (by decide)
+    have he : s₄.gpr .edi = arg s₀ A.sc := by
+      have := congrArg (BitVec.setWidth 32) hs₄.edi
+      simpa only [ptr, BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64), BitVec.setWidth_eq] using this
+    refine Point.LadArg.of h28 (by rw [esp₄]; exact hp.sp_lo)
+      (by rw [esp₄]; have := hp.sp_fit _ hsc; simp only [Args.ao]; omega) hn (by rw [esp₄]; exact hp.stk_sc)
+      (by rw [esp₄, K₄.2.1, K₄.2.2]; exact hp.arg_in _ hsc) (by rw [esp₄, he]; exact hv)
+      (by rw [esp₄]; exact hp.arg_sc _ hsc)
 
 theorem toM_cmont (hc : CfgOk c) (x : Nat) : toM c.C.p (2 ^ (64 * c.n)) (c.mont x) = Fin.ofNat c.C.p x :=
   toM_mont (unitMod_pow_two hc.p_odd _)

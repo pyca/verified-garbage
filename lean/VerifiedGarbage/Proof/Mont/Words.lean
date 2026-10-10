@@ -178,6 +178,15 @@ structure ModOkW (M : Mod) (size m : Nat) (mem : Mem) (base : Addr) : Prop where
   inv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0
   red : M.ok m = true
 
+/-- `ModOkW` does not depend on whether the products are written out (`Mod.inl`). -/
+theorem ModOkW.inl {M : Mod} {size m : Nat} {mem : Mem} {base : Addr} (b : Bool)
+    (h : ModOkW M size m mem base) : ModOkW { M with inl := b } size m mem base :=
+  ⟨h.n0, h.mo, h.tmp, h.sep, h.val, h.inv, h.red⟩
+
+theorem ModOkW.of_inl {M : Mod} {size m : Nat} {mem : Mem} {base : Addr} {b : Bool}
+    (h : ModOkW { M with inl := b } size m mem base) : ModOkW M size m mem base :=
+  ⟨h.n0, h.mo, h.tmp, h.sep, h.val, h.inv, h.red⟩
+
 theorem ModOk.toW {M : Mod} {size m : Nat} {mem : Mem} {base : Addr}
     (h : ModOk M size m mem base) : ModOkW M size m mem base :=
   ⟨h.n0, h.mo, h.tmp, h.sep, h.val, h.inv, h.red⟩
@@ -196,6 +205,11 @@ structure Lay (M : Mod) (size : Nat) (Sl : Nat → Prop) : Prop where
   apart : ∀ x y, Sl x → Sl y → x ≠ y → x + 8 * M.n ≤ y ∨ y + 8 * M.n ≤ x
   mo : ∀ x, Sl x → x + 8 * M.n ≤ M.mo ∨ M.mo + 8 * M.n ≤ x
   tmp : ∀ x, Sl x → x + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ x
+
+/-- `Lay` does not depend on whether the products are written out (`Mod.inl`). -/
+theorem Lay.inl {M : Mod} {size : Nat} {Sl : Nat → Prop} (b : Bool) (h : Lay M size Sl) :
+    Lay { M with inl := b } size Sl :=
+  ⟨h.le, h.apart, h.mo, h.tmp⟩
 
 /-- Slots on a grid: `d + 8 n i` for `lo ≤ i < hi`, with the modulus and the
 temporary area on the grid below `lo`. -/

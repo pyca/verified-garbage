@@ -36,22 +36,26 @@ theorem fixedOk_winXJ : FixedOk c (winXJ c) :=
     rw [List.mem_singleton.mp hw]
     exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_bits c (show 12 < 45 by decide) 2 0))
 
+/-- For six words, the inversion's working area ends below the temporary area. -/
+theorem invW_below_tmp (h6 : c.n = 6) : bitsAt c.n 2 + invTbl c.n ≤ c.sl TMP := by
+  rw [sl_tmp6 c h6, bitsAt_eq, h6]; decide
+
 theorem apart_winXJ {i : Nat} (hi : i < 45) :
     ∀ w ∈ winXJ c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
   apart_append (apart_winX hi) fun w hw => by
     rw [List.mem_singleton.mp hw]
-    exact Or.inl (show c.sl i + 8 * c.n ≤ bitsAt c.n 2 by have := sl_below_bits c hi 2 0; omega)
+    exact sl_apart_hi c hi (Nat.le_refl _) invW_below_tmp
 
 theorem tbl_apart_winXJ {j t : Nat} (hj : j < 2) (ht : t < 64 * c.n) :
     ∀ w ∈ winXJ c, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t :=
-  apart_append (tbl_apart_winX (by omega) ht) fun w hw => by
+  apart_append (tbl_apart_winX (by omega_arith) ht) fun w hw => by
     rw [List.mem_singleton.mp hw]
     refine Or.inl ?_
     dsimp only
     rw [bitsAt_eq, bitsAt_eq]
-    have := Nat.mul_le_mul_left (64 * c.n + 8) (show j + 1 ≤ 2 by omega)
+    have := Nat.mul_le_mul_left (64 * c.n + 8) (show j + 1 ≤ 2 by omega_arith)
     rw [Nat.mul_succ] at this
-    omega
+    omega_arith
 
 
 /-- What `mulQJ4` and the power may write: what `mulQ` and the power may,
@@ -78,12 +82,13 @@ theorem invLayW (hc : CfgOk c) (h9 : c.n ≤ 9) (h4 : 4 ≤ c.n) :
     simp only [bitsAt_eq, invTbl]; show _ ≤ 8192
     have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)
     omega
-  have below : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ bitsAt c.n 2 := fun hi => by
-    have := sl_below_bits c hi 2 0; omega
+  have below : ∀ {i}, i < 45 → i ≠ TMP → c.sl i + 8 * c.n ≤ bitsAt c.n 2 := fun hi hT => by
+    have := sl_below_bits c hi 2 0 (.inl hT); omega
   exact ⟨h4, show c.n < 10 by omega, sl_le c h7 (i := TX) (by decide), sl_le c h7 (i := RZ) (by decide), hT,
     sl_le c h7 (i := MP) (by decide), sl_le c h7 (i := TMP) (by decide), sl_apart c (by decide),
-    Or.inl (below (by decide)), Or.inl (below (by decide)), sl_apart c (by decide),
-    Or.inr (below (i := TMP) (by decide)), sl_apart c (by decide), Or.inl (below (by decide)),
+    Or.inl (below (by decide) (by decide)), Or.inl (below (by decide) (by decide)), sl_apart c (by decide),
+    (sl_apart_hi c (i := TMP) (by decide) (Nat.le_refl _) invW_below_tmp).symm, sl_apart c (by decide),
+    Or.inl (below (by decide) (by decide)),
     sl_apart c (by decide)⟩
 
 /-- The inversion of the window method in Jacobian coordinates, as the
@@ -96,22 +101,22 @@ theorem invSpecQ (hc : CfgOk c) (h9 : c.n ≤ 9) {base : Addr} :
   have h7 := hc.n10
   refine ⟨fun t ht hM hz => ?_, fun w hw => ?_, fun w hw => ?_⟩
   · exact WP.mono (sp (invLayW hc h9 h4) (by have := hc.p_ge; omega) (unitMod_pow_two hc.p_odd (64 * c.n))
-      ht hM hz ⟨ip.B1, ip.B16, ip.C, ip.Cpos, ip.Cn, ip.bound⟩) fun t' ⟨a, b, d, e⟩ => ⟨a, b, d, e⟩
+      ht hM.of_inl hz ⟨ip.B1, ip.B16, ip.C, ip.Cpos, ip.Cn, ip.bound⟩) fun t' ⟨a, b, d, e⟩ => ⟨a, b, d, e⟩
   · simp only [invW, List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl
     · exact Or.inl rfl
     · refine Or.inr (Or.inr ⟨Or.inl (show c.sl MP + 8 * c.n ≤ bitsAt c.n 2 by
-        have := sl_below_bits c (i := MP) (by decide) 2 0; omega), fun x hx => ?_⟩)
+        have := sl_below_bits c (i := MP) (by decide) 2 0; omega_arith), fun x hx => ?_⟩)
       rw [winSlots_eq] at hx
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-      have key : ∀ i ∈ roI ++ otherI ++ tblI, i < 45 ∨ 83 ≤ i := by decide
+      have key : ∀ i ∈ roI ++ otherI ++ tblI, i < 45 ∨ 84 ≤ i := by decide
       rcases key i hi with h | h
-      · exact Or.inl (show c.sl i + 8 * c.n ≤ bitsAt c.n 2 by have := sl_below_bits c h 2 0; omega)
+      · exact sl_apart_hi c h (Nat.le_refl _) invW_below_tmp
       · refine Or.inr ?_
         show bitsAt c.n 2 + invTbl c.n ≤ c.sl i
         rw [bitsAt_eq]; simp (disch := sl_ne) only [sl_eq]; simp only [invTbl]
         have := Nat.mul_le_mul_left (8 * c.n) h
-        omega
+        omega_arith
     · exact Or.inr (Or.inl rfl)
   · simp only [invW, List.mem_cons, List.not_mem_nil, or_false] at hw
     have hb : (winQ c).bits = c.sl WB := rfl
@@ -122,7 +127,14 @@ theorem invSpecQ (hc : CfgOk c) (h9 : c.n ≤ 9) {base : Addr} :
       show bitsAt c.n 2 + invTbl c.n ≤ c.sl WB
       rw [bitsAt_eq]; simp (disch := sl_ne) only [sl_eq]; simp only [invTbl]; unfold WB
       omega
-    · exact Or.inr (sl_lt c (show TMP < WB by decide))
+    · by_cases h6 : c.n = 6
+      · refine Or.inl ?_
+        show c.sl WB + 4 * c.winJ ≤ c.sl TMP
+        have hJle : c.winJ ≤ 16 * c.n + 1 := by
+          unfold Cfg.winJ; have := hc.len_hi; have := hc.nbits_le; omega
+        rw [sl_tmp6 c h6]; simp (disch := sl_ne) only [sl_eq]; unfold WB
+        omega
+      · exact Or.inr (sl_lt c (show TMP < WB by decide) (.inr (.inr ⟨h6, by decide⟩)))
 
 /-! ## The window method -/
 
@@ -136,7 +148,7 @@ theorem winMulJ_ok (hc : CfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) (hO : PrimeOrd
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
       (tmv c.C c.n base s (c.sl ONEP)) P) {ks : Nat} (hks : ks < 45)
     (hk8 : sv c base s ks < 2 ^ c.nbits) {rest : Prog isa} {R : State → Prop}
-    (h : ∀ s', WinMulPostJ c base P (sv c base s ks) s s' → WP isa rest s' R) :
+    (h : ∀ s', WinMulPostJ c base P (sv c base s ks) s s' → WP isa rest s' R) (hkT : ks ≠ TMP := by decide) :
     WP isa (.seq (.seq (c.winPrep (c.sl ks))
       (WinCfg.windowJ (winQ c) (InvCfg.inv (Impl.Ecdh.X86_64.Cfg.invWin c))).inline) rest) s R := by
   have h0 := hc.n0
@@ -145,41 +157,41 @@ theorem winMulJ_ok (hc : CfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) (hO : PrimeOrd
   have hsz : size = 8192 := rfl
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
   have hrec : wordsVal s.mem base (c.sl ks) c.n + 8 * geom c.winJ < 16 ^ c.winJ := recode_lt_bits hk8
   have hJle : c.winJ ≤ 16 * c.n + 1 := by
-    unfold Cfg.winJ; have := hc.len_hi; have := hc.nbits_le; omega
+    unfold Cfg.winJ; have := hc.len_hi; have := hc.nbits_le; omega_arith
   have hWK : c.sl WK + 16 * c.n ≤ size := by
     have := sl_le_win c h9 (i := WK + 1) (by decide)
     simp (disch := sl_ne) only [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
-  have hKW := sl_lt c (show ks < WK by unfold WK; omega)
+  have hKW := sl_lt c (show ks < WK by unfold WK; omega) (.inl hkT)
   have h16 : (16 : Nat) ^ c.winJ ≤ 2 ^ (64 * (c.n + 1)) := by
     rw [show (16 : Nat) = 2 ^ 4 by rfl, ← Nat.pow_mul]
-    exact Nat.pow_le_pow_right (by decide) (by omega)
+    exact Nat.pow_le_pow_right (by decide) (by omega_arith)
   have hJ : (winQ c).J = c.winJ := rfl
   have hK : c.winK = c.sl WK := rfl
   have hB : c.winBits = c.sl WB := rfl
-  have e82 : c.sl WK + 16 * c.n = c.sl WB := by simp (disch := sl_ne) only [sl_eq]; unfold WK WB; omega
-  have h4 := (hc.inv (by omega)).1
-  have hB8 : c.sl WB + 64 * (c.n + 1) ≤ c.sl WB + 80 * c.n := by omega
+  have e82 : c.sl WK + 16 * c.n = c.sl WB := by simp (disch := sl_ne) only [sl_eq]; unfold WK WB; omega_arith
+  have h4 := (hc.inv (by omega_arith)).1
+  have hB8 : c.sl WB + 64 * (c.n + 1) ≤ c.sl WB + 80 * c.n := by omega_arith
   have hBs : c.sl WB + 80 * c.n ≤ size := by
     have := sl_le_win c h9 (i := WB + 9) (by decide)
-    simp (disch := sl_ne) only [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
+    simp (disch := sl_ne) only [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega_arith
   rw [Cfg.winPrep]
   refine WP.seq (WP.seq (WP.seq ?_))
   rw [hK, offset_eq]
   refine WP.mono (addConst_ok hs (n := c.n) (src := c.sl ks) (dst := c.sl WK)
-    (c := 8 * geom c.winJ) h0 (sl_le c h7 hks) (by omega)
-    (Or.inl (by omega)) (by omega) (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+    (c := 8 * geom c.winJ) h0 (sl_le c h7 hks) (by omega_arith)
+    (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [hB]
-  refine WP.mono (bits_ok hs₁ (n := c.n + 1) (src := c.sl WK) (dst := c.sl WB) (by omega) (by omega)
-    (by omega) (by omega) (Or.inl (by omega))) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_
+  refine WP.mono (bits_ok hs₁ (n := c.n + 1) (src := c.sl WK) (dst := c.sl WB) (by omega_arith) (by omega_arith)
+    (by omega_arith) (by omega_arith) (Or.inl (by omega_arith))) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   rw [e₁] at b₂
   have U₂ : Unch base (winX c) s.mem s₂.mem :=
-    ((O₁.mono (o' := c.sl WK) (n' := 16 * c.n) (Nat.le_refl _) (by omega)).unch.trans
-      ((O₂.mono (o' := c.sl WB) (n' := 80 * c.n) (Nat.le_refl _) (by omega)).unch)).mono
+    ((O₁.mono (o' := c.sl WK) (n' := 16 * c.n) (Nat.le_refl _) (by omega_arith)).unch.trans
+      ((O₂.mono (o' := c.sl WB) (n' := 80 * c.n) (Nat.le_refl _) (by omega_arith)).unch)).mono
       (fun w hw => by rcases List.mem_append.mp hw with h | h <;> (rw [List.mem_singleton.mp h]; simp [winX, hK, hB]))
   have F₂ := F.unch h7 hn fixedOk_winX U₂
   have e₂ : ∀ {i}, i < 45 → sv c base s₂ i = sv c base s i := fun hi =>
@@ -195,21 +207,21 @@ theorem winMulJ_ok (hc : CfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) (hO : PrimeOrd
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
       · exact lt_of_eq_of_lt F₂.ap (hmont _)
       · exact lt_of_eq_of_lt ((e₂ (i := BP) (by decide)).trans hbp) (hmont _)
-      · exact lt_of_eq_of_lt F₂.zero (by omega)
+      · exact lt_of_eq_of_lt F₂.zero (by omega_arith)
       · exact lt_of_eq_of_lt (e₂ (i := PX) (by decide)) hpx
       · exact lt_of_eq_of_lt (e₂ (i := PY) (by decide)) hpy
-      · exact lt_of_eq_of_lt F₂.onep (Nat.mod_lt _ (by omega))
+      · exact lt_of_eq_of_lt F₂.onep (Nat.mod_lt _ (by omega_arith))
     · show Rep _ (tmv c.C c.n base s₂ (c.sl PX)) (tmv c.C c.n base s₂ (c.sl PY))
         (tmv c.C c.n base s₂ (c.sl ONEP)) P
       rw [tv (by decide), tv (by decide), tv (by decide)]; exact hrep
     · rw [hJ] at ht
-      exact b₂ t (by omega)
+      exact b₂ t (by omega_arith)
   have hJ2 : 2 ≤ c.winJ := by
     unfold Cfg.winJ
     have hnb := hc.n_bits
     by_contra hlt
     have : 2 ^ c.nbits ≤ 2 ^ 2 := Nat.pow_le_pow_right (by decide) (by omega)
-    omega
+    omega_arith
   have hP0 : P ≠ .infinity := by
     intro e
     have hz := (hrep.z_eq_zero_iff).mpr e
@@ -218,7 +230,7 @@ theorem winMulJ_ok (hc : CfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) (hO : PrimeOrd
       rw [F.onep]; exact toM_one hpR
     exact hC.one_ne_zero (h1 ▸ hz)
   refine WP.mono (windowJ_ok (winLayQ hc h9) (winXQ hc h9) hpR hC hc.am3 hO hP hP0 hc.p_lt (hmont 1)
-    (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) (invSpecQ hc h9) hs₂ hM₂ hF
+    (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) (invSpecQ hc h9) hs₂ (hM₂.inl c.hot) hF
     (by rw [hJ]; exact hrec) (Nat.le_add_left _ _) (by rw [hJ]; exact hJ2)
     (by rw [hJ]; exact winE_two_bound hJ2 hk8 hbd)) fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_
   rw [winW_eq] at U₃
@@ -242,7 +254,7 @@ theorem winMulJ_ok (hc : CfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) (hO : PrimeOrd
       · exact List.mem_append_right _ hw
       · exact List.mem_append_right _ (List.mem_map.mpr ⟨TX, by decide, rfl⟩)
       · exact List.mem_append_left _ (List.mem_append_right _ (List.mem_singleton_self _))
-      · exact List.mem_append_right _ (List.mem_map.mpr ⟨TMP, by decide, rfl⟩), M₃, L₃, R₃⟩
+      · exact List.mem_append_right _ (List.mem_map.mpr ⟨TMP, by decide, rfl⟩), M₃.of_inl, L₃, R₃⟩
 
 
 /-- `mulPow_ok` for `mulQJ4`. -/
@@ -316,7 +328,7 @@ theorem mulQJ4_w (hc : CfgOk c) : MulW c (mulQJ4W c) where
     have := hc.n0
     rcases apart_append (apart_append (apart_winXJ (c := c) (i := FLAG) (by decide)) (apart_slW (by decide)))
       (apart_pwW (by decide) (by decide)) w hw with h | h
-    · exact Or.inl (by omega)
+    · exact Or.inl (by omega_arith)
     · exact Or.inr h
 
 end VG.Proof.Ecdh.X86_64

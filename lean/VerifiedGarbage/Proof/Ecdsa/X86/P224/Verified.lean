@@ -67,13 +67,13 @@ theorem pre_of {s : State} (h : signX86.pre s) : Pre p224 s := by
     h22⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22⟩
 
-/-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
+/-- No instruction writes `esp`, and the calls use 28 bytes of stack. -/
 theorem sign_sp : SpOk signP224 p224.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem sign_x86 (hL : Weierstrass.Law Spec.P224.curve) (s : State) (hs : signX86.pre s) :
     ∃ t s', Exec isa signP224 s t s' ∧ abiPreserved s s' ∧ signX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := sign_ok p224_ok hL sign_sp hp
+  obtain ⟨t, s', he, K, hpost⟩ := sign_ok p224_ok hL rfl sign_sp hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.ret hp⟩, ?_⟩
   swap
   · simp only [signX86, BitVec.setWidth_append_eq_right]
@@ -102,7 +102,7 @@ holding `out` and `scratch` known to be the base addresses of the writable
 regions. -/
 def τ₀ : VG.X86.Taint.T :=
   { regs := .ofList [.esp], flags := false, lens := [56, 8192], argLen := 24, argBases := [(4, 0), (20, 1)],
-    room := 20 }
+    room := 28 }
 
 theorem wf₀ {s : State} (hp : Pre p224 s) : VG.X86.Taint.Wf τ₀ s := by
   have hsc := hp.sc_fit; have ho := hp.out_fit; have hs := hp.sp_fit
@@ -166,14 +166,14 @@ def signWide : Contract isa :=
     let scratch : Region := ⟨(arg s 4).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 20⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 20, 20⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 28, 28⟩
     s.rd = [d, digest, k] ∧ s.wr = [out, scratch, args] ∧ out.Disjoint scratch ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint k ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧ k.Disjoint scratch ∧
       args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 56 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 28 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 28 ≤ 2 ^ 32 ∧
       (arg s 3).toNat + 28 ≤ 2 ^ 32 ∧ (arg s 4).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧
-      20 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch }
+      28 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch }
 
 def signRd (s : State) : List Region :=
   [⟨(arg s 1).setWidth 64, 28⟩, ⟨(arg s 2).setWidth 64, 28⟩, ⟨(arg s 3).setWidth 64, 28⟩, ⟨argAddr s 0, 20⟩]
@@ -202,7 +202,7 @@ def satState : State where
   rd := [⟨0x2000, 28⟩, ⟨0x3000, 28⟩, ⟨0x4000, 28⟩]
   wr := [⟨0x1000, 56⟩, ⟨0x8000, 8192⟩, ⟨0x20004, 20⟩]
 
-theorem signWide_implies : signWide.Implies (Spec.Ecdsa.P224.inst.signContract X86.abi 20) := by
+theorem signWide_implies : signWide.Implies (Spec.Ecdsa.P224.inst.signContract X86.abi 28) := by
   have a0 : arg satState 0 = 0x1000 := by decide
   have a1 : arg satState 1 = 0x2000 := by decide
   have a2 : arg satState 2 = 0x3000 := by decide
@@ -215,7 +215,7 @@ theorem signWide_implies : signWide.Implies (Spec.Ecdsa.P224.inst.signContract X
     signX86, sig] [a0, a1, a2, a3, a4, e, esp] using satState
 
 theorem sign_verified (hL : Weierstrass.Law Spec.P224.curve) :
-    Verified X86.target signP224 (Spec.Ecdsa.P224.inst.signContract X86.abi 20) := by
+    Verified X86.target signP224 (Spec.Ecdsa.P224.inst.signContract X86.abi 28) := by
   have hsat := signWide_implies.sat_left
   have satLocal : ∃ s, signX86.pre s := hsat.elim fun s h => ⟨_, signWide_pre s h⟩
   have verifiedLocal : Verified X86.target signP224 signX86 :=

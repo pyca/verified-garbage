@@ -314,7 +314,6 @@ open VG.Spec.X25519 (P) in
 private theorem val4_twoP : val4 (BitVec.ofNat 64 (2 ^ 64 - 38)) (BitVec.allOnes 64)
     (BitVec.allOnes 64) (BitVec.allOnes 64) = 2 * P := by
   simp only [VG.Proof.X25519.X86_64.val4, BitVec.toNat_ofNat, BitVec.toNat_allOnes, P]
-  norm_num
 
 open VG.Spec.X25519 (P) in
 /-- `negWords`: `r8`–`r11` is `2p - [x]`, which is `-[x]` modulo `p`, for any
@@ -469,7 +468,7 @@ theorem negField_ok {s : State} {base : Addr} (hs : Scr s base) {x : Nat}
       have h0 : VG.Proof.X25519.toFe (val4 (u.gpr .r8) (u.gpr .r9) (u.gpr .r10) (u.gpr .r11)) =
           VG.Proof.X25519.toFe 0 - VG.Proof.X25519.toFe (fe s.mem base x) :=
         VG.Proof.X25519.toFe_sub (by simp only [hu, Nat.zero_mod])
-      rw [h0, VG.Proof.X25519.toFe_zero, zero_sub]
+      rw [h0, VG.Proof.X25519.toFe_zero]; grind
 
 /-- `negField_ok` for the whole scratch (the comb's regions), by running it on
 the first 4096 bytes, as `swapFieldWide_ok` does for `cswap`. -/

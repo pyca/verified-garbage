@@ -9,11 +9,11 @@ open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
 /-- The joint loop's working space, where the window method works but the
 joint method does not: the generator's digits at `3304`, the cached `Z²`,
 `Z³` of the eight entries at `4096` (past the products' temporary area,
-`Mont.fnTmp`), and the selected pair at `7984`, past the table of odd
-multiples. `p521` already has `pubVerify`. -/
+`Mont.fnTmp`), and the selected pair at `5968`, between the window method's
+bits of `k` and its table of odd multiples. `p521` already has `pubVerify`. -/
 def publicJoint : Joint.Cfg :=
   ⟨p521.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
-    3304,"VG_P521_COMB",4096,7984⟩
+    3304,"VG_P521_COMB",4096,5968⟩
 
 def publicJointAdx : Joint.Cfg :=
   {publicJoint with K := p521x.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP}

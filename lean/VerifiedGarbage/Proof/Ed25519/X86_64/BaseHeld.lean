@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
 import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
 import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
 

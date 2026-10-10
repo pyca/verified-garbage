@@ -109,11 +109,12 @@ def bitsAt (n j : Nat) : Nat := slot n nslots + (64 * n + 8) * j
 /-- The window method's slots, past the tables of bits (over the inversion's
 working area, which each inversion initializes): `k + offset J`
 (`n + 1` words, two slots), the table of its bits (`64 (n + 1)` bytes, ten
-slots) and the table of points `[1 … 8]P` (24 slots), below `8192` bytes
-for up to nine words. -/
+slots) and, past slot `83` (the temporary area for six words, `sl`), the
+table of points `[1 … 8]P` (24 slots), below `8192` bytes for up to nine
+words. -/
 def WK : Nat := 71
 def WB : Nat := 73
-def WT : Nat := 83
+def WT : Nat := 84
 
 /-- A fixed-base comb for `G`: its digits' width `w`, its tables
 (`tbl[j][m - 1]` is `[m 2^(w j)]G`, affine, for `j < combJ` and
@@ -148,6 +149,10 @@ structure Cfg where
   public lookups (`u` is public) and compares `x mod n` with `r` in
   projective coordinates, without inverting `Z` (which needs `n < p ≤ 2n`). -/
   pubVerify : Bool := false
+  /-- Whether the loops that run the most products modulo `p`, the comb's
+  and the joint verifier's, write them out (`Mod.inl`, `MH`) where the
+  others call the function computing them. -/
+  hot : Bool := false
   /-- The bits the window method's scalars have: `8 len`, but for a curve
   whose `n` has fewer bits than its `len` bytes (P-521's `n < 2⁵²¹`, in 66
   bytes), as many as `n` has. ECDH reduces its `d` below `2^nbits` before
@@ -174,18 +179,23 @@ def sh : Nat := 8 * c.C.len - Spec.Ecdsa.nBits c.C
 /-- `x R mod p`. -/
 def mont (x : Nat) : Nat := x * c.R % c.C.p
 
-/-- Slot `i`; for nine words (P-521), whose products modulo `p` are calls of
-a function (`Mont.callOf`), the temporary area (`TMP`) is in that function's
-own working space, which a call changes: in slot `55`'s place
-(`Mont.fnTmp`), over the table of the bits of `p - 2` (`bitsAt 1`), which
-only the power `pow` reads, for more than nine words; slot `55` (which
-nothing uses) is in its place, so that distinct slots stay apart. -/
+/-- Slot `i`; for nine words (P-521) and six (P-384), whose products modulo
+`p` are calls of a function (`Mont.callOf`), the temporary area (`TMP`) is in
+that function's own working space, which a call changes: for nine words in
+slot `55`'s place (`Mont.fnTmp`), over the table of the bits of `p - 2`
+(`bitsAt 1`), which only the power `pow` reads, for more than nine words; for
+six in slot `83`'s (`Mont.fnTmp6`), between the window method's table of bits
+and its table of points. Slot `55` or `83` (which nothing uses) is in its
+place, so that distinct slots stay apart. -/
 def sl (i : Nat) : Nat :=
-  slot c.n (if c.n = 9 then (if i = TMP then 55 else if i = 55 then TMP else i) else i)
+  slot c.n (if c.n = 9 then (if i = TMP then 55 else if i = 55 then TMP else i)
+    else if c.n = 6 then (if i = TMP then 83 else if i = 83 then TMP else i) else i)
 
 def MP' : Mod :=
   { n := c.n, mo := c.sl MP, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.p), red := Red.ofModulus c.n c.C.p,
     adx := c.adx, sparse := sparseOk c.n c.C.p }
+/-- `MP'`, but written out in the loops that run the most products (`hot`). -/
+def MH : Mod := { c.MP' with inl := c.hot }
 def MN' : Mod :=
   { n := c.n, mo := c.sl MN, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.n), adx := c.adx }
 
@@ -210,7 +220,7 @@ def combJ (w : Nat) : Nat := (64 * c.n + w - 1) / w
 curve's tables of constants, the `static` `d.tsym` (`Artifact.consts`), with
 `b R mod p` in `EM` (free until `scalar`). -/
 def combCfg (d : CombData) : TCombCfg where
-  M := c.MP'
+  M := c.MH
   S := { c.rcbSlots with b3 := c.sl EM }
   A := c.pt RX RY RZ
   E := c.pt TX TY TZ
@@ -276,7 +286,7 @@ def winTbl : Nat := c.sl WT
 scalar at `k`'s slot, with `b R mod p` at `bm` for the complete addition for
 `a = -3`. -/
 def winCfg (px py bm : Nat) : WinCfg where
-  M := c.MP'
+  M := c.MH
   S := { c.rcbSlots with b3 := c.sl bm }
   P := c.pt px py ONEP
   R := c.pt RX RY RZ

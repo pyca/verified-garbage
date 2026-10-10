@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Avx
+module
+
+public import VerifiedGarbage.TCB.X86_64.Avx
 
 /-!
 # x86-64 AVX-512 instructions
@@ -9,6 +11,8 @@ import VerifiedGarbage.TCB.X86_64.Avx
 embedded-broadcast memory operand (`ZBcstOp`, which `Isa.lean` runs since
 they read memory).
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

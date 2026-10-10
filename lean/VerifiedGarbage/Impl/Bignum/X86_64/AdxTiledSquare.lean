@@ -24,8 +24,8 @@ def rowsChoice (a : Nat) : Prog isa :=
     (.ite .e (.block []) (rows a))
 
 def rawCross (a : Nat) : Prog isa := .seq (.block (Adx.setup a))
-  (.seq Adx.zeroWin8 (.seq AdxHeader.save (.seq (.seq (AdxTri8.blocks a)
-    (rowsChoice a)) AdxHeader.restore)))
+  (.seq AdxHeader.save (.seq (.seq (AdxTri8.blocks a)
+    (rowsChoice a)) AdxHeader.restore))
 
 def rawSquare (a : Nat) : Prog isa := .seq (rawCross a)
   (.seq (.block (Adx.setup a)) (.seq (.block [.mov .r10 (.reg .rbx)]) AdxSquare.diagonalChoice))

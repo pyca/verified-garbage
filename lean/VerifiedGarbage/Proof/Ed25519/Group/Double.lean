@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Ed25519.Group.Extended
+import VerifiedGarbage.Proof.Ed25519.DblPoint
 
 /-!
 # Doubling with the dedicated formula
@@ -22,14 +23,6 @@ structure RepP (p : Point) (a : EPoint dZ) : Prop where
   y : toZ p.Y = a.y * toZ p.Z
 
 theorem Rep.proj {p : Point} {a : EPoint dZ} (h : Rep p a) : RepP p a := ⟨h.z, h.x, h.y⟩
-
-/-- `E = 2XY`, `G = Y² - X²`, `F = 2Z² - G`, `H = X² + Y²`, and
-`(EF, GH, FG, EH)`. -/
-def dblPoint (p : Point) : Point :=
-  ⟨(p.X * p.Y + p.X * p.Y) * (p.Z * p.Z + p.Z * p.Z - (p.Y * p.Y - p.X * p.X)),
-    (p.Y * p.Y - p.X * p.X) * (p.X * p.X + p.Y * p.Y),
-    (p.Z * p.Z + p.Z * p.Z - (p.Y * p.Y - p.X * p.X)) * (p.Y * p.Y - p.X * p.X),
-    (p.X * p.Y + p.X * p.Y) * (p.X * p.X + p.Y * p.Y)⟩
 
 theorem dblPoint_rep {p : Point} {a : EPoint dZ} (h : RepP p a) : Rep (dblPoint p) (a + a) := by
   have hon : -a.x ^ 2 + a.y ^ 2 = 1 + dZ * a.x ^ 2 * a.y ^ 2 := a.on

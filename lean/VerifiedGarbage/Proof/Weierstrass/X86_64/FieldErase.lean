@@ -21,6 +21,12 @@ from the same taint (`Taint.constantTime_mapBlocks`).
 
 namespace VG.Proof.Weierstrass.X86_64
 
+/-- A modulus whose products are not written out (`Mod.inl`) is itself with
+`inl := false`. -/
+theorem _root_.VG.Impl.Mont.Mod.with_inl_false {M : Impl.Mont.Mod} (h : M.inl = false) : { M with inl := false } = M := by
+  cases M; cases h; rfl
+
+
 open VG VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Mont
 
 /-- The code of the field operations without displacements and immediates:
@@ -124,7 +130,7 @@ theorem FieldTmpl.Ok.opProg (hT : T.Ok M) (op : FOp) :
         | some fb =>
           obtain ⟨f, body⟩ := fb
           rw [hf] at hc
-          by_cases hl : Impl.Weierstrass.X86_64.Mont.lowArgs o a b = true
+          by_cases hl : Impl.Weierstrass.X86_64.Mont.lowArgs M.n o a b = true
           · simp only [hl, ite_true, Option.some.injEq] at hc
             exact ⟨o, a, b, f, body, rfl, hc.symm⟩
           · simp only [hl] at hc; cases hc

@@ -84,7 +84,8 @@ theorem consts_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 32} {s : Sta
 
 /-- `vg_ecdsa_<curve>_verify` returns whether the specification's
 verification holds, and restores the callee-saved registers. -/
-theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verify c) c.stk)
+theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none)
+    (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verify c) c.stk)
     {s₀ : State} (hp : VPre c s₀) :
     WP isa (Impl.Ecdsa.Verify.X86.Cfg.verify c) s₀ fun s' => VKeep c s₀ s' ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
@@ -108,7 +109,9 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hsp : SpOk (Impl.Ecdsa.Verify.X
     exact peerPt_rep hC _ _ _ hM.px hM.py
   have hu : sv c (ptr s₀ 3) s₂ U < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
   have hv : sv c (ptr s₀ 3) s₂ V < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
-  refine points_ok hc hM
+  have hA : 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s₂ (ptr s₀ 3) Impl.Ecdsa.Verify.X86.Args.verify.ao := fun h =>
+    hM.keep.ladArg (A := Impl.Ecdsa.Verify.X86.Args.verify) hp.setup (vArgs_disjI hp (i := 3) (by decide)) (Cfg.stk_28 hcomb h.2)
+  refine points_ok hc hM hA
     (Q₁ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ 3) s₂ U >>> j) (G c.C)))
     (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ 3) s₂ V >>> j) P))
     (step_rep hC hc.onG ha hb hG)

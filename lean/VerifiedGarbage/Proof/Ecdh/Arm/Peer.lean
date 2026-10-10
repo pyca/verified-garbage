@@ -127,7 +127,7 @@ theorem sv_out {base : Addr} {m m' : Mem} {j : Nat} (h : Outside base (c.sl j) (
     (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 32) {i : Nat} (hi : i < 45) (hij : i ≠ j) :
     wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n := by
   have := sl_le c h7 hi
-  exact h.wordsVal (sl_apart c hij) (by omega)
+  exact h.wordsVal (sl_apart c hij) (by omega_arith)
 
 /-- The constants, the key's `x` and `y`, and the checks of its first byte,
 `x` and `y`, for a key that `q` points to. -/
@@ -151,7 +151,7 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
   have hp3 := hc.p_ge
   have hl8 := hc.len8
   have hlhi := hc.len_hi
-  have hF : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hF : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   have hR2 := sl_le c h7 (i := R2P) (by decide)
   have hB := sl_le c h7 (i := BP) (by decide)
   have hY := sl_le c h7 (i := QY) (by decide)
@@ -163,13 +163,13 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
   rw [peer_eq]
   -- The constants.
   refine VG.Proof.X25519.Arm.WP.append (setConst_ok hs hR2 (show c.R * c.R % c.C.p < 2 ^ (64 * c.n) from
-    Nat.lt_trans (Nat.mod_lt _ (by omega)) hpl)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+    Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hpl)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_rest k₁ (by decide)
   refine VG.Proof.X25519.Arm.WP.append (setConst_ok hs₁ hB (show c.mont c.C.b < 2 ^ (64 * c.n) from
-    Nat.lt_trans (Nat.mod_lt _ (by omega)) hpl)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+    Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hpl)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁.of_rest k₂ (by decide)
   have W₂ : Outside base 0 size s.mem s₂.mem :=
-    (O₁.mono (Nat.zero_le _) (by omega)).trans (O₂.mono (Nat.zero_le _) (by omega))
+    (O₁.mono (Nat.zero_le _) (by omega_arith)).trans (O₂.mono (Nat.zero_le _) (by omega_arith))
   have K₂ : Rest [.r4] s s₂ := k₁.trans k₂
   -- `peer + 1`
   refine wp_dp (op2_imm (by decide)) fun s₃ u₃ => ?_
@@ -180,14 +180,14 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
   have hb₃ : s₃.gpr .r6 = q32 + BitVec.ofNat 32 1 := by
     rw [u₃.gpr, K₂.gpr _ (by simp [hq4]), hq32]; rfl
   have ha₃ : State.addr (s₃.gpr .r6) = qa + BitVec.ofNat 64 1 := by
-    rw [hb₃, ← hq64]; exact ea (by omega)
+    rw [hb₃, ← hq64]; exact ea (by omega_arith)
   have ht₃ : (s₃.gpr .r6).toNat = q32.toNat + 1 := by
-    rw [hb₃, toNat_add_lt (by rw [toNat_imm (by decide)]; omega), toNat_imm (by decide)]
+    rw [hb₃, toNat_add_lt (by rw [toNat_imm (by decide)]; omega_arith), toNat_imm (by decide)]
   -- `x`
-  refine VG.Proof.X25519.Arm.WP.append (loadBytes_ok hs₃ (src := .r6) (by decide) hE (by omega) (by omega) hlhi
+  refine VG.Proof.X25519.Arm.WP.append (loadBytes_ok hs₃ (src := .r6) (by decide) hE (by omega_arith) (by omega_arith) hlhi
     (fun e he => ⟨_, by rw [hrw₃]; exact hin, by
-      rw [ha₃, Offset.add_add]; exact Offset.contains_base qa (by omega) (by omega)⟩)
-    (by rw [ha₃]; exact (hd.sub_left (Offset.sub_base qa (by omega))).sub_right (Offset.sub_base base hE)))
+      rw [ha₃, Offset.add_add]; exact Offset.contains_base qa (by omega_arith) (by omega_arith)⟩)
+    (by rw [ha₃]; exact (hd.sub_left (Offset.sub_base qa (by omega_arith))).sub_right (Offset.sub_base base hE)))
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   rw [ha₃, hm₃] at e₄
   rw [hm₃] at O₄
@@ -201,27 +201,27 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
     rw [u₅.gpr, k₄.gpr _ (by decide), hb₃]
     exact Offset.add_add _ _ _
   have ha₅ : State.addr (s₅.gpr .r6) = qa + BitVec.ofNat 64 (1 + c.C.len) := by
-    rw [hb₅, ← hq64]; exact ea (by omega)
+    rw [hb₅, ← hq64]; exact ea (by omega_arith)
   have ht₅ : (s₅.gpr .r6).toNat = q32.toNat + (1 + c.C.len) := by
-    rw [hb₅, toNat_add_lt (by rw [toNat_imm (by omega)]; omega), toNat_imm (by omega)]
+    rw [hb₅, toNat_add_lt (by rw [toNat_imm (by omega_arith)]; omega_arith), toNat_imm (by omega_arith)]
   -- `y`
-  refine VG.Proof.X25519.Arm.WP.append (loadBytes_ok hs₅ (src := .r6) (by decide) hY (by omega) (by omega) hlhi
+  refine VG.Proof.X25519.Arm.WP.append (loadBytes_ok hs₅ (src := .r6) (by decide) hY (by omega_arith) (by omega_arith) hlhi
     (fun e he => ⟨_, by rw [hrw₅]; exact hin, by
-      rw [ha₅, Offset.add_add]; exact Offset.contains_base qa (by omega) (by omega)⟩)
-    (by rw [ha₅]; exact (hd.sub_left (Offset.sub_base qa (by omega))).sub_right (Offset.sub_base base hY)))
+      rw [ha₅, Offset.add_add]; exact Offset.contains_base qa (by omega_arith) (by omega_arith)⟩)
+    (by rw [ha₅]; exact (hd.sub_left (Offset.sub_base qa (by omega_arith))).sub_right (Offset.sub_base base hY)))
     fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
   rw [ha₅, u₅.mem] at e₆
   rw [u₅.mem] at O₆
   have K₆ : Rest [.r4, .r6] s s₆ := K₅.trans (k₆.mono (by simp))
   have hs₆ := hs.of_rest K₆ (by decide)
   have W₆ : Outside base 0 size s.mem s₆.mem :=
-    ((W₂.trans (O₄.mono (Nat.zero_le _) (by omega))).trans (O₆.mono (Nat.zero_le _) (by omega)))
+    ((W₂.trans (O₄.mono (Nat.zero_le _) (by omega_arith))).trans (O₆.mono (Nat.zero_le _) (by omega_arith)))
   have hrw₆ : s₆.rd ++ s₆.wr = s.rd ++ s.wr := by rw [K₆.rd, K₆.wr]
   have hq₆ : State.addr (s₆.gpr q) = qa := by rw [K₆.gpr _ hq, hq32, hq64]
   -- the first byte
   refine VG.Proof.X25519.Arm.WP.append (checkLead_ok c hs₆ (q := q)
     ⟨_, by rw [hrw₆]; exact hin, by
-      have := Offset.contains_base qa (d := 0) (n := 1) (k := 1 + 2 * c.C.len) (by omega) (by omega)
+      have := Offset.contains_base qa (d := 0) (n := 1) (k := 1 + 2 * c.C.len) (by omega_arith) (by omega_arith)
       rw [BitVec.add_zero] at this; rw [hq₆]; exact this⟩ hF) fun s₇ ⟨f₇, k₇, O₇⟩ => ?_
   rw [hq₆] at f₇
   have hs₇ := hs₆.of_rest k₇ (by decide)
@@ -240,24 +240,24 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
     ((sv_flag O₉ h0 h7 hn hi hf).trans (sv_flag O₈ h0 h7 hn hi hf)).trans (sv_flag O₇ h0 h7 hn hi hf)
   have flag₆ : flagW c base s₆ = flagW c base s := by
     have hap : ∀ {j}, j < 45 → j ≠ FLAG → c.sl FLAG + 4 ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl FLAG :=
-      fun hj hjf => by have := sl_apart c (Ne.symm hjf) (i := FLAG); omega
-    rw [flagW, flagW, BitVec.eq_of_toNat_eq (O₆.w32 (hap (j := QY) (by decide) (by decide)) (by omega)),
-      BitVec.eq_of_toNat_eq (O₄.w32 (hap (j := E) (by decide) (by decide)) (by omega)),
-      BitVec.eq_of_toNat_eq (O₂.w32 (hap (j := BP) (by decide) (by decide)) (by omega)),
-      BitVec.eq_of_toNat_eq (O₁.w32 (hap (j := R2P) (by decide) (by decide)) (by omega))]
+      fun hj hjf => by have := sl_apart c (Ne.symm hjf) (i := FLAG); omega_arith
+    rw [flagW, flagW, BitVec.eq_of_toNat_eq (O₆.w32 (hap (j := QY) (by decide) (by decide)) (by omega_arith)),
+      BitVec.eq_of_toNat_eq (O₄.w32 (hap (j := E) (by decide) (by decide)) (by omega_arith)),
+      BitVec.eq_of_toNat_eq (O₂.w32 (hap (j := BP) (by decide) (by decide)) (by omega_arith)),
+      BitVec.eq_of_toNat_eq (O₁.w32 (hap (j := R2P) (by decide) (by decide)) (by omega_arith))]
   have mp₆ : wordsVal s₆.mem base (c.sl MP) c.n = c.C.p :=
     (v₆ (i := MP) (by decide) (by decide) (by decide) (by decide) (by decide)).trans hmp
   have xE : sv c base s₉ E = ofBytes (Spec.Ecdsa.bytesAt s.mem (qa + BitVec.ofNat 64 1) c.C.len) := by
     show wordsVal s₉.mem _ _ _ = _
     rw [v₉ (i := E) (by decide) (by decide), sv_out O₆ h7 hn (by decide) (by decide), e₄]
-    exact congrArg Spec.Weierstrass.ofBytes (bytesAt_keep W₂ ((hd.sub_left (Offset.sub_base qa (by omega))))
-      (by omega) (by omega))
+    exact congrArg Spec.Weierstrass.ofBytes (bytesAt_keep W₂ ((hd.sub_left (Offset.sub_base qa (by omega_arith))))
+      (by omega_arith) (by omega_arith))
   have yQ : sv c base s₉ QY =
       ofBytes (Spec.Ecdsa.bytesAt s.mem (qa + BitVec.ofNat 64 (1 + c.C.len)) c.C.len) := by
     show wordsVal s₉.mem _ _ _ = _
     rw [v₉ (i := QY) (by decide) (by decide), e₆]
-    exact congrArg Spec.Weierstrass.ofBytes (bytesAt_keep (W₂.trans (O₄.mono (Nat.zero_le _) (by omega)))
-      (hd.sub_left (Offset.sub_base qa (by omega))) (by omega) (by omega))
+    exact congrArg Spec.Weierstrass.ofBytes (bytesAt_keep (W₂.trans (O₄.mono (Nat.zero_le _) (by omega_arith)))
+      (hd.sub_left (Offset.sub_base qa (by omega_arith))) (by omega_arith) (by omega_arith))
   refine ⟨hs₈.of_rest k₉ (by decide), ?_, ?_, ?_, ?_, xE, yQ, ?_⟩
   · exact ((K₆.mono (by simp)).trans (k₇.mono (by simp))).trans (k₈.trans k₉)
   · have U := (((((O₁.unch.trans O₂.unch).trans O₄.unch).trans O₆.unch).trans O₇.unch).trans
@@ -282,7 +282,7 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
     have y₈ : wordsVal s₈.mem base (c.sl QY) c.n = sv c base s₉ QY :=
       (sv_flag O₉ h0 h7 hn (i := QY) (by decide) (by decide)).symm
     have lead₆ : s₆.mem qa = s.mem qa := by
-      have := keep_of_disjoint' W₆ hd (by omega) (i := 0) (by omega) (by omega)
+      have := keep_of_disjoint' W₆ hd (by omega_arith) (i := 0) (by omega_arith) (by omega_arith)
       rwa [BitVec.add_zero] at this
     rw [f₉, f₈, f₇, flag₆, lead₆, e₇, mp₇, y₈, mp₈]
 

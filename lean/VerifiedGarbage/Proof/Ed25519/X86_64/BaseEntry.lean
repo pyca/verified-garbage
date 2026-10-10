@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
 import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddMemory
-import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
+import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
 
 /-!
 # Verification's static odd multiples of `B`
@@ -189,5 +189,9 @@ theorem pointFromStaticQ_ok {s : State} {base E : Addr} (hs : Scratch s base)
   change env t.mem base 6 = _ at h2
   change env t.mem base 7 = _ at h3
   simp only [tablePoint, point, h0, h1, h2, h3, Nat.mul_zero, Nat.zero_add, Nat.mul_one, Nat.reduceMul]
+
+theorem BaseTbl.of_powers {s t : State} {base T : Addr} {o n : Nat} (h : BaseTbl s base T)
+    (k : PowersKeep base o n s t) (hn : o + n ≤ 8192) : BaseTbl t base T :=
+  h.of_mem k.rd k.wr fun p hp => k.mem p (by omega) (Or.inr (by omega))
 
 end VG.Proof.Ed25519.X86_64
