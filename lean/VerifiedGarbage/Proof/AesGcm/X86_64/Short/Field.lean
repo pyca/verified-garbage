@@ -77,6 +77,6 @@ theorem gacc_ghash {m : Mem} {G T : Addr} {H : Block} {g : Nat} (hT : TabOk m T 
     Nat.sub_self, Nat.mul_zero, pow_zero, mul_one]
 
 /-- What the short path's proofs need from the algebra of the field. -/
-theorem shortFacts : ShortFacts := ⟨powers_ok, powHead_ok, gacc_ghash⟩
+theorem shortFacts : ShortFacts := ⟨powers_ok, powHead_ok, gacc_ghash, finPow_facts⟩
 
 end VG.Proof.AesGcm.X86_64.Short
