@@ -1,15 +1,9 @@
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Dec
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.GhLoad
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupPrefix
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupTail
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ready
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.LoopStart
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.LoopRun
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.FinalEnc
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.FinalDec
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Dispatch
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Pipeline
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Loop
 
 /-! # Eight-state AES-NI/GHASH correctness
 
