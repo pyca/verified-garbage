@@ -14,6 +14,9 @@ publish = false
 default = ["std"]
 # The ticketer rotates its keys behind rustls' std-only `TicketRotator`.
 std = []
+# Lets `VG_CPU_FEATURES` restrict the CPU features verified-garbage uses
+# (its `src/cpu.rs`), to benchmark another CPU class's code paths.
+cpu-features-env = ["verified-garbage/cpu-features-env"]
 
 [dependencies]
 asn1 = { version = "0.24", default-features = false }
