@@ -2,18 +2,21 @@ import VerifiedGarbage.Spec.X25519
 import VerifiedGarbage.TCB.Artifact
 
 /-!
-# Multiplication in curve25519's field, in radix `2^64`, as functions
+# Multiplication, inversion and powers in curve25519's field, in radix `2^64`, as functions
 
-**Trusted** (as every file in `Spec/`). The contracts of two functions on
+**Trusted** (as every file in `Spec/`). The contracts of functions on
 elements of `GF(p)`, `p = 2^255 - 19`, each four 64-bit words, so that the
-code of X25519 and Ed25519 that keeps elements this way (the x86-64 code) can
-call one copy of each product instead of repeating it at every use:
+code of X25519 and Ed25519 that keeps elements this way (on x86-64 and
+AArch64) can call one copy of each instead of repeating it at every use:
 
 * `vg_gf25519_r64_mul`: the product `a b`;
 * `vg_gf25519_r64_mul2`: twice the product, `2 a b` (Ed25519's point
   doubling and cached points multiply by 2 with the product);
 * `vg_gf25519_r64_invert`: the inverse `z^(p-2)` (X25519's last step, and
-  Ed25519's encoding of a point).
+  Ed25519's encoding of a point);
+* `vg_gf25519_r64_pow250`: `a^(2^250 - 1)` and `a^11`, the addition chain
+  that inversion (`a^(p-2)`) and decoding's square root (`a^((p-5)/8)`)
+  share, for code that computes both with the same field operations.
 
 They are not algorithms of a standard but the arithmetic X25519 and Ed25519
 are built from, in the representation that code keeps elements in: what they
@@ -35,6 +38,11 @@ keeps them, in a working space of the same 4096 bytes: it reads `z` at byte
 128 (`zAt`) and writes `z^(p-2)` at byte 544 (`invAt`); bytes 512 to 767 (`invOwnAt` to `invOwnEnd`) are its own working space and its
 result. On return those bytes but the result are unspecified and may hold
 intermediate values; every other byte of `ws` keeps its value (`InvKeeps`).
+
+`pow250` reads `a` at byte 128 too and writes `a^11` at byte 512 (`p11At`)
+and `a^(2^250 - 1)` at byte 544 (`p250At`); bytes 576 to 767 are its own
+working space, unspecified on return. Every byte of `ws` outside bytes 512
+to 767 keeps its value (`PowKeeps`).
 
 Everything is secret but the pointer and the offsets, which are public, and
 the functions are constant time.
@@ -178,5 +186,48 @@ def invertApi : Api where
   safety :=
     ["Bytes 512 to 767 of `ws` but the result are unspecified on return and may hold \
         intermediate values, which the caller must destroy if they are secret."]
+
+/-! ## `pow250` -/
+
+/-- Where `vg_gf25519_r64_pow250` writes `a^11`. -/
+def p11At : BitVec 32 := 512
+
+/-- Where it writes `a^(2^250 - 1)`. -/
+def p250At : BitVec 32 := 544
+
+/-- Every byte of `ws` but those of `pow250`'s results and own working space
+(bytes 512 to 767) keeps its value. -/
+def PowKeeps (ws : Addr) (m m' : Mem) : Prop :=
+  ∀ i < wsBytes, (i < invOwnAt ∨ invOwnEnd ≤ i) →
+    m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
+
+/-- `pow250`: the element at `p250At` is congruent to `a^(2^250 - 1)` and the
+one at `p11At` to `a^11`, modulo `P`, for `a` the element at `zAt`. -/
+def pow250Contract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+  invSig.contract A
+    (post := fun ws m m' _ =>
+      valAt m' ws p250At % P = valAt m ws zAt ^ (2 ^ 250 - 1) % P ∧
+        valAt m' ws p11At % P = valAt m ws zAt ^ 11 % P ∧ PowKeeps ws m m')
+    (stack := stack)
+
+/-- `vg_gf25519_r64_pow250` on every target. -/
+def pow250Api : Api where
+  module := module
+  name := "vg_gf25519_r64_pow250"
+  sig := invSig
+  contracts := some fun A stack => pow250Contract A stack
+  summary := "Powers in curve25519's field: for `a` the element at byte 128 of the working \
+    space `ws`, writes an element congruent to `a^(2^250 - 1)` modulo `p = 2^255 - 19` to byte \
+    544, and one congruent to `a^11` to byte 512: the addition chain that inversion \
+    (`a^(p-2)`, five squarings of the first and a product with the second) and decoding's \
+    square root (`a^((p-5)/8)`, two squarings of the first and a product with `a`) share. An \
+    element is 32 bytes, a little-endian number below `2^256`, not necessarily below `p`. \
+    Every byte of `ws` but those from byte 512 to byte 767 (the results and the function's own \
+    working space) keeps its value.\n\n\
+    Contract: `pow250Contract` of `VG.Spec.X25519.Field64`. Constant time: only the pointer \
+    may affect timing."
+  safety :=
+    ["Bytes 576 to 767 of `ws` are unspecified on return and may hold intermediate values, \
+        which the caller must destroy if they are secret."]
 
 end VG.Spec.X25519.Field64
