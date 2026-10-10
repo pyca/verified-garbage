@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Framework.Arm.Straight
 import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
 import VerifiedGarbage.Proof.Framework.Bitslice.Table
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Framework.Bitslice.Diag
 
 /-!
 # ARMv7: linear layers of bitsliced code, by evaluation
