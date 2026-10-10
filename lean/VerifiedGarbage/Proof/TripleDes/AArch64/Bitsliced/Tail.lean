@@ -71,7 +71,7 @@ theorem tail_ok (d : Direction) {k : Nat} {s : State} (E : TailEnv s k) :
         exec_addImm_x (by decide), runStep_some, runBlock_cons, exec_addImm_x (by decide),
         runStep_some, runBlock_nil], ?_⟩
     have g₁ : ∀ r, r ≠ .x11 → r ≠ .x12 → r ≠ .x13 → s₁'.gpr r = s.gpr r := by
-      intro r a b c; simp [s₁', s₁, State.write, a, b, c]
+      intro r a b c; simp [s₁', s₁, gpr_write, a, b, c]
     have pre₁ : CopyPre D B k s₁' := by
       refine ⟨fun i hi => ?_, fun i hi => ?_, ?_, by omega⟩
       · obtain ⟨r, hr, hc⟩ := E.dataW i hi
@@ -81,9 +81,9 @@ theorem tail_ok (d : Direction) {k : Nat} {s : State} (E : TailEnv s k) :
     have inv₁ : CopyInv D B k s₁' 0 s₁' := by
       refine ⟨by omega, ?_, ?_, ?_, fun j hj => by omega, Frame.refl _ _, fun _ _ => rfl, rfl, rfl,
         rfl, rfl⟩
-      · rw [wAt_zero]; simp [s₁', s₁, State.write, State.read, D]
-      · rw [wAt_zero]; simp [s₁', s₁, State.write, State.read, B]
-      · simp [s₁', s₁, State.write, State.read, E.x2]
+      · rw [wAt_zero]; simp [s₁', s₁, gpr_write, State.read, D]
+      · rw [wAt_zero]; simp [s₁', s₁, gpr_write, State.read, B]
+      · simp [s₁', s₁, gpr_write, State.read, E.x2]
     apply WP.seq
     apply WP.mono (copy_ok pre₁ s₁' 0 inv₁)
     intro s₂ c₂
@@ -97,7 +97,7 @@ theorem tail_ok (d : Direction) {k : Nat} {s : State} (E : TailEnv s k) :
     have g₃ : ∀ r, r ≠ .x4 → r ≠ .x10 → r ≠ .x11 → r ≠ .x12 → r ≠ .x13 → s₃.gpr r = s.gpr r := by
       intro r a b c e f; simp only [s₃, State.write, a, ite_false]; exact g₂ r b c e f
     have x4₃ : s₃.gpr .x4 = B := by
-      simp [s₃, State.write, State.read]; exact g₂ _ (by decide) (by decide) (by decide) (by decide)
+      simp [s₃, gpr_write, State.read]; exact g₂ _ (by decide) (by decide) (by decide) (by decide)
     have wr₃ : s₃.wr = s.wr := c₂.wr
     have room₃ : Room s₃ := Ok.of_off (off := 0) (by rw [wr₃]; exact E.scratch)
       (by show s₃.gpr .x4 = _; rw [x4₃]; simp [B]) (by show 0 + 16 * 64 ≤ 1024; decide) (by show 1024 < 2 ^ 64; decide)
@@ -138,11 +138,11 @@ theorem tail_ok (d : Direction) {k : Nat} {s : State} (E : TailEnv s k) :
     have inv₂ : CopyInv B D k s₅' 0 s₅' := by
       refine ⟨by omega, ?_, ?_, ?_, fun j hj => by omega, Frame.refl _ _, fun _ _ => rfl, rfl, rfl,
         rfl, rfl⟩
-      · rw [wAt_zero]; simp [s₅', s₅, State.write, State.read]
+      · rw [wAt_zero]; simp [s₅', s₅, gpr_write, State.read]
         exact g₄ _ ⟨by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩
-      · rw [wAt_zero]; simp [s₅', s₅, State.write, State.read]
+      · rw [wAt_zero]; simp [s₅', s₅, gpr_write, State.read]
         exact g₄ _ ⟨by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩
-      · simp [s₅', s₅, State.write, State.read]
+      · simp [s₅', s₅, gpr_write, State.read]
         rw [g₄ _ ⟨by decide, by decide, by decide, by decide, by decide, by decide, by decide,
           by decide⟩, E.x2]
     apply WP.mono (copy_ok pre₂ s₅' 0 inv₂)

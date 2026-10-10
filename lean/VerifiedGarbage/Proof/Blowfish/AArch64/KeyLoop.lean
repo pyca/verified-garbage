@@ -28,7 +28,7 @@ theorem exec_umov_w0 (s : State) (d : Reg) (n : VReg) :
     exec (.umov .w d n 0) s = some (s.write .w d (vword (s.v n) 0)) := rfl
 
 theorem read_write_w (s : State) (r : Reg) (v : BitVec 32) : (s.write .w r v).read .w r = v := by
-  simp [State.read, State.write, Size.bits]
+  simp [State.read, gpr_write, Size.bits]
 
 /-- The bytes of the word in `w` at offsets `e`, `256 + e`, `512 + e` and
 `768 + e` of `x14`. -/
@@ -454,17 +454,17 @@ theorem encryptions_run {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv 
         v_setV_of_ne _ _ (by decide : VReg.v8 ≠ .v6), v_setV_of_ne _ _ (by decide : VReg.v8 ≠ .v9),
         v_setV_of_ne _ _ (by decide : VReg.v8 ≠ .v5), v_setV_self]
       rfl
-    · simp [s₇, s₆, s₅, s₄, s₃, s₂, s₁, State.setV, State.write]
-    · simp [s₇, s₆, s₅, s₄, s₃, s₂, s₁, State.setV, State.write]
-    · simp [s₇, s₆, s₅, s₄, s₃, s₂, s₁, State.setV, State.write, State.read, E.x2, Offset.add_add]
-    · simp [s₇, s₆, s₅, s₄, s₃, s₂, s₁, State.setV, State.write, State.read, E.x2, sDone]
-    · simp [s₇, s₆, s₅, s₄, s₃, s₂, s₁, State.setV, State.write, sDone]
+    · simp [s₇, s₆, s₅, s₄, s₃, s₂, s₁, gpr_write]
+    · simp [s₇, s₆, s₅, s₄, s₃, s₂, s₁, gpr_write]
+    · simp [s₇, s₆, s₅, s₄, s₃, s₂, s₁, gpr_setV, gpr_write, State.read, E.x2, Offset.add_add]
+    · simp [s₇, s₆, s₅, s₄, s₃, s₂, s₁, gpr_setV, gpr_write, State.read, E.x2, sDone]
+    · simp [s₇, s₆, s₅, s₄, s₃, s₂, s₁, gpr_write, sDone]
     · rw [hm]; exact Frame.refl _ _
     · simp only [encGprs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      simp [s₇, s₆, s₅, s₄, s₃, s₂, s₁, State.setV, State.write, hr]
+      simp [s₇, s₆, s₅, s₄, s₃, s₂, s₁, gpr_setV, gpr_write, hr]
     · have : r ∉ halfRegs := fun h => hr (by simp [roundRegs, h])
       simp only [halfRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at this
-      simp [s₇, s₆, s₅, s₄, s₃, s₂, s₁, State.setV, State.write, this]
+      simp [s₇, s₆, s₅, s₄, s₃, s₂, s₁, v_setV, v_write, this]
     · simp only [s₇, s₆, s₅, s₄, s₃, s₂, s₁, State.setV, State.write]
 
 end VG.Proof.Blowfish.AArch64
