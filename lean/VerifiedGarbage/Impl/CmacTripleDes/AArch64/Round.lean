@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.CmacTripleDes.Index
+import VerifiedGarbage.Impl.CmacTripleDes.Sbox
 import VerifiedGarbage.Impl.Tbl.AArch64
 
 /-!
@@ -109,7 +110,7 @@ def sboxByte (k x : Nat) : BitVec 8 :=
   (List.range 8).foldl (fun b i =>
     if boxTable i = k then
       (List.range 4).foldl (fun b q =>
-        if (Spec.TripleDes.sBox i (BitVec.ofNat 6 x)).getLsbD q then b ||| BitVec.twoPow 8 (posOf i q)
+        if (sboxOut i (x % 64)).testBit q then b ||| BitVec.twoPow 8 (posOf i q)
         else b) b
     else b) 0
 
