@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointPrep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTable
+import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTableTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
 
 namespace VG.Proof.Ecdsa.Verify.AArch64

@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedEntry
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 namespace VG.Proof.Weierstrass.AArch64.CachedField

@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 import VerifiedGarbage.Proof.Weierstrass.Law3
 import VerifiedGarbage.Proof.Framework.AArch64.Spill
 

@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPublic
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
 
 namespace VG.Proof.Ecdsa.Verify.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass

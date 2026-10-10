@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
 import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
 import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
 
 namespace VG.Proof.P256.VerifyAllocated
 open VG VG.AArch64 VG.Proof.Weierstrass.AArch64

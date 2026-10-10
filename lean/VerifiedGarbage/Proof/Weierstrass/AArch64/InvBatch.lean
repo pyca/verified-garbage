@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatchStart
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvRed
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Framework.Omega
 

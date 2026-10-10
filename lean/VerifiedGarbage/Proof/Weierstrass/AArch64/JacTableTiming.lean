@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
 
 /-! Exact field equality through public in-scratch table transfers. -/

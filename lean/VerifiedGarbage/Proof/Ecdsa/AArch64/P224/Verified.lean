@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
 import VerifiedGarbage.Proof.P224.Point
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 import VerifiedGarbage.Proof.P224.Prime
 
 /-!

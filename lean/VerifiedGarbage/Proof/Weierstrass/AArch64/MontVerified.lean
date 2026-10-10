@@ -1,4 +1,3 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontContract
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
 import VerifiedGarbage.Proof.Framework.Contract
 

@@ -2,7 +2,7 @@ import VerifiedGarbage.Impl.Ecdsa.P192.AArch64
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 import VerifiedGarbage.Proof.P192.Point
 import VerifiedGarbage.Proof.P192.OrderPrime
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 
 /-! # p192 parameters for the AArch64 arithmetic -/
 

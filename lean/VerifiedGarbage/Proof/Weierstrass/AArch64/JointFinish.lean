@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowTiming
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass

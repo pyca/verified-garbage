@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedField
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointPairedTiming
 
 namespace VG.Proof.Ecdsa.Verify.AArch64.Allocated
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

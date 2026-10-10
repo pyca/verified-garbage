@@ -2,7 +2,7 @@ import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 import VerifiedGarbage.Proof.Secp256k1.Point
 import VerifiedGarbage.Proof.Secp256k1.Prime
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 
 /-! # secp256k1 parameters for the AArch64 arithmetic -/
 

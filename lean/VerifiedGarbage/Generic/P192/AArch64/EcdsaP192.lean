@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Verified
 

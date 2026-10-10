@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
 import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindow
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowTiming
 
 namespace VG.Proof.Ecdsa.Verify.AArch64
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 import VerifiedGarbage.Proof.Ecdh.AArch64.Secp256k1.Verified
 
 /-! # secp256k1 on AArch64, generic over its proven group law and inversions -/

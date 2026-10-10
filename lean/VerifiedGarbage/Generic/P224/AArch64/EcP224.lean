@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 import VerifiedGarbage.Proof.P224.Comb7
 import VerifiedGarbage.Impl.EcKey.P224.AArch64
 import VerifiedGarbage.Proof.EcKey.AArch64.P224.Verified

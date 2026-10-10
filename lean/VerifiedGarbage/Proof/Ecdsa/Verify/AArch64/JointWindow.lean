@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLayout
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoop
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPairedTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Inplace

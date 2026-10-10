@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLayout
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntryTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigitTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction

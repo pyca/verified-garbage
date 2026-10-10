@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointMixedTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPairedTiming
 
 namespace VG.Proof.Ecdsa.Verify.AArch64.Allocated
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass

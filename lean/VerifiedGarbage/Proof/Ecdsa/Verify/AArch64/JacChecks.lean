@@ -1,12 +1,11 @@
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Timing
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStepTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoopTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombTiming
 import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
 import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 namespace VG.Proof.Ecdsa.Verify.AArch64

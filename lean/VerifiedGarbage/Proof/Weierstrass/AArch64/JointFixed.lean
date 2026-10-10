@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointMixed
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPairedTiming
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
