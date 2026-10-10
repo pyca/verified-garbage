@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
 import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
 import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
@@ -36,12 +37,12 @@ theorem equation_nosp : NoSp Impl.Ed448.X86_64.verifyEquation := by
 theorem equation_depth : Impl.Ed448.X86_64.verifyEquation.depth ≤ 1 := by lit_decide
 
 /-- `vg_ed448_verify_equation` meets the contract its proof is written against, and the ABI. -/
-abbrev EqOk : Prop := ∀ s, Proof.Ed448.X86_64.verifyEquationLocal.pre s →
+abbrev EqOk : Prop := ∀ s, Proof.Ed448.X86_64.verifyEquationLocal.clear.pre s →
   ∃ t s', Exec isa Impl.Ed448.X86_64.verifyEquation s t s' ∧ abiPreserved s s' ∧
     Proof.Ed448.X86_64.verifyEquationLocal.post s s'
 
 /-- `vg_ed448_verify_equation` is constant time for that contract. -/
-abbrev EqCT : Prop := ConstantTime isa Proof.Ed448.X86_64.verifyEquationLocal.pre
+abbrev EqCT : Prop := ConstantTime isa Proof.Ed448.X86_64.verifyEquationLocal.clear.pre
   Proof.Ed448.X86_64.verifyEquationLocal.pub Impl.Ed448.X86_64.verifyEquation
 
 section
@@ -113,6 +114,25 @@ theorem reduce_ok (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
 
 /-! ## The equation -/
 
+/-- The callee's precondition, its buffers apart from the 8 bytes below its `rsp`, the
+frame's lowest. -/
+theorem eq_cpre (hL : L.Ok) {u : State} (g1 : u.gpr .rdi = L.pk) (g2 : u.gpr .rsi = L.sig)
+    (g3 : u.gpr .rdx = L.K) (g4 : u.gpr .rcx = L.scr) (g5 : u.gpr .rsp = L.B + BitVec.ofNat 64 8)
+    (hrd : u.rd = [L.PK, L.SIG, ⟨L.K, 57⟩]) (hwr : u.wr = [L.SCR]) :
+    Proof.Ed448.X86_64.verifyEquationLocal.clear.pre u := by
+  refine ⟨?_, ?_⟩
+  · simp only [Proof.Ed448.X86_64.verifyEquationLocal, g1, g2, g3, g4, g5, hrd, hwr]
+    exact ⟨trivial, trivial, hL.xPk.symm, hL.xSig.symm, k_x' hL, ret_x hL, hL.nScr⟩
+  · rw [g5, Proof.Ed448.X86_64.hole_add8]
+    intro r hr
+    simp only [hrd, hwr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · simpa using (hL.stk_r hL.kPk (d := 0) (n := 8) (by omega)).symm
+    · simpa using (hL.stk_r hL.kSig (d := 0) (n := 8) (by omega)).symm
+    · rw [show L.K = L.B + BitVec.ofNat 64 (16 + 136) from add_add _ _ _]
+      exact Offset.disjoint_base _ (by omega) (by omega)
+    · simpa using (hL.stk_r hL.kScr (d := 0) (n := 8) (by omega)).symm
+
 /-- The arguments of `vg_ed448_verify_equation`. -/
 abbrev eqArgs : List Arg := [.slot fPk, .slot fSig, .sp fK, .slot fScr]
 
@@ -132,11 +152,8 @@ theorem equation_ok (hv : EqOk) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
   have g2 := (gpr_ce t1 [L.PK, L.SIG, ⟨L.K, 57⟩] [L.SCR] (by decide : Reg.rsi ≠ .rsp)).trans e2
   have g3 := (gpr_ce t1 [L.PK, L.SIG, ⟨L.K, 57⟩] [L.SCR] (by decide : Reg.rdx ≠ .rsp)).trans e3
   have g4 := (gpr_ce t1 [L.PK, L.SIG, ⟨L.K, 57⟩] [L.SCR] (by decide : Reg.rcx ≠ .rsp)).trans e4
-  have hpre : Proof.Ed448.X86_64.verifyEquationLocal.pre
-      (t1.callEntry.withRegions [L.PK, L.SIG, ⟨L.K, 57⟩] [L.SCR]) := by
-    simp only [Proof.Ed448.X86_64.verifyEquationLocal, g1, g2, g3, g4, sp_ce hc1, State.withRegions_rd,
-      State.withRegions_wr]
-    exact ⟨trivial, trivial, hL.xPk.symm, hL.xSig.symm, k_x' hL, ret_x hL, hL.nScr⟩
+  have hpre := eq_cpre hL (u := t1.callEntry.withRegions [L.PK, L.SIG, ⟨L.K, 57⟩] [L.SCR]) g1 g2 g3 g4
+    (sp_ce hc1 _ _) rfl rfl
   refine call_ok hL hv equation_nosp equation_depth hc1 hpre
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -148,7 +165,7 @@ theorem equation_ok (hv : EqOk) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
       simp only [List.mem_singleton] at hr; subst hr
       exact .inl (within_self _))
     fun s' hc' _ _ ⟨s₂, _, hg₂, hpost⟩ => ⟨hc', ?_⟩
-  simp only [Proof.Ed448.X86_64.verifyEquationLocal, g1, g2, g3, State.withRegions_mem] at hpost
+  simp only [Contract.clear, Proof.Ed448.X86_64.verifyEquationLocal, g1, g2, g3, State.withRegions_mem] at hpost
   rw [← hg₂ _ (by decide), hpost]
   have ep : Spec.Ed448.bytesAt t1.callEntry.mem L.pk 57 = bytesAt m₀ L.pk 57 := by
     change bytesAt t1.callEntry.mem L.pk 57 = _

@@ -16,12 +16,32 @@ namespace VG.Proof.X448.X86_64
 open VG VG.X86_64 VG.Impl.X448.X86_64 VG.Proof.X448
 
 /-- What the inversion keeps: the registers but `clob` and `rbx`, the regions,
-and the memory outside `[960, 1648)`. -/
+and the memory outside the slots 14–21 (`[960, 1472)`) and the product's
+words (`[1536, 1648)`). -/
 structure IKeep (base : Addr) (s s' : State) : Prop where
   gpr : ∀ r, r ∉ clob → r ≠ .rbx → s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
+  mem : Outside2 base 960 512 ACC 112 s.mem s'.mem
+
+/-- What code that also writes the bytes between slot 21 and the product's words
+keeps: `IKeep`, with the memory outside `[960, 1648)`. -/
+structure WKeep (base : Addr) (s s' : State) : Prop where
+  gpr : ∀ r, r ∉ clob → r ≠ .rbx → s'.gpr r = s.gpr r
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
   mem : Outside base 960 688 s.mem s'.mem
+
+theorem WKeep.scr {base : Addr} {s s' : State} (h : WKeep base s s') (hs : Scr s base) :
+    Scr s' base :=
+  ⟨(h.gpr _ (by decide) (by decide)).trans hs.rdi, h.wr ▸ hs.wr, hs.nowrap⟩
+
+/-- The memory outside `[960, 1648)`. -/
+theorem IKeep.out {base : Addr} {s s' : State} (h : IKeep base s s') : Outside base 960 688 s.mem s'.mem :=
+  fun p hp => h.mem p (by omega) (by simp only [ACC]; omega)
+
+theorem IKeep.weak {base : Addr} {s s' : State} (h : IKeep base s s') : WKeep base s s' :=
+  ⟨h.gpr, h.rd, h.wr, h.out⟩
 
 theorem IKeep.trans {base : Addr} {s₁ s₂ s₃ : State} (h₁ : IKeep base s₁ s₂)
     (h₂ : IKeep base s₂ s₃) : IKeep base s₁ s₃ :=
@@ -52,9 +72,8 @@ theorem ISpec.append {base : Addr} {l₁ l₂ : List Instr} {f g : Env → Env}
 abbrev ISlot (o : Index) : Prop := 14 ≤ o.val
 
 theorem islot_out {base : Addr} {o : Index} (ho : ISlot o) {m m' : Mem}
-    (h : Outside2 base (slot o.val) 56 ACC 112 m m') : Outside base 960 688 m m' :=
-  h.outside (by simp only [slot]; omega) (by have := slot_lt o; simp only [ACC] at *; omega)
-    (by decide) (by decide)
+    (h : Outside2 base (slot o.val) 56 ACC 112 m m') : Outside2 base 960 512 ACC 112 m m' :=
+  fun p hp hq => h p (by have := o.isLt; simp only [slot] at ho ⊢; omega) hq
 
 variable {fld : Field} (hf : FieldOk fld)
 
@@ -154,7 +173,7 @@ theorem sqLoop_ok {s₀ : State} {base : Addr} (hs₀ : Scr s₀ base) (o : Inde
   refine WP.mono (sqrI_ok hf (hk.scr hs₀) o o ho) fun s1 ⟨k1, b1, e1⟩ => ?_
   refine WP.mono (decRbx_ok (by omega) (b1.trans hb)) fun s2 ⟨b2, g2, m2, rd2, wr2, z2⟩ => ?_
   have k2 : IKeep base s₀ s2 := hk.trans (k1.trans ⟨fun r _ hr => g2 r hr, rd2, wr2,
-    by rw [m2]; exact Outside.refl _ _ _ _⟩)
+    by rw [m2]; exact Outside2.refl _ _ _ _ _ _⟩)
   have e2 : E s2.mem base = Function.update (E s₀.mem base) o (sqn x (n - m)) := by
     rw [m2, e1, he, opMul_update]
     congr 2
@@ -183,27 +202,28 @@ theorem sqnI (base : Addr) (o a : Index) (ho : ISlot o) (n : Nat) (hn : 1 ≤ n)
   refine WP.mono (sqrI_ok hf hs o a ho) fun s1 ⟨k1, _, e1⟩ => ?_
   refine WP.mono (setRbx_ok s1 (n - 1) (by omega)) fun s2 ⟨b2, g2, m2, rd2, wr2⟩ => ?_
   have k2 : IKeep base s s2 := k1.trans ⟨fun r _ hr => g2 r hr, rd2, wr2,
-    by rw [m2]; exact Outside.refl _ _ _ _⟩
+    by rw [m2]; exact Outside2.refl _ _ _ _ _ _⟩
   refine sqLoop_ok hf hs o ho (E s.mem base a) n hn' (n - 1) s2 (by omega) (by omega) k2 b2 ?_
   rw [m2, e1, show n - (n - 1) = 1 by omega]
   rfl
 
 /-! ## The inversion -/
 
-/-- The slots after the inversion. -/
-def invEnv (e : Env) : Env :=
-  opMul 21 21 20 (opMul 20 20 2 (opSqn 20 20 2 (opSqn 21 21 225 (opMul 21 21 2 (opSqn 21 20 1
+/-- The slots after `chain223` of slot `z`. -/
+def chainEnv (z : Index) (e : Env) : Env :=
+  opMul 21 21 z (opSqn 21 20 1
     (opMul 20 20 14 (opSqn 20 20 2 (opMul 20 20 15 (opSqn 20 20 4 (opMul 20 20 16 (opSqn 20 20 8
     (opMul 20 20 17 (opSqn 20 20 16 (opMul 20 20 19 (opSqn 20 20 64 (opMul 20 20 19 (opSqn 20 19 64
     (opMul 19 19 18 (opSqn 19 18 32 (opMul 18 18 17 (opSqn 18 17 16 (opMul 17 17 16 (opSqn 17 16 8
-    (opMul 16 16 15 (opSqn 16 15 4 (opMul 15 15 14 (opSqn 15 14 2 (opMul 14 14 2
-    (opSqn 14 2 1 e)))))))))))))))))))))))))))))
+    (opMul 16 16 15 (opSqn 16 15 4 (opMul 15 15 14 (opSqn 15 14 2 (opMul 14 14 z
+    (opSqn 14 z 1 e)))))))))))))))))))))))))
 
 include hf in
-theorem invert_spec (base : Addr) : ISpec base (Impl.X448.X86_64.invert fld) invEnv := by
+theorem chain223_spec (base : Addr) (z : Index) :
+    ISpec base (Impl.X448.X86_64.chain223 fld (slot z.val)) (chainEnv z) := by
   have h : ISpec base _ _ :=
-    (sqnI hf base 14 2 (by decide) 1 (by decide) (by decide)).seq <|
-    (mulI hf base 14 14 2 (by decide)).seq <|
+    (sqnI hf base 14 z (by decide) 1 (by decide) (by decide)).seq <|
+    (mulI hf base 14 14 z (by decide)).seq <|
     (sqnI hf base 15 14 (by decide) 2 (by decide) (by decide)).seq <|
     (mulI hf base 15 15 14 (by decide)).seq <|
     (sqnI hf base 16 15 (by decide) 4 (by decide) (by decide)).seq <|
@@ -226,15 +246,28 @@ theorem invert_spec (base : Addr) : ISpec base (Impl.X448.X86_64.invert fld) inv
     (mulI hf base 20 20 15 (by decide)).seq <|
     (sqnI hf base 20 20 (by decide) 2 (by decide) (by decide)).seq <|
     (mulI hf base 20 20 14 (by decide)).seq <|
-    (sqnI hf base 21 20 (by decide) 1 (by decide) (by decide)).seq <|
-    (mulI hf base 21 21 2 (by decide)).seq <|
-    (sqnI hf base 21 21 (by decide) 225 (by decide) (by decide)).seq <|
-    (sqnI hf base 20 20 (by decide) 2 (by decide) (by decide)).seq
-    ((mulI hf base 20 20 2 (by decide)).append (mulI hf base 21 21 20 (by decide)))
+    (sqnI hf base 21 20 (by decide) 1 (by decide) (by decide)).seq
+    (mulI hf base 21 21 z (by decide))
   exact h
 
+/-- The slots after `invTail`. -/
+def tailEnv (e : Env) : Env := opMul 21 21 20 (opMul 20 20 2 (opSqn 20 20 2 (opSqn 21 21 225 e)))
+
+include hf in
+theorem invTail_spec (base : Addr) : ISpec base (Impl.X448.X86_64.invTail fld) tailEnv :=
+  (sqnI hf base 21 21 (by decide) 225 (by decide) (by decide)).seq <|
+  (sqnI hf base 20 20 (by decide) 2 (by decide) (by decide)).seq
+    ((mulI hf base 20 20 2 (by decide)).append (mulI hf base 21 21 20 (by decide)))
+
+/-- The slots after the inversion. -/
+def invEnv (e : Env) : Env := tailEnv (chainEnv 2 e)
+
+include hf in
+theorem invert_spec (base : Addr) : ISpec base (Impl.X448.X86_64.invert fld) invEnv :=
+  (chain223_spec hf base 2).seq (invTail_spec hf base)
+
 theorem invEnv_eval (e : Env) : invEnv e 21 = VG.Proof.X448.invert (e 2) := by
-  simp only [↓reduceIte, invEnv, opMul, opSqn, Function.update_apply]
+  simp only [↓reduceIte, invEnv, tailEnv, chainEnv, opMul, opSqn, Function.update_apply]
   rfl
 
 include hf in
@@ -244,6 +277,6 @@ theorem invert_ok {s : State} {base : Addr} (hs : Scr s base) :
       Outside base 960 688 s.mem s'.mem ∧
       E s'.mem base 21 = VG.Proof.X448.invert (E s.mem base 2) :=
   WP.mono (invert_spec hf base s hs) fun _ ⟨k, e⟩ =>
-    ⟨k.gpr, k.rd, k.wr, k.mem, by rw [e, invEnv_eval]⟩
+    ⟨k.gpr, k.rd, k.wr, k.out, by rw [e, invEnv_eval]⟩
 
 end VG.Proof.X448.X86_64

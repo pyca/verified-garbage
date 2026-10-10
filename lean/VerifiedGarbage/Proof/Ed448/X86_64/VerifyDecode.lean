@@ -381,14 +381,15 @@ theorem bytesAt57_len (m : Mem) (p : Addr) : (Spec.Ed448.bytesAt m p 57).length 
   simp [Spec.Ed448.bytesAt]
 
 include hf in
-theorem decode_ok (hR : RecoverOk) {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .rsi = p)
+theorem decode_ok (hR : RecoverOk) {rt : Prog isa} (hrt : RootOk rt) {s : State} {base p : Addr}
+    (hs : Scr s base) (hp : s.gpr .rsi = p)
     (xo yo : Index)
     (hxy : (xo = 6 ∧ yo = 7) ∨ (xo = 8 ∧ yo = 9))
     (h10 : E s.mem base 10 = 1) (h11 : E s.mem base 11 = Spec.Ed448.d)
     (hr8 : ∀ i < 7, InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 (8 * i)) 8)
     (hr56 : InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 56) 1)
     (hfar : ∀ i < 57, 8192 ≤ ofs base (p + BitVec.ofNat 64 i)) :
-    WP isa (decode fld xo.val yo.val) s fun t =>
+    WP isa (decode fld xo.val yo.val rt) s fun t =>
       (∃ c : BitVec 64, (c = 0 ↔ (Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem p 57)).isSome) ∧
         word t.mem base BAD = word s.mem base BAD ||| c) ∧
       (∀ pt, Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem p 57) = some pt →
@@ -410,7 +411,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base p : Addr} (hs : Scr s base)
     (by rcases hxy with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide) hs1) fun s2 ⟨k2, e2⟩ => ?_
   have hs2 := k2.scr hs1
   apply WP.seq
-  refine WP.mono (root_spec hf base s2 hs2) fun s3 ⟨k3, e3⟩ => ?_
+  refine WP.mono (hrt hs2) fun s3 ⟨k3, e3⟩ => ?_
   have hs3 := k3.scr hs2
   rw [WP.block_append_iff]
   refine WP.mono (decodeX_ok hf hs3 xo hxo) fun s4 ⟨x4, ⟨c2, hc2, b4⟩, e4, sg4, g4, rd4, wr4, o4⟩ => ?_

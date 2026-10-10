@@ -36,7 +36,7 @@ pointers.
 namespace VG.Impl.Ed448.X86_64
 
 open VG.X86_64
-open VG.Impl.X448.X86_64 (at_ sc W w loads stores slot Field add sub cswap freeze sqn BITS chain)
+open VG.Impl.X448.X86_64 (at_ sc W w loads stores slot Field add sub cswap freeze sqn BITS chain chain223 pow223Keep copyOut)
 
 /-! ## The working space -/
 
@@ -92,24 +92,18 @@ def sCheck : List Instr :=
 
 /-! ## Decoding a point -/
 
-/-- `[T7] = [z]^((p-3)/4)`: X448's addition chain (`invert`) as far as
-`z^(2^223 - 1)` in `T7` and `z^(2^222 - 1)` in `T6`, then
-`(z^(2^223 - 1))^(2^223) · z^(2^222 - 1)`. -/
-def root (F : Field) (z : Nat) : Prog isa :=
-  .seq (sqn F (slot 14) (slot z) 1) <| .seq (.block (F.mul (slot 14) (slot 14) (slot z))) <|
-  .seq (sqn F (slot 15) (slot 14) 2) <| .seq (.block (F.mul (slot 15) (slot 15) (slot 14))) <|
-  .seq (sqn F (slot 16) (slot 15) 4) <| .seq (.block (F.mul (slot 16) (slot 16) (slot 15))) <|
-  .seq (sqn F (slot 17) (slot 16) 8) <| .seq (.block (F.mul (slot 17) (slot 17) (slot 16))) <|
-  .seq (sqn F (slot 18) (slot 17) 16) <| .seq (.block (F.mul (slot 18) (slot 18) (slot 17))) <|
-  .seq (sqn F (slot 19) (slot 18) 32) <| .seq (.block (F.mul (slot 19) (slot 19) (slot 18))) <|
-  .seq (sqn F (slot 20) (slot 19) 64) <| .seq (.block (F.mul (slot 20) (slot 20) (slot 19))) <|
-  .seq (sqn F (slot 20) (slot 20) 64) <| .seq (.block (F.mul (slot 20) (slot 20) (slot 19))) <|
-  .seq (sqn F (slot 20) (slot 20) 16) <| .seq (.block (F.mul (slot 20) (slot 20) (slot 17))) <|
-  .seq (sqn F (slot 20) (slot 20) 8) <| .seq (.block (F.mul (slot 20) (slot 20) (slot 16))) <|
-  .seq (sqn F (slot 20) (slot 20) 4) <| .seq (.block (F.mul (slot 20) (slot 20) (slot 15))) <|
-  .seq (sqn F (slot 20) (slot 20) 2) <| .seq (.block (F.mul (slot 20) (slot 20) (slot 14))) <|
-  .seq (sqn F (slot 21) (slot 20) 1) <| .seq (.block (F.mul (slot 21) (slot 21) (slot z))) <|
+/-- `[T7] = [z]^((p-3)/4)` from `chain223` of `z`: `(z^(2^223 - 1))^(2^223) · z^(2^222 - 1)`. -/
+def rootTail (F : Field) : Prog isa :=
   .seq (sqn F (slot 21) (slot 21) 223) (.block (F.mul (slot 21) (slot 21) (slot 20)))
+
+/-- `[T7] = [z]^((p-3)/4)`: X448's addition chain (`invert`) as far as
+`z^(2^223 - 1)` in `T7` and `z^(2^222 - 1)` in `T6` (`chain223`), then
+`rootTail`. -/
+def root (F : Field) (z : Nat) : Prog isa := .seq (chain223 F (slot z)) (rootTail F)
+
+/-- `root F 12`, the chain by a call of `vg_gf448_r64_pow223`, keeping the decoding loop's
+public words, `PPK` and `CNT`. -/
+def rootCall (F : Field) : Prog isa := .seq (pow223Keep [PPK, CNT]) (rootTail F)
 
 /-- The 57 bytes at `rsi`: `y`'s seven words into slot `yo`, the sign bit
 into `SIGN`, and `BAD |= 0` exactly when bits 448–454 are 0 and `y < p`. -/
@@ -135,9 +129,10 @@ def decodeSign (F : Field) (xo : Nat) : List Instr :=
   (fieldCode F [.sub 12 xo xo, .sub 12 12 xo] ++ ([.mov .rcx (.mem (sc NEG))] ++
     cswap (slot xo) (slot 12))))))))
 
-/-- Decode the 57 bytes at `rsi` into slots `xo` and `yo`. -/
-def decode (F : Field) (xo yo : Nat) : Prog isa :=
-  .seq (.block (decodeY yo ++ fieldCode F (decodeUV yo xo))) <| .seq (root F 12) <|
+/-- Decode the 57 bytes at `rsi` into slots `xo` and `yo`, with the square root's power
+`rt` (`root F 12`, or `rootCall F`). -/
+def decode (F : Field) (xo yo : Nat) (rt : Prog isa := root F 12) : Prog isa :=
+  .seq (.block (decodeY yo ++ fieldCode F (decodeUV yo xo))) <| .seq rt <|
     .block (decodeX F xo ++ decodeSign F xo)
 
 /-! ## `[S]B + [k](-A)` -/
@@ -190,22 +185,19 @@ def vbits : Prog isa :=
 def vstart : List Instr :=
   [.store (sc PPK) .r8, .store (sc PSIG) .r9, .mov32 .rax (.imm 0), .store (sc BAD) .rax] ++ sCheck
 
-/-- The seven words at `a` to `o`. -/
-def copyOut (o a : Nat) : List Instr := loads a W ++ stores o W
-
 /-- One decoding: slots 6–7 kept at `RX` and `RY`, the constants, and the point at `PCUR`
 decoded into slots 6–7; then `PCUR` at `A`, and `CNT` moved down (ZF set at 0). -/
-def vdecodeBody (F : Field) : Prog isa :=
+def vdecodeBody (F : Field) (rt : Prog isa := root F 12) : Prog isa :=
   .seq (.block (copyOut RX (slot 6) ++ copyOut RY (slot 7) ++ consts ++ [.mov .rsi (.mem (sc PCUR))])) <|
-  .seq (decode F 6 7) <|
+  .seq (decode F 6 7 rt) <|
     .block [.mov .rsi (.mem (sc PPK)), .store (sc PCUR) .rsi, .mov .rbx (.mem (sc CNT)),
       .alu .sub .rbx (.imm 1), .store (sc CNT) .rbx]
 
 /-- `R` (the signature's first half) decoded, then `A`: a loop of two iterations, counted by
 `CNT`. `A` ends in slots 6–7 and `R` at `RX` and `RY`. -/
-def vdecode (F : Field) : Prog isa :=
+def vdecode (F : Field) (rt : Prog isa := root F 12) : Prog isa :=
   .seq (.block [.mov .rsi (.mem (sc PSIG)), .store (sc PCUR) .rsi, .mov32 .rbx (.imm 2),
-    .store (sc CNT) .rbx]) (.loop (vdecodeBody F) .ne)
+    .store (sc CNT) .rbx]) (.loop (vdecodeBody F rt) .ne)
 
 /-- `A` negated, with the constants. -/
 def vnegA (F : Field) : List Instr := consts ++ fieldCode F [.sub 6 0 6]
@@ -229,11 +221,13 @@ def vfinish (F : Field) : Prog isa :=
     ([.mov .rdx (.mem (sc BAD))] ++ (isZero ++ ([.mov .rax (.reg .rdx)] ++
       Impl.X448.X86_64.restore)))))))
 
-/-- `vg_ed448_verify_equation` with the field multiplications `F`. -/
-def verifyEquationWith (F : Field) : Prog isa :=
-  .seq (.block ventry) <| .seq vbits <| .seq (.block vstart) <| .seq (vdecode F) <|
+/-- `vg_ed448_verify_equation` with the field multiplications `F` and the square root's
+power `rt`. -/
+def verifyEquationWith (F : Field) (rt : Prog isa := root F 12) : Prog isa :=
+  .seq (.block ventry) <| .seq vbits <| .seq (.block vstart) <| .seq (vdecode F rt) <|
     .seq (.block (vnegA F)) <| .seq (vloop F) <| .seq (.block vR) (vfinish F)
 
-def verifyEquation : Prog isa := verifyEquationWith Impl.X448.X86_64.baseline
+def verifyEquation : Prog isa :=
+  verifyEquationWith Impl.X448.X86_64.baseline (rootCall Impl.X448.X86_64.baseline)
 
 end VG.Impl.Ed448.X86_64

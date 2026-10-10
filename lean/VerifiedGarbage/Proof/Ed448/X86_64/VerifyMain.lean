@@ -23,9 +23,9 @@ callee-saved registers are restored from it, and the return address is kept.
 namespace VG.Proof.Ed448.X86_64
 
 open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64 VG.Proof.Ed448
-open VG.Proof.X448.X86_64 (Scr Index Env E F fe Keep FieldOk word off Outside Outside2 ofs Saved clob
+open VG.Proof.X448.X86_64 (Scr Index Env E F fe Keep FieldOk word off Outside Outside2 ofs Saved clob copyOut_ok
   writeW_outside word_writeW_self contains_sc E_outside)
-open VG.Impl.X448.X86_64 (W w sc at_ slot BITS)
+open VG.Impl.X448.X86_64 (W w sc at_ slot BITS copyOut)
 
 /-- One store of `r` at `[b + d]`, `b` the working space. -/
 theorem store1_ok {s : State} {base : Addr} (b r : Reg) (hb : s.gpr b = base)
@@ -415,19 +415,6 @@ theorem storeZ_ok {s : State} {base : Addr} (hs : Scr s base) (r : Reg) {d : Nat
   have w : InRegions s.wr (base + BitVec.ofNat 64 d) 8 := ⟨_, hs.wr, contains_sc hd⟩
   erun [hs.rdi, w]
 
-/-- The seven words at `a` to `o`. -/
-theorem copyOut_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : o + 56 ≤ 8192)
-    (ha : a + 56 ≤ 8192) :
-    WP isa (.block (copyOut o a)) s fun t =>
-      fe t.mem base o = fe s.mem base a ∧ Outside base o 56 s.mem t.mem ∧
-      (∀ r, r ∉ W → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  rw [copyOut, WP.block_append_iff]
-  refine WP.mono (VG.Proof.X448.X86_64.loads_ok hs a W (by decide) (by decide) (by simp only [W]; omega))
-    fun u ⟨_, ru, ku⟩ => ?_
-  refine WP.mono (VG.Proof.X448.X86_64.stores_ok (hs.of_keeps ku (by decide)) o W (by simp only [W]; omega))
-    fun t ⟨et, ot, gt, rdt, wrt⟩ =>
-      ⟨et.trans ru, ku.2.1 ▸ ot, fun r hr => (gt r).trans (ku.1 r hr), rdt.trans ku.2.2.1, wrt.trans ku.2.2.2⟩
-
 theorem vdecodeInit_eq : ([.mov .rsi (.mem (sc PSIG)), .store (sc PCUR) .rsi, .mov32 .rbx (.imm 2),
     .store (sc CNT) .rbx] : List Instr) = ([.mov .rsi (.mem (sc PSIG))] : List Instr) ++
     (([.store (sc PCUR) .rsi] : List Instr) ++ (([.mov32 .rbx (.imm (BitVec.ofNat 32 2))] : List Instr) ++
@@ -499,9 +486,9 @@ theorem vnext_ok {s : State} {base : Addr} (hs : Scr s base) {k : Nat} (hk : k <
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [gt, g4 r hr.2, g3 r hr.2, g2, g1 r hr.1]
 
-theorem vdecodeBody_eq (F : Impl.X448.X86_64.Field) : vdecodeBody F =
+theorem vdecodeBody_eq (F : Impl.X448.X86_64.Field) (rt : Prog isa) : vdecodeBody F rt =
     .seq (.block (copyOut RX (slot 6) ++ (copyOut RY (slot 7) ++ (consts ++
-      ([.mov .rsi (.mem (sc PCUR))] : List Instr))))) (.seq (decode F 6 7)
+      ([.mov .rsi (.mem (sc PCUR))] : List Instr))))) (.seq (decode F 6 7 rt)
       (.block ([.mov .rsi (.mem (sc PPK)), .store (sc PCUR) .rsi, .mov .rbx (.mem (sc CNT)),
         .alu .sub .rbx (.imm 1), .store (sc CNT) .rbx] : List Instr))) := by
   simp only [vdecodeBody, List.append_assoc]
@@ -509,12 +496,13 @@ theorem vdecodeBody_eq (F : Impl.X448.X86_64.Field) : vdecodeBody F =
 include hf in
 /-- One decoding: of the point at `q` (`PCUR`), into slots 6 and 7, with their old values kept
 at `RX` and `RY`; then `PCUR` at `A`, and the count moved down. -/
-theorem vdecodeBody_ok (hR : RecoverOk) {s : State} {base q : Addr} (hs : Scr s base) {k : Nat}
+theorem vdecodeBody_ok (hR : RecoverOk) {rt : Prog isa} (hrt : RootOk rt) {s : State} {base q : Addr}
+    (hs : Scr s base) {k : Nat}
     (hk : k < 2) (hq : word s.mem base PCUR = q) (hc : word s.mem base CNT = BitVec.ofNat 64 (k + 1))
     (hr8 : ∀ i < 7, InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 (8 * i)) 8)
     (hr56 : InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 56) 1)
     (hfar : ∀ i < 57, 8192 ≤ ofs base (q + BitVec.ofNat 64 i)) :
-    WP isa (vdecodeBody fld) s fun t =>
+    WP isa (vdecodeBody fld rt) s fun t =>
       word t.mem base PCUR = word s.mem base PPK ∧ word t.mem base CNT = BitVec.ofNat 64 k ∧
       t.zf = some (decide (k = 0)) ∧
       F t.mem base RX = E s.mem base 6 ∧ F t.mem base RY = E s.mem base 7 ∧
@@ -557,7 +545,7 @@ theorem vdecodeBody_ok (hR : RecoverOk) {s : State} {base q : Addr} (hs : Scr s 
   have h10 : E s4.mem base 10 = 1 := by rw [m4]; exact (congrArg Spec.Ed448.Point.Z q3 :)
   have h11 : E s4.mem base 11 = Spec.Ed448.d := by rw [m4]; exact d3
   apply WP.seq
-  refine WP.mono (decode_ok hf hR hs4 hp4 6 7 (Or.inl ⟨rfl, rfl⟩) h10 h11 (by rw [rr4]; exact hr8)
+  refine WP.mono (decode_ok hf hR hrt hs4 hp4 6 7 (Or.inl ⟨rfl, rfl⟩) h10 h11 (by rw [rr4]; exact hr8)
     (by rw [rr4]; exact hr56) hfar) fun s5 ⟨⟨c, hc5, b5⟩, v5, _, g5, rd5, wr5, o5⟩ => ?_
   rw [far_bytes O4 hfar] at hc5 v5
   have hs5 : Scr s5 base := ⟨(g5 _ (by decide)).trans hs4.rdi, wr5 ▸ hs4.wr, hs.nowrap⟩
@@ -592,13 +580,14 @@ theorem vdecodeBody_ok (hR : RecoverOk) {s : State} {base q : Addr} (hs : Scr s 
 
 include hf in
 /-- `R` (at `sig`) decoded and kept at `RX` and `RY`, then `A` (at `pk`) into slots 6 and 7. -/
-theorem vdecode_ok (hR : RecoverOk) {s : State} {base pk sig : Addr} (hs : Scr s base)
+theorem vdecode_ok (hR : RecoverOk) {rt : Prog isa} (hrt : RootOk rt) {s : State} {base pk sig : Addr}
+    (hs : Scr s base)
     (hpk : word s.mem base PPK = pk) (hsig : word s.mem base PSIG = sig)
     (rp : ∀ i n, i + n ≤ 57 → InRegions (s.rd ++ s.wr) (pk + BitVec.ofNat 64 i) n)
     (rs : ∀ i n, i + n ≤ 57 → InRegions (s.rd ++ s.wr) (sig + BitVec.ofNat 64 i) n)
     (fp : ∀ i < 57, 8192 ≤ ofs base (pk + BitVec.ofNat 64 i))
     (fs : ∀ i < 57, 8192 ≤ ofs base (sig + BitVec.ofNat 64 i)) :
-    WP isa (vdecode fld) s fun t =>
+    WP isa (vdecode fld rt) s fun t =>
       (∃ cR cA : BitVec 64,
         (cR = 0 ↔ (Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem sig 57)).isSome) ∧
         (cA = 0 ↔ (Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem pk 57)).isSome) ∧
@@ -634,7 +623,7 @@ theorem vdecode_ok (hR : RecoverOk) {s : State} {base pk sig : Addr} (hs : Scr s
     rw [Outside2.word Dt (Or.inr (by decide)) (Or.inl (by decide)) (by decide), hpk]
   rcases (show k = 0 ∨ k = 1 by omega) with rfl | rfl
   · obtain ⟨⟨cR, hcR, bt⟩, vt⟩ := b1 rfl
-    refine WP.mono (vdecodeBody_ok hf hR ht (k := 0) (by decide) (by rw [pct]; rfl) cnt
+    refine WP.mono (vdecodeBody_ok hf hR hrt ht (k := 0) (by decide) (by rw [pct]; rfl) cnt
       (fun i hi => by rw [rrt]; exact rp _ _ (by omega)) (by rw [rrt]; exact rp _ _ (by omega)) fp)
       fun u ⟨_, _, zu, fx, fy, ⟨c, hc, bu⟩, vu, gu, rdu, wru, Du⟩ => ?_
     rw [far_bytes Ot fp] at hc vu
@@ -643,7 +632,7 @@ theorem vdecode_ok (hR : RecoverOk) {s : State} {base pk sig : Addr} (hs : Scr s
       fun r hr => (gu r hr).trans (gt r hr), rdu.trans rdt, wru.trans wrt, Dt.trans Du⟩
     obtain ⟨x, y, z⟩ := vt r hr
     exact ⟨by rw [fx, x], by rw [fy, y], z⟩
-  · refine WP.mono (vdecodeBody_ok hf hR ht (k := 1) (by decide) (by rw [pct]; rfl) cnt
+  · refine WP.mono (vdecodeBody_ok hf hR hrt ht (k := 1) (by decide) (by rw [pct]; rfl) cnt
       (fun i hi => by rw [rrt]; exact rs _ _ (by omega)) (by rw [rrt]; exact rs _ _ (by omega)) fs)
       fun u ⟨pcu, cnu, zu, _, _, ⟨c, hc, bu⟩, vu, gu, rdu, wru, Du⟩ => ?_
     rw [far_bytes Ot fs] at hc vu
@@ -706,9 +695,9 @@ theorem wide {base : Addr} {m m' : Mem} (h : Outside2 base 64 1584 BAD 80 m m') 
   h.outside (by decide) (by decide) (by decide) (by decide)
 
 include hf in
-theorem verifyEquation_correct (hR : RecoverOk) (hE : VerifyEqOk) {s : State}
-    (hp : verifyEquationLocal.pre s) :
-    WP isa (verifyEquationWith fld) s fun t => gprPreserved s t ∧ verifyEquationLocal.post s t := by
+theorem verifyEquation_correct (hR : RecoverOk) (hE : VerifyEqOk) {rt : Prog isa} (hrt : RootOk rt)
+    {s : State} (hp : verifyEquationLocal.pre s) :
+    WP isa (verifyEquationWith fld rt) s fun t => gprPreserved s t ∧ verifyEquationLocal.post s t := by
   obtain ⟨hr, hw, hdk, hds, hdc, hret, hn⟩ := hp
   obtain ⟨base, hbase⟩ : ∃ b, s.gpr .rcx = b := ⟨_, rfl⟩
   rw [hbase] at hdk hds hdc hret hn hw
@@ -760,7 +749,7 @@ theorem verifyEquation_correct (hR : RecoverOk) (hE : VerifyEqOk) {s : State}
   have O3 : Outside base 0 8192 s.mem s3.mem := O2.trans (o3.mono (by decide) (by decide))
   -- `R` and `A`, decoded by one loop.
   apply WP.seq
-  refine WP.mono (vdecode_ok hf hR hs3 pk3 sig3 (fun i n h => by rw [rr3]; exact rpk i n h)
+  refine WP.mono (vdecode_ok hf hR hrt hs3 pk3 sig3 (fun i n h => by rw [rr3]; exact rpk i n h)
     (fun i n h => by rw [rr3]; exact rsg i n (by omega)) fpk fsg)
     fun s4 ⟨⟨cR, cA, hcR, hcA, b4⟩, vr4, va4, g4, rd4, wr4, D4⟩ => ?_
   rw [far_bytes O3 fpk] at hcA va4
@@ -873,5 +862,15 @@ theorem verifyEquation_correct (hR : RecoverOk) (hE : VerifyEqOk) {s : State}
         rw [hE _ _ _ _ _ (bytesAt57_len _ _) (bytesAt114_len _ _) (bytesAt57_len _ _) ha hR, ← hQ, ← hRR,
           Bool.and_eq_true, decide_eq_true_iff, bytesAt_drop57, hS, cA0, cR0, hc0]
         exact ⟨fun h => ⟨h.1.1.1, h.2⟩, fun h => ⟨⟨⟨h.1, rfl⟩, rfl⟩, h.2⟩⟩
+
+theorem verifyEquation_inline : verifyEquation.inline =
+    verifyEquationWith Impl.X448.X86_64.baseline (rootCall Impl.X448.X86_64.baseline).inline := rfl
+
+/-- `vg_ed448_verify_equation`, its call of `vg_gf448_r64_pow223` inlined. -/
+theorem verifyEquation_correct_inline (hR : RecoverOk) (hE : VerifyEqOk) {s : State}
+    (hp : verifyEquationLocal.pre s) :
+    WP isa verifyEquation.inline s fun t => gprPreserved s t ∧ verifyEquationLocal.post s t := by
+  rw [verifyEquation_inline]
+  exact verifyEquation_correct Proof.X448.X86_64.baseline_ok hR hE (rootCall_ok Proof.X448.X86_64.baseline_ok) hp
 
 end VG.Proof.Ed448.X86_64

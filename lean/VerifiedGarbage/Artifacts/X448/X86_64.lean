@@ -16,9 +16,11 @@ def artifacts : List Artifact := [
     doc := Spec.X448.x448Api.doc (notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements are seven 64-bit words, multiplied with `mul` by \
       columns (squares computing each cross product once) and reduced with \
-      `2^448 = 2^224 + 1` (mod p). Inversion uses an addition chain for `p - 2`."])
+      `2^448 = 2^224 + 1` (mod p). Inversion uses an addition chain for `p - 2`, its part \
+      shared with Ed448's square root by a call of `vg_gf448_r64_pow223`."])
     code := Impl.X448.X86_64.x448
-    contract := Spec.X448.x448Contract X86_64.abi
+    contract := Spec.X448.x448Contract X86_64.abi 8
+    stack := 8
     verified := Proof.X448.X86_64.x448_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.X448.x448Api with

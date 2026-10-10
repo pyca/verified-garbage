@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
 import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 
 /-!
 # Ed448 base-point multiplication on x86-64: the contract the proof is written against
@@ -27,5 +28,10 @@ def scalarBaseLocal : Contract isa where
     Spec.Ed448.scalarBase (Spec.Ed448.bytesAt s.mem (s.gpr .rsi) 57)
   pub s t := s.gpr .rsp = t.gpr .rsp ∧ s.gpr .rdi = t.gpr .rdi ∧
     s.gpr .rsi = t.gpr .rsi ∧ s.gpr .rdx = t.gpr .rdx
+
+/-- The 8 bytes below `rsp = B + 8`, where a call from it stores its return address. -/
+theorem hole_add8 (B : Addr) : hole (B + BitVec.ofNat 64 8) = ⟨B, 8⟩ := by
+  simp only [hole]
+  rw [show (8 : Addr) = BitVec.ofNat 64 8 from rfl, BitVec.add_sub_cancel]
 
 end VG.Proof.Ed448.X86_64

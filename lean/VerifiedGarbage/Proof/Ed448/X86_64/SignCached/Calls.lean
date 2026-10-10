@@ -39,12 +39,12 @@ theorem mulAdd_nosp : NoSp Impl.Ed448.X86_64.scalarMulAdd := by
 theorem mulAdd_depth : Impl.Ed448.X86_64.scalarMulAdd.depth ≤ 1 := by lit_decide
 
 /-- `vg_ed448_scalar_base` meets the contract its proof is written against, and the ABI. -/
-abbrev BaseOk : Prop := ∀ s, Proof.Ed448.X86_64.scalarBaseLocal.pre s →
+abbrev BaseOk : Prop := ∀ s, Proof.Ed448.X86_64.scalarBaseLocal.clear.pre s →
   ∃ t s', Exec isa Impl.Ed448.X86_64.scalarBase s t s' ∧ abiPreserved s s' ∧
     Proof.Ed448.X86_64.scalarBaseLocal.post s s'
 
 /-- `vg_ed448_scalar_base` is constant time for that contract. -/
-abbrev BaseCT : Prop := ConstantTime isa Proof.Ed448.X86_64.scalarBaseLocal.pre
+abbrev BaseCT : Prop := ConstantTime isa Proof.Ed448.X86_64.scalarBaseLocal.clear.pre
   Proof.Ed448.X86_64.scalarBaseLocal.pub Impl.Ed448.X86_64.scalarBase
 
 theorem ed_bytesAt : Spec.Ed448.bytesAt = bytesAt := rfl
@@ -129,6 +129,24 @@ theorem red_ok (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) {d : Nat} (h₁ 
 
 /-! ## `vg_ed448_scalar_base` -/
 
+/-- The callee's precondition, its buffers apart from the 8 bytes below its `rsp`, the
+frame's lowest. -/
+theorem base_cpre (hL : L.Ok) {u : State} (g1 : u.gpr .rdi = L.out) (g2 : u.gpr .rsi = L.R)
+    (g3 : u.gpr .rdx = L.scr) (g4 : u.gpr .rsp = L.B + BitVec.ofNat 64 8) (hrd : u.rd = [⟨L.R, 57⟩])
+    (hwr : u.wr = [⟨L.out, 57⟩, L.SCR]) : Proof.Ed448.X86_64.scalarBaseLocal.clear.pre u := by
+  refine ⟨?_, ?_⟩
+  · simp only [Proof.Ed448.X86_64.scalarBaseLocal, g1, g2, g3, g4, hrd, hwr]
+    exact ⟨trivial, trivial, fr_x hL (d := 384) (by omega), ret_r hL (hL.kOut.sub_right o1_sub), ret_x hL,
+      (hL.xOut.sub_right o1_sub).symm, hL.nScr⟩
+  · rw [g4, Proof.Ed448.X86_64.hole_add8]
+    intro r hr
+    simp only [hrd, hwr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · rw [show L.R = L.B + BitVec.ofNat 64 400 from spd L 384]
+      exact Offset.disjoint_base _ (by omega) (by omega)
+    · simpa using ((hL.stk_r hL.kOut (d := 0) (n := 8) (by omega)).sub_right o1_sub).symm
+    · simpa using (hL.stk_r hL.kScr (d := 0) (n := 8) (by omega)).symm
+
 theorem base_ok (hb : BaseOk) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa (callA "vg_ed448_scalar_base" Impl.Ed448.X86_64.scalarBase [.slot fOut, .sp fR, .slot fScr]) t
       fun t' => Ctx L g mx m₀ t' ∧ Frame [⟨L.out, 57⟩, L.SCR, ⟨L.B, 16⟩] t.mem t'.mem ∧
@@ -143,11 +161,8 @@ theorem base_ok (hb : BaseOk) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
   have g1 := (gpr_ce t1 [⟨L.R, 57⟩] [⟨L.out, 57⟩, L.SCR] (by decide : Reg.rdi ≠ .rsp)).trans e1
   have g2 := (gpr_ce t1 [⟨L.R, 57⟩] [⟨L.out, 57⟩, L.SCR] (by decide : Reg.rsi ≠ .rsp)).trans e2
   have g3 := (gpr_ce t1 [⟨L.R, 57⟩] [⟨L.out, 57⟩, L.SCR] (by decide : Reg.rdx ≠ .rsp)).trans e3
-  have hpre : Proof.Ed448.X86_64.scalarBaseLocal.pre (t1.callEntry.withRegions [⟨L.R, 57⟩] [⟨L.out, 57⟩, L.SCR]) := by
-    simp only [Proof.Ed448.X86_64.scalarBaseLocal, g1, g2, g3, sp_ce hc1, State.withRegions_rd,
-      State.withRegions_wr]
-    exact ⟨trivial, trivial, fr_x hL (d := 384) (by omega), ret_r hL (hL.kOut.sub_right o1_sub), ret_x hL,
-      (hL.xOut.sub_right o1_sub).symm, hL.nScr⟩
+  have hpre := base_cpre hL (u := t1.callEntry.withRegions [⟨L.R, 57⟩] [⟨L.out, 57⟩, L.SCR]) g1 g2 g3
+    (sp_ce hc1 _ _) rfl rfl
   refine call_ok hL hb base_nosp base_depth hc1 hpre
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -157,7 +172,7 @@ theorem base_ok (hb : BaseOk) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
       rcases hr with rfl | rfl
       exacts [.inr (.inl (within_base _ (by omega))), .inl (within_self _)])
     fun s' hc' hf _ ⟨s₂, hm₂, _, hpost⟩ => ⟨hc', by rw [← hm]; simpa using hf, ?_⟩
-  simp only [Proof.Ed448.X86_64.scalarBaseLocal, g1, g2, State.withRegions_mem, hm₂] at hpost
+  simp only [Contract.clear, Proof.Ed448.X86_64.scalarBaseLocal, g1, g2, State.withRegions_mem, hm₂] at hpost
   rw [hpost]
   refine congrArg _ ?_
   rw [ed_bytesAt, hc1.ce_bytesAt (ret_fr (d := 384) (by omega)) (by decide), hm]
