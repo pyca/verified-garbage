@@ -2,6 +2,9 @@ import VerifiedGarbage.Impl.Ed25519.AArch64.Power
 import VerifiedGarbage.Proof.Ed25519.AArch64.Field
 import VerifiedGarbage.Proof.X25519.Invert
 import VerifiedGarbage.Proof.Ed25519.RootPower
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.Covers
 
 /-! Merged from `Proof.Ed25519.AArch64.PowerEnv`. -/
 section
@@ -199,20 +202,116 @@ theorem power250_spec (base : Addr) : ISpec (large := large) base power250 power
     (mulI base 15 16 15 ⟨by decide, by decide⟩)
   exact h
 
+/-! ## `vg_gf25519_r64_pow250` as a function, and its calls -/
+
+theorem powKept_lanes : ∀ k ∈ powKept, k.2.2 < 2 := by decide
+theorem powKept_nodup_lanes : (powKept.map fun k => (k.2.1, k.2.2)).Nodup := by decide
+theorem powKept_nodup : (powKept.map Prod.fst).Nodup := by decide
+
+/-- `power250` writes no vector register. -/
+theorem power250_noV : power250.allInstrs (fun i => vdstOf i == none) = true := by decide +kernel
+
+theorem power250_vdst (r : VReg) : ∀ i ∈ instrs power250, vdstOf i ≠ some r := fun i hi => by
+  have h := List.all_eq_true.mp (by rw [← Code.allInstrs_eq]; exact power250_noV) i hi
+  rw [beq_iff_eq.mp h]; exact fun h' => nomatch h'
+
+/-- `powFn`: the slots as after `power250`, which writes only `[512, 640)` of the working
+space, and every register outside `clob`, or kept in a lane, restored. -/
+theorem powFn_ok {s : State} {base : Addr} (hs : Scr s base false) :
+    WP isa powFn s fun u =>
+      (∀ r, (r ∉ clob ∨ r ∈ powKept.map Prod.fst) → u.gpr r = s.gpr r) ∧ u.rd = s.rd ∧
+        u.wr = s.wr ∧ u.sp = s.sp ∧ Outside base 512 128 s.mem u.mem ∧
+        env u.mem base = power250Env (env s.mem base) := by
+  unfold powFn
+  rw [WP.seq_iff]
+  refine WP.mono (insOf_ok powKept s powKept_lanes powKept_nodup_lanes)
+    fun s₁ ⟨hg, hm, hr, hw, hsp, hls, _⟩ => ?_
+  have hs₁ : Scr s₁ base false := ⟨by rw [hg]; exact hs.x0, by rw [hw]; exact hs.wr, hs.nowrap⟩
+  rw [WP.seq_iff]
+  obtain ⟨tb, t, he, hk, hev⟩ := power250_spec (large := false) base s₁ hs₁
+  refine ⟨tb, t, he, ?_⟩
+  have tl : ∀ k ∈ powKept, laneOf t k.2.1 k.2.2 = s.gpr k.1 := fun k hk' => by
+    rw [laneOf, Exec.vec (power250_vdst _) he, ← laneOf, hls k hk']
+  refine WP.mono (umovOf_ok powKept t powKept_lanes powKept_nodup)
+    fun u ⟨um, ur, uw, usp, uls, uoth⟩ => ?_
+  refine ⟨fun r hr' => ?_, by rw [ur, hk.rd, hr], by rw [uw, hk.wr, hw], by rw [usp, hk.sp, hsp],
+    by rw [um, ← hm]; exact hk.mem, by rw [um, hev, hm]⟩
+  by_cases hm' : r ∈ powKept.map Prod.fst
+  · obtain ⟨k, hk', rfl⟩ := List.mem_map.mp hm'
+    rw [uls k hk', tl k hk']
+  · have h19 : r ≠ .x19 := fun h => hm' (by rw [h]; decide)
+    rw [uoth r hm', hk.gpr r (hr'.resolve_right hm') h19, hg]
+
+theorem powFn_keepsV : powFn.allInstrs keepsV = true := by decide +kernel
+
+theorem powFn_v31 : ∀ i ∈ instrs powFn, vdstOf i ≠ some .v31 := fun i hi => by
+  have h := List.all_eq_true.mp (by rw [← Code.allInstrs_eq]; exact (by decide +kernel :
+    powFn.allInstrs (fun i => vdstOf i != some .v31) = true)) i hi
+  simpa using h
+
+/-- The callee-saved registers `powFn` restores. -/
+theorem powFn_preserved : ∀ r ∈ preserved, r ∉ clob ∨ r ∈ powKept.map Prod.fst := by decide
+
+/-- The contract of the call, from `powFn_ok`. -/
+def powK (base : Addr) : Contract isa where
+  pre t := t.rd = [] ∧ t.wr = [⟨base, 4096⟩] ∧ t.gpr .x0 = base ∧ base.toNat + 4096 ≤ 2 ^ 64
+  post t t' := (∀ r, r ∉ clob → t'.gpr r = t.gpr r) ∧ Outside base 512 128 t.mem t'.mem ∧
+    env t'.mem base = power250Env (env t.mem base) ∧ t'.v .v31 = t.v .v31
+  pub _ _ := True
+
+/-- **A call of `vg_gf25519_r64_pow250`**, with the return address kept in `v31`, as `power250`. -/
+theorem powCall_spec (base : Addr) : ISpec (large := large) base powCall power250Env := by
+  intro s hs
+  unfold powCall
+  rw [WP.seq_iff]
+  refine WP.mono (insOf_ok [(.x30, .v31, 0)] s (by decide) (by decide))
+    fun s₁ ⟨g₁, m₁, r₁, w₁, sp₁, l₁, _⟩ => ?_
+  rw [WP.seq_iff]
+  have hcov : Covers [⟨base, 4096⟩] s₁.wr := Covers.of_sub fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact ⟨⟨base, workSize large⟩, by rw [w₁]; exact hs.wr, 0, (BitVec.add_zero _).symm,
+      workSize_ge large⟩
+  have hx0 : s₁.gpr .x0 = base := by rw [g₁]; exact hs.x0
+  refine WP.callV (k := powK base) (rd := []) (wr := [⟨base, 4096⟩]) ?hv
+    ⟨rfl, rfl, by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), hx0],
+      by have := workSize_ge large; have := hs.nowrap; omega⟩
+    (Covers.right hcov) hcov ?_ (by decide +kernel)
+  case hv =>
+    intro t ⟨_, hwr, h0, hn⟩
+    obtain ⟨tr, t', he, hg, hrd, hwr', hsp, hmem, hev⟩ :=
+      powFn_ok (s := t) (base := base) ⟨h0, by rw [hwr]; exact List.mem_singleton_self _, hn⟩
+    exact ⟨tr, t', he, ⟨fun r hr => hg r (powFn_preserved r hr), hsp, Exec.preservedV he powFn_keepsV⟩,
+      fun r hr => hg r (.inl hr), hmem, hev, Exec.vec powFn_v31 he⟩
+  intro t hrd hwr hsp _ _ _ _ ⟨hg, hmem, hev, hv31⟩
+  simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, m₁] at hg hmem hev
+  refine WP.mono (umovOf_ok [(.x30, .v31, 0)] t (by decide) (by decide))
+    fun u ⟨um, ur, uw, usp, uls, uoth⟩ => ?_
+  have l30 : u.gpr .x30 = s.gpr .x30 := by
+    rw [uls _ List.mem_cons_self, ← l₁ _ List.mem_cons_self]
+    exact congrArg (BitVec.extractLsb' (64 * 0) 64) hv31
+  refine ⟨⟨fun r hr h19 => ?_, by rw [ur, hrd, r₁], by rw [uw, hwr, w₁], by rw [usp, hsp, sp₁],
+    by rw [um]; exact hmem⟩, by rw [um, hev]⟩
+  by_cases h30 : r = .x30
+  · rw [h30]; exact l30
+  · have hl : r ∉ linkRegs := by
+      simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]
+      exact ⟨fun h => hr (by rw [h]; decide), fun h => hr (by rw [h]; decide), h30⟩
+    rw [uoth r (by simpa using h30), hg r hr, State.callEntry_gpr _ hl, g₁]
+
 def invEnv (e : Env) : Env := opMul 15 15 14 (opSqn 15 15 5 (power250Env e))
 def rootEnv (e : Env) : Env := opMul 15 15 2 (opSqn 15 15 2 (power250Env e))
 
 theorem invert_spec (base : Addr) : ISpec (large := large) base invert invEnv := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
-  have h : ISpec (large := large) base _ _ := (power250_spec base).seq ((sqnI base 15 15 ⟨by decide, by decide⟩ 5 (by decide) (by decide)).seq
+  have h : ISpec (large := large) base _ _ := (powCall_spec base).seq ((sqnI base 15 15 ⟨by decide, by decide⟩ 5 (by decide) (by decide)).seq
     (mulI base 15 15 14 ⟨by decide, by decide⟩))
   exact h
 
 theorem rootPower_spec (base : Addr) : ISpec (large := large) base Impl.Ed25519.AArch64.rootPower rootEnv := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
-  have h : ISpec (large := large) base _ _ := (power250_spec base).seq ((sqnI base 15 15 ⟨by decide, by decide⟩ 2 (by decide) (by decide)).seq
+  have h : ISpec (large := large) base _ _ := (powCall_spec base).seq ((sqnI base 15 15 ⟨by decide, by decide⟩ 2 (by decide) (by decide)).seq
     (mulI base 15 15 2 ⟨by decide, by decide⟩))
   exact h
 
