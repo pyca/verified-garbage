@@ -77,7 +77,7 @@ theorem bits_combReady (hc : BaseCfgOk c) {d : CombData} (hcd : c.comb = some d)
   have hTM₂ : TblMem s₂ (s₁.syms d.tsym) (c.combWords d) :=
     hTM.of_unch (by rw [k₂.rd,k₂.wr]) O₂.unch (fun w hw => by
       rw [List.mem_singleton.mp hw]; exact sl_le c h7 (by decide)) hout
-  refine ⟨hs₂,modP_of hc F₂.mp,?_⟩
+  refine ⟨hs₂,(modP_of hc F₂.mp).inl c.hot,?_⟩
   rw [← mid_publicU hM]
   have sym : s₂.syms d.tsym = s₀.syms d.tsym := by rw [sy₂,sy₁,hM.syms]
   refine ⟨?_,?_,fun x hx => ?_,F₂.zero,ht₂,wordsVal_lt _ _ _ _,sym,?_,?_⟩

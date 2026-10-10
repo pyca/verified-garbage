@@ -89,4 +89,11 @@ theorem doubleIn_dblOk {M : Mod} {C : Curve} (hm : UnitMod C.p (2 ^ (64 * M.n)))
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> simp [dblJMul, validAfter, FOp.out]
 
+/-- `doubleIn_dblOk` with the products written out (`Mod.inl`). -/
+theorem doubleIn_dblOk_inl {M : Mod} {C : Curve} (hm : UnitMod C.p (2 ^ (64 * M.n))) (hC : Law C) (ha : AM3 C)
+    {S : RcbSlots} (b : Bool) : DblOk M S C (doubleIn { M with inl := b } S) := by
+  intro base size Sl hL p hnd hSl E s hI Q hQ hJ
+  exact WP.mono (doubleIn_dblOk (M := { M with inl := b }) hm hC ha (hL.inl b) hnd hSl (hI.inl b) hQ hJ)
+    fun t ⟨k, E', I, J⟩ => ⟨k.of_inl, E', I.of_inl, J⟩
+
 end VG.Proof.Weierstrass.X86_64

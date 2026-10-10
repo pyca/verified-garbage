@@ -120,8 +120,8 @@ theorem gMulComb_ok' (hc : BaseCfgOk c) {d : CombData} (hcd : c.comb = some d) {
       · exact lt_of_eq_of_lt F₁.ap (hmont _)
       · exact lt_of_eq_of_lt e₁ (hmont _)
       · exact lt_of_eq_of_lt F₁.zero (by omega)
-  refine WP.mono (hP s₁ hs₁ (modP_of hc F₁.mp) hF) fun s' ⟨K', U', M', L', R'⟩ =>
-      ⟨(k₁.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp [powClob, clob]).trans K', ?_, M', L', R'⟩
+  refine WP.mono (hP s₁ hs₁ ((modP_of hc F₁.mp).inl c.hot) hF) fun s' ⟨K', U', M', L', R'⟩ =>
+      ⟨(k₁.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp [powClob, clob]).trans K', ?_, M'.of_inl, L', R'⟩
   rw [tcombW_eq] at U'
   have hz := zw_le hd
   refine Unch.cover (O₁.unch.trans U') fun w hw => ?_

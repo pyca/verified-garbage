@@ -16,7 +16,7 @@ open VG.X86_64
 /-- `vg_ecdh_p384`. -/
 def exchangeP384 : Prog isa :=
   Cfg.exchangeJA Impl.Ecdsa.X86_64.p384
-    (Impl.Weierstrass.X86_64.doubleIn Impl.Ecdsa.X86_64.p384.MP' Impl.Ecdsa.X86_64.p384.rcbSlots)
+    (Impl.Weierstrass.X86_64.doubleIn Impl.Ecdsa.X86_64.p384.MH Impl.Ecdsa.X86_64.p384.rcbSlots)
 
 /-- `vg_ecdh_p384_adx`. -/
 def exchangeP384Adx : Prog isa :=

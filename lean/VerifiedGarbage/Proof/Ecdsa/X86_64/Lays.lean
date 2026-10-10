@@ -52,28 +52,49 @@ theorem lay_map (hc : BaseCfgOk c) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tm
     rw [hMn, htmp]; exact sl_apart c (hl i hi).2.2
 
 /-- A numbered slot is below the tables, but the temporary area, which for
-nine words is between the second and the third. -/
-theorem sl_below_bits (c : Cfg) {i : Nat} (hi : i < 45) (j t : Nat) (hT : i ≠ TMP ∨ 2 ≤ j := by sl_or) :
+nine words is between the second and the third, and for six past them all. -/
+theorem sl_below_bits (c : Cfg) {i : Nat} (hi : i < 45) (j t : Nat)
+    (hT : i ≠ TMP ∨ 2 ≤ j ∧ c.n ≠ 6 := by sl_or) :
     c.sl i + 8 * c.n ≤ bitsAt c.n j + t := by
   rw [bitsAt_eq, sl_eq']
   by_cases h : i = TMP ∧ c.n = 9
-  · have hj := hT.resolve_left fun e => e h.1
+  · have hj := (hT.resolve_left fun e => e h.1).1
     have hix : ix c i = 55 := by unfold ix; rw [ite_eq_left h.2, ite_eq_left h.1]
     rw [hix, h.2]
     have := Nat.mul_le_mul_left (64 * 9 + 8) hj
     omega
   · have hix : ix c i = i := by
-      unfold ix; split
-      · rename_i h9
-        rw [ite_eq_right fun e => h ⟨e, h9⟩, ite_eq_right (show i ≠ 55 by omega)]
-      · rfl
+      by_cases ht : i = TMP
+      · have h6 : c.n ≠ 6 := (hT.resolve_left fun e => e ht).2
+        have h9 : c.n ≠ 9 := fun e => h ⟨ht, e⟩
+        exact ix_of_ne c (.inr fun e => e.elim h9 h6)
+      · exact ix_of_ne c (.inl ⟨ht, by omega, by omega⟩)
     rw [hix]
     have := Nat.mul_le_mul_left (8 * c.n) hi
     rw [Nat.mul_succ] at this
     omega
 
-/-- The temporary area is apart from every table but the second (the bits of `p - 2`). -/
-theorem tmp_apart_bits (c : Cfg) {j : Nat} (hj : j ≠ 1 ∨ c.n ≠ 9) (t : Nat) (ht : t ≤ 64 * c.n + 8) :
+/-- For six words the temporary area is in slot `83`'s place. -/
+theorem sl_tmp6 (c : Cfg) (h6 : c.n = 6) : c.sl TMP = 64 + 8 * c.n * 83 := by
+  rw [sl_eq', ix_tmp6 c h6]
+
+/-- A numbered slot is apart from an area past the first two tables, which
+for six words ends below the temporary area. -/
+theorem sl_apart_hi (c : Cfg) {i : Nat} (hi : i < 45) {a L : Nat} (hlo : bitsAt c.n 2 ≤ a)
+    (hhi : c.n = 6 → a + L ≤ c.sl TMP) : c.sl i + 8 * c.n ≤ a ∨ a + L ≤ c.sl i := by
+  by_cases h : i = TMP ∧ c.n = 6
+  · obtain ⟨rfl, h6⟩ := h
+    exact .inr (hhi h6)
+  · refine .inl ?_
+    have := sl_below_bits c hi 2 0 (by
+      by_cases ht : i = TMP
+      · exact .inr ⟨by decide, fun e => h ⟨ht, e⟩⟩
+      · exact .inl ht)
+    omega
+
+/-- The temporary area is apart from the first four tables but the second (the bits of `p - 2`)
+for nine words. -/
+theorem tmp_apart_bits (c : Cfg) {j : Nat} (hj : j ≠ 1 ∨ c.n ≠ 9) (hj4 : j < 4) (t : Nat) (ht : t ≤ 64 * c.n + 8) :
     c.sl TMP + 8 * c.n ≤ bitsAt c.n j ∨ bitsAt c.n j + t ≤ c.sl TMP := by
   rw [bitsAt_eq, sl_eq']
   by_cases h9 : c.n = 9
@@ -84,16 +105,20 @@ theorem tmp_apart_bits (c : Cfg) {j : Nat} (hj : j ≠ 1 ∨ c.n ≠ 9) (t : Nat
     · right; obtain rfl : j = 0 := by omega
       omega
     · left; have := Nat.mul_le_mul_left (64 * 9 + 8) (show 2 ≤ j by omega); omega
-  · rw [ix_of_ne c (.inr h9)]; left; simp only [TMP]
-    have := Nat.mul_le_mul_left (64 * c.n + 8) (Nat.zero_le j)
-    omega
+  · by_cases h6 : c.n = 6
+    · rw [ix_tmp6 c h6]; right; rw [h6] at ht ⊢
+      have := Nat.mul_le_mul_left (64 * 6 + 8) (show j ≤ 3 by omega); omega
+    · rw [ix_of_ne c (.inr fun e => e.elim h9 h6)]; left; simp only [TMP]
+      have := Nat.mul_le_mul_left (64 * c.n + 8) (Nat.zero_le j)
+      omega
 
 /-- A numbered slot is apart from the first `t` bytes of table `j`: the
 temporary area too, unless the table is the second, for nine words. -/
 theorem sl_apart_bits (c : Cfg) {i : Nat} (hi : i < 45) {j : Nat} (hj : i ≠ TMP ∨ j ≠ 1 ∨ c.n ≠ 9) (t : Nat)
-    (ht : t ≤ 64 * c.n + 8) : c.sl i + 8 * c.n ≤ bitsAt c.n j ∨ bitsAt c.n j + t ≤ c.sl i := by
+    (ht : t ≤ 64 * c.n + 8) (hj4 : j < 4 := by omega) :
+    c.sl i + 8 * c.n ≤ bitsAt c.n j ∨ bitsAt c.n j + t ≤ c.sl i := by
   by_cases hT : i = TMP
-  · subst hT; exact tmp_apart_bits c (hj.resolve_left fun h => h rfl) t ht
+  · subst hT; exact tmp_apart_bits c (hj.resolve_left fun h => h rfl) hj4 t ht
   · exact .inl (by simpa only [Nat.add_zero] using sl_below_bits c hi j 0 (.inl hT))
 
 /-- A numbered slot is apart from the word past the table of `k`'s bits. -/
@@ -135,18 +160,18 @@ theorem ladLay (hc : BaseCfgOk c) : LadLay c.ladderCfg size := by
           TY, TZ], i < 45 ∧ i ≠ TMP := by decide
       exact Or.inr (sl_below_bits c (hl i hi).1 0 0 (.inl (hl i hi).2))
     · show bitsAt c.n 0 + 64 * c.n ≤ c.sl TMP ∨ c.sl TMP + 8 * c.n ≤ bitsAt c.n 0
-      have := tmp_apart_bits c (j := 0) (.inl (by decide)) (64 * c.n) (by omega); omega
+      have := tmp_apart_bits c (j := 0) (.inl (by decide)) (by decide) (64 * c.n) (by omega); omega
 
 theorem powLay_of (hc : BaseCfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
     (minv : BitVec 64) {red : Red} {adx sparse : Bool}
     {base one j : Nat} (hj : j < 3) (hb : base ∉ [ACC, PT, TMP]) (hb45 : base < 45) (ho : one ≠ ACC)
     (ho45 : one < 45) {nb : Nat} (hnb : 1 ≤ nb ∧ nb ≤ 64 * c.n) (hjT : j ≠ 1 ∨ c.n ≠ 9) :
-    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx, sparse⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
+    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx, sparse, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
       nb⟩ size := by
   have hn := hc.n0
   have h7 := hc.n10
   have hw : ∀ i, i ∉ [ACC, PT, TMP] →
-      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx, sparse⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
+      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx, sparse, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
         bitsAt c.n j, nb⟩, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
     intro i hi w hw
     simp only [powW, List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -166,7 +191,7 @@ theorem powLay_of (hc : BaseCfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
   · exact Or.inr (sl_below_bits c (by decide) j 0)
   · exact Or.inr (sl_below_bits c (by decide) j 0)
   · show bitsAt c.n j + nb ≤ c.sl TMP ∨ c.sl TMP + 8 * c.n ≤ bitsAt c.n j
-    have := tmp_apart_bits c hjT (64 * c.n) (by omega); omega
+    have := tmp_apart_bits c hjT (by omega) (64 * c.n) (by omega); omega
 
 /-- The power modulo `p`, which reads the bits of `p - 2` where the
 temporary area of nine words is. -/

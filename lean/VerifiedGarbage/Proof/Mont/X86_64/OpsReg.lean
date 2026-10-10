@@ -99,7 +99,7 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       ⟨⟨fun r hr => kr.gpr r (not_mem_of hr (by rw [h6]; decide)), kr.rd, kr.wr,
         fun x hx hx' => hmem x (by rw [h6] at hx; exact hx) (by rw [h6] at hx'; exact hx')⟩, hlt, he⟩
   rw [mulG, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (mulRounds_ok hs hM ha hb hB) fun s₂ ⟨⟨U, eU⟩, hT, k₂⟩ => ?_
+  refine WP.mono (mulRounds_ok hs hM.toR ha hb hB) fun s₂ ⟨⟨U, eU⟩, hT, k₂⟩ => ?_
   have hs₂ := hs.of_keeps k₂ (by
     intro h
     simp only [List.mem_cons] at h

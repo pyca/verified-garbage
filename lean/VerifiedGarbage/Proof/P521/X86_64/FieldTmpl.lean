@@ -106,4 +106,11 @@ theorem p521XNMul_ok (o a b : Nat) :
     ite_eq_left_of_eq_true _ _ (by decide +kernel)]
   kernel_rfl
 
+/-- P-521 writes out no products (`Cfg.hot`): its `MH` is its `MP'`. -/
+theorem p521_MH : p521.MH = p521.MP' := Impl.Mont.Mod.with_inl_false rfl
+theorem p521x_MH : p521x.MH = p521x.MP' := Impl.Mont.Mod.with_inl_false rfl
+
+theorem p521HT_ok : p521T.Ok p521.MH := p521_MH ▸ p521T_ok
+theorem p521XHT_ok : p521XT.Ok p521x.MH := p521x_MH ▸ p521XT_ok
+
 end VG.Proof.P521.X86_64

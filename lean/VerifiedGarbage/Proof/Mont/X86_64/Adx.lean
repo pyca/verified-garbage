@@ -234,7 +234,7 @@ theorem redGenX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
 and `T' < 2m` if `T < 2m`. -/
 theorem roundX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}
     (hn : M.n < 7) {a b i m : Nat} (ha : a + 8 * i + 8 ≤ size) (hb : b + 8 * M.n ≤ size)
-    (hmo : M.mo + 8 * M.n ≤ size) (hm : wordsVal s.mem base M.mo M.n = m)
+    (hmo : M.mo + 8 * M.n ≤ size) (hm : MoVal M m s.mem base)
     (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hok : M.ok m = true)
     (hB : wordsVal s.mem base b M.n < m) (hT : regsVal s (wins M.n i) < 2 * m) :
     WP isa (.block (roundX M a b i)) s fun s' =>
@@ -246,7 +246,7 @@ theorem roundX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   have hf : Fresh ((List.range M.n).map (win M.n i) ++ [win M.n i M.n, win M.n i (M.n + 1)]) :=
     hW ▸ fresh_wins hn i
   have hl : ((List.range M.n).map (win M.n i)).length = M.n := by simp
-  have hm' : m < 2 ^ (64 * M.n) := hm ▸ wordsVal_lt _ _ _ _
+  have hm' : m < 2 ^ (64 * M.n) := hm.lt hok
   have hA := (word s.mem base (a + 8 * i)).isLt
   have hAB : (word s.mem base (a + 8 * i)).toNat * wordsVal s.mem base b M.n ≤ (2 ^ 64 - 1) * m :=
     Nat.mul_le_mul (by omega_using []) (by omega_using [hB])
@@ -290,9 +290,10 @@ theorem roundX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     obtain ⟨hn6, hm6⟩ := Mod.ok_sparse hok hsp
     refine WP.mono (redSX_ok hn6 hm6 (by rw [e₂]; omega_using [hT, hAB]))
       fun s' ⟨⟨u, hu, eu⟩, k⟩ => ⟨(fin u hu eu).1, (fin u hu eu).2, k₁₂.trans k⟩
+  rename_i hsp
   have hred := Mod.ok_red hok
   split
-  · refine WP.mono (redGenX_ok hs₂ hn hmo (by rw [hmem, hm]) hinv (by rw [e₂]; omega_using [hT, hAB]))
+  · refine WP.mono (redGenX_ok hs₂ hn hmo (by rw [hmem, hm (Bool.eq_false_iff.mpr hsp)]) hinv (by rw [e₂]; omega_using [hT, hAB]))
       fun s' ⟨⟨u, hu, eu⟩, k⟩ => ⟨(fin u hu eu).1, (fin u hu eu).2, k₁₂.trans k⟩
   · rename_i ws hf
     rw [hf] at hred
@@ -305,7 +306,7 @@ theorem roundX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
 `2⁶⁴ T' = T + a_i B + u m`, and `T' < 2m` if `T < 2m`. -/
 theorem round_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}
     (hn : M.n < 7) {a b i m : Nat} (ha : a + 8 * i + 8 ≤ size) (hb : b + 8 * M.n ≤ size)
-    (hmo : M.mo + 8 * M.n ≤ size) (hm : wordsVal s.mem base M.mo M.n = m)
+    (hmo : M.mo + 8 * M.n ≤ size) (hm : MoVal M m s.mem base)
     (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hok : M.ok m = true)
     (hB : wordsVal s.mem base b M.n < m) (hT : regsVal s (wins M.n i) < 2 * m) :
     WP isa (.block (round M a b i)) s fun s' =>

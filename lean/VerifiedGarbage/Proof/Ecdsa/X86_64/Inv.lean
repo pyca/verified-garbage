@@ -29,12 +29,22 @@ theorem rdi_not_invClob (n : Nat) : Reg.rdi ∉ invClob n := fun h =>
 theorem rsi_not_invClob (n : Nat) : Reg.rsi ∉ invClob n := fun h =>
   (List.mem_cons.mp h).elim (fun h => absurd h (by decide)) (rsi_not_powClob n)
 
+/-- Six words' temporary area, slot `83` (`Cfg.sl`), is past the inversions' working area. -/
+theorem tmp6_above (h : c.n = 6) : bitsAt c.n 3 + (64 * c.n + 64) ≤ c.sl TMP := by
+  unfold Cfg.sl bitsAt slot; rw [h]; decide
+
 /-- A slot is apart from the inversions' working area. -/
 theorem apart_pwA {i : Nat} (hi : i < 45) :
     ∀ w ∈ [(bitsAt c.n 3, 64 * c.n + 64)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
   rw [List.mem_singleton.mp hw]
-  exact Or.inl (sl_below_bits c hi 3 0)
+  by_cases h : i = TMP ∧ c.n = 6
+  · obtain ⟨rfl, h6⟩ := h
+    exact Or.inr (tmp6_above h6)
+  · exact Or.inl (sl_below_bits c hi 3 0 (by
+      by_cases hi : i = TMP
+      · exact Or.inr ⟨by decide, fun e => h ⟨hi, e⟩⟩
+      · exact Or.inl hi))
 
 /-- A slot apart from what the powers write. -/
 theorem apart_pwW {i : Nat} (hi : i < 45) (hl : i ∉ [ACC, PT, TMP]) :
@@ -105,15 +115,19 @@ theorem invLay_of (hc : BaseCfgOk c) (h6 : c.n ≤ 9) (h4 : 4 ≤ c.n) {M : Mod}
     simp only [bitsAt_eq, invTbl]; show _ ≤ 8192
     have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)
     omega
-  have below : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ bitsAt c.n 3 := fun hi => by
-    have := sl_below_bits c hi 3 0; omega
+  have below : ∀ {i}, i < 45 → i ≠ TMP → c.sl i + 8 * c.n ≤ bitsAt c.n 3 := fun hi hT => by
+    have := sl_below_bits c hi 3 0 (Or.inl hT); omega
+  have tbl_tmp : bitsAt c.n 3 + invTbl c.n ≤ c.sl TMP ∨ c.sl TMP + 8 * c.n ≤ bitsAt c.n 3 := by
+    by_cases h6 : c.n = 6
+    · have := tmp6_above (c := c) h6; exact Or.inl (by unfold invTbl; omega)
+    · have := sl_below_bits c (i := TMP) (by decide) 3 0 (Or.inr ⟨by decide, h6⟩); exact Or.inr (by omega)
   have hbA : base ≠ ACC := by rcases hb with rfl | rfl <;> decide
   have hjA : jm ≠ ACC := by rcases hjm with rfl | rfl <;> decide
   have hjT : jm ≠ TMP := by rcases hjm with rfl | rfl <;> decide
   have hjb : base ≠ jm := by rcases hb with rfl | rfl <;> rcases hjm with rfl | rfl <;> decide
   exact ⟨h4, show c.n < 10 by omega, sl_le c h7 (by decide), sl_le c h7 hb45, hT, sl_le c h7 hjm45,
-    sl_le c h7 (by decide), sl_apart c (Ne.symm hbA), Or.inl (below (by decide)), Or.inl (below hb45),
-    sl_apart c (by decide), Or.inr (below (i := TMP) (by decide)), sl_apart c hjA, Or.inl (below hjm45),
+    sl_le c h7 (by decide), sl_apart c (Ne.symm hbA), Or.inl (below (by decide) (by decide)), Or.inl (below hb45 (by rcases hb with rfl | rfl <;> decide)),
+    sl_apart c (by decide), tbl_tmp, sl_apart c hjA, Or.inl (below hjm45 hjT),
     sl_apart c hjT⟩
 
 /-- The inversion's writes, within the powers'. -/

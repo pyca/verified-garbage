@@ -13,7 +13,7 @@ theorem jointMid_field {c : Cfg} {j : Joint.Cfg} (hc : CfgOk c)
     {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (h : Mid c s₀ base g s) :
     Inv j.K.M base size c.C.p (·∈nafSlots j.K) (winRo j.K) (tmv c.C j.K.M.n base s) s := by
   rw [hK]
-  refine ⟨h.scr,modP_of hc h.fixed.mp,fun _ hx => List.mem_append_left _ (List.mem_append_left _ hx),?_,fun _ _ => rfl⟩
+  refine ⟨h.scr,(modP_of hc h.fixed.mp).inl c.hot,fun _ hx => List.mem_append_left _ (List.mem_append_left _ hx),?_,fun _ _ => rfl⟩
   intro x hx
   simp only [winRo,List.mem_cons,List.not_mem_nil,or_false] at hx
   rcases hx with rfl|rfl|rfl|rfl|rfl|rfl

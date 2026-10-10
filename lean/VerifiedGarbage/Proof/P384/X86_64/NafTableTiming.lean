@@ -11,7 +11,7 @@ namespace VG.Proof.P384.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Proof.Weierstrass.X86_64
 
 theorem nafTable_checks : NafTableChecks nafJacWin := by
-  have hT : p384T.Ok nafJacWin.M := p384T_ok
+  have hT : p384T.Ok nafJacWin.M := p384HT_ok
   constructor
   · exact hT.constantTime (Taint.ofRegs [.rdi]) rfl (fun _ _ _ _ h => h) _ (by taint_decide)
   iterate 3 exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
@@ -31,7 +31,7 @@ theorem nafTable_checks : NafTableChecks nafJacWin := by
   · exact instrs_noClobber (by decide +kernel)
 
 theorem nafTable_adx_checks : NafTableChecks nafJacWinAdx := by
-  have hT : p384XT.Ok nafJacWinAdx.M := p384XT_ok
+  have hT : p384XT.Ok nafJacWinAdx.M := p384XHT_ok
   constructor
   · exact hT.constantTime (Taint.ofRegs [.rdi]) rfl (fun _ _ _ _ h => h) _ (by taint_decide)
   iterate 3 exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)

@@ -19,13 +19,14 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Wei
 /-- How P-384's field elements and scalars are multiplied, for the notes of its
 functions: with BMI2 and ADX (`adx`) or not. -/
 def mulNote (adx : Bool) : String :=
+  "multiplied (modulo `p`, by calls of `vg_p384_mul_mod_p" ++ (if adx then "_adx" else "") ++ "`) " ++
   if adx then
-    "multiplied by Montgomery multiplication by rows (operand scanning) of BMI2's `mulx`, each \
+    "by Montgomery multiplication by rows (operand scanning) of BMI2's `mulx`, each \
     product's low half added through OF (`adox`) and its high half through CF (`adcx`), two \
     carry chains that do not wait for each other, each row followed by the reduction's row by \
     the modulus (its multiplier `u = t₀ (-m⁻¹) mod 2⁶⁴`), with a final conditional subtraction"
   else
-    "multiplied by word-by-word Montgomery multiplication (CIOS) with a final conditional \
+    "by word-by-word Montgomery multiplication (CIOS) with a final conditional \
     subtraction"
 
 /-- How the comb's entries are selected, for the notes of its functions: with
@@ -107,16 +108,17 @@ theorem sign_x86_adx (hL : Law Spec.P384.curve)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
-    ∃ t s', Exec isa signP384Adx s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := wp_of_inline (by lit_decide) <| sign_ok (p384x_ok hI) hL (p384x_tbls hT) (pre_of_x hs)
-  have hsp : ∀ i ∈ instrs signP384Adx, Taint.clobbers i .rsp = false := by
+    ∃ t s', Exec isa signP384Adx.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384x_ok hI) hL (p384x_tbls hT) (pre_of_x hs)
+  have hsp : ∀ i ∈ instrs signP384Adx.inline, Taint.clobbers i .rsp = false := by
     have h : signP384Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+    ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -135,22 +137,32 @@ theorem sign_x86_adx (hL : Law Spec.P384.curve)
 
 theorem sign_ct_adx : ConstantTime isa signX86_64.pre signX86_64.pub signP384Adx :=
   VG.Taint.constantTime_mapBlocks (c' := signErasedAdx) (taintSym_eraseInv ["VG_P384_COMB"])
-    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) rfl
-    (fun _ _ _ _ ⟨_, h1, h2, h3, h4, h5, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .rsp]) rfl
+    (fun _ _ _ _ ⟨h0, h1, h2, h3, h4, h5, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
       · exact h1
       · exact h2
       · exact h3
       · exact h4
-      · exact h5, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
+      · exact h5
+      · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
     rfl (by taint_decide)
 
 theorem sign_verified_adx (hL : Law Spec.P384.curve)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
     (hI : InvSounds) :
     Verified X86_64.target signP384Adx
-      (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p384.combConsts)) :=
-  Verified.of_correct (sign_x86_adx hL hT hI) sign_ct_adx implies
+      (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p384.combConsts) 8) :=
+  Verified.of_inline_ct (by lit_decide) (sign_x86_adx hL hT hI) sign_ct_adx implies8
+    (fun _ h => Sig.clear_of_pre_consts h) sign_patch
+
+/-- `sign_call_x86` with BMI2 and ADX. -/
+theorem sign_call_x86_adx (hL : Law Spec.P384.curve)
+    (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
+    (hI : InvSounds) (s : State) (hs : signX86_64.pre s) (hc : Clear (hole (s.gpr .rsp)) s) :
+    ∃ t s', Exec isa signP384Adx s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
+  ok_of_inline (k := signX86_64) (by lit_decide) (sign_x86_adx hL hT hI)
+    (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
 end VG.Proof.Ecdsa.X86_64.P384

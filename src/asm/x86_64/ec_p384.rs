@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
-/// The function is `vg_ecdsa_p384_sign`'s code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves its caller's callee-saved registers in `scratch`; field elements are six 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS) with a final conditional subtraction; `[d]G` is the signature's comb over the 7-bit windows of `d`, from the static `VG_P384_COMB`, each entry selected by loading every entry of its table, 16 bytes at a time, and keeping (`pand`, `por`) the one of the digit's magnitude; and `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
+/// The function is `vg_ecdsa_p384_sign`'s code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves its caller's callee-saved registers in `scratch`; field elements are six 64-bit words in Montgomery form, multiplied (modulo `p`, by calls of `vg_p384_mul_mod_p`) by word-by-word Montgomery multiplication (CIOS) with a final conditional subtraction; `[d]G` is the signature's comb over the 7-bit windows of `d`, from the static `VG_P384_COMB`, each entry selected by loading every entry of its table, 16 bytes at a time, and keeping (`pand`, `por`) the one of the digit's magnitude; and `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
 ///
 /// # Safety
 ///
@@ -15,7 +15,7 @@
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
-/// * None of `out`, `d` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ec_p384_public_key(out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
@@ -13704,7 +13704,7 @@ pub(crate) const VG_EC_P384_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crat
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
-/// The function is `vg_ecdsa_p384_sign_adx`'s code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves its caller's callee-saved registers in `scratch`; field elements are six 64-bit words in Montgomery form, multiplied by Montgomery multiplication by rows (operand scanning) of BMI2's `mulx`, each product's low half added through OF (`adox`) and its high half through CF (`adcx`), two carry chains that do not wait for each other, each row followed by the reduction's row by the modulus (its multiplier `u = t₀ (-m⁻¹) mod 2⁶⁴`), with a final conditional subtraction; `[d]G` is the signature's comb over the 7-bit windows of `d`, from the static `VG_P384_COMB`, each entry selected by loading every entry of its table, 32 bytes at a time with AVX2, and keeping (`vpand`, `vpor`, under the mask of `vpcmpeqd` of a counter and the magnitude, broadcast) the one of the digit's magnitude; and `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
+/// The function is `vg_ecdsa_p384_sign_adx`'s code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves its caller's callee-saved registers in `scratch`; field elements are six 64-bit words in Montgomery form, multiplied (modulo `p`, by calls of `vg_p384_mul_mod_p_adx`) by Montgomery multiplication by rows (operand scanning) of BMI2's `mulx`, each product's low half added through OF (`adox`) and its high half through CF (`adcx`), two carry chains that do not wait for each other, each row followed by the reduction's row by the modulus (its multiplier `u = t₀ (-m⁻¹) mod 2⁶⁴`), with a final conditional subtraction; `[d]G` is the signature's comb over the 7-bit windows of `d`, from the static `VG_P384_COMB`, each entry selected by loading every entry of its table, 32 bytes at a time with AVX2, and keeping (`vpand`, `vpor`, under the mask of `vpcmpeqd` of a counter and the magnitude, broadcast) the one of the digit's magnitude; and `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
 ///
 /// # Safety
 ///
@@ -13713,7 +13713,7 @@ pub(crate) const VG_EC_P384_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crat
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
-/// * None of `out`, `d` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ec_p384_public_key_adx(out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
