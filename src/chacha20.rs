@@ -409,13 +409,14 @@ mod tests {
 
     /// Bulk vector stores handle unaligned slices, preserve their surrounding
     /// bytes, and agree with scalar code at the four-block/tail boundary,
-    /// around the AVX2 tail's pass of six blocks (257 to 384 bytes) and
-    /// around the last pass of sixteen blocks (513 to 1023 bytes).
+    /// around the AVX2 tail's pass of six blocks (257 to 384 bytes), the AVX2
+    /// last pass of eight blocks (385 to 511 bytes) and the last pass of
+    /// sixteen blocks (513 to 1023 bytes).
     #[test]
     fn bulk_boundaries() {
         for len in [
-            191, 192, 193, 255, 256, 257, 319, 320, 321, 383, 384, 385, 511, 512, 513, 575, 576,
-            577, 767, 768, 769, 1023, 1024,
+            191, 192, 193, 255, 256, 257, 319, 320, 321, 383, 384, 385, 447, 448, 449, 511, 512,
+            513, 575, 576, 577, 767, 768, 769, 1023, 1024,
         ] {
             for offset in [0, 1, 7, 15] {
                 for counter in [7, u32::MAX - (len as u32).div_ceil(64) + 1] {

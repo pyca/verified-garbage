@@ -1315,52 +1315,77 @@ theorem holds_rows {buf : Addr} {vs : Nat → CState} {s : State} (h : Holds buf
 
 /-! ## The whole output -/
 
-theorem finish_eq : finish =
+/-- The counter increments' 32 bytes, `buf[192, 224)`. -/
+abbrev incR (buf : Addr) : Region := ⟨buf + BitVec.ofNat 64 192, 32⟩
+
+theorem incs_frame_incR {rs : List Region} {m m' : Mem} {buf : Addr} (h : Incs buf m) (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, (incR buf).Disjoint r) : Incs buf m' := fun l q hl hq => by
+  rw [hf.readW (Offset.contains buf (by lit_omega) (by lit_omega) (by lit_omega)) hd (by decide)]
+  exact h l q hl hq
+
+/-- What `finishWith out` needs of `out`, for row `row` in `x0 … x3`: from
+the row of the blocks `B` in those registers, the code transposing it and
+`out` has the effect `E row B` on memory, writes only `R`, keeps the
+other vector registers but `ymm12 … ymm15`, and keeps the general-purpose
+registers `g` and the writable regions `w`. -/
+def OutOk (out : Nat → List XReg → List Instr) (E : Nat → (Nat → CState) → Mem → Mem → Prop)
+    (R : List Region) (g : Reg → BitVec 64) (w : List Region) (row : Nat) (x0 x1 x2 x3 : XReg) : Prop :=
+  ∀ (B : Nat → CState) (t : State), RowIn row x0 x1 x2 x3 B t → t.gpr = g → t.wr = w →
+    WP isa (.block (transpose x0 x1 x2 x3 ++ out row [x0, x1, x2, x3])) t fun t' =>
+      E row B t.mem t'.mem ∧ Frame R t.mem t'.mem ∧
+      (∀ r l, r ≠ x0 → r ≠ x1 → r ≠ x2 → r ≠ x3 → r ≠ .xmm12 → r ≠ .xmm13 → r ≠ .xmm14 →
+        r ≠ .xmm15 → t'.lane r l = t.lane r l) ∧
+      t'.gpr = t.gpr ∧ t'.rd = t.rd ∧ t'.wr = t.wr
+
+theorem finishWith_eq (out : Nat → List XReg → List Instr) : finishWith out =
     store89 ++ (addRow 0 ([.xmm0, .xmm1, .xmm2, .xmm3] : List XReg) ++
-    ((transpose .xmm0 .xmm1 .xmm2 .xmm3 ++ xorRow 0 ([.xmm0, .xmm1, .xmm2, .xmm3] : List XReg)) ++
+    ((transpose .xmm0 .xmm1 .xmm2 .xmm3 ++ out 0 ([.xmm0, .xmm1, .xmm2, .xmm3] : List XReg)) ++
     (addRow 1 ([.xmm4, .xmm5, .xmm6, .xmm7] : List XReg) ++
-    ((transpose .xmm4 .xmm5 .xmm6 .xmm7 ++ xorRow 1 ([.xmm4, .xmm5, .xmm6, .xmm7] : List XReg)) ++
+    ((transpose .xmm4 .xmm5 .xmm6 .xmm7 ++ out 1 ([.xmm4, .xmm5, .xmm6, .xmm7] : List XReg)) ++
     ((addRow 3 ([.xmm8, .xmm9, .xmm10, .xmm11] : List XReg) ++ incAdd) ++
     ((transpose .xmm8 .xmm9 .xmm10 .xmm11 ++
-      xorRow 3 ([.xmm8, .xmm9, .xmm10, .xmm11] : List XReg)) ++
+      out 3 ([.xmm8, .xmm9, .xmm10, .xmm11] : List XReg)) ++
     (load4 ++ (addRow 2 ([.xmm0, .xmm1, .xmm2, .xmm3] : List XReg) ++
     (transpose .xmm0 .xmm1 .xmm2 .xmm3 ++
-      xorRow 2 ([.xmm0, .xmm1, .xmm2, .xmm3] : List XReg)))))))))) := by
-  simp only [finish, store89, load4, incAdd, List.append_assoc, List.cons_append, List.nil_append]
+      out 2 ([.xmm0, .xmm1, .xmm2, .xmm3] : List XReg)))))))))) := by
+  simp only [finishWith, store89, load4, incAdd, List.append_assoc, List.cons_append, List.nil_append]
 
-theorem finish_ok {st buf a : Addr} {vs : Nat → CState} {s : State} (hh : Holds buf false vs s)
-    (hrdi : s.gpr .rdi = st) (hrcx : s.gpr .rcx = buf) (hrsi : s.gpr .rsi = a)
-    (hwst : stR st ∈ s.wr) (hwb : bufR buf ∈ s.wr) (hwd : DWin s.wr a) (hinc : Incs buf s.mem)
-    (dsd : (stR st).Disjoint (dR5 a)) (dsb : (stR st).Disjoint (bufR buf))
-    (dbd : (bufR buf).Disjoint (dR5 a)) :
-    WP isa (.block finish) s fun s' =>
-      (∀ k < 512, s'.mem (a + BitVec.ofNat 64 k) = s.mem (a + BitVec.ofNat 64 k) ^^^
-        (serialize (plus vs (stateAt s.mem st) (k / 64))).getD (k % 64) 0) ∧
-      Frame [slotsR buf, dR5 a] s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have sdd : ∀ r ∈ [slotsR buf, dR5 a], (stR st).Disjoint r := by
+/-- The rounds' result `vs` plus the input state, written out row by row by
+`out`: rows 0, 1, 3 and 2, in that order, each with the effect `E`. -/
+theorem finishWith_ok {out : Nat → List XReg → List Instr} {E : Nat → (Nat → CState) → Mem → Mem → Prop}
+    {R : List Region} {st buf : Addr} {vs : Nat → CState} {s : State} (hh : Holds buf false vs s)
+    (hrdi : s.gpr .rdi = st) (hrcx : s.gpr .rcx = buf)
+    (hwst : stR st ∈ s.wr) (hwb : bufR buf ∈ s.wr) (hinc : Incs buf s.mem)
+    (dsb : (stR st).Disjoint (bufR buf))
+    (hR : ∀ r ∈ R, (stR st).Disjoint r ∧ (slotsR buf).Disjoint r ∧ (incR buf).Disjoint r)
+    (o0 : OutOk out E R s.gpr s.wr 0 .xmm0 .xmm1 .xmm2 .xmm3)
+    (o1 : OutOk out E R s.gpr s.wr 1 .xmm4 .xmm5 .xmm6 .xmm7)
+    (o3 : OutOk out E R s.gpr s.wr 3 .xmm8 .xmm9 .xmm10 .xmm11)
+    (o2 : OutOk out E R s.gpr s.wr 2 .xmm0 .xmm1 .xmm2 .xmm3) :
+    WP isa (.block (finishWith out)) s fun s' => ∃ m₀ m₁ m₂ m₃,
+      Frame [slotsR buf] s.mem m₀ ∧ E 0 (plus vs (stateAt s.mem st)) m₀ m₁ ∧
+      E 1 (plus vs (stateAt s.mem st)) m₁ m₂ ∧ E 3 (plus vs (stateAt s.mem st)) m₂ m₃ ∧
+      E 2 (plus vs (stateAt s.mem st)) m₃ s'.mem ∧
+      Frame (slotsR buf :: R) s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have sdd : ∀ r ∈ slotsR buf :: R, (stR st).Disjoint r := by
     intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
+    rcases List.mem_cons.mp hr with rfl | hr
     · exact dsb.sub_right (slotsR_sub buf)
-    · exact dsd
-  have hdd : ∀ r ∈ [slotsR buf, dR5 a], (hiR buf).Disjoint r := by
+    · exact (hR r hr).1
+  have idd : ∀ r ∈ slotsR buf :: R, (incR buf).Disjoint r := by
     intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact hiR_slots buf
-    · exact dbd.sub_left (hiR_sub buf)
-  have ssd : ∀ r ∈ [dR5 a], (slotsR buf).Disjoint r := by
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    subst hr; exact dbd.sub_left (slotsR_sub buf)
-  have sub₁ : ∀ r ∈ [slotsR buf], r ∈ [slotsR buf, dR5 a] := by simp
-  have sub₂ : ∀ r ∈ [dR5 a], r ∈ [slotsR buf, dR5 a] := by simp
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact Offset.disjoint_base buf (by lit_omega) (by lit_omega)
+    · exact (hR r hr).2.2
+  have ssd : ∀ r ∈ R, (slotsR buf).Disjoint r := fun r hr => (hR r hr).2.1
+  have sub₁ : ∀ r ∈ [slotsR buf], r ∈ slotsR buf :: R := by simp
+  have sub₂ : ∀ r ∈ R, r ∈ slotsR buf :: R := fun r hr => List.mem_cons_of_mem _ hr
   have rdst : ∀ (t : State), t.gpr = s.gpr → t.rd = s.rd → t.wr = s.wr → ∀ row, row < 4 →
       InRegions (t.rd ++ t.wr) (t.gpr .rdi + BitVec.ofNat 64 (16 * row)) 16 := by
     intro t g r w row hrow
     rw [g, r, w, hrdi]; exact ⟨stR st, List.mem_append_right _ hwst, st_contains st (by lit_omega)⟩
   obtain ⟨r0, r1, r3⟩ := holds_rows hh
-  rw [finish_eq]
+  rw [finishWith_eq]
   -- Words 8 and 9 to their slots.
   refine WP.block_append (WP.mono (store89_ok hh hrcx hwb) fun s₁ ⟨sl₁, l₁, f₁, g₁, rd₁, wr₁⟩ => ?_)
   have G₁ := f₁.mono sub₁
@@ -1368,8 +1393,8 @@ theorem finish_ok {st buf a : Addr} {vs : Nat → CState} {s : State} (hh : Hold
   refine WP.block_append (WP.mono (addRow_in (row := 0) (S := stateAt s.mem st) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (r0.lanes (l₁ _) (l₁ _) (l₁ _) (l₁ _)) (by rw [g₁, hrdi]; exact rowS_frame G₁ sdd 0)
     (rdst s₁ g₁ rd₁ wr₁ 0 (by decide))) fun s₂ ⟨a₂, l₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
-  refine WP.block_append (WP.mono (rowOut_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) a₂ (a := a) (by rw [g₂, g₁, hrsi])
-    (by rw [wr₂, wr₁]; exact hwd)) fun s₃ ⟨d₃, f₃, l₃, g₃, rd₃, wr₃⟩ => ?_)
+  refine WP.block_append (WP.mono (o0 _ s₂ a₂ (by rw [g₂, g₁]) (by rw [wr₂, wr₁]))
+    fun s₃ ⟨d₃, f₃, l₃, g₃, rd₃, wr₃⟩ => ?_)
   rw [m₂] at f₃ d₃
   have G₃ := G₁.trans (f₃.mono sub₂)
   -- Row 1.
@@ -1381,8 +1406,7 @@ theorem finish_ok {st buf a : Addr} {vs : Nat → CState} {s : State} (hh : Hold
     (by rw [g₃, g₂, g₁, hrdi]; exact rowS_frame G₃ sdd 1)
     (rdst s₃ (by rw [g₃, g₂, g₁]) (by rw [rd₃, rd₂, rd₁]) (by rw [wr₃, wr₂, wr₁]) 1 (by decide)))
     fun s₄ ⟨a₄, l₄, g₄, m₄, rd₄, wr₄⟩ => ?_)
-  refine WP.block_append (WP.mono (rowOut_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) a₄ (a := a)
-    (by rw [g₄, g₃, g₂, g₁, hrsi]) (by rw [wr₄, wr₃, wr₂, wr₁]; exact hwd))
+  refine WP.block_append (WP.mono (o1 _ s₄ a₄ (by rw [g₄, g₃, g₂, g₁]) (by rw [wr₄, wr₃, wr₂, wr₁]))
     fun s₅ ⟨d₅, f₅, l₅, g₅, rd₅, wr₅⟩ => ?_)
   rw [m₄] at f₅ d₅
   have G₅ := G₃.trans (f₅.mono sub₂)
@@ -1396,13 +1420,12 @@ theorem finish_ok {st buf a : Addr} {vs : Nat → CState} {s : State} (hh : Hold
     (rdst s₅ (by rw [g₅, g₄, g₃, g₂, g₁]) (by rw [rd₅, rd₄, rd₃, rd₂, rd₁])
       (by rw [wr₅, wr₄, wr₃, wr₂, wr₁]) 3 (by decide))
     (by rw [g₅, g₄, g₃, g₂, g₁, hrcx]) (by rw [wr₅, wr₄, wr₃, wr₂, wr₁]; exact hwb)
-    (incs_frame hinc G₅ hdd)) fun s₆ ⟨a₆, l₆, g₆, m₆, rd₆, wr₆⟩ => ?_)
-  refine WP.block_append (WP.mono (rowOut_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) a₆ (a := a)
-    (by rw [g₆, g₅, g₄, g₃, g₂, g₁, hrsi]) (by rw [wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]; exact hwd))
-    fun s₇ ⟨d₇, f₇, l₇, g₇, rd₇, wr₇⟩ => ?_)
+    (incs_frame_incR hinc G₅ idd)) fun s₆ ⟨a₆, l₆, g₆, m₆, rd₆, wr₆⟩ => ?_)
+  refine WP.block_append (WP.mono (o3 _ s₆ a₆ (by rw [g₆, g₅, g₄, g₃, g₂, g₁])
+    (by rw [wr₆, wr₅, wr₄, wr₃, wr₂, wr₁])) fun s₇ ⟨d₇, f₇, l₇, g₇, rd₇, wr₇⟩ => ?_)
   rw [m₆] at f₇ d₇
   have G₇ := G₅.trans (f₇.mono sub₂)
-  have H₇ : Frame [dR5 a] s₁.mem s₇.mem := (f₃.trans f₅).trans f₇
+  have H₇ : Frame R s₁.mem s₇.mem := (f₃.trans f₅).trans f₇
   -- Row 2, from the slots.
   refine WP.block_append (WP.mono (load4_ok (slots_frame sl₁ H₇ ssd)
     (by rw [g₇, g₆, g₅, g₄, g₃, g₂, g₁, hrcx]) (by rw [wr₇, wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]; exact hwb))
@@ -1412,19 +1435,60 @@ theorem finish_ok {st buf a : Addr} {vs : Nat → CState} {s : State} (hh : Hold
     (rdst s₈ (by rw [g₈, g₇, g₆, g₅, g₄, g₃, g₂, g₁]) (by rw [rd₈, rd₇, rd₆, rd₅, rd₄, rd₃, rd₂, rd₁])
       (by rw [wr₈, wr₇, wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]) 2 (by decide)))
     fun s₉ ⟨a₉, l₉, g₉, m₉, rd₉, wr₉⟩ => ?_)
-  refine WP.mono (rowOut_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) a₉ (a := a)
-    (by rw [g₉, g₈, g₇, g₆, g₅, g₄, g₃, g₂, g₁, hrsi])
-    (by rw [wr₉, wr₈, wr₇, wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]; exact hwd))
+  refine WP.mono (o2 _ s₉ a₉ (by rw [g₉, g₈, g₇, g₆, g₅, g₄, g₃, g₂, g₁])
+    (by rw [wr₉, wr₈, wr₇, wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]))
     fun s₁₀ ⟨d₁₀, f₁₀, _, g₁₀, rd₁₀, wr₁₀⟩ => ?_
   rw [m₉, m₈] at f₁₀ d₁₀
-  refine ⟨fun k hk => ?_, G₇.trans (f₁₀.mono sub₂), by rw [g₁₀, g₉, g₈, g₇, g₆, g₅, g₄, g₃, g₂, g₁],
+  exact ⟨s₁.mem, s₃.mem, s₅.mem, s₇.mem, f₁, d₃, d₅, d₇, d₁₀, G₇.trans (f₁₀.mono sub₂),
+    by rw [g₁₀, g₉, g₈, g₇, g₆, g₅, g₄, g₃, g₂, g₁],
     by rw [rd₁₀, rd₉, rd₈, rd₇, rd₆, rd₅, rd₄, rd₃, rd₂, rd₁],
     by rw [wr₁₀, wr₉, wr₈, wr₇, wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]⟩
-  have e₁ : s₁.mem (a + BitVec.ofNat 64 k) = s.mem (a + BitVec.ofNat 64 k) :=
-    f₁.bytes (R := dR5 a) (fun r hr => by
+
+/-- `xorRow`'s effect: row `row` of the blocks `B` XORed into the 512 bytes at `a`. -/
+def XorEff (a : Addr) (row : Nat) (B : Nat → CState) (m m' : Mem) : Prop :=
+  ∀ k < 512, m' (a + BitVec.ofNat 64 k) =
+    if k % 64 / 16 = row then m (a + BitVec.ofNat 64 k) ^^^ (serialize (B (k / 64))).getD (k % 64) 0
+    else m (a + BitVec.ofNat 64 k)
+
+theorem xorRow_out {a : Addr} {g : Reg → BitVec 64} {w : List Region} (hrsi : g .rsi = a) (hw : DWin w a)
+    {row : Nat} (hrow : row < 4) {x0 x1 x2 x3 : XReg} (e01 : x0 ≠ x1) (e02 : x0 ≠ x2)
+    (e03 : x0 ≠ x3) (e12 : x1 ≠ x2) (e13 : x1 ≠ x3) (e23 : x2 ≠ x3)
+    (h0 : x0 ≠ .xmm12 ∧ x0 ≠ .xmm13 ∧ x0 ≠ .xmm14 ∧ x0 ≠ .xmm15)
+    (h1 : x1 ≠ .xmm12 ∧ x1 ≠ .xmm13 ∧ x1 ≠ .xmm14 ∧ x1 ≠ .xmm15)
+    (h2 : x2 ≠ .xmm12 ∧ x2 ≠ .xmm13 ∧ x2 ≠ .xmm14 ∧ x2 ≠ .xmm15)
+    (h3 : x3 ≠ .xmm12 ∧ x3 ≠ .xmm13 ∧ x3 ≠ .xmm14 ∧ x3 ≠ .xmm15) :
+    OutOk xorRow (XorEff a) [dR5 a] g w row x0 x1 x2 x3 := fun _ t hB hg hwt =>
+  rowOut_ok hrow e01 e02 e03 e12 e13 e23 h0 h1 h2 h3 hB (by rw [hg]; exact hrsi) (by rw [hwt]; exact hw)
+
+theorem finish_ok {st buf a : Addr} {vs : Nat → CState} {s : State} (hh : Holds buf false vs s)
+    (hrdi : s.gpr .rdi = st) (hrcx : s.gpr .rcx = buf) (hrsi : s.gpr .rsi = a)
+    (hwst : stR st ∈ s.wr) (hwb : bufR buf ∈ s.wr) (hwd : DWin s.wr a) (hinc : Incs buf s.mem)
+    (dsd : (stR st).Disjoint (dR5 a)) (dsb : (stR st).Disjoint (bufR buf))
+    (dbd : (bufR buf).Disjoint (dR5 a)) :
+    WP isa (.block finish) s fun s' =>
+      (∀ k < 512, s'.mem (a + BitVec.ofNat 64 k) = s.mem (a + BitVec.ofNat 64 k) ^^^
+        (serialize (plus vs (stateAt s.mem st) (k / 64))).getD (k % 64) 0) ∧
+      Frame [slotsR buf, dR5 a] s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have hR : ∀ r ∈ [dR5 a], (stR st).Disjoint r ∧ (slotsR buf).Disjoint r ∧ (incR buf).Disjoint r := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr
+    exact ⟨dsd, dbd.sub_left (slotsR_sub buf), dbd.sub_left (Offset.sub_base buf (by lit_omega))⟩
+  refine WP.mono (finishWith_ok (out := xorRow) hh hrdi hrcx hwst hwb hinc dsb hR
+    (xorRow_out hrsi hwd (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide))
+    (xorRow_out hrsi hwd (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide))
+    (xorRow_out hrsi hwd (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide))
+    (xorRow_out hrsi hwd (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide)))
+    fun s' ⟨m₀, m₁, m₂, m₃, f₀, d₀, d₁, d₃, d₂, F, g, rd, wr⟩ => ⟨fun k hk => ?_, F, g, rd, wr⟩
+  have e₀ : m₀ (a + BitVec.ofNat 64 k) = s.mem (a + BitVec.ofNat 64 k) :=
+    f₀.bytes (R := dR5 a) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr; exact (dbd.sub_left (slotsR_sub buf)).symm) (show 512 ≤ 2 ^ 64 by decide) hk
-  rw [d₁₀ k hk, d₇ k hk, d₅ k hk, d₃ k hk, e₁]
+  rw [d₂ k hk, d₃ k hk, d₁ k hk, d₀ k hk, e₀]
   rcases (by omega : k % 64 / 16 = 0 ∨ k % 64 / 16 = 1 ∨ k % 64 / 16 = 2 ∨ k % 64 / 16 = 3)
     with h | h | h | h <;> simp only [h, Nat.reduceEqDiff, ite_true, ite_false]
 
