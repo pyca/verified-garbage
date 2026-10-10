@@ -394,7 +394,7 @@ theorem body_nosp (P : RfcHash) : NoSp (cfgOf P).body := by
       Bool.false_eq_true, ite_false, cfgOf_F, coreC_eq, hI, hU, hF, hK, hR, Cfg.initCnt, tries_eq, Bool.and_true,
       Bool.true_and]
     simp only [hl, hlen]
-    rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rcases hn with h'' | h'' <;>
+    rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rcases hn with h'' | h'' | h'' <;>
       simp only [h, h', h''] <;> decide +kernel
   · obtain ⟨hn, hlen, -⟩ := P.R.sizesW hW
     obtain ⟨-, -, hD, hB⟩ := P.sizesW hW

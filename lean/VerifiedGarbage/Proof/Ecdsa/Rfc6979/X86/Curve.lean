@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Contract
 What the proof needs of the curve (`RfcCurve`), as on x86-64
 (`Proof/Ecdsa/Rfc6979/X86_64/Curve.lean`): the code of
 `vg_ecdsa_<curve>_sign` for curves of `n` 64-bit words
-(`Impl.Ecdsa.X86.Cfg`, `n` 4 or 6), the instance of ECDSA it is, that the
+(`Impl.Ecdsa.X86.Cfg`, `n` 3, 4 or 6), the instance of ECDSA it is, that the
 order `n` of its base point has exactly `64 n` bits and `2^(64 n) < 2 n` (so
 that `bits2octets` is one conditional subtraction), and what is proven of the
 code: that it meets the contract the proof of each curve is written against
@@ -90,11 +90,11 @@ structure RfcCurve where
   /-- Whether the scalars are longer than any hash function's output, so
   that two `V`s make a candidate (`Impl.Ecdsa.Rfc6979.X86.Cfg.wide`). -/
   wide : Bool
-  /-- Scalars of 4 or 6 64-bit words, `8 n` bytes, and `n` of exactly `64 n`
+  /-- Scalars of 3, 4 or 6 64-bit words, `8 n` bytes, and `n` of exactly `64 n`
   bits, with `2^(64 n) < 2 n`; or, if `wide`, of 9 words and 66 bytes, and
   `n` of 521 bits. -/
   sizes : if wide then E.n = 9 ∧ E.C.len = 66 ∧ nBits E.C = 521
-    else (E.n = 4 ∨ E.n = 6) ∧ E.C.len = 8 * E.n ∧ nBits E.C = 64 * E.n ∧ 2 ^ (64 * E.n) < 2 * E.C.n
+    else (E.n = 3 ∨ E.n = 4 ∨ E.n = 6) ∧ E.C.len = 8 * E.n ∧ nBits E.C = 64 * E.n ∧ 2 ^ (64 * E.n) < 2 * E.C.n
   n_lt : E.C.n < 2 ^ (64 * E.n)
   /-- The bits the signature drops from its digest, `8 len - nBits`. -/
   sh : Nat
@@ -118,27 +118,27 @@ namespace RfcCurve
 variable (R : RfcCurve)
 
 theorem sizesA (h : R.wide = false) :
-    (R.E.n = 4 ∨ R.E.n = 6) ∧ R.E.C.len = 8 * R.E.n ∧ nBits R.E.C = 64 * R.E.n ∧
+    (R.E.n = 3 ∨ R.E.n = 4 ∨ R.E.n = 6) ∧ R.E.C.len = 8 * R.E.n ∧ nBits R.E.C = 64 * R.E.n ∧
       2 ^ (64 * R.E.n) < 2 * R.E.C.n := by
   have := R.sizes; rw [h] at this; exact this
 
 theorem sizesW (h : R.wide = true) : R.E.n = 9 ∧ R.E.C.len = 66 ∧ nBits R.E.C = 521 := by
   have := R.sizes; rw [h] at this; exact this
 
-theorem n4 : 4 ≤ R.E.n := by
+theorem n3 : 3 ≤ R.E.n := by
   cases h : R.wide
-  · rcases (R.sizesA h).1 with h | h <;> omega
+  · rcases (R.sizesA h).1 with h | h | h <;> omega
   · rw [(R.sizesW h).1]; omega
 
 theorem n9 : R.E.n ≤ 9 := by
   cases h : R.wide
-  · rcases (R.sizesA h).1 with h | h <;> omega
+  · rcases (R.sizesA h).1 with h | h | h <;> omega
   · rw [(R.sizesW h).1]
 
 /-- The scalars' bytes fill their words, the last at least in part. -/
 theorem len_words : 8 ≤ R.E.C.len ∧ 8 * R.E.n < R.E.C.len + 8 ∧ R.E.C.len ≤ 8 * R.E.n := by
   cases h : R.wide
-  · have := R.sizesA h; have := R.n4; omega
+  · have := R.sizesA h; have := R.n3; omega
   · have := R.sizesW h; omega
 
 /-- `nBits` is within the scalars' last byte, and `sh` the bits beyond it. -/
