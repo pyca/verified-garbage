@@ -13,11 +13,11 @@
 /// * `key` must be valid for reads of 16 bytes.
 /// * `schedule` must be valid for reads and writes of 128 bytes.
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `schedule` may overlap the return address on the stack or the 3128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `schedule` may overlap the return address on the stack or the 3144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm4_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3128]",
+        "lea rsp, [rsp-3144]",
         "mov rdx, rsp",
         "add rdx, 8",
         "mov r9, rdx",
@@ -4496,7 +4496,9 @@ pub(crate) unsafe extern "sysv64" fn vg_sm4_expand_key(key: *const [u8; 16], sch
         "mov QWORD PTR [rsp+3104], r11",
         "mov QWORD PTR [rsp+3112], r11",
         "mov QWORD PTR [rsp+3120], r11",
-        "lea rsp, [rsp+3128]",
+        "mov QWORD PTR [rsp+3128], r11",
+        "mov QWORD PTR [rsp+3136], r11",
+        "lea rsp, [rsp+3144]",
         "ret",
         ".p2align 6",
     )
@@ -4513,11 +4515,11 @@ pub(crate) unsafe extern "sysv64" fn vg_sm4_expand_key(key: *const [u8; 16], sch
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 3128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 3144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm4_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3128]",
+        "lea rsp, [rsp-3144]",
         "mov rcx, rsp",
         "add rcx, 8",
         "mov r9, rcx",
@@ -9246,7 +9248,9 @@ pub(crate) unsafe extern "sysv64" fn vg_sm4_ecb_encrypt(schedule: *const [u8; 12
         "mov QWORD PTR [rsp+3104], r11",
         "mov QWORD PTR [rsp+3112], r11",
         "mov QWORD PTR [rsp+3120], r11",
-        "lea rsp, [rsp+3128]",
+        "mov QWORD PTR [rsp+3128], r11",
+        "mov QWORD PTR [rsp+3136], r11",
+        "lea rsp, [rsp+3144]",
         "ret",
         ".p2align 6",
     )
@@ -9263,11 +9267,11 @@ pub(crate) unsafe extern "sysv64" fn vg_sm4_ecb_encrypt(schedule: *const [u8; 12
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 3128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 3144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm4_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3128]",
+        "lea rsp, [rsp-3144]",
         "mov rcx, rsp",
         "add rcx, 8",
         "mov r9, rcx",
@@ -13996,7 +14000,9 @@ pub(crate) unsafe extern "sysv64" fn vg_sm4_ecb_decrypt(schedule: *const [u8; 12
         "mov QWORD PTR [rsp+3104], r11",
         "mov QWORD PTR [rsp+3112], r11",
         "mov QWORD PTR [rsp+3120], r11",
-        "lea rsp, [rsp+3128]",
+        "mov QWORD PTR [rsp+3128], r11",
+        "mov QWORD PTR [rsp+3136], r11",
+        "lea rsp, [rsp+3144]",
         "ret",
         ".p2align 6",
     )

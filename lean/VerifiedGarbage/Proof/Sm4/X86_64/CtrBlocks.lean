@@ -113,8 +113,9 @@ theorem bytes_pair (m : Mem) (P : Addr) (V : Nat) :
   · exact AesCtr.ofNat_congr (by simp only [loOf, BitVec.toNat_ofNat]; omega)
 
 theorem ctrBlock_eq (b : Nat) : ctrBlock b =
-    [movR .rcx .rax] ++ ([.bswap .rcx] ++ ([st (tailAt b 0) .rcx] ++ ([movR .rcx .rbx] ++ ([.bswap .rcx] ++
-      ([st (tailAt b 1) .rcx] ++ ([.alu .add .rbx (.imm 1), .alu .adc .rax (.imm 0)] : List Instr)))))) := rfl
+    ([movR .rcx .rax] : List Instr) ++ (([.bswap .rcx] : List Instr) ++ (([st (tailAt b 0) .rcx] : List Instr) ++
+      (([movR .rcx .rbx] : List Instr) ++ (([.bswap .rcx] : List Instr) ++ (([st (tailAt b 1) .rcx] : List Instr) ++
+      ([.alu .add .rbx (.imm 1), .alu .adc .rax (.imm 0)] : List Instr)))))) := rfl
 
 /-- Counter block `b` to the tail buffer, and the running counter stepped. -/
 theorem ctrBlock_ok (s : State) {B : Addr} {V b : Nat} (hb16 : b < 16) (hB : s.gpr sb = B)

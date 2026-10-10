@@ -48,7 +48,9 @@ fn field(text: &str, label: &str) -> Vec<u8> {
 
 /// `ctr` plus `k`, modulo `2¹²⁸`.
 fn add(ctr: [u8; 16], k: usize) -> [u8; 16] {
-    u128::from_be_bytes(ctr).wrapping_add(k as u128).to_be_bytes()
+    u128::from_be_bytes(ctr)
+        .wrapping_add(k as u128)
+        .to_be_bytes()
 }
 
 /// CTR from ECB: `data` XORed with the encryptions of `ctr`, `ctr + 1`, ….

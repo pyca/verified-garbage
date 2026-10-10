@@ -126,10 +126,17 @@ theorem bytes_pair2 (m : Mem) (P : Addr) (V : Nat) :
   · exact AesCtr.ofNat_congr (by simp only [loOf, BitVec.toNat_ofNat]; omega)
 
 theorem ctrSetup_eq : ctrSetup =
-    [.mov .rax (.mem (at_ .rsi 0))] ++ ([.bswap .rax] ++ ([.mov .rbx (.mem (at_ .rsi 8))] ++ ([.bswap .rbx] ++
-      ([st ctrHi .rax] ++ ([st ctrLo .rbx] ++ ([.alu .add .rbx (.reg .r8), .alu .adc .rax (.imm 0)] ++
-      ([.bswap .rax] ++ ([.bswap .rbx] ++ ([.store (at_ .rsi 8) .rbx] ++
-      ([.store (at_ .rsi 0) .rax] : List Instr)))))))))) := rfl
+    ([.mov .rax (.mem (at_ .rsi 0))] : List Instr) ++
+      (([.bswap .rax] : List Instr) ++
+      (([.mov .rbx (.mem (at_ .rsi 8))] : List Instr) ++
+      (([.bswap .rbx] : List Instr) ++
+      (([st ctrHi .rax] : List Instr) ++
+      (([st ctrLo .rbx] : List Instr) ++
+      (([.alu .add .rbx (.reg .r8), .alu .adc .rax (.imm 0)] : List Instr) ++
+      (([.bswap .rax] : List Instr) ++
+      (([.bswap .rbx] : List Instr) ++
+      (([.store (at_ .rsi 8) .rbx] : List Instr) ++
+      (([.store (at_ .rsi 0) .rax] : List Instr))))))))))) := rfl
 
 /-- The counter block at `P` (`rsi`) to the running counter's slots, and the
 block plus `N` (`r8`) back to `P`. -/
