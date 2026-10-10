@@ -11,17 +11,20 @@ on:
 permissions:
   contents: read
 jobs:
-  exp:
+  op:
     strategy:
       fail-fast: false
       matrix:
-        run: [1, 2, 3, 4, 5, 6]
+        run: [1, 2, 3, 4, 5, 6, 7, 8]
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - run: grep -m1 "model name" /proc/cpuinfo; nproc
-      - run: cd exp-bench && cargo build --release -q
-      - run: cd exp-bench && grep -m1 "model name" /proc/cpuinfo >> $GITHUB_STEP_SUMMARY && ./target/release/exp > /dev/null && ./target/release/exp | tee -a out.txt && sed 's/^/    /' out.txt >> $GITHUB_STEP_SUMMARY
+      - run: cd op-bench && cargo build --release -q
+      - run: |
+          cd op-bench
+          M=ssse3,sha,aes,pclmulqdq,avx,avx2,bmi1,bmi2,avx512f,adx,avx512vl,vaes,vpclmulqdq,avx512bw
+          grep -m1 "model name" /proc/cpuinfo >> $GITHUB_STEP_SUMMARY
+          { echo "    masked (no IFMA)"; VG_CPU_FEATURES=$M OPENSSL_ia32cap="~0x0:~0x200000" ./target/release/op-bench | sed 's/^/    /'; } | tee -a $GITHUB_STEP_SUMMARY

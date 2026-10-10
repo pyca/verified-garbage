@@ -1,0 +1,12 @@
+[package]
+name = "op-bench"
+version = "0.1.0"
+edition = "2024"
+publish = false
+[workspace]
+[profile.release]
+debug = true
+[dependencies]
+verified-garbage = { path = "..", features = ["cpu-features-env"] }
+aws-lc-sys = { version = "0.45", default-features = false }
+openssl = "0.10"
