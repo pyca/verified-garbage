@@ -18,8 +18,8 @@ def artifacts : List Artifact := [
       255 alone) gives the digit n - 16, whose magnitude selects its table entry in constant \
       time (every entry of the table is loaded with SSE2 and kept under a mask; a zero digit \
       selects the identity) and whose sign negates it, or not, under a mask; the odd digits are \
-      added first to [G]B (G = 16 Σ 1024^j makes up for the offset), then five doublings and \
-      [G]B again, then the even ones. The five doublings are calls of \
+      added first to [G']B, then five doublings, which make it [33 G]B (G = 16 Σ 1024^j: 33 G \
+      makes up for the offset; G' = 33 G / 32 modulo the group's order), then the even ones. The five doublings are calls of \
       `vg_ed25519_r64_double_ext`. The working values, masks and saved registers reside in \
       `scratch`. The point's encoding inverts Z with a call of `vg_gf25519_r64_invert`."])
     consts := Impl.Ed25519.X86_64.combConsts

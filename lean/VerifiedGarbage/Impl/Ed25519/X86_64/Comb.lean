@@ -10,11 +10,12 @@ The scalar's 52 chunks `n_i` of five bits (from the bits at byte 768 of the
 scratch, one per byte; chunk 51 is bit 255 alone) give
 `[s]B = Σ n_i [32^i]B = Σ d_i [32^i]B + [32 G + G]B` for the digits
 `d_i = n_i - 16`, from `-16` to `15`, and `G = 16 Σ_{j < 26} 1024^j`.
-Table `j` holds `[k]([1024^j]B)` for `k ≤ 16`, so, from `[G]B`, the odd
-digits `d_{2j+1}` are added first, one from each table, as the entry `|d|` or
-its negation; five doublings multiply their sum by 32, and `[G]B` is added
-again; then the even digits `d_{2j}` are added from the same tables. That is
-54 additions of affine cached points and five doublings, which are calls of
+Table `j` holds `[k]([1024^j]B)` for `k ≤ 16`, so, from `[G']B`, for
+`G' = 33 G / 32` modulo the group's order (`combStart`), the odd digits
+`d_{2j+1}` are added first, one from each table, as the entry `|d|` or its
+negation; five doublings multiply their sum by 32, which makes `[G']B` into
+`[33 G]B`; then the even digits `d_{2j}` are added from the same tables. That
+is 52 additions of affine cached points and five doublings, which are calls of
 `vg_ed25519_r64_double_ext` (`Point64.calls`): only five run, so a call's cost
 is negligible next to the copies of the doubling it saves.
 
@@ -164,17 +165,12 @@ def combChunk : Prog isa :=
 def combDouble (pt : Point64.Ops) : Prog isa :=
   .seq (pt.dbl true) (.seq (pt.dbl true) (.seq (pt.dbl true) (.seq (pt.dbl true) (pt.dbl true))))
 
-/-- `[G]B` added to slots 0–3. -/
-def combAddG (fld : Arith) : List Instr :=
-  fieldCode fld [.const 4 combGCached.X, .const 5 combGCached.Y, .const 6 combGCached.Z] ++
-    pointAddAffine fld
-
-/-- Step `rbx`: before the even digits, the five doublings and `[G]B`; then the digit's entry
+/-- Step `rbx`: before the even digits, the five doublings; then the digit's entry
 of table `r9` (selected by `sel`, `combSelect` or `combSelectY`), negated for a negative digit,
 added; the doublings are `pt`'s. -/
 def combStep (fld : Arith) (sel : List Instr) (pt : Point64.Ops) : Prog isa :=
   .seq (.block [.alu .cmp .rbx (.imm 26)]) <|
-  .seq (.ite .e (.seq (combDouble pt) (.block (combAddG fld))) (.block [])) <|
+  .seq (.ite .e (combDouble pt) (.block [])) <|
   .seq combIndex <|
   .seq combChunk <|
   .seq (.block (combSign ++ [.mov .r8 (.reg .rax), .mov .rdx (.reg .r9)] ++ sel)) <|
@@ -185,7 +181,7 @@ selected by `sel`, the doublings `pt`'s: calls of `vg_ed25519_r64_double_ext` (o
 `fld`'s field multiplications), or their bodies, which the proofs read. -/
 def combMultiply (fld : Arith) (sel : List Instr := combSelect) (pt : Point64.Ops := Point64.calls fld) :
     Prog isa :=
-  .seq (.block (constPoint fld combG ++ [.mov32 .rbx (.imm 0)]))
+  .seq (.block (constPoint fld combStart ++ [.mov32 .rbx (.imm 0)]))
     (.loop (combStep fld sel pt) .ne)
 
 end VG.Impl.Ed25519.X86_64
