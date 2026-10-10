@@ -57,9 +57,8 @@ def checkOthers : Bool := multiples.all fun k => scales.all fun l =>
 
 /-- Byte `i` is in the own working space, as a `Bool`. -/
 def own (C : MulBase.Curve) (i : Nat) : Bool :=
-  (C.slot 17 ≤ i && i < C.slot 29) || (C.slot 30 ≤ i && i < C.slot 31) ||
-    (C.slot 40 ≤ i && i < C.slot 41) || (C.tmpAt ≤ i && i < C.tmpAt + 8 * C.k) ||
-    (C.bitsAt ≤ i && i < C.bitsAt + 64 * C.k + 8)
+  (C.slot 17 ≤ i && i < C.slot 31) || (C.slot 40 ≤ i && i < C.slot 41) ||
+    (C.tmpAt ≤ i && i < C.tmpAt + 8 * C.k) || (C.bitsAt ≤ i && i < C.bitsAt + 64 * C.k + 8)
 
 theorem own_iff (C : MulBase.Curve) (i : Nat) : own C i = true ↔ C.Own i := by
   simp [own, Curve.Own, or_assoc]
@@ -75,7 +74,7 @@ def checkApart (C : MulBase.Curve) : Bool :=
 #guard curves.all checkApart
 
 #guard p384.ownDoc =
-  "Bytes 880 to 1455, 1504 to 1551, 1984 to 2031, 4048 to 4095 and 2224 to 2615 of `ws`"
+  "Bytes 880 to 1551, 1984 to 2031, 4048 to 4095 and 2224 to 2615 of `ws`"
 #guard p384.kAt = 1552 ∧ p384.pAt = 736 ∧ p384.modAt = 64 ∧ p384.zeroAt = 208
 
 end VG.Test.WeierstrassMulBase
