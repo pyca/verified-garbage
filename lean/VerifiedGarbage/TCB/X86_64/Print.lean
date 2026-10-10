@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.Print
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.TCB.Print
 
 /-!
 # Intel-syntax printer for the x86-64 model
@@ -7,6 +9,8 @@ import VerifiedGarbage.TCB.Print
 **Trusted.** Emits Intel syntax without register prefixes, which is the
 default dialect of Rust's `asm!`/`naked_asm!` on x86-64.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

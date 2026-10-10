@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # The AArch64 target (AAPCS64)
@@ -31,6 +33,8 @@ observable by modelled instructions. FPCR and FPSR are not modelled (no
 modelled instruction reads or writes them), nor is memory below `sp`
 (never granted to a function).
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

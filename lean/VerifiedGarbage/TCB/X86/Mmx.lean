@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86.State
+module
+
+public import VerifiedGarbage.TCB.X86.State
 
 /-!
 # IA-32 MMX instructions
@@ -14,6 +16,8 @@ Every one of them, but EMMS, makes the x87 tag word all valid (SDM Vol. 1
 this only as whether the code is inside an MMX frame (`State.mmx`, see
 `TCB/X86/Isa.lean`): these instructions fault outside one.
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

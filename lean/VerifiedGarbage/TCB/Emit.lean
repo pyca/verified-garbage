@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Rust
+module
+
+public import VerifiedGarbage.TCB.Rust
 
 /-!
 # The emitter
@@ -58,6 +60,8 @@ axioms, that what it runs is what the kernel checked and that the `Spec/`
 names it uses come from `Spec/` (`TCB/Audit.lean`), and emits it
 (`driver`), and runs that program, whose `main` is `run`.
 -/
+
+@[expose] public section
 
 namespace VG.Emit
 

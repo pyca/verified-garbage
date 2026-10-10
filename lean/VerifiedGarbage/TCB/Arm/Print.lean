@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Arm.Isa
-import VerifiedGarbage.TCB.Print
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.TCB.Print
 
 /-!
 # Printer for the ARMv7 model
@@ -8,6 +10,8 @@ import VerifiedGarbage.TCB.Print
 `asm!`/`naked_asm!` on 32-bit ARM, valid for both the ARM and the Thumb
 instruction sets.
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 

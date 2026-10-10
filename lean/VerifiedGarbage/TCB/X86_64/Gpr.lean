@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.State
+module
+
+public import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # x86-64 general-purpose instructions
@@ -10,6 +12,8 @@ operations and their flags, shifts, rotates (including BMI2's `rorx`), BMI1's
 (`cmovcc`, which reads the flags through a branch condition, is in
 `Isa.lean`, with the conditions.)
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 
