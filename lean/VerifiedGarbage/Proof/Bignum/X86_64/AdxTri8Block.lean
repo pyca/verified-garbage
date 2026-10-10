@@ -161,30 +161,86 @@ theorem setup_ok {s : State} {B : Addr} {Z w a I : Nat}
   xrun [State.ea,hdr,hd,hdrOff,ld (sArr ca) (by have := hv.lt pa; unfold sArr; omega),ld (sFn 12) (by decide),
     show word s.mem B (8*sArr ca) = _ from hv.at pa,hI,AdxRect8.shift3,add]
 
+theorem zero_ends {m : Mem} {B : Addr} {e n : Nat}
+    (lo : word m B e=0) (hi : word m B (e+8*(n+1))=0) :
+    wv m B e (n+2)=2^64*wv m B (e+8) n := by
+  rw [show n+2=1+(n+1) by omega,wv_add,wv_add]
+  simp only [wv,lo,Nat.mul_zero,Nat.mul_one,Nat.add_zero,Nat.pow_zero,Nat.one_mul,Nat.zero_add]
+  rw [show e+8+8*n=e+8*(n+1) by omega,hi]
+  simp only [show (0 : BitVec 64).toNat=0 from rfl,Nat.mul_zero,Nat.add_zero,Nat.zero_add]
+
+/-- `clearEnds`: the first and last of the block's sixteen output words take
+`r8`. -/
+theorem clearEnds_ok {s : State} {B : Addr} {Z w I : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
+    (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I) (he : slot w aAcc+16*I+144≤Z) :
+    let e := slot w aAcc+16+16*I
+    WP isa AdxTri8.clearEnds s fun t =>
+      word t.mem B e=s.gpr .r8 ∧ word t.mem B (e+120)=s.gpr .r8 ∧
+      (∀ d, 8≤d → d+8≤120 → word t.mem B (e+d)=word s.mem B (e+d)) ∧
+      Outside B e 128 s.mem t.mem ∧ Keep [.rsi,.rcx] s t := by
+  dsimp only
+  have nowrap := hs.nowrap
+  unfold AdxTri8.clearEnds
+  refine WP.seq (WP.mono (headBases_ok hs hd hh hZ hI) fun a ⟨pa,ma,ka⟩ => ?_)
+  refine WP.seq (WP.mono (AdxRotate8.storeAt_ok (p := .rsi) (r := .r8) (hs.congr ka.2.2) pa
+    (by omega : slot w aAcc+16*I+16+8≤Z)) fun b ⟨vb,ob,kb⟩ => ?_)
+  refine WP.mono (AdxRotate8.storeAt_ok (p := .rsi) (r := .r8) (hs.congr (ka.trans kb).2.2)
+    ((kb.gpr (by simp)).trans pa) (by omega : slot w aAcc+16*I+136+8≤Z)) fun t ⟨vt,ot,kt⟩ => ?_
+  have r8a : a.gpr .r8=s.gpr .r8 := ka.gpr (by simp)
+  have r8b : b.gpr .r8=s.gpr .r8 := (kb.gpr (by simp)).trans r8a
+  rw [ma] at ob
+  refine ⟨?_,?_,?_,(ob.mono (by omega) (by omega)).trans (ot.mono (by omega) (by omega)),
+    ((ka.trans kb).trans kt).mono (by simp)⟩
+  · rw [show slot w aAcc+16+16*I=slot w aAcc+16*I+16 by omega,ot.word (by omega) (by omega),vb,r8a]
+  · rw [show slot w aAcc+16+16*I+120=slot w aAcc+16*I+136 by omega,vt,r8b]
+  · intro d h1 h2
+    rw [ot.word (by omega) (by omega),ob.word (by omega) (by omega)]
+
 theorem block_ok {s : State} {B : Addr} {Z w a I : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
     {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hIndex : I+8≤w)
     (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I) :
     WP isa (AdxTri8.block ca) s fun t =>
-      2^64*wv t.mem B (output w I 0) 14=AdxSquare.crossValue s.mem B (slot w a+8*I) 8 ∧
-      Outside B (output w I 0) 112 s.mem t.mem ∧ Keep mmRegs s t := by
+      wv t.mem B (slot w aAcc+16+16*I) 16=AdxSquare.crossValue s.mem B (slot w a+8*I) 8 ∧
+      Outside B (slot w aAcc+16+16*I) 128 s.mem t.mem ∧ Keep mmRegs s t := by
+  have nowrap := hs.nowrap
   have ar := AdxRect8.tile_ranges hIndex hIndex ha ha1 ha2
   have outZ : output w I 0+112≤Z := by unfold output at *; omega
+  have endZ : slot w aAcc+16*I+144≤Z := by omega
   unfold AdxTri8.block
   refine WP.seq (WP.mono (setup_ok hs hd hZ hv pa hI) fun u ⟨pu,mu,ku⟩ => ?_)
   refine WP.seq (WP.mono (clear_ok AdxTri8.columns u) fun v ⟨zv,mv,kv⟩ => ?_)
   have kuv := ku.trans kv
-  have vz : value v AdxTri8.columns=0 := value_zero zv
-  refine WP.mono (rows_ok 7 (hs.congr kuv.2.2) ((kuv.gpr (by decide)).trans hd) (mv ▸ mu ▸ hh) hZ
-    (mv ▸ mu ▸ hI) ((kv.gpr (by decide)).trans pu) (by omega)
+  have muv : v.mem=s.mem := mv.trans mu
+  refine WP.seq (WP.mono (clearEnds_ok (hs.congr kuv.2.2) ((kuv.gpr (by decide)).trans hd) (muv ▸ hh) hZ
+    (muv ▸ hI) endZ) fun x ⟨lx,hx,_,ox,kx⟩ => ?_)
+  rw [muv] at ox
+  have kvx := kuv.trans kx
+  have hdrX : Hdr x.mem B w mi := hh.of_outside ox (by unfold slot; omega)
+  have iX : word x.mem B (8*sFn 12)=BitVec.ofNat 64 I := by
+    rw [ox.word (by unfold slot hdrBytes sFn; omega) (by decide)]; exact hI
+  have zx : ∀ r∈AdxTri8.columns, x.gpr r=0 := fun r hr => (kx.gpr (by
+    simp only [AdxTri8.columns,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide)).trans (zv r hr)
+  have r8x : v.gpr .r8=0 := zv .r8 (by decide)
+  refine WP.mono (rows_ok 7 (hs.congr kvx.2.2) ((kvx.gpr (by decide)).trans hd) hdrX hZ iX
+    ((kx.gpr (by decide)).trans ((kv.gpr (by decide)).trans pu)) (by omega)
     (by simpa only [show 16*7=112 from rfl] using outZ)
-    (by unfold output; omega) columns_regs (by decide) (value_zero_lt zv 7))
+    (by unfold output; omega) columns_regs (by decide) (value_zero_lt zx 7))
     fun t ⟨vt,ot,kt⟩ => ?_
-  rw [vz,Nat.zero_add,mv,mu] at vt
-  rw [mv,mu] at ot
-  refine ⟨?_,ot,(kuv.trans kt).mono (by decide)⟩
-  rw [vt,rowSum_cross]
+  rw [value_zero zx,Nat.zero_add,show 2*7=14 from rfl] at vt
+  have low : word t.mem B (slot w aAcc+16+16*I)=0 := by
+    rw [ot.word (by unfold output; omega) (by omega),lx,r8x]
+  have high : word t.mem B (slot w aAcc+16+16*I+8*(14+1))=0 := by
+    rw [ot.word (by unfold output; omega) (by omega),hx,r8x]
+  refine ⟨?_,ox.trans (ot.mono (by unfold output; omega) (by unfold output; omega)),
+    (kvx.trans kt).mono (by decide)⟩
+  rw [show 16=14+2 from rfl,zero_ends low high,
+    show slot w aAcc+16+16*I+8=output w I 0 by unfold output; omega,vt]
+  refine (congrArg (2^64*·) (rowSum_congr fun j hj => ?_)).trans (rowSum_cross s.mem B _ 7)
+  exact ox.word (by omega) (by omega)
 
 end VG.Proof.Bignum.X86_64.AdxTri8
 

@@ -186,6 +186,41 @@ theorem clear_ct_fw (L : CtLayout) (s : State) (h : CoreReady L s) :
   exact ⟨⟨mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,mt ▸ hg.hdr⟩,mt ▸ hI⟩,
     (kt.gpr (by decide)).trans hp,value_zero_lt zt 7⟩
 
+theorem stage_pins (n : Nat) (rs : List Reg) : Pins (Stage n rs) [.rdi] :=
+  fun L s t hs ht => head_pins L s t hs.1 ht.1
+
+/-- The two stores of `clearEnds`, at addresses from `rsi`. -/
+def EndStores : Prog isa :=
+  .seq (.block [.store (AdxRotate8.at_ .rsi 16) .r8]) (.block [.store (AdxRotate8.at_ .rsi 136) .r8])
+
+theorem clearEnds_fw (L : CtLayout) (s : State) (h : Stage 7 AdxTri8.columns L s) :
+    WP isa AdxTri8.clearEnds s (Stage 7 AdxTri8.columns L) := by
+  obtain ⟨⟨mi,hg,hI⟩,hp,hv⟩ := h
+  have hi := L.hi
+  have hZ := L.hZ
+  refine WP.mono (clearEnds_ok hg.scr hg.rdi hg.hdr L.hZ hI (by have := slot_le (w := L.w) (show aTmp < 8 by decide); unfold slot aAcc aTmp at *; omega)) fun t ⟨_,_,_,ot,kt⟩ => ?_
+  have cols : value t AdxTri8.columns=value s AdxTri8.columns :=
+    value_congr fun r hr => kt.gpr (by
+      simp only [AdxTri8.columns,List.mem_cons,List.not_mem_nil,or_false] at hr
+      rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide)
+  refine ⟨⟨mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,
+    hg.hdr.of_outside ot (by unfold slot; omega)⟩,?_⟩,(kt.gpr (by decide)).trans hp,cols ▸ hv⟩
+  rw [ot.word (by unfold slot hdrBytes sFn; omega) (by decide)]; exact hI
+
+theorem clearEnds_ct
+    {hint : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.rsi]) EndStores hint).isSome=true) :
+    RelCT isa (Two (Stage 7 AdxTri8.columns)) AdxTri8.clearEnds (Two (Stage 7 AdxTri8.columns)) := by
+  refine two_post ?_ clearEnds_fw
+  unfold AdxTri8.clearEnds
+  refine RelCT.seq (two_piece (Ψ := fun L s => s.gpr .rsi=off L.B (slot L.w aAcc+16*L.I))
+    [.rdi] (stage_pins 7 _) (by taint_decide) ?_) (two_taint [.rsi] ?_ hT)
+  · rintro L s ⟨⟨mi,hg,hI⟩,_⟩
+    exact WP.mono (headBases_ok hg.scr hg.rdi hg.hdr L.hZ hI) fun _ h => h.1
+  · intro L s t hs ht r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    subst r; exact hs.trans ht.symm
+
 theorem block_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
     (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxTri8.setup ca)) hint).isSome=true) :
@@ -195,7 +230,8 @@ theorem block_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps)
   · intro L s t hs ht
     exact head_pins L s t hs.1 ht.1
   exact RelCT.seq (two_piece [] (by simp [Pins]) (by taint_decide) clear_ct_fw)
-    (rows_ct 7 0 AdxTri8.columns columns_regs (by decide) (by decide) checks_seven)
+    (RelCT.seq (clearEnds_ct (by taint_decide))
+      (rows_ct 7 0 AdxTri8.columns columns_regs (by decide) (by decide) checks_seven))
 
 end VG.Proof.Bignum.X86_64.AdxTri8
 
@@ -219,9 +255,9 @@ theorem block_loop_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps
   refine WP.mono (block_ok hg.scr hg.rdi hg.hdr p.1.hZ hv pa ha ha1 ha2 (by omega) hI)
     fun t ⟨_,ot,kt⟩ => ?_
   refine ⟨hk,mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,
-    hg.hdr.of_outside ot (by unfold output slot; omega)⟩,
-    hv.of_outside ot (by unfold output slot sFn hdrBytes; omega),?_⟩
-  rw [ot.word (by unfold output slot hdrBytes sFn; omega) (by decide)]; exact hI
+    hg.hdr.of_outside ot (by unfold slot; omega)⟩,
+    hv.of_outside ot (by unfold slot sFn hdrBytes; omega),?_⟩
+  rw [ot.word (by unfold slot hdrBytes sFn; omega) (by decide)]; exact hI
 
 theorem block_loop_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -297,7 +333,7 @@ namespace VG.Proof.Bignum.X86_64.AdxTiledSquare
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.Bignum.X86_64
 
-open VG.Proof.Bignum.X86_64.AdxTiledProduct (Layout GoodV pins_goodV setup_fw zero_fw save_fw)
+open VG.Proof.Bignum.X86_64.AdxTiledProduct (Layout GoodV pins_goodV setup_fw save_fw)
 
 theorem rawCross_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp)
@@ -307,13 +343,8 @@ theorem rawCross_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) 
     (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxTri8.setup ca)) h₃).isSome=true) :
     RelCT isa (Two (GoodV ps)) (AdxTiledSquare.rawCross ca) (fun _ _ => True) := by
   unfold AdxTiledSquare.rawCross
-  refine RelCT.seq (two_piece [.rdi] (pins_goodV ps) hS (setup_fw pa)) ?_
-  refine RelCT.seq (two_piece [.r8,.rbx] ?_ (by taint_decide) zero_fw) ?_
-  · intro L s t hs ht r hr
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl | rfl
-    · exact hs.2.1.trans ht.2.1.symm
-    · exact hs.2.2.trans ht.2.2.symm
+  refine RelCT.seq (two_piece (Ψ := GoodV ps) [.rdi] (pins_goodV ps) hS
+    fun L s h => WP.mono (setup_fw pa L s h) fun _ ht => ht.1) ?_
   have mapGood : ∀ L s, GoodV ps L s → GoodW ⟨L.B,L.Z,L.w⟩ s := by
     rintro L s ⟨⟨mi,hg⟩,_⟩; exact ⟨mi,hg,L.hZ⟩
   refine RelCT.seq (two_post (two_map (fun L : Layout => (⟨L.B,L.Z,L.w⟩ : Ws)) mapGood AdxHeader.save_ct) save_fw) ?_
