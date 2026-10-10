@@ -97,6 +97,12 @@ SLACK = 0.05
 # module times add up to 5.4 times their builds' wall times): a shard's
 # time is at least its work divided by this.
 PARALLELISM = 5.4
+# How much a sink's work in a shard counts against that shard when packing,
+# beyond the estimate (in multiples of its time on a runner): the more, the
+# more sinks go where what they import is built already. Replaying the full
+# rebuilds of CI's metrics, 3 rather than 1 builds 30% less twice (6900 s
+# rather than 9900 s of 36000 s) with the same slowest shard on 12 shards.
+DUPLICATE_WEIGHT = 3.0
 # The time to check that a module is up to date, and to build one the
 # manifest has no time for when it has none at all.
 UP_TO_DATE = 0.02
@@ -235,7 +241,10 @@ def pack(
         # whose imports another shard builds already, and build them again.
         best = min(
             range(count),
-            key=lambda i: (estimate(loads[i] + added[i], max(longest[i], path[s])) + added[i] / PARALLELISM, i),
+            key=lambda i: (
+                estimate(loads[i] + added[i], max(longest[i], path[s])) + DUPLICATE_WEIGHT * added[i] / PARALLELISM,
+                i,
+            ),
         )
         shards[best] |= closure[s]
         loads[best] += added[best]
