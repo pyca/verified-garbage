@@ -24,10 +24,13 @@ passes: each check ORs into it a word that is 0 if and only if it passes.
   kept at `RX` and `RY` (`Z = 1` in slot 10). `A` is negated, and
   `Q = [S]B + [k](-A)` computed from the top bit down, as `[s]B` is: `Q`
   doubled, `B` added and swapped into `Q` by bit `t` of `S`, then `-A` added
-  and swapped in by bit `t` of `k`.
-* `R` is copied into slots 8–9 (`B` is no longer needed), `Q` and `R` are
-  doubled twice, and compared: `X_Q Z_R = X_R Z_Q` and `Y_Q Z_R = Y_R Z_Q`,
-  fully reduced.
+  and swapped in by bit `t` of `k`. The doublings and additions are calls of
+  `vg_ed448_r64_point_double` and `vg_ed448_r64_point_add_affine`
+  (`Point64.lean`), which add the point in slots 8–9 with `Z = 1`: `-A` is
+  copied there for its addition, and `B` written back after it.
+* `Q` is doubled twice and copied into slots 3–5, `R` into slots 0–2 (with
+  `Z = 1`) and doubled twice, and they are compared: `X_Q Z_R = X_R Z_Q` and
+  `Y_Q Z_R = Y_R Z_Q`, fully reduced.
 
 The result is 1 if `BAD` is 0. Every address and branch depends only on the
 pointers.
@@ -145,16 +148,24 @@ def maskAt (o : Nat) : List Instr :=
 /-- `T` swapped into `R` by the mask `rcx`. -/
 def swapT : List Instr := cswap (slot 0) (slot 3) ++ cswap (slot 1) (slot 4) ++ cswap (slot 2) (slot 5)
 
-/-- One bit `t = rbx - 1`, from the top (in three blocks, each short enough
-for the kernel to check as a literal). -/
-def vstep (F : Field) : Prog isa :=
-  .seq (.block ([.alu .sub .rbx (.imm 1)] ++ fieldCode F (doubleAt 0 1 2))) <|
-  .seq (.block (fieldCode F (addAt 8 9) ++ (maskAt BITS ++ swapT))) <|
-    .block (fieldCode F (addAt 6 7) ++ (maskAt KBITS ++ (swapT ++ [.alu .test .rbx (.reg .rbx)])))
+/-- `-A` (slots 6–7) into slots 8–9, where the affine addition reads its second point. -/
+def stageA : List Instr := copyOut (slot 8) (slot 6) ++ copyOut (slot 9) (slot 7)
+
+/-- `B` back into slots 8–9. -/
+def restoreB : List Instr :=
+  constSlot 8 Spec.Ed448.basePoint.X ++ constSlot 9 Spec.Ed448.basePoint.Y
+
+/-- One bit `t = rbx - 1`, from the top, with the point operations `P`: `Q` doubled, `B` (in
+slots 8–9) added and swapped in by bit `t` of `S`, `-A` (copied into slots 8–9) added and
+swapped in by bit `t` of `k`, and `B` restored. -/
+def vstep (P : Point64.Ops) : Prog isa :=
+  .seq (.block [.alu .sub .rbx (.imm 1)]) <| .seq P.dbl <| .seq P.add <|
+  .seq (.block (maskAt BITS ++ (swapT ++ stageA))) <| .seq P.add <|
+    .block (maskAt KBITS ++ (swapT ++ (restoreB ++ [.alu .test .rbx (.reg .rbx)])))
 
 /-- The 456 bits, from 455 down to 0. -/
-def vloop (F : Field) : Prog isa :=
-  .seq (.block [.mov32 .rbx (.imm 456)]) (.loop (vstep F) .ne)
+def vloop (P : Point64.Ops) : Prog isa :=
+  .seq (.block [.mov32 .rbx (.imm 456)]) (.loop (vstep P) .ne)
 
 /-! ## The function -/
 
@@ -202,32 +213,32 @@ def vdecode (F : Field) (rt : Prog isa := root F 12) : Prog isa :=
 /-- `A` negated, with the constants. -/
 def vnegA (F : Field) : List Instr := consts ++ fieldCode F [.sub 6 0 6]
 
-/-- `R` into slots 8–9 (`B` is no longer needed). -/
-def vR : List Instr := copyOut (slot 8) RX ++ copyOut (slot 9) RY
+/-- `[4]Q` into slots 3–5, and `R` (`Z = 1`) into slots 0–2. -/
+def vR : List Instr :=
+  copyOut (slot 3) (slot 0) ++ (copyOut (slot 4) (slot 1) ++ (copyOut (slot 5) (slot 2) ++
+    (copyOut (slot 0) RX ++ (copyOut (slot 1) RY ++ constSlot 2 1))))
 
-/-- `Q` (slots 0–2) and `R` (slots 8–10) doubled twice: a loop of two
-iterations, counted by `rbx`, each doubling both. -/
-def vdouble (F : Field) : Prog isa :=
-  .seq (.block [.mov32 .rbx (.imm 2)])
-    (.loop (.block (fieldCode F (doubleAt 0 1 2 ++ doubleAt 8 9 10) ++ [.alu .sub .rbx (.imm 1)])) .ne)
+/-- The point in slots 0–2 doubled twice: a loop of two iterations, counted by `rbx`. -/
+def vdouble (P : Point64.Ops) : Prog isa :=
+  .seq (.block [.mov32 .rbx (.imm 2)]) (.loop (.seq P.dbl (.block [.alu .sub .rbx (.imm 1)])) .ne)
 
 /-- `[4]Q` and `[4]R` compared (`BAD |= 0` exactly when they are the same
 point), the result `eax = (BAD == 0)`, and the callee-saved registers
 restored. -/
-def vfinish (F : Field) : Prog isa :=
-  .seq (vdouble F) <|
-  .block (fieldCode F [.mul 12 0 10, .mul 13 8 2] ++ (eqSlots 12 13 ++
-    (fieldCode F [.mul 12 1 10, .mul 13 9 2] ++ (eqSlots 12 13 ++
+def vfinish (F : Field) (P : Point64.Ops) : Prog isa :=
+  .seq (vdouble P) <| .seq (.block vR) <| .seq (vdouble P) <|
+  .block (fieldCode F [.mul 12 3 2, .mul 13 0 5] ++ (eqSlots 12 13 ++
+    (fieldCode F [.mul 12 4 2, .mul 13 1 5] ++ (eqSlots 12 13 ++
     ([.mov .rdx (.mem (sc BAD))] ++ (isZero ++ ([.mov .rax (.reg .rdx)] ++
       Impl.X448.X86_64.restore)))))))
 
-/-- `vg_ed448_verify_equation` with the field multiplications `F` and the square root's
-power `rt`. -/
-def verifyEquationWith (F : Field) (rt : Prog isa := root F 12) : Prog isa :=
+/-- `vg_ed448_verify_equation` with the field multiplications `F`, the point operations `P`
+and the square root's power `rt`. -/
+def verifyEquationWith (F : Field) (P : Point64.Ops) (rt : Prog isa := root F 12) : Prog isa :=
   .seq (.block ventry) <| .seq vbits <| .seq (.block vstart) <| .seq (vdecode F rt) <|
-    .seq (.block (vnegA F)) <| .seq (vloop F) <| .seq (.block vR) (vfinish F)
+    .seq (.block (vnegA F)) <| .seq (vloop P) (vfinish F P)
 
 def verifyEquation : Prog isa :=
-  verifyEquationWith Impl.X448.X86_64.baseline (rootCall Impl.X448.X86_64.baseline)
+  verifyEquationWith Impl.X448.X86_64.baseline Point64.calls (rootCall Impl.X448.X86_64.baseline)
 
 end VG.Impl.Ed448.X86_64

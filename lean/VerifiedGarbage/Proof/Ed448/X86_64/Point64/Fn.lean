@@ -188,3 +188,17 @@ theorem bodies_ok : PointOk bodies where
   add hs := WP.mono (fn_ok addAffineOps addAffineOps_valid hs) fun _ ⟨k, e, _⟩ => ⟨k, e⟩
 
 end VG.Proof.Ed448.X86_64.Point64
+
+namespace VG.Proof.Ed448.X86_64.Point64
+
+open VG.Impl.Ed448.X86_64 VG.Proof.Ed448
+
+theorem addAffineOps_keep (e : Fin 22 → Spec.X448.Fe) (i : Fin 22)
+    (hi : i.val < 3 ∨ (6 ≤ i.val ∧ i.val < 13) ∨ i.val = 21) : evalOps addAffineOps e i = e i :=
+  evalOps_keep _ _ _ fun op hop => by
+    have : ∀ op ∈ addAffineOps, (3 ≤ fopDest op ∧ fopDest op < 6) ∨ (13 ≤ fopDest op ∧ fopDest op ≤ 20) := by
+      decide
+    have := this op hop
+    omega
+
+end VG.Proof.Ed448.X86_64.Point64
