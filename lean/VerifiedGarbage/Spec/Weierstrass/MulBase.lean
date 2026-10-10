@@ -29,12 +29,12 @@ bytes is the x86-64 code's: numbers of `k` words in slots from byte 64
 (slot 3, `zeroAt`), both of which the caller provides, the result `P` (slots
 14 to 16, `pAt`) and the scalar `k` (slot 31, `kAt`, any number of `k`
 words). The function takes no offsets, so that every address it computes is
-`ws` plus a constant. Slots 17 to 28 and 30, slot 40, the curve's temporary
-slot (`tmpAt`) and the `64 k + 8` bytes from slot 45 (`bitsAt`, where the
-code keeps a table of `k`'s bits) are the function's own working space
-(`Own`); on return they are unspecified and may hold intermediate values,
-secret ones among them. Every other byte of `ws` keeps its value but the
-result's (`Keeps`).
+`ws` plus a constant. Slots 17 to 30, slot 40, the curve's temporary slot
+(`tmpAt`) and the `64 k + 8` bytes from slot 45 (`bitsAt`, where the code
+keeps a table of `k`'s bits) are the function's own working space (`Own`);
+on return they are unspecified and may hold intermediate values, secret
+ones among them, and the caller's callee-saved registers. Every other byte
+of `ws` keeps its value but the result's (`Keeps`).
 
 Everything is secret but the pointer, which is public, and the function is
 constant time.
@@ -98,12 +98,11 @@ def tmpAt : Nat := C.slot C.tmp
 /-- The bytes of a point. -/
 def ptBytes : Nat := 24 * C.k
 
-/-- Byte `i` is in the function's own working space: slots 17 to 28, 30 and
-40, the temporary slot, or the `64 k + 8` bytes of the table of bits. -/
+/-- Byte `i` is in the function's own working space: slots 17 to 30 and 40,
+the temporary slot, or the `64 k + 8` bytes of the table of bits. -/
 def Own (i : Nat) : Prop :=
-  (C.slot 17 ≤ i ∧ i < C.slot 29) ∨ (C.slot 30 ≤ i ∧ i < C.slot 31) ∨
-    (C.slot 40 ≤ i ∧ i < C.slot 41) ∨ (C.tmpAt ≤ i ∧ i < C.tmpAt + 8 * C.k) ∨
-    (C.bitsAt ≤ i ∧ i < C.bitsAt + 64 * C.k + 8)
+  (C.slot 17 ≤ i ∧ i < C.slot 31) ∨ (C.slot 40 ≤ i ∧ i < C.slot 41) ∨
+    (C.tmpAt ≤ i ∧ i < C.tmpAt + 8 * C.k) ∨ (C.bitsAt ≤ i ∧ i < C.bitsAt + 64 * C.k + 8)
 
 /-- Every byte of `ws` but those of the function's own working space and of
 the result keeps its value. -/
@@ -143,9 +142,8 @@ def rangeDoc (o n : Nat) : String := s!"{o} to {o + n - 1}"
 
 /-- What the documentation says the function's own working space is. -/
 def ownDoc : String :=
-  s!"Bytes {rangeDoc (C.slot 17) (C.slot 29 - C.slot 17)}, {rangeDoc (C.slot 30) (8 * C.k)}, \
-    {rangeDoc (C.slot 40) (8 * C.k)}, {rangeDoc C.tmpAt (8 * C.k)} and \
-    {rangeDoc C.bitsAt (64 * C.k + 8)} of `ws`"
+  s!"Bytes {rangeDoc (C.slot 17) (C.slot 31 - C.slot 17)}, {rangeDoc (C.slot 40) (8 * C.k)}, \
+    {rangeDoc C.tmpAt (8 * C.k)} and {rangeDoc C.bitsAt (64 * C.k + 8)} of `ws`"
 
 /-- `vg_<curve>_mul_base` on every target. -/
 def mulBaseApi : Api where
