@@ -38,7 +38,7 @@ def expandKeySat : State where
   of := none
   mem _ := 0
   rd := [⟨0x1000, 16⟩]
-  wr := [⟨0x2000, 128⟩, ⟨0x3000, 8 * 390⟩]
+  wr := [⟨0x2000, 128⟩, ⟨0x3000, 8 * 392⟩]
 
 theorem expandKey_verified :
     Verified X86_64.target expandKey (Proof.Sm4.expandKeyScratchContract X86_64.abi slots) :=
@@ -49,11 +49,11 @@ theorem expandKey_verified :
 
 /-- Key expansion, with its working space on the stack. -/
 theorem expandKey_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3128 .rdx 390 expandKey)
-      (Spec.Sm4.expandKeyContract X86_64.abi 3128) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rdx 392 expandKey)
+      (Spec.Sm4.expandKeyContract X86_64.abi 3144) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Sm4.expandKeySig) (nm := "scratch") (e := .u64)
-    (n := 390) (post := Proof.Sm4.expandKeyPost X86_64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 3128) expandKey_verified (by decide) (by decide) (by decide)
+    (n := 392) (post := Proof.Sm4.expandKeyPost X86_64.abi.ptrBits) (wa := false) (stack := 0)
+    (bytes := 3144) expandKey_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by decide +kernel)) (by decide +kernel) (by decide)
     (Proof.Sm4.expandKeyPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))

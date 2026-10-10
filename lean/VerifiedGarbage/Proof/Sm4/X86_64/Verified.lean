@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 `ecb_verified`: `ecb dir` is correct (`ecb_wp`) and constant time, by the
 taint analysis: the pointers, `n` and the stack pointer are public, and so
 is everything the code computes from them. `ecb_framed` runs it with its
-working space on the stack, zeroed on return: 3128 bytes, the 390 words of
+working space on the stack, zeroed on return: 3144 bytes, the 392 words of
 the scratch buffer and 8 more.
 -/
 
@@ -91,7 +91,7 @@ def ecbSat : State where
   of := none
   mem _ := 0
   rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x3000, 16⟩, ⟨0x4000, 8 * 390⟩]
+  wr := [⟨0x3000, 16⟩, ⟨0x4000, 8 * 392⟩]
 
 theorem ecb_verified (dir : Dir) :
     Verified X86_64.target (ecb dir) (Proof.Sm4.ecbScratchContract X86_64.abi (specDir dir) slots) :=
@@ -102,11 +102,11 @@ theorem ecb_verified (dir : Dir) :
 
 /-- ECB in the direction `dir`, with its working space on the stack. -/
 theorem ecb_framed (dir : Dir) :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3128 .rcx 390 (ecb dir))
-      (Spec.Sm4.ecbContract X86_64.abi (specDir dir) 3128) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rcx 392 (ecb dir))
+      (Spec.Sm4.ecbContract X86_64.abi (specDir dir) 3144) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Sm4.ecbSig) (nm := "scratch") (e := .u64)
-    (n := 390) (post := Spec.Sm4.ecbPost (specDir dir) X86_64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3128) (ecb_verified dir) (by decide) (by decide) (by decide)
+    (n := 392) (post := Spec.Sm4.ecbPost (specDir dir) X86_64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 3144) (ecb_verified dir) (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by cases dir <;> decide +kernel)) (by cases dir <;> decide +kernel) (by decide)
     (Proof.Sm4.ecbPostOut_local _ _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
