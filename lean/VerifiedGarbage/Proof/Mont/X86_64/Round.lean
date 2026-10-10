@@ -45,12 +45,12 @@ theorem wins_split (n i : Nat) :
   simp only [wins, List.range_succ, List.map_append, List.map_cons, List.map_nil,
     List.append_assoc, List.singleton_append]
 
-theorem nodup_wins_lt : ∀ n < 7, ∀ i < n + 2, (wins n i).Nodup := by decide
+theorem nodup_wins_lt : ∀ n < 7, ∀ i < n + 2, (wins n i).Nodup := by decide +kernel
 
 theorem regs_wins_lt : ∀ n < 7, ∀ i < n + 2, ∀ t ∈ wins n i, t ≠ .rax ∧ t ≠ .rcx ∧ t ≠ .rdx := by
-  decide
+  decide +kernel
 
-theorem regs_wins_lt' : ∀ n < 7, ∀ i < n + 2, ∀ t ∈ wins n i, t ≠ .rbp ∧ t ≠ .rdi := by decide
+theorem regs_wins_lt' : ∀ n < 7, ∀ i < n + 2, ∀ t ∈ wins n i, t ≠ .rbp ∧ t ≠ .rdi := by decide +kernel
 
 theorem fresh_wins_lt (n : Nat) (hn : n < 7) (i : Nat) (hi : i < n + 2) : Fresh (wins n i) :=
   ⟨nodup_wins_lt n hn i hi, fun t ht =>

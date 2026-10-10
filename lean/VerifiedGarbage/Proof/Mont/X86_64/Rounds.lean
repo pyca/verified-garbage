@@ -39,13 +39,13 @@ theorem zeros_ok (s : State) : ∀ ts : List Reg,
     · have : q = t := by simpa [hqt] using hq
       subst this; rw [k₂.1 _ hqt, z₁]
 
-theorem wins_sub_acc_lt : ∀ n < 7, ∀ i < n + 2, ∀ r ∈ wins n i, r ∈ acc n := by decide
+theorem wins_sub_acc_lt : ∀ n < 7, ∀ i < n + 2, ∀ r ∈ wins n i, r ∈ acc n := by decide +kernel
 
 theorem wins_sub_acc {n : Nat} (hn : n < 7) (i : Nat) : ∀ r ∈ wins n i, r ∈ acc n := by
   rw [wins_mod]; exact wins_sub_acc_lt n hn _ (Nat.mod_lt _ (by omega))
 
 theorem acc_regs_lt : ∀ n < 7, ∀ r ∈ acc n, r ≠ .rax ∧ r ≠ .rcx ∧ r ≠ .rdx ∧ r ≠ .rbp ∧ r ≠ .rdi := by
-  decide
+  decide +kernel
 
 /-- `k` rounds, from a cleared accumulator. -/
 theorem rounds_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}

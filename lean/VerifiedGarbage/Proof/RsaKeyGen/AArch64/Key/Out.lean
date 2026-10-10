@@ -107,6 +107,7 @@ theorem stores_ok {B : Addr} {Z w : Nat} {c : Bool} {Q : State → Prop} :
         rw [f₁.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)]
     · intro x hx
       rw [xt x fun e' he' => hx e' (List.mem_cons_of_mem _ he'), x₁ x (hx e List.mem_cons_self)]
+termination_by structural L => L
 
 /-- The block that returns `kOk`'s low bit. -/
 abbrev retOk : List Instr := [ldh .x3 kOk, movi .x4 1, .logic .and .x .x0 .x3 .x4]
