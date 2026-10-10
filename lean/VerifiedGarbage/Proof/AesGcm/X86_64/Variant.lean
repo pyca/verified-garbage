@@ -73,6 +73,13 @@ def fullR : StitchName → Bool
   | .vaesAvx512 => true
   | _ => false
 
+/-- Whether `seal` calling the loops named `n` ends without calls
+(`GcmImpl.fin`): the loops in `VEX.128` with AES-NI and PCLMULQDQ, whose CPU
+features it needs. -/
+def fin : StitchName → Bool
+  | .aesniAvx => true
+  | _ => false
+
 /-- Decryption using a prepared context. -/
 def decR : StitchName → Prog isa
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.dec

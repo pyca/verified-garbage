@@ -149,7 +149,7 @@ def GcmVariant.stitchToP (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_6
 /-- The implementations a variant calls. -/
 def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
   ⟨v.ctr, v.key, v.gh.impl, v.stitch.map StitchPart.impl, v.stitch.bind StitchPart.implP,
-    v.stitch.any (·.name.short)⟩
+    v.stitch.any (·.name.short), v.stitch.any (·.name.fin)⟩
 
 /-- Prepared-context versions of each named interleaved loop (encrypting any
 number of blocks from 16 on if `fullR`). -/
@@ -189,6 +189,13 @@ def shortNote (v : GcmImpl) : List String :=
     ["For a 12-byte nonce and fewer than 32 blocks of additional data and text, with some text or \
       more than 16 bytes of additional data, this implementation computes just the powers of the hash \
       subkey and the keystream they need, on 512-bit registers, without calls."]
+  else []
+
+/-- How an instance of `seal` ends, besides `note` and `shortNote`. -/
+def finNote (v : GcmImpl) : List String :=
+  if v.fin then
+    ["After the whole blocks, this implementation encrypts the bytes left and computes the tag without \
+      calls, with AES-NI and PCLMULQDQ."]
   else []
 
 /-- How an instance of `vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks` works. -/
@@ -236,7 +243,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
   { Spec.Gcm.sealApi with
     name := Spec.Gcm.sealApi.name ++ v.suffix
     target := X86_64.target
-    doc := Spec.Gcm.sealApi.doc (notes := note v :: shortNote v)
+    doc := Spec.Gcm.sealApi.doc (notes := note v :: shortNote v ++ finNote v)
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode v.callees)
     contract := Spec.Gcm.sealContract X86_64.abi 2624
     stack := 2624
@@ -363,7 +370,7 @@ def artifactsP (v : GcmImpl) : List Artifact := [
   { Spec.Gcm.sealPrecomputedApi with
     name := Spec.Gcm.sealPrecomputedApi.name ++ v.suffix
     target := X86_64.target
-    doc := Spec.Gcm.sealPrecomputedApi.doc (notes := note v :: shortNote v)
+    doc := Spec.Gcm.sealPrecomputedApi.doc (notes := note v :: shortNote v ++ finNote v)
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode (v.withBlk v.blkP))
     contract := Spec.Gcm.sealPrecomputedContract X86_64.abi 2624
     stack := 2624
@@ -530,13 +537,17 @@ theorem sealCode_xdepth (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B :
     (v.sealCode (v.withBlk B)).x86_64Depth ≤ 24 := by
   unfold GcmImpl.sealCode; split
   · exact Short.sealM_xdepth v B
-  · exact sealM_xdepth v B
+  · split
+    · exact SealFin.sealFM_xdepth v B
+    · exact sealM_xdepth v B
 
 theorem sealCode_mx (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     (v.sealCode (v.withBlk B)).allInstrs (fun i => !VG.X86_64.loadsMxcsr i) = true := by
   unfold GcmImpl.sealCode; split
   · exact Short.sealM_mx v B
-  · exact sealM_mx v B
+  · split
+    · exact SealFin.sealFM_mx v B
+    · exact sealM_mx v B
 
 /-- The instance of `vg_aes_gcm_seal` calling the implementations `v`. -/
 def sealFn (v : GcmImpl) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
@@ -670,7 +681,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
   { Spec.Gcm.sealPreparedApi with
     name := Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix
     target := X86_64.target
-    doc := Spec.Gcm.sealPreparedApi.doc (notes := note v.impl :: shortNote v.impl)
+    doc := Spec.Gcm.sealPreparedApi.doc (notes := note v.impl :: shortNote v.impl ++ finNote v.impl)
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCode (v.impl.withBlk (blkR v)))
     contract := Spec.Gcm.sealPreparedContract X86_64.abi 2624
     stack := 2624

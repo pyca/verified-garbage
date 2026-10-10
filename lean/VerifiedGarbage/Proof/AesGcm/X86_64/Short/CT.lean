@@ -313,22 +313,38 @@ theorem FinI.keep {Ctx W SP D : Addr} {R r : Nat} {s s' : State} (h : FinI Ctx W
   exact ⟨h.env.keep hg hrd hwr, by rw [kp 176 (by decide)]; exact h.rounds, by rw [kp 200 (by decide)]; exact h.dat,
     by rw [kp 208 (by decide)]; exact h.len⟩
 
-/-- `finish` in two runs with the same rounds and bytes left. -/
-theorem finish_rel (hF : ShortFacts) {Ctx W SP D : Addr} {R r : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (hr : r < 2 ^ 64) :
-    RelCT isa (fun s₁ s₂ => FinI Ctx W SP D R r s₁ ∧ FinI Ctx W SP D R r s₂) finish fun _ _ => True := by
+/-- What `finishWith` needs of its keystream program `ks` in two runs with
+the same rounds and bytes left. -/
+def KsRel (ks : Prog isa) : Prop :=
+  ∀ {Ctx W SP D : Addr} {R r : Nat}, (R = 10 ∨ R = 12 ∨ R = 14) →
+    RelCT isa (fun s₁ s₂ => FinI Ctx W SP D R r s₁ ∧ FinI Ctx W SP D R r s₂) ks fun _ _ => True
+
+theorem finKs_rel : KsRel finKs := fun {Ctx W SP D R r} _ => by
+  have wCtrs : ∀ s, FinI Ctx W SP D R r s → WP isa (.block finCtrs) s fun t =>
+      t.gpr .rdi = Ctx ∧ t.gpr .rsi = BitVec.ofNat 64 R ∧ t.gpr .r10 = Ctx + BitVec.ofNat 64 (16 * R) := fun s h => by
+    obtain ⟨t, run, -, -, -, -, di, si, r10, -⟩ := finCtrs_ok s h.env h.rounds
+    exact WP.of_runBlock ⟨t, run, di, si, r10⟩
+  exact rel_piece [.rdi, .rsi, .r10] (fun _ h => h.env) (fun _ h => h.env) (keepsEnv (by decide +kernel))
+      ⟨_, by taint_decide⟩ wCtrs wCtrs (fun _ _ h₁ h₂ r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · rw [h₁.1, h₂.1]
+        · rw [h₁.2.1, h₂.2.1]
+        · rw [h₁.2.2, h₂.2.2]) ⟨_, by taint_decide⟩
+
+/-- `finishWith ks` in two runs with the same rounds and bytes left. -/
+theorem finish_rel (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) {Ctx W SP D : Addr}
+    {R r : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (hr : r < 2 ^ 64) :
+    RelCT isa (fun s₁ s₂ => FinI Ctx W SP D R r s₁ ∧ FinI Ctx W SP D R r s₂) (finishWith ks) fun _ _ => True := by
   have wPow : ∀ s, FinI Ctx W SP D R r s → WP isa (.block finPow) s (FinI Ctx W SP D R r) := fun s h =>
     WP.mono (hF.finPow s (by rw [h.env.r13, BitVec.ofInt_natCast]; exact h.env.perm.ctxR (by decide)))
       fun _ ⟨_, _, _, _, o⟩ => h.keep (fun g hg => o.gpr g (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
         rcases hg with rfl | rfl | rfl | rfl <;> decide)) o.rd o.wr (by rw [o.mem]; exact Frame.refl _ _)
-  have wKs : ∀ s, FinI Ctx W SP D R r s → WP isa finKs s (FinI Ctx W SP D R r) := fun s h =>
-    WP.mono (finKs_ok s h.env h.rounds hR) fun _ ⟨_, _, f, g, rd, wr, _⟩ => h.keep (fun g' hg => by
+  have wKs : ∀ s, FinI Ctx W SP D R r s → WP isa ks s (FinI Ctx W SP D R r) := fun s h =>
+    WP.mono (hks s h.env h.rounds hR) fun _ ⟨_, _, f, g, rd, wr, _⟩ => h.keep (fun g' hg => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
         rcases hg with rfl | rfl | rfl | rfl <;> exact g _ (by decide) (by decide) (by decide)) rd wr f
-  have wCtrs : ∀ s, FinI Ctx W SP D R r s → WP isa (.block finCtrs) s fun t =>
-      t.gpr .rdi = Ctx ∧ t.gpr .rsi = BitVec.ofNat 64 R ∧ t.gpr .r10 = Ctx + BitVec.ofNat 64 (16 * R) := fun s h => by
-    obtain ⟨t, run, -, -, -, -, di, si, r10, -⟩ := finCtrs_ok s h.env h.rounds
-    exact WP.of_runBlock ⟨t, run, di, si, r10⟩
   have wTest : ∀ s, FinI Ctx W SP D R r s → WP isa (.block [.mov .rax (.mem (at_ .r15 lenO)),
       .alu .test .rax (.reg .rax)]) s fun t => t.zf = some (decide (r = 0)) ∧ FinI Ctx W SP D R r t := fun s h =>
     WP.mono (finTest_ok hr s h.env h.len) fun _ ⟨z, g, m, rd, wr, _⟩ => ⟨z, h.keep (fun g' hg => g _ (by
@@ -341,13 +357,7 @@ theorem finish_rel (hF : ShortFacts) {Ctx W SP D : Addr} {R r : Nat} (hR : R = 1
     exact WP.of_runBlock ⟨t, run, di, si, dx, cx⟩
   have p := rel_next (rel_env_regs [] (fun _ h => h.env) (fun _ h => h.env) (fun _ _ _ _ _ hr => by cases hr)
     (c := .block finPow) ⟨_, by taint_decide⟩) wPow wPow
-  have k := rel_next (rel_piece [.rdi, .rsi, .r10] (fun _ h => h.env) (fun _ h => h.env) (keepsEnv (by decide +kernel))
-      ⟨_, by taint_decide⟩ wCtrs wCtrs (fun _ _ h₁ h₂ r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl
-        · rw [h₁.1, h₂.1]
-        · rw [h₁.2.1, h₂.2.1]
-        · rw [h₁.2.2, h₂.2.2]) ⟨_, by taint_decide⟩) wKs wKs
+  have k := rel_next (hkr hR) wKs wKs
   have t := rel_next (rel_env_regs [] (fun _ h => h.env) (fun _ h => h.env) (fun _ _ _ _ _ hr => by cases hr)
     (c := .block [.mov .rax (.mem (at_ .r15 lenO)), .alu .test .rax (.reg .rax)]) ⟨_, by taint_decide⟩) wTest wTest
   have b₀ := rel_env_regs [] (F₁ := FinI Ctx W SP D R r) (F₂ := FinI Ctx W SP D R r) (fun _ h => h.env) (fun _ h => h.env)
@@ -367,8 +377,8 @@ theorem finish_rel (hF : ShortFacts) {Ctx W SP D : Addr} {R r : Nat} (hR : R = 1
     (b₁.mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h))))
 
 /-- After the entry, the long `seal` in two runs: `oneAad`, `oneBlocks` and
-`finish`. -/
-theorem sealRunF_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s₀ s₀' : State}
+`finishWith ks`. -/
+theorem sealRunF_rel (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) (hkr : KsRel ks) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s₀ s₀' : State}
     {Ctx W SP Np A D : Addr} {nl al n R : Nat}
     (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n) (C' : OneCtx s₀' 4 Ctx W SP Np A D nl al n)
     (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀) (X' : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀')
@@ -377,7 +387,7 @@ theorem sealRunF_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxM
     (hNp' : s₀'.gpr .rdx = Np) (hnl' : (s₀'.gpr .rcx).toNat = nl) (hal' : (s₀'.gpr .r9).toNat = al)
     (hR' : (s₀'.gpr .rsi).toNat = R) :
     RelCT isa (fun s₁ s₂ => True ∧ OneEntry s₀ Ctx W SP A D n s₁ ∧ OneEntry s₀' Ctx W SP A D n s₂)
-      (.seq (oneAad v.callees) (.seq (oneBlocks B.enc) finish)) fun _ _ => True := by
+      (.seq (oneAad v.callees) (.seq (oneBlocks B.enc) (finishWith ks))) fun _ _ => True := by
   have L := C.lay
   have hDW := C.dE
   have hn := C.data.ok.lt
@@ -389,7 +399,7 @@ theorem sealRunF_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxM
   have fi : ∀ {s : State}, OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n) s →
       FinI Ctx W SP (D + BitVec.ofNat 64 (16 * (n / 16))) R (n - 16 * (n / 16)) s :=
     fun h => ⟨h.env, h.rounds.1, h.dat, h.len⟩
-  exact (RelCT.seq a (RelCT.seq bl ((finish_rel hF hRr (by omega)).mono (fun _ _ h => ⟨fi h.1, fi h.2⟩)
+  exact (RelCT.seq a (RelCT.seq bl ((finish_rel hF hks hkr hRr (by omega)).mono (fun _ _ h => ⟨fi h.1, fi h.2⟩)
     fun _ _ h => h))).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 /-! ## `seal` -/
@@ -575,7 +585,7 @@ theorem sealM_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode
         (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega)))
       (hw C hnl hal) (hw C' hnl' hal')
     refine RelCT.seq (c.mono (fun _ _ h => ⟨h.2.1, h.2.2⟩) fun _ _ h => h) (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
-      ((sealRunF_rel hF v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR').mono
+      ((sealRunF_rel hF finKs_ksOk finKs_rel v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR').mono
         (fun _ _ h => ⟨trivial, h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
     by_cases hs : IsShort nl al n
     · exact (sealShort_rel hF C C' hNp hnl hal hR hNp' hnl' hal' hR' hs).mono

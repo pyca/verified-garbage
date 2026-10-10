@@ -171,6 +171,23 @@ theorem finKs_ok {Ctx W SP : Addr} {nr : Nat} (s : State) (he : Env Ctx (W + Bit
     simp only [State.setMem]
     rw [h₁, h₂]
 
+/-- What `finishWith` needs of its keystream program `ks`: `finKs_ok`'s
+effect, with `xmm8` also written (`AesNi.aes`'s round key). -/
+def KsOk (ks : Prog isa) : Prop :=
+  ∀ {Ctx W SP : Addr} {nr : Nat} (s : State), Env Ctx (W + BitVec.ofNat 64 16) W SP s →
+    s.mem.readW (W + BitVec.ofNat 64 176) 64 = BitVec.ofNat 64 nr → (nr = 10 ∨ nr = 12 ∨ nr = 14) →
+    WP isa ks s fun t =>
+      blockAt t.mem (W + BitVec.ofNat 64 1024) = ciphOf s.mem Ctx nr (blockAt s.mem (W + BitVec.ofNat 64 16)) ∧
+      blockAt t.mem (W + BitVec.ofNat 64 1024 + BitVec.ofNat 64 16) =
+        ciphOf s.mem Ctx nr (blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48)) ∧
+      Frame [⟨W + BitVec.ofNat 64 1024, 64⟩] s.mem t.mem ∧
+      (∀ r, r ≠ .rdi → r ≠ .rsi → r ≠ .r10 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      (∀ r, r ≠ .xmm5 → r ≠ .xmm7 → r ≠ .xmm8 → r ≠ .xmm13 → t.xmm r = s.xmm r)
+
+theorem finKs_ksOk : KsOk finKs := fun s he hR hnr =>
+  WP.mono (finKs_ok s he hR hnr) fun _ ⟨a, b, c, d, e, f, g⟩ =>
+    ⟨a, b, c, d, e, f, fun r h5 h7 _ h13 => g r h5 h7 h13⟩
+
 /-! ## `GHASH` of `G` from the state's accumulator -/
 
 /-- `pxor xmm7, xmm12`. -/
@@ -620,12 +637,12 @@ variable {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP)
   {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
 include L
 
-/-- The body of `seal` with `finish`: what `sealBody_ok` leaves. -/
-theorem sealBodyF_ok (hF : ShortFacts) {R : Nat} {D : Addr} {n al : Nat} {H icb : Block} {a : List Byte} {s : State}
+/-- The body of `seal` with `finishWith ks`: what `sealBody_ok` leaves. -/
+theorem sealBodyF_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) {R : Nat} {D : Addr} {n al : Nat} {H icb : Block} {a : List Byte} {s : State}
     (h : ObPre M Ctx W SP R D n s) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H)
     (hcb : blockAt s.mem (cbA W) = icb) (hal : s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al)
     (habs : Absorbed s.mem (yA W) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length))) :
-    WP isa (.seq (oneBlocks B.enc) finish) s fun s' =>
+    WP isa (.seq (oneBlocks B.enc) (finishWith ks)) s fun s' =>
       Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Frame (oneFrameB W D SP n) s.mem s'.mem ∧
       bytesAt s'.mem D n = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem D n) ∧
@@ -652,7 +669,7 @@ theorem sealBodyF_ok (hF : ShortFacts) {R : Nat} {D : Addr} {n al : Nat} {H icb 
     fun d hd => f₃.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
       (kept_oneFrameB L hD h.t_w hd) (by decide)
   -- `H'` and `H'²`.
-  simp only [finish]
+  simp only [finishWith]
   refine WP.seq (WP.mono (hF.finPow s₃ (by rw [he₃.r13, BitVec.ofInt_natCast]; exact he₃.perm.ctxR (by decide)))
     fun s₄ ⟨x0, x1, h1, h2, o₄⟩ => ?_)
   rw [he₃.r13, BitVec.ofInt_natCast, hH₃] at h1 h2
@@ -660,7 +677,7 @@ theorem sealBodyF_ok (hF : ShortFacts) {R : Nat} {D : Addr} {n al : Nat} {H icb 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> decide)) o₄.rd o₄.wr
   -- The keystream.
-  refine WP.seq (WP.mono (finKs_ok s₄ he₄ (by rw [o₄.mem]; exact hR₃.1) hR) fun s₅ ⟨k₀, k₁, fK, g₅, rd₅, wr₅, x₅⟩ => ?_)
+  refine WP.seq (WP.mono (hks s₄ he₄ (by rw [o₄.mem]; exact hR₃.1) hR) fun s₅ ⟨k₀, k₁, fK, g₅, rd₅, wr₅, x₅⟩ => ?_)
   have he₅ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₅ := he₄.keep (fun g hg => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> exact g₅ _ (by decide) (by decide) (by decide)) rd₅ wr₅
@@ -675,16 +692,16 @@ theorem sealBodyF_ok (hF : ShortFacts) {R : Nat} {D : Addr} {n al : Nat} {H icb 
   have he₆ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₆ := he₅.keep (fun g hg => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> exact g₆ _ (by decide)) rd₆ wr₆
-  have xx : ∀ q, q ≠ .xmm5 → q ≠ .xmm7 → q ≠ .xmm13 → s₆.xmm q = s₄.xmm q := fun q a b c => by
-    rw [x₆, x₅ q a b c]
+  have xx : ∀ q, q ≠ .xmm5 → q ≠ .xmm7 → q ≠ .xmm8 → q ≠ .xmm13 → s₆.xmm q = s₄.xmm q := fun q a b c d => by
+    rw [x₆, x₅ q a b c d]
   have hdw : DataW Ctx (W + BitVec.ofNat 64 16) W SP s (D + BitVec.ofNat 64 (16 * q)) r := by
     have := h.data.drop (k := 16 * q) (by omega); rwa [show n - 16 * q = r by omega] at this
   have FP : FinPre Ctx W SP H al n r (D + BitVec.ofNat 64 (16 * q)) s₆ :=
     { env := he₆
-      x0 := by rw [xx _ (by decide) (by decide) (by decide)]; exact x0
-      x1 := by rw [xx _ (by decide) (by decide) (by decide)]; exact x1
-      h1 := by rw [xx _ (by decide) (by decide) (by decide)]; exact h1
-      h2 := by rw [xx .xmm3 (by decide) (by decide) (by decide), xx .xmm6 (by decide) (by decide) (by decide)]; exact h2
+      x0 := by rw [xx _ (by decide) (by decide) (by decide) (by decide)]; exact x0
+      x1 := by rw [xx _ (by decide) (by decide) (by decide) (by decide)]; exact x1
+      h1 := by rw [xx _ (by decide) (by decide) (by decide) (by decide)]; exact h1
+      h2 := by rw [xx .xmm3 (by decide) (by decide) (by decide) (by decide), xx .xmm6 (by decide) (by decide) (by decide) (by decide)]; exact h2
       alen := by rw [m₆, rK 184 (by decide), kW₃ 184 (.inl ⟨by decide, by decide⟩)]; exact hal
       tlen := by rw [m₆, rK 192 (by decide)]; exact P.tlen
       dat := by rw [m₆, rK 200 (by decide)]; rw [← hq]; exact P.dat
