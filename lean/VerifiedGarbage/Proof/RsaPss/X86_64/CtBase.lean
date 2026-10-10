@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
+import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 /-!
@@ -23,11 +24,6 @@ namespace VG.Proof.RsaPss.X86_64
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.Bignum (off)
 open VG.Proof.Bignum.X86_64 (Two)
-
-/-- The taint at the start of a piece. -/
-def pT (n : Nat) (ks : List Nat) (rs : List Reg) : X86_64.Taint.T :=
-  { regs := .ofList (rs ++ [.rsp]), flags := false, lens := frameBytes :: List.replicate n 0,
-    bases := [(.rsp, 0, 0)], slots := ks.map fun k => (0, 8 * k, 8) }
 
 /-- What a run shows at the start of a piece: its frame `F` (at `rsp`), its
 working space `S`, the writable regions after the frame, the public words of
