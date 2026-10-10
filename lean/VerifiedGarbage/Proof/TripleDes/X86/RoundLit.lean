@@ -1,6 +1,28 @@
-import VerifiedGarbage.Proof.TripleDes.X86.SboxTable
-import VerifiedGarbage.Impl.TripleDes.X86.Block
+import VerifiedGarbage.Impl.TripleDes.X86.Sbox
 import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Impl.TripleDes.X86.Block
+
+/-! ## `SboxTable` -/
+
+section
+
+/-!
+The code of the eight S-boxes (written out in `Impl`) as one table
+(`materialize_table`), which the literals of the code that runs them read.
+-/
+
+namespace VG
+
+materialize_table Impl.TripleDes.X86.sboxCode 8
+
+end VG
+
+end
+
+/-! ## `RoundLit` -/
+
+section
+
 namespace VG.Impl.TripleDes.X86
 open VG.X86
 def input0 : Prog isa := .block (sboxInputBits 0)
@@ -36,3 +58,5 @@ materialize_code input7
 def output7 : Prog isa := .block (sboxOutputs 7)
 materialize_code output7
 end VG.Impl.TripleDes.X86
+
+end

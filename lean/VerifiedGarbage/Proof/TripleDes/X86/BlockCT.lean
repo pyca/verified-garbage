@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.TripleDes.X86.ConstantTime
-import VerifiedGarbage.Proof.TripleDes.X86.Contract
+import VerifiedGarbage.Proof.TripleDes.X86.CorrectBlock
 
 namespace VG.Proof.TripleDes.X86
 open VG VG.X86

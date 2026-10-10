@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.RoundLit
+import VerifiedGarbage.Proof.TripleDes.Arm.Lit
 import VerifiedGarbage.Proof.TripleDes.Arm.Sbox
 import VerifiedGarbage.Proof.TripleDes.Permutation
 import VerifiedGarbage.Proof.Framework.Arm.Linear

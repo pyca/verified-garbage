@@ -1,4 +1,3 @@
-import VerifiedGarbage.Proof.TripleDes.X86.Key.Correct
 import VerifiedGarbage.Proof.TripleDes.X86.Key.ConstantTime
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.TripleDes.Scratch

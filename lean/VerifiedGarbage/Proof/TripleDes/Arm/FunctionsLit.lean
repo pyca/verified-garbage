@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.SboxTable
+import VerifiedGarbage.Proof.TripleDes.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
 import VerifiedGarbage.Impl.TripleDes.Arm.Ecb

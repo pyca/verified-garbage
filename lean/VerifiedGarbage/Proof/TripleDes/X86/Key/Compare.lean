@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.TripleDes.X86.Key.Rotation
-import VerifiedGarbage.Proof.TripleDes.X86.RoundAdvance
+import VerifiedGarbage.Proof.TripleDes.X86.RoundStep
 import VerifiedGarbage.Proof.TripleDes.KeySchedule
 
 namespace VG.Proof.TripleDes.X86.Key

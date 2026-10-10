@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.TripleDes.X86.SboxTable
+import VerifiedGarbage.Proof.TripleDes.X86.RoundLit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Impl.TripleDes.X86.ExpandKey
 import VerifiedGarbage.Impl.TripleDes.X86.Ecb
