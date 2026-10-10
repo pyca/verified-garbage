@@ -12,6 +12,7 @@
     target_arch = "x86"
 ))]
 
+mod sm4_cbc;
 mod sm4_ctr;
 mod sm4_ecb;
 
