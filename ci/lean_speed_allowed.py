@@ -12,6 +12,9 @@ showing `decide` is the cheaper option there.
 `BARE_ASSUMPTION_ALLOWED`: bare `assumption` after `<;>` or in `first | …`
 that needs default transparency (the hypothesis matches only up to unfolding)
 or was not yet converted. Same rule.
+
+`PLACEHOLDER_CHAIN_ALLOWED`: `.trans` chains of state-update lemmas with `_`
+arguments (`(gpr_setV _ _ _).trans <| …`), not yet converted. Same rule.
 """
 
 DECIDE_SIMP_ALLOWED = {
@@ -309,4 +312,10 @@ DEFAULT_CERT_ALLOWED = {
     "VerifiedGarbage/Proof/Sha3/AArch64/Permute.lean": 1,
     "VerifiedGarbage/Proof/Sha512/AArch64/Compress.lean": 1,
     "VerifiedGarbage/Proof/Sha512/AArch64/Sha3/Compress.lean": 1,
+}
+
+PLACEHOLDER_CHAIN_ALLOWED = {
+    "VerifiedGarbage/Proof/Aes/X86/AesNi/KeyPrologue.lean": 3,
+    "VerifiedGarbage/Proof/Aes/X86/AesNi/Setup.lean": 2,
+    "VerifiedGarbage/Proof/TripleDes/AArch64/Bitsliced/Step.lean": 20,
 }
