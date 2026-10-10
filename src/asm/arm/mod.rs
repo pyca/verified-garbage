@@ -161,6 +161,9 @@ pub(crate) mod hmac_sha512_224;
 pub(crate) mod hmac_sha512_256;
 
 #[rustfmt::skip]
+pub(crate) mod idea;
+
+#[rustfmt::skip]
 pub(crate) mod md5;
 
 #[rustfmt::skip]
