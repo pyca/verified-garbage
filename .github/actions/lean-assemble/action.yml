@@ -106,6 +106,17 @@ runs:
       shell: bash
       working-directory: lean
       run: python3 ../ci/lean_shards.py prune .lake/build
+    # Lake writes a module's `ir/*.setup.json` (its options, and the paths
+    # of its imports' outputs, for `lean --setup`) before compiling it, and
+    # never reads it again: an up-to-date module needs none, and a rebuilt
+    # one gets a new one. They are 1.9 GB of the 10 GB every Lean job would
+    # otherwise unpack, for nothing (`lake setup-file` writes one when
+    # profiling needs it).
+    - name: Remove the modules' setup files
+      if: ${{ steps.manifest.outcome == 'success' }}
+      shell: bash
+      working-directory: lean
+      run: find .lake/build/ir -name '*.setup.json' -delete
     # If two jobs both save, the second only warns that the key is taken.
     - name: Save this project's build
       if: ${{ steps.manifest.outcome == 'success' }}
