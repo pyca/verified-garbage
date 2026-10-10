@@ -9,8 +9,8 @@ Key expansion and each implementation of ECB run their code, proved with the
 working space as an argument, in a frame that allocates it and zeroes it
 after the code (`Verified.stackScratchWiped`), since it may hold the key
 schedule and the data: 520 bytes for key expansion (512 of working space)
-and 1032 for ECB (1024), with 8 more to keep `rsp` aligned. The code uses no
-other stack.
+and 1032 for ECB (1024), with 8 more to keep `rsp` aligned. Key expansion
+uses no other stack, and ECB 8 bytes, for its call of the core.
 -/
 
 namespace VG.Proof.TripleDes.X86_64
@@ -47,14 +47,15 @@ theorem expandKey_framed :
     (Proof.TripleDes.expandKeyPostOut_local _) expandKeyFrameSat_pre
 
 /-- An implementation `c` of ECB in the direction `d`, proved with its
-working space as an argument and no stack, in its frame. -/
+working space as an argument and 8 bytes of stack, for its call of the core,
+in its frame. -/
 theorem ecb_framed {c : Prog isa} {d : Spec.TripleDes.Direction}
-    (h : Verified X86_64.target c (Proof.TripleDes.ecbScratchContract X86_64.abi d 0))
-    (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ 0) :
+    (h : Verified X86_64.target c (Proof.TripleDes.ecbScratchContract X86_64.abi d 8))
+    (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ 8) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 1032 .rcx 128 c)
-      (Spec.TripleDes.ecbContract X86_64.abi d 1032) :=
+      (Spec.TripleDes.ecbContract X86_64.abi d 1040) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.TripleDes.ecbSig) (nm := "scratch") (e := .u64)
-    (n := 128) (post := Spec.TripleDes.ecbPost d X86_64.abi.ptrBits) (wa := true) (stack := 0)
+    (n := 128) (post := Spec.TripleDes.ecbPost d X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 1032) h (by decide) (by decide) (by decide) hsp hd (by decide)
     (Proof.TripleDes.ecbPostOut_local _ d)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
