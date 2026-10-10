@@ -197,7 +197,7 @@ theorem openTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W
       (hi ++ lo : BitVec 128) = Spec.Gcm.ofBytes (Spec.Siv.counter (Spec.Aes.bytesAt s.mem W 16)) := by
     rw [m₁]; exact counter_cnt s.mem W
   -- CTR.
-  refine WP.seq (WP.mono (ctr_wp v.ctr h hcp hPw hr₁ hcnt (by rw [g₁ _ (by decide) (by decide), hs.x26])
+  refine WP.seq (WP.mono (ctr_wp v.ctr h hcp hPw hr₁ (length_counter _) (counter_low _) hcnt (by rw [g₁ _ (by decide) (by decide), hs.x26])
     (by rw [g₁ _ (by decide) (by decide), hs.x27])) fun s₂ h₂ => ?_)
   have f₂ := h₂.frame
   -- S2V into `W + 112`.

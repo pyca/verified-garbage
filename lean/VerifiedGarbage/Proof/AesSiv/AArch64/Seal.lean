@@ -248,7 +248,7 @@ theorem sealTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W
       s₃.mem.readW (W + BitVec.ofNat 64 (cntOff + 8)) 64 = rev64 lo ∧
       (hi ++ lo : BitVec 128) = Spec.Gcm.ofBytes (Spec.Siv.counter (Spec.Aes.bytesAt s₂.mem W 16)) := by
     rw [m₃]; exact counter_cnt s₂.mem W
-  refine WP.seq (WP.mono (ctr_wp v.ctr h hcp hPw hr₃ hcnt (by rw [g₃ _ (by decide) (by decide), h₂.hold.1, hs.x26])
+  refine WP.seq (WP.mono (ctr_wp v.ctr h hcp hPw hr₃ (length_counter _) (counter_low _) hcnt (by rw [g₃ _ (by decide) (by decide), h₂.hold.1, hs.x26])
     (by rw [g₃ _ (by decide) (by decide), h₂.hold.2, hs.x27])) fun s₄ h₄ => ?_)
   have f₄ := h₄.frame
   -- The saved registers.
