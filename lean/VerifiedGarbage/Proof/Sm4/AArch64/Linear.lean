@@ -1,12 +1,12 @@
 import VerifiedGarbage.Impl.Sm4.AArch64.ExpandKey
 import VerifiedGarbage.Proof.Sm4.Bitsliced
-import VerifiedGarbage.Proof.Camellia.AArch64.Linear
+import VerifiedGarbage.Proof.Framework.AArch64.LinearG
 
 /-!
 # The linear layers of bitsliced SM4 on AArch64, by evaluation
 
 Each linear block is checked by evaluation over the lane domain
-(`Framework/AArch64/Linear.lean`, through Camellia's `linG_ok`): the kernel
+(`Framework/AArch64/Linear.lean`, through `linG_ok`, `LinearG.lean`): the kernel
 runs it on its input words as atoms and compares every output bit with the
 XOR of input bits given here.
 
@@ -27,7 +27,7 @@ namespace VG.Proof.Sm4.AArch64
 
 open VG VG.AArch64 VG.AArch64.Straight VG.Bitslice VG.Impl.Sm4.AArch64
 open VG.Impl.Aes.AArch64 (q sb t0 t1)
-open VG.Proof.Camellia.AArch64 (linEnvG linPostG)
+open VG.AArch64.Straight (linEnvG linPostG)
 open VG.Proof.Sm4 (rotP)
 open VG.Impl.Sm4 (Lin)
 

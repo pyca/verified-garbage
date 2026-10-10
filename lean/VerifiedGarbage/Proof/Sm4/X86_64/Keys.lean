@@ -13,7 +13,7 @@ namespace VG.Proof.Sm4.X86_64
 
 open VG VG.X86_64 VG.X86_64.Straight VG.Bitslice VG.Impl.Sm4.X86_64
 open VG.Impl.Aes.X86_64 (q sb t0 t1 movR at_ slotAt)
-open VG.Proof.Camellia.X86_64 (linEnvG linPostG linG_ok)
+open VG.X86_64.Straight (linEnvG linPostG linG_ok)
 open VG.Proof.Sm4 (WordRel readW64_bit getLsbD_scheduleAt)
 
 /-- Round key `2 m + h`, half `h` of the 64-bit word `x`. -/

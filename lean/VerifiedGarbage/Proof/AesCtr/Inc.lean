@@ -1,4 +1,4 @@
-import VerifiedGarbage.Spec.Ctr
+import VerifiedGarbage.Proof.AesCtr.Counter
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -23,79 +23,6 @@ namespace VG.Proof.AesCtr
 
 open VG Spec.Ctr
 open VG.Spec.Aes (bytesAt)
-
-/-! ## Big-endian numbers in bytes -/
-
-theorem length_ofNat (x k : Nat) : (ofNat x k).length = k := by simp [ofNat]
-
-theorem toNat_append (a b : List Byte) : toNat (a ++ b) = toNat a * 256 ^ b.length + toNat b := by
-  suffices ∀ acc, (b.foldl (fun a b => 256 * a + b.toNat) acc) =
-      acc * 256 ^ b.length + b.foldl (fun a b => 256 * a + b.toNat) 0 by
-    simp only [toNat, List.foldl_append]; exact this _
-  induction b with
-  | nil => simp
-  | cons x xs ih =>
-    intro acc
-    simp only [List.foldl_cons, List.length_cons, Nat.mul_zero, Nat.zero_add]
-    rw [ih, ih (x.toNat), Nat.pow_succ]
-    grind
-
-theorem ofNat_succ (x k : Nat) : ofNat x (k + 1) = ofNat (x / 256) k ++ [BitVec.ofNat 8 x] := by
-  apply List.ext_getElem (by simp [length_ofNat])
-  intro i h₁ _
-  simp only [length_ofNat] at h₁
-  simp only [ofNat, List.getElem_map, List.getElem_range]
-  by_cases hi : i < k
-  · rw [List.getElem_append_left (by simpa using hi)]
-    simp only [List.getElem_map, List.getElem_range, Nat.div_div_eq_div_mul]
-    congr 2
-    rw [show k + 1 - 1 - i = (k - 1 - i) + 1 by omega, Nat.pow_succ, Nat.mul_comm]
-  · rw [List.getElem_append_right (by simp; omega)]
-    simp [show i = k by omega]
-
-/-- `ofNat x k` is the `k`-byte representation of `x mod 256ᵏ`. -/
-theorem toNat_ofNat (x k : Nat) : toNat (ofNat x k) = x % 256 ^ k := by
-  induction k generalizing x with
-  | zero => simp [ofNat, toNat, Nat.mod_one]
-  | succ k ih =>
-    rw [ofNat_succ, toNat_append, ih]
-    simp only [List.length_singleton, Nat.pow_one, toNat, List.foldl_cons, List.foldl_nil, Nat.mul_zero,
-      Nat.zero_add, BitVec.toNat_ofNat]
-    have e : x % 256 ^ (k + 1) = x % 256 + 256 * (x / 256 % 256 ^ k) := by rw [Nat.pow_succ', Nat.mod_mul]
-    rw [e]
-    omega
-
-theorem ofNat_add (x k j : Nat) : ofNat x (k + j) = ofNat (x / 256 ^ j) k ++ ofNat x j := by
-  induction j generalizing x with
-  | zero => simp [ofNat]
-  | succ j ih =>
-    rw [← Nat.add_assoc, ofNat_succ, ih, ofNat_succ, List.append_assoc, Nat.div_div_eq_div_mul,
-      ← Nat.pow_succ']
-
-theorem ofNat_congr {x y k : Nat} (h : x % 256 ^ k = y % 256 ^ k) : ofNat x k = ofNat y k := by
-  apply List.ext_getElem (by simp [length_ofNat])
-  intro i h₁ _
-  simp only [length_ofNat] at h₁
-  simp only [ofNat, List.getElem_map, List.getElem_range]
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_ofNat]
-  have hd : 256 ^ (k - 1 - i) * 256 ∣ 256 ^ k := by
-    rw [← Nat.pow_succ]; exact Nat.pow_dvd_pow 256 (by omega)
-  rw [← Nat.mod_mul_right_div_self, ← Nat.mod_mul_right_div_self y, ← Nat.mod_mod_of_dvd x hd,
-    ← Nat.mod_mod_of_dvd y hd, h]
-
-/-- Adding `x` to the number in `a ++ b`: the sum's last `|b|` bytes are
-those of `b + x`, and its first `|a|` those of `a` plus the carry. -/
-theorem ofNat_toNat_append_add (a b : List Byte) (x : Nat) :
-    ofNat (toNat (a ++ b) + x) (a.length + b.length) =
-      ofNat (toNat a + (toNat b + x) / 256 ^ b.length) a.length ++ ofNat (toNat b + x) b.length := by
-  rw [ofNat_add, toNat_append]
-  have hp : 0 < 256 ^ b.length := Nat.pow_pos (by decide)
-  congr 1
-  · congr 1
-    rw [Nat.add_assoc, Nat.add_comm, Nat.add_mul_div_right _ _ hp, Nat.add_comm]
-  · apply ofNat_congr
-    rw [Nat.add_assoc, Nat.add_comm, Nat.add_mul_mod_self_right]
 
 theorem inc_append (a b : List Byte) (h : a.length + b.length = 16) :
     inc (a ++ b) = ofNat (toNat a + (toNat b + 1) / 256 ^ b.length) a.length ++ ofNat (toNat b + 1) b.length := by

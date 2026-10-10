@@ -87,26 +87,6 @@ namespace VG.Proof.Rc2.X86_64.Cbc
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Rc2.X86_64
 
-theorem copy64_ok (s : State) (src dst : Reg) (a b : Nat) (hne : dst ≠ .rax)
-    (readable : InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 a) 8)
-    (writable : InRegions s.wr (s.gpr dst + BitVec.ofNat 64 b) 8) :
-    ∃ s', runBlock isa [.mov .rax (.mem (memOp src a)), .store (memOp dst b) .rax] s = some s' ∧
-      Keep [.rax] {s with
-        mem := s.mem.writeW (s.gpr dst + BitVec.ofNat 64 b) (s.mem.readW (s.gpr src + BitVec.ofNat 64 a) 64)} s' := by
-  refine ⟨_, by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, memOp, exec, readSrc,
-      State.load64, State.store64, State.ea, offset_nat, readable, ite_true,
-      Option.map_some, gpr_setReg, hne, ite_false,
-      wr_setReg, writable]
-    rfl, ?_⟩
-  constructor
-  · intro r hr
-    simp only [List.mem_singleton] at hr
-    exact gpr_setReg_of_ne _ _ hr
-  · rfl
-  · rfl
-  · rfl
-
 theorem xor64_ok (s : State) (dst iv : Reg) (hd : dst ≠ .rax) (hi : iv ≠ .rax)
     (readDst : InRegions (s.rd ++ s.wr) (s.gpr dst) 8)
     (readIv : InRegions (s.rd ++ s.wr) (s.gpr iv) 8)

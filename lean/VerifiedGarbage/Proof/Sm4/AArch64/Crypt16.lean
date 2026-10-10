@@ -14,7 +14,7 @@ namespace VG.Proof.Sm4.AArch64
 
 open VG VG.AArch64 VG.AArch64.Straight VG.Bitslice VG.Impl.Sm4.AArch64
 open VG.Impl.Aes.AArch64 (q sb t0 t1 movR)
-open VG.Proof.Camellia.AArch64 (linEnvG linPostG linG_ok)
+open VG.AArch64.Straight (linEnvG linPostG linG_ok)
 open VG.Proof.Sm4 (WordRel quads ofBlock outBlock readW64_bit getLsbD_wordAt getLsbD_outBlock' blockAt_getD)
 open VG.Impl.Sm4 (Lin)
 

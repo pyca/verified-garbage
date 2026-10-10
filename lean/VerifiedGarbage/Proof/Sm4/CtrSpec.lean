@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Sm4.Common
-import VerifiedGarbage.Proof.AesCtr.Ctr32
+import VerifiedGarbage.Proof.AesCtr.Counter
 import VerifiedGarbage.Spec.Sm4.Ctr
 
 /-!

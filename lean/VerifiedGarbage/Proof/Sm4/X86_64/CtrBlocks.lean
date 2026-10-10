@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Sm4.X86_64.GroupStep
-import VerifiedGarbage.Proof.AesCtr.Ctr32
+import VerifiedGarbage.Proof.AesCtr.Inc
 import VerifiedGarbage.Impl.Sm4.X86_64.Ctr
 
 /-!

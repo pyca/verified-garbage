@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.AesCtr.Spec
 import VerifiedGarbage.Proof.AesCtr.Inc
+import VerifiedGarbage.Proof.AesCtr.Counter
 import VerifiedGarbage.Proof.AesSiv.Ctr32
 
 /-!
@@ -31,35 +32,12 @@ theorem toNat_lt {t : List Byte} (ht : t.length = 16) : toNat t < 2 ^ 128 := by
   show Proof.AesCcm.beVal t < 2 ^ 128
   simpa using this
 
-theorem ofNat_toNat {t : List Byte} (ht : t.length = 16) : ofNat (toNat t) 16 = t := by
-  have h := Proof.AesSiv.toBytes_be128 (Spec.Siv.beNat t)
-  show Spec.Siv.be128 (Spec.Siv.beNat t) = t
-  rw [← h, ← Proof.AesSiv.beNat_eq]
-  exact Proof.Cmac.toBytes_ofBytes ht
-
-/-- The counter block after `k` increments: `t + k`, modulo `2¹²⁸`. -/
-theorem next_eq {t : List Byte} (ht : t.length = 16) : ∀ k, next t k = ofNat (toNat t + k) 16
-  | 0 => (ofNat_toNat ht).symm
-  | k + 1 => by
-    rw [next_succ, next_eq ht k, inc, toNat_ofNat]
-    exact ofNat_congr (by rw [Nat.mod_add_mod, Nat.add_assoc])
-
-theorem counters_add (t : List Byte) : ∀ a b, counters t (a + b) = counters t a ++ counters (next t a) b
-  | 0, b => by simp only [Nat.zero_add, counters, List.nil_append]; rfl
-  | a + 1, b => by
-    rw [Nat.add_right_comm, counters, counters_add (inc t) a b, counters, next_succ']
-    rfl
-
 /-- CTR on `xs ++ ys`: on `xs`, then on `ys` from the counter block `xs`
 left. -/
 theorem crypt_append (ciph : Spec.Cbc.Cipher) (t : List Byte) (xs ys : List (List Byte)) :
     crypt ciph t (xs ++ ys) = crypt ciph t xs ++ crypt ciph (next t xs.length) ys := by
   simp only [crypt, List.length_append, counters_add, List.map_append]
   exact List.zipWith_append (by simp [length_counters])
-
-theorem counters_eq_map (t : List Byte) : ∀ n, counters t n = (List.range n).map (next t)
-  | 0 => rfl
-  | n + 1 => by rw [counters_succ, counters_eq_map t n, List.range_succ, List.map_append]; rfl
 
 /-- `inc₃₂`'s counter blocks are CTR's while the last 32 bits do not wrap
 around. -/

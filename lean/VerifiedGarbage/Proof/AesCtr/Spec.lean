@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.AesCbc.Spec
+import VerifiedGarbage.Proof.AesCtr.Counter
 import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
@@ -17,23 +18,6 @@ namespace VG.Proof.AesCtr
 
 open VG Spec.Ctr
 open VG.Proof.AesCbc (Mode)
-
-theorem length_counters (t : List Byte) (n : Nat) : (counters t n).length = n := by
-  induction n generalizing t with
-  | zero => rfl
-  | succ n ih => simp [counters, ih]
-
-theorem next_succ (t : List Byte) (n : Nat) : next t (n + 1) = inc (next t n) := rfl
-
-theorem next_succ' (t : List Byte) (n : Nat) : next t (n + 1) = next (inc t) n := by
-  induction n with
-  | zero => rfl
-  | succ n ih => rw [next_succ, ih, ← next_succ]
-
-theorem counters_succ (t : List Byte) (n : Nat) : counters t (n + 1) = counters t n ++ [next t n] := by
-  induction n generalizing t with
-  | zero => rfl
-  | succ n ih => rw [counters, ih, counters, next_succ']; rfl
 
 theorem length_crypt (ciph : Spec.Cbc.Cipher) (t : List Byte) (xs : List (List Byte)) :
     (crypt ciph t xs).length = xs.length := by
