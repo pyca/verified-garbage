@@ -182,23 +182,27 @@ def sum (ws : Addr) (m : Mem) (p q : Nat) : Fin C.p × Fin C.p × Fin C.p :=
   rcbAdd (C.dec (C.coordAt m ws (aAt C.k))) (C.dec (C.coordAt m ws (b3At C.k)))
     P.1 P.2.1 P.2.2 Q.1 Q.2.1 Q.2.2
 
-/-- The contract of a function writing `O` = the sum of the points at `p`
-and `q`, for coordinates and constants below `p`. -/
-def sumContract {I : ISA} (A : Abi I) (stack : Nat) (p q : Nat) : Contract I :=
-  sig.contract A
-    (pre := fun ws m => C.Below (C.pointAt m ws p) ∧ C.Below (C.pointAt m ws q) ∧ C.ConstsBelow ws m)
-    (post := fun ws m m' _ =>
-      C.Below (C.pointAt m' ws (oAt C.k)) ∧ C.decPt (C.pointAt m' ws (oAt C.k)) = C.sum ws m p q ∧
-      Keeps C.k ws m m')
-    (stack := stack)
+/-- What the functions require: the coordinates of the points at `p` and `q`
+and the constants below `p`. -/
+def sumPre (p q : Nat) (ws : Addr) (m : Mem) : Prop :=
+  C.Below (C.pointAt m ws p) ∧ C.Below (C.pointAt m ws q) ∧ C.ConstsBelow ws m
+
+/-- What they ensure: `O`'s coordinates below `p`, standing for the sum of
+the points at `p` and `q`, and every byte of `ws` but `O`'s and the own
+working space kept. -/
+def sumPost (p q : Nat) (ws : Addr) (m m' : Mem) : Prop :=
+  C.Below (C.pointAt m' ws (oAt C.k)) ∧ C.decPt (C.pointAt m' ws (oAt C.k)) = C.sum ws m p q ∧
+    Keeps C.k ws m m'
 
 /-- `add`: `O = P + Q`. -/
 def addContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  C.sumContract A stack (pAt C.k) (qAt C.k)
+  sig.contract A (pre := fun ws m => C.sumPre (pAt C.k) (qAt C.k) ws m)
+    (post := fun ws m m' _ => C.sumPost (pAt C.k) (qAt C.k) ws m m') (stack := stack)
 
 /-- `double`: `O = P + P`. -/
 def doubleContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  C.sumContract A stack (pAt C.k) (pAt C.k)
+  sig.contract A (pre := fun ws m => C.sumPre (pAt C.k) (pAt C.k) ws m)
+    (post := fun ws m m' _ => C.sumPost (pAt C.k) (pAt C.k) ws m m') (stack := stack)
 
 /-- The Rust module of the curve's functions. -/
 def module : String := C.curve ++ "_point"
