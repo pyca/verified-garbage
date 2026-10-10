@@ -55,15 +55,15 @@ theorem ifma_windows_inline : Ifma.windows.inline = Ifma.windows :=
 
 /-- MXCSR is restored in each checker's code, its calls inlined. -/
 theorem baseline_mxI : MxcsrOk (verifyEquationWith Impl.X25519.X86_64.baseline
-    (Point64.bodies Impl.X25519.X86_64.baseline) (windowsWith (Point64.bodies Impl.X25519.X86_64.baseline))) := by
+    (Point64.bodies Impl.X25519.X86_64.baseline) (windowsWith Impl.X25519.X86_64.baseline (Point64.bodies Impl.X25519.X86_64.baseline))) := by
   rw [← verifyEquation_inline (fld := Impl.X25519.X86_64.baseline) (win' := windows Impl.X25519.X86_64.baseline)
-    (win := windowsWith (Point64.bodies Impl.X25519.X86_64.baseline)) rfl]
+    (win := windowsWith Impl.X25519.X86_64.baseline (Point64.bodies Impl.X25519.X86_64.baseline)) rfl]
   exact ctlOk_inline baseline_mx
 
 theorem adx_mxI : MxcsrOk (verifyEquationWith Impl.X25519.X86_64.adx
-    (Point64.bodies Impl.X25519.X86_64.adx) (windowsWith (Point64.bodies Impl.X25519.X86_64.adx))) := by
+    (Point64.bodies Impl.X25519.X86_64.adx) (windowsWith Impl.X25519.X86_64.adx (Point64.bodies Impl.X25519.X86_64.adx))) := by
   rw [← verifyEquation_inline (fld := Impl.X25519.X86_64.adx) (win' := windows Impl.X25519.X86_64.adx)
-    (win := windowsWith (Point64.bodies Impl.X25519.X86_64.adx)) rfl]
+    (win := windowsWith Impl.X25519.X86_64.adx (Point64.bodies Impl.X25519.X86_64.adx)) rfl]
   exact ctlOk_inline adx_mx
 
 theorem ifma_mxI : MxcsrOk (verifyEquationWith Impl.X25519.X86_64.adx
@@ -73,11 +73,11 @@ theorem ifma_mxI : MxcsrOk (verifyEquationWith Impl.X25519.X86_64.adx
 
 /-- What a caller needs of each registered checker's code (`CallCode`). -/
 theorem baseline_call : CallCode Impl.X25519.X86_64.baseline (windows Impl.X25519.X86_64.baseline) :=
-  ⟨⟨windowsWith (Point64.bodies Impl.X25519.X86_64.baseline), inferInstance, rfl, baseline_inlineOk,
+  ⟨⟨windowsWith Impl.X25519.X86_64.baseline (Point64.bodies Impl.X25519.X86_64.baseline), inferInstance, rfl, baseline_inlineOk,
     baseline_mxI⟩⟩
 
 theorem adx_call : CallCode Impl.X25519.X86_64.adx (windows Impl.X25519.X86_64.adx) :=
-  ⟨⟨windowsWith (Point64.bodies Impl.X25519.X86_64.adx), inferInstance, rfl, adx_inlineOk, adx_mxI⟩⟩
+  ⟨⟨windowsWith Impl.X25519.X86_64.adx (Point64.bodies Impl.X25519.X86_64.adx), inferInstance, rfl, adx_inlineOk, adx_mxI⟩⟩
 
 theorem ifma_call : CallCode Impl.X25519.X86_64.adx Ifma.windows :=
   ⟨⟨_, inferInstance, ifma_windows_inline, ifma_inlineOk, ifma_mxI⟩⟩

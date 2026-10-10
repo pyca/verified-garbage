@@ -199,6 +199,17 @@ theorem baseAddPart_ct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi ∧ x.gpr
   · exact h.1
   · exact h.2
 
+theorem baseAddAffPart_ct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi ∧ x.gpr .rax = y.gpr .rax)
+    (.seq (.block pointFromTableQ) (addAffIn fld)) (fun _ _ => True) := by
+  apply taintFld (Taint.ofRegs [.rdi, .rax]) _ (by fld_taint_decide)
+  intro x y h
+  apply Taint.agree_ofRegs
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact h.1
+  · exact h.2
+
 /-- Before `S`'s digit's byte `v` is added, in one run: the static's address `T` at byte 7960. -/
 structure BasePre (base T : Addr) (v : Nat) (x : State) : Prop where
   scratch : Scratch x base
@@ -209,8 +220,10 @@ structure BasePre (base T : Addr) (v : Nat) (x : State) : Prop where
 
 /-- The addition of `S`'s digit: the branch is on its byte, its entry's address `T + 128 (v - 1)`
 the same in both runs. -/
-theorem addBase_ct {base T : Addr} {v : Nat} :
-    RelCT isa (fun x y => BasePre base T v x ∧ BasePre base T v y) (addBase (Point64.bodies fld))
+theorem addBase_ct {add : Prog isa}
+    (hadd : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi ∧ x.gpr .rax = y.gpr .rax)
+      (.seq (.block pointFromTableQ) add) (fun _ _ => True)) {base T : Addr} {v : Nat} :
+    RelCT isa (fun x y => BasePre base T v x ∧ BasePre base T v y) (addBase add)
       (fun _ _ => True) := by
   rw [addBase]
   refine VG.RelCT.ite (fun x y h => by simp only [eval, h.1.zf, h.2.zf]) ?_
@@ -232,7 +245,7 @@ theorem addBase_ct {base T : Addr} {v : Nat} :
   refine VG.RelCT.seq ((VG.RelCT.wp (baseAddrPart_ct.mono (fun x y h =>
     ⟨h.1.1.scratch.rdi.trans h.1.2.scratch.rdi.symm, h.1.1.rbx.trans h.1.2.rbx.symm⟩) (fun _ _ h => h))
     fun x y h => ⟨hw x h.1.1 (hv x h.1.1 h.2), hw y h.1.2 (hv x h.1.1 h.2)⟩).mono (fun _ _ h => h) ?_)
-    baseAddPart_ct
+    hadd
   intro x y ⟨_, hx, hy⟩
   exact ⟨hx.1.trans hy.1.symm, hx.2.trans hy.2.symm⟩
 

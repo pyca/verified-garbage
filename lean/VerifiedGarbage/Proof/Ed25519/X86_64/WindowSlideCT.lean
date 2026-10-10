@@ -100,7 +100,8 @@ theorem cmpSelf_ct :
   taintFld (Taint.ofRegs []) (fun _ _ _ => Taint.agree_ofRegs (by simp)) (by fld_taint_decide)
 
 theorem dblBlock_ct (t : Bool) :
-    RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi) (Point64.doubleFn fld t) (fun _ _ => True) := by
+    RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi) (dblIn fld t) (fun _ _ => True) := by
+  rw [dblIn]
   cases t
   · exact taintFld (Taint.ofRegs [.rdi]) (fun _ _ h => agree_rdi h) (by fld_taint_decide)
   · exact taintFld (Taint.ofRegs [.rdi]) (fun _ _ h => agree_rdi h) (by fld_taint_decide)
@@ -125,10 +126,12 @@ theorem addA_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {f
     (fun _ _ h => h)
 
 /-- `S`'s digit at `p`: the branch is on it, its entry's address from it and the static's. -/
-theorem addB_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top p : Nat}
+theorem addB_ct {badd : Prog isa}
+    (hct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi ∧ x.gpr .rax = y.gpr .rax)
+      (.seq (.block pointFromTableQ) badd) (fun _ _ => True)) {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top p : Nat}
     (hdg : Digits fA fB top) (hp : p ≤ top) :
     RelCT isa (fun x y => HalfRun R₀ base kp sp T A fA fB top p x ∧ HalfRun R₀ base kp sp T A fA fB top p y)
-      (.seq (.block (digitAt 1)) (addBase (Point64.bodies fld))) (fun _ _ => True) := by
+      (.seq (.block (digitAt 1)) (addBase badd)) (fun _ _ => True) := by
   have w (x : State) (h : HalfRun R₀ base kp sp T A fA fB top p x) : WP isa (.block (digitAt 1)) x
       (BasePre base T (fB p)) := by
     obtain ⟨_, _, h⟩ := h
@@ -139,12 +142,14 @@ theorem addB_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {f
     have hu := h.ctx.of_keep kw
     exact ⟨hu.scratch, hu.bHeader, ub, uz, hdg.b p⟩
   exact seq_same (digitAt_ct 1 (by decide) fun x h => by obtain ⟨_, _, h⟩ := h; exact ⟨h.ctx.scratch, h.counter⟩) w
-    addBase_ct
+    (addBase_ct hct)
 
-theorem addsAt_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top p : Nat}
+theorem addsAt_ct {badd : Prog isa}
+    (hct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi ∧ x.gpr .rax = y.gpr .rax)
+      (.seq (.block pointFromTableQ) badd) (fun _ _ => True)) {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top p : Nat}
     (hdg : Digits fA fB top) (hp : p ≤ top) :
     RelCT isa (fun x y => MidRun R₀ base kp sp T A fA fB top p x ∧ MidRun R₀ base kp sp T A fA fB top p y)
-      (addsAt (Point64.bodies fld)) (fun _ _ => True) := by
+      (addsAt (Point64.bodies fld) badd) (fun _ _ => True) := by
   rw [addsAt]
   have w (x : State) (h : MidRun R₀ base kp sp T A fA fB top p x) : WP isa (.block (digitAt 1)) x fun u =>
       u.zf = some (decide (fB p = 0)) ∧ MidRun R₀ base kp sp T A fA fB top p u := by
@@ -167,14 +172,14 @@ theorem addsAt_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} 
     apply RelCT.assoc
     exact seq_same (addA_ct true hdg hp) (fun x h => by
       obtain ⟨s₀, r₀, h⟩ := h; exact WP.mono (addA_ok hdg hp h fun _ => rfl) fun u hu => ⟨s₀, r₀, hu⟩)
-      (addB_ct hdg hp)
+      (addB_ct hct hdg hp)
   · exact (addA_ct false hdg hp).mono (fun x y h => ⟨h.1.1.2, h.1.2.2⟩) (fun _ _ h => h)
 
 /-- The doubling: the branch is on whether a digit at `p` is nonzero. -/
 theorem dblAt_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top p : Nat}
     (hdg : Digits fA fB top) (hp : p ≤ top) :
     RelCT isa (fun x y => AtRun R₀ base kp sp T A fA fB (winVal A fA fB top (p + 1)) p x ∧
-      AtRun R₀ base kp sp T A fA fB (winVal A fA fB top (p + 1)) p y) (dblAt (Point64.bodies fld)) (fun _ _ => True) := by
+      AtRun R₀ base kp sp T A fA fB (winVal A fA fB top (p + 1)) p y) (dblAt fld) (fun _ _ => True) := by
   have w (x : State) (h : AtRun R₀ base kp sp T A fA fB (winVal A fA fB top (p + 1)) p x) :
       WP isa (.block digitsAt) x fun u => u.gpr .rdi = base ∧ u.zf = some (decide (fA p = 0 ∧ fB p = 0)) := by
     obtain ⟨_, _, h⟩ := h
@@ -190,7 +195,7 @@ theorem dblAt_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {
 theorem stepAt_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top p : Nat}
     (hdg : Digits fA fB top) (hp : p ≤ top) :
     RelCT isa (fun x y => LoopRun R₀ base kp sp T A fA fB top (p + 1) x ∧
-      LoopRun R₀ base kp sp T A fA fB top (p + 1) y) (stepAt (Point64.bodies fld)) (fun _ _ => True) := by
+      LoopRun R₀ base kp sp T A fA fB top (p + 1) y) (stepAt fld (Point64.bodies fld)) (fun _ _ => True) := by
   have w1 (x : State) (h : LoopRun R₀ base kp sp T A fA fB top (p + 1) x) : WP isa (.block batchBegin) x
       (AtRun R₀ base kp sp T A fA fB (winVal A fA fB top (p + 1)) p) := by
     obtain ⟨s₀, r₀, h⟩ := h
@@ -202,8 +207,8 @@ theorem stepAt_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} 
   refine seq_same (rdi_ct (fun x h => by obtain ⟨_, _, h⟩ := h; exact h.ctx.scratch.rdi) batchBegin_ct) w1 ?_
   refine seq_same (dblAt_ct hdg hp) (F := MidRun R₀ base kp sp T A fA fB top p) (fun x h => by
     obtain ⟨s₀, r₀, h⟩ := h; exact WP.mono (dblAt_ok hdg hp h) fun u hu => ⟨s₀, r₀, hu⟩) ?_
-  exact seq_same (addsAt_ct hdg hp) (F := LoopRun R₀ base kp sp T A fA fB top p) (fun x h => by
-    obtain ⟨s₀, r₀, h⟩ := h; exact WP.mono (addsAt_ok hdg hp h) fun u hu => ⟨s₀, r₀, hu⟩)
+  exact seq_same (addsAt_ct baseAddAffPart_ct hdg hp) (F := LoopRun R₀ base kp sp T A fA fB top p) (fun x h => by
+    obtain ⟨s₀, r₀, h⟩ := h; exact WP.mono (addsAt_ok addAff_aff hdg hp h) fun u hu => ⟨s₀, r₀, hu⟩)
     (rdi_ct (fun x h => by obtain ⟨_, _, h⟩ := h; exact h.ctx.scratch.rdi) batchTest_ct)
 
 theorem skipTop_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top p : Nat}
@@ -233,7 +238,7 @@ theorem skipTop_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ}
 theorem windows_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top : Nat}
     (hdg : Digits fA fB top) :
     RelCT isa (fun x y => StartRun R₀ base kp sp T A fA fB top x ∧ StartRun R₀ base kp sp T A fA fB top y)
-      (windowsWith (Point64.bodies fld)) (fun _ _ => True) := by
+      (windowsWith fld (Point64.bodies fld)) (fun _ _ => True) := by
   rw [windowsWith]
   -- The skipping, a step at a time, from the same counter in both runs.
   refine VG.RelCT.seq (Q := fun _ _ => True) (R := fun x y => ∃ p, p ≤ top ∧
@@ -268,8 +273,8 @@ theorem windows_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ}
   refine VG.RelCT.exists_ fun p => ?_
   refine (VG.RelCT.exists_ (P := fun (_ : p ≤ top) x y => MidRun R₀ base kp sp T A fA fB top p x ∧
     MidRun R₀ base kp sp T A fA fB top p y) fun hp => ?_).mono (fun x y h => ⟨h.1, h.2⟩) (fun _ _ h => h)
-  refine seq_same (addsAt_ct hdg hp) (F := LoopRun R₀ base kp sp T A fA fB top p) (fun x h => by
-    obtain ⟨s₀, r₀, h⟩ := h; exact WP.mono (addsAt_ok hdg hp h) fun u hu => ⟨s₀, r₀, hu⟩) ?_
+  refine seq_same (addsAt_ct baseAddPart_ct hdg hp) (F := LoopRun R₀ base kp sp T A fA fB top p) (fun x h => by
+    obtain ⟨s₀, r₀, h⟩ := h; exact WP.mono (addsAt_ok addCached_aff hdg hp h) fun u hu => ⟨s₀, r₀, hu⟩) ?_
   have wt (x : State) (h : LoopRun R₀ base kp sp T A fA fB top p x) : WP isa (.block batchTest) x fun u =>
       u.zf = some (decide (p = 0)) ∧ LoopRun R₀ base kp sp T A fA fB top p u := by
     obtain ⟨s₀, r₀, hb⟩ := h
@@ -298,7 +303,7 @@ theorem windows_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ}
   by_cases hm : m + 1 ≤ top
   swap
   · exact VG.RelCT.of_false fun _ _ h => hm h.2.2.2
-  have ws (x : State) (h : LoopRun R₀ base kp sp T A fA fB top (m + 1) x) : WP isa (stepAt (Point64.bodies fld)) x fun u =>
+  have ws (x : State) (h : LoopRun R₀ base kp sp T A fA fB top (m + 1) x) : WP isa (stepAt fld (Point64.bodies fld)) x fun u =>
       u.zf = some (decide (m = 0)) ∧ LoopRun R₀ base kp sp T A fA fB top m u := by
     obtain ⟨s₀, r₀, h⟩ := h
     exact WP.mono (stepAt_ok hdg (by omega) h) fun u ⟨uz, hu⟩ => ⟨uz, s₀, r₀, hu⟩
@@ -312,7 +317,7 @@ theorem windows_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ}
   simp only [Option.some.injEq, Bool.not_eq_true', decide_eq_false_iff_not] at he
   omega
 
-instance : EdWindows (windowsWith (Point64.bodies fld)) where
+instance : EdWindows (windowsWith fld (Point64.bodies fld)) where
   ok hdg h := windows_ok hdg h
   ct hdg := ((VG.RelCT.wp (windows_ct hdg) fun x y h => by
       obtain ⟨⟨s₀, r₀, hx⟩, ⟨t₀, q₀, hy⟩⟩ := h

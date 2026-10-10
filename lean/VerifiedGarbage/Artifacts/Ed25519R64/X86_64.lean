@@ -7,7 +7,7 @@ namespace VG.Artifacts.Ed25519R64.X86_64
 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.Ed25519.X86_64.Point64 VG.Proof.Ed25519.X86_64.Point64
 open VG.Impl.X25519.X86_64 (baseline adx)
-open VG.Spec.Ed25519.Point64 (doubleExtApi doubleProjApi addCachedExtApi addCachedProjApi doubleContract
+open VG.Spec.Ed25519.Point64 (doubleExtApi addCachedExtApi addCachedProjApi doubleContract
   addCachedContract)
 
 /-- How the functions work, with the field multiplications described by `mul`. -/
@@ -22,10 +22,10 @@ def baseMul : String := "multiplied with `mul` by rows (squares computing each c
 /-- BMI2 and ADX's multiplications. -/
 def adxMul : String := "multiplied with BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once)"
 
-/-- What the doublings run. -/
-def dblWhat (t : Bool) : String :=
-  "RFC 8032's doubling formula (§5.1.4), with `-E = 2XY` from one product and `F`, `G` and `H` " ++
-    "negated: " ++ if t then "eight products" else "seven products, leaving out `T`'s"
+/-- What the doubling runs. -/
+def dblWhat : String :=
+  "RFC 8032's doubling formula (§5.1.4), with `-E = 2XY` from one product and `F`, `G` and `H` \
+    negated: eight products"
 
 /-- What the additions run. -/
 def addWhat (t : Bool) : String :=
@@ -40,15 +40,6 @@ theorem doubleExt_verified : Verified X86_64.target (doubleFn baseline true)
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
       (by taint_decide))
     (doubleK_implies true)
-
-theorem doubleProj_verified : Verified X86_64.target (doubleFn baseline false)
-    (doubleContract X86_64.abi false) :=
-  Verified.of_correct (double_correct false (by intro r hr; simp only [keptRegs, kept, List.map_cons, List.map_nil,
-      List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide)
-    (by lit_decide))
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
-      (by taint_decide))
-    (doubleK_implies false)
 
 theorem addExt_verified : Verified X86_64.target (addFn baseline true)
     (addCachedContract X86_64.abi true) :=
@@ -77,15 +68,6 @@ theorem doubleExtAdx_verified : Verified X86_64.target (doubleFn adx true)
       (by taint_decide))
     (doubleK_implies true)
 
-theorem doubleProjAdx_verified : Verified X86_64.target (doubleFn adx false)
-    (doubleContract X86_64.abi false) :=
-  Verified.of_correct (double_correct false (by intro r hr; simp only [keptRegs, kept, List.map_cons, List.map_nil,
-      List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide)
-    (by lit_decide))
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
-      (by taint_decide))
-    (doubleK_implies false)
-
 theorem addExtAdx_verified : Verified X86_64.target (addFn adx true)
     (addCachedContract X86_64.abi true) :=
   Verified.of_correct (add_correct true (by intro r hr; simp only [keptRegs, kept, List.map_cons, List.map_nil,
@@ -106,17 +88,10 @@ theorem addProjAdx_verified : Verified X86_64.target (addFn adx false)
 
 def artifacts : List Artifact := [  { doubleExtApi with
     target := X86_64.target
-    doc := doubleExtApi.doc (notes := (notes (dblWhat true) baseMul).map ("Uses baseline integer instructions, and SSE2 moves. " ++ ·))
+    doc := doubleExtApi.doc (notes := (notes dblWhat baseMul).map ("Uses baseline integer instructions, and SSE2 moves. " ++ ·))
     code := doubleFn baseline true
     contract := doubleContract X86_64.abi true
     verified := doubleExt_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { doubleProjApi with
-    target := X86_64.target
-    doc := doubleProjApi.doc (notes := (notes (dblWhat false) baseMul).map ("Uses baseline integer instructions, and SSE2 moves. " ++ ·))
-    code := doubleFn baseline false
-    contract := doubleContract X86_64.abi false
-    verified := doubleProj_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { addCachedExtApi with
     target := X86_64.target
@@ -135,19 +110,10 @@ def artifacts : List Artifact := [  { doubleExtApi with
   { doubleExtApi with
     target := X86_64.target
     name := doubleExtApi.name ++ "_adx"
-    doc := doubleExtApi.doc (notes := (notes (dblWhat true) adxMul).map ("Uses BMI2 and ADX, and SSE2 moves. " ++ ·))
+    doc := doubleExtApi.doc (notes := (notes dblWhat adxMul).map ("Uses BMI2 and ADX, and SSE2 moves. " ++ ·))
     code := doubleFn adx true
     contract := doubleContract X86_64.abi true
     verified := doubleExtAdx_verified
-    features := ["bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { doubleProjApi with
-    target := X86_64.target
-    name := doubleProjApi.name ++ "_adx"
-    doc := doubleProjApi.doc (notes := (notes (dblWhat false) adxMul).map ("Uses BMI2 and ADX, and SSE2 moves. " ++ ·))
-    code := doubleFn adx false
-    contract := doubleContract X86_64.abi false
-    verified := doubleProjAdx_verified
     features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { addCachedExtApi with

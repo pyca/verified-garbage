@@ -13,7 +13,9 @@ caller-saved, runs the field program the code inlined (`dblOps`,
 `addCachedOps`: slots 0–3 are the point, slots 4–7 the cached operand, slots
 8–15 the temporaries), and restores them. It uses no stack and never writes
 `rdi`, every address is `rdi` plus a constant, and it has no branch: only the
-pointer may affect timing.
+pointer may affect timing. Verification calls `_double_ext` for its table and
+both additions; its chain of doublings stays inline, so `_double_proj` is not
+registered on x86-64.
 -/
 
 namespace VG.Impl.Ed25519.X86_64
