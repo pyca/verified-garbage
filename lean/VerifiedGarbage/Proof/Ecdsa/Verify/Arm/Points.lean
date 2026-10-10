@@ -238,9 +238,9 @@ structure Pts (c : Cfg) (s₀ : State) (base : Addr)
   unch : Unch base [(0, 8192)] s₀.mem s.mem
 
 theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.Arm.Cfg.points c =
-    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (ladder c.ladderCfg c.SP)
+    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP)
       (.seq (.block (Impl.Ecdsa.Verify.Arm.Cfg.save c)) (.seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n))
-      (.seq (ladder (Impl.Ecdh.Arm.Cfg.ladderQ c) c.SP) (Impl.Ecdsa.Verify.Arm.Cfg.sum c))))) := rfl
+      (.seq (VG.Impl.Weierstrass.Arm.Point.ladderP (Impl.Ecdh.Arm.Cfg.ladderQ c) c.SP) (Impl.Ecdsa.Verify.Arm.Cfg.sum c))))) := rfl
 
 /-- The slots the two ladders and `save` write. -/
 abbrev ptsW : List Nat :=
@@ -300,16 +300,17 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     show Q₁ (64 * c.n) (toM _ _ (sv c base s₁ RX)) (toM _ _ (sv c base s₁ RY)) (toM _ _ (sv c base s₁ RZ))
     rw [v₁ (by decide), v₁ (by decide), v₁ (by decide), hM.rx, hM.ry, hM.rz, toM_cmont hc, toM_zero]
     exact hO₁
-  refine WP.seq (WP.mono (ladder_ok (ladLay hc) (ladWk hc) hc.fp hpR (bitsAt_lt hc (j := 0) (by decide)) hs₁ hf₁
+  refine WP.seq (WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (ladLay hc) (ladWk hc) hc.fp ladPt hpR
+    (bitsAt_lt hc (j := 0) (by decide)) hs₁ hf₁
     (modP_of hc F₁.mp) hlt₁
     (Step.congr hstep₁ (tv₁ (by decide)) (tv₁ (by decide)) (tv₁ (by decide)) (tv₁ (by decide))
       (tv₁ (by decide))) hR₁ (fun t ht => by
         show s₁.mem (off base (bitsAt c.n 0 + t)) = _
         rw [b₁ t ht]) henc)
     fun s₂ ⟨K₂, U₂, M₂, L₂, q₂⟩ => ?_)
-  rw [ladWx_eq] at U₂
+  rw [VG.Proof.Weierstrass.Arm.Point.ladWp, ladWx_eq] at U₂
   have hs₂ := hs₁.of_rest K₂ (by decide)
-  have F₂ := F₁.unch h7 hn (fixedOk_slWk h7 (by decide)) U₂
+  have F₂ := F₁.unch h7 hn (fixedOk_slWkP h7 (by decide)) U₂
   -- `U = [u]G`, `R = O`.
   refine WP.seq (WP.mono (save_ok hc hs₂) fun s₃ ⟨hs₃, k₃, U₃, ux₃, uy₃, uz₃, rx₃, ry₃, rz₃⟩ => ?_)
   have F₃ := F₂.unch h7 hn (fixedOk_slW (by decide)) U₃
@@ -319,7 +320,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   have sub₃ : ∀ i ∈ saveW, i ∈ ptsW := by decide
   have W₃ : ∀ {i}, i < 45 → i ∉ ptsW → sv c base s₃ i = sv c base s i := fun hi hl =>
     ((sv_unch U₃ h7 hn hi (apart_slW (fun h => hl (sub₃ _ h)))).trans
-      (sv_unch U₂ h7 hn hi (apart_slWk h7 hi (fun h => hl (sub₂ _ h))))).trans (v₁ hi)
+      (sv_unch U₂ h7 hn hi (apart_slWkP h7 hi (fun h => hl (sub₂ _ h))))).trans (v₁ hi)
   have hf₃ := (hf₁.of_rest K₂).of_rest k₃
   refine WP.seq (WP.mono (tbl_bits_ok hc hs₃ hf₃ (i := V) (j := 0) (by decide) (by decide))
     fun s₄ ⟨b₄, k₄, O₄⟩ => ?_)
@@ -353,7 +354,8 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     show Q₂ (64 * c.n) (toM _ _ (sv c base s₄ RX)) (toM _ _ (sv c base s₄ RY)) (toM _ _ (sv c base s₄ RZ))
     rw [v₄ (by decide), v₄ (by decide), v₄ (by decide), rx₃, ry₃, rz₃, toM_cmont hc, toM_zero]
     exact hO₂
-  refine WP.seq (WP.mono (ladder_ok (ladLayQ hc) (ladWkQ hc) hc.fp hpR (bitsAt_lt hc (j := 0) (by decide)) hs₄ hf₄
+  refine WP.seq (WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (ladLayQ hc) (ladWkQ hc) hc.fp ladPtQ hpR
+    (bitsAt_lt hc (j := 0) (by decide)) hs₄ hf₄
     (modP_of hc F₄.mp) hlt₄
     (Step.congr hstep₂ (tv₄ (by decide) (by decide)) (tv₄ (by decide) (by decide))
       (tv₄ (by decide) (by decide)) (tv₄ (by decide) (by decide)) (tv₄ (by decide) (by decide))) hR₄
@@ -362,16 +364,16 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
         rw [b₄ t ht, show wordsVal s₃.mem base (c.sl V) c.n = sv c base s V from
           W₃ (by decide) (by decide)]) henc)
     fun s₅ ⟨K₅, U₅, M₅, L₅, q₅⟩ => ?_)
-  rw [ladWxQ_eq] at U₅
+  rw [VG.Proof.Weierstrass.Arm.Point.ladWp, ladWxQ_eq] at U₅
   have hs₅ := hs₄.of_rest K₅ (by decide)
-  have F₅ := F₄.unch h7 hn (fixedOk_slWk h7 (by decide)) U₅
+  have F₅ := F₄.unch h7 hn (fixedOk_slWkP h7 (by decide)) U₅
   have v₅ : ∀ {i}, i < 45 → i ∉ ptsW → sv c base s₅ i = sv c base s₄ i := fun hi hl =>
-    sv_unch U₅ h7 hn hi (apart_slWk h7 hi (fun h => hl (sub₂ _ h)))
+    sv_unch U₅ h7 hn hi (apart_slWkP h7 hi (fun h => hl (sub₂ _ h)))
   -- The sum.
   have u₅ : ∀ {i}, i ∈ [UX, UY, UZ] → sv c base s₅ i = sv c base s₃ i := fun {i} hi => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;>
-      exact (sv_unch U₅ h7 hn (by decide) (apart_slWk h7 (by decide) (by decide))).trans (v₄ (by decide))
+      exact (sv_unch U₅ h7 hn (by decide) (apart_slWkP h7 (by decide) (by decide))).trans (v₄ (by decide))
   refine WP.mono (sum_ok hc hs₅ (hf₄.of_rest K₅) M₅ (fun i hi => ?_)) fun s₆ ⟨hs₆, g₆, U₆, M₆, rz₆, t₆⟩ => h s₆ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -386,25 +388,30 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     · exact L₅ _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
   have F₆ := F₅.unch h7 hn (fixedOk_slWk h7 (by decide)) U₆
   have sub₆ : ∀ i ∈ sumW, i ∈ ptsW := by decide
-  have UW : Unch base ([(bitsAt c.n 0, 64 * c.n)] ++ slWk c ptsW) s.mem s₆.mem := by
+  have UW : Unch base ([(bitsAt c.n 0, 64 * c.n)] ++ slWkP c ptsW) s.mem s₆.mem := by
     have hsl : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ ptsW) → ∀ w ∈ slWk c l,
-        w ∈ [(bitsAt c.n 0, 64 * c.n)] ++ slWk c ptsW := fun hl w hw => by
+        w ∈ [(bitsAt c.n 0, 64 * c.n)] ++ slWkP c ptsW := fun hl w hw => by
       rcases List.mem_append.mp hw with hw | hw
       · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-        exact List.mem_append_right _ (List.mem_append_left _ (List.mem_map_of_mem (hl i hi)))
+        exact List.mem_append_right _ (List.mem_append_left _ (List.mem_append_left _ (List.mem_map_of_mem (hl i hi))))
+      · exact List.mem_append_right _ (List.mem_append_left _ (List.mem_append_right _ hw))
+    have hslP : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ ptsW) → ∀ w ∈ slWkP c l,
+        w ∈ [(bitsAt c.n 0, 64 * c.n)] ++ slWkP c ptsW := fun hl w hw => by
+      rcases List.mem_append.mp hw with hw | hw
+      · exact hsl hl w hw
       · exact List.mem_append_right _ (List.mem_append_right _ hw)
     refine (U₁.trans (U₂.trans (U₃.trans (U₄.trans (U₅.trans U₆))))).mono fun w hw => ?_
     rcases List.mem_append.mp hw with hw | hw
     · exact List.mem_append_left _ hw
     rcases List.mem_append.mp hw with hw | hw
-    · exact hsl sub₂ w hw
+    · exact hslP sub₂ w hw
     rcases List.mem_append.mp hw with hw | hw
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      exact List.mem_append_right _ (List.mem_append_left _ (List.mem_map_of_mem (sub₃ i hi)))
+      exact List.mem_append_right _ (List.mem_append_left _ (List.mem_append_left _ (List.mem_map_of_mem (sub₃ i hi))))
     rcases List.mem_append.mp hw with hw | hw
     · exact List.mem_append_left _ hw
     rcases List.mem_append.mp hw with hw | hw
-    · exact hsl sub₂ w hw
+    · exact hslP sub₂ w hw
     · exact hsl sub₆ w hw
   have tu : ∀ {i j}, i ∈ [UX, UY, UZ] → j ∈ [RX, RY, RZ] → sv c base s₃ i = sv c base s₂ j →
       tmv c.C c.n base s₅ (c.sl i) = tmv c.C c.n base s₂ (c.sl j) := fun hi _ e => by
@@ -422,17 +429,17 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     show toM _ _ (wordsVal s.mem base (c.sl B3P) c.n) = _
     rw [F.b3p]; exact toM_cmont hc _
   have hFl := sl_le c h7 (i := FLAG) (by decide)
-  have apF : ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)] ++ slWk c ptsW, c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := by
+  have apF : ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)] ++ slWkP c ptsW, c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := by
     intro w hw
     rcases List.mem_append.mp hw with hw | hw
     · rw [List.mem_singleton.mp hw]
       have := sl_below_bits c hc.n10 (i := FLAG) (by decide) 0 0
       exact Or.inl (by dsimp only; omega)
-    · rcases apart_slWk (c := c) h7 (i := FLAG) (by decide) (by decide) w hw with h | h
+    · rcases apart_slWkP (c := c) h7 (i := FLAG) (by decide) (by decide) w hw with h | h
       · exact Or.inl (by omega)
       · exact Or.inr h
   have rm₆ : sv c base s₆ RM' = sv c base s RM' :=
-    sv_unch UW h7 hn (by decide) (apart_append (tb (by decide)) (apart_slWk h7 (by decide) (by decide)))
+    sv_unch UW h7 hn (by decide) (apart_append (tb (by decide)) (apart_slWkP h7 (by decide) (by decide)))
   have Kw : Rest work s s₆ := (k₁.mono (by decide)).trans ((K₂.mono powClob_work).trans ((k₃.mono (by decide)).trans
     ((k₄.mono (by decide)).trans ((K₅.mono powClob_work).trans (g₆.mono callClob_work)))))
   refine ⟨hs₆, hM.far.of_rest Kw, hM.rest.trans (Kw.mono (by simp)), F₆, fun t ht => ?_,
@@ -443,10 +450,10 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
         tu (by decide) (by decide) uy₃, tu (by decide) (by decide) uz₃]
       rfl⟩, ?_⟩
   · rw [tbl_unch UW h7 (j := 1) (by decide) ht (apart_append (tbl_apart_tbl (by decide) ht)
-      (tbl_apart_slWk h7 (by decide)))]
+      (tbl_apart_slWkP h7 (by decide)))]
     exact hM.t₁ t ht
   · refine whole_of' hM.unch UW fun w hw => (List.mem_append.mp hw).elim
       (fun hw => by rw [List.mem_singleton.mp hw]; exact tbl_le h7)
-      fun hw => by have := slWk_le h7 (by decide) w hw; dsimp only [size] at this; omega
+      fun hw => by have := slWkP_le h7 (by decide) w hw; dsimp only [size] at this; omega
 
 end VG.Proof.Ecdsa.Verify.Arm

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Weierstrass.Arm
+import VerifiedGarbage.Impl.Weierstrass.Arm.LadderP
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Spec.Ecdsa
 
@@ -20,7 +20,8 @@ words; `n = 4` for the 256-bit curves), from the code of
    `R² mod n`, and the exponents `p - 2` and `n - 2`) are stored as
    immediates;
 2. the bits of `k`, `p - 2` and `n - 2` are expanded into tables;
-3. `R = [k]G` by the ladder from `R = O = (0 : 1 : 0)`, then
+3. `R = [k]G` by the ladder from `R = O = (0 : 1 : 0)` (`ladderP`: by calls of
+   the point functions for coordinates of at most 6 words), then
    `x = X Z^(p-2)` (Montgomery's form left by a multiplication by 1) and
    `r = x mod n` (a conditional subtraction, as `x < p < 2n`);
 4. `s = k^(n-2) (e + r d) mod n`, in Montgomery form modulo `n`, then left;
@@ -283,7 +284,7 @@ def sign : Prog isa :=
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq (ladder c.ladderCfg c.SP) <|
+  .seq (Point.ladderP c.ladderCfg c.SP) <|
   .seq (pow c.powP c.SP) <|
   .seq c.middle <|
   .seq (pow c.powN c.SN) c.scalar

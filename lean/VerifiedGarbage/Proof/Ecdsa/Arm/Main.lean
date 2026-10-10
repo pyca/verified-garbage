@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
 import VerifiedGarbage.Proof.Weierstrass.Arm.Rep
+import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 import VerifiedGarbage.Proof.Ecdsa.Sign
 
 /-!
@@ -54,6 +55,97 @@ theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 4)], w.1
   dsimp only
   omega
 
+/-! ### The point functions' slots
+
+For coordinates of at most 6 words, the ladder calls the point functions
+(`ladderP_ok`), which also write their slots and own working space (`ptW`),
+above every numbered slot and below the tables. -/
+
+theorem sl_below_pt (h6 : c.n ≤ 6) {i : Nat} (hi : i < 45) :
+    c.sl i + 8 * c.n ≤ Spec.Weierstrass.Point.oAt c.n := by
+  have := sl_lt c hi
+  rw [sl_eq c 45] at this
+  simp only [Spec.Weierstrass.Point.oAt, Spec.Weierstrass.Point.pAt, Spec.Weierstrass.Point.qAt,
+    Spec.Weierstrass.Point.aAt, Spec.Weierstrass.Point.b3At, Spec.Weierstrass.Point.ownAt,
+    Spec.Weierstrass.Point.elemBytes, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]
+  omega
+
+theorem oAt_le (c : Cfg) : Spec.Weierstrass.Point.oAt c.n ≤ 4096 := by
+  simp only [Spec.Weierstrass.Point.oAt, Spec.Weierstrass.Point.pAt, Spec.Weierstrass.Point.qAt,
+    Spec.Weierstrass.Point.aAt, Spec.Weierstrass.Point.b3At, Spec.Weierstrass.Point.ownAt,
+    Spec.Weierstrass.Point.elemBytes, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]
+  omega
+
+/-- The ladder's slots are below the point functions'. -/
+theorem ladPt (h6 : c.n ≤ 6) : VG.Proof.Weierstrass.Arm.Point.LadPt c.ladderCfg where
+  sl := by
+    rw [ladSlots_eq]
+    intro x hx
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+    have : ∀ i ∈ [AP, B3P, GX, GY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ],
+      i < 45 := by decide
+    exact sl_below_pt h6 (this i hi)
+  mo := sl_below_pt h6 (i := MP) (by decide)
+
+theorem apart_ptW {i : Nat} (hi : i < 45) :
+    ∀ w ∈ VG.Proof.Weierstrass.Arm.Point.ptW c.n, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+  intro w hw
+  unfold VG.Proof.Weierstrass.Arm.Point.ptW at hw
+  split at hw
+  · rw [List.mem_singleton.mp hw]; exact Or.inl (sl_below_pt ‹_› hi)
+  · simp at hw
+
+theorem tbl_apart_ptW (j t : Nat) :
+    ∀ w ∈ VG.Proof.Weierstrass.Arm.Point.ptW c.n, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
+  intro w hw
+  unfold VG.Proof.Weierstrass.Arm.Point.ptW at hw
+  split at hw
+  · rw [List.mem_singleton.mp hw, bitsAt_eq]; have := oAt_le c; dsimp only; omega
+  · simp at hw
+
+theorem fixedOk_ptW : FixedOk c (VG.Proof.Weierstrass.Arm.Point.ptW c.n) := by
+  intro w hw
+  unfold VG.Proof.Weierstrass.Arm.Point.ptW at hw
+  split at hw
+  · rw [List.mem_singleton.mp hw]
+    exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_pt ‹_› (i := 12) (by decide)))
+  · simp at hw
+
+theorem ptW_le : ∀ w ∈ VG.Proof.Weierstrass.Arm.Point.ptW c.n, w.1 + w.2 ≤ size := by
+  intro w hw
+  unfold VG.Proof.Weierstrass.Arm.Point.ptW at hw
+  split at hw
+  · rw [List.mem_singleton.mp hw]; have := oAt_le c; dsimp only [size]; omega
+  · simp at hw
+
+/-- What the ladder writes: numbered slots, the accumulator and the point
+functions' slots. -/
+abbrev slWkP (c : Cfg) (l : List Nat) : List (Nat × Nat) := slWk c l ++ VG.Proof.Weierstrass.Arm.Point.ptW c.n
+
+theorem apart_slWkP (h7 : c.n < 10) {l : List Nat} {i : Nat} (hi : i < 45) (hl : i ∉ l) :
+    ∀ w ∈ slWkP c l, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
+  apart_append (apart_slWk h7 hi hl) (apart_ptW hi)
+
+theorem tbl_apart_slWkP (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) {j t : Nat} :
+    ∀ w ∈ slWkP c l, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t :=
+  apart_append (tbl_apart_slWk h7 hl) (tbl_apart_ptW j t)
+
+theorem fixedOk_slWkP (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i = TMP ∨ 12 ≤ i) : FixedOk c (slWkP c l) :=
+  (fixedOk_slWk h7 hl).append fixedOk_ptW
+
+theorem slWkP_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slWkP c l, w.1 + w.2 ≤ size :=
+  fun w hw => (List.mem_append.mp hw).elim (slWk_le h7 hl w) (ptW_le w)
+
+/-- The flag word apart from what the ladder writes. -/
+theorem flag_unchP {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (slWkP c l) m m')
+    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 32) (hl : FLAG ∉ l) :
+    m'.readW (off base (c.sl FLAG)) 32 = m.readW (off base (c.sl FLAG)) 32 := by
+  have hF := sl_le c h7 (i := FLAG) (by decide)
+  refine Unch.readW32 hu (fun w hw => ?_) (by omega)
+  rcases apart_slWkP (c := c) h7 (i := FLAG) (by decide) hl w hw with h | h
+  · exact Or.inl (by omega)
+  · exact Or.inr h
+
 /-- After `[k]G` and `Z^(p-2)`. -/
 structure St₂ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
   k : sv c base s K = kv c A s₀
@@ -70,7 +162,7 @@ structure St₂ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : 
 /-- `[k]G`, then `Z^(p-2)`. -/
 theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c A s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (ladder c.ladderCfg c.SP) (.seq (pow c.powP c.SP) rest)) s Q := by
+    WP isa (.seq (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP) (.seq (pow c.powP c.SP) rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hS.scr.nowrap
@@ -114,41 +206,41 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s :
   have henc : encodable (BitVec.ofNat 32 (64 * c.n)) = true := by
     have : ∀ n < 10, encodable (BitVec.ofNat 32 (64 * n)) = true := by decide
     exact this _ h7
-  refine WP.seq (WP.mono (ladder_ok (ladLay hc) (ladWk hc) hc.fp hpR (bitsAt_lt hc (j := 0) (by decide)) hS.scr hS.far
-    (modP_of hc F.mp) hlt hstep hR hS.t₀ henc)
+  refine WP.seq (WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (ladLay hc) (ladWk hc) hc.fp ladPt hpR
+    (bitsAt_lt hc (j := 0) (by decide)) hS.scr hS.far (modP_of hc F.mp) hlt hstep hR hS.t₀ henc)
     fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
   rw [Nat.shiftRight_zero] at R₅
-  rw [ladWx_eq] at U₅
+  rw [VG.Proof.Weierstrass.Arm.Point.ladWp, ladWx_eq] at U₅
   have hs₅ := hS.scr.of_rest K₅ (by decide)
   have hf₅ := hS.far.of_rest K₅
-  have F₅ := F.unch h7 hn (fixedOk_slWk h7 (by decide)) U₅
+  have F₅ := F.unch h7 hn (fixedOk_slWkP h7 (by decide)) U₅
   refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hc.fp hpR
     (bitsAt_lt hc (j := 1) (by decide)) hs₅ hf₅ M₅
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))) F₅.onep
     (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWk h7 (by decide))]
+      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWkP h7 (by decide))]
       exact hS.t₁ t ht)
     (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega) henc) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   rw [powWxP_eq] at U₆
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] →
       i ∉ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] →
       sv c base s₆ i = sv c base s i := fun hi h₁ h₂ =>
-    (sv_unch U₆ h7 hn hi (apart_slWk h7 hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_slWk h7 hi h₂))
+    (sv_unch U₆ h7 hn hi (apart_slWk h7 hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_slWkP h7 hi h₂))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
     sv_unch U₆ h7 hn hi (apart_slWk h7 hi h₁)
   have K₅₆ : Rest work s s₆ := (K₅.mono powClob_work).trans (K₆.mono powClob_work)
   refine ⟨⟨hs₅.of_rest K₆ (by decide), hf₅.of_rest K₆, hS.rest.trans (K₅₆.mono (by simp)), by rw [K₅₆.gpr _ (by decide), hS.lr],
     F₅.unch h7 hn (fixedOk_slWk h7 (by decide)) U₆,
-    whole_of (whole_of hS.whole U₅ (slWk_le h7 (by decide))) U₆ (slWk_le h7 (by decide))⟩,
+    whole_of (whole_of hS.whole U₅ (slWkP_le h7 (by decide))) U₆ (slWk_le h7 (by decide))⟩,
     by rw [e₆ (by decide) (by decide) (by decide), hS.k],
     by rw [e₆ (by decide) (by decide) (by decide), hS.d],
     by rw [e₆ (by decide) (by decide) (by decide), hS.e],
-    by rw [flagW, flag_unch U₆ h7 h0 hn (by decide), flag_unch U₅ h7 h0 hn (by decide), ← flagW, hS.flag],
+    by rw [flagW, flag_unch U₆ h7 h0 hn (by decide), flag_unchP U₅ h7 h0 hn (by decide), ← flagW, hS.flag],
     ?_, ?_, lt₆, ?_, ?_⟩
   · intro t ht
     rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_slWk h7 (by decide)),
-      tbl_unch U₅ h7 (j := 2) (by decide) ht (tbl_apart_slWk h7 (by decide))]
+      tbl_unch U₅ h7 (j := 2) (by decide) ht (tbl_apart_slWkP h7 (by decide))]
     exact hS.t₂ t ht
   · show Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ)) _
     rw [r₆ (i := RX) (by decide) (by decide), r₆ (i := RY) (by decide) (by decide),
@@ -333,7 +425,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
 
 theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-    (.seq (ladder c.ladderCfg c.SP) (.seq (pow c.powP c.SP) (.seq c.middle
+    (.seq (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP) (.seq (pow c.powP c.SP) (.seq c.middle
       (.seq (pow c.powN c.SN) c.scalar))))))) := rfl
 
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature, restores

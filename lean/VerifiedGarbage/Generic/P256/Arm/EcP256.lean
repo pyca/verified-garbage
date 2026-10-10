@@ -24,7 +24,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       `scratch`, in calls of `vg_p256_mul_mod_p` and the other functions of `p256_mont`) \
       with a final conditional subtraction; `[d]G` is a double-and-add ladder over \
       all 256 bits of `d`, with the complete addition formulas of Renes, Costello and Batina for \
-      every addition and doubling and a masked selection for each bit; and `Z⁻¹` is Fermat's, \
+      every addition and doubling (calls of `vg_p256_point_double` and \
+      `vg_p256_point_add`) and a masked selection for each bit; and `Z⁻¹` is Fermat's, \
       by square-and-always-multiply over the bits of `p - 2`. The result (or zeros) is selected \
       by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code := Impl.EcKey.Arm.publicKeyP256

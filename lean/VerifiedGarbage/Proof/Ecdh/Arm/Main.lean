@@ -300,7 +300,7 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.Arm.Cfg.exchange c =
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
     (.seq (.block (Impl.Ecdh.Arm.Cfg.peerAt c .r2)) (.seq (Impl.Ecdh.Arm.Cfg.validate c)
-    (.seq (ladder (Impl.Ecdh.Arm.Cfg.ladderQ c) c.SP) (.seq (pow c.powP c.SP) (Impl.Ecdh.Arm.Cfg.middle c))))) :=
+    (.seq (VG.Impl.Weierstrass.Arm.Point.ladderP (Impl.Ecdh.Arm.Cfg.ladderQ c) c.SP) (.seq (pow c.powP c.SP) (Impl.Ecdh.Arm.Cfg.middle c))))) :=
   rfl
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
@@ -374,18 +374,18 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
     (fun t ht => by rw [t₄ (j := 0) (by decide) t ht, S₂.t₀ t ht, S₂.k])
     (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht]) fun s₅ L => ?_
   have hs₅ := L.scr
-  have F₅ := F₄.unch h7 hn ((fixedOk_slWk h7 (by decide)).append (fixedOk_slWk h7 (l := [ACC, PT, TMP]) (by decide)))
+  have F₅ := F₄.unch h7 hn ((fixedOk_slWkP h7 (by decide)).append (fixedOk_slWk h7 (l := [ACC, PT, TMP]) (by decide)))
     L.unch
   have e₅ : ∀ {i}, i < 45 → i ∉ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
       TX, TY, TZ, TMP] → i ∉ [ACC, PT, TMP] → sv c (ptr s₀ .r3) s₅ i = sv c (ptr s₀ .r3) s₄ i :=
-    fun hi h₁ h₂ => sv_unch L.unch h7 hn hi (apart_append (apart_slWk h7 hi h₁) (apart_slWk h7 hi h₂))
+    fun hi h₁ h₂ => sv_unch L.unch h7 hn hi (apart_append (apart_slWkP h7 hi h₁) (apart_slWk h7 hi h₂))
   have hflag₅ : flagW c (ptr s₀ .r3) s₅ = mask32 (PeerOk c (ptr s₀ .r3) s₃ ((s₀.mem (ptr s₀ .r2) = 4 ∧
       sv c (ptr s₀ .r3) s₃ E < c.C.p) ∧ sv c (ptr s₀ .r3) s₃ QY < c.C.p)) := by
     have hFl := sl_le c h7 (i := FLAG) (by decide)
-    have ap : ∀ w ∈ slWk c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
+    have ap : ∀ w ∈ slWkP c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
         TX, TY, TZ, TMP] ++ slWk c [ACC, PT, TMP], c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := by
       intro w hw
-      rcases apart_append (apart_slWk (c := c) h7 (i := FLAG) (by decide) (by decide))
+      rcases apart_append (apart_slWkP (c := c) h7 (i := FLAG) (by decide) (by decide))
         (apart_slWk (c := c) h7 (i := FLAG) (l := [ACC, PT, TMP]) (by decide) (by decide)) w hw with h | h
       · exact Or.inl (by omega)
       · exact Or.inr h
@@ -399,7 +399,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
     whole_of (whole_of (whole_of S₂.whole U₃ (le_append (slWk_le h7 (l := [R2P, BP, E, QY]) (by decide) |>
       fun h w hw => h w (List.mem_append_left _ hw)) (flag_le h0 h7))) U₄
       (le_append (slWk_le h7 (by decide)) (flag_le h0 h7))) L.unch
-      (le_append (slWk_le h7 (by decide)) (slWk_le h7 (by decide)))
+      (le_append (slWkP_le h7 (by decide)) (slWk_le h7 (by decide)))
   refine WP.mono (middle_ok hc hs₅ (((S₂.far.of_rest k₃).of_rest g₄).of_rest L.rest) F₅ L.acc_lt hflag₅ W₅ K₅ hlr₅ hp.out_fit (by rw [hp.wr]; simp)
     (hp.out_sc.sub_right (Region.sub_prefix (by decide))))
     fun s' ⟨xv, hxl, hxv, bytes, ret, saved, sp, m, Wm, Om⟩ => ⟨⟨saved, sp, m, Wm, Om⟩, ?_⟩

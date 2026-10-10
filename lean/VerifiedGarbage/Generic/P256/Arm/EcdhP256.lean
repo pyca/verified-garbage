@@ -26,7 +26,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       coordinates below `p`, and the curve's equation), and the ladder multiplies the peer's \
       point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is a \
       double-and-add ladder over all 256 bits of `d`, with the complete addition formulas of \
-      Renes, Costello and Batina and a masked selection for each bit; `Z⁻¹` is Fermat's, by \
+      Renes, Costello and Batina (calls of `vg_p256_point_double` and \
+      `vg_p256_point_add`) and a masked selection for each bit; `Z⁻¹` is Fermat's, by \
       square-and-always-multiply. The result (or zeros) is selected by a mask of the checks, \
       `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code := Impl.Ecdh.Arm.exchangeP256

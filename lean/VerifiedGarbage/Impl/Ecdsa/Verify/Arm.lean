@@ -125,9 +125,9 @@ def final : Prog isa :=
 
 /-- `[u]G + [v]Q`, into `R`, from the tables of bits of `u` and `v`. -/
 def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (ladder c.ladderCfg c.SP) <|
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (Point.ladderP c.ladderCfg c.SP) <|
   .seq (.block (save c)) <| .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (ladder (Impl.Ecdh.Arm.Cfg.ladderQ c) c.SP) (sum c)
+  .seq (Point.ladderP (Impl.Ecdh.Arm.Cfg.ladderQ c) c.SP) (sum c)
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=
