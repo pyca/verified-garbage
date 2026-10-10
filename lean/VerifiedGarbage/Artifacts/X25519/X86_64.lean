@@ -23,10 +23,10 @@ def artifacts : List Artifact := [
     doc := Spec.X25519.x25519Api.doc (notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements are four 64-bit words, multiplied with `mul` \
       (squares computing each cross product once) and reduced with `2^256 = 38` (mod p); the \
-      inversion is by Bernstein–Yang divsteps, in ten batches of 59 on 64-bit words, and one \
-      multiplication by `2^-590`."])
+      inversion is a call of `vg_gf25519_r64_invert`."])
     code := Impl.X25519.X86_64.x25519
-    contract := Spec.X25519.x25519Contract X86_64.abi
+    contract := Spec.X25519.x25519Contract X86_64.abi 8
+    stack := 8
     verified := Proof.X25519.X86_64.x25519_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.X25519.x25519Api with
@@ -35,10 +35,11 @@ def artifacts : List Artifact := [
     doc := Spec.X25519.x25519Api.doc (notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements are four 64-bit words, multiplied and squared with \
       BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once) and reduced with \
-      `2^256 = 38` (mod p); the inversion is `vg_x25519`'s divsteps. The same code as \
+      `2^256 = 38` (mod p); the inversion is a call of `vg_gf25519_r64_invert`. The same code as \
       `vg_x25519` but for the field multiplications."])
     code := Impl.X25519.X86_64.x25519Adx
-    contract := Spec.X25519.x25519Contract X86_64.abi
+    contract := Spec.X25519.x25519Contract X86_64.abi 8
+    stack := 8
     verified := Proof.X25519.X86_64.x25519Adx_verified
     features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by lit_decide) },
@@ -50,10 +51,11 @@ def artifacts : List Artifact := [
       three stages at once, one to each 64-bit lane of `ymm` registers, with AVX512_IFMA's \
       `vpmadd52luq` and `vpmadd52huq`: field elements are five 51-bit limbs, reduced with \
       `2^255 = 19` (mod p). It sets MXCSR to `0x1FBF` for the ladder (Intel's mitigation of \
-      MXCSR-configuration-dependent timing) and restores the caller's. The inversion is \
-      `vg_x25519`'s divsteps, with `vg_x25519_adx`'s field multiplication."])
+      MXCSR-configuration-dependent timing) and restores the caller's. The inversion is a \
+      call of `vg_gf25519_r64_invert`."])
     code := Impl.X25519.X86_64.x25519Ifma
-    contract := Spec.X25519.x25519Contract X86_64.abi
+    contract := Spec.X25519.x25519Contract X86_64.abi 8
+    stack := 8
     verified := Proof.X25519.X86_64.x25519Ifma_verified
     features := ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
     spSafe := Code.all_of_allInstrs (by lit_decide) },

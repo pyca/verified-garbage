@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.X25519.X86_64.Finish
 import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
+import VerifiedGarbage.Proof.X25519.X86_64.Invert
 import VerifiedGarbage.Spec.X25519.Contract
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -94,25 +95,33 @@ theorem finish_eq : finish fld = fld.mul X2 X2 T1 ++ (freeze X2 ++ (restore ++
       .store (at_ .rsi 24) .r11] : List Instr))) := by
   simp only [finish, List.append_assoc]
 
-theorem x25519_eq' (lad : Prog isa) : x25519Of fld lad = .seq (.block setup) (.seq bits (.seq
+theorem bits_inline : bits.inline = bits := Code.inline_of_noCalls (by decide)
+
+/-- The code with `vg_gf25519_r64_invert`'s inlined, for a ladder `lad` without
+calls. -/
+theorem x25519_eq' {lad : Prog isa} (hli : lad.inline = lad) :
+    (x25519Of fld lad).inline = .seq (.block setup) (.seq bits (.seq
     (.block ([.mov .rsi (.reg .r12)] : List Instr)) (.seq lad (.seq (.block lastSwap)
-    (.seq (invertDS fld) (.block (finish fld))))))) := rfl
+    (.seq invertFn (.block (finish fld))))))) := by
+  simp only [x25519Of, Code.inline, hli, invertCall]
+  rw [bits_inline]
 
 include hf in
 /-- X25519 with any ladder `lad` that leaves the ladder's final state as
 `ladder` does (`LPost`). -/
-theorem correct_of [DivstepInv] {lad : Prog isa}
+theorem correct_of [DivstepInv] {lad : Prog isa} (hli : lad.inline = lad)
     (hlad : ∀ {s : State} {base : Addr} {k : Nat} {u : Spec.X25519.Fe}, LPre base k u s →
       WP isa lad s (LPost base k u s))
     {s₀ : State} (hp : Pre s₀) :
-    WP isa (x25519Of fld lad) s₀ fun s' => gprPreserved s₀ s' ∧ Proof.X25519.x25519X86_64.post s₀ s' := by
+    WP isa (x25519Of fld lad).inline s₀ fun s' =>
+      gprPreserved s₀ s' ∧ Proof.X25519.x25519X86_64.post s₀ s' := by
   obtain ⟨base, hbase⟩ : ∃ b, s₀.gpr .rcx = b := ⟨_, rfl⟩
   have hn : base.toNat + 4096 ≤ 2 ^ 64 := hbase ▸ hp.sc_fit
   have hw₀ : (⟨base, 4096⟩ : Region) ∈ s₀.wr := by rw [hp.wr, ← hbase]; simp
   have hwo : outR s₀ ∈ s₀.wr := by rw [hp.wr]; simp
   have hr : ∀ d, d + 8 ≤ 32 → InRegions (s₀.rd ++ s₀.wr) (off (s₀.gpr .rdx) d) 8 := fun d hd =>
     ⟨pointR s₀, by rw [hp.rd]; simp, Offset.contains_base _ hd (by omega)⟩
-  rw [x25519_eq']
+  rw [x25519_eq' hli]
   refine WP.seq (WP.mono (setup_ok hbase hw₀ hn rfl hr)
     fun s₁ ⟨hs₁, r12₁, g₁, rd₁, wr₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁⟩ => ?_)
   have hkr : ∀ q < 32, InRegions (s₁.rd ++ s₁.wr) (s₀.gpr .rsi + BitVec.ofNat 64 q) 1 :=
@@ -143,7 +152,7 @@ theorem correct_of [DivstepInv] {lad : Prog isa}
           (n := 0) (by omega)
         omega) L.swap L.x2 L.z2 L.x3 L.z3) fun s₅ ⟨K₅, e3₅, e4₅⟩ => ?_)
   have hs₅ := K₅.scr L.scr
-  refine WP.seq (WP.mono (invertDS_pow hf hs₅) fun s₆ ⟨g₆, rd₆, wr₆, o₆, e₆⟩ => ?_)
+  refine WP.seq (WP.mono (invertFn_pow hs₅) fun s₆ ⟨g₆, rd₆, wr₆, o₆, e₆⟩ => ?_)
   have hs₆ : Scr s₆ base := ⟨(g₆ _ (by decide) (by decide)).trans hs₅.rdi, wr₆ ▸ hs₅.wr, hn⟩
   rw [finish_eq, WP.block_append_iff]
   refine WP.mono (mulE hf hs₆ 3 3 17 (by decide)) fun s₇ ⟨K₇, e₇⟩ => ?_
@@ -210,7 +219,8 @@ theorem correct_of [DivstepInv] {lad : Prog isa}
 
 include hf in
 theorem correct [DivstepInv] {s₀ : State} (hp : Pre s₀) :
-    WP isa (x25519With fld) s₀ fun s' => gprPreserved s₀ s' ∧ Proof.X25519.x25519X86_64.post s₀ s' :=
-  correct_of hf (fun h => ladder_post hf h) hp
+    WP isa (x25519With fld).inline s₀ fun s' =>
+      gprPreserved s₀ s' ∧ Proof.X25519.x25519X86_64.post s₀ s' :=
+  correct_of hf (Code.inline_of_noCalls rfl) (fun h => ladder_post hf h) hp
 
 end VG.Proof.X25519.X86_64
