@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.P384.X86_64.PointOpsContract
 /-!
 # P-384's Jacobian point operations on x86-64
 
-`vg_p384_jac_double`, `vg_p384_jac_add_cached` and `vg_p384_jac_add_affine`
+`vg_p384_jac_add_cached` and `vg_p384_jac_add_affine`
 (`Spec/Weierstrass/PointOps.lean`), and their `_adx` forms, which the joint
 verifier calls. A generic file (see `TCB/Emit.lean`) over P-384's group law
 `h`, the variant `Variants/P384/X86_64/Law.lean`, which gives Fermat's
@@ -28,10 +28,6 @@ def common (adx : Bool) : String := "The function keeps `rbp` and `r12`–`r15` 
   " and reduced by six rounds of `u p` for `u = t₀ (2³² + 1) mod 2⁶⁴`, the products' temporary area \
   bytes 4048 to 4095."
 
-/-- What the doubling runs. -/
-def dblWhat : String := "Doubling dbl-2001-b for `a = -3` with `Z' = 2YZ` as a product: eight \
-  products, no branch."
-
 /-- What the additions run. -/
 def addWhat (cached : Bool) : String :=
   "Branches on the coordinates, which are public: `Q` copied if `P`'s `Z` is zero, " ++
@@ -44,16 +40,6 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) : List
   let one (adx : Bool) (a : Artifact) : Artifact :=
     if adx then { a with name := a.name ++ "_adx", features := ["bmi2", "adx"] } else a
   [false, true].flatMap fun adx => [
-    one adx { C.doubleApi with
-      target := X86_64.target
-      doc := C.doubleApi.doc (notes := [common adx, dblWhat])
-      code := doubleFn adx
-      contract := C.doubleContract X86_64.abi
-      verified := double_verified hFe adx
-      spSafe := by
-        cases adx
-        · exact Code.all_of_allInstrs (by rw [doubleLit.lit_eq]; decide +kernel)
-        · exact Code.all_of_allInstrs (by rw [doubleAdxLit.lit_eq]; decide +kernel) },
     one adx { C.addCachedApi with
       target := X86_64.target
       doc := C.addCachedApi.doc (notes := [common adx, addWhat true])

@@ -6,8 +6,6 @@ checks read rather than build each field operation again. -/
 
 namespace VG.Impl.P384.X86_64.PointOps
 
-materialize_code doubleLit := doubleFn false
-materialize_code doubleAdxLit := doubleFn true
 materialize_code addCachedLit := addCachedFn false
 materialize_code addCachedAdxLit := addCachedFn true
 materialize_code addAffineLit := addAffineFn false

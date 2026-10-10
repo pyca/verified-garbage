@@ -12,9 +12,8 @@ The facts of `Spec.Weierstrass.PointOps.p384`'s contracts on x86-64 (`ws`
 in `rdi`, `fnPre`), which the functions meet (`fn_ok` and the bodies'
 values): the spec's coordinates are the slots' field elements (`pt_eq`,
 given Fermat's little theorem in `Fin p`, from the curve's group law).
-The doubling is constant time by taint tracking (only `rsp` and `ws` are
-public); the additions, whose branches depend on the points, by relating
-two runs from states whose points agree (`FieldPair`).
+The additions, whose branches depend on the points, are constant time by
+relating two runs from states whose points agree (`FieldPair`).
 -/
 
 namespace VG.Proof.P384.X86_64.PointOps
@@ -22,7 +21,7 @@ namespace VG.Proof.P384.X86_64.PointOps
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.P384.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64
 open VG.Proof.Weierstrass.X86_64.PointOps
-open VG.Impl.P384.X86_64.PointOps (doubleFn addCachedFn addAffineFn)
+open VG.Impl.P384.X86_64.PointOps (addCachedFn addAffineFn)
 
 /-- P-384's curve of `Spec/Weierstrass/PointOps.lean`. -/
 abbrev C : Spec.Weierstrass.PointOps.Curve := Spec.Weierstrass.PointOps.p384
@@ -41,13 +40,6 @@ theorem pt_eq (hFe : Point.Fermat C.p) (m : Mem) (ws : Addr) {o : Nat} (ho : o +
 points. -/
 def fnPub (s₁ s₂ : State) : Prop := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi
 
-/-- The doubling's contract on x86-64. -/
-def doubleK : Contract isa where
-  pre s := fnPre s ∧ C.ModOk (s.gpr .rdi) s.mem ∧ C.Below (C.pointAt s.mem (s.gpr .rdi) C.pAt)
-  post s s' := let P := C.pt (s.gpr .rdi) s.mem C.pAt
-    C.Result C.pAt (Spec.Weierstrass.PointOps.jacDouble P.1 P.2.1 P.2.2) (s.gpr .rdi) s.mem s'.mem
-  pub := fnPub
-
 theorem below_lt {m : Mem} {ws : Addr} {o : Nat} (ho : o + 16 * 6 < 2 ^ 32)
     (h : C.Below (C.pointAt m ws o)) :
     wordsVal m ws o 6 < C.p ∧ wordsVal m ws (o + 8 * 6) 6 < C.p ∧ wordsVal m ws (o + 16 * 6) 6 < C.p := by
@@ -56,32 +48,6 @@ theorem below_lt {m : Mem} {ws : Addr} {o : Nat} (ho : o + 16 * 6 < 2 ^ 32)
   simp only [Spec.Weierstrass.Point.Curve.pointAt, Spec.Weierstrass.Point.elemBytes, hk] at h0 h1 h2
   rw [coordAt_eq _ _ _ (by omega), hk] at h0 h1 h2
   exact ⟨h0, h1, h2⟩
-
-theorem double_correct (hFe : Point.Fermat C.p) (adx : Bool)
-    (hok : wrapOk (doubleFn adx) = true) (s : State) (hs : doubleK.pre s) :
-    ∃ t s', Exec isa (doubleFn adx) s t s' ∧ abiPreserved s s' ∧ doubleK.post s s' := by
-  obtain ⟨hp, hmod, hb⟩ := hs
-  have hl := below_lt (by decide) hb
-  obtain ⟨t, s', he, ha, hB, hv, hK⟩ := fn_ok (fnCfg adx) (body := Impl.Weierstrass.X86_64.PointOps.doubleBody (K adx))
-    (V := jacCoords (K adx).R)
-    (r := fun E => Spec.Weierstrass.PointOps.jacDouble (E (K adx).R.x) (E (K adx).R.y) (E (K adx).R.z))
-    hok (by cases adx <;> decide +kernel) (fun x hx => (doubleLay adx).sl x (List.mem_append_right _ (by
-      simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl <;> simp [rcbR])))
-    (fun s E hI => WP.mono (doubleBody_val (doubleLay adx) (unitMod_pow_two p_odd _) hI)
-      fun t ⟨kt, E', it, et⟩ => ⟨kt, E', it, et⟩) s hp hmod (by
-      intro x hx
-      rw [K_n]
-      simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl
-      · exact (fnCfg adx).rx ▸ hl.1
-      · exact (fnCfg adx).ry ▸ hl.2.1
-      · exact (fnCfg adx).rz ▸ hl.2.2)
-  refine ⟨t, s', he, ha, hB, ?_, hK⟩
-  rw [pt_eq hFe _ _ (by decide), pt_eq hFe _ _ (by decide)]
-  rw [show C.k = 6 from rfl] at hv
-  rw [hv, (fnCfg adx).rx, (fnCfg adx).ry, (fnCfg adx).rz, K_n]
-  rfl
 
 theorem el_eq (hFe : Point.Fermat C.p) (m : Mem) (ws : Addr) {o : Nat} (ho : o < 2 ^ 32) :
     C.el ws m o = env C.p 6 m ws o := by
@@ -201,20 +167,6 @@ theorem addAffine_correct (hFe : Point.Fermat C.p) (adx : Bool)
   rfl
 
 /-! ## Constant time -/
-
-theorem fnPub_agree {s₁ s₂ : State} (hp : fnPub s₁ s₂) :
-    VG.X86_64.Taint.Agree (Taint.ofRegs [.rdi, .rsp]) s₁ s₂ := by
-  refine Taint.agree_ofRegs fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact hp.2
-  · exact hp.1
-
-theorem double_ct : ∀ adx, ConstantTime isa doubleK.pre doubleK.pub (doubleFn adx)
-  | false => VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp])
-      (fun _ _ _ _ hp => fnPub_agree hp) (by taint_decide)
-  | true => VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp])
-      (fun _ _ _ _ hp => fnPub_agree hp) (by taint_decide)
 
 theorem cachedChecks : ∀ adx, CachedJacChecks (K adx) (K adx).R (K adx).E (K adx).D sel
   | false => nafCachedJac_checks

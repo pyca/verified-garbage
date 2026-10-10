@@ -3,20 +3,17 @@ import VerifiedGarbage.Impl.P384.X86_64.Joint
 /-!
 # P-384's point operations as functions on x86-64
 
-`vg_p384_jac_double`, `vg_p384_jac_add_cached` and `vg_p384_jac_add_affine`
+`vg_p384_jac_add_cached` and `vg_p384_jac_add_affine`
 (`Spec/Weierstrass/PointOps.lean`), with the joint verifier's products
 (`publicJoint`), and their `_adx` forms with BMI2 and ADX's
-(`publicJointAdx`): the code the verifier calls (`PointOps.doubleCall`,
-`addCachedCall`, `addAffineCall`).
+(`publicJointAdx`): the code the verifier calls (`PointOps.addCachedCall`,
+`addAffineCall`). The verifier's doubling stays inline: as a call it cost
+Zen 5 1–3% of a verification.
 -/
 
 namespace VG.Impl.P384.X86_64.PointOps
 
 open VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass.X86_64.PointOps
-
-/-- `vg_p384_jac_double` (`adx` false) or `_adx`. -/
-def doubleFn (adx : Bool) : Prog isa :=
-  wrap (doubleBody (if adx then publicJointAdx.K else publicJoint.K))
 
 /-- `vg_p384_jac_add_cached` (`adx` false) or `_adx`. -/
 def addCachedFn (adx : Bool) : Prog isa :=
