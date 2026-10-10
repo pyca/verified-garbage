@@ -29,6 +29,8 @@ planes each, in the order the rounds use them (from slot 96); then, while
 the data pointer (369) and the number of blocks left (370), which it does
 not keep in registers; the callee-saved registers (371–376); and the tail
 buffer (377–392, eight blocks), through which every group is copied. The
+modes (`Impl/Modes/X86_64/`), which use slots 0–392 as Camellia's core, keep
+their own state in 393–400 (`Ctr.lean`). The
 key schedule (`ExpandKey.lean`) uses the same layout, with the key's length
 in slot 369 and its 128-bit values in the tail buffer.
 -/
@@ -57,8 +59,8 @@ def countSlot : Nat := endSlot + 2
 def savedSlot : Nat := endSlot + 3
 def tailSlot : Nat := endSlot + 9
 
-/-- The number of slots: the tail buffer is the last 16. -/
-def slots : Nat := tailSlot + 16
+/-- The number of slots: the tail buffer's 16, then the modes' 8. -/
+def slots : Nat := tailSlot + 24
 
 def layerMasks : List (Nat × BitVec 64) :=
   [(evenSlot, 0x00FF00FF00FF00FF), (oddSlot, 0xFF00FF00FF00FF00),

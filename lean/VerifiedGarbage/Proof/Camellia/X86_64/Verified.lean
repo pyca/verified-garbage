@@ -14,7 +14,7 @@ public, and so is everything the code computes from them, which it keeps
 in registers or, while `crypt8` runs, in public slots of the scratch
 buffer (the data pointer, the blocks left and the postwhitening's address).
 `ecb_framed` runs it with its working space on the stack, zeroed on return:
-3152 bytes, the 393 words of the scratch buffer and 8 more.
+3216 bytes, the 401 words of the scratch buffer and 8 more.
 -/
 
 namespace VG.Proof.Camellia.X86_64
@@ -94,7 +94,7 @@ def ecbSat : State where
   of := none
   mem _ := 0
   rd := [⟨0x1000, 272⟩]
-  wr := [⟨0x3000, 16⟩, ⟨0x4000, 8 * 393⟩]
+  wr := [⟨0x3000, 16⟩, ⟨0x4000, 8 * 401⟩]
 
 theorem ecb_verified (dir : Dir) :
     Verified X86_64.target (ecb dir) (Proof.Camellia.ecbScratchContract X86_64.abi (specDir dir) slots) :=
@@ -118,18 +118,18 @@ def ecbFrameSat : State where
   wr := [⟨0x3000, 16⟩]
 
 theorem ecbFrameSat_pre (d : Spec.Camellia.Direction) :
-    ∃ s, (Spec.Camellia.ecbContract X86_64.abi d 3152).pre s := by
+    ∃ s, (Spec.Camellia.ecbContract X86_64.abi d 3216).pre s := by
   implies_sat [Spec.Camellia.ecbContract, Spec.Camellia.ecbSig, Spec.Camellia.ecbPre,
     Spec.Camellia.ecbPost, X86_64.abi, X86_64.argRegs] [ecbFrameSat] using ecbFrameSat
 
 /-- ECB in the direction `dir`, with its working space on the stack. -/
 theorem ecb_framed (dir : Dir) :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3152 .r8 393 (ecb dir))
-      (Spec.Camellia.ecbContract X86_64.abi (specDir dir) 3152) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3216 .r8 401 (ecb dir))
+      (Spec.Camellia.ecbContract X86_64.abi (specDir dir) 3216) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Camellia.ecbSig) (nm := "scratch") (e := .u64)
-    (n := 393) (pre := Spec.Camellia.ecbPre X86_64.abi.ptrBits)
+    (n := 401) (pre := Spec.Camellia.ecbPre X86_64.abi.ptrBits)
     (post := Spec.Camellia.ecbPost (specDir dir) X86_64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 3152) (by rw [← Proof.Camellia.ecbScratchContract_eq]; exact ecb_verified dir)
+    (bytes := 3216) (by rw [← Proof.Camellia.ecbScratchContract_eq]; exact ecb_verified dir)
     (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by cases dir <;> lit_decide))
     (by cases dir <;> lit_decide) (by decide) (Proof.Camellia.ecbPostOut_local _ _) (ecbFrameSat_pre _)
 
