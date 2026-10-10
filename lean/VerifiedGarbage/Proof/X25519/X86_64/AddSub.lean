@@ -345,4 +345,194 @@ theorem subL_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : 
     simp only [VG.Spec.X25519.P] at hb2 ⊢
     omega
 
+
+/-! ## Sums and differences with one fold, selected by `cmov` -/
+
+theorem cmov38 (c : Bool) :
+    (if (!c) = true then (0 : BitVec 64) else BitVec.setWidth 64 (38 : BitVec 32)).toNat =
+      38 * c.toNat := by
+  cases c <;> rfl
+
+/-- `addCmov`'s start: the sum of `[a]` and `[b]` into `r8–r11`, and `38 ×` its carry into `rax`. -/
+theorem addCmovPre_ok {s : State} {base : Addr} (hs : Scr s base) {a b : Nat} (ha : Slot a)
+    (hb : Slot b) :
+    WP isa (.block [.alu32 .xor .rcx (.reg .rcx), .mov32 .rax (.imm 38),
+      .mov .r8 (.mem (sc a)), .alu .add .r8 (.mem (sc b)),
+      .mov .r9 (.mem (sc (a + 8))), .alu .adc .r9 (.mem (sc (b + 8))),
+      .mov .r10 (.mem (sc (a + 16))), .alu .adc .r10 (.mem (sc (b + 16))),
+      .mov .r11 (.mem (sc (a + 24))), .alu .adc .r11 (.mem (sc (b + 24))),
+      .cmov .ae .rax (.reg .rcx)]) s fun s' =>
+      ∃ c : Nat, c ≤ 1 ∧
+        val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) + 2 ^ 256 * c =
+          fe s.mem base a + fe s.mem base b ∧
+        (s'.gpr .rax).toNat = 38 * c ∧ Keeps [.r8, .r9, .r10, .r11, .rax, .rcx] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,
+    execAlu32, execCmov, eval, State.load64, State.setReg32,
+    ea_sc, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg,
+    RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, RegUpd.rd_arithFlags,
+    RegUpd.wr_arithFlags, RegUpd.mem_arithFlags, hs.rdi, ld_sc hs (d := a) (by omega),
+    ld_sc hs (d := b) (by omega), ld_sc hs (d := a + 8) (by omega),
+    ld_sc hs (d := b + 8) (by omega), ld_sc hs (d := a + 16) (by omega),
+    ld_sc hs (d := b + 16) (by omega), ld_sc hs (d := a + 24) (by omega),
+    ld_sc hs (d := b + 24) (by omega), ite_true, ite_false, reduceCtorEq, Option.map_some,
+    Option.bind_some, Option.some.injEq, exists_eq_left', BitVec.xor_self]
+  have e := chain_add (s.mem.readW (off base a) 64) (s.mem.readW (off base (a + 8)) 64)
+    (s.mem.readW (off base (a + 16)) 64) (s.mem.readW (off base (a + 24)) 64)
+    (s.mem.readW (off base b) 64) (s.mem.readW (off base (b + 8)) 64)
+    (s.mem.readW (off base (b + 16)) 64) (s.mem.readW (off base (b + 24)) 64)
+  simp only at e
+  generalize decide (2 ^ 64 ≤ (s.mem.readW (off base (a + 24)) 64).toNat + _ + _) = c at e ⊢
+  refine ⟨c.toNat, Bool.toNat_le _, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩ <;>
+  cases c <;> simp only [Bool.not_true, Bool.not_false, Bool.false_eq_true, ite_true, ite_false,
+    RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_setReg, RegUpd.mem_arithFlags,
+    RegUpd.rd_setReg, RegUpd.rd_arithFlags, RegUpd.wr_setReg, RegUpd.wr_arithFlags,
+    reduceCtorEq] at e ⊢
+  all_goals first
+    | exact e
+    | rfl
+    | (simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+       simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2, ite_false])
+
+/-- `subCmov`'s start: the difference of `[a]` and `[b]` into `r8–r11`, and `38 ×` its borrow
+into `rax`. -/
+theorem subCmovPre_ok {s : State} {base : Addr} (hs : Scr s base) {a b : Nat} (ha : Slot a)
+    (hb : Slot b) :
+    WP isa (.block [.alu32 .xor .rcx (.reg .rcx), .mov32 .rax (.imm 38),
+      .mov .r8 (.mem (sc a)), .alu .sub .r8 (.mem (sc b)),
+      .mov .r9 (.mem (sc (a + 8))), .alu .sbb .r9 (.mem (sc (b + 8))),
+      .mov .r10 (.mem (sc (a + 16))), .alu .sbb .r10 (.mem (sc (b + 16))),
+      .mov .r11 (.mem (sc (a + 24))), .alu .sbb .r11 (.mem (sc (b + 24))),
+      .cmov .ae .rax (.reg .rcx)]) s fun s' =>
+      ∃ c : Nat, c ≤ 1 ∧
+        val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) + fe s.mem base b =
+          fe s.mem base a + 2 ^ 256 * c ∧
+        (s'.gpr .rax).toNat = 38 * c ∧ Keeps [.r8, .r9, .r10, .r11, .rax, .rcx] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,
+    execAlu32, execCmov, eval, State.load64, State.setReg32,
+    ea_sc, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg,
+    RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, RegUpd.rd_arithFlags,
+    RegUpd.wr_arithFlags, RegUpd.mem_arithFlags, hs.rdi, ld_sc hs (d := a) (by omega),
+    ld_sc hs (d := b) (by omega), ld_sc hs (d := a + 8) (by omega),
+    ld_sc hs (d := b + 8) (by omega), ld_sc hs (d := a + 16) (by omega),
+    ld_sc hs (d := b + 16) (by omega), ld_sc hs (d := a + 24) (by omega),
+    ld_sc hs (d := b + 24) (by omega), ite_true, ite_false, reduceCtorEq, Option.map_some,
+    Option.bind_some, Option.some.injEq, exists_eq_left', BitVec.xor_self]
+  have e := chain_sub (s.mem.readW (off base a) 64) (s.mem.readW (off base (a + 8)) 64)
+    (s.mem.readW (off base (a + 16)) 64) (s.mem.readW (off base (a + 24)) 64)
+    (s.mem.readW (off base b) 64) (s.mem.readW (off base (b + 8)) 64)
+    (s.mem.readW (off base (b + 16)) 64) (s.mem.readW (off base (b + 24)) 64)
+  simp only at e
+  generalize decide ((s.mem.readW (off base (a + 24)) 64).toNat < _ + _) = c at e ⊢
+  refine ⟨c.toNat, Bool.toNat_le _, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩ <;>
+  cases c <;> simp only [Bool.not_true, Bool.not_false, Bool.false_eq_true, ite_true, ite_false,
+    RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_setReg, RegUpd.mem_arithFlags,
+    RegUpd.rd_setReg, RegUpd.rd_arithFlags, RegUpd.wr_setReg, RegUpd.wr_arithFlags,
+    reduceCtorEq] at e ⊢
+  all_goals first
+    | exact e
+    | rfl
+    | (simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+       simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2, ite_false])
+
+
+/-- `[o] = [a] + [b]`, folded once (`cmov`), if `[a]` or `[b]` is at most `2p`. -/
+theorem addCmov_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : Slot o)
+    (ha : Slot a) (hb : Slot b)
+    (hab : fe s.mem base a ≤ 2 * VG.Spec.X25519.P ∨ fe s.mem base b ≤ 2 * VG.Spec.X25519.P) :
+    WP isa (.block (addCmov o a b)) s fun s' =>
+      Op base o s s' ∧ F s'.mem base o = F s.mem base a + F s.mem base b := by
+  rw [show addCmov o a b = [.alu32 .xor .rcx (.reg .rcx), .mov32 .rax (.imm 38),
+      .mov .r8 (.mem (sc a)), .alu .add .r8 (.mem (sc b)),
+      .mov .r9 (.mem (sc (a + 8))), .alu .adc .r9 (.mem (sc (b + 8))),
+      .mov .r10 (.mem (sc (a + 16))), .alu .adc .r10 (.mem (sc (b + 16))),
+      .mov .r11 (.mem (sc (a + 24))), .alu .adc .r11 (.mem (sc (b + 24))),
+      .cmov .ae .rax (.reg .rcx)] ++
+      (([.alu .add .r8 (.reg .rax), .alu .adc .r9 (.imm 0), .alu .adc .r10 (.imm 0),
+      .alu .adc .r11 (.imm 0)] : List Instr) ++ store4 o) from rfl, WP.block_append_iff]
+  refine WP.mono (addCmovPre_ok hs ha hb) fun s₁ ⟨c, hc, e1, x1, k1⟩ => ?_
+  have hs₁ := hs.of_keeps k1 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (carryAdd_ok s₁) fun s₂ ⟨c', hc', e2, k2⟩ => ?_
+  have hs₂ := hs₁.of_keeps k2 (by decide)
+  refine WP.mono (store4_ok hs₂ ho) fun s₃ ⟨m3, g3, rd3, wr3⟩ => ?_
+  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_⟩, ?_⟩
+  · simp only [clob, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    rw [g3, k2.1 r (by simp [hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1,
+      hr.2.2.2.2.2.2.2.1]), k1.1 r (by simp [hr.1, hr.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1,
+      hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1])]
+  · rw [rd3, k2.2.2.1, k1.2.2.1]
+  · rw [wr3, k2.2.2.2, k1.2.2.2]
+  · rw [m3, k2.2.1, k1.2.1]; exact st4_outside _ _ (by omega) _ _ _ _
+  · simp only [F]
+    apply toFe_add
+    rw [m3, fe_st4 _ _ (by omega)]
+    have la := fe_lt4 s.mem base a; have lb := fe_lt4 s.mem base b
+    have hv : val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) < 2 ^ 256 := by
+      simp only [val4]
+      have := (s₂.gpr .r8).isLt; have := (s₂.gpr .r9).isLt; have := (s₂.gpr .r10).isLt
+      have := (s₂.gpr .r11).isLt
+      omega
+    have hv1 : val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) < 2 ^ 256 := by
+      simp only [val4]
+      have := (s₁.gpr .r8).isLt; have := (s₁.gpr .r9).isLt; have := (s₁.gpr .r10).isLt
+      have := (s₁.gpr .r11).isLt
+      omega
+    rw [x1] at e2
+    generalize val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) = V at *
+    generalize val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) = U at *
+    refine mod_of_add_mul (k := 2 * c) ?_
+    simp only [VG.Spec.X25519.P] at hab ⊢
+    omega
+
+/-- `[o] = [a] - [b]`, folded once (`cmov`), if `[b]` is at most `2p`. -/
+theorem subCmov_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : Slot o)
+    (ha : Slot a) (hb : Slot b)
+    (hb2 : fe s.mem base b ≤ 2 * VG.Spec.X25519.P) :
+    WP isa (.block (subCmov o a b)) s fun s' =>
+      Op base o s s' ∧ F s'.mem base o = F s.mem base a - F s.mem base b := by
+  rw [show subCmov o a b = [.alu32 .xor .rcx (.reg .rcx), .mov32 .rax (.imm 38),
+      .mov .r8 (.mem (sc a)), .alu .sub .r8 (.mem (sc b)),
+      .mov .r9 (.mem (sc (a + 8))), .alu .sbb .r9 (.mem (sc (b + 8))),
+      .mov .r10 (.mem (sc (a + 16))), .alu .sbb .r10 (.mem (sc (b + 16))),
+      .mov .r11 (.mem (sc (a + 24))), .alu .sbb .r11 (.mem (sc (b + 24))),
+      .cmov .ae .rax (.reg .rcx)] ++
+      (([.alu .sub .r8 (.reg .rax), .alu .sbb .r9 (.imm 0), .alu .sbb .r10 (.imm 0),
+      .alu .sbb .r11 (.imm 0)] : List Instr) ++ store4 o) from rfl, WP.block_append_iff]
+  refine WP.mono (subCmovPre_ok hs ha hb) fun s₁ ⟨c, hc, e1, x1, k1⟩ => ?_
+  have hs₁ := hs.of_keeps k1 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (borrowSub_ok s₁) fun s₂ ⟨c', hc', e2, k2⟩ => ?_
+  have hs₂ := hs₁.of_keeps k2 (by decide)
+  refine WP.mono (store4_ok hs₂ ho) fun s₃ ⟨m3, g3, rd3, wr3⟩ => ?_
+  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_⟩, ?_⟩
+  · simp only [clob, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    rw [g3, k2.1 r (by simp [hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1,
+      hr.2.2.2.2.2.2.2.1]), k1.1 r (by simp [hr.1, hr.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1,
+      hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1])]
+  · rw [rd3, k2.2.2.1, k1.2.2.1]
+  · rw [wr3, k2.2.2.2, k1.2.2.2]
+  · rw [m3, k2.2.1, k1.2.1]; exact st4_outside _ _ (by omega) _ _ _ _
+  · simp only [F]
+    apply toFe_sub
+    rw [m3, fe_st4 _ _ (by omega)]
+    have la := fe_lt4 s.mem base a; have lb := fe_lt4 s.mem base b
+    have hv : val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) < 2 ^ 256 := by
+      simp only [val4]
+      have := (s₂.gpr .r8).isLt; have := (s₂.gpr .r9).isLt; have := (s₂.gpr .r10).isLt
+      have := (s₂.gpr .r11).isLt
+      omega
+    have hv1 : val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) < 2 ^ 256 := by
+      simp only [val4]
+      have := (s₁.gpr .r8).isLt; have := (s₁.gpr .r9).isLt; have := (s₁.gpr .r10).isLt
+      have := (s₁.gpr .r11).isLt
+      omega
+    rw [x1] at e2
+    generalize val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) = V at *
+    generalize val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) = U at *
+    refine (mod_of_add_mul (k := 2 * c) ?_).symm
+    simp only [VG.Spec.X25519.P] at hb2 ⊢
+    omega
+
 end VG.Proof.X25519.X86_64

@@ -79,6 +79,16 @@ structure FieldOk (fld : Field) : Prop where
   sqr2 : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o a : Nat}, Slot o → Slot a →
     WP isa (.block (fld.sqr2 o a)) s fun s' => Op base o s s' ∧
       F s'.mem base o = F s.mem base a * F s.mem base a + F s.mem base a * F s.mem base a
+  /-- `mul`, whose product is at most `2p` (for the ladder's sums, `addCmov`). -/
+  mulB : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o a b : Nat}, Slot o → Slot a → Slot b →
+    WP isa (.block (fld.mul o a b)) s fun s' =>
+      Op base o s s' ∧ F s'.mem base o = F s.mem base a * F s.mem base b ∧
+        fe s'.mem base o ≤ 2 * Spec.X25519.P
+  /-- `sqr`, whose square is at most `2p`. -/
+  sqrB : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o a : Nat}, Slot o → Slot a →
+    WP isa (.block (fld.sqr o a)) s fun s' =>
+      Op base o s s' ∧ F s'.mem base o = F s.mem base a * F s.mem base a ∧
+        fe s'.mem base o ≤ 2 * Spec.X25519.P
 
 theorem Op.trans {base : Addr} {o : Nat} {s t u : State} (h : Op base o s t) (k : Op base o t u) :
     Op base o s u :=
@@ -100,6 +110,8 @@ theorem baseline_ok : FieldOk baseline where
   a24 hs _ _ ho ha := mulA24_ok hs ho ha
   mul2 hs _ _ _ ho ha hb := dbl_after hs ho (mul_ok hs ho ha hb)
   sqr2 hs _ _ ho ha := dbl_after hs ho (sqr_ok hs ho ha)
+  mulB hs _ _ _ ho ha hb := mulBnd_ok hs ho ha hb
+  sqrB hs _ _ ho ha := sqrBnd_ok hs ho ha
 
 /-! ## The field operations on the slots -/
 
@@ -159,6 +171,72 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (x y : Fin 128) (hx :
   refine WP.mono (cswap_ok hs (by omega) (by omega) (by omega) hm)
     fun s' ⟨g, gc, rd, wr, ⟨m₁, o₁, o₂, f₁⟩, fx, fy⟩ => ?_
   refine ⟨⟨g, rd, wr, (o₁.mono (by omega) (by omega)).trans (o₂.mono (by omega) (by omega))⟩, gc, ?_⟩
+  rw [E_update o₂, E_update o₁]
+  simp only [F, f₁, fy]
+  cases sw <;> rfl
+
+
+/-! ## The ladder's operations, with the bytes they write
+
+What the ladder's iteration needs to carry bounds of `2p` past later operations
+(`Iter.lean`): each operation changes only the 32 bytes of its result. -/
+
+include hf in
+theorem mulEB {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho : LSlot o) :
+    WP isa (.block (fld.mul (32 * o.val) (32 * a.val) (32 * b.val))) s fun s' =>
+      Keep base s s' ∧ E s'.mem base = opMul o a b (E s.mem base) ∧
+        Outside base (32 * o.val) 32 s.mem s'.mem ∧ fe s'.mem base (32 * o.val) ≤ 2 * Spec.X25519.P :=
+  WP.mono (hf.mulB hs (by omega) (by omega) (by omega)) fun _ ⟨h, e, hb⟩ =>
+    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem, hb⟩
+
+include hf in
+theorem sqrEB {s : State} {base : Addr} (hs : Scr s base) (o a : Fin 128) (ho : LSlot o) :
+    WP isa (.block (fld.sqr (32 * o.val) (32 * a.val))) s fun s' =>
+      Keep base s s' ∧ E s'.mem base = opMul o a a (E s.mem base) ∧
+        Outside base (32 * o.val) 32 s.mem s'.mem ∧ fe s'.mem base (32 * o.val) ≤ 2 * Spec.X25519.P :=
+  WP.mono (hf.sqrB hs (by omega) (by omega)) fun _ ⟨h, e, hb⟩ =>
+    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem, hb⟩
+
+theorem addCmovE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho : LSlot o)
+    (hab : fe s.mem base (32 * a.val) ≤ 2 * Spec.X25519.P ∨
+      fe s.mem base (32 * b.val) ≤ 2 * Spec.X25519.P) :
+    WP isa (.block (addCmov (32 * o.val) (32 * a.val) (32 * b.val))) s fun s' =>
+      Keep base s s' ∧ E s'.mem base = opAdd o a b (E s.mem base) ∧
+        Outside base (32 * o.val) 32 s.mem s'.mem :=
+  WP.mono (addCmov_ok hs (by omega) (by omega) (by omega) hab) fun _ ⟨h, e⟩ =>
+    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem⟩
+
+theorem subCmovE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho : LSlot o)
+    (hb2 : fe s.mem base (32 * b.val) ≤ 2 * Spec.X25519.P) :
+    WP isa (.block (subCmov (32 * o.val) (32 * a.val) (32 * b.val))) s fun s' =>
+      Keep base s s' ∧ E s'.mem base = opSub o a b (E s.mem base) ∧
+        Outside base (32 * o.val) 32 s.mem s'.mem :=
+  WP.mono (subCmov_ok hs (by omega) (by omega) (by omega) hb2) fun _ ⟨h, e⟩ =>
+    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem⟩
+
+include hf in
+theorem a24EB {s : State} {base : Addr} (hs : Scr s base) (o a : Fin 128) (ho : LSlot o) :
+    WP isa (.block (fld.a24 (32 * o.val) (32 * a.val))) s fun s' =>
+      Keep base s s' ∧ E s'.mem base = opA24 o a (E s.mem base) ∧
+        Outside base (32 * o.val) 32 s.mem s'.mem :=
+  WP.mono (hf.a24 hs (by omega) (by omega)) fun _ ⟨h, e⟩ =>
+    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem⟩
+
+theorem cswapEB {s : State} {base : Addr} (hs : Scr s base) (x y : Fin 128) (hx : LSlot x)
+    (hy : LSlot y) (hxy : x ≠ y) {sw : Bool} (hm : s.gpr .rcx = mask sw) :
+    WP isa (.block (cswap (32 * x.val) (32 * y.val))) s fun s' =>
+      Keep base s s' ∧ s'.gpr .rcx = s.gpr .rcx ∧ E s'.mem base = opSwap x y sw (E s.mem base) ∧
+        (∀ d, d + 32 ≤ 4096 → (d + 32 ≤ 32 * x.val ∨ 32 * x.val + 32 ≤ d) →
+          (d + 32 ≤ 32 * y.val ∨ 32 * y.val + 32 ≤ d) → fe s'.mem base d = fe s.mem base d) ∧
+        fe s'.mem base (32 * x.val) =
+          (if sw then fe s.mem base (32 * y.val) else fe s.mem base (32 * x.val)) ∧
+        fe s'.mem base (32 * y.val) =
+          (if sw then fe s.mem base (32 * x.val) else fe s.mem base (32 * y.val)) := by
+  have hne : x.val ≠ y.val := fun h => hxy (Fin.ext h)
+  refine WP.mono (cswap_ok hs (by omega) (by omega) (by omega) hm)
+    fun s' ⟨g, gc, rd, wr, ⟨m₁, o₁, o₂, f₁⟩, fx, fy⟩ => ?_
+  refine ⟨⟨g, rd, wr, (o₁.mono (by omega) (by omega)).trans (o₂.mono (by omega) (by omega))⟩, gc, ?_,
+    fun d hd h1 h2 => by rw [o₂.fe h2 (by omega), o₁.fe h1 (by omega)], fx, fy⟩
   rw [E_update o₂, E_update o₁]
   simp only [F, f₁, fy]
   cases sw <;> rfl

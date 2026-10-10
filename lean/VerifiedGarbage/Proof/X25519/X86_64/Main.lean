@@ -123,7 +123,7 @@ theorem correct_of [DivstepInv] {lad : Prog isa} (hli : lad.inline = lad)
     ⟨pointR s₀, by rw [hp.rd]; simp, Offset.contains_base _ hd (by omega)⟩
   rw [x25519_eq' hli]
   refine WP.seq (WP.mono (setup_ok hbase hw₀ hn rfl hr)
-    fun s₁ ⟨hs₁, r12₁, g₁, rd₁, wr₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁⟩ => ?_)
+    fun s₁ ⟨hs₁, r12₁, g₁, rd₁, wr₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁, zb2₁, zb3₁⟩ => ?_)
   have hkr : ∀ q < 32, InRegions (s₁.rd ++ s₁.wr) (s₀.gpr .rsi + BitVec.ofNat 64 q) 1 :=
     fun q hq => ⟨scalarR s₀, by rw [rd₁, hp.rd]; simp,
       Offset.contains_base _ (d := q) (n := 1) (k := 32) (by omega) (by omega)⟩
@@ -144,7 +144,9 @@ theorem correct_of [DivstepInv] {lad : Prog isa} (hli : lad.inline = lad)
     ⟨hs₃, fun t ht => by rw [k₃.2.1, b₂ t ht, hkb],
       by rw [e₃ 2 (by decide), x1₁], by rw [e₃ 3 (by decide), x2₁], by rw [e₃ 4 (by decide), z2₁],
       by rw [e₃ 5 (by decide), x3₁], by rw [e₃ 6 (by decide), z3₁],
-      by rw [k₃.2.1, o₂.word (by decide) (by decide), sw₁]⟩) fun s₄ L => ?_)
+      by rw [k₃.2.1, o₂.word (by decide) (by decide), sw₁],
+      by rw [k₃.2.1, o₂.fe (by decide) (by decide)]; exact zb2₁,
+      by rw [k₃.2.1, o₂.fe (by decide) (by decide)]; exact zb3₁⟩) fun s₄ L => ?_)
   refine WP.seq (WP.mono (lastSwap_ok L.scr
     (by have := ladderAfter_swap_le
           (Spec.X25519.decodeScalar25519 (Spec.X25519.bytesAt s₀.mem (s₀.gpr .rsi) 32))

@@ -137,7 +137,8 @@ theorem setup_ok {s : State} {base p : Addr} (hc : s.gpr .rcx = base)
       E s'.mem base 2 = toFe (Spec.X25519.decodeUCoordinate (Spec.X25519.bytesAt s.mem p 32)) ∧
       E s'.mem base 3 = 1 ∧ E s'.mem base 4 = 0 ∧
       E s'.mem base 5 = toFe (Spec.X25519.decodeUCoordinate (Spec.X25519.bytesAt s.mem p 32)) ∧
-      E s'.mem base 6 = 1 ∧ word s'.mem base SWAP = 0 := by
+      E s'.mem base 6 = 1 ∧ word s'.mem base SWAP = 0 ∧
+      fe s'.mem base Z2 ≤ 2 * Spec.X25519.P ∧ fe s'.mem base Z3 ≤ 2 * Spec.X25519.P := by
   rw [setup_eq, WP.block_append_iff]
   refine WP.mono (loadU_ok s hp hr) fun s₁ ⟨u₁, k₁⟩ => ?_
   rw [WP.block_append_iff]
@@ -217,7 +218,13 @@ theorem setup_ok {s : State} {base p : Addr} (hc : s.gpr .rcx = base)
   · rw [e', e₉, e₈, e₇, k₆.2.1, e₅, e₄]
     simp (config := {decide := true}) only [Function.update_apply, ite_true, ite_false]
     rw [hu s₄ (fun r _ => g₄ r), hu s₃ (fun _ _ => rfl), r₈.1, r₈.2, r₇, rdx₆, rax₆, one, zero]
-    refine ⟨rfl, rfl, rfl, rfl, rfl, ?_⟩
-    rw [m', word_writeW_self, g₉, r₈.2]
+    have ow : Outside base SWAP 8 s₉.mem s'.mem := by rw [m']; exact writeW_outside _ _ _ (by decide)
+    refine ⟨rfl, rfl, rfl, rfl, rfl, ?_, ?_, ?_⟩
+    · rw [m', word_writeW_self, g₉, r₈.2]
+    · rw [ow.fe (by decide) (by decide), m₉, (st4_outside _ _ (by decide) _ _ _ _).fe (by decide)
+        (by decide), m₈, fe_st4 _ _ (by decide), r₇]
+      decide
+    · rw [ow.fe (by decide) (by decide), m₉, fe_st4 _ _ (by decide), r₈.1, r₈.2]
+      decide
 
 end VG.Proof.X25519.X86_64
