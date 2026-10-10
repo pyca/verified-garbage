@@ -53,15 +53,15 @@ theorem disj {d k : Nat} (h : d + k ≤ 64 ∨ (96 ≤ d ∧ d + k ≤ 240)) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · rcases h with h | h
-    · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-    · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (C.lay.stk_w' (by omega)).symm
-  · exact (C.buf.w.sub_right (Lay.wSub (by omega))).symm
+    · exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+    · exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+  · exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact (C.lay.stk_w' (by omega_arith)).symm
+  · exact (C.buf.w.sub_right (Lay.wSub (by omega_arith))).symm
 
 theorem slot_kept {m : Mem} (hf : Frame (ctrR W SP D n) s.mem m) {o : Nat} (h₁ : 112 ≤ o) (h₂ : o + 4 ≤ 240) :
     slotv m W o = slotv s.mem W o :=
-  hf.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (C.disj (.inr ⟨by omega, h₂⟩)) (by decide)
+  hf.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (C.disj (.inr ⟨by omega_arith, h₂⟩)) (by decide)
 
 theorem c0_kept {m : Mem} (hf : Frame (ctrR W SP D n) s.mem m) :
     bytesAt m (w64 W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0 := by
@@ -121,7 +121,7 @@ theorem ctrSplit_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K
   have hna : slotv sa.mem W nO = BitVec.ofNat 32 n := by rw [hma]; exact Mem.readW_writeW_self32 _ _ _
   obtain ⟨s₁, run₁, hbx, hdi, hzf, hbp, hsp, hm₁, hrd₁, hwr₁⟩ := split_ok L Ea hda hna hn32
   have cw : ∀ d, 240 ≤ d → d + 4 ≤ 2560 → (wC W).Contains (w64 W + BitVec.ofNat 64 d) 4 := fun d h₁ h₂ =>
-    Offset.contains (w64 W) h₁ (by omega) (by decide)
+    Offset.contains (w64 W) h₁ (by omega_arith) (by decide)
   refine ⟨s₁, runBlock_app_of runa run₁, hbx, hdi, hzf, Ea.keep (by rw [hbp, hbpa]) (by rw [hsp, hspa]) hrd₁ hwr₁,
     ?_, ?_, ?_, by rw [hrd₁, hrda], by rw [hwr₁, hwra]⟩
   · rw [hm₁, hma]
@@ -164,7 +164,7 @@ theorem ctrArgs_ok {K W SP : BitVec 32} {s₁ : State} (L : Lay K W SP) (E₁ : 
   have kb : ∀ o, 112 ≤ o → o + 4 ≤ 240 → slotv sb.mem W o = slotv s₁.mem W o := fun o h₁ h₂ => by
     show sb.mem.readW (w64 W + BitVec.ofNat 64 o) 32 = _
     rw [fb.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega)) (by omega) (by decide))
+      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide))
       (by decide), hma]
   have hKb : slotv sb.mem W ctxO = K := by rw [kb _ (by decide) (by decide)]; exact hK₁
   have hRb' : slotv sb.mem W roundsO = BitVec.ofNat 32 R := by rw [kb _ (by decide) (by decide)]; exact hR₁
@@ -206,7 +206,7 @@ theorem ctrWhole_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {
     exact (C.buf.w.sub_left (Offset.sub_base _ h)).sub_right (Lay.wSub (by decide))
   have hrest₁ : bytesAt s₁.mem (w64 D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) =
       bytesAt s.mem (w64 D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) :=
-    Proof.AesGcm.X86.bytesAt_frame f₁ (dD (by omega)) (by omega)
+    Proof.AesGcm.X86.bytesAt_frame f₁ (dD (by omega_arith)) (by omega_arith)
   refine WP.ite (decide (n / 16 = 0)) (eval_e hzf) (fun ht => ?_) (fun hf => ?_)
   · have h0 : n / 16 = 0 := of_decide_eq_true ht
     refine WP.of_runBlock ⟨s₁, rfl, E₁, hrd₁, hwr₁, fr₁, hd₁, hn₁, ?_, hrest₁⟩
@@ -218,7 +218,7 @@ theorem ctrWhole_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {
         C.h7 C.h13 (C.c0_kept fr₁) (i := 1) (by
           have : 1 ≤ 256 ^ (15 - nonce.length) := Nat.pow_pos (by decide)
           have := C.hn
-          omega) (by decide) hbx hdi
+          omega_arith) (by decide) hbx hdi
     refine WP.seq (WP.of_runBlock ⟨sc, runc, ?_⟩)
     have Ec : Env K W SP sc := E₁.keep (by rw [hbpc, E₁.ebp]) (by rw [hspc, E₁.esp]) hrdc hwrc
     have rdc : sc.rd = s.rd := by rw [hrdc, hrd₁]
@@ -231,7 +231,7 @@ theorem ctrWhole_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {
       rw [wrc]
       intro a k ⟨r, hr, hc⟩
       simp only [List.mem_singleton] at hr; subst hr
-      exact C.dw a k ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
+      exact C.dw a k ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_arith⟩
     refine WP.mono (ctrCall_ok v L Ec C.rounds (c := 64) (by decide) hq hqc hqk hqw hax hcx hdx hbxc hdic)
       fun s₄ ⟨E₄, rd₄, wr₄, _, f₄, o₄⟩ => ?_
     -- What was written.
@@ -250,13 +250,13 @@ theorem ctrWhole_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {
       f₄.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
-        · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
-        · exact ((C.buf.w.sub_left (Region.sub_prefix hb)).sub_right (Lay.wSub (by omega))).symm
-        · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-        · exact (L.stk_w' (by omega)).symm) (by decide)
+        · exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+        · exact ((C.buf.w.sub_left (Region.sub_prefix hb)).sub_right (Lay.wSub (by omega_arith))).symm
+        · exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+        · exact (L.stk_w' (by omega_arith)).symm) (by decide)
     have kc : ∀ o, 240 ≤ o → o + 4 ≤ 384 → slotv sc.mem W o = slotv s₁.mem W o := fun o h₁ h₂ =>
       fc.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega)) (by omega) (by decide))
+        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide))
         (by decide)
     refine ⟨E₄, by rw [rd₄, rdc], by rw [wr₄, wrc], fsc.trans f₄', by rw [k₄ _ (by decide) (by decide),
       kc _ (by decide) (by decide), hd₁], by rw [k₄ _ (by decide) (by decide), kc _ (by decide) (by decide), hn₁],
@@ -265,28 +265,28 @@ theorem ctrWhole_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {
         rw [Proof.AesGcm.X86.bytesAt_frame fc (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
             exact (C.buf.w.sub_left (Region.sub_prefix hb)).sub_right (Lay.wSub (by decide)))
-            (by have := C.hn32; omega),
+            (by have := C.hn32; omega_arith),
           Proof.AesGcm.X86.bytesAt_frame f₁ (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
             exact (C.buf.w.sub_left (Region.sub_prefix hb)).sub_right (Lay.wSub (by decide)))
-            (by have := C.hn32; omega)]
+            (by have := C.hn32; omega_arith)]
       have hc := Proof.AesCcm.ctr32_ccm (m := sc.mem) (m' := s₄.mem) (K := w64 K) (C := w64 W + BitVec.ofNat 64 64)
-        (D := w64 D) (R := R) (nonce := nonce) (by have := C.h13; omega) (j := 1) (k := n / 16)
+        (D := w64 D) (R := R) (nonce := nonce) (by have := C.h13; omega_arith) (j := 1) (k := n / 16)
         (fun i hi => by
           rw [show Spec.Gcm.blockAt sc.mem (w64 W + BitVec.ofNat 64 64) = Spec.Gcm.ofBytes (Spec.Ccm.ctrBlock nonce 1)
             from by show Spec.Gcm.ofBytes _ = _; rw [hcc]]
           exact Proof.AesCcm.repeat_inc32_ctrBlock C.h7 C.h13 (j := 1) (k := n / 16)
-            (by have := C.hn32; omega) (by have := C.hn; omega) i hi) o₄
+            (by have := C.hn32; omega_arith) (by have := C.hn; omega_arith) i hi) o₄
       rw [hc, C.ciph_kept fsc, hDsc]
     · have sR : Region.Sub ⟨w64 D + BitVec.ofNat 64 (16 * (n / 16)), n % 16⟩ ⟨w64 D, n⟩ :=
-        Offset.sub_base (w64 D) (d := 16 * (n / 16)) (n := n % 16) (k := n) (by omega)
-      have hlt : n % 16 ≤ 2 ^ 64 := by omega
+        Offset.sub_base (w64 D) (d := 16 * (n / 16)) (n := n % 16) (k := n) (by omega_arith)
+      have hlt : n % 16 ≤ 2 ^ 64 := by omega_arith
       rw [Proof.AesGcm.X86.bytesAt_frame f₄ (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
         · exact (C.buf.w.sub_left sR).sub_right (Lay.wSub (by decide))
         · simpa using Offset.disjoint (w64 D) (d := 16 * (n / 16)) (n := n % 16) (e := 0) (k := 16 * (n / 16))
-            (.inr (by omega)) (by have := C.hn32; omega) (by have := C.hn32; omega)
+            (.inr (by omega_arith)) (by have := C.hn32; omega_arith) (by have := C.hn32; omega_arith)
         · exact (C.buf.w.sub_left sR).sub_right (Lay.wSub (by decide))
         · exact (C.buf.stk.sub_right sR).symm) hlt,
         Proof.AesGcm.X86.bytesAt_frame fc (fun r hr => by
@@ -324,14 +324,14 @@ theorem ctrTailArgs_ok {K W SP : BitVec 32} {t₀ : State} (L : Lay K W SP) (E�
     · cregs [hsp₀]
     all_goals cmems []
   have Ea : Env K W SP ta := E₀.keep (by rw [hbpa, hbp₀]) (by rw [hspa, hsp₀]) hrda hwra
-  obtain ⟨tb, runb, fb, hcb, hgb, hrdb, hwrb⟩ := ctrAt_ok L Ea h7 h13 (by rw [hma]; exact hc0) hj (by omega) haxa
+  obtain ⟨tb, runb, fb, hcb, hgb, hrdb, hwrb⟩ := ctrAt_ok L Ea h7 h13 (by rw [hma]; exact hc0) hj (by omega_arith) haxa
   have hbpb : tb.gpr .ebp = W := by rw [hgb .ebp (by decide) (by decide), hbpa]
   have hspb : tb.gpr .esp = SP := by rw [hgb .esp (by decide) (by decide), hspa]
   have Eb : Env K W SP tb := Ea.keep (by rw [hbpb, hbpa]) (by rw [hspb, hspa]) hrdb hwrb
   have kb : ∀ o, 112 ≤ o → o + 4 ≤ 240 → slotv tb.mem W o = slotv t₀.mem W o := fun o h₁ h₂ => by
     show tb.mem.readW (w64 W + BitVec.ofNat 64 o) 32 = _
     rw [fb.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega)) (by omega) (by decide))
+      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide))
       (by decide), hma]
   have hKb : slotv tb.mem W ctxO = K := by rw [kb _ (by decide) (by decide)]; exact hK₀
   have hRb' : slotv tb.mem W roundsO = BitVec.ofNat 32 R := by rw [kb _ (by decide) (by decide)]; exact hR₀
@@ -407,17 +407,17 @@ theorem ctrTail_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {n
   have hb : 16 * (n / 16) ≤ n := Nat.mul_div_le n 16
   have k₀ : ∀ o, 112 ≤ o → o + 4 ≤ 240 → slotv t.mem W o = slotv s.mem W o := fun o h₁ h₂ =>
     C.slot_kept I.frame h₁ h₂
-  obtain ⟨t₀, run₀, hm₀, hzf, hbp₀, hsp₀, hrd₀, hwr₀⟩ := testN_ok L E (r := n % 16) (by omega) I.nO
+  obtain ⟨t₀, run₀, hm₀, hzf, hbp₀, hsp₀, hrd₀, hwr₀⟩ := testN_ok L E (r := n % 16) (by omega_arith) I.nO
   refine WP.seq (WP.of_runBlock ⟨t₀, run₀, ?_⟩)
   have E₀ : Env K W SP t₀ := E.keep (by rw [hbp₀, E.ebp]) (by rw [hsp₀, E.esp]) hrd₀ hwr₀
   refine WP.ite (decide (n % 16 = 0)) (eval_e hzf) (fun ht => ?_) (fun hf => ?_)
   · have h0 : n % 16 = 0 := of_decide_eq_true ht
     refine WP.of_runBlock ⟨t₀, rfl, E₀, by rw [hrd₀, I.rd], by rw [hwr₀, I.wr], by rw [hm₀]; exact I.frame, ?_⟩
     have hd := I.done
-    rw [show 16 * (n / 16) = n by omega] at hd
+    rw [show 16 * (n / 16) = n by omega_arith] at hd
     rw [hm₀, hd]
   · have h0 : n % 16 ≠ 0 := of_decide_eq_false hf
-    have hj : n / 16 + 1 < 256 ^ (15 - nonce.length) := by have := C.hn; omega
+    have hj : n / 16 + 1 < 256 ^ (15 - nonce.length) := by have := C.hn; omega_arith
     obtain ⟨tc, runc, ft, hcc, hz80, hax, hcx, hdx, hbx, hdi, hbpc, hspc, hrdc, hwrc⟩ :=
       ctrTailArgs_ok L E₀ (by rw [hm₀, k₀ _ (by decide) (by decide)]; exact hK)
         (by rw [hm₀, k₀ _ (by decide) (by decide)]; exact hRo) (by rw [hm₀, k₀ _ (by decide) (by decide)]; exact hlen)
@@ -458,9 +458,9 @@ theorem ctrTail_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {n
       fbd.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
-        · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
-        · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-        · exact (L.stk_w' (by omega)).symm) (by decide)
+        · exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+        · exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+        · exact (L.stk_w' (by omega_arith)).symm) (by decide)
     have hbpd : td.gpr .ebp = W := Ed.ebp
     -- The XOR.
     obtain ⟨te, rune, hme, hdie, hdxe, hcxe, hbpe, hspe, hrde, hwre⟩ :=
@@ -469,16 +469,16 @@ theorem ctrTail_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {n
     refine WP.seq (WP.of_runBlock ⟨te, rune, ?_⟩)
     have rde : te.rd = s.rd := by rw [hrde, rdd, hrdc, hrd₀, I.rd]
     have wre : te.wr = s.wr := by rw [hwre, wrd, hwrc, hwr₀, I.wr]
-    have hw : D.toNat + 16 * (n / 16) < 2 ^ 32 := by have := C.buf.wrap; omega
+    have hw : D.toNat + 16 * (n / 16) < 2 ^ 32 := by have := C.buf.wrap; omega_arith
     have pT : w64 (D + BitVec.ofNat 32 (16 * (n / 16))) = w64 D + BitVec.ofNat 64 (16 * (n / 16)) := Buf.ptr hw
     have sR : Region.Sub ⟨w64 D + BitVec.ofNat 64 (16 * (n / 16)), n % 16⟩ ⟨w64 D, n⟩ :=
-      Offset.sub_base (w64 D) (d := 16 * (n / 16)) (n := n % 16) (k := n) (by omega)
+      Offset.sub_base (w64 D) (d := 16 * (n / 16)) (n := n % 16) (k := n) (by omega_arith)
     have xp : XorPre te (W + BitVec.ofNat 32 80) (D + BitVec.ofNat 32 (16 * (n / 16))) (n % 16) := by
-      refine ⟨hdxe, hdie, hcxe, by omega, by omega, by rw [L.nW (by decide)]; have := L.fw; omega,
-        by rw [toNat_add32 hw]; have := C.buf.wrap; omega, ?_, ?_, ?_⟩
-      · rw [a80]; exact covers_left (Perm.wC (Ed.perm.of_eq hrde hwre) (d := 80) (n := n % 16) (by omega))
-      · rw [pT, wre]; exact covers_off C.dw (by omega) (by have := C.buf.lt; omega)
-      · rw [a80, pT]; exact ((C.buf.w.sub_left sR).sub_right (Lay.wSub (d := 80) (n := n % 16) (by omega))).symm
+      refine ⟨hdxe, hdie, hcxe, by omega_arith, by omega_arith, by rw [L.nW (by decide)]; have := L.fw; omega_arith,
+        by rw [toNat_add32 hw]; have := C.buf.wrap; omega_arith, ?_, ?_, ?_⟩
+      · rw [a80]; exact covers_left (Perm.wC (Ed.perm.of_eq hrde hwre) (d := 80) (n := n % 16) (by omega_arith))
+      · rw [pT, wre]; exact covers_off C.dw (by omega_arith) (by have := C.buf.lt; omega_arith)
+      · rw [a80, pT]; exact ((C.buf.w.sub_left sR).sub_right (Lay.wSub (d := 80) (n := n % 16) (by omega_arith))).symm
     refine WP.mono (xorLoop_ok te xp) fun tf P => ?_
     obtain ⟨xs, hxs⟩ : ∃ xs, xs = xorBytes te.mem (w64 (D + BitVec.ofNat 32 (16 * (n / 16))))
         (w64 (W + BitVec.ofNat 32 80)) (n % 16) := ⟨_, rfl⟩
@@ -488,8 +488,8 @@ theorem ctrTail_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {n
     have fw : Frame [⟨w64 D, n⟩] te.mem tf.mem := by
       rw [hm₄, pT]
       exact writeBytes_frame _ _ _ (by
-        rw [hxl]; exact Offset.contains_base (w64 D) (show 16 * (n / 16) + n % 16 ≤ n by omega)
-          (by have := C.buf.lt; omega))
+        rw [hxl]; exact Offset.contains_base (w64 D) (show 16 * (n / 16) + n % 16 ≤ n by omega_arith)
+          (by have := C.buf.lt; omega_arith))
     refine ⟨E.keep (by rw [P.other _ (by decide) (by decide) (by decide) (by decide) (by decide), hbpe, E.ebp])
         (by rw [P.other _ (by decide) (by decide) (by decide) (by decide) (by decide), hspe, E.esp])
         (by rw [P.rd, rde, I.rd]) (by rw [P.wr, wre, I.wr]), by rw [P.rd, rde], by rw [P.wr, wre], ?_, ?_⟩
@@ -508,11 +508,11 @@ theorem ctrTail_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {n
         · exact (C.buf.stk.sub_right sA).symm
       have h₁ : bytesAt te.mem (w64 D) (16 * (n / 16)) = bytesAt t.mem (w64 D) (16 * (n / 16)) := by
         rw [hme]
-        have := Proof.AesGcm.X86.bytesAt_frame fbd (dD (a := 0) (l := 16 * (n / 16)) (by omega)) (by omega)
+        have := Proof.AesGcm.X86.bytesAt_frame fbd (dD (a := 0) (l := 16 * (n / 16)) (by omega_arith)) (by omega_arith)
         rwa [BitVec.add_zero] at this
       have h₂ : bytesAt te.mem (w64 D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) =
           bytesAt s.mem (w64 D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) := by
-        rw [hme, Proof.AesGcm.X86.bytesAt_frame fbd (dD (by omega)) (by omega), I.rest]
+        rw [hme, Proof.AesGcm.X86.bytesAt_frame fbd (dD (by omega_arith)) (by omega_arith), I.rest]
       have hBC : BlockCipher (Spec.Ccm.ctxCiph s.mem (w64 K) R) := fun x => Proof.Cmac.aesWith_length _ _ x
       have fRc : Frame (ctrR W SP D n) s.mem tc.mem := I.frame.trans (by
         rw [← hm₀]
@@ -521,22 +521,22 @@ theorem ctrTail_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {n
       have hks : bytesAt te.mem (w64 W + BitVec.ofNat 64 80) 16 =
           Spec.Ccm.ctxCiph s.mem (w64 K) R (Spec.Ccm.ctrBlock nonce (n / 16 + 1)) := by
         have hx := Proof.AesCcm.ctr32_ccm (m := tc.mem) (m' := td.mem) (K := w64 K) (C := w64 W + BitVec.ofNat 64 64)
-          (D := w64 (W + BitVec.ofNat 32 80)) (R := R) (nonce := nonce) (by have := C.h13; omega) (k := 1)
+          (D := w64 (W + BitVec.ofNat 32 80)) (R := R) (nonce := nonce) (by have := C.h13; omega_arith) (k := 1)
           (j := n / 16 + 1) (fun i hi => by
-            rw [show i = 0 by omega, Nat.add_zero]
+            rw [show i = 0 by omega_arith, Nat.add_zero]
             show Spec.Gcm.ofBytes _ = _
             rw [hcc]) od
         rw [Nat.mul_one, a80] at hx
         rw [hme, hx, hz80, C.ciph_kept fRc]
         exact Proof.AesCcm.xorFrom_zeros hBC _ _
       have ht := Proof.AesCcm.xorFrom_tail (ciph := Spec.Ccm.ctxCiph s.mem (w64 K) R) nonce (n / 16 + 1)
-        (d := bytesAt s.mem (w64 D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16)) (by rw [length_bytesAt]; omega)
+        (d := bytesAt s.mem (w64 D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16)) (by rw [length_bytesAt]; omega_arith)
       rw [length_bytesAt, hBC] at ht
-      have ht' := ht.resolve_right (by omega)
-      rw [hm₄, pT, bytesAt_writeBytes_at te.mem (w64 D) xs (by rw [hxl]; omega) (by have := C.buf.lt; omega),
-        List.drop_eq_nil_of_le (by rw [length_bytesAt, hxl]; omega), List.append_nil,
+      have ht' := ht.resolve_right (by omega_arith)
+      rw [hm₄, pT, bytesAt_writeBytes_at te.mem (w64 D) xs (by rw [hxl]; omega_arith) (by have := C.buf.lt; omega_arith),
+        List.drop_eq_nil_of_le (by rw [length_bytesAt, hxl]; omega_arith), List.append_nil,
         ← Proof.AesCcm.bytesAt_prefix te.mem (w64 D) hb, h₁, I.done, hxs, xorBytes, pT, a80, h₂,
-        Proof.AesCcm.bytesAt_prefix te.mem (w64 W + BitVec.ofNat 64 80) (show n % 16 ≤ 16 by omega), hks, ht']
+        Proof.AesCcm.bytesAt_prefix te.mem (w64 W + BitVec.ofNat 64 80) (show n % 16 ≤ 16 by omega_arith), hks, ht']
       conv => rhs; rw [show n = 16 * (n / 16) + n % 16 from (Nat.div_add_mod n 16).symm]
       rw [Proof.Cmac.Stream.bytesAt_append, Proof.AesCcm.xorFrom_append _ _ _ (length_bytesAt _ _ _),
         Nat.add_comm 1 (n / 16)]

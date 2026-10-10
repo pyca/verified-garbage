@@ -67,9 +67,9 @@ theorem loadH_ok {s : State} (hax : (s.gpr .rax).toNat < 4) : WP isa (.block loa
   have m := (s.gpr .r11).isLt
   have e4 : ((s.gpr .r11).toNat / 2 ^ 40 ||| (s.gpr .rax).toNat * 2 ^ 24 % 2 ^ 64) =
       (s.gpr .r11).toNat / 2 ^ 40 + 2 ^ 24 * (s.gpr .rax).toNat := by
-    rw [show (s.gpr .rax).toNat * 2 ^ 24 % 2 ^ 64 = 2 ^ 24 * (s.gpr .rax).toNat by omega, Nat.or_comm,
-      ← Nat.two_pow_add_eq_or_of_lt (by omega)]
-    omega
+    rw [show (s.gpr .rax).toNat * 2 ^ 24 % 2 ^ 64 = 2 ^ 24 * (s.gpr .rax).toNat by omega_arith, Nat.or_comm,
+      ← Nat.two_pow_add_eq_or_of_lt (by omega_arith)]
+    omega_arith
   refine ⟨h.eq, fun i hi k hk => ?_, fun k hk => ?_, fun k hk i hi => ?_⟩
   · rw [h.reg _ k hk, ldS_y i hi]; simp only [Q.eval, xr_xi]
   · obtain ⟨a0, a1, a2, a3, a4⟩ := e k hk
@@ -79,7 +79,7 @@ theorem loadH_ok {s : State} (hax : (s.gpr .rax).toNat < 4) : WP isa (.block loa
       rw [e4] at a4
       have := Limbs26.split_val l (s.gpr .r11).toNat
       rw [Limbs26.val, a0, a1, a2, a3, a4, hN]
-      omega
+      omega_arith
     · simp only [hk0, ite_false, Nat.zero_mul, Nat.zero_mod, Nat.zero_div, Nat.or_self] at a0 a1 a2 a3 a4 ⊢
       rw [Limbs26.val, a0, a1, a2, a3, a4]
   · obtain ⟨a0, a1, a2, a3, a4⟩ := e k hk
@@ -88,14 +88,14 @@ theorem loadH_ok {s : State} (hax : (s.gpr .rax).toNat < 4) : WP isa (.block loa
       simp only [ite_true] at a0 a1 a2 a3 a4
       rw [e4] at a4
       rw [Limbs26.split_or l] at a2
-      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
-      · rw [a0]; omega
-      · rw [a1]; omega
-      · rw [a2]; omega
-      · rw [a3]; omega
-      · rw [a4]; omega
+      rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+      · rw [a0]; omega_arith
+      · rw [a1]; omega_arith
+      · rw [a2]; omega_arith
+      · rw [a3]; omega_arith
+      · rw [a4]; omega_arith
     · simp only [hk0, ite_false, Nat.zero_mul, Nat.zero_mod, Nat.zero_div, Nat.or_self] at a0 a1 a2 a3 a4
-      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+      rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
       · rw [a0]; decide
       · rw [a1]; decide
       · rw [a2]; decide
@@ -134,23 +134,23 @@ theorem sumB_env {s : State} (hr8 : s.gpr .r8 = 0x3ffffff) (hb : ∀ k < 4, ∀ 
   refine ⟨fun r k hk => ?_, fun r k hk => ?_, fun g => ?_⟩
   · have := BitVec.isLt (qw s r k)
     cases r <;> simp only [sumB] <;> first
-      | omega
+      | omega_arith
       | exact Nat.le_sub_one_of_lt (hb k hk 0 (by decide))
       | exact Nat.le_sub_one_of_lt (hb k hk 1 (by decide))
       | exact Nat.le_sub_one_of_lt (hb k hk 2 (by decide))
       | exact Nat.le_sub_one_of_lt (hb k hk 3 (by decide))
       | exact Nat.le_sub_one_of_lt (hb k hk 4 (by decide))
   · have := Nat.mod_lt (qw s r k).toNat (show 2 ^ 32 > 0 by decide)
-    simp only [sumB]; omega
+    simp only [sumB]; omega_arith
   · have := BitVec.isLt (s.gpr g)
     simp only [sumB]
     split
     · subst g; rw [hr8]; decide
-    · omega
+    · omega_arith
 
 theorem lsum_val (h : Nat → Nat → Nat) :
     Limbs26.val (lsum h) = Limbs26.val (h 0) + Limbs26.val (h 1) + Limbs26.val (h 2) + Limbs26.val (h 3) := by
-  simp only [Limbs26.val, lsum]; omega
+  simp only [Limbs26.val, lsum]; omega_arith
 
 /-- What `sumLanes` leaves in lane 0 of `H`: the sum of the lanes, carried. -/
 structure SumPost (s s' : State) : Prop where
@@ -179,7 +179,7 @@ theorem sumLanes_ok {s : State} (hr8 : s.gpr .r8 = 0x3ffffff) (hb : ∀ k < 4, �
   · obtain ⟨-, b⟩ := h.nat hE hk (smS_ok i hi k hk).1
     have := (smS_ok i hi k hk).2
     simp only [hv]
-    split at this <;> omega
+    split at this <;> omega_arith
 
 /-! ## `fullCarry` and `reduce` -/
 
@@ -213,16 +213,16 @@ theorem finB_env {s : State} (hr8 : s.gpr .r8 = 0x3ffffff) (hax : s.gpr .rax = 5
   refine ⟨fun r k hk => ?_, fun r k hk => ?_, fun g => ?_⟩
   · have := BitVec.isLt (qw s r k)
     cases r <;> simp only [finB] <;> first
-      | omega
+      | omega_arith
       | exact Nat.le_sub_one_of_lt (hb k hk 0 (by decide))
       | exact Nat.le_sub_one_of_lt (hb k hk 1 (by decide))
       | exact Nat.le_sub_one_of_lt (hb k hk 2 (by decide))
       | exact Nat.le_sub_one_of_lt (hb k hk 3 (by decide))
       | exact Nat.le_sub_one_of_lt (hb k hk 4 (by decide))
   · have := Nat.mod_lt (qw s r k).toNat (show 2 ^ 32 > 0 by decide)
-    simp only [finB]; omega
+    simp only [finB]; omega_arith
   · have := BitVec.isLt (s.gpr g)
-    cases g <;> simp only [finB] <;> first | omega | (rw [hr8]; decide) | (rw [hax]; decide) |
+    cases g <;> simp only [finB] <;> first | omega_arith | (rw [hr8]; decide) | (rw [hax]; decide) |
       (rw [hr10]; decide)
 
 /-- What `fullCarry` and `reduce` leave in lane 0 of `H`: `h mod p`. -/
