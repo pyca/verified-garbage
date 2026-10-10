@@ -132,6 +132,51 @@ below) had larger gaps there: RSA private-key operations, Ed25519 signing
 and short ChaCha20-Poly1305 messages. Those have since been worked on, but
 this CPU can't measure them.
 
+## Cascade Lake class, emulated (7c42c0e1)
+
+The same machine and commit with both libraries restricted to a Cascade Lake
+class's features: AVX-512F/BW/VL, AVX2, BMI1/2, ADX, AES-NI, PCLMULQDQ and
+SSSE3, but no AVX512-IFMA, VAES, VPCLMULQDQ or SHA-NI (`VG_CPU_FEATURES` and
+`OPENSSL_ia32cap`, as `bench/run.sh` describes). Masking features does not
+reproduce that core's microarchitecture, only the code paths each library
+takes on it.
+
+| rustls-bench | client, full | server, full | client, mutual | server, mutual | resumed (TLS 1.3) | resumed (TLS 1.2) |
+|---|---:|---:|---:|---:|---:|---:|
+| ECDSA P-256 | 1.16–1.23 | 0.93–1.15 | 1.11–1.33 | 1.06–1.33 | 1.06–1.19 | 1.02–1.44 |
+| ECDSA P-384 (TLS 1.2 only) | 1.16 | 1.23 | 1.26 | 1.26 | | 0.97–1.58 |
+| RSA-2048 | 1.02–1.04 | 0.91–0.93 | 0.93–0.95 | 0.94 | 1.05–1.22 | 0.99–1.53 |
+| Ed25519 | 1.05–1.11 | 0.95–1.08 | 1.06–1.08 | 1.05–1.06 | 1.00–1.17 | 1.07–1.47 |
+
+| Bulk, send / receive | 16 KiB records | 10000-byte records |
+|---|---:|---:|
+| TLS 1.3 AES-128/256-GCM | 0.89–0.95 / 1.01–1.05 | 0.82–0.83 / 1.00–1.01 |
+| TLS 1.3 ChaCha20-Poly1305 | 1.16 / 1.23 | 1.12 / 1.17 |
+| TLS 1.2 AES-128/256-GCM | 0.88–0.94 / 0.99–1.05 | 0.84–0.86 / 1.03–1.06 |
+| TLS 1.2 ChaCha20-Poly1305 | 1.23 / 1.23–1.24 | 1.14 / 1.18–1.20 |
+
+The gaps on this class, by speed relative to aws-lc-rs:
+
+1. **AES-GCM sealing, 256 bytes to 1 KiB and TLS-shaped lengths: 0.71–0.93.**
+   In place, 384 B is 0.71–0.74 and 768 B 0.75; out of place (payload plus
+   type byte), 256+1 to 1088+1 B is 0.72–0.93, and 4096+1 B 0.85 for
+   AES-256. Records seal at 0.89–0.90 (1 KiB and 16 KiB), so bulk sending is
+   0.82–0.95, while opening is 1.12–1.25. This is the AES-NI + AVX backend,
+   which has no out-of-place interleaved loop.
+2. **RSA private-key operations: 0.89–0.92** (PSS signing at 2048, 3072
+   and 4096 bits), hence RSA server handshakes at 0.91–0.95.
+3. **The SHA-256 transcript hash without SHA-NI: 0.86**, HKDF-SHA256 0.95–0.99.
+   SHA-384 is 1.05–1.16.
+4. **X25519 Diffie-Hellman: 0.94–0.95**, and the X25519MLKEM768 server's
+   exchange 0.92. X25519 key generation is 1.11–1.14 and Ed25519 signing 1.21.
+5. **ChaCha20-Poly1305 at 512 and 768 bytes: 0.86–0.88**, and opening a 1 KiB
+   record 0.91 (the AVX-512 backend, as on the full CPU).
+
+Faster than aws-lc-rs on this class: every ECDSA operation (1.09–2.12),
+Ed25519 (1.21 / 1.28), P-384 key exchange, key loading (1.9–5.1),
+ChaCha20-Poly1305 records (1.22–1.27 at 16 KiB), AES-GCM opening and
+tickets.
+
 ## Changes since the first run
 
 Speed relative to aws-lc-rs, by the verified-garbage commit each run measured.
