@@ -33,27 +33,16 @@ theorem front_ct : ∃ h, ((taintS [Impl.X448.AArch64.Base.combSym]).check
     (Taint.ofRegs [.x0, .x1, .x2, .x3]) wfront h).map
     ((taintS [Impl.X448.AArch64.Base.combSym]).le (Taint.ofRegs [.x3])) = some true := by
   apply exists_map_le_of_eraseT
-  simp only [Code.eraseT, wfront, bitsAt, vdecodeA, decode, root, ops_eraseT, sqn_eraseT, List.map_append,
-    eqSlots_eraseT]
+  simp only [Code.eraseT, wfront, bitsAt, vdecodeA, decode, Point56.powCall, fnCall, Point56.powFn, asFn, root,
+    ops_eraseT, sqn_eraseT, List.map_append, eqSlots_eraseT]
   refine ⟨?h, ?g⟩
   case g => taint_decide
-
-open VG.Impl.X448.AArch64 (slot) in
-/-- The body of the table's loop, erased, in pieces. -/
-def tabPieces : List (List Instr) :=
-  (Impl.X448.AArch64.Base.addOps (slot 0) (slot 1) (slot 2) (slot 3) (slot 4) (slot 5)).map opErased ++
-    [(tabStore ++ ([.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 16] : List Instr)).map Instr.eraseT]
 
 theorem table_ct : ∃ h, ((taintS [Impl.X448.AArch64.Base.combSym]).check (Taint.ofRegs [.x3]) table h).map
     ((taintS [Impl.X448.AArch64.Base.combSym]).le (Taint.ofRegs [.x3])) = some true := by
   apply exists_map_le_of_eraseT
-  refine Split.exists_map_le (c' := ?c') ?s ⟨?h, ?g⟩
-  case s =>
-    have e : tabBody.map Instr.eraseT = tabPieces.flatten := by
-      simp only [tabBody, tabPieces, List.map_append, codeOf_eraseT, List.flatten_append, List.flatten_cons,
-        List.flatten_nil, List.append_nil, List.append_assoc]
-    simp only [Code.eraseT, table, e]
-    exact .seq (.refl _) (.loop _ (.pieces _))
+  simp only [Code.eraseT, table, tabBody, Point56.addCall, fnCall, Point56.addFn, asFn, ops_eraseT]
+  refine ⟨?h, ?g⟩
   case g => taint_decide
 
 theorem sBase_ct : ∃ h, ((taintS [Impl.X448.AArch64.Base.combSym]).check (Taint.ofRegs [.x3]) sBase h).map

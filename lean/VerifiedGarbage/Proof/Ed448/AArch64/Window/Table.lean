@@ -3,14 +3,15 @@ import VerifiedGarbage.Proof.Ed448.AArch64.Window.Select
 import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 
 /-!
 # Ed448 verification on AArch64: the table of `[n](-A)`
 
 Untrusted: everything here is checked by Lean. The table's 16 entries are
-`tabPts P` for the point `P` (`-A`) in slots 3–5: the neutral point, `P`, and
-each later entry the one before plus `P`, by `addOps` (`tabPts`, with the
-specification's `addPt`). `TInv` holds after each entry is stored
+`tabPts P` for the point `P` (`-A`) in slots 6–8: the neutral point, `P`, and
+each later entry the one before (in slots 3–5) plus `P`, by a call of
+`vg_ed448_r56_point_add` (`tabPts`, with the specification's `addPt`). `TInv` holds after each entry is stored
 (`tabBody_ok`), and after the loop for all 16 (`tabLoop_ok`).
 -/
 
@@ -62,15 +63,16 @@ theorem FV_entry (m m' : Mem) (base : Addr) {e c o : Nat} (ho : o = TAB + 192 * 
   congr 2
   omega
 
-/-- After `tabStore` from slots 0–2 of `s`, entry `e` is their point, with their bounds. -/
+/-- After `tabStore` from slots 3–5 of `s`, entry `e` is their point, with their bounds. -/
 theorem tabStore_pt {s t : State} {base : Addr} {e : Nat}
     (h : ∀ w < 24, word t.mem base (TAB + 192 * e + 8 * w) = word s.mem base (src w)) :
-    TPt t.mem base e = pt (EV s.mem base) 0 1 2 := by
-  have hs : ∀ c < 3, ∀ i < 8, tw t.mem base e (8 * c + i) = word s.mem base (slot c + 8 * i) := fun c hc i hi => by
-    rw [tw, h _ (by omega), src]
-    congr 2
-    all_goals (try simp only [slot])
-    all_goals omega
+    TPt t.mem base e = pt (EV s.mem base) 3 4 5 := by
+  have hs : ∀ c < 3, ∀ i < 8, tw t.mem base e (8 * c + i) = word s.mem base (slot (3 + c) + 8 * i) :=
+    fun c hc i hi => by
+      rw [tw, h _ (by omega), src]
+      congr 2
+      all_goals (try simp only [slot])
+      all_goals omega
   simp only [TPt, pt]
   refine Point.mk.injEq _ _ _ _ _ _ |>.mpr ⟨?_, ?_, ?_⟩
   · exact FV_entry _ _ _ (e := e) (c := 0) (o := TAB + 192 * e) (by omega) (hs 0 (by decide))
@@ -80,9 +82,9 @@ theorem tabStore_pt {s t : State} {base : Addr} {e : Nat}
 theorem tabStore_bnd {s t : State} {base : Addr} {e : Nat} (hb : BEnv s.mem base)
     (h : ∀ w < 24, word t.mem base (TAB + 192 * e + 8 * w) = word s.mem base (src w)) : TBnd t.mem base e := by
   intro w hw
-  rw [tw, h w hw, src]
-  have := hb ⟨w / 8, by omega⟩ (w % 8) (Nat.mod_lt _ (by decide))
-  simpa only [limbs] using this
+  rw [tw, h w hw]
+  have := hb ⟨3 + w / 8, by omega⟩ (w % 8) (Nat.mod_lt _ (by decide))
+  exact this
 
 /-- Entries other than `e` are kept by a store to entry `e`. -/
 theorem tw_outside {m m' : Mem} {base : Addr} {e : Nat} (h : Outside base (TAB + 192 * e) 192 m m')
@@ -135,23 +137,20 @@ structure TInv (s₀ : State) (base : Addr) (P : Point) (k : Nat) (s : State) : 
   env : BEnv s.mem base
   zero : ∀ w < 8, limbs s.mem base (slot (19 : Index).val) w = 0
   counter : s.gpr .x19 = BitVec.ofNat 64 k
-  acc : pt (EV s.mem base) 0 1 2 = tabPts P (k - 1)
-  pnt : pt (EV s.mem base) 3 4 5 = P
+  acc : pt (EV s.mem base) 3 4 5 = tabPts P (k - 1)
+  pnt : pt (EV s.mem base) 6 7 8 = P
   one : EV s.mem base 20 = EV s₀.mem base 20
   tab : TabOk s.mem base P k
-  lr : s.gpr .x30 = s₀.gpr .x30
   chk : s.gpr .x20 = s₀.gpr .x20
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   mem : TFrame base s₀.mem s.mem
 
 theorem tabBody_ok {s₀ s : State} {base : Addr} {P : Point} {k : Nat} (h : TInv s₀ base P k s) (hk : k < 16) :
-    WP isa (.block tabBody) s fun t => (t.gpr .x9 != 0) = decide (k + 1 ≠ 16) ∧ TInv s₀ base P (k + 1) t := by
-  obtain ⟨hb2, hs, hb, hz, hc, hacc, hpnt, hone, htab, hlr, hchk, hrd, hwr, hmem⟩ := h
-  rw [tabBody, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (block_codeOf (addOps_ok 0 1 2 3 4 5 (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) hs hb (zero_env hz).2))
-    fun t1 ⟨k1, b1, s1, m0, m1, m2, e1⟩ => ?_
+    WP isa tabBody s fun t => (t.gpr .x9 != 0) = decide (k + 1 ≠ 16) ∧ TInv s₀ base P (k + 1) t := by
+  obtain ⟨hb2, hs, hb, hz, hc, hacc, hpnt, hone, htab, hchk, hrd, hwr, hmem⟩ := h
+  rw [tabBody, WP.seq_iff]
+  refine WP.mono (Point56.addCall_ok hs hb (zero_env hz).2) fun t1 ⟨k1, b1, s1, _, _, _, e1, _⟩ => ?_
   have hs1 := k1.scr hs
   have hc1 : t1.gpr .x19 = BitVec.ofNat 64 k := by rw [k1.regs.1 _ (by decide)]; exact hc
   rw [WP.block_append_iff]
@@ -162,25 +161,20 @@ theorem tabBody_ok {s₀ s : State} {base : Addr} {P : Point} {k : Nat} (h : TIn
   -- The slots after the addition, and the entries after the store.
   have z1 : ∀ w < 8, limbs t1.mem base (slot (19 : Index).val) w = 0 := fun w hw => by
     rw [s1 19 (by decide) w hw]; exact hz w hw
-  have sl : ∀ i : Index, 20 ≤ i.val → ∀ w < 16, limbs t3.mem base (slot i.val) w = limbs t1.mem base (slot i.val) w :=
-    fun i hi w hw => by
-      have := i.isLt
-      rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega)) (by simp only [slot]; omega) hw]
   have e3 : ∀ i : Index, EV t3.mem base i = EV t1.mem base i := fun i => by
     have := i.isLt
     simp only [VG.Proof.X448.AArch64.Weak.E, VG.Proof.X448.AArch64.Weak.F]
     refine congrArg _ (VG.Proof.X448.Wide.valN_congr fun w hw => ?_)
     rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega)) (by simp only [slot]; omega) (by omega)]
-  have hacc1 : pt (EV t1.mem base) 0 1 2 = tabPts P k := by
-    rw [e1, VG.Proof.X448.AArch64.Base.genEnv_add, (zero_env hz).1, VG.Proof.X448.AArch64.Base.genPt_eq, hacc,
-      hpnt]
+  have hacc1 : pt (EV t1.mem base) 3 4 5 = tabPts P k := by
+    rw [e1, Point56.genEnv_pt, (zero_env hz).1, VG.Proof.X448.AArch64.Base.genPt_eq, hacc, hpnt]
     obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega⟩
     rw [show j + 2 - 1 = j + 1 by omega, tabPts_succ]
-  have hpnt1 : pt (EV t1.mem base) 3 4 5 = P := by
+  have hpnt1 : pt (EV t1.mem base) 6 7 8 = P := by
     rw [← hpnt]; simp only [pt]
-    rw [Same.env s1 (i := 3) (by decide), Same.env s1 (i := 4) (by decide), Same.env s1 (i := 5) (by decide)]
+    rw [Same.env s1 (i := 6) (by decide), Same.env s1 (i := 7) (by decide), Same.env s1 (i := 8) (by decide)]
   refine ⟨⟨by omega, by omega⟩, hs2.of_keeps k3 (by decide), ?_, fun w hw => ?_, c3, ?_, ?_, ?_, fun e he => ?_,
-    ?_, ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_⟩
   · intro i w hw
     have := i.isLt
     show limbs t3.mem base (slot i.val) w < Ib
@@ -188,8 +182,8 @@ theorem tabBody_ok {s₀ s : State} {base : Addr} {P : Point} {k : Nat} (h : TIn
     exact b1 i w hw
   · rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega)) (by simp only [slot]; omega) (by omega)]
     exact z1 w hw
-  · simp only [pt]; rw [e3 0, e3 1, e3 2, Nat.add_sub_cancel]; exact hacc1
-  · simp only [pt]; rw [e3 3, e3 4, e3 5]; exact hpnt1
+  · simp only [pt]; rw [e3 3, e3 4, e3 5, Nat.add_sub_cancel]; exact hacc1
+  · simp only [pt]; rw [e3 6, e3 7, e3 8]; exact hpnt1
   · rw [e3 20, ← hone]; exact Same.env s1 (i := 20) (by decide)
   · rw [m3]
     by_cases hek : e = k
@@ -203,7 +197,6 @@ theorem tabBody_ok {s₀ s : State} {base : Addr} {P : Point} {k : Nat} (h : TIn
       refine ⟨?_, fun w hw => ?_⟩
       · rw [TPt_outside o2 hek (by omega), TPt_of_tw hmem1, te]
       · rw [tw_outside o2 hek (by omega) hw, hmem1 w hw]; exact tb w hw
-  · rw [k3.1 _ (by decide), k2.1 _ (by decide), k1.regs.1 _ (by decide)]; exact hlr
   · rw [k3.1 _ (by decide), k2.1 _ (by decide), k1.regs.1 _ (by decide)]; exact hchk
   · rw [k3.2.1, k2.2.1, k1.regs.2.1]; exact hrd
   · rw [k3.2.2, k2.2.2, k1.regs.2.2]; exact hwr
@@ -212,9 +205,9 @@ theorem tabBody_ok {s₀ s : State} {base : Addr} {P : Point} {k : Nat} (h : TIn
 
 theorem tabLoop_ok {s₀ : State} {base : Addr} {P : Point} :
     ∀ m, ∀ s, 1 ≤ m → m ≤ 14 → TInv s₀ base P (16 - m) s →
-      WP isa (.loop (.block tabBody) (.nonzero .x .x9)) s fun t => TInv s₀ base P 16 t := by
+      WP isa (.loop tabBody (.nonzero .x .x9)) s fun t => TInv s₀ base P 16 t := by
   intro m s h1 h2 hi
-  refine WP.loop (M := isa) (body := .block tabBody) (c := .nonzero .x .x9)
+  refine WP.loop (M := isa) (body := tabBody) (c := .nonzero .x .x9)
     (Q := fun t => TInv s₀ base P 16 t)
     (fun m (s : State) => 1 ≤ m ∧ m ≤ 14 ∧ TInv s₀ base P (16 - m) s) ?_ m s ⟨h1, h2, hi⟩
   intro m s ⟨h1, h2, hi⟩

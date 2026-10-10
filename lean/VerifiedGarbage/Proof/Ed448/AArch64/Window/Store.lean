@@ -6,7 +6,7 @@ import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 # Ed448 verification on AArch64: storing a table entry
 
 Untrusted: everything here is checked by Lean. `tabStore`, for `x19 = e < 16`,
-points `x8` at `base + 192 e` and copies the 24 words of slots 0–2 to entry
+points `x8` at `base + 192 e` and copies the 24 words of slots 3–5 to entry
 `e` of the table at `TAB` (`tabStore_ok`): only those 192 bytes change.
 -/
 
@@ -51,17 +51,17 @@ theorem tabAddr_ok {s : State} {base : Addr} (hs : Scr s base) {e : Nat} (he : e
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
 
-/-- Where word `w` of slots 0–2 is. -/
-def src (w : Nat) : Nat := slot (w / 8) + 8 * (w % 8)
+/-- Where word `w` of slots 3–5 is. -/
+def src (w : Nat) : Nat := slot (3 + w / 8) + 8 * (w % 8)
 
-theorem src_bounds {w : Nat} (hw : w < 24) : 64 ≤ src w ∧ src w + 8 ≤ 448 ∧ src w % 8 = 0 := by
+theorem src_bounds {w : Nat} (hw : w < 24) : 448 ≤ src w ∧ src w + 8 ≤ 832 ∧ src w % 8 = 0 := by
   simp only [src, slot]; omega
 
 theorem tabStore_eq : tabStore =
     ([.lsl .x .x8 .x19 7, .lsl .x .x9 .x19 6, .add .x .x8 .x8 .x9, .add .x .x8 .x8 .x3] : List Instr) ++
     (List.range 24).flatMap fun w => [ld .x4 (src w), .str .x .x4 .x8 (TAB + 8 * w)] := rfl
 
-/-- **Slots 0–2 to entry `e`** of the table. -/
+/-- **Slots 3–5 to entry `e`** of the table. -/
 theorem tabStore_ok {s : State} {base : Addr} (hs : Scr s base) {e : Nat} (he : e < 16)
     (hc : s.gpr .x19 = BitVec.ofNat 64 e) :
     WP isa (.block tabStore) s fun t =>

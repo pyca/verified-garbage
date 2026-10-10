@@ -56,7 +56,6 @@ theorem kByte_ok {s₀ s : State} {base : Addr} {P : Point} {S : Point} {j : Nat
   have ha : WCtx s₀ base P a :=
     ⟨h.ctx.scr.of_keeps ka (by decide), by rw [ma]; exact h.ctx.env, by rw [ma]; exact h.ctx.zero,
       by rw [ma]; exact h.ctx.one, by rw [ma]; exact h.ctx.z5, by rw [ma]; exact h.ctx.tab,
-      by rw [ka.1 _ (by decide)]; exact h.ctx.lr,
       by rw [ka.1 _ (by decide)]; exact h.ctx.chk, by rw [ka.2.1]; exact h.ctx.rd,
       by rw [ka.2.2]; exact h.ctx.wr, by rw [ma]; exact h.ctx.mem⟩
   have hb := h.bound

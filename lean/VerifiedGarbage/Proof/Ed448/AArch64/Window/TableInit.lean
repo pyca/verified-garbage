@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 Untrusted: everything here is checked by Lean. `tabInit`, after the decodings
 (every slot's limbs below the products' operand bound `Ib`): `R` (slots 8–9) copied to `RX`
 and `RY`, zero in slot 19 and 1 in slot 20, entry 0 the neutral point, `P =
-(x, y, 1)` from slots 6–7 in slots 0–2 and 3–5 and as entry 1, and the counter
+(x, y, 1)` from slots 6–7 in slots 3–5 and 6–8 and as entry 1, and the counter
 at 2 (`tabInit_ok`): `TInv` for entry 2. Only the slots, `RX`, `RY` and the
 first two entries change (`IFrame`).
 -/
@@ -64,7 +64,6 @@ structure IOut (s : State) (base : Addr) (t : State) : Prop where
   one : EV t.mem base 20 = 1
   rx : ∀ i < 8, limbs t.mem base RX i = limbs s.mem base (slot 8) i
   ry : ∀ i < 8, limbs t.mem base RY i = limbs s.mem base (slot 9) i
-  lr : t.gpr .x30 = s.gpr .x30
   chk : t.gpr .x20 = s.gpr .x20
   rd : t.rd = s.rd
   wr : t.wr = s.wr
@@ -84,8 +83,8 @@ def tabPre : List Instr :=
   Impl.Curve448.AArch64.copy RX (slot 8) ++ Impl.Curve448.AArch64.copy RY (slot 9) ++
   constSlot (slot 19) 0 ++ constSlot (slot 20) 1 ++
   constSlot TAB 0 ++ constSlot (TAB + 64) 1 ++ constSlot (TAB + 128) 1 ++
-  Impl.Curve448.AArch64.copy (slot 0) (slot 6) ++ Impl.Curve448.AArch64.copy (slot 1) (slot 7) ++ constSlot (slot 2) 1 ++
-  Impl.Curve448.AArch64.copy (slot 3) (slot 6) ++ Impl.Curve448.AArch64.copy (slot 4) (slot 7) ++ constSlot (slot 5) 1
+  Impl.Curve448.AArch64.copy (slot 3) (slot 6) ++ Impl.Curve448.AArch64.copy (slot 4) (slot 7) ++ constSlot (slot 5) 1 ++
+  constSlot (slot 8) 1
 
 theorem tabInit_eq : tabInit = tabPre ++ (([.movz .x .x19 1 0] : List Instr) ++ (tabStore ++ ([.movz .x .x19 2 0] : List Instr))) := by
   simp only [tabInit, tabPre, List.append_assoc]
@@ -118,13 +117,12 @@ structure PreOut (s : State) (base : Addr) (t : State) : Prop where
   t0 : ∀ w < 8, word t.mem base (TAB + 8 * w) = limb 0 w
   t1 : ∀ w < 8, word t.mem base (TAB + 64 + 8 * w) = limb 1 w
   t2 : ∀ w < 8, word t.mem base (TAB + 128 + 8 * w) = limb 1 w
-  s0 : ∀ i < 8, limbs t.mem base (slot 0) i = limbs s.mem base (slot 6) i
-  s1 : ∀ i < 8, limbs t.mem base (slot 1) i = limbs s.mem base (slot 7) i
-  s2 : ∀ w < 8, word t.mem base (slot 2 + 8 * w) = limb 1 w
   s3 : ∀ i < 8, limbs t.mem base (slot 3) i = limbs s.mem base (slot 6) i
   s4 : ∀ i < 8, limbs t.mem base (slot 4) i = limbs s.mem base (slot 7) i
   s5 : ∀ w < 8, word t.mem base (slot 5 + 8 * w) = limb 1 w
-  keep : ∀ d, d + 8 ≤ 8192 → (d + 8 ≤ 64 ∨ 768 ≤ d) → (d + 8 ≤ slot 19 ∨ slot 20 + 64 ≤ d) →
+  s8 : ∀ w < 8, word t.mem base (slot 8 + 8 * w) = limb 1 w
+  keep : ∀ d, d + 8 ≤ 8192 → (d + 8 ≤ slot 3 ∨ slot 5 + 64 ≤ d) → (d + 8 ≤ slot 8 ∨ slot 8 + 64 ≤ d) →
+    (d + 8 ≤ slot 19 ∨ slot 20 + 64 ≤ d) →
     (d + 8 ≤ RX ∨ RX + 128 ≤ d) → (d + 8 ≤ RY ∨ TAB + 192 ≤ d) → word t.mem base d = word s.mem base d
   mem : IFrame base s.mem t.mem
   regs : Keeps (.x4 :: VG.Proof.X448.AArch64.clob) s t
@@ -156,61 +154,47 @@ theorem tabPre_ok {s : State} {base : Addr} (hs : Scr s base) :
   refine WP.mono (constSlot_ok h6 (o := TAB + 128) (by decide) (by decide) 1) fun u7 ⟨v7, o7, k7⟩ => ?_
   have h7 := h6.of_keeps k7 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (copyS_ok h7 (o := slot 0) (a := slot 6) (by decide) (by decide) (by decide) (by decide)
+  refine WP.mono (copyS_ok h7 (o := slot 3) (a := slot 6) (by decide) (by decide) (by decide) (by decide)
     (by decide)) fun u8 ⟨v8, o8, k8⟩ => ?_
   have h8 := h7.of_keeps k8 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (copyS_ok h8 (o := slot 1) (a := slot 7) (by decide) (by decide) (by decide) (by decide)
+  refine WP.mono (copyS_ok h8 (o := slot 4) (a := slot 7) (by decide) (by decide) (by decide) (by decide)
     (by decide)) fun u9 ⟨v9, o9, k9⟩ => ?_
   have h9 := h8.of_keeps k9 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (constSlot_ok h9 (o := slot 2) (by decide) (by decide) 1) fun u10 ⟨v10, o10, k10⟩ => ?_
+  refine WP.mono (constSlot_ok h9 (o := slot 5) (by decide) (by decide) 1) fun u10 ⟨v10, o10, k10⟩ => ?_
   have h10 := h9.of_keeps k10 (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (copyS_ok h10 (o := slot 3) (a := slot 6) (by decide) (by decide) (by decide) (by decide)
-    (by decide)) fun u11 ⟨v11, o11, k11⟩ => ?_
-  have h11 := h10.of_keeps k11 (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (copyS_ok h11 (o := slot 4) (a := slot 7) (by decide) (by decide) (by decide) (by decide)
-    (by decide)) fun u12 ⟨v12, o12, k12⟩ => ?_
-  have h12 := h11.of_keeps k12 (by decide)
-  refine WP.mono (constSlot_ok h12 (o := slot 5) (by decide) (by decide) 1) fun u ⟨v13, o13, k13⟩ => ?_
+  refine WP.mono (constSlot_ok h10 (o := slot 8) (by decide) (by decide) 1) fun u ⟨v11, o11, k11⟩ => ?_
   refine ⟨fun i hi => ?_, fun i hi => ?_, fun w hw => ?_, fun w hw => ?_, fun w hw => ?_, fun w hw => ?_,
-    fun w hw => ?_, fun i hi => ?_, fun i hi => ?_, fun w hw => ?_, fun i hi => ?_, fun i hi => ?_,
-    fun w hw => ?_, fun d hd a b c e => ?_, ?_, ?_⟩
-  · have k : KeepIn base RX (RX + 64) u1.mem u.mem := ((((((((((((KeepIn.of_outside o2 (by decide)).trans (KeepIn.of_outside o3 (by decide))).trans (KeepIn.of_outside o4 (by decide))).trans (KeepIn.of_outside o5 (by decide))).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide))).trans (KeepIn.of_outside o12 (by decide))).trans (KeepIn.of_outside o13 (by decide)))
+    fun w hw => ?_, fun i hi => ?_, fun i hi => ?_, fun w hw => ?_, fun w hw => ?_, fun d hd a b c e f => ?_, ?_,
+    ?_⟩
+  · have k : KeepIn base RX (RX + 64) u1.mem u.mem := ((((((((((KeepIn.of_outside o2 (by decide)).trans (KeepIn.of_outside o3 (by decide))).trans (KeepIn.of_outside o4 (by decide))).trans (KeepIn.of_outside o5 (by decide))).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide)))
     rw [k.limbs (by decide) hi]; exact v1 i hi
-  · have k : KeepIn base RY (RY + 64) u2.mem u.mem := (((((((((((KeepIn.of_outside o3 (by decide)).trans (KeepIn.of_outside o4 (by decide))).trans (KeepIn.of_outside o5 (by decide))).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide))).trans (KeepIn.of_outside o12 (by decide))).trans (KeepIn.of_outside o13 (by decide)))
+  · have k : KeepIn base RY (RY + 64) u2.mem u.mem := (((((((((KeepIn.of_outside o3 (by decide)).trans (KeepIn.of_outside o4 (by decide))).trans (KeepIn.of_outside o5 (by decide))).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide)))
     have k1 : KeepIn base (slot 9) (slot 9 + 64) s.mem u1.mem := (KeepIn.of_outside o1 (by decide))
     rw [k.limbs (by decide) hi, v2 i hi, k1.limbs (by decide) hi]
-  · have k : KeepIn base (slot 19) (slot 19 + 64) u3.mem u.mem := ((((((((((KeepIn.of_outside o4 (by decide)).trans (KeepIn.of_outside o5 (by decide))).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide))).trans (KeepIn.of_outside o12 (by decide))).trans (KeepIn.of_outside o13 (by decide)))
+  · have k : KeepIn base (slot 19) (slot 19 + 64) u3.mem u.mem := ((((((((KeepIn.of_outside o4 (by decide)).trans (KeepIn.of_outside o5 (by decide))).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide)))
     rw [k.word (by omega) (by omega) (by simp only [slot]; omega)]; exact v3 w hw
-  · have k : KeepIn base (slot 20) (slot 20 + 64) u4.mem u.mem := (((((((((KeepIn.of_outside o5 (by decide)).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide))).trans (KeepIn.of_outside o12 (by decide))).trans (KeepIn.of_outside o13 (by decide)))
+  · have k : KeepIn base (slot 20) (slot 20 + 64) u4.mem u.mem := (((((((KeepIn.of_outside o5 (by decide)).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide)))
     rw [k.word (by omega) (by omega) (by simp only [slot]; omega)]; exact v4 w hw
-  · have k : KeepIn base (TAB) (TAB + 64) u5.mem u.mem := ((((((((KeepIn.of_outside o6 (by decide)).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide))).trans (KeepIn.of_outside o12 (by decide))).trans (KeepIn.of_outside o13 (by decide)))
+  · have k : KeepIn base (TAB) (TAB + 64) u5.mem u.mem := ((((((KeepIn.of_outside o6 (by decide)).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide)))
     rw [k.word (by omega) (by omega) (by simp only [TAB]; omega)]; exact v5 w hw
-  · have k : KeepIn base (TAB + 64) (TAB + 64 + 64) u6.mem u.mem := (((((((KeepIn.of_outside o7 (by decide)).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide))).trans (KeepIn.of_outside o12 (by decide))).trans (KeepIn.of_outside o13 (by decide)))
+  · have k : KeepIn base (TAB + 64) (TAB + 64 + 64) u6.mem u.mem := (((((KeepIn.of_outside o7 (by decide)).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide)))
     rw [k.word (by omega) (by omega) (by simp only [TAB]; omega)]; exact v6 w hw
-  · have k : KeepIn base (TAB + 128) (TAB + 128 + 64) u7.mem u.mem := ((((((KeepIn.of_outside o8 (by decide)).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide))).trans (KeepIn.of_outside o12 (by decide))).trans (KeepIn.of_outside o13 (by decide)))
+  · have k : KeepIn base (TAB + 128) (TAB + 128 + 64) u7.mem u.mem := ((((KeepIn.of_outside o8 (by decide)).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide)))
     rw [k.word (by omega) (by omega) (by simp only [TAB]; omega)]; exact v7 w hw
-  · have k : KeepIn base (slot 0) (slot 0 + 64) u8.mem u.mem := (((((KeepIn.of_outside o9 (by decide)).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide))).trans (KeepIn.of_outside o12 (by decide))).trans (KeepIn.of_outside o13 (by decide)))
+  · have k : KeepIn base (slot 3) (slot 3 + 64) u8.mem u.mem := (((KeepIn.of_outside o9 (by decide)).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide)))
     have k' : KeepIn base (slot 6) (slot 6 + 64) s.mem u7.mem := (((((((KeepIn.of_outside o1 (by decide)).trans (KeepIn.of_outside o2 (by decide))).trans (KeepIn.of_outside o3 (by decide))).trans (KeepIn.of_outside o4 (by decide))).trans (KeepIn.of_outside o5 (by decide))).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide)))
     rw [k.limbs (by decide) hi, v8 i hi, k'.limbs (by decide) hi]
-  · have k : KeepIn base (slot 1) (slot 1 + 64) u9.mem u.mem := ((((KeepIn.of_outside o10 (by decide)).trans (KeepIn.of_outside o11 (by decide))).trans (KeepIn.of_outside o12 (by decide))).trans (KeepIn.of_outside o13 (by decide)))
+  · have k : KeepIn base (slot 4) (slot 4 + 64) u9.mem u.mem := ((KeepIn.of_outside o10 (by decide)).trans (KeepIn.of_outside o11 (by decide)))
     have k' : KeepIn base (slot 7) (slot 7 + 64) s.mem u8.mem := ((((((((KeepIn.of_outside o1 (by decide)).trans (KeepIn.of_outside o2 (by decide))).trans (KeepIn.of_outside o3 (by decide))).trans (KeepIn.of_outside o4 (by decide))).trans (KeepIn.of_outside o5 (by decide))).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide)))
     rw [k.limbs (by decide) hi, v9 i hi, k'.limbs (by decide) hi]
-  · have k : KeepIn base (slot 2) (slot 2 + 64) u10.mem u.mem := (((KeepIn.of_outside o11 (by decide)).trans (KeepIn.of_outside o12 (by decide))).trans (KeepIn.of_outside o13 (by decide)))
+  · have k : KeepIn base (slot 5) (slot 5 + 64) u10.mem u.mem := (KeepIn.of_outside o11 (by decide))
     rw [k.word (by omega) (by omega) (by simp only [slot]; omega)]; exact v10 w hw
-  · have k : KeepIn base (slot 3) (slot 3 + 64) u11.mem u.mem := ((KeepIn.of_outside o12 (by decide)).trans (KeepIn.of_outside o13 (by decide)))
-    have k' : KeepIn base (slot 6) (slot 6 + 64) s.mem u10.mem := ((((((((((KeepIn.of_outside o1 (by decide)).trans (KeepIn.of_outside o2 (by decide))).trans (KeepIn.of_outside o3 (by decide))).trans (KeepIn.of_outside o4 (by decide))).trans (KeepIn.of_outside o5 (by decide))).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide)))
-    rw [k.limbs (by decide) hi, v11 i hi, k'.limbs (by decide) hi]
-  · have k : KeepIn base (slot 4) (slot 4 + 64) u12.mem u.mem := (KeepIn.of_outside o13 (by decide))
-    have k' : KeepIn base (slot 7) (slot 7 + 64) s.mem u11.mem := (((((((((((KeepIn.of_outside o1 (by decide)).trans (KeepIn.of_outside o2 (by decide))).trans (KeepIn.of_outside o3 (by decide))).trans (KeepIn.of_outside o4 (by decide))).trans (KeepIn.of_outside o5 (by decide))).trans (KeepIn.of_outside o6 (by decide))).trans (KeepIn.of_outside o7 (by decide))).trans (KeepIn.of_outside o8 (by decide))).trans (KeepIn.of_outside o9 (by decide))).trans (KeepIn.of_outside o10 (by decide))).trans (KeepIn.of_outside o11 (by decide)))
-    rw [k.limbs (by decide) hi, v12 i hi, k'.limbs (by decide) hi]
-  · exact v13 w hw
-  · rw [kw o13 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o12 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o11 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o10 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o9 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o8 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o7 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o6 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o5 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o4 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o3 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o2 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o1 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd]
-  · exact ((((((((((((IFrame.of_outside o1 (by decide)).trans (IFrame.of_outside o2 (by decide))).trans (IFrame.of_outside o3 (by decide))).trans (IFrame.of_outside o4 (by decide))).trans (IFrame.of_outside o5 (by decide))).trans (IFrame.of_outside o6 (by decide))).trans (IFrame.of_outside o7 (by decide))).trans (IFrame.of_outside o8 (by decide))).trans (IFrame.of_outside o9 (by decide))).trans (IFrame.of_outside o10 (by decide))).trans (IFrame.of_outside o11 (by decide))).trans (IFrame.of_outside o12 (by decide))).trans (IFrame.of_outside o13 (by decide))
-  · exact (((((((((((((k1.mono (by decide)).trans (k2.mono (by decide))).trans (k3.mono (by decide))).trans (k4.mono (by decide))).trans (k5.mono (by decide))).trans (k6.mono (by decide))).trans (k7.mono (by decide))).trans (k8.mono (by decide))).trans (k9.mono (by decide))).trans (k10.mono (by decide))).trans (k11.mono (by decide))).trans (k12.mono (by decide))).trans (k13.mono (by decide)))
+  · exact v11 w hw
+  · rw [kw o11 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o10 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o9 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o8 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o7 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o6 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o5 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o4 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o3 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o2 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd, kw o1 (by simp only [slot, RX, RY, CAN, TAB] at *; omega) hd]
+  · exact (((((((((((IFrame.of_outside o1 (by decide)).trans (IFrame.of_outside o2 (by decide))).trans (IFrame.of_outside o3 (by decide))).trans (IFrame.of_outside o4 (by decide))).trans (IFrame.of_outside o5 (by decide))).trans (IFrame.of_outside o6 (by decide))).trans (IFrame.of_outside o7 (by decide))).trans (IFrame.of_outside o8 (by decide))).trans (IFrame.of_outside o9 (by decide))).trans (IFrame.of_outside o10 (by decide))).trans (IFrame.of_outside o11 (by decide)))
+  · exact (((((((((((k1.mono (by decide)).trans (k2.mono (by decide))).trans (k3.mono (by decide))).trans (k4.mono (by decide))).trans (k5.mono (by decide))).trans (k6.mono (by decide))).trans (k7.mono (by decide))).trans (k8.mono (by decide))).trans (k9.mono (by decide))).trans (k10.mono (by decide))).trans (k11.mono (by decide)))
 
 /-! ## `tabInit` -/
 
@@ -244,23 +228,21 @@ theorem tabInit_ok {s : State} {base : Addr} (hs : Scr s base)
       limbs t.mem base o i = limbs u.mem base o i :=
     fun o ho ho' i hi => congrArg BitVec.toNat (wut _ (by omega) (by omega))
   -- Every slot of `t`, below `Ib`.
-  have slotKeep : ∀ i : Index, 6 ≤ i.val → i.val ≠ 19 → i.val ≠ 20 → ∀ j < 8,
-      limbs t.mem base (slot i.val) j = limbs s.mem base (slot i.val) j := fun i h6 h19 h20 j hj => by
-    have := i.isLt
-    rw [lut _ (by simp only [slot, TAB]; omega) (by simp only [slot]; omega) j hj]
-    exact congrArg BitVec.toNat (P.keep _ (by simp only [slot]; omega) (by simp only [slot]; omega)
-      (by simp only [slot]; omega) (by simp only [slot, RX]; omega) (by simp only [slot, RY, CAN]; omega))
+  have slotKeep : ∀ i : Index, i.val ≠ 3 → i.val ≠ 4 → i.val ≠ 5 → i.val ≠ 8 → i.val ≠ 19 → i.val ≠ 20 →
+      ∀ j < 8, limbs t.mem base (slot i.val) j = limbs s.mem base (slot i.val) j :=
+    fun i h3 h4 h5 h8 h19 h20 j hj => by
+      have := i.isLt
+      rw [lut _ (by simp only [slot, TAB]; omega) (by simp only [slot]; omega) j hj]
+      exact congrArg BitVec.toNat (P.keep _ (by simp only [slot]; omega) (by simp only [slot]; omega)
+        (by simp only [slot]; omega) (by simp only [slot]; omega) (by simp only [slot, RX]; omega)
+        (by simp only [slot, RY, CAN]; omega))
   have wslot : ∀ (o : Nat) (v : Spec.X448.Fe), o + 64 ≤ TAB + 192 → (∀ w < 8, word u.mem base (o + 8 * w) = limb v w) →
       ∀ w < 8, word t.mem base (o + 8 * w) = limb v w := fun o v ho h w hw => by
     rw [wut _ (by simp only [TAB] at ho; omega) (by omega)]; exact h w hw
   have z19 := wslot _ _ (by decide) P.z19
   have o20 := wslot _ _ (by decide) P.o20
-  have s2 := wslot _ _ (by decide) P.s2
   have s5 := wslot _ _ (by decide) P.s5
-  have l0 : ∀ i < 8, limbs t.mem base (slot 0) i = limbs s.mem base (slot 6) i := fun i hi => by
-    rw [lut _ (by decide) (by decide) i hi]; exact P.s0 i hi
-  have l1 : ∀ i < 8, limbs t.mem base (slot 1) i = limbs s.mem base (slot 7) i := fun i hi => by
-    rw [lut _ (by decide) (by decide) i hi]; exact P.s1 i hi
+  have s8 := wslot _ _ (by decide) P.s8
   have l3 : ∀ i < 8, limbs t.mem base (slot 3) i = limbs s.mem base (slot 6) i := fun i hi => by
     rw [lut _ (by decide) (by decide) i hi]; exact P.s3 i hi
   have l4 : ∀ i < 8, limbs t.mem base (slot 4) i = limbs s.mem base (slot 7) i := fun i hi => by
@@ -269,33 +251,36 @@ theorem tabInit_ok {s : State} {base : Addr} (hs : Scr s base)
   have b7 := hb 7
   have benv : BEnv t.mem base := by
     intro i
-    by_cases h6 : 6 ≤ i.val ∧ i.val ≠ 19 ∧ i.val ≠ 20
-    · exact ib_of_limbs (fun j hj => slotKeep i h6.1 h6.2.1 h6.2.2 j hj) (hb i)
-    · have hi : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 19 ∨ i = 20 := by
+    by_cases h6 : i.val ≠ 3 ∧ i.val ≠ 4 ∧ i.val ≠ 5 ∧ i.val ≠ 8 ∧ i.val ≠ 19 ∧ i.val ≠ 20
+    · exact ib_of_limbs (fun j hj => slotKeep i h6.1 h6.2.1 h6.2.2.1 h6.2.2.2.1 h6.2.2.2.2.1 h6.2.2.2.2.2 j hj)
+        (hb i)
+    · have hi : i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 8 ∨ i = 19 ∨ i = 20 := by
         rcases i with ⟨i, hlt⟩; simp only [Fin.ext_iff] at h6 ⊢; omega
-      rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      · exact ib_of_limbs l0 b6
-      · exact ib_of_limbs l1 b7
-      · exact bnd_of_words s2
+      rcases hi with rfl | rfl | rfl | rfl | rfl | rfl
       · exact ib_of_limbs l3 b6
       · exact ib_of_limbs l4 b7
       · exact bnd_of_words s5
+      · exact bnd_of_words s8
       · exact bnd_of_words z19
       · exact bnd_of_words o20
-  have hP : pt (EV u.mem base) 0 1 2 = slotPt s.mem base := by
-    show (⟨FV u.mem base (slot 0), FV u.mem base (slot 1), FV u.mem base (slot 2)⟩ : Point) =
+  have hP : pt (EV u.mem base) 3 4 5 = slotPt s.mem base := by
+    show (⟨FV u.mem base (slot 3), FV u.mem base (slot 4), FV u.mem base (slot 5)⟩ : Point) =
       ⟨FV s.mem base (slot 6), FV s.mem base (slot 7), 1⟩
-    rw [FV_of_limbs P.s0, FV_of_limbs P.s1, F_of_words P.s2]
-  have hPt : pt (EV t.mem base) 0 1 2 = slotPt s.mem base := by
-    show (⟨FV t.mem base (slot 0), FV t.mem base (slot 1), FV t.mem base (slot 2)⟩ : Point) =
-      ⟨FV s.mem base (slot 6), FV s.mem base (slot 7), 1⟩
-    rw [FV_of_limbs l0, FV_of_limbs l1, F_of_words s2]
+    rw [FV_of_limbs P.s3, FV_of_limbs P.s4, F_of_words P.s5]
   have hP3 : pt (EV t.mem base) 3 4 5 = slotPt s.mem base := by
     show (⟨FV t.mem base (slot 3), FV t.mem base (slot 4), FV t.mem base (slot 5)⟩ : Point) =
       ⟨FV s.mem base (slot 6), FV s.mem base (slot 7), 1⟩
     rw [FV_of_limbs l3, FV_of_limbs l4, F_of_words s5]
+  have hP6 : pt (EV t.mem base) 6 7 8 = slotPt s.mem base := by
+    show (⟨FV t.mem base (slot 6), FV t.mem base (slot 7), FV t.mem base (slot 8)⟩ : Point) =
+      ⟨FV s.mem base (slot 6), FV s.mem base (slot 7), 1⟩
+    have l6 : ∀ j < 8, limbs t.mem base (slot 6) j = limbs s.mem base (slot 6) j :=
+      slotKeep 6 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    have l7 : ∀ j < 8, limbs t.mem base (slot 7) j = limbs s.mem base (slot 7) j :=
+      slotKeep 7 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    rw [FV_of_limbs l6, FV_of_limbs l7, F_of_words s8]
   have e1 : TPt t.mem base 1 = slotPt s.mem base := by
-    rw [show t.mem = u2.mem from mt, tabStore_pt w2, show pt (EV u1.mem base) 0 1 2 = pt (EV u.mem base) 0 1 2 by rw [m1],
+    rw [show t.mem = u2.mem from mt, tabStore_pt w2, show pt (EV u1.mem base) 3 4 5 = pt (EV u.mem base) 3 4 5 by rw [m1],
       hP]
   have e0 : TPt t.mem base 0 = ⟨0, 1, 1⟩ := by
     have hw : ∀ (c : Nat) (v : Spec.X448.Fe), c < 3 → (∀ w < 8, word u.mem base (TAB + 64 * c + 8 * w) = limb v w) →
@@ -308,9 +293,9 @@ theorem tabInit_ok {s : State} {base : Addr} (hs : Scr s base)
     rw [show TAB + 192 * 0 = TAB + 192 * 0 + 64 * 0 by rfl, hw 0 0 (by decide) (fun w hw => by rw [show TAB + 64 * 0 + 8 * w = TAB + 8 * w by omega]; exact P.t0 w hw),
       show TAB + 192 * 0 + 64 = TAB + 192 * 0 + 64 * 1 by rfl, hw 1 1 (by decide) P.t1,
       show TAB + 192 * 0 + 128 = TAB + 192 * 0 + 64 * 2 by rfl, hw 2 1 (by decide) P.t2]
-  refine ⟨⟨⟨by decide, by decide⟩, ht, benv, fun w hw => ?_, ct, by rw [hPt]; rfl, hP3, rfl,
-      fun e he => ?_, rfl, rfl, rfl, rfl, fun _ _ _ _ => rfl⟩,
-    F_of_words o20, fun i hi => ?_, fun i hi => ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨⟨⟨by decide, by decide⟩, ht, benv, fun w hw => ?_, ct, by rw [hP3]; rfl, hP6, rfl,
+      fun e he => ?_, rfl, rfl, rfl, fun _ _ _ _ => rfl⟩,
+    F_of_words o20, fun i hi => ?_, fun i hi => ?_, ?_, ?_, ?_, ?_⟩
   · show (word t.mem base (slot 19 + 8 * w)).toNat = 0
     rw [z19 w hw, limb_zero]; rfl
   · rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl
@@ -328,16 +313,15 @@ theorem tabInit_ok {s : State} {base : Addr} (hs : Scr s base)
       rw [show t.mem = u2.mem from mt]
       intro w hw
       rw [tw, w2 w hw, src, m1]
-      have h0 : Bnd Ib u.mem base (slot 0) := ib_of_limbs P.s0 b6
-      have h1 : Bnd Ib u.mem base (slot 1) := ib_of_limbs P.s1 b7
-      have h2 : Bnd Ib u.mem base (slot 2) := bnd_of_words P.s2
+      have h0 : Bnd Ib u.mem base (slot 3) := ib_of_limbs P.s3 b6
+      have h1 : Bnd Ib u.mem base (slot 4) := ib_of_limbs P.s4 b7
+      have h2 : Bnd Ib u.mem base (slot 5) := bnd_of_words P.s5
       rcases (show w / 8 = 0 ∨ w / 8 = 1 ∨ w / 8 = 2 by omega) with h | h | h <;> rw [h]
       · exact h0 _ (Nat.mod_lt _ (by decide))
       · exact h1 _ (Nat.mod_lt _ (by decide))
       · exact h2 _ (Nat.mod_lt _ (by decide))
   · rw [lut _ (by simp only [RX, TAB]; omega) (by decide) i hi]; exact P.rx i hi
   · rw [lut _ (by simp only [RY, CAN, TAB]; omega) (by decide) i hi]; exact P.ry i hi
-  · rw [gt _ (by decide), k2.1 _ (by decide), g1 _ (by decide), P.regs.1 _ (by decide)]
   · rw [gt _ (by decide), k2.1 _ (by decide), g1 _ (by decide), P.regs.1 _ (by decide)]
   · rw [rdt, k2.2.1, rd1, P.regs.2.1]
   · rw [wrt, k2.2.2, wr1, P.regs.2.2]

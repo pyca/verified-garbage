@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.DecodeSteps
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyRoot
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 import VerifiedGarbage.Proof.Ed448.Recover
 
 /-!
@@ -23,7 +23,7 @@ open VG.Proof.Curve448.AArch64.Fast (Mb)
 open VG.Impl.X448.AArch64 (ld st slot X2 ACC)
 
 /-- The registers decoding may change. -/
-def decClob : List Reg := .x17 :: .x19 :: .x20 :: (workRegs ++ fclob)
+def decClob : List Reg := .x30 :: .x17 :: .x19 :: .x20 :: (workRegs ++ fclob)
 
 theorem bytesAt57_take (m : Mem) (p : Addr) :
     (Spec.Ed448.bytesAt m p 57).take 56 = Spec.Ed448.bytesAt m p 56 := by
@@ -67,7 +67,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
   refine WP.seq (WP.mono (uvOps_ok hs1 bd1 m10 xo yo hxy) fun s2 ⟨k2, bd2, e2⟩ => ?_)
   have hs2 := k2.scr hs1
   -- The root.
-  refine WP.seq (WP.mono (root_spec base s2 hs2 bd2) fun s3 ⟨k3, bd3, e3⟩ => ?_)
+  refine WP.seq (WP.mono (Point56.powCall_ok hs2 bd2) fun s3 ⟨k3, bd3, e3, _⟩ => ?_)
   have hs3 := k3.scr hs2
   -- `x` and `v x²`.
   refine WP.seq (WP.mono (xOps_ok hs3 bd3 xo hxo) fun s4 ⟨k4, bd4, mx4, sm4, e4⟩ => ?_)
@@ -227,7 +227,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
   · have d6 : DFrame base s5.mem s6.mem := DFrame.of_outside o6 (by simp only [slot]; omega)
     have d8 : DFrame base s7.mem s8.mem := by rw [m8]; exact fun _ _ _ _ => rfl
     have d11 : DFrame base s9.mem s11.mem := by rw [mm11, mm10]; exact fun _ _ _ _ => rfl
-    exact ((((((((d1.trans (fkeep_dframe k2)).trans (ikeep_dframe k3)).trans (fkeep_dframe k4)).trans
+    exact ((((((((d1.trans (fkeep_dframe k2)).trans (DFrame.of_outside2 (Nat.le_refl _) k3.mem)).trans (fkeep_dframe k4)).trans
       (cframe_dframe k5.mem)).trans d6).trans (fkeep_dframe k7)).trans d8).trans
       ((cframe_dframe k9.mem).trans d11)).trans (fkeep_dframe kt)
 

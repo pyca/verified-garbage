@@ -25,6 +25,7 @@ structure Persist (base : Addr) (g : Reg → BitVec 64) (gv : VReg → BitVec 12
   saved : Saved base g m
   savedX : SavedX base g m
   savedV : SavedV base gv m
+  lrs : VG.Proof.Ed448.AArch64.LrSaved base g m
   kb : KBytes base m b
 
 /-- A frame that keeps `[0, 64)`, `[2880, 3584)` and `[4736, 4864)`. -/
@@ -39,6 +40,7 @@ theorem Persist.of_frame {base : Addr} {g gv b} {m m' : Mem} (h : Persist base g
   refine ⟨⟨(hw 0 (by decide) (by decide)).trans h.saved.1, (hw 8 (by decide) (by decide)).trans h.saved.2⟩,
     fun k hk => (hw _ (by omega) (by omega)).trans (h.savedX k hk),
     h.savedV.frame fun d h1 h2 => hf _ (by rw [ofs_off0' base (by omega)]; omega),
+    (hw LRS (by simp only [LRS]; omega) (by simp only [LRS]; omega)).trans h.lrs,
     h.kb.of_frame fun i hi => hf _ (by rw [kb_ofs base hi]; simp only [KB]; omega)⟩
 
 theorem Persist.iframe {base : Addr} {g gv b} {m m' : Mem} (h : Persist base g gv b m) (hf : IFrame base m m') :
