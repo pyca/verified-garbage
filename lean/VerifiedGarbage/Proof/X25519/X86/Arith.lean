@@ -176,7 +176,7 @@ theorem mul_ok {x : BitVec 32} {s : State} (hc : Ctx W x s c) {o a b : Nat} (ho 
   simp only [Below, T] at ha hb
   have hA := fe_lt s.mem x a; have hB := fe_lt s.mem x b
   have hAB : fe s.mem x a * fe s.mem x b < 2 ^ 256 * 2 ^ 256 := Nat.mul_lt_mul_of_lt_of_lt hA hB
-  unfold mul
+  unfold mul mulSq mulPr
   split
   · subst b
     refine mulCols_ok hc ho _ (fun k hk t ht d hd => ?_) (fun k hk => ?_) hAB ?_

@@ -170,9 +170,17 @@ def sqrTerms (a k : Nat) : List Term :=
 def mulCols (o : Nat) (ts : Nat → List Term) : List Instr :=
   zeroAcc ++ cols T 16 ts ++ linear o (fun k => [.mulI (T + 32 + 4 * k) 38, .addM (T + 4 * k)])
 
-/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), by `a²`'s columns if `a = b`. -/
+/-- `[o] = [a]²` (`o` may be `a`). -/
+def mulSq (o a : Nat) : List Instr := mulCols o (sqrTerms a)
+
+/-- `[o] = [a] · [b]` by the products' columns. -/
+def mulPr (o a b : Nat) : List Instr := mulCols o (prodTerms a b)
+
+/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), by `a²`'s columns if `a = b`.
+The two cases are named so that each is a template of the code's literal
+(`Proof/X25519/X86/Lit.lean`). -/
 def mul (o a b : Nat) : List Instr :=
-  if a = b then mulCols o (sqrTerms a) else mulCols o (prodTerms a b)
+  if a = b then mulSq o a else mulPr o a b
 
 /-- `[o] = 121665 · [a]`. -/
 def mulSmall (o a : Nat) : List Instr :=
