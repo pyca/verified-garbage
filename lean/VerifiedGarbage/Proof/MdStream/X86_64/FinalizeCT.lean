@@ -207,21 +207,98 @@ theorem zero_step (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : State}
       Nat.sub_sub, Nat.sub_sub]
 
 theorem zero_ok (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : State} (hC : Common P s₀ sI) {n lim : Nat}
-    (hlim : lim ≤ P.B) (hn : n ≤ lim) {s : State} (h : Zero P s₀ sI n lim 0 s)
-    (hz : s.zf = some (decide (lim - n = 0))) :
+    (hlim : lim ≤ P.B) {j₀ : Nat} (hj₀ : j₀ ≤ lim - n) {s : State} (h : Zero P s₀ sI n lim j₀ s)
+    (hz : s.zf = some (decide (lim - n - j₀ = 0))) :
     WP isa (.ite .e (.block []) (zeroLoop P)) s (Zero P s₀ sI n lim (lim - n)) := by
-  refine WP.ite (decide (lim - n = 0)) hz (fun hb => ?_) (fun hb => ?_)
+  refine WP.ite (decide (lim - n - j₀ = 0)) hz (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq] at hb
-    exact WP.block_nil (hb ▸ h)
+    exact WP.block_nil (by rwa [show lim - n = j₀ by omega])
   · simp only [decide_eq_false_iff_not] at hb
     refine WP.loop (M := isa) (fun k s => ∃ j, k = lim - n - j ∧ j < lim - n ∧ Zero P s₀ sI n lim j s)
-      ?_ (lim - n) s ⟨0, rfl, by omega_arith, h⟩
+      ?_ (lim - n - j₀) s ⟨j₀, rfl, by omega_arith, h⟩
     rintro k s ⟨j, rfl, hj, hZ⟩
     refine WP.mono (zero_step hd hp hC hlim hj hZ) fun s' ⟨hZ', hz'⟩ => ?_
     by_cases hl : lim - n - (j + 1) = 0
     · refine .inl ⟨by simp [eval, hz', hl], ?_⟩
       rwa [show j + 1 = lim - n by omega_arith] at hZ'
     · exact .inr ⟨by simp [eval, hz', hl], _, by omega_arith, j + 1, rfl, by omega_arith, hZ'⟩
+
+set_option simprocs false in
+/-- Eight bytes zeroed. -/
+theorem zero_word_step (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : State} (hC : Common P s₀ sI)
+    {n lim j : Nat} (hlim : lim ≤ P.B) (hj : j + 8 ≤ lim - n) {s : State} (h : Zero P s₀ sI n lim j s) :
+    WP isa (.block [.store (bufByte P) .r9, .alu .add .r13 (.imm 8), .alu .sub .rax (.imm 8),
+      .alu .cmp .rax (.imm 8)]) s fun s' =>
+      Zero P s₀ sI n lim (j + 8) s' ∧ s'.cf = some (decide (lim - n - (j + 8) < 8)) := by
+  have := hd.N; have := hd.B
+  have hrbx : s.gpr .rbx = st s₀ := by rw [h.keep _ (by simp), hC.rbx]
+  have hout : InRegions s.wr (buf P s₀ + BitVec.ofNat 64 n + BitVec.ofNat 64 j) 8 := by
+    refine ⟨stR P s₀, by simp [h.wr, hC.wr, hp.wr], ?_⟩
+    rw [add_ofNat, buf_add]
+    exact contains_offset (by omega) (by omega)
+  refine wp_store (r := .r9) (a := buf P s₀ + BitVec.ofNat 64 n + BitVec.ofNat 64 j) ?_ hout
+    fun s₁ g₁ m₁ rd₁ wr₁ => ?_
+  · simp only [State.ea, bufByte, buf, hrbx, h.r13, BitVec.ofNat_add, BitVec.mul_one, ofInt_natCast]
+    ac_rfl
+  refine wp_addi fun s₂ u₂ => wp_subi fun s₃ u₃ _ => wp_cmpi fun s₄ g₄ m₄ rd₄ wr₄ cf₄ _ =>
+    WP.block_nil ?_
+  have hrax₃ : s₃.gpr .rax = BitVec.ofNat 64 (lim - n - (j + 8)) := by
+    rw [u₃.gpr, u₂.other _ (by decide), g₁, h.rax, sx8, sub_ofNat (by omega), Nat.sub_sub]
+  refine ⟨⟨by omega, fun r hr => ?_, by rw [rd₄, u₃.rd, u₂.rd, rd₁, h.rd], by rw [wr₄, u₃.wr, u₂.wr, wr₁, h.wr],
+    ?_, ?_, by rw [g₄, hrax₃], ?_⟩, ?_⟩
+  · have : r ≠ .rax ∧ r ≠ .r13 := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    rw [g₄, u₃.other r this.1, u₂.other r this.2, g₁, h.keep r hr]
+  · rw [g₄, u₃.other _ (by decide), u₂.other _ (by decide), g₁, h.r9]
+  · rw [g₄, u₃.other _ (by decide), u₂.gpr, g₁, h.r13, sx8, ← BitVec.ofNat_add, Nat.add_assoc]
+  · have e : (List.range 8).map (fun k => (0 : BitVec 64).extractLsb' (8 * k) 8) = List.replicate 8 0 := by
+      decide
+    rw [m₄, u₃.mem, u₂.mem, m₁, h.r9, writeW_eq_writeBytes, e, h.mem,
+      show buf P s₀ + BitVec.ofNat 64 n + BitVec.ofNat 64 j =
+        buf P s₀ + BitVec.ofNat 64 n + BitVec.ofNat 64 (List.replicate j (0 : Byte)).length by
+        rw [List.length_replicate],
+      writeBytes_append _ _ _ _ (by simp only [List.length_replicate]; omega), List.replicate_append_replicate]
+  · rw [cf₄, hrax₃, sx8, toNat_ofNat_lt (by omega), toNat_ofNat_lt (by omega)]
+
+/-- Eight bytes at a time, while at least eight are left. -/
+theorem zero_words_ok (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : State} (hC : Common P s₀ sI)
+    {n lim : Nat} (hlim : lim ≤ P.B) {s : State} (h : Zero P s₀ sI n lim 0 s)
+    (hcf : s.cf = some (decide (lim - n < 8))) :
+    WP isa (.ite .b (.block []) (zeroWords P)) s (Zero P s₀ sI n lim (8 * ((lim - n) / 8))) := by
+  refine WP.ite (decide (lim - n < 8)) (by simp [eval, hcf]) (fun hb => ?_) (fun hb => ?_)
+  · simp only [decide_eq_true_eq] at hb
+    exact WP.block_nil (by rw [show (lim - n) / 8 = 0 by omega]; exact h)
+  · simp only [decide_eq_false_iff_not] at hb
+    refine WP.loop (M := isa)
+      (fun k s => ∃ i, k = (lim - n) / 8 - i ∧ i < (lim - n) / 8 ∧ Zero P s₀ sI n lim (8 * i) s)
+      ?_ ((lim - n) / 8) s ⟨0, rfl, by omega, h⟩
+    rintro k s ⟨i, rfl, hi, hZ⟩
+    refine WP.mono (zero_word_step hd hp hC hlim (by omega) hZ) fun s' ⟨hZ', hcf'⟩ => ?_
+    rw [show 8 * i + 8 = 8 * (i + 1) by omega] at hZ' hcf'
+    by_cases hl : (lim - n) / 8 - (i + 1) = 0
+    · refine .inl ⟨by simp [eval, hcf']; omega, ?_⟩
+      rwa [show i + 1 = (lim - n) / 8 by omega] at hZ'
+    · exact .inr ⟨by simp [eval, hcf']; omega, _, by omega, i + 1, rfl, by omega, hZ'⟩
+
+/-- All `lim - n` bytes: eight at a time, then one at a time. -/
+theorem zero_all_ok (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : State} (hC : Common P s₀ sI)
+    {n lim : Nat} (hlim : lim ≤ P.B) (hn : n ≤ lim) {s : State} (h : Zero P s₀ sI n lim 0 s) :
+    WP isa (zero P) s (Zero P s₀ sI n lim (lim - n)) := by
+  have := hd.B
+  unfold zero
+  refine WP.seq (wp_cmpi fun s₁ g₁ m₁ rd₁ wr₁ cf₁ _ => WP.block_nil ?_)
+  have keep : ∀ {s s' : State} {j : Nat}, Zero P s₀ sI n lim j s → s'.gpr = s.gpr → s'.mem = s.mem →
+      s'.rd = s.rd → s'.wr = s.wr → Zero P s₀ sI n lim j s' := fun h g m rd wr =>
+    ⟨h.j_le, fun r hr => by rw [g, h.keep r hr], by rw [rd, h.rd], by rw [wr, h.wr], by rw [g, h.r9],
+      by rw [g, h.r13], by rw [g, h.rax], by rw [m, h.mem]⟩
+  have hcf₁ : s₁.cf = some (decide (lim - n < 8)) := by
+    rw [cf₁, h.rax, Nat.sub_zero, sx8, toNat_ofNat_lt (by omega), toNat_ofNat_lt (by omega)]
+  refine WP.seq (WP.mono (zero_words_ok hd hp hC hlim (keep h g₁ m₁ rd₁ wr₁) hcf₁) fun s₂ hZ₂ => ?_)
+  refine WP.seq (wp_test fun s₃ g₃ m₃ rd₃ wr₃ z₃ => WP.block_nil ?_)
+  have hz₃ : s₃.zf = some (decide (lim - n - 8 * ((lim - n) / 8) = 0)) := by
+    rw [z₃, hZ₂.rax, BitVec.and_self, ofNat_beq_zero (by omega)]
+  exact zero_ok hd hp hC hlim (by omega) (keep hZ₂ g₃ m₃ rd₃ wr₃) hz₃
 
 /-! ## One block -/
 
@@ -340,7 +417,7 @@ theorem pad_ok (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog isa}
       · rw [wr₂, u₁.wr]
   -- Zero the rest of the buffer, up to `lim`.
   have hC₃ : Common P s₀ s₃ := hC.of_gpr (fun r hr => g₃ r (hne r hr)) m₃ rd₃ wr₃
-  refine WP.seq (wp_mov32i fun s₄ u₄ _ _ => wp_sub fun s₅ u₅ z₅ => WP.block_nil ?_)
+  refine WP.seq (wp_mov32i fun s₄ u₄ _ _ => wp_sub fun s₅ u₅ _ => WP.block_nil ?_)
   have hrax₅ : s₅.gpr .rax = BitVec.ofNat 64 (lim P k - n) := by
     rw [u₅.gpr, u₄.other _ (by decide), u₄.other _ (by decide), hrax₃, g₃ _ (by decide), h.r13,
       sub_ofNat (by omega_arith)]
@@ -354,9 +431,7 @@ theorem pad_ok (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog isa}
     · rw [u₅.other _ (by decide), u₄.other _ (by decide), g₃ _ (by decide), h.r13, Nat.add_zero]
     · rw [hrax₅, Nat.sub_zero]
     · rw [u₅.mem, u₄.mem, m₃, List.replicate_zero, writeBytes_nil]
-  have hz₅ : s₅.zf = some (decide (lim P k - n = 0)) := by
-    rw [z₅, ← u₅.gpr, hrax₅, ofNat_beq_zero (by omega_arith)]
-  refine WP.seq (WP.mono (zero_ok hd hp hC hlim hn hZ hz₅) fun s₆ hZ₆ => ?_)
+  refine WP.seq (WP.mono (zero_all_ok hd hp hC hlim hn hZ) fun s₆ hZ₆ => ?_)
   obtain ⟨hf₆, hfr₆, hsv₆⟩ := hC.writeBuf hd hp (n := n) (xs := List.replicate (lim P k - n) 0)
     (by simp only [List.length_replicate]; omega_arith)
   have hC₆ : Common P s₀ s₆ :=

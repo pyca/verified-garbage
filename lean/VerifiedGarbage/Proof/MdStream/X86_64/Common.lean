@@ -756,6 +756,22 @@ theorem test_ok {s : State} (r : Reg) :
         s'.zf = some (s.gpr r &&& s.gpr r == 0) :=
   wp_test fun _ g m rd wr z => WP.block_nil ⟨g, m, rd, wr, z⟩
 
+/-- A 64-bit store writes the bytes of its value, little-endian. -/
+theorem writeW_eq_writeBytes (m : Mem) (a : Addr) (v : BitVec 64) :
+    m.writeW a v = writeBytes m a ((List.range 8).map fun k => v.extractLsb' (8 * k) 8) := by
+  show m.write a 8 (v.setWidth 64) = _
+  rw [BitVec.setWidth_eq]
+  exact WriteBytes.write_eq_writeBytes m a 8 v
+
+/-- Byte `k` of a 64-bit load. -/
+theorem extractLsb'_readW (m : Mem) (a : Addr) {k : Nat} (hk : k < 8) :
+    (m.readW a 64).extractLsb' (8 * k) 8 = m (a + BitVec.ofNat 64 k) := by
+  show ((m.read a 8).setWidth 64).extractLsb' (8 * k) 8 = _
+  rw [BitVec.setWidth_eq]
+  exact Mem.extractLsb'_read m a hk
+
+theorem sx8 : BitVec.signExtend 64 (8 : BitVec 32) = BitVec.ofNat 64 8 := by decide
+
 theorem WP.seq_assoc {M : ISA} {a b c : Prog M} {s : M.State} {Q : M.State → Prop} :
     WP M (.seq (.seq a b) c) s Q ↔ WP M (.seq a (.seq b c)) s Q := by
   simp only [WP.seq_iff]
