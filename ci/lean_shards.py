@@ -101,6 +101,7 @@ PARALLELISM = 5.4
 # manifest has no time for when it has none at all.
 UP_TO_DATE = 0.02
 DEFAULT_TIME = 3.0
+IMPORT = re.compile(r"^\s*import\s+(\S+)", re.M)
 BUILT = re.compile(r"\bBuilt (\S+) \((\d+(?:\.\d+)?)(ms|s)\)")
 
 
@@ -152,12 +153,14 @@ def matches(entry: str, module: str, closure: dict[str, frozenset[str]]) -> bool
     return module == pattern
 
 
+def imported_by(text: str, mods) -> list[str]:
+    """The modules of the project (of `mods`) the source `text` imports."""
+    return [i for i in IMPORT.findall(text) if i in mods]
+
+
 def imports(mods: dict[str, pathlib.Path]) -> dict[str, list[str]]:
     """The modules of the project each module imports."""
-    return {
-        m: [i for i in re.findall(r"^\s*import\s+(\S+)", f.read_text(), re.M) if i in mods]
-        for m, f in mods.items()
-    }
+    return {m: imported_by(f.read_text(), mods) for m, f in mods.items()}
 
 
 def closures(imps: dict[str, list[str]]) -> dict[str, frozenset[str]]:
@@ -244,6 +247,42 @@ def pack(
     return [estimate(w, p) for w, p in zip(loads, longest)], targets, shards
 
 
+def schedule(
+    imps: dict[str, list[str]],
+    closure: dict[str, frozenset[str]],
+    stale: set[str],
+    times: dict[str, float],
+) -> tuple[float, dict[str, float], tuple[list[float], list[list[str]], list[set[str]]]]:
+    """The shards that build the modules `stale` of the modules `imps`
+    (whose closures are `closure`), each taking its time in `times` (a
+    module without one, the median): the work, each module's critical path,
+    and each shard's estimated time, its sinks and the modules it builds
+    (none when the `lean` job builds them alone)."""
+    default = sorted(times.values())[len(times) // 2] if times else DEFAULT_TIME
+    cost = {m: (times.get(m, default) if m in stale else UP_TO_DATE) for m in imps}
+    work = sum(cost[m] for m in stale)
+    # At most a shard per `WORK_PER_SHARD`; but a sink's closure is built on
+    # one runner, so the largest (or the longest chain) may set the time
+    # whatever the count. Then more shards only build what they share again:
+    # take the fewest whose slowest is within `SLACK` of the fastest plan's.
+    most = min(MAX_SHARDS, math.ceil(work / WORK_PER_SHARD))
+    # A shard is closed under imports (it builds its sinks' closures), so its
+    # critical path is the longest of its sinks'.
+    path = paths(imps, cost)
+    imported = {i for m in imps for i in imps[m]}
+    total = {m: sum(cost[x] for x in closure[m]) for m in imps if m not in imported}
+    # Largest first by work, not by estimate: taking long chains first spreads
+    # what they import over more shards, which then build it more than once.
+    sinks = sorted(total, key=lambda m: (-total[m], m))
+    packs = {n: pack(n, sinks, closure, cost, path) for n in range(2, most + 1)}
+    best = min((max(p[0]) for p in packs.values()), default=0.0)
+    count = min((n for n, p in packs.items() if max(p[0]) <= best * (1 + SLACK)), default=0)
+    # Unless the `lean` job would build it all about as fast itself.
+    if count and max(packs[count][0]) + SHARD_OVERHEAD > estimate(work, max(path.values(), default=0.0)):
+        count = 0
+    return work, path, packs[count] if count else ([], [], [])
+
+
 def plan(manifest: dict) -> dict:
     mods = modules()
     imps = imports(mods)
@@ -260,30 +299,7 @@ def plan(manifest: dict) -> dict:
     else:
         changed = set(mods)
     stale = {m for m in mods if closure[m] & changed}
-    times = manifest.get("times", {})
-    default = sorted(times.values())[len(times) // 2] if times else DEFAULT_TIME
-    cost = {m: (times.get(m, default) if m in stale else UP_TO_DATE) for m in mods}
-    work = sum(cost[m] for m in stale)
-    # At most a shard per `WORK_PER_SHARD`; but a sink's closure is built on
-    # one runner, so the largest (or the longest chain) may set the time
-    # whatever the count. Then more shards only build what they share again:
-    # take the fewest whose slowest is within `SLACK` of the fastest plan's.
-    most = min(MAX_SHARDS, math.ceil(work / WORK_PER_SHARD))
-    # A shard is closed under imports (it builds its sinks' closures), so its
-    # critical path is the longest of its sinks'.
-    path = paths(imps, cost)
-    imported = {i for m in mods for i in imps[m]}
-    total = {m: sum(cost[x] for x in closure[m]) for m in mods if m not in imported}
-    # Largest first by work, not by estimate: taking long chains first spreads
-    # what they import over more shards, which then build it more than once.
-    sinks = sorted(total, key=lambda m: (-total[m], m))
-    packs = {n: pack(n, sinks, closure, cost, path) for n in range(2, most + 1)}
-    best = min((max(p[0]) for p in packs.values()), default=0.0)
-    count = min((n for n, p in packs.items() if max(p[0]) <= best * (1 + SLACK)), default=0)
-    # Unless the `lean` job would build it all about as fast itself.
-    if count and max(packs[count][0]) + SHARD_OVERHEAD > estimate(work, max(path.values(), default=0.0)):
-        count = 0
-    loads, targets, shards = packs[count] if count else ([], [], [])
+    work, _, (loads, targets, shards) = schedule(imps, closure, stale, manifest.get("times", {}))
     owner = {}
     for i, shard in enumerate(shards):
         for m in sorted(shard):

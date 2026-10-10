@@ -460,6 +460,18 @@ a declaration with the per-file profiles below, and measure a change by
 instructions or heartbeats, as below, never by this table. Modules you
 rebuild locally record your machine's times in place of CI's.
 
+What a module costs CI depends on its imports too: each shard
+(`ci/lean_shards.py`) builds its sinks' whole import closures, so a module
+two shards need is built twice. `ci/lean_closure.py` shows where (after
+`python3 ci/ci_metrics.py fetch .ci-metrics 30`, and `profile` once the cache
+is restored): `sinks` ranks the sinks by closure time, `dominators SINK`
+gives the time each module brings into SINK's closure alone, and `score`
+replays CI's plan of a full rebuild and of the recent runs with the imports
+of `origin/main` and of the working tree (or `--drop A:B`). Judge an import
+cut by `score`, not by a closure's size: a subtree a sink drags in is often
+built in its shard anyway, and the greedy plan moves by a few seconds with
+any change.
+
 Lake replays a module's recorded messages, the profile included, whenever
 it finds the module built: build with `lake build --log-level=warning` (or
 `-q`), as every command here does, to see only warnings and errors. A
