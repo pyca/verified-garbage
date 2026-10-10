@@ -42,8 +42,8 @@ theorem maskBits (x : BitVec 64) (n : Nat) (hn : n ≤ 64) :
   intro i hi
   simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_setWidth]
-  have ha : 64 - n + i < 64 ↔ i < n := by omega
-  have hb : ¬64 - n + i < 64 - n := by omega
+  have ha : 64 - n + i < 64 ↔ i < n := by omega_arith
+  have hb : ¬64 - n + i < 64 - n := by omega_arith
   simp only [ha, hb, hi, decide_true, decide_false, Bool.not_false,
     Bool.and_true, Bool.true_and, Nat.add_sub_cancel_left]
 
@@ -62,7 +62,7 @@ theorem exec_imm (s : State) (r : Reg) (n : Nat) (hn : n < 65536) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mul_zero,
     Nat.shiftLeft_zero]
-  omega
+  omega_arith
 
 
 /-! ## The indices -/
@@ -163,10 +163,10 @@ theorem umov_mask_ok (s : State) (n : Nat) (hn : n < 64) (hn' : 0 < n) :
   let e₃ := e₂.write .x .x8 (e₂.gpr .x8 >>> (64 - n))
   refine WP.of_runBlock ⟨e₃, ?_, ?_, ?_, rfl⟩
   · rw [List.singleton_append, mask, runBlock_cons, exec_umovw0, runStep_some, runBlock_cons,
-      exec_lslx _ _ _ (by omega), runStep_some, runBlock_cons, exec_lsrx _ _ _ (by omega),
+      exec_lslx _ _ _ (by omega_arith), runStep_some, runBlock_cons, exec_lsrx _ _ _ (by omega_arith),
       runStep_some, runBlock_nil]
   · simp only [e₃, e₂, e₁, gpr_write_self, BitVec.setWidth_eq]
-    exact maskBits _ n (by omega)
+    exact maskBits _ n (by omega_arith)
   · exact ⟨fun r hr => by
       have : r ≠ .x8 := fun e => hr (by simp [e])
       simp only [e₃, e₂, e₁, gpr_write_of_ne _ _ _ this], rfl, rfl, rfl⟩
@@ -177,7 +177,7 @@ theorem low_byte (v : BitVec 128) :
   intro i hi
   simp only [BitVec.getLsbD_setWidth, vbyte, BitVec.getLsbD_extractLsb']
   by_cases h : i < 8
-  · simp [h, show i < 32 by omega]
+  · simp [h, show i < 32 by omega_arith]
   · simp [h]
 
 theorem piLookup_eq : piLookup = loadTable (fun k => Spec.Rc2.piTable.getD k 0) ++
@@ -239,35 +239,35 @@ theorem loads_ok (s : State) (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0) 12
       (∀ r < n, t.v (treg r) = s.mem.read (s.gpr .x0 + BitVec.ofNat 64 (16 * r)) 16) ∧
       (∀ w, (∀ r < n, w ≠ treg r) → t.v w = s.v w) ∧ t = { s with v := t.v } := by
   induction n with
-  | zero => exact WP.block_nil ⟨fun _ h => absurd h (by omega), fun _ _ => rfl, rfl⟩
+  | zero => exact WP.block_nil ⟨fun _ h => absurd h (by omega_arith), fun _ _ => rfl, rfl⟩
   | succ n ih =>
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun a ⟨arow, av, ae⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun a ⟨arow, av, ae⟩ => ?_
     have hin : InRegions (a.rd ++ a.wr) (a.gpr .x0 + BitVec.ofNat 64 (16 * n)) 16 := by
-      rw [ae]; exact CallLay.inRegions_sub readable (by omega) (by decide)
+      rw [ae]; exact CallLay.inRegions_sub readable (by omega_arith) (by decide)
     refine WP.of_runBlock ⟨_, by
-      rw [runBlock_cons, exec_ldrq' _ _ _ _ ⟨by omega, by omega⟩ hin, runStep_some, runBlock_nil],
+      rw [runBlock_cons, exec_ldrq' _ _ _ _ ⟨by omega_arith, by omega_arith⟩ hin, runStep_some, runBlock_nil],
       fun r hr => ?_, fun w hw => ?_, ?_⟩
     · have hmx : a.mem = s.mem ∧ a.gpr = s.gpr := by rw [ae]; exact ⟨rfl, rfl⟩
       by_cases he : r = n
       · subst he; rw [v_setV_self, hmx.1, hmx.2]
-      · rw [v_setV_of_ne _ _ (fun e => he (treg_inj r (by omega) n (by omega) e)), arow r (by omega)]
-    · rw [v_setV_of_ne _ _ (hw n (by omega)), av w (fun r hr => hw r (by omega))]
+      · rw [v_setV_of_ne _ _ (fun e => he (treg_inj r (by omega_arith) n (by omega_arith) e)), arow r (by omega_arith)]
+    · rw [v_setV_of_ne _ _ (hw n (by omega_arith)), av w (fun r hr => hw r (by omega_arith))]
     · rw [ae]; rfl
 
 theorem tbyte_loaded {v : VReg → BitVec 128} (m : Mem) (p : Addr)
     (h : ∀ r < 8, v (treg r) = m.read (p + BitVec.ofNat 64 (16 * r)) 16) (k : Nat) (hk : k < 128) :
     tbyte v k = m (p + BitVec.ofNat 64 k) := by
-  rw [tbyte, h _ (by omega)]
+  rw [tbyte, h _ (by omega_arith)]
   change (m.read _ 16).extractLsb' (8 * (k % 16)) 8 = _
-  rw [Mem.extractLsb'_read m _ (by omega), Offset.add_add, show 16 * (k / 16) + k % 16 = k by omega]
+  rw [Mem.extractLsb'_read m _ (by omega_arith), Offset.add_add, show 16 * (k / 16) + k % 16 = k by omega_arith]
 
 theorem vbyte_dup4 (w : BitVec 32) {e : Nat} (he : e < 16) :
     vbyte (ofVWords w w w w) e = w.extractLsb' (8 * (e % 4)) 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [vbyte, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and]
-  rw [getLsbD_ofVWords _ _ _ _ (by omega)]
-  split <;> (try split) <;> (try split) <;> (congr 1; omega)
+  rw [getLsbD_ofVWords _ _ _ _ (by omega_arith)]
+  split <;> (try split) <;> (try split) <;> (congr 1; omega_arith)
 
 theorem index_table : ∀ j < 64, ∀ c < 4, (256 + 514 * j) / 2 ^ (8 * c) % 2 ^ 8 =
     if c = 0 then 2 * j else if c = 1 then 2 * j + 1 else 0 := by decide
@@ -277,8 +277,8 @@ theorem index_bytes (j : Nat) (hj : j < 64) (e : Nat) :
     ((BitVec.ofNat 32 (256 + 514 * j)).extractLsb' (8 * (e % 4)) 8).toNat =
       if e % 4 = 0 then 2 * j else if e % 4 = 1 then 2 * j + 1 else 0 := by
   rw [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
-    Nat.mod_eq_of_lt (show 256 + 514 * j < 2 ^ 32 by omega)]
-  exact index_table j hj (e % 4) (by omega)
+    Nat.mod_eq_of_lt (show 256 + 514 * j < 2 ^ 32 by omega_arith)]
+  exact index_table j hj (e % 4) (by omega_arith)
 
 theorem low_half (v : BitVec 128) :
     ((((v.extractLsb' 0 32).setWidth 64).setWidth 16).setWidth 64) =
@@ -288,10 +288,10 @@ theorem low_half (v : BitVec 128) :
   simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, vbyte,
     BitVec.getLsbD_extractLsb']
   by_cases h8 : i < 8
-  · simp [h8, show i < 16 by omega, show i < 32 by omega]
+  · simp [h8, show i < 16 by omega_arith, show i < 32 by omega_arith]
   · by_cases h16 : i < 16
-    · simp [h8, h16, show i < 32 by omega, show i - 8 < 8 by omega, show i - 8 < 16 by omega,
-        show 8 + (i - 8) = i by omega]
+    · simp [h8, h16, show i < 32 by omega_arith, show i - 8 < 8 by omega_arith, show i - 8 < 16 by omega_arith,
+        show 8 + (i - 8) = i by omega_arith]
     · simp [h16]
 
 theorem exec_madd (s : State) (d n m a : Reg) :
@@ -352,7 +352,7 @@ theorem keyLookup_ok (s : State) (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0
     simp only [w, h8]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   refine WP.of_runBlock ⟨c, by
     rw [runBlock_cons, exec_imm _ _ _ (by decide), runStep_some, runBlock_cons,
       exec_imm _ _ _ (by decide), runStep_some, runBlock_cons, exec_madd, runStep_some,
@@ -369,7 +369,7 @@ theorem keyLookup_ok (s : State) (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0
   rw [WP.block_append_iff]
   have d0 : d.v .v0 = c.v .v0 := dv _ (by decide) (by decide) (by decide) (by decide) (by decide)
   obtain ⟨f, runf, f0, fv⟩ := select_half_run (s := d) I
-    (fun e he => by rw [hI e he]; split <;> (try split) <;> omega)
+    (fun e he => by rw [hI e he]; split <;> (try split) <;> omega_arith)
     (fun e he => by rw [d0])
     (fun e he => by rw [d1 e he])
   refine WP.of_runBlock ⟨f, runf, ?_⟩
@@ -380,11 +380,11 @@ theorem keyLookup_ok (s : State) (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0
       intro v' h0 h1 h2 h3 h4 h5
       rw [dv v' h1 h2 h3 h4 h5]
       simp only [c, v_setV_of_ne _ _ h0, c₃, c₂, c₁, v_write]
-    rw [tbyte_congr hdb _ (by omega), tbyte_loaded _ _ brow k hk, ak.mem, ak.reg .x0 (by decide)]
+    rw [tbyte_congr hdb _ (by omega_arith), tbyte_loaded _ _ brow k hk, ak.mem, ak.reg .x0 (by decide)]
   refine WP.mono (umov_mask_ok f 16 (by decide) (by decide)) fun t ⟨t8, tk, _⟩ => ⟨?_, ?_⟩
   · have e0 : (I 0).toNat = 2 * j := by rw [hI 0 (by decide)]; rfl
     have e1 : (I 1).toNat = 2 * j + 1 := by rw [hI 1 (by decide)]; rfl
-    rw [t8, low_half, f0 0 (by decide), f0 1 (by decide), e0, e1, tab _ (by omega), tab _ (by omega),
+    rw [t8, low_half, f0 0 (by decide), f0 1 (by decide), e0, e1, tab _ (by omega_arith), tab _ (by omega_arith),
       scheduleAt_getD _ _ _ hj]
   · have kc : Keep [.x8, .x3, .x4, .x5, .x6, .x7] b c :=
       ⟨fun r hr => by

@@ -131,14 +131,14 @@ theorem maskCode_ok (s : State) (bits : Nat) (hb : 1 ≤ bits) (hb' : bits ≤ 1
     simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
     change bits % 2 ^ 32 &&& (2 ^ 3 - 1) = bits % 8 % 2 ^ 32
     rw [Nat.and_two_pow_sub_one_eq_mod]
-    omega
+    omega_arith
   apply WP.mono (maskBranches_ok (List.range 7) (by simp)
     s₁ (bits % 8) (Nat.mod_lt _ (by decide)) index)
   intro s₂ h₂
   refine ⟨?_, keep₁.trans (h₂.2.weaken (by simp))⟩
   rw [h₂.1, mask₁]
   have exponent : 8 + bits - 8 * ((bits + 7) / 8) = if bits % 8 = 0 then 8 else bits % 8 := by
-    split <;> omega
+    split <;> omega_arith
   rw [exponent]
   have fact : ∀ r < 8,
       ((if r ∈ (List.range 7).map (· + 1) then BitVec.ofNat 32 (2 ^ r - 1)
@@ -175,34 +175,34 @@ theorem descendLoop_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (ht
     simp only [I, Nat.sub_self]
     rfl
   rw [← finish]
-  apply forwardLoop (.block descendKey) I (128 - t8) _ 0 (by omega) s
+  apply forwardLoop (.block descendKey) I (128 - t8) _ 0 (by omega_arith) s
     ⟨start, KeyFrame.refl s, initialPrefix⟩
   intro j hj s₁ ⟨index₁, frame₁, prefix₁⟩
   have outPtr := frame₁.reg .edi (by decide)
   have len₁ := (frame₁.reg .esi (by decide)).trans len
   have indexNew : s₁.gpr .ecx - 1 = BitVec.ofNat 32 (127 - t8 - j) := by
-    rw [index₁, counter_sub _ (show 1 ≤ 128 - t8 - j by omega)]
-    congr 1; omega
+    rw [index₁, counter_sub _ (show 1 ≤ 128 - t8 - j by omega_arith)]
+    congr 1; omega_arith
   have loAddr : addr32 (s₁.gpr .edi + (s₁.gpr .ecx - 1) + 1) =
       addr32 (s.gpr .edi) + BitVec.ofNat 64 (127 - t8 - j + 1) := by
     rw [outPtr, indexNew, BitVec.add_assoc, counter_add]
-    exact addr_add (by omega)
+    exact addr_add (by omega_arith)
   have hiAddr : addr32 (s₁.gpr .edi + (s₁.gpr .ecx - 1 + s₁.gpr .esi)) =
       addr32 (s.gpr .edi) + BitVec.ofNat 64 (127 - t8 - j + t8) := by
     rw [outPtr, indexNew, len₁, ← BitVec.ofNat_add]
-    exact addr_add (by omega)
+    exact addr_add (by omega_arith)
   have read₁ (i : Nat) (hi : i < 128) :
       InRegions (s₁.rd ++ s₁.wr) (addr32 (s.gpr .edi) + BitVec.ofNat 64 i) 1 := by
     obtain ⟨r, hr, hc⟩ := writable i hi
     rw [frame₁.wr]
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   have write₁ : InRegions s₁.wr (addr32 (s₁.gpr .edi + (s₁.gpr .ecx - 1))) 1 := by
-    rw [frame₁.wr, outPtr, indexNew, addr_add (by omega)]
-    exact writable _ (by omega)
+    rw [frame₁.wr, outPtr, indexNew, addr_add (by omega_arith)]
+    exact writable _ (by omega_arith)
   have readLo : InRegions (s₁.rd ++ s₁.wr) (addr32 (s₁.gpr .edi + (s₁.gpr .ecx - 1) + 1)) 1 := by
-    rw [loAddr]; exact read₁ _ (by omega)
+    rw [loAddr]; exact read₁ _ (by omega_arith)
   have readHi : InRegions (s₁.rd ++ s₁.wr) (addr32 (s₁.gpr .edi + (s₁.gpr .ecx - 1 + s₁.gpr .esi))) 1 := by
-    rw [hiAddr]; exact read₁ _ (by omega)
+    rw [hiAddr]; exact read₁ _ (by omega_arith)
   apply WP.mono (descendKey_ok s₁ readLo readHi write₁)
   intro s₂ h₂
   let b := Spec.Rc2.pi ((descend l t8 j).getD (127 - t8 - j + 1) 0 ^^^
@@ -210,21 +210,21 @@ theorem descendLoop_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (ht
   have keep₂ : Keep keyTemps {s₁ with
       mem := s₁.mem.writeW (addr32 (s.gpr .edi) + BitVec.ofNat 64 (127 - t8 - j)) b} s₂ := by
     have h := h₂.2.2
-    rw [loAddr, hiAddr, prefix₁ _ (by omega), prefix₁ _ (by omega), outPtr, indexNew, addr_add (by omega)] at h
+    rw [loAddr, hiAddr, prefix₁ _ (by omega_arith), prefix₁ _ (by omega_arith), outPtr, indexNew, addr_add (by omega_arith)] at h
     exact h
   constructor
-  · refine ⟨?_, frame₁.step (127 - t8 - j) (by omega) b keep₂, ?_⟩
+  · refine ⟨?_, frame₁.step (127 - t8 - j) (by omega_arith) b keep₂, ?_⟩
     · rw [h₂.1]
       change s₁.gpr .ecx - 1 = _
       rw [indexNew]
-      congr 1; omega
+      congr 1; omega_arith
     · rw [keep₂.mem, descend_succ]
-      exact prefix₁.write (by decide) (by omega) b
+      exact prefix₁.write (by decide) (by omega_arith) b
   · rw [h₂.2.1]
     change some ((s₁.gpr .ecx - 1) == 0#32) = _
     rw [indexNew]
-    have he : 127 - t8 - j = 0 ↔ j + 1 = 128 - t8 := by omega
-    have eqZero := counter_eq (127 - t8 - j) 0 (by omega) (by decide)
+    have he : 127 - t8 - j = 0 ↔ j + 1 = 128 - t8 := by omega_arith
+    have eqZero := counter_eq (127 - t8 - j) 0 (by omega_arith) (by decide)
     simp only [BitVec.sub_zero] at eqZero
     rw [eqZero]
     simp only [he]
@@ -257,49 +257,49 @@ theorem fillLoop_ok (s : State) (key : List Byte) (ht : 1 ≤ key.length) (ht' :
     simp only [I, Nat.add_sub_of_le (Nat.le_of_lt ht')]
     rfl
   rw [← finish]
-  apply forwardLoop (.block fillKey) I (128 - key.length) _ 0 (by omega) s
+  apply forwardLoop (.block fillKey) I (128 - key.length) _ 0 (by omega_arith) s
     ⟨start, KeyFrame.refl s, initialPrefix⟩
   intro j hj s₁ ⟨index₁, frame₁, prefix₁⟩
   have outPtr := frame₁.reg .edi (by decide)
   have len₁ := (frame₁.reg .esi (by decide)).trans len
   have loAddr : addr32 (s₁.gpr .edi + s₁.gpr .ecx - 1) =
       addr32 (s.gpr .edi) + BitVec.ofNat 64 (key.length + j - 1) := by
-    rw [outPtr, index₁, BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg, counter_sub _ (by omega)]
-    exact addr_add (by omega)
+    rw [outPtr, index₁, BitVec.sub_eq_add_neg, BitVec.add_assoc, ← BitVec.sub_eq_add_neg, counter_sub _ (by omega_arith)]
+    exact addr_add (by omega_arith)
   have hiAddr : addr32 (s₁.gpr .edi + (s₁.gpr .ecx - s₁.gpr .esi)) =
       addr32 (s.gpr .edi) + BitVec.ofNat 64 j := by
-    rw [outPtr, index₁, len₁, Offset.ofNat_sub_ofNat (by omega), Nat.add_sub_cancel_left]
-    exact addr_add (by omega)
+    rw [outPtr, index₁, len₁, Offset.ofNat_sub_ofNat (by omega_arith), Nat.add_sub_cancel_left]
+    exact addr_add (by omega_arith)
   have read₁ (i : Nat) (hi : i < 128) :
       InRegions (s₁.rd ++ s₁.wr) (addr32 (s.gpr .edi) + BitVec.ofNat 64 i) 1 := by
     obtain ⟨r, hr, hc⟩ := writable i hi
     rw [frame₁.wr]
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   have write₁ : InRegions s₁.wr (addr32 (s₁.gpr .edi + s₁.gpr .ecx)) 1 := by
-    rw [frame₁.wr, outPtr, index₁, addr_add (by omega)]
-    exact writable _ (by omega)
+    rw [frame₁.wr, outPtr, index₁, addr_add (by omega_arith)]
+    exact writable _ (by omega_arith)
   have readLo : InRegions (s₁.rd ++ s₁.wr) (addr32 (s₁.gpr .edi + s₁.gpr .ecx - 1)) 1 := by
-    rw [loAddr]; exact read₁ _ (by omega)
+    rw [loAddr]; exact read₁ _ (by omega_arith)
   have readHi : InRegions (s₁.rd ++ s₁.wr) (addr32 (s₁.gpr .edi + (s₁.gpr .ecx - s₁.gpr .esi))) 1 := by
-    rw [hiAddr]; exact read₁ _ (by omega)
+    rw [hiAddr]; exact read₁ _ (by omega_arith)
   apply WP.mono (fillKey_ok s₁ readLo readHi write₁)
   intro s₂ h₂
   let b := Spec.Rc2.pi ((fill key j).getD (key.length + j - 1) 0 + (fill key j).getD j 0)
   have keep₂ : Keep keyTemps {s₁ with
       mem := s₁.mem.writeW (addr32 (s.gpr .edi) + BitVec.ofNat 64 (key.length + j)) b} s₂ := by
     have h := h₂.2.2
-    rw [loAddr, hiAddr, prefix₁ _ (by omega), prefix₁ _ (by omega), outPtr, index₁, addr_add (by omega)] at h
+    rw [loAddr, hiAddr, prefix₁ _ (by omega_arith), prefix₁ _ (by omega_arith), outPtr, index₁, addr_add (by omega_arith)] at h
     exact h
   constructor
-  · refine ⟨?_, frame₁.step (key.length + j) (by omega) b keep₂, ?_⟩
+  · refine ⟨?_, frame₁.step (key.length + j) (by omega_arith) b keep₂, ?_⟩
     · rw [h₂.1, index₁, counter_add, Nat.add_assoc]
     · rw [keep₂.mem, fill_succ]
-      have h := prefix₁.extend (show key.length + j < 128 by omega) b
+      have h := prefix₁.extend (show key.length + j < 128 by omega_arith) b
       simpa only [fillStep, Nat.add_sub_cancel_left, Nat.add_assoc] using h
   · rw [h₂.2.1, index₁, counter_add]
-    have he : key.length + j + 1 = 128 ↔ j + 1 = 128 - key.length := by omega
+    have he : key.length + j + 1 = 128 ↔ j + 1 = 128 - key.length := by omega_arith
     change some ((BitVec.ofNat 32 (key.length + j + 1) - BitVec.ofNat 32 128) == 0#32) = _
-    rw [counter_eq _ _ (by omega) (by decide)]
+    rw [counter_eq _ _ (by omega_arith) (by decide)]
     simp only [he]
 
 end VG.Proof.Rc2.X86
@@ -327,36 +327,36 @@ theorem copyLoop_ok (s : State) (t : Nat) (ht : 1 ≤ t) (ht' : t ≤ 128)
   let key := Spec.Rc2.bytesAt s.mem (addr32 (s.gpr .ebp)) t
   let I (i : Nat) (s' : State) := s'.gpr .ecx = BitVec.ofNat 32 i ∧ KeyFrame s s' ∧
     BytesPrefix s'.mem (addr32 (s.gpr .edi)) (fill key 0) i
-  apply forwardLoop (.block copyKey) I t _ 0 (by omega) s
-    ⟨zero, KeyFrame.refl s, fun i hi => by omega⟩
+  apply forwardLoop (.block copyKey) I t _ 0 (by omega_arith) s
+    ⟨zero, KeyFrame.refl s, fun i hi => by omega_arith⟩
   intro i hi s₁ ⟨index₁, frame₁, prefix₁⟩
   have keyPtr := frame₁.reg .ebp (by decide)
   have outPtr := frame₁.reg .edi (by decide)
   have len₁ := (frame₁.reg .esi (by decide)).trans len
   have read₁ : InRegions (s₁.rd ++ s₁.wr) (addr32 (s₁.gpr .ebp + s₁.gpr .ecx)) 1 := by
-    rw [frame₁.rd, frame₁.wr, keyPtr, index₁, addr_add (by omega)]
+    rw [frame₁.rd, frame₁.wr, keyPtr, index₁, addr_add (by omega_arith)]
     exact readable i hi
   have write₁ : InRegions s₁.wr (addr32 (s₁.gpr .edi + s₁.gpr .ecx)) 1 := by
-    rw [frame₁.wr, outPtr, index₁, addr_add (by omega)]
-    exact writable i (by omega)
+    rw [frame₁.wr, outPtr, index₁, addr_add (by omega_arith)]
+    exact writable i (by omega_arith)
   have byte₁ : s₁.mem (addr32 (s₁.gpr .ebp + s₁.gpr .ecx)) = key.getD i 0 := by
-    rw [keyPtr, index₁, addr_add (by omega), bytesAt_getD _ _ _ _ hi]
-    exact frame₁.mem.bytes (by simpa using sep) (by change t ≤ 2 ^ 64; omega) hi
+    rw [keyPtr, index₁, addr_add (by omega_arith), bytesAt_getD _ _ _ _ hi]
+    exact frame₁.mem.bytes (by simpa using sep) (by change t ≤ 2 ^ 64; omega_arith) hi
   obtain ⟨s₂, run₂, index₂, flag₂, keep₂⟩ := copyKey_ok s₁ read₁ write₁
   have keep₂' : Keep keyTemps
       {s₁ with mem := s₁.mem.writeW (addr32 (s.gpr .edi) + BitVec.ofNat 64 i) (key.getD i 0)} s₂ := by
     rw [byte₁] at keep₂
-    simpa only [outPtr, index₁, addr_add (by omega : (s.gpr .edi).toNat + i < 2 ^ 32)] using keep₂
+    simpa only [outPtr, index₁, addr_add (by omega_arith : (s.gpr .edi).toNat + i < 2 ^ 32)] using keep₂
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   constructor
-  · refine ⟨?_, frame₁.step i (by omega) _ keep₂', ?_⟩
+  · refine ⟨?_, frame₁.step i (by omega_arith) _ keep₂', ?_⟩
     · rw [index₂, index₁, counter_add]
     · rw [keep₂'.mem]
-      have prefix₂ := prefix₁.extend (show i < 128 by omega) (key.getD i 0)
+      have prefix₂ := prefix₁.extend (show i < 128 by omega_arith) (key.getD i 0)
       rw [initial_set key i] at prefix₂
       exact prefix₂
   · rw [flag₂, index₁, len₁, counter_add]
-    exact congrArg some (counter_eq (i + 1) t (by omega) (by omega))
+    exact congrArg some (counter_eq (i + 1) t (by omega_arith) (by omega_arith))
 
 end VG.Proof.Rc2.X86
 
@@ -393,7 +393,7 @@ theorem maybeFill_ok (s : State) (key : List Byte) (ht : 1 ≤ key.length) (ht' 
   have frame₁ := (KeyFrame.refl s).keep (keep₁.weaken (by simp [keyTemps]))
   have flag : zeroFlag s₁ = some (decide (key.length = 128)) := by
     rw [flag₁, start]
-    exact congrArg some (counter_eq _ _ (by omega) (by decide))
+    exact congrArg some (counter_eq _ _ (by omega_arith) (by decide))
   have ptr₁ := keep₁.reg .edi (by simp)
   by_cases he : key.length = 128
   · apply WP.ite false (by simp only [eval_nonzero, flag, he, decide_true, Option.map_some, Bool.not_true])
@@ -410,7 +410,7 @@ theorem maybeFill_ok (s : State) (key : List Byte) (ht : 1 ≤ key.length) (ht' 
         rw [keep₁.wr, ptr₁]; exact writable
       have initial : BytesPrefix s₁.mem (addr32 (s₁.gpr .edi)) (fill key 0) key.length := by
         rw [keep₁.mem, ptr₁]; exact initialPrefix
-      apply WP.mono (fillLoop_ok s₁ key ht (by omega) (by rw [ptr₁]; exact outFit)
+      apply WP.mono (fillLoop_ok s₁ key ht (by omega_arith) (by rw [ptr₁]; exact outFit)
         ((keep₁.reg .esi (by simp)).trans len) ((keep₁.reg .ecx (by simp)).trans start) writes initial)
       intro s₂ h₂
       exact ⟨h₂.1, frame₁.trans h₂.2.1, by rw [ptr₁] at h₂; exact h₂.2.2⟩
@@ -433,14 +433,14 @@ theorem setReduction_ok (s : State) (bits : Nat) (hb : 1 ≤ bits) (hb' : bits �
     rw [input]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   refine ⟨?_, ?_, ?_⟩
   · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, reduceCtorEq, ite_true, ite_false]
     exact t8
   · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, reduceCtorEq, ite_true, ite_false]
     change 128#32 - (s.mem.readW (addr32 (s.gpr .esp + 12)) 32 + 7#32) >>> 3 = _
     rw [t8]
-    exact Offset.ofNat_sub_ofNat (by omega)
+    exact Offset.ofNat_sub_ofNat (by omega_arith)
   · constructor
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -463,11 +463,11 @@ theorem maybeDescend_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (h
   have frame₁ := (KeyFrame.refl s).keep (keep₁.weaken (by simp [keyTemps]))
   have flag : zeroFlag s₁ = some (decide (t8 = 128)) := by
     rw [flag₁, start]
-    have eqZero := counter_eq (128 - t8) 0 (by omega) (by decide)
+    have eqZero := counter_eq (128 - t8) 0 (by omega_arith) (by decide)
     simp only [BitVec.sub_zero] at eqZero
     change some (BitVec.ofNat 32 (128 - t8) == 0#32) = _
     rw [eqZero]
-    have he : 128 - t8 = 0 ↔ t8 = 128 := by omega
+    have he : 128 - t8 = 0 ↔ t8 = 128 := by omega_arith
     simp only [he]
   have ptr₁ := keep₁.reg .edi (by simp)
   by_cases he : t8 = 128
@@ -484,7 +484,7 @@ theorem maybeDescend_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (h
         rw [keep₁.wr, ptr₁]; exact writable
       have initial : BytesPrefix s₁.mem (addr32 (s₁.gpr .edi)) l 128 := by
         rw [keep₁.mem, ptr₁]; exact initialPrefix
-      apply WP.mono (descendLoop_ok s₁ l t8 ht (by omega) (by rw [ptr₁]; exact outFit)
+      apply WP.mono (descendLoop_ok s₁ l t8 ht (by omega_arith) (by rw [ptr₁]; exact outFit)
         ((keep₁.reg .esi (by simp)).trans len) ((keep₁.reg .ecx (by simp)).trans start) writes initial)
       intro s₂ h₂
       exact ⟨frame₁.trans h₂.2.1, by rw [ptr₁] at h₂; exact h₂.2.2⟩
@@ -563,9 +563,9 @@ theorem reduceDescend_ok (s : State) (l : KeyBytes) (bits : Nat) (hb : 1 ≤ bit
       (.ite .ne (.loop (.block descendKey) .ne) (.block [])))) s (fun s' =>
         KeyFrame s s' ∧ BytesPrefix s'.mem (addr32 (s.gpr .edi))
           (descend (reduce l bits) ((bits + 7) / 8) (128 - (bits + 7) / 8)) 128) := by
-  have bound : 1 ≤ (bits + 7) / 8 ∧ (bits + 7) / 8 ≤ 128 := by omega
+  have bound : 1 ≤ (bits + 7) / 8 ∧ (bits + 7) / 8 ≤ 128 := by omega_arith
   have writes : InRegions s.wr (addr32 (s.gpr .edi + s.gpr .ecx)) 1 := by
-    rw [index, addr_add (by omega)]; exact writable _ (by omega)
+    rw [index, addr_add (by omega_arith)]; exact writable _ (by omega_arith)
   have reads : InRegions (s.rd ++ s.wr) (addr32 (s.gpr .edi + s.gpr .ecx)) 1 := by
     obtain ⟨r, hr, hc⟩ := writes
     exact ⟨r, List.mem_append_right _ hr, hc⟩
@@ -573,12 +573,12 @@ theorem reduceDescend_ok (s : State) (l : KeyBytes) (bits : Nat) (hb : 1 ≤ bit
   apply WP.mono (reduceKey_ok s reads writes)
   intro s₁ h₁
   have keep₁ := h₁.2
-  rw [index, addr_add (by omega), initialPrefix _ (by omega), mask] at keep₁
-  have frame₁ := (KeyFrame.refl s).step _ (by omega) _ keep₁
+  rw [index, addr_add (by omega_arith), initialPrefix _ (by omega_arith), mask] at keep₁
+  have frame₁ := (KeyFrame.refl s).step _ (by omega_arith) _ keep₁
   have ptr₁ := keep₁.reg .edi (by decide)
   have prefix₁ : BytesPrefix s₁.mem (addr32 (s.gpr .edi)) (reduce l bits) 128 := by
     rw [keep₁.mem]
-    exact initialPrefix.write (by decide) (by omega) _
+    exact initialPrefix.write (by decide) (by omega_arith) _
   have write₁ : ∀ i < 128, InRegions s₁.wr (addr32 (s₁.gpr .edi) + BitVec.ofNat 64 i) 1 := by
     rw [keep₁.wr, ptr₁]; exact writable
   apply WP.mono (maybeDescend_ok s₁ (reduce l bits) ((bits + 7) / 8) bound.1 bound.2 (by rw [ptr₁]; exact outFit)
@@ -635,14 +635,14 @@ theorem keyRestore_eq : restore = restoreCode .eax savedReg (List.range 4) := rf
 
 theorem argAddr_eq (s : State) (i : Nat) (fit : (s.gpr .esp).toNat + 4 + 4 * i < 2 ^ 32) :
     argAddr s i = addr32 (s.gpr .esp) + BitVec.ofNat 64 (4 + 4 * i) :=
-  addr_add (by omega)
+  addr_add (by omega_arith)
 
 theorem argContains (s : State) (fit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32)
     (i : Nat) (hi : i < 5) :
     (Region.mk (argAddr s 0) 20).Contains
       (addr32 (s.gpr .esp) + BitVec.ofNat 64 (4 + 4 * i)) 4 := by
-  rw [argAddr_eq s 0 (by omega)]
-  exact Offset.contains _ (by omega) (by omega) (by decide)
+  rw [argAddr_eq s 0 (by omega_arith)]
+  exact Offset.contains _ (by omega_arith) (by omega_arith) (by decide)
 
 theorem args_frame {s s' : State} {rs : List Region}
     (frame : Frame rs s.mem s'.mem) (sp : s'.gpr .esp = s.gpr .esp)
@@ -652,7 +652,7 @@ theorem args_frame {s s' : State} {rs : List Region}
   intro i hi
   unfold arg
   have e : argAddr s' i = argAddr s i := by unfold argAddr; rw [sp]
-  rw [e, argAddr_eq s i (by omega)]
+  rw [e, argAddr_eq s i (by omega_arith)]
   exact frame.readW (argContains s fit i hi) sep (by decide)
 
 theorem loadArg_ok (s : State) (r : Reg) (i : Nat)

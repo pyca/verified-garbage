@@ -27,7 +27,7 @@ theorem short_ok (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
     (hz : (stackArg s 1).toNat = 0) (t : State) (ht : Keep s t) :
     WP isa short t (UpdPost d s) := by
   obtain ⟨_, _, hrd, hwr, ctxData, _, _, _, _, _, _, _, _, _, _, _, _, _, fitC, fitD, _, _, hp, hN⟩ := hs
-  have hshort : (s.gpr .r1).toNat + (s.gpr .r3).toNat < 8 := by omega
+  have hshort : (s.gpr .r1).toNat + (s.gpr .r3).toNat < 8 := by omega_arith
   have hNlt := (s.gpr .r3).isLt
   rw [short]
   refine WP.seq (wp_add (op2_reg _ _) fun t₁ u₁ => WP.block_nil ?_)
@@ -37,21 +37,21 @@ theorem short_ok (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
     rw [u₁.gpr, ht.reg _ (by decide), ht.reg _ (by decide), ← ofNat_toNat32]
   have hD : State.addr (t₁.gpr .r1) + BitVec.ofNat 64 136 =
       State.addr (s.gpr .r0) + BitVec.ofNat 64 (136 + (s.gpr .r1).toNat) := by
-    rw [r1₁, addr_add (by omega), Offset.add_add, Nat.add_comm]
+    rw [r1₁, addr_add (by omega_arith), Offset.add_add, Nat.add_comm]
   have dstSub : Region.Sub ⟨State.addr (s.gpr .r0) + BitVec.ofNat 64 (136 + (s.gpr .r1).toNat), (s.gpr .r3).toNat⟩
-      ⟨State.addr (s.gpr .r0), 144⟩ := Offset.sub_base _ (by omega)
+      ⟨State.addr (s.gpr .r0), 144⟩ := Offset.sub_base _ (by omega_arith)
   apply WP.mono (copy_ok (s := t₁) (src := .r2) (dst := .r1) (cnt := .r3) (so := 0) (dd := 136)
     (L := (s.gpr .r3).toNat) (A := State.addr (s.gpr .r2))
     (B := State.addr (s.gpr .r0) + BitVec.ofNat 64 (136 + (s.gpr .r1).toNat))
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by rw [g₁ _ (by decide) (by decide)]; exact ofNat_toNat32 _) hNlt
-    (by rw [g₁ _ (by decide) (by decide)]; omega)
-    (by rw [r1₁, toNat_add32 (by omega)]; omega)
+    (by rw [g₁ _ (by decide) (by decide)]; omega_arith)
+    (by rw [r1₁, toNat_add32 (by omega_arith)]; omega_arith)
     (by rw [g₁ _ (by decide) (by decide)]; exact add0 _) hD
     (fun _ => by
       rw [u₁.rd, u₁.wr, ht.rd, ht.wr, ← add0 (State.addr (s.gpr .r2))]
-      exact cov1 (len := (s.gpr .r3).toNat) (by rw [hrd]; simp) (by omega))
-    (fun _ => by rw [u₁.wr, ht.wr]; exact cov1 (len := 144) (by rw [hwr]; simp) (by omega))
+      exact cov1 (len := (s.gpr .r3).toNat) (by rw [hrd]; simp) (by omega_arith))
+    (fun _ => by rw [u₁.wr, ht.wr]; exact cov1 (len := 144) (by rw [hwr]; simp) (by omega_arith))
     (fun _ => ctxData.symm.sub_right dstSub))
   intro s' c'
   have m' : s'.mem = writeBytes s.mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 (136 + (s.gpr .r1).toNat))
@@ -70,16 +70,16 @@ theorem short_ok (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
     refine update_post_short hshort ?_ ?_ ?_
     · exact Proof.Rc2.scheduleAt_frame frame _ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.base_disjoint _ (by omega) (by omega))
+        exact Offset.base_disjoint _ (by omega_arith) (by omega_arith))
     · rw [e128]
       exact Proof.Rc2.blockAt_frame frame _ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint _ (by omega) (by omega) (by omega))
+        exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith))
     · rw [e136, Proof.Rc2.bytesAt_add, Offset.add_add,
-        Proof.Rc2.bytesAt_frame frame _ _ (by omega) (fun r hr => by
+        Proof.Rc2.bytesAt_frame frame _ _ (by omega_arith) (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact Offset.disjoint _ (by omega) (by omega) (by omega)),
-        m', bytesAt_writeBytes_self _ _ (Proof.Rc2.bytesAt_length _ _ _) (by omega)]
+          exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)),
+        m', bytesAt_writeBytes_self _ _ (Proof.Rc2.bytesAt_length _ _ _) (by omega_arith)]
 
 /-- Regions the call leaves alone. -/
 theorem callSep {C O S : BitVec 32} {OL : Nat} {sp : Addr} (R : Region)
@@ -121,10 +121,10 @@ theorem lrSub (S : BitVec 32) : Region.Sub ⟨State.addr S + BitVec.ofNat 64 512
   Offset.sub_base _ (by decide)
 
 theorem eN {OL : Nat} (h8 : OL % 8 = 0) (hOL : OL < 2 ^ 32) : 8 * (BitVec.ofNat 32 (OL / 8)).toNat = OL := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
 
 theorem eI {C : BitVec 32} (h : C.toNat + 144 ≤ 2 ^ 32) :
-    State.addr (C + 128) = State.addr C + BitVec.ofNat 64 128 := addr_add (k := 128) (by omega)
+    State.addr (C + 128) = State.addr C + BitVec.ofNat 64 128 := addr_add (k := 128) (by omega_arith)
 
 /-- The arguments of the CBC function. -/
 theorem mid_pre (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).pre s)
@@ -133,12 +133,12 @@ theorem mid_pre (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).pr
       (stackArg s 2) := by
   obtain ⟨sp8, _, _, hwr, _, ctxOut, ctxScr, _, _, _, outScr, _, _, bCtx, _, bOut, bScr, _, fitC, _, fitO,
     fitS, hp, hN⟩ := hs
-  have eN' := eN (OL := (stackArg s 1).toNat) (by omega) (stackArg s 1).isLt
+  have eN' := eN (OL := (stackArg s 1).toNat) (by omega_arith) (stackArg s 1).isLt
   have eI' := eI fitC
   have eb : (⟨State.addr t.sp - 8, 8⟩ : Region) = ⟨State.addr s.sp - 8, 8⟩ := by rw [ht.sp]
   refine ⟨ht.r0, ht.r1, ht.r2, ht.r3, ht.r12, by rw [ht.sp]; exact sp8, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    by omega, by show (s.gpr .r0 + BitVec.ofNat 32 128).toNat + 8 ≤ _; rw [toNat_add32 (by omega)]; omega,
-    by rw [eN']; exact fitO, by omega, ?_, ?_⟩
+    by omega_arith, by show (s.gpr .r0 + BitVec.ofNat 32 128).toNat + 8 ≤ _; rw [toNat_add32 (by omega_arith)]; omega_arith,
+    by rw [eN']; exact fitO, by omega_arith, ?_, ?_⟩
   · rw [eI']; exact Offset.base_disjoint _ (by decide) (by decide)
   · rw [eN']; exact ctxOut.sub_left (keySub _)
   · exact (ctxScr.sub_left (keySub _)).sub_right (bufSub _)
@@ -174,21 +174,21 @@ theorem post_ok (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).pr
   obtain ⟨_, _, _, _, frame₂, data₂, iv₂⟩ := hu
   have hOLlt := (stackArg s 1).isLt
   have eb : below t = ⟨State.addr s.sp - 8, 8⟩ := by simp only [below, ht.sp]
-  rw [eI fitC, eN (by omega) hOLlt, eb] at frame₂
-  rw [eI fitC, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show (stackArg s 1).toNat / 8 < 2 ^ 32 by omega)] at data₂ iv₂
+  rw [eI fitC, eN (by omega_arith) hOLlt, eb] at frame₂
+  rw [eI fitC, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show (stackArg s 1).toNat / 8 < 2 ^ 32 by omega_arith)] at data₂ iv₂
   show Spec.Rc2.contextAt u.mem _ d _ = _ ∧ _
   rw [hN] at out₁ pend₁ data₂ iv₂ frame₁ frame₂ ctxOut ⊢
   rw [Nat.mul_div_cancel _ (by decide : 0 < 8)] at data₂ iv₂
   have keyMid := Proof.Rc2.scheduleAt_frame frame₁ _ (midSep _ (ctxOut.sub_left (keySub _))
     (Offset.base_disjoint _ (by decide) (by decide)) ((ctxScr.sub_left (keySub _)).sub_right (lrSub _)))
-  refine update_post_long hp (by omega) out₁ keyMid ?_ ?_ ?_ data₂ iv₂
+  refine update_post_long hp (by omega_arith) out₁ keyMid ?_ ?_ ?_ data₂ iv₂
   · rw [e128]
     exact Proof.Rc2.blockAt_frame frame₁ _ (midSep _ (ctxOut.sub_left (ivSub _))
       (Offset.disjoint _ (by decide) (by decide) (by decide)) ((ctxScr.sub_left (ivSub _)).sub_right (lrSub _)))
-  · rw [e136, Proof.Rc2.bytesAt_frame frame₂ _ _ (by omega) (callSep _
-        (Offset.disjoint _ (by omega) (by omega) (by decide)) (ctxOut.sub_left (Offset.sub_base _ (by omega)))
-        ((ctxScr.sub_left (Offset.sub_base _ (by omega))).sub_right (bufSub _))
-        (bCtx.symm.sub_left (Offset.sub_base _ (by omega)))), pend₁]
+  · rw [e136, Proof.Rc2.bytesAt_frame frame₂ _ _ (by omega_arith) (callSep _
+        (Offset.disjoint _ (by omega_arith) (by omega_arith) (by decide)) (ctxOut.sub_left (Offset.sub_base _ (by omega_arith)))
+        ((ctxScr.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (bufSub _))
+        (bCtx.symm.sub_left (Offset.sub_base _ (by omega_arith)))), pend₁]
   · exact Proof.Rc2.scheduleAt_frame frame₂ _ (callSep _ (Offset.base_disjoint _ (by decide) (by decide))
       (ctxOut.sub_left (keySub _)) ((ctxScr.sub_left (keySub _)).sub_right (bufSub _))
       (bCtx.symm.sub_left (keySub _)))
@@ -207,7 +207,7 @@ theorem restore_ok (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d)
   obtain ⟨rd₂, wr₂, sp₂, saved₂, frame₂, _, _⟩ := hu
   have hOLlt := (stackArg s 1).isLt
   have eb : below t = ⟨State.addr s.sp - 8, 8⟩ := by simp only [below, ht.sp]
-  rw [eI fitC, eN (by omega) hOLlt, eb] at frame₂
+  rw [eI fitC, eN (by omega_arith) hOLlt, eb] at frame₂
   have argR (i : Nat) (hi : i < 3) : InRegions (s.rd ++ s.wr) (stackArgAddr s i) 4 :=
     argIn (by rw [hrd]; simp) hi spfit
   rw [show restoreLr = [.ldrSp .r12 8, .ldr .lr .r12 512] from rfl]
@@ -221,7 +221,7 @@ theorem restore_ok (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d)
       stackArg_frame frame₁ spfit (midSep _ outArgs.symm (ctxArgs.symm.sub_right (pendSub _))
         (scrArgs.symm.sub_right (lrSub _))) (by decide)]
   refine wp_ldr (a := State.addr (stackArg s 2) + BitVec.ofNat 64 512) (by decide)
-    (by rw [v₁.gpr, argsS]; exact addr_add (by omega))
+    (by rw [v₁.gpr, argsS]; exact addr_add (by omega_arith))
     (by rw [v₁.rd, v₁.wr, rd₂, wr₂, ht.rd, ht.wr, hwr]
         exact ⟨⟨State.addr (stackArg s 2), 576⟩, by simp, Offset.contains_base _ (by decide) (by decide)⟩)
     fun u₂ v₂ => WP.block_nil ?_
@@ -256,10 +256,10 @@ theorem args_after (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d)
   have frame₂ := hu.frame
   have hOLlt := (stackArg s 1).isLt
   have eb : below t = ⟨State.addr s.sp - 8, 8⟩ := by simp only [below, ht.sp]
-  rw [eI fitC, eN (by omega) hOLlt, eb] at frame₂
+  rw [eI fitC, eN (by omega_arith) hOLlt, eb] at frame₂
   intro i hi
   have hc : (⟨stackArgAddr s 0, 12⟩ : Region).Contains (stackArgAddr s i) (32 / 8) := by
-    rw [stackArgAddr_eq s hi spfit]; exact Offset.contains_base _ (by omega) (by omega)
+    rw [stackArgAddr_eq s hi spfit]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   have ea : stackArgAddr u i = stackArgAddr s i := by unfold stackArgAddr; rw [hu.sp, ht.sp]
   rw [stackArg, ea, frame₂.readW hc (callSep _ (ctxArgs.symm.sub_right (ivSub _)) outArgs.symm
       (scrArgs.symm.sub_right (bufSub _)) bArgs.symm) (by decide),
@@ -317,7 +317,7 @@ theorem range7 (x : BitVec 32) :
   have h := x.isLt
   apply Bool.eq_iff_iff.mpr
   rw [beq_iff_eq, decide_eq_true_eq, ← BitVec.toNat_inj, e, show (0 : BitVec 32).toNat = 0 from rfl]
-  omega
+  omega_arith
 
 theorem range10 (x : BitVec 32) :
     ((x - 1) >>> 10 - 0 == 0) = decide (1 ≤ x.toNat ∧ x.toNat ≤ 1024) := by
@@ -327,7 +327,7 @@ theorem range10 (x : BitVec 32) :
   have h := x.isLt
   apply Bool.eq_iff_iff.mpr
   rw [beq_iff_eq, decide_eq_true_eq, ← BitVec.toNat_inj, e, show (0 : BitVec 32).toNat = 0 from rfl]
-  omega
+  omega_arith
 
 theorem eq8 (x : BitVec 32) : (x - 8 == 0) = decide (x.toNat = 8) := by
   rw [ofNat_toNat32 x, show (8 : BitVec 32) = BitVec.ofNat 32 8 from rfl, sub_beq x.isLt (by decide),
@@ -338,7 +338,7 @@ theorem setWidth_append (a b : BitVec 32) : BitVec.setWidth 32 (a ++ b) = b := b
   simp only [BitVec.toNat_setWidth, BitVec.toNat_append]
   have := b.isLt
   rw [Nat.shiftLeft_eq, Nat.mul_comm, ← Nat.two_pow_add_eq_or_of_lt this]
-  omega
+  omega_arith
 
 theorem wp_mov_imm {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {v : BitVec 32}
     (he : encodable v = true) (k : WP isa (.block is) (s.setReg d v) Q) :
@@ -492,7 +492,7 @@ theorem args_ok (s : State) (hs : initContract.pre s) (hv : IValid s) (c : State
   refine wp_ldrSp (a := stackArgAddr s 2) (by decide) (by rw [hc.sp]; rfl)
     (by rw [hc.rd, hc.wr]; exact argR 2 (by decide)) fun u₁ v₁ => ?_
   have r12₁ : u₁.gpr .r12 = S := by rw [v₁.gpr, hc.mem]; exact hS
-  refine wp_str (a := State.addr S + BitVec.ofNat 64 512) (by decide) (by rw [r12₁]; exact addr_add (by omega))
+  refine wp_str (a := State.addr S + BitVec.ofNat 64 512) (by decide) (by rw [r12₁]; exact addr_add (by omega_arith))
     (by rw [v₁.wr, hc.wr, hwr]; exact ⟨⟨State.addr S, 576⟩, by simp, Offset.contains_base _ (by decide) (by decide)⟩)
     fun u₂ v₂ => ?_
   have m₂ : u₂.mem = s.mem.writeW (State.addr S + BitVec.ofNat 64 512) LR := by
@@ -506,14 +506,14 @@ theorem args_ok (s : State) (hs : initContract.pre s) (hv : IValid s) (c : State
   have ivRead (k : Nat) (hk : k ≤ 4) : u₂.mem.readW (State.addr IV + BitVec.ofNat 64 k) 32 =
       s.mem.readW (State.addr IV + BitVec.ofNat 64 k) 32 := by
     rw [m₂]
-    refine Mem.readW_writeW_sep (ivScr.sep (Offset.contains_base _ (by omega) (by omega)) ?_) (by decide)
+    refine Mem.readW_writeW_sep (ivScr.sep (Offset.contains_base _ (by omega_arith) (by omega_arith)) ?_) (by decide)
     exact Offset.contains_base _ (by decide) (by decide)
   refine wp_ldr (a := State.addr IV + BitVec.ofNat 64 0) (by decide)
-    (by rw [r3₂]; exact addr_add (by omega))
-    (by obtain ⟨r, hr, hc'⟩ := ivR; exact ⟨r, hr, by rw [add0]; unfold Region.Contains at hc' ⊢; omega⟩)
+    (by rw [r3₂]; exact addr_add (by omega_arith))
+    (by obtain ⟨r, hr, hc'⟩ := ivR; exact ⟨r, hr, by rw [add0]; unfold Region.Contains at hc' ⊢; omega_arith⟩)
     fun u₃ v₃ => ?_
   refine wp_ldr (a := State.addr IV + BitVec.ofNat 64 4) (by decide)
-    (by rw [v₃.other _ (by decide), r3₂]; exact addr_add (by omega))
+    (by rw [v₃.other _ (by decide), r3₂]; exact addr_add (by omega_arith))
     (by rw [v₃.rd, v₃.wr]; exact (Cbc.halves ivR).2) fun u₄ v₄ => ?_
   refine wp_ldrSp (a := stackArgAddr s 1) (by decide) (by rw [v₄.sp, v₃.sp, v₂.sp, v₁.sp, hc.sp]; rfl)
     (by rw [v₄.rd, v₄.wr, v₃.rd, v₃.wr, v₂.rd, v₂.wr, v₁.rd, v₁.wr, hc.rd, hc.wr]; exact argR 1 (by decide))
@@ -521,10 +521,10 @@ theorem args_ok (s : State) (hs : initContract.pre s) (hv : IValid s) (c : State
   have r12₅ : u₅.gpr .r12 = Ct := by
     rw [v₅.gpr, v₄.mem, v₃.mem, stackArg_frame f₂ spfit argsSep (by decide)]; exact hCt
   have wr₅ : u₅.wr = s.wr := by rw [v₅.wr, v₄.wr, v₃.wr, v₂.wr, v₁.wr, hc.wr]
-  refine wp_str (a := State.addr Ct + BitVec.ofNat 64 128) (by decide) (by rw [r12₅]; exact addr_add (by omega))
+  refine wp_str (a := State.addr Ct + BitVec.ofNat 64 128) (by decide) (by rw [r12₅]; exact addr_add (by omega_arith))
     (by rw [wr₅, hwr]; exact ⟨⟨State.addr Ct, 144⟩, by simp, Offset.contains_base _ (by decide) (by decide)⟩) fun u₆ v₆ => ?_
   refine wp_str (a := State.addr Ct + BitVec.ofNat 64 128 + BitVec.ofNat 64 4) (by decide)
-    (by rw [v₆.gpr, r12₅, Offset.add_add]; exact addr_add (by omega))
+    (by rw [v₆.gpr, r12₅, Offset.add_add]; exact addr_add (by omega_arith))
     (by rw [v₆.wr, wr₅, hwr, Offset.add_add]; exact ⟨⟨State.addr Ct, 144⟩, by simp, Offset.contains_base _ (by decide) (by decide)⟩)
     fun u₇ v₇ => wp_mov (op2_reg _ _) fun u₈ v₈ => ?_
   refine wp_ldrSp (a := stackArgAddr s 2) (by decide)
@@ -646,7 +646,7 @@ theorem update_rel (d : Spec.Rc2.Direction) {s₀ s₀' : State} (h0 : (updateCo
   have fit := h0.2.1
   have qa : ∀ i < 3, stackArg s₀ i = stackArg s₀' i := by
     intro i hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
     · exact q₅
     · exact q₆
     · exact q₇
@@ -756,7 +756,7 @@ theorem key_pre (s : State) (hs : initContract.pre s) (hv : IValid s) (u : State
   have eb : (⟨State.addr u.sp - 8, 8⟩ : Region) = ⟨State.addr s.sp - 8, 8⟩ := by rw [hu.sp]
   refine ⟨hu.r0, hu.r1, hu.r2, hu.r3, hu.r12, by rw [hu.sp]; exact sp8,
     ⟨hv.1.1, hv.1.2, hv.2.1.1, hv.2.1.2⟩, keyCtx.sub_right p128, keyScr.sub_right p512,
-    (ctxScr.sub_left p128).sub_right p512, ?_, ?_, ?_, fitK, by omega, by omega, ?_, ?_⟩
+    (ctxScr.sub_left p128).sub_right p512, ?_, ?_, ?_, fitK, by omega_arith, by omega_arith, ?_, ?_⟩
   · show (Region.mk (State.addr u.sp - 8) 8).Disjoint _; rw [eb]; exact bKey
   · show (Region.mk (State.addr u.sp - 8) 8).Disjoint _; rw [eb]; exact bCtx.sub_right p128
   · show (Region.mk (State.addr u.sp - 8) 8).Disjoint _; rw [eb]; exact bScr.sub_right p512
@@ -805,7 +805,7 @@ theorem tail_ok (s : State) (hs : initContract.pre s) (hv : IValid s) (u : State
     · exact ctxArgs.symm.sub_right i128
     · exact scrArgs.symm.sub_right l512
   refine wp_ldr (a := State.addr (stackArg s 2) + BitVec.ofNat 64 512) (by decide)
-    (by rw [w₁.gpr, argsS]; exact addr_add (by omega))
+    (by rw [w₁.gpr, argsS]; exact addr_add (by omega_arith))
     (by rw [w₁.rd, w₁.wr, hk.rd, hk.wr, hu.rd, hu.wr, hwr]
         exact ⟨⟨State.addr (stackArg s 2), 576⟩, by simp, Offset.contains_base _ (by decide) (by decide)⟩)
     fun v₂ w₂ => wp_mov_imm (by decide) (WP.block_nil ?_)
@@ -825,7 +825,7 @@ theorem tail_ok (s : State) (hs : initContract.pre s) (hv : IValid s) (u : State
       rw [gpr_setReg_of_ne _ _ h0, w₂.other _ hl, w₁.other _ h12, hk.saved r hr hl, hu.callee r hr hl]
   · have hsched : Spec.Rc2.scheduleAt (v₂.setReg .r0 0).mem (State.addr (stackArg s 1)) =
         Spec.Rc2.expandKey (Spec.Rc2.bytesAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1).toNat) (s.gpr .r2).toNat := by
-      rw [mem_setReg, mem₂, hk.sched, Proof.Rc2.bytesAt_frame hu.frame _ _ (by omega) (fun r hr => by
+      rw [mem_setReg, mem₂, hk.sched, Proof.Rc2.bytesAt_frame hu.frame _ _ (by omega_arith) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact keyCtx.sub_right i128
@@ -895,7 +895,7 @@ theorem args_after_key (s : State) (hs : initContract.pre s) (u : State) (hu : A
   rw [eb] at frame₂
   intro i hi
   have hc : (⟨stackArgAddr s 0, 12⟩ : Region).Contains (stackArgAddr s i) (32 / 8) := by
-    rw [stackArgAddr_eq s hi spfit]; exact Offset.contains_base _ (by omega) (by omega)
+    rw [stackArgAddr_eq s hi spfit]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   have ea : stackArgAddr v i = stackArgAddr s i := by unfold stackArgAddr; rw [hk.sp, hu.sp]
   rw [stackArg, ea, frame₂.readW hc (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -934,7 +934,7 @@ theorem init_rel {s₀ s₀' : State} (h0 : initContract.pre s₀) (h0' : initCo
   have fit := h0.2.1
   have qa : ∀ i < 3, stackArg s₀ i = stackArg s₀' i := by
     intro i hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
     · exact q₅
     · exact q₆
     · exact q₇

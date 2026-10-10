@@ -24,7 +24,7 @@ theorem inR {rs : List Region} {R : Region} {a : Addr} {n : Nat} (hR : R ∈ rs)
 theorem shr3 {a : Nat} (h : a < 2 ^ 64) : BitVec.ofNat 64 a >>> 3 = BitVec.ofNat 64 (a / 8) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h,
-    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega)]
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- The arguments of an update, and their regions. -/
 structure Lay (σ : State) (c dp op b : Addr) (p len ol : Nat) : Prop where
@@ -82,15 +82,15 @@ theorem prep_ok {σ : State} {c dp op b : Addr} {p len ol : Nat} (h : Lay σ c d
   have olq := h.olq
   have fo := h.fo
   have hl := h.lenlt
-  have hpo : p ≤ ol := by omega
-  have hol8 : 8 ≤ ol := by omega
-  have hrl : ol - p ≤ len := by omega
-  have hr8 : len + p - ol < 8 := by omega
+  have hpo : p ≤ ol := by omega_arith
+  have hol8 : 8 ≤ ol := by omega_arith
+  have hrl : ol - p ≤ len := by omega_arith
+  have hr8 : len + p - ol < 8 := by omega_arith
   have hc136 : ∀ i, i < 8 → InRegions σ.wr (c + BitVec.ofNat 64 136 + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [h.wr, Offset.add_add]
-    exact inR (List.mem_cons_self ..) (Offset.contains_base _ (by omega) (by omega))
-  have hctxSub : Region.Sub ⟨c + BitVec.ofNat 64 136, 8⟩ ⟨c, 144⟩ := Offset.sub_base _ (by omega)
+    exact inR (List.mem_cons_self ..) (Offset.contains_base _ (by omega_arith) (by omega_arith))
+  have hctxSub : Region.Sub ⟨c + BitVec.ofNat 64 136, 8⟩ ⟨c, 144⟩ := Offset.sub_base _ (by omega_arith)
   -- `toOut`, and the pending bytes to `out`.
   refine WP.seq (wp_mov fun s₁ u₁ => wp_mov fun s₂ u₂ => wp_mov fun s₃ u₃ => WP.block_nil ?_)
   have g₃ : ∀ r, r ≠ .x10 → r ≠ .x11 → r ≠ .x12 → s₃.gpr r = σ.gpr r := fun r h1 h2 h3 => by
@@ -99,15 +99,15 @@ theorem prep_ok {σ : State} {c dp op b : Addr} {p len ol : Nat} (h : Lay σ c d
     ⟨by decide, by decide, by decide, by decide, by decide, by decide⟩
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h.x0])
     (by rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), h.x4]; simp)
-    (by rw [u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), h.x1]) (by omega)
+    (by rw [u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), h.x1]) (by omega_arith)
     (fun i hi => by
       rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]
-      obtain ⟨R, hR, hc⟩ := hc136 i (by omega)
+      obtain ⟨R, hR, hc⟩ := hc136 i (by omega_arith)
       exact ⟨R, List.mem_append_right _ hR, hc⟩)
     (fun i hi => by
       rw [u₃.wr, u₂.wr, u₁.wr, h.wr]
-      exact inR (R := ⟨op, ol⟩) (by simp) (Offset.contains_base _ (by omega) (by omega)))
-    ((h.co.sub_left (Offset.sub_base _ (by omega))).sub_right (Region.sub_prefix hpo))
+      exact inR (R := ⟨op, ol⟩) (by simp) (Offset.contains_base _ (by omega_arith) (by omega_arith)))
+    ((h.co.sub_left (Offset.sub_base _ (by omega_arith))).sub_right (Region.sub_prefix hpo))
     fun s₄ c₄ => ?_)
   have m₄ : s₄.mem = writeBytes σ.mem op (Spec.Rc2.bytesAt σ.mem (c + BitVec.ofNat 64 136) p) := by
     rw [c₄.mem, u₃.mem, u₂.mem, u₁.mem]
@@ -119,21 +119,21 @@ theorem prep_ok {σ : State} {c dp op b : Addr} {p len ol : Nat} (h : Lay σ c d
   have hd₄ : Spec.Rc2.bytesAt s₄.mem dp (ol - p) = Spec.Rc2.bytesAt σ.mem dp (ol - p) := by
     rw [m₄]
     exact Proof.Rc2.bytesAt_frame (writeBytes_frame _ _ _ (R := ⟨op, ol⟩) (by
-      rw [bytesAt_length]; simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega))
-      _ _ (by omega) (by simpa using (h.dout.sub_left (Region.sub_prefix hrl)))
+      rw [bytesAt_length]; simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith))
+      _ _ (by omega_arith) (by simpa using (h.dout.sub_left (Region.sub_prefix hrl)))
   refine WP.seq (copy_ok (A := dp) (B := op + BitVec.ofNat 64 p) (k := ol - p) (by decide) (by decide)
     ⟨by decide, by decide, by decide, by decide, by decide, by decide⟩
     (by rw [u₅.other _ (by decide), g₄ _ (by decide) (by decide) (by decide) (by decide), h.x2]; simp)
     (by rw [u₅.other _ (by decide), x11₄]; simp)
     (by rw [u₅.gpr, g₄ _ (by decide) (by decide) (by decide) (by decide),
-      g₄ _ (by decide) (by decide) (by decide) (by decide), h.x5, h.x1, sub_ofNat hpo]) (by omega)
+      g₄ _ (by decide) (by decide) (by decide) (by decide), h.x5, h.x1, sub_ofNat hpo]) (by omega_arith)
     (fun i hi => by
       rw [u₅.rd, u₅.wr, c₄.rd, c₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr, h.rd]
-      exact inR (R := ⟨dp, len⟩) (by simp) (Offset.contains_base _ (by omega) (by omega)))
+      exact inR (R := ⟨dp, len⟩) (by simp) (Offset.contains_base _ (by omega_arith) (by omega_arith)))
     (fun i hi => by
       rw [u₅.wr, c₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr, Offset.add_add]
-      exact inR (R := ⟨op, ol⟩) (by simp) (Offset.contains_base _ (by omega) (by omega)))
-    ((h.dout.sub_left (Region.sub_prefix hrl)).sub_right (Offset.sub_base _ (by omega)))
+      exact inR (R := ⟨op, ol⟩) (by simp) (Offset.contains_base _ (by omega_arith) (by omega_arith)))
+    ((h.dout.sub_left (Region.sub_prefix hrl)).sub_right (Offset.sub_base _ (by omega_arith)))
     fun s₆ c₆ => ?_)
   have m₆ : s₆.mem = writeBytes s₄.mem (op + BitVec.ofNat 64 p) (Spec.Rc2.bytesAt s₄.mem dp (ol - p)) := by
     rw [c₆.mem, u₅.mem]
@@ -146,10 +146,10 @@ theorem prep_ok {σ : State} {c dp op b : Addr} {p len ol : Nat} (h : Lay σ c d
   have hp₆ : Spec.Rc2.bytesAt s₆.mem (dp + BitVec.ofNat 64 (ol - p)) (len + p - ol) =
       Spec.Rc2.bytesAt σ.mem (dp + BitVec.ofNat 64 (ol - p)) (len + p - ol) := by
     have hs : Region.Sub ⟨dp + BitVec.ofNat 64 (ol - p), len + p - ol⟩ ⟨dp, len⟩ :=
-      Offset.sub_base _ (by omega)
-    rw [m₆, Proof.Rc2.bytesAt_frame (frame_writeBytes _ _ _ _) _ _ (by omega)
-      (by simpa using (h.dout.sub_left hs).sub_right (Offset.sub_base _ (by omega))), m₄,
-      Proof.Rc2.bytesAt_frame (frame_writeBytes _ _ _ _) _ _ (by omega)
+      Offset.sub_base _ (by omega_arith)
+    rw [m₆, Proof.Rc2.bytesAt_frame (frame_writeBytes _ _ _ _) _ _ (by omega_arith)
+      (by simpa using (h.dout.sub_left hs).sub_right (Offset.sub_base _ (by omega_arith))), m₄,
+      Proof.Rc2.bytesAt_frame (frame_writeBytes _ _ _ _) _ _ (by omega_arith)
       (by simpa using (h.dout.sub_left hs).sub_right (Region.sub_prefix hpo))]
   refine WP.seq (copy_ok (A := dp + BitVec.ofNat 64 (ol - p)) (B := c + BitVec.ofNat 64 136)
     (k := len + p - ol) (by decide) (by decide)
@@ -161,16 +161,16 @@ theorem prep_ok {σ : State} {c dp op b : Addr} {p len ol : Nat} (h : Lay σ c d
         g₆ _ (by decide) (by decide) (by decide) (by decide)
         (by decide), g₆ _ (by decide) (by decide) (by decide) (by decide) (by decide),
         g₆ _ (by decide) (by decide) (by decide) (by decide) (by decide), h.x3, h.x1, h.x5,
-        BitVec.ofNat_add_ofNat, sub_ofNat (by omega)]) (by omega)
+        BitVec.ofNat_add_ofNat, sub_ofNat (by omega_arith)]) (by omega_arith)
     (fun i hi => by
       rw [u₉.rd, u₉.wr, u₈.rd, u₈.wr, u₇.rd, u₇.wr, c₆.rd, c₆.wr, u₅.rd, u₅.wr, c₄.rd, c₄.wr, u₃.rd,
         u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr, h.rd, Offset.add_add]
-      exact inR (R := ⟨dp, len⟩) (by simp) (Offset.contains_base _ (by omega) (by omega)))
+      exact inR (R := ⟨dp, len⟩) (by simp) (Offset.contains_base _ (by omega_arith) (by omega_arith)))
     (fun i hi => by
       rw [u₉.wr, u₈.wr, u₇.wr, c₆.wr, u₅.wr, c₄.wr, u₃.wr, u₂.wr, u₁.wr]
-      exact hc136 i (by omega))
-    (((h.cd.sub_left hctxSub).sub_left (Region.sub_prefix (by omega))).sub_right
-      (Offset.sub_base _ (by omega)) |>.symm)
+      exact hc136 i (by omega_arith))
+    (((h.cd.sub_left hctxSub).sub_left (Region.sub_prefix (by omega_arith))).sub_right
+      (Offset.sub_base _ (by omega_arith)) |>.symm)
     fun s₁₀ c₁₀ => ?_)
   have g₁₀ : ∀ r, r ≠ .x9 → r ≠ .x2 → r ≠ .x3 → r ≠ .x10 → r ≠ .x11 → r ≠ .x12 →
       s₁₀.gpr r = σ.gpr r := fun r h0 h1 h2 h3 h4 h5 => by
@@ -190,13 +190,13 @@ theorem prep_ok {σ : State} {c dp op b : Addr} {p len ol : Nat} (h : Lay σ c d
   have f₆ : Frame [⟨op, ol⟩, ⟨c + BitVec.ofNat 64 136, 8⟩] s₄.mem s₆.mem := by
     rw [m₆]; exact (frame_writeBytes _ _ _ _).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by omega)⟩
+      exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by omega_arith)⟩
   have f₁₀ : Frame [⟨op, ol⟩, ⟨c + BitVec.ofNat 64 136, 8⟩] s₆.mem s₁₀.mem := by
     rw [hm₁₀]; exact (frame_writeBytes _ _ _ _).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨c + BitVec.ofNat 64 136, 8⟩, by simp, Region.sub_prefix (by omega)⟩
+      exact ⟨⟨c + BitVec.ofNat 64 136, 8⟩, by simp, Region.sub_prefix (by omega_arith)⟩
   have hoc : Region.Disjoint ⟨op, ol⟩ ⟨c + BitVec.ofNat 64 136, len + p - ol⟩ :=
-    ((h.co.sub_left hctxSub).sub_left (Region.sub_prefix (by omega))).symm
+    ((h.co.sub_left hctxSub).sub_left (Region.sub_prefix (by omega_arith))).symm
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [u₁₄.other _ (by decide), u₁₃.other _ (by decide), u₁₂.other _ (by decide),
       u₁₁.other _ (by decide), g₁₀ _ (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -217,12 +217,12 @@ theorem prep_ok {σ : State} {c dp op b : Addr} {p len ol : Nat} (h : Lay σ c d
       u₂.wr, u₁.wr]
   · rw [u₁₄.sp, u₁₃.sp, u₁₂.sp, u₁₁.sp, c₁₀.sp, u₉.sp, u₈.sp, u₇.sp, c₆.sp, u₅.sp, c₄.sp, u₃.sp,
       u₂.sp, u₁.sp]
-  · rw [hm, hm₁₀, Proof.Rc2.bytesAt_frame (frame_writeBytes _ _ _ _) _ _ (by omega) (by simpa using hoc),
-      show ol = p + (ol - p) by omega, bytesAt_add, Nat.add_sub_cancel_left, m₆,
-      Proof.Rc2.bytesAt_frame (frame_writeBytes _ _ _ _) _ _ (by omega)
-        (by simpa using Offset.base_disjoint op (Nat.le_refl p) (by omega)),
-      bytesAt_writeBytes' _ _ _ _ (by omega), hd₄, m₄, bytesAt_writeBytes' _ _ _ _ (by omega)]
+  · rw [hm, hm₁₀, Proof.Rc2.bytesAt_frame (frame_writeBytes _ _ _ _) _ _ (by omega_arith) (by simpa using hoc),
+      show ol = p + (ol - p) by omega_arith, bytesAt_add, Nat.add_sub_cancel_left, m₆,
+      Proof.Rc2.bytesAt_frame (frame_writeBytes _ _ _ _) _ _ (by omega_arith)
+        (by simpa using Offset.base_disjoint op (Nat.le_refl p) (by omega_arith)),
+      bytesAt_writeBytes' _ _ _ _ (by omega_arith), hd₄, m₄, bytesAt_writeBytes' _ _ _ _ (by omega_arith)]
   · rw [hm]; exact f₄.trans (f₆.trans f₁₀)
-  · rw [hm, hm₁₀, bytesAt_writeBytes' _ _ _ _ (by omega), hp₆]
+  · rw [hm, hm₁₀, bytesAt_writeBytes' _ _ _ _ (by omega_arith), hp₆]
 
 end VG.Proof.Rc2.AArch64.Stream

@@ -50,17 +50,17 @@ theorem copy_ok (s : State) (n : Nat) (hn : n ≤ 32)
   induction n with
   | zero =>
     apply WP.block_nil
-    exact ⟨fun _ hi => by omega, rfl, rfl, fun _ _ => rfl, Frame.refl _ _⟩
+    exact ⟨fun _ hi => by omega_arith, rfl, rfl, fun _ _ => rfl, Frame.refl _ _⟩
   | succ n ih =>
     rw [Impl.TripleDes.X86.Key.copyWords, List.range_succ, List.flatMap_append,
       List.flatMap_cons, List.flatMap_nil, List.append_nil, WP.block_append_iff]
-    apply WP.mono (ih (by omega))
+    apply WP.mono (ih (by omega_arith))
     intro s₁ h₁
     have base₁ : s₁.gpr .edx = s.gpr .edx := h₁.reg .edx (by decide)
     have readable : InRegions (s₁.rd ++ s₁.wr) (addr (s₁.gpr .edx) (4 * n)) 4 := by
-      rw [h₁.rd, h₁.wr, base₁]; exact hr n (by omega)
+      rw [h₁.rd, h₁.wr, base₁]; exact hr n (by omega_arith)
     have writable : InRegions s₁.wr (addr (s₁.gpr .edx) (256 + 4 * n)) 4 := by
-      rw [h₁.wr, base₁]; exact hw n (by omega)
+      rw [h₁.wr, base₁]; exact hw n (by omega_arith)
     obtain ⟨s₂, run₂, keep₂⟩ := copyWord_ok s₁ (4 * n) (256 + 4 * n) readable writable
     have source : s₁.mem.readW (addr32 (s.gpr .edx) + BitVec.ofNat 64 (4 * n)) 32 =
         s.mem.readW (addr32 (s.gpr .edx) + BitVec.ofNat 64 (4 * n)) 32 := by
@@ -68,12 +68,12 @@ theorem copy_ok (s : State) (n : Nat) (hn : n ≤ 32)
         (Region.contains_self _ _) _ (by decide)
       intro r h
       obtain rfl := List.mem_singleton.mp h
-      exact Offset.disjoint (addr32 (s.gpr .edx)) (by omega) (by omega) (by decide)
+      exact Offset.disjoint (addr32 (s.gpr .edx)) (by omega_arith) (by omega_arith) (by decide)
     have mem₂ : s₂.mem = s₁.mem.writeW (addr32 (s.gpr .edx) + BitVec.ofNat 64 (256 + 4 * n))
         (s.mem.readW (addr32 (s.gpr .edx) + BitVec.ofNat 64 (4 * n)) 32) := by
       have hm := keep₂.mem
-      rw [base₁, addr_eq (by omega : (s.gpr .edx).toNat + (256 + 4 * n) < 2 ^ 32),
-        addr_eq (by omega : (s.gpr .edx).toNat + 4 * n < 2 ^ 32)] at hm
+      rw [base₁, addr_eq (by omega_arith : (s.gpr .edx).toNat + (256 + 4 * n) < 2 ^ 32),
+        addr_eq (by omega_arith : (s.gpr .edx).toNat + 4 * n < 2 ^ 32)] at hm
       change s₂.mem = s₁.mem.writeW (addr32 (s.gpr .edx) + BitVec.ofNat 64 (256 + 4 * n))
         (s₁.mem.readW (addr32 (s.gpr .edx) + BitVec.ofNat 64 (4 * n)) 32) at hm
       rw [source] at hm
@@ -85,13 +85,13 @@ theorem copy_ok (s : State) (n : Nat) (hn : n ≤ 32)
       rw [mem₂]
       by_cases he : i = n
       · subst i; exact Mem.readW_writeW_self32 _ _ _
-      · rw [Mem.readW_writeW_sep (Offset.sep (addr32 (s.gpr .edx)) (by omega) (by omega)
-          (by omega)) (by decide)]
-        exact h₁.words i (by omega)
+      · rw [Mem.readW_writeW_sep (Offset.sep (addr32 (s.gpr .edx)) (by omega_arith) (by omega_arith)
+          (by omega_arith)) (by decide)]
+        exact h₁.words i (by omega_arith)
     · rw [mem₂]
       apply h₁.frame.writeW (List.mem_singleton_self _) _
       have hc := Offset.contains_base (addr32 (s.gpr .edx) + BitVec.ofNat 64 256)
-        (d := 4 * n) (n := 4) (k := 128) (by omega) (by omega)
+        (d := 4 * n) (n := 4) (k := 128) (by omega_arith) (by omega_arith)
       rw [Offset.add_ofNat_add_ofNat] at hc
       exact hc
 
@@ -123,16 +123,16 @@ theorem copyThird_ok (s : State) (fit : (scheduleArg s).toNat + 384 ≤ 2 ^ 32)
   refine ⟨?_, h₁.rd, h₁.wr, ?_, ?_⟩
   · intro i hi
     let p := addr32 (scheduleArg s)
-    have h0 := h₁.words (2 * i) (by omega)
-    have h1 := h₁.words (2 * i + 1) (by omega)
+    have h0 := h₁.words (2 * i) (by omega_arith)
+    have h1 := h₁.words (2 * i + 1) (by omega_arith)
     rw [ptr₀] at h0 h1
     change s₁.mem.readW (p + BitVec.ofNat 64 (256 + 8 * i)) 64 =
       s.mem.readW (p + BitVec.ofNat 64 (8 * i)) 64
     rw [← readW_pair, ← readW_pair]
-    have d0 : 256 + 4 * (2 * i) = 256 + 8 * i := by omega
-    have d1 : 256 + 4 * (2 * i + 1) = 256 + 8 * i + 4 := by omega
-    have a0 : 4 * (2 * i) = 8 * i := by omega
-    have a1 : 4 * (2 * i + 1) = 8 * i + 4 := by omega
+    have d0 : 256 + 4 * (2 * i) = 256 + 8 * i := by omega_arith
+    have d1 : 256 + 4 * (2 * i + 1) = 256 + 8 * i + 4 := by omega_arith
+    have a0 : 4 * (2 * i) = 8 * i := by omega_arith
+    have a1 : 4 * (2 * i + 1) = 8 * i + 4 := by omega_arith
     rw [d0, a0] at h0
     rw [d1, a1, ← Offset.add_ofNat_add_ofNat (addr32 (scheduleArg s)) (256 + 8 * i) 4,
       ← Offset.add_ofNat_add_ofNat (addr32 (scheduleArg s)) (8 * i) 4] at h1
@@ -536,7 +536,7 @@ theorem expandKey_ok (s : State) (hp : HeadPre s) :
     (by rw [preparedKey, gpr_setReg_self]; exact h₁.bp)
     (sp₁.trans ghostSP.symm) h₁.rd h₁.wr
   have init : Components s₁ s₁ 0 :=
-    ⟨fun _ h => by omega, rfl, rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _⟩
+    ⟨fun _ h => by omega_arith, rfl, rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _⟩
   apply body_ok s₁ s₁ permissions₁ init
     (by rw [h₁.rd, h₁.wr, sp₁]; exact hp.lenRead)
   intro s₂ h₂
@@ -687,9 +687,9 @@ theorem headPre_of_contract (s : State) (hs : contract.pre s) : HeadPre s := by
     exact ⟨⟨addr32 (arg s 3), 512⟩, by simp, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   have ok : Ok sboxCfg (preparedKey s) := by
     refine ⟨slots, ?_, ?_, ?_⟩
-    · intro k hk; change k < 0 at hk; omega
+    · intro k hk; change k < 0 at hk; omega_arith
     · change ((preparedKey s).gpr .ebp).toNat + 512 ≤ 2 ^ 32; rw [bp]; exact scratchFit
-    · intro k hk j hj; change j < 0 at hj; omega
+    · intro k hk j hj; change j < 0 at hj; omega_arith
   refine ⟨?_, ?_, readArg 4 (by decide) (by decide), readArg 2 (by decide) (by decide), ?_,
     argsScratch.sub_right saveSub, ?_, ?_⟩
   · refine ⟨ok, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -785,11 +785,11 @@ theorem keyTaint_wf {s : State} (hs : contract.pre s) : VG.X86.Taint.Wf keyTaint
       forall_eq, List.Pairwise.nil, and_true]
     exact ⟨dataSep, fun _ h => h.elim⟩
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [addr32, BitVec.toNat_setWidth] <;> omega
+    rintro r (rfl | rfl) <;> simp only [addr32, BitVec.toNat_setWidth] <;> omega_arith
   · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) retData argsData
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) retScratch argsScratch
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_arith) retData argsData
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega_arith) retScratch argsScratch
   · intro p hp
     simp only [keyTaint, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
@@ -811,7 +811,7 @@ theorem keyTaint_agree {s t : State} (hs : contract.pre s)
     rw [show VG.X86.Taint.depth keyTaint.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (fit _ hs) h4 hk, VG.X86.Taint.argByte_eq (fit _ ht) h4 hk,
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (args ((k - 4) / 4) (by omega))
+    exact congrArg _ (args ((k - 4) / 4) (by omega_arith))
 
 end VG.Proof.TripleDes.X86.Key
 

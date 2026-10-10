@@ -60,36 +60,36 @@ theorem call_ok (d : Spec.Rc2.Direction) {s : State} {c dp op b : Addr} {len ol 
   have e2 : s.callEntry.gpr .x2 = op := (State.callEntry_gpr _ (by decide)).trans h2
   have e3 : s.callEntry.gpr .x3 = BitVec.ofNat 64 n := (State.callEntry_gpr _ (by decide)).trans h3
   have e4 : s.callEntry.gpr .x4 = b := (State.callEntry_gpr _ (by decide)).trans h4
-  have hn' : (BitVec.ofNat 64 n).toNat = n := toNat_ofNat_lt (by omega)
-  have ivS : Region.Sub ⟨c + BitVec.ofNat 64 128, 8⟩ ⟨c, 144⟩ := Offset.sub_base _ (by omega)
-  have keyS : Region.Sub ⟨c, 128⟩ ⟨c, 144⟩ := Region.sub_prefix (by omega)
-  have outS : Region.Sub ⟨op, 8 * n⟩ ⟨op, ol⟩ := Region.sub_prefix (by omega)
-  have bufS : Region.Sub ⟨b, 512⟩ ⟨b, 576⟩ := Region.sub_prefix (by omega)
+  have hn' : (BitVec.ofNat 64 n).toNat = n := toNat_ofNat_lt (by omega_arith)
+  have ivS : Region.Sub ⟨c + BitVec.ofNat 64 128, 8⟩ ⟨c, 144⟩ := Offset.sub_base _ (by omega_arith)
+  have keyS : Region.Sub ⟨c, 128⟩ ⟨c, 144⟩ := Region.sub_prefix (by omega_arith)
+  have outS : Region.Sub ⟨op, 8 * n⟩ ⟨op, ol⟩ := Region.sub_prefix (by omega_arith)
+  have bufS : Region.Sub ⟨b, 512⟩ ⟨b, 576⟩ := Region.sub_prefix (by omega_arith)
   have zero : ∀ x : Addr, x = x + BitVec.ofNat 64 0 := fun x => by simp
   rw [cbcCall_eq]
   refine WP.call (k := Cbc.contract d) (cbc_correct' d) (rd := [⟨c, 128⟩])
     (wr := [⟨c + BitVec.ofNat 64 128, 8⟩, ⟨op, 8 * n⟩, ⟨b, 512⟩]) ?_ ?_ ?_ ?_ (cbc_noFrames d)
   · simp only [Cbc.contract, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, e0, e1, e2,
       e3, e4, hn']
-    exact ⟨trivial, trivial, Offset.base_disjoint _ (Nat.le_refl _) (by omega),
+    exact ⟨trivial, trivial, Offset.base_disjoint _ (Nat.le_refl _) (by omega_arith),
       (co.sub_left keyS).sub_right outS, (cb.sub_left keyS).sub_right bufS,
       (co.sub_left ivS).sub_right outS, (cb.sub_left ivS).sub_right bufS,
-      (ob.sub_left outS).sub_right bufS, by omega⟩
+      (ob.sub_left outS).sub_right bufS, by omega_arith⟩
   · rw [hrd, hwr]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact ⟨⟨c, 144⟩, by simp, 0, zero c, by dsimp only; omega⟩
-    · exact ⟨⟨c, 144⟩, by simp, 128, rfl, by dsimp only; omega⟩
-    · exact ⟨⟨op, ol⟩, by simp, 0, zero op, by dsimp only; omega⟩
-    · exact ⟨⟨b, 576⟩, by simp, 0, zero b, by dsimp only; omega⟩
+    · exact ⟨⟨c, 144⟩, by simp, 0, zero c, by dsimp only; omega_arith⟩
+    · exact ⟨⟨c, 144⟩, by simp, 128, rfl, by dsimp only; omega_arith⟩
+    · exact ⟨⟨op, ol⟩, by simp, 0, zero op, by dsimp only; omega_arith⟩
+    · exact ⟨⟨b, 576⟩, by simp, 0, zero b, by dsimp only; omega_arith⟩
   · rw [hwr]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨⟨c, 144⟩, by simp, 128, rfl, by dsimp only; omega⟩
-    · exact ⟨⟨op, ol⟩, by simp, 0, zero op, by dsimp only; omega⟩
-    · exact ⟨⟨b, 576⟩, by simp, 0, zero b, by dsimp only; omega⟩
+    · exact ⟨⟨c, 144⟩, by simp, 128, rfl, by dsimp only; omega_arith⟩
+    · exact ⟨⟨op, ol⟩, by simp, 0, zero op, by dsimp only; omega_arith⟩
+    · exact ⟨⟨b, 576⟩, by simp, 0, zero b, by dsimp only; omega_arith⟩
   · intro s' hr hw hsp hf hcs _ hpost
     simp only [Cbc.contract, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, e0, e1, e2,
       e3, hn'] at hpost
@@ -112,7 +112,7 @@ theorem short_ok (d : Spec.Rc2.Direction) {σ : State} {c dp op b : Addr} {p len
       UPost d σ c dp op p len ol s' := by
   have p8 := h.p8
   have olq := h.olq
-  have hpl : p + len < 8 := by omega
+  have hpl : p + len < 8 := by omega_arith
   unfold short
   refine WP.seq (wp_add fun s₁ u₁ => WP.block_nil ?_)
   refine copy_ok (A := dp) (B := c + BitVec.ofNat 64 (136 + p)) (k := len) (by decide) (by decide)
@@ -122,11 +122,11 @@ theorem short_ok (d : Spec.Rc2.Direction) {σ : State} {c dp op b : Addr} {p len
     (by rw [u₁.other _ (by decide), h.x3]) h.lenlt
     (fun i hi => by
       rw [u₁.rd, u₁.wr, h.rd]
-      exact inR (R := ⟨dp, len⟩) (by simp) (Offset.contains_base _ (by omega) (by omega)))
+      exact inR (R := ⟨dp, len⟩) (by simp) (Offset.contains_base _ (by omega_arith) (by omega_arith)))
     (fun i hi => by
       rw [u₁.wr, h.wr, Offset.add_add]
-      exact inR (R := ⟨c, 144⟩) (by simp) (Offset.contains_base _ (by omega) (by omega)))
-    (h.cd.sub_left (Offset.sub_base _ (by omega))).symm fun s' cp => ?_
+      exact inR (R := ⟨c, 144⟩) (by simp) (Offset.contains_base _ (by omega_arith) (by omega_arith)))
+    (h.cd.sub_left (Offset.sub_base _ (by omega_arith))).symm fun s' cp => ?_
   have hm : s'.mem = writeBytes σ.mem (c + BitVec.ofNat 64 (136 + p)) (Spec.Rc2.bytesAt σ.mem dp len) := by
     rw [cp.mem, u₁.mem]
   have hf := frame_writeBytes σ.mem (c + BitVec.ofNat 64 (136 + p)) dp len
@@ -136,13 +136,13 @@ theorem short_ok (d : Spec.Rc2.Direction) {σ : State} {c dp op b : Addr} {p len
     obtain ⟨h1, h2, h3, h4⟩ := hne r hr
     rw [cp.other r h1 h2 h3 h4, u₁.other r h3]
   obtain ⟨r1, r2⟩ := update_post_short (d := d) (out := op) hpl
-    (scheduleAt_frame hf c (by simpa using Offset.base_disjoint c (by omega) (by omega)))
-    (blockAt_frame hf (c + 128) (by simpa using Offset.disjoint c (d := 128) (by omega) (by omega) (by omega)))
+    (scheduleAt_frame hf c (by simpa using Offset.base_disjoint c (by omega_arith) (by omega_arith)))
+    (blockAt_frame hf (c + 128) (by simpa using Offset.disjoint c (d := 128) (by omega_arith) (by omega_arith) (by omega_arith)))
     (by
-      rw [bytesAt_add, Proof.Rc2.bytesAt_frame hf _ _ (by omega)
-        (by simpa using Offset.disjoint c (d := 136) (n := p) (by omega) (by omega) (by omega)),
+      rw [bytesAt_add, Proof.Rc2.bytesAt_frame hf _ _ (by omega_arith)
+        (by simpa using Offset.disjoint c (d := 136) (n := p) (by omega_arith) (by omega_arith) (by omega_arith)),
         show (136 : Addr) = BitVec.ofNat 64 136 from rfl, Offset.add_add, hm,
-        bytesAt_writeBytes' _ _ _ _ (by omega)])
+        bytesAt_writeBytes' _ _ _ _ (by omega_arith)])
   refine ⟨r1, ?_⟩
   rw [olq]; exact r2
 
@@ -159,10 +159,10 @@ theorem long_ok (d : Spec.Rc2.Direction) {σ : State} {c dp op b : Addr} {p len 
   have p8 := h.p8
   have olq := h.olq
   have hl := h.lenlt
-  have hpo : p ≤ ol := by omega
+  have hpo : p ≤ ol := by omega_arith
   unfold longMain
   refine WP.seq (WP.mono (WP.gprs (rs := preserved) (prep_ok h hol) prep_keeps (by decide +kernel)) fun s₁ ⟨hc, hk⟩ => ?_)
-  refine call_ok d hc.x0 hc.x1 hc.x2 hc.x3 hc.x4 (n := (p + len) / 8) (by omega) h.ollt
+  refine call_ok d hc.x0 hc.x1 hc.x2 hc.x3 hc.x4 (n := (p + len) / 8) (by omega_arith) h.ollt
     (hc.rd.trans h.rd) (hc.wr.trans h.wr) h.co h.cb h.ob h.fo
     fun s' hrd hwr hsp hf hcs hout hiv => ⟨fun r hr h30 => (hcs r hr h30).trans (hk r hr), ?_⟩
   have hctx : ∀ {e n : Nat}, e + n ≤ 144 → Region.Sub ⟨c + BitVec.ofNat 64 e, n⟩ ⟨c, 144⟩ :=
@@ -170,39 +170,39 @@ theorem long_ok (d : Spec.Rc2.Direction) {σ : State} {c dp op b : Addr} {p len 
   have co' : ∀ {e n : Nat}, e + n ≤ 144 → Region.Disjoint ⟨c + BitVec.ofNat 64 e, n⟩ ⟨op, ol⟩ :=
     fun he => h.co.sub_left (hctx he)
   have cb' : ∀ {e n : Nat}, e + n ≤ 144 → Region.Disjoint ⟨c + BitVec.ofNat 64 e, n⟩ ⟨b, 512⟩ :=
-    fun he => (h.cb.sub_left (hctx he)).sub_right (Region.sub_prefix (by omega))
-  have co0 : Region.Disjoint ⟨c, 128⟩ ⟨op, ol⟩ := h.co.sub_left (Region.sub_prefix (by omega))
+    fun he => (h.cb.sub_left (hctx he)).sub_right (Region.sub_prefix (by omega_arith))
+  have co0 : Region.Disjoint ⟨c, 128⟩ ⟨op, ol⟩ := h.co.sub_left (Region.sub_prefix (by omega_arith))
   have cb0 : Region.Disjoint ⟨c, 128⟩ ⟨b, 512⟩ :=
-    (h.cb.sub_left (Region.sub_prefix (by omega))).sub_right (Region.sub_prefix (by omega))
-  have outS : Region.Sub ⟨op, 8 * ((p + len) / 8)⟩ ⟨op, ol⟩ := Region.sub_prefix (by omega)
-  have hr : len + p - ol = (p + len) % 8 := by omega
+    (h.cb.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Region.sub_prefix (by omega_arith))
+  have outS : Region.Sub ⟨op, 8 * ((p + len) / 8)⟩ ⟨op, ol⟩ := Region.sub_prefix (by omega_arith)
+  have hr : len + p - ol = (p + len) % 8 := by omega_arith
   have pend := hc.pend
-  rw [hr, show ol - p = (p + len) / 8 * 8 - p by omega] at pend
+  rw [hr, show ol - p = (p + len) / 8 * 8 - p by omega_arith] at pend
   obtain ⟨r1, r2⟩ := update_post_long (d := d) (m₁ := s₁.mem) (out := op) (p := p) (len := len)
-    (by omega) (by omega) (by rw [← olq]; exact hc.out)
+    (by omega_arith) (by omega_arith) (by rw [← olq]; exact hc.out)
     (scheduleAt_frame hc.frame c (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl)
       · exact co0.sub_right (Region.sub_prefix (Nat.le_refl _))
-      · exact Offset.base_disjoint c (k := 128) (e := 136) (n := 8) (by omega) (by omega)))
+      · exact Offset.base_disjoint c (k := 128) (e := 136) (n := 8) (by omega_arith) (by omega_arith)))
     (blockAt_frame hc.frame (c + 128) (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl)
-      · exact co' (e := 128) (by omega)
-      · exact Offset.disjoint c (d := 128) (n := 8) (e := 136) (k := 8) (by omega) (by omega) (by omega)))
+      · exact co' (e := 128) (by omega_arith)
+      · exact Offset.disjoint c (d := 128) (n := 8) (e := 136) (k := 8) (by omega_arith) (by omega_arith) (by omega_arith)))
     (by
-      rw [Proof.Rc2.bytesAt_frame hf _ _ (by omega) (by
+      rw [Proof.Rc2.bytesAt_frame hf _ _ (by omega_arith) (by
         simp only [List.mem_cons, List.not_mem_nil, or_false]
         rintro r (rfl | rfl | rfl)
-        · exact Offset.disjoint c (d := 136) (n := (p + len) % 8) (e := 128) (k := 8) (by omega) (by omega)
-            (by omega)
-        · exact (co' (e := 136) (n := (p + len) % 8) (by omega)).sub_right outS
-        · exact cb' (e := 136) (n := (p + len) % 8) (by omega))]
+        · exact Offset.disjoint c (d := 136) (n := (p + len) % 8) (e := 128) (k := 8) (by omega_arith) (by omega_arith)
+            (by omega_arith)
+        · exact (co' (e := 136) (n := (p + len) % 8) (by omega_arith)).sub_right outS
+        · exact cb' (e := 136) (n := (p + len) % 8) (by omega_arith))]
       exact pend)
     (scheduleAt_frame hf c (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl | rfl)
-      · exact Offset.base_disjoint c (k := 128) (e := 128) (n := 8) (by omega) (by omega)
+      · exact Offset.base_disjoint c (k := 128) (e := 128) (n := 8) (by omega_arith) (by omega_arith)
       · exact co0.sub_right outS
       · exact cb0))
     hout hiv
@@ -256,13 +256,13 @@ theorem update_correct (d : Spec.Rc2.Direction) (s₀ : State) (hs : (updateCont
     have e₁ : Spec.Rc2.contextAt (inner s₀).mem (s₀.gpr .x0) d (s₀.gpr .x1).toNat =
         Spec.Rc2.contextAt s₀.mem (s₀.gpr .x0) d (s₀.gpr .x1).toNat := by
       unfold Spec.Rc2.contextAt
-      rw [inner_mem, scheduleAt_frame hf _ (by simpa using hctx (e := 0) (n := 128) (by omega)),
-        blockAt_frame hf (s₀.gpr .x0 + 128) (hctx (e := 128) (by omega)),
-        Proof.Rc2.bytesAt_frame hf (s₀.gpr .x0 + 136) _ (by omega) (hctx (e := 136) (by omega))]
+      rw [inner_mem, scheduleAt_frame hf _ (by simpa using hctx (e := 0) (n := 128) (by omega_arith)),
+        blockAt_frame hf (s₀.gpr .x0 + 128) (hctx (e := 128) (by omega_arith)),
+        Proof.Rc2.bytesAt_frame hf (s₀.gpr .x0 + 136) _ (by omega_arith) (hctx (e := 136) (by omega_arith))]
     have e₂ : Spec.Rc2.bytesAt (inner s₀).mem (s₀.gpr .x2) (s₀.gpr .x3).toNat =
         Spec.Rc2.bytesAt s₀.mem (s₀.gpr .x2) (s₀.gpr .x3).toNat := by
       rw [inner_mem]
-      exact Proof.Rc2.bytesAt_frame hf _ _ (by omega) (by simpa using kd.symm)
+      exact Proof.Rc2.bytesAt_frame hf _ _ (by omega_arith) (by simpa using kd.symm)
     have hp : UPost d (inner s₀) (s₀.gpr .x0) (s₀.gpr .x2) (s₀.gpr .x4) (s₀.gpr .x1).toNat
       (s₀.gpr .x3).toNat (s₀.gpr .x5).toNat s₂ := hpost
     unfold UPost at hp

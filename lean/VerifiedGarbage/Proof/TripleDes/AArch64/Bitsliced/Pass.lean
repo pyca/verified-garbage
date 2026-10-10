@@ -39,17 +39,17 @@ def keyA (S : Addr) (c : Nat) (d : Direction) (r : Nat) : Addr :=
 
 theorem keyIdx_lt {c : Nat} (hc : c < 3) (d : Direction) {r : Nat} (hr : r < 16) :
     keyIdx c d r < 48 := by
-  unfold keyIdx; split <;> omega
+  unfold keyIdx; split <;> omega_arith
 
 theorem keyA_succ (S : Addr) (c : Nat) (d : Direction) {r : Nat} (hr : r < 15) :
     nextKey d (keyA S c d r) = keyA S c d (r + 1) := by
   cases d
   · simp only [nextKey, keyA, keyIdx, ite_true]
     rw [show (8 : Addr) = BitVec.ofNat 64 8 from rfl, Offset.add_ofNat_add_ofNat]
-    exact congrArg (fun i => S + BitVec.ofNat 64 i) (by omega)
+    exact congrArg (fun i => S + BitVec.ofNat 64 i) (by omega_arith)
   · simp only [nextKey, keyA, keyIdx, reduceCtorEq, ite_false]
-    rw [show (8 : Addr) = BitVec.ofNat 64 8 from rfl, Offset.add_ofNat_sub _ (by omega)]
-    exact congrArg (fun i => S + BitVec.ofNat 64 i) (by omega)
+    rw [show (8 : Addr) = BitVec.ofNat 64 8 from rfl, Offset.add_ofNat_sub _ (by omega_arith)]
+    exact congrArg (fun i => S + BitVec.ofNat 64 i) (by omega_arith)
 
 theorem Sched.key {s : State} (h : Sched s) {c : Nat} (hc : c < 3) (d : Direction) {r : Nat}
     (hr : r < 16) : InRegions (s.rd ++ s.wr) (keyA (s.gpr .x0) c d r) 8 :=
@@ -57,13 +57,13 @@ theorem Sched.key {s : State} (h : Sched s) {c : Nat} (hc : c < 3) (d : Directio
 
 theorem Sched.keySep {s : State} (h : Sched s) {c : Nat} (hc : c < 3) (d : Direction) {r : Nat}
     (hr : r < 16) : (⟨keyA (s.gpr .x0) c d r, 8⟩ : Region).Disjoint (stateR s) :=
-  h.sep.sub_left (Offset.sub_base _ (by have := keyIdx_lt hc d hr; omega))
+  h.sep.sub_left (Offset.sub_base _ (by have := keyIdx_lt hc d hr; omega_arith))
 
 theorem keyA_roundKey (m : Mem) (S : Addr) {c : Nat} (hc : c < 3) (d : Direction) {r : Nat}
     (hr : r < 16) :
     (m.readW (keyA S c d r) 64).setWidth 48 = roundKey (componentSchedule (scheduleAt m S) c) d r := by
   simp only [roundKey, keyA, keyIdx]
-  rw [componentSchedule_readW m S c _ hc (by split <;> omega)]
+  rw [componentSchedule_readW m S c _ hc (by split <;> omega_arith)]
 
 /-! ## Counting down `x7` -/
 
@@ -161,7 +161,7 @@ theorem pairLoop_ok {c : Nat} (hc : c < 3) (d : Direction) {s₀ : State} (hS : 
   have a₁ : InRegions (s.rd ++ s.wr) (s.gpr .x5) 8 := by
     rw [hs.key, hs.rd, hs.wr]; exact hS.key hc d r₀
   have nk : nextKey d (s.gpr .x5) = keyA S c d (2 * (8 - m) + 1) := by
-    rw [hs.key]; exact keyA_succ S c d (by omega)
+    rw [hs.key]; exact keyA_succ S c d (by omega_arith)
   have a₂ : InRegions (s.rd ++ s.wr) (nextKey d (s.gpr .x5)) 8 := by
     rw [nk, hs.rd, hs.wr]; exact hS.key hc d r₁
   have sep₂ : (⟨nextKey d (s.gpr .x5), 8⟩ : Region).Disjoint (stateR s) := by
@@ -193,20 +193,20 @@ theorem pairLoop_ok {c : Nat} (hc : c < 3) (d : Direction) {s₀ : State} (hS : 
     show some (s'.read .x .x7 != 0) = some false
     simp [State.read, cntv]
   · right
-    refine ⟨?_, m - 1, by omega, ⟨room', z', rd'.trans hs.rd, wr'.trans hs.wr, sp'.trans hs.sp,
-      by omega, by omega, ?_, ?_, cntv, gpr', frame'⟩⟩
+    refine ⟨?_, m - 1, by omega_arith, ⟨room', z', rd'.trans hs.rd, wr'.trans hs.wr, sp'.trans hs.sp,
+      by omega_arith, by omega_arith, ?_, ?_, cntv, gpr', frame'⟩⟩
     · show some (s'.read .x .x7 != 0) = some true
       have hne : BitVec.ofNat 64 (m - 1) ≠ 0 := by
         intro h0
         have := congrArg BitVec.toNat h0
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this
         simp at this
-        omega
+        omega_arith
       simp [State.read, cntv]
       exact hne
-    · rw [show 8 - (m - 1) = 8 - m + 1 by omega]; exact words'
-    · rw [key', nk, keyA_succ S c d (by omega)]
-      congr 1; omega
+    · rw [show 8 - (m - 1) = 8 - m + 1 by omega_arith]; exact words'
+    · rw [key', nk, keyA_succ S c d (by omega_arith)]
+      congr 1; omega_arith
 
 /-! ## A pass -/
 
@@ -215,8 +215,8 @@ theorem passOff (c : Nat) (hc : c < 3) (d : Direction) :
       BitVec.ofNat 64 (128 * c + if d = .encrypt then 0 else 120) =
         BitVec.ofNat 64 (8 * keyIdx c d 0) := by
   constructor
-  · split <;> omega
-  · simp only [keyIdx]; split <;> (congr 1; omega)
+  · split <;> omega_arith
+  · simp only [keyIdx]; split <;> (congr 1; omega_arith)
 
 structure PassPost (c : Nat) (d : Direction) (s s' : State) : Prop where
   room : Room s'

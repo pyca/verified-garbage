@@ -24,16 +24,16 @@ theorem tableByte_pair {v : VReg → BitVec 128} {n : VReg} {m : Mem} {a : Addr}
     {idx : Nat} (hi : idx < 32) : tableByte v n idx = m (a + BitVec.ofNat 64 idx) := by
   rw [tableByte]
   by_cases hl : idx < 16
-  · rw [show idx / 16 = 0 by omega, show Nat.repeat VReg.succ 0 n = n from rfl, h0,
-      vbyte_read _ _ (by omega), Nat.mod_eq_of_lt hl]
-  · rw [show idx / 16 = 1 by omega, show Nat.repeat VReg.succ 1 n = VReg.succ n from rfl, h1,
-      vbyte_read _ _ (by omega), Offset.add_add, show 16 + idx % 16 = idx by omega]
+  · rw [show idx / 16 = 0 by omega_arith, show Nat.repeat VReg.succ 0 n = n from rfl, h0,
+      vbyte_read _ _ (by omega_arith), Nat.mod_eq_of_lt hl]
+  · rw [show idx / 16 = 1 by omega_arith, show Nat.repeat VReg.succ 1 n = VReg.succ n from rfl, h1,
+      vbyte_read _ _ (by omega_arith), Offset.add_add, show 16 + idx % 16 = idx by omega_arith]
 
 theorem inIndex_byte (i : Nat) (hi : i < 4) {e : Nat} (he : e < 16) :
     (vbyte (inIndex i) e).toNat = if e % 4 < 2 then 8 * (e / 4) + 2 * i + e % 4 else 255 := by
   rw [inIndex, vbyte_ofVBytes _ he]
   split
-  · rw [BitVec.toNat_ofNat]; omega
+  · rw [BitVec.toNat_ofNat]; omega_arith
   · rfl
 
 /-- The block's word `i`, from its bytes. -/
@@ -41,8 +41,8 @@ theorem decode_getD (m : Mem) (a : Addr) {i : Nat} (hi : i < 4) :
     (Spec.Rc2.decodeBlock (Spec.Rc2.blockAt m a)).getD i 0 =
       (m (a + BitVec.ofNat 64 (2 * i))).setWidth 16 |||
         (m (a + BitVec.ofNat 64 (2 * i + 1))).setWidth 16 <<< 8 := by
-  simp [Spec.Rc2.decodeBlock, Spec.Rc2.blockAt, Vector.getD, hi, show 2 * i < 8 by omega,
-    show 2 * i + 1 < 8 by omega]
+  simp [Spec.Rc2.decodeBlock, Spec.Rc2.blockAt, Vector.getD, hi, show 2 * i < 8 by omega_arith,
+    show 2 * i + 1 < 8 by omega_arith]
 
 /-- Word `i` of set `h`, gathered from the table at `n` (`v0` or `v2`). -/
 theorem gather_lane {v : VReg → BitVec 128} {n : VReg} {m : Mem} {a : Addr}
@@ -51,19 +51,19 @@ theorem gather_lane {v : VReg → BitVec 128} {n : VReg} {m : Mem} {a : Addr}
     lw (ofVBytes fun e =>
       if (vbyte (v .v4) e).toNat < 16 * 2 then tableByte v n (vbyte (v .v4) e).toNat else 0) b =
       (Spec.Rc2.decodeBlock (Spec.Rc2.blockAt m (a + BitVec.ofNat 64 (8 * b)))).getD i 0 := by
-  rw [lw_bytes, vbyte_ofVBytes _ (by omega), vbyte_ofVBytes _ (by omega), hix,
-    inIndex_byte i hi (by omega), inIndex_byte i hi (by omega), decode_getD _ _ hi,
+  rw [lw_bytes, vbyte_ofVBytes _ (by omega_arith), vbyte_ofVBytes _ (by omega_arith), hix,
+    inIndex_byte i hi (by omega_arith), inIndex_byte i hi (by omega_arith), decode_getD _ _ hi,
     Offset.add_add, Offset.add_add]
-  simp only [show 4 * b % 4 = 0 by omega, show (4 * b + 1) % 4 = 1 by omega,
-    show 4 * b / 4 = b by omega, show (4 * b + 1) / 4 = b by omega, show 0 < 2 by decide,
-    show 1 < 2 by decide, ite_true, Nat.add_zero, show 8 * b + 2 * i + 1 = 8 * b + (2 * i + 1) by omega,
-    eq_true (show 8 * b + 2 * i < 16 * 2 by omega), eq_true (show 8 * b + (2 * i + 1) < 16 * 2 by omega)]
-  rw [tableByte_pair h0 h1 (by omega), tableByte_pair h0 h1 (by omega)]
+  simp only [show 4 * b % 4 = 0 by omega_arith, show (4 * b + 1) % 4 = 1 by omega_arith,
+    show 4 * b / 4 = b by omega_arith, show (4 * b + 1) / 4 = b by omega_arith, show 0 < 2 by decide,
+    show 1 < 2 by decide, ite_true, Nat.add_zero, show 8 * b + 2 * i + 1 = 8 * b + (2 * i + 1) by omega_arith,
+    eq_true (show 8 * b + 2 * i < 16 * 2 by omega_arith), eq_true (show 8 * b + (2 * i + 1) < 16 * 2 by omega_arith)]
+  rw [tableByte_pair h0 h1 (by omega_arith), tableByte_pair h0 h1 (by omega_arith)]
 
 theorem wreg_inj {h i h' i' : Nat} (hh : h < 2) (hi : i < 4) (hh' : h' < 2) (hi' : i' < 4)
     (e : wreg h i = wreg h' i') : h = h' ∧ i = i' := by
-  have := treg_inj (8 + 4 * h + i % 4) (by omega) (8 + 4 * h' + i' % 4) (by omega) e
-  omega
+  have := treg_inj (8 + 4 * h + i % 4) (by omega_arith) (8 + 4 * h' + i' % 4) (by omega_arith) e
+  omega_arith
 
 /-- The words the gathers of `is` leave: block `b` of the eight at `q`. -/
 def Gathered (t : State) (m : Mem) (q : Addr) (i : Nat) : Prop :=
@@ -111,7 +111,7 @@ theorem gathers_ok {m : Mem} {q : Addr} (is : List Nat) (his : ∀ i ∈ is, i <
           show c₁.v (wreg 0 i) = _ from v_setV_self _ _ _,
           gather_lane (a := q) (by rw [av _ (by decide), r0])
             (by rw [show VReg.succ .v0 = .v1 from rfl, av _ (by decide), r1]) a4 hi hb,
-          show 4 * 0 + b = b by omega]
+          show 4 * 0 + b = b by omega_arith]
       | 1, _ =>
         rw [show c₂.v (wreg 1 i) = _ from v_setV_self _ _ _]
         have e4 : c₁.v .v4 = a.v .v4 := v_setV_of_ne _ _ w0.2.2.2.2.1.symm
@@ -119,7 +119,7 @@ theorem gathers_ok {m : Mem} {q : Addr} (is : List Nat) (his : ∀ i ∈ is, i <
           (by rw [v_setV_of_ne _ _ w0.2.2.1.symm, av _ (by decide), r2])
           (by rw [show VReg.succ .v2 = .v3 from rfl, v_setV_of_ne _ _ w0.2.2.2.1.symm,
             av _ (by decide), r3, Offset.add_add]) (e4.trans a4) hi hb, Offset.add_add,
-          show 32 + 8 * b = 8 * (4 * 1 + b) by omega]
+          show 32 + 8 * b = 8 * (4 * 1 + b) by omega_arith]
     have hr : ∀ r < 4, c₂.v (VReg.v0) = t.v .v0 ∧ c₂.v .v1 = t.v .v1 ∧ c₂.v .v2 = t.v .v2 ∧
         c₂.v .v3 = t.v .v3 := fun _ _ =>
       ⟨keepT _ (by decide) w0.1.symm w1.1.symm, keepT _ (by decide) w0.2.1.symm w1.2.1.symm,

@@ -240,13 +240,13 @@ open VG.Proof.Rc2.X86 (addr32)
 def selectedRound (d : Direction) (j : Nat) : Nat := if d = .encrypt then j else 15 - j
 
 theorem selectedRound_bound (d : Direction) (j : Nat) (hj : j < 16) : selectedRound d j < 16 := by
-  cases d <;> simp only [selectedRound, reduceCtorEq, ite_true, ite_false] <;> omega
+  cases d <;> simp only [selectedRound, reduceCtorEq, ite_true, ite_false] <;> omega_arith
 
 theorem keyAddr_component (base : BitVec 32) (c : Nat) (d : Direction) (j : Nat) :
     keyAddr (componentBase base c) d j = base + BitVec.ofNat 32 (8 * (16 * c + selectedRound d j)) := by
   unfold keyAddr componentBase selectedRound
   rw [Offset.add_ofNat_add_ofNat]
-  exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega)
+  exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega_arith)
 
 theorem keyWordAddress (base : BitVec 32) (fit : base.toNat + 384 ≤ 2 ^ 32)
     (c j t : Nat) (hc : c < 3) (hj : j < 16) (ht : t < 2) (d : Direction) :
@@ -256,7 +256,7 @@ theorem keyWordAddress (base : BitVec 32) (fit : base.toNat + 384 ≤ 2 ^ 32)
   rw [wordAddr, keyAddr_component]
   unfold addr
   rw [Offset.add_ofNat_add_ofNat]
-  exact VG.Proof.Rc2.X86.addr_add (by omega)
+  exact VG.Proof.Rc2.X86.addr_add (by omega_arith)
 
 theorem readKey_component (m : Mem) (base : BitVec 32)
     (fit : base.toNat + 384 ≤ 2 ^ 32) (c j : Nat) (hc : c < 3) (hj : j < 16) (d : Direction) :
@@ -282,23 +282,23 @@ theorem ready_of_regions (s : State) (base : BitVec 32) (hok : Ok sboxCfg s)
     intro c hc d j hj t ht
     rw [keyWordAddress base fit c j t hc hj ht d]
     have bound := selectedRound_bound d j hj
-    exact Offset.sub_base _ (by omega)
+    exact Offset.sub_base _ (by omega_arith)
   refine ⟨hok, hb, harg, hargSep, ?_, ?_, ?_, ?_⟩
   · intro c hc d j hj t ht
     apply hread
     rw [keyWordAddress base fit c j t hc hj ht d]
     have bound := selectedRound_bound d j hj
-    exact Offset.contains_base _ (by omega) (by omega)
+    exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   · intro c hc d j hj t ht
     exact (hdis.sub_left (keySub c hc d j hj t ht)).sub_right workSub
   · intro c hc d j hj k hk t ht
     have scratchFit : (s.gpr .ebp).toNat + 512 ≤ 2 ^ 32 := hok.fit
     apply hdis.symm.sep
-    · rw [wordAddr, addr_eq (by omega)]
-      exact Offset.contains_base _ (by omega) (by omega)
+    · rw [wordAddr, addr_eq (by omega_arith)]
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)
     · rw [keyWordAddress base fit c j t hc hj ht d]
       have bound := selectedRound_bound d j hj
-      exact Offset.contains_base _ (by omega) (by omega)
+      exact Offset.contains_base _ (by omega_arith) (by omega_arith)
   · intro c hc d j hj
     rw [readKey_component s.mem base fit c j hc hj d]
     exact (VG.Proof.TripleDes.componentSchedule_readW s.mem (addr32 base) c
@@ -321,7 +321,7 @@ theorem argument_word (s : State) (i : Nat) : arg s i = s.mem.readW (wordAddr (s
   unfold arg argAddr
   apply congrArg (fun p => s.mem.readW p 32)
   change addr (s.gpr .esp) (4 + 4 * i) = addr (s.gpr .esp) (4 * (i + 1))
-  exact congrArg (addr (s.gpr .esp)) (by omega)
+  exact congrArg (addr (s.gpr .esp)) (by omega_arith)
 
 theorem data_argument (s : State) : dataArg s = arg s 1 := (argument_word s 1).symm
 
@@ -347,29 +347,29 @@ theorem headPre_of_contract (d : Direction) (s : State) (hs : (blockContract d).
     have hb : 1 ≤ i ∧ i ≤ 3 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
       rcases hi with rfl | rfl | rfl <;> decide
-    rw [wordAddr, addr_eq (by omega)]
-    have h := argContainsCount s 3 spFit (i - 1) (by omega)
-    rw [show 4 + 4 * (i - 1) = 4 * i by omega] at h
+    rw [wordAddr, addr_eq (by omega_arith)]
+    have h := argContainsCount s 3 spFit (i - 1) (by omega_arith)
+    rw [show 4 + 4 * (i - 1) = 4 * i by omega_arith] at h
     exact h
   have argSub : ∀ i ∈ [1, 2, 3], Region.Sub ⟨wordAddr (s.gpr .esp) i, 4⟩ ⟨argAddr s 0, 12⟩ := by
     intro i hi a ha
-    exact (argContains i hi).byte (by change (a - wordAddr (s.gpr .esp) i).toNat + 1 ≤ 4 at ha; omega)
+    exact (argContains i hi).byte (by change (a - wordAddr (s.gpr .esp) i).toNat + 1 ≤ 4 at ha; omega_arith)
   have argRead : ∀ i ∈ [1, 2, 3], InRegions (s.rd ++ s.wr) (wordAddr (s.gpr .esp) i) 4 := by
     intro i hi
     rw [hrd, hwr]
     exact ⟨⟨argAddr s 0, 12⟩, by simp, argContains i hi⟩
   have slots : ∀ i < 128, InRegions (prepared s).wr (wordAddr ((prepared s).gpr .ebp) i) 4 := by
     intro i hi
-    rw [bp, wordAddr, addr_eq (by omega)]
+    rw [bp, wordAddr, addr_eq (by omega_arith)]
     change InRegions s.wr _ 4
     rw [hwr]
-    exact ⟨⟨addr32 (arg s 2), 512⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨addr32 (arg s 2), 512⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have hok : Ok sboxCfg (prepared s) := by
     refine ⟨slots, ?_, ?_, ?_⟩
-    · intro k hk; change k < 0 at hk; omega
+    · intro k hk; change k < 0 at hk; omega_arith
     · change ((prepared s).gpr .ebp).toNat + 512 ≤ 2 ^ 32
       rw [bp]; exact scratchFit
-    · intro k hk j hj; change j < 0 at hj; omega
+    · intro k hk j hj; change j < 0 at hj; omega_arith
   have hb : scheduleArg (prepared s) = arg s 0 := by
     unfold scheduleArg
     rw [sp]
@@ -388,18 +388,18 @@ theorem headPre_of_contract (d : Direction) (s : State) (hs : (blockContract d).
   · rw [data_argument]; exact dataFit
   · intro i hi
     rw [scratch_argument, hwr]
-    exact ⟨⟨addr32 (arg s 2), 512⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨addr32 (arg s 2), 512⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   · intro i hi
     exact (argsScratch.sub_left (argSub i hi)).sub_right saveSub
   · intro i hi
-    rw [data_argument, wordAddr, addr_eq (by omega), hrd, hwr]
-    exact ⟨⟨addr32 (arg s 1), 8⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    rw [data_argument, wordAddr, addr_eq (by omega_arith), hrd, hwr]
+    exact ⟨⟨addr32 (arg s 1), 8⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   · intro c hc direction j hj t ht
     have keySub : Region.Sub ⟨wordAddr (keyAddr (componentBase (arg s 0) c) direction j) t, 4⟩
         ⟨addr32 (arg s 0), 384⟩ := by
       rw [keyWordAddress _ keyFit c j t hc hj ht direction]
       have bound := selectedRound_bound direction j hj
-      exact Offset.sub_base _ (by omega)
+      exact Offset.sub_base _ (by omega_arith)
     exact (keySep.sub_left keySub).sub_right saveSub
 
 end VG.Proof.TripleDes.X86
@@ -421,15 +421,15 @@ theorem block_correct (d : Direction) (s : State) (hs : (blockContract d).pre s)
   obtain ⟨_, hwr, _, _, _, argsScratch, retData, retScratch, _, dataFit, _, spFit⟩ := hs
   have hwrite : ∀ i < 2, InRegions s.wr (wordAddr (dataArg s) i) 4 := by
     intro i hi
-    rw [data_argument, wordAddr, addr_eq (by omega), hwr]
-    exact ⟨⟨addr32 (arg s 1), 8⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    rw [data_argument, wordAddr, addr_eq (by omega_arith), hwr]
+    exact ⟨⟨addr32 (arg s 1), 8⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have hread : ∀ i < 4, InRegions (s.rd ++ s.wr) (addr32 (scratchArg s 3) + BitVec.ofNat 64 (4 * i)) 4 := by
     intro i hi
     obtain ⟨r, hr, hc⟩ := hp.saveWrite i hi
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   have hargSep : (⟨wordAddr (s.gpr .esp) 2, 4⟩ : Region).Disjoint (workRegion (prepared s)) := by
     have sub : Region.Sub ⟨wordAddr (s.gpr .esp) 2, 4⟩ ⟨argAddr s 0, 12⟩ := by
-      rw [wordAddr, addr_eq (by omega), VG.Proof.Rc2.X86.argAddr_eq s 0 (by omega)]
+      rw [wordAddr, addr_eq (by omega_arith), VG.Proof.Rc2.X86.argAddr_eq s 0 (by omega_arith)]
       exact Offset.sub _ (by decide) (by decide)
     have workSub : Region.Sub (workRegion (prepared s)) ⟨addr32 (arg s 2), 512⟩ := by
       unfold workRegion prepared

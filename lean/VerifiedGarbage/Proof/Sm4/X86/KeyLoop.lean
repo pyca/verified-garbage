@@ -45,24 +45,24 @@ theorem extStep_ok {s₀ s : State} {b P : BitVec 32} {k : Nat} (hk : k < 4)
   have hb := setWidth_toNat b
   have hPn := setWidth_toNat P
   obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁, -, -⟩ := ldSlot_ok s .eax .edi (k := tailAt 0 (3 - k)) hi.base
-    (tailAt_lt (by decide) (by omega)) (by rw [hi.wr]; exact hw)
+    (tailAt_lt (by decide) (by omega_arith)) (by rw [hi.wr]; exact hw)
   let s₂ := s₁.setReg .eax (bswap (s₁.gpr .eax))
   have e₂ : runBlock isa [.bswap .eax] s₁ = some s₂ := by
     rw [runBlock_cons, show exec (.bswap .eax) s₁ = some s₂ from rfl, runStep_some, runBlock_nil]
   have ecx₂ : s₂.gpr .ecx = P := by rw [RegUpd.gpr_setReg_of_ne _ _ (by decide), o₁ _ (by decide), hi.ptr]
   have eA : s₂.ea (at_ .ecx (4 * k)) = P.setWidth 64 + BitVec.ofNat 64 (4 * k) := by
     show (s₂.gpr .ecx + BitVec.ofNat 32 (4 * k)).setWidth 64 = _
-    rw [ecx₂]; exact setWidth_add (by omega)
+    rw [ecx₂]; exact setWidth_add (by omega_arith)
   have wr₂ : s₂.wr = s₀.wr := by show s₁.wr = _; rw [wr₁, hi.wr]
   have hin : InRegions s₂.wr (P.setWidth 64 + BitVec.ofNat 64 (4 * k)) 4 := by rw [wr₂]; exact hS k hk
   -- The slot read is the one on entry.
   have hslot : s.mem.readW (wordAddr b (tailAt 0 (3 - k))) 32 = s₀.mem.readW (wordAddr b (tailAt 0 (3 - k))) 32 := by
-    have hk' := tailAt_lt (c := 0) (w := 3 - k) (by decide) (by omega)
-    rw [slot_addr (by omega)]
+    have hk' := tailAt_lt (c := 0) (w := 3 - k) (by decide) (by omega_arith)
+    rw [slot_addr (by omega_arith)]
     refine hi.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
-    exact ((hsep.sub_left (Region.sub_prefix (by omega))).sub_right
-      (VG.Offset.sub_base _ (by omega))).symm
+    exact ((hsep.sub_left (Region.sub_prefix (by omega_arith))).sub_right
+      (VG.Offset.sub_base _ (by omega_arith))).symm
   have v₂ : s₂.gpr .eax = bswap (s₀.mem.readW (wordAddr b (tailAt 0 (3 - k))) 32) := by
     rw [RegUpd.gpr_setReg_self, v₁, hslot]
   let s₃ : State := { s₂ with mem := s₂.mem.writeW (P.setWidth 64 + BitVec.ofNat 64 (4 * k)) (s₂.gpr .eax) }
@@ -77,21 +77,21 @@ theorem extStep_ok {s₀ s : State} {b P : BitVec 32} {k : Nat} (hk : k < 4)
       from rfl, runBlock_app, e₁, Option.bind_some, runBlock_app, e₂, Option.bind_some, e₃]
   · show (s₂.mem.writeW _ _ _).getLsbD j = _
     by_cases hlt : t < 4 * k
-    · rw [writeW32_other _ _ _ _ (VG.Proof.Sm4.off_sub_not _ (Or.inl hlt) (by omega) (by decide) (by omega)),
+    · rw [writeW32_other _ _ _ _ (VG.Proof.Sm4.off_sub_not _ (Or.inl hlt) (by omega_arith) (by decide) (by omega_arith)),
         mem₂]
       exact hi.bytes t hlt j hj
-    · have hc : t - 4 * k < 4 := by omega
+    · have hc : t - 4 * k < 4 := by omega_arith
       rw [show P.setWidth 64 + BitVec.ofNat 64 t =
           P.setWidth 64 + BitVec.ofNat 64 (4 * k) + BitVec.ofNat 64 (t - 4 * k) by
-        rw [VG.Offset.add_add, show 4 * k + (t - 4 * k) = t by omega],
+        rw [VG.Offset.add_add, show 4 * k + (t - 4 * k) = t by omega_arith],
         writeW32_byte _ _ _ hc hj, v₂, bswap_bit _ hc hj,
-        tailBlock_bit s₀ (c := 0) (i := 15 - t) hb₀ hfit (by decide) (by omega) hj,
-        show (15 - t) / 4 = 3 - k by omega, show (15 - t) % 4 = 3 - (t - 4 * k) by omega]
+        tailBlock_bit s₀ (c := 0) (i := 15 - t) hb₀ hfit (by decide) (by omega_arith) hj,
+        show (15 - t) / 4 = 3 - k by omega_arith, show (15 - t) % 4 = 3 - (t - 4 * k) by omega_arith]
   · refine (hi.frame.sub fun r hr => ⟨⟨P.setWidth 64, 4 * (k + 1)⟩, List.mem_singleton_self _, by
-      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega)⟩).trans ?_
+      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega_arith)⟩).trans ?_
     show Frame _ s.mem (s₂.mem.writeW _ _)
     rw [mem₂]
-    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (VG.Offset.contains_base _ (by omega) (by omega))
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (VG.Offset.contains_base _ (by omega_arith) (by omega_arith))
   · show (s₁.setReg .eax _).gpr r = _
     rw [RegUpd.gpr_setReg_of_ne _ _ hr, o₁ r hr, hi.regs r hr]
 
@@ -111,18 +111,18 @@ theorem extract_ok {s : State} {b S : BitVec 32} {m : Nat} (hm : m < 8) (hb : s.
   have hfit := hw.fit
   have hSn := setWidth_toNat S
   let P := S + BitVec.ofNat 32 (16 * m)
-  have hPa : P.setWidth 64 = S.setWidth 64 + BitVec.ofNat 64 (16 * m) := setWidth_add (by omega)
-  have hPn : P.toNat + 16 ≤ 2 ^ 32 := by rw [toNat_add32 _ (by omega)]; omega
+  have hPa : P.setWidth 64 = S.setWidth 64 + BitVec.ofNat 64 (16 * m) := setWidth_add (by omega_arith)
+  have hPn : P.toNat + 16 ≤ 2 ^ 32 := by rw [toNat_add32 _ (by omega_arith)]; omega_arith
   have subP : Region.Sub ⟨P.setWidth 64, 16⟩ ⟨S.setWidth 64, 128⟩ := by
-    rw [hPa]; exact VG.Offset.sub_base _ (by omega)
+    rw [hPa]; exact VG.Offset.sub_base _ (by omega_arith)
   obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁, -, -⟩ := ldSlot_ok s .ecx .edi (k := nSlot) hb (by decide) hw
   rw [hn] at v₁
   have hb₁ : s₁.gpr sb = b := by rw [o₁ _ (by decide)]; exact hb
   have hw₁ : ScrIn s₁.wr b := by rw [wr₁]; exact hw
   have hS₁ : ∀ t < 4, InRegions s₁.wr (P.setWidth 64 + BitVec.ofNat 64 (4 * t)) 4 := fun t ht =>
-    ⟨_, by rw [wr₁]; exact hS, by rw [hPa, VG.Offset.add_add]; exact VG.Offset.contains_base _ (by omega) (by omega)⟩
+    ⟨_, by rw [wr₁]; exact hS, by rw [hPa, VG.Offset.add_add]; exact VG.Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have hsepP : Region.Disjoint ⟨P.setWidth 64, 16⟩ ⟨b.setWidth 64, 4 * slots⟩ := hsep.sub_left subP
-  have i0 : ExtInv s₁ b P 0 s₁ := ⟨hb₁, v₁, fun t ht => by omega, Frame.refl _ _, fun _ _ => rfl, rfl, rfl⟩
+  have i0 : ExtInv s₁ b P 0 s₁ := ⟨hb₁, v₁, fun t ht => by omega_arith, Frame.refl _ _, fun _ _ => rfl, rfl, rfl⟩
   obtain ⟨s₂, e₂, i₂⟩ := extStep_ok (k := 0) (by decide) hfit hPn hw₁ hS₁ hsepP hb₁ i0
   obtain ⟨s₃, e₃, i₃⟩ := extStep_ok (k := 1) (by decide) hfit hPn hw₁ hS₁ hsepP hb₁ i₂
   obtain ⟨s₄, e₄, i₄⟩ := extStep_ok (k := 2) (by decide) hfit hPn hw₁ hS₁ hsepP hb₁ i₃
@@ -150,14 +150,14 @@ theorem extract_ok {s : State} {b S : BitVec 32} {m : Nat} (hm : m < 8) (hb : s.
       Option.bind_some, runBlock_app, e₂, Option.bind_some, runBlock_app, e₃, Option.bind_some, runBlock_app, e₄,
       Option.bind_some, e₅, Option.bind_some, runBlock_app, e₆, Option.bind_some, e₇]
   · have hx : (⟨P.setWidth 64, 16⟩ : Region).Contains (P.setWidth 64 + BitVec.ofNat 64 t) 1 :=
-      VG.Offset.contains_base _ (by omega) (by omega)
+      VG.Offset.contains_base _ (by omega_arith) (by omega_arith)
     rw [show S.setWidth 64 + BitVec.ofNat 64 (16 * m + t) = P.setWidth 64 + BitVec.ofNat 64 t by
         rw [hPa, VG.Offset.add_add],
-      hmem₇, writeW32_other _ _ _ _ (out_of_disj dN hx (Region.contains_self _ _)), i₅.bytes t (by omega) j hj,
+      hmem₇, writeW32_other _ _ _ _ (out_of_disj dN hx (Region.contains_self _ _)), i₅.bytes t (by omega_arith) j hj,
       hblk]
   · rw [hmem₇, Mem.readW_writeW_self32]
     simp only [P]
-    rw [VG.Offset.add_add, show 16 * m + 16 = 16 * (m + 1) by omega]
+    rw [VG.Offset.add_add, show 16 * m + 16 = 16 * (m + 1) by omega_arith]
   · rw [← m₁]
     refine (i₅.frame.sub fun r hr => ⟨_, List.mem_cons_self, by
       simp only [List.mem_singleton] at hr; subst hr; rw [hPa]; exact fun _ h => h⟩).trans ?_

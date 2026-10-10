@@ -27,9 +27,9 @@ theorem lw_bytes (x : BitVec 128) (b : Nat) :
   simp only [lw, vword, vbyte, BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_extractLsb', ht, decide_true, Bool.true_and]
   by_cases h8 : t < 8
-  · simp [h8, show t < 32 by omega, show 8 * (4 * b) + t = 32 * b + t by omega]
-  · simp [h8, show t < 32 by omega, show t - 8 < 8 by omega, show t - 8 < 16 by omega,
-      show 8 * (4 * b + 1) + (t - 8) = 32 * b + t by omega]
+  · simp [h8, show t < 32 by omega_arith, show 8 * (4 * b) + t = 32 * b + t by omega_arith]
+  · simp [h8, show t < 32 by omega_arith, show t - 8 < 8 by omega_arith, show t - 8 < 16 by omega_arith,
+      show 8 * (4 * b + 1) + (t - 8) = 32 * b + t by omega_arith]
 
 theorem exec_dupE (s : State) (d n : VReg) {i : Nat} (hi : i < 4) :
     exec (.vop (.dupE .s4 d n i)) s =
@@ -51,7 +51,7 @@ theorem keyBcast_ok {s : State} {m : Mem} {p : Addr} (hs : SchedV s m p) {k : Na
   let S := s.v (treg (k / 8))
   let D : BitVec 128 := VArr.s4.map2 (fun w _ _ => S.extractLsb' (w * (k % 8 / 2)) w) 0 0
   let s₁ := s.setV kb D
-  have hS : S = m.read (p + BitVec.ofNat 64 (16 * (k / 8))) 16 := hs _ (by omega)
+  have hS : S = m.read (p + BitVec.ofNat 64 (16 * (k / 8))) 16 := hs _ (by omega_arith)
   -- Byte `e` of lane `b` of the broadcast.
   have dB : ∀ b < 4, ∀ e < 4, vbyte D (4 * b + e) = m (p + BitVec.ofNat 64 (2 * (k / 2 * 2) + e)) := by
     intro b hb e he
@@ -59,38 +59,38 @@ theorem keyBcast_ok {s : State} {m : Mem} {p : Addr} (hs : SchedV s m p) {k : Na
       simp only [D, vword_map2 _ _ _ hb]; rfl
     have : vbyte D (4 * b + e) = (vword D b).extractLsb' (8 * e) 8 := by
       apply BitVec.eq_of_getLsbD_eq; intro t ht
-      simp [vbyte, vword, ht, show 8 * e + t < 32 by omega, show 8 * (4 * b + e) + t = 32 * b + (8 * e + t) by omega]
+      simp [vbyte, vword, ht, show 8 * e + t < 32 by omega_arith, show 8 * (4 * b + e) + t = 32 * b + (8 * e + t) by omega_arith]
     rw [this, hv]
     have : (vword S (k % 8 / 2)).extractLsb' (8 * e) 8 = vbyte S (4 * (k % 8 / 2) + e) := by
       apply BitVec.eq_of_getLsbD_eq; intro t ht
-      simp [vbyte, vword, ht, show 8 * e + t < 32 by omega,
-        show 8 * (4 * (k % 8 / 2) + e) + t = 32 * (k % 8 / 2) + (8 * e + t) by omega]
-    rw [this, hS, vbyte_read _ _ (by omega), Offset.add_add,
-      show 16 * (k / 8) + (4 * (k % 8 / 2) + e) = 2 * (k / 2 * 2) + e by omega]
+      simp [vbyte, vword, ht, show 8 * e + t < 32 by omega_arith,
+        show 8 * (4 * (k % 8 / 2) + e) + t = 32 * (k % 8 / 2) + (8 * e + t) by omega_arith]
+    rw [this, hS, vbyte_read _ _ (by omega_arith), Offset.add_add,
+      show 16 * (k / 8) + (4 * (k % 8 / 2) + e) = 2 * (k / 2 * 2) + e by omega_arith]
   have key : ∀ b < 4, lw (s₁.v kb) b = (m (p + BitVec.ofNat 64 (2 * (k / 2 * 2)))).setWidth 16 |||
       (m (p + BitVec.ofNat 64 (2 * (k / 2 * 2) + 1))).setWidth 16 <<< 8 := by
     intro b hb
     rw [show s₁.v kb = D from v_setV_self _ _ _, lw_bytes _ b,
-      show 4 * b = 4 * b + 0 by omega, dB b hb 0 (by decide), dB b hb 1 (by decide)]
+      show 4 * b = 4 * b + 0 by omega_arith, dB b hb 0 (by decide), dB b hb 1 (by decide)]
     rfl
   by_cases hp : k % 2 = 1
   · let s₂ := s₁.setV kb (VRevOp.rev32h.eval (s₁.v kb))
     refine ⟨s₂, ?_, fun b hb => ?_, fun r hr => ?_, rfl, rfl, rfl, rfl, rfl⟩
-    · rw [keyBcast, ite_eq_left hp, List.singleton_append, runBlock_cons, exec_dupE _ _ _ (by omega),
+    · rw [keyBcast, ite_eq_left hp, List.singleton_append, runBlock_cons, exec_dupE _ _ _ (by omega_arith),
         runStep_some, runBlock_cons, exec_rev, runStep_some, runBlock_nil]
     · rw [show s₂.v kb = VRevOp.rev32h.eval (s₁.v kb) from v_setV_self _ _ _, lw_bytes _ b,
         VG.Proof.Rc2.AArch64.scheduleAt_getD _ _ _ hk]
-      simp only [VRevOp.eval, vbyte_ofVBytes _ (show 4 * b < 16 by omega),
-        vbyte_ofVBytes _ (show 4 * b + 1 < 16 by omega),
-        show 4 * (4 * b / 4) + (4 * b % 4 + 2) % 4 = 4 * b + 2 by omega,
-        show 4 * ((4 * b + 1) / 4) + ((4 * b + 1) % 4 + 2) % 4 = 4 * b + 3 by omega]
+      simp only [VRevOp.eval, vbyte_ofVBytes _ (show 4 * b < 16 by omega_arith),
+        vbyte_ofVBytes _ (show 4 * b + 1 < 16 by omega_arith),
+        show 4 * (4 * b / 4) + (4 * b % 4 + 2) % 4 = 4 * b + 2 by omega_arith,
+        show 4 * ((4 * b + 1) / 4) + ((4 * b + 1) % 4 + 2) % 4 = 4 * b + 3 by omega_arith]
       rw [show s₁.v kb = D from v_setV_self _ _ _, dB b hb 2 (by decide), dB b hb 3 (by decide),
-        show 2 * (k / 2 * 2) + 2 = 2 * k by omega, show 2 * (k / 2 * 2) + 3 = 2 * k + 1 by omega]
+        show 2 * (k / 2 * 2) + 2 = 2 * k by omega_arith, show 2 * (k / 2 * 2) + 3 = 2 * k + 1 by omega_arith]
     · simp only [s₂, s₁, v_setV_of_ne _ _ hr]
   · refine ⟨s₁, ?_, fun b hb => ?_, fun r hr => ?_, rfl, rfl, rfl, rfl, rfl⟩
-    · rw [keyBcast, ite_eq_right hp, List.append_nil, runBlock_cons, exec_dupE _ _ _ (by omega),
+    · rw [keyBcast, ite_eq_right hp, List.append_nil, runBlock_cons, exec_dupE _ _ _ (by omega_arith),
         runStep_some, runBlock_nil]
-    · rw [key b hb, VG.Proof.Rc2.AArch64.scheduleAt_getD _ _ _ hk, show k / 2 * 2 = k by omega]
+    · rw [key b hb, VG.Proof.Rc2.AArch64.scheduleAt_getD _ _ _ hk, show k / 2 * 2 = k by omega_arith]
     · simp only [s₁, v_setV_of_ne _ _ hr]
 
 /-! ## A reverse mix on a set -/
@@ -185,7 +185,7 @@ theorem mixStep_ok {s : State} {m : Mem} {p : Addr} (hs : SchedV s m p) (hm : s.
     ∃ s', runBlock isa (keyBcast (4 * j + i) ++ rmix 0 i ++ rmix 1 i) s = some s' ∧
       Sets s' (fun b => Spec.Rc2.reverseMix (Spec.Rc2.scheduleAt m p) (4 * j + i) i (vs b)) ∧
       VKeep s s' := by
-  obtain ⟨s₁, r₁, k₁, o₁, g₁, me₁, rd₁, wr₁, sp₁⟩ := keyBcast_ok hs (k := 4 * j + i) (by omega)
+  obtain ⟨s₁, r₁, k₁, o₁, g₁, me₁, rd₁, wr₁, sp₁⟩ := keyBcast_ok hs (k := 4 * j + i) (by omega_arith)
   have v₁ : Sets s₁ vs := fun h hh =>
     (hv h hh).keep fun i' hi' => o₁ _ (regs_fixed h i' hh hi').1.symm
   have m₁ : s₁.v m16 = mask16 := (o₁ m16 (by decide)).trans hm

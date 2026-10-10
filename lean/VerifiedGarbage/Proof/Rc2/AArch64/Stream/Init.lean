@@ -23,7 +23,7 @@ open VG.Proof.MdStream.AArch64 (Upd Mupd wp_mov wp_movz wp_subImm wp_lsr wp_ldr 
 theorem chk (x : BitVec 64) {sh p : Nat} (hs : sh < 64) (hp : 2 ^ sh = p) :
     ((x - BitVec.ofNat 64 1) >>> sh != 0) = decide ¬(1 ≤ x.toNat ∧ x.toNat ≤ p) := by
   have hx := x.isLt
-  have hp' : p ≤ 2 ^ 63 := hp ▸ Nat.pow_le_pow_right (by decide) (by omega)
+  have hp' : p ≤ 2 ^ 63 := hp ▸ Nat.pow_le_pow_right (by decide) (by omega_arith)
   have hp0 : 0 < p := hp ▸ Nat.two_pow_pos sh
   have e : ((x - BitVec.ofNat 64 1) >>> sh).toNat = (2 ^ 64 - 1 + x.toNat) % 2 ^ 64 / p := by
     rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, Nat.shiftRight_eq_div_pow, hp]
@@ -32,8 +32,8 @@ theorem chk (x : BitVec 64) {sh p : Nat} (hs : sh < 64) (hp : 2 ^ sh = p) :
   rw [Bool.eq_iff_iff, bne_iff_ne, ne_eq, decide_eq_true_eq, ← BitVec.toNat_inj, e, z,
     Nat.div_eq_zero_iff]
   by_cases h0 : x.toNat = 0
-  · rw [h0]; omega
-  · rw [show (2 ^ 64 - 1 + x.toNat) % 2 ^ 64 = x.toNat - 1 by omega]; omega
+  · rw [h0]; omega_arith
+  · rw [show (2 ^ 64 - 1 + x.toNat) % 2 ^ 64 = x.toNat - 1 by omega_arith]; omega_arith
 
 /-- The arguments of `init`, and their regions, for valid lengths. -/
 structure ILay (σ : State) (key iv ctx scr : Addr) (kl eb : Nat) : Prop where
@@ -62,15 +62,15 @@ theorem main_ok {σ : State} {key iv ctx scr : Addr} {kl eb : Nat} (h : ILay σ 
       Spec.Rc2.blockAt s'.mem (ctx + 128) = Spec.Rc2.blockAt σ.mem iv := by
   have hk := h.hk
   have he := h.he
-  have ivS : Region.Sub ⟨ctx + BitVec.ofNat 64 128, 8⟩ ⟨ctx, 144⟩ := Offset.sub_base _ (by omega)
-  have schS : Region.Sub ⟨ctx, 128⟩ ⟨ctx, 144⟩ := Region.sub_prefix (by omega)
-  have bufS : Region.Sub ⟨scr, 512⟩ ⟨scr, 576⟩ := Region.sub_prefix (by omega)
+  have ivS : Region.Sub ⟨ctx + BitVec.ofNat 64 128, 8⟩ ⟨ctx, 144⟩ := Offset.sub_base _ (by omega_arith)
+  have schS : Region.Sub ⟨ctx, 128⟩ ⟨ctx, 144⟩ := Region.sub_prefix (by omega_arith)
+  have bufS : Region.Sub ⟨scr, 512⟩ ⟨scr, 576⟩ := Region.sub_prefix (by omega_arith)
   unfold initMain initArgs
   refine WP.seq (wp_ldr (a := iv) ⟨by decide, by decide⟩ (by rw [h.x3]; simp)
     (by rw [h.rd]; exact inR (R := ⟨iv, 8⟩) (by simp) (Region.contains_self _ _)) fun s₁ u₁ => ?_)
   refine wp_str (a := ctx + BitVec.ofNat 64 128) ⟨by decide, by decide⟩
     (by rw [u₁.other _ (by decide), h.x5])
-    (by rw [u₁.wr, h.wr]; exact inR (R := ⟨ctx, 144⟩) (by simp) (Offset.contains_base _ (by omega) (by omega)))
+    (by rw [u₁.wr, h.wr]; exact inR (R := ⟨ctx, 144⟩) (by simp) (Offset.contains_base _ (by omega_arith) (by omega_arith)))
     fun s₂ g₂ => wp_mov fun s₃ u₃ => wp_mov fun s₄ u₄ => WP.block_nil ?_
   have g₄ : ∀ r, r ≠ .x3 → r ≠ .x4 → r ≠ .x8 → s₄.gpr r = σ.gpr r := fun r h3 h4 h8 => by
     rw [u₄.other r h4, u₃.other r h3, g₂.gpr, u₁.other r h8]
@@ -86,8 +86,8 @@ theorem main_ok {σ : State} {key iv ctx scr : Addr} {kl eb : Nat} (h : ILay σ 
     rw [u₄.other _ (by decide), u₃.gpr, g₂.gpr, u₁.other _ (by decide), h.x5])
   have e4 : s₄.callEntry.gpr .x4 = scr := (State.callEntry_gpr _ (by decide)).trans (by
     rw [u₄.gpr, u₃.other _ (by decide), g₂.gpr, u₁.other _ (by decide), h.x6])
-  have hkl : (BitVec.ofNat 64 kl).toNat = kl := toNat_ofNat_lt (by omega)
-  have heb : (BitVec.ofNat 64 eb).toNat = eb := toNat_ofNat_lt (by omega)
+  have hkl : (BitVec.ofNat 64 kl).toNat = kl := toNat_ofNat_lt (by omega_arith)
+  have heb : (BitVec.ofNat 64 eb).toNat = eb := toNat_ofNat_lt (by omega_arith)
   have zero : ∀ x : Addr, x = x + BitVec.ofNat 64 0 := fun x => by simp
   have rd₄ : s₄.rd = σ.rd := by rw [u₄.rd, u₃.rd, g₂.rd, u₁.rd]
   have wr₄ : s₄.wr = σ.wr := by rw [u₄.wr, u₃.wr, g₂.wr, u₁.wr]
@@ -101,15 +101,15 @@ theorem main_ok {σ : State} {key iv ctx scr : Addr} {kl eb : Nat} (h : ILay σ 
     refine Covers.of_sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨⟨key, kl⟩, by simp, 0, zero key, by dsimp only; omega⟩
-    · exact ⟨⟨ctx, 144⟩, by simp, 0, zero ctx, by dsimp only; omega⟩
-    · exact ⟨⟨scr, 576⟩, by simp, 0, zero scr, by dsimp only; omega⟩
+    · exact ⟨⟨key, kl⟩, by simp, 0, zero key, by dsimp only; omega_arith⟩
+    · exact ⟨⟨ctx, 144⟩, by simp, 0, zero ctx, by dsimp only; omega_arith⟩
+    · exact ⟨⟨scr, 576⟩, by simp, 0, zero scr, by dsimp only; omega_arith⟩
   · rw [wr₄, h.wr]
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨⟨ctx, 144⟩, by simp, 0, zero ctx, by dsimp only; omega⟩
-    · exact ⟨⟨scr, 576⟩, by simp, 0, zero scr, by dsimp only; omega⟩
+    · exact ⟨⟨ctx, 144⟩, by simp, 0, zero ctx, by dsimp only; omega_arith⟩
+    · exact ⟨⟨scr, 576⟩, by simp, 0, zero scr, by dsimp only; omega_arith⟩
   intro s' hr hw hsp hf hcs _ hpost
   simp only [keyContract, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, e0, e1, e2,
     e3, hkl, heb] at hpost
@@ -117,12 +117,12 @@ theorem main_ok {σ : State} {key iv ctx scr : Addr} {kl eb : Nat} (h : ILay σ 
   · have hne : ∀ r ∈ preserved, r ≠ .x0 ∧ r ≠ .x3 ∧ r ≠ .x4 ∧ r ≠ .x8 := by decide
     obtain ⟨h0, h3, h4, h8⟩ := hne r hr
     rw [u₅.other r h0, hcs r hr h30, g₄ r h3 h4 h8]
-  · rw [u₅.mem, hpost, m₄, Proof.Rc2.bytesAt_frame (frame_store64 _ _ _) _ _ (by omega)
+  · rw [u₅.mem, hpost, m₄, Proof.Rc2.bytesAt_frame (frame_store64 _ _ _) _ _ (by omega_arith)
       (by simpa using h.kc.sub_right ivS)]
   · rw [u₅.mem, blockAt_frame hf (ctx + 128) (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl)
-      · exact Offset.disjoint_base ctx (k := 128) (d := 128) (n := 8) (by omega) (by omega)
+      · exact Offset.disjoint_base ctx (k := 128) (d := 128) (n := 8) (by omega_arith) (by omega_arith)
       · exact (h.cs.sub_left ivS).sub_right bufS), m₄]
     exact blockAt_copy _ _ _
 
@@ -200,7 +200,7 @@ theorem init_correct (s₀ : State) (hs : initContract.pre s₀) :
     have e₁ : Spec.Rc2.bytesAt (inner s₅).mem (s₀.gpr .x0) (s₀.gpr .x1).toNat =
         Spec.Rc2.bytesAt s₀.mem (s₀.gpr .x0) (s₀.gpr .x1).toNat := by
       rw [inner_mem, mem₅, sp₅, g₅ .x30 (by decide)]
-      exact Proof.Rc2.bytesAt_frame hf _ _ (by omega) (by simpa using sk.symm)
+      exact Proof.Rc2.bytesAt_frame hf _ _ (by omega_arith) (by simpa using sk.symm)
     have e₂ : Spec.Rc2.blockAt (inner s₅).mem (s₀.gpr .x3) = Spec.Rc2.blockAt s₀.mem (s₀.gpr .x3) := by
       rw [inner_mem, mem₅, sp₅, g₅ .x30 (by decide)]
       exact blockAt_frame hf _ (by rw [hb''] at si; simpa using si.symm)

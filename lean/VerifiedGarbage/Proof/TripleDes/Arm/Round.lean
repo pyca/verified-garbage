@@ -61,7 +61,7 @@ theorem sboxInputsLiteral_eq : ∀ i < 8,
   | 5, _ => sboxInputs5.lit_eq.symm
   | 6, _ => sboxInputs6.lit_eq.symm
   | 7, _ => sboxInputs7.lit_eq.symm
-  | n + 8, h => by omega
+  | n + 8, h => by omega_arith
 
 theorem roundInputCfg_ok (s : State)
     (hread : ∀ j < 2, InRegions (s.rd ++ s.wr) (wordAddr (s.gpr .r0) j) 4) : Ok roundInputCfg s := by
@@ -70,7 +70,7 @@ theorem roundInputCfg_ok (s : State)
   · exact hread
   · change (s.gpr .r2).toNat + 4 * 0 ≤ 2 ^ 32
     have h := (s.gpr .r2).isLt
-    omega
+    omega_arith
   · intro k hk; simp [roundInputCfg] at hk
 
 /-- The extraction block reads just one round key and forms six Boolean
@@ -94,7 +94,7 @@ theorem roundInput_ok (i : Nat) (hi : i < 8) (s : State)
       obtain ⟨rfl, rfl⟩ := h
       exact ⟨by decide, rfl⟩) (fun j hj => by
       have hb : j < 2 := hj
-      refine ⟨by omega, ?_⟩
+      refine ⟨by omega_arith, ?_⟩
       simp only [W, Nat.add_eq_zero_iff, Nat.one_ne_zero, false_and, ite_false, Nat.add_sub_cancel_left, roundInputCfg])
   refine ⟨s', hs', fun j hj p hp => ?_, rd, wr, sp, ?_, keep⟩
   · exact out (q j) (roundInputBits i j)
@@ -124,11 +124,11 @@ theorem bitOf_key (s : State) (a : Nat) (ha : a < 64) :
     (keyWord s).getLsbD a := by
   simp only [bitOf, keyWord, BitVec.getLsbD_append]
   by_cases h : a < 32
-  · have hd : (32 + a) / 32 = 1 := by omega
+  · have hd : (32 + a) / 32 = 1 := by omega_arith
     simp only [h, ite_true, hd, Nat.add_mod_left, Nat.mod_eq_of_lt h]
     rfl
-  · have hd : (32 + a) / 32 = 2 := by omega
-    have hm : (32 + a) % 32 = a - 32 := by omega
+  · have hd : (32 + a) / 32 = 2 := by omega_arith
+    have hm : (32 + a) % 32 = a - 32 := by omega_arith
     simp only [h, ite_false, hd, hm]
     rfl
 
@@ -140,14 +140,14 @@ theorem roundChunk_bit (i j : Nat) (hi : i < 8) (hj : j < 6)
     (roundChunk i (r.setWidth 32) (k.setWidth 48)).getLsbD j =
       (r.getLsbD (32 - Spec.TripleDes.expansion.getD (6 * i + 5 - j) 1) ^^
         k.getLsbD (47 - (6 * i + 5 - j))) := by
-  have ht : 6 * (7 - i) + j < 48 := by omega
-  have heq : 48 - 1 - (6 * (7 - i) + j) = 6 * i + 5 - j := by omega
-  have hkey : 6 * (7 - i) + j = 47 - (6 * i + 5 - j) := by omega
+  have ht : 6 * (7 - i) + j < 48 := by omega_arith
+  have heq : 48 - 1 - (6 * (7 - i) + j) = 6 * i + 5 - j := by omega_arith
+  have hkey : 6 * (7 - i) + j = 47 - (6 * i + 5 - j) := by omega_arith
   have hsource : 32 - Spec.TripleDes.expansion.getD (6 * i + 5 - j) 1 < 32 := by
     have hb : ∀ t < 48, 1 ≤ Spec.TripleDes.expansion.getD t 1 := by decide +kernel
-    have hpos : 6 * i + 5 - j < 48 := by omega
+    have hpos : 6 * i + 5 - j < 48 := by omega_arith
     have := hb _ hpos
-    omega
+    omega_arith
   simp only [roundChunk, BitVec.getLsbD_setWidth, hj, decide_true, Bool.true_and,
     BitVec.getLsbD_ushiftRight, BitVec.getLsbD_xor]
   rw [VG.Proof.TripleDes.permute_bit _ _ (by decide) _ ht]
@@ -195,7 +195,7 @@ theorem sboxOutputsLiteral_eq : ∀ i < 8,
   | 5, _ => sboxOutputs5.lit_eq.symm
   | 6, _ => sboxOutputs6.lit_eq.symm
   | 7, _ => sboxOutputs7.lit_eq.symm
-  | n + 8, h => by omega
+  | n + 8, h => by omega_arith
 
 theorem roundOutputCfg_ok (s : State) : Ok roundOutputCfg s := by
   refine ⟨?_, ?_, ?_, ?_⟩
@@ -203,7 +203,7 @@ theorem roundOutputCfg_ok (s : State) : Ok roundOutputCfg s := by
   · intro k hk; simp [roundOutputCfg] at hk
   · change (s.gpr .r2).toNat + 4 * 0 ≤ 2 ^ 32
     have h := (s.gpr .r2).isLt
-    omega
+    omega_arith
   · intro k hk; simp [roundOutputCfg] at hk
 
 /-- Deposit the four low S-box bits into L, at P's fixed destinations. -/
@@ -226,7 +226,7 @@ theorem roundOutput_ok (i : Nat) (hi : i < 8) (s : State) :
       rcases h with ⟨rfl, rfl⟩ | ⟨j, hj, heq⟩
       · exact ⟨by decide, rfl⟩
       · obtain ⟨rfl, rfl⟩ := heq
-        refine ⟨by omega, ?_⟩
+        refine ⟨by omega_arith, ?_⟩
         simp [W]) (fun j hj => by simp [roundOutputCfg] at hj)
   refine ⟨s', hs', fun p hp => ?_, rd, wr, sp, ?_, keep⟩
   · exact out .r10 (roundOutputBits i) (by simp) p hp
@@ -258,15 +258,15 @@ theorem roundOutput_piece (i : Nat) (hi : i < 8) (s : State) (b : BitVec 4)
   simp only [List.cons_append, List.nil_append, xorBits_cons, bitOf_low _ _ hp, ite_true]
   by_cases h : p < 32 ∧ boxSource p / 4 = i
   · simp only [h]
-    have hj : 3 - boxSource p % 4 < 4 := by omega
+    have hj : 3 - boxSource p % 4 < 4 := by omega_arith
     simp
     rw [bitOf_word]
-    have hn : 4 - boxSource p % 4 ≠ 0 := by omega
-    have heq : 4 - boxSource p % 4 - 1 = 3 - boxSource p % 4 := by omega
+    have hn : 4 - boxSource p % 4 ≠ 0 := by omega_arith
+    have heq : 4 - boxSource p % 4 - 1 = 3 - boxSource p % 4 := by omega_arith
     simp only [hn, ite_false, heq]
     rw [hb _ hj]
     simp only [boxPiece, getLsbD_ofBits, h.1, h.2, decide_true, Bool.true_and, ite_true]
-  · have hs : boxSource p / 4 ≠ i := by omega
+  · have hs : boxSource p / 4 ≠ i := by omega_arith
     simp only [hs, ite_false, xorBits_nil, boxPiece, getLsbD_ofBits,
       hp, decide_true, Bool.true_and, and_false]
 

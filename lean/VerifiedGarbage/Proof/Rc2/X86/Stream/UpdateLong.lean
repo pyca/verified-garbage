@@ -88,12 +88,12 @@ include hp
 
 theorem argAddr_eq (i : Nat) (hi : i < 7) :
     addr (E s₀) (4 + 4 * i) = (E s₀).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) := by
-  have := hp.sp_fit; exact addr_eq (by omega)
+  have := hp.sp_fit; exact addr_eq (by omega_arith)
 
 theorem arg_sub {i : Nat} (hi : i < 7) : Region.Sub ⟨addr (E s₀) (4 + 4 * i), 4⟩ (argR s₀) := by
   show Region.Sub _ ⟨addr (E s₀) (4 + 4 * 0), 28⟩
   rw [hp.argAddr_eq i hi, hp.argAddr_eq 0 (by decide)]
-  exact Offset.sub _ (by omega) (by omega)
+  exact Offset.sub _ (by omega_arith) (by omega_arith)
 
 omit hp in
 theorem pend_sub : Region.Sub (pendR s₀) (ctxR s₀) := Offset.sub_base _ (by decide)
@@ -111,21 +111,21 @@ theorem sch_iv : (schR s₀).Disjoint (ivR s₀) := Offset.base_disjoint _ (by d
 
 /-- A word of the scratch space. -/
 theorem scr_addr {d : Nat} (hd : d + 4 ≤ 576) : addr (scr s₀) d = sA s₀ + BitVec.ofNat 64 d := by
-  have := hp.s_fit; exact addr_eq (by omega)
+  have := hp.s_fit; exact addr_eq (by omega_arith)
 
 theorem scr_sub {d : Nat} (hd : d + 4 ≤ 576) : Region.Sub ⟨addr (scr s₀) d, 4⟩ (scR s₀) := by
   rw [hp.scr_addr hd]; exact Offset.sub_base _ hd
 
 theorem sin {s : State} (hwr : s.wr = s₀.wr) {d : Nat} (hd : d + 4 ≤ 576) :
     InRegions s.wr (addr (scr s₀) d) 4 :=
-  ⟨scR s₀, by simp [hwr, hp.wr], by rw [hp.scr_addr hd]; exact Offset.contains_base _ hd (by omega)⟩
+  ⟨scR s₀, by simp [hwr, hp.wr], by rw [hp.scr_addr hd]; exact Offset.contains_base _ hd (by omega_arith)⟩
 
 theorem rin {s : State} (hrd : s.rd = s₀.rd) {i : Nat} (hi : i < 7) :
     InRegions (s.rd ++ s.wr) (addr (E s₀) (4 + 4 * i)) 4 := by
   refine ⟨argR s₀, by simp [hrd, hp.rd], ?_⟩
   show (⟨addr (E s₀) (4 + 4 * 0), 28⟩ : Region).Contains _ _
   rw [hp.argAddr_eq i hi, hp.argAddr_eq 0 (by decide)]
-  exact Offset.contains _ (by omega) (by omega) (by have := hp.sp_fit; omega)
+  exact Offset.contains _ (by omega_arith) (by omega_arith) (by have := hp.sp_fit; omega_arith)
 
 /-- The regions written are disjoint from the arguments, the saved words, the
 schedule and the chaining value. -/
@@ -257,7 +257,7 @@ theorem entry_ok {s₀ : State} (hp : Pre s₀) {Q : State → Prop}
     WP isa (.block entry) s₀ Q := by
   simp only [entry, save, List.cons_append, List.nil_append]
   have sc (d : Nat) (hd : d + 4 ≤ 576) : (scR s₀).Contains (addr (scr s₀) d) (32 / 8) := by
-    rw [hp.scr_addr hd]; exact Offset.contains_base _ hd (by omega)
+    rw [hp.scr_addr hd]; exact Offset.contains_base _ hd (by omega_arith)
   refine wp_ldm (b := .esp) (o := 4 + 4 * 6) rfl (hp.rin rfl (by decide)) fun s₁ u₁ => ?_
   have e₁ : s₁.gpr .eax = scr s₀ := u₁.gpr
   refine wp_stm e₁ (hp.sin (u₁.wr) (d := 512) (by decide)) fun s₂ u₂ => ?_
@@ -292,7 +292,7 @@ theorem short_ok {s₀ s : State} (hp : Pre s₀) (hO : O s₀ = 0) (hc : Common
         Spec.Rc2.bytesAt s₀.mem (cA s₀ + BitVec.ofNat 64 136) (p s₀) ++
           Spec.Rc2.bytesAt s₀.mem (dA s₀) (len s₀) → Q s') :
     WP isa short s Q := by
-  have hpl : p s₀ + len s₀ < 8 := by have := hp.O_eq; omega
+  have hpl : p s₀ + len s₀ < 8 := by have := hp.O_eq; omega_arith
   have hcf := hp.c_fit
   have hdf := hp.d_fit
   rw [short]
@@ -315,29 +315,29 @@ theorem short_ok {s₀ s : State} (hp : Pre s₀) (hO : O s₀ = 0) (hc : Common
   have ecx₅ : s₅.gpr .ecx = BitVec.ofNat 32 (len s₀) := by rw [u₅.gpr, ofNat_toNat]
   have mem₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
   have hS : addr (dp s₀) 0 = dA s₀ := by
-    rw [addr_eq (by have := (dp s₀).isLt; omega)]; exact BitVec.add_zero _
+    rw [addr_eq (by have := (dp s₀).isLt; omega_arith)]; exact BitVec.add_zero _
   have hD : addr (ctx s₀ + BitVec.ofNat 32 (p s₀)) 136 = cA s₀ + BitVec.ofNat 64 (p s₀ + 136) :=
-    addr_add (by omega)
+    addr_add (by omega_arith)
   have dst : Region.Sub ⟨cA s₀ + BitVec.ofNat 64 (p s₀ + 136), len s₀⟩ (pendR s₀) :=
-    Offset.sub _ (by omega) (by omega)
+    Offset.sub _ (by omega_arith) (by omega_arith)
   refine copy_ok (sd := 0) (dd := 136) (n := len s₀) (S := dp s₀) (D := ctx s₀ + BitVec.ofNat 32 (p s₀))
-    (arg s₀ 3).isLt (by omega) (by rw [toNat_add_ofNat (by omega)]; omega)
+    (arg s₀ 3).isLt (by omega_arith) (by rw [toNat_add_ofNat (by omega_arith)]; omega_arith)
     (fun i hi => by
       rw [c₅.rd, c₅.wr, hS]
-      exact inBytes (R := dR s₀) (by simp [hp.rd]) (fun _ h => h) (by omega) i hi)
+      exact inBytes (R := dR s₀) (by simp [hp.rd]) (fun _ h => h) (by omega_arith) i hi)
     (fun i hi => by
       rw [c₅.wr, hD]
-      exact inBytes (R := ctxR s₀) (by simp [hp.wr]) (fun a h => Pre.pend_sub a (dst a h)) (by omega) i hi)
+      exact inBytes (R := ctxR s₀) (by simp [hp.wr]) (fun a h => Pre.pend_sub a (dst a h)) (by omega_arith) i hi)
     (by rw [hS, hD]; exact hp.c_d.symm.sub_right (fun a h => Pre.pend_sub a (dst a h)))
     esi₅ edx₅ ecx₅ fun s' c => hQ s' (c₅.copy hp c (.inl (by rw [hD]; exact dst))) ?_
   have hw := bytesAt_writeBytes s.mem (cA s₀ + BitVec.ofNat 64 136) (p s₀)
-    (Spec.Rc2.bytesAt s.mem (dA s₀) (len s₀)) (by rw [bytesAt_len]; omega)
+    (Spec.Rc2.bytesAt s.mem (dA s₀) (len s₀)) (by rw [bytesAt_len]; omega_arith)
   rw [bytesAt_len, Offset.add_add, Nat.add_comm 136] at hw
   rw [c.mem, mem₅, hS, hD, hw,
-    Proof.Rc2.bytesAt_frame hf _ _ (by omega) (fun r hr => by
+    Proof.Rc2.bytesAt_frame hf _ _ (by omega_arith) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hp.c_s.sub_left (fun a h => Pre.pend_sub a (Offset.sub _ (by omega) (by omega) a h)))),
-    Proof.Rc2.bytesAt_frame hf _ _ (by omega) (fun r hr => by
+      exact (hp.c_s.sub_left (fun a h => Pre.pend_sub a (Offset.sub _ (by omega_arith) (by omega_arith) a h)))),
+    Proof.Rc2.bytesAt_frame hf _ _ (by omega_arith) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.d_s)]
 
 end VG.Proof.Rc2.X86.Stream.Update
@@ -360,14 +360,14 @@ theorem sub_eq' (x y : BitVec 32) (h : y.toNat ≤ x.toNat) : x - y = BitVec.ofN
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
   have := x.isLt
-  omega
+  omega_arith
 
 theorem sub_add_eq (x y z : BitVec 32) (h : y.toNat ≤ z.toNat + x.toNat) :
     x - y + z = BitVec.ofNat 32 (z.toNat + x.toNat - y.toNat) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat]
   have := x.isLt; have := y.isLt; have := z.isLt
-  omega
+  omega_arith
 
 section
 variable {s₀ s : State} (hp : Pre s₀) (hc : Common s₀ s) {Q : State → Prop}
@@ -441,25 +441,25 @@ theorem long_ok {s₀ s : State} (hp : Pre s₀) (hO : O s₀ ≠ 0) (hc : Commo
     WP isa long s Q := by
   have hOe := hp.O_eq
   have hpl := hp.p_lt
-  have hpO : p s₀ ≤ O s₀ := by omega
-  have hOL : O s₀ - p s₀ ≤ len s₀ := by omega
-  have hR : p s₀ + len s₀ - O s₀ = (p s₀ + len s₀) % 8 := by omega
+  have hpO : p s₀ ≤ O s₀ := by omega_arith
+  have hOL : O s₀ - p s₀ ≤ len s₀ := by omega_arith
+  have hR : p s₀ + len s₀ - O s₀ = (p s₀ + len s₀) % 8 := by omega_arith
   have hRlt : (p s₀ + len s₀) % 8 < 8 := Nat.mod_lt _ (by decide)
   have hcf := hp.c_fit
   have hdf := hp.d_fit
   have hof := hp.o_fit
   have hlen : len s₀ < 2 ^ 32 := (arg s₀ 3).isLt
   have hOlt : O s₀ < 2 ^ 32 := (arg s₀ 5).isLt
-  have hC : addr (ctx s₀) 136 = cA s₀ + BitVec.ofNat 64 136 := addr_eq (by omega)
+  have hC : addr (ctx s₀) 136 = cA s₀ + BitVec.ofNat 64 136 := addr_eq (by omega_arith)
   have hS : addr (dp s₀) 0 = dA s₀ := by
-    rw [addr_eq (by have := (dp s₀).isLt; omega)]; exact BitVec.add_zero _
+    rw [addr_eq (by have := (dp s₀).isLt; omega_arith)]; exact BitVec.add_zero _
   have hO0 : addr (op s₀) 0 = oA s₀ := by
-    rw [addr_eq (by have := (op s₀).isLt; omega)]; exact BitVec.add_zero _
+    rw [addr_eq (by have := (op s₀).isLt; omega_arith)]; exact BitVec.add_zero _
   have hOp : addr (op s₀ + BitVec.ofNat 32 (p s₀)) 0 = oA s₀ + BitVec.ofNat 64 (p s₀) := by
-    rw [addr_add (by omega), Nat.add_zero]
+    rw [addr_add (by omega_arith), Nat.add_zero]
   have hSp (h0 : 0 < (p s₀ + len s₀) % 8) :
       addr (dp s₀ + BitVec.ofNat 32 (O s₀ - p s₀)) 0 = dA s₀ + BitVec.ofNat 64 (O s₀ - p s₀) := by
-    rw [addr_add (by omega), Nat.add_zero]
+    rw [addr_add (by omega_arith), Nat.add_zero]
   have inR {a : Addr} {n : Nat} {R : Region} (hR : R ∈ s₀.rd ++ s₀.wr) (hs : Region.Sub ⟨a, n⟩ R)
       (hn : n < 2 ^ 64) {t : State} (hc : Common s₀ t) :
       ∀ i < n, InRegions (t.rd ++ t.wr) (a + BitVec.ofNat 64 i) 1 := by
@@ -471,67 +471,67 @@ theorem long_ok {s₀ s : State} (hp : Pre s₀) (hO : O s₀ ≠ 0) (hc : Commo
   have oIn : oR s₀ ∈ s₀.wr := by simp [hp.wr]
   have ctxIn' : ctxR s₀ ∈ s₀.rd ++ s₀.wr := List.mem_append_right _ ctxIn
   have dIn : dR s₀ ∈ s₀.rd ++ s₀.wr := List.mem_append_left _ (by simp [hp.rd])
-  have pendSrc : Region.Sub ⟨cA s₀ + BitVec.ofNat 64 136, p s₀⟩ (pendR s₀) := Region.sub_prefix (by omega)
+  have pendSrc : Region.Sub ⟨cA s₀ + BitVec.ofNat 64 136, p s₀⟩ (pendR s₀) := Region.sub_prefix (by omega_arith)
   have pendDst : Region.Sub ⟨cA s₀ + BitVec.ofNat 64 136, (p s₀ + len s₀) % 8⟩ (pendR s₀) :=
-    Region.sub_prefix (by omega)
+    Region.sub_prefix (by omega_arith)
   have outA : Region.Sub ⟨oA s₀, p s₀⟩ (oR s₀) := Region.sub_prefix hpO
   have outB : Region.Sub ⟨oA s₀ + BitVec.ofNat 64 (p s₀), O s₀ - p s₀⟩ (oR s₀) :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_arith)
   have datA : Region.Sub ⟨dA s₀, O s₀ - p s₀⟩ (dR s₀) := Region.sub_prefix hOL
   have datB : Region.Sub ⟨dA s₀ + BitVec.ofNat 64 (O s₀ - p s₀), (p s₀ + len s₀) % 8⟩ (dR s₀) :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_arith)
   have pc {r : Region} (h : Region.Sub r (pendR s₀)) : Region.Sub r (ctxR s₀) :=
     fun a ha => Pre.pend_sub a (h a ha)
   have sing {r r' : Region} (h : r.Disjoint r') : ∀ x ∈ [r'], r.Disjoint x := fun x hx => by
     simp only [List.mem_singleton] at hx; subst hx; exact h
   -- The pending bytes to `out`.
   refine WP.seq (toOut₁_ok hp hc fun s₁ c₁ mem₁ esi₁ edx₁ ecx₁ => ?_)
-  refine WP.seq (copy_ok (sd := 136) (dd := 0) (n := p s₀) (S := ctx s₀) (D := op s₀) (by omega)
-    (by omega) (by omega)
-    (by rw [hC]; exact inR ctxIn' (pc pendSrc) (by omega) c₁)
-    (by rw [hO0]; exact outR oIn outA (by omega) c₁)
+  refine WP.seq (copy_ok (sd := 136) (dd := 0) (n := p s₀) (S := ctx s₀) (D := op s₀) (by omega_arith)
+    (by omega_arith) (by omega_arith)
+    (by rw [hC]; exact inR ctxIn' (pc pendSrc) (by omega_arith) c₁)
+    (by rw [hO0]; exact outR oIn outA (by omega_arith) c₁)
     (by rw [hC, hO0]; exact (hp.c_o.sub_left (pc pendSrc)).sub_right outA)
     esi₁ edx₁ ecx₁ fun s₂ k₂ => ?_)
   have c₂ := c₁.copy hp k₂ (.inr (by rw [hO0]; exact outA))
   have f₂ := copy_frame k₂
-  have b₂ := copy_bytes k₂ (by omega)
+  have b₂ := copy_bytes k₂ (by omega_arith)
   rw [hO0] at f₂ b₂
   rw [hC, mem₁] at b₂
   -- The first `out_len - pending_len` bytes of data after them.
   refine WP.seq (toOut₂_ok hp c₂ hpO fun s₃ c₃ mem₃ esi₃ edx₃ ecx₃ => ?_)
   rw [k₂.edx] at edx₃
   refine WP.seq (copy_ok (sd := 0) (dd := 0) (n := O s₀ - p s₀) (S := dp s₀)
-    (D := op s₀ + BitVec.ofNat 32 (p s₀)) (by omega) (by omega)
-    (by rw [toNat_add_ofNat (by omega)]; omega)
-    (by rw [hS]; exact inR dIn datA (by omega) c₃)
-    (by rw [hOp]; exact outR oIn outB (by omega) c₃)
+    (D := op s₀ + BitVec.ofNat 32 (p s₀)) (by omega_arith) (by omega_arith)
+    (by rw [toNat_add_ofNat (by omega_arith)]; omega_arith)
+    (by rw [hS]; exact inR dIn datA (by omega_arith) c₃)
+    (by rw [hOp]; exact outR oIn outB (by omega_arith) c₃)
     (by rw [hS, hOp]; exact (hp.d_o.sub_left datA).sub_right outB)
     esi₃ edx₃ ecx₃ fun s₄ k₄ => ?_)
   have c₄ := c₃.copy hp k₄ (.inr (by rw [hOp]; exact outB))
   have f₄ := copy_frame k₄
-  have b₄ := copy_bytes k₄ (by omega)
+  have b₄ := copy_bytes k₄ (by omega_arith)
   rw [hOp] at f₄ b₄
   rw [hS, mem₃] at b₄
   -- The rest to the pending block.
-  refine WP.seq (toPending_ok hp c₄ (by omega) fun s₅ c₅ mem₅ esi₅ edx₅ ecx₅ => ?_)
+  refine WP.seq (toPending_ok hp c₄ (by omega_arith) fun s₅ c₅ mem₅ esi₅ edx₅ ecx₅ => ?_)
   rw [k₄.esi] at esi₅
   rw [hR] at ecx₅
   refine copy_ok (sd := 0) (dd := 136) (n := (p s₀ + len s₀) % 8)
-    (S := dp s₀ + BitVec.ofNat 32 (O s₀ - p s₀)) (D := ctx s₀) (by omega)
+    (S := dp s₀ + BitVec.ofNat 32 (O s₀ - p s₀)) (D := ctx s₀) (by omega_arith)
     (by
       rcases Nat.eq_zero_or_pos ((p s₀ + len s₀) % 8) with h0 | h0
-      · have := (dp s₀ + BitVec.ofNat 32 (O s₀ - p s₀)).isLt; omega
-      · rw [toNat_add_ofNat (by omega)]; omega) (by omega)
-    (fun i hi => by rw [hSp (by omega)]; exact inR dIn datB (by omega) c₅ i hi)
-    (by rw [hC]; exact outR ctxIn (pc pendDst) (by omega) c₅)
+      · have := (dp s₀ + BitVec.ofNat 32 (O s₀ - p s₀)).isLt; omega_arith
+      · rw [toNat_add_ofNat (by omega_arith)]; omega_arith) (by omega_arith)
+    (fun i hi => by rw [hSp (by omega_arith)]; exact inR dIn datB (by omega_arith) c₅ i hi)
+    (by rw [hC]; exact outR ctxIn (pc pendDst) (by omega_arith) c₅)
     (by
       rcases Nat.eq_zero_or_pos ((p s₀ + len s₀) % 8) with h0 | h0
-      · intro a h; simp only [Region.Contains, h0] at h; omega
+      · intro a h; simp only [Region.Contains, h0] at h; omega_arith
       · rw [hSp h0, hC]; exact (hp.c_d.symm.sub_left datB).sub_right (pc pendDst))
     esi₅ edx₅ ecx₅ fun s₆ k₆ => ?_
   have c₆ := c₅.copy hp k₆ (.inl (by rw [hC]; exact pendDst))
   have f₆ := copy_frame k₆
-  have b₆ := copy_bytes k₆ (by omega)
+  have b₆ := copy_bytes k₆ (by omega_arith)
   rw [hC] at f₆ b₆
   rw [mem₅] at b₆
   rw [mem₅] at f₆
@@ -544,20 +544,20 @@ theorem long_ok {s₀ s : State} (hp : Pre s₀) (hO : O s₀ ≠ 0) (hc : Commo
       rw [← Proof.Rc2.bytesAt_add, Nat.add_sub_cancel' hpO]
     have e₁ : Spec.Rc2.bytesAt s₆.mem (oA s₀) (p s₀) =
         Spec.Rc2.bytesAt s₀.mem (cA s₀ + BitVec.ofNat 64 136) (p s₀) := by
-      rw [Proof.Rc2.bytesAt_frame f₆ _ _ (by omega) (sing ((hp.c_o.sub_left (pc pendDst)).sub_right outA).symm),
-        Proof.Rc2.bytesAt_frame f₄ _ _ (by omega) (sing (Offset.base_disjoint _ (by omega) (by omega))), b₂,
-        Proof.Rc2.bytesAt_frame hf _ _ (by omega) (sing (hp.c_s.sub_left (pc pendSrc)))]
+      rw [Proof.Rc2.bytesAt_frame f₆ _ _ (by omega_arith) (sing ((hp.c_o.sub_left (pc pendDst)).sub_right outA).symm),
+        Proof.Rc2.bytesAt_frame f₄ _ _ (by omega_arith) (sing (Offset.base_disjoint _ (by omega_arith) (by omega_arith))), b₂,
+        Proof.Rc2.bytesAt_frame hf _ _ (by omega_arith) (sing (hp.c_s.sub_left (pc pendSrc)))]
     have e₂ : Spec.Rc2.bytesAt s₆.mem (oA s₀ + BitVec.ofNat 64 (p s₀)) (O s₀ - p s₀) =
         Spec.Rc2.bytesAt s₀.mem (dA s₀) (O s₀ - p s₀) := by
-      rw [Proof.Rc2.bytesAt_frame f₆ _ _ (by omega) (sing ((hp.c_o.sub_left (pc pendDst)).sub_right outB).symm),
-        b₄, Proof.Rc2.bytesAt_frame f₂ _ _ (by omega) (sing ((hp.d_o.sub_left datA).sub_right outA)),
-        Proof.Rc2.bytesAt_frame hf _ _ (by omega) (sing (hp.d_s.sub_left datA))]
+      rw [Proof.Rc2.bytesAt_frame f₆ _ _ (by omega_arith) (sing ((hp.c_o.sub_left (pc pendDst)).sub_right outB).symm),
+        b₄, Proof.Rc2.bytesAt_frame f₂ _ _ (by omega_arith) (sing ((hp.d_o.sub_left datA).sub_right outA)),
+        Proof.Rc2.bytesAt_frame hf _ _ (by omega_arith) (sing (hp.d_s.sub_left datA))]
     rw [hsplit, e₁, e₂]
   · -- The pending block: the rest of the data.
     rcases Nat.eq_zero_or_pos ((p s₀ + len s₀) % 8) with h0 | h0
     · rw [h0]; rfl
-    rw [b₆, hSp h0, Proof.Rc2.bytesAt_frame f₄ _ _ (by omega) (sing ((hp.d_o.sub_left datB).sub_right outB)),
-      Proof.Rc2.bytesAt_frame f₂ _ _ (by omega) (sing ((hp.d_o.sub_left datB).sub_right outA)),
-      Proof.Rc2.bytesAt_frame hf _ _ (by omega) (sing (hp.d_s.sub_left datB))]
+    rw [b₆, hSp h0, Proof.Rc2.bytesAt_frame f₄ _ _ (by omega_arith) (sing ((hp.d_o.sub_left datB).sub_right outB)),
+      Proof.Rc2.bytesAt_frame f₂ _ _ (by omega_arith) (sing ((hp.d_o.sub_left datB).sub_right outA)),
+      Proof.Rc2.bytesAt_frame hf _ _ (by omega_arith) (sing (hp.d_s.sub_left datB))]
 
 end VG.Proof.Rc2.X86.Stream.Update

@@ -48,7 +48,7 @@ theorem MemWords.update {m : Mem} {p : Addr} {v : Spec.Rc2.State}
   · subst j
     rw [Mem.readW_writeW_self32]
     simp [Vector.getD, hi]
-  · rw [Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide), h j hj]
+  · rw [Mem.readW_writeW_sep (Offset.sep p (by omega_arith) (by omega_arith) (by omega_arith)) (by decide), h j hj]
     rw [vector_getD _ j hj, vector_getD _ j hj, Vector.getElem_set!_ne hj (Ne.symm he)]
 
 theorem Words.at_mod {s : State} {v : Spec.Rc2.State} (h : Words s v) (i : Nat) :
@@ -90,15 +90,15 @@ theorem loadWords_ok (s : State) (v : Spec.Rc2.State) (hv : MemWords s.mem (word
     have h := bounds i hi
     unfold wordBase
     rw [BitVec.add_assoc, show (64 : Addr) = BitVec.ofNat 64 64 from rfl, ← BitVec.ofNat_add]
-    exact congrArg (fun n => addr32 (s.gpr .ebp) + BitVec.ofNat 64 n) (by omega)
+    exact congrArg (fun n => addr32 (s.gpr .ebp) + BitVec.ofNat 64 n) (by omega_arith)
   rw [code]
   apply WP.mono (restoreCode_ok s .ebp regs [16, 17, 18, 19] values fit (by decide) (by decide)
-    (fun i hi => by rw [addr i hi]; exact readable _ (by have := bounds i hi; omega))
+    (fun i hi => by rw [addr i hi]; exact readable _ (by have := bounds i hi; omega_arith))
     (fun i hi => by
       have h := bounds i hi
-      rw [addr i hi, hv _ (by omega)]
+      rw [addr i hi, hv _ (by omega_arith)]
       dsimp only [values, regs]
-      rw [wordIndex_reg _ (by omega)]))
+      rw [wordIndex_reg _ (by omega_arith)]))
   intro s' h
   constructor
   · intro i hi
@@ -255,7 +255,7 @@ theorem mixCore_decrypt_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
   rw [mixCore, WP.block_append_iff]
   have bounds := rotation_bounds i
   obtain ⟨s₁, run₁, out₁, keep₁⟩ := rotate16_ok s (wordReg i) (wordReg_separate i).1 _ (hv i hi)
-    (16 - Spec.Rc2.rotation i) (by omega) (by omega)
+    (16 - Spec.Rc2.rotation i) (by omega_arith) (by omega_arith)
   rw [Word32.rotateLeft_reverse _ _ bounds.1 bounds.2] at out₁
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   have sp : .esp ∉ [wordReg i, .esi] := by
@@ -273,7 +273,7 @@ theorem mixCore_decrypt_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
         s₁.gpr (wordReg (i + n)) = (v.getD ((i + n) % 4) 0).setWidth 32 := by
       rw [keep₁.reg _ (by
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-        exact ⟨neighbor_ne i hi n (by omega) hn, (wordReg_separate _).1⟩)]
+        exact ⟨neighbor_ne i hi n (by omega_arith) hn, (wordReg_separate _).1⟩)]
       exact hv.at_mod _
     rw [h₂.1, out₁, nbr 3 (by decide) (by decide), nbr 2 (by decide) (by decide),
       nbr 1 (by decide) (by decide), keep₁.mem, args, mixValue_sub]
@@ -385,12 +385,12 @@ theorem storeWord32_ok (s : State) (r : Reg) (i : Nat) (hi : i < 4) (env : Round
     rw [wordOff_eq s i hi]; exact env.wordWrite i hi
   refine ⟨_, by
     rw [runBlock_cons, exec_store s r .ebp (wordOff i)
-      (by simp only [wordOff, Nat.mod_eq_of_lt hi]; omega) write, runStep_some, runBlock_nil], ?_⟩
+      (by simp only [wordOff, Nat.mod_eq_of_lt hi]; omega_arith) write, runStep_some, runBlock_nil], ?_⟩
   constructor
   · rw [wordOff_eq s i hi]
   · refine ⟨fun _ _ => rfl, rfl, rfl, ?_⟩
     rw [wordOff_eq s i hi]
-    exact (Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ (by omega) (by omega))
+    exact (Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
 
 end VG.Proof.Rc2.X86
 
@@ -460,7 +460,7 @@ theorem loadScratchWord_ok (s : State) (v : Spec.Rc2.State) (hv : MemWords s.mem
     rw [wordOff_mod]; exact env.wordRead _ (Nat.mod_lt _ (by decide))
   refine ⟨s.setReg r ((v.getD (i % 4) 0).setWidth 32), ?_, gpr_setReg_self _ _ _, ?_⟩
   · rw [runBlock_cons, exec_load s r .ebp (wordOff i)
-      (by simp only [wordOff]; have := Nat.mod_lt i (by decide : 0 < 4); omega) valid,
+      (by simp only [wordOff]; have := Nat.mod_lt i (by decide : 0 < 4); omega_arith) valid,
       wordOff_mod, hv _ (Nat.mod_lt _ (by decide)), runStep_some, runBlock_nil]
   · exact ⟨fun _ hr => gpr_setReg_of_ne _ _ (by simpa using hr), rfl, rfl, rfl⟩
 
@@ -538,7 +538,7 @@ theorem indexWord (x : BitVec 16) :
     ((x.setWidth 32).setWidth 6).toNat = (x &&& 63).toNat := by
   simp only [BitVec.toNat_setWidth, BitVec.toNat_and]
   change x.toNat % 4294967296 % 64 = x.toNat &&& (2 ^ 6 - 1)
-  rw [Nat.and_two_pow_sub_one_eq_mod, Nat.mod_eq_of_lt (show x.toNat < 4294967296 by have := x.isLt; omega)]
+  rw [Nat.and_two_pow_sub_one_eq_mod, Nat.mod_eq_of_lt (show x.toNat < 4294967296 by have := x.isLt; omega_arith)]
 
 def mashSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
     (i : Nat) (v : Spec.Rc2.State) : Spec.Rc2.State :=
@@ -625,7 +625,7 @@ theorem mixRound_ok (s : State) (v : Spec.Rc2.State) (hv : MemWords s.mem (wordB
   apply foldWords_ok (step := fun k i v => Spec.Rc2.mix k (4 * j + i) i v) _ _ _ s v hv env
   intro i hi s v hv env
   have bound := List.mem_range.mp hi
-  exact mixStep_ok .encrypt s v hv env i (4 * j + i) bound (by omega)
+  exact mixStep_ok .encrypt s v hv env i (4 * j + i) bound (by omega_arith)
 
 theorem reverseMixRound_ok (s : State) (v : Spec.Rc2.State) (hv : MemWords s.mem (wordBase s) v)
     (j : Nat) (hj : j < 16)
@@ -637,8 +637,8 @@ theorem reverseMixRound_ok (s : State) (v : Spec.Rc2.State) (hv : MemWords s.mem
   intro i hi s v hv env
   have bound : i < 4 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    omega
-  exact mixStep_ok .decrypt s v hv env i (4 * j + i) bound (by omega)
+    omega_arith
+  exact mixStep_ok .decrypt s v hv env i (4 * j + i) bound (by omega_arith)
 
 def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
     (v : Spec.Rc2.State) : Spec.Rc2.State :=
@@ -666,7 +666,7 @@ theorem mashRound_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (
     | encrypt => exact List.mem_range.mp hi
     | decrypt =>
       simp only [order, List.mem_cons, List.not_mem_nil, or_false] at hi
-      omega
+      omega_arith
   exact mash_ok d s v hv env i bound
 
 def roundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat)
@@ -703,7 +703,7 @@ theorem round_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (hv :
     exact finish s₁ _ h₁
   | decrypt =>
     rw [round, WP.block_append_iff]
-    apply WP.mono (reverseMixRound_ok s v hv (15 - j) (by omega) env)
+    apply WP.mono (reverseMixRound_ok s v hv (15 - j) (by omega_arith) env)
     intro s₁ h₁
     exact finish s₁ _ h₁
 
@@ -731,7 +731,7 @@ theorem decode_word (m : Mem) (p : Addr) (i : Nat) (hi : i < 4) :
   rw [Spec.Rc2.decodeBlock, getD_ofFn _ i hi]
   change ((Spec.Rc2.blockAt m p).getD (2 * i) 0).setWidth 16 |||
     ((Spec.Rc2.blockAt m p).getD (2 * i + 1) 0).setWidth 16 <<< 8 = _
-  rw [Spec.Rc2.blockAt, getD_ofFn _ _ (by omega), getD_ofFn _ _ (by omega)]
+  rw [Spec.Rc2.blockAt, getD_ofFn _ _ (by omega_arith), getD_ofFn _ _ (by omega_arith)]
 
 theorem loadWord_ok (s : State) (i : Nat) (hi : i < 4)
     (fit : (s.gpr .edi).toNat + 8 ≤ 2 ^ 32)
@@ -741,12 +741,12 @@ theorem loadWord_ok (s : State) (i : Nat) (hi : i < 4)
     ∃ s', runBlock isa (loadWord i) s = some s' ∧
       Keep [.eax, .edx] {s with mem := (s.mem.writeW (wordBase s + BitVec.ofNat 64 (4 * i))
         (((Spec.Rc2.decodeBlock (Spec.Rc2.blockAt s.mem (addr32 (s.gpr .edi)))).getD i 0).setWidth 32))} s' := by
-  have lo := readable (2 * i) (by omega)
-  have high := readable (2 * i + 1) (by omega)
-  have a := addr_add (x := s.gpr .edi) (k := 2 * i) (by omega)
-  have b := addr_add (x := s.gpr .edi) (k := 2 * i + 1) (by omega)
+  have lo := readable (2 * i) (by omega_arith)
+  have high := readable (2 * i + 1) (by omega_arith)
+  have a := addr_add (x := s.gpr .edi) (k := 2 * i) (by omega_arith)
+  have b := addr_add (x := s.gpr .edi) (k := 2 * i + 1) (by omega_arith)
   have c : addr32 (s.gpr .ebp + BitVec.ofNat 32 (wordOff i)) = wordBase s + BitVec.ofNat 64 (4 * i) := by
-    rw [addr_add (by simp only [wordOff, Nat.mod_eq_of_lt hi]; omega), wordOff_eq s i hi]
+    rw [addr_add (by simp only [wordOff, Nat.mod_eq_of_lt hi]; omega_arith), wordOff_eq s i hi]
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, loadWord, runBlock_cons, runStep_some, runBlock_nil,
       exec, execAlu, execShift, readSrc, State.ea, memOp, State.load8, State.store32,
@@ -778,21 +778,21 @@ theorem loadBlockWords_ok (n : Nat) (hn : n ≤ 4) (s : State)
     exact ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    apply WP.mono (ih (by omega))
+    apply WP.mono (ih (by omega_arith))
     intro s₁ keep₁
     have ptr₁ := keep₁.reg .edi (by decide)
     have scratch₁ := keep₁.reg .ebp (by decide)
     have base₁ : wordBase s₁ = wordBase s := by unfold wordBase; rw [scratch₁]
     have frame₁ : Frame [⟨wordBase s, 16⟩] s.mem s₁.mem := by
       rw [keep₁.mem]
-      exact saveMem_frame_le _ _ _ n 4 (by omega) (by decide)
+      exact saveMem_frame_le _ _ _ n 4 (by omega_arith) (by decide)
     have block₁ : Spec.Rc2.blockAt s₁.mem (addr32 (s₁.gpr .edi)) = Spec.Rc2.blockAt s.mem (addr32 (s.gpr .edi)) := by
       rw [ptr₁]
       exact blockAt_frame frame₁ _ (by simpa using sep)
-    obtain ⟨s₂, run₂, keep₂⟩ := loadWord_ok s₁ n (by omega)
+    obtain ⟨s₂, run₂, keep₂⟩ := loadWord_ok s₁ n (by omega_arith)
       (by rw [ptr₁]; exact fit) (by rw [scratch₁]; exact scratchFit)
       (by rw [keep₁.rd, keep₁.wr, ptr₁]; exact readable)
-      (by rw [keep₁.wr, base₁]; exact writable n (by omega))
+      (by rw [keep₁.wr, base₁]; exact writable n (by omega_arith))
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
     refine ⟨fun r hr => (keep₂.reg r hr).trans (keep₁.reg r hr), ?_,
@@ -846,12 +846,12 @@ theorem storeWord_ok (s : State) (i : Nat) (hi : i < 4) (v : BitVec 16)
       Keep [.eax] {s with
         mem := (s.mem.writeW (addr32 (s.gpr .edi) + BitVec.ofNat 64 (2 * i)) (v.setWidth 8)).writeW
           (addr32 (s.gpr .edi) + BitVec.ofNat 64 (2 * i + 1)) ((v >>> 8).setWidth 8)} s' := by
-  have lo := writable (2 * i) (by omega)
-  have high := writable (2 * i + 1) (by omega)
-  have a := addr_add (x := s.gpr .edi) (k := 2 * i) (by omega)
-  have b := addr_add (x := s.gpr .edi) (k := 2 * i + 1) (by omega)
+  have lo := writable (2 * i) (by omega_arith)
+  have high := writable (2 * i + 1) (by omega_arith)
+  have a := addr_add (x := s.gpr .edi) (k := 2 * i) (by omega_arith)
+  have b := addr_add (x := s.gpr .edi) (k := 2 * i + 1) (by omega_arith)
   have c : addr32 (s.gpr .ebp + BitVec.ofNat 32 (wordOff i)) = wordBase s + BitVec.ofNat 64 (4 * i) := by
-    rw [addr_add (by simp only [wordOff, Nat.mod_eq_of_lt hi]; omega), wordOff_eq s i hi]
+    rw [addr_add (by simp only [wordOff, Nat.mod_eq_of_lt hi]; omega_arith), wordOff_eq s i hi]
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, and_self, storeWord, runBlock_cons, runStep_some, runBlock_nil,
       exec, execShift, readSrc, State.ea, memOp, Reg8.reg, State.load32, State.store8,
@@ -868,7 +868,7 @@ theorem storeWord_ok (s : State) (i : Nat) (hi : i < 4) (v : BitVec 16)
       apply BitVec.eq_of_getLsbD_eq
       intro j hj
       simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, hj,
-        show 8 + j < 32 by omega, decide_true, Bool.true_and]
+        show 8 + j < 32 by omega_arith, decide_true, Bool.true_and]
     rw [byte]
   · rfl
   · rfl
@@ -887,7 +887,7 @@ theorem storeWords_ok (n : Nat) (hn : n ≤ 4) (s : State) (v : Spec.Rc2.State) 
     exact ⟨fun _ _ => rfl, (writeBytes_nil s.mem (addr32 (s.gpr .edi))).symm, rfl, rfl⟩
   | succ n ih =>
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    apply WP.mono (ih (by omega) s hv fit scratchFit readable sep writable)
+    apply WP.mono (ih (by omega_arith) s hv fit scratchFit readable sep writable)
     intro s₁ keep₁
     have ptr₁ := keep₁.reg .edi (by decide)
     have scratch₁ := keep₁.reg .ebp (by decide)
@@ -896,20 +896,20 @@ theorem storeWords_ok (n : Nat) (hn : n ≤ 4) (s : State) (v : Spec.Rc2.State) 
       rw [keep₁.mem]
       exact writeBytes_frame _ _ _ (by
         simpa only [BitVec.add_zero] using Offset.contains_base (addr32 (s.gpr .edi))
-          (d := 0) (n := (outputBytes v n).length) (by rw [outputBytes_length]; omega) (by decide))
+          (d := 0) (n := (outputBytes v n).length) (by rw [outputBytes_length]; omega_arith) (by decide))
     have val₁ : s₁.mem.readW (wordBase s₁ + BitVec.ofNat 64 (4 * n)) 32 = (v.getD n 0).setWidth 32 := by
       rw [base₁, frame₁.readW (r := ⟨wordBase s, 16⟩)
-        (Offset.contains_base _ (by omega) (by omega)) (by simpa using sep) (by decide)]
-      exact hv n (by omega)
-    obtain ⟨s₂, run₂, keep₂⟩ := storeWord_ok s₁ n (by omega) _ val₁
+        (Offset.contains_base _ (by omega_arith) (by omega_arith)) (by simpa using sep) (by decide)]
+      exact hv n (by omega_arith)
+    obtain ⟨s₂, run₂, keep₂⟩ := storeWord_ok s₁ n (by omega_arith) _ val₁
       (by rw [scratch₁]; exact scratchFit)
-      (by rw [keep₁.rd, keep₁.wr, base₁]; exact readable n (by omega))
+      (by rw [keep₁.rd, keep₁.wr, base₁]; exact readable n (by omega_arith))
       (by rw [ptr₁]; exact fit) (by rw [keep₁.wr, ptr₁]; exact writable)
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
     refine ⟨fun r hr => (keep₂.reg r hr).trans (keep₁.reg r hr), ?_,
       keep₂.rd.trans keep₁.rd, keep₂.wr.trans keep₁.wr⟩
-    rw [keep₂.mem, keep₁.mem, ptr₁, outputBytes_write _ _ _ n (by omega)]
+    rw [keep₂.mem, keep₁.mem, ptr₁, outputBytes_write _ _ _ n (by omega_arith)]
 
 theorem blockStore_ok (s : State) (v : Spec.Rc2.State) (hv : MemWords s.mem (wordBase s) v)
     (fit : (s.gpr .edi).toNat + 8 ≤ 2 ^ 32)
@@ -936,8 +936,8 @@ theorem argContainsCount (s : State) (count : Nat) (fit : (s.gpr .esp).toNat + 4
     (i : Nat) (hi : i < count) :
     (Region.mk (argAddr s 0) (4 * count)).Contains
       (addr32 (s.gpr .esp) + BitVec.ofNat 64 (4 + 4 * i)) 4 := by
-  rw [argAddr_eq s 0 (by omega)]
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  rw [argAddr_eq s 0 (by omega_arith)]
+  exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem arguments_frame (count : Nat) {s s' : State} {rs : List Region}
     (frame : Frame rs s.mem s'.mem) (sp : s'.gpr .esp = s.gpr .esp)
@@ -947,7 +947,7 @@ theorem arguments_frame (count : Nat) {s s' : State} {rs : List Region}
   intro i hi
   unfold arg
   have e : argAddr s' i = argAddr s i := by unfold argAddr; rw [sp]
-  rw [e, argAddr_eq s i (by omega)]
+  rw [e, argAddr_eq s i (by omega_arith)]
   exact frame.readW (argContainsCount s count fit i hi) sep (by decide)
 
 theorem pinBlock_ok (s : State)

@@ -23,7 +23,7 @@ open VG.WriteBytes (writeBytes writeBytes_snoc writeBytes_frame writeBytes_nil w
 /-! ## Addresses -/
 
 theorem toNat_sw (x : BitVec 32) : (x.setWidth 64).toNat = x.toNat := by
-  simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega)
+  simp only [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := x.isLt; omega_arith)
 
 /-- `[(x + k) + d]`, where nothing wraps around the 32-bit address space. -/
 theorem addr_add {x : BitVec 32} {k d : Nat} (h : x.toNat + k + d < 2 ^ 32) :
@@ -32,20 +32,20 @@ theorem addr_add {x : BitVec 32} {k d : Nat} (h : x.toNat + k + d < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
   have := x.isLt
-  rw [Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt (a := d) (by omega),
-    Nat.mod_eq_of_lt (a := x.toNat + k) (by omega), Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega),
-    Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega), Nat.mod_eq_of_lt (a := x.toNat) (by omega),
-    Nat.mod_eq_of_lt (a := k + d) (by omega), Nat.mod_eq_of_lt (a := x.toNat + (k + d)) (by omega)]
-  omega
+  rw [Nat.mod_eq_of_lt (a := k) (by omega_arith), Nat.mod_eq_of_lt (a := d) (by omega_arith),
+    Nat.mod_eq_of_lt (a := x.toNat + k) (by omega_arith), Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega_arith),
+    Nat.mod_eq_of_lt (a := x.toNat + k + d) (by omega_arith), Nat.mod_eq_of_lt (a := x.toNat) (by omega_arith),
+    Nat.mod_eq_of_lt (a := k + d) (by omega_arith), Nat.mod_eq_of_lt (a := x.toNat + (k + d)) (by omega_arith)]
+  omega_arith
 
 /-- `[(x + j) + d]` is byte `j` from `[x + d]`. -/
 theorem addr_step {x : BitVec 32} {j d : Nat} (h : x.toNat + j + d < 2 ^ 32) :
     addr (x + BitVec.ofNat 32 j) d = addr x d + BitVec.ofNat 64 j := by
-  rw [addr_add h, addr_eq (by omega), Offset.add_add, Nat.add_comm]
+  rw [addr_add h, addr_eq (by omega_arith), Offset.add_add, Nat.add_comm]
 
 theorem toNat_add_ofNat {x : BitVec 32} {c : Nat} (h : x.toNat + c < 2 ^ 32) :
     (x + BitVec.ofNat 32 c).toNat = x.toNat + c := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := c) (by omega), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := c) (by omega_arith), Nat.mod_eq_of_lt h]
 
 theorem toNat_add {x y : BitVec 32} (h : x.toNat + y.toNat < 2 ^ 32) :
     (x + y).toNat = x.toNat + y.toNat := by
@@ -54,7 +54,7 @@ theorem toNat_add {x y : BitVec 32} (h : x.toNat + y.toNat < 2 ^ 32) :
 /-- Each byte of a range within one of the regions. -/
 theorem inBytes {rs : List Region} {R : Region} (hR : R ∈ rs) {A : Addr} {n : Nat}
     (hs : Region.Sub ⟨A, n⟩ R) (hn : n < 2 ^ 64) : ∀ i < n, InRegions rs (A + BitVec.ofNat 64 i) 1 :=
-  fun i hi => ⟨R, hR, hs _ (Offset.contains_base _ (by omega) (by omega))⟩
+  fun i hi => ⟨R, hR, hs _ (Offset.contains_base _ (by omega_arith) (by omega_arith))⟩
 
 /-! ## Bytes -/
 
@@ -70,19 +70,19 @@ theorem bytesAt_writeBytes (m : Mem) (p : Addr) (r : Nat) (xs : List Byte) (h : 
   · apply List.map_congr_left
     intro i hi
     have hi := List.mem_range.mp hi
-    exact writeBytes_before m p xs hi (by omega)
+    exact writeBytes_before m p xs hi (by omega_arith)
   · apply List.ext_getElem (by simp)
     intro j h₁ h₂
     simp only [List.getElem_map, List.getElem_range, Function.comp, writeBytes]
     have hj : j < xs.length := by simpa using h₁
     rw [show p + BitVec.ofNat 64 (r + j) - (p + BitVec.ofNat 64 r) = BitVec.ofNat 64 j from
-      Offset.add_ofNat_add_sub p r j, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      Offset.add_ofNat_add_sub p r j, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
     simp [hj, List.getD_eq_getElem?_getD]
 
 /-- The bytes written, read back. -/
 theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) (xs : List Byte) (h : xs.length < 2 ^ 64) :
     Spec.Rc2.bytesAt (writeBytes m q xs) q xs.length = xs := by
-  have := bytesAt_writeBytes m q 0 xs (by omega)
+  have := bytesAt_writeBytes m q 0 xs (by omega_arith)
   rwa [Nat.zero_add, BitVec.add_zero, show Spec.Rc2.bytesAt m q 0 = [] from rfl, List.nil_append] at this
 
 /-! ## Instructions on bytes -/
@@ -150,12 +150,12 @@ include hn hfs hfd hin hout hd
 theorem copyBody_ok {j : Nat} (hj : j < n) {s : State} (h : CopyI s₀ S D sd dd n j s) :
     WP isa (.block (Impl.Rc2.X86.Stream.copyBody sd dd)) s (fun s' =>
       CopyI s₀ S D sd dd n (j + 1) s' ∧ s'.zf = some (decide (n - (j + 1) = 0))) := by
-  have eS : addr (S + BitVec.ofNat 32 j) sd = addr S sd + BitVec.ofNat 64 j := addr_step (by omega)
-  have eD : addr (D + BitVec.ofNat 32 j) dd = addr D dd + BitVec.ofNat 64 j := addr_step (by omega)
+  have eS : addr (S + BitVec.ofNat 32 j) sd = addr S sd + BitVec.ofNat 64 j := addr_step (by omega_arith)
+  have eD : addr (D + BitVec.ofNat 32 j) dd = addr D dd + BitVec.ofNat 64 j := addr_step (by omega_arith)
   have hbyte : s.mem (addr S sd + BitVec.ofNat 64 j) = s₀.mem (addr S sd + BitVec.ofNat 64 j) := by
     rw [h.mem]
-    exact (writeBytes_frame s₀.mem _ _ (contains_prefix (k := n) _ (by simp; omega))).bytes
-      (R := ⟨addr S sd, n⟩) (by simpa using hd) (by show n ≤ 2 ^ 64; omega) hj
+    exact (writeBytes_frame s₀.mem _ _ (contains_prefix (k := n) _ (by simp; omega_arith))).bytes
+      (R := ⟨addr S sd, n⟩) (by simpa using hd) (by show n ≤ 2 ^ 64; omega_arith) hj
   simp only [Impl.Rc2.X86.Stream.copyBody, Impl.Rc2.X86.memOp]
   refine wp_ldb h.esi (by rw [h.rd, h.wr, eS]; exact hin j hj) fun s₁ u₁ => ?_
   refine wp_stb (B := D + BitVec.ofNat 32 j)
@@ -166,8 +166,8 @@ theorem copyBody_ok {j : Nat} (hj : j < n) {s : State} (h : CopyI s₀ S D sd dd
   have hecx : s₄.gpr .ecx = s.gpr .ecx := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), g₂ _ (by decide)]
   have hc : s.gpr .ecx - 1 = BitVec.ofNat 32 (n - (j + 1)) := by
-    rw [h.ecx, ofNat_pred (by omega), Nat.sub_sub]
-  refine ⟨⟨by omega, ?_, ?_, ?_, fun r a b c d => ?_, ?_, ?_, ?_⟩, ?_⟩
+    rw [h.ecx, ofNat_pred (by omega_arith), Nat.sub_sub]
+  refine ⟨⟨by omega_arith, ?_, ?_, ?_, fun r a b c d => ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, g₂ _ (by decide), h.esi,
       BitVec.ofNat_add, BitVec.add_assoc]; rfl
   · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), g₂ _ (by decide), h.edx,
@@ -181,24 +181,24 @@ theorem copyBody_ok {j : Nat} (hj : j < n) {s : State} (h : CopyI s₀ S D sd dd
       rw [List.length_take, Nat.min_eq_left (Nat.le_of_lt hj')]
     rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem, show Reg8.al.reg = Reg.eax from rfl, u₁.gpr, h.mem, List.take_add_one,
       List.getElem?_eq_getElem hj', Option.toList_some,
-      writeBytes_snoc _ _ _ _ (by rw [hlen]; omega), hlen, eD, eS, ← h.mem, hbyte,
-      BitVec.setWidth_setWidth_of_le _ (by omega), BitVec.setWidth_eq]
+      writeBytes_snoc _ _ _ _ (by rw [hlen]; omega_arith), hlen, eD, eS, ← h.mem, hbyte,
+      BitVec.setWidth_setWidth_of_le _ (by omega_arith), BitVec.setWidth_eq]
     congr 1
     simp [Spec.Rc2.bytesAt]
-  · rw [hz₅, hecx, hc, ofNat_beq_zero (by omega)]
+  · rw [hz₅, hecx, hc, ofNat_beq_zero (by omega_arith)]
 
 theorem copyLoop_ok {s : State} (hpos : 0 < n) (h : CopyI s₀ S D sd dd n 0 s) {Q : State → Prop}
     (hQ : ∀ s', CopyPost s₀ S D sd dd n s' → Q s') :
     WP isa (.loop (.block (Impl.Rc2.X86.Stream.copyBody sd dd)) .ne) s Q := by
   refine WP.loop (M := isa) (fun k (s : State) => ∃ j, k = n - j ∧ j < n ∧ CopyI s₀ S D sd dd n j s) ?_ n s
-    ⟨0, by omega, hpos, h⟩
+    ⟨0, by omega_arith, hpos, h⟩
   rintro k s ⟨j, rfl, hj, h⟩
   refine (copyBody_ok hn hfs hfd hin hout hd hj h).mono fun s' ⟨h', hz⟩ => ?_
   by_cases hjn : j + 1 = n
   · refine .inl ⟨?_, hQ _ (copyI_post (hjn ▸ h'))⟩
-    simp only [eval, hz, show n - (j + 1) = 0 by omega, decide_true, Option.map_some, Bool.not_true]
-  · refine .inr ⟨?_, n - (j + 1), by omega, j + 1, rfl, by omega, h'⟩
-    simp only [eval, hz, show n - (j + 1) ≠ 0 by omega, decide_false, Option.map_some, Bool.not_false]
+    simp only [eval, hz, show n - (j + 1) = 0 by omega_arith, decide_true, Option.map_some, Bool.not_true]
+  · refine .inr ⟨?_, n - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, h'⟩
+    simp only [eval, hz, show n - (j + 1) ≠ 0 by omega_arith, decide_false, Option.map_some, Bool.not_false]
 
 /-- The copy of `ecx = n` bytes from `esi = S` (`[esi + sd]`) to `edx = D`
 (`[edx + dd]`). -/
@@ -215,9 +215,9 @@ theorem copy_ok (hS : s₀.gpr .esi = S) (hD : s₀.gpr .edx = D) (hC : s₀.gpr
     · rw [f₁.gpr, hS]; simp
     · rw [f₁.gpr, hD]; simp
     · rw [f₁.mem]; simp [Spec.Rc2.bytesAt, writeBytes_nil]
-  · have hpos : 0 < n := by simp at h0; omega
+  · have hpos : 0 < n := by simp at h0; omega_arith
     exact copyLoop_ok hn hfs hfd hin hout hd hpos
-      ⟨by omega, by rw [f₁.gpr, hS]; simp, by rw [f₁.gpr, hD]; simp, by rw [f₁.gpr, hC]; simp,
+      ⟨by omega_arith, by rw [f₁.gpr, hS]; simp, by rw [f₁.gpr, hD]; simp, by rw [f₁.gpr, hC]; simp,
         fun r _ _ _ _ => by rw [f₁.gpr], f₁.rd, f₁.wr, by rw [f₁.mem]; simp [writeBytes_nil]⟩ hQ
 
 end

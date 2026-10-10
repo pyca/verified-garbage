@@ -26,8 +26,8 @@ theorem exec_add4 (s : State) (d n m : VReg) :
 theorem vbyte_lane (x : BitVec 128) {b c : Nat} (hc : c < 4) :
     vbyte x (4 * b + c) = (vword x b).extractLsb' (8 * c) 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro t ht
-  simp [vbyte, vword, ht, show 8 * c + t < 32 by omega,
-    show 8 * (4 * b + c) + t = 32 * b + (8 * c + t) by omega]
+  simp [vbyte, vword, ht, show 8 * c + t < 32 by omega_arith,
+    show 8 * (4 * b + c) + t = 32 * b + (8 * c + t) by omega_arith]
 
 /-- A lane's index: `514 j + 256`, `j` the low six bits of its word. -/
 theorem index_lane (x : BitVec 32) :
@@ -45,16 +45,16 @@ theorem index_lane (x : BitVec 32) :
     show (256 : BitVec 32).toNat = 256 from rfl, a, Nat.mod_mod_of_dvd _ (by decide : 64 ∣ 2 ^ 16)]
   have : x.toNat % 64 < 64 := Nat.mod_lt _ (by decide)
   generalize x.toNat % 64 = y at *
-  omega
+  omega_arith
 
 theorem index_lt (x : BitVec 16) : (x &&& 63).toNat < 64 := by
   rw [BitVec.toNat_and, show (63 : BitVec 16).toNat = 2 ^ 6 - 1 from rfl,
     Nat.and_two_pow_sub_one_eq_mod]
-  omega
+  omega_arith
 
 theorem vword_dup4 (w : BitVec 32) {b : Nat} (hb : b < 4) : vword (ofVWords w w w w) b = w := by
   rw [vword_ofVWords _ _ _ _ hb]
-  rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega_arith : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- A block keeps the stack pointer. -/
 theorem runBlock_sp {is : List Instr} {s s' : State} (hr : runBlock isa is s = some s') :
@@ -68,7 +68,7 @@ theorem runBlock_sp {is : List Instr} {s s' : State} (hr : runBlock isa is s = s
 
 theorem wreg_ne (h i : Nat) (hh : h < 2) : wreg h i ≠ .v0 ∧ wreg h i ≠ .v1 ∧ wreg h i ≠ .v2 ∧
     wreg h i ≠ .v3 ∧ wreg h i ≠ .v4 ∧ wreg h i ≠ .v5 ∧ wreg h i ≠ .v6 ∧ wreg h i ≠ .v7 :=
-  treg_ne8 (8 + 4 * h + i % 4) (by omega)
+  treg_ne8 (8 + 4 * h + i % 4) (by omega_arith)
 
 theorem rmash_ok {s : State} {m : Mem} {p : Addr} (hs : SchedV s m p) {h i : Nat} (hh : h < 2)
     (hi : i < 4) {vs : Nat → Spec.Rc2.State} (hv : VWords s h vs) :
@@ -118,15 +118,15 @@ theorem rmash_ok {s : State} {m : Mem} {p : Addr} (hs : SchedV s m p) {h i : Nat
       if e % 4 = 0 then 2 * J (e / 4) else if e % 4 = 1 then 2 * J (e / 4) + 1 else 0 := by
     intro e he
     simp only [I]
-    rw [show e = 4 * (e / 4) + e % 4 by omega, vbyte_lane _ (by omega), l₉ _ (by omega),
-      show (4 * (e / 4) + e % 4) / 4 = e / 4 by omega, show (4 * (e / 4) + e % 4) % 4 = e % 4 by omega]
+    rw [show e = 4 * (e / 4) + e % 4 by omega_arith, vbyte_lane _ (by omega_arith), l₉ _ (by omega_arith),
+      show (4 * (e / 4) + e % 4) / 4 = e / 4 by omega_arith, show (4 * (e / 4) + e % 4) % 4 = e % 4 by omega_arith]
     exact index_bytes _ (index_lt _) e
   obtain ⟨d, rund, d1, _, dv, dk⟩ := quarters_run false s₉
   have d0 : d.v .v0 = s₉.v .v0 := dv _ (by decide) (by decide) (by decide) (by decide) (by decide)
   obtain ⟨f, runf, f0, fv⟩ := select_half_run (s := d) I
     (fun e he => by
       have : J (e / 4) < 64 := index_lt _
-      rw [hI e he]; split <;> (try split) <;> omega)
+      rw [hI e he]; split <;> (try split) <;> omega_arith)
     (fun e he => by rw [d0])
     (fun e he => by rw [d1 e he])
   let s' := f.setV (wreg h i) (VArr.s4.map2 (fun _ x y => x - y) (f.v (wreg h i)) (f.v .v0))
@@ -145,7 +145,7 @@ theorem rmash_ok {s : State} {m : Mem} {p : Addr} (hs : SchedV s m p) {h i : Nat
       rw [dv _ a1 a2 a3 a4 a5]
       simp only [s₉, s₈, s₇, s₆, s₅, s₄, s₃, s₂, s₁, v_setV_of_ne _ _ a0, v_setV_of_ne _ _ a1,
         v_setV_of_ne _ _ a4, v_write]
-    rw [tbyte_congr' this _ (by omega)]
+    rw [tbyte_congr' this _ (by omega_arith)]
     exact tbyte_loaded m p hs k hk
   have run : runBlock isa (rmash h i) s = some s' :=
     runBlock_cat_some (runBlock_cat_some (runBlock_cat_some run₉ rund) runf)
@@ -160,12 +160,12 @@ theorem rmash_ok {s : State} {m : Mem} {p : Addr} (hs : SchedV s m p) {h i : Nat
       have hw : lw (f.v .v0) b = (Spec.Rc2.scheduleAt m p).getD (J b) 0 := by
         have hj : J b < 64 := index_lt _
         have e0 : (I (4 * b)).toNat = 2 * J b := by
-          rw [hI _ (by omega), show 4 * b % 4 = 0 by omega, show 4 * b / 4 = b by omega]; rfl
+          rw [hI _ (by omega_arith), show 4 * b % 4 = 0 by omega_arith, show 4 * b / 4 = b by omega_arith]; rfl
         have e1 : (I (4 * b + 1)).toNat = 2 * J b + 1 := by
-          rw [hI _ (by omega), show (4 * b + 1) % 4 = 1 by omega,
-            show (4 * b + 1) / 4 = b by omega]; rfl
-        rw [lw_bytes, f0 _ (by omega), f0 _ (by omega), e0, e1, tab _ (by omega),
-          tab _ (by omega), scheduleAt_getD _ _ _ hj]
+          rw [hI _ (by omega_arith), show (4 * b + 1) % 4 = 1 by omega_arith,
+            show (4 * b + 1) / 4 = b by omega_arith]; rfl
+        rw [lw_bytes, f0 _ (by omega_arith), f0 _ (by omega_arith), e0, e1, tab _ (by omega_arith),
+          tab _ (by omega_arith), scheduleAt_getD _ _ _ hj]
       have : lw (s'.v (wreg h i')) b = lw (s.v (wreg h i')) b - lw (f.v .v0) b := by
         simp only [s', lw, v_setV_self, vword_map2 _ _ _ hb]
         rw [setWidth16_sub, keepV _ wi.1 wi.2.1 wi.2.2.1 wi.2.2.2.1 wi.2.2.2.2.1 wi.2.2.2.2.2.1]

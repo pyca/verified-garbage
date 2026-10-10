@@ -93,11 +93,11 @@ theorem loadMem_frame (s : State) (component : Nat)
     Frame [workRegion s] s.mem (loadMem s component) := by
   have h4 : (workRegion s).Contains (wordAddr (s.gpr .ebp) 4) 4 := by
     change (workRegion s).Contains (addr (s.gpr .ebp) 16) 4
-    rw [addr_eq (by omega)]
+    rw [addr_eq (by omega_arith)]
     exact Offset.contains _ (by decide) (by decide) (by decide)
   have h5 : (workRegion s).Contains (wordAddr (s.gpr .ebp) 5) 4 := by
     change (workRegion s).Contains (addr (s.gpr .ebp) 20) 4
-    rw [addr_eq (by omega)]
+    rw [addr_eq (by omega_arith)]
     exact Offset.contains _ (by decide) (by decide) (by decide)
   exact ((Frame.refl [workRegion s] s.mem).writeW (List.mem_singleton_self _) _ h5).writeW
     (List.mem_singleton_self _) _ h4
@@ -121,7 +121,7 @@ theorem load_ok (s : State) (offset component : Nat) (hok : Ok sboxCfg s)
     have ha : keyAddr s (offset + 4) = keyAddr s offset + 4 := by
       change VG.Proof.Rc2.X86.addr32 (keyArg s + BitVec.ofNat 32 (offset + 4)) =
         VG.Proof.Rc2.X86.addr32 (keyArg s + BitVec.ofNat 32 offset) + 4
-      rw [VG.Proof.Rc2.X86.addr_add (by omega), VG.Proof.Rc2.X86.addr_add (by omega)]
+      rw [VG.Proof.Rc2.X86.addr_add (by omega_arith), VG.Proof.Rc2.X86.addr_add (by omega_arith)]
       rw [← VG.Offset.add_ofNat_add_ofNat]
       rfl
     rw [ha]
@@ -253,7 +253,7 @@ theorem storeRound_ok (s : State) (c d : BitVec 28) (j : Nat) (hj : j < 16)
     have ha : wordAddr (roundKeyPtr s) 1 = wordAddr (roundKeyPtr s) 0 + 4 := by
       rw [show wordAddr (roundKeyPtr s) 0 = (roundKeyPtr s).setWidth 64 from by
         simp [wordAddr, addr]]
-      exact VG.X86.addr_eq (x := roundKeyPtr s) (k := 4) (by omega)
+      exact VG.X86.addr_eq (x := roundKeyPtr s) (k := 4) (by omega_arith)
     rw [ha, writeW_pair, packed48]
     rfl
   refine WP.of_runBlock ⟨s₂, run₂, ⟨hm, ?_, ?_, ?_, rd₂.trans rd₁, wr₂.trans wr₁, regs⟩⟩
@@ -286,20 +286,20 @@ def scheduleRegion (base : BitVec 32) : Region := ⟨addr32 base, 128⟩
 theorem pointer_fit (base : BitVec 32) (fit : base.toNat + 128 ≤ 2 ^ 32)
     (j : Nat) (hj : j < 16) : (base + BitVec.ofNat 32 (8 * j)).toNat + 8 ≤ 2 ^ 32 := by
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega : 8 * j < 2 ^ 32),
-    Nat.mod_eq_of_lt (by omega : base.toNat + 8 * j < 2 ^ 32)]
-  omega
+  rw [Nat.mod_eq_of_lt (by omega_arith : 8 * j < 2 ^ 32),
+    Nat.mod_eq_of_lt (by omega_arith : base.toNat + 8 * j < 2 ^ 32)]
+  omega_arith
 
 theorem schedule_contains (base : BitVec 32) (j : Nat) (hj : j < 16) :
     (scheduleRegion base).Contains (addr32 base + BitVec.ofNat 64 (8 * j)) 8 :=
-  Offset.contains_base _ (by omega) (by omega)
+  Offset.contains_base _ (by omega_arith) (by omega_arith)
 
 theorem work_slot (s : State) (fit : (s.gpr .ebp).toNat + 512 ≤ 2 ^ 32)
     (k : Nat) (hk : k = 4 ∨ k = 5) :
     (workRegion s).Contains (wordAddr (s.gpr .ebp) k) 4 := by
   change (workRegion s).Contains (addr (s.gpr .ebp) (4 * k)) 4
-  rw [addr_eq (by omega)]
-  exact Offset.contains _ (by omega) (by omega) (by omega)
+  rw [addr_eq (by omega_arith)]
+  exact Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem keyStore_read (s : State) (k : BitVec 64) (p : Addr)
     (hsep : ∀ j ∈ [4, 5], Mem.Sep p 8 (wordAddr (s.gpr .ebp) j) 4) :
@@ -316,7 +316,7 @@ theorem keyStore_frame (s : State) (base : BitVec 32) (j : Nat) (hj : j < 16)
     have ha : wordAddr (base + BitVec.ofNat 32 (8 * j)) 0 =
         addr32 base + BitVec.ofNat 64 (8 * j) := by
       simpa [wordAddr, addr, addr32] using
-        (VG.Proof.Rc2.X86.addr_add (x := base) (k := 8 * j) (by omega))
+        (VG.Proof.Rc2.X86.addr_add (x := base) (k := 8 * j) (by omega_arith))
     rw [ha]
     exact schedule_contains base j hj
   exact (((Frame.refl _ _).writeW (by simp) k hc).writeW (by simp) _
@@ -357,9 +357,9 @@ theorem keyWordAddr (base : BitVec 32) (fit : base.toNat + 128 ≤ 2 ^ 32)
     wordAddr (base + BitVec.ofNat 32 (8 * j)) t =
       addr32 base + BitVec.ofNat 64 (8 * j + 4 * t) := by
   change addr (base + BitVec.ofNat 32 (8 * j)) (4 * t) = _
-  rw [addr_eq (by have h := pointer_fit base fit j hj; omega)]
+  rw [addr_eq (by have h := pointer_fit base fit j hj; omega_arith)]
   change addr32 (base + BitVec.ofNat 32 (8 * j)) + BitVec.ofNat 64 (4 * t) = _
-  rw [VG.Proof.Rc2.X86.addr_add (x := base) (k := 8 * j) (by omega), Offset.add_ofNat_add_ofNat]
+  rw [VG.Proof.Rc2.X86.addr_add (x := base) (k := 8 * j) (by omega_arith), Offset.add_ofNat_add_ofNat]
 
 theorem loopBody_ok (key : BitVec 64) (base : BitVec 32) (origin : State)
     (fit : base.toNat + 128 ≤ 2 ^ 32) (hok : Ok sboxCfg origin)
@@ -410,7 +410,7 @@ theorem loopBody_ok (key : BitVec 64) (base : BitVec 32) (origin : State)
   · rw [h₂.ptr, ptr₁, hs.pointer]
     change base + BitVec.ofNat 32 (8 * j) + BitVec.ofNat 32 8 = _
     rw [Offset.add_ofNat_add_ofNat]
-    exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega)
+    exact congrArg (fun n => base + BitVec.ofNat 32 n) (by omega_arith)
   · intro i hi hi16
     have hsep (t : Nat) (ht : t = 4 ∨ t = 5) :
         Mem.Sep (addr32 base + BitVec.ofNat 64 (8 * i)) 8 (wordAddr (origin.gpr .ebp) t) 4 :=
@@ -421,8 +421,8 @@ theorem loopBody_ok (key : BitVec 64) (base : BitVec 32) (origin : State)
     · subst i
       rw [Mem.readW_writeW_self64]
       exact congrArg (BitVec.setWidth 64) (Vector.getElem_set!_self hj).symm
-    · rw [Mem.readW_writeW_sep (Offset.sep (addr32 base) (by omega) (by omega)
-        (by omega)) (by decide), hs.keys i (by omega) hi16]
+    · rw [Mem.readW_writeW_sep (Offset.sep (addr32 base) (by omega_arith) (by omega_arith)
+        (by omega_arith)) (by decide), hs.keys i (by omega_arith) hi16]
       exact congrArg (BitVec.setWidth 64) (Vector.getElem_set!_ne hi16 (Ne.symm he)).symm
   · have fr := keyStore_frame s₁ base j hj fit hok₁.fit (ptr₁.trans hs.pointer) k
     rw [← h₂.mem] at fr
@@ -472,7 +472,7 @@ theorem loop_ok (key : BitVec 64) (base : BitVec 32) (s : State)
   refine ⟨by decide, by decide, hc, hd, hcount, ?_, ?_, rfl, rfl, rfl, rfl, Frame.refl _ _⟩
   · exact hptr.trans (BitVec.add_zero base).symm
   · intro i hi
-    omega
+    omega_arith
 
 end VG.Proof.TripleDes.X86.Key
 

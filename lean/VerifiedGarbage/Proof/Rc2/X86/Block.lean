@@ -50,12 +50,12 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
       (sp : st.gpr .esp = s.gpr .esp) : ∀ i < 3, InRegions (st.rd ++ st.wr) (argAddr st i) 4 := by
     intro i hi
     have fit : (st.gpr .esp).toNat + 16 ≤ 2 ^ 32 := by rw [sp]; exact spFit
-    rw [argAddr_eq st i (by omega), sp, rd, wr, hrd, hwr]
+    rw [argAddr_eq st i (by omega_arith), sp, rd, wr, hrd, hwr]
     exact ⟨⟨argAddr s 0, 12⟩, by simp, argContainsCount s 3 spFit i hi⟩
   have writes : ∀ i < 5, InRegions s.wr (addr32 (arg s 2) + BitVec.ofNat 64 (4 * i)) 4 := by
     intro i hi
     rw [hwr]
-    exact ⟨⟨addr32 (arg s 2), 256⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨addr32 (arg s 2), 256⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   simp only [blockCode, List.append_assoc]
   rw [WP.block_append_iff]
   obtain ⟨s₀, run₀, scratch₀, keep₀⟩ := loadArg_ok s .eax 2 (argRead s rfl rfl rfl 2 (by decide))
@@ -93,10 +93,10 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
     · exact argRead s₂ rd₂ wr₂ sp₂ 0 (by decide)
     · intro i hi
       rw [args₂ 0 (by decide), rd₂, wr₂, hrd, hwr]
-      exact ⟨⟨addr32 (arg s 0), 128⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨⟨addr32 (arg s 0), 128⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     · intro i hi
       rw [wr₂, hwr, base₂, BitVec.add_assoc, show (64 : Addr) = BitVec.ofNat 64 64 from rfl, ← BitVec.ofNat_add]
-      exact ⟨⟨addr32 (arg s 2), 256⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨⟨addr32 (arg s 2), 256⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
     · rw [args₂ 0 (by decide)]
       intro a ha hb; exact keySep a ha (wordsSub a hb)
     · have ae : argAddr s₂ 0 = argAddr s 0 := by unfold argAddr; rw [sp₂]
@@ -110,7 +110,7 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   have dataRead₂ : ∀ i < 8, InRegions (s₂.rd ++ s₂.wr) (addr32 (s₂.gpr .edi) + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [rd₂, wr₂, data₂, hrd, hwr]
-    exact ⟨⟨addr32 (arg s 1), 8⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨addr32 (arg s 1), 8⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   rw [WP.block_append_iff]
   apply WP.mono (blockLoad_ok s₂ (by rw [data₂]; exact dataFit) env₂.scratchFit dataRead₂ env₂.wordWrite
     (by rw [data₂]; exact dataWords))
@@ -143,7 +143,7 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   have writable₅ : ∀ i < 8, InRegions s₅.wr (addr32 (s₅.gpr .edi) + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [keep₅.wr, wr₄, data₅, hwr]
-    exact ⟨⟨addr32 (arg s 1), 8⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨addr32 (arg s 1), 8⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   rw [WP.block_append_iff]
   apply WP.mono (blockStore_ok s₅ v (by rw [keep₅.mem, base₅]; exact words₄)
     (by rw [data₅]; exact dataFit) (by rw [keep₅.reg .ebp (by decide)]; exact env₄.scratchFit)
@@ -163,16 +163,16 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
     intro i hi
     rw [keep₇.rd, keep₇.wr, rd₆, wr₆, base₇, hrd, hwr]
     have bound := List.mem_range.mp hi
-    exact ⟨⟨addr32 (arg s 2), 256⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨addr32 (arg s 2), 256⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have stored₇ : ∀ i ∈ List.range 5, s₇.mem.readW (addr32 (s₇.gpr .eax) + BitVec.ofNat 64 (4 * i)) 32 = s.gpr (blockSavedReg i) := by
     intro i hi
     have bound := List.mem_range.mp hi
     rw [keep₇.mem, mem₆, base₇, Mem.readW_writeW_sep
-      (dataSep.symm.sep (Offset.contains_base _ (by omega) (by omega)) (Region.contains_self _ _)) (by decide)]
+      (dataSep.symm.sep (Offset.contains_base _ (by omega_arith) (by omega_arith)) (Region.contains_self _ _)) (by decide)]
     have sep : (Region.mk (addr32 (arg s 2)) 20).Disjoint ⟨wordBase s₂, 16⟩ := by
       rw [base₂]; exact (Offset.disjoint_base (addr32 (arg s 2)) (d := 64) (n := 16) (k := 20) (by decide) (by decide)).symm
     rw [core.mem.readW (r := ⟨addr32 (arg s 2), 20⟩)
-      (Offset.contains_base _ (by omega) (by omega)) (by simpa using sep) (by decide),
+      (Offset.contains_base _ (by omega_arith) (by omega_arith)) (by simpa using sep) (by decide),
       keep₂.mem, h₁.2.2.2, scratch₀, saveMem_read _ _ _ 5 (by decide) i bound]
     exact gpr₀ _ (by
       have fact : ∀ i ∈ List.range 5, blockSavedReg i ≠ .eax := by decide
@@ -214,8 +214,8 @@ theorem blockTaint_wf {d : Spec.Rc2.Direction} {s : State} (h : (blockContract d
     fun _ h => (List.not_mem_nil h).elim⟩
   simp only [blockTaint, wr, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
-  · exact Taint.frame_disjoint (n := 12) (by omega) ro ao
-  · exact Taint.frame_disjoint (n := 12) (by omega) rsc asc
+  · exact Taint.frame_disjoint (n := 12) (by omega_arith) ro ao
+  · exact Taint.frame_disjoint (n := 12) (by omega_arith) rsc asc
 
 theorem blockTaint_agree {d : Spec.Rc2.Direction} {s₁ s₂ : State} (h₁ : (blockContract d).pre s₁) (h₂ : (blockContract d).pre s₂)
     (hp : (blockContract d).pub s₁ s₂) : VG.X86.Taint.Agree blockTaint s₁ s₂ := by
@@ -232,7 +232,7 @@ theorem blockTaint_agree {d : Spec.Rc2.Direction} {s₁ s₂ : State} (h₁ : (b
     rw [Taint.argByte_eq (fit _ h₁) h4 hk, Taint.argByte_eq (fit _ h₂) h4 hk,
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)),
       Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ (args ((k - 4) / 4) (by omega))
+    exact congrArg _ (args ((k - 4) / 4) (by omega_arith))
 
 theorem encryptBlock_constantTime : ConstantTime isa (blockContract .encrypt).pre (blockContract .encrypt).pub encryptBlock := by
   exact VG.Taint.constantTime (A := taint) blockTaint (fun _ _ h₁ h₂ hp => blockTaint_agree h₁ h₂ hp)

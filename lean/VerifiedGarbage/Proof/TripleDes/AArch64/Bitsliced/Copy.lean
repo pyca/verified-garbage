@@ -50,14 +50,14 @@ structure CopyPost (A B : Addr) (n : Nat) (s₀ s : State) : Prop where
 
 theorem wAt_in {p : Addr} {i n : Nat} (hi : i < n) (hn : 8 * n < 2 ^ 64) :
     (⟨p, 8 * n⟩ : Region).Contains (wAt p i) 8 :=
-  Offset.contains_base p (by omega) (by omega)
+  Offset.contains_base p (by omega_arith) (by omega_arith)
 
 theorem add_ofNat_zero (a : Addr) : a + BitVec.ofNat 64 0 = a := by simp
 
 theorem copy_ok {A B : Addr} {n : Nat} {s₀ : State} (hpre : CopyPre A B n s₀) (s : State) (i : Nat)
     (hs : CopyInv A B n s₀ i s) : WP isa copy s (CopyPost A B n s₀) := by
   refine WP.loop (M := isa) (fun m s => CopyInv A B n s₀ (n - m) s ∧ m ≤ n) ?_ (n - i) s
-    ⟨by rw [show n - (n - i) = i by have := hs.le; omega]; exact hs, by omega⟩
+    ⟨by rw [show n - (n - i) = i by have := hs.le; omega_arith]; exact hs, by omega_arith⟩
   intro m s ⟨inv, hm⟩
   let j := n - m
   have hj : j < n := inv.le
@@ -108,37 +108,37 @@ theorem copy_ok {A B : Addr} {n : Nat} {s₀ : State} (hpre : CopyPre A B n s₀
     have fit := hpre.fitA
     by_cases he : x = j
     · subst he; exact Mem.readW_writeW_self64 _ _ _
-    · rw [Mem.readW_writeW_sep (Offset.sep B (by omega) (by omega) (by omega)) (by decide)]
-      exact inv.copied x (by omega)
+    · rw [Mem.readW_writeW_sep (Offset.sep B (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
+      exact inv.copied x (by omega_arith)
   have frame₅ : Frame [⟨B, 8 * n⟩] s₀.mem s₅.mem := by
     rw [mem₅]; exact inv.frame.writeW List.mem_cons_self _ (wAt_in hj hpre.fitA)
   have regs₅ : ∀ r, CopyRegs r → s₅.gpr r = s₀.gpr r := fun r hr => (g₅ r hr).trans (inv.regs r hr)
   have cntv : s₅.gpr .x13 = BitVec.ofNat 64 (m - 1) := by
-    rw [cnt₅, inv.cnt, show n - j = m by omega]
-    exact cnt_sub m (by omega)
+    rw [cnt₅, inv.cnt, show n - j = m by omega_arith]
+    exact cnt_sub m (by omega_arith)
   have flag : isa.eval (.nonzero .x .x13) s₅ = some (m - 1 != 0) := by
     show some (s₅.read .x .x13 != 0) = _
-    have hlt : m - 1 < 2 ^ 64 := by have := hpre.fitA; omega
+    have hlt : m - 1 < 2 ^ 64 := by have := hpre.fitA; omega_arith
     simp only [State.read, BitVec.setWidth_eq, cntv]
     congr 1
     by_cases h0 : m - 1 = 0
     · simp [h0]
     · have hne : BitVec.ofNat 64 (m - 1) ≠ 0 := by
         intro e; have := congrArg BitVec.toNat e
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlt] at this; simp at this; omega
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlt] at this; simp at this; omega_arith
       change (BitVec.ofNat 64 (m - 1) != (0 : BitVec 64)) = (m - 1 != 0)
       simp only [bne, beq_eq_false_iff_ne.mpr hne, beq_eq_false_iff_ne.mpr h0]
   by_cases h1 : m = 1
   · left
     refine ⟨by rw [flag, h1]; rfl, ?_⟩
-    exact ⟨fun x hx => copied₅ x (by omega), frame₅, regs₅, inv.rd, inv.wr, inv.sp, inv.v⟩
+    exact ⟨fun x hx => copied₅ x (by omega_arith), frame₅, regs₅, inv.rd, inv.wr, inv.sp, inv.v⟩
   · right
-    refine ⟨by rw [flag]; simp; omega, m - 1, by omega, ⟨?_, ?_, ?_, ?_, ?_, frame₅, regs₅, inv.rd,
-      inv.wr, inv.sp, inv.v⟩, by omega⟩
-    · omega
-    · rw [src₅]; congr 2; omega
-    · rw [dst₅]; congr 2; omega
-    · rw [cntv]; congr 1; omega
-    · intro x hx; exact copied₅ x (by omega)
+    refine ⟨by rw [flag]; simp; omega_arith, m - 1, by omega_arith, ⟨?_, ?_, ?_, ?_, ?_, frame₅, regs₅, inv.rd,
+      inv.wr, inv.sp, inv.v⟩, by omega_arith⟩
+    · omega_arith
+    · rw [src₅]; congr 2; omega_arith
+    · rw [dst₅]; congr 2; omega_arith
+    · rw [cntv]; congr 1; omega_arith
+    · intro x hx; exact copied₅ x (by omega_arith)
 
 end VG.Proof.TripleDes.AArch64.BitslicedNeon
