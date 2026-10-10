@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Lit
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
 import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
 
 /-!
@@ -18,8 +19,8 @@ materialize_code verifyDecodeALit :=
   (decode Impl.X448.X86_64.baseline 6 7 (rootCall Impl.X448.X86_64.baseline) : Prog isa)
 materialize_code verifyDecodeLit :=
   (vdecode Impl.X448.X86_64.baseline (rootCall Impl.X448.X86_64.baseline) : Prog isa)
-materialize_code verifyLoopLit := (vloop Impl.X448.X86_64.baseline : Prog isa)
-materialize_code verifyFinishLit := (vfinish Impl.X448.X86_64.baseline : Prog isa)
+materialize_code verifyLoopLit := (vloop Point64.calls : Prog isa)
+materialize_code verifyFinishLit := (vfinish Impl.X448.X86_64.baseline Point64.calls : Prog isa)
 
 end VG.Proof.Ed448.X86_64
 

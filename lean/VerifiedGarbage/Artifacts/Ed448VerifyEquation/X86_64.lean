@@ -24,7 +24,9 @@ def artifacts : List Artifact := [
       `vg_gf448_r64_pow223`, then 223 squarings), and \
       negates A; computes [S]B + [k](-A) with one \
       chain of doublings, adding B and -A for every bit of S and k and swapping each sum in \
-      with a mask of the bit; then compares [4] of it with [4]R projectively. Field elements \
+      with a mask of the bit, by calls of `vg_ed448_r64_point_double` and \
+      `vg_ed448_r64_point_add_affine` (both points have Z = 1); then compares [4] of it with \
+      [4]R projectively, each doubled by the same calls. Field elements \
       are X448's seven 64-bit words, multiplied with `mul` by columns. Callee-saved \
       registers are saved in the first 48 bytes of `scratch`."])
     code := Impl.Ed448.X86_64.verifyEquation
