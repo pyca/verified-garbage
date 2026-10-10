@@ -724,7 +724,7 @@ theorem base_ct : RelCT isa (Two fun _ _ _ => True)
   have c := two_callP (n := (scalarBaseName fs)) (Φ := fun L _ => BaseArgs L)
     (VG.Proof.Ed25519.X86_64.EdBase.ok (bs := bs)) (VG.Proof.Ed25519.X86_64.EdBase.ct (bs := bs)) base_nosp base_depth
     baseRd baseWr
-    (fun _ _ _ _ _ hL hc ha => base_pre hL hc ha)
+    (fun _ _ _ _ _ hL hc ha => ⟨base_pre hL hc ha, base_clear hL hc⟩)
     (fun L t₁ t₂ _ _ _ _ _ _ _ c₁ c₂ a₁ a₂ => by
       obtain ⟨d₁, s₁, x₁⟩ := base_regs a₁ (baseRd L) (baseWr L)
       obtain ⟨d₂, s₂, x₂⟩ := base_regs a₂ (baseRd L) (baseWr L)

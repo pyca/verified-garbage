@@ -265,6 +265,20 @@ theorem base_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : BaseArgs
   · exact hL.tbc
   · exact hL.tbk.sub_right (Offset.sub_base _ (by omega))
 
+/-- The callee's buffers are apart from the 8 bytes below its `rsp`, the stack's lowest. -/
+theorem base_clear (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
+    Clear (hole ((t.callEntry.withRegions (baseRd L) (baseWr L)).gpr .rsp))
+      (t.callEntry.withRegions (baseRd L) (baseWr L)) := by
+  rw [rsp_ce, hc.rsp, sub8, Proof.Ed25519.X86_64.hole_add8]
+  intro r hr
+  simp only [State.withRegions_rd, State.withRegions_wr, List.cons_append, List.nil_append,
+    List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact Offset.disjoint_base _ (by omega) (by omega)
+  · exact hL.tbk.sub_right (Region.sub_prefix (by omega))
+  · simpa using (hL.stk_OUT (d := 0) (n := 8) (by omega)).symm
+  · simpa using (hL.stk_SCR (d := 0) (n := 8) (by omega)).symm
+
 theorem base_sub : ∀ r ∈ baseRd L ++ baseWr L, ∃ R ∈ [L.SEED, L.TBL, L.FR, L.OUT, L.SCR], Within r R := by
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl | rfl)
@@ -285,10 +299,10 @@ theorem base_ok (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : BaseArgs 
       Spec.Ed25519.bytesAt t'.mem L.out 32 =
         Spec.Ed25519.encodePoint (Spec.Ed25519.pointMul s Spec.Ed25519.basePoint) := by
   refine call_ok hL (VG.Proof.Ed25519.X86_64.EdBase.ok (bs := bs)) base_nosp base_depth hc
-    (base_pre hL hc ha) base_sub base_wsub fun s' hc' _ _ ⟨s₂, hm, _, hpost⟩ => ⟨hc', ?_⟩
+    ⟨base_pre hL hc ha, base_clear hL hc⟩ base_sub base_wsub fun s' hc' _ _ ⟨s₂, hm, _, hpost⟩ => ⟨hc', ?_⟩
   obtain ⟨g1, g2, -⟩ := base_regs ha (baseRd L) (baseWr L)
   have h := hpost
-  simp only [Proof.Ed25519.X86_64.scalarBaseLocal, g1, g2, State.withRegions_mem, hm] at h
+  simp only [Contract.clear, Proof.Ed25519.X86_64.scalarBaseLocal, g1, g2, State.withRegions_mem, hm] at h
   have e : Spec.Ed25519.bytesAt t.callEntry.mem (L.B + BitVec.ofNat 64 16) 32 =
       Spec.Ed25519.bytesAt t.mem (L.B + BitVec.ofNat 64 16) 32 := by
     simp only [Spec.Ed25519.bytesAt]

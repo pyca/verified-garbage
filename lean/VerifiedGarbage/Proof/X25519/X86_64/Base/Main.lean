@@ -107,7 +107,8 @@ theorem x25519BaseWith_correct (eng : Prog isa) (heng : UEngineOk eng)
     exact vc
 
 theorem x25519Base_correct [DivstepInv] {s : State} (hs : baseLocal.pre s) :
-    WP isa (x25519Base fld) s fun t => gprPreserved s t ∧ baseLocal.post s t :=
-  x25519BaseWith_correct _ engine_ok hs
+    WP isa (x25519Base fld).inline s fun t => gprPreserved s t ∧ baseLocal.post s t := by
+  rw [x25519Base, scalarBaseWith_inline]
+  exact x25519BaseWith_correct _ engine_ok hs
 
 end VG.Proof.X25519.X86_64.Base
