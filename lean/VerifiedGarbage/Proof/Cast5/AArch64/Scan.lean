@@ -24,7 +24,7 @@ def L (f : Nat → BitVec 32) : BitVec 128 := ofVWords (f 0) (f 1) (f 2) (f 3)
 
 theorem vword_L (f : Nat → BitVec 32) {k : Nat} (hk : k < 4) : vword (L f) k = f k := by
   rw [L, vword_ofVWords _ _ _ _ hk]
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_arith) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem L_vword (x : BitVec 128) : L (vword x ·) = x := ofVWords_vword x
 
@@ -82,13 +82,13 @@ theorem acc_succ (m : Mem) (T : Addr) (idx : Nat → BitVec 32) {j : Nat} (hj : 
   unfold acc
   by_cases h : idx k = BitVec.ofNat 32 j
   · have hn : (idx k).toNat = j := by rw [h, BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hj
-    rw [ite_eq_left h, ite_eq_right (by omega), ite_eq_left (by omega), hn, and_ones', zero_or']
+    rw [ite_eq_left h, ite_eq_right (by omega_arith), ite_eq_left (by omega_arith), hn, and_ones', zero_or']
   · have hn : (idx k).toNat ≠ j := fun h' => h (BitVec.eq_of_toNat_eq (by
       rw [h', BitVec.toNat_ofNat, Nat.mod_eq_of_lt hj]))
     rw [ite_eq_right h, and_zero', or_zero']
     by_cases h2 : (idx k).toNat < j
-    · rw [ite_eq_left h2, ite_eq_left (by omega)]
-    · rw [ite_eq_right h2, ite_eq_right (by omega)]
+    · rw [ite_eq_left h2, ite_eq_left (by omega_arith)]
+    · rw [ite_eq_right h2, ite_eq_right (by omega_arith)]
 
 /-- What the scan keeps of a state: everything but `x10`, `x11`, the flags and
 `v1`–`v5`. -/
@@ -119,7 +119,7 @@ theorem entry_ok {s₀ s : State} {T : Addr} {idx : Nat → BitVec 32} {j : Nat}
     (hr : InRegions (s.rd ++ s.wr) (T + BitVec.ofNat 64 (16 * j)) 16) :
     WP isa (.block (scanEntry e)) s fun t => ScanAt s₀ T idx (j + 1) t ∧ t.gpr = s.gpr := by
   obtain ⟨h0, h1, h2, h3, hk⟩ := h
-  have ho : 16 * e % 16 = 0 ∧ 16 * e < 65536 := ⟨by omega, by omega⟩
+  have ho : 16 * e % 16 = 0 ∧ 16 * e < 65536 := ⟨by omega_arith, by omega_arith⟩
   unfold scanEntry
   crun [ho, ha, hr, h0, h1, h2, h3]
   have hm : s.mem = s₀.mem := hk.mem
@@ -129,7 +129,7 @@ theorem entry_ok {s₀ s : State} {T : Addr} {idx : Nat → BitVec 32} {j : Nat}
   · simp (disch := decide) only [v_setV_self, v_setV_of_ne, h1]
     rw [cmeq_L, read16_L, and_L, or_L, hm]
     refine L_congr fun k _ => ?_
-    rw [← acc_succ _ _ _ (by omega)]
+    rw [← acc_succ _ _ _ (by omega_arith)]
     unfold ent splat
     rw [Offset.add_add, BitVec.and_comm]
   · simp (disch := decide) only [v_setV_self, v_setV_of_ne, h2, h3]
@@ -159,14 +159,14 @@ theorem entries_ok {s₀ s : State} {T : Addr} {idx : Nat → BitVec 32} {q : Na
   | zero => exact WP.block_nil ⟨h, rfl⟩
   | succ e ih =>
     rw [flatMap_range_succ', WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨ht, hg⟩ => ?_
+    refine WP.mono (ih (by omega_arith)) fun t ⟨ht, hg⟩ => ?_
     have hr : InRegions (t.rd ++ t.wr) (T + BitVec.ofNat 64 (16 * (4 * q + e))) 16 := by
       rw [ht.keep.rd, ht.keep.wr]
-      exact CallLay.inRegions_sub hT (by omega) (by decide)
-    refine WP.mono (entry_ok e (by omega) (by omega) ht ?_ hr) fun u ⟨hu, hug⟩ => ⟨hu, hug.trans hg⟩
+      exact CallLay.inRegions_sub hT (by omega_arith) (by decide)
+    refine WP.mono (entry_ok e (by omega_arith) (by omega_arith) ht ?_ hr) fun u ⟨hu, hug⟩ => ⟨hu, hug.trans hg⟩
     rw [hg, hx10, BitVec.add_assoc, ← BitVec.ofNat_add]
     congr 2
-    omega
+    omega_arith
 
 theorem body_ok {s₀ s : State} {T : Addr} {idx : Nat → BitVec 32} {q : Nat} (hq : q < 64)
     (hT : Readable s₀ T) (hx10 : s.gpr .x10 = T + BitVec.ofNat 64 (64 * q))
@@ -177,7 +177,7 @@ theorem body_ok {s₀ s : State} {T : Addr} {idx : Nat → BitVec 32} {q : Nat} 
   rw [WP.block_append_iff]
   refine WP.mono (entries_ok hq hT hx10 4 (Nat.le_refl _) h) fun t ⟨ht, hg⟩ => ?_
   crun
-  rw [hg, hx10, BitVec.add_assoc, ← BitVec.ofNat_add, show 64 * q + 64 = 64 * (q + 1) by omega]
+  rw [hg, hx10, BitVec.add_assoc, ← BitVec.ofNat_add, show 64 * q + 64 = 64 * (q + 1) by omega_arith]
   refine ⟨⟨ht.v0, ht.v1, ht.v2, ht.v3, ht.keep.trans ⟨fun r a b => ?_, fun _ _ _ _ _ _ => rfl, rfl, rfl, rfl,
     rfl⟩⟩, rfl, rfl⟩
   simp only [gpr_write_of_ne _ _ _ b, gpr_write_of_ne _ _ _ a]
@@ -227,6 +227,6 @@ theorem scan_ok (s : State) (sym : String) {idx : Nat → BitVec 32} (h0 : s.v .
       ⟨⟨hv, h10'⟩, h11'⟩)
     ⟨ht, by rw [h10]; exact (BitVec.add_zero _).symm⟩ h11) fun u ⟨hu, _⟩ => ⟨?_, hu.keep⟩
   rw [hu.v1]
-  exact L_congr fun k hk => by rw [acc, ite_eq_left (by have := hidx k hk; omega)]
+  exact L_congr fun k hk => by rw [acc, ite_eq_left (by have := hidx k hk; omega_arith)]
 
 end VG.Proof.Cast5.AArch64

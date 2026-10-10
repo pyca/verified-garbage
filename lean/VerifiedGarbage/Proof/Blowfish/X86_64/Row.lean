@@ -61,14 +61,14 @@ theorem masks_run (u : State) (x : Byte) {r : Nat} (hr : r < 16) (hk : u.xmm kRe
     rw [word_psraw15 _ hw, word_psubw _ _ hw]
     simp only [XBinOp.eval]
     rw [word_pxor, rowK, bcast, wordsOf, word_ofWords _ hw, word_ofWords _ hw, word_ofWords _ hw]
-    exact word_mask x _ (by omega)
+    exact word_mask x _ (by omega_arith)
   · simp (disch := decide) only [u', ops, List.foldl, XOp.exec, xmm_setXmm_self, xmm_setXmm_of_ne, hk, hx, h1]
     rw [word_psraw15 _ hw, word_psubw _ _ hw]
     simp only [XBinOp.eval]
     rw [word_pxor, word_ofWords _ hw, rowK, bcast, wordsOf, word_ofWords _ hw, word_ofWords _ hw,
       word_ofWords _ hw, show BitVec.ofNat 16 (16 * r + 2 * w) + BitVec.ofNat 16 1 =
         BitVec.ofNat 16 (16 * r + 2 * w + 1) by rw [BitVec.ofNat_add_ofNat]]
-    exact word_mask x _ (by omega)
+    exact word_mask x _ (by omega_arith)
   · simp only [u', ops, List.foldl, XOp.exec, xmm_setXmm_of_ne _ _ h1, xmm_setXmm_of_ne _ _ h2]
   · simp only [u', ops, List.foldl, XOp.exec, State.setXmm]
 
@@ -146,7 +146,7 @@ theorem rowK_succ (r : Nat) : XBinOp.eval .paddw (rowK r) (wordsOf 16) = rowK (r
   ext_word fun w hw => by
     rw [word_paddw _ _ hw, rowK, rowK, wordsOf, word_ofWords _ hw, word_ofWords _ hw, word_ofWords _ hw,
       BitVec.ofNat_add_ofNat]
-    congr 1; omega
+    congr 1; omega_arith
 
 theorem ea_row (t : State) (sch : Reg) (S : Addr) (j b r : Nat) (h1 : t.gpr sch = S)
     (h2 : t.gpr .r8 = BitVec.ofNat 64 (16 * r)) :
@@ -174,7 +174,7 @@ theorem plane_step {sch : Reg} {S : Addr} {x : Byte} {j : Nat} {u₀ : State} (E
   have hg : t.gpr = u.gpr := by rw [P.eq]
   have hm : t.mem = u₀.mem := by rw [P.eq, I.eq]
   have ea := ea_row t sch S j b r (by rw [hg, I.gpr _ E.ne8 E.ne9, E.hsch]) (by rw [hg, I.r8])
-  have hoff : planeOff j b + 16 * r + 16 ≤ 4096 := by have := E.j4; unfold planeOff; omega
+  have hoff : planeOff j b + 16 * r + 16 ≤ 4096 := by have := E.j4; unfold planeOff; omega_arith
   have hR : InRegions (t.rd ++ t.wr) (t.ea (rowMem sch j b)) 16 := by
     rw [ea, show t.rd = u₀.rd by rw [P.eq, I.eq], show t.wr = u₀.wr by rw [P.eq, I.eq]]
     exact E.rd _ hoff
@@ -191,15 +191,15 @@ theorem plane_step {sch : Reg} {S : Addr} {x : Byte} {j : Nat} {u₀ : State} (E
       rw [ea, byte_readW128 _ _ he, hm, pl, Offset.add_add, Nat.add_assoc]
     · have ne : accReg b' ≠ accReg b := by
         have : ∀ a < 4, ∀ c < 4, a ≠ c → accReg a ≠ accReg c := by decide
-        exact this _ (by omega) _ hb h
-      rw [keep _ (fun e => by obtain ⟨-, -⟩ := accReg_ne b' (by omega); exact (accReg_ne b' (by omega)).1 e)
-        (fun e => (accReg_ne b' (by omega)).2.1 e) ne]
-      exact P.done _ (by omega)
+        exact this _ (by omega_arith) _ hb h
+      rw [keep _ (fun e => by obtain ⟨-, -⟩ := accReg_ne b' (by omega_arith); exact (accReg_ne b' (by omega_arith)).1 e)
+        (fun e => (accReg_ne b' (by omega_arith)).2.1 e) ne]
+      exact P.done _ (by omega_arith)
   · have ne : accReg b' ≠ accReg b := by
       have : ∀ a < 4, ∀ c < 4, a ≠ c → accReg a ≠ accReg c := by decide
-      exact this _ h2 _ hb (by omega)
+      exact this _ h2 _ hb (by omega_arith)
     rw [keep _ (accReg_ne b' h2).1 (accReg_ne b' h2).2.1 ne]
-    exact P.todo _ (by omega) h2
+    exact P.todo _ (by omega_arith) h2
   · have : d ≠ tmp ∧ d ≠ tmp2 ∧ d ≠ accReg b := by
       refine ⟨fun e => hd (by subst e; decide), fun e => hd (by subst e; decide), fun e => hd ?_⟩
       subst e
@@ -244,7 +244,7 @@ theorem row_run {sch : Reg} {S : Addr} {x : Byte} {j : Nat} {u₀ : State} (E : 
   obtain ⟨u₁, r₁, hE, hO, k₁, e₁⟩ := masks_run u x hr I.k (by rw [I.xmm _ (by decide), E.idx])
     (by rw [I.xmm _ (by decide), E.ones])
   have P0 : PlaneInv sch S x j u₀ r u u₁ (u₁.xmm mEven) (u₁.xmm mOdd) 0 := by
-    refine ⟨e₁, rfl, rfl, fun _ h => absurd h (by omega), fun b' _ h => ?_, fun d hd => ?_, ?_⟩
+    refine ⟨e₁, rfl, rfl, fun _ h => absurd h (by omega_arith), fun b' _ h => ?_, fun d hd => ?_, ?_⟩
     · rw [k₁ _ (accReg_ne b' h).2.2.1 (accReg_ne b' h).2.2.2.1]; exact I.acc b' h
     · exact k₁ d (fun e => hd (e ▸ by decide)) (fun e => hd (e ▸ by decide))
     · rw [k₁ _ (by decide) (by decide)]; exact I.k
@@ -255,19 +255,19 @@ theorem row_run {sch : Reg} {S : Addr} {x : Byte} {j : Nat} {u₀ : State} (E : 
   have g4 : p4.gpr = u.gpr := by rw [P4.eq]
   have s4 : p4.xmm sixteenReg = wordsOf 16 := by rw [P4.keep _ (by decide), I.xmm _ (by decide), E.sixteen]
   obtain ⟨v, rv, xv, r8v, r9v, zv, gv, ev⟩ := rowTail_run p4
-  refine ⟨v, ?_, ⟨by omega, ?_, ?_, ?_, fun b hb => ?_, fun d hd => ?_, fun g h8 h9 => ?_, ?_⟩, ?_⟩
+  refine ⟨v, ?_, ⟨by omega_arith, ?_, ?_, ?_, fun b hb => ?_, fun d hd => ?_, fun g h8 h9 => ?_, ?_⟩, ?_⟩
   · rw [row, List.append_assoc]
     refine cat_run r₁ (cat_run (a := (List.range 4).flatMap (plane sch j)) ?_ rv)
     show runBlock isa (plane sch j 0 ++ (plane sch j 1 ++ (plane sch j 2 ++ (plane sch j 3 ++ [])))) u₁ = _
     exact cat_run rp1 (cat_run rp2 (cat_run rp3 (cat_run rp4 runBlock_nil)))
-  · rw [r8v, g4, I.r8]; apply BitVec.eq_of_toNat_eq; simp; omega
-  · rw [r9v, g4, I.r9]; apply BitVec.eq_of_toNat_eq; simp; omega
+  · rw [r8v, g4, I.r8]; apply BitVec.eq_of_toNat_eq; simp; omega_arith
+  · rw [r9v, g4, I.r9]; apply BitVec.eq_of_toNat_eq; simp; omega_arith
   · rw [xv, xmm_setXmm_self, P4.k, s4, rowK_succ]
   · rw [xv, xmm_setXmm_of_ne _ _ (accReg_ne b hb).2.2.2.2.2.1, P4.done b hb]
   · rw [xv, xmm_setXmm_of_ne _ _ (show d ≠ kReg from fun e => hd (by rw [e]; decide)), P4.keep d hd, I.xmm d hd]
   · rw [gv g h8 h9, g4, I.gpr g h8 h9]
   · rw [ev, P4.eq, I.eq]
-  · rw [zv, g4, I.r9]; congr 2; apply BitVec.eq_of_toNat_eq; simp; omega
+  · rw [zv, g4, I.r9]; congr 2; apply BitVec.eq_of_toNat_eq; simp; omega_arith
 
 
 end VG.Proof.Blowfish.X86_64

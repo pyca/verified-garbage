@@ -44,7 +44,7 @@ theorem word_low (a : BitVec 128) {i : Nat} (hi : i < 8) :
   simp only [getLsbD_word, BitVec.getLsbD_and, decide_eq_true hj, Bool.true_and, byte,
     BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', BitVec.getLsbD_ofNat]
   by_cases h : j < 8
-  · simp [h, show 8 * (2 * i) + j = 16 * i + j by omega]
+  · simp [h, show 8 * (2 * i) + j = 16 * i + j by omega_arith]
     rw [show (255 : Nat) = 2 ^ 8 - 1 by rfl, Nat.testBit_two_pow_sub_one]; simp [h]
   · simp only [h, decide_false, Bool.false_and]
     rw [show (255 : Nat) = 2 ^ 8 - 1 by rfl, Nat.testBit_two_pow_sub_one]; simp [h]
@@ -59,21 +59,21 @@ theorem word_psrlw8 (a : BitVec 128) {i : Nat} (hi : i < 8) :
     BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and]
   by_cases h : j < 8
   · simp only [h, decide_true, Bool.true_and]
-    rw [decide_eq_true (show 8 + j < 16 by omega), Bool.true_and]
-    exact congrArg _ (by omega)
-  · simp [h, show ¬ 8 + j < 16 by omega]
+    rw [decide_eq_true (show 8 + j < 16 by omega_arith), Bool.true_and]
+    exact congrArg _ (by omega_arith)
+  · simp [h, show ¬ 8 + j < 16 by omega_arith]
 
 /-- The word of a mask. -/
 theorem word_mask (x : Byte) (k : Nat) (hk : k < 256) :
     ((BitVec.ofNat 16 k ^^^ x.setWidth 16) - 1).sshiftRight 15 =
       if x.toNat = k then BitVec.allOnes 16 else 0 := by
   have e : BitVec.ofNat 16 k = (BitVec.ofNat 8 k).setWidth 16 := by
-    apply BitVec.eq_of_toNat_eq; simp; omega
+    apply BitVec.eq_of_toNat_eq; simp; omega_arith
   rw [e, BitVec.xor_comm, mask_eq]
   congr 1
   apply propext; constructor
-  · intro h; rw [h, BitVec.toNat_ofNat]; omega
-  · intro h; apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat]; omega
+  · intro h; rw [h, BitVec.toNat_ofNat]; omega_arith
+  · intro h; apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat]; omega_arith
 
 /-- One row: the even and odd entries masked into the accumulator. -/
 theorem row_acc (p : Nat → Byte) (x : Byte) {r : Nat} (data mE mO : BitVec 128)
@@ -85,22 +85,22 @@ theorem row_acc (p : Nat → Byte) (x : Byte) {r : Nat} (data mE mO : BitVec 128
   have hx := x.isLt
   refine ext_word fun w hw => ?_
   rw [word_por, word_por, word_pand _ mE, word_low _ hw, word_pand _ mO, word_psrlw8 _ hw, hE w hw, hO w hw,
-    scanAcc, scanAcc, word_ofWords _ hw, word_ofWords _ hw, hd _ (by omega), hd _ (by omega)]
+    scanAcc, scanAcc, word_ofWords _ hw, word_ofWords _ hw, hd _ (by omega_arith), hd _ (by omega_arith)]
   have and1 : ∀ v : BitVec 16, v &&& BitVec.allOnes 16 = v := fun v => BitVec.and_allOnes
   by_cases h1 : x.toNat = 16 * r + 2 * w
-  · rw [itT _ _ h1, itF _ _ (show ¬ x.toNat = 16 * r + 2 * w + 1 by omega),
-      itF _ _ (show ¬ (x.toNat / 16 < r ∧ x.toNat % 16 / 2 = w) by omega),
-      itT _ _ (show x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w by omega), h1, and1]
+  · rw [itT _ _ h1, itF _ _ (show ¬ x.toNat = 16 * r + 2 * w + 1 by omega_arith),
+      itF _ _ (show ¬ (x.toNat / 16 < r ∧ x.toNat % 16 / 2 = w) by omega_arith),
+      itT _ _ (show x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w by omega_arith), h1, and1]
     simp
   · by_cases h2 : x.toNat = 16 * r + 2 * w + 1
     · rw [itF _ _ h1, itT _ _ h2,
-        itF _ _ (show ¬ (x.toNat / 16 < r ∧ x.toNat % 16 / 2 = w) by omega),
-        itT _ _ (show x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w by omega), h2, and1]
+        itF _ _ (show ¬ (x.toNat / 16 < r ∧ x.toNat % 16 / 2 = w) by omega_arith),
+        itT _ _ (show x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w by omega_arith), h2, and1]
       simp [Nat.add_assoc]
     · rw [itF _ _ h1, itF _ _ h2]
       simp only [BitVec.and_zero, BitVec.or_zero, BitVec.ofNat_eq_ofNat]
       by_cases h3 : x.toNat / 16 < r ∧ x.toNat % 16 / 2 = w
-      · rw [itT _ _ h3, itT _ _ (show x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w by omega)]
-      · rw [itF _ _ h3, itF _ _ (show ¬ (x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w) by omega)]
+      · rw [itT _ _ h3, itT _ _ (show x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w by omega_arith)]
+      · rw [itF _ _ h3, itF _ _ (show ¬ (x.toNat / 16 < r + 1 ∧ x.toNat % 16 / 2 = w) by omega_arith)]
 
 end VG.Proof.Blowfish.X86_64
