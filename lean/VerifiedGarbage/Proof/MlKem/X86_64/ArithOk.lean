@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.MlKem.X86_64.Impls
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 
 /-!
@@ -26,11 +27,6 @@ namespace VG.Proof.MlKem.X86_64
 
 open VG VG.X86_64 VG.Impl.MlKem.X86_64
 open VG.Spec.MlKem
-
-theorem nosp_of {c : Prog isa} (h : c.allInstrs (fun i => !Taint.clobbers i .rsp) = true) : NoSp c := by
-  rw [Code.allInstrs_eq] at h
-  intro i hi
-  simpa using List.all_eq_true.mp h i hi
 
 /-- What a caller needs of a function with the contract `k`. -/
 structure CalleeOk (k : Contract isa) (c : Prog isa) : Prop where

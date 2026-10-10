@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
+import VerifiedGarbage.Proof.MlKem.X86_64.Impls
 import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
 
 /-!
@@ -411,26 +412,6 @@ theorem dec12At_tr {A : Arith} (hA : ArithOk A) {p q : Ptr} (hq : NA q) :
 theorem sw32_64' (d : Nat) (hd : d < 2 ^ 32) : ((BitVec.ofNat 64 d).setWidth 32).toNat = d := by
   rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   omega
-
-/-- A verified implementation `c`, named `n`, of the compression for the
-widths `ws` (`vg_mlkem_compress_encode`, `vg_mlkem1024_compress_encode`). -/
-structure CEImpl (n : String) (c : Prog isa) (ws : List Nat) : Prop where
-  le : ∀ d ∈ ws, d ≤ 11
-  correct : ∀ s, (compressEncodeWK ws).pre s →
-    ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (compressEncodeWK ws).post s s'
-  ct : ConstantTime isa (compressEncodeWK ws).pre (compressEncodeWK ws).pub c
-  nosp : NoSp c
-  depth : c.depth = 0
-
-/-- A verified implementation `c`, named `n`, of the decompression for the
-widths `ws` (`vg_mlkem_decode_decompress`, `vg_mlkem1024_decode_decompress`). -/
-structure DDImpl (n : String) (c : Prog isa) (ws : List Nat) : Prop where
-  le : ∀ d ∈ ws, d ≤ 11
-  correct : ∀ s, (decodeDecompressWK ws).pre s →
-    ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (decodeDecompressWK ws).post s s'
-  ct : ConstantTime isa (decodeDecompressWK ws).pre (decodeDecompressWK ws).pub c
-  nosp : NoSp c
-  depth : c.depth = 0
 
 /-- What a call of a compression of `f` to `out` with width `d` in `ws` needs. -/
 structure CEH (ws : List Nat) (f out : Ptr) (d : Nat) (s : State) : Prop where
