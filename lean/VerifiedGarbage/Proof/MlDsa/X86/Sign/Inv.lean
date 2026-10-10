@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Blocks
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-DSA signing on x86 (32-bit): what the pieces keep

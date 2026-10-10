@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Sha512.X86.Rounds
 import VerifiedGarbage.Proof.Blake2.Spec
 import VerifiedGarbage.Impl.Blake2.X86.CompressB
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # BLAKE2b on x86 (32-bit): `G`

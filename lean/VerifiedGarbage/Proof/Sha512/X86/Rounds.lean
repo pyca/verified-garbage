@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
+import VerifiedGarbage.Proof.Sha256.X86.Stream.Base
 import VerifiedGarbage.Proof.Sha512.Word64
 import VerifiedGarbage.Impl.Sha512.X86
 import VerifiedGarbage.Proof.Sha512.Spec
