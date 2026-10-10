@@ -1,5 +1,5 @@
 import VerifiedGarbage.Impl.P256.CombArithmetic
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeOk
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 
 namespace VG.Proof.Weierstrass.AArch64.Forward.CombArithmetic
@@ -11,7 +11,7 @@ def original (k : Kind) := fprog VG.Impl.P256.CombArithmetic.K.M (operations k)
 def optimized (k : Kind) := VG.Impl.Weierstrass.AArch64.Forward.optimize (original k)
 
 structure Case (k : Kind) where
-  checked : Checked 8192 (original k) (optimized k)
+  checked : OptChecked 8192 (original k) (optimized k)
   leftBound : ∀ i∈original k,instrBound i≤8192
   rightBound : ∀ i∈optimized k,instrBound i≤8192
   clob : ∀ r∈(optimized k).flatMap instrClob,r∈VG.Proof.Mont.AArch64.clob 4

@@ -161,6 +161,41 @@ theorem forward_eq (is : List Instr) :
       dropRegK_eq,dropWordK_eq,reg_beq]
     split <;> (try split) <;> (try split) <;> simp_all <;> rfl
 
+/-- The body of `forward`'s loop with lists and `if`s, for proofs about it. -/
+def fwdStep (i : Instr) (s : FState) : FState :=
+  let regs := s.1
+  let mem := s.2.1
+  let out := s.2.2.1
+  let fresh := s.2.2.2+1
+  match i with
+  | .ldr .x d .x0 off =>
+    let value := (mem.lookup off).getD fresh
+    let src := if regs.lookup d=some value then some d
+      else (regs.find? (fun p => p.2==value)).map Prod.fst
+    let out := match src with
+      | some r => if r=d then out else .logic .orr .x d r r :: out
+      | none => i :: out
+    (put d value regs,put off value mem,out,fresh)
+  | .str .x r .x0 off =>
+    let value := (regs.lookup r).getD fresh
+    (put r value regs,put off value mem,i :: out,fresh)
+  | .movz .x r 0 _ =>
+    (put r 0 regs,mem,if regs.lookup r=some 0 then out else i :: out,fresh)
+  | _ =>
+    match writeReg i with
+    | some d => (put d fresh regs,mem,i :: out,fresh)
+    | none => ([],[],i :: out,fresh)
+
+theorem forward_eq_fwd (is : List Instr) :
+    forward is=(is.foldl (fun s i => fwdStep i s) ([],[],[],1)).2.2.1.reverse := by
+  unfold forward
+  simp only [Id.run]
+  rw [forIn_id_of_yield _ _ _ fwdStep]
+  · rfl
+  · intro i s
+    simp only [fwdStep]
+    split <;> (try split) <;> (try split) <;> simp_all <;> rfl
+
 /-- One step, then the rest (`k`). Taking the step's result apart makes the
 kernel evaluate it before the next, rather than build a chain of steps. -/
 noncomputable def forwardThen (i : Instr) (s : FState) (k : FState → FState) : FState :=
@@ -227,6 +262,23 @@ theorem deadStores_eq (is : List Instr) :
   · rfl
   · intro i s
     simp only [deadStepK,contains_rec,filter_rec,write_rec]
+    split <;> (try split) <;> (try split) <;> simp_all <;> rfl
+
+/-- `deadStores`'s loop body, by lists and `if`s. -/
+def deadStep (i : Instr) (s : List Nat × List Instr) : List Nat × List Instr :=
+  match i with
+  | .str .x _ .x0 off => (off :: s.1,if s.1.contains off then s.2 else i :: s.2)
+  | .ldr .x _ .x0 off => (s.1.filter (· != off),i :: s.2)
+  | _ => (if writeReg i==none then [] else s.1,i :: s.2)
+
+theorem deadStores_eq_dead (is : List Instr) :
+    deadStores is=(is.reverse.foldl (fun s i => deadStep i s) ([],[])).2 := by
+  unfold deadStores
+  simp only [Id.run]
+  rw [forIn_id_of_yield _ _ _ deadStep]
+  · rfl
+  · intro i s
+    simp only [deadStep]
     split <;> (try split) <;> (try split) <;> simp_all <;> rfl
 
 noncomputable def deadThen (i : Instr) (s : List Nat × List Instr)

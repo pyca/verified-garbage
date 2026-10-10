@@ -1,5 +1,5 @@
 import VerifiedGarbage.Impl.P256.EcdhJac
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeOk
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 
 namespace VG.Proof.P256.EcdhJac
@@ -8,7 +8,7 @@ open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstra
 open VG.Impl.P256.EcdhJac
 
 structure FieldCase (ops : List FOp) where
-  checked : Forward.Checked 8192 (fprog K.M ops) (Impl.Weierstrass.AArch64.Forward.optimize (fprog K.M ops))
+  checked : Forward.OptChecked 8192 (fprog K.M ops) (Impl.Weierstrass.AArch64.Forward.optimize (fprog K.M ops))
   leftBound : ∀ i∈fprog K.M ops,Forward.instrBound i≤8192
   rightBound : ∀ i∈Impl.Weierstrass.AArch64.Forward.optimize (fprog K.M ops),Forward.instrBound i≤8192
   clob : ∀ r∈(Impl.Weierstrass.AArch64.Forward.optimize (fprog K.M ops)).flatMap Forward.instrClob,

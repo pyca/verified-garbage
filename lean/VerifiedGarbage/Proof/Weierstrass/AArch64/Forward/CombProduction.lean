@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.FprogJ
 
 namespace VG.Proof.Weierstrass.AArch64.Forward.CombArithmetic
 
-noncomputable def cases : Cases
+theorem cases : Cases
   | .mixed => CombMixed.caseProof
   | .out => CombOut.caseProof
 

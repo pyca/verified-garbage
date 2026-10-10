@@ -51,9 +51,15 @@ def regDead (r : Reg) : List Instr → Bool
   | i::is => if (readRegs i).contains r then false
       else if writeReg i==some r then true else regDead r is
 
+/-- Whether `renameRead` renames every register the instruction reads: all but
+`movk`, which reads the register it writes. -/
+def renames : Instr → Bool
+  | .movk .. => false
+  | _ => true
+
 def foldMoves : List Instr → List Instr
   | (.logic .orr .x d a b)::i::is =>
-    if a==b && regDead d is && !(readRegs i).contains .x0 && writeReg i !=none then
+    if a==b && regDead d is && !(readRegs i).contains .x0 && writeReg i !=none && renames i then
       renameRead d a i :: foldMoves is
     else .logic .orr .x d a b :: foldMoves (i::is)
   | i::is => i::foldMoves is

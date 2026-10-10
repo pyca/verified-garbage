@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticCachedHead
 
 namespace VG.Proof.Weierstrass.AArch64.Forward.Arithmetic
-noncomputable def cases : Cases
+theorem cases : Cases
   | .doubleRR => ArithmeticRR.caseProof
   | .mixedHead => ArithmeticMixedHead.caseProof
   | .mixedTail => ArithmeticMixedTail.caseProof
