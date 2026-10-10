@@ -14,7 +14,7 @@ result (`blocksAt_of_dinv`), the planes of the key schedule's constants
 namespace VG.Proof.Camellia
 
 open VG VG.Spec.Camellia
-open VG.Impl.Camellia (bytePos keyPlane sigmas)
+open VG.Impl.Camellia (bytePos keyPlane planeBits sigmas)
 
 /-! ## Addresses -/
 
@@ -227,10 +227,22 @@ theorem groupsN_succ (g : Nat) (E : Nat → BitVec 64) (i : Nat) (d : BitVec 64 
 
 theorem bytePos_eq : bytePos = pos := rfl
 
+theorem testBit_planeBits (x : BitVec 64) (j n p : Nat) :
+    (planeBits x j n).testBit p = (decide (p < n) && x.getLsbD (56 - 8 * bytePos (p / 8) + j)) := by
+  induction n with
+  | zero => simp [planeBits]
+  | succ n ih =>
+    rw [planeBits, Nat.testBit_or, ih]
+    have hlt : (decide (p < n + 1)) = (decide (p < n) || decide (p = n)) := by
+      by_cases h : p < n <;> by_cases h' : p = n <;> simp [h, h'] <;> omega
+    rw [hlt]
+    by_cases hpn : p = n
+    · subst hpn; split <;> simp_all
+    · split <;> simp [hpn, Ne.symm hpn]
+
 theorem keyPlane_bit (x : BitVec 64) (j : Nat) {p : Nat} (hp : p < 64) :
     (keyPlane x j).getLsbD p = x.getLsbD (56 - 8 * bytePos (p / 8) + j) := by
-  rw [keyPlane, BitVec.getLsbD_setWidth, BitVec.getLsbD_ofBoolListLE, List.getD_eq_getElem?_getD,
-    List.getElem?_map, List.getElem?_range hp]
+  rw [keyPlane, BitVec.getLsbD_ofNat, testBit_planeBits]
   simp [hp]
 
 /-- The planes `sigmaOne` stores hold the constant in every lane. -/

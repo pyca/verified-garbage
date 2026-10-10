@@ -44,10 +44,15 @@ def subkeys256 : List (Nat × Nat × Bool) :=
 /-- The byte of a half that position `c` of a plane holds (as `toBs` lays out a half). -/
 def bytePos (c : Nat) : Nat := c / 2 + 4 * (c % 2)
 
+/-- The bits `p < n` of plane `j` of `x` (see `keyPlane`), as a number. -/
+def planeBits (x : BitVec 64) (j : Nat) : Nat → Nat
+  | 0 => 0
+  | n + 1 => planeBits x j n ||| (if x.getLsbD (56 - 8 * bytePos (n / 8) + j) then 2 ^ n else 0)
+
 /-- Plane `j` of the subkey `x` in every lane, as the table holds it: bit
-`8 c + b` is bit `j` of byte `bytePos c` of `x`, the most significant first. -/
-def keyPlane (x : BitVec 64) (j : Nat) : BitVec 64 :=
-  (BitVec.ofBoolListLE ((List.range 64).map fun p => x.getLsbD (56 - 8 * bytePos (p / 8) + j))).setWidth 64
+`8 c + b` is bit `j` of byte `bytePos c` of `x`, the most significant first.
+(On `Nat`, which the kernel evaluates natively when it builds the code.) -/
+def keyPlane (x : BitVec 64) (j : Nat) : BitVec 64 := BitVec.ofNat 64 (planeBits x j 64)
 
 /-- The subkeys of the pairs. -/
 def sigmas : List (BitVec 64) :=
