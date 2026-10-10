@@ -87,12 +87,13 @@ theorem toBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀
 /-- The state's planes back to the tail buffer's blocks. -/
 theorem fromBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀ E) (hc : Ctx s₀ s)
     {X : Nat → Nat → Spec.Sm4.Word} (hX : StRel s X) :
-    ∃ s', runBlock isa fromBs s = some s' ∧ Ctx s₀ s' ∧ ∀ b < 8, tailBlock s' b = outBlock (X b) := by
+    ∃ s', runBlock isa fromBs s = some s' ∧ Ctx s₀ s' ∧ s'.gpr kp = s.gpr kp ∧ StRel s' X ∧
+      ∀ b < 8, tailBlock s' b = outBlock (X b) := by
   have hchk := fromBs_check
   unfold fromBsEnv at hchk
   have hfit := hp.fit
   rw [slots_eq, ← hc.base] at hfit
-  obtain ⟨s', h', -, hso, -, rd', wr', sp', -, f', hb', -⟩ := linG_ok hchk (ok_bs hp hc)
+  obtain ⟨s', h', -, hso, hkeep, rd', wr', sp', o', f', hb', -⟩ := linG_ok hchk (ok_bs hp hc)
     (fun i => slotW s (32 + i))
     (fun r i hri => by simp at hri)
     (fun j i hji => by
@@ -100,8 +101,14 @@ theorem fromBs_step {s₀ s : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s�
       exact ⟨by simp only [bsCfg, tableSlot_eq]; omega, by omega, by simp only [Nat.zero_add]; rfl⟩)
     (fun kv hkv => by simp at hkv)
     (fun j hj => by simp [bsCfg] at hj)
-  simp only [bsCfg] at hb' hso
-  refine ⟨s', h', hc.bs rd' wr' sp' hb' f', fun b hb => ?_⟩
+  simp only [bsCfg] at hb' hso hkeep
+  have hall : (fromBs.all fun i => dstOf i != some kp) = true := by decide +kernel
+  refine ⟨s', h', hc.bs rd' wr' sp' hb' f', o' kp hall, fun w hw => (hX w hw).congr fun j hj => ?_, fun b hb => ?_⟩
+  · show slotW s' (stateSlot w j) = slotW s (stateSlot w j)
+    have hm : stateSlot w j ∈ stateSlots := by
+      simp only [stateSlots, List.mem_map, List.mem_range]
+      exact ⟨8 * w + j, by omega, by simp only [stateSlot]; omega⟩
+    rw [slotW, hb', hkeep _ hm (by simp only [stateSlot, tableSlot_eq]; omega)]
   apply Vector.ext
   intro k hk
   refine BitVec.eq_of_getLsbD_eq fun j hj => ?_
@@ -130,7 +137,7 @@ theorem crypt8_wp {s₀ : State} {E : Nat → Spec.Sm4.Word} (hp : KeyCtx s₀ E
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
   refine WP.seq (WP.mono (rounds_wp .enc (hp.of_ctx c₁) X₁) fun s₂ ⟨c₂, X₂⟩ => ?_)
   have c₀₂ := c₁.trans c₂
-  obtain ⟨s₃, e₃, c₃, hout⟩ := fromBs_step hp c₀₂ X₂
+  obtain ⟨s₃, e₃, c₃, -, -, hout⟩ := fromBs_step hp c₀₂ X₂
   exact WP.of_runBlock ⟨s₃, e₃, c₃, hout⟩
 
 end VG.Proof.Sm4.Arm
