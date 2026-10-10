@@ -58,9 +58,9 @@ def fold : List Instr :=
 
 /-- The product, reduced, into `d`. -/
 def reduce (d : XReg) : List Instr :=
-  [.vop (.vshift .psrldq .l128 .xmm11 .xmm9 8), .vop (.vbin .vpxor .l128 .xmm10 .xmm10 .xmm11),
-   .vop (.vshift .pslldq .l128 .xmm9 .xmm9 8), .vop (.vbin .vpxor .l128 .xmm8 .xmm8 .xmm9)] ++
-  fold ++ fold ++ [.vop (.vbin .vpxor .l128 d .xmm10 .xmm8)]
+  ([.vop (.vshift .psrldq .l128 .xmm11 .xmm9 8), .vop (.vbin .vpxor .l128 .xmm10 .xmm10 .xmm11),
+   .vop (.vshift .pslldq .l128 .xmm9 .xmm9 8), .vop (.vbin .vpxor .l128 .xmm8 .xmm8 .xmm9)] : List Instr) ++
+  fold ++ fold ++ ([.vop (.vbin .vpxor .l128 d .xmm10 .xmm8)] : List Instr)
 
 /-- Fold `lo` into `mid`, then `mid` into `hi`, for the running hash.
 This needs two carry-less multiplies and avoids packing the middle word. -/
@@ -86,14 +86,14 @@ def const (x : XReg) (c : BitVec 128) : List Instr :=
 /-- `H' = H · x⁻¹` into `xmm3`, from `H` in `xmm7`. -/
 def hInv : List Instr :=
   const .xmm13 xInv ++
-  [.movImm64 .rax 0xffffffffffffffff, .vop (.vmovq .xmm14 .rax),
+  ([.movImm64 .rax 0xffffffffffffffff, .vop (.vmovq .xmm14 .rax),
    .vop (.vbin .vpunpcklqdq .l128 .xmm14 .xmm14 .xmm14),
    .vop (.vshift .psllq .l128 .xmm3 .xmm7 1),
    .vop (.vshift .psrlq .l128 .xmm11 .xmm7 63), .vop (.vshift .pslldq .l128 .xmm11 .xmm11 8),
    .vop (.vbin .vpor .l128 .xmm3 .xmm3 .xmm11),
    .vop (.vpshufd .l128 .xmm11 .xmm7 0xff), .vop (.vshift .psrld .l128 .xmm11 .xmm11 31),
    .vop (.vbin .vpaddd .l128 .xmm11 .xmm11 .xmm14),
-   .vop (.vbin .vpandn .l128 .xmm11 .xmm11 .xmm13), .vop (.vbin .vpxor .l128 .xmm3 .xmm3 .xmm11)]
+   .vop (.vbin .vpandn .l128 .xmm11 .xmm11 .xmm13), .vop (.vbin .vpxor .l128 .xmm3 .xmm3 .xmm11)] : List Instr)
 
 /-! ## The setup -/
 
@@ -105,7 +105,7 @@ def preg : Nat → XReg
 /-- The constants, `H'` from the hash subkey at `ctx + 240`, and `H'²`–`H'⁸`. -/
 def setupG : List Instr :=
   const .xmm0 revMask ++ const .xmm1 poly ++
-  [.vmovdquLoad .l128 .xmm7 (at_ .rdi 240), .vop (.vbin .vpshufb .l128 .xmm7 .xmm7 .xmm0)] ++ hInv ++
+  ([.vmovdquLoad .l128 .xmm7 (at_ .rdi 240), .vop (.vbin .vpshufb .l128 .xmm7 .xmm7 .xmm0)] : List Instr) ++ hInv ++
   mul .xmm4 .xmm3 .xmm3 ++ mul .xmm5 .xmm4 .xmm3 ++ mul .xmm6 .xmm4 .xmm4 ++ mul .xmm12 .xmm6 .xmm3 ++
   mul .xmm13 .xmm6 .xmm4 ++ mul .xmm14 .xmm6 .xmm5 ++ mul .xmm15 .xmm6 .xmm6
 
@@ -116,7 +116,7 @@ def lows (n : Nat) : List Instr :=
 /-- `H'⁹⁺ⁱ = mul(H'⁸, H'ⁱ⁺¹)` (`i < n`) stored to `scratch + 16 (7 − i)`. -/
 def highs (n : Nat) : List Instr :=
   (List.range n).flatMap fun i =>
-    mul .xmm7 .xmm15 (preg i) ++ [.vmovdquStore .l128 (at_ .r11 (16 * (7 - i))) .xmm7]
+    mul .xmm7 .xmm15 (preg i) ++ ([.vmovdquStore .l128 (at_ .r11 (16 * (7 - i))) .xmm7] : List Instr)
 
 /-- `Y`, the counter, the increment, the last round key's address, and the
 pointers of the loop. -/
@@ -136,22 +136,22 @@ def setup : List Instr := setupG ++ lows 8 ++ highs 8 ++ setupC
 block `k` at `rdx + 16 k` into `xmm7`, as a field element (with `Y` added to
 block 0); and their product added to the product. -/
 def ghLoad (k : Nat) : List Instr :=
-  [.vmovdquLoad .l128 .xmm12 (at_ .r11 (16 * k)), .vmovdquLoad .l128 .xmm7 (at_ .rdx (16 * k)),
-   .vop (.vbin .vpshufb .l128 .xmm7 .xmm7 .xmm0)] ++
+  ([.vmovdquLoad .l128 .xmm12 (at_ .r11 (16 * k)), .vmovdquLoad .l128 .xmm7 (at_ .rdx (16 * k)),
+   .vop (.vbin .vpshufb .l128 .xmm7 .xmm7 .xmm0)] : List Instr) ++
   (if k = 0 then [.vop (.vbin .vpxor .l128 .xmm7 .xmm7 .xmm2)] else []) ++ acc .xmm7 .xmm12
 
 /-- The counter blocks: each block register gets the counter, byte-reversed,
 and the counter is incremented (`inc₃₂`). -/
 def ctrs : List XReg → List Instr
   | [] => []
-  | b :: bs => [.vop (.vbin .vpshufb .l128 b .xmm14 .xmm0), .vop (.vbin .vpaddd .l128 .xmm14 .xmm14 .xmm15)] ++
+  | b :: bs => ([.vop (.vbin .vpshufb .l128 b .xmm14 .xmm0), .vop (.vbin .vpaddd .l128 .xmm14 .xmm14 .xmm15)] : List Instr) ++
       ctrs bs
 
 /-- XOR block register `i` into the data block `rdx + 16 (j + i)`. -/
 def xorData : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => [.vbinLoad .vpxor .l128 b b (at_ .rdx (16 * j)),
-      .vmovdquStore .l128 (at_ .rdx (16 * j)) b] ++ xorData bs (j + 1)
+  | b :: bs, j => ([.vbinLoad .vpxor .l128 b b (at_ .rdx (16 * j)),
+      .vmovdquStore .l128 (at_ .rdx (16 * j)) b] : List Instr) ++ xorData bs (j + 1)
 
 /-- Four blocks encrypted into the data blocks `j`… at `rdx + 16 j`, the
 GHASH work `g i` after round `i`. -/

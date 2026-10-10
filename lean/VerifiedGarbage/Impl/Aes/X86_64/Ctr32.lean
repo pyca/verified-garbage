@@ -89,16 +89,16 @@ def ctrBlock (b : Nat) : List Instr :=
 
 def ctrBlocks : List Instr :=
   ctrBlock 0 ++ ctrBlock 1 ++ ctrBlock 2 ++ ctrBlock 3 ++
-  [.mov32 t0 (.mem (slotAt sb cNum)), .alu32 .add t0 (.imm 4), .store32 (slotAt sb cNum) t0]
+  ([.mov32 t0 (.mem (slotAt sb cNum)), .alu32 .add t0 (.imm 4), .store32 (slotAt sb cNum) t0] : List Instr)
 
 /-- A middle round, with `rsi` at the previous round key; loops until `rsi`
 is at the last round key but one. -/
 def roundBody : List Instr :=
-  [.alu .add kp (.imm 64)] ++ sboxCode ++ shiftRows ++ mixColumns ++ addRoundKey ++
+  ([.alu .add kp (.imm 64)] : List Instr) ++ sboxCode ++ shiftRows ++ mixColumns ++ addRoundKey ++
   [movR t0 sb, .alu .add t0 (.imm (BitVec.ofNat 32 (lastKey - 64))), .alu .cmp kp (.reg t0)]
 
 /-- The last round. -/
-def lastRound : List Instr := [.alu .add kp (.imm 64)] ++ sboxCode ++ shiftRows ++ addRoundKey
+def lastRound : List Instr := ([.alu .add kp (.imm 64)] : List Instr) ++ sboxCode ++ shiftRows ++ addRoundKey
 
 /-- Encrypt the four blocks in `q 0 … q 7` (as `toBs` takes them). -/
 def encrypt4 : Prog isa :=
@@ -112,12 +112,12 @@ def xorBlock (b : Nat) : List Instr :=
 
 /-- Four blocks, and on to the next four (ZF is set when none are left). -/
 def xorFull : List Instr :=
-  (List.range 4).flatMap xorBlock ++ [.alu .add .rdx (.imm 64), .alu .sub .r8 (.imm 4)]
+  (List.range 4).flatMap xorBlock ++ ([.alu .add .rdx (.imm 64), .alu .sub .r8 (.imm 4)] : List Instr)
 
 /-- The last one to three blocks (and ZF set). -/
 def xorTail : Prog isa :=
-  .seq (.block (xorBlock 0 ++ [.alu .cmp .r8 (.imm 2)]))
-    (.seq (.ite .ae (.seq (.block (xorBlock 1 ++ [.alu .cmp .r8 (.imm 3)]))
+  .seq (.block (xorBlock 0 ++ ([.alu .cmp .r8 (.imm 2)] : List Instr)))
+    (.seq (.ite .ae (.seq (.block (xorBlock 1 ++ ([.alu .cmp .r8 (.imm 3)] : List Instr)))
         (.ite .ae (.block (xorBlock 2)) (.block [])))
       (.block []))
     (.block [.alu .sub .r8 (.reg .r8)]))
@@ -131,7 +131,7 @@ def group : Prog isa :=
 def ctr32 : Prog isa :=
   .seq (.block (saveRegs ++ ctrSetup ++ keySetup))
     (.seq (.loop (.block keyBody) .ae)
-      (.seq (.block (keyDone ++ [.alu .test .r8 (.reg .r8)]))
+      (.seq (.block (keyDone ++ ([.alu .test .r8 (.reg .r8)] : List Instr)))
         (.seq (.ite .e (.block []) (.loop group .ne)) (.block restoreRegs))))
 
 end VG.Impl.Aes.X86_64

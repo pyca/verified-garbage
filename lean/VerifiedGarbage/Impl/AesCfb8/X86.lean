@@ -37,9 +37,9 @@ open VG.Impl.AesCbc.X86 (cOff whole blkCall)
 function: the schedule and the rounds (our stack arguments 0 and 1), the
 copy, `n = 1`, and the working space (our stack argument 5). -/
 def pre : List Instr :=
-  [.mov .ebp (argOp 5), .mov .ebx (argOp 2)] ++ zero4 .ebp cOff ++ xor4 .ebp .ebx .ebp cOff 0 cOff ++
-  [.mov .eax (argOp 0), .mov .ecx (argOp 1), .mov .ebx (.reg .ebp), .alu .add .ebx (.imm 2048),
-   .mov .edi (.imm 1)]
+  ([.mov .ebp (argOp 5), .mov .ebx (argOp 2)] : List Instr) ++ zero4 .ebp cOff ++ xor4 .ebp .ebx .ebp cOff 0 cOff ++
+  ([.mov .eax (argOp 0), .mov .ecx (argOp 1), .mov .ebx (.reg .ebp), .alu .add .ebx (.imm 2048),
+   .mov .edi (.imm 1)] : List Instr)
 
 /-- The input block at `ebx` shifted left by a byte, with `al` shifted in:
 the words at `ebx + 1`, `+ 5`, `+ 9` and `+ 12` stored at `ebx`, `+ 4`,
@@ -55,13 +55,13 @@ def advance : List Instr :=
 
 /-- `C#ⱼ = P#ⱼ ⊕ MSB₈(Oⱼ)`, shifted into the input block. -/
 def encPost : List Instr :=
-  [.mov .ebp (argOp 5), .movzx8 .eax (at_ .esi 0), .movzx8 .ecx (at_ .ebp cOff), .alu .xor .eax (.reg .ecx),
-   .store8 (at_ .esi 0) .al, .mov .ebx (argOp 2)] ++ shift ++ advance
+  ([.mov .ebp (argOp 5), .movzx8 .eax (at_ .esi 0), .movzx8 .ecx (at_ .ebp cOff), .alu .xor .eax (.reg .ecx),
+   .store8 (at_ .esi 0) .al, .mov .ebx (argOp 2)] : List Instr) ++ shift ++ advance
 
 /-- `P#ⱼ = C#ⱼ ⊕ MSB₈(Oⱼ)`, and `C#ⱼ` shifted into the input block. -/
 def decPost : List Instr :=
-  [.mov .ebp (argOp 5), .movzx8 .eax (at_ .esi 0), .movzx8 .ecx (at_ .ebp cOff), .alu .xor .ecx (.reg .eax),
-   .store8 (at_ .esi 0) .cl, .mov .ebx (argOp 2)] ++ shift ++ advance
+  ([.mov .ebp (argOp 5), .movzx8 .eax (at_ .esi 0), .movzx8 .ecx (at_ .ebp cOff), .alu .xor .ecx (.reg .eax),
+   .store8 (at_ .esi 0) .cl, .mov .ebx (argOp 2)] : List Instr) ++ shift ++ advance
 
 /-- One byte: the input block enciphered in the scratch buffer, and `post`. -/
 def body (b : Blocks) (post : List Instr) : Prog isa := .seq (.block pre) (.seq (blkCall b) (.block post))

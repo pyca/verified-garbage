@@ -172,6 +172,6 @@ def compile (sb : Reg) (gs : List Gate) (ins outs : List (Nat × Reg)) (free : L
   let gs := splitXnor onesVar fresh gs
   let a := Alloc.gates sb outs (Rest.ofGates gs) init gs
   let a := Alloc.place sb a outs
-  [.mov r (.imm 0), .dp .sub r r (.imm 1), .str r sb (4 * ones)] ++ a.code.reverse
+  ([.mov r (.imm 0), .dp .sub r r (.imm 1), .str r sb (4 * ones)] : List Instr) ++ a.code.reverse
 
 end VG.Impl.Aes.Arm

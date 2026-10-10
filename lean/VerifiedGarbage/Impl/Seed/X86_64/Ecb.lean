@@ -98,10 +98,10 @@ def keyStart : Direction → Nat
 
 /-- One round, with its key at `rdi`; advances `rdi` and counts down `r8`. -/
 def round (d : Direction) : List Instr :=
-  [.mov32 .r11 (.mem { base := .rdi, disp := 0 }), .mov32 .r12 (.mem { base := .rdi, disp := 4 })] ++
+  ([.mov32 .r11 (.mem { base := .rdi, disp := 0 }), .mov32 .r12 (.mem { base := .rdi, disp := 4 })] : List Instr) ++
   lanes16 step1 ++ g16 ++ lanes16 step2 ++ g16 ++ lanes16 step3 ++ g16 ++ lanes16 step4 ++
   swapHalves ++
-  [.alu .add .rdi (.imm (BitVec.ofInt 32 (keyStep d))), .alu .sub .r8 (.imm 1)]
+  ([.alu .add .rdi (.imm (BitVec.ofInt 32 (keyStep d))), .alu .sub .r8 (.imm 1)] : List Instr)
 
 /-- Sixteen rounds, then the key pointer back to the first round's key. -/
 def rounds (d : Direction) : Prog isa :=
@@ -122,14 +122,14 @@ def copyInBody : List Instr :=
   ((List.range 4).flatMap fun w =>
     [.mov32 .rax (.mem { base := .r10, disp := ((4 * w : Nat) : Int) }), .bswap32 .rax,
      .store32 (lane .rbx (arrSlot w) 0) .rax]) ++
-  [.alu .add .r10 (.imm 16), .alu .add .rbx (.imm 4), .alu .sub .rcx (.imm 1)]
+  ([.alu .add .r10 (.imm 16), .alu .add .rbx (.imm 4), .alu .sub .rcx (.imm 1)] : List Instr)
 
 /-- Copy a lane out to one block, `R` first (see the rounds). -/
 def copyOutBody : List Instr :=
   ((List.range 4).flatMap fun w =>
     [.mov32 .rax (.mem (lane .rbx (arrSlot ((w + 2) % 4)) 0)), .bswap32 .rax,
      .store32 { base := .r10, disp := ((4 * w : Nat) : Int) } .rax]) ++
-  [.alu .add .r10 (.imm 16), .alu .add .rbx (.imm 4), .alu .sub .rcx (.imm 1)]
+  ([.alu .add .r10 (.imm 16), .alu .add .rbx (.imm 4), .alu .sub .rcx (.imm 1)] : List Instr)
 
 def copyStart : List Instr := [movR .r10 .rsi, movR .rbx .r9]
 
@@ -147,7 +147,7 @@ def batch (d : Direction) : Prog isa := .seq copyIn (.seq (rounds d) copyOut)
 
 def setup (d : Direction) : List Instr :=
   [movR .r9 .rcx] ++ savedRegs.map (fun (r, k) => st k r) ++ setG16Masks ++
-  [.alu .add .rdi (.imm (BitVec.ofNat 32 (keyStart d))), .alu .cmp .rdx (.imm 0)]
+  ([.alu .add .rdi (.imm (BitVec.ofNat 32 (keyStart d))), .alu .cmp .rdx (.imm 0)] : List Instr)
 
 def restore : List Instr := savedRegs.map fun (r, k) => movS r k
 

@@ -40,21 +40,21 @@ def kstepB6 (off : Nat) : List Instr :=
 
 /-- AES-128: 11 round keys. -/
 def expand128 : List Instr :=
-  [.movdquLoad .xmm1 (at_ .eax 0), .movdquStore (at_ .edx 0) .xmm1] ++
+  ([.movdquLoad .xmm1 (at_ .eax 0), .movdquStore (at_ .edx 0) .xmm1] : List Instr) ++
   (List.range 10).flatMap fun k => kstep .xmm1 .xmm1 0xff (rc (k + 1)) (16 * (k + 1))
 
 /-- AES-192: 13 round keys (52 words), 6 words at a time. -/
 def expand192 : List Instr :=
-  [.movdquLoad .xmm1 (at_ .eax 0), .movdquLoad .xmm2 (at_ .eax 8), .xop (.shift .psrldq .xmm2 8),
-   .movdquStore (at_ .edx 0) .xmm1, .movdquStore (at_ .edx 16) .xmm2] ++
+  ([.movdquLoad .xmm1 (at_ .eax 0), .movdquLoad .xmm2 (at_ .eax 8), .xop (.shift .psrldq .xmm2 8),
+   .movdquStore (at_ .edx 0) .xmm1, .movdquStore (at_ .edx 16) .xmm2] : List Instr) ++
   (List.range 7).flatMap (fun k =>
     kstep .xmm1 .xmm2 0x55 (rc (k + 1)) (24 * (k + 1)) ++ kstepB6 (24 * (k + 1) + 16)) ++
   kstep .xmm1 .xmm2 0x55 (rc 8) 192
 
 /-- AES-256: 15 round keys (60 words), 8 words at a time. -/
 def expand256 : List Instr :=
-  [.movdquLoad .xmm1 (at_ .eax 0), .movdquLoad .xmm2 (at_ .eax 16),
-   .movdquStore (at_ .edx 0) .xmm1, .movdquStore (at_ .edx 16) .xmm2] ++
+  ([.movdquLoad .xmm1 (at_ .eax 0), .movdquLoad .xmm2 (at_ .eax 16),
+   .movdquStore (at_ .edx 0) .xmm1, .movdquStore (at_ .edx 16) .xmm2] : List Instr) ++
   (List.range 6).flatMap (fun k =>
     kstep .xmm1 .xmm2 0xff (rc (k + 1)) (32 * (k + 1)) ++
     kstep .xmm2 .xmm1 0xaa 0 (32 * (k + 1) + 16)) ++
@@ -82,9 +82,9 @@ def round (regs : List XReg) (j : Nat) : List Instr := keyOp regs .aesenc (16 * 
 /-- Branches depend only on the public number of rounds. -/
 def aes (regs : List XReg) : Prog isa :=
   .seq (.block (keyOp regs .pxor 0 ++ (List.range 9).flatMap (fun j => round regs (j + 1)) ++
-      [.alu .cmp .ecx (.imm 10)]))
+      ([.alu .cmp .ecx (.imm 10)] : List Instr)))
     (.ite .e (.block (keyOp regs .aesenclast 160))
-      (.seq (.block (round regs 10 ++ round regs 11 ++ [.alu .cmp .ecx (.imm 12)]))
+      (.seq (.block (round regs 10 ++ round regs 11 ++ ([.alu .cmp .ecx (.imm 12)] : List Instr)))
         (.ite .e (.block (keyOp regs .aesenclast 192))
           (.block (round regs 12 ++ round regs 13 ++ keyOp regs .aesenclast 224)))))
 
@@ -103,28 +103,28 @@ def ctrLoad (regs : List XReg) : List Instr :=
 
 def xorData : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => [.movdquLoad .xmm7 (at_ .esi (16 * j)), .xop (.bin .pxor b .xmm7),
-      .movdquStore (at_ .esi (16 * j)) b] ++ xorData bs (j + 1)
+  | b :: bs, j => ([.movdquLoad .xmm7 (at_ .esi (16 * j)), .xop (.bin .pxor b .xmm7),
+      .movdquStore (at_ .esi (16 * j)) b] : List Instr) ++ xorData bs (j + 1)
 
 def regs6 : List XReg := [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5]
 
 def body6 : Prog isa :=
   .seq (.block (ctrLoad regs6)) (.seq (aes regs6)
-    (.block (xorData regs6 0 ++ [.alu .add .esi (.imm 96), .alu .sub .edi (.imm 6),
-      .alu .cmp .edi (.imm 6)])))
+    (.block (xorData regs6 0 ++ ([.alu .add .esi (.imm 96), .alu .sub .edi (.imm 6),
+      .alu .cmp .edi (.imm 6)] : List Instr))))
 
 def body1 : Prog isa :=
   .seq (.block (ctrLoad [.xmm0])) (.seq (aes [.xmm0])
-    (.block (xorData [.xmm0] 0 ++ [.alu .add .esi (.imm 16), .alu .sub .edi (.imm 1)])))
+    (.block (xorData [.xmm0] 0 ++ ([.alu .add .esi (.imm 16), .alu .sub .edi (.imm 1)] : List Instr))))
 
 def prologue : List Instr :=
-  [.mov .eax (.mem (argOp 5))] ++ savedRegs.map (fun (r, d) => .store (at_ .eax d) r) ++
-  [.mov .ebp (.reg .eax), .mov .eax (.mem (argOp 0)), .mov .ecx (.mem (argOp 1)),
+  ([.mov .eax (.mem (argOp 5))] : List Instr) ++ savedRegs.map (fun (r, d) => .store (at_ .eax d) r) ++
+  ([.mov .ebp (.reg .eax), .mov .eax (.mem (argOp 0)), .mov .ecx (.mem (argOp 1)),
    .mov .edx (.mem (argOp 2)), .mov .esi (.mem (argOp 3)), .mov .edi (.mem (argOp 4)),
    .mov .ebx (.mem (at_ .edx 12)), .bswap .ebx,
    .movdquLoad .xmm7 (at_ .edx 0), .xop (.shift .pslldq .xmm7 4),
    .xop (.shift .psrldq .xmm7 4), .movdquStore (at_ .ebp 16) .xmm7,
-   .alu .cmp .edi (.imm 6)]
+   .alu .cmp .edi (.imm 6)] : List Instr)
 
 def restore : List Instr :=
   [.mov .eax (.reg .ebx), .bswap .eax, .store (at_ .edx 12) .eax,

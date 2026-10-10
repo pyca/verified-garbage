@@ -39,11 +39,11 @@ def body (b : Blocks) (post : List Instr) : Prog isa := .seq (.block ivArgs) (.s
 
 /-- `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, and `Cⱼ` the block to continue from. -/
 def encPost : List Instr :=
-  [.mov .ebx (argOp 2)] ++ xor4 .esi .ebx .esi 0 0 0 ++ zero4 .ebx 0 ++ xor4 .ebx .esi .ebx 0 0 0 ++ advance
+  ([.mov .ebx (argOp 2)] : List Instr) ++ xor4 .esi .ebx .esi 0 0 0 ++ zero4 .ebx 0 ++ xor4 .ebx .esi .ebx 0 0 0 ++ advance
 
 /-- `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, and `Cⱼ` the block to continue from. -/
 def decPost : List Instr :=
-  [.mov .ebx (argOp 2)] ++ xor4 .esi .ebx .esi 0 0 0 ++ xor4 .ebx .esi .ebx 0 0 0 ++ advance
+  ([.mov .ebx (argOp 2)] : List Instr) ++ xor4 .esi .ebx .esi 0 0 0 ++ xor4 .ebx .esi .ebx 0 0 0 ++ advance
 
 def encrypt (b : Blocks) : Prog isa := whole (body b encPost)
 

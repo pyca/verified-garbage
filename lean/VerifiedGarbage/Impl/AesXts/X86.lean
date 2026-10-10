@@ -47,21 +47,21 @@ def mulA : List Instr :=
 
 /-- One block: the tweak XORed in, the tweak times `α`, and on to the next
 block (ZF set after the last). -/
-def passBody : List Instr := [.mov .ebx (argOp 2)] ++ xor4 .esi .ebx .esi 0 0 0 ++ mulA ++ advance
+def passBody : List Instr := ([.mov .ebx (argOp 2)] : List Instr) ++ xor4 .esi .ebx .esi 0 0 0 ++ mulA ++ advance
 
 /-- Each block from `esi` on (at least one) with its tweak XORed in. -/
 def pass : Prog isa := .loop (.block passBody) .ne
 
 /-- `T` saved. -/
 def saveT : List Instr :=
-  [.mov .ebx (argOp 2), .mov .ebp (argOp 5)] ++ zero4 .ebp cOff ++ xor4 .ebp .ebx .ebp cOff 0 cOff
+  ([.mov .ebx (argOp 2), .mov .ebp (argOp 5)] : List Instr) ++ zero4 .ebp cOff ++ xor4 .ebp .ebx .ebp cOff 0 cOff
 
 /-- `T` restored, `esi` back at the first block, and the arguments of the
 block function on all the blocks: the schedule, the rounds, the blocks, their
 number and the working space. -/
 def callArgs : List Instr :=
-  [.mov .ebx (argOp 2), .mov .ebp (argOp 5)] ++ zero4 .ebx 0 ++ xor4 .ebx .ebp .ebx 0 cOff 0 ++
-  [.mov .esi (argOp 3), .mov .eax (argOp 0), .mov .ecx (argOp 1), .mov .edx (.reg .esi), .mov .ebx (argOp 4)]
+  ([.mov .ebx (argOp 2), .mov .ebp (argOp 5)] : List Instr) ++ zero4 .ebx 0 ++ xor4 .ebx .ebp .ebx 0 cOff 0 ++
+  ([.mov .esi (argOp 3), .mov .eax (argOp 0), .mov .ecx (argOp 1), .mov .edx (.reg .esi), .mov .ebx (argOp 4)] : List Instr)
 
 /-- The blocks (at least one): the tweaks XORed in, enciphered (or
 deciphered) by `b`, and the tweaks XORed in again. -/
