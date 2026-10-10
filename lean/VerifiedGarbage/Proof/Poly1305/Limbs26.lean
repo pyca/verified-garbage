@@ -70,7 +70,7 @@ theorem and_mask (x : Nat) : x &&& 0x3ffffff = x % 2 ^ 26 := by
 
 theorem carry_val (d : Nat → Nat) : val (carry d 0x3ffffff) + P * (e4 d / 2 ^ 26) = val d := by
   simp only [val, carry, g0, e4, e3, e2, e1, and_mask, P_eq]
-  omega
+  omega_arith
 
 /-- The product of two numbers, carried. -/
 def mul (a b : Nat → Nat) : Nat → Nat := carry (pd a b) 0x3ffffff
@@ -90,15 +90,15 @@ the division, very slowly.) -/
 
 theorem split_or {lo : Nat} (hlo : lo < 2 ^ 64) (hi : Nat) :
     (hi * 2 ^ 50 % 2 ^ 64 / 2 ^ 38 ||| lo / 2 ^ 52) = 2 ^ 12 * (hi % 2 ^ 14) + lo / 2 ^ 52 := by
-  rw [show hi * 2 ^ 50 % 2 ^ 64 / 2 ^ 38 = 2 ^ 12 * (hi % 2 ^ 14) by omega,
-    ← Nat.two_pow_add_eq_or_of_lt (show lo / 2 ^ 52 < 2 ^ 12 by omega)]
+  rw [show hi * 2 ^ 50 % 2 ^ 64 / 2 ^ 38 = 2 ^ 12 * (hi % 2 ^ 14) by omega_arith,
+    ← Nat.two_pow_add_eq_or_of_lt (show lo / 2 ^ 52 < 2 ^ 12 by omega_arith)]
 
 theorem split_val {lo : Nat} (hlo : lo < 2 ^ 64) (hi : Nat) :
     lo * 2 ^ 38 % 2 ^ 64 / 2 ^ 38 + 2 ^ 26 * (lo * 2 ^ 12 % 2 ^ 64 / 2 ^ 38) +
       2 ^ 52 * (hi * 2 ^ 50 % 2 ^ 64 / 2 ^ 38 ||| lo / 2 ^ 52) + 2 ^ 78 * (hi * 2 ^ 24 % 2 ^ 64 / 2 ^ 38) +
       2 ^ 104 * (hi / 2 ^ 40) = lo + 2 ^ 64 * hi := by
   rw [split_or hlo]
-  omega
+  omega_arith
 
 /-! ## The final reduction -/
 
@@ -143,8 +143,8 @@ theorem and_high_zero {x : Nat} (hx : x < 2 ^ 27) : (2 ^ 64 - 1 - (2 ^ 27 - 1)) 
   simp only [Nat.testBit_and, Nat.zero_testBit]
   by_cases hi : i < 27
   · rw [show 2 ^ 64 - 1 - (2 ^ 27 - 1) = (2 ^ 37 - 1) * 2 ^ 27 by decide, Nat.testBit_mul_two_pow,
-      decide_eq_false (by omega), Bool.false_and, Bool.false_and]
-  · rw [Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hx (Nat.pow_le_pow_right (by decide) (by omega))),
+      decide_eq_false (by omega_arith), Bool.false_and, Bool.false_and]
+  · rw [Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hx (Nat.pow_le_pow_right (by decide) (by omega_arith))),
       Bool.and_false]
 
 theorem fin_val {c : Nat → Nat} (h0 : c 0 < 2 ^ 26) (h1 : c 1 < 2 ^ 27) (h2 : c 2 < 2 ^ 26)
@@ -153,7 +153,7 @@ theorem fin_val {c : Nat → Nat} (h0 : c 0 < 2 ^ 26) (h1 : c 1 < 2 ^ 27) (h2 : 
   have ef : ∀ i < 5, fc c 0x3ffffff i = (if i = 0 then c 0 else if i = 1 then c 1 % 2 ^ 26
       else if i = 2 then f2' c % 2 ^ 26 else if i = 3 then f3' c % 2 ^ 26 else c 4 + f3' c / 2 ^ 26) := by
     intro i hi
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;>
       simp only [fc, and_mask] <;> rfl
   have e2 : f2' c = c 2 + c 1 / 2 ^ 26 := rfl
   have e3 : f3' c = c 3 + f2' c / 2 ^ 26 := rfl
@@ -191,7 +191,7 @@ theorem fin_val {c : Nat → Nat} (h0 : c 0 < 2 ^ 26) (h1 : c 1 < 2 ^ 27) (h2 : 
       else if i = 3 then g3' c 0x3ffffff 5 else g4' c 0x3ffffff 5) % 2 ^ 26 := by
     intro i hi
     rw [and_mask]
-    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
+    rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
   have hs : sel c 0x3ffffff 5 0x7ffffff = g4' c 0x3ffffff 5 / 2 ^ 26 * (2 ^ 27 - 1) := by
     rw [sel, show (0x7ffffff : Nat) % 2 ^ 32 = 2 ^ 27 - 1 by decide]
     congr 1
@@ -201,7 +201,7 @@ theorem fin_val {c : Nat → Nat} (h0 : c 0 < 2 ^ 26) (h1 : c 1 < 2 ^ 27) (h2 : 
       if g4' c 0x3ffffff 5 / 2 ^ 26 = 0 then fc c 0x3ffffff i else gl c 0x3ffffff 5 i &&& 0x3ffffff := by
     intro i hi
     have hf : fc c 0x3ffffff i < 2 ^ 27 := by
-      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+      rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
       · omega_using [a0]
       · omega_using [a1]
       · omega_using [a2]
@@ -223,10 +223,10 @@ theorem fin_val {c : Nat → Nat} (h0 : c 0 < 2 ^ 26) (h1 : c 1 < 2 ^ 27) (h2 : 
         unfold val; rw [e 0 (by decide), e 1 (by decide), e 2 (by decide), e 3 (by decide), e 4 (by decide)]
       rw [hv, ← vfc, Nat.mod_eq_of_lt (by rw [P_eq]; omega_using [hg, hq])]
     · rw [e i hi]
-      rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
+      rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl
       exacts [a0, a1, a2, a3, by omega_using [R4, hq]]
   · have e : ∀ i < 5, fin c 0x3ffffff 5 0x7ffffff i = gl c 0x3ffffff 5 i &&& 0x3ffffff := fun i hi => by
-      rw [fin_eq i hi, ite_eq_right (by omega)]
+      rw [fin_eq i hi, ite_eq_right (by omega_arith)]
     refine ⟨?_, fun i hi => ?_⟩
     · rw [val, e 0 (by decide), e 1 (by decide), e 2 (by decide), e 3 (by decide), e 4 (by decide),
         gl_eq 0 (by decide), gl_eq 1 (by decide), gl_eq 2 (by decide), gl_eq 3 (by decide),
@@ -260,17 +260,17 @@ theorem words_val {o : Nat → Nat} (h : ∀ i < 5, o i < 2 ^ 26) :
   have h4 := h 4 (by decide)
   have e0 : w0 o = 2 ^ 52 * (o 2 % 2 ^ 12) + (2 ^ 26 * o 1 + o 0) := by
     have a1 : (o 1 * 2 ^ 26 % 2 ^ 64 ||| o 0) = 2 ^ 26 * o 1 + o 0 := by
-      rw [show o 1 * 2 ^ 26 % 2 ^ 64 = 2 ^ 26 * o 1 by omega]
+      rw [show o 1 * 2 ^ 26 % 2 ^ 64 = 2 ^ 26 * o 1 by omega_arith]
       exact (Nat.two_pow_add_eq_or_of_lt h0 _).symm
-    rw [w0, a1, show o 2 * 2 ^ 52 % 2 ^ 64 = 2 ^ 52 * (o 2 % 2 ^ 12) by omega, Nat.or_comm]
-    exact (Nat.two_pow_add_eq_or_of_lt (by omega) _).symm
+    rw [w0, a1, show o 2 * 2 ^ 52 % 2 ^ 64 = 2 ^ 52 * (o 2 % 2 ^ 12) by omega_arith, Nat.or_comm]
+    exact (Nat.two_pow_add_eq_or_of_lt (by omega_arith) _).symm
   have e1 : w1 o = 2 ^ 40 * (o 4 % 2 ^ 24) + (2 ^ 14 * o 3 + o 2 / 2 ^ 12) := by
     have b1 : (o 2 / 2 ^ 12 ||| o 3 * 2 ^ 14 % 2 ^ 64) = 2 ^ 14 * o 3 + o 2 / 2 ^ 12 := by
-      rw [show o 3 * 2 ^ 14 % 2 ^ 64 = 2 ^ 14 * o 3 by omega, Nat.or_comm]
-      exact (Nat.two_pow_add_eq_or_of_lt (by omega) _).symm
-    rw [w1, b1, show o 4 * 2 ^ 40 % 2 ^ 64 = 2 ^ 40 * (o 4 % 2 ^ 24) by omega, Nat.or_comm]
-    exact (Nat.two_pow_add_eq_or_of_lt (by omega) _).symm
+      rw [show o 3 * 2 ^ 14 % 2 ^ 64 = 2 ^ 14 * o 3 by omega_arith, Nat.or_comm]
+      exact (Nat.two_pow_add_eq_or_of_lt (by omega_arith) _).symm
+    rw [w1, b1, show o 4 * 2 ^ 40 % 2 ^ 64 = 2 ^ 40 * (o 4 % 2 ^ 24) by omega_arith, Nat.or_comm]
+    exact (Nat.two_pow_add_eq_or_of_lt (by omega_arith) _).symm
   simp only [e0, e1, val]
-  omega
+  omega_arith
 
 end VG.Proof.Poly1305.Limbs26

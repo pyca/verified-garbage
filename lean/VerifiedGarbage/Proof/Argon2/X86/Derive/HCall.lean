@@ -34,7 +34,7 @@ theorem in_call {x : BitVec 32} {n : Nat} (h₁ : (E s₀).toNat ≤ x.toNat + 8
     (h₂ : x.toNat + n ≤ (E s₀).toNat) : Region.Sub ⟨x.setWidth 64, n⟩ (callR s₀) := by
   have hE := E_nat hp
   have := hp.esp_lo
-  exact sub32 (by rw [sub_nat (by omega)]; omega) (by rw [sub_nat (by omega)]; omega)
+  exact sub32 (by rw [sub_nat (by omega_arith)]; omega_arith) (by rw [sub_nat (by omega_arith)]; omega_arith)
 
 theorem call_disj {R : Region} (hR : R ∈ [memR s₀, scrR s₀, outR s₀]) : (callR s₀).Disjoint R :=
   (hp.stk_all R (by
@@ -45,7 +45,7 @@ theorem loc_call : (locR s₀).Disjoint (callR s₀) := by
   have hE := E_nat hp
   have := hp.esp_lo
   have := E_hi hp
-  exact disj32 (.inr (by rw [sub_nat (by omega)]; omega)) (by omega) (by rw [sub_nat (by omega)]; omega)
+  exact disj32 (.inr (by rw [sub_nat (by omega_arith)]; omega_arith)) (by omega_arith) (by rw [sub_nat (by omega_arith)]; omega_arith)
 
 theorem loc_sub_stk : Region.Sub (locR s₀) (stkR s₀) := by
   simpa using frame_stk hp (d := 0) (n := 144) (by decide)
@@ -75,7 +75,7 @@ theorem hcall_pre {s : State} (h : Inv s₀ s) {r : Reg} (hr : r ≠ .esp)
   have esp := h.esp
   have nesp : Reg.esp ∉ [Reg.edx, .ecx, .edi, .eax, r] := by simp [Ne.symm hr]
   have fit : 4 * [Reg.edx, .ecx, .edi, .eax, r].length + 4 ≤ (s.gpr .esp).toNat := by
-    simp only [List.length_cons, List.length_nil]; rw [esp]; omega
+    simp only [List.length_cons, List.length_nil]; rw [esp]; omega_arith
   have a0 := callEntry_arg fit nesp (i := 0) (by simp)
   have a1 := callEntry_arg fit nesp (i := 1) (by simp)
   have a2 := callEntry_arg fit nesp (i := 2) (by simp)
@@ -132,16 +132,16 @@ theorem hcall_pre {s : State} (h : Inv s₀ s) {r : Reg} (hr : r ≠ .esp)
     · exact (call_disj hp (R := outR s₀) (by simp)).symm.sub_left sO
   have S_call : (scrR s₀).Disjoint (callR s₀) := (call_disj hp (R := scrR s₀) (by simp)).symm
   -- The callee's stack, arguments and return address.
-  have e20 : (s.gpr .esp - BitVec.ofNat 32 20).toNat = (E s₀).toNat - 20 := by rw [esp, sub_nat (by omega)]
-  have e24 : (s.gpr .esp - BitVec.ofNat 32 24).toNat = (E s₀).toNat - 24 := by rw [esp, sub_nat (by omega)]
+  have e20 : (s.gpr .esp - BitVec.ofNat 32 20).toNat = (E s₀).toNat - 20 := by rw [esp, sub_nat (by omega_arith)]
+  have e24 : (s.gpr .esp - BitVec.ofNat 32 24).toNat = (E s₀).toNat - 24 := by rw [esp, sub_nat (by omega_arith)]
   have e84 : (s.gpr .esp - BitVec.ofNat 32 24 - BitVec.ofNat 32 60).toNat = (E s₀).toNat - 84 := by
-    rw [sub_nat (by omega), e24]; omega
+    rw [sub_nat (by omega_arith), e24]; omega_arith
   have cA : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 20).setWidth 64, 20⟩ (callR s₀) :=
-    in_call hp (by omega) (by omega)
+    in_call hp (by omega_arith) (by omega_arith)
   have cR : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 24).setWidth 64, 4⟩ (callR s₀) :=
-    in_call hp (by omega) (by omega)
+    in_call hp (by omega_arith) (by omega_arith)
   have cS : Region.Sub (below (s.gpr .esp - BitVec.ofNat 32 24) 60) (callR s₀) :=
-    in_call hp (by omega) (by omega)
+    in_call hp (by omega_arith) (by omega_arith)
   have a20 : argAddr (pushed [Reg.edx, .ecx, .edi, .eax, r] s).callEntry 0 =
       (s.gpr .esp - BitVec.ofNat 32 20).setWidth 64 := callEntry_argAddr0 _ _
   have ce : (pushed [Reg.edx, .ecx, .edi, .eax, r] s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 24 :=
@@ -152,7 +152,7 @@ theorem hcall_pre {s : State} (h : Inv s₀ s) {r : Reg} (hr : r ≠ .esp)
     refine ⟨trivial, trivial, I_scr, O_scr, ?_, ?_,
       ?_, ?_,
       I_call.symm.sub_left cS, O_call.symm.sub_left cS, S_call.symm.sub_left cS, hinfit, houtfit,
-      by omega, by rw [sub_nat (by rw [esp]; omega), esp]; omega, by rw [sub_nat (by rw [esp]; omega), esp]; omega,
+      by omega_arith, by rw [sub_nat (by rw [esp]; omega_arith), esp]; omega_arith, by rw [sub_nat (by rw [esp]; omega_arith), esp]; omega_arith,
       hL⟩
     · exact O_call.symm.sub_left cA
     · exact S_call.symm.sub_left cA
@@ -198,7 +198,7 @@ theorem hcall_ok {s : State} (h : Inv s₀ s) {r : Reg} (hr : r ≠ .esp)
   have esp := h.esp
   have nesp : Reg.esp ∉ [Reg.edx, .ecx, .edi, .eax, r] := by simp [Ne.symm hr]
   have fit : 4 * [Reg.edx, .ecx, .edi, .eax, r].length + 4 ≤ (s.gpr .esp).toNat := by
-    simp only [List.length_cons, List.length_nil]; rw [esp]; omega
+    simp only [List.length_cons, List.length_nil]; rw [esp]; omega_arith
   have a0 := callEntry_arg fit nesp (i := 0) (by simp)
   have a1 := callEntry_arg fit nesp (i := 1) (by simp)
   have a2 := callEntry_arg fit nesp (i := 2) (by simp)
@@ -255,26 +255,26 @@ theorem hcall_ok {s : State} (h : Inv s₀ s) {r : Reg} (hr : r ≠ .esp)
     · exact (call_disj hp (R := outR s₀) (by simp)).symm.sub_left sO
   have S_call : (scrR s₀).Disjoint (callR s₀) := (call_disj hp (R := scrR s₀) (by simp)).symm
   -- The callee's stack, arguments and return address.
-  have e20 : (s.gpr .esp - BitVec.ofNat 32 20).toNat = (E s₀).toNat - 20 := by rw [esp, sub_nat (by omega)]
-  have e24 : (s.gpr .esp - BitVec.ofNat 32 24).toNat = (E s₀).toNat - 24 := by rw [esp, sub_nat (by omega)]
+  have e20 : (s.gpr .esp - BitVec.ofNat 32 20).toNat = (E s₀).toNat - 20 := by rw [esp, sub_nat (by omega_arith)]
+  have e24 : (s.gpr .esp - BitVec.ofNat 32 24).toNat = (E s₀).toNat - 24 := by rw [esp, sub_nat (by omega_arith)]
   have e84 : (s.gpr .esp - BitVec.ofNat 32 24 - BitVec.ofNat 32 60).toNat = (E s₀).toNat - 84 := by
-    rw [sub_nat (by omega), e24]; omega
+    rw [sub_nat (by omega_arith), e24]; omega_arith
   have cA : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 20).setWidth 64, 20⟩ (callR s₀) :=
-    in_call hp (by omega) (by omega)
+    in_call hp (by omega_arith) (by omega_arith)
   have cR : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 24).setWidth 64, 4⟩ (callR s₀) :=
-    in_call hp (by omega) (by omega)
+    in_call hp (by omega_arith) (by omega_arith)
   have cS : Region.Sub (below (s.gpr .esp - BitVec.ofNat 32 24) 60) (callR s₀) :=
-    in_call hp (by omega) (by omega)
+    in_call hp (by omega_arith) (by omega_arith)
   have a20 : argAddr (pushed [Reg.edx, .ecx, .edi, .eax, r] s).callEntry 0 =
       (s.gpr .esp - BitVec.ofNat 32 20).setWidth 64 := callEntry_argAddr0 _ _
   have ce : (pushed [Reg.edx, .ecx, .edi, .eax, r] s).callEntry.gpr .esp = s.gpr .esp - BitVec.ofNat 32 24 :=
     callEntry_esp' _ _
   have pre := hcall_pre hp h hr hdx ⟨RI, hRI, oI, bI, lI⟩ hinfit ⟨RO, hRO, oO, bO, lO⟩ houtfit hL
   refine WP.callWith HPrime.hPrime_verified.1 hPrime_nosp (by simp) nesp
-    (by rw [hPrime_stack, esp]; simp only [List.length_cons, List.length_nil]; omega) pre
+    (by rw [hPrime_stack, esp]; simp only [List.length_cons, List.length_nil]; omega_arith) pre
     fun t rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
   simp only [HPrime.hPrimeX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, a3] at post
-  have cB : Region.Sub (below (s.gpr .esp) 24) (callR s₀) := in_call hp (by rw [e24]; omega) (by rw [e24]; omega)
+  have cB : Region.Sub (below (s.gpr .esp) 24) (callR s₀) := in_call hp (by rw [e24]; omega_arith) (by rw [e24]; omega_arith)
   have cf := callEntry_frame fit nesp
   simp only [List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul, Nat.zero_add] at cf
   rw [hPrime_stack] at f'

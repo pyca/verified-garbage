@@ -87,7 +87,7 @@ theorem pre_of (s₀ : State) (h : hPrimeX86.pre s₀) : Pre s₀ := by
 
 /-- `[scratch + d]`, as the code addresses it. -/
 theorem scr_addr {s₀ : State} (hp : Pre s₀) {d : Nat} (hd : d < 16384) :
-    addr (scr s₀) d = P s₀ + BitVec.ofNat 64 d := addr_eq (by have := hp.scr_fits; omega)
+    addr (scr s₀) d = P s₀ + BitVec.ofNat 64 d := addr_eq (by have := hp.scr_fits; omega_arith)
 
 end VG.Proof.Argon2.X86.HPrime
 
@@ -178,7 +178,7 @@ theorem Ctx.stk_sub (h : Ctx B E s) {d n k : Nat} (hd : d + n ≤ 832) (hk : k �
 theorem Ctx.cov0 (h : Ctx B E s) {n : Nat} (hn : n ≤ 832) : Covers [⟨B.setWidth 64, n⟩] s.wr :=
   (Covers.of_sub (rs' := [⟨B.setWidth 64, 832⟩]) fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨_, List.mem_singleton_self _, 0, by simp, by simp; omega⟩).trans h.wr
+    exact ⟨_, List.mem_singleton_self _, 0, by simp, by simp; omega_arith⟩).trans h.wr
 
 end
 
@@ -210,7 +210,7 @@ theorem init_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {n : Nat} (hn : s.
   have hrs : Reg.esp ∉ [Reg.eax, .ecx, .edx, .ebx] := by decide
   have esp₂ : s₂.gpr .esp = E := by rw [u₂.other _ (by decide), u₁.other _ (by decide), h.esp]
   have fit : 4 * [Reg.eax, .ecx, .edx, .ebx].length + 4 ≤ (s₂.gpr .esp).toNat := by
-    rw [esp₂]; have := h.lo; simp only [List.length_cons, List.length_nil]; omega
+    rw [esp₂]; have := h.lo; simp only [List.length_cons, List.length_nil]; omega_arith
   set sE := (pushed [Reg.eax, .ecx, .edx, .ebx] s₂).callEntry with hsE
   have a0 : arg sE 0 = B := by
     rw [hsE, callEntry_arg fit hrs (by simp)]
@@ -233,7 +233,7 @@ theorem init_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {n : Nat} (hn : s.
   have d20 : (below E 20).Disjoint ⟨B.setWidth 64, 192⟩ :=
     (h.stk.sub_right stR).sub_left (below_sub (by decide) h.lo)
   refine WP.callWith (k := initX86 b) init_correct init_nosp rs hrs
-    (by rw [init_stack, esp₂]; have := h.lo; simp only [List.length_cons, List.length_nil]; omega)
+    (by rw [init_stack, esp₂]; have := h.lo; simp only [List.length_cons, List.length_nil]; omega_arith)
     (rd := [⟨(B.setWidth 64), 0⟩, ⟨argAddr sE 0, 16⟩]) (wr := [⟨B.setWidth 64, 192⟩])
     ⟨?_, ?_, ?_⟩ fun t rd' wr' cs' f' ⟨s₃, m₃, post⟩ => ?_
   · rw [← hsE]
@@ -241,22 +241,22 @@ theorem init_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {n : Nat} (hn : s.
       arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, eA, eSp]
     have mb : (64 : Nat) ≤ b.maxBytes := by decide
     refine ⟨rfl, rfl, fun _ h₁ _ => by simp [Region.Contains] at h₁, ?_, ?_,
-      by simp only [Proof.Blake2.bufOff, blockBytes]; have := h.fits; omega,
-      by simp; have := B.isLt; omega, ?_, by simp [BitVec.toNat_ofNat]; omega,
-      by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega, by simp⟩
-    · exact d20.sub_left (below_sub (by decide) (by have := h.lo; omega))
+      by simp only [Proof.Blake2.bufOff, blockBytes]; have := h.fits; omega_arith,
+      by simp; have := B.isLt; omega_arith, ?_, by simp [BitVec.toNat_ofNat]; omega_arith,
+      by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith, by simp⟩
+    · exact d20.sub_left (below_sub (by decide) (by have := h.lo; omega_arith))
     · refine d20.sub_left ?_
-      have := below_inner (sp := E) (a := 4) (b := 20) (k := 16) (by omega) (by have := h.lo; omega)
+      have := below_inner (sp := E) (a := 4) (b := 20) (k := 16) (by omega_arith) (by have := h.lo; omega_arith)
       rw [show E - BitVec.ofNat 32 20 = E - BitVec.ofNat 32 16 - BitVec.ofNat 32 4 by
         rw [← VG.Offset.sub_add_eq]; rfl]
       exact this
-    · rw [sub_toNat (by have := h.lo; omega)]; have := E.isLt; omega
+    · rw [sub_toNat (by have := h.lo; omega_arith)]; have := E.isLt; omega_arith
   · rw [esp₂, w₂]
     refine Covers.append_left (Covers.cons ?_ (Covers.cons ?_ Covers.nil)) ?_
     · intro a k ⟨r, hr, hc⟩
       simp only [List.mem_singleton] at hr; subst hr
       obtain ⟨r', hr', hc'⟩ := h.wr a k ⟨_, List.mem_singleton_self _, by
-        simp only [Region.Contains] at hc ⊢; omega⟩
+        simp only [Region.Contains] at hc ⊢; omega_arith⟩
       exact InRegions_append_cons.mpr (.inr ⟨r', List.mem_append_right _ hr', hc'⟩)
     · intro a k ⟨r, hr, hc⟩
       simp only [List.mem_singleton] at hr; subst hr
@@ -277,7 +277,7 @@ theorem init_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {n : Nat} (hn : s.
     refine ⟨?_, fun r hr => (cs' r hr).trans ?_, rd'.trans (u₂.rd.trans u₁.rd), wr'.trans w₂, ?_⟩
     · have kb : ∀ (m : Mem) (p : Addr), keyBlock 64 (bytesAt m p (BitVec.toNat (0 : BitVec 32))) = [] :=
         fun _ _ => rfl
-      rw [kb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 32 by omega)] at post
+      rw [kb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 32 by omega_arith)] at post
       exact post
     · have : r ≠ .eax ∧ r ≠ .ecx := by
         simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -302,7 +302,7 @@ theorem repr_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Add
   have hs := Proof.Blake2.sub_bufLen (w := 64) d
   have hs' := Proof.Blake2.bufLen_le_self (w := 64) d.length
   refine ⟨?_, ?_⟩
-  · rw [Proof.Blake2.stateAt_congr (fun i hi => hb i (by simp only [Proof.Blake2.bufOff] at hi; omega))]
+  · rw [Proof.Blake2.stateAt_congr (fun i hi => hb i (by simp only [Proof.Blake2.bufOff] at hi; omega_arith))]
     exact h1
   · rw [← h2]
     apply Proof.Blake2.bytesAt_congr
@@ -310,7 +310,7 @@ theorem repr_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Add
     rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     have hbb : blockBytes 64 = 128 := rfl
     rw [hbb] at hl hs hi
-    exact hb _ (by omega)
+    exact hb _ (by omega_arith)
 
 /-! ## `update` -/
 
@@ -335,7 +335,7 @@ theorem update_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {D : BitVec 32} 
   have esp₂ : s₂.gpr .esp = E := by rw [o₂ _ (by decide), h.esp]
   have hlo := h.lo
   have fit : 4 * [Reg.eax, .edi, .esi, .edx, .ecx, .ebx].length + 4 ≤ (s₂.gpr .esp).toNat := by
-    rw [esp₂]; simp only [List.length_cons, List.length_nil]; omega
+    rw [esp₂]; simp only [List.length_cons, List.length_nil]; omega_arith
   set sE := (pushed [Reg.eax, .edi, .esi, .edx, .ecx, .ebx] s₂).callEntry with hsE
   have a0 : arg sE 0 = B := by
     rw [hsE, callEntry_arg fit hrs (by simp)]; simp [o₂ .ebx (by decide), h.ebx]
@@ -356,30 +356,30 @@ theorem update_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {D : BitVec 32} 
   have w₂ : s₂.wr = s.wr := u₂.wr.trans u₁.wr
   have r₂ : s₂.rd = s.rd := u₂.rd.trans u₁.rd
   have hfit := h.fits
-  have e192 : (B + 192).setWidth 64 = B.setWidth 64 + 192 := setWidth_add (d := 192) (by omega)
+  have e192 : (B + 192).setWidth 64 = B.setWidth 64 + 192 := setWidth_add (d := 192) (by omega_arith)
   have stR : (below E 60).Disjoint ⟨B.setWidth 64, 192⟩ :=
     h.stk.sub_right (Region.sub_prefix (by decide))
   have scR : (below E 60).Disjoint ⟨B.setWidth 64 + 192, 576⟩ := h.stk_sub (d := 192) (by decide) (Nat.le_refl _)
   have stk60 : ∀ {k : Nat} {r : Region}, k ≤ 60 → (below E 60).Disjoint r → (below E k).Disjoint r :=
     fun hk d => d.sub_left (below_sub hk hlo)
   have retSub : Region.Sub ⟨(E - BitVec.ofNat 32 28).setWidth 64, 4⟩ (below E 60) := by
-    have := below_inner (sp := E) (a := 4) (b := 60) (k := 24) (by omega) hlo
+    have := below_inner (sp := E) (a := 4) (b := 60) (k := 24) (by omega_arith) hlo
     rw [show E - BitVec.ofNat 32 28 = E - BitVec.ofNat 32 24 - BitVec.ofNat 32 4 by
       rw [← VG.Offset.sub_add_eq]; rfl]
     exact this
   have calleeStk : Region.Sub ⟨(E - BitVec.ofNat 32 28).setWidth 64 - 32, 32⟩ (below E 60) := by
-    have := below_inner (sp := E) (a := 32) (b := 60) (k := 28) (by omega) hlo
+    have := below_inner (sp := E) (a := 32) (b := 60) (k := 28) (by omega_arith) hlo
     have e : (E - BitVec.ofNat 32 28 - BitVec.ofNat 32 32).setWidth 64 =
         (E - BitVec.ofNat 32 28).setWidth 64 - 32 :=
-      Taint.sub_setWidth (m := 32) (by rw [sub_toNat (by omega)]; omega)
+      Taint.sub_setWidth (m := 32) (by rw [sub_toNat (by omega_arith)]; omega_arith)
     show Region.Sub ⟨_, 32⟩ _
     rw [← e]; exact this
   have argSub : Region.Sub ⟨(E - BitVec.ofNat 32 24).setWidth 64, 24⟩ (below E 60) :=
     below_sub (by decide) hlo
   have b192 : (B + 192).toNat = B.toNat + 192 := by
-    rw [BitVec.toNat_add, show (192 : BitVec 32).toNat = 192 from rfl]; omega
+    rw [BitVec.toNat_add, show (192 : BitVec 32).toNat = 192 from rfl]; omega_arith
   refine WP.callWith (k := updateX86 b) update_correct update_nosp rs hrs
-    (by rw [update_stack, esp₂]; simp only [List.length_cons, List.length_nil]; omega)
+    (by rw [update_stack, esp₂]; simp only [List.length_cons, List.length_nil]; omega_arith)
     (rd := [⟨D.setWidth 64, L⟩, ⟨argAddr sE 0, 24⟩])
     (wr := [⟨B.setWidth 64, 192⟩, ⟨B.setWidth 64 + 192, 576⟩])
     ⟨?_, ?_, ?_⟩ fun t rd' wr' cs' f' ⟨s₃, m₃, post⟩ => ?_
@@ -398,11 +398,11 @@ theorem update_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {D : BitVec 32} 
     · exact stR.sub_left calleeStk
     · exact scR.sub_left calleeStk
     · exact hDk.sub_left calleeStk
-    · omega
-    · omega
-    · rw [b192]; omega
-    · rw [sub_toNat (by omega)]; omega
-    · rw [sub_toNat (by omega)]; have := E.isLt; omega
+    · omega_arith
+    · omega_arith
+    · rw [b192]; omega_arith
+    · rw [sub_toNat (by omega_arith)]; omega_arith
+    · rw [sub_toNat (by omega_arith)]; have := E.isLt; omega_arith
   · rw [esp₂, w₂, r₂]
     refine Covers.append_left (Covers.cons (covers_ins _ hDc) (Covers.cons (covers_frame eA _)
       Covers.nil)) (covers_ins _ (Covers.right ((h.cov0 (by decide)).pair (h.cov (d := 192) (by decide)))))
@@ -428,8 +428,8 @@ theorem update_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {D : BitVec 32} 
       exact Proof.Blake2.bytesAt_congr fun i hi =>
         hpush.bytes (R := ⟨D.setWidth 64, L⟩) (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact (stk60 (by decide) hDk).symm) (by simp; omega) hi
-    have := post h0 d reprE (by simpa using countE) (by omega)
+          exact (stk60 (by decide) hDk).symm) (by simp; omega_arith) hi
+    have := post h0 d reprE (by simpa using countE) (by omega_arith)
     rw [dataE] at this
     refine ⟨this, fun r hr => (cs' r hr).trans ?_, rd'.trans r₂, wr'.trans w₂, ?_⟩
     · have : r ≠ .eax := by
@@ -466,7 +466,7 @@ theorem finalize_ok {B E : BitVec 32} {s : State} (h : Ctx B E s)
   have hlo := h.lo
   have hfit := h.fits
   have fit : 4 * [Reg.eax, .esi, .edx, .ecx, .ebx].length + 4 ≤ (s₄.gpr .esp).toNat := by
-    rw [esp₄]; simp only [List.length_cons, List.length_nil]; omega
+    rw [esp₄]; simp only [List.length_cons, List.length_nil]; omega_arith
   set sE := (pushed [Reg.eax, .esi, .edx, .ecx, .ebx] s₄).callEntry with hsE
   have a0 : arg sE 0 = B := by
     rw [hsE, callEntry_arg fit hrs (by simp)]; simp [o₄ .ebx (by decide) (by decide), h.ebx]
@@ -489,8 +489,8 @@ theorem finalize_ok {B E : BitVec 32} {s : State} (h : Ctx B E s)
   have w₄ : s₄.wr = s.wr := u₄.wr.trans (u₃.wr.trans (u₂.wr.trans u₁.wr))
   have r₄ : s₄.rd = s.rd := u₄.rd.trans (u₃.rd.trans (u₂.rd.trans u₁.rd))
   have mE : s₄.mem = s.mem := u₄.mem.trans (u₃.mem.trans (u₂.mem.trans u₁.mem))
-  have e192 : (B + 192).setWidth 64 = B.setWidth 64 + 192 := setWidth_add (d := 192) (by omega)
-  have e768 : (B + 768).setWidth 64 = B.setWidth 64 + 768 := setWidth_add (d := 768) (by omega)
+  have e192 : (B + 192).setWidth 64 = B.setWidth 64 + 192 := setWidth_add (d := 192) (by omega_arith)
+  have e768 : (B + 768).setWidth 64 = B.setWidth 64 + 768 := setWidth_add (d := 768) (by omega_arith)
   have stR : (below E 60).Disjoint ⟨B.setWidth 64, 192⟩ :=
     (h.stk.sub_right (Region.sub_prefix (by decide)))
   have scR : (below E 60).Disjoint ⟨B.setWidth 64 + 192, 576⟩ := h.stk_sub (d := 192) (by decide) (Nat.le_refl _)
@@ -498,23 +498,23 @@ theorem finalize_ok {B E : BitVec 32} {s : State} (h : Ctx B E s)
   have argSub : Region.Sub ⟨(E - BitVec.ofNat 32 20).setWidth 64, 20⟩ (below E 60) :=
     below_sub (by decide) hlo
   have retSub : Region.Sub ⟨(E - BitVec.ofNat 32 24).setWidth 64, 4⟩ (below E 60) := by
-    have := below_inner (sp := E) (a := 4) (b := 60) (k := 20) (by omega) hlo
+    have := below_inner (sp := E) (a := 4) (b := 60) (k := 20) (by omega_arith) hlo
     rw [show E - BitVec.ofNat 32 24 = E - BitVec.ofNat 32 20 - BitVec.ofNat 32 4 by
       rw [← VG.Offset.sub_add_eq]; rfl]
     exact this
   have calleeStk : Region.Sub ⟨(E - BitVec.ofNat 32 24).setWidth 64 - 32, 32⟩ (below E 60) := by
-    have := below_inner (sp := E) (a := 32) (b := 60) (k := 24) (by omega) hlo
+    have := below_inner (sp := E) (a := 32) (b := 60) (k := 24) (by omega_arith) hlo
     have e : (E - BitVec.ofNat 32 24 - BitVec.ofNat 32 32).setWidth 64 =
         (E - BitVec.ofNat 32 24).setWidth 64 - 32 :=
-      Taint.sub_setWidth (m := 32) (by rw [sub_toNat (by omega)]; omega)
+      Taint.sub_setWidth (m := 32) (by rw [sub_toNat (by omega_arith)]; omega_arith)
     show Region.Sub ⟨_, 32⟩ _
     rw [← e]; exact this
   have b192 : (B + 192).toNat = B.toNat + 192 := by
-    rw [BitVec.toNat_add, show (192 : BitVec 32).toNat = 192 from rfl]; omega
+    rw [BitVec.toNat_add, show (192 : BitVec 32).toNat = 192 from rfl]; omega_arith
   have b768 : (B + 768).toNat = B.toNat + 768 := by
-    rw [BitVec.toNat_add, show (768 : BitVec 32).toNat = 768 from rfl]; omega
+    rw [BitVec.toNat_add, show (768 : BitVec 32).toNat = 768 from rfl]; omega_arith
   refine WP.callWith (k := finalizeX86 b) finalize_correct finalize_nosp rs hrs
-    (by rw [finalize_stack, esp₄]; simp only [List.length_cons, List.length_nil]; omega)
+    (by rw [finalize_stack, esp₄]; simp only [List.length_cons, List.length_nil]; omega_arith)
     (rd := [⟨argAddr sE 0, 20⟩])
     (wr := [⟨B.setWidth 64, 192⟩, ⟨B.setWidth 64 + 768, 64⟩, ⟨B.setWidth 64 + 192, 576⟩])
     ⟨?_, ?_, ?_⟩ fun t rd' wr' cs' f' ⟨s₃, m₃, post⟩ => ?_
@@ -535,11 +535,11 @@ theorem finalize_ok {B E : BitVec 32} {s : State} (h : Ctx B E s)
     · exact stR.sub_left calleeStk
     · exact dgR.sub_left calleeStk
     · exact scR.sub_left calleeStk
-    · omega
-    · rw [b768]; omega
-    · rw [b192]; omega
-    · rw [sub_toNat (by omega)]; omega
-    · rw [sub_toNat (by omega)]; have := E.isLt; omega
+    · omega_arith
+    · rw [b768]; omega_arith
+    · rw [b192]; omega_arith
+    · rw [sub_toNat (by omega_arith)]; omega_arith
+    · rw [sub_toNat (by omega_arith)]; have := E.isLt; omega_arith
   · rw [esp₄, w₄, r₄]
     refine Covers.append_left (Covers.cons (covers_frame eA _) Covers.nil)
       (covers_ins _ (Covers.right ((h.cov0 (by decide)).cons ((h.cov (d := 768) (by decide)).pair

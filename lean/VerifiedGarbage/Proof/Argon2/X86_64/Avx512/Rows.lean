@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Mem
 import VerifiedGarbage.Proof.Argon2.PermuteMany
 import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Argon2 on x86-64 with AVX-512: P on two rows
@@ -64,12 +65,12 @@ theorem round_then {s : State} {Q : State → Prop} (h : Q (zrun roundOps s)) :
 
 theorem loadRows_ok {pp : Nat} (hp : pp < 4) {s : State} {p : Addr} (hs : Scratch s p) :
     WP isa (.block (loadRows pp)) s fun t =>
-      (∀ h (hh : h < 2), words t h = gather (rowIndex ⟨2 * pp + h, by omega⟩) (blockAt s.mem p)) ∧
+      (∀ h (hh : h < 2), words t h = gather (rowIndex ⟨2 * pp + h, by omega_arith⟩) (blockAt s.mem p)) ∧
       t.mem = s.mem ∧ VKeep s t := by
-  have r0 := hs.read (d := 256 * pp) (n := 64) (by omega)
-  have r1 := hs.read (d := 256 * pp + 64) (n := 64) (by omega)
-  have r2 := hs.read (d := 256 * pp + 128) (n := 64) (by omega)
-  have r3 := hs.read (d := 256 * pp + 192) (n := 64) (by omega)
+  have r0 := hs.read (d := 256 * pp) (n := 64) (by omega_arith)
+  have r1 := hs.read (d := 256 * pp + 64) (n := 64) (by omega_arith)
+  have r2 := hs.read (d := 256 * pp + 128) (n := 64) (by omega_arith)
+  have r3 := hs.read (d := 256 * pp + 192) (n := 64) (by omega_arith)
   apply WP.of_runBlock
   simp only [loadRows, runBlock_cons, runStep_some, runBlock_nil, exec, State.load512, ea_at,
     State.setZ_rd, State.setZ_wr, State.setZ_gpr, State.setZ_mem, hs.reg, r0, r1, r2, r3, ite_true,
@@ -78,15 +79,15 @@ theorem loadRows_ok {pp : Nat} (hp : pp < 4) {s : State} {p : Addr} (hs : Scratc
   · apply Vector.ext
     intro j hj
     have hk : j % 4 < 4 := Nat.mod_lt _ (by decide)
-    rw [words_get _ _ _ hj, show (gather (rowIndex ⟨2 * pp + h, by omega⟩) (blockAt s.mem p))[j] =
-        (blockAt s.mem p)[rowIndex ⟨2 * pp + h, by omega⟩ ⟨j, hj⟩] from gather_get _ _ ⟨j, hj⟩,
+    rw [words_get _ _ _ hj, show (gather (rowIndex ⟨2 * pp + h, by omega_arith⟩) (blockAt s.mem p))[j] =
+        (blockAt s.mem p)[rowIndex ⟨2 * pp + h, by omega_arith⟩ ⟨j, hj⟩] from gather_get _ _ ⟨j, hj⟩,
       blockAt_get]
     simp only [rowIndex]
-    rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl <;>
+    rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl <;>
       rcases cases_div4 hj with e | e | e | e <;> rw [e] <;>
-      simp (disch := omega) only [vreg, qz_vshufi32x4, qz_load, sel4_44, sel4_ee, ↓reduceIte,
-        reduceCtorEq, show (4 * 0 + j % 4) / 2 < 2 by omega, show ¬ (4 * 1 + j % 4) / 2 < 2 by omega] <;>
-      refine congrArg (Mem.readW _ · 64) (Offset.add_add_eq _ ?_) <;> omega
+      simp (disch := omega_arith) only [vreg, qz_vshufi32x4, qz_load, sel4_44, sel4_ee, ↓reduceIte,
+        reduceCtorEq, show (4 * 0 + j % 4) / 2 < 2 by omega_arith, show ¬ (4 * 1 + j % 4) / 2 < 2 by omega_arith] <;>
+      refine congrArg (Mem.readW _ · 64) (Offset.add_add_eq _ ?_) <;> omega_arith
   · exact (((((((setZ_vkeep _ _ _ _ _ _).trans (setZ_vkeep _ _ _ _ _ _)).trans
       (setZ_vkeep _ _ _ _ _ _)).trans (setZ_vkeep _ _ _ _ _ _)).trans (zop_vkeep _ _)).trans
       (zop_vkeep _ _)).trans (zop_vkeep _ _)).trans (zop_vkeep _ _)
@@ -96,11 +97,11 @@ theorem loadRows_ok {pp : Nat} (hp : pp < 4) {s : State} {p : Addr} (hs : Scratc
 /-- The working half of scratch contains the chunk at `colOff c k`. -/
 theorem colOff_contains (p : Addr) {c k : Nat} (hc : c < 4) (hk : k < 4) :
     (⟨off p 1024, 1024⟩ : Region).Contains (off p (colOff c k)) 64 :=
-  Offset.contains p (by unfold colOff; omega) (by unfold colOff; omega) (by omega)
+  Offset.contains p (by unfold colOff; omega_arith) (by unfold colOff; omega_arith) (by omega_arith)
 
 theorem colOff_write {s : State} {p : Addr} (hs : Scratch s p) {c k : Nat} (hc : c < 4) (hk : k < 4) :
     InRegions s.wr (off p (colOff c k)) 64 :=
-  hs.write (by unfold colOff; omega)
+  hs.write (by unfold colOff; omega_arith)
 
 /-- The quadword `vshufi32x4` with `0xd8` moves to quadword `cvQ i`. -/
 theorem rowQ : ∀ i < 128, 2 * sel4 (0xd8 : BitVec 8).toNat (cvQ i / 2) + cvQ i % 2 =
@@ -148,18 +149,18 @@ theorem storeRows_prefix {pp : Nat} (hp : pp < 4) (n : Nat) (hn : n ≤ 4) {s : 
     simp only [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil]
     apply WP.block_append
-    refine (ih (by omega)).mono ?_
+    refine (ih (by omega_arith)).mono ?_
     rintro t ⟨hc, hf, hk, hr⟩
-    refine (storeRow_ok hp (k := n) (by omega) (hs.of_vkeep hk)).mono ?_
+    refine (storeRow_ok hp (k := n) (by omega_arith) (hs.of_vkeep hk)).mono ?_
     rintro u ⟨hc', hf', hk', hr'⟩
     refine ⟨fun i hi => ?_, hf.trans hf', hk.trans hk', fun r h e he => (hr' r h e he).trans (hr r h e he)⟩
-    rw [hc' i hi, hr _ (vreg_ne4 n) _ (by omega), hc i hi]
+    rw [hc' i hi, hr _ (vreg_ne4 n) _ (by omega_arith), hc i hi]
     by_cases h1 : i % 16 / 4 = n ∧ i / 32 = pp
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ite_eq_left_of_eq_true _ _ (eq_true (by omega)), h1.1]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith)), h1.1]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
       by_cases h2 : i % 16 / 4 < n ∧ i / 32 = pp
-      · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ite_eq_left_of_eq_true _ _ (eq_true (by omega))]
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+      · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith))]
+      · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))]
 
 /-! ## Two rows -/
 
@@ -167,7 +168,7 @@ theorem storeRows_prefix {pp : Nat} (hp : pp < 4) (n : Nat) (hn : n ≤ 4) {s : 
 theorem rows_ok {pp : Nat} (hp : pp < 4) {s : State} {p : Addr} (hs : Scratch s p) :
     WP isa (rows pp) s fun t =>
       (∀ i (hi : i < 128), (cv t.mem p)[i] = if i / 32 = pp then
-        (permute (gather (rowIndex ⟨i / 16, by omega⟩) (blockAt s.mem p)))[i % 16]'(by omega)
+        (permute (gather (rowIndex ⟨i / 16, by omega_arith⟩) (blockAt s.mem p)))[i % 16]'(by omega_arith)
         else (cv s.mem p)[i]) ∧
       Frame [⟨off p 1024, 1024⟩] s.mem t.mem ∧ VKeep s t := by
   unfold rows
@@ -183,14 +184,14 @@ theorem rows_ok {pp : Nat} (hp : pp < 4) {s : State} {p : Addr} (hs : Scratch s 
   refine ⟨fun i hi => ?_, hf, hk1.trans ((zrun_vkeep _ _).trans hk)⟩
   rw [hc i hi]
   by_cases h : i / 32 = pp
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega)), ite_eq_left_of_eq_true _ _ (eq_true h)]
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith)), ite_eq_left_of_eq_true _ _ (eq_true h)]
     have hh : i / 16 % 2 < 2 := Nat.mod_lt _ (by decide)
-    have e := congrArg (fun v : Vector Word 16 => v[i % 16]'(by omega))
+    have e := congrArg (fun v : Vector Word 16 => v[i % 16]'(by omega_arith))
       ((round_words t1 hh).trans (congrArg permute (hw1 _ hh)))
-    simp only [words_get _ _ _ (show i % 16 < 16 by omega), show i % 16 % 4 = i % 4 by omega] at e
+    simp only [words_get _ _ _ (show i % 16 < 16 by omega_arith), show i % 16 % 4 = i % 4 by omega_arith] at e
     rw [e]
-    have er : (⟨2 * pp + i / 16 % 2, by omega⟩ : Fin 8) = ⟨i / 16, by omega⟩ := Fin.ext (by simp only; omega)
+    have er : (⟨2 * pp + i / 16 % 2, by omega_arith⟩ : Fin 8) = ⟨i / 16, by omega_arith⟩ := Fin.ext (by simp only; omega_arith)
     rw [er]
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false h)]
+  · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith)), ite_eq_right_of_eq_false _ _ (eq_false h)]
 
 end VG.Proof.Argon2.X86_64.Avx512
