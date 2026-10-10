@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Spec.X25519.Field64
 
 /-!
 # X25519: x86-64 implementation
@@ -36,7 +37,8 @@ other multiplications:
 
 The ladder follows RFC 7748 §5 (in another order, `step`), over the bits of `k`
 from 254 down to 0 (the counter `rbx`, which indexes `BITS`), and the
-inversion `z2^(p-2)` is by Bernstein–Yang divsteps (`invertDS`).
+inversion `z2^(p-2)` is by Bernstein–Yang divsteps (`invertDS`), a call of
+`vg_gf25519_r64_invert` (`invertCall`).
 
 The only branches are on the loop counters, and every address is a pointer
 plus a constant or a counter, so only the pointers can affect timing.
@@ -575,6 +577,24 @@ def dsel : List Instr :=
 def invertDS (F : Field) : Prog isa :=
   .seq (.block dinit) (.seq (.loop dbatch .ne) (.block (dsel ++ F.mul T1 T1 dsK)))
 
+/-- The callee-saved registers the inversion writes, into `xmm0`–`xmm5`. -/
+def invSaves : List Instr :=
+  [.xop (.movq .xmm0 .rbx), .xop (.movq .xmm1 .rbp), .xop (.movq .xmm2 .r12),
+    .xop (.movq .xmm3 .r13), .xop (.movq .xmm4 .r14), .xop (.movq .xmm5 .r15)]
+
+/-- The callee-saved registers back from `xmm0`–`xmm5`. -/
+def invRestores : List Instr :=
+  [.movqR .rbx .xmm0, .movqR .rbp .xmm1, .movqR .r12 .xmm2, .movqR .r13 .xmm3, .movqR .r14 .xmm4,
+    .movqR .r15 .xmm5]
+
+/-- `vg_gf25519_r64_invert(ws = rdi)`: `[T1] = [Z2]^(p-2)` by divsteps, with the
+baseline multiplication, the callee-saved registers kept in `xmm0`–`xmm5`. -/
+def invertFn : Prog isa := .seq (.block invSaves) (.seq (invertDS baseline) (.block invRestores))
+
+/-- A call of `vg_gf25519_r64_invert`, which every inversion of the x86-64 code
+is (`ws` in `rdi`). -/
+def invertCall : Prog isa := .call Spec.X25519.Field64.invertApi.name invertFn
+
 /-- The callee-saved registers we use, and where they are saved. -/
 def saved : List (Reg × Nat) :=
   [(.rbx, 0), (.rbp, 8), (.r12, 16), (.r13, 24), (.r14, 32), (.r15, 40)]
@@ -615,7 +635,7 @@ working space as `ladder` does) and the field multiplications `F` for the
 inversion. -/
 def x25519Of (F : Field) (lad : Prog isa) : Prog isa :=
   .seq (.block setup) <| .seq bits <| .seq (.block [.mov .rsi (.reg .r12)]) <| .seq lad <|
-    .seq (.block lastSwap) <| .seq (invertDS F) (.block (finish F))
+    .seq (.block lastSwap) <| .seq invertCall (.block (finish F))
 
 /-- X25519 with the field multiplications `F`. -/
 def x25519With (F : Field) : Prog isa := x25519Of F (ladder F)

@@ -30,6 +30,7 @@ end VG.Proof.X25519.X86_64.Lit
 
 namespace VG
 
+materialize_code Impl.X25519.X86_64.invertFn
 materialize_code Impl.X25519.X86_64.x25519
 
 end VG
