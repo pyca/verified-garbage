@@ -90,7 +90,7 @@ theorem keyW_entry {s : State} {b : Addr} {m : Nat} (hk : AtEntry s b m) (e j : 
   simp only [keyW, wordAddr, entryW]
   rw [hk, addr_add, show 8 * keySlot + 64 * m + 8 * (8 * e + j) = 8 * keySlot + 64 * (m + e) + 8 * j by omega]
 
-theorem slots_eq : slots = 394 := rfl
+theorem slots_eq : slots = 406 := rfl
 theorem tailSlot_eq : tailSlot = 378 := rfl
 theorem keySlot_eq : keySlot = 96 := rfl
 theorem endSlot_eq : endSlot = 368 := rfl

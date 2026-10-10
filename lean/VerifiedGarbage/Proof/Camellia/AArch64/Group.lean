@@ -318,7 +318,7 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n g : Nat} {E : Nat → BitVec
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact Region.sub_prefix (by rw [slots_eq, keySlot_eq]; omega)
-      · exact subS (by rw [slots_eq, tailSlot_eq])
+      · exact subS (by rw [slots_eq, tailSlot_eq]; omega)
     · simp only [List.mem_singleton] at hr; subst hr; exact VG.Offset.sub_base D (by omega)
   -- The blocks the eight-block code read are the group's, as on entry.
   have hblk : ∀ j < c, blk s₃ j = Spec.Camellia.blockAt s₀.mem (D + BitVec.ofNat 64 (16 * (8 * k + j))) := by
@@ -357,7 +357,7 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n g : Nat} {E : Nat → BitVec
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
           · exact Region.sub_prefix (by rw [slots_eq, keySlot_eq]; omega)
-          · exact subS (by rw [slots_eq, tailSlot_eq])) (by simp only; omega) hin,
+          · exact subS (by rw [slots_eq, tailSlot_eq]; omega)) (by simp only; omega) hin,
         f₃'.bytes (R := ⟨D, 16 * n⟩) (hdS fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact subS (by rw [slots_eq, tailSlot_eq]; omega))
           (by simp only; omega) hin,

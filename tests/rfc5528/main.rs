@@ -2,7 +2,7 @@
 //! byte-for-byte vendored RFC, and the increment of the counter block across
 //! its words and past `2¹²⁸`, against Camellia-ECB on the counter blocks.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use verified_garbage::camellia_ctr::{CamelliaCtr, InvalidKeyLength};
 use verified_garbage::camellia_ecb::CamelliaEcb;

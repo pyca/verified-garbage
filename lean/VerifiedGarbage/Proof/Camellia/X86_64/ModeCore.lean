@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Camellia.X86_64.Ecb
 import VerifiedGarbage.Proof.Modes.X86_64.Core
 import VerifiedGarbage.Impl.Camellia.X86_64.Ctr
-import VerifiedGarbage.Spec.Camellia.Ctr
+import VerifiedGarbage.Proof.Camellia.CtrCipher
 
 /-!
 # Camellia's core for the modes on x86-64
@@ -20,7 +20,7 @@ namespace VG.Proof.Camellia.X86_64
 open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Camellia.X86_64
 open VG.Impl.Aes.X86_64 (sb t0 setMasks st movS)
 open VG.Proof.Modes.X86_64 (ScrIn coreRegion bufRegion bufAddr Layout CoreSpec modeRegs of_not_modeRegs)
-open VG.Proof.Camellia (schedWords schedWords_getD wordAt_frame encryptWith_eq)
+open VG.Proof.Camellia (schedWords schedWords_getD wordAt_frame bytesAt_eq_blockAt cipher_bytes)
 
 /-- The number of rounds in `rsi` and the schedule at `rdi`, outside the
 regions `rs`. -/
@@ -140,23 +140,6 @@ theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Nat × List (B
       simp only [List.mem_singleton] at hr; subst hr; exact hcore (by rw [keySlot_eq, tailSlot_eq]; omega)⟩).trans
       (kf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
         simp only [List.mem_singleton] at hr; subst hr; exact hcore (by rw [endSlot_eq, tailSlot_eq]; omega)⟩)
-
-theorem bytesAt_eq_blockAt (m : Mem) (p : Addr) :
-    Spec.Aes.bytesAt m p 16 = (Spec.Camellia.blockAt m p).toList := by
-  apply List.ext_getElem (by simp [Spec.Aes.bytesAt])
-  intro i h1 h2
-  simp [Spec.Aes.bytesAt, Spec.Camellia.blockAt]
-
-theorem ofFn_toList (v : Spec.Camellia.Block) : (Vector.ofFn fun i : Fin 16 => v.toList.getD i.val 0) = v := by
-  apply Vector.ext; intro i hi
-  simp
-
-/-- The cipher on a block in memory: `crypt8`'s words. -/
-theorem cipher_bytes {R : Nat} (hR : R = 18 ∨ R = 24) (ws : List (BitVec 64)) (m : Mem) (p : Addr) :
-    Spec.Camellia.cipher (Spec.Camellia.subkeysOfWords R ws) (Spec.Aes.bytesAt m p 16) =
-      (Spec.Camellia.encodeBlock (cryptWords (R / 6) (fun i => ws.getD i 0)
-        (Spec.Camellia.decodeBlock (Spec.Camellia.blockAt m p)))).toList := by
-  rw [Spec.Camellia.cipher, bytesAt_eq_blockAt, ofFn_toList, Spec.Camellia.encryptBlock, encryptWith_eq hR]
 
 /-- The masks and the table below the postwhitening's entry, through a
 change of memory that keeps the words below it. -/
