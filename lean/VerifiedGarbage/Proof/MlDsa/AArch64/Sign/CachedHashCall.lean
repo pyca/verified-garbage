@@ -1,5 +1,131 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashGlue
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
+import VerifiedGarbage.Spec.MlDsa.CommitTail
+
+/-! ## From `CommitTailCall.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Sign.CommitTail
+open VG VG.AArch64 VG.Spec.MlDsa
+
+theorem callee65 {S : Nat} (hS : S<2^64) :
+    CalleeOk S (Impl.MlDsa.AArch64.Sign.CommitTail.code 768 48)
+      (commitTailContract AArch64.abi 768 48 S) :=
+  CalleeOk.of_verified hS verified65 (by omega) (by
+    have h : (Impl.MlDsa.AArch64.Sign.CommitTail.code 768 48).aarch64Depth=0 := by decide
+    rw [h]; omega)
+
+theorem callee87 {S : Nat} (hS : S<2^64) :
+    CalleeOk S (Impl.MlDsa.AArch64.Sign.CommitTail.code 1024 64)
+      (commitTailContract AArch64.abi 1024 64 S) :=
+  CalleeOk.of_verified hS verified87 (by omega) (by
+    have h : (Impl.MlDsa.AArch64.Sign.CommitTail.code 1024 64).aarch64Depth=0 := by decide
+    rw [h]; omega)
+
+end VG.Proof.MlDsa.AArch64.Sign.CommitTail
+
+end
+
+/-! ## From `CachedHashPre.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Sign.Cached
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.Sign
+open VG.Impl.MlDsa.AArch64.Call (sc Arg)
+open VG.Impl.MlDsa.AArch64.Sign.Cached (hashArgs)
+
+def hashReads (p : Params) (s : State) : List Region :=
+  [⟨pa s (.x26,0),64⟩,⟨pa s (sc oW1),p.k*w1Len p⟩,⟨pa s (sc oMS),64⟩]
+def hashWrites (p : Params) (s : State) : List Region :=
+  [⟨pa s (sc oCT),cLen p⟩,⟨pa s t1P,2048⟩,⟨pa s t4P,1024⟩]
+
+theorem hash_pre {p : Params} (hp : p=mlDsa65 ∨ p=mlDsa87) {S : Nat} {s s1 : State}
+    (L : Lay S (sgR p) (sgW p) s) (h1 : Args (hashArgs p) s s1) :
+    (commitTailContract abi (p.k*w1Len p) (cLen p) S).pre
+      (s1.callEntry.withRegions (hashReads p s) (hashWrites p s)) := by
+  sig_pre [commitTailContract,commitTailSig,AArch64.abi,VG.AArch64.argRegs]
+  rw [h1.ptr (r:=.x0) (p:=(.x26,0)) (by simp [hashArgs]),
+    h1.ptr (r:=.x1) (p:=sc oW1) (by simp [hashArgs]),
+    h1.ptr (r:=.x2) (p:=sc oCT) (by simp [hashArgs]),
+    h1.ptr (r:=.x3) (p:=t1P) (by simp [hashArgs]),
+    h1.ptr (r:=.x4) (p:=sc oMS) (by simp [hashArgs]),
+    h1.ptr (r:=.x6) (p:=t4P) (by simp [hashArgs]),Args.sp h1]
+  simp only [hashReads,hashWrites]
+  and_intros
+  all_goals first
+    | with_reducible rfl
+    | exact True.intro
+    | exact wfP_of (Lay.spS L)
+    | exact resv fun _ hr=>by
+        rw [stackBelow_mem hr]
+        refine conj_cons (L.stkD (p:=(.x26,0)) (l:=64) (by rcases hp with rfl|rfl <;> decide)) ?_
+        refine conj_cons (L.stkD (p:=sc oW1) (l:=p.k*w1Len p) (by rcases hp with rfl|rfl <;> decide)) ?_
+        refine conj_cons (L.stkD (p:=sc oCT) (l:=cLen p) (by rcases hp with rfl|rfl <;> decide)) ?_
+        refine conj_cons (L.stkD (p:=t1P) (l:=2048) (by rcases hp with rfl|rfl <;> decide)) ?_
+        refine conj_cons (L.stkD (p:=sc oMS) (l:=64) (by rcases hp with rfl|rfl <;> decide)) ?_
+        exact conj_cons (L.stkD (p:=t4P) (l:=1024) (by rcases hp with rfl|rfl <;> decide)) conj_nil
+    | exact Lay.disj L (by rcases hp with rfl|rfl <;> decide)
+    | exact (Lay.disj L (by rcases hp with rfl|rfl <;> decide)).symm
+    | exact Lay.nwp L (by rcases hp with rfl|rfl <;> decide)
+
+end VG.Proof.MlDsa.AArch64.Sign.Cached
+
+end
+
+/-! ## From `CachedHashGlue.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Sign.Cached
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.Sign
+open VG.Impl.MlDsa.AArch64.Call (sc Arg glue)
+open VG.Impl.MlDsa.AArch64.Sign.Cached (hashArgs)
+open VG.Proof.MlKem.AArch64 (Only wp_nil)
+
+/-- The nonce lives in x9, which these seven argument moves preserve. -/
+theorem hashGlue_ok (p : Params) (s : State) :
+    WP isa (.block (glue (hashArgs p))) s (Args (hashArgs p) s) := by
+  simp only [hashArgs,glue,Arg.instrs]
+  refine lea_ok (by decide) 0 fun s0 h0 e0 => ?_
+  refine lea_ok (by decide) oW1 fun s1 h1 e1 => ?_
+  refine lea_ok (by decide) oCT fun s2 h2 e2 => ?_
+  refine lea_ok (by decide) t1P.2 fun s3 h3 e3 => ?_
+  refine lea_ok (by decide) oMS fun s4 h4 e4 => ?_
+  refine lea_ok (by decide) 0 fun s5 h5 e5 => ?_
+  refine lea_ok (by decide) t4P.2 fun s6 h6 e6 => ?_
+  have h := (((((h0.trans h1).trans h2).trans h3).trans h4).trans h5).trans h6
+  apply wp_nil
+  refine ⟨⟨?_,h.mem⟩,h.keep.mono (by decide)⟩
+  simp only [List.mem_cons,List.not_mem_nil,forall_eq_or_imp,false_implies,implies_true,and_true,
+    Arg.val,pa]
+  and_intros
+  · rw [h6.get .x0 (by decide),h5.get .x0 (by decide),h4.get .x0 (by decide),
+      h3.get .x0 (by decide),h2.get .x0 (by decide),h1.get .x0 (by decide),e0]
+  · rw [h6.get .x1 (by decide),h5.get .x1 (by decide),h4.get .x1 (by decide),
+      h3.get .x1 (by decide),h2.get .x1 (by decide),e1,h0.get .x28 (by decide)]
+  · rw [h6.get .x2 (by decide),h5.get .x2 (by decide),h4.get .x2 (by decide),
+      h3.get .x2 (by decide),e2,h1.get .x28 (by decide),h0.get .x28 (by decide)]
+  · rw [h6.get .x3 (by decide),h5.get .x3 (by decide),h4.get .x3 (by decide),e3,
+      h2.get .x28 (by decide),h1.get .x28 (by decide),h0.get .x28 (by decide)]
+  · rw [h6.get .x4 (by decide),h5.get .x4 (by decide),e4,h3.get .x28 (by decide),
+      h2.get .x28 (by decide),h1.get .x28 (by decide),h0.get .x28 (by decide)]
+  · rw [h6.get .x5 (by decide),e5,h4.get .x9 (by decide),h3.get .x9 (by decide),
+      h2.get .x9 (by decide),h1.get .x9 (by decide),h0.get .x9 (by decide)]
+  · rw [e6,h5.get .x28 (by decide),h4.get .x28 (by decide),h3.get .x28 (by decide),
+      h2.get .x28 (by decide),h1.get .x28 (by decide),h0.get .x28 (by decide)]
+
+end VG.Proof.MlDsa.AArch64.Sign.Cached
+
+end
+
+/-! ## From `CachedHashCall.lean` -/
+
+section
 
 namespace VG.Proof.MlDsa.AArch64.Sign.Cached
 open VG VG.AArch64 VG.Spec.MlDsa
@@ -62,3 +188,5 @@ theorem hashReady_ok {p : Params} (hp : p=mlDsa65 ∨ p=mlDsa87)
     (hash_cov hp L).1 (hash_cov hp L).2
 
 end VG.Proof.MlDsa.AArch64.Sign.Cached
+
+end
