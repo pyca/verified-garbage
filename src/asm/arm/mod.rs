@@ -233,6 +233,9 @@ pub(crate) mod sha3;
 pub(crate) mod sha512;
 
 #[rustfmt::skip]
+pub(crate) mod sm4;
+
+#[rustfmt::skip]
 pub(crate) mod triple_des;
 
 #[rustfmt::skip]
