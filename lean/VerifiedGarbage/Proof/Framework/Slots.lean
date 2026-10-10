@@ -111,6 +111,18 @@ def removeAll (S : Slots) (d w : Nat) : Slots := S.map fun m => Nat.xor m (Nat.l
 /-- Only the bytes of `keep` kept public, in every region. -/
 def keepAll (S : Slots) (keep : Nat) : Slots := S.map fun m => Nat.land m keep
 
+/-- No byte is public. -/
+def isNone (S : Slots) : Bool := S.masks.all fun m => Nat.beq m 0
+
+/-- The bytes public in either. -/
+def unionL : List Nat → List Nat → List Nat
+  | a :: s, b :: t => Nat.lor a b :: unionL s t
+  | [], t => t
+  | s, [] => s
+
+/-- The bytes public in either. -/
+def union (S T : Slots) : Slots := ⟨unionL S.masks T.masks⟩
+
 /-- Every byte public in `S` is public in `T`, as a proposition. -/
 def Sub (S T : Slots) : Prop := ∀ i k, S.has i k = true → T.has i k = true
 
@@ -225,6 +237,45 @@ theorem has_inter (S T : Slots) (i k : Nat) : (S.inter T).has i k = (S.has i k &
         show (Nat.land a b).testBit k = _
         rw [show Nat.land a b = a &&& b from rfl, Nat.testBit_and]; rfl
       | succ i => exact ih i t
+
+theorem has_union (S T : Slots) (i k : Nat) : (S.union T).has i k = (S.has i k || T.has i k) := by
+  simp only [has_eq, get_eq, union]
+  obtain ⟨s⟩ := S; obtain ⟨t⟩ := T
+  simp only
+  induction s generalizing t i with
+  | nil => cases t <;> simp [unionL]
+  | cons a s ih => cases t with
+    | nil => simp [unionL]
+    | cons b t => cases i with
+      | zero =>
+        show (Nat.lor a b).testBit k = _
+        rw [show Nat.lor a b = a ||| b from rfl, Nat.testBit_or]; rfl
+      | succ i => exact ih i t
+
+theorem isNone_iff (S : Slots) : S.isNone = true ↔ ∀ i k, S.has i k = false := by
+  simp only [isNone, has_eq, get_eq, List.all_eq_true, beq_eq, beq_iff_eq]
+  obtain ⟨s⟩ := S
+  simp only
+  constructor
+  · intro h i k
+    by_cases hi : i < s.length
+    · rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some,
+        h _ (List.getElem_mem hi), Nat.zero_testBit]
+    · rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega), Option.getD_none, Nat.zero_testBit]
+  · intro h m hm
+    obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hm
+    apply Nat.eq_of_testBit_eq; intro k
+    have := h i k
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi, Option.getD_some] at this
+    rw [this, Nat.zero_testBit]
+
+theorem isNone_of_sub {S T : Slots} (h : S.Sub T) (hT : T.isNone = true) : S.isNone = true :=
+  (isNone_iff S).mpr fun i k => by
+    cases hk : S.has i k
+    · rfl
+    · have := h i k hk; rw [(isNone_iff T).mp hT i k] at this; cases this
+
+theorem isNone_empty : empty.isNone = true := rfl
 
 theorem subset_iff (S T : Slots) : S.subset T = true ↔ ∀ i k, S.has i k = true → T.has i k = true := by
   simp only [has_eq, get_eq, subset]
