@@ -22,8 +22,8 @@ variable {c : Core}
 /-- A byte of the data before block `j`: the ciphertext's below it, block
 `j` as `Pⱼ ⊕ Cⱼ₋₁`, the plaintext's above. -/
 def encByte (ciph : Spec.Cbc.Cipher) (m₀ : Mem) (D : Addr) (iv : List Byte) (j i : Nat) : Byte :=
-  if i < 16 * j then (cbcEncC ciph m₀ D iv (i / 16)).getD (i % 16) 0
-  else if i < 16 * (j + 1) then m₀ (D + BitVec.ofNat 64 i) ^^^ (cbcEncPrev ciph m₀ D iv j).getD (i - 16 * j) 0
+  if i < 16 * j then (cbcEncC 16 ciph m₀ D iv (i / 16)).getD (i % 16) 0
+  else if i < 16 * (j + 1) then m₀ (D + BitVec.ofNat 64 i) ^^^ (cbcEncPrev 16 ciph m₀ D iv j).getD (i - 16 * j) 0
   else m₀ (D + BitVec.ofNat 64 i)
 
 /-- The data loop, before block `j`; `m₀` is the memory on entry. -/
@@ -45,7 +45,7 @@ structure EDone (cs : CoreSpec c) (s₀ : State) (m₀ : Mem) (B D : Addr) (n : 
     (s : State) : Prop where
   base : s.gpr sb = B
   saved : ∀ i < 10, s.mem.readW (wordAddr B (c.slots + i)) 64 = s₀.mem.readW (wordAddr B (c.slots + i)) 64
-  data : DInv m₀ s.mem D n n (cbcEncC (cs.cipher k) m₀ D iv)
+  data : DInv 16 m₀ s.mem D n n (cbcEncC 16 (cs.cipher k) m₀ D iv)
   frame : Frame [⟨B, 8 * c.total⟩, ⟨D, 16 * n⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
@@ -107,8 +107,8 @@ theorem cbcEncBlock_wp (cs : CoreSpec c) {s₀ : State} {m₀ : Mem} {B D : Addr
     fun s₂ ⟨base₂, dr₂, lr₂, ready₂, f₂, ks₂, rd₂, wr₂⟩ => ?_)
   have eT : bufAddr c B 0 = T := by simp only [bufAddr, T, wordAddr, Nat.mul_zero, Nat.add_zero]
   -- The bytes of block `j`, and its encryption.
-  have blk : bytesAt s.mem A 16 = Spec.Cbc.xor (bytesAt m₀ A 16) (cbcEncPrev ciph m₀ D iv j) := by
-    have hpl : (cbcEncPrev ciph m₀ D iv j).length = 16 := by
+  have blk : bytesAt s.mem A 16 = Spec.Cbc.xor (bytesAt m₀ A 16) (cbcEncPrev 16 ciph m₀ D iv j) := by
+    have hpl : (cbcEncPrev 16 ciph m₀ D iv j).length = 16 := by
       unfold cbcEncPrev; split
       · exact hiv
       · generalize j - 1 = t; cases t <;> exact cs.cipher_len k _
@@ -118,7 +118,7 @@ theorem cbcEncBlock_wp (cs : CoreSpec c) {s₀ : State} {m₀ : Mem} {B D : Addr
     simp only [bytesAt, List.getElem_map, List.getElem_range, Spec.Cbc.xor, List.getElem_zipWith]
     rw [addr_add, hi.data _ (by omega), encByte, ite_eq_right (by omega), ite_eq_left (by omega),
       show 16 * j + u - 16 * j = u by omega, ← List.getElem_eq_getD (h := by rw [hpl]; exact hu)]
-  have C₂ : ∀ u < 16, s₂.mem (T + BitVec.ofNat 64 u) = (cbcEncC ciph m₀ D iv j).getD u 0 := fun u hu => by
+  have C₂ : ∀ u < 16, s₂.mem (T + BitVec.ofNat 64 u) = (cbcEncC 16 ciph m₀ D iv j).getD u 0 := fun u hu => by
     rw [← bytesAt_getD s₂.mem T hu, ← eT, ks₂ 0 hL.G_pos, eT]
     congr 2
     rw [cbcEncC_eq]
@@ -143,7 +143,7 @@ theorem cbcEncBlock_wp (cs : CoreSpec c) {s₀ : State} {m₀ : Mem} {B D : Addr
   have base₃ : s₃.gpr sb = B := by rw [g₃ _ (by decide) (Ne.symm lsb), base₂]
   have data₃ : s₃.gpr c.dataReg = A := by rw [g₃ _ d6 hdl, dr₂, g₁ _ d6, hi.dataR]
   have f₃ : Frame [⟨A, 16⟩] s₂.mem s₃.mem := by rw [m₃]; exact two_frame
-  have A₃ : ∀ u < 16, s₃.mem (A + BitVec.ofNat 64 u) = (cbcEncC ciph m₀ D iv j).getD u 0 := fun u hu => by
+  have A₃ : ∀ u < 16, s₃.mem (A + BitVec.ofNat 64 u) = (cbcEncC 16 ciph m₀ D iv j).getD u 0 := fun u hu => by
     rw [m₃, copy16_in s₂.mem dAT hu, C₂ u hu]
   -- The data outside block `j` and the buffer, through the encryption.
   have outCore : ∀ i < 16 * n, s₂.mem (D + BitVec.ofNat 64 i) = s₁.mem (D + BitVec.ofNat 64 i) := fun i hin =>
@@ -216,7 +216,7 @@ theorem cbcEncBlock_wp (cs : CoreSpec c) {s₀ : State} {m₀ : Mem} {B D : Addr
   have rd₆' : s₆.rd = s₀.rd := by rw [rd₆, rd₄, rd₃']
   have wr₆' : s₆.wr = s₀.wr := by rw [wr₆, wr₄, wr₃']
   -- Block `j` is its ciphertext; block `j + 1`, if any, its plaintext XORed with it.
-  have hlen : ∀ t, (cbcEncC ciph m₀ D iv t).length = 16 := fun t => by cases t <;> exact cs.cipher_len k _
+  have hlen : ∀ t, (cbcEncC 16 ciph m₀ D iv t).length = 16 := fun t => by cases t <;> exact cs.cipher_len k _
   by_cases hdone : j + 1 = n
   · have hm : s₆.mem = s₃.mem := by rw [mem₆, mDone hdone]
     refine .inl ⟨by rw [hz, decide_eq_true hdone]; rfl, base₆, by rw [hm]; exact saved₃, fun i hin => ?_,
@@ -249,7 +249,7 @@ theorem cbcEncBlock_wp (cs : CoreSpec c) {s₀ : State} {m₀ : Mem} {B D : Addr
     · rw [a₆, g₄ _ d6 d7, data₃, addr_add,
         show 16 * j + 16 = 16 * (j + 1) by omega]
     · rw [hm]
-      have hTA : ∀ u < 16, s₃.mem (T + BitVec.ofNat 64 u) = (cbcEncC ciph m₀ D iv j).getD u 0 := fun u hu => by
+      have hTA : ∀ u < 16, s₃.mem (T + BitVec.ofNat 64 u) = (cbcEncC 16 ciph m₀ D iv j).getD u 0 := fun u hu => by
         rw [f₃ _ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           exact fun h => dAT _ h (by simp only [Region.Contains]; rw [off_self T (by omega)]; omega)), C₂ u hu]

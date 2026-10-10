@@ -1,7 +1,7 @@
 import VerifiedGarbage.Impl.Modes.X86_64.Ctr
 
 /-!
-# CBC encryption on x86-64, for any block cipher with 16-byte blocks
+# CBC encryption on x86-64, for any block cipher with blocks of 8 or 16 bytes
 
 `cbcEncrypt core regs`: CBC encryption (SP 800-38A §6.2) over a block
 cipher's core (`Core`, as for CTR), whose `crypt` applies the forward cipher
@@ -33,26 +33,25 @@ is zero. -/
 def cbcWhiten (r : CtrRegs) : Prog isa :=
   .seq (.block [.alu .test r.n (.reg r.n)])
     (.ite .e (.block [])
-      (.block [.mov .rax (.mem (at_ r.ctr 0)), .alu .xor .rax (.mem (at_ r.data 0)), .store (at_ r.data 0) .rax,
-        .mov .rax (.mem (at_ r.ctr 8)), .alu .xor .rax (.mem (at_ r.data 8)), .store (at_ r.data 8) .rax]))
+      (.block ((List.range c.bw).flatMap (xorW .rax r.data r.ctr 0 0))))
 
 /-- The block at `dataReg` to the buffer's first. -/
 def encIn : List Instr :=
-  [.mov .rax (.mem (at_ c.dataReg 0)), st c.buf .rax, .mov .rax (.mem (at_ c.dataReg 8)), st (c.buf + 1) .rax]
+  (List.range c.bw).flatMap (copyW .rax sb c.dataReg (8 * c.buf) 0)
 
 /-- The buffer's first block back to `dataReg`, and one block fewer left
 (ZF set when none is). -/
 def encOut : List Instr :=
-  [movS .rax c.buf, .store (at_ c.dataReg 0) .rax, movS .rax (c.buf + 1), .store (at_ c.dataReg 8) .rax,
-   .alu .sub c.leftReg (.imm 1)]
+  (List.range c.bw).flatMap (copyW .rax c.dataReg sb 0 (8 * c.buf)) ++
+    ([.alu .sub c.leftReg (.imm 1)] : List Instr)
 
 /-- The buffer's first block XORed into the next block of the data. -/
 def encChain : List Instr :=
-  [.mov .rax (.mem (at_ c.dataReg 16)), xorS .rax c.buf, .store (at_ c.dataReg 16) .rax,
-   .mov .rax (.mem (at_ c.dataReg 24)), xorS .rax (c.buf + 1), .store (at_ c.dataReg 24) .rax]
+  (List.range c.bw).flatMap (xorW .rax c.dataReg sb (8 * c.bw) (8 * c.buf))
 
 /-- On to the next block; ZF is set when none is left. -/
-def encNext : List Instr := [.alu .add c.dataReg (.imm 16), .alu .test c.leftReg (.reg c.leftReg)]
+def encNext : List Instr :=
+  [.alu .add c.dataReg (.imm (BitVec.ofNat 32 (8 * c.bw))), .alu .test c.leftReg (.reg c.leftReg)]
 
 /-- One block: encrypted in the buffer, back to the data, and chained into
 the next. -/
@@ -63,7 +62,7 @@ def cbcEncBlock : Prog isa :=
 /-- The whole function: the IV into the first block, the key, then the
 blocks. -/
 def cbcEncrypt (r : CtrRegs) : Prog isa :=
-  .seq (.block (c.ctrEntry r)) (.seq (cbcWhiten r) (.seq (.block (c.ctrArgs r))
+  .seq (.block (c.ctrEntry r)) (.seq (c.cbcWhiten r) (.seq (.block (c.ctrArgs r))
     (.seq c.prepare
       (.seq (.block [.alu .test c.leftReg (.reg c.leftReg)])
         (.seq (.ite .e (.block []) (.loop c.cbcEncBlock .ne)) (.block c.restoreRegs))))))

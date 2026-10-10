@@ -374,6 +374,9 @@ pub(crate) mod sm4_ctr;
 pub(crate) mod triple_des;
 
 #[rustfmt::skip]
+pub(crate) mod triple_des_cbc;
+
+#[rustfmt::skip]
 pub(crate) mod x25519;
 
 #[rustfmt::skip]
