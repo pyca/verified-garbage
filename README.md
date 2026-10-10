@@ -778,6 +778,22 @@ yours to keep:
 
 <tr>
 
+<td>SM4-CFB128</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>SM4-CTR</td>
 
 <td>✅</td>
@@ -805,6 +821,22 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>SM4-OFB</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 </tr>
 
