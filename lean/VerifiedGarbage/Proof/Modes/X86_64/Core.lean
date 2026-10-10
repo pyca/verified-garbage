@@ -12,10 +12,11 @@ its buffer. `CoreSpec c` is what each mode's proof uses of `c`, and nothing
 else: the modes are proven once, for any core, and each cipher proves
 `CoreSpec` of its own.
 
-* `KeyArgs s R k`: the key arguments in the state `s` (e.g. the schedule's
-  address in `rdi`) give the key `k`, where `R` is the scratch buffer. It
-  survives what a mode does before `prepare` (`keyArgs_congr`): changing
-  no register of `keyRegs`, nothing outside `R` in memory.
+* `KeyArgs s rs k`: the key arguments in the state `s` (e.g. the schedule's
+  address in `rdi`) give the key `k`, which lies outside the regions `rs`
+  (the scratch buffer among them). It survives what a mode does before
+  `prepare` (`keyArgs_congr`): changing no register of `keyRegs`, nothing
+  outside `rs` in memory.
 * `Ready m B k`: the key `k` is ready in the memory `m` at `B`. It depends
   only on the core's slots outside its buffer (`ready_frame`).
 * `prepare_wp`, `crypt_wp`: each changes only the core's slots in memory,
@@ -54,17 +55,18 @@ structure Layout (c : Core) : Prop where
 structure CoreSpec (c : Core) where
   Key : Type
   cipher : Key → Spec.Cbc.Cipher
-  KeyArgs : State → Region → Key → Prop
+  KeyArgs : State → List Region → Key → Prop
   Ready : Mem → Addr → Key → Prop
+  cipher_len : ∀ k b, (cipher k b).length = 16
   layout : Layout c
   keyRegs_ok : c.keyRegs.all (fun r => r != .rax && r != .rbx && r != sb) = true
-  keyArgs_congr : ∀ {s s' : State} {R : Region} {k : Key}, KeyArgs s R k →
-    (∀ r ∈ c.keyRegs, s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → Frame [R] s.mem s'.mem →
-    KeyArgs s' R k
+  keyArgs_congr : ∀ {s s' : State} {rs : List Region} {k : Key}, KeyArgs s rs k →
+    (∀ r ∈ c.keyRegs, s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → Frame rs s.mem s'.mem →
+    KeyArgs s' rs k
   ready_frame : ∀ {m m' : Mem} {B : Addr} {k : Key} {rs : List Region}, Ready m B k → Frame rs m m' →
     (∀ r ∈ rs, Region.Disjoint (coreRegion c B) r ∨ Region.Sub r (bufRegion c B)) → Ready m' B k
-  prepare_wp : ∀ {s : State} {B : Addr} {n : Nat} {k : Key}, s.gpr sb = B → c.slots ≤ n → ScrIn s B n →
-    KeyArgs s ⟨B, 8 * n⟩ k →
+  prepare_wp : ∀ {s : State} {B : Addr} {n : Nat} {rs : List Region} {k : Key}, s.gpr sb = B → c.slots ≤ n →
+    ScrIn s B n → (⟨B, 8 * n⟩ : Region) ∈ rs → KeyArgs s rs k →
     WP isa c.prepare s fun s' => Ready s'.mem B k ∧ s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
       Frame [coreRegion c B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr
   crypt_wp : ∀ {s : State} {B : Addr} {n : Nat} {k : Key}, s.gpr sb = B → c.slots ≤ n → ScrIn s B n →
