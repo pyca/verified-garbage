@@ -467,7 +467,9 @@ two shards need is built twice. `ci/lean_closure.py` shows where (after
 is restored): `sinks` ranks the sinks by closure time, `dominators SINK`
 gives the time each module brings into SINK's closure alone, and `score`
 replays CI's plan of a full rebuild and of the recent runs with the imports
-of `origin/main` and of the working tree (or `--drop A:B`). Judge an import
+of `origin/main` and of the working tree (or `--drop A:B`; `--merge NEW=A,B`
+for merged modules; `--profile-branch`, after building the branch, for
+proofs it makes faster). Judge an import
 cut by `score`, not by a closure's size: a subtree a sink drags in is often
 built in its shard anyway, and the greedy plan moves by a few seconds with
 any change.

@@ -25,16 +25,28 @@ module without either the median.
       the modules of SINK's closure with the time that is in it only
       through each of them (its subtree in the closure's dominator tree):
       what removing that one import would take out of SINK's closure
-  lean_closure.py score [--base REF] [--drop A:B ...] [--metrics DIR]
+  lean_closure.py score [--base REF] [--drop A:B ...] [--merge NEW=A,B ...]
+                        [--times FILE] [--profile-branch] [--metrics DIR]
                         [--runs N]
       the plan of a full rebuild and of each of the last N runs in METRICS
-      that built anything, with the imports of REF (`origin/main`) and with
+      that built anything, with the imports of REF (`origin/main`; where
+      the branch forked from it, if it is behind) and with
       those of the working tree, with the imports A:B (module A's of B)
       removed: the shards' count, the slowest shard's estimate (and with
       the old count of shards, since a plan within `SLACK` of the fastest
       takes fewer), and the work built more than once (a full rebuild), or
       the modules built and the estimate (each run, which rebuilds what
-      imports the modules it built first)
+      imports the modules it built first). The modules whose sources
+      differ from REF's take their times on the branch from FILE (a JSON
+      object of module names and seconds) or, with --profile-branch, from
+      the profile of the build under lean/.lake (after building the branch);
+      those without are listed, since they keep REF's time. A module NEW
+      that merges the modules A, B, … (NEW among them or not) takes their
+      times together, less `IMPORT_TIME` for each but one, and a run that
+      built one of them builds NEW.
+
+Every command reads the repository of the working directory (`--repo` for
+another).
 
 A plan packs sinks greedily, so a small change can move its estimates by a
 few seconds either way: compare a change with the noise, and its effect on
@@ -51,7 +63,6 @@ import lean_profile
 import lean_shards as shards
 
 ROOT = shards.LEAN.parent
-METRICS = ROOT / ".ci-metrics"
 # What a module takes beyond its declarations' profile (importing, writing
 # its outputs): the median difference of the two in CI's metrics.
 IMPORT_TIME = 1.25
@@ -91,6 +102,60 @@ def save_profile(build: pathlib.Path, out: pathlib.Path) -> int:
     profile = {r["module"]: round(lean_profile.total(r), 3) for r in lean_profile.by_module(rows)}
     out.write_text(json.dumps(profile, indent=0, sort_keys=True) + "\n")
     return len(profile)
+
+
+def use_repo(root: pathlib.Path) -> None:
+    """Read the modules of the repository at `root`."""
+    global ROOT
+    ROOT = root
+    shards.LEAN = root / "lean"
+
+
+def toplevel() -> pathlib.Path:
+    out = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+    return pathlib.Path(out.stdout.strip()) if out.returncode == 0 else ROOT
+
+
+def merge_base(ref: str) -> str:
+    """The commit the working tree's branch forked from `ref` at."""
+    return subprocess.run(["git", "-C", str(ROOT), "merge-base", ref, "HEAD"],
+                          capture_output=True, text=True, check=True).stdout.strip()
+
+
+def changed_modules(ref: str, mods) -> set[str]:
+    """The modules of `mods` whose sources in the working tree differ from
+    those at `ref` (or that `ref` lacks)."""
+    out = subprocess.run(
+        ["git", "-C", str(ROOT), "diff", "--name-only", ref, "--", "lean/"],
+        capture_output=True, text=True, check=True,
+    ).stdout.split()
+    out += subprocess.run(
+        ["git", "-C", str(ROOT), "ls-files", "--others", "--exclude-standard", "--", "lean/"],
+        capture_output=True, text=True, check=True,
+    ).stdout.split()
+    names = {".".join(pathlib.PurePosixPath(f).relative_to("lean").with_suffix("").parts) for f in out}
+    return names & set(mods)
+
+
+def profile_times(build: pathlib.Path, modules: set[str]) -> dict[str, float]:
+    """The times of `modules` in the profile of the build under `build`,
+    as `latest_times` takes a profile's."""
+    if not modules:
+        return {}
+    rows, _, _ = lean_profile.collect(build, sorted(modules), tests=True)
+    return {r["module"]: lean_profile.total(r) + IMPORT_TIME
+            for r in lean_profile.by_module(rows) if r["module"] in modules}
+
+
+def merged(times: dict[str, float], merges: dict[str, list[str]]) -> dict[str, float]:
+    """`times` with each module NEW of `merges` taking the times of the
+    modules it merges together, less `IMPORT_TIME` for each but one."""
+    out = dict(times)
+    for new, parts in merges.items():
+        ts = [times[m] for m in parts if m in times]
+        if ts:
+            out[new] = sum(ts) - IMPORT_TIME * (len(ts) - 1)
+    return out
 
 
 def imports_at(ref: str) -> dict[str, list[str]]:
@@ -207,26 +272,36 @@ def run_plan(imps, times, changed):
     return {"stale": len(stale), "shards": len(loads), "time": time}
 
 
-def score(base, new, times, runs):
+def score(base, new, times, runs, branch=None, merges=None):
     """The full rebuild's plans and each run's, with the imports `base` and
-    `new`."""
+    `new`; with `new`, the modules of `branch` take its times, and those of
+    `merges` theirs together."""
+    branch = branch or {}
+    # A merged module the branch has a time for takes that time.
+    merges = {m: parts for m, parts in (merges or {}).items() if m not in branch}
+    into = {m: new_m for new_m, parts in merges.items() for m in parts}
     b = full_plan(base, times)
-    rows = [("full", {**b, "slowest_at": b["slowest"]}, full_plan(new, times, b["shards"]))]
+    tn = merged({**times, **branch}, merges)
+    rows = [("full", {**b, "slowest_at": b["slowest"]}, full_plan(new, tn, b["shards"]))]
     for name, built in runs:
         changed = first_built(base, built)
         run = {**times, **built}
-        rows.append((name, run_plan(base, run, changed), run_plan(new, run, changed)))
+        new_changed = {into.get(m, m) for m in changed} & set(new)
+        rows.append((name, run_plan(base, run, changed), run_plan(new, merged({**run, **branch}, merges), new_changed)))
     return rows
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("profile").add_argument("--build", type=pathlib.Path, default=lean_profile.BUILD)
-    sub.choices["profile"].add_argument("--metrics", type=pathlib.Path, default=METRICS)
+    sub.add_parser("profile").add_argument("--build", type=pathlib.Path, default=None)
     for name in ("sinks", "dominators", "score"):
-        p = sub.add_parser(name)
-        p.add_argument("--metrics", type=pathlib.Path, default=METRICS)
+        sub.add_parser(name)
+    for p in sub.choices.values():
+        p.add_argument("--repo", type=pathlib.Path, default=None)
+        p.add_argument("--metrics", type=pathlib.Path, default=None)
+    for name in ("sinks", "dominators", "score"):
+        p = sub.choices[name]
         if name != "score":
             p.add_argument("--top", type=int, default=30)
     sub.choices["dominators"].add_argument("sink")
@@ -234,11 +309,17 @@ def main(argv=None) -> int:
     sc.add_argument("--base", default="origin/main")
     sc.add_argument("--drop", action="append", default=[], metavar="A:B")
     sc.add_argument("--runs", type=int, default=20)
+    sc.add_argument("--merge", action="append", default=[], metavar="NEW=A,B")
+    sc.add_argument("--times", type=pathlib.Path)
+    sc.add_argument("--profile-branch", action="store_true")
     args = parser.parse_args(argv)
+    use_repo((args.repo or toplevel()).resolve())
+    if args.metrics is None:
+        args.metrics = ROOT / ".ci-metrics"
 
     if args.cmd == "profile":
         args.metrics.mkdir(parents=True, exist_ok=True)
-        n = save_profile(args.build, args.metrics / "profile.json")
+        n = save_profile(args.build or ROOT / "lean/.lake/build/lib/lean", args.metrics / "profile.json")
         print(f"{n} modules' profiles in {args.metrics / 'profile.json'}", file=sys.stderr)
         return 0
     runs = load_runs(args.metrics)
@@ -264,14 +345,33 @@ def main(argv=None) -> int:
             t, n, d = dom[m]
             print(f"{t:7.0f} s {n:5d} modules  {m}  (through {d})")
     else:
-        base = imports_at(args.base)
+        fork = merge_base(args.base)
+        base = imports_at(fork)
         new = {m: list(v) for m, v in imps.items()}
         for edge in args.drop:
             a, _, b = edge.partition(":")
             if b not in new.get(a, []):
                 raise SystemExit(f"{a} does not import {b}")
             new[a].remove(b)
-        rows = score(base, new, times, runs[-args.runs:])
+        merges = {}
+        for spec in args.merge:
+            target, _, parts = spec.partition("=")
+            merges[target] = [p for p in parts.split(",") if p]
+            if target not in new:
+                raise SystemExit(f"no module {target} in the working tree")
+        changed = changed_modules(fork, new)
+        branch = {}
+        if args.times:
+            branch.update({m: t for m, t in json.loads(args.times.read_text()).items() if m in changed})
+        if args.profile_branch:
+            branch.update(profile_times(ROOT / "lean/.lake/build/lib/lean", changed - set(branch)))
+        stale = sorted(changed - set(branch) - set(merges))
+        if stale:
+            print(f"{len(stale)} modules changed since {args.base} keep its times, or the median if new (--times, --profile-branch):",
+                  file=sys.stderr)
+            for m in stale:
+                print(f"  {m}", file=sys.stderr)
+        rows = score(base, new, times, runs[-args.runs:], branch, merges)
         (_, b, n), runs_rows = rows[0], rows[1:]
         print(f"full rebuild: {b['shards']} -> {n['shards']} shards, slowest {b['slowest']:.0f} -> {n['slowest']:.0f} s"
               f" ({n['slowest'] - b['slowest']:+.0f}; {n['slowest_at'] - b['slowest']:+.0f} on {b['shards']} shards),"

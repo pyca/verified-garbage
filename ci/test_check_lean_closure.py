@@ -117,6 +117,89 @@ class ImportsAt(unittest.TestCase):
                 })
 
 
+class Merges(unittest.TestCase):
+    def test_merged_times(self):
+        times = {"A": 3.0, "B": 4.0, "C": 5.0}
+        out = closure.merged(times, {"B": ["A", "B"]})
+        self.assertEqual(out["B"], 7.0 - closure.IMPORT_TIME)
+        self.assertEqual(out["C"], 5.0)
+
+    def test_a_run_that_built_a_merged_module(self):
+        # X imports A and B; the branch merges A into B (B imports nothing).
+        base = {"X": ["A", "B"], "A": [], "B": []}
+        new = {"X": ["B"], "B": []}
+        times = {"X": 10.0, "A": 300.0, "B": 300.0}
+        built = {"A": 300.0, "X": 10.0}
+        [(_, fb, fn), (_, b, n)] = closure.score(base, new, times, [("7", built)], merges={"B": ["A", "B"]})
+        # The run changed A: on the branch it rebuilds B, which holds A.
+        self.assertEqual((b["stale"], n["stale"]), (2, 2))
+        self.assertGreater(n["time"], b["time"])
+        # Without the merge, the branch would lose A's time and rebuild nothing.
+        [_, (_, _, n0)] = closure.score(base, new, times, [("7", built)])
+        self.assertEqual(n0["stale"], 0)
+
+    def test_a_branch_time_wins(self):
+        base = {"X": ["A", "B"], "A": [], "B": []}
+        new = {"X": ["B"], "B": []}
+        times = {"X": 10.0, "A": 300.0, "B": 300.0}
+        rows = closure.score(base, new, times, [("7", {"A": 300.0, "X": 10.0})], branch={"B": 100.0},
+                             merges={"B": ["A", "B"]})
+        self.assertLess(rows[1][2]["time"], rows[1][1]["time"])
+
+
+class BranchTimes(unittest.TestCase):
+    def test_a_faster_proof(self):
+        imps = {"X": ["A"], "A": []}
+        times = {"X": 10.0, "A": 300.0}
+        [_, (_, b, n)] = closure.score(imps, imps, times, [("7", {"A": 300.0, "X": 10.0})], branch={"A": 100.0})
+        self.assertEqual(n["time"], b["time"] - 200.0)
+
+
+class Repo(unittest.TestCase):
+    def repo(self, d):
+        root = pathlib.Path(d)
+        for f, text in {"lean/VerifiedGarbage/A.lean": "", "lean/VerifiedGarbage/B.lean": ""}.items():
+            (root / f).parent.mkdir(parents=True, exist_ok=True)
+            (root / f).write_text(text)
+        git = lambda *a: subprocess.run(["git", "-C", d, *a], check=True, capture_output=True)
+        git("init", "-q")
+        git("add", ".")
+        git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "c")
+        return root
+
+    def test_changed_modules(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = self.repo(d)
+            (root / "lean/VerifiedGarbage/B.lean").write_text("-- faster\n")
+            (root / "lean/VerifiedGarbage/C.lean").write_text("")
+            with mock.patch.object(closure, "ROOT", root):
+                mods = {"VerifiedGarbage.A", "VerifiedGarbage.B", "VerifiedGarbage.C"}
+                self.assertEqual(closure.changed_modules("HEAD", mods), {"VerifiedGarbage.B", "VerifiedGarbage.C"})
+
+    def test_merge_base(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = self.repo(d)
+            git = lambda *a: subprocess.run(["git", "-C", d, *a], check=True, capture_output=True, text=True)
+            fork = git("rev-parse", "HEAD").stdout.strip()
+            git("checkout", "-qb", "ahead")
+            (root / "lean/VerifiedGarbage/A.lean").write_text("-- upstream\n")
+            git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qam", "upstream")
+            git("checkout", "-q", fork)
+            with mock.patch.object(closure, "ROOT", root):
+                self.assertEqual(closure.merge_base("ahead"), fork)
+                self.assertEqual(closure.changed_modules(closure.merge_base("ahead"), {"VerifiedGarbage.A"}), set())
+
+    def test_use_repo_reads_its_modules(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = self.repo(d)
+            old_root, old_lean = closure.ROOT, shards.LEAN
+            try:
+                closure.use_repo(root)
+                self.assertEqual(sorted(shards.modules()), ["VerifiedGarbage.A", "VerifiedGarbage.B"])
+            finally:
+                closure.ROOT, shards.LEAN = old_root, old_lean
+
+
 class Schedule(unittest.TestCase):
     def test_plan_is_schedule_of_the_stale_modules(self):
         imps = {"A": [], "B": ["A"]}
