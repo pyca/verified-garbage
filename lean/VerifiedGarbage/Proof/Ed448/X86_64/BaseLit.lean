@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Lit
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
 import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
 
 /-!

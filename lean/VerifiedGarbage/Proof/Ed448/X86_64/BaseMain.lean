@@ -9,7 +9,8 @@ import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
 The correctness of `vg_ed448_scalar_base` against the contract the proof is
 written against (`scalarBaseLocal`, `BaseLocal.lean`): the scalar's bits, the
 loop (`R` ends as the reference ladder's point, which encodes `[k]B` by
-`BaseLadderOk`), the inversion of `Z` and the encoding, every write in the
+`BaseLadderOk`; the output's address kept in `rsi` across it and stored at
+`OUT` again after it), the inversion of `Z` and the encoding, every write in the
 working space but the result's, so the scalar is read unchanged, the
 callee-saved registers are restored from the working space, and the return
 address is kept.
@@ -50,22 +51,36 @@ theorem movOut_ok (s : State) :
 theorem stashOut_ok {s : State} {base : Addr} (hb : s.gpr .rdi = base)
     (hw : (⟨base, 8192⟩ : Region) ∈ s.wr) :
     WP isa (.block stashOut) s fun t =>
-      t.mem = s.mem.writeW (off base OUT) (s.gpr .r15) ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧
+      t.mem = s.mem.writeW (off base OUT) (s.gpr .r15) ∧ t.gpr .rsi = s.gpr .r15 ∧
+        (∀ r, r ≠ .rsi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  have w : InRegions s.wr (off base OUT) 8 := ⟨_, hw, contains_sc (by decide)⟩
+  apply WP.of_runBlock
+  simp only [stashOut, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at, hb, readSrc,
+    State.store64, w, ite_true, Option.some.injEq, exists_eq_left', Option.map_some,
+    RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_setReg_self]
+  refine ⟨trivial, trivial, fun r hr => ?_, trivial, trivial⟩
+  simp only [RegUpd.gpr_setReg_of_ne _ _ hr]
+
+theorem restashOut_ok {s : State} {base : Addr} (hb : s.gpr .rdi = base)
+    (hw : (⟨base, 8192⟩ : Region) ∈ s.wr) :
+    WP isa (.block restashOut) s fun t =>
+      t.mem = s.mem.writeW (off base OUT) (s.gpr .rsi) ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧
         t.wr = s.wr := by
   have w : InRegions s.wr (off base OUT) 8 := ⟨_, hw, contains_sc (by decide)⟩
   apply WP.of_runBlock
-  simp only [stashOut, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at, hb,
+  simp only [restashOut, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at, hb,
     State.store64, w, ite_true, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, trivial, trivial, trivial⟩
 
-variable {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld)
+variable {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld) {P : Point64.Ops} (hP : Point64.PointOk P)
 
-include hf in
-/-- With any inversion `inv` that keeps and computes what `invert` does (`InvPost`). -/
+include hf hP in
+/-- With any point operations `P` that run the field programs (`PointOk`), and any inversion
+`inv` that keeps and computes what `invert` does (`InvPost`). -/
 theorem scalarBase_correct_of (hL : BaseLadderOk) {inv : Prog isa}
     (hinv : ∀ {s : State} {base : Addr}, Scr s base → WP isa inv s (InvPost base s))
     {s : State} (hp : scalarBaseLocal.pre s) :
-    WP isa (scalarBaseWith fld inv) s fun t => gprPreserved s t ∧ scalarBaseLocal.post s t := by
+    WP isa (scalarBaseWith fld P inv) s fun t => gprPreserved s t ∧ scalarBaseLocal.post s t := by
   obtain ⟨hr, hw, hd, hro, hrs, hos, hn⟩ := hp
   obtain ⟨base, hbase⟩ : ∃ b, s.gpr .rdx = b := ⟨_, rfl⟩
   rw [hbase] at hd hrs hos hn
@@ -102,16 +117,18 @@ theorem scalarBase_correct_of (hL : BaseLadderOk) {inv : Prog isa}
   have hs₄' : Scr s₄' base := ⟨(g₄' _ (by decide)).trans hs₃.rdi, wr₄' ▸ hs₃.wr, hs₃.nowrap⟩
   -- The output's address at `OUT`.
   apply WP.seq
-  refine WP.mono (stashOut_ok hs₄'.rdi hs₄'.wr) fun s₄ ⟨m₄, g₄'', rd₄'', wr₄''⟩ => ?_
-  have g₄ : ∀ r, r ∉ [Reg.rax, .rdx, .rbx] → s₄.gpr r = s₃.gpr r := fun r hr => by
-    rw [g₄'', g₄' r hr]
+  refine WP.mono (stashOut_ok hs₄'.rdi hs₄'.wr) fun s₄ ⟨m₄, si₄, g₄'', rd₄'', wr₄''⟩ => ?_
+  have g₄ : ∀ r, r ∉ [Reg.rax, .rdx, .rbx, .rsi] → s₄.gpr r = s₃.gpr r := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    rw [g₄'' r hr.2.2.2, g₄' r (by simp [hr.1, hr.2.1, hr.2.2.1])]
   have rd₄ : s₄.rd = s₃.rd := by rw [rd₄'', rd₄']
   have wr₄ : s₄.wr = s₃.wr := by rw [wr₄'', wr₄']
   have oo : Outside base OUT 8 s₄'.mem s₄.mem := by
     rw [m₄]; exact writeW_outside _ _ _ (by decide)
   have o₄ : Outside base OUT (BITS + 456 - OUT) s₃.mem s₄.mem :=
     (o₄'.mono (by decide) (by decide)).trans (oo.mono (by decide) (by decide))
-  have hs₄ : Scr s₄ base := ⟨by rw [g₄'']; exact hs₄'.rdi, wr₄'' ▸ hs₄'.wr, hs₄'.nowrap⟩
+  have hs₄ : Scr s₄ base := ⟨by rw [g₄'' _ (by decide)]; exact hs₄'.rdi, wr₄'' ▸ hs₄'.wr, hs₄'.nowrap⟩
+  have si₄' : s₄.gpr .rsi = s.gpr .rdi := by rw [si₄, g₄' _ (by decide), g₃ _ (by decide), r15₂]
   have b₄' : ∀ t < 456, s₄.mem (off base (BITS + t)) =
       BitVec.ofNat 8 (((s₃.mem (s.gpr .rsi + BitVec.ofNat 64 (t / 8))).toNat >>> (t % 8)) &&& 1) :=
     fun t ht => by
@@ -144,31 +161,42 @@ theorem scalarBase_correct_of (hL : BaseLadderOk) {inv : Prog isa}
       simp only [Proof.Ed448.pt, e₅]; exact q₃
     · rw [e₅]; exact d₃
     · simp only [Proof.Ed448.pt, e₅, Nat.sub_self]; exact p₃
-  refine WP.mono (loop_ok hf hbits 456 s₅ (by decide) (by decide) I₅) fun s₆ I₆ => ?_
+  refine WP.mono (loop_ok hP hbits 456 s₅ (by decide) (by decide) I₅) fun s₆' I₆ => ?_
+  -- The output's address at `OUT` again.
+  apply WP.seq
+  refine WP.mono (restashOut_ok I₆.scr.rdi I₆.scr.wr) fun s₆ ⟨m₆, g₆, rd₆, wr₆⟩ => ?_
+  have hs₆ : Scr s₆ base := ⟨by rw [g₆]; exact I₆.scr.rdi, wr₆ ▸ I₆.scr.wr, hn⟩
+  have si₆ : s₆'.gpr .rsi = s.gpr .rdi := by rw [I₆.gpr _ (by decide), g₅ _ (by decide), si₄']
+  have o₆ : Outside base OUT 8 s₆'.mem s₆.mem := by
+    rw [m₆]; exact writeW_outside _ _ _ (by decide)
+  have e₆ : E s₆.mem base = E s₆'.mem base := funext fun i => by
+    have h2 := Proof.X448.X86_64.slot_ge i
+    exact E_outside o₆ i (Or.inr (by simp only [OUT]; omega))
   -- The inversion of `Z`.
   apply WP.seq
-  refine WP.mono (hinv I₆.scr) fun s₇ ⟨g₇, rd₇, wr₇, o₇, e₇⟩ => ?_
-  have hs₇ : Scr s₇ base := ⟨(g₇ _ (by decide) (by decide)).trans I₆.scr.rdi, wr₇ ▸ I₆.scr.wr, hn⟩
+  refine WP.mono (hinv hs₆) fun s₇ ⟨g₇, rd₇, wr₇, o₇, e₇⟩ => ?_
+  have hs₇ : Scr s₇ base := ⟨(g₇ _ (by decide) (by decide)).trans hs₆.rdi, wr₇ ▸ hs₆.wr, hn⟩
   -- The encoding.
   have hout₇ : word s₇.mem base OUT = s.gpr .rdi := by
-    rw [o₇.word (by decide) (by decide), I₆.mem.word (by decide) (by decide), m₅, hout₄]
+    rw [o₇.word (by decide) (by decide), m₆, word_writeW_self, si₆]
   have sv₇ : Saved base s.gpr s₇.mem := by
     have sv₂ : Saved base s.gpr s₂.mem := by rw [m₂]; exact sv₁
     have sv₄ := (sv₂.outside o₃ (by decide)).outside o₄ (by decide)
     have sv₅ : Saved base s.gpr s₅.mem := by rw [m₅]; exact sv₄
-    exact (sv₅.outside I₆.mem (by decide)).outside o₇ (by decide)
-  refine WP.mono (encode_ok hf hs₇ hout₇ (by rw [wr₇, I₆.wr, wr₅, wr₄, rw₃.2]; exact hwo) hos sv₇)
+    exact ((sv₅.outside I₆.mem (by decide)).outside o₆ (by decide)).outside o₇ (by decide)
+  refine WP.mono (encode_ok hf hs₇ hout₇ (by rw [wr₇, wr₆, I₆.wr, wr₅, wr₄, rw₃.2]; exact hwo) hos sv₇)
     fun t ⟨bt, rt, gt, ft, _, _⟩ => ?_
   have O₇ : Outside base 0 8192 s.mem s₇.mem := by
     have O₅ : Outside base 0 8192 s.mem s₅.mem := by
       rw [m₅]; exact O₃.trans (o₄.mono (by decide) (by decide))
-    exact (O₅.trans (I₆.mem.mono (by decide) (by decide))).trans (o₇.mono (by decide) (by decide))
+    exact ((O₅.trans (I₆.mem.mono (by decide) (by decide))).trans (o₆.mono (by decide) (by decide))).trans
+      (o₇.mono (by decide) (by decide))
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact rt (.rbx, 0) (by decide)
     · exact rt (.rbp, 8) (by decide)
-    · rw [gt _ (by decide), g₇ _ (by decide) (by decide), I₆.gpr _ (by decide), g₅ _ (by decide),
+    · rw [gt _ (by decide), g₇ _ (by decide) (by decide), g₆, I₆.gpr _ (by decide), g₅ _ (by decide),
         g₄ _ (by decide), g₃ _ (by decide), g₂ _ (by decide), g₁]
     · exact rt (.r12, 16) (by decide)
     · exact rt (.r13, 24) (by decide)
@@ -184,24 +212,25 @@ theorem scalarBase_correct_of (hL : BaseLadderOk) {inv : Prog isa}
   · show bytesAt t.mem (s.gpr .rdi) 57 = _
     have r₆ := I₆.rep
     rw [Nat.sub_zero] at r₆
-    rw [bt, e₇, E_outside o₇ 0 (by decide), E_outside o₇ 1 (by decide)]
+    rw [bt, e₇, E_outside o₇ 0 (by decide), E_outside o₇ 1 (by decide), e₆]
     exact encode_result hL r₆
 
-include hf in
+include hf hP in
 theorem scalarBase_correct (hL : BaseLadderOk) {s : State} (hp : scalarBaseLocal.pre s) :
-    WP isa (scalarBaseWith fld) s fun t => gprPreserved s t ∧ scalarBaseLocal.post s t :=
-  scalarBase_correct_of hf hL (fun hs => invert_post hf hs) hp
+    WP isa (scalarBaseWith fld P) s fun t => gprPreserved s t ∧ scalarBaseLocal.post s t :=
+  scalarBase_correct_of hf hP hL (fun hs => invert_post hf hs) hp
 
 theorem scalarBase_inline : scalarBase.inline =
-    scalarBaseWith Impl.X448.X86_64.baseline
+    scalarBaseWith Impl.X448.X86_64.baseline Point64.bodies
       (Impl.X448.X86_64.invertCall Impl.X448.X86_64.baseline [OUT]).inline :=
   rfl
 
-/-- `vg_ed448_scalar_base`, its call of `vg_gf448_r64_pow223` inlined. -/
+/-- `vg_ed448_scalar_base`, its calls of the point functions and `vg_gf448_r64_pow223`
+inlined. -/
 theorem scalarBase_correct_inline (hL : BaseLadderOk) {s : State} (hp : scalarBaseLocal.pre s) :
     WP isa scalarBase.inline s fun t => gprPreserved s t ∧ scalarBaseLocal.post s t := by
   rw [scalarBase_inline]
-  exact scalarBase_correct_of Proof.X448.X86_64.baseline_ok hL
+  exact scalarBase_correct_of Proof.X448.X86_64.baseline_ok Point64.bodies_ok hL
     (fun hs => invertCall_post Proof.X448.X86_64.baseline_ok (keep := [OUT]) (by simp [OUT]) hs) hp
 
 end VG.Proof.Ed448.X86_64

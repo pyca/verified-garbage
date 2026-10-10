@@ -102,7 +102,7 @@ taint_summary verifyRootSum : taintS (verifySumτ []) (rootCall Impl.X448.X86_64
 taint_summary verifyDecodeASum : taintS (verifySumτ [.rsi])
     (decode Impl.X448.X86_64.baseline 6 7 (rootCall Impl.X448.X86_64.baseline))
   using verifyRootSum
-taint_summary verifyLoopSum : taintS (verifySumτ []) (vloop Impl.X448.X86_64.baseline)
+taint_summary verifyLoopSum : taintS (verifySumτ []) (vloop Point64.calls)
 
 theorem verifyEquation_ct0 :
     ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub verifyEquation := by
