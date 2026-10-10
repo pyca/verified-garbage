@@ -60,7 +60,7 @@ abbrev hIns (p : Params) : List Impl.MlKem.AArch64.Piece :=
 
 theorem hash_chk {p : Params} (hF : VFacts p) : hashChk (vR p) (vW p) (hIns p) ⟨.x28, oCT, p.ctildeLen⟩ = true := by
   have := hF.k; have := hF.l; have := hF.kl; have := hF.scr; have := hF.ct.2; have := hF.w1
-  unfold hashChk pieceChk; vlay
+  unfold hashChk pieceChk; vlayd
 
 theorem hash_taint {p : Params} (hp : p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87) :
     ∀ {P : State → State → Prop}, (∀ x y, P x y → x.sp = y.sp ∧ ∀ r ∈ bases, x.gpr r = y.gpr r) →
@@ -113,8 +113,8 @@ theorem cmp_vpiece {S : Nat} {p : Params} (hF : VFacts p) :
     fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, _, h₁, _⟩ ⟨_, _, _, _, h₂, _⟩ => vc_two hF p₁ p₂ pub h₁.vc h₂.vc⟩
   have L := hs.vc.lay hF hp
   have := hF.ct.2; have := hF.sig; have := hF.scr; have := hF.k; have := hF.l; have := hF.kl
-  refine WP.mono (cmpAnd_ok L (by omega) (by omega) (by vlay) (by vlay)) fun s' ⟨hP', x'⟩ => ⟨?_, ?_⟩
-  · exact hs.vc.step hF hp hP' (by unfold vcChk; vlay)
+  refine WP.mono (cmpAnd_ok L (by omega) (by omega) (by vlayd) (by vlayd)) fun s' ⟨hP', x'⟩ => ⟨?_, ?_⟩
+  · exact hs.vc.step hF hp hP' (by unfold vcChk; vlayd)
   · rw [hH, ctOf_eq hF hs.vc, hs.x24] at x'
     have e : s'.gpr .x24 = flag (q = true ∧ Spec.MlDsa.H (vMu σ ++ w1Enc p σ h A' c0) p.ctildeLen = ctOf p σ) := by
       rw [x', and_flag (P := q = true)
@@ -195,7 +195,7 @@ theorem epi_vpiece {S : Nat} {p : Params} (hF : VFacts p) :
     (by taint_decide)) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => vc_two hF p₁ p₂ pub h₁.1 h₂.1⟩
   have L := hv.lay hF hp
   have hin : InRegions (s.rd ++ s.wr) (σ.gpr .x3 + BitVec.ofNat 64 SV) 48 := by
-    have := L.inR (p := svP) (l := 48) (by have := hF.scr; have := hF.k; vlay)
+    have := L.inR (p := svP) (l := 48) (by have := hF.scr; have := hF.k; vlayd)
     rwa [pa, hv.top.x28] at this
   refine WP.mono (epi_ok hv.top hin) fun s' ⟨ha, hx, _⟩ => ⟨ha, ?_⟩
   sig_post [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, AArch64.abi, VG.AArch64.argRegs]

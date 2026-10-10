@@ -30,8 +30,8 @@ theorem nttT_tr {p : Params} (hF : VFacts p) {S r : Nat} (hr : r<p.k) :
   obtain ⟨⟨σ,τ,hσ,hτ,pub,⟨h,A,c,q,hx,_,tx⟩,⟨h',A',c',q',hy,_,ty⟩⟩,et⟩:=hh
   have H:=vc_two hF hσ hτ pub hx.vc hy.vc
   have hk:=hF.k;have hl:=hF.l;have hkl:=hF.kl;have hsc:=hF.scr
-  have rd : inB (vR p++vW p) (tmP p) 1024=true := by vlay
-  have wr : inB (vW p) (tmP p) 1024=true := by vlay
+  have rd : inB (vR p++vW p) (tmP p) 1024=true := by vlayd
+  have wr : inB (vW p) (tmP p) 1024=true := by vlayd
   exact ⟨forward_ready hF hσ hx.vc hx.roots rd wr tx.1,
     forward_ready hF hτ hy.vc hy.roots rd wr ty.1,
     H.same.pa (show Reg.x28∈bases from by decide),H.same.2,et.1⟩

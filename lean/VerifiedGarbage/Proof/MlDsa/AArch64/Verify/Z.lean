@@ -112,7 +112,7 @@ def V1 (p : Params) (σ s : State) : Prop :=
 theorem hint_chk {p : Params} (hF : VFacts p) :
     rwChk (vR p) (vW p) (.x27, oHint p) (p.ω + p.k) (hP p 0) (256 * p.k * 4) = true := by
   have := hF.k; have := hF.l; have := hF.kl; have := scr_eq p; have := hF.sig; have := hF.small
-  unfold rwChk; vlay
+  unfold rwChk; vlayd
 
 theorem hint_eq (p : Params) (σ : State) :
     hintOf p σ = hintBitUnpack p.ω p.k (((vSig p σ).drop (oHint p)).take (p.ω + p.k)) := rfl
@@ -126,11 +126,11 @@ theorem hint_vpiece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : 
     refine WP.seq (WP.mono (huAt_ok hP.s64 hP.hintUnpack L hc hF.hu) fun s₁ ⟨hP₁, x₁, hq⟩ => ?_)
     have h₁ := h.1.step hF hp hP₁ (by
       have := hF.k; have := hF.l; have := hF.kl; have := scr_eq p; have := hF.small
-      unfold vcChk; vlay)
+      unfold vcChk; vlayd)
     refine WP.mono (and24_post (S := S) s₁) fun s₂ ⟨hP₂, g₂, x₂, hm⟩ => ?_
     have h₂ := h₁.step hF hp hP₂ (by
       have := hF.k; have := hF.l; have := scr_eq p; have := hF.small
-      unfold vcChk; vlay)
+      unfold vcChk; vlayd)
     rw [h.1.slice (by rw [hF.sig, oHint]; omega), show p.ω + p.k - p.ω = p.k by omega, ← hint_eq] at hq
     refine ⟨h₂, ?_, fun hh e => ?_⟩
     · rw [x₂, x₁, h.2]
@@ -173,12 +173,12 @@ theorem VZ.keep {p : Params} (hF : VFacts p) {S : Nat} {σ : State} (hp : vPre p
 theorem VFacts.scr {p : Params} (_ : VFacts p) : scrLen p = 1024 * (p.k * p.ℓ + 4 * p.k + 3 * p.ℓ + 32) :=
   scr_eq p
 
-/-- Proves a `VZChk`. -/
+/-- Proves a `VZChk`: each check decided for each parameter set if it can be (`vlayd`). -/
 syntax "vzchk " term:max : tactic
 macro_rules
   | `(tactic| vzchk $hF) => `(tactic| (
       have := ($hF).k; have := ($hF).l; have := ($hF).kl; have := ($hF).scr; have := ($hF).small
-      refine ⟨?_, ?_, ?_⟩ <;> intros <;> (try unfold VG.Proof.MlDsa.AArch64.Verify.vcChk) <;> vlay))
+      refine ⟨?_, ?_, ?_⟩ <;> intros <;> (try unfold VG.Proof.MlDsa.AArch64.Verify.vcChk) <;> first | vlayd | vlay))
 
 theorem zl_le {p : Params} {j : Nat} (hj : j < p.ℓ) : lenZ p * j + lenZ p ≤ lenZ p * p.ℓ := by
   rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hj
@@ -201,7 +201,7 @@ omit hP in
 theorem bu_chk : rwChk (vR p) (vW p) (.x27, p.ctildeLen + lenZ p * j) (lenZ p) (zP p j) 1024 = true := by
   have := hF.k; have := hF.l; have := hF.kl; have := scr_eq p; have := hF.sig; have := hF.small
   have := zl_le hj
-  unfold rwChk; vlay
+  unfold rwChk; vlayd
 
 theorem bu_vpiece : VPiece p S (Z0 p j) (Z1 p j)
     (bitUnpackAt P (.x27, p.ctildeLen + lenZ p * j) (lenZ p) (p.γ₁ - 1) p.γ₁ (zP p j)) := by
@@ -218,14 +218,14 @@ theorem bu_vpiece : VPiece p S (Z0 p j) (Z1 p j)
 
 theorem norm_vpiece : VPiece p S (Z1 p j) (Z2 p j) (normLtAt P (zP p j) (p.γ₁ - p.β)) := by
   have hc : inB (vR p ++ vW p) (zP p j) 1024 = true := by
-    have := hF.k; have := hF.l; have := hF.kl; have := scr_eq p; vlay
+    have := hF.k; have := hF.l; have := hF.kl; have := scr_eq p; vlayd
   refine ⟨fun σ s hp h => ?_, vrel_of (Q := fun x y => VTwo p S x y ∧ Reduced x.mem (pa x (zP p j)) ∧
     Reduced y.mem (pa y (zP p j))) (normAt_tr hP.normLt (vOk p) hc fun x y h => ⟨h.1.lx, h.1.ly, h.2.1, h.2.2,
       h.1.same⟩) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨vc_two hF p₁ p₂ pub h₁.1.1.vc h₂.1.1.vc, h₁.2.1, h₂.2.1⟩⟩
   have L := h.1.1.vc.lay hF hp
   refine WP.mono (normAt_ok hP.s64 hP.normLt L hc hF.g1.2.2 h.2.1) fun s' ⟨hP', x', hq⟩ => ?_
   have hz := L.keepPoly hP' (by
-    have := hF.k; have := hF.l; have := hF.kl; have := scr_eq p; vlay) h.2
+    have := hF.k; have := hF.l; have := hF.kl; have := scr_eq p; vlayd) h.2
   refine ⟨⟨⟨h.1.1.keep hF hp hP' (by vzchk hF), by rw [x', h.1.2]⟩, hz⟩, ?_⟩
   rw [hq, h.2.2]
 
@@ -235,7 +235,7 @@ theorem and_vpiece : VPiece p S (Z2 p j) (Z0 p (j + 1)) (.block and24) := by
   refine WP.mono (and24_post (S := S) s) fun s' ⟨hP', _, x', _⟩ => ?_
   have L := h.1.1.1.vc.lay hF hp
   have hz := L.keepPoly hP' (by
-    have := hF.k; have := hF.l; have := hF.kl; have := scr_eq p; vlay) h.1.2
+    have := hF.k; have := hF.l; have := hF.kl; have := scr_eq p; vlayd) h.1.2
   obtain ⟨⟨⟨hv, hn⟩, _⟩, hr⟩ := h
   have hv' := hv.keep hF hp hP' (by vzchk hF)
   refine ⟨⟨hv'.vc, hv'.hint, fun i hi => ?_⟩, ?_⟩
