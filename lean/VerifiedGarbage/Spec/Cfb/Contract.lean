@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Cfb
-import VerifiedGarbage.Spec.Cbc.Contract
+module
+
+public import VerifiedGarbage.Spec.Cfb
+public import VerifiedGarbage.Spec.Cbc.Contract
 
 /-!
 # AES-CFB128: the contracts, on every target
@@ -26,6 +28,8 @@ Each takes CBC's `scratch` buffer: room for the working space of
 number of bytes of stack below the stack pointer that an implementation's
 calls and frames use (see `Sig.contract`).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Cfb
 

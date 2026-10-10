@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Weierstrass.Mont
+module
+
+public import VerifiedGarbage.Spec.Weierstrass.Mont
 
 /-!
 # Complete point addition on a curve, in Montgomery form, as functions
@@ -46,6 +48,8 @@ P-521 is not among the curves: its points, constants and own working space,
 of nine-word coordinates, would overlap the slots its code keeps in the
 working space.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Weierstrass.Point
 

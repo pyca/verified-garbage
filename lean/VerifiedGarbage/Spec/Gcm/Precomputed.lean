@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Gcm.Contract
+module
+
+public import VerifiedGarbage.Spec.Gcm.Contract
 
 /-!
 # AES-GCM with the powers of the hash subkey in the key context
@@ -26,6 +28,8 @@ functions that hash no more than a block at a time (`vg_aes_gcm_stream_init`,
 `_stream_aad`, `_stream_finish`, `_stream_verify`) take a pointer to them.
 Existing contracts are unchanged.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Gcm
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.MlKem.Contract
-import VerifiedGarbage.Spec.MlKem.Contract1024
+module
+
+public import VerifiedGarbage.Spec.MlKem.Contract
+public import VerifiedGarbage.Spec.MlKem.Contract1024
 
 /-!
 # ML-KEM-768 and ML-KEM-1024 with expanded encapsulation keys
@@ -41,6 +43,8 @@ and the functions may overwrite their arguments passed in memory
 (`writeArgs`) and take the stack below the stack pointer that their calls use
 (`stack`).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.MlKem
 

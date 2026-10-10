@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Poly1305
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Poly1305
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Poly1305: the contracts, on every target
@@ -29,6 +31,8 @@ Each contract takes the number of bytes of stack below the stack pointer
 that an implementation's calls and frames use (`stack`, see
 `Sig.contract`), 0 for one that uses none.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Poly1305
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.X448
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.X448
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Curve448's field in radix `2^64`, and the addition chain its powers share, as a function
@@ -37,6 +39,8 @@ values; every other byte of `ws` keeps its value (`Keeps`).
 Everything is secret but the pointer, which is public, and the function is
 constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.X448.Field64
 

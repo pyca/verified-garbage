@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Blake2
+module
+
+public import VerifiedGarbage.Spec.Blake2
 
 /-!
 # Argon2 version 1.3 (RFC 9106)
@@ -18,6 +20,8 @@ records the reference indices of data-dependent steps, so the contracts
 can permit exactly this inherent leakage for Argon2d/id without making
 the password, secret, intermediate blocks or derived key public.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Argon2
 

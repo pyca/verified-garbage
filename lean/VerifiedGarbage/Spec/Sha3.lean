@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # SHA-3 and SHAKE (FIPS 202)
@@ -22,6 +24,8 @@ that `Repr` relates to the message absorbed so far, padding and absorbing
 the last block, and squeezing output. Their contracts are in
 `Spec/Sha3/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Sha3
 

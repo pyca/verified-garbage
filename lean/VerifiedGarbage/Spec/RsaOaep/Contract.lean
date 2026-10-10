@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.RsaOaep
-import VerifiedGarbage.Spec.RsaPss.Contract
+module
+
+public import VerifiedGarbage.Spec.RsaOaep
+public import VerifiedGarbage.Spec.RsaPss.Contract
 
 /-!
 # RSAES-OAEP: the contracts, on every target
@@ -40,6 +42,8 @@ below the stack pointer that an implementation's calls and frames use. The
 functions may overwrite their arguments passed in memory, where the calling
 convention allows it (`writeArgs`).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.RsaOaep
 

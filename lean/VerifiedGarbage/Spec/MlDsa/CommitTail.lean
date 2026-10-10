@@ -1,4 +1,8 @@
-import VerifiedGarbage.Spec.MlDsa.Poly
+module
+
+public import VerifiedGarbage.Spec.MlDsa.Poly
+
+@[expose] public section
 
 namespace VG.Spec.MlDsa
 

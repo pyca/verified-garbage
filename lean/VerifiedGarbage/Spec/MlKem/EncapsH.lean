@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.MlKem.Contract
-import VerifiedGarbage.Spec.MlKem.Contract1024
+module
+
+public import VerifiedGarbage.Spec.MlKem.Contract
+public import VerifiedGarbage.Spec.MlKem.Contract1024
 
 /-!
 # ML-KEM: encapsulation with `H(ek)` given, on every target
@@ -21,6 +23,8 @@ The caller computes `h` from `ek` once, with SHA3-256 (or takes it from the
 decapsulation key, where `vg_mlkem*_keygen` writes it), and passes it with
 `ek` to each encapsulation.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.MlKem
 

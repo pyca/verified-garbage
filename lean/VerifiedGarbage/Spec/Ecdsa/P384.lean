@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.Spec.P384
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.P384
 
 /-!
 # ECDSA over P-384: the contracts, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.P384
 **Trusted** (as every file in `Spec/`). The `Instance` of P-384
 (`Spec/P384.lean`): `vg_ecdsa_p384_sign`, in the module `ecdsa_p384`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdsa.P384
 

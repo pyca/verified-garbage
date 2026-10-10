@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Siv
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Siv
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # AES-SIV: the contracts, on every target
@@ -48,6 +50,8 @@ that an implementation's calls and frames use (`stack`, see `Sig.contract`),
 in memory, where the calling convention allows it (`writeArgs`), to pass
 arguments to the functions they call.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Siv
 

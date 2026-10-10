@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.Spec.P192
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.P192
 
 /-!
 # ECDSA over P-192: the contracts, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.P192
 **Trusted** (as every file in `Spec/`). The `Instance` of P-192
 (`Spec/P192.lean`): `vg_ecdsa_p192_sign`, in the module `ecdsa_p192`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdsa.P192
 

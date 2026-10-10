@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha3
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Sha3
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # SHA-3 and SHAKE: the contracts, on every target
@@ -34,6 +36,8 @@ the target with the fewest registers. `vg_keccak_absorb`, `vg_keccak_pad` and
 functions with theirs passed in `scratch`, for functions that call them with
 their own (ML-KEM's, ML-DSA's, Ed448's).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Sha3
 

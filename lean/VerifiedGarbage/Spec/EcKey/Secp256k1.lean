@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.EcKey.Generic
-import VerifiedGarbage.Spec.Secp256k1
+module
+
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.Secp256k1
 
 /-!
 # secp256k1 keys: the contracts, on every target
@@ -8,6 +10,8 @@ import VerifiedGarbage.Spec.Secp256k1
 (`Spec/Secp256k1.lean`): `vg_ec_secp256k1_public_key`, in the module
 `ec_secp256k1`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.EcKey.Secp256k1
 

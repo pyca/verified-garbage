@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ed25519
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Ed25519
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Ed25519's point doubling and addition in radix `2^64`, as functions
@@ -39,6 +41,8 @@ its value but the result's (`Keeps`).
 Everything is secret but the pointer, which is public, and the functions are
 constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ed25519.Point64
 

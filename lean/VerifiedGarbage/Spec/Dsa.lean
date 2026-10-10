@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha1
-import VerifiedGarbage.Spec.Sha256
+module
+
+public import VerifiedGarbage.Spec.Sha1
+public import VerifiedGarbage.Spec.Sha256
 
 /-!
 # DSA — FIPS 186-4 §§4.1–4.7 and Appendices A.1.1.2, A.2.1, B.1.2, B.2.2
@@ -29,6 +31,8 @@ private/public components. This avoids repeating exact primality on every
 signature. All digest lengths, including zero, have mathematical meaning;
 checking a caller's chosen hash length belongs to a prehash wrapper.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Dsa
 

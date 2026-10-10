@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.X448
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.X448
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # X448: the contract, on every target
@@ -21,6 +23,8 @@ the ladder (e.g. as the u-coordinate of a fixed-base multiplication on
 edwards448, RFC 7748 §4.2). Key generation, byte import/export and the
 all-zero shared-secret check belong to the Rust wrapper.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.X448
 

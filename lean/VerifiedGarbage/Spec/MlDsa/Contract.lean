@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.MlDsa.Poly
+module
+
+public import VerifiedGarbage.Spec.MlDsa.Poly
 
 /-!
 # ML-DSA-44, ML-DSA-65 and ML-DSA-87: the contracts, on every target
@@ -59,6 +61,8 @@ functions they call, and take the number of bytes of stack below the stack
 pointer that their calls and frames use (`stack`, see `Sig.contract`),
 which depends on the target.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.MlDsa
 

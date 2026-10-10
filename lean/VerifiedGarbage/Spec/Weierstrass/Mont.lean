@@ -1,10 +1,12 @@
-import VerifiedGarbage.TCB.Artifact
-import VerifiedGarbage.Spec.P192
-import VerifiedGarbage.Spec.P224
-import VerifiedGarbage.Spec.P256
-import VerifiedGarbage.Spec.P384
-import VerifiedGarbage.Spec.P521
-import VerifiedGarbage.Spec.Secp256k1
+module
+
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.Spec.P192
+public import VerifiedGarbage.Spec.P224
+public import VerifiedGarbage.Spec.P256
+public import VerifiedGarbage.Spec.P384
+public import VerifiedGarbage.Spec.P521
+public import VerifiedGarbage.Spec.Secp256k1
 
 /-!
 # Montgomery arithmetic modulo a curve's `p` or `n`, a step at a time
@@ -44,6 +46,8 @@ or reduce one below `2 m` (by adding zero). Everything is secret but the
 pointer and the offsets, which are public, and the functions are constant
 time.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Weierstrass.Mont
 

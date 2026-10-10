@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.RsaKeyGen
-import VerifiedGarbage.Spec.Rsa.Contract
+module
+
+public import VerifiedGarbage.Spec.RsaKeyGen
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-!
 # RSA key generation: the contracts, on every target
@@ -46,6 +48,8 @@ number of bytes below the stack pointer that an implementation's calls and
 frames use. The functions may overwrite their arguments passed in memory,
 where the calling convention allows it (`writeArgs`).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.RsaKeyGen
 

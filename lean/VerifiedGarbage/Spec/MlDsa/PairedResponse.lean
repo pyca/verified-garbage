@@ -1,5 +1,9 @@
-import VerifiedGarbage.Spec.MlDsa.ResponseLow
-import VerifiedGarbage.Spec.MlDsa.ResponseHint
+module
+
+public import VerifiedGarbage.Spec.MlDsa.ResponseLow
+public import VerifiedGarbage.Spec.MlDsa.ResponseHint
+
+@[expose] public section
 
 namespace VG.Spec.MlDsa
 

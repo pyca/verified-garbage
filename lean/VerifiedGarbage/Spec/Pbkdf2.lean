@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Hmac
+module
+
+public import VerifiedGarbage.Spec.Hmac
 
 /-!
 # PBKDF2 (RFC 8018)
@@ -11,6 +13,8 @@ function PBKDF2, over any pseudorandom function, transcribed from RFC 8018,
 The contracts of its iteration and of the whole of PBKDF2-HMAC, for any
 streaming hash function, are in `Spec/Pbkdf2/Generic.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Pbkdf2
 

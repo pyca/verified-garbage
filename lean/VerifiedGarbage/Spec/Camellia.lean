@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # Camellia (RFC 3713)
@@ -25,6 +27,8 @@ The schedule's layout in memory (`scheduleWords`) is this specification's
 own choice, shared by every implementation: the 64-bit subkeys in the order
 encryption uses them, each as its 8 bytes, most significant first.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Camellia
 

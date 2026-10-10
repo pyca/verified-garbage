@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ed448
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Ed448
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Ed448: contracts on every target
@@ -25,6 +27,8 @@ return and must be destroyed by callers handling secrets. `stack` describes
 the space used below the stack pointer. `writeArgs` allows calls to reuse
 the ABI's argument slots, including on 32-bit targets.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ed448
 

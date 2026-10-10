@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.ChaCha20Poly1305
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.ChaCha20Poly1305
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # ChaCha20-Poly1305: the contracts, on every target
@@ -27,6 +29,8 @@ The contracts do not limit the length of the data. Beyond RFC 8439's
 `VG.Spec.ChaCha20.encrypt`) and the construction is no longer secure: the
 caller must enforce `P_MAX`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.ChaCha20Poly1305
 

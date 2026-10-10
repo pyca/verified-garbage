@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Rsa
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # RSA primitives: the contracts, on every target
@@ -57,6 +59,8 @@ pointer that an implementation's calls and frames use. The functions may
 overwrite their arguments passed in memory, where the calling convention
 allows it (`writeArgs`).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Rsa
 

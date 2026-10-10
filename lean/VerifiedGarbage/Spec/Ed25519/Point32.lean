@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ed25519
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Ed25519
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Ed25519's point addition in radix `2^32`, as a function
@@ -31,6 +33,8 @@ byte of `ws` keeps its value but the sum's (`Keeps`).
 Everything is secret but the pointer, which is public, and the function is
 constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ed25519.Point32
 

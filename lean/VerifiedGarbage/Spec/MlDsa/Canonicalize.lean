@@ -1,4 +1,8 @@
-import VerifiedGarbage.Spec.MlDsa.RawInverse
+module
+
+public import VerifiedGarbage.Spec.MlDsa.RawInverse
+
+@[expose] public section
 
 namespace VG.Spec.MlDsa
 

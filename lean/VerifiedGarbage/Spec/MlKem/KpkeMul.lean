@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.MlKem.Poly
+module
+
+public import VerifiedGarbage.Spec.MlKem.Poly
 
 /-!
 # ML-KEM: the arithmetic of K-PKE, a step at a time, on every target
@@ -35,6 +37,8 @@ functions are constant time. The working space `scratch` (4 KiB) may hold
 intermediate values on return, which the caller must destroy (FIPS 203
 §3.3).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.MlKem
 

@@ -1,10 +1,14 @@
-import VerifiedGarbage.Spec.Dsa.Limb
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Dsa.Limb
+public import VerifiedGarbage.TCB.Artifact
 
 /-! # Initial DSA arithmetic contracts (trusted)
 All arguments, including the selection mask, are secret. No memory is
 accessed and no stack is used. Contracts cover every target; a future registration can supply
 an x86-64 baseline implementation. -/
+
+@[expose] public section
 
 namespace VG.Spec.Dsa.Limb
 

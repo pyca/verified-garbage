@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.RsaPss.Contract
+module
+
+public import VerifiedGarbage.Spec.RsaPss.Contract
 
 /-!
 # RSASSA-PSS verification with a precomputed public key
@@ -11,6 +13,8 @@ holds the values for `n`. An inconsistent `pre` leaves the result
 unspecified, as in `Rsa.publicPrecomputedCheckedContract`; memory safety
 and the timing guarantee still apply. Existing contracts are unchanged.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.RsaPss
 

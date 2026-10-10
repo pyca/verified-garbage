@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.EcKey.Generic
-import VerifiedGarbage.Spec.P256
+module
+
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.P256
 
 /-!
 # P-256 keys: the contracts, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.P256
 **Trusted** (as every file in `Spec/`). The `Instance` of P-256
 (`Spec/P256.lean`): `vg_ec_p256_public_key`, in the module `ec_p256`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.EcKey.P256
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Cmac
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Cmac
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # AES-CMAC: the contracts, on every target
@@ -61,6 +63,8 @@ that an implementation's calls and frames use (`stack`, see `Sig.contract`),
 0 for one that uses none; the streaming functions keep their working space
 there.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Cmac
 

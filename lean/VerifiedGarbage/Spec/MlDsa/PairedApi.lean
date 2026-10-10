@@ -1,4 +1,8 @@
-import VerifiedGarbage.Spec.MlDsa.PairedResponse
+module
+
+public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+
+@[expose] public section
 
 namespace VG.Spec.MlDsa
 

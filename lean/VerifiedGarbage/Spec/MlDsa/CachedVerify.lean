@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.MlDsa.Contract
+module
+
+public import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
 # Private cached-digest verification boundary
@@ -6,6 +8,9 @@ import VerifiedGarbage.Spec.MlDsa.Contract
 The additional read-only digest is valid only when it equals the public-key
 hash. The ordinary raw-key verification contract is unchanged.
 -/
+
+@[expose] public section
+
 namespace VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 

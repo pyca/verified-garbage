@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
-import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 
 /-!
 # Deterministic ECDSA over brainpoolP512r1 with HMAC-SHA-512: the contracts, on every target
@@ -12,6 +14,8 @@ A candidate is the leftmost 512 bits of `V`, and `n` is well below
 about `0.333` (`2^-1.58`): at most 128 candidates, all of which are
 unsuitable with probability under `2^-203`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdsa.Rfc6979.BrainpoolP512r1Sha512
 

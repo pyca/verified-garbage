@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # X25519 (RFC 7748)
@@ -16,6 +18,8 @@ represents it (`.val`).
 This file is independent of any architecture; the contract of the function
 implemented in assembly is in `Spec/X25519/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.X25519
 

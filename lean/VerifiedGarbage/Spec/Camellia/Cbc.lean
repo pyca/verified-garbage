@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Camellia.Ctr
-import VerifiedGarbage.Spec.Cbc.Contract
+module
+
+public import VerifiedGarbage.Spec.Camellia.Ctr
+public import VerifiedGarbage.Spec.Cbc.Contract
 
 /-!
 # Camellia-CBC: the contracts, on every target
@@ -20,6 +22,8 @@ decryption, the last block it decrypts). Padding is the caller's.
 Only the pointers, `rounds` and `n` are public: no part of the chaining
 value may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Camellia
 
