@@ -2428,14 +2428,45 @@ def storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat ×
   | some (i, d) =>
     bif Nat.ble (d + w) (τ.lens.getD i 0) then
       bif p then (bif mem3 (i, d, w) τ.slots then τ.slots else (i, d, w) :: τ.slots)
-      else filter (fun sl => p || !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
+      else VG.Taint.filterKeep (fun sl => !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
         Nat.ble (sl.2.1 + sl.2.2) d) τ.slots
     else bif p then τ.slots else []
   | none => bif p then τ.slots else []
 
+/-- `storeWbasesK`, keeping the list when the store overwrites none of its words. -/
+def storeWbasesKD (τ : T) (m : MemOp) (w : Nat) (nb : List Nat) : List (Nat × Nat × Nat) :=
+  match addrOfK τ m with
+  | some (j, d) =>
+    bif Nat.ble (d + w) (τ.lens.getD j 0) then
+      append (VG.Taint.filterKeep (fun p => !Nat.beq p.1 j || Nat.ble (d + w) p.2.1 || Nat.ble (p.2.1 + 4) d)
+        τ.wbases) (map (fun i => (j, d, i)) nb)
+    else []
+  | none => []
+
+theorem storeWbasesKD_eq : storeWbasesKD = storeWbasesK := by
+  funext τ m w nb
+  unfold storeWbasesKD storeWbasesK
+  rcases addrOfK τ m with _ | ⟨j, d⟩
+  · rfl
+  · simp only [VG.Taint.filterKeep_eq, KList.filter_eq]
+
 def storeStepKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) (nb : List Nat) : Option T :=
-  bif pub τ m.base then some { τ with slots := storeSlotsKD τ m w p, wbases := storeWbasesK τ m w nb }
-  else none
+  match τ with
+  | ⟨rg, f, l, b, _, _, al, ab, st, ro⟩ =>
+    bif pub τ m.base then some ⟨rg, f, l, b, storeSlotsKD τ m w p, storeWbasesKD τ m w nb, al, ab, st, ro⟩
+    else none
+
+def mulStepKD (τ : T) (r : Reg) : T :=
+  match τ with
+  | ⟨rg, _, l, _, s, w, al, ab, st, ro⟩ =>
+    let p := pub τ .eax && pub τ r
+    ⟨bif p then (rg.insert .eax).insert .edx else (rg.erase .eax).erase .edx, p, l,
+      filter (fun q => !regEq q.1 .edx) (killK τ .eax), s, w, al, ab, st, ro⟩
+
+theorem mulStepKD_eq : mulStepKD = mulStep := by
+  funext τ r
+  obtain ⟨rg, f, l, b, s, w, al, ab, st, ro⟩ := τ
+  simp only [mulStepKD, mulStep, killK_eq, KList.filter_eq, regEq_eq, Bool.cond_eq_ite, bne]
 
 /-- An instruction transfer function, independent of the incoming taint. -/
 structure Step where
@@ -2445,24 +2476,30 @@ structure Step where
 kernel can share the classification between checks from different taints.
 Stores retain the duplicate-slot optimization of `storeStepKD`. -/
 def stepKDFn : Instr → Step
-  | .mov d src => ⟨fun τ =>
+  | .mov d src => ⟨fun τ => match τ with
+    | ⟨_, f, l, _, s, w, al, ab, st, ro⟩ =>
     bif !regEq d .esp && srcOkK τ src then
-      some { τ with regs := setK τ d (srcPub τ src || loadPubK τ src), bases := movBasesK τ d src }
+      some ⟨setK τ d (srcPub τ src || loadPubK τ src), f, l, movBasesK τ d src, s, w, al, ab, st, ro⟩
     else none⟩
   | .store m r => ⟨fun τ => storeStepKD τ m 4 (pub τ r) (regBasesK τ r)⟩
-  | .alu op d src => ⟨fun τ =>
+  | .alu op d src => ⟨fun τ => match τ with
+    | ⟨rg, f, l, _, s, w, al, ab, st, ro⟩ =>
     bif !regEq d .esp && srcOkK τ src then
-      let p := pub τ d && srcPub τ src && (!usesCarry op || τ.flags)
-      some { τ with regs := bif writes op then setK τ d p else τ.regs, flags := p, bases := killK τ d }
+      let p := pub τ d && srcPub τ src && (!usesCarry op || f)
+      some ⟨bif writes op then setK τ d p else rg, p, l, killK τ d, s, w, al, ab, st, ro⟩
     else none⟩
-  | .shift _ d _ => ⟨fun τ =>
-    bif !regEq d .esp then some { τ with flags := τ.flags && pub τ d, bases := killK τ d } else none⟩
-  | .bswap d => ⟨fun τ => bif !regEq d .esp then some { τ with bases := killK τ d } else none⟩
-  | .movzx8 d m => ⟨fun τ =>
-    bif !regEq d .esp && pub τ m.base then some { τ with regs := setK τ d false, bases := killK τ d }
+  | .shift _ d _ => ⟨fun τ => match τ with
+    | ⟨rg, f, l, _, s, w, al, ab, st, ro⟩ =>
+    bif !regEq d .esp then some ⟨rg, f && pub τ d, l, killK τ d, s, w, al, ab, st, ro⟩ else none⟩
+  | .bswap d => ⟨fun τ => match τ with
+    | ⟨rg, f, l, _, s, w, al, ab, st, ro⟩ =>
+    bif !regEq d .esp then some ⟨rg, f, l, killK τ d, s, w, al, ab, st, ro⟩ else none⟩
+  | .movzx8 d m => ⟨fun τ => match τ with
+    | ⟨_, f, l, _, s, w, al, ab, st, ro⟩ =>
+    bif !regEq d .esp && pub τ m.base then some ⟨setK τ d false, f, l, killK τ d, s, w, al, ab, st, ro⟩
     else none⟩
   | .store8 m r => ⟨fun τ => storeStepKD τ m 1 (pub τ r.reg) []⟩
-  | .mul r => ⟨fun τ => some (mulStep τ r)⟩
+  | .mul r => ⟨fun τ => some (mulStepKD τ r)⟩
   | .symPush .. | .push _ | .pop .. | .alloc _ | .free _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms => ⟨fun _ => none⟩
 
 /-- Apply the preclassified instruction to the incoming taint. -/
@@ -2504,6 +2541,7 @@ theorem mem_storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) (x : Nat × N
     obtain ⟨i, d⟩ := id
     simp only
     cases Nat.ble (d + w) (τ.lens.getD i 0) <;> cases p <;> simp only [Bool.cond_false, Bool.cond_true]
+    · simp only [VG.Taint.filterKeep_eq, KList.filter_eq, Bool.false_or]
     rw [show filter (fun sl => true || !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
       Nat.ble (sl.2.1 + sl.2.2) d) τ.slots = τ.slots by
         simp only [KList.filter_eq, Bool.true_or]; exact List.filter_eq_self.mpr fun _ _ => rfl]
@@ -2523,7 +2561,7 @@ theorem stepKD_spec (τ : T) (i : Instr) :
     cases pub τ m.base
     · exact .inl ⟨rfl, rfl⟩
     · exact .inr ⟨_, _, rfl, rfl, ⟨rfl, rfl, rfl, rfl, fun x => by rw [storeSlotsK_eq]; exact mem_storeSlotsKD τ m w p x,
-        rfl, rfl, rfl, rfl, rfl⟩⟩
+        congrFun (congrFun (congrFun (congrFun storeWbasesKD_eq τ) m) w) nb, rfl, rfl, rfl, rfl⟩⟩
   have other : ∀ {i}, stepKD τ i = stepK τ i →
       (stepKD τ i = none ∧ step τ i = none) ∨ ∃ a b, stepKD τ i = some a ∧ step τ i = some b ∧ Sim a b := by
     intro i e
@@ -2537,6 +2575,7 @@ theorem stepKD_spec (τ : T) (i : Instr) :
       rw [← regBasesK_eq]; rfl
     rw [e]; exact st m 4 _ _
   case store8 m r => exact st m 1 _ []
+  case mul r => exact other (by rw [stepKD, stepKDFn, stepK, mulStepKD_eq])
   all_goals exact other rfl
 
 end VG.X86.Taint
