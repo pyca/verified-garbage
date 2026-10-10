@@ -51,10 +51,13 @@ def diagonal : Prog isa :=
   .seq (.block [.mov32 .r15 (.imm 0), .mov32 .rbp (.imm 0), .mov32 .r14 (.imm 0)])
     (.loop diagonalStep .ne)
 
-/-- Groups of four keep both carries live; all other sizes retain the general loop. -/
+/-- Groups of eight, or of four, keep both carries live; all other sizes
+retain the general loop. -/
 def diagonalChoice : Prog isa :=
-  .seq (.block [.mov .rax (.reg .r10), .alu .and .rax (.imm 3), .alu .cmp .rax (.imm 0)])
-    (.ite .e AdxSquareGrouped.diagonal diagonal)
+  .seq (.block [.mov .rax (.reg .r10), .alu .and .rax (.imm 7), .alu .cmp .rax (.imm 0)])
+    (.ite .e AdxSquareGrouped.diagonal8
+      (.seq (.block [.mov .rax (.reg .r10), .alu .and .rax (.imm 3), .alu .cmp .rax (.imm 0)])
+        (.ite .e AdxSquareGrouped.diagonal diagonal)))
 
 /-- The unreduced square, at `aAcc + 16`, using the adjacent `aAcc` and
 `aTmp` storage. Each off-diagonal product is computed only once. -/
