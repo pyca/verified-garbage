@@ -27,13 +27,12 @@ theorem crossBody_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
     {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (hw : w<2^31) (hwN : w=8*n) (hn : 0<n)
-    (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp)
-    (hz : ∀ j<2*w, word s.mem B (rawBase w+8*j)=0) :
+    (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp) :
     WP isa (.seq (AdxTri8.blocks ca) (AdxTiledSquare.rowsChoice ca)) s fun t =>
       wv t.mem B (rawBase w) (2*w)=AdxSquare.crossValue s.mem B (slot w a) w ∧
       Hdr t.mem B w mi ∧ Frm B (ranges w) s.mem t.mem ∧ Keep mmRegs s t := by
   have nowrap := hs.nowrap
-  refine WP.seq (WP.mono (AdxTri8.blocks_ok hs hd hh hZ hv pa hw hwN hn ha ha1 ha2 hz) fun u hu => ?_)
+  refine WP.seq (WP.mono (AdxTri8.blocks_ok hs hd hh hZ hv pa hw hwN hn ha ha1 ha2) fun u hu => ?_)
   have fu : Frm B (ranges w) s.mem u.mem := by
     intro p hp
     apply hu.frame p
@@ -100,32 +99,22 @@ theorem rawCross_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
   have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega
   unfold AdxTiledSquare.rawCross
   refine WP.seq (WP.mono (adxSetupV_ok hs hd hh hZ (hvs.at pa) (hvs.lt pa)) fun u ⟨_,_,pu,wu,mu,ku⟩ => ?_)
-  refine WP.seq (WP.mono (zeroWin8_ok (hs.congr ku.2.2) pu wu hwN hn (by omega) rawZ)
-    fun v ⟨zv,ov,kv⟩ => ?_)
-  rw [mu] at ov
-  have ov' : Outside B (slot w aAcc) (16*w+32) s.mem v.mem := ov.mono (by omega) (by omega)
-  have hv : Hdr v.mem B w mi := hh.of_outside ov (by unfold slot; omega)
-  have kuv := ku.trans kv
+  have ov' : Outside B (slot w aAcc) (16*w+32) s.mem u.mem := by rw [mu]; exact Outside.refl _ _ _ _
+  have hv : Hdr u.mem B w mi := mu ▸ hh
+  have kuv := ku
   refine WP.seq (WP.mono (AdxHeader.save_ok (hs.congr kuv.2.2) ((kuv.gpr (by decide)).trans hd) hv hZ)
     fun x ⟨lo,hi,fx,kx⟩ => ?_)
-  have ox : Outside B (slot w aAcc) (16*w+32) v.mem x.mem := by
+  have ox : Outside B (slot w aAcc) (16*w+32) u.mem x.mem := by
     intro p hp
     apply fx p
     intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl <;> simp only [] <;> unfold highPad at * <;> omega
   have hx : Hdr x.mem B w mi := hv.of_outside ox (by unfold slot; omega)
-  have zx : ∀ j<2*w, word x.mem B (rawBase w+8*j)=0 := by
-    intro j hj
-    rw [fx.word_eq (by
-      intro r hr
-      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [] <;> simp only [rawBase,highPad] <;> omega) (by omega)]
-    exact zv j (by omega)
   have kuvx := kuv.trans kx
   change WP isa (.seq (.seq (AdxTri8.blocks ca) (AdxTiledSquare.rowsChoice ca)) AdxHeader.restore) x _
   refine WP.seq (WP.mono (crossBody_ok (hs.congr kuvx.2.2) ((kuvx.gpr (by decide)).trans hd)
-    hx hZ (hvs.of_outside (ov'.trans ox) (by unfold slot sFn hdrBytes; omega)) pa hw hwN hn ha ha1 ha2 zx) fun y ⟨vy,hy,fy,ky⟩ => ?_)
+    hx hZ (hvs.of_outside (ov'.trans ox) (by unfold slot sFn hdrBytes; omega)) pa hw hwN hn ha ha1 ha2) fun y ⟨vy,hy,fy,ky⟩ => ?_)
   have kuvxy := kuvx.trans ky
   refine WP.mono (AdxHeader.restore_ok (hs.congr kuvxy.2.2) ((kuvxy.gpr (by decide)).trans hd) hy hZ)
     fun t ⟨lot,hit,zt,ft,kt⟩ => ?_

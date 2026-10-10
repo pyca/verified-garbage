@@ -44,8 +44,14 @@ def setup (a : Nat) : List Instr :=
   [.mov .rax (.mem (hdr (sFn 12))),.shift .shl .rax 3,
    .mov .rbp (.mem (hdr (sArr a))),.alu .add .rbp (.reg .rax)]
 
+/-- Zero the two words of the block's sixteen output words that no row writes,
+its first and last: the rows then write the other fourteen, and nothing has to
+clear the whole product buffer first. `r8` is zero. -/
+def clearEnds : Prog isa := .seq (.block headBases)
+  (.seq (.block [.store (at_ .rsi 16) .r8]) (.block [.store (at_ .rsi 136) .r8]))
+
 def block (a : Nat) : Prog isa :=
-  .seq (.block (setup a)) (.seq (.block clearColumns) (rows 7 0 columns))
+  .seq (.block (setup a)) (.seq (.block clearColumns) (.seq clearEnds (rows 7 0 columns)))
 
 def nextBlock : List Instr :=
   [.mov .rax (.mem (hdr (sFn 12))),.alu .add .rax (.imm 8),

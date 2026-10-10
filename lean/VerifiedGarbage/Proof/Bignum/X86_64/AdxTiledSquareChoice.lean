@@ -10,36 +10,15 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64 (Keep)
 
-theorem zero_ends {m : Mem} {B : Addr} {e n : Nat}
-    (lo : word m B e=0) (hi : word m B (e+8*(n+1))=0) :
-    wv m B e (n+2)=2^64*wv m B (e+8) n := by
-  rw [show n+2=1+(n+1) by omega,wv_add,wv_add]
-  simp only [wv,lo,Nat.mul_zero,Nat.mul_one,Nat.add_zero,Nat.pow_zero,Nat.one_mul,Nat.zero_add]
-  rw [show e+8+8*n=e+8*(n+1) by omega,hi]
-  simp only [show (0 : BitVec 64).toNat=0 from rfl,Nat.mul_zero,Nat.add_zero,Nat.zero_add]
-
 theorem fullBlock_ok {s : State} {B : Addr} {Z w a I : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
     {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hIndex : I+8≤w)
-    (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I)
-    (lo : word s.mem B (slot w aAcc+16+16*I)=0)
-    (hi : word s.mem B (slot w aAcc+16+16*I+120)=0) :
+    (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I) :
     WP isa (AdxTri8.block ca) s fun t =>
       wv t.mem B (slot w aAcc+16+16*I) 16=AdxSquare.crossValue s.mem B (slot w a+8*I) 8 ∧
-      Outside B (slot w aAcc+16+16*I) 128 s.mem t.mem ∧ Keep mmRegs s t := by
-  have nowrap := hs.nowrap
-  have ar := AdxRect8.tile_ranges hIndex hIndex ha ha1 ha2
-  have endBound : slot w aAcc+16+16*I+128≤Z := by omega
-  refine WP.mono (block_ok hs hd hh hZ hv pa ha ha1 ha2 hIndex hI) fun t ⟨vt,ot,kt⟩ => ?_
-  have low : word t.mem B (slot w aAcc+16+16*I)=0 := by
-    rw [ot.word (by unfold output; omega) (by omega)]; exact lo
-  have high : word t.mem B (slot w aAcc+16+16*I+8*(14+1))=0 := by
-    rw [ot.word (by unfold output; omega) (by omega)]; exact hi
-  refine ⟨?_,ot.mono (by unfold output; omega) (by unfold output; omega),kt⟩
-  rw [show 16=14+2 from rfl,zero_ends low high]
-  rw [show slot w aAcc+16+16*I+8=output w I 0 by unfold output; omega]
-  exact vt
+      Outside B (slot w aAcc+16+16*I) 128 s.mem t.mem ∧ Keep mmRegs s t :=
+  block_ok hs hd hh hZ hv pa ha ha1 ha2 hIndex hI
 
 end VG.Proof.Bignum.X86_64.AdxTri8
 
@@ -119,25 +98,13 @@ theorem blockStep_ok {s₀ s : State} {B : Addr} {Z w a k n : Nat} {mi : BitVec 
     {ps : List (Nat × Nat)} (hv : Ops s₀.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (hZ : slot w 8≤Z) (hw : w<2^31) (hwN : w=8*n) (hk : k<n)
     (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp)
-    (hz : ∀ j<2*w, word s₀.mem B (rawBase w+8*j)=0)
     (h : BlocksInv s₀ B Z w a k mi s) :
     WP isa (.seq (AdxTri8.block ca) (.block AdxTri8.nextBlock)) s fun t =>
       t.zf=some (decide (k+1=n)) ∧ BlocksInv s₀ B Z w a (k+1) mi t := by
   have nowrap := h.scr.nowrap
   have Z64 : slot w 8≤(2 : Nat)^64 := by omega
   have ar := AdxRect8.tile_ranges (by omega : 8*k+8≤w) (by omega : 8*k+8≤w) ha ha1 ha2
-  have zero : ∀ q<16, word s.mem B (rawBase w+128*k+8*q)=0 := by
-    intro q hq
-    rw [h.frame.word_eq (by
-      intro r hr
-      simp only [diagonalRanges,List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [] <;> simp only [rawBase,slot,hdrBytes,sFn] <;> omega)
-      (by unfold rawBase at *; omega)]
-    rw [show rawBase w+128*k+8*q=rawBase w+8*(16*k+q) by omega]
-    exact hz (16*k+q) (by omega)
-  refine WP.seq (WP.mono (fullBlock_ok h.scr h.rdi h.hdr hZ (diagonal_ops hv h.frame) pa ha ha1 ha2 (by omega) h.indexI
-    (by simpa only [rawBase,Nat.mul_zero,Nat.add_zero,show 16*(8*k)=128*k by omega] using zero 0 (by decide))
-    (by simpa only [rawBase,show 16*(8*k)=128*k by omega,show 8*15=120 from rfl] using zero 15 (by decide)))
+  refine WP.seq (WP.mono (fullBlock_ok h.scr h.rdi h.hdr hZ (diagonal_ops hv h.frame) pa ha ha1 ha2 (by omega) h.indexI)
     fun u ⟨vu,ou,ku⟩ => ?_)
   have indexU : word u.mem B (8*sFn 12)=BitVec.ofNat 64 (8*k) := by
     rw [ou.word (by unfold slot hdrBytes sFn; omega) (by decide)]; exact h.indexI
@@ -192,8 +159,7 @@ theorem blocks_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
     {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (hw : w<2^31) (hwN : w=8*n) (hn : 0<n)
-    (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp)
-    (hz : ∀ j<2*w, word s.mem B (rawBase w+8*j)=0) :
+    (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp) :
     WP isa (AdxTri8.blocks ca) s (BlocksInv s B Z w a n mi) := by
   have nowrap := hs.nowrap
   have iZ : 8*sFn 12+8≤Z := by
@@ -210,7 +176,7 @@ theorem blocks_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
     ⟨hs.congr ku.2.2,diagonal_hdr hh fu,(ku.gpr (by decide)).trans hd,by rw [mu,word_writeW_self]; rfl,
       ku.mono (by decide),fu,rfl⟩
   exact wp_upto (a := 0) (N := n) hn (BlocksInv s B Z w a · mi)
-    (fun _ _ hk _ h => blockStep_ok hv pa hZ hw hwN hk ha ha1 ha2 hz h) (fun _ h => h) h0
+    (fun _ _ hk _ h => blockStep_ok hv pa hZ hw hwN hk ha ha1 ha2 h) (fun _ h => h) h0
 
 end VG.Proof.Bignum.X86_64.AdxTri8
 
