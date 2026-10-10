@@ -315,11 +315,11 @@ theorem setup_ok {s₀ : State} (hp : SPre s₀) :
   rw [WP.block_append_iff]
   refine WP.mono (setupPrefix_ok hp u P (fun r hr => by rw [huG]; exact htG r hr)
     huF' (huR.trans htR) (huW.trans htW) ((huX _).trans ht0) ((huX _).trans ht1)
-    (fun _ _ => rfl)) fun v ⟨hvE, hvF, hvD, hvN, hv8, hvC, hvY⟩ => ?_
+    (fun _ _ => rfl)) fun v ⟨hvE, hvF, hvD, hvN, hv8, hvC, hvY, hv0⟩ => ?_
   refine WP.mono (counterTail_ok hp hvE hvC hv8) fun s ⟨hsE, hsT, hs8, hsG, hsX, hsF⟩ => ?_
   refine ⟨P, ⟨hsE, hsT, hs8, (hsG _ (by decide) (by decide)).trans hvD,
     (hsG _ (by decide) (by decide)).trans hvN, (hsX _ _).trans hvY,
-    hvF.trans (hsF.sub fun r hr => ?_)⟩, hP⟩
+    hvF.trans (hsF.sub fun r hr => ?_), (hsX _ _).trans hv0, by rw [hsX]; exact hvC⟩, hP⟩
   simp only [List.mem_singleton] at hr; subst r
   exact ⟨pR s₀, List.mem_singleton_self _, Offset.sub_base (pp s₀) (d := 640) (n := 128) (k := 1024) (by decide)⟩
 

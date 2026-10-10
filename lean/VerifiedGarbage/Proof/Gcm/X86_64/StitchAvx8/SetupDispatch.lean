@@ -20,6 +20,10 @@ structure Ready (s₀ : State) (P : Nat → Block) (s : State) : Prop where
   remaining : s.gpr .r9 = s₀.gpr .r9
   hash : s.lane .xmm2 0 = y₀ s₀
   frame : Frame [pR s₀] s₀.mem s.mem
+  /-- The byte-reversal mask, and the counter block as loaded, from which
+  `regCounters` builds the first batch's counters. -/
+  mask : s.lane .xmm0 0 = revMask
+  base : XBinOp.eval .pshufb (s.lane .xmm7 0) revMask = cb s₀
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -346,7 +350,8 @@ theorem setupPrefix_ok {s₀ : State} (hp : SPre s₀) (s : State) (P : Nat → 
       Env s₀ P t ∧ Frame [pR s₀] s₀.mem t.mem ∧
       t.gpr .rdx = dp s₀ ∧ t.gpr .r9 = s₀.gpr .r9 ∧
       (t.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 ∧
-      XBinOp.eval .pshufb (t.lane .xmm7 0) revMask = cb s₀ ∧ t.lane .xmm2 0 = y₀ s₀ := by
+      XBinOp.eval .pshufb (t.lane .xmm7 0) revMask = cb s₀ ∧ t.lane .xmm2 0 = y₀ s₀ ∧
+      t.lane .xmm0 0 = revMask := by
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (setupC_ok s h0 (by rw [hwr, hg _ (by decide)]; exact hp.y_in))
     fun u ⟨hyu, hu10, hax, hdx, hgu, hxu, hmu, hrdu, hwru⟩ => ?_
@@ -413,13 +418,14 @@ theorem setupPrefix_ok {s₀ : State} (hp : SPre s₀) (s : State) (P : Nat → 
       exact (meta_data u).trans gudx
     · exact hrdt.trans (hrdv.trans (hrdu.trans hrd))
     · exact hwrt.trans (hwrv.trans (hwru.trans hwr))
-  refine ⟨ep, ft, ?_, gt _ (by decide) (by decide) (by decide) (by decide) (by decide), ?_, ?_, ?_⟩
+  refine ⟨ep, ft, ?_, gt _ (by decide) (by decide) (by decide) (by decide) (by decide), ?_, ?_, ?_, ?_⟩
   · rw [hgt _ (by decide) (by decide), hgv]; exact gudx
   · rw [ht8, gvax, VG.Proof.Aes.X86_64.icb_lo, vcb]
   · rw [ht7, gvax, BitVec.add_zero, ← blockAt_eq]; exact vcb
   · rw [hxt _ (by decide), hxv, hyu, hg _ (by decide)]
     exact blockAt_frame hm (by
       intro r hr; simp only [List.mem_singleton] at hr; subst r; exact hp.p_y.symm)
+  · rw [hxt _ (by decide), hxv]; exact (hxu _ (by decide) 0 (by decide)).trans h0
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 

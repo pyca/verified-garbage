@@ -123,11 +123,31 @@ def aesFixed (nr : Nat) (regs : List XReg) (g : Nat → List Instr) : Prog isa :
     (List.range (nr-1)).flatMap (fun j => VG.Impl.Aes.X86_64.Vaes.roundL .l128 .xmm1 regs (j+1) ++ g (j+1)) ++
     VG.Impl.Aes.X86_64.Vaes.keyOpL .l128 .xmm1 regs .vaesenclast (at_ .r10 0))
 
-def batch (nr n j : Nat) (g : Nat → List Instr) : Prog isa :=
-  .seq (.block ((List.range n).map (fun i => .vmovdquLoad .l128 (aregs.getD i .xmm3) (at_ .r11 (640+16*i)))))
+/-- The first `n` counter blocks loaded from their templates. -/
+def loads (n : Nat) : List Instr :=
+  (List.range n).map (fun i => .vmovdquLoad .l128 (aregs.getD i .xmm3) (at_ .r11 (640+16*i)))
+
+/-- A batch whose counter blocks `ld` puts in `aregs`. -/
+def batchL (ld : List Instr) (nr n j : Nat) (g : Nat → List Instr) : Prog isa :=
+  .seq (.block ld)
     (.seq (aesFixed nr (aregs.take n) (fun j => g j ++
        (if 1 ≤ j ∧ j ≤ 2 then (List.range 4).flatMap (fun i => prepCounter (4*(j-1)+i)) else [])))
      (.block (xorData (aregs.take n) j ++ ([.alu32 .add .r8 (.imm 8)] : List Instr))))
+
+def batch (nr n j : Nat) (g : Nat → List Instr) : Prog isa := batchL (loads n) nr n j g
+
+/-- The first batch's eight counter blocks, from the counter block in `xmm7`
+(as `initCounter` loaded it) rather than from the templates `initCounter`
+has just written, whose 16-byte loads would wait for its 4-byte stores to
+reach the cache: the block byte-reversed into `xmm11` (as `inc32` counts),
+incremented by `xmm12 = 1` (doubleword 0) and byte-reversed back into each
+register, and `xmm7` itself into `xmm0` last, once the mask is no longer
+needed. -/
+def regCounters : List Instr :=
+  ([.vop (.vbin .vpshufb .l128 .xmm11 .xmm7 .xmm0), .movImm64 .rax 1, .vop (.vmovq .xmm12 .rax)] : List Instr) ++
+  (List.range 7).flatMap (fun i => [.vop (.vbin .vpaddd .l128 .xmm11 .xmm11 .xmm12),
+    .vop (.vbin .vpshufb .l128 (aregs.getD (i+1) .xmm3) .xmm11 .xmm0)]) ++
+  ([.vop (.vbin .vpor .l128 .xmm0 .xmm7 .xmm7)] : List Instr)
 
 def finish : List Instr :=
   ([.mov .rax (.reg .rsi), .alu32 .sub .r8 (.imm 8), .bswap32 .r8,
@@ -217,7 +237,7 @@ def tailT (nr : Nat) : Prog isa :=
           (.seq (.loop (.block (StitchZH.remBody .rdx ++ StitchZH.remNext)) .ne) (.block (tailEnd nr))))))
 
 def encFor (nr : Nat) : Prog isa :=
-  .seq (.block setup) (.seq (batch nr 8 0 (fun _ => [])) (.seq (batch nr 8 8 (fun _ => []))
+  .seq (.block setup) (.seq (batchL regCounters nr 8 0 (fun _ => [])) (.seq (batch nr 8 8 (fun _ => []))
     (.seq (.block ((List.range 8).flatMap prepare ++ ([.alu .cmp .r9 (.imm 24)] : List Instr)))
       (.seq (.ite .b (.block []) (.loop (encBody8 nr) .ae))
         (.seq (.block (hash8 ++ (List.range 8).flatMap (fun i => prepare (8+i)) ++ hash8))
