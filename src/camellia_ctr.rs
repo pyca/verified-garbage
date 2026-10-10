@@ -19,7 +19,7 @@
 //! The caller chooses the initial counter block, and must never use a
 //! counter block twice with the same key (Appendix B.2).
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::arch::camellia::vg_camellia_expand_key;
 use crate::arch::camellia_ctr::vg_camellia_ctr;

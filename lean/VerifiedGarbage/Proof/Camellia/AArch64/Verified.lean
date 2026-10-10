@@ -14,7 +14,7 @@ taint analysis: the pointers, `rounds`, `n` and the stack pointer are
 public, and so is everything the code computes from them, which it keeps
 in registers (`x0`–`x5`, the copies' pointers and counts and the loop
 tests). `ecb_framed` runs it with its working space on the stack, zeroed
-on return: 3152 bytes, the 394 words of the scratch buffer.
+on return: 3248 bytes, the 406 words of the scratch buffer.
 -/
 
 namespace VG.Proof.Camellia.AArch64
@@ -59,7 +59,7 @@ def ecbSat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 272⟩]
-  wr := [⟨0x3000, 16⟩, ⟨0x4000, 8 * 394⟩]
+  wr := [⟨0x3000, 16⟩, ⟨0x4000, 8 * 406⟩]
 
 theorem ecb_verified (dir : Dir) :
     Verified AArch64.target (ecb dir) (Proof.Camellia.ecbScratchContract AArch64.abi (specDir dir) slots) :=
@@ -80,18 +80,18 @@ def ecbFrameSat : State where
   wr := [⟨0x3000, 16⟩]
 
 theorem ecbFrameSat_pre (d : Spec.Camellia.Direction) :
-    ∃ s, (Spec.Camellia.ecbContract AArch64.abi d 3152).pre s := by
+    ∃ s, (Spec.Camellia.ecbContract AArch64.abi d 3248).pre s := by
   implies_sat [Spec.Camellia.ecbContract, Spec.Camellia.ecbSig, Spec.Camellia.ecbPre,
     Spec.Camellia.ecbPost, AArch64.abi, AArch64.argRegs] [ecbFrameSat] using ecbFrameSat
 
 /-- ECB in the direction `dir`, with its working space on the stack. -/
 theorem ecb_framed (dir : Dir) :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3152 .x4 394 (ecb dir))
-      (Spec.Camellia.ecbContract AArch64.abi (specDir dir) 3152) :=
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 3248 .x4 406 (ecb dir))
+      (Spec.Camellia.ecbContract AArch64.abi (specDir dir) 3248) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.Camellia.ecbSig) (nm := "scratch") (e := .u64)
-    (n := 394) (pre := Spec.Camellia.ecbPre AArch64.abi.ptrBits)
+    (n := 406) (pre := Spec.Camellia.ecbPre AArch64.abi.ptrBits)
     (post := Spec.Camellia.ecbPost (specDir dir) AArch64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 3152) (by rw [← Proof.Camellia.ecbScratchContract_eq]; exact ecb_verified dir)
+    (bytes := 3248) (by rw [← Proof.Camellia.ecbScratchContract_eq]; exact ecb_verified dir)
     (by decide) (by decide) (by decide) (Proof.Camellia.ecbPostOut_local _ _) (ecbFrameSat_pre _)
 
 end VG.Proof.Camellia.AArch64

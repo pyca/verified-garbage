@@ -249,7 +249,7 @@ theorem pairPlain_ok {s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx
       refine ⟨_, List.mem_singleton_self _, ?_⟩
       rcases hr with rfl | rfl
       · rw [hb]; exact Region.sub_prefix (by rw [slots_eq, keySlot_eq]; omega)
-      · rw [hb]; exact VG.Offset.sub_base _ (by rw [slots_eq, tailSlot_eq])
+      · rw [hb]; exact VG.Offset.sub_base _ (by rw [slots_eq, tailSlot_eq]; omega)
     have hst : ∀ {t : State} (k : Nat), k < slots → t.gpr sb = s.gpr sb →
         (⟨s.gpr sb, 8 * slots⟩ : Region).Contains (wordAddr (t.gpr sb) k) (64 / 8) := fun k hk hb => by
       rw [hb, wordAddr]; rw [slots_eq] at hk

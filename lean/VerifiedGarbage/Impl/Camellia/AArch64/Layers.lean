@@ -18,9 +18,10 @@ The scratch buffer at `x5` holds, in 8-byte slots: the S-box's spills
 `D2` (72–79): the rounds' working space, below slot 96; then the bitsliced
 subkeys, eight planes each, in the order the rounds use them (from slot
 96); the callee-saved registers `x19`–`x28` (368–377); and the tail buffer
-(378–393, eight blocks), through which every group is copied. The key
-schedule (`ExpandKey.lean`) uses the same layout, with its 128-bit values in
-the tail buffer.
+(378–393, eight blocks), through which every group is copied. The modes
+(`Impl/Modes/AArch64/`), which use slots 0–393 as Camellia's core, keep
+their own 12 slots after them (394–405). The key schedule (`ExpandKey.lean`)
+uses the same layout, with its 128-bit values in the tail buffer.
 -/
 
 namespace VG.Impl.Camellia.AArch64
@@ -45,8 +46,8 @@ def endSlot : Nat := keySlot + 8 * 34
 def savedSlot : Nat := endSlot
 def tailSlot : Nat := savedSlot + 10
 
-/-- The number of slots: the tail buffer is the last 16. -/
-def slots : Nat := tailSlot + 16
+/-- The number of slots: the tail buffer's 16, then the modes' 12. -/
+def slots : Nat := tailSlot + 28
 
 def layerMasks : List (Nat × BitVec 64) :=
   [(evenSlot, 0x00FF00FF00FF00FF), (oddSlot, 0xFF00FF00FF00FF00),

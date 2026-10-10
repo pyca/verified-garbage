@@ -50,6 +50,9 @@ pub(crate) mod blowfish;
 pub(crate) mod camellia;
 
 #[rustfmt::skip]
+pub(crate) mod camellia_ctr;
+
+#[rustfmt::skip]
 pub(crate) mod cast5;
 
 #[rustfmt::skip]
