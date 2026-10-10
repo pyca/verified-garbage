@@ -127,4 +127,56 @@ def ecbDecryptApi : Api where
     may affect timing, not the schedule or data."
   safety := []
 
+/-! ## ECB with its working space as an argument
+
+The ECB functions above keep their working space in a frame of their own. The
+same computation with the working space passed in (`scratch`, 1024 bytes,
+whatever it holds) is a function of its own, so that the ECB functions of a
+target, each with its own wide loop for the blocks it handles at a time, can
+call one copy of the code for the blocks left. -/
+
+def ecbCoreSig : Sig where
+  params := [("schedule", .array false .u8 384), ("data", .slice true (.array .u8 8) "n"),
+    ("scratch", .array true .u64 128)]
+
+/-- `ecbContract`, whatever `scratch` is. -/
+def ecbCoreContract {M : ISA} (A : Abi M) (direction : Direction) (stack : Nat := 0) : Contract M :=
+  ecbCoreSig.contract A
+    (post := fun schedule data n _scratch => ecbPost direction A.ptrBits schedule data n)
+    (writeArgs := true) (stack := stack)
+
+def ecbEncryptCoreContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  ecbCoreContract A .encrypt stack
+
+def ecbDecryptCoreContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  ecbCoreContract A .decrypt stack
+
+def ecbEncryptCoreApi : Api where
+  module := "triple_des"
+  name := "vg_triple_des_ecb_encrypt_core"
+  sig := ecbCoreSig
+  writeArgs := true
+  contracts := some fun A stack => ecbEncryptCoreContract A stack
+  summary := "Triple DES ECB encryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at \
+    `data`, in place, under the schedule written by `vg_triple_des_expand_key`, with the \
+    1024 bytes at `scratch` as working space: `vg_triple_des_ecb_encrypt` without its own \
+    frame. No padding is added or removed. For `n = 0`, no data is transformed.\n\n\
+    Contract: `VG.Spec.TripleDes.ecbEncryptCoreContract`. Constant time: only pointers and `n` \
+    may affect timing, not the schedule or data."
+  safety := ["The contents of `scratch` on return are unspecified."]
+
+def ecbDecryptCoreApi : Api where
+  module := "triple_des"
+  name := "vg_triple_des_ecb_decrypt_core"
+  sig := ecbCoreSig
+  writeArgs := true
+  contracts := some fun A stack => ecbDecryptCoreContract A stack
+  summary := "Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at \
+    `data`, in place, under the schedule written by `vg_triple_des_expand_key`, with the \
+    1024 bytes at `scratch` as working space: `vg_triple_des_ecb_decrypt` without its own \
+    frame. No padding is added or removed. For `n = 0`, no data is transformed.\n\n\
+    Contract: `VG.Spec.TripleDes.ecbDecryptCoreContract`. Constant time: only pointers and `n` \
+    may affect timing, not the schedule or data."
+  safety := ["The contents of `scratch` on return are unspecified."]
+
 end VG.Spec.TripleDes
