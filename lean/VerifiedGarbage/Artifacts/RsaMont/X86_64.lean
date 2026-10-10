@@ -25,9 +25,7 @@ def artifacts : List Artifact := [
     doc := Spec.Rsa.Mont.mulApi.doc
       (notes := ["For `w` a multiple of 8 (below 2^30 + 8), BMI2 and ADX: the product by \
         8-by-8 tiles of `mulx` with two carry chains (`adcx`, `adox`), or, when `a = b`, the square \
-        by triangular tiles computing each cross product once; then the reduction by a row per \
-        word, each row adding the word's multiple of `m` by blocks of eight words with the same \
-        two carry chains, and \
+        by triangular tiles computing each cross product once; then a word-by-word reduction and \
         the selected subtraction of `m`, eight words per iteration, with the borrow and the mask \
         moved between `rbp` and the carry flag once per eight words and the selection by `cmovb`. \
         Other sizes take `vg_rsa_mont_mul`'s code. The tiles read \
