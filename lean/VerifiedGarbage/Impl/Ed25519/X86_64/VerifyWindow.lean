@@ -231,7 +231,7 @@ def windowsWith (pt : Point64.Ops) : Prog isa :=
     (.ite .ne (.loop (stepAt pt) .ne) (.block []))))
 
 /-- The windows, calling the point functions with the field multiplications `fld`. -/
-def windows (fld : Arith) : Prog isa := windowsWith (Point64.calls fld)
+def windows (fld : Arith) : Prog isa := windowsWith (Point64.bodies fld)
 
 /-! ## Skipping the leading zero bytes of `k` -/
 
