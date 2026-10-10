@@ -24,8 +24,10 @@ theorem jointCachedSum_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : N
     (h2 : E c.selected=E c.K.E.z*E c.K.E.z)
     (h3 : E (c.selected+8*c.K.M.n)=E c.selected*E c.K.E.z) :
     RelCT isa (FieldPair c.K.M base size C.p (·∈jointSlots c) (cachedSlots c.K.M.n c.K.E c.selected++jointLive c) E)
-      (Code.seq (CachedJac.add c.K c.K.R c.K.E c.K.D c.selected) (.block (copyPt c.K.M.n c.K.R c.K.D))).inline
+      (Joint.cachedAdd c).inline
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
+  refine jointAdd_relCT_dispatch (body := PointOps.addCachedBody c.K c.selected) rfl (fun _ => rfl)
+    (fun C' hp => (hL.calls.ok C' hp).1) ?_
   have sl : ∀ x∈(rcbW c.K.S c.K.D++rcbR c.K.S c.K.R c.K.E)++[c.selected,c.selected+8*c.K.M.n],x∈jointSlots c := by intro x hx; jslots
   have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E++[c.selected,c.selected+8*c.K.M.n],x∈cachedSlots c.K.M.n c.K.E c.selected++jointLive c := by intro x hx; jslots
   apply RelCT.seq (cachedJacAdd_relCT hL.lookup.layout.lay hm hc.add

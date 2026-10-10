@@ -13,7 +13,7 @@ include hL hT hI
 
 theorem jointVerify_p384_public_ct :
     ConstantTime isa (VPre p384v) (JointPublic p384v p384Table)
-      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384v publicJoint (Joint.jacDouble publicJoint.K)).inline := by
+      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384v publicJoint (PointOps.doubleCall Spec.Weierstrass.PointOps.p384 publicJoint.K)).inline := by
   have hc := p384v_ok hI
   refine jointVerify_ct_of_points hc joint_before_ct ?_ joint_after_ct
   intro s₀ t₀ ps pt pub
@@ -23,7 +23,7 @@ theorem jointVerify_p384_public_ct :
 theorem jointVerify_p384_adx_public_ct :
     ConstantTime isa (VPre p384vx) (JointPublic p384vx p384Table)
       (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384vx publicJointAdx
-        (Joint.jacDouble publicJointAdx.K)).inline := by
+        (PointOps.doubleCall Spec.Weierstrass.PointOps.p384 publicJointAdx.K)).inline := by
   have hc := p384vx_ok hI
   refine jointVerify_ct_of_points hc joint_adx_before_ct ?_ joint_adx_after_ct
   intro s₀ t₀ ps pt pub
