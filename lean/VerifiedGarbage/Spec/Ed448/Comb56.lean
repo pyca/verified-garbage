@@ -25,11 +25,10 @@ comb's digits. The point is three coordinates `X, Y, Z` in slots 0 to 2 of
 the working space, each an element of `Spec/X448/Field56.lean` (eight limbs
 of 56 bits), with limbs below `2^56 + 2^8` (`Field56.Res`). The function
 needs and keeps `Field56.Bounded` (every limb of every slot below
-`3·2^56 + 2^9`) and slot 19 zero, every limb 0. It writes
-slots 0 to 18, the 16 bytes from byte 2816 (in slot 21, after its element's
-64 bytes), where it saves two registers, and its own bytes (`Field56.own`); on return those, but the result, are
-unspecified and may hold intermediate values, and every other byte of `ws`
-keeps its value (`Field56.Keeps`).
+`3·2^56 + 2^9`) and slot 19 zero, every limb 0. It writes the 22 slots
+(bytes 64 to 2879) and its own bytes (`Field56.own`); on return those, but
+the result, are unspecified and may hold intermediate values, and every
+other byte of `ws` keeps its value (`Field56.Keeps`).
 
 Everything is secret but the pointer and `n`, which are public, and the
 function is constant time.
@@ -43,9 +42,6 @@ open Point56 (pointAt zeroSlot)
 /-- Where the scalar's bits are, a byte each. -/
 def bitsOff : Nat := 3072
 
-/-- Where the function saves two registers, for 16 bytes: in slot 21, after its element. -/
-def saveOff : Nat := 2816
-
 /-- The scalar whose `t` bits are the bytes from `bitsOff`, least significant first. -/
 def bitsAt (m : Mem) (ws : Addr) : Nat → Nat
   | 0 => 0
@@ -55,9 +51,8 @@ def bitsAt (m : Mem) (ws : Addr) : Nat → Nat
 def IsBits (m : Mem) (ws : Addr) (t : Nat) : Prop :=
   ∀ i < t, (m (ws + BitVec.ofNat 64 (bitsOff + i))).toNat < 2
 
-/-- What the function changes: the result and the slots up to 18, the saved registers, and its own
-bytes. -/
-def written : List (Nat × Nat) := (slotAt 0, slotAt 19) :: (saveOff, saveOff + 16) :: own
+/-- What the function changes: the slots, and its own bytes. -/
+def written : List (Nat × Nat) := (slotAt 0, slotAt X448.Field56.slots) :: own
 
 /-- `ws: *mut [u64; 1024]` and `n: usize`, both public. -/
 def sig : Sig where
@@ -90,15 +85,14 @@ def combBaseApi : Api where
     is specified. Slot `n` of `ws` is the first 64 bytes from byte `64 + 128 n`, eight 64-bit \
     little-endian words, least significant first, each a limb: the number `Σ l_i 2^(56 i)`, \
     standing for its residue modulo `p = 2^448 - 2^224 - 1`, not necessarily reduced. The \
-    result's limbs are below `2^56 + 2^8`. Every byte of `ws` but slots 0 to 18 (bytes 64 to \
-    2495), bytes 2816 to 2831 and the function's own working space (bytes 3584 to 4735) keeps \
-    its value.\n\n\
+    result's limbs are below `2^56 + 2^8`. Every byte of `ws` but the 22 slots (bytes 64 to \
+    2879) and the function's own working space (bytes 3584 to 4735) keeps its value.\n\n\
     Contract: `combBaseContract` of `VG.Spec.Ed448.Comb56`. Constant time: only the pointer and \
     `n` may affect timing."
   safety := [X448.Field56.boundedDoc,
     "`n` must be 56 or 57, and each of bytes 3072 to `3072 + 8 n - 1` of `ws` must be 0 or 1.",
     "Every limb of slot 19 of `ws` (bytes 2496 to 2559) must be 0.",
-    "Bytes 64 to 2495, 2816 to 2831 and 3584 to 4735 of `ws` but the result are unspecified on \
-      return and may hold intermediate values, which the caller must destroy if they are secret."]
+    "Bytes 64 to 2879 and 3584 to 4735 of `ws` but the result are unspecified on return and may \
+      hold intermediate values, which the caller must destroy if they are secret."]
 
 end VG.Spec.Ed448.Comb56
