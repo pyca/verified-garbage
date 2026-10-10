@@ -13,7 +13,7 @@ def artifacts : List Artifact := [
     contract := Spec.Sm4.expandKeyContract X86_64.abi 3128
     stack := 3128
     verified := Proof.Sm4.X86_64.expandKey_framed
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Sm4.ecbEncryptApi with
     target := X86_64.target
     doc := Spec.Sm4.ecbEncryptApi.doc
@@ -23,7 +23,7 @@ def artifacts : List Artifact := [
     stack := 3128
     ofSig := ⟨_, _, _, by unfold Spec.Sm4.ecbEncryptContract Spec.Sm4.ecbContract; rfl⟩
     verified := Proof.Sm4.X86_64.ecb_framed .encrypt
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Sm4.ecbDecryptApi with
     target := X86_64.target
     doc := Spec.Sm4.ecbDecryptApi.doc
@@ -33,6 +33,6 @@ def artifacts : List Artifact := [
     stack := 3128
     ofSig := ⟨_, _, _, by unfold Spec.Sm4.ecbDecryptContract Spec.Sm4.ecbContract; rfl⟩
     verified := Proof.Sm4.X86_64.ecb_framed .decrypt
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Sm4.X86_64

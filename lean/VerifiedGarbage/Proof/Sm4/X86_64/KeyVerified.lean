@@ -26,7 +26,7 @@ theorem expandKey_ct : ConstantTime isa expandKeyX86_64.pre expandKeyX86_64.pub 
 theorem expandKey_correct (s : State) (hs : expandKeyX86_64.pre s) :
     ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ expandKeyX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hpost⟩ := expandKey_wp hs
-  exact ⟨t, s', he, abiPreserved_of_exec (c := expandKey) (by decide +kernel) he hg, hpost⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (c := expandKey) (by lit_decide) he hg, hpost⟩
 
 /-- A state satisfying the precondition. -/
 def expandKeySat : State where
@@ -54,7 +54,7 @@ theorem expandKey_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Sm4.expandKeySig) (nm := "scratch") (e := .u64)
     (n := 390) (post := Proof.Sm4.expandKeyPost X86_64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 3128) expandKey_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by decide +kernel)) (by decide +kernel) (by decide)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Sm4.expandKeyPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
