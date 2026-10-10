@@ -117,7 +117,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
     · intro r hr
       by_cases saved : r ∈ callerSaved
       · exact saved₄ r saved
-      · have eqSp : r = .esp := by revert hr saved; cases r <;> decide
+      · have eqSp : r = .esp := by cases r <;> simp_all [calleeSaved, callerSaved]
         subst r
         rw [keep₄.reg .esp (by decide), h₃.reg .esp (by decide) (by decide) (by decide), sp₂]
     · have stackRet : (Region.mk (addr32 (s.gpr .esp)) 4).Disjoint (below (s.gpr .esp) 16) := by
