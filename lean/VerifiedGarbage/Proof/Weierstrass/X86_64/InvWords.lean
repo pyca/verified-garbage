@@ -167,10 +167,10 @@ theorem subSh_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (
 /-- The products' code of `lin`. -/
 def prods (w w' : Reg) (t x y k K : Nat) : List Instr :=
   zeroWords K t ++
-  [.mov .rcx (.reg w)] ++ memRow k t x ++ (if k < K then [.store (sc (t + 8 * k)) .rbp] else []) ++
-  [.mov .rcx (.reg w')] ++ memRow k t y ++
-  (if k < K then [.mov .r8 (.mem (sc (t + 8 * k))), .alu .add .r8 (.reg .rbp), .store (sc (t + 8 * k)) .r8]
-    else [])
+  ([.mov .rcx (.reg w)] : List Instr) ++ memRow k t x ++ ((if k < K then [.store (sc (t + 8 * k)) .rbp] else []) : List Instr) ++
+  ([.mov .rcx (.reg w')] : List Instr) ++ memRow k t y ++
+  ((if k < K then [.mov .r8 (.mem (sc (t + 8 * k))), .alu .add .r8 (.reg .rbp), .store (sc (t + 8 * k)) .r8]
+    else []) : List Instr)
 
 theorem lin_eq (w w' : Reg) (t x y U k K : Nat) :
     lin w w' t x y U k K = prods w w' t x y k K ++

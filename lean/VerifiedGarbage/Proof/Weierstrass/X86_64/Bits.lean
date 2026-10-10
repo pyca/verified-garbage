@@ -58,13 +58,13 @@ theorem bitMask_bool_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base 
 
 /-- Bit `j` of `rax` (a byte) to byte `j` of the eight at `rdi + 8 rbx + dst`. -/
 def bitJ (dst j : Nat) : List Instr :=
-  [.mov .rdx (.reg .rax)] ++ (if j = 0 then [] else [.shift .shr .rdx j]) ++
-    [.alu .and .rdx (.imm 1), .store8 (bitAt dst j) .rdx]
+  ([.mov .rdx (.reg .rax)] : List Instr) ++ ((if j = 0 then [] else [.shift .shr .rdx j]) : List Instr) ++
+    ([.alu .and .rdx (.imm 1), .store8 (bitAt dst j) .rdx] : List Instr)
 
 /-- The body of `bits`' loop. -/
 def bitsBody (src dst nbytes : Nat) : List Instr :=
-  [.movzx8 .rax (tbl src)] ++ (List.range 8).flatMap (bitJ dst) ++
-    [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm (BitVec.ofNat 32 nbytes))]
+  ([.movzx8 .rax (tbl src)] : List Instr) ++ ((List.range 8).flatMap (bitJ dst) : List Instr) ++
+    ([.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm (BitVec.ofNat 32 nbytes))] : List Instr)
 
 theorem bits_eq (src dst nbytes : Nat) :
     bits src dst nbytes = .seq (.block [.mov32 .rbx (.imm 0)]) (.loop (.block (bitsBody src dst nbytes)) .ne) :=

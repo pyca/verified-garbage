@@ -108,10 +108,10 @@ def pfirst : List Instr :=
 /-- A column `(x, y)` of the batch's matrix, times the chunk's: `x = u x + v y`
 and `y = q x + r y`, through `rax`, `rdx` and `[t]`. -/
 def pcol (x y : Reg) (t : Nat) : List Instr :=
-  [.mov .rax (.reg .r13), .mul x, .store (sc t) .rax] ++
-    [.mov .rax (.reg .r8), .mul x, .mov x (.reg .rax), .mov .rax (.reg .rcx), .mul y, .alu .add x (.reg .rax),
-      .mov .rax (.reg .rbp), .mul y] ++
-    [.alu .add .rax (.mem (sc t)), .mov y (.reg .rax)]
+  ([.mov .rax (.reg .r13), .mul x, .store (sc t) .rax] : List Instr) ++
+    ([.mov .rax (.reg .r8), .mul x, .mov x (.reg .rax), .mov .rax (.reg .rcx), .mul y, .alu .add x (.reg .rax),
+      .mov .rax (.reg .rbp), .mul y] : List Instr) ++
+    ([.alu .add .rax (.mem (sc t)), .mov y (.reg .rax)] : List Instr)
 
 /-- The batch's matrix times the chunk's. -/
 def pcomp (t : Nat) : List Instr := pcol .r9 .r11 t ++ pcol .r10 .r12 t
@@ -140,10 +140,10 @@ def maskCopy (m : Reg) (dst src : Nat) : Nat → List Instr
 words copied to `[U]` first; through `rax`, `rcx`, `rdx`, `rbp`, `r8`, `r13`. -/
 def lin (w w' : Reg) (t x y U k K : Nat) : List Instr :=
   zeroWords K t ++
-  [.mov .rcx (.reg w)] ++ memRow k t x ++ (if k < K then [.store (sc (t + 8 * k)) .rbp] else []) ++
-  [.mov .rcx (.reg w')] ++ memRow k t y ++
-  (if k < K then [.mov .r8 (.mem (sc (t + 8 * k))), .alu .add .r8 (.reg .rbp), .store (sc (t + 8 * k)) .r8]
-    else []) ++
+  ([.mov .rcx (.reg w)] : List Instr) ++ memRow k t x ++ ((if k < K then [.store (sc (t + 8 * k)) .rbp] else []) : List Instr) ++
+  ([.mov .rcx (.reg w')] : List Instr) ++ memRow k t y ++
+  ((if k < K then [.mov .r8 (.mem (sc (t + 8 * k))), .alu .add .r8 (.reg .rbp), .store (sc (t + 8 * k)) .r8]
+    else []) : List Instr) ++
   maskOf .r13 w ++ maskCopy .r13 U x (K - 1) ++ chainW .sub .sbb (K - 1) (t + 8) (t + 8) U ++
   maskOf .r13 w' ++ maskCopy .r13 U y (K - 1) ++ chainW .sub .sbb (K - 1) (t + 8) (t + 8) U
 

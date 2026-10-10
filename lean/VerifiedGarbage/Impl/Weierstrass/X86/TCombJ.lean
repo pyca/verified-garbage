@@ -40,10 +40,10 @@ window, through `ecx = edi + w esi`, and, for `c`, bit `w esi - 1`), the window'
 bit `s`, and `s ? 2^w - m : m`, through `edx`. -/
 def bdigit (c : Bool) : List Instr :=
   winIndex K.w ++ hornerBits K.bits K.w ++
-  (if c then [.movzx8 .edx (winByte (K.bits - 1)), .alu .add .eax (.reg .edx)] else []) ++
-  [.movzx8 .edx (winByte (K.bits + K.w - 1)), .mov .ebx (.imm 0), .alu .sub .ebx (.reg .edx),
+  ((if c then [.movzx8 .edx (winByte (K.bits - 1)), .alu .add .eax (.reg .edx)] else []) : List Instr) ++
+  ([.movzx8 .edx (winByte (K.bits + K.w - 1)), .mov .ebx (.imm 0), .alu .sub .ebx (.reg .edx),
     .alu .xor .eax (.reg .ebx), .alu .sub .eax (.reg .ebx),
-    .alu .and .ebx (.imm (BitVec.ofNat 32 (2 ^ K.w))), .alu .add .eax (.reg .ebx), .mov .ebx (.reg .eax)]
+    .alu .and .ebx (.imm (BitVec.ofNat 32 (2 ^ K.w))), .alu .add .eax (.reg .ebx), .mov .ebx (.reg .eax)] : List Instr)
 
 /-- `ecx` all ones if Booth's digit `esi` is negative: minus its window's top
 bit, through `eax`. -/

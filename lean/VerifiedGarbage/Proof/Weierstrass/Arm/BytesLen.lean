@@ -126,11 +126,11 @@ theorem loadBytes_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
 
 /-- One word of `shrWords`. -/
 def shrStep (n o sh j : Nat) : List Instr :=
-  [.ldr .r4 wb (o + 4 * j), .mov .r4 (.shifted .r4 .lsr sh)] ++
-  (if j + 1 < 2 * n then
+  ([.ldr .r4 wb (o + 4 * j), .mov .r4 (.shifted .r4 .lsr sh)] : List Instr) ++
+  ((if j + 1 < 2 * n then
     [.ldr .r5 wb (o + 4 * (j + 1)), .dp .orr .r4 .r4 (.shifted .r5 .lsl (32 - sh))]
-  else []) ++
-  [.str .r4 wb (o + 4 * j)]
+  else []) : List Instr) ++
+  ([.str .r4 wb (o + 4 * j)] : List Instr)
 
 theorem shrWords_eq (n o sh : Nat) : shrWords n o sh = (List.range (2 * n)).flatMap (shrStep n o sh) := rfl
 

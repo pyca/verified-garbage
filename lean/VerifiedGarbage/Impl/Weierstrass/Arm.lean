@@ -139,11 +139,11 @@ ones (`0 < sh < 32`), through `r4` and `r5`: word `j` is word `j` shifted
 right, or'd with word `j + 1` shifted left by `32 - sh`. -/
 def shrWords (n o sh : Nat) : List Instr :=
   (List.range (2 * n)).flatMap fun j =>
-    [.ldr .r4 wb (o + 4 * j), .mov .r4 (.shifted .r4 .lsr sh)] ++
-    (if j + 1 < 2 * n then
+    ([.ldr .r4 wb (o + 4 * j), .mov .r4 (.shifted .r4 .lsr sh)] : List Instr) ++
+    ((if j + 1 < 2 * n then
       [.ldr .r5 wb (o + 4 * (j + 1)), .dp .orr .r4 .r4 (.shifted .r5 .lsl (32 - sh))]
-    else []) ++
-    [.str .r4 wb (o + 4 * j)]
+    else []) : List Instr) ++
+    ([.str .r4 wb (o + 4 * j)] : List Instr)
 
 /-- `[dst + d] = ` the `n`-word number at `[r12 + a]` masked with `r10`, in
 `len` bytes big-endian (`len ≤ 8 n`, the number below `2^(8 len)`), through
