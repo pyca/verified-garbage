@@ -366,12 +366,25 @@ theorem ladWkQ (hc : CfgOk c) : LadWk (Impl.Ecdh.Arm.Cfg.ladderQ c) size c.wk wh
 theorem ladWxQ_eq (c : Cfg) : ladWx (Impl.Ecdh.Arm.Cfg.ladderQ c) c.wk = slW c [RX, RY, RZ, T0, T1, T2, T3,
     T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] ++ [(c.wk, 64 * c.n)] := rfl
 
+/-- The ladder's slots are below the point functions'. -/
+theorem ladPtQ (h6 : c.n ≤ 6) : VG.Proof.Weierstrass.Arm.Point.LadPt (Impl.Ecdh.Arm.Cfg.ladderQ c) where
+  sl := by
+    have e : ladSlots (Impl.Ecdh.Arm.Cfg.ladderQ c) = [AP, B3P, PX, PY, ONEP, RX, RY, RZ, T0, T1, T2, T3,
+      T4, T5, DX, DY, DZ, TX, TY, TZ].map c.sl := rfl
+    rw [e]
+    intro x hx
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+    have : ∀ i ∈ [AP, B3P, PX, PY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ],
+      i < 45 := by decide
+    exact sl_below_pt h6 (this i hi)
+  mo := sl_below_pt h6 (i := MP) (by decide)
+
 /-- What the ladder and the power leave: `Q 0` accepts what `R` holds. -/
 structure LadPost (c : Cfg) (base : Addr) (Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop) (s s' : State) :
     Prop where
   scr : Scr s' base size
   rest : Rest powClob s s'
-  unch : Unch base (slWk c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
+  unch : Unch base (slWkP c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
     TX, TY, TZ, TMP] ++ slWk c [ACC, PT, TMP]) s.mem s'.mem
   q : Q 0 (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY)) (tmv c.C c.n base s' (c.sl RZ))
   acc_lt : sv c base s' ACC < c.C.p
@@ -389,7 +402,7 @@ theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
     (ht₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', LadPost c base Q s s' → WP isa rest s' R) :
-    WP isa (.seq (ladder (Impl.Ecdh.Arm.Cfg.ladderQ c) c.SP) (.seq (pow c.powP c.SP) rest)) s R := by
+    WP isa (.seq (VG.Impl.Weierstrass.Arm.Point.ladderP (Impl.Ecdh.Arm.Cfg.ladderQ c) c.SP) (.seq (pow c.powP c.SP) rest)) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
@@ -419,20 +432,21 @@ theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     show Q _ (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ))
     rw [hrx, hry, hrz, toM_cmont hc, toM_zero]
     exact hO
-  refine WP.seq (WP.mono (ladder_ok (L := Impl.Ecdh.Arm.Cfg.ladderQ c) (k := k) (ladLayQ hc)
-    (ladWkQ hc) hc.fp hpR (bitsAt_lt hc (j := 0) (by decide)) hs hf (modP_of hc F.mp) hlt hstep hR ht₀ henc)
+  refine WP.seq (WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (L := Impl.Ecdh.Arm.Cfg.ladderQ c) (k := k)
+    (ladLayQ hc) (ladWkQ hc) hc.fp ladPtQ hpR (bitsAt_lt hc (j := 0) (by decide)) hs hf (modP_of hc F.mp) hlt
+    hstep hR ht₀ henc)
     fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
-  rw [ladWxQ_eq] at U₅
+  rw [VG.Proof.Weierstrass.Arm.Point.ladWp, ladWxQ_eq] at U₅
   have hs₅ := hs.of_rest K₅ (by decide)
   have hf₅ := hf.of_rest K₅
-  have F₅ := F.unch h7 hn (fixedOk_slWk h7 (by decide)) U₅
+  have F₅ := F.unch h7 hn (fixedOk_slWkP h7 (by decide)) U₅
   have rz₅ : wordsVal s₅.mem base (c.sl RZ) c.n < c.C.p :=
     L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
   refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hc.fp hpR
     (bitsAt_lt hc (j := 1) (by decide)) hs₅ hf₅ M₅ rz₅
     F₅.onep (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWk h7 (by decide))]
+      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWkP h7 (by decide))]
       exact ht₁ t ht)
     (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega) henc) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   rw [powWxP_eq] at U₆

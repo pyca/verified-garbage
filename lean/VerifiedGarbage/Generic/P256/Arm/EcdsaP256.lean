@@ -25,7 +25,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       `vg_p256_mul_mod_p` and the other functions of `p256_mont`) with a final \
       conditional subtraction. `[k]G` is a double-and-add ladder over all 256 bits of `k`, with \
       the complete addition formulas of Renes, Costello and Batina for every addition and \
-      doubling and a masked selection for each bit; the inversions modulo `p` and `n` are \
+      doubling (calls of `vg_p256_point_double` and \
+      `vg_p256_point_add`) and a masked selection for each bit; the inversions modulo `p` and `n` are \
       Fermat's, by square-and-always-multiply over the bits of `p - 2` and `n - 2`. The \
       signature (or zeros) is selected by a mask, so the time depends only on the pointers."])
     code := Impl.Ecdsa.Arm.signP256
@@ -45,7 +46,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       key's point if it is valid, else `G`, so it always runs on a point of the curve. `s⁻¹` \
       modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` and `[v]Q` are \
       double-and-add ladders over all 256 bits of `u` and `v`, with the complete addition \
-      formulas of Renes, Costello and Batina, which also add the two. The result is the \
+      formulas of Renes, Costello and Batina (calls of `vg_p256_point_double` and \
+      `vg_p256_point_add` in the ladders), which also add the two. The result is the \
       conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at \
       infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the pointers, \
       although the contract would let every input affect it."])
