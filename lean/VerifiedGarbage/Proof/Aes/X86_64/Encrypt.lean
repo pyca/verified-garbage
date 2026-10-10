@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Aes.Bitsliced
 import VerifiedGarbage.Proof.Framework.X86_64.Straight
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
 
 section
 
@@ -98,7 +97,7 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
     subst hqk
     simp only [TableRel, inT, testBit_tableOf, hc, decide_true, Bool.true_and,
       BitVec.testBit_toNat, getLsbD_bsByte _ _ hk8]
-  obtain ⟨s', hs', p₀⟩ := key 0 (by omega_arith)
+  obtain ⟨s', hs', p₀⟩ := key 0 (by omega)
   refine ⟨s', hs', fun j hj p hp => ?_, p₀.rd, p₀.wr, fun r hr => p₀.other r ?_, p₀.frame⟩
   · obtain ⟨s'', hs'', p₁⟩ := key p hp
     obtain rfl := run_unique hs'' hs'
@@ -179,7 +178,7 @@ theorem q_linear {k xb : Nat} {c : Cfg} {is : List Instr} {g : Nat → Nat → L
   obtain ⟨s', hs', hout, hrd, hwr, hoth, hfr⟩ := linear_ok hchk hok W (fun r i hri => by
     simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hri
     obtain ⟨i, hi, rfl, rfl⟩ := hri
-    exact ⟨by omega_arith, hW i hi⟩) hext
+    exact ⟨by omega, hW i hi⟩) hext
   have hmem : ∀ j < 8, (q j, g j) ∈ qOuts g := fun j hj => by
     simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩
   exact ⟨s', hs', fun j hj p hp => hout (q j) (g j) (hmem j hj) p hp, hrd, hwr,
@@ -198,7 +197,7 @@ theorem toBs_ok {s : State} (hok : Ok linCfg s) :
     (fun _ _ => rfl) (fun j hj => by simp [linCfg] at hj)
   refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
   rw [hout j hj p hp, toBsG, xorBits_cons, xorBits_nil, Bool.xor_false,
-    bitOf_word _ _ _ (by omega_arith)]
+    bitOf_word _ _ _ (by omega)]
 
 /-- `toBs` leaves `t1` alone. -/
 theorem toBs_keeps_t1 {s s' : State} (hok : Ok linCfg s) (h : runBlock isa toBs s = some s') :
@@ -206,7 +205,7 @@ theorem toBs_keeps_t1 {s s' : State} (hok : Ok linCfg s) (h : runBlock isa toBs 
   obtain ⟨s'', hs'', -, -, -, hoth, -⟩ := linear_ok toBs_check hok (Q s) (fun r i hri => by
     simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hri
     obtain ⟨i, hi, rfl, rfl⟩ := hri
-    exact ⟨by omega_arith, rfl⟩) (fun j hj => by simp [linCfg] at hj)
+    exact ⟨by omega, rfl⟩) (fun j hj => by simp [linCfg] at hj)
   rw [run_unique h hs'']
   exact hoth t1 (by decide +kernel)
 
@@ -219,7 +218,7 @@ theorem fromBs_ok {s : State} (hok : Ok linCfg s) :
     (fun _ _ => rfl) (fun j hj => by simp [linCfg] at hj)
   refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
   rw [hout j hj p hp, fromBsG, xorBits_cons, xorBits_nil, Bool.xor_false,
-    bitOf_word _ _ _ (by simp only [pos]; omega_arith)]
+    bitOf_word _ _ _ (by simp only [pos]; omega)]
 
 theorem shiftRows_ok {s : State} (hok : Ok linCfg s) :
     ∃ s', runBlock isa shiftRows s = some s' ∧
@@ -230,7 +229,7 @@ theorem shiftRows_ok {s : State} (hok : Ok linCfg s) :
     (fun _ _ => rfl) (fun j hj => by simp [linCfg] at hj)
   refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
   rw [hout j hj p hp, srG, xorBits_cons, xorBits_nil, Bool.xor_false,
-    bitOf_word _ _ _ (by simp only [srSrc]; omega_arith)]
+    bitOf_word _ _ _ (by simp only [srSrc]; omega)]
 
 theorem mixColumns_ok {s : State} (hok : Ok linCfg s) :
     ∃ s', runBlock isa mixColumns s = some s' ∧
@@ -257,12 +256,12 @@ theorem addRoundKey_ok {s : State} (hok : Ok arkCfg s) :
   obtain ⟨s', hs', hout, rest⟩ := q_linear addRoundKey_check (by decide) (by decide +kernel) hok W
     (fun i hi => by simp [W, hi]) (fun j hj => by
       simp only [arkCfg] at hj ⊢
-      refine ⟨by omega_arith, ?_⟩
-      simp [W, show ¬ 8 + j < 8 by omega_arith])
+      refine ⟨by omega, ?_⟩
+      simp [W, show ¬ 8 + j < 8 by omega])
   refine ⟨s', hs', fun j hj p hp => ?_, rest⟩
   rw [hout j hj p hp, arkG, xorBits_cons, xorBits_cons, xorBits_nil, Bool.xor_false,
     bitOf_word _ _ _ hp, bitOf_word _ _ _ hp]
-  simp [W, hj, show ¬ 8 + j < 8 by omega_arith]
+  simp [W, hj, show ¬ 8 + j < 8 by omega]
 
 end VG.Proof.Aes.X86_64
 
@@ -323,7 +322,7 @@ theorem Ctx.linOk {s₀ s : State} (hp : (⟨s₀.gpr sb, 2048⟩ : Region) ∈ 
 
 /-- The key area is outside what the layers write. -/
 theorem keys_disjoint (b : Addr) : Region.Disjoint ⟨b + 1024, 1024⟩ ⟨b, 384⟩ :=
-  Offset.disjoint_base (d := 1024) b (by omega_arith) (by omega_arith)
+  Offset.disjoint_base (d := 1024) b (by omega) (by omega)
 
 theorem addr3 (b : Addr) (x y z : Nat) :
     b + BitVec.ofNat 64 x + BitVec.ofNat 64 y + BitVec.ofNat 64 z = b + BitVec.ofNat 64 (x + y + z) := by
@@ -338,7 +337,7 @@ theorem key_contains (b : Addr) {R j k : Nat} (hR : R ≤ 14) (hj : j ≤ R) (hk
       (wordAddr (b + BitVec.ofNat 64 (1920 - 64 * R) + BitVec.ofNat 64 (64 * j)) k) (64 / 8) := by
   simp only [wordAddr]
   rw [addr3]
-  exact off_contains (base := 1024) b (by omega_arith) (by omega_arith) (by omega_arith)
+  exact off_contains (base := 1024) b (by omega) (by omega) (by omega)
 
 theorem keyRel_congr {K K' : Nat → BitVec 64} {rk : List Byte} (h : KeyRel K rk)
     (he : ∀ k < 8, K' k = K k) : KeyRel K' rk := by
@@ -349,7 +348,7 @@ theorem keyRel_congr {K K' : Nat → BitVec 64} {rk : List Byte} (h : KeyRel K r
 theorem EncPre.keysAt {s₀ s : State} {R : Nat} {w : List Byte} (hp : EncPre s₀ R w) (hc : Ctx s₀ s) :
     KeysAt s.mem (s₀.gpr .rdi) R w := by
   intro j hj
-  have hR : R ≤ 14 := by rcases hp.rounds with h | h | h <;> omega_arith
+  have hR : R ≤ 14 := by rcases hp.rounds with h | h | h <;> omega
   refine keyRel_congr (hp.keys j hj) fun k hk => ?_
   rw [hp.k0]
   exact hc.frame.readW (key_contains _ hR hj hk)
@@ -361,8 +360,8 @@ theorem ark_cfg_ok {s : State} {b : Addr} {n : Nat} (hscr : (⟨b, 2048⟩ : Reg
   extIn k hk' := by
     simp only [arkCfg] at hk'
     refine ⟨⟨b, 2048⟩, List.mem_append_right _ hscr, ?_⟩
-    have h := off_contains (base := 0) (n := n + 8 * k) (len := 2048) (k := 8) b (by omega_arith) (by omega_arith)
-      (by omega_arith)
+    have h := off_contains (base := 0) (n := n + 8 * k) (len := 2048) (k := 8) b (by omega) (by omega)
+      (by omega)
     simp only [BitVec.add_zero] at h
     simpa [arkCfg, wordAddr, hk, BitVec.ofNat_add, BitVec.add_assoc] using h
   slots := by simp [arkCfg]
@@ -398,7 +397,7 @@ theorem midRounds_succ (w : List Byte) (m : Nat) (x : Spec.Aes.State) :
 theorem kp_step (K : Addr) (m : Nat) :
     K + BitVec.ofNat 64 (64 * m) + (64 : BitVec 32).signExtend 64 = K + BitVec.ofNat 64 (64 * (m + 1)) := by
   rw [show (64 : BitVec 32).signExtend 64 = BitVec.ofNat 64 64 by decide, Offset.add_add,
-    show 64 * m + 64 = 64 * (m + 1) by omega_arith]
+    show 64 * m + 64 = 64 * (m + 1) by omega]
 
 theorem q_ne_kp (i : Nat) : q i ≠ kp := by
   unfold q; split <;> decide
@@ -448,9 +447,9 @@ theorem zf_last (b : Addr) {R m : Nat} (hR : R ≤ 14) (hm : m + 1 < R) :
     (b + BitVec.ofNat 64 (1920 - 64 * R + 64 * (m + 1)) -
       (b + (BitVec.ofNat 32 (lastKey - 64)).signExtend 64) == 0) = decide (m + 2 = R) := by
   rw [show (BitVec.ofNat 32 (lastKey - 64)).signExtend 64 = BitVec.ofNat 64 1856 by decide,
-    sub_eq_zero_iff b (by omega_arith) (by omega_arith)]
+    sub_eq_zero_iff b (by omega) (by omega)]
   simp only [decide_eq_decide]
-  omega_arith
+  omega
 
 theorem kp_off (K0 b : Addr) {R j : Nat} (hk : K0 = b + BitVec.ofNat 64 (1920 - 64 * R)) :
     K0 + BitVec.ofNat 64 (64 * j) = b + BitVec.ofNat 64 (1920 - 64 * R + 64 * j) := by
@@ -463,7 +462,7 @@ theorem round_ok {s₀ s : State} {R m : Nat} {w : List Byte} {T : Nat → Spec.
     WP isa (.block roundBody) s fun s' => Ctx s₀ s' ∧
       s'.gpr kp = s₀.gpr .rdi + BitVec.ofNat 64 (64 * (m + 1)) ∧
       BsRel (Q s') (fun b => rnd w (m + 1) (T b)) ∧ s'.zf = some (decide (m + 2 = R)) := by
-  have hR : R ≤ 14 := by rcases hp.rounds with h | h | h <;> omega_arith
+  have hR : R ≤ 14 := by rcases hp.rounds with h | h | h <;> omega
   simp only [roundBody]
   repeat rw [WP.block_append_iff (M := isa)]
   refine addKp_wp hc fun s₁ hc₁ hk₁ hq₁ => ?_
@@ -479,9 +478,9 @@ theorem round_ok {s₀ s : State} {R m : Nat} {w : List Byte} {T : Nat → Spec.
   have hbs₄ := bs_mixColumns h₄ hbs₃
   have hk₄' : s₄.gpr kp = s₀.gpr .rdi + BitVec.ofNat 64 (64 * (m + 1)) := by rw [hk₄, hk₃, hk₂, hk₁]
   have hok : Ok arkCfg s₄ := ark_cfg_ok (b := s₀.gpr sb) (by rw [hc₄.wr]; exact hp.scr)
-    (by rw [hk₄', kp_off _ _ hp.k0]) (by omega_arith)
+    (by rw [hk₄', kp_off _ _ hp.k0]) (by omega)
   have hkey : KeyRel (keyWord s₄) (roundKey w (m + 1)) := by
-    have := hp.keysAt hc₄ (m + 1) (by omega_arith)
+    have := hp.keysAt hc₄ (m + 1) (by omega)
     unfold keyWord; rw [hk₄']; exact this
   obtain ⟨s₅, hs₅, h₅, hrd, hwr, hoth, hfr⟩ := addRoundKey_ok hok
   have hc₅ : Ctx s₀ s₅ := hc₄.step hrd hwr (fun r h _ => hoth r h)
@@ -515,7 +514,7 @@ theorem ark_step {s₀ s : State} {R j : Nat} {w : List Byte} {T : Nat → Spec.
     (h : ∀ s', Ctx s₀ s' → s'.gpr kp = s.gpr kp → BsRel (Q s') (fun b => addRoundKey (T b) (roundKey w j)) →
       P s') : WP isa (.block addRoundKey) s P := by
   have hok : Ok arkCfg s := ark_cfg_ok (b := s₀.gpr sb) (by rw [hc.wr]; exact hp.scr)
-    (by rw [hk, kp_off _ _ hp.k0]) (by rcases hp.rounds with h | h | h <;> omega_arith)
+    (by rw [hk, kp_off _ _ hp.k0]) (by rcases hp.rounds with h | h | h <;> omega)
   have hkey : KeyRel (keyWord s) (roundKey w j) := by
     have := hp.keysAt hc j hj
     unfold keyWord; rw [hk]; exact this
@@ -534,8 +533,8 @@ theorem cipher_eq (R : Nat) (w : List Byte) (x : Spec.Aes.State) :
 theorem encrypt4_ok {s₀ : State} {R : Nat} {w : List Byte} {S : Nat → Spec.Aes.State}
     (hp : EncPre s₀ R w) (hin : InRel (Q s₀) S) :
     WP isa encrypt4 s₀ fun s => Ctx s₀ s ∧ InRel (Q s) (fun b => cipher R w (S b)) := by
-  have hR : R ≤ 14 := by rcases hp.rounds with h | h | h <;> omega_arith
-  have hR1 : 2 ≤ R := by rcases hp.rounds with h | h | h <;> omega_arith
+  have hR : R ≤ 14 := by rcases hp.rounds with h | h | h <;> omega
+  have hR1 : 2 ≤ R := by rcases hp.rounds with h | h | h <;> omega
   let A : Nat → Spec.Aes.State := fun b => addRoundKey (S b) (roundKey w 0)
   -- The rounds done so far.
   let Inv : Nat → State → Prop := fun n s => ∃ m, n = R - 1 - m ∧ m + 1 < R ∧ Ctx s₀ s ∧
@@ -554,19 +553,19 @@ theorem encrypt4_ok {s₀ : State} {R : Nat} {w : List Byte} {S : Nat → Spec.A
       rw [this]; exact hbs₁
     have hk₂' : s₂.gpr kp = s₀.gpr .rdi + BitVec.ofNat 64 (64 * 0) := by
       rw [hk₂, hc₁.keep _ rdi_not.1 rdi_not.2]; simp
-    exact ark_step hp hc₂ hk₂' (by omega_arith) hbs₂ fun s₃ hc₃ hk₃ hbs₃ =>
-      ⟨0, by omega_arith, by omega_arith, hc₃, by rw [hk₃, hk₂'], hbs₃⟩
+    exact ark_step hp hc₂ hk₂' (by omega) hbs₂ fun s₃ hc₃ hk₃ hbs₃ =>
+      ⟨0, by omega, by omega, hc₃, by rw [hk₃, hk₂'], hbs₃⟩
   · -- The middle rounds.
     refine WP.loop (M := isa) Inv (fun n s hs => ?_) (R - 1) s h
     obtain ⟨m, rfl, hm, hc, hk, hbs⟩ := hs
     refine WP.mono (round_ok hp hc hk hm hbs) fun s' ⟨hc', hk', hbs', hz⟩ => ?_
     by_cases hlast : m + 2 = R
     · refine .inl ⟨by simp [X86_64.eval, hz, hlast], hc', ?_, ?_⟩
-      · rw [hk']; congr 3; omega_arith
-      · rw [show R - 1 = m + 1 by omega_arith]
+      · rw [hk']; congr 3; omega
+      · rw [show R - 1 = m + 1 by omega]
         intro b hb i hi
         rw [hbs' b hb i hi]; simp only [midRounds_succ]
-    · refine .inr ⟨by simp [X86_64.eval, hz, hlast], R - 1 - (m + 1), by omega_arith, m + 1, rfl, by omega_arith, hc', hk',
+    · refine .inr ⟨by simp [X86_64.eval, hz, hlast], R - 1 - (m + 1), by omega, m + 1, rfl, by omega, hc', hk',
         fun b hb i hi => by rw [hbs' b hb i hi]; simp only [midRounds_succ]⟩
   · -- The last round, and back to blocks.
     obtain ⟨hc, hk, hbs⟩ := h
@@ -574,7 +573,7 @@ theorem encrypt4_ok {s₀ : State} {R : Nat} {w : List Byte} {S : Nat → Spec.A
     simp only [lastRound]
     repeat rw [WP.block_append_iff (M := isa)]
     refine addKp_wp hc fun s₁ hc₁ hk₁ hq₁ => ?_
-    rw [hk, kp_step, show R - 1 + 1 = R by omega_arith] at hk₁
+    rw [hk, kp_step, show R - 1 + 1 = R by omega] at hk₁
     have hbs₁ : BsRel (Q s₁) (fun b => midRounds w (R - 1) (A b)) := by
       have : Q s₁ = Q s := funext hq₁
       rw [this]; exact hbs

@@ -39,23 +39,23 @@ def hw (g : Nat) (v : HashValue) (w : Word) : HashValue :=
 theorem f_eq {t : Nat} (ht : t < 80) : f t = sha1F (t / 20) := by
   funext x y z
   simp only [f, Spec.Sha1.ch, Spec.Sha1.parity, Spec.Sha1.maj]
-  rcases (by omega_arith : t < 20 ∨ (20 ≤ t ∧ t < 40) ∨ (40 ≤ t ∧ t < 60) ∨ 60 ≤ t) with h | h | h | h
+  rcases (by omega : t < 20 ∨ (20 ≤ t ∧ t < 40) ∨ (40 ≤ t ∧ t < 60) ∨ 60 ≤ t) with h | h | h | h
   · simp only [h, ite_true, Nat.div_eq_of_lt h]; rfl
-  · simp only [show ¬ t < 20 by omega_arith, h.2, ite_false, ite_true, show t / 20 = 1 by omega_arith]; rfl
-  · simp only [show ¬ t < 20 by omega_arith, show ¬ t < 40 by omega_arith, h.2, ite_false, ite_true,
-      show t / 20 = 2 by omega_arith]; rfl
-  · simp only [show ¬ t < 20 by omega_arith, show ¬ t < 40 by omega_arith, show ¬ t < 60 by omega_arith, ite_false,
-      show t / 20 = 3 by omega_arith]; rfl
+  · simp only [show ¬ t < 20 by omega, h.2, ite_false, ite_true, show t / 20 = 1 by omega]; rfl
+  · simp only [show ¬ t < 20 by omega, show ¬ t < 40 by omega, h.2, ite_false, ite_true,
+      show t / 20 = 2 by omega]; rfl
+  · simp only [show ¬ t < 20 by omega, show ¬ t < 40 by omega, show ¬ t < 60 by omega, ite_false,
+      show t / 20 = 3 by omega]; rfl
 
 theorem K_eq {t : Nat} (ht : t < 80) : K t = sha1K (t / 20) := by
   simp only [K]
-  rcases (by omega_arith : t < 20 ∨ (20 ≤ t ∧ t < 40) ∨ (40 ≤ t ∧ t < 60) ∨ 60 ≤ t) with h | h | h | h
+  rcases (by omega : t < 20 ∨ (20 ≤ t ∧ t < 40) ∨ (40 ≤ t ∧ t < 60) ∨ 60 ≤ t) with h | h | h | h
   · simp only [h, ite_true, Nat.div_eq_of_lt h]; rfl
-  · simp only [show ¬ t < 20 by omega_arith, h.2, ite_false, ite_true, show t / 20 = 1 by omega_arith]; rfl
-  · simp only [show ¬ t < 20 by omega_arith, show ¬ t < 40 by omega_arith, h.2, ite_false, ite_true,
-      show t / 20 = 2 by omega_arith]; rfl
-  · simp only [show ¬ t < 20 by omega_arith, show ¬ t < 40 by omega_arith, show ¬ t < 60 by omega_arith, ite_false,
-      show t / 20 = 3 by omega_arith]; rfl
+  · simp only [show ¬ t < 20 by omega, h.2, ite_false, ite_true, show t / 20 = 1 by omega]; rfl
+  · simp only [show ¬ t < 20 by omega, show ¬ t < 40 by omega, h.2, ite_false, ite_true,
+      show t / 20 = 2 by omega]; rfl
+  · simp only [show ¬ t < 20 by omega, show ¬ t < 40 by omega, show ¬ t < 60 by omega, ite_false,
+      show t / 20 = 3 by omega]; rfl
 
 /-- A round of the specification is `hw` of its group. -/
 theorem round_hw (M : Block) (v : HashValue) {t : Nat} (ht : t < 80) :
@@ -82,7 +82,7 @@ theorem hw_4 : (hw g v w)[4] = v[3] := rfl
 end
 
 theorem imm_eq {g : Nat} (hg : g < 4) : ((BitVec.ofNat 8 g).extractLsb' 0 2).toNat = g := by
-  rcases (by omega_arith : g = 0 ∨ g = 1 ∨ g = 2 ∨ g = 3) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega : g = 0 ∨ g = 1 ∨ g = 2 ∨ g = 3) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- `sha1rnds4` does four rounds of group `g`, given `W₀ + E` in bits 127:96 of
 its source and `W₁ … W₃` below. -/
@@ -119,8 +119,8 @@ theorem dword_xor (x y : BitVec 128) (k : Nat) : dword (x ^^^ y) k = dword x k ^
 
 theorem W_ge' (M : Block) (t : Nat) :
     W M (t + 16) = (W M (t + 13) ^^^ W M (t + 8) ^^^ W M (t + 2) ^^^ W M t).rotateLeft 1 := by
-  rw [W_ge M (by omega_arith), show t + 16 - 3 = t + 13 by omega_arith, show t + 16 - 8 = t + 8 by omega_arith,
-    show t + 16 - 14 = t + 2 by omega_arith, Nat.add_sub_cancel]
+  rw [W_ge M (by omega), show t + 16 - 3 = t + 13 by omega, show t + 16 - 8 = t + 8 by omega,
+    show t + 16 - 14 = t + 2 by omega, Nat.add_sub_cancel]
 
 /-- `sha1msg1`, `pxor` and `sha1msg2` compute the next four schedule words
 from the previous sixteen. -/
@@ -133,14 +133,14 @@ theorem schedule_eq (M : Block) (i : Nat) :
   have w1 := W_ge' M (4 * i + 1)
   have w2 := W_ge' M (4 * i + 2)
   have w3 := W_ge' M (4 * i + 3)
-  simp only [show 4 * i + 16 = 4 * (i + 4) by omega_arith, show 4 * i + 1 + 16 = 4 * (i + 4) + 1 by omega_arith,
-    show 4 * i + 2 + 16 = 4 * (i + 4) + 2 by omega_arith, show 4 * i + 3 + 16 = 4 * (i + 4) + 3 by omega_arith,
-    show 4 * i + 13 = 4 * (i + 3) + 1 by omega_arith, show 4 * i + 1 + 13 = 4 * (i + 3) + 2 by omega_arith,
-    show 4 * i + 2 + 13 = 4 * (i + 3) + 3 by omega_arith,
-    show 4 * i + 8 = 4 * (i + 2) by omega_arith, show 4 * i + 1 + 8 = 4 * (i + 2) + 1 by omega_arith,
-    show 4 * i + 2 + 8 = 4 * (i + 2) + 2 by omega_arith, show 4 * i + 3 + 8 = 4 * (i + 2) + 3 by omega_arith,
-    show 4 * i + 2 + 2 = 4 * (i + 1) by omega_arith, show 4 * i + 3 + 2 = 4 * (i + 1) + 1 by omega_arith,
-    show 4 * i + 1 + 2 = 4 * i + 3 by omega_arith] at w0 w1 w2 w3 ⊢
+  simp only [show 4 * i + 16 = 4 * (i + 4) by omega, show 4 * i + 1 + 16 = 4 * (i + 4) + 1 by omega,
+    show 4 * i + 2 + 16 = 4 * (i + 4) + 2 by omega, show 4 * i + 3 + 16 = 4 * (i + 4) + 3 by omega,
+    show 4 * i + 13 = 4 * (i + 3) + 1 by omega, show 4 * i + 1 + 13 = 4 * (i + 3) + 2 by omega,
+    show 4 * i + 2 + 13 = 4 * (i + 3) + 3 by omega,
+    show 4 * i + 8 = 4 * (i + 2) by omega, show 4 * i + 1 + 8 = 4 * (i + 2) + 1 by omega,
+    show 4 * i + 2 + 8 = 4 * (i + 2) + 2 by omega, show 4 * i + 3 + 8 = 4 * (i + 2) + 3 by omega,
+    show 4 * i + 2 + 2 = 4 * (i + 1) by omega, show 4 * i + 3 + 2 = 4 * (i + 1) + 1 by omega,
+    show 4 * i + 1 + 2 = 4 * i + 3 by omega] at w0 w1 w2 w3 ⊢
   rw [w3, w0, w1, w2]
   generalize W M = f
   ac_rfl
@@ -182,11 +182,11 @@ theorem msg_add4 (n : Nat) : msg (n + 4) = msg n := by
 theorem msg_nodup (n : Nat) :
     [msg n, msg (n + 1), msg (n + 2), msg (n + 3), .xmm0, .xmm1, .xmm2, .xmm7, .xmm8, .xmm9].Nodup := by
   simp only [msg]
-  have := Nat.mod_lt n (show 4 > 0 by omega_arith)
-  rw [show (n + 1) % 4 = (n % 4 + 1) % 4 by omega_arith, show (n + 2) % 4 = (n % 4 + 2) % 4 by omega_arith,
-    show (n + 3) % 4 = (n % 4 + 3) % 4 by omega_arith]
+  have := Nat.mod_lt n (show 4 > 0 by omega)
+  rw [show (n + 1) % 4 = (n % 4 + 1) % 4 by omega, show (n + 2) % 4 = (n % 4 + 2) % 4 by omega,
+    show (n + 3) % 4 = (n % 4 + 3) % 4 by omega]
   generalize n % 4 = c at *
-  rcases (by omega_arith : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;> decide
+  rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;> decide
 
 /-! ## Four rounds -/
 
@@ -220,7 +220,7 @@ theorem schedule_hi (n : Nat) (hn : 4 ≤ n) (s : State) (a b c d : BitVec 128)
   have hd := msg_nodup n
   have hd'' := VG.nodup_reverse hd
   apply WP.of_runBlock
-  simp only [schedule, show ¬ n < 4 by omega_arith, ite_false]
+  simp only [schedule, show ¬ n < 4 by omega, ite_false]
   generalize msg n = x₀ at *
   generalize msg (n + 1) = x₁ at *
   generalize msg (n + 2) = x₂ at *
@@ -257,7 +257,7 @@ theorem schedule_lo (n : Nat) (hn : n < 4) (s : State)
 theorem msg_ne (n k : Nat) (h₁ : k < n) (h₂ : n ≤ k + 3) : msg k ≠ msg n := by
   have hd := msg_nodup k
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hd
-  rcases (by omega_arith : n = k + 1 ∨ n = k + 2 ∨ n = k + 3) with rfl | rfl | rfl
+  rcases (by omega : n = k + 1 ∨ n = k + 2 ∨ n = k + 3) with rfl | rfl | rfl
   · exact hd.1.1
   · exact hd.1.2.1
   · exact hd.1.2.2.1
@@ -288,10 +288,10 @@ theorem rounds_four (H : HashValue) (M : Block) {n : Nat} (hn : n < 20) :
     Spec.Sha1.rounds H M (4 * (n + 1)) =
       hw4 (n / 5) (Spec.Sha1.rounds H M (4 * n)) (W M (4 * n)) (W M (4 * n + 1)) (W M (4 * n + 2))
         (W M (4 * n + 3)) := by
-  rw [show 4 * (n + 1) = 4 * n + 3 + 1 by omega_arith, rounds_succ, rounds_succ, rounds_succ, rounds_succ,
-    round_hw _ _ (by omega_arith), round_hw _ _ (by omega_arith), round_hw _ _ (by omega_arith), round_hw _ _ (by omega_arith),
-    show (4 * n) / 20 = n / 5 by omega_arith, show (4 * n + 1) / 20 = n / 5 by omega_arith,
-    show (4 * n + 2) / 20 = n / 5 by omega_arith, show (4 * n + 3) / 20 = n / 5 by omega_arith]
+  rw [show 4 * (n + 1) = 4 * n + 3 + 1 by omega, rounds_succ, rounds_succ, rounds_succ, rounds_succ,
+    round_hw _ _ (by omega), round_hw _ _ (by omega), round_hw _ _ (by omega), round_hw _ _ (by omega),
+    show (4 * n) / 20 = n / 5 by omega, show (4 * n + 1) / 20 = n / 5 by omega,
+    show (4 * n + 2) / 20 = n / 5 by omega, show (4 * n + 3) / 20 = n / 5 by omega]
   rfl
 
 theorem rounds4_step (H : HashValue) (M : Block) {n : Nat} (hn : n < 20) (s : State)
@@ -303,7 +303,7 @@ theorem rounds4_step (H : HashValue) (M : Block) {n : Nat} (hn : n < 20) (s : St
       (∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm2 → s'.xmm r = s.xmm r) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine WP.mono (rounds4_ok n s _ _ _ h0 rfl hq) fun s' ⟨e0, e1, hx, hg, hm, hrd, hwr⟩ => ?_
-  rw [wk_eq M n _ _ h1, rnds4_eq _ (by omega_arith)] at e0
+  rw [wk_eq M n _ _ h1, rnds4_eq _ (by omega)] at e0
   refine ⟨by rw [e0, rounds_four H M hn], ?_, hx, hg, hm, hrd, hwr⟩
   simp only [ECarry, Nat.add_one_ne_zero, ite_false, e1, abcd, dword_ofDwords_3]
   rw [rounds_four H M hn, hw4_e]
@@ -324,14 +324,14 @@ theorem pshufb_rev (a : BitVec 128) :
   rw [pshufb_rev_bytes]
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   obtain ⟨k, r, hk, hr, rfl⟩ : ∃ k r, k < 16 ∧ r < 8 ∧ i = 8 * k + r :=
-    ⟨i / 8, i % 8, by omega_arith, by omega_arith, by omega_arith⟩
-  rw [getLsbD_ofBytes _ hk hr, show 8 * k + r = 32 * (k / 4) + (8 * (k % 4) + r) by omega_arith,
-    getLsbD_ofDwords_block _ _ _ _ (by omega_arith) (by omega_arith)]
+    ⟨i / 8, i % 8, by omega, by omega, by omega⟩
+  rw [getLsbD_ofBytes _ hk hr, show 8 * k + r = 32 * (k / 4) + (8 * (k % 4) + r) by omega,
+    getLsbD_ofDwords_block _ _ _ _ (by omega) (by omega)]
   simp only [getLsbD_bswap32_block _ (Nat.mod_lt k (by decide : 4 > 0)) hr]
-  rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 ∨
+  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 ∨
     k = 10 ∨ k = 11 ∨ k = 12 ∨ k = 13 ∨ k = 14 ∨ k = 15) with
     h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;> subst h <;>
-  simp (disch := omega_arith) only [↓reduceIte, Nat.reduceSub, Nat.reduceDiv, Nat.reduceMod, Nat.reduceEqDiff,
+  simp (disch := omega) only [↓reduceIte, Nat.reduceSub, Nat.reduceDiv, Nat.reduceMod, Nat.reduceEqDiff,
     Nat.reduceAdd, Nat.reduceMul, ← Nat.add_assoc, byte, dword, BitVec.getLsbD_extractLsb',
     decide_eq_true, Bool.true_and]
 
@@ -343,11 +343,11 @@ theorem load_quad (M : Block) (m : Mem) (bp : Addr) {n : Nat} (hn : n < 4)
   have e : ∀ j, j < 4 → bswap32 (dword (m.readW (bp + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 128) j) =
       W M (4 * n + j) := by
     intro j hj
-    rw [dword_readW _ _ hj, ← hblk (4 * n + j) (by omega_arith)]
+    rw [dword_readW _ _ hj, ← hblk (4 * n + j) (by omega)]
     refine congrArg (fun a => bswap32 (m.readW a 32)) ?_
     simp only [ofInt_natCast']
-    rw [Offset.add_ofNat_add_ofNat, show 16 * n + 4 * j = 4 * (4 * n + j) by omega_arith]
-  rw [e 0 (by omega_arith), e 1 (by omega_arith), e 2 (by omega_arith), e 3 (by omega_arith)]
+    rw [Offset.add_ofNat_add_ofNat, show 16 * n + 4 * j = 4 * (4 * n + j) by omega]
+  rw [e 0 (by omega), e 1 (by omega), e 2 (by omega), e 3 (by omega)]
   rfl
 
 /-- What holds after rounds `0 … 4n-1` of a block `M`, from the state `sB` at its start. -/
@@ -372,9 +372,9 @@ theorem rounds_ok (H : HashValue) (M : Block) (bp : Addr) (sB : State)
   induction n with
   | zero =>
     exact WP.block_nil (M := isa) ⟨h0, by simp only [ECarry, ite_true]; exact h1,
-      fun _ h => absurd h (by omega_arith), fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+      fun _ h => absurd h (by omega), fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
   | succ n ih =>
-    refine WP.seq (WP.mono (ih (by omega_arith)) fun s hs => ?_)
+    refine WP.seq (WP.mono (ih (by omega)) fun s hs => ?_)
     rw [WP.block_append_iff]
     have hs_rsi : s.gpr .rsi = bp := by rw [hs.gpr, hrsi]
     -- The schedule: `msg n` gets `quad M n`; nothing else changes.
@@ -386,18 +386,18 @@ theorem rounds_ok (H : HashValue) (M : Block) (bp : Addr) (sB : State)
           fun s₁ ⟨e, hx, hg, hm, hrd, hwr⟩ => ⟨?_, hx, hg, hm, hrd, hwr⟩
         rw [e, hs_rsi, hs.mem, hs.keep .xmm7 (.inl rfl), hmask]
         exact load_quad M sB.mem bp hlo hblk
-      · obtain ⟨i, rfl⟩ : ∃ i, n = i + 4 := ⟨n - 4, by omega_arith⟩
-        refine WP.mono (schedule_hi (i + 4) (by omega_arith) s (quad M i) (quad M (i + 1)) (quad M (i + 2))
+      · obtain ⟨i, rfl⟩ : ∃ i, n = i + 4 := ⟨n - 4, by omega⟩
+        refine WP.mono (schedule_hi (i + 4) (by omega) s (quad M i) (quad M (i + 1)) (quad M (i + 2))
           (quad M (i + 3)) ?_ ?_ ?_ ?_) fun s₁ ⟨e, hx, hg, hm, hrd, hwr⟩ => ⟨?_, hx, hg, hm, hrd, hwr⟩
-        · rw [msg_add4]; exact hs.msgs i (by omega_arith) (by omega_arith)
-        · rw [show i + 4 + 1 = i + 1 + 4 by omega_arith, msg_add4]; exact hs.msgs (i + 1) (by omega_arith) (by omega_arith)
-        · rw [show i + 4 + 2 = i + 2 + 4 by omega_arith, msg_add4]; exact hs.msgs (i + 2) (by omega_arith) (by omega_arith)
-        · rw [show i + 4 + 3 = i + 3 + 4 by omega_arith, msg_add4]; exact hs.msgs (i + 3) (by omega_arith) (by omega_arith)
+        · rw [msg_add4]; exact hs.msgs i (by omega) (by omega)
+        · rw [show i + 4 + 1 = i + 1 + 4 by omega, msg_add4]; exact hs.msgs (i + 1) (by omega) (by omega)
+        · rw [show i + 4 + 2 = i + 2 + 4 by omega, msg_add4]; exact hs.msgs (i + 2) (by omega) (by omega)
+        · rw [show i + 4 + 3 = i + 3 + 4 by omega, msg_add4]; exact hs.msgs (i + 3) (by omega) (by omega)
         · rw [e]; exact schedule_eq M i
     refine WP.mono hsched fun s₁ ⟨hq, hx₁, hg₁, hm₁, hrd₁, hwr₁⟩ => ?_
     have o0 := msg_other n .xmm0 (by simp)
     have o1 := msg_other n .xmm1 (by simp)
-    refine WP.mono (rounds4_step H M (n := n) (by omega_arith) s₁ (by rw [hx₁ _ (Ne.symm o0)]; exact hs.x0)
+    refine WP.mono (rounds4_step H M (n := n) (by omega) s₁ (by rw [hx₁ _ (Ne.symm o0)]; exact hs.x0)
       (by rw [hx₁ _ (Ne.symm o1)]; exact hs.x1) hq)
       fun s₂ ⟨e0, e1, hx₂, hg₂, hm₂, hrd₂, hwr₂⟩ => ?_
     refine ⟨e0, e1, fun k hk hk' => ?_, fun r hr => ?_, by rw [hg₂, hg₁, hs.gpr], by rw [hm₂, hm₁, hs.mem],
@@ -408,8 +408,8 @@ theorem rounds_ok (H : HashValue) (M : Block) (bp : Addr) (sB : State)
       rw [hx₂ _ n0 n1 n2]
       by_cases hkn : k = n
       · subst hkn; exact hq
-      · rw [hx₁ _ (msg_ne n k (by omega_arith) (by omega_arith))]
-        exact hs.msgs k (by omega_arith) (by omega_arith)
+      · rw [hx₁ _ (msg_ne n k (by omega) (by omega))]
+        exact hs.msgs k (by omega) (by omega)
     · have := hr
       rcases hr with rfl | rfl | rfl <;>
       · rw [hx₂ _ (by decide) (by decide) (by decide), hx₁ _ (Ne.symm (msg_other n _ (by simp)))]
@@ -437,13 +437,13 @@ theorem shift_e (x : BitVec 128) :
   have e : min (12 : BitVec 8).toNat 16 * 8 = 96 := rfl
   simp only [XShiftOp.eval, e, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_ushiftRight, getLsbD_ofDwords,
     getLsbD_dword]
-  rcases (by omega_arith : i < 96 ∨ 96 ≤ i) with h | h
+  rcases (by omega : i < 96 ∨ 96 ≤ i) with h | h
   · simp only [h, decide_true, Bool.not_true, Bool.and_false, Bool.false_and, getLsbD_zero32]
-    rcases (by omega_arith : i < 32 ∨ (32 ≤ i ∧ i < 64) ∨ (64 ≤ i ∧ i < 96)) with h' | h' | h' <;>
-    simp (disch := omega_arith) only [ite_eq_left, ite_eq_right]
-  · simp (disch := omega_arith) only [hi, show ¬ i < 96 by omega_arith, show ¬ i < 32 by omega_arith,
-      show ¬ i - 32 < 32 by omega_arith, show ¬ i - 32 - 32 < 32 by omega_arith, show i - 32 - 32 - 32 = i - 96 by omega_arith,
-      show i - 96 < 32 by omega_arith, decide_true, decide_false, Bool.not_false, Bool.true_and, ite_false]
+    rcases (by omega : i < 32 ∨ (32 ≤ i ∧ i < 64) ∨ (64 ≤ i ∧ i < 96)) with h' | h' | h' <;>
+    simp (disch := omega) only [ite_eq_left, ite_eq_right]
+  · simp (disch := omega) only [hi, show ¬ i < 96 by omega, show ¬ i < 32 by omega,
+      show ¬ i - 32 < 32 by omega, show ¬ i - 32 - 32 < 32 by omega, show i - 32 - 32 - 32 = i - 96 by omega,
+      show i - 96 < 32 by omega, decide_true, decide_false, Bool.not_false, Bool.true_and, ite_false]
 
 /-- `B, C, D, E` from `A, B, C, D` and `E`. -/
 theorem por_e (a b c d e : Word) :
@@ -452,12 +452,12 @@ theorem por_e (a b c d e : Word) :
   have e32 : min (4 : BitVec 8).toNat 16 * 8 = 32 := rfl
   simp only [XBinOp.eval, XShiftOp.eval, e32, BitVec.getLsbD_or, BitVec.getLsbD_ushiftRight, getLsbD_ofDwords,
     getLsbD_zero32]
-  rcases (by omega_arith : i < 32 ∨ (32 ≤ i ∧ i < 64) ∨ (64 ≤ i ∧ i < 96) ∨ 96 ≤ i) with h | h | h | h <;>
-  simp (disch := omega_arith) only [ite_eq_left, ite_eq_right, Bool.or_false]
-  · exact congrArg _ (by omega_arith)
-  · exact congrArg _ (by omega_arith)
-  · exact congrArg _ (by omega_arith)
-  · rw [BitVec.getLsbD_of_ge d _ (by omega_arith), Bool.false_or]
+  rcases (by omega : i < 32 ∨ (32 ≤ i ∧ i < 64) ∨ (64 ≤ i ∧ i < 96) ∨ 96 ≤ i) with h | h | h | h <;>
+  simp (disch := omega) only [ite_eq_left, ite_eq_right, Bool.or_false]
+  · exact congrArg _ (by omega)
+  · exact congrArg _ (by omega)
+  · exact congrArg _ (by omega)
+  · rw [BitVec.getLsbD_of_ge d _ (by omega), Bool.false_or]
 
 theorem shufDwords_1b (a : BitVec 128) :
     shufDwords a 0x1b = ofDwords (dword a 3) (dword a 2) (dword a 1) (dword a 0) := rfl
@@ -497,14 +497,14 @@ theorem stateAt_store (m : Mem) (p : Addr) (x y : BitVec 128) :
   · rw [show p + BitVec.ofNat 64 (4 * j) = p + BitVec.ofNat 64 0 + BitVec.ofNat 64 (4 * j) by
       rw [Offset.add_ofNat_add_ofNat, Nat.zero_add],
       readW_writeW128 _ _ _ hlo]
-    rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> rfl
-  · obtain rfl : j = 4 := by omega_arith
+    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> rfl
+  · obtain rfl : j = 4 := by omega
     rw [Mem.readW_writeW_sep (by
         rw [show p = p + BitVec.ofNat 64 0 from (BitVec.add_zero p).symm]
-        exact Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
+        exact Offset.sep _ (by omega) (by omega) (by omega)) (by decide),
       show p + BitVec.ofNat 64 (4 * 4) = p + BitVec.ofNat 64 4 + BitVec.ofNat 64 (4 * 3) by
         rw [Offset.add_ofNat_add_ofNat],
-      readW_writeW128 _ _ _ (by omega_arith)]
+      readW_writeW128 _ _ _ (by omega)]
     rfl
 
 /-- `ABCD` and `E`, stored back as the hash value. -/
@@ -526,7 +526,7 @@ theorem store_ok (s : State) (v : HashValue) (h0 : s.xmm .xmm0 = abcd v) (h1 : s
     dword_ofDwords_3, por_e]
   apply Vector.ext
   intro j hj
-  rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
+  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
 
 /-! ## The loop over the blocks -/
 
@@ -539,7 +539,7 @@ theorem Pre.in_blk16 {s₀ : State} (hp : Pre s₀) {i n : Nat} (hi : i < nb s�
   refine ⟨blR s₀, by simp [hp.rd], ?_⟩
   rw [ofInt_natCast', show blkAddr s₀ i + BitVec.ofNat 64 (16 * n) =
     bp s₀ + BitVec.ofNat 64 (64 * i + 16 * n) from Offset.add_ofNat_add_ofNat _ _ _]
-  exact contains_offset (by omega_arith) (by omega_arith)
+  exact contains_offset (by omega) (by omega)
 
 /-- What holds between blocks, after `i` of them. -/
 structure Common (s₀ : State) (i : Nat) (s : State) : Prop where
@@ -606,7 +606,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   refine WP.mono h₃ fun s₃ ⟨f0, f1, f7, frsi, frdx, fg, fzf, fm, frd, fwr⟩ => ?_
   have g₂ : s₂.gpr = s.gpr := by rw [hR.gpr, hg₁]
   have hrdx : s₂.gpr .rdx - 1 = BitVec.ofNat 64 (nb s₀ - (i + 1)) := by
-    rw [g₂, hL.rdx, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_arith),
+    rw [g₂, hL.rdx, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega),
       Nat.sub_sub]
   have hcommon : Common s₀ (i + 1) s₃ :=
     ⟨f0, f1, fun r ha hs hd => by rw [fg r hs hd, g₂, hL.gpr r ha hs hd],
@@ -618,14 +618,14 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   · left
     refine ⟨by rw [hev, hlast]; simp, hlast ▸ hcommon⟩
   · right
-    have hne : nb s₀ - (i + 1) ≠ 0 := by omega_arith
-    refine ⟨?_, by omega_arith, { hcommon with x7 := ?_, rsi := ?_, rdx := ?_ }⟩
+    have hne : nb s₀ - (i + 1) ≠ 0 := by omega
+    refine ⟨?_, by omega, { hcommon with x7 := ?_, rsi := ?_, rdx := ?_ }⟩
     · rw [hev]
       have := hp.nb_lt
       have h0 : BitVec.ofNat 64 (nb s₀ - (i + 1)) ≠ 0 := by
         intro h
         have h' := congrArg BitVec.toNat h
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at h'
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at h'
         exact hne h'
       simpa using h0
     · rw [f7, hR.keep .xmm7 (by simp), hx₁ _ (by decide) (by decide), hL.x7]
@@ -639,14 +639,14 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
 
 theorem st16 (s₀ : State) {d : Nat} (hd : d ≤ 4) :
     (stR s₀).Contains (st s₀ + BitVec.ofInt 64 (d : Int)) 16 :=
-  contains_offset' (by omega_arith) (by omega_arith)
+  contains_offset' (by omega) (by omega)
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa compress s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Sha1.compressX86_64.post s₀ s' := by
   have in0 : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rdi + BitVec.ofInt 64 ((0 : Nat) : Int)) 16 :=
-    ⟨stR s₀, by simp [hp.wr], st16 s₀ (by omega_arith)⟩
+    ⟨stR s₀, by simp [hp.wr], st16 s₀ (by omega)⟩
   have in4 : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rdi + BitVec.ofInt 64 ((4 : Nat) : Int)) 16 :=
-    ⟨stR s₀, by simp [hp.wr], st16 s₀ (by omega_arith)⟩
+    ⟨stR s₀, by simp [hp.wr], st16 s₀ (by omega)⟩
   refine WP.seq (WP.mono (load_ok s₀ in0 in4) fun s₁ ⟨h0, h1, h7, hzf, hg, hm, hrd, hwr⟩ => ?_)
   refine WP.seq (WP.mono (Q := Common s₀ (nb s₀)) ?_ fun s₂ hc => ?_)
   · have hc₀ : Common s₀ 0 s₁ := ⟨h0, h1, fun r hr _ _ => hg r hr, hm, hrd, hwr⟩
@@ -664,7 +664,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
         refine WP.mono (body_ok hp hi hL) fun s' h => ?_
         rcases h with ⟨he, hc⟩ | ⟨he, hi', hL'⟩
         · exact .inl ⟨he, hc⟩
-        · exact .inr ⟨he, nb s₀ - (i + 1), by omega_arith, i + 1, rfl, hi', hL'⟩
+        · exact .inr ⟨he, nb s₀ - (i + 1), by omega, i + 1, rfl, hi', hL'⟩
       have hL₀ : LInv s₀ 0 s₁ :=
         { hc₀ with
           x7 := h7
@@ -674,15 +674,15 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   · have hrdi : s₂.gpr .rdi = st s₀ := hc.gpr .rdi (by decide) (by decide) (by decide)
     have out : ∀ d, d ≤ 4 → InRegions s₂.wr (s₂.gpr .rdi + BitVec.ofInt 64 ((d : Nat) : Int)) 16 :=
       fun d hd => ⟨stR s₀, by simp [hc.wr, hp.wr], by rw [hrdi]; exact st16 s₀ hd⟩
-    refine WP.mono (store_ok s₂ _ hc.x0 hc.x1 (out 0 (by omega_arith)) (out 4 (by omega_arith)))
+    refine WP.mono (store_ok s₂ _ hc.x0 hc.x1 (out 0 (by omega)) (out 4 (by omega)))
       fun s' ⟨⟨x, y, hm'⟩, hst, hg', _, _⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
     · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rw [hg', hc.gpr r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
         (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
         (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
     · have hret : (retR s₀).Contains (s₀.gpr .rsp) 8 := Region.contains_self _ _
-      rw [hm', hrdi, Mem.readW_writeW_sep (hp.ret_st.sep hret (st16 s₀ (by omega_arith))) (by decide),
-        Mem.readW_writeW_sep (hp.ret_st.sep hret (st16 s₀ (by omega_arith))) (by decide), hc.mem]
+      rw [hm', hrdi, Mem.readW_writeW_sep (hp.ret_st.sep hret (st16 s₀ (by omega))) (by decide),
+        Mem.readW_writeW_sep (hp.ret_st.sep hret (st16 s₀ (by omega))) (by decide), hc.mem]
     · show stateAt s'.mem (st s₀) = _
       rw [← hrdi]; exact hst
 

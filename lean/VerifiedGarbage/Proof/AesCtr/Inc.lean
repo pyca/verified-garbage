@@ -1,6 +1,7 @@
 import VerifiedGarbage.Spec.Ctr
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # CTR: the increment, in words
@@ -49,9 +50,9 @@ theorem ofNat_succ (x k : Nat) : ofNat x (k + 1) = ofNat (x / 256) k ++ [BitVec.
   · rw [List.getElem_append_left (by simpa using hi)]
     simp only [List.getElem_map, List.getElem_range, Nat.div_div_eq_div_mul]
     congr 2
-    rw [show k + 1 - 1 - i = (k - 1 - i) + 1 by omega, Nat.pow_succ, Nat.mul_comm]
-  · rw [List.getElem_append_right (by simp; omega)]
-    simp [show i = k by omega]
+    rw [show k + 1 - 1 - i = (k - 1 - i) + 1 by omega_arith, Nat.pow_succ, Nat.mul_comm]
+  · rw [List.getElem_append_right (by simp; omega_arith)]
+    simp [show i = k by omega_arith]
 
 /-- `ofNat x k` is the `k`-byte representation of `x mod 256ᵏ`. -/
 theorem toNat_ofNat (x k : Nat) : toNat (ofNat x k) = x % 256 ^ k := by
@@ -63,7 +64,7 @@ theorem toNat_ofNat (x k : Nat) : toNat (ofNat x k) = x % 256 ^ k := by
       Nat.zero_add, BitVec.toNat_ofNat]
     have e : x % 256 ^ (k + 1) = x % 256 + 256 * (x / 256 % 256 ^ k) := by rw [Nat.pow_succ', Nat.mod_mul]
     rw [e]
-    omega
+    omega_arith
 
 theorem ofNat_add (x k j : Nat) : ofNat x (k + j) = ofNat (x / 256 ^ j) k ++ ofNat x j := by
   induction j generalizing x with
@@ -80,7 +81,7 @@ theorem ofNat_congr {x y k : Nat} (h : x % 256 ^ k = y % 256 ^ k) : ofNat x k = 
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat]
   have hd : 256 ^ (k - 1 - i) * 256 ∣ 256 ^ k := by
-    rw [← Nat.pow_succ]; exact Nat.pow_dvd_pow 256 (by omega)
+    rw [← Nat.pow_succ]; exact Nat.pow_dvd_pow 256 (by omega_arith)
   rw [← Nat.mod_mul_right_div_self, ← Nat.mod_mul_right_div_self y, ← Nat.mod_mod_of_dvd x hd,
     ← Nat.mod_mod_of_dvd y hd, h]
 
@@ -120,8 +121,8 @@ theorem bytesAt_writeW_sep (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {d n : 
   simp only [bytesAt, List.length_map, List.length_range] at h₁
   simp only [bytesAt, List.getElem_map, List.getElem_range, Mem.writeW]
   apply Mem.write_apply
-  rw [Offset.add_add_eq _ rfl, Mem.sub_ofNat_toNat P (by omega)]
-  omega
+  rw [Offset.add_add_eq _ rfl, Mem.sub_ofNat_toNat P (by omega_arith)]
+  omega_arith
 
 theorem toNat_append_eq {m n : Nat} (x : BitVec m) (y : BitVec n) :
     (x ++ y).toNat = x.toNat * 2 ^ n + y.toNat := by
@@ -158,7 +159,7 @@ theorem rv64_digit (a : BitVec 64) {i : Nat} (hi : i < 8) :
   have h5 := (a.extractLsb' 40 8).isLt
   have h6 := (a.extractLsb' 48 8).isLt
   have h7 := (a.extractLsb' 56 8).isLt
-  have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega
+  have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega_arith
   rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [Nat.reduceMul, Nat.reducePow, Nat.reduceSub] at * <;>
     generalize (a.extractLsb' 0 8).toNat = t0 at * <;>
@@ -169,7 +170,7 @@ theorem rv64_digit (a : BitVec 64) {i : Nat} (hi : i < 8) :
     generalize (a.extractLsb' 40 8).toNat = t5 at * <;>
     generalize (a.extractLsb' 48 8).toNat = t6 at * <;>
     generalize (a.extractLsb' 56 8).toNat = t7 at * <;>
-    omega
+    omega_arith
 
 /-- The bytes at `P`, read as the reversed 64-bit word there. -/
 theorem bytesAt_rv64 (m : Mem) (P : Addr) : bytesAt m P 8 = ofNat (rv64 (m.readW P 64)).toNat 8 := by
@@ -188,12 +189,12 @@ theorem bytesAt_writeW_rv64 (m : Mem) (P : Addr) (v : BitVec 64) :
   intro i h₁ _
   simp only [bytesAt, List.length_map, List.length_range] at h₁
   simp only [bytesAt, ofNat, List.getElem_map, List.getElem_range]
-  have e : (P + BitVec.ofNat 64 i - P).toNat = i := Mem.sub_ofNat_toNat P (by omega)
-  simp only [Mem.writeW, Mem.write, e, show i < 64 / 8 by omega, ↓reduceIte]
+  have e : (P + BitVec.ofNat 64 i - P).toNat = i := Mem.sub_ofNat_toNat P (by omega_arith)
+  simp only [Mem.writeW, Mem.write, e, show i < 64 / 8 by omega_arith, ↓reduceIte]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ofNat, BitVec.setWidth_eq, toNat_byte]
-  have := rv64_digit v (i := 7 - i) (by omega)
-  rw [show 8 - 1 - (7 - i) = i by omega] at this
+  have := rv64_digit v (i := 7 - i) (by omega_arith)
+  rw [show 8 - 1 - (7 - i) = i by omega_arith] at this
   rw [this]
 
 /-- The block at `P` after the increment as two 64-bit words: the
@@ -210,8 +211,8 @@ theorem inc_words64 (m : Mem) (P : Addr) (hi lo : BitVec 64)
     bytesAt_rv64 m P, bytesAt_rv64 m (P + BitVec.ofNat 64 8), toNat_ofNat, toNat_ofNat, length_ofNat,
     length_ofNat, Nat.mod_eq_of_lt (BitVec.isLt _), Nat.mod_eq_of_lt (BitVec.isLt _)]
   congr 1
-  · exact ofNat_congr (by rw [hhi]; simp only [Nat.reducePow]; omega)
-  · exact ofNat_congr (by rw [hlo]; simp only [Nat.reducePow]; omega)
+  · exact ofNat_congr (by rw [hhi]; simp only [Nat.reducePow]; omega_arith)
+  · exact ofNat_congr (by rw [hlo]; simp only [Nat.reducePow]; omega_arith)
 
 /-! ## 32-bit words -/
 
@@ -227,14 +228,14 @@ theorem rv32_digit (a : BitVec 32) {i : Nat} (hi : i < 4) :
   have h1 := (a.extractLsb' 8 8).isLt
   have h2 := (a.extractLsb' 16 8).isLt
   have h3 := (a.extractLsb' 24 8).isLt
-  have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
+  have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega_arith
   rcases this with rfl | rfl | rfl | rfl <;>
     simp only [Nat.reduceMul, Nat.reducePow, Nat.reduceSub] at * <;>
     generalize (a.extractLsb' 0 8).toNat = t0 at * <;>
     generalize (a.extractLsb' 8 8).toNat = t1 at * <;>
     generalize (a.extractLsb' 16 8).toNat = t2 at * <;>
     generalize (a.extractLsb' 24 8).toNat = t3 at * <;>
-    omega
+    omega_arith
 
 /-- The bytes at `P`, read as the reversed 32-bit word there. -/
 theorem bytesAt_rv32 (m : Mem) (P : Addr) : bytesAt m P 4 = ofNat (rv32 (m.readW P 32)).toNat 4 := by
@@ -253,12 +254,12 @@ theorem bytesAt_writeW_rv32 (m : Mem) (P : Addr) (v : BitVec 32) :
   intro i h₁ _
   simp only [bytesAt, List.length_map, List.length_range] at h₁
   simp only [bytesAt, ofNat, List.getElem_map, List.getElem_range]
-  have e : (P + BitVec.ofNat 64 i - P).toNat = i := Mem.sub_ofNat_toNat P (by omega)
-  simp only [Mem.writeW, Mem.write, e, show i < 32 / 8 by omega, ↓reduceIte]
+  have e : (P + BitVec.ofNat 64 i - P).toNat = i := Mem.sub_ofNat_toNat P (by omega_arith)
+  simp only [Mem.writeW, Mem.write, e, show i < 32 / 8 by omega_arith, ↓reduceIte]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ofNat, BitVec.setWidth_eq, toNat_byte]
-  have := rv32_digit v (i := 3 - i) (by omega)
-  rw [show 4 - 1 - (3 - i) = i by omega] at this
+  have := rv32_digit v (i := 3 - i) (by omega_arith)
+  rw [show 4 - 1 - (3 - i) = i by omega_arith] at this
   rw [this]
 
 /-- Bytes after a store at a lower offset. -/
@@ -266,8 +267,8 @@ theorem bytesAt_writeW_sep' (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {a b n
     (hd : a + w / 8 ≤ b) (hn : b + n < 2 ^ 64) :
     bytesAt (m.writeW (P + BitVec.ofNat 64 a) v) (P + BitVec.ofNat 64 b) n = bytesAt m (P + BitVec.ofNat 64 b) n := by
   rw [show P + BitVec.ofNat 64 b = (P + BitVec.ofNat 64 a) + BitVec.ofNat 64 (b - a) from
-    (Offset.add_add_eq P (by omega)).symm]
-  exact bytesAt_writeW_sep _ _ _ (by omega) (by omega)
+    (Offset.add_add_eq P (by omega_arith)).symm]
+  exact bytesAt_writeW_sep _ _ _ (by omega_arith) (by omega_arith)
 
 /-- The carry out of a sum split across two strings. -/
 theorem carry_append (a b : List Byte) (x : Nat) :
@@ -320,11 +321,11 @@ theorem inc_words32 (m : Mem) (P : Addr) (w0 w1 w2 w3 : BitVec 32)
     simp only [toNat_append, toNat_ofNat, length_ofNat, List.length_append, Nat.reducePow, Nat.reduceAdd]
     simp only [Nat.reducePow] at b0 b1 b2 b3
     rw [Nat.mod_eq_of_lt b0, Nat.mod_eq_of_lt b1, Nat.mod_eq_of_lt b2, Nat.mod_eq_of_lt b3]
-    omega
+    omega_arith
   rw [inc, hv, show (16 : Nat) = 4 + (4 + (4 + 4)) from rfl, ofNat_add, ofNat_add, ofNat_add]
   simp only [Nat.reducePow, Nat.reduceAdd] at *
-  exact congr (congrArg HAppend.hAppend (ofNat_congr (by omega)))
-    (congr (congrArg HAppend.hAppend (ofNat_congr (by omega)))
-      (congr (congrArg HAppend.hAppend (ofNat_congr (by omega))) (ofNat_congr (by omega))))
+  exact congr (congrArg HAppend.hAppend (ofNat_congr (by omega_arith)))
+    (congr (congrArg HAppend.hAppend (ofNat_congr (by omega_arith)))
+      (congr (congrArg HAppend.hAppend (ofNat_congr (by omega_arith))) (ofNat_congr (by omega_arith))))
 
 end VG.Proof.AesCtr

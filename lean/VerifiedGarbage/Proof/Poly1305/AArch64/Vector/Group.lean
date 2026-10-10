@@ -43,7 +43,7 @@ theorem narrow_ok (s : State) :
   refine WP.block_cons_iff.mpr ⟨_, exec_vo rfl, ?_⟩
   vstep
   refine WP.block_nil_iff.mpr ⟨fun i hi c hc => ?_, ⟨?_, ?_, ?_, ?_, ?_, fun r hr => ?_⟩⟩
-  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;>
+  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_arith) with rfl | rfl | rfl | rfl | rfl <;>
       vstep <;> exact wd_uzp_self _ hc
   · simp only [RegUpd.gpr_setV]
   · simp only [RegUpd.mem_setV]
@@ -70,7 +70,7 @@ theorem addH_ok (s : State) :
   refine WP.block_cons_iff.mpr ⟨_, exec_vo rfl, ?_⟩
   vstep
   refine WP.block_nil_iff.mpr ⟨fun i hi e he => ?_, ⟨?_, ?_, ?_, ?_, ?_, fun r hr => ?_⟩⟩
-  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;>
+  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_arith) with rfl | rfl | rfl | rfl | rfl <;>
       vstep <;> exact ln_add _ _ he
   · simp only [RegUpd.gpr_setV]
   · simp only [RegUpd.mem_setV]
@@ -104,11 +104,11 @@ theorem carry_ok (s : State) (hm : ∀ e < 2, ln (s.v maskV) e = 2 ^ 26 - 1) :
     have d0 := hd 0 (by decide) e he; have d1 := hd 1 (by decide) e he
     have d2 := hd 2 (by decide) e he; have d3 := hd 3 (by decide) e he
     have d4 := hd 4 (by decide) e he
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 by omega_arith) with rfl | rfl | rfl | rfl | rfl <;>
       vstep <;>
       simp only [ln_and_mask _ _ hM, ln_add _ _ he, ln_ushr _ _ _ he, ln_shl _ _ _ he] <;>
       simp only [Pair.carry, Pair.h0b, Pair.h3b, Pair.d1a, Pair.d2a, Pair.d4a] <;>
-      simp (disch := omega) only [Nat.mod_eq_of_lt]
+      simp (disch := omega_arith) only [Nat.mod_eq_of_lt]
   · simp only [RegUpd.gpr_setV]
   · simp only [RegUpd.mem_setV]
   · simp only [RegUpd.rd_setV]
@@ -165,7 +165,7 @@ theorem prodHi_ok {R S : Nat → VReg} (hRS : MulOk R S) (s : State)
   have := hb 2 (by decide) k hk e he; have := hb 3 (by decide) k hk e he
   have := hb 4 (by decide) k hk e he
   simp only [ite_true, Bool.false_eq_true, ite_false]
-  simp (disch := omega) only [Nat.mod_eq_of_lt, Nat.zero_add]
+  simp (disch := omega_arith) only [Nat.mod_eq_of_lt, Nat.zero_add]
 
 theorem prodLo_ok {R S : Nat → VReg} (hRS : MulOk R S) (s : State) :
     WP isa (.block (prodLo R S)) s fun t =>
@@ -191,8 +191,8 @@ theorem prodLo_ok {R S : Nat → VReg} (hRS : MulOk R S) (s : State) :
   have := hb 2 (by decide) k hk e he; have := hb 3 (by decide) k hk e he
   have := hb 4 (by decide) k hk e he; have := hd k hk e he
   simp only [Bool.false_eq_true, ite_false]
-  simp (disch := omega) only [Nat.mod_eq_of_lt]
-  omega
+  simp (disch := omega_arith) only [Nat.mod_eq_of_lt]
+  omega_arith
 
 /-! ## The group -/
 
@@ -209,30 +209,30 @@ theorem Mults.mulOk {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (
   intro i hi k hk j hj
   simp only [mulV]
   split
-  · exact (h.regR (k - i) (by omega) j hj).2.1
-  · exact (h.regS (k + 5 - i) (by omega) (by omega) j hj).2.1
+  · exact (h.regR (k - i) (by omega_arith) j hj).2.1
+  · exact (h.regS (k + 5 - i) (by omega_arith) (by omega_arith) j hj).2.1
 
 theorem Mults.mul_regs {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (h : Mults s R S y)
     {i k : Nat} (hi : i < 5) (hk : k < 5) : ∀ j < 5, mulV R S i k ≠ iV j ∧ mulV R S i k ≠ dV j ∧ mulV R S i k ≠ hV j := by
   intro j hj
   simp only [mulV]
   split
-  · exact h.regR (k - i) (by omega) j hj
-  · exact h.regS (k + 5 - i) (by omega) (by omega) j hj
+  · exact h.regR (k - i) (by omega_arith) j hj
+  · exact h.regS (k + 5 - i) (by omega_arith) (by omega_arith) j hj
 
 theorem Mults.wd_mul {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (h : Mults s R S y)
     {i k c : Nat} (hi : i < 5) (hk : k < 5) (hc : c < 4) : wd (s.v (mulV R S i k)) c = Pair.mulL (y c) i k := by
   simp only [mulV, Pair.mulL]
   split
-  · exact h.r _ (by omega) c hc
-  · exact h.s5 _ (by omega) (by omega) c hc
+  · exact h.r _ (by omega_arith) c hc
+  · exact h.s5 _ (by omega_arith) (by omega_arith) c hc
 
 theorem Mults.mulL_lt {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (h : Mults s R S y)
     {i k c : Nat} (hk : k < 5) (hc : c < 4) : Pair.mulL (y c) i k < 5 * 2 ^ 27 := by
   simp only [Pair.mulL]
   split
-  · have := h.lt c hc (k - i) (by omega); omega
-  · have := h.lt c hc (k + 5 - i) (by omega); omega
+  · have := h.lt c hc (k - i) (by omega_arith); omega_arith
+  · have := h.lt c hc (k + 5 - i) (by omega_arith); omega_arith
 
 /-- `Mults` holds of a state with the same multiplier registers. -/
 theorem Mults.of_v {s t : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (h : Mults s R S y)
@@ -279,14 +279,14 @@ theorem group_ok {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (hmu
   have hD : ∀ k < 5, ∀ j < 5, hV k ≠ dV j := by decide
   have dI : ∀ k < 5, ∀ j < 5, dV k ≠ iV j := by decide
   have aHi : ∀ e < 2, bAddr s 32 e = gAddr s (2 + e) := fun e _ => by
-    simp only [bAddr, gAddr]; congr 2; omega
+    simp only [bAddr, gAddr]; congr 2; omega_arith
   have aLo : ∀ e, bAddr s 0 e = gAddr s e := fun e => by
     simp only [bAddr, gAddr, Nat.zero_add]
   have lt32 : ∀ x : Nat, x < 2 ^ 28 → x < 2 ^ 32 := fun x h => Nat.lt_of_lt_of_le h (by decide)
   simp only [group, List.append_assoc]
   -- the second pair of blocks
   refine WP.block_append (WP.mono (split_ok (by decide) (by decide) hm hpd
-    (fun e he => by rw [aHi e he]; exact hr _ (by omega))) fun s1 ⟨l1, k1⟩ => ?_)
+    (fun e he => by rw [aHi e he]; exact hr _ (by omega_arith))) fun s1 ⟨l1, k1⟩ => ?_)
   refine WP.block_append (WP.mono (narrow_ok s1) fun s2 ⟨w2, k2⟩ => ?_)
   have v12 : ∀ r, (∀ j < 5, r ≠ iV j) → s2.v r = s.v r := fun r h =>
     (k2.v r h).trans (k1.v r h)
@@ -295,13 +295,13 @@ theorem group_ok {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (hmu
       gblk s (2 + e) i * Pair.mulL (y (2 + e)) i k := by
     intro i hi k hk e he
     simp only [term, hp, ite_true]
-    rw [w2 i hi _ (by omega), show (2 + e) % 2 = e by omega, l1 i hi e he, aHi e he,
+    rw [w2 i hi _ (by omega_arith), show (2 + e) % 2 = e by omega_arith, l1 i hi e he, aHi e he,
       Nat.mod_eq_of_lt (lt32 _ (Nat.lt_of_lt_of_le (blk_lt _ (vdword _ 1).isLt i hi) (by decide))),
-      m2.wd_mul hi hk (by omega)]
+      m2.wd_mul hi hk (by omega_arith)]
   refine WP.block_append (WP.mono (prodHi_ok mok s2 fun i hi k hk e he => by
     rw [tHi i hi k hk e he]
     calc _ < 2 ^ 26 * (5 * 2 ^ 27) := Nat.mul_lt_mul'' (blk_lt _ (vdword _ 1).isLt i hi)
-          (hmul.mulL_lt hk (by omega))
+          (hmul.mulL_lt hk (by omega_arith))
       _ ≤ 2 ^ 59 := by decide) fun s3 ⟨d3, k3⟩ => ?_)
   -- the first pair of blocks, plus the accumulator
   have g3 : s3.gpr = s.gpr := k3.gpr.trans (k2.gpr.trans k1.gpr)
@@ -314,7 +314,7 @@ theorem group_ok {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (hmu
   refine WP.block_append (WP.mono (split_ok (by decide) (by decide)
     (fun e he => by rw [v3 _ fun j hj => ⟨(hmV j hj).1, (hmV j hj).2.1⟩]; exact hm e he)
     (fun e he => by rw [v3 _ fun j hj => ⟨(hpV j hj).1, (hpV j hj).2.1⟩]; exact hpd e he)
-    (fun e he => by rw [b3, rd3, wr3]; exact hr _ (by omega))) fun s4 ⟨l4, k4⟩ => ?_)
+    (fun e he => by rw [b3, rd3, wr3]; exact hr _ (by omega_arith))) fun s4 ⟨l4, k4⟩ => ?_)
   refine WP.block_append (WP.mono (addH_ok s4) fun s5 ⟨a5, k5⟩ => ?_)
   refine WP.block_append (WP.mono (narrow_ok s5) fun s6 ⟨w6, k6⟩ => ?_)
   have v46 : ∀ r, (∀ j < 5, r ≠ iV j) → s6.v r = s4.v r := fun r h => (k6.v r h).trans (k5.v r h)
@@ -330,15 +330,15 @@ theorem group_ok {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (hmu
     have hb' : blk (blo s.mem (gAddr s e)) (bhi s.mem (gAddr s e)) i < 2 ^ 26 := hb
     have hh := hH e he i hi
     simp only [hp, Bool.false_eq_true, ite_false, Nat.zero_add]
-    rw [w6 i hi _ (by omega), Nat.mod_eq_of_lt he, a5 i hi e he, l4 i hi e he, h4 i hi e he, b3,
+    rw [w6 i hi _ (by omega_arith), Nat.mod_eq_of_lt he, a5 i hi e he, l4 i hi e he, h4 i hi e he, b3,
       mm3, show (blk (blo s.mem (gAddr s e)) (bhi s.mem (gAddr s e)) i + hl s e i) % 2 ^ 64 =
-        blk (blo s.mem (gAddr s e)) (bhi s.mem (gAddr s e)) i + hl s e i from Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (lt32 _ (by omega)), Nat.add_comm]
+        blk (blo s.mem (gAddr s e)) (bhi s.mem (gAddr s e)) i + hl s e i from Nat.mod_eq_of_lt (by omega_arith),
+      Nat.mod_eq_of_lt (lt32 _ (by omega_arith)), Nat.add_comm]
   have tLo : (∀ e < 2, ∀ i < 5, hl s e i < 2 ^ 27) → ∀ i < 5, ∀ k < 5, ∀ e < 2, term s6 false i (mulV R S i) k e =
       (hl s e i + gblk s e i) * Pair.mulL (y e) i k := by
     intro hH i hi k hk e he
     simp only [term]
-    rw [opLo hH i hi e he, m6.wd_mul hi hk (by simp only [hp, Bool.false_eq_true, ite_false]; omega)]
+    rw [opLo hH i hi e he, m6.wd_mul hi hk (by simp only [hp, Bool.false_eq_true, ite_false]; omega_arith)]
     simp only [hp, Bool.false_eq_true, ite_false, Nat.zero_add]
   have d6 : ∀ k < 5, ∀ e < 2, ln (s6.v (dV k)) e = Pair.prod (gblk s (2 + e)) (y (2 + e)) k := by
     intro k hk e he
@@ -350,17 +350,17 @@ theorem group_ok {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (hmu
     intro hH i hi k hk e he
     have hb : gblk s e i < 2 ^ 26 := blk_lt _ (vdword _ 1).isLt i hi
     have hh := hH e he i hi
-    calc _ < 2 ^ 28 * (5 * 2 ^ 27) := Nat.mul_lt_mul'' (by omega) (hmul.mulL_lt hk (by omega))
+    calc _ < 2 ^ 28 * (5 * 2 ^ 27) := Nat.mul_lt_mul'' (by omega_arith) (hmul.mulL_lt hk (by omega_arith))
       _ ≤ 2 ^ 58 := by decide
   have pHi : ∀ k < 5, ∀ e < 2, Pair.prod (gblk s (2 + e)) (y (2 + e)) k < 2 ^ 59 := by
     intro k hk e he
     have b : ∀ i < 5, gblk s (2 + e) i * Pair.mulL (y (2 + e)) i k < 2 ^ 56 := fun i hi =>
       calc _ < 2 ^ 26 * (5 * 2 ^ 27) := Nat.mul_lt_mul'' (blk_lt _ (vdword _ 1).isLt i hi)
-            (hmul.mulL_lt hk (by omega))
+            (hmul.mulL_lt hk (by omega_arith))
         _ ≤ 2 ^ 56 := by decide
     have := b 0 (by decide); have := b 1 (by decide); have := b 2 (by decide)
     have := b 3 (by decide); have := b 4 (by decide)
-    simp only [Pair.prod]; omega
+    simp only [Pair.prod]; omega_arith
   refine WP.block_append (WP.mono (prodLo_ok mok s6) fun s7 ⟨d7, k7⟩ => ?_)
   have hD7 : (∀ e < 2, ∀ i < 5, hl s e i < 2 ^ 27) → ∀ k < 5, ∀ e < 2, ln (s7.v (dV k)) e = gprod (hl s e) y (gblk s) e k := by
     intro hH k hk e he
@@ -378,7 +378,7 @@ theorem group_ok {s : State} {R S : Nat → VReg} {y : Nat → Nat → Nat} (hmu
       bLo hH i hi k hk e he
     have := b 0 (by decide); have := b 1 (by decide); have := b 2 (by decide)
     have := b 3 (by decide); have := b 4 (by decide)
-    simp only [gprod, Pair.prod] at *; omega
+    simp only [gprod, Pair.prod] at *; omega_arith
   refine WP.mono (carry_ok s7 mask7) fun t ⟨c, k8⟩ => ⟨fun hH e he i hi => ?_, ?_⟩
   · have eq := (c (fun k hk e he => by rw [hD7 hH k hk e he]; exact gB hH e he k hk) i hi e he).trans
       (Pair.carry_congr (fun k hk => hD7 hH k hk e he) i)

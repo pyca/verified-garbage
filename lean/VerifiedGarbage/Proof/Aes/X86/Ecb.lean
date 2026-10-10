@@ -41,13 +41,13 @@ def EcbInv (m₀ m : Mem) (D : Addr) (n k : Nat) (F : Nat → Spec.Aes.State) : 
 theorem ecbInv_mono {m₀ m : Mem} {D : Addr} {n k k' : Nat} {F : Nat → Spec.Aes.State}
     (h : EcbInv m₀ m D n k F) (hk : n ≤ k) (hk' : n ≤ k') : EcbInv m₀ m D n k' F := by
   intro i hi
-  rw [h i hi, ite_eq_left (show i < 16 * k by omega), ite_eq_left (show i < 16 * k' by omega)]
+  rw [h i hi, ite_eq_left (show i < 16 * k by omega_arith), ite_eq_left (show i < 16 * k' by omega_arith)]
 
 theorem ecbInv_frame {m₀ m m' : Mem} {D : Addr} {n k : Nat} {F : Nat → Spec.Aes.State} {rs : List Region}
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, Region.Disjoint ⟨D, 16 * n⟩ r) (hn : 16 * n < 2 ^ 64)
     (h : EcbInv m₀ m D n k F) : EcbInv m₀ m' D n k F := fun i hi => by
   rw [← h i hi]
-  exact hf.bytes (R := ⟨D, 16 * n⟩) hd (by simp only; omega) hi
+  exact hf.bytes (R := ⟨D, 16 * n⟩) hd (by simp only; omega_arith) hi
 
 /-- Before `k` blocks are stored, a block not yet stored is still `m₀`'s. -/
 theorem ecbInv_orig {m₀ m : Mem} {D : Addr} {n k : Nat} {F : Nat → Spec.Aes.State}
@@ -56,7 +56,7 @@ theorem ecbInv_orig {m₀ m : Mem} {D : Addr} {n k : Nat} {F : Nat → Spec.Aes.
   apply Vector.ext
   intro i hi
   simp only [Spec.Aes.stateAt, Vector.getElem_ofFn]
-  rw [Offset.add_add, h _ (by omega), ite_eq_right (show ¬ 16 * j + i < 16 * k by omega)]
+  rw [Offset.add_add, h _ (by omega_arith), ite_eq_right (show ¬ 16 * j + i < 16 * k by omega_arith)]
 
 /-- `c` more blocks stored. -/
 theorem ecbInv_store {m₀ m m' : Mem} {D : Addr} {n k c : Nat} {F : Nat → Spec.Aes.State}
@@ -66,27 +66,27 @@ theorem ecbInv_store {m₀ m m' : Mem} {D : Addr} {n k c : Nat} {F : Nat → Spe
     EcbInv m₀ m' D n (k + c) F := by
   intro i hi
   by_cases h1 : 16 * k ≤ i ∧ i < 16 * (k + c)
-  · rw [ite_eq_left (by omega)]
-    have := hv (i - 16 * k) (by omega)
-    rwa [show 16 * k + (i - 16 * k) = i by omega, show k + (i - 16 * k) / 16 = i / 16 by omega,
-      show (i - 16 * k) % 16 = i % 16 by omega] at this
+  · rw [ite_eq_left (by omega_arith)]
+    have := hv (i - 16 * k) (by omega_arith)
+    rwa [show 16 * k + (i - 16 * k) = i by omega_arith, show k + (i - 16 * k) / 16 = i / 16 by omega_arith,
+      show (i - 16 * k) % 16 = i % 16 by omega_arith] at this
   · rw [hfr _ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       simp only [Region.Contains]
-      rw [off_toNat D (by omega) (by omega)]
-      split <;> omega), h i hi]
+      rw [off_toNat D (by omega_arith) (by omega_arith)]
+      split <;> omega_arith), h i hi]
     by_cases h2 : i < 16 * k
-    · rw [ite_eq_left h2, ite_eq_left (by omega)]
-    · rw [ite_eq_right h2, ite_eq_right (by omega)]
+    · rw [ite_eq_left h2, ite_eq_left (by omega_arith)]
+    · rw [ite_eq_right h2, ite_eq_right (by omega_arith)]
 
 /-- The slots holding the words of two blocks, at `a 0` and `a 1`. -/
 theorem inRel_of_words {Q' : Nat → BitVec 32} {m : Mem} {a : Nat → Addr}
     (h : ∀ b < 2, ∀ v < 4, Q' (2 * v + b) = m.readW (a b + BitVec.ofNat 64 (4 * v)) 32) :
     InRel Q' (fun b => Spec.Aes.stateAt m (a b)) := by
   intro b hb i hi j hj
-  rw [show b + 2 * (i / 4) = 2 * (i / 4) + b by omega, h b hb (i / 4) (by omega),
-    readW_bit _ _ (by omega) hj, BitVec.add_assoc, ← BitVec.ofNat_add,
-    show 4 * (i / 4) + i % 4 = i by omega, getD_eq _ hi]
+  rw [show b + 2 * (i / 4) = 2 * (i / 4) + b by omega_arith, h b hb (i / 4) (by omega_arith),
+    readW_bit _ _ (by omega_arith) hj, BitVec.add_assoc, ← BitVec.ofNat_add,
+    show 4 * (i / 4) + i % 4 = i by omega_arith, getD_eq _ hi]
   simp [Spec.Aes.stateAt]
 
 /-- The bytes of the words of block `b`, when the slots hold `T`. -/
@@ -94,20 +94,20 @@ theorem byte_of_inRel {Q' : Nat → BitVec 32} {T : Nat → Spec.Aes.State} (h :
     (hb : b < 2) (ht : t < 16) :
     (Q' (2 * (t / 4) + b)).extractLsb' (8 * (t % 4)) 8 = (T b).getD t 0 :=
   byte_ext fun j hj => by
-    rw [BitVec.getLsbD_extractLsb', show 2 * (t / 4) + b = b + 2 * (t / 4) by omega, h b hb t ht j hj]
+    rw [BitVec.getLsbD_extractLsb', show 2 * (t / 4) + b = b + 2 * (t / 4) by omega_arith, h b hb t ht j hj]
     simp [hj]
 
 /-! ## Where the data is -/
 
 theorem addr_off {Dp : BitVec 32} {a o : Nat} (h : Dp.toNat + a + o < 2 ^ 32) :
     addr (Dp + BitVec.ofNat 32 a) o = Dp.setWidth 64 + BitVec.ofNat 64 (a + o) := by
-  rw [addr_add, addr_eq (by omega)]
+  rw [addr_add, addr_eq (by omega_arith)]
 
 /-- The blocks a group loads: two, or the last one twice. -/
 def blk (n g b : Nat) : Nat := 2 * g + min b (n - 2 * g - 1)
 
 theorem blk_lt {n g b : Nat} (hg : 2 * g < n) : 2 * g ≤ blk n g b ∧ blk n g b < n := by
-  simp only [blk]; omega
+  simp only [blk]; omega_arith
 
 /-! ## The load phase -/
 
@@ -160,45 +160,45 @@ theorem loads_ok {s : State} {B Dp : BitVec 32} {n g : Nat} (hc : 2 * g < n)
       16 * (2 * g) + 4 * c.exts ≤ 16 * n → Ok c s := fun c h1 h2 h3 h4 h5 =>
     Ok.of_off (r := reg32 B 2048) (r' := reg32 Dp (16 * n)) (b := B) (b' := Dp) (off := 0)
       (off' := 32 * g) (n := 2048) (n' := 16 * n) hscr rfl hfitB (Nat.le_refl _)
-      (by rw [h1, hb]; simp) (by rw [h2]; omega) (List.mem_append_right _ hdat) rfl hfitD (Nat.le_refl _)
-      (by rw [h3, hesi]) (by omega) (.inr (.inr (.inl hsep.symm)))
+      (by rw [h1, hb]; simp) (by rw [h2]; omega_arith) (List.mem_append_right _ hdat) rfl hfitD (Nat.le_refl _)
+      (by rw [h3, hesi]) (by omega_arith) (.inr (.inr (.inl hsep.symm)))
   have hfr : ∀ (c : Cfg), c.base = sb → c.slots = 8 → slotRegion c s = reg32 B 32 := fun c h1 h2 => by
     simp only [slotRegion, h1, h2, hb]
   have ea : ∀ k, 32 * g + 4 * k + 4 ≤ 16 * n →
       wordAddr (s.gpr .esi) k = Dp.setWidth 64 + BitVec.ofNat 64 (32 * g + 4 * k) := by
     intro k hk
     simp only [wordAddr, hesi]
-    exact addr_off (by omega)
+    exact addr_off (by omega_arith)
   refine WP.ite (!decide (n - 2 * g < 2)) (by simp [X86.eval, hcf]) (fun hb2 => ?_) (fun hb2 => ?_)
   · have h2 : 2 ≤ n - 2 * g := by simpa using hb2
     obtain ⟨e', s', hpost, hs', p⟩ := names_run load2_check (hslots loadCfg2 rfl rfl rfl (by decide)
-      (by simp [loadCfg2]; omega))
+      (by simp [loadCfg2]; omega_arith))
     refine WP.of_runBlock ⟨s', hs', h s' (fun b hb' v hv => ?_) (hfr loadCfg2 rfl rfl ▸ p.frame)
       (fun r hr => p.other r ?_) p.rd p.wr⟩
     · have := List.all_eq_true.mp hpost b (List.mem_range.mpr hb')
       have := List.all_eq_true.mp this v (List.mem_range.mpr hv)
       simp only [beq_iff_eq] at this
-      have e := p.rel.slot _ _ (by simp [loadCfg2]; omega) this
+      have e := p.rel.slot _ _ (by simp [loadCfg2]; omega_arith) this
       simp only [NameRel, loadCfg2] at e
-      rw [Q, e, ea _ (by omega)]
-      simp only [blk, show min b (n - 2 * g - 1) = b by omega]
-      exact congrArg (fun x => s.mem.readW (Dp.setWidth 64 + BitVec.ofNat 64 x) 32) (by omega)
+      rw [Q, e, ea _ (by omega_arith)]
+      simp only [blk, show min b (n - 2 * g - 1) = b by omega_arith]
+      exact congrArg (fun x => s.mem.readW (Dp.setWidth 64 + BitVec.ofNat 64 x) 32) (by omega_arith)
     · have : ((loadBlock 0 ++ loadBlock 1).all fun i => i.dst != some r) = true := by
         revert hr; cases r <;> decide
       simp [this]
-  · have h1 : n - 2 * g = 1 := by simp at hb2; omega
+  · have h1 : n - 2 * g = 1 := by simp at hb2; omega_arith
     obtain ⟨e', s', hpost, hs', p⟩ := names_run load1_check (hslots loadCfg1 rfl rfl rfl (by decide)
-      (by simp [loadCfg1]; omega))
+      (by simp [loadCfg1]; omega_arith))
     refine WP.of_runBlock ⟨s', hs', h s' (fun b hb' v hv => ?_) (hfr loadCfg1 rfl rfl ▸ p.frame)
       (fun r hr => p.other r ?_) p.rd p.wr⟩
     · have := List.all_eq_true.mp hpost v (List.mem_range.mpr hv)
       simp only [Bool.and_eq_true, beq_iff_eq] at this
-      have e := p.rel.slot (2 * v + b) _ (by simp [loadCfg1]; omega)
-        (by rcases (by omega : b = 0 ∨ b = 1) with rfl | rfl; exacts [this.1, this.2])
+      have e := p.rel.slot (2 * v + b) _ (by simp [loadCfg1]; omega_arith)
+        (by rcases (by omega_arith : b = 0 ∨ b = 1) with rfl | rfl; exacts [this.1, this.2])
       simp only [NameRel, loadCfg1] at e
-      rw [Q, e, ea _ (by omega)]
-      simp only [blk, show min b (n - 2 * g - 1) = 0 by omega]
-      exact congrArg (fun x => s.mem.readW (Dp.setWidth 64 + BitVec.ofNat 64 x) 32) (by omega)
+      rw [Q, e, ea _ (by omega_arith)]
+      simp only [blk, show min b (n - 2 * g - 1) = 0 by omega_arith]
+      exact congrArg (fun x => s.mem.readW (Dp.setWidth 64 + BitVec.ofNat 64 x) 32) (by omega_arith)
     · have : (loadOne.all fun i => i.dst != some r) = true := by
         revert hr; cases r <;> decide
       simp [this]
@@ -231,10 +231,10 @@ theorem stores_bytes {m' : Mem} {Dp : BitVec 32} {g c : Nat} {T : Nat → Spec.A
       Q' (2 * v + b)) :
     ∀ i < 16 * c, m' (Dp.setWidth 64 + BitVec.ofNat 64 (16 * (2 * g) + i)) = (T (i / 16)).getD (i % 16) 0 := by
   intro i hi
-  have hb : i / 16 < 2 := by omega
-  rw [← byte_of_inRel hin hb (Nat.mod_lt _ (by decide)), ← hw (i / 16) (by omega) (i % 16 / 4) (by omega),
-    ← Mem.readW_byte _ _ (by omega : i % 16 % 4 < 4), BitVec.add_assoc, ← BitVec.ofNat_add]
-  congr 3; omega
+  have hb : i / 16 < 2 := by omega_arith
+  rw [← byte_of_inRel hin hb (Nat.mod_lt _ (by decide)), ← hw (i / 16) (by omega_arith) (i % 16 / 4) (by omega_arith),
+    ← Mem.readW_byte _ _ (by omega_arith : i % 16 % 4 < 4), BitVec.add_assoc, ← BitVec.ofNat_add]
+  congr 3; omega_arith
 
 /-- The stores of a group: `c` blocks (two, or the last one) from the
 slots to the data, then on to the next blocks. -/
@@ -258,22 +258,22 @@ theorem stores_ok {s : State} {B Dp : BitVec 32} {n g : Nat} {T : Nat → Spec.A
     Ok.of_off (r := reg32 Dp (16 * n)) (r' := reg32 B 2048) (b := Dp) (b' := B) (off := 32 * g)
       (off' := 0) (n := 16 * n) (n' := 2048) hdat rfl hfitD (Nat.le_refl _)
       (by rw [h1, hesi]) h5 (List.mem_append_right _ hscr) rfl hfitB (Nat.le_refl _)
-      (by rw [h2, hb]; simp) (by rw [h3]; omega) (.inr (.inr (.inl hsep)))
+      (by rw [h2, hb]; simp) (by rw [h3]; omega_arith) (.inr (.inr (.inl hsep)))
   have ea : ∀ k, 32 * g + 4 * k + 4 ≤ 16 * n →
       wordAddr (s.gpr .esi) k = Dp.setWidth 64 + BitVec.ofNat 64 (32 * g + 4 * k) := by
     intro k hk
     simp only [wordAddr, hesi]
-    exact addr_off (by omega)
+    exact addr_off (by omega_arith)
   have hreg : ∀ (c : Cfg), c.base = .esi → 32 * g + 4 * c.slots ≤ 16 * n →
       slotRegion c s = ⟨Dp.setWidth 64 + BitVec.ofNat 64 (16 * (2 * g)), 4 * c.slots⟩ := by
     intro c h1 h2
     simp only [slotRegion, h1, hesi]
-    rw [← addr_zero, addr_off (by omega), Nat.add_zero, show 16 * (2 * g) = 32 * g by omega]
+    rw [← addr_zero, addr_off (by omega_arith), Nat.add_zero, show 16 * (2 * g) = 32 * g by omega_arith]
   refine WP.ite (!decide (n - 2 * g < 2)) (by simp [X86.eval, hcf]) (fun hb2 => ?_) (fun hb2 => ?_)
   · have h2 : 2 ≤ n - 2 * g := by simpa using hb2
     rw [storeTwo, WP.block_append_iff (M := isa)]
     obtain ⟨e', s₁, hpost, hs₁, p⟩ := names_run store2_check (hslots storeCfg2 rfl rfl rfl
-      (by simp [storeCfg2]; omega))
+      (by simp [storeCfg2]; omega_arith))
     refine WP.of_runBlock ⟨s₁, hs₁, wp_addi fun s₂ u₂ => wp_subi fun s₃ u₃ _ _ => WP.block_nil ?_⟩
     have hw : ∀ b < 2, ∀ v < 4, s₁.mem.readW (Dp.setWidth 64 + BitVec.ofNat 64 (32 * g + 16 * b + 4 * v)) 32 =
         Q s (2 * v + b) := by
@@ -281,46 +281,46 @@ theorem stores_ok {s : State} {B Dp : BitVec 32} {n g : Nat} {T : Nat → Spec.A
       have := List.all_eq_true.mp hpost b (List.mem_range.mpr hb')
       have := List.all_eq_true.mp this v (List.mem_range.mpr hv)
       simp only [beq_iff_eq] at this
-      have e := p.rel.slot _ _ (by simp [storeCfg2]; omega) this
+      have e := p.rel.slot _ _ (by simp [storeCfg2]; omega_arith) this
       simp only [NameRel, storeCfg2] at e
       rw [show s₁.gpr .esi = s.gpr .esi from p.base] at e
-      rw [show 32 * g + 16 * b + 4 * v = 32 * g + 4 * (4 * b + v) by omega, ← ea _ (by omega), e]
-    have hmin : min 2 (n - 2 * g) = 2 := by omega
+      rw [show 32 * g + 16 * b + 4 * v = 32 * g + 4 * (4 * b + v) by omega_arith, ← ea _ (by omega_arith), e]
+    have hmin : min 2 (n - 2 * g) = 2 := by omega_arith
     refine h s₃ ?_ ?_ (fun r h1 h2 h3 => ?_) ?_ ?_ (by rw [u₃.rd, u₂.rd, p.rd]) (by rw [u₃.wr, u₂.wr, p.wr])
     · rw [hmin, u₃.mem, u₂.mem]
       exact stores_bytes hin (by decide) hw
-    · rw [hmin, u₃.mem, u₂.mem, show 16 * 2 = 4 * storeCfg2.slots from rfl, ← hreg storeCfg2 rfl (by simp [storeCfg2]; omega)]; exact p.frame
+    · rw [hmin, u₃.mem, u₂.mem, show 16 * 2 = 4 * storeCfg2.slots from rfl, ← hreg storeCfg2 rfl (by simp [storeCfg2]; omega_arith)]; exact p.frame
     · rw [u₃.other r h3, u₂.other r h2, p.other r (by
         have : ((storeBlock 0 ++ storeBlock 1).all fun i => i.dst != some r) = true := by
           revert h1; cases r <;> decide
         simp [this])]
     · rw [hmin, u₃.gpr, u₂.other _ (by decide), p.other _ (by decide), hebp]
-      have : n ≤ 2 ^ 28 := by omega
+      have : n ≤ 2 ^ 28 := by omega_arith
       bv_omega
     · refine .inl ?_
       rw [u₃.other _ (by decide), u₂.gpr, p.other _ (by decide), hesi, BitVec.add_assoc,
         show (32 : BitVec 32) = BitVec.ofNat 32 32 from rfl, ← BitVec.ofNat_add]
       congr 2
-  · have h1 : n - 2 * g = 1 := by simp at hb2; omega
+  · have h1 : n - 2 * g = 1 := by simp at hb2; omega_arith
     rw [storeOne, WP.block_append_iff (M := isa)]
     obtain ⟨e', s₁, hpost, hs₁, p⟩ := names_run store1_check (hslots storeCfg1 rfl rfl rfl
-      (by simp [storeCfg1]; omega))
+      (by simp [storeCfg1]; omega_arith))
     refine WP.of_runBlock ⟨s₁, hs₁, wp_sub fun s₂ u₂ _ => WP.block_nil ?_⟩
     have hw : ∀ b < 1, ∀ v < 4, s₁.mem.readW (Dp.setWidth 64 + BitVec.ofNat 64 (32 * g + 16 * b + 4 * v)) 32 =
         Q s (2 * v + b) := by
       intro b hb' v hv
       have := List.all_eq_true.mp hpost v (List.mem_range.mpr hv)
       simp only [beq_iff_eq] at this
-      have e := p.rel.slot _ _ (by simp [storeCfg1]; omega) this
+      have e := p.rel.slot _ _ (by simp [storeCfg1]; omega_arith) this
       simp only [NameRel, storeCfg1] at e
       rw [show s₁.gpr .esi = s.gpr .esi from p.base] at e
-      rw [show b = 0 by omega, show 32 * g + 16 * 0 + 4 * v = 32 * g + 4 * v by omega, ← ea _ (by omega), e]
+      rw [show b = 0 by omega_arith, show 32 * g + 16 * 0 + 4 * v = 32 * g + 4 * v by omega_arith, ← ea _ (by omega_arith), e]
       rfl
-    have hmin : min 2 (n - 2 * g) = 1 := by omega
-    refine h s₂ ?_ ?_ (fun r h1 h2 h3 => ?_) ?_ (.inr (by omega)) (by rw [u₂.rd, p.rd]) (by rw [u₂.wr, p.wr])
+    have hmin : min 2 (n - 2 * g) = 1 := by omega_arith
+    refine h s₂ ?_ ?_ (fun r h1 h2 h3 => ?_) ?_ (.inr (by omega_arith)) (by rw [u₂.rd, p.rd]) (by rw [u₂.wr, p.wr])
     · rw [hmin, u₂.mem]
       exact stores_bytes hin (by decide) hw
-    · rw [hmin, u₂.mem, show 16 * 1 = 4 * storeCfg1.slots from rfl, ← hreg storeCfg1 rfl (by simp [storeCfg1]; omega)]; exact p.frame
+    · rw [hmin, u₂.mem, show 16 * 1 = 4 * storeCfg1.slots from rfl, ← hreg storeCfg1 rfl (by simp [storeCfg1]; omega_arith)]; exact p.frame
     · rw [u₂.other r h3, p.other r (by
         have : ((storeBlock 0).all fun i => i.dst != some r) = true := by
           revert h1; cases r <;> decide
@@ -346,7 +346,7 @@ theorem groupLoad_wp {s : State} {B Dp : BitVec 32} {n g : Nat} (hb : s.gpr .edi
   refine h s₃ (by rw [u₃.gpr, u₂.other _ (by decide), u₁.gpr, hd])
     (by rw [u₃.gpr, u₂.gpr, u₁.mem, hn]) (fun r h1 h2 => by rw [u₃.gpr, u₂.other r h2, u₁.other r h1])
     (by rw [u₃.mem, u₂.mem, u₁.mem]) (by rw [u₃.rd, u₂.rd, u₁.rd]) (by rw [u₃.wr, u₂.wr, u₁.wr]) ?_
-  rw [hcf, u₂.gpr, u₁.mem, hn, toNat_ofNat_lt (by omega)]
+  rw [hcf, u₂.gpr, u₁.mem, hn, toNat_ofNat_lt (by omega_arith)]
   rfl
 
 /-! ## A group -/
@@ -412,16 +412,16 @@ theorem ESetup.edisj {o l : Nat} (h1 : 256 ≤ o) (h2 : o + l ≤ dOff ∨ dOff 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · show Region.Disjoint _ ⟨B.setWidth 64, 256⟩
-    rw [← addr_zero]; exact part_disj hs.fitB h3 (by omega) (.inr h1)
-  · exact part_disj hs.fitB h3 (by simp only [dOff]; omega) h2
+    rw [← addr_zero]; exact part_disj hs.fitB h3 (by omega_arith) (.inr h1)
+  · exact part_disj hs.fitB h3 (by simp only [dOff]; omega_arith) h2
   · exact (hs.sep.sub_right (part_sub_reg hs.fitB h3)).symm
 
 theorem ESetup.argDisj : ∀ r ∈ eRegions B Dp n, Region.Disjoint ⟨addr (s₂.gpr .esp) 8, 4⟩ r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact hs.argSep.sub_right (Region.sub_prefix (by omega))
-  · exact hs.argSep.sub_right (part_sub_reg hs.fitB (by simp only [dOff]; omega))
+  · exact hs.argSep.sub_right (Region.sub_prefix (by omega_arith))
+  · exact hs.argSep.sub_right (part_sub_reg hs.fitB (by simp only [dOff]; omega_arith))
   · exact hs.argSepD
 
 /-- One group: from before group `g`, to after the last group (ZF set) or
@@ -430,29 +430,29 @@ theorem ecbGroup_ok {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.Stat
     (hcr : CryptOk crypt2 f) {m₀ : Mem} {g : Nat} {s : State} (hi : EInv f m₀ s₂ B Dp n R w g s) :
     WP isa (blockGroup crypt2) s fun s' => (s'.zf = some true ∧ EDone f m₀ s₂ B Dp n R w s') ∨
       (s'.zf = some false ∧ EInv f m₀ s₂ B Dp n R w (g + 1) s') := by
-  have hR : R ≤ 14 := by rcases hs.rounds with h | h | h <;> omega
+  have hR : R ≤ 14 := by rcases hs.rounds with h | h | h <;> omega_arith
   have hfitB := hs.fitB
   have hfitD := hs.fitD
   have hg := hi.hg
-  have hn32 : n < 2 ^ 32 := by omega
+  have hn32 : n < 2 ^ 32 := by omega_arith
   have hscr : reg32 B 2048 ∈ s.wr := hi.wr ▸ hs.scr
   have hdat : reg32 Dp (16 * n) ∈ s.wr := hi.wr ▸ hs.dat
   let D := Dp.setWidth 64
   let F := ecbOut f m₀ D R w
   have d32 : ∀ r ∈ [reg32 B 32], Region.Disjoint (reg32 Dp (16 * n)) r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact hs.sep.sub_right (Region.sub_prefix (by omega))
+    exact hs.sep.sub_right (Region.sub_prefix (by omega_arith))
   have d256 : ∀ r ∈ [reg32 B 256], Region.Disjoint (reg32 Dp (16 * n)) r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact hs.sep.sub_right (Region.sub_prefix (by omega))
-  have hn64 : 16 * n < 2 ^ 64 := by omega
+    exact hs.sep.sub_right (Region.sub_prefix (by omega_arith))
+  have hn64 : 16 * n < 2 ^ 64 := by omega_arith
   -- Reads of the scratch buffer beyond the slots, through the writes of the slots.
   have slotFar : ∀ {m m' : Mem} {N : Nat}, N ≤ 256 → Frame [reg32 B N] m m' → ∀ o, 256 ≤ o → o + 4 ≤ 2048 →
       m'.readW (addr B o) 32 = m.readW (addr B o) 32 := fun hN hf o h1 h2 =>
     hf.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       show Region.Disjoint _ ⟨B.setWidth 64, _⟩
-      rw [← addr_zero]; exact part_disj hfitB h2 (by omega) (.inr (by omega))) (by decide)
+      rw [← addr_zero]; exact part_disj hfitB h2 (by omega_arith) (.inr (by omega_arith))) (by decide)
   unfold blockGroup loadGroup
   refine WP.seq (WP.seq (groupLoad_wp hi.base hfitB hscr hi.dslot hi.nslot hn32
     fun s₁ esi₁ ebp₁ g₁ m₁ rd₁ wr₁ cf₁ => ?_))
@@ -466,7 +466,7 @@ theorem ecbGroup_ok {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.Stat
   have hesp₃ : s₃.gpr .esp = s₂.gpr .esp := (keep₃ _ (by decide) (by decide) (by decide)).trans hi.esp
   have hf₃ : Frame (eRegions B Dp n) s₂.mem s₃.mem :=
     hi.frame.trans (f₃.sub fun r hr => ⟨reg32 B 256, by simp, by
-      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega)⟩)
+      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega_arith)⟩)
   have hp : EncPre s₃ R w :=
     { scr := by rw [hb₃, wr₃, wr₁]; exact hscr
       fit := by rw [hb₃]; exact hfitB
@@ -475,15 +475,15 @@ theorem ecbGroup_ok {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.Stat
       argR := by
         rw [hesp₃, ← hs.argR]
         exact hf₃.readW (Region.contains_self _ _) hs.argDisj (by decide)
-      argSep := by rw [hesp₃, hb₃]; exact hs.argSep.sub_right (Region.sub_prefix (by omega))
+      argSep := by rw [hesp₃, hb₃]; exact hs.argSep.sub_right (Region.sub_prefix (by omega_arith))
       keys := by
         rw [hb₃]
         intro j hj
         refine keyRel_congr (hs.keys j hj) fun k hk => ?_
         have := keyOff_le (j := j) hR
         exact hf₃.readW (Region.contains_self _ _)
-          (hs.edisj (by simp only [lastKey] at this; omega) (.inr (by simp only [dOff, lastKey] at this ⊢; omega))
-            (by simp only [lastKey] at this; omega)) (by decide) }
+          (hs.edisj (by simp only [lastKey] at this; omega_arith) (.inr (by simp only [dOff, lastKey] at this ⊢; omega_arith))
+            (by simp only [lastKey] at this; omega_arith)) (by decide) }
   let S : Nat → Spec.Aes.State := fun b => Spec.Aes.stateAt m₀ (D + BitVec.ofNat 64 (16 * blk n g b))
   have hin : InRel (Q s₃) S := by
     have h := inRel_of_words (Q' := Q s₃) (m := s.mem) (a := fun b => D + BitVec.ofNat 64 (16 * blk n g b))
@@ -499,7 +499,7 @@ theorem ecbGroup_ok {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.Stat
   have hb₄ : s₄.gpr .edi = B := hc₄.base.trans hb₃
   have hesp₄ : s₄.gpr .esp = s₂.gpr .esp := hc₄.esp.trans hesp₃
   have far₄ : ∀ o, 256 ≤ o → o + 4 ≤ 2048 → s₄.mem.readW (addr B o) 32 = s.mem.readW (addr B o) 32 :=
-    fun o h1 h2 => (slotFar (Nat.le_refl _) fr₄ o h1 h2).trans (slotFar (by omega) f₃ o h1 h2)
+    fun o h1 h2 => (slotFar (Nat.le_refl _) fr₄ o h1 h2).trans (slotFar (by omega_arith) f₃ o h1 h2)
   have data₄ : EcbInv m₀ s₄.mem D n (2 * g) F :=
     ecbInv_frame fr₄ d256 hn64 (ecbInv_frame f₃ d32 hn64 hi.data)
   -- The store phase.
@@ -515,13 +515,13 @@ theorem ecbGroup_ok {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.Stat
     (wr₅' ▸ hs.scr) hs.sep cf₅ (by rw [hq₅]; exact hin₄)
     fun s₆ v₆ f₆ g₆ ebp₆ esi₆ rd₆ wr₆ => ?_)
   rw [m₅] at f₆
-  have hc : min 2 (n - 2 * g) ≤ 2 ∧ 2 * g + min 2 (n - 2 * g) ≤ n := by omega
+  have hc : min 2 (n - 2 * g) ≤ 2 ∧ 2 * g + min 2 (n - 2 * g) ≤ n := by omega_arith
   have hsub : (⟨D + BitVec.ofNat 64 (16 * (2 * g)), 16 * min 2 (n - 2 * g)⟩ : Region).Sub
-      (reg32 Dp (16 * n)) := Offset.sub_base _ (by omega)
+      (reg32 Dp (16 * n)) := Offset.sub_base _ (by omega_arith)
   have data₆ : EcbInv m₀ s₆.mem D n (2 * g + min 2 (n - 2 * g)) F := by
     refine ecbInv_store hn64 hc.2 data₄ f₆ fun i hi' => ?_
     refine (v₆ i hi').trans ?_
-    have e : blk n g (i / 16) = 2 * g + i / 16 := by simp only [blk]; omega
+    have e : blk n g (i / 16) = 2 * g + i / 16 := by simp only [blk]; omega_arith
     simp only [F, ecbOut, S, e]
   have hesi₆ : s₆.gpr .edi = B := by rw [g₆ _ (by decide) (by decide) (by decide)]; exact hb₅
   have hin₆ : ∀ o, o + 4 ≤ 2048 → InRegions s₆.wr (addr B o) 4 := fun o ho => by
@@ -560,26 +560,26 @@ theorem ecbGroup_ok {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.Stat
       simp only [List.mem_singleton] at hr; subst hr; exact hsub⟩).trans
       (fr.sub fun r hr => ⟨⟨addr B dOff, 8⟩, List.mem_cons_of_mem _ (List.mem_cons_self ..), by
         simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)
-  rw [hz, u₈.gpr, u₇.gpr, ebp₆, BitVec.and_self, ofNat_beq_zero (by omega)]
+  rw [hz, u₈.gpr, u₇.gpr, ebp₆, BitVec.and_self, ofNat_beq_zero (by omega_arith)]
   by_cases hl : n - 2 * g - min 2 (n - 2 * g) = 0
-  · refine .inl ⟨by rw [hl]; rfl, base', esp', rd', wr', frame', ecbInv_mono data₉ (by omega) (Nat.le_refl _)⟩
-  · have hm2 : min 2 (n - 2 * g) = 2 := by omega
-    refine .inr ⟨by simp [hl], ⟨by omega, base', esp', rd', wr', frame', ?_, ?_, ?_⟩⟩
+  · refine .inl ⟨by rw [hl]; rfl, base', esp', rd', wr', frame', ecbInv_mono data₉ (by omega_arith) (Nat.le_refl _)⟩
+  · have hm2 : min 2 (n - 2 * g) = 2 := by omega_arith
+    refine .inr ⟨by simp [hl], ⟨by omega_arith, base', esp', rd', wr', frame', ?_, ?_, ?_⟩⟩
     · rw [hds]; rcases esi₆ with e | e
       · exact e
       · exact absurd e hl
-    · rw [hns, ebp₆, hm2, show n - 2 * g - 2 = n - 2 * (g + 1) by omega]
-    · rw [hm2] at data₉; rwa [show 2 * g + 2 = 2 * (g + 1) by omega] at data₉
+    · rw [hns, ebp₆, hm2, show n - 2 * g - 2 = n - 2 * (g + 1) by omega_arith]
+    · rw [hm2] at data₉; rwa [show 2 * g + 2 = 2 * (g + 1) by omega_arith] at data₉
 
 /-- The loop over the groups. -/
 theorem ecbGroups_ok {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
     (hcr : CryptOk crypt2 f) {m₀ : Mem} {s : State} (hi : EInv f m₀ s₂ B Dp n R w 0 s) :
     WP isa (.loop (blockGroup crypt2) .ne) s (EDone f m₀ s₂ B Dp n R w) := by
   refine WP.loop (M := isa) (fun k s => ∃ g, k = n - 2 * g ∧ EInv f m₀ s₂ B Dp n R w g s)
-    (fun k s ⟨g, hk, hg⟩ => WP.mono (ecbGroup_ok hs hcr hg) fun s' h => ?_) n s ⟨0, by omega, hi⟩
+    (fun k s ⟨g, hk, hg⟩ => WP.mono (ecbGroup_ok hs hcr hg) fun s' h => ?_) n s ⟨0, by omega_arith, hi⟩
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨by simp [X86.eval, z], d⟩
-  · exact .inr ⟨by simp [X86.eval, z], n - 2 * (g + 1), by have := hg.hg; omega, g + 1, rfl, d⟩
+  · exact .inr ⟨by simp [X86.eval, z], n - 2 * (g + 1), by have := hg.hg; omega_arith, g + 1, rfl, d⟩
 
 end
 

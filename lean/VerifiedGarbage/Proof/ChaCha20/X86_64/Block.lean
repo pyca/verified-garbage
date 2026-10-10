@@ -203,17 +203,17 @@ theorem holds_swap {buf : Addr} {v : CState} {s : State} {p : Bool} {i j : Nat}
   have rd : ∀ (m : Mem) {d e : Nat} (w : BitVec 32), 8 ≤ d → d ≤ 11 → 8 ≤ e → e ≤ 11 → d ≠ e →
       (m.writeW (slotAddr buf e) w).readW (slotAddr buf d) 32 = m.readW (slotAddr buf d) 32 :=
     fun m d e w h1 h2 h3 h4 hde => readW_writeW_off m buf w (.inl rfl)
-      (by simp only [slotOff]; omega_arith) (by simp only [slotOff]; omega_arith) (by simp only [slotOff]; omega_arith)
+      (by simp only [slotOff]; omega) (by simp only [slotOff]; omega) (by simp only [slotOff]; omega)
   by_cases hs : 8 ≤ k ∧ k ≤ 11
-  · have hk4 : k = 8 ∨ k = 9 ∨ k = 10 ∨ k = 11 := by omega_arith
+  · have hk4 : k = 8 ∨ k = 9 ∨ k = 10 ∨ k = 11 := by omega
     rcases hij with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
     rcases hk4 with rfl | rfl | rfl | rfl <;>
     simp only [inReg, wreg, Nat.reduceAdd, Nat.reduceEqDiff, or_true, or_false,
       ↓reduceIte, reduceCtorEq, Bool.not_false, Bool.not_true, Bool.false_eq_true] at hk' ⊢ <;>
-    simp (disch := omega_arith) only [rd, Mem.readW_writeW_self32, hk', BitVec.setWidth_setWidth_of_le,
+    simp (disch := omega) only [rd, Mem.readW_writeW_self32, hk', BitVec.setWidth_setWidth_of_le,
       BitVec.setWidth_eq]
-  · have e1 : ¬(k = 8 ∨ k = 9) := by omega_arith
-    have e2 : ¬(k = 10 ∨ k = 11) := by omega_arith
+  · have e1 : ¬(k = 8 ∨ k = 9) := by omega
+    have e2 : ¬(k = 10 ∨ k = 11) := by omega
     have hr : inReg (!p) k = inReg p k := by simp only [inReg, e1, e2, ite_false]
     have hw : wreg k ≠ .r14 ∧ wreg k ≠ .r15 :=
       (show ∀ k < 16, ¬(8 ≤ k ∧ k ≤ 11) → wreg k ≠ .r14 ∧ wreg k ≠ .r15 by decide) k hk hs
@@ -324,8 +324,8 @@ open VG.Spec.ChaCha20 (Word stateAt innerBlock)
 /-- An address `buf + d` as the code computes it. -/
 abbrev bufAt (buf : Addr) (d : Nat) : Addr := buf + BitVec.ofInt 64 (d : Int)
 
-theorem in_lt {k : Nat} (hk : k < 16) : inOff k + 4 ≤ 256 := by simp only [inOff]; omega_arith
-theorem out_lt {k : Nat} (hk : k < 16) : outOff k + 4 ≤ 256 := by simp only [outOff]; omega_arith
+theorem in_lt {k : Nat} (hk : k < 16) : inOff k + 4 ≤ 256 := by simp only [inOff]; omega
+theorem out_lt {k : Nat} (hk : k < 16) : outOff k + 4 ≤ 256 := by simp only [outOff]; omega
 
 /-! ## Copying the state -/
 
@@ -341,7 +341,7 @@ theorem copyWord_ok {k : Nat} (hk : k < 16) {s : State} {st buf : Addr} (hrdi : 
   have o₁ := out_buf hw (d := inOff k) (n := 4) (in_lt hk)
   apply WP.of_runBlock
   by_cases h : k = 10 ∨ k = 11
-  · have o₂ := out_buf hw (d := slotOff k) (n := 4) (by simp only [slotOff]; omega_arith)
+  · have o₂ := out_buf hw (d := slotOff k) (n := 4) (by simp only [slotOff]; omega)
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, and_self, copyWord, h, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
           exec, readSrc32, isa, ea_at, State.load32, State.store32,
@@ -455,24 +455,24 @@ theorem copy_step {s₀ s₁ : State} (hp : Pre s₀) (h₁ : s₁.gpr = s₀.gp
     (by rw [hc.wr]; exact hp.hw)) fun s' ⟨hm, hg, hrd, hwr⟩ => ?_
   have hx : s.mem.readW (bufAt (st s₀) (4 * n)) 32 = (V s₀)[n] := read_st hp hfs hn
   have cin : (⟨bufAt (buf s₀) 64, 80⟩ : Region).Contains (bufAt (buf s₀) (inOff n)) (32 / 8) :=
-    contains_sub _ (by simp [inOff]) (by simp [inOff]; omega_arith) (by lit_omega)
+    contains_sub _ (by simp [inOff]) (by simp [inOff]; omega) (by lit_omega)
   refine ⟨fun r hr => (hg r hr).trans (hc.gpr r hr), hrd.trans hc.rd, hwr.trans hc.wr, ?_, ?_, ?_⟩
   · rw [hm]
     split
     · exact (hc.frame.writeW (List.mem_singleton_self _) _ cin).writeW (List.mem_singleton_self _) _
-        (contains_sub _ (by simp [slotOff]; omega_arith) (by simp [slotOff]; omega_arith) (by lit_omega))
+        (contains_sub _ (by simp [slotOff]; omega) (by simp [slotOff]; omega) (by lit_omega))
     · exact hc.frame.writeW (List.mem_singleton_self _) _ cin
   · intro j hj hjn
     rw [hm]
     have e1 : ∀ m : Mem, (m.writeW (bufAt (buf s₀) (slotOff n)) ((V s₀)[n])).readW
         (bufAt (buf s₀) (inOff j)) 32 = m.readW (bufAt (buf s₀) (inOff j)) 32 := fun m =>
-      readW_writeW_off m _ _ (by lit_omega) (by simp [inOff]; omega_arith) (by simp [slotOff]; omega_arith)
-        (by simp [inOff, slotOff]; omega_arith)
+      readW_writeW_off m _ _ (by lit_omega) (by simp [inOff]; omega) (by simp [slotOff]; omega)
+        (by simp [inOff, slotOff]; omega)
     rcases Nat.lt_succ_iff_lt_or_eq.mp hjn with hjn | rfl
     · have e2 : (s.mem.writeW (bufAt (buf s₀) (inOff n)) ((V s₀)[n])).readW
           (bufAt (buf s₀) (inOff j)) 32 = s.mem.readW (bufAt (buf s₀) (inOff j)) 32 :=
-        readW_writeW_off _ _ _ (by lit_omega) (by simp [inOff]; omega_arith) (by simp [inOff]; omega_arith)
-          (by simp [inOff]; omega_arith)
+        readW_writeW_off _ _ _ (by lit_omega) (by simp [inOff]; omega) (by simp [inOff]; omega)
+          (by simp [inOff]; omega)
       rw [hx]; split <;> simp only [e1, e2, hc.inw j hj hjn]
     · rw [hx]; split <;> simp only [e1, Mem.readW_writeW_self32]
   · intro j hj hjn h1011
@@ -481,10 +481,10 @@ theorem copy_step {s₀ s₁ : State} (hp : Pre s₀) (h₁ : s₁.gpr = s₀.gp
     · have e2 : ∀ m : Mem, ∀ d, d = inOff n ∨ d = slotOff n → (m.writeW (bufAt (buf s₀) d)
           ((V s₀)[n])).readW (bufAt (buf s₀) (slotOff j)) 32 = m.readW (bufAt (buf s₀) (slotOff j)) 32 := by
         rintro m d (rfl | rfl)
-        · exact readW_writeW_off _ _ _ (by lit_omega) (by simp [slotOff]; omega_arith) (by simp [inOff]; omega_arith)
-            (by simp [inOff, slotOff]; omega_arith)
-        · exact readW_writeW_off _ _ _ (by lit_omega) (by simp [slotOff]; omega_arith) (by simp [slotOff]; omega_arith)
-            (by simp [slotOff]; omega_arith)
+        · exact readW_writeW_off _ _ _ (by lit_omega) (by simp [slotOff]; omega) (by simp [inOff]; omega)
+            (by simp [inOff, slotOff]; omega)
+        · exact readW_writeW_off _ _ _ (by lit_omega) (by simp [slotOff]; omega) (by simp [slotOff]; omega)
+            (by simp [slotOff]; omega)
       rw [hx]; split <;> simp only [e2 _ _ (.inl rfl), e2 _ _ (.inr rfl), hc.slot j hj hjn h1011]
     · simp only [hx, h1011, ite_true, Mem.readW_writeW_self32]
 
@@ -510,7 +510,7 @@ theorem store_step {p : Addr} {R : CState} {sB : State} (hw : bufR p ∈ sB.wr) 
   have hw' : bufR p ∈ s.wr := hs.wr ▸ hw
   have o := out_buf hw' (d := outOff n) (n := 4) (out_lt hn)
   have cout : (outR p).Contains (bufAt p (outOff n)) (32 / 8) :=
-    contains_sub _ (by lit_omega) (by simp [outOff]; omega_arith) (by lit_omega)
+    contains_sub _ (by lit_omega) (by simp [outOff]; omega) (by lit_omega)
   have hr := hs.rest n hn (Nat.le_refl _)
   have hrsi := hs.rsi
   /- The new memory is the old one with `R[n]` written to output word `n`. -/
@@ -522,7 +522,7 @@ theorem store_step {p : Addr} {R : CState} {sB : State} (hw : bufR p ∈ sB.wr) 
     by_cases h : n = 10 ∨ n = 11
     · have hin : inReg false n = false := by rcases h with rfl | rfl <;> rfl
       simp only [hin, Bool.false_eq_true, ite_false] at hr
-      have i := in_buf (rs := s.rd) hw' (d := slotOff n) (n := 4) (by simp only [slotOff]; omega_arith)
+      have i := in_buf (rs := s.rd) hw' (d := slotOff n) (n := 4) (by simp only [slotOff]; omega)
       simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, storeWord, h, runBlock_cons,
         runStep_some, runBlock_nil, exec, readSrc32,
         isa, ea_at, State.load32, State.store32, State.setReg32, State.setReg, hrsi, i, o,
@@ -530,7 +530,7 @@ theorem store_step {p : Addr} {R : CState} {sB : State} (hw : bufR p ∈ sB.wr) 
         Option.map_some, Option.some.injEq, exists_eq_left']
       simp only [slotAddr] at hr
       refine key _ (by simp only [hr]) (fun j hj hnj _ => ?_) (by simp) (by simp) rfl rfl
-      simp [wreg_ne_rax (show 11 ≤ j by omega_arith) hj]
+      simp [wreg_ne_rax (show 11 ≤ j by omega) hj]
     · have hin : inReg false n = true := by
         simp only [inReg]; split <;> simp_all
       simp only [hin, ite_true] at hr
@@ -544,16 +544,16 @@ theorem store_step {p : Addr} {R : CState} {sB : State} (hw : bufR p ∈ sB.wr) 
     hrd.trans hs.rd, hwr.trans hs.wr⟩
   · rw [hm]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hjn with hjn | rfl
-    · rw [readW_writeW_off _ _ _ (by lit_omega) (by simp [outOff]; omega_arith) (by simp [outOff]; omega_arith)
-        (by simp [outOff]; omega_arith)]
+    · rw [readW_writeW_off _ _ _ (by lit_omega) (by simp [outOff]; omega) (by simp [outOff]; omega)
+        (by simp [outOff]; omega)]
       exact hs.out j hj hjn
     · exact Mem.readW_writeW_self32 _ _ _
   · have hr' := hs.rest j hj (by lit_omega)
     split
     · rename_i hin; simp only [hin, ite_true] at hr'; rw [hg j hj (by lit_omega) hin]; exact hr'
     · rename_i hin; simp only [hin] at hr'
-      rw [hm, slotAddr, readW_writeW_off _ _ _ (by lit_omega) (by simp [slotOff]; omega_arith)
-        (by simp [outOff]; omega_arith) (by simp [outOff, slotOff]; omega_arith)]
+      rw [hm, slotAddr, readW_writeW_off _ _ _ (by lit_omega) (by simp [slotOff]; omega)
+        (by simp [outOff]; omega) (by simp [outOff, slotOff]; omega)]
       exact hr'
   · rw [hm]; exact hs.frame.writeW (List.mem_singleton_self _) _ cout
 
@@ -576,7 +576,7 @@ theorem add_step {p : Addr} {R v : CState} {sB : State} (hw : bufR p ∈ sB.wr) 
   have io := in_buf (rs := s.rd) hw' (d := outOff n) (n := 4) (out_lt hn)
   have ii := in_buf (rs := s.rd) hw' (d := inOff n) (n := 4) (in_lt hn)
   have cout : (outR p).Contains (bufAt p (outOff n)) (32 / 8) :=
-    contains_sub _ (by lit_omega) (by simp [outOff]; omega_arith) (by lit_omega)
+    contains_sub _ (by lit_omega) (by simp [outOff]; omega) (by lit_omega)
   have ho := hs.out n hn
   simp only [Nat.lt_irrefl, ite_false] at ho
   have hi := hs.inw n hn
@@ -591,11 +591,11 @@ theorem add_step {p : Addr} {R v : CState} {sB : State} (hw : bufR p ∈ sB.wr) 
     by simpa using hs.rsi, by simpa using hs.rsp, hs.rd, hs.wr⟩
   · by_cases hjn : j = n
     · subst hjn; simp [bufAt, Mem.readW_writeW_self32]
-    · rw [readW_writeW_off _ _ _ (by lit_omega) (by simp [outOff]; omega_arith) (by simp [outOff]; omega_arith)
-        (by simp [outOff]; omega_arith), hs.out j hj]
-      split <;> split <;> first | rfl | omega_arith
-  · rw [readW_writeW_off _ _ _ (by lit_omega) (by simp [inOff]; omega_arith) (by simp [outOff]; omega_arith)
-      (by simp [inOff, outOff]; omega_arith)]
+    · rw [readW_writeW_off _ _ _ (by lit_omega) (by simp [outOff]; omega) (by simp [outOff]; omega)
+        (by simp [outOff]; omega), hs.out j hj]
+      split <;> split <;> first | rfl | omega
+  · rw [readW_writeW_off _ _ _ (by lit_omega) (by simp [inOff]; omega) (by simp [outOff]; omega)
+      (by simp [inOff, outOff]; omega)]
     exact hs.inw j hj
 
 /-! ## Phase 1: saving the callee-saved registers -/
@@ -605,7 +605,7 @@ theorem saved_bound : ∀ p ∈ saved, 144 ≤ p.2 ∧ p.2 + 8 ≤ 192 := by dec
 theorem slot_buf {ws : List Region} {buf : Addr} (hw : bufR buf ∈ ws) {p : Reg × Nat}
     (hp : p ∈ saved) : InRegions ws (Spill.slot buf p.2) 8 := by
   have := saved_bound p hp
-  exact ⟨bufR buf, hw, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  exact ⟨bufR buf, hw, Offset.contains_base _ (by omega) (by omega)⟩
 
 /-- The memory after the prologue's stores. -/
 abbrev saveMem (s₀ : State) : Mem := Spill.saveMem s₀.mem (buf s₀) s₀.gpr saved
@@ -622,14 +622,14 @@ theorem saveMem_saved (s₀ : State) : Saved s₀ (saveMem s₀) :=
   Spill.saveMem_saved _ _ _ _ (by decide)
 
 theorem saveMem_frame (s₀ : State) : Frame [bufR (buf s₀)] s₀.mem (saveMem s₀) :=
-  Spill.saveMem_frame_base _ _ _ _ (fun p hp => by have := saved_bound p hp; omega_arith) (by decide)
+  Spill.saveMem_frame_base _ _ _ _ (fun p hp => by have := saved_bound p hp; omega) (by decide)
 
 theorem saved_frame {s₀ : State} {m m' : Mem} (h : Saved s₀ m) (hf : Frame [workR (buf s₀)] m m') :
     Saved s₀ m' := by
   refine Spill.Saved.frame h hf fun p hp r hr => ?_
   rw [List.mem_singleton.mp hr]
   have := saved_bound p hp
-  have hd := disjoint_sub (buf s₀) (a := p.2) (la := 8) (b := 0) (lb := 144) (by omega_arith) (by omega_arith)
+  have hd := disjoint_sub (buf s₀) (a := p.2) (la := 8) (b := 0) (lb := 144) (by omega) (by omega)
     (by lit_omega)
   simp only [bufAt, ofInt_natCast] at hd
   exact hd
@@ -678,7 +678,7 @@ theorem load_ok {s₀ s₁ : State} (hp : Pre s₀) (h₁ : s₁.gpr = s₀.gpr)
     fun k hk h => by rw [← ofInt_natCast]; exact hc.slot k hk hk h
   rcases k with _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | k <;>
   first
-    | omega_arith
+    | omega
     | simp (config := {decide := true}) only [wreg, slotAddr, ite_true, ite_false, ofInt_natCast,
         RegUpd.gpr_setReg, RegUpd.mem_setReg] <;>
       first
@@ -750,11 +750,11 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     rw [read_in hS.frame (by
         intro r hr j hj
         simp only [List.mem_singleton] at hr; subst hr
-        exact disjoint_sub _ (by simp only [inOff]; omega_arith) (by simp only [inOff]; omega_arith) (by lit_omega)) hj,
+        exact disjoint_sub _ (by simp only [inOff]; omega) (by simp only [inOff]; omega) (by lit_omega)) hj,
       read_in hR.frame (by
         intro r hr j hj
         simp only [List.mem_singleton] at hr; subst hr
-        exact disjoint_sub _ (by simp only [inOff]; omega_arith) (by simp only [inOff]; omega_arith) (by lit_omega)) hj,
+        exact disjoint_sub _ (by simp only [inOff]; omega) (by simp only [inOff]; omega) (by lit_omega)) hj,
       hm₂]
     exact hc.inw j hj hj
   have ha₀ : AI (buf s₀) (Rs s₀) (V s₀) s₄ 0 s₄ :=
