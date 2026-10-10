@@ -73,8 +73,13 @@ def fbNext : List Instr :=
   [.alu .add c.dataReg (.imm (BitVec.ofNat 32 (8 * c.bw))), .alu .sub c.leftReg (.imm 1)]
 
 /-- One block: its input block enciphered in the buffer, XORed into the
-data, and the next input block. -/
-def fbBlock (m : FbMode) : Prog isa := .seq c.crypt (.block (c.fbOp m ++ c.fbNext))
+data, and the next input block. The IV's address is loaded into `rcx` and
+stored back around the data's stores, so that the constant-time analysis,
+which forgets what memory held after a store to the data, knows it is
+public. -/
+def fbBlock (m : FbMode) : Prog isa :=
+  .seq c.crypt (.block (([movS .rcx c.hiSlot] : List Instr) ++ c.fbOp m ++ ([st c.hiSlot .rcx] : List Instr) ++
+    c.fbNext))
 
 /-- The whole function: the entry, the key, the IV to the buffer, the
 blocks, and the block to continue from back to the IV. -/

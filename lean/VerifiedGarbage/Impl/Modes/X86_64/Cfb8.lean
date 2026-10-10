@@ -40,19 +40,22 @@ def cfb8Xor (enc : Bool) : List Instr :=
 /-- Byte `i + 1` of the input block at `rcx` to byte `i`, through `rbp`. -/
 def shiftByte (i : Nat) : List Instr := [.movzx8 .rbp (at_ .rcx (i + 1)), .store8 (at_ .rcx i) .rbp]
 
-/-- The input block, at the IV, shifted left by a byte, with `al` shifted
-in. -/
+/-- The input block, at the IV (whose address is in `rcx`), shifted left by a
+byte, with `al` shifted in. -/
 def cfb8Shift : List Instr :=
-  ([movS .rcx c.hiSlot] : List Instr) ++ (List.range (8 * c.bw - 1)).flatMap shiftByte ++
-    ([.store8 (at_ .rcx (8 * c.bw - 1)) .rax] : List Instr)
+  (List.range (8 * c.bw - 1)).flatMap shiftByte ++ ([.store8 (at_ .rcx (8 * c.bw - 1)) .rax] : List Instr)
 
 /-- On to the next byte; ZF is set when none is left. -/
 def cfb8Next : List Instr := [.alu .add c.dataReg (.imm 1), .alu .sub c.leftReg (.imm 1)]
 
 /-- One byte: the input block to the buffer and enciphered, its first byte
-XORed into the data, and the input block shifted. -/
+XORed into the data, and the input block shifted. The IV's address is
+loaded into `rcx` and stored back around the stores to the data and the IV,
+so that the constant-time analysis, which forgets what memory held after
+them, knows it is public (as in `fbBlock`). -/
 def cfb8Block (enc : Bool) : Prog isa :=
-  .seq (.block c.fbLoad) (.seq c.crypt (.block (c.cfb8Xor enc ++ c.cfb8Shift ++ c.cfb8Next)))
+  .seq (.block c.fbLoad) (.seq c.crypt (.block (([movS .rcx c.hiSlot] : List Instr) ++ c.cfb8Xor enc ++
+    c.cfb8Shift ++ ([st c.hiSlot .rcx] : List Instr) ++ c.cfb8Next)))
 
 /-- The whole function: the entry, the key, then the bytes. -/
 def cfb8 (enc : Bool) (r : CtrRegs) : Prog isa :=
