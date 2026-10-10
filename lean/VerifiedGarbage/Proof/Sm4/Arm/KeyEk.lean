@@ -193,7 +193,10 @@ theorem ckEntries_lt : ∀ kv ∈ ckEntries, kv.1 < tableEnd := by decide +kerne
 
 theorem ckEntries_ge : ∀ kv ∈ ckEntries, tableSlot ≤ kv.1 := by decide +kernel
 
-theorem ckEntries_nodup : (ckEntries.map (·.1)).Nodup := by decide +kernel
+/-- The table's slots are consecutive: no two entries share one. -/
+theorem ckEntries_nodup : (ckEntries.map (·.1)).Nodup := by
+  rw [show ckEntries.map (·.1) = (List.range 256).map (tableSlot + ·) by decide +kernel]
+  exact List.nodup_range.map (tableSlot + ·) fun _ _ hne heq => hne (Nat.add_left_cancel heq)
 
 /-- The code before the loop. -/
 def ekHead : List Instr :=
