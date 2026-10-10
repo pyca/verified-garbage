@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Impl.Ecdh.Secp256k1.AArch64
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Secp256k1Literals
 
 /-!
 # ECDH over secp256k1 on AArch64: the code as a literal

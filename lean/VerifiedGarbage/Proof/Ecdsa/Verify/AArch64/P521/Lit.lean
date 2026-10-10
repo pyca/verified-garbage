@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Impl.Ecdsa.Verify.P521.AArch64
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
 
 /-!
 # ECDSA verification over P-521 on AArch64: the code as a literal

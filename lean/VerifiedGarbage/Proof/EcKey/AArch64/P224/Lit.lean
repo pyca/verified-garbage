@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Impl.EcKey.P224.AArch64
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P224Literals
 
 /-!
 # P-224 public keys on AArch64: the code as a literal
