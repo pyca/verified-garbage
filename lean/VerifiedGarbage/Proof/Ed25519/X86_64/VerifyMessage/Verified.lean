@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 namespace VG.Proof.Ed25519.X86_64.VerifyMessage
 
 variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
-variable {win : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdWindows win]
+variable {win : VG.Prog VG.X86_64.isa}
 open VG VG.X86_64
 open VG.Impl.Ed25519.X86_64 (scalarReduce verifyEquation callWith)
 open VG.Impl.Ed25519.X86_64.VerifyMessage
@@ -121,13 +121,13 @@ theorem implies : verifyMessageLocal.Implies
     exact ⟨sp, pk, msg, len, sig, scr, first, middle, last, sy⟩
   sat := ⟨satState, sat_spec⟩
 
-theorem verified (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld win)) (v : Compress) :
+theorem verified (hq : EqCode fld win) (v : Compress) :
     Verified X86_64.target (code fld win fs v.callee v.suffix)
       (Spec.Ed25519.verifyContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseOddConsts) 184) :=
   Verified.of_correct (fun _ h => verifyMessage_ok hq v h) (verifyMessage_ct hq v) implies
 
-omit [VG.Proof.Ed25519.X86_64.EdArith fld] [VG.Proof.Ed25519.X86_64.EdWindows win] in
-theorem spSafe (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld win)) (v : Compress) :
+omit [VG.Proof.Ed25519.X86_64.EdArith fld] in
+theorem spSafe (hq : EqCode fld win) (v : Compress) :
     (code fld win fs v.callee v.suffix).all (fun i => !isa.writesSp i) = true := by
   have hu := Proof.Sha512.X86_64.Shared.update_spSafe v.spSafe
   have hf := Proof.Sha512.X86_64.Shared.finalize_spSafe v.spSafe

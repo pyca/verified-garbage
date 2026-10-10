@@ -13,7 +13,7 @@ and `vpmadd52huq`, and `carry`.
 * `vload` splits the words of slots 0–3 into the limbs of the lanes of
   `ymm0–ymm4`: the four rows transposed (`vpunpck{l,h}qdq`, `vperm2i128`),
   then shifted and masked as `vinit` splits `x₁`.
-* A doubling (`vdbl`) is `dbl-2008-hwcd` (`dblOps`) in two products: first
+* A doubling (`vdbl`) is `dbl-2008-hwcd` (`dblOpsH`) in two products: first
   `(X, Y, Z, X) · (X, Y, Z, Y) = (A, B, C', P) = (X², Y², Z², XY)`; then,
   with `q = (A + B, A + B, 2C', 2P)` and `r = (A - B, B - A, …)` (each
   difference plus the bias `2¹¹ p`), `E = 2P`, `G = B - A`,

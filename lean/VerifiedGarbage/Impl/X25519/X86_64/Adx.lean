@@ -138,6 +138,7 @@ def adx : Field where
   a24 := a24X
   mul2 := mul2X
   sqr2 := sqr2X
+  suffix := "_adx"
 
 def x25519Adx : Prog isa := x25519With adx
 

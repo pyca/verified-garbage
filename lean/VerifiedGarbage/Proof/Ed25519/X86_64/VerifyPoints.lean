@@ -21,7 +21,7 @@ namespace VG.Proof.Ed25519.X86_64
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Proof.Ed25519 Edwards
 open VG.Proof.X25519.X86_64 (off ofs Keeps clob Outside)
 
-variable {fld : Arith} [EdArith fld]
+variable {fld : Arith} [EdArith fld] {pt : Point64.Ops} [PtOk pt]
 
 theorem ByteKeep.bytesK {base kp sp T : Addr} {A : EPoint dZ} {s t : State} (h : WinCtx base kp sp T A s)
     (k : ByteKeep base s t) : Spec.Ed25519.bytesAt t.mem kp 64 = Spec.Ed25519.bytesAt s.mem kp 64 :=
@@ -311,8 +311,8 @@ theorem negR_ok {s : State} {base : Addr} (hs : Scratch s base) :
   · rw [vt, (negR_eval _).2, pb, ka.2.1]
 
 /-- Verification's code before the windows, regrouped. -/
-def windowPrep (fld : Arith) : Prog isa :=
-  .seq (.seq (.block windowSetup) (aTable fld)) (.block (windowInit fld))
+def windowPrep (fld : Arith) (pt : Point64.Ops) : Prog isa :=
+  .seq (.seq (.block windowSetup) (aTable fld pt)) (.block (windowInit fld))
 
 /-- Before the windows: the tables, an accumulator representing `0` and the counter at 64. -/
 theorem windowPrep_ok {s : State} {base sig challenge : Addr} {Aa : EPoint dZ}
@@ -327,7 +327,7 @@ theorem windowPrep_ok {s : State} {base sig challenge : Addr} {Aa : EPoint dZ}
     (hsr8 : ∀ j < 4, InRegions (s.rd ++ s.wr) (off sig (32 + 8 * j)) 8)
     (hA : Rep (tablePoint s.mem base 7424) Aa) {T : Addr} (hT : s.mem.readW (off base 7960) 64 = T)
     (hbt : BaseTbl s base T) :
-    WP isa (windowPrep fld) s fun e => SkipLoop e base challenge sig T Aa
+    WP isa (windowPrep fld pt) s fun e => SkipLoop e base challenge sig T Aa
       (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem challenge 64))
       (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sig 32) 32)) 64 e ∧
       PowersKeep base 56 7752 s e ∧ tablePoint e.mem base 7552 = tablePoint s.mem base 7552 := by
@@ -341,7 +341,7 @@ theorem windowPrep_ok {s : State} {base sig challenge : Addr} {Aa : EPoint dZ}
     workspace_tablePoint ka.mem (by decide) (by decide)
   have ksa : PowersKeep base 56 7752 s a := PowersKeep.of_keep ka
   -- The multiples of `A`.
-  refine WP.mono (aTable_ok (ksa.scratch hs) ad (by rw [aA]; exact hA)) fun b hb => ?_
+  refine WP.mono (aTable_ok (pt := pt) (ksa.scratch hs) ad (by rw [aA]; exact hA)) fun b hb => ?_
   have ksb := ksa.trans (hb.keep.mono (by decide) (by decide))
   have bR : tablePoint b.mem base 7552 = tablePoint s.mem base 7552 := by
     rw [hb.keep.mem.point (by decide) (Or.inr (by decide)) (by decide), aR]
@@ -424,7 +424,7 @@ theorem verifyEquationPoints_ok {s : State} {base sig challenge : Addr} {Aa Ra :
     (hsr8 : ∀ j < 4, InRegions (s.rd ++ s.wr) (off sig (32 + 8 * j)) 8)
     (hA : Rep (tablePoint s.mem base 7424) Aa) (hR : Rep (tablePoint s.mem base 7552) Ra)
     {T : Addr} (hT : s.mem.readW (off base 7960) 64 = T) (hbt : BaseTbl s base T) :
-    WP isa (verifyEquationPoints fld win) s fun t => PowersKeep base 56 7752 s t ∧
+    WP isa (verifyEquationPoints fld pt win) s fun t => PowersKeep base 56 7752 s t ∧
       t.gpr .rax = signWord (Spec.Ed25519.pointEqual
         (Spec.Ed25519.pointMul
           (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sig 32) 32)) Spec.Ed25519.basePoint)

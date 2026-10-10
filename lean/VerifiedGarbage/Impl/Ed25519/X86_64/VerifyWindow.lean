@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
 import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
+import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
 
 /-!
 # Verification's equation with signed sliding windows
@@ -9,12 +10,17 @@ Verification may leak its inputs, so its scalars `S` and `k` are public. It comp
 are first recoded into signed odd digits (`recodeAll`): `k`'s below 16 in absolute value, at
 least five bits apart, from a table of `±[1]A … ±[15]A` built at run time (byte 5376); `S`'s
 below 128, at least eight bits apart, from the static `baseOddSym` of `∓[1]B … ∓[127]B`;
-both cached for addition (`[Y - X, Y + X, 2dT, 2Z]`, `pointAddCached`). Each position with a
+both cached for addition (`[Y - X, Y + X, 2dT, 2Z]`, `addCachedOps`). Each position with a
 nonzero digit adds its entry; a doubling computes `T`, which only an addition reads, only
 before one. `k`'s bytes above its low 32 that are zero (`skipZero`), and the leading zero
 digits, are skipped: they would only double the identity. The equation `[S]B = R + [k]A`
 holds exactly when the result equals `-R`, which the projective comparison `pointEqual`
 checks.
+
+The doublings and additions are the point operations `pt` (`Point64.Ops`): in the code, calls
+of `vg_ed25519_r64_double_ext` and `_proj` and of `vg_ed25519_r64_add_cached_ext` and `_proj`
+(`Point64.calls`), which run as their bodies would inlined (`Point64.bodies`), as the proofs
+take them.
 -/
 
 namespace VG.Impl.Ed25519.X86_64
@@ -31,8 +37,9 @@ def tableStart (o : Nat) : List Instr := [.movImm64 .rax (BitVec.ofNat 64 o), .a
 
 /-- Doubles slots 0–3 in place with `dbl-2008-hwcd` (for `a = -1`): `A = X²`, `B = Y²`,
 `C = 2Z²`, `E = 2XY`, `G = B - A`, `F = C - G`, `H = A + B`, and `X = EF`, `Y = GH`,
-`Z = FG`, and `T = EH` if `t` (only an addition reads `T`). -/
-def dblOps (t : Bool) : List FieldOp :=
+`Z = FG`, and `T = EH` if `t` (only an addition reads `T`): the comb's doublings
+(`vg_ed25519_scalar_base`). -/
+def dblOpsH (t : Bool) : List FieldOp :=
   [.sqr 8 0, .sqr 9 1, .sqr2 10 2, .mul2 11 0 1,
     .sub 12 9 8, .sub 13 10 12, .add 14 8 9, .mul 0 11 13, .mul 1 12 14, .mul 2 13 12] ++
     if t then [.mul 3 11 14] else []
@@ -40,8 +47,8 @@ def dblOps (t : Bool) : List FieldOp :=
 /-- Four doublings: three without `T`, with the counter `rsi`, then one with it. -/
 def double4 (fld : Arith) : Prog isa :=
   .seq (.block [.mov32 .rsi (.imm 3)]) (.seq
-    (.loop (.block (fieldCode fld (dblOps false) ++ [.alu .sub .rsi (.imm 1)])) .ne)
-    (.block (fieldCode fld (dblOps true))))
+    (.loop (.block (fieldCode fld (dblOpsH false) ++ [.alu .sub .rsi (.imm 1)])) .ne)
+    (.block (fieldCode fld (dblOpsH true))))
 
 /-- Slots 8–11 = the point in slots 0–3 cached for addition, `[Y - X, Y + X, 2dT, 2Z]`
 (`d` in slot 16). -/
@@ -60,20 +67,21 @@ def aTableStore (fld : Arith) : List Instr :=
   fieldCode fld cacheOps ++ tableAddr 5376 ++ cachedToTable ++ fieldCode fld (negOps ++ cacheOps) ++
     tableAddr 5504 ++ cachedToTable ++ fieldCode fld negOps
 
-/-- `[2]A` cached at byte 3216, then `[1]A` (from byte 7424) into slots 0–3 and entries 0 and 1. -/
-def aTableInit (fld : Arith) : List Instr :=
-  tableStart 7424 ++ pointFromTable ++ fieldCode fld (dblOps true ++ cacheOps) ++ tableStart 3216 ++
-    cachedToTable ++ tableStart 7424 ++ pointFromTable ++ ([.mov32 .rbx (.imm 0)] : List Instr) ++
-    aTableStore fld ++ [.mov32 .rbx (.imm 2)]
+/-- `[2]A` cached at byte 3216 (doubled by `vg_ed25519_r64_double_ext`), then `[1]A` (from byte
+7424) into slots 0–3 and entries 0 and 1. -/
+def aTableInit (fld : Arith) (pt : Point64.Ops) : Prog isa :=
+  .seq (.block (tableStart 7424 ++ pointFromTable)) <| .seq (pt.dbl true) <|
+    .block (fieldCode fld cacheOps ++ tableStart 3216 ++ cachedToTable ++ tableStart 7424 ++
+      pointFromTable ++ ([.mov32 .rbx (.imm 0)] : List Instr) ++ aTableStore fld ++ [.mov32 .rbx (.imm 2)])
 
-/-- Slots 0–3 plus `[2]A`, to entries `rbx` and `rbx + 1`. -/
-def aTableBody (fld : Arith) : List Instr :=
-  tableStart 3216 ++ pointFromTableQ ++ pointAddCached fld ++ aTableStore fld ++
-    [.alu .add .rbx (.imm 2), .alu .cmp .rbx (.imm 16)]
+/-- Slots 0–3 plus `[2]A` (by `vg_ed25519_r64_add_cached_ext`), to entries `rbx` and `rbx + 1`. -/
+def aTableBody (fld : Arith) (pt : Point64.Ops) : Prog isa :=
+  .seq (.block (tableStart 3216 ++ pointFromTableQ)) <| .seq (pt.add true) <|
+    .block (aTableStore fld ++ [.alu .add .rbx (.imm 2), .alu .cmp .rbx (.imm 16)])
 
 /-- Entries `2m` and `2m + 1` (`m < 8`) of the table at byte 5376 are `[2m + 1]A` and
 `-[2m + 1]A`, cached. -/
-def aTable (fld : Arith) : Prog isa := .seq (.block (aTableInit fld)) (.loop (.block (aTableBody fld)) .ne)
+def aTable (fld : Arith) (pt : Point64.Ops) : Prog isa := .seq (aTableInit fld pt) (.loop (aTableBody fld pt) .ne)
 
 /-- `rbx` = byte `counter` of the scalar at the pointer stored at byte `ptr` of the scratch,
 plus `add`. -/
@@ -178,9 +186,9 @@ def digitAt (dst : Nat) : List Instr :=
   [.mov .rax (.mem (sc 56)), .alu .add .rax (.reg .rax),
     .movzx8 .rbx { base := .rdi, index := some .rax, disp := ((2048 + dst : Nat) : Int) }, .alu .test .rbx (.reg .rbx)]
 
-/-- Add entry `rbx - 1` of the table at byte `o`, unless `rbx` is zero. -/
-def addDigit (o : Nat) (add : List Instr) : Prog isa :=
-  .ite .ne (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr o ++ pointFromTableQ ++ add))
+/-- Add entry `rbx - 1` of the table at byte `o` (by `add`), unless `rbx` is zero. -/
+def addDigit (o : Nat) (add : Prog isa) : Prog isa :=
+  .ite .ne (.seq (.block [.alu .sub .rbx (.imm 1)]) (.seq (.block (tableAddr o ++ pointFromTableQ)) add))
     (.block [])
 
 /-- `rax` = entry `rbx` of the static `baseOddSym`, 128 bytes an entry, from the static's
@@ -189,36 +197,27 @@ def baseAddr : List Instr :=
   [.mov .rax (.reg .rbx), .movImm64 .rcx 128, .mul .rcx, .mov .rcx (.mem (sc 7960)),
     .alu .add .rax (.reg .rcx)]
 
-/-- `pointAddCachedOps`, computing `T` only if `t`: the last addition at a position need not,
-as a doubling or the final comparison follows it, and neither reads `T`. -/
-def addCachedOps (t : Bool) : List FieldOp :=
-  [.sub 8 1 0, .mul 8 8 4, .add 9 1 0, .mul 9 9 5, .mul 10 3 6, .mul 11 2 7,
-    .sub 12 9 8, .sub 13 11 10, .add 14 11 10, .add 15 9 8,
-    .mul 0 12 13, .mul 1 14 15, .mul 2 13 14] ++
-    if t then [.mul 3 12 15] else []
-
 /-- Add the cached `[dec d](-B)`, entry `rbx - 1` of the static, unless `rbx` is zero, without
 `T`: it is a position's last addition. -/
-def addBase (fld : Arith) : Prog isa :=
-  .ite .ne (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ baseAddr ++ pointFromTableQ ++
-    fieldCode fld (addCachedOps false))) (.block [])
+def addBase (pt : Point64.Ops) : Prog isa :=
+  .ite .ne (.seq (.block [.alu .sub .rbx (.imm 1)]) (.seq (.block (baseAddr ++ pointFromTableQ))
+    (pt.add false))) (.block [])
 
 /-- The digits at the counter's position added: `k`'s from the table at byte 5376, with `T` only
 if `S`'s is nonzero, then `S`'s from the static. -/
-def addsAt (fld : Arith) : Prog isa :=
+def addsAt (pt : Point64.Ops) : Prog isa :=
   .seq (.block (digitAt 1)) (.ite .ne
-    (.seq (.block (digitAt 0)) (.seq (addDigit 5376 (fieldCode fld (addCachedOps true)))
-      (.seq (.block (digitAt 1)) (addBase fld))))
-    (.seq (.block (digitAt 0)) (addDigit 5376 (fieldCode fld (addCachedOps false)))))
+    (.seq (.block (digitAt 0)) (.seq (addDigit 5376 (pt.add true))
+      (.seq (.block (digitAt 1)) (addBase pt))))
+    (.seq (.block (digitAt 0)) (addDigit 5376 (pt.add false))))
 
 /-- One doubling, computing `T` only if a digit at the counter's position will read it. -/
-def dblAt (fld : Arith) : Prog isa :=
-  .seq (.block digitsAt) (.ite .ne (.block (fieldCode fld (dblOps true)))
-    (.block (fieldCode fld (dblOps false))))
+def dblAt (pt : Point64.Ops) : Prog isa :=
+  .seq (.block digitsAt) (.ite .ne (pt.dbl true) (pt.dbl false))
 
 /-- The position below: the counter moved down, a doubling and its digits. -/
-def stepAt (fld : Arith) : Prog isa :=
-  .seq (.block batchBegin) (.seq (dblAt fld) (.seq (addsAt fld) (.block batchTest)))
+def stepAt (pt : Point64.Ops) : Prog isa :=
+  .seq (.block batchBegin) (.seq (dblAt pt) (.seq (addsAt pt) (.block batchTest)))
 
 /-- Below the highest position, while both digits are zero and the accumulator is the identity:
 the counter moved down, and ZF clear while the skipping goes on. -/
@@ -227,9 +226,12 @@ def skipTop : Prog isa :=
 
 /-- The windows, from the counter one above the highest digit's position, the accumulator the
 identity: the leading zero digits skipped, then a doubling and the digits at each position. -/
-def windows (fld : Arith) : Prog isa :=
-  .seq (.loop skipTop .ne) (.seq (addsAt fld) (.seq (.block batchTest)
-    (.ite .ne (.loop (stepAt fld) .ne) (.block []))))
+def windowsWith (pt : Point64.Ops) : Prog isa :=
+  .seq (.loop skipTop .ne) (.seq (addsAt pt) (.seq (.block batchTest)
+    (.ite .ne (.loop (stepAt pt) .ne) (.block []))))
+
+/-- The windows, calling the point functions with the field multiplications `fld`. -/
+def windows (fld : Arith) : Prog isa := windowsWith (Point64.calls fld)
 
 /-! ## Skipping the leading zero bytes of `k` -/
 

@@ -592,7 +592,7 @@ theorem combDouble_ok {s : State} {base : Addr} {a : EPoint dZ} (hs : Scratch s 
       AccBnd t.mem base := by
   rw [combDouble]
   refine WP.seq (WP.mono (double4_ok (fld := fld) hs ha) fun b ⟨br, bh, bk⟩ => ?_)
-  refine WP.mono (wp_and (dbl_ok (fld := fld) (bk.scratch hs) true br.proj)
+  refine WP.mono (wp_and (dblH_ok (fld := fld) (bk.scratch hs) true br.proj)
     (fieldCodeWide_acc (fld := fld) _ (bk.scratch hs) (by decide))) fun t ⟨⟨kt, _, tr, th⟩, tb⟩ =>
     ⟨?_, fun i h => (th i h).trans (bh i h), bk.trans ⟨fun r _ hc => kt.gpr r hc, kt.rd, kt.wr, kt.mem⟩, tb⟩
   rw [show (32 : Nat) = 16 * 2 by rfl, mul_nsmul, two_nsmul]
