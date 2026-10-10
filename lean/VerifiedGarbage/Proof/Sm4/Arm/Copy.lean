@@ -14,17 +14,7 @@ namespace VG.Proof.Sm4.Arm
 open VG VG.Arm VG.Impl.Sm4.Arm
 open VG.Impl.Aes.Arm (t0)
 open VG.Arm.Straight (add_ofNat_ofNat)
-open VG.Proof.Sm4 (off_sub_toNat off_sub_not)
-
-/-- A byte of a little-endian 32-bit word stored from a load. -/
-theorem writeW_readW32_apply (m m' : Mem) (a c x : Addr) :
-    m.writeW a (m'.readW c 32) x =
-      if (x - a).toNat < 4 then m' (c + BitVec.ofNat 64 (x - a).toNat) else m x := by
-  simp only [Mem.writeW, Mem.write, Mem.readW, BitVec.setWidth_eq]
-  split
-  · rename_i h
-    exact Mem.extractLsb'_read m' c (n := 4) h
-  · rfl
+open VG.Proof.Sm4 (off_sub_toNat off_sub_not writeW_readW32_apply)
 
 /-- What a copy keeps, after its first `k` bytes. -/
 structure Copied (A B : Addr) (c : Nat) (s₀ : State) (k : Nat) (s : State) : Prop where

@@ -14,22 +14,7 @@ namespace VG.Proof.Sm4.Arm
 
 open VG VG.Arm VG.Arm.Straight VG.Impl.Sm4.Arm
 open VG.Impl.Aes.Arm (q sb t0 t1 u7 kp movR ldS stS)
-open VG.Proof.Sm4 (quads ofBlock outBlock keyInit rkOf getLsbD_outBlock')
-
-/-! ## Bytes of words -/
-
-/-- A byte of a word written. -/
-theorem writeW32_byte (m : Mem) (a : Addr) (v : BitVec 32) {t j : Nat} (ht : t < 4) (hj : j < 8) :
-    ((m.writeW a v) (a + BitVec.ofNat 64 t)).getLsbD j = v.getLsbD (8 * t + j) := by
-  simp only [Mem.writeW, Mem.write, BitVec.setWidth_eq, VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (by omega)]
-  simp only [show t < 32 / 8 by omega, ↓reduceIte, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and]
-
-/-- A byte outside a word written. -/
-theorem writeW32_other (m : Mem) (a x : Addr) (v : BitVec 32) (h : ¬ (x - a).toNat < 4) :
-    (m.writeW a v) x = m x := by
-  simp only [Mem.writeW, Mem.write]
-  exact ite_eq_right fun h' => h (by simpa using h')
+open VG.Proof.Sm4 (quads ofBlock outBlock keyInit rkOf getLsbD_outBlock' writeW32_byte writeW32_other)
 
 /-! ## The extraction -/
 
