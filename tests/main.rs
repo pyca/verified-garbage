@@ -53,5 +53,7 @@ mod rsa_guidance;
 mod schneier_blowfish;
 #[path = "secp256k1/main.rs"]
 mod secp256k1;
+#[path = "sm3/main.rs"]
+mod sm3;
 #[path = "wycheproof/main.rs"]
 mod wycheproof;

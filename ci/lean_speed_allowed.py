@@ -190,6 +190,7 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/Sha512/X86_64/Compress.lean": 4,
     "VerifiedGarbage/Proof/Sha512/X86_64/ShaNi/Compress.lean": 5,
     "VerifiedGarbage/Proof/Sha512/X86_64/Stream/Init.lean": 1,
+    "VerifiedGarbage/Proof/Sm3/X86_64/Stream/Init.lean": 1,
     "VerifiedGarbage/Proof/TripleDes/Arm/Key/Body.lean": 3,
     "VerifiedGarbage/Proof/X25519/X86/Arith.lean": 2,
     "VerifiedGarbage/Proof/X25519/X86/Column.lean": 1,
