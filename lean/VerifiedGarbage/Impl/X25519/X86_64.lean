@@ -27,7 +27,8 @@ other multiplications:
   in `rbp`), then `lo + 38 hi` (as `2²⁵⁶ ≡ 38`), whose carry word `c` is
   folded in as `38 c`, and a last carry of that as 38 more;
 * `add`, `sub`: with carries (borrows), each carry folded in (subtracted) as
-  38, twice;
+  38, twice; `addCmov` and `subCmov`, the ladder's, once, which is enough when an
+  operand is at most `2p`, as products are;
 * `sqr`: the products `a_i a_j` for `i < j` once, as rows of `mul`, then
   doubled, and the squares `a_i²` added; reduced as `mul`;
 * `mulSmall`: by a one-word constant (`a24`), folded as for `mul`;
@@ -219,6 +220,32 @@ def subL (o a b : Nat) : List Instr :=
     .alu .sub .r8 (.reg .rax), .alu .sbb .r9 (.imm 0), .alu .sbb .r10 (.imm 0),
     .alu .sbb .r11 (.imm 0)] ++ store4 o
 
+/-- `[o] = [a] + [b]`, for `[a]` or `[b]` at most `2p`, as `addL`, but with
+the carry's 38 selected by `cmov` from a constant loaded before the sum: one
+instruction after the carry rather than two, on a chain the ladder waits
+for. `rcx` holds the zero `cmov` selects. -/
+def addCmov (o a b : Nat) : List Instr :=
+  [.alu32 .xor .rcx (.reg .rcx), .mov32 .rax (.imm 38),
+    .mov .r8 (.mem (sc a)), .alu .add .r8 (.mem (sc b)),
+    .mov .r9 (.mem (sc (a + 8))), .alu .adc .r9 (.mem (sc (b + 8))),
+    .mov .r10 (.mem (sc (a + 16))), .alu .adc .r10 (.mem (sc (b + 16))),
+    .mov .r11 (.mem (sc (a + 24))), .alu .adc .r11 (.mem (sc (b + 24))),
+    .cmov .ae .rax (.reg .rcx),
+    .alu .add .r8 (.reg .rax), .alu .adc .r9 (.imm 0), .alu .adc .r10 (.imm 0),
+    .alu .adc .r11 (.imm 0)] ++ store4 o
+
+/-- `[o] = [a] - [b]`, for `[b]` at most `2p`, as `subL`, with the borrow's
+38 selected by `cmov` as in `addCmov`. -/
+def subCmov (o a b : Nat) : List Instr :=
+  [.alu32 .xor .rcx (.reg .rcx), .mov32 .rax (.imm 38),
+    .mov .r8 (.mem (sc a)), .alu .sub .r8 (.mem (sc b)),
+    .mov .r9 (.mem (sc (a + 8))), .alu .sbb .r9 (.mem (sc (b + 8))),
+    .mov .r10 (.mem (sc (a + 16))), .alu .sbb .r10 (.mem (sc (b + 16))),
+    .mov .r11 (.mem (sc (a + 24))), .alu .sbb .r11 (.mem (sc (b + 24))),
+    .cmov .ae .rax (.reg .rcx),
+    .alu .sub .r8 (.reg .rax), .alu .sbb .r9 (.imm 0), .alu .sbb .r10 (.imm 0),
+    .alu .sbb .r11 (.imm 0)] ++ store4 o
+
 /-- `[o] = [a] - [b]`: a borrow out is `2²⁵⁶ ≡ 38` too many, subtracted
 (twice at most). -/
 def sub (o a b : Nat) : List Instr :=
@@ -281,16 +308,18 @@ and the formulas of RFC 7748 §5, ordered by their dependencies rather than
 as the RFC lists them: the four sums and differences, the four products of
 them, and so on, so that independent multiplications are next to each other
 and the processor overlaps them (the longest chain, to `z_3`, is three
-multiplications). -/
+multiplications). The sums and differences fold once (`addCmov`, `subCmov`): `z_2`
+and `z_3` are products, at most `2p`, and so is an operand of each other sum
+and the subtrahend of each other difference (`AA`, `BB`, `CB`). -/
 def step (F : Field) : List Instr :=
   [.alu .sub .rbx (.imm 1), .movzx8 .rax { base := .rdi, index := some .rbx, disp := BITS },
     .mov .rdx (.mem (sc SWAP)), .alu .xor .rdx (.reg .rax), .store (sc SWAP) .rax,
     .mov32 .rcx (.imm 0), .alu .sub .rcx (.reg .rdx)] ++
   cswap X2 X3 ++ cswap Z2 Z3 ++
-  add A X2 Z2 ++ sub B X2 Z2 ++ add C X3 Z3 ++ sub D X3 Z3 ++
+  addCmov A X2 Z2 ++ subCmov B X2 Z2 ++ addCmov C X3 Z3 ++ subCmov D X3 Z3 ++
   F.sqr AA A ++ F.sqr BB B ++ F.mul DA D A ++ F.mul CB C B ++
-  sub E AA BB ++ sub Z3 DA CB ++ add X3 DA CB ++ F.a24 Z2 E ++
-  F.sqr Z3 Z3 ++ F.sqr X3 X3 ++ add Z2 AA Z2 ++ F.mul Z3 X1 Z3 ++
+  subCmov E AA BB ++ subCmov Z3 DA CB ++ addCmov X3 DA CB ++ F.a24 Z2 E ++
+  F.sqr Z3 Z3 ++ F.sqr X3 X3 ++ addCmov Z2 AA Z2 ++ F.mul Z3 X1 Z3 ++
   F.mul X2 AA BB ++ F.mul Z2 E Z2 ++
   [.alu .test .rbx (.reg .rbx)]
 

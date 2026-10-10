@@ -73,21 +73,21 @@ variable {fld : Field} (hf : FieldOk fld)
 def opsList (fld : Field) : List Instr :=
   cswap (32 * (3 : Fin 128).val) (32 * (5 : Fin 128).val) ++
   cswap (32 * (4 : Fin 128).val) (32 * (6 : Fin 128).val) ++
-  add (32 * (7 : Fin 128).val) (32 * (3 : Fin 128).val) (32 * (4 : Fin 128).val) ++
-  sub (32 * (8 : Fin 128).val) (32 * (3 : Fin 128).val) (32 * (4 : Fin 128).val) ++
-  add (32 * (9 : Fin 128).val) (32 * (5 : Fin 128).val) (32 * (6 : Fin 128).val) ++
-  sub (32 * (10 : Fin 128).val) (32 * (5 : Fin 128).val) (32 * (6 : Fin 128).val) ++
+  addCmov (32 * (7 : Fin 128).val) (32 * (3 : Fin 128).val) (32 * (4 : Fin 128).val) ++
+  subCmov (32 * (8 : Fin 128).val) (32 * (3 : Fin 128).val) (32 * (4 : Fin 128).val) ++
+  addCmov (32 * (9 : Fin 128).val) (32 * (5 : Fin 128).val) (32 * (6 : Fin 128).val) ++
+  subCmov (32 * (10 : Fin 128).val) (32 * (5 : Fin 128).val) (32 * (6 : Fin 128).val) ++
   fld.sqr (32 * (11 : Fin 128).val) (32 * (7 : Fin 128).val) ++
   fld.sqr (32 * (12 : Fin 128).val) (32 * (8 : Fin 128).val) ++
   fld.mul (32 * (14 : Fin 128).val) (32 * (10 : Fin 128).val) (32 * (7 : Fin 128).val) ++
   fld.mul (32 * (15 : Fin 128).val) (32 * (9 : Fin 128).val) (32 * (8 : Fin 128).val) ++
-  sub (32 * (13 : Fin 128).val) (32 * (11 : Fin 128).val) (32 * (12 : Fin 128).val) ++
-  sub (32 * (6 : Fin 128).val) (32 * (14 : Fin 128).val) (32 * (15 : Fin 128).val) ++
-  add (32 * (5 : Fin 128).val) (32 * (14 : Fin 128).val) (32 * (15 : Fin 128).val) ++
+  subCmov (32 * (13 : Fin 128).val) (32 * (11 : Fin 128).val) (32 * (12 : Fin 128).val) ++
+  subCmov (32 * (6 : Fin 128).val) (32 * (14 : Fin 128).val) (32 * (15 : Fin 128).val) ++
+  addCmov (32 * (5 : Fin 128).val) (32 * (14 : Fin 128).val) (32 * (15 : Fin 128).val) ++
   fld.a24 (32 * (4 : Fin 128).val) (32 * (13 : Fin 128).val) ++
   fld.sqr (32 * (6 : Fin 128).val) (32 * (6 : Fin 128).val) ++
   fld.sqr (32 * (5 : Fin 128).val) (32 * (5 : Fin 128).val) ++
-  add (32 * (4 : Fin 128).val) (32 * (11 : Fin 128).val) (32 * (4 : Fin 128).val) ++
+  addCmov (32 * (4 : Fin 128).val) (32 * (11 : Fin 128).val) (32 * (4 : Fin 128).val) ++
   fld.mul (32 * (6 : Fin 128).val) (32 * (2 : Fin 128).val) (32 * (6 : Fin 128).val) ++
   fld.mul (32 * (3 : Fin 128).val) (32 * (11 : Fin 128).val) (32 * (12 : Fin 128).val) ++
   fld.mul (32 * (4 : Fin 128).val) (32 * (13 : Fin 128).val) (32 * (4 : Fin 128).val)
@@ -105,73 +105,110 @@ def stepEnv (sw : Bool) (e : Env) : Env :=
 
 include hf in
 /-- The field operations of an iteration, with the mask `rcx` of the swap
-bit `sw`. -/
+bit `sw`, for `z_2` and `z_3` (bytes 128 and 192) at most `2p`, which they
+leave so. -/
 theorem ops_ok {s1 : State} {base : Addr} (hs1 : Scr s1 base) {sw : Bool}
-    (hm : s1.gpr .rcx = mask sw) :
+    (hm : s1.gpr .rcx = mask sw) (hz2 : fe s1.mem base 128 ≤ 2 * Spec.X25519.P)
+    (hz3 : fe s1.mem base 192 ≤ 2 * Spec.X25519.P) :
     WP isa (.block (opsList fld)) s1 fun s' =>
-      Keep base s1 s' ∧ E s'.mem base = stepEnv sw (E s1.mem base) := by
+      Keep base s1 s' ∧ E s'.mem base = stepEnv sw (E s1.mem base) ∧
+        fe s'.mem base 128 ≤ 2 * Spec.X25519.P ∧ fe s'.mem base 192 ≤ 2 * Spec.X25519.P := by
   simp only [opsList, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (cswapE hs1 3 5 ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by decide) hm) fun s2 ⟨k2, c2, e2⟩ => ?_
+  refine WP.mono (cswapEB hs1 3 5 ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by decide) hm) fun s2 ⟨k2, c2, e2, f2, _, _⟩ => ?_
   have hs2 := k2.scr hs1
+  have b2 : ∀ d, d = 128 ∨ d = 192 → fe s2.mem base d ≤ 2 * Spec.X25519.P := by
+    rintro d (rfl | rfl)
+    · rw [f2 _ (by decide) (by decide) (by decide)]; exact hz2
+    · rw [f2 _ (by decide) (by decide) (by decide)]; exact hz3
   rw [WP.block_append_iff]
-  refine WP.mono (cswapE hs2 4 6 ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by decide) (c2.trans hm)) fun s3 ⟨k3, c3, e3⟩ => ?_
+  refine WP.mono (cswapEB hs2 4 6 ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (by decide) (c2.trans hm)) fun s3 ⟨k3, c3, e3, _, x3, y3⟩ => ?_
   have hs3 := k3.scr hs2
+  have z23 : fe s3.mem base 128 ≤ 2 * Spec.X25519.P := by
+    change fe s3.mem base (32 * (4 : Fin 128).val) ≤ _
+    rw [x3]; split
+    · exact b2 _ (.inr rfl)
+    · exact b2 _ (.inl rfl)
+  have z33 : fe s3.mem base 192 ≤ 2 * Spec.X25519.P := by
+    change fe s3.mem base (32 * (6 : Fin 128).val) ≤ _
+    rw [y3]; split
+    · exact b2 _ (.inl rfl)
+    · exact b2 _ (.inr rfl)
   rw [WP.block_append_iff]
-  refine WP.mono (addE hs3 7 3 4 ⟨by decide, by decide⟩) fun s4 ⟨k4, e4⟩ => ?_
+  refine WP.mono (addCmovE hs3 7 3 4 ⟨by decide, by decide⟩ (.inr z23)) fun s4 ⟨k4, e4, o4⟩ => ?_
   have hs4 := k4.scr hs3
   rw [WP.block_append_iff]
-  refine WP.mono (subE hs4 8 3 4 ⟨by decide, by decide⟩) fun s5 ⟨k5, e5⟩ => ?_
+  refine WP.mono (subCmovE hs4 8 3 4 ⟨by decide, by decide⟩
+    (by change fe s4.mem base 128 ≤ _; rw [o4.fe (by decide) (by decide)]; exact z23))
+    fun s5 ⟨k5, e5, o5⟩ => ?_
   have hs5 := k5.scr hs4
+  have z35 : fe s5.mem base 192 ≤ 2 * Spec.X25519.P := by
+    rw [o5.fe (by decide) (by decide), o4.fe (by decide) (by decide)]; exact z33
   rw [WP.block_append_iff]
-  refine WP.mono (addE hs5 9 5 6 ⟨by decide, by decide⟩) fun s6 ⟨k6, e6⟩ => ?_
+  refine WP.mono (addCmovE hs5 9 5 6 ⟨by decide, by decide⟩ (.inr z35)) fun s6 ⟨k6, e6, o6⟩ => ?_
   have hs6 := k6.scr hs5
   rw [WP.block_append_iff]
-  refine WP.mono (subE hs6 10 5 6 ⟨by decide, by decide⟩) fun s7 ⟨k7, e7⟩ => ?_
+  refine WP.mono (subCmovE hs6 10 5 6 ⟨by decide, by decide⟩
+    (by change fe s6.mem base 192 ≤ _; rw [o6.fe (by decide) (by decide)]; exact z35))
+    fun s7 ⟨k7, e7, o7⟩ => ?_
   have hs7 := k7.scr hs6
   rw [WP.block_append_iff]
-  refine WP.mono (sqrE hf hs7 11 7 ⟨by decide, by decide⟩) fun s8 ⟨k8, e8⟩ => ?_
+  refine WP.mono (sqrEB hf hs7 11 7 ⟨by decide, by decide⟩) fun s8 ⟨k8, e8, o8, b8⟩ => ?_
   have hs8 := k8.scr hs7
   rw [WP.block_append_iff]
-  refine WP.mono (sqrE hf hs8 12 8 ⟨by decide, by decide⟩) fun s9 ⟨k9, e9⟩ => ?_
+  refine WP.mono (sqrEB hf hs8 12 8 ⟨by decide, by decide⟩) fun s9 ⟨k9, e9, o9, b9⟩ => ?_
   have hs9 := k9.scr hs8
   rw [WP.block_append_iff]
-  refine WP.mono (mulE hf hs9 14 10 7 ⟨by decide, by decide⟩) fun s10 ⟨k10, e10⟩ => ?_
+  refine WP.mono (mulEB hf hs9 14 10 7 ⟨by decide, by decide⟩) fun s10 ⟨k10, e10, o10, _⟩ => ?_
   have hs10 := k10.scr hs9
   rw [WP.block_append_iff]
-  refine WP.mono (mulE hf hs10 15 9 8 ⟨by decide, by decide⟩) fun s11 ⟨k11, e11⟩ => ?_
+  refine WP.mono (mulEB hf hs10 15 9 8 ⟨by decide, by decide⟩) fun s11 ⟨k11, e11, o11, b11⟩ => ?_
   have hs11 := k11.scr hs10
   rw [WP.block_append_iff]
-  refine WP.mono (subE hs11 13 11 12 ⟨by decide, by decide⟩) fun s12 ⟨k12, e12⟩ => ?_
+  refine WP.mono (subCmovE hs11 13 11 12 ⟨by decide, by decide⟩
+    (by change fe s11.mem base 384 ≤ _; rw [o11.fe (by decide) (by decide), o10.fe (by decide) (by decide)]; exact b9))
+    fun s12 ⟨k12, e12, o12⟩ => ?_
   have hs12 := k12.scr hs11
   rw [WP.block_append_iff]
-  refine WP.mono (subE hs12 6 14 15 ⟨by decide, by decide⟩) fun s13 ⟨k13, e13⟩ => ?_
+  refine WP.mono (subCmovE hs12 6 14 15 ⟨by decide, by decide⟩
+    (by change fe s12.mem base 480 ≤ _; rw [o12.fe (by decide) (by decide)]; exact b11))
+    fun s13 ⟨k13, e13, o13⟩ => ?_
   have hs13 := k13.scr hs12
   rw [WP.block_append_iff]
-  refine WP.mono (addE hs13 5 14 15 ⟨by decide, by decide⟩) fun s14 ⟨k14, e14⟩ => ?_
+  refine WP.mono (addCmovE hs13 5 14 15 ⟨by decide, by decide⟩
+    (.inr (by change fe s13.mem base 480 ≤ _; rw [o13.fe (by decide) (by decide), o12.fe (by decide) (by decide)]; exact b11)))
+    fun s14 ⟨k14, e14, o14⟩ => ?_
   have hs14 := k14.scr hs13
   rw [WP.block_append_iff]
-  refine WP.mono (a24E hf hs14 4 13 ⟨by decide, by decide⟩) fun s15 ⟨k15, e15⟩ => ?_
+  refine WP.mono (a24EB hf hs14 4 13 ⟨by decide, by decide⟩) fun s15 ⟨k15, e15, o15⟩ => ?_
   have hs15 := k15.scr hs14
   rw [WP.block_append_iff]
-  refine WP.mono (sqrE hf hs15 6 6 ⟨by decide, by decide⟩) fun s16 ⟨k16, e16⟩ => ?_
+  refine WP.mono (sqrEB hf hs15 6 6 ⟨by decide, by decide⟩) fun s16 ⟨k16, e16, o16, _⟩ => ?_
   have hs16 := k16.scr hs15
   rw [WP.block_append_iff]
-  refine WP.mono (sqrE hf hs16 5 5 ⟨by decide, by decide⟩) fun s17 ⟨k17, e17⟩ => ?_
+  refine WP.mono (sqrEB hf hs16 5 5 ⟨by decide, by decide⟩) fun s17 ⟨k17, e17, o17, _⟩ => ?_
   have hs17 := k17.scr hs16
   rw [WP.block_append_iff]
-  refine WP.mono (addE hs17 4 11 4 ⟨by decide, by decide⟩) fun s18 ⟨k18, e18⟩ => ?_
+  refine WP.mono (addCmovE hs17 4 11 4 ⟨by decide, by decide⟩ (.inl (by
+    change fe s17.mem base 352 ≤ _
+    rw [o17.fe (by decide) (by decide), o16.fe (by decide) (by decide),
+      o15.fe (by decide) (by decide), o14.fe (by decide) (by decide),
+      o13.fe (by decide) (by decide), o12.fe (by decide) (by decide),
+      o11.fe (by decide) (by decide), o10.fe (by decide) (by decide),
+      o9.fe (by decide) (by decide)]
+    exact b8))) fun s18 ⟨k18, e18, o18⟩ => ?_
   have hs18 := k18.scr hs17
   rw [WP.block_append_iff]
-  refine WP.mono (mulE hf hs18 6 2 6 ⟨by decide, by decide⟩) fun s19 ⟨k19, e19⟩ => ?_
+  refine WP.mono (mulEB hf hs18 6 2 6 ⟨by decide, by decide⟩) fun s19 ⟨k19, e19, o19, b19⟩ => ?_
   have hs19 := k19.scr hs18
   rw [WP.block_append_iff]
-  refine WP.mono (mulE hf hs19 3 11 12 ⟨by decide, by decide⟩) fun s20 ⟨k20, e20⟩ => ?_
+  refine WP.mono (mulEB hf hs19 3 11 12 ⟨by decide, by decide⟩) fun s20 ⟨k20, e20, o20, _⟩ => ?_
   have hs20 := k20.scr hs19
-  refine WP.mono (mulE hf hs20 4 13 4 ⟨by decide, by decide⟩) fun s21 ⟨k21, e21⟩ => ?_
-  refine ⟨(k2.trans (k3.trans (k4.trans (k5.trans (k6.trans (k7.trans (k8.trans (k9.trans (k10.trans (k11.trans (k12.trans (k13.trans (k14.trans (k15.trans (k16.trans (k17.trans (k18.trans (k19.trans (k20.trans k21))))))))))))))))))), ?_⟩
-  rw [e21, e20, e19, e18, e17, e16, e15, e14, e13, e12, e11, e10, e9, e8, e7, e6, e5, e4, e3, e2]
-  rfl
+  refine WP.mono (mulEB hf hs20 4 13 4 ⟨by decide, by decide⟩) fun s21 ⟨k21, e21, o21, b21⟩ => ?_
+  refine ⟨(k2.trans (k3.trans (k4.trans (k5.trans (k6.trans (k7.trans (k8.trans (k9.trans (k10.trans (k11.trans (k12.trans (k13.trans (k14.trans (k15.trans (k16.trans (k17.trans (k18.trans (k19.trans (k20.trans k21))))))))))))))))))), ?_, b21, ?_⟩
+  · rw [e21, e20, e19, e18, e17, e16, e15, e14, e13, e12, e11, e10, e9, e8, e7, e6, e5, e4, e3, e2]
+    rfl
+  · rw [o21.fe (by decide) (by decide), o20.fe (by decide) (by decide)]; exact b19
 
 /-- The ladder's loop invariant, with the counter `rbx = n`: the slots
 `x1, x2, z2, x3, z3` (2–6) and the word `swap` hold the ladder's state after
@@ -190,6 +227,9 @@ structure LInv (base : Addr) (k : Nat) (u : Spec.X25519.Fe) (s₀ s : State) (n 
   x3 : E s.mem base 5 = (ladderAfter k u n).x3
   z3 : E s.mem base 6 = (ladderAfter k u n).z3
   swap : word s.mem base SWAP = BitVec.ofNat 64 (ladderAfter k u n).swap
+  /-- `z_2` and `z_3` are at most `2p` (`addCmov`, `subCmov`). -/
+  z2b : fe s.mem base 128 ≤ 2 * Spec.X25519.P
+  z3b : fe s.mem base 192 ≤ 2 * Spec.X25519.P
 
 theorem cswap_fst (sw : Nat) (a b : Spec.X25519.Fe) :
     (Spec.X25519.cswap sw a b).1 = if decide (sw = 1) = true then b else a := by
@@ -234,7 +274,8 @@ theorem step_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X25519.Fe} {n
   have e1 : E s1.mem base = Function.update (E s.mem base) 20 (F s1.mem base (32 * 20)) :=
     E_update (o := 20) (o8.mono (by omega) (by omega))
   rw [WP.block_append_iff]
-  refine WP.mono (ops_ok hf hs1 m1) fun s2 ⟨K, e2⟩ => ?_
+  refine WP.mono (ops_ok hf hs1 m1 (by rw [o8.fe (by decide) (by decide)]; exact hi.z2b)
+    (by rw [o8.fe (by decide) (by decide)]; exact hi.z3b)) fun s2 ⟨K, e2, bz2, bz3⟩ => ?_
   have hs2 := K.scr hs1
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
@@ -254,8 +295,8 @@ theorem step_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X25519.Fe} {n
     (by rw [e1]; exact hi.x3) (by rw [e1]; exact hi.z3)
   rw [← ladderAfter_step k u hn, ← e2] at v3 v4 v5 v6
   rw [← e2] at v2
-  refine ⟨⟨⟨hs2.rdi, hs2.wr, hs2.nowrap⟩, fun r hr hb => ?_, ?_, ?_, ?_, ?_, v2, v3, v4, v5, v6, ?_⟩,
-    ?_⟩
+  refine ⟨⟨⟨hs2.rdi, hs2.wr, hs2.nowrap⟩, fun r hr hb => ?_, ?_, ?_, ?_, ?_, v2, v3, v4, v5, v6, ?_,
+    by rw [RegUpd.mem_arithFlags]; exact bz2, by rw [RegUpd.mem_arithFlags]; exact bz3⟩, ?_⟩
   · have h' : r ∉ [Reg.rbx, .rax, .rdx, .rcx] := by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨hb, fun h => hr (h ▸ by decide), fun h => hr (h ▸ by decide),
@@ -338,6 +379,9 @@ structure LPre (base : Addr) (k : Nat) (u : Spec.X25519.Fe) (s : State) : Prop w
   x3 : E s.mem base 5 = u
   z3 : E s.mem base 6 = 1
   swap : word s.mem base SWAP = 0
+  /-- `z_2` and `z_3` are at most `2p`, as `ladder`'s sums need. -/
+  z2b : fe s.mem base 128 ≤ 2 * Spec.X25519.P
+  z3b : fe s.mem base 192 ≤ 2 * Spec.X25519.P
 
 include hf in
 /-- `ladder`, as a ladder: from `LPre` to `LPost`. -/
@@ -346,7 +390,8 @@ theorem ladder_post {s : State} {base : Addr} {k : Nat} {u : Spec.X25519.Fe} (h 
   WP.mono (ladder_ok hf h.bits fun s' hb g m rd wr => ⟨⟨by rw [g _ (by decide)]; exact h.scr.rdi,
       by rw [wr]; exact h.scr.wr, h.scr.nowrap⟩, fun r _ hr => g r hr, hb, rd, wr,
       by rw [m]; exact Outside.refl _ _ _ _, by rw [m, h.x1], by rw [m, h.x2]; rfl, by rw [m, h.z2]; rfl,
-      by rw [m, h.x3]; rfl, by rw [m, h.z3]; rfl, by rw [m, h.swap]; rfl⟩)
+      by rw [m, h.x3]; rfl, by rw [m, h.z3]; rfl, by rw [m, h.swap]; rfl, by rw [m]; exact h.z2b,
+      by rw [m]; exact h.z3b⟩)
     fun _ hl => hl.post
 
 end VG.Proof.X25519.X86_64
