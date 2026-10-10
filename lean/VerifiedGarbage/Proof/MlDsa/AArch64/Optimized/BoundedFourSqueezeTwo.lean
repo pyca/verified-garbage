@@ -4,7 +4,7 @@ namespace VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 
-def squeezeAllRegs : List Reg := [.x6,.x7,.x16,.x22,.x23,.x24,.x25,.x26,.x27,.x28]
+def squeezeAllRegs : List Reg := [.x0,.x1,.x16,.x17,.x6,.x7,.x22,.x23,.x24,.x25,.x26,.x27,.x28]
 
 structure SqueezePost (s t : State) (b : Addr) (off : Nat) (A : Nat→Spec.Sha3.State) : Prop where
  keep : RegKeep squeezeAllRegs s t
@@ -38,7 +38,8 @@ theorem squeezeTwo_ok (sha3 : Bool) {s : State} {b : Addr} {off : Nat} {A : Nat�
     · simpa only [SqueezeCfg.at,SqueezeCfg.out,squeezeCfg,Nat.reduceEqDiff,ite_false,
         Nat.mul_zero,BitVec.ofNat_eq_ofNat,BitVec.add_zero] using h27
     · exact h28
-  have hl : SqueezeLayout u (squeezeCfg b off) := squeezeLayout_ok ho (fun o n hn=>by
+  have hl : SqueezeLayout u (squeezeCfg b off) := squeezeLayout_ok ho
+    (by rw [hk.gpr .x19 (by decide),hb]) (fun o n hn=>by
     rw [hk.wr]; exact hw o n hn)
   refine WP.mono (squeezeLoop_ok sha3 hl hi (by decide)) fun t ht=>?_
   have hr : RegKeep [.x22,.x23,.x24,.x25,.x26,.x27,.x28] s u := ⟨hk.gpr,hk.rd,hk.wr,hk.sp⟩

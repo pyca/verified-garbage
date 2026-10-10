@@ -6,7 +6,8 @@ open VG.Proof.Sha3.AArch64.Neon
 
 def squeezeCfg (b : Addr) (off : Nat) : SqueezeCfg :=
  ⟨b,b+400#64,b+BitVec.ofNat 64 (840+off),b+BitVec.ofNat 64 (1384+off),
-  b+BitVec.ofNat 64 (1928+off),b+BitVec.ofNat 64 (2472+off)⟩
+  b+BitVec.ofNat 64 (1928+off),b+BitVec.ofNat 64 (2472+off),
+  b+BitVec.ofNat 64 Impl.MlDsa.AArch64.Optimized.BoundedFour.oX2⟩
 
 theorem squeezeCfg_out (b : Addr) (off : Nat) {i : Nat} (hi : i<4) :
     (squeezeCfg b off).out i=b+BitVec.ofNat 64 (840+544*i+off) := by

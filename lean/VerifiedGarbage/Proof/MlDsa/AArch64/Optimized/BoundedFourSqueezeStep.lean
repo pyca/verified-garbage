@@ -4,12 +4,12 @@ namespace VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 
-def squeezeRegs : List Reg := [.x6,.x7,.x16,.x24,.x25,.x26,.x27,.x28]
+def squeezeRegs : List Reg := [.x0,.x1,.x16,.x17,.x6,.x7,.x24,.x25,.x26,.x27,.x28]
 
-structure SqueezeStepPost (s t : State) (p q a b c d : Addr)
+structure SqueezeStepPost (s t : State) (p q a b c d w : Addr)
     (A B C D : Spec.Sha3.State) : Prop where
  keep : RegKeep squeezeRegs s t
- frame : Frame (pairWrites p a b++pairWrites q c d) s.mem t.mem
+ frame : Frame (pairWrites p a b++pairWrites q c d++[X2.callR w]) s.mem t.mem
  first : PairAt t.mem p (Spec.Sha3.keccakF A) (Spec.Sha3.keccakF B)
  second : PairAt t.mem q (Spec.Sha3.keccakF C) (Spec.Sha3.keccakF D)
  rateA : Rate136 t.mem a (Spec.Sha3.keccakF A)
@@ -22,16 +22,19 @@ structure SqueezeStepPost (s t : State) (p q a b c d : Addr)
  nextD : t.gpr .x27=d+136
  count : t.gpr .x28=s.gpr .x28-1
 
-theorem squeezeStep_ok (sha3 : Bool) {s : State} {p q a b c d : Addr}
+theorem squeezeStep_ok (sha3 : Bool) {s : State} {p q a b c d w : Addr}
     {A B C D : Spec.Sha3.State}
     (hp : s.gpr .x22=p) (hq : s.gpr .x23=q) (ha : s.gpr .x24=a)
     (hb : s.gpr .x25=b) (hc : s.gpr .x26=c) (hd : s.gpr .x27=d)
     (hP : PairAt s.mem p A B) (hQ : PairAt s.mem q C D)
     (hL : PairLayout s p a b) (hR : PairLayout s q c d)
-    (hsep : ∀r∈pairWrites p a b,∀t∈pairWrites q c d,r.Disjoint t) :
+    (hw : s.gpr .x19+BitVec.ofNat 64 Impl.MlDsa.AArch64.Optimized.BoundedFour.oX2=w)
+    (hsep : ∀r∈pairWrites p a b,∀t∈pairWrites q c d,r.Disjoint t)
+    (hscr : ∀r∈pairWrites p a b++pairWrites q c d,r.Disjoint (X2.callR w))
+    (hcP : Covers [pairR p,X2.callR w] s.wr) (hcQ : Covers [pairR q,X2.callR w] s.wr) :
     WP isa (Impl.MlDsa.AArch64.Optimized.BoundedFour.squeezeStep sha3) s fun t=>
-      SqueezeStepPost s t p q a b c d A B C D := by
-  have hh := pairFour_ok sha3 hp hq ha hb hc hd hP hQ hL hR hsep
+      SqueezeStepPost s t p q a b c d w A B C D := by
+  have hh := pairFour_ok sha3 hp hq ha hb hc hd hw hP hQ hL hR hsep hscr hcP hcQ
   unfold Impl.MlDsa.AArch64.Optimized.BoundedFour.squeezeStep
   rw [WP.seq_iff (M := isa)] at hh
   refine WP.seq (WP.mono hh fun u hu=>WP.seq (WP.mono hu fun v hv=>?_))

@@ -14,7 +14,6 @@ namespace VG.Impl.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.AArch64
 open VG.Impl.MlKem.AArch64 (mov)
 open VG.Impl.MlDsa.AArch64.Sample
-open VG.Impl.Sha3.AArch64.Neon.Pair (load store roundsProg)
 open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg)
 
 def counts : Nat := 7904
@@ -27,10 +26,11 @@ def absorbPair (p : Nat) : List Instr :=
   .ldrb .x7 .x4 64,.ldrb .x8 .x4 65,.lsl .x .x8 .x8 8,.add .x .x7 .x7 .x8] : List Instr) ++
  Rej4.tailAdd ++ ([.vop (.dup .d2 .v0 .x6),.vop (.ins .d2 .v0 1 .x7),.strq .v0 .x2 128,
  .movz .x .x9 0x8000 3,.vop (.dup .d2 .v0 .x9),.strq .v0 .x2 256] : List Instr)
-def squeeze (a b : Reg) : List Instr := (List.range 17).flatMap (fun i =>
- [.umov .x .x6 (vreg i) 0,.umov .x .x7 (vreg i) 1,.str .x .x6 a (8*i),.str .x .x7 b (8*i)])
+/-- `vg_keccak_f1600_x2`'s working space, and the return address during its calls. -/
+def oX2 : Nat := 3024
+/-- One permutation of the pair at `p`, by a call, and a rate block of each state to `a`, `b`. -/
 def pair (sha3 : Bool) (p a b : Reg) : Prog isa :=
- .seq (.block (load p)) <| .seq (roundsProg sha3 24) (.block (store p++squeeze a b))
+ .seq (Impl.Sha3.AArch64.Neon.X2.call sha3 p .x19 oX2) (.block (Impl.Sha3.AArch64.Neon.X2.squeeze 17 p a b))
 def squeezeStep (sha3 : Bool) : Prog isa :=
  .seq (pair sha3 .x22 .x24 .x25) <| .seq (pair sha3 .x23 .x26 .x27) <|
  .block [.addImm .x .x24 .x24 136,.addImm .x .x25 .x25 136,

@@ -11,7 +11,9 @@ theorem squeezeLoopStep_ok (sha3 : Bool) {σ s : State} {c : SqueezeCfg}
       SqueezeInv σ t c A (j+1) := by
   refine WP.mono (squeezeStep_ok sha3 hi.r22 hi.r23 hi.r24 hi.r25 hi.r26 hi.r27
     hi.first hi.second ((hl.left j hj).keep hi.keep.rd hi.keep.wr)
-    ((hl.right j hj).keep hi.keep.rd hi.keep.wr) (hl.apart j hj)) fun t ht=>?_
+    ((hl.right j hj).keep hi.keep.rd hi.keep.wr)
+    (by rw [hi.keep.gpr .x19 (by decide)]; exact hl.base) (hl.apart j hj) (hl.scratch j hj)
+    (by rw [hi.keep.wr]; exact hl.callP) (by rw [hi.keep.wr]; exact hl.callQ)) fun t ht=>?_
   have hf : Frame (c.stepWrites j) s.mem t.mem := ht.frame
   refine ⟨by omega,(hi.keep.trans ht.keep).mono (by decide),hi.frame.trans (hf.sub (hl.covers j hj)),
     ht.first,ht.second,?_,?_,?_,?_,?_,?_,?_,?_⟩
