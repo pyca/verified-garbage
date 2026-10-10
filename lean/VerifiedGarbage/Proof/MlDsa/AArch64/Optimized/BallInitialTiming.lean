@@ -1,5 +1,151 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallZeroReady
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallCursor
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
+import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ball
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFirst
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunkTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial
+
+/-! ## From `BallChecks.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Ball
+open VG VG.AArch64
+open VG.Proof.Sha3.AArch64.Sha3
+
+taint_summary firstSponge : VectorTaint.taint (VectorTaint.ofRegs [.x25,.x26,.x27,.x3,.x4])
+  (Impl.MlDsa.AArch64.Sample.spongeWith callee 136 136)
+  using Sha3Sums.absorb Sha3Sums.pad Sha3Sums.squeeze
+
+end VG.Proof.MlDsa.AArch64.Optimized.Ball
+
+end
+
+/-! ## From `BallFirstTiming.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Ball
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64
+open VG.Proof.MlDsa.Sample
+open VG.Proof.MlDsa.AArch64.Sample
+
+structure FirstReady (a b : Addr) (τ : Nat) (X : List Byte) (s : State) : Prop where
+  x25 : s.gpr .x25+840=b
+  x26 : s.gpr .x26=a
+  x27 : (s.gpr .x27).toNat=τ
+  buf : ∀j<136,s.mem (b+BitVec.ofNat 64 j)=X.getD j 0
+  zero : ∀j<256,Spec.MlDsa.coeffAt s.mem a j=0
+  reads : Covers [⟨b,136⟩,polyR a] (s.rd++s.wr)
+  writes : Covers [polyR a] s.wr
+
+ theorem first_relCT {a b : Addr} {τ : Nat} {X : List Byte} (hX : X.length=136) (hτ : τ≤64)
+    (hsep : (⟨b,136⟩ : Region).Disjoint (polyR a)) :
+    RelCT isa (fun s t => FirstReady a b τ X s ∧ FirstReady a b τ X t ∧ s.sp=t.sp)
+      Impl.MlDsa.AArch64.Optimized.Ball.first (fun _ _ => True) := by
+  let rd : List Region := [⟨b,136⟩]
+  let wr : List Region := [polyR a]
+  have run (s : State) (hs : FirstReady a b τ X s) :
+      ∃tr u,Exec isa Impl.MlDsa.AArch64.Optimized.Ball.first (s.withRegions rd wr) tr u := by
+    obtain ⟨tr,u,he,_⟩ := first_ok (τ := τ) (s := s.withRegions rd wr) hX hs.x25 hs.x26 hs.x27 hτ
+      (in_rd (in_regions (List.mem_singleton_self _) (by simp [Region.Contains])))
+      (fun j hj => in_rd (in_regions (List.mem_singleton_self _) (Offset.contains_base _ (by omega) (by omega))))
+      hs.buf (fun j hj => in_regions (List.mem_singleton_self _) (coeff_contains _ hj)) hsep hs.zero
+    exact ⟨tr,u,he⟩
+  refine RelCT.narrow rd wr
+    (fun s t ht => ⟨⟨ht.1.reads,ht.1.writes⟩,⟨ht.2.1.reads,ht.2.1.writes⟩⟩)
+    (fun s t ht => ⟨run s ht.1,run t ht.2.1⟩)
+    (RelCT.taint (A := memTaint) (Taint.ofRegs [.x25,.x26,.x27]) ?_ (by taint_decide))
+  intro s t hp
+  obtain ⟨s₀,t₀,⟨hs,ht,hsp⟩,rfl,rfl⟩ := hp
+  refine ⟨agree_of hsp (fun r hr => ?_),rfl,rfl,fun x hx => ?_⟩
+  · rcases mem3 hr with rfl|rfl|rfl
+    · change s₀.gpr .x25=t₀.gpr .x25
+      have hh := congrArg (fun z : BitVec 64 => z-840) (hs.x25.trans ht.x25.symm)
+      simpa only [BitVec.add_sub_cancel] using hh
+    · exact hs.x26.trans ht.x26.symm
+    · exact BitVec.eq_of_toNat_eq (hs.x27.trans ht.x27.symm)
+  · obtain ⟨r,hr,hx⟩ := hx
+    rcases mem2 hr with rfl|rfl
+    · obtain ⟨j,hj,rfl⟩ := Proof.MlKem.AArch64.Sample.at_off hx
+      exact (hs.buf j hj).trans (ht.buf j hj).symm
+    · exact (Proof.MlKem.AArch64.Sample.byte_zero hs.zero hx).trans
+        (Proof.MlKem.AArch64.Sample.byte_zero ht.zero hx).symm
+end VG.Proof.MlDsa.AArch64.Optimized.Ball
+
+end
+
+/-! ## From `BallCursor.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Ball
+open VG VG.AArch64
+
+abbrev SpongePublic : VectorTaint.T := VectorTaint.ofRegs [.x25,.x26,.x27,.x3,.x4]
+
+/-- The public cursor returned by the first block is retained for a possible
+second squeeze. This is a relational fact proved by the existing taint checker. -/
+def SpongeCursor (c : Impl.Sha3.AArch64.Callee) : Prop :=
+  RelCT isa (VectorTaint.Agree SpongePublic) (Impl.MlDsa.AArch64.Sample.spongeWith c 136 136)
+    (fun s t => s.gpr .x0=t.gpr .x0)
+
+ theorem sha3_spongeCursor : SpongeCursor Proof.Sha3.AArch64.Sha3.callee := by
+  obtain ⟨hint,τ,hcheck,hpost,_⟩ := firstSponge SpongePublic (by decide)
+  have hlo : VectorTaint.taint.le (VectorTaint.ofRegs [.x0]) τ=true :=
+    Taint.Mono.le_R (A := VectorTaint.taint) (by decide) hpost
+  intro s t ts tt u v hp hs ht
+  obtain ⟨he,ha⟩ := Taint.check_sound hcheck hp hs ht
+  have hh := VectorTaint.taint.le_sound hlo ha
+  exact ⟨he,hh.1.2 .x0 (by decide)⟩
+end VG.Proof.MlDsa.AArch64.Optimized.Ball
+
+end
+
+/-! ## From `BallZeroReady.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Ball
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64
+open VG.Proof.MlDsa.AArch64.Sample
+open VG.Proof.MlDsa.Sample
+open VG.Spec.Sha3 (bytesAt)
+open VG.Proof.MlDsa.AArch64.Sample.Ball (spOf)
+
+theorem zero_ready {σ s : State} (hp : sbK.pre σ) (h : Resume 136 136 (spOf σ) σ s) :
+    WP isa Impl.MlDsa.AArch64.Optimized.Ball.zeroWide s fun u =>
+      Keep [] s u ∧ FirstReady (spOf σ).a ((spOf σ).at' 840) (tauOf σ) (firstBytes σ) u := by
+  have ps := Sample.Ball.spOk hp
+  refine WP.mono (zeroWide_coeffs h.first.env.x26 (fun i hi => ?_)) fun t ⟨kt,ft,hz⟩ => ?_
+  · rw [h.first.env.wr,ps.wr]
+    exact in_regions (List.mem_cons_self ..) (Offset.contains_base _ (by omega) (by omega))
+  have et := h.first.env.keepA ps kt ft
+  have ot : bytesAt t.mem ((spOf σ).at' 840) 136=firstBytes σ := by
+    rw [MlKem.bytesAt_frame ft (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact (a_scr' ps (by decide)).symm) (by decide),h.first.out]
+    exact (H_eq _ _).symm
+  refine ⟨kt,by rw [et.x25]; rfl,et.x26,?_,?_,hz,?_,?_⟩
+  · rw [et.x27]; simp [tauOf]; omega
+  · intro j hj
+    rw [← ot,MlKem.bytesAt_getD _ _ hj]
+  · rw [regions ps et]
+    refine Covers.of_sub fun r hr => ?_
+    rcases mem2 hr with rfl|rfl
+    · exact ⟨(spOf σ).scrR,by simp,840,rfl,by simp⟩
+    · exact ⟨polyR (spOf σ).a,by simp,0,(ptr_zero _).symm,by simp⟩
+  · rw [et.wr,ps.wr]
+    exact Covers.of_sub fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact ⟨polyR (spOf σ).a,by simp,0,(ptr_zero _).symm,by simp⟩
+end VG.Proof.MlDsa.AArch64.Optimized.Ball
+
+end
+
+/-! ## From `BallInitialTiming.lean` -/
+
+section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Ball
 open VG VG.AArch64
@@ -70,3 +216,5 @@ def CursorPair (J : State → State → Prop) (s t : State) : Prop :=
       ⟨r₁,rr₂,by rw [k₁.sp,k₂.sp]; exact hsp⟩ ef₁ ef₂
     exact congr (congrArg (fun xs ys : List Leak => xs ++ ys) hz.1) hf.1
 end VG.Proof.MlDsa.AArch64.Optimized.Ball
+
+end

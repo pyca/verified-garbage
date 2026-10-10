@@ -1,5 +1,270 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackLoad
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackFields
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+
+/-! ## From `UseHintPackFour.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.UseHintPack
+open VG VG.AArch64
+open VG.Proof.MlDsa.AArch64.Round
+open VG.Proof.MlKem.AArch64 (VChg)
+
+def temps : List VReg := [.v0,.v1,.v2,.v3,.v4,.v5,.v6,.v7,.v26]
+
+ theorem Ready.chg {g : Nat} {s t : State} (h : Ready g s) {rs : List VReg}
+    (k : VChg rs s t) (hrs : rs⊆temps) : Ready g t := by
+  have hk := k.mono hrs
+  refine ⟨⟨⟨?_,?_,?_,?_⟩,⟨?_,?_,?_,?_⟩⟩,?_,?_,?_⟩
+  · intro e he; rw [hk.get .v17 (by decide)]; exact h.add e he
+  · intro e he; rw [hk.get .v18 (by decide)]; exact h.mul e he
+  · intro e he; rw [hk.get .v19 (by decide)]; exact h.round e he
+  · intro e he; rw [hk.get .v20 (by decide)]; exact h.modulus e he
+  · rw [hk.get .v28 (by decide)]; exact h.zero
+  · rw [hk.get .v29 (by decide)]; exact h.idx29
+  · rw [hk.get .v24 (by decide)]; exact h.idx24
+  · rw [hk.get .v25 (by decide)]; exact h.idx25
+  · intro e he; rw [hk.get .v21 (by decide)]; exact h.factor e he
+  · intro e he; rw [hk.get .v22 (by decide)]; exact h.one e he
+  · intro e he; rw [hk.get .v23 (by decide)]; exact h.z e he
+
+ def loadFour (g : Nat) : List Instr :=
+  ([.v0,.v1,.v2,.v3] : List VReg).zipIdx.flatMap fun (r,j)=>
+    Impl.MlDsa.AArch64.Optimized.UseHintPack.four g r (16*j)
+
+ theorem loadFour_ok {g : Nat} (hg : IsG g) {s : State} (hc : Ready g s)
+    (ha : ∀j<4,InRegions (s.rd++s.wr) (s.gpr .x5+BitVec.ofNat 64 (16*j)) 16)
+    (hh : ∀j<4,InRegions (s.rd++s.wr) (s.gpr .x4+BitVec.ofNat 64 (16*j)) 16)
+    {rest : List Instr} {Q : State→Prop}
+    (k : ∀t,VChg temps s t → Ready g t →
+      (∀j<4,∀e<4,vword (t.v ([.v0,.v1,.v2,.v3] : List VReg)[j]!) e=value g
+        (vword (s.mem.read (s.gpr .x5+BitVec.ofNat 64 (16*j)) 16) e)
+        (vword (s.mem.read (s.gpr .x4+BitVec.ofNat 64 (16*j)) 16) e)) → WP isa (.block rest) t Q) :
+    WP isa (.block (loadFour g++rest)) s Q := by
+  change WP isa (.block (Impl.MlDsa.AArch64.Optimized.UseHintPack.four g .v0 0 ++
+    (Impl.MlDsa.AArch64.Optimized.UseHintPack.four g .v1 16 ++
+    (Impl.MlDsa.AArch64.Optimized.UseHintPack.four g .v2 32 ++
+    (Impl.MlDsa.AArch64.Optimized.UseHintPack.four g .v3 48 ++ rest))))) s Q
+  refine four_ok hg (by decide) hc (by decide) (ha 0 (by decide)) (hh 0 (by decide)) fun a h0 w0=>?_
+  have c0 := hc.chg h0 (by decide)
+  refine four_ok hg (by decide) c0 (by decide)
+    (by rw [h0.rd,h0.wr,h0.gpr]; exact ha 1 (by decide))
+    (by rw [h0.rd,h0.wr,h0.gpr]; exact hh 1 (by decide)) fun b h1 w1=>?_
+  have k1 := h0.trans h1
+  have c1 := c0.chg h1 (by decide)
+  refine four_ok hg (by decide) c1 (by decide)
+    (by rw [k1.rd,k1.wr,k1.gpr]; exact ha 2 (by decide))
+    (by rw [k1.rd,k1.wr,k1.gpr]; exact hh 2 (by decide)) fun c h2 w2=>?_
+  have k2 := k1.trans h2
+  have c2 := c1.chg h2 (by decide)
+  refine four_ok hg (by decide) c2 (by decide)
+    (by rw [k2.rd,k2.wr,k2.gpr]; exact ha 3 (by decide))
+    (by rw [k2.rd,k2.wr,k2.gpr]; exact hh 3 (by decide)) fun t h3 w3=>?_
+  refine k t ((k2.trans h3).mono (by decide)) (c2.chg h3 (by decide)) ?_
+  intro j hj e he
+  rcases (show j=0∨j=1∨j=2∨j=3 by omega) with rfl|rfl|rfl|rfl
+  · change vword (t.v .v0) e=_
+    rw [h3.get .v0 (by decide),h2.get .v0 (by decide),h1.get .v0 (by decide),w0 e he]
+  · change vword (t.v .v1) e=_
+    rw [h3.get .v1 (by decide),h2.get .v1 (by decide),w1 e he,h0.mem,h0.gpr]
+  · change vword (t.v .v2) e=_
+    rw [h3.get .v2 (by decide),w2 e he,k1.mem,k1.gpr]
+  · change vword (t.v .v3) e=_
+    rw [w3 e he,k2.mem,k2.gpr]
+
+end VG.Proof.MlDsa.AArch64.Optimized.UseHintPack
+
+end
+
+/-! ## From `UseHintPackGroup.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.UseHintPack
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Proof.MlDsa.AArch64.Round
+open VG.Proof.MlKem.AArch64 (Keep VChg)
+open HighPack (packWidth)
+
+def groupCode (g : Nat) : List Instr :=
+  loadFour g++Impl.MlDsa.AArch64.Optimized.HighPack.packTail (packWidth g)
+
+structure GroupPost (g block : Nat) (h a : Addr) (s t : State) : Prop where
+  keep : Keep [.x9] s t
+  vec : ∀r,r∉temps→t.v r=s.v r
+  ready : Ready g t
+  frame : Frame [⟨s.gpr .x1,2*packWidth g⟩] s.mem t.mem
+  bytes : ∀i<2*packWidth g,t.mem (s.gpr .x1+BitVec.ofNat 64 i)=
+    (packed g s.mem h a)[2*packWidth g*block+i]!
+
+ theorem group_ok {g : Nat} (hg : IsG g) {block : Nat} (hb : block<16)
+    {h a : Addr} {s : State} (hr : Reduced s.mem a) (hc : Ready g s)
+    (hp : s.gpr .x5=a+BitVec.ofNat 64 (64*block))
+    (hhp : s.gpr .x4=h+BitVec.ofNat 64 (64*block))
+    (ha : ∀j<4,InRegions (s.rd++s.wr) (s.gpr .x5+BitVec.ofNat 64 (16*j)) 16)
+    (hh : ∀j<4,InRegions (s.rd++s.wr) (s.gpr .x4+BitVec.ofNat 64 (16*j)) 16)
+    (hw8 : InRegions s.wr (s.gpr .x1) 8)
+    (hw4 : packWidth g=6→InRegions s.wr (s.gpr .x1+8) 4)
+    {rest : List Instr} {Q : State→Prop}
+    (k : ∀t,GroupPost g block h a s t→WP isa (.block rest) t Q) :
+    WP isa (.block (groupCode g++rest)) s Q := by
+  unfold groupCode
+  rw [List.append_assoc]
+  refine loadFour_ok hg hc ha hh fun u hu cu hv=>?_
+  refine HighPack.packTail_ok hg cu.toPackReady (by rw [hu.wr,hu.gpr];exact hw8)
+    (fun h=>by rw [hu.wr,hu.gpr];exact hw4 h) fun t ht=>?_
+  refine k t ⟨(hu.keep.trans ht.keep).mono (by decide),?_,?_,?_,?_⟩
+  · intro r hr
+    rw [ht.vec r (by intro h;exact hr (by simp only [temps,List.mem_cons,List.not_mem_nil,or_false] at *;grind only)),hu.get r hr]
+  · refine ⟨ht.ready,?_,?_,?_⟩
+    · intro e he;rw [ht.vec .v21 (by decide)];exact cu.factor e he
+    · intro e he;rw [ht.vec .v22 (by decide)];exact cu.one e he
+    · intro e he;rw [ht.vec .v23 (by decide)];exact cu.z e he
+  · simpa only [hu.gpr,hu.mem] using ht.frame
+  · intro i hi
+    have hx:=ht.bytes i hi
+    rw [hu.gpr] at hx
+    rw [hx]
+    exact packed_fields_byte hg hr cu.toPackConstants hb hi (by simpa only [hp,hhp] using hv)
+
+end VG.Proof.MlDsa.AArch64.Optimized.UseHintPack
+
+end
+
+/-! ## From `UseHintPackBody.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.UseHintPack
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Proof.MlDsa.AArch64.Round
+open HighPack (packWidth)
+
+def advance (g : Nat) : List Instr :=
+  [.addImm .x .x4 .x4 64,.addImm .x .x5 .x5 64,.addImm .x .x1 .x1 (2*packWidth g),.subImm .x .x11 .x11 1]
+
+theorem advance_ok (s : State) {g : Nat} (hg : IsG g) :
+    WP isa (.block (advance g)) s fun t =>
+      t.gpr .x4=s.gpr .x4+64 ∧ t.gpr .x5=s.gpr .x5+64 ∧
+      t.gpr .x1=s.gpr .x1+BitVec.ofNat 64 (2*packWidth g) ∧ t.gpr .x11=s.gpr .x11-1 ∧
+      (∀r,r≠.x4→r≠.x5→r≠.x1→r≠.x11→t.gpr r=s.gpr r) ∧
+      t.v=s.v ∧ t.mem=s.mem ∧ t.rd=s.rd ∧ t.wr=s.wr ∧ t.sp=s.sp := by
+  let a := s.write .x .x4 (s.gpr .x4+64)
+  let b := a.write .x .x5 (a.gpr .x5+64)
+  let c := b.write .x .x1 (b.gpr .x1+BitVec.ofNat 64 (2*packWidth g))
+  let t := c.write .x .x11 (c.gpr .x11-1)
+  refine WP.block_cons_iff.mpr ⟨a,rfl,?_⟩
+  refine WP.block_cons_iff.mpr ⟨b,rfl,?_⟩
+  refine WP.block_cons_iff.mpr ⟨c,?_,?_⟩
+  · have hw : 2*packWidth g<4096 := by rcases hg with rfl|rfl <;> decide
+    simp [isa,exec,hw,State.read,c]
+  refine WP.block_cons_iff.mpr ⟨t,rfl,?_⟩
+  apply WP.block_nil_iff.mpr
+  dsimp only [t,c,b,a]
+  simp only [RegUpd.gpr_write,Size.bits,BitVec.setWidth_eq]
+  simp only [show Reg.x4≠.x11 by decide,show Reg.x4≠.x1 by decide,show Reg.x4≠.x5 by decide,
+    show Reg.x5≠.x11 by decide,show Reg.x5≠.x1 by decide,show Reg.x5≠.x4 by decide,
+    show Reg.x1≠.x11 by decide,show Reg.x1≠.x5 by decide,show Reg.x1≠.x4 by decide,
+    show Reg.x11≠.x1 by decide,show Reg.x11≠.x5 by decide,show Reg.x11≠.x4 by decide,ite_false,ite_true,true_and]
+  constructor
+  · intro r h4 h5 h1 h11;simp only [h4,h5,h1,h11,ite_false]
+  · exact ⟨rfl,rfl,rfl,rfl,rfl⟩
+
+theorem Ready.sameVectors {g : Nat} {s t : State} (h : Ready g s) (hv : t.v=s.v) :
+    Ready g t := by
+  refine ⟨⟨⟨?_,?_,?_,?_⟩,⟨?_,?_,?_,?_⟩⟩,?_,?_,?_⟩
+  · rw [hv]; exact h.add
+  · rw [hv]; exact h.mul
+  · rw [hv]; exact h.round
+  · rw [hv]; exact h.modulus
+  · rw [hv]; exact h.zero
+  · rw [hv]; exact h.idx29
+  · rw [hv]; exact h.idx24
+  · rw [hv]; exact h.idx25
+  · intro e he;rw [hv];exact h.factor e he
+  · intro e he;rw [hv];exact h.one e he
+  · intro e he;rw [hv];exact h.z e he
+
+structure BodyPost (g block : Nat) (b a : Addr) (s t : State) : Prop where
+  ready : Ready g t
+  hints : t.gpr .x4=s.gpr .x4+64
+  input : t.gpr .x5=s.gpr .x5+64
+  output : t.gpr .x1=s.gpr .x1+BitVec.ofNat 64 (2*packWidth g)
+  count : t.gpr .x11=s.gpr .x11-1
+  gpr : ∀ r, r≠.x4 → r≠.x5 → r≠.x1 → r≠.x9 → r≠.x11 → t.gpr r=s.gpr r
+  vec : ∀ r, r∉temps → t.v r=s.v r
+  frame : Frame [⟨s.gpr .x1,2*packWidth g⟩] s.mem t.mem
+  bytes : ∀ i<2*packWidth g, t.mem (s.gpr .x1+BitVec.ofNat 64 i)=
+    (packed g s.mem b a)[(2*packWidth g)*block+i]!
+  rd : t.rd=s.rd
+  wr : t.wr=s.wr
+  sp : t.sp=s.sp
+
+/-- Complete loop body, including exact pointer and public counter updates. -/
+theorem body_ok {g : Nat} (hg : IsG g) {block : Nat} (hb : block<16)
+    {b a : Addr} {s : State} (hr : Reduced s.mem a) (hc : Ready g s)
+    (hp : s.gpr .x5=a+BitVec.ofNat 64 (64*block))
+    (hbptr : s.gpr .x4=b+BitVec.ofNat 64 (64*block))
+    (hhin : ∀j<4,InRegions (s.rd++s.wr) (s.gpr .x4+BitVec.ofNat 64 (16*j)) 16)
+    (hin : ∀ j<4, InRegions (s.rd++s.wr) (s.gpr .x5+BitVec.ofNat 64 (16*j)) 16)
+    (hw8 : InRegions s.wr (s.gpr .x1) 8)
+    (hw4 : packWidth g=6 → InRegions s.wr (s.gpr .x1+8) 4) :
+    WP isa (.block (groupCode g ++ advance g)) s (BodyPost g block b a s) := by
+  refine group_ok hg hb hr hc hp hbptr hin hhin hw8 hw4 fun u hu => ?_
+  refine WP.mono (advance_ok u hg) fun t ht => ?_
+  refine ⟨hu.ready.sameVectors ht.2.2.2.2.2.1,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
+  · rw [ht.1,hu.keep.get .x4]
+  · rw [ht.2.1,hu.keep.get .x5]
+  · rw [ht.2.2.1,hu.keep.get .x1]
+  · rw [ht.2.2.2.1,hu.keep.get .x11]
+  · intro r h4 h0 h1 h9 h11
+    rw [ht.2.2.2.2.1 r h4 h0 h1 h11,hu.keep.get r (by simpa using h9)]
+  · intro r hr
+    rw [ht.2.2.2.2.2.1,hu.vec r hr]
+  · rw [ht.2.2.2.2.2.2.1]; exact hu.frame
+  · intro i hi
+    rw [ht.2.2.2.2.2.2.1]; exact hu.bytes i hi
+  · exact ht.2.2.2.2.2.2.2.1.trans hu.keep.rd
+  · exact ht.2.2.2.2.2.2.2.2.1.trans hu.keep.wr
+  · exact ht.2.2.2.2.2.2.2.2.2.trans hu.keep.sp
+
+end VG.Proof.MlDsa.AArch64.Optimized.UseHintPack
+
+end
+
+/-! ## From `UseHintPackMemory.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.UseHintPack
+open VG VG.AArch64 VG.Spec.MlDsa
+open HighPack (packWidth)
+open VG.Proof.MlDsa.Arith (polyRegion)
+
+ theorem packed_frame {g : Nat} {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {b a : Addr}
+    (hb : ∀r∈rs,(polyRegion b).Disjoint r) (ha : ∀r∈rs,(polyRegion a).Disjoint r) :
+    packed g m' b a=packed g m b a := by
+  unfold packed
+  apply congrArg (fun L=>simpleBitPack L ((q-1)/(2*g)-1))
+  apply Vector.ext
+  intro i hi
+  simp only [fields,Vector.getElem_ofFn]
+  rw [VG.Proof.MlDsa.Arith.coeffAt_frame hf ha hi,VG.Proof.MlDsa.Arith.coeffAt_frame hf hb hi]
+
+ theorem packed_length {g : Nat} (hg : Round.IsG g) (m : Mem) (b a : Addr) :
+    (packed g m b a).length=32*packWidth g := by
+  have hw : bitlen ((q-1)/(2*g)-1)=packWidth g := by rcases hg with rfl|rfl <;> rfl
+  rw [packed,VG.Proof.MlDsa.Pack.simpleBitPack_eq,hw]
+  exact VG.Proof.MlDsa.Pack.pack_length _ _ (by simp)
+
+end VG.Proof.MlDsa.AArch64.Optimized.UseHintPack
+
+end
+
+/-! ## From `UseHintPackLoop.lean` -/
+
+section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.UseHintPack
 open VG VG.AArch64 VG.Spec.MlDsa
@@ -128,3 +393,5 @@ theorem LoopState.output_bytes {s₀ s : State} {b a o : Addr} {g : Nat}
     omega
 
 end VG.Proof.MlDsa.AArch64.Optimized.UseHintPack
+
+end

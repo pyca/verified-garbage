@@ -1,7 +1,103 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttContract
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.StaticCore
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryTraversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Spec.MlDsa.PositiveNtt
+import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.NttTable
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableArtifact
+import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttSat
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+
+/-! ## From `NttContract.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.Optimized.Ntt
+
+def positiveNttK : Contract isa where
+  pre s := expandedRegion (s.syms "VG_MLDSA_NTT_EXPANDED") ∈ s.rd++s.wr ∧
+    outputRegion (s.gpr .x0) ∈ s.wr ∧
+    (expandedRegion (s.syms "VG_MLDSA_NTT_EXPANDED")).Disjoint (outputRegion (s.gpr .x0)) ∧
+    ExpandedArtifact s.mem (s.syms "VG_MLDSA_NTT_EXPANDED") ∧ Reduced s.mem (s.gpr .x0)
+  post s t := PositivePolyIs t.mem (s.gpr .x0) (ntt (polyAt s.mem (s.gpr .x0)))
+  pub s t := s.gpr .x0=t.gpr .x0 ∧ s.sp=t.sp ∧
+    s.syms "VG_MLDSA_NTT_EXPANDED"=t.syms "VG_MLDSA_NTT_EXPANDED"
+
+theorem positiveNtt_correct (s : State) (hp : positiveNttK.pre s) :
+    ∃ trace t, Exec isa staticNtt s trace t ∧ abiPreserved s t ∧ positiveNttK.post s t := by
+  obtain ⟨htr,hw,hsep,ht,hred⟩ := hp
+  obtain ⟨tr,t,he,hk,hf,hm⟩ := staticNtt_words_ok ht htr hw hsep
+  have hv := nttMemory_field (m := s.mem) (p := s.gpr .x0) ⟨hred,rfl⟩
+  rw [← hm] at hv
+  refine ⟨tr,t,he,⟨?_,hk.sp,hk.vcs⟩,hv.bound,hv.value⟩
+  intro r hr
+  apply hk.gpr r
+  simp only [preserved,List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+
+theorem positiveNtt_ct : ConstantTime isa positiveNttK.pre positiveNttK.pub staticNtt := by
+  intro s t tr₁ tr₂ s' t' _ _ hp he₁ he₂
+  apply staticNtt_ct s t tr₁ tr₂ s' t' trivial trivial ?_ he₁ he₂
+  refine ⟨VG.Proof.MlKem.AArch64.agree_of hp.2.1 ?_,?_⟩
+  · intro r hr
+    have he : r=.x0 := by simpa only [List.mem_singleton] using hr
+    subst r; exact hp.1
+  · intro name hn
+    have he : name="VG_MLDSA_NTT_EXPANDED" := by simpa only [List.mem_singleton] using hn
+    subst name; exact hp.2.2
+
+end VG.Proof.MlDsa.AArch64.Optimized
+
+end
+
+/-! ## From `NttSat.lean` -/
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.Optimized.Ntt
+
+def nttSat : State where
+  gpr r := if r=.x0 then 4096 else 0
+  sp := 131072
+  syms _ := 65536
+  mem := constMem 65536 staticNttWords
+  rd := [⟨65536,3904⟩]
+  wr := [⟨4096,1024⟩]
+
+theorem nttSat_held : ∀ i<488,
+    nttSat.mem.readW (65536+BitVec.ofNat 64 (8*i)) 64=staticNttWords.getD i 0 := by
+  intro i hi
+  dsimp only [nttSat]
+  exact constMem_held 65536 staticNttWords (by rw [TableConstants.staticNttWords_length]; decide)
+    i (by rw [TableConstants.staticNttWords_length]; exact hi)
+
+theorem nttSat_reduced : Reduced nttSat.mem 4096 := by
+  intro i hi
+  simp only [nttSat,coeffAt,Mem.readW,BitVec.setWidth_eq]
+  rw [Mem.read_eq_of_bytes (v := (0#32)) ?_]
+  · decide
+  · intro j hj
+    have ha : ¬ ((4096+BitVec.ofNat 64 (4*i)+BitVec.ofNat 64 j)-65536).toNat<8*staticNttWords.length := by
+      rw [TableConstants.staticNttWords_length]
+      have hi' : i<256 := hi
+      simp only [BitVec.toNat_sub,BitVec.toNat_add,BitVec.toNat_ofNat,show (4096:BitVec 64).toNat=4096 by decide,
+        show (65536:BitVec 64).toNat=65536 by decide]
+      omega
+    simp only [constMem,ha,ite_false]
+    simp
+
+end VG.Proof.MlDsa.AArch64.Optimized
+
+end
+
+/-! ## From `NttVerified.lean` -/
+
+section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized
 open VG VG.AArch64 VG.Spec.MlDsa
@@ -60,3 +156,5 @@ theorem positiveNtt_verified : Verified target staticNtt
     exact ⟨h.2.2,h.1,h.2.1⟩
 
 end VG.Proof.MlDsa.AArch64.Optimized
+
+end
