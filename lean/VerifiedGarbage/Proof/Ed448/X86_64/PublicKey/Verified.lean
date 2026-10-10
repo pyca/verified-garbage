@@ -246,7 +246,7 @@ theorem body_ct (hb : Proof.Ed448.BaseLadderOk) : RelCT isa (Two fun _ _ => True
       WP.mono (baseArgs_ok hc) fun _ ⟨hc', _, ha⟩ => ⟨hc', ha⟩
   have b₂ := two_callP (n := "vg_ed448_scalar_base") (Φ := BaseArgs)
     (Proof.Ed448.X86_64.scalarBase_ok hb) Proof.Ed448.X86_64.scalarBase_ct
-    base_nosp base_depth baseRd baseWr (fun _ _ _ _ _ hL hc ha => base_pre hL hc ha)
+    base_nosp base_depth baseRd baseWr (fun _ _ _ _ _ hL hc ha => ⟨base_pre hL hc ha, base_clear hL hc⟩)
     (fun L t₁ t₂ _ _ _ _ _ _ c₁ c₂ a₁ a₂ => by
       obtain ⟨d₁, s₁, x₁⟩ := base_regs a₁ (baseRd L) (baseWr L)
       obtain ⟨d₂, s₂, x₂⟩ := base_regs a₂ (baseRd L) (baseWr L)

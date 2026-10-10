@@ -79,4 +79,29 @@ theorem invert_eq (z : Fe) : invert z = pow z (P - 2) := by
   simp only [invert, pw_mul, sqn_pw]
   exact congrArg (pw z) (by decide +kernel)
 
+/-- The chain as far as `z^(2²²² - 1)`. -/
+def c222 (z : Fe) : Fe :=
+  let t2 := sqn z 1 * z            -- 2^2 - 1
+  let t4 := sqn t2 2 * t2          -- 2^4 - 1
+  let t8 := sqn t4 4 * t4          -- 2^8 - 1
+  let t16 := sqn t8 8 * t8         -- 2^16 - 1
+  let t32 := sqn t16 16 * t16      -- 2^32 - 1
+  let t64 := sqn t32 32 * t32      -- 2^64 - 1
+  let t128 := sqn t64 64 * t64     -- 2^128 - 1
+  let t192 := sqn t128 64 * t64    -- 2^192 - 1
+  let t208 := sqn t192 16 * t16    -- 2^208 - 1
+  let t216 := sqn t208 8 * t8      -- 2^216 - 1
+  let t220 := sqn t216 4 * t4      -- 2^220 - 1
+  sqn t220 2 * t2                  -- 2^222 - 1
+
+/-- `z^(2²²³ - 1)`, from `c222`. -/
+def c223 (z : Fe) : Fe := sqn (c222 z) 1 * z
+
+theorem c222_eq (z : Fe) : c222 z = pw z (2 ^ 222 - 1) := by
+  rw [← congrArg c222 (pw_one z)]
+  simp only [c222, pw_mul, sqn_pw]
+
+theorem c223_eq (z : Fe) : c223 z = pw z (2 ^ 223 - 1) := by
+  rw [c223, c222_eq, sqn_pw, ← congrArg (_ * ·) (pw_one z), pw_mul]
+
 end VG.Proof.X448

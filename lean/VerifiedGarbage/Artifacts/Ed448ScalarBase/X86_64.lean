@@ -19,11 +19,13 @@ def artifacts : List Artifact := [
       bytes, then for each bit from the top doubles `R` and adds the base point to it with \
       RFC 8032's projective formulas, and swaps the sum into `R` with a mask of the bit: the \
       same operations for every bit. Field elements are X448's seven 64-bit words, multiplied \
-      with `mul` by columns; `Z` is inverted with X448's addition chain for `p - 2`. \
+      with `mul` by columns; `Z` is inverted with X448's addition chain for `p - 2`, its part \
+      shared with the square root by a call of `vg_gf448_r64_pow223`. \
       Callee-saved registers are saved in the first 48 bytes of `scratch`, and the output's \
       address in the next 8."])
     code := Impl.Ed448.X86_64.scalarBase
-    contract := Spec.Ed448.scalarBaseContract X86_64.abi
+    contract := Spec.Ed448.scalarBaseContract X86_64.abi 8
+    stack := 8
     verified := Proof.Ed448.X86_64.scalarBase_verified Proof.Ed448.baseLadder_ok
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

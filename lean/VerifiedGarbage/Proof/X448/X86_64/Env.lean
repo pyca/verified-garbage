@@ -45,6 +45,14 @@ theorem E_update {base : Addr} {m m' : Mem} {o : Index}
     show toFe (mv m' base (slot i.val) 7) = toFe (mv m base (slot i.val) 7)
     rw [h.mv (slot_sep hi) (Or.inl (by simp only [ACC]; omega)) (by omega)]
 
+theorem E_outside {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (i : Index)
+    (hi : slot i.val + 56 ≤ o ∨ o + n ≤ slot i.val) : E m' base i = E m base i := by
+  have := slot_lt i
+  simp only [ACC] at this
+  simp only [E, F]
+  show toFe (mv m' base (slot i.val) 7) = toFe (mv m base (slot i.val) 7)
+  rw [h.mv (by omega) (by omega)]
+
 /-- What the field operations keep: the registers but `clob`, the regions,
 and the memory outside `[64, 1648)`. -/
 structure Keep (base : Addr) (s s' : State) : Prop where

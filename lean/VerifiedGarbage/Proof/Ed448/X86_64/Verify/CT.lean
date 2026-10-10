@@ -73,14 +73,12 @@ theorem eq_tr (hv : EqOk) (hct : EqCT) {Φ : Lay → Mem → State → Prop} :
     (fun L g mx m₀ t t1 hL hc _ hm => ?_)
     (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 _ _ c₁ c₂ _ _ f₁ f₂ => ?_) fun L _ _ _ _ hL _ _ => ?_
   · obtain ⟨g1, g2, g3, g4, g5⟩ := regs L g mx m₀ t t1 hc hm
-    simp only [Proof.Ed448.X86_64.verifyEquationLocal, gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp),
-      gpr_ce _ _ _ (by decide : Reg.rsi ≠ .rsp), gpr_ce _ _ _ (by decide : Reg.rdx ≠ .rsp),
-      gpr_ce _ _ _ (by decide : Reg.rcx ≠ .rsp), rsp_ce, g1, g2, g3, g4, g5, sp_sub8, State.withRegions_rd,
-      State.withRegions_wr]
-    exact ⟨trivial, trivial, hL.xPk.symm, hL.xSig.symm, k_x' hL, ret_x hL, hL.nScr⟩
+    exact eq_cpre hL ((gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp)).trans g1)
+      ((gpr_ce _ _ _ (by decide : Reg.rsi ≠ .rsp)).trans g2) ((gpr_ce _ _ _ (by decide : Reg.rdx ≠ .rsp)).trans g3)
+      ((gpr_ce _ _ _ (by decide : Reg.rcx ≠ .rsp)).trans g4) (by rw [rsp_ce, g5, sp_sub8]) rfl rfl
   · obtain ⟨x1, x2, x3, x4, x5⟩ := regs L g₁ mx₁ m₁ a a1 c₁ f₁
     obtain ⟨y1, y2, y3, y4, y5⟩ := regs L g₂ mx₂ m₂ b b1 c₂ f₂
-    simp only [Proof.Ed448.X86_64.verifyEquationLocal, gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp),
+    simp only [Contract.clear, Proof.Ed448.X86_64.verifyEquationLocal, gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp),
       gpr_ce _ _ _ (by decide : Reg.rsi ≠ .rsp), gpr_ce _ _ _ (by decide : Reg.rdx ≠ .rsp),
       gpr_ce _ _ _ (by decide : Reg.rcx ≠ .rsp), rsp_ce, x1, x2, x3, x4, x5, y1, y2, y3, y4, y5, and_self]
   · refine ⟨fun r hr => ?_, fun r hr => ?_⟩

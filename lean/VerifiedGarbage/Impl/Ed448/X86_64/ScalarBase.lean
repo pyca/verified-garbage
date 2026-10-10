@@ -31,7 +31,7 @@ plus a constant or a counter, so only the pointers can affect timing.
 namespace VG.Impl.Ed448.X86_64
 
 open VG.X86_64
-open VG.Impl.X448.X86_64 (at_ sc W w loads stores slot Field add sub cswap freeze invert BITS bitAt)
+open VG.Impl.X448.X86_64 (at_ sc W w loads stores slot Field add sub cswap freeze invert invertCall BITS bitAt)
 
 /-! ## Field programs on the slots -/
 
@@ -119,10 +119,13 @@ def encode (F : Field) : List Instr :=
     ((List.range 7).map (fun i => .store (at_ .rax (8 * i)) (w i)) ++
     ([.store8 (at_ .rax 56) .rsi] ++ Impl.X448.X86_64.restore)))))))
 
-/-- `vg_ed448_scalar_base` with the field multiplications `F`. -/
-def scalarBaseWith (F : Field) : Prog isa :=
-  .seq (.block entry) <| .seq bits <| .seq (.block stashOut) <| .seq (mulLoop F) <| .seq (invert F) (.block (encode F))
+/-- `vg_ed448_scalar_base` with the field multiplications `F` and the inversion `inv`
+(`invert F`, or `invertCall F`, which calls `vg_gf448_r64_pow223`). -/
+def scalarBaseWith (F : Field) (inv : Prog isa := invert F) : Prog isa :=
+  .seq (.block entry) <| .seq bits <| .seq (.block stashOut) <| .seq (mulLoop F) <| .seq inv (.block (encode F))
 
-def scalarBase : Prog isa := scalarBaseWith Impl.X448.X86_64.baseline
+/-- The inversion calls `vg_gf448_r64_pow223`, keeping the output's address at `OUT`. -/
+def scalarBase : Prog isa :=
+  scalarBaseWith Impl.X448.X86_64.baseline (invertCall Impl.X448.X86_64.baseline [OUT])
 
 end VG.Impl.Ed448.X86_64

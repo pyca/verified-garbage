@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Spec.X448.Field64
 
 /-!
 # X448: x86-64 implementation
@@ -105,6 +106,9 @@ def loads : Nat → List Reg → List Instr
 def stores : Nat → List Reg → List Instr
   | _, [] => []
   | o, r :: rs => .store (sc o) r :: stores (o + 8) rs
+
+/-- The seven words at `a` to `o`. -/
+def copyOut (o a : Nat) : List Instr := loads a W ++ stores o W
 
 /-- `op` on the first pair, `op'` on the others: an addition (subtraction)
 with carries (borrows) along the words. -/
@@ -320,8 +324,11 @@ def bits : Prog isa :=
 `[T7] = [Z2]^(p-2)`, by the addition chain `invert` of
 `Proof/X448/Invert.lean`. -/
 
-def invert (F : Field) : Prog isa :=
-  .seq (sqn F T0 Z2 1) <| .seq (.block (F.mul T0 T0 Z2)) <|        -- z^(2^2 - 1)
+/-- The addition chain of `invert` as far as `[T7] = [z]^(2^223 - 1)` and
+`[T6] = [z]^(2^222 - 1)`, for the element at `z` (through `T0`–`T5`): what
+inversion and Ed448's square root share (`vg_gf448_r64_pow223`). -/
+def chain223 (F : Field) (z : Nat) : Prog isa :=
+  .seq (sqn F T0 z 1) <| .seq (.block (F.mul T0 T0 z)) <|          -- z^(2^2 - 1)
   .seq (sqn F T1 T0 2) <| .seq (.block (F.mul T1 T1 T0)) <|        -- z^(2^4 - 1)
   .seq (sqn F T2 T1 4) <| .seq (.block (F.mul T2 T2 T1)) <|        -- z^(2^8 - 1)
   .seq (sqn F T3 T2 8) <| .seq (.block (F.mul T3 T3 T2)) <|        -- z^(2^16 - 1)
@@ -333,9 +340,56 @@ def invert (F : Field) : Prog isa :=
   .seq (sqn F T6 T6 8) <| .seq (.block (F.mul T6 T6 T2)) <|        -- z^(2^216 - 1)
   .seq (sqn F T6 T6 4) <| .seq (.block (F.mul T6 T6 T1)) <|        -- z^(2^220 - 1)
   .seq (sqn F T6 T6 2) <| .seq (.block (F.mul T6 T6 T0)) <|        -- z^(2^222 - 1)
-  .seq (sqn F T7 T6 1) <| .seq (.block (F.mul T7 T7 Z2)) <|        -- z^(2^223 - 1)
+  .seq (sqn F T7 T6 1) (.block (F.mul T7 T7 z))                    -- z^(2^223 - 1)
+
+/-- From `chain223` of `Z2`: `[T7] = [Z2]^(p - 2)`. -/
+def invTail (F : Field) : Prog isa :=
   .seq (sqn F T7 T7 225) <| .seq (sqn F T6 T6 2) <|
     .block (F.mul T6 T6 Z2 ++ F.mul T7 T7 T6)                     -- z^(p - 2)
+
+def invert (F : Field) : Prog isa := .seq (chain223 F Z2) (invTail F)
+
+/-! ## The chain as a function
+
+`vg_gf448_r64_pow223` (`Spec/X448/Field64.lean`): `chain223` of slot 12,
+with the baseline's multiplications, between a save of the callee-saved
+registers it writes (`rbx`, `rbp`, `r12`–`r15`) at `SAVE`, in its own
+working space, and their restore. -/
+
+/-- Where the function saves the registers: the 48 bytes from 1472, between
+`T7` and `ACC`. -/
+def SAVE : Nat := 1472
+
+/-- The registers the function saves, and where. -/
+def powSaved : List (Reg × Nat) :=
+  [(.rbx, SAVE), (.rbp, SAVE + 8), (.r12, SAVE + 16), (.r13, SAVE + 24), (.r14, SAVE + 32),
+    (.r15, SAVE + 40)]
+
+def powSave : List Instr := powSaved.map fun (r, d) => .store (sc d) r
+
+def powRestore : List Instr := powSaved.map fun (r, d) => .mov r (.mem (sc d))
+
+/-- `vg_gf448_r64_pow223`. -/
+def pow223Fn : Prog isa := .seq (.block powSave) (.seq (chain223 baseline (slot 12)) (.block powRestore))
+
+/-- A call of `vg_gf448_r64_pow223`. -/
+def pow223Call : Prog isa := .call Spec.X448.Field64.pow223Api.name pow223Fn
+
+/-- The registers that carry the words at `keep` across a call (`pow223Keep`), which the
+function restores. -/
+def keepRegs : List Reg := [.r12, .r13]
+
+/-- A call of `vg_gf448_r64_pow223` that keeps the words at the offsets `keep` (at most
+two) in `keepRegs` across it and stores them back: the same values, but public again for
+a taint analysis, which forgets the working space's public words at a call. -/
+def pow223Keep (keep : List Nat) : Prog isa :=
+  .seq (.block ((keepRegs.zip keep).map fun (r, d) => .mov r (.mem (sc d))))
+    (.seq pow223Call (.block ((keepRegs.zip keep).map fun (r, d) => .store (sc d) r)))
+
+/-- `invert` by a call: `Z2` copied to slot 12, the chain called (keeping the words at
+`keep`), then `invTail`. -/
+def invertCall (F : Field) (keep : List Nat := []) : Prog isa :=
+  .seq (.block (copyOut (slot 12) Z2)) (.seq (pow223Keep keep) (invTail F))
 
 /-! ## Encoding and decoding -/
 
@@ -382,15 +436,15 @@ def lastSwap : List Instr :=
   cswap X2 X3 ++ cswap Z2 Z3
 
 /-- X448 with the ladder `lad` (which leaves the ladder's final state in the
-working space as `ladder` does) and the field multiplications `F` for the
-inversion. -/
-def x448Of (F : Field) (lad : Prog isa) : Prog isa :=
+working space as `ladder` does), the field multiplications `F` for the
+inversion's end, and the inversion `inv` (`invert F`, or `invertCall F`). -/
+def x448Of (F : Field) (lad : Prog isa) (inv : Prog isa := invert F) : Prog isa :=
   .seq (.block setup) <| .seq bits <| .seq (.block [.mov .rsi (.reg .r15)]) <| .seq lad <|
-    .seq (.block lastSwap) <| .seq (invert F) (.block (finish F))
+    .seq (.block lastSwap) <| .seq inv (.block (finish F))
 
 /-- X448 with the field multiplications `F`. -/
 def x448With (F : Field) : Prog isa := x448Of F (ladder F)
 
-def x448 : Prog isa := x448With baseline
+def x448 : Prog isa := x448Of baseline (ladder baseline) (invertCall baseline)
 
 end VG.Impl.X448.X86_64

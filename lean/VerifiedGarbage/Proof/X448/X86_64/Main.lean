@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.X448.X86_64.Finish
-import VerifiedGarbage.Proof.X448.X86_64.Inv
+import VerifiedGarbage.Proof.X448.X86_64.InvCall
 import VerifiedGarbage.Spec.X448.Contract
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -78,14 +78,6 @@ theorem bytesAt_outside {base p : Addr} {m m' : Mem} (h : Outside base 0 8192 m 
   simp only [List.mem_range] at hi
   exact hp i hi
 
-theorem E_outside {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (i : Index)
-    (hi : slot i.val + 56 ≤ o ∨ o + n ≤ slot i.val) : E m' base i = E m base i := by
-  have := slot_lt i
-  simp only [ACC] at this
-  simp only [E, F]
-  show toFe (mv m' base (slot i.val) 7) = toFe (mv m base (slot i.val) 7)
-  rw [h.mv (by omega) (by omega)]
-
 theorem Outside.frame {base : Addr} {m m' : Mem} (h : Outside base 0 8192 m m') :
     Frame [⟨base, 8192⟩] m m' := fun x hx => h x (Or.inr (by
   have := hx _ (List.mem_singleton_self _)
@@ -106,18 +98,20 @@ variable {fld : Field} (hf : FieldOk fld)
 theorem finish_eq : finish fld = fld.mul X2 X2 T7 ++ (freeze X2 ++ (storesR .rsi 0 W ++ restore)) := by
   simp only [finish, List.append_assoc, outStores_eq]
 
-theorem x448_eq' (lad : Prog isa) : x448Of fld lad = .seq (.block setup) (.seq bits (.seq
+theorem x448_eq' (lad inv : Prog isa) : x448Of fld lad inv = .seq (.block setup) (.seq bits (.seq
     (.block ([.mov .rsi (.reg .r15)] : List Instr)) (.seq lad (.seq (.block lastSwap)
-    (.seq (Impl.X448.X86_64.invert fld) (.block (finish fld))))))) := rfl
+    (.seq inv (.block (finish fld))))))) := rfl
 
 include hf in
 /-- X448 with any ladder `lad` that leaves the ladder's final state as
-`ladder` does (`LPost`). -/
-theorem correct_of {lad : Prog isa}
+`ladder` does (`LPost`), and any inversion `inv` that keeps and computes what
+`invert` does (`InvPost`). -/
+theorem correct_of {lad inv : Prog isa}
     (hlad : ∀ {s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe}, LPre base k u s →
       WP isa lad s (LPost base k u s))
+    (hinv : ∀ {s : State} {base : Addr}, Scr s base → WP isa inv s (InvPost base s))
     {s₀ : State} (hp : Pre s₀) :
-    WP isa (x448Of fld lad) s₀ fun s' => gprPreserved s₀ s' ∧ Proof.X448.x448X86_64.post s₀ s' := by
+    WP isa (x448Of fld lad inv) s₀ fun s' => gprPreserved s₀ s' ∧ Proof.X448.x448X86_64.post s₀ s' := by
   obtain ⟨base, hbase⟩ : ∃ b, s₀.gpr .rcx = b := ⟨_, rfl⟩
   have hn : base.toNat + 8192 ≤ 2 ^ 64 := hbase ▸ hp.sc_fit
   have hw₀ : (⟨base, 8192⟩ : Region) ∈ s₀.wr := by rw [hp.wr, ← hbase]; simp
@@ -158,7 +152,7 @@ theorem correct_of {lad : Prog isa}
           (n := 0) (by omega)
         omega) L.swap L.x2 L.z2 L.x3 L.z3) fun s₅ ⟨K₅, e1₅, e2₅⟩ => ?_)
   have hs₅ := K₅.scr L.scr
-  refine WP.seq (WP.mono (invert_ok hf hs₅) fun s₆ ⟨g₆, rd₆, wr₆, o₆, e₆⟩ => ?_)
+  refine WP.seq (WP.mono (hinv hs₅) fun s₆ ⟨g₆, rd₆, wr₆, o₆, e₆⟩ => ?_)
   have hs₆ : Scr s₆ base := ⟨(g₆ _ (by decide) (by decide)).trans hs₅.rdi, wr₆ ▸ hs₅.wr, hn⟩
   rw [finish_eq, WP.block_append_iff]
   refine WP.mono (mulE hf hs₆ 1 1 21) fun s₇ ⟨K₇, e₇⟩ => ?_
@@ -230,6 +224,16 @@ theorem correct_of {lad : Prog isa}
 include hf in
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa (x448With fld) s₀ fun s' => gprPreserved s₀ s' ∧ Proof.X448.x448X86_64.post s₀ s' :=
-  correct_of hf (fun h => ladder_post hf h) hp
+  correct_of hf (fun h => ladder_post hf h) (fun hs => invert_post hf hs) hp
+
+theorem x448_inline : Impl.X448.X86_64.x448.inline =
+    x448Of baseline (ladder baseline) (invertCall baseline []).inline := rfl
+
+/-- `vg_x448`, its call of `vg_gf448_r64_pow223` inlined. -/
+theorem correct_inline {s₀ : State} (hp : Pre s₀) :
+    WP isa Impl.X448.X86_64.x448.inline s₀ fun s' =>
+      gprPreserved s₀ s' ∧ Proof.X448.x448X86_64.post s₀ s' := by
+  rw [x448_inline]
+  exact correct_of baseline_ok (fun h => ladder_post baseline_ok h) (fun hs => invertCall_post baseline_ok (keep := []) (by simp) hs) hp
 
 end VG.Proof.X448.X86_64

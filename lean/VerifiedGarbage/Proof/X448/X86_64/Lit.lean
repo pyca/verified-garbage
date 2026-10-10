@@ -10,6 +10,7 @@ kernel-evaluated check.
 
 namespace VG
 
+materialize_code Impl.X448.X86_64.pow223Fn
 materialize_code Impl.X448.X86_64.x448
 
 end VG

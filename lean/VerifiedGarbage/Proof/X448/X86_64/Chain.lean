@@ -392,6 +392,19 @@ theorem unfold_ok (s : State) (h : (s.gpr .r15).toNat < 2 ^ 32) :
   simp only [wv, r15, toNat_zero64] at he
   omega_arith
 
+/-- The seven words at `a` to `o`. -/
+theorem copyOut_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : o + 56 ≤ 8192)
+    (ha : a + 56 ≤ 8192) :
+    WP isa (.block (copyOut o a)) s fun t =>
+      fe t.mem base o = fe s.mem base a ∧ Outside base o 56 s.mem t.mem ∧
+      (∀ r, r ∉ W → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  rw [copyOut, WP.block_append_iff]
+  refine WP.mono (loads_ok hs a W (by decide) (by decide) (by simp only [W]; omega))
+    fun u ⟨_, ru, ku⟩ => ?_
+  refine WP.mono (stores_ok (hs.of_keeps ku (by decide)) o W (by simp only [W]; omega))
+    fun t ⟨et, ot, gt, rdt, wrt⟩ =>
+      ⟨et.trans ru, ku.2.1 ▸ ot, fun r hr => (gt r).trans (ku.1 r hr), rdt.trans ku.2.2.1, wrt.trans ku.2.2.2⟩
+
 open VG.Spec.X448 (P) in
 /-- `fold2`: `r8–r14 + 2⁴⁴⁸ r15` modulo `p`, in seven words. -/
 theorem fold2_ok (s : State) (h : (s.gpr .r15).toNat < 2 ^ 32) :

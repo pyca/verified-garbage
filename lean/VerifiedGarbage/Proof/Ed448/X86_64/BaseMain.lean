@@ -19,7 +19,7 @@ namespace VG.Proof.Ed448.X86_64
 
 open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448
 open VG.Proof.X448.X86_64 (Scr Index Env E FieldOk word off Outside ofs Saved clob writeW_outside
-  word_writeW_self invert_ok setRbx_ok E_outside contains_sc ofs_off')
+  word_writeW_self invert_ok setRbx_ok E_outside contains_sc ofs_off' InvPost invert_post invertCall_post)
 open VG.Impl.X448.X86_64 (BITS slot)
 open VG.Spec.Ed448 (bytesAt decodeLE)
 
@@ -61,8 +61,11 @@ theorem stashOut_ok {s : State} {base : Addr} (hb : s.gpr .rdi = base)
 variable {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld)
 
 include hf in
-theorem scalarBase_correct (hL : BaseLadderOk) {s : State} (hp : scalarBaseLocal.pre s) :
-    WP isa (scalarBaseWith fld) s fun t => gprPreserved s t ∧ scalarBaseLocal.post s t := by
+/-- With any inversion `inv` that keeps and computes what `invert` does (`InvPost`). -/
+theorem scalarBase_correct_of (hL : BaseLadderOk) {inv : Prog isa}
+    (hinv : ∀ {s : State} {base : Addr}, Scr s base → WP isa inv s (InvPost base s))
+    {s : State} (hp : scalarBaseLocal.pre s) :
+    WP isa (scalarBaseWith fld inv) s fun t => gprPreserved s t ∧ scalarBaseLocal.post s t := by
   obtain ⟨hr, hw, hd, hro, hrs, hos, hn⟩ := hp
   obtain ⟨base, hbase⟩ : ∃ b, s.gpr .rdx = b := ⟨_, rfl⟩
   rw [hbase] at hd hrs hos hn
@@ -144,7 +147,7 @@ theorem scalarBase_correct (hL : BaseLadderOk) {s : State} (hp : scalarBaseLocal
   refine WP.mono (loop_ok hf hbits 456 s₅ (by decide) (by decide) I₅) fun s₆ I₆ => ?_
   -- The inversion of `Z`.
   apply WP.seq
-  refine WP.mono (invert_ok hf I₆.scr) fun s₇ ⟨g₇, rd₇, wr₇, o₇, e₇⟩ => ?_
+  refine WP.mono (hinv I₆.scr) fun s₇ ⟨g₇, rd₇, wr₇, o₇, e₇⟩ => ?_
   have hs₇ : Scr s₇ base := ⟨(g₇ _ (by decide) (by decide)).trans I₆.scr.rdi, wr₇ ▸ I₆.scr.wr, hn⟩
   -- The encoding.
   have hout₇ : word s₇.mem base OUT = s.gpr .rdi := by
@@ -183,5 +186,22 @@ theorem scalarBase_correct (hL : BaseLadderOk) {s : State} (hp : scalarBaseLocal
     rw [Nat.sub_zero] at r₆
     rw [bt, e₇, E_outside o₇ 0 (by decide), E_outside o₇ 1 (by decide)]
     exact encode_result hL r₆
+
+include hf in
+theorem scalarBase_correct (hL : BaseLadderOk) {s : State} (hp : scalarBaseLocal.pre s) :
+    WP isa (scalarBaseWith fld) s fun t => gprPreserved s t ∧ scalarBaseLocal.post s t :=
+  scalarBase_correct_of hf hL (fun hs => invert_post hf hs) hp
+
+theorem scalarBase_inline : scalarBase.inline =
+    scalarBaseWith Impl.X448.X86_64.baseline
+      (Impl.X448.X86_64.invertCall Impl.X448.X86_64.baseline [OUT]).inline :=
+  rfl
+
+/-- `vg_ed448_scalar_base`, its call of `vg_gf448_r64_pow223` inlined. -/
+theorem scalarBase_correct_inline (hL : BaseLadderOk) {s : State} (hp : scalarBaseLocal.pre s) :
+    WP isa scalarBase.inline s fun t => gprPreserved s t ∧ scalarBaseLocal.post s t := by
+  rw [scalarBase_inline]
+  exact scalarBase_correct_of Proof.X448.X86_64.baseline_ok hL
+    (fun hs => invertCall_post Proof.X448.X86_64.baseline_ok (keep := [OUT]) (by simp [OUT]) hs) hp
 
 end VG.Proof.Ed448.X86_64
