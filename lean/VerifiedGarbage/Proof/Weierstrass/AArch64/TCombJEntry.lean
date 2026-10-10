@@ -176,23 +176,29 @@ theorem tentryJ_after_digit_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k 
   dsimp only [TCombCfg.toComb] at yneg xneg zneg
   have W5 := sel_ok (decide (bcar K.w k (i+1)=1)) K.M.n hs₄ (by rw [x₄]; rfl) (o := K.E.y)
     (a := K.E.y) (b := K.neg) hEy.1 hEy.1 hneg hEy.2 hEy.2 (hA.sl _ (by tcomb_mem))
-    (Or.inl (Nat.le_refl _)) (by omega_arith)
+    (Or.inl (Nat.le_refl _)) (by omega_using [yneg])
   refine WP.mono W5 fun s₅ h₅ => h s₅ ?_
   obtain ⟨e₅, k₅, O₅⟩ := h₅
   -- The values.
   have m₄ : s₄.mem = s₃.mem := k₄.mem
   have vx : wordsVal s₅.mem base K.E.x K.M.n = wordsVal s₂.mem base K.E.x K.M.n := by
-    rw [O₅.wordsVal (by omega_arith) (by omega_arith), m₄, U₃.wordsVal (fun w hw => by
+    rw [O₅.wordsVal (by omega_using [xy]) (by omega_using [hEx.1, hn]), m₄, U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)]
+      rcases hw with rfl | rfl
+      · exact xneg
+      · exact tx) (by omega_using [hEx.1, hn])]
   have vz : wordsVal s₅.mem base K.E.z K.M.n = wordsVal s₂.mem base K.E.z K.M.n := by
-    rw [O₅.wordsVal (by omega_arith) (by omega_arith), m₄, U₃.wordsVal (fun w hw => by
+    rw [O₅.wordsVal (by omega_using [yz]) (by omega_using [hEz.1, hn]), m₄, U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)]
+      rcases hw with rfl | rfl
+      · exact zneg
+      · exact tz) (by omega_using [hEz.1, hn])]
   have vy₃ : wordsVal s₃.mem base K.E.y K.M.n = wordsVal s₂.mem base K.E.y K.M.n :=
     U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
+      rcases hw with rfl | rfl
+      · exact yneg
+      · exact ty) (by omega_using [hEy.1, hn])
   have vy : wordsVal s₅.mem base K.E.y K.M.n = if decide (bcar K.w k (i+1)=1) then
       (0 + C.p - wordsVal s₂.mem base K.E.y K.M.n) % C.p else wordsVal s₂.mem base K.E.y K.M.n := by
     rw [e₅, m₄, e₃, hz₂, vy₃]
