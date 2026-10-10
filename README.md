@@ -602,6 +602,22 @@ yours to keep:
 
 <tr>
 
+<td>Camellia-CBC (128-, 192- and 256-bit keys)</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>Camellia-CTR (128-, 192- and 256-bit keys)</td>
 
 <td>✅</td>
@@ -721,6 +737,22 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>SM4-CBC</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 <td>❌</td>
 
