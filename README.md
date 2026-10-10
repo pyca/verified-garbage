@@ -602,6 +602,22 @@ yours to keep:
 
 <tr>
 
+<td>Camellia-CTR (128-, 192- and 256-bit keys)</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>Camellia-ECB (128-, 192- and 256-bit keys)</td>
 
 <td>✅</td>
