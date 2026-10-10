@@ -32,8 +32,8 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : Lis
       result (or zeros) is selected by a mask of the checks, `d` in `[1, n-1]` and `Z ≠ 0`, so \
       the time depends only on the pointers."])
     code := Impl.Ecdh.X86.exchangeP256
-    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86.abi 20
-    stack := 20
+    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86.abi 28
+    stack := 28
     verified := Proof.Ecdh.X86.ecdh_verified h.law h.inv h.prime
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

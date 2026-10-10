@@ -239,6 +239,7 @@ theorem PkPre.setup {s : State} {extra : List Region} (hp : PkPre c s extra) : S
     (by rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := hp.sc_fit; omega)]; exact hp.sc_fit)
     (by decide) hp.stk_sc
   sp_lo := hp.sp_lo
+  stk_sc := hp.stk_sc
 
 /-- The slot of `out` is apart from what the code writes. -/
 theorem pkArgs_disj {s : State} {extra : List Region} (hp : PkPre c s extra) :
@@ -284,12 +285,12 @@ theorem PkKeep.ret {s₀ s' : State} {extra : List Region} (hp : PkPre c s₀ ex
 theorem publicKey_eq' (c : Cfg) : Impl.EcKey.X86.Cfg.publicKey c =
     .seq (.seq (.block (c.setupWith Args.publicKey)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
       (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-      (.seq (ladder c.ladderCfg c.SP) (.seq c.pPow (.block [])))))))
+      (.seq (Point.ladderP c.ladderCfg c.SP Args.publicKey.ao) (.seq c.pPow (.block [])))))))
       (Impl.EcKey.X86.Cfg.middle c) := rfl
 
 /-- The stack the parts of `publicKey` use. -/
 structure PkSp (c : Cfg) : Prop where
-  ladder : SpOk (ladder c.ladderCfg c.SP) c.stk
+  ladder : SpOk (Point.ladderP c.ladderCfg c.SP Args.publicKey.ao) c.stk
   pPow : SpOk c.pPow c.stk
   ops : SpOk (pkOps c) c.stk
 
@@ -302,13 +303,14 @@ theorem PkSp.of (h : SpOk (Impl.EcKey.X86.Cfg.publicKey c) c.stk) : PkSp c := by
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
-theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) (hsp : SpOk (Impl.EcKey.X86.Cfg.publicKey c) c.stk)
+theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none)
+    (hsp : SpOk (Impl.EcKey.X86.Cfg.publicKey c) c.stk)
     {s₀ : State} (hp : PkPre c s₀) :
     WP isa (Impl.EcKey.X86.Cfg.publicKey c) s₀ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have H := PkSp.of hsp
   rw [publicKey_eq']
-  refine WP.seq (stage₁ hc hp.setup fun _ S₁ => stage₂ hc hC S₁ H.ladder H.pPow fun s₂ S₂ => WP.block_nil ?_)
+  refine WP.seq (stage₁ hc hp.setup fun _ S₁ => stage₂ hc hC hcomb S₁ H.ladder H.pPow fun s₂ S₂ => WP.block_nil ?_)
   have h3 : (s₀.gpr .esp).toNat + 4 + 4 * 3 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
   refine WP.mono (middle_ok hc S₂.toKeep S₂.acc_lt S₂.flag H.ops
     ⟨_, by rw [hp.rd]; simp, arg_containsN h3 (by decide)⟩ (pkArgs_disj hp)

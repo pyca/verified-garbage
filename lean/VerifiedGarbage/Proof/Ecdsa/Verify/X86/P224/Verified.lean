@@ -37,13 +37,13 @@ theorem post_of {s s' : State} (h : VPost p224 s s') : verifyX86.post s s' := by
   rw [BitVec.setWidth_append_eq_right]
   exact h
 
-/-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
+/-- No instruction writes `esp`, and the calls use 28 bytes of stack. -/
 theorem verify_sp : SpOk verifyP224 p224.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem verify_x86 (hL : Weierstrass.Law Spec.P224.curve) (s : State) (hs : verifyX86.pre s) :
     ∃ t s', Exec isa verifyP224 s t s' ∧ abiPreserved s s' ∧ verifyX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := verify_ok p224_ok hL verify_sp hp
+  obtain ⟨t, s', he, K, hpost⟩ := verify_ok p224_ok hL rfl verify_sp hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.ret hp⟩, post_of hpost⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -57,7 +57,7 @@ theorem verify_x86 (hL : Weierstrass.Law Spec.P224.curve) (s : State) (hs : veri
 holding `scratch` known to be the base address of the writable region. -/
 def τ₀ : VG.X86.Taint.T :=
   { regs := .ofList [.esp], flags := false, lens := [8192], argLen := 20, argBases := [(16, 0)],
-    room := 20 }
+    room := 28 }
 
 theorem wf₀ {s : State} (hp : VPre p224 s) : VG.X86.Taint.Wf τ₀ s := by
   have hsc := hp.sc_fit; have hs := hp.sp_fit
@@ -118,12 +118,12 @@ def verifyWide : Contract isa :=
     let scratch : Region := ⟨(arg s 3).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 20, 20⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 28, 28⟩
     s.rd = [pk, digest, sig] ∧ s.wr = [scratch, args] ∧ pk.Disjoint scratch ∧ digest.Disjoint scratch ∧
       sig.Disjoint scratch ∧ args.Disjoint scratch ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 57 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 28 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 56 ≤ 2 ^ 32 ∧
       (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
-      20 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint scratch }
+      28 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint scratch }
 
 def verifyRd (s : State) : List Region :=
   [⟨(arg s 0).setWidth 64, 57⟩, ⟨(arg s 1).setWidth 64, 28⟩, ⟨(arg s 2).setWidth 64, 56⟩, ⟨argAddr s 0, 16⟩]
@@ -153,7 +153,7 @@ def satState : State where
   rd := [⟨0x1000, 57⟩, ⟨0x2000, 28⟩, ⟨0x3000, 56⟩]
   wr := [⟨0x8000, 8192⟩, ⟨0x20004, 16⟩]
 
-theorem verifyWide_implies : verifyWide.Implies (Spec.Ecdsa.P224.inst.verifyContract X86.abi 20) := by
+theorem verifyWide_implies : verifyWide.Implies (Spec.Ecdsa.P224.inst.verifyContract X86.abi 28) := by
   have a0 : arg satState 0 = 0x1000 := by decide
   have a1 : arg satState 1 = 0x2000 := by decide
   have a2 : arg satState 2 = 0x3000 := by decide
@@ -165,7 +165,7 @@ theorem verifyWide_implies : verifyWide.Implies (Spec.Ecdsa.P224.inst.verifyCont
     verifyX86, vf] [a0, a1, a2, a3, e, esp] using satState
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P224.curve) :
-    Verified X86.target verifyP224 (Spec.Ecdsa.P224.inst.verifyContract X86.abi 20) := by
+    Verified X86.target verifyP224 (Spec.Ecdsa.P224.inst.verifyContract X86.abi 28) := by
   have hsat := verifyWide_implies.sat_left
   have satLocal : ∃ s, verifyX86.pre s := hsat.elim fun s h => ⟨_, verifyWide_pre s h⟩
   have verifiedLocal : Verified X86.target verifyP224 verifyX86 :=

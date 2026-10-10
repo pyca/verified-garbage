@@ -30,7 +30,7 @@ theorem pre_of {s : State} (h : pkX86.pre s) : PkPre p256 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16⟩
 
-/-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
+/-- No instruction writes `esp`, and the calls use 28 bytes of stack. -/
 theorem pk_sp : SpOk publicKeyP256 p256.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem post_of {s s' : State} (h : PkPost p256 s s') : pkX86.post s s' := by
@@ -49,7 +49,7 @@ theorem post_of {s s' : State} (h : PkPost p256 s s') : pkX86.post s s' := by
 theorem pk_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) (s : State) (hs : pkX86.pre s) :
     ∃ t s', Exec isa publicKeyP256 s t s' ∧ abiPreserved s s' ∧ pkX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := publicKey_ok (p256_ok hI) hL pk_sp hp
+  obtain ⟨t, s', he, K, hpost⟩ := publicKey_ok (p256_ok hI) hL rfl pk_sp hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.ret hp⟩, post_of hpost⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -64,7 +64,7 @@ holding `out` and `scratch` known to be the base addresses of the writable
 regions. -/
 def τ₀ : VG.X86.Taint.T :=
   { regs := .ofList [.esp], flags := false, lens := [65, 8192], argLen := 16, argBases := [(4, 0), (12, 1)],
-    room := 20 }
+    room := 28 }
 
 theorem wf₀ {s : State} (hp : PkPre p256 s) : VG.X86.Taint.Wf τ₀ s := by
   have hsc := hp.sc_fit; have ho := hp.out_fit; have hs := hp.sp_fit
@@ -123,12 +123,12 @@ def pkWide : Contract isa :=
     let scratch : Region := ⟨(arg s 2).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 12⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 20, 20⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 28, 28⟩
     s.rd = [d] ∧ s.wr = [out, scratch, args] ∧ out.Disjoint scratch ∧ out.Disjoint d ∧ d.Disjoint scratch ∧
       args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 65 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 8192 ≤ 2 ^ 32 ∧
       (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 ∧
-      20 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch }
+      28 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch }
 
 def pkRd (s : State) : List Region := [⟨(arg s 1).setWidth 64, 32⟩, ⟨argAddr s 0, 12⟩]
 def pkWr (s : State) : List Region := [⟨(arg s 0).setWidth 64, 65⟩, ⟨(arg s 2).setWidth 64, 8192⟩]
@@ -154,7 +154,7 @@ def satState : State where
   rd := [⟨0x2000, 32⟩]
   wr := [⟨0x1000, 65⟩, ⟨0x8000, 8192⟩, ⟨0x20004, 12⟩]
 
-theorem pkWide_implies : pkWide.Implies (Spec.EcKey.P256.inst.publicKeyContract X86.abi 20) := by
+theorem pkWide_implies : pkWide.Implies (Spec.EcKey.P256.inst.publicKeyContract X86.abi 28) := by
   have a0 : arg satState 0 = 0x1000 := by decide
   have a1 : arg satState 1 = 0x2000 := by decide
   have a2 : arg satState 2 = 0x8000 := by decide
@@ -177,7 +177,7 @@ theorem pkWide_implies : pkWide.Implies (Spec.EcKey.P256.inst.publicKeyContract 
           Spec.P256.curve, Spec.EcKey.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow, pkWide, pkX86, pk] [a0, a1, a2, e, esp] using satState }
 
 theorem pk_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
-    Verified X86.target publicKeyP256 (Spec.EcKey.P256.inst.publicKeyContract X86.abi 20) := by
+    Verified X86.target publicKeyP256 (Spec.EcKey.P256.inst.publicKeyContract X86.abi 28) := by
   have hsat := pkWide_implies.sat_left
   have satLocal : ∃ s, pkX86.pre s := hsat.elim fun s h => ⟨_, pkWide_pre s h⟩
   have verifiedLocal : Verified X86.target publicKeyP256 pkX86 :=

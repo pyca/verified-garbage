@@ -51,7 +51,7 @@ theorem ecdh_sp : SpOk exchangeP521 p521.stk := ⟨NoSp.of_all (by lit_decide), 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P521.curve) (s : State) (hs : ecdhX86.pre s) :
     ∃ t s', Exec isa exchangeP521 s t s' ∧ abiPreserved s s' ∧ ecdhX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok p521_ok hL ecdh_sp hp
+  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok p521_ok hL rfl ecdh_sp hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.ret hp⟩, post_of hpost⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl

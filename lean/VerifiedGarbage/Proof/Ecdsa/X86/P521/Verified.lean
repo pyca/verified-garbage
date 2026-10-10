@@ -74,7 +74,7 @@ theorem sign_sp : SpOk signP521 p521.stk := ⟨NoSp.of_all (by lit_decide), by l
 theorem sign_x86 (hL : Weierstrass.Law Spec.P521.curve) (s : State) (hs : signX86.pre s) :
     ∃ t s', Exec isa signP521 s t s' ∧ abiPreserved s s' ∧ signX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := sign_ok p521_ok hL sign_sp hp
+  obtain ⟨t, s', he, K, hpost⟩ := sign_ok p521_ok hL rfl sign_sp hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.ret hp⟩, ?_⟩
   swap
   · simp only [signX86, BitVec.setWidth_append_eq_right]

@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Weierstrass.X86.TCombJ
+import VerifiedGarbage.Impl.Weierstrass.X86.LadderP
 import VerifiedGarbage.Impl.Weierstrass.X86.InvCfg
 import VerifiedGarbage.Impl.Weierstrass.X86.ScalarPower
 import VerifiedGarbage.Spec.Weierstrass
@@ -19,7 +20,9 @@ curves), from the code of `Impl/Weierstrass/X86.lean`, as on x86-64
    Montgomery form, `R² mod n`, and the exponents `p - 2` and `n - 2`) are
    stored as immediates;
 2. the bits of `k`, `p - 2` and `n - 2` are expanded into tables;
-3. `R = [k]G` by the ladder from `R = O = (0 : 1 : 0)`, then
+3. `R = [k]G` by the ladder from `R = O = (0 : 1 : 0)` (for coordinates of
+   at most 6 words, calling the point functions,
+   `Impl/Weierstrass/X86/LadderP.lean`), then
    `x = X Z^(p-2)` (Montgomery's form left by a multiplication by 1) and
    `r = x mod n` (a conditional subtraction, as `x < p < 2n`);
 4. `s = k^(n-2) (e + r d) mod n`, in Montgomery form modulo `n`, then left;
@@ -119,6 +122,11 @@ structure Args where
 /-- The signature's: `(out, d, digest, k, scratch)`, shifting the hash in
 `E`. -/
 abbrev Args.sign : Args := ⟨4, 3, 1, 2, some E⟩
+
+/-- The offset from `esp` of the argument holding the working space, which
+the ladder's calls of the point functions read it again from
+(`Impl/Weierstrass/X86/LadderP.lean`). -/
+abbrev Args.ao (A : Args) : Nat := 4 + 4 * A.sc
 
 /-- A fixed-base comb's digit width, affine tables, offset point and symbol. -/
 structure CombData where
@@ -354,7 +362,7 @@ def sign : Prog isa :=
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq (ladder c.ladderCfg c.SP) c.signTail
+  .seq (Point.ladderP c.ladderCfg c.SP Args.sign.ao) c.signTail
 
 /-- The table address is obtained before reading the cdecl arguments. -/
 def signComb : Prog isa := .seq c.tableAddr (c.signWithMul c.gMul)

@@ -18,7 +18,7 @@
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `peer` (distinct Rust objects never do).
-/// * None of `out`, `d`, `peer` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 20 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `peer` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdh_p256(out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(

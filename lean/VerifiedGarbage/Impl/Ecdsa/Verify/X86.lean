@@ -164,9 +164,9 @@ def tail : Prog isa :=
 
 /-- `[u]G + [v]Q`, into `R`, from the tables of bits of `u` and `v`. -/
 def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (ladder c.ladderCfg c.SP) <|
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (Point.ladderP c.ladderCfg c.SP Args.verify.ao) <|
   .seq (.block (save c)) <| .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (ladder (Impl.Ecdh.X86.Cfg.ladderQ c) c.SP) (sum c)
+  .seq (Point.ladderP (Impl.Ecdh.X86.Cfg.ladderQ c) c.SP Args.verify.ao) (sum c)
 
 /-- Shared variable-base window layout. -/
 def windowQ : WinCfg := Impl.Ecdh.X86.Cfg.windowCfg c
