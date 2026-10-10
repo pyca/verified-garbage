@@ -278,10 +278,197 @@ def unfoldToLits (N : Name) (x : Expr) : MetaM (Option (Expr × Expr)) := do
         (mkConst (M ++ `lit)) motive (mkConst (M ++ `lit_eq))) prf
   return some (inst items.size none, prf)
 
+/-! ### Code with its appends flattened
+
+The kernel checks `N.lit_eq` by evaluating the code, and code is built with
+`++` (`rowsF k m (r + 1) = rowsF k m r ++ rowF k m r`), nested to the left
+as often as not: each instruction of `a` in `(a ++ b) ++ c` is then rebuilt
+once for every `++` above it, time quadratic in the nesting (P-521's x86
+multiplication: 18 rows, each with 17 nested steps, 9 s). `flattenCode`
+proves, without evaluating anything, that the code is equal to the same code
+with each block's list written as `List.flatten [c₁, …, cₙ]` (its pieces,
+nested to the right), which the kernel then evaluates in time linear in its
+length (P-521's multiplication: under 1 s).
+
+`materialize_flat_code` uses it; `materialize_code` does not. The unfolding
+runs `whnf` at the meta level, slower than the kernel, at every append and
+every decision: for code nested to the right, or that decides much at each
+step (selections of table entries, …), it costs more than it saves. -/
+
+theorem flat_app {α : Type} {a b : List α} {La Lb : List (List α)}
+    (ha : a = La.flatten) (hb : b = Lb.flatten) : a ++ b = (La ++ Lb).flatten := by
+  rw [ha, hb, List.flatten_append]
+
+theorem flat_nil {α : Type} : ([] : List α) = ([] : List (List α)).flatten := rfl
+
+theorem flat_leaf {α : Type} (l : List α) : l = [l].flatten := by
+  simp only [List.flatten_cons, List.flatten_nil, List.append_nil]
+
+theorem Code.block_congr {I C : Type} {l l' : List I} (h : l = l') :
+    (Code.block l : Code I C) = .block l' := h ▸ rfl
+theorem Code.seq_congr {I C : Type} {a a' b b' : Code I C} (ha : a = a') (hb : b = b') :
+    Code.seq a b = .seq a' b' := ha ▸ hb ▸ rfl
+theorem Code.ite_congr {I C : Type} {c : C} {a a' b b' : Code I C} (ha : a = a') (hb : b = b') :
+    Code.ite c a b = .ite c a' b' := ha ▸ hb ▸ rfl
+theorem Code.loop_congr {I C : Type} {c : C} {a a' : Code I C} (ha : a = a') :
+    Code.loop a c = .loop a' c := ha ▸ rfl
+theorem Code.frame_congr {I C : Type} {p q : I} {a a' : Code I C} (ha : a = a') :
+    Code.frame p a q = .frame p a' q := ha ▸ rfl
+
+/-- `++`, which `whnfNoAppend` never unfolds. -/
+def appendConsts : NameSet := NameSet.empty |>.insert ``HAppend.hAppend |>.insert ``Append.append
+  |>.insert ``List.append |>.insert ``instHAppendOfAppend |>.insert ``List.instAppend
+
+/-- `whnf`, but never through `++`: a list built with `++` is left an append. -/
+def whnfNoAppend (e : Expr) : MetaM Expr :=
+  withCanUnfoldPred (fun cfg ci => do
+    if appendConsts.contains ci.name then return false else canUnfoldDefault cfg ci) (whnf e)
+
+/-- `whnfNoAppend`, or `none` where it fails (a number past the threshold of
+`Nat.pow`'s evaluation, …): such a term is left for the kernel. Its messages
+(that threshold's warning) are dropped: it only looks ahead. -/
+def whnfNoAppend? (e : Expr) : MetaM (Option Expr) := do
+  let msgs := (← getThe Core.State).messages
+  let r ← tryCatchRuntimeEx (some <$> whnfNoAppend e) fun _ => pure none
+  modifyThe Core.State fun s => { s with messages := msgs }
+  return r
+
+/-- The elements of the cons prefix of `l`, and its tail. -/
+def consPrefix (l : Expr) : Array Expr × Expr := Id.run do
+  let mut xs := #[]
+  let mut t := l
+  while t.isAppOfArity ``List.cons 3 do
+    xs := xs.push (t.getArg! 1)
+    t := t.appArg!
+  return (xs, t)
+
+/-- What `flatList` and `flattenCode` have done so far: the calls of `whnf`
+(within a budget, past which they give up), and the deepest nesting of `++`
+to the left that they have undone. -/
+structure FlatState where
+  whnfs : Nat := 0
+  leftDepth : Nat := 0
+  /-- Whether a definition may build a list with `++` (memoized). -/
+  appends : NameMap Bool := {}
+
+abbrev FlatM := StateT FlatState MetaM
+
+/-- The calls of `whnf` `flattenCode` may make, a bound on its time. -/
+def flatBudget : Nat := 100000
+
+/-- The functions that build lists with `++`. -/
+def appendBuilders : NameSet := appendConsts |>.insert ``List.flatten |>.insert ``List.flatMap
+
+/-- Whether the definition `c` may build a list with `++`, directly or through
+the definitions it uses: a list whose term uses none is left to the kernel
+whole, without unfolding it at the meta level. -/
+partial def mayAppend (c : Name) : FlatM Bool := do
+  if appendBuilders.contains c then return true
+  if let some b := (← get).appends.find? c then return b
+  modify fun s => { s with appends := s.appends.insert c false }
+  let some (.defnInfo d) := (← getEnv).find? c | return false
+  let mut r := false
+  for v in d.value.getUsedConstants do
+    if ← mayAppend v then r := true; break
+  modify fun s => { s with appends := s.appends.insert c r }
+  return r
+
+/-- `whnfNoAppend?`, counted against the budget (an exception past it). -/
+def flatWhnf (e : Expr) : FlatM (Option Expr) := do
+  let s ← get
+  if s.whnfs ≥ flatBudget then throwError "flattenCode: over budget"
+  set { s with whnfs := s.whnfs + 1 }
+  whnfNoAppend? e
+
+/-- For a list `l : List α`, pieces `L`, a proof of `l = L.flatten` (by
+`flat_app`, `flat_leaf` and unfolding, which the kernel checks without
+evaluating the pieces), and the depth of `++` nested to the left in `l`.
+Below `depth` nested appends (a long chain nested to the right, which the
+kernel evaluates in linear time anyway), the list is one piece: the proof
+stays shallow enough for the kernel. -/
+partial def flatList (α : Expr) (l : Expr) (depth : Nat := 64) :
+    FlatM (Array Expr × Expr × Nat) := do
+  let lα := mkApp (mkConst ``List [0]) α
+  let toL (cs : Array Expr) : Expr :=
+    cs.foldr (fun c acc => mkApp3 (mkConst ``List.cons [0]) lα c acc)
+      (mkApp (mkConst ``List.nil [0]) lα)
+  let leaf (x : Expr) : Array Expr × Expr × Nat := (#[x], mkApp2 (mkConst ``flat_leaf) α x, 0)
+  if depth == 0 then return leaf l
+  let app (a b : Expr) : FlatM (Array Expr × Expr × Nat) := do
+    let (ca, pa, da) ← flatList α a (depth - 1)
+    let (cb, pb, db) ← flatList α b (depth - 1)
+    let d := max (da + 1) db
+    modify fun s => { s with leftDepth := max s.leftDepth d }
+    return (ca ++ cb, mkAppN (mkConst ``flat_app) #[α, a, b, toL ca, toL cb, pa, pb], d)
+  if (consPrefix l).2.isAppOfArity ``List.nil 1 then return leaf l
+  unless ← l.getUsedConstants.anyM mayAppend do return leaf l
+  let some w ← flatWhnf l | return leaf l
+  if w.isAppOfArity ``HAppend.hAppend 6 then return ← app (w.getArg! 4) (w.getArg! 5)
+  if w.isAppOfArity ``List.append 3 then return ← app (w.getArg! 1) (w.getArg! 2)
+  if w.isAppOfArity ``List.nil 1 then return (#[], mkApp (mkConst ``flat_nil) α, 0)
+  if w.isAppOfArity ``List.cons 3 then
+    let (xs, t) := consPrefix w
+    if t.isAppOfArity ``List.nil 1 then return leaf w
+    -- `x₁ :: … :: xₖ :: t` is `[x₁, …, xₖ] ++ t` (the kernel appends `k` elements).
+    let pre := xs.foldr (fun x acc => mkApp3 (mkConst ``List.cons [0]) α x acc)
+      (mkApp (mkConst ``List.nil [0]) α)
+    return ← app pre t
+  return leaf w
+
+/-- For code `c : Code I C`, the same code with each block's list flattened
+(`flatList`), and a proof of `c = c'`; the bodies of calls are left as they
+are (the literals of their callees, or code the kernel compares as it is).
+Code nested deeper than `depth` is left as it is, as `flatList` leaves lists. -/
+partial def flattenCode (I C : Expr) (c : Expr) (depth : Nat := 64) : FlatM (Expr × Expr) := do
+  let codeTy := mkApp2 (mkConst ``Code) I C
+  let refl (x : Expr) := (x, mkApp2 (mkConst ``Eq.refl [1]) codeTy x)
+  if depth == 0 then return refl c
+  let some w ← flatWhnf c | return refl c
+  match w.getAppFn.constName?, w.getAppNumArgs with
+  | some ``Code.block, 3 =>
+    let (cs, p, _) ← flatList I (w.getArg! 2)
+    let lI := mkApp (mkConst ``List [0]) I
+    let L := cs.foldr (fun x acc => mkApp3 (mkConst ``List.cons [0]) lI x acc)
+      (mkApp (mkConst ``List.nil [0]) lI)
+    let l' := mkApp2 (mkConst ``List.flatten [0]) I L
+    return (mkApp3 (mkConst ``Code.block) I C l',
+      mkAppN (mkConst ``Code.block_congr) #[I, C, w.getArg! 2, l', p])
+  | some ``Code.seq, 4 =>
+    let (a, pa) ← flattenCode I C (w.getArg! 2) (depth - 1)
+    let (b, pb) ← flattenCode I C (w.getArg! 3) (depth - 1)
+    return (mkApp4 (mkConst ``Code.seq) I C a b,
+      mkAppN (mkConst ``Code.seq_congr) #[I, C, w.getArg! 2, a, w.getArg! 3, b, pa, pb])
+  | some ``Code.ite, 5 =>
+    let (a, pa) ← flattenCode I C (w.getArg! 3) (depth - 1)
+    let (b, pb) ← flattenCode I C (w.getArg! 4) (depth - 1)
+    return (mkApp5 (mkConst ``Code.ite) I C (w.getArg! 2) a b,
+      mkAppN (mkConst ``Code.ite_congr) #[I, C, w.getArg! 2, w.getArg! 3, a, w.getArg! 4, b, pa, pb])
+  | some ``Code.loop, 4 =>
+    let (a, pa) ← flattenCode I C (w.getArg! 2) (depth - 1)
+    return (mkApp4 (mkConst ``Code.loop) I C a (w.getArg! 3),
+      mkAppN (mkConst ``Code.loop_congr) #[I, C, w.getArg! 3, w.getArg! 2, a, pa])
+  | some ``Code.frame, 5 =>
+    let (a, pa) ← flattenCode I C (w.getArg! 3) (depth - 1)
+    return (mkApp5 (mkConst ``Code.frame) I C (w.getArg! 2) a (w.getArg! 4),
+      mkAppN (mkConst ``Code.frame_congr) #[I, C, w.getArg! 2, w.getArg! 4, w.getArg! 3, a, pa])
+  | _, _ => return refl c
+
+/-- The depth of `++` nested to the left from which flattening pays: below
+it, the kernel's evaluation of the code as it is costs little more than its
+evaluation flattened, and the unfolding is extra work. -/
+def flatMinDepth : Nat := 4
+
+/-- `flattenCode`, if it pays (`flatMinDepth`) and stays within its budget. -/
+def flattenCode? (I C c : Expr) : MetaM (Option (Expr × Expr)) := do
+  let r ← tryCatch (some <$> (flattenCode I C c).run {}) fun _ => pure none
+  let some ((c', prf), s) := r | return none
+  if s.leftDepth < flatMinDepth then return none
+  return some (c', prf)
+
 /-- Defines `N.lit`, the value of the closed code term `code` as a literal
 (calling the literals of the code materialized so far), and
 `N.lit_eq : code = N.lit`. -/
-def materialize (N : Name) (code : Expr) : MetaM Unit := do
+def materialize (N : Name) (code : Expr) (flat : Bool := false) : MetaM Unit := do
   let ty ← inferType code
   let codeTy ← whnfD ty
   unless codeTy.isAppOfArity ``Code 2 do
@@ -314,13 +501,24 @@ def materialize (N : Name) (code : Expr) : MetaM Unit := do
   let eqTy (rhs : Expr) := mkApp3 (mkConst ``Eq [1]) ty code rhs
   -- If the code reaches literals: `code = e'` by unfolding (`unfoldToLits`),
   -- and `e' = N.lit` by evaluation.
-  if let some (_, prf) ← unfoldToLits N code then
+  let I := codeTy.appFn!.appArg!
+  let C := codeTy.appArg!
+  if let some (e, prf) ← unfoldToLits N code then
+    -- `code = e` by unfolding, `e = e'` by flattening its blocks, and `e' = N.lit`
+    -- by evaluation.
+    let prf := match ← (if flat then flattenCode? I C e else pure none) with
+      | some (e', q) => mkApp6 (mkConst ``Eq.trans [1]) ty code e e' prf q
+      | none => prf
     addDecl <| .thmDecl {
       name := N ++ `lit_eq, levelParams := [], type := eqTy (mkConst (N ++ `lit)),
       value := ShareCommon.shareCommon' prf }
     return
-  -- `code = abs[callees]` by evaluation, then each callee rewritten to its literal.
-  let mut prf := mkApp2 (mkConst ``Eq.refl [1]) ty code
+  -- `code = code'` by flattening its blocks, `code' = abs[callees]` by evaluation,
+  -- then each callee rewritten to its literal.
+  let mut prf := match ← (if flat then flattenCode? I C code else pure none) with
+    | some (code', q) => mkApp6 (mkConst ``Eq.trans [1]) ty code code' (inst fun i => lhss[i]!) q
+        (mkApp2 (mkConst ``Eq.refl [1]) ty code')
+    | none => mkApp2 (mkConst ``Eq.refl [1]) ty code
   for i in [0:gs.size] do
     -- The code with the literals of the first `i` callees, and `x` for the `i`-th.
     let motive := Expr.lam `x ty
@@ -548,6 +746,26 @@ elab_rules : command
     let e ← instantiateMVars (← Term.elabTermAndSynthesize t none)
     if e.hasMVar || e.hasFVar then throwError "materialize_code: {e} is not closed"
     materialize ((← getCurrNamespace) ++ id.getId) e
+
+open Lit in
+/-- `materialize_flat_code` is `materialize_code` for code whose blocks are
+built with `++` nested to the left (rows appended one by one, …), which the
+kernel's evaluation would rebuild once for every `++` above them: `N.lit_eq`
+goes through the code with each block flattened (`flattenCode`), which the
+kernel evaluates in time linear in its length. Elsewhere it costs more to
+unfold than it saves: the generators that decide much at each step, or
+nest their appends to the right. -/
+syntax "materialize_flat_code " ident (" := " term)? : command
+
+open Lit in
+elab_rules : command
+  | `(materialize_flat_code $id:ident) => liftTermElabM do
+    let foo ← realizeGlobalConstNoOverloadWithInfo id
+    materialize foo (mkConst foo) (flat := true)
+  | `(materialize_flat_code $id:ident := $t) => liftTermElabM do
+    let e ← instantiateMVars (← Term.elabTermAndSynthesize t none)
+    if e.hasMVar || e.hasFVar then throwError "materialize_flat_code: {e} is not closed"
+    materialize ((← getCurrNamespace) ++ id.getId) e (flat := true)
 
 open Elab Tactic Lit in
 /-- Rewrites each code of the goal that has a literal (`materialize_code`) to it. -/
