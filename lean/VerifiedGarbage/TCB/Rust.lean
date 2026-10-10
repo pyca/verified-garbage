@@ -258,9 +258,48 @@ def function (a : Artifact) (moduleOf : String → String) : String :=
 def distinct (as : List Artifact) (f : Artifact → String) : List String :=
   dedup (as.map f)
 
+/-- Whether the function `n₁` of target `t₁` comes before `n₂` of `t₂`,
+by target and then name (the order of `Index`). -/
+def keyLt (t₁ n₁ t₂ n₂ : String) : Bool :=
+  t₁ < t₂ || (t₁ == t₂ && n₁ < n₂)
+
+/-- Every artifact, with its printed code (`Printer.function`), sorted by
+target and name for `Index.find?`. The code is printed when a call of the
+artifact is first checked (`Thunk`), once however many artifacts call it:
+printing a callee again for each of its callers took most of the emitter's
+time. -/
+structure Index where
+  entries : Array (Artifact × Thunk (List Line))
+
+/-- The index of `as`. -/
+def Index.of (as : List Artifact) : Index :=
+  ⟨(as.toArray.map fun b => (b, Thunk.mk fun _ => b.target.printer.function b.code)).qsort
+    fun (a, _) (b, _) => keyLt a.target.name a.name b.target.name b.name⟩
+
+/-- The artifact of target `t` named `n`, and its printed code, by binary
+search. A target's names are distinct (`checkUnique`, which `files` checks
+first), so there is at most one. -/
+def Index.find? (idx : Index) (t n : String) : Option (Artifact × Thunk (List Line)) :=
+  go idx.entries.size 0 idx.entries.size
+where
+  /-- The entry within `[lo, hi)`; `fuel`, at least the number of halvings
+  left, bounds the recursion. -/
+  go : Nat → Nat → Nat → Option (Artifact × Thunk (List Line))
+    | 0, _, _ => none
+    | fuel + 1, lo, hi =>
+      if lo < hi then
+        let mid := (lo + hi) / 2
+        match idx.entries[mid]? with
+        | none => none
+        | some e =>
+          if e.1.target.name == t && e.1.name == n then some e
+          else if keyLt e.1.target.name e.1.name t n then go fuel (mid + 1) hi
+          else go fuel lo mid
+      else none
+
 /-- The artifact that a call of `name` in `a` calls. -/
-def callee (as : List Artifact) (a : Artifact) (name : String) : Option Artifact :=
-  as.find? fun b => b.target.name == a.target.name && b.name == name
+def callee (idx : Index) (a : Artifact) (name : String) : Option Artifact :=
+  (idx.find? a.target.name name).map (·.1)
 
 /-- The first of `calls` (`Code.calls`: the name of each function called and
 the code the model runs for it) that is not of a function `printed` gives the
@@ -293,9 +332,9 @@ def badCall {M : ISA} (P : Printer M) (printed : String → Option (List Line))
 /-- Every call in the code of `a`, and in the code of the functions it calls,
 is of an artifact of the same target whose printed code is that of the
 called code (`badCall`). -/
-def checkCalls (as : List Artifact) (a : Artifact) : Except String Unit :=
+def checkCalls (idx : Index) (a : Artifact) : Except String Unit :=
   match badCall a.target.printer
-      (fun n => (callee as a n).map fun b => b.target.printer.function b.code) a.code.calls with
+      (fun n => (idx.find? a.target.name n).map (·.2.get)) a.code.calls with
   | none => pure ()
   | some (n, false) => throw s!"{a.target.name}: {a.name} calls {n}, which is not an artifact"
   | some (n, true) =>
@@ -431,11 +470,12 @@ code has an instruction its target's printer cannot encode
 def files (as : List Artifact) : Except String (List (String × String)) := do
   as.forM checkApi
   checkUnique as
-  as.forM (checkCalls as)
+  let idx := Index.of as
+  as.forM (checkCalls idx)
   as.forM (checkConsts as)
   as.forM checkFeatures
   as.forM checkEncodable
   as.forM checkLayout
-  return render as fun a n => ((callee as a n).map (·.module)).getD ""
+  return render as fun a n => ((callee idx a n).map (·.module)).getD ""
 
 end VG.Rust
