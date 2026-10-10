@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Camellia.X86_64.Ecb
 import VerifiedGarbage.Proof.Modes.X86_64.Core
 import VerifiedGarbage.Impl.Camellia.X86_64.Ctr
 import VerifiedGarbage.Proof.Camellia.CtrCipher
+import VerifiedGarbage.Spec.Camellia.Cbc
 
 /-!
 # Camellia's core for the modes on x86-64
@@ -20,7 +21,8 @@ namespace VG.Proof.Camellia.X86_64
 open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Camellia.X86_64
 open VG.Impl.Aes.X86_64 (sb t0 setMasks st movS)
 open VG.Proof.Modes.X86_64 (ScrIn coreRegion bufRegion bufAddr Layout CoreSpec modeRegs of_not_modeRegs)
-open VG.Proof.Camellia (schedWords schedWords_getD wordAt_frame bytesAt_eq_blockAt cipher_bytes)
+open VG.Proof.Camellia (schedWords schedWords_getD wordAt_frame bytesAt_eq_blockAt ofFn_toList encryptWith_eq
+  decryptWith_eq dirPerm_lt)
 
 /-- The number of rounds in `rsi` and the schedule at `rdi`, outside the
 regions `rs`. -/
@@ -29,27 +31,28 @@ def KeyArgs (s : State) (rs : List Region) (k : Nat × List (BitVec 64)) : Prop 
     k.2 = schedWords s.mem p k.1 ∧ (⟨p, 272⟩ : Region) ∈ s.rd ∧ p.toNat + 272 ≤ 2 ^ 64 ∧
     ∀ r ∈ rs, Region.Disjoint ⟨p, 272⟩ r
 
-/-- The masks, the table of subkeys in encryption order, and the address of
+/-- The masks, the table of subkeys in the order of `d`, and the address of
 its postwhitening entry in `rdi`. -/
-def Ready (s : State) (B : Addr) (k : Nat × List (BitVec 64)) : Prop :=
-  (k.1 = 18 ∨ k.1 = 24) ∧ MasksAt s.mem B ∧ (∀ i < 8 * (k.1 / 6) + 2, EntryOk s.mem B i (k.2.getD i 0)) ∧
+def Ready (d : Dir) (s : State) (B : Addr) (k : Nat × List (BitVec 64)) : Prop :=
+  (k.1 = 18 ∨ k.1 = 24) ∧ MasksAt s.mem B ∧
+    (∀ i < 8 * (k.1 / 6) + 2, EntryOk s.mem B i (k.2.getD (permOf d (k.1 / 6) i) 0)) ∧
     s.gpr .rdi = B + BitVec.ofNat 64 (8 * keySlot + 512 * (k.1 / 6))
 
 /-- A word of the core's slots outside the tail buffer is outside the regions
 that are disjoint from the core's slots or within the tail buffer. -/
-theorem word_disjoint {B : Addr} {d : Nat} (hd : d + 8 ≤ 8 * tailSlot) {r : Region}
-    (hr : Region.Disjoint (coreRegion modeCore B) r ∨ Region.Sub r (bufRegion modeCore B)) :
+theorem word_disjoint {dir : Dir} {B : Addr} {d : Nat} (hd : d + 8 ≤ 8 * tailSlot) {r : Region}
+    (hr : Region.Disjoint (coreRegion (dirCore dir) B) r ∨ Region.Sub r (bufRegion (dirCore dir) B)) :
     Region.Disjoint ⟨B + BitVec.ofNat 64 d, 8⟩ r := by
   rcases hr with h | h
-  · exact h.sub_left (VG.Offset.sub_base B (by simp only [modeCore, tailSlot_eq] at hd ⊢; omega))
+  · exact h.sub_left (VG.Offset.sub_base B (by simp only [dirCore, tailSlot_eq] at hd ⊢; omega))
   · refine Region.Disjoint.sub_right ?_ h
-    exact VG.Offset.disjoint B (by simp only [modeCore, tailSlot_eq] at hd ⊢; omega)
-      (by simp only [tailSlot_eq] at hd; omega) (by simp only [modeCore, tailSlot_eq]; omega)
+    exact VG.Offset.disjoint B (by simp only [dirCore, tailSlot_eq] at hd ⊢; omega)
+      (by simp only [tailSlot_eq] at hd; omega) (by simp only [dirCore, tailSlot_eq]; omega)
 
-theorem ready_frame {s s' : State} {B : Addr} {k : Nat × List (BitVec 64)} {rs : List Region} (h : Ready s B k)
-    (hf : Frame rs s.mem s'.mem)
-    (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion modeCore B) r ∨ Region.Sub r (bufRegion modeCore B))
-    (hg : ∀ r, r ∉ modeRegs modeCore → s'.gpr r = s.gpr r) : Ready s' B k := by
+theorem ready_frame {d : Dir} {s s' : State} {B : Addr} {k : Nat × List (BitVec 64)} {rs : List Region}
+    (h : Ready d s B k) (hf : Frame rs s.mem s'.mem)
+    (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore d) B) r ∨ Region.Sub r (bufRegion (dirCore d) B))
+    (hg : ∀ r, r ∉ modeRegs (dirCore d) → s'.gpr r = s.gpr r) : Ready d s' B k := by
   obtain ⟨hR, hm, he, hrdi⟩ := h
   have hR' : ∀ d, d + 8 ≤ 8 * tailSlot →
       s'.mem.readW (B + BitVec.ofNat 64 d) 64 = s.mem.readW (B + BitVec.ofNat 64 d) 64 := fun d h1 =>
@@ -62,10 +65,10 @@ theorem ready_frame {s s' : State} {B : Addr} {k : Nat × List (BitVec 64)} {rs 
     rw [← hm kv hkv]
     exact hR' (8 * kv.1) (by rw [tailSlot_eq]; omega)
   · exact hR' (8 * keySlot + 64 * i + 8 * j) (by rw [keySlot_eq, tailSlot_eq]; omega)
-  · rw [hg .rdi (by decide), hrdi]
+  · rw [hg .rdi (by simp only [modeRegs, dirCore]; decide), hrdi]
 
 theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Nat × List (BitVec 64)} (h : KeyArgs s rs k)
-    (hr : ∀ r ∈ modeCore.keyRegs, s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd) (_ : s'.wr = s.wr)
+    (hr : ∀ r ∈ [Reg.rdi, .rsi], s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd) (_ : s'.wr = s.wr)
     (hf : Frame rs s.mem s'.mem) : KeyArgs s' rs k := by
   obtain ⟨p, hp, hrsi, hR, hws, hin, hfit, hdis⟩ := h
   refine ⟨p, by rw [hr .rdi List.mem_cons_self, hp], by rw [hr .rsi (List.mem_cons_of_mem _ List.mem_cons_self), hrsi],
@@ -77,13 +80,12 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Nat × List (BitVec
   have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega
   exact (wordAt_frame hf fun r hr => (hdis r hr).sub_left (VG.Offset.sub_base p hl)).symm
 
-theorem permOf_encrypt (g i : Nat) : permOf .encrypt g i = i := rfl
-
-theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Nat × List (BitVec 64)} (hB : s.gpr sb = B)
-    (hs : ScrIn s B modeCore.total) (hR : (⟨B, 8 * modeCore.total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
-    WP isa modeCore.prepare s fun s' => Ready s' B k ∧ s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
-      s'.gpr modeCore.dataReg = s.gpr modeCore.dataReg ∧ s'.gpr modeCore.leftReg = s.gpr modeCore.leftReg ∧
-      Frame [coreRegion modeCore B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Nat × List (BitVec 64)}
+    (hB : s.gpr sb = B) (hs : ScrIn s B (dirCore d).total) (hR : (⟨B, 8 * (dirCore d).total⟩ : Region) ∈ rs)
+    (hk : KeyArgs s rs k) :
+    WP isa (dirCore d).prepare s fun s' => Ready d s' B k ∧ s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
+      s'.gpr .rdx = s.gpr .rdx ∧ s'.gpr .r8 = s.gpr .r8 ∧
+      Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨R, ws⟩ := k
   obtain ⟨p, hp, hrsi, hRr, hws, hin, hfit, hdis⟩ := hk
   simp only at hrsi hRr hws
@@ -105,30 +107,32 @@ theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Nat × List (B
     show s₂.mem.readW (wordAddr (s₂.gpr sb) kv.1) 64 = kv.2
     rw [m₂, g₂]; exact v₁ kv hkv
   show WP isa (.seq (.block (setMasks layerMasks ++ ([.alu .cmp .rsi (.imm 18)] : List Instr)))
-    (.ite .e (keys .encrypt 3) (keys .encrypt 4))) s _
+    (.ite .e (keys d 3) (keys d 4))) s _
   refine WP.seq (WP.of_runBlock ⟨s₂, by rw [runBlock_append', e₁, Option.bind_some, e₂], ?_⟩)
   obtain ⟨g, hgR⟩ : ∃ g, R / 6 = g := ⟨_, rfl⟩
   have hg : g = 3 ∨ g = 4 := by omega
-  refine WP.mono (M := isa) (Q := fun s' => KeysPost s₂ B p g (permOf .encrypt g) s' ∧
+  refine WP.mono (M := isa) (Q := fun s' => KeysPost s₂ B p g (permOf d g) s' ∧
       s'.gpr .rdi = B + BitVec.ofNat 64 (8 * keySlot + 512 * g))
     (WP.ite (decide (R = 18)) (by simp [X86_64.eval, hz]) (fun h => ?_) (fun h => ?_)) fun s₃ ⟨k₃, rdi₃⟩ => ?_
   · obtain rfl : g = 3 := by simp at h; omega
-    exact keys_wp .encrypt (Or.inl rfl) hpre rdi₂ mk₂
+    exact keys_wp d (Or.inl rfl) hpre rdi₂ mk₂
   · obtain rfl : g = 4 := by simp at h; omega
-    exact keys_wp .encrypt (Or.inr rfl) hpre rdi₂ mk₂
+    exact keys_wp d (Or.inr rfl) hpre rdi₂ mk₂
   have b₃ : s₃.gpr sb = B := k₃.pre.base
   have keep : ∀ r, r ∉ sboxWrites → r ≠ kp → r ≠ .rdi → r ≠ t0 → s₃.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
     rw [k₃.regs r h1 h2 h3, g₂, g₁ r h4]
-  have hcore : ∀ {n : Nat}, n ≤ tailSlot + 16 → Region.Sub ⟨B, 8 * n⟩ (coreRegion modeCore B) := fun h =>
-    Region.sub_prefix (by simp only [modeCore]; omega)
+  have hcore : ∀ {n : Nat}, n ≤ tailSlot + 16 → Region.Sub ⟨B, 8 * n⟩ (coreRegion (dirCore d) B) := fun h =>
+    Region.sub_prefix (by simp only [dirCore]; omega)
   refine ⟨⟨hRr, k₃.masks.at b₃, fun i hi => ?_, by rw [rdi₃, hgR]⟩, b₃,
     keep _ (by decide) (by decide) (by decide) (by decide), keep _ (by decide) (by decide) (by decide) (by decide),
     keep _ (by decide) (by decide) (by decide) (by decide), ?_, by rw [k₃.rd, rd₂, rd₁], by rw [k₃.wr, wr₂, wr₁]⟩
   · rw [hgR] at hi
     have := k₃.ent i hi
-    rw [permOf_encrypt, m₂] at this
-    have hl : i < Spec.Camellia.scheduleLength R := by simp only [Spec.Camellia.scheduleLength]; omega
-    rw [hws, schedWords_getD _ _ hl]
+    rw [m₂] at this
+    have hp' : permOf d g i < 8 * g + 2 := dirPerm_lt (specDir d) hi
+    have hl : permOf d g i < Spec.Camellia.scheduleLength R := by simp only [Spec.Camellia.scheduleLength]; omega
+    show EntryOk s₃.mem B i (ws.getD (permOf d (R / 6) i) 0)
+    rw [hgR, hws, schedWords_getD _ _ hl]
     rw [wordAt_frame f₁ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hsep.sub_left (VG.Offset.sub_base p (by simp only [Spec.Camellia.scheduleLength] at hl; omega))).sub_right
@@ -140,6 +144,22 @@ theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Nat × List (B
       simp only [List.mem_singleton] at hr; subst hr; exact hcore (by rw [keySlot_eq, tailSlot_eq]; omega)⟩).trans
       (kf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
         simp only [List.mem_singleton] at hr; subst hr; exact hcore (by rw [endSlot_eq, tailSlot_eq]; omega)⟩)
+
+/-- The cipher of the direction `d`. -/
+def dirCipher : Dir → Spec.Camellia.Subkeys → Spec.Cbc.Cipher
+  | .encrypt => Spec.Camellia.cipher
+  | .decrypt => Spec.Camellia.invCipher
+
+/-- The cipher on a block in memory: `crypt8`'s words. -/
+theorem dirCipher_bytes (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) (ws : List (BitVec 64)) (m : Mem) (p : Addr) :
+    dirCipher d (Spec.Camellia.subkeysOfWords R ws) (Spec.Aes.bytesAt m p 16) =
+      (Spec.Camellia.encodeBlock (cryptWords (R / 6) (fun i => ws.getD (permOf d (R / 6) i) 0)
+        (Spec.Camellia.decodeBlock (Spec.Camellia.blockAt m p)))).toList := by
+  cases d
+  · rw [dirCipher, Spec.Camellia.cipher, bytesAt_eq_blockAt, ofFn_toList, Spec.Camellia.encryptBlock,
+      encryptWith_eq hR]; rfl
+  · rw [dirCipher, Spec.Camellia.invCipher, bytesAt_eq_blockAt, ofFn_toList, Spec.Camellia.decryptBlock,
+      decryptWith_eq hR]; rfl
 
 /-- The masks and the table below the postwhitening's entry, through a
 change of memory that keeps the words below it. -/
@@ -155,14 +175,14 @@ theorem keys_of_words {m m' : Mem} {B : Addr} {g : Nat} {E : Nat → BitVec 64} 
     exact hw (8 * kv.1) (by rw [endSlot_eq]; omega)
   · exact hw (8 * keySlot + 64 * i + 8 * j) (by rw [keySlot_eq, endSlot_eq]; omega)
 
-theorem crypt_wp {s : State} {B : Addr} {k : Nat × List (BitVec 64)} (hB : s.gpr sb = B)
-    (hs : ScrIn s B modeCore.total) (hr : Ready s B k) :
-    WP isa modeCore.crypt s fun s' => s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
-      s'.gpr modeCore.dataReg = s.gpr modeCore.dataReg ∧ s'.gpr modeCore.leftReg = s.gpr modeCore.leftReg ∧
-      Ready s' B k ∧ Frame [coreRegion modeCore B] s.mem s'.mem ∧
-      (∀ j < modeCore.G, Spec.Aes.bytesAt s'.mem (bufAddr modeCore B j) 16 =
-        Spec.Camellia.cipher (Spec.Camellia.subkeysOfWords k.1 k.2)
-          (Spec.Aes.bytesAt s.mem (bufAddr modeCore B j) 16)) ∧
+theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Nat × List (BitVec 64)} (hB : s.gpr sb = B)
+    (hs : ScrIn s B (dirCore d).total) (hr : Ready d s B k) :
+    WP isa (dirCore d).crypt s fun s' => s'.gpr sb = B ∧ s'.gpr .rsp = s.gpr .rsp ∧
+      s'.gpr .rdx = s.gpr .rdx ∧ s'.gpr .r8 = s.gpr .r8 ∧
+      Ready d s' B k ∧ Frame [coreRegion (dirCore d) B] s.mem s'.mem ∧
+      (∀ j < (dirCore d).G, Spec.Aes.bytesAt s'.mem (bufAddr (dirCore d) B j) 16 =
+        dirCipher d (Spec.Camellia.subkeysOfWords k.1 k.2)
+          (Spec.Aes.bytesAt s.mem (bufAddr (dirCore d) B j) 16)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨R, ws⟩ := k
   obtain ⟨hRr, hm, he, hrdi⟩ := hr
@@ -170,7 +190,7 @@ theorem crypt_wp {s : State} {B : Addr} {k : Nat × List (BitVec 64)} (hB : s.gp
   let g := R / 6
   have hg : g = 3 ∨ g = 4 := by omega
   have hg4 : g ≤ 4 := by omega
-  let E : Nat → BitVec 64 := fun i => ws.getD i 0
+  let E : Nat → BitVec 64 := fun i => ws.getD (permOf d g i) 0
   let T := B + BitVec.ofNat 64 (8 * tailSlot)
   have hfit : B.toNat + 8 * slots ≤ 2 ^ 64 := hs.fit
   have hwS : (⟨B, 8 * slots⟩ : Region) ∈ s.wr := hs.wr
@@ -289,9 +309,9 @@ theorem crypt_wp {s : State} {B : Addr} {k : Nat × List (BitVec 64)} (hB : s.gp
     rw [m₆b, m₆a, o₆b _ (by decide), o₆a _ (by decide), base₅, vS _ (.inr (.inr rfl)), slot₄ _ hes, ite_eq_left rfl]
   have g₆ : ∀ r, r ≠ .rdx → r ≠ .r8 → r ≠ .rdi → s₆.gpr r = s₅.gpr r := fun r h1 h2 h3 => by
     rw [o₆ r h3, o₆b r h2, o₆a r h1]
-  have hcoreR : ∀ {d n : Nat}, d + n ≤ 8 * (tailSlot + 16) →
-      Region.Sub ⟨B + BitVec.ofNat 64 d, n⟩ (coreRegion modeCore B) := fun h =>
-    VG.Offset.sub_base B (by simp only [modeCore]; omega)
+  have hcoreR : ∀ {o n : Nat}, o + n ≤ 8 * (tailSlot + 16) →
+      Region.Sub ⟨B + BitVec.ofNat 64 o, n⟩ (coreRegion (dirCore d) B) := fun h =>
+    VG.Offset.sub_base B (by simp only [dirCore]; omega)
   refine WP.of_runBlock ⟨s₆, by
     rw [loadState, show ([movS .rdx dataSlot, movS .r8 countSlot, movS .rdi endSlot] : List Instr) =
       [movS .rdx dataSlot] ++ ([movS .r8 countSlot] ++ [movS .rdi endSlot]) from rfl,
@@ -312,28 +332,32 @@ theorem crypt_wp {s : State} {B : Addr} {k : Nat × List (BitVec 64)} (hB : s.gp
       (f₅.sub fun r hr => ⟨_, List.mem_singleton_self _, by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact Region.sub_prefix (by simp only [modeCore]; rw [keySlot_eq, tailSlot_eq]; omega)
+        · exact Region.sub_prefix (by simp only [dirCore]; rw [keySlot_eq, tailSlot_eq]; omega)
         · exact hcoreR (by rw [tailSlot_eq])⟩)
   · have hj8 : j < 8 := hj
-    have ha : bufAddr modeCore B j = T + BitVec.ofNat 64 (16 * j) := by
-      simp only [bufAddr, modeCore, T]; rw [addr_add]
+    have ha : bufAddr (dirCore d) B j = T + BitVec.ofNat 64 (16 * j) := by
+      simp only [bufAddr, dirCore, T]; rw [addr_add]
     have e5 := b₅ j hj8
     simp only [Proof.Camellia.X86_64.blk, rdx₅, rdx₄] at e5
-    rw [ha, cipher_bytes hRr, bytesAt_eq_blockAt, mem₆, e5, tail₄ j hj8]
+    rw [ha, dirCipher_bytes d hRr, bytesAt_eq_blockAt, mem₆, e5, tail₄ j hj8]
 
-/-- Camellia's core meets what the modes need. -/
-def modeCoreSpec : CoreSpec modeCore where
+/-- Camellia's core for the direction `d` meets what the modes need. -/
+def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
   Key := Nat × List (BitVec 64)
-  cipher k := Spec.Camellia.cipher (Spec.Camellia.subkeysOfWords k.1 k.2)
+  cipher k := dirCipher d (Spec.Camellia.subkeysOfWords k.1 k.2)
   KeyArgs := KeyArgs
-  Ready := Ready
-  cipher_len _ _ := by simp [Spec.Camellia.cipher]
-  layout := ⟨by decide, by decide, by decide, by decide⟩
-  keyRegs_ok := by decide
-  regs_ok := by decide
+  Ready := Ready d
+  cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.Camellia.cipher, Spec.Camellia.invCipher]
+  layout := ⟨by simp only [dirCore]; decide, by simp only [dirCore]; decide, by simp only [dirCore]; decide,
+    by simp only [dirCore]; decide⟩
+  keyRegs_ok := by simp only [dirCore]; decide
+  regs_ok := by simp only [dirCore, Modes.X86_64.regsOk]; decide
   keyArgs_congr := keyArgs_congr
   ready_frame := ready_frame
-  prepare_wp := prepare_wp
-  crypt_wp := crypt_wp
+  prepare_wp := prepare_wp d
+  crypt_wp := crypt_wp d
+
+/-- Camellia's core for encryption, for CTR. -/
+abbrev modeCoreSpec : CoreSpec modeCore := dirCoreSpec .encrypt
 
 end VG.Proof.Camellia.X86_64

@@ -1,0 +1,5 @@
+name = "OpenSSL's Camellia CBC test vectors, as pyca/cryptography vendors them (camellia-cbc.txt)"
+directories = ["cryptography-camellia-cbc"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/55cfeb23a8f9e0b7edb87bccb98a6ca7447aa436/vectors/cryptography_vectors/ciphers/Camellia/camellia-cbc.txt"
+sha256 = "3247c599f05d59522f2c48895f1931363ba7283574c495cd3f9bb617e036703d"
+retrieved = 2026-10-10

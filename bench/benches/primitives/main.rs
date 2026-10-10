@@ -33,6 +33,7 @@ mod argon2;
 mod blake2b;
 mod blake2s;
 mod blowfish_ecb;
+mod camellia_cbc;
 mod camellia_ctr;
 mod camellia_ecb;
 mod cast5_ecb;
@@ -98,6 +99,7 @@ mod sha384;
 mod sha512;
 mod sha512_224;
 mod sha512_256;
+mod sm4_cbc;
 mod sm4_ctr;
 mod sm4_ecb;
 mod triple_des_ecb;
@@ -344,6 +346,7 @@ const BENCHES: &[Bench] = &[
     (blake2b::USES, blake2b::bench),
     (blake2s::USES, blake2s::bench),
     (blowfish_ecb::USES, blowfish_ecb::bench),
+    (camellia_cbc::USES, camellia_cbc::bench),
     (camellia_ctr::USES, camellia_ctr::bench),
     (camellia_ecb::USES, camellia_ecb::bench),
     (cast5_ecb::USES, cast5_ecb::bench),
@@ -386,6 +389,7 @@ const BENCHES: &[Bench] = &[
     (rsa_public::USES, rsa_public::bench),
     (triple_des_ecb::USES, triple_des_ecb::bench),
     (seed_ecb::USES, seed_ecb::bench),
+    (sm4_cbc::USES, sm4_cbc::bench),
     (sm4_ctr::USES, sm4_ctr::bench),
     (sm4_ecb::USES, sm4_ecb::bench),
     (argon2::USES, argon2::bench),

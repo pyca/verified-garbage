@@ -21,6 +21,7 @@ mod aes_ecb;
 mod aes_gcm;
 mod aes_ofb;
 mod aes_xts;
+mod camellia_cbc;
 mod camellia_ecb;
 mod cmac_aes;
 mod cmac_triple_des;

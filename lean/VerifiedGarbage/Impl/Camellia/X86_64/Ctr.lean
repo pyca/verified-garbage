@@ -23,10 +23,11 @@ namespace VG.Impl.Camellia.X86_64
 
 open VG.X86_64 VG.Impl.Aes.X86_64
 
-/-- Camellia's core for the modes. -/
-def modeCore : Impl.Modes.X86_64.Core where
+/-- Camellia's core for the modes, its subkeys in the order of the direction
+`d`: encryption's for CTR, decryption's for CBC decryption. -/
+def dirCore (d : Dir) : Impl.Modes.X86_64.Core where
   prepare := .seq (.block (setMasks layerMasks ++ ([.alu .cmp .rsi (.imm 18)] : List Instr)))
-    (.ite .e (keys .encrypt 3) (keys .encrypt 4))
+    (.ite .e (keys d 3) (keys d 4))
   crypt := .seq (.block saveState) (.seq crypt8 (.block loadState))
   slots := tailSlot + 16
   total := slots
@@ -35,6 +36,9 @@ def modeCore : Impl.Modes.X86_64.Core where
   keyRegs := [.rdi, .rsi]
   dataReg := .rdx
   leftReg := .r8
+
+/-- Camellia's core for encryption. -/
+abbrev modeCore : Impl.Modes.X86_64.Core := dirCore .encrypt
 
 /-- `vg_camellia_ctr`. -/
 def ctr : Prog isa := modeCore.ctr ⟨.rdx, .rcx, .r8, .r9⟩

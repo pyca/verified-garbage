@@ -50,6 +50,9 @@ pub(crate) mod blowfish;
 pub(crate) mod camellia;
 
 #[rustfmt::skip]
+pub(crate) mod camellia_cbc;
+
+#[rustfmt::skip]
 pub(crate) mod camellia_ctr;
 
 #[rustfmt::skip]
@@ -351,6 +354,9 @@ pub(crate) mod sha512;
 
 #[rustfmt::skip]
 pub(crate) mod sm4;
+
+#[rustfmt::skip]
+pub(crate) mod sm4_cbc;
 
 #[rustfmt::skip]
 pub(crate) mod sm4_ctr;
