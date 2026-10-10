@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Pre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.DepthBase
 
 /-!
 # ML-DSA on AArch64, `sign_message`: the call of the signing function on `μ`

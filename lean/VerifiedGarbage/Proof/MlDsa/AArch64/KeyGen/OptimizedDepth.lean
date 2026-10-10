@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPrims
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.DepthBase
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen.Optimized
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen

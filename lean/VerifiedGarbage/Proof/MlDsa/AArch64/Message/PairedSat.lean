@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedPre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Verified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedSignSat
 
 namespace VG.Proof.MlDsa.AArch64.Message.Paired

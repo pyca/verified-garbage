@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyCT
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.CachedVerify

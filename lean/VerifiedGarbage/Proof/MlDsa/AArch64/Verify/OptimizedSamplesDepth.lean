@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamples
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.DepthBase
 
 namespace VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
 open VG VG.AArch64 VG.Spec.MlDsa
