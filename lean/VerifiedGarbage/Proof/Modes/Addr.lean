@@ -48,6 +48,16 @@ theorem writeW_xor_apply (m m₁ m₂ : Mem) (a c e x : Addr) :
       Mem.extractLsb'_read m₁ c (n := 8) h, Mem.extractLsb'_read m₂ e (n := 8) h]
   · rfl
 
+/-- A byte of a little-endian word stored from a load. -/
+theorem writeW_readW_apply (m m₁ : Mem) (a c x : Addr) :
+    m.writeW a (m₁.readW c 64) x =
+      if (x - a).toNat < 8 then m₁ (c + BitVec.ofNat 64 (x - a).toNat) else m x := by
+  simp only [Mem.writeW, Mem.write, BitVec.setWidth_eq]
+  split
+  · rename_i h
+    rw [Mem.readW, BitVec.setWidth_eq, Mem.extractLsb'_read m₁ c (n := 8) h]
+  · rfl
+
 /-- Bytes below a store. -/
 theorem bytesAt_writeW_above (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {d n : Nat} (hn : n ≤ d)
     (hw : 0 < w / 8) (hd : d + w / 8 ≤ 2 ^ 64) :

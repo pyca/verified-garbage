@@ -15,7 +15,7 @@
 //! module checks the lengths, holds the key schedule and keeps the chaining
 //! value to continue from: the last ciphertext block.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::arch::sm4::vg_sm4_expand_key;
 use crate::arch::sm4_cbc::{vg_sm4_cbc_decrypt, vg_sm4_cbc_encrypt};

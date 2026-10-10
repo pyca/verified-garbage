@@ -1,14 +1,14 @@
-import VerifiedGarbage.Proof.Modes.X86_64.Unchain
+import VerifiedGarbage.Proof.Modes.Unchain
 
 /-!
-# Blocks of 16 bytes, a word at a time, on x86-64
+# Blocks of 16 bytes, a word at a time
 
 The memory after two 8-byte stores that copy a block (`copy16_in`) or XOR
 one into another (`xor16_in`), read a byte at a time, and the bytes outside
-the block (`two_out`).
+the block (`two_out`), on any 64-bit target.
 -/
 
-namespace VG.Proof.Modes.X86_64
+namespace VG.Proof.Modes
 
 open VG
 
@@ -56,4 +56,4 @@ theorem xor16_in (m : Mem) {a c : Addr} (hd : Region.Disjoint ⟨a, 16⟩ ⟨c, 
   · rw [ite_eq_right (off_sub_not a (Or.inl (by omega : u < 8)) (by omega) (by decide) (by decide)),
       writeW_xor_apply, ite_eq_left (by rw [off_self a (by omega)]; omega), off_self a (by omega)]
 
-end VG.Proof.Modes.X86_64
+end VG.Proof.Modes
