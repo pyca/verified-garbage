@@ -6,7 +6,7 @@
 //! (`VG.Spec.Sm3.Repr`: the hash value after its whole blocks, and its
 //! remaining bytes), and pad it and output the hash value.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::arch::sm3::{vg_sm3_finalize, vg_sm3_init, vg_sm3_update};
 
