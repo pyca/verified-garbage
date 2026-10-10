@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
 
 /-!
@@ -108,7 +109,7 @@ theorem cmpEnd_ok (s : State) :
     WP isa (.block (([.alu .sub .rdx (.imm 1), .alu .sbb .rax (.reg .rax)] : List Instr) ++ and15)) s fun s' =>
       (s'.gpr .r15 = (if s.gpr .rdx = 0 then BitVec.setWidth 64 ((s.gpr .r15).setWidth 32) else 0) ∧
         s'.mem = s.mem) ∧ Keep [.rdx, .rax, .r15] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   unfold and15
   xrun [List.cons_append, List.nil_append]
   exact sbb_val _ _
@@ -121,7 +122,7 @@ theorem cmpBody_ok (s : State) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 1)
       (s'.gpr .rdx = s.gpr .rdx ||| (BitVec.setWidth 64 (s.mem (s.gpr .rsi)) ^^^ BitVec.setWidth 64 (s.mem (s.gpr .rdi))) ∧
         s'.gpr .rsi = s.gpr .rsi + 1 ∧ s'.gpr .rdi = s.gpr .rdi + 1 ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
         s'.zf = some (s.gpr .rcx - 1 == 0) ∧ s'.mem = s.mem) ∧ Keep [.rax, .r8, .rdx, .rsi, .rdi, .rcx] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   unfold cmpBody
   xrun [h0, h1]
 
@@ -153,7 +154,7 @@ theorem cmpAnd_ok {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay rbs wbs s) 
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (glue_ok' hok (by simp only [List.map_cons, List.map_nil]; decide) s) fun s1 h1 => ?_
-  refine WP.mono (WP.keep [.rdx] (Q := fun s₂ => s₂.mem = s1.mem ∧ s₂.gpr .rdx = 0) (by xrun) (by decide))
+  refine WP.mono (WP.keep [.rdx] (Q := fun s₂ => s₂.mem = s1.mem ∧ s₂.gpr .rdx = 0) (by xrun) (Proof.MlKem.X86_64.writesOnly_of (by decide)))
     fun s2 ⟨⟨hm2, hd2⟩, k2⟩ => ?_
   have k12 : Keep argRegs s s2 := (h1.2.trans k2).mono (by simp)
   have hm12 : s2.mem = s.mem := hm2.trans h1.1.2

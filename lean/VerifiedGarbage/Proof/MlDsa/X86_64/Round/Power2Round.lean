@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Loop
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Arith
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
@@ -33,7 +34,7 @@ theorem p2rBody_ok (s : State) (h1 : InRegions (s.rd ++ s.wr) (cfAddr (s.gpr .rd
           (t0V (s.mem.readW (cfAddr (s.gpr .rdi) (s.gpr .rcx)) 32)) ∧
         s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0)) ∧
       Keep [.rax, .r8, .r9, .rcx] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   unfold p2rBody condAdd
   xrun [h1, h2, h3, ea_cf, List.cons_append, List.nil_append, t1V, t0V, condAddV]
 
@@ -101,7 +102,7 @@ theorem p2r_loop :
 
 theorem p2r_correct :
     ∃ t s', Exec isa power2Round s₀ t s' ∧ abiPreserved s₀ s' ∧ power2RoundK.post s₀ s' := by
-  obtain ⟨t, s', he, hI, hk⟩ := WP.keep [.rax, .rcx, .r8, .r9] (p2r_loop hp) (by decide)
+  obtain ⟨t, s', he, hI, hk⟩ := WP.keep [.rax, .rcx, .r8, .r9] (p2r_loop hp) (Proof.MlKem.X86_64.writesOnly_of (by decide))
   have hr : Reduced s₀.mem (s₀.gpr .rdi) := hp.2.2.2.2.2.2.2.2
   refine ⟨t, s', he, abiPreserved_of_exec (by decide) he (gprPreserved_of hk (by decide) hI.frame ?_), ?_, ?_⟩
   · simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,

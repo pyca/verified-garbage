@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Loop
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
 import VerifiedGarbage.Proof.MlDsa.Round.Decompose
@@ -40,13 +41,13 @@ def Prologue (gr oa : Reg) (s s' : State) : Prop :=
 
 theorem prologue_rsi_rdx (s : State) :
     WP isa (.block (gammaCmp .rsi ++ ([.mov .r10 (.reg .rdx)] : List Instr))) s (Prologue .rsi .rdx s) := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   unfold gammaCmp
   xrun [List.cons_append, List.nil_append]
 
 theorem prologue_rdx_rcx (s : State) :
     WP isa (.block (gammaCmp .rdx ++ ([.mov .r10 (.reg .rcx)] : List Instr))) s (Prologue .rdx .rcx s) := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   unfold gammaCmp
   xrun [List.cons_append, List.nil_append]
 

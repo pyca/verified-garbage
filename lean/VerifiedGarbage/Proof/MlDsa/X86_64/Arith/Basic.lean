@@ -1,5 +1,5 @@
 import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Common
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
@@ -137,7 +137,7 @@ theorem redD32_toNat (x : BitVec 64) : (BitVec.setWidth 32 (redD x)).toNat = x.t
 theorem reduce_ok (s : State) :
     WP isa (.block reduce) s fun s' => (s'.gpr .r10 = redD (s.gpr .rax) ∧ s'.mem = s.mem) ∧
       Keep [.rax, .rdx, .r10, .r11] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   unfold reduce csubQ
   xrund [List.cons_append, List.nil_append, csubD, redD]
 

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseC
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
@@ -677,7 +678,7 @@ theorem kInit_ok {D : Nat} {p : Params} (hc : ksChk p = true) {σ : State} {t : 
   refine ksChk_spec hc fun _ _ _ c4 c5 c6 c7 _ _ _ _ _ _ c13 _ _ c16 _ _ _ _ _ _ _ _ _ c22 _ => ?_
   have L1 := h.b.l.st.lay
   rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.r15] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .r15 = 1) (by xrun) (by decide))
+  refine WP.mono (WP.keep [.r15] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .r15 = 1) (by xrun) (Proof.MlKem.X86_64.writesOnly_of (by decide)))
     fun s2 ⟨⟨hm2, h152⟩, k2⟩ => ?_
   have hP2 : PPostB D s s2 [] := (postB15 k2 hm2 _).1
   have B2 := h.b.step hP2 c13

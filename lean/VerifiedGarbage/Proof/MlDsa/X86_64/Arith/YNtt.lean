@@ -17,7 +17,7 @@ namespace VG.Proof.MlDsa.X86_64.Arith
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
-open VG.Proof.MlKem.X86_64 (Keep XOnly YOnly ylanes yld_ok yconst_ok ifp ifn sel GOnly WP.keep writesOnly
+open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep XOnly YOnly ylanes yld_ok yconst_ok ifp ifn sel GOnly WP.keep writesOnly
   gprPreserved_of withMxcsr_ok mxR add_ofNat_zero wp_rcxLoopY lane_setReg lane_setFlags State.setMem_ymm sx32)
 open VG.Impl.MlKem.X86_64 (xb xmov toY rcxLoop yconst)
 open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt PolyIs zetas ntt nttInv)
@@ -344,9 +344,9 @@ theorem ynttBody_ok {t : Poly → Poly} {s s1 : State} (hs : (inPlaceK t).pre s)
 
 /-- `withMxcsr` around the body, and the ABI. -/
 theorem ymx_correct {t : Poly → Poly} {l : Prog isa} (s : State) (hs : (inPlaceK t).pre s)
-    (hk : writesOnly [.rax, .rcx, .rdx, .r8, .r9] (.seq (.block ypro) l) = true)
+    (hk : Code.allInstrs (writesIn [.rax, .rcx, .rdx, .r8, .r9]) (.seq (.block ypro) l) = true)
     (hctl : ctlOk (VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 (.seq (.block ypro) l)) = true)
-    (hk' : writesOnly [.rax, .rcx, .rdx, .r8, .r9, .r11]
+    (hk' : Code.allInstrs (writesIn [.rax, .rcx, .rdx, .r8, .r9, .r11])
       (VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 (.seq (.block ypro) l)) = true)
     (hl : ∀ s1, Keep [.rax, .r11] s s1 → Frame [mxR (s.gpr .rsi)] s.mem s1.mem →
       WP isa (.seq (.block ypro) l) s1 fun s' => PolyIs s'.mem (s.gpr .rdi) (t (polyAt s.mem (s.gpr .rdi))) ∧
@@ -356,8 +356,8 @@ theorem ymx_correct {t : Poly → Poly} {l : Prog isa} (s : State) (hs : (inPlac
   have hw : pR (s.gpr .rsi) ∈ s.wr := by rw [hs.2.1]; simp
   have hd : (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rsi)) := hs.2.2.1
   have hW := withMxcsr_ok (c := .seq (.block ypro) l) (by decide) [.rax, .rcx, .rdx, .r8, .r9] (by decide) rfl hw
-    hk (hl)
-  obtain ⟨tr, s', he, ⟨s2, ⟨hP, hf⟩, hf', -⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .r8, .r9, .r11] hW hk'
+    (writesOnly_of hk) (hl)
+  obtain ⟨tr, s', he, ⟨s2, ⟨hP, hf⟩, hf', -⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .r8, .r9, .r11] hW (writesOnly_of hk')
   refine ⟨tr, s', he, abiPreserved_of_ctl hctl he (gprPreserved_of hk (by decide)
     (hf.trans (hf'.sub fun r hr => ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), ?_⟩))
     (by simpa using ⟨hs.2.2.2.1, hs.2.2.2.2.1⟩)), ?_⟩
