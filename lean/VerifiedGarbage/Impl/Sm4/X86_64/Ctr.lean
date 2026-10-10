@@ -36,7 +36,7 @@ def ctrSetup : List Instr :=
   [.mov .rax (.mem (at_ .rsi 0)), .bswap .rax, .mov .rbx (.mem (at_ .rsi 8)), .bswap .rbx,
    st ctrHi .rax, st ctrLo .rbx,
    .alu .add .rbx (.reg .r8), .alu .adc .rax (.imm 0), .bswap .rax, .bswap .rbx,
-   .store (at_ .rsi 0) .rax, .store (at_ .rsi 8) .rbx]
+   .store (at_ .rsi 8) .rbx, .store (at_ .rsi 0) .rax]
 
 /-- Counter block `b` of the group (the running counter in `rax`, `rbx`) to
 block `b` of the tail buffer, and the running counter incremented. -/
