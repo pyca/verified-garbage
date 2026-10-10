@@ -250,7 +250,7 @@ shifts the slot `hs` holding a hash; stores the constants; and sets
 `R = (0 : 1 : 0)` and the flag to all ones. -/
 def setupWith (hs : Option Nat) : List Instr :=
   saved.map (fun (r, d) => .str .x r .x4 d) ++
-  [.addImm .x .x20 .x0 0, .addImm .x .x0 .x4 0] ++
+  ([.addImm .x .x20 .x0 0, .addImm .x .x0 .x4 0] : List Instr) ++
   loadBytes c.C.len c.n (c.sl K) .x3 ++ loadBytes c.C.len c.n (c.sl D) .x1 ++
   loadBytes c.C.len c.n (c.sl E) .x2 ++ c.shiftCode hs ++
   c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
@@ -265,7 +265,7 @@ def setup : List Instr := c.setupWith none
 def nonzero (a : Nat) : List Instr :=
   [zero7, ld .x1 a] ++ ((List.range (c.n - 1)).flatMap fun j =>
     [ld .x2 (a + 8 * (j + 1)), .logic .orr .x .x1 .x1 .x2]) ++
-  [.subs .x .x16 .x7 .x1, .sbc .x .x2 .x7 .x7]
+  ([.subs .x .x16 .x7 .x1, .sbc .x .x2 .x7 .x7] : List Instr)
 
 /-- The mask `x2` of `[a] < n` (all ones if it is), through `x1`, `x7` and
 `x16`. -/
@@ -273,7 +273,7 @@ def ltN (a : Nat) : List Instr :=
   zero7 :: ((List.range c.n).flatMap fun j =>
     [ld .x1 (a + 8 * j), ld .x2 (c.sl MN + 8 * j),
       if j = 0 then .subs .x .x16 .x1 .x2 else .sbcs .x .x16 .x1 .x2]) ++
-  [.sbc .x .x2 .x7 .x7]
+  ([.sbc .x .x2 .x7 .x7] : List Instr)
 
 /-- The flag `&=` the mask `x2`, through `x1`. -/
 def andFlag : List Instr :=
@@ -282,7 +282,7 @@ def andFlag : List Instr :=
 /-- `[a]` is in `[1, n-1]`: the flag `&=` both masks (the first kept in
 `x4`). -/
 def checkRange (a : Nat) : List Instr :=
-  c.ltN a ++ [.addImm .x .x4 .x2 0] ++ c.nonzero a ++ [.logic .and .x .x2 .x2 .x4] ++ c.andFlag
+  c.ltN a ++ ([.addImm .x .x4 .x2 0] : List Instr) ++ c.nonzero a ++ ([.logic .and .x .x2 .x2 .x4] : List Instr) ++ c.andFlag
 
 /-- `[a] ≠ 0`: the flag `&=` its mask. -/
 def checkNonzero (a : Nat) : List Instr := c.nonzero a ++ c.andFlag
@@ -301,7 +301,7 @@ def finish : List Instr :=
   [ld .x3 (c.sl FLAG)] ++
   storeBytes c.C.len c.n .x20 0 (c.sl RR) ++ storeBytes c.C.len c.n .x20 c.C.len (c.sl SS) ++
   saved.map (fun (r, d) => ld r d) ++
-  [.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1]
+  ([.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1] : List Instr)
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/
 def scalar : Prog isa :=

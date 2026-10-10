@@ -76,28 +76,28 @@ def consts : List (Nat × Nat) := [(R2P, c.R * c.R % c.C.p), (BP, c.mont c.C.b)]
 def ltP (a : Nat) : List Instr :=
   ((List.range (2 * c.n)).flatMap fun j =>
     [.mov .edx (.mem (sc (a + 4 * j))), .alu (if j = 0 then .sub else .sbb) .edx (.mem (sc (c.sl MP + 4 * j)))]) ++
-  [.alu .sbb .eax (.reg .eax)]
+  ([.alu .sbb .eax (.reg .eax)] : List Instr)
 
 /-- `[a] < p`: the flag `&=` its mask. -/
-def checkLtP (a : Nat) : List Instr := ltP c a ++ [.mov .edx (.reg .eax)] ++ c.andFlag
+def checkLtP (a : Nat) : List Instr := ltP c a ++ ([.mov .edx (.reg .eax)] : List Instr) ++ c.andFlag
 
 /-- `[a] = 0`: the flag `&=` its mask (the complement of `nonzero`'s). -/
-def checkZero (a : Nat) : List Instr := c.nonzero a ++ [.alu .xor .edx (.imm (-1))] ++ c.andFlag
+def checkZero (a : Nat) : List Instr := c.nonzero a ++ ([.alu .xor .edx (.imm (-1))] : List Instr) ++ c.andFlag
 
 /-- The first byte of the key that argument `i` points to is `04`: the flag
 `&=` its mask, through `ebx` (the key) and `edx` (all ones iff
 `byte ^ 4 = 0`, the borrow of `- 1`). -/
 def checkLeadAt (i : Nat) : List Instr :=
-  [.mov .ebx (.mem (Cfg.argOp i)), .movzx8 .edx (at_ .ebx 0), .alu .xor .edx (.imm 4),
-    .alu .sub .edx (.imm 1), .alu .sbb .edx (.reg .edx)] ++ c.andFlag
+  ([.mov .ebx (.mem (Cfg.argOp i)), .movzx8 .edx (at_ .ebx 0), .alu .xor .edx (.imm 4),
+    .alu .sub .edx (.imm 1), .alu .sbb .edx (.reg .edx)] : List Instr) ++ c.andFlag
 
 /-- The constants, the `x` and `y` of the key that argument `i` points to
 (through `ebx`, from its byte 1), and the checks of its first byte, `x` and
 `y` (also signature verification's, with its key). -/
 def peerAt (i : Nat) : List Instr :=
   (consts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-  [.mov .ebx (.mem (Cfg.argOp i)), .alu .add .ebx (.imm 1)] ++ loadBytes c.C.len c.n (c.sl E) .ebx ++
-  [.alu .add .ebx (.imm (BitVec.ofNat 32 c.C.len))] ++ loadBytes c.C.len c.n (c.sl QY) .ebx ++
+  ([.mov .ebx (.mem (Cfg.argOp i)), .alu .add .ebx (.imm 1)] : List Instr) ++ loadBytes c.C.len c.n (c.sl E) .ebx ++
+  ([.alu .add .ebx (.imm (BitVec.ofNat 32 c.C.len))] : List Instr) ++ loadBytes c.C.len c.n (c.sl QY) .ebx ++
   checkLeadAt c i ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
 
 /-- The peer's key: `peerAt` its argument. -/
@@ -113,7 +113,7 @@ def curveOps : List FOp :=
 /-- The point to the ladder's slots: the peer's if the flag is set, else
 `G` (the flag is the mask `ecx`). -/
 def select : List Instr :=
-  [.mov .ecx (.mem (sc (c.sl FLAG)))] ++
+  ([.mov .ecx (.mem (sc (c.sl FLAG)))] : List Instr) ++
   sel (2 * c.n) (c.sl PX) (c.sl GX) (c.sl QXM) ++ sel (2 * c.n) (c.sl PY) (c.sl GY) (c.sl QYM)
 
 /-- `x` and `y` into Montgomery's form, the check that the point is on the
@@ -129,8 +129,8 @@ def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
 /-- `x` (or zeros) to `out` (through `ebx`), the flag's low bit to `eax`,
 and the callee-saved registers restored. -/
 def finish : List Instr :=
-  [.mov .ecx (.mem (sc (c.sl FLAG))), .mov .ebx (.mem (Cfg.argOp 0))] ++ storeBytes c.C.len c.n .ebx 0 (c.sl X) ++
-  [.mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] ++ Impl.Ecdsa.X86.Cfg.restore
+  ([.mov .ecx (.mem (sc (c.sl FLAG))), .mov .ebx (.mem (Cfg.argOp 0))] : List Instr) ++ storeBytes c.C.len c.n .ebx 0 (c.sl X) ++
+  ([.mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] : List Instr) ++ Impl.Ecdsa.X86.Cfg.restore
 
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, the checks
 of `d` and `Z`, and the result. -/

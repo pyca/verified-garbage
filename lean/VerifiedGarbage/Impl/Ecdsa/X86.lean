@@ -266,28 +266,28 @@ then goes to `edi`; reads `k`, `d` and the hash (`len` bytes each) through
 stores the constants; and sets `R = (0 : 1 : 0)` and the flag (a word) to
 all ones. -/
 def setupWith (A : Args) : List Instr :=
-  c.prepTable A ++ [.mov .eax (.mem (argOp A.sc))] ++ saveCode ++
-  [.mov .edi (.reg .eax), .mov .ebx (.mem (argOp A.k))] ++ loadBytes c.C.len c.n (c.sl K) .ebx ++
-  [.mov .ebx (.mem (argOp A.d))] ++ loadBytes c.C.len c.n (c.sl D) .ebx ++
-  [.mov .ebx (.mem (argOp A.e))] ++ loadBytes c.C.len c.n (c.sl E) .ebx ++
+  c.prepTable A ++ ([.mov .eax (.mem (argOp A.sc))] : List Instr) ++ saveCode ++
+  ([.mov .edi (.reg .eax), .mov .ebx (.mem (argOp A.k))] : List Instr) ++ loadBytes c.C.len c.n (c.sl K) .ebx ++
+  ([.mov .ebx (.mem (argOp A.d))] : List Instr) ++ loadBytes c.C.len c.n (c.sl D) .ebx ++
+  ([.mov .ebx (.mem (argOp A.e))] : List Instr) ++ loadBytes c.C.len c.n (c.sl E) .ebx ++
   c.shiftCode A.hs ++
   c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-  [.mov .eax (.imm (BitVec.allOnes 32)), .store (sc (c.sl FLAG)) .eax]
+  ([.mov .eax (.imm (BitVec.allOnes 32)), .store (sc (c.sl FLAG)) .eax] : List Instr)
 
 /-- The setup of `sign`. -/
 def setup : List Instr := c.setupWith .sign
 
 /-- The mask `edx` of `[a] ≠ 0` (all ones if it is not zero), through `ecx`. -/
 def nonzero (a : Nat) : List Instr :=
-  [.mov .edx (.mem (sc a))] ++
+  ([.mov .edx (.mem (sc a))] : List Instr) ++
   ((List.range (2 * c.n - 1)).map fun j => .alu .or .edx (.mem (sc (a + 4 * (j + 1))))) ++
-  [.mov .ecx (.imm 0), .alu .sub .ecx (.reg .edx), .alu .sbb .edx (.reg .edx)]
+  ([.mov .ecx (.imm 0), .alu .sub .ecx (.reg .edx), .alu .sbb .edx (.reg .edx)] : List Instr)
 
 /-- The mask `eax` of `[a] < n` (all ones if it is), through `edx`. -/
 def ltN (a : Nat) : List Instr :=
   ((List.range (2 * c.n)).flatMap fun j =>
     [.mov .edx (.mem (sc (a + 4 * j))), .alu (if j = 0 then .sub else .sbb) .edx (.mem (sc (c.sl MN + 4 * j)))]) ++
-  [.alu .sbb .eax (.reg .eax)]
+  ([.alu .sbb .eax (.reg .eax)] : List Instr)
 
 /-- The flag `&=` the mask `edx`, through `eax`. -/
 def andFlag : List Instr :=
@@ -295,7 +295,7 @@ def andFlag : List Instr :=
 
 /-- `[a]` is in `[1, n-1]`: the flag `&=` both masks (the first kept in `ebx`). -/
 def checkRange (a : Nat) : List Instr :=
-  c.ltN a ++ [.mov .ebx (.reg .eax)] ++ c.nonzero a ++ [.alu .and .edx (.reg .ebx)] ++ c.andFlag
+  c.ltN a ++ ([.mov .ebx (.reg .eax)] : List Instr) ++ c.nonzero a ++ ([.alu .and .edx (.reg .ebx)] : List Instr) ++ c.andFlag
 
 /-- `[a] ≠ 0`: the flag `&=` its mask. -/
 def checkNonzero (a : Nat) : List Instr := c.nonzero a ++ c.andFlag
@@ -316,9 +316,9 @@ def restore : List Instr :=
 /-- `r ‖ s` (or zeros) to `out` (through `ebx`), the flag's low bit to `eax`,
 and the callee-saved registers restored. -/
 def finish : List Instr :=
-  [.mov .ecx (.mem (sc (c.sl FLAG))), .mov .ebx (.mem (argOp 0))] ++
+  ([.mov .ecx (.mem (sc (c.sl FLAG))), .mov .ebx (.mem (argOp 0))] : List Instr) ++
   storeBytes c.C.len c.n .ebx 0 (c.sl RR) ++ storeBytes c.C.len c.n .ebx c.C.len (c.sl SS) ++
-  [.mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] ++ restore
+  ([.mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] : List Instr) ++ restore
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/
 def scalar : Prog isa :=
