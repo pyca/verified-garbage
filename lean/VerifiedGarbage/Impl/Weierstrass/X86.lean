@@ -139,12 +139,12 @@ or'd with the low `sh` bits of word `j + 1` rotated to the top (x86 has no
 `shl` here). -/
 def shrWords (n o sh : Nat) : List Instr :=
   (List.range (2 * n)).flatMap fun j =>
-    [.mov .eax (.mem (sc (o + 4 * j))), .shift .shr .eax sh] ++
-    (if j + 1 < 2 * n then
+    ([.mov .eax (.mem (sc (o + 4 * j))), .shift .shr .eax sh] : List Instr) ++
+    ((if j + 1 < 2 * n then
       [.mov .edx (.mem (sc (o + 4 * (j + 1)))), .alu .and .edx (.imm (BitVec.ofNat 32 (2 ^ sh - 1))),
         .shift .ror .edx sh, .alu .or .eax (.reg .edx)]
-    else []) ++
-    [.store (sc (o + 4 * j)) .eax]
+    else []) : List Instr) ++
+    ([.store (sc (o + 4 * j)) .eax] : List Instr)
 
 /-- `[dst + d] = ` the `n`-word number at `[edi + a]` masked with `ecx`, in
 `len` bytes big-endian (`len ≤ 8 n`, the number below `2^(8 len)`), through
@@ -157,11 +157,12 @@ def storeBytes (len n : Nat) (dst : Reg) (d a : Nat) : List Instr :=
       [.mov .eax (.mem (sc (a + 4 * j))), .alu .and .eax (.reg .ecx), .bswap .eax,
         .store (at_ dst (d + (len - 4 * (j + 1)))) .eax]
     else if 4 * j < len then
-      [.mov .eax (.mem (sc (a + 4 * j))), .alu .and .eax (.reg .ecx)] ++
+      ([.mov .eax (.mem (sc (a + 4 * j))), .alu .and .eax (.reg .ecx)] : List Instr) ++
       (List.range (len - 4 * j)).flatMap fun i =>
-        [.mov .edx (.reg .eax)] ++
-        (if len - 4 * j - 1 - i = 0 then [] else [.shift .shr .edx (8 * (len - 4 * j - 1 - i))]) ++
-        [.store8 (at_ dst (d + i)) .dl]
+        ([.mov .edx (.reg .eax)] : List Instr) ++
+        ((if len - 4 * j - 1 - i = 0 then [] else [.shift .shr .edx (8 * (len - 4 * j - 1 - i))])
+          : List Instr) ++
+        ([.store8 (at_ dst (d + i)) .dl] : List Instr)
     else []
 
 /-- `[edi + o] = x`, `n` words, through `eax`. -/

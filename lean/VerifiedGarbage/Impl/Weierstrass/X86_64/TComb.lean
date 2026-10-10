@@ -109,10 +109,10 @@ def tblAt (d : Nat) : MemOp := { base := .rdx, disp := d }
 apart: its `np` 16-byte pieces, piece `c` at `po c` bytes into the entry,
 kept in the accumulators under the mask of `r8 = m`. -/
 def selEntryAt (st np : Nat) (po : Nat → Nat) (m : Nat) : List Instr :=
-  eqMask m ++ [.xop (.movq .xmm15 .rcx), .xop (.bin .punpcklqdq .xmm15 .xmm15)] ++
-  (List.range np).flatMap fun c =>
+  eqMask m ++ ([.xop (.movq .xmm15 .rcx), .xop (.bin .punpcklqdq .xmm15 .xmm15)] : List Instr) ++
+  ((List.range np).flatMap fun c =>
     [.movdquLoad .xmm14 (tblAt (st * (m - 1) + po c)), .xop (.bin .pand .xmm14 .xmm15),
-      .xop (.bin .por (selAcc c) .xmm14)]
+      .xop (.bin .por (selAcc c) .xmm14)] : List Instr)
 
 /-- The entry for the magnitude in `r8` of the `H` entries of the table at
 `rdx` (`selEntryAt st np po`) to `o`, piece `c` at `o + po c`: the
@@ -146,11 +146,11 @@ def selEntryY (st np : Nat) (q : Nat → Nat) (m : Nat) : List Instr :=
 mask (`selEntryY`), the accumulators stored to `o + 16 q c`, and the upper
 halves of the `ymm` registers cleared (`vzeroupper`), through `rcx`. -/
 def selPassY (o H st np : Nat) (q : Nat → Nat) : List Instr :=
-  [.vop (.vmovq .xmm13 .r8), .vop (.vpbroadcastd .l256 .xmm13 .xmm13), .mov32 .rcx (.imm 1),
-    .vop (.vmovq .xmm12 .rcx), .vop (.vpbroadcastd .l256 .xmm12 .xmm12), .vop (.vmovdqa .l256 .xmm14 .xmm12)] ++
-  (List.range np).map (fun c => .vop (.vbin .vpxor .l256 (selAcc c) (selAcc c) (selAcc c))) ++
-  (List.range H).flatMap (fun m => selEntryY st np q (m + 1)) ++
-  (List.range np).map (fun c => .vmovdquStore .l256 (sc (o + 16 * q c)) (selAcc c)) ++ [.vop .vzeroupper]
+  ([.vop (.vmovq .xmm13 .r8), .vop (.vpbroadcastd .l256 .xmm13 .xmm13), .mov32 .rcx (.imm 1),
+    .vop (.vmovq .xmm12 .rcx), .vop (.vpbroadcastd .l256 .xmm12 .xmm12), .vop (.vmovdqa .l256 .xmm14 .xmm12)] : List Instr) ++
+  ((List.range np).map (fun c => .vop (.vbin .vpxor .l256 (selAcc c) (selAcc c) (selAcc c))) : List Instr) ++
+  ((List.range H).flatMap (fun m => selEntryY st np q (m + 1)) : List Instr) ++
+  ((List.range np).map (fun c => .vmovdquStore .l256 (sc (o + 16 * q c)) (selAcc c)) : List Instr) ++ ([.vop .vzeroupper] : List Instr)
 
 namespace TCombCfg
 
