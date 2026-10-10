@@ -57,9 +57,10 @@ theorem combSelW_A_sub : ∀ w ∈ combSelW K K.A, w ∈ combW K := by
 
 namespace CombLay
 
-/-- `A` is unchanged by the entry. -/
-theorem wordsVal_entry (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Addr} {m m' : Mem}
-    (h : Unch base (combEntryW K) m m') :
+/-- `A` is unchanged by the entry, and by any writes `X` apart from the comb's slots. -/
+theorem wordsVal_entryX (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Addr} {m m' : Mem}
+    {X : List (Nat × Nat)} (hX : ∀ x ∈ combWs K, ∀ w ∈ X, x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x)
+    (h : Unch base (combEntryW K ++ X) m m') :
     ∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal m' base x K.M.n = wordsVal m base x K.M.n := by
   have hnd := hL.nodup
   simp only [combWs, rcbW, List.cons_append, List.nil_append, List.nodup_cons, List.mem_cons,
@@ -69,17 +70,27 @@ theorem wordsVal_entry (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Add
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> comb_mem
   refine h.wordsVal (fun w hw => ?_) (by have := hL.lay.le x (combWs_slots _ x hxs); omega)
-  simp only [combEntryW, List.mem_cons, List.not_mem_nil, or_false] at hw hx
-  rcases hw with rfl | rfl | rfl | rfl | rfl
-  · rcases hx with rfl | rfl | rfl <;> exact hL.apart₂ hxs (by comb_mem) (by nd_find hnd)
-  · rcases hx with rfl | rfl | rfl <;> exact hL.apart₂ hxs (by comb_mem) (by nd_find hnd)
-  · rcases hx with rfl | rfl | rfl <;> exact hL.apart₂ hxs (by comb_mem) (by nd_find hnd)
-  · rcases hx with rfl | rfl | rfl <;> exact hL.apart₂ hxs (by comb_mem) (by nd_find hnd)
-  · exact hL.lay.tmp x (combWs_slots _ x hxs)
+  rcases List.mem_append.mp hw with hw | hw
+  · simp only [combEntryW, List.mem_cons, List.not_mem_nil, or_false] at hw hx
+    rcases hw with rfl | rfl | rfl | rfl | rfl
+    · rcases hx with rfl | rfl | rfl <;> exact hL.apart₂ hxs (by comb_mem) (by nd_find hnd)
+    · rcases hx with rfl | rfl | rfl <;> exact hL.apart₂ hxs (by comb_mem) (by nd_find hnd)
+    · rcases hx with rfl | rfl | rfl <;> exact hL.apart₂ hxs (by comb_mem) (by nd_find hnd)
+    · rcases hx with rfl | rfl | rfl <;> exact hL.apart₂ hxs (by comb_mem) (by nd_find hnd)
+    · exact hL.lay.tmp x (combWs_slots _ x hxs)
+  · exact hX x hxs w hw
 
-/-- `A` and `E` are unchanged by the addition into `D`. -/
-theorem wordsVal_add (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Addr} {m m' : Mem}
-    (h : Unch base (combAddW K) m m') :
+/-- `A` is unchanged by the entry. -/
+theorem wordsVal_entry (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Addr} {m m' : Mem}
+    (h : Unch base (combEntryW K) m m') :
+    ∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal m' base x K.M.n = wordsVal m base x K.M.n :=
+  hL.wordsVal_entryX hsz (X := []) (fun _ _ _ h => nomatch h) (h.mono fun _ hw => List.mem_append_left _ hw)
+
+/-- `A` and `E` are unchanged by the addition into `D`, and by any writes `X` apart from the
+comb's slots. -/
+theorem wordsVal_addX (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Addr} {m m' : Mem}
+    {X : List (Nat × Nat)} (hX : ∀ x ∈ combWs K, ∀ w ∈ X, x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x)
+    (h : Unch base (combAddW K ++ X) m m') :
     ∀ x ∈ [K.A.x, K.A.y, K.A.z, K.E.x, K.E.y, K.E.z],
       wordsVal m' base x K.M.n = wordsVal m base x K.M.n := by
   have hnd := hL.nodup
@@ -91,14 +102,23 @@ theorem wordsVal_add (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Addr}
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> comb_mem
   refine h.wordsVal (fun w hw => ?_) (by have := hL.lay.le x (combWs_slots _ x hxs); omega)
   rcases List.mem_append.mp hw with hw | hw
-  · obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hw
-    have hys : y ∈ combWs K := by simp only [combWs, List.mem_append]; exact Or.inr hy
-    refine hL.apart₂ hxs hys ?_
-    simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hx hy
-    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;>
-      rcases hy with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> nd_find hnd
-  · simp only [List.mem_singleton] at hw; subst hw
-    exact hL.lay.tmp x (combWs_slots _ x hxs)
+  · rcases List.mem_append.mp hw with hw | hw
+    · obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hw
+      have hys : y ∈ combWs K := by simp only [combWs, List.mem_append]; exact Or.inr hy
+      refine hL.apart₂ hxs hys ?_
+      simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hx hy
+      rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;>
+        rcases hy with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> nd_find hnd
+    · simp only [List.mem_singleton] at hw; subst hw
+      exact hL.lay.tmp x (combWs_slots _ x hxs)
+  · exact hX x hxs w hw
+
+/-- `A` and `E` are unchanged by the addition into `D`. -/
+theorem wordsVal_add (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Addr} {m m' : Mem}
+    (h : Unch base (combAddW K) m m') :
+    ∀ x ∈ [K.A.x, K.A.y, K.A.z, K.E.x, K.E.y, K.E.z],
+      wordsVal m' base x K.M.n = wordsVal m base x K.M.n :=
+  hL.wordsVal_addX hsz (X := []) (fun _ _ _ h => nomatch h) (h.mono fun _ hw => List.mem_append_left _ hw)
 
 /-- `A` is unchanged by a selection into `D`. -/
 theorem wordsVal_selD (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Addr} {m m' : Mem}
