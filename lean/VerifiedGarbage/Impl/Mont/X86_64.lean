@@ -608,15 +608,20 @@ def mulRounds (M : Mod) (a b : Nat) : List Instr :=
     mulRowS0 a b ++ redSparseX (wins 6 0) ++ (List.range 5).flatMap (fun i => round M a b (i + 1))
   else zeros (acc M.n) ++ (List.range M.n).flatMap (round M a b)
 
+/-- `[o] = [a] [b] R⁻¹ mod m` by the rounds of `mulRounds`, then `csub`, the
+result stored. (A function of its own, deciding nothing on the offsets, so
+that the code of every product is one template: `materialize_template`.) -/
+def mulG (M : Mod) (o a b : Nat) : List Instr :=
+  let low := (List.range M.n).map (win M.n M.n)
+  mulRounds M a b ++ csub M low (win M.n M.n M.n) ++ stores low o
+
 /-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`), the accumulator in
-registers; by `sqrRX`, `mulRX` or (P-384's square) `sqrS` if they apply. -/
+registers; by `sqrRX`, `mulRX` or (P-384's square) `sqrS` if they apply,
+else `mulG`. -/
 def mulR (M : Mod) (o a b : Nat) : List Instr :=
   match prodK? M with
   | some k => if a = b then sqrRX M k o a else mulRX M k o a b
-  | none =>
-    if M.sparse ∧ M.n = 6 ∧ a = b then sqrS M o a else
-    let low := (List.range M.n).map (win M.n M.n)
-    mulRounds M a b ++ csub M low (win M.n M.n M.n) ++ stores low o
+  | none => if M.sparse ∧ M.n = 6 ∧ a = b then sqrS M o a else mulG M o a b
 
 
 /-- The low words and the top word of the sums and differences. -/

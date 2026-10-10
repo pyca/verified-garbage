@@ -31,7 +31,7 @@ theorem mul_ne {o a b : Nat} (h : a ≠ b) :
         Impl.Mont.X86_64.csub c.MP' ((List.range c.MP'.n).map (Impl.Mont.X86_64.win c.MP'.n c.MP'.n))
           (Impl.Mont.X86_64.win c.MP'.n c.MP'.n c.MP'.n) ++
         Impl.Mont.X86_64.stores ((List.range c.MP'.n).map (Impl.Mont.X86_64.win c.MP'.n c.MP'.n)) o := by
-  simp only [Impl.Mont.X86_64.mul, Impl.Mont.X86_64.mulR, hn, hs, hk, h]
+  simp only [Impl.Mont.X86_64.mul, Impl.Mont.X86_64.mulR, Impl.Mont.X86_64.mulG, hn, hs, hk, h]
   rfl
 
 theorem mul_eq (o a : Nat) : Impl.Mont.X86_64.mul c.MP' o a a = Impl.Mont.X86_64.sqrS c.MP' o a := by

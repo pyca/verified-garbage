@@ -13,7 +13,7 @@ theorem code_stores {M : Mod} (hn : M.n=4) (op : FOp) :
     ∃ is,code M op=is++stores (outputRegs M op) op.out := by
   cases op with
   | mul o a b =>
-    simp only [code,opCode,mul,hn,show 4<7 from by decide,↓reduceIte,mulR,outputRegs,FOp.out]
+    simp only [code,opCode,mul,hn,show 4<7 from by decide,↓reduceIte,mulR,mulG,outputRegs,FOp.out]
     rcases prodK? M with _ | k
     · simp only [Nat.reduceEqDiff, false_and, and_false, ↓reduceIte]
       exact ⟨_,rfl⟩
