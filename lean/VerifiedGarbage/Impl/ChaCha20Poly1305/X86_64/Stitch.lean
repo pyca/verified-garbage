@@ -187,4 +187,73 @@ def sealFor (x : ChaCha20.X86_64.Callee) : Poly1305.X86_64.Blocks → Prog isa
   | .avx2 => sealStitched x .avx2
   | b => «seal» x b
 
+/-! ## `open`
+
+`open` absorbs the ciphertext before it decrypts it, so each chunk absorbs
+its own 512 bytes during its rounds, before the kernel's `finish` XORs the
+keystream into them: no chunk is special. `bulkO` runs them while at least
+512 bytes remain; `leaveO` leaves `rbx`, `rbp` and `rsi`, `rdx` at the rest,
+which `cryptO` absorbs (with the lengths block) before the call of
+`vg_chacha20_xor` decrypts it. -/
+
+/-- A chunk of `open` but for `next`: the 512 bytes at `rsi` absorbed during
+the rounds, then decrypted, and `rsi` advanced past them. -/
+def chunkMainO : Prog isa :=
+  .seq (.block ChaCha20.X86_64.Avx2.setup)
+    (.seq (srounds 10)
+      (.block (ChaCha20.X86_64.Avx2.finish ++ ([.alu .add .rsi (.imm 512)] : List Instr))))
+
+def chunkO : Prog isa := .seq chunkMainO (.block next)
+
+/-- As `leave`, with the rest of the data both the ciphertext not yet
+absorbed (`rbx`, `rbp`) and the data not yet decrypted (`rsi`, `rdx`). -/
+def leaveO : List Instr :=
+  Poly1305.X86_64.reduce ++
+  [.store (at_ .rcx accOff) .r11, .store (at_ .rcx (accOff + 8)) .rbx,
+   .store (at_ .rcx (accOff + 16)) .rbp,
+   .mov .rbx (.reg .rsi), .mov .rbp (.mem (at_ .rcx lenOff)), .mov .rdx (.mem (at_ .rcx lenOff)),
+   .mov .r12 (.mem (at_ .rcx r12Off)), .mov .r13 (.mem (at_ .rcx r13Off)),
+   .mov .r14 (.mem (at_ .rcx r14Off)), .mov .r15 (.reg .rcx), .alu .sub .r15 (.imm 128)]
+
+/-- The whole chunks of at least 512 bytes of data, decrypted and absorbed. -/
+def bulkO : Prog isa :=
+  .seq (.block enter) (.seq (.loop chunkO .ae) (.block leaveO))
+
+/-- The arguments of the call on the rest of the data (`rbx`, `rbp`), from
+the counter the chunks left. -/
+def restArgs : List Instr :=
+  ptr .rdi .r15 64 ++ [.mov .rsi (.reg .rbx), .mov .rdx (.reg .rbp)] ++ ptr .rcx .r15 128
+
+/-- `open`'s `macPadLengths` and `crypt`: if the data is at most `fold`
+bytes, as `open` does; otherwise the whole chunks decrypted and absorbed by
+`bulkO`, then the rest absorbed and decrypted. -/
+def cryptO (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
+  .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (x.fold + 1)))])
+  (.seq (.ite .b
+    (.seq (macPadLengths b .r14 .r13)
+      (.seq (.block (ptr .rsi .r15 736 ++ [.mov .rdx (.reg .r13)]))
+        (.seq (xorBufX .r14) (.block (ptr .rsi .r15 128)))))
+    (.seq (.block (cryptArgs ++ [.alu .cmp .rdx (.imm 512)]))
+      (.seq (.ite .b (.block whole) bulkO)
+      (.seq (macPadLengths b .rbx .rbp)
+      (.seq (.block restArgs) (.call x.name x.code))))))
+  (.seq (.block (anchor .rsi 128))
+  (.seq (foldM x.fold)
+  (.seq (.block [.alu .add .rdx (.imm 64)]) zeroKs))))
+
+/-- `open`, with Poly1305 inside the kernel for the whole chunks. -/
+def openStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
+  .seq (.block entry)
+  (.seq (prologue x)
+  (.seq (macPad b .rbx .rbp)
+  (.seq (.block lengths)
+  (.seq (cryptO x b)
+  (.seq (finalizeTo 48)
+    (.block (compare ++ restore)))))))
+
+/-- The `open` an instance uses, as `sealFor`. -/
+def openFor (x : ChaCha20.X86_64.Callee) : Poly1305.X86_64.Blocks → Prog isa
+  | .avx2 => openStitched x .avx2
+  | b => «open» x b
+
 end VG.Impl.ChaCha20Poly1305.X86_64.Stitch
