@@ -28,6 +28,6 @@ theorem piLookup.lit_eq : piLookup = piLookup.lit := by
   refine Eq.trans ?_ piLookupLit.lit_eq
   simp only [piLookup, piLookupLit, this]
 
-materialize_code expandKey
+materialize_flat_code expandKey
 
 end VG.Impl.Rc2.X86

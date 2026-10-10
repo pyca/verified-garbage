@@ -5,7 +5,7 @@ import VerifiedGarbage.Impl.Rc2.AArch64.Cbc
 
 namespace VG
 
-materialize_code Impl.Rc2.AArch64.Cbc.encrypt
-materialize_code Impl.Rc2.AArch64.Cbc.decrypt
+materialize_flat_code Impl.Rc2.AArch64.Cbc.encrypt
+materialize_flat_code Impl.Rc2.AArch64.Cbc.decrypt
 
 end VG
