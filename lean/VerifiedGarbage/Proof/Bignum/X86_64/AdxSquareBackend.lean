@@ -1,6 +1,159 @@
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRawCrossCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRaw
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareDispatch
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCT
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledChoiceCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareDispatchCT
+
+/-! ## AdxTiledSquareRawCT -/
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxTiledSquare
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum.X86_64
+open VG.Proof.Bignum.X86_64.AdxTiledProduct (Layout GoodV pins_goodV)
+
+theorem rawCross_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8) (ha1 : a≠aAcc)
+    (ha2 : a≠aTmp) (L : Layout) (s : State) (h : GoodV ps L s) :
+    WP isa (AdxTiledSquare.rawCross ca) s (GoodV ps L) := by
+  obtain ⟨⟨mi,hg⟩,hv⟩ := h
+  exact WP.mono (rawCross_ok hg.scr hg.rdi hg.hdr hv pa L.hZ L.hw L.hwN L.hn ha ha1 ha2)
+    fun _ ⟨_,_,o,k⟩ => AdxTiledProduct.GoodV.of_outside ⟨⟨mi,hg⟩,hv⟩ o k
+
+def Ready (ps : List (Nat × Nat)) (a : Nat) (L : Layout) (s : State) : Prop :=
+  GoodV ps L s ∧ s.gpr .r8=off L.B (slot L.w aAcc+16) ∧
+    s.gpr .r9=off L.B (slot L.w a) ∧ s.gpr .rbx=BitVec.ofNat 64 L.w
+
+theorem setup_ready {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (L : Layout) (s : State)
+    (h : GoodV ps L s) : WP isa (.block (Adx.setup ca)) s (Ready ps a L) := by
+  obtain ⟨⟨mi,hg⟩,hv⟩ := h
+  exact WP.mono (adxSetupV_ok hg.scr hg.rdi hg.hdr L.hZ (hv.at pa) (hv.lt pa)) fun _ ⟨p9,_,p8,pbx,m,k⟩ =>
+    ⟨⟨⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,m ▸ hg.hdr⟩,m ▸ hv⟩,p8,p9,pbx⟩
+
+theorem raw_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8) (ha1 : a≠aAcc)
+    (ha2 : a≠aTmp)
+    {h₁ h₂ h₃ : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup ca)) h₁).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) h₂).isSome=true)
+    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxTri8.setup ca)) h₃).isSome=true) :
+    RelCT isa (Two (GoodV ps)) (AdxTiledSquare.rawSquare ca) (fun _ _ => True) := by
+  unfold AdxTiledSquare.rawSquare
+  refine RelCT.seq (two_post (rawCross_ct pa ha ha1 ha2 hS hR hT) (rawCross_fw pa ha ha1 ha2)) ?_
+  refine RelCT.seq (two_piece [.rdi] (pins_goodV ps) hS (setup_ready pa)) ?_
+  refine two_taint [.rdi,.r8,.r9,.rbx] ?_ (by taint_decide)
+  intro L s t hs ht r hr
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact pins_goodV ps L s t hs.1 ht.1 .rdi (by simp)
+  · exact hs.2.1.trans ht.2.1.symm
+  · exact hs.2.2.1.trans ht.2.2.1.symm
+  · exact hs.2.2.2.trans ht.2.2.2.symm
+
+theorem raw_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8) (ha1 : a≠aAcc)
+    (ha2 : a≠aTmp) (L : Layout) (s : State) (h : GoodV ps L s) :
+    WP isa (AdxTiledSquare.rawSquare ca) s (GoodV ps L) := by
+  obtain ⟨⟨mi,hg⟩,hv⟩ := h
+  exact WP.mono (rawSquare_ok hg.scr hg.rdi hg.hdr L.hZ L.hwN L.hn L.hw hv pa ha ha1 ha2)
+    fun _ ⟨_,_,o,k⟩ => AdxTiledProduct.GoodV.of_outside ⟨⟨mi,hg⟩,hv⟩ o k
+
+end VG.Proof.Bignum.X86_64.AdxTiledSquare
+
+end
+
+/-! ## AdxTiledSquareMontCT -/
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxTiledSquare
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Proof.Bignum.X86_64
+
+open VG.Proof.Bignum.X86_64.AdxTiledProduct (Layout GoodV pins_goodV)
+
+theorem montSquare_ct {ps : List (Nat × Nat)} {co ca o a : Nat} (po : (co, o) ∈ ps) (pa : (ca, a) ∈ ps)
+    (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp)
+    {h₁ h₂ h₃ h₄ : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup ca)) h₁).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) h₂).isSome=true)
+    (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.finishBases co)) h₃).isSome=true)
+    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxTri8.setup ca)) h₄).isSome=true) :
+    RelCT isa (Two (GoodV ps)) (AdxTiledSquare.montSquare co ca) (fun _ _ => True) :=
+  RelCT.seq (two_post (raw_ct pa ha ha1 ha2 hS hR hT) (raw_fw pa ha ha1 ha2))
+    (AdxTiledProduct.redcFinish_ct (P := fun _ => ps) (L := id) (O := fun _ => o) (fun _ => po) hF)
+
+end VG.Proof.Bignum.X86_64.AdxTiledSquare
+
+end
+
+/-! ## AdxTiledSquareDispatchCT -/
+section
+
+namespace VG.Proof.Bignum.X86_64.AdxTiledSquare
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Bignum.X86_64.Adx
+open VG.Proof.Bignum.X86_64
+
+theorem aligned_ct {o a : Nat} (ho : o<8) (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp)
+    {h₁ h₂ h₃ h₄ : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (setup a)) h₁).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup a a)) h₂).isSome=true)
+    (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (finishBases o)) h₃).isSome=true)
+    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxTri8.setup a)) h₄).isSome=true) :
+    RelCT isa (Two fun L s => AdxSquare.GW L s ∧ L.w%8=0)
+      (AdxTiledSquare.montSquare o a) (fun _ _ => True) := by
+  intro s t ts tt s' t' ⟨L,⟨⟨⟨mi,gs,hZ⟩,sz⟩,h8⟩,⟨⟨⟨mj,gt,_⟩,_⟩,_⟩⟩ es et
+  have hw := sz.lt
+  have hp := sz.2.1
+  let R : AdxTiledProduct.Layout := ⟨L.B,L.Z,L.w,L.w/8,hZ,hw,by omega,by omega⟩
+  exact montSquare_ct (ps := [(o,o),(a,a),(a,a)]) (.head _) (.tail _ (.head _)) ha ha1 ha2 hS hR hF hT
+    _ _ _ _ _ _ ⟨R,⟨⟨mi,gs⟩,gs.hdr.ops3 ho ha ha⟩,⟨mj,gt⟩,gt.hdr.ops3 ho ha ha⟩ es et
+
+theorem alignedChoice_ct {o a : Nat} (ho : o<8) (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp)
+    {h₁ h₂ h₃ h₄ : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (setup a)) h₁).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup a a)) h₂).isSome=true)
+    (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (finishBases o)) h₃).isSome=true)
+    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxTri8.setup a)) h₄).isSome=true) :
+    RelCT isa (Two AdxSquare.GW) (AdxTiledSquare.alignedChoice o a) (fun _ _ => True) := by
+  unfold AdxTiledSquare.alignedChoice
+  refine RelCT.seq (two_piece (Ψ := fun L s => AdxSquare.GW L s ∧ s.zf=some (decide (L.w%8=0)))
+    [.rdi] AdxSquare.pins_gw (by taint_decide) ?_) ?_
+  · intro L s ⟨⟨mi,hg,hZ⟩,sz⟩
+    exact WP.mono (AdxSquare.redcTest_ok hg.scr hg.rdi hg.hdr hZ (by have := sz.lt; omega))
+      fun _ ⟨z,m,k⟩ => ⟨⟨⟨mi,⟨hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,m ▸ hg.hdr⟩,hZ⟩,sz⟩,z⟩
+  refine two_ite (fun L s t hs ht => by simp only [eval,hs.2,ht.2]) ?_ ?_
+  · refine two_map id (fun L s ⟨⟨h,z⟩,e⟩ => ⟨h,?_⟩) (aligned_ct ho ha ha1 ha2 hS hR hF hT)
+    simp only [eval,z,Option.some.injEq,decide_eq_true_eq] at e
+    exact e
+  · exact two_map id (fun _ _ h => h.1.1) (AdxSquare.montSquare_ct ho ha ha1 ha2 hS hF)
+
+theorem choice_ct {o a : Nat} (ho : o<8) (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp)
+    {h₀ h₁ h₂ h₃ h₄ h₅ : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hM : (taint.check (Taint.ofRegs [.rdi]) (.block (bases o a a aN aAcc aTmp)) h₀).isSome=true)
+    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (setup a)) h₁).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (rowBase a)) h₂).isSome=true)
+    (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (finishBases o)) h₃).isSome=true)
+    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup a a)) h₄).isSome=true)
+    (hTri : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxTri8.setup a)) h₅).isSome=true) :
+    RelCT isa (Two GoodW) (AdxTiledSquare.choice o a) (fun _ _ => True) := by
+  unfold AdxTiledSquare.choice
+  refine RelCT.seq (two_piece (Ψ := fun L s => GoodW L s ∧ s.zf=some (decide (SizeOk L.w)))
+    [.rdi] pins_goodW (by taint_decide) ?_) ?_
+  · intro L s ⟨mi,hg,hZ⟩
+    exact WP.mono (sizeTest_ok hg.scr hg.rdi hg.hdr hZ) fun _ ⟨z,m,k⟩ =>
+      ⟨⟨mi,⟨hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,m ▸ hg.hdr⟩,hZ⟩,z⟩
+  refine two_ite (fun L s t hs ht => by simp only [eval,hs.2,ht.2]) ?_ ?_
+  · refine two_map id (fun L s ⟨⟨h,z⟩,e⟩ => ⟨h,?_⟩) (alignedChoice_ct ho ha ha1 ha2 hS hT hF hTri)
+    simp only [eval,z,Option.some.injEq,decide_eq_true_eq] at e
+    exact e
+  · exact two_map id (fun _ _ h => h.1.1) (montMulAdx_ct ho ha ha ha1 ha2 ha1 ha2 hM hS hR hF)
+
+end VG.Proof.Bignum.X86_64.AdxTiledSquare
+
+end
+
+/-! ## AdxSquareBackend -/
+section
 
 /-! The ADX Montgomery backend with specialized squaring. -/
 namespace VG.Proof.Bignum.X86_64
@@ -121,3 +274,5 @@ def Mont.adxSquare : Mont where
       (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)
 
 end VG.Proof.Bignum.X86_64
+
+end
