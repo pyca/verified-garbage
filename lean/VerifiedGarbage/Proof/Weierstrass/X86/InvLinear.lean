@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.X86.InvLinearMath
-import VerifiedGarbage.Proof.Weierstrass.X86.InvCorrection
+import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 
 /-! # The signed multiword divstep matrix row -/
 namespace VG.Proof.Weierstrass.X86.Inv

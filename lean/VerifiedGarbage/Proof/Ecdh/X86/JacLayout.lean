@@ -1,5 +1,5 @@
 import VerifiedGarbage.Impl.Ecdh.X86.WinJac
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacLayout
+import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildState
 import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 
 /-! The five-bit ECDH window fits the existing P-256 scratch layout. -/

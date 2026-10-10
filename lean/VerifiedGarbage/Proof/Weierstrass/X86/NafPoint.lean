@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
-import VerifiedGarbage.Proof.Weierstrass.X86.NafState
+import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
 
 /-! Public table transfers preserve the selected Jacobian point. -/
 namespace VG.Proof.Weierstrass.X86

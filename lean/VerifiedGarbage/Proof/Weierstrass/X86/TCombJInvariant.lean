@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombInv
+import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombJEntry
 import VerifiedGarbage.Proof.Weierstrass.X86.FprogJ
 
