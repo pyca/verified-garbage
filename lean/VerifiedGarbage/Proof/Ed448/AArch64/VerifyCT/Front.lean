@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
-import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
 
 /-!
 # Ed448 verification's equation on AArch64: constant time of the entry, the table and `[S]B`

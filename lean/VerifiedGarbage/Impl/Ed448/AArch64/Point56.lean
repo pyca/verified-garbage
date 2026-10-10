@@ -55,7 +55,7 @@ def copy3 (o a : Nat) : List Instr :=
   Curve448.AArch64.copy (slot o) (slot a) ++ Curve448.AArch64.copy (slot (o + 1)) (slot (a + 1)) ++
     Curve448.AArch64.copy (slot (o + 2)) (slot (a + 2))
 
-/-- The comb's `A := 16 A + B` (X448's `Base.combine`, `A` in slots 0–2 and `B` in 3–5) by calls of
+/-- The comb's `A := 16 A + B` (`A` in slots 0–2 and `B` in 3–5) by calls of
 `vg_ed448_r56_point_add`: `B` kept in slots 0–2 and `A` moved to slots 3–5; `A` added to itself
 (a copy in slots 6–8) four times, counted by `x1`, which the calls keep; `B` added; and the sum moved
 to slots 0–2. -/
@@ -96,8 +96,9 @@ def combAddFn : Prog isa :=
 
 def combAddCall : Prog isa := fnCall Spec.Ed448.Point56.combAddApi.name combAddFn
 
-/-- X448's comb step (`Base.stepN`), its entries both negated before one call of
-`vg_ed448_r56_comb_add` adds them. -/
+/-- Step `x19 = j` of a comb of `n` tables: both digits' entries of table `j`, negated for negative
+digits, added to their accumulators by one call of `vg_ed448_r56_comb_add`. `x9` is nonzero while
+another step follows. -/
 def combStep (n : Nat) : Prog isa :=
   .seq (.block Impl.X448.AArch64.Base.digits) <| .seq (.block Impl.X448.AArch64.Base.select) <|
   .seq (.block (Impl.X448.AArch64.Base.negate (slot 6) (Impl.X448.AArch64.BITS + 4) (slot 10) ++

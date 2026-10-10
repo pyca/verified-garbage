@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.CombStep
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Comb
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
-import VerifiedGarbage.Proof.X448.AArch64.Base.Loop
+import VerifiedGarbage.Proof.X448.AArch64.Base.Step
 import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 

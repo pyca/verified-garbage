@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.X448.AArch64.Base.Main
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
@@ -18,8 +18,7 @@ namespace VG.Proof.X448.AArch64.Base
 
 open VG VG.AArch64 VG.Impl.X448.AArch64.Base
 
-/-- The analysis, of the code without what it does not read, its comb's field operations analysed
-once each (`Base/Erase.lean`). -/
+/-- The analysis, of the code without what it does not read. -/
 theorem x448Base_check :
     ∃ h, ((taintS [combSym]).check (Taint.ofRegs [.x0, .x1, .x2]) Impl.X448.AArch64.Base.x448Base h).isSome =
       true := by

@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.X448.AArch64.Base.Finish
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.CombStep
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Comb
 import VerifiedGarbage.Impl.X448.AArch64.BaseFn
 import VerifiedGarbage.Proof.X448.Edwards.Ladder
 import VerifiedGarbage.Spec.X448.Contract

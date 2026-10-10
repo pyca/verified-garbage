@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.CombVerified
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Comb
 
 /-! # Ed448's point addition and doubling, in radix `2^56`, on AArch64 -/
 

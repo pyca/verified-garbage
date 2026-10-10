@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.X448.AArch64.Base.Combine
+import VerifiedGarbage.Proof.X448.AArch64.Base.Step
+import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 import VerifiedGarbage.Proof.Curve448.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
@@ -7,8 +9,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
 # Ed448's comb on AArch64: `16 A + B` by calls
 
 Untrusted: everything here is checked by Lean. `combineCall` (the comb's
-`A := 16 A + B` by calls of `vg_ed448_r56_point_add`) leaves what X448's
-`Base.combine` does (`combineCall_ok`, as `combine_ok`): `B` kept in slots 0–2,
+`A := 16 A + B` by calls of `vg_ed448_r56_point_add`) leaves `[k] B` in
+slots 0–2 (`combineCall_ok`): `B` kept in slots 0–2,
 `A` moved to slots 3–5 and added to a copy of itself in slots 6–8 four times
 (`addCall_ok`, whose addition is `addPt` with 0 in slot 19), `B` added, and the
 sum moved to slots 0–2; the return address kept in a lane of `v8` across the
@@ -240,7 +242,7 @@ theorem combineMid_ok {s₀ s : State} {base : Addr} {v w : ℤ} (f0 : MFrame s�
     rw [← add_smul, show (2 : ℤ) ^ (4 - 0) * v + w = 16 * v + w by norm_num] at r
     exact r
 
-/-- **`16 A + B` by calls**, as `combine_ok`: `[k] B` in `A`, the return address kept. -/
+/-- **`16 A + B` by calls**: `[k] B` in `A`, the return address kept. -/
 theorem combineCall_ok {n : Nat} {s₀ s : State} {base : Addr} {k : Nat} (hk : k < 256 ^ n)
     (h : StepInv n s₀ base k n s) :
     WP isa combineCall s fun t => VG.Proof.X448.AArch64.Base.Frame s₀ base t ∧ Rep (pt (EV t.mem base) 0 1 2) ((k : ℤ) • baseAff) := by

@@ -1,8 +1,8 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.CombStep
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Comb
 import VerifiedGarbage.Proof.Ed448.AArch64.Base.Setup
 import VerifiedGarbage.Proof.Ed448.AArch64.Base.Encode
-import VerifiedGarbage.Proof.X448.AArch64.Base.Loop
+import VerifiedGarbage.Proof.X448.AArch64.Base.Step
 import VerifiedGarbage.Proof.Ed448.Group.Projective
 import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 
@@ -22,7 +22,6 @@ namespace VG.Proof.Ed448.AArch64
 
 open VG VG.AArch64 VG.Impl.Ed448.AArch64
 open VG.Proof.X448.AArch64 (Scr Keeps off word Outside Outside2 Saved ofs far)
-open VG.Proof.X448.AArch64.Base (combine_ok)
 open VG.Proof.Ed448.AArch64.Base (setup_ok encode_ok)
 open VG.Impl.X448.AArch64 (slot ACC)
 open VG.Spec.Ed448 (bytesAt decodeLE)
