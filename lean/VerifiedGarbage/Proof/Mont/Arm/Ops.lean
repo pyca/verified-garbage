@@ -86,7 +86,7 @@ theorem zeros_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   simp only [zeros, List.cons_append]
   refine wp_mov (op2_imm (by decide)) fun s₁ u₁ => ?_
   refine VG.Proof.X25519.Arm.WP.append (stores0_ok (hs.of_rest (u₁.rest (ws := [.r7]) (by simp)) (by decide))
-    u₁.gpr k hk) fun u ⟨O, V, K⟩ => h u (u₁.mem ▸ O) V ((u₁.rest (by simp)).trans (K.mono (by simp)))
+    u₁.gpr k hk) fun u ⟨O, V, K⟩ => h u (u₁.mem ▸ O) V ((u₁.rest (by simp)).trans (K.mono (by decide)))
 
 theorem dval_zero {m : Mem} {base : Addr} {d : Nat} :
     ∀ {k : Nat}, (∀ j < k, w32 m base (d + 4 * j) = 0) → dval m base d k = 0
@@ -203,7 +203,7 @@ theorem addK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
     have hs₃ := hs.of_rest K₃ (by decide)
     refine addDigit_ok hs₃ (j := 2 * k) (by rw [K₃.gpr _ (by decide)]; exact h6) (by omega_using [hacc])
       (by rw [u₃.other _ (by decide), u₂.other _ (by decide)]; exact C₁) fun s₄ O₄ W₄ V₄ C₄ K₄ => ?_
-    have K₄' := K₃.trans (K₄.mono (by simp))
+    have K₄' := K₃.trans (K₄.mono (by decide))
     have hs₄ := hs.of_rest K₄' (by decide)
     refine addDigit_ok hs₄ (j := 2 * k + 1) (by rw [K₄'.gpr _ (by decide)]; exact h6) (by omega_using [hacc]) C₄
       fun u O₅ W₅ V₅ C₅ K₅ => WP.block_nil ?_
@@ -226,7 +226,7 @@ theorem addK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
     have low : ∀ j < 2 * k, w32 u.mem base (acc + 4 * j) = w32 s₁.mem base (acc + 4 * j) := fun j hj => by
       rw [O₅.w32 (by omega_using [hj]) (by omega_using [hacc, hn, hj]), O₄.w32 (by omega_using [hj]) (by omega_using [hacc, hn, hj]), m₃]
     refine ⟨(O₁.mono (Nat.le_refl _) (by omega_using [])).trans (O₄'.trans O₅'), fun j hj => ?_, C₅, ?_,
-      K₄'.trans (K₅.mono (by simp))⟩
+      K₄'.trans (K₅.mono (by decide))⟩
     · rcases Nat.lt_or_ge j (2 * k) with h | h
       · rw [low j h]; exact D₁ j h
       · obtain rfl | rfl : j = 2 * k ∨ j = 2 * k + 1 := by omega_using [hj, h]
@@ -381,7 +381,7 @@ theorem subK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
     refine subDigit_ok hs₃ (j := 2 * k) (by rw [K₃.gpr _ (by decide)]; exact h6) (by omega_using [hacc])
       (by rw [u₃'.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide)]; exact C₁)
       fun s₄ O₄ W₄ V₄ C₄ K₄ => ?_
-    have K₄' := K₃.trans (K₄.mono (by simp))
+    have K₄' := K₃.trans (K₄.mono (by decide))
     have hs₄ := hs.of_rest K₄' (by decide)
     refine subDigit_ok hs₄ (j := 2 * k + 1) (by rw [K₄'.gpr _ (by decide)]; exact h6) (by omega_using [hacc]) C₄
       fun u O₅ W₅ V₅ C₅ K₅ => WP.block_nil ?_
@@ -409,7 +409,7 @@ theorem subK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
     have low : ∀ j < 2 * k, w32 u.mem base (acc + 4 * j) = w32 s₁.mem base (acc + 4 * j) := fun j hj => by
       rw [O₅.w32 (by omega_using [hj]) (by omega_using [hacc, hn, hj]), O₄.w32 (by omega_using [hj]) (by omega_using [hacc, hn, hj]), m₃]
     refine ⟨(O₁.mono (Nat.le_refl _) (by omega_using [])).trans (O₄'.trans O₅'), fun j hj => ?_, C₅, ?_,
-      K₄'.trans (K₅.mono (by simp))⟩
+      K₄'.trans (K₅.mono (by decide))⟩
     · rcases Nat.lt_or_ge j (2 * k) with h | h
       · rw [low j h]; exact D₁ j h
       · obtain rfl | rfl : j = 2 * k ∨ j = 2 * k + 1 := by omega_using [hj, h]

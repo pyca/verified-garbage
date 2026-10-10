@@ -145,7 +145,7 @@ theorem halfIfF_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {j : Nat}
   rw [m₅, m₄] at o
   have f := KF.arr1 (I := I) (j := j) o (Nat.le_refl _) (by omega)
   refine ⟨h₃.step f (all_mut_arr hj) ((k₄.trans k₅).trans k₆) (by decide), (f₃.trans f).mono (by simp), ?_,
-    (((k13.trans k₄).trans k₅).trans k₆).mono (by simp)⟩
+    (((k13.trans k₄).trans k₅).trans k₆).mono (by decide)⟩
   dsimp only [atop]; rw [o.word (Or.inr (Nat.le_refl _)) (by omega)]; exact tj₃
 
 /-- The mask of `u` and `v` both even, into `sMo`. -/
@@ -179,7 +179,7 @@ theorem twoBlk_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
   rw [twoMask] at hm
   have kk := ((k₁.trans k₂).trans k₃).trans k₄
   obtain ⟨ht, f, hw⟩ := h.hdrW (i := sMo) (by unfold sMo sFn; omega) hm kk (by decide)
-  exact ⟨ht, f, ⟨_, hw⟩, kk.mono (by simp)⟩
+  exact ⟨ht, f, ⟨_, hw⟩, kk.mono (by decide)⟩
 
 /-- The facts the halving keeps: `F`, and words `W` of `u` and `v` zero. -/
 abbrev TwB (F : KIn → State → Prop) : KIn → State → Prop := fun I t => F I t ∧ TopZ aU I t ∧ TopZ aV I t
@@ -236,7 +236,7 @@ theorem twoStep_ct {F : KIn → State → Prop} (n : Nat) (hF : Stab F [.arr aU,
     kg_wsb (G := fun I t => TwF F n I t ∧ SmoM I t) (by taint_decide)
       fun I _ s h _ ⟨⟨hf, tU, tV⟩, h11, h13, hn⟩ => WP.mono (twoBlk_k h) fun t ⟨ht, f, hmo, k⟩ => by
         have hok : [Rc.hdr sMo].all Rc.ok = true := by decide
-        exact ⟨ht, ⟨⟨hF I s t h.hZ hf (f.mono (by simp)) (k.mono (by decide)),
+        exact ⟨ht, ⟨⟨hF I s t h.hZ hf (f.mono (by decide)) (k.mono (by decide)),
           (f.top hok (by decide) (by decide) h.hZ).trans tU, (f.top hok (by decide) (by decide) h.hZ).trans tV⟩,
           (k.gpr (by decide)).trans h11, (k.gpr (by decide)).trans h13, hn⟩, hmo⟩) ?_
   refine rs_app (by simp [halfIf]) (by simp [halfIf]) (halfIf_ct (by decide) (by decide) hF (by simp)
@@ -249,7 +249,7 @@ theorem twoStep_ct {F : KIn → State → Prop} (n : Nat) (hF : Stab F [.arr aU,
       fun t ⟨hz, h13', hm, k⟩ => by
       have hb' : TwB F I t := by
         obtain ⟨hf, tU, tV⟩ := hb
-        refine ⟨hF I s t hZ hf (by rw [hm]; exact (KF.refl _ _ _).mono (by simp)) (k.mono (by decide)), ?_, ?_⟩
+        refine ⟨hF I s t hZ hf (by rw [hm]; exact (KF.refl _ _ _).mono (by decide)) (k.mono (by decide)), ?_, ?_⟩
         · dsimp only [TopZ, atop]; rw [hm]; exact tU
         · dsimp only [TopZ, atop]; rw [hm]; exact tV
       exact ⟨hm, k, hb', (k.gpr (by decide)).trans h11, h13', hz, hn⟩
@@ -266,7 +266,7 @@ theorem twos_ct {F : KIn → State → Prop} (hF : Stab F [.arr aU, .arr aV, .ar
       t.gpr .r13 = BitVec.ofNat 64 0) (by taint_decide) fun I _ s h _ ⟨hf, tU, tV⟩ => by
     rw [← divInit_eq]
     exact WP.mono (divInit_k h aT) fun t ⟨h11, h13, hm, k⟩ =>
-      ⟨h.same hm k (by decide), ⟨hF I s t h.hZ hf (by rw [hm]; exact (KF.refl _ _ _).mono (by simp)) (k.mono (by decide)),
+      ⟨h.same hm k (by decide), ⟨hF I s t h.hZ hf (by rw [hm]; exact (KF.refl _ _ _).mono (by decide)) (k.mono (by decide)),
         by dsimp only [TopZ, atop]; rw [hm]; exact tU, by dsimp only [TopZ, atop]; rw [hm]; exact tV⟩, h11, h13⟩) ?_
   -- The loop, over the steps left.
   have hW : ∀ {G : KIn → State → Prop} {p : KP} {s : State}, KG G p s →
@@ -374,7 +374,7 @@ theorem gcdSwap_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
     refine WP.mono (base_ok aV (r := .r10) (by decide) ((k₃.gpr (by decide)).trans hdi₂)
       ((k₃.gpr (by decide)).trans h9₂)) fun t ⟨h10, m₄, k₄⟩ => ⟨by rw [m₄, m₃, m₂, m₁],
         ⟨_, ((k₃.trans k₄).gpr (by decide)).trans h15⟩, (k₄.gpr (by decide)).trans hbx, h10,
-        (((k₂.trans k₃).trans k₄).gpr (by decide)).trans h12, (((k₁.trans k₂).trans k₃).trans k₄).mono (by simp)⟩
+        (((k₂.trans k₃).trans k₄).gpr (by decide)).trans h12, (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)⟩
   refine WP.seq (WP.mono hb fun s₁ ⟨m₁, ⟨c, h15⟩, hbx, h10, h12, k₁⟩ => ?_)
   refine WP.mono (cswap_ok (h.ws.scr.congr k₁.2.2) hbx h10 h15 h12 (by omega) (by omega) (by omega) (by omega)
     (by omega)) fun t ⟨_, _, hf, k₂⟩ => ?_
@@ -464,12 +464,12 @@ theorem gcdUV_ct {F : KIn → State → Prop} (hF : Stab F csG allR) :
     (by taint_decide) (by taint_decide)) ?_
   refine rs_app (by simp [ltA]) (by simp) (ltA_ct (G := fun I t => (F I t ∧ TopZ aU I t) ∧ RbpM I t)
     (by decide) (by decide) (fun I s t hZ hf hm k hbp => ⟨sFT [] (by simp) (by decide) (by decide) I s t hZ hf
-      (kf_eq hm) (k.mono (by simp)), _, hbp⟩) (by taint_decide)) ?_
+      (kf_eq hm) (k.mono (by decide)), _, hbp⟩) (by taint_decide)) ?_
   refine rs_app (by simp) (by simp [constA]) (show RelCT isa _ (seqs [.block [.store (hdr kOk) .rbp,
     .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]]) _ from kg_rdi
     (G := fun I t => ((F I t ∧ TopZ aU I t) ∧ KokM I t) ∧ RbpM I t) (by taint_decide)
     fun I _ s h _ ⟨hf, c, hbp⟩ => WP.mono (kokPut_ok h hbp) fun t ⟨ht, f, hk, hbp', k⟩ =>
-      ⟨ht, ⟨sFT [.hdr kOk] (by simp) (by decide) (by decide) I s t h.hZ hf f (k.mono (by simp)), _, hk⟩,
+      ⟨ht, ⟨sFT [.hdr kOk] (by simp) (by decide) (by decide) I s t h.hZ hf f (k.mono (by decide)), _, hk⟩,
         _, hbp'⟩) ?_
   refine rs_app (by simp [constA]) (by simp [selC]) (constA_ct 3 (stab_and (sFTK [.arr aC] (by simp) (by decide)
     (by decide) (by decide)).sub (stab_rbp (by decide))) (by taint_decide) (by taint_decide)) ?_
@@ -497,7 +497,7 @@ theorem gcdUV_ct {F : KIn → State → Prop} (hF : Stab F csG allR) :
   refine rs_app (by simp) (by simp [selC]) (show RelCT isa _ (seqs [.block [.mov .rbp (.mem (hdr kOk)),
     .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]]) _ from kg_rdi (G := fun I t => F I t ∧ RbpM I t)
     (by taint_decide) fun I _ s h _ ⟨hf, c, hk⟩ => WP.mono (kokGetNot_ok h hk) fun t ⟨hm, k, hbp⟩ =>
-      ⟨h.same hm k (by decide), sF [] (by simp) I s t h.hZ hf (kf_eq hm) (k.mono (by simp)), _, hbp⟩) ?_
+      ⟨h.same hm k (by decide), sF [] (by simp) I s t h.hZ hf (kf_eq hm) (k.mono (by decide)), _, hbp⟩) ?_
   exact selC_ct (by decide) (by decide) (sF [.arr aV] (by simp)).sub (by taint_decide)
 
 theorem phi_ct : RelCT isa (Two (KG EvOK)) (seqs phi) (Two (KG EvOK)) := by
