@@ -35,7 +35,7 @@ theorem dOddC_ok {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e x R : Nat} (he6
   have hn := h.ws.scr.nowrap
   have sX := h.ws.sl (j := aX₂) (by decide)
   have sR := h.ws.sl (j := aR) (by decide)
-  have hlE := h.ws.scr.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega)
+  have hlE := h.ws.scr.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega_using [this])
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = BitVec.ofNat 64 e ∧ t.mem = s.mem) (by
@@ -69,11 +69,12 @@ theorem dOddC_ok {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e x R : Nat} (he6
   have hE₅ : s₅.mem.readW (off I.B (8 * kEv)) 64 = BitVec.ofNat 64 e := by rw [hm₅]; exact hev
   refine WP.mono (WP.keep [.x1, .x3, .x10] (Q := fun t => t.gpr .x1 = BitVec.ofNat 64 (e - x) ∧
       (t.gpr .x10).toNat = ((R * (e - x) % 2 ^ 64 + 1) % 2 ^ 64 * einv) % 2 ^ 64 ∧ t.mem = s₅.mem) (by
-    brun [hx0₅, hdr_enc (show kEv < 32 by decide), h16₅, h17, hs₅.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega),
-      hs₅.ld (d := slot I.W aX₂) (by omega), hs₅.ld (d := slot I.W aR) (by omega), hX₅, hR₅, hE₅,
+    brun [hx0₅, hdr_enc (show kEv < 32 by decide), h16₅, h17,
+        hs₅.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega_using [this]),
+      hs₅.ld (d := slot I.W aX₂) (by omega_using [sX]), hs₅.ld (d := slot I.W aR) (by omega_using [sR]), hX₅, hR₅, hE₅,
       VG.Offset.ofNat_sub_ofNat (Nat.le_of_lt hxe)]
     rw [BitVec.toNat_mul, BitVec.toNat_add, BitVec.toNat_mul, h4₅, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt hR, Nat.mod_eq_of_lt (show e - x < 2 ^ 64 by omega)]
+      Nat.mod_eq_of_lt hR, Nat.mod_eq_of_lt (show e - x < 2 ^ 64 by omega_using [he64])]
     rfl) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h1, h10, mt⟩, kt⟩ => ?_
   exact ⟨⟨h1, einv, hinv, h10, mt.trans hm₅⟩, ((k12.trans k25).trans kt).mono (by decide)⟩
 
@@ -96,7 +97,7 @@ theorem dOddD_ok {I : KIn} {s₀ s : State} (h : KS I s₀ s) :
   have hs₂ := h.ws.scr.congr (k₁.trans k₂).wr
   have h10₂ : s₂.gpr .x10 = s.gpr .x10 := (k₁.trans k₂).gpr .x10 (by decide)
   refine WP.mono (WP.keep [] (Q := fun t => t.mem = s.mem.writeW (off I.B (slot I.W aDd)) (s.gpr .x10)) (by
-    brun [h8, hs₂.st (d := slot I.W aDd) (by omega), h10₂, m₂, m₁]) rfl rfl rfl) fun s₃ ⟨m₃, k₃⟩ => ?_
+    brun [h8, hs₂.st (d := slot I.W aDd) (by omega_using [sD]), h10₂, m₂, m₁]) rfl rfl rfl) fun s₃ ⟨m₃, k₃⟩ => ?_
   rw [WP.block_append_iff]
   have k13 := (k₁.trans k₂).trans k₃
   refine WP.mono (base_ok aQt .x9 ((k13.gpr .x0 (by decide)).trans h.ws.x0) (((k₂.trans k₃).gpr .x11 (by decide)).trans h11)) fun s₄ ⟨⟨h9, m₄, _⟩, k₄⟩ => ?_
@@ -123,7 +124,7 @@ theorem dOdd_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he3 : 3
     WP isa (seqs dOdd) s fun t => KS I s₀ t ∧ KF I.B I.W csD s.mem t.mem ∧ DRes I e L t.mem := by
   have hn := h.ws.scr.nowrap
   have hZ := h.hZ
-  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega
+  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega_using [this]
   have hw2 := h.ws.w2
   rw [dOdd_eq]
   -- `[aE] := e`.
@@ -144,8 +145,8 @@ theorem dOdd_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he3 : 3
     rw [f₃.av (by decide) (by decide) (by decide) hZ, f₂.av (by decide) (by decide) (by decide) hZ, vE₁]
   have vQ₃ : av I s₃.mem aQt = L := by rw [v₃, f₂.av (by decide) (by decide) (by decide) hZ, vL₁]
   rw [vE₃, vQ₃] at d₄
-  obtain ⟨dR, dQ⟩ := d₄ (by omega)
-  have hR : L % e < e := Nat.mod_lt _ (by omega)
+  obtain ⟨dR, dQ⟩ := d₄ (by omega_using [heo])
+  have hR : L % e < e := Nat.mod_lt _ (by omega_using [heo])
   have vR₄ : av I s₄.mem aR = L % e := divmod_rem hLW dR
   have hok4 : [Rc.arr aQt, Rc.arr aR, Rc.arr aT].all Rc.ok = true := by decide
   have vU₆ : av I s₆.mem aU = L % e := by rw [v₆, f₅.av (by decide) (by decide) (by decide) hZ, vR₄]
@@ -176,7 +177,7 @@ theorem dOdd_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he3 : 3
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) tU₇ (by rw [vV₇, vE₆, vE₇]) vX₁₇ vX₂₇) fun s₈ ⟨h₈, f₈, hinv⟩ => ?_
   rw [vE₇, vU₇] at hinv
-  obtain ⟨hg₈, hdv₈, hx₈⟩ := hinv heo (by omega)
+  obtain ⟨hg₈, hdv₈, hx₈⟩ := hinv heo (by omega_using [he3])
   generalize hx : av I s₈.mem aX₂ = x at hdv₈ hx₈
   have hokI : [Rc.arr aU, Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂, Rc.arr aT].all Rc.ok = true := by decide
   have vL₈ : av I s₈.mem aL = L := by
@@ -219,13 +220,13 @@ theorem dOdd_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he3 : 3
   have sD := h.ws.sl (j := aDd) (by decide)
   have sQ := h.ws.sl (j := aQt) (by decide)
   have spDQ := slot_sep (w := I.W) (j := aDd) (k := aQt) (by decide)
-  have o₁₃ := writeW_outside s₁₂.mem I.B (s₁₂.gpr .x10) (d := slot I.W aDd) (by omega)
+  have o₁₃ := writeW_outside s₁₂.mem I.B (s₁₂.gpr .x10) (d := slot I.W aDd) (by omega_using [hn, sD])
   rw [← m₁₃] at o₁₃
-  have f₁₃ := KF.arr1 (B := I.B) (W := I.W) (j := aDd) o₁₃ (Nat.le_refl _) (by omega)
+  have f₁₃ := KF.arr1 (B := I.B) (W := I.W) (j := aDd) o₁₃ (Nat.le_refl _) (by omega_using [])
   have h₁₃ := h₁₂.step f₁₃ (all_mut_arr (by decide)) k₁₃
   have c₁₂ : (s₁₂.gpr .x10).toNat = c := by rw [k₁₂.gpr .x10 (by decide)]; exact c₁₁
   have vD₁₃ : wv s₁₃.mem I.B (slot I.W aDd) (I.W + 2) = c := by
-    rw [m₁₃, wv_put0 _ z₁₂ (by omega), c₁₂]
+    rw [m₁₃, wv_put0 _ z₁₂ (by omega_using [hn, sD]), c₁₂]
   have hokD : [Rc.arr aDd].all Rc.ok = true := by decide
   have vQ₁₃ : av I s₁₃.mem aQt = L / e := by
     rw [f₁₃.av hokD (by decide) (by decide) hZ, f₁₂.av hokD (by decide) (by decide) hZ,
@@ -237,19 +238,20 @@ theorem dOdd_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he3 : 3
   have hQ : L / e < 2 ^ (64 * I.W) := Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hLW
   have hbound : c + (e - x) * (L / e) < 2 ^ (64 * (I.W + 2)) := by
     have h1 : (e - x) * (L / e) < 2 ^ 64 * 2 ^ (64 * I.W) :=
-      Nat.mul_lt_mul_of_lt_of_le (by omega) (Nat.le_of_lt hQ) (by omega)
+      Nat.mul_lt_mul_of_lt_of_le (by omega_using [he64]) (Nat.le_of_lt hQ) (by omega_using [dQ, hQ])
     have h2 : 2 ^ 64 + 2 ^ 64 * 2 ^ (64 * I.W) ≤ 2 ^ (64 * (I.W + 2)) := by
-      rw [show 64 * (I.W + 2) = 64 + 64 + 64 * I.W by omega, Nat.pow_add, Nat.pow_add]
+      rw [show 64 * (I.W + 2) = 64 + 64 + 64 * I.W by omega_using [], Nat.pow_add, Nat.pow_add]
       have : 1 ≤ 2 ^ (64 * I.W) := Nat.one_le_two_pow
-      have : 2 ^ 64 ≤ 2 ^ 64 * 2 ^ (64 * I.W) := Nat.le_mul_of_pos_right _ (by omega)
+      have : 2 ^ 64 ≤ 2 ^ 64 * 2 ^ (64 * I.W) := Nat.le_mul_of_pos_right _ (by omega_using [this])
       have : 2 * (2 ^ 64 * 2 ^ (64 * I.W)) ≤ 2 ^ 64 * 2 ^ 64 * 2 ^ (64 * I.W) := by
         rw [Nat.mul_assoc]; exact Nat.mul_le_mul_right _ (by decide)
-      omega
-    omega
+      omega_arith
+    omega_using [hcl, h1, h2]
   have vQ' : wv s₁₃.mem I.B (slot I.W aQt) I.W = L / e := vQ₁₃
   have hex : (s₁₃.gpr .x1).toNat = e - x := by
-    rw [h1₁₃, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  refine WP.mono (mulAddRow_ok h₁₃.ws.scr h8 h9 h12 h7 hw1 (by omega) (by omega) (by omega) (by omega)
+    rw [h1₁₃, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [he64])]
+  refine WP.mono (mulAddRow_ok h₁₃.ws.scr h8 h9 h12 h7 hw1 (by omega_using [hw2]) (by omega_using [sD])
+      (by omega_using [sQ]) (by omega_using [spDQ])
     (by rw [vD₁₃, hex, vQ']; exact hbound)) fun t ⟨hv, o, kt⟩ => ?_
   rw [vD₁₃, hex, vQ'] at hv
   have ft := KF.arr1 (B := I.B) (W := I.W) (j := aDd) o (Nat.le_refl _) (Nat.le_refl _)
@@ -281,10 +283,10 @@ theorem dOdd_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he3 : 3
         have := hdv₈; rw [hg₈, hc.2] at this; exact_mod_cast this
       have hio := VG.Proof.RsaKeyGen.inverse_odd he3 he64 hc.1 hQR hR hx1 hxe hinv₁₁
       rw [hcv] at hio
-      have hdL := (VG.Proof.RsaKeyGen.inverse_some hio).2 (by omega)
+      have hdL := (VG.Proof.RsaKeyGen.inverse_some hio).2 (by omega_using [hc])
       rw [hio] at hd
       cases hd
-      exact av_of_full (by rw [hv, Nat.add_comm, Nat.mul_comm]) (by omega)
+      exact av_of_full (by rw [hv, Nat.add_comm, Nat.mul_comm]) (by omega_using [hLW, hdL])
     · rw [VG.Proof.RsaKeyGen.inverse_odd_none he3 (Nat.div_add_mod L e).symm hc] at hd
       cases hd
 
