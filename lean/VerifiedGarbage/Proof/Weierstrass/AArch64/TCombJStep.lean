@@ -1,8 +1,8 @@
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJEntry
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJInvariant
 import VerifiedGarbage.Proof.Weierstrass.AArch64.CopyKeep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FprogJ
+import VerifiedGarbage.Proof.Weierstrass.CombFrame
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
@@ -26,6 +26,7 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
       TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s' (j + 1) ∧
         s'.gpr .x4=BitVec.ofNat 64 (j+1)-BitVec.ofNat 64 K.J := by
   have hn := hI.scr.nowrap
+  have hsz : size ≤ 2 ^ 64 := by omega_using [hn]
   have hJ := hL.comb.J
   rw [TCombCfg.toComb_J] at hJ
   have hle : ∀ x, x ∈ combSlots K.toComb → x + 8 * K.M.n ≤ size := fun x hx => hL.comb.lay.le x hx
@@ -44,32 +45,14 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
   refine tentryJ_ok hL hA hC hV hpn hI.scr hI.mod hjn hI.x19 hb1 (c := true) (Or.inl ⟨rfl, hj⟩)
     hI.bits hz hI.tsym hI.tbl hF.out fun s₃ E₃ => ?_
   have hEW : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n), (K.neg, 8 * K.M.n),
-      (K.M.tmp, 8 * K.M.n)], w ∈ combW K.toComb := by
-    intro w hw
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-    simp only [combW, combWs, List.mem_append, List.mem_map, List.mem_cons,
-      List.not_mem_nil, or_false, TCombCfg.toComb]
-    rcases hw with h | h | h | h | h <;> subst h <;> simp
+      (K.M.tmp, 8 * K.M.n)], w ∈ combW K.toComb := combEntryW_sub (K := K.toComb)
   have U₁₃ : Unch base (combW K.toComb) s.mem s₃.mem := E₃.unch.mono hEW
   have hmoW := tcombW_mo hL hI.mod
   have hM₃ : ModOkA K.M size C.p s₃.mem base :=
     hI.mod.unch U₁₃ (fun w hw => hmoW w (List.mem_append_left _ hw)) hn
   -- What `A` and the read-only slots hold at `s₃`.
   have hAx : ∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s₃.mem base x K.M.n = wordsVal s.mem base x K.M.n :=
-    fun x hx => by
-      have hxs : x ∈ combWs K.toComb := by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-        rcases hx with rfl | rfl | rfl <;> tcomb_mem
-      rw [E₃.unch.wordsVal (fun w hw => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-        rcases hw with rfl | rfl | rfl | rfl | rfl
-        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by clear * - hnd hx; grind)
-        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by clear * - hnd hx; grind)
-        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by clear * - hnd hx; grind)
-        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by clear * - hnd hx; grind)
-        · exact hL.comb.lay.tmp x (combWs_slots _ x hxs))
-        (by have := hle x (combWs_slots _ x hxs); omega_arith)]
+    hL.comb.wordsVal_entry hsz E₃.unch
   have U₃ : Unch base (tcombW K) s₀.mem s₃.mem :=
     (hI.unch.trans U₁₃).mono fun w hw => by
       rcases List.mem_append.mp hw with hw | hw
@@ -113,21 +96,7 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
     · exact Or.inr (by rw [h]; rfl)
   -- `A` and `E` are not written by the addition.
   have hAE₄ : ∀ x ∈ [K.A.x, K.A.y, K.A.z, K.E.x, K.E.y, K.E.z],
-      wordsVal s₄.mem base x K.M.n = wordsVal s₃.mem base x K.M.n := fun x hx => by
-    have hxs : x ∈ combWs K.toComb := by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> tcomb_mem
-    refine P₄.unch.wordsVal (fun w hw => ?_) (by have := hle x (combWs_slots _ x hxs); omega_arith)
-    rcases List.mem_append.mp hw with hw | hw
-    · obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hw
-      have hys : y ∈ combWs K.toComb := by
-        simp only [combWs, List.mem_append, TCombCfg.toComb]; exact Or.inr hy
-      refine hL.comb.apart₂ hxs hys ?_
-      simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hx hy
-      clear * - hnd hx hy
-      grind
-    · simp only [List.mem_singleton] at hw; subst hw
-      exact hL.comb.lay.tmp x (combWs_slots _ x hxs)
+      wordsVal s₄.mem base x K.M.n = wordsVal s₃.mem base x K.M.n := hL.comb.wordsVal_add hsz P₄.unch
   have hbl := hL.bits
   have hz' : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega_arith
   have hw := hL.w
@@ -143,40 +112,18 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
        hA.sl x (by simp only [List.mem_cons,List.not_mem_nil,or_false] at hx; rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> tcomb_mem)⟩
   refine WP.mono (selPtKeep_ok hs₅ (decide (wordsVal s₄.mem base K.A.z K.M.n ≠ 0)) (by rw [c₅]; simp only [mask,decide_eq_true_eq])
     (n := K.M.n) (o := K.D) (a := K.E) hsel
-    ⟨hL.comb.apart₂ (x := K.D.x) (y := K.D.y) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd),
-      hL.comb.apart₂ (x := K.D.x) (y := K.D.z) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd),
-      hL.comb.apart₂ (x := K.D.y) (y := K.D.z) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)⟩
-    (fun x hx y hy => hL.comb.apart₂ (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl <;> tcomb_mem) (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
-      rcases hy with rfl | rfl | rfl <;> tcomb_mem) (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx hy
-      clear * - hnd hx hy
-      grind))) fun s₆ ⟨dx₆, dy₆, dz₆, k₆, O₆⟩ => ?_
+    hL.comb.apart_D hL.comb.apart_DE) fun s₆ ⟨dx₆, dy₆, dz₆, k₆, O₆⟩ => ?_
   have hs₆ := hs₅.of_keepRegs k₆ (by decide)
   have m₅ : s₅.mem = s₄.mem := k₅.mem
   rw [m₅] at dx₆ dy₆ dz₆ O₆
   have UD₆ : Unch base [(K.D.x, 8 * K.M.n), (K.D.y, 8 * K.M.n), (K.D.z, 8 * K.M.n)] s₄.mem s₆.mem :=
     fun x hx => O₆ x (hx (K.D.x, 8 * K.M.n) (by simp)) (hx (K.D.y, 8 * K.M.n) (by simp))
       (hx (K.D.z, 8 * K.M.n) (by simp))
-  have U₆ : Unch base (combW K.toComb) s₄.mem s₆.mem := by
-    refine UD₆.mono fun w hw => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-    simp only [combW, combWs, rcbW, List.mem_append, List.mem_map, List.mem_cons,
-      List.not_mem_nil, or_false, TCombCfg.toComb]
-    rcases hw with h | h | h <;> subst h <;> simp
+  have U₆ : Unch base (combW K.toComb) s₄.mem s₆.mem := UD₆.mono (combSelW_D_sub (K := K.toComb))
   have hA₆ : ∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s₆.mem base x K.M.n = wordsVal s.mem base x K.M.n :=
-    fun x hx => by
-      have hxs : x ∈ combWs K.toComb := by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-        rcases hx with rfl | rfl | rfl <;> tcomb_mem
-      rw [← hAx x hx, ← hAE₄ x (by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; rcases hx with h | h | h <;> simp [h])]
-      refine UD₆.wordsVal (fun w hw => ?_) (by have := hle x (combWs_slots _ x hxs); omega_arith)
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hw with rfl | rfl | rfl <;> exact hL.comb.apart₂ hxs (by tcomb_mem) (by clear * - hnd hx; grind)
+    fun x hx => ((hL.comb.wordsVal_selD hsz UD₆ x hx : wordsVal s₆.mem base x K.M.n = wordsVal s₄.mem base x K.M.n).trans
+      (hAE₄ x (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; rcases hx with h | h | h <;> simp [h]))).trans
+      (hAx x hx)
   have hb₆ : s₆.gpr .x19 = BitVec.ofNat 64 j := by
     rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), hb₄]
   have hbits₆ : ∀ t < K.w * K.J, s₆.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0 := by
@@ -214,17 +161,7 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
     (fun x hx => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨hle _ (by tcomb_mem),hA.sl _ (by tcomb_mem)⟩)
-    ⟨hL.comb.apart₂ (x := K.A.x) (y := K.A.y) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd),
-      hL.comb.apart₂ (x := K.A.x) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd),
-      hL.comb.apart₂ (x := K.A.y) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)⟩
-    (fun x hx y hy => hL.comb.apart₂ (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl <;> tcomb_mem) (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
-      rcases hy with rfl | rfl | rfl <;> tcomb_mem) (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx hy
-      clear * - hnd hx hy
-      grind))) fun s₉ ⟨ex₉, ey₉, ez₉, k₉, O₉⟩ => ?_
+    hL.comb.apart_A hL.comb.apart_AD) fun s₉ ⟨ex₉, ey₉, ez₉, k₉, O₉⟩ => ?_
   have hs₉ := hs₈.of_keepRegs k₉ (by decide)
   have hb₉ : s₉.gpr .x19 = BitVec.ofNat 64 j := by
     rw [k₉.gpr _ (by decide), k₈.gpr _ (by decide), k₇.gpr _ (by decide), hb₆]
@@ -237,11 +174,7 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
     rw [m₁₀]
     refine Unch.mono (W := [(K.A.x, 8 * K.M.n), (K.A.y, 8 * K.M.n), (K.A.z, 8 * K.M.n)])
       (fun x hx => O₉ x (hx (K.A.x, 8 * K.M.n) (by simp)) (hx (K.A.y, 8 * K.M.n) (by simp))
-        (hx (K.A.z, 8 * K.M.n) (by simp))) fun w hw => ?_
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-    simp only [combW, combWs, List.mem_append, List.mem_map, List.mem_cons,
-      List.not_mem_nil, or_false, TCombCfg.toComb]
-    rcases hw with h | h | h <;> subst h <;> simp
+        (hx (K.A.z, 8 * K.M.n) (by simp))) (combSelW_A_sub (K := K.toComb))
   have U : Unch base (combW K.toComb) s.mem s₁₀.mem :=
     (U₁₃.trans (U₄.trans (U₆.trans U₁₀))).mono fun w hw => by
       simp only [List.mem_append] at hw; rcases hw with h | h | h | h <;> exact h
