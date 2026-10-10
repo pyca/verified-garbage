@@ -1,0 +1,33 @@
+[package]
+name = "rustls-verified-garbage"
+version = "0.0.0"
+edition = "2024"
+description = "A rustls CryptoProvider backed by verified-garbage"
+license = "Apache-2.0 OR BSD-3-Clause"
+publish = false
+
+# A package of its own, outside the library's, so that the library's tests,
+# lints and coverage never build rustls.
+[workspace]
+
+[features]
+default = ["std"]
+# The ticketer rotates its keys behind rustls' std-only `TicketRotator`.
+std = []
+# Lets `VG_CPU_FEATURES` restrict the CPU features verified-garbage uses
+# (its `src/cpu.rs`), to benchmark another CPU class's code paths.
+cpu-features-env = ["verified-garbage/cpu-features-env"]
+
+[dependencies]
+asn1 = { version = "0.24", default-features = false }
+getrandom = "0.4"
+pki-types = { package = "rustls-pki-types", version = "1.15", features = ["alloc"] }
+rustls = { git = "https://github.com/rustls/rustls", rev = "91aebe5d6d8220f156bd837eb2c269eb87e9f4a0", default-features = false }
+subtle = { version = "2.5", default-features = false }
+verified-garbage = { path = ".." }
+zeroize = "1.8"
+
+[dev-dependencies]
+rustls = { git = "https://github.com/rustls/rustls", rev = "91aebe5d6d8220f156bd837eb2c269eb87e9f4a0", features = ["webpki"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

@@ -15,3 +15,5 @@ __pycache__/
 /bench-head
 # CI metrics (ci/ci_metrics.py fetch)
 /.ci-metrics
+/rustls-provider/target
+/rustls-provider/bench/aws-lc-compare/target
