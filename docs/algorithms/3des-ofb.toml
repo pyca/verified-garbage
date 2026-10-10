@@ -1,0 +1,5 @@
+name = "3DES-OFB"
+family = "Ciphers"
+specs = ["TripleDes", "Ofb"]
+modules = ["src/triple_des_ofb.rs"]
+asm = ["triple_des_ofb"]
