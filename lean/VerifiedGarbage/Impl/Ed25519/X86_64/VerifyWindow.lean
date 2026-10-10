@@ -6,7 +6,7 @@ import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
 # Verification's equation with signed sliding windows
 
 Verification may leak its inputs, so its scalars `S` and `k` are public. It computes
-`[k]A - [S]B` with one chain of doublings (`dblOps`), one per bit, from the top. Both scalars
+`[k]A - [S]B` with one chain of doublings (`dblOpsH`), one per bit, from the top. Both scalars
 are first recoded into signed odd digits (`recodeAll`): `k`'s below 16 in absolute value, at
 least five bits apart, from a table of `±[1]A … ±[15]A` built at run time (byte 5376); `S`'s
 below 128, at least eight bits apart, from the static `baseOddSym` of `∓[1]B … ∓[127]B`;
@@ -17,10 +17,11 @@ digits, are skipped: they would only double the identity. The equation `[S]B = R
 holds exactly when the result equals `-R`, which the projective comparison `pointEqual`
 checks.
 
-The doublings and additions are the point operations `pt` (`Point64.Ops`): in the code, calls
-of `vg_ed25519_r64_double_ext` and `_proj` and of `vg_ed25519_r64_add_cached_ext` and `_proj`
+The additions, and the table's doubling, are the point operations `pt` (`Point64.Ops`): in the
+code, calls of `vg_ed25519_r64_add_cached_ext` and `_proj` and of `vg_ed25519_r64_double_ext`
 (`Point64.calls`), which run as their bodies would inlined (`Point64.bodies`), as the proofs
-take them.
+take them. The chain's doublings, one per bit, stay inline (`dblIn`): as calls, saving and
+restoring the registers they write would cost more than their code saves.
 -/
 
 namespace VG.Impl.Ed25519.X86_64
@@ -35,10 +36,11 @@ def pointFromTableQ : List Instr :=
 /-- `rax` = byte `o` of the scratch. -/
 def tableStart (o : Nat) : List Instr := [.movImm64 .rax (BitVec.ofNat 64 o), .alu .add .rax (.reg .rdi)]
 
-/-- Doubles slots 0–3 in place with `dbl-2008-hwcd` (for `a = -1`): `A = X²`, `B = Y²`,
-`C = 2Z²`, `E = 2XY`, `G = B - A`, `F = C - G`, `H = A + B`, and `X = EF`, `Y = GH`,
-`Z = FG`, and `T = EH` if `t` (only an addition reads `T`): the comb's doublings
-(`vg_ed25519_scalar_base`). -/
+/-- Doubles slots 0–3 in place with `dbl-2008-hwcd` (for `a = -1`) with every coordinate
+negated, the same point, which saves a subtraction: `A = X²`, `B = Y²`, `C = 2Z²`, `E = 2XY`,
+`G = B - A`, `F = C - G`, `H = A + B`, and `X = EF`, `Y = GH`, `Z = FG`, and `T = EH` if `t`
+(only an addition reads `T`): the comb's doublings (`vg_ed25519_scalar_base`) and the chain's
+(`dblIn`). -/
 def dblOpsH (t : Bool) : List FieldOp :=
   [.sqr 8 0, .sqr 9 1, .sqr2 10 2, .mul2 11 0 1,
     .sub 12 9 8, .sub 13 10 12, .add 14 8 9, .mul 0 11 13, .mul 1 12 14, .mul 2 13 12] ++
@@ -211,13 +213,16 @@ def addsAt (pt : Point64.Ops) : Prog isa :=
       (.seq (.block (digitAt 1)) (addBase pt))))
     (.seq (.block (digitAt 0)) (addDigit 5376 (pt.add false))))
 
+/-- A doubling of the chain, inline, computing `T` if `t`. -/
+def dblIn (fld : Arith) (t : Bool) : Prog isa := .block (fieldCode fld (dblOpsH t))
+
 /-- One doubling, computing `T` only if a digit at the counter's position will read it. -/
-def dblAt (pt : Point64.Ops) : Prog isa :=
-  .seq (.block digitsAt) (.ite .ne (pt.dbl true) (pt.dbl false))
+def dblAt (fld : Arith) : Prog isa :=
+  .seq (.block digitsAt) (.ite .ne (dblIn fld true) (dblIn fld false))
 
 /-- The position below: the counter moved down, a doubling and its digits. -/
-def stepAt (pt : Point64.Ops) : Prog isa :=
-  .seq (.block batchBegin) (.seq (dblAt pt) (.seq (addsAt pt) (.block batchTest)))
+def stepAt (fld : Arith) (pt : Point64.Ops) : Prog isa :=
+  .seq (.block batchBegin) (.seq (dblAt fld) (.seq (addsAt pt) (.block batchTest)))
 
 /-- Below the highest position, while both digits are zero and the accumulator is the identity:
 the counter moved down, and ZF clear while the skipping goes on. -/
@@ -226,12 +231,12 @@ def skipTop : Prog isa :=
 
 /-- The windows, from the counter one above the highest digit's position, the accumulator the
 identity: the leading zero digits skipped, then a doubling and the digits at each position. -/
-def windowsWith (pt : Point64.Ops) : Prog isa :=
+def windowsWith (fld : Arith) (pt : Point64.Ops) : Prog isa :=
   .seq (.loop skipTop .ne) (.seq (addsAt pt) (.seq (.block batchTest)
-    (.ite .ne (.loop (stepAt pt) .ne) (.block []))))
+    (.ite .ne (.loop (stepAt fld pt) .ne) (.block []))))
 
-/-- The windows, calling the point functions with the field multiplications `fld`. -/
-def windows (fld : Arith) : Prog isa := windowsWith (Point64.calls fld)
+/-- The windows, calling the point additions with the field multiplications `fld`. -/
+def windows (fld : Arith) : Prog isa := windowsWith fld (Point64.calls fld)
 
 /-! ## Skipping the leading zero bytes of `k` -/
 

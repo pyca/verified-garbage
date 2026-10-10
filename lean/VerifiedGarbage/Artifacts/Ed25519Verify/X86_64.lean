@@ -20,9 +20,10 @@ def artifacts : List Artifact := [
       for S, from the static VG_ED25519_VERIFY_BASE of ∓[1]B to ∓[127]B), both cached for \
       addition as [Y - X, Y + X, 2dT, 2Z], skipping the leading zero bytes of k above its low \
       32 and the leading zero digits, computing T only in a doubling or addition that an \
-      addition follows, and compares it with -R projectively. The doublings and additions are \
-      calls of vg_ed25519_r64_double_ext and _proj and vg_ed25519_r64_add_cached_ext and _proj, \
-      whose return address takes 8 bytes of stack."])
+      addition follows, and compares it with -R projectively. The additions, and the doubling \
+      of the table, are calls of vg_ed25519_r64_add_cached_ext and _proj and \
+      vg_ed25519_r64_double_ext, whose return address takes 8 bytes of stack; the chain's \
+      doublings are inline."])
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.baseline
       (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.baseline)
     consts := Impl.Ed25519.X86_64.baseOddConsts
@@ -30,7 +31,7 @@ def artifacts : List Artifact := [
       Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseOddConsts) 8
     stack := 8
     verified := Proof.Ed25519.X86_64.verify_verified8 (win := Impl.Ed25519.X86_64.windowsWith
-      (Impl.Ed25519.X86_64.Point64.bodies Impl.X25519.X86_64.baseline)) rfl
+      Impl.X25519.X86_64.baseline (Impl.Ed25519.X86_64.Point64.bodies Impl.X25519.X86_64.baseline)) rfl
       Proof.Ed25519.X86_64.VerifyCode.baseline_inlineOk Proof.Ed25519.X86_64.VerifyCode.baseline_mxI
     spSafe := Proof.Ed25519.X86_64.VerifyCode.baseline_spSafe },
   { Spec.Ed25519.verifyEquationApi with
@@ -42,8 +43,9 @@ def artifacts : List Artifact := [
       does. Checks canonical point encodings and S < L, then evaluates the uncofactored \
       equation using all 512 challenge bits, with one chain of doublings and signed odd digits \
       of k (w = 5) and of S (w = 8), skipping the leading zero bytes of k above its low 32 \
-      and the leading zero digits. The doublings and additions are calls of the `_adx` point \
-      functions, whose return address takes 8 bytes of stack."])
+      and the leading zero digits. The additions, and the doubling of the table, are calls of \
+      the `_adx` point functions, whose return address takes 8 bytes of stack; the chain's \
+      doublings are inline."])
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx
       (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.adx)
     consts := Impl.Ed25519.X86_64.baseOddConsts
@@ -51,7 +53,7 @@ def artifacts : List Artifact := [
       Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseOddConsts) 8
     stack := 8
     verified := Proof.Ed25519.X86_64.verify_verified8 (win := Impl.Ed25519.X86_64.windowsWith
-      (Impl.Ed25519.X86_64.Point64.bodies Impl.X25519.X86_64.adx)) rfl
+      Impl.X25519.X86_64.adx (Impl.Ed25519.X86_64.Point64.bodies Impl.X25519.X86_64.adx)) rfl
       Proof.Ed25519.X86_64.VerifyCode.adx_inlineOk Proof.Ed25519.X86_64.VerifyCode.adx_mxI
     features := ["bmi2", "adx"]
     spSafe := Proof.Ed25519.X86_64.VerifyCode.adx_spSafe },

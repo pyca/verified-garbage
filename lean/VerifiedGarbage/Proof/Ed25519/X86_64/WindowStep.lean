@@ -669,17 +669,6 @@ theorem dblH_ok {s : State} {base : Addr} (hs : Scratch s base) (t : Bool) {a : 
   · subst ht
     rw [vu, (dblOpsH_eval _).1]; exact hr
 
-theorem dblPt_ok {s : State} {base : Addr} (hs : Scratch s base) (t : Bool) {a : EPoint dZ}
-    (ha : RepP (point (env s.mem base) 0 1 2 3) a) :
-    WP isa (pt.dbl t) s fun u => Keep base s u ∧
-      RepP (point (env u.mem base) 0 1 2 3) (a + a) ∧
-      (t = true → Rep (point (env u.mem base) 0 1 2 3) (a + a)) ∧
-      ∀ i : Slot, 16 ≤ i.val → env u.mem base i = env s.mem base i := by
-  refine WP.mono (PtOk.dbl hs t) fun u ⟨ku, vu⟩ => ?_
-  rw [vu]
-  exact ⟨ku, (dblOps_rep _ t ha).1, (dblOps_rep _ t ha).2,
-    fun i hi => point_ops_high _ (by cases t <;> decide) _ i hi⟩
-
 theorem double4_ok {s : State} {base : Addr} {a : EPoint dZ} (hs : Scratch s base)
     (ha : Rep (point (env s.mem base) 0 1 2 3) a) :
     WP isa (double4 fld) s fun t => Rep (point (env t.mem base) 0 1 2 3) ((16 : Nat) • a) ∧
