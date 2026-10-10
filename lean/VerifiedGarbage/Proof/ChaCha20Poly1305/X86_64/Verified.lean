@@ -51,13 +51,13 @@ def openSat : State where
 /-- `seal` and `open` never write the stack pointer. -/
 theorem seal_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     («seal» v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases v.fold_poly with ⟨hf, hpass, hb⟩ | ⟨hf, hpass, hb⟩ | ⟨hf, hpass, hb⟩ <;>
-    (simp only [«seal», prologue, crypt, cryptBig, Code.all, v.spSafe, hf, hpass, hb]; lit_decide)
+  rcases v.fold_poly with ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ <;>
+    (simp only [«seal», prologue, crypt, cryptBig, Code.all, v.spSafe, hf, hpass, hw, hb]; lit_decide)
 
 theorem open_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     («open» v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases v.fold_poly with ⟨hf, hpass, hb⟩ | ⟨hf, hpass, hb⟩ | ⟨hf, hpass, hb⟩ <;>
-    (simp only [«open», prologue, crypt, cryptBig, Code.all, v.spSafe, hf, hpass, hb]; lit_decide)
+  rcases v.fold_poly with ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ <;>
+    (simp only [«open», prologue, crypt, cryptBig, Code.all, v.spSafe, hf, hpass, hw, hb]; lit_decide)
 
 theorem seal_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : sealX86_64.pre s) :
     ∃ t s', Exec isa («seal» v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' :=
@@ -129,7 +129,9 @@ theorem open_verified (v : Proof.ChaCha20.X86_64.XorImpl) :
 
 /-! ## The frame -/
 
-theorem xorBuf_xdepth : (xorBufX .r14).x86_64Depth = 0 := by decide
+theorem xorBuf_xdepth (w : Nat) : (xorBufX w .r14).x86_64Depth = 0 := by
+  have : (Impl.ChaCha20.X86_64.XorBuf.xorBuf .rdi .rsi).x86_64Depth = 0 := by decide
+  simp only [xorBufX, Code.x86_64Depth, this, Nat.max_self]
 theorem splitM_xdepth (fold pass : Nat) : (splitM fold pass).x86_64Depth = 0 := by
   unfold splitM; split <;> rfl
 theorem init_xdepth : Impl.Poly1305.X86_64.init.x86_64Depth = 0 := by lit_decide
