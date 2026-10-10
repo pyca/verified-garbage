@@ -92,6 +92,6 @@ def verifyEquationWith (fld : Arith) (pt : Point64.Ops) (win : Prog isa) : Prog 
 
 /-- Verification, with the field arithmetic `fld`, calling the point functions with it, and the
 windows `win`. -/
-def verifyEquation (fld : Arith) (win : Prog isa) : Prog isa := verifyEquationWith fld (Point64.calls fld) win
+def verifyEquation (fld : Arith) (win : Prog isa) : Prog isa := verifyEquationWith fld (Point64.bodies fld) win
 
 end VG.Impl.Ed25519.X86_64
