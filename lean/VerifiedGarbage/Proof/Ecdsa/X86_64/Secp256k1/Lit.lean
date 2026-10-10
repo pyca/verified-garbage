@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Ecdsa.Secp256k1.X86_64
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Secp256k1Literals
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 namespace VG.Proof.Ecdsa.X86_64.Secp256k1
