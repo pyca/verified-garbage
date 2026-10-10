@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
 import VerifiedGarbage.Proof.Ed448.AArch64.Base.Setup
 import VerifiedGarbage.Proof.Ed448.AArch64.Base.Encode
 import VerifiedGarbage.Proof.X448.AArch64.Base.Loop
@@ -9,7 +10,7 @@ import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 
 Untrusted: everything here is checked by Lean. The correctness of
 `vg_ed448_scalar_base` against `scalarBaseLocal` (`BaseContract.lean`): the
-comb of 57 tables leaves `R` representing `[k]B` (`combine_ok`), whose
+comb of 57 tables leaves `R` representing `[k]B` (`Point56.combineCall_ok`), whose
 encoding is `encodePoint (pointMul k B)` since both represent the same affine
 point (`encodePoint_rep`); every write but the result's is in the working
 space, so the scalar is read unchanged, and the callee-saved registers are
@@ -58,7 +59,7 @@ theorem scalarBase_correct {s : State} (hp : scalarBaseLocal.pre s) :
   refine WP.seq (WP.mono (setup_ok hbase hws hn rfl hkr hkd htb) fun s1 R => ?_)
   refine WP.seq (WP.mono (loop_ok (by decide) (s₀ := s1) 57 s1 (by decide) le_rfl
     (by rw [Nat.sub_self]; exact R.inv) rfl) fun s2 h2 => ?_)
-  refine WP.seq (WP.mono (combine_ok (decodeLE_57_lt kb (by simp [kb, VG.Proof.Ed448.bytesAt_eq, Spec.X25519.bytesAt])) h2)
+  refine WP.seq (WP.mono (Point56.combineCall_ok (decodeLE_57_lt kb (by simp [kb, VG.Proof.Ed448.bytesAt_eq, Spec.X25519.bytesAt])) h2)
     fun s3 ⟨f3, r3⟩ => ?_)
   -- The encoding.
   have out3 : s3.gpr .x20 = s.gpr .x0 := by rw [f3.out, R.out]

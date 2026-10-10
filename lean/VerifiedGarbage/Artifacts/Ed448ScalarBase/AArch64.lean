@@ -17,7 +17,8 @@ def artifacts : List Artifact := [
       (reading every entry), entries `[m 256^j] B` (`m ≤ 8`) of 57 tables in the static \
       `VG_X448_COMB`, added to two projective \
       accumulators with RFC 8032's complete addition (four pairs of the field products in AdvSIMD, \
-      each interleaved with independent scalar products), then `16 A + B`. `Z` is inverted with \
+      each interleaved with independent scalar products), then `16 A + B` by five calls of \
+      `vg_ed448_r56_point_add`. `Z` is inverted with \
       X448's addition chain for `p - 2`. Field elements are eight 56-bit limbs, multiplied as \
       `vg_x448`'s are. The function saves its caller's callee-saved registers in `scratch`."])
     consts := Impl.X448.AArch64.Base.combConsts
