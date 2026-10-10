@@ -12,6 +12,14 @@ code (constant time, `spSafe`).
 
 namespace VG.Impl.X25519.X86
 
+materialize_template mulSqT := mulSq
+materialize_template mulPrT := mulPr
+materialize_template mulSmallT := mulSmall
+materialize_template addT := add
+materialize_template subT := sub
+materialize_template copyT := copy
+materialize_template cswapT := cswap
+
 materialize_code x25519
 
 end VG.Impl.X25519.X86
