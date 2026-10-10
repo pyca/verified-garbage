@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # Blowfish and ECB
@@ -45,6 +47,8 @@ secret in the contracts: the S-boxes are key-dependent and indexed by
 secret bytes, and the contracts do not permit an implementation to index
 memory with them.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Blowfish
 

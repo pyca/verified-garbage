@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.X448
-import VerifiedGarbage.Spec.Sha3
+module
+
+public import VerifiedGarbage.Spec.X448
+public import VerifiedGarbage.Spec.Sha3
 
 /-!
 # Ed448 (RFC 8032)
@@ -28,6 +30,8 @@ the group's order. Encodings must be canonical, including the sign of a zero
 x-coordinate, and `S < L`. There is no additional subgroup or small-order
 rejection.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ed448
 

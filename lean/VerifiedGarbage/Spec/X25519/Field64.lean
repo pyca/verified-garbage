@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.X25519
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Multiplication, inversion and powers in curve25519's field, in radix `2^64`, as functions
@@ -47,6 +49,8 @@ to 767 keeps its value (`PowKeeps`).
 Everything is secret but the pointer and the offsets, which are public, and
 the functions are constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.X25519.Field64
 

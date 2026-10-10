@@ -1,7 +1,12 @@
-import VerifiedGarbage.Spec.MlDsa.FusedInverse
+module
+
+public import VerifiedGarbage.Spec.MlDsa.FusedInverse
 
 /-! Signed output for the internal fused multiplication/inverse helper.
 The canonical fused interface remains separate and unchanged. -/
+
+@[expose] public section
+
 namespace VG.Spec.MlDsa
 
 /-- Interpret each stored 32-bit coefficient as a signed integer modulo q. -/

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Cast5
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Cast5
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # CAST5 ECB: contracts on every target
@@ -18,6 +20,8 @@ the number of rounds from the key's length (`rounds`), and rejects input
 that is not a whole number of blocks. It does not add or remove padding.
 Empty ECB input is supported.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Cast5
 

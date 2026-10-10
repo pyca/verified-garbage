@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4)
@@ -18,6 +20,8 @@ state that `Repr` relates to the message absorbed so far. Nothing here depends
 on the target: the contracts of the implementations, on every target, are in
 `Spec/Sha512/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Sha512
 

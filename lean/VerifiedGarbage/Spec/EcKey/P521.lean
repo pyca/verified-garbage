@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.EcKey.Generic
-import VerifiedGarbage.Spec.P521
+module
+
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.P521
 
 /-!
 # P-521 keys: the contracts, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.P521
 **Trusted** (as every file in `Spec/`). The `Instance` of P-521
 (`Spec/P521.lean`): `vg_ec_p521_public_key`, in the module `ec_p521`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.EcKey.P521
 

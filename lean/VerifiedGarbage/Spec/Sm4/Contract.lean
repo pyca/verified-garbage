@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sm4
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Sm4
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # SM4 ECB: contracts on every target
@@ -13,6 +15,8 @@ permits writes to ABI argument areas to call block primitives.
 The Rust wrapper will reject input that is not a whole number of 16-byte
 blocks. It will not add or remove padding. Empty ECB input is supported.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Sm4
 

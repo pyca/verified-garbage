@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Rsa
-import VerifiedGarbage.Spec.Hmac
+module
+
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Spec.Hmac
 
 /-!
 # RSAES-PKCS1-v1_5 with implicit rejection (RFC 8017 §7.2, draft-irtf-cfrg-rsa-guidance-10 §7)
@@ -33,6 +35,8 @@ the same message for the same invalid ciphertext.
 Octet strings are lists of bytes; integers are converted from and to them by
 `Rsa.os2ip` and `Rsa.i2osp`, most significant octet first.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.RsaPkcs1Enc
 

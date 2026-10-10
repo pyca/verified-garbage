@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Aes
+module
+
+public import VerifiedGarbage.Spec.Aes
 
 /-!
 # CCM (NIST SP 800-38C)
@@ -33,6 +35,8 @@ payload (`p = 0`), §6.1 encrypts it, and the CAVP's own decryption vectors
 `decrypt` follows the CAVP vectors: it rejects a ciphertext shorter than the
 tag (`Clen < Tlen`), and accepts one with an empty payload.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ccm
 

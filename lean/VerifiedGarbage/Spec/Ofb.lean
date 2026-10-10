@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Cbc
+module
+
+public import VerifiedGarbage.Spec.Cbc
 
 /-!
 # OFB (NIST SP 800-38A §6.4)
@@ -21,6 +23,8 @@ The function implemented in assembly takes a piece of whole blocks and the
 block to start from, and leaves the one to continue from; its contract is
 in `Spec/Ofb/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ofb
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # RC4 (ARCFOUR)
@@ -21,6 +23,8 @@ finalization emits nothing. These are value definitions, not permission
 to leak table indices: key bytes, the permutation and `j` remain secret.
 RC4 is obsolete and insecure (see RFC 6229 §3 and RFC 7465).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Rc4
 

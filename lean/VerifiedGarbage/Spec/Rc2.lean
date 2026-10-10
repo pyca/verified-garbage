@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # RC2 and CBC
@@ -25,6 +27,8 @@ These functions describe values, not timing. In particular, neither the
 PITABLE indices nor the mashing-round indices are public in the contracts:
 an implementation must prove constant time despite these secret indices.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Rc2
 

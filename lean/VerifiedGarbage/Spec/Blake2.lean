@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # BLAKE2b and BLAKE2s (RFC 7693)
@@ -19,6 +21,8 @@ and compress the last block and output the final state, on a streaming state
 that `Repr` relates to the data (the padded key followed by the message)
 absorbed so far. Their contracts are in `Spec/Blake2/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Blake2
 

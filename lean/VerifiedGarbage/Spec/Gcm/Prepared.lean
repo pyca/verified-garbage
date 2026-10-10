@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Gcm.OutOfPlace
+module
+
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 
 /-!
 # AES-GCM with prepared GHASH powers
@@ -17,6 +19,8 @@ passed to a `*_precomputed` API, or vice versa. The APIs that read only the
 first 256 bytes (stream initialization, AAD, finish and verify) remain usable.
 Existing specifications and contracts are unchanged.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Gcm
 

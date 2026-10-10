@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Cbc
+module
+
+public import VerifiedGarbage.Spec.Cbc
 
 /-!
 # CTR (NIST SP 800-38A §6.5 and Appendix B.1)
@@ -26,6 +28,8 @@ takes a piece of whole blocks and the counter block to start from, and
 leaves the one to continue from; its contract is in
 `Spec/Ctr/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ctr
 

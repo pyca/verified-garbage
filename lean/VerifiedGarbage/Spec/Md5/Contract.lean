@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Md5
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Md5
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # MD5: the contracts, on every target
@@ -23,6 +25,8 @@ and `finalize_scratch` are the same functions with their working space
 passed in `scratch`, for functions that call them with theirs (HMAC's,
 PBKDF2's).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Md5
 

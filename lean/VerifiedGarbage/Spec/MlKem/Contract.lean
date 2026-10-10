@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.MlKem
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.MlKem
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # ML-KEM-768: the contracts, on every target
@@ -50,6 +52,8 @@ The documentation of the functions (`Params.keyGenApi`, …) is written once,
 for any parameter set, and instantiated here for ML-KEM-768 and in
 `Contract1024.lean` for ML-KEM-1024.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.MlKem
 

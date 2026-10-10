@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.X25519
-import VerifiedGarbage.Spec.Sha512
+module
+
+public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Spec.Sha512
 
 /-!
 # Ed25519 (RFC 8032)
@@ -27,6 +29,8 @@ not ZIP 215 and does not promise to reject identity keys. The choice of
 equation and of the reduced challenge is part of the contract, not
 implementation freedom.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ed25519
 

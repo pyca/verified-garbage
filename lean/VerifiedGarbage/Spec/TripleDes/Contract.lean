@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.TripleDes
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Triple DES ECB: contracts on every target
@@ -17,6 +19,8 @@ The Rust wrapper will buffer partial blocks, reject invalid key lengths
 before key expansion, and reject incomplete input at finalization. It will
 not add or remove padding. Empty ECB input is supported.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.TripleDes
 

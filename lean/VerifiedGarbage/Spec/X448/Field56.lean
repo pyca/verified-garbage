@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.X448
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.X448
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Curve448's field in radix `2^56`, and its square root's power, as a function
@@ -38,6 +40,8 @@ the function's own bytes are unspecified and may hold intermediate values.
 Everything is secret but the pointer, which is public, and the functions are
 constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.X448.Field56
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Weierstrass
+module
+
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # The curve P-192 (NIST SP 800-186)
@@ -12,6 +14,8 @@ for legacy use only. The coefficient `a` is `-3`, that is `p - 3`. The
 cofactor is 1. Field elements and scalars have 192 bits, so their octet
 strings have 24 octets (SEC 1 §2.3.5, §2.3.7).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.P192
 

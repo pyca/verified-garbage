@@ -4,6 +4,10 @@ every importer sees.
 
   modularize.py PATH...   convert each `.lean` file at PATH (a file or a
                           directory, recursively) that is not a module yet
+  modularize.py check LOG
+                          fail if a `lake build` log (LOG, `-` for stdin)
+                          shows an exposed declaration referring to a
+                          private one of its module, listing each
 
 A converted file starts with `module`; its imports become `public import`
 (a module may import only modules, so a layer is converted only once what it
@@ -15,6 +19,13 @@ and declares `elab`, `syntax`, `macro` or `simproc`s, and no theorem) is
 meta code: it imports `Lean` as `public meta import` and its body is a
 `public meta section`, so that its definitions run at elaboration time in
 the files that use them.
+
+An exposed declaration may not refer to a private one of its module (Lean:
+"A private declaration `x` (from the current module) exists but would need
+to be public to access here"). The conversion does not change visibility:
+`check` lists such declarations from a build of the layer, which become
+public (or are renamed, if that would clash) in a small PR of their own
+before the layer is converted.
 
 The conversion is mechanical and idempotent: rerun it on a layer after
 merging, rather than editing headers by hand.
@@ -80,7 +91,24 @@ def convert(text: str) -> str:
     return "\n".join(out)
 
 
+PRIVATE_NEEDED = re.compile(
+    r"^(?:error: )?(\S+\.lean):\d+:\d+: (?:error[^\n:]*: )?Unknown identifier `([^`]+)`\s*\n\s*\n?"
+    r"Note: A private declaration `([^`]+)` \(from the current module\) exists", re.M)
+
+
+def needs_public(log: str) -> list[tuple[str, str]]:
+    """The (file, declaration) pairs of private declarations a build log
+    shows exposed declarations referring to."""
+    return sorted({(m.group(1), m.group(3)) for m in PRIVATE_NEEDED.finditer(log)})
+
+
 def main(args: list[str]) -> int:
+    if len(args) == 2 and args[0] == "check":
+        log = sys.stdin.read() if args[1] == "-" else pathlib.Path(args[1]).read_text()
+        found = needs_public(log)
+        for f, name in found:
+            print(f"{f}: private `{name}` is referred to by an exposed declaration", file=sys.stderr)
+        return 1 if found else 0
     if not args:
         print(__doc__, file=sys.stderr)
         return 2

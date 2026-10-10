@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Ed25519.Contract
+module
+
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-!
 # Ed25519 signing with a cached public key
@@ -16,6 +18,8 @@ key together, call one verified signing operation without repeating the
 public-key scalar multiplication. No buffer contents may affect timing,
 including the cached public key.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ed25519
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Mgf1
+module
+
+public import VerifiedGarbage.Spec.Mgf1
 
 /-!
 # RSAES-OAEP (RFC 8017 §7.1, EME-OAEP)
@@ -28,6 +30,8 @@ only then reveals whether decoding failed.
 The encoding is `k` octets, the modulus' length: its first octet is zero, so
 as an integer it is below `256^(k-1)`, hence below `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.RsaOaep
 

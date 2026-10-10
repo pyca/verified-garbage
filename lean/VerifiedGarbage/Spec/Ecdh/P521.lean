@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdh.Generic
-import VerifiedGarbage.Spec.EcKey.P521
+module
+
+public import VerifiedGarbage.Spec.Ecdh.Generic
+public import VerifiedGarbage.Spec.EcKey.P521
 
 /-!
 # ECDH over P-521: the contracts, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.EcKey.P521
 **Trusted** (as every file in `Spec/`). `vg_ecdh_p521`, in the module
 `ecdh_p521`, for P-521's `EcKey.Instance`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdh.P521
 

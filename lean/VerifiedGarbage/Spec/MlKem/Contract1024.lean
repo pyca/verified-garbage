@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.MlKem.Poly
+module
+
+public import VerifiedGarbage.Spec.MlKem.Poly
 
 /-!
 # ML-KEM-1024: the contracts, on every target
@@ -33,6 +35,8 @@ ML-KEM-1024 compresses to 11 (`d_u`) and 5 (`d_v`), which
 function named after another with a suffix and the same signature is a
 variant of it to `ci/check_variants.py`.)
 -/
+
+@[expose] public section
 
 namespace VG.Spec.MlKem1024
 

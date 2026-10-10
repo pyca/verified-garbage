@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Cmac
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Cmac
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # TDEA-CMAC (3DES-CMAC): the contracts, on every target
@@ -39,6 +41,8 @@ Each takes the number of bytes of stack below the stack pointer that an
 implementation's calls and frames use (`stack`, see `Sig.contract`), where
 it keeps its working space.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Cmac
 

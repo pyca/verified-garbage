@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sm4.Contract
-import VerifiedGarbage.Spec.Ctr.Contract
+module
+
+public import VerifiedGarbage.Spec.Sm4.Contract
+public import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # SM4-CTR: the contract, on every target
@@ -19,6 +21,8 @@ incremented as one 128-bit big-endian integer (SP 800-38A Appendix B.1).
 Unlike `vg_aes_ctr` (`Spec/Ctr/Contract.lean`), no part of the counter
 block may affect timing: only the pointers and `n` are public.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Sm4
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.RsaPss
-import VerifiedGarbage.Spec.Rsa.Contract
+module
+
+public import VerifiedGarbage.Spec.RsaPss
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-!
 # RSASSA-PSS: the contracts, on every target
@@ -40,6 +42,8 @@ implementation's calls and frames use. The functions may overwrite their
 arguments passed in memory, where the calling convention allows it
 (`writeArgs`).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.RsaPss
 

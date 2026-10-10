@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Pbkdf2
-import VerifiedGarbage.Spec.Hmac.Generic
+module
+
+public import VerifiedGarbage.Spec.Pbkdf2
+public import VerifiedGarbage.Spec.Hmac.Generic
 
 /-!
 # PBKDF2-HMAC over any streaming hash function: the contracts, on every target
@@ -34,6 +36,8 @@ call it with theirs (scrypt's).
 `VG.Spec.Hmac.Instance.pbkdf2ScratchApi` are the functions of an `Instance`
 in the Rust interface.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Pbkdf2
 

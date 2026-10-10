@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha512
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # SHA-512: the contracts, on every target
@@ -24,6 +26,8 @@ and `finalize_scratch` are the same functions with their working space
 passed in `scratch`, for functions that call them with theirs (HMAC's,
 PBKDF2's, Ed25519's).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Sha512
 

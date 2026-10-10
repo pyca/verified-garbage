@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Cmac
+module
+
+public import VerifiedGarbage.Spec.Cmac
 
 /-!
 # AES-SIV (RFC 5297)
@@ -31,6 +33,8 @@ the last component and returns `V`), and so is the whole AEAD
 The RFC limits the vector of associated data to 126 components (§2.6, §7),
 which the caller checks.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Siv
 

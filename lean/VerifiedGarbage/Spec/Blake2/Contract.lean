@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Blake2
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Blake2
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # BLAKE2b and BLAKE2s: the contracts, on every target
@@ -35,6 +37,8 @@ vectorized implementations: the streaming functions pass theirs to the
 compression function, so theirs have room for its scratch and for what they
 keep across its calls.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Blake2
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
-import VerifiedGarbage.Spec.Ecdsa.Secp256k1
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 
 /-!
 # ECDSA signature verification over secp256k1: the contracts, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 **Trusted** (as every file in `Spec/`). `vg_ecdsa_secp256k1_verify`, in the
 module `ecdsa_secp256k1`, for secp256k1's `Ecdsa.Instance`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdsa.Secp256k1
 

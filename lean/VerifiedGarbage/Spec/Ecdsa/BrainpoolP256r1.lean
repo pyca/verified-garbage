@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.Spec.BrainpoolP256r1
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.BrainpoolP256r1
 
 /-!
 # ECDSA over brainpoolP256r1: the contracts, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.BrainpoolP256r1
 **Trusted** (as every file in `Spec/`). The `Instance` of brainpoolP256r1
 (`Spec/BrainpoolP256r1.lean`): `vg_ecdsa_brainpoolp256r1_sign`, in the module `ecdsa_brainpoolp256r1`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdsa.BrainpoolP256r1
 

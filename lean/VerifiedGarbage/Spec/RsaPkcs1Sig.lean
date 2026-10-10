@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Rsa
+module
+
+public import VerifiedGarbage.Spec.Rsa
 
 /-!
 # RSASSA-PKCS1-v1_5 (RFC 8017 §8.2, EMSA-PKCS1-v1_5 §9.2)
@@ -56,6 +58,8 @@ prefixes. `Proof/RsaPkcs1Sig/Prefix.lean` checks that every prefix is the
 DER encoding of a `DigestInfo` with the hash's object identifier, NULL
 parameters and an `hLen`-octet digest.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.RsaPkcs1Sig
 

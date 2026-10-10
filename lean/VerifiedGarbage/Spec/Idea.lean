@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # IDEA and ECB
@@ -45,6 +47,8 @@ vectors (NESSIE's among them); the subkey schedules are 52 little-endian
 nothing here permits secret-dependent branches or memory access in an
 implementation of ⊙ or of the inverse.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Idea
 

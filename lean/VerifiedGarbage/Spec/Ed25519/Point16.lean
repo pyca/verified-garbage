@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ed25519
-import VerifiedGarbage.Spec.X25519.Field16
+module
+
+public import VerifiedGarbage.Spec.Ed25519
+public import VerifiedGarbage.Spec.X25519.Field16
 
 /-!
 # Ed25519's point addition and doubling in radix `2^16`, as functions
@@ -36,6 +38,8 @@ The result's limbs are below `2^16` again, so that it can be an operand.
 Everything is secret but the pointer, which is public, and the functions are
 constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ed25519.Point16
 

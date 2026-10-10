@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Aes
+module
+
+public import VerifiedGarbage.Spec.Aes
 
 /-!
 # GCM (NIST SP 800-38D)
@@ -30,6 +32,8 @@ The tag lengths GCM supports (§5.2.1.2) are `tagLenOk`. The limits on the
 other lengths (§5.2.1.1, `supported`) concern a whole message, which a
 streaming caller gives in pieces; the caller checks them.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Gcm
 

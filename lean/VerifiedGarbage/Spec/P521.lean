@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Weierstrass
+module
+
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # The curve P-521 (NIST SP 800-186)
@@ -12,6 +14,8 @@ decimal (`p`, `n`) and hexadecimal (`b`, `G`). The coefficient `a` is
 521 bits, so their octet strings have 66 octets (SEC 1 §2.3.5, §2.3.7), of
 which the first is at most 1.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.P521
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Cbc
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Cbc
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # AES-CBC: the contracts, on every target
@@ -26,6 +28,8 @@ keep until it has decrypted the block after each). `stack` is the number of
 bytes of stack below the stack pointer that an implementation's calls and
 frames use (see `Sig.contract`).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Cbc
 

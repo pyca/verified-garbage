@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # AES: the contracts of the key expansion and the block cipher, on every target
@@ -22,6 +24,8 @@ number of bytes of stack below the stack pointer its frame uses, see
 `Sig.contract`). `vg_aes_expand_key_scratch` is the same function with its
 working space passed in `scratch`, for functions that call it with theirs.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Aes
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # Zeroization
@@ -12,6 +14,8 @@ code the compiler cannot see, cannot be.
 This file is independent of any architecture; the contract on every target
 is in `Spec/Zeroize/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Zeroize
 

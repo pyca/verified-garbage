@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Pbkdf2
+module
+
+public import VerifiedGarbage.Spec.Pbkdf2
 
 /-!
 # scrypt (RFC 7914)
@@ -15,6 +17,8 @@ scryptBlockMix and scryptROMix) are in `Spec/Scrypt/Contract.lean`; the two
 PBKDF2 steps around them are composed by the caller from the verified
 PBKDF2-HMAC-SHA-256.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Scrypt
 

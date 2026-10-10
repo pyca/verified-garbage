@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Montgomery multiplication in the RSA working space, as a function
@@ -28,6 +30,8 @@ the indices and `w`, which are public: `w` is the length of the numbers,
 and timing may depend on it (`leak`). The function is otherwise constant
 time.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Rsa.Mont
 

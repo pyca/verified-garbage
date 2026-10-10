@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
-import VerifiedGarbage.Spec.Ecdsa.P521
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Spec.Ecdsa.P521
 
 /-!
 # Deterministic ECDSA over P-521 with HMAC-SHA-512: the contracts, on every target
@@ -10,6 +12,8 @@ module `ecdsa_p521_sha512`. At most 8 candidates: each is unsuitable with
 probability under `2^-261` (`n > 2^521 - 2^259`), so all 8 with
 probability under `2^-2088`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdsa.Rfc6979.P521Sha512
 

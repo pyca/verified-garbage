@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Aes
+module
+
+public import VerifiedGarbage.Spec.Aes
 
 /-!
 # OCB (RFC 7253)
@@ -21,6 +23,8 @@ once per key (`encryptWith`, `decryptWith`); `encrypt` and `decrypt` are OCB
 with AES (§3.1's parameter sets), as the RFC defines them. The contracts of
 the functions implemented in assembly are in `Spec/Ocb/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ocb
 
