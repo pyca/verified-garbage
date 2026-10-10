@@ -37,7 +37,7 @@ def qImm : BitVec 32 := 8380417
 
 /-- `r10 ← r10 + rax · 2^sh`, for `rax < 2^(64 - sh)`. -/
 def shiftAdd (sh : Nat) : List Instr :=
-  (if sh = 0 then [] else [.shift .ror .rax (64 - sh)]) ++ [.alu .add .r10 (.reg .rax)]
+  (if sh = 0 then [] else [.shift .ror .rax (64 - sh)]) ++ ([.alu .add .r10 (.reg .rax)] : List Instr)
 
 /-! ## Packing -/
 
@@ -51,9 +51,9 @@ def packCoef (ld : Nat → List Instr) (d j : Nat) : List Instr :=
     (List.range (d * (j + 1) / 8 - d * j / 8)).flatMap fun u => packByte (d * j / 8 + u)
 
 def packBody (ld : Nat → List Instr) (d c nb : Nat) : List Instr :=
-  [.mov32 .r10 (.imm 0)] ++ (List.range c).flatMap (packCoef ld d) ++
-    [.alu .add .rdi (.imm (BitVec.ofNat 32 (4 * c))), .alu .add .r8 (.imm (BitVec.ofNat 32 nb)),
-      .alu .sub .rcx (.imm 1)]
+  ([.mov32 .r10 (.imm 0)] : List Instr) ++ (List.range c).flatMap (packCoef ld d) ++
+    ([.alu .add .rdi (.imm (BitVec.ofNat 32 (4 * c))), .alu .add .r8 (.imm (BitVec.ofNat 32 nb)),
+      .alu .sub .rcx (.imm 1)] : List Instr)
 
 /-- All the groups. -/
 def packLoop (ld : Nat → List Instr) (d c nb : Nat) : Prog isa :=
@@ -65,19 +65,19 @@ def packLoop (ld : Nat → List Instr) (d c nb : Nat) : Prog isa :=
 def need (d j : Nat) : Nat := (d * j + 7) / 8
 
 /-- Byte `t` of the group into `r10`, above the `8t - d·j` bits it holds. -/
-def unpackByte (d j t : Nat) : List Instr := [.movzx8 .rax (at_ .rdi t)] ++ shiftAdd (8 * t - d * j)
+def unpackByte (d j t : Nat) : List Instr := ([.movzx8 .rax (at_ .rdi t)] : List Instr) ++ shiftAdd (8 * t - d * j)
 
 /-- Field `j` of the group: the bytes it needs into `r10`, then its value
 into `rax`, and `fin j`. -/
 def unpackCoef (fin : Nat → List Instr) (d j : Nat) : List Instr :=
   (List.range (need d (j + 1) - need d j)).flatMap (fun u => unpackByte d j (need d j + u)) ++
-    [.mov .rax (.reg .r10), .alu32 .and .rax (.imm (BitVec.ofNat 32 (2 ^ d - 1))), .shift .shr .r10 d] ++
+    ([.mov .rax (.reg .r10), .alu32 .and .rax (.imm (BitVec.ofNat 32 (2 ^ d - 1))), .shift .shr .r10 d] : List Instr) ++
     fin j
 
 def unpackBody (fin : Nat → List Instr) (d c nb : Nat) : List Instr :=
-  [.mov32 .r10 (.imm 0)] ++ (List.range c).flatMap (unpackCoef fin d) ++
-    [.alu .add .rdi (.imm (BitVec.ofNat 32 nb)), .alu .add .rsi (.imm (BitVec.ofNat 32 (4 * c))),
-      .alu .sub .rcx (.imm 1)]
+  ([.mov32 .r10 (.imm 0)] : List Instr) ++ (List.range c).flatMap (unpackCoef fin d) ++
+    ([.alu .add .rdi (.imm (BitVec.ofNat 32 nb)), .alu .add .rsi (.imm (BitVec.ofNat 32 (4 * c))),
+      .alu .sub .rcx (.imm 1)] : List Instr)
 
 /-- All the groups. -/
 def unpackLoop (fin : Nat → List Instr) (d c nb : Nat) : Prog isa :=

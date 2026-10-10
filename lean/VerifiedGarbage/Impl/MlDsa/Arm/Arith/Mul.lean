@@ -25,18 +25,18 @@ def step3 : List Instr :=
   [.dp .add .r0 .r0 (.imm 4), .dp .add .r1 .r1 (.imm 4), .dp .add .r2 .r2 (.imm 4), .subs .r3 .r3 (.imm 1)]
 
 /-- `f[i] · g[i]` modulo `q`, less than `2q`, in `r9`. -/
-def mulHead : List Instr := [.ldr .r12 .r1 0] ++ zPieces .r12 ++ [.ldr .r8 .r2 0] ++ mulz .r9 .r8 .r12
+def mulHead : List Instr := ([.ldr .r12 .r1 0] : List Instr) ++ zPieces .r12 ++ ([.ldr .r8 .r2 0] : List Instr) ++ mulz .r9 .r8 .r12
 
-def mulBody : List Instr := mulHead ++ csub .r9 .r12 .r4 ++ [.str .r9 .r0 0] ++ step3
+def mulBody : List Instr := mulHead ++ csub .r9 .r12 .r4 ++ ([.str .r9 .r0 0] : List Instr) ++ step3
 
 def mulAddBody : List Instr :=
-  mulHead ++ [.ldr .r8 .r0 0, .dp .add .r9 .r9 (.reg .r8)] ++ red .r9 .r12 .r4 ++ csub .r9 .r12 .r4 ++
-    [.str .r9 .r0 0] ++ step3
+  mulHead ++ ([.ldr .r8 .r0 0, .dp .add .r9 .r9 (.reg .r8)] : List Instr) ++ red .r9 .r12 .r4 ++ csub .r9 .r12 .r4 ++
+    ([.str .r9 .r0 0] : List Instr) ++ step3
 
 def mul : Prog isa :=
-  saving mulSaved (.seq (.block (loadQ .r4 ++ [.mov .r3 (.imm 256)])) (.loop (.block mulBody) .ne))
+  saving mulSaved (.seq (.block (loadQ .r4 ++ ([.mov .r3 (.imm 256)] : List Instr))) (.loop (.block mulBody) .ne))
 
 def mulAdd : Prog isa :=
-  saving mulSaved (.seq (.block (loadQ .r4 ++ [.mov .r3 (.imm 256)])) (.loop (.block mulAddBody) .ne))
+  saving mulSaved (.seq (.block (loadQ .r4 ++ ([.mov .r3 (.imm 256)] : List Instr))) (.loop (.block mulAddBody) .ne))
 
 end VG.Impl.MlDsa.Arm.Arith

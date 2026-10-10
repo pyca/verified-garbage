@@ -20,11 +20,11 @@ def stepZ (up : Bool) : Instr :=
 def zetaPerms (len : Nat) (up : Bool) : List Instr :=
   (if len = 2 then [.vop (.perm .zip1 .s4 .v18 .v18 .v18)] else []) ++
     if up then [] else
-      (if len = 1 then [.vop (.rev .rev64s .v18 .v18)] else []) ++ [.vop (.ext .v18 .v18 .v18 8)]
+      (if len = 1 then [.vop (.rev .rev64s .v18 .v18)] else []) ++ ([.vop (.ext .v18 .v18 .v18 8)] : List Instr)
 
 def packedZetas (len : Nat) (up : Bool) : List Instr :=
   (if up then [] else [.subImm .x .x3 .x3 (4*(4/len-1))]) ++
-  [.ldrq .v18 .x3 0] ++ zetaPerms len up ++
+  ([.ldrq .v18 .x3 0] : List Instr) ++ zetaPerms len up ++
   [if up then .addImm .x .x3 .x3 (16/len) else .subImm .x .x3 .x3 4]
 
 /-- Load one zeta per block, replicated across its lanes. -/
@@ -34,11 +34,11 @@ def zetas (len : Nat) (up : Bool) : List Instr :=
   else [.ldr .w .x6 .x3 0, stepZ up, .vop (.dup .s4 .v18 .x6)]
 
 def body (bf : List Instr) (len : Nat) : List Instr :=
-  [.ldrq .v0 .x2 0, .ldrq .v1 .x2 (4*len)] ++ bf ++
-  [.strq .v0 .x2 0, .strq .v5 .x2 (4*len), .addImm .x .x2 .x2 16, .subImm .x .x5 .x5 1]
+  ([.ldrq .v0 .x2 0, .ldrq .v1 .x2 (4*len)] : List Instr) ++ bf ++
+  ([.strq .v0 .x2 0, .strq .v5 .x2 (4*len), .addImm .x .x2 .x2 16, .subImm .x .x5 .x5 1] : List Instr)
 
 def block (bf : List Instr) (len : Nat) (up : Bool) : Prog isa :=
-  .seq (.block (zetas len up ++ [.movz .x .x5 (BitVec.ofNat 16 (len/4)) 0]))
+  .seq (.block (zetas len up ++ ([.movz .x .x5 (BitVec.ofNat 16 (len/4)) 0] : List Instr)))
     (.seq (.loop (.block (body bf len)) (.nonzero .x .x5))
       (.block [.addImm .x .x2 .x2 (4*len), .subImm .x .x4 .x4 1]))
 
@@ -53,8 +53,8 @@ def scatter (len : Nat) : List Instr :=
   else [.vop (.perm .zip1 .s4 .v6 .v0 .v5), .vop (.perm .zip2 .s4 .v7 .v0 .v5)]
 
 def packedBody (bf : List Instr) (len : Nat) (up : Bool) : List Instr :=
-  [.ldrq .v6 .x2 0, .ldrq .v7 .x2 16] ++ zetas len up ++ gather len ++ bf ++ scatter len ++
-  [.strq .v6 .x2 0, .strq .v7 .x2 16, .addImm .x .x2 .x2 32, .subImm .x .x5 .x5 1]
+  ([.ldrq .v6 .x2 0, .ldrq .v7 .x2 16] : List Instr) ++ zetas len up ++ gather len ++ bf ++ scatter len ++
+  ([.strq .v6 .x2 0, .strq .v7 .x2 16, .addImm .x .x2 .x2 32, .subImm .x .x5 .x5 1] : List Instr)
 
 /-- The zeta range of a layer is known statically. -/
 def layer (bf : List Instr) (len : Nat) (up : Bool) : Prog isa :=
@@ -74,12 +74,12 @@ def pro (tab : Nat → Nat) : List Instr := storeTab tab 256 .x1 ++ consts
 def ntt : Prog isa := .seq (.block (pro zetaTab)) (layers bfly true [128,64,32,16,8,4,2,1])
 
 def scaleBody : List Instr :=
-  [.ldrq .v0 .x2 0] ++ mont .v0 .v18 ++ csub .v0 .v4 ++
-    [.strq .v0 .x2 0, .addImm .x .x2 .x2 16, .subImm .x .x5 .x5 1]
+  ([.ldrq .v0 .x2 0] : List Instr) ++ mont .v0 .v18 ++ csub .v0 .v4 ++
+    ([.strq .v0 .x2 0, .addImm .x .x2 .x2 16, .subImm .x .x5 .x5 1] : List Instr)
 
 def scale : Prog isa :=
   .seq (.block (movW .x6 16382 ++
-    [.vop (.dup .s4 .v18 .x6), mov .x2 .x0, .movz .x .x5 64 0]))
+    ([.vop (.dup .s4 .v18 .x6), mov .x2 .x0, .movz .x .x5 64 0] : List Instr)))
     (.loop (.block scaleBody) (.nonzero .x .x5))
 
 def nttInv : Prog isa := .seq (.block (pro negZetaTab))

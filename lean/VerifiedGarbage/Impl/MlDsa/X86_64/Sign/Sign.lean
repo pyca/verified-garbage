@@ -209,7 +209,7 @@ def onesOk : List Instr :=
 /-- The validity checks of an iteration, combined into `r15`; then, if they
 passed, `CNT ← 1` (the loop ends with `r15 = 1`), and otherwise `κ ← κ + ℓ`. -/
 def checks : Prog isa :=
-  .seq (nttAt P cP) (.seq (.block ([.mov32 .r15 (.imm 1)] ++ setQ (sc oONES) 0))
+  .seq (nttAt P cP) (.seq (.block (([.mov32 .r15 (.imm 1)] : List Instr) ++ setQ (sc oONES) 0))
     (.seq (seqR (zR P p) 0 p.ℓ) (.seq (seqR (r0R P p) 0 p.k) (.seq (seqR (hR P p) 0 p.k)
       (.seq (.block (onesOk p)) (ifOkElse (.block (setQ (sc oCNT) 1))
         (.block [.mov .rax (.mem (at_ .rbx oKAP)), .alu .add .rax (.imm (BitVec.ofNat 32 p.ℓ)),
@@ -220,7 +220,7 @@ succeeded (and otherwise `r15 ← 0`, `CNT ← 1`); then `CNT ← CNT - 1`, whic
 sets ZF when the loop ends. -/
 def iter : Prog isa :=
   .seq (commit P p) (.seq (ballAt P (cLen p) p.τ cP)
-    (.seq (.block [.alu32 .test .rax (.reg .rax)]) (.seq (.ite .ne (checks P p) (.block ([.mov32 .r15 (.imm 0)] ++ setQ (sc oCNT) 1)))
+    (.seq (.block [.alu32 .test .rax (.reg .rax)]) (.seq (.ite .ne (checks P p) (.block (([.mov32 .r15 (.imm 0)] : List Instr) ++ setQ (sc oCNT) 1)))
       (.block [.mov .rax (.mem (at_ .rbx oCNT)), .alu .sub .rax (.imm 1), .store (at_ .rbx oCNT) .rax]))))
 
 /-- The rejection sampling loop: `κ ← 0`, `CNT ← 814`, and iterations while

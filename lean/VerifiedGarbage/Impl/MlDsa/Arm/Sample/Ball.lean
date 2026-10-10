@@ -51,7 +51,7 @@ def bTry : Prog isa :=
 
 def bBody : Prog isa := .seq (.block jFull) (.seq (.ite .eq (.block []) bTry) (.block (step 1)))
 
-def bLoop : Prog isa := .seq (.block (bSetup ++ [.mov .r3 (.imm 264)])) (.loop bBody .ne)
+def bLoop : Prog isa := .seq (.block (bSetup ++ ([.mov .r3 (.imm 264)] : List Instr))) (.loop bBody .ne)
 
 def sampleInBall : Prog isa :=
   .seq (.block (.ldrSp .r12 0 :: pro .r12 .r3 (.reg .r2) (.reg .r1) .r0))

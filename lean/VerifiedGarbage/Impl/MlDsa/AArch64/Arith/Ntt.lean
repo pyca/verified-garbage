@@ -42,17 +42,17 @@ def negZetaTab (m : Nat) : Nat := (8380417 - zetaTab m) % 8380417
 
 /-- A butterfly of `NTT` on `[x2]` and `[x2 + 4len]`, with the zeta in `x6`. -/
 def bfly (len : Nat) : List Instr :=
-  [.ldr .w .x12 .x2 (4 * len), .mul .x .x12 .x12 .x6] ++ reduce .x12 .x13 ++
-    [.ldr .w .x13 .x2 0, .add .x .x14 .x13 .x9, .sub .x .x14 .x14 .x12] ++ csub .x14 .x15 .x9 ++
-    [.str .w .x14 .x2 (4 * len), .add .x .x13 .x13 .x12] ++ csub .x13 .x15 .x9 ++
-    [.str .w .x13 .x2 0, .addImm .x .x2 .x2 4, .subImm .x .x5 .x5 1]
+  ([.ldr .w .x12 .x2 (4 * len), .mul .x .x12 .x12 .x6] : List Instr) ++ reduce .x12 .x13 ++
+    ([.ldr .w .x13 .x2 0, .add .x .x14 .x13 .x9, .sub .x .x14 .x14 .x12] : List Instr) ++ csub .x14 .x15 .x9 ++
+    ([.str .w .x14 .x2 (4 * len), .add .x .x13 .x13 .x12] : List Instr) ++ csub .x13 .x15 .x9 ++
+    ([.str .w .x13 .x2 0, .addImm .x .x2 .x2 4, .subImm .x .x5 .x5 1] : List Instr)
 
 /-- A butterfly of `NTT⁻¹` on `[x2]` and `[x2 + 4len]`, with the zeta in `x6`. -/
 def bflyInv (len : Nat) : List Instr :=
-  [.ldr .w .x12 .x2 0, .ldr .w .x13 .x2 (4 * len), .add .x .x14 .x12 .x13] ++ csub .x14 .x15 .x9 ++
-    [.str .w .x14 .x2 0, .add .x .x12 .x12 .x9, .sub .x .x12 .x12 .x13] ++ csub .x12 .x15 .x9 ++
-    [.mul .x .x12 .x12 .x6] ++ reduce .x12 .x13 ++
-    [.str .w .x12 .x2 (4 * len), .addImm .x .x2 .x2 4, .subImm .x .x5 .x5 1]
+  ([.ldr .w .x12 .x2 0, .ldr .w .x13 .x2 (4 * len), .add .x .x14 .x12 .x13] : List Instr) ++ csub .x14 .x15 .x9 ++
+    ([.str .w .x14 .x2 0, .add .x .x12 .x12 .x9, .sub .x .x12 .x12 .x13] : List Instr) ++ csub .x12 .x15 .x9 ++
+    ([.mul .x .x12 .x12 .x6] : List Instr) ++ reduce .x12 .x13 ++
+    ([.str .w .x12 .x2 (4 * len), .addImm .x .x2 .x2 4, .subImm .x .x5 .x5 1] : List Instr)
 
 /-- A block of `len` butterflies `b`, with the zeta at `x3`, which then moves
 by 4 bytes, up (`up`) or down. -/
@@ -86,13 +86,13 @@ def ntt : Prog isa := .seq (.block (nttPro zetaTab 1)) (nttLays [128, 64, 32, 16
 
 /-- A coefficient times `8347681` (in `x6`), reduced. -/
 def scaleBody : List Instr :=
-  [.ldr .w .x12 .x2 0, .mul .x .x12 .x12 .x6] ++ reduce .x12 .x13 ++
-    [.str .w .x12 .x2 0, .addImm .x .x2 .x2 4, .subImm .x .x5 .x5 1]
+  ([.ldr .w .x12 .x2 0, .mul .x .x12 .x12 .x6] : List Instr) ++ reduce .x12 .x13 ++
+    ([.str .w .x12 .x2 0, .addImm .x .x2 .x2 4, .subImm .x .x5 .x5 1] : List Instr)
 
 def nttInv : Prog isa :=
   .seq (.block (nttPro negZetaTab 255))
     (.seq (nttInvLays [1, 2, 4, 8, 16, 32, 64, 128])
-      (.seq (.block (movW .x6 (BitVec.ofNat 32 8347681) ++ [.movz .x .x5 256 0]))
+      (.seq (.block (movW .x6 (BitVec.ofNat 32 8347681) ++ ([.movz .x .x5 256 0] : List Instr)))
         (.loop (.block scaleBody) (.nonzero .x .x5))))
 
 end VG.Impl.MlDsa.AArch64.Arith

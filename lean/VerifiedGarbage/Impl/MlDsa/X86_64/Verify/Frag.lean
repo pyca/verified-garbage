@@ -206,7 +206,7 @@ result `eax` (0 or 1) of the sampler that wrote it: unchanged if 1, and zero
 if 0, so that it is reduced either way, without a branch. `edx ← -eax`, then
 each coefficient `∧ edx`. -/
 def mask (a : Ptr) (N : Nat := 256) : Prog isa :=
-  .seq (.block ([.mov32 .rdx (.imm 0), .alu32 .sub .rdx (.reg .rax)] ++
+  .seq (.block (([.mov32 .rdx (.imm 0), .alu32 .sub .rdx (.reg .rax)] : List Instr) ++
       glue [(.rdi, .ptr a), (.rcx, .imm N)]))
     (.loop (.block [.mov32 .rax (.mem (at_ .rdi 0)), .alu32 .and .rax (.reg .rdx), .store32 (at_ .rdi 0) .rax,
       .alu .add .rdi (.imm 4), .alu .sub .rcx (.imm 1)]) .ne)
@@ -237,8 +237,8 @@ def cmpBody : Prog isa :=
 branch: `rdx` is the OR of the XORs of their bytes, so 0 exactly when they
 are equal (`sub rdx, 1` borrows then), and `rax` the mask `-borrow`. -/
 def cmpAnd (a b : Ptr) (n : Nat) : Prog isa :=
-  .seq (.block (glue [(.rsi, .ptr a), (.rdi, .ptr b), (.rcx, .imm n)] ++ [.mov32 .rdx (.imm 0)]))
-    (.seq (.loop cmpBody .ne) (.block ([.alu .sub .rdx (.imm 1), .alu .sbb .rax (.reg .rax)] ++ and15)))
+  .seq (.block (glue [(.rsi, .ptr a), (.rdi, .ptr b), (.rcx, .imm n)] ++ ([.mov32 .rdx (.imm 0)] : List Instr)))
+    (.seq (.loop cmpBody .ne) (.block (([.alu .sub .rdx (.imm 1), .alu .sbb .rax (.reg .rax)] : List Instr) ++ and15)))
 
 /-! ## Entry and exit -/
 
@@ -249,13 +249,13 @@ def savedRegs : List Reg := [.rbx, .rbp, .r12, .r13, .r14, .r15]
 in `rbx`, `pk` in `rbp`, `mu` in `r12` and `sig` in `r13`, and `r15 ← 1`. -/
 def pro : List Instr :=
   (List.range 6).map (fun k => .store (at_ .rcx (oSV + 8 * k)) (savedRegs.getD k .rbx)) ++
-    [.mov .rbx (.reg .rcx), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rdx),
-      .mov32 .r15 (.imm 1)]
+    ([.mov .rbx (.reg .rcx), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rdx),
+      .mov32 .r15 (.imm 1)] : List Instr)
 
 /-- Return `r15`, and restore the callee-saved registers (`rbx` last). -/
 def epi : List Instr :=
   .mov32 .rax (.reg .r15) ::
     ((List.range 5).map fun k => .mov (savedRegs.getD (5 - k) .rbx) (.mem (at_ .rbx (oSV + 8 * (5 - k))))) ++
-    [.mov .rbx (.mem (at_ .rbx oSV))]
+    ([.mov .rbx (.mem (at_ .rbx oSV))] : List Instr)
 
 end VG.Impl.MlDsa.X86_64.Verify

@@ -26,8 +26,8 @@ def r2Imm : BitVec 32 := 2365951
 
 /-- `ebx ← f[i] · g[i] mod q`. -/
 def mulHead : List Instr :=
-  [.mov .eax (.mem (at_ .esi 0)), .mov .edx (.mem (at_ .edi 0)), .mul .edx] +++ mredRaw .ebx +++
-  [.mov .eax (.reg .ebx), .mov .edx (.imm r2Imm), .mul .edx] +++ mred .ebx
+  ([.mov .eax (.mem (at_ .esi 0)), .mov .edx (.mem (at_ .edi 0)), .mul .edx] : List Instr) +++ mredRaw .ebx +++
+  ([.mov .eax (.reg .ebx), .mov .edx (.imm r2Imm), .mul .edx] : List Instr) +++ mred .ebx
 
 /-- Store `ebx` to `h[i]`, and on to the next coefficient. -/
 def mulTail : List Instr :=

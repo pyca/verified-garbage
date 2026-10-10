@@ -50,8 +50,8 @@ def zPieces (a : Reg) : List Instr :=
 /-- `acc ← b · z` modulo `q` (less than `2q`), for the pieces of `z` in
 `r5`–`r7` and `q` in `r4`, with `t` a temporary. -/
 def mulz (acc b t : Reg) : List Instr :=
-  [.mul acc b .r5] ++ red acc t .r4 ++ [.mul t b .r6, .dp .add acc t (.shifted acc .lsl 7)] ++
-    red acc t .r4 ++ [.mul t b .r7, .dp .add acc t (.shifted acc .lsl 7)] ++ red acc t .r4
+  ([.mul acc b .r5] : List Instr) ++ red acc t .r4 ++ ([.mul t b .r6, .dp .add acc t (.shifted acc .lsl 7)] : List Instr) ++
+    red acc t .r4 ++ ([.mul t b .r7, .dp .add acc t (.shifted acc .lsl 7)] : List Instr) ++ red acc t .r4
 
 /-- `body`, with the registers `rs` saved in a frame each around it. -/
 def saving : List Reg → Prog isa → Prog isa

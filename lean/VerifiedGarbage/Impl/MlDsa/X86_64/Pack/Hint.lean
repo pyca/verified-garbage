@@ -84,7 +84,7 @@ bound `r11`: the first, then the others. -/
 def hbuCoefs : Prog isa :=
   .seq (.block [.alu .cmp .rax (.reg .r11)])
     (.ite .b
-      (.seq (.block ([.movzx8 .rsi (atIdx .rdi .rax)] ++ hbuSet ++ [.alu .cmp .rax (.reg .r11)]))
+      (.seq (.block (([.movzx8 .rsi (atIdx .rdi .rax)] : List Instr) ++ hbuSet ++ ([.alu .cmp .rax (.reg .r11)] : List Instr)))
         (.ite .b (.loop hbuNext .b) (.block [])))
       (.block []))
 

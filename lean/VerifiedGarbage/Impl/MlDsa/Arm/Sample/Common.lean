@@ -40,15 +40,15 @@ abbrev saveOff : Nat := 2012
 and `r9` = its length. `scr`, `a` and `msg` are not among `r4`–`r9`. -/
 def pro (scr a : Reg) (prm len : Op2) (msg : Reg) : List Instr :=
   saveRegs scr saveOff ++
-    [.str .lr scr (saveOff + 32), .mov .r5 (.reg a), .mov .r6 (.reg scr), .mov .r7 prm, .mov .r8 (.reg msg),
-      .mov .r9 len]
+    ([.str .lr scr (saveOff + 32), .mov .r5 (.reg a), .mov .r6 (.reg scr), .mov .r7 prm, .mov .r8 (.reg msg),
+      .mov .r9 len] : List Instr)
 
 /-- The state at `r6` zeroed, and the arguments of `absorb`:
 `absorb(state, rate, 0, msg, len, scratch + 200)`. -/
 def absArgs (rate : Nat) : List Instr :=
   zeroState .r6 ++
-    [.mov .r0 (.reg .r6), .mov .r1 (.imm (BitVec.ofNat 32 rate)), .mov .r2 (.imm 0), .mov .r3 (.reg .r8),
-      .mov .r12 (.reg .r9), .dp .add .lr .r6 (.imm 200)]
+    ([.mov .r0 (.reg .r6), .mov .r1 (.imm (BitVec.ofNat 32 rate)), .mov .r2 (.imm 0), .mov .r3 (.reg .r8),
+      .mov .r12 (.reg .r9), .dp .add .lr .r6 (.imm 200)] : List Instr)
 
 /-- `pad(state, rate, pos, 0x1f, scratch + 200)`, with `pos` from `absorb`. -/
 def padArgs (rate : Nat) : List Instr :=
@@ -70,7 +70,7 @@ def sponge (rate outlen : Nat) : Prog isa :=
           (.seq (.block (sqzArgs rate outlen)) squeezeCall))))
 
 /-- Our caller's `r4`–`r11` and `lr` restored, through `r3`. -/
-def epi : List Instr := [.mov .r3 (.reg .r6)] ++ restoreRegs .r3 saveOff ++ [.ldr .lr .r3 (saveOff + 32)]
+def epi : List Instr := ([.mov .r3 (.reg .r6)] : List Instr) ++ restoreRegs .r3 saveOff ++ ([.ldr .lr .r3 (saveOff + 32)] : List Instr)
 
 /-- `r0 ← r2 >> 8`: 1 if `r2` = 256, 0 if it is less. -/
 def retJ : List Instr := [.mov .r0 (.shifted .r2 .lsr 8)]

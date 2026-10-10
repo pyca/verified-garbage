@@ -71,12 +71,12 @@ def yC (g : Nat) : List Instr :=
 
 /-- Eight coefficients of `r` (at `rdi`) to `out` (at `r10`), through `x`, the result left in `ymm d`. -/
 def bitsBodyY (x : List Instr) (d : XReg) : List Instr :=
-  [.vmovdquLoad .l256 .xmm0 (at_ .rdi 0)] ++ toY x ++
-    [.vmovdquStore .l256 (at_ .r10 0) d, .alu .add .rdi (.imm 32), .alu .add .r10 (.imm 32)]
+  ([.vmovdquLoad .l256 .xmm0 (at_ .rdi 0)] : List Instr) ++ toY x ++
+    ([.vmovdquStore .l256 (at_ .r10 0) d, .alu .add .rdi (.imm 32), .alu .add .r10 (.imm 32)] : List Instr)
 
 /-- `γ₂` compared, the output pointer to `r10`, and the loop of `γ₂`, `x g` leaving its result in `ymm d`. -/
 def bitsY (x : Nat → List Instr) (d : XReg) : Prog isa :=
-  .seq (.block (gammaCmp .rsi ++ [.mov .r10 (.reg .rdx)]))
+  .seq (.block (gammaCmp .rsi ++ ([.mov .r10 (.reg .rdx)] : List Instr)))
     (.seq (.ite .e (.seq (.block (yC g32)) (rcxLoop 32 (bitsBodyY (x g32) d)))
       (.seq (.block (yC g88)) (rcxLoop 32 (bitsBodyY (x g88) d)))) (.block [.vop .vzeroupper]))
 
@@ -100,19 +100,19 @@ def nlX : List Instr :=
   [xmov .xmm1 .xmm0, xb .psubd .xmm1 .xmm8, xmov .xmm2 .xmm9, xb .psubd .xmm2 .xmm0, xb .por .xmm1 .xmm2,
     xb .pand .xmm10 .xmm1]
 
-def nlBodyY : List Instr := [.vmovdquLoad .l256 .xmm0 (at_ .rdi 0)] ++ toY nlX ++ [.alu .add .rdi (.imm 32)]
+def nlBodyY : List Instr := ([.vmovdquLoad .l256 .xmm0 (at_ .rdi 0)] : List Instr) ++ toY nlX ++ ([.alu .add .rdi (.imm 32)] : List Instr)
 
 /-- The low doubleword of `rax` in each doubleword of `ymm r`. -/
 def ybcast (r : XReg) : List Instr := [.vop (.vmovq r .rax), .vop (.vpbroadcastd .l256 r r)]
 
 /-- `b` in `ymm8`, `q - b` in `ymm9` and all ones in `ymm10`. -/
 def nlConsts : List Instr :=
-  [.mov32 .rax (.reg .rsi)] ++ ybcast .xmm8 ++ [.mov32 .rax (.imm qImm), .alu32 .sub .rax (.reg .rsi)] ++
+  ([.mov32 .rax (.reg .rsi)] : List Instr) ++ ybcast .xmm8 ++ ([.mov32 .rax (.imm qImm), .alu32 .sub .rax (.reg .rsi)] : List Instr) ++
     ybcast .xmm9 ++ yconst .xmm10 0xFFFFFFFF
 
 def nlEnd : List Instr :=
-  toY [.xop (.shift .psrad .xmm10 31)] ++ [.vpmovmskb .l256 .rax .xmm10, .vop .vzeroupper] ++
-    [.alu .add .rax (.imm 1), .shift .shr .rax 32]
+  toY ([.xop (.shift .psrad .xmm10 31)] : List Instr) ++ ([.vpmovmskb .l256 .rax .xmm10, .vop .vzeroupper] : List Instr) ++
+    ([.alu .add .rax (.imm 1), .shift .shr .rax 32] : List Instr)
 
 /-- The bound, clamped to `q`. -/
 def nlPro : Prog isa :=
@@ -149,14 +149,14 @@ def cntH : List Instr :=
 
 /-- Eight coefficients of `r` (at `rsi`) and `z` (at `rdi`) to the hints at `r10`, and their count added to `r9`. -/
 def mhBodyY (g : Nat) : List Instr :=
-  [.vmovdquLoad .l256 .xmm0 (at_ .rsi 0), .vmovdquLoad .l256 .xmm5 (at_ .rdi 0)] ++ toY (mhX g) ++
-    [.vmovdquStore .l256 (at_ .r10 0) .xmm0, .vpmovmskb .l256 .rax .xmm1] ++ cntH ++
-    [.alu .add .rdi (.imm 32), .alu .add .rsi (.imm 32), .alu .add .r10 (.imm 32)]
+  ([.vmovdquLoad .l256 .xmm0 (at_ .rsi 0), .vmovdquLoad .l256 .xmm5 (at_ .rdi 0)] : List Instr) ++ toY (mhX g) ++
+    ([.vmovdquStore .l256 (at_ .r10 0) .xmm0, .vpmovmskb .l256 .rax .xmm1] : List Instr) ++ cntH ++
+    ([.alu .add .rdi (.imm 32), .alu .add .rsi (.imm 32), .alu .add .r10 (.imm 32)] : List Instr)
 
 def mhY (g : Nat) : Prog isa := .seq (.block (yC g ++ yconst .xmm11 63)) (rcxLoop 32 (mhBodyY g))
 
 def makeHintAvx2 : Prog isa :=
-  .seq (.block (gammaCmp .rdx ++ [.mov .r10 (.reg .rcx), .mov32 .r9 (.imm 0)]))
+  .seq (.block (gammaCmp .rdx ++ ([.mov .r10 (.reg .rcx), .mov32 .r9 (.imm 0)] : List Instr)))
     (.seq (.ite .e (mhY g32) (mhY g88)) (.block [.mov .rax (.reg .r9), .vop .vzeroupper]))
 
 /-! ## `vg_mldsa_use_hint_avx2`
@@ -181,14 +181,14 @@ def uhX (g : Nat) : List Instr :=
 
 /-- Eight hints (at `rdi`) and coefficients of `r` (at `rsi`) to `out` (at `r10`). -/
 def uhBodyY (g : Nat) : List Instr :=
-  [.vmovdquLoad .l256 .xmm0 (at_ .rsi 0), .vmovdquLoad .l256 .xmm5 (at_ .rdi 0)] ++ toY (uhX g) ++
-    [.vmovdquStore .l256 (at_ .r10 0) .xmm4, .alu .add .rdi (.imm 32), .alu .add .rsi (.imm 32),
-      .alu .add .r10 (.imm 32)]
+  ([.vmovdquLoad .l256 .xmm0 (at_ .rsi 0), .vmovdquLoad .l256 .xmm5 (at_ .rdi 0)] : List Instr) ++ toY (uhX g) ++
+    ([.vmovdquStore .l256 (at_ .r10 0) .xmm4, .alu .add .rdi (.imm 32), .alu .add .rsi (.imm 32),
+      .alu .add .r10 (.imm 32)] : List Instr)
 
 def uhY (g : Nat) : Prog isa := .seq (.block (yC g)) (rcxLoop 32 (uhBodyY g))
 
 def useHintAvx2 : Prog isa :=
-  .seq (.block (gammaCmp .rdx ++ [.mov .r10 (.reg .rcx)]))
+  .seq (.block (gammaCmp .rdx ++ ([.mov .r10 (.reg .rcx)] : List Instr)))
     (.seq (.ite .e (uhY g32) (uhY g88)) (.block [.vop .vzeroupper]))
 
 end VG.Impl.MlDsa.X86_64.Round

@@ -39,7 +39,7 @@ def pro (scr a : Reg) (prm len : Src) : List Instr :=
     .mov .rbp (.reg a), .mov32 .r12 prm, .mov .rcx (.reg .rdi), .mov .r8 len]
 
 /-- The 25 lanes of the state at `rbx`, zeroed (as `vg_mlkem_sample_ntt` does). -/
-def zeroSt : List Instr := [.mov32 .rax (.imm 0)] ++ Impl.MlKem.X86_64.zeroSt .rbx 0
+def zeroSt : List Instr := ([.mov32 .rax (.imm 0)] : List Instr) ++ Impl.MlKem.X86_64.zeroSt .rbx 0
 
 /-- The arguments of `absorb` but the message (`rcx`, `r8`). -/
 def absArgs (rate : BitVec 32) : List Instr :=

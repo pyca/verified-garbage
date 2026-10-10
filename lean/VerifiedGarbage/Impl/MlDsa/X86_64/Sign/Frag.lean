@@ -99,7 +99,7 @@ def setQ (p : Ptr) (v : Nat) : List Instr := [.mov32 .rax (.imm (BitVec.ofNat 32
 
 /-- Copy `n` bytes, a multiple of 8, from `src` to `dst`, 8 at a time. -/
 def copy (dst src : Ptr) (n : Nat) : Prog isa :=
-  .seq (.block (lea .rdi dst ++ lea .rsi src ++ [.mov32 .rcx (.imm (BitVec.ofNat 32 (n / 8)))]))
+  .seq (.block (lea .rdi dst ++ lea .rsi src ++ ([.mov32 .rcx (.imm (BitVec.ofNat 32 (n / 8)))] : List Instr)))
     (.loop (.block [.mov .rax (.mem (at_ .rsi 0)), .store (at_ .rdi 0) .rax, .alu .add .rdi (.imm 8),
       .alu .add .rsi (.imm 8), .alu .sub .rcx (.imm 1)]) .ne)
 
@@ -256,12 +256,12 @@ def savedRegs : List Reg := [.rbx, .rbp, .r12, .r13, .r14, .r15]
 in `rbx` and the pointers in the other registers (`moves`), and `r15 ← 1`. -/
 def topPro (scr : Reg) (moves : List (Reg × Reg)) : List Instr :=
   (List.range 6).map (fun k => .store (at_ scr (oSV + 8 * k)) (savedRegs.getD k .rbx)) ++
-    [.mov .rbx (.reg scr)] ++ moves.map (fun m => .mov m.1 (.reg m.2)) ++ [.mov32 .r15 (.imm 1)]
+    ([.mov .rbx (.reg scr)] : List Instr) ++ moves.map (fun m => .mov m.1 (.reg m.2)) ++ ([.mov32 .r15 (.imm 1)] : List Instr)
 
 /-- Return `r15`, and restore the callee-saved registers (`rbx` last). -/
 def topEpi : List Instr :=
   .mov32 .rax (.reg .r15) ::
     ((List.range 5).map fun k => .mov (savedRegs.getD (5 - k) .rbx) (.mem (at_ .rbx (oSV + 8 * (5 - k))))) ++
-    [.mov .rbx (.mem (at_ .rbx oSV))]
+    ([.mov .rbx (.mem (at_ .rbx oSV))] : List Instr)
 
 end VG.Impl.MlDsa.X86_64.Sign

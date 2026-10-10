@@ -60,7 +60,7 @@ def bitPack : Prog isa := .frame (.push [.r4]) bitPackBody (.pop .r4 4)
 
 /-- `b - x` modulo `q` of the field `x` in `r12`, for `b = B`, to
 coefficient `j` of the group at `r1`. Uses `r4`. -/
-def buFin (B : Nat) (j : Nat) : List Instr := bMinus B .r4 .r12 ++ [.str .r4 .r1 (4 * j)]
+def buFin (B : Nat) (j : Nat) : List Instr := bMinus B .r4 .r12 ++ ([.str .r4 .r1 (4 * j)] : List Instr)
 
 /-- The body of `bitUnpack`, in its frame. -/
 def bitUnpackBody : Prog isa :=

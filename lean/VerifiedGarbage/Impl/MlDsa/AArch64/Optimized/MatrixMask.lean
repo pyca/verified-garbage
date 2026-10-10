@@ -12,8 +12,8 @@ def body : List Instr := (List.range 4).flatMap group ++ advance
 
 /-- The measured four-vector cleanup; all addresses and loop counts are public. -/
 def code (a : Ptr) (count : Nat) : Prog isa :=
-  .seq (.block ([.movz .x .x8 0 0,.sub .w .x8 .x8 .x0,.vop (.dup .s4 .v0 .x8)] ++
-    lea .x1 a.1 a.2 ++ [.movz .x .x2 (BitVec.ofNat 16 (count/16)) 0]))
+  .seq (.block (([.movz .x .x8 0 0,.sub .w .x8 .x8 .x0,.vop (.dup .s4 .v0 .x8)] : List Instr) ++
+    lea .x1 a.1 a.2 ++ ([.movz .x .x2 (BitVec.ofNat 16 (count/16)) 0] : List Instr)))
     (.loop (.block body) (.nonzero .x .x2))
 
 end VG.Impl.MlDsa.AArch64.Optimized.MatrixMask

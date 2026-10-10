@@ -47,9 +47,9 @@ def packCoef (ld : Nat → List Instr) (d j : Nat) : List Instr :=
     (List.range (d * (j + 1) / 8 - d * j / 8)).flatMap fun u => packByte (d * j / 8 + u)
 
 def packBody (ld : Nat → List Instr) (d c nb : Nat) : List Instr :=
-  [.mov .r3 (.imm 0)] ++ (List.range c).flatMap (packCoef ld d) ++
-    [.dp .add .r0 .r0 (.imm (BitVec.ofNat 32 (4 * c))), .dp .add .r2 .r2 (.imm (BitVec.ofNat 32 nb)),
-      .subs .r1 .r1 (.imm 1)]
+  ([.mov .r3 (.imm 0)] : List Instr) ++ (List.range c).flatMap (packCoef ld d) ++
+    ([.dp .add .r0 .r0 (.imm (BitVec.ofNat 32 (4 * c))), .dp .add .r2 .r2 (.imm (BitVec.ofNat 32 nb)),
+      .subs .r1 .r1 (.imm 1)] : List Instr)
 
 /-- All the groups. -/
 def packLoop (ld : Nat → List Instr) (d c nb : Nat) : Prog isa :=
@@ -75,9 +75,9 @@ def unpackCoef (fin : Nat → List Instr) (d j : Nat) : List Instr :=
     fin j
 
 def unpackBody (fin : Nat → List Instr) (d c nb : Nat) : List Instr :=
-  [.mov .r3 (.imm 0)] ++ (List.range c).flatMap (unpackCoef fin d) ++
-    [.dp .add .r0 .r0 (.imm (BitVec.ofNat 32 nb)), .dp .add .r1 .r1 (.imm (BitVec.ofNat 32 (4 * c))),
-      .subs .r2 .r2 (.imm 1)]
+  ([.mov .r3 (.imm 0)] : List Instr) ++ (List.range c).flatMap (unpackCoef fin d) ++
+    ([.dp .add .r0 .r0 (.imm (BitVec.ofNat 32 nb)), .dp .add .r1 .r1 (.imm (BitVec.ofNat 32 (4 * c))),
+      .subs .r2 .r2 (.imm 1)] : List Instr)
 
 /-- All the groups. -/
 def unpackLoop (fin : Nat → List Instr) (d c nb : Nat) : Prog isa :=
@@ -95,6 +95,6 @@ def addQNeg (r t : Reg) : List Instr :=
 /-- `r := B - x` modulo `q`, for `x` in `x` (at most `q - 1 + B`, and `B`
 at most `2¹⁹`): `B - x`, plus `q` if it is negative; `x` is overwritten. -/
 def bMinus (B : Nat) (r x : Reg) : List Instr :=
-  [.mov r (.imm (BitVec.ofNat 32 B)), .dp .sub r r (.reg x)] ++ addQNeg r x
+  ([.mov r (.imm (BitVec.ofNat 32 B)), .dp .sub r r (.reg x)] : List Instr) ++ addQNeg r x
 
 end VG.Impl.MlDsa.Arm.Pack

@@ -122,13 +122,13 @@ end
 that wrote it: unchanged if 1, and zero if 0, so that it is reduced either
 way, without a branch. `w8 ← -w0`, then each coefficient `∧ w8`. -/
 def mask (a : Ptr) : Prog isa :=
-  .seq (.block ([.movz .x .x8 0 0, .sub .w .x8 .x8 .x0] ++ lea .x1 a.1 a.2 ++ [.movz .x .x2 256 0]))
+  .seq (.block (([.movz .x .x8 0 0, .sub .w .x8 .x8 .x0] : List Instr) ++ lea .x1 a.1 a.2 ++ ([.movz .x .x2 256 0] : List Instr)))
     (.loop (.block [.ldr .w .x9 .x1 0, .logic .and .w .x9 .x9 .x8, .str .w .x9 .x1 0, .addImm .x .x1 .x1 4,
       .subImm .x .x2 .x2 1]) (.nonzero .x .x2))
 
 /-- Mask four consecutive sampled polynomials with their common result. -/
 def mask4 (a : Ptr) : Prog isa :=
-  .seq (.block ([.movz .x .x8 0 0, .sub .w .x8 .x8 .x0] ++ lea .x1 a.1 a.2 ++ [.movz .x .x2 1024 0]))
+  .seq (.block (([.movz .x .x8 0 0, .sub .w .x8 .x8 .x0] : List Instr) ++ lea .x1 a.1 a.2 ++ ([.movz .x .x2 1024 0] : List Instr)))
     (.loop (.block [.ldr .w .x9 .x1 0, .logic .and .w .x9 .x9 .x8, .str .w .x9 .x1 0, .addImm .x .x1 .x1 4,
       .subImm .x .x2 .x2 1]) (.nonzero .x .x2))
 
@@ -157,8 +157,8 @@ def savedRegs : List Reg := [.x24, .x25, .x26, .x27, .x28, .x30]
 `x28` and the other arguments in `x25`–`x27`, and `x24 ← 1`. -/
 def pro : List Instr :=
   (List.range 6).map (fun k => .str .x (savedRegs.getD k .x0) .x3 (SV + 8 * k)) ++
-    [.addImm .x .x25 .x0 0, .addImm .x .x26 .x1 0, .addImm .x .x27 .x2 0, .addImm .x .x28 .x3 0,
-      .movz .x .x24 1 0]
+    ([.addImm .x .x25 .x0 0, .addImm .x .x26 .x1 0, .addImm .x .x27 .x2 0, .addImm .x .x28 .x3 0,
+      .movz .x .x24 1 0] : List Instr)
 
 /-- Return `x24` (in `x0`), and restore the caller's registers (`x28` last). -/
 def epi : List Instr :=
