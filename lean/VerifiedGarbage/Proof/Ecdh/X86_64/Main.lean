@@ -383,7 +383,7 @@ theorem exchangeWith_ok (hc : BaseCfgOk c) (hC : Law c.C) {mq : Prog isa} {W : L
     (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]; exact S₂.rz)
     hk₄
     (by rw [S₂.k]; exact ofBytes_bytesAt_lt _ _ _)
-    (fun t ht => by rw [t₄ (j := 0) (by decide) (.inl (by decide)) t ht, S₂.t₀ t ht, S₂.k])
+    (fun t ht => by rw [t₄ (j := 0) (by decide) (.inl (by decide)) t ht, S₂.t₀ rfl t ht, S₂.k])
     (fun h9 t ht => by rw [t₄ (j := 1) (by decide) (.inr (by omega_arith)) t ht, S₂.t₁ h9 t ht]) fun s₅ L => ?_
   have hs₅ := L.scr
   have F₅ := F₄.unch h7 hn hW.fixed L.unch

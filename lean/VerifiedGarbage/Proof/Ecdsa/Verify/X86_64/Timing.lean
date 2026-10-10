@@ -80,14 +80,12 @@ theorem bits_combReady (hc : BaseCfgOk c) {d : CombData} (hcd : c.comb = some d)
   refine ⟨hs₂,(modP_of hc F₂.mp).inl c.hot,?_⟩
   rw [← mid_publicU hM]
   have sym : s₂.syms d.tsym = s₀.syms d.tsym := by rw [sy₂,sy₁,hM.syms]
-  refine ⟨?_,?_,fun x hx => ?_,F₂.zero,ht₂,wordsVal_lt _ _ _ _,sym,?_,?_⟩
-  · show toM c.C.p (2 ^ (64*c.n)) (wordsVal s₂.mem base (c.sl AP) c.n) = _
-    rw [F₂.ap]; exact toM_cmont hc _
+  refine ⟨?_,fun x hx => ?_,F₂.zero,ht₂,wordsVal_lt _ _ _ _,sym,?_,?_⟩
   · show toM c.C.p (2 ^ (64*c.n)) (wordsVal s₂.mem base (c.sl EM) c.n) = _
     rw [e₂]; exact toM_cmont hc _
   · simp only [combRo,TCombCfg.toComb,Cfg.combCfg,Cfg.rcbSlots,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl | rfl
-    · exact lt_of_eq_of_lt F₂.ap (hmont _)
+    · exact lt_of_eq_of_lt e₂ (hmont _)
     · exact lt_of_eq_of_lt e₂ (hmont _)
     · exact lt_of_eq_of_lt F₂.zero (by omega)
   · rw [sy₁,hM.syms] at hTM₂; exact hTM₂
