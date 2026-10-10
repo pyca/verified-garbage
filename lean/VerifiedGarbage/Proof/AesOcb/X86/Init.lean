@@ -45,7 +45,12 @@ structure InitPure (p : BitVec 32 × (Nat → BitVec 32)) : Prop where
 theorem initPure_of {p : BitVec 32 × (Nat → BitVec 32)} {s : State} (h : initPre s) (hp : pubOf 4 s = p) :
     InitPure p := by
   simp only [initPre] at h
-  obtain ⟨-, -, d_kc, d_kw, -, d_cw, -, -, -, r_c, r_w, -, k_k, k_c, k_w, -, fk, fc, fw, sp, -, hl⟩ := h
+  sig_split h
+  rename_i hdrop0 hdrop1 d_kc d_kw hdrop4 d_cw hdrop6 hdrop7 hdrop8 r_c r_w hdrop11 k_k k_c k_w hdrop15 fk fc
+    fw sp hdrop20
+  clear hdrop0 hdrop1 hdrop4 hdrop6 hdrop7 hdrop8 hdrop11 hdrop15 hdrop20
+  have hl := h
+  clear h
   simp only [keyR, ictxR, scrR, retR, stackR] at d_kc d_kw d_cw r_c r_w k_k k_c k_w
   rw [show (24 : Addr) = BitVec.ofNat 64 24 from rfl, below_eq sp] at k_k k_c k_w
   have a0 := pubOf_arg hp (i := 0) (by decide); have a1 := pubOf_arg hp (i := 1) (by decide)
@@ -83,7 +88,12 @@ theorem iEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     have hc := initPure_of hpre hpub
     have hp := hpre
     simp only [initPre] at hp
-    obtain ⟨hrd, hwr, -, -, -, -, -, d_wa, -, -, -, -, -, -, -, -, -, -, -, -, fa, -⟩ := hp
+    sig_split hp
+    rename_i hrd hwr hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 d_wa hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13
+      hdrop14 hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 fa
+    clear hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13 hdrop14 hdrop15
+      hdrop16 hdrop17 hdrop18 hdrop19
+    clear hp
     have a : ∀ i, i < 4 → arg s₀ i = p.2 i := fun i hi => pubOf_arg hpub hi
     have wW : Covers [⟨w64 (arg s₀ 3), 2560⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
     have rA : Covers [argsR (s₀.gpr .esp) 4] (s₀.rd ++ s₀.wr) := by
@@ -153,7 +163,12 @@ theorem iEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     subst s
     have hp := hpre
     simp only [initPre] at hp
-    obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fa, -⟩ := hp
+    sig_split hp
+    rename_i hrd hwr hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13
+      hdrop14 hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 fa
+    clear hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13 hdrop14
+      hdrop15 hdrop16 hdrop17 hdrop18 hdrop19
+    clear hp
     have rA : Covers [argsR (s₀.gpr .esp) 4] (s₀.rd ++ s₀.wr) := by
       rw [argsR_eq, hrd, hwr]; exact covers_of_mem (by simp)
     exact WP.mono (arg0_ok (argIn_of rA (by omega) (by decide))) fun s' ⟨ax, sp⟩ =>

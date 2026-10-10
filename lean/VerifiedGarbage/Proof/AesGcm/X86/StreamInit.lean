@@ -28,7 +28,12 @@ theorem streamInit_eq : (streamInit vg.callees) = .seq (entry 4 (([.mov .esi (ar
 theorem streamInit_lay {s : State} (h : streamInitPre s) :
     Lay (arg s 0) (arg s 3) (arg s 4) (s.gpr .esp) 24 := by
   simp only [streamInitPre] at h
-  obtain ⟨-, -, d_cs, d_cw, -, -, -, -, d_sw, -, -, -, -, -, -, -, k_c, -, k_s, k_w, -, fc, -, fs, fw, sp, -⟩ := h
+  sig_split h
+  rename_i hdrop0 hdrop1 d_cs d_cw hdrop4 hdrop5 hdrop6 hdrop7 d_sw hdrop9 hdrop10 hdrop11 hdrop12 hdrop13
+    hdrop14 hdrop15 k_c hdrop17 k_s k_w hdrop20 fc hdrop22 fs fw sp
+  clear hdrop0 hdrop1 hdrop4 hdrop5 hdrop6 hdrop7 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13 hdrop14 hdrop15
+    hdrop17 hdrop20 hdrop22
+  clear h
   rw [ofNat_lit, below_eq sp] at k_c k_s k_w
   exact ⟨fc, fs, fw, Nat.le_refl _, by decide, sp, d_cs, d_cw, d_sw.sub_right (Region.sub_prefix (by decide)),
     d_sw.sub_right (Lay.wSub (by decide)), k_c, k_s, k_w⟩
@@ -52,8 +57,13 @@ theorem siEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     have L := streamInit_lay hpre
     have hp := hpre
     simp only [streamInitPre] at hp
-    obtain ⟨hrd, hwr, -, -, -, d_ns, d_nw, -, -, -, d_wa, -, -, -, -, -, -, k_n, -, -, -,
-      -, fn, -, fw, sp, fa⟩ := hp
+    sig_split hp
+    rename_i hrd hwr hdrop2 hdrop3 hdrop4 d_ns d_nw hdrop7 hdrop8 hdrop9 d_wa hdrop11 hdrop12 hdrop13 hdrop14
+      hdrop15 hdrop16 k_n hdrop18 hdrop19 hdrop20 hdrop21 fn hdrop23 fw sp
+    clear hdrop2 hdrop3 hdrop4 hdrop7 hdrop8 hdrop9 hdrop11 hdrop12 hdrop13 hdrop14 hdrop15 hdrop16 hdrop18
+      hdrop19 hdrop20 hdrop21 hdrop23
+    have fa := hp
+    clear hp
     have a : ∀ i, i < 5 → arg s₀ i = p.2 i := fun i hi => pubOf_arg hpub hi
     have esp := pubOf_esp hpub
     rw [ofNat_lit, below_eq sp] at k_n
@@ -115,7 +125,13 @@ theorem siEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     subst s
     have hp := hpre
     simp only [streamInitPre] at hp
-    obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fa⟩ := hp
+    sig_split hp
+    rename_i hrd hwr hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13
+      hdrop14 hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop23 hdrop24 hdrop25
+    clear hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13 hdrop14
+      hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop23 hdrop24 hdrop25
+    have fa := hp
+    clear hp
     have rA : Covers [argsR (s₀.gpr .esp) 5] (s₀.rd ++ s₀.wr) := by
       rw [argsR_eq, hrd, hwr]; exact covers_of_mem (by simp)
     exact WP.mono (arg0_ok (argIn_of rA (by omega) (by decide))) fun s' ⟨ax, sp⟩ =>
@@ -125,7 +141,12 @@ theorem si_ret {p : BitVec 32 × (Nat → BitVec 32)} {s₀ : State} (h : stream
     (⟨w64 p.1, 4⟩ : Region).Disjoint ⟨w64 (p.2 3), 80⟩ ∧ (⟨w64 p.1, 4⟩ : Region).Disjoint ⟨w64 (p.2 4), 2560⟩ ∧
       24 ≤ p.1.toNat := by
   simp only [streamInitPre] at h
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, r_s, r_w, -, -, -, -, -, -, -, -, -, -, sp, -⟩ := h
+  sig_split h
+  rename_i hdrop0 hdrop1 hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 r_s
+    r_w hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop23 hdrop24 sp
+  clear hdrop0 hdrop1 hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop15
+    hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop23 hdrop24
+  clear h
   rw [pubOf_arg hp (i := 3) (by decide), pubOf_arg hp (i := 4) (by decide), pubOf_esp hp] at *
   exact ⟨r_s, r_w, sp⟩
 
@@ -166,7 +187,12 @@ theorem streamInit_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     fun s' ⟨abi, m', _, _, _⟩ => ⟨abi, fun ciph => ?_⟩
   have hp := h₁.pre
   simp only [streamInitPre] at hp
-  obtain ⟨-, -, -, -, -, -, d_nw, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fn, -, -, -, -⟩ := hp
+  sig_split hp
+  rename_i hdrop0 hdrop1 hdrop2 hdrop3 hdrop4 hdrop5 d_nw hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13
+    hdrop14 hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 fn hdrop23 hdrop24 hdrop25
+  clear hdrop0 hdrop1 hdrop2 hdrop3 hdrop4 hdrop5 hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13 hdrop14
+    hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop23 hdrop24 hdrop25
+  clear hp
   rw [a 1 (by decide), a 2 (by decide), a 4 (by decide)] at d_nw
   rw [a 1 (by decide), a 2 (by decide)] at fn
   rw [a 0 (by decide), a 1 (by decide), a 2 (by decide), a 3 (by decide)]
