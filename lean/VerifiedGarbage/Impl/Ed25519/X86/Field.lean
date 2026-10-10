@@ -61,4 +61,25 @@ def pointDoubleOps : List FieldOp := [
 
 def pointDouble : List Instr := fieldCode pointDoubleOps
 
+/-- Doubles slots 0–3 in place, to RFC 8032's coordinates (§5.1.4: `A = X²`, `B = Y²`,
+`C = 2Z²`, `H = A + B`, `E = H - (X + Y)²`, `G = A - B`, `F = C + G`, and `X = EF`, `Y = GH`,
+`Z = FG`, `T = EH`), with `-E = 2XY` from one product rather than a square and two additions:
+`-G = B - A`, `-F = -G - C` and `-H = -G - B - B`, so that `X = (-E)(-F)`, `Y = (-G)(-H)`,
+`Z = (-F)(-G)` and `T = (-E)(-H)`: eight products, without `d`
+(`vg_ed25519_r32_double`). Slots 8–14 are temporary. -/
+def pointDoubleRfcOps : List FieldOp := [
+  .mul 8 0 0, .mul 9 1 1, .mul 10 2 2, .add 10 10 10, .mul 11 0 1, .add 11 11 11,
+  .sub 12 9 8, .sub 13 12 10, .sub 14 12 9, .sub 14 14 9,
+  .mul 0 11 13, .mul 1 12 14, .mul 2 13 12, .mul 3 11 14]
+
+/-- Add the affine cached point in slots 4–6 (`[Y - X, Y + X, 2dT]` of a point with `Z = 1`,
+so its `2Z` is `2` and `Z₁ · 2Z₂` is `Z₁ + Z₁`) to slots 0–3, in place: `a = (Y₁ - X₁)(Y₂ - X₂)`,
+`b = (Y₁ + X₁)(Y₂ + X₂)`, `c = T₁ · 2dT₂`, `dd = 2Z₁`, `h = b + a`, `e = b - a`, `g = dd + c`,
+`f = dd - c`, and `(ef, gh, fg, eh)`: seven products (`vg_ed25519_r32_add_affine`). Slots
+8–12 are temporary. -/
+def pointAddAffineOps : List FieldOp := [
+  .sub 8 1 0, .mul 8 8 4, .add 9 1 0, .mul 9 9 5, .mul 10 3 6, .add 11 2 2,
+  .add 12 9 8, .sub 8 9 8, .add 9 11 10, .sub 10 11 10,
+  .mul 0 8 10, .mul 1 9 12, .mul 2 10 9, .mul 3 8 12]
+
 end VG.Impl.Ed25519.X86

@@ -115,17 +115,24 @@ abbrev addW (x : BitVec 32) : List Region := [sub x 64 128, sub x 320 256, sub x
 /-- The regions the body writes: slots 0–3, slots 8–15, and `T`. -/
 abbrev bodyW (x : BitVec 32) : List Region := [sub x 64 128, sub x 320 256, sub x T 64]
 
-theorem pointAddOps_dests :
-    ∀ op ∈ pointAddOps, (64 ≤ offset (fieldDest op) ∧ offset (fieldDest op) + 32 ≤ 192) ∨
-      (320 ≤ offset (fieldDest op) ∧ offset (fieldDest op) + 32 ≤ 576) := by decide
+/-- A function's program writes only slots 0–3 and 8–15. -/
+abbrev DestsOk (ops : List FieldOp) : Prop :=
+  ∀ op ∈ ops, (64 ≤ offset (fieldDest op) ∧ offset (fieldDest op) + 32 ≤ 192) ∨
+    (320 ≤ offset (fieldDest op) ∧ offset (fieldDest op) + 32 ≤ 576)
 
-theorem pointAdd_frame {s : State} {x : BitVec 32} (hc : Ctx x s c) :
-    WP isa (.block (fieldCode pointAddOps)) s fun t => Frame (bodyW x) s.mem t.mem := by
+theorem pointAddOps_dests : DestsOk pointAddOps := by decide
+
+theorem pointAddAffineOps_dests : DestsOk pointAddAffineOps := by decide
+
+theorem pointDoubleRfcOps_dests : DestsOk pointDoubleRfcOps := by decide
+
+theorem ops_frame {ops : List FieldOp} (hd : DestsOk ops) {s : State} {x : BitVec 32} (hc : Ctx x s c) :
+    WP isa (.block (fieldCode ops)) s fun t => Frame (bodyW x) s.mem t.mem := by
   have hfit := hc.fit
-  refine fieldCode_frame _ pointAddOps hc fun op hop r hr => ?_
+  refine fieldCode_frame _ ops hc fun op hop r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · rcases pointAddOps_dests op hop with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
+  · rcases hd op hop with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
     · exact ⟨_, List.mem_cons_self .., sub_sub hfit h₁ (by omega_using [h₂]) (by omega_using [h₂])⟩
     · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, sub_sub hfit h₁ (by omega_using [h₂])
         (by omega_using [h₂])⟩
@@ -175,17 +182,18 @@ theorem env_save {x : BitVec 32} (hfit : x.toNat + 8192 ≤ 2 ^ 32) {m m' : Mem}
   exact fe_frame1 hf hfit (by decide) (by simp only [offset]; omega)
     (.inl (by simp only [offset, SAVE]; omega))
 
-theorem addFn_ok {s : State} {x : BitVec 32} (h : Entry s x) :
-    WP isa addFn s fun t => (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Frame (addW x) s.mem t.mem ∧
-      (env s.mem x 16 = Spec.Ed25519.d → point (env t.mem x) 0 1 2 3 =
-        Spec.Ed25519.pointAdd (point (env s.mem x) 0 1 2 3) (point (env s.mem x) 4 5 6 7)) := by
+/-- A function running the field program `ops`: the callee-saved registers kept, memory
+changed only in slots 0–3 and 8–15 and bytes 864 to 1023, and the slots' values `evalOps ops`
+of theirs. -/
+theorem fnOf_ok {ops : List FieldOp} (hd : DestsOk ops) {s : State} {x : BitVec 32} (h : Entry s x) :
+    WP isa (fnOf ops) s fun t => (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Frame (addW x) s.mem t.mem ∧ env t.mem x = evalOps ops (env s.mem x) := by
   have hfit := h.fit
-  rw [addFn, WP.block_append_iff, WP.block_append_iff]
+  rw [fnOf, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (entry_ok h) fun t ⟨hc, esi, esp, rd, wr, hf, hsv⟩ => ?_
-  refine WP.mono (WP.and (pointAdd_frame hc) (fieldCode_ok pointAddOps hc)) fun u ⟨fu, ku, eu⟩ => ?_
+  refine WP.mono (WP.and (ops_frame hd hc) (fieldCode_ok ops hc)) fun u ⟨fu, ku, eu⟩ => ?_
   refine WP.mono (exit_ok (ku.ctx hc) (hsv.body hfit fu)) fun v ⟨rb, rp, ri, rs, re, rr, rw', rm⟩ => ?_
-  refine ⟨fun r hr => ?_, by rw [rr, ku.keep.rd, rd], by rw [rw', ku.keep.wr, wr], ?_, fun hd => ?_⟩
+  refine ⟨fun r hr => ?_, by rw [rr, ku.keep.rd, rd], by rw [rw', ku.keep.wr, wr], ?_, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact rb
@@ -204,8 +212,54 @@ theorem addFn_ok {s : State} {x : BitVec 32} (h : Entry s x) :
       · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
       · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self),
           sub_sub hfit (Nat.le_refl _) (by simp only [T]; decide) (by simp only [T]; decide)⟩
-  · have es := env_save hfit hf
-    rw [rm, eu, ← es]
-    exact pointAdd_eval _ (by rw [es]; exact hd)
+  · rw [rm, eu, env_save hfit hf]
+
+theorem addFn_ok {s : State} {x : BitVec 32} (h : Entry s x) :
+    WP isa addFn s fun t => (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Frame (addW x) s.mem t.mem ∧
+      (env s.mem x 16 = Spec.Ed25519.d → point (env t.mem x) 0 1 2 3 =
+        Spec.Ed25519.pointAdd (point (env s.mem x) 0 1 2 3) (point (env s.mem x) 4 5 6 7)) :=
+  WP.mono (fnOf_ok pointAddOps_dests h) fun _ ⟨hk, hrd, hwr, hf, hv⟩ =>
+    ⟨hk, hrd, hwr, hf, fun hd => by rw [hv]; exact pointAdd_eval _ hd⟩
+
+/-! ## The new functions' values -/
+
+/-- What `pointAddAffineOps` computes, from the accumulator's coordinates and the cached
+entry's. -/
+def mixedResult (x y z t q₀ q₁ q₂ : Spec.X25519.Fe) : Spec.Ed25519.Point :=
+  let a := (y - x) * q₀
+  let b := (y + x) * q₁
+  let c := t * q₂
+  let dd := z + z
+  ⟨(b - a) * (dd - c), (dd + c) * (b + a), (dd - c) * (dd + c), (b - a) * (b + a)⟩
+
+theorem mixedResult_eq (p q : Spec.Ed25519.Point) (hz : q.Z = 1) :
+    mixedResult p.X p.Y p.Z p.T (q.Y - q.X) (q.Y + q.X) (q.T * 2 * Spec.Ed25519.d) =
+      Spec.Ed25519.pointAdd p q := by
+  simp only [mixedResult, Spec.Ed25519.pointAdd, hz]
+  congr 1 <;> grind
+
+theorem addAffine_formula (e : Env) :
+    point (evalOps pointAddAffineOps e) 0 1 2 3 = mixedResult (e 0) (e 1) (e 2) (e 3) (e 4) (e 5) (e 6) := rfl
+
+/-- What `pointDoubleRfcOps` computes. -/
+def dblResult (e : Env) : Spec.Ed25519.Point :=
+  let a := e 0 * e 0
+  let b := e 1 * e 1
+  let c := e 2 * e 2 + e 2 * e 2
+  let ee := e 0 * e 1 + e 0 * e 1
+  let g := b - a
+  let f := g - c
+  let h := g - b - b
+  ⟨ee * f, g * h, f * g, ee * h⟩
+
+theorem dbl_formula (e : Env) : point (evalOps pointDoubleRfcOps e) 0 1 2 3 = dblResult e := rfl
+
+/-- `pointDoubleRfcOps` computes RFC 8032's doubling. -/
+theorem dbl_eval (e : Env) :
+    point (evalOps pointDoubleRfcOps e) 0 1 2 3 = Spec.Ed25519.Point64.pointDouble (point e 0 1 2 3) := by
+  rw [dbl_formula]
+  simp only [dblResult, Spec.Ed25519.Point64.pointDouble, point]
+  congr 1 <;> grind
 
 end VG.Proof.Ed25519.X86.Point32

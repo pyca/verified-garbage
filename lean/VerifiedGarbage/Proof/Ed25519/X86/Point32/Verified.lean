@@ -114,6 +114,71 @@ theorem add_correct (s : State) (hs : addX86.pre s) :
       pointAt_eq _ hfit 0 (by decide), pointAt_eq _ hfit 0 (by decide), pointAt_eq _ hfit 4 (by decide)]
     exact hv hd'
 
+/-- A function running the field program `ops`, from the shared contract's facts: the calling
+convention kept, the slots' values `evalOps ops` of theirs, and `Keeps`. -/
+theorem fnOf_correct {ops : List FieldOp} (hd : DestsOk ops) (s : State) (hp : fnPre s) :
+    ∃ t s', Exec isa (fnOf ops) s t s' ∧ abiPreserved s s' ∧
+      env s'.mem (arg s 0) = evalOps ops (env s.mem (arg s 0)) ∧
+      Spec.Ed25519.Point32.Keeps (wsOf s) s.mem s'.mem := by
+  have he := entry_of_pre hp
+  obtain ⟨t, s', ex, hk, hrd, hwr, hf, hv⟩ := fnOf_ok hd he
+  have hfit := he.fit
+  have hret := hp.2.2.2.2.1
+  refine ⟨t, s', ex, ⟨hk, ?_⟩, hv, keeps_of_frame hfit hf⟩
+  refine hf.readW (Region.contains_self _ _) (fun r hr => hret.sub_right ?_) (by decide)
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  show Region.Sub r (scR 8192 (arg s 0))
+  rw [scR_eq]
+  rcases hr with rfl | rfl | rfl
+  · exact sub_sub hfit (Nat.zero_le _) (by decide) (by decide)
+  · exact sub_sub hfit (Nat.zero_le _) (by decide) (by decide)
+  · exact sub_sub hfit (Nat.zero_le _) (by simp only [T]; decide) (by simp only [T]; decide)
+
+/-- The affine addition's contract on x86. -/
+def affX86 : Contract isa where
+  pre := fnPre
+  post s s' := (∀ q : Spec.Ed25519.Point, q.Z = 1 →
+      elemAt s.mem (wsOf s) Spec.Ed25519.Point32.qAt = q.Y - q.X →
+      elemAt s.mem (wsOf s) (Spec.Ed25519.Point32.qAt + Spec.Ed25519.Point32.elemBytes) = q.Y + q.X →
+      elemAt s.mem (wsOf s) (Spec.Ed25519.Point32.qAt + 2 * Spec.Ed25519.Point32.elemBytes) =
+        q.T * 2 * Spec.Ed25519.d →
+      pointAt s'.mem (wsOf s) Spec.Ed25519.Point32.pAt =
+        Spec.Ed25519.pointAdd (pointAt s.mem (wsOf s) Spec.Ed25519.Point32.pAt) q) ∧
+    Spec.Ed25519.Point32.Keeps (wsOf s) s.mem s'.mem
+  pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0
+
+/-- The doubling's contract on x86. -/
+def doubleX86 : Contract isa where
+  pre := fnPre
+  post s s' := pointAt s'.mem (wsOf s) Spec.Ed25519.Point32.pAt =
+      Spec.Ed25519.Point64.pointDouble (pointAt s.mem (wsOf s) Spec.Ed25519.Point32.pAt) ∧
+    Spec.Ed25519.Point32.Keeps (wsOf s) s.mem s'.mem
+  pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0
+
+theorem aff_correct (s : State) (hs : affX86.pre s) :
+    ∃ t s', Exec isa affFn s t s' ∧ abiPreserved s s' ∧ affX86.post s s' := by
+  obtain ⟨t, s', ex, ha, hv, hk⟩ := fnOf_correct pointAddAffineOps_dests s hs
+  have hfit := (entry_of_pre hs).fit
+  refine ⟨t, s', ex, ha, fun q hz h4 h5 h6 => ?_, hk⟩
+  have el : ∀ o, o + 32 ≤ 8192 → elemAt s.mem (wsOf s) o = VG.Proof.X25519.X86.F s.mem (arg s 0) o :=
+    fun o ho => elemAt_eq _ (by omega)
+  rw [el _ (by decide)] at h4 h5 h6
+  rw [show Spec.Ed25519.Point32.pAt = 64 + 32 * 0 from rfl, pointAt_eq _ hfit 0 (by decide),
+    pointAt_eq _ hfit 0 (by decide), hv]
+  refine (addAffine_formula _).trans ?_
+  rw [show env s.mem (arg s 0) 4 = q.Y - q.X from h4, show env s.mem (arg s 0) 5 = q.Y + q.X from h5,
+    show env s.mem (arg s 0) 6 = q.T * 2 * Spec.Ed25519.d from h6]
+  exact mixedResult_eq (point (env s.mem (arg s 0)) 0 1 2 3) q hz
+
+theorem double_correct (s : State) (hs : doubleX86.pre s) :
+    ∃ t s', Exec isa doubleFn s t s' ∧ abiPreserved s s' ∧ doubleX86.post s s' := by
+  obtain ⟨t, s', ex, ha, hv, hk⟩ := fnOf_correct pointDoubleRfcOps_dests s hs
+  have hfit := (entry_of_pre hs).fit
+  refine ⟨t, s', ex, ha, ?_, hk⟩
+  rw [show Spec.Ed25519.Point32.pAt = 64 + 32 * 0 from rfl, pointAt_eq _ hfit 0 (by decide),
+    pointAt_eq _ hfit 0 (by decide), hv]
+  exact dbl_eval _
+
 /-! ## Constant time -/
 
 /-- The analysis starts with `esp` and the 4 bytes of the argument public. -/
@@ -157,6 +222,12 @@ theorem add_agree (s₁ s₂ : State) (h₁ : addX86.pre s₁) (h₂ : addX86.pr
 theorem addFn_ct : ConstantTime isa addX86.pre addX86.pub addFn :=
   let ⟨_, hc⟩ := addFn_check
   VG.Taint.constantTime (A := taint) fnτ add_agree hc
+
+theorem affFn_ct : ConstantTime isa affX86.pre affX86.pub affFn :=
+  VG.Taint.constantTime (A := taint) fnτ (fun _ _ h₁ h₂ hp => fn_agree h₁ h₂ hp.1 hp.2) (by taint_decide)
+
+theorem doubleFn_ct : ConstantTime isa doubleX86.pre doubleX86.pub doubleFn :=
+  VG.Taint.constantTime (A := taint) fnτ (fun _ _ h₁ h₂ hp => fn_agree h₁ h₂ hp.1 hp.2) (by taint_decide)
 
 /-! ## The shared contract -/
 
@@ -216,5 +287,59 @@ theorem addX86_implies : addX86.Implies (Spec.Ed25519.Point32.addContract X86.ab
 
 theorem addFn_verified : Verified X86.target addFn (Spec.Ed25519.Point32.addContract X86.abi) :=
   Verified.of_correct add_correct addFn_ct addX86_implies
+
+theorem affX86_implies : affX86.Implies (Spec.Ed25519.Point32.addAffineContract X86.abi) := by
+  have a0 : arg fnSat 0 = 0x1000 := by decide
+  have e : argAddr fnSat 0 = 0x8004 := by decide
+  have esp : fnSat.gpr .esp = 0x8000 := rfl
+  exact
+    { pre := by sig_implies_pre [Spec.Ed25519.Point32.addAffineContract, Spec.Ed25519.Point32.sig, affX86,
+        fnPre, wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+      post := by sig_implies_post [Spec.Ed25519.Point32.addAffineContract, Spec.Ed25519.Point32.sig, affX86,
+        fnPre, wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+      pub := by sig_implies_pub [Spec.Ed25519.Point32.addAffineContract, Spec.Ed25519.Point32.sig, affX86,
+        fnPre, wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+      sat := by
+        refine ⟨fnSat, ?_⟩
+        sig_pre [Spec.Ed25519.Point32.addAffineContract, Spec.Ed25519.Point32.sig, affX86, fnPre, wsOf,
+          X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+        sig_and_intros
+        all_goals first
+          | rfl
+          | decide
+          | exact Region.disjoint_of_sep (by decide)
+          | (intro a h₁ h₂
+             simp only [Region.Contains, a0, e, esp] at h₁ h₂
+             bv_omega) }
+
+theorem doubleX86_implies : doubleX86.Implies (Spec.Ed25519.Point32.doubleContract X86.abi) := by
+  have a0 : arg fnSat 0 = 0x1000 := by decide
+  have e : argAddr fnSat 0 = 0x8004 := by decide
+  have esp : fnSat.gpr .esp = 0x8000 := rfl
+  exact
+    { pre := by sig_implies_pre [Spec.Ed25519.Point32.doubleContract, Spec.Ed25519.Point32.sig, doubleX86,
+        fnPre, wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+      post := by sig_implies_post [Spec.Ed25519.Point32.doubleContract, Spec.Ed25519.Point32.sig, doubleX86,
+        fnPre, wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+      pub := by sig_implies_pub [Spec.Ed25519.Point32.doubleContract, Spec.Ed25519.Point32.sig, doubleX86,
+        fnPre, wsOf, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+      sat := by
+        refine ⟨fnSat, ?_⟩
+        sig_pre [Spec.Ed25519.Point32.doubleContract, Spec.Ed25519.Point32.sig, doubleX86, fnPre, wsOf,
+          X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+        sig_and_intros
+        all_goals first
+          | rfl
+          | decide
+          | exact Region.disjoint_of_sep (by decide)
+          | (intro a h₁ h₂
+             simp only [Region.Contains, a0, e, esp] at h₁ h₂
+             bv_omega) }
+
+theorem affFn_verified : Verified X86.target affFn (Spec.Ed25519.Point32.addAffineContract X86.abi) :=
+  Verified.of_correct aff_correct affFn_ct affX86_implies
+
+theorem doubleFn_verified : Verified X86.target doubleFn (Spec.Ed25519.Point32.doubleContract X86.abi) :=
+  Verified.of_correct double_correct doubleFn_ct doubleX86_implies
 
 end VG.Proof.Ed25519.X86.Point32
