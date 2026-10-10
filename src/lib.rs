@@ -93,6 +93,7 @@ pub mod aes_siv;
 pub mod aes_xts;
 pub mod argon2;
 pub mod blowfish_ecb;
+pub mod camellia_ctr;
 pub mod camellia_ecb;
 pub mod cast5_ecb;
 pub mod chacha20;

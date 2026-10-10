@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Camellia.X86_64.Lit
 
 `expandKey_verified`: `expandKey` is correct (`expandKey_wp`) and constant
 time (`expandKey_ct`). `expandKey_framed` runs it with its working space on
-the stack, zeroed on return: 3152 bytes, the 393 words of the scratch
+the stack, zeroed on return: 3216 bytes, the 401 words of the scratch
 buffer and 8 more.
 -/
 
@@ -31,7 +31,7 @@ def expandKeySat : State where
   of := none
   mem _ := 0
   rd := [⟨0x1000, 16⟩]
-  wr := [⟨0x3000, 272⟩, ⟨0x4000, 8 * 393⟩]
+  wr := [⟨0x3000, 272⟩, ⟨0x4000, 8 * 401⟩]
 
 theorem expandKey_verified :
     Verified X86_64.target expandKey (Proof.Camellia.expandKeyScratchContract X86_64.abi slots) :=
@@ -53,18 +53,18 @@ def expandKeyFrameSat : State where
   rd := [⟨0x1000, 16⟩]
   wr := [⟨0x3000, 272⟩]
 
-theorem expandKeyFrameSat_pre : ∃ s, (Spec.Camellia.expandKeyContract X86_64.abi 3152).pre s := by
+theorem expandKeyFrameSat_pre : ∃ s, (Spec.Camellia.expandKeyContract X86_64.abi 3216).pre s := by
   implies_sat [Spec.Camellia.expandKeyContract, Spec.Camellia.expandKeySig, Spec.Camellia.expandKeyPre,
     Spec.Camellia.expandKeyPost, X86_64.abi, X86_64.argRegs] [expandKeyFrameSat] using expandKeyFrameSat
 
 /-- The key schedule, with its working space on the stack. -/
 theorem expandKey_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3152 .rcx 393 expandKey)
-      (Spec.Camellia.expandKeyContract X86_64.abi 3152) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3216 .rcx 401 expandKey)
+      (Spec.Camellia.expandKeyContract X86_64.abi 3216) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Camellia.expandKeySig) (nm := "scratch") (e := .u64)
-    (n := 393) (pre := Spec.Camellia.expandKeyPre X86_64.abi.ptrBits)
+    (n := 401) (pre := Spec.Camellia.expandKeyPre X86_64.abi.ptrBits)
     (post := Spec.Camellia.expandKeyPost X86_64.abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 3152) (by rw [← Proof.Camellia.expandKeyScratchContract_eq]; exact expandKey_verified)
+    (bytes := 3216) (by rw [← Proof.Camellia.expandKeyScratchContract_eq]; exact expandKey_verified)
     (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.expandKeyPostOut_local _) expandKeyFrameSat_pre
 

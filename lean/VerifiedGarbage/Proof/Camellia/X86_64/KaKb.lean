@@ -128,7 +128,7 @@ theorem WordsAt.congr {s s' : State} {k : Nat} {v : BitVec 64 × BitVec 64} (h :
   ⟨h.1.congr h0, h.2.congr h1⟩
 
 theorem kaKb_slots : klSlot = 377 ∧ krSlot = 379 ∧ wSlot = 381 ∧ kaSlot = 383 ∧ kbSlot = 385 ∧
-    endSlot = 368 ∧ keySlot = 96 ∧ slots = 393 := ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+    endSlot = 368 ∧ keySlot = 96 ∧ slots = 401 := ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 /-- `KeyCtx` moves to a state with the same base, blocks, regions and slots below the table's end. -/
 theorem KeyCtx.of_slots {s s' : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx s nk E)
