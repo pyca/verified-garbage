@@ -172,19 +172,27 @@ def keys4 (ls : List Line) (s : XZ) : List Word :=
 
 theorem keysA_eq (s : XZ) : keysA (vec s.z) = keys4 aLines s := by
   simp (disch := decide) only [keysA, keys4, aLines, List.getD_cons_succ, List.getD_cons_zero, lineVal,
-    XZ.get, sbox, Impl.Cast5.z, vec_get, xor5]
+    XZ.get, sbox, Impl.Cast5.z, vec_get]
+  exact congr (congrArg _ (xor5 ..)) <| congr (congrArg _ (xor5 ..)) <|
+    congr (congrArg _ (xor5 ..)) <| congr (congrArg _ (xor5 ..)) rfl
 
 theorem keysB_eq (s : XZ) : keysB (vec s.x) = keys4 bLines s := by
   simp (disch := decide) only [keysB, keys4, bLines, List.getD_cons_succ, List.getD_cons_zero, lineVal,
-    XZ.get, sbox, Impl.Cast5.x, vec_get, xor5]
+    XZ.get, sbox, Impl.Cast5.x, vec_get]
+  exact congr (congrArg _ (xor5 ..)) <| congr (congrArg _ (xor5 ..)) <|
+    congr (congrArg _ (xor5 ..)) <| congr (congrArg _ (xor5 ..)) rfl
 
 theorem keysC_eq (s : XZ) : keysC (vec s.z) = keys4 cLines s := by
   simp (disch := decide) only [keysC, keys4, cLines, List.getD_cons_succ, List.getD_cons_zero, lineVal,
-    XZ.get, sbox, Impl.Cast5.z, vec_get, xor5]
+    XZ.get, sbox, Impl.Cast5.z, vec_get]
+  exact congr (congrArg _ (xor5 ..)) <| congr (congrArg _ (xor5 ..)) <|
+    congr (congrArg _ (xor5 ..)) <| congr (congrArg _ (xor5 ..)) rfl
 
 theorem keysD_eq (s : XZ) : keysD (vec s.x) = keys4 dLines s := by
   simp (disch := decide) only [keysD, keys4, dLines, List.getD_cons_succ, List.getD_cons_zero, lineVal,
-    XZ.get, sbox, Impl.Cast5.x, vec_get, xor5]
+    XZ.get, sbox, Impl.Cast5.x, vec_get]
+  exact congr (congrArg _ (xor5 ..)) <| congr (congrArg _ (xor5 ..)) <|
+    congr (congrArg _ (xor5 ..)) <| congr (congrArg _ (xor5 ..)) rfl
 
 /-- One half of §2.4 as the implementations run it: the subkeys and the
 arrays it leaves. -/
