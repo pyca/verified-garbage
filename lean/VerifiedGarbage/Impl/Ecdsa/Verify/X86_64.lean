@@ -104,7 +104,7 @@ def sum : Prog isa :=
 
 /-- The flag's low bit to `rax`, and the callee-saved registers restored. -/
 def finish : List Instr :=
-  [.mov .rax (.mem (sc (c.sl FLAG))), .alu .and .rax (.imm 1)] ++
+  ([.mov .rax (.mem (sc (c.sl FLAG))), .alu .and .rax (.imm 1)] : List Instr) ++
   Impl.Ecdsa.X86_64.Cfg.saved.map (fun (r, d) => .mov r (.mem (sc d)))
 
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, `x R mod n`
@@ -133,7 +133,7 @@ def projectiveMatch : List Instr :=
   Impl.Ecdh.X86_64.Cfg.zero c (c.sl W) ++ ([.mov .rbp (.reg .rdx)] : List Instr) ++
   c.ltN (c.sl K) ++ ([.mov .r12 (.reg .rax)] : List Instr) ++
   Impl.Ecdh.X86_64.Cfg.zero c (c.sl XN) ++
-  [.alu .and .rdx (.reg .r12), .alu .or .rdx (.reg .rbp)]
+  ([.alu .and .rdx (.reg .r12), .alu .or .rdx (.reg .rbp)] : List Instr)
 
 /-- Reject infinity and combine the match with the preceding input checks. -/
 def projectiveChecks : List Instr :=

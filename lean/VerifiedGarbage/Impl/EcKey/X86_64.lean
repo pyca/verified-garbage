@@ -54,10 +54,10 @@ def upToPow : Prog isa :=
 /-- `04 ‖ x ‖ y` (or zeros) to `out`, the flag's low bit to `rax`, and the
 callee-saved registers restored. -/
 def finish : List Instr :=
-  [.mov .rcx (.mem (sc (c.sl FLAG))), .mov32 .rax (.imm 4), .alu .and .rax (.reg .rcx),
-    .store8 { base := .rsi, disp := 0 } .rax] ++
+  ([.mov .rcx (.mem (sc (c.sl FLAG))), .mov32 .rax (.imm 4), .alu .and .rax (.reg .rcx),
+    .store8 { base := .rsi, disp := 0 } .rax] : List Instr) ++
   storeBytes c.C.len c.n .rsi 1 (c.sl X) ++ storeBytes c.C.len c.n .rsi (1 + c.C.len) (c.sl Y) ++
-  [.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] ++
+  ([.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] : List Instr) ++
   Impl.Ecdsa.X86_64.Cfg.saved.map (fun (r, d) => .mov r (.mem (sc d)))
 
 /-- `x = X Z⁻¹` and `y = Y Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery

@@ -322,26 +322,26 @@ ones; and keeps `out` in `rsi`, which nothing after it writes (the
 multiplications of six words use `r14`). -/
 def setupWith (hs : Option Nat) : List Instr :=
   saved.map (fun (r, d) => .store { base := .r8, disp := (d : Int) } r) ++
-  [.mov .r14 (.reg .rdi), .mov .rdi (.reg .r8)] ++
+  ([.mov .r14 (.reg .rdi), .mov .rdi (.reg .r8)] : List Instr) ++
   loadBytes c.C.len c.n (c.sl K) .rcx ++ loadBytes c.C.len c.n (c.sl D) .rsi ++
   loadBytes c.C.len c.n (c.sl E) .rdx ++
   c.shiftCode hs ++
   c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-  setConst 1 (c.sl FLAG) (2 ^ 64 - 1) ++ [.mov .rsi (.reg .r14)]
+  setConst 1 (c.sl FLAG) (2 ^ 64 - 1) ++ ([.mov .rsi (.reg .r14)] : List Instr)
 
 /-- The signature's setup: the hash, `e`, in slot `E`. -/
 def setup : List Instr := c.setupWith (some E)
 
 /-- The mask `rdx` of `[a] ≠ 0` (all ones if it is not zero). -/
 def nonzero (a : Nat) : List Instr :=
-  [.mov .rdx (.mem (sc a))] ++ ((List.range (c.n - 1)).map fun j => .alu .or .rdx (.mem (sc (a + 8 * (j + 1))))) ++
-  [.mov32 .rcx (.imm 0), .alu .sub .rcx (.reg .rdx), .alu .sbb .rdx (.reg .rdx)]
+  ([.mov .rdx (.mem (sc a))] : List Instr) ++ ((List.range (c.n - 1)).map fun j => .alu .or .rdx (.mem (sc (a + 8 * (j + 1))))) ++
+  ([.mov32 .rcx (.imm 0), .alu .sub .rcx (.reg .rdx), .alu .sbb .rdx (.reg .rdx)] : List Instr)
 
 /-- The mask `rax` of `[a] < n` (all ones if it is), through `rdx`. -/
 def ltN (a : Nat) : List Instr :=
   ((List.range c.n).flatMap fun j =>
     [.mov .rdx (.mem (sc (a + 8 * j))), .alu (if j = 0 then .sub else .sbb) .rdx (.mem (sc (c.sl MN + 8 * j)))]) ++
-  [.alu .sbb .rax (.reg .rax)]
+  ([.alu .sbb .rax (.reg .rax)] : List Instr)
 
 /-- The flag `&=` the mask `rdx`. -/
 def andFlag : List Instr :=
@@ -349,7 +349,7 @@ def andFlag : List Instr :=
 
 /-- `[a]` is in `[1, n-1]`: the flag `&=` both masks. -/
 def checkRange (a : Nat) : List Instr :=
-  c.ltN a ++ [.mov .rbp (.reg .rax)] ++ c.nonzero a ++ [.alu .and .rdx (.reg .rbp)] ++ c.andFlag
+  c.ltN a ++ ([.mov .rbp (.reg .rax)] : List Instr) ++ c.nonzero a ++ ([.alu .and .rdx (.reg .rbp)] : List Instr) ++ c.andFlag
 
 /-- `[a] ≠ 0`: the flag `&=` its mask. -/
 def checkNonzero (a : Nat) : List Instr := c.nonzero a ++ c.andFlag
@@ -365,9 +365,9 @@ def middle : Prog isa :=
 /-- `r ‖ s` (or zeros) to `out`, the flag's low bit to `rax`, and the
 callee-saved registers restored. -/
 def finish : List Instr :=
-  [.mov .rcx (.mem (sc (c.sl FLAG)))] ++
+  ([.mov .rcx (.mem (sc (c.sl FLAG)))] : List Instr) ++
   storeBytes c.C.len c.n .rsi 0 (c.sl RR) ++ storeBytes c.C.len c.n .rsi c.C.len (c.sl SS) ++
-  [.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] ++
+  ([.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] : List Instr) ++
   saved.map (fun (r, d) => .mov r (.mem (sc d)))
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/

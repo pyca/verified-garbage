@@ -10,18 +10,18 @@ def M := VerifyDouble.M
 /-- Subtract the prime from a value below twice the prime. Its low word is
 all ones and its third word is zero. The carry includes the extra high word. -/
 def correct (ts : List Reg) (top : Reg) : List Instr :=
-  [.movz .x .x2 1 0,.adds .x .x1 ts[0]! .x2,
+  ([.movz .x .x2 1 0,.adds .x .x1 ts[0]! .x2,
    ld .x2 (M.mo+8),.sbcs .x .x3 ts[1]! .x2,
    .sbcs .x .x4 ts[2]! .x7,ld .x2 (M.mo+24),.sbcs .x .x5 ts[3]! .x2,
-   .sbcs .x .x2 top .x7] ++ selectsR ts (dRegs 4)
+   .sbcs .x .x2 top .x7] : List Instr) ++ selectsR ts (dRegs 4)
 
 /-- Add the prime under the borrow mask, using its exact four words. -/
 def sub (o a b : Nat) : List Instr :=
   zero7 :: loads (low 4) a ++ chain (.subs .x) (.sbcs .x) (low 4) b ++
-  [.sbc .x .x17 .x7 .x7,.lsr .x .x1 .x17 32,
+  ([.sbc .x .x17 .x7 .x7,.lsr .x .x1 .x17 32,
    .lsl .x .x2 .x17 32,.sub .x .x2 .x2 .x17,
    .adds .x .x8 .x8 .x17,.adcs .x .x9 .x9 .x1,
-   .adcs .x .x10 .x10 .x7,.adc .x .x11 .x11 .x2] ++ stores (low 4) o
+   .adcs .x .x10 .x10 .x7,.adc .x .x11 .x11 .x2] : List Instr) ++ stores (low 4) o
 
 def op : FOp → List Instr
   | .sub o a b => sub o a b

@@ -112,7 +112,7 @@ def sum : Prog isa :=
 
 /-- The flag's low bit to `r0`, and the callee-saved registers restored. -/
 def finish : List Instr :=
-  [.ldr .r10 wb (c.sl FLAG), .dp .and .r0 .r10 (.imm 1)] ++ Impl.Ecdsa.Arm.Cfg.restore
+  ([.ldr .r10 wb (c.sl FLAG), .dp .and .r0 .r10 (.imm 1)] : List Instr) ++ Impl.Ecdsa.Arm.Cfg.restore
 
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, `x R mod n`
 and `x R - r R mod n`, the checks of `Z` and of `x ≡ r`, and the result. -/

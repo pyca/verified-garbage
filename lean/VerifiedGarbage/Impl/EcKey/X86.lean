@@ -55,10 +55,10 @@ def upToPow : Prog isa :=
 /-- `04 ‖ x ‖ y` (or zeros) to `out` (through `ebx`), the flag's low bit to
 `eax`, and the callee-saved registers restored. -/
 def finish : List Instr :=
-  [.mov .ecx (.mem (sc (c.sl FLAG))), .mov .ebx (.mem (Cfg.argOp 0)), .mov .eax (.imm 4),
-    .alu .and .eax (.reg .ecx), .store8 (at_ .ebx 0) .al] ++
+  ([.mov .ecx (.mem (sc (c.sl FLAG))), .mov .ebx (.mem (Cfg.argOp 0)), .mov .eax (.imm 4),
+    .alu .and .eax (.reg .ecx), .store8 (at_ .ebx 0) .al] : List Instr) ++
   storeBytes c.C.len c.n .ebx 1 (c.sl X) ++ storeBytes c.C.len c.n .ebx (1 + c.C.len) (c.sl Y) ++
-  [.mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] ++ Impl.Ecdsa.X86.Cfg.restore
+  ([.mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] : List Instr) ++ Impl.Ecdsa.X86.Cfg.restore
 
 /-- `x = X Z⁻¹` and `y = Y Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery
 form, the checks of `d` and `Z`, and the result. -/
