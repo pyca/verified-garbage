@@ -157,7 +157,7 @@ theorem blks (P : RfcHash) : Blks P.Q P.F.H.D P.F.H.B P.R.wide := by
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
     have hQ : P.Q = 8 * P.w := hQ8
     rw [hQ]
-    rcases (P.R.sizesA hw).1 with hn | hn <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
+    rcases (P.R.sizesA hw).1 with hn | hn | hn <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
       rw [show P.w = P.R.E.n from rfl, hn, h, h'] <;>
       first
       | (exfalso; rw [hQ, show P.w = P.R.E.n from rfl, hn, h] at hQD; omega)

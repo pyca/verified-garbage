@@ -78,7 +78,7 @@ abbrev e : Nat := Impl.Ecdsa.Rfc6979.X86.extra P.R.wide
 /-- The sizes, as the proofs use them. -/
 theorem sizes : P.F.H.S ≤ 192 ∧ P.ok.Wi * 8 ≤ 1872 ∧ P.ok.Wf * 8 ≤ 1872 ∧ P.ok.hH.Wb ≤ 1872 ∧
     32 ≤ P.F.H.D ∧ P.F.H.D ≤ 64 ∧ P.F.H.D % 8 = 0 ∧ P.F.H.D < P.F.H.B ∧ P.F.H.B ≤ 128 ∧ 0 < P.F.H.S ∧
-    4 ≤ P.w ∧ P.w ≤ 9 ∧ P.k = 2 * P.w ∧ 8 ≤ P.Q ∧ P.Q ≤ P.F.H.D + 4 ∧ P.Q ≤ 8 * P.w ∧
+    3 ≤ P.w ∧ P.w ≤ 9 ∧ P.k = 2 * P.w ∧ 8 ≤ P.Q ∧ P.Q ≤ P.F.H.D + 4 ∧ P.Q ≤ 8 * P.w ∧
     8 * P.w < P.Q + 8 ∧ P.e ≤ 36 := by
   have hWb := P.ok.hH.hWb
   have hW := P.ok.hH.hW
@@ -91,7 +91,7 @@ theorem sizes : P.F.H.S ≤ 192 ∧ P.ok.Wi * 8 ≤ 1872 ∧ P.ok.Wf * 8 ≤ 187
       show P.R.E.C.len ≤ _; omega
     · have := P.R.sizesW hW; rw [hW] at hQ; simp only [ite_true] at hQ
       show P.R.E.C.len ≤ _; omega
-  refine ⟨P.hS, P.hWi, P.hWf, by omega, ?_, ?_, ?_, ?_, ?_, hS0, P.R.n4, P.R.n9, rfl, hw.1, hQD, hw.2.2,
+  refine ⟨P.hS, P.hWi, P.hWf, by omega, ?_, ?_, ?_, ?_, ?_, hS0, P.R.n3, P.R.n9, rfl, hw.1, hQD, hw.2.2,
     hw.2.1, by simp only [e, Impl.Ecdsa.Rfc6979.X86.extra]; split <;> omega⟩ <;>
     rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> simp only [h, h'] <;> omega
 
@@ -101,7 +101,7 @@ theorem sizesA (h : P.R.wide = false) : P.Q = 8 * P.w ∧ P.w ≤ 6 ∧ P.Q ≤ 
   have := P.R.sizesA h
   rw [h] at hQ
   simp only [Bool.false_eq_true, ite_false] at hQ
-  rcases this.1 with h' | h' <;> simp only [Q, w] <;> omega
+  rcases this.1 with h' | h' | h' <;> simp only [Q, w] <;> omega
 
 /-- If `wide`, P-521's sizes and SHA-512's. -/
 theorem sizesW (h : P.R.wide = true) : P.w = 9 ∧ P.Q = 66 ∧ P.F.H.D = 64 ∧ P.F.H.B = 128 := by

@@ -249,7 +249,7 @@ theorem rest_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
 /-- One `V` makes a candidate, or two if `wide`. -/
 theorem blocks_eq (P : RfcHash) : Spec.Ecdsa.Rfc6979.blocks P.R.E.C P.F.H.D = P.nb := by
   have hs := P.sizes
-  have h4 := P.R.n4
+  have h3 := P.R.n3
   rw [Spec.Ecdsa.Rfc6979.blocks]
   cases hw : P.R.wide
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
