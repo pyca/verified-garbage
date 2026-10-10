@@ -202,11 +202,10 @@ def redSparse : List Reg → List Instr
 /-- `2³² + 1`, the factor of `u = t₀ (2³² + 1) mod 2⁶⁴`. -/
 def sparseK : BitVec 64 := BitVec.ofNat 64 0x100000001
 
-/-- `rdx = u = t₀ (2³² + 1) mod 2⁶⁴` by `mulx` (its high half to `rax`):
-the multiplier's ports, rather than a shift and an addition on the ports
-that the carry chains need. -/
-def uSparseX (t0 : Reg) : List Instr :=
-  [.movImm64 .rax sparseK, .mov .rdx (.reg t0), .mulx .rax .rdx (.reg .rax)]
+/-- `rdx = u = t₀ (2³² + 1) mod 2⁶⁴` by `imul`: the multiplier's port,
+rather than a shift and an addition on the ports that the carry chains need;
+unlike `mulx`, it computes no high half, which this does not need. -/
+def uSparseX (t0 : Reg) : List Instr := [.movImm64 .rdx sparseK, .imul .rdx t0]
 
 /-- `rax + 2⁶⁴ rcx + 2¹²⁸ rbp = ⌊u c / 2⁶⁴⌋` for `u` in `rdx` (kept), by
 `mulx`, through `t₀`: the two products' halves added in one carry chain. -/
