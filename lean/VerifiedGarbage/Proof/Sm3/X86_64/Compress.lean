@@ -429,7 +429,7 @@ abbrev nb : Nat := (s₀.gpr .rdx).toNat
 abbrev scr : Addr := s₀.gpr .rcx
 abbrev stR : Region := ⟨st s₀, 32⟩
 abbrev blR : Region := ⟨bp s₀, 64 * nb s₀⟩
-abbrev scrR : Region := ⟨scr s₀, 576⟩
+abbrev scrR : Region := ⟨scr s₀, 112⟩
 abbrev retR : Region := ⟨s₀.gpr .rsp, 8⟩
 abbrev H₀ : HashValue := stateAt s₀.mem (st s₀)
 
@@ -666,7 +666,7 @@ theorem blk_word {s₀ : State} (i t : Nat) (ht : t < 16) :
     show blkAddr s₀ i + BitVec.ofNat 64 (4 * t + 2) + 1 = blkAddr s₀ i + BitVec.ofNat 64 (4 * t + 3) from
       Offset.add_add _ _ 1]
 
-theorem win_sub (p : Addr) : Region.Sub (winRegion p) ⟨p, 576⟩ := Region.sub_prefix (by bdd_omega)
+theorem win_sub (p : Addr) : Region.Sub (winRegion p) ⟨p, 112⟩ := Region.sub_prefix (by bdd_omega)
 
 theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s : State}
     (hL : LInv s₀ i s) :
@@ -829,7 +829,7 @@ def satState : State where
   of := none
   mem _ := 0
   rd := [⟨0x2000, 0⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0x3000, 576⟩]
+  wr := [⟨0x1000, 32⟩, ⟨0x3000, 112⟩]
 
 theorem compress_verified :
     Verified X86_64.target Impl.Sm3.X86_64.compress Proof.Sm3.compressX86_64 := by

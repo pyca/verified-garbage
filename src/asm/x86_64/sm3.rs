@@ -3036,19 +3036,19 @@ pub(crate) unsafe extern "sysv64" fn vg_sm3_init(state: *mut [u8; 96]) {
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm3_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-632]",
+        "lea rsp, [rsp-168]",
         "mov r8, rsp",
         "add r8, 8",
-        "mov QWORD PTR [r8+576], rbx",
-        "mov QWORD PTR [r8+584], rbp",
-        "mov QWORD PTR [r8+592], r12",
-        "mov QWORD PTR [r8+600], r13",
-        "mov QWORD PTR [r8+608], r14",
-        "mov QWORD PTR [r8+616], r15",
+        "mov QWORD PTR [r8+112], rbx",
+        "mov QWORD PTR [r8+120], rbp",
+        "mov QWORD PTR [r8+128], r12",
+        "mov QWORD PTR [r8+136], r13",
+        "mov QWORD PTR [r8+144], r14",
+        "mov QWORD PTR [r8+152], r15",
         "mov rbx, rdi",
         "mov r15, r8",
         "mov rbp, rdx",
@@ -3149,13 +3149,13 @@ pub(crate) unsafe extern "sysv64" fn vg_sm3_update(state: *mut [u8; 96], count: 
         "220:",
         "test r14, r14",
         "jne 20b",
-        "mov rbx, QWORD PTR [r15+576]",
-        "mov rbp, QWORD PTR [r15+584]",
-        "mov r12, QWORD PTR [r15+592]",
-        "mov r13, QWORD PTR [r15+600]",
-        "mov r14, QWORD PTR [r15+608]",
-        "mov r15, QWORD PTR [r15+616]",
-        "lea rsp, [rsp+632]",
+        "mov rbx, QWORD PTR [r15+112]",
+        "mov rbp, QWORD PTR [r15+120]",
+        "mov r12, QWORD PTR [r15+128]",
+        "mov r13, QWORD PTR [r15+136]",
+        "mov r14, QWORD PTR [r15+144]",
+        "mov r15, QWORD PTR [r15+152]",
+        "lea rsp, [rsp+168]",
         "ret",
         ".p2align 6",
         vg_sm3_compress = sym super::sm3::vg_sm3_compress,
@@ -3172,19 +3172,19 @@ pub(crate) unsafe extern "sysv64" fn vg_sm3_update(state: *mut [u8; 96], count: 
 /// * `out` must be valid for reads and writes of 32 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 640 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm3_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-632]",
+        "lea rsp, [rsp-168]",
         "mov rcx, rsp",
         "add rcx, 8",
-        "mov QWORD PTR [rcx+576], rbx",
-        "mov QWORD PTR [rcx+584], rbp",
-        "mov QWORD PTR [rcx+592], r12",
-        "mov QWORD PTR [rcx+600], r13",
-        "mov QWORD PTR [rcx+608], r14",
-        "mov QWORD PTR [rcx+616], r15",
+        "mov QWORD PTR [rcx+112], rbx",
+        "mov QWORD PTR [rcx+120], rbp",
+        "mov QWORD PTR [rcx+128], r12",
+        "mov QWORD PTR [rcx+136], r13",
+        "mov QWORD PTR [rcx+144], r14",
+        "mov QWORD PTR [rcx+152], r15",
         "mov rbx, rdi",
         "mov r15, rcx",
         "mov rbp, rdx",
@@ -3266,13 +3266,13 @@ pub(crate) unsafe extern "sysv64" fn vg_sm3_finalize(state: *mut [u8; 96], count
         "mov eax, DWORD PTR [rbx+28]",
         "bswap eax",
         "mov DWORD PTR [rbp+28], eax",
-        "mov rbx, QWORD PTR [r15+576]",
-        "mov rbp, QWORD PTR [r15+584]",
-        "mov r12, QWORD PTR [r15+592]",
-        "mov r13, QWORD PTR [r15+600]",
-        "mov r14, QWORD PTR [r15+608]",
-        "mov r15, QWORD PTR [r15+616]",
-        "lea rsp, [rsp+632]",
+        "mov rbx, QWORD PTR [r15+112]",
+        "mov rbp, QWORD PTR [r15+120]",
+        "mov r12, QWORD PTR [r15+128]",
+        "mov r13, QWORD PTR [r15+136]",
+        "mov r14, QWORD PTR [r15+144]",
+        "mov r15, QWORD PTR [r15+152]",
+        "lea rsp, [rsp+168]",
         "ret",
         ".p2align 6",
         vg_sm3_compress = sym super::sm3::vg_sm3_compress,

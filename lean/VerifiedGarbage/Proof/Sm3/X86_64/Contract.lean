@@ -20,14 +20,14 @@ open X86_64 in
 updates the hash value at `state` with the `n` 64-byte blocks at `blocks`.
 
 The code may read `blocks` (`64 * n` bytes) and read and write `state`
-(32 bytes) and `scratch` (576 bytes, whose contents on exit are unspecified).
+(32 bytes) and `scratch` (112 bytes, whose contents on exit are unspecified).
 These may not overlap each other, nor the return address on the stack.
 The pointers and `n` are public; the hash value and the blocks are secret. -/
 def compressX86_64 : Contract X86_64.isa where
   pre s :=
     let state : Region := ⟨s.gpr .rdi, 32⟩
     let blocks : Region := ⟨s.gpr .rsi, 64 * (s.gpr .rdx).toNat⟩
-    let scratch : Region := ⟨s.gpr .rcx, 576⟩
+    let scratch : Region := ⟨s.gpr .rcx, 112⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     s.rd = [blocks] ∧ s.wr = [state, scratch] ∧
     state.Disjoint scratch ∧ blocks.Disjoint state ∧ blocks.Disjoint scratch ∧
@@ -55,7 +55,7 @@ def initX86_64 : Contract X86_64.isa where
 
 open X86_64 in
 /-- x86-64 contract for `update(state = rdi, count = rsi, data = rdx, len =
-rcx, scratch = r8)`, `vg_sm3_update` with its working space (624 bytes) passed
+rcx, scratch = r8)`, `vg_sm3_update` with its working space (160 bytes) passed
 in `scratch`: if the streaming state at `state` represents a message `m` of
 `count` bytes (modulo 2⁶⁴), then afterwards it represents `m` followed by the
 `len` bytes at `data`.
@@ -70,7 +70,7 @@ def updateX86_64 : Contract X86_64.isa where
   pre s :=
     let state : Region := ⟨s.gpr .rdi, 96⟩
     let data : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
-    let scratch : Region := ⟨s.gpr .r8, 624⟩
+    let scratch : Region := ⟨s.gpr .r8, 160⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     let stack : Region := ⟨s.gpr .rsp - 8, 8⟩
     s.rd = [data] ∧ s.wr = [state, scratch] ∧
@@ -85,7 +85,7 @@ def updateX86_64 : Contract X86_64.isa where
 
 open X86_64 in
 /-- x86-64 contract for `finalize(state = rdi, count = rsi, out = rdx,
-scratch = rcx)`, `vg_sm3_finalize` with its working space (624 bytes) passed
+scratch = rcx)`, `vg_sm3_finalize` with its working space (160 bytes) passed
 in `scratch`: if the streaming state at `state` represents a message `m` of
 `count` bytes (modulo 2⁶⁴), writes the SM3 hash value of `m` to `out`.
 
@@ -99,7 +99,7 @@ def finalizeX86_64 : Contract X86_64.isa where
   pre s :=
     let state : Region := ⟨s.gpr .rdi, 96⟩
     let out : Region := ⟨s.gpr .rdx, 32⟩
-    let scratch : Region := ⟨s.gpr .rcx, 624⟩
+    let scratch : Region := ⟨s.gpr .rcx, 160⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     let stack : Region := ⟨s.gpr .rsp - 8, 8⟩
     s.rd = [] ∧ s.wr = [state, out, scratch] ∧

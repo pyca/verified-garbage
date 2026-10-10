@@ -23,17 +23,17 @@ def artifacts : List Artifact := [
   { Spec.Sm3.updateApi with
     target := X86_64.target
     doc := Spec.Sm3.updateApi.doc
-    code := Impl.StackScratch.X86_64.withStackScratch 632 .r8 Impl.Sm3.X86_64.Stream.update
-    contract := Spec.Sm3.updateContract X86_64.abi (8 + 632)
-    stack := 8 + 632
+    code := Impl.StackScratch.X86_64.withStackScratch 168 .r8 Impl.Sm3.X86_64.Stream.update
+    contract := Spec.Sm3.updateContract X86_64.abi (8 + 168)
+    stack := 8 + 168
     verified := Proof.Sm3.X86_64.Shared.update
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Sm3.finalizeApi with
     target := X86_64.target
     doc := Spec.Sm3.finalizeApi.doc
-    code := Impl.StackScratch.X86_64.withStackScratch 632 .rcx Impl.Sm3.X86_64.Stream.finalize
-    contract := Spec.Sm3.finalizeContract X86_64.abi (8 + 632)
-    stack := 8 + 632
+    code := Impl.StackScratch.X86_64.withStackScratch 168 .rcx Impl.Sm3.X86_64.Stream.finalize
+    contract := Spec.Sm3.finalizeContract X86_64.abi (8 + 168)
+    stack := 8 + 168
     verified := Proof.Sm3.X86_64.Shared.finalize
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

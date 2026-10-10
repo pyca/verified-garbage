@@ -18,8 +18,8 @@ The streaming state (96 bytes at `state`) is the hash value followed by a
 
 `update` and `finalize` are the generic streaming code of
 `Impl/MdStream/X86_64.lean`, calling `vg_sm3_compress`
-(`Impl.Sm3.X86_64.compress`) with `scratch[0..576)` as its scratch space;
-our caller's callee-saved registers are saved in `scratch[576..624)`. The
+(`Impl.Sm3.X86_64.compress`) with `scratch[0..112)` as its scratch space;
+our caller's callee-saved registers are saved in `scratch[112..160)`. The
 length field is big-endian, and so are the words of the hash value.
 -/
 
@@ -38,7 +38,7 @@ def params : Params where
   N := 32
   B := 64
   L := 8
-  so := 576
+  so := 112
   len := len64 88 true
   out := out32 8 true
 
