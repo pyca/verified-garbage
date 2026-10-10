@@ -26,7 +26,7 @@ def dv (s : State) (k i : Nat) : Nat := (qz s (dreg i) k).toNat
 theorem yh_ge (s : State) (k : Nat) {j : Nat} (h : 4 ≤ j) : yh s k j = yh s k 4 := by
   simp only [yh, yreg_ge h]
 
-theorem cases5 {i : Nat} (hi : i < 5) : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega
+theorem cases5 {i : Nat} (hi : i < 5) : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega_arith
 
 /-- `f` holds the limbs of `r10 + 2⁶⁴ r11` (of `s`), as `split` computes
 them. (Stated inline, as in `Limbs26`: a definition whose body divides would
@@ -62,11 +62,11 @@ theorem SplitOf.lt {s : State} {f : Nat → Nat} (hf : SplitOf s f) : ∀ i < 5,
   have m := (s.gpr .r11).isLt
   rw [Limbs26.split_or l] at a2
   rcases cases5 hi with rfl | rfl | rfl | rfl | rfl
-  · rw [a0]; omega
-  · rw [a1]; omega
-  · rw [a2]; omega
-  · rw [a3]; omega
-  · rw [a4]; omega
+  · rw [a0]; omega_arith
+  · rw [a1]; omega_arith
+  · rw [a2]; omega_arith
+  · rw [a3]; omega_arith
+  · rw [a4]; omega_arith
 
 theorem SplitOf.congr {s s' : State} (hg : s'.gpr = s.gpr) {f : Nat → Nat} (hf : SplitOf s f) :
     SplitOf s' f := by
@@ -155,13 +155,13 @@ theorem initY_ok {s : State} (hh : ∀ k < 8, ∀ i < 5, hv s k i < 2 ^ 32) :
     rw [h.natw _ hk, (initS_shape i hi).1]
     have := hh k hk i hi
     simp only [Q.natw, envOf_v, hv] at this ⊢
-    rw [show (qz s (hreg i) k).toNat * 2 ^ 32 % 2 ^ 64 = (qz s (hreg i) k).toNat * 2 ^ 32 by omega,
+    rw [show (qz s (hreg i) k).toNat * 2 ^ 32 % 2 ^ 64 = (qz s (hreg i) k).toNat * 2 ^ 32 by omega_arith,
       Nat.or_comm, or_lo this]
   have := hh k hk i hi
   refine ⟨?_, ?_, ?_⟩
   · simp only [hv]; rw [h.reg _ k hk, (initS_shape i hi).2]; simp only [Q.eval, xr_xi]
-  · simp only [yl]; rw [e]; omega
-  · simp only [yh]; rw [e]; omega
+  · simp only [yl]; rw [e]; omega_arith
+  · simp only [yh]; rw [e]; omega_arith
 
 /-! ## `pairs` -/
 
@@ -246,14 +246,14 @@ theorem finishY_ok {s : State} (hh : ∀ k < 8, ∀ i < 5, hv s k i < 2 ^ 32) :
     have := hh k hk i hi
     have := hh 0 (by decide) i hi
     simp only [Q.natw, envOf_v, hv] at *
-    rw [show (qz s (hreg i) k).toNat * 2 ^ 32 % 2 ^ 64 = (qz s (hreg i) k).toNat * 2 ^ 32 by omega,
-      or_lo (by omega)]
+    rw [show (qz s (hreg i) k).toNat * 2 ^ 32 % 2 ^ 64 = (qz s (hreg i) k).toNat * 2 ^ 32 by omega_arith,
+      or_lo (by omega_arith)]
   have := hh k hk i hi
   have := hh 0 (by decide) i hi
   refine ⟨?_, ?_, ?_⟩
   · simp only [hv]; rw [h.reg _ k hk, (fyS_shape i hi).2]; simp only [Q.eval, xr_xi]
-  · simp only [yl]; rw [e]; omega
-  · simp only [yh]; rw [e]; omega
+  · simp only [yl]; rw [e]; omega_arith
+  · simp only [yh]; rw [e]; omega_arith
 
 /-! ## The powers -/
 
@@ -277,7 +277,7 @@ theorem fext {f g : Nat → Nat} (hf : ∀ j, 4 ≤ j → f j = f 4) (hg : ∀ j
     (h : ∀ i < 5, f i = g i) : f = g := ext5 hf hg h
 
 theorem one_ge {j : Nat} (h : 4 ≤ j) : one j = one 4 := by
-  simp only [one, show j ≠ 0 by omega, show (4 : Nat) ≠ 0 by decide, ite_false]
+  simp only [one, show j ≠ 0 by omega_arith, show (4 : Nat) ≠ 0 by decide, ite_false]
 
 theorem one_lt {i : Nat} : one i < 2 ^ 27 := by
   simp only [one]; split <;> decide
@@ -324,13 +324,13 @@ theorem powersV_ok {s : State} (hr8 : s.gpr .r8 = 0x3ffffff) (hax : s.gpr .rax =
   have rA_ge : ∀ j, 4 ≤ j → rA j = rA 4 := fun _ h => hv_ge _ _ h
   -- `Y = r` in both doublewords.
   refine WP.block_append (WP.mono (initY_ok fun k hk i hi => by
-    rw [hA₁ k hk i hi]; have := A_lt hi; omega) fun s₂ ⟨v₂, I₂⟩ => ?_)
+    rw [hA₁ k hk i hi]; have := A_lt hi; omega_arith) fun s₂ ⟨v₂, I₂⟩ => ?_)
   have v₂' := vec_trans v₁ v₂
   -- `H = r²`.
   refine WP.block_append (WP.mono (mul_ok ⟨r8 v₂', fun k hk i hi => ?_, fun k hk i hi => ?_⟩)
     fun s₃ M₃ => ?_)
-  · rw [(I₂ k hk i hi).1, hA₁ k hk i hi]; have := A_lt hi; omega
-  · rw [(I₂ k hk i hi).2.1, hA₁ k hk i hi]; have := A_lt hi; omega
+  · rw [(I₂ k hk i hi).1, hA₁ k hk i hi]; have := A_lt hi; omega_arith
+  · rw [(I₂ k hk i hi).2.1, hA₁ k hk i hi]; have := A_lt hi; omega_arith
   have hA₂ : ∀ k < 8, hv s₂ k = rA := fun k hk =>
     fext (fun _ h => hv_ge _ _ h) rA_ge fun i hi => by rw [(I₂ k hk i hi).1, hA₁ k hk i hi]
   have yA₂ : ∀ k < 8, yl s₂ k = rA := fun k hk =>
@@ -348,13 +348,13 @@ theorem powersV_ok {s : State} (hr8 : s.gpr .r8 = 0x3ffffff) (hax : s.gpr .rax =
   have h₄ : ∀ k < 8, ∀ i < 5, hv s₄ k i = (if k % 2 = 0 then B i else rA i) := fun k hk i hi => by
     rw [(P₄ k hk i hi).1]; split
     · exact e₃ k hk i hi
-    · exact yh₃ (k - 1) (by omega) i hi
+    · exact yh₃ (k - 1) (by omega_arith) i hi
   have y₄ : ∀ k < 8, ∀ i < 5, yl s₄ k i = B i := fun k hk i hi => by
-    simp only [yl]; rw [(P₄ k hk i hi).2, e₃ k hk i hi]; exact Nat.mod_eq_of_lt (by have := B_lt i hi; omega)
+    simp only [yl]; rw [(P₄ k hk i hi).2, e₃ k hk i hi]; exact Nat.mod_eq_of_lt (by have := B_lt i hi; omega_arith)
   -- `H = (r⁴, r³)` in each lane.
   refine WP.block_append (WP.mono (mul_ok ⟨r8 v₄', fun k hk i hi => ?_, fun k hk i hi => ?_⟩)
     fun s₅ M₅ => ?_)
-  · rw [h₄ k hk i hi]; have := B_lt i hi; have := A_lt hi; split <;> omega
+  · rw [h₄ k hk i hi]; have := B_lt i hi; have := A_lt hi; split <;> omega_arith
   · rw [y₄ k hk i hi]; exact B_lt i hi
   let C4 := Limbs26.mul B B
   let C3 := Limbs26.mul (rA) B
@@ -398,21 +398,21 @@ theorem powersV_ok {s : State} (hr8 : s.gpr .r8 = 0x3ffffff) (hax : s.gpr .rax =
   have y₇ : ∀ k < 8, ∀ i < 5, yl s₇ k i = alt C4 one k i := fun k hk i hi => by
     simp only [yl]; rw [(D₇ k hk i hi).2, hv₆ 0 (by decide) i hi, e₅0 i hi, alt_apply]
     split
-    · exact Nat.mod_eq_of_lt (by have := C4_lt i hi; omega)
+    · exact Nat.mod_eq_of_lt (by have := C4_lt i hi; omega_arith)
     · exact Nat.mod_eq_of_lt (Nat.lt_trans one_lt (by decide))
   have X_lt : ∀ k < 8, ∀ i < 5, quad C4 C3 B rA k i < 2 ^ 27 := fun k hk i hi => by
     rw [quad_apply]
     have := C4_lt i hi; have := C3_lt i hi; have := B_lt i hi; have := A_lt hi
-    split <;> [omega; split <;> [omega; split <;> omega]]
+    split <;> [omega_arith; split <;> [omega_arith; split <;> omega_arith]]
   -- `H = r^(8 - π k)` in quadword `k`.
   refine WP.block_append (WP.mono (mul_ok ⟨r8 v₇', fun k hk i hi => ?_, fun k hk i hi => ?_⟩)
     fun s₈ M₈ => ?_)
-  · rw [h₇ k hk i hi]; have := X_lt k hk i hi; omega
+  · rw [h₇ k hk i hi]; have := X_lt k hk i hi; omega_arith
   · rw [y₇ k hk i hi, alt_apply]; split
     · exact C4_lt i hi
     · exact one_lt
   -- `Y`: `r⁸` and `r^(8 - π k)`.
-  refine WP.mono (finishY_ok fun k hk i hi => by have := M₈.hb k hk i hi; omega) fun s₉ ⟨v₉, F₉⟩ => ?_
+  refine WP.mono (finishY_ok fun k hk i hi => by have := M₈.hb k hk i hi; omega_arith) fun s₉ ⟨v₉, F₉⟩ => ?_
   refine ⟨vec_trans (vec_trans v₇' M₈.vec) v₉, ?_⟩
   -- Values and bounds of the powers.
   have q₁ : Limbs26.val rA ≡ rN s [MOD P] := by rw [rS.val]
@@ -423,7 +423,7 @@ theorem powersV_ok {s : State} (hr8 : s.gpr .r8 = 0x3ffffff) (hax : s.gpr .rax =
   have q₃ : Limbs26.val C3 ≡ rN s ^ 3 [MOD P] := by
     rw [show rN s ^ 3 = rN s * rN s ^ 2 by ring]; exact mul_modEq q₁ q₂
   have qX : ∀ k < 8, Limbs26.val (quad C4 C3 B rA k) ≡ rN s ^ (4 - k / 2) [MOD P] := fun k hk => by
-    rcases (by omega : k / 2 = 0 ∨ k / 2 = 1 ∨ k / 2 = 2 ∨ k / 2 = 3) with h | h | h | h <;>
+    rcases (by omega_arith : k / 2 = 0 ∨ k / 2 = 1 ∨ k / 2 = 2 ∨ k / 2 = 3) with h | h | h | h <;>
       simp only [quad, h, ite_true, ite_false, show (1 : Nat) ≠ 0 by decide, show (2 : Nat) ≠ 0 by decide,
         show (2 : Nat) ≠ 1 by decide, show (3 : Nat) ≠ 0 by decide, show (3 : Nat) ≠ 1 by decide,
         show (3 : Nat) ≠ 2 by decide]
@@ -441,10 +441,10 @@ theorem powersV_ok {s : State} (hr8 : s.gpr .r8 = 0x3ffffff) (hax : s.gpr .rax =
   have q₈ : ∀ k < 8, Limbs26.val (hv s₈ k) ≡ rN s ^ (8 - pi k) [MOD P] := fun k hk => by
     rw [e₈ k hk]
     rcases Nat.mod_two_eq_zero_or_one k with h0 | h0
-    · have e : 8 - pi k = (4 - k / 2) + 4 := by simp only [pi]; omega
+    · have e : 8 - pi k = (4 - k / 2) + 4 := by simp only [pi]; omega_arith
       rw [alt_of_even h0, e, pow_add]
       exact mul_modEq (qX k hk) q₄
-    · have e : 8 - pi k = 4 - k / 2 := by simp only [pi]; omega
+    · have e : 8 - pi k = 4 - k / 2 := by simp only [pi]; omega_arith
       rw [alt_of_odd h0, e, ← Nat.mul_one (rN s ^ (4 - k / 2))]
       exact mul_modEq (qX k hk) (by rw [one_val])
   refine ⟨fun k hk => ?_, fun k hk => ?_, fun k hk i hi => ?_, fun k hk i hi => ?_⟩
