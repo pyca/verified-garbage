@@ -103,7 +103,7 @@ def sum : Prog isa :=
 /-- `x19`–`x25` restored, and the flag's low bit to `x0`. -/
 def finish : List Instr :=
   [ld .x3 (c.sl FLAG)] ++ Impl.Ecdsa.AArch64.Cfg.saved.map (fun (r, d) => ld r d) ++
-  [.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1]
+  ([.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1] : List Instr)
 
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, `x R mod n`
 and `x R - r R mod n`, the checks of `Z` and of `x ≡ r`, and the result. -/
@@ -138,10 +138,10 @@ def projectiveOps (sl : Nat → Nat) : List FOp :=
 /-- Accept the first equality, or the second when `r+n < p`, together with
 all earlier validity checks and `Z ≠ 0`. -/
 def projectiveMatch : List Instr :=
-  VG.Impl.Ecdh.AArch64.Cfg.zero c (c.sl W) ++ [.addImm .x .x4 .x2 0] ++
-  c.ltN (c.sl K) ++ [.addImm .x .x6 .x2 0] ++
+  VG.Impl.Ecdh.AArch64.Cfg.zero c (c.sl W) ++ ([.addImm .x .x4 .x2 0] : List Instr) ++
+  c.ltN (c.sl K) ++ ([.addImm .x .x6 .x2 0] : List Instr) ++
   VG.Impl.Ecdh.AArch64.Cfg.zero c (c.sl XN) ++
-  [.logic .and .x .x2 .x2 .x6, .logic .orr .x .x2 .x2 .x4]
+  ([.logic .and .x .x2 .x2 .x6, .logic .orr .x .x2 .x2 .x4] : List Instr)
 
 def projectiveChecks : List Instr :=
   projectiveMatch c ++ c.andFlag ++ c.checkNonzero (c.sl RZ) ++ finish c

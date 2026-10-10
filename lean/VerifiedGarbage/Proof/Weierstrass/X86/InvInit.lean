@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvInitWords
+import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
 import VerifiedGarbage.Proof.Weierstrass.X86.InvState
 
 /-! # Initial state of the 256-bit divstep inversion -/

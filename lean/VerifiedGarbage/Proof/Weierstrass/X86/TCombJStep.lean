@@ -1,7 +1,6 @@
 import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombJInvariant
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombJMask
 
 namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass

@@ -13,8 +13,8 @@ code again (seconds for the key expansion's).
 
 namespace VG.Proof.Camellia.X86_64
 
-materialize_code expandKeyCode := Impl.Camellia.X86_64.expandKey
-materialize_code ecbEncrypt := Impl.Camellia.X86_64.ecb .encrypt
-materialize_code ecbDecrypt := Impl.Camellia.X86_64.ecb .decrypt
+materialize_flat_code expandKeyCode := Impl.Camellia.X86_64.expandKey
+materialize_flat_code ecbEncrypt := Impl.Camellia.X86_64.ecb .encrypt
+materialize_flat_code ecbDecrypt := Impl.Camellia.X86_64.ecb .decrypt
 
 end VG.Proof.Camellia.X86_64

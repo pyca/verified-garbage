@@ -421,7 +421,7 @@ theorem setNonce_ct : ConstantTime isa Proof.ChaCha20.setNonceX86.pre Proof.ChaC
 /-- Memory whose argument slots (at `0x4004`) hold `0x1000`, `0x2000` and
 `0x3000`. -/
 def satMem : Mem := fun a =>
-  if a = 0x4005 then 0x10 else if a = 0x4009 then 0x20 else if a = 0x400d then 0x30 else 0
+  bif Nat.beq a.toNat 0x4005 then 0x10 else bif Nat.beq a.toNat 0x4009 then 0x20 else bif Nat.beq a.toNat 0x400d then 0x30 else 0
 
 /-- A state satisfying the precondition of `set_nonce`. -/
 def setNonceSat : State where

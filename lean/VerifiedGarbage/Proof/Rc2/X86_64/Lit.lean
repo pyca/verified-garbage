@@ -35,8 +35,8 @@ end VG.Impl.Rc2.X86_64.Sse2
 
 namespace VG
 
-materialize_code Impl.Rc2.X86_64.encryptBlock
-materialize_code Impl.Rc2.X86_64.decryptBlock
-materialize_code Impl.Rc2.X86_64.expandKey
+materialize_flat_code Impl.Rc2.X86_64.encryptBlock
+materialize_flat_code Impl.Rc2.X86_64.decryptBlock
+materialize_flat_code Impl.Rc2.X86_64.expandKey
 
 end VG

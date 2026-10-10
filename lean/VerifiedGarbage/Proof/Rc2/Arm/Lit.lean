@@ -30,9 +30,9 @@ theorem piLookup.lit_eq : piLookup = piLookup.lit := by
 
 materialize_value keyLookup
 
-materialize_code encryptBlock
-materialize_code decryptBlock
+materialize_flat_code encryptBlock
+materialize_flat_code decryptBlock
 
-materialize_code expandKey
+materialize_flat_code expandKey
 
 end VG.Impl.Rc2.Arm

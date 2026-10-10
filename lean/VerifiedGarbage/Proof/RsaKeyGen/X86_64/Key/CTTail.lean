@@ -109,7 +109,7 @@ theorem fm1_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hk : KokM I 
         ((ku₁.trans ku₂).gpr (by decide)).trans h.ws.rdi, hs₂.ld (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega),
         shr63_mask, hok₂, mask_and', hmu₂]
       have hok' : s.mem.readW (off I.B (8 * kOk)) 64 = mask ok := hok
-      rw [hok', mask_and']) rfl) fun t ⟨⟨hcx, hm⟩, k⟩ => ⟨hm, ((ku₁.trans ku₂).trans k).mono (by simp), _, hcx⟩
+      rw [hok', mask_and']) rfl) fun t ⟨⟨hcx, hm⟩, k⟩ => ⟨hm, ((ku₁.trans ku₂).trans k).mono (by decide), _, hcx⟩
 
 theorem fm2_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hc : RcxM I s) :
     WP isa (.block fm2) s fun t => t.mem = s.mem ∧ Keep [.r12, .r9, .rbx, .rax, .rdx, .rcx] s t ∧ RcxM I t := by
@@ -118,7 +118,7 @@ theorem fm2_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hc : RcxM I 
   have hcx₄ : u₄.gpr .rcx = mask c := by rw [ku₄.gpr (by decide), hcx]
   refine WP.mono (WP.keep [.rcx] (Q := fun t => t.gpr .rcx = mask (c && decide (av I s.mem aPa % 2 = 1)) ∧
     t.mem = u₄.mem) (by xrun [hax₄, hcx₄, mask_and']) rfl) fun t ⟨⟨hcx₅, mu₅⟩, ku₅⟩ =>
-      ⟨by rw [mu₅, mu₄], (ku₄.trans ku₅).mono (by simp), _, hcx₅⟩
+      ⟨by rw [mu₅, mu₄], (ku₄.trans ku₅).mono (by decide), _, hcx₅⟩
 
 theorem fm3_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hc : RcxM I s) :
     WP isa (.block fm3) s fun t => KS I m₀ t ∧ KF I.B I.W [.hdr kOk] s.mem t.mem ∧ KokM I t ∧
@@ -153,7 +153,7 @@ theorem fm3_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hc : RcxM I 
       rw [← e1]
       simp only [Bool.and_assoc]) rfl) fun t ⟨mt, kt⟩ => ?_
   obtain ⟨ht, ft, okt⟩ := h.hdrW (i := kOk) (by unfold kOk sFn; omega) mt (ku₆.trans kt) (by decide)
-  exact ⟨ht, ft, ⟨_, okt⟩, (ku₆.trans kt).mono (by simp)⟩
+  exact ⟨ht, ft, ⟨_, okt⟩, (ku₆.trans kt).mono (by decide)⟩
 
 theorem finalMask_ct {F : KIn → State → Prop} (hF : Stab F [.hdr kOk] allR) :
     RelCT isa (Two (KG fun I t => F I t ∧ KokM I t)) (.block finalMask) (Two (KG fun I t => F I t ∧ KokM I t)) := by
@@ -201,14 +201,14 @@ theorem qBlk_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {c : Bool} (
   have hcx₁ : s₁.gpr .rcx = mask c := (k₁.gpr (by decide)).trans hcx
   refine WP.mono (WP.keep [.rax, .rbp] (Q := fun t => t.mem = s₁.mem ∧ ∃ c', t.gpr .rbp = mask c') (by
       xrun [hax, hcx₁, mask_and']
-      exact ⟨_, rfl⟩) rfl) fun t ⟨⟨hm, hbp⟩, k₂⟩ => ⟨by rw [hm, m₁], hbp, (k₁.trans k₂).mono (by simp)⟩
+      exact ⟨_, rfl⟩) rfl) fun t ⟨⟨hm, hbp⟩, k₂⟩ => ⟨by rw [hm, m₁], hbp, (k₁.trans k₂).mono (by decide)⟩
 
 /-- `gcdIsOne`, keeping a mask in `kOk`. -/
 theorem gcdIsOneK_ct {F : KIn → State → Prop} (hF : Stab F [.arr aC, .hdr kOk] allR) :
     RelCT isa (Two (KG fun I t => F I t ∧ KokM I t)) (seqs gcdIsOne) (Two (KG fun I t => F I t ∧ KokM I t)) := by
   unfold gcdIsOne
   simp only [List.append_assoc]
-  refine rs_app (by simp [constA]) (by simp [eqMask, eqA]) (constA_ct 1 (stab_and (hF.mono (by simp) (by simp))
+  refine rs_app (by simp [constA]) (by simp [eqMask, eqA]) (constA_ct 1 (stab_and (hF.mono (by decide) (by simp))
     (stab_kok _ (by decide) (by decide))).sub (by taint_decide) (by taint_decide)) ?_
   refine rs_app (by simp [eqMask, eqA]) (by simp) (eqMask_ct (G := fun I t => (F I t ∧ KokM I t) ∧ RbpM I t)
     (by decide) (by decide) (fun I s t hZ hf hm k hbp => ⟨(stab_and (hF.mono (cs' := []) (by simp) (by simp))
@@ -220,7 +220,7 @@ theorem gcdIsOneK_ct {F : KIn → State → Prop} (hF : Stab F [.arr aC, .hdr kO
     refine WP.mono (WP.keep [.rbp] (Q := fun t => t.mem = s.mem.writeW (off I.B (8 * kOk)) (mask (c' && c))) (by
       xrun [State.ea, hdr, h.ws.rdi, hdrOff, hst, hld, hbp, hok, mask_and']) rfl) fun t ⟨hm, k⟩ => ?_
     obtain ⟨ht, f, hw⟩ := h.hdrW (i := kOk) (by unfold kOk sFn; omega) hm k (by decide)
-    exact ⟨ht, hF I s t h.hZ hf (f.mono (by simp)) (k.mono (by decide)), _, hw⟩
+    exact ⟨ht, hF I s t h.hZ hf (f.mono (by decide)) (k.mono (by decide)), _, hw⟩
 
 theorem qinvPart_eq2 : qinvPart = [zeroA aU, copyA aU aQa] ++ (constA 3 ++ (ltA aPa aC ++
     (([.block (([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ (ws ++ qBlk))] : List (Prog isa)) ++
@@ -242,13 +242,13 @@ theorem qinvPart_ct : RelCT isa (Two (KG fun I t => NF I t ∧ KokM I t)) (seqs 
     (by decide)).sub (by taint_decide) (by taint_decide)) ?_
   refine rs_app (by simp [ltA]) (by simp) (ltA_ct (G := fun I t => ((NF I t ∧ KokM I t) ∧ TopZ aU I t) ∧ RbpM I t)
     (by decide) (by decide) (fun I s t hZ hf hm k hbp => ⟨sKT [] (by decide) (by decide) (by decide) I s t hZ hf
-      (kf_eq hm) (k.mono (by simp)), _, hbp⟩) (by taint_decide)) ?_
+      (kf_eq hm) (k.mono (by decide)), _, hbp⟩) (by taint_decide)) ?_
   refine rs_app (by simp) (by simp) (show RelCT isa _ (seqs [.block ([.mov .rcx (.reg .rbp),
     .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] ++ (ws ++ qBlk))]) _ from RelCT.block_append (RelCT.seq
       (kg_regs (G := fun I t => ((NF I t ∧ KokM I t) ∧ TopZ aU I t) ∧ RcxM I t) (rs := [.rcx]) (by decide)
         (by taint_decide) fun I s hZ ⟨hf, c, hbp⟩ => WP.mono (WP.keep [.rcx] (Q := fun t =>
           t.gpr .rcx = mask (!c) ∧ t.mem = s.mem) (by xrun [hbp, sxM1, maskNot]) rfl) fun t ⟨⟨hcx, hm⟩, k⟩ =>
-            ⟨hm, k, sKT [] (by decide) (by decide) (by decide) I s t hZ hf (kf_eq hm) (k.mono (by simp)), _, hcx⟩)
+            ⟨hm, k, sKT [] (by decide) (by decide) (by decide) I s t hZ hf (kf_eq hm) (k.mono (by decide)), _, hcx⟩)
       (kg_wsb (G := fun I t => ((NF I t ∧ KokM I t) ∧ TopZ aU I t) ∧ RbpM I t) (by taint_decide)
         fun I _ s h _ ⟨hf, c, hcx⟩ => WP.mono (qBlk_k h hcx) fun t ⟨hm, hbp, k⟩ =>
           ⟨h.same hm k (by decide), sKT [] (by decide) (by decide) (by decide) I s t h.hZ hf (kf_eq hm)
@@ -289,7 +289,7 @@ theorem dvBlk_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
       exact ⟨_, rfl⟩) rfl) fun t ⟨hm, k⟩ => ?_
   have kk := (ku₁.trans ku₂).trans k
   obtain ⟨ht, f⟩ := h.arrSome (by decide) hm kk (by decide)
-  exact ⟨ht, f, kk.mono (by simp)⟩
+  exact ⟨ht, f, kk.mono (by decide)⟩
 
 theorem divisorOf_eq2 (j : Nat) : divisorOf j = [zeroA aM, copyA aM j] ++ (constA 0 ++ (eqMask j aC ++
     ([.block (ws ++ dvBlk)] : List (Prog isa)))) := by
@@ -305,14 +305,14 @@ theorem divisorOf_ct {F : KIn → State → Prop} {j : Nat} (hj : j < 16) (hjM :
     RelCT isa (Two (KG F)) (seqs (divisorOf j)) (Two (KG F)) := by
   rw [divisorOf_eq2]
   refine rs_app (by simp) (by simp [constA]) (show RelCT isa _ (seqs [zeroA aM, copyA aM j]) _ from
-    RelCT.seq (zeroA_ct (by decide) (hF.mono (by simp) (by simp)).sub (by taint_decide))
-      (copyA_ct (by decide) hj hjM.symm (hF.mono (by simp) (by simp)).sub ht₁)) ?_
-  refine rs_app (by simp [constA]) (by simp [eqMask, eqA]) (constA_ct 0 (hF.mono (by simp) (by simp)).sub
+    RelCT.seq (zeroA_ct (by decide) (hF.mono (by decide) (by simp)).sub (by taint_decide))
+      (copyA_ct (by decide) hj hjM.symm (hF.mono (by decide) (by simp)).sub ht₁)) ?_
+  refine rs_app (by simp [constA]) (by simp [eqMask, eqA]) (constA_ct 0 (hF.mono (by decide) (by simp)).sub
     (by taint_decide) (by taint_decide)) ?_
   refine rs_app (by simp [eqMask, eqA]) (by simp) (eqMask_ct (G := F) hj (by decide)
     (fun I s t hZ hf hm k _ => hF I s t hZ hf (kf_eq hm) (k.mono (by decide))) ht₂) ?_
   exact kg_wsb (by taint_decide) fun I _ s h _ hf => WP.mono (dvBlk_k h) fun t ⟨ht, f, k⟩ =>
-    ⟨ht, hF I s t h.hZ hf (f.mono (by simp)) (k.mono (by decide))⟩
+    ⟨ht, hF I s t h.hZ hf (f.mono (by decide)) (k.mono (by decide))⟩
 
 theorem crtPart_eq2 : crtPart = divisorOf aPm ++ ([zeroA aU, copyA aU aDd, divmod aU aV aM aT, zeroA aX₁,
     copyA aX₁ aV] ++ (divisorOf aQm ++ [zeroA aU, copyA aU aDd, divmod aU aV aM aT])) := by

@@ -1,7 +1,6 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
 import VerifiedGarbage.Proof.Weierstrass.X86.InvInit
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRun
-import VerifiedGarbage.Proof.Weierstrass.X86.InvFinish
 import VerifiedGarbage.Proof.Divstep.Tc32
 import VerifiedGarbage.Proof.Divstep.Iter
 import Mathlib.Data.Nat.Prime.Basic

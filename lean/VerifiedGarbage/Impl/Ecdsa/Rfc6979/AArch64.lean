@@ -137,19 +137,19 @@ def saveArgs : List Instr :=
 /-- The arguments of HMAC's `init`: the states, the key `K` of `D` bytes,
 the working space. -/
 def hmacArgs₁ (D : Nat) : List Instr :=
-  scr .x0 sInner ++ scr .x1 sOuter ++ fr .x2 fK ++ [.movz .x .x3 (BitVec.ofNat 16 D) 0] ++ scr .x4 sWork
+  scr .x0 sInner ++ scr .x1 sOuter ++ fr .x2 fK ++ ([.movz .x .x3 (BitVec.ofNat 16 D) 0] : List Instr) ++ scr .x4 sWork
 
 /-- The arguments of the streaming `update`: the inner state, the `B` bytes
 it holds, the data (at the address `dataA` sets `x2` to) of `len` bytes,
 the working space. -/
 def hmacArgs₂ (B : Nat) (dataA : List Instr) (len : Nat) : List Instr :=
-  scr .x0 sInner ++ [.movz .x .x1 (BitVec.ofNat 16 B) 0] ++ dataA ++
-    [.movz .x .x3 (BitVec.ofNat 16 len) 0] ++ scr .x4 sWork
+  scr .x0 sInner ++ ([.movz .x .x1 (BitVec.ofNat 16 B) 0] : List Instr) ++ dataA ++
+    ([.movz .x .x3 (BitVec.ofNat 16 len) 0] : List Instr) ++ scr .x4 sWork
 
 /-- The arguments of HMAC's `finalize`: the states, the `B + len` bytes the
 inner one holds, the MAC's place in the frame, the working space. -/
 def hmacArgs₃ (B len dst : Nat) : List Instr :=
-  scr .x0 sInner ++ scr .x1 sOuter ++ [.movz .x .x2 (BitVec.ofNat 16 (B + len)) 0] ++ fr .x3 dst ++
+  scr .x0 sInner ++ scr .x1 sOuter ++ ([.movz .x .x2 (BitVec.ofNat 16 (B + len)) 0] : List Instr) ++ fr .x3 dst ++
     scr .x4 sWork
 
 /-- `HMAC_K(data)` into the frame at `dst`, for `len` bytes of `data` at the
@@ -185,21 +185,21 @@ def copyBytes (len : Nat) (src dst : Reg) : List Instr :=
 frame in `x15`, and, if `wide`, `digest` in `x8` (loaded first, so that every
 address the message's block computes is from them). -/
 def msgPtrs (wide : Bool) : List Instr :=
-  [.ldrSp .x9 fScratch, .ldrSp .x10 fD, .addSp .x15 0] ++ (if wide then [.ldrSp .x8 fDigest] else [])
+  ([.ldrSp .x9 fScratch, .ldrSp .x10 fD, .addSp .x15 0] : List Instr) ++ (if wide then [.ldrSp .x8 fDigest] else [])
 
 /-- `V`'s `D` bytes from the frame (in `x15`) to `scratch + sMsg` (`scratch`
 in `x9`): a word at a time, or, if `D` is not a multiple of 8, through `x13`
 and `x14` (`copyBytes`). -/
 def copyV (D : Nat) : List Instr :=
   if D % 8 = 0 then copyN (D / 8) .x15 fV .x9 sMsg
-  else [.addImm .x .x13 .x15 fV, .addImm .x .x14 .x9 sMsg] ++ copyBytes D .x13 .x14
+  else ([.addImm .x .x13 .x15 fV, .addImm .x .x14 .x9 sMsg] : List Instr) ++ copyBytes D .x13 .x14
 
 /-- `d` (from `x10`) and `h` (from the frame, in `x15`), `Q` bytes each, to
 `x12`: `w` words each when the encoding fills them, otherwise `copyBytes`
 (`h`'s through `x13` and `x14`). -/
 def copyDH (w Q : Nat) : List Instr :=
   if Q % 8 = 0 ∧ Q = 8 * w then copyN w .x10 0 .x12 0 ++ copyN w .x15 fH .x12 (8 * w)
-  else copyBytes Q .x10 .x12 ++ [.addImm .x .x13 .x15 fH, .addImm .x .x14 .x12 Q] ++ copyBytes Q .x13 .x14
+  else copyBytes Q .x10 .x12 ++ ([.addImm .x .x13 .x15 fH, .addImm .x .x14 .x12 Q] : List Instr) ++ copyBytes Q .x13 .x14
 
 /-- The message `V ‖ b` (and `‖ d ‖ h` if `full`, `Q` bytes each) at
 `scratch + sMsg`, for `V` of `D` bytes, with `scratch` in `x9`, `d` in `x10`
@@ -210,13 +210,13 @@ through `x12`, which points after `b`, and the rest through `x13` and `x14`,
 as an 8-byte store's offset is a multiple of 8. -/
 def msg (w Q D b : Nat) (full wide : Bool) : List Instr :=
   copyV D ++
-    [.movz .x .x11 (BitVec.ofNat 16 b) 0, .strb .x11 .x9 (sMsg + D)] ++
+    ([.movz .x .x11 (BitVec.ofNat 16 b) 0, .strb .x11 .x9 (sMsg + D)] : List Instr) ++
     (if full then
       .addImm .x .x12 .x9 (sMsg + D + 1) ::
         (if wide then
           copyBytes Q .x10 .x12 ++
-            [.addImm .x .x13 .x9 (sMsg + D + 1 + Q), .movz .x .x11 0 0, .str .x .x11 .x13 0,
-              .addImm .x .x14 .x9 (sMsg + 1 + 2 * Q)] ++ copyN (D / 8) .x8 0 .x14 0
+            ([.addImm .x .x13 .x9 (sMsg + D + 1 + Q), .movz .x .x11 0 0, .str .x .x11 .x13 0,
+              .addImm .x .x14 .x9 (sMsg + 1 + 2 * Q)] : List Instr) ++ copyN (D / 8) .x8 0 .x14 0
         else copyDH w Q)
       else [])
 
@@ -237,13 +237,13 @@ def conv (o s : Nat) : Prog isa :=
   .seq (.block [.ldrSp .x0 fScratch]) <| .block <|
     .addSp .x6 o :: Impl.Weierstrass.AArch64.loadBytes c.len c.w sSlot .x6 ++
       Impl.Weierstrass.AArch64.shrWords c.w sSlot s ++
-      [.movz .x .x3 0 0, .subImm .x .x3 .x3 1] ++ Impl.Weierstrass.AArch64.storeBytes c.len c.w .x6 0 sSlot
+      ([.movz .x .x3 0 0, .subImm .x .x3 .x3 1] : List Instr) ++ Impl.Weierstrass.AArch64.storeBytes c.len c.w .x6 0 sSlot
 
 /-- If `wide`: the digest for `core`, the digest (at `x1`) then `Q - D` zero
 bytes, shifted right by `8 (Q - D) - sh` bits: the digest's integer shifted
 left by `sh` bits. -/
 def coreDigest : Prog isa :=
-  .seq (.block ([.addSp .x15 0, .movz .x .x11 0 0, .str .x .x11 .x15 (fX + c.H.D)] ++
+  .seq (.block (([.addSp .x15 0, .movz .x .x11 0 0, .str .x .x11 .x15 (fX + c.H.D)] : List Instr) ++
     copyN (c.H.D / 8) .x1 0 .x15 fX))
     (c.conv fX (8 * (c.len - c.H.D) - c.sh))
 
@@ -275,7 +275,7 @@ to `V`'s place, and word `j` of it minus `n` (with the borrow of the words
 before) to `K`'s, with the frame in `x15`: `x8`, `x2` and `x12` change, and
 the borrow is the carry flag (clear if it borrowed). -/
 def subWord (j : Nat) : List Instr :=
-  c.loadWord j ++ [.str .x .x8 .x15 (fV + 8 * j)] ++
+  c.loadWord j ++ ([.str .x .x8 .x15 (fV + 8 * j)] : List Instr) ++
     const64 .x12 (c.nWord j) ++
     [if j = 0 then .subs .x .x2 .x8 .x12 else .sbcs .x .x2 .x8 .x12, .str .x .x2 .x15 (fK + 8 * j)]
 
@@ -293,14 +293,14 @@ def selWord (j : Nat) : List Instr :=
 /-- `h`: the `Q` bytes at `digest` (in `x1`), as a big-endian number, minus
 `n` if that does not borrow, big-endian into the frame's `Q` bytes at `h`. -/
 def reduce : List Instr :=
-  [.movz .x .x7 0 0, .addSp .x15 0] ++
+  ([.movz .x .x7 0 0, .addSp .x15 0] : List Instr) ++
     (if c.len % 8 = 0 then [] else [.addImm .x .x13 .x1 (c.len % 8), .addImm .x .x14 .x15 (c.len % 8)]) ++
-    (List.range c.w).flatMap c.subWord ++ [.sbc .x .x6 .x7 .x7] ++
+    (List.range c.w).flatMap c.subWord ++ ([.sbc .x .x6 .x7 .x7] : List Instr) ++
     (List.range c.w).flatMap c.selWord
 
 /-- `V = 0x01…`, `K = 0x00…`, all 64 bytes of each. -/
 def initKV : List Instr :=
-  const64 .x9 (BitVec.ofNat 64 0x0101010101010101) ++ [.movz .x .x10 0 0, .addSp .x15 0] ++
+  const64 .x9 (BitVec.ofNat 64 0x0101010101010101) ++ ([.movz .x .x10 0 0, .addSp .x15 0] : List Instr) ++
     (List.range 8).flatMap fun j => [.str .x .x9 .x15 (fV + 8 * j), .str .x .x10 .x15 (fK + 8 * j)]
 
 /-- The candidates left. -/
@@ -310,8 +310,8 @@ def initCnt : List Instr :=
 /-- `core(out, d, digest, k, scratch)`, with `k = V`, or, if `wide`, the
 digest and the candidate at the frame's top. -/
 def coreArgs (wide : Bool) : List Instr :=
-  [.ldrSp .x0 fOut, .ldrSp .x1 fD] ++
-    (if wide then fr .x2 fX ++ fr .x3 fKb else [.ldrSp .x2 fDigest] ++ fr .x3 fV) ++ [.ldrSp .x4 fScratch]
+  ([.ldrSp .x0 fOut, .ldrSp .x1 fD] : List Instr) ++
+    (if wide then fr .x2 fX ++ fr .x3 fKb else ([.ldrSp .x2 fDigest] : List Instr) ++ fr .x3 fV) ++ ([.ldrSp .x4 fScratch] : List Instr)
 
 /-- If `wide`: `V`'s first `D` bytes to the candidate's place. -/
 def keepV : List Instr := .addSp .x15 0 :: copyN (c.H.D / 8) .x15 fV .x15 fKb
@@ -352,7 +352,7 @@ def tryOne : Prog isa :=
 /-- `K`, `V` and `h` cleared, and the words at the frame's top (`x0`, the
 result, kept). -/
 def wipe (wide : Bool) : List Instr :=
-  [.addSp .x15 0, .movz .x .x14 0 0] ++ (List.range 22).map (fun j => .str .x .x14 .x15 (8 * j)) ++
+  ([.addSp .x15 0, .movz .x .x14 0 0] : List Instr) ++ (List.range 22).map (fun j => .str .x .x14 .x15 (8 * j)) ++
     (List.range (extra wide / 8)).map fun j => .str .x .x14 .x15 (fX + 8 * j)
 
 /-- `h`, or, if `wide`, the digest for `core`; and the initial `K` and `V`. -/

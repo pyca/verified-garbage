@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Sm4.Arm.Ecb
+import VerifiedGarbage.Proof.Sm4.Planes
 
 /-!
 # The start of the SM4 key schedule on ARMv7
@@ -13,24 +14,8 @@ namespace VG.Proof.Sm4.Arm
 
 open VG VG.Arm VG.Arm.Straight VG.Impl.Sm4.Arm
 open VG.Impl.Aes.Arm (q sb t0 t1 kp movR ldS stS eorR imm32)
-open VG.Proof.Sm4 (keyInit getLsbD_wordAt)
-
-/-! ## The constants' bits -/
-
-theorem planeOf32_bit (x : BitVec 32) (j : Nat) {p : Nat} (hp : p < 32) :
-    (planeOf32 x j).getLsbD p = x.getLsbD (8 * (3 - p / 8) + j) := by
-  rw [planeOf32, BitVec.getLsbD_setWidth, BitVec.getLsbD_ofBoolListLE, List.getD_eq_getElem?_getD,
-    List.getElem?_map, List.getElem?_range hp]
-  simp [hp]
-
-theorem planeOf32_rel (x : BitVec 32) : W32.WordRel (planeOf32 x) (fun _ => x) := fun b _ i hi j _ => by
-  rw [planeOf32_bit x j (by omega), show (8 * i + b) / 8 = i by omega]
-
-theorem fkLE_bit {w t : Nat} (ht : t < 32) :
-    (fkLE w).getLsbD t = (Spec.Sm4.fk.getD w 0).getLsbD (8 * (3 - t / 8) + t % 8) := by
-  rw [fkLE, BitVec.getLsbD_setWidth, BitVec.getLsbD_ofBoolListLE, List.getD_eq_getElem?_getD,
-    List.getElem?_map, List.getElem?_range ht]
-  simp [ht]
+open VG.Proof.Sm4 (keyInit getLsbD_wordAt fkLE_bit)
+open VG.Impl.Sm4 (fkLE)
 
 /-! ## Constants and stores -/
 

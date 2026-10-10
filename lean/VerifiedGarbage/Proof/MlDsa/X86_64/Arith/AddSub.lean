@@ -16,7 +16,7 @@ namespace VG.Proof.MlDsa.X86_64.Arith
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
-open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly gprPreserved_of ifp ifn ptr_step GOnly wp_rcxLoop xmm_setXmm
+open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep WP.keep writesOnly gprPreserved_of ifp ifn ptr_step GOnly wp_rcxLoop xmm_setXmm
   add_ofNat_zero)
 open VG.Impl.MlKem.X86_64 (xb xmov)
 open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs)
@@ -150,7 +150,7 @@ theorem fn_ok {op : XBinOp} {fix : List Instr} {F : BitVec 128 → BitVec 128 �
     (hL : ∀ x y : BitVec 128, ∀ e < 4, dword (F x y) e = L (dword x e) (dword y e))
     (hv : ∀ k < 256, (L (coeffAt s₀.mem (s₀.gpr .rdi) k) (coeffAt s₀.mem (s₀.gpr .rsi) k)).toNat =
       ((t (polyAt s₀.mem (s₀.gpr .rdi)) (polyAt s₀.mem (s₀.gpr .rsi)))[k]!).val)
-    (hc : writesOnly [.rax, .rdi, .rsi, .rcx] (.seq (.block qPro) (VG.Impl.MlKem.X86_64.rcxLoop 64
+    (hc : Code.allInstrs (writesIn [.rax, .rdi, .rsi, .rcx]) (.seq (.block qPro) (VG.Impl.MlKem.X86_64.rcxLoop 64
       (([.movdquLoad .xmm0 (at_ .rdi 0), .movdquLoad .xmm1 (at_ .rsi 0)] : List Instr) ++ (xb op .xmm0 .xmm1 :: fix) ++
         accTail))) = true)
     (hm : Code.allInstrs (fun i => !loadsMxcsr i) (.seq (.block qPro) (VG.Impl.MlKem.X86_64.rcxLoop 64
@@ -182,7 +182,7 @@ theorem fn_ok {op : XBinOp} {fix : List Instr} {F : BitVec 128 → BitVec 128 �
           ((xb op .xmm0 .xmm1 :: fix) ++ (accTail ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) by
         simp only [List.append_assoc]]
       exact step hp hF hL hi hI
-  obtain ⟨tr, s', he, hI, hk⟩ := WP.keep _ hW hc
+  obtain ⟨tr, s', he, hI, hk⟩ := WP.keep _ hW (writesOnly_of hc)
   refine ⟨tr, s', he, abiPreserved_of_exec hm he (gprPreserved_of hk (by decide) hI.frame ?_),
     polyIs_of_toNat fun k hk => ?_⟩
   · simpa using hp.2.2.2.1

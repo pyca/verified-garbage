@@ -1292,7 +1292,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.ChaCha20.xorX86.pre s₁) (h�
 /-- Memory whose four argument slots (at `0x5004`) hold `0x1000`, `0x2000`,
 `0` and `0x3000`. -/
 def satMem : Mem := fun a =>
-  if a = 0x5005 then 0x10 else if a = 0x5009 then 0x20 else if a = 0x5011 then 0x30 else 0
+  bif Nat.beq a.toNat 0x5005 then 0x10 else bif Nat.beq a.toNat 0x5009 then 0x20 else bif Nat.beq a.toNat 0x5011 then 0x30 else 0
 
 /-- A state satisfying the precondition (with no data). -/
 def sat : State where

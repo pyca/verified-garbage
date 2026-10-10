@@ -18,7 +18,7 @@ namespace VG.Proof.MlDsa.X86_64.Arith
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
-open VG.Proof.MlKem.X86_64 (Keep XOnly YOnly ylanes yld_ok yconst_ok WP.keep writesOnly gprPreserved_of ifp ifn
+open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep XOnly YOnly ylanes yld_ok yconst_ok WP.keep writesOnly gprPreserved_of ifp ifn
   ptr_step GOnly wp_rcxLoopY add_ofNat_zero lane_setReg lane_setFlags sx32 State.setMem_ymm xmm_setXmm)
 open VG.Impl.MlKem.X86_64 (xb xmov toY yconst rcxLoop)
 open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced)
@@ -239,7 +239,7 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
       (∀ e < 4, dword z e = coeffAt σ.mem (σ.gpr .rdi) (4 * i + e)) →
       ∀ e < 4, (dword (Fv x y z) e).toNat = ((t (polyAt σ.mem (σ.gpr .rdi)) (polyAt σ.mem (σ.gpr .rsi))
         (polyAt σ.mem (σ.gpr .rdx)))[4 * i + e]!).val)
-    (hk : writesOnly [.rax, .rdi, .rsi, .rdx, .rcx]
+    (hk : Code.allInstrs (writesIn [.rax, .rdi, .rsi, .rdx, .rcx])
       (.seq (.block ymulPro) (.seq (rcxLoop 31 (ymulLoads ++ toY core ++ ymulTail)) (.block (ymulLast core)))) =
         true) :
     WP isa (ymulFn core) σ fun s' => Keep [.r8, .rax, .r11, .rax, .rdi, .rsi, .rdx, .rcx] σ s' ∧
@@ -267,7 +267,7 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
         by rw [o1.mem, o0.mem]⟩
   have hw1 : pR h ∈ s1.wr := by rw [k1.2.2]; exact hwh
   refine WP.seq (WP.mono (withMxcsrH_ok (r := .r8) ⟨by decide, by decide⟩ [.rax, .rdi, .rsi, .rdx, .rcx]
-    ⟨by decide, by decide⟩ h8 hw1 hk (Q := fun (s3 : State) => Keep [.rax, .r11, .rax, .rdi, .rsi, .rdx, .rcx] s1 s3 ∧
+    ⟨by decide, by decide⟩ h8 hw1 (writesOnly_of hk) (Q := fun (s3 : State) => Keep [.rax, .r11, .rax, .rdi, .rsi, .rdx, .rcx] s1 s3 ∧
       s3.gpr .rdi = coeffAddr h 248 ∧ Frame [pR h] σ.mem s3.mem ∧
       (∀ k < 248, (coeffAt s3.mem h k).toNat = (R[k]!).val) ∧
       ∀ l < 2, ∀ e < 4, (dword (s3.lane .xmm3 l) e).toNat = (R[248 + 4 * l + e]!).val)
@@ -277,7 +277,7 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
     refine WP.mono (WP.keep [.rax, .rdi, .rsi, .rdx, .rcx] (WP.seq (WP.mono (ymulPro_ok s2)
       fun w ⟨cw, xw, x6, kw, mw⟩ => ?_) (Q := fun (s3 : State) => s3.gpr .rdi = coeffAddr h 248 ∧
         Frame [pR h] σ.mem s3.mem ∧ (∀ k < 248, (coeffAt s3.mem h k).toNat = (R[k]!).val) ∧
-        ∀ l < 2, ∀ e < 4, (dword (s3.lane .xmm3 l) e).toNat = (R[248 + 4 * l + e]!).val)) hk)
+        ∀ l < 2, ∀ e < 4, (dword (s3.lane .xmm3 l) e).toNat = (R[248 + 4 * l + e]!).val)) (writesOnly_of hk))
       fun s3 ⟨q3, kk⟩ => ⟨k2.trans kk, q3⟩
     have gw : ∀ r, r ≠ .rax → r ≠ .r11 → r ≠ .r8 → w.gpr r = σ.gpr r := fun r h1 h2 h3 => by
       rw [kw.gpr (by simpa using h1), k2.gpr (by simp [h1, h2]), k1.gpr (by simpa using h3)]

@@ -1,7 +1,7 @@
 import VerifiedGarbage.Impl.Weierstrass.X86.Jacobian
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombInv
+import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 
 namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86

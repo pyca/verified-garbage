@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.X86.WinJacRead
-import VerifiedGarbage.Proof.Weierstrass.X86.JacZero
+import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
 
 /-! Conditional Y negation without changing the cached powers of Z. -/
 namespace VG.Proof.Weierstrass.X86.JWin

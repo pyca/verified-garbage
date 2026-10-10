@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Parse
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
 
@@ -254,7 +255,7 @@ theorem tail_ok (s : State) :
     WP isa (.block [.mov .rax (.reg .rdi), .shift .shr .rax 8, .alu32 .and .r14 (.reg .rax)]) s fun s' =>
       (s'.gpr .r14 = BitVec.setWidth 64 ((s.gpr .r14).setWidth 32 &&& ((s.gpr .rdi) >>> 8).setWidth 32) ∧
         s'.mem = s.mem) ∧ Keep [.rax, .r14] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   xrun
 
 /-- Whether a count is 256, from its bit 8. -/

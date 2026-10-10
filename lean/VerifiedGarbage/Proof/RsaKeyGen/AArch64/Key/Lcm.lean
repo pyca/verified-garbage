@@ -168,7 +168,7 @@ theorem gcdUV_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) (hU0 : atop I s.mem
       WP.seq (WP.mono (setOne_k h₉ (j := aX₁) (by decide) z₉) fun s₁₀ ⟨h₁₀, f₁₀, o₁₀, _⟩ =>
         WP.seq (WP.mono (zeroA_k h₁₀ (j := aX₂) (by decide)) fun s₁₁ ⟨h₁₁, f₁₁, z₁₁, _⟩ => ?_)))))
   have hokM : [Rc.arr aM].all Rc.ok = true := by decide
-  have f₈ : KF I.B I.W [.arr aM] s₇.mem s₈.mem := (f₇'.trans f₈').mono (by simp)
+  have f₈ : KF I.B I.W [.arr aM] s₇.mem s₈.mem := (f₇'.trans f₈').mono (by decide)
   rw [f₇'.av hokM (j := aV) (by decide) (by decide) hZ] at vM₈
   have hok1 : [Rc.arr aX₁].all Rc.ok = true := by decide
   have hok2 : [Rc.arr aX₂].all Rc.ok = true := by decide
@@ -217,7 +217,7 @@ theorem gcdUV_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) (hU0 : atop I s.mem
   have f₁₅' : KF I.B I.W [.arr aV] s₁₃.mem t.mem := by rw [← m₁₄]; exact f₁₅
   refine ⟨ht, ?_, ?_⟩
   · exact (((((((((((f₂.trans f₃).trans f₅').trans f₆).trans f₇'').trans f₈).trans f₉).trans f₁₀).trans f₁₁).trans
-      f₁₂).trans f₁₃).trans f₁₅').mono (by simp)
+      f₁₂).trans f₁₃).trans f₁₅').mono (by decide)
   · rw [vV, m₁₄, c1, f₁₃.av hokC (by decide) (by decide) hZ, hg]
     by_cases hv : v1 < 2
     · simp [hv, show v1 ≤ 1 by omega]
@@ -318,7 +318,7 @@ theorem lcm_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {w : Nat} (hW : I.W =
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
     fun t ⟨ht, f₈, hd⟩ => ⟨ht, ?_, ?_⟩
   · have f₂₅ := ((f₂.trans f₃).trans f₄).trans f₅
-    exact ((((f₁.trans f₂₅).trans f₆).trans f₇).trans f₈).mono (by simp)
+    exact ((((f₁.trans f₂₅).trans f₆).trans f₇).trans f₈).mono (by decide)
   · rw [vV₇] at hd
     rw [(hd hg0).2, vL₇, hle.2]
 

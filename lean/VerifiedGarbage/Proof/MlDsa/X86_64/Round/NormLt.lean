@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Loop
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Arith
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
@@ -25,7 +26,7 @@ theorem nlBody_ok (s : State) (h1 : InRegions (s.rd ++ s.wr) (cfAddr (s.gpr .rdi
       (s'.mem = s.mem ∧ s'.gpr .r9 = s.gpr .r9 &&& nlV (s.mem.readW (cfAddr (s.gpr .rdi) (s.gpr .rcx)) 32) (s.gpr .rsi) ∧
         s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0)) ∧
       Keep [.rax, .rdx, .r9, .rcx] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   unfold nlBody
   xrun [h1, ea_cf, List.cons_append, List.nil_append, nlV]
 
@@ -90,11 +91,11 @@ theorem nl_correct : ∃ t s', Exec isa normLt s₀ t s' ∧ abiPreserved s₀ s
   have hpro : WP isa (.block [.mov32 .rsi (.reg .rsi), .mov .r9 (.imm 0xFFFFFFFF)]) s₀ fun s₁ =>
       (s₁.gpr .rsi = BitVec.setWidth 64 ((s₀.gpr .rsi).setWidth 32) ∧ s₁.gpr .r9 = BitVec.allOnes 64 ∧
         s₁.mem = s₀.mem) ∧ Keep [.rsi, .r9] s₀ s₁ := by
-    refine WP.keep _ ?_ (by decide)
+    refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
     xrun
   have hpost : ∀ s : State, WP isa (.block [.mov .rax (.reg .r9), .shift .shr .rax 63]) s fun s' =>
       (s'.gpr .rax = s.gpr .r9 >>> 63 ∧ s'.mem = s.mem) ∧ Keep [.rax] s s' := fun s => by
-    refine WP.keep _ ?_ (by decide)
+    refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
     xrun
   have hnorm : normRq [polyAt s₀.mem (s₀.gpr .rdi)] < arg32 s₀ .rsi ↔
       ∀ k, 256 - 256 ≤ k → k < 256 → Good (arg32 s₀ .rsi) (coeffAt s₀.mem (s₀.gpr .rdi) k).toNat := by
@@ -133,7 +134,7 @@ theorem nl_correct : ∃ t s', Exec isa normLt s₀ t s' ∧ abiPreserved s₀ s
       rw [hm'] at ⊢
       rw [hm] at this
       exact this
-  obtain ⟨t, s', he, ⟨hv, hf⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .rsi, .r9] wp (by decide)
+  obtain ⟨t, s', he, ⟨hv, hf⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .rsi, .r9] wp (Proof.MlKem.X86_64.writesOnly_of (by decide))
   exact ⟨t, s', he, abiPreserved_of_exec (by decide) he (gprPreserved_of hk (by decide) hf (by simp)), hv⟩
 
 end

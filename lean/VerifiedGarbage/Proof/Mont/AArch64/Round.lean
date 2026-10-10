@@ -49,7 +49,7 @@ theorem wins_split (n i : Nat) :
     List.append_assoc, List.singleton_append]
 
 theorem fresh_wins_lt : ∀ n < 10, ∀ i < n + 2, Fresh (wins n i) := by
-  unfold Fresh; decide
+  unfold Fresh; decide +kernel
 
 theorem fresh_wins {n : Nat} (hn : n < 10) (i : Nat) : Fresh (wins n i) := by
   rw [wins_mod]; exact fresh_wins_lt n hn _ (Nat.mod_lt _ (by omega_using []))
@@ -295,7 +295,7 @@ theorem rwVal_regs (s : State) (base : Addr) : ∀ rs : List Reg,
   | [] => rfl
   | r :: rs => by simp only [List.map_cons, rwVal, RWord.val, Src.val, regsVal, rwVal_regs s base rs]
 
-theorem wins_sub_acc_lt : ∀ n < 10, ∀ i < n + 2, ∀ r ∈ wins n i, r ∈ acc n := by decide
+theorem wins_sub_acc_lt : ∀ n < 10, ∀ i < n + 2, ∀ r ∈ wins n i, r ∈ acc n := by decide +kernel
 
 theorem wins_sub_acc {n : Nat} (hn : n < 10) (i : Nat) : ∀ r ∈ wins n i, r ∈ acc n := by
   rw [wins_mod]; exact wins_sub_acc_lt n hn _ (Nat.mod_lt _ (by omega_using []))

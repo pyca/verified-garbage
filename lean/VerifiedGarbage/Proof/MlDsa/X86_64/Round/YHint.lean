@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
 
@@ -156,7 +157,7 @@ theorem cntH_ok (s : State) :
     WP isa (.block cntH) s fun s' =>
       (s'.gpr .r9 = s.gpr .r9 + BitVec.setWidth 64 (nib ((s.gpr .rax).setWidth 32)) ∧ s'.mem = s.mem ∧
         ∀ r l, s'.lane r l = s.lane r l) ∧ Keep [.rax, .rdx, .r9] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   simp only [cntH]
   xrun
   exact ⟨rfl, fun _ _ => rfl⟩
@@ -468,7 +469,7 @@ theorem makeHintY_correct : ∃ t s', Exec isa makeHintAvx2 s₀ t s' ∧ abiPre
       fun u' ⟨hm', hax⟩ => ?_
     rw [hm', hax]
     exact ⟨hf, hc, h9'⟩
-  obtain ⟨t, s', he, ⟨hf, hv, hax⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .rsi, .rdi, .r9, .r10] wp (by decide +kernel)
+  obtain ⟨t, s', he, ⟨hf, hv, hax⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .rsi, .rdi, .r9, .r10] wp (Proof.MlKem.X86_64.writesOnly_of (by decide +kernel))
   refine ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he (gprPreserved_of hk (by decide) hf ?_), ?_, ?_⟩
   · simpa using hp.2.2.2.2.2.2.1
   · refine hintIs_of_toNat fun k hk' => ?_

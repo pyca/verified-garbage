@@ -40,7 +40,7 @@ theorem prodInit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Na
     t.gpr .r13 = BitVec.ofNat 64 0 ∧ t.mem = t₄.mem) (by
       xrun [State.ea, hdr, hdi₄, hdrOff, hl, m₄, m₃, m₂, m₁, hel, shr3_w el hel']) rfl)
     fun t ⟨⟨h11, h13, m⟩, k₅⟩ => ⟨?_, ?_, ?_, ?_, h11, h13, (k₅.gpr (by decide)).trans hdi₄,
-      by rw [m, m₄, m₃, m₂, m₁], (k14.trans k₅).mono (by simp)⟩
+      by rw [m, m₄, m₃, m₂, m₁], (k14.trans k₅).mono (by decide)⟩
   · exact (k₅.gpr (by decide)).trans ((k₄.gpr (by decide)).trans ((k₃.gpr (by decide)).trans
       ((k₂.gpr (by decide)).trans h12)))
   · exact (k₅.gpr (by decide)).trans ((k₄.gpr (by decide)).trans ((k₃.gpr (by decide)).trans hbx))
@@ -135,7 +135,7 @@ theorem prodStep_ok {s₁ t : State} {B : Addr} {Z w we j : Nat} (hI : ProdInv s
     xrun [(k₂.gpr (by decide) : t₂.gpr .r13 = _), (k₁.gpr (by decide) : t₁.gpr .r13 = _), hI.r13,
       (k02.gpr (by decide) : t₂.gpr .r11 = _), h11, ofNat_add_one,
       ofNat_sub_beq (show j + 1 < 2 ^ 64 by omega_using [hZ, hwe, hj, hn, sM]) (show we < 2 ^ 64 by omega_using [hZ, hwe, hn, sM])]) rfl)
-    fun t ⟨⟨hz, h13, mt⟩, k₃⟩ => ⟨hz, ⟨hs₁.congr (k₂.trans k₃).2.2, (k02.trans k₃).mono (by simp), h13,
+    fun t ⟨⟨hz, h13, mt⟩, k₃⟩ => ⟨hz, ⟨hs₁.congr (k₂.trans k₃).2.2, (k02.trans k₃).mono (by decide), h13,
       fun x hx => by
         rw [mt, o₂ x (by omega_using [hwe, hj, hx]), m₁]; exact hI.out x hx, ?_⟩⟩
   -- The value.
@@ -197,7 +197,7 @@ theorem prod_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat}
     rw [m₃]; exact o12.wv (Or.inl (by omega_using [eDM])) (by omega_using [hn, hZ, sM, eM1, eDM])
   have hEs : wv s₃.mem B (slot w aE) w = wv s.mem B (slot w aE) w := by
     rw [m₃]; exact o12.wv (Or.inl (by omega_using [eDM, eEM])) (by omega_using [hn, hZ, sM, eM1, eDM, eEM])
-  refine ⟨?_, fun x hx => by rw [hI.out x hx, m₃]; exact o12 x hx, k03.mono (by simp)⟩
+  refine ⟨?_, fun x hx => by rw [hI.out x hx, m₃]; exact o12 x hx, k03.mono (by decide)⟩
   rw [hI.val, hDs, wv_low_of_lt (v := (el + 7) / 8) (w := w) (by omega_using [he2]) (by rw [hEs]; exact hE), hEs]
 
 /-- `prod`'s loop, from `M = 0`. -/
@@ -217,7 +217,7 @@ theorem prodLoop_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Na
   refine wp_upto (a := 0) (N := (el + 7) / 8) (by omega_using [he1]) (ProdInv s₃ B Z w)
     (fun j _ hj t hI => prodStep_ok hI (by omega_using [hw1]) (by omega_using [hw2]) hZ (by omega_using [he2]) hj h12 hbx h10 h15 h11)
     (fun t hI => ?_) ⟨hs₃, Keep.refl _ _, h13, Outside.refl _ _ _ _, by rw [m₃, hz, wv, Nat.mul_zero]⟩
-  refine ⟨?_, fun x hx => by rw [hI.out x hx, m₃], (k₃.trans hI.keep).mono (by simp)⟩
+  refine ⟨?_, fun x hx => by rw [hI.out x hx, m₃], (k₃.trans hI.keep).mono (by decide)⟩
   rw [hI.val, m₃, wv_low_of_lt (v := (el + 7) / 8) (w := w) (by omega_using [he2]) hE]
 
 end VG.Proof.Rsa.X86_64

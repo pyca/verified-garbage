@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.NafAddress
+import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
 
 /-! Reading and writing public Jacobian table entries, with exact memory frames. -/
 namespace VG.Proof.Weierstrass.X86

@@ -25,6 +25,6 @@ materialize_value Impl.CmacTripleDes.Arm.sboxes
 materialize_value Impl.CmacTripleDes.Arm.output
 materialize_value Impl.CmacTripleDes.Arm.ipCode
 materialize_value Impl.CmacTripleDes.Arm.fpCode
-materialize_code Impl.CmacTripleDes.Arm.block
+materialize_flat_code Impl.CmacTripleDes.Arm.block
 
 end VG

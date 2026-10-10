@@ -1451,7 +1451,7 @@ def bmSat : State where
   z := false
   c := false
   v := false
-  mem a := if a = 0x5001 then 0x30 else 0
+  mem a := bif Nat.beq a.toNat 0x5001 then 0x30 else 0
   rd := [⟨0x1000, 128⟩, ⟨0x5000, 4⟩]
   wr := [⟨0x2000, 128⟩, ⟨0x3000, 128⟩]
 

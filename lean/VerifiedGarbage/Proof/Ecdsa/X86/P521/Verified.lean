@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.X86.Main
-import VerifiedGarbage.Proof.Weierstrass.X86.MontModuli
+import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
 import VerifiedGarbage.Proof.Ecdsa.X86.P521.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
 import VerifiedGarbage.Proof.P521.Point

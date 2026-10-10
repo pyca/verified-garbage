@@ -49,15 +49,23 @@ chains in `x28`, across the calls.
   last 1 to 16 bytes and `vg_cmac_aes_finalize` of those (`cmacOf`), and
   replace `D` with `dbl(D)` XOR it.
 * `encrypt` then finishes S2V with the plaintext into the IV (`finish`) and
-  encrypts the plaintext with CTR from the IV with two bits cleared (`ctr`):
-  each block, `vg_aes_ctr32` on a zero block with the counter block `Q + i`
-  gives the keystream, whose first `min(16, left)` bytes are XORed into the
-  data, and the counter is incremented as a 128-bit big-endian integer.
+  encrypts the plaintext in place with CTR from the IV with two bits
+  cleared, `Q` (`ctr`): one call of `vg_aes_ctr32` from the counter block
+  `Q` encrypts the first `k = ⌊len / 16⌋ mod 2³¹` whole blocks (`ctrWhole`),
+  and the counter becomes `Q + k` as a 128-bit big-endian integer. As
+  `vg_aes_ctr32` increments only the last 32 bits of its counter block, this
+  needs them not to wrap around: `Q`'s are below `2³¹`, its bit 31 being one
+  of the two cleared, and `k < 2³¹`. Then each block left (the last
+  `len mod 16` bytes, and more only for data of `2³⁵` bytes or more),
+  `vg_aes_ctr32` on a zero block with the counter block `Q + i` gives the
+  keystream, whose first `min(16, left)` bytes are XORed into the data, and
+  the counter is incremented as a 128-bit big-endian integer.
   It then copies the IV to `siv` (`sivOut`).
 * `decrypt` then copies the IV it is given from `siv` to the working space
   (`sivIn`), decrypts with CTR from it, finishes S2V with the plaintext into
-  `[112, 128)`, compares the two IVs without a branch and ANDs every byte of
-  the data with the mask of the result.
+  `[112, 128)`, compares the two IVs without a branch and ANDs the data with
+  the mask of the result, a word at a time and then its last bytes one at a
+  time.
 
 `finish`, for a string `P` of `L` bytes: if `L < 16`, the tail is
 `pad(P) XOR dbl(D)` and its CMAC is that of one complete block; otherwise,
@@ -336,12 +344,45 @@ def ctrBody (c : Ctr32) : Prog isa :=
   .seq (.block ctrPre)
     (.seq (.call c.name c.code) (.seq ctrMin (.seq xorBytes (.seq (.block ctrPost) ctrLeft))))
 
+/-- `k = ⌊left / 16⌋ mod 2³¹` in `d`: the whole blocks `ctrWhole` does. -/
+def wholeCount (d : Reg) : List Instr := [.lsr .x d .x23 4, .lsl .x d d 33, .lsr .x d d 33]
+
+/-- The counter block `Q` passed to `vg_aes_ctr32`, and its arguments:
+`K2`'s schedule, the rounds, the counter block, the data, `k` blocks and
+the working space. -/
+def wholePre : List Instr :=
+  copy16 cntOff cbOff ++ wholeCount .x4 ++
+  ([.addImm .x .x0 .x20 272, mov .x1 .x21, .addImm .x .x2 .x19 cbOff, mov .x3 .x22,
+   .addImm .x .x5 .x19 csOff] : List Instr)
+
+/-- With `k` in `x9`: the counter plus `k`, and the data advanced past the
+`16 k` bytes done. -/
+def wholeAdd : List Instr :=
+  [.ldr .x .x10 .x19 (cntOff + 8), .rev .x10 .x10, .ldr .x .x11 .x19 cntOff, .rev .x11 .x11,
+   .adds .x .x10 .x10 .x9, .movz .x .x12 0 0, .adc .x .x11 .x11 .x12, .rev .x10 .x10, .rev .x11 .x11,
+   .str .x .x11 .x19 cntOff, .str .x .x10 .x19 (cntOff + 8), .lsl .x .x9 .x9 4, .add .x .x22 .x22 .x9,
+   .sub .x .x23 .x23 .x9]
+
+/-- `k` again; the counter `Q + k` as a 128-bit big-endian integer; the data
+advanced past the `16 k` bytes done. -/
+def wholePost : List Instr :=
+  wholeCount .x9 ++ wholeAdd
+
+/-- The first `k` whole blocks of the data, by one call of `vg_aes_ctr32`
+from `Q` (none if `k` is 0). `Q`'s last 32 bits are below `2³¹` and
+`k < 2³¹`, so its counter blocks do not wrap around. -/
+def ctrWhole (c : Ctr32) : Prog isa :=
+  .seq (.block wholePre) (.seq (.call c.name c.code) (.block wholePost))
+
 /-- The data at `x22` (`x23` bytes) XORed with the keystream of CTR under
-`K2` from the counter at `x19 + 64`; `x22` and `x23` then back from `x26`
-and `x27`. -/
+`K2` from the counter at `x19 + 64`: its first `k` whole blocks by
+`ctrWhole`, then the rest (the last `len mod 16` bytes, and more only for
+data of `2³⁵` bytes or more) a block at a time; `x22` and `x23` then back
+from `x26` and `x27`. -/
 def ctr (c : Ctr32) : Prog isa :=
-  .seq (.ite (.zero .x .x23) (.block []) (.loop (ctrBody c) (.nonzero .x .x23)))
-    (.block [mov .x22 .x26, mov .x23 .x27])
+  .seq (ctrWhole c)
+    (.seq (.ite (.zero .x .x23) (.block []) (.loop (ctrBody c) (.nonzero .x .x23)))
+      (.block [mov .x22 .x26, mov .x23 .x27]))
 
 /-! ## Comparing the IVs and masking the data -/
 
@@ -354,13 +395,18 @@ def compare : List Instr :=
    .subImm .x .x10 .x9 1, .bicRor .x .x10 .x10 .x9 0, .lsr .x .x0 .x10 63, .movz .x .x11 0 0,
    .sub .x .x11 .x11 .x0]
 
-/-- Every byte of the data (`x27` of them, at `x26`) ANDed with the mask in
-`x11`. -/
+/-- The data (`x27` bytes at `x26`) ANDed with the mask in `x11`: its
+`⌊len / 8⌋` whole words (counted down in `x8`), then its last `len mod 8`
+bytes. -/
 def maskData : Prog isa :=
-  .seq (.block [mov .x6 .x26, mov .x8 .x27])
-    (.ite (.zero .x .x8) (.block [])
-      (.loop (.block [.ldrb .x9 .x6 0, .logic .and .x .x9 .x9 .x11, .strb .x9 .x6 0,
-        .addImm .x .x6 .x6 1, .subImm .x .x8 .x8 1]) (.nonzero .x .x8)))
+  .seq (.block [mov .x6 .x26, .lsr .x .x8 .x27 3])
+    (.seq (.ite (.zero .x .x8) (.block [])
+        (.loop (.block [.ldr .x .x9 .x6 0, .logic .and .x .x9 .x9 .x11, .str .x .x9 .x6 0,
+          .addImm .x .x6 .x6 8, .subImm .x .x8 .x8 1]) (.nonzero .x .x8)))
+      (.seq (.block [.lsl .x .x8 .x27 61, .lsr .x .x8 .x8 61])
+        (.ite (.zero .x .x8) (.block [])
+          (.loop (.block [.ldrb .x9 .x6 0, .logic .and .x .x9 .x9 .x11, .strb .x9 .x6 0,
+            .addImm .x .x6 .x6 1, .subImm .x .x8 .x8 1]) (.nonzero .x .x8)))))
 
 /-! ## `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` -/
 

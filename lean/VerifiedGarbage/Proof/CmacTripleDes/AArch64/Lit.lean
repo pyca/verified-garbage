@@ -7,8 +7,8 @@ import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
 
 namespace VG
 
-materialize_code Impl.CmacTripleDes.AArch64.init
-materialize_code Impl.CmacTripleDes.AArch64.update
-materialize_code Impl.CmacTripleDes.AArch64.finalize
+materialize_flat_code Impl.CmacTripleDes.AArch64.init
+materialize_flat_code Impl.CmacTripleDes.AArch64.update
+materialize_flat_code Impl.CmacTripleDes.AArch64.finalize
 
 end VG

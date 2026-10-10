@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Loop
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Contracts
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -31,7 +32,7 @@ theorem lt_bitlen {x b : Nat} (h : x ≤ b) : x < 2 ^ bitlen b := Nat.lt_of_le_o
 theorem sbpPro_ok (s : State) :
     WP isa (.block [.mov32 .rsi (.reg .rsi), .mov .r8 (.reg .rdx)]) s fun s' =>
       (dArg s' .rsi = dArg s .rsi ∧ s'.gpr .r8 = s.gpr .rdx ∧ s'.mem = s.mem) ∧ Keep [.rsi, .r8] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   xrun [dArg]
 
 theorem sbp_wp {s₀ : State} (hp : simpleBitPackK.pre s₀) :

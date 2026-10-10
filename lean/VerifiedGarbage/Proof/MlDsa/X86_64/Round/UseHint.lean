@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
 
 /-!
@@ -39,7 +40,7 @@ theorem uhBody_ok {g : Nat} (hg : g = g32 ∨ g = g88) (s : State)
           (uhS g (s.mem.readW (cfAddr (s.gpr .rdi) (s.gpr .rcx)) 32) (s.mem.readW (cfAddr (s.gpr .rsi) (s.gpr .rcx)) 32)) ∧
         s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0)) ∧
       Keep [.rax, .rdx, .r8, .r9, .r11, .rcx] s s' := by
-  refine WP.keep _ ?_ (by rcases hg with rfl | rfl <;> decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by rcases hg with rfl | rfl <;> decide))
   unfold uhBody hbRaw condAdd
   xrun [h1, h1', h2, ea_cf, List.cons_append, List.nil_append, uhS, uhDelta, hbRawV, condAddV, dShift_ge, dShift_le]
 

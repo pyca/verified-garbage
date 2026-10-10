@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.JacZero
+import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.X86.Taint
 

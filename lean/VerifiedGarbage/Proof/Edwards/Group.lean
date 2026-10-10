@@ -16,7 +16,9 @@ coordinates) is complete: the denominators never vanish (Bernstein and Lange,
 "Faster addition and doubling on elliptic curves", Theorem 3.3; `a = 1` is a
 square). Closure and associativity are polynomial identities modulo the curve
 equations, checked by `linear_combination` with the quotients of dividing by
-them (Hales, "The group law for Edwards curves"). `EPoint d`, the affine
+them (Hales, "The group law for Edwards curves"). Associativity of `y` follows
+from that of `x`, since `addY` is `addX` with its second point translated by
+`(1, 0)`, which commutes with adding. `EPoint d`, the affine
 points, form a commutative group with zero `(0, 1)` and negation `(-x, y)`.
 
 Ed448's curve (edwards448, `d = -39081`) is one; Ed25519's twisted curve
@@ -132,30 +134,12 @@ theorem addX_div_left (hx : δx ≠ 0) (hy : δy ≠ 0) :
     by ring, frac_den hx hy, div_div_div_cancel_right₀ hk]
   ring
 
-theorem addY_div_left (hx : δx ≠ 0) (hy : δy ≠ 0) :
-    addY d (X / δx) (Y / δy) a b = (Y * δx * b - X * δy * a) / (δx * δy - d * X * Y * a * b) := by
-  have hk : δx * δy ≠ 0 := mul_ne_zero hx hy
-  unfold addY
-  rw [show Y / δy * b - X / δx * a = X / δx * (-a) + Y / δy * b by ring, frac_num hx hy,
-    show 1 - d * (X / δx) * a * (Y / δy) * b = 1 + (-(d * a * b)) * (X / δx) * (Y / δy) by ring,
-    frac_den hx hy, div_div_div_cancel_right₀ hk]
-  ring
-
 theorem addX_div_right (hx : δx ≠ 0) (hy : δy ≠ 0) :
     addX d a b (X / δx) (Y / δy) = (a * Y * δx + b * X * δy) / (δx * δy + d * a * X * b * Y) := by
   have hk : δx * δy ≠ 0 := mul_ne_zero hx hy
   unfold addX
   rw [show a * (Y / δy) + b * (X / δx) = X / δx * b + Y / δy * a by ring, frac_num hx hy,
     show 1 + d * a * (X / δx) * b * (Y / δy) = 1 + (d * a * b) * (X / δx) * (Y / δy) by ring,
-    frac_den hx hy, div_div_div_cancel_right₀ hk]
-  ring
-
-theorem addY_div_right (hx : δx ≠ 0) (hy : δy ≠ 0) :
-    addY d a b (X / δx) (Y / δy) = (b * Y * δx - a * X * δy) / (δx * δy - d * a * X * b * Y) := by
-  have hk : δx * δy ≠ 0 := mul_ne_zero hx hy
-  unfold addY
-  rw [show b * (Y / δy) - a * (X / δx) = X / δx * (-a) + Y / δy * b by ring, frac_num hx hy,
-    show 1 - d * a * (X / δx) * b * (Y / δy) = 1 + (-(d * a * b)) * (X / δx) * (Y / δy) by ring,
     frac_den hx hy, div_div_div_cancel_right₀ hk]
   ring
 
@@ -218,60 +202,29 @@ theorem add_assoc_x (hP : Params d) (h1 : OnCurve d x1 y1) (h2 : OnCurve d x2 y2
       x2*y1^3*y3 + x2*y1*y2^2*y3 - x2*y1*y3 - x3*y1^3*y2^3 + x3*y1^3*y2 + x3*y1*y2^3 - x3*y1*y2) *
       h3
 
+/-- `addY` is `addX` with the second point turned by `(x, y) ↦ (y, -x)`, the
+translation by the point `(1, 0)`. -/
+theorem addY_eq_addX : addY d x1 y1 x2 y2 = addX d x1 y1 y2 (-x2) := by
+  unfold addX addY
+  rw [show x1 * -x2 + y1 * y2 = y1 * y2 - x1 * x2 by ring,
+    show 1 + d * x1 * y2 * y1 * -x2 = 1 - d * x1 * x2 * y1 * y2 by ring]
+
+theorem addY_turn : addY d x1 y1 y2 (-x2) = -addX d x1 y1 x2 y2 := by
+  unfold addX addY
+  rw [show y1 * -x2 - x1 * y2 = -(x1 * y2 + y1 * x2) by ring,
+    show 1 - d * x1 * y2 * y1 * -x2 = 1 + d * x1 * x2 * y1 * y2 by ring, neg_div]
+
+theorem onCurve_turn (h : OnCurve d x1 y1) : OnCurve d y1 (-x1) := by
+  unfold OnCurve at *; linear_combination h
+
+/-- Associativity of `addY`, from that of `addX` with the third point turned
+(`addY_eq_addX`): turning commutes with adding (`addY_turn`). -/
 theorem add_assoc_y (hP : Params d) (h1 : OnCurve d x1 y1) (h2 : OnCurve d x2 y2)
     (h3 : OnCurve d x3 y3) :
     addY d (addX d x1 y1 x2 y2) (addY d x1 y1 x2 y2) x3 y3 =
       addY d x1 y1 (addX d x2 y2 x3 y3) (addY d x2 y2 x3 y3) := by
-  have a12 := den_add_ne hP h1 h2
-  have b12 := den_sub_ne hP h1 h2
-  have a23 := den_add_ne hP h2 h3
-  have b23 := den_sub_ne hP h2 h3
-  have hL := den_sub_ne hP (onCurve_add hP h1 h2) h3
-  have hR := den_sub_ne hP h1 (onCurve_add hP h2 h3)
-  rw [show addY d (addX d x1 y1 x2 y2) (addY d x1 y1 x2 y2) x3 y3 = _ from addY_div_left d a12 b12,
-    show addY d x1 y1 (addX d x2 y2 x3 y3) (addY d x2 y2 x3 y3) = _ from addY_div_right d a23 b23]
-  unfold addX at hL hR
-  unfold addY at hL hR
-  rw [show 1 - d * ((x1 * y2 + y1 * x2) / (1 + d * x1 * x2 * y1 * y2)) * x3 *
-      ((y1 * y2 - x1 * x2) / (1 - d * x1 * x2 * y1 * y2)) * y3 = 1 + (-(d * x3 * y3)) *
-      ((x1 * y2 + y1 * x2) / (1 + d * x1 * x2 * y1 * y2)) *
-      ((y1 * y2 - x1 * x2) / (1 - d * x1 * x2 * y1 * y2)) by ring, frac_den a12 b12] at hL
-  rw [show 1 - d * x1 * ((x2 * y3 + y2 * x3) / (1 + d * x2 * x3 * y2 * y3)) * y1 *
-      ((y2 * y3 - x2 * x3) / (1 - d * x2 * x3 * y2 * y3)) = 1 + (-(d * x1 * y1)) *
-      ((x2 * y3 + y2 * x3) / (1 + d * x2 * x3 * y2 * y3)) *
-      ((y2 * y3 - x2 * x3) / (1 - d * x2 * x3 * y2 * y3)) by ring, frac_den a23 b23] at hR
-  have hL' := (div_ne_zero_iff.mp hL).1
-  have hR' := (div_ne_zero_iff.mp hR).1
-  rw [div_eq_div_iff (by convert hL' using 1; ring) (by convert hR' using 1; ring)]
-  unfold OnCurve at h1 h2 h3
-  linear_combination (-d^2*x1*x2^4*x3*y2^3*y3^2 - d^2*x1*x2^3*x3^2*y2^4*y3 +
-      d^2*x2^4*x3^2*y1*y2^3*y3 - d^2*x2^3*x3*y1*y2^4*y3^2 + d*x1*x2^4*x3*y2*y3^2 -
-      d*x1*x2^3*y2^2*y3^3 + d*x1*x2^3*y2^2*y3 - d*x1*x2^2*x3^3*y2^3 + d*x1*x2^2*x3*y2^3 +
-      d*x1*x2*x3^2*y2^4*y3 - d*x2^4*x3^2*y1*y2*y3 - d*x2^3*x3^3*y1*y2^2 + d*x2^3*x3*y1*y2^2 +
-      d*x2^2*y1*y2^3*y3^3 - d*x2^2*y1*y2^3*y3 + d*x2*x3*y1*y2^4*y3^2) * h1 +
-      (-d^2*x1^2*x2^2*x3^2*y1*y2*y3^3 + d^2*x1^2*x2*x3^3*y1*y2^2*y3^2 +
-      d^2*x1*x2^2*x3^3*y1^2*y2*y3^2 + d^2*x1*x2*x3^2*y1^2*y2^2*y3^3 - d*x1^3*x2^2*x3*y2*y3^2 -
-      d*x1^3*x2*x3^2*y2^2*y3 + d*x1^3*x2*x3^2*y3^3 + d*x1^3*x3^3*y2*y3^2 + d*x1^2*x2^2*x3^2*y1*y2*y3
-      + d*x1^2*x2*x3^3*y1*y3^2 - d*x1^2*x2*x3*y1*y2^2*y3^2 - d*x1^2*x3^2*y1*y2*y3^3 -
-      d*x1*x2^2*x3*y1^2*y2*y3^2 + d*x1*x2^2*x3*y2*y3^2 - d*x1*x2*x3^2*y1^2*y2^2*y3 +
-      d*x1*x2*x3^2*y1^2*y3^3 + d*x1*x2*x3^2*y2^2*y3 - d*x1*x2*x3^2*y3^3 + d*x1*x3^3*y1^2*y2*y3^2 -
-      d*x1*x3^3*y2*y3^2 + d*x2^2*x3^2*y1^3*y2*y3 - d*x2^2*x3^2*y1*y2*y3 + d*x2*x3^3*y1^3*y3^2 -
-      d*x2*x3^3*y1*y3^2 - d*x2*x3*y1^3*y2^2*y3^2 + d*x2*x3*y1*y2^2*y3^2 - d*x3^2*y1^3*y2*y3^3 +
-      d*x3^2*y1*y2*y3^3 - x1^3*x2*x3^2*y3 - x1^3*x2*y3^3 + x1^3*x2*y3 - x1^3*x3^3*y2 -
-      x1^3*x3*y2*y3^2 + x1^3*x3*y2 - x1^2*x2*x3^3*y1 - x1^2*x2*x3*y1*y3^2 + x1^2*x2*x3*y1 +
-      x1^2*x3^2*y1*y2*y3 + x1^2*y1*y2*y3^3 - x1^2*y1*y2*y3 - x1*x2*x3^2*y1^2*y3 + x1*x2*x3^2*y3 -
-      x1*x2*y1^2*y3^3 + x1*x2*y1^2*y3 + x1*x2*y3^3 - x1*x2*y3 - x1*x3^3*y1^2*y2 + x1*x3^3*y2 -
-      x1*x3*y1^2*y2*y3^2 + x1*x3*y1^2*y2 + x1*x3*y2*y3^2 - x1*x3*y2 - x2*x3^3*y1^3 + x2*x3^3*y1 -
-      x2*x3*y1^3*y3^2 + x2*x3*y1^3 + x2*x3*y1*y3^2 - x2*x3*y1 + x3^2*y1^3*y2*y3 - x3^2*y1*y2*y3 +
-      y1^3*y2*y3^3 - y1^3*y2*y3 - y1*y2*y3^3 + y1*y2*y3) * h2 + (d*x1^2*x2^2*y1*y2*y3 -
-      d*x1^2*x2*x3*y1*y2^2 - d*x1*x2^2*x3*y1^2*y2 - d*x1*x2*y1^2*y2^2*y3 + x1^3*x2^3*y3 +
-      x1^3*x2^2*x3*y2 + x1^3*x2*y2^2*y3 - x1^3*x2*y3 + x1^3*x3*y2^3 - x1^3*x3*y2 + x1^2*x2^3*x3*y1 -
-      x1^2*x2^2*y1*y2*y3 + x1^2*x2*x3*y1*y2^2 - x1^2*x2*x3*y1 - x1^2*y1*y2^3*y3 + x1^2*y1*y2*y3 +
-      x1*x2^3*y1^2*y3 - x1*x2^3*y3 + x1*x2^2*x3*y1^2*y2 - x1*x2^2*x3*y2 + x1*x2*y1^2*y2^2*y3 -
-      x1*x2*y1^2*y3 - x1*x2*y2^2*y3 + x1*x2*y3 + x1*x3*y1^2*y2^3 - x1*x3*y1^2*y2 - x1*x3*y2^3 +
-      x1*x3*y2 + x2^3*x3*y1^3 - x2^3*x3*y1 - x2^2*y1^3*y2*y3 + x2^2*y1*y2*y3 + x2*x3*y1^3*y2^2 -
-      x2*x3*y1^3 - x2*x3*y1*y2^2 + x2*x3*y1 - y1^3*y2^3*y3 + y1^3*y2*y3 + y1*y2^3*y3 - y1*y2*y3) *
-      h3
+  rw [addY_eq_addX, add_assoc_x hP h1 h2 (onCurve_turn h3), ← addY_eq_addX, addY_turn,
+    addY_eq_addX (x2 := addX d x2 y2 x3 y3)]
 
 end
 

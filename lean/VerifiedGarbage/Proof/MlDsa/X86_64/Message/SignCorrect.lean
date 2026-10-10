@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCall
 
 /-!
@@ -52,7 +53,7 @@ theorem signMov_ok {p : Params} {s s1 : State} (h : SPre p s) (hg : s1.gpr = s.g
     refine ⟨rArgs s, by simp [hrd, h.rd], ?_⟩
     rw [hg, ← add_add, ← stackArgAddr0]
     exact Offset.contains_base _ hd (by omega)
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   have h8 := hin 0 (by omega)
   have h16 := hin 8 (by omega)
   simp only [Nat.add_zero, Nat.reduceAdd] at h8 h16

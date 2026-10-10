@@ -55,9 +55,9 @@ def upToPow : Prog isa :=
 /-- `04 ‖ x ‖ y` (or zeros) to `out` (in `lr`), the flag's low bit to `r0`,
 and the callee-saved registers restored. -/
 def finish : List Instr :=
-  [.ldr .r10 wb (c.sl FLAG), .mov .r4 (.imm 4), .dp .and .r4 .r4 (.reg .r10), .strb .r4 .lr 0] ++
+  ([.ldr .r10 wb (c.sl FLAG), .mov .r4 (.imm 4), .dp .and .r4 .r4 (.reg .r10), .strb .r4 .lr 0] : List Instr) ++
   storeBytes c.C.len c.n .lr 1 (c.sl X) ++ storeBytes c.C.len c.n .lr (1 + c.C.len) (c.sl Y) ++
-  [.dp .and .r0 .r10 (.imm 1)] ++ Impl.Ecdsa.Arm.Cfg.restore
+  ([.dp .and .r0 .r10 (.imm 1)] : List Instr) ++ Impl.Ecdsa.Arm.Cfg.restore
 
 /-- `x = X Z⁻¹` and `y = Y Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery
 form, the checks of `d` and `Z`, and the result. -/

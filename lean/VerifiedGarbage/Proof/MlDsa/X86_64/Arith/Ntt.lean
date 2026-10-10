@@ -18,7 +18,7 @@ namespace VG.Proof.MlDsa.X86_64.Arith
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
-open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly gprPreserved_of withMxcsr_ok mxR mx_sub xmm_setXmm
+open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep WP.keep writesOnly gprPreserved_of withMxcsr_ok mxR mx_sub xmm_setXmm
   GOnly add_ofNat_zero sel)
 open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs zetas ntt)
 
@@ -209,9 +209,9 @@ theorem nttBody_ok {t : Poly → Poly} {s s1 : State} (hs : (inPlaceK t).pre s) 
 
 /-- `withMxcsr` around the body, and the ABI. -/
 theorem mx_correct {t : Poly → Poly} {l : Prog isa} (s : State) (hs : (inPlaceK t).pre s)
-    (hk : writesOnly [.rax, .rcx, .rdx, .r8, .r9] (.seq (.block vpro) l) = true)
+    (hk : Code.allInstrs (writesIn [.rax, .rcx, .rdx, .r8, .r9]) (.seq (.block vpro) l) = true)
     (hctl : ctlOk (VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 (.seq (.block vpro) l)) = true)
-    (hk' : writesOnly [.rax, .rcx, .rdx, .r8, .r9, .r11]
+    (hk' : Code.allInstrs (writesIn [.rax, .rcx, .rdx, .r8, .r9, .r11])
       (VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 (.seq (.block vpro) l)) = true)
     (hl : ∀ s1, Keep [.rax, .r11] s s1 → Frame [mxR (s.gpr .rsi)] s.mem s1.mem →
       WP isa (.seq (.block vpro) l) s1 fun s' => PolyIs s'.mem (s.gpr .rdi) (t (polyAt s.mem (s.gpr .rdi))) ∧
@@ -221,8 +221,8 @@ theorem mx_correct {t : Poly → Poly} {l : Prog isa} (s : State) (hs : (inPlace
   have hw : pR (s.gpr .rsi) ∈ s.wr := by rw [hs.2.1]; simp
   have hd : (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rsi)) := hs.2.2.1
   have hW := withMxcsr_ok (c := .seq (.block vpro) l) (by decide) [.rax, .rcx, .rdx, .r8, .r9] (by decide) rfl hw
-    hk (hl)
-  obtain ⟨tr, s', he, ⟨s2, ⟨hP, hf⟩, hf', -⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .r8, .r9, .r11] hW hk'
+    (writesOnly_of hk) (hl)
+  obtain ⟨tr, s', he, ⟨s2, ⟨hP, hf⟩, hf', -⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .r8, .r9, .r11] hW (writesOnly_of hk')
   refine ⟨tr, s', he, abiPreserved_of_ctl hctl he (gprPreserved_of hk (by decide)
     (hf.trans (hf'.sub fun r hr => ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), ?_⟩))
     (by simpa using ⟨hs.2.2.2.1, hs.2.2.2.2.1⟩)), ?_⟩

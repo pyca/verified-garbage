@@ -20,6 +20,6 @@ materialize_table Impl.CmacTripleDes.X86.tree 2
 materialize_value Impl.CmacTripleDes.X86.output
 materialize_value Impl.CmacTripleDes.X86.ipCode
 materialize_value Impl.CmacTripleDes.X86.fpCode
-materialize_code Impl.CmacTripleDes.X86.block
+materialize_flat_code Impl.CmacTripleDes.X86.block
 
 end VG

@@ -180,7 +180,7 @@ theorem dEven_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he64 :
   have hM₁e : bad = false → M₁ = L := fun hb => hM₁L (by have := hgood hb; omega)
   refine ⟨ht, ?_, ⟨_, okt, ?_, ?_⟩⟩
   · exact (((((((((((((((f₁.trans f₂).trans f₃).trans f₄).trans f₅).trans f₆).trans f₇).trans f₈).trans
-      f₁₀').trans f₁₁).trans f₁₂).trans f₁₃).trans f₁₄).trans f₁₅).trans f₁₆).trans f₁₇).mono (by simp)
+      f₁₀').trans f₁₁).trans f₁₂).trans f₁₃).trans f₁₄).trans f₁₅).trans f₁₆).trans f₁₇).mono (by decide)
   · -- The inverse exists iff `L` is odd, at least 3, and the gcd is 1.
     constructor
     · rintro ⟨d, hd⟩

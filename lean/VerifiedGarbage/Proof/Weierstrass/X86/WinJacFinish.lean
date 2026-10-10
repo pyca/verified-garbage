@@ -1,5 +1,5 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacAccum
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombJOut
+import VerifiedGarbage.Proof.Weierstrass.X86.WinJacEntryState
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
 
 /-! One final conversion from Jacobian to homogeneous coordinates. -/
 namespace VG.Proof.Weierstrass.X86.JWin

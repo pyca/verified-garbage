@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Weierstrass.X86.NafLoopTiming
 import VerifiedGarbage.Proof.Weierstrass.X86.NafTableTiming
-import VerifiedGarbage.Proof.Weierstrass.X86.NafWindow
+import VerifiedGarbage.Proof.Weierstrass.X86.NafFinish
 
 namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86

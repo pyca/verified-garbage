@@ -37,6 +37,7 @@ namespace VG.Proof.Sm4.Arm
 open VG VG.Arm VG.Arm.Straight VG.Impl.Sm4.Arm
 open VG.Impl.Aes.Arm (q sb t0 t1 u7 kp movR ldS stS)
 open VG.Proof.Sm4 (quads ofBlock outBlock keyInit rkOf getLsbD_outBlock expandKeyArm expandKey_eq)
+open VG.Impl.Sm4 (planeOf32 fkLE)
 
 /-! ## The loop -/
 

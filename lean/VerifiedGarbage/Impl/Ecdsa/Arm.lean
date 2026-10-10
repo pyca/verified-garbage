@@ -203,11 +203,11 @@ bytes each) from the registers `A` names, and shifts the slot `A.hs` holding
 a hash; stores the constants; and sets `R = (0 : 1 : 0)` and the flag (a
 word) to all ones. -/
 def setupWith (A : Args) : List Instr :=
-  [scStart A] ++ saveCode ++ [.mov .lr (.reg .r0)] ++
+  [scStart A] ++ saveCode ++ ([.mov .lr (.reg .r0)] : List Instr) ++
   loadBytes c.C.len c.n (c.sl K) A.k ++ loadBytes c.C.len c.n (c.sl D) A.d ++
   loadBytes c.C.len c.n (c.sl E) A.e ++ c.shiftCode A.hs ++
   c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-  [.mov .r4 (.imm 0), .dp .sub .r4 .r4 (.imm 1), .str .r4 wb (c.sl FLAG)]
+  ([.mov .r4 (.imm 0), .dp .sub .r4 .r4 (.imm 1), .str .r4 wb (c.sl FLAG)] : List Instr)
 
 /-- The setup of `sign`. -/
 def setup : List Instr := c.setupWith .sign
@@ -215,10 +215,10 @@ def setup : List Instr := c.setupWith .sign
 /-- The mask `r5` of `[a] ≠ 0` (all ones if it is not zero), through `r4`:
 the words or'ed, then the top bit of `x | -x`, negated. -/
 def nonzero (a : Nat) : List Instr :=
-  [.ldr .r5 wb a] ++
+  ([.ldr .r5 wb a] : List Instr) ++
   ((List.range (2 * c.n - 1)).flatMap fun j => [.ldr .r4 wb (a + 4 * (j + 1)), .dp .orr .r5 .r5 (.reg .r4)]) ++
-  [.mov .r4 (.imm 0), .dp .sub .r4 .r4 (.reg .r5), .dp .orr .r4 .r4 (.reg .r5), .mov .r4 (.shifted .r4 .lsr 31),
-    .mov .r5 (.imm 0), .dp .sub .r5 .r5 (.reg .r4)]
+  ([.mov .r4 (.imm 0), .dp .sub .r4 .r4 (.reg .r5), .dp .orr .r4 .r4 (.reg .r5), .mov .r4 (.shifted .r4 .lsr 31),
+    .mov .r5 (.imm 0), .dp .sub .r5 .r5 (.reg .r4)] : List Instr)
 
 /-- Digit `j` of `[a] - n`, from the carry `r3` (1 for the first), its carry
 to `r3`; `r7` and `r8` hold the words `j / 2` of `[a]` and of `n`. -/
@@ -231,8 +231,8 @@ def ltDigit (j : Nat) : List Instr :=
 def ltM (m a : Nat) : List Instr :=
   [mask16, .mov .r3 (.imm 1)] ++
   ((List.range (2 * c.n)).flatMap fun k =>
-    [.ldr .r7 wb (a + 4 * k), .ldr .r8 wb (m + 4 * k)] ++ ltDigit (2 * k) ++ ltDigit (2 * k + 1)) ++
-  [.dp .sub .r5 .r3 (.imm 1)]
+    ([.ldr .r7 wb (a + 4 * k), .ldr .r8 wb (m + 4 * k)] : List Instr) ++ ltDigit (2 * k) ++ ltDigit (2 * k + 1)) ++
+  ([.dp .sub .r5 .r3 (.imm 1)] : List Instr)
 
 /-- The mask `r5` of `[a] < n`. -/
 def ltN (a : Nat) : List Instr := c.ltM (c.sl MN) a
@@ -243,7 +243,7 @@ def andFlag : List Instr :=
 
 /-- `[a]` is in `[1, n-1]`: the flag `&=` both masks (the first kept in `r9`). -/
 def checkRange (a : Nat) : List Instr :=
-  c.ltN a ++ [.mov .r9 (.reg .r5)] ++ c.nonzero a ++ [.dp .and .r5 .r5 (.reg .r9)] ++ c.andFlag
+  c.ltN a ++ ([.mov .r9 (.reg .r5)] : List Instr) ++ c.nonzero a ++ ([.dp .and .r5 .r5 (.reg .r9)] : List Instr) ++ c.andFlag
 
 /-- `[a] ≠ 0`: the flag `&=` its mask. -/
 def checkNonzero (a : Nat) : List Instr := c.nonzero a ++ c.andFlag
@@ -262,9 +262,9 @@ def restore : List Instr := saved.map fun (r, d) => .ldr r wb d
 /-- `r ‖ s` (or zeros) to `out` (in `lr`), the flag's low bit to `r0`, and
 the callee-saved registers restored. -/
 def finish : List Instr :=
-  [.ldr .r10 wb (c.sl FLAG)] ++
+  ([.ldr .r10 wb (c.sl FLAG)] : List Instr) ++
   storeBytes c.C.len c.n .lr 0 (c.sl RR) ++ storeBytes c.C.len c.n .lr c.C.len (c.sl SS) ++
-  [.dp .and .r0 .r10 (.imm 1)] ++ restore
+  ([.dp .and .r0 .r10 (.imm 1)] : List Instr) ++ restore
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/
 def scalar : Prog isa :=

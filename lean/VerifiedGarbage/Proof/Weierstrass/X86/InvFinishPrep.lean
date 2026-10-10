@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.X86.InvState
-import VerifiedGarbage.Proof.Weierstrass.X86.InvSignMask
+import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 
 /-! # Selecting the final Montgomery correction from the sign of f -/
 namespace VG.Proof.Weierstrass.X86.Inv

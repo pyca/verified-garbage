@@ -201,7 +201,7 @@ theorem counter_ctrPre {σ : State} {C D P W : Addr} {R L : Nat} (h : Env σ C D
   obtain ⟨hi, lo, e₁, e₂, e₃⟩ := counter_cnt s.mem W
   refine WP.of_runBlock ⟨s₁, run₁, hs.regs.keep' (fun r hr => g₁ r (by rintro rfl; revert hr; decide)
     (by rintro rfl; revert hr; decide)) sp₁ rd₁ wr₁, by rw [g₁ _ (by decide) (by decide), hs.x26],
-    by rw [g₁ _ (by decide) (by decide), hs.x27], ⟨hi, lo, _, by rw [m₁]; exact e₁, by rw [m₁]; exact e₂, e₃⟩⟩
+    by rw [g₁ _ (by decide) (by decide), hs.x27], ⟨hi, lo, _, by rw [m₁]; exact e₁, by rw [m₁]; exact e₂, e₃, length_counter _, counter_low _⟩⟩
 
 /-- The registers of both runs, with the data in `x26` and `x27`. -/
 abbrev RD (s₀ s₀' : State) (C D P W : Addr) (R L : Nat) (a b : State) : Prop :=
@@ -237,7 +237,7 @@ theorem counter_slot {σ : State} {C D P W T : Addr} {R L : Nat} (h : Env σ C D
   obtain ⟨hi, lo, e₁, e₂, e₃⟩ := counter_cnt s.mem W
   refine WP.of_runBlock ⟨s₁, run₁, ⟨hs.regs.keep' (fun r hr => g₁ r (by rintro rfl; revert hr; decide)
     (by rintro rfl; revert hr; decide)) sp₁ rd₁ wr₁, by rw [g₁ _ (by decide) (by decide), hs.x26],
-    by rw [g₁ _ (by decide) (by decide), hs.x27], ⟨hi, lo, _, by rw [m₁]; exact e₁, by rw [m₁]; exact e₂, e₃⟩⟩, ?_⟩
+    by rw [g₁ _ (by decide) (by decide), hs.x27], ⟨hi, lo, _, by rw [m₁]; exact e₁, by rw [m₁]; exact e₂, e₃, length_counter _, counter_low _⟩⟩, ?_⟩
   have f₁ : Frame (cntRegions W) s.mem s₁.mem := m₁ ▸ counter_frame _ _ _ _
   rw [Slot, f₁.readW (Region.contains_self _ _) (cnt_dis (d := 248) (by decide) (by decide)) (by decide)]
   exact hl
@@ -246,8 +246,8 @@ theorem ctr_slot (v : Proof.Aes.AArch64.Ctr32Impl) {σ : State} {C D P W T : Add
     (h : Env σ C D P W R L) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩) (hPw : (⟨P, L⟩ : Region) ∈ σ.wr)
     {s : State} (hs : CtrPre σ C D P W R L s) (hl : Slot W T s) :
     WP isa (ctr v.callee) s (Slot W T) := by
-  obtain ⟨hi, lo, q, e₁, e₂, e₃⟩ := hs.cnt
-  refine WP.mono (ctr_wp v h hcp hPw hs.regs ⟨hi, lo, e₁, e₂, e₃⟩ hs.x26 hs.x27) fun t ht => ?_
+  obtain ⟨hi, lo, q, e₁, e₂, e₃, hql, hlow⟩ := hs.cnt
+  refine WP.mono (ctr_wp v h hcp hPw hs.regs hql hlow ⟨hi, lo, e₁, e₂, e₃⟩ hs.x26 hs.x27) fun t ht => ?_
   rw [Slot, ht.frame.readW (Region.contains_self _ _) (ctr_dis h (d := 248) (by decide) (by decide))
     (by decide)]
   exact hl

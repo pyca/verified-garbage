@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Top
 import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
@@ -48,7 +49,7 @@ theorem copyBody_ok (s : State) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 8)
       (s'.mem = s.mem.writeW (s.gpr .rdi) (s.mem.readW (s.gpr .rsi) 64) ∧ s'.gpr .rdi = s.gpr .rdi + 8 ∧
         s'.gpr .rsi = s.gpr .rsi + 8 ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0)) ∧
       Keep [.rax, .rdi, .rsi, .rcx] s s' := by
-  refine WP.keep _ ?_ (by decide)
+  refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
   xrun [h0, h1]
 
 /-- Byte `j` of a write of 8 bytes at `p + 8k`, of a read at `q + 8k`. -/

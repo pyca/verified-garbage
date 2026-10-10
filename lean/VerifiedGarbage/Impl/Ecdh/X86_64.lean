@@ -84,29 +84,29 @@ def consts : List (Nat × Nat) := [(R2P, c.R * c.R % c.C.p), (BP, c.mont c.C.b)]
 def ltP (a : Nat) : List Instr :=
   ((List.range c.n).flatMap fun j =>
     [.mov .rdx (.mem (sc (a + 8 * j))), .alu (if j = 0 then .sub else .sbb) .rdx (.mem (sc (c.sl MP + 8 * j)))]) ++
-  [.alu .sbb .rax (.reg .rax)]
+  ([.alu .sbb .rax (.reg .rax)] : List Instr)
 
 /-- `[a] < p`: the flag `&=` its mask. -/
-def checkLtP (a : Nat) : List Instr := ltP c a ++ [.mov .rdx (.reg .rax)] ++ c.andFlag
+def checkLtP (a : Nat) : List Instr := ltP c a ++ ([.mov .rdx (.reg .rax)] : List Instr) ++ c.andFlag
 
 /-- The mask `rdx` of `[a] = 0` (all ones if it is). -/
 def zero (a : Nat) : List Instr :=
-  [.mov .rdx (.mem (sc a))] ++ ((List.range (c.n - 1)).map fun j => .alu .or .rdx (.mem (sc (a + 8 * (j + 1))))) ++
-  [.alu .cmp .rdx (.imm 1), .alu .sbb .rdx (.reg .rdx)]
+  ([.mov .rdx (.mem (sc a))] : List Instr) ++ ((List.range (c.n - 1)).map fun j => .alu .or .rdx (.mem (sc (a + 8 * (j + 1))))) ++
+  ([.alu .cmp .rdx (.imm 1), .alu .sbb .rdx (.reg .rdx)] : List Instr)
 
 /-- `[a] = 0`: the flag `&=` its mask. -/
 def checkZero (a : Nat) : List Instr := zero c a ++ c.andFlag
 
 /-- The peer's first byte is `04`: the flag `&=` its mask. -/
 def checkLead : List Instr :=
-  [.movzx8 .rdx { base := .r9 }, .alu .xor .rdx (.imm 4), .alu .cmp .rdx (.imm 1),
-    .alu .sbb .rdx (.reg .rdx)] ++ c.andFlag
+  ([.movzx8 .rdx { base := .r9 }, .alu .xor .rdx (.imm 4), .alu .cmp .rdx (.imm 1),
+    .alu .sbb .rdx (.reg .rdx)] : List Instr) ++ c.andFlag
 
 /-- The constants, the peer's `y`, and the checks of its first byte, `x`
 and `y`. -/
 def peer : List Instr :=
   (consts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-  [.mov .rdx (.reg .r9), .alu .add .rdx (.imm (BitVec.ofNat 32 (1 + c.C.len)))] ++
+  ([.mov .rdx (.reg .r9), .alu .add .rdx (.imm (BitVec.ofNat 32 (1 + c.C.len)))] : List Instr) ++
   loadBytes c.C.len c.n (c.sl QY) .rdx ++ checkLead c ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
 
 /-- `y² - (x³ + a x + b)`, from `x R` and `y R`, to `W1`. -/
@@ -119,7 +119,7 @@ def curveOps : List FOp :=
 /-- The point to the ladder's slots: the peer's if the flag is set, else
 `G`. -/
 def select : List Instr :=
-  [.mov .rcx (.mem (sc (c.sl FLAG)))] ++
+  ([.mov .rcx (.mem (sc (c.sl FLAG)))] : List Instr) ++
   sel c.n (c.sl PX) (c.sl GX) (c.sl QXM) ++ sel c.n (c.sl PY) (c.sl GY) (c.sl QYM)
 
 /-- `x` and `y` into Montgomery's form, the check that the point is on the
@@ -151,8 +151,8 @@ def mulQ : Prog isa :=
 /-- `x` (or zeros) to `out`, the flag's low bit to `rax`, and the
 callee-saved registers restored. -/
 def finish : List Instr :=
-  [.mov .rcx (.mem (sc (c.sl FLAG)))] ++ storeBytes c.C.len c.n .rsi 0 (c.sl X) ++
-  [.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] ++
+  ([.mov .rcx (.mem (sc (c.sl FLAG)))] : List Instr) ++ storeBytes c.C.len c.n .rsi 0 (c.sl X) ++
+  ([.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] : List Instr) ++
   Impl.Ecdsa.X86_64.Cfg.saved.map (fun (r, d) => .mov r (.mem (sc d)))
 
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, the checks

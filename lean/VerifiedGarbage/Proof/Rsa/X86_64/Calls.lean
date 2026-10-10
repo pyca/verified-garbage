@@ -55,22 +55,25 @@ theorem Verified.of_inline_sig {c : Prog isa} (hc : c.InlineOk = true) {k₀ k :
 
 /-! ## `vg_rsa_public_precompute` -/
 
-theorem pc_call_verified (M : Mont) {c : Prog isa} (hc : c.InlineOk = true) (hin : c.inline = Precompute.code M.mm)
-    (hmx : (Precompute.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
+theorem pc_call_verified (M : Mont) (r : R2Impl M) {c : Prog isa} (hc : c.InlineOk = true)
+    (hin : c.inline = Precompute.code M.mm r.code)
+    (hmx : (Precompute.code M.mm r.code).allInstrs (fun i => !loadsMxcsr i) = true) :
     Verified target c (Spec.Rsa.publicPrecomputeContract abi 8) :=
-  Verified.of_inline_sig hc (hin ▸ pcCode_correct M hmx) (hin ▸ pcCode_constantTime M) precompute_implies8
+  Verified.of_inline_sig hc (hin ▸ pcCode_correct M r hmx) (hin ▸ pcCode_constantTime M r) precompute_implies8
     (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ h => Sig.rsp_of_pub h) pc_patch
 
-theorem pc_call_ok (M : Mont) {c : Prog isa} (hc : c.InlineOk = true) (hin : c.inline = Precompute.code M.mm)
-    (hmx : (Precompute.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
+theorem pc_call_ok (M : Mont) (r : R2Impl M) {c : Prog isa} (hc : c.InlineOk = true)
+    (hin : c.inline = Precompute.code M.mm r.code)
+    (hmx : (Precompute.code M.mm r.code).allInstrs (fun i => !loadsMxcsr i) = true) :
     ∀ s, pcContract.clear.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ pcContract.post s s' :=
-  ok_of_inline hc (hin ▸ pcCode_correct M hmx) pc_patch
+  ok_of_inline hc (hin ▸ pcCode_correct M r hmx) pc_patch
 
-theorem pc_call_ct (M : Mont) {c : Prog isa} (hc : c.InlineOk = true) (hin : c.inline = Precompute.code M.mm)
-    (hmx : (Precompute.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
+theorem pc_call_ct (M : Mont) (r : R2Impl M) {c : Prog isa} (hc : c.InlineOk = true)
+    (hin : c.inline = Precompute.code M.mm r.code)
+    (hmx : (Precompute.code M.mm r.code).allInstrs (fun i => !loadsMxcsr i) = true) :
     ConstantTime isa pcContract.clear.pre pcContract.pub c :=
-  ct_of_inline hc (fun s h => let ⟨t, s', e, _⟩ := (hin ▸ pcCode_correct M hmx) s h; ⟨t, s', e⟩)
-    (fun _ _ h => h.1 .rsp (by simp)) (hin ▸ pcCode_constantTime M)
+  ct_of_inline hc (fun s h => let ⟨t, s', e, _⟩ := (hin ▸ pcCode_correct M r hmx) s h; ⟨t, s', e⟩)
+    (fun _ _ h => h.1 .rsp (by simp)) (hin ▸ pcCode_constantTime M r)
 
 /-! ## `vg_rsa_private_crt` -/
 
