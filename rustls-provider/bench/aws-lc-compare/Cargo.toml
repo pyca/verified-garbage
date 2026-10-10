@@ -12,7 +12,7 @@ publish = false
 [dependencies]
 asn1 = "0.24"
 aws-lc-rs = { version = "1.18", features = ["prebuilt-nasm"] }
-verified-garbage = { path = "../../.." }
+verified-garbage = { path = "../../..", features = ["cpu-features-env"] }
 
 [profile.release]
 codegen-units = 1
