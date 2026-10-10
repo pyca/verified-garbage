@@ -2,13 +2,15 @@ import VerifiedGarbage.Proof.Ed25519.WindowConstants
 import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
 
 /-!
-# The comb's tables represent `[k 1024^j]B`, and `combG` represents `[G]B`
+# The comb's tables represent `[k 1024^j]B`, `combG` represents `[G]B`, and `combStart` `[G']B`
 
 Each entry is turned back into affine `(x, y)` (`uncache`, which the kernel
 checks inverts the caching) and `checkTables` walks the tables once: within
 table `j`, each entry is the previous one plus the first, with the
 specification's addition, compared projectively; the first entry of table `j +
-1` is `[1024]` of table `j`'s, with the specification's `pointMul`.
+1` is `[1024]` of table `j`'s, with the specification's `pointMul`. `combG` and
+`combStart` are compared with `pointMul` of the base point, and `[32 G']B` with
+`[33 G]B` (`combStart_32`): `G'` is `33 G / 32` modulo the group's order.
 -/
 
 namespace VG.Proof.Ed25519.X86_64
@@ -149,5 +151,45 @@ theorem combG_ok : Rep combG (combGVal • baseAff) := by
     rw [toZ_mul, toZ_one, mul_one]
 
 theorem combGCached_eq : combGCached = cache combG := by decide +kernel
+
+/-- `G' = 33 G / 32` modulo the group's order: where the comb starts. -/
+def combStartVal : Nat := 4552309959934810102337972192881883473972992010722727002078999847075266157651
+
+private def combStartCheck (p : Point) : Bool :=
+  combStart.X * p.Z == p.X && combStart.Y * p.Z == p.Y && p.Z != 0
+
+private theorem combStart_check : combStartCheck (pointMul combStartVal basePoint) = true := by decide +kernel
+
+theorem combStart_ok : Rep combStart (combStartVal • baseAff) := by
+  have hp := pointMul_rep combStartVal basePoint_rep
+  have hc := combStart_check
+  simp only [combStartCheck, Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at hc
+  obtain ⟨⟨hx, hy⟩, _⟩ := hc
+  refine hp.of_proj (show toZ 1 ≠ 0 by decide) ?_ ?_ ?_
+  · show toZ combStart.X * toZ _ = toZ _ * toZ 1
+    rw [toZ_one, mul_one, ← toZ_mul, hx]
+  · show toZ combStart.Y * toZ _ = toZ _ * toZ 1
+    rw [toZ_one, mul_one, ← toZ_mul, hy]
+  · show toZ (combStartAff.1 * combStartAff.2) * toZ 1 = toZ combStartAff.1 * toZ combStartAff.2
+    rw [toZ_mul, toZ_one, mul_one]
+
+private theorem combStart_32_check :
+    pointEqual (pointMul (32 * combStartVal) basePoint) (pointMul (33 * combGVal) basePoint) = true := by
+  decide +kernel
+
+/-- Five doublings of `[G']B` give `[33 G]B`: `32 G' ≡ 33 G` modulo the group's order. -/
+theorem combStart_32 : (32 * combStartVal) • baseAff = (33 * combGVal) • baseAff := by
+  have hp := pointMul_rep (32 * combStartVal) basePoint_rep
+  have hq := pointMul_rep (33 * combGVal) basePoint_rep
+  have h := combStart_32_check
+  simp only [pointEqual, Bool.and_eq_true, beq_iff_eq] at h
+  have e1 := congrArg toZ h.1
+  have e2 := congrArg toZ h.2
+  rw [toZ_mul, toZ_mul, hp.x, hq.x] at e1
+  rw [toZ_mul, toZ_mul, hp.y, hq.y] at e2
+  have hz := mul_ne_zero hp.z hq.z
+  ext
+  · exact mul_right_cancel₀ hz (by rw [← mul_assoc, e1, mul_assoc]; exact congrArg _ (mul_comm _ _))
+  · exact mul_right_cancel₀ hz (by rw [← mul_assoc, e2, mul_assoc]; exact congrArg _ (mul_comm _ _))
 
 end VG.Proof.Ed25519.X86_64

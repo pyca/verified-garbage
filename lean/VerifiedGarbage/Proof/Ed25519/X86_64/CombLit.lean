@@ -5,12 +5,16 @@ import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
 import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 
-/-! Checked literals for the comb variant and its constant-time proof. -/
+/-! Checked literals for the comb variant (its doublings' calls inlined, as its constant-time proof
+reads it) and the registered code. -/
 namespace VG.Proof.Ed25519.X86_64
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
-materialize_code combMultiplyLit := (combMultiply Impl.X25519.X86_64.baseline)
-materialize_code combMultiplyAdxLit := (combMultiply Impl.X25519.X86_64.adx)
-materialize_code combMultiplyAdxYLit := (combMultiply Impl.X25519.X86_64.adx combSelectY)
+materialize_code combMultiplyLit :=
+  (combMultiply Impl.X25519.X86_64.baseline combSelect (Point64.bodies Impl.X25519.X86_64.baseline))
+materialize_code combMultiplyAdxLit :=
+  (combMultiply Impl.X25519.X86_64.adx combSelect (Point64.bodies Impl.X25519.X86_64.adx))
+materialize_code combMultiplyAdxYLit :=
+  (combMultiply Impl.X25519.X86_64.adx combSelectY (Point64.bodies Impl.X25519.X86_64.adx))
 end VG.Proof.Ed25519.X86_64
 
 namespace VG
