@@ -1,4 +1,3 @@
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FprogJ
@@ -337,7 +336,7 @@ theorem stepJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
   refine WP.mono (tentryJ_ok hL hC hV hpn hI.scr hI.mod hjn hI.rbx hb1 (c := true) (Or.inl ⟨rfl, hj⟩)
     hI.bits hz hI.tsym hI.tbl) fun s₂ h₂ => WP.seq (WP.mono h₂ fun s₃ E₃ => ?_)
   have hEW : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n), (K.neg, 8 * K.M.n),
-      (K.M.tmp, 8 * K.M.n)], w ∈ combW K.toComb := entryW_sub (K := K.toComb)
+      (K.M.tmp, 8 * K.M.n)], w ∈ combW K.toComb := combEntryW_sub (K := K.toComb)
   have U₁₃ : Unch base (combW K.toComb) s.mem s₃.mem := E₃.unch.mono hEW
   have hmoW := tcombW_mo hL hI.mod
   have hM₃ : ModOkW K.M size C.p s₃.mem base :=
@@ -411,7 +410,7 @@ theorem stepJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
   have UD₆ : Unch base [(K.D.x, 8 * K.M.n), (K.D.y, 8 * K.M.n), (K.D.z, 8 * K.M.n)] s₄.mem s₆.mem :=
     fun x hx => O₆ x (hx (K.D.x, 8 * K.M.n) (by simp)) (hx (K.D.y, 8 * K.M.n) (by simp))
       (hx (K.D.z, 8 * K.M.n) (by simp))
-  have U₆ : Unch base (combW K.toComb) s₄.mem s₆.mem := UD₆.mono (ptW_D_sub (K := K.toComb))
+  have U₆ : Unch base (combW K.toComb) s₄.mem s₆.mem := UD₆.mono (combSelW_D_sub (K := K.toComb))
   have hA₆ : ∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s₆.mem base x K.M.n = wordsVal s.mem base x K.M.n :=
     fun x hx => ((hL.comb.wordsVal_selD hsz UD₆ x hx : wordsVal s₆.mem base x K.M.n = wordsVal s₄.mem base x K.M.n).trans
       (hAE₄ x (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; rcases hx with h | h | h <;> simp [h]))).trans
@@ -458,7 +457,7 @@ theorem stepJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
     rw [m₁₀]
     refine Unch.mono (W := [(K.A.x, 8 * K.M.n), (K.A.y, 8 * K.M.n), (K.A.z, 8 * K.M.n)])
       (fun x hx => O₉ x (hx (K.A.x, 8 * K.M.n) (by simp)) (hx (K.A.y, 8 * K.M.n) (by simp))
-        (hx (K.A.z, 8 * K.M.n) (by simp))) (ptW_A_sub (K := K.toComb))
+        (hx (K.A.z, 8 * K.M.n) (by simp))) (combSelW_A_sub (K := K.toComb))
   have U : Unch base (combW K.toComb) s.mem s₁₀.mem :=
     (U₁₃.trans (U₄.trans (U₆.trans U₁₀))).mono fun w hw => by
       simp only [List.mem_append] at hw; rcases hw with h | h | h | h <;> exact h
