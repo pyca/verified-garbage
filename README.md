@@ -698,6 +698,38 @@ yours to keep:
 
 <tr>
 
+<td>CAST5-CBC</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>CAST5-CFB64</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>CAST5-ECB (CAST-128, 40- to 128-bit keys)</td>
 
 <td>✅</td>
@@ -705,6 +737,22 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>CAST5-OFB</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 <td>❌</td>
 
