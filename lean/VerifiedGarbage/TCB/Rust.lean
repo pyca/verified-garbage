@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Rendering artifacts as Rust
@@ -89,6 +91,8 @@ on naked functions. The x86 assemblers accept every instruction without it;
 on AArch64 the printer's `enableFeature`/`disableFeature` directives enable
 each feature for the function's body only.)
 -/
+
+@[expose] public section
 
 namespace VG.Rust
 

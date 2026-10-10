@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Sse
+module
+
+public import VerifiedGarbage.TCB.X86_64.Sse
 
 /-!
 # x86-64 AVX instructions
@@ -9,6 +11,8 @@ AVX512_IFMA multiply-adds and AVX-512F rotations and ternary logic on `xmm` and
 `ymm` registers (with AVX512VL), which write their destination as the
 VEX-encoded instructions do.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

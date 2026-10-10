@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Code
+module
+
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # Lowering structured code to assembly text
@@ -41,6 +43,8 @@ Together with each ISA's instruction printer this is part of the trusted
 base; it is small enough to check by inspection and is covered by the golden
 tests in `VerifiedGarbageTest/Print.lean`.
 -/
+
+@[expose] public section
 
 namespace VG
 

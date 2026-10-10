@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Code
+module
+
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # Rust signatures and calling conventions
@@ -39,6 +41,8 @@ safe wrappers do) meets by construction. A contract adds only what the types
 do not say: any further precondition (e.g. a bound on a length), the
 postcondition, and which integer arguments are public.
 -/
+
+@[expose] public section
 
 namespace VG
 

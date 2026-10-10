@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Arm.Print
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.TCB.Arm.Print
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # The 32-bit ARM target (AAPCS)
@@ -22,6 +24,8 @@ Not modelled: the floating-point and SIMD registers (never modified; `d8`–
 `d15` are callee-saved), the flags other than N, Z, C, V (never modified), and
 memory below `sp` (never granted to a function).
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 

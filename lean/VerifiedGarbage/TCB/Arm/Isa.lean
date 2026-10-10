@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Code
+module
+
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # ARMv7 machine model
@@ -60,6 +62,8 @@ Modelling choices:
   change `r12` and the condition flags (AAELF32 §5.6.1.4, "Call and Jump
   relocations"), so a call leaves unknown values in them too.
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 

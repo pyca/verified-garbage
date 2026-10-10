@@ -1,4 +1,6 @@
-import Lean
+module
+
+public meta import Lean
 
 /-!
 # Environment audit
@@ -30,6 +32,8 @@ imports, besides the axiom audit (`TCB/Axioms.lean`):
   Theorems (e.g. the equation lemmas Lean generates for a `Spec/` definition
   in the module that first unfolds it) carry no data and are exempt.
 -/
+
+public meta section
 
 namespace VG
 

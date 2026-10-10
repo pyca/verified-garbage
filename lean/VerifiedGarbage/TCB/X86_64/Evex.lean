@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Avx512
+module
+
+public import VerifiedGarbage.TCB.X86_64.Avx512
 
 /-!
 # x86-64 EVEX-encoded instructions on 256-bit registers, `ymm0`–`ymm31`
@@ -20,6 +22,8 @@ them. For `xmm0`–`xmm15` the state's
 `xmm`, `ymmHi` and `zmmHi` hold the register, as for the VEX-encoded
 instructions (`State.setV`), whose results these EVEX forms compute.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

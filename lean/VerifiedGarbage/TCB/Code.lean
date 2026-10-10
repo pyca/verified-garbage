@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # Structured assembly programs and their semantics
@@ -64,6 +66,8 @@ decision: the standard constant-time leakage model. Instructions whose timing
 depends on their operand values (e.g. division) must not be part of any ISA
 model.
 -/
+
+@[expose] public section
 
 namespace VG
 

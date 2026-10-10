@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86.Sse
-import VerifiedGarbage.TCB.X86.Mmx
+module
+
+public import VerifiedGarbage.TCB.X86.Sse
+public import VerifiedGarbage.TCB.X86.Mmx
 
 /-!
 # x86 (32-bit) machine model
@@ -91,6 +93,8 @@ Modelling choices:
   otherwise; the MMX registers are caller-saved (the x87 registers are
   scratch registers in the ABI), and their values on entry are unknown.
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

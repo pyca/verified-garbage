@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Code
-import VerifiedGarbage.TCB.AArch64.Simd
+module
+
+public import VerifiedGarbage.TCB.Code
+public import VerifiedGarbage.TCB.AArch64.Simd
 
 /-!
 # AArch64 machine model
@@ -114,6 +116,8 @@ Modelling choices:
   instruction is a data-independent-time instruction as described in About
   PSTATE.DIT"). As above, the code does not set PSTATE.DIT.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

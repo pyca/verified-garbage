@@ -1,3 +1,5 @@
+module
+
 /-!
 # AArch64 AdvSIMD values and the cryptographic functions of the Arm ARM
 
@@ -13,6 +15,8 @@ Lanes are numbered from the least significant, as the pseudocode's
 loaded by `LDR (immediate, SIMD&FP)` holds the `e`-th `size`-bit value in
 memory.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.TCB.Print
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.TCB.Print
 
 /-!
 # Printer for the AArch64 model
@@ -7,6 +9,8 @@ import VerifiedGarbage.TCB.Print
 **Trusted.** Emits the GNU/LLVM assembler syntax used by Rust's
 `asm!`/`naked_asm!` on AArch64.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

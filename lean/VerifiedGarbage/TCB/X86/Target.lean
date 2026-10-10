@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86.Print
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.TCB.X86.Print
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # The x86 (32-bit) cdecl target
@@ -26,6 +28,8 @@ MMX frames use, ending with `emms`, so the x87 stack is empty on exit when
 it was on entry: see `TCB/X86/Isa.lean`), MXCSR (never modified), and memory
 below `esp` (never granted to a function).
 -/
+
+@[expose] public section
 
 namespace VG.X86
 
