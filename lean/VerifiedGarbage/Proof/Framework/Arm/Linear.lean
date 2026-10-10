@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Framework.Arm.Straight
 import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
 import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 
 /-!
 # ARMv7: linear layers of bitsliced code, by evaluation
@@ -22,8 +23,9 @@ open VG.Bitslice
 
 /-! ## Words of atoms (as `Framework/Bitslice/Atoms.lean`, for 32-bit words) -/
 
-/-- Input word `i`: bit `t` is atom `32 i + t`. -/
-def inWord (i : Nat) : Nat × Nat := (0, mk 32 (fun t => [32 * i + t]) 32)
+/-- Input word `i`: bit `t` is atom `32 i + t`. One shift of word `0`'s
+lanes (`Bitslice.inWordW`), which the kernel evaluates once. -/
+def inWord (i : Nat) : Nat × Nat := inWordW 32 i
 
 /-- The word whose bit `p` is the XOR of the atoms `g p`. -/
 def outWord (g : Nat → List Nat) : Nat × Nat := (0, mk 32 g 32)
@@ -60,7 +62,7 @@ theorem xorA_assign (W : Nat → BitVec 32) {N : Nat} {l : List Nat} (hl : ∀ a
 theorem inWord_rel {k : Nat} (W : Nat → BitVec 32) {i : Nat} (hi : 32 * i + 32 ≤ 2 ^ k) :
     LaneRel k (assign W (2 ^ k)) (inWord i) (W i) := by
   refine ⟨Nat.two_pow_pos _, fun q hq => ?_⟩
-  simp only [inWord, Nat.zero_testBit, Bool.false_xor]
+  simp only [inWord, inWordW_eq_mk, Nat.zero_testBit, Bool.false_xor]
   rw [par_mk hq (Nat.le_refl _) _ (fun q' hq' a ha => by simp at ha; omega), xorA_assign W
     (by intro a ha; simp at ha; omega)]
   simp [hq, bitOf_word W i q hq]
