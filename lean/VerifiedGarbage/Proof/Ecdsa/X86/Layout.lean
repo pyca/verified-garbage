@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
 import VerifiedGarbage.Proof.Ecdsa.X86.Flags
 import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
 import VerifiedGarbage.TCB.X86.Target

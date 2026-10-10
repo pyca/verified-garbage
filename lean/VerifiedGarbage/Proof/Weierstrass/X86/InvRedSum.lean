@@ -1,6 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRedWord
-import VerifiedGarbage.Proof.Weierstrass.X86.InvRedSumMath
-import VerifiedGarbage.Proof.Weierstrass.X86.InvSignMask
+import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
 
 /-! # The signed numerator of a divstep coefficient reduction -/

@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Framework.NativeTaint
 import VerifiedGarbage.Proof.Ecdsa.X86.Main
-import VerifiedGarbage.Proof.Weierstrass.X86.MontModuli
+import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
 import VerifiedGarbage.Proof.Ecdsa.X86.P384.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86.P384.Lit
 import VerifiedGarbage.Proof.P384.Point

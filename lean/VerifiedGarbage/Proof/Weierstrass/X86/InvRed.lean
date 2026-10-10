@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Divstep.Red32
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRedSum
-import VerifiedGarbage.Proof.Weierstrass.X86.InvNormalize
+import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
 
 /-! # Reduction of a signed divstep coefficient row -/
