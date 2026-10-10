@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sm4.Arm.Lit
 
 /-!
 # SM4 ECB on ARMv7 meets its contracts

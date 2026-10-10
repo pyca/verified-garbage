@@ -32,7 +32,7 @@ def sboxPost (e : Env Nat) : Bool :=
 
 theorem sbox_check :
     check (table 64 256) sboxCfg (fun _ => none) Impl.Sm4.X86_64.sboxCode sboxEnv sboxPost = true := by
-  decide +kernel
+  lit_decide
 
 /-- The registers the S-box writes. -/
 def sboxWrites : List Reg := [q 0, q 1, q 2, q 3, q 4, q 5, q 6, q 7, t0, t1]
@@ -86,7 +86,7 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
     have := p₁.rel.reg (q j) _ (hout j hj)
     simp only [TableRel] at this
     rw [← this, sboxT, testBit_tableOf]
-    simp [hc]
+    simp [hc, sboxN_eq hc, BitVec.testBit_toNat]
   · simp [sbox_writes r hr]
 
 end VG.Proof.Sm4.X86_64

@@ -32,7 +32,7 @@ def sboxPost (e : Env Nat) : Bool :=
 
 theorem sbox_check :
     check (table 32 256) sboxCfg (fun _ => none) Impl.Sm4.Arm.sboxCode sboxEnv sboxPost = true := by
-  decide +kernel
+  lit_decide
 
 /-- The registers the layers may write: the state, the S-box's temporaries
 and all ones, and the linear layers' masks and temporaries. -/
@@ -86,7 +86,7 @@ theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
     have := p₁.rel.reg (q j) _ (hout j hj)
     simp only [TableRel] at this
     rw [← this, sboxT, testBit_tableOf]
-    simp [hc]
+    simp [hc, sboxN_eq hc, BitVec.testBit_toNat]
   · simp [writes_rest (is := Impl.Sm4.Arm.sboxCode) (by decide +kernel) r hr]
 
 end VG.Proof.Sm4.Arm
