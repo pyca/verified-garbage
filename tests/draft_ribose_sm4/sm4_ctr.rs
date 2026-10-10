@@ -1,4 +1,5 @@
-//! SM4-CTR: the CTR examples of draft-ribose-cfrg-sm4-10 (A.2.5), unmodified
+//! SM4-CTR: the CTR examples (A.2.5) of the Internet-Draft
+//! draft-ribose-cfrg-sm4-10, unmodified
 //! under vectors/, whole, in pieces and truncated; and CTR from ECB
 //! (`Sm4Ecb`, tested on the draft's ECB examples) on every length up to
 //! a few groups of sixteen blocks and across the carries of the counter.
@@ -8,43 +9,7 @@
 use verified_garbage::sm4_ctr::Sm4Ctr;
 use verified_garbage::sm4_ecb::Sm4Ecb;
 
-use super::unhex;
-
-const DRAFT: &str =
-    include_str!("../../vectors/draft-ribose-cfrg-sm4/draft-ribose-cfrg-sm4-10.txt");
-
-/// The text of the appendix between the headings starting `from` and `to`.
-fn section(from: &str, to: &str) -> &'static str {
-    let appendix = DRAFT
-        .split("Appendix A.  Appendix A: Example Calculations")
-        .last()
-        .unwrap();
-    let start = appendix.find(from).unwrap();
-    let end = start + appendix[start..].find(to).unwrap();
-    &appendix[start..end]
-}
-
-/// The bytes after the label `label` (e.g. `"Plaintext:"`), from the lines
-/// of two-digit hex numbers that follow it, skipping the page breaks, up to
-/// the next label.
-fn field(text: &str, label: &str) -> Vec<u8> {
-    let mut lines = text.lines().map(str::trim);
-    lines
-        .by_ref()
-        .find(|line| line.eq_ignore_ascii_case(label))
-        .unwrap();
-    let mut out = Vec::new();
-    for line in lines {
-        if line.ends_with(':') {
-            break;
-        }
-        if !line.is_empty() && line.split(' ').all(|byte| byte.len() == 2) {
-            out.extend(unhex(&line.replace(' ', "")));
-        }
-    }
-    assert!(!out.is_empty());
-    out
-}
+use super::{field, section};
 
 /// `ctr` plus `k`, modulo `2¹²⁸`.
 fn add(ctr: [u8; 16], k: usize) -> [u8; 16] {

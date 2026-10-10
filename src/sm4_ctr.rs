@@ -1,4 +1,5 @@
-//! SM4-CTR (SP 800-38A §6.5, with SM4 as in draft-ribose-cfrg-sm4-10 §7.1),
+//! SM4-CTR (SP 800-38A §6.5, with SM4 as in GB/T 32907-2016, transcribed in
+//! the Internet-Draft draft-ribose-cfrg-sm4-10),
 //! in place, with the standard incrementing function of Appendix B.1 on the
 //! whole counter block (a 128-bit big-endian number, wrapping modulo `2¹²⁸`,
 //! as OpenSSL's SM4-CTR).
