@@ -1,5 +1,7 @@
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
+import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+import VerifiedGarbage.Proof.Framework.LitShare
 
 /-!
 # ECDSA over P-256 on x86-64 with BMI2 and ADX: `Verified`
@@ -40,8 +42,16 @@ theorem sign_x86_adx (hL : Law Spec.P256.curve)
   sign_x86_of (p256x_ok hI) hL (p256_tbls hL hT) (fun _ h => { pre_of h with }) (fun _ _ => id) rfl
     (by lit_decide) (by lit_decide) (by lit_decide) s hs
 
+/-- `signP256Adx` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+def signP256AdxErased : Prog isa := Code.erase signP256Adx
+
+materialize_shared signP256AdxErased
+
 theorem sign_ct_adx : ConstantTime isa signX86_64.pre signX86_64.pub signP256Adx :=
-  VG.Taint.constantTime (A := taintSym ["VG_P256_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8])
+  VG.Taint.constantTime_mapBlocks (c' := signP256AdxErased) (taintSym_eraseInv ["VG_P256_COMB"])
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) rfl
     (fun _ _ _ _ ⟨_, h1, h2, h3, h4, h5, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -50,7 +60,7 @@ theorem sign_ct_adx : ConstantTime isa signX86_64.pre signX86_64.pub signP256Adx
       · exact h3
       · exact h4
       · exact h5, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
-    (by taint_decide)
+    rfl (by taint_decide)
 
 theorem sign_verified_adx (hL : Law Spec.P256.curve)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)

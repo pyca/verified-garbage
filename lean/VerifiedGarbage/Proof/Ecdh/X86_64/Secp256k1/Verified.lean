@@ -2,6 +2,8 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Contract
 import VerifiedGarbage.Proof.Ecdh.X86_64.Secp256k1.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
+import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+import VerifiedGarbage.Proof.Framework.LitShare
 
 /-!
 # ECDH over secp256k1 on x86-64: `Verified`
@@ -64,8 +66,16 @@ theorem ecdh_x86 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X
       · exact hro
       · exact hrs) (by decide)
 
+/-- `exchangeSecp256k1` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+def exchangeSecp256k1Erased : Prog isa := Code.erase exchangeSecp256k1
+
+materialize_shared exchangeSecp256k1Erased
+
 theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeSecp256k1 := by
-  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ (by taint_decide)
+  refine VG.Taint.constantTime_mapBlocks (c' := exchangeSecp256k1Erased) taintS_eraseInv
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) rfl ?_ rfl (by taint_decide)
   intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

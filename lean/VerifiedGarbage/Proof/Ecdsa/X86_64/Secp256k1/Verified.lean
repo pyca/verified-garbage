@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 import VerifiedGarbage.Proof.Secp256k1.Prime
+import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+import VerifiedGarbage.Proof.Framework.LitShare
 
 /-! # secp256k1 signing on x86-64: correctness, memory safety and constant time
 
@@ -102,8 +104,16 @@ theorem sign_x86 (hL : Law Spec.Secp256k1.curve)
       · exact hro
       · exact hrs) (by decide)
 
+/-- `signSecp256k1` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+def signSecp256k1Erased : Prog isa := Code.erase signSecp256k1
+
+materialize_shared signSecp256k1Erased
+
 theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signSecp256k1 :=
-  VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8])
+  VG.Taint.constantTime_mapBlocks (c' := signSecp256k1Erased) taintS_eraseInv
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) rfl
     (fun _ _ _ _ ⟨_, h1, h2, h3, h4, h5⟩ => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -111,7 +121,7 @@ theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signSecp256k1 :
       · exact h2
       · exact h3
       · exact h4
-      · exact h5) (by taint_decide)
+      · exact h5) rfl (by taint_decide)
 
 theorem sign_verified (hL : Law Spec.Secp256k1.curve)
     (hI : InvSounds) :
