@@ -31,17 +31,17 @@ theorem word_ok (s : State) {k : Nat} {hi prev col : Reg} {v : BitVec 64} {c o :
   omega
 
 theorem close_ok (s : State) {hi col : Reg} {c o : Bool}
-    (hc : s.cf=some c) (ho : s.of=some o) (hz : s.gpr .rcx=0) (hne : hi≠col) :
+    (hc : s.cf=some c) (ho : s.of=some o) (hz : s.gpr col=0) (hne : hi≠col) :
     WP isa (.block (AdxTri8.close hi col)) s fun t => ∃ c' o' : Bool,
       t.cf=some c' ∧ t.of=some o' ∧
       (t.gpr col).toNat+2^64*(c'.toNat+o'.toNat)=
         (s.gpr col).toNat+(s.gpr hi).toNat+c.toNat+o.toNat ∧ Keeps [col] s t := by
-  change WP isa (.block (AdxDualAdd.word col (.reg .rcx) (.reg hi))) s _
-  refine WP.mono (AdxDualAdd.word_ok s (a := .reg .rcx) (b := .reg hi) (vb := s.gpr hi) rfl
+  change WP isa (.block (AdxDualAdd.word col (.reg col) (.reg hi))) s _
+  refine WP.mono (AdxDualAdd.word_ok s (a := .reg col) (b := .reg hi) (vb := s.gpr hi) rfl
     (fun t kt => by simp only [readSrc]; rw [kt.gpr (by simp [hne])])
     (fun _ h => nomatch h) (fun _ h => nomatch h) hc ho) fun t ⟨ct,ot,hct,hot,eq,kt⟩ => ?_
-  rw [hz] at eq
-  simp only [show (0 : BitVec 64).toNat=0 from rfl,Nat.add_zero] at eq
+  rw [hz] at eq ⊢
+  simp only [show (0 : BitVec 64).toNat=0 from rfl,Nat.add_zero,Nat.zero_add] at eq ⊢
   exact ⟨ct,ot,hct,hot,eq,kt⟩
 
 end VG.Proof.Bignum.X86_64.AdxTri8
