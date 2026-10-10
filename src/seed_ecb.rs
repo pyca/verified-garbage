@@ -2,10 +2,11 @@
 //!
 //! Key expansion and ECB encryption/decryption use verified primitives.
 //! Each operation accepts complete 16-byte blocks, including empty input.
-//! ECB runs sixteen blocks at a time, computing each round's `G` functions
-//! bitsliced in general-purpose registers, with no table lookups.
+//! ECB runs sixteen blocks at a time (eight on ARMv7), computing each
+//! round's `G` functions bitsliced in general-purpose registers, with no
+//! table lookups.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 
 use crate::arch::seed::{vg_seed_ecb_decrypt, vg_seed_ecb_encrypt, vg_seed_expand_key};
 use crate::zeroize::zeroize;
