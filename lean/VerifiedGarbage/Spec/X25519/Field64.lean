@@ -31,8 +31,8 @@ unspecified and may hold intermediate values; every other byte of `ws` keeps
 its value but the result's (`Keeps`).
 
 The inversion's elements are at fixed offsets instead, those where that code
-keeps them, in a working space of the same 4096 bytes: it reads `z` at byte 128 (`zAt`) and writes `z^(p-2)` at byte 544 (`invAt`);
-bytes 512 to 767 (`invOwnAt` to `invOwnEnd`) are its own working space and its
+keeps them, in a working space of the same 4096 bytes: it reads `z` at byte
+128 (`zAt`) and writes `z^(p-2)` at byte 544 (`invAt`); bytes 512 to 767 (`invOwnAt` to `invOwnEnd`) are its own working space and its
 result. On return those bytes but the result are unspecified and may hold
 intermediate values; every other byte of `ws` keeps its value (`InvKeeps`).
 
