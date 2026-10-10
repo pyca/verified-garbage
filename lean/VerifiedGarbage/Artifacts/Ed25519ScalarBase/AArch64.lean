@@ -12,10 +12,12 @@ def artifacts : List Artifact := [
       a comb: the scalar's 64 nibbles n give the digits n - 8, and each digit's multiple of \
       [16^i]B is one of 32 tables of [k 256^j]B for k <= 8, affine, cached as \
       [Y - X, Y + X, 2dT] in the static `VG_ED25519_COMB` and checked against the specification \
-      in Lean. Each table serves two digits, accumulated apart: their entries are selected \
-      together, in constant time (reading every entry of the table), and negated under their \
-      signs' masks; 64 additions, four doublings and one addition, in a fixed schedule. The \
-      working values and saved registers reside in `scratch`."])
+      in Lean. Each table serves two digits, n_{2j+1} and n_{2j}: one point accumulates the odd \
+      digits' entries from [G']B, is doubled four times, and accumulates the even digits' \
+      (G' makes up for the digits' offset). Each entry is selected in constant time (reading \
+      every entry of the table) and negated under its sign's mask; the 64 additions are calls of \
+      `vg_ed25519_r64_add_affine_ext`, the four doublings calls of `vg_ed25519_r64_double_ext`, \
+      in a fixed schedule. The working values and saved registers reside in `scratch`."])
     consts := Impl.Ed25519.AArch64.combConsts
     code := Impl.Ed25519.AArch64.scalarBase
     contract := Spec.Ed25519.scalarBaseContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.combConsts)
