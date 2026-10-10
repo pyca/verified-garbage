@@ -69,23 +69,23 @@ def preWords (r : Reg) : List Instr :=
 `M`, `n`, the input, the private key and the working space, `n_len` as
 every length of the modulus. -/
 def crtArgs : List Instr :=
-  [.store (sp oOut) .rdi, .store (sp oN) .rdx, .store (sp oK) .rcx, .store (sp oE) .r8, .store (sp oEl) .r9] ++
+  ([.store (sp oOut) .rdi, .store (sp oN) .rdx, .store (sp oK) .rcx, .store (sp oE) .r8, .store (sp oEl) .r9] : List Instr) ++
   (List.range 12).flatMap (fun j => [.mov .rax (.mem (arg (j + 2))), .store (sp (8 * j)) .rax]) ++
-  lea .rdi oM ++ [.mov .rsi (.reg .rcx), .mov .r8 (.mem (arg 0)), .mov .r9 (.reg .rcx)]
+  lea .rdi oM ++ ([.mov .rsi (.reg .rcx), .mov .r8 (.mem (arg 0)), .mov .r9 (.reg .rcx)] : List Instr)
 
 /-- `r₁` kept, and the arguments of `vg_rsa_public_precompute`: its values
 to `oPre`, `n` and the working space. -/
 def pcArgs : List Instr :=
-  [.store (sp oR1) .rax] ++ lea .rdi oPre ++ preWords .rsi ++
-  [.mov .rdx (.mem (sp oN)), .mov .rcx (.mem (sp oK)), .mov .r8 (.mem (arg 12)), .mov .r9 (.mem (arg 13))]
+  ([.store (sp oR1) .rax] : List Instr) ++ lea .rdi oPre ++ preWords .rsi ++
+  ([.mov .rdx (.mem (sp oN)), .mov .rcx (.mem (sp oK)), .mov .r8 (.mem (arg 12)), .mov .r9 (.mem (arg 13))] : List Instr)
 
 /-- `r₃` kept, and the arguments of `vg_rsa_public_precomputed_checked`:
 `out`, `n`'s values, `e`, `M` as the input, the working space. -/
 def pdArgs : List Instr :=
-  [.store (sp oR3) .rax, .mov .rdi (.mem (sp oOut)), .mov .rsi (.mem (sp oK))] ++ lea .rdx oPre ++ preWords .rcx ++
-  [.mov .r8 (.mem (sp oE)), .mov .r9 (.mem (sp oEl))] ++ lea .rax oM ++
-  [.store (sp 0) .rax, .mov .rax (.mem (sp oK)), .store (sp 8) .rax, .mov .rax (.mem (arg 12)),
-    .store (sp 16) .rax, .mov .rax (.mem (arg 13)), .store (sp 24) .rax]
+  ([.store (sp oR3) .rax, .mov .rdi (.mem (sp oOut)), .mov .rsi (.mem (sp oK))] : List Instr) ++ lea .rdx oPre ++ preWords .rcx ++
+  ([.mov .r8 (.mem (sp oE)), .mov .r9 (.mem (sp oEl))] : List Instr) ++ lea .rax oM ++
+  ([.store (sp 0) .rax, .mov .rax (.mem (sp oK)), .store (sp 8) .rax, .mov .rax (.mem (arg 12)),
+    .store (sp 16) .rax, .mov .rax (.mem (arg 13)), .store (sp 24) .rax] : List Instr)
 
 /-- `r₂ & r₁ & r₃ & 1` into `r11`, and the comparison's registers: `out`
 in `rdi`, the input in `rsi`, `n_len` in `rcx`, the index `r10` and the

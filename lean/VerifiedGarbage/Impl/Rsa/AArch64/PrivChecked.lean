@@ -91,16 +91,16 @@ def crtArgs : List Instr := saveSlots ++ copyArgs ++ crtRegs
 /-- `r₁` kept, and the arguments of `vg_rsa_public_precompute`: its values
 to `oPre`, `n` and the working space. -/
 def pcArgs : List Instr :=
-  [.addSp .x15 0, .str .x .x0 .x15 oR1, .addSp .x0 oPre] ++ preWords .x1 ++
-  [.ldrSp .x2 oN, .ldrSp .x3 oK, .ldrSp .x4 (arg 10), .ldrSp .x5 (arg 11)]
+  ([.addSp .x15 0, .str .x .x0 .x15 oR1, .addSp .x0 oPre] : List Instr) ++ preWords .x1 ++
+  ([.ldrSp .x2 oN, .ldrSp .x3 oK, .ldrSp .x4 (arg 10), .ldrSp .x5 (arg 11)] : List Instr)
 
 /-- `r₃` kept, and the arguments of `vg_rsa_public_precomputed_checked`:
 `out`, `n`'s values, `e`, `M` as the input, the working space (on the
 stack). -/
 def pdArgs : List Instr :=
-  [.addSp .x15 0, .str .x .x0 .x15 oR3, .ldrSp .x0 oOut, .ldrSp .x1 oK, .addSp .x2 oPre] ++ preWords .x3 ++
-  [.ldrSp .x4 oE, .ldrSp .x5 oEl, .addSp .x6 oM, .addImm .x .x7 .x1 0, .ldrSp .x8 (arg 10),
-    .str .x .x8 .x15 0, .ldrSp .x8 (arg 11), .str .x .x8 .x15 8]
+  ([.addSp .x15 0, .str .x .x0 .x15 oR3, .ldrSp .x0 oOut, .ldrSp .x1 oK, .addSp .x2 oPre] : List Instr) ++ preWords .x3 ++
+  ([.ldrSp .x4 oE, .ldrSp .x5 oEl, .addSp .x6 oM, .addImm .x .x7 .x1 0, .ldrSp .x8 (arg 10),
+    .str .x .x8 .x15 0, .ldrSp .x8 (arg 11), .str .x .x8 .x15 8] : List Instr)
 
 /-- `r₂ & r₁ & r₃ & 1` into `x9`, and the comparison's registers: `out` in
 `x11`, the input in `x12`, the bytes left `n_len` in `x13` and the

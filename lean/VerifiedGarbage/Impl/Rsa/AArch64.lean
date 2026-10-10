@@ -186,7 +186,7 @@ def rest : Prog isa := seqs [
   .block [ldh .x12 sW, ldh .x16 (sArr aX), ldh .x17 (sArr aN), movi .x7 0, mov .x14 .x12, .subs .x .x3 .x7 .x7],
   cmpLoop,
   -- `-m⁻¹`, and the number 1.
-  .block ([.subImm .x .x4 .x7 1, .csel .x .x15 .x7 .x4, sth .x15 sMask, ldh .x8 (sArr aN), ld .x3 .x8] ++ minv ++
+  .block (([.subImm .x .x4 .x7 1, .csel .x .x15 .x7 .x4, sth .x15 sMask, ldh .x8 (sArr aN), ld .x3 .x8] : List Instr) ++ minv ++
     [sth .x15 sMinv, ldh .x12 sW, movi .x9 1, movi .x13 0]),
   setWord aOne,
   -- `X = input R mod m`, the exponentiation, and the result.

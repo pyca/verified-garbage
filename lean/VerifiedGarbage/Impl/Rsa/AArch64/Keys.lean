@@ -58,7 +58,7 @@ def ws : List Instr := [ldh .x12 sW, ldh .x11 sStride]
 
 /-- The base of array `j` into `r`: `x0 + 256 + j · x11`. -/
 def base (j : Nat) (r : Reg) : List Instr :=
-  [.addImm .x r .x0 hdrBytes] ++ List.replicate j (.add .x r r .x11)
+  ([.addImm .x r .x0 hdrBytes] : List Instr) ++ List.replicate j (.add .x r r .x11)
 
 /-- `[j] := 0` (`w + 2` words). -/
 def zeroA (j : Nat) : Prog isa := .seq (.block (ws ++ base j .x8 ++ [movi .x7 0])) zeroAcc
@@ -120,7 +120,7 @@ def xorBody : List Instr :=
 def divShiftP (iQ iR : Nat) : List (Prog isa) := [
   .block ([movi .x7 0, mov .x14 .x12, .adds .x .x3 .x7 .x7] ++ base iQ .x16),
   countLoop .x14 shlBody,
-  .block (base iR .x16 ++ [.addImm .x .x14 .x12 1]),
+  .block (base iR .x16 ++ ([.addImm .x .x14 .x12 1] : List Instr)),
   countLoop .x14 shlBody]
 
 /-- `[t] := [r] - [d]` over `w + 1` words (word `w` of `[d]` taken as zero),
@@ -129,7 +129,7 @@ def divSubP (iR iD iT : Nat) : List (Prog isa) := [
   .block ([movi .x7 0, mov .x14 .x12, .subs .x .x3 .x7 .x7] ++ base iR .x16 ++ base iD .x17 ++ base iT .x13),
   countLoop .x14 subBody,
   .block ([ld .x3 .x16, .sbcs .x .x3 .x3 .x7, st .x3 .x13] ++ carryMask ++ base iT .x16 ++ base iR .x17 ++
-    [.addImm .x .x14 .x12 1]),
+    ([.addImm .x .x14 .x12 1] : List Instr)),
   Crt.selLoop]
 
 /-- `[q] += 1` if it did not borrow (its low bit is clear after the shift),
@@ -158,7 +158,7 @@ def invSwapP (iU iV iX₁ iX₂ : Nat) : List (Prog isa) := [
   .block (base iU .x16 ++ base iV .x17),
   .block ([ld .x3 .x16] ++ oddMask ++ [mov .x9 .x15, .subs .x .x3 .x7 .x7]),
   cmpLoop,
-  .block (borrowMask ++ [.logic .and .x .x15 .x15 .x9, mov .x14 .x12]),
+  .block (borrowMask ++ ([.logic .and .x .x15 .x15 .x9, mov .x14 .x12] : List Instr)),
   .block (base iU .x16 ++ base iV .x17),
   countLoop .x14 cswapBody,
   .block [mov .x14 .x12],
@@ -208,7 +208,7 @@ def invStep (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
     [.block [.subImm .x .x6 .x6 1]])))
 
 /-- `x6 := 128 w`. -/
-def invInit : List Instr := ws ++ [.lsl .x .x6 .x12 7]
+def invInit : List Instr := ws ++ ([.lsl .x .x6 .x12 7] : List Instr)
 
 /-- `128 w` steps of the binary extended Euclidean algorithm. -/
 def inverse (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
@@ -255,8 +255,8 @@ def andZero : List Instr :=
 /-- `w`, the arrays' bases and the stride `8 (w + 2)`, and the mask all
 ones. -/
 def head : List Instr :=
-  Rsa.AArch64.head ++ [.addImm .x .x3 .x12 2, .lsl .x .x3 .x3 3, sth .x3 sStride, movi .x7 0,
-    .subImm .x .x4 .x7 1, sth .x4 sMask]
+  Rsa.AArch64.head ++ ([.addImm .x .x3 .x12 2, .lsl .x .x3 .x3 3, sth .x3 sStride, movi .x7 0,
+    .subImm .x .x4 .x7 1, sth .x4 sMask] : List Instr)
 
 /-! ## `vg_rsa_crt_values` -/
 

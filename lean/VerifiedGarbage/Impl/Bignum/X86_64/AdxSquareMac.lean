@@ -17,22 +17,22 @@ open VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Adx
 The low words end in `r11`, `r12`, `r13`, `r15`; the carry ends in `rcx`.
 Neither memory nor the scalar changes. -/
 def mac4 : List Instr :=
-  [.alu32 .xor .rsi (.reg .rsi)] ++ (wordA 0 .rax .r11 .rcx ++
+  ([.alu32 .xor .rsi (.reg .rsi)] : List Instr) ++ (wordA 0 .rax .r11 .rcx ++
     (wordA 1 .rsi .r12 .rax ++ (wordA 2 .rax .r13 .rsi ++ (wordA 3 .rcx .r15 .rax ++ close .rcx))))
 
 /-- Four multiply-add words stored, advancing the public word counter. -/
 def mac4Store : List Instr := mac4 ++
-  [.store (ix .r8 .r14) .r11, .store (ix .r8 .r14 8) .r12, .store (ix .r8 .r14 16) .r13,
-    .store (ix .r8 .r14 24) .r15, .alu .add .r14 (.imm 4), .alu .cmp .r14 (.reg .rbx)]
+  ([.store (ix .r8 .r14) .r11, .store (ix .r8 .r14 8) .r12, .store (ix .r8 .r14 16) .r13,
+    .store (ix .r8 .r14 24) .r15, .alu .add .r14 (.imm 4), .alu .cmp .r14 (.reg .rbx)] : List Instr)
 
 /-- One multiply-add word, for a row's one to three remaining words. -/
 def mac1 : List Instr :=
-  [.alu32 .xor .rsi (.reg .rsi), .mov .rax (.reg .rcx)] ++
+  ([.alu32 .xor .rsi (.reg .rsi), .mov .rax (.reg .rcx)] : List Instr) ++
     (wordA 0 .rcx .r11 .rax ++ close .rcx)
 
 /-- One multiply-add word stored, advancing the public word counter. -/
 def mac1Store : List Instr := mac1 ++
-  [.store (ix .r8 .r14) .r11, .alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .rbx)]
+  ([.store (ix .r8 .r14) .r11, .alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .rbx)] : List Instr)
 
 /-- The rounded block limit and initial carry/counter. `rbp` is the public
 row length and `rdx` the scalar. -/

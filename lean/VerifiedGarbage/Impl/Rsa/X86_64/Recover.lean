@@ -81,17 +81,17 @@ def bw : List Instr :=
 /-- Save the callee-saved registers and the arguments in the header at
 `scratch`, with its base in `rdi`. `p_len` and `q_len` are `n_len`. -/
 def entry : List Instr :=
-  [.mov .r11 (.mem (stk 5))] ++
+  ([.mov .r11 (.mem (stk 5))] : List Instr) ++
   (saved.zipIdx.map fun (r, i) => .store { base := .r11, disp := 8 * i } r) ++
-  [.store { base := .r11, disp := 8 * sP } .rdi, .store { base := .r11, disp := 8 * sQ } .rdx,
+  ([.store { base := .r11, disp := 8 * sP } .rdi, .store { base := .r11, disp := 8 * sQ } .rdx,
     .store { base := .r11, disp := 8 * sN } .r8, .store { base := .r11, disp := 8 * sK } .r9,
     .mov .rax (.mem (stk 1)), .store { base := .r11, disp := 8 * sE } .rax,
     .mov .rax (.mem (stk 2)), .store { base := .r11, disp := 8 * sElen } .rax,
     .mov .rax (.mem (stk 3)), .store { base := .r11, disp := 8 * sD } .rax,
-    .mov .rax (.mem (stk 4)), .store { base := .r11, disp := 8 * sDl } .rax, .mov .rdi (.reg .r11)]
+    .mov .rax (.mem (stk 4)), .store { base := .r11, disp := 8 * sDl } .rax, .mov .rdi (.reg .r11)] : List Instr)
 
 /-- Zeros to `p` and `q`, and 0 returned. -/
-def fail : Prog isa := seqs [zeroOut sP sK, zeroOut sQ sK, .block ([.mov32 .rax (.imm 0)] ++ exit)]
+def fail : Prog isa := seqs [zeroOut sP sK, zeroOut sQ sK, .block (([.mov32 .rax (.imm 0)] : List Instr) ++ exit)]
 
 /-! ## `d e` -/
 
@@ -99,7 +99,7 @@ def fail : Prog isa := seqs [zeroOut sP sK, zeroOut sQ sK, .block ([.mov32 .rax 
 `e` into `r11`, and the row counter `r13 := 0`. -/
 def prodInit : List Instr :=
   ws ++ base aE .rbx ++ base aM .r10 ++ base aD .r15 ++
-    [.mov .r11 (.mem (hdr sElen)), .alu .add .r11 (.imm 7), .shift .shr .r11 3, .mov32 .r13 (.imm 0)]
+    ([.mov .r11 (.mem (hdr sElen)), .alu .add .r11 (.imm 7), .shift .shr .r11 3, .mov32 .r13 (.imm 0)] : List Instr)
 
 /-- Row `r13`: `rcx := e[r13]`, the accumulator at word `r13` of `M`, and
 `d`'s base in `r9`. -/
@@ -123,10 +123,10 @@ def orBody : List Instr := [.mov .rax (.mem (ix .rbx .r14)), .alu .or .rbp (.reg
 `m = 0`. -/
 def skipBlk : List Instr :=
   ws ++ base aM .rbx ++
-    [.mov .rax (.mem (at0 .rbx)), .mov .rdx (.reg .rax), .alu .and .rdx (.imm 1), .alu .sub .rax (.reg .rdx),
+    ([.mov .rax (.mem (at0 .rbx)), .mov .rdx (.reg .rax), .alu .and .rdx (.imm 1), .alu .sub .rax (.reg .rdx),
       .mov .rcx (.mem (hdr sElen)), .alu .add .rcx (.imm 7), .shift .shr .rcx 3, .alu .add .rcx (.mem (hdr sW)),
       .mov .r12 (.reg .rcx), .store (at0 .rbx) .rax, .alu .sub .rdx (.imm 1), .store (hdr sC2) .rdx,
-      .mov32 .rbp (.imm 0)]
+      .mov32 .rbp (.imm 0)] : List Instr)
 
 /-- `ZF := ¬(M even ∨ m = 0)`: the mask of `m = 0` or'ed with `sC2`. -/
 def skipTest : List Instr :=
@@ -136,15 +136,15 @@ def skipTest : List Instr :=
 
 /-- `r11 := 64 Bw` halvings, counted by `r13`, and `t := 0`. -/
 def halfInit : List Instr :=
-  bw ++ [.mov .r11 (.reg .rax)] ++ List.replicate 6 (.alu .add .r11 (.reg .r11)) ++
-    [.mov32 .r13 (.imm 0), .mov32 .rax (.imm 0), .store (hdr sT) .rax]
+  bw ++ ([.mov .r11 (.reg .rax)] : List Instr) ++ List.replicate 6 (.alu .add .r11 (.reg .r11)) ++
+    ([.mov32 .r13 (.imm 0), .mov32 .rax (.imm 0), .store (hdr sT) .rax] : List Instr)
 
 /-- `m`'s and the temporary's bases, `r12 := Bw`, and `rbp` the mask of `m`
 odd. -/
 def halfHead : List Instr :=
   ws ++ base aM .r8 ++ base aH .rsi ++ bw ++
-    [.mov .r12 (.reg .rax), .mov .rax (.mem (at0 .r8)), .alu .and .rax (.imm 1), .mov32 .rbp (.imm 0),
-      .alu .sub .rbp (.reg .rax)]
+    ([.mov .r12 (.reg .rax), .mov .rax (.mem (at0 .r8)), .alu .and .rax (.imm 1), .mov32 .rbp (.imm 0),
+      .alu .sub .rbp (.reg .rax)] : List Instr)
 
 /-- `t += 1` if `m` was even, and the counter. -/
 def halfNext : List Instr :=
@@ -162,7 +162,7 @@ variable (mul : Nat → Nat → Nat → Prog isa)
 
 /-- `-n⁻¹`, for `n` in its array. -/
 def minvBlk : List Instr :=
-  ws ++ base aN .r10 ++ [.mov .rbx (.mem (at0 .r10))] ++ minv ++ [.store (hdr sMinv) .r15]
+  ws ++ base aN .r10 ++ ([.mov .rbx (.mem (at0 .r10))] : List Instr) ++ minv ++ ([.store (hdr sMinv) .r15] : List Instr)
 
 /-- `R² mod n` as `vg_rsa_public` computes it, the number 1, `R mod n` and
 `n - R mod n`. -/
@@ -179,7 +179,7 @@ def mont : List (Prog isa) := [
   setWord aOne .rcx,
   mul aY aR2 aOne,
   copyA aO aY,
-  .block (ws ++ base aN .r8 ++ base aO .r10 ++ base aNg .rsi ++ [.mov32 .rbp (.imm 0)]),
+  .block (ws ++ base aN .r8 ++ base aO .r10 ++ base aNg .rsi ++ ([.mov32 .rbp (.imm 0)] : List Instr)),
   wordLoop 0 subBody]
 
 /-- The candidate `g = sCand + 2` into `rdx`, `rcx := 0`, and `w`. -/
@@ -187,19 +187,19 @@ def gBlk : List Instr :=
   [.mov .rdx (.mem (hdr sCand)), .alu .add .rdx (.imm 2), .mov32 .rcx (.imm 0), .mov .r12 (.mem (hdr sW))]
 
 /-- `sC1 := Bw`, the words of `r` left. -/
-def expInit : List Instr := bw ++ [.store (hdr sC1) .rax]
+def expInit : List Instr := bw ++ ([.store (hdr sC1) .rax] : List Instr)
 
 /-- Word `sC1 - 1` of `r` into `sC2`, and `sC3 := 64` bits left. -/
 def wordHead : List Instr :=
   ws ++ base aM .rbx ++
-    [.mov .rax (.mem (hdr sC1)), .alu .sub .rax (.imm 1), .mov .rax (.mem (ix .rbx .rax)), .store (hdr sC2) .rax,
-      .mov32 .rax (.imm 64), .store (hdr sC3) .rax]
+    ([.mov .rax (.mem (hdr sC1)), .alu .sub .rax (.imm 1), .mov .rax (.mem (ix .rbx .rax)), .store (hdr sC2) .rax,
+      .mov32 .rax (.imm 64), .store (hdr sC3) .rax] : List Instr)
 
 /-- The top bit of `sC2` out of it, and `rbp` the mask of it clear; the
 bases of the multiplicand and of `g R mod n`. -/
 def bitSel : List Instr :=
-  [.mov .rax (.mem (hdr sC2)), .mov .rdx (.reg .rax), .shift .shr .rdx 63, .alu .add .rax (.reg .rax),
-    .store (hdr sC2) .rax, .mov .rbp (.reg .rdx), .alu .sub .rbp (.imm 1)] ++ ws ++ base aXm .r8 ++ base aG .rsi
+  ([.mov .rax (.mem (hdr sC2)), .mov .rdx (.reg .rax), .shift .shr .rdx 63, .alu .add .rax (.reg .rax),
+    .store (hdr sC2) .rax, .mov .rbp (.reg .rdx), .alu .sub .rbp (.imm 1)] : List Instr) ++ ws ++ base aXm .r8 ++ base aG .rsi
 
 /-- The bits left. -/
 def bitNext : List Instr := [.mov .rax (.mem (hdr sC3)), .alu .sub .rax (.imm 1), .store (hdr sC3) .rax]
@@ -231,7 +231,7 @@ if `x = -1` or `k + 1 = t`, and continues with `y := x` otherwise.
 `done` and `ok` updated, `rbp` the mask of not continuing, and the bases
 of `y` and `x`. -/
 def sqLogic : List Instr :=
-  [.alu .cmp .rbp (.imm 1), .alu .sbb .rdx (.reg .rdx),
+  ([.alu .cmp .rbp (.imm 1), .alu .sbb .rdx (.reg .rdx),
     .mov .rax (.mem (hdr sC1)), .alu .cmp .rax (.mem (hdr sT)), .alu .sbb .rcx (.reg .rcx),
     .alu .add .rax (.imm 1), .alu .xor .rax (.mem (hdr sT)), .alu .cmp .rax (.imm 1), .alu .sbb .rax (.reg .rax),
     .alu .or .rdx (.reg .rax),
@@ -242,12 +242,12 @@ def sqLogic : List Instr :=
     .alu .xor .rdx (.imm (BitVec.ofInt 32 (-1))), .alu .and .rcx (.reg .rdx),
     .alu .or .rbp (.reg .r15), .alu .or .rbp (.mem (hdr sC2)), .store (hdr sC2) .rbp,
     .alu .or .r15 (.mem (hdr sC3)), .store (hdr sC3) .r15,
-    .mov .rbp (.reg .rcx), .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))] ++ ws ++ base aY .r8 ++ base aX .rsi
+    .mov .rbp (.reg .rcx), .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ ws ++ base aY .r8 ++ base aX .rsi
 
 /-- `k += 1` against `64 Bw`. -/
 def sqNext : List Instr :=
-  [.mov .rax (.mem (hdr sC1)), .alu .add .rax (.imm 1), .store (hdr sC1) .rax, .mov .rdx (.reg .rax)] ++ bw ++
-    List.replicate 6 (.alu .add .rax (.reg .rax)) ++ [.alu .cmp .rdx (.reg .rax)]
+  ([.mov .rax (.mem (hdr sC1)), .alu .add .rax (.imm 1), .store (hdr sC1) .rax, .mov .rdx (.reg .rax)] : List Instr) ++ bw ++
+    List.replicate 6 (.alu .add .rax (.reg .rax)) ++ ([.alu .cmp .rdx (.reg .rax)] : List Instr)
 
 /-- A squaring: `x := y²`, the masks of `x = ±1`, and `y := x` if the
 squarings continue. -/
@@ -283,11 +283,11 @@ masked, and the mask's low bit returned. -/
 def fin : List (Prog isa) :=
   [.block [.mov .rax (.mem (hdr sC3)), .store (hdr sMask) .rax],
     mul aY aY aOne, zeroA fU,
-    .block (ws ++ base aY .r8 ++ base aOne .r10 ++ base fU .rsi ++ [.mov32 .rbp (.imm 0)]),
+    .block (ws ++ base aY .r8 ++ base aOne .r10 ++ base fU .rsi ++ ([.mov32 .rbp (.imm 0)] : List Instr)),
     wordLoop 0 subBody,
     zeroA fV, copyA fV aN, zeroA fX₁, .block (setOneA fX₁), zeroA fX₂, inverse fU fV fX₁ fX₂ aN fT,
     zeroA fQ, copyA fQ aN, divmod fQ fR fV fT,
-    .block (ws ++ base fV .rbx ++ base fQ .r10 ++ [.mov32 .rbp (.imm 0)]),
+    .block (ws ++ base fV .rbx ++ base fQ .r10 ++ ([.mov32 .rbp (.imm 0)] : List Instr)),
     wordLoop 0 ltBody, .block [.mov .r15 (.reg .rbp)], wordLoop 0 cswapBody] ++
   storeA fV sP sK sMask ++ storeA fQ sQ sK sMask ++ [.block retMask]
 
@@ -301,7 +301,7 @@ def main : Prog isa := seqs ([.block CrtValues.head] ++ loadA aN sN sK ++ loadA 
 
 /-- `vg_rsa_recover_primes` with Montgomery multiplication `mul`. -/
 def code : Prog isa :=
-  .seq (.block (entry ++ [.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] ++ invalid))
+  .seq (.block (entry ++ ([.mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))] : List Instr) ++ invalid))
     (.ite .ne fail (main mul))
 
 end VG.Impl.Rsa.X86_64.Keys.Recover

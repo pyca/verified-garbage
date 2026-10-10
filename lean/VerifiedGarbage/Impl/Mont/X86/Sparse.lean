@@ -39,7 +39,7 @@ def positiveMask (j : Nat) : Bool := j == 0 || j == 3 || j == 5
 `p = 2^256 - 2^224 + 2^192 + 2^96 - 1`. The subtraction of `q`
 clears the low word; all other terms are sparse carry chains. -/
 def p256Red (acc : Nat) : List Instr :=
-  [.mov .eax (.imm 0), .store { base := .ebp, disp := acc } .eax] ++
+  ([.mov .eax (.imm 0), .store { base := .ebp, disp := acc } .eax] : List Instr) ++
   multiChain (acc + 12) positiveMask 7 ++
   sparseChain (acc + 28) .sub .sbb 3
 

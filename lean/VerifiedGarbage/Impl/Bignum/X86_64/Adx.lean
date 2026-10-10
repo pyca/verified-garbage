@@ -55,13 +55,13 @@ def close (h : Reg) : List Instr := [.mov32 .rsi (.imm 0), .adox h (.reg .rsi), 
 
 /-- A block of four words. -/
 def block : List Instr :=
-  [.alu32 .xor .rsi (.reg .rsi), .mov .rdx (.mem xSlot)] ++
+  ([.alu32 .xor .rsi (.reg .rsi), .mov .rdx (.mem xSlot)] : List Instr) ++
   wordA 0 .rax .r11 .rcx ++ wordA 1 .rsi .r12 .rax ++ wordA 2 .rax .r13 .rsi ++ wordA 3 .rcx .r15 .rax ++
-  close .rcx ++ [.mov .rdx (.mem uSlot)] ++
+  close .rcx ++ ([.mov .rdx (.mem uSlot)] : List Instr) ++
   wordB 0 .rax .r11 .rbp ++ wordB 1 .rbp .r12 .rax ++ wordB 2 .rax .r13 .rbp ++ wordB 3 .rbp .r15 .rax ++
   close .rbp ++
-  [.store (ix .r8 .r14) .r11, .store (ix .r8 .r14 8) .r12, .store (ix .r8 .r14 16) .r13,
-    .store (ix .r8 .r14 24) .r15, .alu .add .r14 (.imm 4), .alu .cmp .r14 (.reg .rbx)]
+  ([.store (ix .r8 .r14) .r11, .store (ix .r8 .r14 8) .r12, .store (ix .r8 .r14 16) .r13,
+    .store (ix .r8 .r14 24) .r15, .alu .add .r14 (.imm 4), .alu .cmp .r14 (.reg .rbx)] : List Instr)
 
 /-- `a - (aAcc + 16)` into `rax`: with the window `r8 = aAcc + 16 + 8 i`,
 `[rax + r8]` is `a_i`. -/

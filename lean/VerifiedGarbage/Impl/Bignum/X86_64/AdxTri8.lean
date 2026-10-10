@@ -16,7 +16,7 @@ def chain (k : Nat) (hi other prev : Reg) : List Reg → List Instr
   | col::next::rest => word k hi prev col ++ chain (k+1) other hi hi (next::rest)
 
 def rowCore (i : Nat) (rs : List Reg) : List Instr :=
-  [.mov .rdx (.mem (at_ .rbp (8*i))),.alu32 .xor .rcx (.reg .rcx)] ++ chain (i+1) .rax .rbx .rcx rs
+  ([.mov .rdx (.mem (at_ .rbp (8*i))),.alu32 .xor .rcx (.reg .rcx)] : List Instr) ++ chain (i+1) .rax .rbx .rcx rs
 
 def headBases : List Instr :=
   [.mov .rsi (.mem (hdr (sArr Public.aAcc))),.mov .rcx (.mem (hdr (sFn 12))),
