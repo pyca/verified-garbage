@@ -19,7 +19,7 @@ open VG.Impl.X448.AArch64 (slot)
 open VG.Proof.X448.AArch64 (Keeps Scr)
 open VG.Proof.X448.AArch64.Weak (Index Env FieldOp applyOps opMul opCopy opSqn)
 open VG.Proof.Ed448.AArch64 (rootEnv rootEnv_eval rootEnv_keep)
-open VG.Proof.Ed448.AArch64.Point56 (CKeep powCall_ok insOf_ok umovOf_ok)
+open VG.Proof.Ed448.AArch64.Point56 (CKeep powCall_ok)
 
 local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 
