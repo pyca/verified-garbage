@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Weierstrass.Comb
 import VerifiedGarbage.Impl.P256.VerifyDouble
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeOk
 
 namespace VG.Proof.Weierstrass.AArch64.Forward
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
@@ -12,7 +12,7 @@ def original (p o : Pt) := fprog M (dblJMul S p o)
 def optimized (p o : Pt) := VG.Impl.Weierstrass.AArch64.Forward.optimize (original p o)
 
 structure Case (p o : Pt) where
-  checked : Checked 8192 (original p o) (optimized p o)
+  checked : OptChecked 8192 (original p o) (optimized p o)
   leftBound : ∀ i∈original p o,instrBound i≤992
   rightBound : ∀ i∈optimized p o,instrBound i≤992
   clob : ∀ r∈(optimized p o).flatMap instrClob,r∈VG.Proof.Mont.AArch64.clob M.n
