@@ -9,7 +9,7 @@ import VerifiedGarbage.Impl.MdStream.X86_64
 The streaming state (96 bytes at `state`) is the hash value followed by a
 64-byte buffer (see `VG.Spec.Sha256.Repr`).
 
-* `init(state = rdi)` stores `H⁽⁰⁾` (`init224`, SHA-224's).
+* `init(state = rdi)` stores `H⁽⁰⁾` (`init224`, SHA-224's), with two 16-byte stores.
 * `update(state = rdi, count = rsi, data = rdx, len = rcx, scratch = r8)`
   processes one block per iteration: straight from `data` while the buffer is
   empty and a whole block remains, otherwise by copying bytes into the buffer,
@@ -43,10 +43,14 @@ def Callee.scalar : Callee := ⟨"vg_sha256_compress", compress⟩
 def Callee.shani : Callee := ⟨"vg_sha256_compress_shani", ShaNi.compress⟩
 def Callee.avx2 : Callee := ⟨"vg_sha256_compress_avx2", Avx2.compress⟩
 
-/-- Stores the initial hash value `iv`. -/
+/-- Stores the initial hash value `iv`, sixteen bytes at a time (so that a
+16-byte load of it right after is forwarded from the stores): words
+`4q … 4q+3` are built in `xmm0` from two 64-bit immediates. -/
 def initWith (iv : Spec.Sha256.HashValue) : Prog isa :=
-  .block ((List.range 8).flatMap fun k =>
-    [.mov32 .rax (.imm iv[k]!), .store32 (at_ .rdi (4 * k)) .rax])
+  .block ((List.range 2).flatMap fun q =>
+    [.movImm64 .rax (iv[4 * q + 1]! ++ iv[4 * q]!), .xop (.movq .xmm0 .rax),
+      .movImm64 .rax (iv[4 * q + 3]! ++ iv[4 * q + 2]!), .xop (.movq .xmm1 .rax),
+      .xop (.bin .punpcklqdq .xmm0 .xmm1), .movdquStore (at_ .rdi (16 * q)) .xmm0])
 
 /-- `vg_sha256_init`. -/
 def init : Prog isa := initWith Spec.Sha256.H0

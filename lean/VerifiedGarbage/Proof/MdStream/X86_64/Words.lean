@@ -1,5 +1,7 @@
 import VerifiedGarbage.Proof.MdStream.X86_64.Common
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86-64: length fields and digests
@@ -304,5 +306,66 @@ theorem out64_ok {n : Nat} (hn : 8 * n ≤ 64) {s₀ : State}
   refine kk s₃ (fun r h => by rw [g₃, u₂.other r h, u₁.other r h]) (by rw [rd₃, u₂.rd, u₁.rd])
     (by rw [wr₃, u₂.wr, u₁.wr]) ?_
   rw [m₃, u₂.mem, u₁.mem, u₂.gpr, u₁.gpr, ← writeW64 _ _ true]; rfl
+
+
+/-! ## Sixteen-byte stores (the initial values) -/
+
+section
+variable {is : List Instr} {s : State} {Q : State → Prop}
+
+/-! The rules below give the next state itself, rather than what it keeps
+(`Upd`), so that the `xmm` registers are known through the block. -/
+
+theorem wp_movqx {d : XReg} {r : Reg} (k : WP isa (.block is) (s.setXmm d ((0 : BitVec 64) ++ s.gpr r)) Q) :
+    WP isa (.block (.xop (.movq d r) :: is)) s Q :=
+  WP.cons rfl k
+
+theorem wp_xbin {op : XBinOp} {d r : XReg} (k : WP isa (.block is) (s.setXmm d (op.eval (s.xmm d) (s.xmm r))) Q) :
+    WP isa (.block (.xop (.bin op d r) :: is)) s Q :=
+  WP.cons rfl k
+
+theorem wp_movdquStore {m : MemOp} {r : XReg} {a : Addr} (ha : s.ea m = a) (hout : InRegions s.wr a 16)
+    (k : ∀ s', s'.gpr = s.gpr → s'.mem = s.mem.writeW a (s.xmm r) → s'.rd = s.rd →
+      s'.wr = s.wr → WP isa (.block is) s' Q) :
+    WP isa (.block (.movdquStore m r :: is)) s Q := by
+  refine WP.cons (s' := { s with mem := s.mem.writeW a (s.xmm r) }) ?_ (k _ rfl rfl rfl rfl)
+  simp [exec, State.store128, ha, hout]
+
+theorem wp_movImm64' {d : Reg} {v : BitVec 64} (k : WP isa (.block is) (s.setReg d v) Q) :
+    WP isa (.block (.movImm64 d v :: is)) s Q :=
+  WP.cons rfl k
+
+end
+
+theorem bytes_ofDwords (d0 d1 d2 d3 : BitVec 32) :
+    (List.range 16).map (fun k => ((ofDwords d0 d1 d2 d3).setWidth (8 * 16)).extractLsb' (8 * k) 8) =
+      bytes32 false d0 ++ bytes32 false d1 ++ bytes32 false d2 ++ bytes32 false d3 := by
+  rw [BitVec.setWidth_eq]
+  simp only [bytes32, Bool.false_eq_true, ite_false, List.range_succ, List.range_zero, List.nil_append,
+    List.map_cons, List.map_nil, List.cons_append, Nat.reduceMul]
+  simp (disch := decide) only [ofDwords, BitVec.extractLsb'_append_eq_of_add_le,
+    BitVec.extractLsb'_append_eq_of_le, Nat.reduceSub]
+
+/-- A 16-byte store of four words is four 4-byte stores. -/
+theorem writeW_ofDwords (m : Mem) (a : Addr) (d0 d1 d2 d3 : BitVec 32) :
+    m.writeW a (ofDwords d0 d1 d2 d3) =
+      (((m.writeW a d0).writeW (a + BitVec.ofNat 64 4) d1).writeW (a + BitVec.ofNat 64 8) d2).writeW
+        (a + BitVec.ofNat 64 12) d3 := by
+  have w : ∀ (m : Mem) (a : Addr) (x : BitVec 32), m.writeW a x = writeBytes m a (bytes32 false x) :=
+    fun m a x => writeW32 m a false x
+  rw [Mem.writeW, write_eq_writeBytes, bytes_ofDwords, w, w, w, w,
+    show (4 : Nat) = (bytes32 false d0).length from rfl, writeBytes_append _ _ _ _ (by simp only [bytes32_length]; decide),
+    show (8 : Nat) = (bytes32 false d0 ++ bytes32 false d1).length from rfl,
+    writeBytes_append _ _ _ _ (by simp only [List.length_append, bytes32_length]; decide),
+    show (12 : Nat) = (bytes32 false d0 ++ bytes32 false d1 ++ bytes32 false d2).length from rfl,
+    writeBytes_append _ _ _ _ (by simp only [List.length_append, bytes32_length]; decide)]
+
+/-- The doublewords of a quadword loaded by `movq`. -/
+theorem dword_zero_append (x y : BitVec 32) :
+    dword ((0 : BitVec 64) ++ (x ++ y)) 0 = y ∧ dword ((0 : BitVec 64) ++ (x ++ y)) 1 = x := by
+  constructor <;>
+  simp (disch := decide) only [dword, Nat.mul_zero, Nat.mul_one, BitVec.extractLsb'_append_eq_of_add_le,
+    BitVec.extractLsb'_append_eq_of_le, Nat.reduceSub] <;>
+  exact BitVec.extractLsb'_eq_self
 
 end VG.Proof.MdStream.X86_64
