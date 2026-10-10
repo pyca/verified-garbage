@@ -11,7 +11,9 @@ call one copy of each product instead of repeating it at every use:
 
 * `vg_gf25519_r64_mul`: the product `a b`;
 * `vg_gf25519_r64_mul2`: twice the product, `2 a b` (Ed25519's point
-  doubling and cached points multiply by 2 with the product).
+  doubling and cached points multiply by 2 with the product);
+* `vg_gf25519_r64_invert`: the inverse `z^(p-2)` (X25519's last step, and
+  Ed25519's encoding of a point).
 
 They are not algorithms of a standard but the arithmetic X25519 and Ed25519
 are built from, in the representation that code keeps elements in: what they
@@ -27,6 +29,12 @@ to 4095 of `ws` are the functions' own working space (`ownAt`), and the
 elements lie below them (`Fits`). On return the function's own bytes are
 unspecified and may hold intermediate values; every other byte of `ws` keeps
 its value but the result's (`Keeps`).
+
+The inversion's elements are at fixed offsets instead, those where that code
+keeps them, in a working space of the same 4096 bytes: it reads `z` at byte
+128 (`zAt`) and writes `z^(p-2)` at byte 544 (`invAt`); bytes 512 to 767 (`invOwnAt` to `invOwnEnd`) are its own working space and its
+result. On return those bytes but the result are unspecified and may hold
+intermediate values; every other byte of `ws` keeps its value (`InvKeeps`).
 
 Everything is secret but the pointer and the offsets, which are public, and
 the functions are constant time.
@@ -119,5 +127,56 @@ def mul2Api : Api where
   summary := "Twice a product in curve25519's field: writes an element congruent to `2 a b` \
     modulo `p = 2^255 - 19` to `o`. " ++ common
   safety := safety
+
+/-! ## Inversion -/
+
+/-- Where `vg_gf25519_r64_invert` reads `z`. -/
+def zAt : BitVec 32 := 128
+
+/-- Where it writes `z^(p-2)`. -/
+def invAt : BitVec 32 := 544
+
+/-- Where its own working space, and its result, start. -/
+def invOwnAt : Nat := 512
+
+/-- Where they end. -/
+def invOwnEnd : Nat := 768
+
+/-- Every byte of `ws` but those of the inversion's own working space and
+result (bytes 512 to 767) keeps its value. -/
+def InvKeeps (ws : Addr) (m m' : Mem) : Prop :=
+  ∀ i < wsBytes, (i < invOwnAt ∨ invOwnEnd ≤ i) →
+    m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
+
+/-- `ws: *mut [u64; 512]`, the pointer public. -/
+def invSig : Sig where
+  params := [("ws", .array true .u64 512)]
+
+/-- `invert`: the element at `invAt` is congruent to `z^(p-2)` modulo `P`, for
+`z` the element at `zAt`: the inverse of `z` if `z` is not a multiple of `P`,
+and a multiple of `P` if it is. -/
+def invertContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+  invSig.contract A
+    (post := fun ws m m' _ =>
+      valAt m' ws invAt % P = valAt m ws zAt ^ (P - 2) % P ∧ InvKeeps ws m m')
+    (stack := stack)
+
+/-- `vg_gf25519_r64_invert` on every target. -/
+def invertApi : Api where
+  module := module
+  name := "vg_gf25519_r64_invert"
+  sig := invSig
+  contracts := some fun A stack => invertContract A stack
+  summary := "Inversion in curve25519's field: for `z` the element at byte 128 of the working \
+    space `ws`, writes an element congruent to `z^(p-2)` modulo `p = 2^255 - 19` (the inverse \
+    of `z`, or `0` if `z` is a multiple of `p`) to byte 544. An element is 32 bytes, a \
+    little-endian number below `2^256`, not necessarily below `p`. Every byte of `ws` but \
+    those from byte 512 to byte 767 (the function's own working space and its result) keeps \
+    its value.\n\n\
+    Contract: `invertContract` of `VG.Spec.X25519.Field64`. Constant time: only the pointer \
+    may affect timing."
+  safety :=
+    ["Bytes 512 to 767 of `ws` but the result are unspecified on return and may hold \
+        intermediate values, which the caller must destroy if they are secret."]
 
 end VG.Spec.X25519.Field64
