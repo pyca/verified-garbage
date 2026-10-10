@@ -130,17 +130,17 @@ theorem wordAddr_eq (b : BitVec 32) {k : Nat} (h : b.toNat + 4 * k < 2 ^ 32) :
 theorem slot_frame {m m' : Mem} {b : BitVec 32} {n k : Nat} (hf : Frame [⟨b.setWidth 64, 4 * n⟩] m m')
     (hk : n ≤ k) (hb : b.toNat + 4 * k + 4 ≤ 2 ^ 32) :
     m'.readW (wordAddr b k) 32 = m.readW (wordAddr b k) 32 := by
-  rw [wordAddr_eq b (by omega)]
+  rw [wordAddr_eq b (by omega_arith)]
   refine hf.readW (r := ⟨b.setWidth 64 + BitVec.ofNat 64 (4 * k), 4⟩) (Region.contains_self _ _)
     (fun r hr => ?_) (by decide)
   simp only [List.mem_singleton] at hr; subst hr
-  exact Offset.disjoint_base _ (by omega) (by omega)
+  exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
 
 /-- Words `j` and `k` of the slots are apart. -/
 theorem slot_word_sep (b : BitVec 32) {j k : Nat} (h : j ≠ k) (hj : b.toNat + 4 * j + 4 ≤ 2 ^ 32)
     (hk : b.toNat + 4 * k + 4 ≤ 2 ^ 32) : Mem.Sep (wordAddr b j) (32 / 8) (wordAddr b k) (32 / 8) := by
-  rw [wordAddr_eq b (by omega), wordAddr_eq b (by omega)]
-  exact Offset.sep _ (by omega) (by omega) (by omega)
+  rw [wordAddr_eq b (by omega_arith), wordAddr_eq b (by omega_arith)]
+  exact Offset.sep _ (by omega_arith) (by omega_arith) (by omega_arith)
 
 /-- `mov [b + o], r`, run. -/
 theorem runBlock_store {s : State} {b r : Reg} {o : Nat} (hout : InRegions s.wr (addr (s.gpr b) o) 4) :
@@ -176,7 +176,7 @@ theorem inputs_ok {s : State} (hok : Ok rCfg s) :
       · exact ⟨by decide, rfl⟩)
     (fun j hj => by
       simp only [rCfg] at hj
-      rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl
+      rcases (by omega_arith : j = 0 ∨ j = 1) with rfl | rfl
       · exact ⟨by decide, rfl⟩
       · exact ⟨by decide, rfl⟩)
   have kp : ∀ r ∈ kept, s'.gpr r = s.gpr r := fun r hr => keep _ (List.all_eq_true.mp inputs_kept r hr)
@@ -186,8 +186,8 @@ theorem inputs_ok {s : State} (hok : Ok rCfg s) :
   refine ⟨s', hs', fun t ht p hp => bit _ _ (List.mem_append_left _ (List.mem_map.mpr ⟨t, List.mem_range.mpr ht, rfl⟩))
     p hp, slot_bits fun p hp => ?_, slot_bits fun p hp => ?_, rd, wr, kp, fr⟩
   · rw [bit slotL _ (List.mem_append_right _ (List.mem_cons_self ..)) p hp]
-    simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, inW, show (96 + p) / 32 = 3 by omega,
-      show (96 + p) % 32 = p by omega]
+    simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, inW, show (96 + p) / 32 = 3 by omega_arith,
+      show (96 + p) % 32 = p by omega_arith]
     rfl
   · rw [bit slotR _ (List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) p hp]
     simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, inW, Nat.div_eq_of_lt hp, Nat.mod_eq_of_lt hp]
@@ -196,7 +196,7 @@ theorem inputs_ok {s : State} (hok : Ok rCfg s) :
 /-! ## The S-boxes, on the machine -/
 
 theorem tree_kept (h : Nat) (hh : h < 2) : kept.all (fun r => (tree h).all fun i => i.dst != some r) = true := by
-  rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl <;> lit_decide
+  rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl <;> lit_decide
 
 /-- The input of the box whose lane of half `h` holds bit `p`, from bit `p`
 of the slots. -/
@@ -211,7 +211,7 @@ theorem sbox_ok {h : Nat} (hh : h < 2) {s : State} (hok : Ok (sCfg h) s) :
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
       Frame [slotRegion (sCfg h) s] s.mem s'.mem := by
   have hchk : check (rows 32 6) (sCfg h) (fun _ => none) (tree h) (sbEnv h) (sbPost h) = true := by
-    rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl
+    rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl
     · exact sbox0_check
     · exact sbox1_check
   obtain ⟨e', he, hpost⟩ := of_check _ _ _ hchk
@@ -239,16 +239,16 @@ theorem sbox_ok {h : Nat} (hh : h < 2) {s : State} (hok : Ok (sCfg h) s) :
       cases h'
       show (rowIn t).testBit (32 * (boxIn h s p).toNat + p) = (slotW s t).getLsbD p
       have hc := (boxIn h s p).isLt
-      obtain ⟨u, rfl, hu⟩ : ∃ u, t = 7 * h + u ∧ u < 6 := ⟨t - 7 * h, by omega, by omega⟩
-      rw [rowIn, testBit_rowsOf, decide_eq_true (by omega : 32 * (boxIn h s p).toNat + p < 32 * 64),
-        Bool.true_and, show (32 * (boxIn h s p).toNat + p) / 32 = (boxIn h s p).toNat by omega,
-        BitVec.testBit_toNat, boxIn, getLsbD_ofBits, show (7 * h + u) % 7 = u by omega,
+      obtain ⟨u, rfl, hu⟩ : ∃ u, t = 7 * h + u ∧ u < 6 := ⟨t - 7 * h, by omega_arith, by omega_arith⟩
+      rw [rowIn, testBit_rowsOf, decide_eq_true (by omega_arith : 32 * (boxIn h s p).toNat + p < 32 * 64),
+        Bool.true_and, show (32 * (boxIn h s p).toNat + p) / 32 = (boxIn h s p).toNat by omega_arith,
+        BitVec.testBit_toNat, boxIn, getLsbD_ofBits, show (7 * h + u) % 7 = u by omega_arith,
         decide_eq_true hu, Bool.true_and]
     · cases h'
-  obtain ⟨s', hs', p₀⟩ := key 0 (by omega)
+  obtain ⟨s', hs', p₀⟩ := key 0 (by omega_arith)
   refine ⟨s', hs', fun j hj b hb => ?_, p₀.rd, p₀.wr,
     fun r hr => p₀.other r (by simp [List.all_eq_true.mp (tree_kept h hh) r hr]), p₀.frame⟩
-  have hp : 6 * j + off (boxOf h j) b < 32 := by have := off_lt4 h hh j hj b hb; omega
+  have hp : 6 * j + off (boxOf h j) b < 32 := by have := off_lt4 h hh j hj b hb; omega_arith
   obtain ⟨s'', hs'', p₁⟩ := key _ hp
   obtain rfl := run_unique hs'' hs'
   have h' := p₁.rel.reg .ebx F hF
@@ -281,8 +281,8 @@ theorem output_ok {s : State} (hok : Ok oCfg s) :
   refine ⟨s', hs', slot_bits fun p hp => ?_, fun p hp => bit _ _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)) p hp,
     rd, wr, kp, fr⟩
   rw [bit slotL _ (List.mem_cons_self ..) p hp]
-  simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, oW, show (96 + p) / 32 = 3 by omega,
-    show (96 + p) % 32 = p by omega]
+  simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, oW, show (96 + p) / 32 = 3 by omega_arith,
+    show (96 + p) % 32 = p by omega_arith]
   rfl
 
 /-! ## The round -/
@@ -298,31 +298,31 @@ theorem boxIn_eq {s s₁ : State}
     boxIn h s₁ (6 * j + o) = chunk (slotW s slotR) (key48 s) (boxOf h j) := by
   apply BitVec.eq_of_getLsbD_eq
   intro t ht
-  have hb : 6 * (7 - boxOf h j) = 24 * h + 6 * j := by simp only [boxOf]; omega
-  have hE := expSrc_lt (24 * h + 6 * j + t) (by omega)
-  have hs : 7 * h + t = inSlot (6 * h + t) := by simp only [inSlot]; omega
-  rw [boxIn, getLsbD_ofBits, decide_eq_true ht, Bool.true_and, hs, hx (6 * h + t) (by omega) _ (by omega),
-    getLsbD_chunk _ _ (by simp only [boxOf]; omega) ht, inG, ite_eq_left (by omega), hb,
-    show (6 * h + t) / 6 = h by omega, show (6 * h + t) % 6 = t by omega, show (6 * j + o) / 6 = j by omega]
+  have hb : 6 * (7 - boxOf h j) = 24 * h + 6 * j := by simp only [boxOf]; omega_arith
+  have hE := expSrc_lt (24 * h + 6 * j + t) (by omega_arith)
+  have hs : 7 * h + t = inSlot (6 * h + t) := by simp only [inSlot]; omega_arith
+  rw [boxIn, getLsbD_ofBits, decide_eq_true ht, Bool.true_and, hs, hx (6 * h + t) (by omega_arith) _ (by omega_arith),
+    getLsbD_chunk _ _ (by simp only [boxOf]; omega_arith) ht, inG, ite_eq_left (by omega_arith), hb,
+    show (6 * h + t) / 6 = h by omega_arith, show (6 * h + t) % 6 = t by omega_arith, show (6 * j + o) / 6 = j by omega_arith]
   simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, inW, keyAtom]
-  rw [Nat.div_eq_of_lt (show expSrc (24 * h + 6 * j + t) < 32 by omega),
-    Nat.mod_eq_of_lt (show expSrc (24 * h + 6 * j + t) < 32 by omega), ite_eq_left rfl]
+  rw [Nat.div_eq_of_lt (show expSrc (24 * h + 6 * j + t) < 32 by omega_arith),
+    Nat.mod_eq_of_lt (show expSrc (24 * h + 6 * j + t) < 32 by omega_arith), ite_eq_left rfl]
   congr 1
   rw [BitVec.getLsbD_append]
   by_cases h32 : 24 * h + 6 * j + t < 32
-  · rw [ite_eq_left h32, ite_eq_left h32, show (32 + (24 * h + 6 * j + t)) / 32 = 1 by omega,
-      show (32 + (24 * h + 6 * j + t)) % 32 = 24 * h + 6 * j + t by omega]
+  · rw [ite_eq_left h32, ite_eq_left h32, show (32 + (24 * h + 6 * j + t)) / 32 = 1 by omega_arith,
+      show (32 + (24 * h + 6 * j + t)) % 32 = 24 * h + 6 * j + t by omega_arith]
     rfl
-  · rw [ite_eq_right h32, ite_eq_right h32, show (64 + (24 * h + 6 * j + t - 32)) / 32 = 2 by omega,
-      show (64 + (24 * h + 6 * j + t - 32)) % 32 = 24 * h + 6 * j + t - 32 by omega,
-      BitVec.getLsbD_setWidth, decide_eq_true (by omega : 24 * h + 6 * j + t - 32 < 16), Bool.true_and]
+  · rw [ite_eq_right h32, ite_eq_right h32, show (64 + (24 * h + 6 * j + t - 32)) / 32 = 2 by omega_arith,
+      show (64 + (24 * h + 6 * j + t - 32)) % 32 = 24 * h + 6 * j + t - 32 by omega_arith,
+      BitVec.getLsbD_setWidth, decide_eq_true (by omega_arith : 24 * h + 6 * j + t - 32 < 16), Bool.true_and]
     rfl
 
 /-- The slots of a configuration on fewer slots, with no external words. -/
 theorem ok_fewer {c c' : Cfg} {s : State} (h : Ok c s) (hb : c'.base = c.base) (hn : c'.slots ≤ c.slots)
     (he : c'.exts = 0) : Ok c' s :=
-  ⟨fun k hk => by rw [hb]; exact h.slotIn k (by omega), fun k hk => absurd hk (by omega),
-    by rw [hb]; have := h.fit; omega, fun k _ j hj => absurd hj (by omega)⟩
+  ⟨fun k hk => by rw [hb]; exact h.slotIn k (by omega_arith), fun k hk => absurd hk (by omega_arith),
+    by rw [hb]; have := h.fit; omega_arith, fun k _ j hj => absurd hj (by omega_arith)⟩
 
 /-- One round: `(L, R) := (R, L ⊕ f(R, K))` on slots `L` and `R`, with the
 round key at `esi`. -/
@@ -334,7 +334,7 @@ theorem round_ok {s : State} (hok : Ok rCfg s) :
       Frame [slotRegion rCfg s] s.mem s'.mem := by
   have hfit := hok.fit
   simp only [rCfg] at hfit
-  have hb : ∀ k ≤ 17, (s.gpr .ebp).toNat + 4 * k + 4 ≤ 2 ^ 32 := fun k hk => by omega
+  have hb : ∀ k ≤ 17, (s.gpr .ebp).toNat + 4 * k + 4 ≤ 2 ^ 32 := fun k hk => by omega_arith
   obtain ⟨s₁, h₁, hx, L₁, R₁, rd₁, wr₁, k₁, f₁⟩ := inputs_ok hok
   have e₁ : s₁.gpr .ebp = s.gpr .ebp := k₁ _ (by simp [kept])
   have i₁ : s₁.gpr .esi = s.gpr .esi := k₁ .esi (by simp [kept])
@@ -382,8 +382,8 @@ theorem round_ok {s : State} (hok : Ok rCfg s) :
     rw [e₄, ← e₃]
     exact slot_frame (n := 14) f₄ h₁' (by rw [e₃]; exact hb k h₂')
   have slotLR : ∀ k, 16 ≤ k → k ≤ 17 → slotW s₅ k = slotW s k := fun k h₁' h₂' => by
-    rw [st₅ k (by omega) h₂', fr₄ k (by omega) h₂', st₃ k (by omega) h₂', fr₂ k (by omega) h₂']
-    rcases (by omega : k = 16 ∨ k = 17) with rfl | rfl
+    rw [st₅ k (by omega_arith) h₂', fr₄ k (by omega_arith) h₂', st₃ k (by omega_arith) h₂', fr₂ k (by omega_arith) h₂']
+    rcases (by omega_arith : k = 16 ∨ k = 17) with rfl | rfl
     · exact L₁
     · exact R₁
   have slot14 : slotW s₅ 14 = s₂.gpr .ebx := by
@@ -395,7 +395,7 @@ theorem round_ok {s : State} (hok : Ok rCfg s) :
     intro t ht
     rw [boxIn, boxIn, getLsbD_ofBits, getLsbD_ofBits]
     by_cases ht6 : t < 6
-    · rw [st₃ (7 * 1 + t) (by omega) (by omega), fr₂ (7 * 1 + t) (by omega) (by omega)]
+    · rw [st₃ (7 * 1 + t) (by omega_arith) (by omega_arith), fr₂ (7 * 1 + t) (by omega_arith) (by omega_arith)]
     · simp [ht6]
   refine ⟨s₆, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_⟩
   · rw [round, runBlock_append, runBlock_append, h₁, Option.bind_some, sboxes, runBlock_append, runBlock_append,
@@ -407,8 +407,8 @@ theorem round_ok {s : State} (hok : Ok rCfg s) :
     rw [R₆ j hj, oGR, ite_eq_left hj, BitVec.getLsbD_xor, getLsbD_roundFunction _ _ hj, xorBits_cons,
       xorBits_cons, xorBits_nil, Bool.xor_false]
     have hL : bitOf (oW s₅) (64 + j) = (slotW s slotL).getLsbD j := by
-      simp only [reduceCtorEq, ↓reduceIte, Nat.reduceEqDiff, bitOf, oW, show (64 + j) / 32 = 2 by omega,
-        show (64 + j) % 32 = j by omega]
+      simp only [reduceCtorEq, ↓reduceIte, Nat.reduceEqDiff, bitOf, oW, show (64 + j) / 32 = 2 by omega_arith,
+        show (64 + j) % 32 = j by omega_arith]
       rw [slotLR slotL (by decide) (by decide)]
     rw [hL, Bool.xor_comm]
     congr 1
@@ -423,13 +423,13 @@ theorem round_ok {s : State} (hok : Ok rCfg s) :
           (slotW s₅ 14).getLsbD (6 * (pSrc j / 4) + off (boxOf 0 (pSrc j / 4)) b) := by
         rw [hpos]
         simp only [↓reduceIte, bitOf, oW,
-          Nat.div_eq_of_lt (show 6 * (pSrc j / 4) + off (boxOf 0 (pSrc j / 4)) b < 32 by omega),
-          Nat.mod_eq_of_lt (show 6 * (pSrc j / 4) + off (boxOf 0 (pSrc j / 4)) b < 32 by omega)]
+          Nat.div_eq_of_lt (show 6 * (pSrc j / 4) + off (boxOf 0 (pSrc j / 4)) b < 32 by omega_arith),
+          Nat.mod_eq_of_lt (show 6 * (pSrc j / 4) + off (boxOf 0 (pSrc j / 4)) b < 32 by omega_arith)]
       rw [hbit, slot14, y₂ _ hh b hb', boxIn_eq hx (by decide) hh ho, hi]
       simp only [hbe]
     · -- Half 1, in slot 15.
       have hm : pSrc j / 4 % 4 < 4 := Nat.mod_lt _ (by decide)
-      have hi : boxOf 1 (pSrc j / 4 % 4) = 7 - pSrc j / 4 := by simp only [boxOf]; omega
+      have hi : boxOf 1 (pSrc j / 4 % 4) = 7 - pSrc j / 4 := by simp only [boxOf]; omega_arith
       have ho := off_lt4 1 (by decide) _ hm b hb'
       have hpos : sAtom (pSrc j) = 32 + (6 * (pSrc j / 4 % 4) + off (boxOf 1 (pSrc j / 4 % 4)) b) := by
         rw [sAtom, outHalf, ite_eq_right hh, ite_eq_right (by decide), outPos, hi, hbe]
@@ -437,9 +437,9 @@ theorem round_ok {s : State} (hok : Ok rCfg s) :
           (slotW s₅ 15).getLsbD (6 * (pSrc j / 4 % 4) + off (boxOf 1 (pSrc j / 4 % 4)) b) := by
         rw [hpos]
         simp only [reduceCtorEq, ↓reduceIte, bitOf, oW,
-          show (32 + (6 * (pSrc j / 4 % 4) + off (boxOf 1 (pSrc j / 4 % 4)) b)) / 32 = 1 by omega,
+          show (32 + (6 * (pSrc j / 4 % 4) + off (boxOf 1 (pSrc j / 4 % 4)) b)) / 32 = 1 by omega_arith,
           show (32 + (6 * (pSrc j / 4 % 4) + off (boxOf 1 (pSrc j / 4 % 4)) b)) % 32 =
-            6 * (pSrc j / 4 % 4) + off (boxOf 1 (pSrc j / 4 % 4)) b by omega]
+            6 * (pSrc j / 4 % 4) + off (boxOf 1 (pSrc j / 4 % 4)) b by omega_arith]
       rw [hbit, slot15, y₄ _ hm b hb', box₄, boxIn_eq hx (by decide) hm ho, hi]
       simp only [hbe]
   · rw [rd₆, rd₅]; exact rd₁
@@ -450,10 +450,10 @@ theorem round_ok {s : State} (hok : Ok rCfg s) :
       simp only [List.mem_singleton] at hr; subst hr
       refine ⟨_, List.mem_singleton_self _, ?_⟩
       simp only [slotRegion, hc, ht]
-      exact Region.sub_prefix (by simp only [rCfg]; omega)
+      exact Region.sub_prefix (by simp only [rCfg]; omega_arith)
     have cw : ∀ k ≤ 17, (slotRegion rCfg s).Contains (wordAddr (s.gpr .ebp) k) (32 / 8) := fun k hk => by
-      rw [wordAddr_eq _ (by omega)]
-      exact Offset.contains_base _ (by simp only [rCfg]; omega) (by omega)
+      rw [wordAddr_eq _ (by omega_arith)]
+      exact Offset.contains_base _ (by simp only [rCfg]; omega_arith) (by omega_arith)
     have f₃ : Frame [slotRegion rCfg s] s₂.mem s₃.mem := by
       show Frame _ s₂.mem (s₂.mem.writeW (wordAddr (s₂.gpr .ebp) 14) _)
       rw [e₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (cw 14 (by decide))
