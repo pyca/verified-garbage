@@ -195,7 +195,7 @@ theorem init_agree₀ {s₁ s₂ : State} (h₁ : Proof.Poly1305.initX86.pre s�
   obtain ⟨hesp, a0, a1⟩ := hpub
   have hp₁ := IPre.of _ h₁; have hp₂ := IPre.of _ h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, init_wf₀ hp₁, init_wf₀ hp₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => (Nat.zero_add k).symm ▸ argMem_eq hp₁.sp_fit hp₂.sp_fit (fun i hi => ?_) h4 hk⟩
   · simp only [initτ₀, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp

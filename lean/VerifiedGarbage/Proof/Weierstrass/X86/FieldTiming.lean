@@ -46,7 +46,7 @@ theorem NafPublic.agree {s t : State} (h : NafPublic s t) {rs : List Reg}
     (hr : ∀ r∈rs,s.gpr r=t.gpr r) : VG.X86.Taint.Agree (nafτ rs) s t := by
   refine ⟨⟨?_,fun h => nomatch h⟩,fun _ => h.wr,
     nafWf_keep h.wf₁ rfl rfl rfl,nafWf_keep h.wf₂ rfl rfl rfl,
-    fun _ he => (List.not_mem_nil he).elim,fun _ he => (List.not_mem_nil he).elim,
+    VG.X86.Taint.slotsOk_empty,VG.X86.Taint.slotsAgree_empty,
     (fun he => nomatch he),fun _ _ he => (Nat.not_lt_zero _ he).elim⟩
   intro r he
   exact hr r (by simpa only [nafτ,RegSet.mem_ofList] using he)

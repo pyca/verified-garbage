@@ -68,7 +68,7 @@ theorem expandKeyTaint_agree {s₁ s₂ : State} (h₁ : expandKeyX86.pre s₁) 
   obtain ⟨hesp, ha⟩ := hpub
   have hp₁ := KPre.of h₁; have hp₂ := KPre.of h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, expandKeyTaint_wf hp₁, expandKeyTaint_wf hp₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
   · simp only [expandKeyTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp

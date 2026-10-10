@@ -79,7 +79,7 @@ theorem init_agree (hP : Ok P) {s₁ s₂ : State} (h₁ : (initX86 P).pre s₁)
   obtain ⟨hesp, ha⟩ := hpub
   have hp₁ := Init.pre_of h₁; have hp₂ := Init.pre_of h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, init_wf hP h₁, init_wf hP h₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => argMem_eq (n := 20) (by have := hp₁.sp_fit; omega) (by have := hp₂.sp_fit; omega)
       (fun i hi => ha i (by omega)) h4 hk⟩
   · simp only [τInit, RegSet.mem_ofList, List.mem_singleton] at hr
@@ -119,7 +119,7 @@ theorem update_agree (hP : Ok P) {s₁ s₂ : State} (h₁ : (updateX86 P).pre s
   obtain ⟨hesp, ha⟩ := hpub
   have hp₁ := Update.pre_of h₁; have hp₂ := Update.pre_of h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, update_wf hP h₁, update_wf hP h₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => argMem_eq (n := 28) hp₁.sp_fit hp₂.sp_fit (fun i hi => ha i (by omega)) h4 hk⟩
   · simp only [τUpdate, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp
@@ -162,7 +162,7 @@ theorem finalize_agree (hP : Ok P) {s₁ s₂ : State} (h₁ : (finalizeX86 P).p
   obtain ⟨hesp, ha⟩ := hpub
   have hp₁ := Finalize.pre_of h₁; have hp₂ := Finalize.pre_of h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, finalize_wf hP h₁, finalize_wf hP h₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => argMem_eq (n := 24) hp₁.sp_fit hp₂.sp_fit (fun i hi => ha i (by omega)) h4 hk⟩
   · simp only [τFinalize, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp

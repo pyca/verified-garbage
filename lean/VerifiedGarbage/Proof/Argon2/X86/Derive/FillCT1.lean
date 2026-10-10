@@ -236,13 +236,13 @@ abbrev ws0 : List Nat := [72, 76, 80, 84, 88, 92, 96, 100, 132]
 abbrev sl0 : List (Nat × Nat × Nat) := [(0, 72, 32), (0, 132, 4)]
 
 theorem slotsOk0 (rs : List Reg) : VG.X86.Taint.SlotsOk (τB sl0 rs) := by
-  intro x hx
-  simp only [τB, sl0, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hx
+  refine VG.X86.Taint.slotsOk_of_list rfl fun x hx => ?_
+  simp only [sl0, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hx
   rcases hx with rfl | rfl | rfl <;> simp [τB]
 
 theorem slotsOkE (rs : List Reg) : VG.X86.Taint.SlotsOk (τB [] rs) := by
-  intro x hx
-  simp only [τB, List.nil_append, List.mem_singleton] at hx
+  refine VG.X86.Taint.slotsOk_of_list rfl fun x hx => ?_
+  simp only [List.nil_append, List.mem_singleton] at hx
   subst hx; simp [τB]
 
 /-- Composition, with what each run satisfies after the first part. -/

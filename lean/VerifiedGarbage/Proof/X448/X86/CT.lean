@@ -93,7 +93,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.X448.x448X86.pre s₁) (h₂ 
   obtain ⟨hesp, a0, a1, a2, a3⟩ := hpub
   have hp₁ := Pre.of _ h₁; have hp₂ := Pre.of _ h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ hp₁, wf₀ hp₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp
@@ -156,7 +156,7 @@ theorem agreeF {σ₁ σ₂ s₁ s₂ : State} (hP : P₀ σ₁ σ₂) (h₁ : A
   have edi : s₁.gpr .edi = s₂.gpr .edi :=
     BitVec.setWidth_32_64_inj.mp (h₁.1.edi.trans (hP.base.trans h₂.1.edi.symm))
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, wfF hp₁ h₁, wfF hp₂ h₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => esp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => esp,
     fun k h4 hk => ?_⟩
   · simp only [τf, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

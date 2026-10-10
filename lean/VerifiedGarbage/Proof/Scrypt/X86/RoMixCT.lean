@@ -214,7 +214,7 @@ theorem agree_k {s₀ s₀' : State} (hp : Pre s₀) (hp' : Pre s₀') (hq : Pub
   have f₁ : (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 := by rw [h.esp]; exact hp.sp_fit
   have f₂ : (s'.gpr .esp).toNat + 28 ≤ 2 ^ 32 := by rw [h'.esp]; exact hp'.sp_fit
   refine ⟨⟨fun r hr' => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, wf_k hp _ h, wf_k hp' _ h',
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty,
     fun _ => by rw [h.esp, h'.esp, hq.esp₀], fun k h4 hk => ?_⟩
   · simp only [τk, RegSet.mem_ofList, List.mem_cons] at hr'
     rcases hr' with rfl | hr'

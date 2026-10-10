@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.RegSet
+import VerifiedGarbage.Proof.Framework.Slots
 import VerifiedGarbage.Proof.Framework.NativeHintOps
 import VerifiedGarbage.TCB.X86.Target
 
@@ -18,8 +19,8 @@ structure T where
   lens : List Nat := []
   /-- `(r, i, k)`: `r + k` is the base address of writable region `i`. -/
   bases : List (Reg × Nat × Nat) := []
-  /-- `(i, o, n)`: the `n` bytes at offset `o` of writable region `i` are public. -/
-  slots : List (Nat × Nat × Nat) := []
+  /-- The public bytes of the writable regions. -/
+  slots : Slots := .empty
   /-- `(j, o, i)`: the word at offset `o` of writable region `j` is the base address
   of writable region `i`. -/
   wbases : List (Nat × Nat × Nat) := []
@@ -87,7 +88,7 @@ def addrOf (τ : T) (m : MemOp) : Option (Nat × Nat) :=
 /-- `w` bytes at `m` are within a public slot. -/
 def slotPub (τ : T) (m : MemOp) (w : Nat) : Bool :=
   match addrOf τ m with
-  | some (i, d) => τ.slots.any fun sl => sl.1 == i && sl.2.1 ≤ d && d + w ≤ sl.2.1 + sl.2.2
+  | some (i, d) => τ.slots.covers i d w
   | none => false
 
 /-- `w` bytes at `m` are within the stack arguments. -/
@@ -128,14 +129,13 @@ def regBases (τ : T) (r : Reg) : List Nat :=
   (τ.bases.filter fun p => p.1 == r && p.2.2 == 0).map (·.2.1)
 
 /-- The public slots after storing `w` bytes at `m`, a public value iff `p`. -/
-def storeSlots (τ : T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat × Nat) :=
+def storeSlots (τ : T) (m : MemOp) (w : Nat) (p : Bool) : Slots :=
   match addrOf τ m with
   | some (i, d) =>
     if d + w ≤ τ.lens.getD i 0 then
-      let kept := τ.slots.filter fun sl => p || sl.1 != i || d + w ≤ sl.2.1 || sl.2.1 + sl.2.2 ≤ d
-      if p then (i, d, w) :: kept else kept
-    else if p then τ.slots else []
-  | none => if p then τ.slots else []
+      if p then τ.slots.add i d w else τ.slots.remove i d w
+    else if p then τ.slots else .empty
+  | none => if p then τ.slots else .empty
 
 /-- The known base-address words after storing `w` bytes at `m`, the base
 address of each region in `nb`. -/
@@ -195,7 +195,7 @@ def meet (τ₁ τ₂ : T) : T where
   flags := τ₁.flags && τ₂.flags
   lens := if τ₁.lens = τ₂.lens then τ₁.lens else []
   bases := τ₁.bases.filter (τ₂.bases.contains ·)
-  slots := if τ₁.lens = τ₂.lens then τ₁.slots.filter (τ₂.slots.contains ·) else []
+  slots := if τ₁.lens = τ₂.lens then τ₁.slots.inter τ₂.slots else .empty
   wbases := if τ₁.lens = τ₂.lens then τ₁.wbases.filter (τ₂.wbases.contains ·) else []
   argLen := if τ₁.argLen = τ₂.argLen ∧ τ₁.stk = τ₂.stk then τ₁.argLen else 0
   argBases := if τ₁.argLen = τ₂.argLen ∧ τ₁.stk = τ₂.stk then
@@ -205,7 +205,7 @@ def meet (τ₁ τ₂ : T) : T where
 
 def le (τ σ : T) : Bool :=
   τ.regs.subset σ.regs && (!τ.flags || σ.flags) && τ.lens == σ.lens &&
-    τ.bases.all (σ.bases.contains ·) && τ.slots.all (σ.slots.contains ·) &&
+    τ.bases.all (σ.bases.contains ·) && τ.slots.subset σ.slots &&
     τ.wbases.all (σ.wbases.contains ·) && τ.argLen == σ.argLen &&
     τ.argBases.all (σ.argBases.contains ·) && τ.stk == σ.stk && decide (τ.room ≤ σ.room)
 
@@ -241,7 +241,7 @@ def popStep (τ : T) : Instr → Option T
           lens := τ.lens.tail
           bases := ((τ.bases.filter fun p => p.1 != .esp && p.1 != r && p.2.1 != 0).map
             fun p => (p.1, p.2.1 - 1, p.2.2)) ++ stkBases stk
-          slots := (τ.slots.filter (·.1 != 0)).map fun sl => (sl.1 - 1, sl.2)
+          slots := τ.slots.pop
           wbases := (τ.wbases.filter fun p => p.1 != 0 && p.2.2 != 0).map
             fun p => (p.1 - 1, p.2.1, p.2.2 - 1)
           argBases := (τ.argBases.filter (·.2 != 0)).map fun p => (p.1, p.2 - 1) }
@@ -268,7 +268,7 @@ def pushed (τ : T) (rs : List Reg) : T :=
     stk := some n :: τ.stk
     lens := n :: τ.lens
     bases := (kill τ .esp).map (fun p => (p.1, p.2.1 + 1, p.2.2)) ++ stkBases (some n :: τ.stk)
-    slots := pushSlots τ rs n ++ τ.slots.map fun sl => (sl.1 + 1, sl.2)
+    slots := τ.slots.push ((Slots.ofList (pushSlots τ rs n)).get 0)
     wbases := pushWbases τ rs n ++ τ.wbases.map fun p => (p.1 + 1, p.2.1, p.2.2 + 1)
     argBases := τ.argBases.map fun p => (p.1, p.2 + 1) }
 
@@ -281,19 +281,9 @@ def pushStep (τ : T) : Instr → Option T
     else none
   | _ => none
 
-/-- Untrusted hint search uses the same duplicate-free slots as the checker. -/
-def storeSlotsHint (τ : T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat × Nat) :=
-  match addrOf τ m with
-  | some (i, d) =>
-    if d + w ≤ τ.lens.getD i 0 then
-      if p then (if τ.slots.contains (i, d, w) then τ.slots else (i, d, w) :: τ.slots)
-      else τ.slots.filter (fun sl => p || sl.1 != i || d + w ≤ sl.2.1 || sl.2.1 + sl.2.2 ≤ d)
-    else if p then τ.slots else []
-  | none => if p then τ.slots else []
-
 def storeHint (τ : T) (m : MemOp) (w : Nat) (p : Bool) (nb : List Nat) : Option T :=
   if pub τ m.base then
-    some { τ with slots := storeSlotsHint τ m w p, wbases := storeWbases τ m w nb }
+    some { τ with slots := storeSlots τ m w p, wbases := storeWbases τ m w nb }
   else none
 
 def stepHint (τ : T) : Instr → Option T

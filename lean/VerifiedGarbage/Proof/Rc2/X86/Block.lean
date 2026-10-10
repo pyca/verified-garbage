@@ -223,8 +223,8 @@ theorem blockTaint_agree {d : Spec.Rc2.Direction} {s₁ s₂ : State} (h₁ : (b
   have fit : ∀ s, (blockContract d).pre s → (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 := by
     intro s hs; exact hs.2.2.2.2.2.2.2.2.2.2.2
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
-    blockTaint_wf h₁, blockTaint_wf h₂, fun _ h => (List.not_mem_nil h).elim,
-    fun _ h => (List.not_mem_nil h).elim, fun _ => sp, fun k h4 hk => ?_⟩
+    blockTaint_wf h₁, blockTaint_wf h₂, VG.X86.Taint.slotsOk_empty,
+    VG.X86.Taint.slotsAgree_empty, fun _ => sp, fun k h4 hk => ?_⟩
   · simp only [blockTaint, RegSet.mem_ofList, List.mem_singleton] at hr
     subst r; exact sp
   · simp only [blockTaint] at hk

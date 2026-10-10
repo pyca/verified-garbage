@@ -928,8 +928,8 @@ theorem ecbTaint_agree {d : Spec.TripleDes.Direction} {s t : State} (hs : (contr
   have fit : ∀ s, (contract d).pre s → (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 := by
     intro s hs; obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, h, _, _⟩ := hs; exact h
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, ecbTaint_wf hs,
-    ecbTaint_wf ht, fun _ h => (List.not_mem_nil h).elim,
-    fun _ h => (List.not_mem_nil h).elim, fun _ => sp, fun k h4 hk => ?_⟩
+    ecbTaint_wf ht, VG.X86.Taint.slotsOk_empty,
+    VG.X86.Taint.slotsAgree_empty, fun _ => sp, fun k h4 hk => ?_⟩
   · simp only [ecbTaint, RegSet.mem_ofList, List.mem_singleton] at hr
     subst r; exact sp
   · rw [hs.2.1, ht.2.1, args 1 (by decide), args 2 (by decide), args 3 (by decide)]

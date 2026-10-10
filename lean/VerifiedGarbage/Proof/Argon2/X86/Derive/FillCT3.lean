@@ -35,8 +35,8 @@ theorem ref_same (p : Spec.Argon2.Params) (pass lane slice i count : Nat) (X₁ 
 abbrev wsL : List Nat := [72, 76, 80, 92, 96, 100, 132]
 
 theorem slotsOkL : VG.X86.Taint.SlotsOk (τB [(0, 72, 12), (0, 92, 12), (0, 132, 4)]) := by
-  intro x hx
-  simp only [τB, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hx
+  refine VG.X86.Taint.slotsOk_of_list rfl fun x hx => ?_
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hx
   rcases hx with rfl | rfl | rfl | rfl <;> simp [τB]
 
 namespace Two

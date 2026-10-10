@@ -26,8 +26,8 @@ theorem keyTaint_agree {s₁ s₂ : State} (h₁ : keyContract.pre s₁) (h₂ :
   have fit : ∀ s, keyContract.pre s → (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 := by
     intro s hs; exact hs.2.2.2.2.2.2.2.2.2.2.2.2.1
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
-    keyTaint_wf h₁, keyTaint_wf h₂, fun _ h => (List.not_mem_nil h).elim,
-    fun _ h => (List.not_mem_nil h).elim, fun _ => sp, fun k h4 hk => ?_⟩
+    keyTaint_wf h₁, keyTaint_wf h₂, VG.X86.Taint.slotsOk_empty,
+    VG.X86.Taint.slotsAgree_empty, fun _ => sp, fun k h4 hk => ?_⟩
   · simp only [keyTaint, RegSet.mem_ofList, List.mem_singleton] at hr
     subst r; exact sp
   · simp only [keyTaint] at hk

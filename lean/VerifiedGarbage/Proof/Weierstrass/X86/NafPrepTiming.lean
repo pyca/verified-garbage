@@ -54,10 +54,10 @@ theorem NafPrepPair.agree {base : Addr} {size bits work k j : Nat} {s t : State}
     · exact h.left.count.trans h.right.count.symm)
   refine ⟨pub.rf,pub.wr,⟨pub.wf₁.lens,pub.wf₁.bases,pub.wf₁.wbases,pub.wf₁.args,pub.wf₁.argBases,pub.wf₁.stk,pub.wf₁.frames,pub.wf₁.room⟩,
     ⟨pub.wf₂.lens,pub.wf₂.bases,pub.wf₂.wbases,pub.wf₂.args,pub.wf₂.argBases,pub.wf₂.stk,pub.wf₂.frames,pub.wf₂.room⟩,?_,?_,pub.sp,pub.argMem⟩
-  · intro p hp
-    rw [List.mem_singleton.mp hp]
-    exact hw
-  · intro p hp i hlo hhi
+  · exact VG.X86.Taint.slotsOk_of_list rfl fun p hp => by rw [List.mem_singleton.mp hp]; exact hw
+  · intro r i hr
+    rw [show (nafPrepτ work).slots = VG.Slots.ofList [(0,work,4)] from rfl,VG.Slots.has_ofList] at hr
+    obtain ⟨p,hp,rfl,hlo,hhi⟩ := hr
     rw [List.mem_singleton.mp hp] at hlo hhi ⊢
     change work≤i at hlo
     change i<work+4 at hhi

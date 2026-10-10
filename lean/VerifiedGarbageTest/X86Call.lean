@@ -232,7 +232,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : fK.pre s₁) (h₂ : fK.pre s₂) (
     · simp only [hw, List.mem_singleton]; rintro r rfl; exact hR
   have hwr : s₁.wr = s₂.wr := by rw [h₁.2.1, h₂.2.1, out, out, a0]
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => hwr, wf _ h₁, wf _ h₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp

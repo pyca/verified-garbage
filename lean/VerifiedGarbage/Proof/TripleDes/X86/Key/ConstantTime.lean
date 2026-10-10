@@ -802,8 +802,8 @@ theorem keyTaint_agree {s t : State} (hs : contract.pre s)
   have fit : ∀ s, contract.pre s → (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 := by
     intro s hs; obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, h⟩ := hs; exact h
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, keyTaint_wf hs,
-    keyTaint_wf ht, fun _ h => (List.not_mem_nil h).elim,
-    fun _ h => (List.not_mem_nil h).elim, fun _ => sp, fun k h4 hk => ?_⟩
+    keyTaint_wf ht, VG.X86.Taint.slotsOk_empty,
+    VG.X86.Taint.slotsAgree_empty, fun _ => sp, fun k h4 hk => ?_⟩
   · simp only [keyTaint, RegSet.mem_ofList, List.mem_singleton] at hr
     subst r; exact sp
   · rw [hs.2.1, ht.2.1, args 2 (by decide), args 3 (by decide)]

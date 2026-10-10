@@ -1276,13 +1276,13 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.ChaCha20.xorX86.pre s₁) (h�
   · rw [hp₁.wr, hp₂.wr]
     simp only [stR, dR, bR, aR, st, dp, bp, L, ST, DP, LN, BP, argAddr, ha 0 (by lit_omega),
       ha 1 (by lit_omega), ha 2 (by lit_omega), ha 3 (by lit_omega), hesp]
-  · intro sl hsl
-    simp only [τ₀, List.mem_singleton] at hsl
-    subst hsl; decide
-  · intro sl hsl k _ hk
-    simp only [τ₀, List.mem_singleton] at hsl
+  · exact VG.X86.Taint.slotsOk_of_list rfl (by decide)
+  · intro i k hk
+    rw [show τ₀.slots = VG.Slots.ofList [(3, 0, 16)] from rfl, VG.Slots.has_ofList] at hk
+    obtain ⟨sl, hsl, rfl, -, hk⟩ := hk
+    rw [List.mem_singleton] at hsl
     subst hsl
-    simp only [Nat.zero_add] at hk
+    dsimp only at hk ⊢
     simp only [VG.X86.Taint.byteAddr, VG.X86.Taint.region, hp₁.wr, hp₂.wr]
     show s₁.mem (addr (s₁.gpr .esp) 4 + BitVec.ofNat 64 k) = s₂.mem (addr (s₂.gpr .esp) 4 + BitVec.ofNat 64 k)
     rw [argWord_eq hp₁.sp_hi hk, argWord_eq hp₂.sp_hi hk,

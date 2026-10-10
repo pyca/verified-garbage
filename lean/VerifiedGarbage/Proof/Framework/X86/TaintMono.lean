@@ -33,24 +33,24 @@ private theorem ite_t {α : Type} {c : Prop} [Decidable c] (h : c) {a b : α} :
 /-- `τ` and `σ` know the same about memory, and `σ` has at least the public
 registers, flags and slots of `τ`. -/
 def leR (τ σ : T) : Bool :=
-  τ.regs.subset σ.regs && (!τ.flags || σ.flags) && KList.all τ.slots (mem3 · σ.slots) &&
+  τ.regs.subset σ.regs && (!τ.flags || σ.flags) && τ.slots.subsetK σ.slots &&
     τ.lens == σ.lens && τ.bases == σ.bases && τ.wbases == σ.wbases && Nat.beq τ.argLen σ.argLen &&
     τ.argBases == σ.argBases && τ.stk == σ.stk && Nat.beq τ.room σ.room
 
 /-- `σ` is `τ` with the registers `r`, flags `f` and slots `sl`. -/
-def upd (τ : T) (r : RegSet Reg) (f : Bool) (sl : List (Nat × Nat × Nat)) : T :=
+def upd (τ : T) (r : RegSet Reg) (f : Bool) (sl : Slots) : T :=
   { τ with regs := r, flags := f, slots := sl }
 
 /-- `leR`, as a proposition. -/
 structure LeR (τ σ : T) : Prop where
   regs : τ.regs.subset σ.regs = true
   flags : τ.flags = true → σ.flags = true
-  slots : ∀ x ∈ τ.slots, x ∈ σ.slots
+  slots : τ.slots.Sub σ.slots
   shape : σ = upd τ σ.regs σ.flags σ.slots
 
 theorem leR_iff {τ σ : T} : leR τ σ = true ↔ LeR τ σ := by
-  simp only [leR, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true', beq_iff_eq, KList.all_eq,
-    List.all_eq_true, mem3_eq, List.contains_iff_mem, KList.beq_eq]
+  simp only [leR, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true', beq_iff_eq, Slots.subsetK_eq, Slots.subset_iff,
+    KList.beq_eq]
   constructor
   · rintro ⟨⟨⟨⟨⟨⟨⟨⟨⟨hr, hf⟩, hs⟩, hl⟩, hb⟩, hw⟩, ha⟩, hab⟩, hk⟩, hro⟩
     refine ⟨hr, fun h => hf.elim (fun e => by rw [e] at h; cases h) id, hs, ?_⟩
@@ -63,12 +63,12 @@ theorem leR_iff {τ σ : T} : leR τ σ = true ↔ LeR τ σ := by
     · exact .inl rfl
     · exact .inr (hf h)
 
-theorem LeR.refl (τ : T) : LeR τ τ := ⟨RegSet.subset_refl _, id, fun _ h => h, rfl⟩
+theorem LeR.refl (τ : T) : LeR τ τ := ⟨RegSet.subset_refl _, id, Slots.Sub.refl _, rfl⟩
 
 theorem LeR.trans {a b c : T} (h₁ : LeR a b) (h₂ : LeR b c) : LeR a c where
   regs := RegSet.subset_trans h₁.regs h₂.regs
   flags h := h₂.flags (h₁.flags h)
-  slots x hx := h₂.slots x (h₁.slots x hx)
+  slots := h₁.slots.trans h₂.slots
   shape := by rw [h₂.shape, h₁.shape]; rfl
 
 theorem le_of_le_leR {m τ σ : T} (hm : le m τ = true) (h : LeR τ σ) : le m σ = true := by
@@ -76,7 +76,7 @@ theorem le_of_le_leR {m τ σ : T} (hm : le m τ = true) (h : LeR τ σ) : le m 
   simp only [le, upd, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true', beq_iff_eq, List.all_eq_true,
     List.contains_iff_mem, decide_eq_true_eq] at hm ⊢
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨hr, hf⟩, hl⟩, hb⟩, hs⟩, hw⟩, ha⟩, hab⟩, hk⟩, hro⟩ := hm
-  refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨RegSet.subset_trans hr h.regs, ?_⟩, hl⟩, hb⟩, fun x hx => h.slots x (hs x hx)⟩, hw⟩,
+  refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨RegSet.subset_trans hr h.regs, ?_⟩, hl⟩, hb⟩, (Slots.subset_iff _ _).mpr fun i k hk => h.slots i k ((Slots.subset_iff _ _).mp hs i k hk)⟩, hw⟩,
     ha⟩, hab⟩, hk⟩, decide_eq_true hro⟩
   rcases hf with e | e
   · exact .inl e
@@ -85,7 +85,7 @@ theorem le_of_le_leR {m τ σ : T} (hm : le m τ = true) (h : LeR τ σ) : le m 
 /-! ## Monotonicity -/
 
 section
-variable {τ : T} {r : RegSet Reg} {f : Bool} {sl : List (Nat × Nat × Nat)}
+variable {τ : T} {r : RegSet Reg} {f : Bool} {sl : Slots}
 
 theorem pub_upd (hr : τ.regs.subset r = true) {x : Reg} (h : pub τ x = true) :
     pub (upd τ r f sl) x = true := RegSet.mem_of_subset hr h
@@ -98,7 +98,7 @@ theorem srcPub_upd (hr : τ.regs.subset r = true) {src : Src} (h : srcPub τ src
     srcPub (upd τ r f sl) src = true := by
   cases src <;> first | rfl | exact pub_upd hr h | cases h
 
-theorem slotPub_upd (hsl : ∀ x ∈ τ.slots, x ∈ sl) {m : MemOp} {w : Nat} (h : slotPub τ m w = true) :
+theorem slotPub_upd (hsl : τ.slots.Sub sl) {m : MemOp} {w : Nat} (h : slotPub τ m w = true) :
     slotPub (upd τ r f sl) m w = true := by
   unfold slotPub at h ⊢
   rw [show addrOf (upd τ r f sl) m = addrOf τ m from rfl]
@@ -109,10 +109,10 @@ theorem slotPub_upd (hsl : ∀ x ∈ τ.slots, x ∈ sl) {m : MemOp} {w : Nat} (
     intro h
     obtain ⟨i, d⟩ := id
     simp only at h ⊢
-    obtain ⟨x, hx, hp⟩ := List.any_eq_true.mp h
-    exact List.any_eq_true.mpr ⟨x, hsl x hx, hp⟩
+    rw [Slots.covers_iff] at h ⊢
+    exact fun k h₁ h₂ => hsl i k (h k h₁ h₂)
 
-theorem loadPub_upd (hsl : ∀ x ∈ τ.slots, x ∈ sl) {src : Src} (h : loadPub τ src = true) :
+theorem loadPub_upd (hsl : τ.slots.Sub sl) {src : Src} (h : loadPub τ src = true) :
     loadPub (upd τ r f sl) src = true := by
   cases src with
   | mem m =>
@@ -130,86 +130,39 @@ theorem set_upd (hr : τ.regs.subset r = true) (d : Reg) {p q : Bool} (hpq : p =
   · exact absurd (hpq rfl) Bool.false_ne_true
   · exact RegSet.insert_mono hr d
 
-theorem mem_storeSlots_true {m : MemOp} {w : Nat} {x : Nat × Nat × Nat}
-    (hx : x ∈ storeSlots τ m w true) :
-    x ∈ τ.slots ∨ ∃ i d, addrOf τ m = some (i, d) ∧ d + w ≤ τ.lens.getD i 0 ∧ x = (i, d, w) := by
-  unfold storeSlots at hx
-  cases ha : addrOf τ m with
-  | none => simp only [ha, ite_true] at hx; exact .inl hx
+theorem storeSlots_upd (hsl : τ.slots.Sub sl) (m : MemOp) (w : Nat) {p q : Bool}
+    (hpq : p = true → q = true) : (storeSlots τ m w p).Sub (storeSlots (upd τ r f sl) m w q) := by
+  intro j k hk
+  unfold storeSlots at hk ⊢
+  rw [show addrOf (upd τ r f sl) m = addrOf τ m from rfl, show (upd τ r f sl).lens = τ.lens from rfl]
+  rw [show (upd τ r f sl).slots = sl from rfl]
+  revert hk
+  cases addrOf τ m with
+  | none =>
+    intro hk
+    cases p
+    · simp at hk
+    · simp only [ite_true] at hk; rw [hpq rfl]; exact hsl j k hk
   | some id =>
     obtain ⟨i, d⟩ := id
-    simp only [ha] at hx
-    by_cases hw : d + w ≤ τ.lens.getD i 0
-    · simp only [hw, ite_true, Bool.true_or, List.filter_eq_self.mpr (fun _ _ => rfl),
-        List.mem_cons] at hx
-      exact hx.elim (fun e => .inr ⟨i, d, rfl, hw, e⟩) .inl
-    · simp only [hw, ite_false, ite_true] at hx; exact .inl hx
-
-theorem mem_storeSlots_false {m : MemOp} {w : Nat} {x : Nat × Nat × Nat}
-    (hx : x ∈ storeSlots τ m w false) :
-    x ∈ τ.slots ∧ ∃ i d, addrOf τ m = some (i, d) ∧ d + w ≤ τ.lens.getD i 0 ∧
-      (x.1 ≠ i ∨ d + w ≤ x.2.1 ∨ x.2.1 + x.2.2 ≤ d) := by
-  unfold storeSlots at hx
-  cases ha : addrOf τ m with
-  | none => simp only [ha, Bool.false_eq_true, ite_false, List.not_mem_nil] at hx
-  | some id =>
-    obtain ⟨i, d⟩ := id
-    simp only [ha] at hx
-    by_cases hw : d + w ≤ τ.lens.getD i 0
-    · simp only [hw, ite_true, Bool.false_eq_true, ite_false, Bool.false_or, List.mem_filter,
-        Bool.or_eq_true, bne_iff_ne, ne_eq, decide_eq_true_eq] at hx
-      refine ⟨hx.1, i, d, rfl, hw, ?_⟩
-      rcases hx.2 with (h | h) | h
-      · exact .inl h
-      · exact .inr (.inl h)
-      · exact .inr (.inr h)
-    · simp only [hw, ite_false, Bool.false_eq_true, List.not_mem_nil] at hx
-
-theorem mem_storeSlots_of_mem {σ : T} (m : MemOp) (w : Nat) {x : Nat × Nat × Nat} (hx : x ∈ σ.slots) :
-    x ∈ storeSlots σ m w true := by
-  unfold storeSlots
-  cases ha : addrOf σ m with
-  | none => simpa only [ite_true] using hx
-  | some id =>
-    obtain ⟨i, d⟩ := id
-    simp only
-    by_cases hw : d + w ≤ σ.lens.getD i 0
-    · simp only [hw, ite_true, Bool.true_or, List.filter_eq_self.mpr (fun _ _ => rfl), List.mem_cons]
-      exact .inr hx
-    · simpa only [hw, ite_false, ite_true] using hx
-
-theorem mem_storeSlots_kept {σ : T} {m : MemOp} {w : Nat} {i d : Nat} (ha : addrOf σ m = some (i, d))
-    (hw : d + w ≤ σ.lens.getD i 0) {x : Nat × Nat × Nat} (hx : x ∈ σ.slots)
-    (ho : x.1 ≠ i ∨ d + w ≤ x.2.1 ∨ x.2.1 + x.2.2 ≤ d) (q : Bool) : x ∈ storeSlots σ m w q := by
-  cases q
-  · unfold storeSlots
-    simp only [ha, hw, ite_true, Bool.false_eq_true, ite_false, Bool.false_or, List.mem_filter,
-      Bool.or_eq_true, bne_iff_ne, ne_eq, decide_eq_true_eq]
-    refine ⟨hx, ?_⟩
-    rcases ho with h | h | h
-    · exact .inl (.inl h)
-    · exact .inl (.inr h)
-    · exact .inr h
-  · exact mem_storeSlots_of_mem m w hx
-
-theorem mem_storeSlots_new {σ : T} {m : MemOp} {w : Nat} {i d : Nat} (ha : addrOf σ m = some (i, d))
-    (hw : d + w ≤ σ.lens.getD i 0) : (i, d, w) ∈ storeSlots σ m w true := by
-  unfold storeSlots
-  simp only [ha, hw, ite_true, List.mem_cons, true_or]
-
-theorem storeSlots_upd (hsl : ∀ x ∈ τ.slots, x ∈ sl) (m : MemOp) (w : Nat) {p q : Bool}
-    (hpq : p = true → q = true) : ∀ x ∈ storeSlots τ m w p, x ∈ storeSlots (upd τ r f sl) m w q := by
-  intro x hx
-  cases p
-  · obtain ⟨hs, i, d, ha, hw, ho⟩ := mem_storeSlots_false hx
-    exact mem_storeSlots_kept (σ := upd τ r f sl) ha hw (hsl x hs) ho q
-  · cases hpq rfl
-    rcases mem_storeSlots_true hx with hs | ⟨i, d, ha, hw, rfl⟩
-    · exact mem_storeSlots_of_mem (σ := upd τ r f sl) m w (hsl x hs)
-    · exact mem_storeSlots_new (σ := upd τ r f sl) ha hw
+    intro hk
+    simp only at hk ⊢
+    split
+    · rename_i hw
+      simp only [hw, ite_true] at hk
+      cases p <;> cases q <;> simp only [Bool.false_eq_true, ite_false, ite_true] at hk ⊢
+      · rw [Slots.has_remove, Bool.and_eq_true] at hk ⊢; exact ⟨hsl j k hk.1, hk.2⟩
+      · rw [Slots.has_remove, Bool.and_eq_true] at hk; rw [Slots.has_add, hsl j k hk.1]; rfl
+      · exact absurd (hpq rfl) Bool.false_ne_true
+      · rw [Slots.has_add, Bool.or_eq_true] at hk ⊢; exact hk.imp (hsl j k) id
+    · rename_i hw
+      simp only [hw, ite_false] at hk
+      cases p
+      · simp at hk
+      · simp only [ite_true] at hk; rw [hpq rfl]; simp only [ite_true]; exact hsl j k hk
 
 theorem storeStep_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = true)
-    (hsl : ∀ x ∈ τ.slots, x ∈ sl) (m : MemOp) (w : Nat) {p q : Bool} (hpq : p = true → q = true)
+    (hsl : τ.slots.Sub sl) (m : MemOp) (w : Nat) {p q : Bool} (hpq : p = true → q = true)
     (nb : List Nat) {τ' : T} (hs : storeStep τ m w p nb = some τ') :
     ∃ σ', storeStep (upd τ r f sl) m w q nb = some σ' ∧ LeR τ' σ' := by
   unfold storeStep at hs ⊢
@@ -219,10 +172,10 @@ theorem storeStep_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f
   exact ⟨_, rfl, ⟨hr, hf, storeSlots_upd hsl m w hpq, rfl⟩⟩
 
 theorem leR_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = true)
-    (hsl : ∀ x ∈ τ.slots, x ∈ sl) : LeR τ (upd τ r f sl) := ⟨hr, hf, hsl, rfl⟩
+    (hsl : τ.slots.Sub sl) : LeR τ (upd τ r f sl) := ⟨hr, hf, hsl, rfl⟩
 
 theorem step_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = true)
-    (hsl : ∀ x ∈ τ.slots, x ∈ sl) (i : Instr) {τ' : T} (hs : step τ i = some τ') :
+    (hsl : τ.slots.Sub sl) (i : Instr) {τ' : T} (hs : step τ i = some τ') :
     ∃ σ', step (upd τ r f sl) i = some σ' ∧ LeR τ' σ' := by
   cases i with
   | mov d src =>
@@ -304,7 +257,7 @@ theorem step_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = tr
 theorem LeR.sim {a a' b b' : T} (ha : Sim a' a) (hb : Sim b' b) (h : LeR a b) : LeR a' b' where
   regs := by rw [ha.regs, hb.regs]; exact h.regs
   flags e := by rw [hb.flags]; exact h.flags (ha.flags ▸ e)
-  slots x hx := (hb.slots x).mpr (h.slots x ((ha.slots x).mp hx))
+  slots i k hk := by rw [hb.slots]; exact h.slots i k (by rw [← ha.slots]; exact hk)
   shape := by
     have e := h.shape
     have e₁ : b.lens = a.lens := (congrArg T.lens e).trans rfl
@@ -327,7 +280,7 @@ theorem LeR.step {τ σ τ' : T} (h : LeR τ σ) (i : Instr) (hs : step τ i = s
   rw [h.shape]; exact step_upd h.regs h.flags h.slots i hs
 
 theorem callStep_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = true)
-    (hsl : ∀ x ∈ τ.slots, x ∈ sl) {τ' : T} (hs : callStep τ = some τ') :
+    (hsl : τ.slots.Sub sl) {τ' : T} (hs : callStep τ = some τ') :
     ∃ σ', callStep (upd τ r f sl) = some σ' ∧ LeR τ' σ' := by
   unfold callStep at hs ⊢
   split at hs <;> [rename_i hok; cases hs]
@@ -337,7 +290,7 @@ theorem callStep_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f 
   exact ⟨_, rfl, ⟨hr, hf, hsl, rfl⟩⟩
 
 theorem retStep_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = true)
-    (hsl : ∀ x ∈ τ.slots, x ∈ sl) {τ' : T} (hs : retStep τ = some τ') :
+    (hsl : τ.slots.Sub sl) {τ' : T} (hs : retStep τ = some τ') :
     ∃ σ', retStep (upd τ r f sl) = some σ' ∧ LeR τ' σ' := by
   unfold retStep at hs ⊢
   show ∃ σ', (match τ.stk with
@@ -380,7 +333,7 @@ theorem pushWbases_upd (rs : List Reg) (o : Nat) :
   | cons q rs ih => simp only [pushWbases, ih]; rfl
 
 theorem pushStep_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = true)
-    (hsl : ∀ x ∈ τ.slots, x ∈ sl) (i : Instr) {τ' : T} (hs : pushStep τ i = some τ') :
+    (hsl : τ.slots.Sub sl) (i : Instr) {τ' : T} (hs : pushStep τ i = some τ') :
     ∃ σ', pushStep (upd τ r f sl) i = some σ' ∧ LeR τ' σ' := by
   cases i with
   | push rs =>
@@ -389,18 +342,22 @@ theorem pushStep_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f 
     cases hs
     simp only [Bool.and_eq_true] at hok
     rw [ite_t (by simp only [Bool.and_eq_true]; exact ⟨⟨pub_upd hr hok.1.1, hok.1.2⟩, hok.2⟩)]
-    refine ⟨_, rfl, ⟨hr, hf, fun x hx => ?_, ?_⟩⟩
-    · simp only [pushed, List.mem_append, List.mem_map] at hx ⊢
-      rcases hx with hx | ⟨y, hy, e⟩
-      · exact .inl (pushSlots_upd hr rs _ x hx)
-      · exact .inr ⟨y, hsl y hy, e⟩
+    refine ⟨_, rfl, ⟨hr, hf, fun j k hk => ?_, ?_⟩⟩
+    · cases j with
+      | zero =>
+        simp only [pushed, Slots.has_push_zero, ← Slots.has_eq, Slots.has_ofList] at hk ⊢
+        obtain ⟨x, hx, h⟩ := hk
+        exact ⟨x, pushSlots_upd hr rs _ x hx, h⟩
+      | succ j =>
+        simp only [pushed, Slots.has_push_succ] at hk ⊢
+        exact hsl j k hk
     · have e := pushWbases_upd (τ := τ) (r := r) (f := f) (sl := sl) rs (4 * rs.length)
       simp only [pushed]
       rw [e]; rfl
   | _ => simp only [pushStep, reduceCtorEq] at hs
 
 theorem popStep_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = true)
-    (hsl : ∀ x ∈ τ.slots, x ∈ sl) (i : Instr) {τ' : T} (hs : popStep τ i = some τ') :
+    (hsl : τ.slots.Sub sl) (i : Instr) {τ' : T} (hs : popStep τ i = some τ') :
     ∃ σ', popStep (upd τ r f sl) i = some σ' ∧ LeR τ' σ' := by
   cases i with
   | pop d k =>
@@ -421,18 +378,17 @@ theorem popStep_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f =
         split at hs <;> [rename_i hok; cases hs]
         cases hs
         rw [ite_t (pub_upd hr hok)]
-        refine ⟨_, rfl, ⟨RegSet.erase_mono hr d, hf, fun x hx => ?_, rfl⟩⟩
-        simp only [List.mem_map, List.mem_filter] at hx ⊢
-        obtain ⟨y, ⟨hy, hy'⟩, e⟩ := hx
-        exact ⟨y, ⟨hsl y hy, hy'⟩, e⟩
+        refine ⟨_, rfl, ⟨RegSet.erase_mono hr d, hf, fun j k hk => ?_, rfl⟩⟩
+        simp only [Slots.has_pop] at hk ⊢
+        exact hsl (j + 1) k hk
   | _ => simp only [popStep, reduceCtorEq] at hs
 
-theorem mem_meet_slots {a b : T} {x : Nat × Nat × Nat} :
-    x ∈ (meet a b).slots ↔ a.lens = b.lens ∧ x ∈ a.slots ∧ x ∈ b.slots := by
+theorem has_meet_slots {a b : T} {i k : Nat} :
+    (meet a b).slots.has i k = true ↔ a.lens = b.lens ∧ a.slots.has i k = true ∧ b.slots.has i k = true := by
   simp only [meet]
   split
-  · simp only [List.mem_filter, List.contains_iff_mem, true_and, *]
-  · simp only [List.not_mem_nil, false_iff, not_and]; intro h; contradiction
+  · simp only [Slots.has_inter, Bool.and_eq_true, true_and, *]
+  · simp only [Slots.has_empty, Bool.false_eq_true, false_iff, not_and]; intro h; contradiction
 
 theorem meet_upd {τ₁ τ₂ σ₁ σ₂ : T} (h₁ : LeR τ₁ σ₁) (h₂ : LeR τ₂ σ₂) : LeR (meet τ₁ τ₂) (meet σ₁ σ₂) := by
   obtain ⟨hr₁, hf₁, hs₁, e₁⟩ := h₁
@@ -440,10 +396,10 @@ theorem meet_upd {τ₁ τ₂ σ₁ σ₂ : T} (h₁ : LeR τ₁ σ₁) (h₂ : 
   generalize σ₁.regs = r₁, σ₁.flags = f₁, σ₁.slots = s₁ at *
   generalize σ₂.regs = r₂, σ₂.flags = f₂, σ₂.slots = s₂ at *
   subst e₁ e₂
-  refine ⟨RegSet.inter_mono hr₁ hr₂, fun h => ?_, fun x hx => ?_, rfl⟩
+  refine ⟨RegSet.inter_mono hr₁ hr₂, fun h => ?_, fun i k hk => ?_, rfl⟩
   · simp only [meet, upd, Bool.and_eq_true] at h ⊢; exact ⟨hf₁ h.1, hf₂ h.2⟩
-  · obtain ⟨hl, x₁, x₂⟩ := mem_meet_slots.mp hx
-    exact mem_meet_slots.mpr ⟨hl, hs₁ x x₁, hs₂ x x₂⟩
+  · obtain ⟨hl, x₁, x₂⟩ := has_meet_slots.mp hk
+    exact has_meet_slots.mpr ⟨hl, hs₁ i k x₁, hs₂ i k x₂⟩
 
 end
 
@@ -678,7 +634,7 @@ instance : VG.Taint.Frame taint where
     exact frLe_iff.mpr ⟨RegSet.subset_trans a₁ h₂.regs, fun h => h₂.flags (a₂ h)⟩
   join_hint {m Φ τ} hm hΦ := by
     obtain ⟨a₁, a₂⟩ := frLe_iff.mp hΦ
-    refine ⟨?_, leR_iff.mpr ⟨RegSet.subset_union_left _ _, fun h => by simp [h], fun _ hx => hx, rfl⟩,
+    refine ⟨?_, leR_iff.mpr ⟨RegSet.subset_union_left _ _, fun h => by simp [h], Slots.Sub.refl _, rfl⟩,
       frLe_iff.mpr ⟨RegSet.subset_union_right _ _, fun h => by simp [h]⟩⟩
     show leK _ _ = true
     rw [leK_eq]

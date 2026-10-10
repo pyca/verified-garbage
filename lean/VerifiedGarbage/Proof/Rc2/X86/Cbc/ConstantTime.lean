@@ -343,8 +343,8 @@ theorem startTaint_agree {d : Spec.Rc2.Direction} {s₁ s₂ : State} (h : Initi
     obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, h, _⟩ := hs
     exact h
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
-    startTaint_wf h₁, startTaint_wf h₂, fun _ h => (List.not_mem_nil h).elim,
-    fun _ h => (List.not_mem_nil h).elim, fun _ => sp, fun k h4 hk => ?_⟩
+    startTaint_wf h₁, startTaint_wf h₂, VG.X86.Taint.slotsOk_empty,
+    VG.X86.Taint.slotsAgree_empty, fun _ => sp, fun k h4 hk => ?_⟩
   · simp only [startTaint, RegSet.mem_ofList, List.mem_singleton] at hr
     subst r; exact sp
   · simp only [startTaint] at hk

@@ -298,7 +298,7 @@ theorem FE.agreeA {bs : State → Addr} {σ₁ σ₂ s₁ s₂ : State} (h₁ : 
   have esp : s₁.gpr .esp = s₂.gpr .esp := h₁.sp.trans (hs.trans h₂.sp.symm)
   have edi : s₁.gpr .edi = s₂.gpr .edi := edi_eq h₁.fin.scr (hb ▸ h₂.fin.scr)
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, h₁.wfA hfit₁ hwr₁,
-    h₂.wfA hfit₂ hwr₂, fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
+    h₂.wfA hfit₂ hwr₂, VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty,
     fun _ => esp, fun k h4 hk => ?_⟩
   · simp only [τa, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

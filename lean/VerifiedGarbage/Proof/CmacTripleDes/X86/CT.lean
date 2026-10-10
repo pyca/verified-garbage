@@ -66,7 +66,7 @@ theorem init_ct : ConstantTime isa initX86.pre initX86.pub init := by
   intro s₁ s₂ h₁ h₂ ⟨hesp, ha⟩
   have hp₁ := IPre.of h₁; have hp₂ := IPre.of h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, init_wf h₁, init_wf h₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => argMem_eq (n := 20) hp₁.esp_fit hp₂.esp_fit (fun i hi => ha i (by omega)) h4 hk⟩
   · simp only [initTaint, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp
@@ -111,7 +111,7 @@ theorem streamTaint_agree {s₁ s₂ : State} (w₁ : VG.X86.Taint.Wf streamTain
     (hesp : s₁.gpr .esp = s₂.gpr .esp) (ha : ∀ i < 5, arg s₁ i = arg s₂ i) :
     VG.X86.Taint.Agree streamTaint s₁ s₂ := by
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, w₁, w₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => argMem_eq (n := 24) f₁ f₂ (fun i hi => ha i (by omega)) h4 hk⟩
   · simp only [streamTaint, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp

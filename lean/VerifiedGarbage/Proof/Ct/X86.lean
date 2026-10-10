@@ -322,7 +322,7 @@ theorem body_agree (s t : State) (hs : contract.pre s) (ht : contract.pre t)
   have hsp : (pushed [.ebx] s).gpr .esp = (pushed [.ebx] t).gpr .esp := by
     rw [pushed_esp,pushed_esp,hp.1]
   refine ⟨⟨?_,(fun h => nomatch h)⟩,fun h => absurd rfl h,body_wf s hs,body_wf t ht,
-    (fun _ h => nomatch h),(fun _ h => nomatch h),fun _ => hsp,?_⟩
+    VG.X86.Taint.slotsOk_empty,VG.X86.Taint.slotsAgree_empty,fun _ => hsp,?_⟩
   · intro r hr
     have he : r=.esp := by simpa only [bodyTaint,argTaint,RegSet.mem_ofList,List.mem_singleton] using hr
     subst r

@@ -44,10 +44,13 @@ theorem combAgree {s t : State} (hs : VG.X86.Taint.Wf (combτAt scratchSecond) s
     · exact hi
     · exact hd
     · exact hsp
-  · intro p hp
+  · refine VG.X86.Taint.slotsOk_of_list rfl fun p hp => ?_
     have : p = (combRegion scratchSecond, 60, 4) := List.mem_singleton.mp hp
     subst p; cases scratchSecond <;> decide
-  · intro p hmem k hlo hhi
+  · intro i k hk
+    rw [show (combτAt scratchSecond).slots = VG.Slots.ofList [(combRegion scratchSecond, 60, 4)] from rfl,
+      VG.Slots.has_ofList] at hk
+    obtain ⟨p, hmem, rfl, hlo, hhi⟩ := hk
     have : p = (combRegion scratchSecond, 60, 4) := List.mem_singleton.mp hmem
     subst p
     have hk : k < 64 ∧ 60 ≤ k := by exact ⟨hhi, hlo⟩
@@ -76,10 +79,13 @@ theorem combStartAgree {s t : State} (hs : VG.X86.Taint.Wf (combτAt scratchSeco
     rcases hr with rfl | rfl
     · exact hd
     · exact hsp
-  · intro p hp
+  · refine VG.X86.Taint.slotsOk_of_list rfl fun p hp => ?_
     have : p = (combRegion scratchSecond, 60, 4) := List.mem_singleton.mp hp
     subst p; cases scratchSecond <;> decide
-  · intro p hmem k hlo hhi
+  · intro i k hk
+    rw [show (combStartτAt scratchSecond).slots = VG.Slots.ofList [(combRegion scratchSecond, 60, 4)] from rfl,
+      VG.Slots.has_ofList] at hk
+    obtain ⟨p, hmem, rfl, hlo, hhi⟩ := hk
     have : p = (combRegion scratchSecond, 60, 4) := List.mem_singleton.mp hmem
     subst p
     have hk : k < 64 ∧ 60 ≤ k := by exact ⟨hhi, hlo⟩

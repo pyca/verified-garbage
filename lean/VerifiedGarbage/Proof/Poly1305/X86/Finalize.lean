@@ -592,7 +592,7 @@ theorem finalize_agree₀ {s₁ s₂ : State} (h₁ : Proof.Poly1305.finalizeX86
   obtain ⟨hesp, ha⟩ := hpub
   have hp₁ := FPre.of _ h₁; have hp₂ := FPre.of _ h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, finalize_wf₀ hp₁, finalize_wf₀ hp₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => (Nat.zero_add k).symm ▸ argMem_eq hp₁.sp_fit hp₂.sp_fit (fun i hi => ha i (by omega_using [hi]))
       h4 hk⟩
   simp only [finalizeτ₀, RegSet.mem_ofList, List.mem_singleton] at hr

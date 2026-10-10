@@ -36,7 +36,7 @@ theorem vFrontAgree {s t : State} {extra₁ extra₂ : List Region} (hp : VPre c
     (hq : VPre c t extra₂) (he : s.gpr .esp = t.gpr .esp) (ha : ∀ j < 4, arg s j = arg t j) :
     VG.X86.Taint.Agree vFrontτ s t := by
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, vFrontWf hp, vFrontWf hq,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => he,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => he,
     fun k h4 hk => ?_⟩
   · simp only [vFrontτ, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact he

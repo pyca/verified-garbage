@@ -1435,7 +1435,7 @@ prologue stores at `[200, 392)` of the scratch space: public, but no
 address or branch depends on them, and the kernel checks the analysis much
 faster without them (`taint_decide_weak`). -/
 def dropRC (τ : VG.X86.Taint.T) : VG.X86.Taint.T :=
-  { τ with slots := τ.slots.filter fun sl => !(200 ≤ sl.2.1 && sl.2.1 < 392) }
+  { τ with slots := τ.slots.removeAll 200 192 }
 
 /-- The taint analysis starts with `esp` public, and the words holding
 `state` and `scratch` known to be the base addresses of the writable
@@ -1466,7 +1466,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Sha3.permuteX86.pre s₁)
   obtain ⟨hesp, a0, a1⟩ := hpub
   have hp₁ := pre_of _ h₁; have hp₂ := pre_of _ h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ hp₁, wf₀ hp₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp

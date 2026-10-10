@@ -135,7 +135,7 @@ theorem fn_agree {s₁ s₂ : State} (h₁ : fnPre s₁) (h₂ : fnPre s₂)
     (hesp : s₁.gpr .esp = s₂.gpr .esp) (ha : arg s₁ 0 = arg s₂ 0) :
     VG.X86.Taint.Agree fnτ s₁ s₂ := by
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, fn_wf h₁, fn_wf h₂,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
   · simp only [fnτ, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp

@@ -633,11 +633,13 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Sha3.squeezeX86.pre s₁) (h�
   · rw [hp₁.wr, hp₂.wr]
     simp only [stR, oR, scR, argR, stA, oA, st, op, outn, scr, argAddr, ha 0 (by omega), ha 3 (by omega),
       ha 4 (by omega), ha 5 (by omega), hesp]
-  · intro sl hsl
-    simp only [τ₀, List.mem_singleton] at hsl
+  · refine VG.X86.Taint.slotsOk_of_list rfl fun sl hsl => ?_
+    simp only [List.mem_singleton] at hsl
     subst hsl; decide
-  · intro sl hsl k _ hk
-    simp only [τ₀, List.mem_singleton] at hsl
+  · intro i k hk
+    rw [show τ₀.slots = VG.Slots.ofList [(3, 0, 24)] from rfl, VG.Slots.has_ofList] at hk
+    obtain ⟨sl, hsl, rfl, _, hk⟩ := hk
+    simp only [List.mem_singleton] at hsl
     subst hsl
     simp only [Nat.zero_add] at hk
     simp only [VG.X86.Taint.byteAddr, VG.X86.Taint.region, hp₁.wr, hp₂.wr]

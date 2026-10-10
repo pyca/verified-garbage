@@ -44,6 +44,6 @@ variable {scratchSecond : Bool}
 /-- The hints forget the public slots and base words outside the calls of the
 field arithmetic; inside them they keep everything (the functions read their
 pointers from the call's frame). -/
-def combWeak (τ : VG.X86.Taint.T) : VG.X86.Taint.T := if τ.stk = [] then { τ with slots := [], wbases := [] } else τ
+def combWeak (τ : VG.X86.Taint.T) : VG.X86.Taint.T := if τ.stk = [] then { τ with slots := .empty, wbases := [] } else τ
 
 end VG.Proof.Ecdsa.X86
