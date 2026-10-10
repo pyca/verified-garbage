@@ -597,6 +597,32 @@ structure CombInv (s₀ : State) (base T : Addr) (S c : Nat) (s : State) : Prop 
 theorem bits_far {base : Addr} {q : Nat} (hq : q < 256) :
     ofs base (off base (768 + q)) = 768 + q := Proof.X25519.X86_64.ofs_off' base (by omega)
 
+/-- A point function's body leaves slots 0–2 bounded if its program last writes them with
+products: they are, after the doubling and the affine addition. -/
+theorem fn_acc {s : State} {base : Addr} (hs : Scratch s base) (ops : List FieldOp)
+    (h : ∀ i : Slot, i.val < 3 → bndOut ops (fun _ => false) i = true) :
+    WP isa (Point64.fn fld ops) s fun t => AccBnd t.mem base := by
+  simp only [Point64.fn, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (Point64.saves_ok s) fun s₁ ⟨g₁, _, _, wr₁⟩ => ?_
+  have hs₁ : Scratch s₁ base := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
+  rw [WP.block_append_iff]
+  refine WP.mono (fieldCodeWide_acc (fld := fld) _ hs₁ h) fun s₂ h₂ => ?_
+  exact WP.mono (Point64.restores_ok s₂) fun s₃ ⟨_, m₃, _, _⟩ i hi => by
+    unfold Bnd; rw [m₃]; exact h₂ i hi
+
+/-- The affine addition's body (`vg_ed25519_r64_add_affine_ext`'s): the point in slots 0–3 plus `q`,
+whose affine cached form is in slots 4–6. -/
+theorem affBody_ok {s : State} {base : Addr} (hs : Scratch s base) (q : Spec.Ed25519.Point)
+    (hq : (⟨env s.mem base 4, env s.mem base 5, env s.mem base 6, 2⟩ : Spec.Ed25519.Point) = cache q) :
+    WP isa (Point64.bodies fld).aff s fun t => Keep base s t ∧ point (env t.mem base) 0 1 2 3 =
+        Spec.Ed25519.pointAdd (point (env s.mem base) 0 1 2 3) q ∧
+      (∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i) ∧ AccBnd t.mem base :=
+  WP.mono (wp_and (Point64.fn_keep hs pointAddAffineOps Point64.addAffineFn_keeps (by decide))
+    (fn_acc hs pointAddAffineOps (by decide))) fun t ⟨⟨kt, vt⟩, bt⟩ => by
+    rw [vt]
+    exact ⟨kt, pointAddAffine_eval _ q hq, pointAddAffine_high _, bt⟩
+
 theorem zsmul_32 (v : ℤ) (g : Nat) (P : EPoint dZ) :
     (32 : Nat) • (v • P) + g • P = (32 * v + g) • P := by
   rw [add_smul, mul_smul, ← natCast_zsmul, ← natCast_zsmul]; rfl
@@ -604,26 +630,13 @@ theorem zsmul_32 (v : ℤ) (g : Nat) (P : EPoint dZ) :
 theorem zsmul_32' (v : ℤ) (P : EPoint dZ) : (32 : Nat) • (v • P) = (32 * v) • P := by
   rw [mul_smul, ← natCast_zsmul]; rfl
 
-/-- The doubling's body (`vg_ed25519_r64_double_ext`'s) leaves slots 0–2 bounded, as the comb's
-additions need: they are products. -/
-theorem doubleFn_acc {s : State} {base : Addr} (hs : Scratch s base) :
-    WP isa (Point64.doubleFn fld true) s fun t => AccBnd t.mem base := by
-  simp only [Point64.doubleFn, Point64.fn, List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (Point64.saves_ok s) fun s₁ ⟨g₁, _, _, wr₁⟩ => ?_
-  have hs₁ : Scratch s₁ base := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
-  rw [WP.block_append_iff]
-  refine WP.mono (fieldCodeWide_acc (fld := fld) _ hs₁ (by decide)) fun s₂ h₂ => ?_
-  exact WP.mono (Point64.restores_ok s₂) fun s₃ ⟨_, m₃, _, _⟩ i hi => by
-    unfold Bnd; rw [m₃]; exact h₂ i hi
-
 /-- A doubling, the body of `vg_ed25519_r64_double_ext`: `[2]` of the point in slots 0–3. -/
 theorem dblBody_ok {s : State} {base : Addr} {a : EPoint dZ} (hs : Scratch s base)
     (ha : Rep (point (env s.mem base) 0 1 2 3) a) :
     WP isa ((Point64.bodies fld).dbl true) s fun t => Rep (point (env t.mem base) 0 1 2 3) ((2 : Nat) • a) ∧
       (∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i) ∧ DoubleKeep base s t ∧
       AccBnd t.mem base := by
-  refine WP.mono (wp_and (PtOk.dbl (pt := Point64.bodies fld) hs true) (doubleFn_acc hs))
+  refine WP.mono (wp_and (PtOk.dbl (pt := Point64.bodies fld) hs true) (fn_acc hs (dblOps true) (by decide)))
     fun t ⟨⟨kt, vt⟩, bt⟩ => ⟨?_, fun i hi => by rw [vt]; exact point_ops_high _ (by decide) _ i hi,
       ⟨fun r _ hc => kt.gpr r hc, kt.rd, kt.wr, kt.mem⟩, bt⟩
   rw [vt, two_nsmul]
@@ -663,7 +676,7 @@ theorem combMagIdx_ok (s : State) {m j : Nat} (ha : s.gpr .rax = BitVec.ofNat 64
 
 theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base T : Addr} {S c : Nat}
     (h : CombInv s₀ base T S c s) (hfar : TblFar base T) (hS : S < 2 ^ 256) (hc : c < 52) :
-    WP isa (combStep fld sel (Point64.bodies fld)) s fun t => t.zf = some (decide (c + 1 = 52)) ∧
+    WP isa (combStep sel (Point64.bodies fld)) s fun t => t.zf = some (decide (c + 1 = 52)) ∧
       CombInv s₀ base T S (c + 1) t := by
   rw [combStep]
   refine WP.seq (WP.mono_syms (rbxCmp_ok s c 26 (by omega) (by decide) h.counter)
@@ -730,6 +743,7 @@ theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base
           (by simp only [combSignMask]; omega))⟩ : PowersKeep base 56 7368 f f').trans
       (PowersKeep.of_keeps kg (by decide))
   have tg : CombTbl g T := te.keep hfar ksg (by rw [gsy, f'sy])
+  rw [WP.block_append_iff]
   refine WP.mono_syms (hsel hsg tg (combTblIdx_lt hc) (by omega) gx g8)
     fun u ⟨uq, uo, ug, ur, uw, usy⟩ _ => ?_
   have hsu : Scratch u base := ⟨by rw [ug _ (by decide) (by decide) (by decide)]; exact hsg.rdi,
@@ -744,19 +758,7 @@ theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base
       (by simp only [combSignMask]; omega)).trans gsm
   have tu : CombTbl u T := tg.keep hfar (PowersKeep.of_keep ku) usy
   -- Negated for a negative digit.
-  rw [WP.block_append_iff]
   refine WP.mono_syms (combNeg_ok hsu usm) fun u' ⟨u'q, ku', ue', u'o⟩ u'sy => ?_
-  -- The accumulator's words are those after the doublings: only slots 4–6 and the sign
-  -- were written.
-  have hacc : AccBnd u'.mem base := fun i hi => by
-    have hb := bacc i hi
-    unfold Bnd at hb ⊢
-    have := i.isLt
-    rw [u'o.fe (by simp only [offset]; omega) (by simp only [offset]; omega),
-      uo.fe (by simp only [offset]; omega) (by simp only [offset]; omega), kg.2.1,
-      f'mem.fe (by simp only [offset, combSignMask]; omega) (by simp only [offset]; omega), kf.2.1,
-      ke.2.1]
-    exact hb
   have hsu' : Scratch u' base := hsu.of_keep ku'
   have eu : ∀ x : Slot, (x.val < 4 ∨ 16 ≤ x.val) → env u'.mem base x = env b.mem base x := fun x hx => by
     have hux : env u.mem base x = env g.mem base x := by
@@ -805,8 +807,7 @@ theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base
       rw [e, natCast_zsmul]
       exact hrq₀
   -- The addition and the counter.
-  rw [WP.block_append_iff]
-  refine WP.mono_syms (pointAddAffineWide_ok (fld := fld) hsu' q hq hacc) fun v ⟨kv, vp, vh, vb⟩ vsy => ?_
+  refine WP.seq (WP.mono_syms (affBody_ok (fld := fld) hsu' q hq) fun v ⟨kv, vp, vh, vb⟩ vsy => ?_)
   have vc : v.gpr .rbx = BitVec.ofNat 64 c := by
     rw [kv.gpr _ (by decide), ku'.gpr _ (by decide), ug _ (by decide) (by decide) (by decide),
       kg.1 _ (by decide), f'c]

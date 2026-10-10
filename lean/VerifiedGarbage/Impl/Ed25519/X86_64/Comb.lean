@@ -16,8 +16,8 @@ Table `j` holds `[k]([1024^j]B)` for `k ≤ 16`, so, from `[G']B`, for
 negation; five doublings multiply their sum by 32, which makes `[G']B` into
 `[33 G]B`; then the even digits `d_{2j}` are added from the same tables. That
 is 52 additions of affine cached points and five doublings, which are calls of
-`vg_ed25519_r64_double_ext` (`Point64.calls`): only five run, so a call's cost
-is negligible next to the copies of the doubling it saves.
+`vg_ed25519_r64_add_affine_ext` and `vg_ed25519_r64_double_ext`
+(`Point64.calls`).
 
 The digit is secret: the tables are in the static `combSym` (`combWords`),
 and the entry of table `j` for the digit's magnitude is selected in constant
@@ -28,7 +28,7 @@ selects zeros, which become the identity's `[1, 1, 0]`. The entry is negated,
 or not, with the mask of the digit's sign (at byte 1152) by exchanging `Y - X`
 and `Y + X` and choosing between `2dT` and its negation. The entries are
 affine (`Z = 1`), so an addition multiplies by `2Z = 2` with an addition
-(`pointAddAffine`). The loop's counter `rbx`, the bit index `rcx` and the
+(`pointAddAffineOps`). The loop's counter `rbx`, the bit index `rcx` and the
 table index `r9` are public.
 -/
 
@@ -167,21 +167,22 @@ def combDouble (pt : Point64.Ops) : Prog isa :=
 
 /-- Step `rbx`: before the even digits, the five doublings; then the digit's entry
 of table `r9` (selected by `sel`, `combSelect` or `combSelectY`), negated for a negative digit,
-added; the doublings are `pt`'s. -/
-def combStep (fld : Arith) (sel : List Instr) (pt : Point64.Ops) : Prog isa :=
+added; the doublings and additions are `pt`'s. -/
+def combStep (sel : List Instr) (pt : Point64.Ops) : Prog isa :=
   .seq (.block [.alu .cmp .rbx (.imm 26)]) <|
   .seq (.ite .e (combDouble pt) (.block [])) <|
   .seq combIndex <|
   .seq combChunk <|
-  .seq (.block (combSign ++ [.mov .r8 (.reg .rax), .mov .rdx (.reg .r9)] ++ sel)) <|
-  .block (combNeg ++ pointAddAffine fld ++ [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 52)])
+  .seq (.block (combSign ++ [.mov .r8 (.reg .rax), .mov .rdx (.reg .r9)] ++ sel ++ combNeg)) <|
+  .seq pt.aff (.block [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 52)])
 
 /-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 768 onward, the entries
-selected by `sel`, the doublings `pt`'s: calls of `vg_ed25519_r64_double_ext` (or `_adx`, with
-`fld`'s field multiplications), or their bodies, which the proofs read. -/
+selected by `sel`, the doublings and additions `pt`'s: calls of `vg_ed25519_r64_double_ext` and
+`_add_affine_ext` (or `_adx`, with `fld`'s field multiplications), or their bodies, which the
+proofs read. -/
 def combMultiply (fld : Arith) (sel : List Instr := combSelect) (pt : Point64.Ops := Point64.calls fld) :
     Prog isa :=
   .seq (.block (constPoint fld combStart ++ [.mov32 .rbx (.imm 0)]))
-    (.loop (combStep fld sel pt) .ne)
+    (.loop (combStep sel pt) .ne)
 
 end VG.Impl.Ed25519.X86_64
