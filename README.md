@@ -634,6 +634,22 @@ yours to keep:
 
 <tr>
 
+<td>Camellia-CFB128 (128-, 192- and 256-bit keys)</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>Camellia-CTR (128-, 192- and 256-bit keys)</td>
 
 <td>✅</td>
@@ -657,6 +673,22 @@ yours to keep:
 <td>✅ bitsliced, 8 blocks at a time</td>
 
 <td>✅ bitsliced, 8 blocks at a time</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>Camellia-OFB (128-, 192- and 256-bit keys)</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 <td>❌</td>
 
