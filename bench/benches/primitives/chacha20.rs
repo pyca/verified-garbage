@@ -18,7 +18,7 @@ pub fn bench(c: &mut Criterion) {
     let key = [0x42; 32];
     let nonce = [0x24; 16];
     let mut g = c.benchmark_group("chacha20");
-    for size in SIZES {
+    for size in [256usize, 448, 511, 960, 1000] {
         g.throughput(Throughput::Bytes(size as u64));
         let mut data = vec![0u8; size];
         g.bench_function(BenchmarkId::new(VG, size), |b| {
