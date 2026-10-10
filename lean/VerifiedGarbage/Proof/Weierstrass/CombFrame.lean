@@ -93,9 +93,6 @@ theorem wordsVal_addX (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Addr
     (h : Unch base (combAddW K ++ X) m m') :
     ∀ x ∈ [K.A.x, K.A.y, K.A.z, K.E.x, K.E.y, K.E.z],
       wordsVal m' base x K.M.n = wordsVal m base x K.M.n := by
-  have hnd := hL.nodup
-  simp only [combWs, rcbW, List.cons_append, List.nil_append, List.nodup_cons, List.mem_cons,
-    List.not_mem_nil, or_false, not_or] at hnd
   intro x hx
   have hxs : x ∈ combWs K := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -105,10 +102,9 @@ theorem wordsVal_addX (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Addr
   · rcases List.mem_append.mp hw with hw | hw
     · obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hw
       have hys : y ∈ combWs K := by simp only [combWs, List.mem_append]; exact Or.inr hy
-      refine hL.apart₂ hxs hys ?_
-      simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hx hy
-      rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;>
-        rcases hy with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> nd_find hnd
+      -- The addition's inputs are not its outputs (`RcbApart`).
+      exact hL.apart₂ hxs hys fun e =>
+        hL.add.apart x (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hx)) (e ▸ hy)
     · simp only [List.mem_singleton] at hw; subst hw
       exact hL.lay.tmp x (combWs_slots _ x hxs)
   · exact hX x hxs w hw
@@ -124,17 +120,16 @@ theorem wordsVal_add (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Addr}
 theorem wordsVal_selD (hL : CombLay K size) (hsz : size ≤ 2 ^ 64) {base : Addr} {m m' : Mem}
     (h : Unch base (combSelW K K.D) m m') :
     ∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal m' base x K.M.n = wordsVal m base x K.M.n := by
-  have hnd := hL.nodup
-  simp only [combWs, rcbW, List.cons_append, List.nil_append, List.nodup_cons, List.mem_cons,
-    List.not_mem_nil, or_false, not_or] at hnd
   intro x hx
   have hxs : x ∈ combWs K := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> comb_mem
   refine h.wordsVal (fun w hw => ?_) (by have := hL.lay.le x (combWs_slots _ x hxs); omega)
-  simp only [combSelW, List.mem_cons, List.not_mem_nil, or_false] at hw hx
-  rcases hw with rfl | rfl | rfl <;> rcases hx with rfl | rfl | rfl <;>
-    exact hL.apart₂ hxs (by comb_mem) (by nd_find hnd)
+  have hxR : x ∈ rcbR K.S K.A K.E :=
+    List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_left _ hx))
+  simp only [combSelW, List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl | rfl <;>
+    exact hL.apart₂ hxs (by comb_mem) fun e => hL.add.apart x hxR (by rw [e]; simp [rcbW])
 
 /-- The slots of `D` are apart. -/
 theorem apart_D (hL : CombLay K size) :
@@ -164,25 +159,28 @@ theorem apart_A (hL : CombLay K size) :
 theorem apart_DE (hL : CombLay K size) :
     ∀ x ∈ [K.D.x, K.D.y, K.D.z], ∀ y ∈ [K.E.x, K.E.y, K.E.z],
       x + 8 * K.M.n ≤ y ∨ y + 8 * K.M.n ≤ x := by
-  have hnd := hL.nodup
-  simp only [combWs, rcbW, List.cons_append, List.nil_append, List.nodup_cons, List.mem_cons,
-    List.not_mem_nil, or_false, not_or] at hnd
   intro x hx y hy
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hx hy
-  rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl <;>
-    exact hL.apart₂ (by comb_mem) (by comb_mem) (by nd_find hnd)
+  have hxD : x ∈ rcbW K.S K.D := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl | rfl <;> simp [rcbW]
+  have hyR : y ∈ rcbR K.S K.A K.E := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hy; rcases hy with rfl | rfl | rfl <;> simp [rcbR]
+  exact hL.apart₂ (by simp only [combWs, List.mem_append]; exact Or.inr hxD)
+    (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hy; rcases hy with rfl | rfl | rfl <;> comb_mem)
+    fun e => hL.add.apart y hyR (e ▸ hxD)
 
 /-- `A` is apart from `D`. -/
 theorem apart_AD (hL : CombLay K size) :
     ∀ x ∈ [K.A.x, K.A.y, K.A.z], ∀ y ∈ [K.D.x, K.D.y, K.D.z],
       x + 8 * K.M.n ≤ y ∨ y + 8 * K.M.n ≤ x := by
-  have hnd := hL.nodup
-  simp only [combWs, rcbW, List.cons_append, List.nil_append, List.nodup_cons, List.mem_cons,
-    List.not_mem_nil, or_false, not_or] at hnd
   intro x hx y hy
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hx hy
-  rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl <;>
-    exact hL.apart₂ (by comb_mem) (by comb_mem) (by nd_find hnd)
+  have hyD : y ∈ rcbW K.S K.D := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hy; rcases hy with rfl | rfl | rfl <;> simp [rcbW]
+  have hxR : x ∈ rcbR K.S K.A K.E := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl | rfl <;> simp [rcbR]
+  exact hL.apart₂
+    (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl | rfl <;> comb_mem)
+    (by simp only [combWs, List.mem_append]; exact Or.inr hyD)
+    fun e => hL.add.apart x hxR (e ▸ hyD)
 
 end CombLay
 
