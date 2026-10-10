@@ -16,12 +16,12 @@ def close : List Instr :=
 
 /-- Low word to `rbx`, quotient to `r8` through `r15`. No memory is written. -/
 def core : List Instr :=
-  [.mov .rbx (.reg .r8), .alu32 .xor .rax (.reg .rax)] ++
+  ([.mov .rbx (.reg .r8), .alu32 .xor .rax (.reg .rax)] : List Instr) ++
   word 0 .r8 .rbx .r9 ++ word 1 .r9 .r8 .r10 ++
   word 2 .r10 .r9 .r11 ++ word 3 .r11 .r10 .r12 ++
   word 4 .r12 .r11 .r13 ++ word 5 .r13 .r12 .r14 ++
   word 6 .r14 .r13 .r15 ++
-  [.mulx .r15 .rax (.mem (at_ .rbp 56)), .adcx .r14 (.reg .rax)] ++ close
+  ([.mulx .r15 .rax (.mem (at_ .rbp 56)), .adcx .r14 (.reg .rax)] : List Instr) ++ close
 /-- Load the next eight accumulator words. -/
 def loadCols : List Instr :=
   [.mov .r8 (.mem (at_ .rsi 0)), .mov .r9 (.mem (at_ .rsi 8)), .mov .r10 (.mem (at_ .rsi 16)), .mov .r11 (.mem (at_ .rsi 24)), .mov .r12 (.mem (at_ .rsi 32)), .mov .r13 (.mem (at_ .rsi 40)), .mov .r14 (.mem (at_ .rsi 48)), .mov .r15 (.mem (at_ .rsi 56))]
@@ -46,14 +46,14 @@ def addChain (src : Nat → Src) : List Instr :=
 
 /-- Add the next input block, retaining overflow in `rax`. -/
 def addMem : List Instr :=
-  [.alu32 .xor .rax (.reg .rax)] ++ addChain (fun k => .mem (at_ .rsi (8 * k))) ++
-  [.adcx .rax (.reg .rax)]
+  ([.alu32 .xor .rax (.reg .rax)] : List Instr) ++ addChain (fun k => .mem (at_ .rsi (8 * k))) ++
+  ([.adcx .rax (.reg .rax)] : List Instr)
 
 /-- Add a word to the columns, accumulating its overflow in `rax`.
 The incoming CF is clear and `rax` is a small carry count. -/
 def addWord (src : MemOp) : List Instr :=
-  [.mov32 .rdx (.imm 0)] ++ addChain (fun k => if k = 0 then .mem src else .reg .rdx) ++
-  [.adcx .rax (.reg .rdx)]
+  ([.mov32 .rdx (.imm 0)] : List Instr) ++ addChain (fun k => if k = 0 then .mem src else .reg .rdx) ++
+  ([.adcx .rax (.reg .rdx)] : List Instr)
 
 def blockCarry : MemOp := { base := .rcx, disp := -8 }
 def tileCarry : MemOp := { base := .rcx, disp := -16 }
@@ -72,7 +72,7 @@ def nextBlock : List Instr :=
     .mov .rax (.mem (hdr sW)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
     .alu .add .rax (.mem (hdr (sArr Public.aN))), .alu .cmp .rbp (.reg .rax)]
 
-def addInputCarry : List Instr := [.mov .rdx (.mem blockCarry)] ++ AdxDualAdd.addInput
+def addInputCarry : List Instr := ([.mov .rdx (.mem blockCarry)] : List Instr) ++ AdxDualAdd.addInput
 
 def accumulate : Prog isa :=
   .seq (.block addInputCarry) (.block [.store blockCarry .rax])
@@ -107,13 +107,13 @@ def tile : Prog isa :=
 def setupBases : List Instr :=
   [.mov .rcx (.mem (hdr (sArr Public.aAcc))), .alu .add .rcx (.imm 16)]
 
-def setup : List Instr := setupBases ++ [.mov32 .rax (.imm 0), .store tileCarry .rax]
+def setup : List Instr := setupBases ++ ([.mov32 .rax (.imm 0), .store tileCarry .rax] : List Instr)
 
 def finishSetup : List Instr :=
   [.mov .r8 (.reg .rcx), .mov .rbp (.mem (hdr sW)), .mov .r10 (.mem tileCarry)]
 
 def finish : List Instr := finishSetup ++
-  [.store (ix .r8 .rbp) .r10, .mov32 .rax (.imm 0), .store (ix .r8 .rbp 8) .rax]
+  ([.store (ix .r8 .rbp) .r10, .mov32 .rax (.imm 0), .store (ix .r8 .rbp 8) .rax] : List Instr)
 
 /-- Register-tiled Montgomery reduction for a positive multiple of eight words. -/
 def redc : Prog isa := .seq (.block setup) (.seq (.loop tile .ne) (.block finish))

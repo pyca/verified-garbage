@@ -19,7 +19,7 @@ open VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 def zeroWin8 : Prog isa :=
   .seq (.block [.mov32 .rax (.imm 0), .mov .rcx (.reg .rbx), .alu .add .rcx (.reg .rcx), .mov32 .r14 (.imm 0)])
     (.seq (.loop (.block ((List.range 8).map (fun (k : Nat) => .store (ix .r8 .r14 (8 * (k : Int))) .rax) ++
-        [.alu .add .r14 (.imm 8), .alu .cmp .r14 (.reg .rcx)])) .ne)
+        ([.alu .add .r14 (.imm 8), .alu .cmp .r14 (.reg .rcx)] : List Instr))) .ne)
       (.block ((List.range 2).map fun (k : Nat) => .store (ix .r8 .r14 (8 * (k : Int))) .rax)))
 
 /-- Word `k` of a block of `T - m`. -/

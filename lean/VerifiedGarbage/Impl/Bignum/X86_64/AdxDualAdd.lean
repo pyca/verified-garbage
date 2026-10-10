@@ -17,7 +17,7 @@ def close : List Instr :=
 
 /-- Add an input block and the carry word held in `rdx`. -/
 def addInput : List Instr :=
-  [.alu32 .xor .rax (.reg .rax)] ++
+  ([.alu32 .xor .rax (.reg .rax)] : List Instr) ++
   chain (fun k => .mem ({ base := .rsi, disp := (8 * k : Nat) }))
     (fun k => .reg (if k = 0 then .rdx else .rax)) ++ close
 
