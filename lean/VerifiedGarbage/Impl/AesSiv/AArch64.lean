@@ -63,8 +63,9 @@ chains in `x28`, across the calls.
   It then copies the IV to `siv` (`sivOut`).
 * `decrypt` then copies the IV it is given from `siv` to the working space
   (`sivIn`), decrypts with CTR from it, finishes S2V with the plaintext into
-  `[112, 128)`, compares the two IVs without a branch and ANDs every byte of
-  the data with the mask of the result.
+  `[112, 128)`, compares the two IVs without a branch and ANDs the data with
+  the mask of the result, a word at a time and then its last bytes one at a
+  time.
 
 `finish`, for a string `P` of `L` bytes: if `L < 16`, the tail is
 `pad(P) XOR dbl(D)` and its CMAC is that of one complete block; otherwise,
@@ -394,13 +395,18 @@ def compare : List Instr :=
    .subImm .x .x10 .x9 1, .bicRor .x .x10 .x10 .x9 0, .lsr .x .x0 .x10 63, .movz .x .x11 0 0,
    .sub .x .x11 .x11 .x0]
 
-/-- Every byte of the data (`x27` of them, at `x26`) ANDed with the mask in
-`x11`. -/
+/-- The data (`x27` bytes at `x26`) ANDed with the mask in `x11`: its
+`⌊len / 8⌋` whole words (counted down in `x8`), then its last `len mod 8`
+bytes. -/
 def maskData : Prog isa :=
-  .seq (.block [mov .x6 .x26, mov .x8 .x27])
-    (.ite (.zero .x .x8) (.block [])
-      (.loop (.block [.ldrb .x9 .x6 0, .logic .and .x .x9 .x9 .x11, .strb .x9 .x6 0,
-        .addImm .x .x6 .x6 1, .subImm .x .x8 .x8 1]) (.nonzero .x .x8)))
+  .seq (.block [mov .x6 .x26, .lsr .x .x8 .x27 3])
+    (.seq (.ite (.zero .x .x8) (.block [])
+        (.loop (.block [.ldr .x .x9 .x6 0, .logic .and .x .x9 .x9 .x11, .str .x .x9 .x6 0,
+          .addImm .x .x6 .x6 8, .subImm .x .x8 .x8 1]) (.nonzero .x .x8)))
+      (.seq (.block [.lsl .x .x8 .x27 61, .lsr .x .x8 .x8 61])
+        (.ite (.zero .x .x8) (.block [])
+          (.loop (.block [.ldrb .x9 .x6 0, .logic .and .x .x9 .x9 .x11, .strb .x9 .x6 0,
+            .addImm .x .x6 .x6 1, .subImm .x .x8 .x8 1]) (.nonzero .x .x8)))))
 
 /-! ## `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` -/
 
