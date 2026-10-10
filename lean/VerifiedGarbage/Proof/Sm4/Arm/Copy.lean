@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Sm4.Common
 # Copying blocks on ARMv7
 
 As on AArch64: `copyBlocks_wp`: the loop `copyBlocks` copies `c ≥ 1` blocks
-of 16 bytes from `r0` to `r1` (areas that do not overlap), a word at a time
+of 16 bytes from `r0` to `r12` (areas that do not overlap), a word at a time
 through `t0`, counting down `r3`, and changes nothing else in memory.
 -/
 
@@ -37,16 +37,16 @@ theorem copyWord_ok {A B : BitVec 32} {c : Nat} {s₀ s : State} {j d : Nat} (hd
     (hsep : Region.Disjoint ⟨State.addr A, 16 * c⟩ ⟨State.addr B, 16 * c⟩)
     (hr : InRegions (s.rd ++ s.wr) (State.addr A + BitVec.ofNat 64 (16 * j + d)) 4)
     (hw : InRegions s.wr (State.addr B + BitVec.ofNat 64 (16 * j + d)) 4)
-    (h0 : s.gpr .r0 = A + BitVec.ofNat 32 (16 * j)) (h1 : s.gpr .r1 = B + BitVec.ofNat 32 (16 * j))
+    (h0 : s.gpr .r0 = A + BitVec.ofNat 32 (16 * j)) (h1 : s.gpr .r12 = B + BitVec.ofNat 32 (16 * j))
     (hi : Copied (State.addr A) (State.addr B) c s₀ (16 * j + d) s) :
-    ∃ s', runBlock isa [.ldr t0 .r0 d, .str t0 .r1 d] s = some s' ∧
+    ∃ s', runBlock isa [.ldr t0 .r0 d, .str t0 .r12 d] s = some s' ∧
       Copied (State.addr A) (State.addr B) c s₀ (16 * j + d + 4) s' ∧
       (∀ r, r ≠ t0 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   have eA : State.addr (s.gpr .r0 + BitVec.ofNat 32 d) = State.addr A + BitVec.ofNat 64 (16 * j + d) := by
     rw [h0, add_ofNat_ofNat, addr_add (by omega)]
-  have eB : State.addr (s.gpr .r1 + BitVec.ofNat 32 d) = State.addr B + BitVec.ofNat 64 (16 * j + d) := by
+  have eB : State.addr (s.gpr .r12 + BitVec.ofNat 32 d) = State.addr B + BitVec.ofNat 64 (16 * j + d) := by
     rw [h1, add_ofNat_ofNat, addr_add (by omega)]
-  have h₁ : (s.setReg t0 (s.mem.readW (State.addr A + BitVec.ofNat 64 (16 * j + d)) 32)).gpr .r1 = s.gpr .r1 :=
+  have h₁ : (s.setReg t0 (s.mem.readW (State.addr A + BitVec.ofNat 64 (16 * j + d)) 32)).gpr .r12 = s.gpr .r12 :=
     RegUpd.gpr_setReg_of_ne _ _ (by decide)
   refine ⟨{ s.setReg t0 (s.mem.readW (State.addr A + BitVec.ofNat 64 (16 * j + d)) 32) with
       mem := s.mem.writeW (State.addr B + BitVec.ofNat 64 (16 * j + d))
@@ -75,10 +75,10 @@ theorem copyWord_ok {A B : BitVec 32} {c : Nat} {s₀ s : State} {j d : Nat} (hd
 /-- Copying, after `j` of `c` blocks. -/
 structure CopyInv (A B : BitVec 32) (c : Nat) (s₀ : State) (j : Nat) (s : State) : Prop where
   src : s.gpr .r0 = A + BitVec.ofNat 32 (16 * j)
-  dst : s.gpr .r1 = B + BitVec.ofNat 32 (16 * j)
+  dst : s.gpr .r12 = B + BitVec.ofNat 32 (16 * j)
   cnt : s.gpr .r3 = BitVec.ofNat 32 (c - j)
   cp : Copied (State.addr A) (State.addr B) c s₀ (16 * j) s
-  regs : ∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r3 → r ≠ t0 → s.gpr r = s₀.gpr r
+  regs : ∀ r, r ≠ .r0 → r ≠ .r12 → r ≠ .r3 → r ≠ t0 → s.gpr r = s₀.gpr r
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
@@ -118,15 +118,15 @@ theorem copyBlocks_wp {A B : BitVec 32} {c : Nat} {s₀ : State} (hc : 0 < c) (h
     (by rw [g₃ _ (by decide), g₂ _ (by decide), g₁ _ (by decide), hi.dst]) c₃
   have g₄' : ∀ r, r ≠ t0 → s₄.gpr r = s.gpr r := fun r hr => by rw [g₄ r hr, g₃ r hr, g₂ r hr, g₁ r hr]
   obtain ⟨s₅, e₅, a₅, o₅, m₅, rd₅, wr₅, sp₅⟩ := addImm_ok s₄ .r0 .r0 16 (by decide)
-  obtain ⟨s₆, e₆, a₆, o₆, m₆, rd₆, wr₆, sp₆⟩ := addImm_ok s₅ .r1 .r1 16 (by decide)
+  obtain ⟨s₆, e₆, a₆, o₆, m₆, rd₆, wr₆, sp₆⟩ := addImm_ok s₅ .r12 .r12 16 (by decide)
   obtain ⟨s₇, e₇, c₇, z₇, o₇, m₇, rd₇, wr₇, sp₇⟩ := subs1_ok s₆ .r3
   refine WP.of_runBlock ⟨s₇, by
-    rw [show ([Instr.ldr t0 .r0 0, .str t0 .r1 0, .ldr t0 .r0 4, .str t0 .r1 4,
-      .ldr t0 .r0 8, .str t0 .r1 8, .ldr t0 .r0 12, .str t0 .r1 12,
-      .dp .add .r0 .r0 (.imm 16), .dp .add .r1 .r1 (.imm 16), .subs .r3 .r3 (.imm 1)] : List Instr) =
-      [.ldr t0 .r0 0, .str t0 .r1 0] ++ ([.ldr t0 .r0 4, .str t0 .r1 4] ++ ([.ldr t0 .r0 8, .str t0 .r1 8] ++
-      ([.ldr t0 .r0 12, .str t0 .r1 12] ++ ([.dp .add .r0 .r0 (.imm 16)] ++
-      ([.dp .add .r1 .r1 (.imm 16)] ++ [.subs .r3 .r3 (.imm 1)]))))) from rfl,
+    rw [show ([Instr.ldr t0 .r0 0, .str t0 .r12 0, .ldr t0 .r0 4, .str t0 .r12 4,
+      .ldr t0 .r0 8, .str t0 .r12 8, .ldr t0 .r0 12, .str t0 .r12 12,
+      .dp .add .r0 .r0 (.imm 16), .dp .add .r12 .r12 (.imm 16), .subs .r3 .r3 (.imm 1)] : List Instr) =
+      [.ldr t0 .r0 0, .str t0 .r12 0] ++ ([.ldr t0 .r0 4, .str t0 .r12 4] ++ ([.ldr t0 .r0 8, .str t0 .r12 8] ++
+      ([.ldr t0 .r0 12, .str t0 .r12 12] ++ ([.dp .add .r0 .r0 (.imm 16)] ++
+      ([.dp .add .r12 .r12 (.imm 16)] ++ [.subs .r3 .r3 (.imm 1)]))))) from rfl,
       runBlock_app, e₁, Option.bind_some, runBlock_app, e₂, Option.bind_some, runBlock_app, e₃,
       Option.bind_some, runBlock_app, e₄, Option.bind_some, runBlock_app, e₅, Option.bind_some,
       runBlock_app, e₆, Option.bind_some, e₇], ?_⟩

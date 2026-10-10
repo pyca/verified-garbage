@@ -66,45 +66,22 @@ theorem outF_spec (dir : Dir) (m : Mem) (sch : Spec.Sm4.Schedule) (D : Addr) (j 
   · simp only [outF, blockFn, specDirArm, Spec.Sm4.encryptBlock, crypt_eq]; rfl
   · simp only [outF, blockFn, specDirArm, Spec.Sm4.decryptBlock, crypt_eq]; rfl
 
-/-- The prologue: the registers saved, the scratch buffer in `sb`, the data
-pointer and the count in their slots, the schedule's pointer in `r12`. -/
+/-- The prologue: the registers saved, the scratch buffer in `sb`, the
+schedule's pointer in `r12`. -/
 theorem prologue_ok {s₀ : State} {b : BitVec 32} (hb : s₀.gpr .r3 = b) (hw : ScrIn s₀.wr b) :
-    ∃ s, runBlock isa (saveRegs .r3 ++ [movR sb .r3, stS dSlot .r1, stS nSlot .r2, movR .r12 .r0]) s₀ = some s ∧
-      s.gpr sb = b ∧ s.gpr .r12 = s₀.gpr .r0 ∧ Saved s₀ b s.mem ∧
-      s.mem.readW (wordAddr b dSlot) 32 = s₀.gpr .r1 ∧ s.mem.readW (wordAddr b nSlot) 32 = s₀.gpr .r2 ∧
-      Frame [⟨State.addr b, 4 * slots⟩] s₀.mem s.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr ∧ s.sp = s₀.sp := by
+    ∃ s, runBlock isa (saveRegs .r3 ++ [movR sb .r3, movR .r12 .r0]) s₀ = some s ∧
+      s.gpr sb = b ∧ s.gpr .r12 = s₀.gpr .r0 ∧ (∀ r, r ≠ sb → r ≠ .r12 → s.gpr r = s₀.gpr r) ∧
+      Saved s₀ b s.mem ∧ Frame [⟨State.addr b, 4 * slots⟩] s₀.mem s.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr ∧
+      s.sp = s₀.sp := by
   obtain ⟨s₁, e₁, sv₁, g₁, rd₁, wr₁, sp₁, f₁, -⟩ := save_ok hw hb
   obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂, sp₂⟩ := movR_ok s₁ sb .r3
-  have b₂ : s₂.gpr sb = b := by rw [r₂, g₁, hb]
-  have hw₂ : ScrIn s₂.wr b := by rw [wr₂, wr₁]; exact hw
-  obtain ⟨s₃, e₃, m₃, g₃, rd₃, wr₃, sp₃, -, f₃⟩ := stSlot_ok s₂ .r1 sb (k := dSlot) b₂ (by decide) hw₂
-  obtain ⟨s₄, e₄, m₄, g₄, rd₄, wr₄, sp₄, -, f₄⟩ := stSlot_ok s₃ .r2 sb (k := nSlot) (by rw [g₃, b₂]) (by decide)
-    (by rw [wr₃]; exact hw₂)
-  obtain ⟨s₅, e₅, r₅, o₅, m₅, rd₅, wr₅, sp₅⟩ := movR_ok s₄ .r12 .r0
-  have hfit := hw.fit
-  have hsub : ∀ k < slots, Region.Sub ⟨wordAddr b k, 4⟩ ⟨State.addr b, 4 * slots⟩ := fun k hk => slot_sub hfit hk
-  refine ⟨s₅, ?_, by rw [o₅ _ (by decide), g₄, g₃, b₂], by rw [r₅, g₄, g₃, o₂ _ (by decide), g₁],
-    fun i hi => ?_, ?_, ?_, ?_, by rw [rd₅, rd₄, rd₃, rd₂, rd₁], by rw [wr₅, wr₄, wr₃, wr₂, wr₁],
-    by rw [sp₅, sp₄, sp₃, sp₂, sp₁]⟩
-  · rw [runBlock_app, e₁, Option.bind_some,
-      show ([movR sb .r3, stS dSlot .r1, stS nSlot .r2, movR .r12 .r0] : List Instr) =
-        [movR sb .r3] ++ ([.str .r1 sb (4 * dSlot)] ++ ([.str .r2 sb (4 * nSlot)] ++ [movR .r12 .r0])) from rfl,
-      runBlock_app, e₂, Option.bind_some, runBlock_app, e₃, Option.bind_some, runBlock_app, e₄,
-      Option.bind_some, e₅]
-  · rw [m₅, m₄, m₃, m₂, readW_slot_write hfit _ (by rw [savedSlot_eq, slots_eq]; omega) (by decide),
-      ite_eq_right (by rw [savedSlot_eq, nSlot_eq]; omega),
-      readW_slot_write hfit _ (by rw [savedSlot_eq, slots_eq]; omega) (by decide),
-      ite_eq_right (by rw [savedSlot_eq, dSlot_eq]; omega)]
-    exact sv₁ i hi
-  · rw [m₅, m₄, m₃, readW_slot_write hfit _ (by decide) (by decide), ite_eq_right (by decide),
-      readW_slot_write hfit _ (by decide) (by decide), ite_eq_left rfl, o₂ _ (by decide), g₁]
-  · rw [m₅, m₄, readW_slot_write hfit _ (by decide) (by decide), ite_eq_left rfl, g₃, o₂ _ (by decide), g₁]
-  · have f₂₄ : Frame [⟨State.addr b, 4 * slots⟩] s₂.mem s₄.mem :=
-      (f₃.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-        simp only [List.mem_singleton] at hr; subst hr; exact hsub _ (by decide)⟩).trans
-      (f₄.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-        simp only [List.mem_singleton] at hr; subst hr; exact hsub _ (by decide)⟩)
-    rw [m₅]; refine f₁.trans ?_; rw [← m₂]; exact f₂₄
+  obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃, sp₃⟩ := movR_ok s₂ .r12 .r0
+  refine ⟨s₃, ?_, by rw [o₃ _ (by decide), r₂, g₁, hb], by rw [r₃, o₂ _ (by decide), g₁],
+    fun r h1 h2 => by rw [o₃ r h2, o₂ r h1, g₁], by rw [m₃, m₂]; exact sv₁, by rw [m₃, m₂]; exact f₁,
+    by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁], by rw [sp₃, sp₂, sp₁]⟩
+  rw [runBlock_app, e₁, Option.bind_some,
+    show ([movR sb .r3, movR .r12 .r0] : List Instr) = [movR sb .r3] ++ [movR .r12 .r0] from rfl,
+    runBlock_app, e₂, Option.bind_some, e₃]
 
 theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbArm dir).pre s₀) :
     WP isa (ecb dir) s₀ fun s' => (∀ i < 9, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ (ecbArm dir).post s₀ s' := by
@@ -118,7 +95,7 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbArm dir).pre s₀) :
   have hrK : (⟨State.addr sched, 128⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp [sched]
   unfold ecb
   -- The prologue.
-  obtain ⟨s₁, e₁, b₁, r12₁, sv₁, dp₁, np₁, f₁, rd₁, wr₁, sp₁⟩ := prologue_ok (b := b) rfl hwS
+  obtain ⟨s₁, e₁, b₁, r12₁, g₁, sv₁, f₁, rd₁, wr₁, sp₁⟩ := prologue_ok (b := b) rfl hwS
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
   have hk₁ : SchedPre s₁ b sched :=
     ⟨b₁, by rw [wr₁]; exact hwS.mem, fitB, List.mem_append_left _ (by rw [rd₁]; exact hrK), fitK, dSS⟩
@@ -154,38 +131,38 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbArm dir).pre s₀) :
   have rd₂ : s₂.rd = s₀.rd := by rw [k₂.rd, rd₁]
   have wr₂ : s₂.wr = s₀.wr := by rw [k₂.wr, wr₁]
   have sp₂ : s₂.sp = s₀.sp := by rw [k₂.sp, sp₁]
-  have np₂ : s₂.mem.readW (wordAddr b nSlot) 32 = BitVec.ofNat 32 n := by
-    rw [hi₂ _ (by decide) (by decide), np₁]; simp [n]
+  have r1₂ : s₂.gpr .r1 = D := by
+    rw [k₂.regs _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
+      g₁ _ (by decide) (by decide)]
+  have r2₂ : s₂.gpr .r2 = BitVec.ofNat 32 n := by
+    rw [k₂.regs _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
+      g₁ _ (by decide) (by decide)]; simp [n]
   -- Any blocks?
-  obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃, sp₃⟩ := ldSlot_ok s₂ .r2 sb (k := nSlot) base₂ (by decide)
-    (by rw [wr₂]; exact hwS)
-  let s₄ := subFlags s₃ (s₃.gpr .r2) 0
-  have e₄ : runBlock isa [.cmp .r2 (.imm 0)] s₃ = some s₄ := by
-    rw [runBlock_cons, show exec (.cmp .r2 (.imm 0)) s₃ = some s₄ by simp [exec, Op2.eval, s₄]; decide,
+  let s₄ := subFlags s₂ (s₂.gpr .r2) 0
+  have e₄ : runBlock isa [.cmp .r2 (.imm 0)] s₂ = some s₄ := by
+    rw [runBlock_cons, show exec (.cmp .r2 (.imm 0)) s₂ = some s₄ by simp [exec, Op2.eval, s₄]; decide,
       runStep_some, runBlock_nil]
   have hz₄ : s₄.z = decide (n = 0) := by
-    show (s₃.gpr .r2 - 0 == 0) = _
-    rw [r₃, np₂, Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
+    show (s₂.gpr .r2 - 0 == 0) = _
+    rw [r2₂, Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
     have : n < 2 ^ 32 := (s₀.gpr .r2).isLt
     bv_omega
-  refine WP.seq (WP.of_runBlock ⟨s₄, by
-    rw [show ([ldS .r2 nSlot, .cmp .r2 (.imm 0)] : List Instr) = [.ldr .r2 sb (4 * nSlot)] ++ [.cmp .r2 (.imm 0)]
-      from rfl, runBlock_app, e₃, Option.bind_some, e₄], ?_⟩)
-  have base₄ : s₄.gpr sb = b := by show s₃.gpr sb = b; rw [o₃ _ (by decide), base₂]
-  have mem₄ : s₄.mem = s₂.mem := m₃
-  have rd₄ : s₄.rd = s₀.rd := by show s₃.rd = _; rw [rd₃, rd₂]
-  have wr₄ : s₄.wr = s₀.wr := by show s₃.wr = _; rw [wr₃, wr₂]
-  have sp₄ : s₄.sp = s₀.sp := by show s₃.sp = _; rw [sp₃, sp₂]
+  refine WP.seq (WP.of_runBlock ⟨s₄, e₄, ?_⟩)
+  have base₄ : s₄.gpr sb = b := base₂
+  have mem₄ : s₄.mem = s₂.mem := rfl
+  have rd₄ : s₄.rd = s₀.rd := rd₂
+  have wr₄ : s₄.wr = s₀.wr := wr₂
+  have sp₄ : s₄.sp = s₀.sp := sp₂
   refine WP.seq (WP.mono (M := isa) (Q := GDone s₀ b D n E)
     (WP.ite (decide (n = 0)) ((eval_eq s₄).trans (by rw [hz₄])) (fun h0 => ?_) (fun h0 => ?_))
     fun s₅ d₅ => ?_)
   · have hn0 : n = 0 := by simpa using h0
     exact WP.block_nil ⟨base₄, mem₄ ▸ sc₂, fun i hi => by omega, mem₄ ▸ fr₂, rd₄, wr₄, sp₄⟩
   · have hn0 : n ≠ 0 := by simpa using h0
-    refine dataLoop_wp ⟨hwS, hwD, dDS, fitD⟩ ⟨base₄, ?_, by rw [mem₄, np₂, Nat.mul_zero, Nat.sub_zero], by omega,
+    refine dataLoop_wp ⟨hwS, hwD, dDS, fitD⟩ ⟨base₄, by show s₂.gpr .r1 = _; rw [r1₂]; simp,
+      by show s₂.gpr .r2 = _; rw [r2₂, Nat.mul_zero, Nat.sub_zero], by omega,
       mem₄ ▸ sc₂, fun i hi => ?_, mem₄ ▸ fr₂, rd₄, wr₄, sp₄⟩
-    · rw [mem₄, hi₂ _ (by decide) (by decide), dp₁]; simp [D]
-    · rw [mem₄, data₂ i hi, ite_eq_right (by omega)]
+    rw [mem₄, data₂ i hi, ite_eq_right (by omega)]
   -- The epilogue.
   obtain ⟨s₆, e₆, r₆, o₆, m₆, rd₆, wr₆, sp₆⟩ := movR_ok s₅ .r12 sb
   obtain ⟨s₇, e₇, rg₇, -, m₇, -, -, -⟩ := restore_ok (s₀ := s₀) (b := b) (by rw [wr₆, d₅.wr]; exact hwS)

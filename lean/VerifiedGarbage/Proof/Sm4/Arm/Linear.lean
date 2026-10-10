@@ -17,7 +17,7 @@ with the XOR of input bits given here.
 * The transposes (`toBs`, `fromBs`): the tail buffer's eight blocks
   (slots 64–95) are input words `0 … 31`; the state's planes are.
 * A round key's planes (`keyPlanes`): its word, byte-reversed, in `q 0` is
-  input word `0`.
+  input word `0`; the planes are the entry at `kp`.
 
 Position `p = 8 i + b` of a plane is byte `i` (from the most significant)
 of the word of block `b`.
@@ -169,8 +169,8 @@ theorem fromBs_check :
 
 /-! ## The round keys' planes -/
 
-/-- No memory. -/
-def keyCfg : Cfg := { base := sb, slots := 0, ext := sb, exts := 0 }
+/-- The entry at `kp`. -/
+def entryCfg : Cfg := { base := kp, slots := 8, ext := kp, exts := 0 }
 
 def keyEnv : Env (Nat × Nat) := linEnvG [(q 0, 0)] [] []
 
@@ -179,17 +179,8 @@ byte-reversed, in `q 0`. -/
 def keyBsG (j p : Nat) : List Nat := [8 * (p / 8) + j]
 
 theorem keyPlanes_check :
-    check (lanes 32 5) keyCfg (linExt 0) keyPlanes keyEnv (linPostG 5 (qOuts keyBsG) [] [] keyEnv) = true := by
-  decide +kernel
-
-/-- The entry at `kp`. -/
-def entryCfg : Cfg := { base := kp, slots := 8, ext := kp, exts := 0 }
-
-def entryEnv : Env (Nat × Nat) := linEnvG qIns [] []
-
-theorem keyStore_check :
-    check (lanes 32 8) entryCfg (linExt 0) keyStore entryEnv
-      (linPostG 8 [] ((List.range 8).map fun j => (j, fun p => [32 * j + p])) [] entryEnv) = true := by
+    check (lanes 32 5) entryCfg (linExt 0) keyPlanes keyEnv
+      (linPostG 5 [] ((List.range 8).map fun j => (j, keyBsG j)) [] keyEnv) = true := by
   decide +kernel
 
 end VG.Proof.Sm4.Arm

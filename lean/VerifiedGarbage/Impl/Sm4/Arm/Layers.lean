@@ -125,18 +125,24 @@ def rounds4 (l : Lin) : List Instr :=
 
 /-! ## The round keys' planes -/
 
+/-- `r := r ⊕ (r ror n)`. -/
+def eorRor (r : Reg) (n : Nat) : Instr := .dp .eor r r (rorOp r n)
+
 /-- The round key at `r12`, its bytes reversed (the word's bytes are
 little-endian, the state's from the most significant). -/
 def keyWord : List Instr := [.ldr (q 0) .r12 0, .rev (q 0) (q 0)]
 
-/-- Its planes: eight copies, transposed. -/
-def keyPlanes : List Instr := ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++ ortho
+/-- Plane `j` of the round key, to word `j` of the entry at `kp`: bit `j` of
+each byte of `q 0` (`r0`), masked into `r3` by `t1 = 0x01010101` and spread
+over its byte by three shifted XORs (their bits never overlap). -/
+def keyPlane (j : Nat) : List Instr :=
+  [.dp .and (q 3) t1 (if j = 0 then .reg (q 0) else lsrOp (q 0) j), eorRor (q 3) 31, eorRor (q 3) 30,
+   eorRor (q 3) 28, .str (q 3) kp (4 * j)]
 
-def keyLoad : List Instr := keyWord ++ keyPlanes
+/-- The round key's planes to the entry at `kp`, using only `r0`, `r3` and
+`t1`. -/
+def keyPlanes : List Instr := imm32 t1 0x01010101 ++ (List.range 8).flatMap keyPlane
 
-/-- Store the planes to the entry at `kp`. -/
-def keyStore : List Instr := (List.range 8).map fun j => .str (q j) kp (4 * j)
-
-def keyOne : List Instr := keyLoad ++ keyStore
+def keyOne : List Instr := keyWord ++ keyPlanes
 
 end VG.Impl.Sm4.Arm
