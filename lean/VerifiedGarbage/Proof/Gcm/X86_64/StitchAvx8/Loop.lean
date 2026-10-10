@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Blocks
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Pipeline
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
 
 /-! ## FinalCommon -/
 section

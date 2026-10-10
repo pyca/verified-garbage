@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
 import Mathlib.Tactic.IntervalCases
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Data
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
 
 /-! ## Schedule -/
 section
