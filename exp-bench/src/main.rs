@@ -53,6 +53,16 @@ fn check(f: F, g: F, w: usize) {
     }
 }
 fn main() {
+    if let Some(m) = std::env::args().nth(1) {
+        let w: usize = std::env::args().nth(2).unwrap().parse().unwrap();
+        let vs = variants();
+        for (name, v) in &vs { if name == &m.as_str() || (m == "main" && *name == "main") {
+            let (mut ws, n) = setup(w);
+            for _ in 0..1000 { unsafe { v(ws.as_mut_ptr(), n, 4, 4, 4) } }
+        } }
+        if m == "ossl" { okern::sq1000(w); }
+        return;
+    }
     let f = ghz().max(ghz());
     println!("ghz {f:.2}");
     micro(f);

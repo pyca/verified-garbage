@@ -47,3 +47,16 @@ pub fn bench(w: usize, f: f64) {
     }
     println!("w={w} openssl kernels: sq {:.0} cyc  sq-without-redc {:.0} cyc  mul {:.0} cyc  power5 {:.0} cyc ({:.0} cyc/bit)", sq * f, sqr * f, mu * f, p5 * f, p5 * f / 5.0);
 }
+
+pub fn sq1000(w: usize) {
+    let mut s: u64 = 0x9e37_79b9_7f4a_7c15;
+    let mut rnd = || { s ^= s << 13; s ^= s >> 7; s ^= s << 17; s };
+    let mut n: Vec<u64> = (0..w).map(|_| rnd()).collect();
+    n[0] |= 1; n[w - 1] |= 1 << 63;
+    let mut inv: u64 = 1;
+    for _ in 0..6 { inv = inv.wrapping_mul(2u64.wrapping_sub(n[0].wrapping_mul(inv))); }
+    let n0 = [inv.wrapping_neg(), 0];
+    let mut a: Vec<u64> = (0..w).map(|_| rnd()).collect(); a[w - 1] >>= 2;
+    let mut r = vec![0u64; w];
+    for _ in 0..1000 { unsafe { bn_mul_mont(r.as_mut_ptr(), a.as_ptr(), a.as_ptr(), n.as_ptr(), n0.as_ptr(), w as i32); } }
+}
