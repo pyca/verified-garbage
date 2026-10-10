@@ -44,7 +44,7 @@ def canonicalizeZChk (p : Params) (r : Nat) : Bool :=
 
 theorem canonicalizeZChk_ok {p : Params} (hp : Ok3 p) :
     ∀r<p.ℓ,canonicalizeZChk p r=true := by
-  rcases hp with rfl | rfl | rfl <;> decide
+  rcases hp with rfl | rfl | rfl <;> decide +kernel
 
 theorem canonicalizeZ_rooted {p : Params} {S : Nat} {σ s : State} {r : Nat} {f : Poly}
     {lo hi : Int} (hc : canonicalizeZChk p r=true) (hs : RootedSt p S σ s)

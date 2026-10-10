@@ -19,7 +19,7 @@ def optimizedZChk (p : Params) (r : Nat) : Bool :=
   wp.all (fun w => inB (sgW p) w.1 w.2)
 
 theorem optimizedZChk_ok {p : Params} (hp : Ok3 p) : ∀r<p.ℓ,optimizedZChk p r=true := by
-  rcases hp with rfl | rfl | rfl <;> decide
+  rcases hp with rfl | rfl | rfl <;> decide +kernel
 
 theorem optimizedZ_ok {p : Params} {S : Nat} {σ s : State} {t r : Nat}
     (hp : Ok3 p) (hr : r<p.ℓ) (h : PositiveIZ p S σ t r s) :

@@ -83,7 +83,7 @@ def fChk (p : Params) : Bool :=
     decide (scrLen p < 2 ^ 32 ∧ p.skLen < 2 ^ 32 ∧ p.sigLen < 2 ^ 32)
 
 theorem fChk_ok {p : Params} (h : Ok3 p) : fChk p = true := by
-  rcases h with rfl | rfl | rfl <;> decide
+  rcases h with rfl | rfl | rfl <;> decide +kernel
 
 /-- Every check of the layout. -/
 def allChk (p : Params) : Bool :=

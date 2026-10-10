@@ -207,7 +207,7 @@ def positiveMasksChk (p : Params) : Bool :=
   (List.range p.ℓ).all (positiveMaskChk p)
 
 theorem positiveMasksChk_ok {p : Params} (hp : Ok3 p) : positiveMasksChk p=true := by
-  rcases hp with rfl | rfl | rfl <;> decide
+  rcases hp with rfl | rfl | rfl <;> decide +kernel
 
 theorem positiveMasksPaired_ok {P : Prims} {S : Nat} (hP : PrimsOk P S)
     {nm : String} {cd : Prog isa} (C : CalleeOk S cd (expandMaskPairContract AArch64.abi S))

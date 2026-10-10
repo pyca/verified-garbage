@@ -112,7 +112,7 @@ def lChk (p : Params) : Bool :=
     keepB (sgB p) [(sc oKAP, 4)] (sc oCNT) 4 && inB (sgW p) (sc oKAP) 4 && ikChk p [(sc oKAP, 4)]
 
 theorem lChk_ok {p : Params} (h : Ok3 p) : lChk p = true := by
-  rcases h with rfl | rfl | rfl <;> decide
+  rcases h with rfl | rfl | rfl <;> decide +kernel
 
 theorem ofNat32_sub_one {k : Nat} (h : 1 ≤ k) (hk : k < 2 ^ 32) : BitVec.ofNat 32 k - 1 = BitVec.ofNat 32 (k - 1) := by
   apply BitVec.eq_of_toNat_eq

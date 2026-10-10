@@ -220,7 +220,7 @@ def aChk (p : Params) : Bool :=
     stChk p [(sc oRS, 32)] && decide (32 ≤ p.skLen)
 
 theorem aChk_ok {p : Params} (h : Ok3 p) : aChk p = true := by
-  rcases h with rfl | rfl | rfl <;> decide
+  rcases h with rfl | rfl | rfl <;> decide +kernel
 
 
 end VG.Proof.MlDsa.AArch64.Sign

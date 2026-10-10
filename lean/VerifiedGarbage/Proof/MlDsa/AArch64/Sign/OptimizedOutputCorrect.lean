@@ -14,7 +14,7 @@ def conversionOutputChk (p : Params) : Bool :=
     famChk (sgR p) (sgW p) [(yP p r,1024)] 5 p.k
 
 theorem conversionOutputChk_ok {p : Params} (hp : Ok3 p) : conversionOutputChk p=true := by
-  rcases hp with rfl | rfl | rfl <;> decide
+  rcases hp with rfl | rfl | rfl <;> decide +kernel
 
 structure AcceptedConversion (p : Params) (S : Nat) (σ : State) (κ : Nat)
     (lo hi : Int) (done : Nat) (s : State) : Prop where

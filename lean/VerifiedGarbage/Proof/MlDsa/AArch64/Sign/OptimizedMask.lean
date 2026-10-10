@@ -16,7 +16,7 @@ def optimizedMaskChk (p : Params) (r : Nat) : Bool :=
 
 theorem optimizedMaskChk_ok {p : Params} (hp : Ok3 p) :
     ∀ r<p.ℓ,optimizedMaskChk p r=true := by
-  rcases hp with rfl | rfl | rfl <;> decide
+  rcases hp with rfl | rfl | rfl <;> decide +kernel
 
 /-- A direct-source transform keeps the original mask canonical, produces
 its lazy NTT, and preserves the signing state and accumulated check flag. -/

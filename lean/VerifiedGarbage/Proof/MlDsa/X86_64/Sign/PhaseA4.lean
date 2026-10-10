@@ -259,7 +259,7 @@ def aChk (p : Params) : Bool :=
     (List.range (p.k * p.ℓ / 4)).all fun g => g4Chk p (4 * g)
 
 theorem aChk_ok {p : Params} (h : Ok3 p) : aChk p = true := by
-  rcases h with rfl | rfl | rfl <;> decide
+  rcases h with rfl | rfl | rfl <;> decide +kernel
 
 theorem ICopy.ia4 {p : Params} {D : Nat} {σ s : State} (h : ICopy p D σ 4 s) : IA4 p D σ 0 s :=
   ⟨⟨h.st, h.rs, .inr h.r15, fun _ => ⟨fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩,
