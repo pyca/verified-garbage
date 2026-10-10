@@ -25,7 +25,7 @@ comb's digits. The point is three coordinates `X, Y, Z` in slots 0 to 2 of
 the working space, each an element of `Spec/X448/Field56.lean` (eight limbs
 of 56 bits), with limbs below `2^56 + 2^8` (`Field56.Res`). The function
 needs and keeps `Field56.Bounded` (every limb of every slot below
-`3·2^56 + 2^9`) and 0, with limbs below that bound, in slot 19. It writes
+`3·2^56 + 2^9`) and slot 19 zero, every limb 0. It writes
 slots 0 to 18, the 16 bytes from byte 2816 (in slot 21, after its element's
 64 bytes), where it saves two registers, and its own bytes (`Field56.own`); on return those, but the result, are
 unspecified and may hold intermediate values, and every other byte of `ws`
@@ -37,7 +37,7 @@ function is constant time.
 
 namespace VG.Spec.Ed448.Comb56
 
-open X448.Field56 (slotAt elemAt Bounded Res Keeps own)
+open X448.Field56 (slotAt limbAt limbs elemAt Bounded Res Keeps own)
 open Point56 (pointAt zeroSlot)
 
 /-- Where the scalar's bits are, a byte each. -/
@@ -64,12 +64,12 @@ def sig : Sig where
   params := [("ws", .array true .u64 1024), ("n", .int .usize true)]
 
 /-- `[k] B`: for `n` 56 or 57, with `8 n` bits of `k` from byte `bitsOff`, every slot `Bounded`
-and 0, with limbs below `resBound`, in slot 19, the point in slots 0 to 2 equals
+and every limb of slot 19 zero, the point in slots 0 to 2 equals
 `pointMul k basePoint`, with `Z` nonzero and limbs below `resBound`. -/
 def combBaseContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
   sig.contract A
     (pre := fun ws n m => (n.toNat = 56 ∨ n.toNat = 57) ∧ IsBits m ws (8 * n.toNat) ∧
-      Bounded m ws ∧ Res m ws zeroSlot ∧ elemAt m ws (slotAt zeroSlot) = 0)
+      Bounded m ws ∧ ∀ i < limbs, limbAt m ws (slotAt zeroSlot) i = 0)
     (post := fun ws n m m' _ =>
       Bounded m' ws ∧ (∀ i < 3, Res m' ws i) ∧ elemAt m' ws (slotAt 2) ≠ 0 ∧
         pointEqual (pointAt m' ws 0) (pointMul (bitsAt m ws (8 * n.toNat)) basePoint) = true ∧
@@ -97,8 +97,7 @@ def combBaseApi : Api where
     `n` may affect timing."
   safety := [X448.Field56.boundedDoc,
     "`n` must be 56 or 57, and each of bytes 3072 to `3072 + 8 n - 1` of `ws` must be 0 or 1.",
-    "Slot 19 of `ws` (byte 2496) must hold an element congruent to 0, with limbs below \
-      `2^56 + 2^8`.",
+    "Every limb of slot 19 of `ws` (bytes 2496 to 2559) must be 0.",
     "Bytes 64 to 2495, 2816 to 2831 and 3584 to 4735 of `ws` but the result are unspecified on \
       return and may hold intermediate values, which the caller must destroy if they are secret."]
 
