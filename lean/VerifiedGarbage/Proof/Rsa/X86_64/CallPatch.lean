@@ -17,15 +17,6 @@ namespace VG.Proof.Bignum.X86_64
 
 open VG VG.X86_64 VG.Proof.Rsa.X86_64
 
-/-- The bytes of a writable buffer miss the hole. -/
-theorem Clear.miss_wr {H : Region} {s : State} (hc : Clear H s) {p : Addr} {n : Nat}
-    (hr : (⟨p, n⟩ : Region) ∈ s.wr) (hn : p.toNat + n ≤ 2 ^ 64) {k : Nat} (hk : k ≤ n) :
-    ∀ i < k, ¬ H.Contains (p + BitVec.ofNat 64 i) 1 :=
-  fun _ hi => Clear.wr_miss hc hr (by omega) (by omega)
-
-theorem patch_mem (b : State) (H : Region) (hv : Mem) (u : Nat → BitVec 64) :
-    (b.patch H hv u).mem = overlay H hv b.mem := rfl
-
 theorem pc_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : pcContract.pre s)
     (hc : Clear (hole (s.gpr .rsp)) s) (hp : pcContract.post s b) :
     pcContract.post s (b.patch (hole (s.gpr .rsp)) hv u) := by

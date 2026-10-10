@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Verified
-import VerifiedGarbage.Proof.Rsa.X86_64.Calls
+import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
 
 /-!
 # `vg_rsa_keygen_candidate` on x86-64, with Montgomery multiplication by calls
