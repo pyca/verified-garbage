@@ -1,15 +1,17 @@
 import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Spec.P192
 import VerifiedGarbage.Spec.P224
 import VerifiedGarbage.Spec.P256
 import VerifiedGarbage.Spec.P384
 import VerifiedGarbage.Spec.P521
+import VerifiedGarbage.Spec.Secp256k1
 
 /-!
 # Montgomery arithmetic modulo a curve's `p` or `n`, a step at a time
 
 **Trusted** (as every file in `Spec/`). The contracts of three functions for
-each modulus `m` of `moduli` (the primes `p` and the orders `n` of P-224,
-P-256, P-384 and P-521), so that the code of a curve's functions can call one
+each modulus `m` of `moduli` (the primes `p` and the orders `n` of P-192,
+P-224, P-256, P-384, P-521 and secp256k1), so that the code of a curve's functions can call one
 copy of its field arithmetic instead of repeating it at every use:
 
 * `vg_<curve>_mul_mod_<p|n>`: Montgomery's product, the number below `m`
@@ -183,6 +185,8 @@ end Modulus
 
 /-! ## The moduli -/
 
+def p192p : Modulus := ⟨"p192", "p", Spec.P192.p, 3, "P-192's prime `p`"⟩
+def p192n : Modulus := ⟨"p192", "n", Spec.P192.n, 3, "P-192's order `n`"⟩
 def p224p : Modulus := ⟨"p224", "p", Spec.P224.p, 4, "P-224's prime `p`"⟩
 def p224n : Modulus := ⟨"p224", "n", Spec.P224.n, 4, "P-224's order `n`"⟩
 def p256p : Modulus := ⟨"p256", "p", Spec.P256.p, 4, "P-256's prime `p`"⟩
@@ -191,8 +195,11 @@ def p384p : Modulus := ⟨"p384", "p", Spec.P384.p, 6, "P-384's prime `p`"⟩
 def p384n : Modulus := ⟨"p384", "n", Spec.P384.n, 6, "P-384's order `n`"⟩
 def p521p : Modulus := ⟨"p521", "p", Spec.P521.p, 9, "P-521's prime `p`"⟩
 def p521n : Modulus := ⟨"p521", "n", Spec.P521.n, 9, "P-521's order `n`"⟩
+def secp256k1p : Modulus := ⟨"secp256k1", "p", Spec.Secp256k1.p, 4, "secp256k1's prime `p`"⟩
+def secp256k1n : Modulus := ⟨"secp256k1", "n", Spec.Secp256k1.n, 4, "secp256k1's order `n`"⟩
 
 /-- Every modulus. -/
-def moduli : List Modulus := [p224p, p224n, p256p, p256n, p384p, p384n, p521p, p521n]
+def moduli : List Modulus :=
+  [p192p, p192n, p224p, p224n, p256p, p256n, p384p, p384n, p521p, p521n, secp256k1p, secp256k1n]
 
 end VG.Spec.Weierstrass.Mont
