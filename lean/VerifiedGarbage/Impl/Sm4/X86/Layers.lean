@@ -135,14 +135,14 @@ def rounds4 (l : Lin) : List Instr :=
 /-! ## The round keys' planes -/
 
 /-- The round key at `ecx`, its bytes reversed (the word's bytes are
-little-endian, the state's from the most significant). -/
-def keyWord : List Instr := [.mov .eax (.mem (at_ .ecx 0)), .bswap .eax]
+little-endian, the state's from the most significant), to slot 0. -/
+def keyWord : List Instr := [.mov .eax (.mem (at_ .ecx 0)), .bswap .eax, st 0 .eax]
 
 /-- Plane `j` of the round key, to word `j` of the entry at `kp`: bit `j` of
-each byte of `eax`, masked into `ebx` and spread over its byte by three
+each byte of slot 0, masked into `ebx` and spread over its byte by three
 shifted XORs (their bits never overlap), through `edx`. -/
 def keyPlane (j : Nat) : List Instr :=
-  [movR .ebx .eax] ++ (if j = 0 then [] else [shrI .ebx j]) ++
+  [movS .ebx 0] ++ (if j = 0 then [] else [shrI .ebx j]) ++
   [andI .ebx 0x01010101, movR .edx .ebx, rorI .edx 31, xorR .ebx .edx, movR .edx .ebx, rorI .edx 30,
    xorR .ebx .edx, movR .edx .ebx, rorI .edx 28, xorR .ebx .edx, .store (slotAt kp j) .ebx]
 
