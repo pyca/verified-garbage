@@ -4,7 +4,7 @@ import VerifiedGarbage.Impl.Ed25519.Arm.PointAccumulate
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 
-def loadCheckpoint : Prog isa := .seq savePoint (.block (tableAddr 1600 ++ pointFromTable))
-def prepareBatch : Prog isa := .seq loadCheckpoint (.seq (pointPowers 5696 16 false) restorePoint)
+def loadCheckpoint : Prog isa := .seq savePoint (.block (tableAddr 1632 ++ pointFromTable))
+def prepareBatch : Prog isa := .seq loadCheckpoint (.seq (pointPowers 5728 16 false) restorePoint)
 
 end VG.Impl.Ed25519.Arm

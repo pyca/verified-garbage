@@ -199,12 +199,15 @@ def decSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x10008 then 1 else if a = 0x10011 then 0x40 else if a = 0x10018 then 1
-    else if a = 0x10021 then 0x41 else if a = 0x10028 then 64 else if a = 0x10031 then 0x42
-    else if a = 0x10038 then 1 else if a = 0x10041 then 0x43 else if a = 0x10048 then 1
-    else if a = 0x10051 then 0x44 else if a = 0x10058 then 1 else if a = 0x10061 then 0x45
-    else if a = 0x10068 then 1 else if a = 0x10071 then 0x46 else if a = 0x10078 then 1
-    else if a = 0x10082 then 0x02 else if a = 0x10089 then 0x04 else 0
+  mem a := bif Nat.beq a.toNat 0x10008 then 1 else bif Nat.beq a.toNat 0x10011 then 0x40
+    else bif Nat.beq a.toNat 0x10018 then 1 else bif Nat.beq a.toNat 0x10021 then 0x41
+    else bif Nat.beq a.toNat 0x10028 then 64 else bif Nat.beq a.toNat 0x10031 then 0x42
+    else bif Nat.beq a.toNat 0x10038 then 1 else bif Nat.beq a.toNat 0x10041 then 0x43
+    else bif Nat.beq a.toNat 0x10048 then 1 else bif Nat.beq a.toNat 0x10051 then 0x44
+    else bif Nat.beq a.toNat 0x10058 then 1 else bif Nat.beq a.toNat 0x10061 then 0x45
+    else bif Nat.beq a.toNat 0x10068 then 1 else bif Nat.beq a.toNat 0x10071 then 0x46
+    else bif Nat.beq a.toNat 0x10078 then 1 else bif Nat.beq a.toNat 0x10082 then 0x02
+    else bif Nat.beq a.toNat 0x10089 then 0x04 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 1⟩, ⟨0x4100, 64⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩,
     ⟨0x4500, 1⟩, ⟨0x4600, 1⟩, ⟨0x10008, 136⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1800, 8⟩, ⟨0x20000, 8192⟩]
@@ -229,7 +232,7 @@ theorem decrypt_implies : decK.Implies (Spec.RsaPkcs1Enc.decryptContract abi dec
       a15, a16⟩ := h
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, h8]) hl
     refine ⟨?_, by simp only [stackArgs_seventeen, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14,
-      a15, a16], hn, by have := he; rwa [← a0] at this⟩
+      a15, a16], hn, he⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
   sat := by sig_implies_sat [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi, argRegs, decK, decStack, privStack, Impl.RsaPkcs1Enc.X86_64.Decrypt.frameBytes, stackArgs_seventeen, List.append_eq] [decSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using decSatState

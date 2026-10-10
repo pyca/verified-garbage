@@ -11,8 +11,10 @@ open VG.Proof.AesGcm (arg args rounds)
 
 theorem toSpecPrepared_pre {s : State} (h : toPre CtxMode.prepared s) :
     (Spec.Gcm.streamEncryptToPreparedContract X86_64.abi 4856).pre s := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
-    a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈⟩ := h
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
+  have a₂₈ := h
+  clear h
   sig_pre [Spec.Gcm.streamEncryptToPreparedContract, Spec.Gcm.streamEncryptToPreparedSig, Spec.Gcm.streamEncryptToPrecomputedSig,
     Spec.Gcm.streamEncryptToPreparedPre, X86_64.abi, X86_64.argRegs]
   sig_reduce [Spec.Gcm.streamEncryptToPreparedContract, Spec.Gcm.streamEncryptToPreparedSig, Spec.Gcm.streamEncryptToPrecomputedSig,

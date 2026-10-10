@@ -285,16 +285,12 @@ theorem randomSource_ok {s : State} {pass slice lane index ctr : Nat} {st : Fill
     refine (dependentWord_ok hp h₁ hl hs hi).mono fun t ⟨ht, wt⟩ => ⟨by rw [ctrNext, hind]; exact ht, ?_⟩
     have cl := Proof.Argon2.previous_cell_lt (prm s₀) hp.lanes_pos hp.memory_ge
       (column := slice * (prm s₀).segmentLen + index) hl
-    rw [wt, k₁.mem, h.mem.block _ cl]
-    unfold Proof.Argon2.FillStep.random
-    rw [hind]
-    rfl
+    rw [wt, k₁.mem, h.mem.block _ cl, Proof.Argon2.FillStep.random, hind]
+    simp only [Bool.false_eq_true, ite_false]
   · have hind : Spec.Argon2.independent (prm s₀) pass slice = true := by simpa using hb
     refine (addressCache_ok hp h₁ hpass hl hs hi).mono fun t ⟨ht, wt⟩ => ⟨by rw [ctrNext, hind]; exact ht, ?_⟩
-    rw [wt]
-    unfold Proof.Argon2.FillStep.random
-    rw [hind]
-    rfl
+    rw [wt, Proof.Argon2.FillStep.random, hind]
+    simp only [ite_true]
 
 end
 

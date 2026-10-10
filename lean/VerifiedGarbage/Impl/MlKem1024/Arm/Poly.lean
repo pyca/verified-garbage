@@ -49,13 +49,13 @@ def fieldAt (d k : Nat) : Nat × Nat × Nat := (d * k / 8, d * k % 8, (d * k % 8
 /-- `(x · M + 2¹⁸ - 2⁸) >> 19` of the coefficient at `r0 + off`, into `r1`,
 with `M` built in `r12`. -/
 def compressAt4 (off : Nat) (mlo mhi : BitVec 16) : List Instr :=
-  [.ldr .r1 .r0 off, .movw .r12 mlo] ++ (if mhi = 0 then [] else [.movt .r12 mhi]) ++
-  [.mul .r1 .r1 .r12, .dp .add .r1 .r1 (.imm 0x40000), .dp .sub .r1 .r1 (.imm 0x100),
-   .mov .r1 (.shifted .r1 .lsr 19)]
+  ([.ldr .r1 .r0 off, .movw .r12 mlo] : List Instr) ++ (if mhi = 0 then [] else [.movt .r12 mhi]) ++
+  ([.mul .r1 .r1 .r12, .dp .add .r1 .r1 (.imm 0x40000), .dp .sub .r1 .r1 (.imm 0x100),
+   .mov .r1 (.shifted .r1 .lsr 19)] : List Instr)
 
 /-- `Compress_d` of coefficient `k` of the group, into `r1`. -/
 def ceCoeff (d k : Nat) : List Instr :=
-  if d = 5 then compressAt4 (4 * k) 5040 0 ++ [.dp .and .r1 .r1 (.imm 31)]
+  if d = 5 then compressAt4 (4 * k) 5040 0 ++ ([.dp .and .r1 .r1 (.imm 31)] : List Instr)
   else compressAt4 (4 * k) 0xEBEE 0x4
 
 /-- The low bits of the field in `r1` into byte `j` of the group: stored if
@@ -76,7 +76,7 @@ def ceField (d k : Nat) : List Instr :=
 /-- A group of 8 coefficients, into `d` bytes. -/
 def ceBody (d : Nat) : List Instr :=
   (List.range 8).flatMap (ceField d) ++
-    [.dp .add .r0 .r0 (.imm 32), .dp .add .r2 .r2 (.imm (BitVec.ofNat 32 d)), .subs .r3 .r3 (.imm 1)]
+    ([.dp .add .r0 .r0 (.imm 32), .dp .add .r2 .r2 (.imm (BitVec.ofNat 32 d)), .subs .r3 .r3 (.imm 1)] : List Instr)
 
 def compressEncode1024 : Prog isa :=
   .seq (.block [.cmp .r1 (.imm 5), .mov .r3 (.imm 32)])
@@ -96,14 +96,14 @@ def ddNext (j t i : Nat) : List Instr :=
 def ddField (d k : Nat) : List Instr :=
   ddHead (fieldAt d k).1 (fieldAt d k).2.1 ++
     (List.range ((fieldAt d k).2.2 - 1)).flatMap (ddNext (fieldAt d k).1 (fieldAt d k).2.1) ++
-    [.mov .r2 (.shifted .r2 .lsl (32 - d)), .mov .r2 (.shifted .r2 .lsr (32 - d))] ++
+    ([.mov .r2 (.shifted .r2 .lsl (32 - d)), .mov .r2 (.shifted .r2 .lsr (32 - d))] : List Instr) ++
     decompressTo d (4 * k)
 
 /-- A group of `d` bytes, into 8 coefficients. -/
 def ddBody (d : Nat) : List Instr :=
   (List.range 8).flatMap (ddField d) ++
-    [.dp .add .r0 .r0 (.imm (BitVec.ofNat 32 d)), .dp .add .r3 .r3 (.imm 32),
-     .subs .r1 .r1 (.imm (BitVec.ofNat 32 d))]
+    ([.dp .add .r0 .r0 (.imm (BitVec.ofNat 32 d)), .dp .add .r3 .r3 (.imm 32),
+     .subs .r1 .r1 (.imm (BitVec.ofNat 32 d))] : List Instr)
 
 def decodeDecompress1024 : Prog isa :=
   .seq (.block [.cmp .r2 (.imm 5)])

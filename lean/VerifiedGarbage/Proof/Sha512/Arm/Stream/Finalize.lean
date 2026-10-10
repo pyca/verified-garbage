@@ -125,6 +125,7 @@ theorem out_ok {p0 p6 : BitVec 32} {W : Nat} (hW : W ≤ 64) (f0 : p0.toNat + 64
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
     refine ih (by omega) _ s Q h0 h6 hin hout fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
     have hP := flat_length (stateAt s.mem (State.addr p0)) n (by omega)
+    have hn8 : n < 8 := by omega
     simp only [outW, List.cons_append, List.nil_append]
     have i₀ : ∀ o, o + 4 ≤ 8 → InRegions (s₁.rd ++ s₁.wr) (State.addr p0 + BitVec.ofNat 64 (8 * n + o)) 4 :=
       fun o ho => by
@@ -162,21 +163,21 @@ theorem out_ok {p0 p6 : BitVec 32} {W : Nat} (hW : W ≤ 64) (f0 : p0.toNat + 64
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
         subst hr'
         exact hd.sub_left (Offset.sub_base _ (by omega))
-    have hw : (stateAt s.mem (State.addr p0))[n] = s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n)) 64 := by
+    have hw : ((stateAt s.mem (State.addr p0))[n]'hn8) = s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n)) 64 := by
       simp [stateAt]
     have wlo : s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n + 0)) 32 =
-        lo (stateAt s.mem (State.addr p0))[n] := by
+        lo ((stateAt s.mem (State.addr p0))[n]'hn8) := by
       rw [hw, readW_lo, Nat.add_zero]
     have whi : s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n + 4)) 32 =
-        hi (stateAt s.mem (State.addr p0))[n] := by
+        hi ((stateAt s.mem (State.addr p0))[n]'hn8) := by
       rw [hw, readW_hi, BitVec.ofNat_add, ← BitVec.add_assoc]; rfl
-    have v10 : s₅.gpr .r10 = rev (hi (stateAt s.mem (State.addr p0))[n]) := by
+    have v10 : s₅.gpr .r10 = rev (hi ((stateAt s.mem (State.addr p0))[n]'hn8)) := by
       rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.mem, hread 4 (by omega), whi]
-    have v9 : s₆.gpr .r9 = rev (lo (stateAt s.mem (State.addr p0))[n]) := by
+    have v9 : s₆.gpr .r9 = rev (lo ((stateAt s.mem (State.addr p0))[n]'hn8)) := by
       rw [g₆.gpr, u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, hread 0 (by omega), wlo]
     have a4 : State.addr p6 + BitVec.ofNat 64 (8 * n + 4) =
         State.addr p6 + BitVec.ofNat 64 (8 * n + 0) +
-          BitVec.ofNat 64 (Spec.Sha256.wordBytes (hi (stateAt s.mem (State.addr p0))[n])).length := by
+          BitVec.ofNat 64 (Spec.Sha256.wordBytes (hi ((stateAt s.mem (State.addr p0))[n]'hn8))).length := by
       rw [BitVec.add_assoc, ← BitVec.ofNat_add]; rfl
     have a8 : State.addr p6 + BitVec.ofNat 64 (8 * n + 0) = State.addr p6 +
         BitVec.ofNat 64 (((stateAt s.mem (State.addr p0)).toList.take n).flatMap wordBytes).length := by

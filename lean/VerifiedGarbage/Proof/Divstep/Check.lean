@@ -145,7 +145,7 @@ theorem rowOk_sound {L : LinMap} {r1 r2 d : Row} (h : rowOk L r1 r2 d = true) {x
     have s2 := mul_le_mul_of_nonpos_left h2 hNq
     have h3 : c * L.q * D ≤ (Mn : ℚ) * c1 + Nn * c2 := by rw [eq, div_le_iff₀ hsd]; exact hlq
     have hle : (-D : ℚ) * ((G : ℚ) * x + H * y) ≤ (-D) * (c * L.q) := by
-      have := comb; nlinarith
+      rw [neg_mul, neg_mul, neg_le_neg_iff, comb]; linarith
     exact le_of_mul_le_mul_left hle (by linarith)
 
 theorem getD_row {P : List Row} {x y : ℚ} (h : inP P x y) (i : Nat) :

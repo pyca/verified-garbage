@@ -166,7 +166,11 @@ theorem entryStash_ok {s : State} {Ctx W : Addr} {k j : Nat} {V : BitVec 64} (hk
 /-- `sealPre`'s common arguments. -/
 theorem sealCore {s : State} (hs : sealPre s) : oneCore 2 1 s := by
   simp only [sealPre] at hs
-  obtain ⟨hrd, hwr, dcd, dcw, dnd, dnw, dad, daw, -, ddw, dda, -, dwa, wc, wn, wa, wd, ww, wsp, hR⟩ := hs
+  sig_split hs
+  rename_i hrd hwr dcd dcw dnd dnw dad daw hdrop8 ddw dda hdrop11 dwa wc wn wa wd ww wsp
+  clear hdrop8 hdrop11
+  have hR := hs
+  clear hs
   exact ⟨by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hwr]; simp,
     by rw [hwr]; simp, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, dwa, wc, wn, wa, wd, ww, wsp, hR⟩
 

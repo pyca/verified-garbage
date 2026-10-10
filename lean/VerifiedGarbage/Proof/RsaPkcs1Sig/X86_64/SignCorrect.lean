@@ -152,7 +152,7 @@ theorem code_correct (v : CrtImpl) (s : State) (h : sigContract.pre s) :
       rw [heu.rsp, BitVec.sub_add_cancel]
     · show (if r = .rsp then _ else u.gpr r) = s.gpr r
       simp only [hr', ↓reduceIte]
-      rw [hcsu r hr, hK₂.gpr (by simp [calleeSaved, clob] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all),
+      rw [hcsu r hr, hK₂.gpr (by simp [calleeSaved, clob] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first | decide | simp_all),
         hcs₁ r hr hr']
   · show u.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
     rw [hmxu, hmx₂, hmx₁]; rfl

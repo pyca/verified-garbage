@@ -121,9 +121,11 @@ theorem SG.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.sealGatherPreM M s) :
   simp only [Proof.AesGcm.sealGatherPreM, Proof.AesGcm.args, Proof.AesGcm.arg, Proof.AesGcm.ret,
     Proof.AesGcm.stkG, Proof.AesGcm.slicesG, Proof.AesGcm.rounds] at h
   have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
-    a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃, a₃₄, a₃₅, a₃₆, a₃₇, a₃₈, a₃₉, a₄₀, a₄₁, a₄₂, a₄₃, a₄₄,
-    a₄₅⟩ := h
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
+    a₂₈ a₂₉ a₃₀ a₃₁ a₃₂ a₃₃ a₃₄ a₃₅ a₃₆ a₃₇ a₃₈ a₃₉ a₄₀ a₄₁ a₄₂ a₄₃ a₄₄
+  have a₄₅ := h
+  clear h
   rw [hA] at a₁ a₁₉ a₂₀ a₂₁
   exact ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
     a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃, a₃₄, a₃₅, a₃₆, a₃₇, a₃₈, a₃₉, a₄₀, a₄₁, a₄₂, a₄₃,

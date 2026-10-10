@@ -289,6 +289,12 @@ theorem xw_kept (hL : L.Ok) {m m' : Mem} {n : Nat} (h : Outside L.B 16 n m m') (
       exact (Proof.Weierstrass.keep_of_disjoint (k := dn) h ((hL.kg.symm).sub_right (Offset.sub_base _ hn))
         (by have := L.he; omega) (i := i) (by omega) (by have := hL.ng; omega))
 
+/-- One more word of a subtraction with borrow: the words below `k` (`hs`)
+and word `k` (`e`), weighted by `Q = 2^(64 k)`. -/
+private theorem borrow_step {a b r x y z c d Q : Nat} (hs : a + r = b + Q * c)
+    (e : x + y + c = z + 2 ^ 64 * d) : a + Q * x + (r + Q * y) = b + Q * z + 2 ^ 64 * Q * d := by
+  grind
+
 /-- After `k` words: the number's in `V`'s place, and the difference in
 `K`'s, with the borrow `b`. -/
 theorem subs_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) (hL : L.Ok) (h1 : t.gpr .x1 = L.dg) (hdn : P.Q ≤ dn)
@@ -348,7 +354,7 @@ theorem subs_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) (hL : 
       rw [hn] at e ⊢
       rw [Proof.Mont.pow64_succ]
       generalize 2 ^ (64 * k) = Q at *
-      grind
+      exact borrow_step hs e
 
 /-! ## The selection -/
 

@@ -130,6 +130,7 @@ class Plan(Project):
         self.manifest["inputs"] = {f: shards.digest(self.lean / f) for f in shards.INPUTS}
         self.assertEqual(self.stale(), 5)
 
+    @mock.patch.object(shards, "SHARD_OVERHEAD", 0.0)
     def test_shard_count(self):
         # Every module is stale; the work is 5 times each module's time. The
         # project has two sinks: a third shard would have nothing to build.
@@ -138,6 +139,13 @@ class Plan(Project):
             with self.subTest(work=5 * each):
                 self.manifest["times"] = {m: each for m in self.manifest["sources"]}
                 self.assertEqual(len(shards.plan(self.manifest)["targets"]), count)
+
+    def test_no_shards_when_a_chain_sets_the_time(self):
+        # The root module's chain of three imports takes 12000 s however the
+        # work is split: shards would only add their overhead.
+        self.manifest["inputs"] = {}
+        self.manifest["times"] = {m: 4000 for m in self.manifest["sources"]}
+        self.assertEqual(shards.plan(self.manifest)["targets"], [])
 
 
 class WallTime(unittest.TestCase):
@@ -161,8 +169,10 @@ class WallTime(unittest.TestCase):
         self.assertEqual(shards.wall_time({}, {}), 0.0)
 
 
+@mock.patch.object(shards, "SHARD_OVERHEAD", 0.0)
 class Chain(Project):
-    """`plan` with a long chain of imports and many short modules."""
+    """`plan` with a long chain of imports and many short modules (which the
+    `lean` job would build as fast without shards' overhead)."""
 
     CHAIN = [f"VerifiedGarbage.Chain{i}" for i in range(3)]
     SHORT = [f"VerifiedGarbage.Short{i}" for i in range(20)]
@@ -218,10 +228,17 @@ class Many(Project):
         self.assertEqual(self.count(50), 3)
 
     def test_no_shard_that_is_no_faster(self):
-        # 16000 s of work would take 16 shards; but each sink takes 400 s
+        # 16000 s of work would take `MAX_SHARDS`; but each sink takes 400 s
         # however many a runner builds at once, as long as 5 or fewer: 8
         # shards are as fast.
         self.assertEqual(self.count(400), 8)
+
+    def test_no_shards_that_save_less_than_their_overhead(self):
+        # 880 s of work: two shards would take 81 s each, the `lean` job
+        # 163 s, less than their 81 s and `SHARD_OVERHEAD`.
+        self.assertEqual(self.count(22), 0)
+        # 1000 s: 93 s each, against 185 s.
+        self.assertEqual(self.count(25), 2)
 
 
 class Prune(Project):

@@ -63,9 +63,9 @@ theorem ExpSt.tab_of (hl : LayOk l) {m m' : Mem} {B : Addr} {M k x : Nat → Nat
     rw [← Nat.mul_succ, Nat.mul_comm 16]; exact Nat.mul_le_mul_left _ hj
   have hc : l.oTab + l.NB * j + l.NB ≤ o ∨ o + n ≤ l.oTab + l.NB * j := by
     rcases ho with ho | ho
-    · exact .inr (by omega)
-    · exact .inl (by omega)
-  have hcD : l.oTab + l.NB * j + l.NB ≤ l.D := by omega
+    · exact .inr (by omega_using [ho])
+    · exact .inl (by omega_using [hNj, ho])
+  have hcD : l.oTab + l.NB * j + l.NB ≤ l.D := by omega_using [o5, o10, hNj]
   obtain ⟨g, v⟩ := h.tab j hj p hp
   exact ⟨g.of_out2 hl hp hf hc hcD hoD, fun hq => by rw [hf.val hl hp hc hcD hoD]; exact v hq⟩
 
@@ -79,8 +79,9 @@ theorem sq_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : P
         s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  refine WP.mono (amm2_ok hl hB hs h.ar (by omega) (by omega) (by omega) (by omega) h.y h.y)
-    fun s' ⟨hv, hf, ar', hg, hrd, hwr, hx⟩ => ⟨⟨ar', h.tab_of hl hf (.inl (by omega)) (by omega),
+  refine WP.mono (amm2_ok hl hB hs h.ar (by omega_using [o2, o10]) (by omega_using []) (by omega_using [o2, o10])
+      (by omega_using [o2, o10]) h.y h.y)
+    fun s' ⟨hv, hf, ar', hg, hrd, hwr, hx⟩ => ⟨⟨ar', h.tab_of hl hf (.inl (by omega_using [o2, o5])) (by omega_using [o2, o10]),
       fun p hp => (hv p hp).1, fun hq p hp => ?_⟩, hf, hg, hrd, hwr, hx⟩
   exact VG.Proof.Bignum.mont_sq (hR p hp) (h.yv hq p hp) (hv p hp).2
 
@@ -95,8 +96,9 @@ theorem mulS_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q :
         s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  refine WP.mono (amm2_ok hl hB hs h.ar (by omega) (by omega) (by omega) (by omega) h.y gs)
-    fun s' ⟨hv, hf, ar', hg, hrd, hwr, hx⟩ => ⟨⟨ar', h.tab_of hl hf (.inl (by omega)) (by omega),
+  refine WP.mono (amm2_ok hl hB hs h.ar (by omega_using [o2, o10]) (by omega_using []) (by omega_using [o2, o10])
+      (by omega_using [o4, o10]) h.y gs)
+    fun s' ⟨hv, hf, ar', hg, hrd, hwr, hx⟩ => ⟨⟨ar', h.tab_of hl hf (.inl (by omega_using [o2, o5])) (by omega_using [o2, o10]),
       fun p hp => (hv p hp).1, fun hq p hp => ?_⟩, hf, hg, hrd, hwr, hx⟩
   exact mont_mul2 (hR p hp) (h.yv hq p hp) (vs hq p hp) (hv p hp).2
 
@@ -143,12 +145,12 @@ theorem sqLoop_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q
   · simp only [eval, z₂, Option.map_some]
     rcases Nat.eq_or_lt_of_le h1 with rfl | hn
     · exact .inl ⟨by simp, hI'⟩
-    · exact .inr ⟨by simp only [decide_eq_false (show ¬ (n - 1 = 0) by omega), Bool.not_false], n - 1,
-        by omega, by omega, by omega, hI'⟩
+    · exact .inr ⟨by simp only [decide_eq_false (show ¬ (n - 1 = 0) by omega_using [hn]), Bool.not_false], n - 1,
+        by omega_using [hn], by omega_using [hn], by omega_using [h4], hI'⟩
   · rw [me₂]
     refine ⟨st₁.ar, st₁.tab, st₁.y, fun hq p hp => ?_⟩
     rw [st₁.yv hq p hp, show 2 * (E p * 2 ^ (4 - n)) = E p * 2 ^ (4 - (n - 1)) by
-      rw [show 4 - (n - 1) = (4 - n) + 1 by omega, Nat.pow_succ]; grind]
+      rw [show 4 - (n - 1) = (4 - n) + 1 by omega_using [h1, h4], Nat.pow_succ]; grind]
   · rw [me₂]; exact hI.frame.trans f₁
   · rw [k₂.gpr (by simp [r10]), g₁ r r1 r2 r3 r4 r5 r6 r7 r8 r9]
     exact hI.gpr r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10
@@ -165,8 +167,8 @@ theorem rotV_ok {s : State} {B : Addr} {p : Nat} (hp : p < 2) (hB : s.gpr .rbx =
       s'.mem = s.mem.writeW (off B (l.D * p + l.oV)) ((word s.mem B (l.D * p + l.oV)).rotateRight 60) ∧
       VG.Proof.MlKem.X86_64.Keep [.rax] s s' ∧ s'.mxcsr = s.mxcsr := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega
-  have hd : l.D * p + l.oV + 8 ≤ 2 * l.D := by omega
+  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
+  have hd : l.D * p + l.oV + 8 ≤ 2 * l.D := by omega_using [o8, o10, hDp]
   have hld : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 (l.D * p + l.oV)) 8 :=
     let ⟨_, h, c⟩ := hs.region hd (by decide); ⟨_, List.mem_append_right _ h, c⟩
   have hst : InRegions s.wr (B + BitVec.ofNat 64 (l.D * p + l.oV)) 8 :=
@@ -183,7 +185,7 @@ theorem Outside.limbG (hl : LayOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : Ou
     limb l m' B c j = limb l m B c j := by
   have := off_lt hl hj
   show (word m' B _).toNat = (word m B _).toNat
-  rw [h.word (by omega) (by omega)]
+  rw [h.word (by omega_using [hc, this]) (by omega_using [hc', this])]
 
 /-- `S := T_v` for both primes. -/
 theorem sel2_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E : Nat → Nat}
@@ -206,8 +208,8 @@ theorem sel2_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q :
   have f₁ : Out2 l B l.oS l.NB s.mem s₁.mem := Out2.of_outside (p := 0) (by decide) o₁
   have f₂ : Out2 l B l.oS l.NB s₁.mem s₂.mem := Out2.of_outside (p := 1) (by decide) o₂
   have v₁ : nib l s₁.mem B 1 = nib l s.mem B 1 := by
-    unfold nib; rw [o₁.word (by omega) (by omega)]
-  have ex₁ := h.tab_of hl f₁ (.inl (by omega)) (by omega)
+    unfold nib; rw [o₁.word (by omega_using [o4, o10]) (by omega_using [o8, o10, hn])]
+  have ex₁ := h.tab_of hl f₁ (.inl (by omega_using [o4, o5])) (by omega_using [o4, o10])
   -- entry 0 and entry 1
   have hv0 := nib_lt (l := l) s.mem B 0
   have hv1 := nib_lt (l := l) s.mem B 1
@@ -217,20 +219,21 @@ theorem sel2_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q :
     rw [← Nat.mul_succ, Nat.mul_comm 16]; exact Nat.mul_le_mul_left _ hv0
   have L0 : ∀ q < l.L, limb l s₂.mem B (l.D * 0 + l.oS) q =
       limb l s.mem B (l.D * 0 + (l.oTab + l.NB * nib l s.mem B 0)) q := fun q hq => by
-    rw [Outside.limbG hl o₂ (.inl (by omega)) (by omega) hq, l₁ q hq, Nat.add_assoc]
+    rw [Outside.limbG hl o₂ (.inl (by omega_using [hD])) (by omega_using [o4, hD]) hq, l₁ q hq, Nat.add_assoc]
   have L1 : ∀ q < l.L, limb l s₂.mem B (l.D * 1 + l.oS) q =
       limb l s₁.mem B (l.D * 1 + (l.oTab + l.NB * nib l s.mem B 1)) q :=
     fun q hq => by rw [l₂ q hq, v₁, Nat.add_assoc]
-  refine ⟨⟨?_, h.tab_of hl (f₁.trans f₂) (.inl (by omega)) (by omega), fun p hp => ?_, fun hq p hp => ?_⟩,
+  refine ⟨⟨?_, h.tab_of hl (f₁.trans f₂) (.inl (by omega_using [o4, o5])) (by omega_using [o4, o10]), fun p hp => ?_, fun hq p hp => ?_⟩,
     fun p hp => ?_, fun p hp => ?_, f₁.trans f₂, fun r r1 r2 r3 r4 => ?_, by rw [rd₂, rd₁], by rw [wr₂, wr₁],
     by rw [x₂, x₁]⟩
-  · exact (h.ar.of_out2 hl f₁ (by omega) (by omega)).of_out2 hl f₂ (by omega) (by omega)
-  · exact (h.y p hp).of_out2 hl hp (f₁.trans f₂) (.inl (by omega)) (by omega) (by omega)
-  · rw [(f₁.trans f₂).val hl hp (.inl (by omega)) (by omega) (by omega)]; exact h.yv hq p hp
-  · rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl
+  · exact (h.ar.of_out2 hl f₁ (by omega_using [o2, o4]) (by omega_using [o4, o10])).of_out2 hl f₂
+      (by omega_using [o2, o4]) (by omega_using [o4, o10])
+  · exact (h.y p hp).of_out2 hl hp (f₁.trans f₂) (.inl (by omega_using [o2, o4])) (by omega_using [o2, o10]) (by omega_using [o4, o10])
+  · rw [(f₁.trans f₂).val hl hp (.inl (by omega_using [o2, o4])) (by omega_using [o2, o10]) (by omega_using [o4, o10])]; exact h.yv hq p hp
+  · rcases (by omega_using [hp] : p = 0 ∨ p = 1) with rfl | rfl
     · exact ⟨t0.1.of_limbs L0, fun hq => by rw [val52_of_limbs L0]; exact t0.2 hq⟩
     · exact ⟨t1.1.of_limbs L1, fun hq => by rw [val52_of_limbs L1]; exact t1.2 hq⟩
-  · rw [(f₁.trans f₂).word_at hl hp (.inr (by omega)) (by omega) (by omega)]
+  · rw [(f₁.trans f₂).word_at hl hp (.inr (by omega_using [o4, o8])) (by omega_using [o8, o10]) (by omega_using [o4, o10])]
   · rw [g₂ r r1 r2 r3 r4, g₁ r r1 r2 r3 r4]
 
 /-- The rotations of both primes' `V`. -/
@@ -265,7 +268,7 @@ theorem window_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q
     rw [i₁.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide)]; exact hB
   have w₁ : ∀ p < 2, word s₁.mem B (l.D * p + l.oV) = word s.mem B (l.D * p + l.oV) := fun p hp =>
-    i₁.frame.word_at hl hp (.inr (by omega)) (by omega) (by omega)
+    i₁.frame.word_at hl hp (.inr (by omega_using [o2, o8])) (by omega_using [o8, o10]) (by omega_using [o2, o10])
   have nib₁ : ∀ p < 2, nib l s₁.mem B p = nib l s.mem B p := fun p hp => by unfold nib; rw [w₁ p hp]
   refine wp_seqs_app (by simp [select]) (by simp)
     (WP.mono (sel2_ok hl hB₁ (hs.congr i₁.wr) i₁.st) fun s₂ ⟨st₂, gs₂, w₂, f₂, g₂, rd₂, wr₂, x₂⟩ => ?_)
@@ -277,29 +280,30 @@ theorem window_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q
   have hB₃ : s₃.gpr .rbx = B := by rw [k₃.gpr (by decide)]; exact hB₂
   refine WP.mono (rotV_ok (p := 1) (by decide) hB₃ (hs₂.congr k₃.2.2)) fun s₄ ⟨m₄, k₄, x₄⟩ => ?_
   have o₃ : Outside B (l.D * 0 + l.oV) 8 s₂.mem s₃.mem := by
-    rw [m₃]; exact writeW_outside _ B _ (by omega)
+    rw [m₃]; exact writeW_outside _ B _ (by omega_using [o8, o10, hn])
   have o₄ : Outside B (l.D * 1 + l.oV) 8 s₃.mem s₄.mem := by
-    rw [m₄]; exact writeW_outside _ B _ (by omega)
+    rw [m₄]; exact writeW_outside _ B _ (by omega_using [o8, o10, hn])
   have f₄ : Out2 l B l.oV 8 s₂.mem s₄.mem :=
     (Out2.of_outside (p := 0) (by decide) o₃).trans (Out2.of_outside (p := 1) (by decide) o₄)
   have hB₄ : s₄.gpr .rbx = B := by rw [k₄.gpr (by decide)]; exact hB₃
   have st₄ : ExpSt l s₄.mem B M k x Q (fun p => E p * 2 ^ (4 - 0)) :=
-    ⟨st₂.ar.of_out2 hl f₄ (by omega) (by omega), st₂.tab_of hl f₄ (.inr (by omega)) (by omega),
-      fun p hp => (st₂.y p hp).of_out2 hl hp f₄ (.inl (by omega)) (by omega) (by omega),
-      fun hq p hp => by rw [f₄.val hl hp (.inl (by omega)) (by omega) (by omega)]; exact st₂.yv hq p hp⟩
+    ⟨st₂.ar.of_out2 hl f₄ (by omega_using [o2, o8]) (by omega_using [o8, o10]),
+        st₂.tab_of hl f₄ (.inr (by omega_using [o5, o8])) (by omega_using [o8, o10]),
+      fun p hp => (st₂.y p hp).of_out2 hl hp f₄ (.inl (by omega_using [o2, o8])) (by omega_using [o2, o10]) (by omega_using [o8, o10]),
+      fun hq p hp => by rw [f₄.val hl hp (.inl (by omega_using [o2, o8])) (by omega_using [o2, o10]) (by omega_using [o8, o10])]; exact st₂.yv hq p hp⟩
   refine WP.mono (mulS_ok hl (v := fun p => nib l s₁.mem B p) hB₄ (hs₂.congr (by rw [k₄.2.2, k₃.2.2])) hR st₄
-    (fun p hp => ((gs₂ p hp).1).of_out2 hl hp f₄ (.inl (by omega)) (by omega) (by omega))
-    (fun hq p hp => by rw [f₄.val hl hp (.inl (by omega)) (by omega) (by omega)]; exact (gs₂ p hp).2 hq))
+    (fun p hp => ((gs₂ p hp).1).of_out2 hl hp f₄ (.inl (by omega_using [o4, o8])) (by omega_using [o4, o10]) (by omega_using [o8, o10]))
+    (fun hq p hp => by rw [f₄.val hl hp (.inl (by omega_using [o4, o8])) (by omega_using [o4, o10]) (by omega_using [o8, o10])]; exact (gs₂ p hp).2 hq))
     fun s₅ ⟨st₅, f₅, g₅, rd₅, wr₅, x₅⟩ => ⟨?_, fun p hp => ?_, ?_, fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 => ?_,
       by rw [rd₅, k₄.2.1, k₃.2.1, rd₂, i₁.rd], by rw [wr₅, k₄.2.2, k₃.2.2, wr₂, i₁.wr],
       by rw [x₅, x₄, x₃, x₂, i₁.mxcsr]⟩
   · refine ⟨st₅.ar, st₅.tab, st₅.y, fun hq p hp => ?_⟩
     rw [st₅.yv hq p hp, nib₁ p hp]
-  · rw [f₅.word_at hl hp (.inr (by omega)) (by omega) (by omega)]
-    rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl
-    · rw [o₄.word (by omega) (by omega), m₃, VG.Proof.Bignum.word_writeW_self,
+  · rw [f₅.word_at hl hp (.inr (by omega_using [o2, o8])) (by omega_using [o8, o10]) (by omega_using [o2, o10])]
+    rcases (by omega_using [hp] : p = 0 ∨ p = 1) with rfl | rfl
+    · rw [o₄.word (by omega_using [o10]) (by omega_using [o8, o10, hn]), m₃, VG.Proof.Bignum.word_writeW_self,
         w₂ 0 (by decide), w₁ 0 (by decide)]
-    · rw [m₄, VG.Proof.Bignum.word_writeW_self, o₃.word (by omega) (by omega),
+    · rw [m₄, VG.Proof.Bignum.word_writeW_self, o₃.word (by omega_using [o10]) (by omega_arith),
         w₂ 1 (by decide), w₁ 1 (by decide)]
   · exact ((OutW.ofY i₁.frame).trans (OutW.ofS f₂)).trans ((OutW.ofV f₄).trans (OutW.ofY f₅))
   · rw [g₅ r r1 r2 r3 r4 r5 r6 r7 r8 r9, k₄.gpr (by simp [r1]), k₃.gpr (by simp [r1]), g₂ r r1 r2 r3 r5]

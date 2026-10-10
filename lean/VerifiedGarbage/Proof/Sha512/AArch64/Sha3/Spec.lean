@@ -96,6 +96,9 @@ theorem cd_eq (v : HashValue) (k0 w0 k1 w1 : Word) :
 theorem gh_eq (v : HashValue) (k0 w0 k1 w1 : Word) :
     gh (roundKW (roundKW v k0 w0) k1 w1) = ef v := rfl
 
+theorem add_swap4 (a x y b : Word) : a + x + y + b = y + b + x + a := by
+  ac_rfl
+
 theorem schedule_eq (M : Block) (i : Nat) :
     sha512Su1 (sha512Su0 (pair M i) (pair M (i + 1))) (pair M (i + 7))
       (ofVDwords (W M (2 * (i + 4) + 1)) (W M (2 * (i + 5)))) = pair M (i + 8) := by
@@ -110,7 +113,8 @@ theorem schedule_eq (M : Block) (i : Nat) :
     show 2 * (i + 8) + 1 - 2 = 2 * (i + 7) + 1 by omega,
     show 2 * (i + 8) + 1 - 7 = 2 * (i + 5) by omega,
     show 2 * (i + 8) + 1 - 15 = 2 * (i + 1) by omega,
-    show 2 * (i + 8) + 1 - 16 = 2 * i + 1 by omega, ssig0, ssig1, add_ac]
+    show 2 * (i + 8) + 1 - 16 = 2 * i + 1 by omega, ssig0, ssig1]
+  rw [add_swap4 (W M (2 * i)), add_swap4 (W M (2 * i + 1))]
 
 theorem add_ab (v H : HashValue) :
     VArr.d2.map2 (fun _ x y => x + y) (ab v) (ab H) = ab (Vector.zipWith (· + ·) v H) := by

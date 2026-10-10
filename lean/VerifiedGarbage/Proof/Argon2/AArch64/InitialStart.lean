@@ -390,11 +390,9 @@ theorem headerBytes_keeps {s t : State} (h : Space s) (k : Keeps s t) :
   exact List.map_congr_left fun j _ => congrArg Spec.Blake2.wordBytes (headerValue_keeps h k j)
 
 theorem headerBytes_length (s : State) : (headerBytes s).length = 24 := by
-  unfold headerBytes
-  change (Spec.Blake2.wordBytes (headerValue s 0) ++ Spec.Blake2.wordBytes (headerValue s 1) ++
-    Spec.Blake2.wordBytes (headerValue s 2) ++ Spec.Blake2.wordBytes (headerValue s 3) ++
-    Spec.Blake2.wordBytes (headerValue s 4) ++ Spec.Blake2.wordBytes (headerValue s 5)).length = 24
-  simp only [Spec.Blake2.wordBytes, List.length_append, List.length_map, List.length_range]
+  simp only [headerBytes, List.length_flatMap, Spec.Blake2.wordBytes, List.length_map,
+    List.length_range]
+  decide
 
 theorem digestLength_ok (s : State) :
     WP isa (.block [Impl.Argon2.AArch64.Instructions.imm .x1 64].flatten) s fun t =>

@@ -27,11 +27,11 @@ def ev (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (p : Nat) : Nat
 
 theorem nib_hi {m : Mem} {B : Addr} {p b : Nat} (hb : b < 256)
     (h : word m B (l.D * p + l.oV) = BitVec.ofNat 64 (b * 2 ^ 56)) : nib l m B p = b / 16 := by
-  unfold nib; rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+  unfold nib; rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hb])]; omega_using []
 
 theorem nib_lo {m : Mem} {B : Addr} {p b : Nat} (hb : b < 256)
     (h : word m B (l.D * p + l.oV) = BitVec.ofNat 64 (b % 16 * 2 ^ 60 + b / 16)) : nib l m B p = b % 16 := by
-  unfold nib; rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega
+  unfold nib; rw [h, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hb])]; omega_using [hb]
 
 /-- The byte `i` of prime `p`'s exponent. -/
 abbrev ebyte (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (p i : Nat) : Nat := (m (off B (l.D * p + l.oE + i))).toNat
@@ -44,15 +44,15 @@ theorem ldV_ok {s : State} {B : Addr} {p i : Nat} (hp : p < 2) (hi : i < l.E)
       s'.mem = s.mem.writeW (off B (l.D * p + l.oV)) (BitVec.ofNat 64 (ebyte l s.mem B p i * 2 ^ 56)) ∧
       VG.Proof.MlKem.X86_64.Keep [.rax] s s' ∧ s'.mxcsr = s.mxcsr := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega
+  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
   have e : B + BitVec.ofNat 64 i + BitVec.ofNat 64 (l.D * p + l.oE) = off B (l.D * p + l.oE + i) := by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_comm i]
   have hld : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 i + BitVec.ofNat 64 (l.D * p + l.oE)) 1 := by
     rw [e]
-    obtain ⟨r, h, c⟩ := hs.region (d := l.D * p + l.oE + i) (n := 1) (by omega) (by decide)
+    obtain ⟨r, h, c⟩ := hs.region (d := l.D * p + l.oE + i) (n := 1) (by omega_using [hi, o6, o10, hDp]) (by decide)
     exact ⟨r, List.mem_append_right _ h, c⟩
   have hst : InRegions s.wr (B + BitVec.ofNat 64 (l.D * p + l.oV)) 8 :=
-    let ⟨_, h, c⟩ := hs.region (d := l.D * p + l.oV) (n := 8) (by omega) (by decide); ⟨_, h, c⟩
+    let ⟨_, h, c⟩ := hs.region (d := l.D * p + l.oV) (n := 8) (by omega_using [o8, o10, hDp]) (by decide); ⟨_, h, c⟩
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rax] (Q := fun s' =>
     s'.mem = s.mem.writeW (off B (l.D * p + l.oV)) (BitVec.ofNat 64 (ebyte l s.mem B p i * 2 ^ 56)) ∧
       s'.mxcsr = s.mxcsr) (by
@@ -88,21 +88,21 @@ theorem winStep_ok (hl : LayOk l) {t₀ t : State} {B : Addr} {M k x : Nat → N
   have r14₁ : t₁.gpr .r14 = BitVec.ofNat 64 (2 - j) := by
     rw [g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide)]; exact h.r14
-  refine WP.mono (r14Dec_ok (n := 2 - j) (by omega) (by omega) r14₁) fun t₂ ⟨r14₂, z₂, k₂, me₂, x₂⟩ =>
-    ⟨⟨by rw [r14₂, show 2 - j - 1 = 2 - (j + 1) by omega], ?_, fun hj' p hp => ?_,
+  refine WP.mono (r14Dec_ok (n := 2 - j) (by omega_using [hj]) (by omega_using []) r14₁) fun t₂ ⟨r14₂, z₂, k₂, me₂, x₂⟩ =>
+    ⟨⟨by rw [r14₂, show 2 - j - 1 = 2 - (j + 1) by omega_arith], ?_, fun hj' p hp => ?_,
       by rw [me₂]; exact h.frame.trans f₁,
       fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 => ?_, by rw [k₂.2.1, rd₁, h.rd], by rw [k₂.2.2, wr₁, h.wr],
-      by rw [x₂, x₁, h.mxcsr]⟩, by rw [z₂]; congr 1; exact decide_eq_decide.mpr (by omega)⟩
+      by rw [x₂, x₁, h.mxcsr]⟩, by rw [z₂]; congr 1; exact decide_eq_decide.mpr (by omega_using [hj])⟩
   · rw [me₂]
     refine ⟨st₁.ar, st₁.tab, st₁.y, fun hq p hp => ?_⟩
     rw [st₁.yv hq p hp, win_exp (hbs p hp) hj _ ?_]
     have hv := h.v hj p hp
     unfold vj at hv
-    rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl
+    rcases (show j = 0 ∨ j = 1 by omega_using [hj]) with rfl | rfl
     · rw [nib_hi (hbs p hp) hv]; rfl
     · rw [nib_lo (hbs p hp) hv]; rfl
   · rw [me₂, v₁ p hp, h.v hj p hp]
-    rcases (show j = 0 by omega) with rfl
+    rcases (show j = 0 by omega_using [hj']) with rfl
     unfold vj
     simp only [ite_true]
     exact ror60_v _ (hbs p hp)
@@ -119,22 +119,22 @@ theorem winLoop_ok (hl : LayOk l) {t₀ : State} {B : Addr} {M k x : Nat → Nat
     (fun n t => 1 ≤ n ∧ n ≤ 2 ∧ WinInv l t₀ B M k x Q E bs (2 - n) t) ?_ 2 t
     ⟨by decide, Nat.le_refl _, by rw [Nat.sub_self]; exact h⟩
   intro n t ⟨h1, h2, hI⟩
-  refine WP.mono (winStep_ok hl (by omega) hbs hB hs hR hI) fun t' ⟨hI', hz⟩ => ?_
+  refine WP.mono (winStep_ok hl (by omega_using [h1]) hbs hB hs hR hI) fun t' ⟨hI', hz⟩ => ?_
   simp only [eval, hz, Option.map_some]
   rcases Nat.eq_or_lt_of_le h1 with rfl | hn
   · exact .inl ⟨by simp, hI'⟩
-  · refine .inr ⟨by simp only [decide_eq_false (show ¬ (2 - n + 1 = 2) by omega), Bool.not_false], n - 1,
-      by omega, by omega, by omega, by rw [show 2 - (n - 1) = 2 - n + 1 by omega]; exact hI'⟩
+  · refine .inr ⟨by simp only [decide_eq_false (show ¬ (2 - n + 1 = 2) by omega_using [hn]), Bool.not_false], n - 1,
+      by omega_using [hn], by omega_using [hn], by omega_using [h2], by rw [show 2 - (n - 1) = 2 - n + 1 by omega_using [h2, hn]]; exact hI'⟩
 
 /-- The exponents' bytes outside `Y`, `S` and `V`. -/
 theorem OutW.byte (hl : LayOk l) {B : Addr} {m m' : Mem} (h : OutW l B m m') {p i : Nat} (hp : p < 2)
     (hi : i < l.E) : m' (off B (l.D * p + l.oE + i)) = m (off B (l.D * p + l.oE + i)) := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   have hD := hl.D_bounds
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega
+  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
   refine h _ fun p' hp' => ?_
-  rw [ofs_off0 B (by omega)]
-  rcases D_mul (l := l) hp with h1 | h1 <;> rcases D_mul (l := l) hp' with h2 | h2 <;> omega
+  rw [ofs_off0 B (by omega_using [hi, o6, o10, hD, hDp])]
+  rcases D_mul (l := l) hp with h1 | h1 <;> rcases D_mul (l := l) hp' with h2 | h2 <;> omega_using [hi, o2, o4, o6, o8, h1, h2, o10]
 
 /-- The next byte, `ZF` after the last. -/
 theorem r13Inc_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i < l.E) (h13 : s.gpr .r13 = BitVec.ofNat 64 i) :
@@ -143,22 +143,23 @@ theorem r13Inc_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i < l.E) (h13 : s.g
       VG.Proof.MlKem.X86_64.Keep [.r13] s s' ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr := by
   have hE : l.E < 2 ^ 31 := by
     obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-    have := hl.D_bounds; omega
+    have := hl.D_bounds; omega_arith
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r13] (Q := fun s' =>
     s'.gpr .r13 = BitVec.ofNat 64 (i + 1) ∧ s'.zf = some (decide (i + 1 = l.E)) ∧ s'.mem = s.mem ∧
       s'.mxcsr = s.mxcsr) (by
     xrun [h13, se_ofNat hE, ofNat_add_one]
     and_intros
-    · rw [ofNat_sub_beq (by omega) (by omega)]
+    · rw [ofNat_sub_beq (by omega_using [hi, hE]) (by omega_using [hE])]
     all_goals rfl) rfl)
     fun s' ⟨⟨a, b, c, d⟩, k⟩ => ⟨a, b, k, c, d⟩
 
 theorem ExpSt.of_outV (hl : LayOk l) {m m' : Mem} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E : Nat → Nat}
     (h : ExpSt l m B M k x Q E) (f : Out2 l B l.oV 8 m m') : ExpSt l m' B M k x Q E := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  exact ⟨h.ar.of_out2 hl f (by omega) (by omega), h.tab_of hl f (.inr (by omega)) (by omega),
-    fun p hp => (h.y p hp).of_out2 hl hp f (.inl (by omega)) (by omega) (by omega),
-    fun hq p hp => by rw [f.val hl hp (.inl (by omega)) (by omega) (by omega)]; exact h.yv hq p hp⟩
+  exact ⟨h.ar.of_out2 hl f (by omega_using [o2, o8]) (by omega_using [o8, o10]),
+      h.tab_of hl f (.inr (by omega_using [o5, o8])) (by omega_using [o8, o10]),
+    fun p hp => (h.y p hp).of_out2 hl hp f (.inl (by omega_using [o2, o8])) (by omega_using [o2, o10]) (by omega_using [o8, o10]),
+    fun hq p hp => by rw [f.val hl hp (.inl (by omega_using [o2, o8])) (by omega_using [o2, o10]) (by omega_using [o8, o10])]; exact h.yv hq p hp⟩
 
 theorem ExpSt.congrE {m : Mem} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E E' : Nat → Nat}
     (h : ExpSt l m B M k x Q E) (e : ∀ p < 2, E p = E' p) : ExpSt l m B M k x Q E' :=
@@ -209,8 +210,8 @@ theorem byteIter_ok (hl : LayOk l) {t₀ t : State} {B : Addr} {M k x : Nat → 
   refine WP.mono (ldV_ok (p := 0) (by decide) hi hBt h.r13 hst) fun t₁ ⟨m₁, k₁, x₁⟩ => ?_
   refine WP.mono (ldV_ok (p := 1) (by decide) hi (by rw [k₁.gpr (by decide)]; exact hBt)
     (by rw [k₁.gpr (by decide)]; exact h.r13) (hst.congr k₁.2.2)) fun t₂ ⟨m₂, k₂, x₂⟩ => ?_
-  have o₁ : Outside B (l.D * 0 + l.oV) 8 t.mem t₁.mem := by rw [m₁]; exact writeW_outside _ B _ (by omega)
-  have o₂ : Outside B (l.D * 1 + l.oV) 8 t₁.mem t₂.mem := by rw [m₂]; exact writeW_outside _ B _ (by omega)
+  have o₁ : Outside B (l.D * 0 + l.oV) 8 t.mem t₁.mem := by rw [m₁]; exact writeW_outside _ B _ (by omega_using [o8, o10, hn])
+  have o₂ : Outside B (l.D * 1 + l.oV) 8 t₁.mem t₂.mem := by rw [m₂]; exact writeW_outside _ B _ (by omega_using [o8, o10, hn])
   have fV : Out2 l B l.oV 8 t.mem t₂.mem :=
     (Out2.of_outside (p := 0) (by decide) o₁).trans (Out2.of_outside (p := 1) (by decide) o₂)
   let bs : Nat → Nat := fun p => ebyte l t₀.mem B p i
@@ -219,7 +220,7 @@ theorem byteIter_ok (hl : LayOk l) {t₀ t : State} {B : Addr} {M k x : Nat → 
     show (t.mem _).toNat = (t₀.mem _).toNat; rw [h.frame.byte hl (by decide) hi]
   have b1 : ebyte l t₁.mem B 1 i = bs 1 := by
     show (t₁.mem _).toNat = (t₀.mem _).toNat
-    rw [o₁ _ (by rw [ofs_off0 B (by omega)]; omega), h.frame.byte hl (by decide) hi]
+    rw [o₁ _ (by rw [ofs_off0 B (by omega_using [hi, o6, o10, hn])]; omega_using [o8, o10]), h.frame.byte hl (by decide) hi]
   rw [b0] at m₁
   rw [b1] at m₂
   refine WP.seq ?_
@@ -239,11 +240,11 @@ theorem byteIter_ok (hl : LayOk l) {t₀ t : State} {B : Addr} {M k x : Nat → 
     · rw [mu]
       exact (h.st.of_outV hl fV).congrE fun p hp => by
         have := hbs p hp
-        simp only [Nat.pow_zero, Nat.mul_one, Nat.sub_zero]; omega
+        simp only [Nat.pow_zero, Nat.mul_one, Nat.sub_zero]; omega_using [this]
     · rw [mu]
       show _ = BitVec.ofNat 64 (bs p * 2 ^ 56)
-      rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl
-      · rw [o₂.word (by omega) (by omega), m₁, VG.Proof.Bignum.word_writeW_self]
+      rcases (by omega_using [hp] : p = 0 ∨ p = 1) with rfl | rfl
+      · rw [o₂.word (by omega_using [o10]) (by omega_using [o8, o10, hn]), m₁, VG.Proof.Bignum.word_writeW_self]
       · rw [m₂, VG.Proof.Bignum.word_writeW_self]
   refine WP.seq (WP.mono (winLoop_ok hl hbs hBu hsu hR i₀) fun t₃ w₃ => ?_)
   have r13₃ : t₃.gpr .r13 = BitVec.ofNat 64 i := by
@@ -270,20 +271,20 @@ theorem byteLoop_ok (hl : LayOk l) {t₀ : State} {B : Addr} {M k x : Nat → Na
   refine WP.loop (M := isa) (c := .ne) (Q := ByteInv l t₀ B M k x Q l.E)
     (fun n t => 1 ≤ n ∧ n ≤ l.E ∧ ByteInv l t₀ B M k x Q (l.E - n) t) ?_ n t ⟨h1, hE, hI⟩
   intro n t ⟨h1, hE, hI⟩
-  refine WP.mono (byteIter_ok hl (i := l.E - n) (by omega) hB hs hR hI) fun t' ⟨hI', hz⟩ => ?_
+  refine WP.mono (byteIter_ok hl (i := l.E - n) (by omega_using [h1, hE]) hB hs hR hI) fun t' ⟨hI', hz⟩ => ?_
   simp only [eval, hz, Option.map_some]
   rcases Nat.eq_or_lt_of_le h1 with rfl | hn
-  · exact .inl ⟨by simp only [show l.E - 1 + 1 = l.E by omega, decide_true, Bool.not_true], by
-      rw [show l.E - 1 + 1 = l.E by omega] at hI'; exact hI'⟩
-  · refine .inr ⟨by simp only [decide_eq_false (show ¬ (l.E - n + 1 = l.E) by omega), Bool.not_false], n - 1,
-      by omega, by omega, by omega, by rw [show l.E - (n - 1) = l.E - n + 1 by omega]; exact hI'⟩
+  · exact .inl ⟨by simp only [show l.E - 1 + 1 = l.E by omega_using [hE], decide_true, Bool.not_true], by
+      rw [show l.E - 1 + 1 = l.E by omega_using [hE]] at hI'; exact hI'⟩
+  · refine .inr ⟨by simp only [decide_eq_false (show ¬ (l.E - n + 1 = l.E) by omega_using [hE, hn]), Bool.not_false], n - 1,
+      by omega_using [hn], by omega_using [hn], by omega_using [hE], by rw [show l.E - (n - 1) = l.E - n + 1 by omega_using [hE, hn]]; exact hI'⟩
 
 theorem ev_congr {m m' : Mem} {B : Addr} {p : Nat} :
     ∀ n, (∀ i < n, m' (off B (l.D * p + l.oE + i)) = m (off B (l.D * p + l.oE + i))) →
       ev l m' B p n = ev l m B p n
   | 0, _ => rfl
   | n + 1, h => by
-    simp only [ev]; rw [ev_congr n fun i hi => h i (by omega), h n (by omega)]
+    simp only [ev]; rw [ev_congr n fun i hi => h i (by omega_using [hi]), h n (by omega_using [])]
 
 /-- `m'` agrees with `m` but on `Y`, `S`, `V` and the table of each region. -/
 def OutE (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (B : Addr) (m m' : Mem) : Prop :=
@@ -332,18 +333,19 @@ theorem expLoop_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {
   have hsu : Scr u B (2 * l.D) := hs.congr (by rw [wru, t₁.wr])
   have st₀ : ExpSt l u.mem B M k x Q (fun p => ev l u.mem B p (l.E - l.E)) := by
     rw [mu, Nat.sub_self]
-    refine ⟨t₁.ar, t₁.tab, fun p hp => (gy p hp).of_out2 hl hp t₁.frame (.inl (by omega)) (by omega) (by omega),
+    refine ⟨t₁.ar, t₁.tab, fun p hp => (gy p hp).of_out2 hl hp t₁.frame (.inl (by omega_using [o2, o5]))
+        (by omega_using [o2, o10]) (by omega_using [o5, o10]),
       fun hq p hp => ?_⟩
-    rw [t₁.frame.val hl hp (.inl (by omega)) (by omega) (by omega)]
+    rw [t₁.frame.val hl hp (.inl (by omega_using [o2, o5])) (by omega_using [o2, o10]) (by omega_using [o5, o10])]
     exact vy hq p hp
   refine WP.mono (byteLoop_ok hl hBu hsu hR l.E u (E_pos hl) (Nat.le_refl _)
     ⟨by rw [Nat.sub_self]; exact r13u, st₀, OutW.refl _ _, fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl, rfl, rfl, rfl⟩) fun s' b' => ?_
   have hev : ∀ p < 2, ev l u.mem B p l.E = ev l s.mem B p l.E := fun p hp => by
     rw [mu]
     refine ev_congr l.E fun i hi => t₁.frame _ fun p' hp' => ?_
-    have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega
-    rw [ofs_off0 B (by have := hs.nowrap; omega)]
-    rcases D_mul (l := l) hp with h1 | h1 <;> rcases D_mul (l := l) hp' with h2 | h2 <;> omega
+    have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
+    rw [ofs_off0 B (by have := hs.nowrap; omega_using [o6, o10, hi, hDp, this])]
+    rcases D_mul (l := l) hp with h1 | h1 <;> rcases D_mul (l := l) hp' with h2 | h2 <;> omega_using [o5, o6, h2, o10, hi, h1]
   refine ⟨b'.st.congrE hev, ?_, fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 => ?_, ?_, ?_, ?_⟩
   · exact (OutE.ofT t₁.frame).trans (mu ▸ OutE.ofW b'.frame)
   · rw [b'.gpr r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12, gu r r10]

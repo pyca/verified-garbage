@@ -33,6 +33,17 @@ theorem sqrBound {k m : Nat} (hk : 0 < k ∧ k < 64)
   generalize 2 ^ k = K at hm h1 h2
   omega_arith
 
+/-- `shl x, k` and `shr x, 64 - k` (into another register): the low and high
+words of `x 2ᵏ`. -/
+theorem shlShr_arith (x : BitVec 64) {k : Nat} (hk : 0 < k ∧ k < 64) :
+    (x <<< k).toNat + 2 ^ 64 * (x >>> (64 - k)).toNat = x.toNat * 2 ^ k := by
+  rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
+  have h64 : 2 ^ 64 = 2 ^ (64 - k) * 2 ^ k := by rw [← Nat.pow_add]; congr 1; omega
+  have hd : x.toNat * 2 ^ k / 2 ^ 64 = x.toNat / 2 ^ (64 - k) := by
+    rw [h64, Nat.mul_div_mul_right _ _ (Nat.two_pow_pos k)]
+  rw [← hd]
+  exact Nat.mod_add_div _ _
+
 /-- A round of the reduction (`redRoundX`): the window `t, w₁, w₂, w₃` of value
 `W` becomes `w₁, w₂, w₃, t` of value `(W + t m) / 2⁶⁴`, for any `W`, as
 `m < 2²⁵⁶`. -/
@@ -41,7 +52,7 @@ theorem redRoundX_ok (s : State) {t w1 w2 w3 : Reg} {k m : Nat} (hk : 0 < k ∧ 
     WP isa (.block (redRoundX k t w1 w2 w3)) s fun s' =>
       2 ^ 64 * regsVal s' [w1, w2, w3, t] = regsVal s [t, w1, w2, w3] + (s.gpr t).toNat * m ∧
         Keeps [.rax, .rcx, .rdx, .rbp, t, w1, w2, w3] s s' := by
-  obtain ⟨ht, ta, tc, -, tb, -⟩ := hf.head
+  obtain ⟨ht, ta, tc, td, tb, -⟩ := hf.head
   obtain ⟨h1, a1, c1, d1, b1, -⟩ := hf.tail.head
   obtain ⟨h2, a2, c2, d2, b2, -⟩ := hf.tail.tail.head
   obtain ⟨-, a3, c3, d3, b3, -⟩ := hf.tail.tail.tail.head
@@ -50,25 +61,25 @@ theorem redRoundX_ok (s : State) {t w1 w2 w3 : Reg} {k m : Nat} (hk : 0 < k ∧ 
   obtain ⟨n12, n13⟩ := h1
   have hm256 := sqrBound hk hm
   apply WP.of_runBlock
-  simp only [redRoundX, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execMulx, readSrc,
+  have hs1 : 1 ≤ k ∧ k ≤ 63 := ⟨hk.1, by omega⟩
+  have hs2 : 1 ≤ 64 - k ∧ 64 - k ≤ 63 := ⟨by omega, by omega⟩
+  simp only [redRoundX, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execMulx, execShift, readSrc,
+    ite_eq_left_of_eq_true _ _ (eq_true hs1), ite_eq_left_of_eq_true _ _ (eq_true hs2), td, ta,
     Option.bind_some, Option.map_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags,
-    RegUpd.cf_setReg, ↓reduceIte, reduceCtorEq, a1, c1, d1, b1, a2, c2, d2, b2, a3, c3, d3, b3, t1, t2,
+    RegUpd.gpr_setFlags, RegUpd.cf_setReg, ↓reduceIte, reduceCtorEq, a1, c1, d1, b1, a2, c2, d2, b2, a3, c3, d3, b3, t1, t2,
     t3, n12, n13, h2, Ne.symm ta, Ne.symm tc, Ne.symm tb, Ne.symm c1, Ne.symm b1, Ne.symm c2, Ne.symm t1,
     Ne.symm t2, Ne.symm t3, Ne.symm n12, Ne.symm n13, Ne.symm h2,
     Option.some.injEq, exists_eq_left', se0, regsVal]
   refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · have hK : 2 ^ k < 2 ^ 64 := Nat.pow_lt_pow_right (by decide) hk.2
     have hK1 : 2 ^ 1 ≤ 2 ^ k := Nat.pow_le_pow_right (by decide) hk.1
-    have hA : (BitVec.ofNat 64 (2 ^ k)).toNat = 2 ^ k := by
-      rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hK
     have hC : (BitVec.ofNat 64 (2 ^ 64 - 2 ^ k + 1)).toNat = 2 ^ 64 - 2 ^ k + 1 := by
       rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
-    have p1 := mulx_arith (s.gpr t) (BitVec.ofNat 64 (2 ^ k))
+    have p1 := shlShr_arith (s.gpr t) hk
     have p2 := mulx_arith (s.gpr t) (BitVec.ofNat 64 (2 ^ 64 - 2 ^ k + 1))
-    rw [hA] at p1 ⊢
     rw [hC] at p2 ⊢
-    generalize BitVec.ofNat 64 ((s.gpr t).toNat * 2 ^ k) = l₁ at p1 ⊢
-    generalize BitVec.ofNat 64 ((s.gpr t).toNat * 2 ^ k / 2 ^ 64) = h₁ at p1 ⊢
+    generalize s.gpr t <<< k = l₁ at p1 ⊢
+    generalize s.gpr t >>> (64 - k) = h₁ at p1 ⊢
     generalize BitVec.ofNat 64 ((s.gpr t).toNat * (2 ^ 64 - 2 ^ k + 1)) = l₂ at p2 ⊢
     generalize BitVec.ofNat 64 ((s.gpr t).toNat * (2 ^ 64 - 2 ^ k + 1) / 2 ^ 64) = h₂ at p2 ⊢
     have e1 := add_carry (s.gpr w1) l₁
@@ -97,7 +108,8 @@ theorem redRoundX_ok (s : State) {t w1 w2 w3 : Reg} {k m : Nat} (hk : 0 < k ∧ 
     omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨ra, rc, rd, rb, rt, r1, r2, r3⟩ := hr
-    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, ra, rc, rd, rb, rt, r1, r2, r3, ite_false]
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, ra, rc, rd, rb, rt, r1, r2, r3,
+      ite_false]
 
 /-- The high half added to the reduced low half: `r12–r15` and the carry in
 `r8` are `r12–r15 + r8–r11`. -/

@@ -120,7 +120,7 @@ theorem mul_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State
   rw [Nat.add_zero] at hA
   have hS := h.polyS (j := 0) (by omega)
   refine WP.mono (mulAt_ok (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (sc_ok _ (by simp only [oP]; omega))
-    (by lay) (by lay) (by lay) hP.mul S₀ hA.1 hS.1) fun s' ⟨hP', hx, hb⟩ => ?_
+    (by layd) (by layd) (by layd) hP.mul S₀ hA.1 hS.1) fun s' ⟨hP', hx, hb⟩ => ?_
   have hP'' : PPostB s s' [(tP p, 1024)] := hP'.b
   refine ⟨h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_t hF hi), ?_⟩
   rw [tIs, hP''.pa (p := tP p) rbx_bases, Proof.MlDsa.KeyGen.dotK_one, ← hA.2, ← hS.2]
@@ -138,7 +138,7 @@ theorem mulAdd_ok {j : Nat} (hj : j < p.ℓ) {A : Nat → Poly} {S : Nat → IPo
   have hA := h.polyA hi hj
   have hS := h.polyS hj
   refine WP.mono (mulAddAt_ok (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (sc_ok _ (by simp only [oP]; omega))
-    (by lay) (by lay) (by lay) hP.mulAdd S₀ ht.1 hA.1 hS.1) fun s' ⟨hP', hx, hb⟩ => ?_
+    (by layd) (by layd) (by layd) hP.mulAdd S₀ ht.1 hA.1 hS.1) fun s' ⟨hP', hx, hb⟩ => ?_
   have hP'' : PPostB s s' [(tP p, 1024)] := hP'.b
   refine ⟨h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_t hF hi), ?_⟩
   rw [tIs, hP''.pa (p := tP p) rbx_bases, Proof.MlDsa.KeyGen.dotK_succ, encode_add, ← hA.2, ← hS.2, ← ht.2]
@@ -153,7 +153,7 @@ theorem inv_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State
   dsimp only [tIs] at ht
   have S₀ := h.kc.site hF hp
   unfold invNttAt
-  refine WP.mono (ipAt_ok (t := inverse P.montgomery) (f := tP p) (tP_ok hF) (by lay) (by lay) (by lay) hP.invNtt S₀ ht.1)
+  refine WP.mono (ipAt_ok (t := inverse P.montgomery) (f := tP p) (tP_ok hF) (by layd) (by layd) (by layd) hP.invNtt S₀ ht.1)
     fun s' ⟨hP', hx, hb⟩ => ?_
   have hP'' : PPostB s s' [(tP p, 1024), (sc VG.Impl.MlKem.X86_64.oSS, 1024)] := hP'.b
   refine ⟨h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_inv hF hi), ?_⟩
@@ -170,7 +170,7 @@ theorem addS2_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : Sta
   dsimp only [tIs] at ht
   have S₀ := h.kc.site hF hp
   have hS := h.s2 i hi
-  refine WP.mono (addAt_ok (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (by lay) (by lay) hP.add S₀ ht.1 hS.1)
+  refine WP.mono (addAt_ok (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (by layd) (by layd) hP.add S₀ ht.1 hS.1)
     fun s' ⟨hP', hx, hb⟩ => ?_
   have hP'' : PPostB s s' [(tP p, 1024)] := hP'.b
   refine ⟨h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_t hF hi), ?_⟩
@@ -186,7 +186,7 @@ theorem p2r_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   dsimp only [tIs] at ht
   have S₀ := h.kc.site hF hp
-  refine WP.mono (p2rAt_ok (tP_ok hF) (tP1_ok hF) (tP0_ok hF) (by lay) (by lay) (by lay) (by lay) (by lay)
+  refine WP.mono (p2rAt_ok (tP_ok hF) (tP1_ok hF) (tP0_ok hF) (by layd) (by layd) (by layd) (by layd) (by layd)
     hP.power2Round S₀ ht.1) fun s' ⟨hP', hx, h1, h0⟩ => ?_
   have hP'' : PPostB s s' [(t1P p, 1024), (t0P p, 1024)] := hP'.b
   refine ⟨h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_p2r hF hi), ?_, ?_⟩
@@ -205,7 +205,7 @@ theorem sbp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State
   have S₀ := h.kc.site hF hp
   have L := S₀.lay
   refine WP.mono (sbpAt_ok (by decide) (by decide) (tP1_ok hF)
-    ⟨by omega, show Reg.r12 ∉ MlKem.X86_64.argRegs by decide⟩ (by lay [hF.pk]) (by lay [hF.pk]) hP.simpleBitPack S₀
+    ⟨by omega, show Reg.r12 ∉ MlKem.X86_64.argRegs by decide⟩ (by layd) (by layd) hP.simpleBitPack S₀
     fun j hj => ?_) fun s' ⟨hP', hx, hb⟩ => ?_
   · rw [show (coeffAt s.mem (pa s (t1P p)) j).toNat = (t1K p A S i)[j]'hj from by
       rw [← h1]; simp only [Spec.MlDsa.natPolyAt, Vector.getElem_ofFn]]
@@ -214,7 +214,7 @@ theorem sbp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State
     omega
   · have hP'' : PPostB s s' [((.r12, 32 + 320 * i), 320)] := hP'.b
     refine ⟨h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_sbp hF hi),
-      polyIs_frame' L hP'' (by lay [hF.pk]) h0, ?_⟩
+      polyIs_frame' L hP'' (by layd) h0, ?_⟩
     rw [hP''.pa (p := (.r12, 32 + 320 * i)) (show Reg.r12 ∈ bases by decide), hb, h1]
 
 /-- `t₀[i]` to `sk`. -/
@@ -230,15 +230,15 @@ theorem bp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
   have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
   refine WP.mono (bpAt_ok (by decide) (by decide) (tP0_ok hF)
     ⟨by rcases hlen with hl | hl <;> simp only [oT0, hl] <;> omega,
-      show Reg.r13 ∉ MlKem.X86_64.argRegs by decide⟩ (by lay [hF.pk, hF.sk])
-    (by lay [hF.pk, hF.sk]) hP.bitPack S₀ (packIn_t0 h0)) fun s' ⟨hP', hx, hb⟩ => ?_
+      show Reg.r13 ∉ MlKem.X86_64.argRegs by decide⟩ (by layd)
+    (by layd) hP.bitPack S₀ (packIn_t0 h0)) fun s' ⟨hP', hx, hb⟩ => ?_
   have hP'' : PPostB s s' [((.r13, oT0 p + 416 * i), 416)] := hP'.b
   have hk' := h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_bp hF hi)
   refine ⟨hk'.kc, hk'.r15, hk'.good, hk'.small, hk'.aS, hk'.s2, hk'.s1, hk'.pk0, hk'.sk0, hk'.sk1, hk'.packs,
     fun i' hi' => ?_⟩
   rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
   · exact hk'.rows i' hi'
-  · refine ⟨by rw [L.keepBytes hP'' (by lay [hF.pk, hF.sk])]; exact h1, ?_⟩
+  · refine ⟨by rw [L.keepBytes hP'' (by layd)]; exact h1, ?_⟩
     rw [hP''.pa (p := (.r13, oT0 p + 416 * i')) (show Reg.r13 ∈ bases by decide), hb, h0.2, modPm_t0]
     rfl
 
@@ -275,8 +275,8 @@ theorem mul_piece : Piece p (KRx p (p.ℓ + p.k) p.ℓ i) (RowI p i (tIs p fun A
       rw [Nat.add_zero] at a₁ a₂
       exact ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, ⟨a₁.1, (h₁.polyS (j := 0) (by omega)).1⟩,
         ⟨a₂.1, (h₂.polyS (j := 0) (by omega)).1⟩⟩
-  exact mulAt_tr (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (sc_ok _ (by simp only [oP]; omega)) (by lay) (by lay)
-    (by lay) hP.mul (show Reg.rbx ∈ kgRegs by decide) (show Reg.rbx ∈ kgRegs by decide)
+  exact mulAt_tr (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (sc_ok _ (by simp only [oP]; omega)) (by layd) (by layd)
+    (by layd) hP.mul (show Reg.rbx ∈ kgRegs by decide) (show Reg.rbx ∈ kgRegs by decide)
     (show Reg.rbx ∈ kgRegs by decide)
 
 theorem mulAdd_piece {j : Nat} (hj : j < p.ℓ) :
@@ -291,8 +291,8 @@ theorem mulAdd_piece {j : Nat} (hj : j < p.ℓ) :
     fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩ =>
       ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, ⟨t₁.1, (h₁.polyA hi hj).1, (h₁.polyS hj).1⟩,
         ⟨t₂.1, (h₂.polyA hi hj).1, (h₂.polyS hj).1⟩⟩
-  exact mulAddAt_tr (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (sc_ok _ (by simp only [oP]; omega)) (by lay)
-    (by lay) (by lay) hP.mulAdd (show Reg.rbx ∈ kgRegs by decide) (show Reg.rbx ∈ kgRegs by decide)
+  exact mulAddAt_tr (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (sc_ok _ (by simp only [oP]; omega)) (by layd)
+    (by layd) (by layd) hP.mulAdd (show Reg.rbx ∈ kgRegs by decide) (show Reg.rbx ∈ kgRegs by decide)
     (show Reg.rbx ∈ kgRegs by decide)
 
 theorem inv_piece : Piece p (RowI p i (tIs p fun A S => encode P.montgomery (dotK p A S i p.ℓ)))
@@ -302,7 +302,7 @@ theorem inv_piece : Piece p (RowI p i (tIs p fun A S => encode P.montgomery (dot
   refine rel_of (Q := fun x y => Two p x y ∧ Reduced x.mem (pa x (tP p)) ∧ Reduced y.mem (pa y (tP p))) ?_
     fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩ => ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, t₁.1, t₂.1⟩
   unfold invNttAt
-  exact ipAt_tr (tP_ok hF) (by lay) (by lay) (by lay) hP.invNtt (show Reg.rbx ∈ kgRegs by decide)
+  exact ipAt_tr (tP_ok hF) (by layd) (by layd) (by layd) hP.invNtt (show Reg.rbx ∈ kgRegs by decide)
 
 theorem addS2_piece : Piece p (RowI p i (tIs p fun A S => nttInv (dotK p A S i p.ℓ)))
     (RowI p i (tIs p fun A S => Proof.MlDsa.KeyGen.tK p A S i)) (addAt P.sfx P.add (tP p) (sP p (p.ℓ + i))) := by
@@ -312,7 +312,7 @@ theorem addS2_piece : Piece p (RowI p i (tIs p fun A S => nttInv (dotK p A S i p
     (Reduced y.mem (pa y (tP p)) ∧ Reduced y.mem (pa y (sP p (p.ℓ + i))))) ?_
     fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩ =>
       ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, ⟨t₁.1, (h₁.s2 i hi).1⟩, ⟨t₂.1, (h₂.s2 i hi).1⟩⟩
-  exact addAt_tr (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (by lay) (by lay) hP.add
+  exact addAt_tr (tP_ok hF) (sc_ok _ (by simp only [oP]; omega)) (by layd) (by layd) hP.add
     (show Reg.rbx ∈ kgRegs by decide) (show Reg.rbx ∈ kgRegs by decide)
 
 /-- After `Power2Round`. -/
@@ -326,7 +326,7 @@ theorem p2r_piece : Piece p (RowI p i (tIs p fun A S => Proof.MlDsa.KeyGen.tK p 
   refine ⟨fun _ _ hp ⟨A, S, R, h, ht⟩ => WP.mono (p2r_ok hP hF hp hi h ht) fun _ h => ⟨A, S, R, h.1, h.2⟩, ?_⟩
   refine rel_of (Q := fun x y => Two p x y ∧ Reduced x.mem (pa x (tP p)) ∧ Reduced y.mem (pa y (tP p))) ?_
     fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩ => ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, t₁.1, t₂.1⟩
-  exact p2rAt_tr (tP_ok hF) (tP1_ok hF) (tP0_ok hF) (by lay) (by lay) (by lay) (by lay) (by lay) hP.power2Round
+  exact p2rAt_tr (tP_ok hF) (tP1_ok hF) (tP0_ok hF) (by layd) (by layd) (by layd) (by layd) (by layd) hP.power2Round
     (show Reg.rbx ∈ kgRegs by decide) (show Reg.rbx ∈ kgRegs by decide) (show Reg.rbx ∈ kgRegs by decide)
 
 /-- After `t₁[i]` to `pk`. -/
@@ -343,7 +343,7 @@ theorem sbp_piece : Piece p (RowI p i (p2rIs p i)) (RowI p i (sbpIs p i))
     fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩ =>
       ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, t1_bound t₁.1, t1_bound t₂.1⟩
   exact sbpAt_tr (by decide) (by decide) (tP1_ok hF) ⟨by omega, show Reg.r12 ∉ MlKem.X86_64.argRegs by decide⟩
-    (by lay [hF.pk]) (by lay [hF.pk]) hP.simpleBitPack (show Reg.rbx ∈ kgRegs by decide)
+    (by layd) (by layd) hP.simpleBitPack (show Reg.rbx ∈ kgRegs by decide)
     (show Reg.r12 ∈ kgRegs by decide)
 
 theorem bp_piece : Piece p (RowI p i (sbpIs p i)) (KRx p (p.ℓ + p.k) p.ℓ (i + 1))
@@ -357,8 +357,8 @@ theorem bp_piece : Piece p (RowI p i (sbpIs p i)) (KRx p (p.ℓ + p.k) p.ℓ (i 
   have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
   exact bpAt_tr (by decide) (by decide) (tP0_ok hF)
     ⟨by rcases hlen with hl | hl <;> simp only [oT0, hl] <;> omega,
-      show Reg.r13 ∉ MlKem.X86_64.argRegs by decide⟩ (by lay [hF.pk, hF.sk])
-    (by lay [hF.pk, hF.sk]) hP.bitPack (show Reg.rbx ∈ kgRegs by decide) (show Reg.r13 ∈ kgRegs by decide)
+      show Reg.r13 ∉ MlKem.X86_64.argRegs by decide⟩ (by layd)
+    (by layd) hP.bitPack (show Reg.rbx ∈ kgRegs by decide) (show Reg.r13 ∈ kgRegs by decide)
 
 end
 

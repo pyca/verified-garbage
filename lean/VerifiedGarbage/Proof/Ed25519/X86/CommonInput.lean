@@ -7,6 +7,7 @@ structure InputPre (s₀ : State) (scidx i n : Nat) : Prop where
   rd : (sub (arg s₀ i) 0 (4 * n)) ∈ s₀.rd ++ s₀.wr
   fit : (arg s₀ i).toNat + 4 * n ≤ 2 ^ 32
   sep : (sub (arg s₀ i) 0 (4 * n)).Disjoint (scR 8192 (arg s₀ scidx))
+  stk : (sub (arg s₀ i) 0 (4 * n)).Disjoint (callStk s₀)
 
 theorem inputWord_contains {s₀ : State} {scidx i n : Nat} (hp : InputPre s₀ scidx i n)
     {k : Nat} (hk : k < n) : (sub (arg s₀ i) 0 (4 * n)).Contains (addr (arg s₀ i) (4 * k)) 4 :=
@@ -15,8 +16,11 @@ theorem inputWord_contains {s₀ : State} {scidx i n : Nat} (hp : InputPre s₀ 
 theorem inputWord_same {s₀ s : State} {scidx i n : Nat} (hp : InputPre s₀ scidx i n)
     (hs : Saved s₀ (arg s₀ scidx) s) {k : Nat} (hk : k < n) :
     wd s.mem (arg s₀ i) (4 * k) = wd s₀.mem (arg s₀ i) (4 * k) :=
-  hs.frame.readW (inputWord_contains hp hk)
-    (by simp only [List.mem_singleton]; rintro r rfl; exact hp.sep) (by decide)
+  hs.frame.readW (inputWord_contains hp hk) (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hp.sep
+    · exact hp.stk) (by decide)
 
 theorem loadInput_ok {s₀ s : State} {scidx argc i n dst : Nat}
     (hp : ScratchPre s₀ scidx argc) (hi : InputPre s₀ scidx i n)
@@ -27,7 +31,7 @@ theorem loadInput_ok {s₀ s : State} {scidx argc i n dst : Nat}
       (∀ k < n, wd t.mem (arg s₀ scidx) (dst + 4 * k) = wd s₀.mem (arg s₀ i) (4 * k)) ∧
       Frame [sub (arg s₀ scidx) dst (4 * n)] s.mem t.mem := by
   refine WP.block_append (WP.mono (loadArg_ok hp hs hia) fun u ⟨hu, eu, mu⟩ => ?_)
-  have cu := hu.ctx hp.fit hp.wr
+  have cu := hu.ctx hp.fit hp.wr hp.stk
   have hread : ∀ k < n, InRegions (u.rd ++ u.wr) (addr (arg s₀ i) (4 * k)) 4 := by
     intro k hk; refine ⟨_, ?_, inputWord_contains hi hk⟩
     rw [hu.rd, hu.wr]; exact hi.rd

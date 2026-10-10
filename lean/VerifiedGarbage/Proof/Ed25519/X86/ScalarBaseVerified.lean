@@ -55,21 +55,26 @@ theorem scalarBaseTail_ct (s₀ t₀ : State) (hs : BaseRegions s₀) (ht : Base
     (fun s t h => by
       have ht' := h.2.2.1.ctx
       rw [← hp.2.2.2.1] at ht'
-      refine ⟨h.1.2.1.ctx, ht', ?_, ?_⟩
+      refine ⟨h.1.2.1.ctx, ht', ?_, ?_, ?_⟩
       · rw [h.1.1.wr, h.2.1.wr, hs.2.1, ht.2.1, hp.2.1, hp.2.2.2.1]
+      · rw [h.1.1.esp, h.2.1.esp, hp.1]
       · rw [h.1.2.2.1, hp.2.2.2.1, h.2.2.2.1, hp.2.2.2.2]) (fun _ _ h => h)
   have mw (u s : State) (h : BaseCTReady u s) : WP isa combMultiply s (Saved u (arg u 2)) := by
     refine WP.mono (combMultiply_ok (S := baseScalar u) h.2.1.ctx.ctx (by simpa using h.2.1.bound)
-      (fun q hq => by rw [h.2.1.bits q (by omega), scalarBit_nat]) h.2.1.d h.2.2.1 h.2.2.2)
+      (fun q hq => by rw [h.2.1.bits q (by omega), scalarBit_nat]) h.2.1.d h.2.2.1 h.2.2.2.1 h.2.2.2.2)
       fun t ⟨_, kt⟩ => ?_
     exact h.1.mulkeep h.2.1.ctx.ctx.fit kt
   have mul := ctWithRuns mulct (fun s t h => ⟨mw s₀ s h.1, mw t₀ t h.2⟩)
-  have encct := pointEncode_ct.mono (P' := BaseSaved s₀ t₀)
-    (fun _ _ h => h.1.edi.trans (hp.2.2.2.1.trans h.2.edi.symm)) (fun _ _ h => h)
+  have encct := (pointEncode_ct (x := arg s₀ 2)).mono (P' := BaseSaved s₀ t₀)
+    (fun _ _ h => by
+      have ct := pointCTCtx_saved ht h.2
+      rw [← hp.2.2.2.1] at ct
+      exact ⟨pointCTCtx_saved hs h.1, ct, by rw [h.1.wr, h.2.wr, hs.2.1, ht.2.1, hp.2.1, hp.2.2.2.1],
+        by rw [h.1.esp, h.2.esp, hp.1]⟩) (fun _ _ h => h)
   have ew (u s : State) (hu : BaseRegions u) (h : Saved u (arg u 2) s) :
       WP isa pointEncode s (Saved u (arg u 2)) := by
     have pu := (scalarBase_pre hu).1
-    refine WP.mono (pointEncode_ok (h.ctx pu.fit pu.wr)) fun t ⟨kt, _⟩ => ?_
+    refine WP.mono (pointEncode_ok (h.ctx pu.fit pu.wr pu.stk)) fun t ⟨kt, _⟩ => ?_
     exact h.ikeep pu.fit kt
   have enc := ctWithRuns encct (fun s t h => ⟨ew s₀ s hs h.1, ew t₀ t ht h.2⟩)
   refine VG.RelCT.seq (mul.mono (fun _ _ h => h) (fun _ _ ⟨_, _, _, _, ha, hb⟩ => ⟨ha, hb⟩))
@@ -105,9 +110,9 @@ theorem scalarBaseBody_correct {s : State} (h : BodyPre s) :
   rw [scalarBaseBody]
   refine WP.seq (WP.mono (scalarBaseStart_ok h) fun c ⟨hc, mc, pc, tc⟩ => ?_)
   refine WP.seq (WP.mono (combMultiply_ok (S := baseScalar s) mc.ctx.ctx (by simpa using mc.bound)
-    (fun q hq => by rw [mc.bits q (by omega), scalarBit_nat]) mc.d pc tc) fun d ⟨pd, kd⟩ => ?_)
+    (fun q hq => by rw [mc.bits q (by omega), scalarBit_nat]) mc.d pc tc.1 tc.2) fun d ⟨pd, kd⟩ => ?_)
   have hd := hc.mulkeep hp.fit kd
-  refine WP.seq (WP.mono (pointEncode_value (hd.ctx hp.fit hp.wr)) fun e ⟨ke, ve⟩ => ?_)
+  refine WP.seq (WP.mono (pointEncode_value (hd.ctx hp.fit hp.wr hp.stk)) fun e ⟨ke, ve⟩ => ?_)
   have he := hd.ikeep hp.fit ke
   refine WP.mono (finishWords_ok hp ho he (src := 96) (by decide)) fun t ⟨abi_t, et⟩ => ⟨abi_t, ?_⟩
   change Spec.Ed25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 = _
@@ -166,13 +171,13 @@ def scalarBaseWide : Contract isa :=
     let scratch : Region := ⟨(arg s 2).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 12⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stk : Region := below (s.gpr .esp) 4
+    let stk : Region := callStk s
     s.rd = [input, TBL ((s.syms combSym).setWidth 64)] ∧ s.wr = [out, scratch, args] ∧
       out.Disjoint scratch ∧ input.Disjoint scratch ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
       ret.Disjoint out ∧ ret.Disjoint scratch ∧ (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧
       (arg s 1).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 8192 ≤ 2 ^ 32 ∧
-      (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 ∧ 4 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint out ∧
-      stk.Disjoint input ∧ stk.Disjoint scratch ∧ CombHeld s [out, scratch, stk] }
+      (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 ∧ 8 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint input ∧
+      stk.Disjoint scratch ∧ stk.Disjoint out ∧ CombHeld s [out, scratch, stk] }
 
 def scalarBaseRd (s : State) : List Region :=
   [⟨(arg s 1).setWidth 64, 32⟩, ⟨argAddr s 0, 12⟩, TBL ((s.syms combSym).setWidth 64)]
@@ -183,8 +188,8 @@ theorem scalarBaseWide_pre (s : State) (h : scalarBaseWide.pre s) :
   obtain ⟨-, -, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17⟩ := h
   simp only [scalarBaseLocal, BaseRegions, scalarBaseRd, scalarBaseWr, arg_withRegions,
     argAddr_withRegions, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-    State.withRegions_syms]
-  exact ⟨⟨True.intro, True.intro, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩, h13, h14, h15, h16, h17⟩
+    State.withRegions_syms, callStk]
+  exact ⟨⟨True.intro, True.intro, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16⟩, h16, h17⟩
 
 /-- The `n` bytes below `sp`, as the contract states them. -/
 theorem below_eq {sp : BitVec 32} {n : Nat} (h : n ≤ sp.toNat) :
@@ -192,7 +197,7 @@ theorem below_eq {sp : BitVec 32} {n : Nat} (h : n ≤ sp.toNat) :
   simp only [below, Taint.sub_setWidth h]
 
 theorem scalarBase_sat :
-    (Spec.Ed25519.scalarBaseContract (X86.abi.withConsts combConsts) 4).pre baseSatState := by
+    (Spec.Ed25519.scalarBaseContract (X86.abi.withConsts combConsts) 8).pre baseSatState := by
   have hl := combWords_length
   have a0 : arg baseSatState 0 = 0x1000 := (baseSat_arg 0 (by decide)).trans (by decide)
   have a1 : arg baseSatState 1 = 0x2000 := (baseSat_arg 1 (by decide)).trans (by decide)
@@ -218,16 +223,16 @@ theorem scalarBase_sat :
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide
 
 theorem scalarBaseWide_implies :
-    scalarBaseWide.Implies (Spec.Ed25519.scalarBaseContract (X86.abi.withConsts combConsts) 4) where
+    scalarBaseWide.Implies (Spec.Ed25519.scalarBaseContract (X86.abi.withConsts combConsts) 8) where
   pre s h := by
     sig_pre [Spec.Ed25519.scalarBaseContract, Spec.Ed25519.scalarBaseSig,
       Spec.Ed25519.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
     obtain ⟨h4, hsp, hd, held, hfit, hdw, -, hstk, ht, hw, -, o2, o3, i2, -, s3, r0, -, r2, -,
       b0, b1, b2, -, f0, f1, f2⟩ := h
-    have be := below_eq (sp := s.gpr .esp) h4
-    refine ⟨?_, hw, o2, i2, o3.symm, s3.symm, r0, r2, f0, f1, f2, by omega, h4, by rw [be]; exact b0,
-      by rw [be]; exact b1, by rw [be]; exact b2, held, hfit, ?_⟩
+    have be : callStk s = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 8, 8⟩ := below_eq (sp := s.gpr .esp) h4
+    refine ⟨?_, hw, o2, i2, o3.symm, s3.symm, r0, r2, f0, f1, f2, by omega, h4, by rw [be]; exact b1,
+      by rw [be]; exact b2, by rw [be]; exact b0, held, hfit, ?_⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -250,7 +255,7 @@ theorem scalarBaseWide_implies :
   sat := ⟨baseSatState, scalarBase_sat⟩
 
 theorem scalarBase_verified :
-    Verified X86.target scalarBase (Spec.Ed25519.scalarBaseContract (X86.abi.withConsts combConsts) 4) := by
+    Verified X86.target scalarBase (Spec.Ed25519.scalarBaseContract (X86.abi.withConsts combConsts) 8) := by
   have hsat := scalarBaseWide_implies.sat_left
   have satLocal : ∃ s, scalarBaseLocal.pre s := hsat.elim fun s h => ⟨_, scalarBaseWide_pre s h⟩
   have verifiedLocal : Verified X86.target scalarBase scalarBaseLocal :=

@@ -15,8 +15,8 @@ theorem nttSecret_ready {p : Params} (hF : PFacts p) {S' : Nat} {σ s : State}
   obtain ⟨A,T,R,h⟩ := h
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
   have L := h.kc.lay hF hp
-  have hr : inB (kgR++kgW p) (sP p j) 1024=true := by lay
-  have hw : inB (kgW p) (sP p j) 1024=true := by lay
+  have hr : inB (kgR++kgW p) (sP p j) 1024=true := by layd
+  have hw : inB (kgW p) (sP p j) 1024=true := by layd
   have hv := h.s1 j hj
   simp only [ite_eq_right (Nat.lt_irrefl j)] at hv
   exact ⟨L.nwp hr,roots.nttTableAt (L.inW hw),hv.1,

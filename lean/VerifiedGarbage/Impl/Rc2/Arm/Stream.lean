@@ -57,11 +57,11 @@ def keyCall : Prog isa :=
 /-- The IV to `ctx + 128`, and the arguments of `vg_rc2_expand_key`:
 `schedule = ctx` in `r3`, `scratch` in `r12`. -/
 def initArgs : List Instr :=
-  saveLr ++ [.ldr .lr .r3 0, .ldr .r3 .r3 4, .ldrSp .r12 4, .str .lr .r12 128, .str .r3 .r12 132,
-    .mov .r3 (.reg .r12), .ldrSp .r12 8]
+  saveLr ++ ([.ldr .lr .r3 0, .ldr .r3 .r3 4, .ldrSp .r12 4, .str .lr .r12 128, .str .r3 .r12 132,
+    .mov .r3 (.reg .r12), .ldrSp .r12 8] : List Instr)
 
 def initBody : Prog isa :=
-  .seq (.block initArgs) (.seq keyCall (.block (restoreLr ++ [.mov .r0 (.imm 0)])))
+  .seq (.block initArgs) (.seq keyCall (.block (restoreLr ++ ([.mov .r0 (.imm 0)] : List Instr))))
 
 /-- `Z` is clear unless `key_len` is in 1..=128 (`(key_len - 1) >> 7 = 0`). -/
 def checkKey : List Instr :=
@@ -98,7 +98,7 @@ def short : Prog isa :=
   .seq (.block [.dp .add .r1 .r0 (.reg .r1)]) (copy .r2 0 .r1 136 .r3)
 
 /-- The pending bytes go to `lr = out`, from `r0 + 136 = ctx + 136`. -/
-def toOut : List Instr := saveLr ++ [.ldrSp .lr 0]
+def toOut : List Instr := saveLr ++ ([.ldrSp .lr 0] : List Instr)
 
 /-- After them (`r0 = ctx + p`, `lr = out + p`): `r12 = p`, `r0 = ctx`,
 `r1 = out_len - p` bytes of data to `lr`, and `r3 = len - r1` bytes left. -/

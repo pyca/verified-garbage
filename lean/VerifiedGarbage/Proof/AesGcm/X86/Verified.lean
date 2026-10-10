@@ -261,8 +261,13 @@ theorem leak_bool {P Q : Prop} [Decidable P] [Decidable Q] {a b : Bool} (hP : P)
   cases a <;> cases b <;> simp_all
 
 theorem openPre_rounds {s : State} (h : openPre s) : roundsOk s 1 := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
-    -, -, -, h⟩ := h
+  sig_split h
+  rename_i hdrop0 hdrop1 hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12
+    hdrop13 hdrop14 hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop23 hdrop24 hdrop25
+    hdrop26 hdrop27 hdrop28 hdrop29 hdrop30 hdrop31 hdrop32 hdrop33 hdrop34 hdrop35 hdrop36 hdrop37 hdrop38
+  clear hdrop0 hdrop1 hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13
+    hdrop14 hdrop15 hdrop16 hdrop17 hdrop18 hdrop19 hdrop20 hdrop21 hdrop22 hdrop23 hdrop24 hdrop25 hdrop26
+    hdrop27 hdrop28 hdrop29 hdrop30 hdrop31 hdrop32 hdrop33 hdrop34 hdrop35 hdrop36 hdrop37 hdrop38
   exact h
 
 theorem open_pre : ∀ s, (Proof.AesGcm.openScratchContract X86.abi 28).pre s → openX86.pre s := by

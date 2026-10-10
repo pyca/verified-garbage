@@ -218,11 +218,11 @@ theorem wsQ_ok {p : SetupPub} {s : State} (h : SS3 p s) :
   exact hWsP
 
 /-- Into a workspace from the modulus' (`enterP`, `enterQ`), or back (`leave`). -/
-theorem SB.move {p : SetupPub} {s : State} (h : SB p s) {X : Addr} {i : Nat} {A' : Addr}
+theorem SB.move {p : SetupPub} {s : State} (h : SB p s) {X : Addr} {i : Nat} {f : SetupPub → Addr}
     (h0 : s.gpr .x0 = X) (hi : i < 32) (hl : InRegions (s.rd ++ s.wr) (off X (8 * i)) 8)
-    (hw : word s.mem X (8 * i) = A') :
-    WP isa (.block [ldh .x0 i]) s (SBr (fun _ => A') p) :=
-  WP.mono (WP.keep [.x0] (Q := fun t => t.gpr .x0 = A' ∧ t.mem = s.mem)
+    (hw : word s.mem X (8 * i) = f p) :
+    WP isa (.block [ldh .x0 i]) s (SBr f p) :=
+  WP.mono (WP.keep [.x0] (Q := fun t => t.gpr .x0 = f p ∧ t.mem = s.mem)
     (by brun [h0, hdr_enc hi, hl, hw]) rfl rfl rfl) fun t ⟨⟨h0', hm⟩, k⟩ => ⟨h.mem hm k, h0'⟩
 
 /-- A prime's workspace context from `SB`. -/

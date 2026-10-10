@@ -103,7 +103,7 @@ theorem head_ok {s : State} (hp : PreS s) :
   refine ⟨⟨(k.gpr (by decide)).trans hsp₁, k.2.1.trans hrd, k.2.2.trans k₁.2.2, frame_of_outside (hm ▸ ho₁),
     hm ▸ h1, hm ▸ h2, hm ▸ h3, hm ▸ h4, hm ▸ h5, hm ▸ h6⟩, h8, by rw [k.gpr (by decide), g _ (by decide)],
     hdx, hsi, h9, fun r hr hr' => ?_⟩
-  rw [k.gpr (by simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all),
+  rw [k.gpr (by simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first | decide | simp_all),
     g r hr']
 
 /-- What `encode` needs, from the head. -/

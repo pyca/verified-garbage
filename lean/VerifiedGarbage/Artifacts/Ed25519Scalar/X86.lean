@@ -10,7 +10,8 @@ def artifacts : List Artifact := [
       eight 32-bit remainder words, a fixed byte loop, and masked subtraction of the subgroup order. \
       Callee-saved registers are saved in the first 16 bytes of `scratch`."])
     code := Impl.Ed25519.X86.scalarReduce
-    contract := Spec.Ed25519.scalarReduceContract X86.abi
+    contract := Spec.Ed25519.scalarReduceContract X86.abi 8
+    stack := 8
     verified := Proof.Ed25519.X86.scalarReduce_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 end VG.Artifacts.Ed25519Scalar.X86

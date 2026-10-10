@@ -66,7 +66,7 @@ theorem scalarPtr_addr {s : State} (h : Bounds s) :
   addr_eq (by have := h.frame; omega)
 
 theorem base_nosp : NoSp scalarBase := NoSp.of_all (by lit_decide)
-theorem base_stack : stackUse scalarBase = 4 := by lit_decide
+theorem base_stack : stackUse scalarBase = 8 := by lit_decide
 
 def BaseArgs (s t : State) : Prop :=
   Whole.slots (esp s) t 0 = arg s 0 ∧ Whole.slots (esp s) t 1 = scalarPtr s ∧
@@ -100,16 +100,9 @@ theorem base_pre {s t : State} (h : Facts s) (hc : Ctx s t) (ha : BaseArgs s t)
   have scalar : Region.Sub ⟨(scalarPtr s).setWidth 64, 32⟩ (Whole.STK (esp s)) := by
     rw [scalarPtr_addr h.toBounds]
     exact fun p hp => Whole.frame_sub (esp s) p (Offset.sub_base _ (by decide : 32 + 32 ≤ 256) p hp)
-  have stk8 : Region.Sub (below (esp s - BitVec.ofNat 32 4) 4) (below (esp s) 8) :=
-    below_inner (by decide) (by omega)
-  have stk : Region.Sub (below (esp s - BitVec.ofNat 32 4) 4) (Whole.STK (esp s)) :=
-    fun p hp => Whole.below_sub_stack be (by decide) p (stk8 p hp)
-  have stkScalar : (below (esp s - BitVec.ofNat 32 4) 4).Disjoint ⟨(scalarPtr s).setWidth 64, 32⟩ := by
-    refine Region.Disjoint.sub_left ?_ stk8
-    rw [scalarPtr_addr h.toBounds]
-    change Region.Disjoint ⟨(esp s - BitVec.ofNat 32 8).setWidth 64, 8⟩ _
-    rw [Taint.sub_setWidth (by omega)]
-    exact Offset.disjoint_below_above _ (by decide)
+  have stk : Region.Sub (below (esp s - BitVec.ofNat 32 4) 8) (Whole.STK (esp s)) :=
+    Whole.inner_sub_stack be
+  have hf : (esp s).toNat + 256 ≤ 2 ^ 32 := by omega
   have tw : TblWords ((s.syms Impl.Ed25519.X86.combSym).setWidth 64) t.callEntry.mem := by
     refine (h.held.1.frame hc.frame fun r hr => ?_).frame (Whole.callEntry_frame t) fun r hr => ?_
     · simp only [pkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
@@ -118,19 +111,23 @@ theorem base_pre {s t : State} (h : Facts s) (hc : Ctx s t) (ha : BaseArgs s t)
     · rw [List.mem_singleton.mp hr, hc.esp]
       exact (h.held.2.2 _ (by simp)).sub_right (Whole.below_sub_stack be (by decide))
   have cy : (t.callEntry.withRegions (baseRd s) (pkWr s)).syms = s.syms := hy
-  simp only [scalarBaseLocal, BaseRegions, CombHeld, cy, State.withRegions_rd, State.withRegions_wr,
+  have cs : callStk (t.callEntry.withRegions (baseRd s) (pkWr s)) = below (esp s - BitVec.ofNat 32 4) 8 := by
+    simp only [callStk, State.withRegions_gpr, State.callEntry_esp, hc.esp]; rfl
+  simp only [scalarBaseLocal, BaseRegions, CombHeld, cy, cs, State.withRegions_rd, State.withRegions_wr,
     arg_withRegions, argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_esp, hc.esp, a0, a1, a2, ae]
   refine ⟨⟨rfl, rfl, h.oc, h.kc.sub_left scalar, h.ko.sub_left args, h.kc.sub_left args,
-    h.ko.sub_left ret, h.kc.sub_left ret, h.out, ?_, h.scratch, ?_⟩, ?_, h.ko.sub_left stk,
-    stkScalar, h.kc.sub_left stk, tw, h.held.2.1, ?_⟩
+    h.ko.sub_left ret, h.kc.sub_left ret, h.out, ?_, h.scratch, ?_, ?_,
+    Whole.inner_frame be hf (d := 32) (n := 32) (by decide) (by decide), h.kc.sub_left stk,
+    h.ko.sub_left stk⟩,
+    h.ko.sub_left stk, tw, h.held.2.1, ?_⟩
   · change (esp s + BitVec.ofNat 32 32).toNat + 32 ≤ 2 ^ 32
     rw [BitVec.toNat_add, show (BitVec.ofNat 32 32).toNat = 32 from rfl, Nat.mod_eq_of_lt (by omega)]
     omega
   · change (esp s - BitVec.ofNat 32 4).toNat + 16 ≤ 2 ^ 32
     rw [sub_toNat (by omega : 4 ≤ (esp s).toNat)]
     omega
-  · change 4 ≤ (esp s - BitVec.ofNat 32 4).toNat
+  · change 8 ≤ (esp s - BitVec.ofNat 32 4).toNat
     rw [sub_toNat (by omega : 4 ≤ (esp s).toNat)]
     omega
   · simp only [List.mem_cons, List.not_mem_nil, or_false]

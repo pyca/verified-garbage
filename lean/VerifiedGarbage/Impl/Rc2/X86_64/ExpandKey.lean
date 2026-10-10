@@ -26,9 +26,9 @@ def copyKey : List Instr :=
    .alu .add .rbx (.imm 1), .alu .cmp .rbx (.reg .r13)]
 
 def fillKey : List Instr :=
-  [.movzx8 .rax (indexed .r14 .rbx (-1)), rr .r9 .rbx, .alu .sub .r9 (.reg .r13),
-   .movzx8 .rcx (indexed .r14 .r9), .alu .add .rax (.reg .rcx)] ++ Sse2.piLookup ++
-    [.store8 (indexed .r14 .rbx) .rax, .alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 128)]
+  ([.movzx8 .rax (indexed .r14 .rbx (-1)), rr .r9 .rbx, .alu .sub .r9 (.reg .r13),
+   .movzx8 .rcx (indexed .r14 .r9), .alu .add .rax (.reg .rcx)] : List Instr) ++ Sse2.piLookup ++
+    ([.store8 (indexed .r14 .rbx) .rax, .alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 128)] : List Instr)
 
 /-- TM = 2^(T1 mod 8) - 1, with TM = 255 for a multiple of eight. All
 tests here are on the public effective bit count, not the key. -/
@@ -39,13 +39,13 @@ def maskCode : Prog isa :=
         (.seq (.ite .e (.block [imm .rdx (2 ^ (i + 1) - 1)]) (.block [])) rest)) (.block []))
 
 def reduceKey : List Instr :=
-  [.movzx8 .rax (indexed .r14 .rbx), .alu .and .rax (.reg .rdx)] ++ Sse2.piLookup ++
-    [.store8 (indexed .r14 .rbx) .rax]
+  ([.movzx8 .rax (indexed .r14 .rbx), .alu .and .rax (.reg .rdx)] : List Instr) ++ Sse2.piLookup ++
+    ([.store8 (indexed .r14 .rbx) .rax] : List Instr)
 
 def descendKey : List Instr :=
-  [.alu .sub .rbx (.imm 1), .movzx8 .rax (indexed .r14 .rbx 1), rr .r9 .rbx,
-   .alu .add .r9 (.reg .rbp), .movzx8 .rcx (indexed .r14 .r9), .alu .xor .rax (.reg .rcx)] ++
-    Sse2.piLookup ++ [.store8 (indexed .r14 .rbx) .rax, .alu .cmp .rbx (.imm 0)]
+  ([.alu .sub .rbx (.imm 1), .movzx8 .rax (indexed .r14 .rbx 1), rr .r9 .rbx,
+   .alu .add .r9 (.reg .rbp), .movzx8 .rcx (indexed .r14 .r9), .alu .xor .rax (.reg .rcx)] : List Instr) ++
+    Sse2.piLookup ++ ([.store8 (indexed .r14 .rbx) .rax, .alu .cmp .rbx (.imm 0)] : List Instr)
 
 def expandCopyFill : Prog isa :=
   .seq (.loop (.block copyKey) .ne)

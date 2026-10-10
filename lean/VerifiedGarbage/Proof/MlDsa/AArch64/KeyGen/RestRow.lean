@@ -69,7 +69,7 @@ include hF hi
 theorem mul_chk {j : Nat} (hj : j < p.ℓ) : mulChk kgR (kgW p) (tP p) (aP (p.ℓ * i + j)) (sP p j) = true := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
   have := idx_lt hi hj
-  unfold mulChk; lay
+  unfold mulChk; layd
 
 theorem inv_chk : ipChk kgR (kgW p) (tP p) (sc oSS) = true := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
@@ -77,7 +77,7 @@ theorem inv_chk : ipChk kgR (kgW p) (tP p) (sc oSS) = true := by
 
 theorem add_chk : accChk kgR (kgW p) (tP p) (sP p (p.ℓ + i)) = true := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
-  unfold accChk; lay
+  unfold accChk; layd
 
 theorem p2r_chk : p2rChk kgR (kgW p) (tP p) (t1P p) (t0P p) = true := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
@@ -85,12 +85,12 @@ theorem p2r_chk : p2rChk kgR (kgW p) (tP p) (t1P p) (t0P p) = true := by
 
 theorem sbp_chk : rwChk kgR (kgW p) (t1P p) 1024 (.x26, 32 + 320 * i) 320 = true := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
-  unfold rwChk; lay [hF.pk]
+  unfold rwChk; layd
 
 theorem bp_chk : rwChk kgR (kgW p) (t0P p) 1024 (.x27, oT0 p + 416 * i) 416 = true := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
   have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
-  unfold rwChk; lay [hF.pk, hF.sk]
+  unfold rwChk; layd
 
 end
 
@@ -217,7 +217,7 @@ theorem sbp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State
   have L := h.kc.lay hF hp
   refine WP.mono (sbpAt_ok hP.s64 hP.simpleBitPack L (sbp_chk hF hi) sbpOk_t1 (t1_bound h1))
     fun s' ⟨hP', x', hb⟩ => ?_
-  refine ⟨h.keep hF hp hP' x' (chk_sbp hF hi), L.keepPoly hP' (by lay [hF.pk]) h0, ?_⟩
+  refine ⟨h.keep hF hp hP' x' (chk_sbp hF hi), L.keepPoly hP' (by layd) h0, ?_⟩
   rw [hP'.pa (show Reg.x26 ∈ keptRegs by decide), hb, h1]
 
 /-- `t₀[i]` to `sk`. -/
@@ -238,7 +238,7 @@ theorem bp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
   · exact hk'.rows i' hi'
   · refine ⟨by
       have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
-      rw [L.keepBytes hP' (by lay [hF.pk, hF.sk])]; exact h1, ?_⟩
+      rw [L.keepBytes hP' (by layd)]; exact h1, ?_⟩
     rw [hP'.pa (show Reg.x27 ∈ keptRegs by decide), hb, h0.2, modPm_t0]
     rfl
 

@@ -46,8 +46,8 @@ def rotation : Prog isa :=
 def storeRound : List Instr :=
   [rr .rax .r12, .shift .ror .rax 36, .alu .xor .rax (.reg .r13)] ++
     permuteCode Spec.TripleDes.pc2 56 .rbx .rax .rbp ++
-    [.store (memOp .r15 0) .rbx, .alu .add .r15 (.imm 8),
-     .alu .add .r14 (.imm 1), .alu .cmp .r14 (.imm 16)]
+    ([.store (memOp .r15 0) .rbx, .alu .add .r15 (.imm 8),
+     .alu .add .r14 (.imm 1), .alu .cmp .r14 (.imm 16)] : List Instr)
 
 def component (offset index : Nat) : Prog isa :=
   .seq (.block (load offset index)) (.loop (.seq rotation (.block storeRound)) .ne)

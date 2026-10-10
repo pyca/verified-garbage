@@ -120,7 +120,7 @@ theorem epi_piece {p : Params} (hF : PFacts p) :
     (by taint_decide)) fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁, _⟩ ⟨_, _, _, h₂, _⟩ => kc_two hF p₁ p₂ pub h₁.kc h₂.kc⟩
   have L := h.kc.lay hF hp
   have hin : ∀ k < 6, InRegions (s.rd ++ s.wr) (pa s (sc (oSV + 8 * k))) 8 := fun k hk =>
-    L.cR (p := sc (oSV + 8 * k)) (l := 8) (by lay) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+    L.cR (p := sc (oSV + 8 * k)) (l := 8) (by layd) _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   refine WP.mono (WP.mx (noLd_spec (by rfl)) (topEpi_ok h.kc.top hin)) fun s' ⟨⟨hr, hg, hm⟩, hx⟩ =>
     ⟨⟨hg.1, hg.2, by rw [← MX, ← MX, hx, h.kc.mx]⟩, ?_⟩
   have e12 : pa s (.r12, 0) = σ.gpr .rsi := by rw [pa, h.kc.top.regs (.r12, .rsi) (by decide), add_ofNat_zero]

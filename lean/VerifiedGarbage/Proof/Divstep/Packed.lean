@@ -218,13 +218,13 @@ theorem pext_rel {u v : Int} {a b : Nat} (ha : a < 2 ^ 15) (hb : b < 2 ^ 15) (hu
     have : v * b ≤ |v| * (2 ^ 15 - 1) := by
       calc v * b ≤ |v| * b := mul_le_mul_of_nonneg_right (le_abs_self v) hb0
         _ ≤ |v| * (2 ^ 15 - 1) := mul_le_mul_of_nonneg_left (by omega) (abs_nonneg v)
-    nlinarith [abs_nonneg u, abs_nonneg v]
+    linarith [abs_nonneg u, abs_nonneg v]
   have L2 : -2 ^ 30 < u * a + v * b := by
     have : -2 ^ 14 * (2 ^ 15 - 1) ≤ u * a := by
-      calc -2 ^ 14 * (2 ^ 15 - 1) ≤ -2 ^ 14 * (a : Int) := by nlinarith
+      calc -2 ^ 14 * (2 ^ 15 - 1) ≤ -2 ^ 14 * (a : Int) := by linarith
         _ ≤ u * a := mul_le_mul_of_nonneg_right hu ha0
     have : -2 ^ 14 * (2 ^ 15 - 1) ≤ v * b := by
-      calc -2 ^ 14 * (2 ^ 15 - 1) ≤ -2 ^ 14 * (b : Int) := by nlinarith
+      calc -2 ^ 14 * (2 ^ 15 - 1) ≤ -2 ^ 14 * (b : Int) := by linarith
         _ ≤ v * b := mul_le_mul_of_nonneg_right hv hb0
     linarith
   -- The sum with `pextC`, as fields.

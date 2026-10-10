@@ -19,7 +19,11 @@ open VG.Spec.Gcm (Block blockAt StreamRepr ctxH ctxCiph ghashInput gctr inc32 j0
 open VG.Proof.Gcm (Absorbed Ctr xorKs)
 
 theorem scLay {s₀ : State} (h : streamCryptPre s₀) : Lay (s₀.gpr .r0) (s₀.gpr .r2) (arg s₀ 6) s₀.sp := by
-  obtain ⟨-, -, dcs, -, dcW, -, dsW, -, -, -, -, bc, bs, -, bW, fc, fs, -, fW, sp8, -, -⟩ := h
+  sig_split h
+  rename_i hdrop0 hdrop1 dcs hdrop3 dcW hdrop5 dsW hdrop7 hdrop8 hdrop9 hdrop10 bc bs hdrop13 bW fc fs hdrop17
+    fW sp8 hdrop20
+  clear hdrop0 hdrop1 hdrop3 hdrop5 hdrop7 hdrop8 hdrop9 hdrop10 hdrop13 hdrop17 hdrop20
+  clear h
   exact Lay.of fc fs fW sp8 dcs dcW dsW bc bs bW
 
 /-- The rounds, as `r1` holds them. -/
@@ -39,7 +43,12 @@ theorem sc_argsW {s₀ : State} (h : streamCryptPre s₀) : ∀ r ∈ [savedR (a
 theorem sc1_wp {s₀ : State} (h : streamCryptPre s₀) {Q : State → Prop} (k : ∀ s₁, SC1 s₀ s₁ → Q s₁) :
     WP isa (.block cryptEntry) s₀ Q := by
   have hA := sc_argsW h
-  obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fW, -, spf, -⟩ := h
+  sig_split h
+  rename_i hrd hwr hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13
+    hdrop14 hdrop15 hdrop16 hdrop17 fW hdrop19 spf
+  clear hdrop2 hdrop3 hdrop4 hdrop5 hdrop6 hdrop7 hdrop8 hdrop9 hdrop10 hdrop11 hdrop12 hdrop13 hdrop14
+    hdrop15 hdrop16 hdrop17 hdrop19
+  clear h
   have hC : Covers [⟨State.addr (s₀.gpr .r0), 256⟩] (s₀.rd ++ s₀.wr) := by
     rw [hrd]; exact covers_of_mem (by simp)
   have hS : Covers [⟨State.addr (s₀.gpr .r2), 80⟩] s₀.wr := by rw [hwr]; exact covers_of_mem (by simp)
@@ -80,7 +89,12 @@ include h
 /-- The data, as `crypt` needs it. -/
 theorem sc_dataW {k7 : BitVec 32} {s : State} (hk : ArgsKeep 7 s₀ s) :
     DataW (s₀.gpr .r0) (s₀.gpr .r2) (arg s₀ 6) s₀.sp k7 (s₀.gpr .r1) s (arg s₀ 4) (arg s₀ 5).toNat := by
-  obtain ⟨hrd, hwr, -, dcD, -, dsD, -, -, dDW, -, -, -, -, bD, -, -, -, fD, -, -, -, -⟩ := h
+  sig_split h
+  rename_i hrd hwr hdrop2 dcD hdrop4 dsD hdrop6 hdrop7 dDW hdrop9 hdrop10 hdrop11 hdrop12 bD hdrop14 hdrop15
+    hdrop16 fD hdrop18 hdrop19 hdrop20
+  clear hdrop2 hdrop4 hdrop6 hdrop7 hdrop9 hdrop10 hdrop11 hdrop12 hdrop14 hdrop15 hdrop16 hdrop18 hdrop19
+    hdrop20
+  clear h
   have hD : Covers [⟨State.addr (arg s₀ 4), (arg s₀ 5).toNat⟩] s.wr := by
     rw [hk.wr, hwr]; exact covers_of_mem (by simp)
   exact ⟨⟨covers_left hD, (arg s₀ 5).isLt, fD, dsD.symm, dDW, bD⟩, hD, dcD⟩

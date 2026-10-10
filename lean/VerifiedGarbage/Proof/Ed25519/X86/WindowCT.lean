@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
 
 /-!
 # Verification's windows: what their traces depend on
@@ -145,29 +146,43 @@ theorem digitTest_ok {s : State} {v : Nat} (hv : v < 16) {B : BitVec 32}
   Wp.wp_test fun t ht zt => WP.block_nil ⟨⟨by rw [ht.gpr]; exact hs.1, by rw [ht.gpr]; exact hs.2⟩,
     by rw [zt, hs.1, digit_test_fact v hv]⟩
 
+/-- The digit's test keeps the call's context. -/
+theorem digitTest_call {s : State} {v : Nat} (hv : v < 16) {B : BitVec 32}
+    (hs : s.gpr .eax = BitVec.ofNat 32 v ∧ s.gpr .edi = B) :
+    WP isa (.block [.alu .test .eax (.reg .eax)]) s fun t =>
+      ((t.gpr .eax = BitVec.ofNat 32 v ∧ t.gpr .edi = B) ∧ t.zf = some (decide (v = 0))) ∧
+        t.gpr .edi = s.gpr .edi ∧ t.wr = s.wr ∧ t.gpr .esp = s.gpr .esp :=
+  Wp.wp_test fun t ht zt => WP.block_nil ⟨⟨⟨by rw [ht.gpr]; exact hs.1, by rw [ht.gpr]; exact hs.2⟩,
+    by rw [zt, hs.1, digit_test_fact v hv]⟩, congrFun ht.gpr _, ht.wr, congrFun ht.gpr _⟩
+
 /-- A digit's addition branches on the digit and addresses the table by it, the same in both
-runs. -/
+runs; its call of `vg_ed25519_r32_point_add` is analysed with it (`callTaintR`). -/
 theorem addDigit_ct (o : Nat) (ho : o = 1024 ∨ o = 3072) {v : Nat} (hv : v < 16) (B : BitVec 32) :
-    RelCT isa (fun x y => (x.gpr .eax = BitVec.ofNat 32 v ∧ x.gpr .edi = B) ∧
+    RelCT isa (fun x y => CallCTPre B x y ∧ (x.gpr .eax = BitVec.ofNat 32 v ∧ x.gpr .edi = B) ∧
       (y.gpr .eax = BitVec.ofNat 32 v ∧ y.gpr .edi = B)) (addDigit o) (fun _ _ => True) := by
-  have test : RelCT isa (fun x y => (x.gpr .eax = BitVec.ofNat 32 v ∧ x.gpr .edi = B) ∧
+  have test : RelCT isa (fun x y => CallCTPre B x y ∧ (x.gpr .eax = BitVec.ofNat 32 v ∧ x.gpr .edi = B) ∧
       (y.gpr .eax = BitVec.ofNat 32 v ∧ y.gpr .edi = B)) (.block [.alu .test .eax (.reg .eax)])
       (fun _ _ => True) :=
     VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide)
-  have body : RelCT isa (fun x y => x.gpr .eax = y.gpr .eax ∧ x.gpr .edi = y.gpr .edi)
-      (.block (entryAddr o ++ pointFromTableQ ++ pointAdd)) (fun _ _ => True) := by
-    rcases ho with rfl | rfl
-    all_goals
-      exact VG.RelCT.taint (A := taint) (regsTaint [.eax, .edi]) (fun _ _ hh => agree_two hh)
-        (by taint_decide)
+  have body : RelCT isa (fun x y => CallCTPre B x y ∧ x.gpr .eax = y.gpr .eax)
+      (.seq (.block (entryAddr o ++ pointFromTableQ)) Point32.addCall) (fun _ _ => True) := by
+    obtain ⟨_, hc⟩ : ∃ h, (taint.check (callTaintR [.eax])
+        (.seq (.block (entryAddr o ++ pointFromTableQ)) Point32.addCall) h).isSome = true := by
+      rcases ho with rfl | rfl
+      · taint_decide_sum [addSum]
+      · taint_decide_sum [addSum]
+    exact VG.RelCT.taint (A := taint) (callTaintR [.eax])
+      (fun _ _ hh => callTaintR_agree hh.1 fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact hh.2) hc
   rw [addDigit]
-  refine VG.RelCT.seq ((test.wp fun x y hh => ⟨digitTest_ok hv hh.1, digitTest_ok hv hh.2⟩).mono
-    (fun _ _ h => h) (fun _ _ h => h.2)) (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
-  · intro x y hh
+  refine VG.RelCT.seq (ctWithRuns test fun x y hh => ⟨digitTest_call hv hh.2.1, digitTest_call hv hh.2.2⟩)
+    (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
+  · intro x y ⟨_, a, b, _, ⟨⟨_, zx⟩, _⟩, ⟨⟨_, zy⟩, _⟩⟩
     change x.zf.map Bool.not = y.zf.map Bool.not
-    rw [hh.1.2, hh.2.2]
-  · exact body.mono (fun x y hh => ⟨hh.1.1.1.1.trans hh.1.2.1.1.symm, hh.1.1.1.2.trans hh.1.2.1.2.symm⟩)
-      (fun _ _ h => h)
+    rw [zx, zy]
+  · refine body.mono (fun x y hh => ?_) (fun _ _ h => h)
+    obtain ⟨⟨_, a, b, ⟨⟨ca, cb, w, sp⟩, _⟩, ⟨⟨vx, _⟩, ex, wx, px⟩, ⟨⟨vy, _⟩, ey, wy, py⟩⟩, _⟩ := hh
+    exact ⟨⟨ca.keep ex wx px, cb.keep ey wy py, by rw [wx, wy, w], by rw [px, py, sp]⟩, vx.1.trans vy.1.symm⟩
   · exact VG.RelCT.block_nil fun _ _ _ => trivial
 
 /-! ## Windows -/
@@ -206,7 +221,8 @@ theorem digitAdd_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoi
     {R : Spec.Ed25519.Point} {i v : Nat} (hv : v < 16) {o : Nat} (ho : o = 1024 ∨ o = 3072) :
     RelCT isa (fun x y => DigitAt s₀ Aa R i v x ∧ DigitAt t₀ Aa R i v y) (addDigit o) (fun _ _ => True) :=
   (addDigit_ct o ho hv (arg s₀ 3)).mono
-    (fun _ _ hh => ⟨⟨hh.1.2.1, hh.1.2.2⟩, ⟨hh.2.2.1, hh.2.2.2.trans (h.args 3 (by decide)).symm⟩⟩)
+    (fun _ _ hh => ⟨h.callPre hh.1.1.1.saved hh.2.1.1.saved, ⟨hh.1.2.1, hh.1.2.2⟩,
+      ⟨hh.2.2.1, hh.2.2.2.trans (h.args 3 (by decide)).symm⟩⟩)
     (fun _ _ h => h)
 
 theorem digitK_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
@@ -421,8 +437,9 @@ theorem windowMultiply_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {a r
       (fun _ _ => True) := by
   have prep : RelCT isa (fun x y => EquationCTPre s₀ a r x ∧ EquationCTPre t₀ a r y) windowPrep
       (fun _ _ => True) :=
-    VG.RelCT.taint (A := taint) (regsTaint [.edi]) (fun _ _ hh => agree_one (saved_edi h hh.1.1 hh.2.1))
-      (by taint_decide)
+    have ⟨_, hc⟩ : ∃ h, (taint.check callTaint₀ windowPrep h).isSome = true := by
+      taint_decide_sum [addSum]
+    VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ hh => callTaint₀_agree (h.callPre hh.1.1 hh.2.1)) hc
   have pw (u x : State) (hu : VerifyPre u) (hx : EquationCTPre u a r x) :
       WP isa windowPrep x (SkipAt u Aa r 32) :=
     WP.mono (windowPrep_ok hu hx.1 hA hx.2.1 hx.2.2) fun _ ⟨w, e, rp⟩ =>

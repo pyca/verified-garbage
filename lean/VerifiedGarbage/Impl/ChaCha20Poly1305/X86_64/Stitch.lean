@@ -15,11 +15,16 @@ computations are independent, so out-of-order cores overlap them.
 
 With at least 512 bytes of data, `bulk` encrypts its whole chunks of 512
 bytes: the first with the kernel's code (`firstChunk`), and each later one
-with the kernel's code in which every double round is followed by three or
-four blocks of Poly1305 (`chunk`): the 32 blocks of the chunk before it,
-whose ciphertext is complete. `rsi` points at that chunk while the rounds
-run, and is advanced to the chunk being encrypted just before the kernel's
-`finish` XORs the keystream into it.
+with the kernel's code in which every double round absorbs three or four
+blocks of Poly1305 (`chunk`): the 32 blocks of the chunk before it, whose
+ciphertext is complete. Each block is absorbed in two pieces, the block
+added and its products (`addProd`), then their carry, each after one of the
+round's quarter rounds (`sround4`, `sround3`): a whole double round of
+vector code and then three or four blocks of scalar code would each leave
+the other's units idle for longer than the out-of-order window can cover.
+`rsi` points at that chunk while the rounds run, and is advanced to the
+chunk being encrypted just before the kernel's `finish` XORs the keystream
+into it.
 
 Every register but `rsp` is busy during a chunk: `rdi`, `rsi` and `rcx` are
 the kernel's (the ChaCha20 state, the data and `buf`), and the other twelve
@@ -55,14 +60,45 @@ others. -/
 def blocks (n : Nat) : Nat := if n < 2 then 4 else 3
 def firstBlock (n : Nat) : Nat := if n < 2 then 4 * n else 3 * n + 2
 
-/-- Blocks `j, j + 1, …, j + k - 1` of the 512 bytes at `rsi`, absorbed. -/
-def absorbs (j k : Nat) : List Instr :=
-  (List.range k).flatMap fun i => Poly1305.X86_64.absorbAt .rsi (16 * (j + i)) 1
+/-- The first piece of block `j` of the 512 bytes at `rsi`: the block added
+to the accumulator, and the products of the sum. Its second piece is
+`Poly1305.X86_64.carry`. -/
+def addProd (j : Nat) : List Instr :=
+  Poly1305.X86_64.addBlockAt .rsi (16 * j) 1 ++ Poly1305.X86_64.products
 
-/-- `n` double rounds, each followed by its blocks. -/
+section
+open ChaCha20.X86_64.Avx2 (quarter swap)
+
+/-- A double round (`Avx2.doubleRound`) absorbing blocks `j` to `j + 3`, a
+piece after each quarter round. -/
+def sround4 (j : Nat) : Prog isa :=
+  .seq (quarter 0 4 8 12) <| .seq (.block (addProd j)) <|
+  .seq (quarter 1 5 9 13) <| .seq (.block Poly1305.X86_64.carry) <| .seq (swap 8 10) <|
+  .seq (quarter 2 6 10 14) <| .seq (.block (addProd (j + 1))) <|
+  .seq (quarter 3 7 11 15) <| .seq (.block Poly1305.X86_64.carry) <|
+  .seq (quarter 0 5 10 15) <| .seq (.block (addProd (j + 2))) <|
+  .seq (quarter 1 6 11 12) <| .seq (.block Poly1305.X86_64.carry) <| .seq (swap 10 8) <|
+  .seq (quarter 2 7 8 13) <| .seq (.block (addProd (j + 3))) <|
+  .seq (quarter 3 4 9 14) (.block Poly1305.X86_64.carry)
+
+/-- A double round absorbing blocks `j` to `j + 2`: a piece after each
+quarter round but the first of each half. -/
+def sround3 (j : Nat) : Prog isa :=
+  .seq (quarter 0 4 8 12) <|
+  .seq (quarter 1 5 9 13) <| .seq (.block (addProd j)) <| .seq (swap 8 10) <|
+  .seq (quarter 2 6 10 14) <| .seq (.block Poly1305.X86_64.carry) <|
+  .seq (quarter 3 7 11 15) <| .seq (.block (addProd (j + 1))) <|
+  .seq (quarter 0 5 10 15) <|
+  .seq (quarter 1 6 11 12) <| .seq (.block Poly1305.X86_64.carry) <| .seq (swap 10 8) <|
+  .seq (quarter 2 7 8 13) <| .seq (.block (addProd (j + 2))) <|
+  .seq (quarter 3 4 9 14) (.block Poly1305.X86_64.carry)
+
+end
+
+/-- `n` double rounds, each absorbing its blocks. -/
 def srounds : Nat → Prog isa
   | 0 => .block []
-  | n + 1 => .seq (srounds n) (.seq ChaCha20.X86_64.Avx2.doubleRound (.block (absorbs (firstBlock n) (blocks n))))
+  | n + 1 => .seq (srounds n) (if n < 2 then sround4 (firstBlock n) else sround3 (firstBlock n))
 
 /-- The counter advanced by 8 and 512 bytes fewer left; `CF` is clear if at
 least 512 bytes remain. -/

@@ -31,7 +31,7 @@ def fillInput : List Instr :=
 def storeKey : List Instr := [.add .x .x9 .x21 .x23, .strb .x8 .x9 0]
 
 def fillFinish : List Instr :=
-  storeKey ++ [.addImm .x .x23 .x23 1, .subImm .x .x10 .x23 128]
+  storeKey ++ ([.addImm .x .x23 .x23 1, .subImm .x .x10 .x23 128] : List Instr)
 
 def fillKey : List Instr := fillInput ++ piLookup ++ fillFinish
 

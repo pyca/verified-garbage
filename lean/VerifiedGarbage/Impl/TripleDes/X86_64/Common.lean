@@ -28,12 +28,18 @@ The output bits that one rotation of the source brings to their places
 and they are XORed into the output. -/
 def permuteCode {m : Nat} (positions : Vector Nat m) (n : Nat)
     (dst src tmp : Reg) : List Instr :=
-  let rotOf (i : Nat) : Nat := (n - positions.getD i 1 + 64 - (m - 1 - i)) % 64
-  let winOf (i : Nat) : Nat := (m - 1 - i) / 31 * 31
+  -- The masks of all groups, in one pass over the bits: field `3 k + w / 31`
+  -- (32 bits) of `masks` is the mask of rotation `k` and window `w`, which has
+  -- a bit for each output bit of the group, so it is 0 exactly when the group
+  -- is empty. (The kernel evaluates this code; a pass over the bits for each of
+  -- the 192 groups costs it seconds.)
+  let masks : Nat := positions.toList.zipIdx.foldl (fun acc (p, i) =>
+    let k := (n - p + 64 - (m - 1 - i)) % 64
+    let w := (m - 1 - i) / 31 * 31
+    acc ||| 2 ^ (m - 1 - i - w) <<< (32 * (3 * k + w / 31))) 0
   [imm dst 0] ++ (List.range 64).flatMap fun k => [0, 31, 62].flatMap fun w =>
-    let bits := (List.range m).filter fun i => rotOf i = k && winOf i = w
-    if bits.isEmpty then [] else
-    let mask := bits.foldl (fun acc i => acc ||| 2 ^ (m - 1 - i - w)) 0
+    let mask := masks >>> (32 * (3 * k + w / 31)) % 2 ^ 32
+    if mask = 0 then [] else
     [rr tmp src] ++ rorBy tmp ((k + w) % 64) ++
       ([.alu .and tmp (.imm (BitVec.ofNat 32 mask))] : List Instr) ++ rorBy tmp ((64 - w) % 64) ++
       ([.alu .xor dst (.reg tmp)] : List Instr)

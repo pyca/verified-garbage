@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Camellia.AArch64.ExpandKey
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 
 /-!
 # The Camellia key schedule on AArch64 meets its contracts
@@ -18,8 +19,8 @@ open VG VG.AArch64 VG.Impl.Camellia.AArch64
 
 theorem expandKey_correct (s : State) (hs : expandKeyAArch64.pre s) :
     ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ expandKeyAArch64.post s s' := by
-  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (expandKey_wp hs) (by decide +kernel)
-    (by decide +kernel)
+  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (expandKey_wp hs) (by lit_decide)
+    (by lit_decide)
   refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

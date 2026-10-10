@@ -233,8 +233,9 @@ def toK (M : CtxMode) : Contract isa where
 
 theorem toSpec_pre {s : State} (h : toPre CtxMode.base s) :
     (Spec.Gcm.streamEncryptToContract X86_64.abi 4856).pre s := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
-    a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, -⟩ := h
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
+  clear h
   sig_pre [Spec.Gcm.streamEncryptToContract, Spec.Gcm.streamEncryptToSig, Spec.Gcm.streamEncryptToPre,
     X86_64.abi, X86_64.argRegs]
   sig_reduce [Spec.Gcm.streamEncryptToContract, Spec.Gcm.streamEncryptToSig, Spec.Gcm.streamEncryptToPre,
@@ -250,8 +251,10 @@ theorem toSpec_pre {s : State} (h : toPre CtxMode.base s) :
 
 theorem toSpecP_pre {s : State} (h : toPre CtxMode.powers s) :
     (Spec.Gcm.streamEncryptToPrecomputedContract X86_64.abi 4856).pre s := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
-    a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈⟩ := h
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
+  have a₂₈ := h
+  clear h
   sig_pre [Spec.Gcm.streamEncryptToPrecomputedContract, Spec.Gcm.streamEncryptToPrecomputedSig,
     Spec.Gcm.streamEncryptToPrecomputedPre, X86_64.abi, X86_64.argRegs]
   sig_reduce [Spec.Gcm.streamEncryptToPrecomputedContract, Spec.Gcm.streamEncryptToPrecomputedSig,

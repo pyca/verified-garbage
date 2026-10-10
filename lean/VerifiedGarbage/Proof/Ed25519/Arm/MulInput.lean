@@ -21,7 +21,7 @@ structure MulInput (b p : BitVec 32) (n scalar : Nat) (s : State) : Prop where
 
 theorem MulInput.keep {b p : BitVec 32} {n scalar o len : Nat} {s t : State}
     (h : MulInput b p n scalar s) (hk : MulKeep b o len s t)
-    (ho : 1600 ≤ o) (hn : o + len ≤ 8192) : MulInput b p n scalar t := by
+    (ho : 1632 ≤ o) (hn : o + len ≤ 8192) : MulInput b p n scalar t := by
   refine ⟨h.bound, h.fit, ?_, h.separate, (hk.word ho hn 52 (.inr rfl)).trans h.pointer, ?_⟩
   · intro i hi
     rw [hk.rest.rd, hk.rest.wr]

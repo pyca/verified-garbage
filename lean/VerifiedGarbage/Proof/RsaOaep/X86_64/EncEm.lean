@@ -107,10 +107,11 @@ theorem putMsg_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
   have e0 : oEm + k - mLen - 1 = k - mLen - 1 := by unfold oEm; omega
   have G' := L.geo
   have R1 := R.wb G' (o := k - mLen - 1) (by unfold oRsa; omega) 1
-  have hsplit : putMsg = .seq (.block ((scr .rdi oEm ++ [.mov .rax (.mem (sp sK)), .alu .add .rdi (.reg .rax),
-      .mov .rax (.mem (sp sMsgLen)), .alu .sub .rdi (.reg .rax), .alu .sub .rdi (.imm 1), .mov32 .rax (.imm 1)]) ++
-      [.store8 (at_ .rdi) .rax, .mov .rsi (.mem (sp sMsg)), .mov .r10 (.mem (sp sMsgLen)), .mov32 .r8 (.imm 0),
-        .alu .test .r10 (.reg .r10)]))
+  have hsplit : putMsg = .seq (.block ((scr .rdi oEm ++ ([.mov .rax (.mem (sp sK)), .alu .add .rdi (.reg .rax),
+      .mov .rax (.mem (sp sMsgLen)), .alu .sub .rdi (.reg .rax), .alu .sub .rdi (.imm 1), .mov32 .rax (.imm 1)] :
+        List Instr)) ++
+      ([.store8 (at_ .rdi) .rax, .mov .rsi (.mem (sp sMsg)), .mov .r10 (.mem (sp sMsgLen)), .mov32 .r8 (.imm 0),
+        .alu .test .r10 (.reg .r10)] : List Instr)))
       (.ite .e (.block []) (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rdi .r8 1) .rax] (.reg .r10))) := rfl
   rw [hsplit]
   refine WP.seq (WP.mono (WP.keep [.rdi, .rax, .rsi, .r10, .r8] (Q := fun v => v.gpr .rdi = off S (oEm + k - mLen - 1) ∧

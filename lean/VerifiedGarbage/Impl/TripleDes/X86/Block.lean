@@ -10,15 +10,15 @@ open VG.Spec.TripleDes (Direction)
 
 def savedRegs : List Reg := [.ebp, .ebx, .esi, .edi]
 def saveWithArg (slot : Nat) : List Instr :=
-  [.mov .eax (.mem (memOp .esp (4 * slot)))] ++
+  ([.mov .eax (.mem (memOp .esp (4 * slot)))] : List Instr) ++
     savedRegs.zipIdx.map (fun (r, i) => .store (memOp .eax (4 * i)) r) ++
     [rr .ebp .eax]
 def blockSave : List Instr := saveWithArg 3
 def blockRestore : List Instr :=
   [rr .eax .ebp] ++ savedRegs.zipIdx.map fun (r, i) => .mov r (.mem (memOp .eax (4 * i)))
 def blockLoad : List Instr :=
-  [.mov .edx (.mem (memOp .esp 8)), .mov .edi (.mem (memOp .edx 0)),
-    .mov .esi (.mem (memOp .edx 4)), .bswap .edi, .bswap .esi] ++
+  ([.mov .edx (.mem (memOp .esp 8)), .mov .edi (.mem (memOp .edx 0)),
+    .mov .esi (.mem (memOp .edx 4)), .bswap .edi, .bswap .esi] : List Instr) ++
     permuteCode Spec.TripleDes.ip 64 32 32 .eax .ebx .esi .edi .ecx ++
     [rr .esi .ebx, rr .edi .eax]
 
@@ -29,15 +29,15 @@ def sboxInputBits (i : Nat) : List Instr :=
     [rr .eax .edi] ++ shr .eax (32 - Spec.TripleDes.expansion.getD k 1) ++
       ([.mov .ecx (.mem (memOp .edx (if bit < 32 then 0 else 4)))] : List Instr) ++
       shr .ecx (if bit < 32 then bit else bit - 32) ++
-      [.alu .xor .eax (.reg .ecx), .alu .and .eax (.imm 1),
-        .store (memOp .ebp (4 * (16 + j))) .eax]
+      ([.alu .xor .eax (.reg .ecx), .alu .and .eax (.imm 1),
+        .store (memOp .ebp (4 * (16 + j))) .eax] : List Instr)
 def sboxInputs (i : Nat) : List Instr :=
-  [.mov .edx (.mem (memOp .ebp 16))] ++ sboxInputBits i
+  ([.mov .edx (.mem (memOp .ebp 16))] : List Instr) ++ sboxInputBits i
 def sboxOutputs (i : Nat) : List Instr :=
   (List.range 4).flatMap fun j =>
     let position := 4 * i + 4 - j
     let dst := (Spec.TripleDes.p.toList.findIdx? (· == position)).getD 0
-    [.mov .eax (.mem (memOp .ebp (4 * (16 + j)))), .alu .and .eax (.imm 1)] ++
+    ([.mov .eax (.mem (memOp .ebp (4 * (16 + j)))), .alu .and .eax (.imm 1)] : List Instr) ++
       placeBit .eax (31 - dst) ++ ([.alu .xor .esi (.reg .eax)] : List Instr)
 def box (i : Nat) : List Instr := sboxInputs i ++ sboxCode i ++ sboxOutputs i
 def swapHalves : List Instr := [rr .eax .esi, rr .esi .edi, rr .edi .eax]
@@ -63,7 +63,7 @@ def blockBody (direction : Direction) : Prog isa :=
 /-- Save the final permutation before restoring the caller's registers. -/
 def finalSave : List Instr :=
   permuteCode Spec.TripleDes.fp 64 32 32 .eax .ebx .edi .esi .ecx ++
-    [.store (memOp .ebp 24) .eax, .store (memOp .ebp 28) .ebx]
+    ([.store (memOp .ebp 24) .eax, .store (memOp .ebp 28) .ebx] : List Instr)
 def restoredOutput : List Instr :=
   [rr .edx .eax, .mov .ecx (.mem (memOp .edx 28)), .mov .eax (.mem (memOp .edx 24)),
     .bswap .ecx, .bswap .eax, .mov .edx (.mem (memOp .esp 8)),

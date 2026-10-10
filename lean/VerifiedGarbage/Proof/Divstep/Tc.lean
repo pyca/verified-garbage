@@ -54,10 +54,10 @@ theorem mredRaw_range {p m t : Int} (hp : 0 < p) (hm : (p * m + 1) % 2 ^ 64 = 0)
   rw [abs_le] at ht
   constructor
   · by_contra h; push Not at h
-    have : 2 ^ 64 * mredRaw p m t ≤ 2 ^ 64 * (-p) := by nlinarith
+    have : 2 ^ 64 * mredRaw p m t ≤ 2 ^ 64 * (-p) := by linarith
     nlinarith
   · by_contra h; push Not at h
-    have : 2 ^ 64 * (2 * p) ≤ 2 ^ 64 * mredRaw p m t := by nlinarith
+    have : 2 ^ 64 * (2 * p) ≤ 2 ^ 64 * mredRaw p m t := by linarith
     nlinarith
 
 /-- `mred` as the code computes it, on words of `n + 1` (`A = 2^(64 n)`, `p < A`):
@@ -303,7 +303,7 @@ theorem comb_range {u v f g : Int} {p A : Nat} (huv : |u| + |v| ≤ 2 ^ 59) (hf 
   have hpA' : (p : Int) < A := by exact_mod_cast hpA
   have hp0 : (0 : Int) ≤ p := Int.natCast_nonneg _
   push_cast
-  constructor <;> nlinarith
+  constructor <;> linarith
 
 /-! ## Bounds over a run -/
 

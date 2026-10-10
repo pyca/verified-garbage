@@ -56,7 +56,7 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
   | mov | mov32 | movzx8 | movdquLoad | vbroadcasti128 | vmovdqu32Load | vbroadcasti32x4 | vbroadcasti32x4H | zbcst
   | vpmadd52Load =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
-  | bswap32 | bswap | movImm64 | leaSym | lfence | mul | andn32 | andn | vpmovmskb | movqR =>
+  | bswap32 | bswap | movImm64 | leaSym | lfence | mul | imul | andn32 | andn | vpmovmskb | movqR =>
     simp only [exec, Option.some.injEq] at h; subst h; rfl
   | rorx32 => simp only [exec, execRorx32] at h; split at h <;> cases h; rfl
   | rorx => simp only [exec, execRorx] at h; split at h <;> cases h; rfl

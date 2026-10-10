@@ -113,8 +113,8 @@ theorem decodeY_ok {x : BitVec 32} {s : State} (hc : Ctx x s) :
     rw [hh]
     exact (Nat.mod_eq_of_lt (by have hw := wv_lt s.mem x 124; omega_using [hw])).symm
   refine ⟨⟨kt.edi.trans kc.edi, kt.esp.trans kc.esp, kt.rd.trans kc.rd, kt.wr.trans kc.wr,
-    (frameWiden fc hc.fit (by decide) (by decide) (by decide)).trans
-      (frameWiden ft hc.fit (by decide) (by decide) (by decide))⟩, ?_, ?_⟩
+    Frame.withStk (s := s) ((frameWiden (n' := 7144) fc hc.fit (by decide) (by decide) (by decide)).trans
+      (frameWiden (n' := 7144) ft hc.fit (by decide) (by decide) (by decide)))⟩, ?_, ?_⟩
   · rw [mt, fe_last_write _ _ hc.fit, ev]
     have nl : num (fun j => wv c.mem x (96 + 4 * j)) 7 = num (fun j => wv s.mem x (96 + 4 * j)) 7 :=
       num_congr fun j hj => congrArg BitVec.toNat

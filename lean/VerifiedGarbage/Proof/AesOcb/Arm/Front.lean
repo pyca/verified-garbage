@@ -46,8 +46,10 @@ theorem argR_eq (s : State) : args s 7 = argR s.sp := by
   simp only [args, argR, stackArgAddr, Nat.mul_zero, BitVec.add_zero]
 
 theorem lay_of {s : State} (h : oneLay s) : Lay (prmOf s) := by
-  obtain ⟨d1, d2, d3, d4, d5, d6, d7, d8, d9, b1, b2, b3, b4, b5, f1, f2, f3, f4, f5, sp8, spf, hR,
-    hv, t1, t2, t3, t4⟩ := h
+  sig_split h
+  rename_i d1 d2 d3 d4 d5 d6 d7 d8 d9 b1 b2 b3 b4 b5 f1 f2 f3 f4 f5 sp8 spf hR hv t1 t2 t3
+  have t4 := h
+  clear h
   simp only [Spec.Ocb.lengthsOk, Bool.and_eq_true, decide_eq_true_eq] at hv
   obtain ⟨⟨⟨ht1, ht16⟩, hn1⟩, hn15⟩ := hv
   rw [argR_eq] at d8 d9

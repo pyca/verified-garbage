@@ -135,8 +135,8 @@ def finUsed (r : Nat) : Prog isa := .block ([ldh .x3 kUsed] ++ finish r)
 /-- Status 1: `used` the octets read, and `c` to `out` under the mask
 `sMask`, all ones. -/
 def finPrime : Prog isa :=
-  seqs ([.block [ldh .x3 kUsed, ldh .x2 kUsedP, st .x3 .x2]] ++ storeA aN kOut kLen sMask ++
-    [.block [movi .x0 1]])
+  seqs (([.block [ldh .x3 kUsed, ldh .x2 kUsedP, st .x3 .x2]] : List (Prog isa)) ++ storeA aN kOut kLen sMask ++
+    ([.block [movi .x0 1]] : List (Prog isa)))
 
 /-- `x5 := 1` if `[x3] − [x4]` does not borrow, else 0 (`x7 := 0`). -/
 def geFlag : List Instr := [.subs .x .x3 .x3 .x4, movi .x7 0, movi .x4 1, .csel .x .x5 .x4 .x7]
@@ -147,10 +147,10 @@ def geFlag : List Instr := [.subs .x .x3 .x3 .x4, movi .x7 0, movi .x4 1, .csel 
 the first `out_len` octets of `rand` with its two top bits and its low bit
 set; and `used := out_len`. -/
 def loadC : List (Prog isa) :=
-  [.block Keys.head] ++ loadA aN kRand kLen ++
-  [.block (ws ++ base aN .x16 ++ [ld .x3 .x16, movi .x4 1, .logic .orr .x .x3 .x3 .x4, st .x3 .x16,
+  ([.block Keys.head] : List (Prog isa)) ++ loadA aN kRand kLen ++
+  ([.block (ws ++ base aN .x16 ++ [ld .x3 .x16, movi .x4 1, .logic .orr .x .x3 .x3 .x4, st .x3 .x16,
     .lsl .x .x5 .x12 3, .add .x .x5 .x16 .x5, .subImm .x .x5 .x5 8, ld .x3 .x5, .movz .x .x4 0xC000 3,
-    .logic .orr .x .x3 .x3 .x4, st .x3 .x5, ldh .x3 kLen, sth .x3 kUsed])]
+    .logic .orr .x .x3 .x3 .x4, st .x3 .x5, ldh .x3 kLen, sth .x3 kUsed])] : List (Prog isa))
 
 /-! ## Too close to `p` -/
 
@@ -168,14 +168,14 @@ the mask of the former's borrow (kept in `kT0`); the bound in `aY` (word
 def closeCheck : List (Prog isa) :=
   [.block [ldh .x3 kPlen, movi .x15 0],
    .ite (.zero .x .x3) (.block []) (seqs (loadA aX kP kPlen ++ subA aAcc aN aX ++
-      [.block (borrowMask ++ [sth .x15 kT0])] ++ subA aTmp aX aN ++ [
+      ([.block (borrowMask ++ [sth .x15 kT0])] : List (Prog isa)) ++ subA aTmp aX aN ++ ([
       .block (ws ++ [ldh .x15 kT0, mov .x14 .x12] ++ base aTmp .x16 ++ base aAcc .x17),
       Crt.selLoop,
       .block [ldh .x12 sW, .movz .x .x9 0x1000 1, .subImm .x .x13 .x12 2],
       setWord aY,
       .block (ws ++ [movi .x7 0, mov .x14 .x12, .subs .x .x3 .x7 .x7] ++ base aY .x16 ++ base aAcc .x17),
       cmpLoop,
-      .block carryMask]))]
+      .block carryMask] : List (Prog isa))))]
 
 /-! ## Trial division -/
 
@@ -191,9 +191,11 @@ def redc32 : List Instr :=
 or'ed into `x1` (`x7 = 0`, `x8` all ones). -/
 def trialEntry (j : Nat) : List (Prog isa) := [
   .block ((if j = 0 then [mov .x3 .x17] else [.lsr .x .x3 .x17 (16 * j)]) ++
-    [.movz .x .x4 0xFFFF 0, .logic .and .x .x3 .x3 .x4] ++ minv ++ [mov .x13 .x3] ++ ws ++ base aN .x16 ++
+    ([.movz .x .x4 0xFFFF 0, .logic .and .x .x3 .x3 .x4] : List Instr) ++ minv ++ [mov .x13 .x3] ++ ws ++
+      base aN .x16 ++
     [mov .x14 .x12, movi .x2 0]),
-  countLoop .x14 ([ld .x5 .x16, .addImm .w .x4 .x5 0] ++ redc32 ++ [.lsr .x .x4 .x5 32] ++ redc32 ++ [next .x16]),
+  countLoop .x14 ([ld .x5 .x16, .addImm .w .x4 .x5 0] ++ redc32 ++ ([.lsr .x .x4 .x5 32] : List Instr) ++ redc32 ++
+    [next .x16]),
   .block [movi .x4 1, .subs .x .x3 .x2 .x4, .csel .x .x5 .x7 .x8, .logic .eor .x .x3 .x2 .x13,
     .subs .x .x3 .x3 .x4, .csel .x .x6 .x7 .x8, .logic .orr .x .x5 .x5 .x6, .logic .orr .x .x1 .x1 .x5]]
 
@@ -213,8 +215,8 @@ def trial : List (Prog isa) := [
   .block (ws ++ base aTab .x9 ++ tabWrite ++
     [movi .x3 128, movi .x4 256, movi .x5 17, .subs .x .x6 .x12 .x5, .csel .x .x10 .x4 .x3, movi .x1 0,
       movi .x7 0, .subImm .x .x8 .x7 1]),
-  .loop (seqs ([.block [ld .x17 .x9, next .x9]] ++ trialEntry 0 ++ trialEntry 1 ++ trialEntry 2 ++
-      trialEntry 3 ++ [.block [.subImm .x .x10 .x10 1]])) (.nonzero .x .x10)]
+  .loop (seqs (([.block [ld .x17 .x9, next .x9]] : List (Prog isa)) ++ trialEntry 0 ++ trialEntry 1 ++ trialEntry 2 ++
+      trialEntry 3 ++ ([.block [.subImm .x .x10 .x10 1]] : List (Prog isa)))) (.nonzero .x .x10)]
 
 /-! ## `gcd(c − 1, e)` -/
 
@@ -256,16 +258,16 @@ def bgcdStep : List Instr :=
 /-- `kG := gcd(c − 1, e)` for the odd `e > 1` in `kG`: `(c − 1) mod e`, then
 128 steps. -/
 def gcdE : List (Prog isa) :=
-  modLoop ++ [.block [movi .x9 128], countLoop .x9 bgcdStep, .block [sth .x13 kG]]
+  modLoop ++ ([.block [movi .x9 128], countLoop .x9 bgcdStep, .block [sth .x13 kG]] : List (Prog isa))
 
 /-- `gcd(c − 1, e)` into `kG`, or `e` for an even `e`; then `x3 = 0` iff it
 is 1. -/
 def gcdCheck : List (Prog isa) :=
-  loadE ++ [
+  loadE ++ ([
   .block [sth .x3 kG, movi .x4 1, .logic .and .x .x5 .x3 .x4],
   .ite (.zero .x .x5) (.block [])
     (.seq (.block [.subImm .x .x5 .x3 1]) (.ite (.zero .x .x5) (.block []) (seqs gcdE))),
-  .block [ldh .x3 kG, .subImm .x .x3 .x3 1]]
+  .block [ldh .x3 kG, .subImm .x .x3 .x3 1]] : List (Prog isa))
 
 /-! ## Montgomery arithmetic modulo `c` -/
 
@@ -275,18 +277,18 @@ def checksIf (k v : Nat) : List Instr := [movi .x4 k, .subs .x .x3 .x12 .x4, mov
 /-- `-c⁻¹`, the number 1, `R² mod c`, `R mod c` into `aR1` and `c − R mod c`
 into `aRm1`, and the number of uniform witnesses needed (`checksW w`). -/
 def montSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  [.block ([ldh .x8 (sArr aN), ld .x3 .x8] ++ minv ++ [sth .x15 sMinv, ldh .x12 sW, movi .x9 1, movi .x13 0]),
-    setWord aOne] ++
+  ([.block ([ldh .x8 (sArr aN), ld .x3 .x8] ++ minv ++ [sth .x15 sMinv, ldh .x12 sW, movi .x9 1, movi .x13 0]),
+    setWord aOne] : List (Prog isa)) ++
   r2Steps mul ++
   [mul aY aR2 aOne, copyA aR1 aY] ++ subA aRm1 aN aR1 ++
-  [.block ([ldh .x12 sW, movi .x5 27] ++ checksIf 5 8 ++ checksIf 6 7 ++ checksIf 7 6 ++ checksIf 8 5 ++
-    checksIf 22 4 ++ checksIf 59 3 ++ [sth .x5 kChecks])]
+  ([.block ([ldh .x12 sW, movi .x5 27] ++ checksIf 5 8 ++ checksIf 6 7 ++ checksIf 7 6 ++ checksIf 8 5 ++
+    checksIf 22 4 ++ checksIf 59 3 ++ [sth .x5 kChecks])] : List (Prog isa))
 
 /-! ## Miller–Rabin -/
 
 /-- `x15 :=` the mask of `[aY] = [j]`. -/
 def eqMask (j : Nat) : List (Prog isa) :=
-  eqA aY j ++ [.block ([movi .x7 0, movi .x4 1, .subs .x .x3 .x9 .x4] ++ borrowMask)]
+  eqA aY j ++ ([.block ([movi .x7 0, movi .x4 1, .subs .x .x3 .x9 .x4] ++ borrowMask)] : List (Prog isa))
 
 /-- `x15 := ` the mask of the top bit of `kV` (`x7 := 0`). -/
 def bitMask : List Instr := [ldh .x3 kV, .lsr .x .x3 .x3 63, movi .x7 0, .sub .x .x15 .x7 .x3]
@@ -300,11 +302,12 @@ def mrExpBit (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   .block (bitMask ++ ws ++ base aB .x16 ++ base aXm .x17 ++ [mov .x14 .x12]),
   Crt.selLoop,
   mul aY aY aXm] ++
-  eqMask aRm1 ++ [.block [sth .x15 kG]] ++ eqMask aR1 ++ [
+  eqMask aRm1 ++ ([.block [sth .x15 kG]] : List (Prog isa)) ++ eqMask aR1 ++ ([
   .block [mov .x9 .x15, ldh .x3 kV, .lsr .x .x3 .x3 63, movi .x7 0, .sub .x .x6 .x7 .x3, ldh .x5 kG,
     .logic .orr .x .x9 .x9 .x5, .logic .and .x .x9 .x9 .x6, ldh .x4 kFlag, .logic .orr .x .x4 .x4 .x5,
     .subImm .x .x8 .x7 1, .logic .eor .x .x6 .x6 .x8, .logic .and .x .x4 .x4 .x6, .logic .orr .x .x4 .x4 .x9,
-    sth .x4 kFlag, ldh .x3 kV, .lsl .x .x3 .x3 1, sth .x3 kV, ldh .x3 kBits, .subImm .x .x3 .x3 1, sth .x3 kBits]]
+    sth .x4 kFlag, ldh .x3 kV, .lsl .x .x3 .x3 1, sth .x3 kV, ldh .x3 kBits, .subImm .x .x3 .x3 1,
+        sth .x3 kBits]] : List (Prog isa))
 
 /-- The flag over the bits of `c` from the top down to bit 1: its words from
 the top, 64 bits each but 63 of the last. -/
@@ -333,7 +336,8 @@ def mrWitness : List (Prog isa) := [
     base aX .x16 ++ base aN .x17 ++ [ld .x3 .x16, .logic .orr .x .x3 .x3 .x4, ld .x4 .x17, .subs .x .x3 .x3 .x4,
     next .x16, next .x17, .subImm .x .x14 .x12 1]),
   cmpLoop,
-  .block ([.csel .x .x15 .x7 .x8, .logic .and .x .x9 .x9 .x15, sth .x9 kU, .logic .eor .x .x9 .x9 .x8] ++
+  .block (([.csel .x .x15 .x7 .x8, .logic .and .x .x9 .x9 .x15, sth .x9 kU,
+      .logic .eor .x .x9 .x9 .x8] : List Instr) ++
     base aX .x16 ++ [movi .x4 2, .logic .and .x .x4 .x4 .x9, ld .x3 .x16, .logic .orr .x .x3 .x3 .x4, st .x3 .x16,
     .lsl .x .x5 .x12 3, .add .x .x16 .x16 .x5, .subImm .x .x16 .x16 8, .movz .x .x4 0x8000 3,
     .logic .and .x .x4 .x4 .x9, .logic .eor .x .x4 .x4 .x8, ld .x3 .x16, .logic .and .x .x3 .x3 .x4, st .x3 .x16])]
@@ -342,14 +346,14 @@ def mrWitness : List (Prog isa) := [
 `kStat := 3` if it is clear; otherwise the witness counts, and `kStat := 4`
 to go on (fewer than 16 witnesses, or fewer uniform ones than needed) or 1. -/
 def mrRound (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  mrWitness ++ [mul aXm aX aR2, copyA aB aXm, copyA aY aR1] ++ mrExpLoop mul ++ [
+  mrWitness ++ [mul aXm aX aR2, copyA aB aXm, copyA aY aR1] ++ mrExpLoop mul ++ ([
   .block [ldh .x3 kFlag],
   .ite (.zero .x .x3) (.block [movi .x3 3, sth .x3 kStat])
     (.block [ldh .x3 kI, .addImm .x .x3 .x3 1, sth .x3 kI, ldh .x4 kU, movi .x5 1, .logic .and .x .x4 .x4 .x5,
       ldh .x5 kUni, .add .x .x4 .x4 .x5, sth .x4 kUni,
       -- `x13 := 4` if `i ≤ 16` or `uniform < checks`, else 1.
       movi .x9 4, movi .x10 1, movi .x5 17, .subs .x .x6 .x3 .x5, .csel .x .x13 .x10 .x9, ldh .x5 kChecks,
-      .subs .x .x6 .x4 .x5, .csel .x .x13 .x13 .x9, sth .x13 kStat])]
+      .subs .x .x6 .x4 .x5, .csel .x .x13 .x13 .x9, sth .x13 kStat])] : List (Prog isa))
 
 /-- Miller–Rabin: witnesses while `kStat = 4`; 0 when fewer than `out_len`
 octets of `rand` are left (`rand_len − used`, which does not wrap). -/
@@ -369,9 +373,10 @@ def mrResult : Prog isa :=
 
 /-- Once `rand` has the candidate's octets. -/
 def kMain (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  seqs (loadC ++ closeCheck ++ [.ite (.nonzero .x .x15) (finUsed 2) (seqs (trial ++
-    [.ite (.nonzero .x .x1) (finUsed 3) (seqs (gcdCheck ++
-      [.ite (.nonzero .x .x3) (finUsed 3) (seqs (montSetup mul ++ millerRabin mul ++ [mrResult]))]))]))])
+  seqs (loadC ++ closeCheck ++ ([.ite (.nonzero .x .x15) (finUsed 2) (seqs (trial ++
+    ([.ite (.nonzero .x .x1) (finUsed 3) (seqs (gcdCheck ++
+      ([.ite (.nonzero .x .x3) (finUsed 3) (seqs (montSetup mul ++ millerRabin mul ++
+        [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))
 
 /-- `vg_rsa_keygen_candidate`. -/
 def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=

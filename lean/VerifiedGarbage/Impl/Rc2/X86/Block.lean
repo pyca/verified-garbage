@@ -45,7 +45,7 @@ def adjust (sub : Bool) (r : Reg) : List Instr :=
 
 def mixArithmetic (sub : Bool) (j i : Nat) : List Instr :=
   mixSelect i ++ adjust sub (wordReg i) ++ mixKey j ++ adjust sub (wordReg i) ++
-    [.alu .and (wordReg i) (.imm 65535)]
+    ([.alu .and (wordReg i) (.imm 65535)] : List Instr)
 
 def mixCore (d : Spec.Rc2.Direction) (j i : Nat) : List Instr :=
   match d with
@@ -53,10 +53,10 @@ def mixCore (d : Spec.Rc2.Direction) (j i : Nat) : List Instr :=
   | .decrypt => rotate16 (wordReg i) (16 - Spec.Rc2.rotation i) ++ mixArithmetic true j i
 
 def mix (j i : Nat) : List Instr :=
-  loadWords ++ mixCore .encrypt j i ++ [.store (memOp .ebp (wordOff i)) (wordReg i)]
+  loadWords ++ mixCore .encrypt j i ++ ([.store (memOp .ebp (wordOff i)) (wordReg i)] : List Instr)
 
 def reverseMix (j i : Nat) : List Instr :=
-  loadWords ++ mixCore .decrypt j i ++ [.store (memOp .ebp (wordOff i)) (wordReg i)]
+  loadWords ++ mixCore .decrypt j i ++ ([.store (memOp .ebp (wordOff i)) (wordReg i)] : List Instr)
 
 def mashInput (i : Nat) : List Instr :=
   [.mov .eax (.mem (memOp .ebp (wordOff (i + 3)))), .mov .edi (.mem (memOp .esp 4))]
@@ -67,7 +67,7 @@ def mashAdjust (direction : Spec.Rc2.Direction) (i : Nat) : List Instr :=
     .alu .and .edx (.imm 65535)]
 
 def mash (direction : Spec.Rc2.Direction) (i : Nat) : List Instr :=
-  mashInput i ++ keyLookup ++ mashAdjust direction i ++ [.store (memOp .ebp (wordOff i)) .edx]
+  mashInput i ++ keyLookup ++ mashAdjust direction i ++ ([.store (memOp .ebp (wordOff i)) .edx] : List Instr)
 
 def round (direction : Spec.Rc2.Direction) (j : Nat) : List Instr :=
   match direction with

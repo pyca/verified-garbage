@@ -216,8 +216,11 @@ theorem skipLoad_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
   have byte : s.mem (addr (arg s₀ 2 + BitVec.ofNat 32 0) (c - 1)) = kByte s₀ (c - 1) := by
     rw [kByte, bytesAt_getD _ _ _ _ (by omega), ← addr_eq (by have := hsl.fit; omega)]
     apply hs.frame
-    intro r hr; rw [List.mem_singleton.mp hr]
-    exact hsl.sep _ (slice_contains hsl (by omega) (by decide))
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hsl.sep _ (slice_contains hsl (by omega) (by decide))
+    · exact hsl.stk _ (slice_contains hsl (by omega) (by decide))
   have mt : t.mem = s.mem := by rw [ht.mem, h₅.mem, h₄.mem, h₃.mem, m₂]
   have k₅ : IKeep (arg s₀ 3) s t := ⟨by rw [ht.gpr, h₅.other _ (by decide), h₄.other _ (by decide),
       h₃.other _ (by decide), h₂.other _ (by decide), h₁.other _ (by decide)],
@@ -333,7 +336,7 @@ theorem Saved.frame2 {s₀ s t : State} {x : BitVec 32} (h : Saved s₀ x s) (hx
   apply h.of_frame hk hf
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> rw [scR_eq]
+    rcases hr with rfl | rfl <;> refine .inl ?_ <;> rw [scR_eq]
     · exact sub_sub hx (Nat.zero_le _) h2 h5
     · exact sub_sub hx (Nat.zero_le _) h4 h6
   · intro p hp r hr
@@ -343,13 +346,33 @@ theorem Saved.frame2 {s₀ s t : State} {x : BitVec 32} (h : Saved s₀ x s) (hx
     · exact sub_disj (by omega) (by omega) (Or.inl (by omega))
     · exact sub_disj (by omega) (by omega) (Or.inl (by omega))
 
+theorem Saved.frame2s {s₀ s t : State} {x : BitVec 32} (h : Saved s₀ x s) (hx : x.toNat + 8192 ≤ 2 ^ 32)
+    (hk : ScalarKeep s t) {o n o' n' : Nat} (hf : Frame [sub x o n, sub x o' n', callStk s] s.mem t.mem)
+    (h1 : 16 ≤ o) (h2 : o + n ≤ 8192) (h3 : 16 ≤ o') (h4 : o' + n' ≤ 8192) (h5 : o < 8192)
+    (h6 : o' < 8192) : Saved s₀ x t := by
+  apply h.of_frame hk hf
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact .inl (by rw [scR_eq]; exact sub_sub hx (Nat.zero_le _) h2 h5)
+    · exact .inl (by rw [scR_eq]; exact sub_sub hx (Nat.zero_le _) h4 h6)
+    · exact .inr rfl
+  · intro p hp r hr
+    have := savedSlots_bound p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact sub_disj (by omega) (by omega) (Or.inl (by omega))
+    · exact sub_disj (by omega) (by omega) (Or.inl (by omega))
+    · rw [callStk, h.esp]
+      exact h.stk.2.sub_left (by rw [scR_eq]; exact sub_sub hx (Nat.zero_le _) (by omega) (by omega))
+
 theorem windowPrep_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (arg s₀ 3) s)
     {A R : Spec.Ed25519.Point} {Aa : EPoint dZ} (hA : Rep A Aa)
     (ha : tablePoint s.mem (arg s₀ 3) 7680 = A) (hr : tablePoint s.mem (arg s₀ 3) 7808 = R) :
     WP isa windowPrep s fun t => WinCtx s₀ Aa R t ∧ t.gpr .esi = BitVec.ofNat 32 64 ∧
       Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3) 0 := by
   have hfit := hp.scratch.fit
-  have hc := hs.ctx hfit hp.scratch.wr
+  have hc := hs.ctx hfit hp.scratch.wr hp.scratch.stk
   refine WP.seq (WP.mono (fieldCode_ok [.const 16 Spec.Ed25519.d] hc) fun a ⟨ka, ea⟩ => ?_)
   have sa := hs.ikeep hfit (IKeep.of_field ka)
   have ca := ka.ctx hc
@@ -357,25 +380,25 @@ theorem windowPrep_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (a
     fun o h1 h2 => tablePoint_frame hfit ka.frame (by decide) h2 (Or.inr h1)
   refine WP.seq (WP.mono (aTable_ok ca hA (by rw [tpa 7680 (by decide) (by decide)]; exact ha)
     (by rw [ea]; rfl)) fun b hb => ?_)
-  have sb := sa.frame2 hfit hb.keep hb.frame (by decide) (by decide) (by decide) (by decide) (by decide)
+  have sb := sa.frame2s hfit hb.keep hb.frame (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide)
   refine WP.seq (WP.mono (bTable_ok hb.ctx) fun c ⟨kc, fc, tc, dc⟩ => ?_)
   have sc := sb.frame2 hfit kc fc (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-  have cc := sc.ctx hfit hp.scratch.wr
+  have cc := sc.ctx hfit hp.scratch.wr hp.scratch.stk
   rw [windowInit, WP.block_append_iff]
   refine WP.mono (fieldCode_ok _ cc) fun d ⟨kd, ed⟩ => ?_
   refine Wp.wp_movi fun e he => WP.block_nil ?_
   have ke : IKeep (arg s₀ 3) c e := (IKeep.of_field kd).trans (IKeep.of_counter he)
   have de : env e.mem (arg s₀ 3) 16 = env c.mem (arg s₀ 3) 16 := by rw [he.mem, ed]; rfl
   refine ⟨⟨hp, sc.ikeep hfit ke, de.trans (dc.trans hb.d), fun j hj => ?_, fun j hj => ?_, ?_⟩, he.gpr, ?_⟩
-  · rw [tablePoint_frame hfit ke.frame (by decide) (by omega) (Or.inr (by omega)),
+  · rw [workspace_table ke cc _ (by omega) (by omega),
       tablePoint_frame2 fc hfit (by decide) (by decide) (by omega) (Or.inr (by omega)) (Or.inl (by omega))]
     exact hb.table j hj
-  · rw [tablePoint_frame hfit ke.frame (by decide) (by omega) (Or.inr (by omega))]
+  · rw [workspace_table ke cc _ (by omega) (by omega)]
     exact tc j hj
-  · rw [tablePoint_frame hfit ke.frame (by decide) (by decide) (Or.inr (by decide)),
+  · rw [workspace_table ke cc _ (by decide) (by decide),
       tablePoint_frame2 fc hfit (by decide) (by decide) (by decide) (Or.inr (by decide)) (Or.inr (by decide)),
-      tablePoint_frame2 hb.frame hfit (by decide) (by decide) (by decide) (Or.inr (by decide))
+      tablePoint_frame2s ca hb.frame (by decide) (by decide) (by decide) (Or.inr (by decide))
         (Or.inr (by decide)), tpa 7808 (by decide) (by decide)]
     exact hr
   · rw [he.mem, ed, constPoint_eval]; exact identity_rep

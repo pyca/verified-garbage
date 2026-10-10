@@ -79,12 +79,12 @@ def scalar : XorImpl where
   fold_le := by decide
   stack := 8
   stack_le := by decide
-  depth_le := by decide +kernel
-  xdepth := by decide +kernel
+  depth_le := by lit_decide
+  xdepth := by lit_decide
   ok := scalar_ok
   ct := scalar_ct
   nosp := Avx2.xor_nosp
-  mxcsr := by decide +kernel
+  mxcsr := by lit_decide
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := ""
   features := []
@@ -100,7 +100,7 @@ theorem avx2_ct : ConstantTime isa (xorStack 16).pre (xorStack 16).pub Impl.ChaC
 
 theorem avx2_nosp : NoSp Impl.ChaCha20.X86_64.Callee.avx2.code := by
   have : ((instrs Impl.ChaCha20.X86_64.Callee.avx2.code).all fun i => !Taint.clobbers i .rsp) = true := by
-    rw [← Code.allInstrs_eq]; decide +kernel
+    rw [← Code.allInstrs_eq]; lit_decide
   exact fun i hi => by simpa using List.all_eq_true.mp this i hi
 
 /-- The AVX2 implementation, `vg_chacha20_xor_avx2`. -/
@@ -109,12 +109,12 @@ def avx2 : XorImpl where
   fold_le := by decide
   stack := 16
   stack_le := by decide
-  depth_le := by decide +kernel
-  xdepth := by decide +kernel
+  depth_le := by lit_decide
+  xdepth := by lit_decide
   ok := avx2_ok
   ct := avx2_ct
   nosp := avx2_nosp
-  mxcsr := by decide +kernel
+  mxcsr := by lit_decide
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_avx2"
   features := ["avx", "avx2"]
@@ -130,7 +130,7 @@ theorem avx512_ct : ConstantTime isa (xorStack 16).pre (xorStack 16).pub Impl.Ch
 
 theorem avx512_nosp : NoSp Impl.ChaCha20.X86_64.Callee.avx512.code := by
   have : ((instrs Impl.ChaCha20.X86_64.Callee.avx512.code).all fun i => !Taint.clobbers i .rsp) = true := by
-    rw [← Code.allInstrs_eq]; decide +kernel
+    rw [← Code.allInstrs_eq]; lit_decide
   exact fun i hi => by simpa using List.all_eq_true.mp this i hi
 
 /-- The AVX-512 implementation, `vg_chacha20_xor_avx512`. -/
@@ -139,12 +139,12 @@ def avx512 : XorImpl where
   fold_le := by decide
   stack := 16
   stack_le := by decide
-  depth_le := by decide +kernel
-  xdepth := by decide +kernel
+  depth_le := by lit_decide
+  xdepth := by lit_decide
   ok := avx512_ok
   ct := avx512_ct
   nosp := avx512_nosp
-  mxcsr := by decide +kernel
+  mxcsr := by lit_decide
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_avx512"
   features := ["avx", "avx512f"]

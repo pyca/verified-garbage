@@ -207,12 +207,12 @@ theorem copyR_ok {p : Params} (hF : PFacts p) {σ : State} (hp : (kgK p).pre σ)
     WP isa (copy (sc (oSA4 + 34 * j)) (sc oHX) 32) s fun s' => K1R p (j + 1) σ s' ∧ s'.gpr .r15 = s.gpr .r15 := by
   have hk := hF.k; have hl := hF.l
   have L := h.kc.lay hF hp
-  refine WP.mono (copy_okM L (dst := sc (oSA4 + 34 * j)) (src := sc oHX) (n := 32) (by decide) (by layk))
-    fun s' ⟨⟨hP, hb⟩, hx⟩ => ⟨⟨h.kc.step hF hp hP.b hx (by layk), by rw [L.keepBytes hP.b (by layk)]; exact h.hx,
-      by rw [L.keepBytes hP.b (by layk)]; exact h.sa, by rw [L.keepBytes hP.b (by layk)]; exact h.sb,
-      by rw [L.keepBytes hP.b (by layk)]; exact h.z, fun k hk' => ?_⟩, hP.cs .r15 (by decide)⟩
+  refine WP.mono (copy_okM L (dst := sc (oSA4 + 34 * j)) (src := sc oHX) (n := 32) (by decide) (by layd))
+    fun s' ⟨⟨hP, hb⟩, hx⟩ => ⟨⟨h.kc.step hF hp hP.b hx (by layd), by rw [L.keepBytes hP.b (by layd)]; exact h.hx,
+      by rw [L.keepBytes hP.b (by layd)]; exact h.sa, by rw [L.keepBytes hP.b (by layd)]; exact h.sb,
+      by rw [L.keepBytes hP.b (by layd)]; exact h.z, fun k hk' => ?_⟩, hP.cs .r15 (by decide)⟩
   rcases (by omega : k < j ∨ k = j) with hk' | rfl
-  · rw [L.keepBytes hP.b (by layk)]; exact h.sa4 k hk'
+  · rw [L.keepBytes hP.b (by layd)]; exact h.sa4 k hk'
   · rw [hP.pa rbx_cs, hb, ← Proof.MlKem.bytesAt_take s.mem (pa s (sc oHX)) (show 32 ≤ 128 by decide), h.hx, ← rho_eq]
 
 theorem seeds_ok {p : Params} (hF : PFacts p) {σ : State} (hp : (kgK p).pre σ) {s : State} (h : KC p σ s)
@@ -221,38 +221,38 @@ theorem seeds_ok {p : Params} (hF : PFacts p) {σ : State} (hp : (kgK p).pre σ)
   have L := h.lay hF hp
   unfold seeds
   refine WP.seq (WP.mono (setKL_ok L (a := p.k) (b := p.ℓ) (by omega) (by omega)) fun s₁ ⟨hP₁, hx₁, hb₁⟩ => ?_)
-  have h₁ := h.step hF hp hP₁.b hx₁ (by layk)
+  have h₁ := h.step hF hp hP₁.b hx₁ (by layd)
   have L₁ := h₁.lay hF hp
   have e₁ : ∀ o, pa s₁ (sc o) = pa s (sc o) := fun o => hP₁.pa rbx_cs
   refine WP.seq (WP.mono (hash_okM (ps := [((.rbp, 0), 32), (sc oKL, 2)]) (rate := 136) (suffix := 31)
-    (out := sc oHX) (len := 128) (by layk) (by decide) L₁) fun s₂ ⟨⟨hP₂, ho₂⟩, hx₂⟩ => ?_)
-  have h₂ := h₁.step hF hp hP₂.b hx₂ (by layk)
+    (out := sc oHX) (len := 128) (by layd) (by decide) L₁) fun s₂ ⟨⟨hP₂, ho₂⟩, hx₂⟩ => ?_)
+  have h₂ := h₁.step hF hp hP₂.b hx₂ (by layd)
   have L₂ := h₂.lay hF hp
   have e₂ : ∀ o, pa s₂ (sc o) = pa s₁ (sc o) := fun o => hP₂.pa rbx_cs
   have hpc : pieces s₁ [((.rbp, 0), 32), (sc oKL, 2)] = xiOf σ ++ ([BitVec.ofNat 8 p.k] ++ [BitVec.ofNat 8 p.ℓ]) := by
     simp only [pieces, List.flatMap_cons, List.flatMap_nil, List.append_nil, h₁.xi, e₁, hb₁]; rfl
   rw [hpc, ← hx_eq, ← e₂] at ho₂
-  refine WP.seq (WP.mono (copy_okM L₂ (dst := sc oSA) (src := sc oHX) (n := 32) (by decide) (by layk))
+  refine WP.seq (WP.mono (copy_okM L₂ (dst := sc oSA) (src := sc oHX) (n := 32) (by decide) (by layd))
     fun s₃ ⟨⟨hP₃, hb₃⟩, hx₃⟩ => ?_)
-  have h₃ := h₂.step hF hp hP₃.b hx₃ (by layk)
+  have h₃ := h₂.step hF hp hP₃.b hx₃ (by layd)
   have L₃ := h₃.lay hF hp
   have e₃ : ∀ o, pa s₃ (sc o) = pa s₂ (sc o) := fun o => hP₃.pa rbx_cs
-  have hx3 : bytesAt s₃.mem (pa s₃ (sc oHX)) 128 = hxOf p σ := by rw [L₂.keepBytes hP₃.b (by layk)]; exact ho₂
+  have hx3 : bytesAt s₃.mem (pa s₃ (sc oHX)) 128 = hxOf p σ := by rw [L₂.keepBytes hP₃.b (by layd)]; exact ho₂
   rw [← Proof.MlKem.bytesAt_take s₂.mem (pa s₂ (sc oHX)) (show 32 ≤ 128 by decide), ho₂, ← rho_eq, ← e₃] at hb₃
-  refine WP.seq (WP.mono (copy_okM L₃ (dst := sc oSB) (src := sc (oHX + 32)) (n := 64) (by decide) (by layk))
+  refine WP.seq (WP.mono (copy_okM L₃ (dst := sc oSB) (src := sc (oHX + 32)) (n := 64) (by decide) (by layd))
     fun s₄ ⟨⟨hP₄, hb₄⟩, hx₄⟩ => ?_)
-  have h₄ := h₃.step hF hp hP₄.b hx₄ (by layk)
+  have h₄ := h₃.step hF hp hP₄.b hx₄ (by layd)
   have L₄ := h₄.lay hF hp
   have e₄ : ∀ o, pa s₄ (sc o) = pa s₃ (sc o) := fun o => hP₄.pa rbx_cs
   have hsb : bytesAt s₃.mem (pa s₃ (sc (oHX + 32))) 64 = rho'Of p σ := by
     rw [rho'_eq, ← hx3, Proof.MlKem.bytesAt_slice _ _ (show 32 + 64 ≤ 128 by decide), pa, pa, off_add]
   rw [hsb, ← e₄] at hb₄
   refine WP.seq (WP.mono (WP.mx (noLd_spec (by rfl)) (setB_okL L₄ (p := sc (oSB + 65)) (v := 0) (by decide)
-    (by decide) (by lay))) fun s₅ ⟨⟨hP₅, hb₅⟩, hx₅⟩ => ?_)
-  have h₅ : K1R p 0 σ s₅ := ⟨h₄.step hF hp hP₅.b hx₅ (by layk),
-    by rw [L₄.keepBytes hP₅.b (by layk), L₃.keepBytes hP₄.b (by layk)]; exact hx3,
-    by rw [L₄.keepBytes hP₅.b (by layk), L₃.keepBytes hP₄.b (by layk)]; exact hb₃,
-    by rw [L₄.keepBytes hP₅.b (by layk)]; exact hb₄, by rw [hP₅.pa rbx_cs]; exact hb₅,
+    (by decide) (by layd))) fun s₅ ⟨⟨hP₅, hb₅⟩, hx₅⟩ => ?_)
+  have h₅ : K1R p 0 σ s₅ := ⟨h₄.step hF hp hP₅.b hx₅ (by layd),
+    by rw [L₄.keepBytes hP₅.b (by layd), L₃.keepBytes hP₄.b (by layd)]; exact hx3,
+    by rw [L₄.keepBytes hP₅.b (by layd), L₃.keepBytes hP₄.b (by layd)]; exact hb₃,
+    by rw [L₄.keepBytes hP₅.b (by layd)]; exact hb₄, by rw [hP₅.pa rbx_cs]; exact hb₅,
     fun _ h => absurd h (Nat.not_lt_zero _)⟩
   have f₅ : s₅.gpr .r15 = 1 := by
     rw [hP₅.cs .r15 (by decide), hP₄.cs .r15 (by decide), hP₃.cs .r15 (by decide), hP₂.cs .r15 (by decide),
@@ -272,14 +272,14 @@ theorem seeds_tr {p : Params} (hF : PFacts p) : RelCT isa (Two p) (seeds p) fun 
   refine RelCT.seq (Two.step (taintRel [.rbx] (fun x y h => two_rbx h) (setKL_taint p.k (by omega) p.ℓ (by omega)))
     fun x S => WP.mono (setKL_ok S.lay (a := p.k) (b := p.ℓ) (by omega) (by omega)) fun _ h => ⟨_, h.1.b⟩) ?_
   refine RelCT.seq (Two.step (RelCT.mono (hash_tr (kgB_bases p) (ps := [((.rbp, 0), 32), (sc oKL, 2)]) (rate := 136)
-      (suffix := 31) (out := sc oHX) (len := 128) (by layk) (by decide)) (fun _ _ h => h.lrel) fun _ _ h => h)
+      (suffix := 31) (out := sc oHX) (len := 128) (by layd) (by decide)) (fun _ _ h => h.lrel) fun _ _ h => h)
     fun x S => WP.mono (hash_okM (ps := [((.rbp, 0), 32), (sc oKL, 2)]) (rate := 136) (suffix := 31)
-      (out := sc oHX) (len := 128) (by layk) (by decide) S.lay) fun _ h => ⟨_, h.1.1.b⟩) ?_
+      (out := sc oHX) (len := 128) (by layd) (by decide) S.lay) fun _ h => ⟨_, h.1.1.b⟩) ?_
   refine RelCT.seq (Two.step (taintRel [.rbx] (fun x y h => two_rbx h) (by taint_decide))
-    fun x S => WP.mono (copy_okM S.lay (dst := sc oSA) (src := sc oHX) (n := 32) (by decide) (by layk))
+    fun x S => WP.mono (copy_okM S.lay (dst := sc oSA) (src := sc oHX) (n := 32) (by decide) (by layd))
       fun _ h => ⟨_, h.1.1.b⟩) ?_
   refine RelCT.seq (Two.step (taintRel [.rbx] (fun x y h => two_rbx h) (by taint_decide))
-    fun x S => WP.mono (copy_okM S.lay (dst := sc oSB) (src := sc (oHX + 32)) (n := 64) (by decide) (by layk))
+    fun x S => WP.mono (copy_okM S.lay (dst := sc oSB) (src := sc (oHX + 32)) (n := 64) (by decide) (by layd))
       fun _ h => ⟨_, h.1.1.b⟩) ?_
   exact taintRel [.rbx] (fun x y h => two_rbx h) (by taint_decide)
 

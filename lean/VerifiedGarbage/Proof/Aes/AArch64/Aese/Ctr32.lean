@@ -574,7 +574,8 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) :
   · simp only [State.setV, State.write, State.read, ite_true, reduceCtorEq, ite_false, sw32, g,
       f₁.mem, BitVec.add_zero]
     exact icb_lo _ _
-  · exact f₁.mem ▸ Frame.refl _ _
+  · show Frame [dR s₀] s₀.mem s₁.mem
+    rw [f₁.mem]; exact Frame.refl _ _
   · intro i hi
     show s₁.mem _ = _
     rw [f₁.mem, ite_eq_right (by omega), xor_zero']

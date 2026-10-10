@@ -295,10 +295,10 @@ theorem SB.bounds {p : SetupPub} {t : State} (h : SB p t) :
       1 ≤ p.ql ∧ p.ql < 8 * p.w := h.1.1.bounds
 
 /-- Into a workspace from the modulus' (`enterP`, `enterQ`), or back (`leave`). -/
-theorem SB.move {p : SetupPub} {s : State} (h : SB p s) {X : Addr} {i : Nat} {A' : Addr}
-    (hdi : s.gpr .rdi = X) (hl : InRegions (s.rd ++ s.wr) (off X (8 * i)) 8) (hw : word s.mem X (8 * i) = A') :
-    WP isa (.block [.mov .rdi (.mem (hdr i))]) s (SBr (fun _ => A') p) :=
-  WP.mono (WP.keep [.rdi] (Q := fun t => t.gpr .rdi = A' ∧ t.mem = s.mem)
+theorem SB.move {p : SetupPub} {s : State} (h : SB p s) {X : Addr} {i : Nat} {f : SetupPub → Addr}
+    (hdi : s.gpr .rdi = X) (hl : InRegions (s.rd ++ s.wr) (off X (8 * i)) 8) (hw : word s.mem X (8 * i) = f p) :
+    WP isa (.block [.mov .rdi (.mem (hdr i))]) s (SBr f p) :=
+  WP.mono (WP.keep [.rdi] (Q := fun t => t.gpr .rdi = f p ∧ t.mem = s.mem)
     (by xrun [State.ea, hdr, hdi, hdrOff, hl, hw]) rfl) fun t ⟨⟨hdi', hm⟩, k⟩ => ⟨h.mem hm k, hdi'⟩
 
 /-- A prime's workspace context from `SB`. -/

@@ -102,7 +102,10 @@ structure OneLay (s : State) (n w : Nat) : Prop where
 
 theorem oneLay {s : State} {n w : Nat} (hs : oneCore n w s) : OneLay s n w := by
   simp only [oneCore] at hs
-  obtain ⟨mc, mn, ma, mg, md, mw, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, dwa, wc, wn, wa, wd, ww, wsp, hR⟩ := hs
+  sig_split hs
+  rename_i mc mn ma mg md mw dcd dcw dnd dnw dad daw ddw dda dwa wc wn wa wd ww wsp
+  have hR := hs
+  clear hs
   have sub16 : Region.Sub ⟨stackArg s w + BitVec.ofNat 64 16, 80⟩ (workR (stackArg s w)) := Lay.wSub (by decide)
   refine ⟨⟨wc, ?_, ww, dcw.sub_right sub16, dcw, ?_, ?_⟩, ⟨covers_mem (List.mem_append_left _ mc),
     covers_off (k := 2560) (covers_of_mem mw) (show 16 + 80 ≤ 2560 by decide) (by decide),

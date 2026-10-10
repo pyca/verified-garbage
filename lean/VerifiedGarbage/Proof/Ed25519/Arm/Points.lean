@@ -1,7 +1,8 @@
 import VerifiedGarbage.Impl.Ed25519.Arm.FieldMemory
-import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
 
-/-! Exact extended-coordinate operations and the slots they preserve. -/
+/-! Exact extended-coordinate operations, by calls of the functions of point
+arithmetic, and the slots they preserve. -/
 
 namespace VG.Proof.Ed25519.Arm
 
@@ -52,21 +53,21 @@ theorem copyPointToQ_eval (e : Env) :
 
 theorem pointDouble_ok {s : State} {base : BitVec 32} (hs : Ctx base s) (hl : AllLim s.mem base)
     (hd : env s.mem base 16 = Spec.Ed25519.d) :
-    WP isa pointDouble s fun t =>
+    WP isa Point16.doubleCall s fun t =>
       Keep base s t ∧ AllLim t.mem base ∧ point (env t.mem base) 0 1 2 3 =
         Spec.Ed25519.pointAdd (point (env s.mem base) 0 1 2 3) (point (env s.mem base) 0 1 2 3) ∧
       ∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i := by
-  refine WP.mono (fieldCode_ok pointDoubleOps hs hl) fun t ⟨hk, hlt, hv⟩ => ?_
+  refine WP.mono (doubleCall_ok hs hl) fun t ⟨hk, hlt, hv⟩ => ?_
   rw [hv]
   exact ⟨hk, hlt, pointDouble_eval _ hd, pointDouble_high _⟩
 
 theorem pointAdd_ok {s : State} {base : BitVec 32} (hs : Ctx base s) (hl : AllLim s.mem base)
     (hd : env s.mem base 16 = Spec.Ed25519.d) :
-    WP isa pointAdd s fun t =>
+    WP isa Point16.addCall s fun t =>
       Keep base s t ∧ AllLim t.mem base ∧ point (env t.mem base) 0 1 2 3 =
         Spec.Ed25519.pointAdd (point (env s.mem base) 0 1 2 3) (point (env s.mem base) 4 5 6 7) ∧
       ∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i := by
-  refine WP.mono (fieldCode_ok pointAddOps hs hl) fun t ⟨hk, hlt, hv⟩ => ?_
+  refine WP.mono (addCall_ok hs hl) fun t ⟨hk, hlt, hv⟩ => ?_
   rw [hv]
   exact ⟨hk, hlt, pointAdd_eval _ hd, pointAdd_high _⟩
 

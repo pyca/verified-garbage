@@ -28,8 +28,11 @@ theorem FS.keep {s₀ s t : State} {pass slice lane index ctr : Nat} {st : FillS
     (hc : blk t.mem (scrP s₀) 6144 = blk s.mem (scrP s₀) 6144)
     (hm : ∀ k < (prm s₀).blocks, blockAt t.mem (matrixCell (memB s₀) k) = blockAt s.mem (matrixCell (memB s₀) k)) :
     FS s₀ pass slice lane index ctr st t := by
-  refine ⟨it, Prm.of_lw h.pr fun d hd => hl d (by simp at hd ⊢; omega),
-    h.pos.of_lw fun d hd => hl d (by simp at hd ⊢; omega), ?_, Represents.keep h.mem hm⟩
+  refine ⟨it, Prm.of_lw h.pr fun d hd => hl d (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; rcases hd with rfl | rfl | rfl | rfl <;> decide),
+    h.pos.of_lw fun d hd => hl d (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; rcases hd with rfl | rfl | rfl | rfl <;> decide),
+    ?_, Represents.keep h.mem hm⟩
   obtain ⟨c0, c1, c2 | ⟨c3, c4⟩⟩ := h.cache
   · exact ⟨c0, by rw [hl _ (by simp)]; exact c1, .inl c2⟩
   · exact ⟨c0, by rw [hl _ (by simp)]; exact c1, .inr ⟨c3, by rw [hc]; exact c4⟩⟩

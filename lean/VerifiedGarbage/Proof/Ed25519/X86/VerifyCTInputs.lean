@@ -205,24 +205,40 @@ section
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
 
-def RecoverCTPre (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (s : State) : Prop :=
-  Ctx base s ∧ wd s.mem base 32 = signWord b ∧ env s.mem base 1 = y
+/-- A run at code that calls a function of the workspace: the workspace at `base`, apart from the
+stack a call uses, with `esp` at `sp` and the writable regions `W`, the same in both runs. -/
+def CtxAt (base sp : BitVec 32) (W : List Region) (s : State) : Prop :=
+  PointCTCtx base s ∧ s.gpr .esp = sp ∧ s.wr = W
+
+theorem CtxAt.call {base sp : BitVec 32} {W : List Region} {s t : State} (hs : CtxAt base sp W s)
+    (ht : CtxAt base sp W t) : CallCTPre base s t :=
+  ⟨hs.1, ht.1, hs.2.2.trans ht.2.2.symm, hs.2.1.trans ht.2.1.symm⟩
+
+theorem CtxAt.of {base sp : BitVec 32} {W : List Region} {s t : State} (h : CtxAt base sp W s)
+    (he : t.gpr .edi = s.gpr .edi) (hw : t.wr = s.wr) (hsp : t.gpr .esp = s.gpr .esp) :
+    CtxAt base sp W t :=
+  ⟨h.1.keep he hw hsp, hsp.trans h.2.1, hw.trans h.2.2⟩
+
+def RecoverCTPre (base sp : BitVec 32) (W : List Region) (b : Bool) (y : Spec.X25519.Fe) (s : State) :
+    Prop :=
+  CtxAt base sp W s ∧ wd s.mem base 32 = signWord b ∧ env s.mem base 1 = y
 
 private def CandidateCTState (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (s : State) : Prop :=
   Ctx base s ∧ wd s.mem base 32 = signWord b ∧ env s.mem base 0 = rootX y ∧
     env s.mem base 11 = rootV y * rootX y * rootX y ∧
     env s.mem base 6 = rootU y ∧ env s.mem base 12 = 0 - rootU y
 
-theorem recoverPoint_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) :
-    RelCT isa (fun s t => RecoverCTPre base b y s ∧ RecoverCTPre base b y t)
+theorem recoverPoint_ct (base sp : BitVec 32) (W : List Region) (b : Bool) (y : Spec.X25519.Fe) :
+    RelCT isa (fun s t => RecoverCTPre base sp W b y s ∧ RecoverCTPre base sp W b y t)
       recoverPoint (fun _ _ => True) := by
   have ht := (recoverCandidate_ct base).mono
-    (fun _ _ (h : RecoverCTPre base b y _ ∧ RecoverCTPre base b y _) => ⟨h.1.1.edi, h.2.1.edi⟩)
+    (fun _ _ (h : RecoverCTPre base sp W b y _ ∧ RecoverCTPre base sp W b y _) => h.1.1.call h.2.1)
     (fun _ _ h => h)
-  have hw (s : State) (h : RecoverCTPre base b y s) :
+  have hw (s : State) (h : RecoverCTPre base sp W b y s) :
       WP isa recoverCandidate s (CandidateCTState base b y) := by
-    refine WP.mono (recoverCandidate_ok h.1) fun t ⟨kt, tx, _, _, tu, _, tv, tn⟩ => ?_
-    refine ⟨kt.ctx h.1, (kt.word h.1 32 (by decide)).trans h.2.1, ?_, ?_, ?_, ?_⟩
+    have hc := h.1.1.ctx
+    refine WP.mono (recoverCandidate_ok hc) fun t ⟨kt, tx, _, _, tu, _, tv, tn⟩ => ?_
+    refine ⟨kt.ctx hc, (kt.word hc 32 (by decide)).trans h.2.1, ?_, ?_, ?_, ?_⟩
     · rw [tx, h.2.2]
     · rw [tv, h.2.2]
     · rw [tu, h.2.2]
@@ -254,18 +270,20 @@ end
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
 
-def DecodeCTPre (base : BitVec 32) (n : Nat) (s : State) : Prop := Ctx base s ∧ fe s.mem base 96 = n
+def DecodeCTPre (base sp : BitVec 32) (W : List Region) (n : Nat) (s : State) : Prop :=
+  CtxAt base sp W s ∧ fe s.mem base 96 = n
 
-theorem decodeHeadCT_ok {base : BitVec 32} {s : State} (hc : Ctx base s) :
+theorem decodeHeadCT_ok {base sp : BitVec 32} {W : List Region} {s : State} (hca : CtxAt base sp W s) :
     WP isa (.block (decodeY ++ canonicalY)) s fun t =>
-      RecoverCTPre base (fe s.mem base 96 / 2 ^ 255 == 1)
+      RecoverCTPre base sp W (fe s.mem base 96 / 2 ^ 255 == 1)
         (VG.Proof.X25519.toFe (fe s.mem base 96 % 2 ^ 255)) t ∧
       t.zf = some (decide (fe s.mem base 96 % 2 ^ 255 < Spec.X25519.P)) := by
+  have hc := hca.1.ctx
   rw [WP.block_append_iff]
   refine WP.mono (decodeY_ok hc) fun a ⟨ka, ya, ba⟩ => ?_
   have ca := ka.ctx hc
   refine WP.mono (canonicalY_ok ca (by rw [ya]; exact Nat.mod_lt _ (by decide))) fun t ⟨kt, et, bt, zt⟩ => ?_
-  refine ⟨⟨kt.ctx ca, ?_, ?_⟩, ?_⟩
+  refine ⟨⟨hca.of (kt.keep.edi.trans ka.edi) (kt.keep.wr.trans ka.wr) (kt.keep.esp.trans ka.esp), ?_, ?_⟩, ?_⟩
   · rw [bt, ba]
     have hn : fe s.mem base 96 / 2 ^ 255 ≤ 1 := by
       have hlt := fe_lt s.mem base 96
@@ -277,17 +295,18 @@ theorem decodeHeadCT_ok {base : BitVec 32} {s : State} (hc : Ctx base s) :
     rw [ya]
   · rw [zt, ya]
 
-theorem pointDecode_ct (base : BitVec 32) (n : Nat) :
-    RelCT isa (fun s t => DecodeCTPre base n s ∧ DecodeCTPre base n t) pointDecode (fun _ _ => True) := by
+theorem pointDecode_ct (base sp : BitVec 32) (W : List Region) (n : Nat) :
+    RelCT isa (fun s t => DecodeCTPre base sp W n s ∧ DecodeCTPre base sp W n t) pointDecode
+      (fun _ _ => True) := by
   let b := n / 2 ^ 255 == 1
   let y := VG.Proof.X25519.toFe (n % 2 ^ 255)
-  have ht : RelCT isa (fun s t => DecodeCTPre base n s ∧ DecodeCTPre base n t)
+  have ht : RelCT isa (fun s t => DecodeCTPre base sp W n s ∧ DecodeCTPre base sp W n t)
       (.block (decodeY ++ canonicalY)) (fun _ _ => True) := by
     apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
-    exact fun _ _ h => edi_agree h.1.1.edi h.2.1.edi
-  have hw (s : State) (h : DecodeCTPre base n s) :
+    exact fun _ _ h => edi_agree h.1.1.1.ctx.edi h.2.1.1.ctx.edi
+  have hw (s : State) (h : DecodeCTPre base sp W n s) :
       WP isa (.block (decodeY ++ canonicalY)) s fun t =>
-        RecoverCTPre base b y t ∧ t.zf = some (decide (n % 2 ^ 255 < Spec.X25519.P)) := by
+        RecoverCTPre base sp W b y t ∧ t.zf = some (decide (n % 2 ^ 255 < Spec.X25519.P)) := by
     have hh := decodeHeadCT_ok h.1
     rw [h.2] at hh
     exact hh
@@ -295,7 +314,7 @@ theorem pointDecode_ct (base : BitVec 32) (n : Nat) :
   rw [pointDecode]
   refine VG.RelCT.seq hp (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
   · exact fun _ _ h => h.2.1.2.trans h.2.2.2.symm
-  · exact (recoverPoint_ct base b y).mono
+  · exact (recoverPoint_ct base sp W b y).mono
       (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) (fun _ _ h => h)
   · exact recoverInvalid_ct.mono (fun _ _ _ => trivial) (fun _ _ h => h)
 
@@ -321,6 +340,47 @@ structure VerifyCTFacts (s t : State) : Prop where
 theorem VerifyCTFacts.args {s t : State} (h : VerifyCTFacts s t) (i : Nat) (hi : i < 4) : arg s i = arg t i := by
   rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
   exacts [h.pub.2.1, h.pub.2.2.1, h.pub.2.2.2.1, h.pub.2.2.2.2.1]
+
+/-- A region of no bytes is apart from every region. -/
+theorem empty_disjoint {b : Addr} (r : Region) : (⟨b, 0⟩ : Region).Disjoint r := fun _ h => by
+  simp only [Region.Contains] at h; omega
+
+/-- A run of the verification after the callee-saved registers are saved: its workspace and
+writable regions, as the code that calls a function of the workspace needs them. -/
+theorem verify_pointCTCtx {s₀ s : State} (hp : verifyLocal.pre s₀) (hs : Saved s₀ (arg s₀ 3) s) :
+    PointCTCtx (arg s₀ 3) s := by
+  have ps := verify_pre hp
+  obtain ⟨_, wr, _, _, _, _, _, _, _, _, scf, _, _, ks, _, _, _⟩ := hp
+  have hw : s.wr = [sub (arg s₀ 3) 0 0, scR 8192 (arg s₀ 3)] := hs.wr.trans wr
+  refine ⟨hs.ctx ps.scratch.fit ps.scratch.wr ps.scratch.stk, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [hw]; exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil)
+  · rw [hw]; exact List.pairwise_cons.mpr ⟨by simpa [sub] using empty_disjoint _, by simp⟩
+  · intro r hr
+    rw [hw] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · simp only [addr_zero, BitVec.toNat_setWidth]; omega
+    · simp only [BitVec.toNat_setWidth]; omega
+  · change s.wr.getD 1 ⟨0, 0⟩ = _
+    rw [hw]; rfl
+  · intro r hr
+    rw [hw] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rw [callStk, hs.esp]
+    rcases hr with rfl | rfl
+    · exact (by simpa [sub] using empty_disjoint _ : (sub (arg s₀ 3) 0 0).Disjoint (callStk s₀)).symm
+    · exact ks
+
+/-- Two runs of the verification after their callee-saved registers are saved, at code that calls
+a function of the workspace. -/
+theorem VerifyCTFacts.callPre {s₀ t₀ s t : State} (h : VerifyCTFacts s₀ t₀) (hs : Saved s₀ (arg s₀ 3) s)
+    (ht : Saved t₀ (arg t₀ 3) t) : CallCTPre (arg s₀ 3) s t := by
+  have e3 := h.args 3 (by decide)
+  have cs := verify_pointCTCtx h.left hs
+  have ct := verify_pointCTCtx h.right ht
+  rw [← e3] at ct
+  refine ⟨cs, ct, ?_, by rw [hs.esp, ht.esp]; exact h.pub.1⟩
+  rw [hs.wr, ht.wr, h.left.2.1, h.right.2.1, e3]
 
 theorem loadSlicePointer_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (i skip : Nat)
     (hi : i ≤ 2) (hk : skip = 0 ∨ skip = 32) :

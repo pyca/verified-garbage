@@ -5,12 +5,14 @@ import VerifiedGarbage.Impl.Ed25519.X86.Field
 section
 /-! Full-width constants and field-slot copies. -/
 namespace VG.Proof.Ed25519.X86
+
+variable {c : Bool}
 open VG VG.X86 VG.Impl.X25519.X86 VG.Impl.Ed25519.X86 VG.Spec.X25519
 open VG.Proof.X25519
 
 theorem slot_valid (o : Slot) : isSlot 64 (offset o) = true := (by decide : ∀ i : Slot, isSlot 64 (offset i) = true) o
 
-theorem fill_step {x : BitVec 32} {s₀ s : State} (hc : Ctx x s) {o n : Nat} (ho : Below o) (hn : n < 8)
+theorem fill_step {x : BitVec 32} {s₀ s : State} (hc : Ctx x s c) {o n : Nat} (ho : Below o) (hn : n < 8)
     (f : Nat → BitVec 32) (hk : Keep s₀ s) (hf : Frame [sub x o (4 * n)] s₀.mem s.mem)
     (hw : ∀ j < n, wd s.mem x (o + 4 * j) = f j) :
     WP isa (.block [.mov .eax (.imm (f n)), .store (sc (o + 4 * n)) .eax]) s fun s' =>
@@ -33,7 +35,7 @@ theorem fill_step {x : BitVec 32} {s₀ s : State} (hc : Ctx x s) {o n : Nat} (h
         (by omega_using [hj, e])]
       exact hw j (by omega_using [hj, e])
 
-theorem fill_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx x s₀) {o : Nat} (ho : Below o) (f : Nat → BitVec 32) :
+theorem fill_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx x s₀ c) {o : Nat} (ho : Below o) (f : Nat → BitVec 32) :
     ∀ n ≤ 8, WP isa (.block ((List.range n).flatMap fun k =>
       [.mov .eax (.imm (f k)), .store (sc (o + 4 * k)) .eax])) s₀ fun s' =>
       Keep s₀ s' ∧ Frame [sub x o (4 * n)] s₀.mem s'.mem ∧
@@ -52,7 +54,7 @@ theorem num_digits (v n : Nat) :
     rw [num_succ, ih, Nat.pow_succ (2 ^ 32) n]
     exact Nat.mod_mul.symm
 
-theorem constField_op {s : State} {x : BitVec 32} (hc : Ctx x s) (o : Slot) (v : Fe) :
+theorem constField_op {s : State} {x : BitVec 32} (hc : Ctx x s c) (o : Slot) (v : Fe) :
     WP isa (.block (constField o v)) s fun t =>
       Keep s t ∧ Frame [sub x (offset o) 32] s.mem t.mem ∧ F t.mem x (offset o) = v := by
   refine WP.mono (fill_ok hc (slot_below (slot_valid o))
@@ -70,6 +72,8 @@ end
 
 /-! Field programs and exact Edwards-coordinate formulas. -/
 namespace VG.Proof.Ed25519.X86
+
+variable {c : Bool}
 open VG VG.X86 VG.Impl.X25519.X86 VG.Impl.Ed25519.X86
 
 abbrev Env := Slot → Spec.X25519.Fe
@@ -110,7 +114,7 @@ theorem FieldKeep.trans {x : BitVec 32} {s t u : State}
   ⟨h.keep.trans k.keep, h.frame.trans k.frame⟩
 
 theorem FieldKeep.ctx {x : BitVec 32} {s t : State}
-    (h : FieldKeep x s t) (hc : Ctx x s) : Ctx x t := h.keep.ctx hc
+    (h : FieldKeep x s t) (hc : Ctx x s c) : Ctx x t c := h.keep.ctx hc
 
 theorem offset_inj {a b : Slot} (h : offset a = offset b) : a = b := by
   apply Fin.ext
@@ -136,7 +140,7 @@ theorem const_env {x : BitVec 32} {m m' : Mem} (hx : x.toNat + 8192 ≤ 2 ^ 32) 
     exact fe_frame1 hf hx (by simp only [offset]; omega)
       (by simp only [offset]; omega) (slot_ne (slot_valid o) (slot_valid i) (fun h => hi (offset_inj h)))
 
-theorem raw_field_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (op : Op)
+theorem raw_field_ok {s : State} {x : BitVec 32} (hc : Ctx x s c) (op : Op)
     (hv : opValid 64 op = true) (o : Slot) (ho : opOut op = offset o) :
     WP isa (.block op.code) s fun t => FieldKeep x s t ∧
       env t.mem x = Function.update (env s.mem x) o (opVal op (F s.mem x)) := by
@@ -148,7 +152,7 @@ theorem raw_field_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (op : Op)
   rw [← congrFun hr i]
   exact (he (offset i) (slot_valid i)).trans (by rw [ho])
 
-theorem fieldOp_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (op : FieldOp) :
+theorem fieldOp_ok {s : State} {x : BitVec 32} (hc : Ctx x s c) (op : FieldOp) :
     WP isa (.block op.code) s fun t => FieldKeep x s t ∧ env t.mem x = evalOp op (env s.mem x) := by
   cases op with
   | const o v =>
@@ -169,7 +173,7 @@ theorem fieldOp_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (op : FieldOp) :
     exact raw_field_ok hc (.sub (offset o) (offset a) (offset b))
       (by simp only [opValid, opOut, opIns, List.all_cons, List.all_nil, slot_valid]; rfl) o rfl
 
-theorem fieldCode_ok (ops : List FieldOp) {s : State} {x : BitVec 32} (hc : Ctx x s) :
+theorem fieldCode_ok (ops : List FieldOp) {s : State} {x : BitVec 32} (hc : Ctx x s c) :
     WP isa (.block (fieldCode ops)) s fun t =>
       FieldKeep x s t ∧ env t.mem x = evalOps ops (env s.mem x) := by
   induction ops generalizing s with
@@ -179,6 +183,77 @@ theorem fieldCode_ok (ops : List FieldOp) {s : State} {x : BitVec 32} (hc : Ctx 
     refine WP.mono (fieldOp_ok hc op) fun t ⟨ht, et⟩ => ?_
     refine WP.mono (ih (ht.ctx hc)) fun u ⟨hu, eu⟩ => ?_
     exact ⟨ht.trans hu, by rw [eu, et]; rfl⟩
+
+/-! ## Code with calls
+
+A call of `vg_ed25519_r32_point_add` or `vg_gf25519_r32_pow250` also changes
+bytes 864 to 1023 of the working space (beyond the slots and `T`) and the 8
+bytes of stack below `esp` that the call uses (`CallKeep`). -/
+
+/-- What code with calls keeps: the registers `Keep` keeps, and the memory but
+bytes 64 to 1023 of the working space and the stack a call uses. -/
+structure CallKeep (x : BitVec 32) (s t : State) : Prop where
+  keep : Keep s t
+  frame : Frame [sub x 64 960, callStk s] s.mem t.mem
+
+theorem CallKeep.refl (x : BitVec 32) (s : State) : CallKeep x s s :=
+  ⟨Keep.refl _, Frame.refl _ _⟩
+
+theorem CallKeep.trans {x : BitVec 32} {s t u : State}
+    (h : CallKeep x s t) (k : CallKeep x t u) : CallKeep x s u :=
+  ⟨h.keep.trans k.keep, h.frame.trans (by rw [callStk, ← h.keep.esp]; exact k.frame)⟩
+
+theorem CallKeep.ctx {x : BitVec 32} {s t : State}
+    (h : CallKeep x s t) (hc : Ctx x s c) : Ctx x t c := h.keep.ctx hc
+
+/-- Field code keeps what code with calls does. -/
+theorem FieldKeep.call {x : BitVec 32} {s t : State} (h : FieldKeep x s t) : CallKeep x s t :=
+  ⟨h.keep, h.frame.sub fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide)⟩⟩
+
+/-- Bytes of the working space lie apart from the stack a call uses. -/
+theorem stk_apart {x : BitVec 32} {s : State} (hc : Ctx x s) {d n : Nat} (hd : d + n ≤ 8192) (hn : 0 < n) :
+    (sub x d n).Disjoint (callStk s) :=
+  (hc.stk rfl (Nat.le_refl _)).2.sub_left (by
+    rw [scR_eq]; exact sub_sub hc.fit (Nat.zero_le _) (by omega) (by omega))
+
+/-- A word of the working space apart from regions `rs`, through a frame of them and of the
+stack a call uses. -/
+theorem wd_frameS {x : BitVec 32} {s : State} (hc : Ctx x s) {rs : List Region} {m m' : Mem}
+    (hf : Frame (rs ++ [callStk s]) m m') {d : Nat} (hd : d + 4 ≤ 8192)
+    (h : ∀ r ∈ rs, (sub x d 4).Disjoint r) : wd m' x d = wd m x d :=
+  wd_frame hf fun r hr => by
+    rcases List.mem_append.mp hr with hr | hr
+    · exact h r hr
+    · rw [List.mem_singleton.mp hr]; exact stk_apart hc hd (by decide)
+
+/-- `wd_frame1` with the stack a call uses. -/
+theorem wd_frame1s {x : BitVec 32} {s : State} (hc : Ctx x s) {m m' : Mem} {o n d : Nat}
+    (hf : Frame [sub x o n, callStk s] m m') (ho : o + n ≤ 8192) (hd : d + 4 ≤ 8192)
+    (h : d + 4 ≤ o ∨ o + n ≤ d) : wd m' x d = wd m x d :=
+  wd_frameS hc (rs := [sub x o n]) hf hd fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact sub_disj (by have := hc.fit; omega) (by have := hc.fit; omega) h
+
+/-- `fe_frame1` with the stack a call uses. -/
+theorem fe_frame1s {x : BitVec 32} {s : State} (hc : Ctx x s) {m m' : Mem} {o n q : Nat}
+    (hf : Frame [sub x o n, callStk s] m m') (ho : o + n ≤ 8192) (hq : q + 32 ≤ 8192)
+    (h : q + 32 ≤ o ∨ o + n ≤ q) : fe m' x q = fe m x q :=
+  fe_frame fun k hk => wd_frame1s hc hf ho (by omega) (by omega)
+
+/-- A frame of a region and the stack is one of any region containing it, and the stack. -/
+theorem frameWidenS {x : BitVec 32} {s : State} {m m' : Mem} {o n o' n' : Nat}
+    (hf : Frame [sub x o n, callStk s] m m') (hx : x.toNat + 8192 ≤ 2 ^ 32) (h₁ : o' ≤ o)
+    (h₂ : o + n ≤ o' + n') (hn : o < 8192) : Frame [sub x o' n', callStk s] m m' :=
+  hf.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, List.mem_cons_self .., sub_sub hx h₁ h₂ hn⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
+
+/-- A frame of a region is one of it and the stack. -/
+theorem Frame.withStk {x : BitVec 32} {s : State} {m m' : Mem} {o n : Nat}
+    (hf : Frame [sub x o n] m m') : Frame [sub x o n, callStk s] m m' :=
+  hf.mono fun r hr => by rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..
 
 /-- Coordinates in four consecutive slots. -/
 def point (e : Env) (x y z t : Slot) : Spec.Ed25519.Point := ⟨e x, e y, e z, e t⟩

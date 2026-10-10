@@ -416,9 +416,10 @@ def blocksToNote (loops : Bool) (blk : String) : String :=
 
 /-- How an instance of `vg_aes_gcm_stream_encrypt_to` works. -/
 def streamToNote (blk enc : String) : String :=
-  "If the text so far ends a block, this implementation encrypts the whole blocks of the input from \
-    `src` to `dst` with `" ++ blk ++ "`; it copies the rest to `dst` and encrypts it there with `" ++
-    enc ++ "`."
+  "If the text so far ends inside a block, this implementation first copies the bytes of the \
+    input that end it to `dst` and encrypts them there with `" ++ enc ++ "`; then it encrypts the \
+    whole blocks of the rest of the input from `src` to `dst` with `" ++ blk ++ "`; it copies what \
+    is left to `dst` and encrypts it there with `" ++ enc ++ "`."
 
 /-- The instance of `vg_aes_gcm_encrypt_blocks_to` of a variant. -/
 def blkTo (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=

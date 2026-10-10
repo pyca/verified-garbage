@@ -37,7 +37,7 @@ theorem verifyEquationPoints_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Sav
   refine WP.seq (WP.mono (windowMultiply_ok hp hs hA rfl rfl) fun u ⟨wu, ru⟩ => ?_)
   refine WP.seq (WP.mono (negR_ok wu.ctx) fun v ⟨kv, qv, pv⟩ => ?_)
   have sv := wu.saved.ikeep hp.scratch.fit kv
-  refine WP.mono (pointEqual_ok (sv.ctx hp.scratch.fit hp.scratch.wr)) fun t ⟨kt, et⟩ =>
+  refine WP.mono (pointEqual_ok (sv.ctx hp.scratch.fit hp.scratch.wr hp.scratch.stk)) fun t ⟨kt, et⟩ =>
     ⟨sv.ikeep hp.scratch.fit (IKeep.of_field kt), ?_⟩
   rw [et, pv, qv, wu.r]
   congr 1

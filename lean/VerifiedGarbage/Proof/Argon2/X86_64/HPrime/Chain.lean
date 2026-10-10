@@ -228,8 +228,7 @@ theorem ChainResult.cons {s u t : State} {n : Nat} (step : ChainStep s u)
   · rw [tail.remaining, step.remaining, sumBV, BitVec.sub_sub]
   · exact (extend 0 32 (by omega) (by simpa only [BitVec.add_zero] using step.frame)).trans
       (extend 32 (32 * n) (by omega) tf)
-  · rw [← base, tail.digest, base, step.digest]
-    rfl
+  · rw [← base, tail.digest, base, step.digest, Proof.Argon2.chainDigest]
   · have before : bytesAt t.mem (s.gpr .r14) 32 = bytesAt u.mem (s.gpr .r14) 32 := by
       apply Proof.Blake2.bytesAt_congr
       intro i hi
@@ -244,7 +243,7 @@ theorem ChainResult.cons {s u t : State} {n : Nat} (step : ChainStep s u)
     rw [sum, Proof.Blake2.bytesAt_add, before, step.bytes,
       show BitVec.ofNat 64 32 = (32 : Addr) from rfl, ← step.output, tail.bytes,
       base, step.digest]
-    rfl
+    rw [Proof.Argon2.chainPrefixes]
 
 theorem chain_ok (v : Proof.Blake2.X86_64.Backend) (n lastLen : Nat) (s : State)
     (positive : 1 ≤ n) (last : 33 ≤ lastLen ∧ lastLen ≤ 64)

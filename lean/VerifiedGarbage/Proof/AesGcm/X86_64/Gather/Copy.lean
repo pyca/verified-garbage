@@ -8,7 +8,9 @@ import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
 Untrusted: everything here is checked by Lean. `copy` copies `rcx` bytes
 from `rsi` to `rdi` (`copy_ok`), 64 at a time through `xmm0`–`xmm3`
 (`copy64Step_ok`), then 16 at a time through `xmm0` (`copy16Step_ok`), then
-one at a time (`copy1Step_ok`), with the index in `r10`, and leaves what
+the rest with the last 16 bytes, again through `xmm0`, if there are 16
+(`copyLast_ok`), and otherwise one at a time (`copy1Step_ok`), with the index
+in `r10`, and leaves what
 ChaCha20-Poly1305's `copyBytes` leaves (`Gather.CopyPost`); the buffers do
 not overlap. Each loop runs from one multiple of its step to another
 (`chunks_wp`), with the first `j` bytes copied (`CInv`).
@@ -54,6 +56,15 @@ theorem chunks_wp {body : List Instr} {c b : Nat} {P : Nat → State → Prop}
     exact Nat.mod_eq_zero_of_dvd (Nat.dvd_sub (Nat.dvd_of_mod_eq_zero hd) (Nat.dvd_refl c))
 
 /-! ## The bodies -/
+
+/-- Writing `ys` over `xs`, from the same address, when `ys` is as long. -/
+theorem writeBytes_over (m : Mem) (q : Addr) {xs ys : List Byte} (h : xs.length ≤ ys.length) :
+    writeBytes (writeBytes m q xs) q ys = writeBytes m q ys := by
+  funext a
+  simp only [writeBytes]
+  by_cases h₁ : (a - q).toNat < ys.length
+  · simp only [h₁, ite_true]
+  · simp only [h₁, ite_false, show ¬ (a - q).toNat < xs.length by omega]
 
 theorem ea_disp (s : State) (b : Reg) {B : Addr} (hb : s.gpr b = B) {j : Nat}
     (hi : s.gpr .r10 = BitVec.ofNat 64 j) (d : Nat) :
@@ -106,6 +117,20 @@ theorem CInv.readW {j k : Nat} {t : State} (ht : CInv s S D j t) (hk : j + k + 1
   simp only [Offset.add_add] at hcon
   exact h.disj _ (Offset.contains_base S (show j + k + i + 1 ≤ n by simp at hi; omega) (by omega))
     (Region.sub_prefix (show j ≤ n by omega) _ hcon)
+
+/-- A block of the source anywhere in it, which the copy so far has left as
+it was. -/
+theorem CInv.readW' {j i : Nat} {t : State} (ht : CInv s S D j t) (hj : j ≤ n) (hi : i + 16 ≤ n) :
+    t.mem.readW (S + BitVec.ofNat 64 i) 128 = s.mem.readW (S + BitVec.ofNat 64 i) 128 := by
+  have hn := h.lt
+  refine Mem.readW_congr fun k hk => ?_
+  rw [ht.mem]
+  refine (writeBytes_frame s.mem D (bytesAt s.mem S j) (R := ⟨D, j⟩)
+    (by rw [length_bytesAt]; exact Region.contains_self _ _)) _ fun r hr hcon => ?_
+  simp only [List.mem_singleton] at hr; subst hr
+  simp only [Offset.add_add] at hcon
+  exact h.disj _ (Offset.contains_base S (show i + k + 1 ≤ n by simp at hk; omega) (by omega))
+    (Region.sub_prefix hj _ hcon)
 
 /-- `k` more bytes copied, from the source as it was. -/
 theorem CInv.mem_add {j k : Nat} {t : State} (ht : CInv s S D j t) (hk : j + k ≤ n) {m : Mem}
@@ -222,6 +247,55 @@ theorem copy1Step_ok {j : Nat} {t : State} (ht : CInv s S D j t) (hj : j + 1 ≤
   · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ↓reduceIte, reduceCtorEq, ht.r10, hc]
     rw [show (1#64 : BitVec 64) = BitVec.ofNat 64 1 from rfl, ofNat_add_ofNat, sub_beq (by omega) (by omega)]
 
+/-- The last 16 bytes, after `j ≥ n - 16` of them: all `n` copied. -/
+theorem copyLast_ok {j : Nat} {t : State} (ht : CInv s S D j t) (hj : n - 16 ≤ j) (hjn : j ≤ n) (h16 : 16 ≤ n) :
+    WP isa (.block copyLast) t (CopyPost s S D n) := by
+  have hn := h.lt
+  have hs : t.gpr .rsi = S := by rw [ht.keep _ (by decide) (by decide) (by decide), h.rsi]
+  have hd : t.gpr .rdi = D := by rw [ht.keep _ (by decide) (by decide) (by decide), h.rdi]
+  have hc : t.gpr .rcx = BitVec.ofNat 64 n := by rw [ht.keep _ (by decide) (by decide) (by decide), h.rcx]
+  have hsub : BitVec.ofNat 64 n - BitVec.ofNat 64 16 = BitVec.ofNat 64 (n - 16) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_sub, toNat_ofNat_of_lt (show n < 2 ^ 64 by omega), toNat_ofNat_of_lt (show 16 < 2 ^ 64 by decide),
+      toNat_ofNat_of_lt (show n - 16 < 2 ^ 64 by omega)]
+    omega
+  have i16 := imm_eq (n := 16) (by decide)
+  rw [show copyLast = [.mov .r10 (.reg .rcx), .alu .sub .r10 (imm 16)] ++
+    ([.movdquLoad .xmm0 (srcD 0), .movdquStore (dstD 0) .xmm0] : List Instr) from rfl, WP.block_append_iff]
+  obtain ⟨t₁, run₁, r10₁, g₁, m₁, rd₁, wr₁⟩ : ∃ t₁, runBlock isa [.mov .r10 (.reg .rcx), .alu .sub .r10 (imm 16)] t =
+      some t₁ ∧ t₁.gpr .r10 = BitVec.ofNat 64 (n - 16) ∧ (∀ r, r ≠ .r10 → t₁.gpr r = t.gpr r) ∧ t₁.mem = t.mem ∧
+      t₁.rd = t.rd ∧ t₁.wr = t.wr :=
+    ⟨_, by xrun [hc, i16, hsub], by simp [gpr_setReg, gpr_arithFlags, hc, i16, hsub],
+      fun r hr => by simp [gpr_setReg, gpr_arithFlags, hr], by simp [mem_setReg, mem_arithFlags],
+      by simp [rd_setReg, rd_arithFlags], by simp [wr_setReg, wr_arithFlags]⟩
+  refine WP.of_runBlock ⟨t₁, run₁, ?_⟩
+  have es := ea_disp t₁ .rsi (by rw [g₁ _ (by decide), hs]) r10₁ 0
+  have ed := ea_disp t₁ .rdi (by rw [g₁ _ (by decide), hd]) r10₁ 0
+  rw [Nat.add_zero] at es ed
+  have r₀ : InRegions (t₁.rd ++ t₁.wr) (S + BitVec.ofNat 64 (n - 16)) 16 := by
+    rw [rd₁, wr₁]; exact in_rd h ht (by omega)
+  have w₀ : InRegions t₁.wr (D + BitVec.ofNat 64 (n - 16)) 16 := by rw [wr₁]; exact in_wr h ht (by omega)
+  apply WP.of_runBlock
+  refine ⟨_, by
+    simp only [srcD, dstD]
+    mrun [es, ed, r₀, w₀], ?_⟩
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simp only [mem_setXmm, xmm_setXmm', ↓reduceIte, m₁]
+    rw [ht.readW' h hjn (i := n - 16) (by omega), writeW_readW128, ht.mem]
+    -- The first `j` bytes, then the last 16 over the `j - (n - 16)` of them before the rest.
+    have a₁ := bytesAt_add s.mem S (n - 16) (j - (n - 16))
+    have a₂ := bytesAt_add s.mem S (n - 16) 16
+    rw [show n - 16 + (j - (n - 16)) = j by omega] at a₁
+    rw [show n - 16 + 16 = n by omega] at a₂
+    have hA : (bytesAt s.mem S (n - 16)).length = n - 16 := length_bytesAt _ _ _
+    rw [a₁, ← writeBytes_append _ _ _ _ (by rw [length_bytesAt, length_bytesAt]; omega), hA,
+      writeBytes_over _ _ (by rw [length_bytesAt, length_bytesAt]; omega),
+      show D + BitVec.ofNat 64 (n - 16) = D + BitVec.ofNat 64 (bytesAt s.mem S (n - 16)).length by rw [hA],
+      writeBytes_append _ _ _ _ (by rw [length_bytesAt, length_bytesAt]; omega), ← a₂]
+  · intro r a b c; simp only [gpr_setXmm]; rw [g₁ r c]; exact ht.keep r a b c
+  · simp [rd_setXmm, rd₁, ht.rd]
+  · simp [wr_setXmm, wr₁, ht.wr]
+
 end
 
 theorem shr_ofNat (n k : Nat) (hn : n < 2 ^ 64) : BitVec.ofNat 64 n >>> k = BitVec.ofNat 64 (n / 2 ^ k) := by
@@ -289,6 +363,19 @@ theorem setup1_ok {t : State} (ht : CInv s S D (16 * (n / 16)) t) :
   simp only [zf_arithFlags]
   rw [sub_beq (by omega) (by omega)]
 
+/-- The fourth setup: `CF` if there are fewer than 16 bytes. -/
+theorem setupLast_ok {j : Nat} {t : State} (ht : CInv s S D j t) :
+    WP isa (.block [.alu .cmp .rcx (imm 16)]) t fun u => CInv s S D j u ∧ u.cf = some (decide (n < 16)) := by
+  have hn := h.lt
+  have hc : t.gpr .rcx = BitVec.ofNat 64 n := by rw [ht.keep _ (by decide) (by decide) (by decide), h.rcx]
+  have i16 := imm_eq (n := 16) (by decide)
+  apply WP.of_runBlock
+  refine ⟨_, by xrun [hc, i16], ?_⟩
+  refine ⟨⟨by simp [gpr_arithFlags, ht.r10], by simp [mem_arithFlags, ht.mem],
+    fun r a b c => by simp [gpr_arithFlags]; exact ht.keep r a b c, by simp [rd_arithFlags, ht.rd],
+    by simp [wr_arithFlags, ht.wr]⟩, ?_⟩
+  simp only [cf_arithFlags, toNat_ofNat_of_lt (show n < 2 ^ 64 by omega), toNat_ofNat_of_lt (show 16 < 2 ^ 64 by decide)]
+
 /-- `copy`: the `n` bytes at `S` copied to `D`. -/
 theorem copy_ok : WP isa copy s (CopyPost s S D n) := by
   have hn := h.lt
@@ -316,9 +403,13 @@ theorem copy_ok : WP isa copy s (CopyPost s S D n) := by
   refine WP.ite (decide (16 * (n / 16) = n)) (by simp only [eval, z₅]) (fun e => ?_) (fun e => ?_)
   · exact WP.block_nil (done (by have : 16 * (n / 16) = n := by simpa using e
                                  rw [← this]; exact c₅))
-  · have hp : 16 * (n / 16) < n := by simp at e; omega
-    exact WP.mono (chunks_wp (P := fun j t => CInv s S D j t) (fun j t c hj => copy1Step_ok h c hj) (by decide)
-      c₅ hp (by omega)) fun _ h => done h
+  have hp : 16 * (n / 16) < n := by simp at e; omega
+  refine WP.seq (WP.mono (setupLast_ok h c₅) fun t₆ ⟨c₆, cf₆⟩ => ?_)
+  refine WP.ite (decide (n < 16)) (by simp only [eval, cf₆]) (fun e₆ => ?_) (fun e₆ => ?_)
+  · exact WP.mono (chunks_wp (P := fun j t => CInv s S D j t) (fun j t c hj => copy1Step_ok h c hj) (by decide)
+      c₆ hp (by omega)) fun _ h => done h
+  · have h16 : 16 ≤ n := by simpa using e₆
+    exact copyLast_ok h c₆ (by omega) (by omega) h16
 
 end
 

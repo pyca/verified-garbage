@@ -60,8 +60,10 @@ def sealK (M : CtxMode) : Contract isa where
 
 theorem sealSpec_pre {s : State} (h : sealPreK CtxMode.base s) :
     (Spec.Gcm.sealContract X86_64.abi 2624).pre s := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
-    a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, -⟩ := h
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
+    a₂₈ a₂₉ a₃₀ a₃₁
+  clear h
   sig_pre [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, X86_64.abi, X86_64.argRegs]
   sig_reduce [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, X86_64.abi, X86_64.argRegs,
     Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
@@ -75,8 +77,11 @@ theorem sealSpec_pre {s : State} (h : sealPreK CtxMode.base s) :
 
 theorem sealSpecP_pre {s : State} (h : sealPreK CtxMode.powers s) :
     (Spec.Gcm.sealPrecomputedContract X86_64.abi 2624).pre s := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
-    a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂⟩ := h
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
+    a₂₈ a₂₉ a₃₀ a₃₁
+  have a₃₂ := h
+  clear h
   sig_pre [Spec.Gcm.sealPrecomputedContract, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPrecomputedPre,
     X86_64.abi, X86_64.argRegs]
   sig_reduce [Spec.Gcm.sealPrecomputedContract, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPrecomputedPre,
