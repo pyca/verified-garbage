@@ -52,6 +52,29 @@ theorem writeW_readW_apply (m m' : Mem) (a c x : Addr) :
     exact Mem.extractLsb'_read m' c (n := 8) h
   · rfl
 
+/-- A byte of a little-endian 32-bit word stored from a load. -/
+theorem writeW_readW32_apply (m m' : Mem) (a c x : Addr) :
+    m.writeW a (m'.readW c 32) x =
+      if (x - a).toNat < 4 then m' (c + BitVec.ofNat 64 (x - a).toNat) else m x := by
+  simp only [Mem.writeW, Mem.write, Mem.readW, BitVec.setWidth_eq]
+  split
+  · rename_i h
+    exact Mem.extractLsb'_read m' c (n := 4) h
+  · rfl
+
+/-- A byte of a word written. -/
+theorem writeW32_byte (m : Mem) (a : Addr) (v : BitVec 32) {t j : Nat} (ht : t < 4) (hj : j < 8) :
+    ((m.writeW a v) (a + BitVec.ofNat 64 t)).getLsbD j = v.getLsbD (8 * t + j) := by
+  simp only [Mem.writeW, Mem.write, BitVec.setWidth_eq, VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt (by omega)]
+  simp only [show t < 32 / 8 by omega, ↓reduceIte, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and]
+
+/-- A byte outside a word written. -/
+theorem writeW32_other (m : Mem) (a x : Addr) (v : BitVec 32) (h : ¬ (x - a).toNat < 4) :
+    (m.writeW a v) x = m x := by
+  simp only [Mem.writeW, Mem.write]
+  exact ite_eq_right fun h' => h (by simpa using h')
+
 /-- A word written inside `R`. -/
 theorem frame_writeW {m : Mem} {a : Addr} {R : Region} (v : BitVec 64) (hs : Region.Sub ⟨a, 8⟩ R) :
     Frame [R] m (m.writeW a v) := fun x hx => by
