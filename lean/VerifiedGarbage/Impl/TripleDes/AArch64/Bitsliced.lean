@@ -17,7 +17,8 @@ words (Biham's bitslicing; the S-box circuits are Rusakov's,
   bit `j` of block `2i + q` (`BitsliceLayout`); IP only renames words.
   While at least 128 blocks are left the state is the data itself; the last
   `n mod 128` blocks are copied into the scratch buffer, whose other bytes
-  are whatever they were (their results are not stored), and back.
+  are whatever they were (their results are not stored), and back. One loop
+  (`step`) runs the batch's code for both, so it appears once.
 * A round loads its key into `x9` and broadcasts it to `v30`. S-box `j`'s
   input `i` is key bit `inBit j i` as a mask, `0 - ((key << (63 - b)) >> 63)`
   in each doubleword (`v31` is zero), XORed with the state word of `E`.
@@ -363,29 +364,33 @@ def batch (d : Direction) : Prog isa :=
 /-- `x10 := n / 128`, whether a whole batch is left. -/
 def wholeLeft : Instr := .lsr .x .x10 .x2 7
 
-/-- Batches of 128 blocks, in place, while there are that many. -/
-def wide (d : Direction) : Prog isa :=
-  .seq (.block [wholeLeft])
-    (.ite (.zero .x .x10) (.block [])
-      (.loop (.seq (.block [.addImm .x .x4 .x1 0])
-          (.seq (batch d) (.block [.addImm .x .x1 .x1 1024, .subImm .x .x2 .x2 128, wholeLeft])))
-        (.nonzero .x .x10)))
-
 /-- Copy `x13` 8-byte blocks from `x11` to `x12`. -/
 def copy : Prog isa :=
   .loop (.block [.ldr .x .x10 .x11 0, .str .x .x10 .x12 0, .addImm .x .x11 .x11 8,
       .addImm .x .x12 .x12 8, .subImm .x .x13 .x13 1]) (.nonzero .x .x13)
 
-/-- The last `n < 128` blocks, through the scratch buffer. -/
-def tail (d : Direction) : Prog isa :=
-  .ite (.zero .x .x2) (.block [])
-    (.seq (.block [.addImm .x .x11 .x1 0, .addImm .x .x12 .x3 0, .addImm .x .x13 .x2 0])
-      (.seq copy
-        (.seq (.block [.addImm .x .x4 .x3 0]) (.seq (batch d)
-          (.seq (.block [.addImm .x .x11 .x3 0, .addImm .x .x12 .x1 0, .addImm .x .x13 .x2 0])
-            copy)))))
+/-- The last `n < 128` blocks, copied into the scratch buffer, which the
+batch then runs on. -/
+def tailIn : Prog isa :=
+  .seq (.block [.addImm .x .x11 .x1 0, .addImm .x .x12 .x3 0, .addImm .x .x13 .x2 0])
+    (.seq copy (.block [.addImm .x .x4 .x3 0]))
 
-def ecb (d : Direction) : Prog isa := .seq (wide d) (tail d)
+/-- The blocks copied back from the scratch buffer, and none left. -/
+def tailOut : Prog isa :=
+  .seq (.block [.addImm .x .x11 .x3 0, .addImm .x .x12 .x1 0, .addImm .x .x13 .x2 0])
+    (.seq copy (.block [.movz .x .x2 0 0]))
+
+/-- The next 128 blocks. -/
+def wideOut : List Instr := [.addImm .x .x1 .x1 1024, .subImm .x .x2 .x2 128]
+
+/-- One batch: on the next 128 blocks in place if that many are left, else on
+the blocks left, through the scratch buffer. -/
+def step (d : Direction) : Prog isa :=
+  .seq (.block [wholeLeft])
+    (.seq (.ite (.zero .x .x10) tailIn (.block [.addImm .x .x4 .x1 0]))
+      (.seq (batch d) (.seq (.block [wholeLeft]) (.ite (.zero .x .x10) tailOut (.block wideOut)))))
+
+def ecb (d : Direction) : Prog isa := .ite (.zero .x .x2) (.block []) (.loop (step d) (.nonzero .x .x2))
 
 def encrypt : Prog isa := ecb .encrypt
 def decrypt : Prog isa := ecb .decrypt
