@@ -778,6 +778,38 @@ yours to keep:
 
 <tr>
 
+<td>SEED-CBC</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>SEED-CFB128</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>SEED-ECB</td>
 
 <td>✅</td>
@@ -785,6 +817,22 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>SEED-OFB</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 <td>❌</td>
 

@@ -1,0 +1,5 @@
+name = "SEED-OFB"
+family = "Ciphers"
+specs = ["Seed", "Ofb"]
+modules = ["src/seed_ofb.rs"]
+asm = ["seed_ofb"]
