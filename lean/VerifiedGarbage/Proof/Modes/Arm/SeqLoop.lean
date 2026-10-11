@@ -22,7 +22,7 @@ section
 variable {c : Core} {S : CoreSpec c} {M : Mode} {s₀ : State} (hp : UPre c S M s₀)
 include hp
 
-theorem loop_ok (hM : ModeOk M) {k : Nat} (hk : k < N s₀) {s : State} (h : LInv c S M s₀ k s) :
+theorem loop_ok (hM : ModeOk c M) {k : Nat} (hk : k < N s₀) {s : State} (h : LInv c S M s₀ k s) :
     WP isa (.loop (c.body M) .ne) s (LInv c S M s₀ (N s₀)) := by
   refine WP.loop (M := isa) (body := c.body M) (c := .ne) (Q := LInv c S M s₀ (N s₀))
     (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ LInv c S M s₀ j t) ?_ (N s₀ - k) s
@@ -38,7 +38,7 @@ theorem loop_ok (hM : ModeOk M) {k : Nat} (hk : k < N s₀) {s : State} (h : LIn
   · right
     refine ⟨by rw [ev]; simp [hz'], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
 
-theorem mid_wp (hM : ModeOk M) {s₁ : State} (h : LInv c S M s₀ 0 s₁) (hz : s₁.z = decide (N s₀ = 0)) :
+theorem mid_wp (hM : ModeOk c M) {s₁ : State} (h : LInv c S M s₀ 0 s₁) (hz : s₁.z = decide (N s₀ = 0)) :
     WP isa (.ite .eq (.block []) (.loop (c.body M) .ne)) s₁ (LInv c S M s₀ (N s₀)) := by
   have ev : isa.eval .eq s₁ = some (decide (N s₀ = 0)) := by
     show VG.Arm.eval .eq s₁ = _; rw [eval_eq, hz]
@@ -53,7 +53,7 @@ theorem mid_wp (hM : ModeOk M) {s₁ : State} (h : LInv c S M s₀ 0 s₁) (hz :
 /-- The slots of the saved registers. -/
 abbrev slotsR (s₀ : State) : Region := ⟨State.addr (Sc s₀) + BitVec.ofNat 64 0, 36⟩
 
-theorem UPre.slots_disj : ∀ r ∈ [dataR c s₀, blkR c s₀, belowR S s₀, ivR c s₀], (slotsR s₀).Disjoint r := by
+theorem UPre.slots_disj : ∀ r ∈ [dataR c s₀ M, blkR c s₀, belowR S s₀, ivR c s₀], (slotsR s₀).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -69,18 +69,18 @@ structure EInv (s₀ : State) (s : State) : Prop where
   sp : s.sp = s₀.sp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame [dataR c s₀, blkR c s₀, belowR S s₀, ivR c s₀] (savedMem s₀) s.mem
-  data : blocksOf c.bs s.mem (State.addr (Dp s₀)) (N s₀) = (rK S s₀ M (N s₀)).1
+  frame : Frame [dataR c s₀ M, blkR c s₀, belowR S s₀, ivR c s₀] (savedMem s₀) s.mem
+  data : blocksOf (c.ds M) s.mem (State.addr (Dp s₀)) (N s₀) = (rK S s₀ M (N s₀)).1
   iv : M.finish = true → bytesAt s.mem (State.addr (Ivp s₀)) c.bs = (rK S s₀ M (N s₀)).2.o
 
 omit hp in
-theorem take_N : (xs c s₀).take (N s₀) = xs c s₀ := List.take_of_length_le (by rw [length_blocksOf])
+theorem take_N : (xs c s₀ M).take (N s₀) = xs c s₀ M := List.take_of_length_le (by rw [length_blocksOf])
 
 theorem finish_wp {s : State} (h : LInv c S M s₀ (N s₀) s) :
     WP isa (.block (c.finish M)) s (EInv (c := c) (S := S) (M := M) s₀) := by
-  have hnil : (xs c s₀).drop (N s₀) = [] := List.drop_of_length_le (by rw [length_blocksOf])
+  have hnil : (xs c s₀ M).drop (N s₀) = [] := List.drop_of_length_le (by rw [length_blocksOf])
   have hfit : c.bs ≤ 2 ^ 64 := by have := hp.fS; unfold Core.scratchBytes at this; omega
-  have fr4 : Frame [dataR c s₀, blkR c s₀, belowR S s₀, ivR c s₀] (savedMem s₀) s.mem :=
+  have fr4 : Frame [dataR c s₀ M, blkR c s₀, belowR S s₀, ivR c s₀] (savedMem s₀) s.mem :=
     h.frame.mono fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with h | h | h <;> simp [h]
@@ -109,13 +109,13 @@ theorem finish_wp {s : State} (h : LInv c S M s₀ (N s₀) s) :
         simp only [List.mem_singleton] at hr; subst hr
         exact ⟨ivR c s₀, .tail _ (.tail _ (.tail _ (.head _))), by rw [add0]; exact Region.sub_prefix (by omega)⟩)
     · rw [hi.mem]
-      refine Eq.trans (b := blocksOf c.bs s.mem (State.addr (Dp s₀)) (N s₀))
+      refine Eq.trans (b := blocksOf (c.ds M) s.mem (State.addr (Dp s₀)) (N s₀))
         (List.map_congr_left fun j hj => ?_) (by rw [h.data, hnil, List.append_nil])
       have hj := List.mem_range.mp hj
-      have hsub : Region.Sub ⟨State.addr (Dp s₀) + BitVec.ofNat 64 (c.bs * j), c.bs⟩ (dataR c s₀) :=
-        VG.Offset.sub_base _ (by have := idx_lt' (L := c.bs) hj; omega)
+      have hsub : Region.Sub ⟨State.addr (Dp s₀) + BitVec.ofNat 64 (c.ds M * j), c.ds M⟩ (dataR c s₀ M) :=
+        VG.Offset.sub_base _ (by have := idx_lt' (L := c.ds M) hj; omega)
       exact bytesAt_over_other _ _ (by rw [add0]; exact (hp.iv_data.sub_left (Region.sub_prefix (by omega))).sub_right hsub)
-        hfit
+        (by have := S.ds_le M; omega)
     · rw [hi.mem, ← h.o, add0]
       have e := bytesAt_over_self s.mem (State.addr (Ivp s₀) + BitVec.ofNat 64 0)
         (fun i => s.mem (oA s₀ + BitVec.ofNat 64 i)) (n := 4 * c.bw) (by omega)
@@ -151,7 +151,7 @@ theorem epilogue_wp {s : State} (h : EInv (c := c) (S := S) (M := M) s₀ s) :
         revert hr h8; revert r; decide
       exact Spill.restored_reg ld this
   · rw [u₂.sp, sp₁, h.sp]
-  · show blocksOf c.bs s₂.mem (State.addr (Dp s₀)) (N s₀) = _
+  · show blocksOf (c.ds M) s₂.mem (State.addr (Dp s₀)) (N s₀) = _
     rw [u₂.mem, m₁, h.data]; simp only [rK, take_N]
   · intro hf
     show bytesAt s₂.mem (State.addr (Ivp s₀)) c.bs = _
@@ -160,7 +160,7 @@ theorem epilogue_wp {s : State} (h : EInv (c := c) (S := S) (M := M) s₀ s) :
 end
 
 /-- The whole function meets its contract, for any core and mode. -/
-theorem seq_wp {c : Core} (S : CoreSpec c) {M : Mode} (hM : ModeOk M) {s₀ : State}
+theorem seq_wp {c : Core} (S : CoreSpec c) {M : Mode} (hM : ModeOk c M) {s₀ : State}
     (h0 : (seqArm c S M).pre s₀) :
     WP isa (c.seq M) s₀ fun s' => abiPreserved s₀ s' ∧ (seqArm c S M).post s₀ s' := by
   have hp := UPre.of h0

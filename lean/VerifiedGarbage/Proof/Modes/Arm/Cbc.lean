@@ -12,8 +12,10 @@ namespace VG.Proof.Modes.Arm
 
 open VG VG.Arm VG.Impl.Modes.Arm
 
-theorem cbcEnc_ok : ModeOk cbcEnc := ⟨by decide, by decide, by decide⟩
-theorem cbcDec_ok : ModeOk cbcDec := ⟨by decide, by decide, by decide⟩
+theorem cbcEnc_ok (c : Core) : ModeOk c cbcEnc :=
+  ⟨by decide, by decide, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
+theorem cbcDec_ok (c : Core) : ModeOk c cbcDec :=
+  ⟨by decide, by decide, by decide, by show encodable (BitVec.ofNat 32 0) = true; decide⟩
 
 theorem xor_comm (x y : List Byte) : Spec.Cbc.xor x y = Spec.Cbc.xor y x := by
   simp only [Spec.Cbc.xor]
@@ -60,8 +62,11 @@ def RoPre : Prop :=
 
 end
 
-theorem seqArm_pre_ro {c : Core} {S : CoreSpec c} {M : Mode} (hM : M.finish = false) {s : State}
-    (h : RoPre c S s) : (seqArm c S M).pre s := by
+theorem seqArm_pre_ro {c : Core} {S : CoreSpec c} {M : Mode} (hM : M.finish = false) (hb : M.byte = false)
+    {s : State} (h : RoPre c S s) : (seqArm c S M).pre s := by
+  have e : c.ds M = c.bs := ds_of c hb
+  show (seqArm c S M).pre s
+  unfold seqArm; simp only [e]
   obtain ⟨a1, a2, rd, wr, kd, ks, vd, vs, ds, da, sa, bk, -, bd, bs, -, fk, fv, fd, fs⟩ := h
   refine ⟨a1, a2, by simp [rd], by simp [rd], by simp [rd], by simp [wr], by simp [wr], kd, ks, vd, vs, ds,
     bk, bd, bs, fk, fv, fd, fs, fun h => absurd h (by simp [hM]), ?_⟩
@@ -81,19 +86,19 @@ theorem cbcEnc_post {c : Core} {S : CoreSpec c} {s s' : State} (h : (seqArm c S 
       Spec.Cbc.encrypt (S.ciphAt s.mem (State.addr (s.gpr .r0)))
         (Spec.Aes.bytesAt s.mem (State.addr (s.gpr .r1)) c.bs)
         (VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat) := by
-  rw [h.1, runSeq_cbcEnc]
+  exact h.1.trans (runSeq_cbcEnc _ _ _)
 
 theorem cbcDec_post {c : Core} {S : CoreSpec c} {s s' : State} (h : (seqArm c S cbcDec).post s s') :
     VG.Proof.Modes.blocksOf c.bs s'.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat =
       Spec.Cbc.decrypt (S.ciphAt s.mem (State.addr (s.gpr .r0)))
         (Spec.Aes.bytesAt s.mem (State.addr (s.gpr .r1)) c.bs)
         (VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat) := by
-  rw [h.1, runSeq_cbcDec]
+  exact h.1.trans (runSeq_cbcDec _ _ _)
 
 /-- A core and a mode whose code between the calls passes the taint checks
 give a function that is correct and constant time under `seqArm`, and so
 under any contract `seqArm` implies. -/
-theorem seq_verified {c : Core} (S : CoreSpec c) {M : Mode} (hM : ModeOk M) (hT : SeqTaint c M)
+theorem seq_verified {c : Core} (S : CoreSpec c) {M : Mode} (hM : ModeOk c M) (hT : SeqTaint c M)
     {k : Contract isa} (hk : (seqArm c S M).Implies k) : Verified Arm.target (c.seq M) k :=
   Verified.of_correct (fun _ hs => seq_wp S hM hs) (seq_ct S hM hT) hk
 
