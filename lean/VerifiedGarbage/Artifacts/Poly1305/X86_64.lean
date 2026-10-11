@@ -66,7 +66,7 @@ def artifacts : List Artifact := [
     target := X86_64.target
     doc := Spec.Poly1305.blocksApi.doc (notes := ["With AVX-512 IFMA: eight blocks at a time, in eight \
       interleaved Horner evaluations in the quadwords of `zmm` registers, as three limbs of 44 bits \
-      multiplied with `vpmadd52luq` and `vpmadd52huq`, once there are at least 16 blocks; fewer with \
+      multiplied with `vpmadd52luq` and `vpmadd52huq`, once there are at least 28 blocks; fewer with \
       `vg_poly1305_blocks_avx2`, and the last `n mod 8` with `vg_poly1305_blocks`. It sets MXCSR to \
       Intel's value for data operand-independent timing (`0x1FBF`) around its multiply-adds, and \
       restores it."])
