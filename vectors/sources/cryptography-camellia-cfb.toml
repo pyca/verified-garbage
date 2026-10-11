@@ -1,0 +1,5 @@
+name = "OpenSSL's Camellia CFB test vectors, as pyca/cryptography vendors them (camellia-cfb.txt)"
+directories = ["cryptography-camellia-cfb"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/55cfeb23a8f9e0b7edb87bccb98a6ca7447aa436/vectors/cryptography_vectors/ciphers/Camellia/camellia-cfb.txt"
+sha256 = "860179b3617df907059c8eb320baab1c0efc22aa9d97a72476f0e05728d1eb99"
+retrieved = 2026-10-11
