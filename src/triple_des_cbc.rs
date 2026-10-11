@@ -12,7 +12,7 @@
 //! This module checks the lengths, holds the key schedule and keeps the
 //! chaining value to continue from: the last ciphertext block.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 
 use crate::arch::triple_des::vg_triple_des_expand_key;
 use crate::arch::triple_des_cbc::{vg_triple_des_cbc_decrypt, vg_triple_des_cbc_encrypt};
