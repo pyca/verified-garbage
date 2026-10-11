@@ -16,6 +16,16 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage::rsa_keygen::{generate_from, generate_prime_from, key_from_primes};
 
     use crate::{AWS_LC, OPENSSL, VG};
+    // A prime of `bits` bits from OpenSSL that `e = 65537` admits, as the
+    // benchmarks below need: OpenSSL does not test `gcd(p - 1, e)`, which
+    // fails for one prime in 65537.
+    let admitted_prime = |bits: i32| loop {
+        let mut p = BigNum::new().unwrap();
+        p.generate_prime(bits, false, None, None).unwrap();
+        if p.mod_word(65537).unwrap() != 1 {
+            break p;
+        }
+    };
     // The primes of keys of 2048, 3072 and 4096 bits; the ids' size is the
     // prime's bytes. Each library draws candidates until one is a probable
     // prime (with the public exponent 65537 for verified-garbage, which also
@@ -99,8 +109,7 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("rsa_keygen_test");
     g.sample_size(10);
     for bits in [1024, 1536, 2048] {
-        let mut p = BigNum::new().unwrap();
-        p.generate_prime(bits as i32, false, None, None).unwrap();
+        let p = admitted_prime(bits as i32);
         let prime = p.to_vec();
         let mut rand = prime.clone();
         rand.extend((0..64 * prime.len()).map(|i| (i * 37 + 11) as u8));
@@ -136,12 +145,7 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("rsa_keygen_key");
     g.sample_size(10);
     for bits in [1024, 1536, 2048] {
-        let prime = || {
-            let mut p = BigNum::new().unwrap();
-            p.generate_prime(bits, false, None, None).unwrap();
-            p
-        };
-        let (mut p, mut q) = (prime(), prime());
+        let (mut p, mut q) = (admitted_prime(bits), admitted_prime(bits));
         if p < q {
             std::mem::swap(&mut p, &mut q);
         }
