@@ -138,12 +138,13 @@ def mul : List Instr := zeroD ++ prods ++ fold ++ carry
 /-! ## Loading -/
 
 /-- `r` into every quadword of `Y`: the clamped words of `r` (in `r10` and
-`r11`) split into limbs in `rax`, with the mask in `r8` and `rcx` scratch. -/
+`r11`) split into limbs in `rax`, `rcx` and `r9`, with the mask in `r8`. -/
 def splitRg : List Instr :=
-  [.mov .rax (.reg .r10), .alu .and .rax (.reg .r8)] ++ bcast (yreg 0) .rax ++
-  [.mov .rax (.reg .r10), .shift .shr .rax 44, .mov .rcx (.reg .r11), .shift .shl .rcx 20,
-   .alu .or .rax (.reg .rcx), .alu .and .rax (.reg .r8)] ++ bcast (yreg 1) .rax ++
-  [.mov .rax (.reg .r11), .shift .shr .rax 24] ++ bcast (yreg 2) .rax
+  [.mov .rax (.reg .r10), .alu .and .rax (.reg .r8),
+   .mov .rcx (.reg .r11), .shift .shl .rcx 20, .mov .r9 (.reg .r10), .shift .shr .r9 44,
+   .alu .or .rcx (.reg .r9), .alu .and .rcx (.reg .r8),
+   .mov .r9 (.reg .r11), .shift .shr .r9 24] ++
+  bcast (yreg 0) .rax ++ bcast (yreg 1) .rcx ++ bcast (yreg 2) .r9
 
 /-- The clamped `r` into `r10` and `r11`, the mask `2⁴⁴ - 1` into `r8` and
 the state, and the pad bit `2⁴⁰` into the state. -/
@@ -169,11 +170,12 @@ def powers : List Instr :=
 /-- The accumulator `h` (the words at `rdi`, `rdi + 8` and `rdi + 16`) into
 quadword 0 of `H` as limbs, zeros elsewhere, through `rax`, `rcx` and `r9`. -/
 def loadH : List Instr := [
-  .mov .rax (.mem (at_ .rdi 0)), .alu .and .rax (.reg .r8), .vop (.vmovq (hreg 0) .rax),
-  .mov .rax (.mem (at_ .rdi 0)), .shift .shr .rax 44, .mov .rcx (.mem (at_ .rdi 8)), .shift .shl .rcx 20,
-  .alu .or .rax (.reg .rcx), .alu .and .rax (.reg .r8), .vop (.vmovq (hreg 1) .rax),
-  .mov .rax (.mem (at_ .rdi 8)), .shift .shr .rax 24, .mov .rcx (.mem (at_ .rdi 16)), .shift .shl .rcx 40,
-  .alu .or .rax (.reg .rcx), .vop (.vmovq (hreg 2) .rax)]
+  .mov .r9 (.mem (at_ .rdi 16)), .shift .shl .r9 40, .mov .rcx (.mem (at_ .rdi 8)), .shift .shr .rcx 24,
+  .alu .or .r9 (.reg .rcx),
+  .mov .rcx (.mem (at_ .rdi 8)), .shift .shl .rcx 20, .mov .rax (.mem (at_ .rdi 0)), .shift .shr .rax 44,
+  .alu .or .rcx (.reg .rax), .alu .and .rcx (.reg .r8),
+  .mov .rax (.mem (at_ .rdi 0)), .alu .and .rax (.reg .r8),
+  .vop (.vmovq (hreg 0) .rax), .vop (.vmovq (hreg 1) .rcx), .vop (.vmovq (hreg 2) .r9)]
 
 /-- The eight blocks at `rsi` (block `π k` in quadword `k`) split into limbs,
 with the pad bit, added to `H`. -/
@@ -191,13 +193,15 @@ def groupBody : Prog isa :=
 
 /-! ## The end -/
 
-/-- `t1 = 0` and `t0 = 1` in every quadword. -/
+/-- `t1 = 0` and `t0 = 1` in every quadword (the mask `2⁴⁴ - 1` shifted
+right by 43). -/
 def zeroOne : List Instr :=
-  [z .vpxord t1 t1 t1, .mov32 .rax (.imm 1)] ++ bcast t0 .rax
+  [z .vpxord t1 t1 t1, zb .vporq t0 t1 mMask, srl t0 t0 43]
 
-/-- `Y` (and `S`) the limbs at `m i` broadcast, through `rax`. -/
+/-- `Y` the limbs at `m i` broadcast, through `rax`, `rcx` and `r9`. -/
 def loadY (m : Nat → MemOp) : List Instr :=
-  [0, 1, 2].flatMap fun i => [.mov .rax (.mem (m i))] ++ bcast (yreg i) .rax
+  [.mov .rax (.mem (m 0)), .mov .rcx (.mem (m 1)), .mov .r9 (.mem (m 2))] ++
+  bcast (yreg 0) .rax ++ bcast (yreg 1) .rcx ++ bcast (yreg 2) .r9
 
 /-- Step 1: `Y = r⁴` in the even quadwords and 1 in the odd ones; then each
 odd quadword of the product added to the even one before it. -/
