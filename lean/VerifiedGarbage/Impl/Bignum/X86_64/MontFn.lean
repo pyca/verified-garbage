@@ -7,10 +7,10 @@ import VerifiedGarbage.Impl.Bignum.X86_64
 are given by their indices, in `edx`, `ecx` and `r8d`, and the working space
 by `rdi`, as the code that calls it has them. It uses no stack, so that
 calls of it run as their code inlined would (`Proof/Framework/X86_64/CallInline.lean`):
-it keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0`–`xmm2` (caller-saved) while
-it runs, and restores them through its own arrays, `aAcc` and `aTmp`, once
-it no longer needs them, which then hold them on return. It never writes
-`rdi`.
+it keeps `rbx`, `rbp` and `r12`–`r15` in the low quadwords of `xmm8`–`xmm13`
+(caller-saved) while it runs, and moves them back from there, without
+writing them to memory and loading them back, which costs a stalled
+store-to-load forwarding on some cores. It never writes `rdi`.
 
 `call o a b` is the call, with the indices in the argument registers.
 -/
@@ -29,11 +29,15 @@ def at_ (b : Reg) (d : Int) : MemOp := { base := b, disp := d }
 /-- The indices zero-extended (only their low 32 bits are arguments). -/
 def zext : List Instr := [.mov32 .rdx (.reg .rdx), .mov32 .rcx (.reg .rcx), .mov32 .r8 (.reg .r8)]
 
-/-- The callee-saved registers into `xmm0`–`xmm2`, two to a register. -/
+/-- The callee-saved registers into `xmm8`–`xmm13`, one to a register. -/
 def saves : List Instr :=
-  [.xop (.movq .xmm0 .rbx), .xop (.movq .xmm1 .rbp), .xop (.bin .punpcklqdq .xmm0 .xmm1),
-    .xop (.movq .xmm1 .r12), .xop (.movq .xmm2 .r13), .xop (.bin .punpcklqdq .xmm1 .xmm2),
-    .xop (.movq .xmm2 .r14), .xop (.movq .xmm3 .r15), .xop (.bin .punpcklqdq .xmm2 .xmm3)]
+  [.xop (.movq .xmm8 .rbx), .xop (.movq .xmm9 .rbp), .xop (.movq .xmm10 .r12),
+    .xop (.movq .xmm11 .r13), .xop (.movq .xmm12 .r14), .xop (.movq .xmm13 .r15)]
+
+/-- The callee-saved registers back from `xmm8`–`xmm13`. -/
+def unsaves : List Instr :=
+  [.movqR .rbx .xmm8, .movqR .rbp .xmm9, .movqR .r12 .xmm10, .movqR .r13 .xmm11,
+    .movqR .r14 .xmm12, .movqR .r15 .xmm13]
 
 /-- `zext`, then `saves`. -/
 def enter : List Instr := zext ++ saves
@@ -46,12 +50,8 @@ def basesR : List Instr :=
     .mov .r10 (.mem (hdr (sArr aN))), .mov .r8 (.mem (hdr (sArr aAcc))), .mov .r12 (.mem (hdr sW)),
     .mov .r15 (.mem (hdr sMinv)), .mov .rsi (.mem (hdr (sArr aTmp)))]
 
-/-- The callee-saved registers back, through the first words of the
-accumulator (`r8`) and the temporary (`rsi`). -/
-def leave : List Instr :=
-  [.movdquStore (at_ .r8 0) .xmm0, .movdquStore (at_ .r8 16) .xmm1, .movdquStore (at_ .rsi 0) .xmm2,
-    .mov .rbx (.mem (at_ .r8 0)), .mov .rbp (.mem (at_ .r8 8)), .mov .r12 (.mem (at_ .r8 16)),
-    .mov .r13 (.mem (at_ .r8 24)), .mov .r14 (.mem (at_ .rsi 0)), .mov .r15 (.mem (at_ .rsi 8))]
+/-- The callee-saved registers back. -/
+def leave : List Instr := unsaves
 
 /-- `vg_rsa_mont_mul`: `montMul` (`aN`, `aAcc`, `aTmp`) for the arrays in
 `edx`, `ecx` and `r8d`. -/
