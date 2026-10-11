@@ -13,7 +13,7 @@ joint method does not: the generator's digits at `3304`, the cached `Z²`,
 bits of `k` and its table of odd multiples. `p521` already has `pubVerify`. -/
 def publicJoint : Joint.Cfg :=
   ⟨p521.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
-    3304,"VG_P521_COMB",4096,5968⟩
+    3304,"VG_P521_COMB",4096,5968,none⟩
 
 def publicJointAdx : Joint.Cfg :=
   {publicJoint with K := p521x.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP}

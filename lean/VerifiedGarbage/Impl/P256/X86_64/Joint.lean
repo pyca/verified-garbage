@@ -8,7 +8,7 @@ open VG VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X
 
 def publicJoint : Joint.Cfg :=
   ⟨p256.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
-    6000,"VG_P256_COMB",4000,5408⟩
+    6000,"VG_P256_COMB",4000,5408,none⟩
 
 def publicJointAdx : Joint.Cfg :=
   {publicJoint with K := p256x.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP}

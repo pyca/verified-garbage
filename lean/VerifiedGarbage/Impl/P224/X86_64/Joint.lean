@@ -16,6 +16,6 @@ def p224v : Cfg := { p224 with pubVerify := true }
 generator's digits at `6000`. -/
 def publicJoint : Joint.Cfg :=
   ⟨p224v.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
-    6000,"VG_P224_COMB",4000,5408⟩
+    6000,"VG_P224_COMB",4000,5408,none⟩
 
 end VG.Impl.P224.X86_64

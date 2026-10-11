@@ -70,4 +70,26 @@ theorem jacDouble_doubler {c : Joint.Cfg} {C : Curve} {size : Nat}
     exact cp.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub (fun _ hx =>
       List.mem_append_right _ (List.mem_append_right _ hx))⟩)
 
+/-- A call of a doubler that calls nothing, between `saves` and `restores`
+(`PointOps.wrap`), is a doubler. -/
+theorem call_doubler {c : Joint.Cfg} {C : Curve} {size : Nat} {d : Prog isa}
+    (h : JointDoubler c C size d) (hnc : d.noCalls = true)
+    (hclob : ∀ r ∈ Proof.Weierstrass.X86_64.PointOps.keptRegs, r ∈ clob c.K.M.n) (n : String) :
+    JointDoubler c C size (.call n (PointOps.wrap d)) := by
+  have hi := Code.inline_of_noCalls hnc
+  constructor
+  · intro base u v Q A External s hExt hA hs
+    show WP isa (PointOps.wrap d) s _
+    refine Proof.Weierstrass.X86_64.PointOps.wrap_keep_ok hclob
+      (fun x y pk k sy hx => hx.of_keeps k (by simp) (hExt x y pk sy hx.external))
+      (fun x y pk k sy hx => hx.of_keeps k (by decide) (hExt x y pk sy hx.external)) hs
+      fun x hx => ?_
+    have := h.ok hExt hA hx
+    rwa [hi] at this
+  · intro base E
+    show RelCT isa _ (PointOps.wrap d) _
+    have := h.ct (base := base) (E := E)
+    rw [hi] at this
+    exact Proof.Weierstrass.X86_64.PointOps.wrap_relCT this
+
 end VG.Proof.Weierstrass.X86_64
