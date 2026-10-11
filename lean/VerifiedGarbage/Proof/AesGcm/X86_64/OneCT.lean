@@ -142,7 +142,7 @@ theorem OneS₂.env {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat} {T : Op
 theorem aadRest_rel {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat} {T : Option Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) :
     RelCT isa (OneS₂ M Ctx W SP R A al D n T)
       (.seq (.block [.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO)), .mov32 .rbx (imm 0)])
-      (.seq (absorb v.callees 16) (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .alu .and .rbx (imm 15)])
+      (.seq (absorbAl v.callees 16) (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .alu .and .rbx (imm 15)])
         (flush v.callees 16)))) (OneS₂ M Ctx W SP R A al D n T) := by
   have hL : ∀ s, OneS M Ctx W SP R A al D n T s → WP isa (.block [.mov .r12 (.mem (at_ .r15 aadO)),
       .mov .rbp (.mem (at_ .r15 alenO)), .mov32 .rbx (imm 0)]) s fun s₁ => OneS M Ctx W SP R A al D n T s₁ ∧
@@ -154,11 +154,11 @@ theorem aadRest_rel {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat} {T : Op
     s.gpr .rbp = BitVec.ofNat 64 al ∧ s.gpr .rbx = BitVec.ofNat 64 0
   have ai : ∀ s, AI s → AbsIn Ctx (W + BitVec.ofNat 64 16) W SP 16 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) [] A al s :=
     fun s h => ⟨h.1.env, h.2.1, h.2.2.1, h.2.2.2, h.1.dA, rfl⟩
-  have hA : ∀ s, AI s → WP isa (absorb v.callees 16) s (OneS M Ctx W SP R A al D n T) := fun s h =>
-    WP.mono (WP.with_rdwr (absorb_ok v L (.inr rfl) (ai s h))) fun _ ⟨o, hrd, hwr⟩ =>
+  have hA : ∀ s, AI s → WP isa (absorbAl v.callees 16) s (OneS M Ctx W SP R A al D n T) := fun s h =>
+    WP.mono (WP.with_rdwr (absorbAl_ok v L (.inr rfl) (ai s h) rfl)) fun _ ⟨o, hrd, hwr⟩ =>
       h.1.frame L o.env hrd hwr hDW (w_one (absFrame_one o.frame))
   have b := rel_wp ((RelCT.exists_ fun H₁ => RelCT.exists_ fun H₂ =>
-      absorb_rel v L (.inr rfl) (H₁ := H₁) (H₂ := H₂) (x₁ := []) (x₂ := []) (D := A) (n := al) rfl).mono
+      absorbAl_rel v L (.inr rfl) (H₁ := H₁) (H₂ := H₂) (x₁ := []) (x₂ := []) (D := A) (n := al) rfl rfl).mono
       (P' := fun s₁ s₂ => True ∧ AI s₁ ∧ AI s₂) (fun _ _ h => ⟨_, _, ai _ h.2.1, ai _ h.2.2⟩) fun _ _ h => h)
     (fun _ _ h => h.2) hA hA
   have hM : ∀ s, OneS M Ctx W SP R A al D n T s → WP isa (.block [.mov .rbx (.mem (at_ .r15 alenO)),
@@ -212,10 +212,10 @@ theorem oneCrypt_rel {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat} {T : O
     s.gpr .rbp = BitVec.ofNat 64 n ∧ s.gpr .rbx = BitVec.ofNat 64 0
   have ci : ∀ s, CI s → CrIn Ctx (W + BitVec.ofNat 64 16) W SP R 0 0 D n s :=
     fun s h => ⟨h.1.env, h.2.1, h.2.2.1, h.2.2.2, h.1.dD, h.1.rounds⟩
-  have hC : ∀ s, CI s → WP isa (crypt v.callees) s (OneS M Ctx W SP R A al D n T) := fun s h =>
-    WP.mono (WP.with_rdwr (crypt_ok v L (ci s h))) fun _ ⟨o, hrd, hwr⟩ =>
+  have hC : ∀ s, CI s → WP isa (cryptAl v.callees) s (OneS M Ctx W SP R A al D n T) := fun s h =>
+    WP.mono (WP.with_rdwr (cryptAl_ok v L (ci s h) rfl)) fun _ ⟨o, hrd, hwr⟩ =>
       h.1.frame L o.env hrd hwr hDW (crFrame_one o.frame)
-  have b := rel_wp ((crypt_rel v L (R := R) (icb₁ := 0) (icb₂ := 0) (P₁ := 0) (P₂ := 0) (D := D) (n := n) rfl).mono
+  have b := rel_wp ((cryptAl_rel v L (R := R) (icb₁ := 0) (icb₂ := 0) (P₁ := 0) (P₂ := 0) (D := D) (n := n) rfl rfl).mono
       (P' := fun s₁ s₂ => True ∧ CI s₁ ∧ CI s₂) (fun _ _ h => ⟨ci _ h.2.1, ci _ h.2.2⟩) fun _ _ h => h)
     (fun _ _ h => h.2) hC hC
   exact (RelCT.seq a b).mono (fun _ _ h => h) fun _ _ h => h.2
@@ -234,11 +234,11 @@ theorem oneTag_rel {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat} {N : Nat
     s.gpr .rbp = BitVec.ofNat 64 n ∧ s.gpr .rbx = BitVec.ofNat 64 0
   have ai : ∀ s, AI s → AbsIn Ctx (W + BitVec.ofNat 64 16) W SP 16 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) [] D n s :=
     fun s h => ⟨h.1.env, h.2.1, h.2.2.1, h.2.2.2, h.1.dD.ok, rfl⟩
-  have hA : ∀ s, AI s → WP isa (absorb v.callees 16) s (OneS M Ctx W SP R A al D n (some N)) := fun s h =>
-    WP.mono (WP.with_rdwr (absorb_ok v L (.inr rfl) (ai s h))) fun _ ⟨o, hrd, hwr⟩ =>
+  have hA : ∀ s, AI s → WP isa (absorbAl v.callees 16) s (OneS M Ctx W SP R A al D n (some N)) := fun s h =>
+    WP.mono (WP.with_rdwr (absorbAl_ok v L (.inr rfl) (ai s h) rfl)) fun _ ⟨o, hrd, hwr⟩ =>
       h.1.frame L o.env hrd hwr hDW (w_one (absFrame_one o.frame))
   have b := rel_wp ((RelCT.exists_ fun H₁ => RelCT.exists_ fun H₂ =>
-      absorb_rel v L (.inr rfl) (H₁ := H₁) (H₂ := H₂) (x₁ := []) (x₂ := []) (D := D) (n := n) rfl).mono
+      absorbAl_rel v L (.inr rfl) (H₁ := H₁) (H₂ := H₂) (x₁ := []) (x₂ := []) (D := D) (n := n) rfl rfl).mono
       (P' := fun s₁ s₂ => True ∧ AI s₁ ∧ AI s₂) (fun _ _ h => ⟨_, _, ai _ h.2.1, ai _ h.2.2⟩) fun _ _ h => h)
     (fun _ _ h => h.2) hA hA
   have hM : ∀ s, OneS M Ctx W SP R A al D n (some N) s → WP isa (.block [.mov .rbx (.mem (at_ .r15 lenO)),
