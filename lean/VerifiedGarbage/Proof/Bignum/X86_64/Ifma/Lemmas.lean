@@ -441,7 +441,7 @@ open VG.Proof.Bignum (off word ofs Outside off_off ofs_off writeW_outside)
 open VG.Proof.Bignum.X86_64 (Scr)
 
 /-- The squarings' count down, `ZF` at 0. -/
-theorem r15Dec_ok {s : State} {n : Nat} (hn : 1 ≤ n) (hn' : n ≤ 4) (h15 : s.gpr .r15 = BitVec.ofNat 64 n) :
+theorem r15Dec_ok {s : State} {n : Nat} (hn : 1 ≤ n) (hn' : n ≤ 5) (h15 : s.gpr .r15 = BitVec.ofNat 64 n) :
     WP isa (.block [.alu .sub .r15 (.imm 1)]) s fun s' =>
       s'.gpr .r15 = BitVec.ofNat 64 (n - 1) ∧ s'.zf = some (decide (n - 1 = 0)) ∧
       VG.Proof.MlKem.X86_64.Keep [.r15] s s' ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr := by

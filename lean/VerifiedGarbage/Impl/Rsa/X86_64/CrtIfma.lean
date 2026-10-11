@@ -298,15 +298,23 @@ def tabBuild : List (Prog isa) :=
       (.seq (ammCore l) (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 l.NB)),
         .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + 16 * l.NB)))]))) .ne]
 
+/-- The operands of a window's multiplication: `[oY] := [oY] [b]`. -/
+def winSetup (b : Nat) : List Instr :=
+  [.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 l.oY)), .mov .r9 (.reg .rbx),
+   .alu .add .r9 (.imm (BitVec.ofNat 32 b)), .mov .r11 (.reg .rbx),
+   .alu .add .r11 (.imm (BitVec.ofNat 32 l.oY))]
+
 /-- A window: `Y := Y¹⁶ T_v 2^(-208 R)` for each prime, `v` the top 4 bits
-of its byte at `oV`, which moves up 4 bits. -/
+of its byte at `oV`, which moves up 4 bits. `S := T_v` first, then one loop
+of five multiplications (`r15` counting them down): four squarings of `Y`,
+then `Y S`. -/
 def window : List (Prog isa) :=
-  [.block [.mov32 .r15 (.imm 4)],
-    .loop (.seq (amm l l.oY l.oY l.oY) (.block [.alu .sub .r15 (.imm 1)])) .ne] ++
   select l 0 ++ select l 1 ++
-  [.block ((List.range 2).flatMap fun p => [.mov .rax (.mem (at_ .rbx (l.D * p + l.oV))), .shift .ror .rax 60,
-      .store (at_ .rbx (l.D * p + l.oV)) .rax]),
-    amm l l.oY l.oY l.oS]
+  [.block (((List.range 2).flatMap fun p => [.mov .rax (.mem (at_ .rbx (l.D * p + l.oV))),
+      .shift .ror .rax 60, .store (at_ .rbx (l.D * p + l.oV)) .rax]) ++ [.mov32 .r15 (.imm 5)]),
+    .loop (.seq (.block [.alu .cmp .r15 (.imm 1)])
+      (.seq (.ite .e (.block (winSetup l l.oS)) (.block (winSetup l l.oY)))
+        (.seq (ammCore l) (.block [.alu .sub .r15 (.imm 1)])))) .ne]
 
 /-- The exponentiations, a byte of each exponent (`r13`) at a time. -/
 def expLoop : List (Prog isa) :=
