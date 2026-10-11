@@ -49,8 +49,10 @@ the sum `O` of the projective addition (slots 17 to 19, `oAt`), the operand
 for the projective addition (slot 40, `bAt`); `Q`'s `Z²` and `Z³` are at
 a byte offset of each curve's (`cacheAt`, `zzAt`, `zzzAt`). The functions
 take no offsets, so that every address they compute is `ws` plus a
-constant. Slots 23 to 28 and the curve's temporary slot (`tmpAt`) are the
-functions' own working space (`Own`); on return they are unspecified and
+constant. Slots 17 to 19 (`O`'s, where the Jacobian functions may build
+their result before copying it to `P`), 23 to 28 and the curve's temporary
+slot (`tmpAt`) are the functions' own working space (`Own`); on return
+they are unspecified and
 may hold intermediate values. Every other byte of `ws` keeps its value but
 the result's (`Keeps`).
 
@@ -248,10 +250,16 @@ def zzzAt : Nat := C.cache + 8 * C.k
 /-- The bytes of a point. -/
 def ptBytes : Nat := 24 * C.k
 
-/-- Byte `i` is in the functions' own working space: slots 23 to 28, or the
-temporary slot. -/
+/-- Byte `i` is in the functions' own working space: slots 17 to 19, 23 to
+28, or the temporary slot. -/
 def Own (i : Nat) : Prop :=
-  (C.slot 23 ≤ i ∧ i < C.slot 29) ∨ (C.tmpAt ≤ i ∧ i < C.tmpAt + 8 * C.k)
+  (C.slot 17 ≤ i ∧ i < C.slot 20) ∨ (C.slot 23 ≤ i ∧ i < C.slot 29) ∨
+    (C.tmpAt ≤ i ∧ i < C.tmpAt + 8 * C.k)
+
+/-- How the documentation names the own working space. -/
+def ownDoc : String :=
+  s!"bytes {C.slot 17} to {C.slot 20 - 1}, {C.slot 23} to {C.slot 29 - 1} and {C.tmpAt} to \
+    {C.tmpAt + 8 * C.k - 1} of `ws`"
 
 /-- Every byte of `ws` but those of the functions' own working space and of
 the result, the point at `o`, keeps its value. -/
@@ -348,9 +356,8 @@ def common : String :=
   s!"Coordinates are numbers of {C.k} 64-bit words (`{8 * C.k}` bytes), little-endian, in \
     Montgomery's form modulo {C.desc}'s prime `p`, and a point is three at consecutive offsets \
     of `ws`: `P` at {C.ptDoc C.pAt}, `Q` at {C.ptDoc C.qAt}. The function reads `p` at byte \
-    {C.modAt}. Bytes {C.slot 23} to {C.slot 29 - 1} and {C.tmpAt} to {C.tmpAt + 8 * C.k - 1} of \
-    `ws` are the function's own working space; every other byte of `ws` but the result's keeps \
-    its value.\n\n\
+    {C.modAt}. The function's own working space is {C.ownDoc}; every other byte of `ws` but \
+    the result's keeps its value.\n\n\
     Contract: `doubleContract`, `addCachedContract`, `addAffineContract` or \
     `projAddAffineContract` of `VG.Spec.Weierstrass.PointOps.Curve`."
 
@@ -359,9 +366,8 @@ the numbers the function reads besides `p`. -/
 def safety (reads : String) : List String :=
   [s!"The {C.k} words at byte {C.modAt} of `ws` must be {C.desc}'s prime `p`, and {reads} must \
       be below it.",
-    s!"Bytes {C.slot 23} to {C.slot 29 - 1} and {C.tmpAt} to {C.tmpAt + 8 * C.k - 1} of `ws` are \
-      unspecified on return and may hold intermediate values, which the caller must destroy if \
-      they are secret."]
+    s!"The function's own working space, {C.ownDoc}, is unspecified on return and may hold \
+      intermediate values, which the caller must destroy if they are secret."]
 
 /-- What the documentation says of the Jacobian additions' timing. -/
 def leakDoc : String :=
