@@ -11,7 +11,9 @@ n` are `ofbContract`, `cfbEncryptContract` and `cfbDecryptContract` with a
 out its own), for the frame that keeps it on the stack
 (`Verified.stackScratchWiped`), which needs each postcondition to read the
 memory on return only within the function's buffers (`ofbPostOut_local`,
-…).
+…), and, where the frame copies stack arguments (ARMv7), the precondition
+and postconditions to read the memory on entry only within them too
+(`ofbPre_local`, `ofbPost_local`, …).
 -/
 
 namespace VG.Proof.Camellia
@@ -81,6 +83,76 @@ private theorem cbcBlocksAt_congr {n : Nat}
 end
 
 variable (pb : Nat)
+
+theorem ofbPre_local : ∀ vs m₁ m₂, vs.length = (ofbSig.words pb).length →
+    (∀ b ∈ Sig.bufs ofbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ofbSig.words pb) (ofbPre pb) vs m₁ → Curry.apply (ofbSig.words pb) (ofbPre pb) vs m₂
+  | [_, _, _, _, _], _, _, _, _, h => h
+
+theorem cfbPre_local : ∀ vs m₁ m₂, vs.length = (cfbSig.words pb).length →
+    (∀ b ∈ Sig.bufs cfbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (cfbSig.words pb) (cfbPre pb) vs m₁ → Curry.apply (cfbSig.words pb) (cfbPre pb) vs m₂
+  | [_, _, _, _, _], _, _, _, _, h => h
+
+theorem ofbPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ofbSig.words pb).length →
+    (∀ b ∈ Sig.bufs ofbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ofbSig.words pb) (ofbPost pb) vs m₁ m' r → Curry.apply (ofbSig.words pb) (ofbPost pb) vs m₂ m' r
+  | [_, _, iv, data, n], m₁, m₂, m', r, _, hb, h => by
+    simp only [ofbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.1
+    have hv := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+      (ofbPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+      (ofbPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, ofbPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    intro hR
+    rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega), bytesAt_congr' hv,
+      cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+    exact h hR
+
+theorem cfbEncryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cfbSig.words pb).length →
+    (∀ b ∈ Sig.bufs cfbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (cfbSig.words pb) (cfbEncryptPost pb) vs m₁ m' r → Curry.apply (cfbSig.words pb) (cfbEncryptPost pb) vs m₂ m' r
+  | [_, _, iv, data, n], m₁, m₂, m', r, _, hb, h => by
+    simp only [cfbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.1
+    have hv := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+      (cfbEncryptPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+      (cfbEncryptPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, cfbEncryptPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    intro hR
+    rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega), bytesAt_congr' hv,
+      cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+    exact h hR
+
+theorem cfbDecryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cfbSig.words pb).length →
+    (∀ b ∈ Sig.bufs cfbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (cfbSig.words pb) (cfbDecryptPost pb) vs m₁ m' r → Curry.apply (cfbSig.words pb) (cfbDecryptPost pb) vs m₂ m' r
+  | [_, _, iv, data, n], m₁, m₂, m', r, _, hb, h => by
+    simp only [cfbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.1
+    have hv := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+      (cfbDecryptPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb]
+      (cfbDecryptPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, cfbDecryptPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    intro hR
+    rw [subkeysAt_congr (by simp only [scheduleLength]; omega) fun i hi => hs i (by omega), bytesAt_congr' hv,
+      cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by rw [BitVec.toNat_setWidth] at hi; omega)]
+    exact h hR
 
 theorem ofbPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ofbSig.words pb).length →
     (∀ b ∈ Sig.bufs ofbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →

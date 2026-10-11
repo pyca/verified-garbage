@@ -114,6 +114,47 @@ theorem seqArm_pre_rw {c : Core} {S : CoreSpec c} {M : Mode} (hr : c.rounds = fa
   · exact da.symm
   · exact sa.symm
 
+section
+variable (c : Core) (S : CoreSpec c) (len : Nat → Nat) (s : State)
+
+/-- The precondition of `(schedule, rounds, iv, data, n = [sp], scratch = [sp + 4])`,
+with the schedule only read and the IV read and written, as `Sig.contract`
+states it, for data of `len n` bytes, and the number of rounds satisfying
+`S.rok`. -/
+def RwPreR : Prop :=
+  let key : Region := ⟨State.addr (s.gpr .r0), S.keyLen⟩
+  let iv : Region := ⟨State.addr (s.gpr .r2), c.bs⟩
+  let data : Region := ⟨State.addr (s.gpr .r3), len (stackArg s 0).toNat⟩
+  let scr : Region := ⟨State.addr (stackArg s 1), c.scratchBytes⟩
+  let arg : Region := ⟨stackArgAddr s 0, 8⟩
+  let below : Region := ⟨State.addr s.sp - BitVec.ofNat 64 S.stack, S.stack⟩
+  S.stack ≤ s.sp.toNat ∧ s.sp.toNat + 8 ≤ 2 ^ 32 ∧ s.rd = [key, arg] ∧ s.wr = [iv, data, scr] ∧
+    key.Disjoint iv ∧ key.Disjoint data ∧ key.Disjoint scr ∧ iv.Disjoint data ∧ iv.Disjoint scr ∧
+    iv.Disjoint arg ∧ data.Disjoint scr ∧ data.Disjoint arg ∧ scr.Disjoint arg ∧
+    below.Disjoint key ∧ below.Disjoint iv ∧ below.Disjoint data ∧ below.Disjoint scr ∧ below.Disjoint arg ∧
+    (s.gpr .r0).toNat + S.keyLen ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + c.bs ≤ 2 ^ 32 ∧
+    (s.gpr .r3).toNat + len (stackArg s 0).toNat ≤ 2 ^ 32 ∧ (stackArg s 1).toNat + c.scratchBytes ≤ 2 ^ 32 ∧
+    S.rok (s.gpr .r1)
+
+end
+
+theorem seqArm_pre_rwR {c : Core} {S : CoreSpec c} {M : Mode} (hr : c.rounds = true) {len : Nat → Nat}
+    (hl : ∀ n, len n = n * c.ds M) {s : State} (h : RwPreR c S len s) : (seqArm c S M).pre s := by
+  simp only [RwPreR, hl] at h
+  obtain ⟨e1, e2, e3, e4, e5⟩ := args_rounds hr s
+  show (seqArm c S M).pre s
+  unfold seqArm; simp only [e1, e2, e3, e4, e5]
+  obtain ⟨a1, a2, rd, wr, -, kd, ks, vd, vs, va, ds, da, sa, bk, -, bd, bs, -, fk, fv, fd, fs, rk⟩ := h
+  refine ⟨a1, a2, by simp [rd], by simp [wr], by simp [rd], by simp [wr], by simp [wr], kd, ks, vd, vs, ds,
+    bk, bd, bs, fk, fv, fd, fs, fun _ => by simp [wr], ?_, fun _ => rk⟩
+  intro r hr
+  rw [wr] at hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact va.symm
+  · exact da.symm
+  · exact sa.symm
+
 theorem ofb_post {c : Core} {S : CoreSpec c} {s s' : State} (h : (seqArm c S ofb).post s s') :
     let ciph := S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)
     let iv := Spec.Aes.bytesAt s.mem (State.addr (ivArg c s)) c.bs
