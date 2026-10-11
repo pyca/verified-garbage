@@ -16,16 +16,15 @@ def output (w I i : Nat) := slot w aAcc+16*I+(16+8*(2*i+1))
 private theorem compose_arith {P R T V A S W : Nat}
     (h : P+R*T=V+A) (e : W=T+S) : P+R*W=V+(A+R*S) := by grind
 
-theorem rows_ok (n : Nat) {s : State} {B : Addr} {Z w I i e : Nat} {mi : BitVec 64} {rs : List Reg}
-    (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
-    (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I) (hp : s.gpr .rbp=off B e)
+theorem rows_ok (n : Nat) {s : State} {B : Addr} {Z w I i e : Nat} {rs : List Reg}
+    (hs : Scr s B Z) (hc : s.gpr .rcx=off B (slot w aAcc+16*I)) (hp : s.gpr .rbp=off B e)
     (he : e+8*(i+n+1)≤Z) (hout : output w I i+16*n≤Z)
     (hsep : e+8*(i+n+1)≤output w I i ∨ output w I i+16*n≤e)
     (hr : Regs rs) (hlen : rs.length=n+1) (hv : value s rs<2^(64*n)) :
     WP isa (AdxTri8.rows n i rs) s fun t =>
       wv t.mem B (output w I i) (2*n)=value s rs+rowSum s.mem B e i n ∧
       Outside B (output w I i) (16*n) s.mem t.mem ∧
-      Keep (([.rdx,.rcx,.rax,.rbx,.rsi] : List Reg)++rs) s t := by
+      Keep (([.rdx,.rax,.rbx,.rsi] : List Reg)++rs) s t := by
   have nowrap := hs.nowrap
   induction n generalizing s i rs with
   | zero =>
@@ -42,27 +41,24 @@ theorem rows_ok (n : Nat) {s : State} {B : Addr} {Z w I i e : Nat} {mi : BitVec 
       | cons hi tail =>
         have tl : tail.length=n := by simp only [List.length_cons] at hlen; omega
         change WP isa (.seq (AdxTri8.rowStep i lo hi tail) (AdxTri8.rows n (i+1) (tail++[lo]))) s _
-        refine WP.seq (WP.mono (rowStep_ok hs hd hh hZ hI hp (by rw [hlen]; omega)
+        refine WP.seq (WP.mono (rowStep_ok hs hc hp (by rw [hlen]; omega)
           (by unfold output at hout; omega) hr.1 hr.2 (by rw [hlen]; simpa only [Nat.add_sub_cancel] using hv))
           fun a ⟨va,za,oa,ka⟩ => ?_)
         change Outside B (output w I i) 16 s.mem a.mem at oa
         have sa := hs.congr ka.2.2
-        have da : a.gpr .rdi=B := (ka.gpr (by
+        have ca : a.gpr .rcx=off B (slot w aAcc+16*I) := (ka.gpr (by
           simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
-          exact ⟨by decide,⟨(hr.2 lo (by simp)).2.2.2.2.symm,(hr.2 hi (by simp)).2.2.2.2.symm,
-            fun h => (hr.2 .rdi (by simp [h])).2.2.2.2 rfl⟩⟩)).trans hd
+          exact ⟨by decide,⟨(hr.2 lo (by simp)).2.2.2.1.symm,(hr.2 hi (by simp)).2.2.2.1.symm,
+            fun h => (hr.2 .rcx (by simp [h])).2.2.2.1 rfl⟩⟩)).trans hc
         have pa : a.gpr .rbp=off B e := (ka.gpr (by
           simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
           exact ⟨by decide,⟨(hr.2 lo (by simp)).1.2.1.symm,(hr.2 hi (by simp)).1.2.1.symm,
             fun h => (hr.2 .rbp (by simp [h])).1.2.1 rfl⟩⟩)).trans hp
-        have head : hdrBytes≤output w I i := by unfold output slot; omega
-        have ia : word a.mem B (8*sFn 12)=BitVec.ofNat 64 I := by
-          rw [oa.word (by unfold output slot hdrBytes sFn; omega) (by decide)]; exact hI
         have av : value a (tail++[lo])<2^(64*n) := by
           have h := value_zero_top (rs := tail) za
           simpa only [List.length_append,List.length_cons,List.length_nil,tl,Nat.zero_add,Nat.add_sub_cancel] using h
         have outNext : output w I (i+1)=output w I i+16 := by unfold output; omega
-        refine WP.mono (ih (i := i+1) sa da (hh.of_outside oa head) ia pa (by omega)
+        refine WP.mono (ih (i := i+1) sa ca pa (by omega)
           (by rw [outNext]; omega) (by rw [outNext]; omega) (rotate_regs hr)
           (by simp only [List.length_append,List.length_cons,List.length_nil,tl]) av)
           fun t ⟨vt,ot,kt⟩ => ?_
@@ -178,20 +174,20 @@ theorem clearEnds_ok {s : State} {B : Addr} {Z w I : Nat} {mi : BitVec 64}
     WP isa AdxTri8.clearEnds s fun t =>
       word t.mem B e=s.gpr .r8 ∧ word t.mem B (e+120)=s.gpr .r8 ∧
       (∀ d, 8≤d → d+8≤120 → word t.mem B (e+d)=word s.mem B (e+d)) ∧
-      Outside B e 128 s.mem t.mem ∧ Keep [.rsi,.rcx] s t := by
+      Outside B e 128 s.mem t.mem ∧ t.gpr .rcx=off B (slot w aAcc+16*I) ∧ Keep [.rsi,.rcx] s t := by
   dsimp only
   have nowrap := hs.nowrap
   unfold AdxTri8.clearEnds
   refine WP.seq (WP.mono (headBases_ok hs hd hh hZ hI) fun a ⟨pa,ma,ka⟩ => ?_)
-  refine WP.seq (WP.mono (AdxRotate8.storeAt_ok (p := .rsi) (r := .r8) (hs.congr ka.2.2) pa
+  refine WP.seq (WP.mono (AdxRotate8.storeAt_ok (p := .rcx) (r := .r8) (hs.congr ka.2.2) pa
     (by omega : slot w aAcc+16*I+16+8≤Z)) fun b ⟨vb,ob,kb⟩ => ?_)
-  refine WP.mono (AdxRotate8.storeAt_ok (p := .rsi) (r := .r8) (hs.congr (ka.trans kb).2.2)
+  refine WP.mono (AdxRotate8.storeAt_ok (p := .rcx) (r := .r8) (hs.congr (ka.trans kb).2.2)
     ((kb.gpr (by simp)).trans pa) (by omega : slot w aAcc+16*I+136+8≤Z)) fun t ⟨vt,ot,kt⟩ => ?_
   have r8a : a.gpr .r8=s.gpr .r8 := ka.gpr (by simp)
   have r8b : b.gpr .r8=s.gpr .r8 := (kb.gpr (by simp)).trans r8a
   rw [ma] at ob
   refine ⟨?_,?_,?_,(ob.mono (by omega) (by omega)).trans (ot.mono (by omega) (by omega)),
-    ((ka.trans kb).trans kt).mono (by simp)⟩
+    (kt.gpr (by simp)).trans ((kb.gpr (by simp)).trans pa),((ka.trans kb).trans kt).mono (by simp)⟩
   · rw [show slot w aAcc+16+16*I=slot w aAcc+16*I+16 by omega,ot.word (by omega) (by omega),vb,r8a]
   · rw [show slot w aAcc+16+16*I+120=slot w aAcc+16*I+136 by omega,vt,r8b]
   · intro d h1 h2
@@ -215,7 +211,7 @@ theorem block_ok {s : State} {B : Addr} {Z w a I : Nat} {mi : BitVec 64}
   have kuv := ku.trans kv
   have muv : v.mem=s.mem := mv.trans mu
   refine WP.seq (WP.mono (clearEnds_ok (hs.congr kuv.2.2) ((kuv.gpr (by decide)).trans hd) (muv ▸ hh) hZ
-    (muv ▸ hI) endZ) fun x ⟨lx,hx,_,ox,kx⟩ => ?_)
+    (muv ▸ hI) endZ) fun x ⟨lx,hx,_,ox,cx,kx⟩ => ?_)
   rw [muv] at ox
   have kvx := kuv.trans kx
   have hdrX : Hdr x.mem B w mi := hh.of_outside ox (by unfold slot; omega)
@@ -225,7 +221,7 @@ theorem block_ok {s : State} {B : Addr} {Z w a I : Nat} {mi : BitVec 64}
     simp only [AdxTri8.columns,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide)).trans (zv r hr)
   have r8x : v.gpr .r8=0 := zv .r8 (by decide)
-  refine WP.mono (rows_ok 7 (hs.congr kvx.2.2) ((kvx.gpr (by decide)).trans hd) hdrX hZ iX
+  refine WP.mono (rows_ok 7 (hs.congr kvx.2.2) cx
     ((kx.gpr (by decide)).trans ((kv.gpr (by decide)).trans pu)) (by omega)
     (by simpa only [show 16*7=112 from rfl] using outZ)
     (by unfold output; omega) columns_regs (by decide) (value_zero_lt zx 7))

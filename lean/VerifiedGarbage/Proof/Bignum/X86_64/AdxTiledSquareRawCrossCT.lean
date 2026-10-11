@@ -25,35 +25,35 @@ structure CtLayout where
 def HeadState (L : CtLayout) (s : State) : Prop :=
   ∃ mi, Good s L.B L.Z L.w mi ∧ word s.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.I
 
-def Stage (n : Nat) (rs : List Reg) (L : CtLayout) (s : State) : Prop :=
+/-- The rows' state before `clearEnds` sets the output base. -/
+def Pre (n : Nat) (rs : List Reg) (L : CtLayout) (s : State) : Prop :=
   HeadState L s ∧ s.gpr .rbp=off L.B L.e ∧ value s rs<2^(64*n)
+
+/-- The block's output base, in `rcx` through the rows. -/
+def Based (L : CtLayout) (s : State) : Prop :=
+  HeadState L s ∧ s.gpr .rcx=off L.B (slot L.w aAcc+16*L.I)
+
+def Stage (n : Nat) (rs : List Reg) (L : CtLayout) (s : State) : Prop :=
+  Pre n rs L s ∧ s.gpr .rcx=off L.B (slot L.w aAcc+16*L.I)
 
 theorem head_pins : Pins HeadState [.rdi] := by
   rintro L s t ⟨mi,hs,_⟩ ⟨mj,ht,_⟩ r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   subst r; exact hs.rdi.trans ht.rdi.symm
 
-def Stores (i : Nat) (lo hi : Reg) : Prog isa :=
-  .seq (.block [.store (AdxRotate8.at_ .rsi (16+8*(2*i+1))) lo])
-    (.block [.store (AdxRotate8.at_ .rsi (16+8*(2*i+2))) hi])
-
 theorem storeHead_ct (i : Nat) (lo hi : Reg)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hT : (taint.check (Taint.ofRegs [.rsi]) (Stores i lo hi) hint).isSome=true) :
-    RelCT isa (Two HeadState) (AdxTri8.storeHead i lo hi) (fun _ _ => True) := by
-  unfold AdxTri8.storeHead
-  refine RelCT.seq (two_piece (Ψ := fun L s => s.gpr .rsi=off L.B (slot L.w aAcc+16*L.I))
-    [.rdi] head_pins (by taint_decide) ?_) (two_taint [.rsi] ?_ hT)
-  · rintro L s ⟨mi,hg,hI⟩
-    exact WP.mono (headBases_ok hg.scr hg.rdi hg.hdr L.hZ hI) fun _ h => h.1
-  · intro L s t hs ht r hr
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    subst r; exact hs.trans ht.symm
+    (hT : (taint.check (Taint.ofRegs [.rcx]) (AdxTri8.storeHead i lo hi) hint).isSome=true) :
+    RelCT isa (Two Based) (AdxTri8.storeHead i lo hi) (fun _ _ => True) := by
+  refine two_taint [.rcx] ?_ hT
+  intro L s t hs ht r hr
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+  subst r; exact hs.2.trans ht.2.symm
 
 theorem rowCore_head {i n : Nat} {rs : List Reg} (hr : Regs rs) (hlen : rs.length=n+1)
     (hi : i+n+1≤8) (L : CtLayout) (s : State) (h : Stage n rs L s) :
-    WP isa (.block (AdxTri8.rowCore i rs)) s (HeadState L) := by
-  obtain ⟨⟨mi,hg,hI⟩,hp,hv⟩ := h
+    WP isa (.block (AdxTri8.rowCore i rs)) s (Based L) := by
+  obtain ⟨⟨⟨mi,hg,hI⟩,hp,hv⟩,hc⟩ := h
   have he := L.he
   refine WP.mono (rowCore_ok rs hg.scr hp (by rw [hlen]; omega) (by intro eq; rw [eq] at hlen; simp at hlen)
     hr.1 (fun r h => let q := hr.2 r h; ⟨q.1,q.2.1,q.2.2.1,q.2.2.2.1⟩)
@@ -61,12 +61,15 @@ theorem rowCore_head {i n : Nat} {rs : List Reg} (hr : Regs rs) (hlen : rs.lengt
   have dr : t.gpr .rdi=s.gpr .rdi := kt.gpr (by
     simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
     exact ⟨by decide,fun h => (hr.2 .rdi h).2.2.2.2 rfl⟩)
-  exact ⟨mi,⟨hg.scr.congr kt.2.2.2,dr.trans hg.rdi,kt.2.1 ▸ hg.hdr⟩,kt.2.1 ▸ hI⟩
+  have cr : t.gpr .rcx=s.gpr .rcx := kt.gpr (by
+    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
+    exact ⟨by decide,fun h => (hr.2 .rcx h).2.2.2.1 rfl⟩)
+  exact ⟨⟨mi,⟨hg.scr.congr kt.2.2.2,dr.trans hg.rdi,kt.2.1 ▸ hg.hdr⟩,kt.2.1 ▸ hI⟩,cr.trans hc⟩
 
 theorem rowStep_ct {i n : Nat} {lo hi : Reg} {tail : List Reg}
     (hr : Regs (lo::hi::tail)) (hlen : (lo::hi::tail).length=n+2) (hi8 : i+n+2≤8)
     {hint htail hmov : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hT : (taint.check (Taint.ofRegs [.rsi]) (Stores i lo hi) htail).isSome=true)
+    (hT : (taint.check (Taint.ofRegs [.rcx]) (AdxTri8.storeHead i lo hi) htail).isSome=true)
     (hM : (taint.check (Taint.ofRegs []) (.block [.mov32 lo (.imm 0)]) hmov).isSome=true)
     (hC : (taint.check (Taint.ofRegs [.rbp]) (.block (AdxTri8.rowCore i (lo::hi::tail))) hint).isSome=true) :
     RelCT isa (Two (Stage (n+1) (lo::hi::tail))) (AdxTri8.rowStep i lo hi tail) (fun _ _ => True) := by
@@ -74,7 +77,7 @@ theorem rowStep_ct {i n : Nat} {lo hi : Reg} {tail : List Reg}
   refine RelCT.seq (two_piece [.rbp] ?_ hC (rowCore_head hr hlen hi8)) ?_
   · intro L s t hs ht r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    subst r; exact hs.2.1.trans ht.2.1.symm
+    subst r; exact hs.1.2.1.trans ht.1.2.1.symm
   refine RelCT.seq (storeHead_ct i lo hi hT) ?_
   exact RelCT.taint (A := taint) (Taint.ofRegs [])
     (fun _ _ _ => Taint.agree_ofRegs (by simp)) hM
@@ -94,11 +97,11 @@ theorem rowStep_stage {i n : Nat} {lo hi : Reg} {tail : List Reg}
     (hr : Regs (lo::hi::tail)) (hlen : (lo::hi::tail).length=n+2) (hi8 : i+n+2≤8)
     (L : CtLayout) (s : State) (h : Stage (n+1) (lo::hi::tail) L s) :
     WP isa (AdxTri8.rowStep i lo hi tail) s (Stage n (tail++[lo]) L) := by
-  obtain ⟨⟨mi,hg,hI⟩,hp,hv⟩ := h
+  obtain ⟨⟨⟨mi,hg,hI⟩,hp,hv⟩,hc⟩ := h
   have he := L.he; have hiL := L.hi; have hZ := L.hZ
   have bound : slot L.w aAcc+16*L.I+(16+8*(2*i+2))+8≤L.Z := by
     unfold slot aAcc at *; omega
-  refine WP.mono (rowStep_ok hg.scr hg.rdi hg.hdr L.hZ hI hp (by rw [hlen]; omega)
+  refine WP.mono (rowStep_ok hg.scr hc hp (by rw [hlen]; omega)
     bound hr.1 hr.2 (by rw [hlen,show n+2-1=n+1 by omega]; exact hv))
     fun t ⟨_,zt,ot,kt⟩ => ?_
   have dr : t.gpr .rdi=L.B := (kt.gpr (by
@@ -113,14 +116,18 @@ theorem rowStep_stage {i n : Nat} {lo hi : Reg} {tail : List Reg}
   have it : word t.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.I := by
     rw [ot.word (by unfold slot hdrBytes sFn; omega) (by decide)]; exact hI
   have len : tail.length=n := by simp only [List.length_cons] at hlen; omega
-  refine ⟨⟨mi,⟨hg.scr.congr kt.2.2,dr,ht⟩,it⟩,pr,?_⟩
+  have cr : t.gpr .rcx=s.gpr .rcx := kt.gpr (by
+    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
+    exact ⟨by decide,⟨(hr.2 lo (by simp)).2.2.2.1.symm,(hr.2 hi (by simp)).2.2.2.1.symm,
+      fun h => (hr.2 .rcx (by simp [h])).2.2.2.1 rfl⟩⟩)
+  refine ⟨⟨⟨mi,⟨hg.scr.congr kt.2.2,dr,ht⟩,it⟩,pr,?_⟩,cr.trans hc⟩
   have h := value_zero_top (rs := tail) zt
   simpa only [List.length_append,List.length_cons,List.length_nil,len,Nat.zero_add,Nat.add_sub_cancel] using h
 
 /-- Closed hints for each unrolled row; the loop itself is proved relationally. -/
 def RowChecks (i : Nat) (lo hi : Reg) (tail : List Reg) : Prop :=
   ∃ ht hm hc : VG.Taint.Hint VG.X86_64.Taint.T,
-    (taint.check (Taint.ofRegs [.rsi]) (Stores i lo hi) ht).isSome=true ∧
+    (taint.check (Taint.ofRegs [.rcx]) (AdxTri8.storeHead i lo hi) ht).isSome=true ∧
     (taint.check (Taint.ofRegs []) (.block [.mov32 lo (.imm 0)]) hm).isSome=true ∧
     (taint.check (Taint.ofRegs [.rbp]) (.block (AdxTri8.rowCore i (lo::hi::tail))) hc).isSome=true
 
@@ -180,41 +187,41 @@ theorem setup_ct_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) 
   exact ⟨⟨mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,mt ▸ hg.hdr⟩,mt ▸ hI⟩,he ▸ pt⟩
 
 theorem clear_ct_fw (L : CtLayout) (s : State) (h : CoreReady L s) :
-    WP isa (.block AdxTri8.clearColumns) s (Stage 7 AdxTri8.columns L) := by
+    WP isa (.block AdxTri8.clearColumns) s (Pre 7 AdxTri8.columns L) := by
   obtain ⟨⟨mi,hg,hI⟩,hp⟩ := h
   refine WP.mono (clear_ok AdxTri8.columns s) fun t ⟨zt,mt,kt⟩ => ?_
   exact ⟨⟨mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,mt ▸ hg.hdr⟩,mt ▸ hI⟩,
     (kt.gpr (by decide)).trans hp,value_zero_lt zt 7⟩
 
-theorem stage_pins (n : Nat) (rs : List Reg) : Pins (Stage n rs) [.rdi] :=
+theorem pre_pins (n : Nat) (rs : List Reg) : Pins (Pre n rs) [.rdi] :=
   fun L s t hs ht => head_pins L s t hs.1 ht.1
 
-/-- The two stores of `clearEnds`, at addresses from `rsi`. -/
+/-- The two stores of `clearEnds`, at addresses from `rcx`. -/
 def EndStores : Prog isa :=
-  .seq (.block [.store (AdxRotate8.at_ .rsi 16) .r8]) (.block [.store (AdxRotate8.at_ .rsi 136) .r8])
+  .seq (.block [.store (AdxRotate8.at_ .rcx 16) .r8]) (.block [.store (AdxRotate8.at_ .rcx 136) .r8])
 
-theorem clearEnds_fw (L : CtLayout) (s : State) (h : Stage 7 AdxTri8.columns L s) :
+theorem clearEnds_fw (L : CtLayout) (s : State) (h : Pre 7 AdxTri8.columns L s) :
     WP isa AdxTri8.clearEnds s (Stage 7 AdxTri8.columns L) := by
   obtain ⟨⟨mi,hg,hI⟩,hp,hv⟩ := h
   have hi := L.hi
   have hZ := L.hZ
-  refine WP.mono (clearEnds_ok hg.scr hg.rdi hg.hdr L.hZ hI (by have := slot_le (w := L.w) (show aTmp < 8 by decide); unfold slot aAcc aTmp at *; omega)) fun t ⟨_,_,_,ot,kt⟩ => ?_
+  refine WP.mono (clearEnds_ok hg.scr hg.rdi hg.hdr L.hZ hI (by have := slot_le (w := L.w) (show aTmp < 8 by decide); unfold slot aAcc aTmp at *; omega)) fun t ⟨_,_,_,ot,ct,kt⟩ => ?_
   have cols : value t AdxTri8.columns=value s AdxTri8.columns :=
     value_congr fun r hr => kt.gpr (by
       simp only [AdxTri8.columns,List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide)
-  refine ⟨⟨mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,
-    hg.hdr.of_outside ot (by unfold slot; omega)⟩,?_⟩,(kt.gpr (by decide)).trans hp,cols ▸ hv⟩
+  refine ⟨⟨⟨mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,
+    hg.hdr.of_outside ot (by unfold slot; omega)⟩,?_⟩,(kt.gpr (by decide)).trans hp,cols ▸ hv⟩,ct⟩
   rw [ot.word (by unfold slot hdrBytes sFn; omega) (by decide)]; exact hI
 
 theorem clearEnds_ct
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hT : (taint.check (Taint.ofRegs [.rsi]) EndStores hint).isSome=true) :
-    RelCT isa (Two (Stage 7 AdxTri8.columns)) AdxTri8.clearEnds (Two (Stage 7 AdxTri8.columns)) := by
+    (hT : (taint.check (Taint.ofRegs [.rcx]) EndStores hint).isSome=true) :
+    RelCT isa (Two (Pre 7 AdxTri8.columns)) AdxTri8.clearEnds (Two (Stage 7 AdxTri8.columns)) := by
   refine two_post ?_ clearEnds_fw
   unfold AdxTri8.clearEnds
-  refine RelCT.seq (two_piece (Ψ := fun L s => s.gpr .rsi=off L.B (slot L.w aAcc+16*L.I))
-    [.rdi] (stage_pins 7 _) (by taint_decide) ?_) (two_taint [.rsi] ?_ hT)
+  refine RelCT.seq (two_piece (Ψ := fun L s => s.gpr .rcx=off L.B (slot L.w aAcc+16*L.I))
+    [.rdi] (pre_pins 7 _) (by taint_decide) ?_) (two_taint [.rcx] ?_ hT)
   · rintro L s ⟨⟨mi,hg,hI⟩,_⟩
     exact WP.mono (headBases_ok hg.scr hg.rdi hg.hdr L.hZ hI) fun _ h => h.1
   · intro L s t hs ht r hr

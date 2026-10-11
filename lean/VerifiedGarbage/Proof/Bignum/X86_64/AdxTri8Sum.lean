@@ -16,43 +16,40 @@ theorem headBases_ok {s : State} {B : Addr} {Z w I : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
     (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I) :
     WP isa (.block AdxTri8.headBases) s fun t =>
-      t.gpr .rsi=off B (slot w aAcc+16*I) ∧ t.mem=s.mem ∧ Keep [.rsi,.rcx] s t := by
+      t.gpr .rcx=off B (slot w aAcc+16*I) ∧ t.mem=s.mem ∧ Keep [.rsi,.rcx] s t := by
   have ld : ∀ k<32, InRegions (s.rd++s.wr) (off B (8*k)) 8 := fun k hk =>
     hs.ld (by have := hdr_lt_slot w 8 hk; omega)
   have sh : BitVec.ofNat 64 I <<< (4 : Nat)=BitVec.ofNat 64 (16*I) := by
     rw [BitVec.shiftLeft_eq_mul_twoPow]
     change BitVec.ofNat 64 I*BitVec.ofNat 64 16=BitVec.ofNat 64 (16*I)
     rw [← BitVec.ofNat_mul,Nat.mul_comm]
-  have add : off B (slot w aAcc)+BitVec.ofNat 64 (16*I)=off B (slot w aAcc+16*I) := off_off ..
-  refine WP.mono (WP.keep [.rsi,.rcx] (Q := fun t => t.gpr .rsi=off B (slot w aAcc+16*I) ∧ t.mem=s.mem) ?_ rfl)
+  have add : BitVec.ofNat 64 (16*I)+off B (slot w aAcc)=off B (slot w aAcc+16*I) := by
+    rw [BitVec.add_comm]; exact off_off ..
+  refine WP.mono (WP.keep [.rsi,.rcx] (Q := fun t => t.gpr .rcx=off B (slot w aAcc+16*I) ∧ t.mem=s.mem) ?_ rfl)
     fun t ⟨⟨p,m⟩,k⟩ => ⟨p,m,k⟩
   unfold AdxTri8.headBases
   xrun [State.ea,hdr,hd,hdrOff,ld (sArr aAcc) (by decide),ld (sFn 12) (by decide),
     hh.harr aAcc (by decide),hI,sh,add]
 
-theorem storeHead_ok {s : State} {B : Addr} {Z w I i : Nat} {mi : BitVec 64} {lo hi : Reg}
-    (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
-    (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I)
-    (he : slot w aAcc+16*I+(16+8*(2*i+2))+8≤Z)
-    (hl : lo≠.rsi ∧ lo≠.rcx) (hh' : hi≠.rsi ∧ hi≠.rcx) :
+theorem storeHead_ok {s : State} {B : Addr} {Z w I i : Nat} {lo hi : Reg}
+    (hs : Scr s B Z) (hc : s.gpr .rcx=off B (slot w aAcc+16*I))
+    (he : slot w aAcc+16*I+(16+8*(2*i+2))+8≤Z) :
     let e := slot w aAcc+16*I+(16+8*(2*i+1))
     WP isa (AdxTri8.storeHead i lo hi) s fun t =>
       wv t.mem B e 2=(s.gpr lo).toNat+2^64*(s.gpr hi).toNat ∧
-      Outside B e 16 s.mem t.mem ∧ Keep [.rsi,.rcx] s t := by
+      Outside B e 16 s.mem t.mem ∧ Keep [] s t := by
   dsimp only
   have nowrap := hs.nowrap
   unfold AdxTri8.storeHead
-  refine WP.seq (WP.mono (headBases_ok hs hd hh hZ hI) fun a ⟨pa,ma,ka⟩ => ?_)
-  refine WP.seq (WP.mono (AdxRotate8.storeAt_ok (p := .rsi) (r := lo) (hs.congr ka.2.2) pa
+  refine WP.seq (WP.mono (AdxRotate8.storeAt_ok (p := .rcx) (r := lo) hs hc
     (by omega : slot w aAcc+16*I+(16+8*(2*i+1))+8≤Z)) fun b ⟨vb,ob,kb⟩ => ?_)
-  refine WP.mono (AdxRotate8.storeAt_ok (p := .rsi) (r := hi) (hs.congr (ka.trans kb).2.2)
-    ((kb.gpr (by simp)).trans pa) he) fun t ⟨vt,ot,kt⟩ => ?_
+  refine WP.mono (AdxRotate8.storeAt_ok (p := .rcx) (r := hi) (hs.congr kb.2.2)
+    ((kb.gpr (by simp)).trans hc) he) fun t ⟨vt,ot,kt⟩ => ?_
   have low : word t.mem B (slot w aAcc+16*I+(16+8*(2*i+1)))=s.gpr lo := by
-    rw [ot.word (by omega) (by omega),vb,ka.gpr (by simp [hl.1,hl.2])]
+    rw [ot.word (by omega) (by omega),vb]
   have high : word t.mem B (slot w aAcc+16*I+(16+8*(2*i+2)))=s.gpr hi :=
-    vt.trans ((kb.gpr (by simp)).trans (ka.gpr (by simp [hh'.1,hh'.2])))
-  rw [ma] at ob
-  refine ⟨?_,(ob.mono (n' := 16) (by omega) (by omega)).trans (ot.mono (by omega) (by omega)),((ka.trans kb).trans kt).mono (by simp)⟩
+    vt.trans (kb.gpr (by simp))
+  refine ⟨?_,(ob.mono (n' := 16) (by omega) (by omega)).trans (ot.mono (by omega) (by omega)),(kb.trans kt).mono (by simp)⟩
   rw [wv,wv,wv]
   simp only [Nat.mul_zero,Nat.mul_one,Nat.pow_zero,Nat.one_mul,Nat.zero_add,Nat.add_zero]
   rw [low,show slot w aAcc+16*I+(16+8*(2*i+1))+8=slot w aAcc+16*I+(16+8*(2*i+2)) by omega,high]
@@ -72,10 +69,9 @@ open VG.Proof.MlKem.X86_64 (Keep)
 private theorem split_arith {A B R T V : Nat} (h : A+R*(B+R*T)=V) :
     (A+R*B)+(R*R)*T=V := by grind
 
-theorem rowStep_ok {s : State} {B : Addr} {Z w I i e : Nat} {mi : BitVec 64}
+theorem rowStep_ok {s : State} {B : Addr} {Z w I i e : Nat}
     {lo hi : Reg} {tail : List Reg}
-    (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
-    (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I) (hp : s.gpr .rbp=off B e)
+    (hs : Scr s B Z) (hc : s.gpr .rcx=off B (slot w aAcc+16*I)) (hp : s.gpr .rbp=off B e)
     (he : e+8*(i+(lo::hi::tail).length)≤Z)
     (hout : slot w aAcc+16*I+(16+8*(2*i+2))+8≤Z)
     (hr : (lo::hi::tail).Nodup)
@@ -85,24 +81,24 @@ theorem rowStep_ok {s : State} {B : Addr} {Z w I i e : Nat} {mi : BitVec 64}
     WP isa (AdxTri8.rowStep i lo hi tail) s fun t =>
       wv t.mem B out 2+2^128*value t (tail++[lo])=
         value s (lo::hi::tail)+(word s.mem B (e+8*i)).toNat*wv s.mem B (e+8*(i+1)) ((lo::hi::tail).length-1) ∧
-      t.gpr lo=0 ∧ Outside B out 16 s.mem t.mem ∧ Keep (([.rdx,.rcx,.rax,.rbx,.rsi] : List Reg)++lo::hi::tail) s t := by
+      t.gpr lo=0 ∧ Outside B out 16 s.mem t.mem ∧ Keep (([.rdx,.rax,.rbx,.rsi] : List Reg)++lo::hi::tail) s t := by
   dsimp only
   unfold AdxTri8.rowStep
   have baseSafe : ∀ r ∈ lo::hi::tail, Safe r ∧ r≠.rax ∧ r≠.rbx ∧ r≠.rcx :=
     fun r h => let q := hrs r h; ⟨q.1,q.2.1,q.2.2.1,q.2.2.2.1⟩
   refine WP.seq (WP.mono (rowCore_ok (lo::hi::tail) hs hp he (by simp) hr baseSafe hv)
     fun a ⟨va,ka⟩ => ?_)
-  have da : a.gpr .rdi=B := (ka.gpr (by
-    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
-    exact ⟨by decide,⟨(hrs lo (by simp)).2.2.2.2.symm,(hrs hi (by simp)).2.2.2.2.symm,
-      fun h => (hrs .rdi (by simp [h])).2.2.2.2 rfl⟩⟩)).trans hd
   have sl := hrs lo (by simp)
   have sh := hrs hi (by simp)
-  refine WP.seq (WP.mono (storeHead_ok (hs.congr ka.2.2.2) da (ka.2.1 ▸ hh) hZ (ka.2.1 ▸ hI) hout
-    ⟨sl.1.1,sl.1.2.2.2⟩ ⟨sh.1.1,sh.1.2.2.2⟩) fun b ⟨vb,ob,kb⟩ => ?_)
+  have ca : a.gpr .rcx=off B (slot w aAcc+16*I) := (ka.gpr (by
+    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
+    exact ⟨by decide,⟨sl.2.2.2.1.symm,sh.2.2.2.1.symm,
+      fun h => (hrs .rcx (by simp [h])).2.2.2.1 rfl⟩⟩)).trans hc
+  refine WP.seq (WP.mono (storeHead_ok (hs.congr ka.2.2.2) ca hout)
+    fun b ⟨vb,ob,kb⟩ => ?_)
   refine WP.mono (movZero_ok b lo) fun t ⟨zt,_,_,kt⟩ => ?_
   have tailA : value b tail=value a tail := value_congr fun r h =>
-    kb.gpr (by have q := hrs r (by simp [h]); simp [q.1.1,q.1.2.2.2])
+    kb.gpr (by simp)
   have tailT : value t tail=value b tail := value_congr fun r h =>
     kt.gpr (by
       have nd := (List.nodup_cons.mp hr).1
