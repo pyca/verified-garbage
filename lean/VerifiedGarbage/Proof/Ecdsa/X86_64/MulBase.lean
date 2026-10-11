@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.X86_64.GMul
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
 
 /-!
 # `vg_<curve>_mul_base`'s body on x86-64
@@ -73,21 +73,6 @@ theorem mulBaseBody_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {d : 
     rcases List.mem_append.mp hw with hw | hw
     · exact ⟨w, List.mem_append_right _ hw, Nat.le_refl _, Nat.le_refl _⟩
     · exact ⟨w, hw, Nat.le_refl _, Nat.le_refl _⟩
-
-/-- `saveMem` of slots in `[o, o + L)` of `base` changes nothing else of the
-working space. -/
-theorem saveMem_unch (m : Mem) (base : Addr) (g : Reg → BitVec 64) {o L : Nat}
-    (l : List (Reg × Nat)) (h : ∀ p ∈ l, o ≤ p.2 ∧ p.2 + 8 ≤ o + L) (hL : o + L < 2 ^ 64) :
-    Unch base [(o, L)] m (Spill.saveMem m base g l) := by
-  intro x hx
-  refine Spill.saveMem_frame (r := ⟨base + BitVec.ofNat 64 o, L⟩) m base g l
-    (fun p hp => Offset.contains base (h p hp).1 (h p hp).2 hL) x fun r hr hc => ?_
-  rw [List.mem_singleton.mp hr] at hc
-  have hx' := hx _ (List.mem_singleton_self _)
-  simp only [Region.Contains] at hc
-  have := (Offset.lt_iff x base (d := o) (n := L) (by omega)).mp (by omega)
-  simp only [ofs] at hx'
-  omega
 
 theorem mulBaseSaved_slots (h6 : 6 ≤ c.n) :
     ∀ p ∈ c.mulBaseSaved, c.sl ACC ≤ p.2 ∧ p.2 + 8 ≤ c.sl ACC + 8 * c.n := by

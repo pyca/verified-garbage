@@ -36,7 +36,8 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
       signature's call of `vg_p384_mul_base" ++ (if adx then "_adx" else "") ++ "`, a comb over \
       the 7-bit windows of `d`, from the static `VG_P384_COMB`, each entry selected by loading \
       every entry of its table, " ++ Proof.Ecdsa.X86_64.P384.selNote adx ++ " the one of the \
-      digit's magnitude; and `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, \
+      digit's magnitude; and `Z⁻¹` is the signature's call of `vg_p384_inv_mod_p" ++
+      (if adx then "_adx" else "") ++ "`. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, \
       so the time depends only on the pointers."])
     consts := Impl.Ecdsa.X86_64.p384.combConsts
     code

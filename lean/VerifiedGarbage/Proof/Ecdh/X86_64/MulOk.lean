@@ -54,7 +54,7 @@ def MulOk (c : Cfg) (mq : Prog isa) (W : List (Nat × Nat)) : Prop :=
     (∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0) →
     (¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0) →
     ∀ {rest : Prog isa} {R : State → Prop}, (∀ s', MulPostW c W base P k s s' → WP isa rest s' R) →
-    WP isa (.seq mq.inline (.seq c.pPow rest)) s R
+    WP isa (.seq mq.inline (.seq c.pPow.inline rest)) s R
 
 /-- What the exchange needs of the areas `W` the multiplication writes: they
 keep the constants, `d` and the flag. -/
