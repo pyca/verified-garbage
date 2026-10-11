@@ -92,7 +92,8 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p384 s := by
     rcases hr with h | h <;> simp [h]
 
 /-- `[k]G` is a call of `vg_p384_mul_base`, which calls no other function. -/
-theorem p384_mulBase : MulBaseOk p384 := fun _ => ⟨_, rfl, rfl, by decide, by lit_decide⟩
+theorem p384_mulBase : MulBaseOk p384 :=
+  ⟨fun _ => ⟨_, rfl, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
 
 theorem sign_x86 (hL : Law Spec.P384.curve)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)

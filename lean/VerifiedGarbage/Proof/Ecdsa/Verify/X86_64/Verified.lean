@@ -39,6 +39,7 @@ theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre p256 s := by
 that the proof supports, whose precondition the contract's gives (`hpre`),
 never writing `rsp`, calling or loading MXCSR (which its literal decides). -/
 theorem verify_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Weierstrass.Law c.C) (hT : CombTbls c)
+    (hmn : c.mul = none)
     (hpre : ∀ s, verifyX86_64.pre s → VPre c s) (hpost : ∀ s s', VPost c s s' → verifyX86_64.post s s')
     (hcode : Impl.Ecdsa.Verify.X86_64.Cfg.verify c = code)
     (hsp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
@@ -46,7 +47,7 @@ theorem verify_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Weierstra
     (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
   subst hcode
-  obtain ⟨t, s', he, hsv, hpost'⟩ := wp_of_inline hnc <| verify_ok hc hL hT (hpre s hs)
+  obtain ⟨t, s', he, hsv, hpost'⟩ := wp_of_inline hnc <| verify_ok hc hL hT (hpre s hs) fun h => absurd h (by rw [hmn]; decide)
   have hsp : ∀ i ∈ instrs (Impl.Ecdsa.Verify.X86_64.Cfg.verify c), Taint.clobbers i .rsp = false := by
     rw [Code.allInstrs_eq, List.all_eq_true] at hsp
     intro i hi
@@ -74,7 +75,7 @@ theorem verify_x86 (hL : Weierstrass.Law Spec.P256.curve)
     (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa verifyP256 s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
-  verify_x86_of (p256_ok hI) hL (p256_tbls hL hT) (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
+  verify_x86_of (p256_ok hI) hL (p256_tbls hL hT) rfl (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
     (by lit_decide) (by lit_decide) s hs
 
 theorem verify_checks : VerifyChecks p256 p256Table where
@@ -118,7 +119,7 @@ theorem verify_ct (hL : Weierstrass.Law Spec.P256.curve)
       (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pre
       (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pub verifyP256 := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
-  exact verify_public_ct (p256_ok hI) hL (p256_tbls hL hT) rfl (by decide) verify_checks
+  exact verify_public_ct (p256_ok hI) hL (p256_tbls hL hT) rfl (by decide) verify_checks rfl
     _ _ _ _ _ _ (pre_of (implies.pre _ pre₁)) (pre_of (implies.pre _ pre₂)) (verify_public_of_spec pub) e₁ e₂
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P256.curve)

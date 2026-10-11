@@ -12,6 +12,7 @@ def p192 : Cfg where
   C := Spec.P192.curve
   fastN := true
   windows := false
+  mul := some Spec.Weierstrass.Mul.p192
 
 def signP192 : Prog isa := p192.sign
 

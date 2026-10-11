@@ -143,10 +143,14 @@ def maskK : List Instr :=
   else []
 
 /-- `[d]P` into `R`, for `d` at `K` and `P` at `PX`, `PY`, `ONEP`: by windows for
-up to nine words when enabled (`d` reduced below `2^nbits` first), else by the ladder. -/
+up to nine words when enabled (`d` reduced below `2^nbits` first), else by the ladder,
+calling `vg_<curve>_mul` if the curve has it. -/
 def mulQ : Prog isa :=
   if c.n ≤ 9 ∧ c.windows = true then .seq (.block (maskK c)) (.seq (c.winPrep (c.sl K)) (WinCfg.window (c.winCfg PX PY BP)))
-  else ladder (ladderQ c)
+  else match c.mul with
+    | some C => .seq (.block (copy c.n (c.sl RX) (c.sl PX) ++ copy c.n (c.sl RY) (c.sl PY)))
+        (.call C.mulApi.name c.mulFn)
+    | none => ladder (ladderQ c)
 
 /-- `x` (or zeros) to `out`, the flag's low bit to `rax`, and the
 callee-saved registers restored. -/

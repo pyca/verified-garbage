@@ -4,6 +4,7 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.TCombJ
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Spec.Ecdsa
 import VerifiedGarbage.Spec.Weierstrass.MulBase
+import VerifiedGarbage.Spec.Weierstrass.Mul
 import VerifiedGarbage.Spec.Weierstrass.Inverse
 
 /-!
@@ -160,6 +161,10 @@ structure Cfg where
   signature and public key derivation call, with the table of `k`'s bits it
   makes; else they run them inline. -/
   mulBase : Option Spec.Weierstrass.MulBase.Curve := none
+  /-- For a curve without a comb, the curve whose `vg_<curve>_mul`
+  (`Spec/Weierstrass/Mul.lean`) computes `[k]Q` by the ladder (`mulFn`),
+  which the signature, the public key, ECDH and verification call, if any. -/
+  mul : Option Spec.Weierstrass.Mul.Curve := none
   /-- The curve whose functions `vg_<curve>_inv_mod_p` and
   `vg_<curve>_inv_mod_n` (`Spec/Weierstrass/Inverse.lean`) compute `Z^(p-2)`
   and `k^(n-2)` (`invFn`), which every function calls (`pPow`, `nPow`);
@@ -338,6 +343,18 @@ def invFn (body : Prog isa) : Prog isa :=
   .seq body <|
   .block (c.invSaved.map fun p => .mov p.1 (.mem { base := .rdi, disp := p.2 }))
 
+/-- The callee-saved registers, and the `xmm` register each is kept in by
+the functions of four words, which write no vector register. -/
+def invKeptX : List (Reg × XReg) :=
+  [(.rbx, .xmm0), (.rbp, .xmm1), (.r12, .xmm2), (.r13, .xmm3), (.r14, .xmm4), (.r15, .xmm5)]
+
+/-- A function's `body` between copying the callee-saved registers into
+`xmm0`–`xmm5` and back: for four words. -/
+def invFnX (body : Prog isa) : Prog isa :=
+  .seq (.block (invKeptX.map fun (r, x) => .xop (.movq x r))) <|
+  .seq body <|
+  .block (invKeptX.map fun (r, x) => .movqR r x)
+
 /-- The suffix of the functions' names: `_adx` with BMI2 and ADX. -/
 def fnSuffix : String := if c.adx then "_adx" else ""
 
@@ -446,20 +463,45 @@ def mulBaseFn : Prog isa :=
   .seq c.mulBaseBody <|
   .block (c.mulBaseSaved.map fun p => .mov p.1 (.mem { base := .rdi, disp := p.2 }))
 
+/-- The ladder of `vg_<curve>_mul`: the signature's, with its point at `ACC`,
+`PT` (its copy of `Q`), `ONEP`. -/
+def mulLadder : LadderCfg := { c.ladderCfg with G := c.pt ACC PT ONEP }
+
+/-- `vg_<curve>_mul`'s body: the table of `k`'s bits, `Q` (in `R`'s first two
+slots) copied to `ACC` and `PT`, `R` the point at infinity (from zero and
+one), then `R = [k]Q` by the ladder. -/
+def mulBody : Prog isa :=
+  .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
+  .seq (.block (copy c.n (c.sl ACC) (c.sl RX) ++ copy c.n (c.sl PT) (c.sl RY) ++
+    copy c.n (c.sl RX) (c.sl ZERO) ++ copy c.n (c.sl RY) (c.sl ONEP) ++ copy c.n (c.sl RZ) (c.sl ZERO)))
+    (ladder c.mulLadder)
+
+/-- `vg_<curve>_mul`: its body, which writes no vector register, between
+copying the callee-saved registers to `xmm0`–`xmm5` and back (`invFnX`). -/
+def mulFn : Prog isa := Cfg.invFnX c.mulBody
+
+/-- The signature and the public key call a function that makes the table of
+`k`'s bits: `vg_<curve>_mul_base` or `vg_<curve>_mul`. -/
+def callsMul : Bool := c.mulBase.isSome || c.mul.isSome
+
 /-- The table of `k`'s bits, but nothing if `skip`. -/
 def kBitsIf (skip : Bool) : Prog isa :=
   if skip then .block [] else bits (c.sl K) (bitsAt c.n 0) (8 * c.n)
 
-/-- The table of `k`'s bits, unless `vg_<curve>_mul_base` makes it. -/
-def kBits : Prog isa := c.kBitsIf c.mulBase.isSome
+/-- The table of `k`'s bits, unless `vg_<curve>_mul_base` or `vg_<curve>_mul`
+makes it. -/
+def kBits : Prog isa := c.kBitsIf c.callsMul
 
 /-- `R = [k]G` for a secret `k`, from the table of its bits made by `kBits`:
-a call of `vg_<curve>_mul_base` (or `_adx`), which makes the table itself,
-else inline (`gMulK`). -/
+a call of `vg_<curve>_mul_base` (or `_adx`) or `vg_<curve>_mul` (with `G`
+copied to `R`'s slots), which make the table themselves, else inline
+(`gMulK`). -/
 def gMulKC : Prog isa :=
-  match c.mulBase with
-  | some C => .call (C.mulBaseApi.name ++ if c.adx then "_adx" else "") c.mulBaseFn
-  | none => c.gMulK
+  match c.mulBase, c.mul with
+  | some C, _ => .call (C.mulBaseApi.name ++ if c.adx then "_adx" else "") c.mulBaseFn
+  | none, some C => .seq (.block (copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY)))
+      (.call C.mulApi.name c.mulFn)
+  | none, none => c.gMulK
 
 /-- `vg_ecdsa_<curve>_sign`. -/
 def sign : Prog isa :=
