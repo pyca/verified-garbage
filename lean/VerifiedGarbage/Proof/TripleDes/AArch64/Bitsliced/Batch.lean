@@ -124,31 +124,30 @@ theorem batch_ok (d : Direction) {s : State} (h : Room s) (hS : Sched s) :
   let S := s.gpr .x0
   let D := s.gpr .x4
   rw [batch]
-  apply WP.seq
   -- the transposition, and zero
-  obtain ⟨s₁, run₁, w₁, g₁, -, sp₁, rd₁, wr₁, f₁⟩ := transpose_ok h
+  refine WP.seq (WP.mono (transpose_ok h) fun s₁ ⟨w₁, g₁, sp₁, rd₁, wr₁, f₁⟩ => ?_)
+  apply WP.seq
   let s₂ := s₁.setV zeroReg 0
-  refine WP.of_runBlock ⟨s₂, runBlock_cat_some run₁ (by
+  refine WP.of_runBlock ⟨s₂, (by
     rw [runBlock_cons]; exact (by rfl : runStep isa (some s₂) [] = some s₂)), ?_⟩
-  have g₂ : ∀ r, r ≠ .x10 → s₂.gpr r = s.gpr r := g₁
-  have h₂ : Room s₂ := room_congr h (g₂ _ (by decide)) wr₁
-  have S₂ : Sched s₂ := hS.congr (g₂ _ (by decide)) (g₂ _ (by decide)) rd₁ wr₁
-  have st₂ : stateR s₂ = stateR s := by simp only [stateR, g₂ .x4 (by decide)]
+  have g₂ : ∀ r, r ≠ .x10 → r ≠ .x9 → s₂.gpr r = s.gpr r := g₁
+  have h₂ : Room s₂ := room_congr h (g₂ _ (by decide) (by decide)) wr₁
+  have S₂ : Sched s₂ := hS.congr (g₂ _ (by decide) (by decide)) (g₂ _ (by decide) (by decide)) rd₁ wr₁
+  have st₂ : stateR s₂ = stateR s := by simp only [stateR, g₂ .x4 (by decide) (by decide)]
   apply WP.seq
   apply WP.mono (passes_ok d h₂ (v_setV_self _ _ _) S₂)
   intro s₃ q₃
   have g₃ : ∀ r, r ≠ .x9 → r ≠ .x5 → r ≠ .x7 → r ≠ .x10 → s₃.gpr r = s.gpr r :=
-    fun r a b c e => (q₃.gpr r a b c).trans (g₂ r e)
+    fun r a b c e => (q₃.gpr r a b c).trans (g₂ r e a)
   -- the transposition back
-  obtain ⟨s₄, run₄, w₄, g₄, -, sp₄, rd₄, wr₄, f₄⟩ := transpose_ok q₃.room
-  refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
+  refine WP.mono (transpose_ok q₃.room) fun s₄ ⟨w₄, g₄, sp₄, rd₄, wr₄, f₄⟩ => ?_
   have si₄ : s₄.gpr .x4 = D :=
-    (g₄ .x4 (by decide)).trans (g₃ _ (by decide) (by decide) (by decide) (by decide))
+    (g₄ .x4 (by decide) (by decide)).trans (g₃ _ (by decide) (by decide) (by decide) (by decide))
   have K₂ : scheduleAt s₂.mem (s₂.gpr .x0) = scheduleAt s.mem S := by
-    rw [g₂ _ (by decide)]
+    rw [g₂ _ (by decide) (by decide)]
     exact VG.Proof.TripleDes.scheduleAt_eq_of_frame S f₁ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hS.sep
-  refine ⟨fun b hb => ?_, fun r a c e f => by rw [g₄ r f, g₃ r e a c f], rd₄.trans (q₃.rd.trans rd₁),
+  refine ⟨fun b hb => ?_, fun r a c e f => by rw [g₄ r f e, g₃ r e a c f], rd₄.trans (q₃.rd.trans rd₁),
     wr₄.trans (q₃.wr.trans wr₁), sp₄.trans (q₃.sp.trans sp₁), ?_⟩
   · have hq : b % 2 < 2 := Nat.mod_lt _ (by decide)
     have hi : b / 2 < 64 := by omega
