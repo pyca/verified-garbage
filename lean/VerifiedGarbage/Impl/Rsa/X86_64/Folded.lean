@@ -1,21 +1,19 @@
 import VerifiedGarbage.Impl.Rsa.X86_64.Checked
-
 import VerifiedGarbage.Impl.Rsa.X86_64.WordIO
 import VerifiedGarbage.Impl.Rsa.X86_64.Compare8
 
+/-!
+# `vg_rsa_public_precomputed_checked` on x86-64
+
+`vg_rsa_public_precomputed`'s computation (`Impl/Rsa/X86_64.lean`) with
+words in and out (`WordIO`, `Compare8`), for an odd `e` (`Checked.guarded`):
+the exponentiation by `e - 1` (`Precomputed.expLoop`), then one
+multiplication by the input itself, which adds the last bit of `e` and
+leaves Montgomery form at once (`Y x R⁻¹ = x^e` for `Y = x^(e-1) R`).
+-/
+
 namespace VG.Impl.Rsa.X86_64.Folded
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
-
-def next : List Instr :=
-  [.mov .rax (.mem (hdr sI)), .alu .sub .rax (.imm 1), .store (hdr sI) .rax]
-
-def squareStep (mm : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (mm aY aY aY) (.block next)
-
-/-- Sixteen squarings, then combine the final exponent bit and conversion out. -/
-def exp65537 (mm : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  seqs [Precomputed.start, .block [.mov32 .rax (.imm 16), .store (hdr sI) .rax],
-    .loop (squareStep mm) .ne, mm aY aX aY]
 
 /-- The computation, once the values are accepted. -/
 def rest (mm : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
@@ -30,7 +28,7 @@ def rest (mm : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
     ([.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)] : List Instr)),
   setWord aOne .rcx,
   -- `X = input R mod m`, the exponentiation, and the result.
-  mm aXm aX aR2, exp65537 mm,
+  mm aXm aX aR2, Precomputed.expLoop mm, mm aY aX aY,
   .block [.mov .rbx (.mem (hdr (sArr aY))), .mov .rsi (.mem (hdr sOut)), .mov .rcx (.mem (hdr sK)),
     .mov .r15 (.mem (hdr sMask))],
   WordIO.store,
@@ -40,11 +38,7 @@ def code (mm : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (.block Precomputed.entry)
     (.seq (seqs (Precomputed.loadWith Compare8.code)) (.ite .e fail (rest mm)))
 
-def dispatch (mm : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (.block [.alu .cmp .r11 (.imm 65537)])
-    (.ite .e (code mm) (Precomputed.code mm))
-
 def checked (mm : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  Checked.guarded (dispatch mm)
+  Checked.guarded (code mm)
 
 end VG.Impl.Rsa.X86_64.Folded

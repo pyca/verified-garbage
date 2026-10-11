@@ -66,21 +66,21 @@ def artifacts : List Artifact := [
     target := X86_64.target
     doc := Spec.Rsa.publicPrecomputedCheckedApi.doc
       (notes := ["Baseline x86-64: `e` is checked as `vg_rsa_public_checked` checks it; then Montgomery \
-        multiplication as `vg_rsa_public_checked`'s, with the exponent scanned left to right from its \
-        first set bit, which starts the result as the input; a square per later bit and a multiplication \
-        per later set bit. `pre` is checked (`n` odd, its top word not zero, `R² mod n` below it) before \
-        any arithmetic, so that values of no modulus are safe."])
-    code := Impl.Rsa.X86_64.Checked.precomputedChecked Proof.Bignum.X86_64.Mont.base.mm
+        multiplication as `vg_rsa_public_checked`'s, with the exponent less one (`e` is odd) scanned left \
+        to right from its first set bit, which starts the result as the input; a square per later bit \
+        and a multiplication per later set bit; then one multiplication by the input itself, which adds \
+        the last bit and leaves Montgomery form at once. `pre` is checked (`n` odd, its top word not \
+        zero, `R² mod n` below it) before any arithmetic, so that values of no modulus are safe."])
+    code := Impl.Rsa.X86_64.Folded.checked Proof.Bignum.X86_64.Mont.base.mm
     contract := Spec.Rsa.publicPrecomputedCheckedContract X86_64.abi
-    verified := Proof.Rsa.X86_64.precomputedChecked_verified _ (by decide +kernel)
+    verified := Proof.Bignum.X86_64.FoldedPublic.base_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.publicPrecomputedCheckedApi with
     target := X86_64.target
     name := Spec.Rsa.publicPrecomputedCheckedApi.name ++ "_adx"
     doc := Spec.Rsa.publicPrecomputedCheckedApi.doc
-      (notes := ["For exponent 65537, sixteen squares and a final multiplication by the ordinary input \
-        combine the last exponent bit with conversion out of Montgomery form. Other exponents use \
-        the general scan. Montgomery multiplication for a \
+      (notes := ["The exponentiation of the baseline, with the last multiplication by the input itself. \
+        Montgomery multiplication for a \
         number of words that is a multiple of 4 (from 4 to 2^30) adds `a_i b + u m` to the \
         accumulator in one pass per word of `a`, four words at a time, with BMI2's `mulx` and \
         ADX's `adcx` and `adox` (two carry chains at once), and is the baseline's otherwise."])
