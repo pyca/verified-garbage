@@ -82,7 +82,7 @@ theorem step_ok {z : Spec.Idea.Schedule} {a : Addr} {n : Nat} {m₀ : Mem} {o : 
   have hwrite : BlockWrite t (a + BitVec.ofNat 64 (8 * (n - r))) := fun i hi' =>
     ⟨_, by rw [hwr]; exact hc.data, block_contains hj (by omega) (by decide) hc.bound⟩
   have hk : KeyOk z t := by
-    refine ⟨by rw [hx0, hrd, hwr]; exact hc.sched, ?_⟩
+    refine ⟨by rw [hx0, hrd, hwr]; exact ⟨_, hc.sched, Region.contains_self _ _⟩, ?_⟩
     rw [hx0, ← hc.z]
     exact scheduleAt_congr (frame_bytes hi.frame (by simpa using hc.sep) (by decide))
   have hm : MaskOk t := (hi.keep.reg .x15 (by decide)).trans hc.mask

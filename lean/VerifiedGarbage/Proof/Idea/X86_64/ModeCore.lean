@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Modes.X86_64.Core
 import VerifiedGarbage.Proof.Modes.X86_64.Words
 import VerifiedGarbage.Impl.Idea.X86_64.Modes
 import VerifiedGarbage.Spec.Idea.Cbc
+import VerifiedGarbage.Proof.Idea.ModeBytes
 
 /-!
 # IDEA's core for the modes on x86-64
@@ -37,36 +38,6 @@ def ReadyAt (m : Mem) (B : Addr) (k : Spec.Idea.Schedule) : Prop :=
 
 /-- The core's blocks are one word. -/
 @[simp] theorem modeCore_bw : modeCore.bw = 1 := rfl
-
-theorem bytesAt_eq (m : Mem) (p : Addr) : Spec.Aes.bytesAt m p 8 = (Spec.Idea.blockAt m p).toList := by
-  apply List.ext_getElem (by simp [Spec.Aes.bytesAt])
-  intro i _ _
-  simp [Spec.Aes.bytesAt, Spec.Idea.blockAt]
-
-theorem cbcBlocksAt_eq (m : Mem) (p : Addr) (n : Nat) :
-    Spec.Idea.cbcBlocksAt m p n = Modes.blocksOf 8 m p n := by
-  simp only [Spec.Idea.cbcBlocksAt, Spec.Idea.blocksAt, Modes.blocksOf, List.map_map]
-  exact List.map_congr_left fun i _ => (bytesAt_eq m _).symm
-
-theorem cipher_bytes (k : Spec.Idea.Schedule) (m : Mem) (p : Addr) :
-    Spec.Idea.cipher k (Spec.Aes.bytesAt m p 8) = (Spec.Idea.cryptBlock k (Spec.Idea.blockAt m p)).toList := by
-  have h : (Vector.ofFn fun i : Fin 8 => (Spec.Aes.bytesAt m p 8).getD i.val 0) = Spec.Idea.blockAt m p := by
-    ext i hi; simp [Spec.Aes.bytesAt, Spec.Idea.blockAt]
-  simp only [Spec.Idea.cipher, h]
-
-/-- The schedule at `p` depends only on its 104 bytes. -/
-theorem scheduleAt_congr {m m' : Mem} {p q : Addr}
-    (h : ∀ i < 104, m' (q + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
-    Spec.Idea.scheduleAt m' q = Spec.Idea.scheduleAt m p := by
-  apply Vector.ext
-  intro i hi
-  simp only [Spec.Idea.scheduleAt, Vector.getElem_ofFn]
-  rw [h _ (by omega), h _ (by omega)]
-
-theorem scheduleAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
-    (hd : ∀ r ∈ rs, (⟨p, 104⟩ : Region).Disjoint r) :
-    Spec.Idea.scheduleAt m' p = Spec.Idea.scheduleAt m p :=
-  scheduleAt_congr (frame_bytes hf hd (by decide))
 
 /-- The core's slots, its buffer and the schedule's copy. -/
 theorem core_eq (B : Addr) : coreRegion modeCore B = ⟨B, 112⟩ := rfl
@@ -111,7 +82,7 @@ theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Spec.Idea.Sche
       rw [addr_add, total_eq]; exact Offset.contains_base B (by simp only [schedSlot]; omega) (by simp only [schedSlot]; omega)⟩,
     fun w hw => ⟨_, List.mem_append_left _ hin, Offset.contains_base p (by omega) (by omega)⟩,
     (hsep.sub_right (sched_sub B)).symm, by omega⟩) fun s' h => ?_
-  refine ⟨scheduleAt_congr fun i hi => by rw [h.mem, over_at hi (by omega)], by rw [h.regs _ (by decide), hB],
+  refine ⟨scheduleAt_congr_at fun i hi => by rw [h.mem, over_at hi (by omega)], by rw [h.regs _ (by decide), hB],
     h.regs _ (by decide), h.regs _ (by decide), h.regs _ (by decide), ?_, h.rd, h.wr⟩
   rw [h.mem, core_eq]
   exact (over_frame _ _ _ _).sub fun r hr => by

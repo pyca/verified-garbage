@@ -248,7 +248,7 @@ structure QInv (s₀ : State) (q : Nat) (t : State) : Prop where
 
 theorem QInv.keyOk {s₀ t : State} {q : Nat} (hp : InvPre s₀) (hi : QInv s₀ q t) (hq : q ≤ 13) :
     KeyOk (Spec.Idea.scheduleAt s₀.mem (s₀.gpr .x0)) t := by
-  refine ⟨by rw [hi.x0, hi.rd, hi.wr]; exact hp.sched, ?_⟩
+  refine ⟨by rw [hi.x0, hi.rd, hi.wr]; exact ⟨_, hp.sched, Region.contains_self _ _⟩, ?_⟩
   rw [hi.x0]
   exact scheduleAt_congr (frame_bytes hi.frame (by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
