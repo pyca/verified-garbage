@@ -48,9 +48,10 @@ theorem writeW_readW32_apply (m m' : Mem) (a c x : Addr) :
     exact Mem.extractLsb'_read m' c (n := 4) h
   · rfl
 
-/-- The scratch buffer at `b`, in the regions `rs`. -/
+/-- The scratch buffer at `b`, of `slots` slots or more (a mode keeps its
+own after them), in the regions `rs`. -/
 structure ScrIn (rs : List Region) (b : BitVec 32) : Prop where
-  mem : (⟨b.setWidth 64, 4 * slots⟩ : Region) ∈ rs
+  mem : ∃ n, slots ≤ n ∧ b.toNat + 4 * n ≤ 2 ^ 32 ∧ (⟨b.setWidth 64, 4 * n⟩ : Region) ∈ rs
   fit : b.toNat + 4 * slots ≤ 2 ^ 32
 
 /-- Slot `k` is in the scratch buffer. -/
@@ -61,8 +62,14 @@ theorem slot_inR {rs : List Region} {b : BitVec 32} {n k : Nat} (hr : (⟨b.setW
     have := toNat_addr b
     exact Offset.contains_base _ (by omega) (by omega)⟩
 
+/-- A scratch buffer of exactly `slots` slots. -/
+theorem ScrIn.exact {rs : List Region} {b : BitVec 32} (hr : (⟨b.setWidth 64, 4 * slots⟩ : Region) ∈ rs)
+    (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) : ScrIn rs b := ⟨⟨slots, Nat.le_refl _, hfit, hr⟩, hfit⟩
+
 theorem ScrIn.slot {rs : List Region} {b : BitVec 32} (h : ScrIn rs b) {k : Nat} (hk : k < slots) :
-    InRegions rs (wordAddr b k) 4 := slot_inR h.mem h.fit hk
+    InRegions rs (wordAddr b k) 4 :=
+  let ⟨_, hn, hf, hr⟩ := h.mem
+  slot_inR hr hf (Nat.lt_of_lt_of_le hk hn)
 
 theorem ldArg_ok (s : State) (d : Reg) (i : Nat) (h : InRegions (s.rd ++ s.wr) (s.ea (argOp i)) 4) :
     ∃ s', runBlock isa [.mov d (.mem (argOp i))] s = some s' ∧ s'.gpr d = s.mem.readW (s.ea (argOp i)) 32 ∧

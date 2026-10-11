@@ -19,7 +19,7 @@ open VG.Impl.Aes.X86 (sb slotAt movS st xorR xorS addI at_ tmpRegs)
 open VG.X86.Straight (wordAddr Ok slotRegion)
 
 theorem room_ok_gCfg {s : State} (h : Room s) : Ok gCfg s where
-  slotIn k hk := ⟨_, h.mem, slot_in h (by simp [gCfg] at hk; rw [slots_eq]; omega)⟩
+  slotIn k hk := h.inR (by simp [gCfg] at hk; rw [slots_eq]; omega)
   extIn k hk := by simp [gCfg] at hk
   fit := by have := h.fit; simp [gCfg, slots_eq] at this ⊢; omega
   sep k _ j hj := by simp [gCfg] at hj
