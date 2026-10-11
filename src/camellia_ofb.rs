@@ -13,7 +13,7 @@
 //! block is the next output block, whose first bytes it XORs into the rest of
 //! the input.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::arch::camellia::vg_camellia_expand_key;
 use crate::arch::camellia_ofb::vg_camellia_ofb;
