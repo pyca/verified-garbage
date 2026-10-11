@@ -1,0 +1,5 @@
+name = "pyca/cryptography IDEA-CFB vectors (derived from the AESVS MMT data, verified against Botan; idea-cfb.txt)"
+directories = ["cryptography-idea-cfb"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/dd22989f9594704bfef2ea3a8b08b40774a06a23/vectors/cryptography_vectors/ciphers/IDEA/idea-cfb.txt"
+sha256 = "b145a8c2e0f44a247c3c837bdfaa045a89fdd91c44335ef6761a1a1f29374f7c"
+retrieved = 2026-10-11
