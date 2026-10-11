@@ -25,8 +25,9 @@ After the last block the buffer holds the block to continue from, which
 replaces the IV. AArch64's taint analysis takes all memory to be secret, so
 the IV's address, which must stay public, is kept in the register `iv`
 throughout: one the core neither writes nor uses (each adapter chooses it,
-and proves the core keeps it), and none of the modes' own. If it is a
-callee-saved register, the mode's slots keep its value for the caller, as
+and proves the core keeps it), and none of the modes' own. A core that
+writes every such register but no vector register keeps it in one instead,
+around its code (`viaV`). If it is a callee-saved register, the mode's slots keep its value for the caller, as
 they keep the others'.
 
 Only the pointers and `n` (and what is computed from them) are public; no
@@ -41,6 +42,15 @@ open VG.Impl.Modes (FbMode)
 namespace Core
 
 variable (c : Core)
+
+/-- `c` with the register `r` kept in the vector register `v` across its
+`prepare` and `crypt` (`dup v.2d, r` before, `umov r, v.d[0]` after): for a
+core that writes every register the IV's address could be kept in, but no
+vector register (`Proof/Modes/AArch64/ViaV.lean`). -/
+abbrev viaV (r : Reg) (v : VReg) : Core :=
+  { c with
+    prepare := .seq (.block [.vop (.dup .d2 v r)]) (.seq c.prepare (.block [.umov .x r v 0]))
+    crypt := .seq (.block [.vop (.dup .d2 v r)]) (.seq c.crypt (.block [.umov .x r v 0])) }
 
 /-- The scratch buffer to `sb`, the callee-saved registers to the mode's
 slots, the IV's address (`r.ctr`) to `iv`, the data's address and `n` to
