@@ -97,12 +97,15 @@ def RwPre : Prop :=
 
 end
 
-theorem seqArm_pre_rw {c : Core} {S : CoreSpec c} {M : Mode} {len : Nat → Nat}
+theorem seqArm_pre_rw {c : Core} {S : CoreSpec c} {M : Mode} (hr : c.rounds = false) {len : Nat → Nat}
     (hl : ∀ n, len n = n * c.ds M) {s : State} (h : RwPre c S len s) : (seqArm c S M).pre s := by
   simp only [RwPre, hl] at h
+  obtain ⟨e1, e2, e3, e4, e5⟩ := args_plain hr s
+  show (seqArm c S M).pre s
+  unfold seqArm; simp only [e1, e2, e3, e4, e5]
   obtain ⟨a1, a2, rd, wr, -, kd, ks, vd, vs, va, ds, da, sa, bk, -, bd, bs, -, fk, fv, fd, fs⟩ := h
   refine ⟨a1, a2, by simp [rd], by simp [wr], by simp [rd], by simp [wr], by simp [wr], kd, ks, vd, vs, ds,
-    bk, bd, bs, fk, fv, fd, fs, fun _ => by simp [wr], ?_⟩
+    bk, bd, bs, fk, fv, fd, fs, fun _ => by simp [wr], ?_, fun h => absurd h (by simp [hr])⟩
   intro r hr
   rw [wr] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -112,42 +115,42 @@ theorem seqArm_pre_rw {c : Core} {S : CoreSpec c} {M : Mode} {len : Nat → Nat}
   · exact sa.symm
 
 theorem ofb_post {c : Core} {S : CoreSpec c} {s s' : State} (h : (seqArm c S ofb).post s s') :
-    let ciph := S.ciphAt s.mem (State.addr (s.gpr .r0))
-    let iv := Spec.Aes.bytesAt s.mem (State.addr (s.gpr .r1)) c.bs
-    let xs := VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat
-    VG.Proof.Modes.blocksOf c.bs s'.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat = Spec.Ofb.crypt ciph iv xs ∧
-      Spec.Aes.bytesAt s'.mem (State.addr (s.gpr .r1)) c.bs = Spec.Ofb.next ciph iv (s.gpr .r3).toNat := by
-  have e := runSeq_ofb (S.ciphAt s.mem (State.addr (s.gpr .r0))) ⟨[], Spec.Aes.bytesAt s.mem
-    (State.addr (s.gpr .r1)) c.bs, Spec.Aes.bytesAt s.mem (State.addr (stackArg s 0) +
+    let ciph := S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)
+    let iv := Spec.Aes.bytesAt s.mem (State.addr (ivArg c s)) c.bs
+    let xs := VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (dArg c s)) (nArg c s).toNat
+    VG.Proof.Modes.blocksOf c.bs s'.mem (State.addr (dArg c s)) (nArg c s).toNat = Spec.Ofb.crypt ciph iv xs ∧
+      Spec.Aes.bytesAt s'.mem (State.addr (ivArg c s)) c.bs = Spec.Ofb.next ciph iv (nArg c s).toNat := by
+  have e := runSeq_ofb (S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)) ⟨[], Spec.Aes.bytesAt s.mem
+    (State.addr (ivArg c s)) c.bs, Spec.Aes.bytesAt s.mem (State.addr (scArg c s) +
       BitVec.ofNat 64 (oOff + c.bs)) c.bs⟩
-    (VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
+    (VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (dArg c s)) (nArg c s).toNat)
   rw [length_blocksOf] at e
   exact ⟨h.1.trans e.1, (h.2 rfl).trans e.2⟩
 
 theorem cfbEnc_post {c : Core} {S : CoreSpec c} {s s' : State} (h : (seqArm c S cfbEnc).post s s') :
-    let ciph := S.ciphAt s.mem (State.addr (s.gpr .r0))
-    let iv := Spec.Aes.bytesAt s.mem (State.addr (s.gpr .r1)) c.bs
-    let xs := VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat
-    VG.Proof.Modes.blocksOf c.bs s'.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat =
+    let ciph := S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)
+    let iv := Spec.Aes.bytesAt s.mem (State.addr (ivArg c s)) c.bs
+    let xs := VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (dArg c s)) (nArg c s).toNat
+    VG.Proof.Modes.blocksOf c.bs s'.mem (State.addr (dArg c s)) (nArg c s).toNat =
         Spec.Cfb.encrypt ciph iv xs ∧
-      Spec.Aes.bytesAt s'.mem (State.addr (s.gpr .r1)) c.bs = Spec.Cbc.next iv (Spec.Cfb.encrypt ciph iv xs) := by
-  have e := runSeq_cfbEnc (S.ciphAt s.mem (State.addr (s.gpr .r0))) ⟨[], Spec.Aes.bytesAt s.mem
-    (State.addr (s.gpr .r1)) c.bs, Spec.Aes.bytesAt s.mem (State.addr (stackArg s 0) +
+      Spec.Aes.bytesAt s'.mem (State.addr (ivArg c s)) c.bs = Spec.Cbc.next iv (Spec.Cfb.encrypt ciph iv xs) := by
+  have e := runSeq_cfbEnc (S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)) ⟨[], Spec.Aes.bytesAt s.mem
+    (State.addr (ivArg c s)) c.bs, Spec.Aes.bytesAt s.mem (State.addr (scArg c s) +
       BitVec.ofNat 64 (oOff + c.bs)) c.bs⟩
-    (VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
+    (VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (dArg c s)) (nArg c s).toNat)
   exact ⟨h.1.trans e.1, (h.2 rfl).trans e.2⟩
 
 theorem cfbDec_post {c : Core} {S : CoreSpec c} {s s' : State} (h : (seqArm c S cfbDec).post s s') :
-    let ciph := S.ciphAt s.mem (State.addr (s.gpr .r0))
-    let iv := Spec.Aes.bytesAt s.mem (State.addr (s.gpr .r1)) c.bs
-    let xs := VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat
-    VG.Proof.Modes.blocksOf c.bs s'.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat =
+    let ciph := S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)
+    let iv := Spec.Aes.bytesAt s.mem (State.addr (ivArg c s)) c.bs
+    let xs := VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (dArg c s)) (nArg c s).toNat
+    VG.Proof.Modes.blocksOf c.bs s'.mem (State.addr (dArg c s)) (nArg c s).toNat =
         Spec.Cfb.decrypt ciph iv xs ∧
-      Spec.Aes.bytesAt s'.mem (State.addr (s.gpr .r1)) c.bs = Spec.Cbc.next iv xs := by
-  have e := runSeq_cfbDec (S.ciphAt s.mem (State.addr (s.gpr .r0))) ⟨[], Spec.Aes.bytesAt s.mem
-    (State.addr (s.gpr .r1)) c.bs, Spec.Aes.bytesAt s.mem (State.addr (stackArg s 0) +
+      Spec.Aes.bytesAt s'.mem (State.addr (ivArg c s)) c.bs = Spec.Cbc.next iv xs := by
+  have e := runSeq_cfbDec (S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)) ⟨[], Spec.Aes.bytesAt s.mem
+    (State.addr (ivArg c s)) c.bs, Spec.Aes.bytesAt s.mem (State.addr (scArg c s) +
       BitVec.ofNat 64 (oOff + c.bs)) c.bs⟩
-    (VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
+    (VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (dArg c s)) (nArg c s).toNat)
   exact ⟨h.1.trans e.1, (h.2 rfl).trans e.2⟩
 
 end VG.Proof.Modes.Arm
