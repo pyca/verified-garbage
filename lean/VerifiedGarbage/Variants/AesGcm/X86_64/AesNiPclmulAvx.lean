@@ -19,6 +19,10 @@ def stitch : Proof.AesGcm.X86_64.StitchPart where
   encP := Proof.Gcm.X86_64.StitchAvx8.enc_piece
   decP := Proof.Gcm.X86_64.StitchAvx8.dec_piece
   pieceR := some ⟨Proof.Gcm.X86_64.StitchAvx8.encR_piece, Proof.Gcm.X86_64.StitchAvx8.decR_piece⟩
+  toPart := some
+    { name := .aesniAvx
+      piece := Proof.Gcm.X86_64.StitchAvx8.encTo_piece
+      pieceR := some ⟨Proof.Gcm.X86_64.StitchAvx8.encToR_piece⟩ }
 
 def variant : Proof.AesGcm.X86_64.GcmVariant := ⟨.aesni, .aesni, .pclmul, some stitch⟩
 

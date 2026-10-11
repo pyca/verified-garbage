@@ -345,7 +345,8 @@ theorem setupPrefix_ok {s₀ : State} (hp : SPre s₀) (s : State) (P : Nat → 
     (hg : ∀ r, r ≠ .rax → s.gpr r = s₀.gpr r)
     (hm : Frame [pR s₀] s₀.mem s.mem) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
     (h0 : s.lane .xmm0 0 = revMask) (h1 : s.lane .xmm1 0 = poly)
-    (hP : ∀ k < 8, s.mem.readW (pp s₀ + BitVec.ofNat 64 (128 + 16 * k)) 128 = P k) :
+    (hP : ∀ k < 8, s.mem.readW (pp s₀ + BitVec.ofNat 64 (128 + 16 * k)) 128 = P k)
+    (hsv : s.mem.readW (pp s₀ + 816) 64 = s₀.mem.readW (pp s₀ + 816) 64) :
     WP isa (.block (setupC ++ metaCode ++ counterHead)) s fun t =>
       Env s₀ P t ∧ Frame [pR s₀] s₀.mem t.mem ∧
       t.gpr .rdx = dp s₀ ∧ t.gpr .r9 = s₀.gpr .r9 ∧
@@ -416,6 +417,8 @@ theorem setupPrefix_ok {s₀ : State} (hp : SPre s₀) (s : State) (P : Nat → 
       exact (meta_rounds u).trans (gu _ (by decide) (by decide) (by decide))
     · rw [hmt, hmv, ← gu11]
       exact (meta_data u).trans gudx
+    · rw [hmt, hmv, ← gu11]
+      exact (meta_saved u).trans (by rw [hmu, gu11]; exact hsv)
     · exact hrdt.trans (hrdv.trans (hrdu.trans hrd))
     · exact hwrt.trans (hwrv.trans (hwru.trans hwr))
   refine ⟨ep, ft, ?_, gt _ (by decide) (by decide) (by decide) (by decide) (by decide), ?_, ?_, ?_, ?_⟩

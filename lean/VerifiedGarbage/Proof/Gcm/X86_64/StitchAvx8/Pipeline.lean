@@ -562,6 +562,7 @@ theorem Env.writeData {s₀ s t : State} {P : Nat → Block} (hp : SPre s₀)
   · exact (data_read hp hm 784 16 (by decide)).trans h.poly
   · exact (data_read hp hm 800 8 (by decide)).trans h.rounds
   · exact (data_read hp hm 808 8 (by decide)).trans h.data
+  · exact (data_read hp hm 816 8 (by decide)).trans h.saved
   · exact hr.trans h.rd
   · exact hw.trans h.wr
 
@@ -582,6 +583,7 @@ theorem Env.move {s₀ s t : State} {P : Nat → Block} (h : Env s₀ P s)
   · rw [hm]; exact h.poly
   · rw [hm]; exact h.rounds
   · rw [hm]; exact h.data
+  · rw [hm]; exact h.saved
   · exact hr.trans h.rd
   · exact hw.trans h.wr
 
