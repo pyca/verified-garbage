@@ -378,7 +378,7 @@ namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch
 open VG.Spec.Gcm (Block blockAt)
-open VG.Impl.Gcm.X86_64.StitchAvx8 (prepare batch)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (prepare batch batchL regCounters)
 
 theorem CoreInv.yframe {s₀ s t : State} {P : Nat → Block} {dec : Bool} {c g : Nat} {rs : List XReg}
     (h : CoreInv s₀ P dec c g s) (hf : YFrame rs s t) (hy : .xmm2 ∉ rs) : CoreInv s₀ P dec c g t := by
@@ -413,10 +413,12 @@ theorem CoreInv.prepare {s₀ s : State} {P : Nat → Block} {dec : Bool} {c g :
   · intro i hi; rw [htB i hi, h.addr]; exact hx i hi
 
 theorem firstEnc_ok {s₀ s : State} {P : Nat → Block} (hp : SPre s₀) (h : Ready s₀ P s) :
-    WP isa (.seq (batch (nr s₀) 8 0 (fun _ => []))
+    WP isa (.seq (batchL regCounters (nr s₀) 8 0 (fun _ => []))
       (.seq (batch (nr s₀) 8 8 (fun _ => [])) (.block ((List.range 8).flatMap prepare)))) s
       (LoopInv s₀ P false 0) := by
-  refine WP.seq (WP.mono ((CoreInv.initial hp h false).bareBatch hp 0 rfl (by have := hp.nb16; omega))
+  refine WP.seq (WP.mono ((CoreInv.initial hp h false).bareBatchL hp 0 rfl (by have := hp.nb16; omega)
+    (WP.mono (regCounters_ok s h.mask) fun t ⟨ht, hf⟩ =>
+      ⟨fun i hi => by rw [ht i hi, h.base, Nat.zero_add], hf⟩))
     fun u hu => ?_)
   refine WP.seq (WP.mono (hu.bareBatch hp 8 rfl (by have := hp.nb16; omega)) fun t ht => ?_)
   refine WP.mono (ht.prepare hp (by have := hp.nb16; omega) (fun i hi => ?_)) fun v ⟨hv, hb⟩ => ?_
