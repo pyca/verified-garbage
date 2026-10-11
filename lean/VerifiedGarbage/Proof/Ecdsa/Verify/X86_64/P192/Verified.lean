@@ -30,7 +30,7 @@ theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre p192 s := by
 
 theorem verify_x86 (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa verifyP192.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p192_ok hI) hL p192_tbls (pre_of hs) p192_mulBase
+  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p192_ok hI) hL p192_tbls (pre_of hs) p192_mulBase.2
   have hsp : ∀ i ∈ instrs verifyP192.inline, Taint.clobbers i .rsp = false := by
     have h : verifyP192.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h

@@ -42,7 +42,7 @@ theorem post_of {s s' : State} (h : EPost secp256k1 s s') : ecdhX86_64.post s s'
 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeSecp256k1.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (secp256k1_ok hI) hL (pre_of hs) secp256k1_mulBase
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (secp256k1_ok hI) hL (pre_of hs) secp256k1_mulBase.2
   have hsp : ∀ i ∈ instrs exchangeSecp256k1.inline, Taint.clobbers i .rsp = false := by
     have h : exchangeSecp256k1.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h

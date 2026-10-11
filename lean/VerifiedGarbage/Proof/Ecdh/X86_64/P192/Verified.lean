@@ -42,7 +42,7 @@ theorem post_of {s s' : State} (h : EPost p192 s s') : ecdhX86_64.post s s' := b
 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP192.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p192_ok hI) hL (pre_of hs) p192_mulBase
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p192_ok hI) hL (pre_of hs) p192_mulBase.2
   have hsp : ∀ i ∈ instrs exchangeP192.inline, Taint.clobbers i .rsp = false := by
     have h : exchangeP192.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h

@@ -453,9 +453,9 @@ theorem exchangeWith_ok (hc : BaseCfgOk c) (hC : Law c.C) {mq : Prog isa} {W : L
 /-- `vg_ecdh_<curve>`, by the window method or the ladder (`mulQ_ok`), given
 that a curve calling `vg_<curve>_mul` has four words and that function no calls. -/
 theorem exchange_ok (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀)
-    (hmb : MulBaseOk c := by exact ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩) :
+    (hm : c.mul.isSome = true → c.n = 4 ∧ c.mulFn.noCalls = true := by exact fun h => absurd h (by decide)) :
     WP isa (Impl.Ecdh.X86_64.Cfg.exchange c).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ EPost c s₀ s' :=
-  exchangeWith_ok hc hC (mulQ_ok hc hC hmb.2) (mulQ_w hc) hp
+  exchangeWith_ok hc hC (mulQ_ok hc hC hm) (mulQ_w hc) hp
 
 end VG.Proof.Ecdh.X86_64
