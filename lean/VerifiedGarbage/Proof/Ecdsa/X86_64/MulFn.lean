@@ -267,7 +267,7 @@ theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4) (hC : Law c.C) {base : Addr} 
 write. -/
 theorem mulW_sub :
     ∀ w ∈ slW c [RX, RY] ++ mulW c, ∃ w' ∈ gWA c, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := by
-  have hA : ACC ∈ [ACC] := List.mem_singleton_self _
+  have hA : ACC ∈ c.mulBaseSlots := by unfold Cfg.mulBaseSlots; split <;> simp
   intro w hw
   refine ⟨w, ?_, Nat.le_refl _, Nat.le_refl _⟩
   rcases List.mem_append.mp hw with hw | hw
