@@ -61,6 +61,12 @@ theorem PP_le (s₀ : State) (hle : SL s₀ ≤ L s₀) : mm s₀ + PP s₀ ≤ 
   simp only [PP]
   split <;> omega
 
+theorem PP_le_SL (s₀ : State) (hpos : 0 < PP s₀) : mm s₀ + PP s₀ ≤ SL s₀ := by
+  simp only [PP] at hpos ⊢
+  split at hpos
+  · rw [ite_eq_left ‹_›]; have := Nat.div_mul_le_self (SL s₀ - mm s₀) 1024; omega
+  · omega
+
 theorem PP_dvd (s₀ : State) : 1024 ∣ PP s₀ := by
   simp only [PP]; split
   · exact Nat.dvd_mul_left _ _

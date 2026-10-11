@@ -315,4 +315,172 @@ theorem oop_ok {s₀ : State} (hT : ToPre s₀) (hbig : 960 < L s₀) {s₁ : St
   · rw [m₇, stateAt_ctrW, st₆, hst, Vector.set_set, set12_ctr]
 
 
+/-! ## The bytes encrypted -/
+
+theorem length_PTat (s₀ : State) (m : Mem) : (PTat s₀ m).length = L s₀ := by simp [PTat]
+
+theorem PTat_getD {s₀ : State} (m : Mem) {k : Nat} (hk : k < L s₀) :
+    (PTat s₀ m).getD k 0 = if mm s₀ ≤ k ∧ k < mm s₀ + PP s₀ then m (sp s₀ + BitVec.ofNat 64 k)
+      else m (dp s₀ + BitVec.ofNat 64 k) := by
+  simp [PTat, List.getD_eq_getElem?_getD, List.getElem?_range hk]
+
+/-- With no bytes from `src`, the data. -/
+theorem PTat_zero {s₀ : State} (hPP : PP s₀ = 0) (m : Mem) : PTat s₀ m = bytesAt m (dp s₀) (L s₀) := by
+  simp only [PTat, bytesAt, hPP, Nat.add_zero]
+  apply List.map_congr_left
+  intro k _
+  rw [ite_eq_right (fun h => by omega)]
+
+theorem bytesAt_eq_zip {m : Mem} {p : Addr} {n : Nat} {xs ks : List Byte} (hx : xs.length = n)
+    (hk : ks.length = n) (h : ∀ k < n, m (p + BitVec.ofNat 64 k) = xs.getD k 0 ^^^ ks.getD k 0) :
+    bytesAt m p n = List.zipWith (· ^^^ ·) xs ks := by
+  apply List.ext_getElem (by simp [bytesAt, hx, hk])
+  intro k h₁ _
+  simp only [bytesAt, List.length_map, List.length_range] at h₁
+  simp only [bytesAt, List.getElem_map, List.getElem_range, List.getElem_zipWith, h k h₁]
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some,
+    List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
+
+/-- `Inv.step`, for code that may write `rbx`, which `Inv` does not keep. -/
+theorem Inv.stepB {s₀ s s' : State} (h : Inv s₀ s) (cs : ∀ r ∈ calleeSaved, r ≠ .rbx → s'.gpr r = s.gpr r)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) {rs : List Region} (hf : Frame rs s.mem s'.mem)
+    (hsub : ∀ r ∈ rs, ∃ r' ∈ [workR s₀, dR s₀, stkR s₀], Region.Sub r r')
+    (hsv : ∀ r ∈ rs, (sub s₀ 0 48).Disjoint r) : Inv s₀ s' where
+  r15 := by rw [cs _ (by simp [calleeSaved]) (by decide), h.r15]
+  r14 := by rw [cs _ (by simp [calleeSaved]) (by decide), h.r14]
+  r13 := by rw [cs _ (by simp [calleeSaved]) (by decide), h.r13]
+  r12 := by rw [cs _ (by simp [calleeSaved]) (by decide), h.r12]
+  rsp := by rw [cs _ calleeSaved_rsp (by decide), h.rsp]
+  rd := by rw [hrd, h.rd]
+  wr := by rw [hwr, h.wr]
+  saved := h.saved.frame hf hsv
+  frame := h.frame.trans (hf.sub hsub)
+
+/-- After `PTat` is encrypted, before the keystream is wiped. -/
+structure CryptedTo (s₀ s : State) (s' : State) : Prop where
+  rsi : s'.gpr .rsi = off (cx s₀) 128
+  cs : ∀ r ∈ calleeSaved, r ≠ .r15 → r ≠ .rbx → s'.gpr r = s.gpr r
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  frame : Frame [sub s₀ 64 384, sub s₀ 608 64, dR s₀, stkR s₀] s.mem s'.mem
+  data : bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (PTat s₀ s.mem)
+
+/-! ## More than `fold` bytes -/
+
+theorem arg_frame {s₀ : State} {j : Nat} (hj : j = 2 ∨ j = 3) {rs : List Region} {m m' : Mem}
+    (hf : Frame rs m m') (hd : ∀ r ∈ rs, (arg2R s₀).Disjoint r) :
+    m'.readW (stackArgAddr s₀ j) 64 = m.readW (stackArgAddr s₀ j) 64 := by
+  refine hf.readW ?_ hd (by decide)
+  rcases hj with rfl | rfl
+  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  · show (arg2R s₀).Contains (s₀.gpr .rsp + BitVec.ofNat 64 (8 * (3 + 1))) (64 / 8)
+    rw [show s₀.gpr .rsp + BitVec.ofNat 64 (8 * (3 + 1)) = s₀.gpr .rsp + BitVec.ofNat 64 (8 * (2 + 1)) +
+      BitVec.ofNat 64 8 by rw [BitVec.add_assoc, ← BitVec.ofNat_add]]
+    exact Offset.contains_base _ (by lit_omega) (by lit_omega)
+
+theorem cryptBigTo_ok {s₀ : State} (hT : ToPre s₀) {s : State} (h : Inv s₀ s) (hbig : 960 < L s₀)
+    (hst : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀))
+    (hks : ∀ k < mm s₀, s.mem (off (cx s₀) (736 + k)) = (KS1 s₀).getD k 0)
+    (hS2 : s.mem.readW (stackArgAddr s₀ 2) 64 = stackArg s₀ 2)
+    (hS3 : s.mem.readW (stackArgAddr s₀ 3) 64 = stackArg s₀ 3) :
+    WP isa (cryptBigTo Impl.ChaCha20.X86_64.Callee.avx512) s (CryptedTo s₀ s) := by
+  have hp := hT.hp
+  have hL9 := (s₀.gpr .r9).isLt
+  have hM := mOf_le 960 1024 (L s₀)
+  have hML := mOf_le_len 960 1024 (L s₀)
+  have hdvd := mm_dvd hbig
+  have hPPl := PP_le s₀ hT.le
+  have hdvd' : 64 ∣ mm s₀ + PP s₀ := Nat.dvd_add hdvd (Nat.dvd_trans (by decide) (PP_dvd s₀))
+  refine WP.seq (WP.mono (cryptPre_ok Proof.ChaCha20.X86_64.XorImpl.avx512 hp h)
+    fun s₁ ⟨a₁, cs₁, rd₁, mx, fx, dx, m₁⟩ => ?_)
+  change XArgsM s₀ (mm s₀) s₁ at a₁
+  change Frame [⟨dp s₀, mm s₀⟩] s.mem mx at fx
+  change ∀ k < mm s₀, _ at dx
+  change s₁.mem = mx.writeW (off (cx s₀) 112) (BitVec.ofNat 32 (mm s₀ / 64 + 1)) at m₁
+  have fw : Frame [sub s₀ 64 64] mx s₁.mem := by
+    rw [m₁]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (contains_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega))
+  have dpre : ∀ r ∈ [(⟨dp s₀, mm s₀⟩ : Region)], (sub s₀ 64 64).Disjoint r := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact (hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))).sub_right (Region.sub_prefix hML)
+  have hpre : ∀ r ∈ [(⟨dp s₀, mm s₀⟩ : Region)], (arg2R s₀).Disjoint r := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact hT.g_d.sub_right (Region.sub_prefix hML)
+  have harg : ∀ r ∈ [sub s₀ 64 64], (arg2R s₀).Disjoint r := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact hT.g_c.sub_right (sub_ctx s₀ (by lit_omega))
+  refine WP.seq (WP.mono (oop_ok hT hbig a₁ (by rw [rd₁, h.rd]) (by rw [cs₁ _ (by simp [calleeSaved]), h.r15])
+    (by rw [arg_frame (.inl rfl) fw harg, arg_frame (.inl rfl) fx hpre, hS2])
+    (by rw [arg_frame (.inr rfl) fw harg, arg_frame (.inr rfl) fx hpre, hS3])
+    (by rw [m₁, stateAt_ctrW, stateAt_frame fx dpre, hst])) fun s₂ o₂ => ?_)
+  refine o₂.args.call hp Proof.ChaCha20.X86_64.XorImpl.avx512 fun s₃ rd₃ wr₃ cs₃ f₃ rsi₃ data₃ => ?_
+  -- A byte of the data, or of `src`, is in none of the other regions.
+  have nctx : ∀ {k a n : Nat}, k < L s₀ → a + n ≤ 1696 → ¬ (sub s₀ a n).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
+    fun hk ha hc => hp.c_d _ (sub_ctx s₀ ha _ hc) (byte_dR hk)
+  have nstk : ∀ {k : Nat}, k < L s₀ → ¬ (stkR s₀).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
+    fun hk hc => hp.stk_d _ hc (byte_dR hk)
+  have sctx : ∀ {k a n : Nat}, k < SL s₀ → a + n ≤ 1696 → ¬ (sub s₀ a n).Contains (sp s₀ + BitVec.ofNat 64 k) 1 :=
+    fun hk ha hc => hT.s_c _ (Offset.contains_base _ (by omega) (by have := hT.wrap_s; omega)) (sub_ctx s₀ ha _ hc)
+  have sdR : ∀ {k : Nat}, k < SL s₀ → ¬ (dR s₀).Contains (sp s₀ + BitVec.ofNat 64 k) 1 :=
+    fun hk hc => hT.s_d _ (Offset.contains_base _ (by omega) (by have := hT.wrap_s; omega)) hc
+  -- Bytes outside the call's: as after `oop`.
+  have out₃ : ∀ k < mm s₀ + PP s₀, s₃.mem (dp s₀ + BitVec.ofNat 64 k) = s₂.mem (dp s₀ + BitVec.ofNat 64 k) :=
+    fun k hk => f₃ _ fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact nctx (by omega) (by lit_omega)
+      · exact fun hc => Offset.disjoint (dp s₀) (d := k) (n := 1) (e := mm s₀ + PP s₀) (k := L s₀ - (mm s₀ + PP s₀))
+          (Or.inl (by omega)) (by have := hk; simp only [L] at hPPl; omega) (by simp only [L] at hPPl ⊢; omega) _
+          (Region.contains_self _ _) (by simpa only [dRm, off_eq] using hc)
+      · exact nctx (by omega) (by lit_omega)
+      · exact nstk (by omega)
+  refine ⟨rsi₃, fun r hr _ hb => by rw [cs₃ r hr, o₂.cs r hr hb, cs₁ r hr], by rw [rd₃, o₂.rd, rd₁],
+    by rw [wr₃, o₂.args.wr, h.wr], ?_, ?_⟩
+  · refine (fx.sub fun r hr => ?_).trans ((fw.sub fun r hr => ?_).trans ((o₂.frame.sub fun r hr => ?_).trans
+      (f₃.sub fun r hr => ?_)))
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨dR s₀, by simp, Region.sub_prefix hML⟩
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, by simp, fun _ h => h⟩
+      · exact ⟨_, by simp, fun _ h => h⟩
+      · exact ⟨dR s₀, by simp, fun _ h => h⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
+      · exact ⟨dR s₀, by simp, dRm_sub s₀ hPPl⟩
+      · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+      · exact ⟨stkR s₀, by simp, fun _ h => h⟩
+  · rw [encrypt_eq, length_PTat]
+    apply bytesAt_eq_zip (length_PTat _ _) (VG.Proof.ChaCha20.length_keystream _ _)
+    intro k hk
+    rw [PTat_getD _ hk]
+    have m₁k : ∀ {x : Addr}, ¬ (sub s₀ 64 64).Contains x 1 → s₁.mem x = mx x :=
+      fun hx => fw _ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx
+    by_cases hkm : k < mm s₀
+    · rw [ite_eq_right (fun h => by omega), out₃ k (by omega), o₂.out k hk (fun h => by omega),
+        m₁k (nctx hk (by lit_omega)), dx k hkm, hks k hkm]
+    by_cases hkp : k < mm s₀ + PP s₀
+    · have hS := PP_le_SL s₀ (by omega)
+      rw [ite_eq_left ⟨by omega, hkp⟩, out₃ k hkp, o₂.inn k (by omega) hkp,
+        m₁k (sctx (by omega) (by lit_omega)), fx _ (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr
+          exact fun hc => sdR (by omega) (Region.sub_prefix hML _ hc))]
+    · rw [ite_eq_right (fun h => by omega)]
+      have e₃ := bytesAt_xor_get (VG.Proof.ChaCha20.length_keystream _ _) data₃
+        (k := k - (mm s₀ + PP s₀)) (by omega)
+      have ea : off (dp s₀) (mm s₀ + PP s₀) + BitVec.ofNat 64 (k - (mm s₀ + PP s₀)) = dp s₀ + BitVec.ofNat 64 k := by
+        rw [off_eq, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' (by omega)]
+      rw [ea, o₂.out k hk (fun h => by omega), m₁k (nctx hk (by lit_omega)),
+        fx _ (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr
+          exact fun hc => Offset.disjoint_base (dp s₀) (d := k) (n := 1) (by omega)
+            (by simp only [L] at hk; omega) _ (Region.contains_self _ _) hc), o₂.st] at e₃
+      rw [e₃]
+      obtain ⟨a, ha⟩ := hdvd'
+      rw [ha, Nat.mul_div_cancel_left _ (by decide), keystream_skip _ (by omega) hk]
+
 end VG.Proof.ChaCha20Poly1305.X86_64
