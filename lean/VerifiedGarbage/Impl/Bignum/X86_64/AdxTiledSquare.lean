@@ -32,8 +32,9 @@ high pad is only cleared. -/
 def rawCrossBare (a : Nat) : Prog isa := .seq (.block (Adx.setup a))
   (.seq (.seq (AdxTri8.blocks a) (rowsChoice a)) AdxHeader.clear)
 
+/-- The diagonal, in groups of eight: the tiles' sizes are multiples of 8. -/
 def diagonal (a : Nat) : Prog isa :=
-  .seq (.block (Adx.setup a)) (.seq (.block [.mov .r10 (.reg .rbx)]) AdxSquare.diagonalChoice)
+  .seq (.block (Adx.setup a)) (.seq (.block [.mov .r10 (.reg .rbx)]) AdxSquareGrouped.diagonal8)
 
 def rawSquare (a : Nat) : Prog isa := .seq (rawCross a) (diagonal a)
 
