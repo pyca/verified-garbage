@@ -48,8 +48,9 @@
 
 #[cfg(target_arch = "x86_64")]
 use crate::arch::chacha20::{
-    VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX512_FEATURES, vg_chacha20_apply_avx2,
-    vg_chacha20_apply_avx512,
+    VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX512_FEATURES,
+    VG_CHACHA20_APPLY_IFMA_FEATURES, vg_chacha20_apply_avx2, vg_chacha20_apply_avx512,
+    vg_chacha20_apply_ifma,
 };
 #[cfg(target_arch = "x86")]
 use crate::arch::chacha20::{VG_CHACHA20_APPLY_SSSE3_FEATURES, vg_chacha20_apply_ssse3};
@@ -83,10 +84,20 @@ pub(crate) enum Backend {
     /// AVX-512F, sixteen blocks at a time.
     #[cfg(target_arch = "x86_64")]
     Avx512,
+    /// The same, on CPUs with AVX512_IFMA too, whose ChaCha20-Poly1305
+    /// authenticates with `vg_poly1305_blocks_ifma`.
+    #[cfg(target_arch = "x86_64")]
+    Ifma,
     /// SSSE3: the SSE2 code with the rotations by 16 and 8 bits `pshufb`.
     #[cfg(target_arch = "x86")]
     Ssse3,
 }
+
+/// AVX512_IFMA, which `vg_chacha20_apply_ifma` (the code of
+/// `vg_chacha20_apply_avx512`) does not use: it is chosen on the CPUs whose
+/// ChaCha20-Poly1305 runs its `_ifma` instances, which need it.
+#[cfg(target_arch = "x86_64")]
+const IFMA: Features = Features::of(&["avx512ifma"]);
 
 impl Backend {
     /// AdvSIMD is part of our AArch64 baseline. Tracking it also lets
@@ -111,18 +122,26 @@ impl Backend {
     pub(crate) fn select(f: Features) -> Backend {
         Backend::select_for(
             f,
+            Features::all(&[VG_CHACHA20_APPLY_IFMA_FEATURES, IFMA]),
             VG_CHACHA20_APPLY_AVX512_FEATURES,
             VG_CHACHA20_APPLY_AVX2_FEATURES,
         )
     }
 
     /// The best implementation a CPU with the features `f` can run, for
-    /// functions whose instances for AVX-512 and AVX2 need the features
-    /// `avx512` and `avx2` (ChaCha20-Poly1305's, which also call Poly1305
-    /// with AVX2, need more than `vg_chacha20_apply`'s).
+    /// functions whose instances for AVX512_IFMA, AVX-512 and AVX2 need the
+    /// features `ifma`, `avx512` and `avx2` (ChaCha20-Poly1305's, which also
+    /// call Poly1305 with AVX2, need more than `vg_chacha20_apply`'s).
     #[cfg(target_arch = "x86_64")]
-    pub(crate) fn select_for(f: Features, avx512: Features, avx2: Features) -> Backend {
-        if f.contains(avx512) {
+    pub(crate) fn select_for(
+        f: Features,
+        ifma: Features,
+        avx512: Features,
+        avx2: Features,
+    ) -> Backend {
+        if f.contains(ifma) {
+            Backend::Ifma
+        } else if f.contains(avx512) {
             Backend::Avx512
         } else if f.contains(avx2) {
             Backend::Avx2
@@ -225,6 +244,8 @@ impl ChaCha20 {
             Backend::Avx2 => vg_chacha20_apply_avx2,
             #[cfg(target_arch = "x86_64")]
             Backend::Avx512 => vg_chacha20_apply_avx512,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Ifma => vg_chacha20_apply_ifma,
             #[cfg(target_arch = "x86")]
             Backend::Ssse3 => vg_chacha20_apply_ssse3,
         };
@@ -461,12 +482,18 @@ mod tests {
         {
             use crate::arch::chacha20::{
                 VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX512_FEATURES,
+                VG_CHACHA20_APPLY_IFMA_FEATURES,
             };
             use crate::cpu::Features;
             let avx2 = VG_CHACHA20_APPLY_AVX2_FEATURES;
             let avx512 = VG_CHACHA20_APPLY_AVX512_FEATURES;
             assert_eq!(Backend::select(avx2), Backend::Avx2);
             assert_eq!(Backend::select(avx512), Backend::Avx512);
+            assert_eq!(VG_CHACHA20_APPLY_IFMA_FEATURES, avx512);
+            assert_eq!(
+                Backend::select(Features::all(&[avx512, super::IFMA])),
+                Backend::Ifma
+            );
             assert_eq!(
                 Backend::select(Features::all(&[
                     VG_CHACHA20_APPLY_AVX2_FEATURES,

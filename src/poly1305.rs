@@ -11,7 +11,11 @@
 //!
 //! `vg_poly1305_update` absorbs the whole blocks of the data with an
 //! implementation of `vg_poly1305_blocks`, and is emitted once for each
-//! (`Backend`): on x86-64, CPUs with AVX-512F and AVX2 run
+//! (`Backend`): on x86-64, CPUs with AVX512_IFMA, AVX-512F and AVX2 run
+//! `vg_poly1305_update_ifma`, which absorbs them with
+//! `vg_poly1305_blocks_ifma`, eight at a time in 44-bit limbs with 52-bit
+//! multiply-adds once there are at least 16 of them (and fewer with
+//! `vg_poly1305_blocks_avx2`), other CPUs with AVX-512F and AVX2
 //! `vg_poly1305_update_avx512`, which absorbs them with
 //! `vg_poly1305_blocks_avx512`, eight at a time once there are at least 40 of
 //! them (and fewer with `vg_poly1305_blocks_avx2`), and other CPUs with AVX2
@@ -37,8 +41,9 @@
 use crate::arch::poly1305::vg_poly1305_update_neon;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::poly1305::{
-    VG_POLY1305_UPDATE_AVX2_FEATURES, VG_POLY1305_UPDATE_AVX512_FEATURES, vg_poly1305_update_avx2,
-    vg_poly1305_update_avx512,
+    VG_POLY1305_UPDATE_AVX2_FEATURES, VG_POLY1305_UPDATE_AVX512_FEATURES,
+    VG_POLY1305_UPDATE_IFMA_FEATURES, vg_poly1305_update_avx2, vg_poly1305_update_avx512,
+    vg_poly1305_update_ifma,
 };
 use crate::arch::poly1305::{vg_poly1305_finalize, vg_poly1305_init, vg_poly1305_update};
 use crate::cpu::{Features, detected};
@@ -58,6 +63,9 @@ enum Backend {
     /// `vg_poly1305_update_avx512`, with `vg_poly1305_blocks_avx512`.
     #[cfg(target_arch = "x86_64")]
     Avx512,
+    /// `vg_poly1305_update_ifma`, with `vg_poly1305_blocks_ifma`.
+    #[cfg(target_arch = "x86_64")]
+    Ifma,
     /// `vg_poly1305_update_neon`, four blocks at a time in NEON.
     #[cfg(target_arch = "aarch64")]
     Neon,
@@ -67,7 +75,9 @@ impl Backend {
     /// The best implementation a CPU with the features `f` can run.
     #[cfg(target_arch = "x86_64")]
     fn select(f: Features) -> Backend {
-        if f.contains(VG_POLY1305_UPDATE_AVX512_FEATURES) {
+        if f.contains(VG_POLY1305_UPDATE_IFMA_FEATURES) {
+            Backend::Ifma
+        } else if f.contains(VG_POLY1305_UPDATE_AVX512_FEATURES) {
             Backend::Avx512
         } else if f.contains(VG_POLY1305_UPDATE_AVX2_FEATURES) {
             Backend::Avx2
@@ -151,6 +161,8 @@ impl Poly1305 {
             Backend::Avx2 => vg_poly1305_update_avx2,
             #[cfg(target_arch = "x86_64")]
             Backend::Avx512 => vg_poly1305_update_avx512,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Ifma => vg_poly1305_update_ifma,
             #[cfg(target_arch = "aarch64")]
             Backend::Neon => vg_poly1305_update_neon,
         };
@@ -297,13 +309,17 @@ mod tests {
         {
             use crate::arch::poly1305::{
                 VG_POLY1305_BLOCKS_AVX2_FEATURES, VG_POLY1305_BLOCKS_AVX512_FEATURES,
+                VG_POLY1305_BLOCKS_IFMA_FEATURES,
             };
             let avx2 = VG_POLY1305_UPDATE_AVX2_FEATURES;
             let avx512 = VG_POLY1305_UPDATE_AVX512_FEATURES;
+            let ifma = VG_POLY1305_UPDATE_IFMA_FEATURES;
             // The instances need the features of the implementations of
             // `vg_poly1305_blocks` they call.
             assert_eq!(avx2, VG_POLY1305_BLOCKS_AVX2_FEATURES);
             assert_eq!(avx512, VG_POLY1305_BLOCKS_AVX512_FEATURES);
+            assert_eq!(ifma, VG_POLY1305_BLOCKS_IFMA_FEATURES);
+            assert_eq!(Backend::select(ifma), Backend::Ifma);
             assert_eq!(Backend::select(avx512), Backend::Avx512);
             assert_eq!(Backend::select(avx2), Backend::Avx2);
             // AVX-512F alone is not enough: the AVX-512 instance calls the
