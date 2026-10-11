@@ -53,7 +53,7 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.P384.curve)
     (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP384.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p384_ok hI) hL (p384_tbls hT) (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p384_ok hI) hL (p384_tbls hT) (pre_of hs) p384_mulBase
   have hsp : ∀ i ∈ instrs publicKeyP384.inline, Taint.clobbers i .rsp = false := by
     have h : publicKeyP384.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h

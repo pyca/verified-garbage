@@ -20,17 +20,18 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Wei
 variable {c : Cfg}
 
 /-- What `[k]G` may write, by the comb (with `b R mod p` in `EM`) or the
-ladder: their slots and the word past the table of `k`'s bits. -/
+ladder, or by `vg_<curve>_mul_base`, which also makes the table of `k`'s
+bits: their slots, and that table with the word past it. -/
 abbrev gW (c : Cfg) : List (Nat × Nat) :=
   slW c [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] ++
-    [(bitsAt c.n 0 + 64 * c.n, 8)]
+    [(bitsAt c.n 0, 64 * c.n + 8)]
 
-/-- A slot is apart from the word past the table of `k`'s bits. -/
+/-- A slot is apart from the table of `k`'s bits and the word past it. -/
 theorem apart_pad {i : Nat} (hi : i < 45) :
-    ∀ w ∈ [(bitsAt c.n 0 + 64 * c.n, 8)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+    ∀ w ∈ [(bitsAt c.n 0, 64 * c.n + 8)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
   rw [List.mem_singleton.mp hw]
-  exact sl_apart_pad c hi
+  exact sl_apart_bits c hi (j := 0) (.inr (.inl (by decide))) (64 * c.n + 8) (by omega)
 
 /-- A slot apart from what `[k]G` writes. -/
 theorem apart_gW {i : Nat} (hi : i < 45)
@@ -66,7 +67,8 @@ theorem flag_unch_gW {base : Addr} {m m' : Mem} (hu : Unch base (gW c) m m')
 after `b R mod p` is put in `EM`: what `P` gives from `TCombFixed`, `gMul`'s
 postcondition. -/
 theorem gMulComb_ok' (hc : BaseCfgOk c) {d : CombData} (hcd : c.comb = some d) {base : Addr}
-    {g : Reg → BitVec 64} {s : State} (hs : Scr s base size) (F : Fixed c base g s.mem) {k : Nat}
+    {s : State} (hs : Scr s base size) (hmp : wordsVal s.mem base (c.sl MP) c.n = c.C.p)
+    (hz : wordsVal s.mem base (c.sl ZERO) c.n = 0) {k : Nat}
     (hkl : k < 2 ^ (64 * c.n))
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
     (hTM : TblMem s (s.syms d.tsym) (c.combWords d))
@@ -98,7 +100,10 @@ theorem gMulComb_ok' (hc : BaseCfgOk c) {d : CombData} (hcd : c.comb = some d) {
     (sl_le c h7 (by decide)) (by have := hc.p_lt; have := hmont c.C.b; omega))
     fun s₁ ⟨e₁, k₁, O₁⟩ sy₁ => ?_)
   have hs₁ := hs.of_keepRegs k₁ (by decide)
-  have F₁ := F.unch h7 hn (fixedOk_slW (l := [EM]) (by decide)) O₁.unch
+  have hmp₁ : wordsVal s₁.mem base (c.sl MP) c.n = c.C.p :=
+    (sv_unch O₁.unch h7 hn (i := MP) (by decide) (apart_slW (l := [EM]) (by decide))).trans hmp
+  have hz₁ : wordsVal s₁.mem base (c.sl ZERO) c.n = 0 :=
+    (sv_unch O₁.unch h7 hn (i := ZERO) (by decide) (apart_slW (l := [EM]) (by decide))).trans hz
   have ht₁ : ∀ t < 64 * c.n, s₁.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0 :=
     fun t ht => by
       rw [tbl_unch (W := slW c [EM]) O₁.unch h7 hn (j := 0) (by decide) ht (tbl_apart_slW (by decide) 0 t ht)]
@@ -108,19 +113,17 @@ theorem gMulComb_ok' (hc : BaseCfgOk c) {d : CombData} (hcd : c.comb = some d) {
       rw [List.mem_singleton.mp hw]; exact sl_le c h7 (by decide)) hout
   have hF : TCombFixed (c.combCfg d) c.C base size s₁ k (s₁.syms d.tsym)
       (tcombWords (c.combCfg d).M.n (2 ^ (64 * (c.combCfg d).M.n)) c.C.p d.tbl) := by
-    refine ⟨?_, ?_, fun x hx => ?_, F₁.zero, ht₁, hkl, rfl, by rw [sy₁]; exact hTM₁,
+    refine ⟨?_, fun x hx => ?_, hz₁, ht₁, hkl, rfl, by rw [sy₁]; exact hTM₁,
       by rw [sy₁]; exact hout⟩
-    · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₁.mem _ (c.sl AP) c.n) = _
-      rw [F₁.ap]; exact toM_cmont hc _
     · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₁.mem _ (c.sl EM) c.n) = _
       rw [e₁]; exact toM_cmont hc _
     · simp only [combRo, TCombCfg.toComb, Cfg.combCfg, Cfg.rcbSlots, List.mem_cons, List.not_mem_nil,
         or_false] at hx
       rcases hx with rfl | rfl | rfl
-      · exact lt_of_eq_of_lt F₁.ap (hmont _)
       · exact lt_of_eq_of_lt e₁ (hmont _)
-      · exact lt_of_eq_of_lt F₁.zero (by omega)
-  refine WP.mono (hP s₁ hs₁ ((modP_of hc F₁.mp).inl c.hot) hF) fun s' ⟨K', U', M', L', R'⟩ =>
+      · exact lt_of_eq_of_lt e₁ (hmont _)
+      · exact lt_of_eq_of_lt hz₁ (by omega)
+  refine WP.mono (hP s₁ hs₁ ((modP_of hc hmp₁).inl c.hot) hF) fun s' ⟨K', U', M', L', R'⟩ =>
       ⟨(k₁.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp [powClob, clob]).trans K', ?_, M'.of_inl, L', R'⟩
   rw [tcombW_eq] at U'
   have hz := zw_le hd
@@ -135,7 +138,7 @@ theorem gMulComb_ok' (hc : BaseCfgOk c) {d : CombData} (hcd : c.comb = some d) {
         i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] := by decide
     exact ⟨w, List.mem_append_left _ (List.map_subset _ sub hw), Nat.le_refl _, Nat.le_refl _⟩
   · rw [List.mem_singleton.mp hw]
-    exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), Nat.le_refl _, by dsimp only; omega⟩
+    exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), by dsimp only; omega, by dsimp only; omega⟩
 
 
 /-- `R = [k]G`, by the comb or the ladder, from the table of `k`'s bits, with
@@ -202,7 +205,7 @@ theorem gMul_ok' (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Add
     exact Unch.cover U' fun w hw => ⟨w, List.mem_append_left _ (hsub hw), Nat.le_refl _, Nat.le_refl _⟩
   | some d =>
     obtain ⟨hTM, hout⟩ := hTb d hcd
-    exact gMulComb_ok' hc hcd hs F hkl ht₀ hTM hout fun s₁ hs₁ hM₁ hF =>
+    exact gMulComb_ok' hc hcd hs F.mp F.zero hkl ht₀ hTM hout fun s₁ hs₁ hM₁ hF =>
       tcomb_ok (tcombLay hc (hc.comb d hcd)) hC (hc.comb_am3 d hcd) hc.onG (tcombVals hc hC (hT d hcd).1) hc.p_lt hs₁
         hM₁ hF publicLookup
 
@@ -214,7 +217,7 @@ theorem gMul_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem (s₀.gpr .r8) x c.n < c.C.p) ∧
       Rep c.C (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RX)) (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RY))
         (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RZ)) (mul (kv c s₀) (G c.C)) :=
-  gMul_ok' hc hC hT hS.scr hS.fixed (hS.k ▸ wordsVal_lt _ _ _ _) hS.rx hS.ry hS.rz hS.t₀ fun d hcd => by
+  gMul_ok' hc hC hT hS.scr hS.fixed (hS.k ▸ wordsVal_lt _ _ _ _) hS.rx hS.ry hS.rz (hS.t₀ rfl) fun d hcd => by
     rw [hS.syms]; exact tbl_of hcd hp hS.rd hS.unch
 
 /-- `R = [k]G` for a secret `k` (`gMulK`): by the comb with Booth's digits for
@@ -240,7 +243,7 @@ theorem gMulK_ok' (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Ad
       exact gMul_ok' hc hC hT hs F hkl hrx hry hrz ht₀ hTb
     · simp only [hj, ↓reduceIte]
       obtain ⟨hTM, hout⟩ := hTb d hcd
-      exact gMulComb_ok' hc hcd hs F hkl ht₀ hTM hout fun s₁ hs₁ hM₁ hF =>
+      exact gMulComb_ok' hc hcd hs F.mp F.zero hkl ht₀ hTM hout fun s₁ hs₁ hM₁ hF =>
         tcombJ_ok (tcombLay hc (hc.comb d hcd)) hC (hc.comb_am3 d hcd) hc.onG (tcombVals hc hC (hT d hcd).1) hc.p_lt
           (by show 1 ≤ bitsAt c.n 0; rw [bitsAt_eq]; omega) ((hT d hcd).2 hj) hkl hs₁ hM₁ hF
 
@@ -252,7 +255,7 @@ theorem gMulK_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Optio
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem (s₀.gpr .r8) x c.n < c.C.p) ∧
       Rep c.C (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RX)) (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RY))
         (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RZ)) (mul (kv c s₀) (G c.C)) :=
-  gMulK_ok' hc hC hT hS.scr hS.fixed (hS.k ▸ wordsVal_lt _ _ _ _) hS.rx hS.ry hS.rz hS.t₀ fun d hcd => by
+  gMulK_ok' hc hC hT hS.scr hS.fixed (hS.k ▸ wordsVal_lt _ _ _ _) hS.rx hS.ry hS.rz (hS.t₀ rfl) fun d hcd => by
     rw [hS.syms]; exact tbl_of hcd hp hS.rd hS.unch
 
 end VG.Proof.Ecdsa.X86_64

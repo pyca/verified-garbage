@@ -400,17 +400,19 @@ theorem args_ok (s : State) :
 /-- The public key inlined: only `[k]G` calls functions. -/
 theorem publicKey_inline (c : Cfg) : (Impl.EcKey.X86_64.Cfg.publicKey c).inline =
     .seq (.block Impl.EcKey.X86_64.Cfg.args) (.seq (.seq (.block (c.setupWith none))
-      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
-      (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.seq c.gMulK.inline (.seq c.pPow (.block [])))))))
+      (.seq c.kBits (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
+      (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.seq c.gMulKC.inline (.seq c.pPow (.block [])))))))
       (Impl.EcKey.X86_64.Cfg.middle c)) := by
-  show Code.seq _ (Code.seq (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _
+  show Code.seq _ (Code.seq (Code.seq _ (Code.seq c.kBits.inline (Code.seq _ (Code.seq _ (Code.seq _
     (Code.seq c.pPow.inline _)))))) (Impl.EcKey.X86_64.Cfg.middle c).inline) = _
-  rw [pPow_inline, show (Impl.EcKey.X86_64.Cfg.middle c).inline = _ from blocks_inline _]
+  rw [pPow_inline, show (Impl.EcKey.X86_64.Cfg.middle c).inline = _ from blocks_inline _, Cfg.kBits,
+    kBitsIf_inline]
   rfl
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
-theorem publicKey_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : PkPre c s₀) :
+theorem publicKey_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : PkPre c s₀)
+    (hmb : MulBaseOk c := by intro h; exact absurd h (by decide)) :
     WP isa (Impl.EcKey.X86_64.Cfg.publicKey c).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ PkPost c s₀ s' := by
   rw [publicKey_inline]
@@ -457,8 +459,8 @@ theorem publicKey_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ :
       · exact f2 _ (by rw [hp.wr]; simp)
   have hb : sN.gpr .r8 = s₀.gpr .rdx := by rw [g, r8₁]
   obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hs := none) (Or.inl rfl) hpN.setup
-    (rest := .seq c.gMulK.inline (.seq c.pPow (.block [])))
-    (Q := St₂ c none sN (sN.gpr .r8)) fun _ S₁ => stage₂ hc hC hT hpN rfl S₁ fun _ S₂ => WP.block_nil S₂
+    (rest := .seq c.gMulKC.inline (.seq c.pPow (.block [])))
+    (Q := St₂ c none sN (sN.gpr .r8)) fun _ S₁ => stage₂ hc hmb hC hT hpN rfl S₁ fun _ S₂ => WP.block_nil S₂
   rw [hb] at S₂
   -- The same run, with the public key's regions.
   have hrd₁ : s₁.rd = [⟨s₀.gpr .rsi, c.C.len⟩] ++ Abi.constRegions (fun n => s₀.syms n) c.combConsts := by

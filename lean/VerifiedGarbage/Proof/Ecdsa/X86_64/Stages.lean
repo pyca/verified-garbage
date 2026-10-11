@@ -32,8 +32,8 @@ structure Keep (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
   wr : s.wr = s₀.wr
   fixed : Fixed c base s₀.gpr s.mem
 
-/-- After the setup and the tables. -/
-structure St₁ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : State) : Prop
+/-- After the setup and the tables (but `k`'s if `skip`). -/
+structure St₁ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : State) (skip : Bool := false) : Prop
     extends Keep c s₀ base s where
   k : sv c base s K = kv c s₀
   d : sv c base s D = dv c s₀ >>> shAt c hs D
@@ -42,7 +42,7 @@ structure St₁ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : St
   ry : sv c base s RY = c.mont 1
   rz : sv c base s RZ = 0
   flag : word s.mem base (c.sl FLAG) = BitVec.allOnes 64
-  t₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if (kv c s₀).testBit t then 1 else 0
+  t₀ : skip = false → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if (kv c s₀).testBit t then 1 else 0
   /-- The bits of `p - 2`, which only the power for more than nine words reads
   (for nine, the second table holds the products' temporary area). -/
   t₁ : ¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) =
@@ -53,11 +53,23 @@ structure St₁ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : St
   rd : s.rd = s₀.rd
   syms : s.syms = s₀.syms
 
-/-- The setup, then the three tables. -/
+/-- The table of `k`'s bits (`bits_ok`), or nothing if `skip`. -/
+theorem kBitsIf_ok (c : Cfg) (skip : Bool) {s : State} {base : Addr} (hs : Scr s base size)
+    (hn0 : 0 < c.n) (hn : c.n < 2 ^ 28) (hsrc : c.sl K + 8 * c.n ≤ size) (hdst : bitsAt c.n 0 + 64 * c.n ≤ size)
+    (hsep : c.sl K + 8 * c.n ≤ bitsAt c.n 0 ∨ bitsAt c.n 0 + 64 * c.n ≤ c.sl K) :
+    WP isa (c.kBitsIf skip) s fun s' =>
+      (skip = false → ∀ t < 64 * c.n, s'.mem (off base (bitsAt c.n 0 + t)) =
+        if (wordsVal s.mem base (c.sl K) c.n).testBit t then 1 else 0) ∧
+      KeepRegs [.rax, .rdx, .rbx] s s' ∧ Outside base (bitsAt c.n 0) (64 * c.n) s.mem s'.mem := by
+  cases skip
+  · exact WP.mono (bits_ok hs hn0 hn hsrc hdst hsep) fun s' ⟨b, k, o⟩ => ⟨fun _ => b, k, o⟩
+  · exact WP.block_nil ⟨fun h => absurd h (by decide), ⟨fun _ _ => rfl, rfl, rfl⟩, Outside.refl _ _ _ _⟩
+
+/-- The setup, then the three tables (but `k`'s if `skip`). -/
 theorem stage₁ (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ : State} (hp : SetupPre c s₀)
-    {rest : Prog isa} {Q : State → Prop}
-    (h : ∀ s, St₁ c hs s₀ (s₀.gpr .r8) s → WP isa rest s Q) :
-    WP isa (.seq (.block (c.setupWith hs)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
+    {rest : Prog isa} {Q : State → Prop} {skip : Bool}
+    (h : ∀ s, St₁ c hs s₀ (s₀.gpr .r8) s skip → WP isa rest s Q) :
+    WP isa (.seq (.block (c.setupWith hs)) (.seq (c.kBitsIf skip)
       (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) rest)))) s₀ Q := by
   have h0 := hc.n0
@@ -78,7 +90,7 @@ theorem stage₁ (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ :
     fun hi hit j => Or.inl (by have := sl_below_bits c hi j 0 (.inl hit); omega)
   have hsz : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ size := fun hj => bitsAt_le c h7 hj
   -- The table of `k`.
-  refine WP.seq (WP.mono_syms (bits_ok P.scr h0 (by omega) (sl_le c h7 (i := K) (by decide)) (hsz (j := 0)
+  refine WP.seq (WP.mono_syms (kBitsIf_ok c skip P.scr h0 (by omega) (sl_le c h7 (i := K) (by decide)) (hsz (j := 0)
     (by decide)) (hsep (i := K) (by decide) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ sy₂ => ?_)
   have hs₂ := P.scr.of_keepRegs k₂ (by decide)
   have u₂ := O₂.unch
@@ -115,9 +127,9 @@ theorem stage₁ (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ :
         have := sl_below_bits c (i := FLAG) (by decide) j 0
         exact Or.inl (by dsimp only; omega)
     rw [u₄.word (ap 2) (by omega), u₃.word (ap 1) (by omega), u₂.word (ap 0) (by omega), P.flag]
-  · intro t ht
+  · intro hsk t ht
     rw [tbl_unch u₄ h7 hn (j := 0) (by decide) ht (tbl_apart_tbl (by decide) ht),
-      tbl_unch u₃ h7 hn (j := 0) (by decide) ht (tbl_apart_tbl (by decide) ht), b₂ t ht, hk]
+      tbl_unch u₃ h7 hn (j := 0) (by decide) ht (tbl_apart_tbl (by decide) ht), b₂ hsk t ht, hk]
   · intro _ t ht
     rw [tbl_unch u₄ h7 hn (j := 1) (by decide) ht (tbl_apart_tbl (by decide) ht), b₃ t ht, hp2,
       ← v₂ (by decide) (by decide)]
