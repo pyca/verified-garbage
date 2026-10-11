@@ -9,9 +9,10 @@
 //! the next update completes it; updates write the whole blocks they
 //! complete to the caller's buffer, so nothing is allocated; finalization
 //! rejects a trailing partial block. On AArch64, ECB runs sixteen blocks at
-//! a time in AdvSIMD registers; on x86-64, one at a time with SSE2.
+//! a time in AdvSIMD registers; on x86-64, one at a time with SSE2; on
+//! ARMv7, one at a time in core registers.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 
 use crate::arch::blowfish::{
     vg_blowfish_ecb_decrypt, vg_blowfish_ecb_encrypt, vg_blowfish_expand_key,
