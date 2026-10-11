@@ -76,30 +76,31 @@ theorem runSeq_cfbDec (ciph : Spec.Cbc.Cipher) :
 /-! ## The contracts of the ciphers' modes, with the IV read and written -/
 
 section
-variable (c : Core) (S : CoreSpec c) (ds : Nat) (s : State)
+variable (c : Core) (S : CoreSpec c) (len : Nat → Nat) (s : State)
 
 /-- The precondition of `(schedule, iv, data, n, scratch = [sp])`, with the
 schedule only read and the IV read and written, as `Sig.contract` states
-it, for data of `n` elements of `ds` bytes. -/
+it, for data of `len n` bytes. -/
 def RwPre : Prop :=
   let key : Region := ⟨State.addr (s.gpr .r0), S.keyLen⟩
   let iv : Region := ⟨State.addr (s.gpr .r1), c.bs⟩
-  let data : Region := ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat * ds⟩
+  let data : Region := ⟨State.addr (s.gpr .r2), len (s.gpr .r3).toNat⟩
   let scr : Region := ⟨State.addr (stackArg s 0), c.scratchBytes⟩
   let arg : Region := ⟨stackArgAddr s 0, 4⟩
   let below : Region := ⟨State.addr s.sp - BitVec.ofNat 64 S.stack, S.stack⟩
   S.stack ≤ s.sp.toNat ∧ s.sp.toNat + 4 ≤ 2 ^ 32 ∧ s.rd = [key, arg] ∧ s.wr = [iv, data, scr] ∧
     key.Disjoint iv ∧ key.Disjoint data ∧ key.Disjoint scr ∧ iv.Disjoint data ∧ iv.Disjoint scr ∧
-    data.Disjoint scr ∧ iv.Disjoint arg ∧ data.Disjoint arg ∧ scr.Disjoint arg ∧
+    iv.Disjoint arg ∧ data.Disjoint scr ∧ data.Disjoint arg ∧ scr.Disjoint arg ∧
     below.Disjoint key ∧ below.Disjoint iv ∧ below.Disjoint data ∧ below.Disjoint scr ∧ below.Disjoint arg ∧
     (s.gpr .r0).toNat + S.keyLen ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + c.bs ≤ 2 ^ 32 ∧
-    (s.gpr .r2).toNat + (s.gpr .r3).toNat * ds ≤ 2 ^ 32 ∧ (stackArg s 0).toNat + c.scratchBytes ≤ 2 ^ 32
+    (s.gpr .r2).toNat + len (s.gpr .r3).toNat ≤ 2 ^ 32 ∧ (stackArg s 0).toNat + c.scratchBytes ≤ 2 ^ 32
 
 end
 
-theorem seqArm_pre_rw {c : Core} {S : CoreSpec c} {M : Mode} {s : State} (h : RwPre c S (c.ds M) s) :
-    (seqArm c S M).pre s := by
-  obtain ⟨a1, a2, rd, wr, -, kd, ks, vd, vs, ds, va, da, sa, bk, -, bd, bs, -, fk, fv, fd, fs⟩ := h
+theorem seqArm_pre_rw {c : Core} {S : CoreSpec c} {M : Mode} {len : Nat → Nat}
+    (hl : ∀ n, len n = n * c.ds M) {s : State} (h : RwPre c S len s) : (seqArm c S M).pre s := by
+  simp only [RwPre, hl] at h
+  obtain ⟨a1, a2, rd, wr, -, kd, ks, vd, vs, va, ds, da, sa, bk, -, bd, bs, -, fk, fv, fd, fs⟩ := h
   refine ⟨a1, a2, by simp [rd], by simp [wr], by simp [rd], by simp [wr], by simp [wr], kd, ks, vd, vs, ds,
     bk, bd, bs, fk, fv, fd, fs, fun _ => by simp [wr], ?_⟩
   intro r hr
