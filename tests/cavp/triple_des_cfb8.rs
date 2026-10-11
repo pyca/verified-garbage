@@ -2,7 +2,7 @@
 //! vectors/; and CFB8 from ECB (`TripleDesEcb`, tested on CAVP's ECB
 //! vectors) on every length up to a few dozen bytes, for each key length.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 
 use std::collections::BTreeMap;
 
