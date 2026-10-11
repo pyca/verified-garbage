@@ -1,10 +1,12 @@
-import VerifiedGarbage.Spec.Rsa
-import VerifiedGarbage.Spec.Md5
-import VerifiedGarbage.Spec.Sha1
-import VerifiedGarbage.Spec.Sha256
-import VerifiedGarbage.Spec.Sha512
-import VerifiedGarbage.Spec.Sha3
-import VerifiedGarbage.Spec.Blake2
+module
+
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Spec.Md5
+public import VerifiedGarbage.Spec.Sha1
+public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.Spec.Sha3
+public import VerifiedGarbage.Spec.Blake2
 
 /-!
 # MGF1 (RFC 8017 Appendix B.2.1), and the hash functions RSA's padding uses
@@ -18,6 +20,8 @@ of the MD5, SHA-1 and SHA-2 families; the others are the library's other hash
 functions of a fixed digest length: SHA-3 (FIPS 202), and BLAKE2 (RFC 7693),
 unkeyed, with its longest digests.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Mgf1
 

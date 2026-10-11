@@ -102,6 +102,21 @@ def setup : List Instr := setupG ++ lows 8 ++ setupC ++
   ([.vmovdquStore .l128 (at_ .r11 768) .xmm0,
    .vmovdquStore .l128 (at_ .r11 784) .xmm1] : List Instr) ++ initCounter
 
+/-- Where a prepared key context (`Spec.Gcm.PreparedPowersRepr`) holds `H'ⁿ`,
+for `n` from 1 to 48: in pairs, the even power first. -/
+def prepOff (n : Nat) : Nat := if n % 2 = 0 then 224 + 16 * n else 256 + 16 * n
+
+/-- `setupG` for a prepared key context: the constants, and `H'` … `H'⁸`
+loaded from it into the registers where `setupG` computes them. -/
+def setupGR : List Instr :=
+  const .xmm0 revMask ++ const .xmm1 poly ++
+  (List.range 8).map fun i => .vmovdquLoad .l128 (preg i) (at_ .rdi (prepOff (i + 1)))
+
+/-- `setup` for a prepared key context. -/
+def setupR : List Instr := setupGR ++ lows 8 ++ setupC ++
+  ([.vmovdquStore .l128 (at_ .r11 768) .xmm0,
+   .vmovdquStore .l128 (at_ .r11 784) .xmm1] : List Instr) ++ initCounter
+
 def reduceFinal : List Instr :=
   [.vmovdquLoad .l128 .xmm1 (at_ .r11 784),
    .vop (.vpclmulqdq .l128 .xmm11 .xmm8 .xmm1 0x10),
@@ -236,12 +251,15 @@ def tailT (nr : Nat) : Prog isa :=
         (.seq (.block (tailSetup ++ StitchAvx.zero))
           (.seq (.loop (.block (StitchZH.remBody .rdx ++ StitchZH.remNext)) .ne) (.block (tailEnd nr))))))
 
-def encFor (nr : Nat) : Prog isa :=
-  .seq (.block setup) (.seq (batchL regCounters nr 8 0 (fun _ => [])) (.seq (batch nr 8 8 (fun _ => []))
+/-- Encryption, after the setup `su`. -/
+def encForWith (su : List Instr) (nr : Nat) : Prog isa :=
+  .seq (.block su) (.seq (batchL regCounters nr 8 0 (fun _ => [])) (.seq (batch nr 8 8 (fun _ => []))
     (.seq (.block ((List.range 8).flatMap prepare ++ ([.alu .cmp .r9 (.imm 24)] : List Instr)))
       (.seq (.ite .b (.block []) (.loop (encBody8 nr) .ae))
         (.seq (.block (hash8 ++ (List.range 8).flatMap (fun i => prepare (8+i)) ++ hash8))
           (.seq (tailT nr) (.block finish)))))))
+
+def encFor (nr : Nat) : Prog isa := encForWith setup nr
 
 def decBody8 (nr : Nat) : Prog isa :=
   .seq (.block []) (.seq (batch nr 8 0 (q8 nr true))
@@ -258,5 +276,7 @@ def dispatch (a b c : Prog isa) : Prog isa :=
     (.ite .e a (.seq (.block [.alu .cmp .rsi (.imm 12)]) (.ite .e b c)))
 
 def enc : Prog isa := dispatch (encFor 10) (encFor 12) (encFor 14)
+/-- Encryption with a prepared key context: the powers loaded from it. -/
+def encR : Prog isa := dispatch (encForWith setupR 10) (encForWith setupR 12) (encForWith setupR 14)
 def dec : Prog isa := dispatch (decFor 10) (decFor 12) (decFor 14)
 end VG.Impl.Gcm.X86_64.StitchAvx8

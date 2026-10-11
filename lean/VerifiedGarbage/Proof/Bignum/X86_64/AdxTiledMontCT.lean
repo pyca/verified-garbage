@@ -16,6 +16,15 @@ theorem raw_fw {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) 
   exact WP.mono (rawProduct_ok hg.scr hg.rdi hg.hdr hv pa pb L.hZ L.hw L.hwN L.hn ha hb ha1 ha2 hb1 hb2)
     fun _ ⟨_,_,o,k⟩ => GoodV.of_outside ⟨⟨mi,hg⟩,hv⟩ o k
 
+theorem rawBare_fw {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
+    (ha : a<8) (hb : b<8)
+    (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)
+    (L : Layout) (s : State) (h : GoodV ps L s) :
+    WP isa (AdxTiledProduct.rawProductBare ca cb) s (GoodV ps L) := by
+  obtain ⟨⟨mi,hg⟩,hv⟩ := h
+  exact WP.mono (rawProductBare_ok hg.scr hg.rdi hg.hdr hv pa pb L.hZ L.hw L.hwN L.hn ha hb ha1 ha2 hb1 hb2)
+    fun _ ⟨_,o₁,_,o₂,k⟩ => GoodV.of_bare ⟨⟨mi,hg⟩,hv⟩ o₁ o₂ k
+
 theorem redc_ct : RelCT isa (Two GoodL) AdxRotate8.redc (Two GoodL) := by
   apply two_post ?_ ?_
   · refine two_map (fun L : Layout => (⟨⟨L.B,L.Z,L.w⟩,L.n,L.hwN,L.hn⟩ : AdxRotate8.W8)) ?_

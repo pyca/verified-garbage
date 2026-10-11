@@ -25,4 +25,7 @@ def restore : Prog isa := .seq (.block bases)
   (.seq (copyPair .r8 .rdi 0 (8*sFn 12))
     (.seq (copyPair .r9 .rdi 0 (8*sFn 14)) (.block clearHigh)))
 
+/-- The high pad cleared, for callers that keep the borrowed words elsewhere. -/
+def clear : Prog isa := .seq (.block bases) (.block clearHigh)
+
 end VG.Impl.Bignum.X86_64.AdxHeader

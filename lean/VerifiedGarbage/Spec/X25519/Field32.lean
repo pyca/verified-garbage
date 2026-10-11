@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.X25519
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Multiplication and powers in curve25519's field, in radix `2^32`, as functions
@@ -37,6 +39,8 @@ values; every other byte of `ws` keeps its value but the results'
 Everything is secret but the pointer and `mul`'s offsets, which are public,
 and the functions are constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.X25519.Field32
 

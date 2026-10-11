@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Weierstrass
+module
+
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # The curve brainpoolP384r1 (RFC 5639)
@@ -10,6 +12,8 @@ given in hexadecimal: `p`, `A`, `B`, the base point's `x` and `y`, and its
 order `q` (here `n`). The cofactor is 1. Field elements and scalars have
 384 bits, so their octet strings have 48 octets (SEC 1 §2.3.5, §2.3.7).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.BrainpoolP384r1
 

@@ -60,6 +60,17 @@ structure Core where
   keyRegs : List Reg
   dataReg : Reg
   leftReg : Reg
+  /-- The words in a block, for the modes that take any block size (CBC). -/
+  bw : Nat := 2
+
+/-- Word `w` of the block at `rs + os` to the block at `rd + od`, through `t`. -/
+def copyW (t rd rs : Reg) (od os w : Nat) : List Instr :=
+  [.ldr .x t rs (os + 8 * w), .str .x t rd (od + 8 * w)]
+
+/-- Word `w` of the block at `rs + os` XORed into the block at `rd + od`,
+through `t` and `u`. -/
+def xorW (t u rd rs : Reg) (od os w : Nat) : List Instr :=
+  [.ldr .x t rd (od + 8 * w), .ldr .x u rs (os + 8 * w), eorR t t u, .str .x t rd (od + 8 * w)]
 
 /-- Where a mode's arguments are: the counter block's address, the data's
 address, the number of blocks and the scratch buffer's address. -/

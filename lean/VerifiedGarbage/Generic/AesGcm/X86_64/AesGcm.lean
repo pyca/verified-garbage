@@ -166,7 +166,7 @@ theorem StitchName.okR : (n : StitchName) →
       (if n.fullR then 1 else 16)
   | .vaes => Proof.Gcm.X86_64.Stitch.stitch_ok.toM _
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZH.stitchR_ok
-  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitch_ok.toM _
+  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitchR_ok
 
 def GcmVariant.stitchR (v : GcmVariant) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
   v.stitch.bind fun p => p.pieceR.map fun q => ⟨p.name.encR, p.name.decR, p.name.fullR, p.name.okR, q.enc, q.dec⟩
@@ -667,7 +667,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     stack := 2576
     verified := initPrepared_framed v.impl
     spSafe := X86_64.withStackScratch_spSafe (by decide) (initPrepared_spSafe v.impl)
-    features := (v.impl.ctr.features ++ v.impl.key.features ++ v.impl.gh.features ++ ["avx2"]).dedup },
+    features := (v.impl.ctr.features ++ v.impl.key.features ++ v.impl.gh.features ++ ["avx", "avx2"]).dedup },
   { Spec.Gcm.encryptBlocksPreparedApi with
     name := Spec.Gcm.encryptBlocksPreparedApi.name ++ v.impl.suffix
     target := X86_64.target

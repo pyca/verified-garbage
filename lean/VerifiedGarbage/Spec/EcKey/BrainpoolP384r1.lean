@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.EcKey.Generic
-import VerifiedGarbage.Spec.BrainpoolP384r1
+module
+
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.BrainpoolP384r1
 
 /-!
 # brainpoolP384r1 keys: the contracts, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.BrainpoolP384r1
 **Trusted** (as every file in `Spec/`). The `Instance` of brainpoolP384r1
 (`Spec/BrainpoolP384r1.lean`): `vg_ec_brainpoolp384r1_public_key`, in the module `ec_brainpoolp384r1`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.EcKey.BrainpoolP384r1
 

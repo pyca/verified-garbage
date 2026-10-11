@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Ed448.Point56
+module
+
+public import VerifiedGarbage.Spec.Ed448.Point56
 
 /-!
 # Ed448's fixed-base comb in radix `2^56`, as a function
@@ -36,6 +38,8 @@ keeps its value (`Field56.Keeps`).
 Everything is secret but the pointer and `n`, which are public, and the
 function is constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ed448.Comb56
 

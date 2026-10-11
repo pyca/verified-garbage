@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdsa
-import VerifiedGarbage.Spec.EcKey
+module
+
+public import VerifiedGarbage.Spec.Ecdsa
+public import VerifiedGarbage.Spec.EcKey
 
 /-!
 # ECDSA signature verification (FIPS 186-5)
@@ -27,6 +29,8 @@ caller's, as for signing.
 signature if it is not a valid public key; and the signature as `len`
 octets of `r` then `len` octets of `s` (the encoding of `encode`).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdsa
 

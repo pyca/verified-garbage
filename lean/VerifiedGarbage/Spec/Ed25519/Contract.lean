@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ed25519
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Ed25519
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Ed25519: contracts on every target
@@ -22,6 +24,8 @@ return and must be destroyed by callers handling secrets. `stack` describes
 the space used below the stack pointer. `writeArgs` allows calls to reuse
 the ABI's argument slots, including on 32-bit targets.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ed25519
 

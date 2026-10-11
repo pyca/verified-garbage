@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Idea.Contract
-import VerifiedGarbage.Spec.Cbc
+module
+
+public import VerifiedGarbage.Spec.Idea.Contract
+public import VerifiedGarbage.Spec.Cbc
 
 /-!
 # IDEA-CBC: the contracts, on every target
@@ -22,6 +24,8 @@ block it decrypts). Padding is the caller's.
 Only the pointers and `n` are public: no part of the chaining value may affect
 timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Idea
 

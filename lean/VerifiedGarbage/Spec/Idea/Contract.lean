@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Idea
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Idea
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # IDEA ECB: contracts on every target
@@ -18,6 +20,8 @@ The Rust wrapper will buffer partial blocks and reject incomplete input at
 finalization. It will not add or remove padding. Empty ECB input is
 supported.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Idea
 

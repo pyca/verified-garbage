@@ -36,12 +36,12 @@ theorem lsr_beq {v k : Nat} (hv : v < 2 ^ 64) : (BitVec.ofNat 64 v >>> k == 0) =
     omega
 
 /-- `x16 := min(left, G)`. -/
-theorem groupCount_wp (hL : Layout c) (hl13 : c.leftReg ≠ .x13) {s : State} {v : Nat}
+theorem groupCount_wp (hlg : c.lgG < 16) (hl13 : c.leftReg ≠ .x13) {s : State} {v : Nat}
     (hv : s.gpr c.leftReg = BitVec.ofNat 64 v) (hv64 : v < 2 ^ 64) :
     WP isa c.groupCount s fun s' => s'.gpr .x16 = BitVec.ofNat 64 (min v c.G) ∧
       (∀ r, r ≠ .x13 → r ≠ .x16 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hG := hL.G_lt
-  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := lsr_ok s .x13 c.leftReg (sh := c.lgG) (by have := hL.lgG_lt; omega)
+  have hG : c.G < 2 ^ 16 := Nat.pow_lt_pow_right (by decide) hlg
+  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := lsr_ok s .x13 c.leftReg (sh := c.lgG) (by omega)
   unfold Core.groupCount
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
   have hz : isa.eval (.nonzero .x .x13) s₁ = some !(decide (v < c.G)) := by
@@ -57,13 +57,13 @@ theorem groupCount_wp (hL : Layout c) (hl13 : c.leftReg ≠ .x13) {s : State} {v
     · rw [o₂ r h2, o₁ r h1]
 
 /-- The buffer's address to `x14`, the data's to `x15`, the count to `x17`. -/
-theorem xorArgs_ok (hL : Layout c) (hd14 : c.dataReg ≠ .x14) (s : State) {B : Addr} (hB : s.gpr sb = B) :
+theorem xorArgs_ok (hbI : 8 * c.buf < 4096) (hd14 : c.dataReg ≠ .x14) (s : State) {B : Addr} (hB : s.gpr sb = B) :
     ∃ s', runBlock isa c.xorArgs s = some s' ∧ s'.gpr .x14 = B + BitVec.ofNat 64 (8 * c.buf) ∧
       s'.gpr .x15 = s.gpr c.dataReg ∧ s'.gpr .x17 = s.gpr .x16 ∧
       (∀ r, r ≠ .x14 → r ≠ .x15 → r ≠ .x17 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
   obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s .x14 sb
-  obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := addImm_ok s₁ .x14 .x14 hL.bufImm
+  obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := addImm_ok s₁ .x14 .x14 hbI
   obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃⟩ := movR_ok s₂ .x15 c.dataReg
   obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄⟩ := movR_ok s₃ .x17 .x16
   refine ⟨s₄, ?_, ?_, ?_, ?_, fun r h1 h2 h3 => ?_, by rw [m₄, m₃, m₂, m₁], by rw [rd₄, rd₃, rd₂, rd₁],
@@ -96,11 +96,11 @@ theorem advance_ok (hdl : c.dataReg ≠ c.leftReg) (hd16 : c.dataReg ≠ .x16)
 
 /-- What the data loop works on: the scratch buffer at `B`, the `n` blocks at
 `D`. -/
-structure GPre (c : Core) (s₀ : State) (B D : Addr) (n : Nat) : Prop where
+structure GPre (c : Core) (s₀ : State) (B D : Addr) (n : Nat) (L : Nat := 16) : Prop where
   scr : ScrIn s₀ B c.total
-  dat : (⟨D, 16 * n⟩ : Region) ∈ s₀.wr
-  sep : Region.Disjoint ⟨D, 16 * n⟩ ⟨B, 8 * c.total⟩
-  fitD : D.toNat + 16 * n ≤ 2 ^ 64
+  dat : (⟨D, L * n⟩ : Region) ∈ s₀.wr
+  sep : Region.Disjoint ⟨D, L * n⟩ ⟨B, 8 * c.total⟩
+  fitD : D.toNat + L * n ≤ 2 ^ 64
 
 /-- The data loop, before group `g`, from the counter block `V` with the key
 `k`. -/
@@ -130,8 +130,8 @@ structure GDone (cs : CoreSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.
   wr : s.wr = s₀.wr
 
 /-- Byte `u` of the 16 at `p`. -/
-theorem bytesAt_getD (m : Mem) (p : Addr) {u : Nat} (hu : u < 16) :
-    (bytesAt m p 16).getD u 0 = m (p + BitVec.ofNat 64 u) := by
+theorem bytesAt_getD (m : Mem) (p : Addr) {L u : Nat} (hu : u < L) :
+    (bytesAt m p L).getD u 0 = m (p + BitVec.ofNat 64 u) := by
   simp [bytesAt, hu]
 
 theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k : cs.Key} {V : Nat}
@@ -217,9 +217,9 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
   have data₂ : s₂.gpr c.dataReg = A := by rw [dr₂, o₁ _ down, hi.dataR]
   have wr₂' : s₂.wr = s.wr := by rw [wr₂, wr₁]
   have rd₂' : s₂.rd = s.rd := by rw [rd₂, rd₁]
-  refine WP.seq (WP.mono (groupCount_wp hL l13 left₂ hv) fun s₃ ⟨c₃, o₃, m₃, rd₃, wr₃⟩ => ?_)
+  refine WP.seq (WP.mono (groupCount_wp hL.lgG_lt l13 left₂ hv) fun s₃ ⟨c₃, o₃, m₃, rd₃, wr₃⟩ => ?_)
   have base₃ : s₃.gpr sb = B := by rw [o₃ _ (by decide) (by decide), base₂]
-  obtain ⟨s₄, e₄, a₄, b₄, t₄, o₄, m₄, rd₄, wr₄⟩ := xorArgs_ok hL d14 s₃ base₃
+  obtain ⟨s₄, e₄, a₄, b₄, t₄, o₄, m₄, rd₄, wr₄⟩ := xorArgs_ok hL.bufImm d14 s₃ base₃
   refine WP.seq (WP.of_runBlock ⟨s₄, e₄, ?_⟩)
   have mem₄ : s₄.mem = s₂.mem := by rw [m₄, m₃]
   have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂']

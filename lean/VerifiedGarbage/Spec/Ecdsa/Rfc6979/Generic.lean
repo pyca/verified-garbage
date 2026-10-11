@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979
-import VerifiedGarbage.Spec.Ecdsa.Generic
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979
+public import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Deterministic ECDSA over any curve and hash: the contracts, on every target
@@ -25,6 +27,8 @@ implementation's calls and frames use. The function may overwrite its
 arguments passed in memory, where the calling convention allows it
 (`writeArgs`).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdsa.Rfc6979
 

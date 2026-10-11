@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Camellia.Ctr
-import VerifiedGarbage.Spec.Cfb
+module
+
+public import VerifiedGarbage.Spec.Camellia.Ctr
+public import VerifiedGarbage.Spec.Cfb
 
 /-!
 # Camellia-CFB128: the contracts, on every target
@@ -19,6 +21,8 @@ between calls. A partial last segment is the caller's.
 Only the pointers, `rounds` and `n` are public: no part of the chaining
 value may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Camellia
 

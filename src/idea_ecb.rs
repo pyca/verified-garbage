@@ -3,10 +3,10 @@
 //! Key expansion, the decryption subkeys and ECB use verified primitives:
 //! IDEA decrypts with the encryption function under the decryption
 //! subkeys, so both directions run the same ECB primitive. Each operation
-//! accepts complete eight-byte blocks, including empty input. On x86-64 and
-//! AArch64, ECB runs a block at a time in general-purpose registers.
+//! accepts complete eight-byte blocks, including empty input. ECB runs a
+//! block at a time in general-purpose registers.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 
 use crate::arch::idea::{vg_idea_ecb, vg_idea_expand_key, vg_idea_invert_key};
 use crate::zeroize::zeroize;

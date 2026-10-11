@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Seed
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Seed
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # SEED ECB: contracts on every target
@@ -13,6 +15,8 @@ permits writes to ABI argument areas to call block primitives.
 The Rust wrapper will reject input that is not a whole number of 16-byte
 blocks. It will not add or remove padding. Empty ECB input is supported.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Seed
 

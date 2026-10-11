@@ -44,6 +44,9 @@ pub(crate) mod blake2b;
 pub(crate) mod blake2s;
 
 #[rustfmt::skip]
+pub(crate) mod camellia;
+
+#[rustfmt::skip]
 pub(crate) mod chacha20;
 
 #[rustfmt::skip]
@@ -161,6 +164,9 @@ pub(crate) mod hmac_sha512_224;
 pub(crate) mod hmac_sha512_256;
 
 #[rustfmt::skip]
+pub(crate) mod idea;
+
+#[rustfmt::skip]
 pub(crate) mod md5;
 
 #[rustfmt::skip]
@@ -248,6 +254,9 @@ pub(crate) mod rc4;
 pub(crate) mod scrypt;
 
 #[rustfmt::skip]
+pub(crate) mod seed;
+
+#[rustfmt::skip]
 pub(crate) mod sha1;
 
 #[rustfmt::skip]
@@ -264,6 +273,9 @@ pub(crate) mod sm3;
 
 #[rustfmt::skip]
 pub(crate) mod sm4;
+
+#[rustfmt::skip]
+pub(crate) mod sm4_cbc;
 
 #[rustfmt::skip]
 pub(crate) mod triple_des;

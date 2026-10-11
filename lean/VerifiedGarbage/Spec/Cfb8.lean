@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Cbc
+module
+
+public import VerifiedGarbage.Spec.Cbc
 
 /-!
 # CFB with 8-bit segments (NIST SP 800-38A §6.3)
@@ -18,6 +20,8 @@ of `IV` followed by its ciphertext (`next`). The functions implemented in
 assembly take a piece and the block to start from, and leave the one to
 continue from; their contracts are in `Spec/Cfb8/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Cfb8
 

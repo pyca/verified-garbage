@@ -1,7 +1,9 @@
-import VerifiedGarbage.Spec.Sha256
-import VerifiedGarbage.Spec.Sha1
-import VerifiedGarbage.Spec.Md5
-import VerifiedGarbage.Spec.Sha512
+module
+
+public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.Spec.Sha1
+public import VerifiedGarbage.Spec.Md5
+public import VerifiedGarbage.Spec.Sha512
 
 /-!
 # HMAC (RFC 2104; FIPS 198-1)
@@ -15,6 +17,8 @@ digests are sequences of bytes.
 The hash functions it is used with are below; the contracts, for any hash
 function with a streaming implementation, are in `Spec/Hmac/Generic.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Hmac
 

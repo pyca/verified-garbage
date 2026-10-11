@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
-import VerifiedGarbage.Spec.Ecdsa.Secp256k1
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
+public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 
 /-!
 # Deterministic ECDSA over secp256k1 with HMAC-SHA-256: the contracts, on every target
@@ -10,6 +12,8 @@ in the module `ecdsa_secp256k1_sha256`. At most 8 candidates: each is
 unsuitable with probability under `2^-127` (`n > 2^256 - 2^129`), so all 8
 with probability under `2^-1016`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdsa.Rfc6979.Secp256k1Sha256
 

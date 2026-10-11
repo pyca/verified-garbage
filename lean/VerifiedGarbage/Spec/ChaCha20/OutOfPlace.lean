@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.ChaCha20.Contract
+module
+
+public import VerifiedGarbage.Spec.ChaCha20.Contract
 
 /-!
 # ChaCha20 out of place
@@ -21,6 +23,8 @@ arguments, what is public and what is secret (and what `apply_to` may
 leak), and the working space are those of the functions they follow.
 Existing contracts are unchanged.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.ChaCha20
 

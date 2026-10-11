@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Weierstrass
+module
+
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # The curve secp256k1 (SEC 2)
@@ -11,6 +13,8 @@ y`) and its order `n`. The coefficient `a` is `0`. The cofactor is 1. Field
 elements and scalars have 256 bits, so their octet strings have 32 octets
 (SEC 1 §2.3.5, §2.3.7).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Secp256k1
 

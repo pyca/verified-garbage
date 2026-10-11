@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Rsa
+module
+
+public import VerifiedGarbage.Spec.Rsa
 
 /-!
 # RSA key generation (FIPS 186-5 Appendix A.1.3, as BoringSSL does it)
@@ -60,6 +62,8 @@ as in BoringSSL, on how many candidates were rejected and on everything about
 a rejected candidate (only on the rejection, for one too close to `p`), not
 on the primes or the private key.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.RsaKeyGen
 

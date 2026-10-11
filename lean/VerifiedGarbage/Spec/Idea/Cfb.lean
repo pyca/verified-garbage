@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Idea.Cbc
-import VerifiedGarbage.Spec.Cfb
+module
+
+public import VerifiedGarbage.Spec.Idea.Cbc
+public import VerifiedGarbage.Spec.Cfb
 
 /-!
 # IDEA-CFB64: the contracts, on every target
@@ -19,6 +21,8 @@ last segment is the caller's.
 Only the pointers and `n` are public: no part of the chaining value may affect
 timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Idea
 

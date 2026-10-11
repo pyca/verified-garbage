@@ -44,6 +44,9 @@ pub(crate) mod blake2b;
 pub(crate) mod blake2s;
 
 #[rustfmt::skip]
+pub(crate) mod cast5;
+
+#[rustfmt::skip]
 pub(crate) mod chacha20;
 
 #[rustfmt::skip]
@@ -270,6 +273,9 @@ pub(crate) mod sm4;
 
 #[rustfmt::skip]
 pub(crate) mod triple_des;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_cbc;
 
 #[rustfmt::skip]
 pub(crate) mod x25519;

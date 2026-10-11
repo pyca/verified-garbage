@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # AES (FIPS 197)
@@ -28,6 +30,8 @@ The primitives implemented in assembly are the key expansion and GCM's
 counter mode (`Spec/Gcm.lean`); their contracts are in
 `Spec/Aes/Contract.lean` and `Spec/Gcm/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Aes
 

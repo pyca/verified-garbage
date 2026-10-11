@@ -480,6 +480,38 @@ yours to keep:
 
 <td>✅</td>
 
+<td>✅</td>
+
+<td>❌</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>3DES-CFB64</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>3DES-CFB8</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
 <td>❌</td>
 
 <td>❌</td>
@@ -501,6 +533,22 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>3DES-OFB</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -738,7 +786,7 @@ yours to keep:
 
 <td>✅ bitsliced, 8 blocks at a time</td>
 
-<td>❌</td>
+<td>✅ bitsliced, 8 blocks at a time</td>
 
 <td>❌</td>
 
@@ -804,7 +852,7 @@ yours to keep:
 
 <td>❌</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -882,7 +930,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>❌</td>
 
@@ -978,7 +1026,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>❌</td>
 
@@ -1010,7 +1058,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>❌</td>
 

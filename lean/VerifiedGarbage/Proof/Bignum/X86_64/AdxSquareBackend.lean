@@ -39,7 +39,7 @@ theorem raw_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha :
     (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) h₂).isSome=true)
     (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxTri8.setup ca)) h₃).isSome=true) :
     RelCT isa (Two (GoodV ps)) (AdxTiledSquare.rawSquare ca) (fun _ _ => True) := by
-  unfold AdxTiledSquare.rawSquare
+  unfold AdxTiledSquare.rawSquare AdxTiledSquare.diagonal
   refine RelCT.seq (two_post (rawCross_ct pa ha ha1 ha2 hS hR hT) (rawCross_fw pa ha ha1 ha2)) ?_
   refine RelCT.seq (two_piece [.rdi] (pins_goodV ps) hS (setup_ready pa)) ?_
   refine two_taint [.rdi,.r8,.r9,.rbx] ?_ (by taint_decide)
@@ -57,6 +57,41 @@ theorem raw_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha :
   obtain ⟨⟨mi,hg⟩,hv⟩ := h
   exact WP.mono (rawSquare_ok hg.scr hg.rdi hg.hdr L.hZ L.hwN L.hn L.hw hv pa ha ha1 ha2)
     fun _ ⟨_,_,o,k⟩ => AdxTiledProduct.GoodV.of_outside ⟨⟨mi,hg⟩,hv⟩ o k
+
+theorem rawCrossBare_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8) (ha1 : a≠aAcc)
+    (ha2 : a≠aTmp) (L : Layout) (s : State) (h : GoodV ps L s) :
+    WP isa (AdxTiledSquare.rawCrossBare ca) s (GoodV ps L) := by
+  obtain ⟨⟨mi,hg⟩,hv⟩ := h
+  refine WP.mono (rawCrossBare_ok hg.scr hg.rdi hg.hdr hv pa L.hZ L.hw L.hwN L.hn ha ha1 ha2)
+    fun _ ⟨_,_,fr,k⟩ => ?_
+  obtain ⟨_,o₁,o₂⟩ := AdxHeader.frm_split fr
+  exact AdxTiledProduct.GoodV.of_bare ⟨⟨mi,hg⟩,hv⟩ o₁ o₂ k
+
+theorem rawBare_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8) (ha1 : a≠aAcc)
+    (ha2 : a≠aTmp)
+    {h₁ h₂ h₃ : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup ca)) h₁).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) h₂).isSome=true)
+    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxTri8.setup ca)) h₃).isSome=true) :
+    RelCT isa (Two (GoodV ps)) (AdxTiledSquare.rawSquareBare ca) (fun _ _ => True) := by
+  unfold AdxTiledSquare.rawSquareBare AdxTiledSquare.diagonal
+  refine RelCT.seq (two_post (rawCrossBare_ct pa ha ha1 ha2 hS hR hT) (rawCrossBare_fw pa ha ha1 ha2)) ?_
+  refine RelCT.seq (two_piece [.rdi] (pins_goodV ps) hS (setup_ready pa)) ?_
+  refine two_taint [.rdi,.r8,.r9,.rbx] ?_ (by taint_decide)
+  intro L s t hs ht r hr
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact pins_goodV ps L s t hs.1 ht.1 .rdi (by simp)
+  · exact hs.2.1.trans ht.2.1.symm
+  · exact hs.2.2.1.trans ht.2.2.1.symm
+  · exact hs.2.2.2.trans ht.2.2.2.symm
+
+theorem rawBare_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8) (ha1 : a≠aAcc)
+    (ha2 : a≠aTmp) (L : Layout) (s : State) (h : GoodV ps L s) :
+    WP isa (AdxTiledSquare.rawSquareBare ca) s (GoodV ps L) := by
+  obtain ⟨⟨mi,hg⟩,hv⟩ := h
+  exact WP.mono (rawSquareBare_ok hg.scr hg.rdi hg.hdr L.hZ L.hwN L.hn L.hw hv pa ha ha1 ha2)
+    fun _ ⟨_,o₁,_,o₂,k⟩ => AdxTiledProduct.GoodV.of_bare ⟨⟨mi,hg⟩,hv⟩ o₁ o₂ k
 
 end VG.Proof.Bignum.X86_64.AdxTiledSquare
 

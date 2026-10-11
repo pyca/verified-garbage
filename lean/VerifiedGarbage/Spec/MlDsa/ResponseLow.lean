@@ -1,4 +1,8 @@
-import VerifiedGarbage.Spec.MlDsa.ResponseZ
+module
+
+public import VerifiedGarbage.Spec.MlDsa.ResponseZ
+
+@[expose] public section
 
 namespace VG.Spec.MlDsa
 

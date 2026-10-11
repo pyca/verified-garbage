@@ -64,6 +64,7 @@ def decP : StitchName → Prog isa
 /-- Encryption using a prepared context, if supported by the variant. -/
 def encR : StitchName → Prog isa
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.encR
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.encR
   | n => n.enc
 
 /-- Whether the encryption loop named `n` for a prepared context takes all
@@ -71,6 +72,7 @@ the blocks, from 16 on (`Blocks.stitchPart`'s `full`), and not only the
 first `16 ⌊n / 16⌋`. -/
 def fullR : StitchName → Bool
   | .vaesAvx512 => true
+  | .aesniAvx => true
   | _ => false
 
 /-- Whether `seal` calling the loops named `n` ends without calls
