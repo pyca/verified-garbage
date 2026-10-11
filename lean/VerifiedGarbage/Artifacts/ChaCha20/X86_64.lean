@@ -2,6 +2,7 @@ import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorToVerified
 import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
 import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
 import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
@@ -69,6 +70,19 @@ def artifacts : List Artifact := [
     code := Impl.ChaCha20.X86_64.Stream.setNonce
     contract := Spec.ChaCha20.setNonceContract X86_64.abi
     verified := Proof.ChaCha20.X86_64.Stream.setNonce_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.ChaCha20.xorToApi with
+    name := "vg_chacha20_xor_to_avx512"
+    target := X86_64.target
+    doc := Spec.ChaCha20.xorToApi.doc
+      (notes := ["Uses AVX-512: sixteen blocks at a time while at least 1024 bytes remain, as \
+        `vg_chacha20_xor_avx512` does, reading `src` and writing `dst`; the rest, fewer than 1024 \
+        bytes, is copied to `dst` and XORed there by a call of `vg_chacha20_xor_avx512`."])
+    code := Impl.ChaCha20.X86_64.Avx512.xorTo
+    contract := Spec.ChaCha20.xorToContract X86_64.abi 24
+    stack := 24
+    verified := Proof.ChaCha20.X86_64.Avx512To.xorTo_verified
+    features := ["avx", "avx512f"]
+    spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.ChaCha20.X86_64

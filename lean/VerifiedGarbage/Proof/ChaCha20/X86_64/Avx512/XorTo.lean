@@ -36,13 +36,13 @@ def xorToX86_64 : Contract X86_64.isa where
     let dst : Region := ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩
     let buf : Region := ⟨s.gpr .r9, 320⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
-    let stack : Region := below (s.gpr .rsp) 24
+    let stack : Region := ⟨s.gpr .rsp - 24, 24⟩
     s.rd = [src] ∧ s.wr = [state, dst, buf] ∧ s.gpr .r8 = s.gpr .rdx ∧
     state.Disjoint dst ∧ state.Disjoint buf ∧ dst.Disjoint buf ∧
     src.Disjoint state ∧ src.Disjoint dst ∧ src.Disjoint buf ∧
     ret.Disjoint state ∧ ret.Disjoint dst ∧ ret.Disjoint buf ∧
     stack.Disjoint state ∧ stack.Disjoint dst ∧ stack.Disjoint buf ∧
-    (s.gpr .rsi).toNat + (s.gpr .rdx).toNat ≤ 2 ^ 64 ∧ (s.gpr .rcx).toNat + (s.gpr .rdx).toNat ≤ 2 ^ 64
+    (s.gpr .rsi).toNat + (s.gpr .rdx).toNat ≤ 2 ^ 64 ∧ (s.gpr .rcx).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64
   post s s' :=
     bytesAt s'.mem (s.gpr .rcx) (s.gpr .rdx).toNat =
       List.zipWith (· ^^^ ·) (bytesAt s.mem (s.gpr .rsi) (s.gpr .rdx).toNat)
@@ -408,11 +408,11 @@ theorem prologue_ok {s₀ : State} (hp : APre s₀) :
 
 /-! ## The loop -/
 
-theorem loop_ok {s₀ : State} (hp : APre s₀) :
-    WP isa (.seq (.block (entryTo ++ consts ++ ([.alu .cmp .rdx (.imm 1024)] : List Instr)))
-      (.ite .b (.block []) (.loop bodyTo .ae))) s₀ fun s => ∃ t, eL s₀ - 1024 * t < 1024 ∧ LInv s₀ t s := by
+/-- The chunks, while at least 1024 bytes are left. -/
+theorem loop_ok {s₀ : State} (hp : APre s₀) {s₁ : State} (h₁ : LInv s₀ 0 s₁)
+    (hc : s₁.cf = some (decide (eL s₀ < 1024))) :
+    WP isa (.ite .b (.block []) (.loop bodyTo .ae)) s₁ fun s => ∃ t, eL s₀ - 1024 * t < 1024 ∧ LInv s₀ t s := by
   have hL := eL_lt s₀
-  refine WP.seq (WP.mono (prologue_ok hp) fun s₁ ⟨h₁, hc⟩ => ?_)
   refine WP.ite (decide (eL s₀ < 1024)) (by simp [eval, hc]) (fun h => ?_) (fun h => ?_)
   · simp only [decide_eq_true_eq] at h
     exact WP.block_nil (M := isa) ⟨0, by omega, h₁⟩
