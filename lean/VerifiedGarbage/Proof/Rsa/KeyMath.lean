@@ -39,8 +39,8 @@ theorem subMod_dvd {m a b : Nat} (_ha : a < m) (hb : b < m) :
     (m : Int) ∣ (subMod m a b : Int) - (a - b) := by
   unfold subMod
   split
-  · exact ⟨0, by push_cast [Nat.cast_sub (by omega : b ≤ a)]; omega⟩
-  · exact ⟨1, by push_cast [Nat.cast_sub (by omega : b ≤ a + m)]; omega⟩
+  · exact ⟨0, by push_cast [Int.ofNat_sub (by omega : b ≤ a)]; omega⟩
+  · exact ⟨1, by push_cast [Int.ofNat_sub (by omega : b ≤ a + m)]; omega⟩
 
 theorem halfMod_lt {m x : Nat} (hm : m % 2 = 1) (hx : x < m) : halfMod m x < m := by
   unfold halfMod; split <;> omega
@@ -118,7 +118,7 @@ theorem sub_cong {m a x₁ x₂ u v : Nat} (hx₁ : x₁ < m) (hx₂ : x₂ < m)
   obtain ⟨c, hc⟩ := subMod_dvd (m := m) hx₁ hx₂
   have : (subMod m x₁ x₂ : Int) * a - (u - v : Nat) = ((x₁ : Int) * a - u) - ((x₂ : Int) * a - v) + m * (c * a) := by
     rw [show (subMod m x₁ x₂ : Int) = (x₁ - x₂) + m * c by omega]
-    push_cast [Nat.cast_sub hv]; grind
+    push_cast [Int.ofNat_sub hv]; grind
   rw [this]
   exact Int.dvd_add (Int.dvd_sub h₁ h₂) (Int.dvd_mul_right _ _)
 

@@ -19,33 +19,8 @@ open VG.Proof.Scrypt.Memory (bytesAt_add bytesAt_length)
 
 /-- A positive number with no bit in common with its predecessor is a power of
 two. -/
-theorem isPowerOfTwo_of_and : ∀ n : Nat, 0 < n → n &&& (n - 1) = 0 → n.isPowerOfTwo
-  | n, hn, h => by
-    induction n using Nat.strongRecOn with
-    | _ n ih =>
-      obtain ⟨m, rfl | rfl⟩ : ∃ m, n = 2 * m ∨ n = 2 * m + 1 := ⟨n / 2, by omega⟩
-      · -- `n = 2 m`: `2 m &&& (2 m - 1) = 2 (m &&& (m - 1))`.
-        have hm : 0 < m := by omega
-        have e : 2 * m - 1 = 2 * (m - 1) + 1 := by omega
-        have h' : m &&& (m - 1) = 0 := by
-          apply Nat.eq_of_testBit_eq
-          intro i
-          have := congrArg (fun x => x.testBit (i + 1)) h
-          rw [Nat.testBit_and, Nat.zero_testBit, Nat.testBit_succ, Nat.testBit_succ,
-            show 2 * m / 2 = m by omega, show (2 * m - 1) / 2 = m - 1 by omega] at this
-          rw [Nat.testBit_and, Nat.zero_testBit, this]
-        obtain ⟨k, hk⟩ := ih m (by omega) hm h'
-        exact ⟨k + 1, by rw [hk, Nat.pow_succ, Nat.mul_comm]⟩
-      · -- `n = 2 m + 1`: `n &&& (n - 1) = 2 m`, so `m = 0`.
-        have h' : m = 0 := by
-          apply Nat.eq_of_testBit_eq
-          intro i
-          have := congrArg (fun x => x.testBit (i + 1)) h
-          simp only [Nat.add_sub_cancel] at this
-          rw [Nat.testBit_and, Nat.zero_testBit, Nat.testBit_succ, Nat.testBit_succ,
-            show (2 * m + 1) / 2 = m by omega, show 2 * m / 2 = m by omega, Bool.and_self] at this
-          rw [Nat.zero_testBit, this]
-        exact ⟨0, by omega⟩
+theorem isPowerOfTwo_of_and (n : Nat) (hn : 0 < n) (h : n &&& (n - 1) = 0) : n.isPowerOfTwo :=
+  (Nat.and_sub_one_eq_zero_iff_isPowerOfTwo (Nat.pos_iff_ne_zero.1 hn)).1 h
 
 theorem valid_pow {N r p dk : Nat} (h : valid N r p dk) : N.isPowerOfTwo :=
   isPowerOfTwo_of_and N (by have := h.1; omega) h.2.1
