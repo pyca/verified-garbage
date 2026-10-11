@@ -14,7 +14,12 @@
 //! last segment: CFB encryption of a zero block is `CIPH_K` of the block to
 //! continue from, whose first bytes it XORs into the rest of the input.
 
-#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::arch::cast5_cfb::{vg_cast5_cfb64_decrypt, vg_cast5_cfb64_encrypt};
 use crate::cast5_ecb::Cast5Ecb;
@@ -30,7 +35,7 @@ pub struct Cast5Cfb64 {
 #[cfg(target_arch = "x86_64")]
 type Cfb = unsafe extern "sysv64" fn(*const [u8; 128], usize, *mut [u8; 8], *mut [u8; 8], usize);
 /// The signature of `vg_cast5_cfb64_encrypt` and `vg_cast5_cfb64_decrypt`.
-#[cfg(any(target_arch = "x86", target_arch = "arm"))]
+#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
 type Cfb = unsafe extern "C" fn(*const [u8; 128], usize, *mut [u8; 8], *mut [u8; 8], usize);
 
 impl Cast5Cfb64 {
