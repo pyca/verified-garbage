@@ -14,7 +14,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.Secp256k1.curve) : Li
       formulas of Renes, Costello and Batina (Algorithm 1), including for a = 0. \
       Inversions use divsteps. Branches and memory addresses depend only on pointers and loop counters."])
     code := Impl.EcKey.X86_64.publicKeySecp256k1
-    contract := Spec.EcKey.Secp256k1.inst.publicKeyContract X86_64.abi
+    contract := Spec.EcKey.Secp256k1.inst.publicKeyContract X86_64.abi 8
+    stack := 8
     verified := Proof.EcKey.X86_64.Secp256k1.pk_verified h.law h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

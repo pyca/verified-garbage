@@ -127,7 +127,7 @@ theorem sign_x86 (hL : Law Spec.P256.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP256 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  sign_x86_of (p256_ok hI) hL (p256_tbls hL hT) (fun h => absurd h (by decide)) (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
+  sign_x86_of (p256_ok hI) hL (p256_tbls hL hT) ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩ (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
     (by lit_decide) (by lit_decide) s hs
 
 /-- `signP256` without its displacements, as a literal of shared blocks
