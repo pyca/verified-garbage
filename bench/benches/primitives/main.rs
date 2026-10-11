@@ -32,7 +32,10 @@ mod aes_xts;
 mod argon2;
 mod blake2b;
 mod blake2s;
+mod blowfish_cbc;
+mod blowfish_cfb;
 mod blowfish_ecb;
+mod blowfish_ofb;
 mod camellia_cbc;
 mod camellia_cfb;
 mod camellia_ctr;
@@ -363,7 +366,10 @@ const BENCHES: &[Bench] = &[
     (aes_xts::USES, aes_xts::bench),
     (blake2b::USES, blake2b::bench),
     (blake2s::USES, blake2s::bench),
+    (blowfish_cbc::USES, blowfish_cbc::bench),
+    (blowfish_cfb::USES, blowfish_cfb::bench),
     (blowfish_ecb::USES, blowfish_ecb::bench),
+    (blowfish_ofb::USES, blowfish_ofb::bench),
     (camellia_cbc::USES, camellia_cbc::bench),
     (camellia_cfb::USES, camellia_cfb::bench),
     (camellia_ctr::USES, camellia_ctr::bench),
