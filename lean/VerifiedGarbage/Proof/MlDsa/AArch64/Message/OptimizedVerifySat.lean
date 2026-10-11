@@ -23,7 +23,7 @@ theorem vPre_spec {p : Params} {s : State} (h : VPre p s) :
   · rw [h.rd]; rfl
   · rw [h.rd]; rfl
 
-private def baseSat (p : Params) : State where
+def baseSat (p : Params) : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x1 => 0x3000 | .x3 => 0x3100 | .x5 => 0x3200 | .x6 => 0x10000
     | _ => 0
