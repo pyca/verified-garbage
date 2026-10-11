@@ -23,30 +23,39 @@ theorem passOffset_signExtend (component : Nat) (hc : component < 3) (direction 
   · exact (h component hc).1
   · exact (h component hc).2
 
+theorem stepImm_signExtend (direction : Direction) :
+    (if direction = .encrypt then (8 : BitVec 32) else BitVec.ofInt 32 (-8)).signExtend 64 =
+      stepVal direction := by
+  cases direction <;> decide
+
 theorem passStart_ok (component : Nat) (hc : component < 3) (direction : Direction)
     (s : State) (hread : InRegions (s.rd ++ s.wr) (savedKeyAddr s) 8)
-    (hwrite : InRegions s.wr (countAddr s) 8) :
+    (hwrite : InRegions s.wr (countAddr s) 8) (hstep : InRegions s.wr (stepAddr s) 8) :
     ∃ s', runBlock isa (passStart component direction) s = some s' ∧
       s'.gpr .rdi = s.mem.readW (savedKeyAddr s) 64 +
         BitVec.ofNat 64 (passOffset component direction) ∧
-      s'.mem = s.mem.writeW (countAddr s) (BitVec.ofNat 64 16) ∧
+      s'.mem = (s.mem.writeW (countAddr s) (BitVec.ofNat 64 16)).writeW (stepAddr s)
+        (stepVal direction) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ≠ .rax → r ≠ .rdi → s'.gpr r = s.gpr r) := by
   unfold savedKeyAddr at hread
   unfold countAddr at hwrite
+  unfold stepAddr at hstep
   have h48 : BitVec.ofInt 64 (Int.ofNat 48) = BitVec.ofNat 64 48 := rfl
   have h56 : BitVec.ofInt 64 (Int.ofNat 56) = BitVec.ofNat 64 56 := rfl
+  have h448 : BitVec.ofInt 64 (Int.ofNat 448) = BitVec.ofNat 64 448 := rfl
   refine ⟨_, by
     simp only [passStart, imm, runBlock_cons, runStep_some, runBlock_nil, exec,
-      execAlu, readSrc, State.ea, memOp, h48, h56, State.load64, State.store64,
+      execAlu, readSrc, State.ea, memOp, h48, h56, h448, State.load64, State.store64,
       gpr_setReg, mem_setReg, rd_setReg, wr_setReg, gpr_arithFlags, mem_arithFlags,
       rd_arithFlags, wr_arithFlags, reduceCtorEq, ite_false, ite_true,
-      hread, hwrite, Option.map_some, Option.bind_some]
+      hread, hwrite, hstep, Option.map_some, Option.bind_some]
     rfl, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ite_false, ite_true]
     exact congrArg (s.mem.readW (savedKeyAddr s) 64 + ·)
       (passOffset_signExtend component hc direction)
-  · rfl
+  · simp only [stepImm_signExtend]
+    rfl
   · rfl
   · rfl
   · intro r hrax hrdi
