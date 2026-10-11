@@ -31,8 +31,8 @@ def artifacts : List Artifact := [
       computes with a comb rather than the ladder: the scalar's 112 signed radix-16 digits select, in \
       constant time (reading every entry), entries `[m 256^j] B` (`m ≤ 8`) of 56 tables in the \
       static `VG_X448_COMB`, added to two projective accumulators with RFC 8032's complete addition \
-      (four pairs of the field products in AdvSIMD, each interleaved with independent scalar \
-      products), then `16 A + B` (five calls of `vg_ed448_r56_point_add`) and `Y² / X²`. Field \
+      (a call of `vg_ed448_r56_comb_base`), then `16 A + B` (five calls of \
+      `vg_ed448_r56_point_add`) and `Y² / X²`. Field \
       elements are eight 56-bit limbs, multiplied as `vg_x448`'s are. The function saves its caller's \
       callee-saved registers in `scratch`."])
     consts := Impl.X448.AArch64.Base.combConsts

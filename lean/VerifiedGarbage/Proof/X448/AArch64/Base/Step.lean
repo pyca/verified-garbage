@@ -99,12 +99,36 @@ structure StepInv (n : Nat) (s₀ : State) (base : Addr) (k j : Nat) (s : State)
   wr : s.wr = s₀.wr
   mem : Outside2 base 64 2816 ACC 1152 s₀.mem s.mem
   tbl : TblAt s base (s₀.syms combSym)
+  keep : ∀ r, r ∉ .x1 :: .x19 :: VG.Proof.X448.AArch64.Fast.fclob → s.gpr r = s₀.gpr r
+
+/-- What every phase after the setup keeps. -/
+structure Frame (s₀ : State) (base : Addr) (s : State) : Prop where
+  scr : Scr s base
+  env : BEnv s.mem base
+  zero : ∀ w < 8, limbs s.mem base (slot (19 : Index).val) w = 0
+  lr : s.gpr .x30 = s₀.gpr .x30
+  out : s.gpr .x20 = s₀.gpr .x20
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  mem : Outside2 base 64 2816 ACC 1152 s₀.mem s.mem
+
+theorem StepInv.frame {n : Nat} {s₀ s : State} {base : Addr} {k j : Nat} (h : StepInv n s₀ base k j s) :
+    Frame s₀ base s := ⟨h.scr, h.env, h.zero, h.lr, h.out, h.rd, h.wr, h.mem⟩
+
+/-- What the comb needs before its accumulators are set: the working space, every slot's limbs
+below `Ib`, slot 19 zero, the bits of `k` and the tables. -/
+structure CombPre (n : Nat) (base : Addr) (k : Nat) (s : State) : Prop where
+  scr : Scr s base
+  env : BEnv s.mem base
+  zero : ∀ w < 8, limbs s.mem base (slot (19 : Index).val) w = 0
+  bits : Bits n base k s.mem
+  tbl : TblAt s base (s.syms combSym)
 
 /-! ## One step -/
 
 open VG.Proof.X448 (addPt addPt_rep basePt negAff baseEntry_ok nib_lt mag_lt sdig)
 
-theorem step_eq (n : Nat) : VG.Impl.X448.AArch64.Base.stepN n =
+theorem step_eq : VG.Impl.X448.AArch64.Base.stepR =
     .seq (.block digits) (.seq (.block select) (.block (
       negate (slot (6 : Index).val) (BITS + 4) (slot (10 : Index).val) ++
       (addAffine (slot (0 : Index).val) (slot (1 : Index).val) (slot (2 : Index).val)
@@ -112,8 +136,8 @@ theorem step_eq (n : Nat) : VG.Impl.X448.AArch64.Base.stepN n =
       (negate (slot (8 : Index).val) BITS (slot (10 : Index).val) ++
       (addAffine (slot (3 : Index).val) (slot (4 : Index).val) (slot (5 : Index).val)
         (slot (8 : Index).val) (slot (9 : Index).val) ++
-      ([.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 n] : List Instr))))))) := by
-  simp only [VG.Impl.X448.AArch64.Base.stepN, List.append_assoc]; rfl
+      ([.addImm .x .x19 .x19 1, .sub .x .x9 .x19 .x30] : List Instr))))))) := by
+  simp only [VG.Impl.X448.AArch64.Base.stepR, List.append_assoc]; rfl
 
 /-- The selected scalar slots outside `entrySlots` are kept by a selection. -/
 theorem Selected.outside2 {base : Addr} {j ao ae : Nat} {s t : State} (h : Selected base j ao ae s t) :
@@ -139,14 +163,17 @@ theorem TblAt.of_outside2 {s t : State} {base T : Addr} (h : TblAt s base T)
     TblAt t base T :=
   h.of_far hrw fun x hx => hm x (by omega) (by simp only [ACC]; omega)
 
+theorem notin_keep {l : List Reg} (h : ∀ q ∈ l, q ∈ .x1 :: .x19 :: VG.Proof.X448.AArch64.Fast.fclob)
+    {r : Reg} (hr : r ∉ .x1 :: .x19 :: VG.Proof.X448.AArch64.Fast.fclob) : r ∉ l := fun e => hr (h r e)
+
 theorem step_ok {n : Nat} (hn : n ≤ 57) {s₀ s : State} {base : Addr} {k j : Nat}
-    (h : StepInv n s₀ base k j s) (hj : j < n) (hsy : s.syms = s₀.syms) :
-    WP isa (VG.Impl.X448.AArch64.Base.stepN n) s fun t =>
+    (h : StepInv n s₀ base k j s) (hj : j < n) (hsy : s.syms = s₀.syms) (h30 : s₀.gpr .x30 = BitVec.ofNat 64 n) :
+    WP isa VG.Impl.X448.AArch64.Base.stepR s fun t =>
       (t.gpr .x9 != 0) = decide (j + 1 ≠ n) ∧ StepInv n s₀ base k (j + 1) t := by
-  obtain ⟨_, hs, hb, hz, hc, hbits, hodd, heven, hlr, hout, hrd, hwr, hmem, htbl⟩ := h
+  obtain ⟨_, hs, hb, hz, hc, hbits, hodd, heven, hlr, hout, hrd, hwr, hmem, htbl, hkeep⟩ := h
   have no := nib_lt k (2 * j + 1)
   have ne := nib_lt k (2 * j)
-  rw [step_eq n]
+  rw [step_eq]
   -- The digits.
   refine WP.seq (WP.mono_syms (digits_ok hs hn hj hc hbits) fun t1 ⟨d1, m1⟩ sy1 => ?_)
   have hs1 : Scr t1 base := hs.of_keeps d1.keeps (by decide)
@@ -206,7 +233,10 @@ theorem step_ok {n : Nat} (hn : n ≤ 57) {s₀ s : State} {base : Addr} {k j : 
   -- The counter.
   have hc6 : t6.gpr .x19 = BitVec.ofNat 64 j := by
     rw [k6.regs.1 .x19 (by decide), k5.regs.1 .x19 (by decide)]; exact hc4
-  refine WP.mono (next_ok t6 hn hj hc6) fun t7 ⟨c7, n7, k7, m7⟩ => ⟨n7, ?_⟩
+  have h6 : t6.gpr .x30 = BitVec.ofNat 64 n := by
+    rw [k6.regs.1 .x30 (by decide), k5.regs.1 .x30 (by decide), k4.regs.1 .x30 (by decide),
+      k3.regs.1 .x30 (by decide), h2.2.2.1 .x30 (by decide), d1.keeps.1 .x30 (by decide), hkeep .x30 (by decide), h30]
+  refine WP.mono (nextR_ok t6 hn hj hc6 h6) fun t7 ⟨c7, n7, k7, m7⟩ => ⟨n7, ?_⟩
   have hs7 : Scr t7 base := hs6.of_keeps k7 (by decide)
   have z6 : ∀ w < 8, limbs t6.mem base (slot (19 : Index).val) w = 0 := fun w hw => by
     rw [s6 19 (by decide) w hw]; exact z5 w hw
@@ -254,7 +284,7 @@ theorem step_ok {n : Nat} (hn : n ≤ 57) {s₀ s : State} {base : Addr} {k j : 
   have p7B : pt (EV t7.mem base) 3 4 5 = pt (EV t6.mem base) 3 4 5 := by simp only [pt, m7]
   refine ⟨by omega, hs7, by rw [m7]; exact b6, by rw [m7]; exact z6, c7,
     by rw [m7]; exact Bits.of_fkeep hn hs5 (Bits.of_fkeep hn hs4 (Bits.of_fkeep hn hs3 (Bits.of_fkeep hn hs2 bits2 k3) k4) k5) k6,
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [p7A, pA]
     have := addPt_rep hodd (baseEntry_ok j (nib k (2 * j + 1)) (by omega) no)
     rw [acc_step] at this
@@ -280,5 +310,35 @@ theorem step_ok {n : Nat} (hn : n ≤ 57) {s₀ s : State} {base : Addr} {k j : 
       h2.2.2.2.2, d1.keeps.2.2]) ?_
     rw [m7, ← m1]
     exact (((h2.outside2.trans k3.mem).trans k4.mem).trans k5.mem).trans k6.mem
+  · intro r hr
+    rw [k7.1 r (notin_keep (by decide) hr), k6.regs.1 r (notin_keep (by decide) hr),
+      k5.regs.1 r (notin_keep (by decide) hr), k4.regs.1 r (notin_keep (by decide) hr),
+      k3.regs.1 r (notin_keep (by decide) hr), h2.2.2.1 r (notin_keep (by decide) hr),
+      d1.keeps.1 r (notin_keep (by decide) hr)]
+    exact hkeep r hr
+
+/-! ## The steps -/
+
+theorem loop_ok {n : Nat} (hn : n ≤ 57) {s₀ : State} {base : Addr} {k : Nat}
+    (h30 : s₀.gpr .x30 = BitVec.ofNat 64 n) :
+    ∀ m, ∀ s, 1 ≤ m → m ≤ n → StepInv n s₀ base k (n - m) s → s.syms = s₀.syms →
+      WP isa (.loop VG.Impl.X448.AArch64.Base.stepR (.nonzero .x .x9)) s fun t =>
+        StepInv n s₀ base k n t := by
+  intro m s h1 h2 hi hsy
+  refine WP.loop (M := isa) (body := VG.Impl.X448.AArch64.Base.stepR) (c := .nonzero .x .x9)
+    (Q := fun t => StepInv n s₀ base k n t)
+    (fun m (s : State) => 1 ≤ m ∧ m ≤ n ∧ StepInv n s₀ base k (n - m) s ∧ s.syms = s₀.syms) ?_ m s
+    ⟨h1, h2, hi, hsy⟩
+  intro m s ⟨h1, h2, hi, hsy⟩
+  refine WP.mono_syms (step_ok hn hi (by omega) hsy h30) fun t ⟨hz, ht⟩ tsy => ?_
+  simp only [eval, State.read, BitVec.setWidth_eq, hz]
+  by_cases hm : m = 1
+  · subst hm
+    rw [show n - 1 + 1 = n by omega] at ht ⊢
+    exact .inl ⟨by simp, ht⟩
+  · refine .inr ⟨congrArg some (decide_eq_true (by omega)), m - 1, by omega, by omega, by omega, ?_,
+      tsy.trans hsy⟩
+    rw [show n - (m - 1) = n - m + 1 by omega]
+    exact ht
 
 end VG.Proof.X448.AArch64.Base

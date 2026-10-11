@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
 import VerifiedGarbage.Proof.Ed448.AArch64.Base.Setup
 import VerifiedGarbage.Proof.Ed448.AArch64.Base.Encode
-import VerifiedGarbage.Proof.X448.AArch64.Base.Loop
+import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
 import VerifiedGarbage.Proof.Ed448.Group.Projective
 import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 
@@ -10,7 +10,8 @@ import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 
 Untrusted: everything here is checked by Lean. The correctness of
 `vg_ed448_scalar_base` against `scalarBaseLocal` (`BaseContract.lean`): the
-comb of 57 tables leaves `R` representing `[k]B` (`Point56.combineCall_ok`), whose
+comb of 57 tables, by a call of `vg_ed448_r56_comb_base` (`CombBase.call_ok`), and `16 A + C`
+(`Point56.combineCall_frame`) leave `R` representing `[k]B`, whose
 encoding is `encodePoint (pointMul k B)` since both represent the same affine
 point (`encodePoint_rep`); every write but the result's is in the working
 space, so the scalar is read unchanged, and the callee-saved registers are
@@ -21,7 +22,6 @@ namespace VG.Proof.Ed448.AArch64
 
 open VG VG.AArch64 VG.Impl.Ed448.AArch64
 open VG.Proof.X448.AArch64 (Scr Keeps off word Outside Outside2 Saved ofs far)
-open VG.Proof.X448.AArch64.Base (loop_ok combine_ok)
 open VG.Proof.Ed448.AArch64.Base (setup_ok encode_ok)
 open VG.Impl.X448.AArch64 (slot ACC)
 open VG.Spec.Ed448 (bytesAt decodeLE)
@@ -57,10 +57,12 @@ theorem scalarBase_correct {s : State} (hp : scalarBaseLocal.pre s) :
   set k := decodeLE kb
   unfold scalarBase
   refine WP.seq (WP.mono (setup_ok hbase hws hn rfl hkr hkd htb) fun s1 R => ?_)
-  refine WP.seq (WP.mono (loop_ok (by decide) (s₀ := s1) 57 s1 (by decide) le_rfl
-    (by rw [Nat.sub_self]; exact R.inv) rfl) fun s2 h2 => ?_)
-  refine WP.seq (WP.mono (Point56.combineCall_ok (decodeLE_57_lt kb (by simp [kb, VG.Proof.Ed448.bytesAt_eq, Spec.X25519.bytesAt])) h2)
-    fun s3 ⟨f3, r3⟩ => ?_)
+  have f1 : VG.Proof.X448.AArch64.Base.Frame s1 base s1 :=
+    ⟨R.pre.scr, R.pre.env, R.pre.zero, rfl, rfl, rfl, rfl, Outside2.refl _ _ _ _ _ _⟩
+  refine WP.seq (WP.mono (CombBase.call_ok (Or.inr rfl) f1 R.pre) fun s2 ⟨f2, a2, c2⟩ => ?_)
+  refine WP.seq (WP.mono (Point56.combineCall_frame f2 a2 c2) fun s3 ⟨f3, r3⟩ => ?_)
+  rw [VG.Proof.X448.comb_total (decodeLE_57_lt kb (by simp [kb, VG.Proof.Ed448.bytesAt_eq,
+    Spec.X25519.bytesAt]))] at r3
   -- The encoding.
   have out3 : s3.gpr .x20 = s.gpr .x0 := by rw [f3.out, R.out]
   have wr3 : s3.wr = s.wr := by rw [f3.wr, R.wr]
