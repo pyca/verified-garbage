@@ -4,7 +4,7 @@
 //! every length up to 20 blocks, partial last blocks included, for keys of
 //! the shortest, a middle and the longest length.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use verified_garbage::blowfish_ecb::BlowfishEcbEncryptor;
 use verified_garbage::blowfish_ofb::{BlowfishOfb, InvalidKeyLength};
