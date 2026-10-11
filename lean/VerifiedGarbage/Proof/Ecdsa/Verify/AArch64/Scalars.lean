@@ -55,22 +55,23 @@ structure Mid (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (s 
 
 theorem scalars_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.scalars c =
     .seq (.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT)))
-      (.block (Impl.Mont.AArch64.mul c.MN' (c.sl SM') (c.sl PT) (c.sl R2N))) := rfl
+      (c.mulNP (c.sl SM') (c.sl PT) (c.sl R2N)) := rfl
 
 theorem uv_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.uv c =
-    .seq (.block (Impl.Mont.AArch64.mul c.MN' (c.sl EM') (c.sl D) (c.sl R2N)))
-    (.seq (.block (Impl.Mont.AArch64.mul c.MN' (c.sl RM') (c.sl K) (c.sl R2N)))
-    (.seq (.block (Impl.Mont.AArch64.mul c.MN' (c.sl UM) (c.sl EM') (c.sl ACC)))
-    (.seq (.block (Impl.Mont.AArch64.mul c.MN' (c.sl VM) (c.sl RM') (c.sl ACC)))
-    (.seq (.block (Impl.Mont.AArch64.mul c.MN' (c.sl U) (c.sl UM) (c.sl ONE)))
-      (.block (Impl.Mont.AArch64.mul c.MN' (c.sl V) (c.sl VM) (c.sl ONE))))))) := rfl
+    .seq (c.mulNP (c.sl EM') (c.sl D) (c.sl R2N))
+    (.seq (c.mulNP (c.sl RM') (c.sl K) (c.sl R2N))
+    (.seq (c.mulNP (c.sl UM) (c.sl EM') (c.sl ACC))
+    (.seq (c.mulNP (c.sl VM) (c.sl RM') (c.sl ACC))
+    (.seq (c.mulNP (c.sl U) (c.sl UM) (c.sl ONE))
+      (c.mulNP (c.sl V) (c.sl VM) (c.sl ONE)))))) := rfl
 
 /-- One multiplication modulo `n`, on numbered slots: it keeps the modulus and
 every other slot but the temporary area's. -/
 theorem mulN_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hMN : ModOkA c.MN' size c.C.n s.mem base) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
-    (hB : sv c base s b < c.C.n) (hoN : o ≠ MN) :
-    WP isa (.block (Impl.Mont.AArch64.mul c.MN' (c.sl o) (c.sl a) (c.sl b))) s fun s' =>
+    (hB : sv c base s b < c.C.n) (hoN : o ≠ MN)
+    (hoT : o ≠ TMP := by decide) (haT : a ≠ TMP := by decide) (hbT : b ≠ TMP := by decide) :
+    WP isa (c.mulNP (c.sl o) (c.sl a) (c.sl b)) s fun s' =>
       Scr s' base size ∧ ModOkA c.MN' size c.C.n s'.mem base ∧
       (∀ r, r ∉ clob c.n → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Unch base (slW c [o, TMP]) s.mem s'.mem ∧
@@ -79,7 +80,7 @@ theorem mulN_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
       sv c base s' o * 2 ^ (64 * c.n) % c.C.n = sv c base s a * sv c base s b % c.C.n := by
   have h7 := hc.n10
   have hn := hs.nowrap
-  exact WP.mono (slMul_ok (MN'_n c) h7 hs hMN (MN'_A c) ho ha hb hB) fun s' ⟨k, lt, e⟩ =>
+  exact WP.mono (slMulN_ok hc hs hMN ho ha hb hoT haT hbT hB) fun s' ⟨k, lt, e⟩ =>
     ⟨k.scr hs, hMN.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k (Ne.symm hoN) (by decide),
       k.gpr, k.rd, k.wr, unch_slots (MN'_n c) rfl k.unch (l := [o, TMP]) (by simp) (by simp),
       fun hi h₁ h₂ => sv_keep (MN'_n c) rfl h7 hn k hi h₁ h₂, lt, e⟩

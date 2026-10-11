@@ -79,11 +79,12 @@ structure BaseCfgOk (c : Cfg) : Prop where
   inv_p : InvOk c.invP c.C.p
   inv_n : c.fastN = true → InvSound c.C.n ∧ InvOk c.invN c.C.n
   chain_n : c.fastN = false → chainCheck (slide (c.C.n - 2)).1 (slide (c.C.n - 2)).2 (c.C.n - 2) = true
-  /-- If the products modulo `p` are calls of a function (`Mont.callOf`), it
-  computes them modulo `p`; those modulo `n` are inline. -/
+  /-- If the products modulo `p` or `n` are calls of a function
+  (`Mont.callOf`), it computes them modulo `p` or `n`. -/
   call_p : ∀ f m', Mont.callOf c.MP' = some (f, m') → m' = c.C.p ∧
     VG.Proof.Weierstrass.AArch64.Mont.ModOk c.n m'
-  call_n : Mont.callOf c.MN' = none
+  call_n : ∀ f m', Mont.callOf c.MN' = some (f, m') → m' = c.C.n ∧
+    VG.Proof.Weierstrass.AArch64.Mont.ModOk c.n m'
   /-- The powers' working slots and temporary area (`invTbl`, `invTmp`):
   `CT`'s and `TMP`'s, or, for inversions as functions (`inverse`), past
   `CT`, with room for `x19` after the slots, in the working space, and the

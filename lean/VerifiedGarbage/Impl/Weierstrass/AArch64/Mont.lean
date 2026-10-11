@@ -178,16 +178,66 @@ def exitCode (n m : Nat) : List Instr :=
   mLoadCode n m ++ csubM n (lowF n) (win n n n) (mRegs n m) ++
     storesR (roF n) (lowF n) 0 ++ restoreCode n
 
-/-- `vg_<curve>_mul_mod_<p|n>`: the entry, the rounds, the exit. -/
-def mulFn (n m : Nat) : Prog isa :=
+/-- `vg_<curve>_mul_mod_<p|n>` for P-384's sparse `p` or a friendly
+modulus: the entry, the rounds, the exit. -/
+def mulFnS (n m : Nat) : Prog isa :=
   .seq (.block zextCode)
     (.block (entryRest n m ++ (List.range n).flatMap (roundF n m) ++ exitCode n m))
 
+/-! ## A general modulus
+
+For a modulus whose reduction multiplies by its words (such as a curve's
+order `n`), the function is the inline product (`mulR`) through pointers:
+it writes the modulus's words into its own working space at `moAt n`, where
+the inline product reads them, and computes `ro = ws + o`, `ra = ws + a` and
+`rb = ws + b` in callee-saved registers, which it saves with those the
+product writes. -/
+
+/-- The pointers to `[a]`, `[b]` and `[o]`. -/
+def raG : Reg := .x26
+def rbG : Reg := .x27
+def roG : Reg := .x28
+
+/-- Whether the function's products take the general form: neither P-384's
+sparse `p` nor a friendly modulus. -/
+def general (n m : Nat) : Bool :=
+  match (mod n m).red with
+  | .general => !sparseOk n m
+  | .friendly _ => false
+
+/-- The callee-saved registers the general form writes. -/
+def savedG (n : Nat) : List Reg :=
+  ((acc n ++ dRegs n ++ [raG, rbG, roG]).filter fun r => r ∈ preserved).eraseDups
+
+/-- The registers saved in their lanes. -/
+def saveCodeG (n : Nat) : List Instr :=
+  (savedG n).zipIdx.map fun (r, i) => .vop (.ins .d2 (slot i).1 (slot i).2 r)
+
+/-- The registers restored from their lanes. -/
+def restoreCodeG (n : Nat) : List Instr :=
+  (savedG n).zipIdx.map fun (r, i) => .umov .x r (slot i).1 (slot i).2
+
+/-- The pointer additions. -/
+def ptrsG : List Instr := [.add .x roG .x0 .x1, .add .x raG .x0 .x2, .add .x rbG .x0 .x3]
+
+/-- The modulus's words into the working space at `moAt n`, through `x1`. -/
+def setMod (n m : Nat) : List Instr :=
+  (List.range n).flatMap fun j => const64 .x1 (BitVec.ofNat 64 (m >>> (64 * j))) ++ [st .x1 (moAt n + 8 * j)]
+
+/-- The general form: the registers saved, the pointers, the modulus, the
+inline product, the registers restored. -/
+def mulFnG (n m : Nat) : Prog isa :=
+  .seq (.block zextCode)
+    (.block (saveCodeG n ++ ptrsG ++ setMod n m ++ mulR (mod n m) raG rbG roG 0 0 0 ++ restoreCodeG n))
+
+/-- `vg_<curve>_mul_mod_<p|n>`. -/
+def mulFn (n m : Nat) : Prog isa := if general n m then mulFnG n m else mulFnS n m
+
 open Spec.Weierstrass.Mont in
 /-- The moduli whose products are functions on AArch64: P-384's and P-521's
-`p`. A product of four words is short enough inline that calls do not pay,
-and the products modulo `n` are few. -/
-def fns : List Modulus := [p384p, p521p]
+`p`, and P-521's `n`, whose inline product is long. A product of four words
+is short enough inline that calls do not pay. -/
+def fns : List Modulus := [p384p, p521p, p521n]
 
 /-- The function computing the products of the modulus `M` (its name and its
 modulus), if any: one of `fns` of `M.n` words and `M.minv`, if `M`'s

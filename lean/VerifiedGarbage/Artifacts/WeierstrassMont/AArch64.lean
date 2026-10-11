@@ -18,6 +18,15 @@ def notes : List String := ["The function zero-extends the offsets, saves the ca
   conditional subtraction against the modulus, built in registers (`movz`/`movk`), is selected by \
   `csel`."]
 
+/-- How the functions for a general modulus work. -/
+def notesG : List String := ["The function zero-extends the offsets, saves the callee-saved \
+  registers it writes in lanes of `v16`–`v19`, writes the modulus's words (`movz`/`movk`) into its \
+  own working space, and runs the inline product of the curve's code through pointers to the \
+  operands and the result: word-by-word Montgomery multiplication (CIOS, with `mul` and `umulh`, \
+  the accumulator in registers, four words of `[b]` in registers and the others loaded), each \
+  reduction step multiplying the accumulator's low word by `-m⁻¹ mod 2⁶⁴` and adding that \
+  multiple of the modulus, then a final conditional subtraction selected by `csel`."]
+
 def artifacts : List Artifact := [
   { p384p.mulApi with
     target := AArch64.target
@@ -32,6 +41,13 @@ def artifacts : List Artifact := [
     code := mulFn p521p.k p521p.m
     contract := p521p.mulContract AArch64.abi
     verified := p521p_mul_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { p521n.mulApi with
+    target := AArch64.target
+    doc := p521n.mulApi.doc (notes := notesG)
+    code := mulFn p521n.k p521n.m
+    contract := p521n.mulContract AArch64.abi
+    verified := p521n_mul_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }
 ]
 

@@ -22,7 +22,7 @@ variable {c : Cfg}
 theorem middle_eq (c : Cfg) : c.middle = .seq (.block (mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
     (.seq (.block (mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
     (.seq (.block (add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO)))
-    (.seq (.block (mul c.MN' (c.sl KM) (c.sl K) (c.sl R2N)))
+    (.seq (c.mulNP (c.sl KM) (c.sl K) (c.sl R2N))
     (.block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR)))))) := rfl
 
 /-- What `middle`'s field operations leave. -/
@@ -59,7 +59,7 @@ theorem midOps_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
     WP isa (.seq (.block (mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
       (.seq (.block (mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
       (.seq (.block (add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO)))
-      (.seq (.block (mul c.MN' (c.sl KM) (c.sl K) (c.sl R2N))) rest)))) s Q := by
+      (.seq (c.mulNP (c.sl KM) (c.sl K) (c.sl R2N)) rest)))) s Q := by
   have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
@@ -101,8 +101,8 @@ theorem midOps_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
       sv_keep (MP'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide),
       sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)]
   -- `KM = K · R² mod n`.
-  refine WP.seq (WP.mono (slMul_ok (MN'_n c) h7 hs₃ kN₃ (MN'_A c) (o := KM) (a := K) (b := R2N) (by decide)
-    (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega))) fun s₄ ⟨k₄, lt₄, e₄⟩ => h s₄ ?_)
+  refine WP.seq (WP.mono (slMulN_ok hc hs₃ kN₃ (o := KM) (a := K) (b := R2N) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega))) fun s₄ ⟨k₄, lt₄, e₄⟩ => h s₄ ?_)
   have X₄ : sv c base s₄ X = sv c base s₂ X := by
     rw [sv_keep (MN'_n c) rfl h7 hn k₄ (by decide) (by decide) (by decide),
       sv_keep (MN'_n c) rfl h7 hn k₃ (by decide) (by decide) (by decide)]
