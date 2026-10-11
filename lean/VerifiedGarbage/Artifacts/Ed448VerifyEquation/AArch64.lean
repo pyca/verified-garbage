@@ -20,7 +20,7 @@ def artifacts : List Artifact := [
       S < L, and the comparison) are accumulated in `x20`, 0 exactly when all pass. Decodes A \
       with RFC 8032's square root (X448's addition chain up to z^(2^223 - 1), then 223 \
       squarings) and negates it. Computes [S]B with `vg_ed448_scalar_base`'s comb of 57 tables \
-      (the static `VG_X448_COMB`; its `16 A + B` by calls of `vg_ed448_r56_point_add`), \
+      (a call of `vg_ed448_r56_comb_base`, and `16 A + B` by calls of `vg_ed448_r56_point_add`), \
       and [k](-A) with 4-bit windows of k from the top: four doublings, then the addition of \
       [n](-A) for the window's digit n, selected with masks from all 16 entries of a table built \
       in `scratch`. Then compares [4]([S]B + [k](-A)) with [4]R projectively. Field elements \

@@ -26,8 +26,8 @@ theorem x448Base_check :
   apply exists_isSome_of_eraseT
   refine Split.exists_isSome (c' := ?c') ?s ⟨?h, ?g⟩
   case s =>
-    simp only [x448Base, step, finish, Code.eraseT, Impl.X448.AArch64.Fast.invert, ops_eraseT, sqn_eraseT]
-    exact .seq (.refl _) (.seq (.loop _ (stepN_split 56)) (.seq (.refl _) (.refl _)))
+    simp only [x448Base, finish, Code.eraseT, Impl.X448.AArch64.Fast.invert, ops_eraseT, sqn_eraseT]
+    exact .refl _
   case g => taint_decide
 
 theorem x448Base_ct : ConstantTime isa Proof.X448.x448BaseAArch64.pre Proof.X448.x448BaseAArch64.pub

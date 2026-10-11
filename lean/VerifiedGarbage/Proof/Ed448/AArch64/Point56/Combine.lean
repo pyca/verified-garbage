@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.X448.AArch64.Base.Combine
+import VerifiedGarbage.Proof.X448.AArch64.Base.Step
+import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 import VerifiedGarbage.Proof.Curve448.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
@@ -240,10 +242,11 @@ theorem combineMid_ok {s₀ s : State} {base : Addr} {v w : ℤ} (f0 : MFrame s�
     rw [← add_smul, show (2 : ℤ) ^ (4 - 0) * v + w = 16 * v + w by norm_num] at r
     exact r
 
-/-- **`16 A + B` by calls**, as `combine_ok`: `[k] B` in `A`, the return address kept. -/
-theorem combineCall_ok {n : Nat} {s₀ s : State} {base : Addr} {k : Nat} (hk : k < 256 ^ n)
-    (h : StepInv n s₀ base k n s) :
-    WP isa combineCall s fun t => VG.Proof.X448.AArch64.Base.Frame s₀ base t ∧ Rep (pt (EV t.mem base) 0 1 2) ((k : ℤ) • baseAff) := by
+/-- **`16 A + B` by calls**, from `Frame`: `[16 v + w] B` in `A`, the return address kept. -/
+theorem combineCall_frame {s₀ s : State} {base : Addr} {v w : ℤ} (h : VG.Proof.X448.AArch64.Base.Frame s₀ base s)
+    (ha : Rep (pt (EV s.mem base) 0 1 2) (v • baseAff)) (hb : Rep (pt (EV s.mem base) 3 4 5) (w • baseAff)) :
+    WP isa combineCall s fun t => VG.Proof.X448.AArch64.Base.Frame s₀ base t ∧
+      Rep (pt (EV t.mem base) 0 1 2) ((16 * v + w) • baseAff) := by
   unfold combineCall
   rw [WP.seq_iff]
   refine WP.mono (insOf_ok [(.x30, .v8, 0)] s (by decide) (by decide)) fun t₁ ⟨g₁, m₁, r₁, w₁, _, l₁, _⟩ => ?_
@@ -251,7 +254,7 @@ theorem combineCall_ok {n : Nat} {s₀ s : State} {base : Addr} {k : Nat} (hk : 
     ⟨h.scr.of_keeps (rs := []) ⟨fun r _ => by rw [g₁], r₁, w₁⟩ (by decide), m₁ ▸ h.env, m₁ ▸ h.zero,
       by rw [g₁]; exact h.out, by rw [r₁]; exact h.rd, by rw [w₁]; exact h.wr, m₁ ▸ h.mem⟩
   rw [WP.seq_iff]
-  refine WP.mono (WP.preservedV (combineMid_ok f₁ (m₁ ▸ h.odd) (m₁ ▸ h.even)) (by lit_decide))
+  refine WP.mono (WP.preservedV (combineMid_ok f₁ (m₁ ▸ ha) (m₁ ▸ hb)) (by lit_decide))
     fun t₂ ⟨⟨f₂, r₂⟩, v₂⟩ => ?_
   refine WP.mono (umovOf_ok [(.x30, .v8, 0)] t₂ (by decide) (by decide)) fun u ⟨um, ur, uw, _, ul, uo⟩ => ?_
   have l30 : u.gpr .x30 = s₀.gpr .x30 := by
@@ -263,7 +266,12 @@ theorem combineCall_ok {n : Nat} {s₀ s : State} {base : Addr} {k : Nat} (hk : 
   refine ⟨⟨f₂.scr.of_keeps ku (by decide), um ▸ f₂.env, um ▸ f₂.zero, l30,
     by rw [ku.1 _ (by decide)]; exact f₂.out, by rw [ur]; exact f₂.rd, by rw [uw]; exact f₂.wr, um ▸ f₂.mem⟩, ?_⟩
   rw [um]
-  rw [VG.Proof.X448.comb_total hk] at r₂
   exact r₂
+
+/-- **`16 A + B` by calls**, as `combine_ok`: `[k] B` in `A`, the return address kept. -/
+theorem combineCall_ok {n : Nat} {s₀ s : State} {base : Addr} {k : Nat} (hk : k < 256 ^ n)
+    (h : StepInv n s₀ base k n s) :
+    WP isa combineCall s fun t => VG.Proof.X448.AArch64.Base.Frame s₀ base t ∧ Rep (pt (EV t.mem base) 0 1 2) ((k : ℤ) • baseAff) :=
+  WP.mono (combineCall_frame h.frame h.odd h.even) fun t ⟨f, r⟩ => ⟨f, by rw [← VG.Proof.X448.comb_total hk]; exact r⟩
 
 end VG.Proof.Ed448.AArch64.Point56
