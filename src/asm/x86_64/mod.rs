@@ -368,7 +368,13 @@ pub(crate) mod sm4;
 pub(crate) mod sm4_cbc;
 
 #[rustfmt::skip]
+pub(crate) mod sm4_cfb;
+
+#[rustfmt::skip]
 pub(crate) mod sm4_ctr;
+
+#[rustfmt::skip]
+pub(crate) mod sm4_ofb;
 
 #[rustfmt::skip]
 pub(crate) mod triple_des;
