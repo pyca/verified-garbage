@@ -33,4 +33,9 @@ theorem restore_ct : RelCT isa (Two GoodW) AdxHeader.restore (fun _ _ => True) :
   exact RelCT.seq (two_piece [.rdi] pins_goodW (by taint_decide) bases_fw)
     (two_taint [.rdi,.r8,.r9] pads_pins (by taint_decide))
 
+theorem clear_ct : RelCT isa (Two GoodW) AdxHeader.clear (fun _ _ => True) := by
+  unfold AdxHeader.clear
+  exact RelCT.seq (two_piece [.rdi] pins_goodW (by taint_decide) bases_fw)
+    (two_taint [.rdi,.r8,.r9] pads_pins (by taint_decide))
+
 end VG.Proof.Bignum.X86_64.AdxHeader
