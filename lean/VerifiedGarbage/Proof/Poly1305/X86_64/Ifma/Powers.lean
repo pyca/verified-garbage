@@ -1,3 +1,4 @@
+import Mathlib.Data.Nat.ModEq
 import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Gpr
 
 /-!
@@ -326,7 +327,7 @@ theorem powers_ok {s : State} (hc : Ctx s) (hw : VG.Proof.Poly1305.X86_64.sR (s.
     intro k hk
     simp only [yval]; rw [y₁₀ k hk]
     exact sq_mod (E₉ k hk) (by simp only [hval, hv₈]; exact R₇ k hk)
-  have vm : ∀ {a b : State}, vec a b = b → b.mxcsr = a.mxcsr := fun h => (Avx2.vec_keep h).2.2.2.2
+  have vm : ∀ {a b : State}, vec a b = b → b.mxcsr = a.mxcsr := fun h => by rw [← h]; rfl
   have pad₁ : s₁.mem.readW (off (s.gpr .rdi) 112) 64 = 0x10000000000 := by
     rw [m₁, Mem.readW_writeW_self64]
   have M2 : ∀ j < 3, ((hMem (hMem s₁.mem (s.gpr .rdi) 56 s₅.xmm) (s.gpr .rdi) 80 s₇.xmm).readW

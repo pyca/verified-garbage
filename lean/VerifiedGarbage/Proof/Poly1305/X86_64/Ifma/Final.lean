@@ -14,7 +14,7 @@ namespace VG.Proof.Poly1305.X86_64.Ifma
 open VG VG.X86_64 VG.Impl.Poly1305.X86_64.Ifma
 open VG.Impl.Poly1305.X86_64 (at_)
 open VG.Proof.Poly1305.X86_64 (off)
-open VG.Proof.Poly1305.X86_64.Avx2 (xr xi xr_xi vec vec_trans vec_gpr vec_mem vec_rd vec_wr vec_keep)
+open VG.Proof.Poly1305.X86_64.Avx2 (xr xi xr_xi vec vec_trans vec_gpr vec_mem vec_rd vec_wr)
 open VG.Proof.Poly1305.X86_64.Avx512 (qz envOf_v VKeep pi blk blk_mv blk_length group_bytes pi_0 pi_1 pi_2
   pi_3 pi_4 pi_5 pi_6 pi_7)
 open VG.Spec.Poly1305 (P leNum bytesAt)
@@ -34,8 +34,7 @@ theorem GK.trans {s₁ s₂ s₃ : State} (h₁ : GK s₁ s₂) (h₂ : GK s₂ 
     h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr⟩
 
 theorem GK.of_vec {s s' : State} (h : vec s s' = s') : GK s s' :=
-  have k := vec_keep h
-  ⟨fun r _ _ _ => by rw [k.1], k.2.1, k.2.2.2.2, k.2.2.1, k.2.2.2.1⟩
+  ⟨fun r _ _ _ => by rw [vec_gpr h], vec_mem h, by rw [← h]; rfl, vec_rd h, vec_wr h⟩
 
 theorem GK.of_vk {s s' : State} (hk : VKeep s s') (hg : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r9 → s'.gpr r = s.gpr r)
     (hm : s'.mem = s.mem) : GK s s' :=

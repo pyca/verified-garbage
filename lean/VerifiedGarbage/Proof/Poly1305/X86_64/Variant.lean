@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
+import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
+import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
 import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
@@ -41,6 +43,20 @@ end VG.Proof.Poly1305
 namespace VG.Proof.Poly1305.X86_64
 
 open VG VG.X86_64
+
+namespace Avx2
+
+theorem blocks_keeps :
+    ((instrs Impl.Poly1305.X86_64.blocks).all fun i => !Taint.clobbers i .rsp) = true := by
+  rw [← Code.allInstrs_eq]; lit_decide
+
+theorem blocks_nosp : NoSp Impl.Poly1305.X86_64.blocks := by
+  intro i hi
+  simpa using List.all_eq_true.mp blocks_keeps i hi
+
+theorem blocks_depth : Impl.Poly1305.X86_64.blocks.depth = 0 := by lit_decide
+
+end Avx2
 
 /-- An implementation of `vg_poly1305_blocks` on x86-64. -/
 structure BlocksImpl where
@@ -101,23 +117,6 @@ theorem avx2_keeps : ((instrs Impl.Poly1305.X86_64.Avx2.blocksAvx2).all fun i =>
 
 theorem avx2_nosp : NoSp Impl.Poly1305.X86_64.Avx2.blocksAvx2 :=
   fun i hi => by simpa using List.all_eq_true.mp avx2_keeps i hi
-
-/-- The AVX2 implementation, `vg_poly1305_blocks_avx2`. -/
-def avx2 : BlocksImpl where
-  name := Impl.Poly1305.X86_64.Blocks.name .avx2
-  code := Impl.Poly1305.X86_64.Blocks.code .avx2
-  stack := 8
-  stack_le := by decide
-  depth_le := by
-    change Impl.Poly1305.X86_64.Avx2.blocksAvx2.depth ≤ 2
-    lit_decide
-  xdepth := by change Impl.Poly1305.X86_64.Avx2.blocksAvx2.x86_64Depth ≤ 8; lit_decide
-  ok := Avx2.blocksAvx2_ok
-  ct := Avx2.blocksAvx2_ct
-  nosp := avx2_nosp
-  spSafe := Code.all_of_allInstrs (by lit_decide)
-  suffix := "_avx2"
-  features := Impl.Poly1305.X86_64.Blocks.features .avx2
 
 end BlocksImpl
 
