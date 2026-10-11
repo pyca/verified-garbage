@@ -31,9 +31,26 @@ theorem arr_off (B : Addr) {j : Nat} (hj : j < 2 ^ 32) :
   simp only [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat, Nat.reducePow]
   omega_arith
 
+/-- The callee-saved registers of `s` in the low quadwords of `xmm8`–`xmm13`
+of `t`, as `saves` leaves them. -/
+def Saved (s t : State) : Prop :=
+  t.xmm .xmm8 = (0 : BitVec 64) ++ s.gpr .rbx ∧ t.xmm .xmm9 = (0 : BitVec 64) ++ s.gpr .rbp ∧
+    t.xmm .xmm10 = (0 : BitVec 64) ++ s.gpr .r12 ∧ t.xmm .xmm11 = (0 : BitVec 64) ++ s.gpr .r13 ∧
+    t.xmm .xmm12 = (0 : BitVec 64) ++ s.gpr .r14 ∧ t.xmm .xmm13 = (0 : BitVec 64) ++ s.gpr .r15
+
+theorem Saved.of_xmm {s t t' : State} (h : Saved s t) (hx : t'.xmm = t.xmm) : Saved s t' := by
+  unfold Saved at *; rw [hx]; exact h
+
+theorem Saved.of_keep {s s' t : State} {rs : List Reg} (h : Saved s' t) (hk : Keep rs s s')
+    (hr : ∀ r ∈ [Reg.rbx, .rbp, .r12, .r13, .r14, .r15], r ∉ rs) : Saved s t := by
+  unfold Saved at *
+  rw [hk.gpr (hr .rbx (by simp)), hk.gpr (hr .rbp (by simp)), hk.gpr (hr .r12 (by simp)),
+    hk.gpr (hr .r13 (by simp)), hk.gpr (hr .r14 (by simp)), hk.gpr (hr .r15 (by simp))] at h
+  exact h
+
 /-- `enter` and `basesR`: the bases of the arrays whose indices are in `edx`,
 `ecx` and `r8d`, as `bases` gives them, and the callee-saved registers in
-`xmm0`–`xmm2`. -/
+`xmm8`–`xmm13`. -/
 theorem fnHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) {o a b : Nat}
     (ho : o < 8) (ha : a < 8) (hb : b < 8) (hdx : (s.gpr .rdx).setWidth 32 = BitVec.ofNat 32 o)
@@ -43,19 +60,17 @@ theorem fnHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
       t.gpr .r10 = off B (slot w aN) ∧ t.gpr .r8 = off B (slot w aAcc) ∧
       t.gpr .r12 = BitVec.ofNat 64 w ∧ t.gpr .r15 = minv ∧ t.gpr .rsi = off B (slot w aTmp) ∧ t.mem = s.mem ∧
       Keep [.rdx, .rcx, .r8, .rbx, .r11, .r9, .r10, .r12, .r15, .rsi] s t ∧
-      t.xmm .xmm0 = s.gpr .rbp ++ s.gpr .rbx ∧ t.xmm .xmm1 = s.gpr .r13 ++ s.gpr .r12 ∧
-      t.xmm .xmm2 = s.gpr .r15 ++ s.gpr .r14 := by
+      Saved s t := by
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
     hs.ld (by have := hdr_lt_slot w 8 hi; omega_arith)
   refine WP.mono (WP.keep [.rdx, .rcx, .r8, .rbx, .r11, .r9, .r10, .r12, .r15, .rsi] (c := .block (enter ++ basesR))
     (Q := fun t => t.gpr .rbx = off B (slot w o) ∧ t.gpr .r11 = off B (slot w a) ∧
       t.gpr .r9 = off B (slot w b) ∧ t.gpr .r10 = off B (slot w aN) ∧ t.gpr .r8 = off B (slot w aAcc) ∧
       t.gpr .r12 = BitVec.ofNat 64 w ∧ t.gpr .r15 = minv ∧ t.gpr .rsi = off B (slot w aTmp) ∧ t.mem = s.mem ∧
-      t.xmm .xmm0 = s.gpr .rbp ++ s.gpr .rbx ∧ t.xmm .xmm1 = s.gpr .r13 ++ s.gpr .r12 ∧
-      t.xmm .xmm2 = s.gpr .r15 ++ s.gpr .r14) ?_ rfl)
+      Saved s t) ?_ rfl)
     fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2.1,
       h.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.1, k, h.2.2.2.2.2.2.2.2.2⟩
-  unfold enter zext saves basesR
+  unfold enter zext saves basesR Saved
   simp only [List.cons_append, List.nil_append]
   xrun [XOp.exec, setXmm_gpr, setXmm_mem, setXmm_rd, setXmm_wr, setXmm_xmm, setReg_xmm, XBinOp.eval, qword_movq,
     State.ea, arrAt, hdr, hdi, hdx, hcx, h8, hdrOff, arr_off B (show o < 2 ^ 32 by omega_arith),
@@ -117,72 +132,20 @@ theorem writeW_outsideN (m : Mem) (base : Addr) {d w : Nat} (v : BitVec w) (h : 
       Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_arith)]
     omega_arith
 
-/-- `leave`: the callee-saved registers from `xmm0`–`xmm2`, through the
-first four words of the accumulator and two of the temporary. -/
-theorem fnLeave_ok {t : State} {B : Addr} {Z w : Nat} (hs : Scr t B Z) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w)
-    (h8 : t.gpr .r8 = off B (slot w aAcc)) (hsi : t.gpr .rsi = off B (slot w aTmp)) :
-    WP isa (.block leave) t fun t' =>
-      t'.gpr .rbx = (t.xmm .xmm0).extractLsb' 0 64 ∧ t'.gpr .rbp = (t.xmm .xmm0).extractLsb' 64 64 ∧
-      t'.gpr .r12 = (t.xmm .xmm1).extractLsb' 0 64 ∧ t'.gpr .r13 = (t.xmm .xmm1).extractLsb' 64 64 ∧
-      t'.gpr .r14 = (t.xmm .xmm2).extractLsb' 0 64 ∧ t'.gpr .r15 = (t.xmm .xmm2).extractLsb' 64 64 ∧
-      Arrays B w [aAcc, aTmp] t.mem t'.mem ∧ Keep [.rbx, .rbp, .r12, .r13, .r14, .r15] t t' := by
-  have hn := hs.nowrap
-  have sa := slot_le (w := w) (show aAcc < 8 by decide)
-  have st := slot_le (w := w) (show aTmp < 8 by decide)
-  have sat : slot w aAcc + 8 * (w + 2) ≤ slot w aTmp := by unfold slot aAcc aTmp; omega_arith
-  have hst : ∀ {d n}, d + n ≤ Z → 0 < n → InRegions t.wr (off B d) n := fun {d n} h hn =>
-    let ⟨_, hm, hc⟩ := hs.region (d := d) (n := n) (by simpa using h) hn
-    ⟨_, hm, by simpa [off] using hc⟩
-  have hld : ∀ {d}, d + 8 ≤ Z → InRegions (t.rd ++ t.wr) (off B d) 8 := fun {d} h =>
-    let ⟨r, hm, hc⟩ := hst h (by decide); ⟨r, List.mem_append_right _ hm, hc⟩
-  have e0 : ∀ d, off B d + BitVec.ofInt 64 0 = off B d := fun d => by simp
-  have e8 : ∀ d, off B d + BitVec.ofInt 64 8 = off B (d + 8) := fun d => off_add_ofInt B d 8
-  have e16 : ∀ d, off B d + BitVec.ofInt 64 16 = off B (d + 16) := fun d => off_add_ofInt B d 16
-  have e24 : ∀ d, off B d + BitVec.ofInt 64 24 = off B (d + 24) := fun d => off_add_ofInt B d 24
-  let m₃ := ((t.mem.writeW (off B (slot w aAcc)) (t.xmm .xmm0)).writeW (off B (slot w aAcc + 16))
-    (t.xmm .xmm1)).writeW (off B (slot w aTmp)) (t.xmm .xmm2)
-  have sep : ∀ {d e : Nat}, d + 8 ≤ e ∨ e + 16 ≤ d → d + 8 ≤ 2 ^ 64 → e + 16 ≤ 2 ^ 64 →
-      Mem.Sep (off B d) (64 / 8) (off B e) (128 / 8) := fun h h₁ h₂ => Offset.sep B h h₁ h₂
-  have r₀ : m₃.readW (off B (slot w aAcc)) 64 = (t.xmm .xmm0).extractLsb' 0 64 := by
-    simp only [m₃]
-    rw [Mem.readW_writeW_sep (sep (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
-      Mem.readW_writeW_sep (sep (by omega_arith) (by omega_arith) (by omega_arith)) (by decide), word_lo128]
-  have r₁ : m₃.readW (off B (slot w aAcc + 8)) 64 = (t.xmm .xmm0).extractLsb' 64 64 := by
-    simp only [m₃]
-    rw [Mem.readW_writeW_sep (sep (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
-      Mem.readW_writeW_sep (sep (by omega_arith) (by omega_arith) (by omega_arith)) (by decide), word_hi128]
-  have r₂ : m₃.readW (off B (slot w aAcc + 16)) 64 = (t.xmm .xmm1).extractLsb' 0 64 := by
-    simp only [m₃]
-    rw [Mem.readW_writeW_sep (sep (by omega_arith) (by omega_arith) (by omega_arith)) (by decide), word_lo128]
-  have r₃ : m₃.readW (off B (slot w aAcc + 24)) 64 = (t.xmm .xmm1).extractLsb' 64 64 := by
-    simp only [m₃]
-    rw [Mem.readW_writeW_sep (sep (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
-      show slot w aAcc + 24 = slot w aAcc + 16 + 8 by omega_arith, word_hi128]
-  have r₄ : m₃.readW (off B (slot w aTmp)) 64 = (t.xmm .xmm2).extractLsb' 0 64 := word_lo128 _ _ _ _
-  have r₅ : m₃.readW (off B (slot w aTmp + 8)) 64 = (t.xmm .xmm2).extractLsb' 64 64 := word_hi128 _ _ _ _
-  refine WP.mono (WP.keep [.rbx, .rbp, .r12, .r13, .r14, .r15] (c := .block leave)
-    (Q := fun t' => t'.gpr .rbx = (t.xmm .xmm0).extractLsb' 0 64 ∧ t'.gpr .rbp = (t.xmm .xmm0).extractLsb' 64 64 ∧
-      t'.gpr .r12 = (t.xmm .xmm1).extractLsb' 0 64 ∧ t'.gpr .r13 = (t.xmm .xmm1).extractLsb' 64 64 ∧
-      t'.gpr .r14 = (t.xmm .xmm2).extractLsb' 0 64 ∧ t'.gpr .r15 = (t.xmm .xmm2).extractLsb' 64 64 ∧
-      t'.mem = m₃) ?_ rfl) fun t' ⟨⟨h1, h2, h3, h4, h5, h6, hm⟩, k⟩ => ⟨h1, h2, h3, h4, h5, h6, ?_, k⟩
-  · unfold leave
-    xrun [State.ea, at_, State.store128, h8, hsi, e0, e8, e16, e24,
-      hst (d := slot w aAcc) (n := 16) (by omega_arith) (by decide),
-      hst (d := slot w aAcc + 16) (n := 16) (by omega_arith) (by decide),
-      hst (d := slot w aTmp) (n := 16) (by omega_arith) (by decide), hld (d := slot w aAcc) (by omega_arith),
-      hld (d := slot w aAcc + 8) (by omega_arith), hld (d := slot w aAcc + 16) (by omega_arith),
-      hld (d := slot w aAcc + 24) (by omega_arith), hld (d := slot w aTmp) (by omega_arith),
-      hld (d := slot w aTmp + 8) (by omega_arith)]
-    exact ⟨r₀, r₁, r₂, r₃, r₄, r₅, rfl⟩
-  · rw [hm]
-    have o₁ := writeW_outsideN t.mem B (d := slot w aAcc) (t.xmm .xmm0) (by omega_arith) (by decide)
-    have o₂ := writeW_outsideN (t.mem.writeW (off B (slot w aAcc)) (t.xmm .xmm0)) B
-      (d := slot w aAcc + 16) (t.xmm .xmm1) (by omega_arith) (by decide)
-    have o₃ := writeW_outsideN ((t.mem.writeW (off B (slot w aAcc)) (t.xmm .xmm0)).writeW
-      (off B (slot w aAcc + 16)) (t.xmm .xmm1)) B (d := slot w aTmp) (t.xmm .xmm2) (by omega_arith) (by decide)
-    refine ((Arrays.of_outside (j := aAcc) (by simp) o₁ (Nat.le_refl _) (by omega_arith)).trans
-      (Arrays.of_outside (j := aAcc) (by simp) o₂ (by omega_arith) (by omega_arith))).trans
-      (Arrays.of_outside (j := aTmp) (by simp) o₃ (Nat.le_refl _) (by omega_arith))
+/-- `unsaves`: the callee-saved registers of `s` back, from `t`'s `xmm8`–`xmm13`
+as `saves` left them. -/
+theorem unsaves_ok {s t : State} (h : Saved s t) :
+    WP isa (.block unsaves) t fun t' =>
+      (∀ r ∈ [Reg.rbx, .rbp, .r12, .r13, .r14, .r15], t'.gpr r = s.gpr r) ∧ t'.mem = t.mem ∧
+        t'.xmm = t.xmm ∧ Keep [.rbx, .rbp, .r12, .r13, .r14, .r15] t t' := by
+  obtain ⟨x8, x9, x10, x11, x12, x13⟩ := h
+  refine WP.mono (WP.keep [.rbx, .rbp, .r12, .r13, .r14, .r15] (c := .block unsaves)
+    (Q := fun t' => (∀ r ∈ [Reg.rbx, .rbp, .r12, .r13, .r14, .r15], t'.gpr r = s.gpr r) ∧ t'.mem = t.mem ∧
+      t'.xmm = t.xmm) ?_ rfl) fun t' ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2, k⟩
+  unfold unsaves
+  xrun [setReg_xmm, x8, x9, x10, x11, x12, x13, fnExtract_lo]
+  simp only [List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl | rfl | rfl | rfl) <;> rfl
 
 /-- `vg_rsa_mont_mul`'s code: `[o] = [a] [b] R⁻¹ mod m` for the arrays whose
 indices are in `edx`, `ecx` and `r8d`, as `montMul` computes it, changing
@@ -203,27 +166,16 @@ theorem mulBase_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : S
   have hn := hs.nowrap
   unfold mulBase
   refine WP.seq (WP.mono (fnHead_ok hs hdi hH hZ ho ha hb hdx hcx h8)
-    fun s₁ ⟨hbx, h11, h9, h10, h8₁, h12, h15, hsi₁, hm₁, k₁, x0, x1, x2⟩ => ?_)
+    fun s₁ ⟨hbx, h11, h9, h10, h8₁, h12, h15, hsi₁, hm₁, k₁, sv⟩ => ?_)
   rw [← hm₁] at hinv hB
   have hs₁ := hs.congr k₁.2.2
   refine WP.seq (WP.mono (WP.keep [.rax, .rcx, .rdx, .rbp, .r13, .r14] (WP.vecKeep (by decide) (mmTail_ok hs₁ hZ hw hw' (by decide) (by decide) (by decide) ho ha hb
     (by decide) (by decide) (Ne.symm ho1) (Ne.symm ha1) (Ne.symm hb1) (by decide) (Ne.symm ho2) hbx h11 h9 h10
-    h8₁ h12 h15 hsi₁ hinv hB)) (by decide)) fun s₂ ⟨⟨⟨hlt, heq, har, k₂⟩, hx₂, _⟩, k₂'⟩ => ?_)
-  refine WP.mono (fnLeave_ok (hs₁.congr k₂.2.2) hZ hw ((k₂'.gpr (by decide)).trans h8₁) ((k₂'.gpr (by decide)).trans hsi₁))
-    fun t ⟨r1, r2, r3, r4, r5, r6, har₂, k₃⟩ => ?_
-  have hv : wv t.mem B (slot w o) w = wv s₂.mem B (slot w o) w :=
-    har₂.wv_of_not_mem ho (by simp [ho1, ho2]) (by omega_arith)
+    h8₁ h12 h15 hsi₁ hinv hB)) (by decide)) fun s₂ ⟨⟨⟨hlt, heq, har, k₂⟩, hx₂, _⟩, _⟩ => ?_)
+  refine WP.mono (unsaves_ok (sv.of_xmm hx₂)) fun t ⟨rs, mt, _, k₃⟩ => ?_
   rw [hm₁] at hlt heq har
-  refine ⟨by rw [hv]; exact hlt, by rw [hv]; exact heq, har.trans (har₂.mono (by simp)),
-    ((k₁.trans k₂).trans k₃).mono (by decide), ?_⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false]
-  rintro r (rfl | rfl | rfl | rfl | rfl | rfl)
-  · rw [r1, hx₂, x0, fnExtract_lo]
-  · rw [r2, hx₂, x0, fnExtract_hi]
-  · rw [r3, hx₂, x1, fnExtract_lo]
-  · rw [r4, hx₂, x1, fnExtract_hi]
-  · rw [r5, hx₂, x2, fnExtract_lo]
-  · rw [r6, hx₂, x2, fnExtract_hi]
+  rw [← mt] at hlt heq har
+  exact ⟨hlt, heq, har, ((k₁.trans k₂).trans k₃).mono (by decide), rs⟩
 
 /-- The indices, as `args` leaves them. -/
 theorem fnArgs_ok (s : State) (o a b : Nat) :

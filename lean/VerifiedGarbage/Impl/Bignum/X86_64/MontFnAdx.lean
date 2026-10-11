@@ -17,8 +17,7 @@ so that it changes only `aAcc`, `aTmp` and `o`. Squares (`a = b`, which the
 indices tell, and so publicly) take the triangular tiles.
 
 As `vg_rsa_mont_mul`, it uses no stack and keeps `rbx`, `rbp` and `r12`–`r15`
-in `xmm0`–`xmm2` while it runs; it moves them back through header words
-16–21, at addresses from `rdi` alone.
+in `xmm8`–`xmm13` while it runs, and moves them back from there.
 -/
 
 namespace VG.Impl.Bignum.X86_64.MontFn
@@ -39,13 +38,11 @@ def slotsIn : List Instr :=
     .mov .rax (.mem (arrAt .rcx)), .store (hdr (sArr xA)) .rax,
     .mov .rax (.mem (arrAt .r8)), .store (hdr (sArr xB)) .rax]
 
-/-- The callee-saved registers from `xmm0`–`xmm2` through header words 16–21,
-and those words back from `xmm3`–`xmm5`: every address is `rdi`'s. -/
+/-- The callee-saved registers back from `xmm8`–`xmm13`, and header words
+16–21 back from `xmm3`–`xmm5`: every address is `rdi`'s. -/
 def restore : List Instr :=
-  [.movdquStore (hdr (sFn 0)) .xmm0, .movdquStore (hdr (sFn 2)) .xmm1, .movdquStore (hdr (sFn 4)) .xmm2,
-    .mov .rbx (.mem (hdr (sFn 0))), .mov .rbp (.mem (hdr (sFn 1))), .mov .r12 (.mem (hdr (sFn 2))),
-    .mov .r13 (.mem (hdr (sFn 3))), .mov .r14 (.mem (hdr (sFn 4))), .mov .r15 (.mem (hdr (sFn 5))),
-    .movdquStore (hdr (sFn 0)) .xmm3, .movdquStore (hdr (sFn 2)) .xmm4, .movdquStore (hdr (sFn 4)) .xmm5]
+  unsaves ++ ([.movdquStore (hdr (sFn 0)) .xmm3, .movdquStore (hdr (sFn 2)) .xmm4,
+    .movdquStore (hdr (sFn 4)) .xmm5] : List Instr)
 
 /-- ZF set when `w` is a multiple of 8 in `8..2^30 + 8`: `v = w - 8` (modulo
 `2⁶⁴`) rotated right by 3 has its low bits on top, and the rest below `2²⁷`. -/
