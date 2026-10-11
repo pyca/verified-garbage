@@ -6,7 +6,12 @@
 //! accepts complete eight-byte blocks, including empty input. ECB runs a
 //! block at a time in general-purpose registers.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::arch::idea::{vg_idea_ecb, vg_idea_expand_key, vg_idea_invert_key};
 use crate::zeroize::zeroize;
