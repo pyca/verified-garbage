@@ -260,4 +260,255 @@ theorem pro_ok {s₀ : State} (hp : APre s₀) (hbig : 16 ≤ nb s₀) {s : Stat
       simp only [Poly1305.lanes8, Nat.mul_zero, Nat.add_zero]
       rfl
 
+/-! ## The loop -/
+
+theorem IMem.consts {s₀ : State} {m₁ : Mem} (hm : IMem s₀ m₁) {s : State} (hd : s.gpr .rdi = st s₀)
+    (hs : s.mem = m₁) : Consts s :=
+  MemR.consts (by rw [hs]; exact hm.r) hd
+
+theorem group_body_ok {s₀ : State} (hp : APre s₀) {m₁ : Mem} (hm : IMem s₀ m₁) {j : Nat}
+    (hj : j + 1 < nb s₀ / 8) {s : State} (h : LInv s₀ m₁ j s) :
+    WP isa groupBody s fun s' => LInv s₀ m₁ (j + 1) s' ∧ s'.zf = some (decide (nb s₀ / 8 - 1 - j = 1)) := by
+  have hb := hp.avx2.bpre.nb_lt
+  have hc := ctx_of hp h.rd h.wr h.rdi h.rsi (j := j) (by omega)
+  refine WP.block_append (WP.mono (guard (R := fun s' => vec s s' = s') (A := H2 s₀ < 4) ?_
+    fun hA => group_ok hc (hm.consts h.rdi h.mem) (h.acc hA)) fun s₁ ⟨v₁, G₁⟩ => ?_)
+  · exact WP.block_append (WP.mono (run_ok (fun _ => hc) addS_eq) fun s₁ h₁ =>
+      WP.mono (run_ok (fun _ => Ctx.of_vec hc h₁.eq) mulS_eq) fun s₂ h₂ => vec_trans h₁.eq h₂.eq)
+  obtain ⟨vg₁, vm₁, vrd₁, vwr₁, -⟩ := vec_keep v₁
+  refine WP.mono (adv_ok s₁) fun s₂ ⟨si₂, cx₂, zf₂, g₂, m₂, k₂⟩ => ?_
+  have gk : ∀ r, r ≠ .rsi → r ≠ .rcx → s₂.gpr r = s.gpr r := fun r a b => by rw [g₂ r a b, vg₁]
+  have hcx : s₁.gpr .rcx = BitVec.ofNat 64 (nb s₀ / 8 - 1 - j) := by rw [vg₁, h.rcx]
+  refine ⟨⟨hj, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_, fun hA => ?_⟩, ?_⟩
+  · rw [gk _ (by decide) (by decide), h.rdi]
+  · rw [si₂, vg₁, h.rsi, add128]
+  · rw [cx₂, hcx, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega),
+      Nat.sub_sub]
+  · rw [gk _ (by decide) (by decide), h.rdx]
+  · rw [gk _ (by decide) (by decide), h.r8]
+  · rw [gk _ (by decide) (by decide), h.r10]
+  · rw [gk _ (by decide) (by decide), h.r11]
+  · obtain ⟨-, c, -, e, -⟩ := cs_ne' hr
+    rw [gk r e c, h.keep r hr]
+  · rw [k₂.rd, vrd₁, h.rd]
+  · rw [k₂.wr, vwr₁, h.wr]
+  · rw [m₂, vm₁, h.mem]
+  · have G := (G₁ hA).2
+    rw [h.mem, h.rsi, grp_bytes hp hm.ok (by omega), absorb_grp] at G
+    exact G.of_vk k₂
+  · rw [zf₂, hcx, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
+      Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
+
+theorem loop_ok {s₀ : State} (hp : APre s₀) {m₁ : Mem} (hm : IMem s₀ m₁) (hG : 1 < nb s₀ / 8) {s : State}
+    (h₀ : LInv s₀ m₁ 0 s) : WP isa (.loop groupBody .ne) s (LInv s₀ m₁ (nb s₀ / 8 - 1)) := by
+  let Inv : Nat → State → Prop := fun n s => ∃ j, n = nb s₀ / 8 - 1 - j ∧ j < nb s₀ / 8 - 1 ∧ LInv s₀ m₁ j s
+  have hstep : ∀ n s, Inv n s → WP isa groupBody s (fun s' =>
+      (eval .ne s' = some false ∧ LInv s₀ m₁ (nb s₀ / 8 - 1) s') ∨
+      (eval .ne s' = some true ∧ ∃ n' < n, Inv n' s')) := by
+    rintro n s ⟨j, rfl, hj, hI⟩
+    refine WP.mono (group_body_ok hp hm (by omega) hI) fun s' ⟨h', hz⟩ => ?_
+    by_cases e : nb s₀ / 8 - 1 - j = 1
+    · have e' : j + 1 = nb s₀ / 8 - 1 := by omega
+      exact .inl ⟨by simp [eval, hz, e], e' ▸ h'⟩
+    · exact .inr ⟨by simp [eval, hz, e], nb s₀ / 8 - 1 - (j + 1), by omega, j + 1, rfl, by omega, h'⟩
+  exact WP.loop (M := isa) Inv hstep _ s ⟨0, rfl, by omega, h₀⟩
+
+/-! ## The epilogue's integer code -/
+
+set_option simprocs false in
+/-- `save`, keeping the vector registers and MXCSR. -/
+theorem saveX_ok (s : State) (hw : sR (s.gpr .rdi) ∈ s.wr) :
+    WP isa (.block save) s fun s' =>
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.xmm = s.xmm ∧ s'.mxcsr = s.mxcsr ∧
+      Frame [Proof.Poly1305.X86_64.svR (s.gpr .rdi)] s.mem s'.mem ∧ Saved (s.gpr .rdi) s s'.mem := by
+  have o : ∀ d, d + 8 ≤ 128 → InRegions s.wr (off (s.gpr .rdi) d) 8 :=
+    fun d hd => ⟨_, hw, Proof.Poly1305.X86_64.contains_off hd (by omega)⟩
+  have o0 := o 72 (by decide); have o1 := o 80 (by decide); have o2 := o 88 (by decide)
+  have o3 := o 96 (by decide); have o4 := o 104 (by decide); have o5 := o 112 (by decide)
+  apply WP.of_runBlock
+  rw [Proof.Poly1305.X86_64.save_eq]
+  simp only [off] at o0 o1 o2 o3 o4 o5
+  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+    Proof.Poly1305.X86_64.ea_at, State.store64, o0, o1, o2, o3, o4, o5, ite_true, Option.some.injEq,
+    exists_eq_left']
+  refine ⟨trivial, trivial, trivial, trivial, trivial, ?_, ?_⟩
+  · have c : ∀ d, 72 ≤ d → d + 8 ≤ 120 →
+        (Proof.Poly1305.X86_64.svR (s.gpr .rdi)).Contains (off (s.gpr .rdi) d) (64 / 8) :=
+      fun d h₁ h₂ => Proof.Poly1305.X86_64.svR_contains _ h₁ h₂
+    refine (((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 72 ?_ ?_)).writeW
+      (List.mem_singleton_self _) _ (c 80 ?_ ?_)).writeW (List.mem_singleton_self _) _ (c 88 ?_ ?_)).writeW
+      (List.mem_singleton_self _) _ (c 96 ?_ ?_)).writeW (List.mem_singleton_self _) _ (c 104 ?_ ?_)
+      |>.writeW (List.mem_singleton_self _) _ (c 112 ?_ ?_) <;> omega
+  · refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp (config := {decide := true}) only [off, Mem.readW_writeW_self64,
+      Proof.Poly1305.X86_64.readW_writeW_off]
+
+set_option simprocs false in
+/-- Storing `h` and restoring the callee-saved registers, keeping the rest. -/
+theorem storeRestoreX_ok (s : State) (hw : sR (s.gpr .rdi) ∈ s.wr) :
+    WP isa (.block (([.store (at_ .rdi 0) .r11, .store (at_ .rdi 8) .rbx,
+      .store (at_ .rdi 16) .rbp] : List Instr) ++ restore)) s fun s' =>
+      let m := Proof.Poly1305.X86_64.storeH s.mem (s.gpr .rdi) (s.gpr .r11) (s.gpr .rbx) (s.gpr .rbp)
+      s'.mem = m ∧ s'.gpr .rbx = m.readW (off (s.gpr .rdi) 72) 64 ∧
+      s'.gpr .rbp = m.readW (off (s.gpr .rdi) 80) 64 ∧ s'.gpr .r12 = m.readW (off (s.gpr .rdi) 88) 64 ∧
+      s'.gpr .r13 = m.readW (off (s.gpr .rdi) 96) 64 ∧ s'.gpr .r14 = m.readW (off (s.gpr .rdi) 104) 64 ∧
+      s'.gpr .r15 = m.readW (off (s.gpr .rdi) 112) 64 ∧
+      (∀ r, r ≠ .rbx → r ≠ .rbp → r ≠ .r12 → r ≠ .r13 → r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  have o : ∀ d, d + 8 ≤ 128 → InRegions s.wr (off (s.gpr .rdi) d) 8 :=
+    fun d hd => ⟨_, hw, Proof.Poly1305.X86_64.contains_off hd (by omega)⟩
+  have i : ∀ d, d + 8 ≤ 128 → InRegions (s.rd ++ s.wr) (off (s.gpr .rdi) d) 8 :=
+    fun d hd => ⟨_, List.mem_append_right _ hw, Proof.Poly1305.X86_64.contains_off hd (by omega)⟩
+  have o0 := o 0 (by decide); have o8 := o 8 (by decide); have o16 := o 16 (by decide)
+  have i0 := i 72 (by decide); have i1 := i 80 (by decide); have i2 := i 88 (by decide)
+  have i3 := i 96 (by decide); have i4 := i 104 (by decide); have i5 := i 112 (by decide)
+  simp only [off] at o0 o8 o16 i0 i1 i2 i3 i4 i5
+  apply WP.of_runBlock
+  rw [Proof.Poly1305.X86_64.storeRestore_eq]
+  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+    Proof.Poly1305.X86_64.ea_at, readSrc, State.store64, State.load64, State.setReg, o0, o8, o16, i0, i1, i2,
+    i3, i4, i5, ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, fun r a b c d e f => ?_, trivial⟩
+  simp only [a, b, c, d, e, f, ite_false]
+
+/-! ## The epilogue -/
+
+theorem reduce_mx : ∀ i ∈ instrs (.block reduce : Prog isa), loadsMxcsr i = false := by decide
+
+theorem epi_eq : addGroup ++ step1 ++ step2 ++ step3 ++ Impl.Poly1305.X86_64.Avx2.mxcsrOut ++
+    ([.vop .vzeroupper] : List Instr) ++ save ++ toWords ++ ([.mov .r9 (.reg .rdx)] : List Instr) ++ reduce ++
+    ([.store (at_ .rdi 0) .r11, .store (at_ .rdi 8) .rbx, .store (at_ .rdi 16) .rbp] : List Instr) ++
+    restore ++ ([.mov .rdx (.reg .r9), .alu .add .rsi (.imm 128), .alu .and .rdx (.imm 7)] : List Instr) =
+    (addGroup ++ step1 ++ step2 ++ step3) ++ (Impl.Poly1305.X86_64.Avx2.mxcsrOut ++
+      (([.vop .vzeroupper] : List Instr) ++ (save ++ (toWords ++ (([.mov .r9 (.reg .rdx)] : List Instr) ++
+      (reduce ++ ((([.store (at_ .rdi 0) .r11, .store (at_ .rdi 8) .rbx, .store (at_ .rdi 16) .rbp] :
+        List Instr) ++ restore) ++
+      ([.mov .rdx (.reg .r9), .alu .add .rsi (.imm 128), .alu .and .rdx (.imm 7)] : List Instr)))))))) := by
+  simp only [List.append_assoc]
+
+theorem epi_ok {s₀ : State} (hp : APre s₀) {m₁ : Mem} (hm : IMem s₀ m₁) {s : State}
+    (h : LInv s₀ m₁ (nb s₀ / 8 - 1) s) :
+    WP isa (.block (addGroup ++ step1 ++ step2 ++ step3 ++ Impl.Poly1305.X86_64.Avx2.mxcsrOut ++
+      ([.vop .vzeroupper] : List Instr) ++ save ++ toWords ++ ([.mov .r9 (.reg .rdx)] : List Instr) ++ reduce ++
+      ([.store (at_ .rdi 0) .r11, .store (at_ .rdi 8) .rbx, .store (at_ .rdi 16) .rbp] : List Instr) ++
+      restore ++ ([.mov .rdx (.reg .r9), .alu .add .rsi (.imm 128), .alu .and .rdx (.imm 7)] : List Instr)))
+      s (TailPre s₀ (8 * (nb s₀ / 8))) := by
+  have hp2 := hp.avx2
+  have hb := hp2.bpre.nb_lt
+  have hlt := h.lt
+  have h1 : 1 ≤ nb s₀ / 8 := by omega
+  rw [epi_eq]
+  have hE : EndCtx (Rn s₀) s :=
+    ⟨ctx_of hp h.rd h.wr h.rdi h.rsi (by omega), by rw [h.rdi, h.mem]; exact hm.r,
+      by rw [h.r10, h.r11], h.r8⟩
+  -- The last group and the folds.
+  refine WP.block_append (WP.mono (guard (R := GK s) (A := H2 s₀ < 4) (last_exec hE)
+    fun hA => last_ok hE (h.acc hA)) fun s₁ ⟨G₁, L₁⟩ => ?_)
+  have rdi₁ : s₁.gpr .rdi = st s₀ := by rw [G₁.gpr _ (by decide) (by decide) (by decide), h.rdi]
+  have wr₁ : s₁.wr = s₀.wr := by rw [G₁.wr, h.wr]
+  have mm₁ : s₁.mem = m₁ := by rw [G₁.mem, h.mem]
+  -- MXCSR restored.
+  refine WP.block_append (WP.mono (mxcsrOut_ok s₁ (hp2.inRW wr₁ rdi₁ (by omega))
+    (by rw [mm₁, rdi₁, hm.ok.mx]; exact mx_hi _)) fun s₂ ⟨g₂, m₂, mx₂, x₂, _, rd₂, wr₂⟩ => ?_)
+  refine WP.block_append (WP.mono (vzu_ok s₂) fun s₃ ⟨g₃, m₃, x₃, mx₃, rd₃, wr₃⟩ => ?_)
+  have rdi₃ : s₃.gpr .rdi = st s₀ := by rw [g₃, g₂, rdi₁]
+  have wr₃ : s₃.wr = s₀.wr := by rw [wr₃, wr₂, wr₁]
+  -- The callee-saved registers saved, and the accumulator to words.
+  refine WP.block_append (WP.mono (saveX_ok s₃ (by rw [wr₃, hp.wr, rdi₃]; exact List.mem_singleton_self _))
+    fun s₄ ⟨g₄, rd₄, wr₄, x₄, mx₄, F₄, S₄⟩ => ?_)
+  refine WP.block_append (WP.mono (toWords_ok s₄) fun s₅ ⟨T₅, K₅⟩ => ?_)
+  refine WP.block_append (WP.mono (movR9_ok s₅) fun s₆ ⟨r9₆, g₆, m₆, mx₆, rd₆, wr₆⟩ => ?_)
+  refine WP.block_append (WP.mono (Avx2.and_exec (reduce_ok s₆) fun _ _ he => Exec.mxcsr reduce_mx he)
+    fun s₇ ⟨⟨R₇, K₇⟩, mx₇⟩ => ?_)
+  have rdi₇ : s₇.gpr .rdi = st s₀ := by
+    rw [K₇.1 _ (by decide), g₆ _ (by decide), K₅.gpr _ (by decide), g₄, rdi₃]
+  have wr₇ : s₇.wr = s₀.wr := by rw [K₇.2.2.2, wr₆, K₅.wr, wr₄, wr₃]
+  refine WP.block_append (WP.mono (storeRestoreX_ok s₇ (by rw [wr₇, hp.wr, rdi₇]; exact List.mem_singleton_self _))
+    fun s₈ ⟨m₈, b₈, p₈, r12₈, r13₈, r14₈, r15₈, g₈, rd₈, wr₈, mx₈⟩ => ?_)
+  refine WP.mono (fin3_ok s₈) fun s₉ ⟨si₉, dx₉, g₉, m₉, mx₉, rd₉, wr₉⟩ => ?_
+  -- The registers the integer code leaves as they were.
+  have k₇ : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r11 → r ≠ .rbx → r ≠ .rbp → r ≠ .r12 → r ≠ .r13 → r ≠ .r14 →
+      s₇.gpr r = s₆.gpr r := fun r a b c d e f g i => K₇.1 r (by simp [a, b, c, d, e, f, g, i])
+  have gs : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r9 → s₃.gpr r = s.gpr r := fun r a c n => by
+    rw [g₃, g₂, G₁.gpr r a c n]
+  have rsi₈ : s₈.gpr .rsi = s.gpr .rsi := by
+    rw [g₈ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
+      k₇ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
+      g₆ _ (by decide), K₅.gpr _ (by decide), g₄, gs _ (by decide) (by decide) (by decide)]
+  have r9₈ : s₈.gpr .r9 = s₀.gpr .rdx := by
+    rw [g₈ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
+      k₇ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
+      r9₆, K₅.gpr _ (by decide), g₄, gs _ (by decide) (by decide) (by decide), h.rdx]
+  have mm₇ : s₇.mem = s₄.mem := by rw [K₇.2.1, m₆, K₅.mem]
+  have rdi₇' : s₇.gpr .rdi = s₃.gpr .rdi := by rw [rdi₇, rdi₃]
+  have mmx : s₉.mxcsr = s₀.mxcsr &&& 0xffff := by
+    rw [mx₉, mx₈, mx₇, mx₆, K₅.mxcsr, mx₄, mx₃, mx₂, mm₁, rdi₁, hm.ok.mx]
+  have hframe : Frame [hR (st s₀), wR (st s₀)] s₀.mem s₉.mem := by
+    rw [m₉, m₈, rdi₇]
+    refine storeH_frame ?_ _ _ _
+    rw [mm₇]
+    refine (hm.ok.frame.mono (by simp)).trans ?_
+    have e : s₃.mem = m₁ := by rw [m₃, m₂, mm₁]
+    rw [← e]
+    exact F₄.sub fun r hr => ⟨wR (st s₀), by simp, by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rw [hr, rdi₃]; exact Proof.Poly1305.X86_64.svR_sub_wR _⟩
+  refine ⟨by omega, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, hframe, by rw [mmx, mx_bits], fun key msg hr => ?_⟩
+  · rw [g₉ _ (by decide) (by decide), g₈ _ (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide), rdi₇]
+  · rw [si₉, rsi₈, h.rsi, add128, Nat.sub_add_cancel h1]
+  · rw [dx₉, r9₈]
+    apply BitVec.eq_of_toNat_eq
+    rw [and7_toNat, toNat_ofNat_lt (by omega)]
+    simp only [nb]
+    omega
+  · -- The callee-saved registers, restored from the state.
+    have sv : ∀ d, 24 ≤ d → d < 2 ^ 32 →
+        (Proof.Poly1305.X86_64.storeH s₇.mem (s₇.gpr .rdi) (s₇.gpr .r11) (s₇.gpr .rbx) (s₇.gpr .rbp)).readW
+          (off (s₇.gpr .rdi) d) 64 = s₄.mem.readW (off (s₃.gpr .rdi) d) 64 := fun d h₁ h₂ => by
+      rw [storeH_saved _ _ _ _ _ h₁ h₂, mm₇, rdi₇']
+    obtain ⟨sv1, sv2, sv3, sv4, sv5, sv6⟩ := S₄
+    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · rw [g₉ _ (by decide) (by decide), b₈, sv _ (by decide) (by decide), sv1,
+        gs _ (by decide) (by decide) (by decide), h.keep _ (by decide)]
+    · rw [g₉ _ (by decide) (by decide), p₈, sv _ (by decide) (by decide), sv2,
+        gs _ (by decide) (by decide) (by decide), h.keep _ (by decide)]
+    · rw [g₉ _ (by decide) (by decide), g₈ _ (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide), k₇ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide), g₆ _ (by decide), K₅.gpr _ (by decide), g₄, gs _ (by decide) (by decide) (by decide),
+        h.keep _ (by decide)]
+    · rw [g₉ _ (by decide) (by decide), r12₈, sv _ (by decide) (by decide), sv3,
+        gs _ (by decide) (by decide) (by decide), h.keep _ (by decide)]
+    · rw [g₉ _ (by decide) (by decide), r13₈, sv _ (by decide) (by decide), sv4,
+        gs _ (by decide) (by decide) (by decide), h.keep _ (by decide)]
+    · rw [g₉ _ (by decide) (by decide), r14₈, sv _ (by decide) (by decide), sv5,
+        gs _ (by decide) (by decide) (by decide), h.keep _ (by decide)]
+    · rw [g₉ _ (by decide) (by decide), r15₈, sv _ (by decide) (by decide), sv6,
+        gs _ (by decide) (by decide) (by decide), h.keep _ (by decide)]
+  · rw [rd₉, rd₈, K₇.2.2.1, rd₆, K₅.rd, rd₄, rd₃, rd₂, G₁.rd, h.rd]
+  · rw [wr₉, wr₈, wr₇]
+  · -- The accumulator represents the blocks absorbed.
+    have hA := H2_lt hr
+    obtain ⟨hlen, hkey, hacc⟩ := hr
+    have hkey' : bytesAt s₀.mem (off (st s₀) 24) 32 = key := by rw [off_24]; exact hkey
+    have hA0 : accumulate (Rn s₀) msg = A0 s₀ := by rw [A0, hacc, ← hkey', clamp_key]
+    have hlt : A0 s₀ < P := by rw [← hA0]; exact Poly1305.accumulate_lt _ _
+    obtain ⟨-, Lb, L⟩ := L₁ hA
+    rw [h.mem, h.rsi, grp_bytes hp hm.ok (by omega), absorb_grp, Nat.sub_add_cancel h1] at L
+    have ex : ∀ i < 3, (h0w s₄ i).toNat = hv s₁ 0 i := fun i _ => by
+      simp only [h0w, x₄, x₃, x₂]; rfl
+    obtain ⟨T, T4⟩ := T₅ fun i hi => by rw [ex i hi]; exact Nat.le_trans (Lb i hi) (by decide)
+    have e₆ : Proof.Poly1305.X86_64.hval s₆ = Proof.Poly1305.X86_64.hval s₅ := by
+      simp only [Proof.Poly1305.X86_64.hval, g₆ .r11 (by decide), g₆ .rbx (by decide), g₆ .rbp (by decide)]
+    have R := R₇ (by rw [g₆ .rbp (by decide)]; exact T4)
+    have e₄ : h0val s₄ = hval s₁ 0 := by
+      simp only [h0val, hval, Limbs44.val, ex 0 (by decide), ex 1 (by decide), ex 2 (by decide)]
+    refine ⟨?_, ?_, ?_⟩
+    · rw [List.length_append, Poly1305.length_bytesAt]; omega
+    · rw [← off_24, key_frame hframe, hkey']
+    · rw [m₉, m₈, rdi₇, storeH_acc, ← hkey', clamp_key, Poly1305.accumulate_append hlen]
+      change Proof.Poly1305.X86_64.hval s₇ = Poly1305.absorbAll (Rn s₀) (accumulate (Rn s₀) msg) _
+      rw [R, e₆, T, e₄, hA0, (L : _ ≡ _ [MOD P]), Nat.mod_eq_of_lt (Poly1305.absorbAll_lt hlt _)]
+
 end VG.Proof.Poly1305.X86_64.Ifma
