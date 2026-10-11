@@ -23,9 +23,8 @@ def note (adx : Bool) (mod : String) : String :=
   batches of 59 (23 batches for nine words), each run on the low words of `f` and `g` packed into \
   64-bit registers and applied to `f`, `g` and the numbers `d`, `e` by the batch's matrix, in its \
   working area at bytes 5056 to 5695, then multiplies by a constant (`2^(5 B) R³ mod " ++ mod ++
-  "`) to return to Montgomery form, " ++
-  (if adx then "by rows of BMI2's `mulx` with ADX's two carry chains (`adcx`, `adox`)"
-    else "by `mul` and word-by-word Montgomery reduction") ++
+  "`) to return to Montgomery form, by the signature's Montgomery multiplication modulo `" ++ mod ++
+  "`" ++ (if adx then ", with BMI2 and ADX" else "") ++
   "; nothing depends on the numbers but through masks and `cmov`."
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) : List Artifact :=
@@ -45,7 +44,7 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) : List
         · exact Code.all_of_allInstrs (show invP.allInstrs _ = true by lit_decide)
         · exact Code.all_of_allInstrs (show invPAdx.allInstrs _ = true by lit_decide)
       features := if adx then ["bmi2", "adx"] else [] }) ++
-  ([false, true].map fun adx =>
+  ([false].map fun adx =>
     { C.invNApi with
       name := C.invNApi.name ++ (if adx then "_adx" else "")
       target := X86_64.target
@@ -60,6 +59,6 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) : List
         cases adx
         · exact Code.all_of_allInstrs (show invN.allInstrs _ = true by lit_decide)
         · exact Code.all_of_allInstrs (show invNAdx.allInstrs _ = true by lit_decide)
-      features := if adx then ["adx"] else [] })
+      features := [] })
 
 end VG.Generic.P521.X86_64.InverseP521
