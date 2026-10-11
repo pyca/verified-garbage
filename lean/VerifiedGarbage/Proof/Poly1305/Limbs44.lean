@@ -111,4 +111,30 @@ theorem mul_mod {a b c : Nat → Nat} (ha : ∀ i < 3, a i < 2 ^ 52) (hb : ∀ i
   have h₂ := pf_val ha hb hc c1 c2
   rw [← h₂, ← h₁, Nat.add_assoc, ← Nat.mul_add, Nat.add_mul_mod_self_left, mul]
 
+/-! ## Splitting words into limbs
+
+The limbs of `lo + 2⁶⁴ hi + 2¹²⁸ t` (`lo, hi < 2⁶⁴`), as the code splits
+them, are `lo & M`, `(lo >> 44 | hi << 20) & M` and `hi >> 24 | t << 40`
+(for a block, `t = 1`, its pad bit). -/
+
+theorem split1 {lo : Nat} (hlo : lo < 2 ^ 64) (hi : Nat) :
+    ((lo / 2 ^ 44 ||| hi * 2 ^ 20 % 2 ^ 64) &&& 0xfffffffffff) = lo / 2 ^ 44 + 2 ^ 20 * (hi % 2 ^ 24) := by
+  rw [show hi * 2 ^ 20 % 2 ^ 64 = 2 ^ 20 * (hi % 2 ^ 44) by omega_arith, Nat.or_comm,
+    ← Nat.two_pow_add_eq_or_of_lt (show lo / 2 ^ 44 < 2 ^ 20 by omega_arith), and_mask]
+  omega_arith
+
+theorem split2 {hi : Nat} (hhi : hi < 2 ^ 64) (t : Nat) :
+    (hi / 2 ^ 24 ||| t * 2 ^ 40 % 2 ^ 64) = 2 ^ 40 * (t % 2 ^ 24) + hi / 2 ^ 24 := by
+  rw [show t * 2 ^ 40 % 2 ^ 64 = 2 ^ 40 * (t % 2 ^ 24) by omega_arith, Nat.or_comm,
+    ← Nat.two_pow_add_eq_or_of_lt (show hi / 2 ^ 24 < 2 ^ 40 by omega_arith)]
+
+theorem split_pad {hi : Nat} (hhi : hi < 2 ^ 64) : (hi / 2 ^ 24 ||| 0x10000000000) = 2 ^ 40 + hi / 2 ^ 24 := by
+  have := split2 hhi 1
+  rwa [show 1 * 2 ^ 40 % 2 ^ 64 = 0x10000000000 by decide, show 1 % 2 ^ 24 = 1 by decide, Nat.mul_one] at this
+
+theorem split_val (lo hi t : Nat) :
+    lo % 2 ^ 44 + 2 ^ 44 * (lo / 2 ^ 44 + 2 ^ 20 * (hi % 2 ^ 24)) + 2 ^ 88 * (2 ^ 40 * t + hi / 2 ^ 24) =
+      lo + 2 ^ 64 * hi + 2 ^ 128 * t := by
+  omega_arith
+
 end VG.Proof.Poly1305.Limbs44
