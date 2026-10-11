@@ -167,7 +167,7 @@ theorem mb_correct (hL : Law Spec.P256.curve)
     ∃ t s', Exec isa (cfg adx).mulBaseFn s t s' ∧ abiPreserved s s' ∧ mbK.post s s' := by
   obtain ⟨hrd, hwr, hret, hfit, ht, hmp, hz⟩ := hs
   have hc := cfg_ok hI adx
-  obtain ⟨d, hcd, h6, hnc⟩ := cfg_mulBase adx (by cases adx <;> rfl)
+  obtain ⟨d, hcd, h6, hnc⟩ := (cfg_mulBase adx).1 (by cases adx <;> rfl)
   obtain rfl : d = comb7 := Option.some.inj (hcd.symm.trans (cfg_comb adx))
   have hS : Scr s (s.gpr .rdi) size := ⟨rfl, by rw [hwr]; simp, hfit⟩
   have hn := cfg_n adx

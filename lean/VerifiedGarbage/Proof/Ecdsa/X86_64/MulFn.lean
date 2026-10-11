@@ -295,12 +295,12 @@ theorem gMulKC_ok (hc : BaseCfgOk c) (hmb : MulBaseOk c) (hC : Law c.C) (hT : Co
   unfold Cfg.gMulKC
   cases hm : c.mulBase with
   | some C =>
-    obtain ⟨d, hcd, hj, h6, hnc⟩ := hmb.1 (by rw [hm]; rfl)
+    obtain ⟨d, hcd, h3, hnc⟩ := hmb.1 (by rw [hm]; rfl)
     obtain ⟨hTM, hout⟩ := tbl_of hcd hp hS.rd hS.unch
     rw [← hS.syms] at hTM hout
     show WP isa c.mulBaseFn s _
     rw [← Code.inline_of_noCalls hnc]
-    refine WP.mono (mulBaseFn_ok hc h6 hC hT hcd hj hS.scr hS.fixed.mp hS.fixed.zero hTM hout)
+    refine WP.mono (mulBaseFn_ok hc h3 hC hT hcd hS.scr hS.fixed.mp hS.fixed.zero hTM hout)
       fun s' ⟨g', _, rd', wr', _, U', M', L', R'⟩ => ⟨⟨g', rd', wr'⟩, U', M', L', ?_⟩
     rw [← hS.k]; exact R'
   | none =>

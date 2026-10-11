@@ -96,7 +96,8 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p224 s := by
     rcases hr with h | h <;> simp [h]
 
 /-- `[k]G` is a call of `vg_p224_mul_base`, which calls no other function. -/
-theorem p224_mulBase : MulBaseOk p224 := fun _ => ⟨_, rfl, by decide, by lit_decide⟩
+theorem p224_mulBase : MulBaseOk p224 :=
+  ⟨fun _ => ⟨_, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
 
 theorem sign_x86 (hL : Law Spec.P224.curve)
     (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
