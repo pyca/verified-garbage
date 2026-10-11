@@ -253,6 +253,38 @@ theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
         · cases hc
       · cases hc
 
+/-- A product modulo a modulus of general reduction (`opProg`), a call of
+P-521's `n`'s function or inline: as the inline product. -/
+theorem opMulN_ok {M : Mod} {base : Addr} {Z m : Nat} {s : State} (hs : Scr s base Z)
+    (hM : ModOkW M Z m s.mem base) (hred : M.red = .general) (hsp : M.sparse = false) {o a b : Nat}
+    (hB : wordsVal s.mem base b M.n < m)
+    (hin : WP isa (.block (VG.Impl.Mont.X86_64.mul M o a b)) s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m = wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m) :
+    WP isa (opProg M (.mul o a b)).inline s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m = wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
+  simp only [opProg, opCall?]
+  cases hcall : Mont.callOf M with
+  | none => exact hin
+  | some p =>
+    obtain ⟨f, body⟩ := p
+    simp only
+    split
+    · rename_i hlow
+      unfold Mont.callOf at hcall
+      split at hcall
+      · rename_i h; rw [hred] at h; exact absurd h.2.1 (by simp)
+      split at hcall
+      · rename_i h; rw [hsp] at h; exact absurd h.2.1 (by simp)
+      split at hcall
+      · rename_i h
+        obtain ⟨hn9, hf, hmo, ht⟩ := h
+        cases hcall
+        exact Mont.mulCallN_ok hs hM hf hmo ht (hn9 ▸ hlow) hB
+      · cases hcall
+    · exact hin
+
 /-- A field program, its products calls where `opProg` makes them, inlined. -/
 theorem fprogB_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hm : UnitMod m (2 ^ (64 * M.n))) :

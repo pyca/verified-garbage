@@ -214,7 +214,8 @@ def MP' : Mod :=
 /-- `MP'`, but written out in the loops that run the most products (`hot`). -/
 def MH : Mod := { c.MP' with inl := c.hot }
 def MN' : Mod :=
-  { n := c.n, mo := c.sl MN, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.n), adx := c.adx }
+  { n := c.n, mo := c.sl MN, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.n), adx := c.adx,
+    fnN := c.n == 9 }
 
 def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 
@@ -423,11 +424,11 @@ def checkNonzero (a : Nat) : List Instr := c.nonzero a ++ c.andFlag
 
 /-- `x = X Z⁻¹`, `r = x mod n`, `k R mod n`, and the checks of `d`, `k`, `r`. -/
 def middle : Prog isa :=
-  blocks [Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC),
-    Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE),
-    Mont.X86_64.add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO),
-    Mont.X86_64.mul c.MN' (c.sl KM) (c.sl K) (c.sl R2N),
-    c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR)]
+  progs [.block (Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)),
+    .block (Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)),
+    .block (Mont.X86_64.add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO)),
+    opProg c.MN' (.mul (c.sl KM) (c.sl K) (c.sl R2N)),
+    .block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR))]
 
 /-- `r ‖ s` (or zeros) to `out`, the flag's low bit to `rax`, and the
 callee-saved registers restored. -/
@@ -439,14 +440,14 @@ def finish : List Instr :=
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/
 def scalar : Prog isa :=
-  blocks [Mont.X86_64.mul c.MN' (c.sl RM) (c.sl RR) (c.sl R2N),
-    Mont.X86_64.mul c.MN' (c.sl DM) (c.sl D) (c.sl R2N),
-    Mont.X86_64.mul c.MN' (c.sl EM) (c.sl E) (c.sl R2N),
-    Mont.X86_64.mul c.MN' (c.sl TT) (c.sl RM) (c.sl DM),
-    Mont.X86_64.add c.MN' (c.sl TT) (c.sl TT) (c.sl EM),
-    Mont.X86_64.mul c.MN' (c.sl SM) (c.sl ACC) (c.sl TT),
-    Mont.X86_64.mul c.MN' (c.sl SS) (c.sl SM) (c.sl ONE),
-    c.checkNonzero (c.sl SS) ++ c.finish]
+  progs [opProg c.MN' (.mul (c.sl RM) (c.sl RR) (c.sl R2N)),
+    opProg c.MN' (.mul (c.sl DM) (c.sl D) (c.sl R2N)),
+    opProg c.MN' (.mul (c.sl EM) (c.sl E) (c.sl R2N)),
+    opProg c.MN' (.mul (c.sl TT) (c.sl RM) (c.sl DM)),
+    .block (Mont.X86_64.add c.MN' (c.sl TT) (c.sl TT) (c.sl EM)),
+    opProg c.MN' (.mul (c.sl SM) (c.sl ACC) (c.sl TT)),
+    opProg c.MN' (.mul (c.sl SS) (c.sl SM) (c.sl ONE)),
+    .block (c.checkNonzero (c.sl SS) ++ c.finish)]
 
 /-- `vg_<curve>_mul_base`'s body: the table of `k`'s bits, then `[k]G` into
 `R` (`gMulK`). -/
