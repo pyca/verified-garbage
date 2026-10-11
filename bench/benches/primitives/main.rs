@@ -106,8 +106,10 @@ mod sha512_224;
 mod sha512_256;
 mod sm3;
 mod sm4_cbc;
+mod sm4_cfb;
 mod sm4_ctr;
 mod sm4_ecb;
+mod sm4_ofb;
 mod triple_des_cbc;
 mod triple_des_ecb;
 mod x25519;
@@ -403,8 +405,10 @@ const BENCHES: &[Bench] = &[
     (seed_ecb::USES, seed_ecb::bench),
     (seed_ofb::USES, seed_ofb::bench),
     (sm4_cbc::USES, sm4_cbc::bench),
+    (sm4_cfb::USES, sm4_cfb::bench),
     (sm4_ctr::USES, sm4_ctr::bench),
     (sm4_ecb::USES, sm4_ecb::bench),
+    (sm4_ofb::USES, sm4_ofb::bench),
     (argon2::USES, argon2::bench),
     (scrypt::USES, scrypt::bench),
     (sha1::USES, sha1::bench),
