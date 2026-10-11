@@ -95,41 +95,6 @@ theorem bitSet_lane (q : BitVec 32) {L : Nat} (hL : q.toNat % 4 = L) :
   rw [h3 1 (.inl rfl), h3 2 (.inr rfl)]
   rcases (by omega : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;> decide
 
-/-- The lane mask: 255 rotated left a byte if bit 0 of the lane is set, then
-two if bit 1 is. -/
-theorem laneMask_rot {L : Nat} (hL : L < 4) :
-    (if decide (L / 2 = 1) then
-        (if decide (L % 2 = 1) then (BitVec.ofNat 32 255).rotateRight 24 else BitVec.ofNat 32 255).rotateRight 16
-      else if decide (L % 2 = 1) then (BitVec.ofNat 32 255).rotateRight 24 else BitVec.ofNat 32 255) =
-      laneMask L := by
-  rcases (by omega : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;> decide
-
-theorem ror_ror (x : BitVec 32) {a b : Nat} (h : a + b < 32) :
-    (x.rotateRight a).rotateRight b = x.rotateRight (a + b) := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [BitVec.getLsbD_rotateRight_of_lt (show b < 32 by omega),
-    BitVec.getLsbD_rotateRight_of_lt (show a < 32 by omega), BitVec.getLsbD_rotateRight_of_lt h]
-  have d : ∀ n, n < 32 → decide (n < 32) = true := fun n hn => decide_eq_true hn
-  split <;> split <;> (try split) <;>
-    first
-    | omega
-    | (congr 1; omega)
-    | (rw [d _ (by omega), Bool.true_and]; congr 1; omega)
-    | (rw [d _ (by omega), Bool.true_and, d _ (by omega), Bool.true_and]; congr 1; omega)
-
-set_option linter.unusedSimpArgs false in
-/-- The accumulator rotated right by the lane's bytes. -/
-theorem acc_rot (x : BitVec 32) {L : Nat} (hL : L < 4) :
-    (if decide (L / 2 = 1) then
-        (if decide (L % 2 = 1) then x.rotateRight 8 else x).rotateRight 16
-      else if decide (L % 2 = 1) then x.rotateRight 8 else x) = x.rotateRight (8 * L) := by
-  have r0 : x.rotateRight 0 = x := by
-    apply BitVec.eq_of_getLsbD_eq; intro i hi
-    simp [hi]
-  rcases (by omega : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;>
-    simp only [Nat.reduceDiv, Nat.reduceMod, Nat.reduceMul, decide_true, decide_false, ite_true,
-      ite_false, Bool.false_eq_true, r0, ror_ror x (show 8 + 16 < 32 by decide)] <;> rfl
-
 /-! ## The rows -/
 
 theorem row_mask (q lm : BitVec 32) :
@@ -216,14 +181,6 @@ structure RowInv (s₀ : State) (j : Nat) (idx : Byte) (k : Nat) (u : State) : P
   keep : Keep lookRegs s₀ u
   mem : u.mem = s₀.mem
 
-theorem mask_hit (idx : Byte) {k : Nat} (hk : k < 64) (lm : BitVec 32) :
-    (if 4 ≤ (idx.setWidth 32 - BitVec.ofNat 32 (4 * k)).toNat then 0 else lm) =
-      if idx.toNat / 4 = k then lm else 0 := by
-  have h := row_hit idx hk
-  by_cases e : idx.toNat / 4 = k
-  · rw [ite_eq_right (by omega), ite_eq_left e]
-  · rw [ite_eq_left (by omega), ite_eq_right e]
-
 theorem row_step {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) (idx : Byte) {k : Nat}
     (hk : k < 64) {u : State} (I : RowInv s₀ j idx k u) :
     WP isa (.block (row j)) u fun u' =>
@@ -264,11 +221,6 @@ theorem rows_run {s₀ : State} (E : LookEnv s₀) {j : Nat} (hj : j < 4) (idx :
     have : BitVec.ofNat 32 (64 - (k + 1)) ≠ 0#32 := by
       intro h; have := congrArg BitVec.toNat h; simp at this; omega
     rw [show (BitVec.ofNat 32 (64 - (k + 1)) == 0#32) = false from beq_eq_false_iff_ne.mpr this]; rfl
-
-theorem sub256_mod (idx : Byte) : (idx.setWidth 32 - BitVec.ofNat 32 (4 * 64)).toNat % 4 = idx.toNat % 4 := by
-  have := idx.isLt
-  rw [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show idx.toNat < 2 ^ 32 by omega)]
-  omega
 
 /-- The lookup of S-box `j` for xL's byte `3 - j`. -/
 theorem lookup_run {s : State} (E : LookEnv s) {j : Nat} (hj : j < 4) :

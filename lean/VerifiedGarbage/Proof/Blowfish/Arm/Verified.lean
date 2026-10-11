@@ -18,18 +18,6 @@ namespace VG.Proof.Blowfish.Arm
 
 open VG VG.Arm VG.Impl.Blowfish.Arm VG.Spec.Blowfish VG.Proof.Blowfish
 
-/-- `vg_blowfish_expand_key` with `scratch: *mut [u64; 8]`. -/
-def expandKeyScratch8Sig : Sig where
-  params := [("key", .slice false .u8 "key_len"), ("schedule", .array true .u8 4168),
-    ("scratch", .array true .u64 8)]
-
-/-- `expandKeyContract`, whatever `scratch` is. -/
-def expandKeyScratch8Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  expandKeyScratch8Sig.contract A
-    (pre := fun key keyLen schedule _scratch => expandKeyPre A.ptrBits key keyLen schedule)
-    (post := fun key keyLen schedule _scratch => expandKeyPost A.ptrBits key keyLen schedule)
-    (stack := stack)
-
 def dir (up : Bool) : Direction := if up then .encrypt else .decrypt
 
 /-! ## ECB -/
