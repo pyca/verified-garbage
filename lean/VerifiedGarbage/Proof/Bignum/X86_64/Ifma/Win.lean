@@ -18,7 +18,8 @@ namespace VG.Proof.Bignum.X86_64.Ifma
 open VG VG.X86_64 VG.Proof.Bignum.Amm52
 open VG.Proof.Bignum (off word ofs Outside off_off ofs_off writeW_outside)
 open VG.Impl.Rsa.X86_64.CrtIfma
-open VG.Proof.Bignum.X86_64.AmmSym (mont_mul2 r15Dec_ok ea_at' wp_seqs_app)
+open VG.Proof.Bignum.X86_64.AmmSym (mont_mul2 r15Dec_ok ea_at' wp_seqs_app se_ofNat)
+open VG.Proof.Bignum.X86_64 (ofNat_sub_beq)
 
 variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
@@ -302,18 +303,45 @@ theorem mulLoop_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {
     funext p
     rw [show 5 - (n - 1) = (5 - n) + 1 by omega_using [h1, h5, h1'], Nat.pow_succ]; grind
 
-theorem window_eq : window l =
-    (select l 0 ++ select l 1) ++
-      ([.block (rotCode l 0 ++ rotCode l 1 ++ ([.mov32 .r15 (.imm 5)] : List Instr)), .loop (mulBody l) .ne] :
-        List (Prog isa)) := by
-  simp only [window, List.append_assoc]; rfl
+/-- The last window's setup: `S := Fin`, one multiplication, the last window. -/
+def finCode (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : List Instr :=
+  copyN l l.oS l.oFin ++ [.mov32 .r15 (.imm 1), .mov32 .r14 (.imm 1)]
 
-/-- A window: `Y ≡ x^E R` becomes `x^(16 E + v) R` for the top 4 bits `v` of
-`V`, which is rotated up by 4 bits. -/
-theorem window_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E : Nat → Nat}
+/-- A window's usual setup: `S := T_v`, `V` rotated, five multiplications. -/
+def normCode (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : List (Prog isa) :=
+  (select l 0 ++ select l 1) ++
+    ([.block (rotCode l 0 ++ rotCode l 1 ++ ([.mov32 .r15 (.imm 5)] : List Instr))] : List (Prog isa))
+
+theorem window_eq : VG.Impl.Bignum.X86_64.seqs (window l) =
+    .seq (.seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 l.E))])
+      (.ite .e (.block (finCode l)) (VG.Impl.Bignum.X86_64.seqs (normCode l)))) (.loop (mulBody l) .ne) := by
+  simp only [window, normCode, finCode, List.append_assoc]; rfl
+
+theorem E_lt (hl : LayOk l) : l.E < 2 ^ 31 := by
+  obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
+  have := hl.D_bounds; omega_arith
+
+/-- The comparison of `r13` (byte `i`) with `E`. -/
+theorem r13Cmp_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i ≤ l.E) (h13 : s.gpr .r13 = BitVec.ofNat 64 i) :
+    WP isa (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 l.E))]) s fun s' =>
+      isa.eval .e s' = some (decide (i = l.E)) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
+        s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  have hE := E_lt hl
+  let t := arithFlags s (s.gpr .r13 - (BitVec.ofNat 32 l.E).signExtend 64)
+    (decide ((s.gpr .r13).toNat < ((BitVec.ofNat 32 l.E).signExtend 64).toNat))
+    (subOverflow (s.gpr .r13) ((BitVec.ofNat 32 l.E).signExtend 64) (s.gpr .r13 - (BitVec.ofNat 32 l.E).signExtend 64))
+  refine WP.of_runBlock ⟨t, by rw [runBlock_cons]; rfl, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · change t.zf = _
+    simp only [t, VG.X86_64.RegUpd.zf_arithFlags, h13, se_ofNat hE]
+    rw [ofNat_sub_beq (by omega_using [hi, hE]) (by omega_using [hE])]
+  all_goals rfl
+
+/-- A window's usual setup and multiplications: `Y ≡ x^E R` becomes
+`x^(16 E + v) R` for the top 4 bits `v` of `V`, which is rotated up by 4 bits. -/
+theorem winNorm_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E : Nat → Nat}
     (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p))
     (h : ExpSt l s.mem B M k x Q E) :
-    WP isa (VG.Impl.Bignum.X86_64.seqs (window l)) s fun s' =>
+    WP isa (VG.Impl.Bignum.X86_64.seqs (normCode l)) s fun t => WP isa (.loop (mulBody l) .ne) t fun s' =>
       ExpSt l s'.mem B M k x Q (fun p => E p * 16 + nib l s.mem B p) ∧
       (∀ p < 2, word s'.mem B (l.D * p + l.oV) = (word s.mem B (l.D * p + l.oV)).rotateRight 60) ∧
       OutW l B s.mem s'.mem ∧
@@ -323,12 +351,11 @@ theorem window_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   have hD := hl.D_bounds
   have hn := hs.nowrap
-  rw [window_eq]
   refine wp_seqs_app (by simp [select]) (by simp)
     (WP.mono (sel2_ok hl hB hs h) fun s₂ ⟨st₂, gs₂, w₂, f₂, g₂, rd₂, wr₂, x₂⟩ => ?_)
   have hB₂ : s₂.gpr .rbx = B := by rw [g₂ _ (by decide) (by decide) (by decide) (by decide)]; exact hB
   have hs₂ : Scr s₂ B (2 * l.D) := hs.congr wr₂
-  refine WP.seq ?_
+  dsimp only [VG.Impl.Bignum.X86_64.seqs]
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (rotV_ok (p := 0) (by decide) hB₂ hs₂) fun s₃ ⟨m₃, k₃, x₃⟩ => ?_
   have hB₃ : s₃.gpr .rbx = B := by rw [k₃.gpr (by decide)]; exact hB₂
@@ -381,5 +408,107 @@ theorem window_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q
     change (s₄.setReg32 .r15 5).gpr r = _
     rw [State.setReg32, RegUpd.gpr_setReg_of_ne _ _ r10, k₄.gpr (by simp [r1]), k₃.gpr (by simp [r1]),
       g₂ r r1 r2 r3 r5]
+
+/-- A window (byte `i < E`): `Y ≡ x^E R` becomes `x^(16 E + v) R` for the top
+4 bits `v` of `V`, which is rotated up by 4 bits. -/
+theorem window_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E : Nat → Nat} {i : Nat}
+    (hi : i < l.E) (h13 : s.gpr .r13 = BitVec.ofNat 64 i)
+    (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p))
+    (h : ExpSt l s.mem B M k x Q E) :
+    WP isa (VG.Impl.Bignum.X86_64.seqs (window l)) s fun s' =>
+      ExpSt l s'.mem B M k x Q (fun p => E p * 16 + nib l s.mem B p) ∧
+      (∀ p < 2, word s'.mem B (l.D * p + l.oV) = (word s.mem B (l.D * p + l.oV)).rotateRight 60) ∧
+      OutW l B s.mem s'.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
+        r ≠ .r15 → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  rw [window_eq]
+  refine WP.seq (WP.seq (WP.mono (r13Cmp_ok hl (Nat.le_of_lt hi) h13) fun s₀ ⟨e₀, g₀, m₀, rd₀, wr₀, x₀⟩ => ?_))
+  refine WP.ite false (by rw [e₀]; simp only [decide_eq_false (Nat.ne_of_lt hi)]) (fun h => Bool.noConfusion h)
+    (fun _ => ?_)
+  have := winNorm_ok hl (s := s₀) (by rw [g₀]; exact hB) (hs.congr wr₀) hR (m₀ ▸ h)
+  rw [m₀, g₀, rd₀, wr₀, x₀] at this
+  exact this
+
+/-- `S` holds `Fin`, `r14` and `r15` 1, from `s₀`. -/
+structure FinSet (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (B : Addr) (t : State) : Prop where
+  s : ∀ p < 2, ∀ q < l.L, limb l t.mem B (l.D * p + l.oS) q = limb l s₀.mem B (l.D * p + l.oFin) q
+  frame : Out2 l B l.oS l.NB s₀.mem t.mem
+  r14 : t.gpr .r14 = BitVec.ofNat 64 1
+  r15 : t.gpr .r15 = BitVec.ofNat 64 1
+  gpr : ∀ r, r ≠ .r14 → r ≠ .r15 → t.gpr r = s₀.gpr r
+  rd : t.rd = s₀.rd
+  wr : t.wr = s₀.wr
+  mxcsr : t.mxcsr = s₀.mxcsr
+
+theorem finCode_ok (hl : LayOk l) {s : State} {B : Addr} (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) :
+    WP isa (.block (finCode l)) s (FinSet l s B) := by
+  obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
+  rw [finCode, WP.block_append_iff]
+  refine WP.mono (copyN_ok hl hB hs (by omega_using [o4, o10]) (by omega_using [o9, o10])
+    (.inr (by omega_using [o4, o9]))) fun s₁ ⟨l₁, f₁, g₁, rd₁, wr₁, x₁⟩ => ?_
+  rw [WP.block_cons_iff]
+  refine ⟨s₁.setReg32 .r15 1, rfl, ?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨(s₁.setReg32 .r15 1).setReg32 .r14 1, rfl, WP.block_nil ⟨l₁, f₁, ?_, ?_, fun r r1 r2 => ?_, rd₁, wr₁, x₁⟩⟩
+  · rw [State.setReg32, RegUpd.gpr_setReg_self]; rfl
+  · rw [State.setReg32, RegUpd.gpr_setReg_of_ne _ _ (by decide), State.setReg32, RegUpd.gpr_setReg_self]; rfl
+  · rw [State.setReg32, RegUpd.gpr_setReg_of_ne _ _ r1, State.setReg32, RegUpd.gpr_setReg_of_ne _ _ r2, g₁]
+
+/-- The last window (`r13 = E`): `Y := Y Fin / R`, `r14 := 1`. -/
+theorem finWin_ok (hl : LayOk l) {s : State} {B : Addr} {M k : Nat → Nat}
+    (h13 : s.gpr .r13 = BitVec.ofNat 64 l.E) (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D))
+    (ar : Ar l s.mem B M k) (gy : ∀ p < 2, Good l s.mem B M l.oY p) (gf : ∀ p < 2, Good l s.mem B M l.oFin p) :
+    WP isa (VG.Impl.Bignum.X86_64.seqs (window l)) s fun s' =>
+      (∀ p < 2, Good l s'.mem B M l.oY p ∧
+        val52 l s'.mem B (l.D * p + l.oY) * 2 ^ (52 * l.L) % M p =
+          val52 l s.mem B (l.D * p + l.oY) * val52 l s.mem B (l.D * p + l.oFin) % M p) ∧
+      OutW l B s.mem s'.mem ∧ s'.gpr .r14 = BitVec.ofNat 64 1 ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
+        r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
+  rw [window_eq]
+  refine WP.seq (WP.seq (WP.mono (r13Cmp_ok hl (Nat.le_refl _) h13) fun s₀ ⟨e₀, g₀, m₀, rd₀, wr₀, x₀⟩ => ?_))
+  refine WP.ite true (by rw [e₀]; simp only [decide_true]) (fun _ => ?_) (fun h => Bool.noConfusion h)
+  have hB₀ : s₀.gpr .rbx = B := by rw [g₀]; exact hB
+  refine WP.mono (finCode_ok hl hB₀ (hs.congr wr₀)) fun u hu => ?_
+  have hBu : u.gpr .rbx = B := by rw [hu.gpr _ (by decide) (by decide)]; exact hB₀
+  have hsu : Scr u B (2 * l.D) := hs.congr (by rw [hu.wr, wr₀])
+  have fu : Out2 l B l.oS l.NB s.mem u.mem := by rw [← m₀]; exact hu.frame
+  have gsu : ∀ p < 2, Good l u.mem B M l.oS p := fun p hp =>
+    (gf p hp).of_limbs fun q hq => by rw [hu.s p hp q hq, m₀]
+  have vsu : ∀ p < 2, val52 l u.mem B (l.D * p + l.oS) = val52 l s.mem B (l.D * p + l.oFin) := fun p hp =>
+    val52_of_limbs fun q hq => by rw [hu.s p hp q hq, m₀]
+  have gyu : ∀ p < 2, Good l u.mem B M l.oY p := fun p hp =>
+    (gy p hp).of_out2 hl hp fu (.inl (by omega_using [o2, o4])) (by omega_using [o2, o10]) (by omega_using [o4, o10])
+  have vyu : ∀ p < 2, val52 l u.mem B (l.D * p + l.oY) = val52 l s.mem B (l.D * p + l.oY) := fun p hp =>
+    fu.val hl hp (.inl (by omega_using [o2, o4])) (by omega_using [o2, o10]) (by omega_using [o4, o10])
+  have aru : Ar l u.mem B M k := ar.of_out2 hl fu (by omega_using [o2, o4]) (by omega_using [o4, o10])
+  refine WP.loop (M := isa) (fun n t => n = 1 ∧ t = u) ?_ 1 u ⟨rfl, rfl⟩
+  intro n t ⟨hn, ht⟩
+  subst hn ht
+  refine WP.seq (WP.mono (r15Cmp_ok (by decide) hu.r15) fun t₀ ⟨e₁, g₁, m₁, rd₁, wr₁, x₁⟩ => ?_)
+  refine WP.seq (WP.ite true (by rw [e₁]; rfl) (fun _ => ?_) (fun h => Bool.noConfusion h))
+  have hm := amm2_ok hl (o := l.oY) (a := l.oY) (b := l.oS) (by rw [g₁]; exact hBu) (hsu.congr wr₁) (m₁ ▸ aru)
+    (by omega_using [o2, o10]) (by omega_using []) (by omega_using [o2, o10]) (by omega_using [o4, o10])
+    (fun p hp => m₁ ▸ gyu p hp) (fun p hp => m₁ ▸ gsu p hp)
+  rw [amm_winSetup, WP.seq_iff] at hm
+  refine WP.mono hm fun w hw => WP.seq (WP.mono hw fun t₁ ⟨v₁, f₁, ar₁, g₂, rd₂, wr₂, x₂⟩ => ?_)
+  have r15₁ : t₁.gpr .r15 = BitVec.ofNat 64 1 := by
+    rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide), g₁]; exact hu.r15
+  refine WP.mono (r15Dec_ok (by decide) (by decide) r15₁) fun t₂ ⟨r15₂, z₂, k₂, me₂, x₃⟩ => ?_
+  simp only [eval, z₂, Option.map_some]
+  refine .inl ⟨by simp, fun p hp => ?_, ?_, ?_, fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 => ?_, ?_, ?_, ?_⟩
+  · rw [me₂, ← vyu p hp, ← vsu p hp, ← m₁]; exact v₁ p hp
+  · rw [me₂, ← m₀]
+    exact (OutW.ofS hu.frame).trans (OutW.ofY (m₁ ▸ f₁))
+  · rw [k₂.gpr (by decide), g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide), g₁]; exact hu.r14
+  · rw [k₂.gpr (by simp [r11]), g₂ r r1 r2 r3 r4 r5 r6 r7 r8 r9, g₁, hu.gpr r r10 r11, g₀]
+  · rw [k₂.2.1, rd₂, rd₁, hu.rd, rd₀]
+  · rw [k₂.2.2, wr₂, wr₁, hu.wr, wr₀]
+  · rw [x₃, x₂, x₁, hu.mxcsr, x₀]
 
 end VG.Proof.Bignum.X86_64.Ifma

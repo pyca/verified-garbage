@@ -24,11 +24,11 @@ abbrev arrJ (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (i : Nat) : Nat := ((arrs l).ge
 /-- Entry `i` of `arrs`: the offset in the region. -/
 abbrev arrC (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (i : Nat) : Nat := ((arrs l).getD i (0, 0)).2
 
-theorem arrs_ok (hl : LayOk l) : ∀ i < 4, arrJ l i < 8 ∧ arrC l i + l.NB ≤ l.D := by
+theorem arrs_ok (hl : LayOk l) : ∀ i < 5, arrJ l i < 8 ∧ arrC l i + l.NB ≤ l.D := by
   rcases hl with rfl | rfl | rfl <;> decide
 
 theorem arrs_sep (hl : LayOk l) :
-    ∀ k < 4, ∀ i < 4, k ≠ i → arrC l k + l.NB ≤ arrC l i ∨ arrC l i + l.NB ≤ arrC l k := by
+    ∀ k < 5, ∀ i < 5, k ≠ i → arrC l k + l.NB ≤ arrC l i ∨ arrC l i + l.NB ≤ arrC l k := by
   rcases hl with rfl | rfl | rfl <;> decide
 
 /-- `cmp r8, k`. -/

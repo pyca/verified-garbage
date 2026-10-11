@@ -29,10 +29,6 @@ variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 def TOk (rs : List Reg) (c : Prog isa) : Prop :=
   ∃ hc : VG.Taint.Hint VG.X86_64.Taint.T, (taint.check (Taint.ofRegs rs) c hc).isSome = true
 
-/-- `arr52`'s code after its loads. -/
-def arrTail (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p c : Nat) : List Instr :=
-  ([.alu .add .r11 (.imm (BitVec.ofNat 32 (l.D * p + c))), .movImm64 .r12 mask52] : List Instr) ++ to52 l
-
 /-- `k0St`'s code after its load. -/
 def k0Tail (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) : List Instr :=
   ([.alu .add .r11 (.imm (BitVec.ofNat 32 (l.D * p))), .mov .rax (.mem (hdr sMinv)), .alu .and .rax (.reg .r12)] :
@@ -43,7 +39,6 @@ structure RegT (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop where
   sel0 : TOk [.rdi, .r8] (arrSel l 0 (arrs l))
   sel1 : TOk [.rdi, .r8] (arrSel l 1 (arrs l))
   tail : TOk [.rsi, .r11, .r8] (.block (to52 l ++ ([.alu .sub .r8 (.imm 1)] : List Instr)))
-  a0F : TOk [.rsi, .r11] (.block (arrTail l 0 l.oFin))
   k00 : TOk [.rdi, .r11] (.block (k0Tail l 0))
   k01 : TOk [.rdi, .r11] (.block (k0Tail l 1))
   eZ : TOk [.r11] (.block (eZero l))
@@ -55,7 +50,7 @@ theorem regT (hl : LayOk l) : RegT l := by
   rcases hl with rfl | rfl | rfl <;>
     exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
       ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+      ⟨_, by taint_decide⟩⟩
 
 /-! ## The region's public data and what its blocks read -/
 
@@ -106,45 +101,6 @@ theorem RT.hd {p sp sl : Nat} {q : RegPub} {s : State} (h : RT l p sp sl q s) :
   rw [off_off]; exact c.scr.ld (by omega_using [hoa, haZ, this])
 
 /-! ## The blocks -/
-
-theorem arr52_eq (p j c : Nat) : arr52 l p j c =
-    ([.mov .rsi (.mem (hdr (sArr j))), .mov .r11 (.mem (hdr sIfma))] : List Instr) ++ arrTail l p c := by
-  simp only [arr52, arrPtrs, arrTail, List.cons_append, List.nil_append]
-
-/-- `arr52`'s loads: the array's and the area's addresses. -/
-theorem arrLd_ok {p j sp sl : Nat} (hj : j < 8) {q : RegPub} {s : State} (h : RT l p sp sl q s) :
-    WP isa (.block [.mov .rsi (.mem (hdr (sArr j))), .mov .r11 (.mem (hdr sIfma))]) s fun t =>
-      t.gpr .rsi = off (off q.B q.o) (slot l.W j) ∧ t.gpr .r11 = off q.B q.a := by
-  have hH := h.hd
-  obtain ⟨-, mx, eb, c, -⟩ := h
-  refine WP.mono (WP.keep [.rsi, .r11] (Q := fun t => t.gpr .rsi = off (off q.B q.o) (slot l.W j) ∧
-    t.gpr .r11 = off q.B q.a) (by
-      xrun [State.ea, hdr, c.rdi, hdrOff, hH _ (show sArr j < 32 by unfold sArr; omega_arith), hH sIfma (by decide)]
-      exact ⟨c.hdr.harr j hj, c.ia⟩) rfl) fun t h => h.1
-
-theorem arr52_rt (hl : LayOk l) {p j c sp sl : Nat} (hc : c + l.NB ≤ l.D) (hj : j < 8) {q : RegPub} {s : State}
-    (h : RT l p sp sl q s) : WP isa (.block (arr52 l p j c)) s fun t => RT l p sp sl q t ∧ t.gpr .r12 = mask52 := by
-  have hRT := h
-  obtain ⟨⟨hoa, haZ, hp, -⟩, mx, eb, c', -⟩ := h
-  have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
-  exact WP.mono (arr52r_ok hl c'.scr c'.rdi c'.hdr c'.ia hoa haZ hp hc hj) fun t ⟨_, f, k, h12, _⟩ =>
-    ⟨hRT.of_frm f (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega_using [hc, haZ, hDp]) k, h12⟩
-
-/-- `arr52` is constant time, given that the taint analysis checks the rest after its loads. -/
-theorem arr52_ct {p j c sp sl : Nat} (hj : j < 8) {hc₁ : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hT₁ : (taint.check (Taint.ofRegs [.rdi]) (.block ([.mov .rsi (.mem (hdr (sArr j))),
-      .mov .r11 (.mem (hdr sIfma))] : List Instr)) hc₁).isSome = true)
-    (hT : TOk [.rsi, .r11] (.block (arrTail l p c))) :
-    RelCT isa (Two (RT l p sp sl)) (.block (arr52 l p j c)) fun _ _ => True := by
-  rw [arr52_eq]
-  obtain ⟨_, hT⟩ := hT
-  exact ct_split _ _ [.rdi] [.rsi, .r11] (pins_rt fun _ _ h => h) hT₁
-    (fun _ _ h => arrLd_ok hj h)
-    (pins_eqs (fun q r => if r = .rsi then off (off q.B q.o) (slot l.W j) else off q.B q.a) fun q s h r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact h.1
-      · exact h.2) hT
 
 theorem k0St_eq (p : Nat) : k0St l p = ([.mov .r11 (.mem (hdr sIfma))] : List Instr) ++ k0Tail l p := by
   simp only [k0St, k0Tail, List.cons_append, List.nil_append]
@@ -389,20 +345,6 @@ theorem k1_ct (hl : LayOk l) (hR : RegT l) {p sp sl : Nat} {rest : List (Prog is
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by taint_decide) (by taint_decide) (by taint_decide))) (fun _ _ h => h.2) hr
 
-/-- The loads of `arr52`, for array `j`. -/
-abbrev ArrLd (j : Nat) : Prop :=
-  ∃ hc : VG.Taint.Hint VG.X86_64.Taint.T, (taint.check (Taint.ofRegs [.rdi]) (.block ([.mov .rsi (.mem (hdr (sArr j))),
-    .mov .r11 (.mem (hdr sIfma))] : List Instr)) hc).isSome = true
-
-theorem arrLd_aY : ArrLd Public.aY := ⟨_, by taint_decide⟩
-
-theorem arr52_ct' (hl : LayOk l) {p j c sp sl : Nat} (hj : j < 8) (hc : c + l.NB ≤ l.D) (h₁ : ArrLd j)
-    (hT : TOk [.rsi, .r11] (.block (arrTail l p c))) {rest : List (Prog isa)} (hr0 : rest ≠ [])
-    (hr : RelCT isa (Two fun q s => RT l p sp sl q s ∧ s.gpr .r12 = mask52) (seqs rest) fun _ _ => True) :
-    RelCT isa (Two (RT l p sp sl)) (seqs (.block (arr52 l p j c) :: rest)) fun _ _ => True :=
-  let ⟨_, h₁⟩ := h₁
-  ct_cons hr0 (arr52_ct hj h₁ hT) (fun _ _ h => arr52_rt hl hc hj h) hr
-
 /-- `to52`'s arguments for array `j` at offset `c` of region `p`. -/
 theorem arrPtrs_ok {p j c sp sl : Nat} (hj : j < 8) (hc : l.D * p + c < 2 ^ 31) {q : RegPub} {s : State}
     (h : RT l p sp sl q s) :
@@ -419,12 +361,12 @@ theorem arrPtrs_ok {p j c sp sl : Nat} (hj : j < 8) (hc : l.D * p + c < 2 ^ 31) 
 
 /-- `arrLoop`'s count, before an iteration. -/
 def LoopI (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p sp sl : Nat) (q : RegPub) (i : Nat) (s : State) : Prop :=
-  RT l p sp sl q s ∧ s.gpr .r8 = BitVec.ofNat 64 (4 - i)
+  RT l p sp sl q s ∧ s.gpr .r8 = BitVec.ofNat 64 (5 - i)
 
 /-- `arrSel`'s result: the arguments of entry `i`. -/
 def SelO (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) (a : RegPub × Nat) (s : State) : Prop :=
   s.gpr .rsi = off (off a.1.B a.1.o) (slot l.W (arrJ l a.2)) ∧
-    s.gpr .r11 = off (off a.1.B a.1.a) (l.D * p + arrC l a.2) ∧ s.gpr .r8 = BitVec.ofNat 64 (4 - a.2)
+    s.gpr .r11 = off (off a.1.B a.1.a) (l.D * p + arrC l a.2) ∧ s.gpr .r8 = BitVec.ofNat 64 (5 - a.2)
 
 /-- What `arrLoop` does to `RT`. -/
 theorem arrLoop_rt (hl : LayOk l) {p sp sl : Nat} {q : RegPub} {s : State} (h : RT l p sp sl q s) :
@@ -443,18 +385,18 @@ theorem arrLoop_ct (hl : LayOk l) {p sp sl : Nat} (hsel : TOk [.rdi, .r8] (arrSe
   obtain ⟨_, htail⟩ := htail
   have hD := hl.D_bounds
   -- The iteration from `RT` and the count, through `arrSel`'s state.
-  have sel : ∀ (a : RegPub × Nat) s, a.2 < 4 → LoopI l p sp sl a.1 a.2 s → ∀ {Q : State → Prop},
+  have sel : ∀ (a : RegPub × Nat) s, a.2 < 5 → LoopI l p sp sl a.1 a.2 s → ∀ {Q : State → Prop},
       (∀ s', RT l p sp sl a.1 s' → s'.gpr .r8 = s.gpr .r8 →
         WP isa (.block (arrPtrs l p (arrJ l a.2) (arrC l a.2))) s' Q) → WP isa (arrSel l p (arrs l)) s Q :=
-    fun a s hi ⟨hRT, h8⟩ _ hk => arrSel_ok (arrs l) a.2 s hi (show 4 < 2 ^ 31 by decide) (by rw [h8]; rfl)
+    fun a s hi ⟨hRT, h8⟩ _ hk => arrSel_ok (arrs l) a.2 s hi (show 5 < 2 ^ 31 by decide) (by rw [h8]; rfl)
       fun s' hg hm hrd hwr _ => hk s' (hRT.of_frm (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp)
         (⟨fun r _ => by rw [hg], hrd, hwr⟩ : Keep [] s s')) (by rw [hg])
-  have hbody : RelCT isa (Two fun (a : RegPub × Nat) s => a.2 < 4 ∧ LoopI l p sp sl a.1 a.2 s)
+  have hbody : RelCT isa (Two fun (a : RegPub × Nat) s => a.2 < 5 ∧ LoopI l p sp sl a.1 a.2 s)
       (.seq (arrSel l p (arrs l)) (.block (to52 l ++ ([.alu .sub .r8 (.imm 1)] : List Instr)))) fun _ _ => True := by
     refine RelCT.seq (two_piece (Ψ := SelO l p) [.rdi, .r8] (pins_eqs (fun a r => if r = .rdi then off a.1.B a.1.o
-      else BitVec.ofNat 64 (4 - a.2)) fun a s h r hr => ?_) hsel fun a s h => ?_)
+      else BitVec.ofNat 64 (5 - a.2)) fun a s h r hr => ?_) hsel fun a s h => ?_)
       (two_taint [.rsi, .r11, .r8] (pins_eqs (fun a r => if r = .rsi then off (off a.1.B a.1.o) (slot l.W (arrJ l a.2))
-        else if r = .r11 then off (off a.1.B a.1.a) (l.D * p + arrC l a.2) else BitVec.ofNat 64 (4 - a.2))
+        else if r = .r11 then off (off a.1.B a.1.a) (l.D * p + arrC l a.2) else BitVec.ofNat 64 (5 - a.2))
         fun a s h r hr => ?_) htail)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -472,10 +414,10 @@ theorem arrLoop_ct (hl : LayOk l) {p sp sl : Nat} (hsel : TOk [.rdi, .r8] (arrSe
       · exact h.2.1
       · exact h.2.2
   have hloop := two_loop (cond := .ne) (Φ := LoopI l p sp sl) (Ψ := fun q s => RT l p sp sl q s ∧ s.gpr .r12 = mask52)
-    (fun _ => 4) hbody fun q i s hi h => ?_
-  · obtain ⟨_, hz⟩ := (⟨_, by taint_decide⟩ : TOk [] (.block [.mov32 .r8 (.imm 4)]))
-    exact RelCT.seq (two_piece (Ψ := fun q s => 0 < 4 ∧ LoopI l p sp sl q 0 s) [] (fun _ _ _ _ _ _ h => by cases h) hz
-      fun q s h => WP.mono (WP.keep [.r8] (Q := fun t => t.gpr .r8 = BitVec.ofNat 64 4 ∧ t.mem = s.mem) (by xrun) rfl)
+    (fun _ => 5) hbody fun q i s hi h => ?_
+  · obtain ⟨_, hz⟩ := (⟨_, by taint_decide⟩ : TOk [] (.block [.mov32 .r8 (.imm 5)]))
+    exact RelCT.seq (two_piece (Ψ := fun q s => 0 < 5 ∧ LoopI l p sp sl q 0 s) [] (fun _ _ _ _ _ _ h => by cases h) hz
+      fun q s h => WP.mono (WP.keep [.r8] (Q := fun t => t.gpr .r8 = BitVec.ofNat 64 5 ∧ t.mem = s.mem) (by xrun) rfl)
         fun t ⟨⟨h8, hm⟩, k⟩ => ⟨by decide, h.of_frm (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k, h8⟩)
       hloop
   have hj := arrs_ok hl i hi
@@ -493,10 +435,10 @@ theorem arrLoop_ct (hl : LayOk l) {p sp sl : Nat} (hsel : TOk [.rdi, .r8] (arrSe
     rw [List.mem_singleton.mp hr]; simp only; have := hj.2; omega_using [this, haZ, hDp]) k
   refine WP.mono (subR8_ok v) fun x ⟨x8, xz, kx, xm, _⟩ => ?_
   have hx := hv.of_frm (rs := []) (by rw [xm]; exact Frm.refl _ _ _) (by simp) kx
-  have hv8 : v.gpr .r8 - 1 = BitVec.ofNat 64 (4 - (i + 1)) := by
+  have hv8 : v.gpr .r8 - 1 = BitVec.ofNat 64 (5 - (i + 1)) := by
     rw [k.gpr (by decide), h8, h.2, ofNat64_pred (by omega) (by omega), Nat.sub_sub]
   refine ⟨?_, fun _ => ⟨hx, by rw [x8, hv8]⟩, fun _ => ⟨hx, by rw [kx.gpr (by decide)]; exact h12⟩⟩
-  simp only [eval, xz, hv8, ofNat64_beq_zero (show 4 - (i + 1) < 2 ^ 64 by omega), Option.map_some,
+  simp only [eval, xz, hv8, ofNat64_beq_zero (show 5 - (i + 1) < 2 ^ 64 by omega), Option.map_some,
     Option.some.injEq]
   apply Bool.eq_iff_iff.mpr
   simp only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, decide_eq_true_eq]
@@ -514,13 +456,10 @@ theorem region0_ct (hl : LayOk l) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
   have := NB_le hl
   have := E_pos hl
   rw [show region l 0 sp sl = k1 l ++ (arrLoop l 0 ::
-    .block (arr52 l 0 Public.aY l.oFin) :: .block (k0St l 0) :: .block (eZero l) ::
-    eCopy l sp sl) from rfl]
+    .block (k0St l 0) :: .block (eZero l) :: eCopy l sp sl) from rfl]
   refine k1_ct hl hR (List.cons_ne_nil _ _) ?_
   refine ct_cons (List.cons_ne_nil _ _) ((arrLoop_ct hl hR.sel0 hR.tail).mono (fun _ _ h => h) fun _ _ _ => trivial)
     (fun _ _ h => arrLoop_rt hl h) ?_
-  refine two_map id (fun _ _ h => h.1) (arr52_ct' hl (by decide) (by omega_using [o9, o10]) arrLd_aY hR.a0F
-    (List.cons_ne_nil _ _) ?_)
   refine ct_cons (List.cons_ne_nil _ _) (k0St_ct 0 hR.k00) (fun _ _ h => k0St_rt hl h) ?_
   refine ct_cons (by simp [eCopy]) (eZero_ct 0 hR.eZ) (fun _ _ h => eZero_rt hl h) ?_
   exact two_map id (fun _ _ h => ⟨h.1, h.2.1⟩) (eCopy_ct hl hT hR.eEnd)
