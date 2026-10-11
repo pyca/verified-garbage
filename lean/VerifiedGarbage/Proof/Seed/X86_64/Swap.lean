@@ -47,8 +47,8 @@ theorem swap_check : check (names 64) swapCfg (fun _ => none) swapHalves swapEnv
 
 theorem ok_of_room {s : State} (h : Room s) {c : Cfg} (hb : c.base = .r9) (hs : c.slots ≤ 132)
     (he : c.exts = 0) : Ok c s :=
-  ⟨fun k hk => ⟨_, h, by
-      rw [hb]; exact Offset.contains_base _ (by unfold scratchSlots; omega) (by omega)⟩,
+  ⟨fun k hk => h.wr (by
+      rw [hb]; exact Offset.contains_base _ (by unfold scratchSlots; omega) (by omega)),
     fun k hk => by omega, by omega, fun _ _ j hj => by omega⟩
 
 theorem swap_writes (r : Reg) (h1 : r ≠ .rax) (h2 : r ≠ .rcx) :
