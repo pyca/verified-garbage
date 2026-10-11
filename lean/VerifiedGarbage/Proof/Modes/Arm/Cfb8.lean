@@ -86,15 +86,15 @@ theorem blocksOf_one_len (m : Mem) (p : Addr) (n : Nat) : ∀ x ∈ VG.Proof.Mod
 
 theorem cfb8Enc_post {c : Core} {S : CoreSpec c} (hbs : 0 < c.bs) {s s' : State}
     (h : (seqArm c S cfb8Enc).post s s') :
-    let ciph := S.ciphAt s.mem (State.addr (s.gpr .r0))
-    let iv := bytesAt s.mem (State.addr (s.gpr .r1)) c.bs
-    let xs := bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat
-    bytesAt s'.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat = Spec.Cfb8.encrypt ciph iv xs ∧
-      bytesAt s'.mem (State.addr (s.gpr .r1)) c.bs = Spec.Cfb8.next iv (Spec.Cfb8.encrypt ciph iv xs) := by
-  have e := runSeq_cfb8Enc (S.ciphAt s.mem (State.addr (s.gpr .r0))) ⟨[], bytesAt s.mem
-    (State.addr (s.gpr .r1)) c.bs, bytesAt s.mem (State.addr (stackArg s 0) +
+    let ciph := S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)
+    let iv := bytesAt s.mem (State.addr (ivArg c s)) c.bs
+    let xs := bytesAt s.mem (State.addr (dArg c s)) (nArg c s).toNat
+    bytesAt s'.mem (State.addr (dArg c s)) (nArg c s).toNat = Spec.Cfb8.encrypt ciph iv xs ∧
+      bytesAt s'.mem (State.addr (ivArg c s)) c.bs = Spec.Cfb8.next iv (Spec.Cfb8.encrypt ciph iv xs) := by
+  have e := runSeq_cfb8Enc (S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)) ⟨[], bytesAt s.mem
+    (State.addr (ivArg c s)) c.bs, bytesAt s.mem (State.addr (scArg c s) +
       BitVec.ofNat 64 (oOff + c.bs)) c.bs⟩
-    (VG.Proof.Modes.blocksOf 1 s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
+    (VG.Proof.Modes.blocksOf 1 s.mem (State.addr (dArg c s)) (nArg c s).toNat)
     (by show bytesAt _ _ c.bs ≠ []; simp [bytesAt]; omega) (blocksOf_one_len _ _ _)
   rw [flatten_blocksOf_one] at e
   have h1 := congrArg List.flatten h.1
@@ -103,15 +103,15 @@ theorem cfb8Enc_post {c : Core} {S : CoreSpec c} (hbs : 0 < c.bs) {s s' : State}
 
 theorem cfb8Dec_post {c : Core} {S : CoreSpec c} (hbs : 0 < c.bs) {s s' : State}
     (h : (seqArm c S cfb8Dec).post s s') :
-    let ciph := S.ciphAt s.mem (State.addr (s.gpr .r0))
-    let iv := bytesAt s.mem (State.addr (s.gpr .r1)) c.bs
-    let xs := bytesAt s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat
-    bytesAt s'.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat = Spec.Cfb8.decrypt ciph iv xs ∧
-      bytesAt s'.mem (State.addr (s.gpr .r1)) c.bs = Spec.Cfb8.next iv xs := by
-  have e := runSeq_cfb8Dec (S.ciphAt s.mem (State.addr (s.gpr .r0))) ⟨[], bytesAt s.mem
-    (State.addr (s.gpr .r1)) c.bs, bytesAt s.mem (State.addr (stackArg s 0) +
+    let ciph := S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)
+    let iv := bytesAt s.mem (State.addr (ivArg c s)) c.bs
+    let xs := bytesAt s.mem (State.addr (dArg c s)) (nArg c s).toNat
+    bytesAt s'.mem (State.addr (dArg c s)) (nArg c s).toNat = Spec.Cfb8.decrypt ciph iv xs ∧
+      bytesAt s'.mem (State.addr (ivArg c s)) c.bs = Spec.Cfb8.next iv xs := by
+  have e := runSeq_cfb8Dec (S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1)) ⟨[], bytesAt s.mem
+    (State.addr (ivArg c s)) c.bs, bytesAt s.mem (State.addr (scArg c s) +
       BitVec.ofNat 64 (oOff + c.bs)) c.bs⟩
-    (VG.Proof.Modes.blocksOf 1 s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
+    (VG.Proof.Modes.blocksOf 1 s.mem (State.addr (dArg c s)) (nArg c s).toNat)
     (by show bytesAt _ _ c.bs ≠ []; simp [bytesAt]; omega) (blocksOf_one_len _ _ _)
   rw [flatten_blocksOf_one] at e
   have h1 := congrArg List.flatten h.1

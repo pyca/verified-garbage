@@ -42,7 +42,7 @@ theorem decTaint : SeqTaint (ecbCore .decrypt) cbcDec :=
 
 theorem enc_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cbcEnc).Implies
     (Proof.TripleDes.cbcEncScratchContract Arm.abi 7 1024) where
-  pre s h := seqArm_pre_ro rfl rfl (by
+  pre s h := seqArm_pre_ro rfl rfl rfl (by
     sig_pre [Proof.TripleDes.cbcEncScratchContract, Proof.TripleDes.cbcScratchSig, Spec.TripleDes.cbcSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at h
     exact h)
@@ -50,13 +50,14 @@ theorem enc_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cbcEnc).Impl
     sig_post [Proof.TripleDes.cbcEncScratchContract, Proof.TripleDes.cbcScratchSig, Proof.TripleDes.cbcEncPost, Spec.TripleDes.cbcSig,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     have e := cbcEnc_post h
-    rw [show (ecbCore .encrypt).bs = 8 from rfl] at e
+    obtain ⟨e1, e2, e3, -, -⟩ := args_plain (c := ecbCore .encrypt) rfl s
+    rw [show (ecbCore .encrypt).bs = 8 from rfl, e1, e2, e3] at e
     simp only [ecbSpec, dirCipher, State.addr, blocksOf_eq] at e
     exact e
   pub s₁ s₂ _ _ h := by
     sig_pub [Proof.TripleDes.cbcEncScratchContract, Proof.TripleDes.cbcScratchSig, Spec.TripleDes.cbcSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at h
-    exact seqArm_pub h
+    exact seqArm_pub rfl h
   sat := by
     sig_implies_sat [Proof.TripleDes.cbcEncScratchContract, Proof.TripleDes.cbcScratchSig, Spec.TripleDes.cbcSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [cbcSat, stackArg, stackArgAddr, Mem.readW,
@@ -64,7 +65,7 @@ theorem enc_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cbcEnc).Impl
 
 theorem dec_implies : (seqArm (ecbCore .decrypt) (ecbSpec .decrypt) cbcDec).Implies
     (Proof.TripleDes.cbcDecScratchContract Arm.abi 7 1024) where
-  pre s h := seqArm_pre_ro rfl rfl (by
+  pre s h := seqArm_pre_ro rfl rfl rfl (by
     sig_pre [Proof.TripleDes.cbcDecScratchContract, Proof.TripleDes.cbcScratchSig, Spec.TripleDes.cbcSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at h
     exact h)
@@ -72,13 +73,14 @@ theorem dec_implies : (seqArm (ecbCore .decrypt) (ecbSpec .decrypt) cbcDec).Impl
     sig_post [Proof.TripleDes.cbcDecScratchContract, Proof.TripleDes.cbcScratchSig, Proof.TripleDes.cbcDecPost, Spec.TripleDes.cbcSig,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     have e := cbcDec_post h
-    rw [show (ecbCore .decrypt).bs = 8 from rfl] at e
+    obtain ⟨e1, e2, e3, -, -⟩ := args_plain (c := ecbCore .decrypt) rfl s
+    rw [show (ecbCore .decrypt).bs = 8 from rfl, e1, e2, e3] at e
     simp only [ecbSpec, dirCipher, State.addr, blocksOf_eq] at e
     exact e
   pub s₁ s₂ _ _ h := by
     sig_pub [Proof.TripleDes.cbcDecScratchContract, Proof.TripleDes.cbcScratchSig, Spec.TripleDes.cbcSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at h
-    exact seqArm_pub h
+    exact seqArm_pub rfl h
   sat := by
     sig_implies_sat [Proof.TripleDes.cbcDecScratchContract, Proof.TripleDes.cbcScratchSig, Spec.TripleDes.cbcSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [cbcSat, stackArg, stackArgAddr, Mem.readW,
