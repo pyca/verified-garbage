@@ -38,7 +38,10 @@ mod camellia_cfb;
 mod camellia_ctr;
 mod camellia_ecb;
 mod camellia_ofb;
+mod cast5_cbc;
+mod cast5_cfb;
 mod cast5_ecb;
+mod cast5_ofb;
 mod chacha20;
 mod chacha20poly1305;
 mod cmac_aes;
@@ -363,7 +366,10 @@ const BENCHES: &[Bench] = &[
     (camellia_ctr::USES, camellia_ctr::bench),
     (camellia_ecb::USES, camellia_ecb::bench),
     (camellia_ofb::USES, camellia_ofb::bench),
+    (cast5_cbc::USES, cast5_cbc::bench),
+    (cast5_cfb::USES, cast5_cfb::bench),
     (cast5_ecb::USES, cast5_ecb::bench),
+    (cast5_ofb::USES, cast5_ofb::bench),
     (chacha20::USES, chacha20::bench),
     (chacha20poly1305::USES, chacha20poly1305::bench),
     (cmac_aes::USES, cmac_aes::bench),

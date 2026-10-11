@@ -1,0 +1,5 @@
+name = "pyca/cryptography CAST5-OFB vectors (from the AESVS MMT data, verified against CommonCrypto and Go)"
+directories = ["cryptography-cast5-ofb"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/55cfeb23a8f9e0b7edb87bccb98a6ca7447aa436/vectors/cryptography_vectors/ciphers/CAST5/cast5-ofb.txt"
+sha256 = "15333d337139e2360fa713e91c47300e7eba273dcbe5699ea6d44ca2952825cb"
+retrieved = 2026-10-11

@@ -68,6 +68,18 @@ impl Cast5Ecb {
         self.crypt(buffer, vg_cast5_ecb_decrypt)
     }
 
+    /// The subkeys, for the modes built on CAST5 (`crate::cast5_cbc`, …).
+    #[cfg(target_arch = "x86")]
+    pub(crate) fn schedule(&self) -> &[u8; 128] {
+        &self.schedule
+    }
+
+    /// The number of rounds, 12 or 16, for the modes built on CAST5.
+    #[cfg(target_arch = "x86")]
+    pub(crate) fn rounds(&self) -> usize {
+        self.rounds
+    }
+
     fn crypt(&self, buffer: &mut [u8], f: Ecb) -> Result<(), Error> {
         if !buffer.len().is_multiple_of(8) {
             return Err(Error::IncompleteBlock);
