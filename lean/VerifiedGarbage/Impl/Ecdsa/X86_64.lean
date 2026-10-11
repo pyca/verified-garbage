@@ -335,10 +335,9 @@ def saved : List (Reg × Nat) := [(.rbx, 0), (.rbp, 8), (.r12, 16), (.r13, 24), 
 which they change: `PT`'s slot, part of their own working space. -/
 def invSaved : List (Reg × Nat) := saved.map fun (r, d) => (r, c.sl PT + d)
 
-/-- `vg_<curve>_inv_mod_p` or `_n` (`_adx` with BMI2 and ADX): the inversion
-`body`, between saving the callee-saved registers in `PT`'s slot and
-restoring them. -/
-def invFn (body : Prog isa) : Prog isa :=
+/-- The inversion `body` between saving the callee-saved registers in `PT`'s
+slot and restoring them: for six words or more, whose slot holds them. -/
+def invFnS (body : Prog isa) : Prog isa :=
   .seq (.block (c.invSaved.map fun p => .store { base := .rdi, disp := p.2 } p.1)) <|
   .seq body <|
   .block (c.invSaved.map fun p => .mov p.1 (.mem { base := .rdi, disp := p.2 }))
@@ -354,6 +353,11 @@ def invFnX (body : Prog isa) : Prog isa :=
   .seq (.block (invKeptX.map fun (r, x) => .xop (.movq x r))) <|
   .seq body <|
   .block (invKeptX.map fun (r, x) => .movqR r x)
+
+/-- `vg_<curve>_inv_mod_p` or `_n` (`_adx` with BMI2 and ADX): the inversion
+`body`, keeping the callee-saved registers in `PT`'s slot (`invFnS`), or in
+`xmm` registers for fewer than six words (`invFnX`). -/
+def invFn (body : Prog isa) : Prog isa := if c.n < 6 then invFnX body else c.invFnS body
 
 /-- The suffix of the functions' names: `_adx` with BMI2 and ADX. -/
 def fnSuffix : String := if c.adx then "_adx" else ""

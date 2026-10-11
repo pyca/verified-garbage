@@ -89,7 +89,7 @@ theorem p384x_ok (hI : InvSounds) : CfgOk p384x where
   comb_am3 := fun _ _ => by unfold AM3; decide +kernel
   am3 := by unfold AM3; decide +kernel
   even _ := by decide
-  inverse _ := ⟨by decide, by decide, rfl⟩
+  inverse _ := ⟨by decide, rfl⟩
 
 /-- `[k]G` is a call of `vg_p384_mul_base_adx`, which calls no other function. -/
 theorem p384x_mulBase : MulBaseOk p384x :=
