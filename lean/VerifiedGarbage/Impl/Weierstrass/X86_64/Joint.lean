@@ -45,15 +45,20 @@ def fixedDigit (c : Cfg) : Prog isa :=
 
 def digits (c : Cfg) : Prog isa := .seq (cachedDigit c) (fixedDigit c)
 
+/-- The doubling but in the first iteration (`rbx = 64 n`, the counter
+public), where `R` is `O`: the loop runs the top digit's additions too,
+rather than a copy of them before it. -/
+def guardDouble (c : Cfg) (double : Prog isa) : Prog isa :=
+  .seq (.block [.alu .cmp .rbx (.imm (BitVec.ofNat 32 (64*c.K.M.n)))]) (.ite .e (.block []) double)
+
 def step (c : Cfg) (double : Prog isa) : Prog isa :=
   .seq (.block [.alu .sub .rbx (.imm 1)]) <|
-    .seq double (.seq (digits c) (.block [.alu .test .rbx (.reg .rbx)]))
+    .seq (guardDouble c double) (.seq (digits c) (.block [.alu .test .rbx (.reg .rbx)]))
 
-def run (c : Cfg) (double : Prog isa) : Prog isa :=
-  .seq (digits c) (.loop (step c double) .ne)
+def run (c : Cfg) (double : Prog isa) : Prog isa := .loop (step c double) .ne
 
 def window (c : Cfg) (double : Prog isa) : Prog isa :=
   .seq (Naf.table c.K) <| .seq (Naf.cacheTable c.K.M c.K.tbl c.cache 8) <|
-    .seq (.block (Jacobian.infinity c.K c.K.R ++ [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*c.K.M.n)))])) (run c double)
+    .seq (.block (Jacobian.infinity c.K c.K.R ++ [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*c.K.M.n+1)))])) (run c double)
 
 end VG.Impl.Weierstrass.X86_64.Joint
