@@ -334,10 +334,19 @@ def withMxcsr (c : Prog isa) : Prog isa :=
         .ldmxcsr (at_ .rbx (l.oMx + 4)), .lfence]) (.seq c (.block [.lfence])))
       (.block [.ldmxcsr (at_ .rbx l.oMx), .vop .vzeroupper]))
 
-/-- The vector code: `X` and `Y` into Montgomery form, the
-exponentiations, and the results multiplied by `oFin`. -/
+/-- `[r13] := [r13] [oK1] 2^(-208 R)`, then `r13` to the next number, `ZF`
+after `X`. -/
+def k1Body : Prog isa :=
+  .seq (.block [.mov .r8 (.reg .rbx), .alu .add .r8 (.reg .r13), .mov .r9 (.reg .rbx),
+      .alu .add .r9 (.imm (BitVec.ofNat 32 l.oK1)), .mov .r11 (.reg .rbx), .alu .add .r11 (.reg .r13)])
+    (.seq (ammCore l) (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 l.NB)),
+      .alu .cmp .r13 (.imm (BitVec.ofNat 32 l.oS))]))
+
+/-- The vector code: `Y` and then `X` (the next number) into Montgomery form,
+in a loop, the exponentiations, and the results multiplied by `oFin`. -/
 def vec : Prog isa :=
-  withMxcsr l (seqs ([amm l l.oX l.oX l.oK1, amm l l.oY l.oY l.oK1] ++ expLoop l ++ [amm l l.oY l.oY l.oFin]))
+  withMxcsr l (seqs ([.block [.mov32 .r13 (.imm (BitVec.ofNat 32 l.oY))], .loop (k1Body l) .ne] ++
+    expLoop l ++ [amm l l.oY l.oY l.oFin]))
 
 /-- In a prime's workspace: the result into `aY`, reduced below `X`. -/
 def result (p : Nat) : List (Prog isa) :=
