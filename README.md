@@ -788,7 +788,7 @@ yours to keep:
 
 <td>✅ bitsliced, 8 blocks at a time</td>
 
-<td>❌</td>
+<td>✅ bitsliced, 8 blocks at a time</td>
 
 </tr>
 

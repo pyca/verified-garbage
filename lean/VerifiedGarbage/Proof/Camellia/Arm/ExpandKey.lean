@@ -17,7 +17,7 @@ namespace VG.Proof.Camellia.Arm
 open VG VG.Arm VG.Arm.Straight VG.Impl.Camellia.Arm
 open VG.Impl.Aes.Arm (q sb t0 t1 u7 kp movR ldS stS)
 open VG.Proof.Camellia (byteOf hiW loW rotHalf hi_eq lo_eq sigE kaD2 kaD3 kaD_eq klkr_halves
-  schedule_of_stores subkeys_lt4 subkeys_length)
+  schedule_of_stores subkeys_lt4 subkeys_length keyVals valNum)
 open VG.Spec.Camellia (wordAt)
 
 /-- The key schedule on ARMv7 with its working space at `r3`. -/
@@ -41,15 +41,6 @@ def expandKeyArm : Contract isa where
       s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.sp = s₂.sp
 
 theorem entryW_slot (s : State) (i j : Nat) : entryW s.mem (s.gpr sb) i j = slotW s (keySlot + 16 * i + j) := rfl
-
-/-- The values `[KL, KR, KA, KB]` of a key. -/
-def keyVals (key : List Byte) : List (BitVec 128) :=
-  [(Spec.Camellia.klkr key).1, (Spec.Camellia.klkr key).2,
-    (Spec.Camellia.kakb (Spec.Camellia.klkr key).1 (Spec.Camellia.klkr key).2).1,
-    (Spec.Camellia.kakb (Spec.Camellia.klkr key).1 (Spec.Camellia.klkr key).2).2]
-
-/-- The value `v` as a number, from its halves. -/
-def valNum (key : List Byte) (v : Nat) : BitVec 128 := hiW ((keyVals key).getD v 0) ++ loW ((keyVals key).getD v 0)
 
 /-- What the subkeys' stores leave: the schedule's bytes. -/
 structure StoresPost (s₈ : State) (b S : BitVec 32) (len : Nat) (key : List Byte) (s : State) : Prop where

@@ -107,6 +107,28 @@ theorem expandKeyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (expandKeySig
       omega)]
     exact h hk
 
+theorem expandKeyPre_local : ∀ vs m₁ m₂, vs.length = (expandKeySig.words pb).length →
+    (∀ b ∈ Sig.bufs expandKeySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (expandKeySig.words pb) (expandKeyPre pb) vs m₁ →
+      Curry.apply (expandKeySig.words pb) (expandKeyPre pb) vs m₂
+  | [_, _, _], _, _, _, _, h => h
+
+theorem expandKeyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (expandKeySig.words pb).length →
+    (∀ b ∈ Sig.bufs expandKeySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (expandKeySig.words pb) (expandKeyPost pb) vs m₁ m' r →
+      Curry.apply (expandKeySig.words pb) (expandKeyPost pb) vs m₂ m' r
+  | [_, _, _], m₁, m₂, m', r, _, hb, h => by
+    simp only [expandKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hk := agree_of hb.1
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (expandKeyPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (expandKeyPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, expandKeyPost, ArgWord.ofRaw] at h hk ⊢
+    intro hl
+    rw [bytesAt_congr fun i hi => hk i (by
+      rw [BitVec.toNat_setWidth] at hi; exact Nat.lt_of_lt_of_le hi (Nat.mod_le _ _))]
+    exact h hl
+
 theorem ecbPostOut_local (direction : Direction) : ∀ vs m m₁ m₂ r,
     vs.length = (ecbSig.words pb).length →
     (∀ b ∈ Sig.bufs ecbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
