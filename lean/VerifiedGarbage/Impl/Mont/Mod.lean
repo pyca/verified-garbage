@@ -69,14 +69,21 @@ step may add a multiple of without multiplying by its words (`Mod.sparse`):
 def sparseOk (n m : Nat) : Bool :=
   n == 6 && m == 39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319
 
+/-- P-521's order `n`, of nine words, whose products a function computes
+with `n` stored in its own working space (`Mod.fnN`). -/
+def fnNOk (n m : Nat) : Bool :=
+  n == 9 && m == 6864797660130609714981900799081393217269435300143305409394463459185543183397655394245057746333217197532963996371363321113864768612440380340372808892707005449
+
 /-- A modulus: its number of words `n`, where it is (`mo`, `n` words), the
 working space's temporary area (`tmp`, `n` words), `minv = -m⁻¹ mod 2⁶⁴`,
 its reduction (`red`), whether it is `tightOk` (`tight`), which only
 some targets use, whether to multiply with BMI2 and ADX (`adx`, x86-64
 only), and whether it is P-384's `p`, reduced by `2³⁸⁴ - p` (`sparse`, x86-64
-only, which needs `sparseOk`), and whether its products are written out
+only, which needs `sparseOk`), whether its products are written out
 in full even where a function computes them (`inl`, x86-64 only, for the
-loops that run the most products). -/
+loops that run the most products), and whether it is P-521's `n`, whose
+products are calls of a function that stores it (`fnN`, x86-64 only, which
+needs `fnNOk`). -/
 structure Mod where
   n : Nat
   mo : Nat
@@ -87,5 +94,6 @@ structure Mod where
   adx : Bool := false
   sparse : Bool := false
   inl : Bool := false
+  fnN : Bool := false
 
 end VG.Impl.Mont
