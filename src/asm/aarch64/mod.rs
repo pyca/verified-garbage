@@ -224,6 +224,9 @@ pub(crate) mod mlkem1024;
 pub(crate) mod mlkem768;
 
 #[rustfmt::skip]
+pub(crate) mod p384_inverse;
+
+#[rustfmt::skip]
 pub(crate) mod p384_mont;
 
 #[rustfmt::skip]

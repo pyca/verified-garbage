@@ -92,15 +92,15 @@ theorem stage₂_with (hc : BaseCfgOk c) (comb : Prog isa) (hcomb : CombCorrect 
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] →
       i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] →
       sv c base s₆ i = sv c base s i := fun hi h₁ h₂ =>
-    (sv_unch U₆ h7 hn hi (apart_chainWc hi h₁)).trans (sv_unch_tcomb U₅ h7 hn hi h₂)
+    (sv_unch U₆ h7 hn hi (apart_chainWc hc hi h₁)).trans (sv_unch_tcomb U₅ h7 hn hi h₂)
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
-    sv_unch U₆ h7 hn hi (apart_chainWc hi h₁)
+    sv_unch U₆ h7 hn hi (apart_chainWc hc hi h₁)
   refine ⟨⟨hs₅.of_keepRegs K₆ (x0_not_powClob h7), ?_, by rw [K₆.wr, K₅.wr, hS.wr],
-    F₅.unch h7 hn fixedOk_chainWc U₆⟩,
+    F₅.unch h7 hn (fixedOk_chainWc hc) U₆⟩,
     by rw [e₆ (by decide) (by decide) (by decide), hS.k],
     by rw [e₆ (by decide) (by decide) (by decide), hS.d],
     by rw [e₆ (by decide) (by decide) (by decide), hS.e],
-    by rw [flag_unch_chain U₆ h7 h0 hn, flag_unch_tcomb U₅ h7 h0 hn, hS.flag], ?_, lt₆, ?_,
+    by rw [flag_unch_chain hc U₆ h7 h0 hn, flag_unch_tcomb U₅ h7 h0 hn, hS.flag], ?_, lt₆, ?_,
     ?_⟩
   · rw [K₆.gpr _ (x20_not_powClob h7), K₅.gpr _ (x20_not_tcombClob hc.n10), hS.x20]
   · show Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ)) _
@@ -159,7 +159,7 @@ theorem stage₃ (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {s : State} (hS
     (lt_of_eq_of_lt (e₈ (i := KM) (by decide) (by decide)) Mp.km_lt))
     fun s₉ ⟨K₉, U₉, lt₉, v₉⟩ => h s₉ ?_)
   have e₉ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₉ i = sv c base s₈ i := fun hi hl =>
-    sv_unch U₉ h7 hn hi (apart_chainWc hi hl)
+    sv_unch U₉ h7 hn hi (apart_chainWc hc hi hl)
   -- The slots `middle` and the power do not write.
   have a₉ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → i ≠ FLAG → i ∉ [XM, X, RR, KM, TMP] →
       sv c base s₉ i = sv c base s i := fun hi h₁ h₂ h₃ =>
@@ -174,7 +174,7 @@ theorem stage₃ (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {s : State} (hS
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;> rw [a₉ (by decide) (by decide) (by decide) (by decide)]
   refine ⟨⟨hs₈.of_keepRegs K₉ (x0_not_powClob h7), ?_, by rw [K₉.wr, k₈.wr, Mp.wr, hS.wr],
-    F₈.unch h7 hn fixedOk_chainWc U₉⟩,
+    F₈.unch h7 hn (fixedOk_chainWc hc) U₉⟩,
     by rw [a₉ (i := D) (by decide) (by decide) (by decide) (by decide), hS.d, shAt_E_D, Nat.shiftRight_zero],
     by rw [a₉ (i := E) (by decide) (by decide) (by decide) (by decide), hS.e, shAt_self],
     by rw [tR RX (by simp), tR RY (by simp), tR RZ (by simp)]; exact hS.rep,
@@ -182,7 +182,7 @@ theorem stage₃ (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {s : State} (hS
     by rw [x₉, Mp.x, tR RX (by simp), tR RZ (by simp), hS.acc],
     by rw [rr₉, x₉]; exact Mp.rr, ?_, ?_⟩
   · rw [K₉.gpr _ (x20_not_powClob h7), k₈.gpr _ (by decide), Mp.gpr _ (x20_not_clob h7), hS.x20]
-  · rw [flag_unch_chain U₉ h7 h0 hn, f₈, flag_unch Mp.unch h7 h0 hn (by decide), hS.flag,
+  · rw [flag_unch_chain hc U₉ h7 h0 hn, f₈, flag_unch Mp.unch h7 h0 hn (by decide), hS.flag,
       e₇ (i := D) (by decide) (by decide), e₇ (i := K) (by decide) (by decide), hS.d, shAt_E_D,
       Nat.shiftRight_zero, hS.k, Mp.rr, x₉]
   · refine v₉.trans ?_
