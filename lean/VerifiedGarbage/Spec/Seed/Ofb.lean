@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Seed.Cbc
-import VerifiedGarbage.Spec.Ofb
+module
+
+public import VerifiedGarbage.Spec.Seed.Cbc
+public import VerifiedGarbage.Spec.Ofb
 
 /-!
 # SEED-OFB: the contract, on every target
@@ -19,6 +21,8 @@ zero block is the next output block, whose first bytes it XORs in.
 Only the pointers and `n` are public: no part of the chaining value may affect
 timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Seed
 

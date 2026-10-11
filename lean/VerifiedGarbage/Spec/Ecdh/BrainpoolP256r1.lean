@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdh.Generic
-import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
+module
+
+public import VerifiedGarbage.Spec.Ecdh.Generic
+public import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
 
 /-!
 # ECDH over brainpoolP256r1: the contracts, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
 **Trusted** (as every file in `Spec/`). `vg_ecdh_brainpoolp256r1`, in the module
 `ecdh_brainpoolp256r1`, for brainpoolP256r1's `EcKey.Instance`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdh.BrainpoolP256r1
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Idea.Cbc
-import VerifiedGarbage.Spec.Ofb
+module
+
+public import VerifiedGarbage.Spec.Idea.Cbc
+public import VerifiedGarbage.Spec.Ofb
 
 /-!
 # IDEA-OFB: the contract, on every target
@@ -18,6 +20,8 @@ zero block is the next output block, whose first bytes it XORs in.
 Only the pointers and `n` are public: no part of the chaining value may affect
 timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Idea
 

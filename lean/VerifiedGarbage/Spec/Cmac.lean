@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.Spec.TripleDes
+module
+
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # CMAC (NIST SP 800-38B)
@@ -27,6 +29,8 @@ subkey generation (§6.1), the chaining of whole blocks (§6.2 step 6,
 and the message in pieces of any length. Truncating the MAC (§6.2 step 7)
 and comparing MACs (§6.3) is the caller's (Rust's) job.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Cmac
 

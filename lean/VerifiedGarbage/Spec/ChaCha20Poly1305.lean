@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.ChaCha20
-import VerifiedGarbage.Spec.Poly1305
+module
+
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.Spec.Poly1305
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439)
@@ -13,6 +15,8 @@ function names in backquotes are those of the pseudocode of §2.6.1 and
 This file is independent of any architecture; the contracts of the
 primitives on every target are in `Spec/ChaCha20Poly1305/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.ChaCha20Poly1305
 

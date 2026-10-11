@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # Triple DES and ECB
@@ -20,6 +22,8 @@ padding. All key bytes, round keys and data are secret in the contracts;
 S-box indexing here does not permit secret-dependent memory access in an
 implementation.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.TripleDes
 

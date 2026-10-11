@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Blowfish.Contract
-import VerifiedGarbage.Spec.Cbc
+module
+
+public import VerifiedGarbage.Spec.Blowfish.Contract
+public import VerifiedGarbage.Spec.Cbc
 
 /-!
 # Blowfish-CBC: the contracts, on every target
@@ -20,6 +22,8 @@ the last block it decrypts). Padding is the caller's.
 Only the pointers and `n` are public: no part of the chaining value may affect
 timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Blowfish
 

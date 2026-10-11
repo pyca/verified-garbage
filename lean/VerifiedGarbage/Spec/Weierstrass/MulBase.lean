@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Spec.P384
+module
+
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Spec.P384
 
 /-!
 # The multiplication of a curve's base point, in its working space, as a function
@@ -39,6 +41,8 @@ of `ws` keeps its value but the result's (`Keeps`).
 Everything is secret but the pointer, which is public, and the function is
 constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Weierstrass.MulBase
 

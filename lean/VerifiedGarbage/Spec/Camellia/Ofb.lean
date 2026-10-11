@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Camellia.Ctr
-import VerifiedGarbage.Spec.Ofb
+module
+
+public import VerifiedGarbage.Spec.Camellia.Ctr
+public import VerifiedGarbage.Spec.Ofb
 
 /-!
 # Camellia-OFB: the contract, on every target
@@ -18,6 +20,8 @@ OFB of a zero block is the next output block, whose first bytes it XORs in.
 Only the pointers, `rounds` and `n` are public: no part of the chaining
 value may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Camellia
 

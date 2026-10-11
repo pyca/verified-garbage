@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Mgf1
+module
+
+public import VerifiedGarbage.Spec.Mgf1
 
 /-!
 # RSASSA-PSS (RFC 8017 §8.1, EMSA-PSS §9.1)
@@ -39,6 +41,8 @@ the public exponent as BoringSSL checks every private-key operation
 back to the encoding. Verification takes the public key within BoringSSL's
 limits (`Rsa.publicOpChecked`).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.RsaPss
 

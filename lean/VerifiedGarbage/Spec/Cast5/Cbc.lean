@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Cast5.Contract
-import VerifiedGarbage.Spec.Cbc
+module
+
+public import VerifiedGarbage.Spec.Cast5.Contract
+public import VerifiedGarbage.Spec.Cbc
 
 /-!
 # CAST5-CBC: the contracts, on every target
@@ -20,6 +22,8 @@ block it decrypts). Padding is the caller's.
 Only the pointers, `rounds` and `n` are public: no part of the chaining value
 may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Cast5
 

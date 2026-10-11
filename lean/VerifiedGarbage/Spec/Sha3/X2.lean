@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha3
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Sha3
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Keccak-f[1600] on two interleaved states, as a function
@@ -20,6 +22,8 @@ unspecified, and may hold the caller's registers or intermediate values.
 The states are secret; only the pointers, which are public, may affect
 timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Sha3
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.ChaCha20
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # ChaCha20: the contracts, on every target
@@ -43,6 +45,8 @@ pointer that an implementation's calls and frames use (`stack`), and
 overwrite its arguments passed in memory (`writeArgs`). Its implementations
 for CPU features (e.g. `vg_chacha20_apply_avx2`) have the same contract.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.ChaCha20
 

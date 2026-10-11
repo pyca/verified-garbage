@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.Spec.P256
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.P256
 
 /-!
 # ECDSA over P-256: the contracts, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.P256
 **Trusted** (as every file in `Spec/`). The `Instance` of P-256
 (`Spec/P256.lean`): `vg_ecdsa_p256_sign`, in the module `ecdsa_p256`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdsa.P256
 

@@ -1,4 +1,8 @@
-import VerifiedGarbage.Spec.MlDsa.Canonicalize
+module
+
+public import VerifiedGarbage.Spec.MlDsa.Canonicalize
+
+@[expose] public section
 
 namespace VG.Spec.MlDsa
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # RC2-CBC: contracts on every target
@@ -46,6 +48,8 @@ arguments passed in memory,
 where the calling convention allows it (`writeArgs`), to pass arguments to
 the primitive they call.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Rc2
 

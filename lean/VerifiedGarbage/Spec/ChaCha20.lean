@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # ChaCha20 (RFC 8439)
@@ -15,6 +17,8 @@ state in memory that represents what is left of it: `keyAt`, `restAt`). This
 file is independent of any architecture; the contracts of the primitives on
 every target are in `Spec/ChaCha20/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.ChaCha20
 

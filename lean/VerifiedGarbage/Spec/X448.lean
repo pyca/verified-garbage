@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # X448 (RFC 7748)
@@ -13,6 +15,8 @@ Inputs to `x448` are 56-byte strings, as enforced by its memory contract in
 `Spec/X448/Contract.lean`. Every input bit of the u-coordinate is used;
 noncanonical coordinates are reduced modulo `P`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.X448
 

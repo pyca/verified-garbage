@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Rc4
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Rc4
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # RC4: contracts on every target
@@ -19,6 +21,8 @@ context is unspecified. Update accepts any byte-valued context, including
 zero-length input, and applies exactly `update`. Finalization needs no
 primitive: the model emits no bytes and examines no secrets.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Rc4
 
