@@ -34,8 +34,10 @@ mod blake2b;
 mod blake2s;
 mod blowfish_ecb;
 mod camellia_cbc;
+mod camellia_cfb;
 mod camellia_ctr;
 mod camellia_ecb;
+mod camellia_ofb;
 mod cast5_ecb;
 mod chacha20;
 mod chacha20poly1305;
@@ -348,8 +350,10 @@ const BENCHES: &[Bench] = &[
     (blake2s::USES, blake2s::bench),
     (blowfish_ecb::USES, blowfish_ecb::bench),
     (camellia_cbc::USES, camellia_cbc::bench),
+    (camellia_cfb::USES, camellia_cfb::bench),
     (camellia_ctr::USES, camellia_ctr::bench),
     (camellia_ecb::USES, camellia_ecb::bench),
+    (camellia_ofb::USES, camellia_ofb::bench),
     (cast5_ecb::USES, cast5_ecb::bench),
     (chacha20::USES, chacha20::bench),
     (chacha20poly1305::USES, chacha20poly1305::bench),
