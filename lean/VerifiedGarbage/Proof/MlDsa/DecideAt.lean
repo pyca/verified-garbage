@@ -3,6 +3,7 @@ import Lean.Meta.AppBuilder
 import Lean.Meta.Tactic.Assert
 import Lean.Meta.Offset
 import Lean.Meta.Reduce
+import Lean.Util.CollectFVars
 
 /-!
 # Deciding a check for each parameter set

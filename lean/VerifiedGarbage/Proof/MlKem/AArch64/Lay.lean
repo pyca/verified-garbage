@@ -43,7 +43,7 @@ namespace VG.Proof.MlKem.AArch64
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 
 /-- The offsets of `KG` and `KEM` and the lengths of a `KemLay`. -/
-def offsetNames : Array Lean.Name :=
+meta def offsetNames : Array Lean.Name :=
   #[``KG.ST, ``KG.WK, ``KG.SB, ``KG.SG, ``KG.BK, ``KG.PB, ``KG.SS, ``KG.NS, ``KG.AH, ``KG.SH,
     ``KG.EP, ``KG.TP, ``KG.PP, ``KG.SV, ``KG.aOff, ``KG.sOff, ``KEM.ST, ``KEM.WK, ``KEM.SB,
     ``KEM.HB, ``KEM.MB, ``KEM.RB, ``KEM.KP, ``KEM.JB, ``KEM.PB, ``KEM.SS, ``KEM.NS, ``KEM.AH,

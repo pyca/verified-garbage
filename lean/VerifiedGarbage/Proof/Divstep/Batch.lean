@@ -29,21 +29,21 @@ theorem mstep_rel {t : MSt} {k : Nat} {f₀ g₀ : Int} (hf : t.f % 2 = 1) (h : 
     simp only
     have e : 2 * ((t.g - t.f) / 2) = t.g - t.f := Int.mul_ediv_cancel' (by omega)
     constructor
-    · rw [pow_succ]; rw [mul_right_comm, h2, add_mul]; simp only [mul_assoc, mul_comm]
-    · rw [pow_succ, mul_assoc, e]; rw [mul_sub, h2, h1]; simp only [sub_mul]; omega
+    · rw [Int.pow_succ]; rw [Int.mul_right_comm, h2, Int.add_mul]; simp only [Int.mul_assoc, Int.mul_comm]
+    · rw [Int.pow_succ, Int.mul_assoc, e]; rw [Int.mul_sub, h2, h1]; simp only [Int.sub_mul]; omega
   · rename_i hc
     simp only
     rcases Int.emod_two_eq_zero_or_one t.g with hg | hg
     · rw [hg]
-      have e : 2 * ((t.g + 0 * t.f) / 2) = t.g := by rw [zero_mul, add_zero]; exact Int.mul_ediv_cancel' (by omega)
+      have e : 2 * ((t.g + 0 * t.f) / 2) = t.g := by rw [Int.zero_mul, Int.add_zero]; exact Int.mul_ediv_cancel' (by omega)
       constructor
-      · rw [pow_succ]; rw [mul_right_comm, h1, add_mul]; simp only [mul_assoc, mul_comm]
-      · rw [pow_succ, mul_assoc, e]; simpa using h2
+      · rw [Int.pow_succ]; rw [Int.mul_right_comm, h1, Int.add_mul]; simp only [Int.mul_assoc, Int.mul_comm]
+      · rw [Int.pow_succ, Int.mul_assoc, e]; simpa using h2
     · rw [hg]
-      have e : 2 * ((t.g + 1 * t.f) / 2) = t.g + t.f := by rw [one_mul]; exact Int.mul_ediv_cancel' (by omega)
+      have e : 2 * ((t.g + 1 * t.f) / 2) = t.g + t.f := by rw [Int.one_mul]; exact Int.mul_ediv_cancel' (by omega)
       constructor
-      · rw [pow_succ]; rw [mul_right_comm, h1, add_mul]; simp only [mul_assoc, mul_comm]
-      · rw [pow_succ, mul_assoc, e]; rw [mul_add, h2, h1]; simp only [add_mul, one_mul]; omega
+      · rw [Int.pow_succ]; rw [Int.mul_right_comm, h1, Int.add_mul]; simp only [Int.mul_assoc, Int.mul_comm]
+      · rw [Int.pow_succ, Int.mul_assoc, e]; rw [Int.mul_add, h2, h1]; simp only [Int.add_mul, Int.one_mul]; omega
 
 /-- `n` steps from the identity: `2^n f_n = u f + v g`, `2^n g_n = q f + r g`. -/
 theorem msteps_mat {d f g : Int} (hf : f % 2 = 1) (n : Nat) :
@@ -68,7 +68,7 @@ theorem mstep_bnd {t : MSt} {n : Nat} (h : t.bnd n) : (mstep t).bnd (n + 1) := b
     · rw [abs_of_neg (by omega : x < 0), abs_of_neg (by omega : 2*x < 0)]; omega
   have hg := Int.emod_two_eq_zero_or_one t.g
   unfold mstep MSt.bnd
-  rw [pow_succ]
+  rw [Int.pow_succ]
   split
   · simp only
     refine ⟨?_, ?_⟩
@@ -117,9 +117,9 @@ theorem mstep_cong {t t' : MSt} {k : Nat} (ht : t.f % 2 = 1) (h : t.cong t' (k +
       rw [Int.sub_emod, hg, hf, ← Int.sub_emod]
   · refine ⟨rfl, by rw [hu], by rw [hv], by rw [hq, hu], by rw [hr, hv], hfk, ?_⟩
     rcases Int.emod_two_eq_zero_or_one t'.g with h0 | h0
-    · simp only [h0, zero_mul, add_zero]
+    · simp only [h0, Int.zero_mul, Int.add_zero]
       exact half_cong hg (by omega) (by omega)
-    · simp only [h0, one_mul]
+    · simp only [h0, Int.one_mul]
       refine half_cong ?_ (by omega) (by omega)
       rw [Int.add_emod, hg, hf, ← Int.add_emod]
 

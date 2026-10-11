@@ -66,7 +66,7 @@ theorem msteps_d (t : MSt) : ∀ n, |(msteps n t).d| ≤ |t.d| + 2 * n
     rw [msteps_succ]
     have := mstep_d (msteps n t)
     have := msteps_d t n
-    simp only [Nat.cast_add, Nat.cast_one]
+    push_cast
     omega
 
 /-- Halving congruent even numbers. -/
