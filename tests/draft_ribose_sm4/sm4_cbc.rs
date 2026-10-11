@@ -3,7 +3,7 @@
 //! pieces; and CBC from ECB (`Sm4Ecb`, tested on the draft's ECB examples)
 //! on every length up to a few groups of sixteen blocks.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
 
 use verified_garbage::sm4_cbc::{Error, Sm4Cbc};
 use verified_garbage::sm4_ecb::Sm4Ecb;

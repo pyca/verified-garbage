@@ -9,13 +9,15 @@
 //! block with its CBC encryption or decryption from the chaining value at
 //! `iv`, in constant time: their timing depends on none of the key, the
 //! chaining value and the data. Both are the modes' generic CBC over SM4's
-//! bitsliced ECB code: decryption transforms sixteen blocks at a time, and
-//! encryption, in which each block needs the one before, one block at a
-//! time (in a batch of sixteen, so about sixteen times ECB's cost). This
+//! bitsliced ECB code. On x86-64 and AArch64, decryption transforms sixteen
+//! blocks at a time, and encryption, in which each block needs the one
+//! before, one block at a time (in a batch of sixteen, so about sixteen times
+//! ECB's cost). On x86, both take one block at a time, in a batch of eight
+//! (about eight times ECB's cost). This
 //! module checks the lengths, holds the key schedule and keeps the chaining
 //! value to continue from: the last ciphertext block.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::arch::sm4::vg_sm4_expand_key;
 use crate::arch::sm4_cbc::{vg_sm4_cbc_decrypt, vg_sm4_cbc_encrypt};
