@@ -430,3 +430,26 @@ theorem loop_ok {s₀ : State} (hp : APre s₀) {s₁ : State} (h₁ : LInv s₀
     exact WP.loop (M := isa) Inv hstep (eL s₀ - 1024 * 0) s₁ ⟨0, rfl, by omega, h₁⟩
 
 end VG.Proof.ChaCha20.X86_64.Avx512To
+
+namespace VG.Proof.ChaCha20.X86_64.Avx512To
+
+open VG VG.X86_64 VG.Impl.ChaCha20.X86_64.Avx512
+open VG.Spec.ChaCha20 (stateAt keystream)
+
+/-- The prologue and the loop alone, for a length that is a multiple of
+1024 (as `vg_chacha20_poly1305_seal_gather` runs them inline): every byte
+of the output written. -/
+theorem loopFull_ok {s₀ : State} (hp : APre s₀) (hd : 1024 ∣ eL s₀) :
+    WP isa (.seq (.block (entryTo ++ consts ++ ([.alu .cmp .rdx (.imm 1024)] : List Instr)))
+      (.ite .b (.block []) (.loop bodyTo .ae))) s₀ fun s =>
+      (∀ r ∈ calleeSaved, s.gpr r = s₀.gpr r) ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr ∧
+      Frame (frR s₀) s₀.mem s.mem ∧
+      ∀ k < eL s₀, s.mem (edp s₀ + BitVec.ofNat 64 k) = D0 s₀ k ^^^ (KS s₀).getD k 0 := by
+  refine WP.seq (WP.mono (prologue_ok hp) fun s₁ ⟨h₁, hc⟩ => ?_)
+  refine WP.mono (loop_ok hp h₁ hc) fun s ⟨t, ht, h⟩ => ⟨h.keep, h.rd, h.wr, h.frame, fun k hk => h.data k ?_⟩
+  obtain ⟨c, hc⟩ := hd
+  have := h.le
+  have : t = c := by omega
+  omega
+
+end VG.Proof.ChaCha20.X86_64.Avx512To
