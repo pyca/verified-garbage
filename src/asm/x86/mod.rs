@@ -44,6 +44,9 @@ pub(crate) mod blake2b;
 pub(crate) mod blake2s;
 
 #[rustfmt::skip]
+pub(crate) mod camellia;
+
+#[rustfmt::skip]
 pub(crate) mod cast5;
 
 #[rustfmt::skip]

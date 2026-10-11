@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Camellia.Arm.KeyPair
 import VerifiedGarbage.Proof.Camellia.Arm.Prologue
+import VerifiedGarbage.Proof.Camellia.Planes32
 
 /-!
 # Camellia's key schedule on ARMv7: the prologue and the key
@@ -15,7 +16,8 @@ namespace VG.Proof.Camellia.Arm
 
 open VG VG.Arm VG.Arm.Straight VG.Impl.Camellia.Arm
 open VG.Impl.Aes.Arm (q sb t0 t1 u7 kp movR ldS stS eorR imm32)
-open VG.Impl.Camellia (sigmas)
+open VG.Impl.Camellia (sigmas keyPlane32)
+open VG.Proof.Camellia (sigma_rel)
 open VG.Proof.Camellia (byteOf getLsbD_byteOf sigE byteOf_wordAt)
 
 /-! ## Constants -/
@@ -70,33 +72,6 @@ theorem constStores_ok {b : BitVec 32} : ∀ (L : List (Nat × BitVec 32)) {s : 
     · rw [← m₁]
       exact (f₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by
         simp only [List.mem_singleton] at hr; subst hr; exact slot_sub hfit hx⟩).trans f'
-
-/-! ## The constants' planes -/
-
-theorem testBit_planeBits32 (x : BitVec 64) (w j n p : Nat) :
-    (planeBits32 x w j n).testBit p = (decide (p < n) && x.getLsbD (56 - 8 * (4 * w + p / 8) + j)) := by
-  induction n with
-  | zero => simp [planeBits32]
-  | succ n ih =>
-    rw [planeBits32, Nat.testBit_or, ih]
-    have hlt : (decide (p < n + 1)) = (decide (p < n) || decide (p = n)) := by
-      by_cases h : p < n <;> by_cases h' : p = n <;> simp [h, h'] <;> omega
-    rw [hlt]
-    by_cases hpn : p = n
-    · subst hpn; split <;> simp_all
-    · split <;> simp [hpn, Ne.symm hpn]
-
-theorem keyPlane32_bit (x : BitVec 64) (w j : Nat) {p : Nat} (hp : p < 32) :
-    (keyPlane32 x w j).getLsbD p = x.getLsbD (56 - 8 * (4 * w + p / 8) + j) := by
-  rw [keyPlane32, BitVec.getLsbD_ofNat, testBit_planeBits32]
-  simp [hp]
-
-/-- The planes of a constant hold it in every lane. -/
-theorem sigma_rel (x : BitVec 64) : W32.HalfRel (fun k => keyPlane32 x (k / 8) (k % 8)) fun _ => x := by
-  intro b hb c hc j hj
-  rw [keyPlane32_bit _ _ _ (by omega), getLsbD_byteOf _ hc hj, show (8 * (c / 4) + j) / 8 = c / 4 by omega,
-    show (8 * (c / 4) + j) % 8 = j by omega, show (8 * (c % 4) + b) / 8 = c % 4 by omega,
-    show 4 * (c / 4) + c % 4 = c by omega]
 
 /-- The table's first six entries' words. -/
 def sigmaTable : List (Nat × BitVec 32) :=
