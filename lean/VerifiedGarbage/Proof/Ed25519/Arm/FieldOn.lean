@@ -65,17 +65,18 @@ theorem wRegions_FA0 {b : BitVec 32} {W : List Slot} {m m' : Mem} (hf : Frame (w
 def opReads : FieldOp → List Slot
   | .copy _ a => [a]
   | .const _ _ => []
-  | .mul _ a c | .add _ a c | .sub _ a c => [a, c]
+  | .mul _ a c | .mulc _ a c | .add _ a c | .sub _ a c => [a, c]
 
 /-- The slot an operation writes. -/
 def opOut : FieldOp → Slot
-  | .copy o _ | .const o _ | .mul o _ _ | .add o _ _ | .sub o _ _ => o
+  | .copy o _ | .const o _ | .mul o _ _ | .mulc o _ _ | .add o _ _ | .sub o _ _ => o
 
 /-- The slots with limbs below `2^16` after `ops`, from those of `S`, if each
-operation reads only such slots. -/
+operation is inlined and reads only such slots. -/
 def limsAfter : List FieldOp → List Slot → Option (List Slot)
   | [], S => some S
-  | op :: ops, S => if (opReads op).all S.contains then limsAfter ops (opOut op :: S) else none
+  | op :: ops, S =>
+    if op.inline && (opReads op).all S.contains then limsAfter ops (opOut op :: S) else none
 
 theorem field_updateOn {b : BitVec 32} {m m' : Mem} (o : Slot) {S : List Slot} (hl : LimOn m b S)
     (hf : Frame [⟨State.addr b + BitVec.ofNat 64 (offset o), 64⟩,
@@ -98,7 +99,8 @@ theorem field_updateOn {b : BitVec 32} {m m' : Mem} (o : Slot) {S : List Slot} (
 /-- An operation that reads only slots of `S`: it changes no register but
 X25519's `clob` and no memory but `FA0`. -/
 theorem fieldOpOn_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {S : List Slot} (hl : LimOn s.mem b S)
-    (op : FieldOp) (hr : ∀ i ∈ opReads op, i ∈ S) {W : List Slot} (hw : opOut op ∈ W) :
+    (op : FieldOp) (hin : op.inline = true) (hr : ∀ i ∈ opReads op, i ∈ S) {W : List Slot}
+    (hw : opOut op ∈ W) :
     WP isa op.code s fun t => Rest clob s t ∧ Frame (wRegions b W) s.mem t.mem ∧ LimOn t.mem b (opOut op :: S) ∧
       env t.mem b = evalOp op (env s.mem b) := by
   cases op with
@@ -120,6 +122,7 @@ theorem fieldOpOn_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {S : List Slot} 
     have hv' : FS t.mem (State.addr b) (offset o) = _ := VG.Proof.X25519.toFe_mul hv
     rw [hv'] at e
     exact ⟨hrt, frame_w hw hf, l, e⟩
+  | mulc => simp [FieldOp.inline] at hin
   | add o a c =>
     have ho := slot_range o
     have ha := slot_range a
@@ -160,9 +163,10 @@ theorem fieldCodeOn_ok (ops : List FieldOp) {S S' : List Slot} (h : limsAfter op
     simp only [limsAfter] at h
     split at h
     · rename_i hrd
+      simp only [Bool.and_eq_true] at hrd
       rw [fieldCode, WP.seq_iff]
-      refine WP.mono (fieldOpOn_ok hc hl op (fun i hi => by
-          simpa using List.all_eq_true.mp hrd i hi) (hW op List.mem_cons_self))
+      refine WP.mono (fieldOpOn_ok hc hl op hrd.1 (fun i hi => by
+          simpa using List.all_eq_true.mp hrd.2 i hi) (hW op List.mem_cons_self))
         fun t ⟨hrt, hft, hlt, et⟩ => ?_
       refine WP.mono (ih h (fun op hop => hW op (List.mem_cons_of_mem _ hop)) (hc.of_rest hrt (by decide)) hlt) fun u ⟨hru, hfu, hlu, eu⟩ => ?_
       exact ⟨hrt.trans hru, hft.trans hfu, hlu, by rw [eu, et]; rfl⟩

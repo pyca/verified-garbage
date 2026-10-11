@@ -15,8 +15,6 @@ namespace VG.Proof.Ed25519.Arm
 
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
-theorem SAVE_eq : SAVE = 1600 := rfl
-
 theorem regSlots_ok (c : Bool) : Spill.Slots SAVE (SAVE + 28) (regSlots c) := by
   cases c <;> decide
 

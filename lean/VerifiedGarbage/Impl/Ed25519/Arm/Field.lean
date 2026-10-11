@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Word
+import VerifiedGarbage.Impl.Ed25519.Arm.MulFn
 import VerifiedGarbage.Spec.Ed25519
 
 /-! Extended Edwards formulas on the sixteen-limb field representation.
@@ -22,19 +22,27 @@ def copyLimb (o a : Slot) (k : Nat) : List Instr :=
 
 def copyField (o a : Slot) : List Instr := (List.range 16).flatMap (copyLimb o a)
 
-/-- Small field programs, lowered to the existing verified integer code. -/
+/-- Small field programs, lowered to the existing verified integer code. `mulc` is `mul` as a
+call of `vg_gf25519_r16_mul`, for code off the hot paths. -/
 inductive FieldOp where
   | copy (out a : Slot)
   | const (out : Slot) (v : Spec.X25519.Fe)
   | mul (out a b : Slot)
+  | mulc (out a b : Slot)
   | add (out a b : Slot)
   | sub (out a b : Slot)
   deriving DecidableEq
+
+/-- Whether an operation's code is inlined: all but `mulc`, a call. -/
+def FieldOp.inline : FieldOp → Bool
+  | .mulc .. => false
+  | _ => true
 
 def FieldOp.code : FieldOp → Prog isa
   | .copy o a => .block (copyField o a)
   | .const o v => .block (constField o v)
   | .mul o a b => VG.Impl.Ed25519.Arm.mul (offset o) (offset a) (offset b)
+  | .mulc o a b => mulCall (offset o) (offset a) (offset b)
   | .add o a b => .block (VG.Impl.Ed25519.Arm.add (offset o) (offset a) (offset b))
   | .sub o a b => .block (VG.Impl.Ed25519.Arm.sub (offset o) (offset a) (offset b))
 

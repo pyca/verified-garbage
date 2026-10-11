@@ -110,7 +110,7 @@ theorem verifyLhs_ok {b pk sig challenge : BitVec 32} {s : State}
   refine WP.mono (addInput32_ok a) fun c ⟨cr, cm, cp⟩ => ?_
   have kc : PointKeep b s c := ⟨(ar.mono (by decide)).trans (cr.mono (by decide)), by
     rw [cm, am]; exact Frame.refl _ _⟩
-  refine WP.seq (WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) (kc.ctx hc.ctx)
+  refine WP.seq (WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) rfl (kc.ctx hc.ctx)
     (by rw [cm, am]; exact hl)) fun d ⟨dk, dr, _, dl, de⟩ => ?_)
   have kd := kc.trans (PointKeep.of_keep dk)
   have dc := hc.keep (VerifyKeep.of_point kd)
