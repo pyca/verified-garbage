@@ -31,7 +31,7 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P224.curve) : List A
       the one of the digit's magnitude (or the point at infinity for a zero digit), negated by a \
       mask of its sign, and added by the complete addition formulas of Renes, Costello and \
       Batina for `a = -3` (Algorithm 4: 12 products and 2 by `b`); the inversions modulo `p` \
-      and `n` are by divsteps (Bernstein and Yang's safegcd, half-delta form): 10 batches of 59 \
+      and `n` are calls of `vg_p224_inv_mod_p` and `vg_p224_inv_mod_n`, by divsteps (Bernstein and Yang's safegcd, half-delta form): 10 batches of 59 \
       divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`, or `n` and `k`), \
       each giving a matrix of 64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the \
       coefficients `a`, `b` (divided by 2⁶⁴ modulo `p` or `n`, as in Montgomery reduction), 590 \
@@ -55,8 +55,8 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P224.curve) : List A
       multiple of the modulus) with a final conditional subtraction. The key is checked without \
       branches (its first byte, both coordinates below `p`, and the curve's equation), and \
       `[v]Q` is computed for the key's point if it is valid, else `G`, so always on a point of \
-      the curve. `s⁻¹` modulo `n` and `Z⁻¹` are by the signature's \
-      divsteps; `[u]G` is the signature's comb over the 7-bit windows of `u` (from the static \
+      the curve. `s⁻¹` modulo `n` and `Z⁻¹` are calls of `vg_p224_inv_mod_n` and `vg_p224_inv_mod_p`, by the \
+      signature's divsteps; `[u]G` is the signature's comb over the 7-bit windows of `u` (from the static \
       `VG_P224_COMB`), and `[v]Q` `vg_ecdh_p224`'s signed 4-bit windows (65 digits of `v + 8 \
       Σ_{j<65} 16^j`, four doublings in Jacobian coordinates and a constant-time selection from \
       a table of `[1 … 8]Q` each), with the complete formulas of Renes, Costello and Batina for \

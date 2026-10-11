@@ -86,11 +86,14 @@ structure BaseCfgOk (c : Cfg) : Prop where
   call_n : Mont.callOf c.MN' = none
   /-- The powers' working slots and temporary area (`invTbl`, `invTmp`):
   `CT`'s and `TMP`'s, or, for inversions as functions (`inverse`), past
-  `CT`, with room for `x19` after the slots, then the temporary area, in the
-  working space and not the products' (`moAt`). -/
+  `CT`, with room for `x19` after the slots, in the working space, and the
+  temporary area either `TMP`'s, below `CT`, or past `x19`, in the working
+  space and not the products' (`moAt`). -/
   inv_at : c.inverse = none ∨ (c.sl CT ≤ c.invTbl ∧ c.invTbl % 8 = 0 ∧
-    c.invTbl + 9 * (8 * c.n) + 8 ≤ c.invTmp ∧ c.invTmp + 8 * c.n ≤ size ∧ c.invTmp % 8 = 0 ∧
-    c.invTmp ≠ Mont.moAt c.n)
+    c.invTbl + 9 * (8 * c.n) + 8 ≤ size ∧
+    ((c.invTmp = c.sl TMP ∧ c.invTmp + 8 * c.n ≤ c.sl CT) ∨
+      (c.invTbl + 9 * (8 * c.n) + 8 ≤ c.invTmp ∧ c.invTmp + 8 * c.n ≤ size ∧ c.invTmp % 8 = 0 ∧
+        c.invTmp ≠ Mont.moAt c.n)))
   /-- The functions keep the callee-saved registers but `x19` (which they
   save) and `x30`, and their code writes no vector register and opens no
   frame. -/

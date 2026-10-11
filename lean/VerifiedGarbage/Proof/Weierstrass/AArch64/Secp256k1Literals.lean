@@ -18,6 +18,11 @@ materialize_template mulNT := mul secp256k1.MN'
 materialize_template addNT := add secp256k1.MN'
 materialize_template subNT := sub secp256k1.MN'
 
+materialize_template mulPIT := mul { secp256k1.MP' with tmp := secp256k1.invTmp }
+materialize_template mulNIT := mul { secp256k1.MN' with tmp := secp256k1.invTmp }
+
+materialize_code invFnP := Cfg.invFn secp256k1 (Cfg.pPowI secp256k1)
+materialize_code invFnN := Cfg.invFn secp256k1 (Cfg.nPowI secp256k1)
 materialize_code pPow := Cfg.pPow secp256k1
 materialize_code nPow := Cfg.nPow secp256k1
 materialize_code validate := Impl.Ecdh.AArch64.Cfg.validate secp256k1
