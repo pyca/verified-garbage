@@ -410,7 +410,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
   have g₄ : ∀ s, G₃ s → WP isa streamHead s G₄ := fun s h => by
     obtain ⟨hs, h12, hbp, hbx, hdat, hlen, htl⟩ := h
     have hlt := (let ⟨_, _, _, _, _, _, I⟩ := hs; I.data.ok.lt : n < 2 ^ 64)
-    refine WP.mono (sHead_ok hs.env hlt hbx hbp) fun s' ⟨hbp', hg, hl, ha, f, hrd, hwr⟩ => ?_
+    refine WP.mono (sHead_ok hs.env hlt hbx hbp hlen) fun s' ⟨hbp', hg, hl, ha, f, hrd, hwr⟩ => ?_
     rw [hk] at hbp' hl
     have rd : ∀ d, 176 ≤ d → d + 8 ≤ 208 →
         s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
@@ -445,6 +445,18 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
     · rw [sl 192 (by decide) (by decide), htl, Nat.add_zero]
     · rw [sl 216 (by decide) (by decide)]; exact ha
   have e := rel_both ((part_rel v L enc (j := 0) (k := k)).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h) g₅ g₅
+  -- Whether that was all of it.
+  have g₅d : ∀ s, G₅ s → WP isa (.block streamDone) s fun s' => G₅ s' ∧ s'.cf = some (decide (n < 256)) :=
+    fun s h => by
+      obtain ⟨hs, hl, hdat, htl, ha⟩ := h
+      have hlt := (let ⟨_, _, _, _, _, _, I⟩ := hs; I.data.ok.lt : n < 2 ^ 64)
+      obtain ⟨s', run, hcf, hg, hm, hrd, hwr⟩ := done_ok hs.env hlt ha
+      exact WP.of_runBlock ⟨s', run, ⟨hs.regs (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl | rfl <;> exact hg _ (by decide) (by decide)) hm hrd hwr,
+        hm ▸ hl, hm ▸ hdat, hm ▸ htl, hm ▸ ha⟩, hcf⟩
+  have dn := rel_both (rel_envT (F := G₅) [] (fun _ h => h.1.env) (fun _ _ _ _ _ h => by cases h)
+    ⟨_, by taint_decide⟩) g₅d g₅d
   -- Past the head.
   have g₆ : ∀ s, G₅ s → WP isa (.block streamNext) s (BPre M Ctx St W SP R P₀ enc D n k) := fun s h => by
     obtain ⟨hs, hl, hdat, htl, ha⟩ := h
@@ -486,8 +498,16 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
   simp only [streamText]
   refine RelCT.seq a (rel_ite_e (fun _ _ h => by rw [h.1.2, h.2.2])
     (RelCT.block_nil fun _ _ h => ⟨h.1.1.1.env, h.1.2.1.env⟩) ?_)
-  refine rel_reassoc2 ((RelCT.seq b (RelCT.seq c (RelCT.seq d (RelCT.seq e (RelCT.seq f (RelCT.seq g
-    (RelCT.seq i j))))))).mono (fun _ _ h => ⟨⟨h.1.1, h.2⟩, ⟨h.1.2, by rw [h.1.2.2, ← h.1.1.2, h.2]⟩⟩) fun _ _ h => h)
+  have big := (RelCT.seq f (RelCT.seq g (RelCT.seq i j))).mono
+    (P' := fun (s₁ s₂ : State) => ((G₅ s₁ ∧ s₁.cf = some (decide (n < 256))) ∧ (G₅ s₂ ∧ s₂.cf = some (decide (n < 256)))) ∧
+      isa.eval .b s₁ = some false) (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h
+  have sm : RelCT isa (fun (s₁ s₂ : State) => ((G₅ s₁ ∧ s₁.cf = some (decide (n < 256))) ∧
+      (G₅ s₂ ∧ s₂.cf = some (decide (n < 256)))) ∧ isa.eval .b s₁ = some true) (.block [])
+      fun s₁ s₂ => Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂ :=
+    RelCT.block_nil fun _ _ h => ⟨h.1.1.1.1.env, h.1.2.1.1.env⟩
+  refine rel_reassoc2 ((RelCT.seq b (RelCT.seq c (RelCT.seq d (RelCT.seq e (RelCT.seq dn
+    (RelCT.ite (fun _ _ h => by show _ = _; exact h.1.2.trans h.2.2.symm) sm big)))))).mono
+    (fun _ _ h => ⟨⟨h.1.1, h.2⟩, ⟨h.1.2, by rw [h.1.2.2, ← h.1.1.2, h.2]⟩⟩) fun _ _ h => h)
 
 end
 
