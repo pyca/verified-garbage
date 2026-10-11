@@ -109,7 +109,7 @@ theorem invTbl_ge (hc : BaseCfgOk c) : c.sl CT ≤ c.invTbl := by
 theorem invTbl_le (hc : BaseCfgOk c) : c.invTbl + 9 * (8 * c.n) ≤ size := by
   rcases hc.inv_at with h | h
   · rw [invTbl_none h]; exact ct_le c hc.n10
-  · omega
+  · have := h.2.2.1; omega
 
 theorem invTbl_le8 (hc : BaseCfgOk c) : c.invTbl + (9 * (8 * c.n) + 8) ≤ size := by
   rcases hc.inv_at with h | h
@@ -117,12 +117,14 @@ theorem invTbl_le8 (hc : BaseCfgOk c) : c.invTbl + (9 * (8 * c.n) + 8) ≤ size 
     have := hc.n10
     show 64 + 8 * c.n * 69 + (9 * (8 * c.n) + 8) ≤ 8192
     omega
-  · omega
+  · have := h.2.2.1; omega
 
 theorem invTmp_ge64 (hc : BaseCfgOk c) : 64 ≤ c.invTmp := by
   rcases hc.inv_at with h | h
   · rw [invTmp_none h]; exact sl_ge64 c _
-  · have := sl_ge64 c CT; omega
+  · rcases h.2.2.2 with h' | h'
+    · rw [h'.1]; exact sl_ge64 c _
+    · have := sl_ge64 c CT; omega
 
 theorem invTbl8 (hc : BaseCfgOk c) : c.invTbl % 8 = 0 := by
   rcases hc.inv_at with h | h
@@ -132,18 +134,24 @@ theorem invTbl8 (hc : BaseCfgOk c) : c.invTbl % 8 = 0 := by
 theorem invTmp8 (hc : BaseCfgOk c) : c.invTmp % 8 = 0 := by
   rcases hc.inv_at with h | h
   · rw [invTmp_none h]; exact sl_mod8 c _
-  · exact h.2.2.2.2.1
+  · rcases h.2.2.2 with h' | h'
+    · rw [h'.1]; exact sl_mod8 c _
+    · exact h'.2.2.1
 
 theorem invTmp_le (hc : BaseCfgOk c) : c.invTmp + 8 * c.n ≤ size := by
   rcases hc.inv_at with h | h
   · rw [invTmp_none h]; exact sl_le c hc.n10 (by decide)
-  · exact h.2.2.2.1
+  · rcases h.2.2.2 with h' | h'
+    · rw [h'.1]; exact sl_le c hc.n10 (by decide)
+    · exact h'.2.1
 
 theorem invTbl_tmp (hc : BaseCfgOk c) :
     c.invTbl + 9 * (8 * c.n) ≤ c.invTmp ∨ c.invTmp + 8 * c.n ≤ c.invTbl := by
   rcases hc.inv_at with h | h
   · rw [invTbl_none h, invTmp_none h]; exact ct_tmp c
-  · exact Or.inl (by omega)
+  · rcases h.2.2.2 with h' | h'
+    · exact Or.inr (by omega)
+    · exact Or.inl (by omega)
 
 /-- A numbered slot below the tables is below the powers' working slots. -/
 theorem sl_invTbl (hc : BaseCfgOk c) {i : Nat} (hi : i < 45) (hT : i ≠ TMP) :
@@ -156,8 +164,10 @@ theorem sl_invTmp (hc : BaseCfgOk c) {i : Nat} (hi : i < 45) (hT : i ≠ TMP) :
     c.sl i + 8 * c.n ≤ c.invTmp ∨ c.invTmp + 8 * c.n ≤ c.sl i := by
   rcases hc.inv_at with h | h
   · rw [invTmp_none h]; exact sl_apart c hT
-  · have := sl_invTbl hc hi hT
-    exact Or.inl (by omega)
+  · rcases h.2.2.2 with h' | h'
+    · rw [h'.1]; exact sl_apart c hT
+    · have := sl_invTbl hc hi hT
+      exact Or.inl (by omega)
 
 theorem invMP_A (hc : BaseCfgOk c) : ModA { c.MP' with tmp := c.invTmp } := ⟨sl_mod8 c MP, invTmp8 hc⟩
 theorem invMN_A (hc : BaseCfgOk c) : ModA { c.MN' with tmp := c.invTmp } := ⟨sl_mod8 c MN, invTmp8 hc⟩
