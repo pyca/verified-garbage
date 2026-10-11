@@ -52,7 +52,7 @@ theorem coreRound_ok {σ s : State} {wlen i : Nat} {w1 work : Addr}
     {A B : Spec.Sha3.State} (h : CoreState σ wlen w1 work A B i s) :
     WP isa (.block rounds) s fun t =>
       RoundState σ wlen w1 work A B i i t ∧ RegKeep [.x16] s t := by
-  refine WP.mono (VG.Proof.MlDsa.AArch64.Optimized.Resident.permute_ok h.pairs)
+  refine WP.mono (VG.Proof.Sha3.AArch64.Neon.Hw.rounds2_ok h.pairs)
     fun t ⟨hk,hp⟩ => ?_
   have hl : RegKeep [.x16] s t :=
     ⟨fun r hr => hk.gpr r (fun he => hr (by simp [he])),hk.rd,hk.wr,hk.sp⟩

@@ -31,6 +31,15 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.W
 /-- The size of the working space, in bytes. -/
 abbrev size : Nat := 8192
 
+/-- What the calls of the complete addition's function need of the curve
+(`Cfg.pointOps`): at most four words, a callee keeping the callee-saved
+registers, writing no vector register and with no frames. -/
+structure PaddOk (c : Cfg) : Prop where
+  n4 : c.n ≤ 4
+  pres : ∀ r ∈ preserved, r ∉ clob c.n
+  vec : (instrs c.projAddFn).all (fun i => (vdstOf i).isNone) = true
+  nf : c.projAddFn.noFrames = true
+
 /-- What the proof of the code needs of a curve: its field and order are odd
 and fit in `n` words (`n < 10`: the multiplications accumulate in
 `x8`–`x15`), `G` is on the curve, `p < 2n` (so `x mod n` is one conditional
@@ -89,6 +98,7 @@ structure BaseCfgOk (c : Cfg) : Prop where
     (c.invFn c.pPowI).allInstrs (fun i => (vdstOf i).isNone) = true ∧
     (c.invFn c.nPowI).allInstrs (fun i => (vdstOf i).isNone) = true ∧
     (c.invFn c.pPowI).noFrames = true ∧ (c.invFn c.nPowI).noFrames = true
+  padd : c.pointOps ≠ none → PaddOk c
 
 /-- The optimized comb and window formulas additionally require `a = -3`. -/
 structure CfgOk (c : Cfg) : Prop extends BaseCfgOk c where

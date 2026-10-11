@@ -2,7 +2,7 @@
 //! verified against Botan), unmodified under vectors/; and CBC from ECB
 //! (`IdeaEcb`, tested on the NESSIE vectors) on every number of blocks up to 27.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 
 use verified_garbage::idea_cbc::{Error, IdeaCbc};
 use verified_garbage::idea_ecb::IdeaEcb;

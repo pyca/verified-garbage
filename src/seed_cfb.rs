@@ -9,13 +9,20 @@
 //! decryption from the block at `iv`, which they replace with the last
 //! ciphertext block, in constant time: their timing depends on none of the
 //! key, the chaining value and the data. Both are the modes' generic CFB over
-//! the batch of sixteen blocks of `vg_seed_ecb_encrypt`. This module holds
+//! `vg_seed_ecb_encrypt`: on x86-64 and AArch64 over its batch of sixteen blocks, on
+//! ARMv7 and x86 calling it once per block (a batch of eight, so about eight times
+//! ECB's cost). This module holds
 //! the key schedule and handles a partial last segment (§6.3, `Cₙ* = Pₙ* ⊕
 //! MSB_u(CIPH_K(Cₙ₋₁))`): CFB encryption of a zero block gives `CIPH_K` of
 //! the block to continue from, whose first bytes it XORs into the rest of the
 //! input.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::arch::seed::vg_seed_expand_key;
 use crate::arch::seed_cfb::{vg_seed_cfb128_decrypt, vg_seed_cfb128_encrypt};
@@ -35,7 +42,7 @@ pub struct SeedCfb128 {
 #[cfg(target_arch = "x86_64")]
 type Cfb = unsafe extern "sysv64" fn(*const [u8; 128], *mut [u8; 16], *mut [u8; 16], usize);
 /// The signature of `vg_seed_cfb128_encrypt` and `vg_seed_cfb128_decrypt`.
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
 type Cfb = unsafe extern "C" fn(*const [u8; 128], *mut [u8; 16], *mut [u8; 16], usize);
 
 impl SeedCfb128 {

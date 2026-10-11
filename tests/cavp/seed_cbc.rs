@@ -1,7 +1,12 @@
 //! SEED-CBC: RFC 4196's vectors as pyca/cryptography reformats them, unmodified under vectors/; and CBC from ECB
 //! (`SeedEcb`, tested on RFC 4269's vectors) on every number of blocks up to 40 (two batches of sixteen and a bit).
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use verified_garbage::seed_cbc::{Error, SeedCbc};
 use verified_garbage::seed_ecb::SeedEcb;

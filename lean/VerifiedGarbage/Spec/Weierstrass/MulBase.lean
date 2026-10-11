@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Spec.Weierstrass.Point
 public import VerifiedGarbage.Spec.P384
+public import VerifiedGarbage.Spec.P224
+public import VerifiedGarbage.Spec.P256
 
 /-!
 # The multiplication of a curve's base point, in its working space, as a function
 
 **Trusted** (as every file in `Spec/`). The contract of one function for each
-curve of `curves` (so far P-384), on the working space where the x86-64 code
+curve of `curves` (so far P-224, P-256 and P-384), on the working space where the x86-64 code
 of the curve's ECDSA signature and public key derivation keeps its numbers,
 so that both can call one copy of the multiplication instead of repeating it:
 
@@ -31,9 +33,11 @@ bytes is the x86-64 code's: numbers of `k` words in slots from byte 64
 (slot 3, `zeroAt`), both of which the caller provides, the result `P` (slots
 14 to 16, `pAt`) and the scalar `k` (slot 31, `kAt`, any number of `k`
 words). The function takes no offsets, so that every address it computes is
-`ws` plus a constant. Slots 17 to 30, slot 40, the curve's temporary slot
-(`tmpAt`) and the `64 k + 8` bytes from slot 45 (`bitsAt`, where the code
-keeps a table of `k`'s bits) are the function's own working space (`Own`);
+`ws` plus a constant. Slots 17 to 30, slot 40 (and slot 41 for a curve of
+fewer than six words, whose slots 29 and 30 cannot hold the caller's six
+callee-saved registers), the curve's temporary slot (`tmpAt`) and
+the `64 k + 8` bytes from slot 45 (`bitsAt`, where the code keeps a table of
+`k`'s bits) are the function's own working space (`Own`);
 on return they are unspecified and may hold intermediate values, secret
 ones among them, and the caller's callee-saved registers. Every other byte
 of `ws` keeps its value but the result's (`Keeps`).
@@ -102,10 +106,12 @@ def tmpAt : Nat := C.slot C.tmp
 /-- The bytes of a point. -/
 def ptBytes : Nat := 24 * C.k
 
-/-- Byte `i` is in the function's own working space: slots 17 to 30 and 40,
-the temporary slot, or the `64 k + 8` bytes of the table of bits. -/
+/-- Byte `i` is in the function's own working space: slots 17 to 30 and 40
+(and 41 for fewer than six words), the temporary slot, or the `64 k + 8` bytes
+of the table of bits. -/
 def Own (i : Nat) : Prop :=
   (C.slot 17 ≤ i ∧ i < C.slot 31) ∨ (C.slot 40 ≤ i ∧ i < C.slot 41) ∨
+    (C.k < 6 ∧ C.slot 41 ≤ i ∧ i < C.slot 42) ∨
     (C.tmpAt ≤ i ∧ i < C.tmpAt + 8 * C.k) ∨ (C.bitsAt ≤ i ∧ i < C.bitsAt + 64 * C.k + 8)
 
 /-- Every byte of `ws` but those of the function's own working space and of
@@ -146,7 +152,7 @@ def rangeDoc (o n : Nat) : String := s!"{o} to {o + n - 1}"
 
 /-- What the documentation says the function's own working space is. -/
 def ownDoc : String :=
-  s!"Bytes {rangeDoc (C.slot 17) (C.slot 31 - C.slot 17)}, {rangeDoc (C.slot 40) (8 * C.k)}, \
+  s!"Bytes {rangeDoc (C.slot 17) (C.slot 31 - C.slot 17)}, {rangeDoc (C.slot 40) (if C.k < 6 then 16 * C.k else 8 * C.k)}, \
     {rangeDoc C.tmpAt (8 * C.k)} and {rangeDoc C.bitsAt (64 * C.k + 8)} of `ws`"
 
 /-- `vg_<curve>_mul_base` on every target. -/
@@ -174,9 +180,11 @@ end Curve
 
 /-! ## The curves -/
 
+def p224 : Curve := { W := Spec.P224.curve, curve := "p224", k := 4, desc := "P-224", tmp := 2 }
+def p256 : Curve := { W := Spec.P256.curve, curve := "p256", k := 4, desc := "P-256", tmp := 2 }
 def p384 : Curve := { W := Spec.P384.curve, curve := "p384", k := 6, desc := "P-384", tmp := 83 }
 
 /-- Every curve. -/
-def curves : List Curve := [p384]
+def curves : List Curve := [p224, p256, p384]
 
 end VG.Spec.Weierstrass.MulBase

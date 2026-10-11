@@ -9,11 +9,12 @@
 //! `cbcDecryptContract`) replace each block with its CBC encryption or
 //! decryption from the chaining value at `iv`, in constant time: their timing
 //! depends on none of the key, the chaining value and the data. Both are the
-//! modes' generic CBC over the scalar block code, one block at a time. This
-//! module checks the lengths, holds the subkeys and keeps the chaining value
-//! to continue from: the last ciphertext block.
+//! modes' generic CBC, one block at a time: on x86-64 and AArch64 over the
+//! scalar block code, on ARMv7 calling the verified `vg_idea_ecb` for each
+//! block. This module checks the lengths, holds the subkeys and keeps the
+//! chaining value to continue from: the last ciphertext block.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 
 use crate::arch::idea::{vg_idea_expand_key, vg_idea_invert_key};
 use crate::arch::idea_cbc::{vg_idea_cbc_decrypt, vg_idea_cbc_encrypt};

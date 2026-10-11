@@ -239,6 +239,9 @@ pub(crate) mod mlkem1024;
 pub(crate) mod mlkem768;
 
 #[rustfmt::skip]
+pub(crate) mod p224_point_ops;
+
+#[rustfmt::skip]
 pub(crate) mod p384_inverse;
 
 #[rustfmt::skip]

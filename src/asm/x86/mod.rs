@@ -44,10 +44,22 @@ pub(crate) mod blake2b;
 pub(crate) mod blake2s;
 
 #[rustfmt::skip]
+pub(crate) mod blowfish;
+
+#[rustfmt::skip]
 pub(crate) mod camellia;
 
 #[rustfmt::skip]
 pub(crate) mod cast5;
+
+#[rustfmt::skip]
+pub(crate) mod cast5_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod cast5_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod cast5_ofb;
 
 #[rustfmt::skip]
 pub(crate) mod chacha20;
@@ -263,6 +275,15 @@ pub(crate) mod scrypt;
 pub(crate) mod seed;
 
 #[rustfmt::skip]
+pub(crate) mod seed_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod seed_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod seed_ofb;
+
+#[rustfmt::skip]
 pub(crate) mod sha1;
 
 #[rustfmt::skip]
@@ -282,6 +303,12 @@ pub(crate) mod sm4;
 
 #[rustfmt::skip]
 pub(crate) mod sm4_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod sm4_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod sm4_ofb;
 
 #[rustfmt::skip]
 pub(crate) mod triple_des;

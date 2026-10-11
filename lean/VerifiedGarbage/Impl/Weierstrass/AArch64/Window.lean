@@ -46,17 +46,24 @@ def storeEntry : Nat → Prog isa
   | j + 1 => .seq (.block [.subImm .x .x2 .x19 (j + 1)])
       (.ite (.zero .x .x2) (.block (copyPt K.M.n (K.tblPt (7 - j)) K.D)) (storeEntry j))
 
+/-- `D = E + P`: inline, or `R = P` (which the table's build leaves free)
+then `D = R + E` by a call (`addP`), the same sum as Algorithm 4 is
+symmetric. -/
+def addEP : Option (String × Nat) → Prog isa
+  | none => fprogB K.M (rcb3 K.S K.E K.P K.D)
+  | some f => .seq (.block (copyPt K.M.n K.R K.P)) (addP K.M K.S K.R K.E K.D (some f))
+
 /-- An entry of the table, with `E = [m]P` and `x19 = 8 - m`: `D = E + P`
 (`[m + 1]P`), then `E = D`, and `D` into entry `m + 1`. -/
-def buildStep : Prog isa :=
-  .seq (.block [decCounter]) <| .seq (fprogB K.M (rcb3 K.S K.E K.P K.D)) <|
+def buildStep (pa : Option (String × Nat) := none) : Prog isa :=
+  .seq (.block [decCounter]) <| .seq (addEP K pa) <|
   .seq (.block (copyPt K.M.n K.E K.D)) (storeEntry K 6)
 
 /-- The table: `[1]P = P`, then `[m + 1]P = [m]P + P` by a loop of seven
 additions into `D`, each copied into its entry (`storeEntry`). -/
-def build : Prog isa :=
+def build (pa : Option (String × Nat) := none) : Prog isa :=
   .seq (.block (copyPt K.M.n (K.tblPt 1) K.P ++ copyPt K.M.n K.E K.P ++ [.movz .x .x19 7 0]))
-    (.loop (buildStep K) (.nonzero .x .x19))
+    (.loop (buildStep K pa) (.nonzero .x .x19))
 
 /-- `x4 |= [x0 + d] & mask m`, through `x9` and `x2`. -/
 def loadCand (d m : Nat) : List Instr :=
@@ -111,11 +118,11 @@ def jac : Prog isa :=
 def quad : Prog isa := .seq (jac K) (.block (ySel K))
 
 /-- Iteration `j = x19 - 1`: `R = 16 R + [d_j]P`. -/
-def step : Prog isa :=
+def step (pa : Option (String × Nat) := none) : Prog isa :=
   .seq (.block [decCounter]) <|
   .seq (quad K) <|
   .seq (.block (digit K.bits ++ select K ++ negY K.M K.neg K.zero K.E.y K.bits)) <|
-  .seq (fprogB K.M (rcb3 K.S K.R K.E K.D)) <|
+  .seq (addP K.M K.S K.R K.E K.D pa) <|
   .block (copyPt K.M.n K.R K.D)
 
 /-- `R = O` and the counter. -/
@@ -124,7 +131,8 @@ def init : List Instr :=
     [.movz .x .x19 (BitVec.ofNat 16 K.J) 0]
 
 /-- `[k]P` into `R`, for the table of the bits of `k + offset J` at `K.bits`. -/
-def window : Prog isa := .seq (build K) (.seq (.block (init K)) (.loop (step K) (.nonzero .x .x19)))
+def window (pa : Option (String × Nat) := none) : Prog isa :=
+  .seq (build K pa) (.seq (.block (init K)) (.loop (step K pa) (.nonzero .x .x19)))
 
 end WinCfg
 

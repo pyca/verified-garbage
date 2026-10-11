@@ -7,13 +7,20 @@
 //! (`VG.Spec.Seed.cbcEncryptContract`, `cbcDecryptContract`) replace each
 //! block with its CBC encryption or decryption from the chaining value at
 //! `iv`, in constant time: their timing depends on none of the key, the
-//! chaining value and the data. Both are the modes' generic CBC over the
-//! batch of sixteen blocks of `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`:
-//! decryption deciphers sixteen blocks at a time, encryption one. This module
+//! chaining value and the data. Both are the modes' generic CBC over
+//! `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`: on x86-64 and AArch64
+//! over their batch of sixteen blocks, decryption deciphering sixteen blocks at a time
+//! and encryption one; on ARMv7 and x86 calling them once per block (a batch of
+//! eight, so about eight times ECB's cost). This module
 //! checks the lengths, holds the key schedule and keeps the chaining value to
 //! continue from: the last ciphertext block.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::arch::seed::vg_seed_expand_key;
 use crate::arch::seed_cbc::{vg_seed_cbc_decrypt, vg_seed_cbc_encrypt};
