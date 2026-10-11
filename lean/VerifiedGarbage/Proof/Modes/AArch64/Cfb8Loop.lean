@@ -128,18 +128,18 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {ivR : Reg} (hivR : ivR ∉
     · exact (hp.sepP.sub_right (slotIn i hi10)).symm
   -- The input block to the buffer.
   unfold Core.cfb8Block
-  refine WP.seq (WP.mono (copyN_wp (k := c.bw) (t := .x6) (u := .x6) (rd := sb) (rs := ivR) (od := 8 * c.buf)
+  refine WP.seq (WP.mono_syms (copyN_wp (k := c.bw) (t := .x6) (u := .x6) (rd := sb) (rs := ivR) (od := 8 * c.buf)
     (os := 0) (P := T) (Q := P)
     ⟨hi.base ▸ rfl, by rw [hi.ivK]; simp, by decide, Ne.symm i6, by decide, Ne.symm i6, by omega, by decide,
       by omega, by omega, fun w hw => by rw [addr_add]; exact inS (by omega),
-      fun w hw => inRd ⟨_, hwP, VG.Offset.contains_base P (by omega) (by omega)⟩, dTP, by omega⟩) fun s₁ h₁ => ?_)
+      fun w hw => inRd ⟨_, hwP, VG.Offset.contains_base P (by omega) (by omega)⟩, dTP, by omega⟩) fun s₁ h₁ sy₁ => ?_)
   have mem₁ : s₁.mem = over s.mem T (8 * c.bw) fun i => s.mem (P + BitVec.ofNat 64 i) := h₁.mem
   have f₁ : Frame [⟨T, 8 * c.bw⟩] s.mem s₁.mem := by rw [mem₁]; exact over_frame _ _ _ _
   have g₁ : ∀ x, x ≠ .x6 → s₁.gpr x = s.gpr x := fun x h => h₁.regs x h h
   have base₁ : s₁.gpr sb = B := by rw [g₁ _ (by decide), hi.base]
   have ready₁ : cs.Ready s₁ B k := cs.ready_frame hi.ready f₁ (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact .inr subTbuf)
-    ⟨fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, hwS, subT⟩, h₁.rd, h₁.wr⟩
+    ⟨fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, hwS, subT⟩, h₁.rd, h₁.wr, sy₁⟩
     fun r hr => by
     obtain ⟨h1, -, -⟩ := of_not_modeRegs hr; exact g₁ r (not_own h1).1
   have rd₁ : s₁.rd = s₀.rd := by rw [h₁.rd, hi.rd]
@@ -178,15 +178,15 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {ivR : Reg} (hivR : ivR ∉
   have wr₂' : s₂.wr = s₀.wr := by rw [wr₂, wr₁]
   have iv₂ : s₂.gpr ivR = P := by rw [i₂, g₁ _ i6, hi.ivK]
   -- The byte.
-  refine WP.block_append (WP.block_append (WP.mono (cfb8Xor_wp enc (T := T) hbI data₂ (by rw [base₂]) d6 d7
+  refine WP.block_append (WP.block_append (WP.mono_syms (cfb8Xor_wp enc (T := T) hbI data₂ (by rw [base₂]) d6 d7
     (by rw [wr₂', ← hi.wr]; exact inA)
     (by rw [rd₂', wr₂', ← hi.rd, ← hi.wr]; exact inRd (inS (by omega))))
-    fun s₃ ⟨g₃, rd₃, wr₃, m₃, x₃⟩ => ?_))
+    fun s₃ ⟨g₃, rd₃, wr₃, m₃, x₃⟩ sy₃ => ?_))
   have cj : (s₃.gpr .x6).setWidth 8 = cfb8C enc ciph m₀ D iv j := by
     rw [x₃, A₂, T₂]; rfl
   -- The shift.
-  refine WP.mono (cfb8Shift_wp (c := c) (P := P) i7 (by rw [g₃ _ i6 i7, iv₂]) (by rw [wr₃, wr₂']; exact hp.ivw) hbw0 hbw2)
-    fun s₄ ⟨g₄, rd₄, wr₄, P₄, f₄⟩ => ?_
+  refine WP.mono_syms (cfb8Shift_wp (c := c) (P := P) i7 (by rw [g₃ _ i6 i7, iv₂]) (by rw [wr₃, wr₂']; exact hp.ivw) hbw0 hbw2)
+    fun s₄ ⟨g₄, rd₄, wr₄, P₄, f₄⟩ sy₄ => ?_
   -- On to the next byte.
   obtain ⟨s₅a, e₅a, a₅a, o₅a, m₅a, rd₅a, wr₅a⟩ := addImm_ok s₄ c.dataReg c.dataReg (v := 1) (by decide)
   obtain ⟨s₅, e₅, l₅, o₅, m₅, rd₅, wr₅⟩ := subImm_ok s₅a c.leftReg c.leftReg (v := 1) (by decide)
@@ -228,7 +228,8 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {ivR : Reg} (hivR : ivR ∉
       rcases hr with rfl | rfl
       · exact ⟨_, by rw [wr₂, wr₁, ← hi.wr]; exact hwD, subA⟩
       · exact ⟨_, by rw [wr₂, wr₁, ← hi.wr]; exact hwP, fun _ h => h⟩,
-      by rw [rd₅, rd₅a, rd₄, rd₃], by rw [wr₅, wr₅a, wr₄, wr₃]⟩ fun r hr => by
+      by rw [rd₅, rd₅a, rd₄, rd₃], by rw [wr₅, wr₅a, wr₄, wr₃],
+      by rw [runBlock_syms e₅, runBlock_syms e₅a, sy₄, sy₃]⟩ fun r hr => by
     obtain ⟨h1, h2, h3⟩ := of_not_modeRegs hr
     exact keep₅ r (not_own h1).1 (not_own h1).2.1 h2 h3
   have saved₅ : ∀ i < 10, s₅.mem.readW (wordAddr B (c.slots + i)) 64 =

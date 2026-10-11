@@ -164,7 +164,7 @@ def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
     by cases d <;> decide⟩
   keyRegs_ok := by cases d <;> decide
   regs_ok := by cases d <;> decide
-  keyArgs_congr := keyArgs_congr
+  keyArgs_congr h hr hrd hwr _ hf := keyArgs_congr h hr hrd hwr hf
   ready_frame h hf hd _ _ := readyAt_frame h hf hd
   prepare_wp := prepare_wp d
   crypt_wp := crypt_wp d
