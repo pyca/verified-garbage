@@ -3,7 +3,12 @@
 //! and CFB128 from ECB (`Sm4Ecb`, tested on the draft's ECB examples) on
 //! every length up to a few blocks, partial last segments included.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use verified_garbage::sm4_cfb::Sm4Cfb128;
 use verified_garbage::sm4_ecb::Sm4Ecb;
