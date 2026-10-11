@@ -576,8 +576,8 @@ theorem ecb_wp (s : State) (hs : ecbContract.pre s) :
   unfold ecb
   refine WP.seq (WP.of_runBlock ⟨o, ho, ?_⟩)
   have hc : LCtx z (arg s 1) n o := by
-    refine ⟨⟨by rw [pi.esi, pi.wr, hp.wr]; simp, by rw [pi.esi]; simp only [slots]; omega,
-      by rw [pi.esi, pi.sched]⟩, by rw [pi.wr, hp.wr]; simp [n], by rw [pi.esi]; exact hp.dDB, fD⟩
+    refine ⟨.exact (by rw [pi.esi, pi.wr, hp.wr]; simp) (by rw [pi.esi]; simp only [slots]; omega)
+      (by rw [pi.esi, pi.sched]), by rw [pi.wr, hp.wr]; simp [n], by rw [pi.esi]; exact hp.dDB, fD⟩
   have blocks₀ : ∀ j < n, Spec.Idea.blockAt o.mem ((arg s 1).setWidth 64 + BitVec.ofNat 64 (8 * j)) =
       Spec.Idea.blockAt s.mem ((arg s 1).setWidth 64 + BitVec.ofNat 64 (8 * j)) := fun j hj =>
     blockAt_congr (frame_bytes pi.frame (by

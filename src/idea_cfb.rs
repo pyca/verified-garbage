@@ -9,13 +9,18 @@
 //! decryption from the block at `iv`, which they replace with the last
 //! ciphertext block, in constant time: their timing depends on none of the
 //! key, the chaining value and the data. Both are the modes' generic CFB: on
-//! x86-64 and AArch64 over the scalar block code, on ARMv7 calling the
+//! x86, x86-64 and AArch64 over the scalar block code, on ARMv7 calling the
 //! verified `vg_idea_ecb` once per block. This module holds the subkeys and
 //! handles a partial last segment (§6.3, `Cₙ* = Pₙ* ⊕ MSB_u(CIPH_K(Cₙ₋₁))`):
 //! CFB encryption of a zero block gives `CIPH_K` of the block to continue
 //! from, whose first bytes it XORs into the rest of the input.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::arch::idea::vg_idea_expand_key;
 use crate::arch::idea_cfb::{vg_idea_cfb64_decrypt, vg_idea_cfb64_encrypt};
@@ -36,7 +41,7 @@ pub struct IdeaCfb64 {
 #[cfg(target_arch = "x86_64")]
 type Cfb = unsafe extern "sysv64" fn(*const [u8; 104], *mut [u8; 8], *mut [u8; 8], usize);
 /// The signature of `vg_idea_cfb64_encrypt` and `vg_idea_cfb64_decrypt`.
-#[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
 type Cfb = unsafe extern "C" fn(*const [u8; 104], *mut [u8; 8], *mut [u8; 8], usize);
 
 impl IdeaCfb64 {

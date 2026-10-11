@@ -45,12 +45,19 @@ theorem mov_run (d : Reg) (src : Src) (v : BitVec 32) (s : State) (hv : readSrc 
 
 /-! ## The subkeys -/
 
-/-- The scratch buffer at `esi` (`4 * slots` bytes): its first 104 bytes
-hold the subkeys `z`, then `t₀`'s slot; all writable, not wrapping around. -/
+/-- The scratch buffer at `esi` (`4 * slots` bytes or more: a mode keeps its
+own after them): its first 104 bytes hold the subkeys `z`, then `t₀`'s slot;
+all writable, not wrapping around. -/
 structure KeyOk (z : Spec.Idea.Schedule) (s : State) : Prop where
-  wr : ⟨(s.gpr .esi).setWidth 64, 4 * slots⟩ ∈ s.wr
+  wr : ∃ n, slots ≤ n ∧ (s.gpr .esi).toNat + 4 * n ≤ 2 ^ 32 ∧ ⟨(s.gpr .esi).setWidth 64, 4 * n⟩ ∈ s.wr
   fit : (s.gpr .esi).toNat + 4 * slots ≤ 2 ^ 32
   sched : Spec.Idea.scheduleAt s.mem ((s.gpr .esi).setWidth 64) = z
+
+/-- A scratch buffer of exactly `slots` slots. -/
+theorem KeyOk.exact {z : Spec.Idea.Schedule} {s : State} (hr : ⟨(s.gpr .esi).setWidth 64, 4 * slots⟩ ∈ s.wr)
+    (hf : (s.gpr .esi).toNat + 4 * slots ≤ 2 ^ 32)
+    (hs : Spec.Idea.scheduleAt s.mem ((s.gpr .esi).setWidth 64) = z) : KeyOk z s :=
+  ⟨⟨slots, Nat.le_refl _, hf, hr⟩, hf, hs⟩
 
 theorem KeyOk.keep {z : Spec.Idea.Schedule} {rs : List Reg} {s s' : State} (h : KeyOk z s)
     (hk : Keep rs s s') (hesi : .esi ∉ rs) : KeyOk z s' := by
@@ -61,8 +68,9 @@ theorem KeyOk.keep {z : Spec.Idea.Schedule} {rs : List Reg} {s s' : State} (h : 
 
 theorem KeyOk.slot {z : Spec.Idea.Schedule} {s : State} (h : KeyOk z s) {d : Nat} (hd : d + 4 ≤ 4 * slots) :
     InRegions s.wr (addr (s.gpr .esi) d) 4 := by
+  obtain ⟨n, hn, hf, hr⟩ := h.wr
   rw [addr_eq (by have := h.fit; simp only [slots] at *; omega)]
-  exact ⟨_, h.wr, Offset.contains_base _ hd (by simp only [slots] at *; omega)⟩
+  exact ⟨_, hr, Offset.contains_base _ (by omega) (by omega)⟩
 
 /-- Subkey `k`, read at its offset. -/
 theorem KeyOk.src {z : Spec.Idea.Schedule} {s : State} (h : KeyOk z s) {k : Nat} (hk : k < 52) :
