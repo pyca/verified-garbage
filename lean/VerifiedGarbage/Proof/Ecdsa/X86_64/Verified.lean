@@ -124,12 +124,16 @@ theorem sign_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Law c.C) (h
       · exact hro
       · exact hrs) (by decide)
 
+/-- `[k]G` is a call of `vg_p256_mul_base`, which calls no other function. -/
+theorem p256_mulBase : MulBaseOk p256 :=
+  ⟨fun _ => ⟨_, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
+
 theorem sign_x86 (hL : Law Spec.P256.curve)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP256.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  sign_x86_of (p256_ok hI) hL (p256_tbls hL hT) ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩ (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
+  sign_x86_of (p256_ok hI) hL (p256_tbls hL hT) p256_mulBase (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
     (by lit_decide) (by lit_decide) s hs
 
 /-- `signP256` without its displacements, as a literal of shared blocks

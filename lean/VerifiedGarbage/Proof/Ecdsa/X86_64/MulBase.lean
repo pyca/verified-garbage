@@ -22,10 +22,10 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Wei
 variable {c : Cfg}
 
 /-- `R = [k]G` for the `k` in `K`'s slot, with the table of its bits, from
-`p`, zero and the comb's tables, for a curve whose comb has complete
-additions (`jac = false`). -/
+`p`, zero and the comb's tables: by complete additions, or by Booth's digits
+and Jacobian additions for a comb that has them (`jac`). -/
 theorem mulBaseBody_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {d : CombData}
-    (hcd : c.comb = some d) (hj : d.jac = false) {base : Addr} {s : State} (hs : Scr s base size)
+    (hcd : c.comb = some d) {base : Addr} {s : State} (hs : Scr s base size)
     (hmp : wordsVal s.mem base (c.sl MP) c.n = c.C.p) (hz : wordsVal s.mem base (c.sl ZERO) c.n = 0)
     (hTM : TblMem s (s.syms d.tsym) (c.combWords d))
     (hout : ∀ i < (c.combWords d).length, ∀ b < 8,
@@ -57,15 +57,28 @@ theorem mulBaseBody_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {d : 
     hTM.of_unch (by rw [k₁.rd, k₁.wr]) U₁ (fun w hw => by
       rw [List.mem_singleton.mp hw]; have := bitsAt_le c h7 (j := 1) (by decide)
       rw [bitsAt_eq] at this ⊢; dsimp only; omega) hout
-  have hgK : c.gMulK = c.gMul := by unfold Cfg.gMulK; rw [hcd]; simp only [hj, Bool.false_eq_true, ↓reduceIte]
-  rw [hgK]
-  unfold Cfg.gMul
-  rw [hcd]
-  refine WP.mono (gMulComb_ok' hc hcd hs₁ hmp₁ hz₁ (wordsVal_lt _ _ _ _) b₁ (by rw [sy₁]; exact hTM₁)
-    (by rw [sy₁]; exact hout) fun s₂ hs₂ hM₂ hF =>
-      tcomb_ok (tcombLay hc (hc.comb d hcd)) hC (hc.comb_am3 d hcd) hc.onG (tcombVals hc hC (hT d hcd).1)
-        hc.p_lt hs₂ hM₂ hF false)
-    fun s' ⟨K', U', M', L', R'⟩ => ⟨?_, ?_, M', L', R'⟩
+  have hG : WP isa c.gMulK.inline s₁ fun s' => KeepRegs (powClob c.n) s₁ s' ∧ Unch base (gW c) s₁.mem s'.mem ∧
+      ModOkW c.MP' size c.C.p s'.mem base ∧
+      (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem base x c.n < c.C.p) ∧
+      Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
+        (tmv c.C c.n base s' (c.sl RZ)) (mul (wordsVal s.mem base (c.sl K) c.n) (G c.C)) := by
+    unfold Cfg.gMulK
+    rw [hcd]
+    dsimp only
+    split
+    · rename_i hj
+      exact gMulComb_ok' hc hcd hs₁ hmp₁ hz₁ (wordsVal_lt _ _ _ _) b₁ (by rw [sy₁]; exact hTM₁)
+        (by rw [sy₁]; exact hout) fun s₂ hs₂ hM₂ hF =>
+          tcombJ_ok (tcombLay hc (hc.comb d hcd)) hC (hc.comb_am3 d hcd) hc.onG (tcombVals hc hC (hT d hcd).1)
+            hc.p_lt (by show 1 ≤ bitsAt c.n 0; rw [bitsAt_eq]; omega) ((hT d hcd).2 hj)
+            (wordsVal_lt _ _ _ _) hs₂ hM₂ hF
+    · unfold Cfg.gMul
+      rw [hcd]
+      exact gMulComb_ok' hc hcd hs₁ hmp₁ hz₁ (wordsVal_lt _ _ _ _) b₁ (by rw [sy₁]; exact hTM₁)
+        (by rw [sy₁]; exact hout) fun s₂ hs₂ hM₂ hF =>
+          tcomb_ok (tcombLay hc (hc.comb d hcd)) hC (hc.comb_am3 d hcd) hc.onG (tcombVals hc hC (hT d hcd).1)
+            hc.p_lt hs₂ hM₂ hF false
+  refine WP.mono hG fun s' ⟨K', U', M', L', R'⟩ => ⟨?_, ?_, M', L', R'⟩
   · refine (k₁.mono fun r hr => ?_).trans K'
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp [powClob, clob]
@@ -124,7 +137,7 @@ callee-saved registers kept (saved in its slots, `mulBaseSlots`, and
 restored), and what its body gives (`mulBaseBody_ok`), having written also
 those slots. -/
 theorem mulBaseFn_ok (hc : BaseCfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) (hT : CombTbls c) {d : CombData}
-    (hcd : c.comb = some d) (hj : d.jac = false) {base : Addr} {s : State} (hs : Scr s base size)
+    (hcd : c.comb = some d) {base : Addr} {s : State} (hs : Scr s base size)
     (hmp : wordsVal s.mem base (c.sl MP) c.n = c.C.p) (hz : wordsVal s.mem base (c.sl ZERO) c.n = 0)
     (hTM : TblMem s (s.syms d.tsym) (c.combWords d))
     (hout : ∀ i < (c.combWords d).length, ∀ b < 8,
@@ -171,7 +184,7 @@ theorem mulBaseFn_ok (hc : BaseCfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) (hT : Co
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       have := hle i hi; dsimp only; omega) hout
   -- The body.
-  refine WP.seq (WP.mono_syms (mulBaseBody_ok hc hC hT hcd hj hs₁ hmp₁ hz₁ hTM₁
+  refine WP.seq (WP.mono_syms (mulBaseBody_ok hc hC hT hcd hs₁ hmp₁ hz₁ hTM₁
     (by rw [sy₁]; exact hout)) fun s₂ ⟨K₂, U₂, M₂, L₂, R₂⟩ sy₂ => ?_)
   rw [hk₁] at R₂
   have sv₂ : Spill.Saved s₂.mem base s.gpr c.mulBaseSaved := fun p hp => by
@@ -212,12 +225,12 @@ theorem mulBaseFn_ok (hc : BaseCfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) (hT : Co
 /-! ## `R = [k]G` in the signature and the public key: `gMulKC` -/
 
 /-- What a call of `vg_<curve>_mul_base` or `vg_<curve>_mul` needs of the
-curve: for the first, a comb, with complete additions, at least three words
-(so that its slots hold the six callee-saved registers); for the second, four
-words (which it keeps the six registers in `xmm` registers for); and products
-written out (the functions call no other). -/
+curve: for the first, a comb and at least three words (so that its slots
+hold the six callee-saved registers); for the second, four words (which it
+keeps the six registers in `xmm` registers for, as the inversions); and
+products written out (the functions call no other). -/
 def MulBaseOk (c : Cfg) : Prop :=
-  (c.mulBase.isSome = true → ∃ d, c.comb = some d ∧ d.jac = false ∧ 3 ≤ c.n ∧ c.mulBaseFn.noCalls = true) ∧
+  (c.mulBase.isSome = true → ∃ d, c.comb = some d ∧ 3 ≤ c.n ∧ c.mulBaseFn.noCalls = true) ∧
     (c.mul.isSome = true → c.n = 4 ∧ c.mulFn.noCalls = true)
 
 theorem apart_gWA {i : Nat} (hi : i < 45)

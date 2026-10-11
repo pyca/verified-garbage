@@ -36,7 +36,9 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
     target := X86_64.target
     doc := Spec.Ecdsa.P256.signApi.doc (notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, \
-      " ++ Proof.Ecdsa.X86_64.mulNote adx ++ ". `[k]G` is a fixed-base comb of 7-bit signed digits: the 37 windows `k_j` of \
+      " ++ Proof.Ecdsa.X86_64.mulNote adx ++ ". `[k]G` is a call of `vg_p256_mul_base" ++
+      (if adx then "_adx" else "") ++ "`, which expands `k` into a table of its bits and runs a \
+      fixed-base comb of 7-bit signed digits: the 37 windows `k_j` of \
       `k`'s bits as Booth's digits `d_j = k_j + c_j - 128 c_(j+1)` from `-64` to `64` (`c_j` the \
       bit below window `j`, `c_0 = 0`), `[k]G = Σ [d_j 2^(7j)]G`, from 37 tables of `[m 2^(7j)]G` \
       (`m = 1 … 64`, affine, in Montgomery form) in the static `VG_P256_COMB` (148 KB), with no \

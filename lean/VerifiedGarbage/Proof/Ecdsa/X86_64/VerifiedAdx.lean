@@ -35,12 +35,16 @@ theorem p256x_ok (hI : InvSounds) : CfgOk p256x :=
       InvOk.ofMod (by decide +kernel) (by decide)⟩
     inv_n := fun _ _ => ⟨@hI _ p256.C.n_ne_zero Proof.P256.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩ }
 
+/-- `[k]G` is a call of `vg_p256_mul_base_adx`, which calls no other function. -/
+theorem p256x_mulBase : MulBaseOk p256x :=
+  ⟨fun _ => ⟨_, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
+
 theorem sign_x86_adx (hL : Law Spec.P256.curve)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP256Adx.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  sign_x86_of (p256x_ok hI) hL (p256_tbls hL hT) ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩ (fun _ h => { pre_of h with }) (fun _ _ => id) rfl
+  sign_x86_of (p256x_ok hI) hL (p256_tbls hL hT) p256x_mulBase (fun _ h => { pre_of h with }) (fun _ _ => id) rfl
     (by lit_decide) (by lit_decide) (by lit_decide) s hs
 
 /-- `signP256Adx` without its displacements, as a literal of shared blocks

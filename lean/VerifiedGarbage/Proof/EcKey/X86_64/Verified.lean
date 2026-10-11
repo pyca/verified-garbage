@@ -96,7 +96,7 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.P256.curve)
     (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP256.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' :=
-  pk_x86_of (p256_ok hI) hL (p256_tbls hL hT) ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩ (fun _ => pre_of) (fun _ _ => post_of rfl) rfl (by lit_decide)
+  pk_x86_of (p256_ok hI) hL (p256_tbls hL hT) p256_mulBase (fun _ => pre_of) (fun _ _ => post_of rfl) rfl (by lit_decide)
     (by lit_decide) (by lit_decide) s hs
 
 /-- `publicKeyP256` without its displacements, as a literal of shared blocks
