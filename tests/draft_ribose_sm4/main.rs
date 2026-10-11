@@ -13,8 +13,10 @@
 ))]
 
 mod sm4_cbc;
+mod sm4_cfb;
 mod sm4_ctr;
 mod sm4_ecb;
+mod sm4_ofb;
 
 const DRAFT: &str =
     include_str!("../../vectors/draft-ribose-cfrg-sm4/draft-ribose-cfrg-sm4-10.txt");
