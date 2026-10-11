@@ -195,8 +195,11 @@ theorem mb_correct (hL : Law Spec.P224.curve)
     have hC : (cfg adx).C = C.W := rfl
     have L₁ := hC ▸ L'
     have R₁ := hC ▸ R'
-    exact result_of hFe h1 hu (by rfl) (by decide) (L₁ _ (by decide)) (L₁ _ (by decide)) (L₁ _ (by decide)) R₁
-      (keeps_of_unch adx U')
+    cases adx
+    · exact result_of hFe h1 hu (by rfl) (by decide) (L₁ _ (by decide)) (L₁ _ (by decide)) (L₁ _ (by decide)) R₁
+        (keeps_of_unch false U')
+    · exact result_of hFe h1 hu (by rfl) (by decide) (L₁ _ (by decide)) (L₁ _ (by decide)) (L₁ _ (by decide)) R₁
+        (keeps_of_unch true U')
 
 /-- Constant time by taint tracking, `rdi`, `rsp` and the static's address
 public. -/
