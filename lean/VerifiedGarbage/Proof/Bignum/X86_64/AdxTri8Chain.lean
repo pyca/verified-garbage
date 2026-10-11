@@ -24,7 +24,7 @@ private theorem append_arith {L L' R H C O X P D U U' Q F A Ci Oi : Nat}
 
 theorem chain_ok (rs : List Reg) {s : State} {B : Addr} {Z e k : Nat}
     {hi other prev : Reg} {c o : Bool}
-    (hs : Scr s B Z) (hp : s.gpr .rbp=off B e) (hz : s.gpr .rcx=0)
+    (hs : Scr s B Z) (hp : s.gpr .rbp=off B e) (htop : value s rs<2^(64*(rs.length-1)))
     (hZ : e+8*(k+(rs.length-1)) ≤ Z) (hn : rs≠[]) (hd : rs.Nodup)
     (hh : Safe hi) (ho' : Safe other) (hne : hi≠other) (hp1 : prev≠hi) (hp2 : prev≠.rsi)
     (hrs : ∀ r ∈ rs, Safe r ∧ r≠hi ∧ r≠other ∧ r≠prev)
@@ -40,6 +40,10 @@ theorem chain_ok (rs : List Reg) {s : State} {B : Addr} {Z e k : Nat}
     cases rs with
     | nil =>
       have cp := (hrs col (by simp)).2.2.2
+      have hz : s.gpr col=0 := by
+        apply BitVec.eq_of_toNat_eq
+        simp only [value,List.length_cons,List.length_nil,Nat.sub_self,Nat.mul_zero,Nat.pow_zero] at htop
+        simp only [show (0 : BitVec 64).toNat=0 from rfl]; omega
       refine WP.mono (close_ok s hc ho hz (Ne.symm cp)) fun t ⟨ct,ot,hct,hot,eq,kt⟩ => ?_
       refine ⟨ct,ot,hct,hot,?_,kt.mono (by simp)⟩
       simpa only [value,List.length_cons,List.length_nil,Nat.mul_one,Nat.sub_self,wv,
@@ -55,17 +59,23 @@ theorem chain_ok (rs : List Reg) {s : State} {B : Addr} {Z e k : Nat}
       refine WP.mono (word_ok s hm hc ho hh.1 cs.2.1 cs.1.1 hp1 hp2 cs.2.2.2.symm)
         fun a ⟨ca,oa,hca,hoa,eq,ka⟩ => ?_
       have pa : a.gpr .rbp=off B e := (ka.gpr (by simp [Ne.symm hh.2.1,Ne.symm cs.1.2.1])).trans hp
-      have za : a.gpr .rcx=0 := (ka.gpr (by simp [Ne.symm hh.2.2.2,Ne.symm cs.1.2.2.2])).trans hz
-      refine WP.mono (ih (hs.congr ka.2.2.2) pa za (by simp only [List.length_cons] at *; omega)
+      have tailPres : value a (next::rest)=value s (next::rest) := value_congr (by
+        intro r hr
+        have h := hrs r (by simp [hr])
+        exact ka.gpr (by simp [h.2.1,h.1.1,show r≠col by intro e; subst r; exact nd.1 hr]))
+      have topA : value a (next::rest)<2^(64*((next::rest).length-1)) := by
+        rw [tailPres]
+        have e1 : value s (col::next::rest)=(s.gpr col).toNat+2^64*value s (next::rest) := rfl
+        have e2 : 64*((col::next::rest).length-1)=64+64*((next::rest).length-1) := by
+          simp only [List.length_cons]; omega
+        rw [e1,e2,Nat.pow_add] at htop
+        exact Nat.lt_of_mul_lt_mul_left (Nat.lt_of_le_of_lt (Nat.le_add_left _ _) htop)
+      refine WP.mono (ih (hs.congr ka.2.2.2) pa topA (by simp only [List.length_cons] at *; omega)
         (by simp) nd.2 ho' hh hne.symm hne hh.1 ?_ hca hoa) fun t ⟨ct,ot,hct,hot,et,kt⟩ => ?_
       · intro r hr
         have h := hrs r (by simp [hr])
         exact ⟨h.1,h.2.2.1,h.2.1,h.2.1⟩
       have caPres : a.gpr .rdx=s.gpr .rdx := ka.gpr (by simp [Ne.symm hh.2.2.1,Ne.symm cs.1.2.2.1])
-      have tailPres : value a (next::rest)=value s (next::rest) := value_congr (by
-        intro r hr
-        have h := hrs r (by simp [hr])
-        exact ka.gpr (by simp [h.2.1,h.1.1,show r≠col by intro e; subst r; exact nd.1 hr]))
       have colPres : t.gpr col=a.gpr col := kt.gpr (by simp [cs.2.1,cs.2.2.1,cs.1.1,nd.1])
       rw [caPres,ka.2.1,tailPres] at et
       refine ⟨ct,ot,hct,hot,?_,(ka.trans kt).mono (by

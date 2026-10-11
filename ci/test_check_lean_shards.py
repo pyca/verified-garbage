@@ -118,6 +118,14 @@ class Plan(Project):
         self.edit("# Compiled specifications.", "# The compiled specifications.")
         self.assertEqual(self.stale(), 0)
 
+    def test_a_module_s_imports(self):
+        # Proof as a module: a change to Spec.A still rebuilds it and its importer.
+        (self.lean / "VerifiedGarbage/Proof.lean").write_text(
+            "module\n\npublic import VerifiedGarbage.Spec.A\nmeta import VerifiedGarbage.Spec.B\n")
+        self.manifest["sources"] = {m: shards.digest(f) for m, f in shards.modules().items()}
+        (self.lean / "VerifiedGarbage/Spec/A.lean").write_text("-- changed\n")
+        self.assertEqual(self.stale(), 3)
+
     def test_a_setting_rebuilds_everything(self):
         self.edit('moreLeanArgs = ["-j2"]', 'moreLeanArgs = ["-j4"]')
         self.assertEqual(self.stale(), 5)

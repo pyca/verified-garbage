@@ -56,13 +56,14 @@ structure XorImpl where
   which also call `vg_poly1305_blocks` (ChaCha20-Poly1305) call: the one
   for the same CPUs. -/
   poly : Impl.Poly1305.X86_64.Blocks
-  /-- Its `fold` and `pass` with the implementation of `vg_poly1305_blocks`
-  it comes with: one of the triples whose ChaCha20-Poly1305 the
-  constant-time analysis checks (it runs on code with the comparisons
-  against `fold` and the mask `pass - 1` in it). -/
-  fold_poly : (callee.fold = 0 ∧ callee.pass = 0 ∧ poly = .scalar) ∨
-    (callee.fold = 448 ∧ callee.pass = 0 ∧ poly = .avx2) ∨
-    (callee.fold = 960 ∧ callee.pass = 1024 ∧ poly = .avx512)
+  /-- Its `fold`, `pass` and `wide` with the implementation of
+  `vg_poly1305_blocks` it comes with: one of the combinations whose
+  ChaCha20-Poly1305 the constant-time analysis checks (it runs on code with
+  the comparisons against `fold`, the mask `pass - 1` and the loops of
+  `2 ^ wide` bytes in it). -/
+  fold_poly : (callee.fold = 0 ∧ callee.pass = 0 ∧ callee.wide = 4 ∧ poly = .scalar) ∨
+    (callee.fold = 448 ∧ callee.pass = 0 ∧ callee.wide = 5 ∧ poly = .avx2) ∨
+    (callee.fold = 960 ∧ callee.pass = 1024 ∧ callee.wide = 6 ∧ poly = .avx512)
 
 namespace XorImpl
 
@@ -89,7 +90,7 @@ def scalar : XorImpl where
   suffix := ""
   features := []
   poly := .scalar
-  fold_poly := Or.inl ⟨rfl, rfl, rfl⟩
+  fold_poly := Or.inl ⟨rfl, rfl, rfl, rfl⟩
 
 theorem avx2_ok : ∀ s, (xorStack 16).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.avx2.code s t s' ∧
     abiPreserved s s' ∧ (xorStack 16).post s s' :=
@@ -119,7 +120,7 @@ def avx2 : XorImpl where
   suffix := "_avx2"
   features := ["avx", "avx2"]
   poly := .avx2
-  fold_poly := Or.inr (Or.inl ⟨rfl, rfl, rfl⟩)
+  fold_poly := Or.inr (Or.inl ⟨rfl, rfl, rfl, rfl⟩)
 
 theorem avx512_ok : ∀ s, (xorStack 16).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.avx512.code s t s' ∧
     abiPreserved s s' ∧ (xorStack 16).post s s' :=
@@ -149,7 +150,7 @@ def avx512 : XorImpl where
   suffix := "_avx512"
   features := ["avx", "avx512f"]
   poly := .avx512
-  fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl⟩)
+  fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, rfl⟩)
 
 end XorImpl
 

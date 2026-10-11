@@ -61,13 +61,6 @@ def montgomeryMulAddContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract
 def montgomeryNttInvContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   inPlaceContract A montgomeryNttInv stack
 
-private def reducedSafety (name : String) : String :=
-  s!"Each of the 256 `u32`s of `{name}` must be less than `q` = 8380417."
-
-private def ctDoc (contract : String) : String :=
-  s!"\n\nContract: `VG.Spec.MlDsa.{contract}`. Constant time: only the pointers may affect \
-    timing, not the data."
-
 /-- A distinct API: its result is not the ordinary coefficientwise product. -/
 def montgomeryMulApi : Api where
   module := "mldsa"

@@ -67,7 +67,7 @@ theorem opMul_update (o : Slot) (e : Env) (v : Spec.X25519.Fe) :
 
 theorem sqLoop_ok {s₀ : State} {base : BitVec 32} (hc : Ctx base s₀)
     (o : Slot) (x : Spec.X25519.Fe) (n : Nat) (hn : n < 65536) :
-    ∀ m s, 1 ≤ m → m < n → IKeep base s₀ s → AllLim s.mem base →
+    ∀ m s, 1 ≤ m → m ≤ n → IKeep base s₀ s → AllLim s.mem base →
       s.gpr .r10 = BitVec.ofNat 32 m →
       env s.mem base = Function.update (env s₀.mem base) o (sqn x (n - m)) →
       WP isa (.loop (.seq (mulP o o o) (.block [.subs .r10 .r10 (.imm 1)])) .ne) s fun t =>
@@ -75,7 +75,7 @@ theorem sqLoop_ok {s₀ : State} {base : BitVec 32} (hc : Ctx base s₀)
         env t.mem base = Function.update (env s₀.mem base) o (sqn x n) := by
   intro m s h1 h2 hk hl hb he
   refine WP.loop (M := isa) (Inv := fun m (s : State) =>
-    1 ≤ m ∧ m < n ∧ IKeep base s₀ s ∧ AllLim s.mem base ∧
+    1 ≤ m ∧ m ≤ n ∧ IKeep base s₀ s ∧ AllLim s.mem base ∧
     s.gpr .r10 = BitVec.ofNat 32 m ∧
     env s.mem base = Function.update (env s₀.mem base) o (sqn x (n - m))) ?_
     m s ⟨h1, h2, hk, hl, hb, he⟩
@@ -95,6 +95,26 @@ theorem sqLoop_ok {s₀ : State} {base : BitVec 32} (hc : Ctx base s₀)
   · exact .inl ⟨rfl, k2, l2, by rw [e2, Nat.sub_zero]⟩
   · exact .inr ⟨by simp only [decide_eq_false (by omega : m ≠ 0), Bool.not_false],
       m, by omega, by omega, by omega, k2, l2, b2, e2⟩
+
+theorem mulcI (base : BitVec 32) (o a b : Slot) : ISpec base (mulPc o a b) (opMul o a b) :=
+  fun _ hc hl => WP.mono (fieldOp_ok hc hl (.mulc o a b)) fun _ ⟨hk, hlt, he⟩ =>
+    ⟨⟨hk.rest.mono (by decide), hk.frame⟩, hlt, he⟩
+
+/-- `sqnLoop o n`: slot `o` squared `n` times. -/
+theorem sqnLoopI (base : BitVec 32) (o : Slot) (n : Nat) (hn : 1 ≤ n) (hn' : n < 65536) :
+    ISpec base (sqnLoop o n) (opSqn o o n) := by
+  intro s hc hl
+  refine WP.seq (wp_movw fun s1 h1 => WP.block_nil ?_)
+  have b1 : s1.gpr .r10 = BitVec.ofNat 32 n := by
+    rw [h1.gpr]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (by omega : n < 2 ^ 16)]
+  have k1 : IKeep base s s1 := IKeep.of_counter (h1.rest (by decide)) h1.mem
+  refine WP.mono (sqLoop_ok hc o (env s.mem base o) n hn' n s1 hn (Nat.le_refl _) k1
+    (by rw [h1.mem]; exact hl) b1 ?_) fun t ⟨kt, lt, et⟩ => ⟨kt, lt, et⟩
+  rw [h1.mem, Nat.sub_self]
+  exact (Function.update_eq_self _ _).symm
 
 theorem sqnI (base : BitVec 32) (o a : Slot) (n : Nat) (hn : 2 ≤ n) (hn' : n < 65536) :
     ISpec base (Impl.Ed25519.Arm.sqn o a n) (opSqn o a n) := by
@@ -157,7 +177,7 @@ theorem mulO_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {S W : List Slot} (hl
     (o x y : Slot) (hx : x ∈ S) (hy : y ∈ S) (hw : o ∈ W) :
     WP isa (mulP o x y) s fun t => Rest clob s t ∧ Frame (wRegions b W) s.mem t.mem ∧ LimOn t.mem b (o :: S) ∧
       env t.mem b = opMul o x y (env s.mem b) :=
-  fieldOpOn_ok hc hl (.mul o x y) (fun i hi => by
+  fieldOpOn_ok hc hl (.mul o x y) rfl (fun i hi => by
     rcases List.mem_cons.mp hi with rfl | hi
     · exact hx
     · rw [List.mem_singleton.mp hi]; exact hy) hw
@@ -269,13 +289,13 @@ def invEnv (e : Env) : Env := opMul 15 15 14 (opSqn 15 15 5 (power250Env e))
 def rootEnv (e : Env) : Env := opMul 15 15 2 (opSqn 15 15 2 (power250Env e))
 
 theorem invert_spec (base : BitVec 32) : ISpec base invert invEnv := by
-  have h : ISpec base _ _ := (power250_spec base).seq ((sqnI base 15 15 5 (by decide) (by decide)).seq
-    (mulI base 15 15 14))
+  have h : ISpec base _ _ := (power250_spec base).seq ((sqnLoopI base 15 5 (by decide) (by decide)).seq
+    (mulcI base 15 15 14))
   exact h
 
 theorem rootPower_spec (base : BitVec 32) : ISpec base Impl.Ed25519.Arm.rootPower rootEnv := by
-  have h : ISpec base _ _ := (power250_spec base).seq ((sqnI base 15 15 2 (by decide) (by decide)).seq
-    (mulI base 15 15 2))
+  have h : ISpec base _ _ := (power250_spec base).seq ((sqnLoopI base 15 2 (by decide) (by decide)).seq
+    (mulcI base 15 15 2))
   exact h
 
 theorem invEnv_eval (e : Env) : invEnv e 15 = VG.Proof.X25519.invert (e 2) := by

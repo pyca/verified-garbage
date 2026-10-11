@@ -134,15 +134,15 @@ theorem rootCheck_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (minus :
 
 theorem rootAdjustSign_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
     CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
-      (.seq (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18]) recoverSign) (fun _ _ => True) := by
+      (.seq (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18]) recoverSign) (fun _ _ => True) := by
   have hp : CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
-      (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18])
+      (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18])
       (fun s t => SignCTPre base b (x * Spec.Ed25519.sqrtM1) s ∧ SignCTPre base b (x * Spec.Ed25519.sqrtM1) t) := by
     apply ctBoth
     · apply ctRegs [.r0] _ (by taint_decide)
       exact fun _ _ h => r0_agree h.1.1.r0 h.2.1.r0
     · intro s h
-      refine WP.mono (fieldCode_ok [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18] h.1 h.2.1)
+      refine WP.mono (fieldCode_ok [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18] h.1 h.2.1)
         fun t ⟨kt, lt, te⟩ => ?_
       refine ⟨kt.ctx h.1, lt, kt.sign.trans h.2.2.1, ?_⟩
       rw [te]
@@ -153,7 +153,7 @@ theorem rootAdjustSign_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
 theorem recoverMinus_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) :
     CT (fun s t => RootCTState base b y s ∧ RootCTState base b y t)
       (.seq (fieldEqual 11 12) (.ite .eq
-        (.seq (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18]) recoverSign) recoverInvalid)) (fun _ _ => True) := by
+        (.seq (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18]) recoverSign) recoverInvalid)) (fun _ _ => True) := by
   refine RelCT.seq (rootCheck_ct base b y true) (RelCT.ite ?_ ?_ ?_)
   · exact fun _ _ h => congrArg some (h.1.2.trans h.2.2.symm)
   · exact (rootAdjustSign_ct base b (rootX y)).mono
@@ -164,7 +164,7 @@ theorem recoverChecks_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) :
     CT (fun s t => RootCTState base b y s ∧ RootCTState base b y t)
       (.seq (fieldEqual 11 6) (.ite .eq recoverSign
         (.seq (fieldEqual 11 12) (.ite .eq
-          (.seq (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18]) recoverSign) recoverInvalid)))) (fun _ _ => True) := by
+          (.seq (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18]) recoverSign) recoverInvalid)))) (fun _ _ => True) := by
   refine RelCT.seq (rootCheck_ct base b y false) (RelCT.ite ?_ ?_ ?_)
   · exact fun _ _ h => congrArg some (h.1.2.trans h.2.2.symm)
   · exact (recoverSign_ct base b (rootX y)).mono (fun _ _ h => ⟨h.1.1.1.1, h.1.2.1.1⟩) (fun _ _ h => h)

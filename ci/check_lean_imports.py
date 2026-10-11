@@ -23,6 +23,10 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LEAN = ROOT / "lean" / "VerifiedGarbage"
 
+# The start of an import: `import`, and in a module `public`, `meta` and
+# `all` imports.
+IMPORT = r"\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?"
+
 ALLOWED_IMPORTS = {
     "TCB": ("Lean", "VerifiedGarbage.TCB."),
     "Spec": ("VerifiedGarbage.TCB.", "VerifiedGarbage.Spec.", "Mathlib"),
@@ -47,14 +51,14 @@ def main() -> int:
         if own is None:
             continue
         for n, line in enumerate(f.read_text().splitlines(), 1):
-            m = re.match(r"\s*import\s+(VerifiedGarbage\.\S+)", line)
+            m = re.match(IMPORT + r"(VerifiedGarbage\.\S+)", line)
             other = m and target_of(m.group(1).split("."), targets)
             if other and other != own:
                 errors.append(f"{f.relative_to(ROOT)}:{n}: a module of {own} may not import {m.group(1)}, of {other}")
     for d, prefixes in ALLOWED_IMPORTS.items():
         for f in sorted((LEAN / d).rglob("*.lean")):
             for n, line in enumerate(f.read_text().splitlines(), 1):
-                m = re.match(r"\s*import\s+(\S+)", line)
+                m = re.match(IMPORT + r"(\S+)", line)
                 if m and not allowed(m.group(1), prefixes):
                     errors.append(f"{f.relative_to(ROOT)}:{n}: {d}/ may not import {m.group(1)}")
     for e in errors:

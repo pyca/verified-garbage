@@ -1,4 +1,7 @@
 import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFn
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Covers
 import Mathlib.Logic.Function.Basic
 
 /-! Compositional field programs and the extended Edwards formulas. -/
@@ -15,7 +18,7 @@ def evalOp (op : FieldOp) (e : Env) : Env :=
   match op with
   | .copy o a => Function.update e o (e a)
   | .const o v => Function.update e o v
-  | .mul o a b => Function.update e o (e a * e b)
+  | .mul o a b | .mulc o a b => Function.update e o (e a * e b)
   | .add o a b => Function.update e o (e a + e b)
   | .sub o a b => Function.update e o (e a - e b)
 
@@ -109,6 +112,70 @@ theorem field_finish {b : BitVec 32} {s t : State} (o : Slot) (hl : AllLim s.mem
   rw [hv] at he
   exact ⟨⟨hr, frame_FA16 hf⟩, hlim, he⟩
 
+/-- What a call of `vg_gf25519_r16_mul` asks of the function, as a contract on the working
+space: `o`, `a` and `c`'s offsets in `r1`–`r3`. -/
+def mulK (b : BitVec 32) (o a c : Slot) : Contract isa where
+  pre t := t.rd = [] ∧ t.wr = [⟨State.addr b, 8192⟩] ∧ Ctx b t ∧ AllLim t.mem b ∧
+    t.gpr .r1 = BitVec.ofNat 32 (offset o) ∧ t.gpr .r2 = BitVec.ofNat 32 (offset a) ∧
+    t.gpr .r3 = BitVec.ofNat 32 (offset c)
+  post t t' := Rest mulFnClob t t' ∧ Frame [FA b] t.mem t'.mem ∧ AllLim t'.mem b ∧
+    env t'.mem b = Function.update (env t.mem b) o (env t.mem b a * env t.mem b c)
+  pub _ _ := True
+
+theorem movw_offset (o : Slot) : ((BitVec.ofNat 16 (offset o)).setWidth 32) = BitVec.ofNat 32 (offset o) := by
+  have := slot_range o
+  rw [ACC_eq] at this
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  omega
+
+/-- **A call of `vg_gf25519_r16_mul`**, as the inlined product. -/
+theorem mulCall_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b) (o a c : Slot) :
+    WP isa (mulCall (offset o) (offset a) (offset c)) s fun t => Keep b s t ∧ AllLim t.mem b ∧
+      env t.mem b = Function.update (env s.mem b) o (env s.mem b a * env s.mem b c) := by
+  have ho := slot_range o
+  have ha := slot_range a
+  have hc' := slot_range c
+  have hA := ACC_eq
+  unfold mulCall
+  rw [WP.seq_iff]
+  refine wp_movw fun s1 u1 => wp_movw fun s2 u2 => wp_movw fun s3 u3 => WP.block_nil ?_
+  have hr3 : Rest [.r1, .r2, .r3] s s3 :=
+    (u1.rest (by decide)).trans ((u2.rest (by decide)).trans (u3.rest (by decide)))
+  have hc3 : Ctx b s3 := hc.of_rest hr3 (by decide)
+  have hm3 : s3.mem = s.mem := by rw [u3.mem, u2.mem, u1.mem]
+  have hl3 : AllLim s3.mem b := by rw [hm3]; exact hl
+  have e1 : s3.gpr .r1 = BitVec.ofNat 32 (offset o) := by
+    rw [u3.other _ (by decide), u2.other _ (by decide), u1.gpr, movw_offset]
+  have e2 : s3.gpr .r2 = BitVec.ofNat 32 (offset a) := by
+    rw [u3.other _ (by decide), u2.gpr, movw_offset]
+  have e3 : s3.gpr .r3 = BitVec.ofNat 32 (offset c) := by rw [u3.gpr, movw_offset]
+  have hv : ∀ t, (mulK b o a c).pre t → ∃ tr t', Exec isa mulFn t tr t' ∧ abiPreserved t t' ∧
+      (mulK b o a c).post t t' := fun t ⟨_, _, ht, hlt, t1, t2, t3⟩ => by
+    obtain ⟨tr, t', he, hR, hF, hL, hV⟩ := mulFn_ok (by omega) (by omega) (by omega) ht t1 t2 t3
+      (hlt a) (hlt c)
+    obtain ⟨hlim, henv⟩ := field_update o hlt hF hL
+    exact ⟨tr, t', he, ⟨fun r hr => hR.gpr r (by revert hr; cases r <;> decide), hR.sp⟩, hR,
+      frame_FA16 hF, hlim, henv.trans (congrArg _ (VG.Proof.X25519.toFe_mul hV))⟩
+  have g : ∀ q, q ∉ VG.Arm.linkRegs → (s3.callEntry.withRegions [] [⟨State.addr b, 8192⟩]).gpr q = s3.gpr q :=
+    fun q hq => by rw [State.withRegions_gpr, State.callEntry_gpr _ hq]
+  have hcov : Covers [⟨State.addr b, 8192⟩] s3.wr :=
+    Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; exact hc3.wr
+  refine WP.call (k := mulK b o a c) hv (rd := []) (wr := [⟨State.addr b, 8192⟩])
+    ⟨rfl, rfl, ⟨by rw [g _ (by decide)]; exact hc3.r0, hc3.fit, List.mem_singleton_self _⟩,
+      by rw [State.withRegions_mem, State.callEntry_mem]; exact hl3,
+      by rw [g _ (by decide)]; exact e1, by rw [g _ (by decide)]; exact e2,
+      by rw [g _ (by decide)]; exact e3⟩
+    (Covers.right hcov) hcov ?_ (by decide +kernel)
+  intro t hrd hwr hsp _ _ _ ⟨hR, hF, hL, hV⟩
+  simp only [State.withRegions_mem, State.callEntry_mem] at hF hL hV
+  rw [hm3] at hF hV
+  refine ⟨⟨⟨fun q hq => ?_, hrd.trans hr3.rd, hwr.trans hr3.wr, hsp.trans hr3.sp⟩, hF⟩, hL, hV⟩
+  have h3 : q ∉ ([.r1, .r2, .r3] : List Reg) := by revert hq; cases q <;> decide
+  have hR' := hR.gpr q h3
+  simp only [State.withRegions_gpr] at hR'
+  rw [hR', State.callEntry_gpr _ (by revert hq; cases q <;> decide), hr3.gpr q h3]
+
 theorem fieldOp_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b)
     (op : FieldOp) :
     WP isa op.code s fun t => Keep b s t ∧ AllLim t.mem b ∧
@@ -124,6 +191,7 @@ theorem fieldOp_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem
     refine WP.mono (mul_ok (by decide) (slot_range o).2 (slot_range a).2 (slot_range c).2 hc (hl a) (hl c))
       fun t ⟨hr, hf, ho, hv⟩ => ?_
     exact field_finish o hl (hr.mono (by decide)) (frame_acc16 hf) ho (VG.Proof.X25519.toFe_mul hv)
+  | mulc o a c => exact mulCall_ok hc hl o a c
   | add o a c =>
     have ho := slot_range o
     have ha := slot_range a
@@ -160,7 +228,7 @@ abbrev FA0 (b : BitVec 32) : Region := Proof.X25519.Arm.FA ACC b
 /-- `fieldOp_ok`, which also changes no register but X25519's `clob` and no
 memory but `FA0`: an operation calls nothing. -/
 theorem fieldOpFree_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b)
-    (op : FieldOp) :
+    (op : FieldOp) (hi : op.inline = true) :
     WP isa op.code s fun t => Keep b s t ∧ Rest clob s t ∧ Frame [FA0 b] s.mem t.mem ∧ AllLim t.mem b ∧
       env t.mem b = evalOp op (env s.mem b) := by
   have hs (o : Slot) := slot_range o
@@ -178,6 +246,7 @@ theorem fieldOpFree_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s
       fun t ⟨hr, hf, ho, hv⟩ => ?_
     obtain ⟨k, l, e⟩ := field_finish o hl (hr.mono (by decide)) (frame_acc16 hf) ho (VG.Proof.X25519.toFe_mul hv)
     exact ⟨k, hr, frame_FA (by decide) (hs o) hf, l, e⟩
+  | mulc => simp [FieldOp.inline] at hi
   | add o a c =>
     have ho := slot_range o
     have ha := slot_range a
@@ -199,7 +268,7 @@ theorem fieldOpFree_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s
 
 /-- `fieldCode_ok`, which also changes no register but X25519's `clob` and no
 memory but `FA0`. -/
-theorem fieldCodeFree_ok (ops : List FieldOp) {s : State}
+theorem fieldCodeFree_ok (ops : List FieldOp) (hi : ops.all FieldOp.inline = true) {s : State}
     {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b) :
     WP isa (fieldCode ops) s fun t => Keep b s t ∧ Rest clob s t ∧ Frame [FA0 b] s.mem t.mem ∧
       AllLim t.mem b ∧ env t.mem b = evalOps ops (env s.mem b) := by
@@ -207,8 +276,9 @@ theorem fieldCodeFree_ok (ops : List FieldOp) {s : State}
   | nil => exact WP.block_nil ⟨Keep.refl _ _, Rest.refl _ _, Frame.refl _ _, hl, rfl⟩
   | cons op ops ih =>
     rw [fieldCode, WP.seq_iff]
-    refine WP.mono (fieldOpFree_ok hc hl op) fun t ⟨ht, hrt, hft, hlt, et⟩ => ?_
-    refine WP.mono (ih (ht.ctx hc) hlt) fun u ⟨hu, hru, hfu, hlu, eu⟩ => ?_
+    simp only [List.all_cons, Bool.and_eq_true] at hi
+    refine WP.mono (fieldOpFree_ok hc hl op hi.1) fun t ⟨ht, hrt, hft, hlt, et⟩ => ?_
+    refine WP.mono (ih hi.2 (ht.ctx hc) hlt) fun u ⟨hu, hru, hfu, hlu, eu⟩ => ?_
     exact ⟨ht.trans hu, hrt.trans hru, hft.trans hfu, hlu, by rw [eu, et]; rfl⟩
 
 theorem constField_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)

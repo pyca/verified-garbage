@@ -319,8 +319,8 @@ theorem Inv.step' {s₀ s s' : State} (h : Inv s₀ s)
 theorem cryptS_mx (v : Proof.ChaCha20.X86_64.XorImpl) :
     (cryptS v.callee).allInstrs (fun i => !loadsMxcsr i) = true := by
   have hb : bulk.allInstrs (fun i => !loadsMxcsr i) = true := by decide +kernel
-  rcases v.fold_poly with ⟨hf, hpass, -⟩ | ⟨hf, hpass, -⟩ | ⟨hf, hpass, -⟩ <;>
-    (simp only [cryptS, Code.allInstrs, v.mxcsr, hb, hf, hpass]; rfl)
+  rcases v.fold_poly with ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ <;>
+    (simp only [cryptS, Code.allInstrs, v.mxcsr, hb, hf, hpass, hw]; rfl)
 
 /-- The data encrypted, by `bulk` and the implementation `v` of
 `vg_chacha20_xor`, its first `a` bytes of ciphertext absorbed, and the
@@ -348,7 +348,7 @@ theorem cryptS_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
   · refine WP.ite (decide (L s₀ < v.callee.fold + 1)) (by simp [eval, c₁]) (fun hc => ?_) (fun hc => ?_)
     · simp only [decide_eq_true_eq] at hc
       apply seq3
-      refine WP.mono (cryptSmall_ok hfl hp h₁ (by omega) (by rw [m₁]; exact hks)) fun s₃ c₃ => ?_
+      refine WP.mono (cryptSmall_ok hfl (wide_of v) hp h₁ (by omega) (by rw [m₁]; exact hks)) fun s₃ c₃ => ?_
       refine WP.mono (whole_ok s₃) fun s₄ ⟨rbx₄, rbp₄, g₄, rd₄, wr₄, m₄⟩ => ?_
       have cs : ∀ r, r = .r12 ∨ r = .r13 ∨ r = .r14 ∨ r = .rsp → s₄.gpr r = s₁.gpr r := fun r hr => by
         rcases hr with rfl | rfl | rfl | rfl <;>
@@ -415,7 +415,7 @@ theorem cryptS_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
   refine WP.seq (WP.mono (foldM_ok (fold := v.callee.fold) (pass := v.callee.pass) (len := L s₀) (by lit_omega) (pass_of v) hL9
     (by rw [i₃.r13]; exact hL s₀)) fun s₄ ⟨d₄, g₄, rd₄, wr₄, m₄⟩ => ?_)
   refine WP.seq (WP.mono (add64_ok (n := mOf v.callee.fold v.callee.pass (L s₀)) d₄) fun s₅ ⟨d₅, g₅, rd₅, wr₅, m₅⟩ => ?_)
-  refine WP.mono (zeroKs_ok hp (n := 64 + mOf v.callee.fold v.callee.pass (L s₀)) (by omega) (by lit_omega) d₅
+  refine WP.mono (zeroKs_ok (wide_of v) hp (n := 64 + mOf v.callee.fold v.callee.pass (L s₀)) (by omega) (by lit_omega) d₅
     (by rw [g₅ _ (by decide), g₄ _ (by decide), i₃.r15]) (by rw [wr₅, wr₄, i₃.wr]))
     fun s₆ ⟨g₆, rd₆, wr₆, f₆, _⟩ => ?_
   have g36 : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → s₆.gpr r = s₃.gpr r := fun r h1 h2 h3 => by

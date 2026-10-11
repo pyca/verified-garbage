@@ -162,12 +162,12 @@ def cryptS (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (x.fold + 1)))])
   (.seq (.ite .b
     (.seq (.block (ptr .rsi .r15 736 ++ ([.mov .rdx (.reg .r13)] : List Instr)))
-      (.seq (xorBufX .r14) (.block (ptr .rsi .r15 128 ++ whole))))
+      (.seq (xorBufX x.wide .r14) (.block (ptr .rsi .r15 128 ++ whole))))
     (.seq (.block (cryptArgs ++ ([.alu .cmp .rdx (.imm 512)] : List Instr)))
       (.seq (.ite .b (.block whole) bulk) (.call x.name x.code))))
   (.seq (.block (anchor .rsi 128))
   (.seq (foldM x.fold x.pass)
-  (.seq (.block [.alu .add .rdx (.imm 64)]) zeroKs))))
+  (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs x.wide)))))
 
 /-- `seal`, with Poly1305 inside the kernel for the whole chunks. -/
 def sealStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
@@ -232,14 +232,14 @@ def cryptO (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa 
   (.seq (.ite .b
     (.seq (macPadLengths b .r14 .r13)
       (.seq (.block (ptr .rsi .r15 736 ++ [.mov .rdx (.reg .r13)]))
-        (.seq (xorBufX .r14) (.block (ptr .rsi .r15 128)))))
+        (.seq (xorBufX x.wide .r14) (.block (ptr .rsi .r15 128)))))
     (.seq (.block (cryptArgs ++ [.alu .cmp .rdx (.imm 512)]))
       (.seq (.ite .b (.block whole) bulkO)
       (.seq (macPadLengths b .rbx .rbp)
       (.seq (.block restArgs) (.call x.name x.code))))))
   (.seq (.block (anchor .rsi 128))
   (.seq (foldM x.fold x.pass)
-  (.seq (.block [.alu .add .rdx (.imm 64)]) zeroKs))))
+  (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs x.wide)))))
 
 /-- `open`, with Poly1305 inside the kernel for the whole chunks. -/
 def openStitched (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=

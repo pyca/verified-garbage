@@ -33,7 +33,7 @@ theorem front_ct : ∃ h, ((taintS [Impl.X448.AArch64.Base.combSym]).check
     (Taint.ofRegs [.x0, .x1, .x2, .x3]) wfront h).map
     ((taintS [Impl.X448.AArch64.Base.combSym]).le (Taint.ofRegs [.x3])) = some true := by
   apply exists_map_le_of_eraseT
-  simp only [Code.eraseT, wfront, bitsAt, vdecodeA, decode, Point56.powCall, fnCall, Point56.powFn, asFn, root,
+  simp only [Code.eraseT, wfront, bitsAt, decodes, negA, decode, Point56.powCall, fnCall, Point56.powFn, asFn, root,
     ops_eraseT, sqn_eraseT, List.map_append, eqSlots_eraseT]
   refine ⟨?h, ?g⟩
   case g => taint_decide

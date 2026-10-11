@@ -15,5 +15,5 @@ materialize_code equalOpsCT := fieldCode pointEqualOps
 materialize_code zero0CT := fieldZero 0
 materialize_code parityCT := (.block (freeze 0 ++ recoverParity) : Prog isa)
 materialize_code negateCT := fieldCode [.const 5 0, .sub 0 5 0]
-materialize_code rootAdjustCT := fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18]
+materialize_code rootAdjustCT := fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18]
 end VG.Proof.Ed25519.Arm

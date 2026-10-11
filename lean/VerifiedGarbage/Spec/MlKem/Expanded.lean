@@ -103,7 +103,7 @@ def DecapsExpandedPost (p : Params) (dk ct key : Addr) (m m' : Mem) : Prop :=
   ∃ iters, decapsInternal p iters (bytesAt m dk p.dkLen) (bytesAt m ct p.ctLen) = some (bytesAt m' key 32)
 
 /-- What the documentation says of an expanded encapsulation key. -/
-private def ekxDoc (p : Params) : String :=
+def ekxDoc (p : Params) : String :=
   s!"an expanded encapsulation key of {p.name}: the encapsulation key ({p.ekLen} bytes), then \
     `H(ek)` (32 bytes), then the matrix `Â` sampled from its `ρ` (FIPS 203 Algorithm 14, \
     lines 4–8), row by row, each entry as 256 little-endian `u32` coefficients less than `q` \
