@@ -5,7 +5,7 @@ import VerifiedGarbage.TCB.X86_64.Isa
 # x86-64: code that does not touch the vector registers
 
 `scalCode` holds of code whose every instruction is one of a few scalar ones
-(moves, loads and stores of general-purpose registers, their arithmetic,
+(moves, loads and stores of general-purpose registers, their arithmetic, `bswap`,
 `lea` of a static, `mul`, `imul`, `mulx`, `adcx`, `adox`, `cmov`, 32-bit arithmetic):
 such code leaves `xmm` and `ymmHi` as they are (`WP.vecKeep`), which a proof
 about it need not state.
@@ -16,7 +16,7 @@ namespace VG.X86_64
 /-- The instructions that read and write only general-purpose registers, flags and memory. -/
 def scalarI : Instr → Bool
   | .mov .. | .store .. | .alu .. | .mov32 .. | .movzx8 .. | .movImm64 .. | .leaSym .. | .mul ..
-  | .store8 .. | .shift .. | .mulx .. | .adcx .. | .adox .. | .cmov .. | .alu32 .. | .imul .. => true
+  | .store8 .. | .shift .. | .mulx .. | .adcx .. | .adox .. | .cmov .. | .alu32 .. | .imul .. | .bswap .. => true
   | _ => false
 
 theorem execAlu32_vec {op : AluOp} {d : Reg} {src : Src} {s t : State} (h : execAlu32 op d src s = some t) :
@@ -70,6 +70,7 @@ theorem exec_vec {i : Instr} (hi : scalarI i = true) {s t : State} (h : exec i s
     | exact ⟨(execAdox_vec h).1, (execAdox_vec h).2.1⟩
     | exact ⟨(execCmov_vec h).1, (execCmov_vec h).2.1⟩
     | (obtain ⟨v, -, rfl⟩ := h; exact ⟨rfl, rfl⟩)
+    | (simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩)
     | (simp only [State.store64, State.store8] at h; split at h <;> [(cases h; exact ⟨rfl, rfl⟩); cases h])
     | (unfold execAlu at h
        simp only [Option.bind_eq_some_iff] at h
