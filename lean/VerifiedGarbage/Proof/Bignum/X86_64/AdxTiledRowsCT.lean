@@ -59,7 +59,7 @@ theorem row_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) 
   · rintro L s t ⟨_,_,⟨mi,hs⟩,_,_⟩ ⟨_,_,⟨mj,ht⟩,_,_⟩ r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     subst r; exact hs.rdi.trans ht.rdi.symm
-  refine RelCT.seq (two_post (two_map id (fun _ _ h => h.2.2.1)
+  refine RelCT.seq (two_post (two_map id (fun _ _ h => ⟨h.2.2.1,h.2.2.2⟩)
     ((AdxRect8.row_ct pa pb ha hb ha1 ha2 hb1 hb2 hS).mono (fun _ _ h => h) (fun _ _ _ => True.intro)))
     (inner_fw pa pb ha hb ha1 ha2 hb1 hb2)) ?_
   refine RelCT.seq (two_post (two_map id (fun _ _ h => h.1) tail_ct)
