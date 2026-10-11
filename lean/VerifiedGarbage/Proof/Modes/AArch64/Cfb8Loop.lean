@@ -138,7 +138,9 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {ivR : Reg} (hivR : ivR ∉
   have g₁ : ∀ x, x ≠ .x6 → s₁.gpr x = s.gpr x := fun x h => h₁.regs x h h
   have base₁ : s₁.gpr sb = B := by rw [g₁ _ (by decide), hi.base]
   have ready₁ : cs.Ready s₁ B k := cs.ready_frame hi.ready f₁ (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact .inr subTbuf) fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact .inr subTbuf)
+    ⟨fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, hwS, subT⟩, h₁.rd, h₁.wr⟩
+    fun r hr => by
     obtain ⟨h1, -, -⟩ := of_not_modeRegs hr; exact g₁ r (not_own h1).1
   have rd₁ : s₁.rd = s₀.rd := by rw [h₁.rd, hi.rd]
   have wr₁ : s₁.wr = s₀.wr := by rw [h₁.wr, hi.wr]
@@ -220,7 +222,13 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {ivR : Reg} (hivR : ivR ∉
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact .inl (dDcore.sub_left subA).symm
-    · exact .inl dPcore.symm) fun r hr => by
+    · exact .inl dPcore.symm)
+    ⟨fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨_, by rw [wr₂, wr₁, ← hi.wr]; exact hwD, subA⟩
+      · exact ⟨_, by rw [wr₂, wr₁, ← hi.wr]; exact hwP, fun _ h => h⟩,
+      by rw [rd₅, rd₅a, rd₄, rd₃], by rw [wr₅, wr₅a, wr₄, wr₃]⟩ fun r hr => by
     obtain ⟨h1, h2, h3⟩ := of_not_modeRegs hr
     exact keep₅ r (not_own h1).1 (not_own h1).2.1 h2 h3
   have saved₅ : ∀ i < 10, s₅.mem.readW (wordAddr B (c.slots + i)) 64 =

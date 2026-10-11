@@ -163,7 +163,8 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
   have wr₃' : s₃.wr = s.wr := by rw [h₃.wr, wr₂']
   have f₃ : Frame [⟨T, 8 * c.bw * cc⟩] s.mem s₃.mem := by rw [← mem₂]; exact h₃.frame
   have ready₃ : cs.Ready s₃ B k := cs.ready_frame hi.ready f₃ (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact .inr subTbuf) fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact .inr subTbuf)
+    ⟨fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, hwS, subT⟩, rd₃', wr₃'⟩ fun r hr => by
     obtain ⟨h1, -, -⟩ := of_not_modeRegs hr
     exact keep₃ r h1
   -- Decrypted.
@@ -206,12 +207,20 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
     obtain ⟨h1, h2, h3⟩ := of_not_modeRegs hr
     rw [o₈ r h2 h3, g₇ r h1]
   have ready₈ : cs.Ready s₈ B k := by
-    refine cs.ready_frame ready₄ (by rw [m₈]; exact f₇) (fun r hr => ?_) keep₈
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact .inr subTbuf
-    · exact .inl (((dDS subCore).sub_left subA).symm)
-    · exact .inl dHcore.symm
+    refine cs.ready_frame ready₄ (by rw [m₈]; exact f₇) (fun r hr => ?_) ⟨fun r hr => ?_, ?_, ?_⟩ keep₈
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact .inr subTbuf
+      · exact .inl (((dDS subCore).sub_left subA).symm)
+      · exact .inl dHcore.symm
+    · have w₄ : s₄.wr = s.wr := by rw [wr₄, wr₃']
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, by rw [w₄]; exact hwS, subT⟩
+      · exact ⟨_, by rw [w₄]; exact hwD, subA⟩
+      · exact ⟨_, by rw [w₄]; exact hwS, subH⟩
+    · rw [rd₈, h₇.rd, rd₆', rd₄, rd₃']
+    · rw [wr₈, h₇.wr, wr₆', wr₄, wr₃']
   -- The bytes, through the steps.
   have hn64 : 8 * c.bw * n ≤ 2 ^ 64 := by omega
   have outCore : ∀ {R : Region}, Region.Disjoint R (coreRegion c B) → R.len ≤ 2 ^ 64 →

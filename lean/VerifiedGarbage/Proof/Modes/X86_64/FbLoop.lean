@@ -89,18 +89,25 @@ theorem flatMap_scal {f : Nat → List Instr} (h : ∀ w, (f w).all scalarI = tr
   intro w _ i hi
   exact List.all_eq_true.mp (h w) i hi
 
-/-- Every execution of `p` keeps the IV's address, in `ivX`: the modes'
-requirement of a core's `prepare` and `crypt`. Scalar code meets it
-(`keepsIv_of_scal`); other code may save and restore `ivX` around its own. -/
-def KeepsIv (p : Prog isa) : Prop := ∀ s t s', Exec isa p s t s' → s'.xmm Core.ivX = s.xmm Core.ivX
+/-- Every execution of `p` keeps the IV's address, in `ivX`, which the modes
+put there with `movq`, its upper half zero: the modes' requirement of a
+core's `prepare` and `crypt`. Scalar code meets it (`keepsIv_of_scal`);
+other code may save and restore `ivX` around its own, its low half being
+all there is to restore. -/
+def KeepsIv (p : Prog isa) : Prop :=
+  ∀ s t s', Exec isa p s t s' → (s.xmm Core.ivX).extractLsb' 64 64 = 0 → s'.xmm Core.ivX = s.xmm Core.ivX
 
 theorem keepsIv_of_scal {p : Prog isa} (h : scalCode p = true) : KeepsIv p :=
-  fun _ _ _ e => congrFun (exec_scal e h).1 _
+  fun _ _ _ e _ => congrFun (exec_scal e h).1 _
 
-theorem WP.keepIv {p : Prog isa} (h : KeepsIv p) {s : State} {Q : State → Prop} (w : WP isa p s Q) :
-    WP isa p s fun t => Q t ∧ t.xmm Core.ivX = s.xmm Core.ivX :=
+theorem WP.keepIv {p : Prog isa} (h : KeepsIv p) {s : State} (hz : (s.xmm Core.ivX).extractLsb' 64 64 = 0)
+    {Q : State → Prop} (w : WP isa p s Q) : WP isa p s fun t => Q t ∧ t.xmm Core.ivX = s.xmm Core.ivX :=
   let ⟨t, s', e, q⟩ := w
-  ⟨t, s', e, q, h _ _ _ e⟩
+  ⟨t, s', e, q, h _ _ _ e hz⟩
+
+/-- `movq xmm, r64` leaves the upper half zero. -/
+theorem hi_zero_append (v : BitVec 64) : ((0 : BitVec 64) ++ v).extractLsb' 64 64 = 0 :=
+  BitVec.extractLsb'_append_eq_left
 
 /-- The step after `crypt` is scalar. -/
 theorem fbOp_scal (c : Core) (mo : FbMode) : scalCode (.block (c.fbOp mo)) = true := by
@@ -149,7 +156,7 @@ structure FDone (cs : BlockSpec c) (mo : FbMode) (s₀ : State) (m₀ : Mem) (B 
 
 theorem fbBlock_wp (cs : BlockSpec c) (mo : FbMode) {s₀ : State} {m₀ : Mem} {B D : Addr} {n : Nat} {k : cs.Key}
     {iv : List Byte} (hiv : iv.length = 8 * c.bw) (hp : GPre c s₀ B D n (8 * c.bw)) (hsc : KeepsIv c.crypt)
-    {j : Nat} {s : State} (hi : FInv cs mo s₀ m₀ B D n k iv j s) :
+    (hz : (s₀.xmm Core.ivX).extractLsb' 64 64 = 0) {j : Nat} {s : State} (hi : FInv cs mo s₀ m₀ B D n k iv j s) :
     WP isa (c.fbBlock mo) s fun s' => (s'.zf = some true ∧ FDone cs mo s₀ m₀ B D n k iv s') ∨
       (s'.zf = some false ∧ FInv cs mo s₀ m₀ B D n k iv (j + 1) s') := by
   have hL := cs.layout
@@ -197,7 +204,7 @@ theorem fbBlock_wp (cs : BlockSpec c) (mo : FbMode) {s₀ : State} {m₀ : Mem} 
     have := idx_lt (L := 8 * c.bw) hq; omega
   -- Enciphered.
   unfold Core.fbBlock
-  refine WP.seq (WP.mono (WP.keepIv hsc (cs.crypt_wp hi.base ⟨hwS, hfit⟩ hi.ready))
+  refine WP.seq (WP.mono (WP.keepIv hsc (by rw [hi.xmm]; exact hz) (cs.crypt_wp hi.base ⟨hwS, hfit⟩ hi.ready))
     fun s₂ ⟨⟨base₂, rsp₂, dr₂, lr₂, ready₂, f₂, ks₂, rd₂, wr₂⟩, x₂⟩ => ?_)
   have eT : blkAddr c B 0 = T := by simp only [blkAddr, T, Nat.mul_zero, Nat.add_zero]
   have hin : bytesAt s.mem T (8 * c.bw) = fbIn mo (8 * c.bw) ciph m₀ D iv j := by
@@ -215,9 +222,9 @@ theorem fbBlock_wp (cs : BlockSpec c) (mo : FbMode) {s₀ : State} {m₀ : Mem} 
       simp only [List.mem_singleton] at hx; subst hx; exact dDS subCore) hn64 (hqr hq hr)
   -- The step after `crypt`.
   have data₂ : s₂.gpr c.dataReg = A := by rw [dr₂, hi.dataR]
-  refine WP.block_append (WP.mono (WP.vecKeep (fbOp_scal c mo) (fbOp_wp mo data₂ (by rw [base₂]) da
+  refine WP.block_append (WP.mono_syms (WP.vecKeep (fbOp_scal c mo) (fbOp_wp mo data₂ (by rw [base₂]) da
     (fun w hw' => by rw [wr₂]; exact inA w hw') (fun w hw' => by rw [wr₂]; exact inT w hw') dAT (by omega)))
-    fun s₃a ⟨⟨g₃a, rd₃a, wr₃a, mA₃, mT₃, f₃a⟩, x₃a, _⟩ => ?_)
+    fun s₃a ⟨⟨g₃a, rd₃a, wr₃a, mA₃, mT₃, f₃a⟩, x₃a, _⟩ sy₃a => ?_)
   obtain ⟨s₃b, e₃b, a₃b, o₃b, m₃b, rd₃b, wr₃b⟩ := addImm_ok s₃a c.dataReg (BitVec.ofNat 32 (8 * c.bw))
   obtain ⟨s₃, e₃, l₃, z₃, o₃, m₃, rd₃, wr₃⟩ := subImm_ok s₃b c.leftReg 1
   refine WP.of_runBlock ⟨s₃, by
@@ -277,7 +284,14 @@ theorem fbBlock_wp (cs : BlockSpec c) (mo : FbMode) {s₀ : State} {m₀ : Mem} 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact .inl ((dDS subCore).sub_left subA).symm
-    · exact .inr subTbuf) fun r hr => by
+    · exact .inr subTbuf)
+    ⟨fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨_, by rw [wr₂]; exact hwD, subA⟩
+      · exact ⟨_, by rw [wr₂]; exact hwS, subT⟩,
+      by rw [rd₃, rd₃b, rd₃a], by rw [wr₃, wr₃b, wr₃a], by rw [runBlock_syms e₃, runBlock_syms e₃b, sy₃a]⟩
+    fun r hr => by
     obtain ⟨h1, -, -, -, -, h6, h7⟩ := of_not_modeRegs hr; exact keep₃ r h1 h6 h7
   -- The buffer and the data.
   have mA : ∀ u < 8 * c.bw, s.mem (A + BitVec.ofNat 64 u) = m₀ (A + BitVec.ofNat 64 u) := fun u hu => by
@@ -317,12 +331,12 @@ theorem fbBlock_wp (cs : BlockSpec c) (mo : FbMode) {s₀ : State} {m₀ : Mem} 
 /-- The data loop. -/
 theorem fbLoop_wp (cs : BlockSpec c) (mo : FbMode) {s₀ : State} {m₀ : Mem} {B D : Addr} {n : Nat} {k : cs.Key}
     {iv : List Byte} (hiv : iv.length = 8 * c.bw) (hp : GPre c s₀ B D n (8 * c.bw)) (hsc : KeepsIv c.crypt)
-    {s : State} (hi : FInv cs mo s₀ m₀ B D n k iv 0 s) :
+    (hz : (s₀.xmm Core.ivX).extractLsb' 64 64 = 0) {s : State} (hi : FInv cs mo s₀ m₀ B D n k iv 0 s) :
     WP isa (.loop (c.fbBlock mo) .ne) s (FDone cs mo s₀ m₀ B D n k iv) := by
   refine WP.loop (M := isa) (fun m s => ∃ j, m = n - j ∧ FInv cs mo s₀ m₀ B D n k iv j s) (fun m s hs => ?_) n s
     ⟨0, by simp, hi⟩
   obtain ⟨j, rfl, hj⟩ := hs
-  refine WP.mono (fbBlock_wp cs mo hiv hp hsc hj) fun s' h => ?_
+  refine WP.mono (fbBlock_wp cs mo hiv hp hsc hz hj) fun s' h => ?_
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨by simp [X86_64.eval, z], d⟩
   · exact .inr ⟨by simp [X86_64.eval, z], n - (j + 1), by have := d.lt; have := hj.lt; omega, j + 1, rfl, d⟩

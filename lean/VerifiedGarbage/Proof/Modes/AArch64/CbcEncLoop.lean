@@ -116,7 +116,8 @@ theorem cbcEncBlock_wp (cs : BlockSpec c) {s₀ : State} {m₀ : Mem} {B D : Add
   have base₁ : s₁.gpr sb = B := by rw [h₁.regs _ (by decide) (by decide), hi.base]
   have f₁ : Frame [⟨T, 8 * c.bw⟩] s.mem s₁.mem := by rw [h₁.mem]; exact over_frame _ _ _ _
   have ready₁ : cs.Ready s₁ B k := cs.ready_frame hi.ready f₁ (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact .inr subTbuf) fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact .inr subTbuf)
+    ⟨fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, hwS, subT⟩, h₁.rd, h₁.wr⟩ fun r hr => by
     obtain ⟨h1, -⟩ := of_not_modeRegs hr; exact h₁.regs r (not_own h1).1 (not_own h1).1
   -- Encrypted.
   refine WP.seq (WP.mono (cs.crypt_wp base₁ ⟨by rw [h₁.wr]; exact hwS, hfit⟩ ready₁)
@@ -209,7 +210,10 @@ theorem cbcEncBlock_wp (cs : BlockSpec c) {s₀ : State} {m₀ : Mem} {B D : Add
   have rd₃' : s₃.rd = s₀.rd := by rw [rd₃, h₃a.rd, rd₂, h₁.rd, hi.rd]
   have wr₃' : s₃.wr = s₀.wr := by rw [wr₃, h₃a.wr, wr₂, h₁.wr, hi.wr]
   have ready₃ : cs.Ready s₃ B k := cs.ready_frame ready₂ f₃ (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact .inl ((dDS subCore).sub_left subA).symm) fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact .inl ((dDS subCore).sub_left subA).symm)
+    ⟨fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by rw [wr₂, h₁.wr]; exact hwD, subA⟩,
+      by rw [rd₃, h₃a.rd], by rw [wr₃, h₃a.wr]⟩ fun r hr => by
     obtain ⟨h1, -, h3⟩ := of_not_modeRegs hr; exact g₃ r (not_own h1).1 h3
   -- The last block, or on to the next.
   have hAL : A + BitVec.ofNat 64 (8 * c.bw) = D + BitVec.ofNat 64 (8 * c.bw * (j + 1)) := by rw [addr_add, hj1]
@@ -268,6 +272,9 @@ theorem cbcEncBlock_wp (cs : BlockSpec c) {s₀ : State} {m₀ : Mem} {B D : Add
         simp only [List.mem_singleton] at hr; subst hr; exact subN⟩), rd₆', wr₆'⟩
     · exact cs.ready_frame ready₃ fN (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact .inl ((dDS subCore).sub_left subN).symm)
+        ⟨fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by rw [wr₃', ← hi.wr]; exact hwD, subN⟩,
+          by rw [rd₆', rd₃'], by rw [wr₆', wr₃']⟩
         fun r hr => by
           obtain ⟨h1, h2, -⟩ := of_not_modeRegs hr
           exact keep₆ r (not_own h1).1 (not_own h1).2.1 h2

@@ -116,9 +116,10 @@ theorem fb_wp (cs : BlockSpec c) (mo : FbMode) {r : CtrRegs} (hr : RegsOk r) (hd
     rw [runBlock_vec rfl eA, xS, gE _ hr.ctr.1, hP]
   have kr := keyRegs_ne cs.keyRegs_ok
   have hkA : cs.KeyArgs sA [S] k :=
-    cs.keyArgs_congr hk (fun x hx => gA' x (kr x hx).1 (fun e => dk (e ▸ hx)) (fun e => lk (e ▸ hx))) rdA' wrA' fA
+    cs.keyArgs_congr hk (fun x hx => gA' x (kr x hx).1 (fun e => dk (e ▸ hx)) (fun e => lk (e ▸ hx))) rdA' wrA'
+      (by rw [runBlock_syms eA, runBlock_syms eS, runBlock_syms eE]) fA
   -- The key.
-  refine WP.seq (WP.mono (WP.keepIv hsc.1 (cs.prepare_wp bA ⟨by rw [wrA']; exact hs.wr, hs.fit⟩ List.mem_cons_self hkA))
+  refine WP.seq (WP.mono (WP.keepIv hsc.1 (by rw [xA]; exact hi_zero_append _) (cs.prepare_wp bA ⟨by rw [wrA']; exact hs.wr, hs.fit⟩ List.mem_cons_self hkA))
     fun s₄ ⟨⟨ready₄, b₄, rsp₄, dr₄, lr₄, f₄, rd₄, wr₄⟩, x₄⟩ => ?_)
   have rd₄' : s₄.rd = s₀.rd := by rw [rd₄, rdA']
   have wr₄' : s₄.wr = s₀.wr := by rw [wr₄, wrA']
@@ -129,7 +130,7 @@ theorem fb_wp (cs : BlockSpec c) (mo : FbMode) {r : CtrRegs} (hr : RegsOk r) (hd
   -- The IV to the buffer.
   obtain ⟨s₅a, e₅a, ax₅a, o₅a, m₅a, rd₅a, wr₅a, x₅a⟩ := movqR_ok s₄ .rax Core.ivX
   have ax₅ : s₅a.gpr .rax = P := by rw [ax₅a, x₄, xA, extract_zero_append]
-  refine WP.seq (WP.block_append (WP.block_append (WP.of_runBlock ⟨s₅a, e₅a, WP.mono (WP.vecKeep
+  refine WP.seq (WP.block_append (WP.block_append (WP.of_runBlock ⟨s₅a, e₅a, WP.mono_syms (WP.vecKeep
     (c := .block ((List.range c.bw).flatMap (copyW .rbp sb .rax (8 * c.buf) 0)))
     (flatMap_scal (copyW_scal _ _ _ _ _) _) (copyN_wp (k := c.bw)
     (t := .rbp) (rd := sb) (rs := .rax) (od := 8 * c.buf) (os := 0) (P := T) (Q := P)
@@ -138,7 +139,7 @@ theorem fb_wp (cs : BlockSpec c) (mo : FbMode) {r : CtrRegs} (hr : RegsOk r) (hd
       fun w hw => by
         rw [rd₅a, wr₅a, rd₄', wr₄']
         exact inRd ⟨_, hwP, VG.Offset.contains_base P (by omega) (by omega)⟩,
-      dTP, by omega⟩)) fun s₅b ⟨h₅b, x₅b, _⟩ => ?_⟩)))
+      dTP, by omega⟩)) fun s₅b ⟨h₅b, x₅b, _⟩ sy₅b => ?_⟩)))
   obtain ⟨s₅, e₅, z₅, g₅, m₅, rd₅, wr₅⟩ := testSelf_ok s₅b c.leftReg
   refine WP.of_runBlock ⟨s₅, e₅, ?_⟩
   have x₅ : s₅.xmm Core.ivX = (0 : BitVec 64) ++ P := by rw [runBlock_vec rfl e₅, x₅b, x₅a, x₄, xA]
@@ -192,8 +193,12 @@ theorem fb_wp (cs : BlockSpec c) (mo : FbMode) {r : CtrRegs} (hr : RegsOk r) (hd
     exact WP.block_nil ⟨b₅, rfl, fun _ _ => rfl, by rw [hn0]; exact buf₅,
       fun i hi' => by rw [hn0, Nat.mul_zero] at hi'; omega, Frame.refl _ _, rfl, rfl, rfl⟩
   · have hn0 : n ≠ 0 := by simpa using h0
-    refine fbLoop_wp cs mo hiv hp hsc.2 ⟨b₅, rfl, cs.ready_frame ready₄ f₅ (fun x hx => by
+    refine fbLoop_wp cs mo hiv hp hsc.2 (by rw [x₅]; exact hi_zero_append _) ⟨b₅, rfl, cs.ready_frame ready₄ f₅ (fun x hx => by
         simp only [List.mem_singleton] at hx; subst hx; exact .inr subTbuf)
+        ⟨fun x hx => by
+          simp only [List.mem_singleton] at hx; subst hx; exact ⟨S, by rw [wr₄']; exact hs.wr, subT⟩,
+          by rw [rd₅, h₅b.rd, rd₅a], by rw [wr₅, h₅b.wr, wr₅a],
+          by rw [runBlock_syms e₅, sy₅b, runBlock_syms e₅a]⟩
         (fun x hx => by obtain ⟨h1, -, -, h4, -, -, -⟩ := of_not_modeRegs hx; exact g₅' x h1 h4),
       fun _ _ => rfl, ?_, ?_, by omega, buf₅, fun q hq r hr => ?_, Frame.refl _ _, rfl, rfl, rfl⟩
     · rw [g₅' _ da dbp, dr₄, drA, gS, gE _ hr.data.1, hD]; simp
