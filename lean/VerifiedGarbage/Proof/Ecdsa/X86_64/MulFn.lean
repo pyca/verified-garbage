@@ -267,7 +267,7 @@ theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4) (hC : Law c.C) {base : Addr} 
 write. -/
 theorem mulW_sub :
     ∀ w ∈ slW c [RX, RY] ++ mulW c, ∃ w' ∈ gWA c, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := by
-  have hA : ACC ∈ c.mulBaseSlots := by unfold Cfg.mulBaseSlots; split <;> simp
+  have hA : ACC ∈ [ACC] := List.mem_singleton_self _
   intro w hw
   refine ⟨w, ?_, Nat.le_refl _, Nat.le_refl _⟩
   rcases List.mem_append.mp hw with hw | hw
@@ -295,12 +295,12 @@ theorem gMulKC_ok (hc : BaseCfgOk c) (hmb : MulBaseOk c) (hC : Law c.C) (hT : Co
   unfold Cfg.gMulKC
   cases hm : c.mulBase with
   | some C =>
-    obtain ⟨d, hcd, h3, hnc⟩ := hmb.1 (by rw [hm]; rfl)
+    obtain ⟨d, hcd, hj, h6, hnc⟩ := hmb.1 (by rw [hm]; rfl)
     obtain ⟨hTM, hout⟩ := tbl_of hcd hp hS.rd hS.unch
     rw [← hS.syms] at hTM hout
     show WP isa c.mulBaseFn s _
     rw [← Code.inline_of_noCalls hnc]
-    refine WP.mono (mulBaseFn_ok hc h3 hC hT hcd hS.scr hS.fixed.mp hS.fixed.zero hTM hout)
+    refine WP.mono (mulBaseFn_ok hc h6 hC hT hcd hj hS.scr hS.fixed.mp hS.fixed.zero hTM hout)
       fun s' ⟨g', _, rd', wr', _, U', M', L', R'⟩ => ⟨⟨g', rd', wr'⟩, U', M', L', ?_⟩
     rw [← hS.k]; exact R'
   | none =>
