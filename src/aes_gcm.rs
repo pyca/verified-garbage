@@ -1901,7 +1901,10 @@ mod tests {
         fn with_backend(&self, backend: Backend) -> AesGcm {
             let mut k = self.clone();
             k.backend = backend;
-            k.powers.fns = backend.prepared();
+            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+            {
+                k.powers.fns = backend.prepared();
+            }
             k
         }
     }
