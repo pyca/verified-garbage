@@ -5,7 +5,9 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Rounds
 
 Outside the rounds, every instruction of the code moves, adds or XORs
 doublewords of `zmm` registers and of three regions of memory: the state (at
-`rdi`), `buf` (at `rcx`) and 1024 bytes of data (at `rsi`). `Sym.run` computes
+`rdi`), `buf` (at `rcx`) and 1024 bytes of data (at `rsi`); code XORing out
+of place also loads from a fourth, 1024 bytes of input (at `r8`), which it
+never writes (`Sym.src`). `Sym.run` computes
 each doubleword after a block of such instructions as a term (`T`) in the
 doublewords before it, and `run_ok` proves the machine agrees; the terms
 themselves are then compared by the kernel.
@@ -17,9 +19,10 @@ open VG VG.X86_64 VG.Impl.ChaCha20.X86_64.Avx512
 open VG.Impl.ChaCha20.X86_64 (at_)
 open VG.Spec.ChaCha20 (Word)
 
-/-- The base register of region `b`: the state, `buf` and the data. -/
+/-- The base register of region `b`: the state, `buf`, the data and the
+input of code XORing out of place. -/
 def baseR : Nat → Reg
-  | 0 => .rdi | 1 => .rcx | _ => .rsi
+  | 0 => .rdi | 1 => .rcx | 2 => .rsi | _ => .r8
 
 /-- The doublewords of region `b`. -/
 def bsize : Nat → Nat
@@ -28,12 +31,12 @@ def bsize : Nat → Nat
 /-- The doublewords of region `b` that may be written: the saved registers in
 `buf`, and the data. -/
 def wsize : Nat → Nat
-  | 0 => 0 | 1 => 32 | _ => 256
+  | 0 => 0 | 1 => 32 | 2 => 256 | _ => 0
 
 def bidx : Reg → Option Nat
-  | .rdi => some 0 | .rcx => some 1 | .rsi => some 2 | _ => none
+  | .rdi => some 0 | .rcx => some 1 | .rsi => some 2 | .r8 => some 3 | _ => none
 
-theorem bidx_some {r : Reg} {b : Nat} (h : bidx r = some b) : r = baseR b ∧ b < 3 := by
+theorem bidx_some {r : Reg} {b : Nat} (h : bidx r = some b) : r = baseR b ∧ b < 4 := by
   cases r <;> simp only [bidx, reduceCtorEq, Option.some.injEq] at h <;> subst h <;> decide
 
 /-- Region `b`, where the code starts. -/
@@ -64,8 +67,18 @@ structure Sym where
   mem : Nat → Nat → T
   /-- Whether memory may have been written. -/
   dirty : Bool
+  /-- Whether loads from the input (region 3) are allowed: they are of its
+  doublewords where the code starts, as it is never written. -/
+  src : Bool
 
-def Sym.init : Sym := ⟨.reg, .mem, false⟩
+def Sym.init : Sym := ⟨.reg, .mem, false, false⟩
+
+/-- As `Sym.init`, for code XORing out of place. -/
+def Sym.initSrc : Sym := ⟨.reg, .mem, false, true⟩
+
+/-- Doubleword `j` of region `b` as a load reads it: from region 3, the
+doubleword where the code starts. -/
+def Sym.rdm (σ : Sym) (b j : Nat) : T := if b < 3 then σ.mem b j else .mem b j
 
 def Sym.setReg (σ : Sym) (d : Nat) (f : Nat → T) : Sym :=
   { σ with reg := fun r p => if r = d then f p else σ.reg r p }
@@ -106,9 +119,10 @@ def Sym.step (σ : Sym) : Instr → Option Sym
   | .zop (.vshufi32x4 d a b n) =>
     some (σ.setReg (xidx d) fun p =>
       (if p / 4 < 2 then σ.reg (xidx a) else σ.reg (xidx b)) (4 * sel2 n.toNat (p / 4) + p % 4))
-  | .vmovdqu32Load d m => (slot m 16 bsize).map fun (b, i) => σ.setReg (xidx d) fun p => σ.mem b (i + p)
-  | .vbroadcasti32x4 d m =>
-    (slot m 4 bsize).map fun (b, i) => σ.setReg (xidx d) fun p => σ.mem b (i + p % 4)
+  | .vmovdqu32Load d m => (slot m 16 bsize).bind fun (b, i) =>
+    if b < 3 ∨ σ.src then some (σ.setReg (xidx d) fun p => σ.rdm b (i + p)) else none
+  | .vbroadcasti32x4 d m => (slot m 4 bsize).bind fun (b, i) =>
+    if b < 3 ∨ σ.src then some (σ.setReg (xidx d) fun p => σ.rdm b (i + p % 4)) else none
   | .vmovdqu32Store m r => (slot m 16 wsize).map fun (b, i) =>
     { σ with
       mem := fun b' i' => if b' = b ∧ i ≤ i' ∧ i' < i + 16 then σ.reg (xidx r) (i' - i) else σ.mem b' i'
@@ -129,7 +143,7 @@ theorem add_ofNat' (p : Addr) (d e : Nat) :
   rw [BitVec.ofNat_add, BitVec.add_assoc]
 
 theorem slot_ok {m : MemOp} {n : Nat} {lim : Nat → Nat} {b i : Nat} (h : slot m n lim = some (b, i)) :
-    b < 3 ∧ i + n ≤ lim b ∧ ∀ s : State, s.ea m = s.gpr (baseR b) + BitVec.ofNat 64 (4 * i) := by
+    b < 4 ∧ i + n ≤ lim b ∧ ∀ s : State, s.ea m = s.gpr (baseR b) + BitVec.ofNat 64 (4 * i) := by
   unfold slot at h
   split at h
   · rename_i b' d hb hi hd
@@ -148,7 +162,7 @@ theorem bsize_le (b : Nat) : bsize b ≤ 256 := by
   unfold bsize; split <;> decide
 
 theorem wsize_le (b : Nat) : wsize b ≤ bsize b := by
-  unfold wsize bsize; split <;> decide
+  rcases b with _ | _ | _ | b <;> simp [wsize, bsize]
 
 theorem regn_contains (s₀ : State) {b i n : Nat} (h : i + n ≤ bsize b) :
     (regn s₀ b).Contains ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) (4 * n) := by
@@ -163,6 +177,12 @@ structure Ctx (s₀ : State) : Prop where
     InRegions s₀.wr ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) (4 * n)
   d : ∀ b b', b < 3 → b' < 3 → b ≠ b' → (regn s₀ b).Disjoint (regn s₀ b')
 
+/-- The input of code XORing out of place: readable, and apart from the
+regions written. -/
+structure SrcOk (s₀ : State) : Prop where
+  r : ∀ i n, i + n ≤ 256 → InRegions (s₀.rd ++ s₀.wr) ((regn s₀ 3).base + BitVec.ofNat 64 (4 * i)) (4 * n)
+  d : ∀ r ∈ wregs s₀, (regn s₀ 3).Disjoint r
+
 /-- The terms `σ` hold in `s`. -/
 structure SRel (σ : Sym) (s₀ s : State) : Prop where
   reg : ∀ r p, p < 16 → zw s r p = (σ.reg (xidx r) p).eval s₀
@@ -173,19 +193,24 @@ structure SRel (σ : Sym) (s₀ s : State) : Prop where
   wr : s.wr = s₀.wr
   frame : Frame (wregs s₀) s₀.mem s.mem
   clean : σ.dirty = false → s.mem = s₀.mem
+  src : σ.src = true → SrcOk s₀
 
 theorem zreg_xidx (r : XReg) : zreg (xidx r) = r := by cases r <;> rfl
 
 theorem SRel.init (s₀ : State) : SRel Sym.init s₀ s₀ :=
   ⟨fun r p _ => by simp only [Sym.init, T.eval, zreg_xidx], fun _ _ _ _ => rfl, rfl, rfl, rfl,
-    Frame.refl _ _, fun _ => rfl⟩
+    Frame.refl _ _, fun _ => rfl, fun h => by cases h⟩
+
+theorem SRel.initSrc {s₀ : State} (h : SrcOk s₀) : SRel Sym.initSrc s₀ s₀ :=
+  ⟨fun r p _ => by simp only [Sym.initSrc, T.eval, zreg_xidx], fun _ _ _ _ => rfl, rfl, rfl, rfl,
+    Frame.refl _ _, fun _ => rfl, fun _ => h⟩
 
 theorem SRel.setReg {σ : Sym} {s₀ s s' : State} (h : SRel σ s₀ s) {d : XReg} {f : Nat → T}
     (hz : ∀ r p, p < 16 → zw s' r p = if r = d then (f p).eval s₀ else zw s r p)
     (hm : s'.mem = s.mem) (hg : s'.gpr = s.gpr) (hr : s'.rd = s.rd) (hw : s'.wr = s.wr) :
     SRel (σ.setReg (xidx d) f) s₀ s' := by
   refine ⟨fun r p hp => ?_, fun b i hb hi => by rw [hm]; exact h.mem b i hb hi, hg.trans h.gpr,
-    hr.trans h.rd, hw.trans h.wr, hm ▸ h.frame, fun hd => hm.trans (h.clean hd)⟩
+    hr.trans h.rd, hw.trans h.wr, hm ▸ h.frame, fun hd => hm.trans (h.clean hd), h.src⟩
   rw [hz r p hp]
   simp only [Sym.setReg, xidx_inj]
   split
@@ -248,6 +273,29 @@ theorem in_regn' {s₀ s : State} (hc : Ctx s₀) {b : Nat} (hb : b < 3) (hw : s
     (h : i + n ≤ bsize b) : InRegions (s.rd ++ s.wr) ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) (4 * n) :=
   let ⟨r, hr, hc'⟩ := in_regn hc hb hw h; ⟨r, List.mem_append_right _ hr, hc'⟩
 
+/-- A load's doublewords, of a region it may read. -/
+theorem SRel.rdm {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) {b j : Nat} (hb : b < 4) (hs : b < 3 ∨ σ.src = true)
+    (hj : j < bsize b) :
+    s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * j)) 32 = (σ.rdm b j).eval s₀ := by
+  by_cases h3 : b < 3
+  · simp only [Sym.rdm, h3, ite_true]; exact h.mem b j h3 hj
+  · have e : b = 3 := by omega
+    subst e
+    have sr := h.src (by simpa using hs)
+    simp only [Sym.rdm, h3, ite_false, T.eval]
+    exact h.frame.readW (regn_contains s₀ (n := 1) (by omega)) sr.d (by decide)
+
+/-- A load is permitted. -/
+theorem SRel.rdIn {σ : Sym} {s₀ s : State} (hc : Ctx s₀) (h : SRel σ s₀ s) {b : Nat} (hb : b < 4)
+    (hs : b < 3 ∨ σ.src = true) {i n : Nat} (hi : i + n ≤ bsize b) :
+    InRegions (s.rd ++ s.wr) ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) (4 * n) := by
+  by_cases h3 : b < 3
+  · exact in_regn' hc h3 h.wr hi
+  · have e : b = 3 := by omega
+    subst e
+    rw [h.rd, h.wr]
+    exact (h.src (by simpa using hs)).r i n (by simpa [bsize] using hi)
+
 /-- One instruction. -/
 theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State} (h : SRel σ s₀ s) {i : Instr}
     (e : σ.step i = some σ') : ∃ s', exec i s = some s' ∧ SRel σ' s₀ s' := by
@@ -286,10 +334,15 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State} (h : 
         rw [← zw_lk s b (mod4_lt p)]; exact h.reg b _ (by omega)
     · rfl
   · rename_i d m
-    obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
+    obtain ⟨⟨b, i⟩, hs, e⟩ := Option.bind_eq_some_iff.1 e
     obtain ⟨hb, hi, hea⟩ := slot_ok hs
+    dsimp only at e
+    split at e
+    case isFalse => cases e
+    rename_i hsrc
+    cases e
     have ea : s.ea m = (regn s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
-    have hin := in_regn' hc hb h.wr hi
+    have hin := h.rdIn hc hb hsrc hi
     refine ⟨s.setZ d ((s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 512).extractLsb' 0 128)
       ((s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 512).extractLsb' 128 128)
       ((s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 512).extractLsb' 256 128)
@@ -298,13 +351,18 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State} (h : 
     rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
     split
     · rw [pick4_ext _ (div4_lt hp), dword_read512 _ _ hp, add_ofNat', ← Nat.mul_add]
-      exact h.mem b (i + p) hb (by omega)
+      exact h.rdm hb hsrc (by omega)
     · rfl
   · rename_i d m
-    obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
+    obtain ⟨⟨b, i⟩, hs, e⟩ := Option.bind_eq_some_iff.1 e
     obtain ⟨hb, hi, hea⟩ := slot_ok hs
+    dsimp only at e
+    split at e
+    case isFalse => cases e
+    rename_i hsrc
+    cases e
     have ea : s.ea m = (regn s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
-    have hin := in_regn' hc hb h.wr hi
+    have hin := h.rdIn hc hb hsrc hi
     refine ⟨s.setZ d (s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 128)
       (s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 128)
       (s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 128)
@@ -313,22 +371,24 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State} (h : 
     rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
     split
     · rw [pick4_same _ (div4_lt hp), dword_readW _ _ (mod4_lt p), add_ofNat', ← Nat.mul_add]
-      exact h.mem b (i + p % 4) hb (by have := mod4_lt p; omega)
+      exact h.rdm hb hsrc (by have := mod4_lt p; omega)
     · rfl
   · rename_i m r
     obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
     obtain ⟨hb, hi, hea⟩ := slot_ok hs
     have hi' : i + 16 ≤ bsize b := Nat.le_trans hi (wsize_le b)
     have hb0 : b = 1 ∨ b = 2 := by
-      rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2) with rfl | e | e
+      rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | e | e | rfl
       · simp [wsize] at hi
       · exact .inl e
       · exact .inr e
+      · simp [wsize] at hi
+    have hb : b < 3 := by omega
     have ea : s.ea m = (regn s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
     have hin := in_regn hc hb h.wr hi'
     refine ⟨s.setMem (s.mem.writeW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) (s.zmm r)),
       by simp only [exec, ea, State.store512_eq, hin, ite_true], ⟨fun r' p hp => ?_,
-      fun b' i' hb' hi'' => ?_, by simp [h.gpr], by simp [h.rd], by simp [h.wr], ?_, fun hd => by cases hd⟩⟩
+      fun b' i' hb' hi'' => ?_, by simp [h.gpr], by simp [h.rd], by simp [h.wr], ?_, (fun hd => by cases hd), h.src⟩⟩
     · simp only [zw_split, State.setMem_zlane]; exact h.reg r' p hp
     · simp only [State.setMem_mem]
       by_cases hx : b' = b ∧ i ≤ i' ∧ i' < i + 16

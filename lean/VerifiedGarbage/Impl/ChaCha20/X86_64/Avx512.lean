@@ -125,27 +125,34 @@ def transpose (x0 x1 x2 x3 t0 t1 : XReg) : List Instr := [
   z .vpunpcklqdq x0 t0 t1, z .vpunpckhqdq t0 t0 t1,
   z .vpunpcklqdq x2 x1 x3, z .vpunpckhqdq x3 x1 x3]
 
+/-- XOR the 64 bytes in `x` into those at `src + off`, writing them to the
+data at `rsi + off`, through `t`. -/
+def xor64From (src : Reg) (x t : XReg) (off : Nat) : List Instr :=
+  [.vmovdqu32Load t (at_ src off), z .vpxord t t x, .vmovdqu32Store (at_ .rsi off) t]
+
 /-- XOR the 64 bytes in `x` into the data at `rsi + off`, through `t`. -/
-def xor64 (x t : XReg) (off : Nat) : List Instr :=
-  [.vmovdqu32Load t (at_ .rsi off), z .vpxord t t x, .vmovdqu32Store (at_ .rsi off) t]
+def xor64 (x t : XReg) (off : Nat) : List Instr := xor64From .rsi x t off
 
 /-- Blocks `i, i + 4, i + 8, i + 12`, from rows 0–3 of them in the lanes of
 `a, b, c, d` (see `transpose`), gathered through `t0, t1` and XORed into the
-data (through `a`). -/
-def gather (i : Nat) (a b c d t0 t1 : XReg) : List Instr :=
+bytes at `src`, written to the data (through `a`). -/
+def gatherFrom (src : Reg) (i : Nat) (a b c d t0 t1 : XReg) : List Instr :=
   ([.zop (.vshufi32x4 t0 a b 0x44), .zop (.vshufi32x4 a a b 0xee),
    .zop (.vshufi32x4 t1 c d 0x44), .zop (.vshufi32x4 c c d 0xee),
    .zop (.vshufi32x4 b t0 t1 0x88), .zop (.vshufi32x4 d t0 t1 0xdd),
    .zop (.vshufi32x4 t0 a c 0x88), .zop (.vshufi32x4 t1 a c 0xdd)] : List Instr) ++
-  xor64 b a (64 * i) ++ xor64 d a (64 * (i + 4)) ++
-  xor64 t0 a (64 * (i + 8)) ++ xor64 t1 a (64 * (i + 12))
+  xor64From src b a (64 * i) ++ xor64From src d a (64 * (i + 4)) ++
+  xor64From src t0 a (64 * (i + 8)) ++ xor64From src t1 a (64 * (i + 12))
+
+/-- `gatherFrom`, XORing into the data in place. -/
+def gather (i : Nat) (a b c d t0 t1 : XReg) : List Instr := gatherFrom .rsi i a b c d t0 t1
 
 /-- The rounds' result plus the input state, XORed into the next 1024 bytes
-of data. The registers holding row `r` after its transpose are, for
+at `src`, written to the next 1024 bytes of data. The registers holding row `r` after its transpose are, for
 `i = 0 … 3`: row 0 `zmm0, zmm14, zmm2, zmm3` (`zmm2, zmm3` then saved to
 `buf`), row 1 `zmm4, zmm1, zmm6, zmm7`, row 2 `zmm8, zmm5, zmm10, zmm11`,
 row 3 `zmm12, zmm2, zmm9, zmm15`. -/
-def finish : List Instr :=
+def finishFrom (src : Reg) : List Instr :=
   ([.vmovdqu32Store (at_ .rcx save0Off) .xmm14, .vmovdqu32Store (at_ .rcx save1Off) .xmm15] : List Instr) ++
   addRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] .xmm14 .xmm15 ++
     transpose .xmm0 .xmm1 .xmm2 .xmm3 .xmm14 .xmm15 ++
@@ -158,10 +165,13 @@ def finish : List Instr :=
   addRow 3 [.xmm12, .xmm13, .xmm9, .xmm15] .xmm2 .xmm3 ++
     ([.vmovdqu32Load .xmm3 (at_ .rcx incOff), z .vpaddd .xmm12 .xmm12 .xmm3] : List Instr) ++
     transpose .xmm12 .xmm13 .xmm9 .xmm15 .xmm2 .xmm3 ++
-  gather 0 .xmm0 .xmm4 .xmm8 .xmm12 .xmm13 .xmm3 ++
-  gather 1 .xmm14 .xmm1 .xmm5 .xmm2 .xmm13 .xmm3 ++
-  ([.vmovdqu32Load .xmm0 (at_ .rcx save0Off)] : List Instr) ++ gather 2 .xmm0 .xmm6 .xmm10 .xmm9 .xmm13 .xmm3 ++
-  ([.vmovdqu32Load .xmm0 (at_ .rcx save1Off)] : List Instr) ++ gather 3 .xmm0 .xmm7 .xmm11 .xmm15 .xmm13 .xmm3
+  gatherFrom src 0 .xmm0 .xmm4 .xmm8 .xmm12 .xmm13 .xmm3 ++
+  gatherFrom src 1 .xmm14 .xmm1 .xmm5 .xmm2 .xmm13 .xmm3 ++
+  ([.vmovdqu32Load .xmm0 (at_ .rcx save0Off)] : List Instr) ++ gatherFrom src 2 .xmm0 .xmm6 .xmm10 .xmm9 .xmm13 .xmm3 ++
+  ([.vmovdqu32Load .xmm0 (at_ .rcx save1Off)] : List Instr) ++ gatherFrom src 3 .xmm0 .xmm7 .xmm11 .xmm15 .xmm13 .xmm3
+
+/-- `finishFrom`, XORing into the data in place. -/
+def finish : List Instr := finishFrom .rsi
 
 /-- Advance the counter by 16 and the data by 1024 bytes; `CF` is clear if at
 least 1024 bytes remain. -/
