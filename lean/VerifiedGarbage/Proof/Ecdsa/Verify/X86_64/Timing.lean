@@ -166,7 +166,7 @@ structure VerifyChecks (c : Cfg) (d : CombData) : Prop where
 
 theorem verify_public_ct (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c)
     {d : CombData} (hcd : c.comb = some d) (hLookup : c.pubVerify = true)
-    (checks : VerifyChecks c d) (hmn : c.mul = none := by rfl) :
+    (checks : VerifyChecks c d) (hmn : c.mul = none) :
     ConstantTime isa (VPre c) (VerifyPublic c d) (Impl.Ecdsa.Verify.X86_64.Cfg.verify c).inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ ⟨pub,sym,scalar⟩ e₁ e₂
   obtain ⟨a₁,b₁,tp₁,tc₁,ts₁,ep₁,ec₁,es₁,et₁⟩ := verify_cut hcd hmn e₁
