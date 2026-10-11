@@ -13,7 +13,7 @@
 //! module checks the lengths, holds the subkeys and keeps the chaining value
 //! to continue from: the last ciphertext block.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::arch::idea::{vg_idea_expand_key, vg_idea_invert_key};
 use crate::arch::idea_cbc::{vg_idea_cbc_decrypt, vg_idea_cbc_encrypt};

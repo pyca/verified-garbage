@@ -14,7 +14,7 @@
 //! a zero block gives `CIPH_K` of the block to continue from, whose first
 //! bytes it XORs into the rest of the input.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::arch::idea::vg_idea_expand_key;
 use crate::arch::idea_cfb::{vg_idea_cfb64_decrypt, vg_idea_cfb64_encrypt};
@@ -32,7 +32,11 @@ pub struct IdeaCfb64 {
 }
 
 /// The signature of `vg_idea_cfb64_encrypt` and `vg_idea_cfb64_decrypt`.
+#[cfg(target_arch = "x86_64")]
 type Cfb = unsafe extern "sysv64" fn(*const [u8; 104], *mut [u8; 8], *mut [u8; 8], usize);
+/// The signature of `vg_idea_cfb64_encrypt` and `vg_idea_cfb64_decrypt`.
+#[cfg(target_arch = "aarch64")]
+type Cfb = unsafe extern "C" fn(*const [u8; 104], *mut [u8; 8], *mut [u8; 8], usize);
 
 impl IdeaCfb64 {
     /// Expands a 16-byte key for use in either direction.
