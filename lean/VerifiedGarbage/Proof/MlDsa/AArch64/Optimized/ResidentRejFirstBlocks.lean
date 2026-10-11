@@ -27,9 +27,9 @@ theorem firstFour_ok {σ s : State} (hp : Pre 4 σ) (he : Env 4 σ s)
     fun u ⟨heu,hpu,hu0,hu1,hfu,hgu⟩ => ?_
   refine WP.mono (fiveEnv_ok hp heu (by decide : 2*1+1<4) fiveRegisters1
     (five_pair_keep (by decide : 0<2) (by decide : 1<2) (by decide) hfu (hs 1 (by decide)))
-    (by rw [hgu .x23 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact h23)
-    (by rw [hgu .x26 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hbuf 2 (by decide))
-    (by rw [hgu .x27 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hbuf 3 (by decide)))
+    (by rw [hgu .x23 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact h23)
+    (by rw [hgu .x26 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hbuf 2 (by decide))
+    (by rw [hgu .x27 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hbuf 3 (by decide)))
     fun t ⟨het,hpt,ht2,ht3,hft,_⟩ => ?_
   refine ⟨het,?_,?_,?_⟩
   · intro p hpn

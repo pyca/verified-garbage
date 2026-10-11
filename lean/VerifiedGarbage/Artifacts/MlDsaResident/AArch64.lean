@@ -46,7 +46,7 @@ def artifacts : List Artifact := [
     target := AArch64.target
     doc := Spec.MlDsa.expandMaskPairApi.doc
     code := Impl.MlDsa.AArch64.Optimized.ResidentMask.rawWith
-      (.block Impl.MlDsa.AArch64.Optimized.KeccakMix.rounds)
+      (Impl.Sha3.AArch64.Sha3.Vector.roundsLoop Impl.MlDsa.AArch64.Optimized.KeccakMix.core .x15)
     contract := Spec.MlDsa.expandMaskPairContract AArch64.abi
     verified := Proof.MlDsa.AArch64.Optimized.ResidentMask.pair_n2_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
