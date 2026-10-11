@@ -17,7 +17,7 @@ verified-garbage = { path = "..", features = ["cpu-features-env"] }
 
 # Low-level KEM calls are not yet wrapped by rust-openssl.
 openssl-sys = { version = "0.9.117", optional = true }
-foreign-types = { version = "0.3", optional = true }
+foreign-types = { version = "0.5", optional = true }
 
 [features]
 # OpenSSL 3.2+ supplies Argon2; the benchmark runners use 3.0.
