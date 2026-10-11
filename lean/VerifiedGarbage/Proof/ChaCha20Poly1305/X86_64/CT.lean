@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
+import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
 import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
@@ -137,6 +138,12 @@ theorem avx512_keeps : ((instrs Impl.Poly1305.X86_64.Avx512.blocksAvx512).all fu
 
 theorem avx512_depth : Impl.Poly1305.X86_64.Avx512.blocksAvx512.depth = 2 := by lit_decide
 
+theorem ifma_keeps : ((instrs Impl.Poly1305.X86_64.Ifma.blocksIfma).all fun i =>
+    !Taint.clobbers i .rdi && !Taint.clobbers i .rsp) = true := by
+  rw [← Code.allInstrs_eq]; lit_decide
+
+theorem ifma_depth : Impl.Poly1305.X86_64.Ifma.blocksIfma.depth = 2 := by lit_decide
+
 /-- The stack below `rsp` that a call of `vg_poly1305_blocks` uses (24 bytes
 for `vg_poly1305_blocks_avx512`, which calls `vg_poly1305_blocks_avx2`,
 which calls `vg_poly1305_blocks`). -/
@@ -245,12 +252,41 @@ theorem avx512_call :
     rwa [bytesAt_frame (callEntry_frame s) (by simpa using (hsp.sub_left (below8_24' _)).symm)
       (by lit_omega)] at h
 
+theorem ifma_call :
+    WP isa (.call "vg_poly1305_blocks_ifma" Impl.Poly1305.X86_64.Ifma.blocksIfma) s (BlocksPost s P p n) := by
+  have hn' : (BitVec.ofNat 64 n).toNat = n := by
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by lit_omega)
+  have hsP8 := hsP.sub_left (below8_24' _)
+  refine WP.call_mx (k := Proof.Poly1305.X86_64.Avx512.blocksAvx512X86_64)
+    Proof.Poly1305.X86_64.Ifma.blocksIfma_ok
+    (keeps_of ifma_keeps fun _ h => and_right h) (by rw [ifma_depth]; decide)
+    (rd := [⟨p, 16 * n⟩]) (wr := [⟨P, 128⟩]) ?_ hc hw ?_
+  · simp only [Proof.Poly1305.X86_64.Avx512.blocksAvx512X86_64, Proof.Poly1305.blocksStack,
+      State.withRegions_gpr, State.withRegions_rd,
+      State.withRegions_wr, State.callEntry_rsp, callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp),
+      callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rdx ≠ .rsp), hrdi,
+      hrsi, hrdx, hn']
+    exact ⟨trivial, trivial, hdj, hsP8, hsP.sub_left (below_callee _ 16),
+      hsp.sub_left (below_callee _ 16), hwrap⟩
+  · intro s' hrd hwr hcs hf hkeep ⟨s₂, hm₂, _, hpost⟩ hmx
+    rw [ifma_depth] at hf
+    refine ⟨hrd, hwr, hcs, hf,
+      by rw [hkeep .rdi (keeps_of ifma_keeps fun _ h => and_left h), hrdi], fun key msg hr => ?_, hmx⟩
+    simp only [Proof.Poly1305.X86_64.Avx512.blocksAvx512X86_64, Proof.Poly1305.blocksStack,
+      Proof.Poly1305.blocksX86_64, State.withRegions_gpr, State.withRegions_mem,
+      callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp),
+      callEntry_gpr' s (by decide : Reg.rdx ≠ .rsp), hrdi, hrsi, hrdx, hn', hm₂] at hpost
+    have h := hpost key msg (Repr.frame (callEntry_frame s) (h := hr) (by simpa using hsP8.symm))
+    rwa [bytesAt_frame (callEntry_frame s) (by simpa using (hsp.sub_left (below8_24' _)).symm)
+      (by lit_omega)] at h
+
 /-- A call of the implementation `b` of `vg_poly1305_blocks`. -/
 theorem blocks_call (b : Impl.Poly1305.X86_64.Blocks) : WP isa (.call b.name b.code) s (BlocksPost s P p n) := by
   cases b
   · exact scalar_call hrdi hrsi hrdx hn hdj hwrap hsP hsp hc hw
   · exact avx2_call hrdi hrsi hrdx hn hdj hwrap hsP hsp hc hw
   · exact avx512_call hrdi hrsi hrdx hn hdj hwrap hsP hsp hc hw
+  · exact ifma_call hrdi hrsi hrdx hn hdj hwrap hsP hsp hc hw
 
 end
 
@@ -3943,12 +3979,16 @@ taint_summary blocksBigAvx2S : taintS (τB true true) (.call avx2.name avx2.code
 taint_summary blocksSmallAvx2S : taintS (τB true false) (.call avx2.name avx2.code)
 taint_summary blocksBigAvx512S : taintS (τB true true) (.call avx512.name avx512.code)
 taint_summary blocksSmallAvx512S : taintS (τB true false) (.call avx512.name avx512.code)
+taint_summary blocksBigIfmaS : taintS (τB true true) (.call ifma.name ifma.code)
+taint_summary blocksSmallIfmaS : taintS (τB true false) (.call ifma.name ifma.code)
 taint_summary blocksBigO : taintS (τB false true) (.call scalar.name scalar.code)
 taint_summary blocksSmallO : taintS (τB false false) (.call scalar.name scalar.code)
 taint_summary blocksBigAvx2O : taintS (τB false true) (.call avx2.name avx2.code)
 taint_summary blocksSmallAvx2O : taintS (τB false false) (.call avx2.name avx2.code)
 taint_summary blocksBigAvx512O : taintS (τB false true) (.call avx512.name avx512.code)
 taint_summary blocksSmallAvx512O : taintS (τB false false) (.call avx512.name avx512.code)
+taint_summary blocksBigIfmaO : taintS (τB false true) (.call ifma.name ifma.code)
+taint_summary blocksSmallIfmaO : taintS (τB false false) (.call ifma.name ifma.code)
 end
 
 taint_summary finalizeSumS : taintS (τB true false)
@@ -3967,7 +4007,7 @@ taint_summary finalizeSumO : taintS τF
 below cover (`XorImpl.fold_poly`). -/
 abbrev FoldPoly (fold pass wide : Nat) (b : Impl.Poly1305.X86_64.Blocks) : Prop :=
   (fold = 0 ∧ pass = 0 ∧ wide = 4 ∧ b = .scalar) ∨ (fold = 448 ∧ pass = 0 ∧ wide = 5 ∧ b = .avx2) ∨
-    (fold = 960 ∧ pass = 1024 ∧ wide = 6 ∧ b = .avx512)
+    (fold = 960 ∧ pass = 1024 ∧ wide = 6 ∧ (b = .avx512 ∨ b = .ifma))
 
 theorem prologueA_taint (enc : Bool) {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass wide b) :
     ∃ h, (taintS.check (τ₀ enc) (prologueA fold pass wide) h).isSome = true := by
@@ -3983,19 +4023,19 @@ theorem cryptPre_taint (enc : Bool) {fold pass wide : Nat} {b : Impl.Poly1305.X8
 
 theorem sealMid_taint {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass wide b) :
     ∃ h, (taintS.check (τA true) (sealMid fold b) h).isSome = true := by
-  rcases h with ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl⟩ <;>
-    taint_decide_sum [blocksBigS, blocksBigAvx2S, blocksBigAvx512S]
+  rcases h with ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl | rfl⟩ <;>
+    taint_decide_sum [blocksBigS, blocksBigAvx2S, blocksBigAvx512S, blocksBigIfmaS]
 
 theorem sealPost_taint {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass wide b) :
     ∃ h, (taintS.check (τ₁ true) (sealPost fold pass wide b) h).isSome = true := by
-  rcases h with ⟨rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl⟩ <;>
-    taint_decide_sum [blocksSmallS, blocksSmallAvx2S, blocksSmallAvx512S, finalizeSumS]
+  rcases h with ⟨rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl | rfl⟩ <;>
+    taint_decide_sum [blocksSmallS, blocksSmallAvx2S, blocksSmallAvx512S, blocksSmallIfmaS, finalizeSumS]
 
 theorem openMid_taint {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass wide b) :
     ∃ h, (taintS.check (τA false) (openMid fold b) h).isSome = true := by
-  rcases h with ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl⟩ <;>
+  rcases h with ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl | rfl⟩ <;>
     taint_decide_sum [blocksBigO, blocksSmallO, blocksBigAvx2O, blocksSmallAvx2O, blocksBigAvx512O,
-      blocksSmallAvx512O]
+      blocksSmallAvx512O, blocksBigIfmaO, blocksSmallIfmaO]
 
 theorem openPost_taint {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass wide b) :
     ∃ h, (taintS.check (τ₁ false) (openPost fold pass wide) h).isSome = true := by
