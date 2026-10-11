@@ -251,6 +251,9 @@ pub(crate) mod p384_mul_base;
 pub(crate) mod p384_point_ops;
 
 #[rustfmt::skip]
+pub(crate) mod p521_inverse;
+
+#[rustfmt::skip]
 pub(crate) mod p521_mont;
 
 #[rustfmt::skip]
