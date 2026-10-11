@@ -10,10 +10,6 @@ namespace VG.Proof.X448.X86
 
 open VG VG.X86 VG.Impl.X448.X86
 
-def clamp : List Instr :=
-  [.mov .edx (.imm 0), .store8 (sc BITS) .dl, .store8 (sc (BITS + 1)) .dl,
-    .mov .edx (.imm 1), .store8 (sc (BITS + 447)) .dl]
-
 def clampMem (m : Mem) (base : Addr) : Mem :=
   ((m.writeW (off base BITS) (0 : BitVec 8)).writeW (off base (BITS + 1))
     (0 : BitVec 8)).writeW (off base (BITS + 447)) (1 : BitVec 8)

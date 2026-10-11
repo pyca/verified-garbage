@@ -160,8 +160,7 @@ abbrev SV (σ : State) : Nat :=
 abbrev KV (σ : State) : Nat := Spec.Ed448.decodeLE (Spec.Ed448.bytesAt σ.mem ((arg σ 2).setWidth 64) 57)
 
 /-- The bits of `S` and `k` in the working space. -/
-def BitsAt (σ s : State) : Prop :=
-  ∀ j < 456, s.mem (off (bsV σ) (Impl.X448.X86.BITS + j)) = BitVec.ofNat 8 (pair2 (SV σ) (KV σ) j)
+abbrev BitsAt (σ s : State) : Prop := VBits (bsV σ) (SV σ) (KV σ) s.mem
 
 /-- After the entry block. -/
 structure VE (σ s₁ : State) : Prop where
@@ -172,7 +171,7 @@ structure VE (σ s₁ : State) : Prop where
   bits : BitsAt σ s₁
   e : ∀ i : Index, E s₁.mem (bsV σ) i = Proof.X448.toFe (Impl.Ed448.X86.initVal i.val)
 
-theorem ventry_VE {σ : State} (h : VerifyPre σ) : WP isa (.block ventry) σ (VE σ) :=
+theorem ventry_VE {σ : State} (h : VerifyPre σ) : WP isa ventry σ (VE σ) :=
   WP.mono (WP.and (ventry_loopPre h) (ventry_ok h rfl)) fun _ ⟨lp, _, _, o, k, _, bits, _, e⟩ =>
     ⟨h, lp, k.1 _ (by decide), o, bits, e⟩
 
@@ -339,9 +338,7 @@ def VI (n : Nat) (σ s : State) : Prop :=
 
 theorem V4.bits {σ s₄ : State} (h : V4 σ s₄) : BitsAt σ s₄ := by
   obtain ⟨s₂, s₃, ⟨s₁, e, d⟩, k₃, -, k₄, -⟩ := h
-  intro j hj
-  rw [bits_kept (WsOut2.widen k₄.2) j hj, bits_kept (WsOut2.widen k₃.2) j hj, bits_keptD d.frame j hj]
-  exact e.bits j hj
+  exact VBits.kept (WsOut2.widen k₄.2) (VBits.kept (WsOut2.widen k₃.2) (VBits.keptD d.frame e.bits))
 
 theorem V4.start {σ s₄ : State} (h : V4 σ s₄) :
     ∀ s', s'.gpr .esi = BitVec.ofNat 32 456 → (∀ r, r ≠ .esi → s'.gpr r = s₄.gpr r) →
@@ -383,8 +380,7 @@ def StepV (n : Nat) (σ t : State) : Prop :=
 
 theorem StepV.keep {n : Nat} {σ s t : State} (h : StepV n σ s) (k : Keep (bsV σ) s t)
     (b : BoundedEnv t.mem (bsV σ)) : StepV n σ t :=
-  ⟨FS.keep h.1 k b, (k.regs.1 _ (by decide)).trans h.2.1, fun j hj => by
-    rw [bits_kept (WsOut2.widen k.2) j hj]; exact h.2.2.1 j hj, h.2.2.2⟩
+  ⟨FS.keep h.1 k b, (k.regs.1 _ (by decide)).trans h.2.1, VBits.kept (WsOut2.widen k.2) h.2.2.1, h.2.2.2⟩
 
 theorem StepV.agree {n : Nat} {s₁ s₂ : State} (h : Runs VP₀ (StepV n) s₁ s₂) :
     VG.X86.Taint.Agree (τr [.esp, .esi, .edi]) s₁ s₂ := by
@@ -412,7 +408,7 @@ theorem vmaskSwap_rel (n : Nat) (hi : Bool) :
     · exact RelCT.taint (A := taint) (τr [.esp, .esi, .edi]) ag (by taint_decide)
     · exact RelCT.taint (A := taint) (τr [.esp, .esi, .edi]) ag (by taint_decide)
   · exact WP.mono (vmaskSwap_ok h.1.1.scr h.1.1.bounded h.2.2.2 h.2.1 (bit_lt' (SV σ) n) (bit_lt' (KV σ) n)
-      (h.2.2.1 n h.2.2.2) hi) fun t ⟨k, b, _⟩ => h.keep k b
+      (h.2.2.1 n h.2.2.2).1 (h.2.2.1 n h.2.2.2).2 hi) fun t ⟨k, b, _⟩ => h.keep k b
 
 
 theorem fieldV (n : Nat) (l : List Impl.Ed448.FOp) (hv : ∀ op ∈ l, fopValid op) :
@@ -427,11 +423,8 @@ theorem vstep_tr (n : Nat) : RelCT isa (Runs VP₀ (VI n)) Impl.Ed448.X86.vstep 
       ((fieldV n _ (by decide)).seq ?_))))
   · rintro σ s ⟨hn, s₄, v, L, fe⟩
     refine WP.mono (decCounter_ok (by omega) L.esi) fun t ⟨c, g, m, r, w, _⟩ =>
-      ⟨⟨FInv.of_counter fe.fin g m r w, (g _ (by decide)).trans fe.sp⟩, c, fun j hj => ?_, hn⟩
-    rw [m, L.mem _ (by rw [ofs_off' _ (by simp only [Impl.X448.X86.BITS]; omega)]; simp only [Impl.X448.X86.BITS]; omega)
-      (by rw [ofs_off' _ (by simp only [Impl.X448.X86.BITS]; omega)]; simp only [Impl.X448.X86.BITS]; omega)
-      (by rw [ofs_off' _ (by simp only [Impl.X448.X86.BITS]; omega)]; simp only [Impl.X448.X86.BITS, Impl.X448.X86.ACC]; omega)]
-    exact v.bits j hj
+      ⟨⟨FInv.of_counter fe.fin g m r w, (g _ (by decide)).trans fe.sp⟩, c,
+        show VBits _ _ _ t.mem from m ▸ VBits.kept (WsOut2.widen L.mem) v.bits, hn⟩
   · exact RelCT.taint (A := taint) (τr [.esp, .esi, .edi]) (fun _ _ h => StepV.agree h) (by taint_decide)
 
 
