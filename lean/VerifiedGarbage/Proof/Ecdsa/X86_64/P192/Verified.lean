@@ -68,6 +68,7 @@ theorem p192_ok (hI : InvSounds) : BaseCfgOk p192 where
   window_am3 := fun h => by cases h
   comb_am3 := fun _ h => by cases h
   even _ := by decide
+  inverse h := absurd h (by decide)
 
 theorem p192_tbls : CombTbls p192 := fun _ h => by cases h
 

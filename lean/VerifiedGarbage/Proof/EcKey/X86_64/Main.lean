@@ -397,15 +397,15 @@ theorem args_ok (s : State) :
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_setReg, hr.1, hr.2.1, hr.2.2, ite_false]
 
-/-- The public key inlined: only `[k]G` calls functions. -/
+/-- The public key inlined: only `[k]G` and the inversion call functions. -/
 theorem publicKey_inline (c : Cfg) : (Impl.EcKey.X86_64.Cfg.publicKey c).inline =
     .seq (.block Impl.EcKey.X86_64.Cfg.args) (.seq (.seq (.block (c.setupWith none))
       (.seq c.kBits (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
-      (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.seq c.gMulKC.inline (.seq c.pPow (.block [])))))))
+      (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.seq c.gMulKC.inline (.seq c.pPow.inline (.block [])))))))
       (Impl.EcKey.X86_64.Cfg.middle c)) := by
   show Code.seq _ (Code.seq (Code.seq _ (Code.seq c.kBits.inline (Code.seq _ (Code.seq _ (Code.seq _
     (Code.seq c.pPow.inline _)))))) (Impl.EcKey.X86_64.Cfg.middle c).inline) = _
-  rw [pPow_inline, show (Impl.EcKey.X86_64.Cfg.middle c).inline = _ from blocks_inline _, Cfg.kBits,
+  rw [show (Impl.EcKey.X86_64.Cfg.middle c).inline = _ from blocks_inline _, Cfg.kBits,
     kBitsIf_inline]
   rfl
 
@@ -459,7 +459,7 @@ theorem publicKey_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ :
       · exact f2 _ (by rw [hp.wr]; simp)
   have hb : sN.gpr .r8 = s₀.gpr .rdx := by rw [g, r8₁]
   obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hs := none) (Or.inl rfl) hpN.setup
-    (rest := .seq c.gMulKC.inline (.seq c.pPow (.block [])))
+    (rest := .seq c.gMulKC.inline (.seq c.pPow.inline (.block [])))
     (Q := St₂ c none sN (sN.gpr .r8)) fun _ S₁ => stage₂ hc hmb hC hT hpN rfl S₁ fun _ S₂ => WP.block_nil S₂
   rw [hb] at S₂
   -- The same run, with the public key's regions.

@@ -93,7 +93,7 @@ theorem mulN_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
 theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
     (hF : Front c s₀ base g s) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Mid c s₀ base g s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c) (.seq c.nPow
+    WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c) (.seq c.nPow.inline
       (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c) rest))) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10

@@ -372,7 +372,7 @@ theorem ladPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
     (ht₁ : ¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', LadPost c base Q s s' → WP isa rest s' R) :
-    WP isa (.seq (ladder (Impl.Ecdh.X86_64.Cfg.ladderQ c)).inline (.seq c.pPow rest)) s R := by
+    WP isa (.seq (ladder (Impl.Ecdh.X86_64.Cfg.ladderQ c)).inline (.seq c.pPow.inline rest)) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap

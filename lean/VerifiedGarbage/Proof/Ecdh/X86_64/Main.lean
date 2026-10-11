@@ -282,17 +282,17 @@ theorem exchangeWith_eq' (c : Cfg) (mq : Prog isa) : Impl.Ecdh.X86_64.Cfg.exchan
     (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) (.seq (Impl.Ecdh.X86_64.Cfg.validate c)
     (.seq mq (.seq c.pPow (Impl.Ecdh.X86_64.Cfg.middle c)))))) := rfl
 
-/-- The exchange inlined: only `mq` calls functions. -/
+/-- The exchange inlined: only `mq` and the inversion call functions. -/
 theorem exchangeWith_inline (c : Cfg) (mq : Prog isa) : (Impl.Ecdh.X86_64.Cfg.exchangeWith c mq).inline =
     .seq (.block Impl.Ecdh.X86_64.Cfg.args) (.seq (.seq (.block (c.setupWith none))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
     (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) (.seq (Impl.Ecdh.X86_64.Cfg.validate c)
-    (.seq mq.inline (.seq c.pPow (Impl.Ecdh.X86_64.Cfg.middle c)))))) := by
+    (.seq mq.inline (.seq c.pPow.inline (Impl.Ecdh.X86_64.Cfg.middle c)))))) := by
   rw [exchangeWith_eq']
   show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.validate c).inline
     (Code.seq _ (Code.seq c.pPow.inline (Impl.Ecdh.X86_64.Cfg.middle c).inline))))) = _
-  rw [pPow_inline c, show (Impl.Ecdh.X86_64.Cfg.validate c).inline = _ from blocks_inline _,
+  rw [show (Impl.Ecdh.X86_64.Cfg.validate c).inline = _ from blocks_inline _,
     show (Impl.Ecdh.X86_64.Cfg.middle c).inline = _ from blocks_inline _]
   rfl
 

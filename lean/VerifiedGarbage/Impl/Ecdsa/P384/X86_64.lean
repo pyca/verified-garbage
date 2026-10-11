@@ -10,7 +10,8 @@ open VG.X86_64
 
 /-- P-384 as the code has it, the products of its hottest loops written out
 (`Cfg.hot`): calls of them there slow it down. `[k]G` for the signature and
-the public key is a call of `vg_p384_mul_base` (`Cfg.mulBase`). -/
+the public key is a call of `vg_p384_mul_base` (`Cfg.mulBase`), and `Z^(p-2)`
+and `k^(n-2)` calls of `vg_p384_inv_mod_p` and `_n` (`Cfg.inverse`). -/
 def p384 : Cfg where
   n := 6
   C := Spec.P384.curve
@@ -18,6 +19,7 @@ def p384 : Cfg where
   fastN := true
   hot := true
   mulBase := some Spec.Weierstrass.MulBase.p384
+  inverse := some Spec.Weierstrass.Inverse.p384
 
 /-- `vg_ecdsa_p384_sign`. -/
 def signP384 : Prog isa := p384.sign
