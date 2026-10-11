@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.TripleDes.Cbc
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.CmacTripleDes.Scratch
 
 /-!
 # Triple DES-CBC with its working space as an argument
@@ -9,7 +10,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 `n` words appended, whatever it holds (each target lays out its own), for
 the frame that keeps it on the stack (`Verified.stackScratchWiped`), which
 needs `cbcEncPost` and `cbcDecPost` to read the memory on return only
-within the function's buffers (`cbcEncPostOut_local`, `cbcDecPostOut_local`).
+within the function's buffers (`cbcEncPostOut_local`, `cbcDecPostOut_local`), and, where
+the frame copies stack arguments (ARMv7), the memory on entry too
+(`cbcEncPost_local`, `cbcDecPost_local`).
 -/
 
 namespace VG.Proof.TripleDes
@@ -104,6 +107,48 @@ theorem cbcDecPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcSig.words pb
     have := Nat.mod_le n.toNat (2 ^ pb)
     rw [cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
       rw [BitVec.toNat_setWidth] at hi; omega)]
+    exact h
+
+theorem cbcEncPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cbcSig.words pb).length →
+    (∀ b ∈ Sig.bufs cbcSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (cbcSig.words pb) (cbcEncPost pb) vs m₁ m' r →
+      Curry.apply (cbcSig.words pb) (cbcEncPost pb) vs m₂ m' r
+  | [_, _, data, n], m₁, m₂, m', r, _, hb, h => by
+    simp only [cbcSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.1
+    have hv := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (cbcEncPost pb) _
+      m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (cbcEncPost pb) _
+      m₂ m' r
+    dsimp only [Curry.apply, cbcEncPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    rw [Proof.CmacTripleDes.scheduleAt_congr hs, Proof.CmacTripleDes.tdesBytesAt_congr hv,
+      cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
+        rw [BitVec.toNat_setWidth] at hi; omega)]
+    exact h
+
+theorem cbcDecPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cbcSig.words pb).length →
+    (∀ b ∈ Sig.bufs cbcSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (cbcSig.words pb) (cbcDecPost pb) vs m₁ m' r →
+      Curry.apply (cbcSig.words pb) (cbcDecPost pb) vs m₂ m' r
+  | [_, _, data, n], m₁, m₂, m', r, _, hb, h => by
+    simp only [cbcSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.1
+    have hv := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (cbcDecPost pb) _
+      m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (cbcDecPost pb) _
+      m₂ m' r
+    dsimp only [Curry.apply, cbcDecPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    rw [Proof.CmacTripleDes.scheduleAt_congr hs, Proof.CmacTripleDes.tdesBytesAt_congr hv,
+      cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
+        rw [BitVec.toNat_setWidth] at hi; omega)]
     exact h
 
 end VG.Proof.TripleDes

@@ -8,11 +8,12 @@
 //! `cbcDecryptContract`) replace each block with its CBC encryption or
 //! decryption from the chaining value at `iv`, in constant time: their timing
 //! depends on none of the key, the chaining value and the data. Both are the
-//! modes' generic CBC over the scalar block function, one block at a time.
+//! modes' generic CBC, one block at a time: on x86-64 over the scalar block
+//! function, on ARMv7 calling the verified ECB function for each block.
 //! This module checks the lengths, holds the key schedule and keeps the
 //! chaining value to continue from: the last ciphertext block.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 
 use crate::arch::triple_des::vg_triple_des_expand_key;
 use crate::arch::triple_des_cbc::{vg_triple_des_cbc_decrypt, vg_triple_des_cbc_encrypt};
