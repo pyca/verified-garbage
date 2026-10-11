@@ -21,6 +21,7 @@ namespace VG
 materialize_code Impl.Gcm.X86_64.StitchAvx8.enc
 materialize_code Impl.Gcm.X86_64.StitchAvx8.dec
 materialize_code Impl.Gcm.X86_64.StitchAvx8.encR
+materialize_code Impl.Gcm.X86_64.StitchAvx8.decR
 
 end VG
 
@@ -28,7 +29,7 @@ namespace VG.Proof.Gcm.X86_64.StitchAvx8
 
 open VG VG.X86_64
 open VG.Proof.AesGcm.X86_64 (Piece)
-open VG.Impl.Gcm.X86_64.StitchAvx8 (enc dec encR)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (enc dec encR decR)
 
 theorem enc_piece : Piece enc false true :=
   ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide,
@@ -42,7 +43,7 @@ theorem encR_piece : Piece encR true true :=
   ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide,
     by lit_decide, ⟨_, by taint_decide⟩⟩
 
-theorem decR_piece : Piece dec true :=
+theorem decR_piece : Piece decR true :=
   ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide,
     by lit_decide, ⟨_, by taint_decide⟩⟩
 

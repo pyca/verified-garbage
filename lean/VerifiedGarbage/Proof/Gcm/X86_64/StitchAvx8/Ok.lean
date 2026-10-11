@@ -395,7 +395,7 @@ end VG.Proof.Gcm.X86_64.StitchAvx8
 namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch
-open VG.Impl.Gcm.X86_64.StitchAvx8 (encFor encForWith decFor)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (encFor encForWith decFor decForWith)
 open VG.Proof.Gcm.Poly
 open VG.Spec.Gcm (Block)
 
@@ -423,10 +423,13 @@ theorem encForWith_ok {s₀ : State} (hp : SPre s₀) {su : List Instr}
 theorem encFor_ok {s₀ : State} (hp : SPre s₀) : WP isa (encFor (nr s₀)) s₀ (EPost s₀) :=
   encForWith_ok hp (setup_ok hp)
 
-theorem decFor_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
-    WP isa (decFor (nr s₀)) s₀ (DPost s₀) := by
-  rw [decFor, WP.seq_iff, WP.block_append_iff]
-  refine WP.mono (setup_ok hp) fun s ⟨P, hR, hP⟩ => ?_
+/-- Decryption, after any setup `su` that leaves what `setup` does. -/
+theorem decForWith_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {su : List Instr}
+    (hsu : WP isa (.block su) s₀ fun s => ∃ P : Nat → Block,
+      Ready s₀ P s ∧ ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) :
+    WP isa (decForWith su (nr s₀)) s₀ (DPost s₀) := by
+  rw [decForWith, WP.seq_iff, WP.block_append_iff]
+  refine WP.mono hsu fun s ⟨P, hR, hP⟩ => ?_
   have hlaw : HashLaw s₀ P := fun X y => finishHash X P (hk s₀) y hP
   refine WP.mono (firstDec_ok hp hR) fun t hI => ?_
   have hl := loopRun_ok hp hlaw hI hp.nb16
@@ -435,6 +438,10 @@ theorem decFor_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
   have ht := hu.tail_le
   simp only [threshold, tailSize, ite_true] at hg ht
   exact WP.seq (WP.block_nil (finalDec_ok hp hlaw hu (by omega)))
+
+theorem decFor_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
+    WP isa (decFor (nr s₀)) s₀ (DPost s₀) :=
+  decForWith_ok hp hm (setup_ok hp)
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -484,7 +491,7 @@ namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Proof.Gcm.X86_64.Stitch
 open VG.Proof.Gcm.X86_64.Pclmul (const_ok Only rev_eq)
-open VG.Impl.Gcm.X86_64.StitchAvx8 (setupGR setupR prepOff preg lows setupC initCounter encForWith encR dec)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (setupGR setupR prepOff preg lows setupC initCounter encForWith encR dec decR decForWith)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
 open VG.Proof.Gcm.X86_64 (revMask)
 open VG.Proof.Gcm.X86_64.StitchZP (hInvF)
@@ -611,7 +618,18 @@ theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀) : WP isa encR s₀ (EPos
     rw [ht, hn] at hw
     exact WP.mono hw fun u hu => epost_same hf hu
 
-theorem stitchR_ok : StitchOkM CtxMode.prepared encR dec 1 :=
-  ⟨fun _ hp _ => encR_ok hp.toPrepared, fun s₀ hp hm => stitch_ok.2 s₀ hp.base hm⟩
+/-- Decryption with a prepared key context. -/
+theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) :
+    WP isa decR s₀ (DPost s₀) := by
+  apply dispatch_ok hp.base <;> intro t hf hn
+  all_goals
+    have ht : nr t = nr s₀ := by simp only [nr, hf.gpr]
+    have hw := decForWith_ok (preR_same hp hf).base (by simp only [nb, hf.gpr]; exact hm)
+      (setupR_ok (preR_same hp hf))
+    rw [ht, hn] at hw
+    exact WP.mono hw fun u hu => dpost_same hf hu
+
+theorem stitchR_ok : StitchOkM CtxMode.prepared encR decR 1 :=
+  ⟨fun _ hp _ => encR_ok hp.toPrepared, fun _ hp hm => decR_ok hp.toPrepared hm⟩
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
