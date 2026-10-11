@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Spec.Weierstrass.Point
 public import VerifiedGarbage.Spec.P384
+public import VerifiedGarbage.Spec.P521
 
 /-!
 # Inverses modulo a curve's prime and order, in its working space, as functions
 
 **Trusted** (as every file in `Spec/`). The contracts of two functions for
-each curve of `curves` (so far P-384), on the working space where the x86-64
+each curve of `curves` (so far P-384 and P-521), on the working space where the x86-64
 code of the curve's ECDSA signature, verification and public key derivation
 keeps its numbers, so that they can call one copy of each inversion instead
 of repeating it:
@@ -189,8 +190,9 @@ end Curve
 /-! ## The curves -/
 
 def p384 : Curve := { W := Spec.P384.curve, curve := "p384", k := 6, desc := "P-384", tmp := 83 }
+def p521 : Curve := { W := Spec.P521.curve, curve := "p521", k := 9, desc := "P-521", tmp := 55 }
 
 /-- Every curve. -/
-def curves : List Curve := [p384]
+def curves : List Curve := [p384, p521]
 
 end VG.Spec.Weierstrass.Inverse
