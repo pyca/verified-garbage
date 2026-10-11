@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Lane0
 import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Gcm.X86_64.Rev
 
 /-! ## Aes -/
 section
@@ -456,6 +458,121 @@ theorem loadCounters_ok (s : State)
       intro r hr l hl
       have he : r ≠ aregs.getD n .xmm3 := fun h => hr (h ▸ aregs_member n (by omega))
       simp only [State.lane, xmm_setV, ymmHi_setV_128, he, ite_false]
+
+
+/-- What the code that puts a batch's counter blocks in `aregs` (`loads`,
+`regCounters`) may change: `rax`, `xmm11`, `xmm12` and `aregs`. -/
+structure LdFrame (s t : State) : Prop where
+  gpr : ∀ r, r ≠ .rax → t.gpr r = s.gpr r
+  mem : t.mem = s.mem
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  lane : ∀ r, r ∉ .xmm11 :: .xmm12 :: aregs → ∀ l < 2, t.lane r l = s.lane r l
+
+theorem LdFrame.of_yframe {s t : State} (h : YFrame aregs s t) : LdFrame s t :=
+  ⟨fun r _ => by rw [h.gpr], h.mem, h.rd, h.wr,
+    fun r hr l hl => h.lane r (fun h' => hr (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h'))) l hl⟩
+
+theorem LdFrame.trans {s t u : State} (h : LdFrame s t) (h' : LdFrame t u) : LdFrame s u :=
+  ⟨fun r hr => (h'.gpr r hr).trans (h.gpr r hr), h'.mem.trans h.mem, h'.rd.trans h.rd,
+    h'.wr.trans h.wr, fun r hr l hl => (h'.lane r hr l hl).trans (h.lane r hr l hl)⟩
+
+open VG.Impl.Gcm.X86_64.StitchAvx8 (regCounters)
+open VG.Proof.Aes.X86_64.AesNi (one paddd_one)
+open VG.Proof.Gcm.X86_64 (revMask pshufb_rev_rev)
+open VG.Spec.Gcm (inc32)
+
+private theorem aregs_succ_ne : ∀ i < 7, aregs.getD (i + 1) .xmm3 ≠ .xmm0 ∧
+    aregs.getD (i + 1) .xmm3 ≠ .xmm11 ∧ aregs.getD (i + 1) .xmm3 ≠ .xmm12 ∧
+    aregs.getD (i + 1) .xmm3 ≠ .xmm7 := by decide
+
+/-- The seven increments of `regCounters`: after `k` of them, `xmm11` holds
+the counter block plus `k` and the `k` registers after `xmm0` the blocks
+plus 1 to `k`, byte-reversed. -/
+private theorem incs_ok (C : BitVec 128) (k : Nat) (hk : k ≤ 7) (s : State)
+    (h0 : s.lane .xmm0 0 = revMask) (h11 : s.lane .xmm11 0 = C) (h12 : s.lane .xmm12 0 = one) :
+    WP isa (.block ((List.range k).flatMap fun i => [.vop (.vbin .vpaddd .l128 .xmm11 .xmm11 .xmm12),
+      .vop (.vbin .vpshufb .l128 (aregs.getD (i+1) .xmm3) .xmm11 .xmm0)])) s fun t =>
+      t.lane .xmm11 0 = Nat.repeat inc32 k C ∧
+      (∀ i < k, t.lane (aregs.getD (i + 1) .xmm3) 0 =
+        XBinOp.eval .pshufb (Nat.repeat inc32 (i + 1) C) revMask) ∧
+      t.lane .xmm0 0 = revMask ∧ t.lane .xmm12 0 = one ∧ LdFrame s t ∧
+      t.lane .xmm7 0 = s.lane .xmm7 0 := by
+  induction k with
+  | zero => exact WP.block_nil ⟨h11, fun _ h => absurd h (Nat.not_lt_zero _), h0, h12,
+      ⟨fun _ _ => rfl, rfl, rfl, rfl, fun _ _ _ _ => rfl⟩, rfl⟩
+  | succ k ih =>
+    rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
+    refine WP.mono (ih (by omega)) fun t ⟨t11, tr, t0, t12, tf, t7⟩ => ?_
+    obtain ⟨n0, n11, n12, n7⟩ := aregs_succ_ne k (by omega)
+    simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+    rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
+    rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ?_⟩
+    have hm : aregs.getD (k + 1) .xmm3 ∈ aregs := aregs_member (k + 1) (by omega)
+    refine ⟨?_, fun i hi => ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [lane_vbin128, Ne.symm n11, ite_false, ite_true, VBinOp.sse, t11, t12, paddd_one]; rfl
+    · simp only [lane_vbin128, VBinOp.sse]
+      by_cases he : i = k
+      · subst he
+        simp only [ite_true, t11, t12, t0, paddd_one]; rfl
+      · have hne : aregs.getD (i + 1) .xmm3 ≠ aregs.getD (k + 1) .xmm3 := fun h =>
+          he (by have := aregs_distinct (i + 1) (by omega) (k + 1) (by omega) h; omega)
+        have hne' : aregs.getD (i + 1) .xmm3 ≠ .xmm11 := (aregs_succ_ne i (by omega)).2.1
+        simp only [hne, hne', ite_false]
+        exact tr i (by omega)
+    · simp only [lane_vbin128, Ne.symm n0, ite_false, show XReg.xmm0 ≠ .xmm11 by decide, t0]
+    · simp only [lane_vbin128, Ne.symm n12, ite_false, show XReg.xmm12 ≠ .xmm11 by decide, t12]
+    · refine tf.trans ⟨fun r _ => rfl, rfl, rfl, rfl, fun r hr l hl => ?_⟩
+      simp only [List.mem_cons, not_or] at hr
+      have h1 : r ≠ aregs.getD (k + 1) .xmm3 := fun h => hr.2.2 (h ▸ hm)
+      simp only [lane_vbin128, h1, hr.1, ite_false]
+    · simp only [lane_vbin128, Ne.symm n7, ite_false, show XReg.xmm7 ≠ .xmm11 by decide, t7]
+
+/-- `regCounters`: the first batch's counter blocks, from the counter block in
+`xmm7` as loaded. -/
+theorem regCounters_ok (s : State) (h0 : s.lane .xmm0 0 = revMask) :
+    WP isa (.block regCounters) s fun t =>
+      (∀ i < 8, t.lane (aregs.getD i .xmm3) 0 =
+        XBinOp.eval .pshufb (Nat.repeat inc32 i (XBinOp.eval .pshufb (s.lane .xmm7 0) revMask)) revMask) ∧
+      LdFrame s t := by
+  generalize hC : XBinOp.eval .pshufb (s.lane .xmm7 0) revMask = C
+  rw [regCounters, List.append_assoc, WP.block_append_iff]
+  rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
+  rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
+  rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ?_⟩
+  generalize hs₁ : VOp.exec (.vmovq .xmm12 .rax) ((VOp.exec (.vbin .vpshufb .l128 .xmm11 .xmm7 .xmm0) s).setReg .rax 1) = s₁
+  have hL : ∀ (t : State) (v : BitVec 64) r l, (t.setReg .rax v).lane r l = t.lane r l := fun _ _ _ _ => rfl
+  have l : ∀ r l, s₁.lane r l = if r = .xmm12 then (if l = 0 then one else 0)
+      else if r = .xmm11 then (if l = 0 then C else 0) else s.lane r l := by
+    intro r l
+    rw [← hs₁]
+    simp only [VOp.exec, State.lane_setV128, hL, gpr_setReg, ite_true, VBinOp.sse, ← hC, h0]
+  have f₁ : LdFrame s s₁ := by
+    refine ⟨fun r hr => ?_, by rw [← hs₁]; rfl, by rw [← hs₁]; rfl, by rw [← hs₁]; rfl, fun r hr l' _ => ?_⟩
+    · rw [← hs₁]
+      simp only [VOp.exec, State.setV_gpr, gpr_setReg, hr, ite_false]
+    · rw [l]
+      simp only [List.mem_cons, not_or] at hr
+      simp only [hr.1, hr.2.1, ite_false]
+  rw [WP.block_append_iff]
+  refine WP.mono (incs_ok C 7 (by decide) s₁ (by
+      rw [l]; simp only [show XReg.xmm0 ≠ .xmm12 by decide, show XReg.xmm0 ≠ .xmm11 by decide, ite_false]
+      exact h0) (by rw [l]; rfl) (by rw [l]; rfl))
+    fun t ⟨_, tr, _, _, tf, t7⟩ => ?_
+  rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ?_⟩
+  have x7 : t.lane .xmm7 0 = XBinOp.eval .pshufb C revMask := by
+    rw [t7, l]; simp only [show XReg.xmm7 ≠ .xmm12 by decide, show XReg.xmm7 ≠ .xmm11 by decide, ite_false]
+    rw [← hC, pshufb_rev_rev]
+  refine ⟨fun i hi => ?_, f₁.trans (tf.trans ⟨fun _ _ => rfl, rfl, rfl, rfl, fun r hr l hl => ?_⟩)⟩
+  · rcases i with _ | i
+    · simp only [lane_vbin128, ite_true, VBinOp.sse, x7]
+      show XBinOp.eval .por _ _ = _
+      simp only [XBinOp.eval, BitVec.or_self]; rfl
+    · have hne := (aregs_succ_ne i (by omega)).1
+      simp only [lane_vbin128, hne, ite_false]
+      exact tr i (by omega)
+  · have h0' : r ≠ .xmm0 := fun h => hr (h ▸ by decide)
+    simp only [lane_vbin128, h0', ite_false]
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
