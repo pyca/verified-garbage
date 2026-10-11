@@ -27,7 +27,7 @@ def note (adx : Bool) (mod : String) : String :=
     else "by `mul` and word-by-word Montgomery reduction") ++
   "; nothing depends on the numbers but through masks and `cmov`."
 
-def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.Secp256k1.curve) : List Artifact :=
+def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.Secp256k1.curve) : List Artifact :=
   ([false].map fun adx =>
     { C.invPApi with
       name := C.invPApi.name ++ (if adx then "_adx" else "")
