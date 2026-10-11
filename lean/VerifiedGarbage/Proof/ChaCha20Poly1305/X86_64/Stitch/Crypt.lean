@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
 
 /-!
@@ -62,12 +62,21 @@ theorem xor_at {m m' : Mem} {p : Addr} {n : Nat} {ks : List Byte} (hks : ks.leng
   rfl
 
 /-- The ciphertext `cryptS` absorbs of `L` bytes, for an implementation of
-`vg_chacha20_xor` with `fold`: none if `L ≤ fold`; else the whole chunks if
-`tailS` encrypts the rest (1 to 256 bytes after at least one chunk), or all
-but the last of them. -/
+`vg_chacha20_xor` with `fold` (448): none if `L ≤ fold`; all but the last 1
+to 64 bytes if the prologue computed the keystream of the first `fold` (the
+rest being whole chunks and those, `splitM` for `pass` 512); else the whole
+chunks if `tailS` encrypts the rest (1 to 256 bytes after at least one
+chunk), or all but the last of them. -/
 abbrev aOf (fold L : Nat) : Nat :=
   if L ≤ fold then 0 else
+  if fold ≤ (L - 1) % 512 then fold + 512 * ((L - fold - 1) / 512) else
   if 512 ≤ L ∧ 1 ≤ L % 512 ∧ L % 512 ≤ 256 then 512 * (L / 512) else 512 * (L / 512) - 512
+
+/-- The lengths whose rest `tailS` encrypts: after the first `fold` bytes
+(whose keystream the prologue computed) and the whole chunks, or after the
+whole chunks. -/
+abbrev TailLen (fold L : Nat) : Prop :=
+  (fold < L ∧ fold ≤ (L - 1) % 512) ∨ (512 ≤ L ∧ 1 ≤ L % 512 ∧ L % 512 ≤ 256)
 
 /-- After `cryptS`'s first part, before the keystream is wiped: the data
 encrypted, and its first `a` bytes of ciphertext absorbed. -/
@@ -223,7 +232,7 @@ theorem args_repr {s₀ : State} {m : Mem} {key msg : List Byte} (h : Repr m (of
 
 /-- No whole chunks: nothing encrypted yet, nothing absorbed. -/
 theorem whole_mid {fold : Nat} {s₀ : State} (hp : APre e s₀) {s s₂ : State} (ha : Args s₀ s s₂)
-    (hf : fold < L s₀) (hlt : L s₀ < 512)
+    (hf : fold < L s₀) (hnp : (L s₀ - 1) % 512 < fold) (hlt : L s₀ < 512)
     (hst : stateAt s.mem (off (cx s₀) 64) = initState (K s₀) 0 (N s₀))
     {key msg : List Byte} (hrep : Repr s.mem (off (cx s₀) 448) key msg) :
     WP isa (.block whole) s₂ (Mid fold s₀ s key msg 0 0) := by
@@ -233,7 +242,8 @@ theorem whole_mid {fold : Nat} {s₀ : State} (hp : APre e s₀) {s s₂ : State
     by rw [g₃ _ (by decide) (by decide), ha.rsi, z], by rw [g₃ _ (by decide) (by decide), ha.rdx, Nat.sub_zero],
     by rw [rbx₃, ha.r14, z], by rw [rbp₃, ha.r13, Nat.sub_zero], fun r hr => ?_, by rw [rd₃, ha.rd],
     by rw [wr₃, ha.wr], rfl, by omega, rfl, Nat.zero_le _, Nat.le_refl _, rfl,
-    by simp only [aOf]; rw [ite_eq_right (by omega), ite_eq_right (by omega)]; omega, ?_, fun k hk => ?_, ?_, ?_⟩
+    by simp only [aOf]; rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]; omega,
+    ?_, fun k hk => ?_, ?_, ?_⟩
   · rw [g₃ r (by rcases hr with rfl | rfl | rfl | rfl <;> decide) (by rcases hr with rfl | rfl | rfl | rfl <;> decide),
       ha.keep r hr]
   · rw [m₃, ha.mem, stateAt_ctr, hst, set12_initState, Nat.zero_div, VG.Proof.ChaCha20.ctr_zero]
@@ -258,11 +268,11 @@ structure DoneT (fold : Nat) (s₀ s : State) (key msg : List Byte) (s' : State)
   abs : ∃ a, a = aOf fold (L s₀) ∧ a % 16 = 0 ∧ a ≤ L s₀ ∧ s'.gpr .rbx = dp s₀ + BitVec.ofNat 64 a ∧
     s'.gpr .rbp = BitVec.ofNat 64 (L s₀ - a) ∧
     Repr s'.mem (off (cx s₀) 448) key (msg ++ bytesAt s'.mem (dp s₀) a)
-  tail : 512 ≤ L s₀ ∧ 1 ≤ L s₀ % 512 ∧ L s₀ % 512 ≤ 256
+  tail : TailLen fold (L s₀)
 
 /-- The whole chunks: `bulk`, with its permissions. -/
 theorem bulk_mid {fold : Nat} {s₀ : State} (hp : APre e s₀) {s s₂ : State} (hwr : s.wr = s₀.wr) (ha : Args s₀ s s₂)
-    (hf : fold < L s₀) (hge : 512 ≤ L s₀)
+    (hf : fold < L s₀) (hnp : (L s₀ - 1) % 512 < fold) (hge : 512 ≤ L s₀)
     (hst : stateAt s.mem (off (cx s₀) 64) = initState (K s₀) 0 (N s₀))
     {key msg : List Byte} (hrep : Repr s.mem (off (cx s₀) 448) key msg) :
     WP isa bulk s₂ fun s₃ => (∃ E a, Mid fold s₀ s key msg E a s₃) ∨ DoneT fold s₀ s key msg s₃ := by
@@ -311,7 +321,8 @@ theorem bulk_mid {fold : Nat} {s₀ : State} (hp : APre e s₀) {s s₂ : State}
     refine .inl ⟨512 * T, 512 * (T - 1), by rw [off_eq]; exact rdi, by rw [off_eq]; exact rcx, rsi, rdx, rbx, rbp,
       fun r hr => ?_, (rd₃ : s₃.rd = s₂.rd).trans ha.rd, (wr₃ : s₃.wr = s₂.wr).trans ha.wr, by omega,
       by omega, by omega, le, by omega, by omega,
-      by simp only [aOf]; rw [ite_eq_right (by omega), ite_eq_right (by omega)]; omega, ?_, fun k hk => ?_, fr,
+      by simp only [aOf]; rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega)]; omega,
+      ?_, fun k hk => ?_, fr,
       by rw [off_eq]; exact repr⟩
     · rcases hr with rfl | rfl | rfl | rfl
       · exact (r12 : s₃.gpr .r12 = s₂.gpr .r12).trans (ha.keep _ (.inl rfl))
@@ -325,8 +336,8 @@ theorem bulk_mid {fold : Nat} {s₀ : State} (hp : APre e s₀) {s s₂ : State}
         (keystream (stateAt s₂.mem (cx s₀ + BitVec.ofNat 64 64)) (L s₀)).getD k 0 := data
     refine .inr ⟨rdx, by rw [off_eq]; exact rcx, fun r hr => ?_, (rd₃ : s₃.rd = s₂.rd).trans ha.rd,
       (wr₃ : s₃.wr = s₂.wr).trans ha.wr, fr, ?_,
-      ⟨512 * T, by simp only [aOf]; rw [ite_eq_right (by omega), ite_eq_left (by omega)]; omega, by omega, le, rbx, rbp,
-        by rw [off_eq]; exact repr⟩, by omega⟩
+      ⟨512 * T, by simp only [aOf]; rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_left (by omega)]; omega,
+        by omega, le, rbx, rbp, by rw [off_eq]; exact repr⟩, .inr (by omega)⟩
     · rcases hr with rfl | rfl | rfl | rfl
       · exact (r12 : s₃.gpr .r12 = s₂.gpr .r12).trans (ha.keep _ (.inl rfl))
       · exact (r13 : s₃.gpr .r13 = s₂.gpr .r13).trans (ha.keep _ (.inr (.inl rfl)))
@@ -336,6 +347,167 @@ theorem bulk_mid {fold : Nat} {s₀ : State} (hp : APre e s₀) {s s₂ : State}
       apply VG.Proof.ChaCha20.bytesAt_xor (VG.Proof.ChaCha20.length_keystream _ _)
       intro k hk
       rw [data' k hk, st₂, ha.mem, args_data hp _ hk]
+
+/-- The permissions of the chunks are `seal`'s. -/
+theorem bulk_covers' {s₀ : State} (hp : APre e s₀) : Covers (bulkWr (cx s₀) (dp s₀) (L s₀)) s₀.wr := by
+  refine Covers.of_sub fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact ⟨ctxR s₀, hp.ctx_wr, 64, rfl, by show 64 + 64 ≤ 1696; omega⟩
+  · exact ⟨dR s₀, hp.d_wr, 0, by simp, by simp⟩
+  · exact ⟨ctxR s₀, hp.ctx_wr, 128, rfl, by show 128 + 320 ≤ 1696; omega⟩
+  · exact ⟨ctxR s₀, hp.ctx_wr, 448, rfl, by show 448 + 128 ≤ 1696; omega⟩
+
+theorem movCmp_ok {n : Nat} (hn : n < 2 ^ 64) {s : State} (hrdx : s.gpr .rdx = BitVec.ofNat 64 n) :
+    WP isa (.block [.mov .rsi (.reg .r14), .alu .cmp .rdx (.imm 512)]) s fun s' =>
+      s'.gpr .rsi = s.gpr .r14 ∧ (∀ r, r ≠ .rsi → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.mem = s.mem ∧ s'.cf = some (decide (n < 512)) := by
+  rw [show ([.mov .rsi (.reg .r14), .alu .cmp .rdx (.imm 512)] : List Instr) =
+    [.mov .rsi (.reg .r14)] ++ [.alu .cmp .rdx (.imm 512)] from rfl]
+  refine WP.block_append (WP.mono (Stitch.movR_ok .rsi .r14) fun s₁ ⟨rsi₁, g₁, m₁, rd₁, wr₁, _, _⟩ => ?_)
+  exact WP.mono (cmp512_ok hn (by rw [g₁ _ (by decide), hrdx])) fun s₂ ⟨g₂, rd₂, wr₂, m₂, c₂⟩ =>
+    ⟨by rw [g₂, rsi₁], fun r hr => by rw [g₂, g₁ r hr], by rw [rd₂, rd₁], by rw [wr₂, wr₁], by rw [m₂, m₁], c₂⟩
+
+/-- `cryptPre` for the 448 bytes: the arguments of the rest, and the
+Poly1305 state kept. -/
+theorem cryptPreR_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hf448 : v.callee.fold = 448) {s₀ : State}
+    (hp : APre e s₀) {s : State} (h : Inv s₀ s) (hpre : 448 ≤ (L s₀ - 1) % 512) (hbig : 448 < L s₀)
+    {key msg : List Byte} (hrep : Repr s.mem (off (cx s₀) 448) key msg) :
+    WP isa (cryptPre v.callee.fold 512 v.callee.wide) s fun s' =>
+      XArgsM s₀ 448 s' ∧ Repr s'.mem (off (cx s₀) 448) key msg := by
+  have hm : mOf v.callee.fold 512 (L s₀) = 448 := by
+    rw [mOf_big (by omega), hf448]
+    simp only [splitOf, show (512 : Nat) ≠ 0 by decide, ite_false, ite_true]
+    rw [ite_eq_right (by omega)]
+  refine WP.mono (cryptPre_ok v (pass := 512) (.inr (.inr ⟨rfl, hf448⟩)) hp h)
+    fun s₁ ⟨a₁, _, _, mx, fx, _, m₁⟩ => ?_
+  rw [hm] at a₁ fx m₁
+  have fw : Frame [sub s₀ 64 64] mx s₁.mem := by
+    rw [m₁]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (contains_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega))
+  refine ⟨a₁, Repr.frame fw (fun r hr => ?_) (Repr.frame fx (fun r hr => ?_) hrep)⟩
+  · simp only [List.mem_singleton] at hr; subst hr
+    exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
+  · simp only [List.mem_singleton] at hr; subst hr
+    have hL9 : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
+    exact (hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))).sub_right (Region.sub_prefix (by omega))
+
+/-- The 448 bytes whose keystream the prologue computed (`splitM` for `pass`
+512), then the rest: `preS`, with `bulkP` or `tailS` on their permissions. -/
+theorem preS_mid (v : Proof.ChaCha20.X86_64.XorImpl) (hf448 : v.callee.fold = 448) {s₀ : State} (hp : APre e s₀)
+    {s : State} (h : Inv s₀ s) (hpre : 448 ≤ (L s₀ - 1) % 512) (hbig : 448 < L s₀)
+    (hst : stateAt s.mem (off (cx s₀) 64) = initState (K s₀) 0 (N s₀))
+    (hks : ∀ k < 448, s.mem (off (cx s₀) (736 + k)) = (keystream (initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0)
+    {key msg : List Byte} (hrep : Repr s.mem (off (cx s₀) 448) key msg) :
+    WP isa (preS { v.callee with pass := 512 }) s (DoneT 448 s₀ s key msg) := by
+  have hL9 : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
+  have hm : mOf v.callee.fold 512 (L s₀) = 448 := by
+    rw [mOf_big (by omega), hf448]
+    simp only [splitOf, show (512 : Nat) ≠ 0 by decide, ite_false, ite_true]
+    rw [ite_eq_right (by omega)]
+  unfold preS
+  refine WP.seq (WP.mono (cryptPre_ok v (pass := 512) (.inr (.inr ⟨rfl, hf448⟩)) hp h)
+    fun s₁ ⟨a₁, cs₁, rd₁, mx, fx, dx, m₁⟩ => ?_)
+  rw [hm] at a₁ fx dx m₁
+  have fw : Frame [sub s₀ 64 64] mx s₁.mem := by
+    rw [m₁]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (contains_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega))
+  have dpre : ∀ r ∈ [(⟨dp s₀, 448⟩ : Region)], (sub s₀ 64 64).Disjoint r := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact (hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))).sub_right (Region.sub_prefix (by omega))
+  have st₁ : stateAt s₁.mem (off (cx s₀) 64) = ctr (initState (K s₀) 1 (N s₀)) 7 := by
+    rw [m₁, stateAt_ctrW, stateAt_frame fx dpre, hst, show 448 / 64 + 1 = 7 + 1 from rfl, set12_ctr]
+  have nctx : ∀ {k a n : Nat}, k < L s₀ → a + n ≤ 1696 → ¬ (sub s₀ a n).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
+    fun hk ha hc => hp.c_d _ (sub_ctx s₀ ha _ hc) (byte_dR hk)
+  have m₁k : ∀ k < L s₀, s₁.mem (dp s₀ + BitVec.ofNat 64 k) = mx (dp s₀ + BitVec.ofNat 64 k) := fun k hk =>
+    fw _ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact nctx hk (by lit_omega)
+  have rep₁ : Repr s₁.mem (off (cx s₀) 448) key msg := by
+    refine Repr.frame fw (fun r hr => ?_) (Repr.frame fx (fun r hr => ?_) hrep)
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact (hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))).sub_right (Region.sub_prefix (by omega))
+  refine WP.seq (WP.mono (movCmp_ok (n := L s₀ - 448) (by omega) a₁.rdx)
+    fun s₂ ⟨rsi₂, g₂, rd₂, wr₂, m₂, c₂⟩ => ?_)
+  -- Either branch, on the permissions of the chunks.
+  have hl : Lay (cx s₀) (dp s₀) (L s₀) := ⟨hL9, hp.wrap_d, hp.c_d.sub_left (Region.sub_prefix (by decide))⟩
+  have hw : Covers (bulkWr (cx s₀) (dp s₀) (L s₀)) s₂.wr := by
+    rw [wr₂, a₁.wr]; exact bulk_covers' hp
+  have cs₂ : ∀ r ∈ calleeSaved, s₂.gpr r = s.gpr r := fun r hr => by
+    rw [g₂ r (by intro e; subst e; simp [calleeSaved] at hr), cs₁ r hr]
+  have fin : ∀ {c : Prog isa}, c.noCalls = true →
+      WP isa c (s₂.withRegions [] (bulkWr (cx s₀) (dp s₀) (L s₀)))
+        (PreDone (cx s₀) (dp s₀) (L s₀) (s₂.withRegions [] (bulkWr (cx s₀) (dp s₀) (L s₀))) key msg) →
+      WP isa c s₂ (DoneT 448 s₀ s key msg) := by
+    intro c hn hc
+    refine regionModel.wp_narrow hc (Covers.right hw) hw (Code.noFrames_of_noCalls hn) (.inl hn)
+      fun _ s₃ _ rd₃ wr₃ f₃ hP => ?_
+    have f₃' : Frame (bulkWr (cx s₀) (dp s₀) (L s₀)) s₂.mem s₃.mem := f₃
+    have rd₃' : s₃.rd = s₂.rd := rd₃
+    have wr₃' : s₃.wr = s₂.wr := wr₃
+    have pd : PreDone (cx s₀) (dp s₀) (L s₀) (s₂.withRegions [] (bulkWr (cx s₀) (dp s₀) (L s₀))) key msg
+      (s₃.withRegions [] (bulkWr (cx s₀) (dp s₀) (L s₀))) := hP
+    obtain ⟨pdata, ppre, prepr, prbx, prbp, prdx, prcx, pr12, pr13, pr14, -, prsp, -, -⟩ := pd
+    simp only [State.withRegions_gpr, State.withRegions_mem] at pdata ppre prepr prbx prbp prdx
+    simp only [State.withRegions_gpr] at prcx pr12 pr13 pr14 prsp
+    have ea : aOf 448 (L s₀) = aP (L s₀) := by
+      simp only [aOf, aP]; rw [ite_eq_right (by omega), ite_eq_left hpre]; omega
+    refine ⟨prdx, by rw [prcx, off_eq], fun r hr => ?_, by rw [rd₃', rd₂, rd₁],
+      by rw [wr₃', wr₂, a₁.wr, h.wr], ?_, ?_,
+      ⟨aP (L s₀), ea.symm, by simp only [aP]; omega, by simp only [aP]; omega, prbx, prbp,
+        by rw [off_eq]; exact prepr⟩, .inl ⟨hbig, hpre⟩⟩
+    · rcases hr with rfl | rfl | rfl | rfl
+      · rw [pr12, cs₂ _ (by simp [calleeSaved])]
+      · rw [pr13, cs₂ _ (by simp [calleeSaved])]
+      · rw [pr14, cs₂ _ (by simp [calleeSaved])]
+      · rw [prsp, cs₂ _ calleeSaved_rsp]
+    · have e : sub s₀ 64 512 = ⟨cx s₀ + BitVec.ofNat 64 64, 512⟩ := by rw [sub, off_eq]
+      have f₃'' : Frame [sub s₀ 64 512, dR s₀] s₁.mem s₃.mem := by
+        rw [← m₂]
+        refine f₃'.sub fun r hr => ?_
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl
+        · exact ⟨sub s₀ 64 512, by simp, by rw [e]; exact Offset.sub _ (by decide) (by decide)⟩
+        · exact ⟨dR s₀, by simp, fun _ h => h⟩
+        · exact ⟨sub s₀ 64 512, by simp, by rw [e]; exact Offset.sub _ (by decide) (by decide)⟩
+        · exact ⟨sub s₀ 64 512, by simp, by rw [e]; exact Offset.sub _ (by decide) (by decide)⟩
+      refine (fx.sub fun r hr => ?_).trans ((fw.sub fun r hr => ?_).trans f₃'')
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨dR s₀, by simp, Region.sub_prefix (by omega)⟩
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨sub s₀ 64 512, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
+    · rw [encrypt_eq, VG.Proof.Poly1305.length_bytesAt]
+      apply VG.Proof.ChaCha20.bytesAt_xor (VG.Proof.ChaCha20.length_keystream _ _)
+      intro k hk
+      by_cases hk4 : k < 448
+      · rw [ppre k hk4, m₂, m₁k k hk, dx k hk4, hks k hk4]
+      · have x := pdata (k - 448) (by omega)
+        rw [show 448 + (k - 448) = k by omega, m₂, m₁k k hk, fx _ fun r hr => ?_,
+          show stA (cx s₀) = off (cx s₀) 64 by rw [off_eq], st₁,
+          show L s₀ - 448 = L s₀ - 64 * 7 from rfl, show k - 448 = k - 64 * 7 from rfl,
+          keystream_skip _ (by omega) hk] at x
+        · exact x
+        · simp only [List.mem_singleton] at hr; subst hr
+          exact fun hc => Offset.disjoint_base (dp s₀) (d := k) (n := 1) (by omega)
+            (by simp only [L] at hk; omega) _ (Region.contains_self _ _) hc
+  have r14₂ : s₂.gpr .rsi = dp s₀ := by rw [rsi₂, cs₁ _ (by simp [calleeSaved]), h.r14]
+  have bp : ∀ {σ : State}, σ = s₂.withRegions [] (bulkWr (cx s₀) (dp s₀) (L s₀)) →
+      σ.wr = bulkWr (cx s₀) (dp s₀) (L s₀) ∧ σ.gpr .rsi = dp s₀ ∧
+      σ.gpr .rdx = BitVec.ofNat 64 (L s₀ - 448) ∧ σ.gpr .rcx = bfA (cx s₀) ∧
+      Repr σ.mem (psA (cx s₀)) key msg := by
+    rintro σ rfl
+    refine ⟨rfl, r14₂, by rw [State.withRegions_gpr, g₂ _ (by decide), a₁.rdx],
+      by rw [State.withRegions_gpr, g₂ _ (by decide), a₁.rcx, off_eq], ?_⟩
+    rw [State.withRegions_mem, m₂, show psA (cx s₀) = off (cx s₀) 448 by rw [off_eq]]; exact rep₁
+  refine WP.ite (decide (L s₀ - 448 < 512)) (by simp [eval, c₂]) (fun hc => ?_) (fun hc => ?_)
+  · simp only [decide_eq_true_eq] at hc
+    obtain ⟨w₁, r₁, d₁, c₁, R₁⟩ := bp rfl
+    exact fin (by decide +kernel) (tailP_ok hl (by omega) (by omega) w₁ r₁ d₁ c₁ R₁)
+  · simp only [decide_eq_false_iff_not] at hc
+    obtain ⟨w₁, r₁, d₁, c₁, R₁⟩ := bp rfl
+    exact fin (by decide +kernel) (bulkP_ok hl (by omega) (by omega) w₁ r₁ d₁ c₁ R₁)
 
 theorem beq_ofNat_zero {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n == 0) = decide (n = 0) := by
   by_cases hn : n = 0
@@ -398,29 +570,46 @@ theorem Inv.step' {s₀ s s' : State} (h : Inv s₀ s)
   saved := h.saved.frame hf hsv
   frame := h.frame.trans (hf.sub hsub)
 
-theorem cryptS_mx (v : Proof.ChaCha20.X86_64.XorImpl) :
-    (cryptS v.callee).allInstrs (fun i => !loadsMxcsr i) = true := by
-  have hb : bulk.allInstrs (fun i => !loadsMxcsr i) = true := by decide +kernel
-  rcases v.fold_poly with ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ <;>
-    (simp only [cryptS, Code.allInstrs, v.mxcsr, hb, hf, hpass, hw]; rfl)
+/-- The implementation of `vg_chacha20_xor` that comes with the AVX2
+`vg_poly1305_blocks`, the only one `sealFor` stitches. -/
+theorem avx2_of (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
+    v.callee.fold = 448 ∧ v.callee.pass = 0 ∧ v.callee.wide = 5 := by
+  rcases v.fold_poly with ⟨-, -, -, h⟩ | ⟨hf, hp, hw, -⟩ | ⟨-, -, -, h⟩
+  · rw [hv] at h; cases h
+  · exact ⟨hf, hp, hw⟩
+  · rw [hv] at h; cases h
+
+theorem cryptS_mx (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
+    (cryptS { v.callee with pass := 512 }).allInstrs (fun i => !loadsMxcsr i) = true := by
+  obtain ⟨hf, -, hw⟩ := avx2_of v hv
+  have hb : bigS.allInstrs (fun i => !loadsMxcsr i) = true := by decide +kernel
+  simp only [cryptS, Code.allInstrs, v.mxcsr, hb, hf, hw]; rfl
+
+theorem prologueP_mx (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
+    (prologue { v.callee with pass := 512 }).allInstrs (fun i => !loadsMxcsr i) = true := by
+  obtain ⟨hf, -, hw⟩ := avx2_of v hv
+  simp only [prologue, Code.allInstrs, v.mxcsr, hf, hw]; rfl
 
 /-- The data encrypted, by `bulk` and the implementation `v` of
 `vg_chacha20_xor`, its first `a` bytes of ciphertext absorbed, and the
 keystream wiped. -/
-theorem cryptS_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
+theorem cryptS_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {s₀ : State} (hp : APre e s₀)
+    {s : State} (h : Inv s₀ s)
     (hst : stateAt s.mem (off (cx s₀) 64) = initState (K s₀) 0 (N s₀))
-    (hks : ∀ k < mOf v.callee.fold v.callee.pass (L s₀), s.mem (off (cx s₀) (736 + k)) =
+    (hks : ∀ k < mOf v.callee.fold 512 (L s₀), s.mem (off (cx s₀) (736 + k)) =
       (keystream (initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0)
     {key msg : List Byte} (hrep : Repr s.mem (off (cx s₀) 448) key msg) :
-    WP isa (cryptS v.callee) s fun s' => Inv s₀ s' ∧
+    WP isa (cryptS { v.callee with pass := 512 }) s fun s' => Inv s₀ s' ∧
       Frame [sub s₀ 64 512, sub s₀ 672 1024, dR s₀, stkR s₀] s.mem s'.mem ∧
       bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀)) ∧
       ∃ a, a = aOf v.callee.fold (L s₀) ∧ a % 16 = 0 ∧ a ≤ L s₀ ∧ s'.gpr .rbx = dp s₀ + BitVec.ofNat 64 a ∧
         s'.gpr .rbp = BitVec.ofNat 64 (L s₀ - a) ∧
         Repr s'.mem (off (cx s₀) 448) key (msg ++ bytesAt s'.mem (dp s₀) a) := by
   have hfl := v.fold_le
+  have hf := (avx2_of v hv).1
+  have hP : PassOk v.callee.fold 512 := .inr (.inr ⟨rfl, hf⟩)
   have hL9 : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
-  have hm := mOf_le v.callee.fold v.callee.pass (L s₀)
+  have hm := mOf_le v.callee.fold 512 (L s₀)
   unfold cryptS
   refine WP.seq (WP.mono (cmpFold_ok (fold := v.callee.fold) (by lit_omega) h.r13)
     fun s₁ ⟨g₁, rd₁, wr₁, m₁, c₁⟩ => ?_)
@@ -453,27 +642,61 @@ theorem cryptS_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
         · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))
         · exact (hp.stk_sub (by lit_omega)).symm
     · simp only [decide_eq_false_iff_not] at hc
-      refine WP.seq (WP.mono (Q := fun (s₃ : State) => Args s₀ s₁ s₃ ∧ s₃.cf = some (decide (L s₀ < 512))) ?_
-        fun s₃ ⟨ha, cf₃⟩ => ?_)
-      · refine WP.block_append (WP.mono (cryptA_ok hp h₁) fun s₂ ⟨m₂, rdi₂, rsi₂, rdx₂, rcx₂, cs₂, rd₂, wr₂⟩ =>
-          WP.mono (cmp512_ok hL9 (by rw [rdx₂, hL])) fun s₃ ⟨g₃, rd₃, wr₃, m₃, c₃⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_,
-            fun r hr => ?_, by rw [rd₃, rd₂], by rw [wr₃, wr₂]⟩, c₃⟩)
-        · rw [m₃, m₂]
-        · rw [g₃, rdi₂]
-        · rw [g₃, rsi₂]
-        · rw [g₃, rdx₂, hL]
-        · rw [g₃, rcx₂]
-        · rw [g₃, cs₂ _ (by simp [calleeSaved]), h₁.r13, hL]
-        · rw [g₃, cs₂ _ (by simp [calleeSaved]), h₁.r14]
-        · rw [g₃, cs₂ r (by rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])]
-      refine WP.seq (WP.mono (Q := fun (s₄ : State) => (∃ E a, Mid v.callee.fold s₀ s₁ key msg E a s₄) ∨
-        DoneT v.callee.fold s₀ s₁ key msg s₄) ?_ fun s₄ hq => callIf_ok v hp h₁ hq)
-      refine WP.ite (decide (L s₀ < 512)) (by simp [eval, cf₃]) (fun hc' => ?_) (fun hc' => ?_)
-      · simp only [decide_eq_true_eq] at hc'
-        exact WP.mono (whole_mid hp ha (by omega) hc' (by rw [m₁]; exact hst) (by rw [m₁]; exact hrep))
-          fun s₄ hm₄ => .inl ⟨0, 0, hm₄⟩
-      · simp only [decide_eq_false_iff_not] at hc'
-        exact bulk_mid hp (by rw [wr₁, h.wr]) ha (by omega) (by omega) (by rw [m₁]; exact hst) (by rw [m₁]; exact hrep)
+      -- `m`: 448 if the prologue computed the keystream of the first 448 bytes, else 0.
+      refine WP.seq (WP.mono (foldM_ok (fold := v.callee.fold) (pass := 512) (len := L s₀) (by lit_omega) hP hL9
+        (by rw [h₁.r13]; exact hL s₀)) fun s₂ ⟨d₂, g₂, rd₂, wr₂, m₂⟩ => ?_)
+      refine WP.seq (WP.mono (testRdx_ok s₂) fun s₃ ⟨g₃, m₃, rd₃, wr₃, z₃⟩ => ?_)
+      have g13 : ∀ r, r ≠ .rdx → s₃.gpr r = s₁.gpr r := fun r hr => by rw [g₃, g₂ r hr]
+      have h₃ : Inv s₀ s₃ := h₁.step (fun r hr => g13 r (by rintro rfl; simp [calleeSaved] at hr))
+        (by rw [rd₃, rd₂]) (by rw [wr₃, wr₂]) (rs := []) (by rw [m₃, m₂]; exact Frame.refl _ _)
+        (fun _ h => by simp at h) (fun _ h => by simp at h)
+      have mm : s₃.mem = s₁.mem := by rw [m₃, m₂]
+      refine WP.mono (Q := CryptedS v.callee.fold s₀ s₃ key msg) ?_ fun s' c =>
+        ⟨c.rsi, fun r hr => by
+          rw [c.keep r hr, g13 r (by rcases hr with rfl | rfl | rfl | rfl <;> decide)],
+          by rw [c.rd, rd₃, rd₂], by rw [c.wr, wr₃, wr₂], by rw [← mm]; exact c.frame,
+          by rw [← mm]; exact c.data, c.abs⟩
+      have hst₃ : stateAt s₃.mem (off (cx s₀) 64) = initState (K s₀) 0 (N s₀) := by rw [mm, m₁]; exact hst
+      have hrep₃ : Repr s₃.mem (off (cx s₀) 448) key msg := by rw [mm, m₁]; exact hrep
+      refine WP.seq (WP.mono (Q := fun (s₄ : State) => (∃ E a, Mid v.callee.fold s₀ s₃ key msg E a s₄) ∨
+        DoneT v.callee.fold s₀ s₃ key msg s₄) ?_ fun s₄ hq => callIf_ok v hp h₃ hq)
+      have hMv : mOf v.callee.fold 512 (L s₀) = if (L s₀ - 1) % 512 < 448 then 0 else 448 := by
+        rw [mOf_big (by omega), hf]
+        simp only [splitOf, show (512 : Nat) ≠ 0 by decide, ite_false, ite_true]
+      refine WP.ite (decide (mOf v.callee.fold 512 (L s₀) = 0))
+        (by simp only [eval, z₃, d₂, beq_ofNat_zero (show mOf v.callee.fold 512 (L s₀) < 2 ^ 64 by omega)])
+        (fun hz => ?_) (fun hz => ?_)
+      · -- None: the whole chunks by `bulk`.
+        simp only [decide_eq_true_eq] at hz
+        have hnp : (L s₀ - 1) % 512 < v.callee.fold := by
+          rw [hMv] at hz; rw [hf]; split at hz <;> omega
+        unfold bigS
+        refine WP.seq (WP.mono (Q := fun (s₄ : State) => Args s₀ s₃ s₄ ∧ s₄.cf = some (decide (L s₀ < 512))) ?_
+          fun s₄ ⟨ha, cf₄⟩ => ?_)
+        · refine WP.block_append (WP.mono (cryptA_ok hp h₃) fun s₂ ⟨m₂, rdi₂, rsi₂, rdx₂, rcx₂, cs₂, rd₂, wr₂⟩ =>
+            WP.mono (cmp512_ok hL9 (by rw [rdx₂, hL])) fun s₃ ⟨g₃, rd₃, wr₃, m₃, c₃⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_,
+              fun r hr => ?_, by rw [rd₃, rd₂], by rw [wr₃, wr₂]⟩, c₃⟩)
+          · rw [m₃, m₂]
+          · rw [g₃, rdi₂]
+          · rw [g₃, rsi₂]
+          · rw [g₃, rdx₂, hL]
+          · rw [g₃, rcx₂]
+          · rw [g₃, cs₂ _ (by simp [calleeSaved]), h₃.r13, hL]
+          · rw [g₃, cs₂ _ (by simp [calleeSaved]), h₃.r14]
+          · rw [g₃, cs₂ r (by rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])]
+        refine WP.ite (decide (L s₀ < 512)) (by simp [eval, cf₄]) (fun hc' => ?_) (fun hc' => ?_)
+        · simp only [decide_eq_true_eq] at hc'
+          exact WP.mono (whole_mid hp ha (by omega) hnp hc' hst₃ hrep₃) fun s₄ hm₄ => .inl ⟨0, 0, hm₄⟩
+        · simp only [decide_eq_false_iff_not] at hc'
+          exact bulk_mid hp (by rw [wr₃, wr₂, wr₁, h.wr]) ha (by omega) hnp (by omega) hst₃ hrep₃
+      · -- 448: those by `cryptPre`, the rest by `bulkP` or `tailS`.
+        simp only [decide_eq_false_iff_not] at hz
+        have hpre : 448 ≤ (L s₀ - 1) % 512 := by
+          rw [hMv] at hz; split at hz <;> omega
+        have h448 : mOf v.callee.fold 512 (L s₀) = 448 := by rw [hMv, ite_eq_right (by omega)]
+        refine WP.mono (preS_mid v hf hp h₃ hpre (by omega) hst₃
+          (fun k hk => by rw [mm, m₁]; exact hks k (by rw [h448]; exact hk)) hrep₃) fun s₄ d => .inr ?_
+        rw [hf]; exact d
   -- The keystream wiped, as in `crypt_ok`.
   refine WP.seq (WP.mono (anchor_ok .rsi (k := 128) (by lit_omega) s₂) fun s₃ ⟨e3, g₃, rd₃, wr₃, m₃⟩ => ?_)
   have cs₃ : ∀ r, r = .r12 ∨ r = .r13 ∨ r = .r14 ∨ r = .r15 ∨ r = .rsp → s₃.gpr r = s.gpr r := fun r hr => by
@@ -495,10 +718,10 @@ theorem cryptS_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
       · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
       · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))
       · exact (hp.stk_sub (by lit_omega)).symm)
-  refine WP.seq (WP.mono (foldM_ok (fold := v.callee.fold) (pass := v.callee.pass) (len := L s₀) (by lit_omega) (pass_of v) hL9
+  refine WP.seq (WP.mono (foldM_ok (fold := v.callee.fold) (pass := 512) (len := L s₀) (by lit_omega) hP hL9
     (by rw [i₃.r13]; exact hL s₀)) fun s₄ ⟨d₄, g₄, rd₄, wr₄, m₄⟩ => ?_)
-  refine WP.seq (WP.mono (add64_ok (n := mOf v.callee.fold v.callee.pass (L s₀)) d₄) fun s₅ ⟨d₅, g₅, rd₅, wr₅, m₅⟩ => ?_)
-  refine WP.mono (zeroKs_ok (wide_of v) hp (n := 64 + mOf v.callee.fold v.callee.pass (L s₀)) (by omega) (by lit_omega) d₅
+  refine WP.seq (WP.mono (add64_ok (n := mOf v.callee.fold 512 (L s₀)) d₄) fun s₅ ⟨d₅, g₅, rd₅, wr₅, m₅⟩ => ?_)
+  refine WP.mono (zeroKs_ok (wide_of v) hp (n := 64 + mOf v.callee.fold 512 (L s₀)) (by omega) (by lit_omega) d₅
     (by rw [g₅ _ (by decide), g₄ _ (by decide), i₃.r15]) (by rw [wr₅, wr₄, i₃.wr]))
     fun s₆ ⟨g₆, rd₆, wr₆, f₆, _⟩ => ?_
   have g36 : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → s₆.gpr r = s₃.gpr r := fun r h1 h2 h3 => by
@@ -570,12 +793,15 @@ theorem split_pad (m : Mem) (p : Addr) {a n : Nat} (ha : a % 16 = 0) (hn : a ≤
     simp only [pad16, VG.Proof.Poly1305.length_bytesAt, show (n - a) % 16 = n % 16 by omega]
   rw [hp, e, List.append_assoc]
 
-theorem sealStitched_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre true s₀) :
-    WP isa (sealStitched v.callee v.poly) s₀ fun s' => abiPreserved s₀ s' ∧ sealX86_64.post s₀ s' := by
+theorem sealStitched_correct (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {s₀ : State}
+    (hp : APre true s₀) :
+    WP isa (sealStitched { v.callee with pass := 512 } v.poly) s₀ fun s' =>
+      abiPreserved s₀ s' ∧ sealX86_64.post s₀ s' := by
   have hL' := (Nat.le_of_lt (s₀.gpr .r9).isLt)
+  have hP : PassOk v.callee.fold 512 := .inr (.inr ⟨rfl, (avx2_of v hv).1⟩)
   refine WP.seq (WP.mono_mx (by decide +kernel) (entry_ok hp) fun s₀' e₀ mx₀ => ?_)
   subst e₀
-  refine WP.seq (WP.mono_mx (prologue_mx v) (prologue_ok v hp) fun s₁ h₁ mx₁ => ?_)
+  refine WP.seq (WP.mono_mx (prologueP_mx v hv) (prologueP_ok v hP hp) fun s₁ h₁ mx₁ => ?_)
   have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
     bytesAt_frame h₁.fine (by rdisj_all) (Nat.le_of_lt (s₀.gpr .rcx).isLt)
   refine WP.seq (WP.mono (macPad_ok v.poly hp (p := .rbx) (n := .rbp) ⟨.inl rfl, .inl rfl⟩ (srcA hp)
@@ -589,10 +815,10 @@ theorem sealStitched_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} 
   have D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by
     rw [bytesAt_frame f₃ (by rdisj_all) hL', bytesAt_frame f₂ (by rdisj_all) hL',
       bytesAt_frame h₁.fine (by rdisj_all) hL']
-  have hM := Nat.le_trans (mOf_le v.callee.fold v.callee.pass (L s₀)) v.fold_le
+  have hM := Nat.le_trans (mOf_le v.callee.fold 512 (L s₀)) v.fold_le
   have ks₃ := ks_frame f₃ (by rdisj_all) hM (ks_frame f₂ (by rdisj_all) hM h₁.ks)
   have R₃ := Repr.frame f₃ (by rdisj_all) (r₂ (otk s₀) [] h₁.poly)
-  refine WP.seq (WP.mono_mx (cryptS_mx v) (cryptS_ok v hp i₃ st₃ ks₃ R₃)
+  refine WP.seq (WP.mono_mx (cryptS_mx v hv) (cryptS_ok v hv hp i₃ st₃ ks₃ R₃)
     fun s₄ ⟨i₄, f₄, ct₄, a, _, a16, aL, rbx₄, rbp₄, R₄⟩ mx₄ => ?_)
   rw [D₃] at ct₄
   refine WP.seq (WP.mono (macPadLengths_ok v.poly hp (p := .rbx) (n := .rbp) ⟨.inl rfl, .inl rfl⟩

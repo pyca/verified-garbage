@@ -119,11 +119,14 @@ theorem window_eq (dp : Addr) {t : Nat} (ht : 1 ≤ t) :
   rw [show (512 : Addr) = BitVec.ofNat 64 512 from rfl, BitVec.add_assoc, ← BitVec.ofNat_add,
     show 512 * (t - 1) + 512 = 512 * t by omega_arith]
 
+theorem tot_false : tot false = 512 := rfl
+theorem total_false : 16 * total false = 512 := rfl
+
 /-- A chunk: the loop invariant from `t` to `t + 1`. -/
 theorem chunk_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1) {A : Nat}
     {m₀ : Mem} {sp : Addr} {t : Nat} (hge : 512 ≤ L - 512 * t) {s : State}
     (h : LI c dp L R0 R1 A m₀ sp t s) :
-    WP isa chunk s fun s' => LI c dp L R0 R1 A m₀ sp (t + 1) s' ∧
+    WP isa (chunk false) s fun s' => LI c dp L R0 R1 A m₀ sp (t + 1) s' ∧
       s'.cf = some (decide (L - 512 * (t + 1) < 512)) := by
   have hLe := hl.L_lt
   have ht := h.t1
@@ -147,9 +150,11 @@ theorem chunk_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (
     rw [hq]; exact hl.win_cd hw (by decide)
   have dqs : (dR5 (dp + BitVec.ofNat 64 (512 * (t - 1)))).Disjoint (slotsR (bfA c)) :=
     ((hl.cd (d := 128) (n := 128) (by decide)).sub_right wsub).symm
-  refine WP.seq (WP.mono (chunkMain_ok hk h.rdi h.rcx h.rsi mst mbf hwd hin h.consts dsd st_bf dbd dqs h.acc)
+  refine WP.seq (WP.mono (chunkMain_ok false hk h.rdi h.rcx h.rsi mst mbf (by rw [tot_false]; exact hwd) hin
+    h.consts (by rw [tot_false]; exact dsd) st_bf (by rw [tot_false]; exact dbd) dqs h.acc)
     fun s₁ ⟨d₁, a₁, f₁, g₁, rsi₁, rd₁, wr₁⟩ => ?_)
-  rw [hq] at d₁ f₁ rsi₁
+  rw [tot_false, hq] at d₁ f₁ rsi₁
+  rw [total_false] at a₁
   have dslot : ∀ r ∈ [slotsR (bfA c), dR5 (dp + BitVec.ofNat 64 (512 * t))],
       (⟨slot (bfA c), 8⟩ : Region).Disjoint r := by
     intro r hr
@@ -376,7 +381,7 @@ theorem firstChunk_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 
 theorem chunks_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1) {A : Nat}
     {m₀ : Mem} {sp : Addr} {t : Nat} {s : State} (h : LI c dp L R0 R1 A m₀ sp t s)
     (hcf : s.cf = some (decide (L - 512 * t < 512))) :
-    WP isa (.ite .b (.block []) (.loop chunk .ae)) s fun s' =>
+    WP isa (.ite .b (.block []) (.loop (chunk false) .ae)) s fun s' =>
       ∃ T, LI c dp L R0 R1 A m₀ sp T s' ∧ L - 512 * T < 512 := by
   refine WP.ite (decide (L - 512 * t < 512)) (by simp only [eval, hcf]) (fun hb => ?_) (fun hb => ?_)
   · exact WP.block_nil ⟨t, h, by simpa using hb⟩
