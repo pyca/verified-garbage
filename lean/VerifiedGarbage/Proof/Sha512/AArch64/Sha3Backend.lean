@@ -13,22 +13,22 @@ def backend : Compress where
   keepsV := by lit_decide
   suffix := "_sha3"
   features := ["sha3"]
-  updateCT := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-    (fun _ _ _ _ hp => MdStream.AArch64.Update.agree₀ hp) (by taint_decide)
-  finalizeCT := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
-    (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀ hp) (by taint_decide)
+  updateCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (fun _ _ _ _ hp => MdStream.AArch64.Update.agree₀ hp) (by taint_decide))
+  finalizeCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
+    (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀ hp) (by taint_decide))
   updateKeeps := instrs_keeps (by lit_decide)
   finalizeKeeps := instrs_keeps (by lit_decide)
   updateDepth := by lit_decide
   finalizeDepth := by lit_decide
-  digest384 := ⟨VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
+  digest384 := by exact (⟨VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
       (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀D hp) (by taint_decide),
-    instrs_keeps (by lit_decide), by lit_decide⟩
-  digest512_256 := ⟨VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
+    instrs_keeps (by lit_decide), by lit_decide⟩)
+  digest512_256 := by exact (⟨VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
       (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀D hp) (by taint_decide),
-    instrs_keeps (by lit_decide), by lit_decide⟩
-  digest512_224 := ⟨VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
+    instrs_keeps (by lit_decide), by lit_decide⟩)
+  digest512_224 := by exact (⟨VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
       (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀D hp) (by taint_decide),
-    instrs_keeps (by lit_decide), by lit_decide⟩
+    instrs_keeps (by lit_decide), by lit_decide⟩)
 
 end VG.Proof.Sha512.AArch64.Sha3
