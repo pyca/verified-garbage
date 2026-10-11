@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
 
 /-! Register allocation for the fixed, public P-256 verification blocks.
 
@@ -7,10 +9,13 @@ arithmetic specification by the verification artifact's proofs. It forwards
 scratch words in SSA form, schedules dependencies (including carry flags),
 and allocates scalar registers with bounded scratch spills.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.VerifyRegisters
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64
 
-private instance : Inhabited Instr := ⟨.movz .x .x7 0 0⟩
+instance : Inhabited Instr := ⟨.movz .x .x7 0 0⟩
 
 structure Item where
   instr : Instr

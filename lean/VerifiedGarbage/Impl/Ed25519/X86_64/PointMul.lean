@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointBatch
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointBatch
 
 /-! Descend through checkpoint batches with a public counter in scratch. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

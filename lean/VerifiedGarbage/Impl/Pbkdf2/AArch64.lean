@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MdStream.AArch64
+module
+
+public import VerifiedGarbage.Impl.MdStream.AArch64
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function: AArch64 implementation
@@ -35,6 +37,8 @@ pointers and `n`.
 `n` is a 32-bit argument, whose register's upper half is whatever the caller
 left there (possibly secret): the first instruction zero-extends it.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Pbkdf2.AArch64
 

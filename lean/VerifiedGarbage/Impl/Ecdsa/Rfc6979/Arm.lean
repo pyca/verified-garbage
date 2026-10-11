@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Pbkdf2.Whole.Arm
-import VerifiedGarbage.Impl.Weierstrass.Arm
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Whole.Arm
+public import VerifiedGarbage.Impl.Weierstrass.Arm
 
 /-!
 # Deterministic ECDSA (RFC 6979) on 32-bit ARM
@@ -72,6 +74,8 @@ in `r12` for the prologue and the epilogue) or a pointer argument plus a
 constant (in a conversion, `r1` and `r12` are the frame's base and `scratch`
 plus a constant).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Rfc6979.Arm
 

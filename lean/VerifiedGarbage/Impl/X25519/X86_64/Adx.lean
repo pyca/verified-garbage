@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.X25519.X86_64
+module
+
+public import VerifiedGarbage.Impl.X25519.X86_64
 
 /-!
 # X25519: x86-64 implementation with BMI2 and ADX
@@ -24,6 +26,8 @@ halves through CF.
 Both use the registers `rax`, `rcx`, `rdx`, `rbp` (zero, for the chains'
 last carries) and `r8–r15`, and address memory only as `vg_x25519` does.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X25519.X86_64
 

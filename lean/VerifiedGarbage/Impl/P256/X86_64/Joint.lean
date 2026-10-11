@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
-import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
-import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
+public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
 
 /-! The measured x86-64 P-256 joint multiplication layout and doubling dispatch. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
 

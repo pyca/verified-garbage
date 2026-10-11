@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # GHASH with PMULL on AArch64
@@ -39,6 +41,8 @@ Only caller-saved registers are used (`x5`–`x7`, `v0`–`v7`, `v16`–`v31`),
 and `scratch` is not. Every branch and every address depends only on the
 pointers and `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.AArch64.Pmull
 

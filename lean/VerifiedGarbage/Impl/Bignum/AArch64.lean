@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.Impl.Bignum.Layout
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Impl.Bignum.Layout
 
 /-!
 # Multiword arithmetic on AArch64: the baseline
@@ -33,6 +35,8 @@ The registers: `x0` the working space; `x8` the accumulator, `x9` `b`, `x10`
 zero; `x3`–`x6`, `x16`, `x17` temporaries and pointers. No callee-saved
 register is written.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Bignum.AArch64
 

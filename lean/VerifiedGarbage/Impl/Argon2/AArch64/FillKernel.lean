@@ -1,13 +1,17 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceMap
-import VerifiedGarbage.Impl.Argon2.AArch64.FillPointers
-import VerifiedGarbage.Impl.Argon2.AArch64.FillCompress
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceMap
+public import VerifiedGarbage.Impl.Argon2.AArch64.FillPointers
+public import VerifiedGarbage.Impl.Argon2.AArch64.FillCompress
 
 /-! Map the random word, prepare matrix pointers, and update one active cell.
 The enclosing loops provide the position in callee-saved registers and the
 frame; `x0` contains either the cached independent word or the previous cell's
 first word. The lane count and matrix base are reloaded after volatile calls.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.FillKernel
 

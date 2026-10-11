@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Sm4.Arm.Ecb
-import VerifiedGarbage.Spec.Sm4
-import VerifiedGarbage.Impl.Sm4.Planes
+module
+
+public import VerifiedGarbage.Impl.Sm4.Arm.Ecb
+public import VerifiedGarbage.Spec.Sm4
+public import VerifiedGarbage.Impl.Sm4.Planes
 
 /-!
 # The SM4 key schedule on ARMv7
@@ -19,6 +21,8 @@ Only the pointers, `kp`, the loop test, and the slot of the schedule's
 pointer hold public values; no address and no branch depends on anything
 else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.Arm
 

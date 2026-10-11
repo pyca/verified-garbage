@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # ChaCha20 block function: x86-64 implementation
@@ -22,6 +24,8 @@ scalar ChaCha20. The ten double rounds are fully unrolled.
 Every address is `rsi` (or, while copying the state, `rdi`) plus a constant,
 and there are no branches, so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.X86_64
 

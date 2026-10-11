@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.Sm4.Circuit
-import VerifiedGarbage.Impl.Aes.Arm.Sbox
+module
+
+public import VerifiedGarbage.Impl.Sm4.Circuit
+meta import VerifiedGarbage.Impl.Sm4.Circuit
+public import VerifiedGarbage.Impl.Aes.Arm.Sbox
+meta import VerifiedGarbage.Impl.Aes.Arm.Sbox
 
 /-!
 # The bitsliced SM4 S-box on ARMv7
@@ -12,6 +16,8 @@ and spilling to its next slots. It is written out (and `#guard` checks
 that it is what `compile` produces) so that the kernel, which evaluates
 the code in the proofs, does not have to run the allocator.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.Arm
 

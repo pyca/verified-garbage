@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Arm.Isa
-import VerifiedGarbage.Impl.Mont.Mod
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Impl.Mont.Mod
 
 /-!
 # Montgomery arithmetic modulo an odd multiword modulus, on 32-bit ARM
@@ -43,6 +45,8 @@ Every multiplication is `mul`, every selection a mask, and every address
 constant: nothing but `r12` may affect timing. The operations use `r0`–`r9`,
 and write only `[o]`, `[acc]` and `[M.tmp]`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Mont.Arm
 

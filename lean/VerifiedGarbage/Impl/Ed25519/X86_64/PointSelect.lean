@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.FieldMemory
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.FieldMemory
 
 /-! Select the saved point with a mask, without secret-dependent branches. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

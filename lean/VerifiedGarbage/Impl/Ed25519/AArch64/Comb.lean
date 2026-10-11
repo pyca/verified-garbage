@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed25519.CombTable
-import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
-import VerifiedGarbage.Impl.Ed25519.AArch64.PointLoop
+module
+
+public import VerifiedGarbage.Impl.Ed25519.CombTable
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointLoop
 
 /-!
 # Ed25519: base-point multiplication with a comb, two digits per table
@@ -28,6 +30,8 @@ is negated, or not, with the mask of its digit's sign (from its nibble's top bit
 exchanging `Y - X` and `Y + X` and choosing between `2dT` and its negation.
 The loop's counter `x19`, which is also the table index, is public.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.AArch64
 

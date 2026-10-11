@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.InitialBody
-import VerifiedGarbage.Impl.Argon2.AArch64.Parameters
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.InitialBody
+public import VerifiedGarbage.Impl.Argon2.AArch64.Parameters
 
 /-! # ARM64 Argon2 entry point
 
@@ -9,6 +11,9 @@ Eight register arguments and ten caller stack arguments are copied into a
 offset eight. Every u32 argument is normalized before use. Seven saved
 registers occupy 112 bytes; the original SP is 384 bytes above the frame.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Argon2.AArch64.Derive
 open VG VG.AArch64
 open VG.Impl.Argon2.AArch64.Instructions

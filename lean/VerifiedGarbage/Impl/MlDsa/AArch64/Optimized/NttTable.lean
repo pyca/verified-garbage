@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.Ntt
 

@@ -1,7 +1,12 @@
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! Eight four-byte stores (32 bytes) at a time, then four-byte stores, then
 a byte tail, using only caller-saved registers. -/
+
+@[expose] public section
+
 namespace VG.Impl.Zeroize.X86
 open VG.X86
 

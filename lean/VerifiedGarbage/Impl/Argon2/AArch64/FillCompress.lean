@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.FillWrite
-import VerifiedGarbage.Spec.Argon2.Contract
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Impl.Argon2.AArch64.FillWrite
+public import VerifiedGarbage.Spec.Argon2.Contract
 
 /-! Compress the selected previous/reference blocks and update the current
 matrix cell. Pointer setup supplied `x6` (current), `x0` (previous), and
@@ -8,6 +10,8 @@ matrix cell. Pointer setup supplied `x6` (current), `x0` (previous), and
 scratch pointer at offset 248; offset 16 retains the destination across G.
 The first 4096 scratch bytes belong to G, and its output is at offset 4096.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.FillCompress
 

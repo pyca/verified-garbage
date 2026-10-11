@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Stream
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Stream
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_hint_bit_pack` and `vg_mldsa_hint_bit_unpack`
@@ -31,6 +33,8 @@ reloads the first).
   the loop it is in and skips the rest; the return value is 1 if the index
   is at most `ω`, 0 otherwise.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.Pack
 

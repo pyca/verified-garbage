@@ -1,14 +1,16 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Arith
-import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
-import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
-import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
-import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
-import VerifiedGarbage.Impl.MlKem.X86_64.Compress
-import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
-import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
-import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
-import VerifiedGarbage.Impl.MlKem.X86_64.Sample
-import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Arith
+public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
+public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
+public import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
+public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
+public import VerifiedGarbage.Impl.MlKem.X86_64.Compress
+public import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
+public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
+public import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
+public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
+public import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
 
 /-!
 # ML-KEM on x86-64: the pieces of the top-level functions
@@ -33,6 +35,8 @@ of the primitives at 2048 (2048 bytes); and polynomials of 1024 bytes from
 4096 (`P k`), where each parameter set places the matrix, the outputs of
 `PRF₂` and the working space of their computation (`Kem`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

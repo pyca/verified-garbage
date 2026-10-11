@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Vec
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Vec
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_ntt` and `vg_mlkem_inv_ntt`
@@ -30,6 +32,8 @@ pointing at the words it loads, `r8` at the zetas of the table:
 
 Every address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

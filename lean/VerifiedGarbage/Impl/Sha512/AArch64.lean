@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha512
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # SHA-512 compression function: AArch64 implementation
@@ -15,6 +17,8 @@ The same structure as the SHA-256 implementation, on 64-bit registers:
 * `x0`–`x3` (the pointers and the block count) are public; no address and
   no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha512.AArch64
 

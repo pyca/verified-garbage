@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Vec
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Vec
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_multiply_ntt` and `vg_mldsa_multiply_add_ntt`
@@ -18,6 +20,8 @@ of `h` are loaded to `xmm6` first, the loop stores the first 252, the last
 four are computed from registers before MXCSR is loaded back, and stored
 after it. Every address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Arith
 

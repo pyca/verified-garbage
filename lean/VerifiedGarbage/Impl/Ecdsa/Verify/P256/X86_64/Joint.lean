@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64.Joint
-import VerifiedGarbage.Impl.P256.X86_64.Joint
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64.Joint
+public import VerifiedGarbage.Impl.P256.X86_64.Joint
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Verify.X86_64
 open VG.X86_64 VG.Impl.P256.X86_64 VG.Impl.Ecdsa.X86_64

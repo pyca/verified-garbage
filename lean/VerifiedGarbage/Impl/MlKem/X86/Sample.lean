@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.X86.Basic
-import VerifiedGarbage.Impl.Sha3.X86.Stream
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Basic
+public import VerifiedGarbage.Impl.Sha3.X86.Stream
 
 /-!
 # ML-KEM on x86 (32-bit): `vg_mlkem_sample_ntt`
@@ -28,6 +30,8 @@ iterations left. The candidates of a chunk are computed in `eax` and `ebx`
 on the SHAKE128 output, and so on the seed, which the contract declares
 that it may leak; everything else depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86
 

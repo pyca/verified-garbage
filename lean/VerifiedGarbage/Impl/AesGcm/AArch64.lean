@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # AES-GCM: AArch64 implementation
@@ -69,6 +71,8 @@ Every call is outside any loop, and every branch is on a length or (for
 `rounds`, `tag_len` and (for `open`) whether the tag is right can affect
 timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcm.AArch64
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesCbc.AArch64
+module
+
+public import VerifiedGarbage.Impl.AesCbc.AArch64
 
 /-!
 # AES-CFB8: AArch64 implementation
@@ -23,6 +25,8 @@ in `x9`) shifted in.
 
 Only the pointers, `rounds` and `len` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesCfb8.AArch64
 

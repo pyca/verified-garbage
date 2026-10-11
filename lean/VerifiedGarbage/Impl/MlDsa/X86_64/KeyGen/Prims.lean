@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 
 /-!
 # ML-DSA on x86-64: the primitives key generation calls
@@ -9,6 +11,8 @@ code is written for any implementations of the primitives, given as a
 `Prims`: the code of each primitive it calls, which it calls by the name of
 the artifact that has that code.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.KeyGen
 

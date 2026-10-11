@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Vec
-import VerifiedGarbage.Impl.MlKem.X86_64.Avx
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Vec
+public import VerifiedGarbage.Impl.MlKem.X86_64.Avx
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_add` and `vg_mlkem_sub`
@@ -18,6 +20,8 @@ two 128-bit lanes of AVX2 registers (`toY` of the same arithmetic,
 `addArith` and `subArith`), with `q` in each doubleword of `ymm15`, over the
 32 groups of eight.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

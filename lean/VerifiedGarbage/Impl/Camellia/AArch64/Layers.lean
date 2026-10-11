@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Camellia.AArch64.Sbox
-import VerifiedGarbage.Impl.Aes.AArch64.Linear
+module
+
+public import VerifiedGarbage.Impl.Camellia.AArch64.Sbox
+public import VerifiedGarbage.Impl.Aes.AArch64.Linear
 
 /-!
 # The layers of bitsliced Camellia on AArch64
@@ -23,6 +25,8 @@ subkeys, eight planes each, in the order the rounds use them (from slot
 their own 12 slots after them (394–405). The key schedule (`ExpandKey.lean`)
 uses the same layout, with its 128-bit values in the tail buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.AArch64
 

@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.FillSlice
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Impl.Argon2.AArch64.FillSlice
 
 /-! Fill a pass's four slices in order, using the public slice coordinate. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.FillSlices
 

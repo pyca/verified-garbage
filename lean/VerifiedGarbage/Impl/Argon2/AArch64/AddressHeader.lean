@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.Compress
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Impl.Argon2.AArch64.Compress
 
 /-! Fill the first seven words of an independently generated address input.
 The input pointer is `x0`; its remaining words were cleared once. The frame
@@ -7,6 +9,8 @@ holds pass (0), address counter (8), passes (72), variant (112), blocks (240).
 Lane and slice remain in `x24` and `x22`. The counter is supplied after the
 public address-generation loop advances it to its one-based value.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.AddressHeader
 

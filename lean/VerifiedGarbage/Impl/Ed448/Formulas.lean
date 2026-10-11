@@ -1,3 +1,5 @@
+module
+
 /-!
 # Ed448: the point formulas as field programs
 
@@ -8,6 +10,8 @@ addition of projective points, on the slots every Ed448 base-point
 multiplication uses: `R` in slots 0–2, `T` in 3–5, `Q` in 8–10, `d` in 11,
 and temporaries in 12–20.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448
 

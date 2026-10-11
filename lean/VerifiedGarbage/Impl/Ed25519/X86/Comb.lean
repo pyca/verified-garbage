@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Ed25519.X86.Point32
-import VerifiedGarbage.Impl.Ed25519.CombTable
-import VerifiedGarbage.Impl.Ed25519.X86.PointSelect
-import VerifiedGarbage.Impl.Ed25519.X86.PointLoop
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.Point32
+public import VerifiedGarbage.Impl.Ed25519.CombTable
+public import VerifiedGarbage.Impl.Ed25519.X86.PointSelect
+public import VerifiedGarbage.Impl.Ed25519.X86.PointLoop
 
 /-!
 # Ed25519: base-point multiplication with a comb, two digits per table
@@ -33,6 +35,8 @@ exchanging `Y - X` and `Y + X` and choosing between `2dT` and its negation.
 The loop's counter `esi`, which is also the table index, is public, and so are
 the addresses of the bits (`edi + 8 esi` plus a constant).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86
 

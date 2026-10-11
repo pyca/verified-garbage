@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.Point
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.Point
 
 /-!
 # The ladder by calls of the point functions, on x86 (32-bit)
@@ -25,6 +27,8 @@ constant-time analysis knows it to be public; the point functions keep
 `esi`, and a call uses 28 bytes of stack. Every address is still `edi`
 plus a constant or a counter, or `esp` plus a constant.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86.Point
 

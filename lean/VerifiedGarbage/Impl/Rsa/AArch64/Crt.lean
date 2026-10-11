@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Rsa.AArch64
-import VerifiedGarbage.Impl.Bignum.CrtLayout
+module
+
+public import VerifiedGarbage.Impl.Rsa.AArch64
+public import VerifiedGarbage.Impl.Bignum.CrtLayout
 
 /-!
 # RSA with the CRT private key on AArch64
@@ -36,6 +38,8 @@ into a register, and every comparison's carry is made a register's value by
 `csel`: the model branches only on whether a register is zero. The code
 writes no callee-saved register, and uses no stack.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.AArch64.Crt
 

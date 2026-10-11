@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed448.X86.Shake
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86.Shake
 
 /-!
 # Ed448 public-key derivation on x86 (32-bit)
@@ -16,6 +18,8 @@ outside `scratch` and `out`, which it writes; the frame from `esp + 24` is
 cleared before it is popped. Every address depends only on the pointers and
 `esp`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86.PublicKey
 

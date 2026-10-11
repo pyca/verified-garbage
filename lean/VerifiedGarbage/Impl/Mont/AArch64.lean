@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.Impl.Mont.Mod
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Impl.Mont.Mod
 
 /-!
 # Montgomery arithmetic modulo an odd multiword modulus, on AArch64
@@ -41,6 +43,8 @@ for `n > 6` the callee-saved `x21`–`x23` (`acc n`) and, for `n > 7`, `x24`
 and `x25` (`dRegs n`), and write only `[o]` (their frames allow `[M.tmp]`
 too).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Mont.AArch64
 

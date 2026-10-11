@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Mont.X86_64
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
-import VerifiedGarbage.Impl.Weierstrass.Slots
+module
+
+public import VerifiedGarbage.Impl.Mont.X86_64
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
+public import VerifiedGarbage.Impl.Weierstrass.Slots
 
 /-!
 # Short Weierstrass curves on x86-64: points, scalar multiplication, powers
@@ -24,6 +26,8 @@ the working space; a point is three slots, projective coordinates
 The only branches are on loop counters, and every address is `rdi` plus a
 constant, or plus a counter: nothing but `rdi` may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86_64
 

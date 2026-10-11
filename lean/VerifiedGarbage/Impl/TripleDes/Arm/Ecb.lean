@@ -1,4 +1,9 @@
-import VerifiedGarbage.Impl.TripleDes.Arm.Block
+module
+
+public import VerifiedGarbage.Impl.TripleDes.Arm.Block
+
+@[expose] public section
+
 namespace VG.Impl.TripleDes.Arm.Ecb
 open VG.Arm VG.Impl.TripleDes.Arm
 open VG.Spec.TripleDes (Direction)

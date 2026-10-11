@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Spec.RsaPkcs1Sig
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Spec.RsaPkcs1Sig
 
 /-!
 # EMSA-PKCS1-v1_5 encoding on x86-64
@@ -27,6 +29,8 @@ The buffer is written from its start, one byte at a time, through `rdi`:
 the prefix by an immediate per byte, chosen by the hash function's number
 (`prefixes`), and the hash value, `hLen` bytes counted down in `r9`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaPkcs1Sig.X86_64
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rsa.X86_64.Checked
+module
+
+public import VerifiedGarbage.Impl.Rsa.X86_64.Checked
 
 /-!
 # RSA's private-key operation checked against `e`, on x86-64
@@ -31,6 +33,8 @@ values. Only caller-saved registers are used, so the frame's slots hold
 everything kept across a call. With the frame `rsp` is a multiple of 16 at
 each call, as the System V ABI asks.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.X86_64.PrivChecked
 

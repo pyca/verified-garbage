@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Common
-import VerifiedGarbage.Spec.MlKem
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Common
+public import VerifiedGarbage.Spec.MlKem
 
 /-!
 # ML-KEM on x86-64: arithmetic modulo `q` in the words of SSE registers
@@ -28,6 +30,8 @@ A polynomial is stored as 256 `u32`s, and in the working space as 256
 words (`vpack`, `vunpack`): 32 bytes of the former at `[a]` are the 16 bytes
 of the latter at `[b]`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

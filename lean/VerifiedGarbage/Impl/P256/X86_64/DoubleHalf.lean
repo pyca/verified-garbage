@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.P256.X86_64.Half
-import VerifiedGarbage.Impl.Weierstrass.X86_64
+module
+
+public import VerifiedGarbage.Impl.P256.X86_64.Half
+public import VerifiedGarbage.Impl.Weierstrass.X86_64
 
 /-! In-place Jacobian doubling with a modular half instead of repeated additions. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 

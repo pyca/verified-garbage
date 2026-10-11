@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJac
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJac
 
 /-!
 # Short Weierstrass curves on x86-64: 5-bit windows with an affine table
@@ -25,6 +27,8 @@ mixed addition: it is right unless `R = T` (the Jacobian addition's
 exception, which the recoding rules out) or `R = O` (where `D = T`, as
 before).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86_64
 

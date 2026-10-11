@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Ed25519.X86.Whole.Setup
-import VerifiedGarbage.Impl.Ed25519.X86.Whole.Wipe
-import VerifiedGarbage.Impl.Sha3.X86.Stream
-import VerifiedGarbage.Spec.Sha3.Contract
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Setup
+public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Wipe
+public import VerifiedGarbage.Impl.Sha3.X86.Stream
+public import VerifiedGarbage.Spec.Sha3.Contract
 
 /-!
 # Ed448 on x86 (32-bit): SHAKE256 of `dom4(0, C) ‖ …` in Ed25519's frame
@@ -27,6 +29,8 @@ caller's argument `sc` (`.caller sc`).
 
 Every address depends only on `esp` and `scratch`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86.Shake
 

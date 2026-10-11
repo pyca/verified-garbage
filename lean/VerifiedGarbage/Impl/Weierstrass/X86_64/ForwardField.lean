@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Forward
-import VerifiedGarbage.Impl.Weierstrass.X86_64
-import VerifiedGarbage.Impl.Mont.X86_64.Double4
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Forward
+public import VerifiedGarbage.Impl.Weierstrass.X86_64
+public import VerifiedGarbage.Impl.Mont.X86_64.Double4
 
 /-! Four-limb field programs with register doubling and forwarding between operations. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86_64.ForwardField
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64
 

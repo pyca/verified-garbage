@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Camellia.X86_64.Layers
-import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
+module
+
+public import VerifiedGarbage.Impl.Camellia.X86_64.Layers
+public import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
 
 /-!
 # Camellia ECB, bitsliced, on x86-64
@@ -25,6 +27,8 @@ round key's entry), `rdx` (the data), `r8` (the blocks left), `r9` and
 `r15` during the key setup, and the copies' pointers and counts hold public
 values; no address and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.X86_64
 

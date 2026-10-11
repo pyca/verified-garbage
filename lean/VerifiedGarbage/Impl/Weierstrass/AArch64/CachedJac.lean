@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.Weierstrass.CachedJac
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.CachedJac
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.AArch64.CachedJac
 open VG VG.AArch64 VG.Impl.Mont.AArch64

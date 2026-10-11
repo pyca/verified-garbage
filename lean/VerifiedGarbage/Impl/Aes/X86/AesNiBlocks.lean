@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.X86.AesNi
+module
+
+public import VerifiedGarbage.Impl.Aes.X86.AesNi
 
 /-!
 # AES with AES-NI on x86 (32-bit): encryption and decryption of whole blocks
@@ -26,6 +28,8 @@ which decryption starts, is copied to `scratch + 224`.
 Every branch and every address depends only on the pointers, `rounds` and
 `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86.AesNi
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! # The two eligible reference windows
 
@@ -7,6 +9,8 @@ the slice and `r15` the index within the segment. `rdx` receives the count
 for the current lane; `rcx` receives the count for another lane. Only the
 public pass controls a branch. The zero-index adjustment uses a borrow mask.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.CountCandidates
 

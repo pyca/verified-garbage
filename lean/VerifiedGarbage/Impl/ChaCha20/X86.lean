@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # ChaCha20 block function: x86 (32-bit) implementation
@@ -16,6 +18,8 @@ With only seven usable registers, the state lives in memory:
 * Every address is `esp`, `esi`, `edi` or `eax` (while it holds `buf`) plus a
   constant, and there are no branches, so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.X86
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 
 /-!
 # ML-KEM on AArch64: what `encaps` and `decaps` share
@@ -19,6 +21,8 @@ polynomial, a sum of products, a product, `t̂[j]`, `c'` and the saved
 registers (`KEM`; for ML-KEM-768 at 13464, 16536, 17560, 18584, 19608, 20632
 and 21720).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.AArch64
 

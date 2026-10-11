@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_multiply_ntt` and `vg_mldsa_multiply_add_ntt`
@@ -10,6 +12,8 @@ product `f[i] · g[i]` (by `mul`, less than `q²`; for `multiplyAddNTT`, plus
 `h[i]`, still less than `q²`) is reduced with `reduce` and stored to `h[i]`.
 Every address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Arith
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.X86.Sample.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86.Sample.Common
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_sample_in_ball`
@@ -19,6 +21,8 @@ otherwise.
 Its branches and addresses depend on the SHAKE256 output, a function of
 `c̃`, which the contract lets it leak.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.Sample
 

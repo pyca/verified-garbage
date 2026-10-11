@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Argon2.X86.Layout
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86.Layout
 
 /-!
 # Fixed-time unsigned division on x86 (32-bit)
@@ -12,6 +14,8 @@ in `edx` adds the divisor back and gives the quotient bit. The quotient ends
 in `ecx` and the remainder in `eax`. There are no branches, and the only
 memory access is the divisor's word, so the numerator may be secret.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86.Divide
 

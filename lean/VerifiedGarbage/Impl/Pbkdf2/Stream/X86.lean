@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # Calls of a streaming hash function: x86 (32-bit)
@@ -29,6 +31,8 @@ index registers, so `copy` addresses byte `ecx` of a buffer at
 `base + off` as `[eax + off]` (or `[edx + off]`), with `eax = base + ecx`
 computed just before the access.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Pbkdf2.Stream.X86
 

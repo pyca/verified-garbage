@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Vec
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Vec
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_multiply_ntts`
@@ -23,6 +25,8 @@ counting down:
 
 Every address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

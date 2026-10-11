@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Aes.X86_64.Vaes
-import VerifiedGarbage.Impl.Aes.X86_64.AesNiBlocks
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.Vaes
+public import VerifiedGarbage.Impl.Aes.X86_64.AesNiBlocks
 
 /-!
 # AES with VAES on x86-64: encryption and decryption of whole blocks
@@ -26,6 +28,8 @@ before the blocks (`AesNi.imcKeys`), and both loops read them from there.
 No callee-saved register is written. Every branch and every address
 depends only on the pointers, `rounds` and `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86_64.VaesBlocks
 

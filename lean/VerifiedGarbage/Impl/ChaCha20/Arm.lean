@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # ChaCha20 block function: 32-bit ARM implementation
@@ -21,6 +23,8 @@ in from its slot. The ten double rounds are fully unrolled.
 Every address is `r1` (or, while copying the state, `r0`) plus a constant,
 and there are no branches, so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.Arm
 

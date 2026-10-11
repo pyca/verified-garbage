@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Md5.X86
-import VerifiedGarbage.Impl.MdStream.X86
+module
+
+public import VerifiedGarbage.Impl.Md5.X86
+public import VerifiedGarbage.Impl.MdStream.X86
 
 /-!
 # Streaming MD5: x86 (32-bit) implementation
@@ -17,6 +19,8 @@ The streaming state (80 bytes at `state`) is the MD buffer followed by a
   `finalize` keeps `count` and `out` in `scratch[80..92)`. The length field is
   little-endian, and so are the words of the digest.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Md5.X86.Stream
 

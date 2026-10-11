@@ -1,12 +1,17 @@
-import VerifiedGarbage.Impl.Ed25519.X86.InputSlice
-import VerifiedGarbage.Impl.Ed25519.X86.PointDecode
-import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
-import VerifiedGarbage.Impl.Ed25519.X86.Scalar
-import VerifiedGarbage.Impl.Ed25519.X86.VerifyWindow
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.InputSlice
+public import VerifiedGarbage.Impl.Ed25519.X86.PointDecode
+public import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
+public import VerifiedGarbage.Impl.Ed25519.X86.Scalar
+public import VerifiedGarbage.Impl.Ed25519.X86.VerifyWindow
 
 /-! Canonical decoding and the uncofactored verification equation using all
 512 supplied challenge bits. The four cdecl arguments are pk, sig, challenge,
 and scratch; the result is exactly zero or one in EAX. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86
 open VG VG.X86 VG.Impl.X25519.X86
 

@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.EcKey.AArch64
-import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64
+module
+
+public import VerifiedGarbage.Impl.EcKey.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64
+
+@[expose] public section
 
 namespace VG.Impl.EcKey.AArch64
 

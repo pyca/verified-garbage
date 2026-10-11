@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed25519.X86.Field
-import VerifiedGarbage.Spec.Ed25519.Point32
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.Field
+public import VerifiedGarbage.Spec.Ed25519.Point32
 
 /-!
 # Ed25519's point addition on x86 (32-bit), as a function
@@ -16,6 +18,8 @@ affect timing.
 The function's own working space is bytes 320 to 575 (slots 8–15) and 864
 to 1023: X25519's 64-byte product (`T`) and `SAVE`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86.Point32
 

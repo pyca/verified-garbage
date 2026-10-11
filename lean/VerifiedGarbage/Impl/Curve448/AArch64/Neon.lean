@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.X448.AArch64.Common
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Common
 
 /-!
 # Two Curve448 field multiplications in AdvSIMD
@@ -21,6 +23,8 @@ The code uses every vector register (the callers save `v8`–`v15`), and no
 general-purpose register but `x3`, the working space, and `x12`, which holds
 `2²⁸ - 1` (as for `Fast`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Curve448.AArch64.Neon
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Pbkdf2.Stream.Arm
-import VerifiedGarbage.Impl.MdStream.Arm
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Stream.Arm
+public import VerifiedGarbage.Impl.MdStream.Arm
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function: 32-bit ARM implementation
@@ -59,6 +61,8 @@ and `iterate` use no stack; `finalize` pushes the streaming `finalize`'s two
 stack arguments around its call (`push {r1, r12}`), 8 bytes. Every address and
 branch depends only on the pointers, `key_len` and `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Pbkdf2.Md.Arm
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.TripleDes
+module
+
+public import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # DES's bit permutations, as maps of bit indices
@@ -9,6 +11,8 @@ first, as `BitVec.getLsbD` does), the bit of its input it is, for every
 implementation to build its code from (`Proof/CmacTripleDes/Des.lean`
 proves them right).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacTripleDes
 

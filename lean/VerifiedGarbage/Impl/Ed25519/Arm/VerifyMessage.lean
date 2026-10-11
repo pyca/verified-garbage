@@ -1,10 +1,14 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
-import VerifiedGarbage.Impl.Ed25519.Arm.Verify
-import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Setup
-import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Entry
-import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Wipe
-import VerifiedGarbage.Impl.Sha512.Arm.Stream
-import VerifiedGarbage.Spec.Sha512.Contract
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
+public import VerifiedGarbage.Impl.Ed25519.Arm.Verify
+public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Setup
+public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Entry
+public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Wipe
+public import VerifiedGarbage.Impl.Sha512.Arm.Stream
+public import VerifiedGarbage.Spec.Sha512.Contract
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.Arm.VerifyMessage
 open VG.Arm VG.Impl.Ed25519.Arm.Whole

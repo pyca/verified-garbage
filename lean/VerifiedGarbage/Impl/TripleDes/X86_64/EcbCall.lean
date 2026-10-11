@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedAvx512
-import VerifiedGarbage.Spec.TripleDes.Contract
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedAvx512
+public import VerifiedGarbage.Spec.TripleDes.Contract
 
 /-!
 # Triple DES ECB on x86-64, calling one copy of the SSE2 code
@@ -13,6 +15,8 @@ the baseline function for all of them, the AVX2 one after its batches of
 The frame around each (`withStackScratchWiped`) allocates the working space,
 whose pointer stays in `rcx` for the call.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86_64.EcbCall
 

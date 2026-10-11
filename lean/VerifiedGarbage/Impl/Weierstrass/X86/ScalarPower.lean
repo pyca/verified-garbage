@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.PowChain
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.PowChain
 
 /-! # A fixed prefix for P-256 scalar-order inversion -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86
 open VG.X86 VG.Impl.Mont.X86 VG.Impl.Weierstrass
 

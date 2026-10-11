@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
-import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
-import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
 
 /-!
 # Verification's equation with signed sliding windows
@@ -24,6 +26,8 @@ take them. The chain's doublings, one per bit, stay inline (`dblIn`), as calls c
 than they save code, and so do the additions of the static's entries below the highest position,
 which take one product fewer (`addAffIn`): the entries' `Z` is 1.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

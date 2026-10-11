@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Pbkdf2.Stream.Arm
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Stream.Arm
 
 /-!
 # PBKDF2-HMAC over any streaming hash function: 32-bit ARM implementation of the whole derivation
@@ -32,6 +34,8 @@ and incremented in place (`rev`). The model's branches test only `Z`, so a
 comparison `x ≥ k` is made into a flag with `subs` and `adc` (the carry).
 Every address and branch depends only on the pointers, the lengths and `c`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Pbkdf2.Whole.Arm
 

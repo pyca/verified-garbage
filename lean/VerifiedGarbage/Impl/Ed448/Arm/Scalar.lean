@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.X448.Arm
-import VerifiedGarbage.Impl.X25519.Arm
+module
+
+public import VerifiedGarbage.Impl.X448.Arm
+public import VerifiedGarbage.Impl.X25519.Arm
 
 /-!
 # Ed448 scalar arithmetic on ARMv7
@@ -31,6 +33,8 @@ counter. The working space's base is in `r0` and the limb mask `0xffff` in
 `r6`; the callee-saved registers are saved in its first 32 bytes, and the
 addresses of the output and the arguments from byte 32 (`OUT`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.Arm
 

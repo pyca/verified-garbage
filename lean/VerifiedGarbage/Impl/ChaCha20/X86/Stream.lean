@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.ChaCha20.X86.Callee
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.X86.Callee
 
 /-!
 # Streaming ChaCha20: x86 (32-bit) implementation
@@ -44,6 +46,8 @@ pointers, the length and the number of bytes left (which the contract lets
 state pointer is loaded in a block of its own: the proof of constant time
 takes it from the correctness proof, not from the slot.)
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.X86.Stream
 

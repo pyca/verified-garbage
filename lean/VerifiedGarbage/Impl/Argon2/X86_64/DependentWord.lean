@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.FillKernel
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillKernel
 
 /-! Read the previous cell's first word for data-dependent addressing. Only the
 public loop position and matrix base determine the read address.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.DependentWord
 

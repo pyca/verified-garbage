@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.ExpandMask
-import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.ExpandMask
+public import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_expand_mask_poly4` and `vg_mldsa_expand_mask_poly4_avx2`
@@ -30,6 +32,8 @@ with the loop of `vg_mldsa_expand_mask_poly` (`emBody`, for `c = 18` or
 There is no branch on data, and every address depends only on the pointers
 and `γ₁`: it is constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Sample.Mask4
 

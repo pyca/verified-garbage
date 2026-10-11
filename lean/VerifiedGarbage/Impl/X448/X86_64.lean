@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Spec.X448.Field64
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Spec.X448.Field64
 
 /-!
 # X448: x86-64 implementation
@@ -47,6 +49,8 @@ inversion `z2^(p-2)` is an addition chain (`Proof/X448/Invert.lean`).
 The only branches are on the loop counters, and every address is a pointer
 plus a constant or a counter, so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X448.X86_64
 

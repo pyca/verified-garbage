@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Bignum.X86_64
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64
 
 /-! Word-sized conversion for public RSA operands whose byte length is a
 multiple of eight. Other lengths retain the byte conversion. -/
+
+@[expose] public section
+
 namespace VG.Impl.Rsa.X86_64.WordIO
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 

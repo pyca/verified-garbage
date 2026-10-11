@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Call
-import VerifiedGarbage.Spec.MlDsa
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Call
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`
@@ -35,6 +37,8 @@ polynomial `kℓ + ℓ + i`, and `t`, `t₁` and `t₀` the three after them.
 Every address and branch depends only on the pointers, but for what the
 samplers leak (`ρ` and which half-bytes `RejBoundedPoly` rejects).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.KeyGen
 

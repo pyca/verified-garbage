@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.X448.AArch64.Field56
-import VerifiedGarbage.Impl.X448.BaseTable
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Field56
+public import VerifiedGarbage.Impl.X448.BaseTable
 
 /-!
 # X448 of the base point on AArch64: a fixed-base multiplication on edwards448
@@ -43,6 +45,8 @@ word is loaded from the table and ORed in under each mask: every entry of
 the table is read, at addresses from the static's and the loop's counter
 `x19`, the table index, which is public; the branches are on it alone.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X448.AArch64.Base
 

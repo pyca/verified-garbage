@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Start of the chronological reference window.
 
@@ -7,6 +9,8 @@ The public pass, slice and segment length are in `x5`, `x22` and `x21`.
 `x6` receives zero on pass zero or the last slice, otherwise the column
 at the beginning of the next slice. No division is needed.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.ReferenceStart
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesGcm.Arm
+module
+
+public import VerifiedGarbage.Impl.AesGcm.Arm
 
 /-!
 # AES-GCM-SIV: 32-bit ARM implementation
@@ -68,6 +70,8 @@ The model has no register-offset addressing and branches only on `Z`: the
 bytes are copied, XORed and masked through advancing pointers, counting
 down with `subs`. Only the pointers, the lengths and `rounds` affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcmSiv.Arm
 

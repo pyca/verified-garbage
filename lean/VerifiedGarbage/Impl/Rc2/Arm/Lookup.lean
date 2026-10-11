@@ -1,11 +1,15 @@
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # RC2 selection on ARMv7
 
 Every candidate is visited in a fixed order. Secret indices are used only
 in arithmetic masks, never as addresses or branch conditions.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.Arm
 

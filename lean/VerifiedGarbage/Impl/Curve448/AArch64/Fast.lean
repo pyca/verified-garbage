@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.X448.AArch64.Common
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Common
 
 /-!
 # Curve448 field arithmetic on AArch64, in registers
@@ -19,6 +21,8 @@ at the start.
 Sums and differences are not reduced: their limbs only have to be small
 enough for a multiplication's coefficients to fit in two words.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Curve448.AArch64.Fast
 

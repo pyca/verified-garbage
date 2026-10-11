@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 
 /-! # Out-of-place GCM with prepared powers and cached AES keys -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.X86_64.StitchZHTo
 open VG.X86_64

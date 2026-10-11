@@ -1,10 +1,15 @@
-import VerifiedGarbage.Impl.Aes.X86.Ctr32
-import VerifiedGarbage.Impl.Aes.X86.ExpandKey
-import VerifiedGarbage.Impl.Aes.X86.AesNi
-import VerifiedGarbage.Impl.Aes.X86.Blocks
-import VerifiedGarbage.Impl.Aes.X86.AesNiBlocks
+module
+
+public import VerifiedGarbage.Impl.Aes.X86.Ctr32
+public import VerifiedGarbage.Impl.Aes.X86.ExpandKey
+public import VerifiedGarbage.Impl.Aes.X86.AesNi
+public import VerifiedGarbage.Impl.Aes.X86.Blocks
+public import VerifiedGarbage.Impl.Aes.X86.AesNiBlocks
 
 /-! AES implementations that generic x86 callers select by symbol and code. -/
+
+@[expose] public section
+
 namespace VG.Impl.Aes.X86
 open VG.X86
 structure Ctr32 where

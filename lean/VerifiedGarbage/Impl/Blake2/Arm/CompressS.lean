@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Blake2
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.Spec.Blake2
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # BLAKE2s compression function: 32-bit ARM implementation
@@ -32,6 +34,8 @@ last = [sp, #8], scratch = [sp, #12])` (AAPCS: the 64-bit `t` cannot take
   address is `scratch`, `state` or a block pointer plus a constant, so only
   the pointers and `n` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blake2.Arm.S
 

@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.FillSlice
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillSlice
 
 /-! Fill a pass's four slices in order, using the public slice coordinate. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.FillSlices
 

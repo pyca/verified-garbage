@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.Aes.AArch64.Aese
+module
+
+public import VerifiedGarbage.Impl.Aes.AArch64.Aese
 
 /-! AES-CMAC chaining with FEAT_AES. Round keys are loaded once, and the
 chaining value remains in v0 for the entire update. No scratch or stack is
 used, and no callee-saved register is written. -/
+
+@[expose] public section
+
 namespace VG.Impl.CmacAes.AArch64.Aese
 open VG.AArch64
 open VG.Impl.Aes.AArch64.Aese (kreg rnd)

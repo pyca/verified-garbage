@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
-import VerifiedGarbage.Impl.Sha3.AArch64.Stream
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
+public import VerifiedGarbage.Impl.Sha3.AArch64.Stream
 
 /-!
 # ML-KEM on AArch64: `SampleNTT`
@@ -42,6 +44,8 @@ The loop's branches, the addresses it writes, and whether `sampleFull`
 runs depend on the SHAKE128 output, and so on the seed, which the contract
 declares that it may leak; everything else depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.AArch64
 

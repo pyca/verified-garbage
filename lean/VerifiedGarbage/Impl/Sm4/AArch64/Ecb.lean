@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Sm4.AArch64.Layers
+module
+
+public import VerifiedGarbage.Impl.Sm4.AArch64.Layers
 
 /-!
 # SM4 ECB, bitsliced, on AArch64
@@ -24,6 +26,8 @@ values; no address and no branch depends on anything else. The rounds use
 only the state, the temporaries and the scratch buffer, so the public
 values stay in `x0`–`x4` throughout.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.AArch64
 

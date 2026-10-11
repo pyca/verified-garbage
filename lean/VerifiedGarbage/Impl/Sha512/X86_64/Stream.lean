@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Sha512.X86_64
-import VerifiedGarbage.Impl.Sha512.X86_64.Avx2
-import VerifiedGarbage.Impl.Sha512.X86_64.ShaNi
-import VerifiedGarbage.Impl.MdStream.X86_64
+module
+
+public import VerifiedGarbage.Impl.Sha512.X86_64
+public import VerifiedGarbage.Impl.Sha512.X86_64.Avx2
+public import VerifiedGarbage.Impl.Sha512.X86_64.ShaNi
+public import VerifiedGarbage.Impl.MdStream.X86_64
 
 /-!
 # Streaming SHA-512: x86-64 implementation
@@ -30,6 +32,8 @@ length field is the length in bits as a 128-bit big-endian integer:
 `count >> 61`, then `count << 3` (modulo 2⁶⁴); the words of the final hash
 value are big-endian.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha512.X86_64.Stream
 

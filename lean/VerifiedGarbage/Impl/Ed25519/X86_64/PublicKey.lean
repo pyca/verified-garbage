@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
-import VerifiedGarbage.Impl.Sha512.X86_64.Stream
-import VerifiedGarbage.Spec.Sha512.Contract
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
+public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
+public import VerifiedGarbage.Spec.Sha512.Contract
 
 /-!
 # Ed25519 public-key derivation on x86-64
@@ -20,6 +22,8 @@ is popped. In `scratch`: the SHA-512 streaming state (192 bytes), the
 working space of `update` and `finalize` (1376 bytes), and the digest (64
 bytes, at 1568).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

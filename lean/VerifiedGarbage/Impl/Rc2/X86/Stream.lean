@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Rc2.X86.Cbc
-import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
+module
+
+public import VerifiedGarbage.Impl.Rc2.X86.Cbc
+public import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
 
 /-! # Streaming RC2-CBC on baseline x86
 
@@ -27,6 +29,8 @@ copied one at a time from `esi` to `edx`, `ecx` of them, through `al`. Every
 branch, loop count and address depends only on `esp`, the pointers and the
 lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.X86.Stream
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Prims
-import VerifiedGarbage.Spec.MlDsa
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Prims
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`
@@ -41,6 +43,8 @@ them; then the working space of `vg_mldsa_rej_ntt_poly4` (8 KiB, `oR4`).
 Every address and branch depends only on the pointers, but for what the
 samplers leak (`ρ` and which half-bytes `RejBoundedPoly` rejects).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.KeyGen
 

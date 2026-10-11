@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.P256.X86_64.DoubleHalf
-import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
+module
+
+public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalf
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
 
 /-! In-place point doubling, retaining field outputs in registers for the next operation. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 

@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.X86.FieldMemory
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.FieldMemory
 
 /-! Sixteen doublings with a public register counter. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86
 open VG.X86
 

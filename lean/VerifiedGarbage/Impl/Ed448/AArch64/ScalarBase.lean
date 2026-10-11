@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed448.Formulas
-import VerifiedGarbage.Impl.X448.AArch64.Base
-import VerifiedGarbage.Spec.Ed448
+module
+
+public import VerifiedGarbage.Impl.Ed448.Formulas
+public import VerifiedGarbage.Impl.X448.AArch64.Base
+public import VerifiedGarbage.Spec.Ed448
 
 /-!
 # Ed448 base-point multiplication on AArch64
@@ -24,6 +26,8 @@ function saves `x19`–`x28` and `v8`–`v15` in the working space and restores
 them. The only branches are on the counters, and every address is a pointer
 plus a constant or a counter, so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.AArch64
 

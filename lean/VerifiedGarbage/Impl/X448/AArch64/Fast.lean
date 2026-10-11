@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.X448.AArch64.Weak
-import VerifiedGarbage.Impl.Curve448.AArch64.Fast
-import VerifiedGarbage.Impl.Curve448.AArch64.Neon
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Weak
+public import VerifiedGarbage.Impl.Curve448.AArch64.Fast
+public import VerifiedGarbage.Impl.Curve448.AArch64.Neon
 
 /-!
 # X448: AArch64 implementation with register-resident field arithmetic
@@ -18,6 +20,8 @@ multiplications (`Impl/Curve448/AArch64/Neon.lean`), each interleaved with
 scalar operations independent of it, so that the vector and the integer
 units run at once. The function saves `v8`–`v15` too.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X448.AArch64.Fast
 

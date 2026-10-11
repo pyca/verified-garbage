@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86.Kem
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Kem
 
 /-!
 # ML-KEM on x86 (32-bit): key generation
@@ -15,6 +17,8 @@ added and the sum encoded into `ek`. Then `ρ` is copied into `ek`, `ŝ` encoded
 into `dk`, `ek` copied into `dk`, `H(ek)` hashed into `dk`, and `z` copied into
 `dk`. `vg_mlkem768_keygen` is `keyGen` (`L768`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86
 

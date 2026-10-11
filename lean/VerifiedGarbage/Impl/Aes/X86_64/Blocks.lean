@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
-import VerifiedGarbage.Impl.Aes.X86_64.Inv
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
+public import VerifiedGarbage.Impl.Aes.X86_64.Inv
 
 /-!
 # AES encryption and decryption of whole blocks, bitsliced, on x86-64
@@ -24,6 +26,8 @@ Only `rdi` (the first round key), `rsi`, `rdx` (the data), `r8` (the blocks
 left), `r9` and `r15` during the key loop hold public values; no address
 and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86_64
 

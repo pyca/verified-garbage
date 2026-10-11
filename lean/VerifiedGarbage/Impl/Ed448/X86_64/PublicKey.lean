@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
-import VerifiedGarbage.Impl.Sha3.X86_64.Stream
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+public import VerifiedGarbage.Impl.Sha3.X86_64.Stream
 
 /-!
 # Ed448 public-key derivation on x86-64
@@ -18,6 +20,8 @@ change. The pruned scalar must lie outside `scratch` and `out`, which
 `scratch`: the Keccak state (200 bytes), the sponge functions' working space
 (640 bytes, at 256) and the hash (114 bytes, at 1024).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86_64
 

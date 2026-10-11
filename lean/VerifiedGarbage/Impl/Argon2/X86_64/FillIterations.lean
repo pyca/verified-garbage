@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.FillIteration
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillIteration
 
 /-! Advance the public pass counter stored in the mutable header. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.FillIterations
 

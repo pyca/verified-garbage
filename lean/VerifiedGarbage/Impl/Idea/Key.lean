@@ -1,3 +1,5 @@
+module
+
 /-!
 # IDEA key expansion: where each subkey bit comes from
 
@@ -11,6 +13,8 @@ a group of bits with the same source quadword and rotation at a time
 (`Spec.Idea.invertKey`): a copy, the negation or the inverse of which
 encryption subkey.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Idea
 

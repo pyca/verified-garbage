@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.ReductionInit
-import VerifiedGarbage.Impl.Argon2.X86_64.ReduceLanes
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.ReductionInit
+public import VerifiedGarbage.Impl.Argon2.X86_64.ReduceLanes
 
 /-! Reduce all lane endings into matrix block zero for the final H′ call. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.FinalReduction
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.Arm.Sample
+module
+
+public import VerifiedGarbage.Impl.MlKem.Arm.Sample
 
 /-!
 # ML-DSA on 32-bit ARM: sampling from SHAKE
@@ -23,6 +25,8 @@ and squeezes `outlen` bytes to `scratch + 840` with `vg_keccak_squeeze`:
 whole blocks of the rate, so that no permutation is wasted. Its addresses
 and branches depend only on the pointers and the length.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.Sample
 

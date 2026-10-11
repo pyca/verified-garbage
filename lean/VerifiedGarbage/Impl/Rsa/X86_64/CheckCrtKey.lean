@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
+module
+
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
 
 /-!
 # The checks of `RSA_check_key` on the CRT form on x86-64
@@ -31,6 +33,8 @@ at the end.
   only `x`'s low `c` words are divided, a bit at a time. When it does not
   hold, the remainder is not used: the mask is clear.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.X86_64.CheckCrtKey
 

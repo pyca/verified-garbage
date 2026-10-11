@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # ML-DSA on 32-bit ARM: arithmetic modulo `q`
@@ -24,6 +26,8 @@ A function that uses more registers than `r0`–`r3` and `r12` saves them in
 frames on the stack, one per register (`saving`), and restores each with
 the pop of its frame.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.Arith
 

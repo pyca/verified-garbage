@@ -1,5 +1,10 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
-import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
+
+@[expose] public section
+
 open VG VG.AArch64
 open VG.Impl.MlDsa.AArch64.Arith
 open VG.Impl.MlKem.AArch64 (mov)

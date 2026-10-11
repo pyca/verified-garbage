@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha256
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # SHA-256 compression function: x86 (32-bit) implementation
@@ -18,6 +20,8 @@ With only seven usable registers, the working variables live in memory:
   `scratch[96..112)` holds the saved `ebx`, `esi`, `edi`, `ebp`.
 * `eax`, `ebx`, `ecx`, `edx` are the temporaries.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha256.X86
 

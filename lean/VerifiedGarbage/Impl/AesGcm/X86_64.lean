@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Aes.X86_64.Callee
-import VerifiedGarbage.Impl.Aes.X86_64.ExpandKey
-import VerifiedGarbage.Impl.Gcm.X86_64
-import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.Callee
+public import VerifiedGarbage.Impl.Aes.X86_64.ExpandKey
+public import VerifiedGarbage.Impl.Gcm.X86_64
+public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 
 /-!
 # AES-GCM: x86-64 implementation
@@ -83,6 +85,8 @@ Only the pointers, the lengths, `rounds`, `tag_len` and (for `open`) whether
 the tag is right can affect timing: the branches are on those, and the
 comparison is masked.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcm.X86_64
 

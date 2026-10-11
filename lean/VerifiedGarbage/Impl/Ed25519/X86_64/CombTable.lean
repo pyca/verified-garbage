@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Ed25519
+module
+
+public import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # Ed25519: the comb's constant tables
@@ -13,6 +15,8 @@ The code reads the entries `k ≥ 1`, without their `2Z`, from the static
 `combSym`, whose words are `combWords`: 26 tables of sixteen entries of 96 bytes,
 then the magnitudes `1 … 16` that the AVX2 selection compares with.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

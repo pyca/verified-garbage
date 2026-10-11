@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesGcm.X86
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86
 
 /-!
 # AES-OCB: x86 (32-bit) implementation
@@ -65,6 +67,8 @@ the frame and back after it.
 Only the pointers, the lengths, `rounds` and `tag_len` (and for `open`,
 whether the tag is right) affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesOcb.X86
 

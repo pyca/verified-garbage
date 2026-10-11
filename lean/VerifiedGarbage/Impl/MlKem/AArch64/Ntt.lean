@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
 
 /-!
 # ML-KEM on AArch64: the NTT, its inverse and `MultiplyNTTs`
@@ -30,6 +32,8 @@ in order through a pointer.
 
 Every address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.AArch64
 

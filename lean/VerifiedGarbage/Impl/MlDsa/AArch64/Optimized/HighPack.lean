@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
-import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.HighPack
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Round

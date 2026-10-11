@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.AesCbc.X86
-import VerifiedGarbage.Impl.AesOcb.X86
+module
+
+public import VerifiedGarbage.Impl.AesCbc.X86
+public import VerifiedGarbage.Impl.AesOcb.X86
 
 /-!
 # XTS-AES: x86 (32-bit) implementation
@@ -29,6 +31,8 @@ carry.
 Only the pointers, `rounds` and `n` can affect timing: the only branches are
 on `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesXts.X86
 

@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.Jacobian
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.Jacobian
 
 /-! Width-five NAF recoding of a public 256-bit scalar into 257 bytes.
 The nine-word residual lives in scratch memory on the register-limited x86 ISA. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86.Naf
 open VG VG.X86 VG.Impl.Mont.X86
 

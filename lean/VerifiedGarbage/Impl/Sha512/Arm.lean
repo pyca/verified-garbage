@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha512
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # SHA-512 compression function: ARMv7 implementation
@@ -23,6 +25,9 @@ import VerifiedGarbage.TCB.Arm.Isa
 * `r0`–`r3` (the pointers and the block count) are public; no address and no
   branch depends on anything else.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Sha512.Arm
 
 open VG.Arm

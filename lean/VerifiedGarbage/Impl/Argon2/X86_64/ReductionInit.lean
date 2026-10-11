@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.ClearBlock
-import VerifiedGarbage.Impl.Argon2.X86_64.Compress
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.ClearBlock
+public import VerifiedGarbage.Impl.Argon2.X86_64.Compress
 
 /-! Begin the final reduction at lane zero with a zero accumulator in matrix block zero. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.ReductionInit
 

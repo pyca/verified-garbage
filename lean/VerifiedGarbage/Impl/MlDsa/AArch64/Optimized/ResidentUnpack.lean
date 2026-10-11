@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Stream
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Stream
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.ResidentMask.Unpack
 open VG VG.AArch64

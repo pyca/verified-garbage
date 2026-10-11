@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Poly1305.AArch64
+module
+
+public import VerifiedGarbage.Impl.Poly1305.AArch64
 
 /-!
 # Poly1305 radix-64 arithmetic on AArch64
@@ -7,6 +9,9 @@ The accumulator occupies x4:x5:x6, the clamped key x7:x8, and 5*x8/4
 is kept in x17. x9–x16 are temporary registers. The canonical 128-byte
 state and all pointer/length registers x0–x3 are unchanged.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Poly1305.AArch64.Radix64
 open VG.AArch64
 

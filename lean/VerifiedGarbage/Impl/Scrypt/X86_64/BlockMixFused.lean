@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMix
+module
+
+public import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMix
 
 /-! Scalar BlockMix retaining its twelve register words and four scratch words
 across Salsa invocations. Loop metadata lives in scratch[16, 48); scratch[48, 56)
 is a temporary, and scratch[64, 112) retains the caller's saved registers. -/
+
+@[expose] public section
+
 namespace VG.Impl.Scrypt.X86_64
 open VG.X86_64
 

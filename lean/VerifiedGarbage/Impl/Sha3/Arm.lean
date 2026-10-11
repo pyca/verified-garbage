@@ -1,6 +1,8 @@
-import VerifiedGarbage.Spec.Sha3
-import VerifiedGarbage.Impl.Sha3.Tables
-import VerifiedGarbage.Impl.Sha512.Arm
+module
+
+public import VerifiedGarbage.Spec.Sha3
+public import VerifiedGarbage.Impl.Sha3.Tables
+public import VerifiedGarbage.Impl.Sha512.Arm
 
 /-!
 # Keccak-f[1600]: ARMv7 implementation
@@ -36,6 +38,8 @@ Every address is a pointer plus a constant or the round constant pointer,
 which is public, and the only branch is the round loop's, which depends
 only on the pointers, so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.Arm
 

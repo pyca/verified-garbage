@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # A scratch buffer on the stack (AArch64)
@@ -23,6 +25,8 @@ first 16-byte boundary after it (`bufOff m`, so `sp + 16 ⌊m / 2⌋ + 16`). It
 passes them through `x16` (the frame's base) and `x17`, which no argument is
 in. `bytes` is a multiple of 16 (`alloc`), so `sp` stays 16-byte aligned.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.StackScratch.AArch64
 

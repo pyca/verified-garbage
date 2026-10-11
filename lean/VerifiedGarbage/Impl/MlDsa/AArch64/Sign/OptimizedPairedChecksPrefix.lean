@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedZ
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedLow
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedZ
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedLow
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sign.Optimized
 open VG VG.AArch64 VG.Spec.MlDsa

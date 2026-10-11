@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed448.X86.Shake
-import VerifiedGarbage.Impl.Ed448.X86.Scalar
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86.Shake
+public import VerifiedGarbage.Impl.Ed448.X86.Scalar
 
 /-!
 # Ed448 signing with a cached public key on x86 (32-bit)
@@ -29,6 +31,8 @@ at `esp`, 24 bytes; the caller's at `esp + 260`), with a 114-byte hash at
 
 Every address depends only on the pointers, the lengths and `esp`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86.SignCached
 

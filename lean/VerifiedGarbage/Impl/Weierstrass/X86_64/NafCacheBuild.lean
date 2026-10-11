@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
 
 /-! Precompute Z² and Z³ once for each public odd-multiple table entry. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86_64.Naf
 open VG VG.X86_64 VG.Impl.Mont
 

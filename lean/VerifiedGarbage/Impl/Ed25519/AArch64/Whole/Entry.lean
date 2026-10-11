@@ -1,6 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Shared saved arguments and stack frame for complete Ed25519 operations. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.AArch64.Whole
 open VG.AArch64
 

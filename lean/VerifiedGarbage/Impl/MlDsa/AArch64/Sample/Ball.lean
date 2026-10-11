@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_sample_in_ball`
@@ -17,6 +19,8 @@ and increments `i`. It returns `i >> 8`: 1 if `i = 256`, and 0 otherwise.
 Its branches and addresses depend on the SHAKE256 output, a function of
 `c̃`, which the contract lets it leak.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sample
 

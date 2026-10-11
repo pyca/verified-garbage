@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.Arm.Sample
-import VerifiedGarbage.Spec.MlDsa.Contract
+module
+
+public import VerifiedGarbage.Impl.MlKem.Arm.Sample
+public import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa{44,65,87}_sign_message` and `_verify_message`
@@ -33,6 +35,8 @@ immediates, or from `r0` (the position the previous sponge function
 returned). Every address and branch depends only on the pointers and the
 lengths, and the calls' own leakage.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.Message
 

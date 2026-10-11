@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Camellia.AArch64.Ecb
-import VerifiedGarbage.Impl.Modes.AArch64.Ctr
+module
+
+public import VerifiedGarbage.Impl.Camellia.AArch64.Ecb
+public import VerifiedGarbage.Impl.Modes.AArch64.Ctr
 
 /-!
 # Camellia-CTR, bitsliced, on AArch64
@@ -18,6 +20,8 @@ transforms the eight blocks of the tail buffer and keeps the data's address
 (`x2`), the blocks left (`x3`) and that address, as in ECB. The schedule's
 address (`x0`) and the number of rounds (`x1`) are the key arguments.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.AArch64
 

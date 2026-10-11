@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
 open VG VG.AArch64

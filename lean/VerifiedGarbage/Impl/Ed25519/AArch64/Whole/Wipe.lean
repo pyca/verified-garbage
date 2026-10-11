@@ -1,4 +1,8 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.AArch64.Whole
 open VG.AArch64

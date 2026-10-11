@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesGcm.X86
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices: x86 (32-bit) implementation
@@ -19,6 +21,8 @@ at a time through `eax`, with `ecx` its number of words (`copyWords`), then
 its last `len mod 4` bytes one at a time (`copyLoop`). The branches are on
 `src_count` and the slices' lengths alone.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcm.X86.SealGather
 

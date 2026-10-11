@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Blake2.X86_64
+module
+
+public import VerifiedGarbage.Impl.Blake2.X86_64
 
 /-!
 # Streaming BLAKE2: x86-64 implementation
@@ -30,6 +32,8 @@ analysis, which tracks which registers hold the base address of a region
 through registers but not through memory. Every address and branch depends
 only on the pointers, `count` and the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blake2.X86_64.Stream
 

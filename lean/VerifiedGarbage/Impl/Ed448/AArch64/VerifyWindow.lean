@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 
 /-!
 # Ed448 verification's equation on AArch64, by a comb and 4-bit windows
@@ -26,6 +28,8 @@ register that could keep its pointer; `R`, once decoded, is kept at `RX` and
 the working space and restores them. Every address and branch depends only on
 the pointers and counters.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.AArch64
 

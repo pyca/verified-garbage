@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.RsaPss.X86_64.Buffers
-import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
+module
+
+public import VerifiedGarbage.Impl.RsaPss.X86_64.Buffers
+public import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
 
 /-!
 # RSASSA-PSS (RFC 8017 §8.1, EMSA-PSS §9.1) on x86-64
@@ -78,6 +80,8 @@ under the mask of bit `j` of `pos + 1`), leaving `0⁸ ‖ mHash ‖ salt` and
 zeros; it is hashed (`ctHash`), and the digest compared with `H`. The
 result is 1 if `acc = 0`, computed without a branch.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaPss.X86_64
 

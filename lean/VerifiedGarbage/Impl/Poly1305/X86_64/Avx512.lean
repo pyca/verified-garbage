@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
+module
+
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
 
 /-!
 # Poly1305 blocks: x86-64 implementation with AVX-512
@@ -44,6 +46,8 @@ No callee-saved register is written, and `vzeroupper` precedes the calls and
 the return. The branches are on `n` only, and every address is a pointer
 plus a constant, so only the pointers and `n` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Poly1305.X86_64.Avx512
 

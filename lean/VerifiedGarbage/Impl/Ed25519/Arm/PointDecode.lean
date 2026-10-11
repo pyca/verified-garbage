@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.RecoverSign
-import VerifiedGarbage.Impl.Ed25519.Arm.Packed
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.RecoverSign
+public import VerifiedGarbage.Impl.Ed25519.Arm.Packed
 
 /-! Strict point decoding through r12. Sign metadata lives outside field scratch. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 

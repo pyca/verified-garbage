@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.AArch64.Aese
+module
+
+public import VerifiedGarbage.Impl.Aes.AArch64.Aese
 
 /-!
 # AES with the Armv8 Cryptographic Extension: encryption and decryption of whole blocks
@@ -28,6 +30,8 @@ down to 2 (those above 9 chosen by `x6` and `x7`), then `aesd` with round key
 Neither uses `scratch` or writes a callee-saved register. Every branch and
 every address depends only on the pointers, `rounds` and `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.AArch64.Aese
 

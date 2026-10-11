@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Md5.Arm
-import VerifiedGarbage.Impl.MdStream.Arm
+module
+
+public import VerifiedGarbage.Impl.Md5.Arm
+public import VerifiedGarbage.Impl.MdStream.Arm
 
 /-!
 # Streaming MD5: 32-bit ARM implementation
@@ -13,6 +15,8 @@ The streaming state (80 bytes at `state`) is the MD buffer followed by a
   (`vg_md5_compress`) with `scratch[0..64)` as its scratch space, and saving our
   caller's `r4`–`r11` and `lr` in `scratch[64..100)`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Md5.Arm.Stream
 

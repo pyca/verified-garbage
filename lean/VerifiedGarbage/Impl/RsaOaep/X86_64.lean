@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Mgf1.X86_64
+module
+
+public import VerifiedGarbage.Impl.Mgf1.X86_64
 
 /-!
 # RSAES-OAEP (RFC 8017 §7.1) on x86-64
@@ -51,6 +53,8 @@ message, then zeros. With `ok` all ones exactly when `r = 1` and
 `*msg_len` receives `(t - idx - 1) ∧ ok`, and the result is
 `(ok ∧ 1) ∨ (r = 2 ? 2 : 0)`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaOaep.X86_64
 

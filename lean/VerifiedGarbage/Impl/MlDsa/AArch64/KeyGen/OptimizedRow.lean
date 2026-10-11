@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedDot
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedDot
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.KeyGen.Optimized
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Call

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Sample
-import VerifiedGarbage.Impl.Sha3.X86_64.X4
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
+public import VerifiedGarbage.Impl.Sha3.X86_64.X4
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4` and `vg_mlkem_sample_ntt4_avx2`
@@ -49,6 +51,8 @@ their stores, and whether the function calls `vg_mlkem_sample_ntt`,
 depend on the XOF output, a function of the seeds, and on nothing else;
 every other address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64.Sample4
 

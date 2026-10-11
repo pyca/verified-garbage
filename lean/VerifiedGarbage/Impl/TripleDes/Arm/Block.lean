@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.TripleDes.Arm.Common
-import VerifiedGarbage.Impl.TripleDes.Arm.Sbox
+module
+
+public import VerifiedGarbage.Impl.TripleDes.Arm.Common
+public import VerifiedGarbage.Impl.TripleDes.Arm.Sbox
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.Arm
 open VG.Arm

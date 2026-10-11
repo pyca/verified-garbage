@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Scrypt.X86.Salsa
+module
+
+public import VerifiedGarbage.Impl.Scrypt.X86.Salsa
 
 /-!
 # scryptBlockMix: x86 (32-bit) implementation
@@ -26,6 +28,8 @@ returns: with the return address the call stores, it uses the 12 bytes
 below `esp`. Every address is `esp` or one of our variables plus a constant,
 and the only branch is on the pointers and `r`, so only they affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.X86
 

@@ -1,11 +1,13 @@
-import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.KeyGen
-import VerifiedGarbage.Impl.MlDsa.X86.Arith.Ntt
-import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
-import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
-import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejNtt
-import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejBounded
-import VerifiedGarbage.Impl.MlDsa.X86.Round.Round
-import VerifiedGarbage.Impl.MlDsa.X86.Pack.Encode
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.KeyGen
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Ntt
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
+public import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejNtt
+public import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejBounded
+public import VerifiedGarbage.Impl.MlDsa.X86.Round.Round
+public import VerifiedGarbage.Impl.MlDsa.X86.Pack.Encode
 
 /-!
 # ML-DSA key generation on x86 (32-bit), with this library's primitives
@@ -13,6 +15,8 @@ import VerifiedGarbage.Impl.MlDsa.X86.Pack.Encode
 `keyGen` (`KeyGen.lean`) called with the x86 implementations of the
 primitives it calls (`Arith/`, `Sample/`, `Round/`, `Pack/`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.KeyGen
 

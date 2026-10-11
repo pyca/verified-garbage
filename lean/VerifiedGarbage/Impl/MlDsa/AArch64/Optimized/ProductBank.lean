@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Product
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Inverse
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Product
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Inverse
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized
 open VG.AArch64

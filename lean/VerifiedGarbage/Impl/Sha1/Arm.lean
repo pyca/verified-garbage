@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha1
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.Spec.Sha1
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # SHA-1 compression function: ARMv7 implementation
@@ -19,6 +21,8 @@ the ARMv7 SHA-256 implementation:
 * `r0`–`r3` (the pointers and the block count) are public; no address and no
   branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha1.Arm
 

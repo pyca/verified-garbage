@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Verify
+module
+
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Verify
 
 /-!
 # RSASSA-PKCS1-v1_5 recovery on AArch64
@@ -23,6 +25,8 @@ Everything is public, so it branches freely. The frame is
 `vg_rsa_pkcs1_verify`'s; across the call, `out`, `out_len`, `k` and `hash`
 are kept in `x19`–`x22`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaPkcs1Sig.AArch64.Recover
 

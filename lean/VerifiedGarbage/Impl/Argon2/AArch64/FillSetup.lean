@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.Compress
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Impl.Argon2.AArch64.Compress
 
 /-! Convert initialization's byte stride to filling dimensions and reset the public pass. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.FillSetup
 

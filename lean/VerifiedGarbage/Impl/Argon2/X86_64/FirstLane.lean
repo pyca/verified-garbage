@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! Force the current lane on the first slice of the first pass.
 
@@ -6,6 +8,8 @@ The pass and slice are public in `r9` and `r14`. The current lane is in
 `rbx`; `r8` initially contains J₂ modulo the lane count. Only the public
 position controls a branch.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.FirstLane
 

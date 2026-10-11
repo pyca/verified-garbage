@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64
-import VerifiedGarbage.Impl.Weierstrass.TCombWords
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64
+public import VerifiedGarbage.Impl.Weierstrass.TCombWords
 
 /-!
 # Short Weierstrass curves on AArch64: a fixed-base comb
@@ -28,6 +30,8 @@ selects it by the mask of the digit's sign. The table's code is chosen by
 the iteration's counter `x19`, which is public, as are every address and
 branch.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.AArch64
 

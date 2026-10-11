@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.EcKey.AArch64
-import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
+module
+
+public import VerifiedGarbage.Impl.EcKey.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 
 /-! # P-521 public keys on AArch64: nine-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.EcKey.AArch64
 

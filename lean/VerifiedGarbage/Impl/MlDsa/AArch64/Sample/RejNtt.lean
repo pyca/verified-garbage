@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_rej_ntt_poly`
@@ -18,6 +20,8 @@ otherwise.
 The loop's branches and addresses depend on the XOF output, a function of
 the seed, which the contract lets it leak.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sample
 

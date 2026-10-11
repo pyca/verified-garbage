@@ -1,6 +1,8 @@
-import VerifiedGarbage.Spec.Sha3
-import VerifiedGarbage.Impl.Sha3.Tables
-import VerifiedGarbage.Impl.Sha512.X86
+module
+
+public import VerifiedGarbage.Spec.Sha3
+public import VerifiedGarbage.Impl.Sha3.Tables
+public import VerifiedGarbage.Impl.Sha512.X86
 
 /-!
 # Keccak-f[1600]: x86 (32-bit) implementation
@@ -38,6 +40,8 @@ which depends only on the pointers, so only the pointers can affect timing.
 The loop runs two rounds per iteration, so that `esi` and `edi` are the same
 source and destination of the same rounds on every iteration.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.X86
 

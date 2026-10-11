@@ -1,4 +1,6 @@
-import Lean.Elab.ElabRules
+module
+
+public meta import Lean.Elab.ElabRules
 
 /-!
 # Tables of pairs of numerals
@@ -12,6 +14,8 @@ List (Nat × Nat)`, built directly as the term the elaborator builds for it
 elaborator took most of their modules' time over, a numeral and a pair at a
 time.
 -/
+
+public meta section
 
 namespace VG.Impl.NatPairs
 open Lean Elab

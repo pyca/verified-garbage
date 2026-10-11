@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
+module
+
+public import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
 
 /-!
 # scrypt: AArch64 implementation
@@ -27,6 +29,8 @@ Only the pointers and the lengths affect timing: the only branch is on the
 bytes of `b` left, and every address is in the frames (`sp` plus a
 constant).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.AArch64
 

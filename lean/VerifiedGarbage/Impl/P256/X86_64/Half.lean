@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Mont.X86_64
+module
+
+public import VerifiedGarbage.Impl.Mont.X86_64
 
 /-! Branchless modular halving for canonical P-256 field elements. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.X86_64
 open VG VG.X86_64 VG.Impl.Mont.X86_64
 

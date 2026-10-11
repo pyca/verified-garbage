@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesCbc.Arm
+module
+
+public import VerifiedGarbage.Impl.AesCbc.Arm
 
 /-!
 # AES-CTR: ARMv7 implementation
@@ -22,6 +24,8 @@ reversed again and stored.
 Only the pointers, `rounds` and `n` can affect timing: the only branches are
 on `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesCtr.Arm
 

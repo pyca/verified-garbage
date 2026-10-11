@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rsa.AArch64.Keys
+module
+
+public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 
 /-!
 # `vg_rsa_recover_primes` on AArch64
@@ -32,6 +34,8 @@ Every loop counts down a register with `cbnz`, or tests a value computed
 into a register, and every comparison's carry is made a register's value by
 `csel`: the model branches only on whether a register is zero.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.AArch64.Recover
 

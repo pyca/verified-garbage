@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
 
 /-!
 # ML-DSA on AArch64: arithmetic modulo `q`
@@ -24,6 +26,8 @@ steps use the sign bit of a 64-bit difference.
 * `storeTab t n b`: the table `t 0, …, t (n - 1)` of constants stored as
   `u32`s at `b` (in the working space), through `x9`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Arith
 

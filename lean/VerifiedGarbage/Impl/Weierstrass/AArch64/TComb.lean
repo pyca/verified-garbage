@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
 
 /-!
 # Short Weierstrass curves on AArch64: a fixed-base comb from tables in memory
@@ -31,6 +33,8 @@ stored at `E.x`, which `E.y` continues. The entry's `Z` is `1`
 `(0 : 1 : 0)`. The negation computes `0 - y` and selects it by the mask of the
 digit's sign.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.AArch64
 

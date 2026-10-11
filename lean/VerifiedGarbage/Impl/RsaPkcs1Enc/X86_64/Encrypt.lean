@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64
@@ -28,6 +30,8 @@ multiple of 16 at the call, as the System V ABI asks: at `rsp`, the call's
 stack arguments; from `oOut`, the slots; from `oEM`, `EM`, up to 1024
 bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaPkcs1Enc.X86_64.Encrypt
 

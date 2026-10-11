@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.RsaPss.X86_64
+module
+
+public import VerifiedGarbage.Impl.RsaPss.X86_64
+
+@[expose] public section
 
 namespace VG.Impl.RsaPss.X86_64.Precomputed
 

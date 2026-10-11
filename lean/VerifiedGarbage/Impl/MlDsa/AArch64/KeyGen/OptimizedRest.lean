@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedNtt
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRow
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedNtt
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRow
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.KeyGen.Optimized
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Call

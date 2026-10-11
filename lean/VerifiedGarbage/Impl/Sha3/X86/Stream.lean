@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Sha3.X86
+module
+
+public import VerifiedGarbage.Impl.Sha3.X86
 
 /-!
 # The SHA-3 sponge: x86 (32-bit) implementation
@@ -39,6 +41,8 @@ state: `pos < rate ≤ 168`). Values the analysis must know to be public are
 loaded from memory with `mov`. Every address and branch depends only on
 `esp`, the pointers, `rate`, `pos` and the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.X86.Stream
 

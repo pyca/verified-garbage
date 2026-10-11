@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Fixed-schedule P-256 small linear combinations.
 The coefficient schedules are adapted from s2n-bignum
@@ -6,6 +8,9 @@ The coefficient schedules are adapted from s2n-bignum
 Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 SPDX-License-Identifier: MIT-0
 -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.Linear
 open VG VG.AArch64
 

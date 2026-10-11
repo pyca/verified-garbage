@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.Arm.Ntt
-import VerifiedGarbage.Impl.Sha3.Arm.Stream
+module
+
+public import VerifiedGarbage.Impl.MlKem.Arm.Ntt
+public import VerifiedGarbage.Impl.Sha3.Arm.Stream
 
 /-!
 # ML-KEM on 32-bit ARM: `SampleNTT`, and calling the SHA-3 sponge
@@ -29,6 +31,8 @@ The loop's branches depend on the XOF output, a function of the seed, which
 the contract lets the function leak; every address depends only on the
 pointers and on `j`, likewise.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.Arm
 

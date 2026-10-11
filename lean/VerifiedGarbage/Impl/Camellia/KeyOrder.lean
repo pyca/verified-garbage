@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Camellia
+module
+
+public import VerifiedGarbage.Spec.Camellia
 
 /-!
 # The order of Camellia's subkeys
@@ -10,6 +12,8 @@ Every target's key schedule computes and stores them in this order. And
 the planes of the constants `Sigma1 … Sigma6`, which every target's key
 schedule stores as a table of subkeys for its bitsliced rounds.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia
 

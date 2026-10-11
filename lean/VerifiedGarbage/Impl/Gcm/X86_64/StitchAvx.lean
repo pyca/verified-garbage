@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 
 /-!
 # AES-GCM's counter mode and GHASH, interleaved, with AES-NI and PCLMULQDQ in AVX
@@ -28,6 +30,8 @@ hashed, `xmm8`–`xmm11` the product (`lo`, `mid`, `hi`) and a temporary,
 increment. `rdx` points to the group being hashed, `rax` to the counter,
 `r10` to the last round key, `r11` to `scratch`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.X86_64.StitchAvx
 

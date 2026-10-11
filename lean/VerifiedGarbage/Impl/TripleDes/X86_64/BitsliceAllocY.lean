@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.TripleDes.BitsliceCircuit
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.Impl.TripleDes.BitsliceCircuit
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # Register allocation of the DES S-box circuits on AVX2 registers
@@ -17,6 +19,8 @@ slot is loaded back into a register before its next use.
 Nothing here needs to be trusted: the proofs check the code this produces,
 not the allocator.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86_64.BitsliceAvx2
 

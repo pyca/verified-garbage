@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Rsa.X86_64
-import VerifiedGarbage.Impl.Bignum.X86_64.Adx
-import VerifiedGarbage.Impl.Bignum.CrtLayout
+module
+
+public import VerifiedGarbage.Impl.Rsa.X86_64
+public import VerifiedGarbage.Impl.Bignum.X86_64.Adx
+public import VerifiedGarbage.Impl.Bignum.CrtLayout
 
 /-!
 # RSA with the CRT private key on x86-64
@@ -32,6 +34,8 @@ The code runs in one at a time, its base in `rdi`; the headers of `p`'s and
    powers after the prime's arrays, read by masked selections (`expLoop`); `h = (m_p - m_q) qInv mod p`
    and `m = m_q + q h`, written out masked.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.X86_64.Crt
 

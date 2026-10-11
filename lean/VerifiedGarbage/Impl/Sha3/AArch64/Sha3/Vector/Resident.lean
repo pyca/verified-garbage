@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.ResidentCore
-import VerifiedGarbage.Impl.Sha3.AArch64.Stream
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.ResidentCore
+public import VerifiedGarbage.Impl.Sha3.AArch64.Stream
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.AArch64.Sha3.Vector.Resident
 

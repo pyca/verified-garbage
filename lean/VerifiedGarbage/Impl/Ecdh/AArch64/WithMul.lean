@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.Ecdh.AArch64
+module
+
+public import VerifiedGarbage.Impl.Ecdh.AArch64
+
+@[expose] public section
 
 namespace VG.Impl.Ecdh.AArch64.Cfg
 open VG VG.AArch64

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Common
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Common
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_compress_encode` and `vg_mlkem_decode_decompress`
@@ -25,6 +27,8 @@ is also the number whose bytes are its bytes.
 
 Every address and branch depends only on the pointers and `d`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

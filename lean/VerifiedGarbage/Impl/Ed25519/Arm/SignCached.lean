@@ -1,18 +1,23 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.PublicKey
-import VerifiedGarbage.Impl.Sha512.Arm.Stream
-import VerifiedGarbage.Spec.Sha512.Contract
-import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
-import VerifiedGarbage.Impl.Ed25519.Arm.SignCached.Prefix
-import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Setup
-import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Entry
-import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Wipe
-import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
-import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
-import VerifiedGarbage.Spec.Ed25519.CachedSign
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.PublicKey
+public import VerifiedGarbage.Impl.Sha512.Arm.Stream
+public import VerifiedGarbage.Spec.Sha512.Contract
+public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
+public import VerifiedGarbage.Impl.Ed25519.Arm.SignCached.Prefix
+public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Setup
+public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Entry
+public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Wipe
+public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
+public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
+public import VerifiedGarbage.Spec.Ed25519.CachedSign
 
 /-! Complete ARMv7 cached-key signing, including SHA-512. The 248-byte
 local frame contains scalar24, prefix56, nonce88, challenge120 and digest184.
 Saved caller arguments begin at248. All secret locals are cleared. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm.SignCached
 open VG.Arm VG.Impl.Ed25519.Arm.Whole
 

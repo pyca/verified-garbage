@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.ChaCha20.X86_64
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.X86_64
 
 /-!
 # XORing keystream from a buffer into the data, eight bytes at a time
@@ -13,6 +15,8 @@ The branches are on `rcx`, `rax` and `rdx` only, which depend on the length
 alone, and every address is `d` or `b` plus `rcx`, so only the pointers and
 the length can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.X86_64.XorBuf
 

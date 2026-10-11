@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Rc2.X86_64.Sse2Lookup
+module
+
+public import VerifiedGarbage.Impl.Rc2.X86_64.Sse2Lookup
 
 /-! # Eight-way constant-time RC2 schedule scans on baseline x86-64 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.X86_64.Sse2
 

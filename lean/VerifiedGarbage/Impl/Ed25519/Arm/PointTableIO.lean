@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Packed
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Packed
 
 /-! Fixed workspace addresses for the packed verification points. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 

@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.CombTable
-import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointSelect
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.CombTable
+public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointSelect
 
 /-!
 # Ed25519: base-point multiplication with a comb
@@ -27,6 +29,8 @@ affine (`Z = 1`), so an addition multiplies by `2Z = 2` with an addition
 (`pointAddAffine`). The loop's counter `rbx`, the bit index `rcx` and the
 table index `r9` are public.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

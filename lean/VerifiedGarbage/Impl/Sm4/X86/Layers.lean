@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Sm4.X86.Sbox
-import VerifiedGarbage.Impl.Sm4.Lin
-import VerifiedGarbage.Impl.Aes.X86.Ctr32
+module
+
+public import VerifiedGarbage.Impl.Sm4.X86.Sbox
+public import VerifiedGarbage.Impl.Sm4.Lin
+public import VerifiedGarbage.Impl.Aes.X86.Ctr32
 
 /-!
 # The layers of bitsliced SM4 on x86 (32-bit)
@@ -25,6 +27,8 @@ most significant is at bits `8 i … 8 i + 7`) into slots `0 … 7`, AES's
 `ortho` (the 8×8 bit transpose in each byte position) gives its planes,
 and back.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.X86
 

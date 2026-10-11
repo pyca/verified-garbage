@@ -1,4 +1,8 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.MontProduct
 open VG VG.AArch64

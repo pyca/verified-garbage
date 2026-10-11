@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Mont.Mod
+module
+
+public import VerifiedGarbage.Impl.Mont.Mod
 
 /-!
 # Powers by sliding windows, on any target
@@ -11,6 +13,8 @@ the first window `d₀` and steps `(s, d)`: square `s` times, then multiply by
 `x^d` (`d` odd, or `0` for none). The steps' value from `d₀` is `e`
 (`chainVal`), which the proofs check for each exponent.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass
 

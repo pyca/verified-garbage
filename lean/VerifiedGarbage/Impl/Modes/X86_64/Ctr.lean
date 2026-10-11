@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.X86_64.Sbox
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.Sbox
 
 /-!
 # CTR on x86-64, for any block cipher with 16-byte blocks
@@ -32,6 +34,8 @@ Only the pointers and `n` (and what is computed from them) are public; the
 counter is secret like the key and the data, and no address or branch
 depends on it.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Modes.X86_64
 

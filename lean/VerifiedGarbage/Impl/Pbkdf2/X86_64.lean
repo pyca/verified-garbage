@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MdStream.X86_64
+module
+
+public import VerifiedGarbage.Impl.MdStream.X86_64
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function: x86-64 implementation
@@ -28,6 +30,8 @@ bytes from `so + 48`) and right after it the block (`B` bytes). Registers:
 preserves them. Every address and branch depends only on the pointers and
 `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Pbkdf2.X86_64
 

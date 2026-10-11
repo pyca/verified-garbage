@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.FieldCheck
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.FieldCheck
 
 /-!
 Recover a candidate x-coordinate from y, before checking its square and sign.
@@ -9,6 +11,8 @@ of dependent multiplications, run side by side (`rootPower2`), so that each one'
 multiplications overlap the other's. The candidate (`recoverCandidate`) then takes the power
 from slot 15.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

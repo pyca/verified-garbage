@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Camellia.X86_64.Ecb
-import VerifiedGarbage.Impl.Modes.X86_64.Ctr
+module
+
+public import VerifiedGarbage.Impl.Camellia.X86_64.Ecb
+public import VerifiedGarbage.Impl.Modes.X86_64.Ctr
 
 /-!
 # Camellia-CTR, bitsliced, on x86-64
@@ -18,6 +20,8 @@ blocks left (`r8`) and that address in their slots while `crypt8` runs, as
 ECB does (`saveState`, `loadState`). The schedule's address (`rdi`) and the
 number of rounds (`rsi`) are the key arguments.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.X86_64
 

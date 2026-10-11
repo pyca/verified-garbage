@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Aes.Arm.Ctr32
-import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
-import VerifiedGarbage.Impl.Gcm.Arm
+module
+
+public import VerifiedGarbage.Impl.Aes.Arm.Ctr32
+public import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
+public import VerifiedGarbage.Impl.Gcm.Arm
 
 /-!
 # AES-GCM: 32-bit ARM implementation
@@ -72,6 +74,8 @@ Only the pointers, the lengths, `rounds`, `tag_len` and (for `open`) whether
 the tag is right can affect timing: the branches are on those, and the tags
 are compared without a branch.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcm.Arm
 

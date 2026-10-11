@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.DotInverse
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.DotInverse
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sign.Optimized
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Call

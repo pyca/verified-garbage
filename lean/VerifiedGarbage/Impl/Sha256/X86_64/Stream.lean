@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Sha256.X86_64
-import VerifiedGarbage.Impl.Sha256.X86_64.ShaNi
-import VerifiedGarbage.Impl.Sha256.X86_64.Avx2
-import VerifiedGarbage.Impl.MdStream.X86_64
+module
+
+public import VerifiedGarbage.Impl.Sha256.X86_64
+public import VerifiedGarbage.Impl.Sha256.X86_64.ShaNi
+public import VerifiedGarbage.Impl.Sha256.X86_64.Avx2
+public import VerifiedGarbage.Impl.MdStream.X86_64
 
 /-!
 # Streaming SHA-256: x86-64 implementation
@@ -28,6 +30,8 @@ are saved in `scratch[560..608)`. The length field is big-endian, and so are
 the words of the digest. (HMAC-SHA256 calls the compression function and
 saves registers the same way: `saved`, `save`, `restore` and `compressAt`.)
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha256.X86_64.Stream
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.Arm.Top
-import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
+module
+
+public import VerifiedGarbage.Impl.MlKem.Arm.Top
+public import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: key generation, encapsulation, decapsulation
@@ -17,6 +19,8 @@ The keys and ciphertexts are laid out as FIPS 203 says: `ek` is
 `ByteEncode₁₁(Compress₁₁(u[i]))` (352 bytes each) then
 `ByteEncode₅(Compress₅(v))` (at 1408).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem1024.Arm
 

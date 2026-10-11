@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareMac
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareMac
 
 /-! Longer register-scalar multiply-add chains for Montgomery reduction. -/
+
+@[expose] public section
+
 namespace VG.Impl.Bignum.X86_64.AdxSquareWide
 open VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Adx
 

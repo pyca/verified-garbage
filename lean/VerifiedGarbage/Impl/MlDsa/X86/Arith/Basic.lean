@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86.Basic
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): arithmetic modulo `q`, `vg_mldsa_add` and `vg_mldsa_sub`
@@ -33,6 +35,8 @@ Both are the loop `Impl.MlKem.X86.mapLoop` with `esi = f`, `edi = g` and
 `eax = f[i]`, with `edx` as a temporary. Every address and branch depends
 only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.Arith
 

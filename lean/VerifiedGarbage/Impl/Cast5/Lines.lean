@@ -1,3 +1,5 @@
+module
+
 /-!
 # CAST5 key schedule: the lines of RFC 2144 §2.4, as data
 
@@ -7,6 +9,8 @@ computing `z` or `x`, with a quadruple of the other array. The lines come in
 groups of four (`zLines`, `aLines`, …) whose extra S-boxes are S5–S8, one
 each, so the implementations make a group's four extra lookups at once.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Cast5
 

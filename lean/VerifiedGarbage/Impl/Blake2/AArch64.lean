@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Blake2
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Spec.Blake2
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # BLAKE2 compression function: AArch64 implementation
@@ -29,6 +31,8 @@ for words of `w` bits (64 for BLAKE2b, 32 for BLAKE2s, with the 64-bit or
   (advanced by the block size) or `scratch` plus a constant, so only the
   pointers and `n` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blake2.AArch64
 

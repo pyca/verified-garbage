@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha256
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # SHA-256 compression with the AArch64 SHA-2 instructions
@@ -18,6 +20,8 @@ used to build them; later blocks only read them. Only caller-saved registers
 are used, and scratch is unused. The count and block pointer control the
 only branches; message words never affect addresses or branches.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha256.AArch64.Sha2
 

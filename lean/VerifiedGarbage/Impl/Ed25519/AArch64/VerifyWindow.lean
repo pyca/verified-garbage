@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed25519.BaseMultiples
-import VerifiedGarbage.Impl.Ed25519.AArch64.BaseMultiply
+module
+
+public import VerifiedGarbage.Impl.Ed25519.BaseMultiples
+public import VerifiedGarbage.Impl.Ed25519.AArch64.BaseMultiply
 
 /-!
 # Verification's equation with 4-bit windows
@@ -16,6 +18,8 @@ its low 32 are skipped (`skipZero`): before them the sum is zero, which
 doubles to itself. The equation `[S]B = R + [k]A` holds exactly when the
 result equals `-R`, which the projective comparison `pointEqual` checks.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.AArch64
 

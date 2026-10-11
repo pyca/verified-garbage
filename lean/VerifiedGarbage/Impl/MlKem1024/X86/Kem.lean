@@ -1,8 +1,10 @@
-import VerifiedGarbage.Impl.MlKem.X86.KeyGen
-import VerifiedGarbage.Impl.MlKem.X86.Encaps
-import VerifiedGarbage.Impl.MlKem.X86.Decaps
-import VerifiedGarbage.Impl.MlKem.X86.CheckEk
-import VerifiedGarbage.Impl.MlKem1024.X86.Compress
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.KeyGen
+public import VerifiedGarbage.Impl.MlKem.X86.Encaps
+public import VerifiedGarbage.Impl.MlKem.X86.Decaps
+public import VerifiedGarbage.Impl.MlKem.X86.CheckEk
+public import VerifiedGarbage.Impl.MlKem1024.X86.Compress
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): `vg_mlkem1024_keygen`, `_encaps`, `_decaps` and `_check_ek`
@@ -14,6 +16,8 @@ bytes, laid out as `Impl/MlKem/X86/Kem.lean` says), which compresses to 5 and
 `vg_mlkem1024_decode_decompress` (`Compress.lean`). The key check loops over
 the 512 groups of three bytes of `ek[0 : 1536]`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem1024.X86
 

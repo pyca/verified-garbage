@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Blake2.Arm.Stream
-import VerifiedGarbage.Impl.Blake2.Arm.CompressB
+module
+
+public import VerifiedGarbage.Impl.Blake2.Arm.Stream
+public import VerifiedGarbage.Impl.Blake2.Arm.CompressB
 
 /-!
 # Argon2 H′ on ARMv7
@@ -25,6 +27,8 @@ H′'s macros (`init`, `update`, `finalize`) write only `r0`–`r3`, `r9`, `r10`
 The rest of `scratch` is not used. Only `sp`, the pointers and the lengths
 affect branches and addresses.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.Arm.HPrime
 

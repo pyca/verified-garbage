@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ball
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ball
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.Ball
 

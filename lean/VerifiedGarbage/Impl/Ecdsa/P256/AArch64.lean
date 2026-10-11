@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.Ecdsa.AArch64
-import VerifiedGarbage.Spec.P256
-import VerifiedGarbage.Impl.P256.CombTable7
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.AArch64
+public import VerifiedGarbage.Spec.P256
+public import VerifiedGarbage.Impl.P256.CombTable7
 
 /-! # ECDSA over P-256 on AArch64: four-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.AArch64
 

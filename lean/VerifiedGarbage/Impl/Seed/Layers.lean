@@ -1,3 +1,5 @@
+module
+
 /-!
 # SEED's S-boxes through AES's
 
@@ -12,6 +14,8 @@ for linear maps `P0` and `P1`. `Proof/Seed/Sbox.lean` checks both on all
 A linear map is given by its rows: output bit `j` is the XOR of the input
 bits `rows[j]` (bit 0 the least significant).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed
 

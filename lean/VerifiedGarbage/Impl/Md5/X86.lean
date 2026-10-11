@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Md5
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.Spec.Md5
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # MD5 compression function: x86 (32-bit) implementation
@@ -21,6 +23,8 @@ The same structure as the x86-64 implementation:
 * `esp` and the arguments (the pointers and the block count) are public; no
   address and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Md5.X86
 

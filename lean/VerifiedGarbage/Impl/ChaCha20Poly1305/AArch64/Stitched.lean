@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
-import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitch
+module
+
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitch
 
 /-!
 # ChaCha20-Poly1305: AArch64, with Poly1305 inside the ChaCha20 kernel
@@ -27,6 +29,8 @@ and only the rest with those calls:
 The registers `x21`–`x25` and `x30` hold other values meanwhile; the
 prologue saved them, and `restore` restores them.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20Poly1305.AArch64
 

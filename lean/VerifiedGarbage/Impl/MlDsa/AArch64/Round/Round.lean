@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
 
 /-!
 # ML-DSA on AArch64: rounding and hints
@@ -35,6 +37,8 @@ registers.
   if `f · 2γ₂ < a` (`r₀ > 0`), -1 otherwise (`2s - 1` for the sign bit `s`
   of `f · 2γ₂ - a`, times the hint as 0 or 1: the sign bit of `0 - h`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Round
 

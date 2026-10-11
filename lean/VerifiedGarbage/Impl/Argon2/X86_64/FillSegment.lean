@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.FillBlock
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillBlock
 
 /-! Advance the public index after each active cell, stopping at the segment length. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.FillSegment
 

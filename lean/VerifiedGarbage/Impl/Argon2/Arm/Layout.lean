@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Argon2.Arm.HPrime
+module
+
+public import VerifiedGarbage.Impl.Argon2.Arm.HPrime
 
 /-!
 # Argon2 derivation on ARMv7: the frame
@@ -20,6 +22,8 @@ at `[r11, #argOff i]`. The locals are:
 Every value in the locals but H₀, the random word and the reference block
 is public.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.Arm.Derive
 

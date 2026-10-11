@@ -1,5 +1,9 @@
-import VerifiedGarbage.Spec.TripleDes
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.TCB.X86.Isa
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86
 open VG.X86

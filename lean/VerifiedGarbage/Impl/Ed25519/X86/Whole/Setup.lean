@@ -1,6 +1,11 @@
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! Small argument-setup blocks shared by the complete Ed25519 operations. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86.Whole
 open VG.X86
 

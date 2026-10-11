@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedSse
-import VerifiedGarbage.Impl.TripleDes.X86_64.BitsliceAllocY
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedSse
+meta import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedSse
+public import VerifiedGarbage.Impl.TripleDes.X86_64.BitsliceAllocY
+meta import VerifiedGarbage.Impl.TripleDes.X86_64.BitsliceAllocY
 
 /-!
 # Bitsliced Triple DES ECB on x86-64 with AVX2
@@ -26,6 +30,8 @@ code (`BitsliceSse.ecb`: a batch of 128 if that many are left, then the
   `rbx`, the only callee-saved register used, is saved in the scratch
   buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86_64.BitsliceAvx2
 

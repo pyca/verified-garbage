@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Kem
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Kem
 
 /-!
 # ML-KEM on x86-64: K-PKE.Encrypt, in encapsulation and decapsulation
@@ -24,6 +26,8 @@ is the AND of the results of `vg_mlkem_sample_ntt`, as in key generation.
    `e₂ = SamplePolyCBD₂(PRF₂(r, 2k))` and `μ = Decompress₁(ByteDecode₁(m))`,
    and `ByteEncode_{d_v}(Compress_{d_v}(v))` to `CT + 32 d_u k`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

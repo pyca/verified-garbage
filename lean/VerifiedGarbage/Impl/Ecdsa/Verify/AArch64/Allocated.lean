@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
-import VerifiedGarbage.Impl.P256.VerifyAllocated
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
+public import VerifiedGarbage.Impl.P256.VerifyAllocated
 
 /-! Public P-256 verification with register-allocated point and inversion arithmetic. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ecdsa.Verify.AArch64.P256Allocated
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 open VG.Impl.Weierstrass.AArch64 VG.Impl.Ecdsa.AArch64

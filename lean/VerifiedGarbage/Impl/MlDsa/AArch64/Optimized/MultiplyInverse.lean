@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ProductBank
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ProductBank
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.MultiplyInverse
 open VG VG.AArch64

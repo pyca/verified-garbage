@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
-import VerifiedGarbage.Impl.Mont.AArch64
-import VerifiedGarbage.Impl.Weierstrass.AArch64
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
+public import VerifiedGarbage.Impl.Mont.AArch64
+public import VerifiedGarbage.Impl.Weierstrass.AArch64
 
 /-!
 # Deterministic ECDSA (RFC 6979) on AArch64
@@ -67,6 +69,8 @@ a pointer an earlier block loaded from the frame (`digestPtr`, `msgPtrs`),
 never one it loads itself, so that the taint analysis of each block knows
 its addresses are public.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Rfc6979.AArch64
 

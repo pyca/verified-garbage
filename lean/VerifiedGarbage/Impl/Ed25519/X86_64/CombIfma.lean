@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
-import VerifiedGarbage.Impl.Ed25519.X86_64.Ifma
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Ifma
 
 /-!
 # Ed25519: base-point multiplication with a comb, with AVX512_IFMA
@@ -29,6 +31,8 @@ keeps MXCSR in `r11`; nothing in the loop writes `r11`). The digits and the
 sign are computed as `combMultiply` computes them,
 and every address is the scratch or the static plus a public offset.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64.Ifma
 

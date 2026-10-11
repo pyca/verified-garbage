@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.AbsorbBlock
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.AbsorbBlock
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.AArch64.Sha3.Vector.Resident
 

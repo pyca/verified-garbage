@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.RecoverSign
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.RecoverSign
 
 /-! Compare projective coordinates using the specification's cross products. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 

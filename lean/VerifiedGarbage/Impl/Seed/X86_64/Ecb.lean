@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Seed.X86_64.G16
-import VerifiedGarbage.Spec.Seed
+module
+
+public import VerifiedGarbage.Impl.Seed.X86_64.G16
+public import VerifiedGarbage.Spec.Seed
 
 /-!
 # SEED ECB on x86-64
@@ -31,6 +33,8 @@ registers.
   Every address and branch depends only on them, the scratch base and the
   copy loops' counters.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.X86_64
 

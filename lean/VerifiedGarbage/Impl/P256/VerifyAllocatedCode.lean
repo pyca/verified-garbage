@@ -1,8 +1,13 @@
-import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.Impl.AArch64Instrs
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Impl.AArch64Instrs
 
 /-! Lean-generated output of VerifyRegisters.optimize. These literal instruction
 blocks are untrusted input to the checked arithmetic certificates. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.VerifyAllocatedCode
 open VG VG.AArch64
 

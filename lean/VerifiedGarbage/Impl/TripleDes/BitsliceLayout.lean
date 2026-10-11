@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.TripleDes
+module
+
+public import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # Where bitsliced DES keeps each bit
@@ -16,6 +18,8 @@ A round reads `R` and XORs `f(R, K)` into `L`. S-box `j`'s input bit `i`
 `eBit (inBit j i)` and K's bit `inBit j i`; its output bit `i` is bit
 `outBit j i` of `f`, after P.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.Bitslice
 

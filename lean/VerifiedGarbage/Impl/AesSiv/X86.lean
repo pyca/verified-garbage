@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.AesGcm.X86
-import VerifiedGarbage.Impl.CmacAes.Stream.X86
-import VerifiedGarbage.Impl.StackScratch.X86
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86
+public import VerifiedGarbage.Impl.CmacAes.Stream.X86
+public import VerifiedGarbage.Impl.StackScratch.X86
 
 /-!
 # AES-SIV: x86 (32-bit) implementation
@@ -94,6 +96,8 @@ Only the pointers, `rounds`, the key length, `ads_count`, `len` and where
 the components of associated data are can affect timing: the branches are on
 them, and so are the numbers of calls, bytes copied and blocks chained.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesSiv.X86
 

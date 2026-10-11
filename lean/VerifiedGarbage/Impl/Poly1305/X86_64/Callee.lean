@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
+module
+
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
 
 /-!
 # The implementations of `vg_poly1305_blocks` on x86-64
@@ -9,6 +11,8 @@ A function that calls `vg_poly1305_blocks` (ChaCha20-Poly1305's `seal` and
 that a proof can evaluate the code of the one called (the constant-time
 check of `seal` and `open` descends into their calls).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Poly1305.X86_64
 

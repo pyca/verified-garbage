@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.ChaCha20.AArch64.XorCallee
-import VerifiedGarbage.Impl.Poly1305.AArch64.Radix64
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.XorCallee
+public import VerifiedGarbage.Impl.Poly1305.AArch64.Radix64
 
 /-!
 # ChaCha20-Poly1305: AArch64 implementation
@@ -43,6 +45,8 @@ zero with `cbnz`, and the tags are compared without a branch, as
 Only the pointers and the lengths can affect timing: the branches are on the
 lengths, and every address is a pointer plus a constant or a count.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20Poly1305.AArch64
 

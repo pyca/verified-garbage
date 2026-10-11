@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # GHASH: x86 (32-bit) implementation
@@ -35,6 +37,8 @@ still to be used, `[16, 32)` `Z`, `[32, 48)` the saved `ebx`, `esi`, `edi`
 and `ebp`, then the data pointer, the blocks left, the words left and the
 iterations left.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.X86
 

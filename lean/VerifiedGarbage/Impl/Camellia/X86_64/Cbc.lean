@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Camellia.X86_64.Ctr
-import VerifiedGarbage.Impl.Modes.X86_64.Cbc
-import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
+module
+
+public import VerifiedGarbage.Impl.Camellia.X86_64.Ctr
+public import VerifiedGarbage.Impl.Modes.X86_64.Cbc
+public import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
 
 /-!
 # Camellia-CBC, bitsliced, on x86-64
@@ -12,6 +14,8 @@ data = rcx, n = r8, scratch = r9)`: `vg_camellia_cbc_encrypt` and
 subkeys in the order of each direction (`dirCore`). Decryption transforms
 eight blocks at a time; encryption, which is sequential, one.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.X86_64
 

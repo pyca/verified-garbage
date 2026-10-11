@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Kem
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Kem
 
 /-!
 # ML-KEM on x86-64: key generation (`vg_mlkem768_keygen`, `vg_mlkem1024_keygen`)
@@ -24,6 +26,8 @@ Only the calls of `vg_mlkem_sample_ntt`, and the branch on their results,
 depend on `ρ` (which the contract declares that the function may leak);
 every other address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

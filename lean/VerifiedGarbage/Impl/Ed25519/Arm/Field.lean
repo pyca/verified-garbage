@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Word
-import VerifiedGarbage.Spec.Ed25519
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Word
+public import VerifiedGarbage.Spec.Ed25519
 
 /-! Extended Edwards formulas on the sixteen-limb field representation.
 Slots 0–21 occupy bytes 64–1471 of the eight-KiB workspace. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm

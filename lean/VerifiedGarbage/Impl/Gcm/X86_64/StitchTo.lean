@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
 
 /-!
 # The VAES interleaved encryption loop, out of place
@@ -16,6 +18,8 @@ the output blocks the pair is written to, `xorDataKTo`), and the ciphertext
 stored to `[rdx + 32 j]`, where the GHASH loads read it back, as in place.
 Everything else is the code of `Stitch.enc`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.X86_64.StitchTo
 

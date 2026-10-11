@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Mont.AArch64
-import VerifiedGarbage.Impl.Mont.AArch64.P256Square
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
-import VerifiedGarbage.Impl.Weierstrass.Slots
+module
+
+public import VerifiedGarbage.Impl.Mont.AArch64
+public import VerifiedGarbage.Impl.Mont.AArch64.P256Square
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
+public import VerifiedGarbage.Impl.Weierstrass.Slots
 
 /-!
 # Short Weierstrass curves on AArch64: points and scalar multiplication
@@ -24,6 +26,8 @@ The loops count down in `x19`. The only branches are on it, and every
 address is `x0` plus a constant, or plus the counter: nothing but `x0` may
 affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.AArch64
 

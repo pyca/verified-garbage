@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # RC4 on baseline x86 (32-bit)
@@ -20,6 +22,8 @@ secret index of a lookup or replacement in `ebp`, its result in `eax`;
 and `j` in `ebp`; the stream function keeps the count of bytes done in
 `ebx` and `j` in `ebp`. Both read the other arguments from the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc4.X86
 

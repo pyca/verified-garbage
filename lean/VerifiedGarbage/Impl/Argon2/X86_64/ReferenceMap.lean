@@ -1,9 +1,11 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceLane
-import VerifiedGarbage.Impl.Argon2.X86_64.FirstLane
-import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceStart
-import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceCount
-import VerifiedGarbage.Impl.Argon2.X86_64.Relative
-import VerifiedGarbage.Impl.Argon2.X86_64.Wrap
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceLane
+public import VerifiedGarbage.Impl.Argon2.X86_64.FirstLane
+public import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceStart
+public import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceCount
+public import VerifiedGarbage.Impl.Argon2.X86_64.Relative
+public import VerifiedGarbage.Impl.Argon2.X86_64.Wrap
 
 /-! Complete mapping of J₁ and J₂ to a reference lane and column.
 
@@ -13,6 +15,8 @@ index in `r14` and `r15`. The pass counter is at the frame base `rbp`:
 H₀'s first word is reused after memory initialization. `r9` and `rdi`
 receive the reference lane and column. The input word is retained in `r11`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.ReferenceMap
 

@@ -1,9 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.X86.PublicKey
-import VerifiedGarbage.Impl.Ed25519.X86.Whole.Setup
-import VerifiedGarbage.Impl.Ed25519.X86.Whole.Wipe
-import VerifiedGarbage.Impl.Ed25519.X86.Scalar
-import VerifiedGarbage.Impl.Ed25519.X86.MulAdd
-import VerifiedGarbage.Spec.Ed25519.CachedSign
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.PublicKey
+public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Setup
+public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Wipe
+public import VerifiedGarbage.Impl.Ed25519.X86.Scalar
+public import VerifiedGarbage.Impl.Ed25519.X86.MulAdd
+public import VerifiedGarbage.Spec.Ed25519.CachedSign
 
 /-! Complete cached-key Ed25519 signing on x86. The 256-byte frame holds
 outgoing cdecl arguments at 0..24, scalar at 32, prefix at 64, nonce at 96,
@@ -12,6 +14,9 @@ the frame. Hashing uses scratch[0..192) for state and scratch[192..464) for
 working memory. Primitive calls may overwrite the entire scratch buffer.
 The 64-bit finalization count includes carry from the 32-bit message length.
 All secret frame buffers are cleared before returning. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86.SignCached
 open VG.X86
 open PublicKey (at_ argument callWith)

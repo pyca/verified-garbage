@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
-import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
+public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_decode12_avx2`
@@ -26,6 +28,8 @@ halves of the vector registers before returning (`vzeroupper`), for the
 SSE code its callers run next. Every address and branch depends only on
 the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

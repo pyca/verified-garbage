@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.TripleDes.X86_64.Common
-import VerifiedGarbage.Impl.TripleDes.X86_64.Sbox
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Common
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Sbox
 
 /-!
 # Scalar Triple DES blocks on x86-64
@@ -11,6 +13,8 @@ passes share IP and FP. Round counters and key addresses are public.
 Scratch slots 0–5 save callee-saved registers, 6 saves the schedule pointer,
 7 holds the round counter, and 8–55 are the S-box's fixed spills.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86_64
 

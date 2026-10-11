@@ -1,11 +1,16 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.JointFixed
-import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
-import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
-import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
-import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
-import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.JointFixed
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
 
 /-! Interleaved public multiplication with cached peer and fixed-generator digits. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86_64.Joint
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass
 

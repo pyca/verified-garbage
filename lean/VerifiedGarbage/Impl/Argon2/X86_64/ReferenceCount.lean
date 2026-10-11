@@ -1,11 +1,15 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.CountCandidates
-import VerifiedGarbage.Impl.Argon2.X86_64.SelectWindow
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.CountCandidates
+public import VerifiedGarbage.Impl.Argon2.X86_64.SelectWindow
 
 /-! Compute both reference windows and select one without a secret branch.
 
 `rdi` and `rsi` are the reference and current lanes. The pass and segment
 position use CountCandidates' registers. `r8` receives the selected count.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.ReferenceCount
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rc2.Arm.Block
+module
+
+public import VerifiedGarbage.Impl.Rc2.Arm.Block
 
 /-! # RC2-CBC on ARMv7
 
@@ -6,6 +8,8 @@ The caller saves its callee-saved registers and link register outside the
 block primitive's 256-byte scratch region. Decryption retains the input
 ciphertext at scratch + 256 before overwriting it.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.Arm.Cbc
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.ChaCha20.AArch64.XorCallee
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.XorCallee
 
 /-!
 # Streaming ChaCha20: AArch64 implementation
@@ -40,6 +42,8 @@ address is a pointer plus a constant, or advances by one: only the pointers,
 the length and the number of bytes left (which the contract lets `apply`
 leak) can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.AArch64.Stream
 

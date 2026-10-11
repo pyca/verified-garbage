@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.Basic
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.Basic
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_hint_bit_pack` and `vg_mldsa_hint_bit_unpack`
@@ -31,6 +33,8 @@ Comparisons of numbers less than `2⁶³` are the sign bit of their difference
   the loop it is in and fails every later check; the return value is 1 if
   the index is at most `ω`, 0 otherwise.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Pack
 

@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.Adx
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.Adx
 
 /-! Interleave two independent additions into the eight live columns. -/
+
+@[expose] public section
+
 namespace VG.Impl.Bignum.X86_64.AdxDualAdd
 open VG.X86_64
 

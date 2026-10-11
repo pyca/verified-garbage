@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.AArch64.Callee
+module
+
+public import VerifiedGarbage.Impl.Aes.AArch64.Callee
 
 /-!
 # AES-CMAC: AArch64 implementation
@@ -37,6 +39,8 @@ The model has no flags or register-offset addressing: the branches are
 copied through advancing pointers. Only the pointers, `rounds`, `n` and
 `last_len` can affect timing: the doubling is masked.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacAes.AArch64
 

@@ -1,10 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Inverse
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontDot
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontProduct
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.AddSub
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.UseHintPack
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Inverse
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontDot
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontProduct
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.AddSub
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.UseHintPack
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Verify.Optimized
 open VG VG.AArch64 VG.Spec.MlDsa

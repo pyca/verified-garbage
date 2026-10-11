@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Cast5.Tables
-import VerifiedGarbage.Impl.Cast5.Lines
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Impl.Cast5.Tables
+public import VerifiedGarbage.Impl.Cast5.Lines
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # CAST5 on baseline AArch64
@@ -24,6 +26,8 @@ round function's `I` in `w4`, whose argument, `scratch`, ECB does not use). Regi
 of the scan: the table in `x10`, the count of groups of four entries left in
 `x11`, `v0`–`v5`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Cast5.AArch64
 

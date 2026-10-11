@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.Circuit
+module
+
+public import VerifiedGarbage.Impl.Aes.Circuit
 
 /-!
 # The SM4 S-box as a Boolean circuit
@@ -20,6 +22,8 @@ bit 0 (variables `0 … 7`); likewise the outputs `s₀ … s₇` (variables
 `116 … 123`). Each target's proof checks the code made from it on all 256
 inputs; nothing here needs to be trusted.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.Circuit
 

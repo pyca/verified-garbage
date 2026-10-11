@@ -1,9 +1,14 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.PointFromScalar
-import VerifiedGarbage.Impl.Ed25519.Arm.PointEncode
-import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
-import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointFromScalar
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointEncode
+public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
 
 /-! Ed25519 base-point multiplication with the reviewed zero-stack ARM ABI. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 

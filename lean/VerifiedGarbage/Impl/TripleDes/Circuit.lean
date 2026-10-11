@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.Circuit
+module
+
+public import VerifiedGarbage.Impl.Aes.Circuit
 
 /-!
 # DES Boolean S-box circuits
@@ -10,6 +12,8 @@ inputs against FIPS 46-3, and checks the allocated machine code independently.
 The existing AES circuit gate representation and allocator are reused;
 no cryptographic AES operation is called.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.Circuit
 

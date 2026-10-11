@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
-import VerifiedGarbage.Impl.X448.AArch64.Field56
-import VerifiedGarbage.Spec.Ed448.Point56
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+public import VerifiedGarbage.Impl.X448.AArch64.Field56
+public import VerifiedGarbage.Spec.Ed448.Point56
 
 /-!
 # Ed448's point addition and doubling on AArch64, as functions
@@ -18,6 +20,8 @@ no stack.
 Every address is `ws` plus a constant, and there are no branches: only the
 pointer, which is public, may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.AArch64
 

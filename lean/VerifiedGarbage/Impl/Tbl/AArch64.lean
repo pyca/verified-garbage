@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! # Table lookups with `tbl` on AArch64
 
@@ -10,6 +12,8 @@ XORed with the quarter's number (in `v0`–`v3`), which only that quarter's
 `tbl` finds in range (any other gives 0), and the results ORed together. No
 secret is ever an address or a branch condition.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Tbl.AArch64
 

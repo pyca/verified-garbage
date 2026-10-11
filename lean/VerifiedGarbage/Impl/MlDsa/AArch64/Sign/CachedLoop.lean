@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedMatrix
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedMatrix
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sign.Cached
 open VG VG.AArch64 VG.Spec.MlDsa

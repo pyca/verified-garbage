@@ -1,10 +1,14 @@
-import VerifiedGarbage.Impl.Rc2.AArch64.Lookup
+module
+
+public import VerifiedGarbage.Impl.Rc2.AArch64.Lookup
 
 /-! # RC2 key expansion on baseline AArch64
 
 The public lengths control the loops. `x9` holds public addresses and
 `x10` holds public comparison results; PITABLE lookups never branch on, or address memory with, key bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.AArch64
 

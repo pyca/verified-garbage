@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ecdh.X86.Window
-import VerifiedGarbage.Impl.Weierstrass.X86.WinJac
+module
+
+public import VerifiedGarbage.Impl.Ecdh.X86.Window
+public import VerifiedGarbage.Impl.Weierstrass.X86.WinJac
 
 /-! P-256 ECDH's constant-time Jacobian windows in the existing 8192-byte scratch area. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ecdh.X86
 open VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
 open VG.Impl.Ecdsa.X86

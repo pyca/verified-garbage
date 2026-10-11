@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.X86.PointTable
-import VerifiedGarbage.Impl.Ed25519.X86.PointLoop
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.PointTable
+public import VerifiedGarbage.Impl.Ed25519.X86.PointLoop
 
 /-! Checkpoint tables and local batches share a public counter at byte24. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86
 open VG.X86
 open VG.Impl.X25519.X86 (sc)

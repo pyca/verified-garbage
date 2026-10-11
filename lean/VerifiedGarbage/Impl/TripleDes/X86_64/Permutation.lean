@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.TripleDes.X86_64.Common
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Common
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86_64
 

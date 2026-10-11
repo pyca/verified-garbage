@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.X86.Field
-import VerifiedGarbage.Spec.Ed25519
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.Field
+public import VerifiedGarbage.Spec.Ed25519
 
 /-! Constants and copies in the field workspace. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86
 

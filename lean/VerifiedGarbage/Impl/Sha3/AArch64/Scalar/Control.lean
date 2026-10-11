@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Core
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Core
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.AArch64.Scalar.Control
 open VG VG.AArch64

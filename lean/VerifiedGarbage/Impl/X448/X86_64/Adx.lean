@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.X448.X86_64
+module
+
+public import VerifiedGarbage.Impl.X448.X86_64
 
 /-!
 # X448: x86-64 implementation with BMI2 and ADX
@@ -23,6 +25,8 @@ CF.
 
 The rest, including `mulSmall`, is `vg_x448`'s.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X448.X86_64
 

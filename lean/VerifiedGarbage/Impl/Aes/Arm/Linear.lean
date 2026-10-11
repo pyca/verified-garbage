@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.Arm.Sbox
+module
+
+public import VerifiedGarbage.Impl.Aes.Arm.Sbox
 
 /-!
 # The linear layers of bitsliced AES on ARMv7
@@ -19,6 +21,8 @@ and `u7`; the transposes build their masks in `t1` (with `movw` and
 `movt`), and AddRoundKey loads the round key from `kp`. None uses memory
 otherwise.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.Arm
 
