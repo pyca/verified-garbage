@@ -197,7 +197,8 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
     rcases hr with rfl | rfl
     · exact .inr fun _ h => h
     · exact .inl (VG.Offset.disjoint_base B (by simp only [Core.hiSlot]; omega)
-        (by simp only [Core.hiSlot]; omega)).symm) fun r hr => o₁ r (of_not_modeRegs hr).1
+        (by simp only [Core.hiSlot]; omega)).symm) ⟨fun r hr => ⟨_, hwS, subBC r hr⟩, rd₁, wr₁⟩
+    fun r hr => o₁ r (of_not_modeRegs hr).1
   -- The keystream.
   refine WP.seq (WP.mono (cs.crypt_wp base₁ ⟨by rw [wr₁]; exact hwS, hfit⟩ ready₁)
     fun s₂ ⟨base₂, dr₂, lr₂, ready₂, f₂, ks₂, rd₂, wr₂⟩ => ?_)
@@ -257,9 +258,13 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
     congr 2
     exact decide_eq_decide.mpr (by omega)
   have ready₆ : cs.Ready s₆ B k := by
-    refine cs.ready_frame ready₂ (by rw [m₆]; exact f₅) (fun r hr => ?_) fun r hr => ?_
+    refine cs.ready_frame ready₂ (by rw [m₆]; exact f₅) (fun r hr => ?_) ⟨fun r hr => ?_, ?_, ?_⟩ fun r hr => ?_
     · simp only [List.mem_singleton] at hr; subst hr
       exact .inl (((hp.sep.sub_left (VG.Offset.sub_base D (by omega))).sub_right subCore).symm)
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, by rw [wr₂, wr₁]; exact hwD, VG.Offset.sub_base D (by omega)⟩
+    · rw [rd₆, rd₅', rd₂, rd₁]
+    · rw [wr₆, wr₅', wr₂, wr₁]
     · obtain ⟨h1, h2, h3⟩ := of_not_modeRegs hr
       rw [o₆ r h2 h3, keep₄ r h1]
   -- The data.

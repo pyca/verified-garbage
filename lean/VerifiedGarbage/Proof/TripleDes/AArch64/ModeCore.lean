@@ -174,7 +174,7 @@ def dirCoreSpec (d : Direction) : BlockSpec (dirCore d) where
   keyRegs_ok := by cases d <;> decide
   regs_ok := by cases d <;> decide
   keyArgs_congr := keyArgs_congr
-  ready_frame h hf hd _ := readyAt_frame h hf hd
+  ready_frame h hf hd _ _ := readyAt_frame h hf hd
   prepare_wp := prepare_wp d
   crypt_wp := crypt_wp d
 

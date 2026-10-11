@@ -187,6 +187,9 @@ theorem fb_wp (cs : BlockSpec c) (mo : FbMode) {r : CtrRegs} (hr : RegsOk r) (hd
   · have hn0 : n ≠ 0 := by simpa using h0
     refine fbLoop_wp cs mo hiv.mode hivl hp hsc.2 ⟨b₅, cs.ready_frame ready₄ f₅ (fun x hx => by
         simp only [List.mem_singleton] at hx; subst hx; exact .inr subTbuf)
+        ⟨fun x hx => by
+          simp only [List.mem_singleton] at hx; subst hx; exact ⟨S, by rw [wr₄']; exact hs.wr, subT⟩,
+          h₅.rd, h₅.wr⟩
         (fun x hx => by obtain ⟨h1, -, -⟩ := of_not_modeRegs hx; exact g₅ x (not_own h1).1),
       fun _ _ => rfl, ?_, ?_, by omega, buf₅, fun q hq r hr => ?_, Frame.refl _ _, rfl, rfl, rfl⟩
     · rw [g₅ _ d6, dr₄, drA, gS _ (Ne.symm hiv.data), gE _ ds', hD]; simp

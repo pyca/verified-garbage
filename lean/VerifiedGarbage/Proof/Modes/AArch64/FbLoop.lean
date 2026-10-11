@@ -277,7 +277,13 @@ theorem fbBlock_wp (cs : BlockSpec c) (mo : FbMode) {ivR : Reg} (hivR : ivR ∉ 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact .inl ((dDS subCore).sub_left subA).symm
-    · exact .inr subTbuf) fun r hr => by
+    · exact .inr subTbuf)
+    ⟨fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨_, by rw [wr₂]; exact hwD, subA⟩
+      · exact ⟨_, by rw [wr₂]; exact hwS, subT⟩,
+      by rw [rd₃, rd₃b, rd₃a], by rw [wr₃, wr₃b, wr₃a]⟩ fun r hr => by
     obtain ⟨h1, h2, h3⟩ := of_not_modeRegs hr
     exact keep₃ r (not_own h1).1 (not_own h1).2.1 h2 h3
   -- The buffer and the data.

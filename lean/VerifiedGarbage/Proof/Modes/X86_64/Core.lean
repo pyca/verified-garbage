@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Modes.X86_64.Steps
 import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Spec.Cbc
 
 /-!
@@ -18,10 +19,12 @@ else: the modes are proven once, for any core, and each cipher proves
   `prepare` (`keyArgs_congr`): changing no register of `keyRegs`, nothing
   outside `rs` in memory.
 * `Ready s B k`: the key `k` is ready in the state `s`, with the scratch
-  buffer at `B`. It depends only on the core's slots outside its buffer and
-  on the registers the modes do not write (`modeRegs`, `ready_frame`), so a
-  core may keep part of it in registers (e.g. a pointer it saves and
-  restores around its rounds).
+  buffer at `B`. It depends only on the core's slots outside its buffer, on
+  memory outside every writable region, on the statics' addresses, and on
+  the registers the modes do not write (`modeRegs`, `ready_frame`, `WrIn`),
+  so a core may keep part of it in registers (e.g. a pointer it saves and
+  restores around its rounds), read a key too large for its slots where the
+  caller passed it, or read a table among the statics.
 * `prepare_wp`, `crypt_wp`: with the scratch buffer of `total` slots, each
   changes only the core's slots in memory, and keeps `sb`, `rsp`,
   `dataReg` and `leftReg`; every other register may change.
@@ -38,6 +41,22 @@ wrap around. -/
 structure ScrIn (s : State) (B : Addr) (n : Nat) : Prop where
   wr : (⟨B, 8 * n⟩ : Region) ∈ s.wr
   fit : B.toNat + 8 * n ≤ 2 ^ 64
+
+/-- A straight-line block names the same addresses of statics after it as before. -/
+theorem runBlock_syms : ∀ {is : List Instr} {s s' : State}, runBlock isa is s = some s' → s'.syms = s.syms
+  | [], _, _, h => by cases h; rfl
+  | i :: is, s, s', h => by
+    obtain ⟨s₁, h₁, h₂⟩ := Option.bind_eq_some_iff.mp h
+    exact (runBlock_syms h₂).trans (exec_syms h₁)
+
+/-- What the modes did between two states: written only within the writable
+regions `rs`, which with the readable ones and the statics' addresses have
+not changed. -/
+structure WrIn (rs : List Region) (s s' : State) : Prop where
+  sub : ∀ r ∈ rs, ∃ w ∈ s.wr, Region.Sub r w
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  syms : s'.syms = s.syms
 
 /-- Block `j` of the core's buffer, with the scratch buffer at `B`. -/
 abbrev bufAddr (c : Core) (B : Addr) (j : Nat) : Addr := B + BitVec.ofNat 64 (8 * c.buf + 16 * j)
@@ -89,10 +108,10 @@ structure CoreSpec (c : Core) where
   keyRegs_ok : c.keyRegs.all (fun r => r != .rax && r != .rbx && r != sb) = true
   regs_ok : regsOk c = true
   keyArgs_congr : ∀ {s s' : State} {rs : List Region} {k : Key}, KeyArgs s rs k →
-    (∀ r ∈ c.keyRegs, s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → Frame rs s.mem s'.mem →
-    KeyArgs s' rs k
+    (∀ r ∈ c.keyRegs, s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → s'.syms = s.syms →
+    Frame rs s.mem s'.mem → KeyArgs s' rs k
   ready_frame : ∀ {s s' : State} {B : Addr} {k : Key} {rs : List Region}, Ready s B k → Frame rs s.mem s'.mem →
-    (∀ r ∈ rs, Region.Disjoint (coreRegion c B) r ∨ Region.Sub r (bufRegion c B)) →
+    (∀ r ∈ rs, Region.Disjoint (coreRegion c B) r ∨ Region.Sub r (bufRegion c B)) → WrIn rs s s' →
     (∀ r, r ∉ modeRegs c → s'.gpr r = s.gpr r) → Ready s' B k
   prepare_wp : ∀ {s : State} {B : Addr} {rs : List Region} {k : Key}, s.gpr sb = B →
     ScrIn s B c.total → (⟨B, 8 * c.total⟩ : Region) ∈ rs → KeyArgs s rs k →
@@ -140,10 +159,10 @@ structure BlockSpec (c : Core) where
   keyRegs_ok : c.keyRegs.all (fun r => r != .rax && r != .rbx && r != sb) = true
   regs_ok : regsOk c = true
   keyArgs_congr : ∀ {s s' : State} {rs : List Region} {k : Key}, KeyArgs s rs k →
-    (∀ r ∈ c.keyRegs, s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → Frame rs s.mem s'.mem →
-    KeyArgs s' rs k
+    (∀ r ∈ c.keyRegs, s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → s'.syms = s.syms →
+    Frame rs s.mem s'.mem → KeyArgs s' rs k
   ready_frame : ∀ {s s' : State} {B : Addr} {k : Key} {rs : List Region}, Ready s B k → Frame rs s.mem s'.mem →
-    (∀ r ∈ rs, Region.Disjoint (coreRegion c B) r ∨ Region.Sub r (blkRegion c B)) →
+    (∀ r ∈ rs, Region.Disjoint (coreRegion c B) r ∨ Region.Sub r (blkRegion c B)) → WrIn rs s s' →
     (∀ r, r ∉ modeRegs c → s'.gpr r = s.gpr r) → Ready s' B k
   prepare_wp : ∀ {s : State} {B : Addr} {rs : List Region} {k : Key}, s.gpr sb = B →
     ScrIn s B c.total → (⟨B, 8 * c.total⟩ : Region) ∈ rs → KeyArgs s rs k →
@@ -170,7 +189,7 @@ def CoreSpec.toBlock {c : Core} (cs : CoreSpec c) (h : c.bw = 2) : BlockSpec c w
   keyRegs_ok := cs.keyRegs_ok
   regs_ok := cs.regs_ok
   keyArgs_congr := cs.keyArgs_congr
-  ready_frame hr hf hd hg := cs.ready_frame hr hf (by simpa only [blkRegion, h] using hd) hg
+  ready_frame hr hf hd hw hg := cs.ready_frame hr hf (by simpa only [blkRegion, h] using hd) hw hg
   prepare_wp := cs.prepare_wp
   crypt_wp hB hs hr := WP.mono (cs.crypt_wp hB hs hr) fun _ ⟨b, sp, d, l, r, f, e, rd, wr⟩ =>
     ⟨b, sp, d, l, r, f, by simpa only [blkAddr, bufAddr, h] using e, rd, wr⟩

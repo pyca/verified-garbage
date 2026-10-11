@@ -98,7 +98,7 @@ theorem cbcEncrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
       split
       · rename_i h; subst h; rw [addr_add, mD _ (hqr hq hr), mP r hr]
       · exact mD _ (hqr hq hr)
-  refine WP.seq (WP.mono hw fun s₂ ⟨b₂, g₂, rd₂, wr₂, f₂, d₂⟩ => ?_)
+  refine WP.seq (WP.mono_syms hw fun s₂ ⟨b₂, g₂, rd₂, wr₂, f₂, d₂⟩ sy₂ => ?_)
   -- The data's address and `n`.
   obtain ⟨s₃, e₃, dr₃, lr₃, g₃, m₃, rd₃, wr₃⟩ := ctrArgs_ok s₂ r hdn hdl
   refine WP.seq (WP.of_runBlock ⟨s₃, e₃, ?_⟩)
@@ -117,7 +117,8 @@ theorem cbcEncrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
   have kr := keyRegs_ne cs.keyRegs_ok
   have hk₃ : cs.KeyArgs s₃ [⟨B, 8 * c.ctrSlots⟩, ⟨D, 8 * c.bw * n⟩] k :=
     cs.keyArgs_congr hk (fun x hx => g₃' x (kr x hx).1 (kr x hx).2.1 (fun e => dk (e ▸ hx))
-      (fun e => lk (e ▸ hx))) rd₃' wr₃' f₃
+      (fun e => lk (e ▸ hx))) rd₃' wr₃'
+      (by rw [runBlock_syms e₃, sy₂, runBlock_syms e₁]) f₃
   -- The key.
   refine WP.seq (WP.mono (cs.prepare_wp b₃ ⟨by rw [wr₃']; exact hs.wr, hs.fit⟩ List.mem_cons_self hk₃)
     fun s₄ ⟨ready₄, b₄, rsp₄, dr₄, lr₄, f₄, rd₄, wr₄⟩ => ?_)
@@ -153,7 +154,7 @@ theorem cbcEncrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
       Frame.refl _ _, rfl, rfl⟩
   · have hn0 : n ≠ 0 := by simpa using h0
     refine cbcEncLoop_wp cs hiv hp ⟨b₅, rfl, cs.ready_frame ready₄ (by rw [mem₅]; exact Frame.refl [] _)
-        (fun _ h => by simp at h) (fun r _ => by rw [g₅]), fun _ _ => rfl, ?_, ?_, by omega, fun q hq r hr => ?_,
+        (fun _ h => by simp at h) ⟨fun _ h => by simp at h, rd₅, wr₅, runBlock_syms e₅⟩ (fun r _ => by rw [g₅]), fun _ _ => rfl, ?_, ?_, by omega, fun q hq r hr => ?_,
       Frame.refl _ _, rfl, rfl⟩
     · rw [g₅, dr₄, dr₃, g₂ _ hr.data.2.1, g₁ _ hr.data.1, hD]; simp
     · rw [left₅, Nat.sub_zero, ← hn]; simp

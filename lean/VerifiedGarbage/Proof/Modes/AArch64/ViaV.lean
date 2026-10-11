@@ -135,7 +135,7 @@ def BlockSpec.viaV (cs : BlockSpec c) {r : Reg} (v : VReg) (hsb : r ≠ sb) (hd 
       f, rd, wr⟩
   crypt_wp {s B k} hB hs hr := by
     have hr₁ : cs.Ready (s.setV v (ofVDwords (s.gpr r) (s.gpr r))) B k :=
-      cs.ready_frame hr (Frame.refl [] _) (fun _ h => by simp at h) fun _ _ => rfl
+      cs.ready_frame hr (Frame.refl [] _) (fun _ h => by simp at h) ⟨fun _ h => by simp at h, rfl, rfl⟩ fun _ _ => rfl
     refine WP.mono (WP.wrap (cs.crypt_wp hB ⟨hs.wr, hs.fit⟩ hr₁)) fun s' ⟨s₁, ⟨b, dr, lr, ready, f, e, rd, wr⟩, he⟩ => ?_
     subst he
     exact ⟨by rw [(write_ok _ _ _).2.1 _ (Ne.symm hsb), b], by rw [(write_ok _ _ _).2.1 _ (Ne.symm hd), dr]; rfl,
