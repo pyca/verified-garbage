@@ -14,7 +14,7 @@ theorem alignedChoice_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (
     {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8)
     (ho1 : o ≠ aAcc) (ho2 : o ≠ aTmp) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp)
     (hinv : ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
-    (hB : wv s.mem B (slot w b) w < wv s.mem B (slot w aN) w) :
+    (hB : wv s.mem B (slot w b) w < wv s.mem B (slot w aN) w) (hsz : SizeOk w) :
     WP isa (AdxTiledProduct.alignedChoice o a b) s fun t =>
       wv t.mem B (slot w o) w < wv s.mem B (slot w aN) w ∧
       wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s.mem B (slot w aN) w =
@@ -38,7 +38,7 @@ theorem alignedChoice_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (
   · refine WP.ite true (by simp [eval,hz,h8]) (fun _ => WP.mono
       (montMul_ok hs₁ hdi₁ hH hZ (by omega : w=8*(w/8)) (by omega) hw' (hH.ops3 ho ha hb) (.head _) (.tail _ (.head _)) (.tail _ (.tail _ (.head _))) ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hinv hB) post) (by simp)
   · refine WP.ite false (by simp [eval,hz,h8]) (by simp) (fun _ =>
-      WP.mono (montMulAdx_ok hs₁ hdi₁ hH hZ hw hw' ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hinv hB) post)
+      WP.mono (fused_ok hs₁ hdi₁ hH hZ hsz.1 hsz.2.1 hw' ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hinv hB) post)
 
 theorem choice_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
@@ -67,9 +67,10 @@ theorem choice_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
     fun t ⟨h1, h2, h3, k⟩ => ⟨h1, h2, h3, (k₁.trans k).mono (by decide)⟩
   by_cases h8 : SizeOk w
   · refine WP.ite true (by simp [eval,hz,h8]) (fun _ => WP.mono
-      (alignedChoice_ok hs₁ hdi₁ hH hZ hw hw' ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hinv hB) post) (by simp)
-  · refine WP.ite false (by simp [eval,hz,h8]) (by simp) (fun _ =>
-      WP.mono (montMulAdx_ok hs₁ hdi₁ hH hZ hw hw' ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hinv hB) post)
+      (alignedChoice_ok hs₁ hdi₁ hH hZ hw hw' ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hinv hB h8) post) (by simp)
+  · refine WP.ite false (by simp [eval,hz,h8]) (by simp) (fun _ => WP.mono (VG.Proof.Bignum.X86_64.montMul_ok hs₁ hdi₁ hH hZ hw hw'
+      (by decide) (by decide) (by decide) ho ha hb (by decide) (by decide) (Ne.symm ho1) (Ne.symm ha1) (Ne.symm hb1)
+      (by decide) (Ne.symm ho2) hinv hB) post)
 
 end VG.Proof.Bignum.X86_64.AdxTiledProduct
 
@@ -99,8 +100,7 @@ theorem aligned_ct {o a b : Nat} (ho : o<8) (ha : a<8) (hb : b<8)
 
 theorem alignedChoice_ct {o a b : Nat} (ho : o<8) (ha : a<8) (hb : b<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)
-    {h₀ h₁ h₂ h₃ h₄ : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hM : (taint.check (Taint.ofRegs [.rdi]) (.block (bases o a b aN aAcc aTmp)) h₀).isSome=true)
+    {h₁ h₂ h₃ h₄ : VG.Taint.Hint VG.X86_64.Taint.T}
     (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (setup b)) h₁).isSome=true)
     (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (rowBase a)) h₂).isSome=true)
     (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (finishBases o)) h₃).isSome=true)
@@ -116,7 +116,7 @@ theorem alignedChoice_ct {o a b : Nat} (ho : o<8) (ha : a<8) (hb : b<8)
   · refine two_map id (fun L s ⟨⟨h,z⟩,e⟩ => ⟨h,?_⟩) (aligned_ct ho ha hb ha1 ha2 hb1 hb2 hS hT hF)
     simp only [eval,z,Option.some.injEq,decide_eq_true_eq] at e
     exact e
-  · exact two_map id (fun _ _ h => h.1.1.1) (montMulAdx_ct ho ha hb ha1 ha2 hb1 hb2 hM hS hR hF)
+  · exact two_map id (fun _ _ h => h.1.1) (fused_ct ho ha hb ha1 ha2 hb1 hb2 hS hR hF)
 
 theorem choice_ct {o a b : Nat} (ho : o<8) (ha : a<8) (hb : b<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)
@@ -134,10 +134,10 @@ theorem choice_ct {o a b : Nat} (ho : o<8) (ha : a<8) (hb : b<8)
     exact WP.mono (sizeTest_ok hg.scr hg.rdi hg.hdr hZ) fun _ ⟨z,m,k⟩ =>
       ⟨⟨mi,⟨hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,m ▸ hg.hdr⟩,hZ⟩,z⟩
   refine two_ite (fun L s t hs ht => by simp only [eval,hs.2,ht.2]) ?_ ?_
-  · refine two_map id (fun L s ⟨⟨h,z⟩,e⟩ => ⟨h,?_⟩) (alignedChoice_ct ho ha hb ha1 ha2 hb1 hb2 hM hS hR hF hT)
+  · refine two_map id (fun L s ⟨⟨h,z⟩,e⟩ => ⟨h,?_⟩) (alignedChoice_ct ho ha hb ha1 ha2 hb1 hb2 hS hR hF hT)
     simp only [eval,z,Option.some.injEq,decide_eq_true_eq] at e
     exact e
-  · exact two_map id (fun _ _ h => h.1.1) (montMulAdx_ct ho ha hb ha1 ha2 hb1 hb2 hM hS hR hF)
+  · exact two_map id (fun _ _ h => h.1.1) (montMul_ctW (by decide) (by decide) (by decide) ho ha hb hM)
 
 end VG.Proof.Bignum.X86_64.AdxTiledProduct
 
