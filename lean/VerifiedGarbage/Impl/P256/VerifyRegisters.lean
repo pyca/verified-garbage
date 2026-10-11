@@ -10,7 +10,7 @@ and allocates scalar registers with bounded scratch spills.
 namespace VG.Impl.P256.VerifyRegisters
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64
 
-private instance : Inhabited Instr := ⟨.movz .x .x7 0 0⟩
+instance : Inhabited Instr := ⟨.movz .x .x7 0 0⟩
 
 structure Item where
   instr : Instr
