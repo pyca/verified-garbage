@@ -31,11 +31,11 @@ theorem env_r13 {σ₁ σ₂ s₁ s₂ : State} (hq : em4K.pub σ₁ σ₂) (e�
 theorem env_rsp {σ₁ σ₂ s₁ s₂ : State} (hq : em4K.pub σ₁ σ₂) (e₁ : Env σ₁ s₁) (e₂ : Env σ₂ s₂) :
     s₁.gpr .rsp = s₂.gpr .rsp := by rw [e₁.rsp, e₂.rsp, hq.2.2.2.2]
 
-/-- `squeeze4 n`, given its taint analysis. -/
-theorem sq_ct (n : Nat) (hn : n < 5) {hc : VG.Taint.Hint X86_64.Taint.T}
-    (c : (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeeze4 n) hc).isSome = true) :
-    RelCT isa (R fun σ s => SqInv σ n s) (squeeze4 n) (R fun σ s => SqInv σ (n + 1) s) :=
-  relInv (fun σ s hp h => sq_ok (pre_of hp) hn h)
+/-- `squeezes`, given its taint analysis. -/
+theorem sq_ct {hc : VG.Taint.Hint X86_64.Taint.T}
+    (c : (taint.check (X86_64.Taint.ofRegs [.rbx]) squeezes hc).isSome = true) :
+    RelCT isa (R fun σ s => SqInv σ 0 s) squeezes (R fun σ s => SqInv σ 5 s) :=
+  relInv (fun σ s hp h => sqs_ok (pre_of hp) h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) c)
 
@@ -117,9 +117,7 @@ theorem ct : ConstantTime isa em4K.pre em4K.pub expandMask4Avx2 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       exacts [hq.1, hq.2.2.1, hq.2.2.2.1, hq.2.2.2.2]) (by taint_decide))) ?_)
-  refine RelCT.seq (sq_ct 0 (by decide) (by taint_decide)) (RelCT.seq (sq_ct 1 (by decide) (by taint_decide))
-    (RelCT.seq (sq_ct 2 (by decide) (by taint_decide)) (RelCT.seq (sq_ct 3 (by decide) (by taint_decide))
-      (RelCT.seq (sq_ct 4 (by decide) (by taint_decide)) ?_))))
+  refine RelCT.seq (sq_ct (by taint_decide)) ?_
   refine RelCT.seq (relInv (fun σ s _ h => cmp_ok h) (taintRel [] (fun _ _ _ _ hr => absurd hr List.not_mem_nil)
     (by taint_decide))) (RelCT.seq sel_ct ?_)
   exact taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by

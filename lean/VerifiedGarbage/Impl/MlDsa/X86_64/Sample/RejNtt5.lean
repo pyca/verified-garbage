@@ -15,7 +15,7 @@ namespace VG.Impl.MlDsa.X86_64.Sample.Rej5
 
 open VG.X86_64
 open VG.Impl.MlKem.X86_64 (at_)
-open VG.Impl.MlKem.X86_64.Sample4 (pro epi absorb4 squeeze4 oRc oBuf)
+open VG.Impl.MlKem.X86_64.Sample4 (pro epi absorb4 squeezes oRc oBuf)
 open VG.Impl.MlDsa.X86_64.Sample.Rej4 (oJ zeroJ first)
 open VG.Impl.Sha3.X86_64.X4 (rcTable)
 
@@ -43,7 +43,7 @@ def flags : List Instr := .mov32 .r14 (.imm 1) :: (List.range 4).flatMap fun k =
 /-- The optional sixth block, with the accumulator reset before squeezing. -/
 def fallback : Prog isa :=
   .seq (.block [.mov32 .r14 (.imm 1)])
-    (.seq (squeeze4 2) (.seq (batch 112 56) (.block flags)))
+    (.seq (squeezes 2 1) (.seq (batch 112 56) (.block flags)))
 
 /-- Check the five-block result and finish with the original six-block bound. -/
 def finish : Prog isa :=
@@ -52,8 +52,8 @@ def finish : Prog isa :=
 
 def rejNTT4Avx2 : Prog isa :=
   .seq (.block (VG.Impl.MlKem.X86_64.Sample4.pro ++ rcTable .rbx (oRc / 32) ++ absorb4))
-    (.seq (squeeze4 0) (.seq (squeeze4 1) (.seq (squeeze4 2) (.seq (.block zeroJ)
+    (.seq (squeezes 0 3) (.seq (.block zeroJ)
       (.seq (first 0) (.seq (first 1) (.seq (first 2) (.seq (first 3)
-        (.seq (squeeze4 0) (.seq (squeeze4 1) (.seq (batch 0 112) finish)))))))))))
+        (.seq (squeezes 0 2) (.seq (batch 0 112) finish))))))))
 
 end VG.Impl.MlDsa.X86_64.Sample.Rej5
