@@ -197,6 +197,13 @@ should add files, not edit lists that every other PR edits too.
   `crate::asm::<target>::<module>`, `src/lib.rs`), once for every
   architecture, not with a `use` per architecture; only functions a target
   alone has (e.g. an x86-64 `_shani` variant) take a `#[cfg(target_arch)]`.
+* Lean files in the layers converted to Lean's module system (`CONVERTED`
+  in `ci/modularize.py`) are modules. Add a file there as a plain Lean file
+  and run `python3 ci/modularize.py <file>`, which writes its header
+  (`module`, `public import`s, `@[expose] public section`); after merging
+  `main` into an older PR, rerun it on the layer's directory
+  (`python3 ci/modularize.py lean/VerifiedGarbage/<dir>`). CI fails on a file
+  there that is not a module (`ci/modularize.py check-converted`).
 * Tests of one algorithm go in a file of their own (`tests/cavp/<alg>.rs`,
   `tests/wycheproof/<alg>.rs`), declared with one `mod` line. Every test
   directory is a module of the one test binary, `tests/main.rs`: a new one

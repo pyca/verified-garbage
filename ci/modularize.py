@@ -4,6 +4,9 @@ every importer sees.
 
   modularize.py PATH...   convert each `.lean` file at PATH (a file or a
                           directory, recursively) that is not a module yet
+  modularize.py check-converted
+                          fail if a directory of `CONVERTED` has a file
+                          that is not a module, saying what to run
   modularize.py check LOG
                           fail if a `lake build` log (LOG, `-` for stdin)
                           shows an exposed declaration referring to a
@@ -34,6 +37,13 @@ merging, rather than editing headers by hand.
 import pathlib
 import re
 import sys
+
+LEAN = pathlib.Path(__file__).resolve().parent.parent / "lean"
+
+# The directories (under lean/) whose every file is a module. The PR that
+# converts a layer adds its directory here, so that CI rejects a file added
+# to it later without a module header (by a PR older than the conversion).
+CONVERTED = ["VerifiedGarbage/TCB", "VerifiedGarbage/Spec"]
 
 IMPORT = re.compile(r"^import\s+(\S+)\s*$")
 META_DECL = re.compile(r"^(elab|syntax|macro|macro_rules|simproc|dsimproc|elab_rules)\b", re.M)
@@ -96,6 +106,13 @@ PRIVATE_NEEDED = re.compile(
     r"Note: A private declaration `([^`]+)` \(from the current module\) exists", re.M)
 
 
+def not_converted(lean: pathlib.Path, dirs: list[str]) -> list[tuple[str, pathlib.Path]]:
+    """The (directory, file) pairs of the files under `lean`'s directories
+    `dirs` that are not modules."""
+    return [(d, f) for d in dirs for f in sorted((lean / d).rglob("*.lean"))
+            if not is_module(f.read_text().split("\n"))]
+
+
 def needs_public(log: str) -> list[tuple[str, str]]:
     """The (file, declaration) pairs of private declarations a build log
     shows exposed declarations referring to."""
@@ -103,6 +120,12 @@ def needs_public(log: str) -> list[tuple[str, str]]:
 
 
 def main(args: list[str]) -> int:
+    if args == ["check-converted"]:
+        bad = not_converted(LEAN, CONVERTED)
+        for d, f in bad:
+            print(f"{f.relative_to(LEAN.parent)}: not a module, but lean/{d} is converted to modules; "
+                  f"run `python3 ci/modularize.py lean/{d}`", file=sys.stderr)
+        return 1 if bad else 0
     if len(args) == 2 and args[0] == "check":
         log = sys.stdin.read() if args[1] == "-" else pathlib.Path(args[1]).read_text()
         found = needs_public(log)
