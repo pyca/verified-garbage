@@ -22,7 +22,8 @@ Each seed is at most 34 bytes, so the padded message is one block: the
 code zeroes the states, writes the seed's bytes, SHAKE's suffix `0x1f` (at
 byte 34) and the last bit of the padding (`0x80`, at byte 167) into each,
 and permutes them. It then copies the first 168 bytes of each state to its
-output, and permutes them again, three times in all.
+output, and permutes them again, three times in all, in a loop (`squeezes`)
+whose output pointer is `rbp` and whose count is `r10`.
 
 The states are then no longer needed, and the code writes over them a
 table for the sampling (`tabQ`, 2048 bytes from byte 0 of `scratch`) and
@@ -97,14 +98,25 @@ def permArgs : List Instr :=
     .mov .rdx (.reg .rbx), .alu .add .rdx (.imm (BitVec.ofNat 32 oRc)), .mov .rcx (.reg .rbx),
     .alu .add .rcx (.imm (BitVec.ofNat 32 oBuf))]
 
-/-- The first 168 bytes of each state to block `b` of its output. -/
-def extract (b : Nat) : List Instr :=
+/-- The first 168 bytes of each state to the block of its output at `rbp`
+(that of state `k` at `rbp + 504 k`). -/
+def extract : List Instr :=
   (List.range 4).flatMap fun k => (List.range 21).flatMap fun i =>
-    [.mov .rax (.mem (at_ .rbx (32 * i + 8 * k))), .store (at_ .rbx (oBuf + 504 * k + 168 * b + 8 * i)) .rax]
+    [.mov .rax (.mem (at_ .rbx (32 * i + 8 * k))), .store (at_ .rbp (504 * k + 8 * i)) .rax]
 
-/-- Permute the states and squeeze block `b`. -/
-def squeeze4 (b : Nat) (fast : Bool := false) : Prog isa :=
-  .seq (.block permArgs) (.seq (permute4 fast) (.block (extract b)))
+/-- `n` iterations of `body` (`n > 0`), with `rbp` from `rbx + start`,
+advanced by `step` after each, and `r10` counting them down. -/
+def blocks (start step n : Nat) (body : Prog isa) : Prog isa :=
+  .seq (.block [.mov .rbp (.reg .rbx), .alu .add .rbp (.imm (BitVec.ofNat 32 start)),
+      .mov32 .r10 (.imm (BitVec.ofNat 32 n))])
+    (.loop (.seq body (.block [.alu .add .rbp (.imm (BitVec.ofNat 32 step)), .alu .sub .r10 (.imm 1)])) .ne)
+
+/-- Permute the states and squeeze a block to `rbp`. -/
+def squeeze (fast : Bool := false) : Prog isa :=
+  .seq (.block permArgs) (.seq (permute4 fast) (.block extract))
+
+/-- Squeeze blocks `b` to `b + n - 1`. -/
+def squeezes (b n : Nat) (fast : Bool := false) : Prog isa := blocks (oBuf + 168 * b) 168 n (squeeze fast)
 
 /-- If seed `k` has fewer than 256 coefficients: `vg_mlkem_sample_ntt` on
 it, and `r14 ← r14 ∧ result`. -/
@@ -209,8 +221,8 @@ def epi : List Instr :=
 /-- `vg_mlkem_sample_ntt4_avx2`. -/
 def sampleNTT4Avx2 (fast : Bool := false) : Prog isa :=
   .seq (.block (pro ++ rcTable .rbx (oRc / 32) ++ absorb4))
-    (.seq (squeeze4 0 fast) (.seq (squeeze4 1 fast) (.seq (squeeze4 2 fast) (.seq (.block tabBuild)
-      (.seq (parse 0) (.seq (parse 1) (.seq (parse 2) (.seq (parse 3) (.block epi)))))))))
+    (.seq (squeezes 0 3 fast) (.seq (.block tabBuild)
+      (.seq (parse 0) (.seq (parse 1) (.seq (parse 2) (.seq (parse 3) (.block epi)))))))
 
 /-- `vg_mlkem_sample_ntt` on seed `k`, and `r14 ← r14 ∧ result`. -/
 def callK (k : Nat) : Prog isa :=

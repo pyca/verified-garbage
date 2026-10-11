@@ -90,8 +90,8 @@ theorem batch_of_m2 {s : State} (h : M2 σ 2 s) : Batch σ 2 0 112 0 s :=
 
 /-- Start the sixth-block parse with the coefficients retained after five. -/
 theorem squeeze_last_ok {s : State} (h : Batch σ 2 0 112 4 s) :
-    WP isa (squeeze4 2) s (Batch σ 3 112 56 0) := by
-  refine WP.mono (sqT_ok hp (by decide) h.sq) fun s' ⟨q, hf⟩ => ⟨q, fun k hk => ?_, fun k hk => ?_⟩
+    WP isa (squeezes 2 1) s (Batch σ 3 112 56 0) := by
+  refine WP.mono (sqTs_ok hp (by decide) (by decide) h.sq) fun s' ⟨q, hf⟩ => ⟨q, fun k hk => ?_, fun k hk => ?_⟩
   · rw [hf.readW (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact (Offset.base_disjoint (scr σ) (k := oSave) (e := oJ + 8 * k) (n := 8)

@@ -30,28 +30,24 @@ theorem pub_Lt4 {σ₁ σ₂ : State} (hq : sample4K.pub σ₁ σ₂) {K : Nat} 
 
 /-! ## The squeezes -/
 
-theorem sqTaint0 : ∃ hc : VG.Taint.Hint X86_64.Taint.T,
-    (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeeze4 0) hc).isSome = true := ⟨_, by taint_decide⟩
-theorem sqTaint1 : ∃ hc : VG.Taint.Hint X86_64.Taint.T,
-    (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeeze4 1) hc).isSome = true := ⟨_, by taint_decide⟩
-theorem sqTaint2 : ∃ hc : VG.Taint.Hint X86_64.Taint.T,
-    (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeeze4 2) hc).isSome = true := ⟨_, by taint_decide⟩
+theorem sqTaint : ∃ hc : VG.Taint.Hint X86_64.Taint.T,
+    (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeezes 0 3) hc).isSome = true := ⟨_, by taint_decide⟩
 
-/-- A squeeze, from the absorption, given its taint analysis. -/
-theorem sqT_ct {t n : Nat} (hn : n < 3)
-    (c : ∃ hc : VG.Taint.Hint X86_64.Taint.T, (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeeze4 n) hc).isSome = true) :
-    RelCT isa (R4 fun σ s => SqT σ t n s) (squeeze4 n) (R4 fun σ s => SqT σ t (n + 1) s) := by
+/-- Squeezes, from the absorption, given their taint analysis. -/
+theorem sqT_ct {t b n : Nat} (hn : 0 < n) (hbn : b + n ≤ 3)
+    (c : ∃ hc : VG.Taint.Hint X86_64.Taint.T, (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeezes b n) hc).isSome = true) :
+    RelCT isa (R4 fun σ s => SqT σ t b s) (squeezes b n) (R4 fun σ s => SqT σ t (b + n) s) := by
   obtain ⟨_, c⟩ := c
-  exact relInv (fun σ s hp h => WP.mono (sqT_ok (pre_of hp) hn h) fun _ h' => h'.1)
+  exact relInv (fun σ s hp h => WP.mono (sqTs_ok (pre_of hp) hn hbn h) fun _ h' => h'.1)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) c)
 
-/-- A second squeeze, given its taint analysis. -/
-theorem sqM_ct {n : Nat} (hn : n < 3)
-    (c : ∃ hc : VG.Taint.Hint X86_64.Taint.T, (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeeze4 n) hc).isSome = true) :
-    RelCT isa (R4 fun σ s => M2 σ n s) (squeeze4 n) (R4 fun σ s => M2 σ (n + 1) s) := by
+/-- The second squeezes, given their taint analysis. -/
+theorem sqM_ct {b n : Nat} (hn : 0 < n) (hbn : b + n ≤ 3)
+    (c : ∃ hc : VG.Taint.Hint X86_64.Taint.T, (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeezes b n) hc).isSome = true) :
+    RelCT isa (R4 fun σ s => M2 σ b s) (squeezes b n) (R4 fun σ s => M2 σ (b + n) s) := by
   obtain ⟨_, c⟩ := c
-  exact relInv (fun σ s hp h => sqM_ok (pre_of hp) hn h)
+  exact relInv (fun σ s hp h => sqM_ok (pre_of hp) hn hbn h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.sq.env h₂.sq.env) c)
 
@@ -152,9 +148,9 @@ theorem second_ct {K : Nat} (hK : K < 4) {h₁ : VG.Taint.Hint X86_64.Taint.T}
 /-! ## The whole function -/
 
 theorem ct : ConstantTime isa r4K.pre r4K.pub rejNTT4Avx2 := by
-  refine relStart (Q := fun _ _ => True) (RelCT.seq start_ct (RelCT.seq (RelCT.mono (sqT_ct (t := 0) (by decide) sqTaint0)
-    (fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, hq, sqT_of h₁, sqT_of h₂⟩) fun _ _ h => h)
-    (RelCT.seq (sqT_ct (by decide) sqTaint1) (RelCT.seq (sqT_ct (by decide) sqTaint2) ?_))))
+  refine relStart (Q := fun _ _ => True) (RelCT.seq start_ct (RelCT.seq (RelCT.mono
+    (sqT_ct (t := 0) (by decide) (by decide) sqTaint)
+    (fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, hq, sqT_of h₁, sqT_of h₂⟩) fun _ _ h => h) ?_))
   refine RelCT.seq (relInv (fun σ s hp h => zeroJ_ok (pre_of hp) h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) (by taint_decide))) ?_
@@ -162,9 +158,8 @@ theorem ct : ConstantTime isa r4K.pre r4K.pub rejNTT4Avx2 := by
   refine RelCT.seq (first_ct (K := 1) (by decide) (by taint_decide) (by taint_decide)) ?_
   refine RelCT.seq (first_ct (K := 2) (by decide) (by taint_decide) (by taint_decide)) ?_
   refine RelCT.seq (first_ct (K := 3) (by decide) (by taint_decide) (by taint_decide)) ?_
-  refine RelCT.seq (RelCT.mono (sqM_ct (by decide) sqTaint0)
-    (fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, hq, m2_of h₁, m2_of h₂⟩) fun _ _ h => h)
-    (RelCT.seq (sqM_ct (by decide) sqTaint1) (RelCT.seq (sqM_ct (by decide) sqTaint2) ?_))
+  refine RelCT.seq (RelCT.mono (sqM_ct (by decide) (by decide) sqTaint)
+    (fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, hq, m2_of h₁, m2_of h₂⟩) fun _ _ h => h) ?_
   refine RelCT.seq (relInv (fun σ s _ h => vz_ok h) (taintRel [] nil_regs (by taint_decide))) ?_
   refine RelCT.seq (second_ct (K := 0) (by decide) (by taint_decide)) ?_
   refine RelCT.seq (second_ct (K := 1) (by decide) (by taint_decide)) ?_
