@@ -3,7 +3,7 @@ import VerifiedGarbage.Proof.Idea.Memory
 /-!
 # IDEA: subkeys read with 32-bit loads
 
-Target-independent facts for 32-bit targets: subkey `k` (below 51) is the low
+Target-independent facts for 32-bit targets: subkey `k` is the low
 half of the 32-bit word at its own offset `2k` of the schedule
 (`subkey_lo32`), and the last one the high half of the word at 100
 (`subkey_hi32`).
@@ -13,7 +13,7 @@ namespace VG.Proof.Idea
 
 open VG
 
-theorem subkey_lo32 (m : Mem) (p : Addr) {k : Nat} (hk : k < 51) :
+theorem subkey_lo32 (m : Mem) (p : Addr) {k : Nat} (hk : k < 52) :
     (m.readW (p + BitVec.ofNat 64 (2 * k)) 32).setWidth 16 = (Spec.Idea.scheduleAt m p).getD k 0 := by
   have e := word_read32 m (p + BitVec.ofNat 64 (2 * k)) 0 (by decide)
   rw [Nat.mul_zero, BitVec.ushiftRight_zero, BitVec.setWidth_setWidth_of_le _ (by decide)] at e
