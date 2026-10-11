@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Final
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
+import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: `vg_poly1305_blocks_ifma`
@@ -510,5 +511,59 @@ theorem epi_ok {s₀ : State} (hp : APre s₀) {m₁ : Mem} (hm : IMem s₀ m₁
     · rw [m₉, m₈, rdi₇, storeH_acc, ← hkey', clamp_key, Poly1305.accumulate_append hlen]
       change Proof.Poly1305.X86_64.hval s₇ = Poly1305.absorbAll (Rn s₀) (accumulate (Rn s₀) msg) _
       rw [R, e₆, T, e₄, hA0, (L : _ ≡ _ [MOD P]), Nat.mod_eq_of_lt (Poly1305.absorbAll_lt hlt _)]
+
+/-! ## The whole function -/
+
+theorem body_ok {s₀ : State} (hp : APre s₀) (hbig : 16 ≤ nb s₀) {s : State} (hg : s.gpr = s₀.gpr)
+    (hm : s.mem = s₀.mem) (hk : VKeep s₀ s) :
+    WP isa body s (TailPre s₀ (8 * (nb s₀ / 8))) :=
+  WP.seq (WP.mono (pro_ok hp hbig hg hm hk) fun _ h₁ =>
+    WP.seq (WP.mono (loop_ok hp h₁.1 (by omega) h₁.2) fun _ h₂ => epi_ok hp h₁.1 h₂))
+
+theorem correct {s₀ : State} (hp : APre s₀) : WP isa blocksIfma s₀ (Post s₀) := by
+  have hb := hp.avx2.bpre.nb_lt
+  refine WP.seq (WP.mono (cmp_ok s₀) fun s₁ ⟨g₁, m₁, k₁, cf₁⟩ => ?_)
+  refine WP.ite (decide (nb s₀ < 16)) (by simp [eval, cf₁]) (fun hlt => ?_) (fun hge => ?_)
+  · refine Avx512.avx2_ok hp ⟨by omega, by rw [g₁], by rw [g₁]; simp [blkAddr], ?_,
+      fun r _ => by rw [g₁], k₁.rd, k₁.wr, by rw [m₁]; exact Frame.refl _ _, by rw [k₁.mxcsr],
+      fun key msg hr => by rw [m₁, blks_zero, List.append_nil]; exact hr⟩
+    rw [g₁, Nat.sub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  · simp only [decide_eq_false_iff_not, Nat.not_lt] at hge
+    refine WP.seq (WP.mono (body_ok hp hge g₁ m₁ k₁) fun s₂ h₂ => ?_)
+    refine WP.seq (WP.mono (Avx2.test_ok s₂) fun s₃ ⟨z₃, g₃, m₃, mx₃, rd₃, wr₃⟩ => ?_)
+    have h₃ := h₂.congr g₃ m₃ mx₃ rd₃ wr₃
+    refine WP.ite (s₃.gpr .rdx &&& s₃.gpr .rdx == 0) (by simp [eval, z₃, g₃]) (fun h => ?_)
+      (fun _ => tail_ok hp.avx2 h₃)
+    have e : 8 * (nb s₀ / 8) = nb s₀ := by
+      have := h₃.rdx
+      simp only [BitVec.and_self, beq_iff_eq] at h
+      rw [h] at this
+      have := congrArg BitVec.toNat this
+      rw [toNat_ofNat_lt (by omega)] at this
+      rw [show (0 : BitVec 64).toNat = 0 from rfl] at this
+      simp only [nb] at this ⊢
+      omega
+    exact WP.block_nil (M := isa) (done_ok hp.avx2 (e ▸ h₃))
+
+theorem blocksIfma_ok (s : State) (hs : Avx512.blocksAvx512X86_64.pre s) :
+    ∃ t s', Exec isa blocksIfma s t s' ∧ abiPreserved s s' ∧ Avx512.blocksAvx512X86_64.post s s' :=
+  correct (APre.of s hs)
+
+/-! ## Constant time -/
+
+theorem blocksIfma_ct :
+    ConstantTime isa Avx512.blocksAvx512X86_64.pre Avx512.blocksAvx512X86_64.pub blocksIfma := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) ?_ (by taint_decide)
+  intro s₁ s₂ _ _ ⟨⟨h1, h2, h3⟩, h4⟩
+  refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem blocksIfma_verified :
+    Verified X86_64.target blocksIfma (Spec.Poly1305.blocksContract X86_64.abi 16) :=
+  Verified.of_correct blocksIfma_ok blocksIfma_ct (by
+    sig_implies [Spec.Poly1305.blocksContract, Spec.Poly1305.blocksSig, Avx512.blocksAvx512X86_64,
+      Proof.Poly1305.blocksStack, Proof.Poly1305.blocksX86_64, X86_64.abi, X86_64.argRegs]
+      [Avx2.sat] using Avx2.sat)
 
 end VG.Proof.Poly1305.X86_64.Ifma
