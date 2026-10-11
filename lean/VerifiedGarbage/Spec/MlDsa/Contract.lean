@@ -266,14 +266,14 @@ def verifyMessageContract (p : Params) {M : ISA} (A : Abi M) (stack : Nat := 0) 
 
 /-- What the documentation says of the return value of a function whose
 loops are bounded. -/
-private def outcomeDoc : String :=
+def outcomeDoc : String :=
   "Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of \
     FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the \
     outputs are then unspecified, and the caller must destroy them and treat the operation as \
     failed."
 
 /-- What the documentation says of the working space. -/
-private def scratchSafety : String :=
+def keyScratchSafety : String :=
   "`scratch` is working space: on return it holds intermediate values, which the caller must \
     destroy (FIPS 204 §3.6.3)."
 
@@ -295,7 +295,7 @@ def keyGenApi (p : Params) (module name : String) : Api where
   safety := [
     "`seed` must be random bytes from an approved RBG (FIPS 204 §3.6.1), or a seed so \
       generated before.",
-    scratchSafety]
+    keyScratchSafety]
 
 /-- `vg_<module>_sign` for the parameter set `p` named `name`. -/
 def signApi (p : Params) (module name : String) : Api where
@@ -318,7 +318,7 @@ def signApi (p : Params) (module name : String) : Api where
     "`sk` must have been written by `" ++ s!"vg_{module}_keygen" ++ "`.",
     "`rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic \
       signing.",
-    scratchSafety]
+    keyScratchSafety]
 
 /-- `vg_<module>_verify` for the parameter set `p` named `name`. -/
 def verifyApi (p : Params) (module name : String) : Api where
@@ -335,10 +335,10 @@ def verifyApi (p : Params) (module name : String) : Api where
     Table 3 (this happens with probability about 2^-256 or less).\n\n\
     Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the \
     public key, the message representative and the signature."
-  safety := [scratchSafety]
+  safety := [keyScratchSafety]
 
 /-- What the documentation says of a context string that is too long. -/
-private def contextDoc : String :=
+def contextDoc : String :=
   "Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`)"
 
 /-- `vg_<module>_sign_message` for the parameter set `p` named `name`. -/
@@ -363,7 +363,7 @@ def signMessageApi (p : Params) (module name : String) : Api where
     "`sk` must have been written by `" ++ s!"vg_{module}_keygen" ++ "`.",
     "`rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic \
       signing.",
-    scratchSafety]
+    keyScratchSafety]
 
 /-- `vg_<module>_verify_message` for the parameter set `p` named `name`. -/
 def verifyMessageApi (p : Params) (module name : String) : Api where
@@ -381,7 +381,7 @@ def verifyMessageApi (p : Params) (module name : String) : Api where
     happens with probability about 2^-256 or less). " ++ contextDoc ++ ".\n\n\
     Contract: `VG.Spec.MlDsa.verifyMessageContract`. Not constant time: timing may depend on \
     the public key, the message, the context string and the signature."
-  safety := [scratchSafety]
+  safety := [keyScratchSafety]
 
 /-- `vg_mldsa44_keygen` on every target. -/
 def keyGen44Api : Api := keyGenApi mlDsa44 "mldsa44" "ML-DSA-44"
