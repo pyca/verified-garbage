@@ -226,11 +226,32 @@ def to64 : List Instr :=
 def k1 : List (Prog isa) :=
   copyArr aT aY ++ [.block [.mov32 .rcx (.imm (BitVec.ofNat 32 l.dbls))], doubles aN aAcc aTmp aT sCtr]
 
+/-- `to52`'s arguments for array `j` and the limbs at offset `o` of region
+`p`: the array, the limbs, and `2⁵² - 1`. -/
+def arrPtrs (p j o : Nat) : List Instr :=
+  [.mov .rsi (.mem (hdr (sArr j))), .mov .r11 (.mem (hdr sIfma)),
+    .alu .add .r11 (.imm (BitVec.ofNat 32 (l.D * p + o))), .movImm64 .r12 mask52]
+
 /-- Array `j` into the limbs at offset `o` of the region at `r11`'s base
 `rbx + p D`. -/
-def arr52 (p j o : Nat) : List Instr :=
-  ([.mov .rsi (.mem (hdr (sArr j))), .mov .r11 (.mem (hdr sIfma)),
-    .alu .add .r11 (.imm (BitVec.ofNat 32 (l.D * p + o))), .movImm64 .r12 mask52] : List Instr) ++ to52 l
+def arr52 (p j o : Nat) : List Instr := arrPtrs l p j o ++ to52 l
+
+/-- The arrays every region takes, with their offsets: the modulus,
+`2^dbls R_X mod X`, `x R_X` and `R_X`. -/
+def arrs : List (Nat × Nat) := [(aN, oM), (aT, l.oK1), (aXc, l.oX), (aY, l.oY)]
+
+/-- `to52`'s arguments for the entry of `ps` that `r8` counts down to
+(`ps.length` for the first). -/
+def arrSel (p : Nat) : List (Nat × Nat) → Prog isa
+  | [] => .block []
+  | [(j, o)] => .block (arrPtrs l p j o)
+  | (j, o) :: ps => .seq (.block [.alu .cmp .r8 (.imm (BitVec.ofNat 32 (ps.length + 1)))])
+      (.ite .e (.block (arrPtrs l p j o)) (arrSel p ps))
+
+/-- `arrs` into region `p`, by one `to52` in a loop. -/
+def arrLoop (p : Nat) : Prog isa :=
+  .seq (.block [.mov32 .r8 (.imm 4)])
+    (.loop (.seq (arrSel l p (arrs l)) (.block (to52 l ++ ([.alu .sub .r8 (.imm 1)] : List Instr)))) .ne)
 
 /-- `k₀` (the low 52 bits of the inverse) in each quadword of `oK0`, `r11`
 the region (`r12` holds `2⁵² - 1`). -/
@@ -260,8 +281,7 @@ def eCopy (slotPtr slotLen : Nat) : List (Prog isa) :=
 `x R_X` as `X`, `R_X` as `Y`, the last multiplier, `k₀`, the padded
 exponent. -/
 def region (p slotPtr slotLen : Nat) : List (Prog isa) :=
-  k1 l ++ [.block (arr52 l p aN oM), .block (arr52 l p aT l.oK1), .block (arr52 l p aXc l.oX),
-      .block (arr52 l p aY l.oY)] ++
+  k1 l ++ [arrLoop l p] ++
     (if p = 0 then [.block (arr52 l p aY l.oFin)] else []) ++ [.block (k0St l p), .block (eZero l)] ++
     (if p = 0 then [] else [.block (finOne l)]) ++ eCopy l slotPtr slotLen
 
