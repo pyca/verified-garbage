@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Modes.X86_64.Fb
 import VerifiedGarbage.Proof.Seed.X86_64.Lit
 import VerifiedGarbage.Impl.Seed.X86_64.Modes
 import VerifiedGarbage.Spec.Seed.Cbc
+import VerifiedGarbage.Proof.Seed.ModeBytes
 
 /-!
 # SEED's core for the modes on x86-64
@@ -43,51 +44,14 @@ def MasksAt (m : Mem) (B : Addr) : Prop := ∀ kv ∈ maskSlots, m.readW (wordAd
 def ReadyAt (m : Mem) (B : Addr) (k : Spec.Seed.Schedule) : Prop :=
   Spec.Seed.scheduleAt m (schedAddr B) = k ∧ MasksAt m B
 
-/-- The cipher of the direction `d`. -/
-def dirCipher : Direction → Spec.Seed.Schedule → Spec.Cbc.Cipher
-  | .encrypt => Spec.Seed.cipher
-  | .decrypt => Spec.Seed.invCipher
-
 /-- The core's blocks are two words. -/
 @[simp] theorem dirCore_bw (d : Direction) : (dirCore d).bw = 2 := rfl
-
-theorem bytesAt_eq (m : Mem) (p : Addr) : Spec.Aes.bytesAt m p 16 = (Spec.Seed.blockAt m p).toList := by
-  apply List.ext_getElem (by simp [Spec.Aes.bytesAt])
-  intro i _ _
-  simp [Spec.Aes.bytesAt, Spec.Seed.blockAt]
 
 theorem dirCipher_bytes (d : Direction) (k : Spec.Seed.Schedule) (m : Mem) (p : Addr) :
     dirCipher d k (Spec.Aes.bytesAt m p 16) = (cipher d k (Spec.Seed.blockAt m p)).toList := by
   have h : (Vector.ofFn fun i : Fin 16 => (Spec.Aes.bytesAt m p 16).getD i.val 0) = Spec.Seed.blockAt m p := by
     ext i hi; simp [Spec.Aes.bytesAt, Spec.Seed.blockAt]
   cases d <;> simp only [dirCipher, Spec.Seed.cipher, Spec.Seed.invCipher, cipher, h]
-
-theorem read_copy {m m' : Mem} : ∀ {n : Nat} {a b : Addr},
-    (∀ i < n, m' (a + BitVec.ofNat 64 i) = m (b + BitVec.ofNat 64 i)) → m'.read a n = m.read b n
-  | 0, _, _, _ => rfl
-  | n + 1, a, b, h => by
-    simp only [Mem.read]
-    have h0 := h 0 (by omega)
-    simp only [BitVec.add_zero] at h0
-    rw [h0, read_copy fun i hi => ?_]
-    have := h (i + 1) (by omega)
-    rwa [Offset.add_ofNat_succ, Offset.add_ofNat_succ] at this
-
-/-- The schedule at `p` depends only on its 128 bytes. -/
-theorem scheduleAt_congr {m m' : Mem} {p q : Addr}
-    (h : ∀ i < 128, m' (q + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
-    Spec.Seed.scheduleAt m' q = Spec.Seed.scheduleAt m p := by
-  apply Vector.ext
-  intro i hi
-  rw [scheduleAt_readW _ _ i hi, scheduleAt_readW _ _ i hi]
-  simp only [Mem.readW]
-  exact congrArg (BitVec.setWidth 32) (read_copy fun j hj => by
-    rw [Offset.add_add, Offset.add_add]; exact h _ (by omega))
-
-theorem scheduleAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
-    (hd : ∀ r ∈ rs, (⟨p, 128⟩ : Region).Disjoint r) :
-    Spec.Seed.scheduleAt m' p = Spec.Seed.scheduleAt m p :=
-  scheduleAt_congr fun _ hi => hf.bytes (R := ⟨p, 128⟩) hd (by show 128 ≤ 2 ^ 64; decide) hi
 
 /-- The masks' slots, 48 to 60. -/
 abbrev masksR (B : Addr) : Region := ⟨B, 8 * 61⟩
@@ -178,7 +142,7 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
     hreg _ (by decide) (by decide), hreg _ (by decide) (by decide), by rw [core_eq]; exact fcopy.trans fmask,
     by rw [rd₂, h₁.rd], by rw [wr₂, h₁.wr]⟩
   · rw [scheduleAt_frame f₂ fun r hr => ?_, h₁.mem]
-    · exact scheduleAt_congr fun i hi => over_at hi (by omega)
+    · exact scheduleAt_congr_at fun i hi => over_at hi (by omega)
     · simp only [List.mem_singleton] at hr; subst hr
       exact Offset.disjoint_base B (by decide) (by decide)
   · have := set₂ kv hkv

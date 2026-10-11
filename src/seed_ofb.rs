@@ -12,7 +12,7 @@
 //! the next output block, whose first bytes it XORs into the rest of the
 //! input.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::arch::seed::vg_seed_expand_key;
 use crate::arch::seed_ofb::vg_seed_ofb;

@@ -2,7 +2,7 @@
 //! against Botan), unmodified under vectors/; and CFB128 from ECB
 //! (`SeedEcb`, tested on RFC 4269's vectors) on every length up to 20 blocks, partial last segments included.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use verified_garbage::seed_cfb::{InvalidKeyLength, SeedCfb128};
 use verified_garbage::seed_ecb::SeedEcb;
