@@ -238,10 +238,11 @@ def mulFn6 (adx : Bool) : Prog isa :=
 
 `vg_p521_mul_mod_n(ws, o, a, b)` runs the inline product by columns of
 `Impl/Mont/X86_64.lean` (`mulF`), which reads the modulus from the working
-space: the function first stores P-521's `n` in its own working space
-(`fnMoN`, below the temporary area `fnTmp`), and its operands are read through
-`rbx = ws + a`, `rbp = ws + b` and `rsi = ws + o` (`relocTo`). A caller whose
-modulus is at `fnMoN` (`Mod.fnN`) finds it unchanged. -/
+space: the function stores P-521's `n` in its own working space (`fnMoN`,
+below the temporary area `fnTmp`), the eighty bytes from `fnMoN - 8` kept in
+`xmm6`–`xmm10` meanwhile and restored after, and reads its operands through
+`rbx = ws + a`, `rbp = ws + b` and `rsi = ws + o` (`relocTo`). It changes
+`[o]` and its temporary area only, as the inline product does. -/
 
 /-- Where the function of P-521's `n` stores it: the nine words below its
 temporary area. -/
@@ -264,11 +265,21 @@ def storeN : List Instr :=
   (List.range 9).flatMap fun j =>
     [.movImm64 .rax (BitVec.ofNat 64 (n521 >>> (64 * j))), .store (sc (fnMoN + 8 * j)) .rax]
 
-/-- `rbp = ws + b`, `rsi = ws + o`, `n` stored, and `mulF` with its operands
-through `rbx`, `rbp` and `rsi`. -/
+/-- Where the function keeps the bytes it stores `n` over: piece `i` of the
+eighty from `fnMoN - 8`. -/
+def keepX (i : Nat) : XReg := [XReg.xmm6, .xmm7, .xmm8, .xmm9, .xmm10].getD i .xmm6
+
+/-- The eighty bytes from `fnMoN - 8` into `xmm6`–`xmm10`. -/
+def saveN : List Instr := (List.range 5).map fun i => .movdquLoad (keepX i) (sc (fnMoN - 8 + 16 * i))
+
+/-- And back. -/
+def restoreN : List Instr := (List.range 5).map fun i => .movdquStore (sc (fnMoN - 8 + 16 * i)) (keepX i)
+
+/-- `rbp = ws + b`, `rsi = ws + o`, the bytes kept and `n` stored, `mulF`
+with its operands through `rbx`, `rbp` and `rsi`, and the bytes restored. -/
 def mulN : List Instr :=
-  [.mov .rbp (.reg .rcx), .alu .add .rsi (.reg .rdi)] ++ storeN ++
-    reloc [(mA, .rbx), (mB, .rbp), (mO, .rsi)] (mulF fnModN mO mA mB)
+  [.mov .rbp (.reg .rcx), .alu .add .rsi (.reg .rdi)] ++ saveN ++ storeN ++
+    reloc [(mA, .rbx), (mB, .rbp), (mO, .rsi)] (mulF fnModN mO mA mB) ++ restoreN
 
 /-- `vg_p521_mul_mod_n`. -/
 def mulFnN : Prog isa :=
@@ -277,8 +288,8 @@ def mulFnN : Prog isa :=
 /-- The function the products modulo `M` call, and its code: P-521's `p`, with
 the temporary area the functions' (`fnTmp`), or P-384's (`fnTmp6`) unless its
 products are written out (`Mod.inl`), with or without BMI2 and ADX; P-521's
-`n` (`Mod.fnN`) at `fnMoN`, with the temporary area `fnTmp`; none for any
-other modulus. -/
+`n` (`Mod.fnN`), with the temporary area `fnTmp`; none for any other
+modulus. -/
 def callOf (M : Mod) : Option (String × Prog isa) :=
   if M.n = 9 ∧ M.red = .friendly p521Ws ∧ M.tmp = fnTmp then
     some (if M.adx then (Spec.Weierstrass.Mont.p521p.mulApi.name ++ "_adx", mulFnX)
@@ -286,7 +297,7 @@ def callOf (M : Mod) : Option (String × Prog isa) :=
   else if M.n = 6 ∧ M.sparse ∧ M.tmp = fnTmp6 ∧ M.inl = false then
     some (if M.adx then (Spec.Weierstrass.Mont.p384p.mulApi.name ++ "_adx", mulFn6 true)
       else (Spec.Weierstrass.Mont.p384p.mulApi.name, mulFn6 false))
-  else if M.n = 9 ∧ M.fnN ∧ M.mo = fnMoN ∧ M.tmp = fnTmp then
+  else if M.n = 9 ∧ M.fnN ∧ M.tmp = fnTmp then
     some (Spec.Weierstrass.Mont.p521n.mulApi.name, mulFnN)
   else none
 

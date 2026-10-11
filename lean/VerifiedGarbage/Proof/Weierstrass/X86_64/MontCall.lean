@@ -159,11 +159,10 @@ theorem mulCall6_ok {f : String} {body : Prog isa} (hbody : body = mulFn6 false 
     rw [ht] at ht'
     rw [hm₃, m₂ x hx (by simp only [fnTmp6] at ht' ⊢; omega), hm₁]
 
-/-- A product modulo P-521's `n` by a call of `mulFnN`, inlined: as the inline
-product, for a modulus at `fnMoN` (`Mod.fnN`), which the function stores
-again, and the functions' temporary area. -/
+/-- A product modulo P-521's `n` (`Mod.fnN`) by a call of `mulFnN`, inlined: as
+the inline product, for the functions' temporary area. -/
 theorem mulCallN_ok {f : String} {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) {M : Mod} {m : Nat}
-    (hM : ModOkW M Z m s.mem base) (hf : M.fnN = true) (hmo : M.mo = fnMoN) (ht : M.tmp = fnTmp)
+    (hM : ModOkW M Z m s.mem base) (hf : M.fnN = true) (ht : M.tmp = fnTmp)
     {o a b : Nat} (hlow : lowArgs 9 o a b = true) (hB : wordsVal s.mem base b M.n < m) :
     WP isa (mulCall f mulFnN o a b).inline s fun s' => OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n < m ∧
@@ -172,7 +171,6 @@ theorem mulCallN_ok {f : String} {s : State} {base : Addr} {Z : Nat} (hs : Scr s
   obtain ⟨hn9, hm⟩ := Mod.ok_fnN hM.red hf
   have hm' : m = n521 := hm
   have hZ : 4096 ≤ Z := by have := hM.tmp; rw [ht, hn9] at this; simp only [fnTmp] at this; omega
-  have hnw := hs.nowrap
   simp only [lowArgs, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at hlow
   obtain ⟨⟨ho, ha⟩, hb⟩ := hlow
   rw [hn9] at hB ⊢
@@ -182,12 +180,11 @@ theorem mulCallN_ok {f : String} {s : State} {base : Addr} {Z : Nat} (hs : Scr s
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
   refine WP.seq (WP.mono (mulFnN_ok hs₁ hZ (by rw [o₁]; exact ho) (by rw [a₁]; exact ha) (by rw [b₁]; exact hb)
-    (by rw [b₁, hm₁, ← hm']; exact hB)) fun s₂ ⟨lt₂, e₂, k₂, n₂, m₂⟩ => ?_)
+    (by rw [b₁, hm₁, ← hm']; exact hB)) fun s₂ ⟨lt₂, e₂, k₂, m₂⟩ => ?_)
   refine WP.mono (movReg_ok s₂ .rsi .r12) fun s₃ ⟨v₃, k₃⟩ => ?_
   rw [o₁] at lt₂ e₂ m₂
   rw [a₁, b₁, hm₁] at e₂
   have hm₃ : s₃.mem = s₂.mem := k₃.2.1
-  have hval : wordsVal s.mem base fnMoN 9 = n521 := by rw [← hmo, ← hn9, hM.val, hm']
   refine ⟨⟨fun r hr => ?_, by rw [k₃.2.2.1, k₂.rd, k₁.2.2.1], by rw [k₃.2.2.2, k₂.wr, k₁.2.2.2],
     fun x hx ht' => ?_⟩, by rw [hm₃, hm']; exact lt₂, by rw [hm₃, Nat.pow_mul 2 64 9, hm']; exact e₂⟩
   · rw [hn9] at hr
@@ -198,12 +195,6 @@ theorem mulCallN_ok {f : String} {s : State} {base : Addr} {Z : Nat} (hs : Scr s
     · rw [k₃.1 _ (by decide), k₂.gpr _ (by decide), k₁.1 _ (by decide)]
   · rw [hn9] at hx ht'
     rw [ht] at ht'
-    rw [hm₃]
-    by_cases hf' : ofs base x < fnMoN ∨ 4096 ≤ ofs base x
-    · rw [m₂ x hx hf', hm₁]
-    · have h₁ := hs.nowrap
-      rw [← hm₁] at hval
-      exact (mem_of_wordsVal 9 fnMoN (n₂.trans hval.symm) (by simp only [fnMoN, fnTmp]; omega) x
-        (by omega) (by simp only [fnTmp, fnMoN] at ht' hf' ⊢; omega)).trans (by rw [hm₁])
+    rw [hm₃, m₂ x hx (by simp only [fnTmp] at ht' ⊢; omega), hm₁]
 
 end VG.Proof.Weierstrass.X86_64.Mont

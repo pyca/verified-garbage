@@ -199,7 +199,7 @@ theorem fprog_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat →
       k₁.mem x (hx _ (List.mem_cons_self ..)) ht]
 
 /-- One operation, a call for a product modulo P-521's or P-384's `p` with the
-functions' temporary area, or P-521's `n` at `fnMoN` (`opProg`), inlined
+functions' temporary area, or P-521's `n` (`opProg`), inlined
 (`Code.inline`). -/
 theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hm : UnitMod m (2 ^ (64 * M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
@@ -244,9 +244,9 @@ theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
             rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
           split at hcall
           · rename_i hM
-            obtain ⟨hn9, hf, hmo, ht⟩ := hM
+            obtain ⟨hn9, hf, ht⟩ := hM
             cases hcall
-            refine WP.mono (Mont.mulCallN_ok hI.scr hI.mod hf hmo ht (hn9 ▸ hlow) (hI.lt b hR.2))
+            refine WP.mono (Mont.mulCallN_ok hI.scr hI.mod hf ht (hn9 ▸ hlow) (hI.lt b hR.2))
               fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
             rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
           · cases hcall
@@ -279,9 +279,9 @@ theorem opMulN_ok {M : Mod} {base : Addr} {Z m : Nat} {s : State} (hs : Scr s ba
       · rename_i h; rw [hsp] at h; exact absurd h.2.1 (by simp)
       split at hcall
       · rename_i h
-        obtain ⟨hn9, hf, hmo, ht⟩ := h
+        obtain ⟨hn9, hf, ht⟩ := h
         cases hcall
-        exact Mont.mulCallN_ok hs hM hf hmo ht (hn9 ▸ hlow) hB
+        exact Mont.mulCallN_ok hs hM hf ht (hn9 ▸ hlow) hB
       · cases hcall
     · exact hin
 
