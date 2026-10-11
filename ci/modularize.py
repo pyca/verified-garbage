@@ -40,9 +40,11 @@ import sys
 
 LEAN = pathlib.Path(__file__).resolve().parent.parent / "lean"
 
-# The directories (under lean/) whose every file is a module. The PR that
-# converts a layer adds its directory here, so that CI rejects a file added
-# to it later without a module header (by a PR older than the conversion).
+# The directories (under lean/) whose every file is a module: `D` for every
+# file under D, `D/*` for D's own files (not those of its subdirectories).
+# The PR that converts a layer adds its directories here, so that CI rejects
+# a file added to one later without a module header (by a PR older than the
+# conversion).
 CONVERTED = ["VerifiedGarbage/TCB", "VerifiedGarbage/Spec"]
 
 IMPORT = re.compile(r"^import\s+(\S+)\s*$")
@@ -109,8 +111,11 @@ PRIVATE_NEEDED = re.compile(
 def not_converted(lean: pathlib.Path, dirs: list[str]) -> list[tuple[str, pathlib.Path]]:
     """The (directory, file) pairs of the files under `lean`'s directories
     `dirs` that are not modules."""
-    return [(d, f) for d in dirs for f in sorted((lean / d).rglob("*.lean"))
-            if not is_module(f.read_text().split("\n"))]
+    found = []
+    for d in dirs:
+        files = (lean / d[:-2]).glob("*.lean") if d.endswith("/*") else (lean / d).rglob("*.lean")
+        found += [(d.removesuffix("/*"), f) for f in sorted(files) if not is_module(f.read_text().split("\n"))]
+    return found
 
 
 def needs_public(log: str) -> list[tuple[str, str]]:

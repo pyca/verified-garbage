@@ -33,6 +33,15 @@ class NotConverted(unittest.TestCase):
             (lean / "L/C.lean").write_text("-- A comment.\nmodule\n")
             self.assertEqual(modularize.not_converted(lean, ["L"]), [("L", lean / "L/B.lean")])
 
+    def test_a_directory_s_own_files(self):
+        with tempfile.TemporaryDirectory() as d:
+            lean = pathlib.Path(d)
+            (lean / "L/S").mkdir(parents=True)
+            (lean / "L/A.lean").write_text("module\n")
+            (lean / "L/S/B.lean").write_text("import C\n")
+            self.assertEqual(modularize.not_converted(lean, ["L/*"]), [])
+            self.assertEqual(modularize.not_converted(lean, ["L"]), [("L", lean / "L/S/B.lean")])
+
 
 if __name__ == "__main__":
     unittest.main()
