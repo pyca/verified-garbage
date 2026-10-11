@@ -8,13 +8,13 @@
 //! block with its CBC encryption or decryption from the chaining value at
 //! `iv`, in constant time: their timing depends on none of the key, the
 //! chaining value and the data. Both are the modes' generic CBC over CAST5's
-//! table-scanning block code, one block at a time: on x86 over the block code
+//! table-scanning block code, one block at a time: on x86 and x86-64 over the block code
 //! itself, on ARMv7 calling the verified `vg_cast5_ecb_encrypt` or
 //! `vg_cast5_ecb_decrypt` for each block. This module checks the
 //! lengths, holds the subkeys and keeps the chaining value to continue from:
 //! the last ciphertext block.
 
-#![cfg(any(target_arch = "x86", target_arch = "arm"))]
+#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "arm"))]
 
 use crate::arch::cast5_cbc::{vg_cast5_cbc_decrypt, vg_cast5_cbc_encrypt};
 use crate::cast5_ecb::Cast5Ecb;
