@@ -177,4 +177,39 @@ theorem oopG_ok {s₀ : State} {s : State} {m P : Nat}
     trivial, trivial, trivial⟩
   simp [h₁, h₂, h₃, h₄, h₅, h₆]
 
+/-- The arguments of the call for the data after its first `m' = rbx`
+bytes: as `cryptB_ok`. -/
+theorem restArgs_ok {e : Bool} {s₀ : State} (hp : APre e s₀) {s : State} {m : Nat} (hm : m ≤ L s₀) (hm9 : m / 64 + 1 < 2 ^ 32)
+    (hrbx : s.gpr .rbx = BitVec.ofNat 64 m) (hr15 : s.gpr .r15 = cx s₀) (hr14 : s.gpr .r14 = dp s₀)
+    (hr13 : s.gpr .r13 = s₀.gpr .r9) (hwr : s.wr = s₀.wr) :
+    WP isa (.block restArgs) s fun s' =>
+      s'.mem = s.mem.writeW (off (cx s₀) 112) (BitVec.ofNat 32 (m / 64 + 1)) ∧
+      s'.gpr .rdi = off (cx s₀) 64 ∧ s'.gpr .rsi = off (dp s₀) m ∧
+      s'.gpr .rdx = BitVec.ofNat 64 (L s₀ - m) ∧ s'.gpr .rcx = off (cx s₀) 128 ∧
+      (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have o := hp.in_ctx (a := 112) (w := 4) (by lit_omega)
+  rw [← hwr] at o
+  simp only [off] at o
+  have hL9 := (s₀.gpr .r9).isLt
+  have hw : (BitVec.ofNat 64 (m / 64) + BitVec.signExtend 64 (1 : BitVec 32)).setWidth 32 =
+      BitVec.ofNat 32 (m / 64 + 1) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_setWidth, BitVec.toNat_add, show BitVec.signExtend 64 (1 : BitVec 32) = 1 by decide,
+      BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl,
+      Nat.mod_eq_of_lt (show m / 64 < 2 ^ 64 by omega),
+      Nat.mod_eq_of_lt (show m / 64 + 1 < 2 ^ 64 by omega), Nat.mod_eq_of_lt hm9]
+  apply WP.of_runBlock
+  simp only [restArgs, ptr, List.cons_append, List.nil_append, runBlock_cons,
+    runStep_some, runBlock_nil, exec, ea_at, readSrc, execAlu, execShift, RegUpd.gpr_arithFlags,
+    RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, State.store32, RegUpd.gpr_setReg,
+    RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_setFlags, RegUpd.mem_setFlags,
+    RegUpd.rd_setFlags, RegUpd.wr_setFlags, hr15, hr14, hr13, hrbx, o, reduceCtorEq,
+    ↓reduceIte, Nat.reduceLeDiff, and_self, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
+    se_ofNat (show 64 < 2 ^ 31 by omega_using []), se_ofNat (show 128 < 2 ^ 31 by omega_using []),
+    shr6_ofNat (show m < 2 ^ 64 by simp only [L] at hm; omega), hw]
+  refine ⟨trivial, by rw [off_eq], by rw [off_eq], ?_, by rw [off_eq], fun r hr => ?_, trivial⟩
+  · rw [hL s₀]; exact Offset.ofNat_sub_ofNat hm
+  · have := calleeSaved_ne hr
+    simp [this.1, this.2.1, this.2.2.1, this.2.2.2.1, this.2.2.2.2]
+
 end VG.Proof.ChaCha20Poly1305.X86_64
