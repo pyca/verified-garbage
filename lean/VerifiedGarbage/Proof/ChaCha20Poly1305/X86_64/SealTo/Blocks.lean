@@ -179,7 +179,7 @@ theorem oopG_ok {s₀ : State} {s : State} {m P : Nat}
 
 /-- The arguments of the call for the data after its first `m' = rbx`
 bytes: as `cryptB_ok`. -/
-theorem restArgs_ok {e : Bool} {s₀ : State} (hp : APre e s₀) {s : State} {m : Nat} (hm : m ≤ L s₀) (hm9 : m / 64 + 1 < 2 ^ 32)
+theorem restArgs_ok {e : Bool} {s₀ : State} (hp : APre e s₀) {s : State} {m : Nat} (hm : m ≤ L s₀)
     (hrbx : s.gpr .rbx = BitVec.ofNat 64 m) (hr15 : s.gpr .r15 = cx s₀) (hr14 : s.gpr .r14 = dp s₀)
     (hr13 : s.gpr .r13 = s₀.gpr .r9) (hwr : s.wr = s₀.wr) :
     WP isa (.block restArgs) s fun s' =>
@@ -191,13 +191,14 @@ theorem restArgs_ok {e : Bool} {s₀ : State} (hp : APre e s₀) {s : State} {m 
   rw [← hwr] at o
   simp only [off] at o
   have hL9 := (s₀.gpr .r9).isLt
+  have hLl : L s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   have hw : (BitVec.ofNat 64 (m / 64) + BitVec.signExtend 64 (1 : BitVec 32)).setWidth 32 =
       BitVec.ofNat 32 (m / 64 + 1) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_setWidth, BitVec.toNat_add, show BitVec.signExtend 64 (1 : BitVec 32) = 1 by decide,
       BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl,
       Nat.mod_eq_of_lt (show m / 64 < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (show m / 64 + 1 < 2 ^ 64 by omega), Nat.mod_eq_of_lt hm9]
+      Nat.mod_eq_of_lt (show m / 64 + 1 < 2 ^ 64 by omega)]
   apply WP.of_runBlock
   simp only [restArgs, ptr, List.cons_append, List.nil_append, runBlock_cons,
     runStep_some, runBlock_nil, exec, ea_at, readSrc, execAlu, execShift, RegUpd.gpr_arithFlags,
