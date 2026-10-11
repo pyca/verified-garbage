@@ -61,11 +61,11 @@ theorem joint_adx_infinity_ct : ScratchCT (.block (Jacobian.infinity publicJoint
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem joint_counter_ct :
-    ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*publicJoint.K.M.n+1)))]) :=
+    ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top publicJoint)))]) :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem joint_adx_counter_ct :
-    ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*publicJointAdx.K.M.n+1)))]) :=
+    ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top publicJointAdx)))]) :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem fastPeer_checks : FastPrepChecks 6 (p384v.sl V) p384v.winBits 5 := by

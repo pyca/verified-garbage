@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Weierstrass.Joint
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
 
 /-! The carry digit followed by `64 n` shared doubles computes the two-scalar sum. -/
 namespace VG.Proof.Weierstrass.X86_64
@@ -62,13 +63,14 @@ variable {double : Prog isa}
 include hdouble
 
 theorem jointStep_core_ok (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {j : Nat} {s : State}
-    (hj : j<64*c.K.M.n+1)
+    (hj : j<Joint.top c)
     (hs : JointCore c C base size Q u v (JointGenerator c C base T size row) (jointPoint G Q u v (j+1)) s)
     (hb : s.gpr .rbx=BitVec.ofNat 64 (j+1)) :
     WP isa (Joint.step c double).inline s fun t => JointLoopKeep c.K.M base (jointWork c) s t ∧
       JointCore c C base size Q u v (JointGenerator c C base T size row) (jointPoint G Q u v j) t ∧
       t.gpr .rbx=BitVec.ofNat 64 j ∧ t.zf=some (decide (j=0)) := by
   have := hL.lookup.layout.n
+  have ht := joint_top_le c
   have hA := jointPoint_curve hC hG hQ u v (j+1)
   rw [Joint.step]
   simp only [Code.inline]
@@ -83,6 +85,9 @@ theorem jointStep_core_ok (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {j : N
         (add (jointPoint G Q u v (j+1)) (jointPoint G Q u v (j+1))) b ∧
       b.gpr .rbx=BitVec.ofNat 64 j := by
     rw [Joint.guardDouble]
+    split
+    · exact WP.mono (hdouble _ a hA ca) fun b ⟨kb,cb⟩ =>
+        ⟨kb,cb,(kb.gpr _ (rbx_not_clob _)).trans ab'⟩
     simp only [Code.inline]
     refine WP.seq (WP.mono_syms (cmpRbxImm_ok a (k:=64*c.K.M.n) (by omega) (by omega) ab')
       fun a' ⟨az,ka'⟩ sa' => ?_)
@@ -112,8 +117,8 @@ theorem jointStep_core_ok (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {j : N
 
 theorem jointLoop_core_ok (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {s : State}
     (hs : JointCore c C base size Q u v (JointGenerator c C base T size row)
-      (jointPoint G Q u v (64*c.K.M.n+1)) s)
-    (hb : s.gpr .rbx=BitVec.ofNat 64 (64*c.K.M.n+1)) :
+      (jointPoint G Q u v (Joint.top c)) s)
+    (hb : s.gpr .rbx=BitVec.ofNat 64 (Joint.top c)) :
     WP isa (Code.loop (Joint.step c double) .ne).inline s fun t => JointLoopKeep c.K.M base (jointWork c) s t ∧
       JointCore c C base size Q u v (JointGenerator c C base T size row) (add (mul u G) (mul v Q)) t ∧
       t.gpr .rbx=0 := by
@@ -121,7 +126,8 @@ theorem jointLoop_core_ok (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {s : S
     JointCore c C base size Q u v (JointGenerator c C base T size row) (jointPoint G Q u v j) t ∧
     t.gpr .rbx=BitVec.ofNat 64 j
   have := hL.lookup.layout.n
-  apply countLoop_ok (Inv:=I) (n:=64*c.K.M.n+1)
+  have := joint_top_le c
+  apply countLoop_ok (Inv:=I) (n:=Joint.top c)
   · intro j a hj1 hj256 hi
     obtain ⟨ka,ca,ab⟩ := hi
     have he : j-1+1=j := by omega
@@ -136,12 +142,29 @@ theorem jointLoop_core_ok (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {s : S
 
 theorem jointRun_core_ok {s : State} (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n))
     (hs : JointCore c C base size Q u v (JointGenerator c C base T size row) .infinity s)
-    (hb : s.gpr .rbx=BitVec.ofNat 64 (64*c.K.M.n+1)) :
+    (hb : s.gpr .rbx=BitVec.ofNat 64 (Joint.top c)) :
     WP isa (Joint.run c double).inline s fun t => JointLoopKeep c.K.M base (jointWork c) s t ∧
       JointCore c C base size Q u v (JointGenerator c C base T size row) (add (mul u G) (mul v Q)) t ∧
       t.gpr .rbx=0 := by
   rw [Joint.run]
-  rw [← jointPoint_topB G Q hu hv] at hs
-  exact jointLoop_core_ok hL hm hC ha hOne hOneVal hG hQ hdouble hu hv hs hb
+  split
+  · rename_i hp
+    rw [joint_top_peel hp] at hb
+    simp only [Code.inline]
+    apply WP.seq
+    refine WP.mono (jointDigits_core_ok hL hm hC ha hOne hOneVal hG hQ (A:=.infinity)
+      rfl hs (by omega) hb) fun a ⟨ka,ca⟩ => ?_
+    have he := jointPoint_step hC hG hQ u v (64*c.K.M.n)
+    rw [jointPoint_topB G Q hu hv] at he
+    change add (add .infinity (FastNaf.point C Q 5 v (64*c.K.M.n)))
+      (FastNaf.point C G 7 u (64*c.K.M.n))=jointPoint G Q u v (64*c.K.M.n) at he
+    rw [he,← joint_top_peel hp] at ca
+    refine WP.mono (jointLoop_core_ok hL hm hC ha hOne hOneVal hG hQ hdouble hu hv ca
+      ((ka.gpr _ (rbx_not_clob _)).trans (hb.trans (by rw [joint_top_peel hp])))) fun t ⟨kt,ct,tb⟩ =>
+      ⟨(JointLoopKeep.of_prog ka).trans kt,ct,tb⟩
+  · rename_i hp
+    have hp' : c.peel=false := by simpa using hp
+    rw [← jointPoint_topB G Q hu hv,← joint_top_guard hp'] at hs
+    exact jointLoop_core_ok hL hm hC ha hOne hOneVal hG hQ hdouble hu hv hs hb
 end
 end VG.Proof.Weierstrass.X86_64

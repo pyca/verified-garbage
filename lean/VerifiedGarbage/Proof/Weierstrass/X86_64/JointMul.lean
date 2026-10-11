@@ -33,7 +33,7 @@ theorem jointMulRun_ok {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base T :
     (hG : onCurve C G=true) (hQ : onCurve C Q=true)
     (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n))
     (h : JointCore c C base size Q u v (JointGenerator c C base T size row) .infinity s)
-    (hb : s.gpr .rbx=BitVec.ofNat 64 (64*c.K.M.n+1)) :
+    (hb : s.gpr .rbx=BitVec.ofNat 64 (Joint.top c)) :
     WP isa (Joint.run c double).inline s fun t =>
       JointLoopKeep c.K.M base (jointWork c) s t ∧
       JointCore c C base size Q u v (JointGenerator c C base T size row) (add (mul u G) (mul v Q)) t ∧

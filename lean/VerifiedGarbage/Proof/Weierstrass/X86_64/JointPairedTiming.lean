@@ -158,7 +158,7 @@ include hdouble
 
 omit hm hC ha hOne hOneVal hG hQ in
 /-- The doubling but where `R` is `O`, in the first iteration (`j = 64 n`). -/
-theorem jointPair_guard {j : Nat} {A : Point C} (hA : onCurve C A=true) (hj : j<64*c.K.M.n+1)
+theorem jointPair_guard {j : Nat} {A : Point C} (hA : onCurve C A=true) (hj : j<Joint.top c)
     (h0 : j=64*c.K.M.n → add A A=A) :
     RelCT isa (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) A j)
       (Joint.guardDouble c double).inline
@@ -167,7 +167,11 @@ theorem jointPair_guard {j : Nat} {A : Point C} (hA : onCurve C A=true) (hj : j<
       (ks : Keeps rs s t) (st : t.syms=s.syms) (cs : (JointCore c C base size Q u v (JointGenerator c C base T size row)) A s) : (JointCore c C base size Q u v (JointGenerator c C base T size row)) A t :=
     cs.of_keeps ks hr (fun n hn hb ho => (cs.external n hn hb ho).of_keeps ks st)
   have := hL.lookup.layout.n
+  have := joint_top_le c
   rw [Joint.guardDouble]
+  split
+  · exact (jointPair_stage (fun s hs _ => hdouble _ s hA hs) (ht.double _ j)).mono
+      (fun _ _ h => h) (fun _ _ h => h)
   simp only [Code.inline]
   apply RelCT.seq (jointPair_cmp (k:=64*c.K.M.n) (hk [] (by simp)) (by omega) (by omega))
   refine RelCT.ite (fun s t h => by show s.zf=t.zf; rw [h.2.1,h.2.2]) ?_ ?_
@@ -179,7 +183,7 @@ theorem jointPair_guard {j : Nat} {A : Point C} (hA : onCurve C A=true) (hj : j<
   · exact (jointPair_stage (fun s hs _ => hdouble _ s hA hs) (ht.double _ j)).mono
       (fun _ _ h => h.1.1) (fun _ _ h => h)
 
-theorem jointPair_step (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {j : Nat} (hj : j<64*c.K.M.n+1) :
+theorem jointPair_step (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {j : Nat} (hj : j<Joint.top c) :
     RelCT isa (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (jointPoint G Q u v (j+1)) (j+1))
       (Joint.step c double).inline (fun s t => JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (jointPoint G Q u v j) j s t ∧
         s.zf=some (decide (j=0)) ∧ t.zf=some (decide (j=0))) := by
@@ -188,6 +192,7 @@ theorem jointPair_step (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {j : Nat}
     cs.of_keeps ks hr (fun n hn hb ho => (cs.external n hn hb ho).of_keeps ks st)
   have hA := jointPoint_curve hC hG hQ u v (j+1)
   have := hL.lookup.layout.n
+  have := joint_top_le c
   apply RelCT.seq (jointPair_counter (hk [.rbx] (by decide)) (by omega))
   apply RelCT.seq (jointPair_guard hL ht hdouble hA hj
     (fun h => by rw [h, jointPoint_topB G Q hu hv]; rfl))
@@ -199,12 +204,25 @@ theorem jointPair_step (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {j : Nat}
 
 theorem jointPair_run (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) :
     RelCT isa (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row))
-      .infinity (64*c.K.M.n+1)) (Joint.run c double).inline
+      .infinity (Joint.top c)) (Joint.run c double).inline
       (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (add (mul u G) (mul v Q)) 0) := by
   have := hL.lookup.layout.n
+  have he := jointPoint_step hC hG hQ u v (64*c.K.M.n)
+  rw [jointPoint_topB G Q hu hv] at he
+  change add (add .infinity (FastNaf.point C Q 5 v (64*c.K.M.n)))
+    (FastNaf.point C G 7 u (64*c.K.M.n))=jointPoint G Q u v (64*c.K.M.n) at he
   have out := jointRun_relCT (c:=c) (double:=double) (by omega)
+    (Pre:=JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row))
+      .infinity (Joint.top c))
     (fun j => JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (jointPoint G Q u v j) j)
+    (fun hp => by
+      have seed := jointPair_digits (base:=base) (T:=T) (u:=u) (v:=v) (row:=row) (j:=64*c.K.M.n)
+        (A:=.infinity) hL hm hC ha hOne hOneVal hG hQ ht rfl (by omega)
+      rw [he] at seed
+      simpa only [joint_top_peel hp] using seed)
+    (fun hp s t h => by
+      simpa only [joint_top_guard hp,jointPoint_topB G Q hu hv] using h)
     (fun j hj => jointPair_step hL hm hC ha hOne hOneVal hG hQ ht hdouble hu hv hj)
-  simpa only [jointPoint_zero, jointPoint_topB G Q hu hv] using out
+  simpa only [jointPoint_zero] using out
 end
 end VG.Proof.Weierstrass.X86_64
