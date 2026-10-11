@@ -329,8 +329,50 @@ theorem invFn_ok (hc : BaseCfgOk c) (h6 : 6 ≤ c.n) {body : Prog isa} {base : A
       List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
     rcases hw with rfl | rfl | rfl | rfl <;> simp
 
+/-- `vg_<curve>_inv_mod_p`'s body run as a function, for six to nine words:
+`[ACC] = [RZ]^(p-2)`, the callee-saved registers restored. -/
+theorem invPFn_ok (hc : BaseCfgOk c) (h6 : 6 ≤ c.n) (h9 : c.n ≤ 9) {base : Addr} {s : State}
+    (hs : Scr s base size)
+    (hM : ModOkW c.MP' size c.C.p s.mem base) (hB : wordsVal s.mem base (c.sl RZ) c.n < c.C.p) :
+    WP isa (c.invFn c.pPowI) s fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s.gpr r) ∧
+      KeepRegs (invClob c.n) s s' ∧ Unch base (pwW c) s.mem s'.mem ∧
+      wordsVal s'.mem base (c.sl ACC) c.n < c.C.p ∧
+      toM c.C.p (2 ^ (64 * c.n)) (wordsVal s'.mem base (c.sl ACC) c.n) =
+        toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl RZ) c.n) ^ (c.C.p - 2) := by
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  rw [show c.pPowI = InvCfg.inv c.invP from ite_eq_left_of_eq_true _ _ (eq_true h9)]
+  refine invFn_ok hc h6 hs (Q := fun m => wordsVal m base (c.sl ACC) c.n < c.C.p ∧
+    toM c.C.p (2 ^ (64 * c.n)) (wordsVal m base (c.sl ACC) c.n) =
+      toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl RZ) c.n) ^ (c.C.p - 2)) fun s₁ hs₁ U₁ => ?_
+  have hrz : wordsVal s₁.mem base (c.sl RZ) c.n = wordsVal s.mem base (c.sl RZ) c.n :=
+    sv_unch U₁ h7 hn (i := RZ) (by decide) (apart_slW (by decide))
+  refine WP.mono (invP_ok hc h9 hs₁ (hM.unch U₁ (apart_slW (i := MP) (by decide)) hn) (hrz ▸ hB))
+    fun s' ⟨K, U, lt, v⟩ => ⟨K, U, lt, by rw [v, hrz]⟩
+
+/-- `vg_<curve>_inv_mod_n`'s body run as a function, for six to nine words
+and `fastN`: `[ACC] = [KM]^(n-2)`, the callee-saved registers restored. -/
+theorem invNFn_ok (hc : BaseCfgOk c) (h6 : 6 ≤ c.n) (h9 : c.n ≤ 9) (hf : c.fastN = true) {base : Addr}
+    {s : State} (hs : Scr s base size)
+    (hM : ModOkW c.MN' size c.C.n s.mem base) (hB : wordsVal s.mem base (c.sl KM) c.n < c.C.n) :
+    WP isa (c.invFn c.nPowI) s fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s.gpr r) ∧
+      KeepRegs (invClob c.n) s s' ∧ Unch base (pwW c) s.mem s'.mem ∧
+      wordsVal s'.mem base (c.sl ACC) c.n < c.C.n ∧
+      toM c.C.n (2 ^ (64 * c.n)) (wordsVal s'.mem base (c.sl ACC) c.n) =
+        toM c.C.n (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl KM) c.n) ^ (c.C.n - 2) := by
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  rw [show c.nPowI = InvCfg.inv c.invN from ite_eq_left_of_eq_true _ _ (eq_true ⟨hf, h9⟩)]
+  refine invFn_ok hc h6 hs (Q := fun m => wordsVal m base (c.sl ACC) c.n < c.C.n ∧
+    toM c.C.n (2 ^ (64 * c.n)) (wordsVal m base (c.sl ACC) c.n) =
+      toM c.C.n (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl KM) c.n) ^ (c.C.n - 2)) fun s₁ hs₁ U₁ => ?_
+  have hkm : wordsVal s₁.mem base (c.sl KM) c.n = wordsVal s.mem base (c.sl KM) c.n :=
+    sv_unch U₁ h7 hn (i := KM) (by decide) (apart_slW (by decide))
+  refine WP.mono (invN_ok hc hf h9 hs₁ (hM.unch U₁ (apart_slW (i := MN) (by decide)) hn) (hkm ▸ hB))
+    fun s' ⟨K, U, lt, v⟩ => ⟨K, U, lt, by rw [v, hkm]⟩
+
 /-- `[ACC] = [RZ]^(p-2)` in Montgomery form: a call of
-`vg_<curve>_inv_mod_p`, or inline (`pPowI_ok`). -/
+`vg_<curve>_inv_mod_p` (`invPFn_ok`), or inline (`pPowI_ok`). -/
 theorem pPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hM : ModOkW c.MP' size c.C.p s.mem base) (hB : wordsVal s.mem base (c.sl RZ) c.n < c.C.p)
     (hO : wordsVal s.mem base (c.sl ONEP) c.n = 2 ^ (64 * c.n) % c.C.p)
@@ -345,21 +387,10 @@ theorem pPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   | none => rw [pPowI_inline]; exact pPowI_ok hc hs hM hB hO hbits
   | some C =>
     obtain ⟨h6, h9, -⟩ := hc.inverse (by rw [hi]; rfl)
-    have h7 := hc.n10
-    have hn := hs.nowrap
-    show WP isa (c.invFn c.pPowI) s _
-    rw [show c.pPowI = InvCfg.inv c.invP from ite_eq_left_of_eq_true _ _ (eq_true h9)]
-    refine WP.mono (invFn_ok hc h6 hs (Q := fun m => wordsVal m base (c.sl ACC) c.n < c.C.p ∧
-      toM c.C.p (2 ^ (64 * c.n)) (wordsVal m base (c.sl ACC) c.n) =
-        toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl RZ) c.n) ^ (c.C.p - 2)) (fun s₁ hs₁ U₁ => ?_))
-      fun _ h => h.2
-    have hrz : wordsVal s₁.mem base (c.sl RZ) c.n = wordsVal s.mem base (c.sl RZ) c.n :=
-      sv_unch U₁ h7 hn (i := RZ) (by decide) (apart_slW (by decide))
-    refine WP.mono (invP_ok hc h9 hs₁ (hM.unch U₁ (apart_slW (i := MP) (by decide)) hn) (hrz ▸ hB))
-      fun s' ⟨K, U, lt, v⟩ => ⟨K, U, lt, by rw [v, hrz]⟩
+    exact WP.mono (invPFn_ok hc h6 h9 hs hM hB) fun _ h => h.2
 
 /-- `[ACC] = [KM]^(n-2)` in Montgomery form: a call of
-`vg_<curve>_inv_mod_n`, or inline (`nPowI_ok`). -/
+`vg_<curve>_inv_mod_n` (`invNFn_ok`), or inline (`nPowI_ok`). -/
 theorem nPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hM : ModOkW c.MN' size c.C.n s.mem base) (hB : wordsVal s.mem base (c.sl KM) c.n < c.C.n)
     (hO : wordsVal s.mem base (c.sl ONEN) c.n = 2 ^ (64 * c.n) % c.C.n)
@@ -373,17 +404,6 @@ theorem nPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   | none => rw [nPowI_inline]; exact nPowI_ok hc hs hM hB hO hbits
   | some C =>
     obtain ⟨h6, h9, hf⟩ := hc.inverse (by rw [hi]; rfl)
-    have h7 := hc.n10
-    have hn := hs.nowrap
-    show WP isa (c.invFn c.nPowI) s _
-    rw [show c.nPowI = InvCfg.inv c.invN from ite_eq_left_of_eq_true _ _ (eq_true ⟨hf, h9⟩)]
-    refine WP.mono (invFn_ok hc h6 hs (Q := fun m => wordsVal m base (c.sl ACC) c.n < c.C.n ∧
-      toM c.C.n (2 ^ (64 * c.n)) (wordsVal m base (c.sl ACC) c.n) =
-        toM c.C.n (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl KM) c.n) ^ (c.C.n - 2)) (fun s₁ hs₁ U₁ => ?_))
-      fun _ h => h.2
-    have hkm : wordsVal s₁.mem base (c.sl KM) c.n = wordsVal s.mem base (c.sl KM) c.n :=
-      sv_unch U₁ h7 hn (i := KM) (by decide) (apart_slW (by decide))
-    refine WP.mono (invN_ok hc hf h9 hs₁ (hM.unch U₁ (apart_slW (i := MN) (by decide)) hn) (hkm ▸ hB))
-      fun s' ⟨K, U, lt, v⟩ => ⟨K, U, lt, by rw [v, hkm]⟩
+    exact WP.mono (invNFn_ok hc h6 h9 hf hs hM hB) fun _ h => h.2
 
 end VG.Proof.Ecdsa.X86_64

@@ -46,7 +46,8 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
       sign, by Jacobian addition with the entry's `Z²` and `Z³`, whose exceptional cases (equal \
       or opposite points) do not arise for `d < n`; the sum is kept, by masks, unless the digit \
       is zero, and the entry in its place where the accumulator is the point at infinity; \
-      `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of the \
+      `Z⁻¹` is the signature's call of `vg_p384_inv_mod_p" ++
+      (if adx then "_adx" else "") ++ "`. The result (or zeros) is selected by a mask of the \
       checks, `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code
     contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst X86_64.abi 8
