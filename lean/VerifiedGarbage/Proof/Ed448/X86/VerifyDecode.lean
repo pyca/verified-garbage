@@ -85,7 +85,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
   have hc4 := k4.ctx hc3
   -- `v x² = u`
   refine WP.seq (WP.mono (eqSlots_ok hs4 b4 12 13 (by decide) (by decide) (by decide))
-    fun s5 ⟨k5, b5, e5, c5⟩ => ?_)
+    fun s5 ⟨k5, b5, e5, c5, _⟩ => ?_)
   have hs5 := k5.scr hs4
   have hc5 := k5.ctx hc4
   -- `-x`

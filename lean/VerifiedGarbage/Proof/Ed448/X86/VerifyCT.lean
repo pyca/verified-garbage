@@ -558,11 +558,56 @@ theorem vdouble_rel : RelCT isa (Runs VP₀ (FS bsV)) Impl.Ed448.X86.vdouble (Ru
     have e : k - 1 + 1 = k := by omega
     exact ⟨k - 1, by omega, σ₁, σ₂, hP, ⟨f₁, e ▸ e₁, by omega⟩, ⟨f₂, e ▸ e₂, by omega⟩⟩
 
+/-- In the comparison, `k + 1` passes left. -/
+def CI (k : Nat) (σ s : State) : Prop := FS bsV σ s ∧ s.gpr .esi = BitVec.ofNat 32 (k + 1) ∧ k < 2
+
+theorem CI.keep {k : Nat} {σ s t : State} (h : CI k σ s) (kt : Keeps workRegs s t) (ht : FS bsV σ t) :
+    CI k σ t :=
+  ⟨ht, (kt.1 _ (by decide)).trans h.2.1, h.2.2⟩
+
+theorem vcmp_tr (k : Nat) : RelCT isa (Runs VP₀ (CI k)) Impl.Ed448.X86.vcmp fun _ _ => True := by
+  unfold Impl.Ed448.X86.vcmp
+  refine RelCT.seq (Runs.step (G := CI k) (field_tr (fun _ _ h => h.1) _ (by decide)) ?_) ?_
+  · intro σ s h
+    exact WP.mono (field_ok _ (by decide) h.1.1.scr h.1.1.ctx h.1.1.bounded) fun t ⟨kt, bt, _⟩ =>
+      h.keep kt.regs (FS.keep h.1 kt bt)
+  refine RelCT.seq (Runs.step (G := CI k) (RelCT.taint (A := taint) (τr [.esp, .edi])
+    (fun _ _ ⟨_, _, hP, f₁, f₂⟩ => FS.agree hP f₁.1 f₂.1) (by taint_decide)) ?_) ?_
+  · intro σ s h
+    exact WP.mono (eqSlots_ok h.1.1.scr h.1.1.bounded 12 13 (by decide) (by decide) (by decide))
+      fun t ⟨k', bt, _, _, kw⟩ =>
+        h.keep kw ⟨⟨k'.scr h.1.1.scr, k'.ctx h.1.1.ctx, bt⟩, (k'.regs.1 _ (by decide)).trans h.1.2⟩
+  rw [show Impl.X448.X86.ops [.copy (slot 0) (slot 6), .copy (slot 8) (slot 9)] =
+    Impl.X448.X86.ops (([.copy 0 6, .copy 8 9] : List FieldOp).map FieldOp.impl) from rfl]
+  refine RelCT.seq (Runs.step (G := CI k) (ops_tr (fun _ _ h => h.hp) (fun _ _ h => h.1) _) ?_)
+    (RelCT.taint (A := taint) (τr []) (fun _ _ _ => agree_regs fun _ h => (List.not_mem_nil h).elim)
+      (by taint_decide))
+  intro σ s h
+  exact WP.mono (ops_ok h.1.1.scr h.1.1.ctx h.1.1.bounded _) fun t ⟨kt, bt, _⟩ =>
+    h.keep kt.regs (FS.keep h.1 kt bt)
+
 theorem vfinish_tr : RelCT isa (Runs VP₀ (FS bsV)) Impl.Ed448.X86.vfinish fun _ _ => True := by
   unfold Impl.Ed448.X86.vfinish
-  exact vdouble_rel.seq ((field_FS _ (by decide)).seq (eqSlots_FS.seq ((field_FS _ (by decide)).seq
-    (RelCT.taint (A := taint) (τr [.esp, .edi]) (fun _ _ ⟨_, _, hP, f₁, f₂⟩ => FS.agree hP f₁ f₂)
-      (by taint_decide)))))
+  refine vdouble_rel.seq (RelCT.seq (Runs.step (G := CI 1) (RelCT.taint (A := taint) (τr [])
+    (fun _ _ _ => agree_regs fun _ h => (List.not_mem_nil h).elim) (by taint_decide)) ?_)
+    (RelCT.seq (R := Runs VP₀ (FS bsV)) (RelCT.loop (M := isa) (fun k => Runs VP₀ (CI k)) (fun k => ?_) 1)
+      (RelCT.taint (A := taint) (τr [.esp, .edi]) (fun _ _ ⟨_, _, hP, f₁, f₂⟩ => FS.agree hP f₁ f₂)
+        (by taint_decide))))
+  · intro σ s h
+    exact WP.mono (setCounter_ok s 2 (by decide)) fun t ⟨h1, h2, h3, h4, h5⟩ =>
+      ⟨⟨FInv.of_counter h.1 h2 h3 h4 h5, (h2 _ (by decide)).trans h.2⟩, h1, by decide⟩
+  refine Runs.then (G := fun σ t => FS bsV σ t ∧ t.gpr .esi = BitVec.ofNat 32 k ∧ t.zf = some (decide (k = 0)) ∧
+      k < 2) (fun _ _ h => h) (vcmp_tr k) ?_ ?_
+  · rintro σ s ⟨f, e, hk⟩
+    exact WP.mono (vcmp_ok f.1.scr f.1.ctx f.1.bounded hk e)
+      fun t ⟨et, zt, kt, _, bt, _⟩ => ⟨⟨⟨f.1.scr.of_keeps kt (by decide), f.1.ctx.keep (kt.1 _ (by decide)), bt⟩,
+        (kt.1 _ (by decide)).trans f.2⟩, et, zt, hk⟩
+  · rintro σ₁ σ₂ t₁ t₂ hP - ⟨f₁, e₁, z₁, b₁⟩ ⟨f₂, e₂, z₂, b₂⟩
+    rw [eval_ne z₁, eval_ne z₂]
+    refine ⟨rfl, fun _ => ⟨σ₁, σ₂, hP, f₁, f₂⟩, fun hz => ?_⟩
+    have hk0 : k ≠ 0 := fun h0 => by simp [h0] at hz
+    have e : k - 1 + 1 = k := by omega
+    exact ⟨k - 1, by omega, σ₁, σ₂, hP, ⟨f₁, e ▸ e₁, by omega⟩, ⟨f₂, e ▸ e₂, by omega⟩⟩
 
 theorem vafter_tr : RelCT isa (Runs VP₀ (LoopAt · 0 ·)) Impl.Ed448.X86.vafter fun _ _ => True := by
   unfold Impl.Ed448.X86.vafter

@@ -263,16 +263,24 @@ def vdecode : Prog isa := .seq (vdecodeBody .r12) (vdecodeBody .r8)
 /-- `R` into slots 8–9 (`B` is no longer needed). -/
 def vR : List Instr := copy (slot 8) RX ++ copy (slot 9) RY
 
-/-- `[4]Q` and `[4]R` compared (`BAD |= 0` exactly when they are the same
-point), the callee-saved registers restored, and `r0 = (BAD == 0)`. -/
-def vfinish : Prog isa :=
-  .seq vdouble <|
+/-- One comparison: slot 0 times slot 10 against slot 8 times slot 2 (`BAD |= 0` exactly when they
+are equal); then slots 21 and 9 copied into 0 and 8, for the second pass, and `r11` moved down. -/
+def vcmp : Prog isa :=
   .seq (ops [.mul (slot 12) (slot 0) (slot 10), .mul (slot 13) (slot 8) (slot 2)]) <|
   .seq (.block (eqSlots (slot 12) (slot 13))) <|
-  .seq (ops [.mul (slot 12) (slot 21) (slot 10), .mul (slot 13) (slot 9) (slot 2)]) <|
-  .block (eqSlots (slot 12) (slot 13) ++
-    [.dp .sub .r1 .r10 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31)] ++
-    (List.range 8).map (fun i => ld (saved[i]!) (4 * i)) ++ [ld .lr LR, .mov .r0 (.reg .r1)])
+  .seq (ops [.copy (slot 0) (slot 21), .copy (slot 8) (slot 9)])
+    (.block [.dp .sub .r11 .r11 (.imm 1), .cmp .r11 (.imm 0)])
+
+/-- `r0 = (BAD == 0)`, and the callee-saved registers and the link register restored. -/
+def vresult : List Instr :=
+  [.dp .sub .r1 .r10 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31)] ++
+    (List.range 8).map (fun i => ld (saved[i]!) (4 * i)) ++ [ld .lr LR, .mov .r0 (.reg .r1)]
+
+/-- `[4]Q` and `[4]R` compared (`BAD |= 0` exactly when they are the same
+point): `X_Q Z_R = X_R Z_Q`, then `Y_Q Z_R = Y_R Z_Q`, by two passes of `vcmp`,
+counted by `r11`; then `vresult`. -/
+def vfinish : Prog isa :=
+  .seq vdouble <| .seq (.block [.movw .r11 2]) <| .seq (.loop vcmp .ne) (.block vresult)
 
 /-- `vg_ed448_verify_equation(pk = r0, signature = r1, challenge = r2, scratch = r3) -> r0`. -/
 def verifyEquation : Prog isa :=
