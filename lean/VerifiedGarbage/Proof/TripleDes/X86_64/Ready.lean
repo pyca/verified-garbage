@@ -15,6 +15,9 @@ structure Ready (keys : Nat → DesSchedule) (base : Addr) (s : State) : Prop wh
   savedRead : InRegions (s.rd ++ s.wr) (savedKeyAddr s) 8
   countRead : InRegions (s.rd ++ s.wr) (countAddr s) 8
   countWrite : InRegions s.wr (countAddr s) 8
+  stepWrite : InRegions s.wr (stepAddr s) 8
+  passesRead : InRegions (s.rd ++ s.wr) (passesAddr s) 8
+  passesWrite : InRegions s.wr (passesAddr s) 8
   read : ∀ c < 3, ∀ d : Direction, ∀ j < 16,
     InRegions (s.rd ++ s.wr) (keyAddr (componentBase base c) d j) 8
   separate : ∀ c < 3, ∀ d : Direction, ∀ j < 16,
@@ -33,8 +36,10 @@ theorem Ready.congr {keys : Nat → DesSchedule} {base : Addr} {s t : State}
   have hsave : savedKeyAddr t = savedKeyAddr s := congrArg (· + BitVec.ofNat 64 48) hbase
   have hcount : countAddr t = countAddr s := congrArg (· + BitVec.ofNat 64 56) hbase
   have hwork : workRegion t = workRegion s :=
-    congrArg (fun p => (⟨p + BitVec.ofNat 64 56, 392⟩ : Region)) hbase
-  refine ⟨hs.spills.congr hbase hbase hrd hwr, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    congrArg (fun p => (⟨p + BitVec.ofNat 64 56, 408⟩ : Region)) hbase
+  have hstep : stepAddr t = stepAddr s := congrArg (· + BitVec.ofNat 64 448) hbase
+  have hpasses : passesAddr t = passesAddr s := congrArg (· + BitVec.ofNat 64 456) hbase
+  refine ⟨hs.spills.congr hbase hbase hrd hwr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hsave]
     have hmem := hf.readW (a := savedKeyAddr s) (w := 64)
       (r := ⟨savedKeyAddr s, 8⟩) (Region.contains_self _ _)
@@ -43,6 +48,9 @@ theorem Ready.congr {keys : Nat → DesSchedule} {base : Addr} {s t : State}
   · rw [hrd, hwr, hsave]; exact hs.savedRead
   · rw [hrd, hwr, hcount]; exact hs.countRead
   · rw [hwr, hcount]; exact hs.countWrite
+  · rw [hwr, hstep]; exact hs.stepWrite
+  · rw [hrd, hwr, hpasses]; exact hs.passesRead
+  · rw [hwr, hpasses]; exact hs.passesWrite
   · rw [hrd, hwr]; exact hs.read
   · rw [hwork]; exact hs.separate
   · intro c hc d j hj
@@ -72,28 +80,35 @@ theorem Stable.refl (s : State) : Stable s s :=
 
 theorem Stable.trans {s t u : State} (hs : Stable s t) (ht : Stable t u) : Stable s u := by
   have hwork : workRegion t = workRegion s :=
-    congrArg (fun p => (⟨p + BitVec.ofNat 64 56, 392⟩ : Region)) (hs.regs .rdx (by decide))
+    congrArg (fun p => (⟨p + BitVec.ofNat 64 56, 408⟩ : Region)) (hs.regs .rdx (by decide))
   have hf := ht.frame
   rw [hwork] at hf
   exact ⟨ht.rd.trans hs.rd, ht.wr.trans hs.wr,
     fun q hq => (ht.regs q hq).trans (hs.regs q hq), hs.frame.trans hf⟩
 
 theorem pass_word_ok (keys : Nat → DesSchedule) (base : Addr) (s : State) (x : BitVec 64)
-    (c : Nat) (hc : c < 3) (d : Direction)
-    (hready : Ready keys base s) (hword : WordState x s) :
-    WP isa (pass c d) s (fun t => WordState (VG.Proof.TripleDes.desCore (keys c) d x) t ∧
-      Ready keys base t ∧ Stable s t) := by
-  have hptr : s.mem.readW (savedKeyAddr s) 64 + BitVec.ofNat 64 (passOffset c d) =
-      keyAddr (componentBase base c) d 0 := by
+    (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
+    (hready : Ready keys base s) (hword : WordState x s)
+    (hpasses : s.mem.readW (passesAddr s) 64 = BitVec.ofNat 64 p) :
+    WP isa (pass d) s (fun t =>
+      WordState (VG.Proof.TripleDes.desCore (keys (passOf d p).1) (passOf d p).2 x) t ∧
+      Ready keys base t ∧ Stable s t ∧
+      t.mem.readW (passesAddr t) 64 = BitVec.ofNat 64 (p - 1) ∧
+      isa.eval .ne t = some (decide (p ≠ 1))) := by
+  have hc := passOf_lt d p
+  have hptr : s.mem.readW (savedKeyAddr s) 64 +
+      BitVec.ofNat 64 (passOffset (passOf d p).1 (passOf d p).2) =
+      keyAddr (componentBase base (passOf d p).1) (passOf d p).2 0 := by
     rw [hready.saved]
-    exact passPointer base c d
-  apply WP.mono (pass_ok c hc (keys c) d (componentBase base c) s
+    exact passPointer base _ _
+  apply WP.mono (pass_ok d hp (keys (passOf d p).1) (componentBase base (passOf d p).1) s
     ((x >>> 32).setWidth 32, x.setWidth 32) hready.spills hword.left hword.right
-    hptr hready.savedRead hready.countRead hready.countWrite
-    (hready.read c hc d) (hready.separate c hc d) (hready.values c hc d))
+    hpasses hready.passesRead hready.passesWrite hptr hready.savedRead hready.countRead
+    hready.countWrite hready.stepWrite
+    (hready.read _ hc _) (hready.separate _ hc _) (hready.values _ hc _))
   intro t ht
   exact ⟨ht.wordState,
     hready.congr (ht.regs .rdx (by decide)) ht.rd ht.wr ht.frame,
-    ht.rd, ht.wr, ht.regs, ht.frame⟩
+    ⟨ht.rd, ht.wr, ht.regs, ht.frame⟩, ht.passes, ht.zf⟩
 
 end VG.Proof.TripleDes.X86_64

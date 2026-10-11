@@ -12,23 +12,22 @@ def blockTaint : X86_64.Taint.T :=
   { regs := .ofList [.rdi, .rsi, .rdx], flags := false,
     lens := [0, 512], bases := [(.rdx, 1, 0)] }
 
-/-- What the rounds need public: the pointers, the round counter and the
-saved ones in the scratch buffer. -/
+/-- What the rounds need public: the pointers, the round counter, the key
+step, the passes left and the saved pointers in the scratch buffer. -/
 def roundTaint : X86_64.Taint.T :=
   { regs := .ofList [.rax, .rdx, .rsi, .rdi], flags := false,
-    lens := [0, 512], bases := [(.rdx, 1, 0)], slots := [(1, 56, 8), (1, 48, 8)] }
+    lens := [0, 512], bases := [(.rdx, 1, 0)],
+    slots := [(1, 456, 8), (1, 448, 8), (1, 56, 8), (1, 48, 8)] }
 
-/-! Each function runs the loop of rounds three times, two of them in each
-direction: their bodies are analysed once, as summaries. -/
+/-! The block functions' round, analysed once, as a summary. -/
 
-taint_summary roundEnc : taintS roundTaint (.block (roundBody ++ roundAdvance .encrypt))
-taint_summary roundDec : taintS roundTaint (.block (roundBody ++ roundAdvance .decrypt))
+taint_summary round : taintS roundTaint (.block (roundBody ++ roundAdvance))
 
 theorem encryptBlock_taint : ∃ h, (taintS.check blockTaint encryptBlock h).isSome = true := by
-  taint_decide_sum [roundEnc, roundDec]
+  taint_decide_sum [round]
 
 theorem decryptBlock_taint : ∃ h, (taintS.check blockTaint decryptBlock h).isSome = true := by
-  taint_decide_sum [roundEnc, roundDec]
+  taint_decide_sum [round]
 
 theorem encryptBlock_constantTime (pre : State → Prop) (pub : State → State → Prop)
     (hagree : ∀ s t, pre s → pre t → pub s t → X86_64.Taint.Agree blockTaint s t) :

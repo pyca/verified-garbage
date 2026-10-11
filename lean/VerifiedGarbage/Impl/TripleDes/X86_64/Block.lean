@@ -7,9 +7,11 @@ import VerifiedGarbage.Impl.TripleDes.X86_64.Sbox
 Two 32-bit Feistel halves stay in `r12` and `r13`. S-box input bits are
 formed with fixed shifts and XORs with the round key, passed through Boolean
 circuits, and XORed directly into their P-permuted destinations. The three
-passes share IP and FP. Round counters and key addresses are public.
-Scratch slots 0–5 save callee-saved registers, 6 saves the schedule pointer,
-7 holds the round counter, and 8–55 are the S-box's fixed spills.
+passes share IP and FP, and one loop runs them, with the pass's first key
+and its step chosen by the passes left. Round counters and key addresses
+are public. Scratch slots 0–5 save callee-saved registers, 6 saves the
+schedule pointer, 7 holds the round counter, 8–55 are the S-box's fixed
+spills, 56 holds the key step (8 or −8) and 57 the passes left.
 -/
 
 namespace VG.Impl.TripleDes.X86_64
@@ -61,19 +63,45 @@ def roundCountAdvance : List Instr :=
   [.mov .rax (.mem (memOp .rdx 56)), .alu .sub .rax (.imm 1),
    .store (memOp .rdx 56) .rax]
 
-def roundAdvance (direction : Direction) : List Instr :=
-  ([.alu (if direction = .encrypt then .add else .sub) .rdi (.imm 8)] : List Instr) ++
+/-- The next round key, `[rdx + 448]` bytes on. -/
+def roundAdvance : List Instr :=
+  ([.mov .rax (.mem (memOp .rdx 448)), .alu .add .rdi (.reg .rax)] : List Instr) ++
     roundCountAdvance
 
 def passStart (component : Nat) (direction : Direction) : List Instr :=
   [.mov .rdi (.mem (memOp .rdx 48)),
    .alu .add .rdi (.imm (BitVec.ofNat 32 (128 * component +
      if direction = .encrypt then 0 else 120))),
-   imm .rax 16, .store (memOp .rdx 56) .rax]
+   imm .rax 16, .store (memOp .rdx 56) .rax,
+   .mov .rax (.imm (if direction = .encrypt then 8 else BitVec.ofInt 32 (-8))),
+   .store (memOp .rdx 448) .rax]
 
-def pass (component : Nat) (direction : Direction) : Prog isa :=
-  .seq (.block (passStart component direction))
-    (.seq (.loop (.block (roundBody ++ roundAdvance direction)) .ne) (.block swapHalves))
+/-- The component and direction of the pass with `left` passes left (3, 2, 1). -/
+def passOf (direction : Direction) (left : Nat) : Nat × Direction :=
+  match direction, left with
+  | .encrypt, 3 => (0, .encrypt)
+  | .encrypt, 2 => (1, .decrypt)
+  | .encrypt, _ => (2, .encrypt)
+  | .decrypt, 3 => (2, .decrypt)
+  | .decrypt, 2 => (1, .encrypt)
+  | .decrypt, _ => (0, .decrypt)
+
+/-- Choose the pass's first key and step by the passes left. -/
+def passSelect (direction : Direction) : Prog isa :=
+  .seq (.block [.mov .rax (.mem (memOp .rdx 456)), .alu .cmp .rax (.imm 3)])
+    (.ite .e (.block (passStart (passOf direction 3).1 (passOf direction 3).2))
+      (.seq (.block [.alu .cmp .rax (.imm 2)])
+        (.ite .e (.block (passStart (passOf direction 2).1 (passOf direction 2).2))
+          (.block (passStart (passOf direction 1).1 (passOf direction 1).2)))))
+
+def passCountAdvance : List Instr :=
+  [.mov .rax (.mem (memOp .rdx 456)), .alu .sub .rax (.imm 1),
+   .store (memOp .rdx 456) .rax]
+
+def pass (direction : Direction) : Prog isa :=
+  .seq (passSelect direction)
+    (.seq (.loop (.block (roundBody ++ roundAdvance)) .ne)
+      (.block (swapHalves ++ passCountAdvance)))
 
 def blockStore : List Instr :=
   [rr .rax .r12, .shift .ror .rax 32, .alu .xor .rax (.reg .r13)] ++
@@ -81,9 +109,7 @@ def blockStore : List Instr :=
     ([.bswap .rbx, rr .rax .rbx] : List Instr)
 
 def blockBody (direction : Direction) : Prog isa :=
-  match direction with
-  | .encrypt => .seq (pass 0 .encrypt) (.seq (pass 1 .decrypt) (pass 2 .encrypt))
-  | .decrypt => .seq (pass 2 .decrypt) (.seq (pass 1 .encrypt) (pass 0 .decrypt))
+  .seq (.block [imm .rax 3, .store (memOp .rdx 456) .rax]) (.loop (pass direction) .ne)
 
 def block (direction : Direction) : Prog isa :=
   .seq (.block (blockSave ++ blockLoad))
