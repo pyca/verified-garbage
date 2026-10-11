@@ -49,63 +49,10 @@ end VG.Proof.Bignum.X86_64.AdxRotate8
 
 end
 
-/-! ## AdxRect8 -/
-section
-
-/-! Exact rectangular products, with both inputs and all other memory preserved. -/
-namespace VG.Proof.Bignum.X86_64.AdxRect8
-open VG VG.X86_64 VG.Impl.Bignum.X86_64
-open VG.Proof.Bignum.X86_64
-open VG.Proof.Bignum.X86_64.AdxRotate8
-open VG.Proof.MlKem.X86_64 (Keep)
-
-theorem finish_ok {s : State} {B : Addr} {Z e : Nat}
-    (hs : Scr s B Z) (hp : s.gpr .rsi = off B e) (he : e + 64 ≤ Z) :
-    WP isa AdxRect8.finish s fun t =>
-      wv t.mem B e 8 + 2^512 * (t.gpr .rax).toNat =
-        cols s + wv s.mem B e 8 + (s.gpr .rdx).toNat ∧
-      (t.gpr .rax).toNat ≤ 2 ∧ Outside B e 64 s.mem t.mem ∧
-      Keep [.rax,.rdx,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15] s t := by
-  unfold AdxRect8.finish
-  refine WP.seq (WP.mono (AdxDualAdd.addInput_ok hs hp he)
-    fun a ⟨ea,ba,_,_,ka⟩ => ?_)
-  refine WP.mono (storeCols_ok (hs.congr ka.2.2.2)
-    ((ka.gpr (by decide)).trans hp) he) fun t ⟨vt,ot,kt⟩ => ?_
-  refine ⟨?_,?_,?_,(ka.keep.trans kt).mono (by decide)⟩
-  · rw [vt,kt.gpr (r := .rax) (by simp)]; exact ea
-  · rw [kt.gpr (r := .rax) (by simp)]; exact ba
-  · rw [ka.2.1] at ot; exact ot
-
-theorem product_ok {s : State} {B : Addr} {Z eA eB eO : Nat}
-    (hs : Scr s B Z) (ha : s.gpr .rcx = off B eA)
-    (hb : s.gpr .rbp = off B eB) (ho : s.gpr .rsi = off B eO)
-    (hA : eA + 64 ≤ Z) (hB : eB + 64 ≤ Z) (hO : eO + 64 ≤ Z)
-    (sepA : eA + 64 ≤ eO ∨ eO + 64 ≤ eA)
-    (sepB : eB + 64 ≤ eO ∨ eO + 64 ≤ eB) :
-    WP isa AdxRect8.product s fun t =>
-      wv t.mem B eO 8 + 2^512 * cols t =
-        wv s.mem B eO 8 + wv s.mem B eA 8 * wv s.mem B eB 8 ∧
-      Outside B eO 64 s.mem t.mem ∧
-      Keep [.rdx,.rax,.rbx,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15] s t := by
-  unfold AdxRect8.product
-  refine WP.seq (WP.mono (loadCols_ok hs ho hO) fun a ⟨va,ka⟩ => ?_)
-  refine WP.mono (productN_disjoint_ok (hs.congr ka.2.2.2)
-    ((ka.gpr (by decide)).trans ha) ((ka.gpr (by decide)).trans hb)
-    ((ka.gpr (by decide)).trans ho) hA hO hB sepA sepB)
-    fun t ⟨vt,ot,kt⟩ => ?_
-  rw [va,ka.2.1] at vt
-  simp only [Nat.reduceMul] at vt
-  rw [ka.2.1] at ot
-  exact ⟨vt,ot,(ka.keep.trans kt).mono (by decide)⟩
-
-end VG.Proof.Bignum.X86_64.AdxRect8
-
-end
-
 /-! ## AdxRect8Tile -/
 section
 
-/-! A rectangular tile adds one full 1024-bit product and a high-half carry. -/
+/-! A rectangular tile adds an 8-by-8 product, keeping its upper words in the columns. -/
 namespace VG.Proof.Bignum.X86_64.AdxRect8
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.Bignum.X86_64
@@ -130,63 +77,83 @@ theorem upper_ok {s : State} {B : Addr} {Z e : Nat}
   simp only [carryOffset,off,BitVec.ofNat_add,BitVec.add_assoc]
   exact ⟨True.intro,rfl⟩
 
-theorem tile_ok {s : State} {B : Addr} {Z eA eB eO : Nat}
+/-- The end of `streamTile`: the carry into its header slot and `rbp` to the
+next column block. -/
+theorem streamEnd_ok {s : State} {B : Addr} {Z eB : Nat}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hb : s.gpr .rbp = off B eB)
+    (he : carryOffset + 8 ≤ Z) :
+    WP isa (.block [.store (hdr (sFn 14)) .rax, .alu .add .rbp (.imm 64)]) s fun t =>
+      word t.mem B carryOffset = s.gpr .rax ∧ Outside B carryOffset 8 s.mem t.mem ∧
+      t.gpr .rbp = off B (eB+64) ∧ Keep [.rbp] s t := by
+  rw [show ([.store (hdr (sFn 14)) .rax, .alu .add .rbp (.imm 64)] : List Instr) =
+    [.store (hdr (sFn 14)) .rax] ++ [.alu .add .rbp (.imm 64)] from rfl, WP.block_append_iff]
+  have address : s.ea (hdr (sFn 14)) = off B carryOffset := by
+    simp only [State.ea,hdr,hd,hdrOff,carryOffset]
+  refine WP.mono (storeMem_ok hs address he) fun a ⟨wa,oa,ka⟩ => ?_
+  have pa : a.gpr .rbp = off B eB := (ka.gpr (by simp)).trans hb
+  refine WP.mono (WP.keep [.rbp] (Q := fun t => t.gpr .rbp = off B (eB+64) ∧ t.mem = a.mem) ?_ rfl)
+    fun t ⟨⟨pt,mt⟩,kt⟩ => ?_
+  · xrun [pa, show (64 : BitVec 32).signExtend 64 = 64 from rfl]
+    simp only [off,BitVec.ofNat_add,BitVec.add_assoc]
+    rfl
+  · rw [mt]
+    exact ⟨wa,oa,pt,(ka.trans kt).mono (by simp)⟩
+
+/-- A tile whose upper words stay in the columns: the eight products, with
+the columns as the tile's low words, into eight output words, and the next
+eight output words and the carry added to the columns. -/
+theorem streamTile_ok {s : State} {B : Addr} {Z eA eB eO : Nat}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (ha : s.gpr .rcx = off B eA)
     (hb : s.gpr .rbp = off B eB) (ho : s.gpr .rsi = off B eO)
     (hA : eA + 64 ≤ Z) (hB : eB + 64 ≤ Z) (hO : eO + 128 ≤ Z)
     (sepA : eA + 64 ≤ eO ∨ eO + 128 ≤ eA)
     (sepB : eB + 64 ≤ eO ∨ eO + 128 ≤ eB)
     (sepC : carryOffset + 8 ≤ eO) :
-    WP isa AdxRect8.tile s fun t =>
-      wv t.mem B eO 16 + 2^1024 * (word t.mem B carryOffset).toNat =
-        wv s.mem B eO 16 + wv s.mem B eA 8 * wv s.mem B eB 8 +
+    WP isa AdxRect8.streamTile s fun t =>
+      wv t.mem B eO 8 + 2^512 * cols t + 2^512 * 2^512 * (word t.mem B carryOffset).toNat =
+        cols s + 2^512 * wv s.mem B (eO+64) 8 + wv s.mem B eA 8 * wv s.mem B eB 8 +
           2^512 * (word s.mem B carryOffset).toNat ∧
       (word t.mem B carryOffset).toNat ≤ 2 ∧
       ((word s.mem B carryOffset).toNat ≤ 1 → (word t.mem B carryOffset).toNat ≤ 1) ∧
-      Frm B [(eO,128),(carryOffset,8)] s.mem t.mem ∧ t.gpr .rsi = off B (eO+64) ∧
-      Keep [.rdx,.rax,.rbx,.rsi,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15] s t := by
-  unfold AdxRect8.tile
-  refine WP.seq (WP.mono (product_ok hs ha hb ho hA hB (by omega) (by omega) (by omega))
-    fun a ⟨ea,oa,ka⟩ => ?_)
-  refine WP.seq (WP.mono (upper_ok (hs.congr ka.2.2)
-    ((ka.gpr (by decide)).trans hd) ((ka.gpr (by decide)).trans ho) (by omega))
-    fun b ⟨db,pb,mb,kb⟩ => ?_)
+      Frm B [(eO,64),(carryOffset,8)] s.mem t.mem ∧ t.gpr .rsi = off B (eO+64) ∧
+      t.gpr .rbp = off B (eB+64) ∧
+      Keep [.rdx,.rax,.rbx,.rsi,.rbp,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15] s t := by
+  have nowrap := hs.nowrap
+  unfold AdxRect8.streamTile
+  refine WP.seq (WP.mono (productN_disjoint_ok (n := 8) hs ha hb ho (by omega) (by omega) hB
+    (by omega) (by omega)) fun a ⟨ea,oa,ka⟩ => ?_)
+  refine WP.seq (WP.mono (upper_ok (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hd)
+    ((ka.gpr (by decide)).trans ho) (by omega)) fun b ⟨db,pb,mb,kb⟩ => ?_)
   have kab := ka.trans kb
-  refine WP.seq (WP.mono (finish_ok (hs.congr kab.2.2) pb (by omega))
-    fun c ⟨ec,bc,oc,kc⟩ => ?_)
-  have kabc := kab.trans kc
-  have address : c.ea (hdr (sFn 14)) = off B carryOffset := by
-    simp only [State.ea,hdr,(kabc.gpr (by decide)).trans hd,hdrOff,carryOffset]
-  refine WP.mono (storeMem_ok (hs.congr kabc.2.2) address (by omega))
-    fun t ⟨wt,ot,kt⟩ => ?_
+  refine WP.seq (WP.mono (AdxDualAdd.addInput_ok (hs.congr kab.2.2) pb (by omega))
+    fun c ⟨ec,bc,_,_,kc⟩ => ?_)
+  have kabc := kab.trans kc.keep
+  refine WP.mono (streamEnd_ok (hs.congr kabc.2.2) ((kabc.gpr (by decide)).trans hd)
+    ((kabc.gpr (by decide)).trans hb) (by omega)) fun t ⟨wt,ot,pt,kt⟩ => ?_
   have carryA : word a.mem B carryOffset = word s.mem B carryOffset :=
-    oa.word (by omega) (by have := hs.nowrap; omega)
+    oa.word (by omega) (by omega)
   have upperA : wv a.mem B (eO+64) 8 = wv s.mem B (eO+64) 8 :=
-    oa.wv (by omega) (by have := hs.nowrap; omega)
-  have lowC : wv c.mem B eO 8 = wv a.mem B eO 8 := by
-    rw [oc.wv (by omega) (by have := hs.nowrap; omega),mb]
-  have allT : wv t.mem B eO 16 = wv c.mem B eO 16 :=
-    ot.wv (by omega) (by have := hs.nowrap; omega)
+    oa.wv (by omega) (by omega)
+  have lowT : wv t.mem B eO 8 = wv a.mem B eO 8 := by
+    rw [ot.wv (by omega) (by omega),kc.2.1,mb]
+  have colsT : cols t = cols c := cols_keep kt (by decide)
   rw [cols_keep kb (by decide),mb,db,carryA,upperA] at ec
-  refine ⟨?_,?_,?_,?_,?_,(kabc.trans kt).mono (by decide)⟩
-  · rw [allT,wt,show 16 = 8+8 from rfl,wv_add,wv_add]
-    simp only [Nat.reduceMul] at *
-    rw [lowC]
+  simp only [Nat.reduceMul] at ea
+  refine ⟨?_,?_,?_,?_,(kt.gpr (by simp)).trans ((kc.1 .rsi (by decide)).trans pb),pt,
+    (kabc.trans kt).mono (by decide)⟩
+  · rw [wt,lowT,colsT]
     omega_using [ea,ec]
   · rw [wt]; exact bc
   · intro cin
     rw [wt]
     have ca := cols_lt a
+    have cc := cols_lt c
     have hi := wv_lt s.mem B (eO+64) 8
     simp only [Nat.reduceMul] at hi
-    omega_using [ec,ca,hi,cin]
-  · have ab : Outside B eO 128 s.mem c.mem :=
-      (oa.mono (o' := eO) (n' := 128) (by omega) (by omega)).trans (by
-        rw [mb] at oc
-        exact oc.mono (o' := eO) (n' := 128) (by omega) (by omega))
+    omega_using [ec,ca,cc,hi,cin]
+  · have ab : Outside B eO 64 s.mem c.mem := by
+      rw [kc.2.1,mb]; exact oa
     exact (Frm.of_outside ab (by simp)).trans (Frm.of_outside ot (by simp))
-
-  · exact (kt.gpr (by simp)).trans ((kc.gpr (by decide)).trans pb)
 
 end VG.Proof.Bignum.X86_64.AdxRect8
 
