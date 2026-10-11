@@ -35,12 +35,16 @@ theorem ctrLoop_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k : 
       by have := d.lt; have := hg.lt; rw [Nat.mul_succ] at *; omega, g + 1, rfl, d⟩
 
 /-- The blocks at `D` outside a frame. -/
-theorem cbcBlocks_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {D : Addr} {n : Nat}
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨D, 16 * n⟩ r) : Spec.Cbc.blocksAt m' D n = Spec.Cbc.blocksAt m D n := by
-  simp only [Spec.Cbc.blocksAt]
+theorem blocksOf_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {L : Nat} (hL : L ≤ 2 ^ 64)
+    {D : Addr} {n : Nat} (hd : ∀ r ∈ rs, Region.Disjoint ⟨D, L * n⟩ r) : blocksOf L m' D n = blocksOf L m D n := by
+  simp only [blocksOf]
   refine List.map_congr_left fun j hj => ?_
-  have hj := List.mem_range.mp hj
-  exact bytesAt_frame hf (fun r hr => (hd r hr).sub_left (VG.Offset.sub_base D (by omega))) (by omega)
+  have hj := idx_lt (L := L) (List.mem_range.mp hj)
+  exact bytesAt_frame hf (fun r hr => (hd r hr).sub_left (VG.Offset.sub_base D hj)) hL
+
+theorem cbcBlocks_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {D : Addr} {n : Nat}
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨D, 16 * n⟩ r) : Spec.Cbc.blocksAt m' D n = Spec.Cbc.blocksAt m D n :=
+  blocksOf_frame hf (by decide) hd
 
 theorem keyRegs_ne {c : Core} (h : c.keyRegs.all (fun r => r != .rax && r != .rbx && r != sb) = true) :
     ∀ x ∈ c.keyRegs, x ≠ sb ∧ x ≠ .rax ∧ x ≠ .rbx := fun x hx => by

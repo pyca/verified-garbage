@@ -1,0 +1,5 @@
+name = "SM4-OFB"
+family = "Ciphers"
+specs = ["Sm4", "Ofb"]
+modules = ["src/sm4_ofb.rs"]
+asm = ["sm4_ofb"]

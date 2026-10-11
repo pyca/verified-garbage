@@ -103,7 +103,7 @@ theorem cbcDecrypt_wp (cs : CoreSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.d
   · rw [v₅ i hi', d₄.saved i hi', keep₂ _ (by omega) (by omega), mem₁, sv₁ i hi']
   · have subCore : ∀ x ∈ [coreRegion c B], Region.Sub x ⟨B, 8 * c.total⟩ := fun x hx => by
       simp only [List.mem_singleton] at hx; subst hx; exact Region.sub_prefix (by omega)
-    rw [m₅, cbc_of_dinv (cs.cipher_len k) hiv d₄.data,
+    rw [m₅, ← blocksOf_16, cbc_of_dinv (cs.cipher_len k) hiv d₄.data, blocksOf_16,
       cbcBlocks_frame f₂ (fun x hx => sDS.sub_right (subCore x hx)),
       cbcBlocks_frame f₁' (fun x hx => by simp only [List.mem_singleton] at hx; subst hx; exact sDS)]
   · rw [m₅]

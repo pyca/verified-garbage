@@ -99,9 +99,11 @@ mod sha384;
 mod sha512;
 mod sha512_224;
 mod sha512_256;
+mod sm3;
 mod sm4_cbc;
 mod sm4_ctr;
 mod sm4_ecb;
+mod triple_des_cbc;
 mod triple_des_ecb;
 mod x25519;
 mod x448;
@@ -387,6 +389,7 @@ const BENCHES: &[Bench] = &[
     (rsa_pkcs1_sig::USES, rsa_pkcs1_sig::bench),
     (rsa_pss::USES, rsa_pss::bench),
     (rsa_public::USES, rsa_public::bench),
+    (triple_des_cbc::USES, triple_des_cbc::bench),
     (triple_des_ecb::USES, triple_des_ecb::bench),
     (seed_ecb::USES, seed_ecb::bench),
     (sm4_cbc::USES, sm4_cbc::bench),
@@ -402,6 +405,7 @@ const BENCHES: &[Bench] = &[
     (sha512::USES, sha512::bench),
     (sha512_224::USES, sha512_224::bench),
     (sha512_256::USES, sha512_256::bench),
+    (sm3::USES, sm3::bench),
     (x25519::USES, x25519::bench),
     (x448::USES, x448::bench),
     (ed25519::USES, ed25519::bench),

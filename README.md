@@ -242,13 +242,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -474,6 +474,22 @@ yours to keep:
 
 <tr>
 
+<td>3DES-CBC</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>3DES-ECB</td>
 
 <td>✅</td>
@@ -602,6 +618,38 @@ yours to keep:
 
 <tr>
 
+<td>Blowfish-CBC</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>Blowfish-CFB64</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>Blowfish-ECB</td>
 
 <td>✅</td>
@@ -618,6 +666,22 @@ yours to keep:
 
 <tr>
 
+<td>Blowfish-OFB</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>Camellia-CBC (128-, 192- and 256-bit keys)</td>
 
 <td>✅</td>
@@ -625,6 +689,22 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>Camellia-CFB128 (128-, 192- and 256-bit keys)</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 <td>❌</td>
 
@@ -666,6 +746,54 @@ yours to keep:
 
 <tr>
 
+<td>Camellia-OFB (128-, 192- and 256-bit keys)</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>CAST5-CBC</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>CAST5-CFB64</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>CAST5-ECB (CAST-128, 40- to 128-bit keys)</td>
 
 <td>✅</td>
@@ -673,6 +801,22 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>CAST5-OFB</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 <td>❌</td>
 
@@ -698,6 +842,38 @@ yours to keep:
 
 <tr>
 
+<td>IDEA-CBC</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>IDEA-CFB64</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>IDEA-ECB</td>
 
 <td>✅</td>
@@ -705,6 +881,22 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>IDEA-OFB</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 <td>❌</td>
 
@@ -746,6 +938,38 @@ yours to keep:
 
 <tr>
 
+<td>SEED-CBC</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>SEED-CFB128</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>SEED-ECB</td>
 
 <td>✅</td>
@@ -762,6 +986,22 @@ yours to keep:
 
 <tr>
 
+<td>SEED-OFB</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>SM4-CBC</td>
 
 <td>✅</td>
@@ -769,6 +1009,22 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>SM4-CFB128</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 <td>❌</td>
 
@@ -805,6 +1061,22 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>SM4-OFB</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 </tr>
 

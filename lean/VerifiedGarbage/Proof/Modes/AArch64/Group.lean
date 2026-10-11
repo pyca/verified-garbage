@@ -114,7 +114,7 @@ structure GInv (cs : CoreSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.K
   lt : c.G * g < n
   hi : s.mem.readW (wordAddr B c.hiSlot) 64 = hiOf (V + c.G * g)
   lo : s.mem.readW (wordAddr B c.loSlot) 64 = loOf (V + c.G * g)
-  data : DInv s₀.mem s.mem D n (c.G * g) (ctrOut (cs.cipher k) s₀.mem D V)
+  data : DInv 16 s₀.mem s.mem D n (c.G * g) (ctrOut (cs.cipher k) s₀.mem D V)
   frame : Frame [⟨B, 8 * c.total⟩, ⟨D, 16 * n⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
@@ -124,7 +124,7 @@ structure GDone (cs : CoreSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.
     Prop where
   base : s.gpr sb = B
   saved : ∀ i < 10, s.mem.readW (wordAddr B (c.slots + i)) 64 = s₀.mem.readW (wordAddr B (c.slots + i)) 64
-  data : DInv s₀.mem s.mem D n n (ctrOut (cs.cipher k) s₀.mem D V)
+  data : DInv 16 s₀.mem s.mem D n n (ctrOut (cs.cipher k) s₀.mem D V)
   frame : Frame [⟨B, 8 * c.total⟩, ⟨D, 16 * n⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
@@ -270,7 +270,7 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
   have hn64 : 16 * n ≤ 2 ^ 64 := by omega
   have via₁₂ : ∀ i < 16 * n, s₂.mem (D + BitVec.ofNat 64 i) = s.mem (D + BitVec.ofNat 64 i) := fun i hin => by
     rw [f₂.bytes (R := ⟨D, 16 * n⟩) dCore hn64 hin, f₁.bytes (R := ⟨D, 16 * n⟩) (hdS subBC) hn64 hin]
-  have hdata : DInv s₀.mem s₆.mem D n (c.G * g + cc) (ctrOut (cs.cipher k) s₀.mem D V) := by
+  have hdata : DInv 16 s₀.mem s₆.mem D n (c.G * g + cc) (ctrOut (cs.cipher k) s₀.mem D V) := by
     intro i hin
     rw [m₆]
     by_cases hin1 : 16 * (c.G * g) ≤ i ∧ i < 16 * (c.G * g) + 16 * cc

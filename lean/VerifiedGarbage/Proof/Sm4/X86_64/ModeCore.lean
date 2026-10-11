@@ -152,6 +152,9 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : 
     have ha : bufAddr (dirCore d) B j = B + BitVec.ofNat 64 (8 * tailSlot + 16 * j) := rfl
     rw [ha, dirCipher_bytes, bytesAt_eq_blockAt, ← m₁, e₁]
 
+/-- The core's blocks are two words. -/
+@[simp] theorem dirCore_bw (d : Dir) : (dirCore d).bw = 2 := rfl
+
 /-- SM4's core for the direction `d` meets what the modes need. -/
 def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
   Key := Spec.Sm4.Schedule

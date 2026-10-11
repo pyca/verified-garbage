@@ -64,13 +64,13 @@ open VG.Proof.Sm4 (cbcDecX86_64 cbcEncX86_64)
 
 attribute [local irreducible] Spec.Sm4.invCipher in
 /-- The core's cipher is the contract's, without unfolding it (as `cipher_eq`). -/
-theorem invCipher_eq (k : Spec.Sm4.Schedule) : (dirCoreSpec .decrypt).cipher k = Spec.Sm4.invCipher k := rfl
+theorem invCipher_eq (k : Spec.Sm4.Schedule) : ((dirCoreSpec .decrypt).toBlock rfl).cipher k = Spec.Sm4.invCipher k := rfl
 
 theorem cbcDecrypt_wp {s₀ : State} (hp : cbcDecX86_64.pre s₀) :
     WP isa cbcDecrypt s₀ fun s' => gprPreserved s₀ s' ∧ cbcDecX86_64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, dRD, dRS, fitK, fitV, fitD, fitB⟩ := hp
   have hwS : (⟨s₀.gpr .r8, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Proof.Modes.X86_64.cbcDecrypt_wp (dirCoreSpec .decrypt) (r := ⟨.rsi, .rdx, .rcx, .r8⟩)
+  refine WP.mono (Proof.Modes.X86_64.cbcDecrypt_wp ((dirCoreSpec .decrypt).toBlock rfl) (r := ⟨.rsi, .rdx, .rcx, .r8⟩)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .r8) (P := s₀.gpr .rsi) (D := s₀.gpr .rdx) (n := (s₀.gpr .rcx).toNat)
     (k := Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .rdi)) rfl rfl rfl rfl ⟨hwS, fitB⟩
@@ -176,13 +176,13 @@ theorem cbcDecrypt_framed :
 
 attribute [local irreducible] Spec.Sm4.cipher in
 /-- The core's cipher is the contract's, without unfolding it (as `cipher_eq`). -/
-theorem encCipher_eq (k : Spec.Sm4.Schedule) : (dirCoreSpec .encrypt).cipher k = Spec.Sm4.cipher k := rfl
+theorem encCipher_eq (k : Spec.Sm4.Schedule) : ((dirCoreSpec .encrypt).toBlock rfl).cipher k = Spec.Sm4.cipher k := rfl
 
 theorem cbcEncrypt_wp {s₀ : State} (hp : cbcEncX86_64.pre s₀) :
     WP isa cbcEncrypt s₀ fun s' => gprPreserved s₀ s' ∧ cbcEncX86_64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, dRD, dRS, fitK, fitV, fitD, fitB⟩ := hp
   have hwS : (⟨s₀.gpr .r8, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Proof.Modes.X86_64.cbcEncrypt_wp (dirCoreSpec .encrypt) (r := ⟨.rsi, .rdx, .rcx, .r8⟩)
+  refine WP.mono (Proof.Modes.X86_64.cbcEncrypt_wp ((dirCoreSpec .encrypt).toBlock rfl) (r := ⟨.rsi, .rdx, .rcx, .r8⟩)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .r8) (P := s₀.gpr .rsi) (D := s₀.gpr .rdx) (n := (s₀.gpr .rcx).toNat)
     (k := Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .rdi)) rfl rfl rfl rfl ⟨hwS, fitB⟩

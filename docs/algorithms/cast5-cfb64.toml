@@ -1,0 +1,5 @@
+name = "CAST5-CFB64"
+family = "Ciphers"
+specs = ["Cast5", "Cfb"]
+modules = ["src/cast5_cfb.rs"]
+asm = ["cast5_cfb"]

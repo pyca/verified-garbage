@@ -1,0 +1,5 @@
+name = "SEED-CBC"
+family = "Ciphers"
+specs = ["Seed", "Cbc"]
+modules = ["src/seed_cbc.rs"]
+asm = ["seed_cbc"]

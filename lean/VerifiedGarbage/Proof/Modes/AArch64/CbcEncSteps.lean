@@ -9,8 +9,7 @@ import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
 The blocks of code of `cbcEncrypt`, each as `copy16` or `xor16` on memory:
 `whiten_ok` (the IV into the first block), `encIn_ok` (a block of the data
 to the core's buffer), `encOut_ok` (back), `encChain_ok` (the buffer's block
-into the next block of the data). As on x86-64
-(`Proof/Modes/X86_64/CbcEncSteps.lean`).
+into the next block of the data).
 -/
 
 namespace VG.Proof.Modes.AArch64

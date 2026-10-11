@@ -1,0 +1,5 @@
+name = "IDEA-CBC"
+family = "Ciphers"
+specs = ["Idea", "Cbc"]
+modules = ["src/idea_cbc.rs"]
+asm = ["idea_cbc"]

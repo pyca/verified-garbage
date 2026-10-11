@@ -1,0 +1,5 @@
+name = "Camellia-CFB128 (128-, 192- and 256-bit keys)"
+family = "Ciphers"
+specs = ["Camellia", "Cfb"]
+modules = ["src/camellia_cfb.rs"]
+asm = ["camellia_cfb"]
