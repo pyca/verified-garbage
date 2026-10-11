@@ -15,6 +15,6 @@ open VG VG.X86_64 VG.Impl.P521.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X8
 
 materialize_code jointDoubleCode :=
   fprogB publicJoint.K.M (dblJMul publicJoint.K.S publicJoint.K.R publicJoint.K.D)
-materialize_code jointCacheCode := Naf.cacheTable publicJoint.K.M publicJoint.K.tbl publicJoint.cache 8
+materialize_code jointCacheCode := Naf.cacheTable publicJoint.K.M publicJoint.K.tbl publicJoint.cache publicJoint.K.E.x
 
 end VG.Proof.P521.X86_64

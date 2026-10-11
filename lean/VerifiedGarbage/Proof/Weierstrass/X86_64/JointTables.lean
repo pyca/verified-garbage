@@ -37,7 +37,7 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
     (hv : ∀ i<64*c.K.M.n+1,s.mem (off base (c.K.bits+i))=FastNaf.byte 5 v i)
     (hu : ∀ i<64*c.K.M.n+1,s.mem (off base (c.gBits+i))=FastNaf.byte 7 u i)
     (he : JointGenerator c C base T size row s) :
-    WP isa (Code.seq (Naf.table c.K) (Naf.cacheTable c.K.M c.K.tbl c.cache 8)).inline s fun t =>
+    WP isa (Code.seq (Naf.table c.K) (Naf.cacheTable c.K.M c.K.tbl c.cache c.K.E.x)).inline s fun t =>
       JointLoopKeep c.K.M base (jointInitWork c) s t ∧
       Inv c.K.M base size C.p (·∈jointSlots c) (jointLive c) (tmv C c.K.M.n base t) t ∧
       JointStable c C base Q u v t ∧ JointGenerator c C base T size row t := by
@@ -47,18 +47,6 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
   have ii : Inv c.K.M base size C.p (·∈jointSlots c) (nafTableLive c.K 8) (tmv C c.K.M.n base a) a :=
     ⟨ia.field.scr,ia.field.mod,fun x hx => List.mem_append_left _ (List.mem_append_left _ (ia.field.sl x hx)),
       ia.field.lt,ia.field.val⟩
-  have hcsl : ∀ x∈cacheTableSlots c.K.M.n c.cache 8,x∈jointSlots c := fun _ hx =>
-    List.mem_append_right _ (joint_cache_mem.mp hx)
-  have hZ : ∀ i<8,c.K.tbl+24*c.K.M.n*i+16*c.K.M.n∈nafTableLive c.K 8 := by
-    intro i hi
-    apply List.mem_append_right
-    exact List.mem_map.mpr ⟨3*i+2,List.mem_range.mpr (by omega),
-      by rw [slot_three_mul_two,Nat.add_assoc]⟩
-  have csl : ∀ i<8,(c.cache+16*c.K.M.n*i∈jointSlots c) ∧
-      (c.cache+16*c.K.M.n*i+8*c.K.M.n∈jointSlots c) := by
-    intro i hi
-    exact ⟨hcsl _ (mem_cacheTableSlots.mpr ⟨i,hi,Or.inl rfl⟩),
-      hcsl _ (mem_cacheTableSlots.mpr ⟨i,hi,Or.inr rfl⟩)⟩
   have ka : KeepRegs (.rbx::clob c.K.M.n) s a := ia.keep.mono (by
     intro r hr
     simp only [nafTableClob,List.mem_append,List.mem_cons] at hr ⊢
@@ -68,17 +56,39 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
     simp only [nafTableWrites,jointInitRanges,jointInitWork,List.mem_append,List.mem_map,List.mem_singleton] at hw ⊢
     grind)
   have ea := he.keep_init hL.layout hi.mod.tmp ka ua sa
-  refine WP.mono_syms (nafCacheTable_current_ok hL.layout.n hL.layout.lay hm 8
-    (by have := hL.cacheSep; omega) ii hZ csl) fun t ⟨kt,it,ht⟩ st => ?_
+  have hCL := hL.cacheLay
+  have hN := hL.naf
+  have eo : ∀ x∈jacCoords c.K.E,x∈winOther c.K := by
+    intro x hx
+    simp only [jacCoords,winOther,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
+    grind
+  refine WP.mono_syms (nafCacheTable_current_ok hL.layout.lay hm hCL ii) fun t ⟨kt,it,ht⟩ st => ?_
   have ub : Unch base (jointInitRanges c) a.mem t.mem := kt.unch.mono (by
     intro w hw
     simp only [jointInitRanges,List.mem_append,List.mem_map,List.mem_singleton] at hw ⊢
     rcases hw with ⟨x,hx,rfl⟩|rfl
-    · exact Or.inl ⟨x,List.mem_append_right _ (joint_cache_mem.mp hx),rfl⟩
+    · refine Or.inl ⟨x,?_,rfl⟩
+      simp only [cacheLoopSlots,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx
+      rcases hx with hx|rfl|rfl|rfl
+      · exact List.mem_append_right _ (joint_cache_mem.mp hx)
+      · exact List.mem_append_left _ (List.mem_append_left _ (eo _ (by simp [jacCoords])))
+      · rw [← hN.exy]
+        exact List.mem_append_left _ (List.mem_append_left _ (eo _ (by simp [jacCoords])))
+      · rw [← hN.exz]
+        exact List.mem_append_left _ (List.mem_append_left _ (eo _ (by simp [jacCoords])))
     · exact Or.inr rfl)
   have ut : Unch base (jointInitRanges c) s.mem t.mem := fun z hz => (ub z hz).trans (ua z hz)
-  have kr : KeepRegs (.rbx::clob c.K.M.n) a t :=
-    (⟨kt.gpr,kt.rd,kt.wr⟩ : KeepRegs (clob c.K.M.n) a t).mono (fun _ hr => List.mem_cons_of_mem _ hr)
+  have kr : KeepRegs (.rbx::clob c.K.M.n) a t := kt.regs
+  have notE : ∀ x,x∈cacheLoopSlots c.K.M.n c.cache c.K.E.x →
+      x∈cacheTableSlots c.K.M.n c.cache 8 ∨ c.K.E.x≤x ∧ x+8*c.K.M.n≤c.K.E.x+24*c.K.M.n := by
+    intro x hx
+    simp only [cacheLoopSlots,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx
+    rcases hx with hx|rfl|rfl|rfl
+    · exact Or.inl hx
+    all_goals exact Or.inr ⟨by omega,by omega⟩
+  have tx := hN.tbl c.K.E.x (List.mem_append_right _ (eo _ (by simp [jacCoords])))
+  have tz := hN.tbl c.K.E.z (List.mem_append_right _ (eo _ (by simp [jacCoords])))
+  rw [hN.exz] at tz
   have iv : Inv c.K.M base size C.p (·∈jointSlots c) (jointLive c) (tmv C c.K.M.n base t) t :=
     it.sub (fun x hx => by
       rcases List.mem_append.mp hx with hx|hx
@@ -86,23 +96,31 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
       · exact List.mem_append_left _ (joint_cache_mem.mpr hx))
   have zero : tmv C c.K.M.n base t c.K.zero=0 := by
     unfold tmv
-    rw [kt.slot hL.layout.lay ii.scr hcsl (ii.sl _ (by simp [nafTableLive,winRo]))
-      (fun hx => hL.zeroCache (joint_cache_mem.mp hx))]
-    exact (ia.readonly hL.naf (by simp [winRo])).trans hz
+    rw [kt.unch.slot hL.layout.lay ii.scr hCL.slots (ii.sl _ (by simp [nafTableLive,winRo]))
+      (fun hx => ?_)]
+    · exact (ia.readonly hL.naf (by simp [winRo])).trans hz
+    simp only [cacheLoopSlots,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx
+    rcases hx with hx|hx|hx|hx
+    · exact hL.zeroCache (joint_cache_mem.mp hx)
+    · exact hN.ro c.K.zero (by simp [winRo]) (by rw [hx]; exact eo _ (by simp [jacCoords]))
+    · exact hN.ro c.K.zero (by simp [winRo]) (by rw [hx,← hN.exy]; exact eo _ (by simp [jacCoords]))
+    · exact hN.ro c.K.zero (by simp [winRo]) (by rw [hx,← hN.exz]; exact eo _ (by simp [jacCoords]))
   have table : ∀ n,1≤n → n≤8 → InvJ C (tmv C c.K.M.n base t (c.K.tblPt n).x)
       (tmv C c.K.M.n base t (c.K.tblPt n).y) (tmv C c.K.M.n base t (c.K.tblPt n).z) (mul (2*n-1) Q) := by
     intro n hn hn'
-    apply kt.invJ hL.layout.lay ii.scr hcsl
+    apply kt.unch.invJ hL.layout.lay ii.scr hCL.slots
       (fun x hx => List.mem_append_left _ (List.mem_append_left _
         (nafTblPt_mem c.K hn (by omega) x hx))) ?_ (ia.table n hn hn')
     intro x hx hc
-    obtain ⟨i,hi,hx'⟩ := mem_cacheTableSlots.mp hc
     have hs := hL.cacheSep
     have := hL.layout.n
-    have := entry_end_le (16*c.K.M.n) hi
     have := entry_le (24*c.K.M.n) (show n-1≤7 by omega)
     simp only [jacCoords,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hx
-    omega
+    rcases notE x hc with hc|hc
+    · obtain ⟨i,hi,hx'⟩ := mem_cacheTableSlots.mp hc
+      have := entry_end_le (16*c.K.M.n) hi
+      omega
+    · omega
   refine ⟨⟨ka.trans kr,ut⟩,iv,⟨zero,table,
     jointInit_digits hL (by have := hi.scr.nowrap; omega) ut (by simp) hv,
     jointInit_digits hL (by have := hi.scr.nowrap; omega) ut (by simp) hu,?_,?_⟩,

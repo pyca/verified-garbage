@@ -53,7 +53,7 @@ def run (c : Cfg) (double : Prog isa) : Prog isa :=
   .seq (digits c) (.loop (step c double) .ne)
 
 def window (c : Cfg) (double : Prog isa) : Prog isa :=
-  .seq (Naf.table c.K) <| .seq (Naf.cacheTable c.K.M c.K.tbl c.cache 8) <|
+  .seq (Naf.table c.K) <| .seq (Naf.cacheTable c.K.M c.K.tbl c.cache c.K.E.x) <|
     .seq (.block (Jacobian.infinity c.K c.K.R ++ [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*c.K.M.n)))])) (run c double)
 
 end VG.Impl.Weierstrass.X86_64.Joint

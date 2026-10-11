@@ -10,28 +10,17 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 theorem jointTables_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {E : Nat → Fe C}
     (hL : JointInitLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
     (hOne : c.K.one<C.p) (ht : NafTableChecks c.K)
-    (hc : ScratchCT (Naf.cacheTable c.K.M c.K.tbl c.cache 8).inline) :
+    (hc : ScratchCT (Naf.cacheTable c.K.M c.K.tbl c.cache c.K.E.x).inline) :
     RelCT isa (FieldPair c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E)
-      (Code.seq (Naf.table c.K) (Naf.cacheTable c.K.M c.K.tbl c.cache 8)).inline
+      (Code.seq (Naf.table c.K) (Naf.cacheTable c.K.M c.K.tbl c.cache c.K.E.x)).inline
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
   apply RelCT.seq (nafTable_relCT hL.naf hL.count hm hL.tableSmall hOne ht)
   have cache : ∀ E',RelCT isa
       (FieldPair c.K.M base size C.p (·∈jointSlots c) (nafTableLive c.K 8) E')
-      (Naf.cacheTable c.K.M c.K.tbl c.cache 8).inline
+      (Naf.cacheTable c.K.M c.K.tbl c.cache c.K.E.x).inline
       (fun s t => ∃ E'',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E'' s t) := by
     intro E'
-    have hz : ∀ i<8,c.K.tbl+24*c.K.M.n*i+16*c.K.M.n∈nafTableLive c.K 8 := by
-      intro i hi
-      apply List.mem_append_right
-      exact List.mem_map.mpr ⟨3*i+2,List.mem_range.mpr (by omega),
-        by rw [slot_three_mul_two,Nat.add_assoc]⟩
-    have sl : ∀ i<8,(c.cache+16*c.K.M.n*i∈jointSlots c) ∧
-        (c.cache+16*c.K.M.n*i+8*c.K.M.n∈jointSlots c) := by
-      intro i hi
-      constructor
-      · exact List.mem_append_right _ (joint_cache_mem.mp (mem_cacheTableSlots.mpr ⟨i,hi,Or.inl rfl⟩))
-      · exact List.mem_append_right _ (joint_cache_mem.mp (mem_cacheTableSlots.mpr ⟨i,hi,Or.inr rfl⟩))
-    exact (nafCacheTable_relCT (E:=E') hL.layout.lay hm 8 hz sl hc).mono
+    exact (nafCacheTable_relCT (E:=E') hL.layout.lay hm hL.cacheLay hc).mono
       (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub (fun x hx => by
         rcases List.mem_append.mp hx with hx|hx
         · exact List.mem_append_right _ (joint_tableLive x hx)
