@@ -118,24 +118,25 @@ theorem ofNat_succ (i : Nat) : BitVec.ofNat 64 (i + 1) = BitVec.ofNat 64 i + 1 :
   rw [← BitVec.ofNat_add_ofNat]; rfl
 
 /-- The shift's byte moves, then the last byte. -/
-theorem cfb8Shift_wp {s : State} {B P : Addr} (hb : s.gpr sb = B) (hP : s.mem.readW (wordAddr B c.hiSlot) 64 = P)
-    (hslot : InRegions (s.rd ++ s.wr) (wordAddr B c.hiSlot) 8) (hwP : (⟨P, 8 * c.bw⟩ : Region) ∈ s.wr)
+theorem cfb8Shift_wp {s : State} {P : Addr} (hc : s.gpr .rcx = P) (hwP : (⟨P, 8 * c.bw⟩ : Region) ∈ s.wr)
     (hbw : 0 < c.bw) (hbw2 : c.bw ≤ 2) :
-    WP isa (.block c.cfb8Shift) s fun s' => (∀ x, x ≠ .rcx → x ≠ .rbp → s'.gpr x = s.gpr x) ∧ s'.rd = s.rd ∧
+    WP isa (.block c.cfb8Shift) s fun s' => (∀ x, x ≠ .rbp → s'.gpr x = s.gpr x) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ (∀ u < 8 * c.bw, s'.mem (P + BitVec.ofNat 64 u) =
         if u + 1 < 8 * c.bw then s.mem (P + BitVec.ofNat 64 (u + 1)) else (s.gpr .rax).setWidth 8) ∧
       Frame [⟨P, 8 * c.bw⟩] s.mem s'.mem := by
-  obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := movS_ok (s := s) (k := c.hiSlot) .rcx hb hslot
-  have c₁ : s₁.gpr .rcx = P := by rw [v₁, hP]
+  have c₁ := hc
+  have rd₁ : s.rd = s.rd := rfl
+  have wr₁ : s.wr = s.wr := rfl
+  have m₁ : s.mem = s.mem := rfl
   have inP : ∀ {u}, u < 8 * c.bw → InRegions s.wr (P + BitVec.ofNat 64 u) 1 := fun hu =>
     ⟨_, hwP, VG.Offset.contains_base P (by omega) (by omega)⟩
   -- The byte moves.
-  have hmv : WP isa (.block ((List.range (8 * c.bw - 1)).flatMap Core.shiftByte)) s₁ fun s₂ =>
-      (∀ x, x ≠ .rbp → s₂.gpr x = s₁.gpr x) ∧ s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr ∧
-        s₂.mem = shl1 s₁.mem P (8 * c.bw - 1) := by
-    refine wp_range_flatMap (M := isa) (N := 8 * c.bw - 1) (fun i s₂ => (∀ x, x ≠ .rbp → s₂.gpr x = s₁.gpr x) ∧
-        s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr ∧ s₂.mem = shl1 s₁.mem P i)
-      (fun i s₂ hi ⟨g₂, rd₂, wr₂, m₂⟩ => ?_) _ (Nat.le_refl _) s₁ ⟨fun _ _ => rfl, rfl, rfl, by rw [shl1_zero]⟩
+  have hmv : WP isa (.block ((List.range (8 * c.bw - 1)).flatMap Core.shiftByte)) s fun s₂ =>
+      (∀ x, x ≠ .rbp → s₂.gpr x = s.gpr x) ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr ∧
+        s₂.mem = shl1 s.mem P (8 * c.bw - 1) := by
+    refine wp_range_flatMap (M := isa) (N := 8 * c.bw - 1) (fun i s₂ => (∀ x, x ≠ .rbp → s₂.gpr x = s.gpr x) ∧
+        s₂.rd = s.rd ∧ s₂.wr = s.wr ∧ s₂.mem = shl1 s.mem P i)
+      (fun i s₂ hi ⟨g₂, rd₂, wr₂, m₂⟩ => ?_) _ (Nat.le_refl _) s ⟨fun _ _ => rfl, rfl, rfl, by rw [shl1_zero]⟩
     have hc : s₂.gpr .rcx = P := by rw [g₂ _ (by decide), c₁]
     obtain ⟨s₃, e₃, v₃, o₃, m₃, rd₃, wr₃⟩ := ld8_ok s₂ .rbp .rcx (i + 1)
       (by rw [rd₂, wr₂, rd₁, wr₁, hc]; exact inRd (inP (by omega)))
@@ -150,7 +151,7 @@ theorem cfb8Shift_wp {s : State} {B P : Addr} (hb : s.gpr sb = B) (hP : s.mem.re
     funext x
     rw [writeW8_apply]
     have h64 : 8 * c.bw < 2 ^ 64 := by omega
-    have hP1 : shl1 s₁.mem P i (P + BitVec.ofNat 64 (i + 1)) = s₁.mem (P + BitVec.ofNat 64 (i + 1)) := by
+    have hP1 : shl1 s.mem P i (P + BitVec.ofNat 64 (i + 1)) = s.mem (P + BitVec.ofNat 64 (i + 1)) := by
       simp only [shl1]; rw [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
         ite_eq_right (by omega)]
     rw [hP1]
@@ -164,13 +165,13 @@ theorem cfb8Shift_wp {s : State} {B P : Addr} (hb : s.gpr sb = B) (hP : s.mem.re
       by_cases h1 : (x - P).toNat < i
       · rw [ite_eq_left h1, ite_eq_left (by omega)]
       · rw [ite_eq_right h1, ite_eq_right (by omega)]
-  refine WP.block_append (WP.block_append (WP.of_runBlock ⟨s₁, e₁, WP.mono hmv fun s₂ ⟨g₂, rd₂, wr₂, m₂⟩ => ?_⟩))
+  refine WP.block_append (WP.mono hmv fun s₂ ⟨g₂, rd₂, wr₂, m₂⟩ => ?_)
   have hc : s₂.gpr .rcx = P := by rw [g₂ _ (by decide), c₁]
   obtain ⟨s₃, e₃, m₃, g₃, rd₃, wr₃⟩ := st8_ok s₂ .rcx .rax (8 * c.bw - 1)
     (by rw [wr₂, wr₁, hc]; exact inP (by omega))
-  refine WP.of_runBlock ⟨s₃, e₃, fun x h1 h2 => by rw [g₃, g₂ x h2, o₁ x h1], by rw [rd₃, rd₂, rd₁],
+  refine WP.of_runBlock ⟨s₃, e₃, fun x h2 => by rw [g₃, g₂ x h2], by rw [rd₃, rd₂, rd₁],
     by rw [wr₃, wr₂, wr₁], fun u hu => ?_, ?_⟩
-  · rw [m₃, hc, writeW8_apply, g₂ _ (by decide), o₁ _ (by decide), m₂, m₁]
+  · rw [m₃, hc, writeW8_apply, g₂ _ (by decide), m₂, m₁]
     by_cases hl : u + 1 < 8 * c.bw
     · rw [ite_eq_right (fun h => by
         have := (sub_eq_iff (x := P + BitVec.ofNat 64 u) (P := P) (by omega)).mp h

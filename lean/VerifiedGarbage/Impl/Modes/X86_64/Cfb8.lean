@@ -10,8 +10,8 @@ buffer. Each byte needs the input block shifted by the byte before it, so
 each call of `crypt` enciphers one block, in the buffer's first, and the
 other `G - 1` are wasted.
 
-The input block is kept in place in the IV's buffer, whose address the
-mode's `hiSlot` holds (as for OFB and CFB, `Impl/Modes/X86_64/Fb.lean`):
+The input block is kept in place in the IV's buffer, whose address `ivX`
+holds (as for OFB and CFB, `Impl/Modes/X86_64/Fb.lean`):
 for each byte, it is copied to the buffer and enciphered there, the
 output's first byte is XORed into the data's byte, and the input block is
 shifted left by a byte in place, with the ciphertext byte (the output when
@@ -40,11 +40,10 @@ def cfb8Xor (enc : Bool) : List Instr :=
 /-- Byte `i + 1` of the input block at `rcx` to byte `i`, through `rbp`. -/
 def shiftByte (i : Nat) : List Instr := [.movzx8 .rbp (at_ .rcx (i + 1)), .store8 (at_ .rcx i) .rbp]
 
-/-- The input block, at the IV, shifted left by a byte, with `al` shifted
-in. -/
+/-- The input block, at the IV (whose address is in `rcx`), shifted left by a
+byte, with `al` shifted in. -/
 def cfb8Shift : List Instr :=
-  ([movS .rcx c.hiSlot] : List Instr) ++ (List.range (8 * c.bw - 1)).flatMap shiftByte ++
-    ([.store8 (at_ .rcx (8 * c.bw - 1)) .rax] : List Instr)
+  (List.range (8 * c.bw - 1)).flatMap shiftByte ++ ([.store8 (at_ .rcx (8 * c.bw - 1)) .rax] : List Instr)
 
 /-- On to the next byte; ZF is set when none is left. -/
 def cfb8Next : List Instr := [.alu .add c.dataReg (.imm 1), .alu .sub c.leftReg (.imm 1)]
@@ -52,7 +51,8 @@ def cfb8Next : List Instr := [.alu .add c.dataReg (.imm 1), .alu .sub c.leftReg 
 /-- One byte: the input block to the buffer and enciphered, its first byte
 XORed into the data, and the input block shifted. -/
 def cfb8Block (enc : Bool) : Prog isa :=
-  .seq (.block c.fbLoad) (.seq c.crypt (.block (c.cfb8Xor enc ++ c.cfb8Shift ++ c.cfb8Next)))
+  .seq (.block c.fbLoad) (.seq c.crypt (.block (c.cfb8Xor enc ++ ([.movqR .rcx ivX] : List Instr) ++
+    c.cfb8Shift ++ c.cfb8Next)))
 
 /-- The whole function: the entry, the key, then the bytes. -/
 def cfb8 (enc : Bool) (r : CtrRegs) : Prog isa :=
