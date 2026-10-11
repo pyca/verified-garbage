@@ -59,7 +59,7 @@ open VG.Impl.Poly1305.X86_64 (at_)
 open VG.Impl.Poly1305.X86_64.Avx512 (z srl sll mov shuf bcast zb)
 
 /-- Below this many blocks, `vg_poly1305_blocks_avx2` is faster. -/
-def minBlocks : Nat := 16
+def minBlocks : Nat := 28
 
 /-! ## Registers -/
 

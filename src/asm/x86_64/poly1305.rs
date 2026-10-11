@@ -1617,7 +1617,7 @@ pub(crate) const VG_POLY1305_BLOCKS_IFMA_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `VG.Spec.Poly1305.blocksContract`. Constant time: only the pointers and `n` may affect timing, not the state or the data.
 ///
-/// With AVX-512 IFMA: eight blocks at a time, in eight interleaved Horner evaluations in the quadwords of `zmm` registers, as three limbs of 44 bits multiplied with `vpmadd52luq` and `vpmadd52huq`, once there are at least 16 blocks; fewer with `vg_poly1305_blocks_avx2`, and the last `n mod 8` with `vg_poly1305_blocks`. It sets MXCSR to Intel's value for data operand-independent timing (`0x1FBF`) around its multiply-adds, and restores it.
+/// With AVX-512 IFMA: eight blocks at a time, in eight interleaved Horner evaluations in the quadwords of `zmm` registers, as three limbs of 44 bits multiplied with `vpmadd52luq` and `vpmadd52huq`, once there are at least 28 blocks; fewer with `vg_poly1305_blocks_avx2`, and the last `n mod 8` with `vg_poly1305_blocks`. It sets MXCSR to Intel's value for data operand-independent timing (`0x1FBF`) around its multiply-adds, and restores it.
 ///
 /// # Safety
 ///
@@ -1629,7 +1629,7 @@ pub(crate) const VG_POLY1305_BLOCKS_IFMA_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_blocks_ifma(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "cmp rdx, 16",
+        "cmp rdx, 28",
         "jb 20f",
         "stmxcsr DWORD PTR [rdi+120]",
         "mov eax, DWORD PTR [rdi+120]",

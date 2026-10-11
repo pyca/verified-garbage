@@ -171,7 +171,7 @@ theorem cs_ne' {r : Reg} (hr : r ∈ calleeSaved) : r ≠ .rax ∧ r ≠ .rcx �
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
-theorem pro_ok {s₀ : State} (hp : APre s₀) (hbig : 16 ≤ nb s₀) {s : State} (hg : s.gpr = s₀.gpr)
+theorem pro_ok {s₀ : State} (hp : APre s₀) (hbig : 28 ≤ nb s₀) {s : State} (hg : s.gpr = s₀.gpr)
     (hm : s.mem = s₀.mem) (hk : VKeep s₀ s) :
     WP isa (.block (Impl.Poly1305.X86_64.Avx2.mxcsrIn ++ powers ++ loadH ++
       ([.mov .rcx (.reg .rdx), .shift .shr .rcx 3, .alu .sub .rcx (.imm 1)] : List Instr))) s
@@ -511,7 +511,7 @@ theorem epi_ok {s₀ : State} (hp : APre s₀) {m₁ : Mem} (hm : IMem s₀ m₁
 
 /-! ## The whole function -/
 
-theorem body_ok {s₀ : State} (hp : APre s₀) (hbig : 16 ≤ nb s₀) {s : State} (hg : s.gpr = s₀.gpr)
+theorem body_ok {s₀ : State} (hp : APre s₀) (hbig : 28 ≤ nb s₀) {s : State} (hg : s.gpr = s₀.gpr)
     (hm : s.mem = s₀.mem) (hk : VKeep s₀ s) :
     WP isa body s (TailPre s₀ (8 * (nb s₀ / 8))) :=
   WP.seq (WP.mono (pro_ok hp hbig hg hm hk) fun _ h₁ =>
@@ -520,7 +520,7 @@ theorem body_ok {s₀ : State} (hp : APre s₀) (hbig : 16 ≤ nb s₀) {s : Sta
 theorem correct {s₀ : State} (hp : APre s₀) : WP isa blocksIfma s₀ (Post s₀) := by
   have hb := hp.avx2.bpre.nb_lt
   refine WP.seq (WP.mono (cmp_ok s₀) fun s₁ ⟨g₁, m₁, k₁, cf₁⟩ => ?_)
-  refine WP.ite (decide (nb s₀ < 16)) (by simp [eval, cf₁]) (fun hlt => ?_) (fun hge => ?_)
+  refine WP.ite (decide (nb s₀ < 28)) (by simp [eval, cf₁]) (fun hlt => ?_) (fun hge => ?_)
   · refine Avx512.avx2_ok hp ⟨by omega, by rw [g₁], by rw [g₁]; simp [blkAddr], ?_,
       fun r _ => by rw [g₁], k₁.rd, k₁.wr, by rw [m₁]; exact Frame.refl _ _, by rw [k₁.mxcsr],
       fun key msg hr => by rw [m₁, blks_zero, List.append_nil]; exact hr⟩

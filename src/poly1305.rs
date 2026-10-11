@@ -14,7 +14,7 @@
 //! (`Backend`): on x86-64, CPUs with AVX512_IFMA, AVX-512F and AVX2 run
 //! `vg_poly1305_update_ifma`, which absorbs them with
 //! `vg_poly1305_blocks_ifma`, eight at a time in 44-bit limbs with 52-bit
-//! multiply-adds once there are at least 16 of them (and fewer with
+//! multiply-adds once there are at least 28 of them (and fewer with
 //! `vg_poly1305_blocks_avx2`), other CPUs with AVX-512F and AVX2
 //! `vg_poly1305_update_avx512`, which absorbs them with
 //! `vg_poly1305_blocks_avx512`, eight at a time once there are at least 40 of
@@ -266,8 +266,8 @@ mod tests {
 
     /// The implementation chosen, and on AArch64 the NEON one whichever is
     /// chosen, give the same tag as the scalar one, for lengths around the
-    /// numbers of blocks from which the vector code runs (8 on AArch64, 16 on
-    /// x86-64) and multiples of four blocks, in one piece and in two split at
+    /// numbers of blocks from which the vector code runs (8 on AArch64; 28,
+    /// 32 and 40 on x86-64) and multiples of four blocks, in one piece and in two split at
     /// many positions.
     #[test]
     fn implementations_agree() {
@@ -281,8 +281,8 @@ mod tests {
         }
         for len in [
             0, 1, 15, 16, 17, 63, 64, 65, 127, 128, 129, 191, 192, 193, 255, 256, 257, 271, 272,
-            273, 319, 320, 321, 495, 496, 511, 512, 513, 527, 528, 529, 623, 624, 625, 639, 640,
-            641, 1024, 1100,
+            273, 319, 320, 321, 447, 448, 449, 495, 496, 511, 512, 513, 527, 528, 529, 623, 624,
+            625, 639, 640, 641, 1024, 1100,
         ] {
             let mut scalar = Poly1305::new(&key);
             scalar.backend = Backend::Scalar;
