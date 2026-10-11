@@ -231,8 +231,17 @@ def absorb (yo : Nat) : Prog isa :=
       (.seq (.ite .e (.block []) (absorbHead c yo))
       (.seq (absorbWhole c yo) absorbTail))))
 
-/-- `absorb yo` with nothing buffered (`rbx = 0`): no buffer to fill first. -/
-def absorbAl (yo : Nat) : Prog isa := .seq (absorbWhole c yo) absorbTail
+/-- The last `rbp` bytes at `r12`, padded with zeros in `T`, absorbed. -/
+def padTail (yo : Nat) : Prog isa :=
+  .seq (.block [.mov .rcx (.reg .rbp), .alu .test .rcx (.reg .rcx)])
+    (.ite .e (.block [])
+      (.seq (.block (([.mov32 .rax (imm 0), .store (at_ .r15 tO) .rax, .store (at_ .r15 (tO + 8)) .rax] : List Instr) ++
+          ptr .rdi .r15 tO ++ ([.mov .rsi (.reg .r12)] : List Instr)))
+      (.seq copyLoop (ghash1 c yo .r15 tO))))
+
+/-- `absorb yo` then `flush yo`, with nothing buffered (`rbx = 0`): the
+whole blocks, then the last bytes padded in `T` directly. -/
+def absorbPad (yo : Nat) : Prog isa := .seq (absorbWhole c yo) (padTail c yo)
 
 /-- The `rbx` buffered bytes, padded with zeros in `T`, absorbed. -/
 def flush (yo : Nat) : Prog isa :=
@@ -309,11 +318,9 @@ def j012 : List Instr :=
 def j0hash : Prog isa :=
   .seq (.block [.mov32 .rax (imm 0), .store (at_ .r14 0) .rax, .store (at_ .r14 8) .rax,
     .store (at_ .r15 auxO) .rbp, .mov32 .rbx (imm 0)])
-  (.seq (absorbAl c 0)
-  (.seq (.block [.mov .rbx (.mem (at_ .r15 auxO)), .alu .and .rbx (imm 15)])
-  (.seq (flush c 0)
+  (.seq (absorbPad c 0)
   (.seq (.block [.mov32 .rbx (imm 0), .mov .rbp (.mem (at_ .r15 auxO))])
-    (lens c 0)))))
+    (lens c 0)))
 
 /-- The first counter block `inc₃₂(J₀)`, word by word, and the accumulator zeroed. -/
 def initState : List Instr :=
@@ -557,9 +564,7 @@ def oneEntry (wo : Nat) : List Instr :=
 def oneAad : Prog isa :=
   .seq (j0 c)
   (.seq (.block [.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO)), .mov32 .rbx (imm 0)])
-  (.seq (absorbAl c 16)
-  (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .alu .and .rbx (imm 15)])
-    (flush c 16))))
+    (absorbPad c 16))
 
 /-- The whole blocks of the data encrypted (with `f`, `vg_aes_gcm_encrypt_blocks`)
 or decrypted (`vg_aes_gcm_decrypt_blocks`) and absorbed, from the first counter
@@ -582,11 +587,9 @@ def oneBlocks (f : Fn) : Prog isa :=
 (`len` at `W + 192`) into `W + o`. -/
 def oneTag (o : Nat) : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)])
-  (.seq (absorbAl c 16)
-  (.seq (.block [.mov .rbx (.mem (at_ .r15 lenO)), .alu .and .rbx (imm 15)])
-  (.seq (flush c 16)
+  (.seq (absorbPad c 16)
   (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .mov .rbp (.mem (at_ .r15 tlenO))])
-    (tag c o)))))
+    (tag c o)))
 
 /-- The data encrypted or decrypted, from the first counter block. -/
 def oneCrypt : Prog isa :=
