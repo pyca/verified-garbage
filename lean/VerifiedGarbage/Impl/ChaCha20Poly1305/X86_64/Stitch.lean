@@ -32,11 +32,14 @@ are Poly1305's (`r8`–`r10` for the key, `r11`, `rbx`, `rbp` for the
 accumulator, the rest for the products). So the number of bytes left lives
 in the Poly1305 state's working space (`lenOff`), which `vg_poly1305_blocks`
 uses only while it runs, and `r12`–`r14` (`tag`, the length and the data,
-which `seal` needs afterwards) are stashed there by `enter`. `leave`
-reduces the accumulator, stores it, restores them, and leaves in `rbx`,
-`rbp` the ciphertext not yet absorbed (the last chunk and the rest), and
-in `rsi`, `rdx` the data not yet encrypted, for the call of
-`vg_chacha20_xor` that follows. The branches are on the length only.
+which `seal` needs afterwards) are stashed there by `enter`. If 1 to 256
+bytes are left after the whole chunks, `tailS` encrypts them while it
+absorbs the last chunk (see below), and leaves `rdx` 0. Otherwise `leave`
+reduces the accumulator, stores it, restores the registers, and leaves in
+`rbx`, `rbp` the ciphertext not yet absorbed (the last chunk and the rest),
+and in `rsi`, `rdx` the data not yet encrypted, for the call of
+`vg_chacha20_xor` that follows if `rdx` is not 0. The branches are on the
+length only.
 -/
 
 namespace VG.Impl.ChaCha20Poly1305.X86_64.Stitch
@@ -144,27 +147,110 @@ def leave : List Instr :=
    .mov .r12 (.mem (at_ .rcx r12Off)), .mov .r13 (.mem (at_ .rcx r13Off)),
    .mov .r14 (.mem (at_ .rcx r14Off)), .mov .r15 (.reg .rcx), .alu .sub .r15 (.imm 128)] : List Instr)
 
-/-- The whole chunks of at least 512 bytes of data. -/
+/-! ## The last bytes of `seal`
+
+If 1 to 256 bytes are left after the whole chunks, `tailS` computes their
+keystream with `Avx2Tail`'s code for one set of two blocks (up to 128 bytes)
+or two sets (up to 256), whose double rounds absorb the 32 blocks of the
+last chunk at `rsi`, one after each half of a round (`tround`, as many in
+each double round as `chunk`'s); the rounds are bound by their latency, which
+the blocks of Poly1305 fill. Its setup reads `buf` through `r9`, which holds
+part of the key: `r12`, free until the first block, keeps it meanwhile.
+Then `leaveT` stores the accumulator and restores the registers, as `leave`
+does, with `rbx`, `rbp` the bytes left (the ciphertext not yet absorbed),
+and the keystream, computed into `buf`, is XORed into them. -/
+
+/-- Block `j` of the 512 bytes at `rsi` absorbed. -/
+def piece (j : Nat) : List Instr := addProd j ++ Poly1305.X86_64.carry
+
+/-- `Avx2Tail`'s double round, on one set (`two = false`) or two, absorbing
+the `blocks n` blocks from `firstBlock n`: one after each half of the round
+but the first if three. -/
+def tround (two : Bool) (n : Nat) : List Instr :=
+  let h := if two then ChaCha20.X86_64.Avx2Tail.half2 else ChaCha20.X86_64.Avx2Tail.half1
+  let r := if two then ChaCha20.X86_64.Avx2Tail.rot2 else ChaCha20.X86_64.Avx2Tail.rot1
+  let j := firstBlock n + blocks n - 4
+  h .xmm8 12 ++ (if blocks n = 4 then piece j else []) ++ h .xmm9 7 ++ piece (j + 1) ++
+    r 0x39 0x4e 0x93 ++ h .xmm8 12 ++ piece (j + 2) ++ h .xmm9 7 ++ piece (j + 3) ++ r 0x93 0x4e 0x39
+
+/-- `n` double rounds, each absorbing its blocks. -/
+def trounds (two : Bool) : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (trounds two n) (.block (tround two n))
+
+/-- `Avx2Tail`'s lane increments and the masks stored in `buf` (as
+`vg_chacha20_xor_avx2` does), and its setup, with `buf` in `r9` meanwhile. -/
+def tailA (two : Bool) : List Instr :=
+  ChaCha20.X86_64.Avx2Tail.consts ++ ChaCha20.X86_64.Avx2.consts ++
+    ([.mov .r12 (.reg .r9), .mov .r9 (.reg .rcx)] : List Instr) ++
+    (if two then ChaCha20.X86_64.Avx2Tail.setup else ChaCha20.X86_64.Avx2Tail.setup1) ++
+    ([.mov .r9 (.reg .r12)] : List Instr)
+
+/-- As `leave`, with `rbx`, `rbp` the bytes left after the last chunk. -/
+def leaveT : List Instr :=
+  Poly1305.X86_64.reduce ++
+  ([.store (at_ .rcx accOff) .r11, .store (at_ .rcx (accOff + 8)) .rbx,
+   .store (at_ .rcx (accOff + 16)) .rbp,
+   .mov .rbx (.reg .rsi), .alu .add .rbx (.imm 512), .mov .rbp (.mem (at_ .rcx lenOff)),
+   .mov .r12 (.mem (at_ .rcx r12Off)), .mov .r13 (.mem (at_ .rcx r13Off)),
+   .mov .r14 (.mem (at_ .rcx r14Off)), .mov .r15 (.reg .rcx), .alu .sub .r15 (.imm 128)] : List Instr)
+
+/-- After the rounds: `leaveT`, and the keystream into `buf` (through `r9`),
+the `rbp` bytes of it at `rsi` for `xorBufX`. -/
+def tailB (two : Bool) : List Instr :=
+  leaveT ++ ([.mov .r9 (.reg .rcx)] : List Instr) ++
+    (if two then ChaCha20.X86_64.Avx2Tail.addIn ++ ChaCha20.X86_64.Avx2Tail.storeSet .xmm0 .xmm1 .xmm2 .xmm3 0 ++
+      ChaCha20.X86_64.Avx2Tail.storeSet .xmm4 .xmm5 .xmm6 .xmm7 128
+    else ChaCha20.X86_64.Avx2Tail.addIn1 ++ ChaCha20.X86_64.Avx2Tail.storeSet .xmm0 .xmm1 .xmm2 .xmm3 0) ++
+    ([.mov .rsi (.reg .r9), .mov .rdx (.reg .rbp)] : List Instr)
+
+/-- The keystream of the bytes left computed into `buf` while the last chunk
+is absorbed, and the registers restored. -/
+def tailAB (two : Bool) : Prog isa :=
+  .seq (.block (tailA two)) (.seq (trounds two 10) (.block (tailB two)))
+
+/-- The bytes left (1 to 128, or 129 to 256 with `two`) encrypted, the last
+chunk absorbed, and `rdx` 0 (nothing left to encrypt) with `buf` in `rcx`.
+The `test` gives `xorBufX` flags computed from the length. -/
+def tailS (two : Bool) : Prog isa :=
+  .seq (tailAB two)
+  (.seq (.block [.alu .test .rdx (.reg .rdx)])
+  (.seq (xorBufX 5 .rbx)
+    (.block [.vop .vzeroupper, .mov .rcx (.reg .r9), .mov32 .rdx (.imm 0)])))
+
+/-- After the whole chunks: if 1 to 256 bytes are left, `tailS`; otherwise
+`leave`. -/
+def restT : Prog isa :=
+  .seq (.block [.mov .rdx (.mem (at_ .rcx lenOff)), .alu .sub .rdx (.imm 1), .alu .cmp .rdx (.imm 256)])
+  (.ite .b
+    (.seq (.block [.alu .cmp .rdx (.imm 128)]) (.ite .b (tailS false) (tailS true)))
+    (.block leave))
+
+/-- The whole chunks of at least 512 bytes of data, and the rest if at most
+256 bytes. -/
 def bulk : Prog isa :=
   .seq (.block enter)
   (.seq firstChunk
   (.seq (.ite .b (.block []) (.loop chunk .ae))
-    (.block leave)))
+    restT))
 
 /-- The data and the ciphertext to absorb when there are no whole chunks:
 all of it. -/
 def whole : List Instr := [.mov .rbx (.reg .r14), .mov .rbp (.reg .r13)]
 
 /-- `crypt`, with `rbx`, `rbp` set to the ciphertext not yet absorbed: the
-whole chunks are encrypted and absorbed by `bulk`, and the rest encrypted by
-the implementation `x` of `vg_chacha20_xor`. -/
+whole chunks are encrypted and absorbed by `bulk`, with the rest if at most
+256 bytes, and any rest left encrypted by the implementation `x` of
+`vg_chacha20_xor`. -/
 def cryptS (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (x.fold + 1)))])
   (.seq (.ite .b
     (.seq (.block (ptr .rsi .r15 736 ++ ([.mov .rdx (.reg .r13)] : List Instr)))
       (.seq (xorBufX x.wide .r14) (.block (ptr .rsi .r15 128 ++ whole))))
     (.seq (.block (cryptArgs ++ ([.alu .cmp .rdx (.imm 512)] : List Instr)))
-      (.seq (.ite .b (.block whole) bulk) (.call x.name x.code))))
+      (.seq (.ite .b (.block whole) bulk)
+        (.seq (.block [.alu .test .rdx (.reg .rdx)])
+          (.ite .e (.block [.mov .rsi (.reg .rcx)]) (.call x.name x.code))))))
   (.seq (.block (anchor .rsi 128))
   (.seq (foldM x.fold x.pass)
   (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs x.wide)))))
