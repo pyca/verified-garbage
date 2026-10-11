@@ -32,14 +32,15 @@ caller provides the curve's prime `p` (slot 0, `modAt`), zero (slot 3,
 (slots 5 to 7, `oneAt`, `aAt`, `b3At`), the constants of the complete
 addition formulas, which the function reads from `ws` rather than holding
 them in its code; the point `Q`, as its affine coordinates in Montgomery's
-form, below `p`, on the curve (slots 8 and 9, `qAt`); and the scalar `k`
-(slot 31, `kAt`, any number of `k` words). The result `P` is in slots 14 to
-16 (`pAt`). The function takes no offsets, so that every address it computes
-is `ws` plus a constant. Slots 17 to 30, the curve's temporary slot
-(`tmpAt`) and the `64 k + 8` bytes from slot 45 (`bitsAt`, where the code
-keeps a table of `k`'s bits) are the function's own working space (`Own`);
-on return they are unspecified and may hold intermediate values, secret ones
-among them, and the caller's callee-saved registers. Every other byte of `ws`
+form, below `p`, on the curve, in the first two slots of the result (slots
+14 and 15, `qAt`); and the scalar `k` (slot 31, `kAt`, any number of `k`
+words). The result `P` replaces `Q`, in slots 14 to 16 (`pAt`). The
+function takes no offsets, so that every address it computes is `ws` plus a
+constant. Slots 17 to 30 (where the code keeps, among others, its copy of
+`Q`), the curve's temporary slot (`tmpAt`) and the `64 k + 8` bytes from
+slot 45 (`bitsAt`, where the code keeps a table of `k`'s bits) are the
+function's own working space (`Own`); on return they are unspecified and may
+hold intermediate values, secret ones among them. Every other byte of `ws`
 keeps its value but the result's (`Keeps`).
 
 Everything is secret but the pointer, which is public, and the function is
@@ -111,8 +112,9 @@ def aAt : Nat := C.slot 6
 /-- Where `3 b R mod p` is. -/
 def b3At : Nat := C.slot 7
 
-/-- Where the point `Q` is: its affine coordinates, `x` then `y`. -/
-def qAt : Nat := C.slot 8
+/-- Where the point `Q` is: its affine coordinates, `x` then `y`, where the
+result goes. -/
+def qAt : Nat := C.pAt
 
 /-- `x R mod p`: the Montgomery form of `x`. -/
 def mont (x : Nat) : Nat := x * 2 ^ (64 * C.k) % C.W.p
@@ -182,8 +184,8 @@ def mulApi : Api where
   summary := s!"The multiple `P = [k]Q` of a point `Q` of {C.desc}, for the number `k` of {C.k} \
     64-bit words (`{8 * C.k}` bytes), little-endian, at byte {C.kAt} of `ws`, and `Q`'s affine \
     coordinates `x` and `y` at bytes {C.qAt} and {C.qAt + 8 * C.k}, in projective coordinates \
-    (`(X : Y : Z)` for `(X / Z, Y / Z)`, and `(0 : Y : 0)` for the point at infinity) at bytes \
-    {rangeDoc C.pAt C.ptBytes}: coordinates of {C.k} 64-bit words, little-endian, in \
+    (`(X : Y : Z)` for `(X / Z, Y / Z)`, and `(0 : Y : 0)` for the point at infinity) in \
+    `Q`'s place, at bytes {rangeDoc C.pAt C.ptBytes}: coordinates of {C.k} 64-bit words, little-endian, in \
     Montgomery's form modulo {C.desc}'s prime `p`, below it. The function reads `p` at byte \
     {C.modAt}, zero at byte {C.zeroAt}, and one, `a` and `3 b` in Montgomery's form at bytes \
     {C.oneAt}, {C.aAt} and {C.b3At}. {C.ownDoc} are the function's own working space; every other \

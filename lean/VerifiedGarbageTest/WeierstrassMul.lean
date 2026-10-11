@@ -5,7 +5,7 @@ import VerifiedGarbage.Spec.Weierstrass.Mul
 
 * the function's own working space is where the documentation says, and
   apart from what the caller provides (`p`, zero, the constants, `Q` and
-  `k`), from the result, and from the other tables of bits of the x86-64
+  `k`), from the result (where `Q` is), and from the other tables of bits of the x86-64
   code (`p - 2`'s and `n - 2`'s, from byte `bitsAt + 64 k + 8`);
 * each curve's base point satisfies `PointOk` in Montgomery's form, and the
   constants `ConstsOk` asks for are the curve's.
@@ -34,11 +34,12 @@ def checkApart (C : Mul.Curve) : Bool :=
 
 #guard curves.all checkApart
 
-/-- What the caller provides and the result do not overlap: their slots are
-distinct, each of `k` words. -/
+/-- What the caller provides does not overlap, and `Q` is in the result's
+place: their slots are distinct, each of `k` words, but `Q`'s, the result's
+first two. -/
 def checkInputs (C : Mul.Curve) : Bool :=
-  let os := [C.modAt, C.zeroAt, C.oneAt, C.aAt, C.b3At, C.qAt, C.qAt + 8 * C.k, C.kAt, C.pAt,
-    C.pAt + 8 * C.k, C.pAt + 16 * C.k]
+  C.qAt == C.pAt &&
+  let os := [C.modAt, C.zeroAt, C.oneAt, C.aAt, C.b3At, C.kAt, C.pAt, C.pAt + 8 * C.k, C.pAt + 16 * C.k]
   os.all fun o => os.all fun o' => o = o' || o + 8 * C.k ≤ o' || o' + 8 * C.k ≤ o
 
 #guard curves.all checkInputs
@@ -46,7 +47,7 @@ def checkInputs (C : Mul.Curve) : Bool :=
 #guard [p192, secp256k1].all fun C =>
   C.ownDoc == "Bytes 608 to 1055, 128 to 159 and 1504 to 1767 of `ws`" &&
     C.kAt == 1056 && C.pAt == 512 && C.modAt == 64 && C.zeroAt == 160 && C.oneAt == 224 &&
-    C.aAt == 256 && C.b3At == 288 && C.qAt == 320
+    C.aAt == 256 && C.b3At == 288 && C.qAt == 512
 
 /-- The base point in Montgomery's form is a point `PointOk` accepts: its
 coordinates below `p`, and decoding them gives `G` on the curve. -/
