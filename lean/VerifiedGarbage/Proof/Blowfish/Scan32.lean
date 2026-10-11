@@ -136,4 +136,54 @@ theorem select_rot (x t : BitVec 32) (c : Bool) :
       BitVec.xor_zero]
   · simp
 
+/-! ## Rotations by the index's lane -/
+
+/-- The lane mask: 255 rotated left a byte if bit 0 of the lane is set, then
+two if bit 1 is. -/
+theorem laneMask_rot {L : Nat} (hL : L < 4) :
+    (if decide (L / 2 = 1) then
+        (if decide (L % 2 = 1) then (BitVec.ofNat 32 255).rotateRight 24 else BitVec.ofNat 32 255).rotateRight 16
+      else if decide (L % 2 = 1) then (BitVec.ofNat 32 255).rotateRight 24 else BitVec.ofNat 32 255) =
+      laneMask L := by
+  rcases (by omega : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;> decide
+
+theorem ror_ror (x : BitVec 32) {a b : Nat} (h : a + b < 32) :
+    (x.rotateRight a).rotateRight b = x.rotateRight (a + b) := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [BitVec.getLsbD_rotateRight_of_lt (show b < 32 by omega),
+    BitVec.getLsbD_rotateRight_of_lt (show a < 32 by omega), BitVec.getLsbD_rotateRight_of_lt h]
+  have d : ∀ n, n < 32 → decide (n < 32) = true := fun n hn => decide_eq_true hn
+  split <;> split <;> (try split) <;>
+    first
+    | omega
+    | (congr 1; omega)
+    | (rw [d _ (by omega), Bool.true_and]; congr 1; omega)
+    | (rw [d _ (by omega), Bool.true_and, d _ (by omega), Bool.true_and]; congr 1; omega)
+
+set_option linter.unusedSimpArgs false in
+/-- The accumulator rotated right by the lane's bytes. -/
+theorem acc_rot (x : BitVec 32) {L : Nat} (hL : L < 4) :
+    (if decide (L / 2 = 1) then
+        (if decide (L % 2 = 1) then x.rotateRight 8 else x).rotateRight 16
+      else if decide (L % 2 = 1) then x.rotateRight 8 else x) = x.rotateRight (8 * L) := by
+  have r0 : x.rotateRight 0 = x := by
+    apply BitVec.eq_of_getLsbD_eq; intro i hi
+    simp [hi]
+  rcases (by omega : L = 0 ∨ L = 1 ∨ L = 2 ∨ L = 3) with rfl | rfl | rfl | rfl <;>
+    simp only [Nat.reduceDiv, Nat.reduceMod, Nat.reduceMul, decide_true, decide_false, ite_true,
+      ite_false, Bool.false_eq_true, r0, ror_ror x (show 8 + 16 < 32 by decide)] <;> rfl
+
+theorem mask_hit (idx : Byte) {k : Nat} (hk : k < 64) (lm : BitVec 32) :
+    (if 4 ≤ (idx.setWidth 32 - BitVec.ofNat 32 (4 * k)).toNat then 0 else lm) =
+      if idx.toNat / 4 = k then lm else 0 := by
+  have h := row_hit idx hk
+  by_cases e : idx.toNat / 4 = k
+  · rw [ite_eq_right (by omega), ite_eq_left e]
+  · rw [ite_eq_left (by omega), ite_eq_right e]
+
+theorem sub256_mod (idx : Byte) : (idx.setWidth 32 - BitVec.ofNat 32 (4 * 64)).toNat % 4 = idx.toNat % 4 := by
+  have := idx.isLt
+  rw [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show idx.toNat < 2 ^ 32 by omega)]
+  omega
+
 end VG.Proof.Blowfish
