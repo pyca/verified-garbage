@@ -56,6 +56,52 @@ theorem p521p_m : p521p.m + 1 = 512 * (2 ^ 64) ^ 8 := by decide +kernel
 theorem p521p_R : p521p.R = (2 ^ 64) ^ 9 :=
   (Nat.pow_mul 2 64 p521p.k).trans (congrArg (HPow.hPow (2 ^ 64)) (show p521p.k = 9 from rfl))
 
+/-- The contract for a modulus of nine words, from what the function's proof
+gives for `code`. -/
+theorem fn9_x64 (M : Modulus) (hk : M.k = 9) (hR : M.R = (2 ^ 64) ^ 9) {code : Prog isa}
+    (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true)
+    (hok : ∀ {s : State} {base : Addr} {Z : Nat}, Scr s base Z → 4096 ≤ Z →
+      argOf s .rsi + 72 ≤ 3520 → argOf s .rdx + 72 ≤ 3520 → argOf s .rcx + 72 ≤ 3520 →
+      wordsVal s.mem base (argOf s .rcx) 9 < M.m →
+      WP isa code s fun s' =>
+        wordsVal s'.mem base (argOf s .rsi) 9 < M.m ∧
+        wordsVal s'.mem base (argOf s .rsi) 9 * (2 ^ 64) ^ 9 % M.m =
+          wordsVal s.mem base (argOf s .rdx) 9 * wordsVal s.mem base (argOf s .rcx) 9 % M.m ∧
+        KeepRegs fnClob s s' ∧
+        ∀ x, (ofs base x < argOf s .rsi ∨ argOf s .rsi + 72 ≤ ofs base x) →
+          (ofs base x < fnTmp ∨ 4096 ≤ ofs base x) → s'.mem x = s.mem x)
+    (s : State) (hs : (mulX64 M).pre s) :
+    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (mulX64 M).post s s' := by
+  obtain ⟨⟨hrd, hwr, hret, hnw, ho, ha, hb⟩, hB⟩ := hs
+  have hscr : Scr s (s.gpr .rdi) 8192 := ⟨rfl, by rw [hwr]; simp, hnw⟩
+  simp only [Spec.Weierstrass.Mont.Fits, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes,
+    hk] at ho ha hb
+  suffices hwp : WP isa code s fun s' => gprPreserved s s' ∧ (mulX64 M).post s s' by
+    obtain ⟨t, s', he, hg, hp⟩ := hwp
+    exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hp⟩
+  simp only [argNum, numAt_eq, hk] at hB
+  refine WP.mono (hok hscr (by decide) ho ha hb hB) fun s' ⟨hlt, heq, k, hmem⟩ => ?_
+  refine ⟨⟨fun r hr => k.gpr r (by
+      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide), ?_⟩,
+    by simp only [argNum, numAt_eq, hk]; exact hlt, by simp only [argNum, numAt_eq, hk, hR]; exact heq, ?_⟩
+  · refine Mem.readW_congr fun i hi => hmem _ (Or.inr ?_) (Or.inr ?_) <;>
+    · have hx := hret (s.gpr .rsp + BitVec.ofNat 64 i) (by
+        simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)
+      simp only [Region.Contains, Nat.not_le] at hx
+      simp only [ofs, argOf]; omega
+  · intro i hi hown ho'
+    have e1 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
+    have e2 : Spec.Weierstrass.Mont.ownAt M.k = 3520 := by rw [hk]; rfl
+    have e3 : fnTmp = 4024 := rfl
+    rw [e1] at hi
+    rw [e2] at hown
+    rw [hk] at ho'
+    have h64 : i < 2 ^ 64 := by omega
+    refine hmem _ ?_ ?_
+    · rw [ofs_off0 _ h64]; exact ho'
+    · rw [ofs_off0 _ h64, e3]; omega
+
 /-- The contract, from what `fnShape_ok` gives for `code`. -/
 theorem fn_x64 {code : Prog isa} (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true)
     (hok : ∀ {s : State} {base : Addr} {Z : Nat}, Scr s base Z → 4096 ≤ Z → ∀ {m : Nat}, m + 1 = 512 * (2 ^ 64) ^ 8 →
@@ -69,37 +115,8 @@ theorem fn_x64 {code : Prog isa} (hmx : code.allInstrs (fun i => !loadsMxcsr i) 
         ∀ x, (ofs base x < argOf s .rsi ∨ argOf s .rsi + 72 ≤ ofs base x) →
           (ofs base x < fnTmp ∨ 4096 ≤ ofs base x) → s'.mem x = s.mem x)
     (s : State) (hs : (mulX64 p521p).pre s) :
-    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (mulX64 p521p).post s s' := by
-  obtain ⟨⟨hrd, hwr, hret, hnw, ho, ha, hb⟩, hB⟩ := hs
-  have hscr : Scr s (s.gpr .rdi) 8192 := ⟨rfl, by rw [hwr]; simp, hnw⟩
-  simp only [Spec.Weierstrass.Mont.Fits, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes,
-    p521p] at ho ha hb
-  suffices hwp : WP isa code s fun s' => gprPreserved s s' ∧ (mulX64 p521p).post s s' by
-    obtain ⟨t, s', he, hg, hp⟩ := hwp
-    exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hp⟩
-  simp only [argNum, numAt_eq] at hB
-  refine WP.mono (hok hscr (by decide) p521p_m ho ha hb hB) fun s' ⟨hlt, heq, k, hmem⟩ => ?_
-  refine ⟨⟨fun r hr => k.gpr r (by
-      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide), ?_⟩,
-    by simp only [argNum, numAt_eq]; exact hlt, by simp only [argNum, numAt_eq, p521p_R]; exact heq, ?_⟩
-  · refine Mem.readW_congr fun i hi => hmem _ (Or.inr ?_) (Or.inr ?_) <;>
-    · have hx := hret (s.gpr .rsp + BitVec.ofNat 64 i) (by
-        simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)
-      simp only [Region.Contains, Nat.not_le] at hx
-      simp only [ofs, argOf]; omega
-  · intro i hi hown ho'
-    have e1 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
-    have e2 : Spec.Weierstrass.Mont.ownAt p521p.k = 3520 := rfl
-    have e3 : fnTmp = 4024 := rfl
-    have e4 : p521p.k = 9 := rfl
-    rw [e1] at hi
-    rw [e2] at hown
-    rw [e4] at ho'
-    have h64 : i < 2 ^ 64 := by omega
-    refine hmem _ ?_ ?_
-    · rw [ofs_off0 _ h64]; exact ho'
-    · rw [ofs_off0 _ h64, e3]; omega
+    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (mulX64 p521p).post s s' :=
+  fn9_x64 p521p rfl p521p_R hmx (fun hs hZ ho ha hb hB => hok hs hZ p521p_m ho ha hb hB) s hs
 
 theorem mulFnX_x64 : ∀ s, (mulX64 p521p).pre s →
     ∃ t s', Exec isa mulFnX s t s' ∧ abiPreserved s s' ∧ (mulX64 p521p).post s s' :=

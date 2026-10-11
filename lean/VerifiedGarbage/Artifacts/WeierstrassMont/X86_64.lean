@@ -2,8 +2,9 @@ import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6Verified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnNVerified
 
-/-! # Montgomery products modulo P-384's and P-521's `p` on x86-64 -/
+/-! # Montgomery products modulo P-384's and P-521's `p` and P-521's `n` on x86-64 -/
 
 namespace VG.Artifacts.WeierstrassMont.X86_64
 
@@ -77,6 +78,22 @@ def artifacts : List Artifact := artifacts6 ++ [
     contract := p521p.mulContract X86_64.abi
     verified := p521p_mulX_verified
     features := ["bmi2", "adx"]
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { p521n.mulApi with
+    target := X86_64.target
+    doc := p521n.mulApi.doc (notes := ["The function zero-extends the offsets and saves the \
+      callee-saved registers it writes in `xmm0`–`xmm5` (`movq`), and the eighty bytes of `ws` from \
+      byte 3944 in `xmm6`–`xmm10`, over which it stores `n`; it writes only `[o]` and its temporary \
+      area, the last nine words below byte 4096 of `ws`, and restores those bytes. It runs the \
+      inline product of the other P-521 functions modulo `n` with its operands read through \
+      registers: `[a]` through `rbx = ws + a`, `[b]` through `rbp = ws + b` and `[o]` through \
+      `rsi = ws + o`. Montgomery multiplication by columns (product scanning, the accumulator in \
+      three registers, `mul`): column `c` adds its products and the reduction's `u_k n_j`, and for \
+      `c < 9` computes `u_c = t₀ (-n⁻¹) mod 2⁶⁴`, which clears the low word; the result, below \
+      `2n`, is reduced by subtracting `n` and selecting the difference unless it borrowed."])
+    code := mulFnN
+    contract := p521n.mulContract X86_64.abi
+    verified := p521n_mul_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) }
 ]
 
