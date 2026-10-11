@@ -3,7 +3,12 @@
 //! checked in `lean/VerifiedGarbageTest/Seed.lean`) and pyca/cryptography's
 //! CBC, OFB and CFB ones, whose modes are computed here from ECB.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 
 use std::collections::BTreeMap;
 

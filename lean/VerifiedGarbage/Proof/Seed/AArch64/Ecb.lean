@@ -288,7 +288,7 @@ theorem ecb_ok (d : Spec.Seed.Direction) {s : State} (h : EcbPre s) : WP isa (ec
   have r9₁ : s₁.gpr .x5 = s.gpr .x3 := by simp [s₁, gpr_write]
   have g₁ : ∀ r, r ≠ .x5 → s₁.gpr r = s.gpr r := fun r hr => gpr_write_of_ne _ _ _ hr
   have scr₁ : scratchR s₁ = ⟨s.gpr .x3, 8 * scratchSlots⟩ := by simp only [scratchR, r9₁]
-  have room₁ : Room s₁ := by unfold Room; rw [scr₁]; exact h.scratch
+  have room₁ : Room s₁ := .of_mem (by rw [scr₁]; exact h.scratch)
   -- the saved registers
   obtain ⟨s₂, e₂, g₂, rd₂, wr₂, sp₂, f₂, set₂, keep₂⟩ := stores_ok room₁
     (Impl.Seed.AArch64.savedRegs.map fun p => (p.2, p.1)) (by decide) (by decide)
@@ -312,7 +312,7 @@ theorem ecb_ok (d : Spec.Seed.Direction) {s : State} (h : EcbPre s) : WP isa (ec
     show s₅.mem.readW (Straight.wordAddr (s₅.gpr .x5) k) 64 = s₂.mem.readW (Straight.wordAddr (s₂.gpr .x5) k) 64
     rw [mem₅, r9₅, g₂, r9₁]
   have scr₅ : scratchR s₅ = ⟨s.gpr .x3, 8 * scratchSlots⟩ := by simp only [scratchR, r9₅]
-  have room₅ : Room s₅ := by unfold Room; rw [scr₅, wr₅]; exact h.scratch
+  have room₅ : Room s₅ := .of_mem (by rw [scr₅, wr₅]; exact h.scratch)
   have f₅ : Frame [⟨s.gpr .x3, 8 * scratchSlots⟩] s.mem s₅.mem := by
     rw [mem₅, ← scr₁]; exact f₂
   have zf₅ : isa.eval (.zero .x .x2) s₅ = some (s.gpr .x2 == 0) := by

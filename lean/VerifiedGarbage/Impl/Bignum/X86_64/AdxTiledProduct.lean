@@ -47,11 +47,15 @@ def redcFinish (o : Nat) : Prog isa :=
 
 def montMul (o a b : Nat) : Prog isa := .seq (rawProduct a b) (redcFinish o)
 
+/-- For sizes that pass `Adx.sizeTest`: the tiles if `w` is a multiple of 8,
+and the fused ADX multiplication otherwise. -/
 def alignedChoice (o a b : Nat) : Prog isa :=
-  .seq (.block AdxSquare.redcTest) (.ite .e (montMul o a b) (Adx.montMulAdx o a b))
+  .seq (.block AdxSquare.redcTest) (.ite .e (montMul o a b) (Adx.fused o a b))
 
+/-- `Adx.montMulAdx`, with the tiles for multiples of 8. -/
 def choice (o a b : Nat) : Prog isa :=
-  .seq (.block Adx.sizeTest) (.ite .e (alignedChoice o a b) (Adx.montMulAdx o a b))
+  .seq (.block Adx.sizeTest)
+    (.ite .e (alignedChoice o a b) (X86_64.montMul Public.aN Public.aAcc Public.aTmp o a b))
 
 /-- Keep the specialized square while using rectangular tiles for products. -/
 def dispatch (o a b : Nat) : Prog isa :=

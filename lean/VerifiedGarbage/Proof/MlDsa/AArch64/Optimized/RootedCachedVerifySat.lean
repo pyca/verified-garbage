@@ -24,7 +24,7 @@ theorem cachedPre_spec {p : Params} {s : State} (h : CachedPre p s) :
   · rw [h.rd];rfl
   · rw [h.rd];rfl
 
-private def tableMem : Mem := (Sign.optimizedSignSat mlDsa44).mem
+def tableMem : Mem := (Sign.optimizedSignSat mlDsa44).mem
 
 def satMem (p : Params) : Mem := fun a=>
   if a.toNat<1048576 then CachedVerify.satMem p a else tableMem a

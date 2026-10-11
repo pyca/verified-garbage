@@ -1,0 +1,5 @@
+name = "pyca/cryptography CAST5-CFB64 vectors (from the AESVS MMT data for CFB with full-block segments, verified against CommonCrypto and Go)"
+directories = ["cryptography-cast5-cfb"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/55cfeb23a8f9e0b7edb87bccb98a6ca7447aa436/vectors/cryptography_vectors/ciphers/CAST5/cast5-cfb.txt"
+sha256 = "5c0ffb89ce2bf5bbc91ef6a8195d32140f3a6ea3d3fd83e04dcd2085cf858abf"
+retrieved = 2026-10-11

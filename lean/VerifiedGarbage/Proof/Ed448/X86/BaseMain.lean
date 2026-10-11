@@ -23,7 +23,7 @@ namespace VG.Proof.Ed448.X86
 
 open VG VG.X86 VG.Proof.X448.X86 VG.Proof.X448.Radix16
 open VG.Proof.Ed448 (ladder pt)
-open VG.Impl.Ed448.X86 (scalarBase initSlots baseBits initVal)
+open VG.Impl.Ed448.X86 (scalarBase initSlots baseBits baseEntry initVal)
 open VG.Impl.X448.X86 (slot BITS ACC at_)
 open VG.Spec.Ed448 (bytesAt decodeLE)
 
@@ -102,18 +102,19 @@ structure BMid (σ s : State) : Prop where
     s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → BaseInv (bsB σ) (kB σ) s s' 456
 
 theorem entry_stage {s₀ : State} (h : BasePre s₀) :
-    WP isa (.block (Impl.Ed448.X86.save 12 ++ initSlots ++ baseBits)) s₀ (BMid s₀) := by
+    WP isa baseEntry s₀ (BMid s₀) := by
   have hA := h.args
   have hin : Input s₀ (bsB s₀) (arg s₀ 1) 57 :=
     Input.of_region h.scalar_fit (by rw [h.rd]; simp) h.scalar_sc
-  refine WP.block_append (WP.block_append (WP.mono (save_ok hA) fun s₁ ⟨hs₁, sv₁, o₁, k₁⟩ => ?_))
+  refine WP.seq (WP.block_append (WP.mono (save_ok hA) fun s₁ ⟨hs₁, sv₁, o₁, k₁⟩ => ?_))
   refine WP.mono (initSlots_ok hs₁) fun s₂ ⟨l₂, o₂, k₂⟩ => ?_
   have hs₂ := hs₁.of_keeps k₂ (by decide)
   have k02 : Keeps [.eax, .ebx, .ebp, .edi] s₀ s₂ := (k₁.mono (by decide)).trans (k₂.mono (by decide))
   have o02 : Outside (bsB s₀) 0 8192 s₀.mem s₂.mem :=
     (o₁.mono (by omega) (by omega)).trans (o₂.mono (by omega) (by omega))
-  rw [baseBits]
-  refine hA.load (i := 1) (k02.1 _ (by decide)) k02.2.1 k02.2.2 o02 (by decide) fun s₃ u₃ => ?_
+  unfold baseBits
+  refine WP.seq (hA.load (i := 1) (k02.1 _ (by decide)) k02.2.1 k02.2.2 o02 (by decide)
+    fun s₃ u₃ => WP.block_nil ?_)
   have hs₃ := hs₂.of_upd u₃ (by decide)
   refine WP.mono (baseBytes_ok (k := (arg s₀ 1).setWidth 64) hs₃ (by rw [u₃.gpr]) (by rw [u₃.gpr]; exact hin.fit)
     (by rw [u₃.rd, u₃.wr, k02.2.1, k02.2.2]; exact hin.read) hin.far) fun s₄ ⟨k₄, o₄, bits₄⟩ => ?_
@@ -133,7 +134,7 @@ theorem entry_stage {s₀ : State} (h : BasePre s₀) :
       (by have := i.isLt; simp only [slot]; omega) hj, u₃.mem]
     exact initSlots_bounded l₂ i j hj
   obtain ⟨er, eq, ed⟩ := initE _ e₄
-  have k04 : Keeps [.eax, .ebx, .ebp, .edi, .esi, .edx] s₀ s₄ :=
+  have k04 : Keeps [.eax, .ebx, .ebp, .edi, .esi, .edx, .ecx] s₀ s₄ :=
     (k02.mono (by decide)).trans ((u₃.rest (by decide)).trans (k₄.mono (by decide)))
   have sp₄ : s₄.gpr .esp = s₀.gpr .esp := k04.1 _ (by decide)
   have hc₄ : CallCtx s₄ (bsB s₀) := ⟨by rw [sp₄]; exact h.sp_room, by

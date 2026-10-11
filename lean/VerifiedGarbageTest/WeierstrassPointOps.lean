@@ -13,13 +13,13 @@ scaled by factors other than one, so that `Z ≠ 1`:
 * `jacDouble P` is `P + P`;
 * `jacAddCached P Q Z₂² Z₂³` and, for `Q` affine (`Z = 1`), `jacAddAffine P Q`
   are `P + Q`;
-* `rcbAddAffine b P Q`, for `Q` affine, is `P + Q`.
+* `rcbAdd b P Q` and, for `Q` affine, `rcbAddAffine b P Q` are `P + Q`.
 -/
 
 namespace VG.Test.WeierstrassPointOps
 
 open Lean Elab Command Spec.Weierstrass
-open Spec.Weierstrass.PointOps (jacDouble jacAddCached jacAddAffine rcbAddAffine)
+open Spec.Weierstrass.PointOps (jacDouble jacAddCached jacAddAffine rcbAddAffine rcbAdd)
 
 variable {C : Spec.Weierstrass.Curve}
 
@@ -74,6 +74,9 @@ def check (C : Spec.Weierstrass.Curve) (l₁ l₂ : Fe C) : Except String Unit :
       let (X2, Y2, Z2) := toJac l₂ Q
       let r := jacAddCached X1 Y1 Z1 X2 Y2 Z2 (Z2 * Z2) (Z2 * Z2 * Z2)
       expect "jacAddCached" (ofJac r) (add P Q)
+      let (U1, V1, W1) := toProj l₁ P
+      let (U2, V2, W2) := toProj l₂ Q
+      expect "rcbAdd" (ofProj (rcbAdd b U1 V1 W1 U2 V2 W2)) (add P Q)
       match Q with
       | .infinity => pure ()
       | .affine x y =>

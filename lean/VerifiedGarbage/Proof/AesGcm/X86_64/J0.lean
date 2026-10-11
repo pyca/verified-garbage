@@ -333,7 +333,7 @@ theorem j0hash_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St
   have hai : AbsIn Ctx St W SP 0 H [] Np n s₁ :=
     ⟨he₁, by rw [hg₁ _ (by decide) (by decide), h.r12], by rw [hg₁ _ (by decide) (by decide), h.rbp],
       by rw [hbx₁]; rfl, hd.of_eq hrd₁ hwr₁, hH₁⟩
-  refine WP.seq (WP.mono (absorb_ok v L (yo := 0) (.inl rfl) hai) fun s₂ ho => ?_)
+  refine WP.seq (WP.mono (absorbAl_ok v L (yo := 0) (.inl rfl) hai rfl) fun s₂ ho => ?_)
   rw [List.nil_append, hiv] at ho
   have hab₂ := ho.abs (Proof.Gcm.absorbed_nil H hY₁)
   have he₂ := ho.env

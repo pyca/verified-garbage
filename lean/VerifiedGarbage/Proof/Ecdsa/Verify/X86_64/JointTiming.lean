@@ -12,7 +12,7 @@ def jointPrefix (c : Cfg) : Prog isa :=
   .seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) <|
   .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <|
   .seq (Impl.Ecdh.X86_64.Cfg.validate c) <|
-  .seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c) <| .seq c.nPow <|
+  .seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c) <| .seq c.nPow.inline <|
   .seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c) (.block [])
 
 theorem jointPrefix_ok {c : Cfg} (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) :

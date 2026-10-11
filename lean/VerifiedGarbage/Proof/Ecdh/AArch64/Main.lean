@@ -265,7 +265,7 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.AArch64.Cfg.exchange c =
     .seq (.block Impl.Ecdh.AArch64.Cfg.args) (.seq (.seq (.block c.setup)
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])))
     (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c)) (.seq (Impl.Ecdh.AArch64.Cfg.validate c)
-    (.seq (c.winPrep (c.sl K)) (.seq (WinCfg.window (winQ c)) (.seq c.pPow
+    (.seq (c.winPrep (c.sl K)) (.seq (WinCfg.window (winQ c) c.padd) (.seq c.pPow
       (Impl.Ecdh.AArch64.Cfg.middle c))))))) := rfl
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
@@ -340,14 +340,14 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
       rw [F₄.onep, toM_one hpR]; exact h)
     fun s₅ L => ?_
   have hs₅ := L.scr
-  have F₅ := F₄.unch h7 hn (fixedOk_winX.append ((fixedOk_slW (by decide)).append fixedOk_chainWc))
+  have F₅ := F₄.unch h7 hn (fixedOk_winX.append ((fixedOk_slW (by decide)).append (fixedOk_chainWc hc)))
     L.unch
   have e₅ : ∀ {i}, i < 45 → i ∉ otherI ++ tblI ++ [TMP] → i ∉ [ACC, TMP] →
       sv c (s₀.gpr .x3) s₅ i = sv c (s₀.gpr .x3) s₄ i :=
     fun hi h₁ h₂ => sv_unch L.unch h7 hn hi
-      (apart_append (apart_winX hi) (apart_append (apart_slW h₁) (apart_chainWc hi h₂)))
+      (apart_append (apart_winX hi) (apart_append (apart_slW h₁) (apart_chainWc hc hi h₂)))
   have hflag₅ := f₄
-  rw [← flag_unch_win L.unch h7 h0 hn (by decide)] at hflag₅
+  rw [← flag_unch_win hc L.unch h7 h0 hn (by decide)] at hflag₅
   have hx20₅ : s₅.gpr .x20 = s₀.gpr .x0 := by
     rw [L.gpr _ (x20_not_combClob h7) (x20_not_powClob h7), g₄ _ (x20_not_clob h7), k₃.gpr _ (by decide),
       S₂.x20, x0₁]

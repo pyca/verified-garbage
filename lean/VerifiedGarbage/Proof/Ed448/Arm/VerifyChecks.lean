@@ -136,7 +136,8 @@ theorem eqSlots_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
     (ha1 : a ≠ 1) (hb1 : b ≠ 1) (hab : a ≠ b) :
     WP isa (.block (eqSlots (slot a.val) (slot b.val))) s fun t =>
       CKeep base s t ∧ BoundedEnv t.mem base ∧ (∀ i : Index, i ≠ 1 → E t.mem base i = E s.mem base i) ∧
-        BadUpd (E s.mem base a = E s.mem base b) (s.gpr .r10) (t.gpr .r10) := by
+        BadUpd (E s.mem base a = E s.mem base b) (s.gpr .r10) (t.gpr .r10) ∧
+        Keeps (.r10 :: workRegs) s t := by
   have sa := slot_range a
   have sb := slot_range b
   have hX2v : X2 = 192 := rfl
@@ -191,9 +192,10 @@ theorem eqSlots_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
     rw [tm, m5.limbs s1i (by omega) hj, m4.limbs (by omega) (by omega) hj,
       m3.limbs (by omega) (by omega) hj, m2.limbs s1i (by omega) hj,
       m1.limbs (by omega) (by omega) hj]
-  refine ⟨⟨?_, ?_⟩, fun i j hj => ?_, fun i hi => ?_, ?_⟩
-  · refine (((k1.mono ?_).trans ((k2.mono ?_).trans ((k3.mono ?_).trans ((k4.mono ?_).trans
+  have kw : Keeps (.r10 :: workRegs) s t := by
+    refine (((k1.mono ?_).trans ((k2.mono ?_).trans ((k3.mono ?_).trans ((k4.mono ?_).trans
       (k5.mono ?_))))).trans (tk.mono ?_)) <;> intro r hr <;> revert r <;> decide
+  refine ⟨⟨kw.mono (fun r hr => by revert r; decide), ?_⟩, fun i j hj => ?_, fun i hi => ?_, ?_, kw⟩
   · rw [tm]
     exact ((((outC m1 (by decide) (by decide)).trans (fmC m2 (by decide) (by decide))).trans
       (outC m3 (by omega) (by omega))).trans (outC m4 (by decide) (by decide))).trans

@@ -4,6 +4,7 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.TCombJ
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Spec.Ecdsa
 import VerifiedGarbage.Spec.Weierstrass.MulBase
+import VerifiedGarbage.Spec.Weierstrass.Inverse
 
 /-!
 # ECDSA signing on x86-64
@@ -159,6 +160,11 @@ structure Cfg where
   signature and public key derivation call, with the table of `k`'s bits it
   makes; else they run them inline. -/
   mulBase : Option Spec.Weierstrass.MulBase.Curve := none
+  /-- The curve whose functions `vg_<curve>_inv_mod_p` and
+  `vg_<curve>_inv_mod_n` (`Spec/Weierstrass/Inverse.lean`) compute `Z^(p-2)`
+  and `k^(n-2)` (`invFn`), which every function calls (`pPow`, `nPow`);
+  else they run them inline. -/
+  inverse : Option Spec.Weierstrass.Inverse.Curve := none
   /-- The bits the window method's scalars have: `8 len`, but for a curve
   whose `n` has fewer bits than its `len` bytes (P-521's `n < 2⁵²¹`, in 66
   bytes), as many as `n` has. ECDH reduces its `d` below `2^nbits` before
@@ -312,13 +318,39 @@ def winPrep (k : Nat) : Prog isa :=
   .seq (.block (WinCfg.addConst c.n k c.winK (WinCfg.offset c.winJ)))
     (bits c.winK c.winBits (8 * (c.n + 1)))
 
-/-- `Z^(p-2)` and `k^(n-2)` into `ACC`: by divsteps for up to nine words
-(`k^(n-2)` only if `fastN`), else by the powers. -/
-def pPow : Prog isa := if c.n ≤ 9 then InvCfg.inv c.invP else pow c.powP
-def nPow : Prog isa := if c.fastN ∧ c.n ≤ 9 then InvCfg.inv c.invN else pow c.powN
+/-- `Z^(p-2)` and `k^(n-2)` into `ACC`, inline: by divsteps for up to nine
+words (`k^(n-2)` only if `fastN`), else by the powers. -/
+def pPowI : Prog isa := if c.n ≤ 9 then InvCfg.inv c.invP else pow c.powP
+def nPowI : Prog isa := if c.fastN ∧ c.n ≤ 9 then InvCfg.inv c.invN else pow c.powN
 
 /-- The callee-saved registers, and where they are saved. -/
 def saved : List (Reg × Nat) := [(.rbx, 0), (.rbp, 8), (.r12, 16), (.r13, 24), (.r14, 32), (.r15, 40)]
+
+/-- Where `vg_<curve>_inv_mod_p` and `_n` keep the callee-saved registers,
+which they change: `PT`'s slot, part of their own working space. -/
+def invSaved : List (Reg × Nat) := saved.map fun (r, d) => (r, c.sl PT + d)
+
+/-- `vg_<curve>_inv_mod_p` or `_n` (`_adx` with BMI2 and ADX): the inversion
+`body`, between saving the callee-saved registers in `PT`'s slot and
+restoring them. -/
+def invFn (body : Prog isa) : Prog isa :=
+  .seq (.block (c.invSaved.map fun p => .store { base := .rdi, disp := p.2 } p.1)) <|
+  .seq body <|
+  .block (c.invSaved.map fun p => .mov p.1 (.mem { base := .rdi, disp := p.2 }))
+
+/-- The suffix of the functions' names: `_adx` with BMI2 and ADX. -/
+def fnSuffix : String := if c.adx then "_adx" else ""
+
+/-- `Z^(p-2)` and `k^(n-2)` into `ACC`: calls of `vg_<curve>_inv_mod_p` and
+`_n` (`invFn`), else inline (`pPowI`, `nPowI`). -/
+def pPow : Prog isa :=
+  match c.inverse with
+  | some C => .call (C.invPApi.name ++ c.fnSuffix) (c.invFn c.pPowI)
+  | none => c.pPowI
+def nPow : Prog isa :=
+  match c.inverse with
+  | some C => .call (C.invNApi.name ++ c.fnSuffix) (c.invFn c.nPowI)
+  | none => c.nPowI
 
 /-- The constants, and `R = (0 : 1 : 0)`: slots and values. -/
 def consts : List (Nat × Nat) :=

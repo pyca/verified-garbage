@@ -70,7 +70,7 @@ theorem block_ok (keys : Schedule) (base : Addr) (direction : Direction) (s : St
       obtain rfl := List.mem_singleton.mp hr
       refine ⟨⟨s.gpr .rdx, 512⟩, by simp [blockRegions], ?_⟩
       have hbase := hs₁.regs .rdx (by decide)
-      change Region.Sub ⟨s₁.gpr .rdx + BitVec.ofNat 64 56, 392⟩ ⟨s.gpr .rdx, 512⟩
+      change Region.Sub ⟨s₁.gpr .rdx + BitVec.ofNat 64 56, 408⟩ ⟨s.gpr .rdx, 512⟩
       rw [hbase]
       exact Offset.sub_base _ (by decide))
     have hf₃ : Frame (blockRegions s) s₂.mem s₃.mem := hs₃.frame.sub (by

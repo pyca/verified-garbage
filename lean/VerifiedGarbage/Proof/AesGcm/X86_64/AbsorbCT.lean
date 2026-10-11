@@ -210,6 +210,20 @@ theorem absorb_rel {H₁ H₂ : Block} {x₁ x₂ : List Byte} {D : Addr} {n : N
     (fun s h => whole_ok v L hyo h (h.data_eq hyo)) (fun s h => whole_ok v L hyo h (h.data_eq hyo))
   exact RelCT.seq hw (tail_rel.mono (fun _ _ h => h.2) fun _ _ h => h)
 
+/-- `absorbAl yo`, for data at the same address, of the same length, with
+nothing buffered. -/
+theorem absorbAl_rel {H₁ H₂ : Block} {x₁ x₂ : List Byte} {D : Addr} {n : Nat}
+    (hx₁ : x₁.length % 16 = 0) (hx₂ : x₂.length % 16 = 0) :
+    RelCT isa (fun s₁ s₂ => AbsIn Ctx St W SP yo H₁ x₁ D n s₁ ∧ AbsIn Ctx St W SP yo H₂ x₂ D n s₂)
+      (absorbAl v.callees yo) fun _ _ => True := by
+  suffices k : RelCT isa (fun s₁ s₂ => ∃ m₁ m₂ : Mem, AbsMid Ctx St W SP yo H₁ x₁ D n m₁ 0 s₁ ∧ AbsMid Ctx St W SP yo H₂ x₂ D n m₂ 0 s₂) (absorbAl v.callees yo) fun _ _ => True from
+    k.mono (fun s₁ s₂ h => ⟨s₁.mem, s₂.mem, h.1.mid hx₁, h.2.mid hx₂⟩) fun _ _ h => h
+  refine RelCT.exists_ fun m₁ => RelCT.exists_ fun m₂ => ?_
+  have hw := rel_wp (whole_rel v L hyo (H₁ := H₁) (H₂ := H₂) (x₁ := x₁) (x₂ := x₂) (D := D) (n := n) (m₁ := m₁)
+      (m₂ := m₂) (j := 0)) (fun _ _ h => h)
+    (fun s h => whole_ok v L hyo h (h.data_eq hyo)) (fun s h => whole_ok v L hyo h (h.data_eq hyo))
+  exact RelCT.seq hw (tail_rel.mono (fun _ _ h => h.2) fun _ _ h => h)
+
 end
 
 end VG.Proof.AesGcm.X86_64

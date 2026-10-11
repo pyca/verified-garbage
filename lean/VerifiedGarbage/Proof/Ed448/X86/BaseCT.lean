@@ -17,7 +17,7 @@ squarings by `RelCT.loop`.
 namespace VG.Proof.Ed448.X86
 
 open VG VG.X86 VG.Proof.X448.X86 VG.Proof.X448.Radix16
-open VG.Impl.Ed448.X86 (scalarBase baseLoop baseStep baseSwap baseEncode toOp field initSlots baseBits)
+open VG.Impl.Ed448.X86 (scalarBase baseLoop baseStep baseSwap baseEncode toOp field initSlots baseEntry)
 open VG.Impl.Ed448 (doubleOps addOps)
 
 /-- Two entry states the constant-time statement relates. -/
@@ -103,7 +103,7 @@ theorem baseLoop_rel : ∀ n, RelCT isa (Runs BP₀ (LadB n)) (.loop baseStep .n
 
 theorem baseEntry_rel :
     RelCT isa (Runs BP₀ fun σ s => s = σ ∧ BasePre σ)
-      (.block (Impl.Ed448.X86.save 12 ++ initSlots ++ baseBits)) (Runs BP₀ BMid) := by
+      baseEntry (Runs BP₀ BMid) := by
   refine Runs.step (RelCT.taint (A := taint) (scalarTaint 2 3) ?_ (by taint_decide))
     fun σ s ⟨e, h⟩ => by subst e; exact entry_stage h
   rintro s₁ s₂ ⟨σ₁, σ₂, hP, ⟨rfl, -⟩, ⟨rfl, -⟩⟩

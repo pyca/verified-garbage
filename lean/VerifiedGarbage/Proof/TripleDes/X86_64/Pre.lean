@@ -60,7 +60,8 @@ theorem headPre_of (s : State)
   have saveSub : Region.Sub (saveRegion s) ⟨s.gpr .rdx, 512⟩ := Region.sub_prefix (by decide)
   refine ⟨spills, rfl, (fun i hi => scratchReads i (by omega)),
     (fun i hi => scratchWrites i (by omega)), scratchReads 7 (by decide),
-    scratchWrites 7 (by decide), inRd dataWrite, dataSep.sub_right saveSub, ?_, ?_, ?_, ?_⟩
+    scratchWrites 7 (by decide), scratchWrites 56 (by decide), scratchReads 57 (by decide),
+    scratchWrites 57 (by decide), inRd dataWrite, dataSep.sub_right saveSub, ?_, ?_, ?_, ?_⟩
   · intro c hc direction j hj
     rw [keyAddr_component]
     exact keyReads _ (by have := selectedRound_bound direction j hj; omega)

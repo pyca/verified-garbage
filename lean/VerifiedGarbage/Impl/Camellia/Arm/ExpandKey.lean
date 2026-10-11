@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.Camellia.Arm.Ecb
 import VerifiedGarbage.Impl.Camellia.KeyOrder
+import VerifiedGarbage.Impl.Camellia.Planes32
 
 /-!
 # The Camellia key schedule on ARMv7
@@ -38,17 +39,6 @@ def wSlot : Nat := tailSlot + 8
 def kaSlot : Nat := tailSlot + 12
 def kbSlot : Nat := tailSlot + 16
 def cntSlot : Nat := grpSlot
-
-/-- The bits `p < n` of plane `j` of word `w` (0 for the left 32 bits, 1 for
-the right) of `x` in every lane, as a number. -/
-def planeBits32 (x : BitVec 64) (w j : Nat) : Nat → Nat
-  | 0 => 0
-  | n + 1 => planeBits32 x w j n |||
-      (if x.getLsbD (56 - 8 * (4 * w + n / 8) + j) then 2 ^ n else 0)
-
-/-- Plane `j` of word `w` of the subkey `x`, as the table holds it: bit
-`8 i + b` is bit `j` of byte `4 w + i` of `x`, the most significant first. -/
-def keyPlane32 (x : BitVec 64) (w j : Nat) : BitVec 32 := BitVec.ofNat 32 (planeBits32 x w j 32)
 
 /-- The planes of the constant `x` to entry `e` of the table. -/
 def sigmaOne (e : Nat) (x : BitVec 64) : List Instr :=

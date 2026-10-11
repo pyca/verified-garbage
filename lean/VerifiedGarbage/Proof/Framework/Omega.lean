@@ -1,5 +1,9 @@
 import Lean.Elab.Tactic.Basic
 import Lean.Elab.Tactic.Omega
+import Lean.Elab.SyntheticMVars
+import Lean.Meta.Closure
+import Lean.Meta.Tactic.Assert
+import Lean.Meta.Tactic.Clear
 
 /-!
 # `omega` in large contexts

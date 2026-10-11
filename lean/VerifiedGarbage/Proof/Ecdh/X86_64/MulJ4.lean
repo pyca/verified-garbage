@@ -267,7 +267,7 @@ theorem mulPowJ4_ok (hc : CfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) (hO : PrimeOr
     {k : Nat} (hk : sv c base s K = k) (hk8 : k < 2 ^ (8 * c.C.len))
     (ht₁ : ¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', MulPostW c (mulQJ4W c) base P k s s' → WP isa rest s' R) :
-    WP isa (.seq (Impl.Ecdh.X86_64.Cfg.mulQJ4 c).inline (.seq c.pPow rest)) s R := by
+    WP isa (.seq (Impl.Ecdh.X86_64.Cfg.mulQJ4 c).inline (.seq c.pPow.inline rest)) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap

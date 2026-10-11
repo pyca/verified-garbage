@@ -45,4 +45,7 @@ def round (r : Nat) : List Instr :=
   constant (Spec.Sha3.RC r) ++ theta.map Op.instr ++ rhoPi.map Op.instr ++ chi.map Op.instr ++ iota
 
 def rounds : List Instr := (List.range 24).flatMap round
+
+/-- The vector operations of a round before iota. -/
+def core : List Instr := (theta ++ rhoPi ++ chi).map Op.instr
 end VG.Impl.MlDsa.AArch64.Optimized.KeccakMix

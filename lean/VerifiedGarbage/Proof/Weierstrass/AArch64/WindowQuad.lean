@@ -3,7 +3,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 /-!
 # The window method on AArch64: `R = 16 R`
 
-Four doublings in Jacobian coordinates (`jac_ok`), and `Y = 1` where the result is `O`
+Four doublings in Jacobian coordinates, a loop of two (`dbl2_ok`, `jac_ok`), and `Y = 1` where the result is `O`
 (`ySel_ok`): `quad_ok`.
 -/
 
@@ -82,12 +82,119 @@ local macro "rcb_sub" : tactic => `(tactic| (
     List.not_mem_nil, or_false] at hx ⊢
   rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
 
+/-- The count of the doublings: `x19 = j + 2 ^ 33`. -/
+theorem dblSet_ok (s : State) {j : Nat} (hx : s.gpr .x19 = BitVec.ofNat 64 j) :
+    WP isa (.block [.movz .x .x2 2 2, .add .x .x19 .x19 .x2]) s fun t =>
+      t.gpr .x19 = BitVec.ofNat 64 (j + 2 ^ 32 * 2) ∧ Keeps [.x2, .x19] s t := by
+  have c2 : (2 : BitVec 16).setWidth 64 <<< (16 * 2) = BitVec.ofNat 64 (2 ^ 32 * 2) := by
+    apply BitVec.eq_of_toNat_eq; simp
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Size.bits, show 16 * 2 < 64 by decide, ite_true,
+    c2, Option.some.injEq, exists_eq_left', read_x]
+  simp (disch := decide) only [RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, BitVec.setWidth_eq, hx]
+  refine ⟨BitVec.ofNat_add_ofNat .., fun r hr => ?_, rfl, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
+
+/-- One less doubling to count: `x19 = j + 2 ^ 32 c` and `x2 = c`. -/
+theorem dblCnt_ok (s : State) {j c : Nat} (hj : j < 2 ^ 32) (hc : c < 2)
+    (hx : s.gpr .x19 = BitVec.ofNat 64 (j + 2 ^ 32 * (c + 1))) :
+    WP isa (.block [.movz .x .x2 1 2, .sub .x .x19 .x19 .x2, .lsr .x .x2 .x19 32]) s fun t =>
+      t.gpr .x19 = BitVec.ofNat 64 (j + 2 ^ 32 * c) ∧ t.gpr .x2 = BitVec.ofNat 64 c ∧
+      Keeps [.x2, .x19] s t := by
+  have c1 : (1 : BitVec 16).setWidth 64 <<< (16 * 2) = BitVec.ofNat 64 (2 ^ 32) := by
+    apply BitVec.eq_of_toNat_eq; simp
+  have e : BitVec.ofNat 64 (j + 2 ^ 32 * (c + 1)) - BitVec.ofNat 64 (2 ^ 32) =
+      BitVec.ofNat 64 (j + 2 ^ 32 * c) := by
+    rw [Nat.mul_succ, ← Nat.add_assoc, ← BitVec.ofNat_add_ofNat, BitVec.add_sub_cancel]
+  have hlt : j + 2 ^ 32 * c < 2 ^ 64 := by omega
+  have l : BitVec.ofNat 64 (j + 2 ^ 32 * c) >>> 32 = BitVec.ofNat 64 c := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hlt,
+      Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow, Nat.add_mul_div_left _ _ (by decide),
+      Nat.div_eq_of_lt hj, Nat.zero_add]
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Size.bits, show 16 * 2 < 64 by decide,
+    ite_true, c1, Option.some.injEq, exists_eq_left', read_x]
+  simp (disch := decide) only [RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, BitVec.setWidth_eq, hx, e, l]
+  refine ⟨trivial, trivial, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
+
+/-- The slots the doublings keep in the environment: `E` and the constants. -/
+def dblV (K : WinCfg) : List Nat := [K.E.x, K.E.y, K.E.z, K.S.a, K.S.b3, K.zero]
+
+/-- Two doublings, `E` to `D` and back, and one less to count. -/
+theorem dbl2_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)
+    (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
+    (hP : onCurve C P = true) {s₀ s : State} (hF : WinFixed K C base s₀ P k)
+    (hS : WinSt K C base size P s₀ s) {j c e : Nat} (hj : j < 2 ^ 32) (hc : 1 ≤ c) (hc2 : c ≤ 2)
+    (hx : s.gpr .x19 = BitVec.ofNat 64 (j + 2 ^ 32 * c)) {E : Nat → Fe C}
+    (hI : Inv K.M base size C.p (· ∈ winSlots K) (dblV K) E s)
+    (hJ : InvJ C (E K.E.x) (E K.E.y) (E K.E.z) (mul e P)) :
+    WP isa (WinCfg.dbl2 K) s fun s' =>
+      WinSt K C base size P s₀ s' ∧ s'.gpr .x19 = BitVec.ofNat 64 (j + 2 ^ 32 * (c - 1)) ∧
+      s'.gpr .x2 = BitVec.ofNat 64 (c - 1) ∧ ∃ E' : Nat → Fe C,
+      Inv K.M base size C.p (· ∈ winSlots K) (dblV K) E' s' ∧
+      InvJ C (E' K.E.x) (E' K.E.y) (E' K.E.z) (mul (4 * e) P) := by
+  obtain ⟨-, -, ro_lt, hz⟩ := hS.ro_tmv hL hF
+  obtain ⟨a1, a2, a3, a4⟩ := hL.rcbApart_jac
+  have oR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winOther K := by
+    intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl <;> win_in
+  have oE : ∀ x ∈ [K.E.x, K.E.y, K.E.z], x ∈ winOther K := by
+    intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl <;> win_in
+  have oD : ∀ x ∈ [K.D.x, K.D.y, K.D.z], x ∈ winOther K := by
+    intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl <;> win_in
+  have sZ : ∀ x ∈ [(WinCfg.zeroPt K).x, (WinCfg.zeroPt K).y, (WinCfg.zeroPt K).z], x ∈ winRo K ++ winOther K := by
+    intro x hx
+    simp only [WinCfg.zeroPt, List.mem_cons, List.not_mem_nil, or_false, or_self] at hx
+    subst hx; win_in
+  have sl := fun (P : Pt) (h : ∀ x ∈ [P.x, P.y, P.z], x ∈ winOther K) x (hx : x ∈ [P.x, P.y, P.z]) =>
+    List.mem_append_right (winRo K) (h x hx)
+  have w2 := winJ_sl oD (sl _ oE) (sl _ oE)
+  have w3 := winJ_sl oE (sl _ oD) (sl _ oD)
+  have hQ := fun (a : Nat) => hC.onCurve_mul hP a
+  simp only [WinCfg.dbl2, WinCfg.double, dblJChoice_eq]
+  refine WP.seq (WP.mono (winN_ok hL hA hp (dblJChoiceN_ok (K.M.n == 4)) a2 w2.1 w2.2.1 w2.2.2 hI
+    (by intro x hx; simp only [rcbR, dblV, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
+        rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
+    fun s₂ ⟨k₂, U₂, E₂, I₂, _, v₂⟩ => ?_)
+  have S₂ := hS.next hL I₂.scr (k₂.mono clob_combClob) U₂
+  have J₂ := InvJ.dbl' hC hM3 (hQ e) hJ (v₂.trans (dblJChoiceN_run (K.M.n == 4) _))
+  rw [hC.double hP] at J₂
+  refine WP.seq (WP.mono (winN_ok hL hA hp (dblJChoiceN_ok (K.M.n == 4)) a3 w3.1 w3.2.1 w3.2.2 I₂
+    (by intro x hx; simp only [rcbR, dblV, List.cons_append, List.nil_append, List.mem_cons,
+          List.not_mem_nil, or_false] at hx ⊢
+        rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
+    fun s₃ ⟨k₃, U₃, E₃, I₃, _, v₃⟩ => ?_)
+  have S₃ := S₂.next hL I₃.scr (k₃.mono clob_combClob) U₃
+  have J₃ := InvJ.dbl' hC hM3 (hQ _) J₂ (v₃.trans (dblJChoiceN_run (K.M.n == 4) _))
+  rw [hC.double hP, show 2 * (2 * e) = 4 * e by omega_using []] at J₃
+  have x₃ : s₃.gpr .x19 = BitVec.ofNat 64 (j + 2 ^ 32 * ((c - 1) + 1)) := by
+    rw [k₃.gpr _ (x19_not_clob _), k₂.gpr _ (x19_not_clob _), hx, Nat.sub_add_cancel hc]
+  refine WP.mono (dblCnt_ok s₃ hj (by omega_using [hc2, hc]) x₃) fun s₄ ⟨x₄, y₄, k₄⟩ => ?_
+  have hs₄ := S₃.scr.of_keeps k₄ (by decide)
+  have cc : ∀ r ∈ [Reg.x2, .x19], r ∈ combClob K.M.n := by
+    intro r hr
+    simp only [combClob, clob, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with rfl | rfl <;> simp
+  refine ⟨S₃.next hL hs₄ ((Keeps.regs k₄).mono cc) (by rw [k₄.mem]; exact Unch.refl _ _ _), x₄, y₄,
+    E₃, (I₃.of_mem hs₄ k₄.mem).sub ?_, J₃⟩
+  intro x hx
+  simp only [dblV, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+    or_false] at hx ⊢
+  rcases hx with h | h | h | h | h | h <;> simp only [h, true_or, or_true]
+
 /-- `R = 16 R` in Jacobian coordinates, but `Y`: the triple `(X : Y : Z)` stands for
 `[16 e]P` (or `Z = 0`), `R` is `(XZ : Y : Z³)` and `E.z` is `Z`. -/
 theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)
     (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) {s₀ s : State} (hF : WinFixed K C base s₀ P k)
-    (hS : WinSt K C base size P s₀ s) {e : Nat}
+    (hS : WinSt K C base size P s₀ s) {e j : Nat} (hj : j < 2 ^ 32)
+    (hx : s.gpr .x19 = BitVec.ofNat 64 j)
     (hlt : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s.mem base x K.M.n < C.p)
     (hR : Rep C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
       (mul e P)) :
@@ -115,8 +222,6 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
   have sl := fun (P : Pt) (h : ∀ x ∈ [P.x, P.y, P.z], x ∈ winOther K) x (hx : x ∈ [P.x, P.y, P.z]) =>
     List.mem_append_right (winRo K) (h x hx)
   have w1 := winJ_sl oE (sl _ oR) sZ
-  have w2 := winJ_sl oD (sl _ oE) (sl _ oE)
-  have w3 := winJ_sl oE (sl _ oD) (sl _ oD)
   have w4 := winJ_sl oR (sl _ oE) sZ
   have V0 : ∀ x ∈ [K.S.a, K.S.b3, K.zero, K.R.x, K.R.y, K.R.z],
       x ∈ winSlots K ∧ wordsVal s.mem base x K.M.n < C.p := by
@@ -130,8 +235,12 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
   have I₀ : Inv K.M base size C.p (· ∈ winSlots K) [K.S.a, K.S.b3, K.zero, K.R.x, K.R.y, K.R.z]
       (tmv C K.M.n base s) s :=
     ⟨hS.scr, hS.mod, fun x hx => (V0 x hx).1, fun x hx => (V0 x hx).2, fun _ _ => rfl⟩
-  have hQ := fun (a : Nat) => hC.onCurve_mul hP a
-  simp only [WinCfg.jac, toJ_eq, WinCfg.double, dblJChoice_eq, fromJ_eq]
+  have cc : ∀ r ∈ [Reg.x2, .x19], r ∈ combClob K.M.n := by
+    intro r hr
+    simp only [combClob, clob, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with rfl | rfl <;> simp
+  rw [WinCfg.jac]
+  simp only [toJ_eq, fromJ_eq]
   -- Into Jacobian coordinates, in `E`.
   refine WP.seq (WP.mono (winN_ok hL hA hp toJN_ok a1 w1.1 w1.2.1 w1.2.2 I₀ (by rcb_sub))
     fun s₁ ⟨k₁, U₁, E₁, I₁, _, v₁⟩ => ?_)
@@ -139,48 +248,59 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
   have J₁ : InvJ C (E₁ K.E.x) (E₁ K.E.y) (E₁ K.E.z) (mul e P) :=
     InvJ.of_toJ (z := tmv C K.M.n base s K.zero) hC hR (show toM _ _ _ = 0 by rw [hz]; exact toM_zero _ _)
       (v₁.trans (toJN_run _))
-  -- Four doublings.
-  refine WP.seq (WP.mono (winN_ok hL hA hp (dblJChoiceN_ok (K.M.n == 4)) a2 w2.1 w2.2.1 w2.2.2 I₁ (by rcb_sub))
-    fun s₂ ⟨k₂, U₂, E₂, I₂, _, v₂⟩ => ?_)
-  have S₂ := S₁.next hL I₂.scr (k₂.mono clob_combClob) U₂
-  have J₂ := InvJ.dbl' hC hM3 (hQ e) J₁ (v₂.trans (dblJChoiceN_run (K.M.n == 4) _))
-  rw [hC.double hP] at J₂
-  refine WP.seq (WP.mono (winN_ok hL hA hp (dblJChoiceN_ok (K.M.n == 4)) a3 w3.1 w3.2.1 w3.2.2 I₂ (by rcb_sub))
-    fun s₃ ⟨k₃, U₃, E₃, I₃, _, v₃⟩ => ?_)
-  have S₃ := S₂.next hL I₃.scr (k₃.mono clob_combClob) U₃
-  have J₃ := InvJ.dbl' hC hM3 (hQ _) J₂ (v₃.trans (dblJChoiceN_run (K.M.n == 4) _))
-  rw [hC.double hP] at J₃
-  refine WP.seq (WP.mono (winN_ok hL hA hp (dblJChoiceN_ok (K.M.n == 4)) a2 w2.1 w2.2.1 w2.2.2 I₃ (by rcb_sub))
-    fun s₄ ⟨k₄, U₄, E₄, I₄, _, v₄⟩ => ?_)
-  have S₄ := S₃.next hL I₄.scr (k₄.mono clob_combClob) U₄
-  have J₄ := InvJ.dbl' hC hM3 (hQ _) J₃ (v₄.trans (dblJChoiceN_run (K.M.n == 4) _))
-  rw [hC.double hP] at J₄
-  refine WP.seq (WP.mono (winN_ok hL hA hp (dblJChoiceN_ok (K.M.n == 4)) a3 w3.1 w3.2.1 w3.2.2 I₄ (by rcb_sub))
-    fun s₅ ⟨k₅, U₅, E₅, I₅, _, v₅⟩ => ?_)
-  have S₅ := S₄.next hL I₅.scr (k₅.mono clob_combClob) U₅
-  have J₅ := InvJ.dbl' hC hM3 (hQ _) J₄ (v₅.trans (dblJChoiceN_run (K.M.n == 4) _))
-  rw [hC.double hP, show 2 * (2 * (2 * (2 * e))) = 16 * e by omega_using []] at J₅
+  -- The count.
+  refine WP.seq (WP.mono (dblSet_ok s₁ ((k₁.gpr _ (x19_not_clob _)).trans hx))
+    fun s₂ ⟨x₂, k₂⟩ => ?_)
+  have hs₂ := S₁.scr.of_keeps k₂ (by decide)
+  have S₂ := S₁.next hL hs₂ ((Keeps.regs k₂).mono cc) (by rw [k₂.mem]; exact Unch.refl _ _ _)
+  -- Twice two doublings.
+  have hloop : WP isa (.loop (WinCfg.dbl2 K) (.nonzero .x .x2)) s₂ fun t =>
+      WinSt K C base size P s₀ t ∧ t.gpr .x19 = BitVec.ofNat 64 j ∧ ∃ E' : Nat → Fe C,
+        Inv K.M base size C.p (· ∈ winSlots K) (dblV K) E' t ∧
+        InvJ C (E' K.E.x) (E' K.E.y) (E' K.E.z) (mul (16 * e) P) := by
+    refine WP.loop (M := isa) (fun c t => 1 ≤ c ∧ c ≤ 2 ∧ WinSt K C base size P s₀ t ∧
+        t.gpr .x19 = BitVec.ofNat 64 (j + 2 ^ 32 * c) ∧ ∃ E' : Nat → Fe C,
+        Inv K.M base size C.p (· ∈ winSlots K) (dblV K) E' t ∧
+        InvJ C (E' K.E.x) (E' K.E.y) (E' K.E.z) (mul (4 ^ (2 - c) * e) P))
+      (fun c t ⟨hc, hc2, St, xt, Et, It, Jt⟩ => ?_) 2 s₂
+      ⟨by decide, Nat.le_refl _, S₂, x₂, E₁, (I₁.of_mem hs₂ k₂.mem).sub (by
+        intro x hx; simp only [dblV, List.mem_cons, List.not_mem_nil, or_false] at hx
+        simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+        rcases hx with h | h | h | h | h | h <;> simp only [h, true_or, or_true]),
+        by simpa using J₁⟩
+    refine WP.mono (dbl2_ok hL hA hp hC hM3 hP hF St hj hc hc2 xt It Jt)
+      fun t' ⟨St', xt', yt', E', It', Jt'⟩ => ?_
+    have ev : isa.eval (.nonzero .x .x2) t' = some (decide (c - 1 ≠ 0)) := by
+      show some (t'.read .x .x2 != 0) = _
+      rw [read_x, yt']
+      rcases (by omega_using [hc, hc2] : c = 1 ∨ c = 2) with rfl | rfl <;> rfl
+    rcases (by omega_using [hc, hc2] : c = 1 ∨ c = 2) with rfl | rfl
+    · refine Or.inl ⟨ev, St', by simpa using xt', E', It', ?_⟩
+      rw [show 16 * e = 4 * (4 ^ (2 - 1) * e) by simp only [Nat.reduceSub, Nat.reducePow]; omega_using []]
+      exact Jt'
+    · refine Or.inr ⟨ev, 1, by decide, Nat.le_refl _, by decide, St', xt', E', It', by simpa using Jt'⟩
+  refine WP.seq (WP.mono hloop fun s₅ ⟨S₅, x₅, E₅, I₅, J₅⟩ => ?_)
   -- Back to projective coordinates, in `R`.
-  refine WP.mono (winN_ok hL hA hp fromJN_ok a4 w4.1 w4.2.1 w4.2.2 I₅ (by rcb_sub))
+  refine WP.mono (winN_ok hL hA hp fromJN_ok a4 w4.1 w4.2.1 w4.2.2 I₅
+    (by intro x hx; simp only [rcbR, dblV, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
+        rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
     fun s₆ ⟨k₆, U₆, E₆, I₆, o₆, v₆⟩ => ?_
   have S₆ := S₅.next hL I₆.scr (k₆.mono clob_combClob) U₆
   obtain ⟨-, -, -, hz₅⟩ := S₅.ro_tmv hL hF
   have z₅ : E₅ K.zero = 0 := by
-    rw [← I₅.val _ (by simp), hz₅]; exact toM_zero _ _
+    rw [← I₅.val _ (by simp [dblV]), hz₅]; exact toM_zero _ _
   have r₆ : (E₆ K.R.x, E₆ K.R.y, E₆ K.R.z) = (E₅ K.E.x * E₅ K.E.z, E₅ K.E.y + E₅ K.zero,
       E₅ K.E.z * E₅ K.E.z * E₅ K.E.z) := v₆.trans (fromJN_run _)
   simp only [z₅, Prod.mk.injEq] at r₆
   have ez : E₆ K.E.z = E₅ K.E.z := o₆ _ (a4.apart _ (by simp [rcbR]))
-  refine ⟨S₆, by
-      rw [k₆.gpr _ (x19_not_clob _), k₅.gpr _ (x19_not_clob _), k₄.gpr _ (x19_not_clob _),
-        k₃.gpr _ (x19_not_clob _), k₂.gpr _ (x19_not_clob _), k₁.gpr _ (x19_not_clob _)],
+  refine ⟨S₆, by rw [k₆.gpr _ (x19_not_clob _), x₅, hx],
     fun x hx => I₆.lt x (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with
-      h | h | h | h <;> simp [h]),
+      h | h | h | h <;> simp [h, dblV]),
     E₅ K.E.x, E₅ K.E.y, E₅ K.E.z, J₅, ?_, ?_, ?_, ?_⟩
   · exact (I₆.val _ (by simp)).trans r₆.1
   · exact (I₆.val _ (by simp)).trans (r₆.2.1.trans (by grind))
   · exact (I₆.val _ (by simp)).trans r₆.2.2
-  · exact (I₆.val _ (by simp)).trans ez
+  · exact (I₆.val _ (by simp [dblV])).trans ez
 
 /-! ## `Y = 1` where `Z = 0` -/
 
@@ -297,7 +417,8 @@ theorem quad_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
     (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s₀ s : State} (hF : WinFixed K C base s₀ P k)
-    (hS : WinSt K C base size P s₀ s) {e : Nat}
+    (hS : WinSt K C base size P s₀ s) {e j : Nat} (hj : j < 2 ^ 32)
+    (hx : s.gpr .x19 = BitVec.ofNat 64 j)
     (hlt : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s.mem base x K.M.n < C.p)
     (hR : Rep C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
       (mul e P)) :
@@ -307,7 +428,7 @@ theorem quad_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
         (mul (16 * e) P) := by
   rw [WinCfg.quad]
-  refine WP.seq (WP.mono (jac_ok hL hA hp hC hM3 hP hF hS hlt hR)
+  refine WP.seq (WP.mono (jac_ok hL hA hp hC hM3 hP hF hS hj hx hlt hR)
     fun s₁ ⟨S₁, x₁, l₁, X, Y, Z, hJ, ex, ey, ez, eE⟩ => ?_)
   have hn := S₁.scr.nowrap
   refine WP.mono (ySel_ok hL hA S₁.scr (Nat.lt_trans hone_lt hpn)) fun s₂ ⟨v₂, k₂, U₂⟩ => ?_

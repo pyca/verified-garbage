@@ -18,7 +18,7 @@ def pair (p a b : Reg) : Prog isa :=
 /-- Five consecutive rate-168 blocks, with one state load and store. -/
 def fiveWith (core : Prog isa) (p a b : Reg) : Prog isa :=
   .seq (.block (VG.Impl.Sha3.AArch64.Neon.Pair.load p))
-    (.seq (Resident.streamWith core 21 5 a b)
+    (.seq (Resident.streamWith core 21 5 a b .x19)
       (.block (VG.Impl.Sha3.AArch64.Neon.Pair.store p)))
 
 def five (p a b : Reg) : Prog isa := fiveWith Resident.permute p a b

@@ -37,10 +37,12 @@ of `untouched`. -/
 abbrev KeepsUntouched (c : Prog isa) : Prop :=
   topAll (fun i => (dstOf i).all fun r => !untouched.contains r) c = true
 
-/-- Whether every function `c` calls is straight-line code that keeps the
-registers of `untouched` (`restores`). -/
+/-- Whether every function `c` calls keeps the registers of `untouched`:
+straight-line code that restores them (`restores`), or code none of whose
+instructions writes them. -/
 abbrev CallsKeep (c : Prog isa) : Prop :=
-  (c.calls.all fun nb => (straight nb.2).any fun is => untouched.all fun r => restores r is) = true
+  (c.calls.all fun nb => ((straight nb.2).any fun is => untouched.all fun r => restores r is) ||
+    untouched.all fun r => nb.2.allInstrs (keepsReg r)) = true
 
 theorem keepsReg_of_untouched {i : Instr} {r : Reg} (hr : r ∈ untouched)
     (h : ((dstOf i).all fun r => !untouched.contains r) = true) : keepsReg r i = true := by
@@ -58,7 +60,8 @@ theorem keepsReg_of_untouched {i : Instr} {r : Reg} (hr : r ∈ untouched)
 and that those functions keep, is kept. -/
 theorem gpr_top {r : Reg} (hr : r ∉ linkRegs) {c : Prog isa} {s s' : State} {t : List Leak}
     (h : Exec isa c s t s') (hc : topAll (keepsReg r) c = true)
-    (hb : (c.calls.all fun nb => (straight nb.2).any (restores r)) = true) : s'.gpr r = s.gpr r := by
+    (hb : (c.calls.all fun nb => (straight nb.2).any (restores r) || nb.2.allInstrs (keepsReg r)) = true) :
+    s'.gpr r = s.gpr r := by
   induction h with
   | block h =>
     exact execBlock_keep (fun s : State => s.gpr r) (ok := fun i => keepsReg r i = true)
@@ -79,10 +82,14 @@ theorem gpr_top {r : Reg} (hr : r ∉ linkRegs) {c : Prog isa} {s s' : State} {t
   | loopExit _ _ ih => exact ih hc hb
   | loopNext _ _ _ ih₁ ih₂ => rw [ih₂ hc hb, ih₁ hc hb]
   | call hc₁ e hr' _ =>
-    simp only [Code.calls, List.all_cons, Bool.and_eq_true] at hb
-    obtain ⟨is, his, hres⟩ := (Option.any_eq_true _ _).mp hb.1
-    obtain ⟨_, eb⟩ := straight_exec his e
-    rw [ret_eq hr', restores_ok hres eb, (call_eq hc₁).2.2.2.2 r hr]
+    simp only [Code.calls, List.all_cons, Bool.and_eq_true, Bool.or_eq_true] at hb
+    rcases hb.1 with hb | hb
+    · obtain ⟨is, his, hres⟩ := (Option.any_eq_true _ _).mp hb
+      obtain ⟨_, eb⟩ := straight_exec his e
+      rw [ret_eq hr', restores_ok hres eb, (call_eq hc₁).2.2.2.2 r hr]
+    · rw [ret_eq hr', Exec.gpr (fun i hi hd => by
+          have := List.all_eq_true.mp ((Code.allInstrs_eq _ _) ▸ hb) i hi
+          simp [keepsReg, hd] at this) e (.inr hr), (call_eq hc₁).2.2.2.2 r hr]
   | frame hp _ hq ih =>
     simp only [topAll, Bool.and_eq_true] at hc
     simp only [Code.calls] at hb
@@ -108,8 +115,10 @@ theorem untouched_keep {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec 
         simp only [topAll, Bool.and_eq_true]; exact fun h => ⟨⟨hpq i h.1.1, ih h.1.2⟩, hpq j h.2⟩
     exact this _ _ (fun i hi => keepsReg_of_untouched h hi) c hu
   · refine List.all_eq_true.mpr fun nb hnb => ?_
-    obtain ⟨is, his, hres⟩ := (Option.any_eq_true _ _).mp (List.all_eq_true.mp hn nb hnb)
-    exact (Option.any_eq_true _ _).mpr ⟨is, his, List.all_eq_true.mp hres r h⟩
+    rcases Bool.or_eq_true_iff.mp (List.all_eq_true.mp hn nb hnb) with h' | h'
+    · obtain ⟨is, his, hres⟩ := (Option.any_eq_true _ _).mp h'
+      exact Bool.or_eq_true_iff.mpr (.inl ((Option.any_eq_true _ _).mpr ⟨is, his, List.all_eq_true.mp hres r h⟩))
+    · exact Bool.or_eq_true_iff.mpr (.inr (List.all_eq_true.mp h' r h))
 
 /-- A run that restores `x19`–`x25` and `x30`, writes no other callee-saved
 register outside the functions it calls, which keep them, and writes no

@@ -102,59 +102,6 @@ theorem mulS_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q :
       fun p hp => (hv p hp).1, fun hq p hp => ?_⟩, hf, hg, hrd, hwr, hx⟩
   exact mont_mul2 (hR p hp) (h.yv hq p hp) (vs hq p hp) (hv p hp).2
 
-/-- After `4 - n` squarings, from `s₀`. -/
-structure SqInv (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (B : Addr) (M k x : Nat → Nat) (Q : Prop) (E : Nat → Nat) (n : Nat)
-    (t : State) : Prop where
-  r15 : t.gpr .r15 = BitVec.ofNat 64 n
-  st : ExpSt l t.mem B M k x Q (fun p => E p * 2 ^ (4 - n))
-  frame : Out2 l B l.oY l.NB s₀.mem t.mem
-  gpr : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
-    r ≠ .r15 → t.gpr r = s₀.gpr r
-  rd : t.rd = s₀.rd
-  wr : t.wr = s₀.wr
-  mxcsr : t.mxcsr = s₀.mxcsr
-
-/-- The four squarings: `Y ≡ x^E R` becomes `x^(16 E) R`. -/
-theorem sqLoop_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E : Nat → Nat}
-    (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p))
-    (h : ExpSt l s.mem B M k x Q E) :
-    WP isa (.seq (.block [.mov32 .r15 (.imm 4)])
-      (.loop (.seq (amm l l.oY l.oY l.oY) (.block [.alu .sub .r15 (.imm 1)])) .ne)) s
-      fun s' => SqInv l s B M k x Q E 0 s' := by
-  refine WP.seq ?_
-  rw [WP.block_cons_iff]
-  refine ⟨s.setReg32 .r15 4, rfl, WP.block_nil ?_⟩
-  have i₀ : SqInv l s B M k x Q E 4 (s.setReg32 .r15 4) :=
-    ⟨by rw [State.setReg32, RegUpd.gpr_setReg_self]; rfl, by
-      show ExpSt l s.mem B M k x Q (fun p => E p * 2 ^ (4 - 4))
-      simp only [Nat.sub_self, Nat.pow_zero, Nat.mul_one]; exact h, Out2.refl _ _ _ _,
-      fun r _ _ _ _ _ _ _ _ _ h15 => by rw [State.setReg32, RegUpd.gpr_setReg_of_ne _ _ h15], rfl, rfl, rfl⟩
-  refine WP.loop (M := isa) (c := .ne) (Q := SqInv l s B M k x Q E 0)
-    (fun n t => 1 ≤ n ∧ n ≤ 4 ∧ SqInv l s B M k x Q E n t) ?_ 4 _ ⟨by decide, by decide, i₀⟩
-  intro n t ⟨h1, h4, hI⟩
-  have hB' : t.gpr .rbx = B := by
-    rw [hI.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide)]; exact hB
-  refine WP.seq (WP.mono (sq_ok hl hB' (hs.congr hI.wr) hR hI.st) fun t₁ ⟨st₁, f₁, g₁, rd₁, wr₁, x₁⟩ => ?_)
-  have r15₁ : t₁.gpr .r15 = BitVec.ofNat 64 n := by
-    rw [g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide)]; exact hI.r15
-  refine WP.mono (r15Dec_ok h1 h4 r15₁) fun t₂ ⟨r15₂, z₂, k₂, me₂, x₂⟩ => ?_
-  have hI' : SqInv l s B M k x Q E (n - 1) t₂ := ⟨r15₂, ?_, ?_, fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 => ?_,
-    by rw [k₂.2.1, rd₁, hI.rd], by rw [k₂.2.2, wr₁, hI.wr], by rw [x₂, x₁, hI.mxcsr]⟩
-  · simp only [eval, z₂, Option.map_some]
-    rcases Nat.eq_or_lt_of_le h1 with rfl | hn
-    · exact .inl ⟨by simp, hI'⟩
-    · exact .inr ⟨by simp only [decide_eq_false (show ¬ (n - 1 = 0) by omega_using [hn]), Bool.not_false], n - 1,
-        by omega_using [hn], by omega_using [hn], by omega_using [h4], hI'⟩
-  · rw [me₂]
-    refine ⟨st₁.ar, st₁.tab, st₁.y, fun hq p hp => ?_⟩
-    rw [st₁.yv hq p hp, show 2 * (E p * 2 ^ (4 - n)) = E p * 2 ^ (4 - (n - 1)) by
-      rw [show 4 - (n - 1) = (4 - n) + 1 by omega_using [h1, h4], Nat.pow_succ]; grind]
-  · rw [me₂]; exact hI.frame.trans f₁
-  · rw [k₂.gpr (by simp [r10]), g₁ r r1 r2 r3 r4 r5 r6 r7 r8 r9]
-    exact hI.gpr r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10
-
 theorem eaG' (t : State) (r : Reg) (d : Nat) : t.ea (at_ r d) = t.gpr r + BitVec.ofNat 64 d := by
   simp only [State.ea, at_]
   exact congrArg _ (BitVec.ofInt_natCast ..)
@@ -240,11 +187,125 @@ theorem sel2_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q :
 def rotCode (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (p : Nat) : List Instr :=
   [.mov .rax (.mem (at_ .rbx (l.D * p + l.oV))), .shift .ror .rax 60, .store (at_ .rbx (l.D * p + l.oV)) .rax]
 
+theorem amm_winSetup (b : Nat) : amm l l.oY l.oY b = .seq (.block (winSetup l b)) (ammCore l) := rfl
+
+/-- The comparison of `r15` with 1. -/
+theorem r15Cmp_ok {s : State} {n : Nat} (hn : n ≤ 5) (h15 : s.gpr .r15 = BitVec.ofNat 64 n) :
+    WP isa (.block [.alu .cmp .r15 (.imm 1)]) s fun s' =>
+      isa.eval .e s' = some (n == 1) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
+        s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  let t := arithFlags s (s.gpr .r15 - (1 : BitVec 32).signExtend 64)
+    (decide ((s.gpr .r15).toNat < ((1 : BitVec 32).signExtend 64).toNat))
+    (subOverflow (s.gpr .r15) ((1 : BitVec 32).signExtend 64) (s.gpr .r15 - (1 : BitVec 32).signExtend 64))
+  refine WP.of_runBlock ⟨t, by rw [runBlock_cons]; rfl, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · change t.zf = _
+    simp only [t, VG.X86_64.RegUpd.zf_arithFlags, h15]
+    rcases n with _ | _ | _ | _ | _ | _ | n <;> first | omega | decide
+  all_goals rfl
+
+/-- The loop of a window with `n` multiplications left, from `s₀`. -/
+structure MulInv (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (B : Addr) (M k x : Nat → Nat)
+    (Q : Prop) (E v : Nat → Nat) (n : Nat) (t : State) : Prop where
+  r15 : t.gpr .r15 = BitVec.ofNat 64 n
+  st : ExpSt l t.mem B M k x Q (fun p => E p * 2 ^ (5 - n))
+  gs : ∀ p < 2, Good l t.mem B M l.oS p ∧
+    (Q → val52 l t.mem B (l.D * p + l.oS) % M p = x p ^ v p * 2 ^ (52 * l.L) % M p)
+  frame : Out2 l B l.oY l.NB s₀.mem t.mem
+  gpr : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
+    r ≠ .r15 → t.gpr r = s₀.gpr r
+  rd : t.rd = s₀.rd
+  wr : t.wr = s₀.wr
+  mxcsr : t.mxcsr = s₀.mxcsr
+
+/-- The loop body of a window. -/
+def mulBody (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prog isa :=
+  .seq (.block [.alu .cmp .r15 (.imm 1)])
+    (.seq (.ite .e (.block (winSetup l l.oS)) (.block (winSetup l l.oY)))
+      (.seq (ammCore l) (.block [.alu .sub .r15 (.imm 1)])))
+
+/-- The five multiplications: four squarings, then `Y S`. `Y ≡ x^E R` and
+`S ≡ x^v R` give `Y ≡ x^(16 E + v) R`. -/
+theorem mulLoop_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E v : Nat → Nat}
+    (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p))
+    (h : MulInv l s B M k x Q E v 5 s) :
+    WP isa (.loop (mulBody l) .ne) s fun s' =>
+      ExpSt l s'.mem B M k x Q (fun p => E p * 16 + v p) ∧ Out2 l B l.oY l.NB s.mem s'.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
+        r ≠ .r15 → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
+  refine WP.loop (M := isa) (fun n t => 1 ≤ n ∧ n ≤ 5 ∧ MulInv l s B M k x Q E v n t) ?_ 5 s
+    ⟨by decide, by decide, h⟩
+  intro n t ⟨h1, h5, hI⟩
+  have hB' : t.gpr .rbx = B := by
+    rw [hI.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide)]; exact hB
+  refine WP.seq (WP.mono (r15Cmp_ok h5 hI.r15) fun t₀ ⟨e₀, g₀, m₀, rd₀, wr₀, x₀⟩ => ?_)
+  have hB₀ : t₀.gpr .rbx = B := by rw [g₀]; exact hB'
+  have hs₀ : Scr t₀ B (2 * l.D) := hs.congr (by rw [wr₀, hI.wr])
+  have st₀ : ExpSt l t₀.mem B M k x Q (fun p => E p * 2 ^ (5 - n)) := by rw [m₀]; exact hI.st
+  -- after the multiplication and the count
+  have after : ∀ (t₁ : State) (E' : Nat → Nat), ExpSt l t₁.mem B M k x Q E' →
+      Out2 l B l.oY l.NB t₀.mem t₁.mem →
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 →
+        r ≠ .r12 → t₁.gpr r = t₀.gpr r) → t₁.rd = t₀.rd → t₁.wr = t₀.wr → t₁.mxcsr = t₀.mxcsr →
+      (n = 1 → E' = fun p => E p * 16 + v p) → (1 < n → E' = fun p => E p * 2 ^ (5 - (n - 1))) →
+      WP isa (.block [.alu .sub .r15 (.imm 1)]) t₁ fun t₂ =>
+        (isa.eval .ne t₂ = some false ∧ (ExpSt l t₂.mem B M k x Q (fun p => E p * 16 + v p) ∧
+          Out2 l B l.oY l.NB s.mem t₂.mem ∧
+          (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 →
+            r ≠ .r12 → r ≠ .r15 → t₂.gpr r = s.gpr r) ∧
+          t₂.rd = s.rd ∧ t₂.wr = s.wr ∧ t₂.mxcsr = s.mxcsr)) ∨
+        (isa.eval .ne t₂ = some true ∧ ∃ m < n, 1 ≤ m ∧ m ≤ 5 ∧ MulInv l s B M k x Q E v m t₂) := by
+    intro t₁ E' st₁ f₁ g₁ rd₁ wr₁ x₁ hlast hmore
+    have r15₁ : t₁.gpr .r15 = BitVec.ofNat 64 n := by
+      rw [g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+        (by decide), g₀]; exact hI.r15
+    refine WP.mono (r15Dec_ok h1 h5 r15₁) fun t₂ ⟨r15₂, z₂, k₂, me₂, x₂⟩ => ?_
+    have f₀₁ : Out2 l B l.oY l.NB t.mem t₁.mem := by rw [← m₀]; exact f₁
+    have f₂ : Out2 l B l.oY l.NB s.mem t₂.mem := by rw [me₂]; exact hI.frame.trans f₀₁
+    have g₂ : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 →
+        r ≠ .r12 → r ≠ .r15 → t₂.gpr r = s.gpr r := fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 => by
+      rw [k₂.gpr (by simp [r10]), g₁ r r1 r2 r3 r4 r5 r6 r7 r8 r9, g₀]
+      exact hI.gpr r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10
+    have rd₂ : t₂.rd = s.rd := by rw [k₂.2.1, rd₁, rd₀, hI.rd]
+    have wr₂ : t₂.wr = s.wr := by rw [k₂.2.2, wr₁, wr₀, hI.wr]
+    have xx₂ : t₂.mxcsr = s.mxcsr := by rw [x₂, x₁, x₀, hI.mxcsr]
+    simp only [eval, z₂, Option.map_some]
+    rcases Nat.eq_or_lt_of_le h1 with rfl | hn
+    · refine .inl ⟨by simp, ?_, f₂, g₂, rd₂, wr₂, xx₂⟩
+      rw [me₂, ← hlast rfl]; exact st₁
+    · refine .inr ⟨by simp only [decide_eq_false (show ¬ (n - 1 = 0) by omega_using [hn]),
+        Bool.not_false], n - 1, by omega_using [hn], by omega_using [hn], by omega_using [h5],
+        r15₂, ?_, ?_, f₂, g₂, rd₂, wr₂, xx₂⟩
+      · rw [me₂, ← hmore hn]; exact st₁
+      · intro p hp
+        have hf : Out2 l B l.oY l.NB t.mem t₂.mem := by rw [me₂]; exact f₀₁
+        obtain ⟨g, w⟩ := hI.gs p hp
+        exact ⟨g.of_out2 hl hp hf (.inr (by omega_using [o2, o4])) (by omega_using [o4, o10]) (by omega_using [o2, o10]),
+          fun hq => by rw [hf.val hl hp (.inr (by omega_using [o2, o4])) (by omega_using [o4, o10]) (by omega_using [o2, o10])]; exact w hq⟩
+  refine WP.seq ?_
+  by_cases h1' : n = 1
+  · subst n
+    refine WP.ite true e₀ (fun _ => ?_) (fun h => Bool.noConfusion h)
+    have hm := mulS_ok hl (v := v) hB₀ hs₀ hR st₀
+      (fun p hp => by rw [m₀]; exact (hI.gs p hp).1) (fun hq p hp => by rw [m₀]; exact (hI.gs p hp).2 hq)
+    rw [amm_winSetup, WP.seq_iff] at hm
+    refine WP.mono hm fun u hu => WP.seq (WP.mono hu fun t₁ ⟨st₁, f₁, g₁, rd₁, wr₁, x₁⟩ => ?_)
+    refine after t₁ _ st₁ f₁ g₁ rd₁ wr₁ x₁ (fun _ => ?_) (fun h => absurd h (by decide))
+    funext p; rfl
+  · refine WP.ite false (by rw [e₀]; simp [h1']) (fun h => Bool.noConfusion h) (fun _ => ?_)
+    have hm := sq_ok hl hB₀ hs₀ hR st₀
+    rw [amm_winSetup, WP.seq_iff] at hm
+    refine WP.mono hm fun u hu => WP.seq (WP.mono hu fun t₁ ⟨st₁, f₁, g₁, rd₁, wr₁, x₁⟩ => ?_)
+    refine after t₁ _ st₁ f₁ g₁ rd₁ wr₁ x₁ (fun h => absurd h h1') (fun _ => ?_)
+    funext p
+    rw [show 5 - (n - 1) = (5 - n) + 1 by omega_using [h1, h5, h1'], Nat.pow_succ]; grind
+
 theorem window_eq : window l =
-    ([.block [.mov32 .r15 (.imm 4)],
-      .loop (.seq (amm l l.oY l.oY l.oY) (.block [.alu .sub .r15 (.imm 1)])) .ne] : List (Prog isa)) ++
-    ((select l 0 ++ select l 1) ++
-      ([.block (rotCode l 0 ++ rotCode l 1), amm l l.oY l.oY l.oS] : List (Prog isa))) := by
+    (select l 0 ++ select l 1) ++
+      ([.block (rotCode l 0 ++ rotCode l 1 ++ ([.mov32 .r15 (.imm 5)] : List Instr)), .loop (mulBody l) .ne] :
+        List (Prog isa)) := by
   simp only [window, List.append_assoc]; rfl
 
 /-- A window: `Y ≡ x^E R` becomes `x^(16 E + v) R` for the top 4 bits `v` of
@@ -263,22 +324,17 @@ theorem window_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q
   have hD := hl.D_bounds
   have hn := hs.nowrap
   rw [window_eq]
-  refine wp_seqs_app (by simp) (by simp) (WP.mono (sqLoop_ok hl hB hs hR h) fun s₁ i₁ => ?_)
-  have hB₁ : s₁.gpr .rbx = B := by
-    rw [i₁.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide)]; exact hB
-  have w₁ : ∀ p < 2, word s₁.mem B (l.D * p + l.oV) = word s.mem B (l.D * p + l.oV) := fun p hp =>
-    i₁.frame.word_at hl hp (.inr (by omega_using [o2, o8])) (by omega_using [o8, o10]) (by omega_using [o2, o10])
-  have nib₁ : ∀ p < 2, nib l s₁.mem B p = nib l s.mem B p := fun p hp => by unfold nib; rw [w₁ p hp]
   refine wp_seqs_app (by simp [select]) (by simp)
-    (WP.mono (sel2_ok hl hB₁ (hs.congr i₁.wr) i₁.st) fun s₂ ⟨st₂, gs₂, w₂, f₂, g₂, rd₂, wr₂, x₂⟩ => ?_)
-  have hB₂ : s₂.gpr .rbx = B := by rw [g₂ _ (by decide) (by decide) (by decide) (by decide)]; exact hB₁
-  have hs₂ : Scr s₂ B (2 * l.D) := hs.congr (by rw [wr₂, i₁.wr])
+    (WP.mono (sel2_ok hl hB hs h) fun s₂ ⟨st₂, gs₂, w₂, f₂, g₂, rd₂, wr₂, x₂⟩ => ?_)
+  have hB₂ : s₂.gpr .rbx = B := by rw [g₂ _ (by decide) (by decide) (by decide) (by decide)]; exact hB
+  have hs₂ : Scr s₂ B (2 * l.D) := hs.congr wr₂
   refine WP.seq ?_
-  rw [WP.block_append_iff]
+  rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (rotV_ok (p := 0) (by decide) hB₂ hs₂) fun s₃ ⟨m₃, k₃, x₃⟩ => ?_
   have hB₃ : s₃.gpr .rbx = B := by rw [k₃.gpr (by decide)]; exact hB₂
   refine WP.mono (rotV_ok (p := 1) (by decide) hB₃ (hs₂.congr k₃.2.2)) fun s₄ ⟨m₄, k₄, x₄⟩ => ?_
+  rw [WP.block_cons_iff]
+  refine ⟨s₄.setReg32 .r15 5, rfl, WP.block_nil ?_⟩
   have o₃ : Outside B (l.D * 0 + l.oV) 8 s₂.mem s₃.mem := by
     rw [m₃]; exact writeW_outside _ B _ (by omega_using [o8, o10, hn])
   have o₄ : Outside B (l.D * 1 + l.oV) 8 s₃.mem s₄.mem := by
@@ -286,27 +342,44 @@ theorem window_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q
   have f₄ : Out2 l B l.oV 8 s₂.mem s₄.mem :=
     (Out2.of_outside (p := 0) (by decide) o₃).trans (Out2.of_outside (p := 1) (by decide) o₄)
   have hB₄ : s₄.gpr .rbx = B := by rw [k₄.gpr (by decide)]; exact hB₃
-  have st₄ : ExpSt l s₄.mem B M k x Q (fun p => E p * 2 ^ (4 - 0)) :=
+  let s₅ := s₄.setReg32 .r15 5
+  have hB₅ : s₅.gpr .rbx = B := by
+    change (s₄.setReg32 .r15 5).gpr .rbx = _
+    rw [State.setReg32, RegUpd.gpr_setReg_of_ne _ _ (by decide)]; exact hB₄
+  have st₄ : ExpSt l s₅.mem B M k x Q (fun p => E p * 2 ^ (5 - 5)) :=
     ⟨st₂.ar.of_out2 hl f₄ (by omega_using [o2, o8]) (by omega_using [o8, o10]),
         st₂.tab_of hl f₄ (.inr (by omega_using [o5, o8])) (by omega_using [o8, o10]),
       fun p hp => (st₂.y p hp).of_out2 hl hp f₄ (.inl (by omega_using [o2, o8])) (by omega_using [o2, o10]) (by omega_using [o8, o10]),
-      fun hq p hp => by rw [f₄.val hl hp (.inl (by omega_using [o2, o8])) (by omega_using [o2, o10]) (by omega_using [o8, o10])]; exact st₂.yv hq p hp⟩
-  refine WP.mono (mulS_ok hl (v := fun p => nib l s₁.mem B p) hB₄ (hs₂.congr (by rw [k₄.2.2, k₃.2.2])) hR st₄
-    (fun p hp => ((gs₂ p hp).1).of_out2 hl hp f₄ (.inl (by omega_using [o4, o8])) (by omega_using [o4, o10]) (by omega_using [o8, o10]))
-    (fun hq p hp => by rw [f₄.val hl hp (.inl (by omega_using [o4, o8])) (by omega_using [o4, o10]) (by omega_using [o8, o10])]; exact (gs₂ p hp).2 hq))
-    fun s₅ ⟨st₅, f₅, g₅, rd₅, wr₅, x₅⟩ => ⟨?_, fun p hp => ?_, ?_, fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 => ?_,
-      by rw [rd₅, k₄.2.1, k₃.2.1, rd₂, i₁.rd], by rw [wr₅, k₄.2.2, k₃.2.2, wr₂, i₁.wr],
-      by rw [x₅, x₄, x₃, x₂, i₁.mxcsr]⟩
-  · refine ⟨st₅.ar, st₅.tab, st₅.y, fun hq p hp => ?_⟩
-    rw [st₅.yv hq p hp, nib₁ p hp]
-  · rw [f₅.word_at hl hp (.inr (by omega_using [o2, o8])) (by omega_using [o8, o10]) (by omega_using [o2, o10])]
+      fun hq p hp => by
+        rw [show E p * 2 ^ (5 - 5) = E p by simp]
+        change val52 l s₄.mem B _ % M p = _
+        rw [f₄.val hl hp (.inl (by omega_using [o2, o8])) (by omega_using [o2, o10]) (by omega_using [o8, o10])]
+        exact st₂.yv hq p hp⟩
+  have hI : MulInv l s₅ B M k x Q E (fun p => nib l s.mem B p) 5 s₅ :=
+    ⟨by change (s₄.setReg32 .r15 5).gpr .r15 = _; rw [State.setReg32, RegUpd.gpr_setReg_self]; rfl, st₄,
+      fun p hp => ⟨((gs₂ p hp).1).of_out2 hl hp f₄ (.inl (by omega_using [o4, o8])) (by omega_using [o4, o10])
+        (by omega_using [o8, o10]), fun hq => by
+        change val52 l s₄.mem B _ % M p = _
+        rw [f₄.val hl hp (.inl (by omega_using [o4, o8])) (by omega_using [o4, o10]) (by omega_using [o8, o10])]
+        exact (gs₂ p hp).2 hq⟩,
+      Out2.refl _ _ _ _, fun _ _ _ _ _ _ _ _ _ _ _ => rfl, rfl, rfl, rfl⟩
+  refine WP.mono (mulLoop_ok hl hB₅ (hs₂.congr (by
+      change s₄.wr = _; rw [k₄.2.2, k₃.2.2])) hR hI)
+    fun s₆ ⟨st₆, f₆, g₆, rd₆, wr₆, x₆⟩ => ⟨st₆, fun p hp => ?_, ?_, fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 => ?_,
+      by rw [rd₆]; change s₄.rd = _; rw [k₄.2.1, k₃.2.1, rd₂],
+      by rw [wr₆]; change s₄.wr = _; rw [k₄.2.2, k₃.2.2, wr₂],
+      by rw [x₆]; change s₄.mxcsr = _; rw [x₄, x₃, x₂]⟩
+  · rw [f₆.word_at hl hp (.inr (by omega_using [o2, o8])) (by omega_using [o8, o10]) (by omega_using [o2, o10])]
+    change word s₄.mem B _ = _
     rcases (by omega_using [hp] : p = 0 ∨ p = 1) with rfl | rfl
     · rw [o₄.word (by omega_using [o10]) (by omega_using [o8, o10, hn]), m₃, VG.Proof.Bignum.word_writeW_self,
-        w₂ 0 (by decide), w₁ 0 (by decide)]
+        w₂ 0 (by decide)]
     · rw [m₄, VG.Proof.Bignum.word_writeW_self, o₃.word (by omega_using [o10]) (by omega_arith),
-        w₂ 1 (by decide), w₁ 1 (by decide)]
-  · exact ((OutW.ofY i₁.frame).trans (OutW.ofS f₂)).trans ((OutW.ofV f₄).trans (OutW.ofY f₅))
-  · rw [g₅ r r1 r2 r3 r4 r5 r6 r7 r8 r9, k₄.gpr (by simp [r1]), k₃.gpr (by simp [r1]), g₂ r r1 r2 r3 r5]
-    exact i₁.gpr r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10
+        w₂ 1 (by decide)]
+  · exact ((OutW.ofS f₂).trans (OutW.ofV f₄)).trans (OutW.ofY f₆)
+  · rw [g₆ r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10]
+    change (s₄.setReg32 .r15 5).gpr r = _
+    rw [State.setReg32, RegUpd.gpr_setReg_of_ne _ _ r10, k₄.gpr (by simp [r1]), k₃.gpr (by simp [r1]),
+      g₂ r r1 r2 r3 r5]
 
 end VG.Proof.Bignum.X86_64.Ifma

@@ -17,6 +17,9 @@ structure HeadPre (keys : Nat → DesSchedule) (base : Addr) (s : State) : Prop 
   saveWrite : ∀ i < 7, InRegions s.wr (s.gpr .rdx + BitVec.ofNat 64 (8 * i)) 8
   countRead : InRegions (s.rd ++ s.wr) (countAddr s) 8
   countWrite : InRegions s.wr (countAddr s) 8
+  stepWrite : InRegions s.wr (stepAddr s) 8
+  passesRead : InRegions (s.rd ++ s.wr) (passesAddr s) 8
+  passesWrite : InRegions s.wr (passesAddr s) 8
   dataRead : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 8
   dataSeparate : (⟨s.gpr .rsi, 8⟩ : Region).Disjoint (saveRegion s)
   read : ∀ c < 3, ∀ d : Direction, ∀ j < 16,
@@ -43,7 +46,7 @@ theorem ready_afterSave {keys : Nat → DesSchedule} {base : Addr} {s t : State}
     (hwr : t.wr = s.wr) (hsaved : Saved s t) (hf : Frame [saveRegion s] s.mem t.mem) :
     Ready keys base t := by
   have hbase : t.gpr .rdx = s.gpr .rdx := congrFun hg .rdx
-  refine ⟨hp.spills.congr hbase hbase hrd hwr, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨hp.spills.congr hbase hbase hrd hwr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact (hsaved 6 (by decide)).trans hp.pointer
   · rw [hrd, hwr, show savedKeyAddr t = savedKeyAddr s from congrArg (· + BitVec.ofNat 64 48) hbase]
     exact hp.saveRead 6 (by decide)
@@ -51,9 +54,15 @@ theorem ready_afterSave {keys : Nat → DesSchedule} {base : Addr} {s t : State}
     exact hp.countRead
   · rw [hwr, show countAddr t = countAddr s from congrArg (· + BitVec.ofNat 64 56) hbase]
     exact hp.countWrite
+  · rw [hwr, show stepAddr t = stepAddr s from congrArg (· + BitVec.ofNat 64 448) hbase]
+    exact hp.stepWrite
+  · rw [hrd, hwr, show passesAddr t = passesAddr s from congrArg (· + BitVec.ofNat 64 456) hbase]
+    exact hp.passesRead
+  · rw [hwr, show passesAddr t = passesAddr s from congrArg (· + BitVec.ofNat 64 456) hbase]
+    exact hp.passesWrite
   · rw [hrd, hwr]; exact hp.read
   · rw [show workRegion t = workRegion s from
-      congrArg (fun p => (⟨p + BitVec.ofNat 64 56, 392⟩ : Region)) hbase]
+      congrArg (fun p => (⟨p + BitVec.ofNat 64 56, 408⟩ : Region)) hbase]
     exact hp.separateWork
   · intro c hc d j hj
     have hmem := hf.readW (a := keyAddr (componentBase base c) d j) (w := 64)

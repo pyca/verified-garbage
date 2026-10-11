@@ -215,10 +215,10 @@ def digit : List Instr := winIndex K.w ++ hornerBits K.bits K.w ++ magnitudeH K.
 
 /-- Iteration `j = x19 - 1` (with `x19` counting down from `J`): the entry,
 negated for a negative digit, added to `A`. -/
-def step (publicLookup : Bool := false) : Prog isa :=
+def step (publicLookup : Bool := false) (pa : Option (String × Nat) := none) : Prog isa :=
   .seq (.block (decCounter :: K.digit ++ (if publicLookup then K.selectPublic else K.select))) <|
   .seq (.block (negYW K.M K.w K.neg K.zero K.E.y K.bits)) <|
-  .seq (fprogB K.M (rcb3 K.S K.A K.E K.D)) <|
+  .seq (addP K.M K.S K.A K.E K.D pa) <|
   .block (copyPt K.M.n K.A K.D)
 
 /-- `A = [c]G`, the bytes of the table of bits past the scalar's cleared (to
@@ -230,8 +230,8 @@ def init : List Instr :=
     [.movz .x .x19 (BitVec.ofNat 16 K.J) 0]
 
 /-- `[k]G` into `A`. -/
-def comb (publicLookup : Bool := false) : Prog isa :=
-  .seq (.block K.init) (.loop (K.step publicLookup) (.nonzero .x .x19))
+def comb (publicLookup : Bool := false) (pa : Option (String × Nat) := none) : Prog isa :=
+  .seq (.block K.init) (.loop (K.step publicLookup pa) (.nonzero .x .x19))
 
 end TCombCfg
 

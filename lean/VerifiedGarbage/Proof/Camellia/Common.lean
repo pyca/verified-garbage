@@ -303,4 +303,13 @@ theorem schedule_of_stores {m : Mem} {S : Addr} {ks : List (Nat × Nat × Bool)}
   simp only [subkeyWords, List.getD_eq_getElem?_getD, List.getElem?_map,
     List.getElem?_eq_getElem hi, Option.map_some, Option.getD_some]
 
+/-- The values `[KL, KR, KA, KB]` of a key. -/
+def keyVals (key : List Byte) : List (BitVec 128) :=
+  [(Spec.Camellia.klkr key).1, (Spec.Camellia.klkr key).2,
+    (Spec.Camellia.kakb (Spec.Camellia.klkr key).1 (Spec.Camellia.klkr key).2).1,
+    (Spec.Camellia.kakb (Spec.Camellia.klkr key).1 (Spec.Camellia.klkr key).2).2]
+
+/-- The value `v` as a number, from its halves. -/
+def valNum (key : List Byte) (v : Nat) : BitVec 128 := hiW ((keyVals key).getD v 0) ++ loW ((keyVals key).getD v 0)
+
 end VG.Proof.Camellia

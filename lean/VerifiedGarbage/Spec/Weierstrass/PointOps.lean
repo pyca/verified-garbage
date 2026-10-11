@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.P521
 /-!
 # Point doubling and addition for `a = -3` in a curve's working space, as functions
 
-**Trusted** (as every file in `Spec/`). The contracts of four functions for
+**Trusted** (as every file in `Spec/`). The contracts of five functions for
 each curve of `curves` (P-224, P-256, P-384 and P-521, all with `a = -3`),
 on points kept where the x86-64 code of the curve's ECDSA, ECDH and key
 derivation keeps them, so that it can call one copy of each operation
@@ -28,7 +28,10 @@ instead of repeating it at every use:
   (`(X : Y : Z)` for `(X / Z, Y / Z)`) for `Q` with `Z = 1`, by
   `rcbAddAffine`, the complete mixed addition for `a = -3` of Renes,
   Costello and Batina (*Complete addition formulas for prime order elliptic
-  curves*, EUROCRYPT 2016, Algorithm 5).
+  curves*, EUROCRYPT 2016, Algorithm 5);
+* `vg_<curve>_proj_add(ws)`: `O = P + Q` in projective coordinates, by
+  `rcbAdd`, the complete addition for `a = -3` of the same paper
+  (Algorithm 4), of which `rcbAddAffine` is the case `Z₂ = 1`.
 
 They are not algorithms of a standard but the arithmetic the algorithms on
 the curve are built from: what they compute is stated on the coordinates as
@@ -206,6 +209,55 @@ def rcbAddAffine (b X1 Y1 Z1 X2 Y2 : Fin p) : Fin p × Fin p × Fin p :=
   let Z3 := Z3 + t1
   (X3, Y3, Z3)
 
+/-- The complete addition for `a = -3`, Algorithm 4 of Renes, Costello and
+Batina, in its stated order, on the coordinates of `(X1 : Y1 : Z1)` and
+`(X2 : Y2 : Z2)`, for the coefficient `b`. -/
+def rcbAdd (b X1 Y1 Z1 X2 Y2 Z2 : Fin p) : Fin p × Fin p × Fin p :=
+  let t0 := X1 * X2
+  let t1 := Y1 * Y2
+  let t2 := Z1 * Z2
+  let t3 := X1 + Y1
+  let t4 := X2 + Y2
+  let t3 := t3 * t4
+  let t4 := t0 + t1
+  let t3 := t3 - t4
+  let t4 := Y1 + Z1
+  let X3 := Y2 + Z2
+  let t4 := t4 * X3
+  let X3 := t1 + t2
+  let t4 := t4 - X3
+  let X3 := X1 + Z1
+  let Y3 := X2 + Z2
+  let X3 := X3 * Y3
+  let Y3 := t0 + t2
+  let Y3 := X3 - Y3
+  let Z3 := b * t2
+  let X3 := Y3 - Z3
+  let Z3 := X3 + X3
+  let X3 := X3 + Z3
+  let Z3 := t1 - X3
+  let X3 := t1 + X3
+  let Y3 := b * Y3
+  let t1 := t2 + t2
+  let t2 := t1 + t2
+  let Y3 := Y3 - t2
+  let Y3 := Y3 - t0
+  let t1 := Y3 + Y3
+  let Y3 := t1 + Y3
+  let t1 := t0 + t0
+  let t0 := t1 + t0
+  let t0 := t0 - t2
+  let t1 := t4 * Y3
+  let t2 := t0 * Y3
+  let Y3 := X3 * Z3
+  let Y3 := Y3 + t2
+  let X3 := t3 * X3
+  let X3 := X3 - t1
+  let Z3 := t4 * Z3
+  let t1 := t3 * t0
+  let Z3 := Z3 + t1
+  (X3, Y3, Z3)
+
 /-! ## The working space -/
 
 /-- `ws: *mut [u64; 1024]`. -/
@@ -344,6 +396,17 @@ def projAddAffineContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I 
         (C.el ws m (C.qAt + 8 * C.k))) ws m m')
     (stack := stack)
 
+/-- `proj_add`: `O = P + Q`. -/
+def projAddContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+  sig.contract A
+    (pre := fun ws m => C.ModOk ws m ∧ C.Below (C.pointAt m ws C.pAt) ∧
+      C.Below (C.pointAt m ws C.qAt) ∧ C.CoordBelow ws m C.bAt)
+    (post := fun ws m m' _ =>
+      let P := C.pt ws m C.pAt
+      let Q := C.pt ws m C.qAt
+      C.Result C.oAt (rcbAdd (C.el ws m C.bAt) P.1 P.2.1 P.2.2 Q.1 Q.2.1 Q.2.2) ws m m')
+    (stack := stack)
+
 /-! ## The functions -/
 
 /-- The Rust module of the curve's functions. -/
@@ -362,8 +425,8 @@ def common : String :=
     of `ws`: `P` at {C.ptDoc C.pAt}, `Q` at {C.ptDoc C.qAt}. The function reads `p` at byte \
     {C.modAt}. The function's own working space is {C.ownDoc}; every other byte of `ws` but \
     the result's keeps its value.\n\n\
-    Contract: `doubleContract`, `addCachedContract`, `addAffineContract` or \
-    `projAddAffineContract` of `VG.Spec.Weierstrass.PointOps.Curve`."
+    Contract: `doubleContract`, `addCachedContract`, `addAffineContract`, \
+    `projAddAffineContract` or `projAddContract` of `VG.Spec.Weierstrass.PointOps.Curve`."
 
 /-- The `# Safety` items but for what the signature gives, after `reads`,
 the numbers the function reads besides `p`. -/
@@ -424,6 +487,18 @@ def projAddAffineApi : Api where
     at {C.ptDoc C.oAt}, with the curve's `b`, in Montgomery's form, read at byte {C.bAt}. " ++
     C.common ++ " Constant time: only the pointer may affect timing."
   safety := C.safety s!"the coordinates of `P`, `Q`'s `X` and `Y` and the number at byte {C.bAt}"
+
+/-- `vg_<curve>_proj_add` on every target. -/
+def projAddApi : Api where
+  module := C.module
+  name := C.fn "proj_add"
+  sig := sig
+  contracts := some fun A stack => C.projAddContract A stack
+  summary := s!"The complete sum `O = P + Q` of points on {C.desc} in projective coordinates \
+    (Renes, Costello and Batina's Algorithm 4, for `a = -3`), into `O` at {C.ptDoc C.oAt}, with \
+    the curve's `b`, in Montgomery's form, read at byte {C.bAt}. " ++ C.common ++ " Constant time: \
+    only the pointer may affect timing."
+  safety := C.safety s!"the coordinates of `P` and `Q` and the number at byte {C.bAt}"
 
 end Curve
 

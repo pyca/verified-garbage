@@ -83,19 +83,19 @@ open Lean Elab Command
 
 /-- The sets of callee-saved registers, besides `x19`–`x24` (which the
 sponge's functions use), public at the calls of the sponge's functions. -/
-private def spongeSaved : List (String × String) :=
+private meta def spongeSaved : List (String × String) :=
   [("28", ".x25, .x26, .x27, .x28"), ("27", ".x25, .x26, .x27"), ("26", ".x25, .x26")]
 
 /-- The summaries `sponge_taint_summaries` may define in `ns`, in the order
 `taint_decide_sum` tries them. -/
-def spongeSumNames : List String :=
+meta def spongeSumNames : List String :=
   ["absorb23", "absorb24", "absorb28", "absorb27", "absorb24_26"] ++
   (spongeSaved.map fun (n, _) => s!"pad{n}") ++ (spongeSaved.map fun (n, _) => s!"squeeze{n}") ++
   (spongeSaved.map fun (n, _) => s!"perm{n}s") ++ ["permS"] ++
   (spongeSaved.map fun (n, _) => s!"perm{n}") ++ ["absorb", "pad", "squeeze", "perm"]
 
 /-- The ML-KEM functions' summaries (`MlKemSums`). -/
-def mlkemSumNames : List String :=
+meta def mlkemSumNames : List String :=
   ["ntt", "nttInv", "mul", "add", "sub", "cbd2", "encode12", "decode12", "ce", "dd", "ce1024",
     "dd1024"].map ("VG.Proof.Sha3.AArch64.MlKemSums." ++ ·)
 
@@ -104,7 +104,7 @@ the permutation and of `pad` and `squeeze` those of `base`, if given (for a
 callee that differs only in its absorb). The permutation and `pad` keep the
 callee-saved registers; `absorb` and `squeeze` restore `x19`–`x24` from
 memory, and keep `x25`–`x28`. -/
-def spongeSumCmds (ns c : String) (base : Option String) :
+meta def spongeSumCmds (ns c : String) (base : Option String) :
     List String × List (String × String) := Id.run do
   let fn (f n : String) :=
     s!"(.call (\"vg_keccak_{f}_scratch\" ++ {c}.suffix) (Impl.Sha3.AArch64.Stream.{n}With {c}))"
@@ -130,7 +130,7 @@ summary keeps anything, so each function has a summary for each set of
 callee-saved registers public at some call (the larger first). The
 summaries `permUsing` (e.g. of the permutation's rounds) are used in those of
 the permutation. -/
-def spongeSumSavingCmds (ns c : String) (permUsing : List String := []) : List String := Id.run do
+meta def spongeSumSavingCmds (ns c : String) (permUsing : List String := []) : List String := Id.run do
   let perm := s!"(.call {c}.name {c}.code)"
   let fn (f n : String) :=
     s!"(.call (\"vg_keccak_{f}_scratch\" ++ {c}.suffix) (Impl.Sha3.AArch64.Stream.{n}With {c}))"

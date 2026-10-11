@@ -68,6 +68,7 @@ theorem secp256k1_ok (hI : InvSounds) : BaseCfgOk secp256k1 where
   window_am3 := fun h => by cases h
   comb_am3 := fun _ h => by cases h
   even _ := by decide
+  inverse h := absurd h (by decide)
 
 theorem secp256k1_tbls : CombTbls secp256k1 := fun _ h => by cases h
 

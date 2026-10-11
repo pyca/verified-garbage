@@ -298,15 +298,23 @@ def tabBuild : List (Prog isa) :=
       (.seq (ammCore l) (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 l.NB)),
         .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + 16 * l.NB)))]))) .ne]
 
+/-- The operands of a window's multiplication: `[oY] := [oY] [b]`. -/
+def winSetup (b : Nat) : List Instr :=
+  [.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 l.oY)), .mov .r9 (.reg .rbx),
+   .alu .add .r9 (.imm (BitVec.ofNat 32 b)), .mov .r11 (.reg .rbx),
+   .alu .add .r11 (.imm (BitVec.ofNat 32 l.oY))]
+
 /-- A window: `Y := Y¹⁶ T_v 2^(-208 R)` for each prime, `v` the top 4 bits
-of its byte at `oV`, which moves up 4 bits. -/
+of its byte at `oV`, which moves up 4 bits. `S := T_v` first, then one loop
+of five multiplications (`r15` counting them down): four squarings of `Y`,
+then `Y S`. -/
 def window : List (Prog isa) :=
-  [.block [.mov32 .r15 (.imm 4)],
-    .loop (.seq (amm l l.oY l.oY l.oY) (.block [.alu .sub .r15 (.imm 1)])) .ne] ++
   select l 0 ++ select l 1 ++
-  [.block ((List.range 2).flatMap fun p => [.mov .rax (.mem (at_ .rbx (l.D * p + l.oV))), .shift .ror .rax 60,
-      .store (at_ .rbx (l.D * p + l.oV)) .rax]),
-    amm l l.oY l.oY l.oS]
+  [.block (((List.range 2).flatMap fun p => [.mov .rax (.mem (at_ .rbx (l.D * p + l.oV))),
+      .shift .ror .rax 60, .store (at_ .rbx (l.D * p + l.oV)) .rax]) ++ [.mov32 .r15 (.imm 5)]),
+    .loop (.seq (.block [.alu .cmp .r15 (.imm 1)])
+      (.seq (.ite .e (.block (winSetup l l.oS)) (.block (winSetup l l.oY)))
+        (.seq (ammCore l) (.block [.alu .sub .r15 (.imm 1)])))) .ne]
 
 /-- The exponentiations, a byte of each exponent (`r13`) at a time. -/
 def expLoop : List (Prog isa) :=
@@ -326,10 +334,19 @@ def withMxcsr (c : Prog isa) : Prog isa :=
         .ldmxcsr (at_ .rbx (l.oMx + 4)), .lfence]) (.seq c (.block [.lfence])))
       (.block [.ldmxcsr (at_ .rbx l.oMx), .vop .vzeroupper]))
 
-/-- The vector code: `X` and `Y` into Montgomery form, the
-exponentiations, and the results multiplied by `oFin`. -/
+/-- `[r13] := [r13] [oK1] 2^(-208 R)`, then `r13` to the next number, `ZF`
+after `X`. -/
+def k1Body : Prog isa :=
+  .seq (.block [.mov .r8 (.reg .rbx), .alu .add .r8 (.reg .r13), .mov .r9 (.reg .rbx),
+      .alu .add .r9 (.imm (BitVec.ofNat 32 l.oK1)), .mov .r11 (.reg .rbx), .alu .add .r11 (.reg .r13)])
+    (.seq (ammCore l) (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 l.NB)),
+      .alu .cmp .r13 (.imm (BitVec.ofNat 32 l.oS))]))
+
+/-- The vector code: `Y` and then `X` (the next number) into Montgomery form,
+in a loop, the exponentiations, and the results multiplied by `oFin`. -/
 def vec : Prog isa :=
-  withMxcsr l (seqs ([amm l l.oX l.oX l.oK1, amm l l.oY l.oY l.oK1] ++ expLoop l ++ [amm l l.oY l.oY l.oFin]))
+  withMxcsr l (seqs ([.block [.mov32 .r13 (.imm (BitVec.ofNat 32 l.oY))], .loop (k1Body l) .ne] ++
+    expLoop l ++ [amm l l.oY l.oY l.oFin]))
 
 /-- In a prime's workspace: the result into `aY`, reduced below `X`. -/
 def result (p : Nat) : List (Prog isa) :=

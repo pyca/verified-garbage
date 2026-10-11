@@ -2,15 +2,20 @@ module
 
 public import VerifiedGarbage.Spec.Weierstrass.Point
 public import VerifiedGarbage.Spec.P384
+public import VerifiedGarbage.Spec.P192
+public import VerifiedGarbage.Spec.P224
+public import VerifiedGarbage.Spec.P256
+public import VerifiedGarbage.Spec.Secp256k1
+public import VerifiedGarbage.Spec.P521
 
 /-!
 # Inverses modulo a curve's prime and order, in its working space, as functions
 
 **Trusted** (as every file in `Spec/`). The contracts of two functions for
-each curve of `curves` (so far P-384), on the working space where the x86-64
-code of the curve's ECDSA signature, verification and public key derivation
-keeps its numbers, so that they can call one copy of each inversion instead
-of repeating it:
+each curve of `curves` (so far P-192, P-224, P-256, secp256k1, P-384 and
+P-521), on the working space where the x86-64 code of the curve's ECDSA
+signature, verification and public key derivation keeps its numbers, so that
+they can call one copy of each inversion instead of repeating it:
 
 * `vg_<curve>_inv_mod_p(ws)`: `A = Z^(p - 2)` modulo the curve's prime `p`,
   for the number `Z` at slot 16 (the code's `Z` coordinate of `[k]G`);
@@ -188,9 +193,15 @@ end Curve
 
 /-! ## The curves -/
 
+def p192 : Curve := { W := Spec.P192.curve, curve := "p192", k := 4, desc := "P-192", tmp := 2 }
+def p224 : Curve := { W := Spec.P224.curve, curve := "p224", k := 4, desc := "P-224", tmp := 2 }
+def p256 : Curve := { W := Spec.P256.curve, curve := "p256", k := 4, desc := "P-256", tmp := 2 }
+def secp256k1 : Curve :=
+  { W := Spec.Secp256k1.curve, curve := "secp256k1", k := 4, desc := "secp256k1", tmp := 2 }
 def p384 : Curve := { W := Spec.P384.curve, curve := "p384", k := 6, desc := "P-384", tmp := 83 }
+def p521 : Curve := { W := Spec.P521.curve, curve := "p521", k := 9, desc := "P-521", tmp := 55 }
 
 /-- Every curve. -/
-def curves : List Curve := [p384]
+def curves : List Curve := [p192, p224, p256, secp256k1, p384, p521]
 
 end VG.Spec.Weierstrass.Inverse

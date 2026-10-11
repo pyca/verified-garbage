@@ -8,7 +8,7 @@ namespace VG.Impl.Ecdsa.AArch64
 open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 
 /-- Four-word arithmetic without a precomputed comb table. -/
-def secp256k1 : Cfg := ⟨4, Spec.Secp256k1.curve, [], (0, 0), "", true⟩
+def secp256k1 : Cfg := ⟨4, Spec.Secp256k1.curve, [], (0, 0), "", true, none, none⟩
 
 namespace Secp256k1
 

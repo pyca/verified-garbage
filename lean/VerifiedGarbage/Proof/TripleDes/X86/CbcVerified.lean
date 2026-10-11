@@ -85,9 +85,9 @@ theorem seqPre_of {enc : Bool} {M : Mode} (d : Spec.TripleDes.Direction) (hstep 
   obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, dAD, dAS, dRD, dRS, dSD, dSS, fK, fV, fD, fS, fE, fLo⟩ := h
   have hL := (dirCoreSpec d).layout
   obtain ⟨sA, sR⟩ := stk_apart fE fLo
-  refine ⟨(by rw [hrd]; simp), fE, ⟨(by rw [hwr]; simp [dirCore, schedSlot]),
+  refine ⟨(by rw [hrd]; simp [dirCore]), fE, ⟨(by rw [hwr]; simp [dirCore, schedSlot]),
       (by simp only [dirCore, schedSlot]; omega)⟩, (by rw [hrd]; simp [dirCore]),
-    (fun h => by rw [hiv] at h; cases h), (by simp only [dirCore]; omega), (by rw [hwr, hstep]; simp),
+    (fun h => by rw [hiv] at h; cases h), (by simp only [dirCore]; omega), (by rw [hwr, hstep]; simp [dirCore]),
     (by rw [hstep]; exact fD), ?_, ?_, (fun h => by rw [hiv] at h; cases h), ?_, ?_, ?_, ?_,
     (fun h => by rw [hiv] at h; cases h), (by rw [hstep]; exact dSD), ?_, sA, sR, (by simp [dirCore]; omega),
     (by rw [hstep]; simp [dirCore]), hL⟩

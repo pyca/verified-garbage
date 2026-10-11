@@ -55,27 +55,29 @@ theorem ecb_stack (dir : Dir) : VG.Arm.FrameStack.armStack (ecbCode dir) ≤ 145
 def ecbSpec (dir : Dir) : CoreSpec (ecbCore dir) where
   keyLen := 128
   stack := 1456
-  ciphAt m K := dirCipher dir (Spec.Sm4.scheduleAt m K)
+  ciphAt m K _ := dirCipher dir (Spec.Sm4.scheduleAt m K)
   contract := Spec.Sm4.ecbContract Arm.abi (specDirArm dir) 1456
   correct := (ecb_framed dir).1
   ct := (ecb_framed dir).2.1
   depth := ecb_stack dir
-  pre_of s h := by
-    obtain ⟨stk, rd, wr, kd, bk, bd, fK, fD⟩ := h
+  pre_of _ s h := by
+    obtain ⟨stk, rd, wr, kd, bk, bd, fK, fD, -⟩ := h
     sig_pre [Spec.Sm4.ecbContract, Spec.Sm4.ecbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     exact ⟨stk, by have := s.sp.isLt; omega, rd, wr, kd, bk, bd, fK, fD⟩
-  post_of s s' _ h := by
+  post_of _ s s' _ h := by
     sig_post [Spec.Sm4.ecbContract, Spec.Sm4.ecbSig, Spec.Sm4.ecbPost, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val] at h
     show blocksOf 16 _ _ _ = (blocksOf 16 _ _ _).map _
+    rw [show (ecbCore dir).dReg = .r1 from rfl, show (ecbCore dir).nReg = .r2 from rfl]
     simp only [State.addr]
     rw [blocksOf_eq, blocksOf_eq, h, ecb_dir, List.map_map, List.map_map]
     exact List.map_congr_left fun v _ => (dirCipher_toList dir _ v).symm
-  pub_of s₁ s₂ h0 h1 h2 h3 := by
+  pub_of _ s₁ s₂ h0 h1 h2 h3 _ := by
     sig_pub [Spec.Sm4.ecbContract, Spec.Sm4.ecbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
     exact ⟨h0, h1, h2, h3⟩
   ciphAt_congr h := by simp only [Proof.Sm4.scheduleAt_congr h]
-  cipher_len m K b _ := by cases dir <;> (simp [dirCipher, Spec.Sm4.cipher, Spec.Sm4.invCipher]; rfl)
+  ciphAt_R _ _ _ _ _ := rfl
+  cipher_len m K _ b _ := by cases dir <;> (simp [dirCipher, Spec.Sm4.cipher, Spec.Sm4.invCipher]; rfl)
   bw_pos := by cases dir <;> decide
   bw_le := by cases dir <;> decide
   bs_enc := by cases dir <;> decide

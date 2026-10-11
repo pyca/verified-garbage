@@ -25,6 +25,11 @@ theorem allocatedInverse_apart : ∀ i<45,i∉[ACC,TMP] → ∀ w∈invAllocated
 
 theorem allocatedInverse_bound : ∀ w∈invAllocatedOuterW,w.1+w.2≤size := by decide
 
+/-- P-256's powers' modulus modulo `n` is `MN'`: its inversions are inline. -/
+theorem p256_invM (hI : InvSounds) {base : Addr} {m : Mem} (hm : ModOkA p256.MN' size p256.C.n m base) :
+    ModOkA invAllocatedCfg.M size p256.C.n m base :=
+  modOkA_inv (p256_ok hI) hm (.inr rfl) rfl rfl
+
 theorem allocatedInverse_ok (hI : InvSounds) (hT : InvToM p256.C.n)
     {s : State} {base : Addr} (hs : Scr s base size)
     (hm : ModOkA p256.MN' size p256.C.n s.mem base)
@@ -35,7 +40,7 @@ theorem allocatedInverse_ok (hI : InvSounds) (hT : InvToM p256.C.n)
       toM p256.C.n (2^(64*p256.n)) (wordsVal t.mem base (p256.sl ACC) p256.n)=
         toM p256.C.n (2^(64*p256.n)) (wordsVal s.mem base (p256.sl KM) p256.n)^(p256.C.n-2) :=
   invAllocated_inverse_ok (by decide) VG.Proof.P256.n_prime hT
-    (invLayN (p256_ok hI)) (unitMod_pow_two (p256_ok hI).n_odd _) hs hm hx
+    (invLayN (p256_ok hI)) (unitMod_pow_two (p256_ok hI).n_odd _) hs (p256_invM hI hm) hx
     ((p256_ok hI).inv_n (by decide)).2
 
 theorem allocatedMid_ok (hI : InvSounds) (hT : InvToM p256.C.n)
@@ -63,7 +68,7 @@ theorem allocatedInverse_relCT (hI : InvSounds) (hT : InvToM p256.C.n)
   exact invAllocated_inverse_relCT (by decide) VG.Proof.P256.n_prime hT
     (invLayN (p256_ok hI)) (unitMod_pow_two (p256_ok hI).n_odd _)
     hs.lt ((p256_ok hI).inv_n (by decide)).2 _ _ _ _ _ _
-    ⟨hs.scr,ht.scr,hsp,hs.mod,ht.mod,rfl,hx.symm⟩ es et
+    ⟨hs.scr,ht.scr,hsp,p256_invM hI hs.mod,p256_invM hI ht.mod,rfl,hx.symm⟩ es et
 
 theorem allocatedUv_ct : FieldCT (Cfg.uv p256) := by jac_field_ct
 

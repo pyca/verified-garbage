@@ -109,7 +109,7 @@ theorem sponge_ok (core : Resident.Core) {σ s : State} (hp : Pre σ) (he : Env 
     (hpair : PairAt s.mem (σ.gpr .x4) (seedState σ.mem (σ.gpr .x0)) (seedState σ.mem (σ.gpr .x0+66)))
     (h23 : s.gpr .x23=σ.gpr .x4) (h24 : s.gpr .x24=σ.gpr .x4+840)
     (h25 : s.gpr .x25=σ.gpr .x4+1520) :
-    WP isa (Impl.MlDsa.AArch64.Optimized.Resident.maskPairWith core.code .x23 .x24 .x25) s (SpongePost σ) := by
+    WP isa (Impl.MlDsa.AArch64.Optimized.Resident.maskPairWith core.code .x23 .x24 .x25 .x19) s (SpongePost σ) := by
   have hw (off len : Nat) (hb : off+len≤8192) :
       InRegions s.wr (σ.gpr .x4+BitVec.ofNat 64 off) len := by
     rw [he.wr]; exact ⟨_,hp.scratch,Offset.contains_base _ hb (by omega)⟩
@@ -142,20 +142,26 @@ theorem sponge_ok (core : Resident.Core) {σ s : State} (hp : Pre σ) (he : Env 
       rw [Offset.add_add,Offset.add_add]; exact hw _ _ (by omega))
     (fun j hj => by
       change InRegions _ (σ.gpr .x4+BitVec.ofNat 64 1520+BitVec.ofNat 64 (136*j)+BitVec.ofNat 64 128) 8
-      rw [Offset.add_add,Offset.add_add]; exact hw _ _ (by omega))) ?_
+      rw [Offset.add_add,Offset.add_add]; exact hw _ _ (by omega))
+    (by decide) (by decide) (by decide) (by decide) (by rw [he.base])
+    (fun k hk => by rw [Offset.add_add]; exact hw _ _ (by omega))
+    (fun k hk => by rw [Offset.add_add]; exact hw _ _ (by omega))
+    (Offset.disjoint _ (Or.inr (by decide)) (by decide) (by decide))
+    (Offset.disjoint _ (Or.inr (by decide)) (by decide) (by decide))) ?_
   intro t ht
-  have hk : RegKeep [.x6,.x7,.x16,.x24,.x25,.x28] s t := by
+  have hk : RegKeep [.x6,.x7,.x15,.x16,.x24,.x25,.x28] s t := by
     refine ⟨?_,ht.2.2.2.2.2.1,ht.2.2.2.2.2.2.1,ht.2.2.2.2.2.2.2⟩
     intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
-    exact ht.2.2.2.2.1 r hr.2.2.2.1 hr.2.2.2.2.1 hr.2.2.2.2.2 hr.1 hr.2.1 hr.2.2.1
+    exact ht.2.2.2.2.1 r hr.2.2.2.2.1 hr.2.2.2.2.2.1 hr.2.2.2.2.2.2 hr.1 hr.2.1 hr.2.2.2.1 hr.2.2.1
   refine ⟨he.lowStep hk ht.2.2.2.1 (by decide) ?_,ht.2.1,ht.2.2.1⟩
   intro r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact Offset.sub_base _ (by decide)
   · exact Offset.sub_base _ (by decide)
   · exact Region.sub_prefix (by decide)
+  · exact Offset.sub_base _ (by decide)
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentMask
 

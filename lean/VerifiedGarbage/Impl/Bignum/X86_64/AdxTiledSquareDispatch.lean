@@ -3,11 +3,14 @@ import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
 namespace VG.Impl.Bignum.X86_64.AdxTiledSquare
 open VG.X86_64
 
+/-- For sizes that pass `Adx.sizeTest`: the triangular tiles if `w` is a
+multiple of 8, and the square for four-word groups otherwise. -/
 def alignedChoice (o a : Nat) : Prog isa :=
-  .seq (.block AdxSquare.redcTest) (.ite .e (montSquare o a) (AdxSquare.montSquare o a))
+  .seq (.block AdxSquare.redcTest) (.ite .e (montSquare o a) (AdxSquare.montSquare4 o a))
 
 def choice (o a : Nat) : Prog isa :=
-  .seq (.block Adx.sizeTest) (.ite .e (alignedChoice o a) (Adx.montMulAdx o a a))
+  .seq (.block Adx.sizeTest)
+    (.ite .e (alignedChoice o a) (X86_64.montMul Public.aN Public.aAcc Public.aTmp o a a))
 
 /-- Aligned squares use triangular tiles; other sizes retain the verified fallbacks. -/
 def dispatch (o a b : Nat) : Prog isa :=

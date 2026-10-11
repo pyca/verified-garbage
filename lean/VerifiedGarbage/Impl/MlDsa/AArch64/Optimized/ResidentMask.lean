@@ -42,7 +42,7 @@ def parseBoth (c : Nat) : Prog isa := .seq (.block (Unpack.init c)) <|
 def rawWith (core : Prog isa) : Prog isa :=
  .seq (.block (pro ++ zero ++ absorb 0 ++
  [mov .x23 .x19,.addImm .x .x24 .x19 840,.addImm .x .x25 .x19 1520])) <|
- .seq (Resident.maskPairWith core .x23 .x24 .x25) <|
+ .seq (Resident.maskPairWith core .x23 .x24 .x25 .x19) <|
  .seq (.block [.ldr .w .x27 .x19 7904,.lsr .x .x9 .x27 18]) <|
  .seq (.ite (.zero .x .x9) (parseBoth 18) (parseBoth 20)) (.block epi)
 

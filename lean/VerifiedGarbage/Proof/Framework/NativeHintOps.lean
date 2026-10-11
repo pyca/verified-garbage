@@ -128,7 +128,7 @@ end VG
 
 namespace VG.NativeHints
 open Lean
-private def renamePrefix (old new : Name) (n : Name) : Name :=
+def renamePrefix (old new : Name) (n : Name) : Name :=
   if n == old then new else match n with
   | .str p s => .str (renamePrefix old new p) s
   | .num p i => .num (renamePrefix old new p) i

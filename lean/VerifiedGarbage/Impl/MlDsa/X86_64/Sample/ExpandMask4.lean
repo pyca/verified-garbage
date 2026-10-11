@@ -23,7 +23,8 @@ suffix `0x1f` (at byte 66) and the last bit of the padding (`0x80`, at byte
 135) into each, and permutes them; it then copies the first 136 bytes of
 each state to its output (from byte `2368 + 680 k`), and permutes them
 again, five times in all (680 bytes, which hold the 640 that `γ₁ = 2¹⁹`
-needs and the 576 of `γ₁ = 2¹⁷`). It then unpacks the output of each seed
+needs and the 576 of `γ₁ = 2¹⁷`), in a loop (`squeezes`, as in
+`vg_mlkem_sample_ntt4_avx2`). It then unpacks the output of each seed
 with the loop of `vg_mldsa_expand_mask_poly` (`emBody`, for `c = 18` or
 `20`, chosen by a branch on the public `γ₁`).
 
@@ -35,7 +36,7 @@ namespace VG.Impl.MlDsa.X86_64.Sample.Mask4
 
 open VG.X86_64
 open VG.Impl.MlKem.X86_64 (at_)
-open VG.Impl.MlKem.X86_64.Sample4 (zero4 permArgs oRc oBuf)
+open VG.Impl.MlKem.X86_64.Sample4 (zero4 permArgs blocks oRc oBuf)
 open VG.Impl.Sha3.X86_64.X4 (permute4 rcTable)
 
 /-- Where the callee-saved registers are saved. -/
@@ -73,14 +74,18 @@ def absorb4 : List Instr :=
     .mov32 .rax (.imm 0x1f) :: (List.range 4).flatMap (fun k => [.store8 (at_ .rbx (256 + 8 * k + 2)) .rax]) ++
     .mov32 .rax (.imm 0x80) :: (List.range 4).flatMap fun k => [.store8 (at_ .rbx (512 + 8 * k + 7)) .rax]
 
-/-- The first 136 bytes of each state to block `b` of its output. -/
-def extract (b : Nat) : List Instr :=
+/-- The first 136 bytes of each state to the block of its output at `rbp`
+(that of state `k` at `rbp + 680 k`). -/
+def extract : List Instr :=
   (List.range 4).flatMap fun k => (List.range 17).flatMap fun i =>
-    [.mov .rax (.mem (at_ .rbx (32 * i + 8 * k))), .store (at_ .rbx (oBuf + 680 * k + 136 * b + 8 * i)) .rax]
+    [.mov .rax (.mem (at_ .rbx (32 * i + 8 * k))), .store (at_ .rbp (680 * k + 8 * i)) .rax]
 
-/-- Permute the states and squeeze block `b`. -/
-def squeeze4 (b : Nat) : Prog isa :=
-  .seq (.block permArgs) (.seq permute4 (.block (extract b)))
+/-- Permute the states and squeeze a block to `rbp`. -/
+def squeeze : Prog isa :=
+  .seq (.block permArgs) (.seq permute4 (.block extract))
+
+/-- Squeeze the five blocks. -/
+def squeezes : Prog isa := blocks oBuf 136 5 squeeze
 
 /-- The coefficients of polynomial `k` from the output of seed `k`, `c` bits each. -/
 def unpack (c k : Nat) : Prog isa :=
@@ -94,9 +99,9 @@ def unpack4 (c : Nat) : Prog isa := .seq (unpack c 0) (.seq (unpack c 1) (.seq (
 of the vector registers after the last permutation. -/
 def expandMask4Avx2 : Prog isa :=
   .seq (.block (pro ++ rcTable .rbx (oRc / 32) ++ absorb4))
-    (.seq (squeeze4 0) (.seq (squeeze4 1) (.seq (squeeze4 2) (.seq (squeeze4 3) (.seq (squeeze4 4)
+    (.seq squeezes
       (.seq (.block [.vop .vzeroupper, .alu32 .cmp .r14 (.imm 0x20000)])
-        (.seq (.ite .e (unpack4 18) (unpack4 20)) (.block epi))))))))
+        (.seq (.ite .e (unpack4 18) (unpack4 20)) (.block epi))))
 
 /-- `vg_mldsa_expand_mask_poly` on seed `k`. -/
 def callK (k : Nat) : Prog isa :=

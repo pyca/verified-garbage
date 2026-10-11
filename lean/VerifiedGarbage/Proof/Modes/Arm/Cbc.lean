@@ -12,8 +12,10 @@ namespace VG.Proof.Modes.Arm
 
 open VG VG.Arm VG.Impl.Modes.Arm
 
-theorem cbcEnc_ok : ModeOk cbcEnc := ⟨by decide, by decide, by decide⟩
-theorem cbcDec_ok : ModeOk cbcDec := ⟨by decide, by decide, by decide⟩
+theorem cbcEnc_ok (c : Core) : ModeOk c cbcEnc :=
+  ⟨by decide, by decide, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
+theorem cbcDec_ok (c : Core) : ModeOk c cbcDec :=
+  ⟨by decide, by decide, by decide, by show encodable (BitVec.ofNat 32 0) = true; decide⟩
 
 theorem xor_comm (x y : List Byte) : Spec.Cbc.xor x y = Spec.Cbc.xor y x := by
   simp only [Spec.Cbc.xor]
@@ -60,11 +62,22 @@ def RoPre : Prop :=
 
 end
 
-theorem seqArm_pre_ro {c : Core} {S : CoreSpec c} {M : Mode} (hM : M.finish = false) {s : State}
-    (h : RoPre c S s) : (seqArm c S M).pre s := by
+/-- The arguments of a core without rounds: `(schedule = r0, iv = r1,
+data = r2, n = r3, scratch = [sp])`. -/
+theorem args_plain {c : Core} (hr : c.rounds = false) (s : State) :
+    ivArg c s = s.gpr .r1 ∧ dArg c s = s.gpr .r2 ∧ nArg c s = s.gpr .r3 ∧ scArg c s = stackArg s 0 ∧
+      argBytes c = 4 := by
+  simp [ivArg, dArg, nArg, scArg, argBytes, hr]
+
+theorem seqArm_pre_ro {c : Core} {S : CoreSpec c} {M : Mode} (hr : c.rounds = false) (hM : M.finish = false)
+    (hb : M.byte = false) {s : State} (h : RoPre c S s) : (seqArm c S M).pre s := by
+  have e : c.ds M = c.bs := ds_of c hb
+  obtain ⟨e1, e2, e3, e4, e5⟩ := args_plain hr s
+  show (seqArm c S M).pre s
+  unfold seqArm; simp only [e, e1, e2, e3, e4, e5]
   obtain ⟨a1, a2, rd, wr, kd, ks, vd, vs, ds, da, sa, bk, -, bd, bs, -, fk, fv, fd, fs⟩ := h
   refine ⟨a1, a2, by simp [rd], by simp [rd], by simp [rd], by simp [wr], by simp [wr], kd, ks, vd, vs, ds,
-    bk, bd, bs, fk, fv, fd, fs, fun h => absurd h (by simp [hM]), ?_⟩
+    bk, bd, bs, fk, fv, fd, fs, fun h => absurd h (by simp [hM]), ?_, fun h => absurd h (by simp [hr])⟩
   intro r hr
   rw [wr] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -72,28 +85,81 @@ theorem seqArm_pre_ro {c : Core} {S : CoreSpec c} {M : Mode} (hM : M.finish = fa
   · exact da.symm
   · exact sa.symm
 
-theorem seqArm_pub {c : Core} {S : CoreSpec c} {M : Mode} {s₁ s₂ : State}
+theorem seqArm_pub {c : Core} {S : CoreSpec c} {M : Mode} (hr : c.rounds = false) {s₁ s₂ : State}
     (h : s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
-      s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0) : (seqArm c S M).pub s₁ s₂ := h
+      s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0) : (seqArm c S M).pub s₁ s₂ :=
+  ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2, fun h' => absurd h' (by simp [hr])⟩
+
+/-- The arguments of a core with rounds: `(schedule = r0, rounds = r1,
+iv = r2, data = r3, n = [sp], scratch = [sp + 4])`. -/
+theorem args_rounds {c : Core} (hr : c.rounds = true) (s : State) :
+    ivArg c s = s.gpr .r2 ∧ dArg c s = s.gpr .r3 ∧ nArg c s = stackArg s 0 ∧ scArg c s = stackArg s 1 ∧
+      argBytes c = 8 := by
+  simp [ivArg, dArg, nArg, scArg, argBytes, hr]
+
+section
+variable (c : Core) (S : CoreSpec c) (s : State)
+
+/-- The precondition of `(schedule, rounds, iv, data, n = [sp], scratch = [sp + 4])`,
+with the schedule and the IV only read, as `Sig.contract` states it, and
+the number of rounds satisfying `S.rok`. -/
+def RoPreR : Prop :=
+  let key : Region := ⟨State.addr (s.gpr .r0), S.keyLen⟩
+  let iv : Region := ⟨State.addr (s.gpr .r2), c.bs⟩
+  let data : Region := ⟨State.addr (s.gpr .r3), (stackArg s 0).toNat * c.bs⟩
+  let scr : Region := ⟨State.addr (stackArg s 1), c.scratchBytes⟩
+  let arg : Region := ⟨stackArgAddr s 0, 8⟩
+  let below : Region := ⟨State.addr s.sp - BitVec.ofNat 64 S.stack, S.stack⟩
+  S.stack ≤ s.sp.toNat ∧ s.sp.toNat + 8 ≤ 2 ^ 32 ∧ s.rd = [key, iv, arg] ∧ s.wr = [data, scr] ∧
+    key.Disjoint data ∧ key.Disjoint scr ∧ iv.Disjoint data ∧ iv.Disjoint scr ∧ data.Disjoint scr ∧
+    data.Disjoint arg ∧ scr.Disjoint arg ∧ below.Disjoint key ∧ below.Disjoint iv ∧ below.Disjoint data ∧
+    below.Disjoint scr ∧ below.Disjoint arg ∧
+    (s.gpr .r0).toNat + S.keyLen ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + c.bs ≤ 2 ^ 32 ∧
+    (s.gpr .r3).toNat + (stackArg s 0).toNat * c.bs ≤ 2 ^ 32 ∧ (stackArg s 1).toNat + c.scratchBytes ≤ 2 ^ 32 ∧
+    S.rok (s.gpr .r1)
+
+end
+
+theorem seqArm_pre_roR {c : Core} {S : CoreSpec c} {M : Mode} (hr : c.rounds = true) (hM : M.finish = false)
+    (hb : M.byte = false) {s : State} (h : RoPreR c S s) : (seqArm c S M).pre s := by
+  have e : c.ds M = c.bs := ds_of c hb
+  obtain ⟨e1, e2, e3, e4, e5⟩ := args_rounds hr s
+  show (seqArm c S M).pre s
+  unfold seqArm; simp only [e, e1, e2, e3, e4, e5]
+  obtain ⟨a1, a2, rd, wr, kd, ks, vd, vs, ds, da, sa, bk, -, bd, bs, -, fk, fv, fd, fs, rk⟩ := h
+  refine ⟨a1, a2, by simp [rd], by simp [rd], by simp [rd], by simp [wr], by simp [wr], kd, ks, vd, vs, ds,
+    bk, bd, bs, fk, fv, fd, fs, fun h => absurd h (by simp [hM]), ?_, fun _ => rk⟩
+  intro r hr
+  rw [wr] at hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact da.symm
+  · exact sa.symm
+
+theorem seqArm_pubR {c : Core} {S : CoreSpec c} {M : Mode} {s₁ s₂ : State}
+    (h : s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
+      s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1) :
+    (seqArm c S M).pub s₁ s₂ :=
+  ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, fun _ => h.2.2.2.2.2.2⟩
 
 theorem cbcEnc_post {c : Core} {S : CoreSpec c} {s s' : State} (h : (seqArm c S cbcEnc).post s s') :
-    VG.Proof.Modes.blocksOf c.bs s'.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat =
-      Spec.Cbc.encrypt (S.ciphAt s.mem (State.addr (s.gpr .r0)))
-        (Spec.Aes.bytesAt s.mem (State.addr (s.gpr .r1)) c.bs)
-        (VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat) := by
-  rw [h.1, runSeq_cbcEnc]
+    VG.Proof.Modes.blocksOf c.bs s'.mem (State.addr (dArg c s)) (nArg c s).toNat =
+      Spec.Cbc.encrypt (S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1))
+        (Spec.Aes.bytesAt s.mem (State.addr (ivArg c s)) c.bs)
+        (VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (dArg c s)) (nArg c s).toNat) :=
+  h.1.trans (runSeq_cbcEnc _ _ _)
 
 theorem cbcDec_post {c : Core} {S : CoreSpec c} {s s' : State} (h : (seqArm c S cbcDec).post s s') :
-    VG.Proof.Modes.blocksOf c.bs s'.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat =
-      Spec.Cbc.decrypt (S.ciphAt s.mem (State.addr (s.gpr .r0)))
-        (Spec.Aes.bytesAt s.mem (State.addr (s.gpr .r1)) c.bs)
-        (VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat) := by
-  rw [h.1, runSeq_cbcDec]
+    VG.Proof.Modes.blocksOf c.bs s'.mem (State.addr (dArg c s)) (nArg c s).toNat =
+      Spec.Cbc.decrypt (S.ciphAt s.mem (State.addr (s.gpr .r0)) (s.gpr .r1))
+        (Spec.Aes.bytesAt s.mem (State.addr (ivArg c s)) c.bs)
+        (VG.Proof.Modes.blocksOf c.bs s.mem (State.addr (dArg c s)) (nArg c s).toNat) :=
+  h.1.trans (runSeq_cbcDec _ _ _)
 
 /-- A core and a mode whose code between the calls passes the taint checks
 give a function that is correct and constant time under `seqArm`, and so
 under any contract `seqArm` implies. -/
-theorem seq_verified {c : Core} (S : CoreSpec c) {M : Mode} (hM : ModeOk M) (hT : SeqTaint c M)
+theorem seq_verified {c : Core} (S : CoreSpec c) {M : Mode} (hM : ModeOk c M) (hT : SeqTaint c M)
     {k : Contract isa} (hk : (seqArm c S M).Implies k) : Verified Arm.target (c.seq M) k :=
   Verified.of_correct (fun _ hs => seq_wp S hM hs) (seq_ct S hM hT) hk
 

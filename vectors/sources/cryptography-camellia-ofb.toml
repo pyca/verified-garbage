@@ -1,0 +1,5 @@
+name = "OpenSSL's Camellia OFB test vectors, as pyca/cryptography vendors them (camellia-ofb.txt)"
+directories = ["cryptography-camellia-ofb"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/55cfeb23a8f9e0b7edb87bccb98a6ca7447aa436/vectors/cryptography_vectors/ciphers/Camellia/camellia-ofb.txt"
+sha256 = "80ffcc4347bb5f5bc031436eff0ef0e64ae738f0d504ff2e1564bbd9fae34d2a"
+retrieved = 2026-10-11

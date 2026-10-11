@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.TripleDes.Cbc
-import VerifiedGarbage.Spec.Cfb8
+module
+
+public import VerifiedGarbage.Spec.TripleDes.Cbc
+public import VerifiedGarbage.Spec.Cfb8
 
 /-!
 # Triple DES-CFB8: the contracts, on every target
@@ -18,6 +20,8 @@ pieces of any length, keeping `iv` between calls.
 Only the pointers and `len` are public: no part of the input block may affect
 timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.TripleDes
 

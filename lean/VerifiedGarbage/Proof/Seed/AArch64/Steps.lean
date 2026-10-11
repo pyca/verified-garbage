@@ -28,7 +28,7 @@ theorem mem_R1 : arrSlot 3 ∈ arrays := by decide
 
 theorem room_congr {s s' : State} (h : Room s) (hr : s'.gpr .x5 = s.gpr .x5) (hw : s'.wr = s.wr) :
     Room s' := by
-  unfold Room scratchR at *; rw [hr, hw]; exact h
+  unfold Room at *; rw [hr, hw]; exact h
 
 /-- Reading a lane after a write to another. -/
 theorem readW_writeW_lane {m : Mem} {s : State} {k b k' b' : Nat} (hk : k ∈ arrays) (hb : b < 16)

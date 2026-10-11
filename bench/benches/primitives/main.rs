@@ -34,9 +34,14 @@ mod blake2b;
 mod blake2s;
 mod blowfish_ecb;
 mod camellia_cbc;
+mod camellia_cfb;
 mod camellia_ctr;
 mod camellia_ecb;
+mod camellia_ofb;
+mod cast5_cbc;
+mod cast5_cfb;
 mod cast5_ecb;
+mod cast5_ofb;
 mod chacha20;
 mod chacha20poly1305;
 mod cmac_aes;
@@ -63,7 +68,10 @@ mod hmac_sha384;
 mod hmac_sha512;
 mod hmac_sha512_224;
 mod hmac_sha512_256;
+mod idea_cbc;
+mod idea_cfb;
 mod idea_ecb;
+mod idea_ofb;
 mod md5;
 mod mldsa44;
 mod mldsa65;
@@ -90,7 +98,10 @@ mod rsa_pkcs1_sig;
 mod rsa_pss;
 mod rsa_public;
 mod scrypt;
+mod seed_cbc;
+mod seed_cfb;
 mod seed_ecb;
+mod seed_ofb;
 mod sha1;
 mod sha224;
 mod sha256;
@@ -101,10 +112,15 @@ mod sha512_224;
 mod sha512_256;
 mod sm3;
 mod sm4_cbc;
+mod sm4_cfb;
 mod sm4_ctr;
 mod sm4_ecb;
+mod sm4_ofb;
 mod triple_des_cbc;
+mod triple_des_cfb;
+mod triple_des_cfb8;
 mod triple_des_ecb;
+mod triple_des_ofb;
 mod x25519;
 mod x448;
 
@@ -349,9 +365,14 @@ const BENCHES: &[Bench] = &[
     (blake2s::USES, blake2s::bench),
     (blowfish_ecb::USES, blowfish_ecb::bench),
     (camellia_cbc::USES, camellia_cbc::bench),
+    (camellia_cfb::USES, camellia_cfb::bench),
     (camellia_ctr::USES, camellia_ctr::bench),
     (camellia_ecb::USES, camellia_ecb::bench),
+    (camellia_ofb::USES, camellia_ofb::bench),
+    (cast5_cbc::USES, cast5_cbc::bench),
+    (cast5_cfb::USES, cast5_cfb::bench),
     (cast5_ecb::USES, cast5_ecb::bench),
+    (cast5_ofb::USES, cast5_ofb::bench),
     (chacha20::USES, chacha20::bench),
     (chacha20poly1305::USES, chacha20poly1305::bench),
     (cmac_aes::USES, cmac_aes::bench),
@@ -364,7 +385,10 @@ const BENCHES: &[Bench] = &[
     (hmac_sha512::USES, hmac_sha512::bench),
     (hmac_sha512_224::USES, hmac_sha512_224::bench),
     (hmac_sha512_256::USES, hmac_sha512_256::bench),
+    (idea_cbc::USES, idea_cbc::bench),
+    (idea_cfb::USES, idea_cfb::bench),
     (idea_ecb::USES, idea_ecb::bench),
+    (idea_ofb::USES, idea_ofb::bench),
     (md5::USES, md5::bench),
     (mldsa44::USES, mldsa44::bench),
     (mldsa65::USES, mldsa65::bench),
@@ -390,11 +414,19 @@ const BENCHES: &[Bench] = &[
     (rsa_pss::USES, rsa_pss::bench),
     (rsa_public::USES, rsa_public::bench),
     (triple_des_cbc::USES, triple_des_cbc::bench),
+    (triple_des_cfb::USES, triple_des_cfb::bench),
+    (triple_des_cfb8::USES, triple_des_cfb8::bench),
     (triple_des_ecb::USES, triple_des_ecb::bench),
+    (triple_des_ofb::USES, triple_des_ofb::bench),
+    (seed_cbc::USES, seed_cbc::bench),
+    (seed_cfb::USES, seed_cfb::bench),
     (seed_ecb::USES, seed_ecb::bench),
+    (seed_ofb::USES, seed_ofb::bench),
     (sm4_cbc::USES, sm4_cbc::bench),
+    (sm4_cfb::USES, sm4_cfb::bench),
     (sm4_ctr::USES, sm4_ctr::bench),
     (sm4_ecb::USES, sm4_ecb::bench),
+    (sm4_ofb::USES, sm4_ofb::bench),
     (argon2::USES, argon2::bench),
     (scrypt::USES, scrypt::bench),
     (sha1::USES, sha1::bench),

@@ -2,7 +2,7 @@ import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
 import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
 
 /-! Commitment hashing and the next public-index mask share independent
-64-bit Keccak lanes. The selected implementation remains entirely inline. -/
+64-bit Keccak lanes, one permutation per iteration of a loop. -/
 namespace VG.Impl.MlDsa.AArch64.Sign.CommitTail
 open VG VG.AArch64
 open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg rounds)
@@ -34,21 +34,30 @@ def full : List Instr := (List.range 17).flatMap (fun i => lowWord (vreg i) (8*i
 def tail : List Instr := lowWord .v0 0 ++ lowWord .v1 8 ++
  ([.movz .x .x7 31 0,.vop (.movi0 .v25),.vop (.ins .d2 .v25 0 .x7),.vop (.logic .eor .v2 .v2 .v25),
  .movz .x .x7 0x8000 3,.vop (.movi0 .v25),.vop (.ins .d2 .v25 0 .x7),.vop (.logic .eor .v16 .v16 .v25)] : List Instr)
-def squeeze (n : Nat) : List Instr := ([.addImm .x .x10 .x19 (256+136*n)] : List Instr) ++ (List.range 8).flatMap (fun i =>
+/-- The next 136-byte mask block, through `x10`, which advances; `x12` counts
+the blocks left. -/
+def squeezeNext : List Instr := (List.range 8).flatMap (fun i =>
  [.vop (.perm .trn2 .d2 .v26 (vreg (2*i)) (vreg (2*i+1))),.strq .v26 .x10 (16*i)]) ++
- ([.umov .x .x7 .v16 1,.str .x .x7 .x10 128] : List Instr)
+ ([.umov .x .x7 .v16 1,.str .x .x7 .x10 128,.addImm .x .x10 .x10 136,.subImm .x .x12 .x12 1] : List Instr)
+def padTail (wlen : Nat) : List Instr :=
+ if wlen=768 then tail else
+  [.movz .x .x7 31 0,.vop (.movi0 .v25),.vop (.ins .d2 .v25 0 .x7),.vop (.logic .eor .v0 .v0 .v25),
+   .movz .x .x7 0x8000 3,.vop (.movi0 .v25),.vop (.ins .d2 .v25 0 .x7),.vop (.logic .eor .v16 .v16 .v25)]
+/-- The commitment block absorbed after a permutation, by the permutations
+left (`x11`): a full block while more than two are left, the padded tail
+before the last, none after it. -/
+def absorbNext (wlen : Nat) : Prog isa :=
+ .seq (.block [.subImm .x .x13 .x11 1]) (.ite (.zero .x .x13) (.block [])
+  (.seq (.block [.subImm .x .x13 .x11 2]) (.ite (.zero .x .x13) (.block (padTail wlen)) (.block full))))
 def epi : List Instr := [mov .x3 .x19] ++ restore ++
  (List.range 4).map (fun i => .ldr .x saved[i]! .x3 (128+8*i))
+/-- The `(64+wlen)/136+1` permutations, one loop iteration each: the first
+five also squeeze a mask block. -/
 def coreFor (wlen : Nat) : Prog isa :=
- let n := (64+wlen)/136
- (List.range (n+1)).foldr (fun i rest =>
- .seq (.block rounds)
- (.seq (.block ((if i<5 then squeeze i else []) ++
- (if i<n-1 then full else if i==n-1 then
-  (if wlen=768 then tail else
-    [.movz .x .x7 31 0,.vop (.movi0 .v25),.vop (.ins .d2 .v25 0 .x7),.vop (.logic .eor .v0 .v0 .v25),
-     .movz .x .x7 0x8000 3,.vop (.movi0 .v25),.vop (.ins .d2 .v25 0 .x7),.vop (.logic .eor .v16 .v16 .v25)])
- else []))) rest)) (.block [])
+ .seq (.block [.movz .x .x11 (BitVec.ofNat 16 ((64+wlen)/136+1)) 0,.movz .x .x12 5 0,
+  .addImm .x .x10 .x19 256])
+ (.loop (.seq (.block rounds) (.seq (.ite (.zero .x .x12) (.block []) (.block squeezeNext))
+  (.seq (absorbNext wlen) (.block [.subImm .x .x11 .x11 1])))) (.nonzero .x .x11))
 def code (wlen olen : Nat) : Prog isa :=
  .seq (.block (pro ++ first ++ upperInit ++ ([.addImm .x .x5 .x1 72] : List Instr)))
  (.seq (coreFor wlen) (.seq (.block ([mov .x2 .x21]++output olen++([.addImm .x .x0 .x19 256,mov .x4 .x20] : List Instr)))

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSqueeze
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSqueezeRate
 
 /-! ## From `CommitTailPaddingWord.lean` -/
 

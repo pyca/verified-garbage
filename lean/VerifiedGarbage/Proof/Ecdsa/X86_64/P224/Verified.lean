@@ -77,6 +77,7 @@ theorem p224_ok (hI : InvSounds) : CfgOk p224 where
   comb_am3 := fun _ _ => by unfold AM3; decide +kernel
   am3 := by unfold AM3; decide +kernel
   even _ := by decide
+  inverse h := absurd h (by decide)
 
 theorem p224_tbls (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) :
     CombTbls p224 := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩

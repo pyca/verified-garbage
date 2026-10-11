@@ -75,6 +75,9 @@ theorem p521_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p521 where
     obtain rfl : _ = _ := Option.some.inj (e.symm.trans (congrArg (Option.map Prod.snd) h))
     exact ⟨rfl, Mont.p521p_ok⟩
   call_n := by decide +kernel
+  inv_at := .inl rfl
+  inv_fn := fun h => absurd rfl h
+  padd := fun h => absurd rfl h
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p521 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, held, fit, hdw⟩ := h

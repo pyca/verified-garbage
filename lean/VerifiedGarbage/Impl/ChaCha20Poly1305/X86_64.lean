@@ -123,11 +123,19 @@ def moves : List Instr :=
     .mov .r14 (.reg .r8), .mov .r13 (.reg .r9)]
 
 /-- For more than `fold` bytes of data (in `r13`), `rdx = m`: if `pass` is
-not 0, the bytes past the last multiple of `pass` rounded up to a multiple of
-64 (`pass` a power of two), if that is at most `fold`; else (or if `pass` is
-0, adding no code) `rdx` stays 0. -/
+512 (the stitched AVX2 `seal`, whose first chunk can absorb the `fold` bytes
+before it), `fold` if the bytes after them are whole chunks of 512 and 1 to
+`512 - fold`, else 0; if `pass` is another number but 0, the bytes past the
+last multiple of `pass` rounded up to a multiple of 64 (`pass` a power of
+two), if that is at most `fold`; else (or if `pass` is 0, adding no code)
+`rdx` stays 0. -/
 def splitM (fold pass : Nat) : Prog isa :=
   if pass = 0 then .block [] else
+  if pass = 512 then
+    .seq (.block [.mov .rdx (.reg .r13), .alu .sub .rdx (.imm 1), .alu .and .rdx (.imm 511),
+      .alu .cmp .rdx (.imm (BitVec.ofNat 32 fold))])
+      (.ite .b (.block [.mov32 .rdx (.imm 0)]) (.block [.mov32 .rdx (.imm (BitVec.ofNat 32 fold))]))
+  else
   .seq (.block [.mov .rdx (.reg .r13), .alu .and .rdx (.imm (BitVec.ofNat 32 (pass - 1))),
     .alu .add .rdx (.imm 63), .alu .and .rdx (.imm (BitVec.ofInt 32 (-64))),
     .alu .cmp .rdx (.imm (BitVec.ofNat 32 (fold + 1)))])

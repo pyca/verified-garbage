@@ -51,7 +51,7 @@ def upToPowWith (comb : Prog isa) : Prog isa :=
   .seq comb <|
   .seq c.pPow (.block [])
 
-def upToPow : Prog isa := upToPowWith c (TCombCfg.comb c.combCfg)
+def upToPow : Prog isa := upToPowWith c (TCombCfg.comb c.combCfg false c.padd)
 
 /-- `04 ‖ x ‖ y` (or zeros, `len` bytes each) to `out`, `x19`–`x25` restored, and the
 flag's low bit to `x0`. -/
@@ -75,7 +75,7 @@ def middle : Prog isa :=
 def publicKeyWith (comb : Prog isa) : Prog isa :=
   .seq (.block args) (.seq (upToPowWith c comb) (middle c))
 
-def publicKey : Prog isa := publicKeyWith c (TCombCfg.comb c.combCfg)
+def publicKey : Prog isa := publicKeyWith c (TCombCfg.comb c.combCfg false c.padd)
 
 end Cfg
 

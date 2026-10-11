@@ -281,7 +281,8 @@ elab_rules : tactic
       unless t.isIdent do continue
       let cs ← try realizeGlobalConstWithInfos t catch _ => pure []
       let env ← getEnv
-      if cs.any fun c => (env.find? c).any (· matches .thmInfo _) then args := args.push l
+      -- In a module, a theorem imported from another module is an axiom.
+      if cs.any fun c => (env.find? c).any (· matches .thmInfo _ | .axiomInfo _) then args := args.push l
     if args.isEmpty then return
     evalTactic (← `(tactic|
       set_option linter.unusedSimpArgs false in simp -failIfUnchanged only [$args,*] $[$loc]?))

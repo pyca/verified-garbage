@@ -221,7 +221,7 @@ theorem ekHead_ok {s₀ : State} (hp : expandKeyX86.pre s₀) :
   let b := arg s₀ 2
   let S := arg s₀ 1
   let Kp := arg s₀ 0
-  have hwS : ScrIn s₀.wr b := ⟨by rw [hwr]; simp [b], fitB⟩
+  have hwS : ScrIn s₀.wr b := .exact (by rw [hwr]; simp [b]) fitB
   have hfit : b.toNat + 4 * 358 ≤ 2 ^ 32 := fitB
   have hbn := setWidth_toNat b
   have hKn := setWidth_toNat Kp
@@ -387,7 +387,7 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86.pre s₀) :
   obtain ⟨hrd, hwr, dKS, dKB, dSB, dAS, dAB, dRS, dRB, fitK, fitS, fitB, fitE⟩ := hp
   let b := arg s₀ 2
   let S := arg s₀ 1
-  have hwB : ScrIn s₀.wr b := ⟨by rw [hwr]; simp [b], fitB⟩
+  have hwB : ScrIn s₀.wr b := .exact (by rw [hwr]; simp [b]) fitB
   have hwS : (⟨S.setWidth 64, 128⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [S]
   have pre : EkPre s₀ b S := ⟨hwB, hwS, dSB, fitS⟩
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)

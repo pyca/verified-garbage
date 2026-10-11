@@ -265,10 +265,13 @@ def decBody8 (nr : Nat) : Prog isa :=
   .seq (.block []) (.seq (batch nr 8 0 (q8 nr true))
     (.block [.alu .add .rdx (.imm 128), .alu .sub .r9 (.imm 8), .alu .cmp .r9 (.imm 16)]))
 
-def decFor (nr : Nat) : Prog isa :=
-  .seq (.block (setup ++ (List.range 8).flatMap prepare))
+/-- Decryption, after the setup `su`. -/
+def decForWith (su : List Instr) (nr : Nat) : Prog isa :=
+  .seq (.block (su ++ (List.range 8).flatMap prepare))
     (.seq (.loop (decBody8 nr) .ae) (.seq (.block [])
       (.seq (batch nr 8 0 (q8 nr false)) (.block finish))))
+
+def decFor (nr : Nat) : Prog isa := decForWith setup nr
 
 /-- Choose the complete loop once, from the public AES round count. -/
 def dispatch (a b c : Prog isa) : Prog isa :=
@@ -279,4 +282,6 @@ def enc : Prog isa := dispatch (encFor 10) (encFor 12) (encFor 14)
 /-- Encryption with a prepared key context: the powers loaded from it. -/
 def encR : Prog isa := dispatch (encForWith setupR 10) (encForWith setupR 12) (encForWith setupR 14)
 def dec : Prog isa := dispatch (decFor 10) (decFor 12) (decFor 14)
+/-- Decryption with a prepared key context: the powers loaded from it. -/
+def decR : Prog isa := dispatch (decForWith setupR 10) (decForWith setupR 12) (decForWith setupR 14)
 end VG.Impl.Gcm.X86_64.StitchAvx8

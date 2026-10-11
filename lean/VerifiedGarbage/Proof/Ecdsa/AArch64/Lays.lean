@@ -96,48 +96,113 @@ theorem ct_tmp (c : Cfg) : c.sl CT + 9 * (8 * c.n) ≤ c.sl TMP ∨ c.sl TMP + 8
       rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by decide)
     omega
 
+/-! ## The powers' working slots and temporary area -/
+
+theorem invTbl_none (h : c.inverse = none) : c.invTbl = c.sl CT := by simp only [Cfg.invTbl, h]
+theorem invTmp_none (h : c.inverse = none) : c.invTmp = c.sl TMP := by simp only [Cfg.invTmp, h]
+
+theorem invTbl_ge (hc : BaseCfgOk c) : c.sl CT ≤ c.invTbl := by
+  rcases hc.inv_at with h | h
+  · rw [invTbl_none h]
+  · exact h.1
+
+theorem invTbl_le (hc : BaseCfgOk c) : c.invTbl + 9 * (8 * c.n) ≤ size := by
+  rcases hc.inv_at with h | h
+  · rw [invTbl_none h]; exact ct_le c hc.n10
+  · omega
+
+theorem invTbl_le8 (hc : BaseCfgOk c) : c.invTbl + (9 * (8 * c.n) + 8) ≤ size := by
+  rcases hc.inv_at with h | h
+  · rw [invTbl_none h, sl_eq c CT]
+    have := hc.n10
+    show 64 + 8 * c.n * 69 + (9 * (8 * c.n) + 8) ≤ 8192
+    omega
+  · omega
+
+theorem invTmp_ge64 (hc : BaseCfgOk c) : 64 ≤ c.invTmp := by
+  rcases hc.inv_at with h | h
+  · rw [invTmp_none h]; exact sl_ge64 c _
+  · have := sl_ge64 c CT; omega
+
+theorem invTbl8 (hc : BaseCfgOk c) : c.invTbl % 8 = 0 := by
+  rcases hc.inv_at with h | h
+  · rw [invTbl_none h]; exact sl_mod8 c _
+  · exact h.2.1
+
+theorem invTmp8 (hc : BaseCfgOk c) : c.invTmp % 8 = 0 := by
+  rcases hc.inv_at with h | h
+  · rw [invTmp_none h]; exact sl_mod8 c _
+  · exact h.2.2.2.2.1
+
+theorem invTmp_le (hc : BaseCfgOk c) : c.invTmp + 8 * c.n ≤ size := by
+  rcases hc.inv_at with h | h
+  · rw [invTmp_none h]; exact sl_le c hc.n10 (by decide)
+  · exact h.2.2.2.1
+
+theorem invTbl_tmp (hc : BaseCfgOk c) :
+    c.invTbl + 9 * (8 * c.n) ≤ c.invTmp ∨ c.invTmp + 8 * c.n ≤ c.invTbl := by
+  rcases hc.inv_at with h | h
+  · rw [invTbl_none h, invTmp_none h]; exact ct_tmp c
+  · exact Or.inl (by omega)
+
+/-- A numbered slot below the tables is below the powers' working slots. -/
+theorem sl_invTbl (hc : BaseCfgOk c) {i : Nat} (hi : i < 45) (hT : i ≠ TMP) :
+    c.sl i + 8 * c.n ≤ c.invTbl :=
+  Nat.le_trans (sl_lt c (show i < CT by unfold CT; omega) hT) (invTbl_ge hc)
+
+/-- A numbered slot below the tables, but `TMP`, is apart from the powers'
+temporary area. -/
+theorem sl_invTmp (hc : BaseCfgOk c) {i : Nat} (hi : i < 45) (hT : i ≠ TMP) :
+    c.sl i + 8 * c.n ≤ c.invTmp ∨ c.invTmp + 8 * c.n ≤ c.sl i := by
+  rcases hc.inv_at with h | h
+  · rw [invTmp_none h]; exact sl_apart c hT
+  · have := sl_invTbl hc hi hT
+    exact Or.inl (by omega)
+
+theorem invMP_A (hc : BaseCfgOk c) : ModA { c.MP' with tmp := c.invTmp } := ⟨sl_mod8 c MP, invTmp8 hc⟩
+theorem invMN_A (hc : BaseCfgOk c) : ModA { c.MN' with tmp := c.invTmp } := ⟨sl_mod8 c MN, invTmp8 hc⟩
+
 /-- A power by a chain with its result in `ACC`, its base in slot `b` and its
-table at `CT`. -/
+table and temporary area the powers' (`invTbl`, `invTmp`). -/
 theorem chainLay_of (hc : BaseCfgOk c) {P : ChainCfg} (hn : P.M.n = c.n) (hacc : P.acc = c.sl ACC)
-    (htbl : P.tbl = c.sl CT) {b jm : Nat} (hb : P.base = c.sl b) (hmo : P.M.mo = c.sl jm)
-    (htmp : P.M.tmp = c.sl TMP) (hA : ModA P.M) (hb45 : b < 45) (hbs : b ∉ [ACC, TMP, jm])
+    (htbl : P.tbl = c.invTbl) {b jm : Nat} (hb : P.base = c.sl b) (hmo : P.M.mo = c.sl jm)
+    (htmp : P.M.tmp = c.invTmp) (hA : ModA P.M) (hb45 : b < 45) (hbs : b ∉ [ACC, TMP, jm])
     (hjm : jm < 45 ∧ jm ∉ [ACC, TMP]) : ChainLay P size := by
   have h0 := hc.n0
   have h7 := hc.n10
-  have lt : ∀ {i}, i < 45 → i ≠ TMP → c.sl i + 8 * c.n ≤ c.sl CT := fun hi hT => sl_lt c (by unfold CT; omega) hT
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hbs hjm
   refine ⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, hA, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     simp only [hn, hacc, htbl, hb, hmo, htmp]
   · exact sl_le c h7 (by decide)
   · exact sl_le c h7 hb45
-  · exact ct_le c h7
+  · exact invTbl_le hc
   · exact sl_mod8 c _
   · exact sl_mod8 c _
-  · exact sl_mod8 c _
+  · exact invTbl8 hc
   · exact sl_apart c (Ne.symm hbs.1)
-  · exact Or.inl (lt (by decide) (by decide))
-  · exact Or.inl (lt hb45 hbs.2.1)
-  · exact sl_apart c (by decide)
-  · exact sl_apart c hbs.2.1
-  · exact ct_tmp c
+  · exact Or.inl (sl_invTbl hc (by decide) (by decide))
+  · exact Or.inl (sl_invTbl hc hb45 hbs.2.1)
+  · exact sl_invTmp hc (by decide) (by decide)
+  · exact sl_invTmp hc hb45 hbs.2.1
+  · exact invTbl_tmp hc
   · intro w hw
     simp only [chainW, hn, hacc, htbl, htmp, List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl
     · exact sl_apart c hjm.2.1
-    · exact Or.inl (lt hjm.1 hjm.2.2)
-    · exact sl_apart c hjm.2.2
+    · exact Or.inl (sl_invTbl hc hjm.1 hjm.2.2)
+    · exact sl_invTmp hc hjm.1 hjm.2.2
   · exact sl_apart c hbs.2.2
 
 theorem invLayP (hc : BaseCfgOk c) : InvLay c.invP size :=
-  InvLay.of_chain (chainLay_of hc (P := c.invP.toChain) rfl rfl rfl (b := RZ) (jm := MP) rfl rfl rfl (MP'_A c)
+  InvLay.of_chain (chainLay_of hc (P := c.invP.toChain) rfl rfl rfl (b := RZ) (jm := MP) rfl rfl rfl (invMP_A hc)
     (by decide) (by decide) (by decide)) hc.n4 hc.n10
 
 theorem invLayN (hc : BaseCfgOk c) : InvLay c.invN size :=
-  InvLay.of_chain (chainLay_of hc (P := c.invN.toChain) rfl rfl rfl (b := KM) (jm := MN) rfl rfl rfl (MN'_A c)
+  InvLay.of_chain (chainLay_of hc (P := c.invN.toChain) rfl rfl rfl (b := KM) (jm := MN) rfl rfl rfl (invMN_A hc)
     (by decide) (by decide) (by decide)) hc.n4 hc.n10
 
 theorem chainLayN (hc : BaseCfgOk c) : ChainLay c.powN size :=
-  chainLay_of hc rfl rfl rfl (b := KM) (jm := MN) rfl rfl rfl (MN'_A c) (by decide) (by decide)
+  chainLay_of hc rfl rfl rfl (b := KM) (jm := MN) rfl rfl rfl (invMN_A hc) (by decide) (by decide)
     (by decide)
 
 theorem chainOkN (hc : BaseCfgOk c) (h : c.fastN = false) : ChainOk c.powN (c.C.n - 2) :=

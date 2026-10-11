@@ -231,6 +231,9 @@ def absorb (yo : Nat) : Prog isa :=
       (.seq (.ite .e (.block []) (absorbHead c yo))
       (.seq (absorbWhole c yo) absorbTail))))
 
+/-- `absorb yo` with nothing buffered (`rbx = 0`): no buffer to fill first. -/
+def absorbAl (yo : Nat) : Prog isa := .seq (absorbWhole c yo) absorbTail
+
 /-- The `rbx` buffered bytes, padded with zeros in `T`, absorbed. -/
 def flush (yo : Nat) : Prog isa :=
   .seq (.block [.alu .test .rbx (.reg .rbx)])
@@ -282,6 +285,10 @@ def crypt : Prog isa :=
       (.seq (.ite .e (.block []) cryptHead)
       (.seq (cryptWhole c) (cryptTail c)))))
 
+/-- `crypt` from the start of a keystream block (`rbx = 0`): no rest of a
+block to use first. -/
+def cryptAl : Prog isa := .seq (cryptWhole c) (cryptTail c)
+
 /-! ## The tag and `J₀` -/
 
 /-- The tag into `W + o`. -/
@@ -302,7 +309,7 @@ def j012 : List Instr :=
 def j0hash : Prog isa :=
   .seq (.block [.mov32 .rax (imm 0), .store (at_ .r14 0) .rax, .store (at_ .r14 8) .rax,
     .store (at_ .r15 auxO) .rbp, .mov32 .rbx (imm 0)])
-  (.seq (absorb c 0)
+  (.seq (absorbAl c 0)
   (.seq (.block [.mov .rbx (.mem (at_ .r15 auxO)), .alu .and .rbx (imm 15)])
   (.seq (flush c 0)
   (.seq (.block [.mov32 .rbx (imm 0), .mov .rbp (.mem (at_ .r15 auxO))])
@@ -469,12 +476,12 @@ def streamBlocks (f : Fn) : Prog isa :=
 def streamSmall : List Instr := [.mov32 .rcx (imm 256), .alu .cmp .rbp (.reg .rcx)]
 
 /-- The text of `encrypt` (`enc`) or `decrypt`: if there is any, the
-additional data padded first if there is no text yet; then, if there are
-fewer than 256 bytes (`streamSmall`), all of them with `crypt` and `absorb`;
-otherwise the head (the bytes that finish the block the text so far left
-partial) with `crypt` and `absorb`, the whole blocks in one call of
-`vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks`, and the rest with `crypt`
-and `absorb`. Encrypting absorbs each part after `crypt`, decrypting
+additional data padded first if there is no text yet; then, unless there are
+fewer than 256 bytes (`streamSmall`), the head (the bytes that finish the
+block the text so far left partial) with `crypt` and `absorb` and the whole
+blocks in one call of `vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks`; and
+the rest (all of it, if there were fewer than 256 bytes) with `crypt` and
+`absorb`. Encrypting absorbs each part after `crypt`, decrypting
 before. -/
 def streamText (enc : Bool) : Prog isa :=
   let part : Prog isa := if enc then .seq (crypt c) (.seq (.block streamLoad) (absorb c 16))
@@ -485,12 +492,13 @@ def streamText (enc : Bool) : Prog isa :=
       (.seq (.ite .e (firstFlush c) (.block []))
       (.seq (.block streamLoad)
       (.seq (.block streamSmall)
-      (.ite .b part
-      (.seq streamHead
-      (.seq part
-      (.seq (.block streamNext)
-      (.seq (streamBlocks (if enc then c.enc else c.dec))
-      (.seq (.block streamLoad) part)))))))))))
+      (.seq (.ite .b (.block [])
+        (.seq streamHead
+        (.seq part
+        (.seq (.block streamNext)
+        (.seq (streamBlocks (if enc then c.enc else c.dec))
+          (.block streamLoad))))))
+        part))))))
 
 /-- `vg_aes_gcm_stream_encrypt`. -/
 def streamEncrypt : Prog isa :=
@@ -549,7 +557,7 @@ def oneEntry (wo : Nat) : List Instr :=
 def oneAad : Prog isa :=
   .seq (j0 c)
   (.seq (.block [.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO)), .mov32 .rbx (imm 0)])
-  (.seq (absorb c 16)
+  (.seq (absorbAl c 16)
   (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .alu .and .rbx (imm 15)])
     (flush c 16))))
 
@@ -574,7 +582,7 @@ def oneBlocks (f : Fn) : Prog isa :=
 (`len` at `W + 192`) into `W + o`. -/
 def oneTag (o : Nat) : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)])
-  (.seq (absorb c 16)
+  (.seq (absorbAl c 16)
   (.seq (.block [.mov .rbx (.mem (at_ .r15 lenO)), .alu .and .rbx (imm 15)])
   (.seq (flush c 16)
   (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .mov .rbp (.mem (at_ .r15 tlenO))])
@@ -583,7 +591,7 @@ def oneTag (o : Nat) : Prog isa :=
 /-- The data encrypted or decrypted, from the first counter block. -/
 def oneCrypt : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)])
-    (crypt c)
+    (cryptAl c)
 
 /-- The whole blocks decrypted by `oneBlocks`, encrypted again (when the tag
 is wrong): `vg_aes_ctr32` from the first counter block, which `tag`'s call of

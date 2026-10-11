@@ -24,11 +24,11 @@ def stMem (s : State) (k : Nat) (v : BitVec 64) : Mem := s.mem.writeW (wordAddr 
 
 theorem exec_st {s : State} (h : Room s) {k : Nat} (hk : k < scratchSlots) (r : Reg) :
     exec (stS k r) s = some (setMem s (stMem s k (s.gpr r))) :=
-  exec_str_x (slot_off hk) ⟨scratchR s, h, slot_in_scratch s hk⟩
+  exec_str_x (slot_off hk) (h.wr (slot_in_scratch s hk))
 
 theorem exec_ld {s : State} (h : Room s) {k : Nat} (hk : k < scratchSlots) (r : Reg) :
     exec (ldS r k) s = some (s.write .x r (slotW s k)) :=
-  exec_ldr_x (slot_off hk) ⟨scratchR s, List.mem_append_right _ h, slot_in_scratch s hk⟩
+  exec_ldr_x (slot_off hk) (h.rw (slot_in_scratch s hk))
 
 theorem slotW_stMem (s : State) {k : Nat} (hk : k < scratchSlots) (v : BitVec 64) {j : Nat}
     (hj : j < scratchSlots) : slotW (setMem s (stMem s k v)) j = if j = k then v else slotW s j := by

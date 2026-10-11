@@ -29,15 +29,15 @@ theorem stage₂ (hc : BaseCfgOk p192) (hC : Law p192.C)
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] →
       i ∉ gSlots →
       sv p192 base s₆ i = sv p192 base s i := fun hi h₁ h₂ =>
-    (sv_unch U₆ h7 hn hi (apart_chainWc hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_slW h₂))
+    (sv_unch U₆ h7 hn hi (apart_chainWc hc hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_slW h₂))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv p192 base s₆ i = sv p192 base s₅ i := fun hi h₁ =>
-    sv_unch U₆ h7 hn hi (apart_chainWc hi h₁)
+    sv_unch U₆ h7 hn hi (apart_chainWc hc hi h₁)
   refine ⟨⟨hs₅.of_keepRegs K₆ (x0_not_powClob h7), ?_, by rw [K₆.wr, K₅.wr, hS.wr],
-    F₅.unch h7 hn fixedOk_chainWc U₆⟩,
+    F₅.unch h7 hn (fixedOk_chainWc hc) U₆⟩,
     by rw [e₆ (by decide) (by decide) (by decide), hS.k],
     by rw [e₆ (by decide) (by decide) (by decide), hS.d],
     by rw [e₆ (by decide) (by decide) (by decide), hS.e],
-    by rw [flag_unch_chain U₆ h7 h0 hn, flag_unch U₅ h7 h0 hn (by decide), hS.flag], ?_, lt₆, ?_,
+    by rw [flag_unch_chain hc U₆ h7 h0 hn, flag_unch U₅ h7 h0 hn (by decide), hS.flag], ?_, lt₆, ?_,
     ?_⟩
   · rw [K₆.gpr _ (x20_not_powClob h7), K₅.gpr _ (x20_not_powClob h7), hS.x20]
   · show Rep p192.C (toM _ _ (sv p192 base s₆ RX)) (toM _ _ (sv p192 base s₆ RY)) (toM _ _ (sv p192 base s₆ RZ)) _

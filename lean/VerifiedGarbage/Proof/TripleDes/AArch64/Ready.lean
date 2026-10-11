@@ -63,21 +63,25 @@ theorem Stable.trans {s t u : State} (hs : Stable s t) (ht : Stable t u) : Stabl
     fun q hq => (ht.regs q hq).trans (hs.regs q hq), hs.frame.trans hf⟩
 
 theorem pass_word_ok (keys : Nat → DesSchedule) (base : Addr) (s : State) (x : BitVec 64)
-    (c : Nat) (hc : c < 3) (d : Direction)
-    (hready : Ready keys base s) (hword : WordState x s) :
-    WP isa (pass c d) s (fun t => WordState (VG.Proof.TripleDes.desCore (keys c) d x) t ∧
-      Ready keys base t ∧ Stable s t) := by
-  have hptr : s.gpr .x0 + BitVec.ofNat 64 (passOffset c d) =
-      keyAddr (componentBase base c) d 0 := by
+    (d : Direction) {p : Nat} (hp : 1 ≤ p ∧ p ≤ 3)
+    (hready : Ready keys base s) (hword : WordState x s)
+    (hpasses : passesOf s = BitVec.ofNat 64 p) :
+    WP isa (pass d) s (fun t =>
+      WordState (VG.Proof.TripleDes.desCore (keys (passOf d p).1) (passOf d p).2 x) t ∧
+      Ready keys base t ∧ Stable s t ∧
+      passesOf t = BitVec.ofNat 64 (p - 1) ∧
+      isa.eval (.nonzero .x .x3) t = some (decide (p ≠ 1))) := by
+  have hc := passOf_lt d p
+  have hptr : s.gpr .x0 + BitVec.ofNat 64 (passOffset (passOf d p).1 (passOf d p).2) =
+      keyAddr (componentBase base (passOf d p).1) (passOf d p).2 0 := by
     rw [hready.baseReg]
-    exact passPointer base c d
-  apply WP.mono (pass_ok c hc (keys c) d (componentBase base c) s
+    exact passPointer base _ _
+  apply WP.mono (pass_ok d hp (keys (passOf d p).1) (componentBase base (passOf d p).1) s
     ((x >>> 32).setWidth 32, x.setWidth 32) hready.spills hword.left hword.right
-    hptr
-    (hready.read c hc d) (hready.separate c hc d) (hready.values c hc d))
+    hpasses hptr (hready.read _ hc _) (hready.separate _ hc _) (hready.values _ hc _))
   intro t ht
   exact ⟨ht.wordState,
     hready.congr (ht.regs .x2 (by decide)) (ht.regs .x0 (by decide)) ht.rd ht.wr ht.frame,
-    ht.rd, ht.wr, ht.sp, ht.regs, ht.frame⟩
+    ⟨ht.rd, ht.wr, ht.sp, ht.regs, ht.frame⟩, ht.passes, ht.zf⟩
 
 end VG.Proof.TripleDes.AArch64

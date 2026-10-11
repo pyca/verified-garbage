@@ -44,14 +44,16 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
       its sign, and added by the mixed complete addition formulas of Renes, Costello and Batina \
       for `a = -3` (Algorithm 5: the entry's `Z` is 1), the sum replacing the accumulator \
       unless the digit is zero; the \
-      inversion modulo `p` is by divsteps (Bernstein and Yang's safegcd, half-delta form): 15 \
+      inversion modulo `p` is a call of `vg_p384_inv_mod_p" ++ (if adx then "_adx" else "") ++ "`, \
+      by divsteps (Bernstein and Yang's safegcd, half-delta form): 15 \
       batches of 59 divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each \
       giving a matrix of 64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the \
       coefficients `a`, `b` (divided by 2⁶⁴ modulo `p`, as in Montgomery reduction), 885 \
       divsteps in all, enough for 384-bit moduli by Bernstein and Yang's bound (which the proof \
       checks); then `f = ±1`, and `Z⁻¹` is `a` times a constant or its negation by `f`'s sign. \
       The number of steps is fixed, so the time does not depend on `Z`. `k⁻¹` modulo `n` is by \
-      the same divsteps, from `f = n`, `g = k`. The signature (or zeros) \
+      the same divsteps, from `f = n`, `g = k`, a call of `vg_p384_inv_mod_n" ++
+      (if adx then "_adx" else "") ++ "`. The signature (or zeros) \
       is selected by a mask, so the time depends only on the pointers."])
     consts := Impl.Ecdsa.X86_64.p384.combConsts
     code
@@ -77,7 +79,8 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
       " ++ Proof.Ecdsa.X86_64.P384.mulNote adx ++ ". The public key is checked without branches \
       (its first byte, both coordinates below `p`, and the curve's equation); an invalid key is \
       replaced with `G` for the point operations and rejected by the final validity flag. \
-      Divsteps computes `s⁻¹` modulo `n`, then `u = e/s` and `v = r/s`. Both public 384-bit \
+      Divsteps computes `s⁻¹` modulo `n` (a call of `vg_p384_inv_mod_n" ++
+      (if adx then "_adx" else "") ++ "`), then `u = e/s` and `v = r/s`. Both public 384-bit \
       scalars are recoded as non-adjacent signed digits, width seven for `u` and width five for \
       `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 384 doublings, adding only \
       nonzero digits. Generator digits directly index odd multiples among the 64 affine entries \

@@ -1124,52 +1124,59 @@ theorem streamText_ok (B : BlkFn M) (K : SCtx M Ctx St W SP R H D n m₀) (enc :
   have sl₃' : ∀ d, 176 ≤ d → d + 8 ≤ 240 →
       s₃'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
     rw [hm']; exact sl₃ d h₁ h₂
-  refine WP.ite (decide (n < 256)) (eval_b hcf) (fun _ => ?_) (fun _ => ?_)
-  · refine WP.mono (part_ok v K enc I₃' hx (j := 0) (k := n) (by omega_arith) (by simp [h12₃']) hbp₃'
-      (by rw [hbx₃', Nat.add_zero]) (by rw [sl₃' 200 (by decide) (by decide), hdat]; simp)
-      (by rw [sl₃' 208 (by decide) (by decide), hlen]) (by rw [sl₃' 192 (by decide) (by decide), htl, Nat.add_zero]))
-      fun s' ⟨I, _⟩ => fin s' (by rw [Nat.zero_add] at I; exact I)
-  -- The head.
-  refine WP.seq (WP.mono (sHead_ok I₃'.env hlt hbx₃' hbp₃') fun s₄ ⟨hbp₄, hg₄, hl₄, ha₄, f₄, hrd₄, hwr₄⟩ => ?_)
-  generalize hk : headLen c₀.length n = k at hbp₄ hl₄
-  have hkn : k ≤ n := hk ▸ headLen_le c₀.length n
-  have hkw := headLen_whole c₀.length n
-  rw [hk] at hkw
-  have g₄ : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s₄.gpr r = s₃'.gpr r := fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> exact hg₄ _ (by decide) (by decide)
-  have I₄ := I₃'.slots K g₄ hrd₄ hwr₄ (by decide) (by decide) f₄
-  have sl₄ : ∀ d, 176 ≤ d → d + 8 ≤ 208 →
-      s₄.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
-    rw [f₄.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact K.lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)) (by decide), sl₃' d h₁ (by omega_arith)]
-  refine WP.seq (WP.mono (part_ok v K enc I₄ hx (j := 0) (k := k) (by omega_arith) (by simp [hg₄ .r12 (by decide) (by decide), h12₃'])
-    hbp₄ (by rw [hg₄ .rbx (by decide) (by decide), hbx₃', Nat.add_zero]) (by rw [sl₄ 200 (by decide) (by decide), hdat]; simp) hl₄
-    (by rw [sl₄ 192 (by decide) (by decide), htl, Nat.add_zero])) fun s₅ ⟨I₅, sl₅⟩ => ?_)
-  -- Past the head.
-  refine WP.seq (WP.mono (next_ok I₅.env (D := D) (P := c₀.length) hkn hlt (by rw [sl₅ 208 (by decide) (by decide), hl₄])
-    (by rw [sl₅ 200 (by decide) (by decide), sl₄ 200 (by decide) (by decide), hdat])
-    (by rw [sl₅ 192 (by decide) (by decide), sl₄ 192 (by decide) (by decide), htl])
-    (by rw [sl₅ 216 (by decide) (by decide), ha₄])) fun s₆ ⟨g₆, d₆, t₆, l₆, f₆, hrd₆, hwr₆⟩ => ?_)
-  have I₆ := I₅.slots K (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> exact g₆ _ (by decide) (by decide)) hrd₆ hwr₆ (Nat.le_refl _) (by decide) f₆
-  rw [Nat.zero_add] at I₆
-  -- The whole blocks.
-  refine WP.seq (WP.mono (blocks_ok B K enc I₆ hx d₆ l₆ t₆ (fun hq => hkw.resolve_left (by omega_arith)))
-    fun s₇ ⟨I₇, d₇, l₇, t₇⟩ => ?_)
-  generalize hj₂ : k + 16 * ((n - k) / 16) = j₂ at I₇ d₇ t₇
+  -- Where the rest starts: all of it if short, after the head and the whole blocks otherwise.
+  refine WP.seq (WP.mono (Q := fun (s' : State) => ∃ j k', j + k' = n ∧
+      SInv M Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ j s' ∧
+      s'.gpr .r12 = D + BitVec.ofNat 64 j ∧ s'.gpr .rbp = BitVec.ofNat 64 k' ∧
+      s'.gpr .rbx = BitVec.ofNat 64 ((c₀.length + j) % 16) ∧
+      s'.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 j ∧
+      s'.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 k' ∧
+      s'.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (c₀.length + j))
+    (WP.ite (decide (n < 256)) (eval_b hcf) (fun _ => ?_) (fun _ => ?_)) fun s' ⟨j, k', hjk, I, h12, hbp, hbx, hd, hl, ht⟩ => ?_)
+  · exact WP.block_nil ⟨0, n, by omega_arith, I₃', by simp [h12₃'], hbp₃', by rw [hbx₃', Nat.add_zero],
+      by rw [sl₃' 200 (by decide) (by decide), hdat]; simp, by rw [sl₃' 208 (by decide) (by decide), hlen],
+      by rw [sl₃' 192 (by decide) (by decide), htl, Nat.add_zero]⟩
+  · -- The head.
+    refine WP.seq (WP.mono (sHead_ok I₃'.env hlt hbx₃' hbp₃') fun s₄ ⟨hbp₄, hg₄, hl₄, ha₄, f₄, hrd₄, hwr₄⟩ => ?_)
+    generalize hk : headLen c₀.length n = k at hbp₄ hl₄
+    have hkn : k ≤ n := hk ▸ headLen_le c₀.length n
+    have hkw := headLen_whole c₀.length n
+    rw [hk] at hkw
+    have g₄ : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s₄.gpr r = s₃'.gpr r := fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> exact hg₄ _ (by decide) (by decide)
+    have I₄ := I₃'.slots K g₄ hrd₄ hwr₄ (by decide) (by decide) f₄
+    have sl₄ : ∀ d, 176 ≤ d → d + 8 ≤ 208 →
+        s₄.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
+      rw [f₄.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact K.lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)) (by decide), sl₃' d h₁ (by omega_arith)]
+    refine WP.seq (WP.mono (part_ok v K enc I₄ hx (j := 0) (k := k) (by omega_arith) (by simp [hg₄ .r12 (by decide) (by decide), h12₃'])
+      hbp₄ (by rw [hg₄ .rbx (by decide) (by decide), hbx₃', Nat.add_zero]) (by rw [sl₄ 200 (by decide) (by decide), hdat]; simp) hl₄
+      (by rw [sl₄ 192 (by decide) (by decide), htl, Nat.add_zero])) fun s₅ ⟨I₅, sl₅⟩ => ?_)
+    -- Past the head.
+    refine WP.seq (WP.mono (next_ok I₅.env (D := D) (P := c₀.length) hkn hlt (by rw [sl₅ 208 (by decide) (by decide), hl₄])
+      (by rw [sl₅ 200 (by decide) (by decide), sl₄ 200 (by decide) (by decide), hdat])
+      (by rw [sl₅ 192 (by decide) (by decide), sl₄ 192 (by decide) (by decide), htl])
+      (by rw [sl₅ 216 (by decide) (by decide), ha₄])) fun s₆ ⟨g₆, d₆, t₆, l₆, f₆, hrd₆, hwr₆⟩ => ?_)
+    have I₆ := I₅.slots K (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> exact g₆ _ (by decide) (by decide)) hrd₆ hwr₆ (Nat.le_refl _) (by decide) f₆
+    rw [Nat.zero_add] at I₆
+    -- The whole blocks.
+    refine WP.seq (WP.mono (blocks_ok B K enc I₆ hx d₆ l₆ t₆ (fun hq => hkw.resolve_left (by omega_arith)))
+      fun s₇ ⟨I₇, d₇, l₇, t₇⟩ => ?_)
+    generalize hj₂ : k + 16 * ((n - k) / 16) = j₂ at I₇ d₇ t₇
+    -- The rest.
+    obtain ⟨s₈, run₈, h12₈, hbp₈, hbx₈, hg₈, hm₈, hrd₈, hwr₈⟩ := load_ok I₇.env d₇ l₇ t₇
+    rw [toNat_mod16] at hbx₈
+    have I₈ := I₇.regs (load_env hg₈) hm₈ hrd₈ hwr₈
+    exact WP.of_runBlock ⟨s₈, run₈, j₂, (n - k) % 16, by omega_arith, I₈, h12₈, hbp₈, hbx₈, by rw [hm₈]; exact d₇,
+      by rw [hm₈]; exact l₇, by rw [hm₈]; exact t₇⟩
   -- The rest.
-  obtain ⟨s₈, run₈, h12₈, hbp₈, hbx₈, hg₈, hm₈, hrd₈, hwr₈⟩ := load_ok I₇.env d₇ l₇ t₇
-  refine WP.seq (WP.of_runBlock ⟨s₈, run₈, ?_⟩)
-  rw [toNat_mod16] at hbx₈
-  have I₈ := I₇.regs (load_env hg₈) hm₈ hrd₈ hwr₈
-  refine WP.mono (part_ok v K enc I₈ hx (j := j₂) (k := (n - k) % 16) (by omega_arith) h12₈ hbp₈ hbx₈
-    (by rw [hm₈]; exact d₇) (by rw [hm₈]; exact l₇) (by rw [hm₈]; exact t₇)) fun s' ⟨I, _⟩ => ?_
-  have hn : j₂ + (n - k) % 16 = n := by omega_arith
-  rw [hn] at I
-  exact fin s' I
+  refine WP.mono (part_ok v K enc I hx (j := j) (k := k') (by omega_arith) h12 hbp hbx hd hl ht) fun s'' ⟨I', _⟩ => ?_
+  rw [hjk] at I'
+  exact fin s'' I'
 
 end
 
