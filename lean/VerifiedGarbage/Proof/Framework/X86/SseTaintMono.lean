@@ -99,49 +99,49 @@ end VG.X86.SseTaint
 
 namespace VG.X86
 
-private abbrev I : VG.Taint.Frame taint := inferInstance
+abbrev taintFrameOfTaint : VG.Taint.Frame taint := inferInstance
 
 open VG.X86.Taint in
 /-- The SIMD analysis is monotone along `LeR`, with frames of registers, as
 `taint` is. -/
 instance : VG.Taint.Frame sseTaint :=
-  { R := I.R
-    R_trans := I.R_trans
-    R_right := I.R_right
-    le_R := I.le_R
+  { R := taintFrameOfTaint.R
+    R_trans := taintFrameOfTaint.R_trans
+    R_right := taintFrameOfTaint.R_right
+    le_R := taintFrameOfTaint.le_R
     step := fun {τ σ τ'} i h hs => by
       have hs : SseTaint.step τ i = some τ' := hs
       obtain ⟨σ', h₁, h₂⟩ := SseTaint.LeR.step (leR_iff.mp h) i hs
       exact ⟨σ', h₁, leR_iff.mpr h₂⟩
-    condPub := I.condPub
-    meet := I.meet
-    call := I.call
-    ret := I.ret
-    push := I.push
-    pop := I.pop
-    join := I.join
-    bot := I.bot
-    frameOf := I.frameOf
-    Fr := I.Fr
-    Fr_trans := I.Fr_trans
-    Fr_R := I.Fr_R
-    join_hint := I.join_hint
-    join_R := I.join_R
-    frame_le_left := I.frame_le_left
-    frame_le_right := I.frame_le_right
-    frame_mono := I.frame_mono
-    le_frame := I.le_frame
-    le_meet := I.le_meet
-    bot_le := I.bot_le
-    bot_valid := I.bot_valid
-    keeps := I.keeps
-    keepsCall := I.keepsCall
-    keeps_bot := I.keeps_bot
-    keepsCall_bot := I.keepsCall_bot
+    condPub := taintFrameOfTaint.condPub
+    meet := taintFrameOfTaint.meet
+    call := taintFrameOfTaint.call
+    ret := taintFrameOfTaint.ret
+    push := taintFrameOfTaint.push
+    pop := taintFrameOfTaint.pop
+    join := taintFrameOfTaint.join
+    bot := taintFrameOfTaint.bot
+    frameOf := taintFrameOfTaint.frameOf
+    Fr := taintFrameOfTaint.Fr
+    Fr_trans := taintFrameOfTaint.Fr_trans
+    Fr_R := taintFrameOfTaint.Fr_R
+    join_hint := taintFrameOfTaint.join_hint
+    join_R := taintFrameOfTaint.join_R
+    frame_le_left := taintFrameOfTaint.frame_le_left
+    frame_le_right := taintFrameOfTaint.frame_le_right
+    frame_mono := taintFrameOfTaint.frame_mono
+    le_frame := taintFrameOfTaint.le_frame
+    le_meet := taintFrameOfTaint.le_meet
+    bot_le := taintFrameOfTaint.bot_le
+    bot_valid := taintFrameOfTaint.bot_valid
+    keeps := taintFrameOfTaint.keeps
+    keepsCall := taintFrameOfTaint.keepsCall
+    keeps_bot := taintFrameOfTaint.keeps_bot
+    keepsCall_bot := taintFrameOfTaint.keepsCall_bot
     step_keeps := fun i hk hΦF hΦ hs => SseTaint.step_keeps i hk hΦF hΦ hs
-    call_keeps := I.call_keeps
-    ret_keeps := I.ret_keeps
-    push_keeps := I.push_keeps
-    pop_keeps := I.pop_keeps }
+    call_keeps := taintFrameOfTaint.call_keeps
+    ret_keeps := taintFrameOfTaint.ret_keeps
+    push_keeps := taintFrameOfTaint.push_keeps
+    pop_keeps := taintFrameOfTaint.pop_keeps }
 
 end VG.X86

@@ -378,7 +378,7 @@ end Taint
 
 open Lean Meta Elab Tactic in
 /-- `taint_decide`, with the taints of the hint weakened by `w`, if given. -/
-def taintDecideAt (chunkSize : Nat) (name : String) (w : Option Term) : TacticM Unit := do
+meta def taintDecideAt (chunkSize : Expr) (name : String) (w : Option Term) : TacticM Unit := do
   let g ← getMainGoal
   let some (_, lhs, _) := (← instantiateMVars (← g.getType)).eq?
     | throwError "{name}: the goal is not an equation about `Taint.check A τ c h`"
@@ -389,7 +389,7 @@ def taintDecideAt (chunkSize : Nat) (name : String) (w : Option Term) : TacticM 
   let tT ← whnfD (mkApp2 (mkConst ``Taint.T) m a)
   let hty := mkApp (mkConst ``Taint.Hint) tT
   let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) hty)
-  let mut hint := mkApp5 (mkConst ``Taint.hintOfSize) m a (mkNatLit chunkSize) τ c
+  let mut hint := mkApp5 (mkConst ``Taint.hintOfSize) m a chunkSize τ c
   if let some w := w then
     unless h.isMVar do throwError "{name}: the hint is already given"
     let wv ← Term.elabTermEnsuringType w (← mkArrow tT tT)
@@ -402,14 +402,14 @@ def taintDecideAt (chunkSize : Nat) (name : String) (w : Option Term) : TacticM 
 
 open Lean Elab Tactic in
 /-- Try larger hint intervals, retaining the original bounded check as a fallback. -/
-def taintDecide (name : String) (w : Option Term) : TacticM Unit := do
+meta def taintDecide (name : String) (w : Option Term) : TacticM Unit := do
   let saved ← saveState
   try
-    taintDecideAt 1024 name w
+    taintDecideAt (mkNatLit 1024) name w
   catch _ =>
     -- Discard the failed attempt's hint assignment before constructing another.
     saved.restore
-    taintDecideAt Taint.chunk name w
+    taintDecideAt (mkConst ``Taint.chunk) name w
 
 /-- Proves `(Taint.check A τ c ?hint).isSome = true`, or any decidable
 equation whose left side contains `Taint.check A τ c ?hint` (e.g. a property of
