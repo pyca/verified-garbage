@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Argon2
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Argon2
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Argon2: contracts on every target
@@ -24,6 +26,8 @@ BLAKE2b state and scratch, and saved arguments. It has a fixed size because
 the entry point permits serial evaluation of the lanes. `stack` and
 `writeArgs` account for the verified calls within the derivation.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Argon2
 

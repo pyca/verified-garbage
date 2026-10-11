@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
-import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 
 /-!
 # ECDSA signature verification over brainpoolP512r1: the contracts, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 **Trusted** (as every file in `Spec/`). `vg_ecdsa_brainpoolp512r1_verify`, in the
 module `ecdsa_brainpoolp512r1`, for brainpoolP512r1's `Ecdsa.Instance`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdsa.BrainpoolP512r1
 

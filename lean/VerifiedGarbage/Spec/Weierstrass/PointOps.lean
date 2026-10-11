@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Spec.P521
+module
+
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Spec.P521
 
 /-!
 # Point doubling and addition for `a = -3` in a curve's working space, as functions
@@ -63,6 +65,8 @@ Jacobian additions decide the exceptional cases by branches: their timing
 may depend on the coordinates they read (`leak`), so they are only for
 public points (verifying a signature).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Weierstrass.PointOps
 

@@ -1,8 +1,13 @@
-import VerifiedGarbage.Spec.MlDsa.Poly
+module
+
+public import VerifiedGarbage.Spec.MlDsa.Poly
 
 /-! Separate internal transform contracts. They retain the standard NTT field
 value while explicitly allowing positive representatives below three times q.
 The canonical `nttContract`, `Reduced`, and `PolyIs` contracts are unchanged. -/
+
+@[expose] public section
+
 namespace VG.Spec.MlDsa
 
 /-- Internal positive representatives, not canonical residues. -/

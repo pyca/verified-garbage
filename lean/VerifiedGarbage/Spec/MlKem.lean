@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Sha3
+module
+
+public import VerifiedGarbage.Spec.Sha3
 
 /-!
 # ML-KEM (FIPS 203)
@@ -33,6 +35,8 @@ The hash functions and XOFs are those of `Spec/Sha3.lean` (§4.1). The
 contracts of the functions implemented in assembly are in
 `Spec/MlKem/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.MlKem
 

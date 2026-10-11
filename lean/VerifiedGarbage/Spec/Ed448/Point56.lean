@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ed448
-import VerifiedGarbage.Spec.X448.Field56
+module
+
+public import VerifiedGarbage.Spec.Ed448
+public import VerifiedGarbage.Spec.X448.Field56
 
 /-!
 # Ed448's point addition and doubling in radix `2^56`, as functions
@@ -33,6 +35,8 @@ result's (`Field56.Keeps`).
 Everything is secret but the pointer, which is public, and the functions are
 constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ed448.Point56
 

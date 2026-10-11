@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Weierstrass
+module
+
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # Elliptic curve key pairs and public keys
@@ -19,6 +21,8 @@ import VerifiedGarbage.Spec.Weierstrass
 The compressed form (`02`/`03 ‖ x`), which needs a square root in `GF(p)`,
 is not specified yet: `decodePublicKey` rejects it.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.EcKey
 

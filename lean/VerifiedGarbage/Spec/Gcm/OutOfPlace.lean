@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Gcm.Precomputed
+module
+
+public import VerifiedGarbage.Spec.Gcm.Precomputed
 
 /-!
 # AES-GCM encryption out of place
@@ -34,6 +36,8 @@ the preconditions require to be the length of the input. The other
 arguments, what is public and what is secret, and the working space are
 those of the functions they follow. Existing contracts are unchanged.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Gcm
 

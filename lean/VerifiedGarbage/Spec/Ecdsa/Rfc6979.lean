@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdsa
-import VerifiedGarbage.Spec.Hmac
+module
+
+public import VerifiedGarbage.Spec.Ecdsa
+public import VerifiedGarbage.Spec.Hmac
 
 /-!
 # Deterministic ECDSA (RFC 6979)
@@ -30,6 +32,8 @@ gives no signature if none is suitable: for a curve whose `n` is close to
 gives the number of candidates tried, which an implementation may reveal.
 A private key not in `[1, n-1]` gives no signature, and no candidate.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdsa.Rfc6979
 

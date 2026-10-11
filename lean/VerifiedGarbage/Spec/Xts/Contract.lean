@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Xts
-import VerifiedGarbage.Spec.Cbc.Contract
+module
+
+public import VerifiedGarbage.Spec.Xts
+public import VerifiedGarbage.Spec.Cbc.Contract
 
 /-!
 # XTS-AES: the contracts, on every target
@@ -27,6 +29,8 @@ working space of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`
 below the stack pointer that an implementation's calls and frames use (see
 `Sig.contract`).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Xts
 

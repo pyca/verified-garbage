@@ -1,5 +1,9 @@
-import VerifiedGarbage.Spec.MlDsa.FusedInverse
-import VerifiedGarbage.Spec.MlDsa.Montgomery
+module
+
+public import VerifiedGarbage.Spec.MlDsa.FusedInverse
+public import VerifiedGarbage.Spec.MlDsa.Montgomery
+
+@[expose] public section
 
 namespace VG.Spec.MlDsa
 

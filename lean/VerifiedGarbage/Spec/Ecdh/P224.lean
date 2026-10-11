@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdh.Generic
-import VerifiedGarbage.Spec.EcKey.P224
+module
+
+public import VerifiedGarbage.Spec.Ecdh.Generic
+public import VerifiedGarbage.Spec.EcKey.P224
 
 /-!
 # ECDH over P-224: the contracts, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.EcKey.P224
 **Trusted** (as every file in `Spec/`). `vg_ecdh_p224`, in the module
 `ecdh_p224`, for P-224's `EcKey.Instance`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdh.P224
 

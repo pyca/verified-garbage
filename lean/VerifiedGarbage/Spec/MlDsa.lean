@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Sha3
+module
+
+public import VerifiedGarbage.Spec.Sha3
 
 /-!
 # ML-DSA (FIPS 204)
@@ -39,6 +41,8 @@ The hash function and XOFs `H` and `G` are SHAKE256 and SHAKE128
 `ℓ` bytes of their output. The contracts of the functions implemented in
 assembly are in `Spec/MlDsa/`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.MlDsa
 

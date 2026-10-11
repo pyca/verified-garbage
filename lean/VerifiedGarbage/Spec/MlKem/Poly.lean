@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.MlKem.Contract
+module
+
+public import VerifiedGarbage.Spec.MlKem.Contract
 
 /-!
 # ML-KEM: the contracts of the polynomial primitives, on every target
@@ -26,6 +28,8 @@ calling convention allows it (`writeArgs`), and take the number of bytes of
 stack below the stack pointer that their calls and frames use (`stack`, see
 `Sig.contract`), which depends on the target.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.MlKem
 

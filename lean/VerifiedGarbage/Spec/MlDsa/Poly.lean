@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.MlDsa
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # ML-DSA: the contracts of the polynomial primitives, on every target
@@ -33,6 +35,8 @@ arguments passed in memory, where the calling convention allows it
 that their calls and frames use (`stack`, see `Sig.contract`), which
 depends on the target.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.MlDsa
 

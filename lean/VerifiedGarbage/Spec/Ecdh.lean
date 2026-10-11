@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.EcKey
+module
+
+public import VerifiedGarbage.Spec.EcKey
 
 /-!
 # Elliptic curve Diffie-Hellman (NIST SP 800-56A)
@@ -12,6 +14,8 @@ error if `P = O`. The peer's public key is an octet string, validated as
 `EcKey.decodePublicKey` does (§5.6.2.3.3), which §5.6.2.2.2 requires
 before it is used.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdh
 

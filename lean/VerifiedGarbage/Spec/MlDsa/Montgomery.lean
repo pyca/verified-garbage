@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.MlDsa.Poly
+module
+
+public import VerifiedGarbage.Spec.MlDsa.Poly
 
 /-!
 # ML-DSA: contracts for Montgomery-scaled polynomial arithmetic
@@ -19,6 +21,8 @@ every term in a sum or difference.
 The new functions have distinct names and contracts. They are not variants
 of the ordinary-representation functions, whose contracts are unchanged.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.MlDsa
 

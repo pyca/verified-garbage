@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # CAST-128 (CAST5) and ECB
@@ -23,6 +25,8 @@ values, not timing: the S-box indices and the rotation amounts are secret
 in the contracts, and an implementation must prove constant time despite
 them.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Cast5
 

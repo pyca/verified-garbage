@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Camellia.Contract
-import VerifiedGarbage.Spec.Ctr.Contract
+module
+
+public import VerifiedGarbage.Spec.Camellia.Contract
+public import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # Camellia-CTR: the contract, on every target
@@ -20,6 +22,8 @@ Appendix B.1).
 Only the pointers, `rounds` and `n` are public: no part of the counter block
 may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Camellia
 

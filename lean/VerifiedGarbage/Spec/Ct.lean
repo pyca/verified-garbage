@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # Constant-time comparison of byte strings
@@ -17,6 +19,8 @@ arguments, the pointers and the lengths.
 This file is independent of any architecture; the contract on every target
 is in `Spec/Ct/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ct
 
