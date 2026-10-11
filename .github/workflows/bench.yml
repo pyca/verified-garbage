@@ -114,6 +114,8 @@ jobs:
       # Restricts the CPU features the library uses, to benchmark other
       # implementations (see ci/bench_arches.py); empty restricts nothing.
       VG_CPU_FEATURES: ${{ matrix.cpu-features }}
+      # Temporary: mask OpenSSL and AWS-LC to AES-NI/PCLMULQDQ/AVX2 (no VAES, VPCLMULQDQ, AVX-512).
+      OPENSSL_ia32cap: '~0x0:~0x574220200000'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
