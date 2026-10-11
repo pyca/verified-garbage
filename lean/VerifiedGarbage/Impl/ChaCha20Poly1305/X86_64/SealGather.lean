@@ -53,6 +53,7 @@ def Width.ofBlocks : Impl.Poly1305.X86_64.Blocks → Width
   | .scalar => .x16
   | .avx2 => .y32
   | .avx512 => .z64
+  | .ifma => .z64
 
 /-- The number of bytes, a power of two. -/
 def Width.log : Width → Nat

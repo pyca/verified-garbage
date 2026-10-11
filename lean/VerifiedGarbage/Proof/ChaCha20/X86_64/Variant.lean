@@ -63,7 +63,7 @@ structure XorImpl where
   `2 ^ wide` bytes in it). -/
   fold_poly : (callee.fold = 0 ∧ callee.pass = 0 ∧ callee.wide = 4 ∧ poly = .scalar) ∨
     (callee.fold = 448 ∧ callee.pass = 0 ∧ callee.wide = 5 ∧ poly = .avx2) ∨
-    (callee.fold = 960 ∧ callee.pass = 1024 ∧ callee.wide = 6 ∧ poly = .avx512)
+    (callee.fold = 960 ∧ callee.pass = 1024 ∧ callee.wide = 6 ∧ (poly = .avx512 ∨ poly = .ifma))
 
 namespace XorImpl
 
@@ -150,7 +150,27 @@ def avx512 : XorImpl where
   suffix := "_avx512"
   features := ["avx", "avx512f"]
   poly := .avx512
-  fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, rfl⟩)
+  fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, .inl rfl⟩)
+
+/-- `vg_chacha20_xor_avx512`, for CPUs with AVX-512 IFMA too: its callers
+that also call `vg_poly1305_blocks` (ChaCha20-Poly1305) call
+`vg_poly1305_blocks_ifma`. -/
+def ifma : XorImpl where
+  callee := .avx512
+  fold_le := by decide
+  stack := 16
+  stack_le := by decide
+  depth_le := by lit_decide
+  xdepth := by lit_decide
+  ok := avx512_ok
+  ct := avx512_ct
+  nosp := avx512_nosp
+  mxcsr := by lit_decide
+  spSafe := Code.all_of_allInstrs (by lit_decide)
+  suffix := "_ifma"
+  features := ["avx", "avx512f"]
+  poly := .ifma
+  fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, .inr rfl⟩)
 
 end XorImpl
 
