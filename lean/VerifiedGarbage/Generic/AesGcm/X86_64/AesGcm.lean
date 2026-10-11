@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Prepared
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Field
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
@@ -166,7 +166,7 @@ theorem StitchName.okR : (n : StitchName) →
       (if n.fullR then 1 else 16)
   | .vaes => Proof.Gcm.X86_64.Stitch.stitch_ok.toM _
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZH.stitchR_ok
-  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitch_ok.toM _
+  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitchR_ok
 
 def GcmVariant.stitchR (v : GcmVariant) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
   v.stitch.bind fun p => p.pieceR.map fun q => ⟨p.name.encR, p.name.decR, p.name.fullR, p.name.okR, q.enc, q.dec⟩

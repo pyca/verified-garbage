@@ -272,19 +272,28 @@ end VG.Proof.Gcm.X86_64.StitchAvx8
 namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Proof.Gcm.X86_64.Stitch
-open VG.Impl.Gcm.X86_64.StitchAvx8 (setup setupG lows setupC initCounter)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (setup setupG lows setupC initCounter preg)
+open VG.Impl.Gcm.X86_64.Pclmul (poly)
+open VG.Proof.Gcm.X86_64 (revMask)
+open VG.Spec.Gcm (blockAt)
 open VG.Spec.Gcm (Block)
 
 theorem setup_split : setup = setupG ++ lows 8 ++ (setupC ++ metaCode ++ counterHead) ++ counterTail := by
   simp only [setup, initCounter, metaCode, counterHead, counterTail, List.append_assoc,
     List.cons_append, List.nil_append]
 
-theorem setup_ok {s₀ : State} (hp : SPre s₀) :
-    WP isa (.block setup) s₀ fun s => ∃ P : Nat → Block,
-      Ready s₀ P s ∧ ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k) := by
-  rw [setup_split, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (setupG_ok s₀ (in_sub hp.k_in (off := 240) (by decide)))
-    fun t ⟨ht0, ht1, htP, htG, htM, htR, htW⟩ => ?_
+/-- What `setupG` leaves: the constants, and `H'` … `H'⁸` in `preg`. -/
+def GPost (s₀ t : State) : Prop :=
+  t.lane .xmm0 0 = revMask ∧ t.lane .xmm1 0 = poly ∧
+    (∀ i < 8, x * φ (t.lane (preg i) 0) = φ (blockAt s₀.mem (s₀.gpr .rdi + BitVec.ofNat 64 240)) ^ (i + 1)) ∧
+    (∀ r, r ≠ .rax → t.gpr r = s₀.gpr r) ∧ t.mem = s₀.mem ∧ t.rd = s₀.rd ∧ t.wr = s₀.wr
+
+/-- The setup, from any code `g` that leaves what `setupG` does. -/
+theorem setupWith_ok {s₀ : State} (hp : SPre s₀) {g : List Instr} (hg : WP isa (.block g) s₀ (GPost s₀)) :
+    WP isa (.block (g ++ lows 8 ++ (setupC ++ metaCode ++ counterHead) ++ counterTail)) s₀ fun s =>
+      ∃ P : Nat → Block, Ready s₀ P s ∧ ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k) := by
+  rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono hg fun t ⟨ht0, ht1, htP, htG, htM, htR, htW⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (lows_ok t (fun k hk => by
     rw [htW, htG .r11 (by decide)]
@@ -323,6 +332,12 @@ theorem setup_ok {s₀ : State} (hp : SPre s₀) :
   simp only [List.mem_singleton] at hr; subst r
   exact ⟨pR s₀, List.mem_singleton_self _, Offset.sub_base (pp s₀) (d := 640) (n := 128) (k := 1024) (by decide)⟩
 
+
+theorem setup_ok {s₀ : State} (hp : SPre s₀) :
+    WP isa (.block setup) s₀ fun s => ∃ P : Nat → Block,
+      Ready s₀ P s ∧ ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k) := by
+  rw [setup_split]
+  exact setupWith_ok hp (setupG_ok s₀ (in_sub hp.k_in (off := 240) (by decide)))
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
 /-!
@@ -377,7 +392,9 @@ end VG.Proof.Gcm.X86_64.StitchAvx8
 namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch
-open VG.Impl.Gcm.X86_64.StitchAvx8 (encFor decFor)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (encFor encForWith decFor)
+open VG.Proof.Gcm.Poly
+open VG.Spec.Gcm (Block)
 
 private theorem prefixContinue {a b z : Prog isa} {xs ys : List Instr} {s : State} {Q : State → Prop}
     (h : WP isa (.seq a (.seq b (.block xs))) s (fun t => WP isa (.seq (.block ys) z) t Q)) :
@@ -386,15 +403,22 @@ private theorem prefixContinue {a b z : Prog isa} {xs ys : List Instr} {s : Stat
     WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h =>
       WP.seq (WP.block_append_iff.mpr (WP.mono h fun _ h => WP.seq_iff.mp h))))
 
-theorem encFor_ok {s₀ : State} (hp : SPre s₀) : WP isa (encFor (nr s₀)) s₀ (EPost s₀) := by
-  rw [encFor]
-  refine WP.seq (WP.mono (setup_ok hp) fun s ⟨P, hR, hP⟩ => ?_)
+/-- Encryption, after any setup `su` that leaves what `setup` does. -/
+theorem encForWith_ok {s₀ : State} (hp : SPre s₀) {su : List Instr}
+    (hsu : WP isa (.block su) s₀ fun s => ∃ P : Nat → Block,
+      Ready s₀ P s ∧ ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) :
+    WP isa (encForWith su (nr s₀)) s₀ (EPost s₀) := by
+  rw [encForWith]
+  refine WP.seq (WP.mono hsu fun s ⟨P, hR, hP⟩ => ?_)
   have hlaw : HashLaw s₀ P := fun X y => finishHash X P (hk s₀) y hP
   apply prefixContinue
   refine WP.mono (firstEnc_ok hp hR) fun t hI => ?_
   refine WP.seq (WP.mono hI.compare fun u ⟨hu, hcf⟩ => ?_)
   refine WP.seq (WP.mono (loopMaybe_ok hp hlaw hu hcf) fun v ⟨g, hg, hv⟩ => ?_)
   exact WP.seq (WP.mono (finalHash_ok hp hlaw hv hg) fun w hw => tail_ok hp (tailLaw hP) hw)
+
+theorem encFor_ok {s₀ : State} (hp : SPre s₀) : WP isa (encFor (nr s₀)) s₀ (EPost s₀) :=
+  encForWith_ok hp (setup_ok hp)
 
 theorem decFor_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
     WP isa (decFor (nr s₀)) s₀ (DPost s₀) := by

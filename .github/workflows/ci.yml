@@ -513,7 +513,8 @@ jobs:
             arch: x86_64
             # AES-GCM's instances for AES's or GHASH's extension alone, which
             # no runner or chip has without the other; AES-NI's and
-            # PCLMULQDQ's together, without AVX and with it (and AES-CMAC's,
+            # PCLMULQDQ's together, without AVX and with it, and with AVX2
+            # too, whose key setup with the powers needs it (and AES-CMAC's,
             # AES-CCM's and AES-SIV's AES-NI functions, those chaining CMAC's
             # blocks in registers among them, and the AES-NI instances of
             # AES-OCB and of the modes over whole blocks, ECB to XTS), which a
@@ -529,6 +530,7 @@ jobs:
               pclmulqdq,ssse3 | aes_gcm cpu
               aes,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,pclmulqdq,ssse3 | aes_gcm cpu
+              aes,avx,avx2,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
               sha,ssse3 | rsa_pkcs1 rsa_pss rsa_oaep cpu
           # x86 feature dispatch, natively in a 32-bit userspace, with the
