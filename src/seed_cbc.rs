@@ -13,7 +13,7 @@
 //! checks the lengths, holds the key schedule and keeps the chaining value to
 //! continue from: the last ciphertext block.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::arch::seed::vg_seed_expand_key;
 use crate::arch::seed_cbc::{vg_seed_cbc_decrypt, vg_seed_cbc_encrypt};
