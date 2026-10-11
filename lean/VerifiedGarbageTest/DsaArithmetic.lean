@@ -1,3 +1,11 @@
+import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Zero
+import VerifiedGarbage.Proof.Dsa.X86_64.Equal
+import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
+import VerifiedGarbage.Proof.Dsa.Zero
+import VerifiedGarbage.Proof.Dsa.X86_64.Range
+import VerifiedGarbage.Proof.Dsa.X86_64.RangeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.WidthMask
 import VerifiedGarbage.Proof.Dsa.X86_64.CoreCalls
 import VerifiedGarbage.Proof.Dsa.X86_64.CoreReduce
 import VerifiedGarbage.Proof.Dsa.X86_64.CoreAdd
@@ -93,3 +101,23 @@ The whole-operation contracts must be proved before artifacts are registered.
 #assert_standard_axioms VG.Proof.Dsa.X86_64.coreReduce_ok
 #assert_standard_axioms VG.Proof.Dsa.X86_64.add_ok
 #assert_standard_axioms VG.Proof.Dsa.X86_64.coreAdd_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.orWords_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.rangeLow_words
+#assert_standard_axioms VG.Proof.Dsa.X86_64.rangeMask_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.rangeMask_ct
+#assert_standard_axioms VG.Proof.Dsa.X86_64.accumulate_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.widthMask_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.loadRange_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.accumulate_context
+#assert_standard_axioms VG.Proof.Dsa.X86_64.range_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.zeroLoop_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.zeroMask_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.zero_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.equalLoop_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.equal_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.equal_ct
+#assert_standard_axioms VG.Proof.Dsa.decodeBE_eq_zero
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.zero_ct
