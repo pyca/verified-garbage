@@ -101,12 +101,14 @@ structure AfterCall (c : Core) (M : Mode) (s₀ : State) (k : Nat) (s₃ : State
   r8 : s₃.gpr .r8 = Sc c s₀
 
 theorem afterCall {c : Core} {S : CoreSpec c} {M : Mode} {s₀ : State} {k : Nat} {s₂ s₃ : State}
-    (h : AfterPre c S M s₀ k s₂) (cp : CallPost c S s₂ (Kp s₀) (Rp s₀) (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt) s₃) :
+    (h : AfterPre c S M s₀ k s₂)
+    (cp : CallPost c S s₂ (Kp s₀) (Rp s₀) (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt) (Cs c s₀) s₃) :
     AfterCall c M s₀ k s₃ := by
   obtain ⟨_, s, hl, a⟩ := h
   have g : ∀ r ∈ preserved, r ≠ .lr → r ≠ .r9 → r ≠ .r10 → s₃.gpr r = s.gpr r := fun r hr hl h9 h10 => by
     rw [cp.saved r hr hl, a.regs r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr)
-      (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr) h9 h10]
+      (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr) h9 h10
+      (by rintro rfl; simp [preserved] at hr)]
   exact ⟨by rw [g _ (by decide) (by decide) (by decide) (by decide), hl.r6],
     by rw [g _ (by decide) (by decide) (by decide) (by decide), hl.r7],
     by rw [g _ (by decide) (by decide) (by decide) (by decide), hl.r8]⟩
@@ -133,38 +135,86 @@ theorem body_ct (hM : ModeOk c M) (hT : SeqTaint c M) (k : Nat) :
   let rd : List Region := [⟨State.addr (Kp s₀), S.keyLen⟩]
   let wr : List Region := [⟨State.addr (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt), c.bs⟩]
   have cpre : ∀ {t₀ : State} (hpt : UPre c S M t₀) {s₂ : State} (h : AfterPre c S M t₀ k s₂),
-      CallPre c S s₂ (Kp t₀) (Rp t₀) (bt c (Dk t₀ c M k) (Sc c t₀) M.tgt) := fun {_} hpt {_} h => by
+      CallPre c S s₂ (Kp t₀) (Rp t₀) (bt c (Dk t₀ c M k) (Sc c t₀) M.tgt) (Cs c t₀) := fun {_} hpt {_} h => by
     obtain ⟨hk, s, hl, pa⟩ := h
     exact PreA.callPre hpt hM hk hl pa
-  have callR : RelCT isa (fun s₂ s₂' => AfterPre c S M s₀ k s₂ ∧ AfterPre c S M s₀' k s₂') (.call c.name c.code)
-      fun _ _ => True := by
-    refine RelCT.call S.correct S.ct rd wr fun s₂ s₂' ⟨h, h'⟩ => ?_
+  have spA : ∀ {s₂ s₂' : State}, AfterPre c S M s₀ k s₂ → AfterPre c S M s₀' k s₂' → s₂.sp = s₂'.sp :=
+    fun ⟨_, _, hl, x⟩ ⟨_, _, hl', x'⟩ => by rw [x.sp, hl.sp, x'.sp, hl'.sp, pub_sp hq]
+  -- The arguments in registers, through the callee's view of a state.
+  have regsA : ∀ {s₂ s₂' : State} (h : AfterPre c S M s₀ k s₂) (h' : AfterPre c S M s₀' k s₂'),
+      s₂.gpr .r0 = s₂'.gpr .r0 ∧ s₂.gpr .r1 = s₂'.gpr .r1 ∧ s₂.gpr .r2 = s₂'.gpr .r2 ∧
+        (c.rounds = true → s₂.gpr .r3 = s₂'.gpr .r3) := fun h h' => by
     have p := cpre hp h
     have p' := cpre hp' h'
     rw [← pub_K hq, ← pub_R hq, ← pub_Dk hq, ← pub_Sc hq] at p'
-    obtain ⟨_, s, hl, x⟩ := h
-    obtain ⟨_, s', hl', x'⟩ := h'
     have rD := p.rd.trans p'.rd.symm
     have rN := p.rn.trans p'.rn.symm
-    refine ⟨S.pre_of _ p.ecbPre, S.pre_of _ p'.ecbPre, S.pub_of _ _ ?_ ?_ ?_ ?_ fun hr => ?_,
-      Covers.append_left p.rK (Covers.right p.wB), p.wB, Covers.append_left p'.rK (Covers.right p'.wB), p'.wB⟩
-    · simp only [State.withRegions_sp, State.callEntry_sp]
-      rw [x.sp, hl.sp, x'.sp, hl'.sp, pub_sp hq]
-    · rw [narrow_gpr _ _ _ (by decide) (by decide), narrow_gpr _ _ _ (by decide) (by decide), p.r0, p'.r0]
-    · rw [narrow_gpr _ _ _ (by decide) (by decide), narrow_gpr _ _ _ (by decide) (by decide)]
-      cases hr : c.rounds
+    refine ⟨by rw [p.r0, p'.r0], ?_, ?_, fun hr => ?_⟩
+    · cases hr : c.rounds
       · have hD : c.dReg = .r1 := by unfold Core.dReg; rw [hr]; rfl
         rwa [hD] at rD
       · rw [p.r1 hr, p'.r1 hr]
-    · rw [narrow_gpr _ _ _ (by decide) (by decide), narrow_gpr _ _ _ (by decide) (by decide)]
-      cases hr : c.rounds
+    · cases hr : c.rounds
       · have hN : c.nReg = .r2 := by unfold Core.nReg; rw [hr]; rfl
         rwa [hN] at rN
       · have hD : c.dReg = .r2 := by unfold Core.dReg; rw [hr]; rfl
         rwa [hD] at rD
-    · rw [narrow_gpr _ _ _ (by decide) (by decide), narrow_gpr _ _ _ (by decide) (by decide)]
-      have hN : c.nReg = .r3 := by unfold Core.nReg; rw [hr]; rfl
+    · have hN : c.nReg = .r3 := by unfold Core.nReg; rw [hr]; rfl
       rwa [hN] at rN
+  have callR : RelCT isa (fun s₂ s₂' => AfterPre c S M s₀ k s₂ ∧ AfterPre c S M s₀' k s₂') c.callStep
+      fun _ _ => True := by
+    unfold Core.callStep
+    split
+    rotate_left
+    · rename_i hs
+      refine RelCT.frame (fun s₂ s₂' h => spA h.1 h.2) ?_
+      intro a b t₁ t₂ a' b' ⟨s₂, s₂', ⟨h, h'⟩, pa, pb⟩ e₁ e₂
+      have p := cpre hp h
+      have p' := cpre hp' h'
+      have eC : Cs c s₀' = Cs c s₀ := by simp only [Cs]; rw [pub_Sc hq]
+      rw [← pub_K hq, ← pub_R hq, ← pub_Dk hq, eC, ← pub_Sc hq] at p'
+      have hsp := spA h h'
+      rw [push_pushed (rs := [.r12, .lr]) rfl (by simpa using p.sp8 hs), Option.some.injEq] at pa
+      rw [push_pushed (rs := [.r12, .lr]) rfl (by simpa using p'.sp8 hs), Option.some.injEq] at pb
+      subst pa pb
+      have eA : Push.argR s₂' = Push.argR s₂ := by rw [Push.argR, Push.argR, hsp]
+      let wr' : List Region := [⟨State.addr (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt), c.bs⟩,
+        ⟨State.addr (Cs c s₀), c.stackScratch⟩]
+      have cw : Covers ([⟨State.addr (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt), c.bs⟩] ++
+          [⟨State.addr (Cs c s₀), c.stackScratch⟩]) s₂.wr := Covers.append_left p.wB (p.wC hs)
+      have cw' : Covers ([⟨State.addr (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt), c.bs⟩] ++
+          [⟨State.addr (Cs c s₀), c.stackScratch⟩]) s₂'.wr := Covers.append_left p'.wB (p'.wC hs)
+      refine RelCT.call S.correct S.ct ([⟨State.addr (Kp s₀), S.keyLen⟩, Push.argR s₂]) wr'
+        (P := fun x y => x = pushed [.r12, .lr] s₂ ∧ y = pushed [.r12, .lr] s₂')
+        (fun x y ⟨ex, ey⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
+      subst ex ey
+      have v := p.ecbPreS hs
+      have v' := p'.ecbPreS hs
+      rw [eA] at v'
+      obtain ⟨r0, r1, r2, r3⟩ := regsA h h'
+      have e0 : ∀ (t : State) (r : Reg), r ≠ .r12 → r ≠ .lr → ∀ rd wr, (Push.view t rd wr).gpr r = t.gpr r :=
+        fun t r a b rd wr => Push.view_gpr _ _ _ _ (by simp [linkRegs, a, b])
+      refine ⟨S.pre_ofS hs _ v, S.pre_ofS hs _ v', S.pub_ofS hs _ _ ?_ ?_ ?_ ?_ (fun hr => ?_) ?_,
+        Push.cov (p.sp8 hs) p.rK cw, Push.covW cw, eA ▸ Push.cov (p'.sp8 hs) p'.rK cw', Push.covW cw'⟩
+      · simp only [State.withRegions_sp, State.callEntry_sp, pushed_sp, hsp]
+      · rw [e0 _ _ (by decide) (by decide), e0 _ _ (by decide) (by decide), r0]
+      · rw [e0 _ _ (by decide) (by decide), e0 _ _ (by decide) (by decide), r1]
+      · rw [e0 _ _ (by decide) (by decide), e0 _ _ (by decide) (by decide), r2]
+      · rw [e0 _ _ (by decide) (by decide), e0 _ _ (by decide) (by decide), r3 hr]
+      · rw [Push.arg0 (p.sp8 hs), Push.arg0 (p'.sp8 hs), p.r12 hs, p'.r12 hs]
+    rename_i h0
+    refine RelCT.call S.correct S.ct rd wr fun s₂ s₂' ⟨h, h'⟩ => ?_
+    have p := cpre hp h
+    have p' := cpre hp' h'
+    rw [← pub_K hq, ← pub_R hq, ← pub_Dk hq, ← pub_Sc hq] at p'
+    obtain ⟨r0, r1, r2, r3⟩ := regsA h h'
+    refine ⟨S.pre_of h0 _ p.ecbPre, S.pre_of h0 _ p'.ecbPre, S.pub_of h0 _ _ ?_ ?_ ?_ ?_ fun hr => ?_,
+      Covers.append_left p.rK (Covers.right p.wB), p.wB, Covers.append_left p'.rK (Covers.right p'.wB), p'.wB⟩
+    · simp only [State.withRegions_sp, State.callEntry_sp]; exact spA h h'
+    · rw [narrow_gpr _ _ _ (by decide) (by decide), narrow_gpr _ _ _ (by decide) (by decide), r0]
+    · rw [narrow_gpr _ _ _ (by decide) (by decide), narrow_gpr _ _ _ (by decide) (by decide), r1]
+    · rw [narrow_gpr _ _ _ (by decide) (by decide), narrow_gpr _ _ _ (by decide) (by decide), r2]
+    · rw [narrow_gpr _ _ _ (by decide) (by decide), narrow_gpr _ _ _ (by decide) (by decide), r3 hr]
   have cr := rel_wp (G := AfterCall c M s₀ k) (G' := AfterCall c M s₀' k) callR
     (fun _ h => WP.mono (call_wp S (cpre hp h)) fun _ cp => afterCall h cp)
     (fun _ h => WP.mono (call_wp S (cpre hp' h)) fun _ cp => afterCall h cp)

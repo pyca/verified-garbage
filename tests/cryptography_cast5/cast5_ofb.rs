@@ -1,4 +1,4 @@
-#![cfg(target_arch = "x86")]
+#![cfg(any(target_arch = "x86", target_arch = "arm"))]
 
 use verified_garbage::cast5_ofb::{Cast5Ofb, Error};
 

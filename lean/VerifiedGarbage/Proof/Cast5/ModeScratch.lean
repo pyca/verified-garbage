@@ -81,7 +81,7 @@ private theorem cbcBlocksAt_congr {n : Nat}
   have := List.mem_range.mp hi
   exact congrArg Vector.toList (blockAt_congr fun j hj => by rw [Offset.add_add]; exact h _ (by omega))
 
-private theorem scheduleAt_congr
+theorem scheduleAt_congr
     (h : ∀ i < 128, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     scheduleAt m₂ p = scheduleAt m₁ p := by
   apply Vector.ext
