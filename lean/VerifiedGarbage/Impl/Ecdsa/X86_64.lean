@@ -338,6 +338,18 @@ def invFn (body : Prog isa) : Prog isa :=
   .seq body <|
   .block (c.invSaved.map fun p => .mov p.1 (.mem { base := .rdi, disp := p.2 }))
 
+/-- The callee-saved registers, and the `xmm` register each is kept in by
+the functions of four words, which write no vector register. -/
+def invKeptX : List (Reg × XReg) :=
+  [(.rbx, .xmm0), (.rbp, .xmm1), (.r12, .xmm2), (.r13, .xmm3), (.r14, .xmm4), (.r15, .xmm5)]
+
+/-- A function's `body` between copying the callee-saved registers into
+`xmm0`–`xmm5` and back: for four words. -/
+def invFnX (body : Prog isa) : Prog isa :=
+  .seq (.block (invKeptX.map fun (r, x) => .xop (.movq x r))) <|
+  .seq body <|
+  .block (invKeptX.map fun (r, x) => .movqR r x)
+
 /-- The suffix of the functions' names: `_adx` with BMI2 and ADX. -/
 def fnSuffix : String := if c.adx then "_adx" else ""
 

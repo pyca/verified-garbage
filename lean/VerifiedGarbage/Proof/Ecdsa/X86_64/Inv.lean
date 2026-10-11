@@ -329,6 +329,34 @@ theorem invFn_ok (hc : BaseCfgOk c) (h6 : 6 ≤ c.n) {body : Prog isa} {base : A
       List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
     rcases hw with rfl | rfl | rfl | rfl <;> simp
 
+private theorem setXmm_gpr (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).gpr = s.gpr := rfl
+private theorem setXmm_mem (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).mem = s.mem := rfl
+private theorem setXmm_rd (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).rd = s.rd := rfl
+private theorem setXmm_wr (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).wr = s.wr := rfl
+
+/-- Copying the callee-saved registers into `xmm` registers changes nothing
+else that the proofs follow. -/
+theorem savesX_ok (s : State) :
+    WP isa (.block (Cfg.invKeptX.map fun (r, x) => Instr.xop (.movq x r))) s fun t =>
+      t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [Cfg.invKeptX, List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil, exec,
+    XOp.exec, Option.some.injEq, exists_eq_left', setXmm_gpr, setXmm_mem, setXmm_rd, setXmm_wr, and_self]
+
+/-- Copying them back writes only them. -/
+theorem restoresX_ok (s : State) :
+    WP isa (.block (Cfg.invKeptX.map fun (r, x) => Instr.movqR r x)) s fun t =>
+      (∀ r, r ∉ Cfg.invKeptX.map Prod.fst → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧
+        t.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [Cfg.invKeptX, List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil, exec,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_setReg_of_ne _ _ hr.1, RegUpd.gpr_setReg_of_ne _ _ hr.2.1,
+    RegUpd.gpr_setReg_of_ne _ _ hr.2.2.1, RegUpd.gpr_setReg_of_ne _ _ hr.2.2.2.1,
+    RegUpd.gpr_setReg_of_ne _ _ hr.2.2.2.2.1, RegUpd.gpr_setReg_of_ne _ _ hr.2.2.2.2.2]
+
 /-- `vg_<curve>_inv_mod_p`'s body run as a function, for six to nine words:
 `[ACC] = [RZ]^(p-2)`, the callee-saved registers restored. -/
 theorem invPFn_ok (hc : BaseCfgOk c) (h6 : 6 ≤ c.n) (h9 : c.n ≤ 9) {base : Addr} {s : State}
