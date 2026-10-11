@@ -60,7 +60,7 @@ private theorem foldl_congr {α β : Type} {f g : β → α → β} :
     rw [h x List.mem_cons_self]
     exact foldl_congr l _ fun y hy => h y (List.mem_cons_of_mem _ hy)
 
-private theorem scheduleAt_congr
+theorem scheduleAt_congr
     (h : ∀ i < 128, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     scheduleAt m₂ p = scheduleAt m₁ p := by
   simp only [scheduleAt]
