@@ -316,7 +316,8 @@ and the processor overlaps them (the longest chain, to `z_3`, is three
 multiplications). The sums and differences fold once (`addCmov`, `subCmov`): `z_2`
 and `z_3` are products, at most `2p`, and so is an operand of each other sum
 and the subtrahend of each other difference (`BB`, `CB`). `AA + a24 E` is one
-multiply-add (`a24add`). -/
+multiply-add (`a24add`). `x_2 = AA · BB` comes before it, as soon as the
+products it needs are done, so that it overlaps the chain to `z_2`. -/
 def step (F : Field) : List Instr :=
   [.alu .sub .rbx (.imm 1), .movzx8 .rax { base := .rdi, index := some .rbx, disp := BITS },
     .mov .rdx (.mem (sc SWAP)), .alu .xor .rdx (.reg .rax), .store (sc SWAP) .rax,
@@ -324,9 +325,8 @@ def step (F : Field) : List Instr :=
   cswap X2 X3 ++ cswap Z2 Z3 ++
   addCmov A X2 Z2 ++ subCmov B X2 Z2 ++ addCmov C X3 Z3 ++ subCmov D X3 Z3 ++
   F.sqr AA A ++ F.sqr BB B ++ F.mul DA D A ++ F.mul CB C B ++
-  subCmov E AA BB ++ subCmov Z3 DA CB ++ addCmov X3 DA CB ++ F.a24add Z2 AA E ++
-  F.sqr Z3 Z3 ++ F.sqr X3 X3 ++ F.mul Z3 X1 Z3 ++
-  F.mul X2 AA BB ++ F.mul Z2 E Z2 ++
+  subCmov E AA BB ++ subCmov Z3 DA CB ++ addCmov X3 DA CB ++ F.mul X2 AA BB ++
+  F.a24add Z2 AA E ++ F.sqr Z3 Z3 ++ F.sqr X3 X3 ++ F.mul Z3 X1 Z3 ++ F.mul Z2 E Z2 ++
   [.alu .test .rbx (.reg .rbx)]
 
 /-- The 255 iterations, for `t` from 254 down to 0. -/

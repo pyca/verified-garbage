@@ -84,11 +84,11 @@ def opsList (fld : Field) : List Instr :=
   subCmov (32 * (13 : Fin 128).val) (32 * (11 : Fin 128).val) (32 * (12 : Fin 128).val) ++
   subCmov (32 * (6 : Fin 128).val) (32 * (14 : Fin 128).val) (32 * (15 : Fin 128).val) ++
   addCmov (32 * (5 : Fin 128).val) (32 * (14 : Fin 128).val) (32 * (15 : Fin 128).val) ++
+  fld.mul (32 * (3 : Fin 128).val) (32 * (11 : Fin 128).val) (32 * (12 : Fin 128).val) ++
   fld.a24add (32 * (4 : Fin 128).val) (32 * (11 : Fin 128).val) (32 * (13 : Fin 128).val) ++
   fld.sqr (32 * (6 : Fin 128).val) (32 * (6 : Fin 128).val) ++
   fld.sqr (32 * (5 : Fin 128).val) (32 * (5 : Fin 128).val) ++
   fld.mul (32 * (6 : Fin 128).val) (32 * (2 : Fin 128).val) (32 * (6 : Fin 128).val) ++
-  fld.mul (32 * (3 : Fin 128).val) (32 * (11 : Fin 128).val) (32 * (12 : Fin 128).val) ++
   fld.mul (32 * (4 : Fin 128).val) (32 * (13 : Fin 128).val) (32 * (4 : Fin 128).val)
 
 theorem step_eq : step fld = stepPre ++ (opsList fld ++ ([.alu .test .rbx (.reg .rbx)] : List Instr)) := by
@@ -97,7 +97,7 @@ theorem step_eq : step fld = stepPre ++ (opsList fld ++ ([.alu .test .rbx (.reg 
 
 /-- The slots after the field operations of an iteration. -/
 def stepEnv (sw : Bool) (e : Env) : Env :=
-  opMul 4 13 4 (opMul 3 11 12 (opMul 6 2 6 (opMul 5 5 5 (opMul 6 6 6 (opA24Add 4 11 13
+  opMul 4 13 4 (opMul 6 2 6 (opMul 5 5 5 (opMul 6 6 6 (opA24Add 4 11 13 (opMul 3 11 12
     (opAdd 5 14 15 (opSub 6 14 15 (opSub 13 11 12 (opMul 15 9 8 (opMul 14 10 7 (opMul 12 8 8
     (opMul 11 7 7 (opSub 10 5 6 (opAdd 9 5 6 (opSub 8 3 4 (opAdd 7 3 4 (opSwap 4 6 sw
     (opSwap 3 5 sw e))))))))))))))))))
@@ -179,25 +179,25 @@ theorem ops_ok {s1 : State} {base : Addr} (hs1 : Scr s1 base) {sw : Bool}
     fun s14 ⟨k14, e14, _⟩ => ?_
   have hs14 := k14.scr hs13
   rw [WP.block_append_iff]
-  refine WP.mono (a24AddEB hf hs14 4 11 13 ⟨by decide, by decide⟩) fun s15 ⟨k15, e15, _⟩ => ?_
+  refine WP.mono (mulEB hf hs14 3 11 12 ⟨by decide, by decide⟩) fun s15 ⟨k15, e15, _, _⟩ => ?_
   have hs15 := k15.scr hs14
   rw [WP.block_append_iff]
-  refine WP.mono (sqrEB hf hs15 6 6 ⟨by decide, by decide⟩) fun s16 ⟨k16, e16, _, _⟩ => ?_
+  refine WP.mono (a24AddEB hf hs15 4 11 13 ⟨by decide, by decide⟩) fun s16 ⟨k16, e16, _⟩ => ?_
   have hs16 := k16.scr hs15
   rw [WP.block_append_iff]
-  refine WP.mono (sqrEB hf hs16 5 5 ⟨by decide, by decide⟩) fun s17 ⟨k17, e17, _, _⟩ => ?_
+  refine WP.mono (sqrEB hf hs16 6 6 ⟨by decide, by decide⟩) fun s17 ⟨k17, e17, _, _⟩ => ?_
   have hs17 := k17.scr hs16
   rw [WP.block_append_iff]
-  refine WP.mono (mulEB hf hs17 6 2 6 ⟨by decide, by decide⟩) fun s19 ⟨k19, e19, o19, b19⟩ => ?_
-  have hs19 := k19.scr hs17
+  refine WP.mono (sqrEB hf hs17 5 5 ⟨by decide, by decide⟩) fun s18 ⟨k18, e18, _, _⟩ => ?_
+  have hs18 := k18.scr hs17
   rw [WP.block_append_iff]
-  refine WP.mono (mulEB hf hs19 3 11 12 ⟨by decide, by decide⟩) fun s20 ⟨k20, e20, o20, _⟩ => ?_
-  have hs20 := k20.scr hs19
-  refine WP.mono (mulEB hf hs20 4 13 4 ⟨by decide, by decide⟩) fun s21 ⟨k21, e21, o21, b21⟩ => ?_
-  refine ⟨(k2.trans (k3.trans (k4.trans (k5.trans (k6.trans (k7.trans (k8.trans (k9.trans (k10.trans (k11.trans (k12.trans (k13.trans (k14.trans (k15.trans (k16.trans (k17.trans (k19.trans (k20.trans k21)))))))))))))))))), ?_, b21, ?_⟩
-  · rw [e21, e20, e19, e17, e16, e15, e14, e13, e12, e11, e10, e9, e8, e7, e6, e5, e4, e3, e2]
+  refine WP.mono (mulEB hf hs18 6 2 6 ⟨by decide, by decide⟩) fun s19 ⟨k19, e19, _, b19⟩ => ?_
+  have hs19 := k19.scr hs18
+  refine WP.mono (mulEB hf hs19 4 13 4 ⟨by decide, by decide⟩) fun s20 ⟨k20, e20, o20, b20⟩ => ?_
+  refine ⟨(k2.trans (k3.trans (k4.trans (k5.trans (k6.trans (k7.trans (k8.trans (k9.trans (k10.trans (k11.trans (k12.trans (k13.trans (k14.trans (k15.trans (k16.trans (k17.trans (k18.trans (k19.trans k20)))))))))))))))))), ?_, b20, ?_⟩
+  · rw [e20, e19, e18, e17, e16, e15, e14, e13, e12, e11, e10, e9, e8, e7, e6, e5, e4, e3, e2]
     rfl
-  · rw [o21.fe (by decide) (by decide), o20.fe (by decide) (by decide)]; exact b19
+  · rw [o20.fe (by decide) (by decide)]; exact b19
 
 /-- The ladder's loop invariant, with the counter `rbx = n`: the slots
 `x1, x2, z2, x3, z3` (2–6) and the word `swap` hold the ladder's state after
