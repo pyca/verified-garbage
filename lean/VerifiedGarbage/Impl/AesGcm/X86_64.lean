@@ -76,9 +76,8 @@ rounds is kept in `W` (`roundsO`) and loaded before each call of
 * `streamText enc`: `stream_encrypt` and `stream_decrypt` likewise
   (`streamBlocks f`), after finishing the partial block the text so far left
   (`streamHead`), and before the last bytes, when there are at least 256
-  bytes; fewer are all the head, through `crypt` and `absorb` in two passes,
-  as the call would not interleave them and its bookkeeping would cost more
-  than it saves.
+  bytes; fewer go through `crypt` and `absorb` in two passes, as the call
+  would not interleave them and its bookkeeping would cost more than it saves.
 
 Only the pointers, the lengths, `rounds`, `tag_len` and (for `open`) whether
 the tag is right can affect timing: the branches are on those, and the
@@ -433,26 +432,13 @@ def streamLoad : List Instr :=
   [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.mem (at_ .r15 tlenO)),
     .alu .and .rbx (imm 15)]
 
-/-- Whether the data kept (`rbp` bytes) is short of 16 blocks, the fewest
-`vg_aes_gcm_encrypt_blocks` interleaves (`CF`). -/
-def streamSmall : List Instr := [.mov32 .rcx (imm 256), .alu .cmp .rbp (.reg .rcx)]
-
-/-- The length of the head of the text, into `lenO` and `rbp`; the whole
-length is kept at `auxO`. Short of 16 blocks (`streamSmall`), the head is all
-of it, already there; otherwise it is the bytes that finish the block the
+/-- The length of the head of the text, the bytes that finish the block the
 text so far left partial (none if it left none): `min (16 - rbx, rbp)`, or 0
-if `rbx = 0`. -/
+if `rbx = 0`, into `lenO` and `rbp`; the whole length is kept at `auxO`. -/
 def streamHead : Prog isa :=
-  .seq (.block (([.store (at_ .r15 auxO) .rbp] : List Instr) ++ streamSmall))
-  (.ite .b (.block [])
-    (.seq (.block [.alu .test .rbx (.reg .rbx)])
-    (.seq (.ite .e (.block [.mov32 .rcx (imm 0)]) minLen)
-      (.block [.store (at_ .r15 lenO) .rcx, .mov .rbp (.reg .rcx)]))))
-
-/-- Whether the whole length (at `auxO`) is short of 16 blocks, so that the
-head was all of it (`CF`). -/
-def streamDone : List Instr :=
-  [.mov .rax (.mem (at_ .r15 auxO)), .mov32 .rcx (imm 256), .alu .cmp .rax (.reg .rcx)]
+  .seq (.block [.store (at_ .r15 auxO) .rbp, .alu .test .rbx (.reg .rbx)])
+  (.seq (.ite .e (.block [.mov32 .rcx (imm 0)]) minLen)
+    (.block [.store (at_ .r15 lenO) .rcx, .mov .rbp (.reg .rcx)]))
 
 /-- Past the head: the text so far and the data kept advance by its length,
 and what is left (of the length at `auxO`) becomes the length kept. -/
@@ -478,14 +464,18 @@ def streamBlocks (f : Fn) : Prog isa :=
           .alu .add .rcx (.reg .rax), .store (at_ .r15 dataO) .rcx, .mov .rcx (.mem (at_ .r15 tlenO)),
           .alu .add .rcx (.reg .rax), .store (at_ .r15 tlenO) .rcx]))))
 
+/-- Whether the data kept (`rbp` bytes) is short of 16 blocks, the fewest
+`vg_aes_gcm_encrypt_blocks` interleaves (`CF`). -/
+def streamSmall : List Instr := [.mov32 .rcx (imm 256), .alu .cmp .rbp (.reg .rcx)]
+
 /-- The text of `encrypt` (`enc`) or `decrypt`: if there is any, the
-additional data padded first if there is no text yet; then the head (all of
-it, if there are fewer than 256 bytes; otherwise the bytes that finish the
-block the text so far left partial) with `crypt` and `absorb`, and unless
-that was all of it (`streamDone`), the whole blocks in one call of
-`vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks`, and the rest with `crypt`
-and `absorb`. Encrypting absorbs each part after
-`crypt`, decrypting before. -/
+additional data padded first if there is no text yet; then, unless there are
+fewer than 256 bytes (`streamSmall`), the head (the bytes that finish the
+block the text so far left partial) with `crypt` and `absorb` and the whole
+blocks in one call of `vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks`; and
+the rest (all of it, if there were fewer than 256 bytes) with `crypt` and
+`absorb`. Encrypting absorbs each part after `crypt`, decrypting
+before. -/
 def streamText (enc : Bool) : Prog isa :=
   let part : Prog isa := if enc then .seq (crypt c) (.seq (.block streamLoad) (absorb c 16))
     else .seq (absorb c 16) (.seq (.block streamLoad) (crypt c))
@@ -494,13 +484,14 @@ def streamText (enc : Bool) : Prog isa :=
       (.seq (.block [.mov .rax (.mem (at_ .r15 tlenO)), .alu .test .rax (.reg .rax)])
       (.seq (.ite .e (firstFlush c) (.block []))
       (.seq (.block streamLoad)
-      (.seq streamHead
-      (.seq part
-      (.seq (.block streamDone)
-      (.ite .b (.block [])
-      (.seq (.block streamNext)
-      (.seq (streamBlocks (if enc then c.enc else c.dec))
-      (.seq (.block streamLoad) part)))))))))))
+      (.seq (.block streamSmall)
+      (.seq (.ite .b (.block [])
+        (.seq streamHead
+        (.seq part
+        (.seq (.block streamNext)
+        (.seq (streamBlocks (if enc then c.enc else c.dec))
+          (.block streamLoad))))))
+        part))))))
 
 /-- `vg_aes_gcm_stream_encrypt`. -/
 def streamEncrypt : Prog isa :=
