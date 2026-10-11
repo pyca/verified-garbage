@@ -19,9 +19,9 @@ theorem workRanges_ok (w : Nat) : ∀ r ∈ workRanges w,
   omega
 
 /-- Array writes are confined to the child's mutable region. -/
-theorem arrays_work {s t : State} {B : Addr} {w : Nat} {js : List Nat}
-    (hf : Arrays B w js s.mem t.mem) (hj : ∀ j ∈ js, j < 8) :
-    Frm B (workRanges w) s.mem t.mem := by
+theorem arrays_work {mem mem' : Mem} {B : Addr} {w : Nat} {js : List Nat}
+    (hf : Arrays B w js mem mem') (hj : ∀ j ∈ js, j < 8) :
+    Frm B (workRanges w) mem mem' := by
   intro x hx
   apply hf x
   intro j hmem

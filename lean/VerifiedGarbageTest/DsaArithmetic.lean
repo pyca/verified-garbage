@@ -3,7 +3,7 @@ import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.SignVerify
 import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Multiply
-import VerifiedGarbage.Proof.Dsa.X86_64.ReduceSetup
+import VerifiedGarbage.Proof.Dsa.X86_64.Reduce
 import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Load
 import VerifiedGarbage.Proof.Dsa.X86_64.Store
@@ -59,3 +59,5 @@ The whole-operation contracts must be proved before artifacts are registered.
 #assert_standard_axioms VG.Proof.Dsa.X86_64.powerCore_ct
 
 #assert_standard_axioms VG.Proof.Dsa.X86_64.reduceSetup_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.reduce_ok

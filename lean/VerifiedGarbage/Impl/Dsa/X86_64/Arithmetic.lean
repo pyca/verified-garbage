@@ -94,16 +94,23 @@ array 4 contains 256 R mod m. -/
 def reduceStep (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (mul aY aR2 aY) (Crt.addMod aY aY aX)
 
+/-- Read the next byte and advance the source pointer. -/
+def reduceRead : List Instr :=
+  [.mov .rsi (.mem (hdr Crt.sSrc)), .movzx8 .rax (at0 .rsi),
+    .mov .rbx (.mem (hdr (sArr aX))), .store (at0 .rbx) .rax,
+    .alu .add .rsi (.imm 1), .store (hdr Crt.sSrc) .rsi]
+
+/-- Decrement the public remaining-byte count, setting the loop condition. -/
+def reduceCount : List Instr :=
+  [.mov .rax (.mem (hdr Crt.sRem)), .alu .sub .rax (.imm 1), .store (hdr Crt.sRem) .rax]
+
 /-- One byte of streaming reduction: Y := (256 Y + byte) mod m. Array 4
 holds 256 R mod m; array 1 is zero except for the byte in its low word.
 All byte values are less than the DSA modulus. -/
 def reduceByte (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
-  .block [.mov .rsi (.mem (hdr Crt.sSrc)), .movzx8 .rax (at0 .rsi),
-    .mov .rbx (.mem (hdr (sArr aX))), .store (at0 .rbx) .rax,
-    .alu .add .rsi (.imm 1), .store (hdr Crt.sSrc) .rsi],
+  .block reduceRead,
   reduceStep mul,
-  .block [.mov .rax (.mem (hdr Crt.sRem)), .alu .sub .rax (.imm 1),
-    .store (hdr Crt.sRem) .rax]]
+  .block reduceCount]
 
 /-- Prepare 256R for byte reduction and clear the accumulator and byte array. -/
 def reduceSetup (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
@@ -113,15 +120,19 @@ def reduceSetup (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   doubles aN aAcc aTmp aR2 sCnt,
   zero aY, zero aX]
 
+/-- Load the source pointer and public length into the child workspace. -/
+def reduceInit (ptr len : Nat) : List Instr :=
+  [.mov .rax (.mem (hdr Crt.sLink)), .mov .rsi (.mem (Crt.ws .rax ptr)),
+    .mov .rcx (.mem (Crt.ws .rax len)), .store (hdr Crt.sSrc) .rsi,
+    .store (hdr Crt.sRem) .rcx, .alu .test .rcx (.reg .rcx)]
+
 /-- Reduce an arbitrary-length big-endian input modulo m, including an
 empty input. Unlike RSA CRT reduction this does not assume m divides
 another modulus, which is essential for reducing a DSA p-residue modulo q.
 The ordinary result is in aY; the input pointer and length are parent slots. -/
 def reduce (mul : Nat → Nat → Nat → Prog isa) (ptr len : Nat) : Prog isa :=
   .seq (reduceSetup mul) (seqs [
-    .block [.mov .rax (.mem (hdr Crt.sLink)), .mov .rsi (.mem (Crt.ws .rax ptr)),
-      .mov .rcx (.mem (Crt.ws .rax len)), .store (hdr Crt.sSrc) .rsi,
-      .store (hdr Crt.sRem) .rcx, .alu .test .rcx (.reg .rcx)],
+    .block (reduceInit ptr len),
     .ite .e (.block []) (.loop (reduceByte mul) .ne)])
 
 end VG.Impl.Dsa.X86_64.Arithmetic
