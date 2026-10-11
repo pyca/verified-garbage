@@ -90,7 +90,7 @@ theorem segment_ok (v n : Nat) (hn : n<65536) {s : State} {b p c : Addr} {L : Li
     (hc : (s.mem.readW c 64).toNat=256-L.length)
     (hst : Stored s.mem p L) (hsep : (polyR p).Disjoint ⟨c,8⟩) :
     WP isa (segment v n) s fun t =>
-      Keep (parseRegs++[.x24,.x25,.x26,.x27]) s t ∧
+      Keep (parseRegs++([.x24,.x25,.x26,.x27] : List Reg)) s t ∧
       t.gpr .x24=b+BitVec.ofNat 64 1008 ∧ t.gpr .x25=p+BitVec.ofNat 64 1024 ∧
       t.gpr .x26=c+BitVec.ofNat 64 8 ∧ t.gpr .x27=s.gpr .x27-BitVec.ofNat 64 1 ∧
       Frame [polyR p,⟨c,8⟩] s.mem t.mem ∧
