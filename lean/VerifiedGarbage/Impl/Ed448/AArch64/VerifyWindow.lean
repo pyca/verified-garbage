@@ -162,10 +162,10 @@ def wfinish : List Instr :=
   Impl.X448.AArch64.Fast.vrestore
 
 /-- The entry, the bits of `S`, its check, and the decodings of `A` (negated, into slots 6–7) and
-`R` (into slots 8–9). -/
+`R` (into slots 8–9), by one copy of `decode` (`decodes`). -/
 def wfront : Prog isa :=
   .seq (.block (ventry ++ wsave)) <| .seq (bitsAt .x1 57 0 BITS) <| .seq (.block sCheck) <|
-  .seq vdecodeA (decode .x1 8 9)
+  decodes
 
 def verifyEquation : Prog isa :=
   .seq wfront <| .seq table <| .seq sBase <| .seq kWindows <| .seq wcross (.block wfinish)

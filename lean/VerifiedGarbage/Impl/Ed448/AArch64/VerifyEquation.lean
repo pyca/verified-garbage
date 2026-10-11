@@ -157,11 +157,22 @@ def ventry : List Instr :=
   Impl.X448.AArch64.Base.constSlot (slot 9) Spec.Ed448.basePoint.Y ++
   Impl.X448.AArch64.Base.constSlot (slot 10) 1 ++ Impl.X448.AArch64.Base.constSlot (slot 11) Spec.Ed448.d
 
-/-- `A` decoded into slots 6–7 and negated: `x` (below the products' bound, a product by 1 in
-slot 10) subtracted from zero in slot 13. -/
-def vdecodeA : Prog isa :=
-  .seq (decode .x0 6 7) <| .seq (X448.AArch64.Fast.ops [.mul (slot 6) (slot 6) (slot 10)]) <|
+/-- After `A` is decoded into slots 8–9: `-A` into slots 6–7 (`x`, below the products' bound as a
+product by 1 in slot 10, subtracted from zero in slot 13), `R`'s pointer into `x0`, and the working
+space's into `x1`, which ends the loop of `decodes`. -/
+def negA : Prog isa :=
+  .seq (X448.AArch64.Fast.ops [.mul (slot 6) (slot 8) (slot 10), .copy (slot 7) (slot 9)]) <|
   .seq (.block (Impl.X448.AArch64.Base.constSlot (slot 13) 0)) <|
-  X448.AArch64.Fast.ops [.sub (slot 12) (slot 13) (slot 6), .copy (slot 6) (slot 12)]
+  .seq (X448.AArch64.Fast.ops [.sub (slot 12) (slot 13) (slot 6), .copy (slot 6) (slot 12)])
+    (.block [.addImm .x .x0 .x1 0, .addImm .x .x1 .x3 0])
+
+/-- `A` (from `x0`) and `R` (from `x1`) decoded by one copy of `decode`, into slots 8–9. Each pass
+ends with `x19 := x1 - x3`, public after `decode` (which keeps `x19` only through a vector lane): `R`'s
+offset from the working space after `A`, nonzero since `R` lies outside it, and then `negA` (which
+moves `x3` into `x1`); 0 after `R`, and `x0 := x1` there too, so that `x0` is public after either
+branch. -/
+def decodes : Prog isa :=
+  .loop (.seq (decode .x0 8 9) (.seq (.block [.sub .x .x19 .x1 .x3])
+    (.ite (.nonzero .x .x19) negA (.block [.addImm .x .x0 .x1 0])))) (.nonzero .x .x19)
 
 end VG.Impl.Ed448.AArch64
