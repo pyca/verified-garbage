@@ -28,7 +28,7 @@ theorem cfb8_wp (cs : BlockSpec c) (enc : Bool) {r : CtrRegs} (hr : RegsOk r) (h
     (hwP : (⟨P, 8 * c.bw⟩ : Region) ∈ s₀.wr) (hwD : (⟨D, n⟩ : Region) ∈ s₀.wr)
     (sPS : Region.Disjoint ⟨P, 8 * c.bw⟩ ⟨B, 8 * c.ctrSlots⟩) (sDS : Region.Disjoint ⟨D, n⟩ ⟨B, 8 * c.ctrSlots⟩)
     (sPD : Region.Disjoint ⟨P, 8 * c.bw⟩ ⟨D, n⟩) (fitD : D.toNat + n ≤ 2 ^ 64)
-    (hk : cs.KeyArgs s₀ [⟨B, 8 * c.ctrSlots⟩] k) (hsc : scalCode c.prepare = true ∧ scalCode c.crypt = true) :
+    (hk : cs.KeyArgs s₀ [⟨B, 8 * c.ctrSlots⟩] k) (hsc : KeepsIv c.prepare ∧ KeepsIv c.crypt) :
     WP isa (c.cfb8 enc r) s₀ fun s' => (∀ x ∈ calleeSaved, s'.gpr x = s₀.gpr x) ∧
       bytesAt s'.mem D n = (List.range n).map (cfb8Out enc (cs.cipher k) s₀.mem D (bytesAt s₀.mem P (8 * c.bw))) ∧
       bytesAt s'.mem P (8 * c.bw) = cfb8In enc (cs.cipher k) s₀.mem D (bytesAt s₀.mem P (8 * c.bw)) n ∧
@@ -78,8 +78,8 @@ theorem cfb8_wp (cs : BlockSpec c) (enc : Bool) {r : CtrRegs} (hr : RegsOk r) (h
   have hkA : cs.KeyArgs sA [S] k :=
     cs.keyArgs_congr hk (fun x hx => gA' x (kr x hx).1 (fun e => dk (e ▸ hx)) (fun e => lk (e ▸ hx))) rdA' wrA' fA
   -- The key.
-  refine WP.seq (WP.mono (WP.vecKeep hsc.1 (cs.prepare_wp bA ⟨by rw [wrA']; exact hs.wr, hs.fit⟩ List.mem_cons_self hkA))
-    fun s₄ ⟨⟨ready₄, b₄, rsp₄, dr₄, lr₄, f₄, rd₄, wr₄⟩, x₄, _⟩ => ?_)
+  refine WP.seq (WP.mono (WP.keepIv hsc.1 (cs.prepare_wp bA ⟨by rw [wrA']; exact hs.wr, hs.fit⟩ List.mem_cons_self hkA))
+    fun s₄ ⟨⟨ready₄, b₄, rsp₄, dr₄, lr₄, f₄, rd₄, wr₄⟩, x₄⟩ => ?_)
   have rd₄' : s₄.rd = s₀.rd := by rw [rd₄, rdA']
   have wr₄' : s₄.wr = s₀.wr := by rw [wr₄, wrA']
   -- Any bytes?

@@ -50,7 +50,7 @@ structure C8Inv (cs : BlockSpec c) (enc : Bool) (s₀ : State) (m₀ : Mem) (B D
   frame : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, n⟩, ⟨P, 8 * c.bw⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  xmm : s.xmm = s₀.xmm
+  xmm : s.xmm Core.ivX = s₀.xmm Core.ivX
 
 /-- The data loop, done. -/
 structure C8Done (cs : BlockSpec c) (enc : Bool) (s₀ : State) (m₀ : Mem) (B D P : Addr) (n : Nat) (k : cs.Key)
@@ -63,7 +63,7 @@ structure C8Done (cs : BlockSpec c) (enc : Bool) (s₀ : State) (m₀ : Mem) (B 
   frame : Frame [⟨B, 8 * c.ctrSlots⟩, ⟨D, n⟩, ⟨P, 8 * c.bw⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  xmm : s.xmm = s₀.xmm
+  xmm : s.xmm Core.ivX = s₀.xmm Core.ivX
 
 theorem headD_eq_getD (l : List Byte) : l.headD 0 = l.getD 0 0 := by cases l <;> rfl
 
@@ -72,7 +72,7 @@ theorem writeW8_frame (m : Mem) (A : Addr) (b : Byte) : Frame [⟨A, 1⟩] m (m.
     subst h; simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega))]
 
 theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {s₀ : State} {m₀ : Mem} {B D P : Addr} {n : Nat} {k : cs.Key}
-    {iv : List Byte} (hiv : iv.length = 8 * c.bw) (hp : C8Pre c s₀ B D P n) (hsc : scalCode c.crypt = true)
+    {iv : List Byte} (hiv : iv.length = 8 * c.bw) (hp : C8Pre c s₀ B D P n) (hsc : KeepsIv c.crypt)
     {j : Nat} {s : State} (hi : C8Inv cs enc s₀ m₀ B D P n k iv j s) :
     WP isa (c.cfb8Block enc) s fun s' => (s'.zf = some true ∧ C8Done cs enc s₀ m₀ B D P n k iv s') ∨
       (s'.zf = some false ∧ C8Inv cs enc s₀ m₀ B D P n k iv (j + 1) s') := by
@@ -145,8 +145,8 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {s₀ : State} {m₀ : Mem}
   have rd₁ : s₁.rd = s₀.rd := by rw [h₁.rd, rd₁a, hi.rd]
   have wr₁ : s₁.wr = s₀.wr := by rw [h₁.wr, wr₁a, hi.wr]
   -- Enciphered.
-  refine WP.seq (WP.mono (WP.vecKeep hsc (cs.crypt_wp base₁ ⟨by rw [wr₁]; exact hp.scr.wr, hfit⟩ ready₁))
-    fun s₂ ⟨⟨base₂, rsp₂, dr₂, lr₂, ready₂, f₂, ks₂, rd₂, wr₂⟩, x₂, _⟩ => ?_)
+  refine WP.seq (WP.mono (WP.keepIv hsc (cs.crypt_wp base₁ ⟨by rw [wr₁]; exact hp.scr.wr, hfit⟩ ready₁))
+    fun s₂ ⟨⟨base₂, rsp₂, dr₂, lr₂, ready₂, f₂, ks₂, rd₂, wr₂⟩, x₂⟩ => ?_)
   have eT : blkAddr c B 0 = T := by simp only [blkAddr, T, Nat.mul_zero, Nat.add_zero]
   have hX : bytesAt s₁.mem T (8 * c.bw) = cfb8In enc ciph m₀ D iv j := by
     apply List.ext_getElem (by
@@ -218,7 +218,7 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {s₀ : State} {m₀ : Mem}
     rw [o₅ _ hdl, a₅a, g₄ _ dc dbp, g₃ _ da dbp, data₂,
       show (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 1 from rfl, addr_add]
   have mem₅ : s₅.mem = s₄.mem := by rw [m₅, m₅a]
-  have xmm₅ : s₅.xmm = s₀.xmm := by
+  have xmm₅ : s₅.xmm Core.ivX = s₀.xmm Core.ivX := by
     rw [runBlock_vec rfl e₅, runBlock_vec rfl e₅a, x₄, xK, x₃, x₂, x₁, x₁a, hi.xmm]
   have base₅ : s₅.gpr sb = B := by
     rw [keep₅ _ (by decide) (by decide) (by decide) (Ne.symm dsb) (Ne.symm lsb), base₂]
@@ -303,7 +303,7 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {s₀ : State} {m₀ : Mem}
 
 /-- The data loop. -/
 theorem cfb8Loop_wp (cs : BlockSpec c) (enc : Bool) {s₀ : State} {m₀ : Mem} {B D P : Addr} {n : Nat} {k : cs.Key}
-    {iv : List Byte} (hiv : iv.length = 8 * c.bw) (hp : C8Pre c s₀ B D P n) (hsc : scalCode c.crypt = true)
+    {iv : List Byte} (hiv : iv.length = 8 * c.bw) (hp : C8Pre c s₀ B D P n) (hsc : KeepsIv c.crypt)
     {s : State} (hi : C8Inv cs enc s₀ m₀ B D P n k iv 0 s) :
     WP isa (.loop (c.cfb8Block enc) .ne) s (C8Done cs enc s₀ m₀ B D P n k iv) := by
   refine WP.loop (M := isa) (fun m s => ∃ j, m = n - j ∧ C8Inv cs enc s₀ m₀ B D P n k iv j s) (fun m s hs => ?_) n s
