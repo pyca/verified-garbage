@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Weierstrass.Law3
 import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 
 /-!
 # ECDSA on AArch64: the curve, the arguments and the working space
@@ -74,6 +75,20 @@ structure BaseCfgOk (c : Cfg) : Prop where
   call_p : ∀ f m', Mont.callOf c.MP' = some (f, m') → m' = c.C.p ∧
     VG.Proof.Weierstrass.AArch64.Mont.ModOk c.n m'
   call_n : Mont.callOf c.MN' = none
+  /-- The powers' working slots and temporary area (`invTbl`, `invTmp`):
+  `CT`'s and `TMP`'s, or, for inversions as functions (`inverse`), past
+  `CT`, with room for `x19` after the slots, then the temporary area, in the
+  working space and not the products' (`moAt`). -/
+  inv_at : c.inverse = none ∨ (c.sl CT ≤ c.invTbl ∧ c.invTbl % 8 = 0 ∧
+    c.invTbl + 9 * (8 * c.n) + 8 ≤ c.invTmp ∧ c.invTmp + 8 * c.n ≤ size ∧ c.invTmp % 8 = 0 ∧
+    c.invTmp ≠ Mont.moAt c.n)
+  /-- The functions keep the callee-saved registers but `x19` (which they
+  save) and `x30`, and their code writes no vector register and opens no
+  frame. -/
+  inv_fn : c.inverse ≠ none → (∀ r ∈ preserved, r ∉ clob c.n) ∧
+    (c.invFn c.pPowI).allInstrs (fun i => (vdstOf i).isNone) = true ∧
+    (c.invFn c.nPowI).allInstrs (fun i => (vdstOf i).isNone) = true ∧
+    (c.invFn c.pPowI).noFrames = true ∧ (c.invFn c.nPowI).noFrames = true
 
 /-- The optimized comb and window formulas additionally require `a = -3`. -/
 structure CfgOk (c : Cfg) : Prop extends BaseCfgOk c where

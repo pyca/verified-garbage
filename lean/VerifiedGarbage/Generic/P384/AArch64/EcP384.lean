@@ -26,7 +26,7 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List A
       `[d]G` is `vg_ecdsa_p384_sign`'s fixed-base comb of 7-bit signed digits from the 55 tables \
       of `[m 2^(7j)]G` (`m = 1 … 64`) in the static `VG_P384_COMB`, each entry selected in \
       constant time by loading the whole table, with no doublings; and \
-      `Z⁻¹` is by divsteps (Bernstein and Yang's safegcd, half-delta form): 15 batches of 59 \
+      `Z⁻¹` is a call of `vg_p384_inv_mod_p`, by divsteps (Bernstein and Yang's safegcd, half-delta form): 15 batches of 59 \
       divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each giving a matrix of \
       64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the coefficients `a`, `b` \
       (divided by 2⁶⁴ modulo `p`, as in Montgomery reduction), 885 divsteps in all, enough for \

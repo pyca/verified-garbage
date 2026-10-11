@@ -135,9 +135,9 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
   refine WP.seq (WP.mono_syms (nPow_ok hc hs₃ M₃ lt₃)
     fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ sy₄ => ?_)
   have hs₄ := hs₃.of_keepRegs K₄ (x0_not_powClob h7)
-  have F₄ := F₃.unch h7 hn fixedOk_chainWc U₄
+  have F₄ := F₃.unch h7 hn (fixedOk_chainWc hc) U₄
   have e₄ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi hl =>
-    sv_unch U₄ h7 hn hi (apart_chainWc hi hl)
+    sv_unch U₄ h7 hn hi (apart_chainWc hc hi hl)
   have w₄ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₄ ACC) = Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2) := by
     rw [← sm₃]; exact v₄
   -- `u` and `v`.
@@ -179,7 +179,7 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
     simp only [List.mem_cons, List.not_mem_nil, or_false] at h
     rcases h with rfl | rfl <;> decide)
   have a : ∀ {i}, i < 45 → i ∉ midW → i ≠ FLAG → sv c base s₁₀ i = sv c base s i := fun hi hl hf =>
-    sv_unch UW h7 hn hi (apart_append (apart_append (apart_flag h0 hf) (apart_chainWc hi (hmw _ hl)))
+    sv_unch UW h7 hn hi (apart_append (apart_append (apart_flag h0 hf) (apart_chainWc hc hi (hmw _ hl)))
       (apart_slW hl))
   -- The values.
   have d₄ : sv c base s₄ D = dig c s₀ >>> c.sh := by
@@ -228,7 +228,7 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
       v₉ (i := VM) (by decide) (by decide) (by decide), vm₈], ?_,
     by rw [sy₁₀, sy₉, sy₈, sy₇, sy₆, sy₅, sy₄, sy₃, sy₂, sy₁, hF.syms],
     by rw [a (i := K) (by decide) (by decide) (by decide), hF.k]⟩
-  · rw [flag_unch_cw U' h7 h0 hn (by decide)]
+  · rw [flag_unch_cw hc U' h7 h0 hn (by decide)]
     exact flag₂
   · refine unch_whole (hF.unch.trans UW) fun w hw => ?_
     simp only [List.mem_append] at hw
@@ -238,8 +238,8 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl
       · exact sl_le c h7 (i := ACC) (by decide)
-      · exact ct_le c h7
-      · exact sl_le c h7 (i := TMP) (by decide)
+      · exact invTbl_le8 hc
+      · exact invTmp_le hc
     · exact slW_le h7 (by decide) w hw
 
 end VG.Proof.Ecdsa.Verify.AArch64

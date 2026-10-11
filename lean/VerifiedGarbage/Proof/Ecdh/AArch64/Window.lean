@@ -167,14 +167,14 @@ theorem apart_winX4 (hn4 : c.n ≤ 4) {i : Nat} (hi : i < 45) :
     simp only [Cfg.winK, Cfg.winBits, sl_eq4 c hn4, WK, WB] <;> omega_arith
 
 /-- The flag word survives the window method and the power. -/
-theorem flag_unch_win {base : Addr} {l₁ : List Nat} {m m' : Mem}
+theorem flag_unch_win (hc : BaseCfgOk c) {base : Addr} {l₁ : List Nat} {m m' : Mem}
     (hu : Unch base (winX c ++ (slW c l₁ ++ chainWc c)) m m') (h7 : c.n < 10) (h0 : 0 < c.n)
     (hn : base.toNat + size ≤ 2 ^ 64) (hl₁ : FLAG ∉ l₁) (hlA : ∀ j ∈ l₁, j ≠ 54 ∧ j ≠ 82 := by decide) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine hu.word (fun w hw => ?_) (by omega_arith)
   rcases apart_append (apart_winX (c := c) (i := FLAG) (by decide))
-    (apart_append (apart_slW hl₁ (by decide) hlA) (apart_chainWc (c := c) (i := FLAG) (by decide) (by decide))) w hw
+    (apart_append (apart_slW hl₁ (by decide) hlA) (apart_chainWc hc (i := FLAG) (by decide) (by decide))) w hw
     with h | h
   · exact Or.inl (by omega_arith)
   · exact Or.inr h
@@ -330,7 +330,7 @@ theorem winPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
   refine WP.seq (WP.mono (pPow_ok hc W.scr W.mod rz₃)
     fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ => h s₄ ?_)
   have r₄ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi h₁ =>
-    sv_unch U₄ h7 hn hi (apart_chainWc hi h₁)
+    sv_unch U₄ h7 hn hi (apart_chainWc hc hi h₁)
   refine ⟨W.scr.of_keepRegs K₄ (x0_not_powClob h7), fun r hr hr' => ?_, by rw [K₄.rd, W.rd],
     by rw [K₄.wr, W.wr], (W.unch.trans U₄).mono (by simp), ?_, lt₄, ?_, ?_⟩
   · rw [K₄.gpr r hr', W.gpr r hr]

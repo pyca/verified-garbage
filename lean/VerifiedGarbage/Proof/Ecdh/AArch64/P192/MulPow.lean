@@ -45,7 +45,7 @@ theorem ladPow_ok (hc : BaseCfgOk p192) (hC : Law p192.C) {base : Addr} {s : Sta
   refine WP.seq (WP.mono (pPow_ok hc hs₃ M₃ rz₃)
     fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ => h s₄ ?_)
   have r₄ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv p192 base s₄ i = sv p192 base s₃ i := fun hi h₁ =>
-    sv_unch U₄ h7 hn hi (apart_chainWc hi h₁)
+    sv_unch U₄ h7 hn hi (apart_chainWc hc hi h₁)
   refine ⟨hs₃.of_keepRegs K₄ (x0_not_powClob h7), fun r hr => ?_, by rw [K₄.rd, K₃.rd],
     by rw [K₄.wr, K₃.wr], U₃.trans U₄, ?_, lt₄, ?_, ?_⟩
   · rw [K₄.gpr r hr, K₃.gpr r hr]

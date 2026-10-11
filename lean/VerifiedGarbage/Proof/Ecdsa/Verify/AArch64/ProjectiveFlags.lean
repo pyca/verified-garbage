@@ -137,9 +137,9 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
   refine WP.seq (WP.mono (pPow_ok hc hP.scr (modP_of hc F.mp) hP.rz_lt)
     fun s₁ ⟨K₁, U₁, lt₁, v₁⟩ => ?_)
   have hs₁ := hP.scr.of_keepRegs K₁ (x0_not_powClob h7)
-  have F₁ := F.unch h7 hn fixedOk_chainWc U₁
+  have F₁ := F.unch h7 hn (fixedOk_chainWc hc) U₁
   have e₁ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₁ i = sv c base s i := fun hi hl =>
-    sv_unch U₁ h7 hn hi (apart_chainWc hi hl)
+    sv_unch U₁ h7 hn hi (apart_chainWc hc hi hl)
   rw [final_eq]
   -- `XM = X · ACC`.
   have hM₁ := modP_of hc F₁.mp
@@ -223,7 +223,7 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
       · rcases List.mem_append.mp hw with hw | hw
         · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
           rcases hw with rfl | rfl | rfl
-          exacts [sl_ge64 c ACC, sl_ge64 c CT, sl_ge64 c TMP]
+          exacts [sl_ge64 c ACC, Nat.le_trans (sl_ge64 c CT) (invTbl_ge hc), invTmp_ge64 hc]
         · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
           exact sl_ge64 c i
       · rw [List.mem_singleton.mp hw]
@@ -255,7 +255,7 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
       · exact sl (by decide) hw
       · exact sl (by decide) hw
     have z₆' : wordsVal s₅.mem base (c.sl RZ) c.n = sv c base s RZ := z₆
-    rw [f₇, f₆, hW₆, flag_unch_cw U₅ h7 h0 hn (by decide), hP.flag, z₆', mask_and, mask_and]
+    rw [f₇, f₆, hW₆, flag_unch_cw hc U₅ h7 h0 hn (by decide), hP.flag, z₆', mask_and, mask_and]
     simp only [mask, w₅, decide_eq_true_eq, and_assoc]
   refine WP.mono (vfinish_ok hc hs₇ hsv _ hflag) fun s' ⟨ret, saved⟩ => ⟨saved, _, lt₃, x₃, ?_⟩
   rw [ret]

@@ -32,7 +32,7 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List A
       (or the point at infinity for a zero digit), its `x` in one pass over the table and its `y` \
       in another, negated by a mask of its sign, and added by the complete addition formulas of \
       Renes, Costello and Batina for `a = -3` (Algorithm 4: 12 products and 2 by `b`); the \
-      inversions modulo `p` and `n` are \
+      inversions modulo `p` and `n` are calls of `vg_p384_inv_mod_p` and `vg_p384_inv_mod_n`, \
       by divsteps (Bernstein and Yang's safegcd, half-delta form): 15 batches of 59 \
       divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`, or `n` and `k`), each giving a matrix of \
       64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the coefficients `a`, `b` \
@@ -58,7 +58,7 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List A
       final conditional subtraction. The key is checked without branches \
       (its first byte, both coordinates below `p`, and the curve's equation), and `[v]Q` is \
       computed for the key's point if it is valid, else `G`, so always on a point of the curve. \
-      `s⁻¹` modulo `n` and `Z⁻¹` are by the signature's divsteps; `[u]G` is the \
+      `s⁻¹` modulo `n` and `Z⁻¹` are calls of `vg_p384_inv_mod_n` and `vg_p384_inv_mod_p`, by the signature's divsteps; `[u]G` is the \
       signature's comb over the 7-bit windows of `u` (from the static `VG_P384_COMB`), and `[v]Q` `vg_ecdh_p384`'s signed 4-bit windows \
       (97 digits of `v + 8 Σ_{j<97} 16^j`, four doublings in Jacobian coordinates and a \
       constant-time selection from a \

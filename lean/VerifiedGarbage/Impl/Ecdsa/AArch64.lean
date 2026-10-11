@@ -4,6 +4,7 @@ import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Spec.Ecdsa
+import VerifiedGarbage.Spec.Weierstrass.Inverse
 
 /-!
 # ECDSA signing on AArch64
@@ -123,6 +124,11 @@ structure Cfg where
   tsym : String
   /-- Whether `k⁻¹ mod n` is by divsteps (the proofs need `n` prime), else by a chain. -/
   fastN : Bool
+  /-- The curve whose functions `vg_<curve>_inv_mod_p` and
+  `vg_<curve>_inv_mod_n` (`Spec/Weierstrass/Inverse.lean`) compute `Z^(p-2)`
+  and `k^(n-2)` (`invFn`), which every function calls (`pPow`, `nPow`);
+  else they run them inline. -/
+  inverse : Option Spec.Weierstrass.Inverse.Curve := none
 
 namespace Cfg
 
@@ -217,15 +223,48 @@ def winPrep (k : Nat) : Prog isa :=
   .seq (.block (WinCfg.addConst c.n k c.winK (WinCfg.offset (16 * c.n + 1))))
     (bits c.winK c.winBits (8 * (c.n + 1)))
 
-/-- `Z^(p-2)` and `k^(n-2)` into `ACC`, by divsteps (`k^(n-2)` by sliding
-windows unless `fastN`), their working slots at `CT …` (the window method's,
-which no power overlaps in time). -/
-def invP : InvCfg := .ofMod c.MP' (c.sl ACC) (c.sl RZ) (c.sl CT) c.C.p
-def invN : InvCfg := .ofMod c.MN' (c.sl ACC) (c.sl KM) (c.sl CT) c.C.n
-def powN : Weierstrass.ChainCfg := .ofExp c.MN' (c.sl ACC) (c.sl KM) (c.sl CT) (c.C.n - 2)
+/-- The powers' temporary area and working slots: for a curve whose
+inversions are functions (`inverse`), the functions' own (`tmpAt`, whose
+products are then written out, and `workAt`); else `TMP`'s and `CT …` (the
+window method's, which no power overlaps in time). -/
+def invTmp : Nat := match c.inverse with | some C => C.tmpAt | none => c.sl TMP
+def invTbl : Nat := match c.inverse with | some C => C.workAt | none => c.sl CT
 
-def pPow : Prog isa := InvCfg.inv c.invP
-def nPow : Prog isa := if c.fastN then InvCfg.inv c.invN else ChainCfg.pow c.powN
+/-- `Z^(p-2)` and `k^(n-2)` into `ACC`, by divsteps (`k^(n-2)` by sliding
+windows unless `fastN`), in `invTmp` and `invTbl`. -/
+def invP : InvCfg := .ofMod { c.MP' with tmp := c.invTmp } (c.sl ACC) (c.sl RZ) c.invTbl c.C.p
+def invN : InvCfg := .ofMod { c.MN' with tmp := c.invTmp } (c.sl ACC) (c.sl KM) c.invTbl c.C.n
+def powN : Weierstrass.ChainCfg :=
+  .ofExp { c.MN' with tmp := c.invTmp } (c.sl ACC) (c.sl KM) c.invTbl (c.C.n - 2)
+
+/-- The powers, inline. -/
+def pPowI : Prog isa := InvCfg.inv c.invP
+def nPowI : Prog isa := if c.fastN then InvCfg.inv c.invN else ChainCfg.pow c.powN
+
+/-- Where `vg_<curve>_inv_mod_p` and `_n` keep `x19`, which the powers
+change: past the powers' working slots, in the functions' working area. -/
+def invSave : Nat := c.invTbl + 9 * (8 * c.n)
+
+/-- `vg_<curve>_inv_mod_p` or `_n`: the power `body` between saving `x19` and
+restoring it. -/
+def invFn (body : Prog isa) : Prog isa :=
+  .seq (.block [st .x19 c.invSave]) (.seq body (.block [ld .x19 c.invSave]))
+
+/-- A call of the function `name`, whose code is `fn`: `x30`, which the call
+changes, kept in `v29`, which the function does not write. -/
+def invCall (name : String) (fn : Prog isa) : Prog isa :=
+  .seq (.block [.vop (.ins .d2 .v29 0 .x30)]) (.seq (.call name fn) (.block [.umov .x .x30 .v29 0]))
+
+/-- `Z^(p-2)` and `k^(n-2)` into `ACC`: calls of `vg_<curve>_inv_mod_p` and
+`_n` (`invFn`), else inline (`pPowI`, `nPowI`). -/
+def pPow : Prog isa :=
+  match c.inverse with
+  | some C => invCall C.invPApi.name (c.invFn c.pPowI)
+  | none => c.pPowI
+def nPow : Prog isa :=
+  match c.inverse with
+  | some C => invCall C.invNApi.name (c.invFn c.nPowI)
+  | none => c.nPowI
 
 /-- The callee-saved registers the code uses (`x21`–`x25` by the
 multiplications of more than six words), and where they are saved. -/

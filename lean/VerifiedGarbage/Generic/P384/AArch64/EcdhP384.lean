@@ -30,7 +30,7 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List A
       coordinates, dbl-2001-b, with `Y = 1` where the result is the point at infinity) and the \
       addition of its entry, every entry loaded and masked and `y` negated by a mask of the \
       digit's sign, by the complete formula of Renes, Costello and Batina for `a = -3` \
-      (Algorithm 4); `Z⁻¹` is by divsteps (Bernstein and Yang's safegcd, half-delta form): 15 batches of 59 \
+      (Algorithm 4); `Z⁻¹` is a call of `vg_p384_inv_mod_p`, by divsteps (Bernstein and Yang's safegcd, half-delta form): 15 batches of 59 \
       divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each giving a matrix of \
       64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the coefficients `a`, `b` \
       (divided by 2⁶⁴ modulo `p`, as in Montgomery reduction), 885 divsteps in all, enough for \
