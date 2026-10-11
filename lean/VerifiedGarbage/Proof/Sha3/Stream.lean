@@ -108,7 +108,7 @@ theorem length_toBytes (A : State) : (toBytes A).length = 200 := by
 
 theorem toBytes_getElem (A : State) {j : Nat} (hj : j < 200) :
     (toBytes A)[j]'(by rw [length_toBytes]; exact hj) = byteOf A j := by
-  unfold toBytes
+  simp only [toBytes]
   rw [getElem_flatMap8 _ (fun _ => by simp)]
   simp only [List.getElem_map, List.getElem_range, Vector.getElem_toList]
   exact (byteOf_eq' A hj).symm
