@@ -17,7 +17,7 @@ open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 open VG.Impl.MlDsa.AArch64.Sign.CommitTail
 
-def spongeRegs : List Reg := [.x5,.x6,.x7,.x8,.x10,.x16]
+def spongeRegs : List Reg := [.x5,.x6,.x7,.x8,.x10,.x11,.x12,.x13,.x16]
 
 theorem sponge_ok {s : State} {wlen : Nat} (hc : CoreConfig s wlen (s.gpr .x1) (s.gpr .x19))
     (hmu : ∀j<4,InRegions (s.rd++s.wr) (s.gpr .x0+BitVec.ofNat 64 (16*j)) 16)
@@ -240,7 +240,7 @@ open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 open VG.Impl.MlDsa.AArch64.Sign.CommitTail
 
-def frontRegs : List Reg := [.x5,.x6,.x7,.x8,.x10,.x16,.x19,.x20,.x21]
+def frontRegs : List Reg := [.x5,.x6,.x7,.x8,.x10,.x11,.x12,.x13,.x16,.x19,.x20,.x21]
 
 structure FrontPre (wlen : Nat) (s : State) : Prop where
   length : wlen=768 ∨ wlen=1024
