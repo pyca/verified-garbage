@@ -3,7 +3,7 @@
 //! and OFB from ECB (`Sm4Ecb`, tested on the draft's ECB examples) on every
 //! length up to a few blocks, partial last blocks included.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use verified_garbage::sm4_ecb::Sm4Ecb;
 use verified_garbage::sm4_ofb::Sm4Ofb;

@@ -13,7 +13,7 @@
 //! `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next output block,
 //! whose first bytes it XORs into the rest of the input.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::arch::sm4::vg_sm4_expand_key;
 use crate::arch::sm4_ofb::vg_sm4_ofb;

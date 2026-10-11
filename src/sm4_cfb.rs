@@ -15,7 +15,7 @@
 //! `CIPH_K` of the block to continue from, whose first bytes it XORs into the
 //! rest of the input.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::arch::sm4::vg_sm4_expand_key;
 use crate::arch::sm4_cfb::{vg_sm4_cfb128_decrypt, vg_sm4_cfb128_encrypt};
@@ -28,7 +28,11 @@ pub struct Sm4Cfb128 {
 }
 
 /// The signature of `vg_sm4_cfb128_encrypt` and `vg_sm4_cfb128_decrypt`.
+#[cfg(target_arch = "x86_64")]
 type Cfb = unsafe extern "sysv64" fn(*const [u8; 128], *mut [u8; 16], *mut [u8; 16], usize);
+/// The signature of `vg_sm4_cfb128_encrypt` and `vg_sm4_cfb128_decrypt`.
+#[cfg(target_arch = "aarch64")]
+type Cfb = unsafe extern "C" fn(*const [u8; 128], *mut [u8; 16], *mut [u8; 16], usize);
 
 impl Sm4Cfb128 {
     /// Expands a 16-byte key for use in either direction.
