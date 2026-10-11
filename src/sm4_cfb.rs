@@ -10,12 +10,13 @@
 //! `iv`, which they replace with the last ciphertext block, in constant time:
 //! their timing depends on none of the key, the chaining value and the data.
 //! Both are the modes' generic CFB over SM4's bitsliced ECB code, one block
-//! at a time (in a batch of sixteen). This module holds the key schedule and
-//! handles a partial last segment: CFB encryption of a zero block is
+//! at a time (in a batch of sixteen on x86-64 and AArch64 and of eight on
+//! ARMv7). This module holds the key schedule and handles a partial last
+//! segment: CFB encryption of a zero block is
 //! `CIPH_K` of the block to continue from, whose first bytes it XORs into the
 //! rest of the input.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 
 use crate::arch::sm4::vg_sm4_expand_key;
 use crate::arch::sm4_cfb::{vg_sm4_cfb128_decrypt, vg_sm4_cfb128_encrypt};
@@ -31,7 +32,7 @@ pub struct Sm4Cfb128 {
 #[cfg(target_arch = "x86_64")]
 type Cfb = unsafe extern "sysv64" fn(*const [u8; 128], *mut [u8; 16], *mut [u8; 16], usize);
 /// The signature of `vg_sm4_cfb128_encrypt` and `vg_sm4_cfb128_decrypt`.
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
 type Cfb = unsafe extern "C" fn(*const [u8; 128], *mut [u8; 16], *mut [u8; 16], usize);
 
 impl Sm4Cfb128 {
