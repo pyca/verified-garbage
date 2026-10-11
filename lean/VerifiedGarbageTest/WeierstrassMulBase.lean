@@ -10,7 +10,9 @@ import VerifiedGarbage.Spec.Weierstrass.MulBase
 * the function's own working space is where the documentation says, and
   apart from what the caller provides (`p`, zero and `k`) and from the other
   tables of bits of the x86-64 code (`p - 2`'s and `n - 2`'s, from byte
-  `bitsAt + 64 k + 8`).
+  `bitsAt + 64 k + 8`), but for P-521, whose temporary slot is over the
+  table of `p - 2`'s bits, which only the power for curves of more than nine
+  words reads.
 -/
 
 namespace VG.Test.WeierstrassMulBase
@@ -68,7 +70,8 @@ are not in the own working space. -/
 def checkApart (C : MulBase.Curve) : Bool :=
   let words := 8 * C.k
   (List.range words).all (fun i => !own C (C.modAt + i) && !own C (C.zeroAt + i) && !own C (C.kAt + i)) &&
-    (List.range (2 * (64 * C.k + 8))).all (fun i => !own C (C.bitsAt + 64 * C.k + 8 + i)) &&
+    (List.range (64 * C.k + 8)).all (fun i =>
+      (C.k == 9 || !own C (C.bitsAt + 64 * C.k + 8 + i)) && !own C (C.bitsAt + 2 * (64 * C.k + 8) + i)) &&
     (List.range C.ptBytes).all (fun i => !own C (C.pAt + i))
 
 #guard curves.all checkApart
@@ -76,5 +79,8 @@ def checkApart (C : MulBase.Curve) : Bool :=
 #guard p384.ownDoc =
   "Bytes 880 to 1551, 1984 to 2031, 4048 to 4095 and 2224 to 2615 of `ws`"
 #guard p384.kAt = 1552 ∧ p384.pAt = 736 ∧ p384.modAt = 64 ∧ p384.zeroAt = 208
+#guard p521.ownDoc =
+  "Bytes 1288 to 2295, 2944 to 3015, 4024 to 4095 and 3304 to 3887 of `ws`"
+#guard p521.kAt = 2296 ∧ p521.pAt = 1072 ∧ p521.modAt = 64 ∧ p521.zeroAt = 280
 
 end VG.Test.WeierstrassMulBase
