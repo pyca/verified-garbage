@@ -1,5 +1,5 @@
 import VerifiedGarbage.Impl.Ed448.Formulas
-import VerifiedGarbage.Impl.Ed448.AArch64.Point56
+import VerifiedGarbage.Impl.Ed448.AArch64.CombBase
 import VerifiedGarbage.Spec.Ed448
 
 /-!
@@ -9,7 +9,7 @@ import VerifiedGarbage.Spec.Ed448
 of `[s]B` for the 456-bit little-endian scalar `s`, without pruning.
 
 `[s]B` is X448's fixed-base comb on edwards448 (`Impl/X448/AArch64/Base.lean`),
-over all 57 bytes of the scalar: 57 tables (`stepN 57`), the last
+over all 57 bytes of the scalar: 57 tables (`vg_ed448_r56_comb_base`, `CombBase.call 57`), the last
 `[m · 256^56] B`, and both accumulators starting at `[G] B` for
 `G = 8 Σ_{j < 57} 256^j` (`baseG57`). The scalar's bits are expanded into
 bytes at `BITS` (`bits`), as X448 expands its scalar but without clamping.
@@ -64,13 +64,11 @@ def encode : Prog isa :=
 
 /-! ## The function -/
 
-/-- X448's comb's `entry`, the scalar's bits, and both accumulators at `[G] B`. -/
+/-- X448's comb's `entry` and the scalar's bits. -/
 def baseSetup : Prog isa :=
-  .seq (.block Impl.X448.AArch64.Base.entry) <| .seq bits <|
-    .block (Impl.X448.AArch64.Base.accs Impl.X448.baseG57)
+  .seq (.block Impl.X448.AArch64.Base.entry) bits
 
 def scalarBase : Prog isa :=
-  .seq baseSetup <| .seq (.loop (Impl.X448.AArch64.Base.stepN 57) (.nonzero .x .x9)) <|
-    .seq Point56.combineCall encode
+  .seq baseSetup <| .seq (CombBase.call 57) <| .seq Point56.combineCall encode
 
 end VG.Impl.Ed448.AArch64

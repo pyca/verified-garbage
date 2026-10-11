@@ -3,13 +3,11 @@ import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
 /-!
 # X448 of the base point on AArch64: the comb's code, erased
 
-Untrusted: everything here is checked by Lean. The comb's step and its
-combination (`Impl/X448/AArch64/Base.lean`), without what the analysis does
-not read, as pieces that are the same code whatever the slots (the field
-operations, the negations, the additions of affine points): the
-constant-time checks of every function built on the comb (X448's and
-Ed448's multiplications of the base point, Ed448's verification) analyse each
-once (`Split`).
+Untrusted: everything here is checked by Lean. The comb's step
+(`Impl/X448/AArch64/Base.lean`), without what the analysis does not read, as
+pieces that are the same code whatever the slots (the negations, the additions
+of affine points): the constant-time check of `vg_ed448_r56_comb_base`, whose
+loop it is, analyses each once (`Split`).
 -/
 
 namespace VG.AArch64
@@ -46,34 +44,18 @@ theorem addAffine_eraseT (x1 y1 z1 x2 y2 : Nat) :
 /-- The block of a step that negates the entries and adds them, erased, in pieces. -/
 def stepPieces : List (List Instr) :=
   negPieces ++ addAffinePieces ++ negPieces ++ addAffinePieces ++
-    [([.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 0] : List Instr).map Instr.eraseT]
+    [([.addImm .x .x19 .x19 1, .sub .x .x9 .x19 .x30] : List Instr).map Instr.eraseT]
 
-theorem stepN_eraseT (n : Nat) : Code.eraseT (stepN n) =
+theorem stepR_eraseT : Code.eraseT stepR =
     .seq (.block (digits.map Instr.eraseT)) (.seq (.block (select.map Instr.eraseT))
       (.block stepPieces.flatten)) := by
-  simp only [stepN, Code.eraseT, List.map_append, negate_eraseT, addAffine_eraseT, stepPieces,
+  simp only [stepR, Code.eraseT, List.map_append, negate_eraseT, addAffine_eraseT, stepPieces,
     List.flatten_append, List.flatten_cons, List.flatten_nil, List.append_nil, List.append_assoc,
     List.map_cons, List.map_nil, Instr.eraseT]
 
-theorem stepN_split (n : Nat) : Split (Code.eraseT (stepN n)) (.seq (.block (digits.map Instr.eraseT))
+theorem stepR_split : Split (Code.eraseT stepR) (.seq (.block (digits.map Instr.eraseT))
     (.seq (.block (select.map Instr.eraseT)) (piecesProg stepPieces))) := by
-  rw [stepN_eraseT]
+  rw [stepR_eraseT]
   exact .seq (.refl _) (.seq (.refl _) (.pieces _))
-
-/-- An addition of points on the slots `0`–`5`, erased, in pieces. -/
-def addPieces (x1 y1 z1 x2 y2 z2 : Nat) : List (List Instr) := (addOps x1 y1 z1 x2 y2 z2).map opErased
-
-theorem combine_split : Split (Code.eraseT combine) (.seq (.block ([Instr.movz .x .x19 4 0].map Instr.eraseT))
-    (.seq (.loop (piecesProg (addPieces AX AY AZ AX AY AZ ++
-        [([.subImm .x .x19 .x19 1] : List Instr).map Instr.eraseT])) (.nonzero .x .x19))
-      (piecesProg (addPieces AX AY AZ BX BY BZ)))) := by
-  have e₁ : (codeOf (addOps AX AY AZ AX AY AZ) ++ ([.subImm .x .x19 .x19 1] : List Instr)).map Instr.eraseT =
-      (addPieces AX AY AZ AX AY AZ ++ [([.subImm .x .x19 .x19 1] : List Instr).map Instr.eraseT]).flatten := by
-    simp only [addPieces, List.map_append, codeOf_eraseT, List.flatten_append, List.flatten_cons,
-      List.flatten_nil, List.append_nil]
-  have e₂ : (codeOf (addOps AX AY AZ BX BY BZ)).map Instr.eraseT = (addPieces AX AY AZ BX BY BZ).flatten :=
-    codeOf_eraseT _
-  simp only [combine, Code.eraseT, e₁, e₂]
-  exact .seq (.refl _) (.seq (.loop _ (.pieces _)) (.pieces _))
 
 end VG.AArch64

@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
+import VerifiedGarbage.Impl.Ed448.AArch64.CombBase
 
 /-!
 # Ed448 verification's equation on AArch64, by a comb and 4-bit windows
@@ -9,7 +10,7 @@ are `VerifyEquation.lean`'s (with X448's memory-resident arithmetic), as is the
 comparison of `[4]Q` with `[4]R`; but `Q = [S]B + [k](-A)` is computed with the
 register-resident arithmetic (`Impl/Curve448/AArch64/Fast.lean`):
 
-* `[S]B` by `vg_ed448_scalar_base`'s comb of 57 tables (`stepN 57`, `Point56.combineCall`),
+* `[S]B` by `vg_ed448_scalar_base`'s comb of 57 tables (`vg_ed448_r56_comb_base`, `CombBase.call 57`),
   from the bits of `S` at `BITS`.
 * `[k](-A)` by 4-bit windows from the top, each four doublings and the
   addition of `[n](-A)` for the window's digit `n`, selected in constant time
@@ -80,11 +81,9 @@ def table : Prog isa := .seq (.block tabInit) (.loop tabBody (.nonzero .x .x9))
 
 /-! ## `[S]B` -/
 
-/-- Both accumulators at `[G] B`, the comb's steps over the bits of `S` (at `BITS`), and
-`16 A + B`: `[S]B` in slots 0–2. -/
-def sBase : Prog isa :=
-  .seq (.block (Impl.X448.AArch64.Base.accs Impl.X448.baseG57)) <|
-  .seq (.loop (Impl.X448.AArch64.Base.stepN 57) (.nonzero .x .x9)) Point56.combineCall
+/-- The comb over the bits of `S` (at `BITS`), by a call of `vg_ed448_r56_comb_base`, and `16 A + C`
+by calls of `vg_ed448_r56_point_add`: `[S]B` in slots 0–2. -/
+def sBase : Prog isa := .seq (CombBase.call 57) Point56.combineCall
 
 /-! ## `[k](-A)` -/
 
