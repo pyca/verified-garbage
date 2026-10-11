@@ -118,7 +118,7 @@ theorem verifyConstBase_ct (b ptr : BitVec 32) :
     subst r
     exact h.1.1.r0.trans h.2.1.r0.symm
   · intro s hs
-    refine WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) hs.1 hs.2.1)
+    refine WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) rfl hs.1 hs.2.1)
       fun t ⟨tk, tr, _, tl, _⟩ => ?_
     exact fromCTPre_keep hs tk tr tl
 

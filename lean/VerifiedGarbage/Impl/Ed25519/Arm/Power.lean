@@ -34,8 +34,16 @@ def pow250Fn : Prog isa := asFn true chain250
 /-- A call of `vg_gf25519_r16_pow250`. -/
 def power250 : Prog isa := .call Spec.X25519.Field16.pow250Api.name pow250Fn
 
-def invert : Prog isa := .seq power250 (.seq (sqn 15 15 5) (mulP 15 15 14))
+/-- `[o] = [a] · [b]`, by a call of `vg_gf25519_r16_mul`. -/
+def mulPc (o a b : Slot) : Prog isa := mulCall (offset o) (offset a) (offset b)
 
-def rootPower : Prog isa := .seq power250 (.seq (sqn 15 15 2) (mulP 15 15 2))
+/-- Slot `o` squared `n` times in place, in a loop counted by `r10`. -/
+def sqnLoop (o : Slot) (n : Nat) : Prog isa :=
+  .seq (.block [.movw .r10 (BitVec.ofNat 16 n)]) <|
+    .loop (.seq (mulP o o o) (.block [.subs .r10 .r10 (.imm 1)])) .ne
+
+def invert : Prog isa := .seq power250 (.seq (sqnLoop 15 5) (mulPc 15 15 14))
+
+def rootPower : Prog isa := .seq power250 (.seq (sqnLoop 15 2) (mulPc 15 15 2))
 
 end VG.Impl.Ed25519.Arm

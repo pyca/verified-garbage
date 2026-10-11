@@ -34,7 +34,7 @@ theorem scalarBaseEngine_ok {s : State} {base ptr : BitVec 32} (hc : Ctx base s)
       V t.mem (State.addr base) FR = encodedValue
         (Spec.Ed25519.pointMul (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32)) Spec.Ed25519.basePoint) := by
   refine WP.seq (WP.mono (initFields_rest hc) fun a ⟨ak, ar, al, _⟩ => ?_)
-  refine WP.seq (WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) (ak.ctx hc) al)
+  refine WP.seq (WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) rfl (ak.ctx hc) al)
     fun u ⟨uk, ur', _, ul, ue⟩ => ?_)
   have ku := ak.trans uk
   have up : u.gpr .r12 = ptr := (ur'.gpr _ (by decide)).trans ((ar.gpr _ (by decide)).trans hp)
@@ -81,7 +81,7 @@ theorem basePrepareCT_ok {s : State} {base ptr : BitVec 32} (h : BaseCTPre base 
     WP isa basePrepareCT s (FromCTPre base ptr 16) := by
   obtain ⟨hc, hp, hfit, hr, hsep⟩ := h
   refine WP.seq (WP.mono (initFields_rest hc) fun a ⟨ak, ar, al, _⟩ => ?_)
-  refine WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) (ak.ctx hc) al)
+  refine WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) rfl (ak.ctx hc) al)
     fun u ⟨uk, ur', _, ul, _⟩ => ?_
   have ku := ak.trans uk
   refine ⟨ku.ctx hc, ul, (ur'.gpr _ (by decide)).trans ((ar.gpr _ (by decide)).trans hp), hfit, ?_, hsep⟩
