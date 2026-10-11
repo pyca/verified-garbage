@@ -9,13 +9,15 @@
 //! decryption from the chaining value at `iv`, in constant time: their
 //! timing depends on none of the key, the chaining value and the data. Both
 //! are the modes' generic CBC over Camellia's bitsliced ECB code, with the
-//! S-boxes as Boolean circuits: decryption transforms eight blocks at a
-//! time, and encryption, in which each block needs the one before, one block
-//! at a time (in a batch of eight, so about eight times ECB's cost). This
+//! S-boxes as Boolean circuits. On x86-64 and AArch64, decryption
+//! transforms eight blocks at a time, and encryption, in which each block
+//! needs the one before, one block at a time (in a batch of eight, so about
+//! eight times ECB's cost). On ARMv7, both call the verified ECB function
+//! once per block (a batch of eight, so about eight times ECB's cost). This
 //! module checks the lengths, holds the subkeys and keeps the chaining value
 //! to continue from: the last ciphertext block.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 
 use crate::arch::camellia::vg_camellia_expand_key;
 use crate::arch::camellia_cbc::{vg_camellia_cbc_decrypt, vg_camellia_cbc_encrypt};
