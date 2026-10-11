@@ -160,6 +160,36 @@ def arithmeticChecks : Except String Nat := do
         (BitVec.ofNat 64 (0x10000 + Impl.Dsa.Layout.t)) 16)
       unless actual == expected do throw s!"{name} mismatch modulo {modulus}: {actual} != {expected}"
       total := total + after.instructions - before.instructions
+    for value in [0, 1, modulus - 1, modulus, modulus + 1, 2 ^ 127 + 17] do
+      let sample := { v with params := { v.params with g := value } }
+      let start ← initial sample 16 16 true
+      let start := { start with state := { start.state with
+        wr := [⟨0x3000, 32⟩, ⟨0x10000, 16384⟩, ⟨0x20000, 48⟩] } }
+      let prepared ← evaluate 20000 setup start
+      for aboveOne in [false, true] do
+        let program := Impl.Bignum.X86_64.seqs [
+          .block [.mov .rax (.imm (-1)), .store (Impl.Dsa.X86_64.Core.field .mask) .rax],
+          Impl.Dsa.X86_64.Checks.range Impl.Dsa.Layout.pWorkspace
+            Impl.Dsa.X86_64.Core.generator aboveOne]
+        let after ← evaluate 20000 program prepared
+        let actual := after.state.mem.readW
+          (BitVec.ofNat 64 (0x10000 + Impl.Dsa.Layout.Field.mask.offset)) 64
+        let valid := (if aboveOne then 1 else 0) < value && value < modulus
+        let expected : BitVec 64 := if valid then -1 else 0
+        unless actual == expected do throw s!"range mask mismatch for {value}, modulus={modulus}, aboveOne={aboveOne}"
+        total := total + after.instructions - prepared.instructions
+  for value in [0, 1, 127, 128, 255, 256, 65535, 2 ^ 127] do
+    let sample : Dsa.Vector := { params := ⟨value, 257, 2⟩, hash := "SHA-256" }
+    let before ← initial sample 16 16 true
+    let before := { before with state := { before.state with gpr := fun r =>
+      if r == .rsi then 0x1000 else if r == .rcx then 16 else before.state.gpr r } }
+    let after ← evaluate 20000 Impl.Dsa.X86_64.Checks.significant before
+    let width := (Spec.Dsa.bitLength value + 7) / 8
+    let head := value >>> (8 * (width - 1))
+    unless after.state.gpr .r8 == BitVec.ofNat 64 width &&
+        after.state.gpr .r9 == BitVec.ofNat 64 head do
+      throw s!"actual-width scan mismatch for {value}"
+    total := total + after.instructions
   return total
 
 end VG.Test.DsaModel
@@ -171,7 +201,7 @@ they complement, and do not replace, whole-operation proofs and native tests. -/
 def main (args : List String) : IO Unit := do
   if args[0]? == some "arithmetic" then
     match VG.Test.DsaModel.arithmeticChecks with
-    | .ok n => IO.println s!"Padded-modulus power, product, reduction and empty-input checks passed ({n} instructions)"
+    | .ok n => IO.println s!"Padded-modulus arithmetic, scalar-range and actual-width checks passed ({n} instructions)"
     | .error e => throw (IO.userError e)
     return
   let bits := (args[0]?.getD "1024").toNat?.getD 1024

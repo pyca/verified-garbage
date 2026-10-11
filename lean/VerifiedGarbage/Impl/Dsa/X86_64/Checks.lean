@@ -15,18 +15,25 @@ open VG.Impl.Rsa.X86_64 VG.Impl.Dsa.Layout
 def accumulate : List Instr :=
   [.alu .and .rax (.mem (Core.field .mask)), .store (Core.field .mask) .rax]
 
+/-- Record a nonzero byte only if the scan has not found one yet. -/
+def significantChoose : Prog isa :=
+  .ite .e
+    (.seq (.block [.alu .test .rax (.reg .rax)])
+      (.ite .ne (.block [.mov .r8 (.reg .rcx), .mov .r9 (.reg .rax)]) (.block [])))
+    (.block [])
+
+/-- One public byte of the actual-width scan. -/
+def significantByte : Prog isa := seqs [
+  .block [.movzx8 .rax (at0 .rsi), .alu .test .r8 (.reg .r8)],
+  significantChoose,
+  .block [.alu .add .rsi (.imm 1), .alu .sub .rcx (.imm 1)]]
+
 /-- Read all bytes, returning the number of bytes from the first nonzero
 byte in r8 and that byte in r9. Both are zero for an all-zero input.
 Input pointer rsi, positive byte length rcx. -/
 def significant : Prog isa := seqs [
   .block [.mov32 .r8 (.imm 0), .mov32 .r9 (.imm 0)],
-  .loop (seqs [
-    .block [.movzx8 .rax (at0 .rsi), .alu .test .r8 (.reg .r8)],
-    .ite .e
-      (.seq (.block [.alu .test .rax (.reg .rax)])
-        (.ite .ne (.block [.mov .r8 (.reg .rcx), .mov .r9 (.reg .rax)]) (.block [])))
-      (.block []),
-    .block [.alu .add .rsi (.imm 1), .alu .sub .rcx (.imm 1)]]) .ne]
+  .loop significantByte .ne]
 
 /-- Equality of r8 with a public immediate, as a mask in rax. -/
 def widthMask (n : Nat) : List Instr :=
