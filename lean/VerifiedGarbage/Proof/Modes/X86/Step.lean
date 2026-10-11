@@ -391,17 +391,18 @@ theorem pre_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : B
     WP isa (.block (c.load ++ c.opsCode M.pre)) s
       (Mid cs s₀ B D st j k s (applyOps M.pre (cont (areas c B D st j) s.mem))) := by
   have hR := regs hF hj
+  refine WP.syms_intro ?_
   refine load_wp hI.b ⟨by rw [hI.wr]; exact hF.scr.wr, hF.scr.fit⟩ hF.layout fun s₁ esi₁ _ g₁ m₁ rd₁ wr₁ => ?_
   rw [← List.append_nil (c.opsCode M.pre)]
   have b₁ : s₁.gpr sb = B := by rw [g₁ _ (by decide) (by decide)]; exact hI.b
   have hA : AreasOk c s₁ (lens c st) (areas c B D st j) allLocs :=
     areasOk hF hj b₁ (by rw [esi₁, hI.dp]) (by rw [wr₁, hI.wr])
-  refine opsCode_wp c (fun o ho => ⟨hpre o ho, mem_allLocs _⟩) hA fun s₂ a₂ f₂ g₂ rd₂ wr₂ => WP.block_nil ?_
+  refine opsCode_wp c (fun o ho => ⟨hpre o ho, mem_allLocs _⟩) hA fun s₂ a₂ f₂ g₂ rd₂ wr₂ => WP.block_nil fun sy₂ => ?_
   rw [m₁] at a₂ f₂
   have esp₂ : s₂.gpr .esp = s₀.gpr .esp := by
     rw [g₂ _ (by decide) (by decide), g₁ _ (by decide) (by decide), hI.esp]
   exact ⟨by rw [g₂ _ (by decide) (by decide)]; exact b₁, esp₂, by rw [rd₂, rd₁, hI.rd], by rw [wr₂, wr₁, hI.wr],
-    cs.ready_frame hI.ready (by rw [esp₂, hI.esp]) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]) f₂
+    cs.ready_frame hI.ready (by rw [esp₂, hI.esp]) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]) sy₂ f₂
       (toWr hF hI.wr hR.areasW) hR.areasCore, a₂, f₂.sub hR.areasFine⟩
 
 theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
@@ -485,6 +486,7 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
   have np₃ : s₃.mem.readW (slotA B c.nSlot) 32 = BitVec.ofNat 32 (n - j) := by
     rw [hm.frame.readW (Region.contains_self _ _) hR.nKeep (by decide), hI.np]
   rw [List.append_assoc]
+  refine WP.syms_intro ?_
   refine load_wp hm.b (hS hm.wr) hL fun s₄ esi₄ ebp₄ g₄ m₄ rd₄ wr₄ => ?_
   have b₄ : s₄.gpr sb = B := by rw [g₄ _ (by decide) (by decide)]; exact hm.b
   have hA : AreasOk c s₄ (lens c st) (areas c B D st j) allLocs :=
@@ -494,6 +496,7 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
   have b₅ : s₅.gpr sb = B := by rw [g₅ _ (by decide) (by decide)]; exact b₄
   have wr₅' : s₅.wr = s₀.wr := by rw [wr₅, wr₄, hm.wr]
   refine advance_wp b₅ (hS wr₅') hL M.step fun s₆ z₆ g₆ m₆ rd₆ wr₆ => ?_
+  intro sy₆
   have esi₅ : s₅.gpr .esi = D + BitVec.ofNat 32 (st * j) := by rw [g₅ _ (by decide) (by decide), esi₄, dp₃]
   have ebp₅ : s₅.gpr .ebp = BitVec.ofNat 32 (n - j) := by rw [g₅ _ (by decide) (by decide), ebp₄, np₃]
   rw [esi₅, ebp₅, hM] at m₆
@@ -555,7 +558,7 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
   · rw [m₆, Mem.readW_writeW_self32, Wp.ofNat_pred (by omega)]
     congr 1
   · exact cs.ready_frame hm.ready (by rw [gg _ (by decide) (by decide) (by decide) (by decide)])
-      (by rw [rd₆, rd₅, rd₄]) (by rw [wr₆, wr₅, wr₄])
+      (by rw [rd₆, rd₅, rd₄]) (by rw [wr₆, wr₅, wr₄]) sy₆
       ((f₅.mono fun r hr => List.mem_append_left _ hr).trans (f₆.mono fun r hr => List.mem_append_right _ hr))
       (fun r hr => by
         rcases List.mem_append.mp hr with h | h

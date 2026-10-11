@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Modes.X86.Ops
 import VerifiedGarbage.Proof.Modes.Steps
 import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Spec.Aes
 
 /-!
@@ -15,12 +16,12 @@ proves `CoreSpec` of its own.
 
 * `KeyArgs s rs k`: the key arguments in the state `s` (e.g. the schedule's
   address in a stack argument) give the key `k`. It survives what a mode
-  does before `prepare` (`keyArgs_congr`): keeping `esp`, the regions, and
-  memory outside `rs`, writable regions.
+  does before `prepare` (`keyArgs_congr`): keeping `esp`, the regions, the
+  addresses of statics, and memory outside `rs`, writable regions.
 * `Ready s B k`: the key `k` is ready in `s`, with the scratch buffer at `B`.
   It survives what a mode does between the core's code (`ready_frame`):
-  keeping `esp` and the regions, and writing writable memory outside the
-  core's slots or within its buffer.
+  keeping `esp`, the regions and the addresses of statics, and writing
+  writable memory outside the core's slots or within its buffer.
 * `prepare_wp`, `crypt_wp`: each changes only the core's slots and the
   `stack` bytes below `esp` in memory, and keeps `sb` and `esp`; every other
   register may change.
@@ -30,6 +31,12 @@ namespace VG.Proof.Modes.X86
 
 open VG VG.X86 VG.Impl.Modes VG.Impl.Modes.X86
 open VG.Spec.Aes (bytesAt)
+
+/-- `Q` of the state after `c`, which may assume it names the same addresses
+of statics as before (`Exec.syms`). -/
+theorem WP.syms_intro {c : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa c s fun s' => s'.syms = s.syms → Q s') : WP isa c s Q :=
+  WP.mono_syms h fun _ h₁ h₂ => h₁ h₂
 
 /-- The scratch buffer of `n` slots at `B` is writable in `s`, and does not
 wrap around. -/
@@ -69,10 +76,10 @@ structure CoreSpec (c : Core) where
   cipher_len : ∀ k b, (cipher k b).length = 4 * c.bw
   layout : Layout c
   keyArgs_congr : ∀ {s s' : State} {rs : List Region} {k : Key}, KeyArgs s rs k →
-    s'.gpr .esp = s.gpr .esp → s'.rd = s.rd → s'.wr = s.wr → Frame rs s.mem s'.mem →
+    s'.gpr .esp = s.gpr .esp → s'.rd = s.rd → s'.wr = s.wr → s'.syms = s.syms → Frame rs s.mem s'.mem →
     KeyArgs s' rs k
   ready_frame : ∀ {s s' : State} {B : BitVec 32} {k : Key} {rs : List Region}, Ready s B k →
-    s'.gpr .esp = s.gpr .esp → s'.rd = s.rd → s'.wr = s.wr → Frame rs s.mem s'.mem →
+    s'.gpr .esp = s.gpr .esp → s'.rd = s.rd → s'.wr = s.wr → s'.syms = s.syms → Frame rs s.mem s'.mem →
     (∀ r ∈ rs, ∃ r' ∈ s.wr, Region.Sub r r') →
     (∀ r ∈ rs, Region.Disjoint (coreRegion c B) r ∨ Region.Sub r (blkRegion c B)) → Ready s' B k
   prepare_wp : ∀ {s : State} {B : BitVec 32} {rs : List Region} {k : Key}, s.gpr sb = B →

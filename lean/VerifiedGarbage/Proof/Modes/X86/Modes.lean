@@ -27,11 +27,11 @@ section
 variable (cs : CoreSpec c) {s₀ : State} {k : cs.Key}
 
 /-- The data on entry, in blocks. -/
-abbrev blocks0 (s₀ : State) : List (List Byte) := chunksAt (4 * c.bw) s₀.mem ((Dp s₀).setWidth 64) (N s₀)
+abbrev blocks0 (s₀ : State) : List (List Byte) := chunksAt (4 * c.bw) s₀.mem ((Dp s₀ c).setWidth 64) (N s₀ c)
 
 theorem cbcEnc_wp (hp : SeqPre c (Mode.cbcEnc c.bw) s₀) (hk : cs.KeyArgs s₀ [scrR s₀ c] k) :
     WP isa (c.seq (Mode.cbcEnc c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
-      chunksAt (4 * c.bw) s'.mem ((Dp s₀).setWidth 64) (N s₀) =
+      chunksAt (4 * c.bw) s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) =
         Spec.Cbc.encrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) := by
   have b := blk_bounds (c := c) (st := (Mode.cbcEnc c.bw).step) rfl
   exact WP.mono (seq_wp cs hp (xorBlk_inBounds (b _) (b _) (b _))
@@ -40,7 +40,7 @@ theorem cbcEnc_wp (hp : SeqPre c (Mode.cbcEnc c.bw) s₀) (hk : cs.KeyArgs s₀ 
 
 theorem cbcDec_wp (hp : SeqPre c (Mode.cbcDec c.bw) s₀) (hk : cs.KeyArgs s₀ [scrR s₀ c] k) :
     WP isa (c.seq (Mode.cbcDec c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
-      chunksAt (4 * c.bw) s'.mem ((Dp s₀).setWidth 64) (N s₀) =
+      chunksAt (4 * c.bw) s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) =
         Spec.Cbc.decrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) := by
   have b := blk_bounds (c := c) (st := (Mode.cbcDec c.bw).step) rfl
   refine WP.mono (seq_wp cs hp (copyBlk_inBounds (b _) (b _)) (fun o ho => ?_)
@@ -53,9 +53,9 @@ theorem cbcDec_wp (hp : SeqPre c (Mode.cbcDec c.bw) s₀) (hk : cs.KeyArgs s₀ 
 
 theorem ofb_wp (hp : SeqPre c (Mode.ofb c.bw) s₀) (hk : cs.KeyArgs s₀ [scrR s₀ c] k) :
     WP isa (c.seq (Mode.ofb c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
-      chunksAt (4 * c.bw) s'.mem ((Dp s₀).setWidth 64) (N s₀) =
+      chunksAt (4 * c.bw) s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) =
         Spec.Ofb.crypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) ∧
-      bytesAt s'.mem ((P s₀).setWidth 64) (4 * c.bw) = Spec.Ofb.next (cs.cipher k) (iv0 c s₀) (N s₀) := by
+      bytesAt s'.mem ((P s₀ c).setWidth 64) (4 * c.bw) = Spec.Ofb.next (cs.cipher k) (iv0 c s₀) (N s₀ c) := by
   have b := blk_bounds (c := c) (st := (Mode.ofb c.bw).step) rfl
   refine WP.mono (seq_wp cs hp (copyBlk_inBounds (b _) (b _))
     (fun o ho => (List.mem_append.mp ho).elim (copyBlk_inBounds (b _) (b _) o) (xorBlk_inBounds (b _) (b _) (b _) o))
@@ -65,9 +65,9 @@ theorem ofb_wp (hp : SeqPre c (Mode.ofb c.bw) s₀) (hk : cs.KeyArgs s₀ [scrR 
 
 theorem cfbEnc_wp (hp : SeqPre c (Mode.cfbEnc c.bw) s₀) (hk : cs.KeyArgs s₀ [scrR s₀ c] k) :
     WP isa (c.seq (Mode.cfbEnc c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
-      chunksAt (4 * c.bw) s'.mem ((Dp s₀).setWidth 64) (N s₀) =
+      chunksAt (4 * c.bw) s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) =
         Spec.Cfb.encrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) ∧
-      bytesAt s'.mem ((P s₀).setWidth 64) (4 * c.bw) =
+      bytesAt s'.mem ((P s₀ c).setWidth 64) (4 * c.bw) =
         Spec.Cbc.next (iv0 c s₀) (Spec.Cfb.encrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀)) := by
   have b := blk_bounds (c := c) (st := (Mode.cfbEnc c.bw).step) rfl
   refine WP.mono (seq_wp cs hp (copyBlk_inBounds (b _) (b _))
@@ -78,9 +78,9 @@ theorem cfbEnc_wp (hp : SeqPre c (Mode.cfbEnc c.bw) s₀) (hk : cs.KeyArgs s₀ 
 
 theorem cfbDec_wp (hp : SeqPre c (Mode.cfbDec c.bw) s₀) (hk : cs.KeyArgs s₀ [scrR s₀ c] k) :
     WP isa (c.seq (Mode.cfbDec c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
-      chunksAt (4 * c.bw) s'.mem ((Dp s₀).setWidth 64) (N s₀) =
+      chunksAt (4 * c.bw) s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) =
         Spec.Cfb.decrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) ∧
-      bytesAt s'.mem ((P s₀).setWidth 64) (4 * c.bw) = Spec.Cbc.next (iv0 c s₀) (blocks0 (c := c) s₀) := by
+      bytesAt s'.mem ((P s₀ c).setWidth 64) (4 * c.bw) = Spec.Cbc.next (iv0 c s₀) (blocks0 (c := c) s₀) := by
   have b := blk_bounds (c := c) (st := (Mode.cfbDec c.bw).step) rfl
   refine WP.mono (seq_wp cs hp (copyBlk_inBounds (b _) (b _))
     (fun o ho => (List.mem_append.mp ho).elim (copyBlk_inBounds (b _) (b _) o) (xorBlk_inBounds (b _) (b _) (b _) o))
@@ -89,16 +89,16 @@ theorem cfbDec_wp (hp : SeqPre c (Mode.cfbDec c.bw) s₀) (hk : cs.KeyArgs s₀ 
   · rw [h3 rfl, (cfbDec_run _ _ _).2]; rfl
 
 /-- The data on entry, as bytes. -/
-abbrev bytes0 (s₀ : State) : List Byte := bytesAt s₀.mem ((Dp s₀).setWidth 64) (N s₀)
+abbrev bytes0 (c : Core) (s₀ : State) : List Byte := bytesAt s₀.mem ((Dp s₀ c).setWidth 64) (N s₀ c)
 
 theorem cfb8_bounds {l : Loc} : (l = .dat → 1 ≤ lens c 1 l) ∧ (l ≠ .dat → 4 * c.bw ≤ lens c 1 l) := by
   cases l <;> simp [lens]
 
 theorem cfb8Enc_wp (hp : SeqPre c (Mode.cfb8Enc c.bw) s₀) (hk : cs.KeyArgs s₀ [scrR s₀ c] k) :
     WP isa (c.seq (Mode.cfb8Enc c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
-      bytesAt s'.mem ((Dp s₀).setWidth 64) (N s₀) = Spec.Cfb8.encrypt (cs.cipher k) (iv0 c s₀) (bytes0 s₀) ∧
-      bytesAt s'.mem ((P s₀).setWidth 64) (4 * c.bw) =
-        Spec.Cfb8.next (iv0 c s₀) (Spec.Cfb8.encrypt (cs.cipher k) (iv0 c s₀) (bytes0 s₀)) := by
+      bytesAt s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) = Spec.Cfb8.encrypt (cs.cipher k) (iv0 c s₀) (bytes0 c s₀) ∧
+      bytesAt s'.mem ((P s₀ c).setWidth 64) (4 * c.bw) =
+        Spec.Cfb8.next (iv0 c s₀) (Spec.Cfb8.encrypt (cs.cipher k) (iv0 c s₀) (bytes0 c s₀)) := by
   have hbw : 0 < c.bw := by rcases hp.layout.bw with h | h <;> omega
   have hne : iv0 c s₀ ≠ [] := by
     intro h; have := congrArg List.length h; simp [bytesAt] at this; omega
@@ -108,17 +108,17 @@ theorem cfb8Enc_wp (hp : SeqPre c (Mode.cfb8Enc c.bw) s₀) (hk : cs.KeyArgs s�
     rcases ho with rfl | ho
     · exact xorByte_inBounds (by simp [lens, Mode.cfb8Enc]) (by simp [lens]; omega)
     · exact shiftIn_inBounds hbw (by simp [lens]) (by simp [lens, Mode.cfb8Enc]) o ho
-  · have h2' : chunksAt 1 s'.mem ((Dp s₀).setWidth 64) (N s₀) =
-        (run (cfb8EncF (cs.cipher k)) (iv0 c s₀) (chunksAt 1 s₀.mem ((Dp s₀).setWidth 64) (N s₀))).1 := h2
+  · have h2' : chunksAt 1 s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) =
+        (run (cfb8EncF (cs.cipher k)) (iv0 c s₀) (chunksAt 1 s₀.mem ((Dp s₀ c).setWidth 64) (N s₀ c))).1 := h2
     rw [← bytesSteps_flatten (bytesAt s'.mem _ _), ← chunksAt_one, h2', chunksAt_one, (cfb8Enc_run _ _ _ hne).1]
-  · have h3' : bytesAt s'.mem ((P s₀).setWidth 64) (4 * c.bw) =
-        (run (cfb8EncF (cs.cipher k)) (iv0 c s₀) (chunksAt 1 s₀.mem ((Dp s₀).setWidth 64) (N s₀))).2 := h3 rfl
+  · have h3' : bytesAt s'.mem ((P s₀ c).setWidth 64) (4 * c.bw) =
+        (run (cfb8EncF (cs.cipher k)) (iv0 c s₀) (chunksAt 1 s₀.mem ((Dp s₀ c).setWidth 64) (N s₀ c))).2 := h3 rfl
     rw [h3', chunksAt_one, (cfb8Enc_run _ _ _ hne).2]
 
 theorem cfb8Dec_wp (hp : SeqPre c (Mode.cfb8Dec c.bw) s₀) (hk : cs.KeyArgs s₀ [scrR s₀ c] k) :
     WP isa (c.seq (Mode.cfb8Dec c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
-      bytesAt s'.mem ((Dp s₀).setWidth 64) (N s₀) = Spec.Cfb8.decrypt (cs.cipher k) (iv0 c s₀) (bytes0 s₀) ∧
-      bytesAt s'.mem ((P s₀).setWidth 64) (4 * c.bw) = Spec.Cfb8.next (iv0 c s₀) (bytes0 s₀) := by
+      bytesAt s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) = Spec.Cfb8.decrypt (cs.cipher k) (iv0 c s₀) (bytes0 c s₀) ∧
+      bytesAt s'.mem ((P s₀ c).setWidth 64) (4 * c.bw) = Spec.Cfb8.next (iv0 c s₀) (bytes0 c s₀) := by
   have hbw : 0 < c.bw := by rcases hp.layout.bw with h | h <;> omega
   have hne : iv0 c s₀ ≠ [] := by
     intro h; have := congrArg List.length h; simp [bytesAt] at this; omega
@@ -128,11 +128,11 @@ theorem cfb8Dec_wp (hp : SeqPre c (Mode.cfb8Dec c.bw) s₀) (hk : cs.KeyArgs s�
     rcases ho with ho | rfl
     · exact shiftIn_inBounds hbw (by simp [lens]) (by simp [lens, Mode.cfb8Dec]) o ho
     · exact xorByte_inBounds (by simp [lens, Mode.cfb8Dec]) (by simp [lens]; omega)
-  · have h2' : chunksAt 1 s'.mem ((Dp s₀).setWidth 64) (N s₀) =
-        (run (cfb8DecF (cs.cipher k)) (iv0 c s₀) (chunksAt 1 s₀.mem ((Dp s₀).setWidth 64) (N s₀))).1 := h2
+  · have h2' : chunksAt 1 s'.mem ((Dp s₀ c).setWidth 64) (N s₀ c) =
+        (run (cfb8DecF (cs.cipher k)) (iv0 c s₀) (chunksAt 1 s₀.mem ((Dp s₀ c).setWidth 64) (N s₀ c))).1 := h2
     rw [← bytesSteps_flatten (bytesAt s'.mem _ _), ← chunksAt_one, h2', chunksAt_one, (cfb8Dec_run _ _ _ hne).1]
-  · have h3' : bytesAt s'.mem ((P s₀).setWidth 64) (4 * c.bw) =
-        (run (cfb8DecF (cs.cipher k)) (iv0 c s₀) (chunksAt 1 s₀.mem ((Dp s₀).setWidth 64) (N s₀))).2 := h3 rfl
+  · have h3' : bytesAt s'.mem ((P s₀ c).setWidth 64) (4 * c.bw) =
+        (run (cfb8DecF (cs.cipher k)) (iv0 c s₀) (chunksAt 1 s₀.mem ((Dp s₀ c).setWidth 64) (N s₀ c))).2 := h3 rfl
     rw [h3', chunksAt_one, (cfb8Dec_run _ _ _ hne).2]
 
 end
