@@ -13,9 +13,6 @@ open VG.AArch64
 -- (`Lit`) read.
 materialize_table sboxCompiled 8
 
--- The transposition, once.
-materialize_value transpose
-
 -- Pairs of rounds and the exchange of the halves, once.
 materialize_value roundPairEncrypt := roundPair .encrypt
 materialize_value roundPairDecrypt := roundPair .decrypt
@@ -39,9 +36,8 @@ materialize_code sbox5
 materialize_code sbox6
 materialize_code sbox7
 
-def transposeProg : Prog isa := .block transpose
-
-materialize_code transposeProg
+-- The transposition, once.
+materialize_code transpose
 
 end VG.Impl.TripleDes.AArch64.BitsliceNeon
 
