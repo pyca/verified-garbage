@@ -23,15 +23,10 @@ open VG.Impl.Rsa.X86_64
 /-- Fill an array with zero, including its two padding words. -/
 def zero (a : Nat) : Prog isa := Crt.zeroArr a
 
-/-- Load a possibly empty big-endian input into an array, zeroing the
-padding and any unused high limbs. The pointer and length are read from
-slots of the parent workspace. -/
-def load (a ptr len : Nat) : Prog isa := seqs [
-  zero a,
-  .block [.mov .rax (.mem (hdr Crt.sLink)), .mov .rsi (.mem (Crt.ws .rax ptr)),
-    .mov .rcx (.mem (Crt.ws .rax len)), .mov .rbx (.mem (hdr (sArr a))),
-    .alu .test .rcx (.reg .rcx)],
-  .ite .e (.block []) loadBE]
+/-- Load a nonempty big-endian component, zeroing the padding and unused
+high limbs. All DSA components have positive public widths; empty digests
+are handled separately by reduce. The source is in the parent header. -/
+def load (a ptr len : Nat) : Prog isa := seqs (Crt.loadArr a ptr len)
 
 /-- Store an array as big-endian bytes. The output length is positive and
 fits in the array; the pointer and length are in the parent header. -/
@@ -41,33 +36,63 @@ def store (a ptr len : Nat) : Prog isa := seqs [
     .mov .r15 (.imm (-1))],
   storeBE]
 
-/-- Initialize the number 1 and R² mod m. This is repeated before operations
-that reuse the R² array as the exponentiation base. -/
-def constants (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
-  .block [.mov .r12 (.mem (hdr sW)), .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)],
-  setWord aOne .rcx,
-  R2Words.choice mul]
+/-- Set an array to a small ordinary value, clearing the high limbs. -/
+def small (a : Nat) (v : BitVec 32) : Prog isa :=
+  .seq (.block [.mov .r12 (.mem (hdr sW)), .mov32 .rdx (.imm v), .mov32 .rcx (.imm 0)])
+    (setWord a .rcx)
+
+/-- The number of doublings needed for R²: 128 times the limb width. -/
+def r2Count : List Instr :=
+  [.mov .rcx (.mem (hdr sW)),
+    .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx),
+    .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx),
+    .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx),
+    .alu .add .rcx (.reg .rcx)]
+
+/-- Initialize the number 1 and R² mod m by a public number of doublings.
+Unlike RSA's normalized-modulus shortcut this also handles zero high limbs.
+The modulus is greater than 1. -/
+def constants : Prog isa := seqs [
+  small aOne 1, small aR2 1,
+  .block r2Count,
+  doubles aN aAcc aTmp aR2 sCnt]
+
+/-- Exponentiate an encoded base with accumulator R, then decode. -/
+def encodedPower (mul : Nat → Nat → Nat → Prog isa) (exp expLen : Nat) : Prog isa :=
+  .seq (seqs (Crt.expLoop mul exp expLen)) (mul aY aY aOne)
+
+/-- Convert the loaded base and accumulator to Montgomery representation. -/
+def encodePower (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (mul aY aR2 aOne)
+    (.seq (mul aXm aX aR2) (seqs (Crt.copyArr Crt.aXc aXm)))
+
+/-- Encode the loaded base, run the fixed-window exponentiation and decode
+its result. R² and the number one have already been initialized. -/
+def powerCore (mul : Nat → Nat → Nat → Prog isa) (exp expLen : Nat) : Prog isa :=
+  .seq (encodePower mul) (encodedPower mul exp expLen)
 
 /-- Exponentiation of an ordinary base. The base fits the limb width but
-need not be below m. `aY` receives the ordinary, reduced result. Exponent
-length is positive; base length may be zero. -/
+need not be below m. aY receives the ordinary, reduced result. Exponent
+and base lengths are positive. -/
 def power (mul : Nat → Nat → Nat → Prog isa) (base baseLen exp expLen : Nat) : Prog isa :=
-  seqs ([constants mul, load aX base baseLen,
-    mul aY aR2 aOne, mul Crt.aXc aX aR2] ++
-    Crt.expLoop mul exp expLen ++ [mul aY aY aOne])
+  .seq constants (.seq (load aX base baseLen) (powerCore mul exp expLen))
+
+/-- Four Montgomery steps: encode both operands, multiply, and decode. -/
+def productCore (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
+  mul aX aX aR2, mul aXm aXm aR2,
+  mul aY aXm aX, mul aY aY aOne]
 
 /-- An ordinary modular product. Both input values fit the limb width;
 neither must be below the modulus. -/
 def product (mul : Nat → Nat → Nat → Prog isa) (a aLen b bLen : Nat) : Prog isa := seqs [
-  constants mul,
+  constants,
   load aX a aLen, load aXm b bLen,
-  mul aX aX aR2, mul aXm aXm aR2,
-  mul aY aX aXm, mul aY aY aOne]
+  productCore mul]
 
 /-- The arithmetic part of a byte step; array 1 contains the byte and
 array 4 contains 256 R mod m. -/
 def reduceStep (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (mul aY aY aR2) (Crt.addMod aY aY aX)
+  .seq (mul aY aR2 aY) (Crt.addMod aY aY aX)
 
 /-- One byte of streaming reduction: Y := (256 Y + byte) mod m. Array 4
 holds 256 R mod m; array 1 is zero except for the byte in its low word.
@@ -80,19 +105,23 @@ def reduceByte (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   .block [.mov .rax (.mem (hdr Crt.sRem)), .alu .sub .rax (.imm 1),
     .store (hdr Crt.sRem) .rax]]
 
+/-- Prepare 256R for byte reduction and clear the accumulator and byte array. -/
+def reduceSetup (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
+  constants,
+  mul aR2 aR2 aOne,
+  .block [.mov32 .rcx (.imm 8)],
+  doubles aN aAcc aTmp aR2 sCnt,
+  zero aY, zero aX]
+
 /-- Reduce an arbitrary-length big-endian input modulo m, including an
 empty input. Unlike RSA CRT reduction this does not assume m divides
 another modulus, which is essential for reducing a DSA p-residue modulo q.
 The ordinary result is in aY; the input pointer and length are parent slots. -/
-def reduce (mul : Nat → Nat → Nat → Prog isa) (ptr len : Nat) : Prog isa := seqs [
-  constants mul,
-  mul aR2 aR2 aOne,
-  .block [.mov32 .rcx (.imm 8)],
-  doubles aN aAcc aTmp aR2 Crt.sBit,
-  zero aY, zero aX,
-  .block [.mov .rax (.mem (hdr Crt.sLink)), .mov .rsi (.mem (Crt.ws .rax ptr)),
-    .mov .rcx (.mem (Crt.ws .rax len)), .store (hdr Crt.sSrc) .rsi,
-    .store (hdr Crt.sRem) .rcx, .alu .test .rcx (.reg .rcx)],
-  .ite .e (.block []) (.loop (reduceByte mul) .ne)]
+def reduce (mul : Nat → Nat → Nat → Prog isa) (ptr len : Nat) : Prog isa :=
+  .seq (reduceSetup mul) (seqs [
+    .block [.mov .rax (.mem (hdr Crt.sLink)), .mov .rsi (.mem (Crt.ws .rax ptr)),
+      .mov .rcx (.mem (Crt.ws .rax len)), .store (hdr Crt.sSrc) .rsi,
+      .store (hdr Crt.sRem) .rcx, .alu .test .rcx (.reg .rcx)],
+    .ite .e (.block []) (.loop (reduceByte mul) .ne)])
 
 end VG.Impl.Dsa.X86_64.Arithmetic

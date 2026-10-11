@@ -87,4 +87,22 @@ theorem mont_scale {out input c R m : Nat} (hR : Nat.Coprime R m)
   rw [h]
   simp only [Nat.mul_mod, Nat.mod_mod, Nat.mul_assoc]
 
+/-- Multiplication of two Montgomery-encoded values, without primality. -/
+theorem mont_product {out A B a b R m : Nat} (hR : Nat.Coprime R m)
+    (hA : A % m = a * R % m) (hB : B % m = b * R % m)
+    (h : out * R % m = A * B % m) : out % m = a * b * R % m := by
+  apply VG.Proof.Bignum.mont_cancel hR
+  calc
+    out * R % m = A * B % m := h
+    _ = (a * R) * (b * R) % m := by
+      rw [Nat.mul_mod A B, hA, hB, ← Nat.mul_mod]
+    _ = (a * b * R) * R % m := by ac_rfl
+
+/-- Multiplication by ordinary one decodes a Montgomery value. -/
+theorem mont_decode {out A a R m : Nat} (hR : Nat.Coprime R m)
+    (hA : A % m = a * R % m) (h : out * R % m = A * 1 % m) :
+    out % m = a % m := by
+  apply VG.Proof.Bignum.mont_cancel hR
+  rw [h, Nat.mul_one, hA]
+
 end VG.Proof.Dsa
