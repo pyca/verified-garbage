@@ -12,9 +12,6 @@ open VG.X86_64
 -- below and the functions' literals (`Lit`) read.
 materialize_table sboxCode 8
 
--- The transposition, once.
-materialize_value transpose
-
 -- A pair of rounds and the exchange of the halves, once for both directions.
 materialize_value roundPair
 materialize_value swapHalves
@@ -37,8 +34,7 @@ materialize_code sbox5
 materialize_code sbox6
 materialize_code sbox7
 
-def transposeProg : Prog isa := .block transpose
-
-materialize_code transposeProg
+-- The transposition, once.
+materialize_code transpose
 
 end VG.Impl.TripleDes.X86_64.BitsliceAvx512
