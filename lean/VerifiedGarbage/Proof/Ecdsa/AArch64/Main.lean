@@ -42,7 +42,7 @@ def CombCorrect (c : Cfg) (code : Prog isa) : Prop :=
     TCombFixed c.combCfg c.C base size s k T c.combWords →
     WP isa code s fun s' =>
       KeepRegs (tcombClob c.combCfg.M.n) s s' ∧
-      Unch base (tcombW c.combCfg) s.mem s'.mem ∧
+      Unch base (combPW c) s.mem s'.mem ∧
       ModOkA c.combCfg.M size c.C.p s'.mem base ∧
       (∀ x ∈ [c.combCfg.A.x,c.combCfg.A.y,c.combCfg.A.z],
         wordsVal s'.mem base x c.combCfg.M.n < c.C.p) ∧
@@ -52,10 +52,67 @@ def CombCorrect (c : Cfg) (code : Prog isa) : Prop :=
 
 theorem combCorrect (hc : CfgOk c) (hC : Law c.C)
     (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start) :
-    CombCorrect c (TCombCfg.comb c.combCfg false c.padd) := by
+    CombCorrect c c.combP := by
   intro base k T s hs hm hf
-  exact tcomb_ok (publicLookup := false) (tcombLay hc) (combA hc) hC hc.am3 hc.onG
-    (tcombVals hc hC hT) hc.p_lt hs hm hf (combAddOk hc)
+  have hpa := combAddOk hc.toBaseCfgOk
+  unfold Cfg.combP
+  split
+  · next h =>
+    rw [h] at hpa
+    exact WP.mono (tcomb_ok (publicLookup := false) (tcombLay hc) (combA hc) hC hc.am3 hc.onG
+      (tcombVals hc hC hT) hc.p_lt hs hm hf hpa trivial trivial)
+      fun s' ⟨K, U, M, L, R⟩ => ⟨K, U.mono fun w hw => List.mem_append_left _ hw, M, L, R⟩
+  · next name bAt h =>
+    obtain rfl := padd_bAt h
+    rw [h] at hpa
+    have h7 := hc.n10
+    have hn := hs.nowrap
+    refine WP.seq (WP.mono_syms (copy_ok c.n hs (o := c.sl EM) (a := c.sl BM) (sl_le c h7 (by decide))
+      (sl_le c h7 (by decide)) (sl_mod8 c EM) (sl_mod8 c BM)
+      ((sl_apart c (i := EM) (j := BM) (by decide)).imp (fun h => by omega_using [h]) id))
+      fun s₁ ⟨e₁, k₁, O₁⟩ sy₁ => ?_)
+    have U₁ : Unch base (slW c [EM]) s.mem s₁.mem := fun x hx => O₁ x (hx _ (List.mem_singleton_self _))
+    have hs₁ := hs.of_keepRegs k₁ (by decide)
+    have svu : ∀ i, i < 45 → i ≠ EM → wordsVal s₁.mem base (c.sl i) c.n = wordsVal s.mem base (c.sl i) c.n :=
+      fun i hi hne => sv_unch U₁ h7 hn hi (apart_slW (l := [EM]) (by simpa using hne))
+    have tv : ∀ i, i < 45 → i ≠ EM → tmv c.C c.n base s₁ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
+      fun i hi hne => by show toM _ _ _ = toM _ _ _; rw [svu i hi hne]
+    have hW₁ : ∀ w ∈ slW c [EM], w.1 + w.2 ≤ size := fun w hw => by
+      rw [List.mem_singleton.mp hw]; exact sl_le c h7 (i := EM) (by decide)
+    have hb := bitsAt0_le c h7
+    have hf₁ : TCombFixed c.combCfg c.C base size s₁ k T c.combWords := by
+      refine ⟨(tv AP (by decide) (by decide)).trans hf.a, (tv BM (by decide) (by decide)).trans hf.b,
+        fun x hx => ?_, (svu ZERO (by decide) (by decide)).trans hf.zero, fun t ht => ?_, hf.k_lt,
+        by rw [sy₁]; exact hf.tsym, TblMem.of_unch hf.tbl (by rw [k₁.rd, k₁.wr]) U₁ hW₁ hf.out, hf.out⟩
+      · have := hf.ro_lt x hx
+        simp only [combRo, List.mem_cons, List.not_mem_nil, or_false] at hx
+        rcases hx with rfl | rfl | rfl
+        · show wordsVal s₁.mem base (c.sl AP) c.n < _; rw [svu AP (by decide) (by decide)]; exact this
+        · show wordsVal s₁.mem base (c.sl BM) c.n < _; rw [svu BM (by decide) (by decide)]; exact this
+        · show wordsVal s₁.mem base (c.sl ZERO) c.n < _; rw [svu ZERO (by decide) (by decide)]; exact this
+      · have hk : c.combCfg.kbytes = 64 * c.n := rfl
+        have hbits : c.combCfg.bits = bitsAt c.n 0 := rfl
+        rw [hbits, U₁.byte (fun w hw => by
+          rw [List.mem_singleton.mp hw]
+          exact Or.inr (sl_below_bits c (i := EM) (by decide) 0 t)) (by omega_using [hb, ht, hk])]
+        rw [← hbits]; exact hf.bits t ht
+    have hr : AddReady base c.combCfg.M s₁.mem c.combCfg.S (some (name, c.sl EM)) := by
+      show wordsVal s₁.mem base (c.sl EM) c.n = wordsVal s₁.mem base (c.sl BM) c.n
+      rw [e₁, svu BM (by decide) (by decide)]
+    have hfar : AddFar c.combCfg.M c.combCfg.S (tcombW c.combCfg) (some (name, c.sl EM)) := by
+      intro w hw
+      rw [tcombW_eq] at hw
+      exact ⟨apart_append (apart_slW (i := EM) (by decide)) (apart_zw (by decide)) w hw,
+        apart_append (apart_slW (i := BM) (by decide)) (apart_zw (by decide)) w hw⟩
+    have hm₁ : ModOkA c.combCfg.M size c.C.p s₁.mem base :=
+      hm.unch U₁ (apart_slW (c := c) (i := MP) (l := [EM]) (by decide)) hn
+    refine WP.mono (tcomb_ok (publicLookup := false) (tcombLay hc) (combA hc) hC hc.am3 hc.onG
+      (tcombVals hc hC hT) hc.p_lt hs₁ hm₁ hf₁ hpa hr hfar) fun s' ⟨K, U, M, L, R⟩ =>
+        ⟨(k₁.mono fun r hr => ?_).trans K, (U₁.trans U).mono fun w hw => ?_, M, L, R⟩
+    · simp only [List.mem_singleton] at hr; subst hr; simp [tcombClob, combClob, maskRegs]
+    · rcases List.mem_append.mp hw with hw | hw
+      · exact List.mem_append_right _ hw
+      · exact List.mem_append_left _ hw
 
 /-- `[k]G` by the comb, then `Z^(p-2)`. -/
 theorem stage₂_with (hc : BaseCfgOk c) (comb : Prog isa) (hcomb : CombCorrect c comb)
@@ -85,14 +142,14 @@ theorem stage₂_with (hc : BaseCfgOk c) (comb : Prog isa) (hcomb : CombCorrect 
   refine WP.seq (WP.mono W fun s₅ h₅ => ?_)
   obtain ⟨K₅, U₅, M₅, L₅, R₅⟩ := h₅
   have hs₅ := hS.scr.of_keepRegs K₅ (x0_not_tcombClob hc.n10)
-  have F₅ := F.unch h7 hn fixedOk_tcombW U₅
+  have F₅ := F.unch h7 hn fixedOk_combPW U₅
   refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))))
     fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] →
-      i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] →
+      i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] →
       sv c base s₆ i = sv c base s i := fun hi h₁ h₂ =>
-    (sv_unch U₆ h7 hn hi (apart_chainWc hc hi h₁)).trans (sv_unch_tcomb U₅ h7 hn hi h₂)
+    (sv_unch U₆ h7 hn hi (apart_chainWc hc hi h₁)).trans (sv_unch_combP U₅ h7 hn hi h₂)
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
     sv_unch U₆ h7 hn hi (apart_chainWc hc hi h₁)
   refine ⟨⟨hs₅.of_keepRegs K₆ (x0_not_powClob h7), ?_, by rw [K₆.wr, K₅.wr, hS.wr],
@@ -100,7 +157,7 @@ theorem stage₂_with (hc : BaseCfgOk c) (comb : Prog isa) (hcomb : CombCorrect 
     by rw [e₆ (by decide) (by decide) (by decide), hS.k],
     by rw [e₆ (by decide) (by decide) (by decide), hS.d],
     by rw [e₆ (by decide) (by decide) (by decide), hS.e],
-    by rw [flag_unch_chain hc U₆ h7 h0 hn, flag_unch_tcomb U₅ h7 h0 hn, hS.flag], ?_, lt₆, ?_,
+    by rw [flag_unch_chain hc U₆ h7 h0 hn, flag_unch_combP U₅ h7 h0 hn, hS.flag], ?_, lt₆, ?_,
     ?_⟩
   · rw [K₆.gpr _ (x20_not_powClob h7), K₅.gpr _ (x20_not_tcombClob hc.n10), hS.x20]
   · show Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ)) _
@@ -116,7 +173,7 @@ theorem stage₂_with (hc : BaseCfgOk c) (comb : Prog isa) (hcomb : CombCorrect 
 theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
     {s₀ : State} {base : Addr} (hTP : TblPre c s₀ (s₀.syms c.tsym) base) {hs : Option Nat} {s : State} (hS : St₁ c hs s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (TCombCfg.comb c.combCfg false c.padd) (.seq c.pPow rest)) s Q :=
+    WP isa (.seq c.combP (.seq c.pPow rest)) s Q :=
   stage₂_with hc _ (combCorrect hc hC hT) hTP hS h
 
 /-- After `x`, `r`, the checks and `k^(n-2)`. -/
@@ -264,7 +321,7 @@ theorem stage₄ (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : SignOutp
     rw [bytes, hd]; rfl
 
 theorem sign_eq (c : Cfg) : c.sign = .seq (.block (c.setupWith (some E))) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
-    (.seq (TCombCfg.comb c.combCfg false c.padd) (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))) :=
+    (.seq c.combP (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))) :=
   rfl
 
 theorem signWith_ok (hc : BaseCfgOk c) (hC : Law c.C) (comb : Prog isa)

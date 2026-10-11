@@ -158,7 +158,7 @@ theorem combSum_ok {K : CombCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Co
     (hA : CombA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {s : State} (hs : Scr s base size)
     (hM : ModOkA K.M size C.p s.mem base)
     (hlt : ∀ x ∈ rcbR K.S K.A K.E, wordsVal s.mem base x K.M.n < C.p) {pa : Option (String × Nat)}
-    (hpa : AddOk K.M size (· ∈ combSlots K) K.S K.A K.E K.D pa) :
+    (hpa : AddOk K.M size (· ∈ combSlots K) K.S K.A K.E K.D pa) (hr : AddReady base K.M s.mem K.S pa) :
     WP isa (.seq (addP K.M K.S K.A K.E K.D pa) (.block (copyPt K.M.n K.A K.D))) s
       (SumPost K C base size s) := by
   have hn := hs.nowrap
@@ -175,7 +175,7 @@ theorem combSum_ok {K : CombCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Co
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl <;> comb_mem
   have W := addP_ok hL.lay ⟨hA.sl, hA.mod, fun f m' h => (hA.call f m' h).1⟩ hp hL.add hSl
-    (Low.of_call fun f m' h x hx => (hA.call f m' h).2 x (hSl x hx)) hpa hI (fun x hx => hx)
+    (Low.of_call fun f m' h x hx => (hA.call f m' h).2 x (hSl x hx)) hpa hI (fun x hx => hx) hr
   refine WP.seq (WP.mono W fun s₁ h₁ => ?_)
   obtain ⟨k₁, I₁, v₁⟩ := h₁
   have hnd := hL.nodup
