@@ -39,7 +39,7 @@ theorem sign_x86_adx (hL : Law Spec.P256.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP256Adx s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  sign_x86_of (p256x_ok hI) hL (p256_tbls hL hT) (fun _ h => { pre_of h with }) (fun _ _ => id) rfl
+  sign_x86_of (p256x_ok hI) hL (p256_tbls hL hT) (fun h => absurd h (by decide)) (fun _ h => { pre_of h with }) (fun _ _ => id) rfl
     (by lit_decide) (by lit_decide) (by lit_decide) s hs
 
 /-- `signP256Adx` without its displacements, as a literal of shared blocks
