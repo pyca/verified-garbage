@@ -117,7 +117,10 @@ mod sm4_ctr;
 mod sm4_ecb;
 mod sm4_ofb;
 mod triple_des_cbc;
+mod triple_des_cfb;
+mod triple_des_cfb8;
 mod triple_des_ecb;
+mod triple_des_ofb;
 mod x25519;
 mod x448;
 
@@ -411,7 +414,10 @@ const BENCHES: &[Bench] = &[
     (rsa_pss::USES, rsa_pss::bench),
     (rsa_public::USES, rsa_public::bench),
     (triple_des_cbc::USES, triple_des_cbc::bench),
+    (triple_des_cfb::USES, triple_des_cfb::bench),
+    (triple_des_cfb8::USES, triple_des_cfb8::bench),
     (triple_des_ecb::USES, triple_des_ecb::bench),
+    (triple_des_ofb::USES, triple_des_ofb::bench),
     (seed_cbc::USES, seed_cbc::bench),
     (seed_cfb::USES, seed_cfb::bench),
     (seed_ecb::USES, seed_ecb::bench),
