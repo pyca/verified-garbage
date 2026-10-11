@@ -412,7 +412,7 @@ theorem publicKey_inline (c : Cfg) : (Impl.EcKey.X86_64.Cfg.publicKey c).inline 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
 theorem publicKey_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : PkPre c s₀)
-    (hmb : MulBaseOk c := by intro h; exact absurd h (by decide)) :
+    (hmb : MulBaseOk c := by exact ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩) :
     WP isa (Impl.EcKey.X86_64.Cfg.publicKey c).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ PkPost c s₀ s' := by
   rw [publicKey_inline]

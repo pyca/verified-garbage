@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
 import VerifiedGarbage.Proof.Ecdsa.Sign
 
@@ -39,7 +39,7 @@ structure St₂ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : St
 
 /-- `[k]G`, then `Z^(p-2)`. -/
 theorem stage₂ (hc : BaseCfgOk c) (hmb : MulBaseOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀) {base : Addr}
-    (hb : base = s₀.gpr .r8) {s : State} (hS : St₁ c hs s₀ base s c.mulBase.isSome)
+    (hb : base = s₀.gpr .r8) {s : State} (hS : St₁ c hs s₀ base s c.callsMul)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
     WP isa (.seq c.gMulKC.inline (.seq c.pPow.inline rest)) s Q := by
   subst hb
@@ -252,7 +252,7 @@ theorem sign_inline (c : Cfg) : c.sign.inline = .seq (.block c.setup) (.seq c.kB
   rfl
 
 theorem sign_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : Pre c s₀)
-    (hmb : MulBaseOk c := by intro h; exact absurd h (by decide)) :
+    (hmb : MulBaseOk c := by exact ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩) :
     WP isa c.sign.inline s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   rw [sign_inline]
   exact stage₁ hc (Or.inr (Or.inr rfl)) hp.setup fun _ S₁ => stage₂ hc hmb hC hT hp rfl S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>

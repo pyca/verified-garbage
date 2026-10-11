@@ -92,7 +92,8 @@ theorem p384x_ok (hI : InvSounds) : CfgOk p384x where
   inverse _ := ⟨by decide, by decide, rfl⟩
 
 /-- `[k]G` is a call of `vg_p384_mul_base_adx`, which calls no other function. -/
-theorem p384x_mulBase : MulBaseOk p384x := fun _ => ⟨_, rfl, rfl, by decide, by lit_decide⟩
+theorem p384x_mulBase : MulBaseOk p384x :=
+  ⟨fun _ => ⟨_, rfl, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
 
 theorem p384x_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     CombTbls p384x := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
