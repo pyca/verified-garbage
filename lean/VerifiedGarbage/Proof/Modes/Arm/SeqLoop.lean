@@ -79,7 +79,7 @@ theorem take_N : (xs c s₀ M).take (N c s₀) = xs c s₀ M := List.take_of_len
 theorem finish_wp {s : State} (h : LInv c S M s₀ (N c s₀) s) :
     WP isa (.block (c.finish M)) s (EInv (c := c) (S := S) (M := M) s₀) := by
   have hnil : (xs c s₀ M).drop (N c s₀) = [] := List.drop_of_length_le (by rw [length_blocksOf])
-  have hfit : c.bs ≤ 2 ^ 64 := by have := hp.fS; unfold Core.scratchBytes at this; omega
+  have hfit : c.bs ≤ 2 ^ 64 := by have := hp.fS; unfold Core.scratchBytes Core.csOff at this; omega
   have fr4 : Frame [dataR c s₀ M, blkR c s₀, belowR S s₀, ivR c s₀] (savedMem c s₀) s.mem :=
     h.frame.mono fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
@@ -89,7 +89,7 @@ theorem finish_wp {s : State} (h : LInv c S M s₀ (N c s₀) s) :
   · rename_i hf
     have hS := hp.fS
     have hI := hp.fIv
-    have hsc : c.scratchBytes = oOff + 2 * c.bs := rfl
+    have hsc : c.scratchBytes = oOff + 2 * c.bs + c.stackScratch := rfl
     have hbs : c.bs = 4 * c.bw := rfl
     have hb := S.bw_le
     have ho : oOff = 40 := rfl
@@ -127,7 +127,7 @@ theorem finish_wp {s : State} (h : LInv c S M s₀ (N c s₀) s) :
 theorem epilogue_wp {s : State} (h : EInv (c := c) (S := S) (M := M) s₀ s) :
     WP isa (.block restore) s fun s' => abiPreserved s₀ s' ∧ (seqArm c S M).post s₀ s' := by
   have hS := hp.fS
-  have hsc : c.scratchBytes = oOff + 2 * c.bs := rfl
+  have hsc : c.scratchBytes = oOff + 2 * c.bs + c.stackScratch := rfl
   have ho : oOff = 40 := rfl
   have hsv : Spill.Saved s.mem (State.addr (Sc c s₀)) s₀.gpr saved :=
     (Spill.saveMem_saved (State.addr (Sc c s₀)) s₀.gpr s₀.mem saved saved_slots).frame saved_slots h.frame

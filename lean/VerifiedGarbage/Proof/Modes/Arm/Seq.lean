@@ -119,8 +119,8 @@ abbrev dataR (M : Mode) : Region := ⟨State.addr (Dp c s₀), N c s₀ * c.ds M
 abbrev scrR : Region := ⟨State.addr (Sc c s₀), c.scratchBytes⟩
 abbrev argR : Region := ⟨stackArgAddr s₀ 0, argBytes c⟩
 abbrev belowR : Region := ⟨State.addr s₀.sp - BitVec.ofNat 64 S.stack, S.stack⟩
-/-- The chaining and spare blocks. -/
-abbrev blkR : Region := ⟨State.addr (Sc c s₀) + BitVec.ofNat 64 oOff, 2 * c.bs⟩
+/-- The chaining and spare blocks, and the callee's working space. -/
+abbrev blkR : Region := ⟨State.addr (Sc c s₀) + BitVec.ofNat 64 oOff, 2 * c.bs + c.stackScratch⟩
 abbrev oA : Addr := State.addr (Sc c s₀) + BitVec.ofNat 64 oOff
 abbrev tA : Addr := State.addr (Sc c s₀) + BitVec.ofNat 64 (oOff + c.bs)
 
@@ -216,17 +216,22 @@ include hp
 
 
 omit hp in
-theorem UPre.scrB : c.scratchBytes = oOff + 2 * c.bs := rfl
+theorem UPre.scrB : c.scratchBytes = oOff + 2 * c.bs + c.stackScratch := rfl
 
 omit hp in
-theorem UPre.blk_sub : Region.Sub (blkR c s₀) (scrR c s₀) := VG.Offset.sub_base _ (by unfold Core.scratchBytes; omega)
+theorem UPre.blk_sub : Region.Sub (blkR c s₀) (scrR c s₀) := VG.Offset.sub_base _ (by unfold Core.scratchBytes Core.csOff; omega)
+
+omit hp in
+/-- The chaining and spare blocks, within the scratch buffer. -/
+theorem UPre.blk2_sub : Region.Sub ⟨State.addr (Sc c s₀) + BitVec.ofNat 64 oOff, 2 * c.bs⟩ (scrR c s₀) :=
+  VG.Offset.sub_base _ (by unfold Core.scratchBytes Core.csOff; omega)
 
 theorem UPre.slots_disj_blk : Region.Disjoint ⟨State.addr (Sc c s₀) + BitVec.ofNat 64 0, 36⟩ (blkR c s₀) :=
-  VG.Offset.disjoint _ (.inl (by unfold oOff; omega)) (by omega) (by have := hp.fS; unfold Core.scratchBytes at this; omega)
+  VG.Offset.disjoint _ (.inl (by unfold oOff; omega)) (by omega) (by have := hp.fS; unfold Core.scratchBytes Core.csOff at this; omega)
 
 omit hp in
 theorem UPre.slots_sub : Region.Sub ⟨State.addr (Sc c s₀) + BitVec.ofNat 64 0, 36⟩ (scrR c s₀) :=
-  VG.Offset.sub_base _ (by unfold Core.scratchBytes oOff; omega)
+  VG.Offset.sub_base _ (by unfold Core.scratchBytes Core.csOff oOff; omega)
 
 omit hp in
 /-- Saving the registers changes only the slots. -/
@@ -263,7 +268,7 @@ theorem prologue_mem {c : Core} {S : CoreSpec c} {M : Mode} {s₀ : State} (hp :
       bytesAt m (tA c s₀) c.bs = bytesAt s₀.mem (tA c s₀) c.bs := by
   intro m
   have hS := hp.fS
-  have hsc : c.scratchBytes = oOff + 2 * c.bs := rfl
+  have hsc : c.scratchBytes = oOff + 2 * c.bs + c.stackScratch := rfl
   have hbs : c.bs = 4 * c.bw := rfl
   have fs := UPre.savedMem_frame (c := c) (s₀ := s₀)
   -- The slots are apart from all but the scratch buffer's own bytes.
@@ -318,7 +323,7 @@ theorem UPre.npreIv {s : State} (h8 : s.gpr .r8 = Sc c s₀) (h5 : s.gpr .r5 = I
     NPre c.bw s .r8 .r5 oOff 0 (oA c s₀) (State.addr (Ivp c s₀) + BitVec.ofNat 64 0) := by
   have hS := hp.fS
   have hI := hp.fIv
-  have hsc : c.scratchBytes = oOff + 2 * c.bs := rfl
+  have hsc : c.scratchBytes = oOff + 2 * c.bs + c.stackScratch := rfl
   have hbs : c.bs = 4 * c.bw := rfl
   have hb := S.bw_le
   have ho : oOff = 40 := rfl
@@ -365,7 +370,7 @@ theorem prologue_tail {s₇ : State} (r4 : s₇.gpr .r4 = Kp s₀) (r5 : s₇.gp
 theorem prologue_wp :
     WP isa (.block (c.save ++ c.setup)) s₀ fun s => LInv c S M s₀ 0 s ∧ s.z = decide (N c s₀ = 0) := by
   have hS := hp.fS
-  have hsc : c.scratchBytes = oOff + 2 * c.bs := rfl
+  have hsc : c.scratchBytes = oOff + 2 * c.bs + c.stackScratch := rfl
   have hbs : c.bs = 4 * c.bw := rfl
   have ho : oOff = 40 := rfl
   have hF := hp.spF

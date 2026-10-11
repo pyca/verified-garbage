@@ -7,11 +7,12 @@
 //! which it replaces with the last output block, in constant time: its
 //! timing depends on none of the key, the chaining value and the data. It is
 //! the modes' generic OFB over CAST5's table-scanning block code, one block
-//! at a time. This module holds the subkeys and handles a partial last block
+//! at a time: on x86 over the block code itself, on ARMv7 calling the
+//! verified `vg_cast5_ecb_encrypt` for each block. This module holds the subkeys and handles a partial last block
 //! (§6.4, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next output
 //! block, whose first bytes it XORs into the rest of the input.
 
-#![cfg(target_arch = "x86")]
+#![cfg(any(target_arch = "x86", target_arch = "arm"))]
 
 use crate::arch::cast5_ofb::vg_cast5_ofb;
 use crate::cast5_ecb::Cast5Ecb;

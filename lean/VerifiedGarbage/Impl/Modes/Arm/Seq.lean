@@ -10,6 +10,9 @@ data = r2, n = r3)`), which replaces `n` blocks of `bw` 32-bit words at
 `data` with their encryptions (or decryptions) in place, and which the mode
 calls (`bl`) once for each block, with `n = 1`. Each cipher's ECB function
 is already an artifact, so the mode adds no cryptographic code of its own.
+A core may also take a working space of `stackScratch` bytes as its first
+stack argument (after `n`; CAST5's does): the mode passes it the end of its
+own scratch buffer, pushed (`push {r12, lr}`) around each call.
 
 The function, `(schedule = r0, iv = r1, data = r2, n = r3, scratch = [sp])`
 (or `(schedule = r0, rounds = r1, iv = r2, data = r3, n = [sp],
@@ -52,6 +55,9 @@ structure Core where
   code : Prog isa
   bw : Nat
   rounds : Bool := false
+  /-- The size of the working space the function takes as its first stack
+  argument, or 0 if it takes none. -/
+  stackScratch : Nat := 0
 
 /-- The blocks a mode works on: the data block (`r6`), the chaining block
 and the spare block (in the scratch buffer). -/
@@ -127,9 +133,13 @@ def scOff : Nat := if c.rounds then 4 else 0
 /-- Saves our caller's registers, with the scratch buffer in `r12`. -/
 def save : List Instr := .ldrSp .r12 c.scOff :: saved.map fun (r, d) => .str r .r12 d
 
+/-- The offset of the callee's working space in the scratch buffer. -/
+def csOff : Nat := oOff + 2 * c.bs
+
 /-- The scratch buffer's size: the saved registers (and a word to keep the
-blocks 8-byte aligned), the chaining block and the spare block. -/
-def scratchBytes : Nat := oOff + 2 * c.bs
+blocks 8-byte aligned), the chaining block, the spare block and the callee's
+working space. -/
+def scratchBytes : Nat := c.csOff + c.stackScratch
 
 /-- Where a block is: its base register and offset. -/
 def base : Blk → Reg × Nat
@@ -160,11 +170,23 @@ def setup : List Instr :=
     (List.range c.bw).flatMap (copyWord .r8 .r5 oOff 0) ++
     [.cmp .r7 (.imm 0)]
 
+/-- The callee's working space to `r12`, if it takes one. -/
+def scrArg : List Instr :=
+  if c.stackScratch = 0 then [] else [.dp .add .r12 .r8 (.imm (BitVec.ofNat 32 c.csOff))]
+
 /-- The arguments of the call on block `x`: the schedule, the number of
-rounds (if any), the block, `n = 1`. -/
+rounds (if any), the block, `n = 1`, and the callee's working space (if
+any) in `r12`, which the call pushes. -/
 def callArgs (x : Blk) : List Instr :=
   mov .r0 .r4 :: ((if c.rounds then [mov .r1 .r11] else []) ++
-    [.dp .add c.dReg (c.base x).1 (.imm (BitVec.ofNat 32 (c.base x).2)), .mov c.nReg (.imm 1)])
+    [.dp .add c.dReg (c.base x).1 (.imm (BitVec.ofNat 32 (c.base x).2)), .mov c.nReg (.imm 1)]) ++ c.scrArg
+
+/-- The call: with the callee's working space, in a frame that pushes its
+address (`r12`) as the stack argument, and `lr` to keep the stack 8-byte
+aligned. -/
+def callStep : Prog isa :=
+  if c.stackScratch = 0 then .call c.name c.code
+  else .frame (.push [.r12, .lr]) (.call c.name c.code) (.pop .r12 8)
 
 /-- On to the next block, or byte (Z is set when none are left). -/
 def advance (m : Mode) : List Instr := [.dp .add .r6 .r6 (.imm (BitVec.ofNat 32 (c.ds m))), .subs .r7 .r7 (.imm 1)]
@@ -175,7 +197,7 @@ def finish (m : Mode) : List Instr :=
 
 /-- One block. -/
 def body (m : Mode) : Prog isa :=
-  .seq (.block (c.opsCode m.pre ++ c.callArgs m.tgt)) (.seq (.call c.name c.code)
+  .seq (.block (c.opsCode m.pre ++ c.callArgs m.tgt)) (.seq c.callStep
     (.block (c.opsCode m.post ++ c.advance m)))
 
 /-- The whole function. -/
