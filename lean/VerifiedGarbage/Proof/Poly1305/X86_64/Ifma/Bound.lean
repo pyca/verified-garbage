@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Sym
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Bound
+import VerifiedGarbage.Proof.Poly1305.Limbs44
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: terms as numbers
@@ -22,6 +23,7 @@ open VG VG.X86_64
 open VG.Proof.Poly1305.X86_64.Avx2 (xr xi xr_xi capW orB capW_ge orB_ge)
 open VG.Proof.Poly1305.X86_64.Avx512 (qz shufIdx shufIdx_lt)
 open VG.Proof.X25519.X86_64.Ifma (mad52 mad52_toNat)
+open VG.Proof.Poly1305.Limbs44 (madN)
 
 /-- Bounds on the registers a block starts from: on each vector register's
 quadwords (`v`), on the general-purpose registers, and on the quadwords of
@@ -34,10 +36,6 @@ structure Bnds where
 /-- The values a block starts from, as numbers. -/
 abbrev Env := Avx512.Env
 abbrev envOf := Avx512.envOf
-
-/-- The 52-bit part of a product that a multiply-add adds, as a number. -/
-def madN (h : Bool) (a b : Nat) : Nat :=
-  if h then a % 2 ^ 52 * (b % 2 ^ 52) / 2 ^ 52 else a % 2 ^ 52 * (b % 2 ^ 52) % 2 ^ 52
 
 /-- A bound on `madN h a b` from bounds on `a` and `b`. -/
 def madB (h : Bool) (a b : Nat) : Nat :=
