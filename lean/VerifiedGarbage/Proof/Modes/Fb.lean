@@ -1,5 +1,4 @@
 import VerifiedGarbage.Proof.Modes.CbcEnc
-import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Impl.Modes.FbMode
 import VerifiedGarbage.Spec.Ofb
 import VerifiedGarbage.Spec.Cfb
@@ -160,13 +159,5 @@ theorem fbOut_getD (mo : FbMode) {L : Nat} {ciph : Spec.Cbc.Cipher} (hc : ∀ b,
 /-- The byte the data's XORed back into the output gives, for CFB decryption. -/
 theorem xor_xor_cancel (o x : Byte) : o ^^^ (x ^^^ o) = x := by
   rw [BitVec.xor_comm x o, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
-
-/-- Storing a word just loaded from the same address changes nothing. -/
-theorem writeW_readW_same (m : Mem) (a : Addr) : m.writeW a (m.readW a 64) = m := by
-  funext x
-  rw [writeW_readW_apply]
-  split
-  · rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
-  · rfl
 
 end VG.Proof.Modes

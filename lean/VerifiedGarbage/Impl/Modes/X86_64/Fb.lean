@@ -23,12 +23,16 @@ buffer is made `Iⱼ₊₁`:
 
 After the last block the buffer holds `Iₙ₊₁`, the block to continue from,
 which replaces the IV. The mode's slots hold the callee-saved registers
-(`savedSlot`) and the IV's address (`hiSlot`), which `prepare` and `crypt`
-may not keep in a register.
+(`savedSlot`); the IV's address, which `prepare` and `crypt` need not keep
+in a general-purpose register, is kept in `xmm15`, which a core whose code
+is all scalar (`scalCode`) leaves alone. A slot would not do: the
+constant-time analysis forgets what memory held after a store through a
+pointer at an offset it does not know (the data's, or one advanced in a
+loop of the core's), and the address must be public.
 
-* The scratch buffer moves to `sb`, the callee-saved registers and the IV's
-  address to the mode's slots. The data's address and `n` move to
-  `dataReg` and `leftReg`.
+* The scratch buffer moves to `sb`, the callee-saved registers to the
+  mode's slots, the IV's address to `xmm15`. The data's address and `n`
+  move to `dataReg` and `leftReg`.
 * `core.prepare` makes the key ready.
 * The IV to the buffer, the blocks, and the buffer back to the IV.
 
@@ -45,19 +49,22 @@ namespace Core
 
 variable (c : Core)
 
-/-- The scratch buffer to `sb`, the callee-saved registers and the IV's
-address (`r.ctr`) to the mode's slots, the data's address and `n` to
+/-- The register that keeps the IV's address. -/
+def ivX : XReg := .xmm15
+
+/-- The scratch buffer to `sb`, the callee-saved registers to the mode's
+slots, the IV's address (`r.ctr`) to `ivX`, the data's address and `n` to
 `dataReg` and `leftReg`. -/
 def fbEntry (r : CtrRegs) : List Instr :=
-  c.ctrEntry r ++ ([st c.hiSlot r.ctr] : List Instr) ++ c.ctrArgs r
+  c.ctrEntry r ++ ([.xop (.movq ivX r.ctr)] : List Instr) ++ c.ctrArgs r
 
 /-- The IV to the buffer's first block. -/
 def fbLoad : List Instr :=
-  ([movS .rax c.hiSlot] : List Instr) ++ (List.range c.bw).flatMap (copyW .rbp sb .rax (8 * c.buf) 0)
+  ([.movqR .rax ivX] : List Instr) ++ (List.range c.bw).flatMap (copyW .rbp sb .rax (8 * c.buf) 0)
 
 /-- The buffer's first block back to the IV. -/
 def fbStore : List Instr :=
-  ([movS .rax c.hiSlot] : List Instr) ++ (List.range c.bw).flatMap (copyW .rbp .rax sb 0 (8 * c.buf))
+  ([.movqR .rax ivX] : List Instr) ++ (List.range c.bw).flatMap (copyW .rbp .rax sb 0 (8 * c.buf))
 
 /-- `Oⱼ`, in the buffer's first block, XORed into the block at `dataReg`, and
 the buffer made `Iⱼ₊₁`. -/
@@ -73,13 +80,8 @@ def fbNext : List Instr :=
   [.alu .add c.dataReg (.imm (BitVec.ofNat 32 (8 * c.bw))), .alu .sub c.leftReg (.imm 1)]
 
 /-- One block: its input block enciphered in the buffer, XORed into the
-data, and the next input block. The IV's address is loaded into `rcx` and
-stored back around the data's stores, so that the constant-time analysis,
-which forgets what memory held after a store to the data, knows it is
-public. -/
-def fbBlock (m : FbMode) : Prog isa :=
-  .seq c.crypt (.block (([movS .rcx c.hiSlot] : List Instr) ++ c.fbOp m ++ ([st c.hiSlot .rcx] : List Instr) ++
-    c.fbNext))
+data, and the next input block. -/
+def fbBlock (m : FbMode) : Prog isa := .seq c.crypt (.block (c.fbOp m ++ c.fbNext))
 
 /-- The whole function: the entry, the key, the IV to the buffer, the
 blocks, and the block to continue from back to the IV. -/

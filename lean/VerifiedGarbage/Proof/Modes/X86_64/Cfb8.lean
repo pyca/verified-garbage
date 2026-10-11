@@ -28,7 +28,7 @@ theorem cfb8_wp (cs : BlockSpec c) (enc : Bool) {r : CtrRegs} (hr : RegsOk r) (h
     (hwP : (⟨P, 8 * c.bw⟩ : Region) ∈ s₀.wr) (hwD : (⟨D, n⟩ : Region) ∈ s₀.wr)
     (sPS : Region.Disjoint ⟨P, 8 * c.bw⟩ ⟨B, 8 * c.ctrSlots⟩) (sDS : Region.Disjoint ⟨D, n⟩ ⟨B, 8 * c.ctrSlots⟩)
     (sPD : Region.Disjoint ⟨P, 8 * c.bw⟩ ⟨D, n⟩) (fitD : D.toNat + n ≤ 2 ^ 64)
-    (hk : cs.KeyArgs s₀ [⟨B, 8 * c.ctrSlots⟩] k) :
+    (hk : cs.KeyArgs s₀ [⟨B, 8 * c.ctrSlots⟩] k) (hsc : scalCode c.prepare = true ∧ scalCode c.crypt = true) :
     WP isa (c.cfb8 enc r) s₀ fun s' => (∀ x ∈ calleeSaved, s'.gpr x = s₀.gpr x) ∧
       bytesAt s'.mem D n = (List.range n).map (cfb8Out enc (cs.cipher k) s₀.mem D (bytesAt s₀.mem P (8 * c.bw))) ∧
       bytesAt s'.mem P (8 * c.bw) = cfb8In enc (cs.cipher k) s₀.mem D (bytesAt s₀.mem P (8 * c.bw)) n ∧
@@ -55,8 +55,7 @@ theorem cfb8_wp (cs : BlockSpec c) (enc : Bool) {r : CtrRegs} (hr : RegsOk r) (h
     VG.Offset.disjoint_base B (by omega) (by omega)
   -- The entry.
   obtain ⟨sE, eE, bE, svE, fE, gE, rdE, wrE⟩ := entry_ok hsm hroom s₀ hB hs
-  obtain ⟨sS, eS, mS, gS, rdS, wrS⟩ := stReg_ok (s := sE) (k := c.hiSlot) r.ctr bE
-    (by rw [wrE]; exact inS (by simp only [Core.hiSlot, Core.ctrSlots]; omega))
+  obtain ⟨sS, eS, xS, gS, mS, rdS, wrS⟩ := movqX_ok sE Core.ivX r.ctr
   obtain ⟨sA, eA, drA, lrA, gA, mA, rdA, wrA⟩ := ctrArgs_ok sS r hdn hdl
   unfold Core.cfb8
   refine WP.seq (WP.of_runBlock ⟨sA, by
@@ -68,26 +67,19 @@ theorem cfb8_wp (cs : BlockSpec c) (enc : Bool) {r : CtrRegs} (hr : RegsOk r) (h
   have wrA' : sA.wr = s₀.wr := by rw [wrA, wrS, wrE]
   have fA : Frame [S] s₀.mem sA.mem := by
     rw [mA, mS]
-    exact (fE.sub fun x hx => ⟨S, List.mem_singleton_self _, by
-      simp only [List.mem_singleton] at hx; subst hx; exact subMode⟩).writeW (List.mem_singleton_self _) _
-      (VG.Offset.contains_base B (by simp only [Core.hiSlot, Core.ctrSlots]; omega)
-        (by simp only [Core.hiSlot]; omega))
-  let sv : Nat → BitVec 64 := fun i => if i < 6 then s₀.gpr (Core.savedRegs.getD i .rbx) else P
-  have svA : ∀ i < 7, sA.mem.readW (wordAddr B (c.slots + i)) 64 = sv i := fun i hi => by
-    rw [mA, mS, readW_slot_write _ (by omega) (by simp only [Core.hiSlot]; omega)]
-    by_cases h : i < 6
-    · rw [ite_eq_right (show c.slots + i ≠ c.hiSlot by simp only [Core.hiSlot]; omega), svE i h]
-      show _ = if i < 6 then _ else _
-      rw [ite_eq_left h]
-    · rw [ite_eq_left (show c.slots + i = c.hiSlot by simp only [Core.hiSlot]; omega), gE _ hr.ctr.1, hP]
-      show _ = if i < 6 then _ else _
-      rw [ite_eq_right h]
+    exact fE.sub fun x hx => ⟨S, List.mem_singleton_self _, by
+      simp only [List.mem_singleton] at hx; subst hx; exact subMode⟩
+  let sv : Nat → BitVec 64 := fun i => s₀.gpr (Core.savedRegs.getD i .rbx)
+  have svA : ∀ i < 6, sA.mem.readW (wordAddr B (c.slots + i)) 64 = sv i := fun i hi => by
+    rw [mA, mS, svE i hi]
+  have xA : sA.xmm Core.ivX = (0 : BitVec 64) ++ P := by
+    rw [runBlock_vec rfl eA, xS, gE _ hr.ctr.1, hP]
   have kr := keyRegs_ne cs.keyRegs_ok
   have hkA : cs.KeyArgs sA [S] k :=
     cs.keyArgs_congr hk (fun x hx => gA' x (kr x hx).1 (fun e => dk (e ▸ hx)) (fun e => lk (e ▸ hx))) rdA' wrA' fA
   -- The key.
-  refine WP.seq (WP.mono (cs.prepare_wp bA ⟨by rw [wrA']; exact hs.wr, hs.fit⟩ List.mem_cons_self hkA)
-    fun s₄ ⟨ready₄, b₄, rsp₄, dr₄, lr₄, f₄, rd₄, wr₄⟩ => ?_)
+  refine WP.seq (WP.mono (WP.vecKeep hsc.1 (cs.prepare_wp bA ⟨by rw [wrA']; exact hs.wr, hs.fit⟩ List.mem_cons_self hkA))
+    fun s₄ ⟨⟨ready₄, b₄, rsp₄, dr₄, lr₄, f₄, rd₄, wr₄⟩, x₄, _⟩ => ?_)
   have rd₄' : s₄.rd = s₀.rd := by rw [rd₄, rdA']
   have wr₄' : s₄.wr = s₀.wr := by rw [wr₄, wrA']
   -- Any bytes?
@@ -104,10 +96,11 @@ theorem cfb8_wp (cs : BlockSpec c) (enc : Bool) {r : CtrRegs} (hr : RegsOk r) (h
     congr 1
     rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
     exact ⟨fun h => by rw [← hn, h]; rfl, fun h => BitVec.eq_of_toNat_eq (by rw [hn, h]; rfl)⟩
-  have sv₅ : ∀ i < 7, s₅.mem.readW (wordAddr B (c.slots + i)) 64 = sv i := fun i hi => by
+  have sv₅ : ∀ i < 6, s₅.mem.readW (wordAddr B (c.slots + i)) 64 = sv i := fun i hi => by
     rw [mem₅, ← svA i hi]
     exact f₄.readW (Region.contains_self _ _) (fun x hx => by
-      simp only [List.mem_singleton] at hx; subst hx; exact slotCore i hi) (by decide)
+      simp only [List.mem_singleton] at hx; subst hx; exact slotCore i (by omega)) (by decide)
+  have x₅ : s₅.xmm Core.ivX = (0 : BitVec 64) ++ P := by rw [runBlock_vec rfl e₅, x₄, xA]
   have dDcore : ∀ x ∈ [coreRegion c B], Region.Disjoint ⟨D, n⟩ x := fun x hx => by
     simp only [List.mem_singleton] at hx; subst hx; exact sDS.sub_right subCore
   have dPcore : ∀ x ∈ [coreRegion c B], Region.Disjoint ⟨P, 8 * c.bw⟩ x := fun x hx => by
@@ -123,8 +116,7 @@ theorem cfb8_wp (cs : BlockSpec c) (enc : Bool) {r : CtrRegs} (hr : RegsOk r) (h
   let iv := bytesAt s₀.mem P (8 * c.bw)
   have hiv : iv.length = 8 * c.bw := by simp [iv, bytesAt]
   have hp : C8Pre c s₅ B D P n := ⟨⟨by rw [wr₅']; exact hs.wr, hs.fit⟩, by rw [wr₅']; exact hwD,
-    by rw [wr₅']; exact hwP, sDS, sPS, sPD, fitD, hn64, by
-      rw [show c.hiSlot = c.slots + 6 from rfl, sv₅ 6 (by decide)]; rfl⟩
+    by rw [wr₅']; exact hwP, sDS, sPS, sPD, fitD, hn64, x₅⟩
   have fr₅ : Frame [S] s₀.mem s₅.mem :=
     fA.trans (by rw [mem₅]; exact f₄.sub fun x hx => ⟨S, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hx; subst hx; exact subCore⟩)
@@ -133,17 +125,17 @@ theorem cfb8_wp (cs : BlockSpec c) (enc : Bool) {r : CtrRegs} (hr : RegsOk r) (h
     (WP.ite (decide (n = 0)) (by simp [X86_64.eval, hz₅]) (fun h0 => ?_) (fun h0 => ?_)) fun s₆ d₆ => ?_)
   · have hn0 : n = 0 := by simpa using h0
     exact WP.block_nil ⟨b₅, rfl, fun _ _ => rfl, fun u hu => by rw [hn0, m₅P u hu]; simp [cfb8In, iv, bytesAt, hu],
-      fun q hq => by omega, Frame.refl _ _, rfl, rfl⟩
+      fun q hq => by omega, Frame.refl _ _, rfl, rfl, rfl⟩
   · have hn0 : n ≠ 0 := by simpa using h0
-    refine cfb8Loop_wp cs enc hiv hp ⟨b₅, rfl, cs.ready_frame ready₄ (by rw [mem₅]; exact Frame.refl [] _)
+    refine cfb8Loop_wp cs enc hiv hp hsc.2 ⟨b₅, rfl, cs.ready_frame ready₄ (by rw [mem₅]; exact Frame.refl [] _)
         (fun _ h => by simp at h) (fun r _ => by rw [g₅]), fun _ _ => rfl, ?_, ?_, by omega,
-      fun u hu => by rw [m₅P u hu]; simp [cfb8In, iv, bytesAt, hu], fun q hq => ?_, Frame.refl _ _, rfl, rfl⟩
+      fun u hu => by rw [m₅P u hu]; simp [cfb8In, iv, bytesAt, hu], fun q hq => ?_, Frame.refl _ _, rfl, rfl, rfl⟩
     · rw [g₅, dr₄, drA, gS, gE _ hr.data.1, hD]; simp
     · rw [left₅, Nat.sub_zero, ← hn]; simp
     · rw [ite_eq_right (Nat.not_lt_zero _)]; exact m₅D q hq
   -- The exit.
-  have hsv7 : ∀ i < 7, s₆.mem.readW (wordAddr B (c.slots + i)) 64 = sv i := fun i hi => by
-    rw [d₆.saved i hi, sv₅ i hi]
+  have hsv7 : ∀ i < 6, s₆.mem.readW (wordAddr B (c.slots + i)) 64 = sv i := fun i hi => by
+    rw [d₆.saved i (by omega), sv₅ i hi]
   have rd₆ : s₆.rd = s₀.rd := by rw [d₆.rd, rd₅']
   have wr₆ : s₆.wr = s₀.wr := by rw [d₆.wr, wr₅']
   have hsv : ∀ i < 6, Core.savedRegs.getD i .rbx ≠ sb := by decide
@@ -157,7 +149,6 @@ theorem cfb8_wp (cs : BlockSpec c) (enc : Bool) {r : CtrRegs} (hr : RegsOk r) (h
     have hsaved : ∀ i < 6, s₈.gpr (Core.savedRegs.getD i .rbx) = s₀.gpr (Core.savedRegs.getD i .rbx) :=
       fun i hi' => by
         rw [v₈ i hi', hsv7 i (by omega)]
-        simp only [sv, ite_eq_left hi']
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsaved 0 (by decide)
     · exact hsaved 1 (by decide)
