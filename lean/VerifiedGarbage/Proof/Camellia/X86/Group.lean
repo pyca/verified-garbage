@@ -217,9 +217,10 @@ theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {g : Nat} {E : N
   have hwD : (⟨D.setWidth 64, 16 * n⟩ : Region) ∈ s.wr := by rw [hi.wr]; exact hp.dat
   have inT : ∀ t < 16 * c, t % 4 = 0 → InRegions s.wr (T.setWidth 64 + BitVec.ofNat 64 t) 4 := by
     intro t ht h4
-    refine ⟨_, hwS.mem, ?_⟩
+    obtain ⟨N, hN, hNf, hNr⟩ := hwS.mem
+    refine ⟨_, hNr, ?_⟩
     rw [hT, VG.Offset.add_add]
-    exact VG.Offset.contains_base _ (by rw [slots_eq, tailSlot_eq]; omega) (by rw [tailSlot_eq]; omega)
+    exact VG.Offset.contains_base _ (by rw [slots_eq, tailSlot_eq] at *; omega) (by rw [tailSlot_eq]; omega)
   have inA : ∀ t < 16 * c, t % 4 = 0 → InRegions s.wr (A.setWidth 64 + BitVec.ofNat 64 t) 4 := by
     intro t ht h4
     refine ⟨_, hwD, ?_⟩
