@@ -13,6 +13,7 @@ def p192 : Cfg where
   fastN := true
   windows := false
   mul := some Spec.Weierstrass.Mul.p192
+  inverse := some Spec.Weierstrass.Inverse.p192
 
 def signP192 : Prog isa := p192.sign
 

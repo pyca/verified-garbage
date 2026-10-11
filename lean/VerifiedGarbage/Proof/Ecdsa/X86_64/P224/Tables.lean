@@ -43,6 +43,17 @@ theorem p224W_length : p224W.length = 18944 :=
   (Proof.Weierstrass.tcombWords_length (n := p224.n) (R := p224.R) (p := p224.C.p)
     (H := 64) (tbl := Impl.P224.p224Comb7) p224_tbl_len p224_tbl_lenH).trans rfl
 
+theorem constRegions_single (f : String → BitVec 64) (n : String) (w : List (BitVec 64)) :
+    Abi.constRegions f [(n, w)] = [⟨f n, 8 * w.length⟩] := rfl
+
+/-- The tables' region, `8 · 18944` bytes at the static's address. The proofs
+rewrite with this rather than unfold `Abi.constRegions`: the kernel evaluates
+closed arithmetic such as `8 * p224W.length` when it compares two forms of
+it, which would build the tables' 18944 words. -/
+theorem p224_constRegions (f : String → BitVec 64) :
+    Abi.constRegions f [("VG_P224_COMB", p224W)] = [⟨f "VG_P224_COMB", 151552⟩] := by
+  rw [constRegions_single, p224W_length]
+
 /-- The memory of the contracts' witnesses: the tables at `0x100000`
 (irreducible: unfolding it in a definitional check would evaluate the
 tables). -/

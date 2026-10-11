@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 import VerifiedGarbage.Proof.P224.Prime
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 
 /-!
 # ECDSA over P-224 on x86-64: `Verified`
@@ -77,7 +78,7 @@ theorem p224_ok (hI : InvSounds) : CfgOk p224 where
   comb_am3 := fun _ _ => by unfold AM3; decide +kernel
   am3 := by unfold AM3; decide +kernel
   even _ := by decide
-  inverse h := absurd h (by decide)
+  inverse _ := ⟨by decide, rfl⟩
 
 theorem p224_tbls (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) :
     CombTbls p224 := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
@@ -97,16 +98,17 @@ theorem sign_x86 (hL : Law Spec.P224.curve)
     (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
-    ∃ t s', Exec isa signP224 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := wp_of_inline (by lit_decide) <| sign_ok (p224_ok hI) hL (p224_tbls hT) (pre_of hs)
-  have hsp : ∀ i ∈ instrs signP224, Taint.clobbers i .rsp = false := by
+    ∃ t s', Exec isa signP224.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p224_ok hI) hL (p224_tbls hT) (pre_of hs)
+  have hsp : ∀ i ∈ instrs signP224.inline, Taint.clobbers i .rsp = false := by
     have h : signP224.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+    ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -130,24 +132,64 @@ def signP224Erased : Prog isa := Code.erase signP224
 
 materialize_shared signP224Erased
 
+/-- Constant time by taint tracking, which follows the calls: `rsp` is
+public, as the return addresses they store are. -/
 theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP224 :=
   VG.Taint.constantTime_mapBlocks (c' := signP224Erased) (taintSym_eraseInv ["VG_P224_COMB"])
-    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) rfl
-    (fun _ _ _ _ ⟨_, h1, h2, h3, h4, h5, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .rsp]) rfl
+    (fun _ _ _ _ ⟨h0, h1, h2, h3, h4, h5, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
       · exact h1
       · exact h2
       · exact h3
       · exact h4
-      · exact h5, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
+      · exact h5
+      · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
     rfl (by taint_decide)
+
+theorem sat_spec8 :
+    (Spec.Ecdsa.P224.inst.signContract (X86_64.abi.withConsts p224.combConsts) 8).pre satState := by
+  have held : ∀ i < p224W.length, satState.mem.readW (satState.syms "VG_P224_COMB" +
+      BitVec.ofNat 64 (8 * i)) 64 = p224W.getD i 0 := satMem_held
+  sig_pre [Spec.Ecdsa.P224.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+    Spec.P224.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p224_combConsts,
+    Abi.withConsts, p224_constRegions, Abi.constsHeld, stackBelow]
+  sig_and_intros
+  all_goals first | exact Region.disjoint_of_sep (by decide) | exact held | (rw [p224W_length]; rfl) | rfl | decide
+
+/-- The contract with 8 bytes of stack, for the calls' return address. -/
+theorem implies8 :
+    signX86_64.Implies (Spec.Ecdsa.P224.inst.signContract (X86_64.abi.withConsts p224.combConsts) 8) :=
+  implies.stack8 ⟨satState, sat_spec8⟩
+
+/-- The output is apart from the calls' return address. -/
+theorem post_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : signX86_64.pre s)
+    (hc : Clear (hole (s.gpr .rsp)) s) (hp : signX86_64.post s b) :
+    signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  have hb := Clear.wr_bytes hc (p := s.gpr .rdi) (n := 56) (by rw [hs.2.1]; simp) (by decide)
+  simpa only [signX86_64, State.patch_gpr, bytesAt_patch hb] using hp
+
+theorem sign_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
+    (hs : (Spec.Ecdsa.P224.inst.signContract (X86_64.abi.withConsts p224.combConsts) 8).pre s)
+    (hp : signX86_64.post s b) : signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) :=
+  post_patch s b hv u (implies8.pre s hs) (Sig.clear_of_pre_consts hs) hp
+
+/-- The function with its calls, for a caller (RFC 6979's) that keeps its
+buffers off the 8 bytes below `rsp`. -/
+theorem sign_call_x86 (hL : Law Spec.P224.curve)
+    (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
+    (hI : InvSounds) (s : State) (hs : signX86_64.pre s) (hc : Clear (hole (s.gpr .rsp)) s) :
+    ∃ t s', Exec isa signP224 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
+  ok_of_inline (k := signX86_64) (by lit_decide) (sign_x86 hL hT hI)
+    (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
 theorem sign_verified (hL : Law Spec.P224.curve)
     (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
     (hI : InvSounds) :
     Verified X86_64.target signP224
-      (Spec.Ecdsa.P224.inst.signContract (X86_64.abi.withConsts p224.combConsts)) :=
-  Verified.of_correct (sign_x86 hL hT hI) sign_ct implies
+      (Spec.Ecdsa.P224.inst.signContract (X86_64.abi.withConsts p224.combConsts) 8) :=
+  Verified.of_inline_ct (by lit_decide) (sign_x86 hL hT hI) sign_ct implies8
+    (fun _ h => Sig.clear_of_pre_consts h) sign_patch
 
 end VG.Proof.Ecdsa.X86_64.P224

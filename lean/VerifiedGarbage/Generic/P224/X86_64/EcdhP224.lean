@@ -34,7 +34,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       is by the signature's divsteps. The result (or zeros) is selected by a mask of the checks, \
       `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code := Impl.Ecdh.X86_64.exchangeP224
-    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst X86_64.abi
+    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst X86_64.abi 8
+    stack := 8
     verified := Proof.Ecdh.X86_64.P224.ecdh_verified h.law h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

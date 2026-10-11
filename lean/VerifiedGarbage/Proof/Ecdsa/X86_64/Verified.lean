@@ -71,7 +71,7 @@ theorem p256_ok (hI : InvSounds) : CfgOk p256 where
   comb_am3 := fun _ _ => by unfold AM3; decide +kernel
   am3 := by unfold AM3; decide +kernel
   even _ := by decide
-  inverse h := absurd h (by decide)
+  inverse _ := ⟨by decide, rfl⟩
 
 theorem p256_tbls (hL : Law Spec.P256.curve)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
