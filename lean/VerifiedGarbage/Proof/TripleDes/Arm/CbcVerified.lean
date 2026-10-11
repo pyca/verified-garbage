@@ -42,7 +42,7 @@ theorem decTaint : SeqTaint (ecbCore .decrypt) cbcDec :=
 
 theorem enc_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cbcEnc).Implies
     (Proof.TripleDes.cbcEncScratchContract Arm.abi 7 1024) where
-  pre s h := seqArm_pre_ro rfl (by
+  pre s h := seqArm_pre_ro rfl rfl (by
     sig_pre [Proof.TripleDes.cbcEncScratchContract, Proof.TripleDes.cbcScratchSig, Spec.TripleDes.cbcSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at h
     exact h)
@@ -64,7 +64,7 @@ theorem enc_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cbcEnc).Impl
 
 theorem dec_implies : (seqArm (ecbCore .decrypt) (ecbSpec .decrypt) cbcDec).Implies
     (Proof.TripleDes.cbcDecScratchContract Arm.abi 7 1024) where
-  pre s h := seqArm_pre_ro rfl (by
+  pre s h := seqArm_pre_ro rfl rfl (by
     sig_pre [Proof.TripleDes.cbcDecScratchContract, Proof.TripleDes.cbcScratchSig, Spec.TripleDes.cbcSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at h
     exact h)
@@ -85,10 +85,10 @@ theorem dec_implies : (seqArm (ecbCore .decrypt) (ecbSpec .decrypt) cbcDec).Impl
       Mem.read] using cbcSat
 
 theorem cbcEncrypt_verified : Verified Arm.target cbcEncrypt (Proof.TripleDes.cbcEncScratchContract Arm.abi 7 1024) :=
-  seq_verified (ecbSpec .encrypt) cbcEnc_ok encTaint enc_implies
+  seq_verified (ecbSpec .encrypt) (cbcEnc_ok _) encTaint enc_implies
 
 theorem cbcDecrypt_verified : Verified Arm.target cbcDecrypt (Proof.TripleDes.cbcDecScratchContract Arm.abi 7 1024) :=
-  seq_verified (ecbSpec .decrypt) cbcDec_ok decTaint dec_implies
+  seq_verified (ecbSpec .decrypt) (cbcDec_ok _) decTaint dec_implies
 
 /-- A state satisfying the functions' precondition (one block). -/
 def cbcFrameSat : State := { cbcSat with rd := [⟨0x1000, 384⟩, ⟨0x2000, 8⟩], wr := [⟨0x3000, 8⟩] }

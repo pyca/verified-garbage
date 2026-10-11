@@ -28,7 +28,7 @@ structure SeqTaint (c : Core) (M : Mode) : Prop where
   pro : ∃ h, (taint.check (argTaint [.r0, .r1, .r2, .r3] 4) (.block (save ++ c.setup)) h).isSome = true
   pre : ∃ h, (taint.check (Taint.ofRegs [.r4, .r5, .r6, .r7, .r8])
     (.block (c.opsCode M.pre ++ c.callArgs M.tgt)) h).isSome = true
-  post : ∃ h, (taint.check (Taint.ofRegs [.r6, .r7, .r8]) (.block (c.opsCode M.post ++ c.advance)) h).isSome =
+  post : ∃ h, (taint.check (Taint.ofRegs [.r6, .r7, .r8]) (.block (c.opsCode M.post ++ c.advance M)) h).isSome =
     true
   epi : ∃ h, (taint.check (Taint.ofRegs [.r5, .r8]) (.block (c.finish M ++ restore)) h).isSome = true
 
@@ -44,7 +44,7 @@ theorem pub_Iv : Ivp s₀ = Ivp s₀' := hq.2.2.1
 theorem pub_Dp : Dp s₀ = Dp s₀' := hq.2.2.2.1
 theorem pub_N : N s₀ = N s₀' := by simp only [N]; rw [hq.2.2.2.2.1]
 theorem pub_Sc : Sc s₀ = Sc s₀' := hq.2.2.2.2.2
-theorem pub_Dk (k : Nat) : Dk s₀ c k = Dk s₀' c k := by simp only [Dk]; rw [pub_Dp hq]
+theorem pub_Dk (k : Nat) : Dk s₀ c M k = Dk s₀' c M k := by simp only [Dk]; rw [pub_Dp hq]
 
 /-- The registers the invariant pins agree in both runs. -/
 theorem LInv.agree {k : Nat} {s₁ s₂ : State} (h₁ : LInv c S M s₀ k s₁) (h₂ : LInv c S M s₀' k s₂) :
@@ -68,17 +68,17 @@ def BRel (c : Core) (S : CoreSpec c) (M : Mode) (s₀ s₀' : State) (k : Nat) (
 def AfterPre (c : Core) (S : CoreSpec c) (M : Mode) (s₀ : State) (k : Nat) (s₂ : State) : Prop :=
   ∃ (hk : k < N s₀) (s : State), LInv c S M s₀ k s ∧
     PreA (c := c) (M := M) s₀ k (runOps M.pre ((rK S s₀ M k).2.set .d
-      ((xs c s₀)[k]'(by rw [length_blocksOf]; exact hk)))) s s₂
+      ((xs c s₀ M)[k]'(by rw [length_blocksOf]; exact hk)))) s s₂
 
 /-- The registers the code after the call uses, after it. -/
-structure AfterCall (c : Core) (s₀ : State) (k : Nat) (s₃ : State) : Prop where
-  r6 : s₃.gpr .r6 = Dk s₀ c k
+structure AfterCall (c : Core) (M : Mode) (s₀ : State) (k : Nat) (s₃ : State) : Prop where
+  r6 : s₃.gpr .r6 = Dk s₀ c M k
   r7 : s₃.gpr .r7 = BitVec.ofNat 32 (N s₀ - k)
   r8 : s₃.gpr .r8 = Sc s₀
 
 theorem afterCall {c : Core} {S : CoreSpec c} {M : Mode} {s₀ : State} {k : Nat} {s₂ s₃ : State}
-    (h : AfterPre c S M s₀ k s₂) (cp : CallPost c S s₂ (Kp s₀) (bt c (Dk s₀ c k) (Sc s₀) M.tgt) s₃) :
-    AfterCall c s₀ k s₃ := by
+    (h : AfterPre c S M s₀ k s₂) (cp : CallPost c S s₂ (Kp s₀) (bt c (Dk s₀ c M k) (Sc s₀) M.tgt) s₃) :
+    AfterCall c M s₀ k s₃ := by
   obtain ⟨_, s, hl, a⟩ := h
   have g : ∀ r ∈ preserved, r ≠ .lr → r ≠ .r9 → r ≠ .r10 → s₃.gpr r = s.gpr r := fun r hr hl h9 h10 => by
     rw [cp.saved r hr hl, a.regs r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr)
@@ -97,7 +97,7 @@ variable {c : Core} {S : CoreSpec c} {M : Mode} {s₀ s₀' : State} (hp : UPre 
 include hp hp' hq
 
 /-- One run of the body from `k` blocks is constant time. -/
-theorem body_ct (hM : ModeOk M) (hT : SeqTaint c M) (k : Nat) :
+theorem body_ct (hM : ModeOk c M) (hT : SeqTaint c M) (k : Nat) :
     RelCT isa (BRel c S M s₀ s₀' k) (c.body M) fun _ _ => True := by
   have a := rel_agree (F := fun s => k < N s₀ ∧ LInv c S M s₀ k s)
     (F' := fun s => k < N s₀' ∧ LInv c S M s₀' k s)
@@ -107,11 +107,11 @@ theorem body_ct (hM : ModeOk M) (hT : SeqTaint c M) (k : Nat) :
     (fun _ h => WP.mono (pre_wp hp' hM h.1 h.2) fun _ x => ⟨h.1, _, h.2, x⟩)
   -- The call, with the same regions in both runs.
   let rd : List Region := [⟨State.addr (Kp s₀), S.keyLen⟩]
-  let wr : List Region := [⟨State.addr (bt c (Dk s₀ c k) (Sc s₀) M.tgt), c.bs⟩]
+  let wr : List Region := [⟨State.addr (bt c (Dk s₀ c M k) (Sc s₀) M.tgt), c.bs⟩]
   have cpre : ∀ {t₀ : State} (hpt : UPre c S M t₀) {s₂ : State} (h : AfterPre c S M t₀ k s₂),
-      CallPre c S s₂ (Kp t₀) (bt c (Dk t₀ c k) (Sc t₀) M.tgt) := fun {_} hpt {_} h => by
+      CallPre c S s₂ (Kp t₀) (bt c (Dk t₀ c M k) (Sc t₀) M.tgt) := fun {_} hpt {_} h => by
     obtain ⟨hk, s, hl, pa⟩ := h
-    exact PreA.callPre hpt hk hl pa
+    exact PreA.callPre hpt hM hk hl pa
   have callR : RelCT isa (fun s₂ s₂' => AfterPre c S M s₀ k s₂ ∧ AfterPre c S M s₀' k s₂') (.call c.name c.code)
       fun _ _ => True := by
     refine RelCT.call S.correct S.ct rd wr fun s₂ s₂' ⟨h, h'⟩ => ?_
@@ -127,11 +127,11 @@ theorem body_ct (hM : ModeOk M) (hT : SeqTaint c M) (k : Nat) :
     · rw [narrow_gpr _ _ _ (by decide) (by decide), narrow_gpr _ _ _ (by decide) (by decide), p.r0, p'.r0]
     · rw [narrow_gpr _ _ _ (by decide) (by decide), narrow_gpr _ _ _ (by decide) (by decide), p.r1, p'.r1]
     · rw [narrow_gpr _ _ _ (by decide) (by decide), narrow_gpr _ _ _ (by decide) (by decide), p.r2, p'.r2]
-  have cr := rel_wp (G := AfterCall c s₀ k) (G' := AfterCall c s₀' k) callR
+  have cr := rel_wp (G := AfterCall c M s₀ k) (G' := AfterCall c M s₀' k) callR
     (fun _ h => WP.mono (call_wp S (cpre hp h)) fun _ cp => afterCall h cp)
     (fun _ h => WP.mono (call_wp S (cpre hp' h)) fun _ cp => afterCall h cp)
   obtain ⟨_, hB⟩ := hT.post
-  have b := RelCT.taint (A := taint) (P := fun s₁ s₂ => AfterCall c s₀ k s₁ ∧ AfterCall c s₀' k s₂)
+  have b := RelCT.taint (A := taint) (P := fun s₁ s₂ => AfterCall c M s₀ k s₁ ∧ AfterCall c M s₀' k s₂)
     (Taint.ofRegs [.r6, .r7, .r8])
     (fun s₁ s₂ h => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -146,7 +146,7 @@ theorem body_ct (hM : ModeOk M) (hT : SeqTaint c M) (k : Nat) :
 def LRel (n : Nat) (s₁ s₂ : State) : Prop :=
   ∃ k, n = N s₀ - k ∧ BRel c S M s₀ s₀' k s₁ s₂
 
-theorem loop_ct (hM : ModeOk M) (hT : SeqTaint c M) (n : Nat) :
+theorem loop_ct (hM : ModeOk c M) (hT : SeqTaint c M) (n : Nat) :
     RelCT isa (LRel (c := c) (S := S) (M := M) (s₀ := s₀) (s₀' := s₀') n) (.loop (c.body M) .ne)
       fun s₁ s₂ => LInv c S M s₀ (N s₀) s₁ ∧ LInv c S M s₀' (N s₀') s₂ := by
   refine RelCT.loop (M := isa) (LRel (c := c) (S := S) (M := M) (s₀ := s₀) (s₀' := s₀')) (fun n => ?_) n
@@ -177,7 +177,7 @@ theorem loop_ct (hM : ModeOk M) (hT : SeqTaint c M) (n : Nat) :
 
 end
 
-theorem seq_rel {c : Core} (S : CoreSpec c) {M : Mode} (hM : ModeOk M) (hT : SeqTaint c M)
+theorem seq_rel {c : Core} (S : CoreSpec c) {M : Mode} (hM : ModeOk c M) (hT : SeqTaint c M)
     {s₀ s₀' : State} (h0 : (seqArm c S M).pre s₀) (h0' : (seqArm c S M).pre s₀')
     (hq : (seqArm c S M).pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (c.seq M) fun _ _ => True := by
@@ -241,7 +241,7 @@ theorem seq_rel {c : Core} (S : CoreSpec c) {M : Mode} (hM : ModeOk M) (hT : Seq
       · rw [h.1.r8, h.2.r8, pub_Sc hq]) hepi
   exact (pro.mono (fun _ _ h => h) fun _ _ h => h).seq (mid.seq epi)
 
-theorem seq_ct {c : Core} (S : CoreSpec c) {M : Mode} (hM : ModeOk M) (hT : SeqTaint c M) :
+theorem seq_ct {c : Core} (S : CoreSpec c) {M : Mode} (hM : ModeOk c M) (hT : SeqTaint c M) :
     ConstantTime isa (seqArm c S M).pre (seqArm c S M).pub (c.seq M) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (seq_rel S hM hT h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
