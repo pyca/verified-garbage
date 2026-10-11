@@ -11,7 +11,7 @@
 //! key, the input block and the data. Both are the modes' generic CFB8 over
 //! the scalar block function. This module holds the key schedule.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 
 use crate::arch::triple_des::vg_triple_des_expand_key;
 use crate::arch::triple_des_cfb8::{vg_triple_des_cfb8_decrypt, vg_triple_des_cfb8_encrypt};

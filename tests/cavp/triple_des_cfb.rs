@@ -3,7 +3,7 @@
 //! vectors) on every length up to a few dozen blocks, partial last segments
 //! included, for each key length.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 
 use std::collections::BTreeMap;
 

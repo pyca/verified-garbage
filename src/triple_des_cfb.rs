@@ -14,7 +14,7 @@
 //! `CIPH_K` of the block to continue from, whose first bytes it XORs into the
 //! rest of the input.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 
 use crate::arch::triple_des::vg_triple_des_expand_key;
 use crate::arch::triple_des_cfb::{vg_triple_des_cfb64_decrypt, vg_triple_des_cfb64_encrypt};
@@ -34,7 +34,11 @@ pub struct TripleDesCfb64 {
 }
 
 /// The signature of `vg_triple_des_cfb64_encrypt` and `vg_triple_des_cfb64_decrypt`.
+#[cfg(target_arch = "x86_64")]
 type Cfb = unsafe extern "sysv64" fn(*const [u8; 384], *mut [u8; 8], *mut [u8; 8], usize);
+/// The signature of `vg_triple_des_cfb64_encrypt` and `vg_triple_des_cfb64_decrypt`.
+#[cfg(target_arch = "x86")]
+type Cfb = unsafe extern "C" fn(*const [u8; 384], *mut [u8; 8], *mut [u8; 8], usize);
 
 impl TripleDesCfb64 {
     /// Expands a 16- or 24-byte key for use in either direction.

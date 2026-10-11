@@ -13,7 +13,7 @@
 //! is the next output block, whose first bytes it XORs into the rest of the
 //! input.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 
 use crate::arch::triple_des::vg_triple_des_expand_key;
 use crate::arch::triple_des_ofb::vg_triple_des_ofb;
