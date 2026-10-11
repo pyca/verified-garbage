@@ -451,6 +451,21 @@ theorem absorb_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
       refine WP.seq (WP.mono (whole_ok v L hyo hj (hj.data_eq hyo)) fun s'' hj' => ?_)
       exact tail_ok L hyo hj' (by have := hj.le; omega) (hj'.data_eq hyo)
 
+omit L hyo in
+/-- With nothing buffered, nothing absorbed yet. -/
+theorem AbsIn.mid {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
+    (h : AbsIn Ctx St W SP yo H x D n s) (hx : x.length % 16 = 0) : AbsMid Ctx St W SP yo H x D n s.mem 0 s :=
+  ⟨h.env, Nat.zero_le _, by rw [h.r12]; simp, by rw [h.rbp, Nat.sub_zero], h.data, h.hH,
+    fun ha => by simpa [bytesAt] using ha, .inr (by omega), Frame.refl _ _⟩
+
+/-- `absorbAl yo`: `absorb yo` with nothing buffered. -/
+theorem absorbAl_ok {H : Block} {x : List Byte} {D : Addr} {n : Nat} {s : State}
+    (h : AbsIn Ctx St W SP yo H x D n s) (hx : x.length % 16 = 0) :
+    WP isa (absorbAl v.callees yo) s (AbsOut Ctx St W SP yo H x (x ++ bytesAt s.mem D n) s.mem) := by
+  have h₀ := h.mid hx
+  refine WP.seq (WP.mono (whole_ok v L hyo h₀ rfl) fun s' hj => ?_)
+  exact tail_ok L hyo hj (by omega) (hj.data_eq hyo)
+
 end
 
 end VG.Proof.AesGcm.X86_64

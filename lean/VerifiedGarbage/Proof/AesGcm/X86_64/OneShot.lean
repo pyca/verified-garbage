@@ -518,7 +518,7 @@ theorem oneAad_ok {D Np A : Addr} {nl al n : Nat} {H : Block} {s : State} (he : 
     rw [hm₂]; exact bytesAt_frame jo.frame dAj (by have := hAd.lt; omega)
   have hai : AbsIn Ctx (W + BitVec.ofNat 64 16) W SP 16 H [] A al s₂ :=
     ⟨he₂, h12₂, hbp₂, hbx₂, hAd.of_eq (by rw [hrd₂, hrd₁]) (by rw [hwr₂, hwr₁]), by rw [hm₂]; exact jo.hH⟩
-  refine WP.seq (WP.mono (WP.with_rdwr (absorb_ok v L (yo := 16) (.inr rfl) hai)) fun s₃ ⟨ho, hrd₃, hwr₃⟩ => ?_)
+  refine WP.seq (WP.mono (WP.with_rdwr (absorbAl_ok v L (yo := 16) (.inr rfl) hai rfl)) fun s₃ ⟨ho, hrd₃, hwr₃⟩ => ?_)
   rw [List.nil_append, ha₂] at ho
   have he₃ := ho.env
   have f₃ := wFrame_one (D := D) (n := n) (o := 0) (.inl rfl) (wFrame_cons (absFrame_one ho.frame))
@@ -625,8 +625,8 @@ theorem oneCrypt_ok {R : Nat} {icb : Block} {P : Nat} (hP : P % 16 = 0) {D : Add
   have he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide)) hrd₁ hwr₁
-  have := WP.with_rdwr (crypt_ok v L (R := R) (icb := icb) (P := P)
-    ⟨he₁, h12, hbp, hbx, hd.of_eq hrd₁ hwr₁, by rw [hm₁]; exact hR⟩)
+  have := WP.with_rdwr (cryptAl_ok v L (R := R) (icb := icb) (P := P)
+    ⟨he₁, h12, hbp, hbx, hd.of_eq hrd₁ hwr₁, by rw [hm₁]; exact hR⟩ hP)
   rw [hm₁] at this
   exact WP.mono this fun s' ⟨h, a, b⟩ => ⟨h, a.trans hrd₁, b.trans hwr₁⟩
 
@@ -689,7 +689,7 @@ theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat}
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide)) hrd₁ hwr₁
   have hai : AbsIn Ctx (W + BitVec.ofNat 64 16) W SP 16 H x D n s₁ :=
     ⟨he₁, h12, hbp, hbx, hd.of_eq hrd₁ hwr₁, by rw [hm₁, hH]⟩
-  refine WP.seq (WP.mono (WP.with_rdwr (absorb_ok v L (yo := 16) (.inr rfl) hai)) fun s₂ ⟨ho', hrd₂, hwr₂⟩ => ?_)
+  refine WP.seq (WP.mono (WP.with_rdwr (absorbAl_ok v L (yo := 16) (.inr rfl) hai hx16)) fun s₂ ⟨ho', hrd₂, hwr₂⟩ => ?_)
   rw [hm₁] at ho'
   have he₂ := ho'.env
   have g₂ := absFrame_one ho'.frame

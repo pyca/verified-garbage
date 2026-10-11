@@ -266,6 +266,21 @@ theorem crypt_rel {R : Nat} {icb₁ icb₂ : Block} {P₁ P₂ : Nat} {D : Addr}
     (fun s h => cryptWhole_ok v L h (h.ciph L)) (fun s h => cryptWhole_ok v L h (h.ciph L))
   exact RelCT.seq hw ((cryptTail_rel v L).mono (fun _ _ h => h.2) fun _ _ h => h)
 
+/-- `cryptAl`, for data at the same address, of the same length, from the
+start of a keystream block. -/
+theorem cryptAl_rel {R : Nat} {icb₁ icb₂ : Block} {P₁ P₂ : Nat} {D : Addr} {n : Nat} (hP₁ : P₁ % 16 = 0)
+    (hP₂ : P₂ % 16 = 0) :
+    RelCT isa (fun s₁ s₂ => CrIn Ctx St W SP R icb₁ P₁ D n s₁ ∧ CrIn Ctx St W SP R icb₂ P₂ D n s₂)
+      (cryptAl v.callees) fun _ _ => True := by
+  suffices k : RelCT isa (fun s₁ s₂ => ∃ m₁ m₂ : Mem, CrMid Ctx St W SP R icb₁ P₁ D n m₁ 0 s₁ ∧
+      CrMid Ctx St W SP R icb₂ P₂ D n m₂ 0 s₂) (cryptAl v.callees) fun _ _ => True from
+    k.mono (fun s₁ s₂ h => ⟨s₁.mem, s₂.mem, h.1.mid hP₁, h.2.mid hP₂⟩) fun _ _ h => h
+  refine RelCT.exists_ fun m₁ => RelCT.exists_ fun m₂ => ?_
+  have hw := rel_wp (cryptWhole_rel v L (R := R) (icb₁ := icb₁) (icb₂ := icb₂) (P₁ := P₁) (P₂ := P₂) (D := D)
+      (n := n) (m₁ := m₁) (m₂ := m₂) (j := 0)) (fun _ _ h => h)
+    (fun s h => cryptWhole_ok v L h (h.ciph L)) (fun s h => cryptWhole_ok v L h (h.ciph L))
+  exact RelCT.seq hw ((cryptTail_rel v L).mono (fun _ _ h => h.2) fun _ _ h => h)
+
 end
 
 end VG.Proof.AesGcm.X86_64

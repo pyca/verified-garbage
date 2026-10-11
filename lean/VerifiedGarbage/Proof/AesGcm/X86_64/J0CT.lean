@@ -97,8 +97,8 @@ theorem j0hash_rel {H₁ H₂ : Block} {Np : Addr} {n : Nat} :
   · exact RelCT.of_false fun _ _ h => hlt h.1.data.lt
   -- After `absorb` and `flush`, the length is still kept.
   have hA : ∀ s, (∃ H', AbsIn Ctx St W SP 0 H' [] Np n s) ∧ AuxN Ctx St W SP n s →
-      WP isa (absorb v.callees 0) s (AuxN Ctx St W SP n) := fun s ⟨⟨_, h⟩, ha⟩ =>
-    WP.mono (absorb_ok v L (.inl rfl) h) fun _ o =>
+      WP isa (absorbAl v.callees 0) s (AuxN Ctx St W SP n) := fun s ⟨⟨_, h⟩, ha⟩ =>
+    WP.mono (absorbAl_ok v L (.inl rfl) h rfl) fun _ o =>
       ⟨o.env, by rw [o.frame.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) (aux_absFrame L)
         (by decide), ha.2]⟩
   have hF : ∀ s, AuxN Ctx St W SP n s ∧ s.gpr .rbx = BitVec.ofNat 64 (n % 16) →
@@ -121,9 +121,9 @@ theorem j0hash_rel {H₁ H₂ : Block} {Np : Addr} {n : Nat} :
   let PA : State → State → Prop := fun s₁ s₂ => True ∧
     ((∃ H', AbsIn Ctx St W SP 0 H' [] Np n s₁) ∧ AuxN Ctx St W SP n s₁) ∧
     ((∃ H', AbsIn Ctx St W SP 0 H' [] Np n s₂) ∧ AuxN Ctx St W SP n s₂)
-  have a₁ : RelCT isa PA (absorb v.callees 0) fun _ _ => True :=
+  have a₁ : RelCT isa PA (absorbAl v.callees 0) fun _ _ => True :=
     (RelCT.exists_ fun H₁' => RelCT.exists_ fun H₂' =>
-      absorb_rel v L (.inl rfl) (H₁ := H₁') (H₂ := H₂') (x₁ := []) (x₂ := []) (D := Np) (n := n) rfl).mono
+      absorbAl_rel v L (.inl rfl) (H₁ := H₁') (H₂ := H₂') (x₁ := []) (x₂ := []) (D := Np) (n := n) rfl rfl).mono
       (fun s₁ s₂ (h : PA s₁ s₂) => by
         obtain ⟨_, ⟨⟨H₁', h₁⟩, _⟩, ⟨⟨H₂', h₂⟩, _⟩⟩ := h; exact ⟨H₁', H₂', h₁, h₂⟩) fun _ _ h => h
   have r₁ := rel_wp a₁ (fun _ _ h => h.2) hA hA
