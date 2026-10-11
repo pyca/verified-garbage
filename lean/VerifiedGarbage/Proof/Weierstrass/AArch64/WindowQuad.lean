@@ -121,11 +121,6 @@ theorem dblCnt_ok (s : State) {j c : Nat} (hj : j < 2 ^ 32) (hc : c < 2)
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
 
-theorem Inv.of_mem {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
-    {V : List Nat} {E : Nat → Fin m} {s t : State} (h : Inv M base size m Sl V E s)
-    (ht : Scr t base size) (hm : t.mem = s.mem) : Inv M base size m Sl V E t :=
-  ⟨ht, hm ▸ h.mod, h.sl, by rw [hm]; exact h.lt, by rw [hm]; exact h.val⟩
-
 /-- The slots the doublings keep in the environment: `E` and the constants. -/
 def dblV (K : WinCfg) : List Nat := [K.E.x, K.E.y, K.E.z, K.S.a, K.S.b3, K.zero]
 

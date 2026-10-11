@@ -302,7 +302,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
       show s₁.mem (off base (bitsAt c.n 0 + t)) = _
       rw [b₁ t ht]
   have WC := tcomb_ok (publicLookup := c.C.len == 32) (tcombLay hc) (combA hc) hC hc.am3 hc.onG (tcombVals hc hC hT) hc.p_lt hs₁
-    (modP_of hc F₁.mp) hF
+    (modP_of hc F₁.mp) hF (pa := none) trivial
   refine WP.seq (WP.mono WC fun s₂ h₂ => ?_)
   obtain ⟨K₂, U₂, M₂, L₂, R₂⟩ := h₂
   have q₂ := hQ₁ _ _ _ R₂
@@ -326,7 +326,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
   refine winMul_ok hc hC hs₃ F₃ hP (by rw [W₃ (by decide) (by decide)]; exact hM.px_lt)
     (by rw [W₃ (by decide) (by decide)]; exact hM.py_lt)
     (by rw [tv₃ (by decide) (by decide), tv₃ (by decide) (by decide), tv₃ (by decide) (by decide)]
-        exact hrep) (ks := V) (by decide) fun s₅ W => ?_
+        exact hrep) (ks := V) (by decide) (hpa := (trivial : AddOk _ _ _ _ _ _ _ none)) fun s₅ W => ?_
   have hs₅ := W.scr
   have F₅ := F₃.unch h7 hn (fixedOk_winX.append (fixedOk_slW (by decide))) W.unch
   have nw : ∀ i < 45, i ∉ ptsW → i ∉ otherI ++ tblI ++ [TMP] := by decide

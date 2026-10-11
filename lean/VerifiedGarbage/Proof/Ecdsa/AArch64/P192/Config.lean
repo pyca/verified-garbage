@@ -54,5 +54,6 @@ theorem p192_ok (hI : Weierstrass.AArch64.InvSounds) : BaseCfgOk p192 where
   call_n := callOf_small (by decide)
   inv_at := .inl rfl
   inv_fn := fun h => absurd rfl h
+  padd := fun h => absurd rfl h
 
 end VG.Proof.Ecdsa.AArch64.P192

@@ -131,7 +131,7 @@ theorem publicStep_ct {K : TCombCfg} {base T : Addr} {size k j : Nat}
       ⟨publicHead_ok hL p₁.1 hj hjn p₁.2.1 p₁.2.2.1 p₁.2.2.2,
        publicHead_ok hL p₂.1 hj hjn p₂.2.1 p₂.2.2.1 p₂.2.2.2⟩)
   have e : K.step true = .seq (.block (publicHead K ++ publicLoads K)) (publicRest K) := by
-    simp only [TCombCfg.step, TCombCfg.selectPublic, publicHead, publicLoads, publicRest,
+    simp only [TCombCfg.step, TCombCfg.selectPublic, publicHead, publicLoads, publicRest, addP,
       ite_true, List.append_assoc, List.cons_append, List.nil_append]
   rw [e]
   apply block_append_seq_ct
@@ -173,8 +173,8 @@ theorem publicLoop_ct {K : TCombCfg} {C : Spec.Weierstrass.Curve} {base T : Addr
             ⟨⟨ia.scr, ia.x19, ia.tsym, ia.bits⟩, ⟨ib.scr, ib.x19, ib.tsym, ib.bits⟩,
               ia.keep.sp.trans (hsp.trans ib.keep.sp.symm)⟩) (fun _ _ h => h)
         have hw := h.wp (fun a b ⟨_, _, ia, ib⟩ =>
-          ⟨tstep_ok (publicLookup := true) hL hA hC hM3 hG hV hpn hFa hj hjn ia,
-           tstep_ok (publicLookup := true) hL hA hC hM3 hG hV hpn hFb hj hjn ib⟩)
+          ⟨tstep_ok (publicLookup := true) hL hA hC hM3 hG hV hpn hFa hj hjn ia trivial,
+           tstep_ok (publicLookup := true) hL hA hC hM3 hG hV hpn hFb hj hjn ib trivial⟩)
         refine hw.mono (fun _ _ h => h) fun a b ⟨_, ⟨ia, xa⟩, ⟨ib, xb⟩⟩ => ?_
         refine ⟨by simp only [eval, State.read, xa, xb], fun _ => trivial, fun ht => ?_⟩
         have hz : j - 1 ≠ 0 := by

@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
 
 /-!
 # ECDSA on AArch64: the fixed-base comb's slots and constants
@@ -56,6 +57,15 @@ theorem combLay (hc : BaseCfgOk c) : CombLay c.combCfg.toComb size := by
     have hl : ∀ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP], i < 45 := by
       decide
     exact sl_bits0 c (hl i hi) (by rw [hJ]; unfold Cfg.combJ; omega_arith)
+
+/-- The comb's additions, inline or by calls. -/
+theorem combAddOk (hc : BaseCfgOk c) :
+    AddOk c.combCfg.M size (· ∈ combSlots c.combCfg.toComb) c.combCfg.S c.combCfg.A c.combCfg.E
+      c.combCfg.D c.padd :=
+  addOk_of hc (by
+    rw [combSlots_eq]
+    exact lay_map_em hc rfl rfl rfl (l := [AP, BM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3,
+      T4, T5, DX, DY, DZ]) (by decide))
 
 theorem tcombLay (hc : BaseCfgOk c) : TCombLay c.combCfg size := by
   have hn := hc.n0
