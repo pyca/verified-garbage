@@ -66,7 +66,7 @@ theorem next_ok {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 1024 ≤ eL s�
   have hL := eL_lt s₀
   have c₁ : (Avx2.stR (est s₀)).Contains (Xor.off (est s₀) 48) 4 := contains_off (by omega) (by omega)
   have i₁ : InRegions (s.rd ++ s.wr) (Xor.off (est s₀) 48) 4 :=
-    ⟨Avx2.stR (est s₀), by simp [hrd, hwr, hp.rd, hp.wr], c₁⟩
+    ⟨Avx2.stR (est s₀), by simp [hrd, hwr, hp.wr], c₁⟩
   have o₁ : InRegions s.wr (Xor.off (est s₀) 48) 4 := ⟨Avx2.stR (est s₀), by simp [hwr, hp.wr], c₁⟩
   simp only [Xor.off] at i₁ o₁
   apply WP.of_runBlock
