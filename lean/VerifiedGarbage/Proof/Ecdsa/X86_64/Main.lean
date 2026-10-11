@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.GMul
+import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
 import VerifiedGarbage.Proof.Ecdsa.Sign
 
@@ -38,29 +38,30 @@ structure St₂ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : St
   rz_lt : sv c base s RZ < c.C.p
 
 /-- `[k]G`, then `Z^(p-2)`. -/
-theorem stage₂ (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀) {base : Addr}
-    (hb : base = s₀.gpr .r8) {s : State} (hS : St₁ c hs s₀ base s)
+theorem stage₂ (hc : BaseCfgOk c) (hmb : MulBaseOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀) {base : Addr}
+    (hb : base = s₀.gpr .r8) {s : State} (hS : St₁ c hs s₀ base s c.mulBase.isSome)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq c.gMulK.inline (.seq c.pPow rest)) s Q := by
+    WP isa (.seq c.gMulKC.inline (.seq c.pPow rest)) s Q := by
   subst hb
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hS.scr.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have F := hS.fixed
-  refine WP.seq (WP.mono (gMulK_ok hc hC hT hp hS) fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
+  refine WP.seq (WP.mono (gMulKC_ok hc hmb hC hT hp hS) fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
   have hs₅ := hS.scr.of_keepRegs K₅ (rdi_not_powClob _)
-  have F₅ := F.unch h7 hn fixedOk_gW U₅
+  have F₅ := F.unch h7 hn fixedOk_gWA U₅
   refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))) F₅.onep
     (fun h9 t ht => by
       show s₅.mem (off (s₀.gpr .r8) (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 hn (j := 1) (by decide) ht (tbl_apart_gW (Or.inl rfl) ht)]
+      rw [tbl_unch U₅ h7 hn (j := 1) (by decide) ht (tbl_apart_gWA (Or.inl rfl) ht)]
       exact hS.t₁ h9 t ht)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] →
       i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] →
       sv c (s₀.gpr .r8) s₆ i = sv c (s₀.gpr .r8) s i := fun hi h₁ h₂ =>
-    (sv_unch U₆ h7 hn hi (apart_pwW hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_gW hi h₂))
+    (sv_unch U₆ h7 hn hi (apart_pwW hi h₁)).trans
+      (sv_unch U₅ h7 hn hi (apart_gWA hi h₂ fun h => h₁ (List.mem_cons.mpr (.inl (List.mem_singleton.mp h)))))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c (s₀.gpr .r8) s₆ i = sv c (s₀.gpr .r8) s₅ i := fun hi h₁ =>
     sv_unch U₆ h7 hn hi (apart_pwW hi h₁)
   refine ⟨⟨hs₅.of_keepRegs K₆ (rdi_not_invClob _), ?_, by rw [K₆.wr, K₅.wr, hS.wr],
@@ -68,12 +69,12 @@ theorem stage₂ (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Optio
     by rw [e₆ (by decide) (by decide) (by decide), hS.k],
     by rw [e₆ (by decide) (by decide) (by decide), hS.d],
     by rw [e₆ (by decide) (by decide) (by decide), hS.e],
-    by rw [flag_unch_pwW U₆ h7 h0 hn, flag_unch_gW U₅ h7 h0 hn, hS.flag], ?_, ?_, lt₆, ?_,
+    by rw [flag_unch_pwW U₆ h7 h0 hn, flag_unch_gWA U₅ h7 h0 hn, hS.flag], ?_, ?_, lt₆, ?_,
     ?_⟩
   · rw [K₆.gpr _ (rsi_not_invClob _), K₅.gpr _ (rsi_not_powClob _), hS.rsi]
   · intro t ht
     rw [tbl_unch U₆ h7 hn (j := 2) (by decide) ht (tbl_apart_pwW (by decide) ht),
-      tbl_unch U₅ h7 hn (j := 2) (by decide) ht (tbl_apart_gW (Or.inr rfl) ht)]
+      tbl_unch U₅ h7 hn (j := 2) (by decide) ht (tbl_apart_gWA (Or.inr rfl) ht)]
     exact hS.t₂ t ht
   · show Rep c.C (toM _ _ (sv c (s₀.gpr .r8) s₆ RX)) (toM _ _ (sv c (s₀.gpr .r8) s₆ RY)) (toM _ _ (sv c (s₀.gpr .r8) s₆ RZ)) _
     rw [r₆ (i := RX) (by decide) (by decide), r₆ (i := RY) (by decide) (by decide),
@@ -233,26 +234,28 @@ theorem stage₄ (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s�
     refine ⟨by rw [rax, hd]; rfl, ?_⟩
     rw [bytes, hd]; rfl
 
-theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
+theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq c.kBits
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-    (.seq c.gMulK (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))))) := rfl
+    (.seq c.gMulKC (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))))) := rfl
+
+theorem kBitsIf_inline (c : Cfg) (b : Bool) : (c.kBitsIf b).inline = c.kBitsIf b := by
+  cases b <;> rfl
 
 /-- The signature inlined: only `[k]G` calls functions. -/
-theorem sign_inline (c : Cfg) : c.sign.inline = .seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
+theorem sign_inline (c : Cfg) : c.sign.inline = .seq (.block c.setup) (.seq c.kBits
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-    (.seq c.gMulK.inline (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))))) := by
+    (.seq c.gMulKC.inline (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))))) := by
   rw [sign_eq]
-  show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _
+  show Code.seq _ (Code.seq c.kBits.inline (Code.seq _ (Code.seq _ (Code.seq _
     (Code.seq c.pPow.inline (Code.seq c.middle.inline (Code.seq c.nPow.inline c.scalar.inline))))))) = _
-  rw [pPow_inline c, nPow_inline c]
+  rw [pPow_inline c, nPow_inline c, Cfg.kBits, kBitsIf_inline]
   rfl
 
-/-- `vg_ecdsa_<curve>_sign` computes the specification's signature and
-restores the callee-saved registers. -/
-theorem sign_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : Pre c s₀) :
+theorem sign_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : Pre c s₀)
+    (hmb : MulBaseOk c := by intro h; exact absurd h (by decide)) :
     WP isa c.sign.inline s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   rw [sign_inline]
-  exact stage₁ hc (Or.inr (Or.inr rfl)) hp.setup fun _ S₁ => stage₂ hc hC hT hp rfl S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
+  exact stage₁ hc (Or.inr (Or.inr rfl)) hp.setup fun _ S₁ => stage₂ hc hmb hC hT hp rfl S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
     stage₄ hc hC hp rfl S₃
 
 end VG.Proof.Ecdsa.X86_64

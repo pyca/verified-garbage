@@ -1,0 +1,5 @@
+name = "3DES-CFB8"
+family = "Ciphers"
+specs = ["TripleDes", "Cfb8"]
+modules = ["src/triple_des_cfb8.rs"]
+asm = ["triple_des_cfb8"]

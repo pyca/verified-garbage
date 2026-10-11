@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.X448
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.X448
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Arithmetic in curve448's field, in radix `2^16`, as functions
@@ -34,6 +36,8 @@ The result's limbs are below `2^16` again, so that it can be the operand of
 any of the functions. Everything is secret but the pointer and the offsets,
 which are public, and the functions are constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.X448.Field16
 

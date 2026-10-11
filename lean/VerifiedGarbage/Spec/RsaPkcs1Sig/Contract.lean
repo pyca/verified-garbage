@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.RsaPkcs1Sig
-import VerifiedGarbage.Spec.Rsa.Contract
+module
+
+public import VerifiedGarbage.Spec.RsaPkcs1Sig
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-!
 # RSASSA-PKCS1-v1_5: the contracts, on every target
@@ -38,6 +40,8 @@ pointer that an implementation's calls and frames use, as for the RSA
 primitives. The functions may overwrite their arguments passed in memory,
 where the calling convention allows it (`writeArgs`).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.RsaPkcs1Sig
 

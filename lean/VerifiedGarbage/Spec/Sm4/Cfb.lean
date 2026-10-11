@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sm4.Ctr
-import VerifiedGarbage.Spec.Cfb
+module
+
+public import VerifiedGarbage.Spec.Sm4.Ctr
+public import VerifiedGarbage.Spec.Cfb
 
 /-!
 # SM4-CFB128: the contracts, on every target
@@ -19,6 +21,8 @@ A partial last segment is the caller's.
 Only the pointers and `n` are public: no part of the chaining value may
 affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Sm4
 

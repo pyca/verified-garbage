@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Ecdh
-import VerifiedGarbage.Spec.EcKey.Generic
+module
+
+public import VerifiedGarbage.Spec.Ecdh
+public import VerifiedGarbage.Spec.EcKey.Generic
 
 /-!
 # ECDH over any curve: the contracts, on every target
@@ -19,6 +21,8 @@ the number of bytes below the stack pointer that an implementation's calls
 and frames use. The function may overwrite its arguments passed in memory,
 where the calling convention allows it (`writeArgs`).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Ecdh
 

@@ -1,3 +1,5 @@
+module
+
 /-!
 # Pipeline self-test
 
@@ -6,6 +8,8 @@ deliberately trivial function that exercises the whole pipeline (spec →
 implementation → proof → `Artifacts.lean` → Rust) so that the pipeline is
 tested before any real primitive exists.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Selftest
 

@@ -1,8 +1,13 @@
-import VerifiedGarbage.Spec.MlDsa.PositiveNtt
+module
+
+public import VerifiedGarbage.Spec.MlDsa.PositiveNtt
 
 /-! Internal fused arithmetic interfaces. Inputs may use positive, noncanonical
 representatives below 3q; outputs are canonical ordinary coefficients.
 These specifications express composition of the existing field operations. -/
+
+@[expose] public section
+
 namespace VG.Spec.MlDsa
 
 /-- The bound produced by the positive forward transform. -/

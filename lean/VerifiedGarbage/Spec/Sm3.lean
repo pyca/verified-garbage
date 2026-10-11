@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # SM3 (GB/T 32905-2016)
@@ -23,6 +25,8 @@ interface: initialize, absorb message bytes, pad and output the hash value,
 on a streaming state that `Repr` relates to the message absorbed so far.
 Their contracts are in `Spec/Sm3/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Sm3
 

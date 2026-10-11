@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sm4.Ctr
-import VerifiedGarbage.Spec.Cbc.Contract
+module
+
+public import VerifiedGarbage.Spec.Sm4.Ctr
+public import VerifiedGarbage.Spec.Cbc.Contract
 
 /-!
 # SM4-CBC: the contracts, on every target
@@ -20,6 +22,8 @@ the last block it decrypts). Padding is the caller's.
 Only the pointers and `n` are public: no part of the chaining value may
 affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Sm4
 

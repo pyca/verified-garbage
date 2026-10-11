@@ -1,6 +1,8 @@
-import VerifiedGarbage.Spec.Scrypt
-import VerifiedGarbage.Spec.Pbkdf2
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Scrypt
+public import VerifiedGarbage.Spec.Pbkdf2
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # scrypt: the contracts, on every target
@@ -32,6 +34,8 @@ password (§5), so its memory accesses depend on them: its contract declares
 that it leaks them (`Scrypt.roMixIndices`, through `Sig.contract`'s `leak`),
 and nothing else secret.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Scrypt
 

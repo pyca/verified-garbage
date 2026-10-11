@@ -1,6 +1,8 @@
-import VerifiedGarbage.Spec.RsaPkcs1Enc
-import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.RsaPkcs1Enc
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # RSAES-PKCS1-v1_5 with implicit rejection: the contracts, on every target
@@ -40,6 +42,8 @@ pointer that an implementation's calls and frames use. The functions may
 overwrite their arguments passed in memory, where the calling convention
 allows it (`writeArgs`).
 -/
+
+@[expose] public section
 
 namespace VG.Spec.RsaPkcs1Enc
 

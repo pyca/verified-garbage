@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # RSA primitives (RFC 8017 §§4–5, NIST SP 800-56B Rev. 2)
@@ -58,6 +60,8 @@ note 1), and `privateCrt` with the CRT values `crtKey` gives computes
 
 Padding (EME-OAEP, EMSA-PSS, PKCS #1 v1.5) is a separate layer.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Rsa
 

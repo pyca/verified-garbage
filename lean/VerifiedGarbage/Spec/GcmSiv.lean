@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Aes
+module
+
+public import VerifiedGarbage.Spec.Aes
 
 /-!
 # AES-GCM-SIV (RFC 8452)
@@ -27,6 +29,8 @@ The RFC's limits on the lengths (§4, §5, §6: at most 2³⁶ bytes of
 plaintext and of additional data) are `supported`; the RFC's `encrypt` and
 `decrypt` fail beyond them, which `encrypt` and `decrypt` here do.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.GcmSiv
 

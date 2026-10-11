@@ -90,14 +90,14 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p256 s := by
 /-- The signature `code` of a curve `c` (P-256, with either multiplication) that
 the proof supports, whose precondition the contract's gives (`hpre`), never
 writing `rsp`, calling or loading MXCSR (which its literal decides). -/
-theorem sign_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Law c.C) (hT : CombTbls c)
+theorem sign_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Law c.C) (hT : CombTbls c) (hmb : MulBaseOk c)
     (hpre : ∀ s, signX86_64.pre s → Pre c s) (hpost : ∀ s s', SignPost c s s' → signX86_64.post s s')
     (hcode : c.sign = code) (hsp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
     (hnc : code.noCalls = true) (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   subst hcode
-  obtain ⟨t, s', he, hsv, hpost'⟩ := wp_of_inline hnc <| sign_ok hc hL hT (hpre s hs)
+  obtain ⟨t, s', he, hsv, hpost'⟩ := wp_of_inline hnc <| sign_ok hc hL hT (hpre s hs) hmb
   have hsp : ∀ i ∈ instrs c.sign, Taint.clobbers i .rsp = false := by
     rw [Code.allInstrs_eq, List.all_eq_true] at hsp
     intro i hi
@@ -126,7 +126,7 @@ theorem sign_x86 (hL : Law Spec.P256.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP256 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  sign_x86_of (p256_ok hI) hL (p256_tbls hL hT) (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
+  sign_x86_of (p256_ok hI) hL (p256_tbls hL hT) (fun h => absurd h (by decide)) (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
     (by lit_decide) (by lit_decide) s hs
 
 /-- `signP256` without its displacements, as a literal of shared blocks

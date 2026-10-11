@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sm3
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Sm3
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # SM3: the contracts, on every target
@@ -22,6 +24,8 @@ which functions the implementation calls. They keep their working space
 there. (Unlike SHA-256's and MD5's, they have no `_scratch` forms: nothing
 calls SM3 with working space of its own.)
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Sm3
 

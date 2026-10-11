@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Cast5.Cbc
-import VerifiedGarbage.Spec.Cfb
+module
+
+public import VerifiedGarbage.Spec.Cast5.Cbc
+public import VerifiedGarbage.Spec.Cfb
 
 /-!
 # CAST5-CFB64: the contracts, on every target
@@ -19,6 +21,8 @@ partial last segment is the caller's.
 Only the pointers, `rounds` and `n` are public: no part of the chaining value
 may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Cast5
 

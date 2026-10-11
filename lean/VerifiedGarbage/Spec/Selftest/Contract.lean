@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Selftest
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.Spec.Selftest
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Pipeline self-test: the contract, on every target
@@ -7,6 +9,8 @@ import VerifiedGarbage.TCB.Artifact
 **Trusted** (as every file in `Spec/`). `A` is the target's calling
 convention.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Selftest
 

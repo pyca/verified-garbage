@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # Poly1305 (RFC 8439)
@@ -12,6 +14,8 @@ little-endian.
 This file is independent of any architecture; the contracts of the
 primitives on every target are in `Spec/Poly1305/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Poly1305
 

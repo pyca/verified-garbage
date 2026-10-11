@@ -1,113 +1,126 @@
+import VerifiedGarbage.Proof.Modes.AArch64.Words
 import VerifiedGarbage.Proof.Modes.AArch64.Xor
 import VerifiedGarbage.Impl.Modes.AArch64.Cbc
 
 /-!
-# Copying blocks on AArch64
+# Loops over blocks on AArch64
 
-`copyBlocks_wp`: the loop `copyBlocks` copies `c ≥ 1` blocks of 16 bytes at
-`x15` to `x14` (areas that do not overlap), through `x8`, counting down
-`x17`, and changes nothing else in memory.
+As on x86-64 (`Proof/Modes/X86_64/Copy.lean`). `blockLoop_wp`: a loop whose
+body works on the block at `x14` and `x15` and then steps both by a block
+(`nextBlock`) and counts `x17` down, from an invariant `J` of everything
+but those three registers. `copyBlocks_wp`: `copyBlocks` copies `n ≥ 1`
+blocks at `x15` to `x14` (areas that do not overlap) and changes nothing
+else in memory.
 -/
 
 namespace VG.Proof.Modes.AArch64
 
 open VG VG.AArch64 VG.AArch64.Straight VG.Impl.Modes.AArch64
 
-/-- `ldr x8, [x15, #d]; str x8, [x14, #d]`. -/
-theorem copyWord_ok (s : State) {d : Nat} (hd : d % 8 = 0 ∧ d < 32768)
-    (hr : InRegions (s.rd ++ s.wr) (s.gpr .x15 + BitVec.ofNat 64 d) 8)
-    (hw : InRegions s.wr (s.gpr .x14 + BitVec.ofNat 64 d) 8) :
-    ∃ s', runBlock isa [.ldr .x .x8 .x15 d, .str .x .x8 .x14 d] s = some s' ∧
-      s'.mem = s.mem.writeW (s.gpr .x14 + BitVec.ofNat 64 d) (s.mem.readW (s.gpr .x15 + BitVec.ofNat 64 d) 64) ∧
-      (∀ r, r ≠ .x8 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain ⟨s₁, e₁, v₁, o₁, m₁, rd₁, wr₁⟩ := ldr_ok s .x8 .x15 hd hr
-  obtain ⟨s₂, e₂, m₂, g₂, rd₂, wr₂⟩ := str_ok s₁ .x8 .x14 hd (by rw [wr₁, o₁ _ (by decide)]; exact hw)
-  refine ⟨s₂, ?_, by rw [m₂, v₁, o₁ _ (by decide), m₁], fun r hr => by rw [g₂, o₁ r hr], by rw [rd₂, rd₁],
-    by rw [wr₂, wr₁]⟩
-  rw [show ([.ldr .x .x8 .x15 d, .str .x .x8 .x14 d] : List Instr) = [.ldr .x .x8 .x15 d] ++ [.str .x .x8 .x14 d]
-    from rfl, runBlock_app, e₁, Option.bind_some, e₂]
+variable {c : Core}
 
-/-- Copying, after `j` of `c` blocks from `S` to `T`. -/
-structure CopyInv (S T : Addr) (c : Nat) (s₀ : State) (j : Nat) (s : State) : Prop where
-  x14 : s.gpr .x14 = T + BitVec.ofNat 64 (16 * j)
-  x15 : s.gpr .x15 = S + BitVec.ofNat 64 (16 * j)
-  x17 : s.gpr .x17 = BitVec.ofNat 64 (c - j)
-  copied : ∀ t < 16 * j, s.mem (T + BitVec.ofNat 64 t) = s₀.mem (S + BitVec.ofNat 64 t)
-  frame : Frame [⟨T, 16 * c⟩] s₀.mem s.mem
+theorem nextBlock_ok (s : State) (hL : 8 * c.bw < 4096) :
+    ∃ s', runBlock isa c.nextBlock s = some s' ∧ s'.gpr .x14 = s.gpr .x14 + BitVec.ofNat 64 (8 * c.bw) ∧
+      s'.gpr .x15 = s.gpr .x15 + BitVec.ofNat 64 (8 * c.bw) ∧ s'.gpr .x17 = s.gpr .x17 - BitVec.ofNat 64 1 ∧
+      (∀ r, r ≠ .x14 → r ≠ .x15 → r ≠ .x17 → s'.gpr r = s.gpr r) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨s₁, e₁, a₁, o₁, m₁, rd₁, wr₁⟩ := addImm_ok s .x14 .x14 hL
+  obtain ⟨s₂, e₂, a₂, o₂, m₂, rd₂, wr₂⟩ := addImm_ok s₁ .x15 .x15 hL
+  obtain ⟨s₃, e₃, c₃, o₃, m₃, rd₃, wr₃⟩ := subImm_ok s₂ .x17 .x17 (v := 1) (by decide)
+  refine ⟨s₃, ?_, by rw [o₃ _ (by decide), o₂ _ (by decide), a₁],
+    by rw [o₃ _ (by decide), a₂, o₁ _ (by decide)], by rw [c₃, o₂ _ (by decide), o₁ _ (by decide)],
+    fun r h1 h2 h3 => by rw [o₃ r h3, o₂ r h2, o₁ r h1], by rw [m₃, m₂, m₁], by rw [rd₃, rd₂, rd₁],
+    by rw [wr₃, wr₂, wr₁]⟩
+  rw [Core.nextBlock, show ([.addImm .x .x14 .x14 (8 * c.bw), .addImm .x .x15 .x15 (8 * c.bw),
+      .subImm .x .x17 .x17 1] : List Instr) =
+      [.addImm .x .x14 .x14 (8 * c.bw)] ++ ([.addImm .x .x15 .x15 (8 * c.bw)] ++ [.subImm .x .x17 .x17 1]) from rfl,
+    runBlock_app, e₁, Option.bind_some, runBlock_app, e₂, Option.bind_some, e₃]
+
+/-- The loop over `n` blocks at `T` (in `x14`) and `A` (in `x15`), counting
+down `x17`: `J j` holds before block `j` whatever `x14`, `x15` and `x17`
+hold, and the body of block `j` keeps those three and makes `J (j + 1)`. -/
+theorem blockLoop_wp (body : List Instr) {T A : Addr} {n : Nat} (J : Nat → State → Prop)
+    (hL : 8 * c.bw < 4096) (hn : 0 < n) (hn64 : n < 2 ^ 64)
+    (hJ : ∀ j s s', J j s → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
+      (∀ r, r ≠ .x14 → r ≠ .x15 → r ≠ .x17 → s'.gpr r = s.gpr r) → J j s')
+    (hb : ∀ j < n, ∀ s, J j s → s.gpr .x14 = T + BitVec.ofNat 64 (8 * c.bw * j) →
+      s.gpr .x15 = A + BitVec.ofNat 64 (8 * c.bw * j) →
+      WP isa (.block body) s fun s' => J (j + 1) s' ∧ s'.gpr .x14 = s.gpr .x14 ∧ s'.gpr .x15 = s.gpr .x15 ∧
+        s'.gpr .x17 = s.gpr .x17)
+    {s₀ : State} (h0 : J 0 s₀) (ha : s₀.gpr .x14 = T) (hb' : s₀.gpr .x15 = A)
+    (hc : s₀.gpr .x17 = BitVec.ofNat 64 n) :
+    WP isa (.loop (.block (body ++ c.nextBlock)) (.nonzero .x .x17)) s₀ fun s => J n s ∧
+      s.gpr .x14 = T + BitVec.ofNat 64 (8 * c.bw * n) ∧ s.gpr .x15 = A + BitVec.ofNat 64 (8 * c.bw * n) := by
+  refine WP.loop (M := isa) (fun m s => ∃ j, m = n - j ∧ j < n ∧ J j s ∧
+      s.gpr .x14 = T + BitVec.ofNat 64 (8 * c.bw * j) ∧ s.gpr .x15 = A + BitVec.ofNat 64 (8 * c.bw * j) ∧
+      s.gpr .x17 = BitVec.ofNat 64 (n - j))
+    (fun m s hs => ?_) n s₀ ⟨0, by omega, hn, h0, by rw [ha]; simp, by rw [hb']; simp, by rw [hc, Nat.sub_zero]⟩
+  obtain ⟨j, rfl, hj, hJj, hax, hbx, hcx⟩ := hs
+  rw [WP.block_append_iff]
+  refine WP.mono (hb j hj s hJj hax hbx) fun s₁ ⟨hJ₁, a₁, b₁, c₁⟩ => ?_
+  obtain ⟨s₂, e₂, a₂, b₂, c₂, o₂, m₂, rd₂, wr₂⟩ := nextBlock_ok (c := c) s₁ hL
+  have hJ₂ : J (j + 1) s₂ := hJ _ _ _ hJ₁ m₂ rd₂ wr₂ o₂
+  have ec : s₂.gpr .x17 = BitVec.ofNat 64 (n - (j + 1)) := by
+    rw [c₂, c₁, hcx, VG.Offset.ofNat_sub_ofNat (by omega), show n - j - 1 = n - (j + 1) by omega]
+  have hz : isa.eval (.nonzero .x .x17) s₂ = some !(decide (n - (j + 1) = 0)) := by
+    rw [eval_nonzero, ec, ofNat_beq_zero (by omega)]
+  have hstep : ∀ (X : Addr), X + BitVec.ofNat 64 (8 * c.bw * j) + BitVec.ofNat 64 (8 * c.bw) =
+      X + BitVec.ofNat 64 (8 * c.bw * (j + 1)) := fun X => by rw [addr_add, Nat.mul_succ]
+  refine WP.of_runBlock ⟨s₂, e₂, ?_⟩
+  by_cases hl : j + 1 = n
+  · refine .inl ⟨by rw [hz, decide_eq_true (by omega)]; rfl, by rw [← hl]; exact hJ₂,
+      by rw [a₂, a₁, hax, hstep, hl], by rw [b₂, b₁, hbx, hstep, hl]⟩
+  · exact .inr ⟨by rw [hz, decide_eq_false (by omega)]; rfl, n - (j + 1), by omega, j + 1, rfl, by omega, hJ₂,
+      by rw [a₂, a₁, hax, hstep], by rw [b₂, b₁, hbx, hstep], ec⟩
+
+/-- Copying, after `j` of `n` blocks of `bw` words from `S` to `T`. -/
+structure CopyInv (c : Core) (S T : Addr) (n : Nat) (s₀ : State) (j : Nat) (s : State) : Prop where
+  copied : ∀ t < 8 * c.bw * j, s.mem (T + BitVec.ofNat 64 t) = s₀.mem (S + BitVec.ofNat 64 t)
+  frame : Frame [⟨T, 8 * c.bw * n⟩] s₀.mem s.mem
   regs : ∀ r, r ≠ .x8 → r ≠ .x14 → r ≠ .x15 → r ≠ .x17 → s.gpr r = s₀.gpr r
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem copyBlocks_wp {S T : Addr} {c : Nat} {s₀ : State} (hc : 0 < c) (hc16 : c < 2 ^ 59)
-    (hS : ∀ t < 2 * c, InRegions (s₀.rd ++ s₀.wr) (S + BitVec.ofNat 64 (8 * t)) 8)
-    (hT : ∀ t < 2 * c, InRegions s₀.wr (T + BitVec.ofNat 64 (8 * t)) 8)
-    (hsep : Region.Disjoint ⟨S, 16 * c⟩ ⟨T, 16 * c⟩) (hs : CopyInv S T c s₀ 0 s₀) :
-    WP isa Core.copyBlocks s₀ (CopyInv S T c s₀ c) := by
-  refine WP.loop (M := isa) (fun n s => ∃ j, n = c - j ∧ j < c ∧ CopyInv S T c s₀ j s)
-    (fun n s hs => ?_) c s₀ ⟨0, by omega, hc, hs⟩
-  obtain ⟨j, rfl, hj, hi⟩ := hs
-  have hn : 16 * c < 2 ^ 64 := by omega
-  have hSs : ∀ t < 16 * c, s.mem (S + BitVec.ofNat 64 t) = s₀.mem (S + BitVec.ofNat 64 t) := fun t ht =>
-    hi.frame.bytes (R := ⟨S, 16 * c⟩) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsep)
+theorem copyBlocks_wp {S T : Addr} {n : Nat} {s₀ : State} (hbw : 0 < c.bw) (hbw2 : c.bw ≤ 2) (hn : 0 < n)
+    (hfit : 8 * c.bw * n < 2 ^ 63)
+    (hS : ∀ t < c.bw * n, InRegions (s₀.rd ++ s₀.wr) (S + BitVec.ofNat 64 (8 * t)) 8)
+    (hT : ∀ t < c.bw * n, InRegions s₀.wr (T + BitVec.ofNat 64 (8 * t)) 8)
+    (hsep : Region.Disjoint ⟨S, 8 * c.bw * n⟩ ⟨T, 8 * c.bw * n⟩) (ha : s₀.gpr .x14 = T) (hb : s₀.gpr .x15 = S)
+    (hc : s₀.gpr .x17 = BitVec.ofNat 64 n) :
+    WP isa c.copyBlocks s₀ fun s => CopyInv c S T n s₀ n s ∧ s.gpr .x15 = S + BitVec.ofNat 64 (8 * c.bw * n) := by
+  have hn64 : n ≤ 8 * c.bw * n := Nat.le_mul_of_pos_left n (by omega)
+  unfold Core.copyBlocks
+  refine WP.mono (blockLoop_wp (c := c) _ (CopyInv c S T n s₀) (by omega) hn (by omega)
+    (fun j s s' h hm hrd hwr hg => ⟨fun t ht => by rw [hm]; exact h.copied t ht, by rw [hm]; exact h.frame,
+      fun r h1 h2 h3 h4 => by rw [hg r h2 h3 h4, h.regs r h1 h2 h3 h4], by rw [hrd, h.rd], by rw [hwr, h.wr]⟩)
+    (fun j hj s hi hax hbx => ?_) ⟨fun t ht => by omega, Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩ ha hb hc)
+    fun _ h => ⟨h.1, h.2.2⟩
+  have hlt := idx_lt (L := 8 * c.bw) hj
+  have hw : ∀ w, 8 * c.bw * j + 8 * w = 8 * (c.bw * j + w) := fun w => by rw [Nat.mul_add, Nat.mul_assoc]
+  have hbj : ∀ w < c.bw, c.bw * j + w < c.bw * n := fun w hw' => by have := idx_lt (L := c.bw) hj; omega
+  have hSs : ∀ t < 8 * c.bw * n, s.mem (S + BitVec.ofNat 64 t) = s₀.mem (S + BitVec.ofNat 64 t) := fun t ht =>
+    hi.frame.bytes (R := ⟨S, 8 * c.bw * n⟩) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsep)
       (by simp only; omega) ht
-  obtain ⟨s₁, e₁, m₁, g₁, rd₁, wr₁⟩ := copyWord_ok s (d := 0) (by decide)
-    (by rw [hi.rd, hi.wr, hi.x15, addr_add, show 16 * j + 0 = 8 * (2 * j) by omega]; exact hS _ (by omega))
-    (by rw [hi.wr, hi.x14, addr_add, show 16 * j + 0 = 8 * (2 * j) by omega]; exact hT _ (by omega))
-  obtain ⟨s₂, e₂, m₂, g₂, rd₂, wr₂⟩ := copyWord_ok s₁ (d := 8) (by decide)
-    (by rw [rd₁, wr₁, hi.rd, hi.wr, g₁ _ (by decide), hi.x15, addr_add,
-      show 16 * j + 8 = 8 * (2 * j + 1) by omega]; exact hS _ (by omega))
-    (by rw [wr₁, hi.wr, g₁ _ (by decide), hi.x14, addr_add, show 16 * j + 8 = 8 * (2 * j + 1) by omega]
-        exact hT _ (by omega))
-  obtain ⟨s₃, e₃, a₃, o₃, m₃, rd₃, wr₃⟩ := addImm_ok s₂ .x14 .x14 (v := 16) (by decide)
-  obtain ⟨s₄, e₄, a₄, o₄, m₄, rd₄, wr₄⟩ := addImm_ok s₃ .x15 .x15 (v := 16) (by decide)
-  obtain ⟨s₅, e₅, c₅, o₅, m₅, rd₅, wr₅⟩ := subImm_ok s₄ .x17 .x17 (v := 1) (by decide)
-  refine WP.of_runBlock ⟨s₅, by
-    rw [show ([.ldr .x .x8 .x15 0, .str .x .x8 .x14 0, .ldr .x .x8 .x15 8, .str .x .x8 .x14 8,
-      .addImm .x .x14 .x14 16, .addImm .x .x15 .x15 16, .subImm .x .x17 .x17 1] : List Instr) =
-      [.ldr .x .x8 .x15 0, .str .x .x8 .x14 0] ++ ([.ldr .x .x8 .x15 8, .str .x .x8 .x14 8] ++
-      ([.addImm .x .x14 .x14 16] ++ ([.addImm .x .x15 .x15 16] ++ [.subImm .x .x17 .x17 1]))) from rfl,
-      runBlock_app, e₁, Option.bind_some, runBlock_app, e₂, Option.bind_some, runBlock_app, e₃,
-      Option.bind_some, runBlock_app, e₄, Option.bind_some, e₅], ?_⟩
-  have r1 : s₁.gpr .x15 = S + BitVec.ofNat 64 (16 * j) := by rw [g₁ _ (by decide), hi.x15]
-  have a1 : s₁.gpr .x14 = T + BitVec.ofNat 64 (16 * j) := by rw [g₁ _ (by decide), hi.x14]
-  have hm : s₅.mem = s₁.mem.writeW (T + BitVec.ofNat 64 (16 * j + 8))
-      (s₁.mem.readW (S + BitVec.ofNat 64 (16 * j + 8)) 64) := by
-    rw [m₅, m₄, m₃, m₂, r1, a1, addr_add, addr_add]
-  have hm₁ : s₁.mem = s.mem.writeW (T + BitVec.ofNat 64 (16 * j))
-      (s.mem.readW (S + BitVec.ofNat 64 (16 * j)) 64) := by
-    rw [m₁, hi.x15, hi.x14, addr_add, addr_add, Nat.add_zero]
-  have hS₁ : ∀ t < 16 * c, s₁.mem (S + BitVec.ofNat 64 t) = s.mem (S + BitVec.ofNat 64 t) := fun t ht => by
-    rw [hm₁, writeW_readW_apply, ite_eq_right (not_in_of_disjoint hsep ht (by omega) hn)]
-  have x17₅ : s₅.gpr .x17 = BitVec.ofNat 64 (c - (j + 1)) := by
-    rw [c₅, o₄ _ (by decide), o₃ _ (by decide), g₂ _ (by decide), g₁ _ (by decide), hi.x17,
-      VG.Offset.ofNat_sub_ofNat (by omega), show c - j - 1 = c - (j + 1) by omega]
-  have hinv : CopyInv S T c s₀ (j + 1) s₅ := by
-    refine ⟨?_, ?_, x17₅, fun t ht => ?_, hi.frame.trans fun x hx => ?_, fun r h1 h2 h3 h4 => ?_,
-      by rw [rd₅, rd₄, rd₃, rd₂, rd₁, hi.rd], by rw [wr₅, wr₄, wr₃, wr₂, wr₁, hi.wr]⟩
-    · rw [o₅ _ (by decide), o₄ _ (by decide), a₃, g₂ _ (by decide), a1, addr_add,
-        show 16 * j + 16 = 16 * (j + 1) by omega]
-    · rw [o₅ _ (by decide), a₄, o₃ _ (by decide), g₂ _ (by decide), r1, addr_add,
-        show 16 * j + 16 = 16 * (j + 1) by omega]
-    · rw [hm, writeW_readW_apply]
-      by_cases h8 : 16 * j + 8 ≤ t
-      · rw [ite_eq_left (by rw [off_sub_toNat T h8 (by omega)]; omega), off_sub_toNat T h8 (by omega), addr_add,
-          show 16 * j + 8 + (t - (16 * j + 8)) = t by omega, hS₁ t (by omega), hSs t (by omega)]
-      · rw [ite_eq_right (off_sub_not T (Or.inl (by omega)) (by omega) (by omega) (by omega)), hm₁,
-          writeW_readW_apply]
-        by_cases h0 : 16 * j ≤ t
-        · rw [ite_eq_left (by rw [off_sub_toNat T h0 (by omega)]; omega), off_sub_toNat T h0 (by omega), addr_add,
-            show 16 * j + (t - 16 * j) = t by omega, hSs t (by omega)]
-        · rw [ite_eq_right (off_sub_not T (Or.inl (by omega)) (by omega) (by omega) (by omega))]
-          exact hi.copied t (by omega)
-    · have hout : ∀ e, e + 8 ≤ 16 * c → ¬ (x - (T + BitVec.ofNat 64 e)).toNat < 8 := fun e he h =>
-        hx _ (List.mem_singleton_self _) (VG.Offset.sub_base T he _ (by simp only [Region.Contains]; omega))
-      rw [hm, writeW_readW_apply, ite_eq_right (hout _ (by omega)), hm₁, writeW_readW_apply,
-        ite_eq_right (hout _ (by omega))]
-    · rw [o₅ r h4, o₄ r h3, o₃ r h2, g₂ r h1, g₁ r h1, hi.regs r h1 h2 h3 h4]
-  have hz : isa.eval (.nonzero .x .x17) s₅ = some !(decide (c - (j + 1) = 0)) := by
-    rw [eval_nonzero, x17₅, ofNat_beq_zero (by omega)]
-  by_cases hl : j + 1 = c
-  · refine .inl ⟨by rw [hz, decide_eq_true (by omega)]; rfl, by rw [show j + 1 = c from hl] at hinv; exact hinv⟩
-  · exact .inr ⟨by rw [hz, decide_eq_false (by omega)]; rfl, c - (j + 1), by omega, j + 1, rfl, by omega, hinv⟩
+  have hPT : Region.Sub ⟨T + BitVec.ofNat 64 (8 * c.bw * j), 8 * c.bw⟩ ⟨T, 8 * c.bw * n⟩ :=
+    VG.Offset.sub_base T (by omega)
+  refine WP.mono (copyN_wp (k := c.bw) (P := T + BitVec.ofNat 64 (8 * c.bw * j)) (u := .x8)
+    (Q := S + BitVec.ofNat 64 (8 * c.bw * j)) ⟨by rw [hax]; simp, by rw [hbx]; simp,
+    by decide, by decide, by decide, by decide, by decide, by decide, by omega, by omega,
+    fun w hw' => by rw [hi.wr, addr_add, hw w]; exact hT _ (hbj w hw'),
+    fun w hw' => by rw [hi.rd, hi.wr, addr_add, hw w]; exact hS _ (hbj w hw'),
+    (hsep.symm.sub_left hPT).sub_right (VG.Offset.sub_base S (by omega)), by omega⟩) fun s' h' => ?_
+  refine ⟨⟨fun t ht => ?_, hi.frame.trans fun x hx => ?_, fun r h1 h2 h3 h4 => by
+      rw [h'.regs r h1 h1, hi.regs r h1 h2 h3 h4], by rw [h'.rd, hi.rd], by rw [h'.wr, hi.wr]⟩,
+    h'.regs _ (by decide) (by decide), h'.regs _ (by decide) (by decide), h'.regs _ (by decide) (by decide)⟩
+  · have : 8 * c.bw * (j + 1) = 8 * c.bw * j + 8 * c.bw := Nat.mul_succ _ _
+    rw [h'.mem]
+    by_cases h1 : 8 * c.bw * j ≤ t
+    · rw [show T + BitVec.ofNat 64 t = T + BitVec.ofNat 64 (8 * c.bw * j) + BitVec.ofNat 64 (t - 8 * c.bw * j) by
+        rw [addr_add, show 8 * c.bw * j + (t - 8 * c.bw * j) = t by omega], over_at (by omega) (by omega), addr_add,
+        show 8 * c.bw * j + (t - 8 * c.bw * j) = t by omega, hSs t (by omega)]
+    · rw [over_out (off_sub_not T (by omega) (by omega) (by omega) (by omega))]
+      exact hi.copied t (by omega)
+  · rw [h'.mem]
+    exact over_out fun h => hx _ (List.mem_singleton_self _) (hPT x (by simp only [Region.Contains]; omega))
 
 end VG.Proof.Modes.AArch64

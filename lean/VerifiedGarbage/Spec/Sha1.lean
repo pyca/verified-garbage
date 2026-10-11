@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Mem
+module
+
+public import VerifiedGarbage.TCB.Mem
 
 /-!
 # SHA-1 (FIPS 180-4)
@@ -17,6 +19,8 @@ interface: initialize, absorb message bytes, pad and output the digest, on a
 streaming state that `Repr` relates to the message absorbed so far. Their
 contracts are in `Spec/Sha1/Contract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Spec.Sha1
 
