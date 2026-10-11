@@ -90,6 +90,9 @@ theorem p384x_ok (hI : InvSounds) : CfgOk p384x where
   am3 := by unfold AM3; decide +kernel
   even _ := by decide
 
+/-- `[k]G` is a call of `vg_p384_mul_base_adx`, which calls no other function. -/
+theorem p384x_mulBase : MulBaseOk p384x := fun _ => ⟨_, rfl, rfl, by decide, by lit_decide⟩
+
 theorem p384x_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     CombTbls p384x := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
 
@@ -109,7 +112,7 @@ theorem sign_x86_adx (hL : Law Spec.P384.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP384Adx.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384x_ok hI) hL (p384x_tbls hT) (pre_of_x hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384x_ok hI) hL (p384x_tbls hT) (pre_of_x hs) p384x_mulBase
   have hsp : ∀ i ∈ instrs signP384Adx.inline, Taint.clobbers i .rsp = false := by
     have h : signP384Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h

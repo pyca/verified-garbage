@@ -187,4 +187,63 @@ theorem mulBaseFn_ok (hc : BaseCfgOk c) (h6 : 6 ≤ c.n) (hC : Law c.C) (hT : Co
       show toM _ _ _ = toM _ _ _; rw [ms]
     rw [e, e, e]; exact R₂
 
+/-! ## `R = [k]G` in the signature and the public key: `gMulKC` -/
+
+/-- What a call of `vg_<curve>_mul_base` needs of the curve: a comb, with
+complete additions, at least six words (so that `ACC`'s slot holds the six
+callee-saved registers), and products written out (the function calls no
+other). -/
+def MulBaseOk (c : Cfg) : Prop :=
+  c.mulBase.isSome = true → ∃ d, c.comb = some d ∧ d.jac = false ∧ 6 ≤ c.n ∧ c.mulBaseFn.noCalls = true
+
+/-- What `gMulKC` may write: `gMulK`'s, and `ACC`'s slot. -/
+abbrev gWA (c : Cfg) : List (Nat × Nat) := gW c ++ slW c [ACC]
+
+theorem apart_gWA {i : Nat} (hi : i < 45)
+    (hl : i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM]) (ha : i ∉ [ACC]) :
+    ∀ w ∈ gWA c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
+  apart_append (apart_gW hi hl) (apart_slW ha)
+
+theorem fixedOk_gWA : FixedOk c (gWA c) :=
+  FixedOk.append fixedOk_gW (fixedOk_slW (by decide))
+
+theorem tbl_apart_gWA {j t : Nat} (hj : j = 1 ∨ j = 2) (ht : t < 64 * c.n)
+    (hj1 : j ≠ 1 ∨ c.n ≠ 9 := by sl_or) :
+    ∀ w ∈ gWA c, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t :=
+  apart_append (tbl_apart_gW hj ht hj1) (tbl_apart_slW (by decide) j t ht (.inl (by decide)))
+
+theorem flag_unch_gWA {base : Addr} {m m' : Mem} (hu : Unch base (gWA c) m m')
+    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) :
+    word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
+  have hF := sl_le c h7 (i := FLAG) (by decide)
+  refine hu.word (fun w hw => ?_) (by omega)
+  rcases apart_gWA (c := c) (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
+  · exact Or.inl (by omega)
+  · exact Or.inr h
+
+/-- `R = [k]G` for a secret `k`, after the setup and the tables (but `k`'s
+if `vg_<curve>_mul_base` makes it): by its call, or inline (`gMulK_ok`). -/
+theorem gMulKC_ok (hc : BaseCfgOk c) (hmb : MulBaseOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat}
+    {s₀ : State} (hp : Pre c s₀) {s : State} (hS : St₁ c hs s₀ (s₀.gpr .r8) s c.mulBase.isSome) :
+    WP isa c.gMulKC.inline s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch (s₀.gpr .r8) (gWA c) s.mem s'.mem ∧
+      ModOkW c.MP' size c.C.p s'.mem (s₀.gpr .r8) ∧
+      (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem (s₀.gpr .r8) x c.n < c.C.p) ∧
+      Rep c.C (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RX)) (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RY))
+        (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RZ)) (mul (kv c s₀) (G c.C)) := by
+  unfold Cfg.gMulKC
+  cases hm : c.mulBase with
+  | none =>
+    rw [hm] at hS
+    exact WP.mono (gMulK_ok hc hC hT hp hS) fun s' ⟨K', U', M', L', R'⟩ =>
+      ⟨K', U'.mono fun w hw => List.mem_append_left _ hw, M', L', R'⟩
+  | some C =>
+    obtain ⟨d, hcd, hj, h6, hnc⟩ := hmb (by rw [hm]; rfl)
+    obtain ⟨hTM, hout⟩ := tbl_of hcd hp hS.rd hS.unch
+    rw [← hS.syms] at hTM hout
+    show WP isa c.mulBaseFn s _
+    rw [← Code.inline_of_noCalls hnc]
+    refine WP.mono (mulBaseFn_ok hc h6 hC hT hcd hj hS.scr hS.fixed.mp hS.fixed.zero hTM hout)
+      fun s' ⟨g', _, rd', wr', _, U', M', L', R'⟩ => ⟨⟨g', rd', wr'⟩, U', M', L', ?_⟩
+    rw [← hS.k]; exact R'
+
 end VG.Proof.Ecdsa.X86_64
