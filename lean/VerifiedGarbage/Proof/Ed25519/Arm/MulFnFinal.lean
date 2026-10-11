@@ -32,7 +32,7 @@ theorem tail9_ok {o : Nat} (ho : o + 64 ≤ ACC) {s : State} (hc : CtxN e b s)
     (h9 : s.gpr .r9 = b + BitVec.ofNat 32 o)
     (h6 : s.gpr .r6 = mask16) (h8 : s.gpr .r8 = 38) {c16 : Nat} (h5 : (s.gpr .r5).toNat = c16)
     (hc16 : c16 ≤ 38) (hl : Lim s.mem (State.addr b) o) :
-    WP isa (.block ([.mul .r5 .r5 .r8] ++ pass .r9 0 mulTailSrc ++
+    WP isa (.block (([.mul .r5 .r5 .r8] : List Instr) ++ pass .r9 0 mulTailSrc ++
       ([.mul .r5 .r5 .r8, .ldr .r3 .r9 0, .dp .add .r3 .r3 (.reg .r5), .str .r3 .r9 0] : List Instr))) s
       fun s' => Rest [.r2, .r3, .r4, .r5] s s' ∧
         Frame [⟨State.addr b + BitVec.ofNat 64 o, 64⟩] s.mem s'.mem ∧ Lim s'.mem (State.addr b) o ∧
