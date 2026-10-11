@@ -60,6 +60,6 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) : List
         cases adx
         · exact Code.all_of_allInstrs (show invN.allInstrs _ = true by lit_decide)
         · exact Code.all_of_allInstrs (show invNAdx.allInstrs _ = true by lit_decide)
-      features := if adx then ["bmi2", "adx"] else [] })
+      features := if adx then ["adx"] else [] })
 
 end VG.Generic.P521.X86_64.InverseP521
