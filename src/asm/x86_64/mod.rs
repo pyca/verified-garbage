@@ -224,6 +224,9 @@ pub(crate) mod mlkem768;
 pub(crate) mod p384_mont;
 
 #[rustfmt::skip]
+pub(crate) mod p384_mul_base;
+
+#[rustfmt::skip]
 pub(crate) mod p384_point_ops;
 
 #[rustfmt::skip]
