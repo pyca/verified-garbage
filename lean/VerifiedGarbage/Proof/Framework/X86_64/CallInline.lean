@@ -272,6 +272,13 @@ def Src.noRsp : Src → Bool
   | .imm _ => true
   | .mem m => m.noRsp
 
+/-- A vector operation that does not touch `rsp`: those of vector registers
+alone, and `vmovq` from a register but `rsp`. -/
+def VOp.rspFree : VOp → Bool
+  | .vbin .. | .vmovdqa .. | .vpbroadcastd .. | .vzeroupper => true
+  | .vmovq _ r => r != .rsp
+  | _ => false
+
 /-- An instruction that neither reads nor writes `rsp`: those of the
 functions `Code.InlineOk` lets code call (a short list; the others are
 `false`). -/
@@ -288,6 +295,11 @@ def Instr.rspFree : Instr → Bool
   | .xop _ => true
   | .movqR d _ => d != .rsp
   | .movdquLoad _ m | .movdquStore m _ => m.noRsp
+  | .movzx8 d m => d != .rsp && m.noRsp
+  | .store8 m r => m.noRsp && r != .rsp
+  | .leaSym d _ => d != .rsp
+  | .vop op => op.rspFree
+  | .vbinLoad _ _ _ _ m | .vmovdquStore _ m _ => m.noRsp
   | _ => false
 
 section
@@ -338,6 +350,16 @@ theorem store128_setRsp (a : Addr) (v : BitVec 128) :
     (s.setReg .rsp x).store128 a v = (s.store128 a v).map (·.setReg .rsp x) := by
   simp only [State.store128, show (s.setReg .rsp x).wr = s.wr from rfl]
   by_cases h : InRegions s.wr a 16 <;> simp only [h, ite_true, ite_false, Option.map_some, Option.map_none] <;> rfl
+
+theorem store8_setRsp (a : Addr) (v : Byte) :
+    (s.setReg .rsp x).store8 a v = (s.store8 a v).map (·.setReg .rsp x) := by
+  simp only [State.store8, show (s.setReg .rsp x).wr = s.wr from rfl]
+  by_cases h : InRegions s.wr a 1 <;> simp only [h, ite_true, ite_false, Option.map_some, Option.map_none] <;> rfl
+
+theorem store256_setRsp (a : Addr) (v : BitVec 256) :
+    (s.setReg .rsp x).store256 a v = (s.store256 a v).map (·.setReg .rsp x) := by
+  simp only [State.store256, show (s.setReg .rsp x).wr = s.wr from rfl]
+  by_cases h : InRegions s.wr a 32 <;> simp only [h, ite_true, ite_false, Option.map_some, Option.map_none] <;> rfl
 
 theorem eval_setRsp (c : Cond) : eval c (s.setReg .rsp x) = eval c s := by cases c <;> rfl
 
@@ -440,6 +462,29 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
   | movdquStore m r =>
     simp only [Instr.rspFree] at hi
     simp only [exec, ea_setRsp hi, store128_setRsp]; rfl
+  | movzx8 d m =>
+    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [exec, Option.map_map]; rw [ea_setRsp hi.2]
+    simp only [Function.comp_def, setReg_setRsp hi.1]; rfl
+  | store8 m r =>
+    simp only [Instr.rspFree, Bool.and_eq_true, bne_iff_ne, ne_eq] at hi
+    simp only [exec, ea_setRsp hi.1, setRsp_gpr hi.2, store8_setRsp]
+  | leaSym d n =>
+    simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
+    simp only [exec, Option.map_some, setReg_setRsp hi]; rfl
+  | vop op =>
+    simp only [exec, Option.map_some]; congr 1
+    cases op <;> simp only [Instr.rspFree, VOp.rspFree, Bool.false_eq_true, bne_iff_ne, ne_eq] at hi
+    case vmovq d r => simp only [VOp.exec, setRsp_gpr hi]; rfl
+    all_goals rfl
+  | vbinLoad op len d a m =>
+    simp only [Instr.rspFree] at hi
+    cases len <;> simp only [exec, Option.map_map] <;> rw [ea_setRsp hi] <;> rfl
+  | vmovdquStore len m r =>
+    simp only [Instr.rspFree] at hi
+    cases len
+    · simp only [exec, ea_setRsp hi, store128_setRsp]; rfl
+    · simp only [exec, ea_setRsp hi, store256_setRsp]; rfl
   | _ => simp [Instr.rspFree] at hi
 
 theorem srcAddrs_setRsp {src : Src} (h : src.noRsp = true) : srcAddrs (s.setReg .rsp x) src = srcAddrs s src := by
@@ -452,7 +497,9 @@ theorem addrs_setRsp {i : Instr} (hi : i.rspFree = true) : addrs i (s.setReg .rs
   case mov | mov32 | alu | alu32 | adcx | adox | cmov => simp only [addrs]; rw [srcAddrs_setRsp hi.2]
   case mulx => simp only [addrs]; rw [srcAddrs_setRsp hi.2]
   case store => simp only [addrs]; rw [ea_setRsp hi.1]
-  case movdquLoad | movdquStore => simp only [addrs]; rw [ea_setRsp hi]
+  case movdquLoad | movdquStore | vbinLoad | vmovdquStore => simp only [addrs]; rw [ea_setRsp hi]
+  case movzx8 => simp only [addrs]; rw [ea_setRsp hi.2]
+  case store8 => simp only [addrs]; rw [ea_setRsp hi.1]
   all_goals first | rfl | simp at hi
 
 theorem rspFree_clobbers {i : Instr} (hi : i.rspFree = true) : Taint.clobbers i .rsp = false := by

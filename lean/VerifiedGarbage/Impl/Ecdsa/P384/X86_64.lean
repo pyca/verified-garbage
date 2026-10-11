@@ -9,13 +9,15 @@ namespace VG.Impl.Ecdsa.X86_64
 open VG.X86_64
 
 /-- P-384 as the code has it, the products of its hottest loops written out
-(`Cfg.hot`): calls of them there slow it down. -/
+(`Cfg.hot`): calls of them there slow it down. `[k]G` for the signature and
+the public key is a call of `vg_p384_mul_base` (`Cfg.mulBase`). -/
 def p384 : Cfg where
   n := 6
   C := Spec.P384.curve
   comb := some ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", false⟩
   fastN := true
   hot := true
+  mulBase := some Spec.Weierstrass.MulBase.p384
 
 /-- `vg_ecdsa_p384_sign`. -/
 def signP384 : Prog isa := p384.sign
