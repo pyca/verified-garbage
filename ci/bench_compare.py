@@ -344,7 +344,7 @@ def main():
                 best[side][bench_id] = min(t, best[side].get(bench_id, t))
     cpu_features = os.environ.get("VG_CPU_FEATURES", "")
     references = {}
-    with_references = (args.openssl or binaries["base"] is None) and not cpu_features
+    with_references = (args.openssl or binaries["base"] is None)
     if with_references:
         for library, name in REFERENCES.items():
             print(name, file=sys.stderr)
