@@ -22,20 +22,24 @@ its bulk passes take at once: the call with the one-time key then also
 computes the keystream of the bytes past the last multiple of `pass`,
 rounded up to a block, if they are at most `fold`, so that the rest of the
 data is whole passes (rather than whole passes and a last pass for a few
-bytes, as in TLS records of `n · 1024 + 1` bytes). -/
+bytes, as in TLS records of `n · 1024 + 1` bytes). `wide` is how many bytes
+(`2 ^ wide`) ChaCha20-Poly1305's loops over that keystream (zeroing it,
+XORing it into the data) take at once: 16 in the baseline ISA, 32 with AVX,
+64 with AVX-512F, which an implementation needs anyway. -/
 structure Callee where
   name : String
   code : Prog isa
   fold : Nat
   pass : Nat
+  wide : Nat
 
 /-- The baseline computes one block at a time: nothing to gain. -/
-def Callee.scalar : Callee := ⟨"vg_chacha20_xor", Xor.xor, 0, 0⟩
+def Callee.scalar : Callee := ⟨"vg_chacha20_xor", Xor.xor, 0, 0, 4⟩
 /-- Up to 512 bytes in one call: up to 384 in one computation of at most six
 blocks (`Avx2Tail.last3`), 512 in one of eight (the loop). -/
-def Callee.avx2 : Callee := ⟨"vg_chacha20_xor_avx2", Avx2.xor, 448, 0⟩
+def Callee.avx2 : Callee := ⟨"vg_chacha20_xor_avx2", Avx2.xor, 448, 0, 5⟩
 /-- Up to 1024 bytes in one computation of sixteen blocks (the loop, or
 `Avx512.last16`), as are the rest of the data's after the first call. -/
-def Callee.avx512 : Callee := ⟨"vg_chacha20_xor_avx512", Avx512.xor, 960, 1024⟩
+def Callee.avx512 : Callee := ⟨"vg_chacha20_xor_avx512", Avx512.xor, 960, 1024, 6⟩
 
 end VG.Impl.ChaCha20.X86_64
