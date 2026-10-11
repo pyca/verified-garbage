@@ -307,14 +307,14 @@ open VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
 
  def tailChecks (k : Nat) (hk : k<4) : TailChecks k := by
   by_cases h0 : k=0
-  · subst k; exact ⟨_,_,by taint_decide,by taint_decide⟩
+  · subst k; constructor <;> taint_decide
   by_cases h1 : k=1
-  · subst k; exact ⟨_,_,by taint_decide,by taint_decide⟩
+  · subst k; constructor <;> taint_decide
   by_cases h2 : k=2
-  · subst k; exact ⟨_,_,by taint_decide,by taint_decide⟩
+  · subst k; constructor <;> taint_decide
   have h3 : k=3 := by omega
   subst k
-  exact ⟨_,_,by taint_decide,by taint_decide⟩
+  constructor <;> taint_decide
 
 private theorem tail_candidate_eq {v k : Nat} {σ τ s t : State}
     (pub : Pub v σ τ) (hs : TailReady v σ s) (ht : TailReady v τ t) (hk : k<v) :
