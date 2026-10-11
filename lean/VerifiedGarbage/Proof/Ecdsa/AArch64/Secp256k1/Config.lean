@@ -54,5 +54,6 @@ theorem secp256k1_ok (hI : Weierstrass.AArch64.InvSounds) : BaseCfgOk secp256k1 
   call_n := callOf_small (by decide)
   inv_at := .inl rfl
   inv_fn := fun h => absurd rfl h
+  padd := fun h => absurd rfl h
 
 end VG.Proof.Ecdsa.AArch64.Secp256k1

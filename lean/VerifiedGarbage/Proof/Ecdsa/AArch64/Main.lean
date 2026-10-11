@@ -52,10 +52,10 @@ def CombCorrect (c : Cfg) (code : Prog isa) : Prop :=
 
 theorem combCorrect (hc : CfgOk c) (hC : Law c.C)
     (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start) :
-    CombCorrect c (TCombCfg.comb c.combCfg) := by
+    CombCorrect c (TCombCfg.comb c.combCfg false c.padd) := by
   intro base k T s hs hm hf
   exact tcomb_ok (publicLookup := false) (tcombLay hc) (combA hc) hC hc.am3 hc.onG
-    (tcombVals hc hC hT) hc.p_lt hs hm hf
+    (tcombVals hc hC hT) hc.p_lt hs hm hf (combAddOk hc)
 
 /-- `[k]G` by the comb, then `Z^(p-2)`. -/
 theorem stage₂_with (hc : BaseCfgOk c) (comb : Prog isa) (hcomb : CombCorrect c comb)
@@ -116,7 +116,7 @@ theorem stage₂_with (hc : BaseCfgOk c) (comb : Prog isa) (hcomb : CombCorrect 
 theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
     {s₀ : State} {base : Addr} (hTP : TblPre c s₀ (s₀.syms c.tsym) base) {hs : Option Nat} {s : State} (hS : St₁ c hs s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (TCombCfg.comb c.combCfg) (.seq c.pPow rest)) s Q :=
+    WP isa (.seq (TCombCfg.comb c.combCfg false c.padd) (.seq c.pPow rest)) s Q :=
   stage₂_with hc _ (combCorrect hc hC hT) hTP hS h
 
 /-- After `x`, `r`, the checks and `k^(n-2)`. -/
@@ -264,7 +264,7 @@ theorem stage₄ (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : SignOutp
     rw [bytes, hd]; rfl
 
 theorem sign_eq (c : Cfg) : c.sign = .seq (.block (c.setupWith (some E))) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
-    (.seq (TCombCfg.comb c.combCfg) (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))) :=
+    (.seq (TCombCfg.comb c.combCfg false c.padd) (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))) :=
   rfl
 
 theorem signWith_ok (hc : BaseCfgOk c) (hC : Law c.C) (comb : Prog isa)

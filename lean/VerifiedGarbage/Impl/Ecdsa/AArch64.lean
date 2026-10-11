@@ -5,6 +5,7 @@ import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Spec.Ecdsa
 import VerifiedGarbage.Spec.Weierstrass.Inverse
+import VerifiedGarbage.Spec.Weierstrass.PointOps
 
 /-!
 # ECDSA signing on AArch64
@@ -129,6 +130,10 @@ structure Cfg where
   and `k^(n-2)` (`invFn`), which every function calls (`pPow`, `nPow`);
   else they run them inline. -/
   inverse : Option Spec.Weierstrass.Inverse.Curve := none
+  /-- The curve whose function `vg_<curve>_proj_add`
+  (`Spec/Weierstrass/PointOps.lean`) the complete additions call (`padd`);
+  else they run inline. -/
+  pointOps : Option Spec.Weierstrass.PointOps.Curve := none
 
 namespace Cfg
 
@@ -168,6 +173,15 @@ def MN' : Mod where
 def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 
 def rcbSlots : RcbSlots := ⟨c.sl AP, c.sl BM, c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5⟩
+
+/-- The complete additions' function, if any: its name and where it reads
+`b` (`EM`'s slot, `PointOps.Curve.bAt`, which no addition overlaps in time). -/
+def padd : Option (String × Nat) := c.pointOps.map fun C => (C.projAddApi.name, c.sl EM)
+
+/-- `vg_<curve>_proj_add`: `D = R + T` by Algorithm 4, `b` at `EM`'s slot. -/
+def projAddFn : Prog isa :=
+  fprogB c.MP' (rcb3 { c.rcbSlots with a := c.sl EM, b3 := c.sl EM } (c.pt RX RY RZ) (c.pt TX TY TZ)
+    (c.pt DX DY DZ))
 
 /-- The comb's digits: `combJ n` of 7 bits cover the scalar's `64 n`. -/
 def combW : Nat := 7
@@ -363,7 +377,7 @@ def signWith (comb : Prog isa) : Prog isa :=
   .seq c.nPow c.scalar
 
 /-- Signing with the original complete-addition comb. -/
-def sign : Prog isa := c.signWith (TCombCfg.comb c.combCfg)
+def sign : Prog isa := c.signWith (TCombCfg.comb c.combCfg false c.padd)
 
 end Cfg
 
