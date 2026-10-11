@@ -259,7 +259,7 @@ def dirCoreSpec (up : Bool) : BlockSpec (dirCore up) where
     by simp only [dirCore]; decide, by simp only [dirCore]; decide⟩
   keyRegs_ok := by simp only [dirCore]; decide
   regs_ok := by simp only [dirCore, Modes.AArch64.regsOk]; decide
-  keyArgs_congr h hr hrd hwr hf := keyArgs_congr h hr hrd hwr hf
+  keyArgs_congr h hr hrd hwr _ hf := keyArgs_congr h hr hrd hwr hf
   ready_frame h hf _ hw hg := ready_frame h hf hw hg
   prepare_wp := prepare_wp
   crypt_wp := crypt_wp

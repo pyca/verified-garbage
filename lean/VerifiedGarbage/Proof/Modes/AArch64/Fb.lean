@@ -116,7 +116,8 @@ theorem fb_wp (cs : BlockSpec c) (mo : FbMode) {r : CtrRegs} (hr : RegsOk r) (hd
   have kr := keyRegs_ne cs.keyRegs_ok
   have hkA : cs.KeyArgs sA [S] k :=
     cs.keyArgs_congr hk (fun x hx => gA' x (not_setupRegs (kr x hx)).1 (fun e => hiv.key (e ▸ hx))
-      (fun e => dk (e ▸ hx)) (fun e => lk (e ▸ hx))) rdA' wrA' fA
+      (fun e => dk (e ▸ hx)) (fun e => lk (e ▸ hx))) rdA' wrA'
+      (by rw [runBlock_syms eA, runBlock_syms eS, runBlock_syms eE]) fA
   -- The key.
   refine WP.seq (WP.mono (WP.keepReg hsc.1 (cs.prepare_wp bA ⟨by rw [wrA']; exact hs.wr, hs.fit⟩
     List.mem_cons_self hkA)) fun s₄ ⟨⟨ready₄, b₄, dr₄, lr₄, f₄, rd₄, wr₄⟩, iv₄⟩ => ?_)
@@ -129,14 +130,14 @@ theorem fb_wp (cs : BlockSpec c) (mo : FbMode) {r : CtrRegs} (hr : RegsOk r) (hd
       exact f₄.readW (Region.contains_self _ _) (fun x hx => by
         simp only [List.mem_singleton] at hx; subst hx; exact slotCore i hi) (by decide)
   -- The IV to the buffer.
-  refine WP.seq (WP.mono (copyN_wp (k := c.bw) (t := .x6) (u := .x6) (rd := sb) (rs := ivR) (od := 8 * c.buf)
+  refine WP.seq (WP.mono_syms (copyN_wp (k := c.bw) (t := .x6) (u := .x6) (rd := sb) (rs := ivR) (od := 8 * c.buf)
     (os := 0) (P := T) (Q := P)
     ⟨by rw [b₄], by rw [ivR₄]; simp, by decide, Ne.symm i6, by decide, Ne.symm i6, by omega, by decide, by omega,
       by omega, fun w hw => by rw [wr₄', addr_add]; exact inS (by omega),
       fun w hw => by
         rw [rd₄', wr₄']
         exact inRd ⟨_, hwP, VG.Offset.contains_base P (by omega) (by omega)⟩,
-      dTP, by omega⟩) fun s₅ h₅ => ?_)
+      dTP, by omega⟩) fun s₅ h₅ sy₅ => ?_)
   have g₅ : ∀ x, x ≠ .x6 → s₅.gpr x = s₄.gpr x := fun x h => h₅.regs x h h
   have mem₅ : s₅.mem = over s₄.mem T (8 * c.bw) fun i => s₄.mem (P + BitVec.ofNat 64 i) := h₅.mem
   have f₅ : Frame [⟨T, (8 * c.bw)⟩] s₄.mem s₅.mem := by rw [mem₅]; exact over_frame _ _ _ _
@@ -189,7 +190,7 @@ theorem fb_wp (cs : BlockSpec c) (mo : FbMode) {r : CtrRegs} (hr : RegsOk r) (hd
         simp only [List.mem_singleton] at hx; subst hx; exact .inr subTbuf)
         ⟨fun x hx => by
           simp only [List.mem_singleton] at hx; subst hx; exact ⟨S, by rw [wr₄']; exact hs.wr, subT⟩,
-          h₅.rd, h₅.wr⟩
+          h₅.rd, h₅.wr, sy₅⟩
         (fun x hx => by obtain ⟨h1, -, -⟩ := of_not_modeRegs hx; exact g₅ x (not_own h1).1),
       fun _ _ => rfl, ?_, ?_, by omega, buf₅, fun q hq r hr => ?_, Frame.refl _ _, rfl, rfl, rfl⟩
     · rw [g₅ _ d6, dr₄, drA, gS _ (Ne.symm hiv.data), gE _ ds', hD]; simp

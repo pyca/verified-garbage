@@ -197,7 +197,8 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
     rcases hr with rfl | rfl
     · exact .inr fun _ h => h
     · exact .inl (VG.Offset.disjoint_base B (by simp only [Core.hiSlot]; omega)
-        (by simp only [Core.hiSlot]; omega)).symm) ⟨fun r hr => ⟨_, hwS, subBC r hr⟩, rd₁, wr₁⟩
+        (by simp only [Core.hiSlot]; omega)).symm) ⟨fun r hr => ⟨_, hwS, subBC r hr⟩, rd₁, wr₁,
+      runBlock_syms e₁⟩
     fun r hr => o₁ r (of_not_modeRegs hr).1
   -- The keystream.
   refine WP.seq (WP.mono (cs.crypt_wp base₁ ⟨by rw [wr₁]; exact hwS, hfit⟩ ready₁)
@@ -218,7 +219,7 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
   have data₂ : s₂.gpr c.dataReg = A := by rw [dr₂, o₁ _ down, hi.dataR]
   have wr₂' : s₂.wr = s.wr := by rw [wr₂, wr₁]
   have rd₂' : s₂.rd = s.rd := by rw [rd₂, rd₁]
-  refine WP.seq (WP.mono (groupCount_wp hL.lgG_lt l13 left₂ hv) fun s₃ ⟨c₃, o₃, m₃, rd₃, wr₃⟩ => ?_)
+  refine WP.seq (WP.mono_syms (groupCount_wp hL.lgG_lt l13 left₂ hv) fun s₃ ⟨c₃, o₃, m₃, rd₃, wr₃⟩ sy₃ => ?_)
   have base₃ : s₃.gpr sb = B := by rw [o₃ _ (by decide) (by decide), base₂]
   obtain ⟨s₄, e₄, a₄, b₄, t₄, o₄, m₄, rd₄, wr₄⟩ := xorArgs_ok hL.bufImm d14 s₃ base₃
   refine WP.seq (WP.of_runBlock ⟨s₄, e₄, ?_⟩)
@@ -226,12 +227,12 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
   have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃, wr₂']
   have rd₄' : s₄.rd = s.rd := by rw [rd₄, rd₃, rd₂']
   -- The keystream XORed into the group's blocks.
-  refine WP.seq (WP.mono (xorBlocks_wp (A := T) (B := A) hc0 (by omega)
+  refine WP.seq (WP.mono_syms (xorBlocks_wp (A := T) (B := A) hc0 (by omega)
     (fun t ht => by rw [rd₄', wr₄']; exact inRd (inT t (by omega)))
     (fun t ht => by rw [wr₄']; exact inA t ht) sepAT.symm
     ⟨by rw [a₄]; simp [T], by rw [b₄, o₃ _ d13 d16, data₂]; simp [A],
       by rw [t₄, c₃, Nat.sub_zero], fun t ht => by omega, fun t _ _ => rfl,
-      Frame.refl _ _, fun _ _ _ _ _ _ => rfl, rfl, rfl⟩) fun s₅ h₅ => ?_)
+      Frame.refl _ _, fun _ _ _ _ _ _ => rfl, rfl, rfl⟩) fun s₅ h₅ sy₅ => ?_)
   have f₅ : Frame [⟨A, 16 * cc⟩] s₂.mem s₅.mem := by rw [← mem₄]; exact h₅.frame
   have keep₄ : ∀ r, r ∉ ownRegs → s₅.gpr r = s₂.gpr r := fun r hr => by
     obtain ⟨-, -, h8, h9, -, h13, h14, h15, h16, h17⟩ := nown hr
@@ -258,13 +259,14 @@ theorem ctrGroup_wp (cs : CoreSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k :
     congr 2
     exact decide_eq_decide.mpr (by omega)
   have ready₆ : cs.Ready s₆ B k := by
-    refine cs.ready_frame ready₂ (by rw [m₆]; exact f₅) (fun r hr => ?_) ⟨fun r hr => ?_, ?_, ?_⟩ fun r hr => ?_
+    refine cs.ready_frame ready₂ (by rw [m₆]; exact f₅) (fun r hr => ?_) ⟨fun r hr => ?_, ?_, ?_, ?_⟩ fun r hr => ?_
     · simp only [List.mem_singleton] at hr; subst hr
       exact .inl (((hp.sep.sub_left (VG.Offset.sub_base D (by omega))).sub_right subCore).symm)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, by rw [wr₂, wr₁]; exact hwD, VG.Offset.sub_base D (by omega)⟩
     · rw [rd₆, rd₅', rd₂, rd₁]
     · rw [wr₆, wr₅', wr₂, wr₁]
+    · rw [runBlock_syms e₆, sy₅, runBlock_syms e₄, sy₃]
     · obtain ⟨h1, h2, h3⟩ := of_not_modeRegs hr
       rw [o₆ r h2 h3, keep₄ r h1]
   -- The data.
