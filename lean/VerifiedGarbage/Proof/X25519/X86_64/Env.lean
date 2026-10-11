@@ -70,9 +70,9 @@ structure FieldOk (fld : Field) : Prop where
   sqr : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o a : Nat}, Slot o → Slot a →
     WP isa (.block (fld.sqr o a)) s fun s' =>
       Op base o s s' ∧ F s'.mem base o = F s.mem base a * F s.mem base a
-  a24 : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o a : Nat}, Slot o → Slot a →
-    WP isa (.block (fld.a24 o a)) s fun s' =>
-      Op base o s s' ∧ F s'.mem base o = Spec.X25519.a24 * F s.mem base a
+  a24add : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o b a : Nat}, Slot o → Slot b → Slot a →
+    WP isa (.block (fld.a24add o b a)) s fun s' =>
+      Op base o s s' ∧ F s'.mem base o = F s.mem base b + Spec.X25519.a24 * F s.mem base a
   mul2 : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o a b : Nat}, Slot o → Slot a → Slot b →
     WP isa (.block (fld.mul2 o a b)) s fun s' => Op base o s s' ∧
       F s'.mem base o = F s.mem base a * F s.mem base b + F s.mem base a * F s.mem base b
@@ -107,7 +107,7 @@ theorem dbl_after {code : List Instr} {s : State} {base : Addr} (hs : Scr s base
 theorem baseline_ok : FieldOk baseline where
   mul hs _ _ _ ho ha hb := mul_ok hs ho ha hb
   sqr hs _ _ ho ha := sqr_ok hs ho ha
-  a24 hs _ _ ho ha := mulA24_ok hs ho ha
+  a24add hs _ _ _ ho hb ha := mulA24Add_ok hs ho hb ha
   mul2 hs _ _ _ ho ha hb := dbl_after hs ho (mul_ok hs ho ha hb)
   sqr2 hs _ _ ho ha := dbl_after hs ho (sqr_ok hs ho ha)
   mulB hs _ _ _ ho ha hb := mulBnd_ok hs ho ha hb
@@ -123,7 +123,8 @@ abbrev Env := Fin 128 → Spec.X25519.Fe
 def opMul (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a * e b)
 def opAdd (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a + e b)
 def opSub (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a - e b)
-def opA24 (o a : Fin 128) (e : Env) : Env := Function.update e o (Spec.X25519.a24 * e a)
+def opA24Add (o b a : Fin 128) (e : Env) : Env :=
+  Function.update e o (e b + Spec.X25519.a24 * e a)
 def opSwap (x y : Fin 128) (sw : Bool) (e : Env) : Env :=
   Function.update (Function.update e x (if sw then e y else e x)) y (if sw then e x else e y)
 
@@ -154,13 +155,6 @@ theorem subE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho :
     WP isa (.block (sub (32 * o.val) (32 * a.val) (32 * b.val))) s fun s' =>
       Keep base s s' ∧ E s'.mem base = opSub o a b (E s.mem base) :=
   WP.mono (sub_ok hs (by omega) (by omega) (by omega)) fun _ ⟨h, e⟩ =>
-    ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl⟩
-
-include hf in
-theorem a24E {s : State} {base : Addr} (hs : Scr s base) (o a : Fin 128) (ho : LSlot o) :
-    WP isa (.block (fld.a24 (32 * o.val) (32 * a.val))) s fun s' =>
-      Keep base s s' ∧ E s'.mem base = opA24 o a (E s.mem base) :=
-  WP.mono (hf.a24 hs (by omega) (by omega)) fun _ ⟨h, e⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl⟩
 
 theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (x y : Fin 128) (hx : LSlot x)
@@ -215,11 +209,11 @@ theorem subCmovE {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem⟩
 
 include hf in
-theorem a24EB {s : State} {base : Addr} (hs : Scr s base) (o a : Fin 128) (ho : LSlot o) :
-    WP isa (.block (fld.a24 (32 * o.val) (32 * a.val))) s fun s' =>
-      Keep base s s' ∧ E s'.mem base = opA24 o a (E s.mem base) ∧
+theorem a24AddEB {s : State} {base : Addr} (hs : Scr s base) (o b a : Fin 128) (ho : LSlot o) :
+    WP isa (.block (fld.a24add (32 * o.val) (32 * b.val) (32 * a.val))) s fun s' =>
+      Keep base s s' ∧ E s'.mem base = opA24Add o b a (E s.mem base) ∧
         Outside base (32 * o.val) 32 s.mem s'.mem :=
-  WP.mono (hf.a24 hs (by omega) (by omega)) fun _ ⟨h, e⟩ =>
+  WP.mono (hf.a24add hs (by omega) (by omega) (by omega)) fun _ ⟨h, e⟩ =>
     ⟨h.keep (by omega) (by omega), by rw [E_update h.mem, e]; rfl, h.mem⟩
 
 theorem cswapEB {s : State} {base : Addr} (hs : Scr s base) (x y : Fin 128) (hx : LSlot x)
