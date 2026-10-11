@@ -1,3 +1,6 @@
+import VerifiedGarbage.Proof.Dsa.X86_64.CoreCalls
+import VerifiedGarbage.Proof.Dsa.X86_64.CoreReduce
+import VerifiedGarbage.Proof.Dsa.X86_64.CoreAdd
 import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.DomainShape
@@ -8,6 +11,8 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Reduce
 import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Load
 import VerifiedGarbage.Proof.Dsa.X86_64.Store
+import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
+import VerifiedGarbage.Proof.Dsa.X86_64.Finish
 import VerifiedGarbage.Proof.Dsa.X86_64.SignificantLoop
 import VerifiedGarbage.Proof.Dsa.X86_64.Power
 import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
@@ -67,3 +72,24 @@ The whole-operation contracts must be proved before artifacts are registered.
 #assert_standard_axioms VG.Proof.Dsa.significant_width
 
 #assert_standard_axioms VG.Proof.Dsa.X86_64.significant_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.operand_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.enter_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.leave_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.operand_context
+#assert_standard_axioms VG.Proof.Dsa.X86_64.storeSuffix_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.finish_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.returnAfter_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.call_ready
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.arguments_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.arguments2_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.call3_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.call2_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.corePow_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.coreProduct_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.coreReduce_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.add_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.coreAdd_ok
