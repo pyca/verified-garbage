@@ -468,7 +468,12 @@ const POWERS_AFTER: u32 = 32;
 /// computed once the key has been used enough ([`Powers::get`]).
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 struct Powers {
-    /// The calls that could have read the powers, before they were ready.
+    /// The `_prepared` instances of the key's backend, if this CPU runs
+    /// them (`Backend::prepared`).
+    fns: Option<&'static Prepared>,
+    /// The calls that could have read the powers, before they were ready
+    /// (counted without a read-modify-write: one lost to a race only
+    /// delays the powers).
     calls: AtomicU32,
     /// Null, or the key context, from `Box::into_raw`: written before it is
     /// published here (with release ordering), never written again while it
@@ -478,35 +483,32 @@ struct Powers {
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 impl Powers {
-    /// No powers yet.
-    fn new() -> Self {
+    /// No powers yet, for a key whose backend is `backend`.
+    fn new(backend: Backend) -> Self {
         Powers {
+            fns: backend.prepared(),
             calls: AtomicU32::new(0),
             ctx: AtomicPtr::new(core::ptr::null_mut()),
         }
     }
 
-    /// The key context with the powers, and `backend`'s `_prepared`
-    /// instances, for a call (long enough to gain from them) with
-    /// `backend`'s instances for `rounds` rounds and the key context `key`
-    /// of `vg_aes_gcm_init`: none if `backend` has no `_prepared` instances
-    /// this CPU runs (`Backend::prepared`); otherwise the powers, computed
-    /// by this call if the key has made `POWERS_AFTER` such calls and they
-    /// are not ready yet.
-    fn get(
-        &self,
-        backend: Backend,
-        rounds: usize,
-        key: &[u64; 32],
-    ) -> Option<(&[u64; 128], &'static Prepared)> {
-        let fns = backend.prepared()?;
+    /// The key context with the powers, and the backend's `_prepared`
+    /// instances, for a call (long enough to gain from them) for `rounds`
+    /// rounds with the key context `key` of `vg_aes_gcm_init`: none if the
+    /// backend has no `_prepared` instances this CPU runs; otherwise the
+    /// powers, computed by this call if the key has made `POWERS_AFTER`
+    /// such calls and they are not ready yet.
+    fn get(&self, rounds: usize, key: &[u64; 32]) -> Option<(&[u64; 128], &'static Prepared)> {
+        let fns = self.fns?;
         let p = self.ctx.load(Ordering::Acquire);
         if !p.is_null() {
             // SAFETY: a published key context (see `ctx`), which the acquire
             // load orders after its writes; it lives as long as `self`.
             return Some((unsafe { &*p }, fns));
         }
-        if self.calls.fetch_add(1, Ordering::Relaxed) < POWERS_AFTER - 1 {
+        let calls = self.calls.load(Ordering::Relaxed);
+        if calls < POWERS_AFTER - 1 {
+            self.calls.store(calls + 1, Ordering::Relaxed);
             return None;
         }
         let mut ctx = Box::new([0; 128]);
@@ -569,6 +571,7 @@ impl Clone for Powers {
             Box::into_raw(Box::new(unsafe { *p }))
         };
         Powers {
+            fns: self.fns,
             calls: AtomicU32::new(self.calls.load(Ordering::Relaxed)),
             ctx: AtomicPtr::new(ctx),
         }
@@ -679,12 +682,13 @@ impl AesGcm {
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(Error::InvalidKeyLength);
         }
+        let backend = select(detected());
         let mut k = AesGcm {
             ctx: [0; 32],
             rounds: key.len() / 4 + 6,
-            backend: select(detected()),
+            backend,
             #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-            powers: Powers::new(),
+            powers: Powers::new(backend),
         };
         let init = instance!(k.backend, vg_aes_gcm_init,
             x86_64: [vg_aes_gcm_init_aesni, vg_aes_gcm_init_pclmul, vg_aes_gcm_init_aesni_pclmul],
@@ -1094,7 +1098,7 @@ impl AesGcm {
     /// `Powers::get` gives it.
     #[inline(never)]
     fn seal_prepared(&self, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Option<Block> {
-        let (ctx, fns) = self.powers.get(self.backend, self.rounds, &self.ctx)?;
+        let (ctx, fns) = self.powers.get(self.rounds, &self.ctx)?;
         let mut tag: Block = [0; 16];
         let seal = fns.seal;
         // SAFETY: as in `encrypt_in_place`, with `ctx` the key context
@@ -1127,7 +1131,7 @@ impl AesGcm {
         data: &mut [u8],
         tag: &[u8],
     ) -> Option<Result<(), Error>> {
-        let (ctx, fns) = self.powers.get(self.backend, self.rounds, &self.ctx)?;
+        let (ctx, fns) = self.powers.get(self.rounds, &self.ctx)?;
         let open = fns.open;
         // SAFETY: as in `seal_prepared`, with the received tag `tag`
         // valid for reads of its length.
@@ -1164,7 +1168,7 @@ impl AesGcm {
         count: usize,
         out: &mut [u8],
     ) -> Option<Block> {
-        let (ctx, fns) = self.powers.get(self.backend, self.rounds, &self.ctx)?;
+        let (ctx, fns) = self.powers.get(self.rounds, &self.ctx)?;
         let mut tag: Block = [0; 16];
         let seal = fns.seal_gather;
         // SAFETY: as in `encrypt`, with `src` the `count` descriptors it
@@ -1330,11 +1334,7 @@ impl<const DECRYPT: bool> Stream<'_, DECRYPT> {
     /// gives it: whether it did (leaving `self.text_len` to the caller).
     #[inline(never)]
     fn update_prepared(&mut self, data: &mut [u8]) -> bool {
-        let Some((ctx, fns)) =
-            self.key
-                .powers
-                .get(self.key.backend, self.key.rounds, &self.key.ctx)
-        else {
+        let Some((ctx, fns)) = self.key.powers.get(self.key.rounds, &self.key.ctx) else {
             return false;
         };
         let f = if DECRYPT {
@@ -1901,6 +1901,7 @@ mod tests {
         fn with_backend(&self, backend: Backend) -> AesGcm {
             let mut k = self.clone();
             k.backend = backend;
+            k.powers.fns = backend.prepared();
             k
         }
     }
@@ -2129,11 +2130,7 @@ mod tests {
         for key_len in [16, 24, 32] {
             let k = AesGcm::new(&[0x3c; 32][..key_len]).unwrap();
             let base = k.with_backend(Backend::Scalar);
-            assert!(
-                base.powers
-                    .get(base.backend, base.rounds, &base.ctx)
-                    .is_none()
-            );
+            assert!(base.powers.get(base.rounds, &base.ctx).is_none());
             for b in [Backend::VaesVpclmulAvx512, Backend::AesNiPclmulAvx] {
                 // Without the backend's features (or those of its key setup with
                 // the powers), only what needs none of them.
@@ -2191,11 +2188,8 @@ mod tests {
                 assert_eq!((out, tag), (want, Ok(want_tag)));
                 // A clone copies the powers if they are ready, and not otherwise.
                 let copy = k.clone();
-                let (powers, _) = k.powers.get(k.backend, k.rounds, &k.ctx).unwrap();
-                let copied = copy
-                    .powers
-                    .get(copy.backend, copy.rounds, &copy.ctx)
-                    .map(|(c, _)| c);
+                let (powers, _) = k.powers.get(k.rounds, &k.ctx).unwrap();
+                let copied = copy.powers.get(copy.rounds, &copy.ctx).map(|(c, _)| c);
                 assert_eq!(copied, Some(powers));
                 assert!(!core::ptr::eq(copied.unwrap(), powers));
                 assert!(!ready(&fresh.clone()));
