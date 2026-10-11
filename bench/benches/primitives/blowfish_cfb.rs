@@ -48,9 +48,13 @@ pub fn bench(c: &mut Criterion) {
             let mut output = vec![0; size + 8];
             group.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
                 b.iter(|| {
-                    let mut ctx =
-                        Crypter::new(Cipher::bf_cfb64(), mode, black_box(&key), Some(black_box(&iv)))
-                            .unwrap();
+                    let mut ctx = Crypter::new(
+                        Cipher::bf_cfb64(),
+                        mode,
+                        black_box(&key),
+                        Some(black_box(&iv)),
+                    )
+                    .unwrap();
                     ctx.pad(false);
                     let n = ctx.update(black_box(&data), &mut output).unwrap();
                     let n = n + ctx.finalize(&mut output[n..]).unwrap();
