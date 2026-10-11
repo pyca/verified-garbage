@@ -10,7 +10,7 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P192.curve) : List Ar
   { Spec.EcKey.P192.publicKeyApi with
     target := X86_64.target
     doc := Spec.EcKey.P192.publicKeyApi.doc (notes := ["Field elements are four 64-bit words in Montgomery form. \
-      Scalar multiplication uses a fixed 256-iteration ladder with the general complete addition \
+      Scalar multiplication calls `vg_p192_mul`, a fixed 256-iteration ladder with the general complete addition \
       formulas of Renes, Costello and Batina (Algorithm 1). \
       Inversions use divsteps. Branches and memory addresses depend only on pointers and loop counters."])
     code := Impl.EcKey.X86_64.publicKeyP192

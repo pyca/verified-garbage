@@ -25,7 +25,8 @@ ECDSA's signature (`Impl/Ecdsa/X86_64.lean`) and of ECDH
    to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's window method (for
    up to nine words, with `b R mod p` set again in ECDH's slot of it), or
    its ladder (from the table of `v`'s bits), and `[u]G + [v]Q` by the
-   complete addition, into `R`;
+   complete addition, into `R`; a curve with `vg_<curve>_mul` computes
+   both by its calls instead;
 6. for a curve with `pubVerify` (P-256, P-384 and P-521, where `n < p ≤ 2n`),
    compare `X` with `r Z` and, when `r + n < p`, `(r + n) Z`; other curves
    invert `Z` and compare the affine x-coordinate modulo `n`.
@@ -161,10 +162,21 @@ def mulV : Prog isa :=
         Impl.Ecdh.X86_64.BP)))
   else .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) (ladder (Impl.Ecdh.X86_64.Cfg.ladderQ c))
 
-/-- `[u]G + [v]Q`, into `R`, from `u` and `v`. -/
+/-- `[u]G + [v]Q`, into `R`, from `u` and `v`; for a curve with
+`vg_<curve>_mul`, by its calls, each from `K` and `R`'s first two slots, `r`
+kept meanwhile in `D` (the hash's slot, which `uv` has read). -/
 def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (c.gMul c.pubVerify) <| .seq (.block (save c)) <|
-  .seq (mulV c) (sum c)
+  match c.mul with
+  | some C =>
+    .seq (.block (copy c.n (c.sl D) (c.sl K) ++ copy c.n (c.sl K) (c.sl U) ++
+      copy c.n (c.sl RX) (c.sl GX) ++ copy c.n (c.sl RY) (c.sl GY))) <|
+    .seq (.call C.mulApi.name c.mulFn) <| .seq (.block (save c)) <|
+    .seq (.block (copy c.n (c.sl K) (c.sl V) ++ copy c.n (c.sl RX) (c.sl Impl.Ecdh.X86_64.PX) ++
+      copy c.n (c.sl RY) (c.sl Impl.Ecdh.X86_64.PY))) <|
+    .seq (.call C.mulApi.name c.mulFn) <| .seq (sum c) (.block (copy c.n (c.sl K) (c.sl D)))
+  | none =>
+    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (c.gMul c.pubVerify) <| .seq (.block (save c)) <|
+    .seq (mulV c) (sum c)
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=

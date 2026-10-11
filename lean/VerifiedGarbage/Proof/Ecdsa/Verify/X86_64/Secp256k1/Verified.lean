@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 
 /-!
 # ECDSA verification over secp256k1 on x86-64: `Verified`
@@ -28,16 +29,17 @@ theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre secp256k1 s := by
   exact ⟨h1, h2, h3, h4, h5, h7, by simp [TblsHeld, Cfg.combConsts, secp256k1, Abi.constsHeld, Abi.constRegions]⟩
 
 theorem verify_x86 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
-    ∃ t s', Exec isa verifySecp256k1 s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (secp256k1_ok hI) hL secp256k1_tbls (pre_of hs)
-  have hsp : ∀ i ∈ instrs verifySecp256k1, Taint.clobbers i .rsp = false := by
+    ∃ t s', Exec isa verifySecp256k1.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
+  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (secp256k1_ok hI) hL secp256k1_tbls (pre_of hs) secp256k1_mulBase
+  have hsp : ∀ i ∈ instrs verifySecp256k1.inline, Taint.clobbers i .rsp = false := by
     have h : verifySecp256k1.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, hrs, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+    ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -62,18 +64,27 @@ materialize_shared verifySecp256k1Erased
 
 theorem verify_ct : ConstantTime isa verifyX86_64.pre verifyX86_64.pub verifySecp256k1 := by
   refine VG.Taint.constantTime_mapBlocks (c' := verifySecp256k1Erased) taintS_eraseInv
-    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) rfl ?_ rfl (by taint_decide)
-  intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) rfl ?_ rfl (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact h1
   · exact h2
   · exact h3
   · exact h4
+  · exact h0
+
+/-- The contract with 8 bytes of stack, for the calls' return address. -/
+theorem implies8 : verifyX86_64.Implies (Spec.Ecdsa.Secp256k1.inst.verifyContract X86_64.abi 8) :=
+  implies.stack8_abi (by
+    sig_implies_sat [Spec.Ecdsa.Secp256k1.inst, Spec.Ecdsa.Instance.verifyContract,
+      Spec.Ecdsa.Instance.verifySig, Spec.Secp256k1.curve, Spec.Ecdsa.scratchWords, X86_64.abi,
+      X86_64.argRegs, satState] [satState] using satState)
 
 theorem verify_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) :
-    Verified X86_64.target verifySecp256k1 (Spec.Ecdsa.Secp256k1.inst.verifyContract X86_64.abi) :=
-  Verified.of_correct (verify_x86 hL hI) verify_ct implies
+    Verified X86_64.target verifySecp256k1 (Spec.Ecdsa.Secp256k1.inst.verifyContract X86_64.abi 8) :=
+  Verified.of_inline_ct (by lit_decide) (verify_x86 hL hI) verify_ct implies8
+    (fun _ h => Sig.clear_of_pre h) fun _ _ _ _ _ hp => hp
 
 end VG.Proof.Ecdsa.Verify.X86_64.Secp256k1

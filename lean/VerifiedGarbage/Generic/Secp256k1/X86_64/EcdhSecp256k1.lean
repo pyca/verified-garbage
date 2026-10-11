@@ -10,7 +10,7 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.Secp256k1.curve) : Li
   { Spec.Ecdh.Secp256k1.exchangeApi with
     target := X86_64.target
     doc := Spec.Ecdh.Secp256k1.exchangeApi.doc (notes := ["Field elements are four 64-bit words in Montgomery form. \
-      Scalar multiplication uses a fixed 256-iteration ladder with the general complete addition \
+      Scalar multiplication calls `vg_secp256k1_mul`, a fixed 256-iteration ladder with the general complete addition \
       formulas of Renes, Costello and Batina (Algorithm 1), including for a = 0. \
       Inversions use divsteps. Branches and memory addresses depend only on pointers and loop counters."])
     code := Impl.Ecdh.X86_64.exchangeSecp256k1

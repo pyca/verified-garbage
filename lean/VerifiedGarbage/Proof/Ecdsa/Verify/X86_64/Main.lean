@@ -77,7 +77,8 @@ theorem consts_tmv (hc : BaseCfgOk c) {base : Addr} {g : Reg → BitVec 64} {s :
 /-- `vg_ecdsa_<curve>_verify` returns whether the specification's
 verification holds, and restores the callee-saved registers. -/
 theorem verify_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
-    (hp : VPre c s₀) :
+    (hp : VPre c s₀)
+    (hmb : MulBaseOk c := by exact ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.verify c).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
@@ -92,7 +93,7 @@ theorem verify_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : St
       (tmv c.C c.n (s₀.gpr .rcx) s₂ (c.sl ONEP)) P := by
     rw [h1]
     exact peerPt_rep hC _ _ _ hM.px hM.py
-  refine points_ok hc hC hT hM hp.tbls (by rw [hp.wr]; simp) (fun r hr => by rw [hp.rd]; simp [hr]) hPc hQ
+  refine points_ok hc hC hT hmb.2 hM hp.tbls (by rw [hp.wr]; simp) (fun r hr => by rw [hp.rd]; simp [hr]) hPc hQ
     fun s₃ hP => ?_
   refine WP.mono (tail_dispatch_ok hc hC hP) fun s' ⟨saved, xo, hxo, hx, rax⟩ =>
     ⟨fun r hr => (saved r hr).trans (hg r hr), ?_⟩

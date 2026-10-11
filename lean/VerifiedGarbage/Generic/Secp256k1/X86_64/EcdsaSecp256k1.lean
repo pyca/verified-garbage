@@ -11,7 +11,7 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.Secp256k1.curve) : Li
   { Spec.Ecdsa.Secp256k1.signApi with
     target := X86_64.target
     doc := Spec.Ecdsa.Secp256k1.signApi.doc (notes := ["Field elements are four 64-bit words in Montgomery form. \
-      Scalar multiplication uses a fixed 256-iteration ladder with the general complete addition \
+      Scalar multiplication calls `vg_secp256k1_mul`, a fixed 256-iteration ladder with the general complete addition \
       formulas of Renes, Costello and Batina (Algorithm 1), including for a = 0. \
       Inversions use divsteps. Branches and memory addresses depend only on pointers and loop counters."])
     code := Impl.Ecdsa.X86_64.signSecp256k1
@@ -21,7 +21,7 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.Secp256k1.curve) : Li
   { Spec.Ecdsa.Secp256k1.verifyApi with
     target := X86_64.target
     doc := Spec.Ecdsa.Secp256k1.verifyApi.doc (notes := ["Field elements are four 64-bit words in Montgomery form. \
-      Scalar multiplication uses a fixed 256-iteration ladder with the general complete addition \
+      Scalar multiplication calls `vg_secp256k1_mul`, a fixed 256-iteration ladder with the general complete addition \
       formulas of Renes, Costello and Batina (Algorithm 1), including for a = 0. \
       Inversions use divsteps. Branches and memory addresses depend only on pointers and loop counters."])
     code := Impl.Ecdsa.Verify.X86_64.verifySecp256k1
