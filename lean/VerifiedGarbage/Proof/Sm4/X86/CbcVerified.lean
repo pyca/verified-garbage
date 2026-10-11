@@ -68,9 +68,9 @@ theorem seqPre_of {enc : Bool} {M : Mode} (d : Dir) (hstep : M.step = 16) (hiv :
     SeqPre (dirCore d) M s := by
   obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, dAD, dAS, dRD, dRS, fK, fV, fD, fS, fE⟩ := h
   have hL := (dirCoreSpec d).layout
-  refine ⟨(by rw [hrd]; simp), fE, ⟨(by rw [hwr]; simp [dirCore, tableEnd_eq]),
+  refine ⟨(by rw [hrd]; simp [dirCore]), fE, ⟨(by rw [hwr]; simp [dirCore, tableEnd_eq]),
       (by simp only [dirCore, tableEnd_eq]; omega)⟩, (by rw [hrd]; simp [dirCore]),
-    (fun h => by rw [hiv] at h; cases h), (by simp only [dirCore]; omega), (by rw [hwr, hstep]; simp),
+    (fun h => by rw [hiv] at h; cases h), (by simp only [dirCore]; omega), (by rw [hwr, hstep]; simp [dirCore]),
     (by rw [hstep]; exact fD), ?_, ?_, (fun h => by rw [hiv] at h; cases h), ?_, ?_, ?_, ?_,
     (fun h => by rw [hiv] at h; cases h), disjoint_empty _ _, disjoint_empty _ _,
     disjoint_empty _ _, disjoint_empty _ _, (by simp [dirCore]), (by rw [hstep]; simp [dirCore]), hL⟩

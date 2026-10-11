@@ -10,7 +10,8 @@ of the scratch buffer. The core is inlined. The functions take, cdecl (every
 argument on the stack, `[esp + 4]` the first on entry), the key, the
 initialization vector (or chaining value), the data, its length in steps
 (blocks, or bytes for CFB8) and the scratch buffer:
-`f(key, iv, data, n, scratch)`.
+`f(key, iv, data, n, scratch)`, where the key is the core's `ka` arguments
+(the schedule, and for some ciphers the number of rounds).
 
 The scratch buffer's address is in `sb` (`edi`) throughout; its first
 `core.slots` 4-byte slots are the core's, the next 10 the mode's: the
@@ -61,7 +62,8 @@ slots at `sb`, `prepare` makes the key, given by the stack arguments, ready
 in the core's slots `[0, slots)`, and `crypt` replaces the `G` blocks of
 `bw` words of the buffer at slot `buf` with their encryptions. Both keep
 `sb` and `esp`, and may use `stack` bytes below `esp`. A mode keeps its own
-slots in `[slots, total)`. -/
+slots in `[slots, total)`. The key is the first `ka` arguments; the mode's
+follow. -/
 structure Core where
   prepare : Prog isa
   crypt : Prog isa
@@ -71,6 +73,7 @@ structure Core where
   G : Nat
   bw : Nat
   stack : Nat := 0
+  ka : Nat := 1
 
 namespace Core
 
@@ -110,20 +113,20 @@ def opsCode (os : List Op) : List Instr := os.flatMap c.opCode
 
 /-! ## The function -/
 
-/-- The scratch buffer (argument 4) to `sb`, the callee-saved registers to
+/-- The scratch buffer (argument `ka + 3`) to `sb`, the callee-saved registers to
 their slots first. -/
 def entry : List Instr :=
-  ([.mov .eax (.mem (argOp 4))] : List Instr) ++
+  ([.mov .eax (.mem (argOp (c.ka + 3)))] : List Instr) ++
     (List.range 4).map (fun i => .store (at_ .eax (4 * c.savedSlot i)) (savedRegs.getD i .ebx)) ++
     [.mov sb (.reg .eax)]
 
-/-- The IV (argument 1, at `esi`, as the data area) to the chaining value. -/
-def ivIn : List Instr := ([.mov .esi (.mem (argOp 1))] : List Instr) ++ c.opsCode (copyBlk c.bw .chn .dat)
+/-- The IV (argument `ka`, at `esi`, as the data area) to the chaining value. -/
+def ivIn : List Instr := ([.mov .esi (.mem (argOp c.ka))] : List Instr) ++ c.opsCode (copyBlk c.bw .chn .dat)
 
-/-- The data pointer and `n` (arguments 2 and 3) to their slots; ZF is set
+/-- The data pointer and `n` (arguments `ka + 1` and `ka + 2`) to their slots; ZF is set
 if `n = 0`. -/
 def args : List Instr :=
-  [.mov .eax (.mem (argOp 2)), .store (slotAt c.dSlot) .eax, .mov .eax (.mem (argOp 3)),
+  [.mov .eax (.mem (argOp (c.ka + 1))), .store (slotAt c.dSlot) .eax, .mov .eax (.mem (argOp (c.ka + 2))),
    .store (slotAt c.nSlot) .eax, .alu .test .eax (.reg .eax)]
 
 /-- The data pointer and the steps left to `esi` and `ebp`. -/
@@ -140,9 +143,9 @@ def body (m : Mode) : Prog isa :=
   .seq (.block (c.load ++ c.opsCode m.pre)) (.seq c.crypt
     (.block (c.load ++ c.opsCode m.post ++ c.advance m.step)))
 
-/-- The chaining value back to the IV (argument 1, at `esi`, as the data
+/-- The chaining value back to the IV (argument `ka`, at `esi`, as the data
 area). -/
-def ivBack : List Instr := ([.mov .esi (.mem (argOp 1))] : List Instr) ++ c.opsCode (copyBlk c.bw .dat .chn)
+def ivBack : List Instr := ([.mov .esi (.mem (argOp c.ka))] : List Instr) ++ c.opsCode (copyBlk c.bw .dat .chn)
 
 /-- The callee-saved registers restored (`sb` last). -/
 def restore : List Instr :=

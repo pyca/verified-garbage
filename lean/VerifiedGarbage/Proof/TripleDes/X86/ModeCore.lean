@@ -420,8 +420,8 @@ def dirCoreSpec (d : Direction) : CoreSpec (dirCore d) where
   cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.TripleDes.cipher, Spec.TripleDes.invCipher]
   layout := ⟨by simp only [dirCore]; decide, .inl rfl, by simp only [dirCore, schedSlot, bufSlot]; omega,
     by simp only [dirCore]; omega⟩
-  keyArgs_congr := keyArgs_congr
-  ready_frame h hesp _ _ hf _ hd := ready_frame h hesp hf hd
+  keyArgs_congr h e r w _ f := keyArgs_congr h e r w f
+  ready_frame h hesp _ _ _ hf _ hd := ready_frame h hesp hf hd
   prepare_wp := prepare_wp d
   crypt_wp := crypt_wp d
 
