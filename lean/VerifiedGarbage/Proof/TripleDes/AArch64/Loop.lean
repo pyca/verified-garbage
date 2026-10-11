@@ -11,17 +11,19 @@ open VG.Proof.TripleDes (roundKey roundPrefix feistelStep)
 def keyAddr (base : Addr) (direction : Direction) (j : Nat) : Addr :=
   base + BitVec.ofNat 64 (8 * (if direction = .encrypt then j else 15 - j))
 
+/-- The key step of a pass, in the low lane of `v0`. -/
+def stepVal (direction : Direction) : BitVec 64 := if direction = .encrypt then 8 else -8
+
 theorem keyAddr_step (base : Addr) (direction : Direction) (j : Nat) (hj : j < 15) :
-    (if direction = .encrypt then keyAddr base direction j + 8
-      else keyAddr base direction j - 8) = keyAddr base direction (j + 1) := by
+    keyAddr base direction j + stepVal direction = keyAddr base direction (j + 1) := by
   cases direction
   · change base + BitVec.ofNat 64 (8 * j) + BitVec.ofNat 64 8 =
       base + BitVec.ofNat 64 (8 * (j + 1))
     rw [Offset.add_ofNat_add_ofNat]
     exact congrArg (fun i => base + BitVec.ofNat 64 i) (by omega)
-  · change base + BitVec.ofNat 64 (8 * (15 - j)) - BitVec.ofNat 64 8 =
+  · change base + BitVec.ofNat 64 (8 * (15 - j)) + -BitVec.ofNat 64 8 =
       base + BitVec.ofNat 64 (8 * (15 - (j + 1)))
-    rw [Offset.add_ofNat_sub _ (by omega)]
+    rw [← BitVec.sub_eq_add_neg, Offset.add_ofNat_sub _ (by omega)]
     exact congrArg (fun i => base + BitVec.ofNat 64 i) (by omega)
 
 structure LoopInv (keys : DesSchedule) (direction : Direction) (base : Addr)
@@ -32,6 +34,8 @@ structure LoopInv (keys : DesSchedule) (direction : Direction) (base : Addr)
   right : s.gpr .x20 = (roundPrefix keys direction (16 - n) v).2.setWidth 64
   counter : s.gpr .x21 = BitVec.ofNat 64 n
   pointer : s.gpr .x22 = keyAddr base direction (16 - n)
+  step : stepOf s = stepVal direction
+  vec : s.v = origin.v
   rd : s.rd = origin.rd
   wr : s.wr = origin.wr
   sp : s.sp = origin.sp
@@ -43,6 +47,7 @@ structure LoopPost (keys : DesSchedule) (direction : Direction)
   left : s.gpr .x19 = (roundPrefix keys direction 16 v).1.setWidth 64
   right : s.gpr .x20 = (roundPrefix keys direction 16 v).2.setWidth 64
   counter : s.gpr .x21 = 0
+  vec : s.v = origin.v
   rd : s.rd = origin.rd
   wr : s.wr = origin.wr
   sp : s.sp = origin.sp
@@ -57,7 +62,7 @@ theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
     (hkeys : ∀ j < 16, (origin.mem.readW (keyAddr base direction j) 64).setWidth 48 =
       roundKey keys direction j)
     (n : Nat) (s : State) (hs : LoopInv keys direction base origin v n s) :
-    WP isa (.block (roundBody ++ roundAdvance direction)) s (fun s' =>
+    WP isa (.block (roundBody ++ roundAdvance)) s (fun s' =>
       (isa.eval (.nonzero .x .x21) s' = some false ∧ LoopPost keys direction origin v s') ∨
       (isa.eval (.nonzero .x .x21) s' = some true ∧ ∃ m < n, LoopInv keys direction base origin v m s')) := by
   have hj : 16 - n < 16 := by omega_using [hs.positive]
@@ -79,8 +84,8 @@ theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
         obtain rfl := List.mem_singleton.mp hq
         exact hsep _ hj) (by decide)
     exact (congrArg (BitVec.setWidth 48) hmem).trans (hkeys _ hj)
-  obtain ⟨s', run, left, right, ptr, count, flag, rd, wr, sp, regs, frame⟩ :=
-    roundStep_ok direction s _ _ (s.mem.readW (s.gpr .x22) 64) n hs.positive
+  obtain ⟨s', run, left, right, ptr, vec, count, flag, rd, wr, sp, regs, frame⟩ :=
+    roundStep_ok s _ _ (s.mem.readW (s.gpr .x22) 64) n hs.positive
       (by omega_using [hs.bounded]) hs.left hs.right rfl hokS hreadS hsepS
       hs.counter
   have hidx : 16 - (n - 1) = 16 - n + 1 := by
@@ -107,13 +112,15 @@ theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
     refine ⟨?_, ?_⟩
     · simpa only [hlast, ne_eq, not_true_eq_false, decide_false] using flag
     · subst n
-      exact ⟨hleft, hright, count, rd.trans hs.rd, wr.trans hs.wr, sp.trans hs.sp, hregs, hframe⟩
+      exact ⟨hleft, hright, count, vec.trans hs.vec, rd.trans hs.rd, wr.trans hs.wr,
+        sp.trans hs.sp, hregs, hframe⟩
   · right
     refine ⟨?_, n - 1, by omega_using [hs.positive], ?_⟩
     · simpa only [hlast, ne_eq, not_false_eq_true, decide_true] using flag
     · refine ⟨by omega_using [hs.positive, hlast], by omega_using [hs.bounded],
-        hleft, hright, count, ?_, rd.trans hs.rd, wr.trans hs.wr, sp.trans hs.sp, hregs, hframe⟩
-      rw [ptr, hs.pointer, keyAddr_step base direction (16 - n) (by
+        hleft, hright, count, ?_, by rw [stepOf, vec]; exact hs.step, vec.trans hs.vec,
+        rd.trans hs.rd, wr.trans hs.wr, sp.trans hs.sp, hregs, hframe⟩
+      rw [ptr, hs.pointer, hs.step, keyAddr_step base direction (16 - n) (by
         omega_using [hs.positive, hlast]), ← hidx]
 
 /-- The complete sixteen-round loop, in either key order. -/
@@ -123,17 +130,18 @@ theorem roundsLoop_ok (keys : DesSchedule) (direction : Direction) (base : Addr)
     (hl : origin.gpr .x19 = v.1.setWidth 64) (hr : origin.gpr .x20 = v.2.setWidth 64)
     (hptr : origin.gpr .x22 = keyAddr base direction 0)
     (hcount : origin.gpr .x21 = BitVec.ofNat 64 16)
+    (hstep : stepOf origin = stepVal direction)
     (hread : ∀ j < 16, InRegions (origin.rd ++ origin.wr) (keyAddr base direction j) 8)
     (hsep : ∀ j < 16, (⟨keyAddr base direction j, 8⟩ : Region).Disjoint (spillRegion origin))
     (hkeys : ∀ j < 16, (origin.mem.readW (keyAddr base direction j) 64).setWidth 48 =
       roundKey keys direction j) :
-    WP isa (.loop (.block (roundBody ++ roundAdvance direction)) (.nonzero .x .x21))
+    WP isa (.loop (.block (roundBody ++ roundAdvance)) (.nonzero .x .x21))
       origin (LoopPost keys direction origin v) := by
-  apply WP.loop (M := isa) (body := .block (roundBody ++ roundAdvance direction))
+  apply WP.loop (M := isa) (body := .block (roundBody ++ roundAdvance))
     (c := .nonzero .x .x21) (Q := LoopPost keys direction origin v) (LoopInv keys direction base origin v)
     (loopStep keys direction base origin v hok hread hsep hkeys)
     16 origin
-  exact ⟨by decide, by decide, hl, hr, hcount, hptr, rfl, rfl, rfl,
+  exact ⟨by decide, by decide, hl, hr, hcount, hptr, hstep, rfl, rfl, rfl, rfl,
     fun _ _ => rfl, Frame.refl _ _⟩
 
 end VG.Proof.TripleDes.AArch64
