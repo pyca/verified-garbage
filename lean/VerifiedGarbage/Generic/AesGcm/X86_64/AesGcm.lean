@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Prepared
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Field
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
@@ -667,7 +667,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     stack := 2576
     verified := initPrepared_framed v.impl
     spSafe := X86_64.withStackScratch_spSafe (by decide) (initPrepared_spSafe v.impl)
-    features := (v.impl.ctr.features ++ v.impl.key.features ++ v.impl.gh.features ++ ["avx2"]).dedup },
+    features := (v.impl.ctr.features ++ v.impl.key.features ++ v.impl.gh.features ++ ["avx", "avx2"]).dedup },
   { Spec.Gcm.encryptBlocksPreparedApi with
     name := Spec.Gcm.encryptBlocksPreparedApi.name ++ v.impl.suffix
     target := X86_64.target

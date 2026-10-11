@@ -85,6 +85,20 @@
 ))]
 
 use crate::arch::gcm::vg_aes_gcm_seal_gather;
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+use crate::arch::gcm::{
+    VG_AES_GCM_INIT_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
+    VG_AES_GCM_INIT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
+    vg_aes_gcm_init_prepared_aesni_pclmul_avx, vg_aes_gcm_init_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_open_prepared_aesni_pclmul_avx, vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512, vg_aes_gcm_seal_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
+};
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
     VG_AES_GCM_SEAL_AES_FEATURES, vg_aes_gcm_init_aes, vg_aes_gcm_open_aes, vg_aes_gcm_seal_aes,
@@ -155,20 +169,6 @@ use crate::arch::gcm::{
     vg_aes_gcm_init, vg_aes_gcm_open, vg_aes_gcm_seal, vg_aes_gcm_stream_aad,
     vg_aes_gcm_stream_decrypt, vg_aes_gcm_stream_encrypt, vg_aes_gcm_stream_finish,
     vg_aes_gcm_stream_init, vg_aes_gcm_stream_verify,
-};
-#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-use crate::arch::gcm::{
-    VG_AES_GCM_INIT_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
-    VG_AES_GCM_INIT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
-    vg_aes_gcm_init_prepared_aesni_pclmul_avx, vg_aes_gcm_init_prepared_vaes_vpclmul_avx512,
-    vg_aes_gcm_open_prepared_aesni_pclmul_avx, vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
-    vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx,
-    vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512,
-    vg_aes_gcm_seal_prepared_aesni_pclmul_avx, vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
-    vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
-    vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512,
-    vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
-    vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
@@ -1330,10 +1330,10 @@ impl<const DECRYPT: bool> Stream<'_, DECRYPT> {
     /// gives it: whether it did (leaving `self.text_len` to the caller).
     #[inline(never)]
     fn update_prepared(&mut self, data: &mut [u8]) -> bool {
-        let Some((ctx, fns)) = self
-            .key
-            .powers
-            .get(self.key.backend, self.key.rounds, &self.key.ctx)
+        let Some((ctx, fns)) =
+            self.key
+                .powers
+                .get(self.key.backend, self.key.rounds, &self.key.ctx)
         else {
             return false;
         };
@@ -2074,41 +2074,41 @@ mod tests {
     fn prepared_boundaries() {
         use super::POWERS_AFTER;
         for b in [Backend::VaesVpclmulAvx512, Backend::AesNiPclmulAvx] {
-        if !detected().contains(b.features()) || b.prepared().is_none() {
-            continue;
-        }
-        for key_len in [16, 24, 32] {
-            let key = &[0x63; 32][..key_len];
-            let warm = AesGcm::new(key).unwrap().with_backend(b);
-            for _ in 0..POWERS_AFTER {
-                warm.encrypt_in_place(&[0; 12], &[], &mut [0; 256]).unwrap();
+            if !detected().contains(b.features()) || b.prepared().is_none() {
+                continue;
             }
-            for len in [
-                255, 256, 257, 511, 512, 513, 767, 768, 769, 1024, 1536, 3071, 3072, 3073, 4097,
-                10000,
-            ] {
-                let plain: alloc::vec::Vec<u8> = (0..len).map(|i| (i * 29 + 7) as u8).collect();
-                for nonce_len in [12, 13] {
-                    let nonce = &[0x41; 13][..nonce_len];
-                    for aad_len in [0, 5, 16, 17] {
-                        let aad = &[0x23; 17][..aad_len];
-                        let fresh = AesGcm::new(key).unwrap().with_backend(b);
-                        let mut want = plain.clone();
-                        let want_tag = fresh.encrypt_in_place(nonce, aad, &mut want).unwrap();
-                        let mut actual = plain.clone();
-                        let tag = warm.encrypt_in_place(nonce, aad, &mut actual).unwrap();
-                        assert_eq!((&actual, tag), (&want, want_tag));
-                        warm.decrypt_in_place(nonce, aad, &mut actual, &tag)
-                            .unwrap();
-                        assert_eq!(actual, plain);
-                        let pieces = [&plain[..len - 1], &plain[len - 1..]];
-                        let tag = warm.encrypt(nonce, aad, &pieces, &mut actual).unwrap();
-                        assert_eq!((&actual, tag), (&want, want_tag));
+            for key_len in [16, 24, 32] {
+                let key = &[0x63; 32][..key_len];
+                let warm = AesGcm::new(key).unwrap().with_backend(b);
+                for _ in 0..POWERS_AFTER {
+                    warm.encrypt_in_place(&[0; 12], &[], &mut [0; 256]).unwrap();
+                }
+                for len in [
+                    255, 256, 257, 511, 512, 513, 767, 768, 769, 1024, 1536, 3071, 3072, 3073,
+                    4097, 10000,
+                ] {
+                    let plain: alloc::vec::Vec<u8> = (0..len).map(|i| (i * 29 + 7) as u8).collect();
+                    for nonce_len in [12, 13] {
+                        let nonce = &[0x41; 13][..nonce_len];
+                        for aad_len in [0, 5, 16, 17] {
+                            let aad = &[0x23; 17][..aad_len];
+                            let fresh = AesGcm::new(key).unwrap().with_backend(b);
+                            let mut want = plain.clone();
+                            let want_tag = fresh.encrypt_in_place(nonce, aad, &mut want).unwrap();
+                            let mut actual = plain.clone();
+                            let tag = warm.encrypt_in_place(nonce, aad, &mut actual).unwrap();
+                            assert_eq!((&actual, tag), (&want, want_tag));
+                            warm.decrypt_in_place(nonce, aad, &mut actual, &tag)
+                                .unwrap();
+                            assert_eq!(actual, plain);
+                            let pieces = [&plain[..len - 1], &plain[len - 1..]];
+                            let tag = warm.encrypt(nonce, aad, &pieces, &mut actual).unwrap();
+                            assert_eq!((&actual, tag), (&want, want_tag));
+                        }
                     }
                 }
             }
         }
-    }
     }
 
     /// A key whose backend has `_prepared` instances computes the powers
@@ -2135,72 +2135,75 @@ mod tests {
                     .is_none()
             );
             for b in [Backend::VaesVpclmulAvx512, Backend::AesNiPclmulAvx] {
-            // Without the backend's features (or those of its key setup with
-            // the powers), only what needs none of them.
-            if !detected().contains(b.features()) || b.prepared().is_none() {
-                continue;
-            }
-            let k = AesGcm::new(&[0x3c; 32][..key_len]).unwrap().with_backend(b);
-            let ready = |k: &AesGcm| !k.powers.ctx.load(Ordering::Acquire).is_null();
-            // Short calls neither use nor count toward the powers.
-            let mut short = msg;
-            let tag = k
-                .encrypt_in_place(&nonce, &aad, &mut short[..POWERS_MIN_LEN - 1])
-                .unwrap();
-            k.decrypt_in_place(&nonce, &aad, &mut short[..POWERS_MIN_LEN - 1], &tag)
-                .unwrap();
-            let mut e = k.encryptor(&nonce).unwrap();
-            e.update(&mut short[..POWERS_MIN_LEN - 1]).unwrap();
-            assert_eq!(k.powers.calls.load(Ordering::Relaxed), 0);
-            let fresh = k.clone();
-            // Each round makes five calls: `encrypt_in_place`, two
-            // streaming updates and two `decrypt_in_place`.
-            for i in 0..POWERS_AFTER / 5 + 2 {
-                assert_eq!(ready(&k), 5 * i >= POWERS_AFTER);
-                let len = [256, 300, 512, 700][i as usize % 4];
-                let mut want = msg;
-                let want_tag = base
-                    .encrypt_in_place(&nonce, &aad, &mut want[..len])
+                // Without the backend's features (or those of its key setup with
+                // the powers), only what needs none of them.
+                if !detected().contains(b.features()) || b.prepared().is_none() {
+                    continue;
+                }
+                let k = AesGcm::new(&[0x3c; 32][..key_len]).unwrap().with_backend(b);
+                let ready = |k: &AesGcm| !k.powers.ctx.load(Ordering::Acquire).is_null();
+                // Short calls neither use nor count toward the powers.
+                let mut short = msg;
+                let tag = k
+                    .encrypt_in_place(&nonce, &aad, &mut short[..POWERS_MIN_LEN - 1])
                     .unwrap();
-                let mut ct = msg;
-                let tag = k.encrypt_in_place(&nonce, &aad, &mut ct[..len]).unwrap();
-                assert_eq!((&ct[..len], tag), (&want[..len], want_tag));
+                k.decrypt_in_place(&nonce, &aad, &mut short[..POWERS_MIN_LEN - 1], &tag)
+                    .unwrap();
                 let mut e = k.encryptor(&nonce).unwrap();
-                e.update_aad(&aad).unwrap();
-                let mut st = msg;
-                e.update(&mut st[..len]).unwrap();
-                assert_eq!((&st[..len], e.finalize()), (&want[..len], want_tag));
-                let mut d = k.decryptor(&nonce).unwrap();
-                d.update_aad(&aad).unwrap();
-                d.update(&mut st[..len]).unwrap();
-                d.finalize(&tag).unwrap();
-                assert_eq!(&st[..len], &msg[..len]);
-                let mut bad = tag;
-                bad[0] ^= 1;
-                let rejected = k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &bad);
-                assert_eq!(rejected, Err(Error::TagMismatch));
-                k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &tag)
-                    .unwrap();
-                assert_eq!(&ct[..len], &msg[..len]);
-            }
-            // Out of place, with the powers.
-            let mut want = msg;
-            let want_tag = base.encrypt_in_place(&nonce, &aad, &mut want).unwrap();
-            let mut out = [0u8; 700];
-            let tag = k.encrypt(&nonce, &aad, &[&msg[..1], &msg[1..]], &mut out);
-            assert_eq!((out, tag), (want, Ok(want_tag)));
-            // A clone copies the powers if they are ready, and not otherwise.
-            let copy = k.clone();
-            let (powers, _) = k.powers.get(k.backend, k.rounds, &k.ctx).unwrap();
-            let copied = copy.powers.get(copy.backend, copy.rounds, &copy.ctx).map(|(c, _)| c);
-            assert_eq!(copied, Some(powers));
-            assert!(!core::ptr::eq(copied.unwrap(), powers));
-            assert!(!ready(&fresh.clone()));
-            // A key context published second is dropped for the first.
-            let first = fresh.powers.publish(Box::new(*powers));
-            let second = fresh.powers.publish(Box::new([0; 128]));
-            assert!(core::ptr::eq(first, second));
-            assert_eq!(second, powers);
+                e.update(&mut short[..POWERS_MIN_LEN - 1]).unwrap();
+                assert_eq!(k.powers.calls.load(Ordering::Relaxed), 0);
+                let fresh = k.clone();
+                // Each round makes five calls: `encrypt_in_place`, two
+                // streaming updates and two `decrypt_in_place`.
+                for i in 0..POWERS_AFTER / 5 + 2 {
+                    assert_eq!(ready(&k), 5 * i >= POWERS_AFTER);
+                    let len = [256, 300, 512, 700][i as usize % 4];
+                    let mut want = msg;
+                    let want_tag = base
+                        .encrypt_in_place(&nonce, &aad, &mut want[..len])
+                        .unwrap();
+                    let mut ct = msg;
+                    let tag = k.encrypt_in_place(&nonce, &aad, &mut ct[..len]).unwrap();
+                    assert_eq!((&ct[..len], tag), (&want[..len], want_tag));
+                    let mut e = k.encryptor(&nonce).unwrap();
+                    e.update_aad(&aad).unwrap();
+                    let mut st = msg;
+                    e.update(&mut st[..len]).unwrap();
+                    assert_eq!((&st[..len], e.finalize()), (&want[..len], want_tag));
+                    let mut d = k.decryptor(&nonce).unwrap();
+                    d.update_aad(&aad).unwrap();
+                    d.update(&mut st[..len]).unwrap();
+                    d.finalize(&tag).unwrap();
+                    assert_eq!(&st[..len], &msg[..len]);
+                    let mut bad = tag;
+                    bad[0] ^= 1;
+                    let rejected = k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &bad);
+                    assert_eq!(rejected, Err(Error::TagMismatch));
+                    k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &tag)
+                        .unwrap();
+                    assert_eq!(&ct[..len], &msg[..len]);
+                }
+                // Out of place, with the powers.
+                let mut want = msg;
+                let want_tag = base.encrypt_in_place(&nonce, &aad, &mut want).unwrap();
+                let mut out = [0u8; 700];
+                let tag = k.encrypt(&nonce, &aad, &[&msg[..1], &msg[1..]], &mut out);
+                assert_eq!((out, tag), (want, Ok(want_tag)));
+                // A clone copies the powers if they are ready, and not otherwise.
+                let copy = k.clone();
+                let (powers, _) = k.powers.get(k.backend, k.rounds, &k.ctx).unwrap();
+                let copied = copy
+                    .powers
+                    .get(copy.backend, copy.rounds, &copy.ctx)
+                    .map(|(c, _)| c);
+                assert_eq!(copied, Some(powers));
+                assert!(!core::ptr::eq(copied.unwrap(), powers));
+                assert!(!ready(&fresh.clone()));
+                // A key context published second is dropped for the first.
+                let first = fresh.powers.publish(Box::new(*powers));
+                let second = fresh.powers.publish(Box::new([0; 128]));
+                assert!(core::ptr::eq(first, second));
+                assert_eq!(second, powers);
             }
         }
     }
