@@ -12,8 +12,9 @@ from the slot of a fixed index (`sArr X`), when every register is in use; so
 the function writes the bases of the arrays `o`, `a` and `b`, given at run
 time, into the slots of the indices 8, 9 and 10 (header words 16–18, the
 functions' own), and runs the ADX code for those indices. It saves header
-words 16–21 in `xmm3`–`xmm5` first and writes them back before it returns,
-so that it changes only `aAcc`, `aTmp` and `o`. Squares (`a = b`, which the
+words 16–21 in `xmm3`–`xmm5`, and 28–31, which the tiles borrow, in `xmm6`
+and `xmm7` (so the tiles need not save them), and writes them back before it
+returns, so that it changes only `aAcc`, `aTmp` and `o`. Squares (`a = b`, which the
 indices tell, and so publicly) take the triangular tiles.
 
 As `vg_rsa_mont_mul`, it uses no stack and keeps `rbx`, `rbp` and `r12`–`r15`
@@ -29,20 +30,23 @@ def xO : Nat := 8
 def xA : Nat := 9
 def xB : Nat := 10
 
-/-- Header words 16–21 (`sFn 0`–`sFn 5`) into `xmm3`–`xmm5`, and the bases of
+/-- Header words 16–21 (`sFn 0`–`sFn 5`) into `xmm3`–`xmm5` and 28–31 (`sFn 12`–`sFn 15`,
+which the tiles borrow) into `xmm6` and `xmm7`, and the bases of
 the arrays in `edx`, `ecx` and `r8d` into the slots of `xO`, `xA` and `xB`
 (`sFn 0`–`sFn 2`). -/
 def slotsIn : List Instr :=
   [.movdquLoad .xmm3 (hdr (sFn 0)), .movdquLoad .xmm4 (hdr (sFn 2)), .movdquLoad .xmm5 (hdr (sFn 4)),
+    .movdquLoad .xmm6 (hdr (sFn 12)), .movdquLoad .xmm7 (hdr (sFn 14)),
     .mov .rax (.mem (arrAt .rdx)), .store (hdr (sArr xO)) .rax,
     .mov .rax (.mem (arrAt .rcx)), .store (hdr (sArr xA)) .rax,
     .mov .rax (.mem (arrAt .r8)), .store (hdr (sArr xB)) .rax]
 
 /-- The callee-saved registers back from `xmm8`–`xmm13`, and header words
-16–21 back from `xmm3`–`xmm5`: every address is `rdi`'s. -/
+16–21 and 28–31 back from `xmm3`–`xmm7`: every address is `rdi`'s. -/
 def restore : List Instr :=
   unsaves ++ ([.movdquStore (hdr (sFn 0)) .xmm3, .movdquStore (hdr (sFn 2)) .xmm4,
-    .movdquStore (hdr (sFn 4)) .xmm5] : List Instr)
+    .movdquStore (hdr (sFn 4)) .xmm5] : List Instr) ++
+    ([.movdquStore (hdr (sFn 12)) .xmm6, .movdquStore (hdr (sFn 14)) .xmm7] : List Instr)
 
 /-- ZF set when `w` is a multiple of 8 in `8..2^30 + 8`: `v = w - 8` (modulo
 `2⁶⁴`) rotated right by 3 has its low bits on top, and the rest below `2²⁷`. -/
@@ -54,7 +58,7 @@ reduction for both, which keeps the function small enough for the decoded
 µop caches of older cores. -/
 def tiled : Prog isa :=
   .seq (.block [.alu .cmp .rcx (.reg .r8)])
-    (.seq (.ite .e (AdxTiledSquare.rawSquare xA) (AdxTiledProduct.rawProduct xA xB))
+    (.seq (.ite .e (AdxTiledSquare.rawSquareBare xA) (AdxTiledProduct.rawProductBare xA xB))
       (AdxTiledProduct.redcFinish xO))
 
 /-- The tiles for `w` a multiple of 8 (below `2^30 + 8`), `montMul` otherwise. -/

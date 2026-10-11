@@ -27,8 +27,17 @@ def rawCross (a : Nat) : Prog isa := .seq (.block (Adx.setup a))
   (.seq AdxHeader.save (.seq (.seq (AdxTri8.blocks a)
     (rowsChoice a)) AdxHeader.restore))
 
-def rawSquare (a : Nat) : Prog isa := .seq (rawCross a)
-  (.seq (.block (Adx.setup a)) (.seq (.block [.mov .r10 (.reg .rbx)]) AdxSquare.diagonalChoice))
+/-- `rawCross` for a caller that keeps the borrowed header words itself: the
+high pad is only cleared. -/
+def rawCrossBare (a : Nat) : Prog isa := .seq (.block (Adx.setup a))
+  (.seq (.seq (AdxTri8.blocks a) (rowsChoice a)) AdxHeader.clear)
+
+def diagonal (a : Nat) : Prog isa :=
+  .seq (.block (Adx.setup a)) (.seq (.block [.mov .r10 (.reg .rbx)]) AdxSquare.diagonalChoice)
+
+def rawSquare (a : Nat) : Prog isa := .seq (rawCross a) (diagonal a)
+
+def rawSquareBare (a : Nat) : Prog isa := .seq (rawCrossBare a) (diagonal a)
 
 def montSquare (o a : Nat) : Prog isa := .seq (rawSquare a) (AdxTiledProduct.redcFinish o)
 

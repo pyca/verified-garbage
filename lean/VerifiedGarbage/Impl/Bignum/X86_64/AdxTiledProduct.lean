@@ -36,6 +36,10 @@ def rawProduct (a b : Nat) : Prog isa :=
   .seq (.block (Adx.setup b)) (.seq Adx.zeroWin8
     (.seq AdxHeader.save (.seq (rows a b) AdxHeader.restore)))
 
+/-- `rawProduct` for a caller that keeps the borrowed header words itself. -/
+def rawProductBare (a b : Nat) : Prog isa :=
+  .seq (.block (Adx.setup b)) (.seq Adx.zeroWin8 (.seq (rows a b) AdxHeader.clear))
+
 /-- The reduction of the raw product in the accumulator into `o`: shared by
 products and squares. -/
 def redcFinish (o : Nat) : Prog isa :=

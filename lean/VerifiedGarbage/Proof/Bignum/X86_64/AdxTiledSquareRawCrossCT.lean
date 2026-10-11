@@ -358,6 +358,21 @@ theorem rawCross_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) 
   exact RelCT.seq (RelCT.seq (AdxTri8.blocks_ct pa ha ha1 ha2 hT) (rowsChoice_ct pa ha ha1 ha2 hR))
     (two_map (fun L : Layout => (⟨L.B,L.Z,L.w⟩ : Ws)) mapGood AdxHeader.restore_ct)
 
+theorem rawCrossBare_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) (ha : a<8)
+    (ha1 : a≠aAcc) (ha2 : a≠aTmp)
+    {h₁ h₂ h₃ : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (Adx.setup ca)) h₁).isSome=true)
+    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca ca)) h₂).isSome=true)
+    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxTri8.setup ca)) h₃).isSome=true) :
+    RelCT isa (Two (GoodV ps)) (AdxTiledSquare.rawCrossBare ca) (fun _ _ => True) := by
+  unfold AdxTiledSquare.rawCrossBare
+  refine RelCT.seq (two_piece (Ψ := GoodV ps) [.rdi] (pins_goodV ps) hS
+    fun L s h => WP.mono (setup_fw pa L s h) fun _ ht => ht.1) ?_
+  have mapGood : ∀ L s, GoodV ps L s → GoodW ⟨L.B,L.Z,L.w⟩ s := by
+    rintro L s ⟨⟨mi,hg⟩,_⟩; exact ⟨mi,hg,L.hZ⟩
+  exact RelCT.seq (RelCT.seq (AdxTri8.blocks_ct pa ha ha1 ha2 hT) (rowsChoice_ct pa ha ha1 ha2 hR))
+    (two_map (fun L : Layout => (⟨L.B,L.Z,L.w⟩ : Ws)) mapGood AdxHeader.clear_ct)
+
 end VG.Proof.Bignum.X86_64.AdxTiledSquare
 
 end
