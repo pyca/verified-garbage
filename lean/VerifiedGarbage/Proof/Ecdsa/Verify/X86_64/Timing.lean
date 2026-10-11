@@ -97,8 +97,8 @@ def verifyPrefix (c : Cfg) : Prog isa :=
   .seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) <|
   .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <|
   .seq (Impl.Ecdh.X86_64.Cfg.validate c) <|
-  .seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c) <| .seq c.nPow.inline <|
-  .seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c) <|
+  .seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline <| .seq c.nPow.inline <|
+  .seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline <|
   .seq (bits (c.sl U) (bitsAt c.n 0) (8*c.n)) <|
   .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) (.block [])
 

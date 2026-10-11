@@ -265,19 +265,19 @@ def storeN : List Instr :=
   (List.range 9).flatMap fun j =>
     [.movImm64 .rax (BitVec.ofNat 64 (n521 >>> (64 * j))), .store (sc (fnMoN + 8 * j)) .rax]
 
-/-- Where the function keeps the bytes it stores `n` over: piece `i` of the
-eighty from `fnMoN - 8`. -/
-def keepX (i : Nat) : XReg := [XReg.xmm6, .xmm7, .xmm8, .xmm9, .xmm10].getD i .xmm6
+/-- Where the function keeps word `j` of the bytes it stores `n` over. -/
+def keepX (j : Nat) : XReg :=
+  [XReg.xmm6, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11, .xmm12, .xmm13, .xmm14].getD j .xmm6
 
-/-- The eighty bytes from `fnMoN - 8` into `xmm6`–`xmm10`. -/
-def saveN : List Instr := (List.range 5).map fun i => .movdquLoad (keepX i) (sc (fnMoN - 8 + 16 * i))
+/-- The words at `fnMoN` into `xmm6`–`xmm14`, through `rax`: `movq` keeps
+what the constant-time analysis knows public there public (the bits of
+`p - 2` that the inversions' callers keep there). -/
+def saveN : List Instr :=
+  (List.range 9).flatMap fun j => [.mov .rax (.mem (sc (fnMoN + 8 * j))), .xop (.movq (keepX j) .rax)]
 
 /-- And back. -/
-def restoreN : List Instr := (List.range 5).map fun i => .movdquStore (sc (fnMoN - 8 + 16 * i)) (keepX i)
-
-/-- `xmm6`–`xmm10` overwritten with `ws`, a public value, so that no byte of
-the working space stays in them. -/
-def clearN : List Instr := (List.range 5).map fun i => .xop (.movq (keepX i) .rdi)
+def restoreN : List Instr :=
+  (List.range 9).flatMap fun j => [.movqR .rax (keepX j), .store (sc (fnMoN + 8 * j)) .rax]
 
 /-- `rbp = ws + b`, `rsi = ws + o`, the bytes kept and `n` stored, `mulF`
 with its operands through `rbx`, `rbp` and `rsi`, and the bytes restored. -/
@@ -287,7 +287,7 @@ def mulN : List Instr :=
 
 /-- `vg_p521_mul_mod_n`. -/
 def mulFnN : Prog isa :=
-  .seq (.block zext) (.seq (.block setup) (.seq (.block mulN) (.block (restores ++ clearN))))
+  .seq (.block zext) (.seq (.block setup) (.seq (.block mulN) (.block restores)))
 
 /-- The function the products modulo `M` call, and its code: P-521's `p`, with
 the temporary area the functions' (`fnTmp`), or P-384's (`fnTmp6`) unless its
