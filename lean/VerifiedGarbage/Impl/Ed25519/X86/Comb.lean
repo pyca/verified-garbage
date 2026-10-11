@@ -15,9 +15,13 @@ selects from table `j` the entries of both digits that use it, `d_{2j+1}` and
 adds them, or their negations, to two accumulators, which start at `[G]B`:
 `A` (slots 0–3) for the odd digits and `B` (slots 17–20) for the even ones.
 At the end, `[s]B = 16 A + B`: four doublings and one addition. That is 64
-additions of affine cached points (seven multiplications each, `addOddOps`,
-`addEvenOps`), four doublings and one addition, as ref10's
-`ge_scalarmult_base` (and so OpenSSL's) does with its signed radix-16 table.
+additions of affine cached points (seven multiplications each), four
+doublings and one addition, as ref10's `ge_scalarmult_base` (and so
+OpenSSL's) does with its signed radix-16 table. The additions to `A` are calls
+of `vg_ed25519_r32_add_affine`, the doublings calls of `vg_ed25519_r32_double`
+and the last addition a call of `vg_ed25519_r32_point_add`; the additions to
+`B` are inline (`addEvenOps`), and come first in each step, since the calls'
+working space includes the slots of `B`'s entry.
 
 The digits are secret: their entries are selected in constant time. The
 masks of the nine magnitudes `k = 0 … 8` of each digit (all ones exactly for
@@ -51,16 +55,6 @@ def combOddSign : Nat := 1152
 /-- Byte of the workspace holding the mask of the even digit's sign. -/
 def combEvenSign : Nat := 1156
 
-/-- Add the affine cached point in slots 4–6 (`[Y - X, Y + X, 2dT]` of a point with `Z = 1`,
-so its `2Z` is `2` and `Z₁ · 2Z₂` is `Z₁ + Z₁`) to the odd digits' accumulator in slots 0–3,
-in place: `a = (Y₁ - X₁)(Y₂ - X₂)`, `b = (Y₁ + X₁)(Y₂ + X₂)`, `c = T₁ · 2dT₂`, `dd = 2Z₁`,
-`h = b + a`, `e = b - a`, `g = dd + c`, `f = dd - c`, and `(ef, gh, fg, eh)`. Slots 8–12 are
-temporary. -/
-def addOddOps : List FieldOp := [
-  .sub 8 1 0, .mul 8 8 4, .add 9 1 0, .mul 9 9 5, .mul 10 3 6, .add 11 2 2,
-  .add 12 9 8, .sub 8 9 8, .add 9 11 10, .sub 10 11 10,
-  .mul 0 8 10, .mul 1 9 12, .mul 2 10 9, .mul 3 8 12]
-
 /-- The same addition, of the even digits' entry in slots 13–15 to their accumulator in
 slots 17–20. -/
 def addEvenOps : List FieldOp := [
@@ -68,9 +62,9 @@ def addEvenOps : List FieldOp := [
   .add 12 9 8, .sub 8 9 8, .add 9 11 10, .sub 10 11 10,
   .mul 17 8 10, .mul 18 9 12, .mul 19 10 9, .mul 20 8 12]
 
-/-- Four doublings, with the counter `esi`. -/
+/-- Four doublings, calls of `vg_ed25519_r32_double`, with the counter `esi`. -/
 def double4 : Prog isa :=
-  .seq (.block [.mov .esi (.imm 4)]) (.loop (.block doubleBody) .ne)
+  .seq (.block [.mov .esi (.imm 4)]) (.loop (.seq Point32.doubleCall (.block [.alu .sub .esi (.imm 1)])) .ne)
 
 /-- `edx = edi + 8 esi`: the bits of the table `esi`'s digits are at `edx + 7168` (even) and
 `edx + 7172` (odd). -/
@@ -185,13 +179,13 @@ def combNeg (a b c : Slot) (sign : Nat) : List Instr :=
   fieldCode [.sub 8 21 c] ++ [.mov .ecx (.mem (sc sign))] ++ swapFields [(a, b), (c, 8)]
 
 /-- Step `esi = j`: both digits' entries of table `j`, negated for negative digits, added to
-their accumulators. ZF is clear while another step follows. -/
+their accumulators, `B`'s first. ZF is clear while another step follows. -/
 def combStep : Prog isa :=
   .seq (.block combDigits) <|
   .seq (.block combSelect) <|
-  .seq (.block (combNeg 4 5 6 combOddSign ++ fieldCode addOddOps)) <|
-  .block (combNeg 13 14 15 combEvenSign ++ fieldCode addEvenOps ++
-    [.alu .add .esi (.imm 1), .alu .cmp .esi (.imm 32)])
+  .seq (.block (combNeg 13 14 15 combEvenSign ++ fieldCode addEvenOps ++ combNeg 4 5 6 combOddSign)) <|
+  .seq Point32.affCall <|
+  .block [.alu .add .esi (.imm 1), .alu .cmp .esi (.imm 32)]
 
 /-- Both accumulators at `[G]B`, zero in slot 21, and the counter. -/
 def combInit : List Instr :=
