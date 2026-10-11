@@ -12,6 +12,7 @@ def secp256k1 : Cfg where
   C := Spec.Secp256k1.curve
   fastN := true
   windows := false
+  mul := some Spec.Weierstrass.Mul.secp256k1
 
 def signSecp256k1 : Prog isa := secp256k1.sign
 

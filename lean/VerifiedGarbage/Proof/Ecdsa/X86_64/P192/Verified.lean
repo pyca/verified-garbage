@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 import VerifiedGarbage.Proof.P192.OrderPrime
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 
 /-! # p192 signing on x86-64: correctness, memory safety and constant time
 
@@ -76,19 +77,24 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p192 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, -, -, h12, h13⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h12, h13, by simp [TblsHeld, Cfg.combConsts, p192, Abi.constsHeld, Abi.constRegions]⟩
 
+/-- `[k]G` is a call of `vg_p192_mul`, which calls no other function. -/
+theorem p192_mulBase : MulBaseOk p192 :=
+  ⟨fun h => absurd h (by decide), fun _ => ⟨rfl, by lit_decide⟩⟩
+
 theorem sign_x86 (hL : Law Spec.P192.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
-    ∃ t s', Exec isa signP192 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p192_ok hI) hL p192_tbls (pre_of hs)
-  have hsp : ∀ i ∈ instrs signP192, Taint.clobbers i .rsp = false := by
+    ∃ t s', Exec isa signP192.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p192_ok hI) hL p192_tbls (pre_of hs) p192_mulBase
+  have hsp : ∀ i ∈ instrs signP192.inline, Taint.clobbers i .rsp = false := by
     have h : signP192.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+    ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -114,20 +120,52 @@ materialize_shared signP192Erased
 
 theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP192 :=
   VG.Taint.constantTime_mapBlocks (c' := signP192Erased) taintS_eraseInv
-    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) rfl
-    (fun _ _ _ _ ⟨_, h1, h2, h3, h4, h5⟩ => Taint.agree_ofRegs fun r hr => by
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .rsp]) rfl
+    (fun _ _ _ _ ⟨h0, h1, h2, h3, h4, h5⟩ => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
       · exact h1
       · exact h2
       · exact h3
       · exact h4
-      · exact h5) rfl (by taint_decide)
+      · exact h5
+      · exact h0) rfl (by taint_decide)
+
+/-- The contract with 8 bytes of stack, for the calls' return address. -/
+theorem implies8 : signX86_64.Implies (Spec.Ecdsa.P192.inst.signContract X86_64.abi 8) :=
+  implies.stack8_abi (by
+    sig_implies_sat [Spec.Ecdsa.P192.inst, Spec.Ecdsa.Instance.signContract,
+      Spec.Ecdsa.Instance.signSig, Spec.P192.curve, Spec.Ecdsa.scratchWords, X86_64.abi,
+      X86_64.argRegs, satState] [satState] using satState)
+
+/-- The output is apart from the calls' return address. -/
+theorem post_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : signX86_64.pre s)
+    (hc : Clear (hole (s.gpr .rsp)) s) (hp : signX86_64.post s b) :
+    signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  have hb := Clear.wr_bytes hc (p := s.gpr .rdi) (n := 48) (by rw [hs.2.1]; simp) (by decide)
+  simpa only [signX86_64, State.patch_gpr, bytesAt_patch hb] using hp
+
+/-- The function with its calls, for a caller (RFC 6979's) that keeps its
+buffers off the 8 bytes below `rsp`. -/
+theorem sign_call_x86 (hL : Law Spec.P192.curve) (hI : InvSounds) (s : State) (hs : signX86_64.pre s)
+    (hc : Clear (hole (s.gpr .rsp)) s) :
+    ∃ t s', Exec isa signP192 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
+  ok_of_inline (k := signX86_64) (by lit_decide) (sign_x86 hL hI)
+    (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
+
+theorem sign_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
+    (hs : (Spec.Ecdsa.P192.inst.signContract X86_64.abi 8).pre s)
+    (hp : signX86_64.post s b) : signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  obtain ⟨-, hwr, -⟩ := implies8.pre s hs
+  have hb := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdi) (n := 48)
+    (by rw [hwr]; simp) (by decide)
+  simpa only [signX86_64, State.patch_gpr, bytesAt_patch hb] using hp
 
 theorem sign_verified (hL : Law Spec.P192.curve)
     (hI : InvSounds) :
     Verified X86_64.target signP192
-      (Spec.Ecdsa.P192.inst.signContract X86_64.abi) :=
-  Verified.of_correct (sign_x86 hL hI) sign_ct implies
+      (Spec.Ecdsa.P192.inst.signContract X86_64.abi 8) :=
+  Verified.of_inline_ct (by lit_decide) (sign_x86 hL hI) sign_ct implies8
+    (fun _ h => Sig.clear_of_pre h) sign_patch
 
 end VG.Proof.Ecdsa.X86_64.P192
