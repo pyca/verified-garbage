@@ -56,7 +56,7 @@ fn main() {
     if let Some(m) = std::env::args().nth(1) {
         let w: usize = std::env::args().nth(2).unwrap().parse().unwrap();
         let vs = variants();
-        for (name, v) in &vs { if name == &m.as_str() || (m == "main" && *name == "main") {
+        for (name, v) in &vs { if name == &m.as_str() || (m == "cur" && name.starts_with("PRs")) {
             let (mut ws, n) = setup(w);
             for _ in 0..1000 { unsafe { v(ws.as_mut_ptr(), n, 4, 4, 4) } }
         } }
