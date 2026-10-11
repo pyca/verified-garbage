@@ -82,7 +82,7 @@ theorem cfg_fastN (adx : Bool) : (cfg adx).fastN = true := rfl
 /-- What the functions write, as offsets: `ACC`'s slot (the result's) and the
 own working space. -/
 theorem pwW_eq (adx : Bool) : pwW (cfg adx) = [(992, 32), (1024, 32), (128, 32), (2296, 320)] := by
-  decide
+  show pwW p224 = _; decide
 
 theorem keeps_of_unch {ws : Addr} {m m' : Mem} (adx : Bool) (hu : Unch ws (pwW (cfg adx)) m m') :
     C.Keeps ws m m' := by
