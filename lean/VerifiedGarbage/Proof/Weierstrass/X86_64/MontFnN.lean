@@ -157,6 +157,33 @@ theorem byte_of_readW128 {m m' : Mem} {a : Addr} (h : m.readW a 128 = m'.readW a
   rw [BitVec.setWidth_eq, BitVec.setWidth_eq, Mem.extractLsb'_read _ _ hj, Mem.extractLsb'_read _ _ hj] at e
   exact e
 
+/-- `movq x, rdi` writes only `x`. -/
+theorem movqRdi_ok (s : State) (r : XReg) :
+    WP isa (.block [.xop (.movq r .rdi)]) s fun t =>
+      (∀ x, x ≠ r → t.xmm x = s.xmm x) ∧ t.mem = s.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq, exists_eq_left']
+  exact ⟨fun x hx => RegUpd.xmm_setXmm_of_ne _ _ hx, rfl, rfl, rfl, rfl⟩
+
+/-- `movq (xs i), rdi` for `i < k` writes only those. -/
+theorem movqs_ok (xs : Nat → XReg) :
+    ∀ k (s : State), WP isa (.block ((List.range k).map fun i => .xop (.movq (xs i) .rdi))) s fun t =>
+      (∀ x, (∀ i < k, x ≠ xs i) → t.xmm x = s.xmm x) ∧ t.mem = s.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧
+        t.wr = s.wr
+  | 0, _ => WP.block_nil ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+  | k + 1, s => by
+    rw [List.range_succ, List.map_append, WP.block_append_iff]
+    refine WP.mono (movqs_ok xs k s) fun u ⟨x₁, m₁, g₁, r₁, w₁⟩ => WP.mono (movqRdi_ok u (xs k))
+      fun t ⟨x₂, m₂, g₂, r₂, w₂⟩ => ⟨fun x hx => ?_, m₂.trans m₁, g₂.trans g₁, r₂.trans r₁, w₂.trans w₁⟩
+    rw [x₂ x (hx k (by omega)), x₁ x fun i hi => hx i (by omega)]
+
+/-- `clearN` writes only `xmm6`–`xmm10`. -/
+theorem clearN_ok (s : State) :
+    WP isa (.block clearN) s fun t =>
+      (∀ x, (∀ i < 5, x ≠ keepX i) → t.xmm x = s.xmm x) ∧ t.mem = s.mem ∧ t.gpr = s.gpr ∧
+        t.rd = s.rd ∧ t.wr = s.wr :=
+  movqs_ok keepX 5 s
+
 theorem keepX_ne : ∀ i j, i < j → j < 5 → keepX i ≠ keepX j := by
   intro i j hij hj
   have h : ∀ j < 5, ∀ i < j, keepX i ≠ keepX j := by decide
@@ -265,11 +292,14 @@ theorem mulFnN_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 
   have xk : ∀ x, x ∈ [XReg.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5] → s₂.xmm x = s₁.xmm x := fun x hx =>
     xm₂ x (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
               rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
-  refine WP.mono (restores_ok s₂) fun s₃ ⟨b₃, p₃, r12₃, r13₃, r14₃, r15₃, k₃⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (restores_ok s₂) fun s₃ ⟨b₃, p₃, r12₃, r13₃, r14₃, r15₃, k₃⟩ =>
+    WP.mono (clearN_ok s₃) fun s₄ ⟨_, m₄, g₄, r₄, w₄⟩ => ?_
   rw [m₁] at e₂ O₂
-  refine ⟨by rw [k₃.2.1]; exact lt₂, by rw [k₃.2.1, ← hQ]; exact e₂,
-    ⟨fun r hr => ?_, by rw [k₃.2.2.1, k₂.rd, k₁.rd], by rw [k₃.2.2.2, k₂.wr, k₁.wr]⟩, fun x hx hx' => ?_⟩
-  · rcases not_clob_cases r hr with hsv | rfl | rfl
+  refine ⟨by rw [m₄, k₃.2.1]; exact lt₂, by rw [m₄, k₃.2.1, ← hQ]; exact e₂,
+    ⟨fun r hr => ?_, by rw [r₄, k₃.2.2.1, k₂.rd, k₁.rd], by rw [w₄, k₃.2.2.2, k₂.wr, k₁.wr]⟩, fun x hx hx' => ?_⟩
+  · rw [g₄]
+    rcases not_clob_cases r hr with hsv | rfl | rfl
     · simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hsv
       rcases hsv with rfl | rfl | rfl | rfl | rfl | rfl
       · rw [b₃, xk _ (by simp), x0, qword_lo]
@@ -280,6 +310,6 @@ theorem mulFnN_ok {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) (hZ : 
       · rw [r15₃, xk _ (by simp), x5, qword_lo]
     · rw [k₃.1 _ (by decide), k₂.gpr _ (by decide), k₁.gpr _ (by decide)]
     · rw [k₃.1 _ (by decide), k₂.gpr _ (by decide), k₁.gpr _ (by decide)]
-  · rw [k₃.2.1, O₂ x hx hx']
+  · rw [m₄, k₃.2.1, O₂ x hx hx']
 
 end VG.Proof.Weierstrass.X86_64.Mont

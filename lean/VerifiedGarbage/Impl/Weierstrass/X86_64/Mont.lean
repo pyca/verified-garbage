@@ -275,6 +275,10 @@ def saveN : List Instr := (List.range 5).map fun i => .movdquLoad (keepX i) (sc 
 /-- And back. -/
 def restoreN : List Instr := (List.range 5).map fun i => .movdquStore (sc (fnMoN - 8 + 16 * i)) (keepX i)
 
+/-- `xmm6`–`xmm10` overwritten with `ws`, a public value, so that no byte of
+the working space stays in them. -/
+def clearN : List Instr := (List.range 5).map fun i => .xop (.movq (keepX i) .rdi)
+
 /-- `rbp = ws + b`, `rsi = ws + o`, the bytes kept and `n` stored, `mulF`
 with its operands through `rbx`, `rbp` and `rsi`, and the bytes restored. -/
 def mulN : List Instr :=
@@ -283,7 +287,7 @@ def mulN : List Instr :=
 
 /-- `vg_p521_mul_mod_n`. -/
 def mulFnN : Prog isa :=
-  .seq (.block zext) (.seq (.block setup) (.seq (.block mulN) (.block restores)))
+  .seq (.block zext) (.seq (.block setup) (.seq (.block mulN) (.block (restores ++ clearN))))
 
 /-- The function the products modulo `M` call, and its code: P-521's `p`, with
 the temporary area the functions' (`fnTmp`), or P-384's (`fnTmp6`) unless its
