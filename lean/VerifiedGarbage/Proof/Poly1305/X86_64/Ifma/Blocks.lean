@@ -316,7 +316,6 @@ theorem loop_ok {s₀ : State} (hp : APre s₀) {m₁ : Mem} (hm : IMem s₀ m�
 
 /-! ## The epilogue's integer code -/
 
-set_option simprocs false in
 /-- `save`, keeping the vector registers and MXCSR. -/
 theorem saveX_ok (s : State) (hw : sR (s.gpr .rdi) ∈ s.wr) :
     WP isa (.block save) s fun s' =>
@@ -329,8 +328,8 @@ theorem saveX_ok (s : State) (hw : sR (s.gpr .rdi) ∈ s.wr) :
   apply WP.of_runBlock
   rw [Proof.Poly1305.X86_64.save_eq]
   simp only [off] at o0 o1 o2 o3 o4 o5
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
-    Proof.Poly1305.X86_64.ea_at, State.store64, o0, o1, o2, o3, o4, o5, ite_true, Option.some.injEq,
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
+    Proof.Poly1305.X86_64.ea_at, State.store64, o0, o1, o2, o3, o4, o5, Option.some.injEq,
     exists_eq_left']
   refine ⟨trivial, trivial, trivial, trivial, trivial, ?_, ?_⟩
   · have c : ∀ d, 72 ≤ d → d + 8 ≤ 120 →
@@ -341,10 +340,8 @@ theorem saveX_ok (s : State) (hw : sR (s.gpr .rdi) ∈ s.wr) :
       (List.mem_singleton_self _) _ (c 96 ?_ ?_)).writeW (List.mem_singleton_self _) _ (c 104 ?_ ?_)
       |>.writeW (List.mem_singleton_self _) _ (c 112 ?_ ?_) <;> omega
   · refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp (config := {decide := true}) only [off, Mem.readW_writeW_self64,
-      Proof.Poly1305.X86_64.readW_writeW_off]
+    simp (disch := decide) only [off, Mem.readW_writeW_self64, Proof.Poly1305.X86_64.readW_writeW_off]
 
-set_option simprocs false in
 /-- Storing `h` and restoring the callee-saved registers, keeping the rest. -/
 theorem storeRestoreX_ok (s : State) (hw : sR (s.gpr .rdi) ∈ s.wr) :
     WP isa (.block (([.store (at_ .rdi 0) .r11, .store (at_ .rdi 8) .rbx,
@@ -366,10 +363,10 @@ theorem storeRestoreX_ok (s : State) (hw : sR (s.gpr .rdi) ∈ s.wr) :
   simp only [off] at o0 o8 o16 i0 i1 i2 i3 i4 i5
   apply WP.of_runBlock
   rw [Proof.Poly1305.X86_64.storeRestore_eq]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
     Proof.Poly1305.X86_64.ea_at, readSrc, State.store64, State.load64, State.setReg, o0, o8, o16, i0, i1, i2,
-    i3, i4, i5, ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left']
-  refine ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, fun r a b c d e f => ?_, trivial⟩
+    i3, i4, i5, Option.map_some, Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, fun r a b c d e f => ?_, trivial, trivial, trivial⟩
   simp only [a, b, c, d, e, f, ite_false]
 
 /-! ## The epilogue -/

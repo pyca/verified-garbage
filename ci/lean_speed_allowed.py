@@ -149,6 +149,7 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/Poly1305/X86_64/Avx512/Gpr.lean": 3,
     "VerifiedGarbage/Proof/Poly1305/X86_64/Blocks.lean": 2,
     "VerifiedGarbage/Proof/Poly1305/X86_64/Finalize.lean": 2,
+    "VerifiedGarbage/Proof/Poly1305/X86_64/Ifma/Gpr.lean": 4,
     "VerifiedGarbage/Proof/Poly1305/X86_64/Init.lean": 3,
     "VerifiedGarbage/Proof/Poly1305/X86_64/Setup.lean": 12,
     "VerifiedGarbage/Proof/Poly1305/X86_64/Update.lean": 2,

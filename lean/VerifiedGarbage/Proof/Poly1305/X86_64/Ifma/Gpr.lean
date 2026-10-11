@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Vec
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.VKeep
+import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: the integer instructions
@@ -12,8 +13,8 @@ namespace VG.Proof.Poly1305.X86_64.Ifma
 
 open VG VG.X86_64 VG.Impl.Poly1305.X86_64.Ifma
 open VG.Impl.Poly1305.X86_64 (at_)
-open VG.Proof.Poly1305.X86_64 (off off_eq M0 M1 Keeps)
-open VG.Proof.Poly1305.X86_64.Avx2 (vec vec_gpr vec_mem vec_rd vec_wr ea_at se1 se3)
+open VG.Proof.Poly1305.X86_64 (off off_eq M0 M1 Keeps ea_at se1 se3)
+open VG.Proof.Poly1305.X86_64.Avx2 (vec vec_gpr vec_mem vec_rd vec_wr)
 open VG.Proof.Poly1305.X86_64.Avx512 (VKeep)
 
 theorem se16 : BitVec.signExtend 64 (BitVec.ofNat 32 16) = 16 := by decide
@@ -28,7 +29,6 @@ theorem cmp_ok (s : State) :
     State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left', minBlocks, se16]
   exact ⟨trivial, trivial, ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩, rfl⟩
 
-set_option simprocs false in
 theorem loadR_ok (s : State) (r₁ : InRegions (s.rd ++ s.wr) (off (s.gpr .rdi) 24) 8)
     (r₂ : InRegions (s.rd ++ s.wr) (off (s.gpr .rdi) 32) 8) (w₁ : InRegions s.wr (off (s.gpr .rdi) 104) 8)
     (w₂ : InRegions s.wr (off (s.gpr .rdi) 112) 8) :
@@ -40,9 +40,9 @@ theorem loadR_ok (s : State) (r₁ : InRegions (s.rd ++ s.wr) (off (s.gpr .rdi) 
         (off (s.gpr .rdi) 112) (0x10000000000 : BitVec 64) ∧ VKeep s s' := by
   apply WP.of_runBlock
   simp only [off] at r₁ r₂ w₁ w₂
-  simp (config := {decide := true}) only [loadR, mMask, mPad, runBlock_cons, runStep_some, runBlock_nil,
+  simp only [reduceCtorEq, ↓reduceIte, loadR, mMask, mPad, runBlock_cons, runStep_some, runBlock_nil,
     exec, ea_at, readSrc, execAlu, arithFlags, State.load64, State.store64, State.setReg, State.setFlags,
-    r₁, r₂, w₁, w₂, ite_true, ite_false, Option.map_some, Option.bind_some, Option.some.injEq,
+    r₁, r₂, w₁, w₂, Option.map_some, Option.bind_some, Option.some.injEq,
     exists_eq_left']
   finish_gpr8
 
@@ -78,7 +78,7 @@ def loadHG : List Instr := [
   .mov .rax (.mem (at_ .rdi 0)), .alu .and .rax (.reg .r8)]
 
 theorem loadH_eq : loadH = loadHG ++
-    [.vop (.vmovq (hreg 0) .rax), .vop (.vmovq (hreg 1) .rcx), .vop (.vmovq (hreg 2) .r9)] := rfl
+    ([.vop (.vmovq (hreg 0) .rax), .vop (.vmovq (hreg 1) .rcx), .vop (.vmovq (hreg 2) .r9)] : List Instr) := rfl
 
 set_option simprocs false in
 theorem loadHG_ok (s : State) (r₀ : InRegions (s.rd ++ s.wr) (off (s.gpr .rdi) 0) 8)
@@ -105,7 +105,6 @@ def loadYG (m : Nat → MemOp) : List Instr :=
 
 theorem loadY_eq (m : Nat → MemOp) : loadY m = loadYG m ++ bc3 := rfl
 
-set_option simprocs false in
 theorem loadYG_ok (s : State) (d : Nat)
     (r : ∀ i < 3, InRegions (s.rd ++ s.wr) (off (s.gpr .rdi) (d + 8 * i)) 8) :
     WP isa (.block (loadYG fun i => at_ .rdi (d + 8 * i))) s fun s' =>
@@ -116,8 +115,8 @@ theorem loadYG_ok (s : State) (d : Nat)
   have r₂ := r 2 (by decide)
   apply WP.of_runBlock
   simp only [off] at r₀ r₁ r₂
-  simp (config := {decide := true}) only [loadYG, runBlock_cons, runStep_some, runBlock_nil, exec,
-    ea_at, readSrc, State.load64, State.setReg, r₀, r₁, r₂, ite_true, ite_false, Option.map_some,
+  simp only [reduceCtorEq, ↓reduceIte, loadYG, runBlock_cons, runStep_some, runBlock_nil, exec,
+    ea_at, readSrc, State.load64, State.setReg, r₀, r₁, r₂, Option.map_some,
     Option.some.injEq, exists_eq_left']
   refine ⟨fun i hi => ?_, ?_⟩
   · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;> rfl
@@ -128,7 +127,6 @@ def hMem (m : Mem) (p : Addr) (d : Nat) (x : XReg → BitVec 128) : Mem :=
   ((m.writeW (off p d) ((x (hreg 0)).extractLsb' 0 64)).writeW (off p (d + 8))
     ((x (hreg 1)).extractLsb' 0 64)).writeW (off p (d + 16)) ((x (hreg 2)).extractLsb' 0 64)
 
-set_option simprocs false in
 theorem storeH_ok (s : State) (d : Nat) (w : ∀ i < 3, InRegions s.wr (off (s.gpr .rdi) (d + 8 * i)) 8) :
     WP isa (.block (storeH fun i => at_ .rdi (d + 8 * i))) s fun s' =>
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.mem = hMem s.mem (s.gpr .rdi) d s.xmm ∧ VKeep s s' := by
@@ -137,9 +135,9 @@ theorem storeH_ok (s : State) (d : Nat) (w : ∀ i < 3, InRegions s.wr (off (s.g
   have w₂ := w 2 (by decide)
   apply WP.of_runBlock
   simp only [off] at w₀ w₁ w₂
-  simp (config := {decide := true}) only [storeH, List.flatMap_cons, List.flatMap_nil, List.cons_append,
+  simp only [reduceCtorEq, ↓reduceIte, storeH, List.flatMap_cons, List.flatMap_nil, List.cons_append,
     List.nil_append, List.append_nil, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
-    State.store64, State.setReg, w₀, w₁, w₂, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    State.store64, State.setReg, w₀, w₁, w₂, Option.some.injEq, exists_eq_left']
   refine ⟨fun r hr => by simp [hr], ?_, ?_⟩
   · simp only [hMem, off]; rfl
   · finish_gpr8
@@ -190,7 +188,6 @@ theorem twA_ok (s : State) :
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
 
-set_option simprocs false in
 theorem twB_ok (s : State) :
     WP isa (.block twB) s fun s' =>
       ((s.gpr .r11).toNat + (s.gpr .rax).toNat + 2 ^ 64 * ((s.gpr .rbx).toNat + (s.gpr .rcx).toNat) +
@@ -199,9 +196,9 @@ theorem twB_ok (s : State) :
           (s.gpr .r11).toNat + (s.gpr .rax).toNat + 2 ^ 64 * ((s.gpr .rbx).toNat + (s.gpr .rcx).toNat) +
             2 ^ 128 * (s.gpr .rbp).toNat) ∧ GKeep twRegs s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [twB, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, twB, runBlock_cons, runStep_some, runBlock_nil, exec,
     readSrc, execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some,
-    Option.bind_some, Option.some.injEq, exists_eq_left', ite_true, ite_false, VG.Proof.Poly1305.X86_64.se0]
+    Option.bind_some, Option.some.injEq, exists_eq_left', VG.Proof.Poly1305.X86_64.se0]
   refine ⟨fun h => ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl, rfl⟩⟩
   · have hz : (0 : BitVec 64).toNat = 0 := rfl
     rw [VG.Proof.Poly1305.Limbs64.add3_toNat _ _ _ _ _ _ (by rw [hz]; omega_using [h]), hz]
@@ -222,7 +219,6 @@ theorem twC_ok (s : State) :
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [hr.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
 
-set_option simprocs false in
 /-- Adding `rax` into `r11, rbx, rbp`, with carries (`addLow_ok`, keeping
 the vector registers). -/
 theorem twD_ok (s : State) :
@@ -234,9 +230,9 @@ theorem twD_ok (s : State) :
           (s.gpr .r11).toNat + (s.gpr .rax).toNat + 2 ^ 64 * (s.gpr .rbx).toNat +
             2 ^ 128 * (s.gpr .rbp).toNat) ∧ GKeep twRegs s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
     readSrc, execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some,
-    Option.bind_some, Option.some.injEq, exists_eq_left', ite_true, ite_false, VG.Proof.Poly1305.X86_64.se0]
+    Option.bind_some, Option.some.injEq, exists_eq_left', VG.Proof.Poly1305.X86_64.se0]
   refine ⟨fun h => ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl, rfl⟩⟩
   · have hz : (0 : BitVec 64).toNat = 0 := rfl
     rw [VG.Proof.Poly1305.Limbs64.add3_toNat _ _ _ _ _ _ (by rw [hz]; omega_using [h]), hz]

@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
 import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 
@@ -137,16 +138,6 @@ theorem ret_frame {s₀ : State} (hp : APre s₀) : ∀ r ∈ [hR (st s₀), wR 
 theorem done_ok {s₀ : State} (hp : APre s₀) {s : State} (h : TailPre s₀ (nb s₀) s) : Post s₀ s :=
   ⟨⟨h.keep, h.frame.readW (Region.contains_self _ _) (ret_frame hp) (by decide), h.mxcsr⟩,
     fun key msg hr => h.repr key msg hr⟩
-
-theorem blocks_keeps :
-    ((instrs Impl.Poly1305.X86_64.blocks).all fun i => !Taint.clobbers i .rsp) = true := by
-  rw [← Code.allInstrs_eq]; lit_decide
-
-theorem blocks_nosp : NoSp Impl.Poly1305.X86_64.blocks := by
-  intro i hi
-  simpa using List.all_eq_true.mp blocks_keeps i hi
-
-theorem blocks_depth : Impl.Poly1305.X86_64.blocks.depth = 0 := by lit_decide
 
 theorem blocks_mx : ((instrs Impl.Poly1305.X86_64.blocks).all fun i => !loadsMxcsr i) = true := by
   rw [← Code.allInstrs_eq]; lit_decide
