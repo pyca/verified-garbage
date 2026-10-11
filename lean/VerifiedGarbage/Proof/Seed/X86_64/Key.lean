@@ -45,7 +45,7 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
   have r9₁ : s₁.gpr .r9 = s.gpr .rdx := gpr_setReg_self (s := s) _ _
   have g₁ : ∀ r, r ≠ .r9 → s₁.gpr r = s.gpr r := fun r hr => gpr_setReg_of_ne (s := s) _ hr
   have scr₁ : scratchR s₁ = ⟨s.gpr .rdx, 8 * scratchSlots⟩ := by simp only [scratchR, r9₁]
-  have room₁ : Room s₁ := by unfold Room; rw [scr₁]; exact h.scratch
+  have room₁ : Room s₁ := ⟨_, Nat.le_refl _, by rw [r9₁]; exact h.scratch⟩
   obtain ⟨s₂, e₂, g₂, rd₂, wr₂, f₂, set₂, keep₂⟩ := stores_ok room₁
     (Impl.Seed.X86_64.savedRegs.map fun p => (p.2, p.1)) (by decide) (by decide)
   have room₂ : Room s₂ := room_congr room₁ (by rw [g₂]) wr₂
@@ -59,7 +59,7 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
     rw [← this]; exact f₃
   have rd₃' : s₃.rd = s.rd := by rw [rd₃, rd₂]; rfl
   have wr₃' : s₃.wr = s.wr := by rw [wr₃, wr₂]; rfl
-  have room₃ : Room s₃ := by unfold Room; rw [scratchR, r9₃, wr₃']; exact h.scratch
+  have room₃ : Room s₃ := ⟨_, Nat.le_refl _, by rw [r9₃, wr₃']; exact h.scratch⟩
   -- the key
   have rdi₃ : s₃.gpr .rdi = s.gpr .rdi := G₃ _ (by decide) (by decide)
   have hkey : ∀ k, k + 4 ≤ 16 → InRegions (s₃.rd ++ s₃.wr) (s₃.gpr .rdi + BitVec.ofNat 64 k) 4 := fun k hk => by
@@ -84,7 +84,7 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
   have wr₅' : s₅.wr = s.wr := by rw [wr₅, wr₄, wr₃']
   have mem₅ : s₅.mem = s₃.mem := by rw [m₅, m₄]
   have scr₅ : scratchR s₅ = ⟨s.gpr .rdx, 8 * scratchSlots⟩ := by simp only [scratchR, r9₅]
-  have room₅ : Room s₅ := by unfold Room; rw [scr₅, wr₅']; exact h.scratch
+  have room₅ : Room s₅ := ⟨_, Nat.le_refl _, by rw [r9₅, wr₅']; exact h.scratch⟩
   have masks₅ : MasksIn s₅ := fun kv hkv => by
     rw [← set₃ kv hkv]
     show s₅.mem.readW (Straight.wordAddr (s₅.gpr .r9) kv.1) 64 = s₃.mem.readW (Straight.wordAddr (s₃.gpr .r9) kv.1) 64
