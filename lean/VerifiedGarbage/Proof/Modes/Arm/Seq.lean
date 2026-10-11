@@ -51,27 +51,6 @@ theorem runSeq_length (M : Mode) (ciph : Spec.Cbc.Cipher) :
   | _, [] => rfl
   | b, _ :: xs => by simp [runSeq, runSeq_length M ciph _ xs]
 
-/-- The blocks after a step stay blocks. -/
-theorem stepOf_length {M : Mode} {ciph : Spec.Cbc.Cipher} {L : Nat} (hc : ∀ b, b.length = L → (ciph b).length = L)
-    {b : Blks} (hl : ∀ x, (b.get x).length = L) : ∀ x, ((stepOf M ciph b).get x).length = L := by
-  have h₁ := runOps_length (ops := M.pre) hl
-  refine runOps_length fun x => ?_
-  by_cases hx : x = M.tgt
-  · subst hx; rw [Blks.get_set_self]; exact hc _ (h₁ _)
-  · rw [Blks.get_set_of_ne _ _ hx]; exact h₁ x
-
-theorem runSeq_blks_length {M : Mode} {ciph : Spec.Cbc.Cipher} {L : Nat}
-    (hc : ∀ b, b.length = L → (ciph b).length = L) :
-    ∀ {b : Blks} {xs : List (List Byte)}, (∀ x, (b.get x).length = L) → (∀ x ∈ xs, x.length = L) →
-      ∀ y, ((runSeq M ciph b xs).2.get y).length = L
-  | _, [], hb, _ => hb
-  | b, x :: xs, hb, hx => by
-    refine runSeq_blks_length (b := stepOf M ciph (b.set .d x)) (xs := xs) hc (stepOf_length hc fun y => ?_)
-      (fun z hz => hx z (List.mem_cons_of_mem _ hz))
-    by_cases hy : y = .d
-    · subst hy; rw [Blks.get_set_self]; exact hx x List.mem_cons_self
-    · rw [Blks.get_set_of_ne _ _ hy]; exact hb y
-
 section
 variable (c : Core) (S : CoreSpec c)
 
@@ -81,7 +60,7 @@ def seqArm (M : Mode) : Contract isa where
   pre s :=
     let key : Region := ⟨State.addr (s.gpr .r0), S.keyLen⟩
     let iv : Region := ⟨State.addr (s.gpr .r1), c.bs⟩
-    let data : Region := ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat * c.bs⟩
+    let data : Region := ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat * c.ds M⟩
     let scr : Region := ⟨State.addr (stackArg s 0), c.scratchBytes⟩
     let arg : Region := ⟨stackArgAddr s 0, 4⟩
     let below : Region := ⟨State.addr s.sp - BitVec.ofNat 64 S.stack, S.stack⟩
@@ -90,14 +69,14 @@ def seqArm (M : Mode) : Contract isa where
       key.Disjoint data ∧ key.Disjoint scr ∧ iv.Disjoint data ∧ iv.Disjoint scr ∧ data.Disjoint scr ∧
       below.Disjoint key ∧ below.Disjoint data ∧ below.Disjoint scr ∧
       (s.gpr .r0).toNat + S.keyLen ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + c.bs ≤ 2 ^ 32 ∧
-      (s.gpr .r2).toNat + (s.gpr .r3).toNat * c.bs ≤ 2 ^ 32 ∧ (stackArg s 0).toNat + c.scratchBytes ≤ 2 ^ 32 ∧
+      (s.gpr .r2).toNat + (s.gpr .r3).toNat * c.ds M ≤ 2 ^ 32 ∧ (stackArg s 0).toNat + c.scratchBytes ≤ 2 ^ 32 ∧
       (M.finish = true → iv ∈ s.wr) ∧ (∀ r ∈ s.wr, arg.Disjoint r)
   post s s' :=
     let r := runSeq M (S.ciphAt s.mem (State.addr (s.gpr .r0)))
       ⟨[], bytesAt s.mem (State.addr (s.gpr .r1)) c.bs,
         bytesAt s.mem (State.addr (stackArg s 0) + BitVec.ofNat 64 (oOff + c.bs)) c.bs⟩
-      (blocksOf c.bs s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
-    blocksOf c.bs s'.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat = r.1 ∧
+      (blocksOf (c.ds M) s.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat)
+    blocksOf (c.ds M) s'.mem (State.addr (s.gpr .r2)) (s.gpr .r3).toNat = r.1 ∧
       (M.finish = true → bytesAt s'.mem (State.addr (s.gpr .r1)) c.bs = r.2.o)
   pub s₁ s₂ :=
     s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
@@ -116,7 +95,7 @@ abbrev Sc : BitVec 32 := stackArg s₀ 0
 
 abbrev keyR : Region := ⟨State.addr (Kp s₀), S.keyLen⟩
 abbrev ivR : Region := ⟨State.addr (Ivp s₀), c.bs⟩
-abbrev dataR : Region := ⟨State.addr (Dp s₀), N s₀ * c.bs⟩
+abbrev dataR (M : Mode) : Region := ⟨State.addr (Dp s₀), N s₀ * c.ds M⟩
 abbrev scrR : Region := ⟨State.addr (Sc s₀), c.scratchBytes⟩
 abbrev argR : Region := ⟨stackArgAddr s₀ 0, 4⟩
 abbrev belowR : Region := ⟨State.addr s₀.sp - BitVec.ofNat 64 S.stack, S.stack⟩
@@ -128,11 +107,11 @@ abbrev tA : Addr := State.addr (Sc s₀) + BitVec.ofNat 64 (oOff + c.bs)
 /-- The cipher, as on entry. -/
 abbrev ciph : Spec.Cbc.Cipher := S.ciphAt s₀.mem (State.addr (Kp s₀))
 /-- The blocks on entry. -/
-abbrev xs : List (List Byte) := blocksOf c.bs s₀.mem (State.addr (Dp s₀)) (N s₀)
+abbrev xs (M : Mode) : List (List Byte) := blocksOf (c.ds M) s₀.mem (State.addr (Dp s₀)) (N s₀)
 /-- The blocks the mode starts from. -/
 abbrev b0 : Blks := ⟨[], bytesAt s₀.mem (State.addr (Ivp s₀)) c.bs, bytesAt s₀.mem (tA c s₀) c.bs⟩
 /-- The mode after the first `k` blocks. -/
-abbrev rK (M : Mode) (k : Nat) : List (List Byte) × Blks := runSeq M (ciph S s₀) (b0 c' s₀) ((xs c' s₀).take k)
+abbrev rK (M : Mode) (k : Nat) : List (List Byte) × Blks := runSeq M (ciph S s₀) (b0 c' s₀) ((xs c' s₀ M).take k)
 
 /-- The memory once the registers are saved. -/
 def savedMem : Mem := Spill.saveMem s₀.mem (State.addr (Sc s₀)) s₀.gpr saved
@@ -146,19 +125,19 @@ structure UPre (c : Core) (S : CoreSpec c) (M : Mode) (s₀ : State) : Prop wher
   key_in : keyR S s₀ ∈ s₀.rd ++ s₀.wr
   iv_in : ivR c s₀ ∈ s₀.rd ++ s₀.wr
   arg_in : argR s₀ ∈ s₀.rd ++ s₀.wr
-  data_in : dataR c s₀ ∈ s₀.wr
+  data_in : dataR c s₀ M ∈ s₀.wr
   scr_in : scrR c s₀ ∈ s₀.wr
-  key_data : (keyR S s₀).Disjoint (dataR c s₀)
+  key_data : (keyR S s₀).Disjoint (dataR c s₀ M)
   key_scr : (keyR S s₀).Disjoint (scrR c s₀)
-  iv_data : (ivR c s₀).Disjoint (dataR c s₀)
+  iv_data : (ivR c s₀).Disjoint (dataR c s₀ M)
   iv_scr : (ivR c s₀).Disjoint (scrR c s₀)
-  data_scr : (dataR c s₀).Disjoint (scrR c s₀)
+  data_scr : (dataR c s₀ M).Disjoint (scrR c s₀)
   b_key : (belowR S s₀).Disjoint (keyR S s₀)
-  b_data : (belowR S s₀).Disjoint (dataR c s₀)
+  b_data : (belowR S s₀).Disjoint (dataR c s₀ M)
   b_scr : (belowR S s₀).Disjoint (scrR c s₀)
   fK : (Kp s₀).toNat + S.keyLen ≤ 2 ^ 32
   fIv : (Ivp s₀).toNat + c.bs ≤ 2 ^ 32
-  fD : (Dp s₀).toNat + N s₀ * c.bs ≤ 2 ^ 32
+  fD : (Dp s₀).toNat + N s₀ * c.ds M ≤ 2 ^ 32
   fS : (Sc s₀).toNat + c.scratchBytes ≤ 2 ^ 32
   fin : M.finish = true → ivR c s₀ ∈ s₀.wr
   arg_wr : ∀ r ∈ s₀.wr, (argR s₀).Disjoint r
@@ -172,20 +151,31 @@ theorem UPre.of {c : Core} {S : CoreSpec c} {M : Mode} {s₀ : State} (h : (seqA
 structure LInv (c : Core) (S : CoreSpec c) (M : Mode) (s₀ : State) (k : Nat) (s : State) : Prop where
   r4 : s.gpr .r4 = Kp s₀
   r5 : s.gpr .r5 = Ivp s₀
-  r6 : s.gpr .r6 = Dp s₀ + BitVec.ofNat 32 (c.bs * k)
+  r6 : s.gpr .r6 = Dp s₀ + BitVec.ofNat 32 (c.ds M * k)
   r7 : s.gpr .r7 = BitVec.ofNat 32 (N s₀ - k)
   r8 : s.gpr .r8 = Sc s₀
   sp : s.sp = s₀.sp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame [dataR c s₀, blkR c s₀, belowR S s₀] (savedMem s₀) s.mem
-  data : blocksOf c.bs s.mem (State.addr (Dp s₀)) (N s₀) = (rK S s₀ M k).1 ++ (xs c s₀).drop k
+  frame : Frame [dataR c s₀ M, blkR c s₀, belowR S s₀] (savedMem s₀) s.mem
+  data : blocksOf (c.ds M) s.mem (State.addr (Dp s₀)) (N s₀) = (rK S s₀ M k).1 ++ (xs c s₀ M).drop k
   o : bytesAt s.mem (oA s₀) c.bs = (rK S s₀ M k).2.o
   t : bytesAt s.mem (tA c s₀) c.bs = (rK S s₀ M k).2.t
 
 /-! ## Facts of the layout -/
 
 theorem CoreSpec.bs_pos {c : Core} (S : CoreSpec c) : 0 < c.bs := by have := S.bw_pos; unfold Core.bs; omega
+
+theorem CoreSpec.ds_pos {c : Core} (S : CoreSpec c) (M : Mode) : 0 < c.ds M := by
+  have := S.bs_pos; unfold Core.ds; split <;> omega
+
+theorem CoreSpec.ds_le {c : Core} (S : CoreSpec c) (M : Mode) : c.ds M ≤ c.bs := by
+  have := S.bs_pos; unfold Core.ds; split <;> omega
+
+theorem CoreSpec.ds_enc {c : Core} (S : CoreSpec c) (M : Mode) : encodable (BitVec.ofNat 32 (c.ds M)) = true := by
+  unfold Core.ds; split
+  · decide
+  · exact S.bs_enc
 
 theorem saved_slots : Spill.Slots 0 36 saved := by decide
 /-- The registers restored before `r8`, the base, which is restored last. -/
@@ -222,7 +212,7 @@ theorem UPre.savedMem_frame : Frame [⟨State.addr (Sc s₀) + BitVec.ofNat 64 0
 /-- What a frame within the scratch buffer, the data and the stack leaves of
 the schedule. -/
 theorem UPre.ciph_eq {m : Mem}
-    (hf : Frame [dataR c s₀, scrR c s₀, belowR S s₀] s₀.mem m) :
+    (hf : Frame [dataR c s₀ M, scrR c s₀, belowR S s₀] s₀.mem m) :
     S.ciphAt m (State.addr (Kp s₀)) = ciph S s₀ := by
   refine (S.ciphAt_congr fun i hi => ?_).symm
   refine (hf.bytes (R := keyR S s₀) (fun r hr => ?_) (by show S.keyLen ≤ 2 ^ 64; have := hp.fK; omega) hi).symm
@@ -238,14 +228,13 @@ end
 
 theorem stackArgAddr0 (s : State) : State.addr (s.sp + BitVec.ofNat 32 0) = stackArgAddr s 0 := rfl
 
-theorem add0 (p : Addr) : p + BitVec.ofNat 64 0 = p := BitVec.add_zero p
 
 /-- What the saves and the copy of the IV leave in memory. -/
 theorem prologue_mem {c : Core} {S : CoreSpec c} {M : Mode} {s₀ : State} (hp : UPre c S M s₀) :
     let m := over (savedMem s₀) (oA s₀) (4 * c.bw) fun i =>
       savedMem s₀ (State.addr (Ivp s₀) + BitVec.ofNat 64 0 + BitVec.ofNat 64 i)
-    Frame [dataR c s₀, blkR c s₀, belowR S s₀] (savedMem s₀) m ∧
-      blocksOf c.bs m (State.addr (Dp s₀)) (N s₀) = xs c s₀ ∧
+    Frame [dataR c s₀ M, blkR c s₀, belowR S s₀] (savedMem s₀) m ∧
+      blocksOf (c.ds M) m (State.addr (Dp s₀)) (N s₀) = xs c s₀ M ∧
       bytesAt m (oA s₀) c.bs = bytesAt s₀.mem (State.addr (Ivp s₀)) c.bs ∧
       bytesAt m (tA c s₀) c.bs = bytesAt s₀.mem (tA c s₀) c.bs := by
   intro m
@@ -264,11 +253,11 @@ theorem prologue_mem {c : Core} {S : CoreSpec c} {M : Mode} {s₀ : State} (hp :
   · -- The data: apart from the slots and the chaining block.
     refine List.map_congr_left fun j hj => ?_
     have hj := List.mem_range.mp hj
-    have hsub : Region.Sub ⟨State.addr (Dp s₀) + BitVec.ofNat 64 (c.bs * j), c.bs⟩ (dataR c s₀) :=
-      VG.Offset.sub_base _ (by have := VG.Proof.Modes.idx_lt (L := c.bs) hj; rw [Nat.mul_comm (N s₀)]; omega)
+    have hsub : Region.Sub ⟨State.addr (Dp s₀) + BitVec.ofNat 64 (c.ds M * j), c.ds M⟩ (dataR c s₀ M) :=
+      VG.Offset.sub_base _ (by have := VG.Proof.Modes.idx_lt (L := c.ds M) hj; rw [Nat.mul_comm (N s₀)]; omega)
     rw [bytesAt_over_other _ _ ((hp.data_scr.sub_left hsub).sub_right (fun a h => UPre.blk_sub a (oSub a h))).symm
-      (by have := hp.fD; omega)]
-    exact VG.Proof.Modes.bytesAt_frame fs (slotsDisj (hp.data_scr.sub_left hsub)) (by have := hp.fD; omega)
+      (by have := S.ds_le M; omega)]
+    exact VG.Proof.Modes.bytesAt_frame fs (slotsDisj (hp.data_scr.sub_left hsub)) (by have := S.ds_le M; omega)
   · have e := VG.Proof.Modes.bytesAt_frame fs (slotsDisj hp.iv_scr) (by show c.bs ≤ 2 ^ 64; omega)
     rw [hbs] at e ⊢
     rw [bytesAt_over_self _ _ _ (by omega), ← e]
