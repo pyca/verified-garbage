@@ -91,6 +91,7 @@ def full : StitchName → Bool
 /-- Decryption using a prepared context. -/
 def decR : StitchName → Prog isa
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.dec
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.decR
   | n => n.dec
 
 /-- Whether `seal` and `open` calling the loops named `n` take the short path
