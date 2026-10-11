@@ -27,12 +27,17 @@ def scratchR (s : State) : Region := ⟨(s.gpr sb).setWidth 64, 4 * slots⟩
 
 /-- The scratch buffer is writable, and does not wrap around. -/
 structure Room (s : State) : Prop where
-  mem : scratchR s ∈ s.wr
+  mem : ∃ n, slots ≤ n ∧ (s.gpr sb).toNat + 4 * n ≤ 2 ^ 32 ∧
+    (⟨(s.gpr sb).setWidth 64, 4 * n⟩ : Region) ∈ s.wr
   fit : (s.gpr sb).toNat + 4 * slots ≤ 2 ^ 32
 
 theorem Room.congr {s s' : State} (h : Room s) (hb : s'.gpr sb = s.gpr sb) (hw : s'.wr = s.wr) :
     Room s' :=
-  ⟨by unfold scratchR; rw [hb, hw]; exact h.mem, by rw [hb]; exact h.fit⟩
+  ⟨by rw [hb, hw]; exact h.mem, by rw [hb]; exact h.fit⟩
+
+/-- A scratch buffer of exactly `slots` slots. -/
+theorem Room.exact {s : State} (hr : scratchR s ∈ s.wr) (hfit : (s.gpr sb).toNat + 4 * slots ≤ 2 ^ 32) :
+    Room s := ⟨⟨slots, Nat.le_refl _, hfit, hr⟩, hfit⟩
 
 theorem toNat_addr (b : BitVec 32) : (b.setWidth 64).toNat = b.toNat := by
   rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
@@ -44,6 +49,12 @@ theorem slot_addr {b : BitVec 32} {k : Nat} (hfit : b.toNat + 4 * k + 4 ≤ 2 ^ 
 theorem slot_in {s : State} (h : Room s) {k : Nat} (hk : k < slots) :
     (scratchR s).Contains (wordAddr (s.gpr sb) k) 4 :=
   slot_contains (s.gpr sb) hk h.fit
+
+/-- Slot `k` is writable. -/
+theorem Room.inR {s : State} (h : Room s) {k : Nat} (hk : k < slots) :
+    InRegions s.wr (wordAddr (s.gpr sb) k) 4 :=
+  let ⟨_, hn, hf, hr⟩ := h.mem
+  ⟨_, hr, slot_contains (s.gpr sb) (Nat.lt_of_lt_of_le hk hn) hf⟩
 
 /-- Slot `k` of the scratch buffer. -/
 abbrev slotA (s : State) (k : Nat) : Addr := wordAddr (s.gpr sb) k
@@ -61,7 +72,7 @@ theorem ea_slot (s : State) (k : Nat) : s.ea (slotAt sb k) = slotA s k := rfl
 theorem load_slot {s : State} (h : Room s) {k : Nat} (hk : k < slots) :
     s.load32 (slotA s k) = some (slotW s k) := by
   simp only [State.load32, show InRegions (s.rd ++ s.wr) (slotA s k) 4 from
-    ⟨_, List.mem_append_right _ h.mem, slot_in h hk⟩, ↓reduceIte]; rfl
+    let ⟨_, hr, hc⟩ := h.inR hk; ⟨_, List.mem_append_right _ hr, hc⟩, ↓reduceIte]; rfl
 
 theorem exec_movS {s : State} (h : Room s) {k : Nat} (hk : k < slots) (d : Reg) :
     exec (movS d k) s = some (s.setReg d (slotW s k)) := by
@@ -69,7 +80,7 @@ theorem exec_movS {s : State} (h : Room s) {k : Nat} (hk : k < slots) (d : Reg) 
 
 theorem exec_st {s : State} (h : Room s) {k : Nat} (hk : k < slots) (r : Reg) :
     exec (st k r) s = some (setMem s (s.mem.writeW (slotA s k) (s.gpr r))) := by
-  simp only [st, exec, ea_slot, State.store32, show InRegions s.wr (slotA s k) 4 from ⟨_, h.mem, slot_in h hk⟩,
+  simp only [st, exec, ea_slot, State.store32, show InRegions s.wr (slotA s k) 4 from h.inR hk,
     ↓reduceIte]; rfl
 
 theorem exec_xorS {s : State} (h : Room s) {k : Nat} (hk : k < slots) (d : Reg) :

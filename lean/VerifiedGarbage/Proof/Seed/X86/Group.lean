@@ -220,9 +220,10 @@ theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {E : Nat → Spe
   have hwD : (⟨D.setWidth 64, 16 * n⟩ : Region) ∈ s.wr := by rw [hi.wr]; exact hp.dat
   have inT : ∀ t < 16 * c, t % 4 = 0 → InRegions s.wr (T.setWidth 64 + BitVec.ofNat 64 t) 4 := by
     intro t ht h4
-    refine ⟨_, hwS.mem, ?_⟩
+    obtain ⟨n', hn', hf', hr'⟩ := hwS.mem
+    refine ⟨_, hr', ?_⟩
     rw [hT, VG.Offset.add_add]
-    exact VG.Offset.contains_base _ (by rw [slots_eq, tailSlot_eq]; omega) (by rw [tailSlot_eq]; omega)
+    exact VG.Offset.contains_base _ (by rw [slots_eq] at hn'; rw [tailSlot_eq]; omega) (by rw [tailSlot_eq]; omega)
   have inA : ∀ t < 16 * c, t % 4 = 0 → InRegions s.wr (A.setWidth 64 + BitVec.ofNat 64 t) 4 := by
     intro t ht h4
     refine ⟨_, hwD, ?_⟩
@@ -291,7 +292,7 @@ theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {E : Nat → Spe
   have base₄ : s₄.gpr sb = b := by rw [g₄]; exact base₃
   have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃]
   -- The eight blocks.
-  have hR₄ : Room s₄ := ⟨by unfold scratchR; rw [base₄, wr₄']; exact hwS.mem, by rw [base₄]; exact hfit'⟩
+  have hR₄ : Room s₄ := ⟨by rw [base₄, wr₄']; exact hwS.mem, by rw [base₄]; exact hfit'⟩
   refine WP.seq (WP.mono (crypt8_wp hR₄) fun s₅ ⟨b₅, _, rd₅', wr₅', sb₅, esp₅, sl₅, f₅'⟩ => ?_)
   have base₅ : s₅.gpr .edi = b := sb₅.trans base₄
   have keepr₅ : ∀ r, r ≠ .esi → r ≠ .ebp → r ≠ .ecx → r ≠ .edx → r ≠ .ebx → r ≠ .eax → s₅.gpr r = s₄.gpr r :=
