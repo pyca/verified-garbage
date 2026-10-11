@@ -270,17 +270,31 @@ def decodeLimb (i : Nat) : List Instr :=
   [.movzx8 .eax (at_ .esi (2 * i)), .movzx8 .edx (at_ .esi (2 * i + 1)),
     .shift .ror .edx 24, .alu .add .eax (.reg .edx), st .eax (X1 + 4 * i), st .eax (X3 + 4 * i)]
 
-def bitJ (i j : Nat) : List Instr :=
+/-- Bit `j` of the byte in `eax` to `[ebp + o + j]`. -/
+def bitP (o j : Nat) : List Instr :=
   [.mov .edx (.reg .eax)] ++ (if j = 0 then [] else [.shift .shr .edx j]) ++
-    [.alu .and .edx (.imm 1), .store8 (sc (BITS + 8 * i + j)) .dl]
+    [.alu .and .edx (.imm 1), .store8 (at_ .ebp (o + j)) .dl]
 
-/-- Expand the scalar's bytes, then apply the RFC 7748 clamp. -/
-def bits : Prog isa := .block <|
-  [.mov .esi (.mem (at_ .esp 8))] ++
-  ((List.range 56).flatMap fun i =>
-    [.movzx8 .eax (at_ .esi i)] ++ (List.range 8).flatMap (bitJ i)) ++
+/-- One byte: the byte at `esi` expanded into the bytes at `ebp + o`, …, `ebp + o + 7`; then
+`esi`, `ebp` and the count `ecx` moved on (ZF set at 0). -/
+def bitsBody (o : Nat) : List Instr :=
+  [.movzx8 .eax (at_ .esi 0)] ++ (List.range 8).flatMap (bitP o) ++
+    [.alu .add .esi (.imm 1), .alu .add .ebp (.imm 8), .alu .sub .ecx (.imm 1)]
+
+/-- The `n` bytes at `esi` expanded into their bits in the working space: byte `o + 8 i + j` is
+bit `j` of byte `i`, through `ebp = edi + 8 i`, counted by `ecx`. -/
+def bitsLoop (o n : Nat) : Prog isa :=
+  .seq (.block [.mov .ebp (.reg .edi), .mov .ecx (.imm (BitVec.ofNat 32 n))])
+    (.loop (.block (bitsBody o)) .ne)
+
+/-- RFC 7748's clamp of the expanded bits: bits 0 and 1 cleared, bit 447 set. -/
+def clamp : List Instr :=
   [.mov .edx (.imm 0), .store8 (sc BITS) .dl, .store8 (sc (BITS + 1)) .dl,
     .mov .edx (.imm 1), .store8 (sc (BITS + 447)) .dl]
+
+/-- Expand the scalar's bytes, then apply the RFC 7748 clamp. -/
+def bits : Prog isa :=
+  .seq (.block [.mov .esi (.mem (at_ .esp 8))]) (.seq (bitsLoop BITS 56) (.block clamp))
 
 def initSlots : List Instr :=
   [.alu .xor .eax (.reg .eax)] ++
