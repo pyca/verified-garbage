@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.CompressAvx2
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.CompressAvx2
 
 /-!
 # Argon2 compression G on x86-64 with AVX-512
@@ -34,6 +36,8 @@ scratch holds R = X XOR Y, `[1024, 2048)` the block P permutes, and
 
 Every address is a pointer plus a constant, and there are no branches.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.Avx512
 

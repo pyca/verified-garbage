@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_expand_mask_poly`
@@ -18,6 +20,8 @@ difference is negative, by its sign bit). There is no branch on the data,
 and the addresses depend only on the pointers and `γ₁`: it is constant
 time.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sample
 

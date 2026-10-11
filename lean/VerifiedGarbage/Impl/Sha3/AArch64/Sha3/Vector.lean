@@ -1,5 +1,9 @@
-import VerifiedGarbage.Spec.Sha3
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Spec.Sha3
+public import VerifiedGarbage.TCB.AArch64.Isa
+
+@[expose] public section
 
 /-
 Copyright 2017-2026 The OpenSSL Project Authors. All Rights Reserved.

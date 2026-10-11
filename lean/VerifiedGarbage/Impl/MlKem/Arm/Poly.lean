@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # ML-KEM: the coefficient-wise primitives on 32-bit ARM
@@ -47,6 +49,8 @@ arrays.
 Every address is a pointer plus a constant, and every branch depends on a
 counter or `d`: only the pointers, `d` and `len` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.Arm
 

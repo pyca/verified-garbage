@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Bignum.X86_64
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64
 
 /-!
 # Multiword arithmetic on x86-64: Montgomery multiplication with BMI2 and ADX
@@ -31,6 +33,8 @@ The registers: `rdi` the working space; `r8` the window, `r9` `b`, `r10` `m`,
 `r13`, `r15` the block's words; `rcx`, `rbp` the carries; `rax`, `rsi`
 temporaries.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Bignum.X86_64.Adx
 

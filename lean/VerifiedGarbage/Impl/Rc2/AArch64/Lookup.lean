@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Impl.Tbl.AArch64
+module
+
+public import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Impl.Tbl.AArch64
 
 /-! # RC2 table lookups on AArch64
 
@@ -10,6 +12,8 @@ and a schedule word is read from the 128-byte schedule at `x0` into
 `v16`–`v23`. Only caller-saved vector registers are written (`v0`–`v5`,
 `v16`–`v31`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.AArch64
 

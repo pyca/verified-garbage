@@ -1,4 +1,8 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.Arm.Whole
 open VG.Arm

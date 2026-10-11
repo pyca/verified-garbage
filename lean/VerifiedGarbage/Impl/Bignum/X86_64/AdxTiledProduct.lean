@@ -1,9 +1,14 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxHeader
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxCarry8
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxFinish8
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxHeader
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxCarry8
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxFinish8
 
 /-! Full raw multiplication from eight-word rectangular rows. -/
+
+@[expose] public section
+
 namespace VG.Impl.Bignum.X86_64.AdxTiledProduct
 open VG.X86_64
 

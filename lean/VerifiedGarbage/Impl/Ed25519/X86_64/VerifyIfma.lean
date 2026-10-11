@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.CombIfma
-import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.CombIfma
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
 
 /-!
 # Ed25519 verification's windows with AVX512_IFMA
@@ -21,6 +23,8 @@ stores the constants), and back into slots 0–3 once, after them (`vstore`);
 the windows and `vstore` run between Intel's MXCSR prologue and epilogue
 (`withMx`), and nothing in them writes `r11`, which holds the saved MXCSR.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64.Ifma
 

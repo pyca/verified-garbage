@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.Paired
 open VG VG.AArch64

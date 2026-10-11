@@ -1,9 +1,13 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
-import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Setup
-import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Wipe
-import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
-import VerifiedGarbage.Impl.Sha512.AArch64.Stream
-import VerifiedGarbage.Spec.Sha512.Contract
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Setup
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Wipe
+public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
+public import VerifiedGarbage.Spec.Sha512.Contract
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.AArch64.PublicKey
 open VG.AArch64

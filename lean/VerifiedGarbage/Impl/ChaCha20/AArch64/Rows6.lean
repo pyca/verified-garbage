@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Small
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Small
 
 /-!
 # Six row-oriented ChaCha20 blocks
@@ -10,6 +12,9 @@ and restores the three nonconstant rows for the diagonal quarter rounds.
 The stream wrapper must preserve the low halves of v8–v9 before using this
 kernel. v30 is the byte-rotation table and v31 is temporary.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.ChaCha20.AArch64.Rows6
 open VG.AArch64
 

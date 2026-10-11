@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86.Basic
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): packing and unpacking `d`-bit fields
@@ -25,6 +27,8 @@ through the accumulator `ebx`, in a schedule that depends only on `d`:
 `ebx` never holds more than `d + 7 ≤ 27` bits. Every address and branch
 depends only on the pointers and `d`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.Pack
 

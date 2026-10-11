@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Aes.Circuit
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.Impl.Aes.Circuit
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # Register allocation of Boolean circuits on x86-64
@@ -17,6 +19,8 @@ ones.
 Nothing here needs to be trusted: the proofs check the code this produces,
 not the allocator.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86_64
 

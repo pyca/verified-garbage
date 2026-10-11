@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
 
 /-! Signed five-bit NAF recoding of a public 256-bit scalar into 257 bytes. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.AArch64.Naf
 open VG VG.AArch64 VG.Impl.Mont.AArch64
 

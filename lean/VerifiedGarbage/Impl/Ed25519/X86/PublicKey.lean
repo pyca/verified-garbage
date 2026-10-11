@@ -1,13 +1,18 @@
-import VerifiedGarbage.Impl.Ed25519.X86.Whole.Wipe
-import VerifiedGarbage.Impl.Ed25519.X86.Whole.Setup
-import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
-import VerifiedGarbage.Impl.Sha512.X86.Stream
-import VerifiedGarbage.Spec.Sha512.Contract
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Wipe
+public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Setup
+public import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
+public import VerifiedGarbage.Impl.Sha512.X86.Stream
+public import VerifiedGarbage.Spec.Sha512.Contract
 
 /-! Ed25519 public-key derivation, including SHA-512 and pruning, on x86.
 The 256-byte frame holds outgoing cdecl arguments at 0, the scalar at 32,
 and the digest at 192. The original arguments remain above the frame.
 SHA-512's state and working space use the caller's scratch buffer. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86.PublicKey
 open VG.X86
 

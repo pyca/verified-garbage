@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Field
-import VerifiedGarbage.Spec.Ed25519.Point16
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Field
+public import VerifiedGarbage.Spec.Ed25519.Point16
 
 /-!
 # Ed25519's point addition and doubling on ARMv7, as functions
@@ -14,6 +16,8 @@ stack. They never write `r0`, `r10`, `r11` or `r12`.
 Every address is `ws` plus a constant, and the only branches are the
 products' row loops: only the pointer, which is public, may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.Arm
 

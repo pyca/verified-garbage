@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Rsa.X86_64.Checked
+module
 
-import VerifiedGarbage.Impl.Rsa.X86_64.WordIO
-import VerifiedGarbage.Impl.Rsa.X86_64.Compare8
+public import VerifiedGarbage.Impl.Rsa.X86_64.Checked
+
+public import VerifiedGarbage.Impl.Rsa.X86_64.WordIO
+public import VerifiedGarbage.Impl.Rsa.X86_64.Compare8
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.X86_64.Folded
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public

@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
 
 /-! Full-width multiply-add before subgroup-order reduction. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG VG.Arm
 

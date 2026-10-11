@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.TripleDes.BitsliceCircuit
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Impl.TripleDes.BitsliceCircuit
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # Register allocation of the DES S-box circuits on AdvSIMD registers
@@ -16,6 +18,8 @@ reject.
 Nothing here needs to be trusted: the proofs check the code this produces,
 not the allocator.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.AArch64.BitsliceNeon
 

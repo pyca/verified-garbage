@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
-import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Encode
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Encode
 
 /-!
 # RSASSA-PSS (RFC 8017 §8.1, EMSA-PSS §9.1) on AArch64
@@ -44,6 +46,8 @@ mask of `b = ⌊(ℓ + L) / B⌋` (`lenLoop`); every block compressed, the hash
 value copied to `scratch + oSel` under the same mask (`compLoop`); the
 digest of that hash value written (`digestOut`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaPss.AArch64
 

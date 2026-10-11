@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.X86_64.Callee
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.Callee
 
 /-!
 # AES-OCB: x86-64 implementation
@@ -60,6 +62,8 @@ preserve them, and `rbx`, `rbp`, `r12` and `r13`, which hold pointers and
 counts across calls. Only the pointers, the lengths, `rounds` and
 `tag_len` (and for `open`, whether the tag is right) affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesOcb.X86_64
 

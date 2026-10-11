@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ecdh.X86
-import VerifiedGarbage.Impl.Weierstrass.X86.Window
+module
+
+public import VerifiedGarbage.Impl.Ecdh.X86
+public import VerifiedGarbage.Impl.Weierstrass.X86.Window
 
 /-! # Shared x86 P-256 variable-base window code for ECDH and verification -/
+
+@[expose] public section
+
 namespace VG.Impl.Ecdh.X86
 open VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
 open VG.Impl.Ecdsa.X86

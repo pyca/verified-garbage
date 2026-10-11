@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Aes.AArch64.Ctr32
-import VerifiedGarbage.Impl.Aes.AArch64.Inv
+module
+
+public import VerifiedGarbage.Impl.Aes.AArch64.Ctr32
+public import VerifiedGarbage.Impl.Aes.AArch64.Inv
 
 /-!
 # AES encryption and decryption of whole blocks, bitsliced, on AArch64
@@ -24,6 +26,8 @@ Only `x0` (the first round key), `x1`, `x2` during the key loop, `x3` (the
 data), `x4` (the blocks left), `x5` and the loop tests (`t0`) hold public
 values; no address and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.AArch64
 

@@ -1,7 +1,12 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Register argument setup for whole Ed25519 operations. Original arguments
 are saved in the read-only part of the local stack allocation. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.AArch64.Whole
 open VG.AArch64
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.X448.Arm
-import VerifiedGarbage.Spec.Ed448
+module
+
+public import VerifiedGarbage.Impl.X448.Arm
+public import VerifiedGarbage.Spec.Ed448
 
 /-!
 # Ed448 base-point multiplication on ARMv7
@@ -31,6 +33,8 @@ output's first 56 bytes and the bit as the top bit of its 57th.
 The only branches are on the loop counters, and every address is a pointer
 plus a constant or a counter, so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.Arm
 

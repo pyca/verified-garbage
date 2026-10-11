@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.Ecdsa.AArch64
-import VerifiedGarbage.Spec.P521
-import VerifiedGarbage.Impl.P521.CombTable7
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.AArch64
+public import VerifiedGarbage.Spec.P521
+public import VerifiedGarbage.Impl.P521.CombTable7
 
 /-! # ECDSA over P-521 on AArch64: nine-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.AArch64
 

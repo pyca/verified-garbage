@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
 
 /-!
 # AVX-512 GCM loops reading prepared GHASH powers
@@ -7,6 +9,8 @@ The context stores the converted powers once at key setup. Each pair is
 loaded directly, eliminating the byte reversal, shift and reduction from
 each record. The arithmetic loops and working-space layout are unchanged.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.X86_64.StitchZR
 

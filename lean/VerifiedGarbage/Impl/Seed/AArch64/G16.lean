@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Aes.AArch64.Linear
-import VerifiedGarbage.Impl.Seed.Layers
+module
+
+public import VerifiedGarbage.Impl.Aes.AArch64.Linear
+public import VerifiedGarbage.Impl.Seed.Layers
 
 /-!
 # SEED's G on sixteen words at once, bitsliced, on AArch64
@@ -29,6 +31,8 @@ instructions, rotations and shifts by constants touch the data: no address
 and no branch depends on it. `g16` writes the S-box's registers (`q 0 …
 q 7`, `x14`–`x17`, `x19`–`x28`) and nothing else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.AArch64
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Mont.X86_64
+module
+
+public import VerifiedGarbage.Impl.Mont.X86_64
 
 /-!
 # P-384's `C [a] - D [b] mod p`, for small `C` and `D`, with BMI2 and ADX
@@ -16,6 +18,8 @@ combinations (`12 X Y² - 9 (X² - Z⁴)²`, `4 X Y² - X₃`, `3 M (…) - 8 Y�
    `c = 2³⁸⁴ - p` (`cmsFold`): `L + h c`, below `2p`;
 4. `csub`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Mont.X86_64
 

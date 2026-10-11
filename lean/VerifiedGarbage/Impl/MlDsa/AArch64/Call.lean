@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 
 /-!
 # ML-DSA on AArch64: calls with their arguments
@@ -10,6 +12,8 @@ keep in callee-saved registers. A buffer is at `p.1 + p.2` for a pointer `p`
 arguments into their registers (`glue`: an `add`, or a `movz` (and `movk`s)
 and an `add`, for a pointer; a `movz` (and `movk`s) for an integer).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Call
 

@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.Ed25519.X86.Field
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.Field
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86
 open VG VG.X86 VG.Impl.X25519.X86

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rsa.AArch64.Crt
+module
+
+public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
 
 /-!
 # RSA private keys on AArch64: the shared routines and `vg_rsa_crt_values`
@@ -43,6 +45,8 @@ cleared: `p - 1` for an odd `p`, which `p q = n` implies). Each result is
 written out masked. `p q = n` is checked by `divmod` too, as
 `n mod p = 0`, `n / p = q` and `p` odd.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.AArch64.Keys
 

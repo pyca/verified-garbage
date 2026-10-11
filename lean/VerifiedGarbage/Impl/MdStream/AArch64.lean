@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # Streaming Merkle–Damgård hash functions: AArch64 implementation
@@ -35,6 +37,8 @@ flags either: every comparison is a shift (`len ≥ B` iff `len >> log₂ B ≠ 
 or a subtraction tested with `cbz`/`cbnz`. Every address and branch depends
 only on the pointers, `count` and `len`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MdStream.AArch64
 

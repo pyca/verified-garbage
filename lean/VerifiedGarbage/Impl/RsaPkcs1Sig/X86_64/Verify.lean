@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Encode
+module
+
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Encode
 
 /-!
 # RSASSA-PKCS1-v1_5 verification on x86-64
@@ -24,6 +26,8 @@ call; at `oN` … `oD`, the arguments kept across it; at `oEM1` and `oEM2`,
 the two buffers of up to 1024 bytes. Only caller-saved registers are used.
 With the frame, `rsp` is a multiple of 16 at the call.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaPkcs1Sig.X86_64.Verify
 

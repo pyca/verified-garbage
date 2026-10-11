@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # GHASH: AArch64 implementation
@@ -25,6 +27,8 @@ SP 800-38D Algorithm 1 bit by bit, as `Spec.Gcm.mul` defines it:
 * `x0`–`x3` (the pointers and the block count) and `x14` are public; no
   address and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.AArch64
 

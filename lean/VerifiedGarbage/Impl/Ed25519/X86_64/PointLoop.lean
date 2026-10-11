@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.FieldMemory
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.FieldMemory
 
 /-! Fixed batches of doubling, with a public counter in rsi. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

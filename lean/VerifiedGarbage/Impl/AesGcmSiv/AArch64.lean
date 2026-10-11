@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesGcm.AArch64
+module
+
+public import VerifiedGarbage.Impl.AesGcm.AArch64
 
 /-!
 # AES-GCM-SIV: AArch64 implementation
@@ -61,6 +63,8 @@ The model has no flags or register-offset addressing: the branches are
 masked through advancing pointers. Only the pointers, the lengths and
 `rounds` affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcmSiv.AArch64
 

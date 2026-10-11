@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.X86.Top
-import VerifiedGarbage.Spec.MlKem
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Top
+public import VerifiedGarbage.Spec.MlKem
 
 /-!
 # ML-KEM on x86 (32-bit): the layout of a parameter set
@@ -40,6 +42,8 @@ and for K-PKE.Encrypt (`e*`), which encapsulation and decapsulation share:
 * `eC`: the ciphertext (`32(d_u·k + d_v)` bytes);
 * `eH`: `H(ek)` in encapsulation, `K̄` in decapsulation.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86
 

@@ -1,6 +1,8 @@
-import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Impl.Mont.X86.Sparse
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Impl.Mont.X86.Sparse
 
 /-!
 # Montgomery arithmetic modulo an odd multiword modulus, on x86 (32-bit)
@@ -32,6 +34,8 @@ plus a constant: nothing but `edi` may affect timing. The operations use
 `eax`, `ebx`, `ecx`, `edx` and `ebp`, and write only `[o]`, `[acc]` and
 `[M.tmp]`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Mont.X86
 

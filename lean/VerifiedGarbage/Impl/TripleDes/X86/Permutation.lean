@@ -1,4 +1,9 @@
-import VerifiedGarbage.Impl.TripleDes.X86.Common
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86.Common
+
+@[expose] public section
+
 namespace VG.Impl.TripleDes.X86
 open VG.X86
 

@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointSelect
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointTable
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointSelect
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointTable
 
 /-! A descending scalar bit: add its point power, then select using the bit mask. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

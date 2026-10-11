@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Call
-import VerifiedGarbage.Impl.MlKem.AArch64.Compress
-import VerifiedGarbage.Impl.Sha3.AArch64.Stream
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Call
+public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+public import VerifiedGarbage.Impl.Sha3.AArch64.Stream
 
 /-!
 # ML-DSA on AArch64, signing: the pieces of the top-level function
@@ -21,6 +23,8 @@ test a register (`cbz`, `cbnz`).
 The code is generic in the implementations of the primitives (`Prims`): the
 proofs hold for any code that meets their contracts.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sign
 

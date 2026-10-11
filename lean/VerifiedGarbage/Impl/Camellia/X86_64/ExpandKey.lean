@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Camellia.X86_64.Ecb
-import VerifiedGarbage.Spec.Camellia
-import VerifiedGarbage.Impl.Camellia.KeyOrder
+module
+
+public import VerifiedGarbage.Impl.Camellia.X86_64.Ecb
+public import VerifiedGarbage.Spec.Camellia
+public import VerifiedGarbage.Impl.Camellia.KeyOrder
 
 /-!
 # The Camellia key schedule on x86-64
@@ -23,6 +25,8 @@ Only `rdi`, `rsi` (the key length, then the table), `rdx` and `r9` hold
 public values, and `r8` counts the pairs; no address and no branch depends
 on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.X86_64
 

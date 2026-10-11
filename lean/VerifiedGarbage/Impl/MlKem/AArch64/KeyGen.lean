@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.Lay
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.Lay
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem768_keygen` and `vg_mlkem1024_keygen`
@@ -33,6 +35,8 @@ Only the calls of `sample_ntt` depend on `ρ` (which the contract declares
 that the function may leak); every other address and branch depends only on
 the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.AArch64
 

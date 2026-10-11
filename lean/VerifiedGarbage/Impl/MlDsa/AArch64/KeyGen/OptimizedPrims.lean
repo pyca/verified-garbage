@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Optimized
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.AddSub
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenRound
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Optimized
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.AddSub
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenRound
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.KeyGen.Optimized
 open VG VG.AArch64

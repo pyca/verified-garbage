@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 
 /-!
 # The SHA-3 sponge: AArch64 implementation
@@ -37,6 +39,8 @@ access. It has no flags either: the comparison of the position with the
 rate is a subtraction tested with `cbz`. Every address and branch depends
 only on the pointers, `rate`, `pos` and the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.AArch64.Stream
 

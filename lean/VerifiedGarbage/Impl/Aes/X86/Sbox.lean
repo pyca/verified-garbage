@@ -1,4 +1,7 @@
-import VerifiedGarbage.Impl.Aes.X86.Alloc
+module
+
+public import VerifiedGarbage.Impl.Aes.X86.Alloc
+meta import VerifiedGarbage.Impl.Aes.X86.Alloc
 
 /-!
 # The bitsliced AES S-box on x86 (32-bit)
@@ -10,6 +13,8 @@ from 8 on: the code that `compile` allocates for it. It is written out (and
 `#guard` checks that it is what `compile` produces) so that the kernel,
 which evaluates the code in the proofs, does not have to run the allocator.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86
 

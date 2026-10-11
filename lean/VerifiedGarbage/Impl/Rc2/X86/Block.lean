@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
+module
+
+public import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
 
 /-! # RC2 block rounds on baseline x86
 
@@ -7,6 +9,8 @@ EAX..EDX and writes back one result. EBP stays pinned to scratch; the schedule
 pointer is read from the original stack argument. MASH scans all 64 schedule
 words, so its addresses and branches never depend on secret data.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.X86
 

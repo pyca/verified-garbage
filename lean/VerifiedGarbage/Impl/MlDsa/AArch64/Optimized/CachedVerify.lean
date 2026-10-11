@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Message
-import VerifiedGarbage.Spec.MlDsa.CachedVerify
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Message
+public import VerifiedGarbage.Spec.MlDsa.CachedVerify
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized
 open VG.AArch64

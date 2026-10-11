@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Spec.MlKem
-import VerifiedGarbage.Spec.MlKem.Contract
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+public import VerifiedGarbage.Spec.MlKem
+public import VerifiedGarbage.Spec.MlKem.Contract
 
 /-!
 # ML-KEM on x86-64: what a parameter set fixes of the top-level functions
@@ -16,6 +18,8 @@ polynomial `pA + k i + j`, sampled four entries at a time and then one at a
 time (`samples`), and a sum of `k` products is accumulated left to right
 (`dotN`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

@@ -1,9 +1,14 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
-import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
-import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 
 /-! Public joint verification, with a Jacobian accumulator and an inversion-free final check.
 The curve supplies the loop's doubler of the accumulator (`double`). -/
+
+@[expose] public section
+
 namespace VG.Impl.Ecdsa.Verify.X86_64
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.Weierstrass.X86_64
 

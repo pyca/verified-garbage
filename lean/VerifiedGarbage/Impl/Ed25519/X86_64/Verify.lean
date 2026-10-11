@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointDecode
-import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBase
-import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointDecode
+public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBase
+public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
 
 /-! Strict verification with the full 512-bit challenge supplied by the caller. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

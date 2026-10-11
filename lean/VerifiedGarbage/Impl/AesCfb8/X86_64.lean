@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesCbc.X86_64
+module
+
+public import VerifiedGarbage.Impl.AesCbc.X86_64
 
 /-!
 # AES-CFB8: x86-64 implementation
@@ -23,6 +25,8 @@ shifted in.
 
 Only the pointers, `rounds` and `len` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesCfb8.X86_64
 

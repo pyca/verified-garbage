@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Common
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Common
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_encode12` and `vg_mlkem_decode12`
@@ -16,6 +18,8 @@ counting down.
 
 Every address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

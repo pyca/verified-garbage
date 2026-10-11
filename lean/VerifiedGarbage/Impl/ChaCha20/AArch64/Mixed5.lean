@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Small
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Small
 
 /-!
 # Five-block ChaCha20 with NEON and integer rounds
@@ -9,6 +11,9 @@ Integer and vector arithmetic operations alternate. x19, x20 and x26 are saved i
 existing 320-byte stream scratch space; x20 retains its address while the
 scalar state occupies x2–x17. Public length/data stay in x19/x26. No new stack or CPU feature is required.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.ChaCha20.AArch64.Mixed5
 open VG VG.AArch64
 

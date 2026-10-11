@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Point16
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Point16
 
 /-! A fixed addition chain shared by inversion and square-root recovery. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 

@@ -1,9 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Resident
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Resident
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
 
 /-! Paired SHAKE128 blocks for the matrix sampler. The enclosing sampler
 preserves the public ABI. The five resident blocks keep the permutation
 inline; the rare sixth block calls `vg_keccak_f1600_x2_sha3`. -/
+
+@[expose] public section
+
 namespace VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
 open VG VG.AArch64
 

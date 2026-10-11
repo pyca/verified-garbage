@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.Weierstrass.JacAdd
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.JacAdd
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.CachedJac
 

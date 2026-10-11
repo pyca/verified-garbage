@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Scrypt.AArch64.Salsa
+module
+
+public import VerifiedGarbage.Impl.Scrypt.AArch64.Salsa
 
 /-!
 # scryptBlockMix: AArch64 implementation
@@ -22,6 +24,8 @@ is `y + 64 (r + k)`, `x22` is `scratch`, `x23` counts the pairs left and
 `x24` is `X`. Every address is one of these plus a constant, and the only
 branch is on the count, so only the pointers and `r` affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.AArch64
 

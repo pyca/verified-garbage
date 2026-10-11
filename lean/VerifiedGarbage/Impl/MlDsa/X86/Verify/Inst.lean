@@ -1,12 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.X86.Verify.Verify
-import VerifiedGarbage.Impl.MlDsa.X86.Arith.Ntt
-import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
-import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
-import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejNtt
-import VerifiedGarbage.Impl.MlDsa.X86.Sample.Ball
-import VerifiedGarbage.Impl.MlDsa.X86.Round.Round
-import VerifiedGarbage.Impl.MlDsa.X86.Pack.Encode
-import VerifiedGarbage.Impl.MlDsa.X86.Pack.Hint
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86.Verify.Verify
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Ntt
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
+public import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejNtt
+public import VerifiedGarbage.Impl.MlDsa.X86.Sample.Ball
+public import VerifiedGarbage.Impl.MlDsa.X86.Round.Round
+public import VerifiedGarbage.Impl.MlDsa.X86.Pack.Encode
+public import VerifiedGarbage.Impl.MlDsa.X86.Pack.Hint
 
 /-!
 # ML-DSA verification on x86 (32-bit), with this library's primitives
@@ -14,6 +16,8 @@ import VerifiedGarbage.Impl.MlDsa.X86.Pack.Hint
 `verify` (`Verify.lean`) called with the x86 implementations of the
 primitives it calls (`Arith/`, `Sample/`, `Round/`, `Pack/`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.Verify
 

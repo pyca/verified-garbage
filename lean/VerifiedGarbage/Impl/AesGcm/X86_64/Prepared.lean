@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.AesGcm.X86_64
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86_64
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 
 /-! # Preparing GHASH powers once at key setup -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcm.X86_64.Prepared
 open VG.X86_64

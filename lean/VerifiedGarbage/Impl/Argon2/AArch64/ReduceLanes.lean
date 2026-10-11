@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.ReduceLane
-import VerifiedGarbage.Impl.Argon2.AArch64.FillLanes
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Impl.Argon2.AArch64.ReduceLane
+public import VerifiedGarbage.Impl.Argon2.AArch64.FillLanes
 
 /-! Visit each public lane once to reduce its last block. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.ReduceLanes
 

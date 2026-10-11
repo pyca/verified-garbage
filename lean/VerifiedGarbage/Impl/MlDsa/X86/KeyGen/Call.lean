@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86.Top
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Top
 
 /-!
 # ML-DSA on x86 (32-bit): calls of the primitives from the top-level functions
@@ -15,6 +17,8 @@ arguments (`Arg`: a buffer's address, or an immediate) are set in `eax`,
 last first, so that the callee finds argument `i` at `[esp + 4 + 4i]`.
 `callPR` keeps the value the callee returns in `eax` (`callRet`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.KeyGen
 

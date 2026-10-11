@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Common
-import VerifiedGarbage.Impl.MlKem.X86_64.Vec
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Common
+public import VerifiedGarbage.Impl.MlKem.X86_64.Vec
 
 /-!
 # ML-DSA on x86-64: arithmetic modulo `q` in the doublewords of SSE registers
@@ -32,6 +34,8 @@ which the tables hold.
 `0x1FBF` (see `TCB/X86_64/Isa.lean`): the functions run inside ML-KEM's
 `withMxcsr`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Arith
 

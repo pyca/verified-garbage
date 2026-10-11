@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
 
 /-!
 # Ed448 verification's equation on x86 (32-bit)
@@ -45,6 +47,8 @@ reduction works on slot 1 alone, which comparisons and decoding use.
 The result is 1 if `BAD` is 0. Every address and branch depends only on the
 pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86
 

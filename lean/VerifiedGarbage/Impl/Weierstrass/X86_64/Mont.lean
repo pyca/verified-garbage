@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Mont.X86_64
-import VerifiedGarbage.Spec.Weierstrass.Mont
+module
+
+public import VerifiedGarbage.Impl.Mont.X86_64
+public import VerifiedGarbage.Spec.Weierstrass.Mont
 
 /-!
 # Montgomery products modulo P-521's `p`, as functions, on x86-64
@@ -9,6 +11,8 @@ import VerifiedGarbage.Spec.Weierstrass.Mont
 `a` and `b` in `esi`, `edx` and `ecx`): the inline products of
 `Impl/Mont/X86_64.lean` with their operands read through registers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86_64.Mont
 

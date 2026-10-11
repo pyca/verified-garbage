@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ecdh.X86_64
+module
+
+public import VerifiedGarbage.Impl.Ecdh.X86_64
 
 /-!
 # ECDSA signature verification on x86-64
@@ -36,6 +38,8 @@ indexes the fixed-base table using the public verification scalar. The shared co
 the public key, digest and signature public; secret signing scalars continue
 to use constant-time table scans.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Verify.X86_64
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.X86_64.Callee
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.Callee
 
 /-!
 # AES-CMAC: x86-64 implementation
@@ -34,6 +36,8 @@ caller's callee-saved registers.
 Only the pointers, `rounds`, `n` and `last_len` can affect timing: the
 branches are on `n` and `last_len`, and the doubling is masked.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacAes.X86_64
 

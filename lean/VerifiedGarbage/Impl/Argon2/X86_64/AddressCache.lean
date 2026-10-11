@@ -1,9 +1,13 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.AddressCalls
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.AddressCalls
 
 /-! Cache one address block per 128 segment positions. Frame offset eight holds
 its one-based counter; initializing it to zero forces generation even when the
 first filled index is two. Only public counters control regeneration.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.AddressCache
 

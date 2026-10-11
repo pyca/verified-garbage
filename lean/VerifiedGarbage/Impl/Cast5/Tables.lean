@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Cast5
+module
+
+public import VerifiedGarbage.Spec.Cast5
 
 /-!
 # CAST5: the S-box tables of the scans
@@ -8,6 +10,8 @@ entries of 16 bytes, entry `i` four S-box values at `i`: `VG_CAST5_S1234`
 holds `S4[i], S3[i], S2[i], S1[i]` and `VG_CAST5_S5678` holds `S8[i], S7[i],
 S6[i], S5[i]`, as 512 little-endian quadwords.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Cast5
 

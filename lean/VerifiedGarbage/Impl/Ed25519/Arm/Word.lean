@@ -1,10 +1,15 @@
-import VerifiedGarbage.Impl.X25519.Arm
+module
+
+public import VerifiedGarbage.Impl.X25519.Arm
 
 /-! Ed25519 field arithmetic on ARMv7 uses sixteen 16-bit limbs and only
 32-bit `mul`. The multiplication accumulator follows the 22 field slots, and
 the registers that the functions of point arithmetic save follow it; packed
 point tables let the complete implementation fit the reviewed 8 KiB scratch
 contract. No long-multiply instructions are used. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG VG.Arm
 

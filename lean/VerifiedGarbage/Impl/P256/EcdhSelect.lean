@@ -1,6 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Fixed-address selection of X, Y, Z, Z² and Z³ from sixteen rows. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.EcdhSelect
 open VG VG.AArch64
 

@@ -1,9 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
-import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
-import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Spec.Ecdsa
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Spec.Ecdsa
 
 /-!
 # ECDSA signing on AArch64
@@ -31,6 +33,8 @@ scratch = x4) -> w0`, for a curve whose field elements and scalars are `n`
 `r = 0`, as the specification says. Everything is computed whatever the
 flag, and only the pointers may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.AArch64
 

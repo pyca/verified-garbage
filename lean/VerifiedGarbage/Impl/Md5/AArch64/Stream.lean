@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Md5.AArch64
-import VerifiedGarbage.Impl.MdStream.AArch64
+module
+
+public import VerifiedGarbage.Impl.Md5.AArch64
+public import VerifiedGarbage.Impl.MdStream.AArch64
 
 /-!
 # Streaming MD5: AArch64 implementation
@@ -12,6 +14,8 @@ The streaming state (80 bytes at `state`) is the MD buffer followed by a
   (`Impl/MdStream/AArch64.lean`), calling the compression function
   (`vg_md5_compress`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Md5.AArch64.Stream
 

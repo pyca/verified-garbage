@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.X86.PointPowers
-import VerifiedGarbage.Impl.Ed25519.X86.PointAccumulate
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.PointPowers
+public import VerifiedGarbage.Impl.Ed25519.X86.PointAccumulate
 
 /-! Rebuild a local batch while preserving the scalar accumulator. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86
 open VG.X86
 

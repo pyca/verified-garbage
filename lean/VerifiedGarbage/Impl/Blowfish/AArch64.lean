@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.Impl.Blowfish.Table
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Impl.Blowfish.Table
 
 /-!
 # Blowfish on AArch64: sixteen blocks at a time, S-boxes by `tbl`
@@ -29,6 +31,8 @@ Key expansion runs the same batch code with one meaningful lane (lane 0 of
 `A` and `B`): 521 chained encryptions, each one's output written to the
 schedule, in the planes for the S-boxes, before the next.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blowfish.AArch64
 

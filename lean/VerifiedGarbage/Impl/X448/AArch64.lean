@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.X448.AArch64.Tail
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Tail
 
 /-!
 # X448: AArch64 implementation
@@ -20,6 +22,8 @@ registers for its operands and coefficients.
 are saved in the working space and restored before returning. `x12` holds
 `2^28 - 1` throughout. Only pointers and counters affect addresses or branches.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X448.AArch64
 

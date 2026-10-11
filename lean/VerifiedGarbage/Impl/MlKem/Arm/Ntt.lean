@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.Arm.Poly
+module
+
+public import VerifiedGarbage.Impl.MlKem.Arm.Poly
 
 /-!
 # ML-KEM on 32-bit ARM: the NTT, its inverse and `MultiplyNTTs`
@@ -37,6 +39,8 @@ A butterfly stores `f[j + len]` before `f[j]`, and an inverse butterfly
 `f[j]` before `f[j + len]`, the order in which Algorithms 9 and 10 write
 them. Every address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.Arm
 

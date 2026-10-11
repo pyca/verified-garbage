@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.RecoverSign
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.RecoverSign
 
 /-! Decode a canonical 32-byte Ed25519 point. The input pointer is in rdx. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

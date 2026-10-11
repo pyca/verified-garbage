@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Frag
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Frag
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`
@@ -33,6 +35,8 @@ and polynomials of 1024 bytes from 4096 (`oP j`): `Â[r, s]` is polynomial
 Every address and branch depends only on the pointers, but for what the
 samplers leak (`ρ` and which half-bytes `RejBoundedPoly` rejects).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.KeyGen
 

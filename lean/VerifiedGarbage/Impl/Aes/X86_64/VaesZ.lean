@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.X86_64.AesNi
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
 
 /-!
 # AES with AVX-512 VAES on x86-64: the building blocks
@@ -12,6 +14,8 @@ the byte-reversal mask in each lane turns them into the AES inputs of four
 blocks, and `vpaddd` with 4 in doubleword 0 of each lane advances them by
 four.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86_64.VaesZ
 

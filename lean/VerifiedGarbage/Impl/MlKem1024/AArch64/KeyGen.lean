@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
-import VerifiedGarbage.Impl.MlKem1024.AArch64.Compress
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.Compress
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_keygen`
@@ -8,6 +10,8 @@ ML-KEM-768's code (`Impl/MlKem/AArch64/KeyGen.lean`) for the parameters of
 ML-KEM-1024 (`lay1024`): `k = 4`, `d_u = 11` and `d_v = 5`, with 48 KiB of
 `scratch` and ML-KEM-1024's compression functions.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem1024.AArch64
 

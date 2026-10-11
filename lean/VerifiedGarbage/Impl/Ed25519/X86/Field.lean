@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Spec.Ed25519
+module
+
+public import VerifiedGarbage.Impl.X25519.X86
+public import VerifiedGarbage.Spec.Ed25519
 
 /-! Extended Edwards formulas on the eight-word field representation.
 Slots 0–21 occupy bytes 64–767 of the eight-KiB workspace. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86
 open VG.X86

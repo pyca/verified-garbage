@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedHints
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedHints
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sign.Optimized
 open VG VG.AArch64 VG.Spec.MlDsa

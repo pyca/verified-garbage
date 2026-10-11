@@ -1,9 +1,11 @@
-import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
-import VerifiedGarbage.Impl.Sha3.Arm.Stream
-import VerifiedGarbage.Spec.Sha3.Contract
-import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Setup
-import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Entry
-import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Wipe
+module
+
+public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
+public import VerifiedGarbage.Impl.Sha3.Arm.Stream
+public import VerifiedGarbage.Spec.Sha3.Contract
+public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Setup
+public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Entry
+public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Wipe
 
 /-!
 # Ed448 public-key derivation on ARMv7
@@ -23,6 +25,8 @@ it writes; the frame is cleared before it is popped. In `scratch`: the
 Keccak state (200 bytes) and the sponge functions' working space (640 bytes,
 at 208). Every address depends only on the pointers and `sp`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.Arm.PublicKey
 

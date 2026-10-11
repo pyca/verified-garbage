@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
-import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices: x86-64
@@ -29,6 +31,8 @@ slices one after the other, each to the output after the ones before it,
 and writes the tag. The arguments and the progress through the slices are
 kept in `work` across the calls.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcm.X86_64.SealGather
 

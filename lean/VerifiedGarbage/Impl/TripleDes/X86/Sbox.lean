@@ -1,9 +1,16 @@
-import VerifiedGarbage.Impl.TripleDes.Circuit
-import VerifiedGarbage.Impl.Aes.X86.Alloc
+module
+
+public import VerifiedGarbage.Impl.TripleDes.Circuit
+meta import VerifiedGarbage.Impl.TripleDes.Circuit
+public import VerifiedGarbage.Impl.Aes.X86.Alloc
+meta import VerifiedGarbage.Impl.Aes.X86.Alloc
 
 /-! Scalar DES Boolean circuits on IA-32. EBP is the scratch base;
 ESI/EDI retain the Feistel halves. Inputs and outputs occupy fixed slots
 16–21, with spills in slots 22–111. No address depends on a secret. -/
+
+@[expose] public section
+
 namespace VG.Impl.TripleDes.X86
 open VG.X86
 

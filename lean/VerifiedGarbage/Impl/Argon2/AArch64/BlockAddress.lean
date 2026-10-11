@@ -1,11 +1,15 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Lane-major matrix addressing. The matrix base is in `x4`, the lane
 in `x8`, the column in `x3`, and the lane length in `x20`. The resulting
 block pointer is returned in `x8`. Scalar multiplication and ten doublings
 work on the baseline ISA, including when the reference coordinates are secret.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.BlockAddress
 

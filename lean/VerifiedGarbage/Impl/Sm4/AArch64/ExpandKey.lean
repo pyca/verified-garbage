@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
-import VerifiedGarbage.Impl.Sm4.Planes
+module
+
+public import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
+public import VerifiedGarbage.Impl.Sm4.Planes
 
 /-!
 # The SM4 key schedule on AArch64
@@ -17,6 +19,8 @@ Only `x0`, `x1` (the schedule), `x3` (the table's end), `x4` (the round
 key's entry), `x5` and the loop test (`t0`) hold public values; no address
 and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.AArch64
 

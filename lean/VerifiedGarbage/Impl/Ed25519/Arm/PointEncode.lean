@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Power
-import VerifiedGarbage.Impl.Ed25519.Arm.Freeze
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Power
+public import VerifiedGarbage.Impl.Ed25519.Arm.Freeze
 
 /-! Normalize extended coordinates, then form the compressed point in FR. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 

@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.PublicKey
-import VerifiedGarbage.Impl.Ed25519.X86_64.Scalar
-import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PublicKey
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Scalar
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
 
 /-!
 # Complete Ed25519 verification on x86-64
@@ -17,6 +19,8 @@ as public-key derivation. The return value survives the frame pop.
 
 The complete-operation proof targets `Spec.Ed25519.verifyContract`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64.VerifyMessage
 

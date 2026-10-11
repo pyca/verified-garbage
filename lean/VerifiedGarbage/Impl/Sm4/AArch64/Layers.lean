@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Sm4.AArch64.Sbox
-import VerifiedGarbage.Impl.Sm4.Lin
-import VerifiedGarbage.Impl.Aes.AArch64.Linear
+module
+
+public import VerifiedGarbage.Impl.Sm4.AArch64.Sbox
+public import VerifiedGarbage.Impl.Sm4.Lin
+public import VerifiedGarbage.Impl.Aes.AArch64.Linear
 
 /-!
 # The layers of bitsliced SM4 on AArch64
@@ -22,6 +24,8 @@ buffer (96–127, sixteen blocks), the table of the 32 bitsliced round keys
 own 12 slots after them (384–395): the callee-saved registers, then the
 running counter.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.AArch64
 

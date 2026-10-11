@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
+module
+
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
 
 /-!
 # ChaCha20-Poly1305: x86-64, with Poly1305 inside the AVX2 ChaCha20 kernel
@@ -38,6 +40,8 @@ reduces the accumulator, stores it, restores them, and leaves in `rbx`,
 in `rsi`, `rdx` the data not yet encrypted, for the call of
 `vg_chacha20_xor` that follows. The branches are on the length only.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20Poly1305.X86_64.Stitch
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Aes.Circuit
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Impl.Aes.Circuit
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # Register allocation of Boolean circuits on AArch64
@@ -18,6 +20,8 @@ the register `ones`.
 Nothing here needs to be trusted: the proofs check the code this produces,
 not the allocator.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.AArch64
 

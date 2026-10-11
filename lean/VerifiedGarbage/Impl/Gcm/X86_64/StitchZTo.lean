@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 
 /-!
 # The AVX-512 interleaved encryption loop, out of place
@@ -16,6 +18,8 @@ the output block the group is written to, `xorDataZTo`), and the ciphertext
 stored to `[rdx + 64 j]`, where the GHASH loads read it back, as in place.
 Everything else is the code of `StitchZ` and `StitchZP`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.X86_64.StitchZTo
 

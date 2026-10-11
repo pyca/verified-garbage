@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesCbc.X86_64
+module
+
+public import VerifiedGarbage.Impl.AesCbc.X86_64
 
 /-!
 # AES-OFB: x86-64 implementation
@@ -19,6 +21,8 @@ next output block, which is XORed into the data block.
 
 Only the pointers, `rounds` and `n` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesOfb.X86_64
 

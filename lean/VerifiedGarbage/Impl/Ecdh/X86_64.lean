@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ecdsa.X86_64
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.X86_64
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
 
 /-!
 # ECDH on x86-64
@@ -32,6 +34,8 @@ for a curve of `n` 64-bit words, from the code of ECDSA's signature
 Everything is computed whatever the flag, and only the pointers may affect
 timing (the contract would let the peer's public key affect it too).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdh.X86_64
 

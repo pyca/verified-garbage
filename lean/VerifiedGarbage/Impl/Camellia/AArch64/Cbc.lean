@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Camellia.AArch64.Ctr
-import VerifiedGarbage.Impl.Modes.AArch64.Cbc
-import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
+module
+
+public import VerifiedGarbage.Impl.Camellia.AArch64.Ctr
+public import VerifiedGarbage.Impl.Modes.AArch64.Cbc
+public import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
 
 /-!
 # Camellia-CBC, bitsliced, on AArch64
@@ -12,6 +14,8 @@ n = x4, scratch = x5)`: `vg_camellia_cbc_encrypt` and
 its subkeys in the order of each direction (`dirCore`). Decryption
 transforms eight blocks at a time; encryption, which is sequential, one.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.AArch64
 

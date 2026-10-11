@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.EcKey.X86_64
-import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
+module
+
+public import VerifiedGarbage.Impl.EcKey.X86_64
+public import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
 
 /-! # P-521 public keys on x86-64: nine-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.EcKey.X86_64
 

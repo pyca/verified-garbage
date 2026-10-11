@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Rsa.X86_64.Keys
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
-import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
+module
+
+public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
 
 /-!
 # An RSA key from its two primes on x86-64
@@ -46,6 +48,8 @@ lengths and the status returned.
    odd and `e` valid (`Rsa.exponentValid`); the seven outputs stored under
    it, and its low bit returned.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaKeyGen.X86_64.Key
 

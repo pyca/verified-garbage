@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Spec.X25519.Field64
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Spec.X25519.Field64
 
 /-!
 # X25519: x86-64 implementation
@@ -44,6 +46,8 @@ inversion `z2^(p-2)` is by Bernstein–Yang divsteps (`invertDS`), a call of
 The only branches are on the loop counters, and every address is a pointer
 plus a constant or a counter, so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X25519.X86_64
 

@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Rc2.Arm.Lookup
+module
+
+public import VerifiedGarbage.Impl.Rc2.Arm.Lookup
 
 /-! # RC2 block encryption and decryption on baseline Arm -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.Arm
 

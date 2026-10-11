@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with implicit rejection on AArch64
@@ -43,6 +45,8 @@ call. In `scratch`, from `sSt`: the streaming state (also HMAC's inner
 state), HMAC's outer state, the working space, the message of an IRPRF
 block, `DH`, `KDK`, `CL`, `AM` and `D`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaPkcs1Enc.AArch64.Decrypt
 

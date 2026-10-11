@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
-import VerifiedGarbage.Impl.Poly1305.Arm
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
+public import VerifiedGarbage.Impl.Poly1305.Arm
 
 /-!
 # ChaCha20-Poly1305: 32-bit ARM implementation
@@ -53,6 +55,8 @@ ChaCha20, the Poly1305 state at `[0, 128)`), and `r7` is set from the
 callee's pointer that it keeps (`r1` for ChaCha20, `r0` for Poly1305) after
 each call.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20Poly1305.Arm
 

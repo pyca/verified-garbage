@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Sm4.Arm.Layers
+module
+
+public import VerifiedGarbage.Impl.Sm4.Arm.Layers
 
 /-!
 # SM4 ECB, bitsliced, on ARMv7
@@ -25,6 +27,8 @@ Only the pointers, `n`, and what is computed from them (the copies'
 pointers and counts, `kp`, the loop tests, and the slots holding them) are
 public; no address and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.Arm
 

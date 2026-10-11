@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Encrypt
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Encrypt
 
 /-!
 # ML-KEM on x86-64: encapsulation (`vg_mlkem768_encaps_h`, `vg_mlkem1024_encaps_h`)
@@ -18,6 +20,8 @@ keeps `scratch` in `rbx`, `m` in `rbp`, `key` in `r12`, `ct` in `r13` and
 It returns `r15`: 0 if a `SampleNTT` failed (when `key` and `ct` are
 unspecified), and 1 otherwise.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

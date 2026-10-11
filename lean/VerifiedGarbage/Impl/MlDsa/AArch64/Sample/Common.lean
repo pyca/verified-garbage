@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.Basic
-import VerifiedGarbage.Impl.Sha3.AArch64.Stream
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.Basic
+public import VerifiedGarbage.Impl.Sha3.AArch64.Stream
 
 /-!
 # ML-DSA on AArch64: sampling from SHAKE
@@ -27,6 +29,8 @@ wasted. Its addresses and branches depend only on the pointers and the length.
 A loop that stores coefficients one at a time keeps `x3` at the next one
 and `x4` = 256 minus their number.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sample
 

@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.P256.VerifyArithmetic
-import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
+module
+
+public import VerifiedGarbage.Impl.P256.VerifyArithmetic
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 
 /-! Forwarded field schedules for the secret P-256 Booth comb. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.CombArithmetic
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 

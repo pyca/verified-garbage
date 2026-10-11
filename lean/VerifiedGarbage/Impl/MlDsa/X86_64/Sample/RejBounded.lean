@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Common
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_bounded_poly`
@@ -23,6 +25,8 @@ they are greater and `sbb` making it a mask, and `q` added under a mask to
 of its stores depend only on which half-bytes are accepted (and `j`, which
 counts them), which the contract lets it leak, not on the coefficients.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Sample
 

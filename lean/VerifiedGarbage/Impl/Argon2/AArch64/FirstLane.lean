@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Force the current lane on the first slice of the first pass.
 
@@ -7,6 +9,8 @@ The pass and slice are public in `x5` and `x22`. The current lane is in
 `x24`; `x4` initially contains J₂ modulo the lane count. Only the public
 position controls a branch.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.FirstLane
 

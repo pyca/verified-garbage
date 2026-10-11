@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Sample
-import VerifiedGarbage.Spec.MlDsa
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on x86-64: the pieces of `vg_mldsa*_verify`
@@ -30,6 +32,8 @@ from 8192 (`P j`): the hint `h` (polynomials 0 to 7, of which the first
 working space of `vg_mldsa_rej_ntt_poly4` (8 KiB, from polynomial `20 + 8k`, after
 `Â` for every `ℓ` ≤ 8).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Verify
 

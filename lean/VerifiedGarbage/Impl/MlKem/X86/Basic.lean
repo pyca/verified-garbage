@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # ML-KEM on x86 (32-bit): helpers, `vg_mlkem_add` and `vg_mlkem_sub`
@@ -22,6 +24,8 @@ coefficients left, around the arithmetic `addOp` or `subOp` on `eax = f[i]`,
 with `edx` as a temporary. Every address and branch depends only on the
 pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86
 

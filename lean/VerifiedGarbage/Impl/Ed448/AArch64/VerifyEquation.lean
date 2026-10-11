@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.Point56
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
 
 /-!
 # Ed448 verification's equation on AArch64: the checks, the decodings and the entry
@@ -24,6 +26,8 @@ it passes.
   sixteen 28-bit limbs (`canon`, with X448's `toLegacy` and `freeze`).
 * The bits of a scalar, one per byte (`bitsAt`), and the entry (`ventry`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.AArch64
 

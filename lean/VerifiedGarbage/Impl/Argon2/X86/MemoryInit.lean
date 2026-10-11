@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Argon2.X86.Initial
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86.Initial
 
 /-!
 # Argon2 on x86 (32-bit): memory initialization
@@ -9,6 +11,8 @@ LE32(lane)), from the 72 bytes at the start of the locals (`ebp`), with
 `scratch` as its working space. `esi` counts the lanes and `edi` points to
 the block being initialized; both are kept across the calls, as `ebp` is.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86.Derive
 

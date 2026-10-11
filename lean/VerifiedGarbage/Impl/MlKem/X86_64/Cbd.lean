@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Arith
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Arith
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_cbd2`
@@ -17,6 +19,8 @@ zero-extended to doublewords, and each coefficient is `e - 2`, plus `q` if
 negative (`dcadd`). There are no multiplications. Every address and branch
 depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

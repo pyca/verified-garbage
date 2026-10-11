@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Vector
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Vector
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.AArch64.Neon.Pair
 open VG VG.AArch64

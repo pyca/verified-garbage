@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86.Basic
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): `vg_mlkem_compress_encode` and `vg_mlkem_decode_decompress`
@@ -24,6 +26,8 @@ groups of coefficients that fill whole bytes, with `esi` at the input,
 
 Every address and branch depends only on the pointers and `d`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86
 

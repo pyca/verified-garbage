@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # Streaming Merkle–Damgård hash functions: 32-bit ARM implementation
@@ -35,6 +37,8 @@ that advances. Every comparison is a `cmp` or `subs` tested with `eq`/`ne`.
 Every address and branch depends only on `sp`, the pointers, `count` and
 `len`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MdStream.Arm
 

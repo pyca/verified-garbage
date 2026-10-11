@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Blake2
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.Spec.Blake2
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # BLAKE2 compression function: x86-64 implementation
@@ -34,6 +36,8 @@ Every address is `r9`, `rdi` or the block's address plus a constant, and
 the only branches are on `last` and on the count of blocks, so only the
 pointers, `n`, `t` and `last` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blake2.X86_64
 

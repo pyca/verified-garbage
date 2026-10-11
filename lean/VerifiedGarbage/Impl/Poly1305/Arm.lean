@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # Poly1305: 32-bit ARM implementation
@@ -48,6 +50,8 @@ bytes buffered (`count mod 16`), and every address is `state`, a pointer or
 a pointer plus a constant or a count, so only the pointers, `count` and the
 lengths can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Poly1305.Arm
 

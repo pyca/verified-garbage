@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Mont.X86_64
+module
+
+public import VerifiedGarbage.Impl.Mont.X86_64
 
 /-! Four-limb modular doubling with a single input load. -/
+
+@[expose] public section
+
 namespace VG.Impl.Mont.X86_64
 open VG.X86_64
 

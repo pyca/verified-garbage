@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.KeygenRound
 open VG VG.AArch64

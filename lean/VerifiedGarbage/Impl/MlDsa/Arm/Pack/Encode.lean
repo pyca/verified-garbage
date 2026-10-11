@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Stream
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Stream
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_simple_bit_pack`, `vg_mldsa_bit_pack`, `vg_mldsa_bit_unpack` and `vg_mldsa_unpack_t1`
@@ -23,6 +25,8 @@ that width `d`, with groups of `c` coefficients and `nb` bytes, as on x86-64:
 
 Every address and branch depends only on the pointers and the widths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.Pack
 

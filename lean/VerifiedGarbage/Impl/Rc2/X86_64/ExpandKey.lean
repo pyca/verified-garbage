@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rc2.X86_64.Sse2Lookup
+module
+
+public import VerifiedGarbage.Impl.Rc2.X86_64.Sse2Lookup
 
 /-! # RC2 key expansion on baseline x86-64
 
@@ -6,6 +8,8 @@ The public key length controls copying and expansion. The effective bit
 count controls the reduction mask and descending loop. PITABLE selection
 always scans all 256 candidates with eight parallel SSE2 arithmetic masks.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.X86_64
 

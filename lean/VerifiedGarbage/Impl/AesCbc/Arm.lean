@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.CmacAes.Arm
-import VerifiedGarbage.Impl.Aes.Arm.Blocks
+module
+
+public import VerifiedGarbage.Impl.CmacAes.Arm
+public import VerifiedGarbage.Impl.Aes.Arm.Blocks
 
 /-!
 # AES-CBC: 32-bit ARM implementation
@@ -36,6 +38,8 @@ across the call, and `[2064, 2096)` our caller's registers.
 Only the pointers, `rounds` and `n` can affect timing: the only branches are
 on `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesCbc.Arm
 

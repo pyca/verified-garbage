@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Sha3.Arm
+module
+
+public import VerifiedGarbage.Impl.Sha3.Arm
 
 /-!
 # The SHA-3 sponge: ARMv7 implementation
@@ -33,6 +35,8 @@ computed just before the access. Every comparison is a `cmp` or `subs`
 tested with `eq`/`ne`. Every address and branch depends only on `sp`, the
 pointers, `rate`, `pos` and the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.Arm.Stream
 

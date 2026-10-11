@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Weierstrass.Arm.Point
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.Arm.Point
 
 /-!
 # The ladder by calls of the point functions, on 32-bit ARM
@@ -20,6 +22,8 @@ A call keeps `lr` in `r10`, as the calls of the Montgomery functions do;
 the point functions write neither `r10` nor `r11` and leave `r12`. Every
 address is still `r12` plus a constant or a counter.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.Arm.Point
 

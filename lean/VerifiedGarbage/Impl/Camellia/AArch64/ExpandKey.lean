@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Camellia.AArch64.Ecb
-import VerifiedGarbage.Impl.Camellia.KeyOrder
+module
+
+public import VerifiedGarbage.Impl.Camellia.AArch64.Ecb
+public import VerifiedGarbage.Impl.Camellia.KeyOrder
 
 /-!
 # The Camellia key schedule on AArch64
@@ -25,6 +27,8 @@ the round key's entry), `x2`, `x3` (the key's length), `x4` (the pairs
 left), `x5` and the branches' tests hold public values; no address and no
 branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.AArch64
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Stream
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Stream
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_simple_bit_pack`, `vg_mldsa_bit_pack`, `vg_mldsa_bit_unpack` and `vg_mldsa_unpack_t1`
@@ -23,6 +25,8 @@ reads: the length determines them.
 
 Every address and branch depends only on the pointers and the length.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Pack
 

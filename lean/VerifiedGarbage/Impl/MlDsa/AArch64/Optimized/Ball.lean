@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
+
 /-! Demand-driven SampleInBall: parse the first SHAKE block, stop once all
 coefficients are assigned, and squeeze a second block only when needed.
 The total byte budget remains 272 and only the public challenge affects
 branches and addresses. Scratch offsets 1800..1824 save parser registers. -/
+
+@[expose] public section
 
 open VG VG.AArch64
 namespace VG.Impl.MlDsa.AArch64.Optimized.Ball

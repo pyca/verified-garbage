@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.Compress
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.Compress
 
 /-! Clear one 1024-byte address-generation block. The destination in `rdi`
 is public; neither the old contents nor any input value affects the trace.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.ClearBlock
 

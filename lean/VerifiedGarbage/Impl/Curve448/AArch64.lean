@@ -1,9 +1,14 @@
-import VerifiedGarbage.Impl.X448.AArch64.Tail
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Tail
 
 /-! Shared Curve448 field arithmetic: eight radix-2⁵⁶ limbs with headroom.
 Slots retain a 128-byte stride, but only their first eight words are field limbs.
 Products stage all coefficients before writes, allowing either output alias.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Curve448.AArch64
 open VG VG.AArch64
 open VG.Impl.X448.AArch64 (ld st ACC TMP)

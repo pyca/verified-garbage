@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
+module
+
+public import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices: AArch64 implementation
@@ -17,6 +19,8 @@ then at `sp + 16`. `dst`, `len` and `tag` wait for the call in `x8`, `x9`
 and `x10`, which the gathering does not write: it steps through the
 descriptors with `x6` and `x7` and writes to `x11`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20Poly1305.AArch64.SealGather
 

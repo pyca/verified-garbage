@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rc2.AArch64.Lookup
+module
+
+public import VerifiedGarbage.Impl.Rc2.AArch64.Lookup
 
 /-! # RC2 block encryption and decryption on baseline AArch64
 
@@ -8,6 +10,8 @@ the neighbouring words in parallel, adds them and the key word, masks the
 sum and rotates it with two shifts: seven instructions in sequence from the
 word that the previous mix wrote.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.AArch64
 

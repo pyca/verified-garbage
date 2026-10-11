@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Verify
+module
+
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Verify
 
 /-! # PKCS #1 v1.5 verification with a precomputed public key -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaPkcs1Sig.X86_64.Precomputed
 

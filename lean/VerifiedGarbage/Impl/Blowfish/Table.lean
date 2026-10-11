@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Blowfish
+module
+
+public import VerifiedGarbage.Spec.Blowfish
 
 /-!
 # The initial schedule, as a table of constants
@@ -7,6 +9,8 @@ Key expansion starts from `Spec.Blowfish.initial` in the memory layout of
 `scheduleAt`: the S-boxes in byte planes, then the P-array. `initWords` is
 that image, 4168 bytes, as 521 little-endian 64-bit words, for a `static`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blowfish
 

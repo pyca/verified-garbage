@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.X448.AArch64.Common
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Common
 
 /-! Eight radix-2⁵⁶ limbs, with two-word product coefficients. All blocks
 use caller-saved registers; field operands are staged before output writes. -/
+
+@[expose] public section
+
 namespace VG.Impl.X448.AArch64.Wide
 
 open VG VG.AArch64

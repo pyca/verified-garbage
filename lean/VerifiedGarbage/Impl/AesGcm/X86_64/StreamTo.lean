@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
 
 /-!
 # AES-GCM streaming encryption, out of place: x86-64 implementation
@@ -31,6 +33,8 @@ continuation of the text so far and the bytes done (`rest`). So a slice
 after one that ends inside a block is encrypted straight from where it is,
 past the bytes that end that block, as one that follows a whole block is.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcm.X86_64.StreamTo
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.TripleDes.Circuit
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
+module
+
+public import VerifiedGarbage.Impl.TripleDes.Circuit
+meta import VerifiedGarbage.Impl.TripleDes.Circuit
+public import VerifiedGarbage.Impl.Aes.Arm.Alloc
+meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.Arm
 

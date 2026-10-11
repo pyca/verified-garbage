@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.Arm.Top
-import VerifiedGarbage.Spec.MlDsa
+module
+
+public import VerifiedGarbage.Impl.MlKem.Arm.Top
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on 32-bit ARM: the pieces of the top-level functions
@@ -22,6 +24,8 @@ whatever the parameter set. A fifth argument goes on the stack: it is moved
 into `r12`, which a call changes anyway, and pushed in a frame of its own
 around the call (`callAtS`), whose pop loads it back into `r12`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.KeyGen
 

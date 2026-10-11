@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Vec
-import VerifiedGarbage.Spec.MlDsa
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Arithmetic
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Vec
+public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Arithmetic
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.Ntt
 open VG VG.AArch64

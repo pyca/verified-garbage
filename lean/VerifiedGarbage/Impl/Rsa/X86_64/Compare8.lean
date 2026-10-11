@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Bignum.X86_64
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64
 
 /-! Compare eight limbs per loop iteration, carrying the borrow in CF between
 limbs. Lengths not divisible by eight retain the single-limb loop. -/
+
+@[expose] public section
+
 namespace VG.Impl.Rsa.X86_64.Compare8
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 

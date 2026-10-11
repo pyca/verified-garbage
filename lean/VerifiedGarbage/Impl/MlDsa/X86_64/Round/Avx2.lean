@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Round
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Vec
-import VerifiedGarbage.Impl.MlKem.X86_64.Avx
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Round
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Vec
+public import VerifiedGarbage.Impl.MlKem.X86_64.Avx
 
 /-!
 # ML-DSA on x86-64: rounding with AVX2
@@ -27,6 +29,8 @@ the functions branch once on the public `γ₂`, and every address depends
 only on the pointers. Each clears the upper halves of the vector registers
 before returning (`vzeroupper`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Round
 

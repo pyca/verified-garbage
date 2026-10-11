@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Bignum.Layout
+module
+
+public import VerifiedGarbage.Impl.Bignum.Layout
 
 /-!
 # Multiword arithmetic: the layout of the private-key operation
@@ -9,6 +11,8 @@ import VerifiedGarbage.Impl.Bignum.Layout
 are the header slots and arrays it uses besides the public-key operation's,
 the same on every target.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Bignum.Crt
 

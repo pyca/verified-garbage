@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Argon2.Arm.Initial
+module
+
+public import VerifiedGarbage.Impl.Argon2.Arm.Initial
 
 /-!
 # Argon2 on ARMv7: memory initialization
@@ -9,6 +11,8 @@ LE32(lane)), from the 72 bytes at the start of the locals (`r11`), with
 `scratch` as its working space. `r5` counts the lanes and `r6` points to
 the block being initialized; both are kept across the calls, as `r11` is.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.Arm.Derive
 

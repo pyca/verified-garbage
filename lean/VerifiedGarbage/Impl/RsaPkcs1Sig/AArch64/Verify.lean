@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Encode
+module
+
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Encode
 
 /-!
 # RSASSA-PKCS1-v1_5 verification on AArch64
@@ -26,6 +28,8 @@ the call, `k`, `hash`, `digest` and `digest_len` are kept in `x19`–`x22`,
 which the callee preserves; the slots are written through `x16`, which holds
 `sp`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaPkcs1Sig.AArch64.Verify
 

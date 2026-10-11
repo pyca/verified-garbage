@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Sample
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
 
 /-!
 # ML-DSA on x86-64: sampling from SHAKE
@@ -19,6 +21,8 @@ returns, and squeezes `outlen` bytes to `scratch + 840` with
 `vg_keccak_squeeze`: whole blocks of the rate, so that no permutation is
 wasted. Its addresses and branches depend only on the pointers and the length.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Sample
 

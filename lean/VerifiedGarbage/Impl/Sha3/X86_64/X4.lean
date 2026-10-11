@@ -1,8 +1,10 @@
-import VerifiedGarbage.Spec.Sha3
-import VerifiedGarbage.Impl.Sha3.Tables
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Impl.Sha3.X86_64
-import VerifiedGarbage.Impl.Sha3.X86_64.X4Reg
+module
+
+public import VerifiedGarbage.Spec.Sha3
+public import VerifiedGarbage.Impl.Sha3.Tables
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Impl.Sha3.X86_64
+public import VerifiedGarbage.Impl.Sha3.X86_64.X4Reg
 
 /-!
 # Keccak-f[1600] on four states at once: x86-64 with AVX2
@@ -35,6 +37,8 @@ AVX-512VL for the 24 rounds.
 Every address is a pointer plus a constant, and the only branch is the
 round loop's, so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.X86_64.X4
 

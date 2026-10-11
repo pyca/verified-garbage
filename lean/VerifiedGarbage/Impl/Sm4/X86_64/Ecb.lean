@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Sm4.X86_64.Layers
+module
+
+public import VerifiedGarbage.Impl.Sm4.X86_64.Layers
 
 /-!
 # SM4 ECB, bitsliced, on x86-64
@@ -22,6 +24,8 @@ round key's entry), `rdx` (the data), `r8` (the blocks left), `r15` during
 the key setup, and the copies' pointers and counts hold public values; no
 address and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.X86_64
 

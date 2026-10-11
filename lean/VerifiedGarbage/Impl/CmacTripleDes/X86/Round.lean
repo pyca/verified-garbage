@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.CmacTripleDes.Index
-import VerifiedGarbage.Impl.CmacTripleDes.Sbox
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.Impl.CmacTripleDes.Index
+public import VerifiedGarbage.Impl.CmacTripleDes.Sbox
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # DES on x86 (32-bit), in constant time: the round, the block and the key schedule
@@ -24,6 +26,8 @@ word):
 * slots 18–20: the round counter, the pass counter and the step from one
   round key to the next (8 or −8).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacTripleDes.X86
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed448.X86.Shake
-import VerifiedGarbage.Impl.Ed448.X86.Scalar
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86.Shake
+public import VerifiedGarbage.Impl.Ed448.X86.Scalar
 
 /-!
 # Ed448 verification on x86 (32-bit)
@@ -23,6 +25,8 @@ ten bytes of `dom4(0, context)` at `HDR`, the hash at `HASH` and `k` at `K`:
 
 Every address and branch depends only on the pointers and the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86.Verify
 

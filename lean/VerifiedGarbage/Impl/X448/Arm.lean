@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # X448: ARMv7 implementation
@@ -15,6 +17,8 @@ before returning. Multiplications, additions, subtractions and the
 multiplication by `a24` are calls of the functions `vg_gf448_r16_*` below,
 which keep `r0`, `r8`, `r10` and `r11`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X448.Arm
 

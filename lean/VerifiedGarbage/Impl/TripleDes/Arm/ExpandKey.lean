@@ -1,4 +1,9 @@
-import VerifiedGarbage.Impl.TripleDes.Arm.Common
+module
+
+public import VerifiedGarbage.Impl.TripleDes.Arm.Common
+
+@[expose] public section
+
 namespace VG.Impl.TripleDes.Arm.Key
 open VG.Arm VG.Impl.TripleDes.Arm
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # Poly1305: x86 (32-bit) implementation
@@ -46,6 +48,8 @@ bytes buffered) and the lengths, and every address is `esp`, a pointer or a
 pointer plus a constant, a count or `count mod 16`, so only the pointers,
 `count` and the lengths can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Poly1305.X86
 

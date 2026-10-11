@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Ed25519
+module
+
+public import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # Small multiples of the base point, for verification
@@ -7,6 +9,8 @@ import VerifiedGarbage.Spec.Ed25519
 `negBaseCached i` is `[Y - X, Y + X, 2dT, 2Z]` of `-[i + 1]B` with `Z = 1`,
 for `i < 15`. The proof checks both against the specification's addition.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519
 

@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Word
-import VerifiedGarbage.Spec.Ed25519
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Word
+public import VerifiedGarbage.Spec.Ed25519
 
 /-! Extended Edwards formulas on the four-word field representation.
 Slots 0–21 occupy bytes 64–767 of the eight-KiB workspace. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64

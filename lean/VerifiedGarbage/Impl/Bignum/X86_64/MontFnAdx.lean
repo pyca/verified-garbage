@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
 
 /-!
 # Montgomery multiplication as a function, with BMI2 and ADX (x86-64)
@@ -20,6 +22,8 @@ As `vg_rsa_mont_mul`, it uses no stack and keeps `rbx`, `rbp` and `r12`–`r15`
 in `xmm0`–`xmm2` while it runs; it moves them back through header words
 16–21, at addresses from `rdi` alone.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Bignum.X86_64.MontFn
 

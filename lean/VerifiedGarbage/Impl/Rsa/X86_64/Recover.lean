@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rsa.X86_64.Keys
+module
+
+public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
 
 /-!
 # `vg_rsa_recover_primes` on x86-64
@@ -27,6 +29,8 @@ Then, with Montgomery multiplication `mul` (`[o] = [a] [b] R⁻¹ mod n`):
 * `p = gcd(y - 1, n)` by `inverse`, `q = n / p` by `divmod`, the larger
   first, written masked by whether a candidate gave them (`fin`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.X86_64.Keys.Recover
 

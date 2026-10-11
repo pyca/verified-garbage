@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Aes.X86.Ctr32
-import VerifiedGarbage.Impl.Aes.X86.Inv
+module
+
+public import VerifiedGarbage.Impl.Aes.X86.Ctr32
+public import VerifiedGarbage.Impl.Aes.X86.Inv
 
 /-!
 # AES encryption and decryption of whole blocks, bitsliced, on x86 (32-bit)
@@ -25,6 +27,8 @@ Every address is `esp` or a pointer plus a constant, or computed from the
 pointers and `rounds`, and every branch depends only on those and `n`, so
 only the pointers, `rounds` and `n` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86
 

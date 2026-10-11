@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
-import VerifiedGarbage.Impl.Weierstrass.JacMul
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
 
 /-!
 # Short Weierstrass curves on x86-64: scalar multiplication by windows
@@ -25,6 +27,8 @@ the last its last 16 bytes (for odd `n`, overlapping the one before it by a
 word); then `y = R` for a zero digit (the entry `(0 : 1 : 0)`).
 The counter `rbx` is public, as are every address and branch.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86_64
 

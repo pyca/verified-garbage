@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.CmacTripleDes.Index
-import VerifiedGarbage.Impl.CmacTripleDes.Sbox
-import VerifiedGarbage.Impl.Tbl.AArch64
+module
+
+public import VerifiedGarbage.Impl.CmacTripleDes.Index
+public import VerifiedGarbage.Impl.CmacTripleDes.Sbox
+public import VerifiedGarbage.Impl.Tbl.AArch64
 
 /-!
 # DES on AArch64, in constant time: the round, the block and the key schedule
@@ -35,6 +37,8 @@ then runs the three passes from the spread keys. It uses `x0`, `x5`–`x13`,
 the spread keys (bytes 384–455) and the end restores (`blockSave`,
 `blockRestore`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacTripleDes.AArch64
 

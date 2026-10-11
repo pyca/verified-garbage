@@ -1,4 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
+
+@[expose] public section
+
 open VG VG.AArch64
 open VG.Impl.MlDsa.AArch64.Arith
 open VG.Impl.MlKem.AArch64 (mov)

@@ -1,9 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.TCombJ
-import VerifiedGarbage.Impl.Weierstrass.X86.LadderP
-import VerifiedGarbage.Impl.Weierstrass.X86.InvCfg
-import VerifiedGarbage.Impl.Weierstrass.X86.ScalarPower
-import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Spec.Ecdsa
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.TCombJ
+public import VerifiedGarbage.Impl.Weierstrass.X86.LadderP
+public import VerifiedGarbage.Impl.Weierstrass.X86.InvCfg
+public import VerifiedGarbage.Impl.Weierstrass.X86.ScalarPower
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Spec.Ecdsa
 
 /-!
 # ECDSA signing on x86 (32-bit)
@@ -37,6 +39,8 @@ and the tables of bits are past byte 4096. `R = O` (impossible for `k` in
 says. Everything is computed whatever the flag, and only
 the pointers may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.X86
 

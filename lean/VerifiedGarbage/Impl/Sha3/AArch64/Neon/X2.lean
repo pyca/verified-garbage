@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Pair
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
-import VerifiedGarbage.Spec.Sha3.X2
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Pair
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
+public import VerifiedGarbage.Spec.Sha3.X2
 
 /-!
 # Keccak-f[1600] on two interleaved states, as a function (AArch64)
@@ -16,6 +18,8 @@ A caller (`call`) passes the states' pointer and its working space, keeps
 its return address next to that working space, and squeezes the output from
 memory (`squeeze`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.AArch64.Neon.X2
 

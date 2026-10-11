@@ -1,3 +1,5 @@
+module
+
 /-!
 # The AES S-box as a Boolean circuit
 
@@ -14,6 +16,8 @@ outputs `s₀ … s₇`. Each target's proof checks the code made from it on
 all 256 inputs (e.g. `Proof/Aes/X86/Sbox.lean`); nothing here needs to be
 trusted.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.Circuit
 

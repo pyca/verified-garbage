@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # GHASH: ARMv7 implementation
@@ -27,6 +29,8 @@ SP 800-38D Algorithm 1 bit by bit, as `Spec.Gcm.mul` defines it:
 * The pointers and the block count are public, and so is everything
   computed from them; no address and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.Arm
 

@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
-import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
 
 /-! Commitment hashing and the next public-index mask share independent
 64-bit Keccak lanes. The selected implementation remains entirely inline. -/
+
+@[expose] public section
+
 namespace VG.Impl.MlDsa.AArch64.Sign.CommitTail
 open VG VG.AArch64
 open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg rounds)

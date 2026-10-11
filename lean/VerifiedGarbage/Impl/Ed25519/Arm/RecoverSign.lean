@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Recover
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Recover
 
 /-! Validate the candidate and choose the public encoded sign, saved at offset 60. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 

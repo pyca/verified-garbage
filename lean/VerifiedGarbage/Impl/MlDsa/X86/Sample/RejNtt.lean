@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.X86.Sample.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86.Sample.Common
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_rej_ntt_poly`
@@ -17,6 +19,8 @@ incremented if it is less than `q`. It returns `j >> 8`: 1 if `j = 256`, and
 The loop's branches and the addresses of its stores depend on the XOF
 output, a function of the seed, which the contract lets it leak.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.Sample
 

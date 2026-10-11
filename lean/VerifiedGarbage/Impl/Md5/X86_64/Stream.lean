@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Md5.X86_64
-import VerifiedGarbage.Impl.MdStream.X86_64
+module
+
+public import VerifiedGarbage.Impl.Md5.X86_64
+public import VerifiedGarbage.Impl.MdStream.X86_64
 
 /-!
 # Streaming MD5: x86-64 implementation
@@ -21,6 +23,8 @@ The streaming state (80 bytes at `state`) is the MD buffer followed by a
 caller's callee-saved registers are saved in `scratch[64..112)`. The length
 field is little-endian, and so are the words of the digest.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Md5.X86_64.Stream
 

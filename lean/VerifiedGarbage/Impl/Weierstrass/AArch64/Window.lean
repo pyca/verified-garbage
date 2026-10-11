@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Weierstrass.JacMul
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
 
 /-!
 # Short Weierstrass curves on AArch64: scalar multiplication by windows
@@ -20,6 +22,8 @@ The digits are secret: every entry's every word is loaded and masked
 `y` negated by a mask of the digit's sign (`negY`). The counter `x19` is
 public, as are every address and branch.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.AArch64
 

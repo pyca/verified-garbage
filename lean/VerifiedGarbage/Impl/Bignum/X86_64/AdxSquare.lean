@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareWide
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareGrouped
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareWide
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareGrouped
 
 /-! ADX squaring and Montgomery reduction. -/
+
+@[expose] public section
+
 namespace VG.Impl.Bignum.X86_64.AdxSquare
 open VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Adx
 

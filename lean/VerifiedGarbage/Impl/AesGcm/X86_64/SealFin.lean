@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.AesGcm.X86_64.Short
-import VerifiedGarbage.Impl.Aes.X86_64.AesNi
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86_64.Short
+public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
 
 /-!
 # AES-GCM on x86-64: `seal` ending without calls, with AES-NI
@@ -11,6 +13,8 @@ left, the lengths block and the tag without calls, as `Short.seal`'s long
 path ends, with the keystream of `J₀` and of the counter block computed with
 AES-NI on 128-bit registers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcm.X86_64.SealFin
 

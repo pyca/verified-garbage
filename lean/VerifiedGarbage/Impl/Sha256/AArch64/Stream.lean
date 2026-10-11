@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sha256.AArch64
-import VerifiedGarbage.Impl.MdStream.AArch64
+module
+
+public import VerifiedGarbage.Impl.Sha256.AArch64
+public import VerifiedGarbage.Impl.MdStream.AArch64
 
 /-!
 # Streaming SHA-256: AArch64 implementation
@@ -16,6 +18,8 @@ The streaming state (96 bytes at `state`) is the hash value followed by a
 HMAC-SHA-256 and PBKDF2-HMAC-SHA-256 call the compression function the same
 way (`saved`, `save`, `restore`, `compressAt`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha256.AArch64.Stream
 

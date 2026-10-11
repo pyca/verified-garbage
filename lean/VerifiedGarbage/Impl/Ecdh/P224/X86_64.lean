@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Ecdh.X86_64
-import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
+module
+
+public import VerifiedGarbage.Impl.Ecdh.X86_64
+public import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
 
 /-! # ECDH over P-224 on x86-64: four-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdh.X86_64
 

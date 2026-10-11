@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Verify
+module
+
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Verify
 
 /-!
 # RSASSA-PKCS1-v1_5 verification with a precomputed public key on AArch64
@@ -13,6 +15,8 @@ status, which is unspecified if `pre` is not the modulus' values. The status
 is kept in the frame's word at `oSt`, which `vg_rsa_pkcs1_verify` does not
 use. The frame and the registers kept are `vg_rsa_pkcs1_verify`'s.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaPkcs1Sig.AArch64.Precomputed
 

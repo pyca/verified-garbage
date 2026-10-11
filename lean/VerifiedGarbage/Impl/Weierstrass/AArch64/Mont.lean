@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Mont.AArch64
-import VerifiedGarbage.Spec.Weierstrass.Mont
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Impl.Mont.AArch64
+public import VerifiedGarbage.Spec.Weierstrass.Mont
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # Montgomery products modulo a curve's `p` or `n`, as functions, on AArch64
@@ -32,6 +34,8 @@ a call (loop counters and pointers), leaves `x0 = ws`, and writes only `[o]`
 of `ws`. Every address is `ws` plus a constant or one of the offsets (plus a
 constant), so only the pointer and the offsets may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.AArch64.Mont
 

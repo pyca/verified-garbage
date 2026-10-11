@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesOfb.X86_64
+module
+
+public import VerifiedGarbage.Impl.AesOfb.X86_64
 
 /-!
 # AES-CFB128: x86-64 implementation
@@ -22,6 +24,8 @@ becomes the ciphertext block:
 
 Only the pointers, `rounds` and `n` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesCfb.X86_64
 

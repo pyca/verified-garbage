@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.X25519.X86_64.Adx
+module
+
+public import VerifiedGarbage.Impl.X25519.X86_64.Adx
 
 /-!
 # X25519: x86-64 implementation with AVX512_IFMA
@@ -50,6 +52,8 @@ prologue and epilogue (`withMxcsr`; see "MCDT" in `TCB/X86_64/Isa.lean`).
 The only branches are on the loop counter, and every address is the working
 space plus a constant or a counter, so only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X25519.X86_64
 

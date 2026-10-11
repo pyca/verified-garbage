@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rc2.X86_64.Block
+module
+
+public import VerifiedGarbage.Impl.Rc2.X86_64.Block
 
 /-! # RC2-CBC on baseline x86-64
 
@@ -8,6 +10,8 @@ caller saves only `rbx` and `rbp`, outside the block function's 256-byte
 scratch region. Decryption retains the input ciphertext at scratch + 256
 before overwriting it. No branch or address depends on secret bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.X86_64.Cbc
 

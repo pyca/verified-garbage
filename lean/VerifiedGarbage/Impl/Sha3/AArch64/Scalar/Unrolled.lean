@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Boundary
-import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Control
-import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.VectorLower
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Boundary
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Control
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.VectorLower
 
 /-!
 # The scalar permutation with its rounds unrolled
@@ -13,6 +15,8 @@ pointer to it kept in AdvSIMD registers, and no loop. On Neoverse N2 the
 transfers between the general and AdvSIMD registers that the counted loop
 needs each round compete with the round's own integer operations.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.AArch64.Scalar
 open VG VG.AArch64

@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.P256.VerifyArithmetic
+module
+
+public import VerifiedGarbage.Impl.P256.VerifyArithmetic
 
 /-! Canonical field arithmetic specialized to the P-256 prime's sparse words. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.VerifySparse
 open VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 open VG.Impl.Weierstrass.AArch64

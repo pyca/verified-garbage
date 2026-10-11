@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Mont.Arm
-import VerifiedGarbage.Spec.Weierstrass.Mont
+module
+
+public import VerifiedGarbage.Impl.Mont.Arm
+public import VerifiedGarbage.Spec.Weierstrass.Mont
 
 /-!
 # Montgomery arithmetic modulo a curve's `p` or `n`, as functions, on 32-bit ARM
@@ -30,6 +32,8 @@ each), and the saved registers (28 bytes), which fit for `n ≥ 3`. Every
 address is `ws` plus a constant or one of `o`, `a` and `b` (plus a constant,
 or a counter), so only the pointer and the offsets may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.Arm.Mont
 

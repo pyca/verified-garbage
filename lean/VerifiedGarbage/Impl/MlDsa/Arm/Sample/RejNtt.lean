@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Common
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_rej_ntt_poly`
@@ -17,6 +19,8 @@ incremented if it is less than `q` (the sign bit of `r10 - q`). It returns
 The loop's branches and the addresses of its stores depend on the XOF
 output, a function of the seed, which the contract lets it leak.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.Sample
 

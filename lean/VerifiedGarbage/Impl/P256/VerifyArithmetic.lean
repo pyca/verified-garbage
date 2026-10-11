@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.P256.VerifyDouble
-import VerifiedGarbage.Impl.Weierstrass.CachedJac
-import VerifiedGarbage.Impl.Weierstrass.JacAdd
+module
+
+public import VerifiedGarbage.Impl.P256.VerifyDouble
+public import VerifiedGarbage.Impl.Weierstrass.CachedJac
+public import VerifiedGarbage.Impl.Weierstrass.JacAdd
 
 /-! Register-forwarded field programs for public P-256 verification. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.VerifyArithmetic
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Impl.P256.VerifyDouble

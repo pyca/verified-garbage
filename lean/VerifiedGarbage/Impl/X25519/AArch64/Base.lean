@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
 
 /-!
 # X25519 of the base point on AArch64
@@ -17,6 +19,8 @@ rather than the ladder.
   `scalarFinish` restores the callee-saved registers and stores it to `out`.
 * The working space and the saved registers are in `scratch`, as for Ed25519.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X25519.AArch64.Base
 

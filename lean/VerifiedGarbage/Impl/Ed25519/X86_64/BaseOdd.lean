@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.CombTable
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.CombTable
 
 /-!
 # Ed25519 verification: the odd multiples of `-B`
@@ -9,6 +11,8 @@ cached for addition (`baseOddCached`): `[Y - X, Y + X, 2dT, 2Z]` of `-[d]B` with
 bytes an entry. Verification adds the entry for each nonzero digit of `S` (`recode`) to the
 accumulated point. The proof checks every entry against the specification's addition.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

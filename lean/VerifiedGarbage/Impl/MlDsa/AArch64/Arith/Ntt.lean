@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
-import VerifiedGarbage.Spec.MlDsa
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_ntt` and `vg_mldsa_inv_ntt`
@@ -28,6 +30,8 @@ A block ends with `x2` advanced past its upper half, so a layer ends with
 `x2` at `f + 1024`, and moves it back. Every address and branch depends
 only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Arith
 

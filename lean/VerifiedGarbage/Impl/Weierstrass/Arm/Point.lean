@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Weierstrass.Arm
-import VerifiedGarbage.Impl.Weierstrass.Slots
-import VerifiedGarbage.Spec.Weierstrass.Point
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.Arm
+public import VerifiedGarbage.Impl.Weierstrass.Slots
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-!
 # Complete point addition and doubling as functions, on 32-bit ARM
@@ -27,6 +29,8 @@ constants and the six temporaries, which `enc` turns into offsets; the
 doubling reads `P` as both operands. Every address is `ws` plus a constant,
 so only the pointer may affect timing. The functions use no stack.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.Arm.Point
 

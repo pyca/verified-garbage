@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
-import VerifiedGarbage.Impl.Ed448.Arm.Scalar
+module
+
+public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
+public import VerifiedGarbage.Impl.Ed448.Arm.Scalar
 
 /-!
 # Ed448 verification's equation on ARMv7
@@ -46,6 +48,8 @@ works on slot 1 alone, which is kept free for it: `Q`'s `Y` is in slot 21.
 The result is 1 if `BAD` is 0. Every address and branch depends only on the
 pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.Arm
 

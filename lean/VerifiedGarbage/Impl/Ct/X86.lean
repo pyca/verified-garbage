@@ -1,6 +1,11 @@
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! Byte comparison with a four-byte frame holding the caller's EBX. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ct.X86
 open VG.X86
 

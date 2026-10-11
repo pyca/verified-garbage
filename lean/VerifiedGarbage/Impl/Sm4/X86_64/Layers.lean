@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Sm4.X86_64.Sbox
-import VerifiedGarbage.Impl.Sm4.Lin
-import VerifiedGarbage.Impl.Aes.X86_64.Linear
-import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
+module
+
+public import VerifiedGarbage.Impl.Sm4.X86_64.Sbox
+public import VerifiedGarbage.Impl.Sm4.Lin
+public import VerifiedGarbage.Impl.Aes.X86_64.Linear
+public import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
 
 /-!
 # The layers of bitsliced SM4 on x86-64
@@ -26,6 +28,8 @@ them (128–383), and the callee-saved registers (384–389). The modes
 (`Impl/Modes/X86_64/`), which use slots 0–383 as SM4's core, keep their
 own state in 384–391 (`Ctr.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.X86_64
 

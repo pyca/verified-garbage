@@ -20,6 +20,12 @@ meta code: it imports `Lean` as `public meta import` and its body is a
 `public meta section`, so that its definitions run at elaboration time in
 the files that use them.
 
+A file that evaluates code while it is elaborated (`#guard`, `#eval`,
+`run_cmd`, ...) also imports each of its imports as `meta import`, so that
+what it evaluates is available to the compiler at that time.
+
+A leading comment (a copyright notice) stays before `module`.
+
 An exposed declaration may not refer to a private one of its module (Lean:
 "A private declaration `x` (from the current module) exists but would need
 to be public to access here"). The conversion does not change visibility:
@@ -38,11 +44,19 @@ import sys
 IMPORT = re.compile(r"^import\s+(\S+)\s*$")
 META_DECL = re.compile(r"^(elab|syntax|macro|macro_rules|simproc|dsimproc|elab_rules)\b", re.M)
 THEOREM = re.compile(r"^(@\[[^\]]*\]\s*)?(private\s+)?(theorem|lemma)\b", re.M)
+EVAL = re.compile(r"^\s*(#guard|#eval|#reduce|run_cmd|run_elab|run_meta)\b", re.M)
 
 
 def is_module(lines: list[str]) -> bool:
+    comment = False
     for l in lines:
         s = l.strip()
+        if comment:
+            comment = not s.endswith("-/")
+            continue
+        if s.startswith("/-") and not s.startswith("/-!"):
+            comment = not s.endswith("-/")
+            continue
         if s == "module":
             return True
         if s and not s.startswith("--"):
@@ -59,18 +73,29 @@ def convert(text: str) -> str:
     lines = text.split("\n")
     if is_module(lines):
         return text
-    i, n, head = 0, len(lines), []
+    i, n, lead = 0, len(lines), []
+    # A leading comment (a copyright notice) stays before `module`.
+    if lines and lines[0].startswith("/-") and not lines[0].startswith("/-!"):
+        while i < n:
+            lead.append(lines[i])
+            i += 1
+            if lines[i - 1].rstrip().endswith("-/"):
+                break
+    head = []
     while i < n and (IMPORT.match(lines[i]) or lines[i].strip() == "" or lines[i].startswith("--")):
         head.append(lines[i])
         i += 1
     imports = [IMPORT.match(l).group(1) for l in head if IMPORT.match(l)]
     meta = is_meta(text, imports)
-    out = ["module", ""]
+    evals = not meta and EVAL.search(text) is not None
+    out = lead + ["module", ""]
     for l in head:
         m = IMPORT.match(l)
         if m:
             core = m.group(1) == "Lean" or m.group(1).startswith("Lean.")
             l = f"public {'meta ' if meta and core else ''}import {m.group(1)}"
+            if evals:
+                l += f"\nmeta import {m.group(1)}"
         out.append(l)
     while out and out[-1].strip() == "":
         out.pop()

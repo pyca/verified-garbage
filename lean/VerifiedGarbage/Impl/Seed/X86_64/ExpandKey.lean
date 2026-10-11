@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Seed.X86_64.Ecb
+module
+
+public import VerifiedGarbage.Impl.Seed.X86_64.Ecb
 
 /-!
 # SEED key expansion on x86-64
@@ -17,6 +19,8 @@ callee-saved registers' slots it shares.
 words, so that the rotations by eight bits are `ror`s. Nothing depends on
 the key but the data: the code is straight-line.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.X86_64
 

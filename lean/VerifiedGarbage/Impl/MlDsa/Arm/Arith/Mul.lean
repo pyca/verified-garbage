@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_multiply_ntt` and `vg_mldsa_multiply_add_ntt`
@@ -12,6 +14,8 @@ them, into `r9`, less than `2q`; `csub` reduces it (for `multiplyAddNTT`,
 `h[i]` is added and the sum reduced with `red` first, as it is less than
 `2q + q < 2²⁵`). Every address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.Arith
 

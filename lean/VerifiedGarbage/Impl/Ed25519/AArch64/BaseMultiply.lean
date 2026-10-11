@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.PointMul
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointMul
 
 /-!
 # Cached points
@@ -7,6 +9,8 @@ A cached point `[Y - X, Y + X, 2dT, 2Z]` is added with eight
 multiplications (`pointAddCached`), and stored from constants
 (`cachedPointStore`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.AArch64
 

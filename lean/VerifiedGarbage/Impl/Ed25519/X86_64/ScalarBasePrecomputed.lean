@@ -1,8 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
-import VerifiedGarbage.Impl.Ed25519.X86_64.CombZmm
-import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBase
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
+public import VerifiedGarbage.Impl.Ed25519.X86_64.CombZmm
+public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBase
 
 /-! Fixed-base multiplication with a comb of precomputed, cached multiples of the base point. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 open VG.X86_64

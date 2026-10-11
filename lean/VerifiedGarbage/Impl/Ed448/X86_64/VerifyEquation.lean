@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
 
 /-!
 # Ed448 verification's equation on x86-64
@@ -32,6 +34,8 @@ passes: each check ORs into it a word that is 0 if and only if it passes.
 The result is 1 if `BAD` is 0. Every address and branch depends only on the
 pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86_64
 

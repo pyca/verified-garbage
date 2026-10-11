@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Rc2.X86_64.Cbc
-import VerifiedGarbage.Impl.Rc2.X86_64.ExpandKey
+module
+
+public import VerifiedGarbage.Impl.Rc2.X86_64.Cbc
+public import VerifiedGarbage.Impl.Rc2.X86_64.ExpandKey
 
 /-! # Streaming RC2-CBC on baseline x86-64
 
@@ -21,6 +23,8 @@ Bytes are copied one at a time, with `r10` as the index and `r11` holding
 the byte. Every branch, loop count and address depends only on the
 pointers and lengths; the scratch pointer is loaded last before each call.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.X86_64.Stream
 

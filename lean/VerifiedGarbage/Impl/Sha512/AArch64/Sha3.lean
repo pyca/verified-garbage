@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha512
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # SHA-512 compression with FEAT_SHA512 (Rust's `sha3` feature)
@@ -30,6 +32,8 @@ share one unpipelined unit (Apple M1: two cycles each, three to a vector
 consumer, vector operations two), this trades seven cycles of latency per
 pair of rounds for six of throughput.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha512.AArch64.Sha3
 

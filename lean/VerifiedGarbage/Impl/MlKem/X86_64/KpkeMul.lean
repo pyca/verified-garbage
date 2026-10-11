@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
-import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
-import VerifiedGarbage.Impl.MlKem.X86_64.Arith
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
+public import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
+public import VerifiedGarbage.Impl.MlKem.X86_64.Arith
 
 /-!
 # ML-KEM on x86-64: the products of K-PKE in one call
@@ -21,6 +23,8 @@ last step stores through, `r10`), its product with `ŝ[j]` to
 inlines uses the first 1024 bytes of `scratch` as their working space.
 Every address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

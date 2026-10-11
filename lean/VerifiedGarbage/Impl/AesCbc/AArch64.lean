@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.AArch64.Callee
+module
+
+public import VerifiedGarbage.Impl.Aes.AArch64.Callee
 
 /-!
 # AES-CBC: AArch64 implementation
@@ -30,6 +32,8 @@ chaining value), `x22` (the next block), `x23` (blocks left) and `x24`
 The model has no flags: the branches are `cbz`/`cbnz` on the blocks left.
 Only the pointers, `rounds` and `n` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesCbc.AArch64
 

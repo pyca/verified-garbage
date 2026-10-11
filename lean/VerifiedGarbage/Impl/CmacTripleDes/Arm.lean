@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.CmacTripleDes.Arm.Round
+module
+
+public import VerifiedGarbage.Impl.CmacTripleDes.Arm.Round
 
 /-!
 # TDEA-CMAC (3DES-CMAC): 32-bit ARM implementation
@@ -34,6 +36,8 @@ The scratch buffer: words 0–12 (bytes `[0, 52)`) are the block's; bytes
 Only the pointers, `key_len`, `n` and `last_len` can affect timing: the
 branches are on them and on counters, and the doubling is masked.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacTripleDes.Arm
 

@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.P256.VerifySparse
-import VerifiedGarbage.Impl.P256.VerifyRegisters
-import VerifiedGarbage.Impl.P256.VerifyAllocatedCode
+module
+
+public import VerifiedGarbage.Impl.P256.VerifySparse
+public import VerifiedGarbage.Impl.P256.VerifyRegisters
+public import VerifiedGarbage.Impl.P256.VerifyAllocatedCode
 
 /-! Scalar-register field programs for public P-256 verification. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.VerifyAllocated
 open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VerifyArithmetic

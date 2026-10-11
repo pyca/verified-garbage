@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Common
-import VerifiedGarbage.Impl.Sha3.X86_64.Stream
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Common
+public import VerifiedGarbage.Impl.Sha3.X86_64.Stream
 
 /-!
 # ML-DSA on x86-64, signing: the pieces of the top-level function
@@ -16,6 +18,8 @@ Each call is preceded by the moves of its arguments into their registers
 The code is generic in the implementations of the primitives (`Prims`): the
 proofs hold for any code that meets their contracts.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Sign
 

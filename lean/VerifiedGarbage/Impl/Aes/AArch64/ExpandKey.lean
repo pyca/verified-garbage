@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.AArch64.Ctr32
+module
+
+public import VerifiedGarbage.Impl.Aes.AArch64.Ctr32
 
 /-!
 # The AES key expansion on AArch64
@@ -21,6 +23,8 @@ licence).
   w[i − 1]`. Every branch is on these, which depend only on `key_len`; the
   key's bytes only ever reach the S-box's registers and memory.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.AArch64
 

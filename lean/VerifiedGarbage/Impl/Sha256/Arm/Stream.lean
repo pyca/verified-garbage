@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sha256.Arm
-import VerifiedGarbage.Impl.MdStream.Arm
+module
+
+public import VerifiedGarbage.Impl.Sha256.Arm
+public import VerifiedGarbage.Impl.MdStream.Arm
 
 /-!
 # Streaming SHA-256: 32-bit ARM implementation
@@ -16,6 +18,8 @@ The streaming state (96 bytes at `state`) is the hash value followed by a
 HMAC-SHA-256 and PBKDF2-HMAC-SHA-256 call the compression function the same
 way (`saved`, `save`, `restore`, `compressAt`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha256.Arm.Stream
 

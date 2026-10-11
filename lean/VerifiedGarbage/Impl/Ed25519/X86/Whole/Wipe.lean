@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.Ed25519.X86.Whole.Setup
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Setup
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86.Whole
 /-- Clear consecutive 32-bit frame words, starting at word index `start`. -/

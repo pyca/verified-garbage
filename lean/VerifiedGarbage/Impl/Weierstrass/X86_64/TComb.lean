@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64
-import VerifiedGarbage.Impl.Weierstrass.TCombWords
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64
+public import VerifiedGarbage.Impl.Weierstrass.TCombWords
 
 /-!
 # Short Weierstrass curves on x86-64: a fixed-base comb from tables in memory
@@ -38,6 +40,8 @@ The default `comb` and `step` keep the full scan for secret scalars.
 
 The counter is `rbx`, and products of it with constants are by `mul`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86_64
 

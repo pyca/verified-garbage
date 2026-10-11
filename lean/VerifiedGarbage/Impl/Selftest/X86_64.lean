@@ -1,6 +1,10 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! # Pipeline self-test: x86-64 implementation -/
+
+@[expose] public section
 
 namespace VG.Impl.Selftest.X86_64
 

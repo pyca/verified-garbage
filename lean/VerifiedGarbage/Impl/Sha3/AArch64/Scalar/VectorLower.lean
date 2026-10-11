@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Lower
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Lower
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.AArch64.Scalar
 open VG VG.AArch64

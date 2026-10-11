@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Blake2
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.Spec.Blake2
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # BLAKE2s compression function: x86 (32-bit) implementation, with SSE2
@@ -38,6 +40,8 @@ value during each block. Every address is `esp`, `eax`, `esi` or `edi` plus a
 constant, and the only branches are on `last` and on the count of blocks, so
 only the pointers, `n`, `t` and `last` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blake2.X86
 

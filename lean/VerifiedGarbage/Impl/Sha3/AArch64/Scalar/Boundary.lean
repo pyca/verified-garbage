@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Core
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Core
 
 /-!
 # Boundaries for a register-resident scalar Keccak permutation
@@ -9,6 +11,8 @@ are used by the scalar round. No SHA3 extension is required. Callee-saved
 GPRs are retained in caller-saved vectors; no stack frame is
 opened, preserving the generic sponge callers' frame contract.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.AArch64.Scalar.Boundary
 

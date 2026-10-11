@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Word
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Word
 
 /-! Multiplication by X25519's ladder constant, using one wide product row. -/
+
+@[expose] public section
+
 namespace VG.Impl.X25519.AArch64
 open VG.AArch64 VG.Impl.Ed25519.AArch64
 

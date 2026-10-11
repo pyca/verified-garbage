@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
-import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
-import VerifiedGarbage.Spec.MlDsa.Contract
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
+public import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa{44,65,87}_sign_message` and `_verify_message`
@@ -32,6 +34,8 @@ immediates, or from `x0` (the position the previous sponge function
 returned). Every address and branch depends only on the pointers and the
 lengths, and the calls' own leakage.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Message
 

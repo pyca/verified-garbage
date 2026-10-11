@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.X86_64.Sbox
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.Sbox
 
 /-!
 # The linear layers of bitsliced AES on x86-64
@@ -14,6 +16,8 @@ Every block here uses the state registers and the temporaries `t0`, `t1`
 only (`toBs` and `fromBs` only `t0`), and slots of the scratch buffer at
 `r9` for masks.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86_64
 

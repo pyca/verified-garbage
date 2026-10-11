@@ -1,9 +1,13 @@
-import VerifiedGarbage.Impl.Ecdh.X86_64
-import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
+module
+
+public import VerifiedGarbage.Impl.Ecdh.X86_64
+public import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
 
 /-! # ECDH over P-521 on x86-64: nine-word field elements and scalars, by 4-bit
 windows with a Jacobian accumulator (`Cfg.exchangeJ4`), every point of P-521
 having order `n` -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdh.X86_64
 

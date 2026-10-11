@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
 
 /-! Width-five NAF multiplication for public verification scalars. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86_64.Naf
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass
 open Jacobian

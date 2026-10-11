@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesCbc.AArch64
+module
+
+public import VerifiedGarbage.Impl.AesCbc.AArch64
 
 /-!
 # AES-CTR: AArch64 implementation
@@ -25,6 +27,8 @@ plus `2³²`, with the carry into the first, both byte-reversed with `rev`).
 Only the pointers, `rounds`, `n` and the last 32 bits of the counter block
 can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesCtr.AArch64
 

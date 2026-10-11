@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # Poly1305: AArch64 implementation
@@ -42,6 +44,8 @@ The only branches are on the block count, the number of bytes buffered
 constant, or plus a count, so only the pointers, `count` and the lengths can
 affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Poly1305.AArch64
 

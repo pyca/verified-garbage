@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.AArch64.Linear
+module
+
+public import VerifiedGarbage.Impl.Aes.AArch64.Linear
 
 /-!
 # The inverse round transformations of bitsliced AES on AArch64
@@ -21,6 +23,8 @@ On the state of `Linear.lean` (four blocks in `q 0 … q 7`), as BearSSL's
 ireg 7` (and all ones in `ones`), which the S-box and MixColumns also use
 as temporaries; no layer here uses memory.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.AArch64
 

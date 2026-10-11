@@ -1,6 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Constant-time byte comparison on baseline AArch64. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ct.AArch64
 open VG.AArch64
 

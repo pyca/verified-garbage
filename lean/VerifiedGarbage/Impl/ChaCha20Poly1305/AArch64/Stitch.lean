@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed8
-import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Poly
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed8
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Poly
 
 /-!
 # ChaCha20 and Poly1305 together (AArch64)
@@ -19,6 +21,8 @@ block is absorbed, and each of the five iterations absorbs three more after
 its double round; then `x20` is restored to the working space, which is 64
 bytes after the ChaCha20 state in the ChaCha20-Poly1305 context.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20Poly1305.AArch64.Stitch
 

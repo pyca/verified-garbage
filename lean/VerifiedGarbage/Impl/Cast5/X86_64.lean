@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Cast5.Tables
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Impl.Cast5.Lines
+module
+
+public import VerifiedGarbage.Impl.Cast5.Tables
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Impl.Cast5.Lines
 
 /-!
 # CAST5 on baseline x86-64
@@ -21,6 +23,8 @@ and 16, each kept or not by a mask made from a bit of `Kr` (`rotate`).
 Registers of the scan: the table in `r10`, the count of groups of four
 entries left in `r11`, `xmm0`–`xmm5`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Cast5.X86_64
 

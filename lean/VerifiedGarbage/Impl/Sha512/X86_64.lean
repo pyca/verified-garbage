@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha512
-import VerifiedGarbage.TCB.X86_64.Target
+module
+
+public import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # SHA-512 compression function: x86-64 implementation
@@ -17,6 +19,8 @@ import VerifiedGarbage.TCB.X86_64.Target
 * `rdi, rsi, rdx, rcx` (the pointers and the block count) are public; no
   address and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha512.X86_64
 

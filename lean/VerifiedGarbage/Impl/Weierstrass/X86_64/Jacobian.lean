@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Weierstrass.JacAdd
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.JacAdd
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
 
 /-! Jacobian point operations for public verification data. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86_64.Jacobian
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass
 

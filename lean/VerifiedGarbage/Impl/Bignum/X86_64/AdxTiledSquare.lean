@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxTri8
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledProduct
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTri8
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledProduct
 
 /-! Triangular block squares combined with rectangular cross-block rows. -/
+
+@[expose] public section
+
 namespace VG.Impl.Bignum.X86_64.AdxTiledSquare
 open VG.X86_64
 

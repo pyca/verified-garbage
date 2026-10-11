@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Ecdsa.AArch64
-import VerifiedGarbage.Spec.P192
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.AArch64
+public import VerifiedGarbage.Spec.P192
 
 /-! # p192 on AArch64, using complete general addition -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.AArch64
 

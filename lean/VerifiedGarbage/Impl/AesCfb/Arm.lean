@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesOfb.Arm
+module
+
+public import VerifiedGarbage.Impl.AesOfb.Arm
 
 /-!
 # AES-CFB128: 32-bit ARM implementation
@@ -21,6 +23,8 @@ and the block at `iv` then becomes the ciphertext block:
 Only the pointers, `rounds` and `n` can affect timing: the only branches are
 on `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesCfb.Arm
 

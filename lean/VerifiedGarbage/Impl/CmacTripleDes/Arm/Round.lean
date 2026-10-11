@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.CmacTripleDes.Index
-import VerifiedGarbage.Impl.CmacTripleDes.Sbox
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.Impl.CmacTripleDes.Index
+public import VerifiedGarbage.Impl.CmacTripleDes.Sbox
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # DES on 32-bit ARM, in constant time: the round, the block and the key schedule
@@ -22,6 +24,8 @@ in slots 0–11, half 0's outputs in slot 12), the round counter in `r11`, the
 pass counter in `r12` and the step from one round key to the next (8 or −8)
 in `lr`. A round uses `r0`–`r6`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacTripleDes.Arm
 

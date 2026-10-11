@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.ChaCha20.X86.Callee
-import VerifiedGarbage.Impl.Poly1305.X86
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.X86.Callee
+public import VerifiedGarbage.Impl.Poly1305.X86
 
 /-!
 # ChaCha20-Poly1305: x86 (32-bit) implementation
@@ -37,6 +39,8 @@ functions use 32 bytes of stack below their return address.
 Only the pointers and the lengths can affect timing: the branches are on the
 lengths, and the tags are compared without a branch.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20Poly1305.X86
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # RC4 on baseline x86-64
@@ -19,6 +21,8 @@ index of a lookup or replacement in `r9`, its result in `rax`; `r10` and
 the data at `rsi`, the remaining length in `rdx` and `j` in `r8`. Only
 caller-saved registers are used, and no stack.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc4.X86_64
 

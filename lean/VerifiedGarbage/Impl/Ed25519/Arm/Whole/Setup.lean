@@ -1,7 +1,12 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Argument setup for whole Ed25519 operations. Saved caller arguments live
 in the read-only stack allocation, beyond the writable local frame. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm.Whole
 open VG.Arm
 

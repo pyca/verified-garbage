@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.MlKem.X86.Basic
-import VerifiedGarbage.Impl.Sha3.X86.Stream
-import VerifiedGarbage.Spec.MlDsa.Contract
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Basic
+public import VerifiedGarbage.Impl.Sha3.X86.Stream
+public import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa{44,65,87}_sign_message` and `_verify_message`
@@ -31,6 +33,8 @@ position the previous call of `vg_keccak_absorb` returned, which `callRet`
 keeps), and pushed in a frame of their own. Every address and branch
 depends only on the pointers and the lengths, and the calls' own leakage.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.Message
 

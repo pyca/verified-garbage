@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZR
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
-import VerifiedGarbage.Impl.Aes.X86_64.VaesZH
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZR
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
+public import VerifiedGarbage.Impl.Aes.X86_64.VaesZH
 
 /-!
 # Prepared AVX-512 GCM with AES keys cached across batches
@@ -19,6 +21,8 @@ with its keystream and its product with its power added to the lane 0
 products (`remBody`, with `Y` added to the first block, then cleared), which
 are reduced once (`StitchAvx.reduceHash`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.X86_64.StitchZH
 open VG.X86_64

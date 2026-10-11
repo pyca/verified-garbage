@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.TripleDes.AArch64.Common
-import VerifiedGarbage.Impl.TripleDes.AArch64.Sbox
+module
+
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Common
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Sbox
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.AArch64
 

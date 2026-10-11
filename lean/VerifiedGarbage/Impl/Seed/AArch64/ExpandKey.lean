@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Seed.AArch64.Ecb
+module
+
+public import VerifiedGarbage.Impl.Seed.AArch64.Ecb
 
 /-!
 # SEED key expansion on AArch64
@@ -17,6 +19,8 @@ out as ECB's (`Ecb.lean`).
 so that the rotations by eight bits are `ror`s. Nothing depends on the key
 but the data: the code is straight-line.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.AArch64
 

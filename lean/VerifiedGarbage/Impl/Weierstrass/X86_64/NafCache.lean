@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
 
 /-! Public lookup of the cached Z² and Z³ belonging to an odd multiple. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86_64.Naf
 open VG VG.X86_64 VG.Impl.Mont.X86_64
 

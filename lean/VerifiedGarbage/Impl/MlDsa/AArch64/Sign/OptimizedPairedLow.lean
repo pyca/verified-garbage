@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedLow
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedLow
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sign.Optimized
 open VG VG.AArch64 VG.Spec.MlDsa

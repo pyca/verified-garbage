@@ -1,9 +1,11 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Ntt
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Mul
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.AddSub
-import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Round
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt4
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.ExpandMask4
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Ntt
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Mul
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.AddSub
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Round
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt4
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.ExpandMask4
 
 /-!
 # ML-DSA on x86-64: implementations of the polynomial arithmetic
@@ -19,6 +21,8 @@ interface `MlDsaArith` on x86-64 (`Variants/MlDsaArith/X86_64/`), and the
 functions that call them are emitted once for each
 (`Generic/MlDsaArith/X86_64/`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Arith
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86.Basic
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): `vg_mlkem_cbd2`
@@ -12,6 +14,8 @@ holds `x = v₀ + v₁` in bits 0–1 and `y = v₂ + v₃` in bits 2–3
 (`cbdNibble`), and the coefficient is `x + q - y` reduced with `csub`. Every
 address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86
 

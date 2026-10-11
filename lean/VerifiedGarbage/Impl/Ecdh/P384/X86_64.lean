@@ -1,13 +1,17 @@
-import VerifiedGarbage.Impl.Ecdh.X86_64
-import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
-import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleIn
-import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+module
+
+public import VerifiedGarbage.Impl.Ecdh.X86_64
+public import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleIn
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
 
 /-! # ECDH over P-384 on x86-64: six-word field elements and scalars, by the
 Jacobian window method with an affine table (`Cfg.exchangeJA`, P-384 having
 prime order) with the doubling in place
 (`Impl/Weierstrass/X86_64/DoubleIn.lean`; with BMI2 and ADX, with its small
 multiples fused, `Impl/Weierstrass/X86_64/DoubleCms.lean`) -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdh.X86_64
 
