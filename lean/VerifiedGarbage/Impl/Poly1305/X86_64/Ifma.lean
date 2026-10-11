@@ -164,7 +164,7 @@ def storeH (m : Nat → MemOp) : List Instr :=
 
 /-- `Y = r⁸` (and `S`), with `r²` and `r⁴` stored in the state. -/
 def powers : List Instr :=
-  loadR ++ splitRg ++ hOfY ++ twenty ++ mul ++ storeH mR2 ++
+  loadR ++ splitRg ++ twenty ++ hOfY ++ mul ++ storeH mR2 ++
   yOfH ++ twenty ++ mul ++ storeH mR4 ++ yOfH ++ twenty ++ mul ++ yOfH ++ twenty
 
 /-- The accumulator `h` (the words at `rdi`, `rdi + 8` and `rdi + 16`) into
