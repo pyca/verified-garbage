@@ -122,6 +122,8 @@ inductive StitchToName where
   | vaes
   /-- `Impl.Gcm.X86_64.StitchZTo`: VAES and VPCLMULQDQ on 512-bit registers. -/
   | vaesAvx512
+  /-- `Impl.Gcm.X86_64.StitchAvx8.encTo`: AES-NI and PCLMULQDQ in `VEX.128`. -/
+  | aesniAvx
 
 namespace StitchToName
 
@@ -129,22 +131,32 @@ namespace StitchToName
 def enc : StitchToName → Prog isa
   | .vaes => Impl.Gcm.X86_64.StitchTo.enc
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZTo.enc
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.encTo
 
 /-- The loop named `n`, for a key context of `vg_aes_gcm_init_precomputed`. -/
 def encP : StitchToName → Prog isa
   | .vaes => Impl.Gcm.X86_64.StitchTo.enc
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZTo.encP
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.encTo
 
 /-- Out-of-place encryption using a prepared context. -/
 def encR : StitchToName → Prog isa
   | .vaes => Impl.Gcm.X86_64.StitchTo.enc
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZHTo.encR
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.encToR
+
+/-- Whether the loop named `n` takes all the blocks, from 16 on
+(`BlocksTo.stitchPart`'s `full`), and not only the first `16 ⌊n / 16⌋`. -/
+def full : StitchToName → Bool
+  | .aesniAvx => true
+  | _ => false
 
 /-- Whether the loop named `n` for a prepared context takes all the blocks,
 from 16 on (`BlocksTo.stitchPart`'s `full`), and not only the first
 `16 ⌊n / 16⌋`. -/
 def fullR : StitchToName → Bool
   | .vaesAvx512 => true
+  | .aesniAvx => true
   | _ => false
 
 end StitchToName
@@ -163,7 +175,7 @@ of those for a key context of `vg_aes_gcm_init_precomputed`, if they read
 the powers of the hash subkey from it). -/
 structure StitchToPart where
   name : StitchToName
-  piece : PieceTo name.enc
+  piece : PieceTo name.enc false name.full
   pieceP : Option (PieceToP name) := none
   pieceR : Option (PieceToR name) := none
 
