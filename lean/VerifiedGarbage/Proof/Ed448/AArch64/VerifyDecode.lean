@@ -23,7 +23,7 @@ open VG.Proof.Curve448.AArch64.Fast (Mb)
 open VG.Impl.X448.AArch64 (ld st slot X2 ACC)
 
 /-- The registers decoding may change. -/
-def decClob : List Reg := .x30 :: .x17 :: .x19 :: .x20 :: (workRegs ++ fclob)
+def decClob : List Reg := .x30 :: .x17 :: .x20 :: (workRegs ++ fclob)
 
 theorem bytesAt57_take (m : Mem) (p : Addr) :
     (Spec.Ed448.bytesAt m p 57).take 56 = Spec.Ed448.bytesAt m p 56 := by
