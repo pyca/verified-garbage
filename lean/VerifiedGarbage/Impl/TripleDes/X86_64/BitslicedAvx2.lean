@@ -395,20 +395,33 @@ def masks (unit : Nat) : List Instr :=
   bcast .xmm13 (swapMask (4 * unit)) ++ bcast .xmm14 (swapMask (2 * unit)) ++
   bcast .xmm15 (swapMask unit)
 
+/-- One group of a stage of the transposition, the eight words `w k` from
+`rsi`, with its masks; then `rsi` advances by `step` bytes to the next
+group, and the count of groups in `r11` goes down. -/
+def stageBody (w : Nat → Nat) (unit step : Nat) : List Instr :=
+  masks unit ++ group w unit ++ ([.alu .add .rsi (.imm step), .alu .sub .r11 (.imm 1)] : List Instr)
+
+/-- The eight groups of a stage, in a loop. -/
+def stage (w : Nat → Nat) (unit step : Nat) : Prog isa :=
+  .seq (.block [.mov .r11 (.imm 8)]) (.loop (.block (stageBody w unit step)) .ne)
+
 /-- Transpose each quadword lane of the 64 state words in place: stages
-32, 16, 8, then 4, 2, 1. -/
-def transpose : List Instr :=
-  masks 8 ++ (List.range 8).flatMap (fun i => group (fun k => i + 8 * k) 8) ++
-  masks 1 ++ (List.range 8).flatMap (fun g => group (fun k => 8 * g + k) 1)
+32, 16, 8 on the words `i + 8 k` of each `i`, then 4, 2, 1 on the words
+`8 g + k` of each `g`; `rsi` is back at the state words after each. -/
+def transpose : Prog isa :=
+  .seq (stage (fun k => 8 * k) 8 32)
+    (.seq (.block [.alu .sub .rsi (.imm 256)])
+      (.seq (stage (fun k => k) 1 256) (.block [.alu .sub .rsi (.imm 2048)])))
 
 /-! ## Batches -/
 
 /-- Three passes on 256 blocks, then the next 256. -/
 def batch (d : Direction) : Prog isa :=
-  .seq (.block (transpose ++ bcast ones (BitVec.allOnes 64) ++ ([.mov .r11 (.imm 3)] : List Instr)))
-    (.seq (.loop (pass d) .ne)
-      (.block (transpose ++
-        ([.alu .add .rsi (.imm 2048), .alu .sub .rdx (.imm 256), .alu .cmp .rdx (.imm 256)] : List Instr))))
+  .seq transpose
+    (.seq (.block (bcast ones (BitVec.allOnes 64) ++ ([.mov .r11 (.imm 3)] : List Instr)))
+      (.seq (.loop (pass d) .ne)
+        (.seq transpose
+          (.block [.alu .add .rsi (.imm 2048), .alu .sub .rdx (.imm 256), .alu .cmp .rdx (.imm 256)]))))
 
 /-- Batches of 256 blocks while there are that many. -/
 def wide (d : Direction) : Prog isa :=
