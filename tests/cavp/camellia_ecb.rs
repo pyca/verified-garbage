@@ -2,7 +2,7 @@
 //! known-answer tests as pyca/cryptography vendors them; unmodified sources
 //! and provenance live under vectors/.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 
 use verified_garbage::camellia_ecb::{CamelliaEcb, Error};
 
