@@ -5,7 +5,7 @@ open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 open VG.Proof.MlDsa.AArch64.Optimized.Resident (permuted StreamOutput)
 
-def coreRegs : List Reg := [.x5,.x6,.x7,.x10,.x16]
+def coreRegs : List Reg := [.x5,.x6,.x7,.x10,.x11,.x12,.x13,.x16]
 def bufferBase (work : Addr) : Addr := work+256
 def bufferRegion (work : Addr) : Region := ⟨bufferBase work,680⟩
 
