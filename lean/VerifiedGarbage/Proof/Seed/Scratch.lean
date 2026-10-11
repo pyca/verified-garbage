@@ -81,6 +81,13 @@ private theorem blocksAt_congr {n : Nat}
   rw [Offset.add_add]
   exact h _ this
 
+private theorem blockAt_congr (h : ∀ i < 16, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
+    blockAt m₂ p = blockAt m₁ p := by
+  simp only [blockAt]
+  congr 1
+  funext j
+  exact h _ j.isLt
+
 /-- The memory agrees on the `n` bytes at `p`, from its agreeing on the
 region. -/
 private theorem agree_of {n : Nat} (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 → m₁ a = m₂ a) :
@@ -127,6 +134,42 @@ theorem ecbPostOut_local (direction : Direction) : ∀ vs m m₁ m₂ r,
     dsimp only [Curry.apply, ecbPost, ArgWord.ofRaw] at h ⊢
     have := Nat.mod_le n.toNat (2 ^ pb)
     rw [blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
+      rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 16 this; omega)]
+    exact h
+
+/-- `expandKeyPost` reads the memory on entry only within the key. -/
+theorem expandKeyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (expandKeySig.words pb).length →
+    (∀ b ∈ Sig.bufs expandKeySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (expandKeySig.words pb) (expandKeyPost pb) vs m₁ m' r →
+      Curry.apply (expandKeySig.words pb) (expandKeyPost pb) vs m₂ m' r
+  | [_, _], m₁, m₂, m', r, _, hb, h => by
+    simp only [expandKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hk := agree_of hb.1
+    change Curry.apply [ArgWord.addr, ArgWord.addr] (expandKeyPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.addr] (expandKeyPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, expandKeyPost, ArgWord.ofRaw] at h ⊢
+    rw [blockAt_congr hk]
+    exact h
+
+/-- `ecbPost` reads the memory on entry only within the schedule and the data. -/
+theorem ecbPost_local (direction : Direction) : ∀ vs m₁ m₂ m' r,
+    vs.length = (ecbSig.words pb).length →
+    (∀ b ∈ Sig.bufs ecbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ecbSig.words pb) (ecbPost direction pb) vs m₁ m' r →
+      Curry.apply (ecbSig.words pb) (ecbPost direction pb) vs m₂ m' r
+  | [_, data, n], m₁, m₂, m', r, _, hb, h => by
+    simp only [ecbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.1
+    have hd := agree_of hb.2
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ecbPost direction pb) _
+      m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ecbPost direction pb) _
+      m₂ m' r
+    dsimp only [Curry.apply, ecbPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    rw [scheduleAt_congr hs, blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
       rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 16 this; omega)]
     exact h
 
