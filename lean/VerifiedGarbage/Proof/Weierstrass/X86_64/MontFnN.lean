@@ -7,14 +7,15 @@ import VerifiedGarbage.Proof.Weierstrass.Unch
 /-!
 # P-521's product modulo `n` as a function, on x86-64
 
-`mulFnN` (`Impl/Weierstrass/X86_64/Mont.lean`) stores `n` at `fnMoN`
-(`setConst`), then runs the inline product by columns `mulF` relocated: its
-operands at the markers read through `rbx = ws + a`, `rbp = ws + b` and
-`rsi = ws + o`. With those registers so (`PtrsAt`), the relocated code runs
-as the inline code at the offsets `a`, `b` and `o` (`wp_unptr`,
-`mulF_reloc`), whose proof then applies (`mulF_ok`), `n` now in memory. The
-function changes only `fnClob`, `[o]` and bytes `fnMoN` to 4095, where it
-leaves `n` (`mulFnN_ok`).
+`mulFnN` (`Impl/Weierstrass/X86_64/Mont.lean`) keeps the words at `fnMoN` in
+`xmm6`–`xmm14` (`saveSteps_ok`), stores `n` there (`setConst`), then runs the
+inline product by columns `mulF` relocated: its operands at the markers read
+through `rbx = ws + a`, `rbp = ws + b` and `rsi = ws + o`. With those
+registers so (`PtrsAt`), the relocated code runs as the inline code at the
+offsets `a`, `b` and `o` (`wp_unptr`, `mulF_reloc`), whose proof then applies
+(`mulF_ok`), `n` now in memory. It puts the words back (`restoreSteps_ok`),
+so the function changes only `fnClob`, `[o]` and its temporary area, bytes
+`fnTmp` to 4095 (`mulFnN_ok`).
 -/
 
 namespace VG.Proof.Weierstrass.X86_64.Mont
