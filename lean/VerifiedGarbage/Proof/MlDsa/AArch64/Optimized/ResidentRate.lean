@@ -1,5 +1,5 @@
 import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Resident
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRounds
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RoundLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeccakMix
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
 
@@ -17,20 +17,22 @@ open VG.Proof.Sha3.AArch64.Sha3.Vector (CoreKeep)
 structure Core where
   code : Prog isa
   correct : ∀ {s : State} {A B : Spec.Sha3.State}, Pairs s A B →
+    VG.Proof.Sha3.AArch64.Neon.Hw.RcTable s (s.gpr .x15) →
     WP isa code s fun t => CoreKeep s t ∧ Pairs t (Spec.Sha3.keccakF A) (Spec.Sha3.keccakF B)
-
-def originalCore : Core :=
-  ⟨Impl.MlDsa.AArch64.Optimized.Resident.permute, VG.Proof.Sha3.AArch64.Neon.Hw.rounds2_ok⟩
-
-def n2Core : Core :=
-  ⟨.block Impl.MlDsa.AArch64.Optimized.KeccakMix.rounds, KeccakMix.rounds2_ok⟩
 
 /-- Neither stream constrains the other: every input bit in both lanes is
 covered, and the inline permutation leaves memory untouched. -/
-theorem permute_ok {s : State} {A B : Spec.Sha3.State} (h : Pairs s A B) :
+theorem permute_ok {s : State} {A B : Spec.Sha3.State} (h : Pairs s A B)
+    (ht : VG.Proof.Sha3.AArch64.Neon.Hw.RcTable s (s.gpr .x15)) :
     WP isa Impl.MlDsa.AArch64.Optimized.Resident.permute s fun t =>
       CoreKeep s t ∧ Pairs t (Spec.Sha3.keccakF A) (Spec.Sha3.keccakF B) :=
-  VG.Proof.Sha3.AArch64.Neon.Hw.rounds2_ok h
+  VG.Proof.Sha3.AArch64.Neon.Hw.roundsLoop_ok VG.Proof.Sha3.AArch64.Neon.Hw.core_ok (by decide) h ht
+
+def originalCore : Core := ⟨Impl.MlDsa.AArch64.Optimized.Resident.permute, permute_ok⟩
+
+def n2Core : Core :=
+  ⟨Impl.Sha3.AArch64.Sha3.Vector.roundsLoop Impl.MlDsa.AArch64.Optimized.KeccakMix.core .x15,
+    fun h ht => VG.Proof.Sha3.AArch64.Neon.Hw.roundsLoop_ok KeccakMix.core_ok (by decide) h ht⟩
 end VG.Proof.MlDsa.AArch64.Optimized.Resident
 
 end

@@ -87,12 +87,47 @@ theorem powStep_rel {j : Nat} (hj : j < 47) :
     (fun t h => powNext_ok rfl h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
   exact (RelCT.seq a (RelCT.seq b c)).mono (fun _ _ h => h) fun _ _ h => h.2
 
-/-- `n` more powers, in two runs. -/
-theorem powSteps_rel : ∀ n, n ≤ 47 →
-    RelCT isa (fun t₁ t₂ => PowRegs Ctx W SP rd₁ wr₁ 0 t₁ ∧ PowRegs Ctx W SP rd₂ wr₂ 0 t₂) (powSteps v.callees n)
-      fun t₁ t₂ => PowRegs Ctx W SP rd₁ wr₁ n t₁ ∧ PowRegs Ctx W SP rd₂ wr₂ n t₂
-  | 0, _ => RelCT.block_nil fun _ _ h => h
-  | n + 1, hn => RelCT.seq (powSteps_rel n (by omega)) (powStep_rel v L pC₁ pW₁ pC₂ pW₂ (by omega))
+omit L pC₁ pW₁ pC₂ pW₂ in
+theorem powEndRegs_ok {rd wr : List Region} {k : Nat} (hk : k ≤ 47) {t : State}
+    (h : PowRegs Ctx W SP rd wr k t) :
+    WP isa (.block (ptr .rax .r13 1024 ++ ([.alu .cmp .rbp (.reg .rax)] : List Instr))) t fun t' =>
+      PowRegs Ctx W SP rd wr k t' ∧ isa.eval .ne t' = some (decide (k ≠ 47)) := by
+  obtain ⟨h13, h15, hbp, hsp, hrd, hwr⟩ := h
+  obtain ⟨t', run, hg, -, hrd', hwr', he⟩ := powEnd_run hk h13 hbp
+  exact WP.of_runBlock ⟨t', run, ⟨by rw [hg _ (by decide)]; exact h13, by rw [hg _ (by decide)]; exact h15,
+    by rw [hg _ (by decide)]; exact hbp, by rw [hg _ (by decide)]; exact hsp, hrd'.trans hrd,
+    hwr'.trans hwr⟩, he⟩
+
+/-- The loop of the 47 powers, in two runs: the loop's test depends only on
+`rbp`, which both runs advance alike. -/
+theorem powLoop_rel :
+    RelCT isa (fun t₁ t₂ => PowRegs Ctx W SP rd₁ wr₁ 0 t₁ ∧ PowRegs Ctx W SP rd₂ wr₂ 0 t₂) (powLoop v.callees)
+      fun t₁ t₂ => PowRegs Ctx W SP rd₁ wr₁ 47 t₁ ∧ PowRegs Ctx W SP rd₂ wr₂ 47 t₂ := by
+  refine (RelCT.loop (M := isa) (fun m t₁ t₂ => ∃ j, j < 47 ∧ m = 47 - j ∧
+      PowRegs Ctx W SP rd₁ wr₁ j t₁ ∧ PowRegs Ctx W SP rd₂ wr₂ j t₂) (fun m => ?_) 47).mono
+    (fun _ _ h => ⟨0, by decide, rfl, h⟩) (fun _ _ h => h)
+  apply RelCT.exists_
+  intro j
+  intro t₁ t₂ tr ur u₁ u₂ ⟨hj, hm, h⟩ e₁ e₂
+  have hend := rel_wp (rel_taint (P := fun t₁ t₂ => PowRegs Ctx W SP rd₁ wr₁ (j + 1) t₁ ∧
+      PowRegs Ctx W SP rd₂ wr₂ (j + 1) t₂)
+      (c := .block (ptr .rax .r13 1024 ++ ([.alu .cmp .rbp (.reg .rax)] : List Instr))) [.r13, .rbp]
+      (fun _ _ h r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · rw [h.1.1, h.2.1]
+        · rw [h.1.2.2.1, h.2.2.2.1]) ⟨_, by taint_decide⟩)
+    (fun _ _ h => h) (fun _ h => powEndRegs_ok (by omega) h) (fun _ h => powEndRegs_ok (by omega) h)
+  obtain ⟨htr, -, ⟨g₁, he₁⟩, ⟨g₂, he₂⟩⟩ :=
+    RelCT.seq (powStep_rel v L pC₁ pW₁ pC₂ pW₂ hj) hend t₁ t₂ tr ur u₁ u₂ h e₁ e₂
+  refine ⟨htr, by rw [he₁, he₂], fun hf => ?_, fun ht => ?_⟩
+  · rw [he₁] at hf
+    have hl : j + 1 = 47 := by simp at hf; omega
+    rw [hl] at g₁ g₂
+    exact ⟨g₁, g₂⟩
+  · rw [he₁] at ht
+    have hl : j + 1 < 47 := by simp at ht; omega
+    exact ⟨47 - (j + 1), by omega, j + 1, hl, rfl, g₁, g₂⟩
 
 end
 
@@ -123,7 +158,7 @@ theorem initP_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.initPrec
         · rw [h.1.2.1, h.2.2.1]
         · rw [h.1.2.2.1, h.2.2.2.1]) ⟨_, by taint_decide⟩)
     (fun _ _ h => h) (hS pC) (hS pC')
-  have b := powSteps_rel v L (rd₁ := s₀.rd) (rd₂ := s₀'.rd) pC pW pC' pW' 47 (Nat.le_refl _)
+  have b := powLoop_rel v L (rd₁ := s₀.rd) (rd₂ := s₀'.rd) pC pW pC' pW'
   have c := rel_taint (P := fun t₁ t₂ => PowRegs (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsp) s₀.rd s₀.wr 47 t₁ ∧
       PowRegs (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsp) s₀'.rd s₀'.wr 47 t₂) (c := .block restore) [.r15, .rsp]
     (fun _ _ h r hr => by

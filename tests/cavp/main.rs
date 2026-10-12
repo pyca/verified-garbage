@@ -21,12 +21,16 @@ mod aes_ecb;
 mod aes_gcm;
 mod aes_ofb;
 mod aes_xts;
+mod blowfish_cbc;
+mod blowfish_cfb;
+mod blowfish_ofb;
 mod camellia_cbc;
 mod camellia_cfb;
 mod camellia_ecb;
 mod camellia_ofb;
 mod cmac_aes;
 mod cmac_triple_des;
+mod dsa;
 mod ecdh_p192;
 mod ecdh_p224;
 mod ecdh_p256;
@@ -51,7 +55,10 @@ mod sha512;
 mod sha512_224;
 mod sha512_256;
 mod triple_des_cbc;
+mod triple_des_cfb;
+mod triple_des_cfb8;
 mod triple_des_ecb;
+mod triple_des_ofb;
 
 /// The `key = value` lines of a CAVP response file, in order, without the
 /// comments, blank lines and `[L = ...]` section headers.

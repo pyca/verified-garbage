@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P192.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 
 /-!
 # ECDSA verification over p192 on x86-64: `Verified`
@@ -28,16 +29,17 @@ theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre p192 s := by
   exact ⟨h1, h2, h3, h4, h5, h7, by simp [TblsHeld, Cfg.combConsts, p192, Abi.constsHeld, Abi.constRegions]⟩
 
 theorem verify_x86 (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
-    ∃ t s', Exec isa verifyP192 s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p192_ok hI) hL p192_tbls (pre_of hs)
-  have hsp : ∀ i ∈ instrs verifyP192, Taint.clobbers i .rsp = false := by
+    ∃ t s', Exec isa verifyP192.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
+  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p192_ok hI) hL p192_tbls (pre_of hs) p192_mulBase.2
+  have hsp : ∀ i ∈ instrs verifyP192.inline, Taint.clobbers i .rsp = false := by
     have h : verifyP192.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, hrs, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+    ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -62,18 +64,27 @@ materialize_shared verifyP192Erased
 
 theorem verify_ct : ConstantTime isa verifyX86_64.pre verifyX86_64.pub verifyP192 := by
   refine VG.Taint.constantTime_mapBlocks (c' := verifyP192Erased) taintS_eraseInv
-    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) rfl ?_ rfl (by taint_decide)
-  intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) rfl ?_ rfl (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact h1
   · exact h2
   · exact h3
   · exact h4
+  · exact h0
+
+/-- The contract with 8 bytes of stack, for the calls' return address. -/
+theorem implies8 : verifyX86_64.Implies (Spec.Ecdsa.P192.inst.verifyContract X86_64.abi 8) :=
+  implies.stack8_abi (by
+    sig_implies_sat [Spec.Ecdsa.P192.inst, Spec.Ecdsa.Instance.verifyContract,
+      Spec.Ecdsa.Instance.verifySig, Spec.P192.curve, Spec.Ecdsa.scratchWords, X86_64.abi,
+      X86_64.argRegs, satState] [satState] using satState)
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) :
-    Verified X86_64.target verifyP192 (Spec.Ecdsa.P192.inst.verifyContract X86_64.abi) :=
-  Verified.of_correct (verify_x86 hL hI) verify_ct implies
+    Verified X86_64.target verifyP192 (Spec.Ecdsa.P192.inst.verifyContract X86_64.abi 8) :=
+  Verified.of_inline_ct (by lit_decide) (verify_x86 hL hI) verify_ct implies8
+    (fun _ h => Sig.clear_of_pre h) fun _ _ _ _ _ hp => hp
 
 end VG.Proof.Ecdsa.Verify.X86_64.P192

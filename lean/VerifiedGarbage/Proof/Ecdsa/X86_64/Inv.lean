@@ -290,6 +290,7 @@ theorem invFn_ok (hc : BaseCfgOk c) (h6 : 6 ≤ c.n) {body : Prog isa} {base : A
   have hsz : size = 8192 := rfl
   have hpt := sl_le c h7 (i := PT) (by decide)
   have hsl := invSaved_slots (c := c) h6
+  rw [show c.invFn body = c.invFnS body from ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
   show WP isa (.seq (.block (Spill.saveCode .rdi c.invSaved)) (.seq body
     (.block (Spill.restoreCode .rdi c.invSaved)))) s _
   -- Save.
@@ -328,6 +329,63 @@ theorem invFn_ok (hc : BaseCfgOk c) (h6 : 6 ≤ c.n) {body : Prog isa} {base : A
     simp only [pwI, pwW, slW, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
       List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
     rcases hw with rfl | rfl | rfl | rfl <;> simp
+
+private theorem setXmm_gpr (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).gpr = s.gpr := rfl
+private theorem setXmm_mem (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).mem = s.mem := rfl
+private theorem setXmm_rd (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).rd = s.rd := rfl
+private theorem setXmm_wr (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).wr = s.wr := rfl
+
+/-- Copying the callee-saved registers into `xmm` registers changes nothing
+else that the proofs follow. -/
+theorem savesX_ok (s : State) :
+    WP isa (.block (Cfg.invKeptX.map fun (r, x) => Instr.xop (.movq x r))) s fun t =>
+      t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [Cfg.invKeptX, List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil, exec,
+    XOp.exec, Option.some.injEq, exists_eq_left', setXmm_gpr, setXmm_mem, setXmm_rd, setXmm_wr, and_self]
+
+/-- Copying them back writes only them. -/
+theorem restoresX_ok (s : State) :
+    WP isa (.block (Cfg.invKeptX.map fun (r, x) => Instr.movqR r x)) s fun t =>
+      (∀ r, r ∉ Cfg.invKeptX.map Prod.fst → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧
+        t.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [Cfg.invKeptX, List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil, exec,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_setReg_of_ne _ _ hr.1, RegUpd.gpr_setReg_of_ne _ _ hr.2.1,
+    RegUpd.gpr_setReg_of_ne _ _ hr.2.2.1, RegUpd.gpr_setReg_of_ne _ _ hr.2.2.2.1,
+    RegUpd.gpr_setReg_of_ne _ _ hr.2.2.2.2.1, RegUpd.gpr_setReg_of_ne _ _ hr.2.2.2.2.2]
+
+/-- The inversion of four words writes every callee-saved register. -/
+theorem invKeptX_clob : ∀ r ∈ Cfg.invKeptX.map Prod.fst, r ∈ invClob 4 := by decide
+
+/-- `vg_<curve>_inv_mod_p` or `_n` for fewer than six words (four): its body
+from a state of the same memory and registers, the callee-saved registers
+copied to `xmm` registers and back, which `invClob` allows. That they come
+back unchanged is a fact of runs (`invFnX_gpr`). -/
+theorem invFnX_ok (hc : BaseCfgOk c) (h6 : c.n < 6) {body : Prog isa} {base : Addr} {s : State}
+    (hs : Scr s base size) {Q : Mem → Prop}
+    (hb : ∀ s₁ : State, Scr s₁ base size → s₁.mem = s.mem → (∀ r, s₁.gpr r = s.gpr r) →
+      WP isa body s₁ fun s' => KeepRegs (invClob c.n) s₁ s' ∧ Unch base (pwI c) s₁.mem s'.mem ∧ Q s'.mem) :
+    WP isa (c.invFn body) s fun s' => KeepRegs (invClob c.n) s s' ∧ Unch base (pwW c) s.mem s'.mem ∧
+      Q s'.mem := by
+  have h4 : c.n = 4 := by have := hc.even (by omega); have := (hc.inv (by omega)).1; omega
+  rw [show c.invFn body = Cfg.invFnX body from ite_eq_left_of_eq_true _ _ (eq_true h6)]
+  refine WP.seq (WP.mono (savesX_ok s) fun s₁ ⟨g₁, m₁, rd₁, wr₁⟩ => ?_)
+  have hs₁ : Scr s₁ base size := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
+  refine WP.seq (WP.mono (hb s₁ hs₁ m₁ (fun r => by rw [g₁])) fun s₂ ⟨K₂, U₂, Q₂⟩ => ?_)
+  refine WP.mono (restoresX_ok s₂) fun s' ⟨g', m', rd', wr'⟩ => ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_⟩
+  · rw [g' r (fun h => hr (h4 ▸ invKeptX_clob r h)), K₂.gpr r hr, g₁]
+  · rw [rd', K₂.rd, rd₁]
+  · rw [wr', K₂.wr, wr₁]
+  · rw [m', ← m₁]
+    refine U₂.mono fun w hw => ?_
+    simp only [pwI, pwW, slW, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
+      List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+    rcases hw with rfl | rfl | rfl <;> simp
+  · rw [m']; exact Q₂
 
 /-- `vg_<curve>_inv_mod_p`'s body run as a function, for six to nine words:
 `[ACC] = [RZ]^(p-2)`, the callee-saved registers restored. -/
@@ -371,8 +429,40 @@ theorem invNFn_ok (hc : BaseCfgOk c) (h6 : 6 ≤ c.n) (h9 : c.n ≤ 9) (hf : c.f
   refine WP.mono (invN_ok hc hf h9 hs₁ (hM.unch U₁ (apart_slW (i := MN) (by decide)) hn) (hkm ▸ hB))
     fun s' ⟨K, U, lt, v⟩ => ⟨K, U, lt, by rw [v, hkm]⟩
 
+/-- `vg_<curve>_inv_mod_p`'s body run as a function, for fewer than six words:
+`[ACC] = [RZ]^(p-2)`; the callee-saved registers come back by `invFnX_gpr`. -/
+theorem invPFnX_ok (hc : BaseCfgOk c) (h6 : c.n < 6) (h9 : c.n ≤ 9) {base : Addr} {s : State}
+    (hs : Scr s base size)
+    (hM : ModOkW c.MP' size c.C.p s.mem base) (hB : wordsVal s.mem base (c.sl RZ) c.n < c.C.p) :
+    WP isa (c.invFn c.pPowI) s fun s' => KeepRegs (invClob c.n) s s' ∧ Unch base (pwW c) s.mem s'.mem ∧
+      wordsVal s'.mem base (c.sl ACC) c.n < c.C.p ∧
+      toM c.C.p (2 ^ (64 * c.n)) (wordsVal s'.mem base (c.sl ACC) c.n) =
+        toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl RZ) c.n) ^ (c.C.p - 2) := by
+  rw [show c.pPowI = InvCfg.inv c.invP from ite_eq_left_of_eq_true _ _ (eq_true h9)]
+  refine invFnX_ok hc h6 hs (Q := fun m => wordsVal m base (c.sl ACC) c.n < c.C.p ∧
+    toM c.C.p (2 ^ (64 * c.n)) (wordsVal m base (c.sl ACC) c.n) =
+      toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl RZ) c.n) ^ (c.C.p - 2)) fun s₁ hs₁ m₁ _ => ?_
+  rw [← m₁] at hM hB
+  refine WP.mono (invP_ok hc h9 hs₁ hM hB) fun s' ⟨K, U, lt, v⟩ => ⟨K, U, lt, by rw [v, m₁]⟩
+
+/-- `vg_<curve>_inv_mod_n`'s body run as a function, for fewer than six words
+and `fastN`: `[ACC] = [KM]^(n-2)`. -/
+theorem invNFnX_ok (hc : BaseCfgOk c) (h6 : c.n < 6) (h9 : c.n ≤ 9) (hf : c.fastN = true) {base : Addr}
+    {s : State} (hs : Scr s base size)
+    (hM : ModOkW c.MN' size c.C.n s.mem base) (hB : wordsVal s.mem base (c.sl KM) c.n < c.C.n) :
+    WP isa (c.invFn c.nPowI) s fun s' => KeepRegs (invClob c.n) s s' ∧ Unch base (pwW c) s.mem s'.mem ∧
+      wordsVal s'.mem base (c.sl ACC) c.n < c.C.n ∧
+      toM c.C.n (2 ^ (64 * c.n)) (wordsVal s'.mem base (c.sl ACC) c.n) =
+        toM c.C.n (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl KM) c.n) ^ (c.C.n - 2) := by
+  rw [show c.nPowI = InvCfg.inv c.invN from ite_eq_left_of_eq_true _ _ (eq_true ⟨hf, h9⟩)]
+  refine invFnX_ok hc h6 hs (Q := fun m => wordsVal m base (c.sl ACC) c.n < c.C.n ∧
+    toM c.C.n (2 ^ (64 * c.n)) (wordsVal m base (c.sl ACC) c.n) =
+      toM c.C.n (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl KM) c.n) ^ (c.C.n - 2)) fun s₁ hs₁ m₁ _ => ?_
+  rw [← m₁] at hM hB
+  refine WP.mono (invN_ok hc hf h9 hs₁ hM hB) fun s' ⟨K, U, lt, v⟩ => ⟨K, U, lt, by rw [v, m₁]⟩
+
 /-- `[ACC] = [RZ]^(p-2)` in Montgomery form: a call of
-`vg_<curve>_inv_mod_p` (`invPFn_ok`), or inline (`pPowI_ok`). -/
+`vg_<curve>_inv_mod_p` (`invPFn_ok`, `invPFnX_ok`), or inline (`pPowI_ok`). -/
 theorem pPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hM : ModOkW c.MP' size c.C.p s.mem base) (hB : wordsVal s.mem base (c.sl RZ) c.n < c.C.p)
     (hO : wordsVal s.mem base (c.sl ONEP) c.n = 2 ^ (64 * c.n) % c.C.p)
@@ -386,11 +476,13 @@ theorem pPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   cases hi : c.inverse with
   | none => rw [pPowI_inline]; exact pPowI_ok hc hs hM hB hO hbits
   | some C =>
-    obtain ⟨h6, h9, -⟩ := hc.inverse (by rw [hi]; rfl)
-    exact WP.mono (invPFn_ok hc h6 h9 hs hM hB) fun _ h => h.2
+    obtain ⟨h9, -⟩ := hc.inverse (by rw [hi]; rfl)
+    by_cases h6 : 6 ≤ c.n
+    · exact WP.mono (invPFn_ok hc h6 h9 hs hM hB) fun _ h => h.2
+    · exact invPFnX_ok hc (by omega) h9 hs hM hB
 
 /-- `[ACC] = [KM]^(n-2)` in Montgomery form: a call of
-`vg_<curve>_inv_mod_n` (`invNFn_ok`), or inline (`nPowI_ok`). -/
+`vg_<curve>_inv_mod_n` (`invNFn_ok`, `invNFnX_ok`), or inline (`nPowI_ok`). -/
 theorem nPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hM : ModOkW c.MN' size c.C.n s.mem base) (hB : wordsVal s.mem base (c.sl KM) c.n < c.C.n)
     (hO : wordsVal s.mem base (c.sl ONEN) c.n = 2 ^ (64 * c.n) % c.C.n)
@@ -403,7 +495,9 @@ theorem nPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   cases hi : c.inverse with
   | none => rw [nPowI_inline]; exact nPowI_ok hc hs hM hB hO hbits
   | some C =>
-    obtain ⟨h6, h9, hf⟩ := hc.inverse (by rw [hi]; rfl)
-    exact WP.mono (invNFn_ok hc h6 h9 hf hs hM hB) fun _ h => h.2
+    obtain ⟨h9, hf⟩ := hc.inverse (by rw [hi]; rfl)
+    by_cases h6 : 6 ≤ c.n
+    · exact WP.mono (invNFn_ok hc h6 h9 hf hs hM hB) fun _ h => h.2
+    · exact invNFnX_ok hc (by omega) h9 hf hs hM hB
 
 end VG.Proof.Ecdsa.X86_64

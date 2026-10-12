@@ -3,7 +3,7 @@ import VerifiedGarbage.Spec.Weierstrass.Inverse
 /-!
 # The contracts of `Spec/Weierstrass/Inverse.lean`
 
-* For P-384's prime `p` and order `n` and a few numbers `x` in Montgomery's
+* For every curve's prime `p` and order `n` and a few numbers `x` in Montgomery's
   form (`x R mod m`), the power the contracts state, `dec(x)^(m-2)`, is the
   inverse of `dec(x)` (`dec(x) · dec(x)^(m-2) = 1`), and the Montgomery form
   of `x⁻¹` decodes to it;
@@ -16,22 +16,30 @@ namespace VG.Test.WeierstrassInverse
 
 open Spec.Weierstrass Spec.Weierstrass.Inverse
 
-def C : Inverse.Curve := p384
-
 /-- `x R mod m`. -/
-def mont (m x : Nat) : Nat := x * 2 ^ (64 * C.k) % m
+def mont (C : Inverse.Curve) (m x : Nat) : Nat := x * 2 ^ (64 * C.k) % m
 
 def values : List Nat := [1, 2, 3, 0x1234567, 2 ^ 383 + 5]
 
 /-- The stated power is the inverse modulo `m`, and is what the Montgomery
 form of the inverse decodes to. -/
-def checkInv (m : Nat) [NeZero m] : Bool := values.all fun x =>
-  let a := C.dec m (mont m x)
+def checkInv (C : Inverse.Curve) (m : Nat) [NeZero m] : Bool := values.all fun x =>
+  let a := C.dec m (mont C m x)
   let b := pow a (m - 2)
-  a * b = 1 && C.dec m (mont m (pow (Fin.ofNat m x) (m - 2)).val) = b
+  a * b = 1 && C.dec m (mont C m (pow (Fin.ofNat m x) (m - 2)).val) = b
 
-#guard checkInv C.W.p
-#guard checkInv C.W.n
+#guard checkInv p384 p384.W.p
+#guard checkInv p384 p384.W.n
+#guard checkInv p521 p521.W.p
+#guard checkInv p521 p521.W.n
+#guard checkInv p192 p192.W.p
+#guard checkInv p192 p192.W.n
+#guard checkInv p224 p224.W.p
+#guard checkInv p224 p224.W.n
+#guard checkInv p256 p256.W.p
+#guard checkInv p256 p256.W.n
+#guard checkInv secp256k1 secp256k1.W.p
+#guard checkInv secp256k1 secp256k1.W.n
 
 /-- Byte `i` is in the own working space, as a `Bool`. -/
 def own (C : Inverse.Curve) (i : Nat) : Bool :=
@@ -52,5 +60,10 @@ def checkApart (C : Inverse.Curve) : Bool :=
 
 #guard p384.ownDoc = "Bytes 1504 to 1551, 4048 to 4095 and 3400 to 3847 of `ws`"
 #guard p384.zAt = 832 ∧ p384.xAt = 1840 ∧ p384.outAt = 1456 ∧ p384.pAt = 64 ∧ p384.nAt = 112
+#guard p521.ownDoc = "Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5767 of `ws`"
+#guard [p192, p224, p256, secp256k1].all fun C =>
+  C.ownDoc = "Bytes 1024 to 1055, 128 to 159 and 2296 to 2615 of `ws`" &&
+    C.zAt == 576 && C.xAt == 1248 && C.outAt == 992 && C.pAt == 64 && C.nAt == 96
+#guard p521.zAt = 1216 ∧ p521.xAt = 2728 ∧ p521.outAt = 2152 ∧ p521.pAt = 64 ∧ p521.nAt = 136
 
 end VG.Test.WeierstrassInverse

@@ -371,7 +371,7 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86.pre s₀) :
   have fitK' : K.toNat + 16 ≤ 2 ^ 32 := fitK
   have fitS' : P.toNat + 128 ≤ 2 ^ 32 := fitS
   have fitB' : b.toNat + 4 * slots ≤ 2 ^ 32 := fitB
-  have hwS : ScrIn s₀.wr b := ⟨by rw [hwr]; simp [b], fitB⟩
+  have hwS : ScrIn s₀.wr b := .exact (by rw [hwr]; simp [b]) fitB
   have hwP : (⟨P.setWidth 64, 128⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [P]
   have hrK : (⟨K.setWidth 64, 16⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp [K]
   have hrA : (⟨argAddr s₀ 0, 12⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
@@ -390,7 +390,7 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyX86.pre s₀) :
   -- The key's words.
   obtain ⟨s₂, e₂, c₂, o₂, m₂, rd₂, wr₂⟩ := ldArg_ok s₁ .ecx 0 (argIn rd₁ wr₁ esp₁ 0 (by decide))
   have sb₂ : s₂.gpr sb = b := by rw [o₂ _ (by decide)]; exact b₁
-  have h₂ : Room s₂ := ⟨by unfold scratchR; rw [sb₂, wr₂, wr₁]; exact hwS.mem, by rw [sb₂]; exact fitB'⟩
+  have h₂ : Room s₂ := ⟨by rw [sb₂, wr₂, wr₁]; exact hwS.mem, by rw [sb₂]; exact fitB'⟩
   have kp₂ : KeyPre s₂ K :=
     ⟨h₂, by rw [c₂, ea_arg esp₁]; exact argR f₁ 0 (by decide),
       List.mem_append_left _ (by rw [rd₂, rd₁]; exact hrK), fitK', by unfold scratchR; rw [sb₂]; exact dKB⟩

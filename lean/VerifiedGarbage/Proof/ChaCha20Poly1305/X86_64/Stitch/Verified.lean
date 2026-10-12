@@ -717,9 +717,9 @@ theorem whole_taint : ∃ h, (taintS.check (τR []) (.block whole) h).isSome = t
 
 theorem postS_taint {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass wide b) :
     ∃ h, (taintS.check (τ₁S true) (postS fold pass wide b) h).isSome = true := by
-  rcases h with ⟨rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl⟩ <;>
-    taint_decide_sum [blocksBigS, blocksBigAvx2S, blocksBigAvx512S, blocksSmallS, blocksSmallAvx2S,
-      blocksSmallAvx512S, finalizeSumS]
+  rcases h with ⟨rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl | rfl⟩ <;>
+    taint_decide_sum [blocksBigS, blocksBigAvx2S, blocksBigAvx512S, blocksBigIfmaS, blocksSmallS,
+      blocksSmallAvx2S, blocksSmallAvx512S, blocksSmallIfmaS, finalizeSumS]
 
 /-! ## The call if data is left -/
 
@@ -2662,14 +2662,14 @@ theorem restO_x {s₀ : State} {s : State} (h : MacDone s₀ s) : WP isa (.block
 
 theorem midO_taint {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass wide b) :
     ∃ h, (taintS.check (τA false) (sealMid fold b) h).isSome = true := by
-  rcases h with ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl⟩ <;>
-    taint_decide_sum [blocksBigO, blocksBigAvx2O, blocksBigAvx512O]
+  rcases h with ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl | rfl⟩ <;>
+    taint_decide_sum [blocksBigO, blocksBigAvx2O, blocksBigAvx512O, blocksBigIfmaO]
 
 theorem smallO_taint {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass wide b) :
     ∃ h, (taintS.check (τS false) (smallO wide b) h).isSome = true := by
-  rcases h with ⟨-, -, rfl, rfl⟩ | ⟨-, -, rfl, rfl⟩ | ⟨-, -, rfl, rfl⟩ <;>
+  rcases h with ⟨-, -, rfl, rfl⟩ | ⟨-, -, rfl, rfl⟩ | ⟨-, -, rfl, rfl | rfl⟩ <;>
     taint_decide_sum [blocksBigO, blocksSmallO, blocksBigAvx2O, blocksSmallAvx2O, blocksBigAvx512O,
-      blocksSmallAvx512O]
+      blocksSmallAvx512O, blocksBigIfmaO, blocksSmallIfmaO]
 
 theorem argsO_taint :
     ∃ h, (taintS.check (τS false) (.block (cryptArgs ++ ([.alu .cmp .rdx (.imm 512)] : List Instr))) h).isSome =
@@ -2678,9 +2678,9 @@ theorem argsO_taint :
 
 theorem macO_taint {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass wide b) :
     ∃ h, (taintS.check (τM false) (macPadLengths b .rbx .rbp) h).isSome = true := by
-  rcases h with ⟨-, -, -, rfl⟩ | ⟨-, -, -, rfl⟩ | ⟨-, -, -, rfl⟩ <;>
+  rcases h with ⟨-, -, -, rfl⟩ | ⟨-, -, -, rfl⟩ | ⟨-, -, -, rfl | rfl⟩ <;>
     taint_decide_sum [blocksBigO, blocksSmallO, blocksBigAvx2O, blocksSmallAvx2O, blocksBigAvx512O,
-      blocksSmallAvx512O]
+      blocksSmallAvx512O, blocksBigIfmaO, blocksSmallIfmaO]
 
 theorem restO_taint : ∃ h, (taintS.check (τM false) (.block restArgs) h).isSome = true := by
   taint_decide_sum []
@@ -2821,7 +2821,7 @@ open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64 VG.Impl.ChaCha20Poly1305.X86_6
 
 theorem openS_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     (openStitched v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases v.fold_poly with ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ <;>
+  rcases v.fold_poly with ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb | hb⟩ <;>
     (simp only [openStitched, prologue, cryptO, Code.all, v.spSafe, hf, hpass, hw, hb]; lit_decide)
 
 theorem openS_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : openX86_64.pre s) :
@@ -2908,6 +2908,7 @@ theorem openFor_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
   · exact h₁
   · exact h₂
   · exact h₁
+  · exact h₁
 
 theorem openFor_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
     Verified X86_64.target
@@ -2919,6 +2920,7 @@ theorem openFor_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
   cases b
   · exact h₁
   · exact h₂
+  · exact h₁
   · exact h₁
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch

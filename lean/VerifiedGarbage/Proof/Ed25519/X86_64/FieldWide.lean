@@ -44,6 +44,22 @@ theorem fieldCodeWide_ok {s : State} {base : Addr} (hs : Scratch s base) (ops : 
       Keep base s t ∧ env t.mem base = evalOps ops (env s.mem base) :=
   field_lift hs (fieldCode fld ops) (evalOps ops) (fun _ h => fieldCode_ok ops h)
 
+/-- `fieldCode_frame` in the working space of `Scratch`. -/
+theorem fieldCodeWide_frame {s : State} {base : Addr} (hs : Scratch s base) (ops : List FieldOp) :
+    WP isa (.block (fieldCode fld ops)) s fun t => Keep base s t ∧
+      env t.mem base = evalOps ops (env s.mem base) ∧ ∀ x, Outs ops base x → t.mem x = s.mem x := by
+  let narrow := s.withRegions s.rd [⟨base, 4096⟩]
+  have hn : Scr narrow base := ⟨hs.rdi, List.mem_singleton_self _, by have := hs.nowrap; omega⟩
+  obtain ⟨tr, t, he, hk, hv, hf⟩ := fieldCode_frame (fld := fld) ops hn
+  have cw : Covers [⟨base, 4096⟩] s.wr := by
+    apply Covers.of_sub
+    intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    exact ⟨⟨base, 8192⟩, hs.wr, 0, (BitVec.add_zero base).symm, by change 0 + 4096 ≤ 8192; decide⟩
+  refine ⟨tr, t.withRegions s.rd s.wr, ?_, ⟨hk.gpr, rfl, rfl, hk.mem⟩, hv, hf⟩
+  have e := VG.X86_64.Exec.widen he (Covers.append (fun _ _ h => h) cw) cw
+  simpa only [narrow, State.withRegions_withRegions, State.withRegions_rd, State.withRegions_self] using e
+
 theorem constFieldWide_ok {s : State} {base : Addr} (hs : Scratch s base) (o : Slot) (v : Spec.X25519.Fe) :
     WP isa (.block (constField o v)) s fun t =>
       Keep base s t ∧ env t.mem base = Function.update (env s.mem base) o v :=

@@ -108,12 +108,13 @@ theorem cbcEncBlock_wp (cs : BlockSpec c) {s₀ : State} {m₀ : Mem} {B D : Add
     have := idx_lt (L := 8 * c.bw) hq; omega
   -- Block `j` to the buffer.
   unfold Core.cbcEncBlock
-  refine WP.seq (WP.mono (copyN_wp (k := c.bw) (P := T) (Q := A) ⟨by rw [hi.base], by rw [hi.dataR, p0],
-    by decide, Ne.symm da, inT, fun w hw' => inRd (inA w hw'), dAT.symm, by omega⟩) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono_syms (copyN_wp (k := c.bw) (P := T) (Q := A) ⟨by rw [hi.base], by rw [hi.dataR, p0],
+    by decide, Ne.symm da, inT, fun w hw' => inRd (inA w hw'), dAT.symm, by omega⟩) fun s₁ h₁ sy₁ => ?_)
   have base₁ : s₁.gpr sb = B := by rw [h₁.regs _ (by decide), hi.base]
   have f₁ : Frame [⟨T, 8 * c.bw⟩] s.mem s₁.mem := by rw [h₁.mem]; exact over_frame _ _ _ _
   have ready₁ : cs.Ready s₁ B k := cs.ready_frame hi.ready f₁ (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact .inr subTbuf) fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact .inr subTbuf)
+    ⟨fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, hwS, subT⟩, h₁.rd, h₁.wr, sy₁⟩ fun r hr => by
     obtain ⟨h1, -⟩ := of_not_modeRegs hr; exact h₁.regs r h1
   -- Encrypted.
   refine WP.seq (WP.mono (cs.crypt_wp base₁ ⟨by rw [h₁.wr]; exact hwS, hfit⟩ ready₁)
@@ -150,9 +151,9 @@ theorem cbcEncBlock_wp (cs : BlockSpec c) {s₀ : State} {m₀ : Mem} {B D : Add
       over_sep (dDS subT).symm (hqr hq hr) hn64]
   -- Back to the data, and the count.
   have data₂ : s₂.gpr c.dataReg = A := by rw [dr₂, h₁.regs _ da, hi.dataR]
-  refine WP.seq (WP.block_append (WP.mono (copyN_wp (k := c.bw) (P := A) (Q := T) ⟨by rw [data₂, p0],
+  refine WP.seq (WP.block_append (WP.mono_syms (copyN_wp (k := c.bw) (P := A) (Q := T) ⟨by rw [data₂, p0],
     by rw [base₂], Ne.symm da, by decide, fun w hw' => by rw [wr₂, h₁.wr]; exact inA w hw',
-    fun w hw' => by rw [rd₂, wr₂, h₁.rd, h₁.wr]; exact inRd (inT w hw'), dAT, by omega⟩) fun s₃a h₃a => ?_))
+    fun w hw' => by rw [rd₂, wr₂, h₁.rd, h₁.wr]; exact inRd (inT w hw'), dAT, by omega⟩) fun s₃a h₃a sy₃a => ?_))
   obtain ⟨s₃, e₃, l₃, z₃, o₃, m₃, rd₃, wr₃⟩ := subImm_ok s₃a c.leftReg 1
   refine WP.of_runBlock ⟨s₃, e₃, ?_⟩
   have left₂ : s₃a.gpr c.leftReg = BitVec.ofNat 64 (n - j) := by
@@ -208,14 +209,17 @@ theorem cbcEncBlock_wp (cs : BlockSpec c) {s₀ : State} {m₀ : Mem} {B D : Add
   have rd₃' : s₃.rd = s₀.rd := by rw [rd₃, h₃a.rd, rd₂, h₁.rd, hi.rd]
   have wr₃' : s₃.wr = s₀.wr := by rw [wr₃, h₃a.wr, wr₂, h₁.wr, hi.wr]
   have ready₃ : cs.Ready s₃ B k := cs.ready_frame ready₂ f₃ (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact .inl ((dDS subCore).sub_left subA).symm) fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact .inl ((dDS subCore).sub_left subA).symm)
+    ⟨fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by rw [wr₂, h₁.wr]; exact hwD, subA⟩,
+      by rw [rd₃, h₃a.rd], by rw [wr₃, h₃a.wr], by rw [runBlock_syms e₃, sy₃a]⟩ fun r hr => by
     obtain ⟨h1, -, -, -, -, -, h7⟩ := of_not_modeRegs hr; exact g₃ r h1 h7
   -- The last block, or on to the next.
   have hAL : A + BitVec.ofNat 64 (8 * c.bw) = D + BitVec.ofNat 64 (8 * c.bw * (j + 1)) := by rw [addr_add, hj1]
-  refine WP.seq (WP.mono (M := isa) (Q := fun s₄ => (∀ x, x ≠ .rax → s₄.gpr x = s₃.gpr x) ∧ s₄.rd = s₃.rd ∧
+  refine WP.seq (WP.mono_syms (Q := fun s₄ => (∀ x, x ≠ .rax → s₄.gpr x = s₃.gpr x) ∧ s₄.rd = s₃.rd ∧
       s₄.wr = s₃.wr ∧ (j + 1 = n → s₄.mem = s₃.mem) ∧ (j + 1 < n → s₄.mem = over s₃.mem (D + BitVec.ofNat 64 (8 * c.bw * (j + 1))) (8 * c.bw)
         fun i => s₃.mem ((D + BitVec.ofNat 64 (8 * c.bw * (j + 1))) + BitVec.ofNat 64 i) ^^^ s₃.mem (T + BitVec.ofNat 64 i)))
-    (WP.ite (decide (j + 1 = n)) (by simp [X86_64.eval, hz₃]) (fun h => ?_) (fun h => ?_)) fun s₄ h₄ => ?_)
+    (WP.ite (decide (j + 1 = n)) (by simp [X86_64.eval, hz₃]) (fun h => ?_) (fun h => ?_)) fun s₄ h₄ sy₄ => ?_)
   · exact WP.block_nil ⟨fun _ _ => rfl, rfl, rfl, fun _ => rfl, fun h' => by simp at h; omega⟩
   · have hjn : j + 1 < n := by simp at h; omega
     have hjl' := idx_lt (L := 8 * c.bw) hjn
@@ -271,6 +275,9 @@ theorem cbcEncBlock_wp (cs : BlockSpec c) {s₀ : State} {m₀ : Mem} {B D : Add
         simp only [List.mem_singleton] at hr; subst hr; exact subN⟩), rd₆', wr₆'⟩
     · exact cs.ready_frame ready₃ fN (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact .inl ((dDS subCore).sub_left subN).symm)
+        ⟨fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by rw [wr₃', ← hi.wr]; exact hwD, subN⟩,
+          by rw [rd₆', rd₃'], by rw [wr₆', wr₃'], by rw [runBlock_syms e₆, runBlock_syms e₅, sy₄]⟩
         fun r hr => by obtain ⟨h1, -, -, -, -, h6, -⟩ := of_not_modeRegs hr; exact keep₆ r h1 h6
     · rw [← saved₃ i hi6]
       exact fN.readW (Region.contains_self _ _) (fun r hr => by

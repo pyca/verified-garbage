@@ -65,12 +65,12 @@ def ecbSpec (d : Spec.TripleDes.Direction) : CoreSpec (ecbCore d) where
   correct := (ecbVerified d).1
   ct := (ecbVerified d).2.1
   depth := ecb_stack d
-  pre_of s h := by
+  pre_of _ s h := by
     obtain ⟨stk, rd, wr, kd, bk, bd, fK, fD, -⟩ := h
     sig_pre [Spec.TripleDes.ecbContract, Spec.TripleDes.ecbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     exact ⟨stk, by have := s.sp.isLt; omega, rd, wr, kd, bk, bd, fK, fD⟩
-  post_of s s' _ h := by
+  post_of _ s s' _ h := by
     sig_post [Spec.TripleDes.ecbContract, Spec.TripleDes.ecbSig, Spec.TripleDes.ecbPost, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at h
     show blocksOf 8 _ _ _ = (blocksOf 8 _ _ _).map _
@@ -79,7 +79,7 @@ def ecbSpec (d : Spec.TripleDes.Direction) : CoreSpec (ecbCore d) where
     rw [blocksOf_eq, blocksOf_eq, Spec.TripleDes.cbcBlocksAt, Spec.TripleDes.cbcBlocksAt, h, ecb_dir,
       List.map_map, List.map_map]
     exact List.map_congr_left fun v _ => (dirCipher_toList d _ v).symm
-  pub_of s₁ s₂ h0 h1 h2 h3 _ := by
+  pub_of _ s₁ s₂ h0 h1 h2 h3 _ := by
     sig_pub [Spec.TripleDes.ecbContract, Spec.TripleDes.ecbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     exact ⟨h0, h1, h2, h3⟩

@@ -104,7 +104,7 @@ theorem UPre.blk_sub_data {k : Nat} (hk : k < N c s₀) :
 
 theorem UPre.lay {k : Nat} (hk : k < N c s₀) : Lay c (c.ds M) (Dk s₀ c M k) (Sc c s₀) s₀.wr := by
   have hS := hp.fS
-  have hsc : c.scratchBytes = oOff + 2 * c.bs := rfl
+  have hsc : c.scratchBytes = oOff + 2 * c.bs + c.stackScratch := rfl
   refine ⟨S.bw_pos, S.bw_le, S.ds_pos M, S.ds_le M, ?_, by omega, ?_, ?_, ?_⟩
   · rw [hp.dk_toNat hk]
     have := hp.fD; have := idx_lt' (L := c.ds M) hk; omega
@@ -113,7 +113,7 @@ theorem UPre.lay {k : Nat} (hk : k < N c s₀) : Lay c (c.ds M) (Dk s₀ c M k) 
       refine ⟨dataR c s₀ M, hp.data_in, c.ds M * k, hp.dk_addr hk, ?_⟩
       have := idx_lt' (L := c.ds M) hk; show _ ≤ N c s₀ * c.ds M; omega
   · exact cov_off (R := scrR c s₀) hp.scr_in (by show oOff + 2 * c.bs ≤ c.scratchBytes; omega)
-  · exact (hp.data_scr.sub_left (hp.blk_sub_data hk)).sub_right UPre.blk_sub
+  · exact (hp.data_scr.sub_left (hp.blk_sub_data hk)).sub_right UPre.blk2_sub
 
 /-- Block `k` before the step, from the invariant. -/
 theorem LInv.block {k : Nat} {s : State} (h : LInv c S M s₀ k s) (hk : k < N c s₀) :
@@ -140,6 +140,78 @@ theorem LInv.blkMem {k : Nat} {s : State} (h : LInv c S M s₀ k s) (hk : k < N 
   · exact h.t
 
 end
+
+/-! ## The callee's working space -/
+
+/-- The address of the callee's working space, at the end of the scratch
+buffer. -/
+abbrev Cs (c : Core) (s₀ : State) : BitVec 32 := Sc c s₀ + BitVec.ofNat 32 c.csOff
+
+/-- The callee's working space. -/
+abbrev csR (c : Core) (s₀ : State) : Region := ⟨State.addr (Cs c s₀), c.stackScratch⟩
+
+section
+variable {c : Core} {S : CoreSpec c} {M : Mode} {s₀ : State} (hp : UPre c S M s₀)
+include hp
+
+theorem UPre.cs_toNat (hs : c.stackScratch ≠ 0) : (Cs c s₀).toNat = (Sc c s₀).toNat + c.csOff := by
+  have := hp.fS; unfold Core.scratchBytes at this
+  have := S.bw_le
+  have e : c.csOff = oOff + 2 * c.bs := rfl
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := c.csOff) (by rw [e]; unfold oOff at *; omega),
+    Nat.mod_eq_of_lt (by omega)]
+
+theorem UPre.cs_addr (hs : c.stackScratch ≠ 0) :
+    State.addr (Cs c s₀) = State.addr (Sc c s₀) + BitVec.ofNat 64 c.csOff := by
+  have := hp.fS; unfold Core.scratchBytes at this
+  exact addr_add (by omega)
+
+theorem UPre.cs_fit (hs : c.stackScratch ≠ 0) : (Cs c s₀).toNat + c.stackScratch ≤ 2 ^ 32 := by
+  have := hp.fS; unfold Core.scratchBytes at this; rw [hp.cs_toNat hs]; omega
+
+omit hp in
+theorem csR_empty (hs : c.stackScratch = 0) (a : Addr) : ¬ (csR c s₀).Contains a 1 := by
+  simp only [Region.Contains, hs]; omega
+
+theorem UPre.cs_sub_scr : Region.Sub (csR c s₀) (scrR c s₀) := by
+  by_cases hs : c.stackScratch = 0
+  · exact fun a h => absurd h (csR_empty hs a)
+  show Region.Sub ⟨State.addr (Cs c s₀), _⟩ _
+  rw [hp.cs_addr hs]; exact VG.Offset.sub_base _ (by unfold Core.scratchBytes; omega)
+
+theorem UPre.cs_sub_blk : Region.Sub (csR c s₀) (blkR c s₀) := by
+  by_cases hs : c.stackScratch = 0
+  · exact fun a h => absurd h (csR_empty hs a)
+  show Region.Sub ⟨State.addr (Cs c s₀), _⟩ _
+  rw [hp.cs_addr hs]; exact VG.Offset.sub _ (by unfold Core.csOff; omega) (by unfold Core.csOff; omega)
+
+/-- The blocks of a step are apart from the callee's working space. -/
+theorem UPre.blk_cs {k : Nat} (hk : k < N c s₀) (x : Blk) :
+    Region.Disjoint ⟨addrOf c (Dk s₀ c M k) (Sc c s₀) x, sz c (c.ds M) x⟩ (csR c s₀) := by
+  by_cases hs : c.stackScratch = 0
+  · exact fun a _ h => csR_empty hs a h
+  have hS := hp.fS; unfold Core.scratchBytes at hS
+  have hcs : c.csOff = oOff + 2 * c.bs := rfl
+  cases x
+  · exact (hp.data_scr.sub_left (hp.blk_sub_data hk)).sub_right hp.cs_sub_scr
+  · show Region.Disjoint ⟨State.addr (Sc c s₀) + BitVec.ofNat 64 oOff, c.bs⟩ ⟨State.addr (Cs c s₀), _⟩
+    rw [hp.cs_addr hs]; exact VG.Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+  · show Region.Disjoint ⟨State.addr (Sc c s₀) + BitVec.ofNat 64 (oOff + c.bs), c.bs⟩ ⟨State.addr (Cs c s₀), _⟩
+    rw [hp.cs_addr hs]; exact VG.Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+
+end
+
+theorem scrArg_wp {c : Core} (S : CoreSpec c) {s : State} {Sb : BitVec 32} {Q : State → Prop}
+    (h8 : s.gpr .r8 = Sb)
+    (hQ : ∀ s', (∀ x, x ≠ .r12 → s'.gpr x = s.gpr x) →
+      (c.stackScratch ≠ 0 → s'.gpr .r12 = Sb + BitVec.ofNat 32 c.csOff) →
+      s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → s'.mem = s.mem → Q s') :
+    WP isa (.block c.scrArg) s Q := by
+  unfold Core.scrArg
+  split
+  · exact WP.block_nil (hQ s (fun _ _ => rfl) (fun h => absurd ‹_› h) rfl rfl rfl rfl)
+  · exact wp_add (op2_imm (S.cs_enc ‹_›)) fun s' u => WP.block_nil
+      (hQ s' u.other (fun _ => by rw [u.gpr, h8]) u.rd u.wr u.sp u.mem)
 
 /-! ## The call's block -/
 
@@ -200,11 +272,11 @@ theorem UPre.frame_entry {m₁ m₂ : Mem} {k : Nat} (hk : k < N c s₀)
   · simp only [blkRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, .head _, hp.blk_sub_data hk⟩
-    · exact ⟨scrR c s₀, .tail _ (.head _), UPre.blk_sub⟩
+    · exact ⟨scrR c s₀, .tail _ (.head _), UPre.blk2_sub⟩
 
 /-- What the code before the call leaves. -/
 structure PreA (s₀ : State) (k : Nat) (b : Blks) (s s₂ : State) : Prop where
-  regs : ∀ x, x ≠ .r0 → x ≠ .r1 → x ≠ .r2 → x ≠ .r3 → x ≠ .r9 → x ≠ .r10 → s₂.gpr x = s.gpr x
+  regs : ∀ x, x ≠ .r0 → x ≠ .r1 → x ≠ .r2 → x ≠ .r3 → x ≠ .r9 → x ≠ .r10 → x ≠ .r12 → s₂.gpr x = s.gpr x
   r0 : s₂.gpr .r0 = Kp s₀
   r1 : c.rounds = true → s₂.gpr .r1 = Rp s₀
   rD : s₂.gpr c.dReg = bt c (Dk s₀ c M k) (Sc c s₀) M.tgt
@@ -214,6 +286,7 @@ structure PreA (s₀ : State) (k : Nat) (b : Blks) (s s₂ : State) : Prop where
   sp : s₂.sp = s.sp
   frame : Frame (blkRegions c (c.ds M) (Dk s₀ c M k) (Sc c s₀)) s.mem s₂.mem
   blks : BlkMem c (c.ds M) (Dk s₀ c M k) (Sc c s₀) s₂.mem b
+  r12 : c.stackScratch ≠ 0 → s₂.gpr .r12 = Cs c s₀
 
 theorem pre_wp (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {s : State} (h : LInv c S M s₀ k s) :
     WP isa (.block (c.opsCode M.pre ++ c.callArgs M.tgt)) s
@@ -237,32 +310,36 @@ theorem pre_wp (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {s : State} (h : 
   · have hD : c.dReg = .r1 := by unfold Core.dReg; rw [hr]; rfl
     have hN : c.nReg = .r2 := by unfold Core.nReg; rw [hr]; rfl
     simp only [Bool.false_eq_true, ↓reduceIte, List.nil_append, hD, hN]
-    refine wp_add (op2_imm enc) fun s₃ u₃ => wp_mov (op2_imm (by decide)) fun s₄ u₄ =>
-      WP.block_nil ⟨fun x a b d _ e f => ?_, ?_, fun h => absurd h (by simp [hr]), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [u₄.other _ d, u₃.other _ b, u₂.other _ a, h₁.regs _ e f]
-    · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, h4]
-    · rw [hD, u₄.other _ (by decide), u₃.gpr, bt₂]
-    · rw [hN, u₄.gpr]
-    · rw [u₄.rd, u₃.rd, u₂.rd, h₁.rd]
-    · rw [u₄.wr, u₃.wr, u₂.wr, h₁.wr]
-    · rw [u₄.sp, u₃.sp, u₂.sp, h₁.sp]
-    · rw [u₄.mem, u₃.mem, u₂.mem]; exact h₁.frame
-    · rw [u₄.mem, u₃.mem, u₂.mem]; exact h₁.blks
+    refine wp_add (op2_imm enc) fun s₃ u₃ => wp_mov (op2_imm (by decide)) fun s₄ u₄ => scrArg_wp S
+      (by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), h₁.regs _ (by decide)
+        (by decide), h.r8]) fun s₅ g₅ c₅ rd₅ wr₅ sp₅ m₅ =>
+      ⟨fun x a b d _ e f i => ?_, ?_, fun h => absurd h (by simp [hr]), ?_, ?_, ?_, ?_, ?_, ?_, ?_, c₅⟩
+    · rw [g₅ _ i, u₄.other _ d, u₃.other _ b, u₂.other _ a, h₁.regs _ e f]
+    · rw [g₅ _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, h4]
+    · rw [hD, g₅ _ (by decide), u₄.other _ (by decide), u₃.gpr, bt₂]
+    · rw [hN, g₅ _ (by decide), u₄.gpr]
+    · rw [rd₅, u₄.rd, u₃.rd, u₂.rd, h₁.rd]
+    · rw [wr₅, u₄.wr, u₃.wr, u₂.wr, h₁.wr]
+    · rw [sp₅, u₄.sp, u₃.sp, u₂.sp, h₁.sp]
+    · rw [m₅, u₄.mem, u₃.mem, u₂.mem]; exact h₁.frame
+    · rw [m₅, u₄.mem, u₃.mem, u₂.mem]; exact h₁.blks
   · have hD : c.dReg = .r2 := by unfold Core.dReg; rw [hr]; rfl
     have hN : c.nReg = .r3 := by unfold Core.nReg; rw [hr]; rfl
     simp only [↓reduceIte, List.cons_append, List.nil_append, hD, hN]
     refine wp_mov (op2_reg _ _) fun s₃ u₃ => wp_add (op2_imm enc) fun s₄ u₄ => wp_mov (op2_imm (by decide))
-      fun s₅ u₅ => WP.block_nil ⟨fun x a b d e f g => ?_, ?_, fun _ => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [u₅.other _ e, u₄.other _ d, u₃.other _ b, u₂.other _ a, h₁.regs _ f g]
-    · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, h4]
-    · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, h11 hr]
-    · rw [hD, u₅.other _ (by decide), u₄.gpr, u₃.other _ hne.2, bt₂]
-    · rw [hN, u₅.gpr]
-    · rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, h₁.rd]
-    · rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, h₁.wr]
-    · rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, h₁.sp]
-    · rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem]; exact h₁.frame
-    · rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem]; exact h₁.blks
+      fun s₅ u₅ => scrArg_wp S (by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
+        u₂.other _ (by decide), h₁.regs _ (by decide) (by decide), h.r8]) fun s₆ g₆ c₆ rd₆ wr₆ sp₆ m₆ =>
+      ⟨fun x a b d e f g i => ?_, ?_, fun _ => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, c₆⟩
+    · rw [g₆ _ i, u₅.other _ e, u₄.other _ d, u₃.other _ b, u₂.other _ a, h₁.regs _ f g]
+    · rw [g₆ _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, h4]
+    · rw [g₆ _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, h11 hr]
+    · rw [hD, g₆ _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.other _ hne.2, bt₂]
+    · rw [hN, g₆ _ (by decide), u₅.gpr]
+    · rw [rd₆, u₅.rd, u₄.rd, u₃.rd, u₂.rd, h₁.rd]
+    · rw [wr₆, u₅.wr, u₄.wr, u₃.wr, u₂.wr, h₁.wr]
+    · rw [sp₆, u₅.sp, u₄.sp, u₃.sp, u₂.sp, h₁.sp]
+    · rw [m₆, u₅.mem, u₄.mem, u₃.mem, u₂.mem]; exact h₁.frame
+    · rw [m₆, u₅.mem, u₄.mem, u₃.mem, u₂.mem]; exact h₁.blks
 
 
 /-- A region apart from the data and the scratch buffer is apart from the
@@ -275,31 +352,38 @@ theorem UPre.disj_blks {k : Nat} (hk : k < N c s₀) {R : Region} (hd : R.Disjoi
   simp only [blkRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact hd.sub_right (hp.blk_sub_data hk)
-  · exact hs.sub_right UPre.blk_sub
+  · exact hs.sub_right UPre.blk2_sub
 
 /-- The call's arguments make its precondition. -/
 theorem PreA.callPre (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {b : Blks} {s s₂ : State}
     (h : LInv c S M s₀ k s) (a : PreA (c := c) (M := M) s₀ k b s s₂) :
-    CallPre c S s₂ (Kp s₀) (Rp s₀) (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt) := by
+    CallPre c S s₂ (Kp s₀) (Rp s₀) (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt) (Cs c s₀) := by
   have hL := hp.lay hk
   have sp : s₂.sp = s₀.sp := by rw [a.sp, h.sp]
   have ts := hM.tgt_sz
-  refine ⟨a.r0, a.r1, hp.rok, a.rD, a.rN, by rw [sp]; exact hp.stk, hp.fK, ts ▸ hL.bt_fit _, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨a.r0, a.r1, hp.rok, a.rD, a.rN, by rw [sp]; exact hp.stk, hp.fK, ts ▸ hL.bt_fit _, ?_, ?_, ?_, ?_, ?_,
+    a.r12, hp.cs_fit, hp.key_scr.sub_right hp.cs_sub_scr, ?_, by rw [sp]; exact hp.b_scr.sub_right hp.cs_sub_scr,
+    fun hs => ?_⟩
   · rw [hL.bt_addr, ← ts]; exact hp.disj_blks hk hp.key_data hp.key_scr _
   · rw [sp]; exact hp.b_key
   · rw [sp, hL.bt_addr, ← ts]; exact hp.disj_blks hk hp.b_data hp.b_scr _
   · rw [a.rd, a.wr, h.rd, h.wr]; exact Covers.of_mem fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.key_in
   · rw [a.wr, h.wr, hL.bt_addr, ← ts]; exact hL.writable _
+  · rw [hL.bt_addr, ← ts]; exact hp.blk_cs hk _
+  · rw [a.wr, h.wr]; exact Covers.of_sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      have := hp.fS; unfold Core.scratchBytes at this
+      exact ⟨_, hp.scr_in, c.csOff, hp.cs_addr hs, by show c.csOff + c.stackScratch ≤ c.scratchBytes; rfl⟩
 
 /-- The blocks after the call. -/
 theorem call_blks (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {b : Blks} {s s₂ s₃ : State}
     (h : LInv c S M s₀ k s) (a : PreA (c := c) (M := M) s₀ k b s s₂)
-    (cp : CallPost c S s₂ (Kp s₀) (Rp s₀) (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt) s₃) :
+    (cp : CallPost c S s₂ (Kp s₀) (Rp s₀) (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt) (Cs c s₀) s₃) :
     BlkMem c (c.ds M) (Dk s₀ c M k) (Sc c s₀) s₃.mem (b.set M.tgt (ciph S s₀ (b.get M.tgt))) := by
   have hL := hp.lay hk
   have sp : s₂.sp = s₀.sp := by rw [a.sp, h.sp]
-  have hfit : c.bs ≤ 2 ^ 64 := by have := hp.fS; unfold Core.scratchBytes at this; omega
+  have hfit : c.bs ≤ 2 ^ 64 := by have := hp.fS; unfold Core.scratchBytes Core.csOff at this; omega
   intro x
   by_cases hx : x = M.tgt
   · subst hx
@@ -308,8 +392,9 @@ theorem call_blks (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {b : Blks} {s 
   · rw [Blks.get_set_of_ne _ _ hx, ← a.blks x]
     refine VG.Proof.Modes.bytesAt_frame cp.frame (fun r hr => ?_) (by have := hL.sz_le x; omega)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · rw [hL.bt_addr, ← hM.tgt_sz]; exact hL.disjoint hx
+    · exact hp.blk_cs hk x
     · rw [sp]; exact (hp.disj_blks hk hp.b_data hp.b_scr x).symm
 
 end
@@ -331,18 +416,19 @@ theorem UPre.step_sub {k : Nat} (hk : k < N c s₀) :
   simp only [blkRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact ⟨_, .head _, hp.blk_sub_data hk⟩
-  · exact ⟨_, .tail _ (.head _), fun _ h => h⟩
+  · exact ⟨_, .tail _ (.head _), Region.sub_prefix (by omega)⟩
 
 theorem body_ok (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {s : State} (h : LInv c S M s₀ k s) :
     WP isa (c.body M) s fun s' => LInv c S M s₀ (k + 1) s' ∧ s'.z = decide (N c s₀ - (k + 1) = 0) := by
   have hL := hp.lay hk
-  have hfit : c.bs ≤ 2 ^ 64 := by have := hp.fS; unfold Core.scratchBytes at this; omega
+  have hfit : c.bs ≤ 2 ^ 64 := by have := hp.fS; unfold Core.scratchBytes Core.csOff at this; omega
   refine WP.seq (WP.mono (pre_wp hp hM hk h) fun s₂ a => ?_)
   refine WP.seq (WP.mono (call_wp S (a.callPre hp hM hk h)) fun s₃ cp => ?_)
   have hb₂ := call_blks hp hM hk h a cp
   have g₃ : ∀ r ∈ preserved, r ≠ .lr → r ≠ .r9 → r ≠ .r10 → s₃.gpr r = s.gpr r := fun r hr hl h9 h10 => by
     rw [cp.saved r hr hl, a.regs r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr)
-      (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr) h9 h10]
+      (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr) h9 h10
+      (by rintro rfl; simp [preserved] at hr)]
   have r6 : s₃.gpr .r6 = Dk s₀ c M k := by rw [g₃ _ (by decide) (by decide) (by decide) (by decide), h.r6]
   have r8 : s₃.gpr .r8 = Sc c s₀ := by rw [g₃ _ (by decide) (by decide) (by decide) (by decide), h.r8]
   have wr₃ : s₃.wr = s₀.wr := by rw [cp.wr, a.wr, h.wr]
@@ -350,14 +436,15 @@ theorem body_ok (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {s : State} (h :
   refine WP.mono (opsCode_wp (ds_of c) (wr₃ ▸ hL) r6 r8 hb₂ hM.post) fun s₄ h₄ => ?_
   -- The memory the step changed: block `k`, the chaining and spare blocks, the stack.
   have sp₂ : s₂.sp = s₀.sp := by rw [a.sp, h.sp]
-  have fstep : Frame (blkRegions c (c.ds M) (Dk s₀ c M k) (Sc c s₀) ++ [belowR S s₀]) s.mem s₄.mem := by
+  have fstep : Frame (blkRegions c (c.ds M) (Dk s₀ c M k) (Sc c s₀) ++ [csR c s₀, belowR S s₀]) s.mem s₄.mem := by
     refine ((a.frame.mono fun r hr => List.mem_append_left _ hr).trans (cp.frame.sub fun r hr => ?_)).trans
       (h₄.frame.mono fun r hr => List.mem_append_left _ hr)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · rw [hL.bt_addr]
       obtain ⟨r', hr', hs'⟩ := Lay.sub (c := c) (ds := c.ds M) (Dp := Dk s₀ c M k) (S := Sc c s₀) M.tgt
       exact ⟨r', List.mem_append_left _ hr', hM.tgt_sz ▸ hs'⟩
+    · exact ⟨csR c s₀, by simp, fun _ h => h⟩
     · exact ⟨belowR S s₀, by simp, by rw [sp₂]; exact fun _ h => h⟩
   have r6' : s₄.gpr .r6 = Dk s₀ c M k := by rw [h₄.regs _ (by decide) (by decide), r6]
   have r7 : s₄.gpr .r7 = BitVec.ofNat 32 (N c s₀ - k) := by
@@ -382,7 +469,10 @@ theorem body_ok (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {s : State} (h :
     exact h.frame.trans (fstep.sub fun r hr => by
       rcases List.mem_append.mp hr with hr | hr
       · exact hp.step_sub hk r hr
-      · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact ⟨_, by simp, hp.cs_sub_blk⟩
+        · exact ⟨_, by simp, fun _ h => h⟩)
   · rw [u₆.mem, u₅.mem]
     have hl : (rK S s₀ M k).1.length = k := by rw [runSeq_length, List.length_take, length_blocksOf]; omega
     rw [blocksOf_set (k := k) fun j hj hjk => ?_, h.data, set_prefix _ _ _ hl (by rw [length_blocksOf]; exact hk)]
@@ -395,7 +485,7 @@ theorem body_ok (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {s : State} (h :
       have hsub : Region.Sub ⟨State.addr (Dp c s₀) + BitVec.ofNat 64 (c.ds M * j), c.ds M⟩ (dataR c s₀ M) :=
         VG.Offset.sub_base _ (by have := idx_lt' (L := c.ds M) hj; omega)
       simp only [blkRegions, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl
       · rw [hp.dk_addr hk]
         have := hp.fD; have := idx_lt' (L := c.ds M) hj; have := idx_lt' (L := c.ds M) hk
         rcases Nat.lt_or_gt_of_ne hjk with hlt | hlt
@@ -403,7 +493,8 @@ theorem body_ok (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {s : State} (h :
             (by omega) (by omega)
         · exact VG.Offset.disjoint _ (.inr (by have := VG.Proof.Modes.idx_lt (L := c.ds M) hlt; omega))
             (by omega) (by omega)
-      · exact (hp.data_scr.sub_left hsub).sub_right UPre.blk_sub
+      · exact (hp.data_scr.sub_left hsub).sub_right UPre.blk2_sub
+      · exact (hp.data_scr.sub_left hsub).sub_right hp.cs_sub_scr
       · exact hp.b_data.symm.sub_left hsub
   · simp only [rK]; rw [u₆.mem, u₅.mem, take_succ_xs hk, runSeq_snoc]; exact h₄.blks .o
   · simp only [rK]; rw [u₆.mem, u₅.mem, take_succ_xs hk, runSeq_snoc]; exact h₄.blks .t

@@ -1,0 +1,5 @@
+name = "pyca/cryptography Blowfish-CBC vectors (reformatted from Schneier's Blowfish test vectors, vectors-2.txt; bf-cbc.txt)"
+directories = ["cryptography-blowfish-cbc"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/dd22989f9594704bfef2ea3a8b08b40774a06a23/vectors/cryptography_vectors/ciphers/Blowfish/bf-cbc.txt"
+sha256 = "1221a1bce45a9c1cb3ef30a6b5c0fc8ca6d3fc546c723554b1ca20c0bee908f3"
+retrieved = 2026-10-11

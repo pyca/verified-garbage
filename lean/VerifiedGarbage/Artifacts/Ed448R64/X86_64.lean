@@ -41,7 +41,8 @@ def artifacts : List Artifact := [
   { addAffineApi with
     target := X86_64.target
     doc := addAffineApi.doc (notes := notes "Runs RFC 8032's complete addition formula with \
-      `A = Z₁` for `Z₁ Z₂`, as `Z₂ = 1`: ten products")
+      `A = Z₁` for `Z₁ Z₂`, as `Z₂ = 1`: nine full products and multiplication by \
+      `d = -39081` using negation and X448's small-constant multiplier")
     code := addFn
     contract := addAffineContract X86_64.abi
     verified := add_verified

@@ -160,13 +160,12 @@ theorem alignedChoice_ct {o a : Nat} (ho : o<8) (ha : a<8) (ha1 : a≠aAcc) (ha2
   · refine two_map id (fun L s ⟨⟨h,z⟩,e⟩ => ⟨h,?_⟩) (aligned_ct ho ha ha1 ha2 hS hR hF hT)
     simp only [eval,z,Option.some.injEq,decide_eq_true_eq] at e
     exact e
-  · exact two_map id (fun _ _ h => h.1.1) (AdxSquare.montSquare_ct ho ha ha1 ha2 hS hF)
+  · exact two_map id (fun _ _ h => h.1.1) (AdxSquare.montSquare4_ct ho ha ha1 ha2 hS hF)
 
 theorem choice_ct {o a : Nat} (ho : o<8) (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp)
-    {h₀ h₁ h₂ h₃ h₄ h₅ : VG.Taint.Hint VG.X86_64.Taint.T}
+    {h₀ h₁ h₃ h₄ h₅ : VG.Taint.Hint VG.X86_64.Taint.T}
     (hM : (taint.check (Taint.ofRegs [.rdi]) (.block (bases o a a aN aAcc aTmp)) h₀).isSome=true)
     (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (setup a)) h₁).isSome=true)
-    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (rowBase a)) h₂).isSome=true)
     (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (finishBases o)) h₃).isSome=true)
     (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup a a)) h₄).isSome=true)
     (hTri : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxTri8.setup a)) h₅).isSome=true) :
@@ -181,7 +180,7 @@ theorem choice_ct {o a : Nat} (ho : o<8) (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠
   · refine two_map id (fun L s ⟨⟨h,z⟩,e⟩ => ⟨h,?_⟩) (alignedChoice_ct ho ha ha1 ha2 hS hT hF hTri)
     simp only [eval,z,Option.some.injEq,decide_eq_true_eq] at e
     exact e
-  · exact two_map id (fun _ _ h => h.1.1) (montMulAdx_ct ho ha ha ha1 ha2 ha1 ha2 hM hS hR hF)
+  · exact two_map id (fun _ _ h => h.1.1) (montMul_ctW (by decide) (by decide) (by decide) ho ha ha hM)
 
 end VG.Proof.Bignum.X86_64.AdxTiledSquare
 
@@ -289,7 +288,7 @@ theorem tiledDispatch_ct {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8)
   by_cases hab : a=b
   · rw [ite_eq_left hab]
     subst b
-    exact AdxTiledSquare.choice_ct ho ha ha1 ha2 hM hA hR hF hT hTri
+    exact AdxTiledSquare.choice_ct ho ha ha1 ha2 hM hA hF hT hTri
   · rw [ite_eq_right hab]
     exact AdxTiledProduct.choice_ct ho ha hb ha1 ha2 hb1 hb2 hM hS hR hF hT
 

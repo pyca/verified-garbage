@@ -3,7 +3,12 @@
 //! (`IdeaEcb`, tested on the NESSIE vectors) on every length up to 20 blocks,
 //! partial last blocks included.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use verified_garbage::idea_ecb::IdeaEcb;
 use verified_garbage::idea_ofb::{IdeaOfb, InvalidKeyLength};

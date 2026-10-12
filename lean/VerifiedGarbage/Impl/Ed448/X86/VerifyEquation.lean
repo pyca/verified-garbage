@@ -227,14 +227,19 @@ def vdouble : Prog isa :=
   .seq (.block [.mov .esi (.imm 2)])
     (.loop (.seq (field (doubleAt 0 6 2 ++ doubleAt 8 9 10)) (.block [.alu .sub .esi (.imm 1)])) .ne)
 
+/-- One comparison: slot 0 times slot 10 against slot 8 times slot 2 (`BAD |= 0` exactly when they
+are equal); then slots 6 and 9 copied into 0 and 8, for the second pass, and `esi` moved down. -/
+def vcmp : Prog isa :=
+  .seq (field [.mul 12 0 10, .mul 13 8 2]) <| .seq (.block (eqSlots (slot 12) (slot 13))) <|
+  .seq (ops [.copy (slot 0) (slot 6), .copy (slot 8) (slot 9)]) (.block [.alu .sub .esi (.imm 1)])
+
 /-- `[4]Q` and `[4]R` compared (`Q` in slots 0, 6 and 2, `R` in 8–10;
-`BAD |= 0` exactly when they are the same point), the callee-saved
-registers restored, and `eax = (BAD == 0)`. -/
+`BAD |= 0` exactly when they are the same point): `X_Q Z_R = X_R Z_Q`, then
+`Y_Q Z_R = Y_R Z_Q`, by two passes of `vcmp`, counted by `esi`; then the
+callee-saved registers restored, and `eax = (BAD == 0)`. -/
 def vfinish : Prog isa :=
-  .seq vdouble <| .seq (field [.mul 12 0 10, .mul 13 8 2]) <|
-  .seq (.block (eqSlots (slot 12) (slot 13))) <| .seq (field [.mul 12 6 10, .mul 13 9 2]) <|
-  .block (eqSlots (slot 12) (slot 13) ++
-    [ld .ecx BAD, .alu .sub .ecx (.imm 1), .shift .shr .ecx 31] ++ restore ++ [.mov .eax (.reg .ecx)])
+  .seq vdouble <| .seq (.block [.mov .esi (.imm 2)]) <| .seq (.loop vcmp .ne) <|
+  .block ([ld .ecx BAD, .alu .sub .ecx (.imm 1), .shift .shr .ecx 31] ++ restore ++ [.mov .eax (.reg .ecx)])
 
 /-- After the decodings: `A` negated, `Q`, `R` copied back, and the comparison. -/
 def vafter : Prog isa :=

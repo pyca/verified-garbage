@@ -32,7 +32,10 @@ mod aes_xts;
 mod argon2;
 mod blake2b;
 mod blake2s;
+mod blowfish_cbc;
+mod blowfish_cfb;
 mod blowfish_ecb;
+mod blowfish_ofb;
 mod camellia_cbc;
 mod camellia_cfb;
 mod camellia_ctr;
@@ -46,6 +49,7 @@ mod chacha20;
 mod chacha20poly1305;
 mod cmac_aes;
 mod cmac_triple_des;
+mod dsa;
 mod ecdh_p192;
 mod ecdh_p224;
 mod ecdh_p256;
@@ -117,7 +121,10 @@ mod sm4_ctr;
 mod sm4_ecb;
 mod sm4_ofb;
 mod triple_des_cbc;
+mod triple_des_cfb;
+mod triple_des_cfb8;
 mod triple_des_ecb;
+mod triple_des_ofb;
 mod x25519;
 mod x448;
 
@@ -360,7 +367,10 @@ const BENCHES: &[Bench] = &[
     (aes_xts::USES, aes_xts::bench),
     (blake2b::USES, blake2b::bench),
     (blake2s::USES, blake2s::bench),
+    (blowfish_cbc::USES, blowfish_cbc::bench),
+    (blowfish_cfb::USES, blowfish_cfb::bench),
     (blowfish_ecb::USES, blowfish_ecb::bench),
+    (blowfish_ofb::USES, blowfish_ofb::bench),
     (camellia_cbc::USES, camellia_cbc::bench),
     (camellia_cfb::USES, camellia_cfb::bench),
     (camellia_ctr::USES, camellia_ctr::bench),
@@ -411,7 +421,10 @@ const BENCHES: &[Bench] = &[
     (rsa_pss::USES, rsa_pss::bench),
     (rsa_public::USES, rsa_public::bench),
     (triple_des_cbc::USES, triple_des_cbc::bench),
+    (triple_des_cfb::USES, triple_des_cfb::bench),
+    (triple_des_cfb8::USES, triple_des_cfb8::bench),
     (triple_des_ecb::USES, triple_des_ecb::bench),
+    (triple_des_ofb::USES, triple_des_ofb::bench),
     (seed_cbc::USES, seed_cbc::bench),
     (seed_cfb::USES, seed_cfb::bench),
     (seed_ecb::USES, seed_ecb::bench),
@@ -439,6 +452,7 @@ const BENCHES: &[Bench] = &[
     (ecdsa_p192::USES, ecdsa_p192::bench),
     (ecdsa_p224::USES, ecdsa_p224::bench),
     (ecdsa_secp256k1::USES, ecdsa_secp256k1::bench),
+    (dsa::USES, dsa::bench),
     (ecdsa_p256::USES, ecdsa_p256::bench),
     (ecdsa_p384::USES, ecdsa_p384::bench),
     (ecdsa_p521::USES, ecdsa_p521::bench),

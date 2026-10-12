@@ -8,7 +8,8 @@ namespace VG.Impl.Ecdsa.X86_64
 
 open VG.X86_64
 
-/-- P-521 as the code has it. -/
+/-- P-521 as the code has it. `Z^(p-2)` and `k^(n-2)` are calls of
+`vg_p521_inv_mod_p` and `_n` (`Cfg.inverse`). -/
 def p521 : Cfg where
   n := 9
   C := Spec.P521.curve
@@ -16,6 +17,7 @@ def p521 : Cfg where
   fastN := true
   pubVerify := true
   nbits := 521
+  inverse := some Spec.Weierstrass.Inverse.p521
 
 /-- `vg_ecdsa_p521_sign`. -/
 def signP521 : Prog isa := p521.sign

@@ -2,7 +2,7 @@
 //!
 //! What is wiped:
 //!
-//! * ML-KEM, ML-DSA, Ed25519, ECDSA, X25519, X448 and RSA wipe their
+//! * ML-KEM, ML-DSA, Ed25519, ECDSA, DSA, X25519, X448 and RSA wipe their
 //!   private keys when they are dropped, and the intermediate values and
 //!   working space of each operation (FIPS 203 §3.3, FIPS 204 §3.6.3).
 //! * Every other object holding key material (the ciphers, AEADs and MACs,

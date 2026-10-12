@@ -97,8 +97,8 @@ def verifyPrefix (c : Cfg) : Prog isa :=
   .seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) <|
   .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <|
   .seq (Impl.Ecdh.X86_64.Cfg.validate c) <|
-  .seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c) <| .seq c.nPow.inline <|
-  .seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c) <|
+  .seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline <| .seq c.nPow.inline <|
+  .seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline <|
   .seq (bits (c.sl U) (bitsAt c.n 0) (8*c.n)) <|
   .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) (.block [])
 
@@ -123,7 +123,7 @@ private theorem gMul_cut {d : CombData} (hcd : c.comb = some d) {s s' : State} {
   cases he with
   | seq ep ec => exact ⟨_,_,_,ep,ec,rfl⟩
 
-theorem verify_cut {d : CombData} (hcd : c.comb = some d) {s s' : State} {t : List Leak}
+theorem verify_cut {d : CombData} (hcd : c.comb = some d) (hmn : c.mul = none) {s s' : State} {t : List Leak}
     (he : Exec isa (Impl.Ecdsa.Verify.X86_64.Cfg.verify c).inline s t s') :
     ∃ a b tp tc ts, Exec isa (verifyPrefix c) s tp a ∧
       Exec isa ((c.combCfg d).comb c.pubVerify).inline a tc b ∧ Exec isa (verifySuffix c).inline b ts s' ∧
@@ -139,6 +139,7 @@ theorem verify_cut {d : CombData} (hcd : c.comb = some d) {s s' : State} {t : Li
               | seq e6 h => cases h with
                 | seq e7 h => cases h with
                   | seq ep h =>
+                    rw [points_eq hmn] at ep
                     change Exec isa (.seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n))
                       (.seq (c.gMul c.pubVerify).inline (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.save c))
                         (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.mulV c).inline
@@ -165,11 +166,11 @@ structure VerifyChecks (c : Cfg) (d : CombData) : Prop where
 
 theorem verify_public_ct (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c)
     {d : CombData} (hcd : c.comb = some d) (hLookup : c.pubVerify = true)
-    (checks : VerifyChecks c d) :
+    (checks : VerifyChecks c d) (hmn : c.mul = none) :
     ConstantTime isa (VPre c) (VerifyPublic c d) (Impl.Ecdsa.Verify.X86_64.Cfg.verify c).inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ ⟨pub,sym,scalar⟩ e₁ e₂
-  obtain ⟨a₁,b₁,tp₁,tc₁,ts₁,ep₁,ec₁,es₁,et₁⟩ := verify_cut hcd e₁
-  obtain ⟨a₂,b₂,tp₂,tc₂,ts₂,ep₂,ec₂,es₂,et₂⟩ := verify_cut hcd e₂
+  obtain ⟨a₁,b₁,tp₁,tc₁,ts₁,ep₁,ec₁,es₁,et₁⟩ := verify_cut hcd hmn e₁
+  obtain ⟨a₂,b₂,tp₂,tc₂,ts₂,ep₂,ec₂,es₂,et₂⟩ := verify_cut hcd hmn e₂
   rw [hLookup] at ec₁ ec₂
   have ht := checks.before _ _ _ _ _ _ trivial trivial pub ep₁ ep₂
   obtain ⟨_,_,wp₁,ready₁⟩ := verifyPrefix_ok hc hcd pre₁

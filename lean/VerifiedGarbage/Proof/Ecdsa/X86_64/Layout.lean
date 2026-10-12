@@ -76,6 +76,7 @@ structure BaseCfgOk (c : Cfg) : Prop where
   p_lt_2n : c.C.p < 2 * c.C.n
   minv_p : (c.C.p * (BitVec.ofNat 64 (minv c.C.p)).toNat + 1) % 2 ^ 64 = 0
   red_p : c.MP'.ok c.C.p = true
+  red_n : c.MN'.ok c.C.n = true
   minv_n : (c.C.n * (BitVec.ofNat 64 (minv c.C.n)).toNat + 1) % 2 ^ 64 = 0
   len8 : 8 ≤ c.C.len
   len_lo : 8 * c.n ≤ c.C.len + 8
@@ -100,9 +101,9 @@ structure BaseCfgOk (c : Cfg) : Prop where
   window_am3 : c.windows = true → AM3 c.C
   comb_am3 : ∀ d, c.comb = some d → AM3 c.C
   even : c.n ≤ 6 → c.n % 2 = 0
-  /-- With functions for the inversions (`Cfg.inverse`), six to nine words:
-  divsteps, and `PT`'s slot holds the six callee-saved registers. -/
-  inverse : c.inverse.isSome = true → 6 ≤ c.n ∧ c.n ≤ 9 ∧ c.fastN = true
+  /-- With functions for the inversions (`Cfg.inverse`), up to nine words:
+  divsteps modulo `p` and `n`. -/
+  inverse : c.inverse.isSome = true → c.n ≤ 9 ∧ c.fastN = true
 
 /-- Additional hypothesis for the optimized variable-base formulas. The
 general ladder and signing without a comb do not require `a = -3`. -/

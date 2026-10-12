@@ -32,9 +32,9 @@ theorem initPrepared_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.i
         · rw [h.1.2.1, h.2.2.1]
         · rw [h.1.2.2.1, h.2.2.2.1]) ⟨_, by taint_decide⟩)
     (fun _ _ h => h) (hS pC) (hS pC')
-  have b := powSteps_rel v L (rd₁ := s₀.rd) (rd₂ := s₀'.rd) pC pW pC' pW' 47 (Nat.le_refl _)
+  have b := powLoop_rel v L (rd₁ := s₀.rd) (rd₂ := s₀'.rd) pC pW pC' pW'
   have c := rel_taint (P := fun t₁ t₂ => PowRegs (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsp) s₀.rd s₀.wr 47 t₁ ∧
-      PowRegs (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsp) s₀'.rd s₀'.wr 47 t₂) (c := .block ([.mov .rdi (.reg .r13)] ++ Prepared.convert ++ restore)) [.r13, .r15, .rsp]
+      PowRegs (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsp) s₀'.rd s₀'.wr 47 t₂) (c := .seq (.block [.mov .rdi (.reg .r13)]) (.seq Prepared.convert (.block restore))) [.r13, .r15, .rsp]
     (fun _ _ h r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl

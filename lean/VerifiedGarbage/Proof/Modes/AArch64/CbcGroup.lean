@@ -145,16 +145,16 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
         (by simp only [Core.hiSlot]; omega)⟩
   unfold Core.cbcDecGroup
   -- The count, the addresses, and the ciphertext blocks to the buffer.
-  refine WP.seq (WP.mono (groupCount_wp hL.lgG_lt l13 hi.leftR hv) fun s₁ ⟨c₁, o₁, m₁, rd₁, wr₁⟩ => ?_)
+  refine WP.seq (WP.mono_syms (groupCount_wp hL.lgG_lt l13 hi.leftR hv) fun s₁ ⟨c₁, o₁, m₁, rd₁, wr₁⟩ sy₁ => ?_)
   have base₁ : s₁.gpr sb = B := by rw [o₁ _ (by decide) (by decide), hi.base]
   obtain ⟨s₂, e₂, a₂, b₂, t₂, o₂, m₂, rd₂, wr₂⟩ := xorArgs_ok hL.bufImm d14 s₁ base₁
   refine WP.seq (WP.of_runBlock ⟨s₂, e₂, ?_⟩)
   have mem₂ : s₂.mem = s.mem := by rw [m₂, m₁]
   have rd₂' : s₂.rd = s.rd := by rw [rd₂, rd₁]
   have wr₂' : s₂.wr = s.wr := by rw [wr₂, wr₁]
-  refine WP.seq (WP.mono (copyBlocks_wp (S := A) (T := T) hbw0 hbw2 hc0 (by omega)
+  refine WP.seq (WP.mono_syms (copyBlocks_wp (S := A) (T := T) hbw0 hbw2 hc0 (by omega)
     (fun t ht => by rw [rd₂', wr₂']; exact inRd (inA t ht)) (fun t ht => by rw [wr₂']; exact inT t ht) dAT
-    (by rw [a₂]) (by rw [b₂, o₁ _ d13 d16, hi.dataR]) (by rw [t₂, c₁])) fun s₃ ⟨h₃, _⟩ => ?_)
+    (by rw [a₂]) (by rw [b₂, o₁ _ d13 d16, hi.dataR]) (by rw [t₂, c₁])) fun s₃ ⟨h₃, _⟩ sy₃ => ?_)
   have keep₃ : ∀ r, r ∉ ownRegs → s₃.gpr r = s.gpr r := fun r hr => by
     obtain ⟨-, -, h8, -, -, h13, h14, h15, h16, h17⟩ := not_own hr
     rw [h₃.regs r h8 h14 h15 h17, o₂ r h14 h15 h17, o₁ r h13 h16]
@@ -163,7 +163,9 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
   have wr₃' : s₃.wr = s.wr := by rw [h₃.wr, wr₂']
   have f₃ : Frame [⟨T, 8 * c.bw * cc⟩] s.mem s₃.mem := by rw [← mem₂]; exact h₃.frame
   have ready₃ : cs.Ready s₃ B k := cs.ready_frame hi.ready f₃ (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact .inr subTbuf) fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact .inr subTbuf)
+    ⟨fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, hwS, subT⟩, rd₃', wr₃',
+      by rw [sy₃, runBlock_syms e₂, sy₁]⟩ fun r hr => by
     obtain ⟨h1, -, -⟩ := of_not_modeRegs hr
     exact keep₃ r h1
   -- Decrypted.
@@ -171,7 +173,7 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
     fun s₄ ⟨base₄, dr₄, lr₄, ready₄, f₄, ks₄, rd₄, wr₄⟩ => ?_)
   have left₄ : s₄.gpr c.leftReg = BitVec.ofNat 64 v := by rw [lr₄, keep₃ _ lown, hi.leftR]
   have data₄ : s₄.gpr c.dataReg = A := by rw [dr₄, keep₃ _ down, hi.dataR]
-  refine WP.seq (WP.mono (groupCount_wp hL.lgG_lt l13 left₄ hv) fun s₅ ⟨c₅, o₅, m₅, rd₅, wr₅⟩ => ?_)
+  refine WP.seq (WP.mono_syms (groupCount_wp hL.lgG_lt l13 left₄ hv) fun s₅ ⟨c₅, o₅, m₅, rd₅, wr₅⟩ sy₅ => ?_)
   have base₅ : s₅.gpr sb = B := by rw [o₅ _ (by decide) (by decide), base₄]
   obtain ⟨s₆, e₆, a₆, b₆, t₆, o₆, m₆, rd₆, wr₆⟩ := xorArgs_ok hL.bufImm d14 s₅ base₅
   refine WP.seq (WP.of_runBlock ⟨s₆, e₆, ?_⟩)
@@ -180,10 +182,10 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
   have wr₆' : s₆.wr = s.wr := by rw [wr₆, wr₅, wr₄, wr₃']
   have base₆ : s₆.gpr sb = B := by rw [o₆ _ (by decide) (by decide) (by decide), base₅]
   -- The plaintext blocks.
-  refine WP.seq (WP.mono (unchainBlocks_wp (c := c) (B := B) (T := T) (A := A) (H := H) hbw0 (by omega)
+  refine WP.seq (WP.mono_syms (unchainBlocks_wp (c := c) (B := B) (T := T) (A := A) (H := H) hbw0 (by omega)
     (by simp only [Core.hiSlot]; omega) hc0 (by omega) base₆ rfl (fun t ht => by rw [wr₆']; exact inT t ht)
     (fun t ht => by rw [wr₆']; exact inA t ht) (fun w hw => by rw [wr₆']; exact inH w hw) dAT.symm dTH dAH
-    (by rw [a₆]) (by rw [b₆, o₅ _ d13 d16, data₄]) (by rw [t₆, c₅])) fun s₇ ⟨h₇, x15₇⟩ => ?_)
+    (by rw [a₆]) (by rw [b₆, o₅ _ d13 d16, data₄]) (by rw [t₆, c₅])) fun s₇ ⟨h₇, x15₇⟩ sy₇ => ?_)
   have f₇ : Frame [⟨T, 8 * c.bw * cc⟩, ⟨A, 8 * c.bw * cc⟩, ⟨H, 8 * c.bw⟩] s₄.mem s₇.mem := by
     rw [← mem₆]; exact h₇.frame
   have g₇ : ∀ r, r ∉ ownRegs → s₇.gpr r = s₄.gpr r := fun r hr => by
@@ -206,12 +208,21 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
     obtain ⟨h1, h2, h3⟩ := of_not_modeRegs hr
     rw [o₈ r h2 h3, g₇ r h1]
   have ready₈ : cs.Ready s₈ B k := by
-    refine cs.ready_frame ready₄ (by rw [m₈]; exact f₇) (fun r hr => ?_) keep₈
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact .inr subTbuf
-    · exact .inl (((dDS subCore).sub_left subA).symm)
-    · exact .inl dHcore.symm
+    refine cs.ready_frame ready₄ (by rw [m₈]; exact f₇) (fun r hr => ?_) ⟨fun r hr => ?_, ?_, ?_, ?_⟩ keep₈
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact .inr subTbuf
+      · exact .inl (((dDS subCore).sub_left subA).symm)
+      · exact .inl dHcore.symm
+    · have w₄ : s₄.wr = s.wr := by rw [wr₄, wr₃']
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, by rw [w₄]; exact hwS, subT⟩
+      · exact ⟨_, by rw [w₄]; exact hwD, subA⟩
+      · exact ⟨_, by rw [w₄]; exact hwS, subH⟩
+    · rw [rd₈, h₇.rd, rd₆', rd₄, rd₃']
+    · rw [wr₈, h₇.wr, wr₆', wr₄, wr₃']
+    · rw [runBlock_syms e₈, sy₇, runBlock_syms e₆, sy₅]
   -- The bytes, through the steps.
   have hn64 : 8 * c.bw * n ≤ 2 ^ 64 := by omega
   have outCore : ∀ {R : Region}, Region.Disjoint R (coreRegion c B) → R.len ≤ 2 ^ 64 →

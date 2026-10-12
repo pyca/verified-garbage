@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 
 /-!
 # P-256 public keys on x86-64: `Verified`
@@ -40,7 +41,7 @@ theorem pre_of {s : State} (h : pkX86_64.pre s) : PkPre p256 s := by
 /-- The postcondition, for any configuration of P-256 (either multiplication). -/
 theorem post_of {c : Cfg} (hC : c.C = Spec.P256.curve) {s s' : State} (h : PkPost c s s') :
     pkX86_64.post s s' := by
-  obtain ⟨n, C, comb, windows, fastN, adx, avx2, pubVerify, hot, mulBase, inverse, nbits⟩ := c
+  obtain ⟨n, C, comb, windows, fastN, adx, avx2, pubVerify, hot, mulBase, mul, inverse, nbits⟩ := c
   subst hC
   unfold PkPost at h
   show match pk s.mem (s.gpr .rsi) with
@@ -50,30 +51,30 @@ theorem post_of {c : Cfg} (hC : c.C = Spec.P256.curve) {s s' : State} (h : PkPos
         Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 65 = List.replicate 65 0
   revert h
   generalize hq : pk s.mem (s.gpr .rsi) = q
-  rw [show Spec.EcKey.publicKey Spec.P256.curve (dk ⟨n, Spec.P256.curve, comb, windows, fastN, adx, avx2, pubVerify, hot, mulBase, inverse, nbits⟩ s) =
+  rw [show Spec.EcKey.publicKey Spec.P256.curve (dk ⟨n, Spec.P256.curve, comb, windows, fastN, adx, avx2, pubVerify, hot, mulBase, mul, inverse, nbits⟩ s) =
     pk s.mem (s.gpr .rsi) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
 /-- The public key `code` of a curve `c` (P-256, with either multiplication)
 that the proof supports, whose precondition the contract's gives (`hpre`),
-never writing `rsp`, calling or loading MXCSR (which its literal decides). -/
+never writing `rsp`, or loading MXCSR, its calls inlined (which its literal decides). -/
 theorem pk_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Weierstrass.Law c.C) (hT : CombTbls c)
     (hmb : MulBaseOk c)
     (hpre : ∀ s, pkX86_64.pre s → PkPre c s) (hpost : ∀ s s', PkPost c s s' → pkX86_64.post s s')
     (hcode : Impl.EcKey.X86_64.Cfg.publicKey c = code)
     (hsp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
-    (hnc : code.noCalls = true) (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
+    (hnc : code.InlineOk = true) (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
     (hs : pkX86_64.pre s) :
-    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
+    ∃ t s', Exec isa code.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
   subst hcode
-  obtain ⟨t, s', he, hsv, hpost'⟩ := wp_of_inline hnc <| publicKey_ok hc hL hT (hpre s hs) hmb
-  have hsp : ∀ i ∈ instrs (Impl.EcKey.X86_64.Cfg.publicKey c), Taint.clobbers i .rsp = false := by
-    rw [Code.allInstrs_eq, List.all_eq_true] at hsp
+  obtain ⟨t, s', he, hsv, hpost'⟩ := publicKey_ok hc hL hT (hpre s hs) hmb
+  have hsp : ∀ i ∈ instrs (Impl.EcKey.X86_64.Cfg.publicKey c).inline, Taint.clobbers i .rsp = false := by
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at hsp
     intro i hi
     simpa using hsp i hi
-  have F := (Exec.regions he hnc).2.2
+  have F := (Exec.regions he (Code.noCalls_inline hnc)).2.2
   obtain ⟨-, hwr, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec hmx he ⟨fun r hr => ?_, ?_⟩, hpost _ _ hpost'⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; exact hmx) he ⟨fun r hr => ?_, ?_⟩, hpost _ _ hpost'⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -94,8 +95,8 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : pkX86_64.pre s) :
-    ∃ t s', Exec isa publicKeyP256 s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' :=
-  pk_x86_of (p256_ok hI) hL (p256_tbls hL hT) (fun h => absurd h (by decide)) (fun _ => pre_of) (fun _ _ => post_of rfl) rfl (by lit_decide)
+    ∃ t s', Exec isa publicKeyP256.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' :=
+  pk_x86_of (p256_ok hI) hL (p256_tbls hL hT) ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩ (fun _ => pre_of) (fun _ _ => post_of rfl) rfl (by lit_decide)
     (by lit_decide) (by lit_decide) s hs
 
 /-- `publicKeyP256` without its displacements, as a literal of shared blocks
@@ -107,20 +108,46 @@ materialize_shared publicKeyP256Erased
 
 theorem pk_ct : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyP256 :=
   VG.Taint.constantTime_mapBlocks (c' := publicKeyP256Erased) (taintSym_eraseInv ["VG_P256_COMB"])
-    (Taint.ofRegs [.rdi, .rsi, .rdx]) rfl
-    (fun _ _ _ _ ⟨_, h1, h2, h3, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) rfl
+    (fun _ _ _ _ ⟨h0, h1, h2, h3, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl
       · exact h1
       · exact h2
-      · exact h3, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
+      · exact h3
+      · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
     rfl (by taint_decide)
+
+theorem sat_spec8 :
+    (Spec.EcKey.P256.inst.publicKeyContract (X86_64.abi.withConsts p256.combConsts) 8).pre satState := by
+  have held : ∀ i < p256W.length, satState.mem.readW (satState.syms "VG_P256_COMB" +
+      BitVec.ofNat 64 (8 * i)) 64 = p256W.getD i 0 := satMem_held
+  sig_pre [Spec.EcKey.P256.inst, Spec.EcKey.Instance.publicKeyContract,
+    Spec.EcKey.Instance.publicKeySig, Spec.P256.curve, Spec.EcKey.scratchWords, X86_64.abi,
+    X86_64.argRegs, p256_combConsts, Abi.withConsts, p256_constRegions, Abi.constsHeld, stackBelow]
+  sig_and_intros
+  all_goals first | exact Region.disjoint_of_sep (by decide) | rfl | exact held | decide
+
+/-- The contract with 8 bytes of stack, for the calls' return address. -/
+theorem implies8 :
+    pkX86_64.Implies (Spec.EcKey.P256.inst.publicKeyContract (X86_64.abi.withConsts p256.combConsts) 8) :=
+  implies.stack8 ⟨satState, sat_spec8⟩
+
+/-- The output is apart from the calls' return address. -/
+theorem pk_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
+    (hs : (Spec.EcKey.P256.inst.publicKeyContract (X86_64.abi.withConsts p256.combConsts) 8).pre s)
+    (hp : pkX86_64.post s b) : pkX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  obtain ⟨-, hwr, -⟩ := implies8.pre s hs
+  have hb := Clear.wr_bytes (Sig.clear_of_pre_consts hs) (p := s.gpr .rdi) (n := 65)
+    (by rw [hwr]; simp) (by decide)
+  simpa only [pkX86_64, State.patch_gpr, EcKey.bytesAt_patch hb] using hp
 
 theorem pk_verified (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target publicKeyP256
-      (Spec.EcKey.P256.inst.publicKeyContract (X86_64.abi.withConsts p256.combConsts)) :=
-  Verified.of_correct (pk_x86 hL hT hI) pk_ct implies
+      (Spec.EcKey.P256.inst.publicKeyContract (X86_64.abi.withConsts p256.combConsts) 8) :=
+  Verified.of_inline_ct (by lit_decide) (pk_x86 hL hT hI) pk_ct implies8
+    (fun _ h => Sig.clear_of_pre_consts h) pk_patch
 
 end VG.Proof.EcKey.X86_64

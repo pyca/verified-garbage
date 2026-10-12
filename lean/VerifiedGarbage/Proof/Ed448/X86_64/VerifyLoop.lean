@@ -213,7 +213,8 @@ include hP in
 theorem vstep_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t < 456)
     (hb : s.gpr .rbx = BitVec.ofNat 64 (t + 1)) {b₁ b₂ : Nat} (hb₁ : b₁ < 2) (hb₂ : b₂ < 2)
     (hbit₁ : s.mem (off base (BITS + t)) = BitVec.ofNat 8 b₁)
-    (hbit₂ : s.mem (off base (KBITS + t)) = BitVec.ofNat 8 b₂) :
+    (hbit₂ : s.mem (off base (KBITS + t)) = BitVec.ofNat 8 b₂)
+    (hd : E s.mem base 11 = Spec.Ed448.d) :
     WP isa (vstep P) s fun s' =>
       s'.gpr .rbx = BitVec.ofNat 64 t ∧ s'.zf = some (decide (t = 0)) ∧
       (∀ r, r ∉ .rbx :: clob → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
@@ -224,7 +225,9 @@ theorem vstep_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t <
   have hs1 : Scr s1 base := ⟨(g1 _ (by decide)).trans hs.rdi, wr1 ▸ hs.wr, hs.nowrap⟩
   refine WP.seq (WP.mono (hP.dbl hs1) fun s2 ⟨k2, e2⟩ => ?_)
   have hs2 := k2.scr hs1
-  refine WP.seq (WP.mono (hP.add hs2) fun s3 ⟨k3, e3⟩ => ?_)
+  have hd2 : E s2.mem base 11 = Spec.Ed448.d := by
+    rw [e2, doubleOps_keep _ _ (Or.inl (by decide)), m1]; exact hd
+  refine WP.seq (WP.mono (hP.add hs2 hd2) fun s3 ⟨k3, e3⟩ => ?_)
   have hs3 := k3.scr hs2
   have b3 : s3.gpr .rbx = BitVec.ofNat 64 t := by
     rw [k3.gpr _ (by decide), k2.gpr _ (by decide)]; exact b1
@@ -243,7 +246,9 @@ theorem vstep_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t <
   have hs5 := k5.scr hs4
   refine WP.mono (stageA_ok hs5) fun s5' ⟨k5', e5'⟩ => ?_
   have hs5' := k5'.scr hs5
-  refine WP.seq (WP.mono (hP.add hs5') fun s6 ⟨k6, e6⟩ => ?_)
+  refine WP.seq (WP.mono (hP.add hs5' (by
+    rw [e5', stageEnv_keep _ _ (by decide) (by decide), e5, swapEnv_keep _ _ _ (by decide), m4,
+      e3, Point64.addAffineOps_keep _ _ (Or.inr (Or.inl (by decide)))]; exact hd2)) fun s6 ⟨k6, e6⟩ => ?_)
   have hs6 := k6.scr hs5'
   have b6 : s6.gpr .rbx = BitVec.ofNat 64 t := by
     rw [k6.gpr _ (by decide), k5'.gpr _ (by decide), k5.gpr _ (by decide), g4 _ (by decide)]; exact b3
@@ -331,7 +336,7 @@ theorem vloop_ok {s₀ : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Point}
   have hbit2 : s.mem (off base (KBITS + t)) = BitVec.ofNat 8 ((K >>> t) &&& 1) := by
     rw [hi.mem _ (hout KBITS (by decide) (by simp only [KBITS]; omega))]
     exact hbk t (by omega)
-  refine WP.mono (vstep_ok hP hi.scr (by omega) hi.rbx hb1 hb2 hbit1 hbit2)
+  refine WP.mono (vstep_ok hP hi.scr (by omega) hi.rbx hb1 hb2 hbit1 hbit2 hi.d)
     fun s' ⟨b', z', g', rd', wr', o', e'⟩ => ?_
   obtain ⟨k6, k7, k10, k11, k8, k9⟩ := vstepEnv_keep (decide ((S >>> t) &&& 1 = 1))
     (decide ((K >>> t) &&& 1 = 1)) (E s.mem base)

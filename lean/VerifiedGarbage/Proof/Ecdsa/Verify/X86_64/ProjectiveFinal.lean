@@ -100,7 +100,6 @@ theorem tail_dispatch_ok (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} {base 
   · rename_i h
     exact projectiveFinal_ok hc hC h.2.1 h.2.2 hP
   · show WP isa (Code.seq c.pPow.inline (Impl.Ecdsa.Verify.X86_64.Cfg.final c).inline) s _
-    rw [show (Impl.Ecdsa.Verify.X86_64.Cfg.final c).inline = _ from blocks_inline _]
     exact tail_ok hc hP
 
 end VG.Proof.Ecdsa.Verify.X86_64

@@ -28,8 +28,8 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P224.curve) : List A
       8]P` is built in `scratch`, and each digit takes four doublings (in Jacobian coordinates, \
       dbl-2001-b, with `Y = 1` where the result is the point at infinity) and the addition of \
       its entry, every entry loaded and masked and `y` negated by a mask of the digit's sign, by \
-      the complete formula of Renes, Costello and Batina for `a = -3` (Algorithm 4); `Z⁻¹` is by \
-      divsteps (Bernstein and Yang's safegcd, half-delta form): 10 batches of 59 divsteps on the \
+      the complete formula of Renes, Costello and Batina for `a = -3` (Algorithm 4); `Z⁻¹` is a \
+      call of `vg_p224_inv_mod_p`, by divsteps (Bernstein and Yang's safegcd, half-delta form): 10 batches of 59 divsteps on the \
       low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each giving a matrix of 64-bit \
       entries that updates `f`, `g` (divided by 2⁵⁹) and the coefficients `a`, `b` (divided by \
       2⁶⁴ modulo `p`, as in Montgomery reduction), 590 divsteps in all, enough for 256-bit \

@@ -24,7 +24,8 @@ theorem winK_ok : p521T.Ok winK.M := p521HT_ok
 
 taint_summary winBuildJSum : taintS τB winBuildJ
 taint_summary_map winNormJSum : taintS τB winNormJ via taintS_eraseInv
-  (by simp only [winNormJ, WinCfg.normTbl, Code.mapBlocks, winK_ok.fprogB]; rfl :
+  (by simp only [winNormJ, WinCfg.normTbl, WinCfg.seqRange, WinCfg.prodStep, WinCfg.backStep,
+    WinCfg.backOne, WinCfg.mulTb, WinCfg.mulTx, Code.mapBlocks, winK_ok.fprogB]; rfl :
     Code.mapBlocks Instr.erase winNormJ = _)
 taint_summary_map winLoopJSum : taintS τL winLoopJ via taintS_eraseInv
   (by simp only [winLoopJ, WinCfg.stepJ, WinCfg.quadJ, WinCfg.jacPairOn, WinCfg.sumJ, Code.mapBlocks,
