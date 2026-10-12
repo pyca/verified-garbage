@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Joint
+public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPadding
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
@@ -21,7 +21,7 @@ The correctness of `vg_ed448_verify_equation` against the contract the proof
 is written against (`verifyEquationLocal`, `VerifyLocal.lean`): `BAD` ends as the OR of
 the checks of `S`, of decoding `A` and `R`, and of the comparison of `[4]Q`
 with `[4]R`, for `Q` representing `[S]B + [k](-A)` through the joint
-signed five-bit window loop. Group representation is required only when both
+sparse width-five non-adjacent form loop. Group representation is required only when both
 points decode; malformed inputs still execute safely and are rejected;
 every write is in the working space, so the inputs are read unchanged, the
 callee-saved registers are restored from it, and the return address is kept.
@@ -811,7 +811,7 @@ theorem verifyEquation_correct (hR : RecoverOk) (_hE : VerifyEqOk) {rt : Prog is
     obtain ⟨vx, vy, vz⟩ := va4 a ha
     show (⟨E s4'.mem base 6, E s4'.mem base 7, E s4'.mem base 10⟩ : Spec.Ed448.Point) = ⟨0 - a.X, a.Y, a.Z⟩
     rw [n6, n7, n10, vx, vy, vz]
-  -- The joint signed five-bit window multiplication.
+  -- The joint sparse multiplication.
   apply WP.seq
   have bits4 : ∀ o : Nat, o + 460 ≤ 8192 → 2048 ≤ o → ∀ t < 461,
       s4'.mem (off base (o - 1 + t)) = s2.mem (off base (o - 1 + t)) := fun o ho1 ho2 t ht => by
@@ -828,7 +828,7 @@ theorem verifyEquation_correct (hR : RecoverOk) (_hE : VerifyEqOk) {rt : Prog is
     rw [← hS]; exact decodeLE_below (bytesAt57_len _ _)
   have hKb : K < 2 ^ 456 := by
     rw [← hK]; exact decodeLE_below (bytesAt57_len _ _)
-  refine WP.mono (Window.joint_ok hf hP hs4' (by decide) (by decide) bs4 bk4 hSb hKb d4
+  refine WP.mono (Wnaf.joint_ok hf hP hs4' (by decide) (by decide) bs4 bk4 hSb hKb d4
     (congrArg Spec.Ed448.Point.Z q4) p4) fun s6 ⟨hs6, g6, rd6, wr6, M6, rep6⟩ => ?_
   have O7 : Outside base 0 8192 s.mem s6.mem :=
     (O4.trans (o4.mono (by decide) (by decide))).trans (M6.wide.mono (by decide) (by decide))

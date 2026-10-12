@@ -26,7 +26,7 @@ private theorem entry_words : ∀ i < 17,
 def SelKeeps (e e' : Env) : Prop :=
   ∀ j, j ≠ 3 → j ≠ 4 → j ≠ 8 → j ≠ 9 → e' j = e j
 
-private theorem base_pick (c : Nat) :
+theorem base_pick (c : Nat) :
     PickOk (fun i => chooseConst (if c = 0 then (Impl.Ed448.SignedWindow.entry i).1 else (Impl.Ed448.SignedWindow.entry i).2))
       (fun _ _ i => if c = 0 then (Impl.Ed448.SignedWindow.entry i).1 else (Impl.Ed448.SignedWindow.entry i).2) := by
   intro i hi s base hs sw hz

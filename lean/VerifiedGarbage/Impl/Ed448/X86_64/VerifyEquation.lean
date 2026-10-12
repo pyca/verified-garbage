@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Joint
 public import VerifiedGarbage.Impl.Ed448.X86_64.Window
 
 /-!
@@ -24,18 +25,19 @@ passes: each check ORs into it a word that is 0 if and only if it passes.
   negated (swapped with `-x` by a mask) if its low bit is not the sign bit.
 * `R` and then `A` are decoded into slots 6–7 by one loop (`vdecode`), `R`
   kept at `RX` and `RY` (`Z = 1` in slot 10). `A` is negated, and
-  `Q = [S]B + [k](-A)` uses 114 four-bit windows sharing four doublings.
-  Each window adds an affine multiple of `B` and a projective multiple of
-  `-A`, selected by full scans of sixteen entries. The public-key table is
-  built with fifteen affine additions, without inversions, at scratch
-  offsets 4096–7167. Doublings and affine additions call the existing
+  `Q = [S]B + [k](-A)` uses width-five non-adjacent form digits, with
+  461 shared doublings and additions only for nonzero public digits.
+  The signed byte streams occupy scratch 3072–3532 and 3536–3996.
+  Fixed-base selection scans seventeen affine entries; public-key selection
+  directly indexes seventeen projective entries. The public-key table is
+  built with sixteen affine additions, without inversions, at scratch
+  offsets 4096–7359. Doublings and affine additions call the existing
   point functions; projective addition uses the same field operations.
 * `Q` is doubled twice and copied into slots 3–5, `R` into slots 0–2 (with
   `Z = 1`) and doubled twice, and they are compared: `X_Q Z_R = X_R Z_Q` and
   `Y_Q Z_R = Y_R Z_Q`, fully reduced.
 
-The result is 1 if `BAD` is 0. Every address and branch depends only on the
-pointers.
+The result is 1 if `BAD` is 0. Addresses and branches depend only on public verification inputs.
 -/
 
 @[expose] public section
@@ -187,7 +189,7 @@ def bitsBodyAt (o : Nat) : List Instr :=
 
 def bitsAt (o : Nat) : Prog isa := .seq (.block [.mov32 .rbx (.imm 0)]) (.loop (.block (bitsBodyAt o)) .ne)
 
-/-- Leading carry bit and four high zero bits for signed five-bit recoding. -/
+/-- Five high zero bits for full-width signed scalar recoding. -/
 def bitPadding (o : Nat) : List Instr :=
   [.mov32 .rdx (.imm 0)] ++
     ([o - 1, o + 456, o + 457, o + 458, o + 459].map fun d => .store8 (sc d) .rdx)
@@ -250,7 +252,7 @@ def vfinish (F : Field) (P : Point64.Ops) : Prog isa :=
 and the square root's power `rt`. -/
 def verifyEquationWith (F : Field) (P : Point64.Ops) (rt : Prog isa := root F 12) : Prog isa :=
   .seq (.block ventry) <| .seq vbits <| .seq (.block vstart) <| .seq (vdecode F rt) <|
-    .seq (.block (vnegA F)) <| .seq (Window.joint F P KBITS) (vfinish F P)
+    .seq (.block (vnegA F)) <| .seq (Wnaf.joint F P KBITS) (vfinish F P)
 
 def verifyEquationFor (v : FieldVariant) : Prog isa :=
   verifyEquationWith v.field v.calls (rootCallFor v)
