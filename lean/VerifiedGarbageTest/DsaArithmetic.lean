@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.Dsa.X86_64.ModulusMinus
+import VerifiedGarbage.Proof.Dsa.X86_64.IsOne
 import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Zero
 import VerifiedGarbage.Proof.Dsa.X86_64.Equal
@@ -121,3 +123,13 @@ The whole-operation contracts must be proved before artifacts are registered.
 #assert_standard_axioms VG.Proof.Dsa.decodeBE_eq_zero
 
 #assert_standard_axioms VG.Proof.Dsa.X86_64.zero_ct
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.checkCall_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.oneScan_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.loadOne_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.isOne_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.minusCore_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.minus_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.resultCall_ok
+#assert_standard_axioms VG.Proof.Dsa.X86_64.modulusMinus_ok

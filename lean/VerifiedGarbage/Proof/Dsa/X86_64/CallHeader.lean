@@ -55,7 +55,7 @@ theorem call_child {mem mem' : Mem} {B : Addr} {o wx sp sl : Nat} {minv : BitVec
 /-- Arguments remain in the active arithmetic prefix, so sources in the
 scratch suffix or caller buffers retain their values and permissions. -/
 theorem call_source {s t : State} {B p : Addr} {Z sp sl : Nat} {bytes : List Byte}
-    (hf : Frm B (callRanges sp sl) s.mem t.mem) (hk : Keep [.rax] s t)
+    {rs : List Reg} (hf : Frm B (callRanges sp sl) s.mem t.mem) (hk : Keep rs s t)
     (hsp : sp < 32) (hsl : sl < 32) (hZ : 256 ≤ Z) (hs : Src s B Z p bytes) :
     Src t B Z p bytes := by
   apply hs.congrK _ hk
