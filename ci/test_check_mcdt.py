@@ -32,6 +32,22 @@ class InstructionLocations(unittest.TestCase):
              [14, 18, 20], {"2": [0, 2], "3": [1, 1]}),
         )
 
+    def test_directives_are_not_instructions(self):
+        body = '\n'.join([
+            '    naked_asm!(',
+            '        "mov eax, 8127",',
+            '        ".p2align 5",',
+            '        "2:",',
+            '        "sub rcx, 1",',
+            '        "jne 2b",',
+            '        "ret",',
+            '    );',
+        ])
+        self.assertEqual(
+            check_mcdt.code(body, 1),
+            (["mov eax, 8127", "sub rcx, 1", "jne 2b", "ret"], [2, 5, 6, 7], {"2": [1]}),
+        )
+
     def test_diagnostics_across_functions_and_files(self):
         # Include documentation, blank lines, and labels before instructions;
         # main() must reset its file offset and code() must include labels.

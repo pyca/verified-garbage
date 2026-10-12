@@ -129,4 +129,23 @@ pub(crate) unsafe extern \"sysv64\" fn vg_test_consts() -> u64 {
   (t.gpr .rdx, t.gpr .rax, t.cf, t.mem 0x1008, t.syms "VG_TEST_TABLE")) ==
     some (0x1000, 0, none, 42, 0x1000)
 
+/-! Loop heads aligned on x86-64 (`Rust.alignLoops`): the directive goes before
+each label a branch targets backward, and nowhere else. -/
+
+#guard Rust.loopAlign target == [".p2align 5"]
+#guard Rust.backTarget "jne 22b" == some "22"
+#guard Rust.backTarget "jmp 21f" == none
+#guard Rust.backTarget "vpshufb ymm0, ymm0, ymm1" == none
+#guard Rust.backTarget "sub rcx, 1" == none
+
+def loopCode : Prog isa :=
+  .seq (.block [.alu .xor .rax (.reg .rax)])
+    (.seq (.ite .e (.block [.mov .rdx (.reg .rax)]) (.block []))
+      (.loop (.block [.alu .sub .rcx (.imm 1)]) .ne))
+
+#guard (Rust.alignLoops (Rust.loopAlign target) (target.printer.function loopCode)).filterMap
+    (fun | .text s => some s | _ => none) ==
+  ["xor rax, rax", "je 20f", "jmp 21f", "20:", "mov rdx, rax", "21:", ".p2align 5", "22:", "sub rcx, 1",
+    "jne 22b", "ret"]
+
 end VG.Test.ConstTablesX86_64

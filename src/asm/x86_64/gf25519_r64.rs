@@ -87,6 +87,7 @@ pub(crate) unsafe extern "sysv64" fn vg_gf25519_r64_invert(ws: *mut [u64; 512]) 
         "mov QWORD PTR [rdi+512], rax",
         "mov QWORD PTR [rdi+704], rax",
         "mov ebp, 2560",
+        ".p2align 5",
         "20:",
         "mov r14, rbp",
         "mov rax, QWORD PTR [rdi+576]",
