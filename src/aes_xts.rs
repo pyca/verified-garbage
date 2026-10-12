@@ -13,9 +13,12 @@
 //! not, and steals ciphertext (§5.3.2, §5.4.2) by moving bytes between the
 //! last two blocks; every block is enciphered by the verified functions.
 //!
-//! On x86-64, CPUs with VAES and AVX2 run the `_vaes` functions, and other
-//! CPUs with AES-NI the `_aesni` ones (`crate::aes::Backend`), as on x86; on
-//! AArch64, CPUs with the AES instructions run the `_aes` ones. Elsewhere, and on other CPUs, the
+//! On x86-64, CPUs with VAES, VPCLMULQDQ and AVX2 run
+//! `vg_aes_xts_encrypt_vaes_vpclmul` and `vg_aes_xts_decrypt_vaes_vpclmul`,
+//! which read each block once and call nothing, with the `_vaes` functions
+//! for the rest; CPUs with VAES and AVX2 alone run the `_vaes` functions, and
+//! other CPUs with AES-NI the `_aesni` ones (`crate::aes::Backend`), as on
+//! x86; on AArch64, CPUs with the AES instructions run the `_aes` ones. Elsewhere, and on other CPUs, the
 //! constant-time bitsliced implementation runs.
 
 #![cfg(any(
@@ -52,6 +55,11 @@ use crate::arch::aes_xts::{
     VG_AES_XTS_DECRYPT_VAES_FEATURES, VG_AES_XTS_ENCRYPT_VAES_FEATURES, vg_aes_xts_decrypt_vaes,
     vg_aes_xts_encrypt_vaes,
 };
+#[cfg(target_arch = "x86_64")]
+use crate::arch::aes_xts::{
+    VG_AES_XTS_DECRYPT_VAES_VPCLMUL_FEATURES, VG_AES_XTS_ENCRYPT_VAES_VPCLMUL_FEATURES,
+    vg_aes_xts_decrypt_vaes_vpclmul, vg_aes_xts_encrypt_vaes_vpclmul,
+};
 use crate::arch::aes_xts::{vg_aes_xts_decrypt, vg_aes_xts_encrypt};
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
@@ -74,10 +82,54 @@ macro_rules! instance {
     };
 }
 
+/// The XTS functions a key uses: those of an implementation of AES, which
+/// call its block functions, or x86-64's in one pass, with VAES's for the
+/// rest.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Impl {
+    /// The `vg_aes_xts_*` functions of an implementation of AES.
+    Blocks(Backend),
+    /// `vg_aes_xts_encrypt_vaes_vpclmul` and `vg_aes_xts_decrypt_vaes_vpclmul`.
+    #[cfg(target_arch = "x86_64")]
+    VaesVpclmul,
+}
+
+impl Impl {
+    /// The implementation of AES that expands the keys and enciphers the
+    /// tweak value.
+    fn aes(self) -> Backend {
+        match self {
+            Impl::Blocks(backend) => backend,
+            #[cfg(target_arch = "x86_64")]
+            Impl::VaesVpclmul => Backend::Vaes,
+        }
+    }
+}
+
+/// The best XTS functions a CPU with the features `f` can run: in one pass
+/// if it has VAES's and their features too.
+#[cfg(target_arch = "x86_64")]
+fn select(f: Features) -> Impl {
+    const ONE_PASS: Features = Features::all(&[
+        VG_AES_XTS_ENCRYPT_VAES_VPCLMUL_FEATURES,
+        VG_AES_XTS_DECRYPT_VAES_VPCLMUL_FEATURES,
+    ]);
+    match select_aes(f) {
+        Backend::Vaes if f.contains(ONE_PASS) => Impl::VaesVpclmul,
+        backend => Impl::Blocks(backend),
+    }
+}
+
+/// The best XTS functions a CPU with the features `f` can run.
+#[cfg(not(target_arch = "x86_64"))]
+fn select(f: Features) -> Impl {
+    Impl::Blocks(select_aes(f))
+}
+
 /// The best implementation of AES a CPU with the features `f` can run, with
 /// its XTS functions and its encryption of whole blocks.
 #[cfg(target_arch = "x86_64")]
-fn select(f: Features) -> Backend {
+fn select_aes(f: Features) -> Backend {
     const AESNI: Features = Features::all(&[
         VG_AES_XTS_ENCRYPT_AESNI_FEATURES,
         VG_AES_XTS_DECRYPT_AESNI_FEATURES,
@@ -94,7 +146,7 @@ fn select(f: Features) -> Backend {
 /// The best implementation of AES a CPU with the features `f` can run, with
 /// its XTS functions and its encryption of whole blocks.
 #[cfg(target_arch = "x86")]
-fn select(f: Features) -> Backend {
+fn select_aes(f: Features) -> Backend {
     const AESNI: Features = Features::all(&[
         VG_AES_XTS_ENCRYPT_AESNI_FEATURES,
         VG_AES_XTS_DECRYPT_AESNI_FEATURES,
@@ -106,7 +158,7 @@ fn select(f: Features) -> Backend {
 /// The best implementation of AES a CPU with the features `f` can run, with
 /// its XTS functions and its encryption of whole blocks.
 #[cfg(target_arch = "aarch64")]
-fn select(f: Features) -> Backend {
+fn select_aes(f: Features) -> Backend {
     const AES: Features = Features::all(&[
         VG_AES_XTS_ENCRYPT_AES_FEATURES,
         VG_AES_XTS_DECRYPT_AES_FEATURES,
@@ -117,7 +169,7 @@ fn select(f: Features) -> Backend {
 
 /// The only implementation of AES on ARMv7.
 #[cfg(target_arch = "arm")]
-fn select(f: Features) -> Backend {
+fn select_aes(f: Features) -> Backend {
     Backend::select(f)
 }
 
@@ -151,8 +203,8 @@ pub struct AesXts {
     tweak_schedule: [u8; 240],
     /// The number of rounds of AES: 10, 12 or 14.
     rounds: usize,
-    /// The implementation of AES the functions called use.
-    backend: Backend,
+    /// The XTS functions, and the implementation of AES the others use.
+    imp: Impl,
 }
 
 /// The signature of `vg_aes_xts_encrypt` and `vg_aes_xts_decrypt`.
@@ -189,9 +241,9 @@ impl AesXts {
         if key1.iter().zip(key2).fold(0, |d, (a, b)| d | (a ^ b)) == 0 {
             return Err(Error::EqualKeyHalves);
         }
-        let backend = select(detected());
+        let imp = select(detected());
         let expand = instance!(
-            backend,
+            imp.aes(),
             vg_aes_expand_key,
             vg_aes_expand_key_aesni,
             vg_aes_expand_key_aesni,
@@ -212,7 +264,7 @@ impl AesXts {
             data_schedule,
             tweak_schedule,
             rounds: key1.len() / 4 + 6,
-            backend,
+            imp,
         })
     }
 
@@ -220,13 +272,17 @@ impl AesXts {
     /// (§5.3.2). Returns an error without changing the buffer if it is
     /// shorter than 16 bytes or longer than [`MAX_BLOCKS`] blocks.
     pub fn encrypt(&self, i: &[u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
-        let f = instance!(
-            self.backend,
-            vg_aes_xts_encrypt,
-            vg_aes_xts_encrypt_aesni,
-            vg_aes_xts_encrypt_vaes,
-            vg_aes_xts_encrypt_aes
-        );
+        let f: Xts = match self.imp {
+            Impl::Blocks(backend) => instance!(
+                backend,
+                vg_aes_xts_encrypt,
+                vg_aes_xts_encrypt_aesni,
+                vg_aes_xts_encrypt_vaes,
+                vg_aes_xts_encrypt_aes
+            ),
+            #[cfg(target_arch = "x86_64")]
+            Impl::VaesVpclmul => vg_aes_xts_encrypt_vaes_vpclmul,
+        };
         let mut tweak = self.tweak(i, buffer.len())?;
         let mut scratch = [0; 272];
         let (whole, tail) = buffer.split_at_mut(buffer.len() / 16 * 16);
@@ -252,13 +308,17 @@ impl AesXts {
     /// (§5.4.2). Returns an error without changing the buffer if it is
     /// shorter than 16 bytes or longer than [`MAX_BLOCKS`] blocks.
     pub fn decrypt(&self, i: &[u8; 16], buffer: &mut [u8]) -> Result<(), Error> {
-        let f = instance!(
-            self.backend,
-            vg_aes_xts_decrypt,
-            vg_aes_xts_decrypt_aesni,
-            vg_aes_xts_decrypt_vaes,
-            vg_aes_xts_decrypt_aes
-        );
+        let f: Xts = match self.imp {
+            Impl::Blocks(backend) => instance!(
+                backend,
+                vg_aes_xts_decrypt,
+                vg_aes_xts_decrypt_aesni,
+                vg_aes_xts_decrypt_vaes,
+                vg_aes_xts_decrypt_aes
+            ),
+            #[cfg(target_arch = "x86_64")]
+            Impl::VaesVpclmul => vg_aes_xts_decrypt_vaes_vpclmul,
+        };
         let mut tweak = self.tweak(i, buffer.len())?;
         let mut scratch = [0; 272];
         let (whole, tail) = buffer.split_at_mut(buffer.len() / 16 * 16);
@@ -298,7 +358,7 @@ impl AesXts {
             return Err(Error::DataUnitTooLong);
         }
         let encrypt = instance!(
-            self.backend,
+            self.imp.aes(),
             vg_aes_encrypt_blocks,
             vg_aes_encrypt_blocks_aesni,
             vg_aes_encrypt_blocks_vaes,
@@ -354,7 +414,7 @@ impl Drop for AesXts {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesXts, select};
+    use super::{AesXts, Impl, select};
     use crate::cpu::detected;
 
     /// A new key uses the implementation chosen for the CPU's features.
@@ -362,10 +422,7 @@ mod tests {
     fn select_detected() {
         let key: [u8; 64] = core::array::from_fn(|i| i as u8);
         for len in [32, 48, 64] {
-            assert_eq!(
-                AesXts::new(&key[..len]).unwrap().backend,
-                select(detected())
-            );
+            assert_eq!(AesXts::new(&key[..len]).unwrap().imp, select(detected()));
         }
     }
 
@@ -375,16 +432,23 @@ mod tests {
     fn select_features() {
         use crate::aes::Backend;
         use crate::cpu::Features;
-        assert_eq!(select(Features(0)), Backend::Scalar);
+        assert_eq!(select(Features(0)), Impl::Blocks(Backend::Scalar));
         #[cfg(target_arch = "x86_64")]
         {
-            assert_eq!(select(Features::of(&["aes", "ssse3"])), Backend::AesNi);
+            let aesni = Features::of(&["aes", "ssse3"]);
+            assert_eq!(select(aesni), Impl::Blocks(Backend::AesNi));
             let vaes = Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
-            assert_eq!(select(vaes), Backend::Vaes);
+            assert_eq!(select(vaes), Impl::Blocks(Backend::Vaes));
+            let one_pass = Features::of(&["aes", "avx", "avx2", "ssse3", "vaes", "vpclmulqdq"]);
+            assert_eq!(select(one_pass), Impl::VaesVpclmul);
+            assert_eq!(Impl::VaesVpclmul.aes(), Backend::Vaes);
+            // VPCLMULQDQ without VAES.
+            let no_vaes = Features::of(&["aes", "avx", "avx2", "ssse3", "vpclmulqdq"]);
+            assert_eq!(select(no_vaes), Impl::Blocks(Backend::AesNi));
         }
         #[cfg(target_arch = "x86")]
-        assert_eq!(select(Features::of(&["aes"])), Backend::AesNi);
+        assert_eq!(select(Features::of(&["aes"])), Impl::Blocks(Backend::AesNi));
         #[cfg(target_arch = "aarch64")]
-        assert_eq!(select(Features::of(&["aes"])), Backend::Aes);
+        assert_eq!(select(Features::of(&["aes"])), Impl::Blocks(Backend::Aes));
     }
 }
