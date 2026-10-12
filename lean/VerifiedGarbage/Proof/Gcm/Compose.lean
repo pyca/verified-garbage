@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Gcm.Ctr
-import VerifiedGarbage.Proof.Framework.Bswap
+module
+
+public import VerifiedGarbage.Proof.Gcm.Ctr
+public import VerifiedGarbage.Proof.Framework.Bswap
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GCM: the streaming state, the tag and the pre-counter block
@@ -19,6 +25,8 @@ relating the steps of `Stream.lean` and `Ctr.lean` to `StreamRepr`,
   padded, then the lengths block of no additional data and the IV.
 * `inc32_bytes`: `inc₃₂` increments the last four bytes, big-endian.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm
 

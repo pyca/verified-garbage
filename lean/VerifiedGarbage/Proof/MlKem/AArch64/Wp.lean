@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: one instruction at a time
@@ -14,6 +20,8 @@ stated as natural numbers (`toNat`), which `omega` reasons about; the `_n`
 lemmas turn the machine's operations into operations on them when nothing
 wraps.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64
 

@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.FinalCall
-import VerifiedGarbage.Impl.Argon2.AArch64.FinalOutput
-import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.FinalCall
+public import VerifiedGarbage.Impl.Argon2.AArch64.FinalOutput
+public import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.FinalOutputArgs`. -/
+
+@[expose] public section
+
 section
 /-! Load the public final-call pointers and tag length from the enclosing frame. -/
 

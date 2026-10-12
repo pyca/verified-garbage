@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_add` and `vg_mldsa_sub`
@@ -10,6 +12,8 @@ and `x10 = 256 - i` counting down: `f[i] + g[i]` (for `sub`,
 `f[i]`. `q` is in `x9`. Every address and branch depends only on the
 pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Arith
 

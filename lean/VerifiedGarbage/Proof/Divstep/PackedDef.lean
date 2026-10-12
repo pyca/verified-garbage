@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Packed divsteps on 64-bit words: the definitions
@@ -13,6 +19,8 @@ as `(f, g)` would, doubled rather than halved: after `j` steps their low
 `n` bits are `2^j f_j` and `2^j g_j`'s, so step `j` reads `g`'s parity from
 bit `j`. `E = ~d` holds `d`, its sign bit set for `d ≥ 0`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Divstep
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.SampleSqueeze
-import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.SampleSqueeze
+meta import VerifiedGarbage.Proof.MlKem.AArch64.SampleSqueeze
+public import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
+meta import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_sample_ntt`
@@ -22,6 +30,8 @@ of `sampleFast` leave the same number of coefficients, on which the retry
 branches, and the retry is `sampleFull` from states that satisfy its
 contract (`full_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Sample
 

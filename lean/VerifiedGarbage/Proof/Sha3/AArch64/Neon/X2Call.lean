@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+module
+
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Calls of `vg_keccak_f1600_x2` on AArch64
@@ -14,6 +20,8 @@ changes memory only in the states and `callR`, and keeps every register but
 proof (`X2.correct`, by `WP.callV`). `squeeze_ok`: the
 squeeze from memory that follows it in a caller (`X2.squeeze`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Neon.X2
 

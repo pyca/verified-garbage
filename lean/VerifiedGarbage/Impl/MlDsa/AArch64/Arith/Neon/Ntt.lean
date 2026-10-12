@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Vec
-import VerifiedGarbage.Spec.MlDsa
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Vec
+public import VerifiedGarbage.Spec.MlDsa
 
 /-! Four butterflies per vector. The last two layers gather two or four
 blocks into the same lane layout, without using callee-saved vector registers. -/
+
+@[expose] public section
+
 namespace VG.Impl.MlDsa.AArch64.Arith.Neon
 open VG.AArch64
 open VG.Impl.MlKem.AArch64 (mov)

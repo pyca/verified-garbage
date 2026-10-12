@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Idea.X86_64
-import VerifiedGarbage.Impl.Modes.X86_64.Cbc
-import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
-import VerifiedGarbage.Impl.Modes.X86_64.Fb
+module
+
+public import VerifiedGarbage.Impl.Idea.X86_64
+public import VerifiedGarbage.Impl.Modes.X86_64.Cbc
+public import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
+public import VerifiedGarbage.Impl.Modes.X86_64.Fb
 
 /-!
 # IDEA-CBC, -OFB and -CFB64 on x86-64
@@ -21,6 +23,8 @@ scratch buffer's address (`sb`, which the block code overwrites) in `rcx`.
 The block code keeps `r12` and `r13`, which carry the data's address and the
 blocks left.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Idea.X86_64
 

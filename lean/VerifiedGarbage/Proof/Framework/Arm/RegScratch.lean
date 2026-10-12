@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 
 /-!
 # A scratch buffer in a register, on the stack (ARMv7)
@@ -16,6 +18,8 @@ written to memory: unlike `Verified.stackScratch`, the precondition and
 postcondition may read any memory, as may the leak the contract may declare
 (`Sig.contract`'s `leak`, which the code's contract takes too).
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 

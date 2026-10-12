@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Cast5.Tables
-import VerifiedGarbage.Impl.Cast5.Lines
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.Impl.Cast5.Tables
+public import VerifiedGarbage.Impl.Cast5.Lines
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # CAST5 on baseline ARMv7
@@ -28,6 +30,8 @@ The working space `scratch` (`r3` for key expansion, the stack argument for
 ECB) is in `r12` throughout; the
 callee-saved registers `r4`–`r11` and `lr` are saved in it at `savedOff`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Cast5.Arm
 

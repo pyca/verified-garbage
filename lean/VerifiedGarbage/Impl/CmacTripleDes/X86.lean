@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.CmacTripleDes.X86.Round
+module
+
+public import VerifiedGarbage.Impl.CmacTripleDes.X86.Round
 
 /-!
 # TDEA-CMAC (3DES-CMAC): x86 (32-bit) implementation
@@ -33,6 +35,8 @@ block `Mₙ`.
 Only the pointers, `key_len`, `n` and `last_len` can affect timing: the
 branches are on them and on counters, and the doubling is masked.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacTripleDes.X86
 

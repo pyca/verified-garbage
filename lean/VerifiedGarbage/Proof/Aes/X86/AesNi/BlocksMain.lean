@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Blocks
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Aes.Contract
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Blocks
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Blocks
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Aes.Contract
+meta import VerifiedGarbage.Spec.Aes.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-NI on x86 (32-bit): `vg_aes_encrypt_blocks_aesni` and `vg_aes_decrypt_blocks_aesni`
@@ -11,6 +21,8 @@ import VerifiedGarbage.Spec.Aes.Contract
 of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`, through the
 per-target contract of the bitsliced implementation (`Proof.Aes.blocksX86`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86.AesNi
 

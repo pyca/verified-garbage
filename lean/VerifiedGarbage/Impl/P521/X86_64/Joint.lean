@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.JointDouble
-import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
-import VerifiedGarbage.Impl.Ecdh.X86_64
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.JointDouble
+public import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
+public import VerifiedGarbage.Impl.Ecdh.X86_64
 
 /-! The x86-64 P-521 joint multiplication layout, for public verification. -/
+
+@[expose] public section
+
 namespace VG.Impl.P521.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
 

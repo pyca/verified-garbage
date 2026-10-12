@@ -1,9 +1,17 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.ReducePointers
-import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
-import VerifiedGarbage.Proof.Argon2.AArch64.FillIterations
-import VerifiedGarbage.Proof.Argon2.FinalReduction
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.ReducePointers
+public import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillIterations
+public import VerifiedGarbage.Proof.Argon2.FinalReduction
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The last-lane address calculation preserves all callee-saved registers. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.AArch64.ReducePointers
 

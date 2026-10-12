@@ -1,4 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Lit
+module
+
+public import VerifiedGarbage.Proof.Framework.Lit
+public meta import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Code as literals with shared blocks, for the kernel
@@ -20,6 +23,8 @@ then rewrite `t` to `N.lit`, and compute their hints from `t`, in compiled
 code. Unlike `materialize_code`, calls are written out in full, not as the
 literals of their callees.
 -/
+
+public meta section
 
 namespace VG
 

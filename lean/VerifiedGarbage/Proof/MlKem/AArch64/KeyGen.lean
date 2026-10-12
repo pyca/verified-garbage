@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
+meta import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem768_keygen` and `vg_mlkem1024_keygen`
@@ -19,6 +26,8 @@ with the taint analyses of its code (`KgTaints`), which are decided on the
 code of each parameter set; the end of this file is ML-KEM-768's instance
 (and `Proof/MlKem1024/AArch64/KeyGen.lean` ML-KEM-1024's).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.KeyGen
 

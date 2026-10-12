@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Modes.AArch64.Ctr
-import VerifiedGarbage.Impl.Modes.FbMode
+module
+
+public import VerifiedGarbage.Impl.Modes.AArch64.Ctr
+public import VerifiedGarbage.Impl.Modes.FbMode
 
 /-!
 # OFB and CFB on AArch64, for any block cipher with blocks of 8 or 16 bytes
@@ -33,6 +35,8 @@ they keep the others'.
 Only the pointers and `n` (and what is computed from them) are public; no
 address or branch depends on the key, the IV or the data.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Modes.AArch64
 

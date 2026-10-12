@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.TripleDes
-import VerifiedGarbage.Impl.CmacTripleDes.Index
+module
+
+public import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.Impl.CmacTripleDes.Index
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # DES: the bits of the specification's permutations and round function
@@ -9,6 +15,8 @@ four) at a time, most significant first. These lemmas say which input bit
 each output bit is, so that the implementations, checked bit by bit, can be
 compared with them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes
 

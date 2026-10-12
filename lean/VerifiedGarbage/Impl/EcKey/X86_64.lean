@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ecdsa.X86_64
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.X86_64
 
 /-!
 # Elliptic curve public keys on x86-64
@@ -22,6 +24,8 @@ curve of `n` 64-bit words, from the code of ECDSA's signature
 Everything is computed whatever the flag, and only the pointers may affect
 timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.EcKey.X86_64
 

@@ -1,14 +1,23 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.Parameters
-import VerifiedGarbage.Proof.Argon2.AArch64.DeriveAbi
-import VerifiedGarbage.Proof.Argon2.AArch64.DeriveSaved
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.Covers
-import VerifiedGarbage.Proof.Argon2.AArch64.FillCompress
-import VerifiedGarbage.Impl.Argon2.AArch64.Derive
-import VerifiedGarbage.Proof.Argon2.AArch64.InitialArgs
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.Parameters
+public import VerifiedGarbage.Proof.Argon2.AArch64.DeriveAbi
+public import VerifiedGarbage.Proof.Argon2.AArch64.DeriveSaved
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompress
+public import VerifiedGarbage.Impl.Argon2.AArch64.Derive
+public import VerifiedGarbage.Proof.Argon2.AArch64.InitialArgs
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.DeriveNormalize`. -/
+
+@[expose] public section
+
 section
 /-! Normalize u32 stack arguments without assuming anything about their upper bits. -/
 

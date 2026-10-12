@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Pbkdf2.Stream.X86
-import VerifiedGarbage.Impl.MdStream.X86
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Stream.X86
+public import VerifiedGarbage.Impl.MdStream.X86
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function: x86 (32-bit) implementation
@@ -57,6 +59,8 @@ our variables live there. Every copy and every write of the padding is a
 address and branch depends only on `esp`, the pointers, `key_len`, `count` and
 `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Pbkdf2.Md.X86
 

@@ -1,11 +1,15 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.Scalar
-import VerifiedGarbage.Impl.Ed25519.X86_64.Bits
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointEncode
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Scalar
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Bits
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointEncode
 
 /-! Base-point multiplication for the complete unsigned 256-bit input scalar: the
 frame around an engine (`scalarBaseWith`), which the comb
 (`ScalarBasePrecomputed.lean`) fills, and the expansion of the scalar's bits. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

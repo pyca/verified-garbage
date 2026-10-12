@@ -1,10 +1,15 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.PointDecode
-import VerifiedGarbage.Impl.Ed25519.Arm.PointEqual
-import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
-import VerifiedGarbage.Impl.Ed25519.Arm.PointFromScalar
-import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointDecode
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointEqual
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointFromScalar
+public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
 
 /-! Strict Ed25519 verification with the entire 512-bit challenge. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 

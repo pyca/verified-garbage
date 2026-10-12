@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # ML-DSA on x86-64: packing and unpacking `d`-bit fields
@@ -24,6 +26,8 @@ through the accumulator `r10`, in a schedule that depends only on `d`:
 `r10` never holds more than `d + 7` bits. Every address and branch depends
 only on the pointers and `d`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Pack
 

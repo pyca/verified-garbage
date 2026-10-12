@@ -1,4 +1,6 @@
-import Lean.Elab.Tactic.Omega
+module
+
+public meta import Lean.Elab.Tactic.Omega
 
 /-!
 # `omega` on closed goals
@@ -13,6 +15,8 @@ which the kernel evaluates with its native arithmetic, and any other goal (or
 one `decide` cannot prove, such as `False` from contradictory hypotheses) by
 `omega`.
 -/
+
+public meta section
 
 namespace VG.OmegaLit
 

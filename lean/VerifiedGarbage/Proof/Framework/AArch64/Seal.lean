@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # AArch64: state updates kept folded during elaboration
@@ -19,6 +21,8 @@ Reducibility only guides elaboration: the kernel ignores it, so nothing
 about what is proven changes. Lean changes the reducibility of a
 definition from another module only with `allowUnsafeReducibility`.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64.RegUpd
 

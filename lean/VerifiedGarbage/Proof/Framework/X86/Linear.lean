@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86.Straight
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Straight
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 
 /-!
 # x86 (32-bit): linear layers of bitsliced code, by evaluation
@@ -15,6 +17,8 @@ the XOR of the atoms `g p` at each bit position `p`, and `linear_ok` turns a
 successful check into a statement about the machine: bit `p` of the output
 slot is the XOR of the input bits `g p`.
 -/
+
+@[expose] public section
 
 namespace VG.X86.Straight
 

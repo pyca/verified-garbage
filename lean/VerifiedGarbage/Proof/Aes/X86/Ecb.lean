@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Aes.X86.Decrypt
-import VerifiedGarbage.Proof.Aes.X86.Group
-import VerifiedGarbage.Spec.Aes.Contract
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.Decrypt
+public import VerifiedGarbage.Proof.Aes.X86.Group
+public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES on whole blocks on x86 (32-bit): the groups
@@ -14,6 +20,8 @@ buffer between the phases, as in `vg_aes_ctr32` (`Group.lean`). The data's
 invariant (`EcbInv`) says that the first `k` blocks hold the transformation
 of the original ones, and the others are still the original ones.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86
 

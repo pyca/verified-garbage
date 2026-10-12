@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.MlDsa
-import VerifiedGarbage.Proof.MlKem.Bits
+module
+
+public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Proof.MlKem.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: bit packing as numbers, for every target
@@ -22,6 +28,8 @@ little-endian number in base `2ᵈ`, and
   (`simpleBitPack_eq`, `bitPack_eq`, `simpleBitUnpack_get`,
   `bitUnpack_get`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Pack
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
+module
+
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
 
 /-!
 # Poly1305 blocks: x86-64 implementation with AVX-512 IFMA
@@ -51,6 +53,8 @@ per quadword), the mask `2⁴⁴ - 1` (byte 104) and the pad bit `2⁴⁰` (byte
 the return. The branches are on `n` only, and every address is a pointer
 plus a constant, so only the pointers and `n` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Poly1305.X86_64.Ifma
 

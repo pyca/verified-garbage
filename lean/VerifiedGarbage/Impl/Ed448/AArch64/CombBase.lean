@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.Point56
-import VerifiedGarbage.Spec.Ed448.Comb56
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
+public import VerifiedGarbage.Spec.Ed448.Comb56
 
 /-!
 # Ed448's fixed-base comb on AArch64, as a function
@@ -18,6 +20,8 @@ which the steps do not store to, and loads them back at the end; and it keeps `x
 counter, and the return address, at `XSAVE`, after slot 21's element: the steps use every other
 register, so `x30` holds `n` while they run, and is loaded back before the return.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.AArch64.CombBase
 

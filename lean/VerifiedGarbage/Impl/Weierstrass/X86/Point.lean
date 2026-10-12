@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Weierstrass.X86
-import VerifiedGarbage.Impl.Weierstrass.Slots
-import VerifiedGarbage.Spec.Weierstrass.Point
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86
+public import VerifiedGarbage.Impl.Weierstrass.Slots
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-!
 # Complete point addition and doubling as functions, on x86 (32-bit)
@@ -29,6 +31,8 @@ whose working space is in `edi` loads it again from its own arguments
 `esp` plus a constant, so only the pointer may affect timing. A call's
 frame and return address use 20 bytes of stack.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86.Point
 

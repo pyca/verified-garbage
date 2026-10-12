@@ -1,11 +1,17 @@
-import Mathlib.Algebra.Order.Field.Rat
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Ring
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import Mathlib.Algebra.Order.Field.Rat
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.NormNum
+public import Mathlib.Tactic.Positivity
+public import Mathlib.Tactic.FieldSimp
+public import Mathlib.Tactic.LinearCombination
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Polygons and their images: a checker
@@ -17,6 +23,8 @@ polygon into another if every row of the target is a nonnegative
 combination of two rows of the source (Farkas), which `inclOk` checks in
 integers, given the two rows for each target row (`Incl.ok_sound`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Divstep
 

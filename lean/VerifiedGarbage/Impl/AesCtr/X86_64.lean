@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.AesCbc.X86_64
-import VerifiedGarbage.Impl.Aes.X86_64.Callee
+module
+
+public import VerifiedGarbage.Impl.AesCbc.X86_64
+public import VerifiedGarbage.Impl.Aes.X86_64.Callee
 
 /-!
 # AES-CTR: x86-64 implementation
@@ -26,6 +28,8 @@ to 0, the first 96 bits are incremented (`carry`: the second half plus
 Only the pointers, `rounds`, `n` and the last 32 bits of the counter block
 can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesCtr.X86_64
 

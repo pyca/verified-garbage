@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Weierstrass.JacMul
-import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
 
 /-!
 # Short Weierstrass curves on x86-64: doubling a Jacobian point in place
@@ -10,6 +12,8 @@ coordinate is read for the last time before it is written (`X` by `X + Z²`,
 the first write of `X₃`; `Y` and `Z` by `Y Z`, before `Z₃` and `Y₃`), so the
 in-place sequence computes the doubling, with no copy.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86_64
 

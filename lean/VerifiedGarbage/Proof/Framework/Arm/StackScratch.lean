@@ -1,10 +1,12 @@
-import VerifiedGarbage.Impl.StackScratch.Arm
-import VerifiedGarbage.Proof.Framework.Scratch
-import VerifiedGarbage.Proof.Framework.Arm.CallF
-import VerifiedGarbage.Proof.Framework.Arm.Inline
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.Arm.Target
+module
+
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Proof.Framework.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-!
 # A scratch buffer on the stack (ARMv7)
@@ -33,6 +35,8 @@ descriptors are as on entry (`Sig.lists_eq_of_agree`). `pubL_arm` is
 `pub_arm` with a leak; `pre_armL` and `pubL_armL` are `pre_arm` and
 `pubL_arm` for a signature that may have lists of slices.
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64
 
 /-!
 # Short Weierstrass curves on AArch64: inversion by divsteps
@@ -21,6 +23,8 @@ a constant. Nothing depends on the numbers but through masks.
 The words of `f`, `g`, `a`, `b` and the temporaries are in the table area of
 the powers' configuration (`tbl`, `9 n` words).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.AArch64
 

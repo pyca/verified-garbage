@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
 
 /-! Register-resident triangular products within one eight-word block. -/
+
+@[expose] public section
+
 namespace VG.Impl.Bignum.X86_64.AdxTri8
 open VG.X86_64
 open AdxRotate8 (at_)

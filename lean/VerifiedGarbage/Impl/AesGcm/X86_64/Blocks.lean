@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesGcm.X86_64
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86_64
 
 /-!
 # AES-GCM on whole blocks: x86-64 implementation
@@ -18,6 +20,8 @@ those of the rest; a `piece` that also takes the blocks after the last 16
 `vg_ghash` (hashed first when decrypting), each called with `scratch + 64`,
 reloading the arguments from `scratch` after each call.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcm.X86_64.Blocks
 

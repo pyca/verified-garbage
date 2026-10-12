@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # The compression function the derivation calls
@@ -8,6 +10,8 @@ its variants, e.g. `vg_argon2_compress_avx2`): its name and code. The code
 that calls it takes it as an instance argument, so that the derivation is
 written, and proven, once for every implementation.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64
 

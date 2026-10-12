@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.X86.FieldMemory
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.FieldMemory
 
 /-! Point tables use eight little-endian words per coordinate. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86
 open VG.X86
 open VG.Impl.X25519.X86 (at_)

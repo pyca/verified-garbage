@@ -1,7 +1,17 @@
-import VerifiedGarbage.Spec.Camellia
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
-import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Camellia
+meta import VerifiedGarbage.Spec.Camellia
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Table
+public import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `SBOX1` on all 256 inputs at once
@@ -10,6 +20,8 @@ The truth tables of the specification's `SBOX1` (bit `j` of the output on
 each of the 256 inputs) and of the inputs (bit `k`), which each target's
 proof of its S-box circuit compares the circuit's evaluation with.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 

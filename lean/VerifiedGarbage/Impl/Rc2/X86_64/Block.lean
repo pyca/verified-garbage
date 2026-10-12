@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Rc2.X86_64.Sse2KeyLookup
+module
+
+public import VerifiedGarbage.Impl.Rc2.X86_64.Sse2KeyLookup
 
 /-! # RC2 block encryption and decryption on baseline x86-64 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc2.X86_64
 

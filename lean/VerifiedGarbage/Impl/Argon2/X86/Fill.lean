@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Argon2.X86.MemoryInit
-import VerifiedGarbage.Impl.Argon2.X86.Compress
-import VerifiedGarbage.Spec.Argon2.Contract
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86.MemoryInit
+public import VerifiedGarbage.Impl.Argon2.X86.Compress
+public import VerifiedGarbage.Spec.Argon2.Contract
 
 /-!
 # Argon2 on x86 (32-bit): filling the memory
@@ -26,6 +28,8 @@ position, but for the addresses of the previous block's first word (public:
 its position is) and of the reference block, which data-dependent addressing
 permits to leak.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86.Derive
 

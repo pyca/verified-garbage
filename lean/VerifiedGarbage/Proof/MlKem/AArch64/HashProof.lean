@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
-import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Impl.MlKem.AArch64.Top
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
+public import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Impl.MlKem.AArch64.Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on AArch64: the hash routine
@@ -14,6 +20,8 @@ padding, and each `squeeze` continues the output. It changes only the Keccak
 state and working space, the outputs, the 16 bytes below the stack pointer,
 and registers that are not callee-saved (or `x30`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64
 

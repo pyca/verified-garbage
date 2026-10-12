@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Scrypt.X86_64.Salsa
+module
+
+public import VerifiedGarbage.Impl.Scrypt.X86_64.Salsa
 
 /-!
 # scryptBlockMix: x86-64 implementation
@@ -20,6 +22,8 @@ preserves them, `rbx` is `B[2k]`, `rbp` is `y + 64k`, `r12` is
 is `X`. Every address is one of these plus a constant, and the only branch
 is on the count, so only the pointers and `r` affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.X86_64
 

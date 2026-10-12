@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Aes.X86_64.Vaes
-import VerifiedGarbage.Impl.Gcm.X86_64.Vpclmul
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.Vaes
+public import VerifiedGarbage.Impl.Gcm.X86_64.Vpclmul
 
 /-!
 # AES-GCM's counter mode and GHASH, interleaved, with VAES and VPCLMULQDQ
@@ -26,6 +28,8 @@ increment (2 in each lane). `rdx` points to the group being hashed (the one
 before the group being encrypted), `rax` to the counter, `r10` to the last
 round key, `r11` to `scratch`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.X86_64.Stitch
 

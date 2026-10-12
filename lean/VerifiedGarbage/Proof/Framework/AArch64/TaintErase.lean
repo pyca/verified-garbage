@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 
 /-!
 # Taint tracking for AArch64: code without its immediates
@@ -13,6 +15,8 @@ copies differ only in those immediates, and are now equal
 immediates): the kernel builds none of the immediates, and evaluates the
 analysis of equal copies from the same taint once.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.Impl.Aes.X86.AesNi
-import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Gcm.X86.Rev
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+public import VerifiedGarbage.Impl.Aes.X86.AesNi
+public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Gcm.X86.Rev
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

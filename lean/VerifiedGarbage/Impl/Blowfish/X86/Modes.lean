@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Blowfish.X86
-import VerifiedGarbage.Impl.Modes.X86.Seq
+module
+
+public import VerifiedGarbage.Impl.Blowfish.X86
+public import VerifiedGarbage.Impl.Modes.X86.Seq
 
 /-!
 # Blowfish's core for the modes on x86 (32-bit)
@@ -24,6 +26,8 @@ again after it.
 CBC runs in the core's direction; OFB and CFB64 run the cipher forwards
 (encryption) in both directions.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blowfish.X86
 

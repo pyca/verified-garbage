@@ -1,6 +1,11 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! Constant-time byte comparison. Only the public lengths control branches. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ct.X86_64
 open VG.X86_64
 

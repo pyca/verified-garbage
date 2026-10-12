@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # H′: initializing an unkeyed BLAKE2b computation -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.AArch64.HPrime
 

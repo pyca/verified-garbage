@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+public import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # x86-64 taint tracking with the addresses of statics
@@ -13,6 +15,8 @@ static's address, the same in both. No instruction changes the addresses
 (`exec_syms`). Summaries (`taint_summary`) and checks with them
 (`taint_decide_sum`) work as with `taintS`: the order and the frame are its.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

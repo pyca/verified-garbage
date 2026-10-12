@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 
 /-!
 # x86-64: what a block leaves of the AVX-512 registers, lane by lane
@@ -7,6 +9,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 128-bit lanes of each) and the flags, as `YFrame` states of two lanes. A
 `ZFrame` is a `YFrame` (`ZFrame.yframe`).
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

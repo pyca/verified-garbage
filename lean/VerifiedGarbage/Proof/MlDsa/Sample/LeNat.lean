@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: the fields of a group of bytes, for every target
@@ -10,6 +16,8 @@ of the `u64` of them (`field_low`); and a field that straddles the 8th byte is
 the top bits of the `u64` plus the next bytes above them
 (`leNat_take_succ`, `split_div`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sample
 

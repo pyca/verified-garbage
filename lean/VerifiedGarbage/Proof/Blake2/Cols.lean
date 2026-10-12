@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blake2.Spec
+module
+
+public import VerifiedGarbage.Proof.Blake2.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A BLAKE2 round on four columns at once, for any word size
@@ -12,6 +18,8 @@ that column `q` holds diagonal `(q + 3) mod 4`, rotated back after it
 (`rotOutP`). This is how code keeping each row in one vector register
 computes a round (`round_colsP`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2
 

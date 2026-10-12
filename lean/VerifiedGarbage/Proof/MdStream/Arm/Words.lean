@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MdStream.Arm.Common
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Merkle–Damgård hash functions on ARMv7: length fields and digests
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 What the length fields (`len64`) and digests (`out32`) of
 `Impl/MdStream/Arm.lean` write, for the hash functions' `Shape`s.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MdStream.Arm
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesCfb8.AArch64.Body
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.AesCfb8.AArch64.Body
+meta import VerifiedGarbage.Proof.AesCfb8.AArch64.Body
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB8 on AArch64: constant time
@@ -11,6 +19,8 @@ the registers the correctness proof pins to the public arguments (`LInv`),
 and each call of a block function is constant time by its own proof
 (`blk_rel`). `whole_ct`: if one run of `body` is (`BodyCt`), `whole body` is.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCfb8.AArch64
 

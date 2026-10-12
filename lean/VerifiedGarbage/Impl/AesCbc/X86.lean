@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.CmacAes.X86
+module
+
+public import VerifiedGarbage.Impl.CmacAes.X86
 
 /-!
 # AES-CBC: x86 (32-bit) implementation
@@ -39,6 +41,8 @@ across the call, and `[2064, 2080)` our caller's registers.
 Only the pointers, `rounds` and `n` can affect timing: the only branches are
 on `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesCbc.X86
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86.Sse
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Sse
 
 /-!
 # x86 (32-bit): SSE2 operations doubleword by doubleword
@@ -8,6 +10,8 @@ the shifts, `pshufd`), stated on one doubleword of their result; and the
 rotation of each doubleword by 16 bits that `pshuflw` and `pshufhw` with
 `0xb1` compute.
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

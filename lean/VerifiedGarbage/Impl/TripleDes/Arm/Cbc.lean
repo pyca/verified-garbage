@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
-import VerifiedGarbage.Impl.StackScratch.Arm
-import VerifiedGarbage.Impl.Modes.Arm.Seq
-import VerifiedGarbage.Spec.TripleDes.Contract
+module
+
+public import VerifiedGarbage.Impl.TripleDes.Arm.Ecb
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Impl.Modes.Arm.Seq
+public import VerifiedGarbage.Spec.TripleDes.Contract
 
 /-!
 # Triple DES-CBC on ARMv7
@@ -11,6 +13,8 @@ modes one block at a time (`Impl/Modes/Arm/Seq.lean`) over Triple DES's ECB
 functions, `vg_triple_des_ecb_encrypt` and `vg_triple_des_ecb_decrypt`,
 which they call once per 8-byte block (`ecbCore`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.Arm
 

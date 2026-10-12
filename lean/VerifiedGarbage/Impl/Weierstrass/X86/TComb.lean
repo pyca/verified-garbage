@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Weierstrass.X86
-import VerifiedGarbage.Impl.Weierstrass.TCombWords
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86
+public import VerifiedGarbage.Impl.Weierstrass.TCombWords
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): a fixed-base comb from tables in memory
@@ -33,6 +35,8 @@ The static address is obtained in a four-byte stack frame with `symPush`;
 `pop eax` releases that frame after the comb. The counter is `esi`, and products of it with constants are by `mul`: the
 model has no left shift.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86
 

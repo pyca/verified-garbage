@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.MdStream.X86.Common
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.MdStream.X86.ArgWord
+module
+
+public import VerifiedGarbage.Proof.MdStream.X86.Common
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.MdStream.X86.ArgWord
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86 (32-bit): `update`
@@ -15,6 +21,8 @@ function (`compressAt_ok`), which uses the 20 bytes below `esp`; and, from the
 taint analysis of each hash function's code (which looks into the compression
 function), that it is constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MdStream.X86.Update
 

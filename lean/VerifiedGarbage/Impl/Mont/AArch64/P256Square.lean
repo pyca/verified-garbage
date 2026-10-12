@@ -6,9 +6,14 @@ The instruction schedule is adapted from Andy Polyakov's p256-armv8-asm.pl,
 as distributed in AWS-LC (aws-lc-sys 0.45.0). The Lean representation and
 proofs are maintained by verified-garbage.
 -/
-import VerifiedGarbage.Impl.Mont.AArch64
+module
+
+public import VerifiedGarbage.Impl.Mont.AArch64
 
 /-! Dedicated Montgomery squaring modulo the P-256 field prime. -/
+
+@[expose] public section
+
 namespace VG.Impl.Mont.AArch64.P256Square
 open VG.AArch64 VG.Impl.Mont
 

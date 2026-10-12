@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Camellia.Cbc
-import VerifiedGarbage.Proof.Camellia.Scratch
+module
+
+public import VerifiedGarbage.Spec.Camellia.Cbc
+public import VerifiedGarbage.Proof.Camellia.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia-CBC with its working space as an argument
@@ -13,6 +19,8 @@ only within the function's buffers (`cbcEncPostOut_local`,
 `cbcDecPostOut_local`), and the precondition and postconditions to read the
 memory on entry only within them too (`cbcPre_local`, `cbcEncryptPost_local`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 

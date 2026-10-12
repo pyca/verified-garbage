@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.Field
-import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
-import VerifiedGarbage.Spec.Ed25519.Point64
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Field
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
+public import VerifiedGarbage.Spec.Ed25519.Point64
 
 /-!
 # Ed25519's point doubling and cached addition on x86-64, as functions
@@ -20,6 +22,8 @@ registered on x86-64. The comb of the base-point multiplications calls
 `_double_ext` for its doublings and `_add_affine_ext` for its additions of
 affine table entries.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

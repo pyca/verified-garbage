@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Sha3.AArch64.Call
-import VerifiedGarbage.Proof.Sha3.Stream
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Sha3.Contract
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Sha3.AArch64.Call
+public import VerifiedGarbage.Proof.Sha3.Stream
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Sha3.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SHA-3 sponge on AArch64: `squeeze`
@@ -12,6 +18,8 @@ The same structure as the x86-64 proof
 (`VG.Proof.Sha3.X86_64.Stream.Squeeze`), inside the frame that saves `x30`
 (`WP.frameReg`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Stream.Squeeze
 

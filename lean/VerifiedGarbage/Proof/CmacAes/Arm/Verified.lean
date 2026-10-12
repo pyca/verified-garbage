@@ -1,8 +1,21 @@
-import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCT
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Cmac.Contract
-import VerifiedGarbage.Proof.CmacAes.Arm.Finalize
-import VerifiedGarbage.Proof.CmacAes.Arm.Subkeys
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCT
+meta import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCT
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Cmac.Contract
+meta import VerifiedGarbage.Spec.Cmac.Contract
+public import VerifiedGarbage.Proof.CmacAes.Arm.Finalize
+meta import VerifiedGarbage.Proof.CmacAes.Arm.Finalize
+public import VerifiedGarbage.Proof.CmacAes.Arm.Subkeys
+meta import VerifiedGarbage.Proof.CmacAes.Arm.Subkeys
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

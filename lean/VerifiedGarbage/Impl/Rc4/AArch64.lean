@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # RC4 on AArch64, with the table in AdvSIMD registers
@@ -25,6 +27,8 @@ runs the same steps from `i = 0`, with `B = 0` and no skipped lanes.
 `v8`–`v13` are callee-saved: their low halves are kept in general-purpose
 registers meanwhile. No instruction outside the baseline ISA is needed.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc4.AArch64
 open VG.AArch64

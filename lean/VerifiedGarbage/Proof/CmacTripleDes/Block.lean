@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacTripleDes.Des
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.Des
+public import VerifiedGarbage.Proof.Framework.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA: the passes, and the key schedule in memory
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.Mem
 rounds with the halves exchanged (`tdes_eq`). The key schedule's slots are
 little-endian words (`scheduleAt_getD`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes
 

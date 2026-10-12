@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
 
 /-!
 # The implementations of `vg_chacha20_xor` on x86-64
@@ -8,6 +10,8 @@ A function that calls `vg_chacha20_xor` (ChaCha20-Poly1305's `seal` and
 `open`) takes the implementation it calls, a `Callee`, and is emitted once
 for each (`Generic/ChaCha20Xor/X86_64/`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.X86_64
 

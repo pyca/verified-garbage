@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2Tail
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2Tail
 
 /-!
 # ChaCha20 keystream XOR: x86-64 implementation with AVX2
@@ -39,6 +41,8 @@ six blocks at a time.
 The branches are on the length only, and every address is a pointer plus a
 constant, so only the pointers and the length can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.X86_64.Avx2
 

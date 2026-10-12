@@ -6,7 +6,8 @@ every importer sees.
                           directory, recursively) that is not a module yet
   modularize.py check-converted
                           fail if a directory of `CONVERTED` has a file
-                          that is not a module, saying what to run
+                          that is not a module, saying what to run, or if
+                          a module imports a file that is not one
   modularize.py check LOG
                           fail if a `lake build` log (LOG, `-` for stdin)
                           shows an exposed declaration referring to a
@@ -17,18 +18,36 @@ A converted file starts with `module`; its imports become `public import`
 imports is); and its body is an `@[expose] public section`, so that every
 declaration stays visible to importers with its definition, as before.
 
-A file that only defines tactics, elaborators or commands (it imports `Lean`
-and declares `elab`, `syntax`, `macro` or `simproc`s, and no theorem) is
-meta code: it imports `Lean` as `public meta import` and its body is a
-`public meta section`, so that its definitions run at elaboration time in
-the files that use them.
+A file that only defines tactics, elaborators or commands (it declares
+`elab`, `syntax`, `macro` or `simproc`s, and no theorem, nor a command that
+adds one, nor a structure, inductive type or instance unless it imports
+`Lean`) is meta code: its
+body is a `public meta section`, so that its definitions run at elaboration
+time in the files that use them, and each of its imports is also a
+`public meta import` (only that, for `Lean`'s), so that its code can run
+theirs. A file that declares such meta code next to definitions or theorems
+(marking `meta` the definitions its tactics run) imports `Lean` both ways:
+`public import` and `public meta import`.
+
+A file that evaluates code while it is elaborated (`#guard`, `#eval`,
+`run_cmd`, ..., and the framework's `materialize_*` and `taint_decide`/
+`taint_summary`, which run code to build literals and hints) also imports each of its imports as `meta import`, so that
+what it evaluates is available to the compiler at that time.
+
+A proof module (under `Proof/`, but not the framework) also imports the core
+modules of `CORE_ALL` with `import all`, and those of `CORE_ALL_FOR` whose
+definition it mentions.
+
+A leading comment (a copyright notice) stays before `module`.
 
 An exposed declaration may not refer to a private one of its module (Lean:
 "A private declaration `x` (from the current module) exists but would need
 to be public to access here"). The conversion does not change visibility:
 `check` lists such declarations from a build of the layer, which become
 public (or are renamed, if that would clash) in a small PR of their own
-before the layer is converted.
+before the layer is converted. So do the definitions that meta code runs
+(`meta`), and the `Lean` modules it uses, which a module sees only through
+its imports' public imports: Lean accepts both edits outside modules too.
 
 The conversion is mechanical and idempotent: rerun it on a layer after
 merging, rather than editing headers by hand.
@@ -45,16 +64,135 @@ LEAN = pathlib.Path(__file__).resolve().parent.parent / "lean"
 # The PR that converts a layer adds its directories here, so that CI rejects
 # a file added to one later without a module header (by a PR older than the
 # conversion).
-CONVERTED = ["VerifiedGarbage/TCB", "VerifiedGarbage/Spec"]
+CONVERTED = ["VerifiedGarbage/TCB", "VerifiedGarbage/Spec", "VerifiedGarbage/Impl",
+             "VerifiedGarbage/Proof/Framework",
+             "VerifiedGarbage/Proof/Aes/*",
+             "VerifiedGarbage/Proof/Aes/AArch64",
+             "VerifiedGarbage/Proof/Aes/Arm",
+             "VerifiedGarbage/Proof/Aes/Ct32",
+             "VerifiedGarbage/Proof/Aes/X86",
+             "VerifiedGarbage/Proof/AesCbc/*",
+             "VerifiedGarbage/Proof/AesCbc/AArch64",
+             "VerifiedGarbage/Proof/AesCbc/X86",
+             "VerifiedGarbage/Proof/AesCfb/*",
+             "VerifiedGarbage/Proof/AesCfb/AArch64",
+             "VerifiedGarbage/Proof/AesCfb/X86",
+             "VerifiedGarbage/Proof/AesCfb8/*",
+             "VerifiedGarbage/Proof/AesCfb8/AArch64",
+             "VerifiedGarbage/Proof/AesCfb8/X86",
+             "VerifiedGarbage/Proof/AesOfb/*",
+             "VerifiedGarbage/Proof/AesOfb/AArch64",
+             "VerifiedGarbage/Proof/AesOfb/X86",
+             "VerifiedGarbage/Proof/AesXts/*",
+             "VerifiedGarbage/Proof/Argon2/*",
+             "VerifiedGarbage/Proof/Argon2/AArch64",
+             "VerifiedGarbage/Proof/Blake2/*",
+             "VerifiedGarbage/Proof/Blake2/AArch64",
+             "VerifiedGarbage/Proof/Camellia/*",
+             "VerifiedGarbage/Proof/ChaCha20/*",
+             "VerifiedGarbage/Proof/ChaCha20/Arm",
+             "VerifiedGarbage/Proof/ChaCha20/X86",
+             "VerifiedGarbage/Proof/Cmac/*",
+             "VerifiedGarbage/Proof/CmacAes/AArch64",
+             "VerifiedGarbage/Proof/CmacAes/Arm",
+             "VerifiedGarbage/Proof/CmacAes/X86",
+             "VerifiedGarbage/Proof/CmacTripleDes/*",
+             "VerifiedGarbage/Proof/Divstep/*",
+             "VerifiedGarbage/Proof/Edwards/*",
+             "VerifiedGarbage/Proof/Gcm/*",
+             "VerifiedGarbage/Proof/Gcm/AArch64",
+             "VerifiedGarbage/Proof/Gcm/Arm",
+             "VerifiedGarbage/Proof/Gcm/X86",
+             "VerifiedGarbage/Proof/Md5/*",
+             "VerifiedGarbage/Proof/Md5/AArch64",
+             "VerifiedGarbage/Proof/Md5/Arm",
+             "VerifiedGarbage/Proof/Md5/X86",
+             "VerifiedGarbage/Proof/Md5/X86_64",
+             "VerifiedGarbage/Proof/MdStream/*",
+             "VerifiedGarbage/Proof/MdStream/AArch64",
+             "VerifiedGarbage/Proof/MdStream/Arm",
+             "VerifiedGarbage/Proof/MdStream/X86",
+             "VerifiedGarbage/Proof/MdStream/X86_64",
+             "VerifiedGarbage/Proof/Mgf1/*",
+             "VerifiedGarbage/Proof/MlDsa/*",
+             "VerifiedGarbage/Proof/MlDsa/Arith",
+             "VerifiedGarbage/Proof/MlDsa/KeyGen",
+             "VerifiedGarbage/Proof/MlDsa/Message",
+             "VerifiedGarbage/Proof/MlDsa/Pack",
+             "VerifiedGarbage/Proof/MlDsa/Round",
+             "VerifiedGarbage/Proof/MlDsa/Sample",
+             "VerifiedGarbage/Proof/MlDsa/Sign",
+             "VerifiedGarbage/Proof/MlDsa/Verify",
+             "VerifiedGarbage/Proof/MlKem/*",
+             "VerifiedGarbage/Proof/MlKem/AArch64",
+             "VerifiedGarbage/Proof/Sha256/*",
+             "VerifiedGarbage/Proof/Sha3/*",
+             "VerifiedGarbage/Proof/Sha3/AArch64",
+             "VerifiedGarbage/Proof/Sha3/X86_64"]
 
 IMPORT = re.compile(r"^import\s+(\S+)\s*$")
 META_DECL = re.compile(r"^(elab|syntax|macro|macro_rules|simproc|dsimproc|elab_rules)\b", re.M)
 THEOREM = re.compile(r"^(@\[[^\]]*\]\s*)?(private\s+)?(theorem|lemma)\b", re.M)
+META_MARK = re.compile(r"^\s*(@\[[^\]]*\]\s*)?((public|private|protected)\s+)?meta\s+(def|instance|section|abbrev|structure)\b", re.M)
+EVAL_CMD = re.compile(r"^\s*(#guard|#eval|#reduce|run_cmd|run_elab|run_meta|materialize_\w+)\b", re.M)
+EVAL_NAMES = ["taint_decide", "taint_summar"]
+
+
+def evaluates(text: str, names: list[str]) -> bool:
+    """Whether `text` runs code while it is elaborated: an evaluating command,
+    a tactic or command whose name contains one of `EVAL_NAMES`, or one of the
+    other `names` (not in a docstring's backquotes, a string, or a syntax
+    quotation)."""
+    if EVAL_CMD.search(text):
+        return True
+    pre = r"(^|[\s;·>]|(?<!`)\()"
+    base = "|".join(re.escape(n) for n in EVAL_NAMES)
+    if re.search(pre + r"\w*(" + base + r")\w*\b", text, re.M):
+        return True
+    others = [n for n in names if n not in EVAL_NAMES]
+    return bool(others) and re.search(pre + r"(" + "|".join(map(re.escape, others)) + r")\b(?!`)",
+                                      text, re.M) is not None
+
+
+# A tactic or command defined by `macro "name" … => body` or `elab "name" …`,
+# or by `macro_rules`/`elab_rules` on `(tactic| name …)`: its name and body.
+DEFINES = re.compile(r'^(?:macro|elab)\b[^"\n]*"(\w+)|^(?:macro_rules|elab_rules)\b', re.M)
+QUOTED = re.compile(r"`\((?:tactic|command)\|\s*(\w+)")
+
+
+def blocks(text: str):
+    """The top-level `macro`/`elab`/`…_rules` blocks of `text`: (names, body)."""
+    starts = [m for m in DEFINES.finditer(text)]
+    for k, m in enumerate(starts):
+        end = text.find("\n\n", m.end())
+        body = text[m.start():end if end >= 0 else len(text)]
+        names = [m.group(1)] if m.group(1) else [q for q in QUOTED.findall(body.split("=>")[0])]
+        yield names, body.split("=>", 1)[1] if "=>" in body else body
+
+
+def evaluating_names(lean: pathlib.Path) -> list[str]:
+    """`EVAL_NAMES`, and the project's tactics and commands whose definition
+    runs one of them or evaluates a term itself (`evalExpr`), to a fixpoint:
+    e.g. `kem_wf`, a macro for `taint_decide`, and `def_literal`."""
+    bs = [b for f in (lean / "VerifiedGarbage" / "Proof").rglob("*.lean") for b in blocks(f.read_text())]
+    names = list(EVAL_NAMES)
+    while True:
+        new = {n for ns, body in bs if evaluates(body, names) or "evalExpr" in body for n in ns if n not in names}
+        if not new:
+            return names
+        names += sorted(new)
 
 
 def is_module(lines: list[str]) -> bool:
+    comment = False
     for l in lines:
         s = l.strip()
+        if comment:
+            comment = not s.endswith("-/")
+            continue
+        if s.startswith("/-") and not s.startswith("/-!"):
+            comment = not s.endswith("-/")
+            continue
         if s == "module":
             return True
         if s and not s.startswith("--"):
@@ -62,30 +200,77 @@ def is_module(lines: list[str]) -> bool:
     return False
 
 
+# Lean core modules with definitions the proofs evaluate (with `decide`,
+# `rfl` or the kernel, e.g. Spec tables built with `Array.ofFn`) but that core
+# does not expose to modules. A proof module imports them with `import all`,
+# so that it sees their bodies as a non-module file does.
+CORE_ALL = ["Init.Data.Array.Basic", "Init.Data.Array.DecidableEq", "Init.Data.Nat.Bitwise.Basic",
+            "Init.Data.Vector.Basic"]
+# Core modules a proof module imports with `import all` only if it mentions
+# their definition: `Nat.isPowerOfTwo`, which core states as `∃ k, n = 2 ^ k`
+# but neither exposes nor gives a lemma to take apart.
+CORE_ALL_FOR = {"Init.Data.Nat.Power2.Basic": "isPowerOfTwo"}
+
+# Commands that add theorems (and definitions) to the file that runs them.
+PROOF_CMD = re.compile(r"^(materialize_\w+|taint_summary)\b", re.M)
+
+
+# Declarations of data (not `meta`): a file with one is meta code only if
+# it imports `Lean` (a tactic's own state, as in `Framework/SigEval.lean`).
+DATA = re.compile(r"^(@\[[^\]]*\]\s*)?((private|protected)\s+)?(structure|inductive|class|instance)\b", re.M)
+
+
 def is_meta(text: str, imports: list[str]) -> bool:
-    return (any(i == "Lean" or i.startswith("Lean.") for i in imports)
-            and META_DECL.search(text) is not None and THEOREM.search(text) is None)
+    uses_lean = any(i == "Lean" or i.startswith("Lean.") for i in imports)
+    return (META_DECL.search(text) is not None and THEOREM.search(text) is None
+            and PROOF_CMD.search(text) is None and (uses_lean or DATA.search(text) is None))
 
 
-def convert(text: str) -> str:
+def is_proof(path: str) -> bool:
+    p = pathlib.PurePosixPath(path).as_posix()
+    return "VerifiedGarbage/Proof/" in p and "VerifiedGarbage/Proof/Framework/" not in p
+
+
+def convert(text: str, proof: bool = False, names: list[str] = EVAL_NAMES) -> str:
     lines = text.split("\n")
     if is_module(lines):
         return text
-    i, n, head = 0, len(lines), []
+    i, n, lead = 0, len(lines), []
+    # A leading comment (a copyright notice) stays before `module`.
+    if lines and lines[0].startswith("/-") and not lines[0].startswith("/-!"):
+        while i < n:
+            lead.append(lines[i])
+            i += 1
+            if lines[i - 1].rstrip().endswith("-/"):
+                break
+    head = []
     while i < n and (IMPORT.match(lines[i]) or lines[i].strip() == "" or lines[i].startswith("--")):
         head.append(lines[i])
         i += 1
     imports = [IMPORT.match(l).group(1) for l in head if IMPORT.match(l)]
     meta = is_meta(text, imports)
-    out = ["module", ""]
+    evals = not meta and evaluates(text, names)
+    # Tactics next to definitions and theorems: their code needs Lean at
+    # elaboration time too.
+    mixed = not meta and (META_DECL.search(text) is not None or META_MARK.search(text) is not None)
+    out = lead + ["module", ""]
     for l in head:
         m = IMPORT.match(l)
         if m:
             core = m.group(1) == "Lean" or m.group(1).startswith("Lean.")
             l = f"public {'meta ' if meta and core else ''}import {m.group(1)}"
+            if meta and not core:
+                l += f"\npublic meta import {m.group(1)}"
+            if mixed and core:
+                l += f"\npublic meta import {m.group(1)}"
+            if evals:
+                l += f"\nmeta import {m.group(1)}"
         out.append(l)
     while out and out[-1].strip() == "":
         out.pop()
+    if proof and not meta:
+        out += [f"import all {m}" for m in CORE_ALL]
+        out += [f"import all {m}" for m, name in CORE_ALL_FOR.items() if name in text]
     out.append("")
     # The module's docstring stays right after the imports.
     if i < n and lines[i].startswith("/-!"):
@@ -118,6 +303,25 @@ def not_converted(lean: pathlib.Path, dirs: list[str]) -> list[tuple[str, pathli
     return found
 
 
+ANY_IMPORT = re.compile(r"^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?(\S+)\s*$", re.M)
+
+
+def non_module_imports(lean: pathlib.Path) -> list[tuple[pathlib.Path, str]]:
+    """The (file, import) pairs of the modules under `lean/VerifiedGarbage`
+    that import a file of this project that is not a module (which Lean
+    refuses)."""
+    found = []
+    for f in sorted((lean / "VerifiedGarbage").rglob("*.lean")):
+        text = f.read_text()
+        if not is_module(text.split("\n")):
+            continue
+        for m in ANY_IMPORT.finditer(text):
+            dep = lean / (m.group(1).replace(".", "/") + ".lean")
+            if dep.exists() and not is_module(dep.read_text().split("\n")):
+                found.append((f, m.group(1)))
+    return found
+
+
 def needs_public(log: str) -> list[tuple[str, str]]:
     """The (file, declaration) pairs of private declarations a build log
     shows exposed declarations referring to."""
@@ -130,7 +334,10 @@ def main(args: list[str]) -> int:
         for d, f in bad:
             print(f"{f.relative_to(LEAN.parent)}: not a module, but lean/{d} is converted to modules; "
                   f"run `python3 ci/modularize.py lean/{d}`", file=sys.stderr)
-        return 1 if bad else 0
+        imports = non_module_imports(LEAN)
+        for f, dep in imports:
+            print(f"{f.relative_to(LEAN.parent)}: a module, but imports `{dep}`, which is not", file=sys.stderr)
+        return 1 if bad or imports else 0
     if len(args) == 2 and args[0] == "check":
         log = sys.stdin.read() if args[1] == "-" else pathlib.Path(args[1]).read_text()
         found = needs_public(log)
@@ -144,10 +351,11 @@ def main(args: list[str]) -> int:
     for a in args:
         p = pathlib.Path(a)
         files += sorted(p.rglob("*.lean")) if p.is_dir() else [p]
+    names = evaluating_names(LEAN)
     changed = 0
     for f in files:
         text = f.read_text()
-        new = convert(text)
+        new = convert(text, is_proof(str(f)), names)
         if new != text:
             f.write_text(new)
             changed += 1

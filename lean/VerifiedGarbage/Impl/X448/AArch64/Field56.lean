@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.X448.AArch64.Fast
-import VerifiedGarbage.Spec.X448.Field56
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Fast
+public import VerifiedGarbage.Spec.X448.Field56
 
 /-!
 # Curve448's field on AArch64: the square root's power, and the inversion calling it
@@ -26,6 +28,8 @@ Every address is `ws` plus a constant, and the only branches are the
 squarings' counted loops: only the pointer, which is public, may affect
 timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.AArch64
 

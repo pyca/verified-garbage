@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Cmac
-import VerifiedGarbage.Proof.Aes.Blocks
+module
+
+public import VerifiedGarbage.Spec.Cmac
+public import VerifiedGarbage.Proof.Aes.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CMAC: lemmas about the specification
@@ -12,6 +18,8 @@ import VerifiedGarbage.Proof.Aes.Blocks
   block, which is how the implementations call `vg_aes_ctr32`: as bytes,
   `Spec.Gcm.toBytes (aesWith nr w (Spec.Gcm.ofBytes x)) = Cmac.aesWith nr w x`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cmac
 

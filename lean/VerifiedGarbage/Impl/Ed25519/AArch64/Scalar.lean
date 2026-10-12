@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Word
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Word
 
 /-!
 # Ed25519 scalar reduction on AArch64
@@ -12,6 +14,8 @@ there is no borrow, leaves `v mod L`. All 8 words are processed,
 independent of their values, with `mul`, `umulh`, additions, shifts and
 masks: no division instruction or secret-dependent branch or address.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64

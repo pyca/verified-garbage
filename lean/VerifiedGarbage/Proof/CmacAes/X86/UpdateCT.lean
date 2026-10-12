@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
-import VerifiedGarbage.Proof.Framework.X86.ArgTaint
+module
+
+public import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+meta import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CMAC on x86: `vg_cmac_aes_update` is constant time
@@ -11,6 +19,8 @@ analysis covers the code between the calls, from `esp`, the stack arguments
 correctness proof pins to the public arguments), and each call of
 `vg_aes_ctr32`, in its frame, is constant time by its own proof (`ctr_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.X86
 

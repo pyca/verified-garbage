@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_rej_bounded_poly`
@@ -24,6 +26,8 @@ negative (its sign bit, times the constant, by `madd`), and `q` is added to
 addresses of its stores depend only on `j`, which counts the half-bytes
 accepted, which the contract lets it leak, not on the coefficients.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sample
 

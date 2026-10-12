@@ -1,9 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.RegSet
-import VerifiedGarbage.Proof.Framework.RegSetOrder
-import VerifiedGarbage.Proof.Framework.KernelList
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.TCB.X86_64.Target
+module
+
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.KernelList
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # Taint tracking for x86-64
@@ -36,6 +38,8 @@ function can keep callee-saved registers in them without making its callers'
 registers secret. Any other write to the vector registers forgets them all
 (`noX`).
 -/
+
+@[expose] public section
 
 namespace VG.X86_64.Taint
 

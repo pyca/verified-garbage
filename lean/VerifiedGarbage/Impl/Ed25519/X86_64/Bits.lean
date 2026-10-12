@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointPowers
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointPowers
 
 /-! Expand a 32- or 64-byte scalar into bits without pruning or clamping. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

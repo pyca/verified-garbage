@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Dsa.X86_64.Checks
+module
+
+public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
 
 /-!
 # Complete DSA sign/verify programs on x86-64
@@ -8,6 +10,9 @@ contains the saved callee-saved registers, two Montgomery workspaces and
 computed operands. This file defines programs only; emitting them requires
 whole-operation correctness, memory-safety, ABI and constant-time proofs.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Dsa.X86_64.SignVerify
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public

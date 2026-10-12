@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-NI on x86 (32-bit): encryption and decryption of whole blocks
@@ -12,6 +18,8 @@ and one-block bodies are the same code for different lists of registers
 which saves `esi` and `edi` in the scratch buffer and loads the arguments,
 the round keys through `aesimc` for decryption, and the epilogue.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86.AesNi
 

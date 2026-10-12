@@ -1,3 +1,5 @@
+module
+
 /-!
 # The feedback modes
 
@@ -7,6 +9,8 @@ block (OFB) or ciphertext block (CFB). Each target's implementation of the
 modes (`Impl/Modes/<Target>/Fb.lean`) takes one of these, and their proofs
 share the mode's result (`Proof/Modes/Fb.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Modes
 

@@ -1,7 +1,15 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.CountCandidates
-import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.CountCandidates
+public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Candidate window arithmetic before selecting the reference lane -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.AArch64.CountCandidates
 

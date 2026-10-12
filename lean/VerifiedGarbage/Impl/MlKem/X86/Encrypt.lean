@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86.Kem
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Kem
 
 /-!
 # ML-KEM on x86 (32-bit): K-PKE.Encrypt, in `scratch`
@@ -14,6 +16,8 @@ the sum compressed to `d_u` bits into the ciphertext; and `v` is `encV`: the
 products of `t̂[j]` (decoded from `ek`) and `ŷ[j]` summed, `NTT⁻¹`, `e₂` and `μ`
 added, and the sum compressed to `d_v` bits into the ciphertext.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86
 

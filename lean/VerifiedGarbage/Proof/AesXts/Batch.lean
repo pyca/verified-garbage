@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesXts.Spec
+module
+
+public import VerifiedGarbage.Proof.AesXts.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # XTS: all the blocks in one call
@@ -9,6 +15,8 @@ blocks, the first `i` have their tweaks XORed in, `xored_step`), encipher (or
 decipher) all the blocks in one call, and XOR the tweaks in again in a second
 pass: XTS of the blocks (`crypt_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts
 

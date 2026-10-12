@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
-import VerifiedGarbage.Proof.AesCfb.AArch64.Body
+module
+
+public import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
+public import VerifiedGarbage.Proof.AesCfb.AArch64.Body
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB128 on AArch64: `Verified`
@@ -10,6 +16,8 @@ precondition, and the shared contracts of `Spec/Cfb/Contract.lean` (with no
 stack: the calls keep the return address in `x30`, which each function
 saves in the scratch buffer).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCfb.AArch64
 

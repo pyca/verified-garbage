@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
 
 /-!
 # X25519 of the base point on x86 (32-bit)
@@ -12,6 +14,8 @@ as RFC 7748 §5 decodes the scalar (bits 0–2 and 255 cleared, bit 254 set);
 the comb leaves `[k] B` in slots 0–3, and one inversion gives `u`, which is
 reduced and written out.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X25519.X86.Base
 open VG VG.X86

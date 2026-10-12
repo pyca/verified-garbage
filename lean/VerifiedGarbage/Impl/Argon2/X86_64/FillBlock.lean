@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.RandomSource
-import VerifiedGarbage.Impl.Argon2.X86_64.FillKernel
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.RandomSource
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillKernel
 
 /-! Select the random word and update one active matrix cell. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.FillBlock
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.X25519.X86_64
+module
+
+public import VerifiedGarbage.Impl.X25519.X86_64
 
 /-!
 # Ed25519 scalar reduction on x86-64
@@ -13,6 +15,8 @@ values, with `mul`, additions, shifts and masks: no division instruction or
 secret-dependent branch. `mul` overwrites `rdx`, so the loop keeps the
 scratch in `rdi`, and the output's address at byte 48 of it.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

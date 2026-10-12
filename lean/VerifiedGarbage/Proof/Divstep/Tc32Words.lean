@@ -1,12 +1,21 @@
-import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.Data.Int.ModEq
-import Mathlib.Data.BitVec
-import Mathlib.Algebra.Order.Ring.Abs
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Ring
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Data.BitVec
+public import Mathlib.Algebra.Order.Ring.Abs
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.NormNum
+public import Mathlib.Tactic.Ring
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Signed 32-bit words, shifts, and matrix combinations -/
+
+@[expose] public section
+
 namespace VG.Proof.Divstep.W32
 
 /-- `W ≡ x (mod 2H)`, `W ∈ [0, 2H)`, `x ∈ [-H, H)`: `W` is `x`, or `x + 2H` if negative. -/

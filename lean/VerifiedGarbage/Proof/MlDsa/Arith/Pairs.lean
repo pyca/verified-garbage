@@ -1,3 +1,9 @@
+module
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
 /-!
 # Updating disjoint pairs of a vector
 
@@ -8,6 +14,8 @@ proof about a schedule of butterflies on a register bank then decides which
 pair holds each entry, a finite fact, rather than evaluating the schedule for
 each entry.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Pairs
 

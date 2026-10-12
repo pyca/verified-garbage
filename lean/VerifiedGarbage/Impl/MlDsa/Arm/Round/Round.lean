@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.Arith.AddSub
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.AddSub
 
 /-!
 # ML-DSA on 32-bit ARM: rounding and hints
@@ -40,6 +42,8 @@ take it compare it with `(q - 1)/88` once, and run one loop for each value.
   carry of `f · 2γ₂ - a` clear), -1 otherwise: `δ = (1 - 2c) · h'` for the
   carry `c` and `h' = ((0 - h) | h) >> 31`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.Round
 

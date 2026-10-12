@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.MlDsa
-import VerifiedGarbage.Proof.Sha3.Stream
+module
+
+public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Proof.Sha3.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: larger bounds give the same results
@@ -11,6 +17,8 @@ once they succeed (`rejNTTPoly_mono`, `sampleInBall_mono`); and so does
 `verifyMu` (`verifyMu_mono`), for bounds that are larger in the two loops it
 has.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Verify
 

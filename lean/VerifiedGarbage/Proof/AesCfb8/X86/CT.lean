@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesCfb8.X86.Body
-import VerifiedGarbage.Proof.Framework.X86.ArgTaint
+module
+
+public import VerifiedGarbage.Proof.AesCfb8.X86.Body
+meta import VerifiedGarbage.Proof.AesCfb8.X86.Body
+public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB8 on x86: constant time
@@ -13,6 +21,8 @@ proof pins to the public arguments), and each call of a block function, in
 its frame, is constant time by its own proof (`blk_rel`). `whole_ct`: if one
 run of `body` is (`BodyCt`), `whole body` is.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCfb8.X86
 

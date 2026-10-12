@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Recover
+module
+
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Recover
 
 /-!
 # RSASSA-PKCS1-v1_5 signing on x86-64
@@ -23,6 +25,8 @@ the call; at `oOut` … `oEl`, the arguments kept across `encode`; at `oEM`,
 `EM`, up to 1024 bytes. Only caller-saved registers are used. With the
 frame, `rsp` is a multiple of 16 at the call.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaPkcs1Sig.X86_64.Sign
 

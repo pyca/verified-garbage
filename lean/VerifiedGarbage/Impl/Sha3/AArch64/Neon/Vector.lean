@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
 
 /-! Portable NEON Keccak-f[1600] on two independent states. Each register
 holds the same state word from both streams. Only baseline AdvSIMD is used. -/
+
+@[expose] public section
+
 namespace VG.Impl.Sha3.AArch64.Neon.Vector
 open VG VG.AArch64
 open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg constant)

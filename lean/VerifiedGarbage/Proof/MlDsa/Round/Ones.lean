@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Round.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Round.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: counting the 1s of a hint from its first coefficient, for every target
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlDsa.Round.Mem
 polynomial, for a loop that counts them in order (`onesTo_succ`), and all 256
 of them are those of `hintOnes` (`hintOnes_onesTo`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Round
 

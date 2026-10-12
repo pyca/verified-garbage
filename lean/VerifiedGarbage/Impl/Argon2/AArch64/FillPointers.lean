@@ -1,12 +1,16 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.BlockAddress
-import VerifiedGarbage.Impl.Argon2.AArch64.FillColumn
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Impl.Argon2.AArch64.BlockAddress
+public import VerifiedGarbage.Impl.Argon2.AArch64.FillColumn
 
 /-! Prepare the block pointers for one filling operation. `x4` is the matrix
 base; `x24`, `x20`–`x23` retain the loop position. Reference mapping supplied
 the reference lane and column in `x5` and `x0`. The current pointer is saved
 in `x6`, with the previous and reference pointers in `x0` and `x1`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.FillPointers
 

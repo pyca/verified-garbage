@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86_64.StraightY
-import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.StraightY
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 
 /-!
 # x86-64: straight-line bitwise AVX-512 code, quadword lane by quadword lane
@@ -15,6 +17,8 @@ its first input) is the disjunction of the minterms its immediate selects,
 as the model defines it (`ternlog`), in the domain's operations. Masks are
 made by `movabs`, `vmovq` and `vpbroadcastq` from known constants.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64.StraightZ
 

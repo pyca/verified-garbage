@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.Cbc.Contract
-import VerifiedGarbage.Spec.Aes.Contract
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Frame
+module
+
+public import VerifiedGarbage.Spec.Cbc.Contract
+public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Frame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CBC: the mode one block at a time, and blocks in memory
@@ -18,6 +24,8 @@ at once: `cbc enc` is encryption or decryption, `ciphOf enc` the cipher it
 uses, and `cts enc` its ciphertext blocks (the output or the input), the last
 of which is the chaining value to continue from.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCbc
 

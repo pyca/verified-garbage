@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Taint tracking over memory both runs agree on (AArch64)
@@ -18,6 +24,8 @@ from an output that is a function of the declared leak.
 touches memory the two runs agree on: the runs from the states narrowed to
 those regions leak what the actual runs leak (`Exec.widen` and determinism).
 -/
+
+@[expose] public section
 
 namespace VG.AArch64.MemTaint
 

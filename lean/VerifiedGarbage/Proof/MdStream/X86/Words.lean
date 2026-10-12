@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MdStream.X86.Common
+module
+
+public import VerifiedGarbage.Proof.MdStream.X86.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86 (32-bit): length fields and digests
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.MdStream.X86.Common
 What the length fields (`len64`) and digests (`out32`) of
 `Impl/MdStream/X86.lean` write, for the hash functions' `Shape`s.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MdStream.X86
 

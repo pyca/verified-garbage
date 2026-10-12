@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.Arm.Poly
+module
+
+public import VerifiedGarbage.Impl.MlKem.Arm.Poly
 
 /-!
 # ML-KEM-1024: the compression to 5 and 11 bits, and the key check, on 32-bit ARM
@@ -34,6 +36,8 @@ has a body of the 8 fields, each a few instructions of the same shapes.
 Every address is a pointer plus a constant, and every branch depends on a
 counter or `d`: only the pointers, `d` and `len` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem1024.Arm
 

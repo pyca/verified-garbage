@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+module
+
+public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 
 /-!
 # The variable domain: words as XORs of whole words
@@ -15,6 +17,8 @@ shifts are not tracked.
 `VarRel V N` relates abstract to concrete words, for the values `V` of the
 variables below `N`.
 -/
+
+@[expose] public section
 
 namespace VG.Bitslice
 

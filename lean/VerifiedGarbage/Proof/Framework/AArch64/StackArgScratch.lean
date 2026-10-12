@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # A scratch buffer on the stack, after stack arguments (AArch64)
@@ -28,6 +30,8 @@ The calling convention's precondition, postcondition and public data, with a
 leak, for any number of argument words (`pre_args`, `post_args`,
 `pub_args`), are here too.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

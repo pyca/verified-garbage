@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.X86.Sample.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86.Sample.Common
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_rej_bounded_poly`
@@ -25,6 +27,8 @@ branches and the addresses of its stores depend only on which half-bytes
 are accepted (and `j`, which counts them), which the contract lets it leak,
 not on the coefficients.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.Sample
 

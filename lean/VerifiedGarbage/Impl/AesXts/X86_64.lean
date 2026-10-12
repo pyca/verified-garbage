@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesCbc.X86_64
+module
+
+public import VerifiedGarbage.Impl.AesCbc.X86_64
 
 /-!
 # XTS-AES: x86-64 implementation
@@ -27,6 +29,8 @@ word's top bit was set, as a mask from `sbb` of the carry.
 
 Only the pointers, `rounds` and `n` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesXts.X86_64
 

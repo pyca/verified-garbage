@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesGcm.X86.SealGather
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86.SealGather
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices: x86 (32-bit) implementation
@@ -15,6 +17,8 @@ It allocates a frame of 48 bytes: the call's seven arguments at `esp` …
 `esp + 24`, and our caller's `ebx`, `esi` and `edi`, which the copy uses, at
 `esp + 36` … `esp + 44`; our arguments are then at `esp + 52` … `esp + 84`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20Poly1305.X86.SealGather
 
