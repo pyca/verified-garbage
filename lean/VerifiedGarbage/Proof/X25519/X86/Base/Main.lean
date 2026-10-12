@@ -185,12 +185,12 @@ theorem scalar_lt (s : State) : Spec.X25519.decodeScalar25519
   exact Nat.lt_trans e (by decide)
 
 theorem start_ok {s : State} (h : BodyPre s) :
-    WP isa (.block x25519BaseStart) s (Ready s) := by
+    WP isa x25519BaseStart s (Ready s) := by
   obtain ⟨hr, hptr, htbl, hts⟩ := h
   obtain ⟨hp, hi, _⟩ := scalarBase_pre hr
-  simp only [x25519BaseStart, List.append_assoc]
-  refine WP.block_append (WP.mono (abiSave_frame hp) fun a ⟨ha, fa⟩ => ?_)
-  refine WP.block_append (WP.mono (inputBits_frame hp hi ha (by decide) (by decide))
+  rw [x25519BaseStart]
+  refine WP.seq (WP.mono (abiSave_frame hp) fun a ⟨ha, fa⟩ => ?_)
+  refine WP.seq (WP.mono (inputBits_frame hp hi ha (by decide) (by decide) (by decide))
     fun b ⟨hb, fb, bits⟩ => ?_)
   refine WP.block_append (WP.mono (clampBits_ok hb hp.fit hp.wr
     (fun k hk => bits k (by omega_using [hk]))) fun b' ⟨hb', fb', bits'⟩ => ?_)

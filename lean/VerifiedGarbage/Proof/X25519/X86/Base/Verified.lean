@@ -44,7 +44,7 @@ theorem uEncode_ct {x : BitVec 32} : RelCT isa (CallCTPre x) uEncode (fun _ _ =>
 
 theorem start_ct : RelCT isa
     (fun s t => BodyPre s ∧ BodyPre t ∧ x25519BaseLocal.pub s t)
-    (.block x25519BaseStart) (fun _ _ => True) := by
+    x25519BaseStart (fun _ _ => True) := by
   apply VG.RelCT.taint (A := taint) (scalarTaint 2 3) _ (by taint_decide)
   intro s t ⟨hs, ht, hp⟩
   obtain ⟨sp, a0, a1, a2, _⟩ := hp

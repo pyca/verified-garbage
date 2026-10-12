@@ -21,7 +21,7 @@ constant-time checks and `spSafe`. -/
 namespace VG.Impl.X25519.X86.Base
 open VG VG.X86 VG.Impl.Ed25519.X86
 
-materialize_code x25519BaseStartBlock := (.block x25519BaseStart : Prog isa)
+materialize_code x25519BaseStart
 materialize_code x25519BaseFinishTail :=
   (.block (outputWords 64 8 ++ Impl.X25519.X86.restore) : Prog isa)
 materialize_code x25519Base

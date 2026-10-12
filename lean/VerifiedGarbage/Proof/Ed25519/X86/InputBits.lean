@@ -43,19 +43,21 @@ theorem doubled_byte_bit (b : Byte) (j : Nat) :
     show (b.toNat + b.toNat) / 2 = b.toNat by omega_using []]
   rfl
 
-theorem expandScalarBit_ok {x p : BitVec 32} {s : State} (hc : Ctx x s) (hp : s.gpr .esi = p)
-    {k : Nat} (hk : k < 512) (hr : InRegions (s.rd ++ s.wr) (addr p (k / 8)) 1) :
-    WP isa (.block (expandScalarBit k)) s fun t => Keep s t ∧
-      t.mem = s.mem.writeW (addr x (7168 + k))
-        (BitVec.ofNat 8 ((s.mem (addr p (k / 8))).toNat / 2 ^ (k % 8) % 2)) := by
-  refine scalar_ld8 (by rw [hp]) hr fun u₁ h₁ => ?_
-  refine Wp.wp_add fun u₂ h₂ _ => Wp.wp_shr
-    (by have h := Nat.mod_lt k (by decide : 0 < 8); omega_using [h]) fun u₃ h₃ _ => ?_
+/-- Bit `j` of the byte at `a` (`[esi]`) to byte `d + j` of the workspace (`[edx + j]`). -/
+theorem expandBit_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {a : Addr} {d j : Nat} (hj : j < 8)
+    (ha : addr (s.gpr .esi) 0 = a) (hr : InRegions (s.rd ++ s.wr) a 1)
+    (hd : addr (s.gpr .edx) j = addr x (d + j)) (hdw : d + j + 1 ≤ 8192) :
+    WP isa (.block (expandBit j)) s fun t => (∀ r, r ≠ .eax → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧
+      t.wr = s.wr ∧ t.mem = s.mem.writeW (addr x (d + j)) (BitVec.ofNat 8 ((s.mem a).toNat / 2 ^ j % 2)) := by
+  refine scalar_ld8 ha hr fun u₁ h₁ => ?_
+  refine Wp.wp_add fun u₂ h₂ _ => Wp.wp_shr (by omega_using [hj]) fun u₃ h₃ _ => ?_
   refine Wp.wp_andi fun u₄ h₄ => ?_
-  have k₄ := (updKeep h₁).trans ((updKeep h₂).trans ((updKeep h₃).trans (updKeep h₄)))
-  have c₄ := k₄.ctx hc
-  refine scalar_store8 (by rw [c₄.edi]) (c₄.inW (by omega_using [hk]) (by decide)) fun t ht => WP.block_nil ?_
-  refine ⟨k₄.trans ⟨by rw [ht.gpr], by rw [ht.gpr], by rw [ht.gpr], ht.rd, ht.wr⟩, ?_⟩
+  have g : ∀ r, r ≠ .eax → u₄.gpr r = s.gpr r := fun r hr => by
+    rw [h₄.other _ hr, h₃.other _ hr, h₂.other _ hr, h₁.other _ hr]
+  have w₄ : u₄.wr = s.wr := by rw [h₄.wr, h₃.wr, h₂.wr, h₁.wr]
+  refine scalar_store8 (by rw [g .edx (by decide), hd]) (by rw [w₄]; exact hc.inW (by omega_using [hdw]) (by decide))
+    fun t ht => WP.block_nil ⟨fun r hr => by rw [ht.gpr, g r hr], by rw [ht.rd, h₄.rd, h₃.rd, h₂.rd, h₁.rd],
+      by rw [ht.wr, w₄], ?_⟩
   rw [ht.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem]
   change s.mem.writeW _ ((u₄.gpr .eax).setWidth 8) = _
   rw [h₄.gpr, h₃.gpr, h₂.gpr, h₁.gpr, doubled_byte_bit]
@@ -77,46 +79,38 @@ end
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.X25519.X86 VG.Impl.Ed25519.X86
 
-structure ExpandedBits (x p : BitVec 32) (s₀ : State) (n : Nat) (s : State) : Prop where
-  keep : Keep s₀ s
-  frame : Frame [sub x 7168 n] s₀.mem s.mem
-  bits : ∀ k < n, s.mem (addr x (7168 + k)) =
-    BitVec.ofNat 8 ((s₀.mem (addr p (k / 8))).toNat / 2 ^ (k % 8) % 2)
-
-theorem expandPrefix_ok {x p : BitVec 32} {s₀ : State} (hc : Ctx x s₀)
-    (hp : s₀.gpr .esi = p) {bytes : Nat} (hb : bytes ≤ 64)
-    (hr : ∀ i < bytes, InRegions (s₀.rd ++ s₀.wr) (addr p i) 1)
-    (hs : ∀ i < bytes, (sub p i 1).Disjoint (sub x 7168 (8 * bytes))) :
-    ∀ n ≤ 8 * bytes, WP isa (.block ((List.range n).flatMap expandScalarBit)) s₀ (ExpandedBits x p s₀ n)
-  | 0, _ => WP.block_nil ⟨Keep.refl _, Frame.refl _ _, fun _ h => by omega_using [h]⟩
+/-- The first `n` bits of the byte at `a` (`[esi]`) to bytes `d`, … of the workspace. -/
+theorem expandBits_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {a : Addr} {d : Nat}
+    (ha : addr (s.gpr .esi) 0 = a) (hr : InRegions (s.rd ++ s.wr) a 1)
+    (hd : s.gpr .edx = x + BitVec.ofNat 32 d) (hdw : d + 8 ≤ 8192)
+    (hsep : (⟨a, 1⟩ : Region).Disjoint (sub x d 8)) :
+    ∀ n ≤ 8, WP isa (.block ((List.range n).flatMap expandBit)) s fun t =>
+      (∀ r, r ≠ .eax → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ Frame [sub x d 8] s.mem t.mem ∧
+      ∀ j < n, t.mem (addr x (d + j)) = BitVec.ofNat 8 ((s.mem a).toNat / 2 ^ j % 2)
+  | 0, _ => WP.block_nil ⟨fun _ _ => rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | n + 1, hn => by
+    have hfit := hc.fit
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    refine WP.block_append (WP.mono (expandPrefix_ok hc hp hb hr hs n (by omega_using [hn]))
-      fun u hu => ?_)
-    have cu := hu.keep.ctx hc
-    have hnb : n / 8 < bytes := by omega_using [hn]
-    have input : u.mem (addr p (n / 8)) = s₀.mem (addr p (n / 8)) := by
-      apply hu.frame
-      intro r hmem; rw [List.mem_singleton.mp hmem]
-      have hd := (hs (n / 8) hnb).sub_right
-        (sub_sub (o := 7168) (n := n) (o' := 7168) (n' := 8 * bytes)
-          hc.fit (Nat.le_refl _) (by omega_using [hn]) (by decide))
-      exact hd _ (Region.contains_self _ _)
-    refine WP.mono (expandScalarBit_ok cu (hu.keep.esi.trans hp) (by omega_using [hn, hb])
-      (by rw [hu.keep.rd, hu.keep.wr]; exact hr _ hnb)) fun t ⟨kt, mt⟩ => ?_
-    rw [input] at mt
-    refine ⟨hu.keep.trans kt, ?_, fun k hk => ?_⟩
+    refine WP.block_append (WP.mono (expandBits_ok hc ha hr hd hdw hsep n (by omega_using [hn]))
+      fun u ⟨gu, ru, wu, fu, bu⟩ => ?_)
+    have src : u.mem a = s.mem a := fu _ fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact hsep _ (Region.contains_self _ _)
+    refine WP.mono (expandBit_ok (a := a) (j := n) (d := d) ((Keep.scalar ⟨gu _ (by decide), gu _ (by decide),
+        gu _ (by decide), ru, wu⟩).ctx hc) (by omega_using [hn]) (by rw [gu _ (by decide)]; exact ha)
+      (by rw [ru, wu]; exact hr)
+      (by rw [gu _ (by decide), hd]; simp only [addr, BitVec.add_assoc, BitVec.ofNat_add_ofNat])
+      (by omega_using [hn, hdw])) fun t ⟨gt, rt, wt, mt⟩ => ?_
+    rw [src] at mt
+    refine ⟨fun r hr => by rw [gt r hr, gu r hr], by rw [rt, ru], by rw [wt, wu], ?_, fun j hj => ?_⟩
     · rw [mt]
-      have hf := frameWiden hu.frame hc.fit (Nat.le_refl _) (by omega_using []) (by decide)
-        (n' := n + 1)
-      exact hf.writeW (List.mem_singleton_self _) _
-        (sub_contains (by omega_using [hc.fit, hn, hb]) (by omega_using []) (by omega_using []) (by decide))
+      exact fu.writeW (List.mem_singleton_self _) _
+        (sub_contains (by omega_using [hfit, hdw]) (by omega_using []) (by omega_using [hn]) (by decide))
     · rw [mt]
-      by_cases he : k = n
+      by_cases he : j = n
       · subst he; exact bits_byte_write_self _ _ _
-      · rw [bits_byte_write_ne _ _ (by omega_using [hc.fit, hb, hn, hk])
-          (by omega_using [hc.fit, hb, hn]) (by omega_using [he])]
-        exact hu.bits k (by omega_using [hk, he])
+      · rw [bits_byte_write_ne _ _ (by omega_using [hfit, hdw, hn, hj])
+          (by omega_using [hfit, hdw, hn]) (by omega_using [he])]
+        exact bu j (by omega_using [hj, he])
 
 theorem expanded_scalar_bit {p : BitVec 32} (m : Mem) {bytes k : Nat}
     (hp : p.toNat + bytes ≤ 2 ^ 32) (hk : k < 8 * bytes) :
@@ -131,31 +125,82 @@ theorem expanded_scalar_bit {p : BitVec 32} (m : Mem) {bytes k : Nat}
   rw [addr_eq (by omega_using [hp, hk])]
 
 theorem expandScalarBits_ok {x p : BitVec 32} {s : State} (hc : Ctx x s)
-    (hp : s.gpr .esi = p) {bytes : Nat} (hb : bytes ≤ 64)
+    (hp : s.gpr .esi = p) {bytes : Nat} (hb : bytes ≤ 64) (hb1 : 1 ≤ bytes)
     (hfit : p.toNat + bytes ≤ 2 ^ 32)
     (hr : ∀ i < bytes, InRegions (s.rd ++ s.wr) (addr p i) 1)
     (hs : ∀ i < bytes, (sub p i 1).Disjoint (sub x 7168 (8 * bytes))) :
-    WP isa (.block (expandScalarBits bytes)) s fun t => Keep s t ∧ Frame [sub x 7168 (8 * bytes)] s.mem t.mem ∧
+    WP isa (expandScalarBits bytes) s fun t => ScalarKeep s t ∧ Frame [sub x 7168 (8 * bytes)] s.mem t.mem ∧
       ∀ k < 8 * bytes, t.mem (addr x (7168 + k)) = BitVec.ofNat 8
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (p.setWidth 64) bytes) / 2 ^ k % 2) := by
-  refine WP.mono (expandPrefix_ok hc hp hb hr hs (8 * bytes) (Nat.le_refl _)) fun t ht =>
-    ⟨ht.keep, ht.frame, fun k hk => ?_⟩
-  rw [ht.bits k hk, expanded_scalar_bit s.mem hfit hk]
-theorem loadScalarBits_ok {x p : BitVec 32} {s : State} (hc : Ctx x s)
-    (hp : wd s.mem x 20 = p) {bytes : Nat} (hb : bytes ≤ 64)
-    (hfit : p.toNat + bytes ≤ 2 ^ 32)
-    (hr : ∀ i < bytes, InRegions (s.rd ++ s.wr) (addr p i) 1)
-    (hs : ∀ i < bytes, (sub p i 1).Disjoint (sub x 7168 (8 * bytes))) :
-    WP isa (.block (loadScalarBits bytes)) s fun t => ScalarKeep s t ∧
-      Frame [sub x 7168 (8 * bytes)] s.mem t.mem ∧
-      ∀ k < 8 * bytes, t.mem (addr x (7168 + k)) = BitVec.ofNat 8
-        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (p.setWidth 64) bytes) / 2 ^ k % 2) := by
-  refine Wp.wp_ldm hc.edi (hc.inRW (by decide) (by decide)) fun u hu => ?_
-  have ku := scalarUpd hu
-  refine WP.mono (expandScalarBits_ok (ku.ctx hc) (hu.gpr.trans hp) hb hfit
-    (by intro i hi; rw [hu.rd, hu.wr]; exact hr i hi) hs) fun t ⟨kt, ft, bt⟩ => ?_
-  rw [hu.mem] at ft bt
-  exact ⟨ku.trans (Keep.scalar kt), ft, bt⟩
+  have hx := hc.fit
+  -- After `i` bytes.
+  let LI : Nat → State → Prop := fun i t => ScalarKeep s t ∧ t.gpr .esi = p + BitVec.ofNat 32 i ∧
+    t.gpr .edx = x + BitVec.ofNat 32 (7168 + 8 * i) ∧ t.gpr .ecx = BitVec.ofNat 32 (bytes - i) ∧
+    Frame [sub x 7168 (8 * bytes)] s.mem t.mem ∧
+    ∀ k < 8 * i, t.mem (addr x (7168 + k)) = BitVec.ofNat 8 ((s.mem (addr p (k / 8))).toNat / 2 ^ (k % 8) % 2)
+  unfold expandScalarBits
+  refine WP.seq (Wp.wp_mov fun u₁ v₁ => Wp.wp_addi fun u₂ v₂ => Wp.wp_movi fun u₃ v₃ => WP.block_nil ?_)
+  refine (WP.loop (M := isa) (Q := LI bytes) (fun m t => ∃ i, m = bytes - i ∧ i < bytes ∧ LI i t) ?_ bytes u₃
+    ⟨0, by omega, by omega, ⟨by rw [v₃.other _ (by decide), v₂.other _ (by decide), v₁.other _ (by decide)],
+      by rw [v₃.other _ (by decide), v₂.other _ (by decide), v₁.other _ (by decide)],
+      by rw [v₃.rd, v₂.rd, v₁.rd], by rw [v₃.wr, v₂.wr, v₁.wr]⟩,
+      by rw [v₃.other _ (by decide), v₂.other _ (by decide), v₁.other _ (by decide), hp]; simp,
+      by rw [v₃.other _ (by decide), v₂.gpr, v₁.gpr, hc.edi]; rfl, by rw [v₃.gpr]; rfl,
+      by rw [v₃.mem, v₂.mem, v₁.mem]; exact Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩).mono ?_
+  · rintro m t ⟨i, rfl, hi, kt, si, di, ci, ft, bt⟩
+    have ct := kt.ctx hc
+    have src : t.mem (addr p i) = s.mem (addr p i) := ft _ fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact (hs i hi) _ (by rw [sub]; exact Region.contains_self _ _)
+    have sep : (⟨addr p i, 1⟩ : Region).Disjoint (sub x (7168 + 8 * i) 8) :=
+      (hs i hi).sub_right (sub_sub hx (by omega_using []) (by omega_using [hi]) (by omega_using [hi, hb]))
+    unfold expandByte
+    refine WP.block_append (WP.mono (expandBits_ok ct (a := addr p i) (d := 7168 + 8 * i)
+      (by rw [si]; simp only [addr, BitVec.add_zero])
+      (by rw [kt.rd, kt.wr]; exact hr i hi) di (by omega_using [hi, hb]) sep 8 (Nat.le_refl _))
+      fun u ⟨gu, ru, wu, fu, bu⟩ => ?_)
+    refine Wp.wp_addi fun w₁ y₁ => Wp.wp_addi fun w₂ y₂ => Wp.wp_subi fun w₃ y₃ _ z₃ => WP.block_nil ?_
+    have next : LI (i + 1) w₃ := by
+      refine ⟨kt.trans ⟨?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, fun k hk => ?_⟩
+      · rw [y₃.other _ (by decide), y₂.other _ (by decide), y₁.other _ (by decide), gu _ (by decide)]
+      · rw [y₃.other _ (by decide), y₂.other _ (by decide), y₁.other _ (by decide), gu _ (by decide)]
+      · rw [y₃.rd, y₂.rd, y₁.rd, ru]
+      · rw [y₃.wr, y₂.wr, y₁.wr, wu]
+      · rw [y₃.other _ (by decide), y₂.other _ (by decide), y₁.gpr, gu _ (by decide), si,
+          show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+      · rw [y₃.other _ (by decide), y₂.gpr, y₁.other _ (by decide), gu _ (by decide), di,
+          show (8 : BitVec 32) = BitVec.ofNat 32 8 from rfl, BitVec.add_assoc, BitVec.ofNat_add_ofNat,
+          show 7168 + 8 * i + 8 = 7168 + 8 * (i + 1) by omega]
+      · rw [y₃.gpr, y₂.other _ (by decide), y₁.other _ (by decide), gu _ (by decide), ci,
+          Wp.ofNat_pred (by omega)]
+        congr 1
+      · rw [y₃.mem, y₂.mem, y₁.mem]
+        exact ft.trans (fu.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+          rw [List.mem_singleton.mp hr]
+          exact sub_sub hx (by omega_using []) (by omega_using [hi]) (by omega_using [hi, hb])⟩)
+      · rw [y₃.mem, y₂.mem, y₁.mem]
+        by_cases e : k < 8 * i
+        · rw [← bt k e]
+          refine fu _ fun r hr => ?_
+          rw [List.mem_singleton.mp hr]
+          exact sub_disj (x := x) (d := 7168 + k) (n := 1) (e := 7168 + 8 * i) (k := 8)
+            (by omega_using [hx, hk, hi, hb]) (by omega_using [hx, hi, hb]) (.inl (by omega_using [e])) _
+            (Region.contains_self _ _)
+        · have := bu (k - 8 * i) (by omega_using [hk, e])
+          rw [show 7168 + 8 * i + (k - 8 * i) = 7168 + k by omega] at this
+          rw [this, src, show k / 8 = i by omega, show k % 8 = k - 8 * i by omega]
+    have z : w₃.zf = some (decide (bytes - (i + 1) = 0)) := by
+      rw [z₃, y₂.other _ (by decide), y₁.other _ (by decide), gu _ (by decide), ci, Wp.ofNat_pred (by omega),
+        Wp.ofNat_beq_zero (by omega)]
+      rfl
+    by_cases done : i + 1 = bytes
+    · refine .inl ⟨?_, done ▸ next⟩
+      simp only [eval, z, show bytes - (i + 1) = 0 by omega, decide_true, Option.map_some, Bool.not_true]
+    · refine .inr ⟨?_, bytes - (i + 1), by omega, i + 1, rfl, by omega, next⟩
+      simp only [eval, z, show bytes - (i + 1) ≠ 0 by omega, decide_false, Option.map_some, Bool.not_false]
+  · rintro t ⟨kt, _, _, _, ft, bt⟩
+    refine ⟨kt, ft, fun k hk => ?_⟩
+    rw [bt k hk, expanded_scalar_bit s.mem hfit hk]
 
 end VG.Proof.Ed25519.X86
 end
@@ -185,11 +230,12 @@ theorem inputBytes_same {s₀ s : State} {scidx i n : Nat} (hp : InputPre s₀ s
 /-- `inputBits`, which writes only the bits' bytes of the workspace. -/
 theorem inputBits_frame {s₀ s : State} {scidx argc i n : Nat}
     (hp : ScratchPre s₀ scidx argc) (hi : InputPre s₀ scidx i n)
-    (hs : Saved s₀ (arg s₀ scidx) s) (hia : i < argc) (hn : n ≤ 16) :
-    WP isa (.block (inputBits i (4 * n))) s fun t => Saved s₀ (arg s₀ scidx) t ∧
+    (hs : Saved s₀ (arg s₀ scidx) s) (hia : i < argc) (hn : n ≤ 16) (hn1 : 1 ≤ n) :
+    WP isa (inputBits i (4 * n)) s fun t => Saved s₀ (arg s₀ scidx) t ∧
       Frame [sub (arg s₀ scidx) 7168 (8 * (4 * n))] s.mem t.mem ∧ (∀ k < 32 * n, t.mem (addr (arg s₀ scidx) (7168 + k)) = BitVec.ofNat 8
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ i).setWidth 64) (4 * n)) / 2 ^ k % 2)) := by
-  refine WP.block_append (WP.mono (loadArg_ok hp hs hia) fun u ⟨hu, eu, mu⟩ => ?_)
+  unfold inputBits
+  refine WP.seq (WP.mono (loadArg_ok hp hs hia) fun u ⟨hu, eu, mu⟩ => ?_)
   have cu := hu.ctx hp.fit hp.wr hp.stk
   have hr : ∀ k < 4 * n, InRegions (u.rd ++ u.wr) (addr (arg s₀ i) k) 1 := by
     intro k hk; refine ⟨_, ?_, inputByte_contains hi hk⟩
@@ -200,18 +246,18 @@ theorem inputBits_frame {s₀ s : State} {scidx argc i n : Nat}
     · rw [sub, sub, addr_eq (by have := hi.fit; omega_using [this, hk]), addr_zero]
       exact Offset.sub_base _ (by omega_using [hk])
     · rw [scR_eq]; exact sub_sub hp.fit (by decide) (by omega_using [hn]) (by decide)
-  refine WP.mono (expandScalarBits_ok cu eu (by omega_using [hn]) hi.fit hr hsep)
+  refine WP.mono (expandScalarBits_ok cu eu (by omega_using [hn]) (by omega_using [hn1]) hi.fit hr hsep)
     fun t ⟨kt, ft, bt⟩ => ?_
-  refine ⟨hu.of_offset hp.fit (Keep.scalar kt) ft (by decide) (by omega_using [hn]) (by decide),
+  refine ⟨hu.of_offset hp.fit kt ft (by decide) (by omega_using [hn]) (by decide),
     by rw [← mu]; exact ft, fun k hk => ?_⟩
   rw [bt k (by omega_using [hk]), inputBytes_same hi hu]
 
 theorem inputBits_ok {s₀ s : State} {scidx argc i n : Nat}
     (hp : ScratchPre s₀ scidx argc) (hi : InputPre s₀ scidx i n)
-    (hs : Saved s₀ (arg s₀ scidx) s) (hia : i < argc) (hn : n ≤ 16) :
-    WP isa (.block (inputBits i (4 * n))) s fun t => Saved s₀ (arg s₀ scidx) t ∧
+    (hs : Saved s₀ (arg s₀ scidx) s) (hia : i < argc) (hn : n ≤ 16) (hn1 : 1 ≤ n) :
+    WP isa (inputBits i (4 * n)) s fun t => Saved s₀ (arg s₀ scidx) t ∧
       (∀ k < 32 * n, t.mem (addr (arg s₀ scidx) (7168 + k)) = BitVec.ofNat 8
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ i).setWidth 64) (4 * n)) / 2 ^ k % 2)) :=
-  WP.mono (inputBits_frame hp hi hs hia hn) fun _ h => ⟨h.1, h.2.2⟩
+  WP.mono (inputBits_frame hp hi hs hia hn hn1) fun _ h => ⟨h.1, h.2.2⟩
 
 end VG.Proof.Ed25519.X86
