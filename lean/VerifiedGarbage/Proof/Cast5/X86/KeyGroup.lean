@@ -10,7 +10,7 @@ subkey (`groupK_ok`).
 
 namespace VG.Proof.Cast5.X86
 
-open VG VG.X86 VG.X86.RegUpd VG.Impl.Cast5 VG.Impl.Cast5.X86
+open VG VG.X86 VG.X86.Lanes VG.X86.RegUpd VG.Impl.Cast5 VG.Impl.Cast5.X86
 open VG.Proof.Cast5 (XZ HoldsXZ Keys KMem lineOk lineVal sbox off_lt off_ge sep_base' Held tableEnt ent_table
   exVal exVal_sbox runQ runQ_succ get_runQ GroupOk keys4 take_keys4)
 
