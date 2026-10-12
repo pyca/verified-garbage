@@ -363,6 +363,11 @@ def invFn (body : Prog isa) : Prog isa := if c.n < 6 then invFnX body else c.inv
 /-- The suffix of the functions' names: `_adx` with BMI2 and ADX. -/
 def fnSuffix : String := if c.adx then "_adx" else ""
 
+/-- The suffix of `vg_<curve>_inv_mod_n`'s name: `fnSuffix`, but none for nine
+words, whose products modulo `n` use neither BMI2 nor ADX (`Mont.X86_64.mul`),
+so that both configurations call the one function. -/
+def nSuffix : String := if c.n = 9 then "" else c.fnSuffix
+
 /-- `Z^(p-2)` and `k^(n-2)` into `ACC`: calls of `vg_<curve>_inv_mod_p` and
 `_n` (`invFn`), else inline (`pPowI`, `nPowI`). -/
 def pPow : Prog isa :=
@@ -371,7 +376,7 @@ def pPow : Prog isa :=
   | none => c.pPowI
 def nPow : Prog isa :=
   match c.inverse with
-  | some C => .call (C.invNApi.name ++ c.fnSuffix) (c.invFn c.nPowI)
+  | some C => .call (C.invNApi.name ++ c.nSuffix) (c.invFn c.nPowI)
   | none => c.nPowI
 
 /-- The constants, and `R = (0 : 1 : 0)`: slots and values. -/
