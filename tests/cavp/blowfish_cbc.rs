@@ -4,7 +4,12 @@
 //! blocks up to 27, for keys of the shortest, a middle and the longest
 //! length.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use verified_garbage::blowfish_cbc::{BlowfishCbc, Error};
 use verified_garbage::blowfish_ecb::BlowfishEcbEncryptor;

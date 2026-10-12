@@ -5,17 +5,24 @@
 //! `vg_blowfish_expand_key` (contract `VG.Spec.Blowfish.expandKeyContract`)
 //! writes the schedule, which serves both directions, and
 //! `vg_blowfish_cbc_encrypt` and `vg_blowfish_cbc_decrypt`
-//! (`VG.Spec.Blowfish.cbcEncryptContract`, `cbcDecryptContract`) replace
-//! each block with its CBC encryption or decryption from the chaining value
-//! at `iv`, in constant time: their timing depends on none of the key, the
-//! chaining value and the data. Both are the modes' generic CBC over the
-//! inlined ECB code, reading the schedule where it is: on x86-64 one block
-//! at a time, on AArch64 through the ECB code's batch of sixteen blocks,
-//! which deciphers sixteen blocks at once (encryption, which is sequential,
-//! one per batch). This module checks the lengths, holds the schedule and
-//! keeps the chaining value to continue from: the last ciphertext block.
+//! (`VG.Spec.Blowfish.cbcEncryptContract`, `cbcDecryptContract`) replace each
+//! block with its CBC encryption or decryption from the chaining value at `iv`,
+//! in constant time: their timing depends on none of the key, the chaining
+//! value and the data. Both are the modes' generic CBC over the inlined ECB
+//! code, reading the schedule where it is: on x86 and x86-64 one block at a
+//! time, on AArch64 through the ECB code's batch of sixteen blocks, which
+//! deciphers sixteen blocks at once (encryption, which is sequential, one per
+//! batch), on ARMv7 calling the verified `vg_blowfish_ecb_encrypt` or
+//! `vg_blowfish_ecb_decrypt` for each block. This module checks the lengths,
+//! holds the schedule and keeps the chaining value to continue from: the last
+//! ciphertext block.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::arch::blowfish::vg_blowfish_expand_key;
 use crate::arch::blowfish_cbc::{vg_blowfish_cbc_decrypt, vg_blowfish_cbc_encrypt};

@@ -7,15 +7,22 @@
 //! `vg_blowfish_cfb64_decrypt` (`VG.Spec.Blowfish.cfbEncryptContract`,
 //! `cfbDecryptContract`) replace whole blocks with their CFB encryption or
 //! decryption from the block at `iv`, which they replace with the last
-//! ciphertext block, in constant time: their timing depends on none of the
-//! key, the chaining value and the data. Both are the modes' generic CFB
-//! over the inlined ECB code, one block at a time (on AArch64, one per batch
-//! of the ECB code's sixteen), reading the schedule where it is. This module holds the schedule and handles a
-//! partial last segment (§6.3, `Cₙ* = Pₙ* ⊕ MSB_u(CIPH_K(Cₙ₋₁))`): CFB
-//! encryption of a zero block gives `CIPH_K` of the block to continue from,
-//! whose first bytes it XORs into the rest of the input.
+//! ciphertext block, in constant time: their timing depends on none of the key,
+//! the chaining value and the data. Both are the modes' generic CFB over the
+//! inlined ECB code, one block at a time (on AArch64, one per batch of the ECB
+//! code's sixteen), reading the schedule where it is (on ARMv7, calling the
+//! verified `vg_blowfish_ecb_encrypt` for each block). This module holds the
+//! schedule and handles a partial last segment (§6.3, `Cₙ* = Pₙ* ⊕
+//! MSB_u(CIPH_K(Cₙ₋₁))`): CFB encryption of a zero block gives `CIPH_K` of the
+//! block to continue from, whose first bytes it XORs into the rest of the
+//! input.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::arch::blowfish::vg_blowfish_expand_key;
 use crate::arch::blowfish_cfb::{vg_blowfish_cfb64_decrypt, vg_blowfish_cfb64_encrypt};
@@ -37,7 +44,7 @@ pub struct BlowfishCfb64 {
 #[cfg(target_arch = "x86_64")]
 type Cfb = unsafe extern "sysv64" fn(*const [u8; 4168], *mut [u8; 8], *mut [u8; 8], usize);
 
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
 type Cfb = unsafe extern "C" fn(*const [u8; 4168], *mut [u8; 8], *mut [u8; 8], usize);
 
 impl BlowfishCfb64 {

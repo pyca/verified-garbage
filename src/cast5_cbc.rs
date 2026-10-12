@@ -14,7 +14,12 @@
 //! lengths, holds the subkeys and keeps the chaining value to continue from:
 //! the last ciphertext block.
 
-#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::arch::cast5_cbc::{vg_cast5_cbc_decrypt, vg_cast5_cbc_encrypt};
 use crate::cast5_ecb::Cast5Ecb;

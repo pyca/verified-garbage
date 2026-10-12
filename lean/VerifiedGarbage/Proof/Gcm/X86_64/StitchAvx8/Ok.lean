@@ -402,7 +402,7 @@ end VG.Proof.Gcm.X86_64.StitchAvx8
 namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch
-open VG.Impl.Gcm.X86_64.StitchAvx8 (encFor encForWith decFor decForWith)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (encRest decRest)
 open VG.Proof.Gcm.Poly
 open VG.Spec.Gcm (Block)
 
@@ -413,17 +413,15 @@ private theorem prefixContinue {a b z : Prog isa} {xs ys : List Instr} {s : Stat
     WP.seq (WP.mono (WP.seq_iff.mp h) fun _ h =>
       WP.seq (WP.block_append_iff.mpr (WP.mono h fun _ h => WP.seq_iff.mp h))))
 
-/-- Encryption, from a state `s` (`s₀` itself in place), after any setup
-`su` that leaves what `setup` does of `s₀`, with the data where the loop
-reads it (`srcBlk s₀ ix`); the 8 bytes at `scratch + 816` as in `s₀`. -/
-theorem encForWithI_ok {s₀ s : State} {ix : Bool} (hp : SPre s₀) (hS : SrcOk s₀ ix) {su : List Instr}
-    (hsu : WP isa (.block su) s fun t => ∃ P : Nat → Block, ReadyC s₀ P t ∧
-      (∀ k < nb s₀, Spec.Gcm.blockAt t.mem (srcBlk s₀ ix k) = blk s₀ k) ∧
-      ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) :
-    WP isa (encForWith su (nr s₀) ix) s fun t =>
+/-- Encryption, from a state `s` (`s₀` itself in place) where the setup
+has left what `setup` does of `s₀`, with the data where the loop reads it
+(`srcBlk s₀ ix`); the 8 bytes at `scratch + 816` as in `s₀`. -/
+theorem encRestI_ok {s₀ s : State} {ix : Bool} (hp : SPre s₀) (hS : SrcOk s₀ ix) {P : Nat → Block}
+    (hR : ReadyC s₀ P s) (hsrc : ∀ k < nb s₀, Spec.Gcm.blockAt s.mem (srcBlk s₀ ix k) = blk s₀ k)
+    (hP : ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) :
+    WP isa (encRest (nr s₀) ix) s fun t =>
       EPost s₀ t ∧ t.mem.readW (pp s₀ + 816) 64 = s₀.mem.readW (pp s₀ + 816) 64 := by
-  rw [encForWith]
-  refine WP.seq (WP.mono hsu fun s ⟨P, hR, hsrc, hP⟩ => ?_)
+  rw [encRest]
   have hlaw : HashLaw s₀ P := fun X y => finishHash X P (hk s₀) y hP
   apply prefixContinue
   refine WP.mono (firstEnc_ok hp hS hR hsrc) fun t hI => ?_
@@ -431,26 +429,19 @@ theorem encForWithI_ok {s₀ s : State} {ix : Bool} (hp : SPre s₀) (hS : SrcOk
   refine WP.seq (WP.mono (loopMaybe_ok hp hS hlaw hu hcf) fun v ⟨g, hg, hv⟩ => ?_)
   exact WP.seq (WP.mono (finalHash_ok hp hS hlaw hv hg) fun w hw => tail_ok hp hS (tailLaw hP) hw)
 
-/-- Encryption in place, after any setup `su` that leaves what `setup` does. -/
-theorem encForWith_ok {s₀ : State} (hp : SPre s₀) {su : List Instr}
-    (hsu : WP isa (.block su) s₀ fun s => ∃ P : Nat → Block,
-      Ready s₀ P s ∧ ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) :
-    WP isa (encForWith su (nr s₀)) s₀ (EPost s₀) :=
-  WP.mono (encForWithI_ok (ix := false) hp (SrcOk.inplace hp) (WP.mono hsu fun _ ⟨P, hR, hP⟩ =>
-    ⟨P, hR.toC, hR.src hp, hP⟩)) fun _ h => h.1
+/-- Encryption in place, after a setup that leaves what `setup` does. -/
+theorem encRest_ok {s₀ s : State} (hp : SPre s₀) {P : Nat → Block} (hR : Ready s₀ P s)
+    (hP : ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) :
+    WP isa (encRest (nr s₀)) s (EPost s₀) :=
+  WP.mono (encRestI_ok (ix := false) hp (SrcOk.inplace hp) hR.toC (hR.src hp) hP) fun _ h => h.1
 
-theorem encFor_ok {s₀ : State} (hp : SPre s₀) : WP isa (encFor (nr s₀)) s₀ (EPost s₀) :=
-  encForWith_ok hp (setup_ok hp)
-
-/-- Decryption, after any setup `su` that leaves what `setup` does. -/
-theorem decForWith_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {su : List Instr}
-    (hsu : WP isa (.block su) s₀ fun s => ∃ P : Nat → Block,
-      Ready s₀ P s ∧ ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) :
-    WP isa (decForWith su (nr s₀)) s₀ (DPost s₀) := by
-  rw [decForWith, WP.seq_iff, WP.block_append_iff]
-  refine WP.mono hsu fun s ⟨P, hR, hP⟩ => ?_
+/-- Decryption, after a setup that leaves what `setup` does. -/
+theorem decRest_ok {s₀ s : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Block}
+    (hR : Ready s₀ P s) (hP : ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) :
+    WP isa (decRest (nr s₀)) s (DPost s₀) := by
+  rw [decRest]
   have hlaw : HashLaw s₀ P := fun X y => finishHash X P (hk s₀) y hP
-  refine WP.mono (firstDec_ok hp hR) fun t hI => ?_
+  refine WP.seq (WP.mono (firstDec_ok hp hR) fun t hI => ?_)
   have hl := loopRun_ok hp (SrcOk.inplace hp) hlaw hI hp.nb16
   refine WP.seq (WP.mono hl fun u ⟨g, hg, hu⟩ => ?_)
   have h8 := hu.multiple
@@ -458,9 +449,10 @@ theorem decForWith_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {s
   simp only [threshold, tailSize, ite_true] at hg ht
   exact WP.seq (WP.block_nil (finalDec_ok hp hlaw hu (by omega)))
 
-theorem decFor_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
-    WP isa (decFor (nr s₀)) s₀ (DPost s₀) :=
-  decForWith_ok hp hm (setup_ok hp)
+/-- The setup leaves the end of the key schedule, which `dispatch` compares. -/
+theorem ready_rounds {s₀ s : State} {P : Nat → Block} (h : Ready s₀ P s) :
+    s.gpr .r10 = s.gpr .rdi + BitVec.ofNat 64 (16 * nr s₀) := by
+  rw [h.env.r10, h.env.rdi]
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -473,24 +465,24 @@ open VG.Impl.Gcm.X86_64.StitchAvx8 (enc dec)
 
 /-- Encryption of any number of blocks from 16 on. -/
 theorem enc_ok {s₀ : State} (hp : SPre s₀) : WP isa enc s₀ (EPost s₀) := by
-  apply dispatch_ok hp <;> intro t hf hn
+  refine dispatch_ok hp (setup_ok hp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
   all_goals
-    have ht : nr t = nr s₀ := by simp only [nr, hf.gpr]
-    have hw := encFor_ok (pre_same hp hf)
-    rw [ht, hn] at hw
-    exact WP.mono hw fun u hu => epost_same hf hu
+    intro s t ⟨P, hR, hP⟩ ht hn
+    have hw := encRest_ok hp (hR.rax ht) hP
+    rw [hn] at hw
+    exact hw
 
 theorem stitch_ok : StitchOk enc dec := by
   constructor
   · intro s₀ hp _
     exact enc_ok hp
   · intro s₀ hp hm
-    apply dispatch_ok hp <;> intro t hf hn
+    refine dispatch_ok hp (setup_ok hp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
     all_goals
-      have ht : nr t = nr s₀ := by simp only [nr, hf.gpr]
-      have hw := decFor_ok (pre_same hp hf) (by simp only [nb, hf.gpr]; exact hm)
-      rw [ht, hn] at hw
-      exact WP.mono hw fun u hu => dpost_same hf hu
+      intro s t ⟨P, hR, hP⟩ ht hn
+      have hw := decRest_ok hp hm (hR.rax ht) hP
+      rw [hn] at hw
+      exact hw
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -502,7 +494,7 @@ Untrusted: everything here is checked by Lean. `encR` is `enc` with
 (`Spec.Gcm.PreparedPowersRepr`) rather than computing them: what it loads
 is `hInvF (Hⁿ)` (`pair_values`), and `x · φ (hInvF (Hⁿ)) = φ (H)ⁿ`, so it
 leaves what `setupG` does (`setupGR_ok`), and the rest is `enc`'s
-(`setupWith_ok`, `encForWith_ok`): `stitchR_ok`.
+(`setupWith_ok`, `encRest_ok`): `stitchR_ok`.
 -/
 
 namespace VG.Proof.Gcm.X86_64.StitchAvx8
@@ -510,7 +502,7 @@ namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Proof.Gcm.X86_64.Stitch
 open VG.Proof.Gcm.X86_64.Pclmul (const_ok Only rev_eq)
-open VG.Impl.Gcm.X86_64.StitchAvx8 (setupGR setupR prepOff preg lows setupC initCounter encForWith encR dec decR decForWith)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (setupGR setupR prepOff preg lows setupC initCounter encR dec decR)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
 open VG.Proof.Gcm.X86_64 (revMask)
 open VG.Proof.Gcm.X86_64.StitchZP (hInvF)
@@ -617,36 +609,24 @@ theorem setupR_ok {s₀ : State} (hp : SPrePrepared s₀) :
   rw [setupR_split]
   exact setupWith_ok hp.base (setupGR_ok hp)
 
-theorem preR_same {s t : State} (h : SPrePrepared s) (hf : YFrame [] s t) : SPrePrepared t := by
-  have hb := pre_same h.base hf
-  rcases hf with ⟨hg, hm, hr, hw, _⟩
-  cases s; cases t
-  dsimp at hg hm hr hw
-  cases hg; cases hm; cases hr; cases hw
-  cases h
-  constructor
-  · exact hb
-  all_goals with_reducible assumption
-
 /-- Encryption with a prepared key context, of any number of blocks from 16 on. -/
 theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀) : WP isa encR s₀ (EPost s₀) := by
-  apply dispatch_ok hp.base <;> intro t hf hn
+  refine dispatch_ok hp.base (setupR_ok hp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
   all_goals
-    have ht : nr t = nr s₀ := by simp only [nr, hf.gpr]
-    have hw := encForWith_ok (preR_same hp hf).base (setupR_ok (preR_same hp hf))
-    rw [ht, hn] at hw
-    exact WP.mono hw fun u hu => epost_same hf hu
+    intro s t ⟨P, hR, hP⟩ ht hn
+    have hw := encRest_ok hp.base (hR.rax ht) hP
+    rw [hn] at hw
+    exact hw
 
 /-- Decryption with a prepared key context. -/
 theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) :
     WP isa decR s₀ (DPost s₀) := by
-  apply dispatch_ok hp.base <;> intro t hf hn
+  refine dispatch_ok hp.base (setupR_ok hp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
   all_goals
-    have ht : nr t = nr s₀ := by simp only [nr, hf.gpr]
-    have hw := decForWith_ok (preR_same hp hf).base (by simp only [nb, hf.gpr]; exact hm)
-      (setupR_ok (preR_same hp hf))
-    rw [ht, hn] at hw
-    exact WP.mono hw fun u hu => dpost_same hf hu
+    intro s t ⟨P, hR, hP⟩ ht hn
+    have hw := decRest_ok hp.base hm (hR.rax ht) hP
+    rw [hn] at hw
+    exact hw
 
 theorem stitchR_ok : StitchOkM CtxMode.prepared encR decR 1 :=
   ⟨fun _ hp _ => encR_ok hp.toPrepared, fun _ hp hm => decR_ok hp.toPrepared hm⟩
@@ -659,9 +639,10 @@ end VG.Proof.Gcm.X86_64.StitchAvx8
 Untrusted: everything here is checked by Lean. `encToWith su` runs from a
 state `s₀` meeting `SPreTo` (`src` in `r8`, `dst` in `r10`). `toEntry` keeps
 `rbx` at `scratch + 816` and leaves `src - dst` in `rbx` and `dst` in `r8`
-(`toEntry_ok`); from there the loop is `encForWith su nr true`, which reads
-the data at `rdx + rbx`. Its proof is the in-place one (`encForWithI_ok`)
-for the view `view t` of the state `t` the loop starts from: `t` with the
+(`toEntry_ok`); from there the setup `su` runs, then the loop
+`encRest nr true`, which reads the data at `rdx + rbx`. Its proof is the
+in-place one (`encRestI_ok`) for the view `view t` of the state `t` the
+setup starts from: `t` with the
 output holding the data (`viewMem`), which meets `SPre` and on which the
 data the loop reads (`srcBlk _ true`, at `src`) is the view's (`blk`). What
 the in-place proof concludes of the view is `EPostTo` of `s₀`
@@ -672,7 +653,7 @@ which the loop keeps (`Env.saved`).
 namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Proof.Gcm.Poly
 open VG.Proof.Gcm.X86_64.Stitch
-open VG.Impl.Gcm.X86_64.StitchAvx8 (toEntry toExit encToWith encTo encToR encForWith setup setupR)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (toEntry toExit encToWith encTo encToR encRest setup setupR)
 open VG.Impl.Aes.X86_64.AesNi (at_)
 open VG.Proof.Aes.X86_64.AesNi (ea_at blockAt_frame)
 open VG.Spec.Gcm (Block blockAt blocksAt)
@@ -749,8 +730,7 @@ private theorem inRegions_prefix' {rs : List Region} {a : Addr} {n L : Nat} (h :
     (hn : n ≤ L) : InRegions rs a n := by
   obtain ⟨r, hr, hc⟩ := h; exact ⟨r, hr, by unfold Region.Contains at *; omega⟩
 
-/-- The state `t` the loop starts from, after `toEntry` (and the dispatch's
-comparisons), from `s₀`. -/
+/-- The state `t` the setup starts from, after `toEntry`, from `s₀`. -/
 structure Start (M : CtxMode) (s₀ t : State) : Prop where
   pre : SPreTo M s₀
   rbx : t.gpr .rbx = sp s₀ - op s₀
@@ -759,11 +739,6 @@ structure Start (M : CtxMode) (s₀ t : State) : Prop where
   mem : t.mem = s₀.mem.writeW (pp s₀ + BitVec.ofNat 64 816) (s₀.gpr .rbx)
   rd : t.rd = s₀.rd
   wr : t.wr = s₀.wr
-
-theorem Start.yframe {M : CtxMode} {s₀ t u : State} (h : Start M s₀ t) (hf : YFrame [] t u) : Start M s₀ u :=
-  ⟨h.pre, by rw [hf.gpr]; exact h.rbx, by rw [hf.gpr]; exact h.r8,
-    fun r h1 h2 => by rw [hf.gpr]; exact h.gpr r h1 h2, by rw [hf.mem]; exact h.mem,
-    by rw [hf.rd]; exact h.rd, by rw [hf.wr]; exact h.wr⟩
 
 section
 variable {M : CtxMode} {s₀ t : State} (h : Start M s₀ t)
@@ -909,9 +884,6 @@ end
 
 /-! ## The loop out of place -/
 
-theorem view_yframe {s t : State} (hf : YFrame [] s t) : YFrame [] (view s) (view t) :=
-  ⟨hf.gpr, by simp only [view, State.setMem_mem, hf.mem, hf.gpr], hf.rd, hf.wr, hf.lane⟩
-
 section
 variable {M : CtxMode} {s₀ t : State} (h : Start M s₀ t)
 include h
@@ -1036,17 +1008,17 @@ theorem encToWith_ok (M : CtxMode) {su : List Instr}
   have st₁ : Start M s₀ s₁ := ⟨hp, b₁, r8₁, g₁, m₁, rd₁, wr₁⟩
   let Q : State → Prop := fun w => EPost (view s₁) w ∧
     w.mem.readW (pp (view s₁) + 816) 64 = (view s₁).mem.readW (pp (view s₁) + 816) 64
-  have branch : ∀ n, ∀ t, YFrame [] s₁ t → nr s₁ = n → WP isa (encForWith su n true) t Q := by
-    intro n t hf hn
-    have st := st₁.yframe hf
-    have e := encForWithI_ok (s₀ := view t) (s := t) (ix := true) (spre_view st.spre) st.srcOk
-      (WP.mono (hsu t st.spreM) fun u ⟨P, hR, hP⟩ => ⟨P, st.readyC hR, st.src hR, by rw [st.hk_view]; exact hP⟩)
-    have hnr : nr (view t) = n := by rw [← hn]; simp only [Stitch.nr, view_gpr, hf.gpr]
+  let R : State → Prop := fun u => ∃ P : Nat → Block, Ready s₁ P u ∧ ∀ k < 8, x * φ (P k) = φ (hk s₁) ^ (8 - k)
+  have branch : ∀ n, ∀ u t, R u → RaxStep u t → nr s₁ = n → WP isa (encRest n true) t Q := by
+    intro n u t ⟨P, hR, hP⟩ ht hn
+    have hR' := hR.rax ht
+    have e := encRestI_ok (s₀ := view s₁) (s := t) (ix := true) (spre_view st₁.spre) st₁.srcOk
+      (st₁.readyC hR') (st₁.src hR') (by rw [st₁.hk_view]; exact hP)
+    have hnr : nr (view s₁) = n := hn
     rw [hnr] at e
-    have hy := view_yframe hf
-    exact WP.mono e fun w ⟨hw, hs⟩ => ⟨epost_same hy hw, by
-      simpa only [Stitch.pp, view_gpr, hf.gpr, hy.mem] using hs⟩
-  refine WP.seq (WP.mono (dispatch_ok st₁.spre (branch 10) (branch 12) (branch 14)) fun w ⟨hw, hs⟩ => ?_)
+    exact e
+  refine WP.seq (WP.mono (dispatch_ok st₁.spre (hsu s₁ st₁.spreM) (fun s ⟨P, hR, _⟩ => ready_rounds hR)
+    (branch 10) (branch 12) (branch 14)) fun w ⟨hw, hs⟩ => ?_)
   have hr11 : w.gpr .r11 = pp s₀ :=
     (hw.gpr _ (by decide) (by decide) (by decide) (by decide)).trans st₁.pp_eq
   refine WP.mono (toExit_ok w (by

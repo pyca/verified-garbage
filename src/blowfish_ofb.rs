@@ -3,18 +3,23 @@
 //!
 //! The block cipher work and the feedback are verified assembly:
 //! `vg_blowfish_expand_key` (contract `VG.Spec.Blowfish.expandKeyContract`)
-//! writes the schedule, and `vg_blowfish_ofb`
-//! (`VG.Spec.Blowfish.ofbContract`) XORs whole blocks with the output blocks
-//! `Oⱼ = CIPH_K(Oⱼ₋₁)` from the block at `iv`, which it replaces with the
-//! last output block, in constant time: its timing depends on none of the
-//! key, the chaining value and the data. It is the modes' generic OFB over
-//! the inlined ECB code, one block at a time (on AArch64, one per batch of
-//! the ECB code's sixteen), reading the schedule where it is. This module holds the schedule and handles a
-//! partial last block (§6.4, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block
-//! is the next output block, whose first bytes it XORs into the rest of the
-//! input.
+//! writes the schedule, and `vg_blowfish_ofb` (`VG.Spec.Blowfish.ofbContract`)
+//! XORs whole blocks with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)` from the block
+//! at `iv`, which it replaces with the last output block, in constant time: its
+//! timing depends on none of the key, the chaining value and the data. It is
+//! the modes' generic OFB over the inlined ECB code, one block at a time (on
+//! AArch64, one per batch of the ECB code's sixteen), reading the schedule
+//! where it is (on ARMv7, calling the verified `vg_blowfish_ecb_encrypt` for
+//! each block). This module holds the schedule and handles a partial last block
+//! (§6.4, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next output
+//! block, whose first bytes it XORs into the rest of the input.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::arch::blowfish::vg_blowfish_expand_key;
 use crate::arch::blowfish_ofb::vg_blowfish_ofb;

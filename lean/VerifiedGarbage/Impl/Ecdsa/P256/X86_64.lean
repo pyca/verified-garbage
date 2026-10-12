@@ -15,6 +15,7 @@ def p256 : Cfg where
   comb := some ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true⟩
   fastN := true
   pubVerify := true
+  inverse := some Spec.Weierstrass.Inverse.p256
 
 /-- P-256, multiplying with BMI2 and ADX. -/
 def p256x : Cfg := { p256 with adx := true, avx2 := true }
