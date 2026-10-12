@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86.Basic
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): rounding and hints
@@ -41,6 +43,8 @@ store the end of their output, `out + 1024`, in the argument slot of `γ₂`
   else 1 if `f · 2γ₂ < a` (`r₀ > 0`), -1 otherwise, as masks (`a` in `ebx`,
   `f` in `ecx`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86.Round
 

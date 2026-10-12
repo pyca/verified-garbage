@@ -1,7 +1,12 @@
-import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.Impl.AArch64Instrs
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Impl.AArch64Instrs
 
 /-! Lean-generated register allocations, checked independently against their raw arithmetic. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.EcdhAllocatedCode
 open VG VG.AArch64
 

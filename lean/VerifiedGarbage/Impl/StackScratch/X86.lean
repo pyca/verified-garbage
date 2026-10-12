@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # A scratch buffer on the stack (x86)
@@ -14,6 +16,8 @@ arguments, and the address of the buffer, which is the rest of the frame.
 `words` doublewords of the buffer after its code (`wipe`), for a function
 whose working space may hold secrets that its caller would otherwise wipe.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.StackScratch.X86
 

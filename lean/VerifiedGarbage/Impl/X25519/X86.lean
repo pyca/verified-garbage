@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # X25519: x86 (32-bit) implementation
@@ -47,6 +49,8 @@ The only branches are on the loop counters, and every address is a pointer
 plus a constant, or `edi` plus the counter, so only the pointers can affect
 timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X25519.X86
 

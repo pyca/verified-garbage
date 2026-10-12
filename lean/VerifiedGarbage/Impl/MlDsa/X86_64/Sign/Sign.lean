@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Frag
-import VerifiedGarbage.Spec.MlDsa
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Frag
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa{44,65,87}_sign`
@@ -41,6 +43,8 @@ the branch on the validity checks on whether they passed, and only the call
 of `vg_mldsa_hint_bit_pack` on the hint of the signature. Every other
 address and branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Sign
 

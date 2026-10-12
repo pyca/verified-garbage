@@ -8,13 +8,14 @@ import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
 
 `addP M S p q o pa` (`Impl/Weierstrass/AArch64/Comb.lean`) is `o = p + q` by
 Algorithm 4: inline (`pa = none`), or (`pa = some (name, bAt)`) by a call of
-the function `name`, whose code is the same formula reading `b` at `bAt`:
-the `n ≤ 4` words at `bAt` kept in lanes of `v27` and `v28`, `b` copied
-there and `x30` kept in `v29` around the call, then all restored. Either
-way it does what `rcb3_ok` says the inline formula does (`addP_ok`), given
-what the call needs (`AddOk`): `bAt` a slot apart from the formula's, and a
-callee that writes no vector register, keeps the callee-saved registers and
-has no frames.
+the function `name`, whose code is the same formula reading `b` at `bAt`,
+with `x30` kept in `v29` around the call. Either way it does what `rcb3_ok`
+says the inline formula does (`addP_ok`), given what the call needs
+(`AddOk`): `bAt` a slot apart from the formula's, and a callee that writes
+no vector register, keeps the callee-saved registers and has no frames; and
+of the state (`AddReady`): `b`, the number at `S.b3`, already at `bAt`. The
+caller puts it there once, and it survives what does not write `bAt` or
+`S.b3` (`AddReady.unch`, `AddFar`).
 -/
 
 namespace VG.Proof.Weierstrass.AArch64
@@ -69,150 +70,6 @@ theorem runOps_rcb3_b3 {F : Type _} [Lean.Grind.CommRing F] {S : RcbSlots} {p q 
     rw [runOps_of_not_out _ _ (hout { S with b3 := b } rfl), runOps_of_not_out _ _ (hout S rfl),
       Function.update_of_ne hx]
 
-/-! ## Saving and restoring a slot in vector lanes -/
-
-theorem keepLane_snd (i : Nat) : (keepLane i).2 < 2 := by
-  unfold keepLane; exact Nat.mod_lt _ (by decide)
-
-theorem keepLane_fst (i : Nat) : (keepLane i).1 = .v27 ∨ (keepLane i).1 = .v28 := by
-  unfold keepLane; split <;> simp
-
-theorem keepLane_ne : ∀ i < 4, ∀ j < 4, i ≠ j → keepLane i ≠ keepLane j := by decide
-
-/-- A block writing no vector register keeps them all. -/
-theorem WP.keepV {c : Prog isa} (hc : ∀ i ∈ instrs c, vdstOf i = none) {s : State}
-    {Q : State → Prop} (h : WP isa c s Q) : WP isa c s fun s' => Q s' ∧ s'.v = s.v := by
-  obtain ⟨t, s', he, hq⟩ := h
-  exact ⟨t, s', he, hq, funext fun r => Exec.vec (fun i hi e => by rw [hc i hi] at e; cases e) he⟩
-
-theorem copy_novec : ∀ (k o a : Nat), ∀ i ∈ copy k o a, vdstOf i = none
-  | 0, _, _ => fun _ h => absurd h (List.not_mem_nil)
-  | k + 1, o, a => fun i hi => by
-    simp only [copy, List.cons_append, List.nil_append, List.mem_cons] at hi
-    rcases hi with rfl | rfl | hi
-    · rfl
-    · rfl
-    · exact copy_novec k _ _ i hi
-
-theorem keepSlot_succ (o k : Nat) :
-    keepSlot o (k + 1) = keepSlot o k ++
-      ([ld .x2 (o + 8 * k), .vop (.ins .d2 (keepLane k).1 (keepLane k).2 .x2)] : List Instr) := by
-  simp [keepSlot, List.range_succ, List.flatMap_append]
-
-theorem restoreSlot_succ (o k : Nat) :
-    restoreSlot o (k + 1) = restoreSlot o k ++
-      ([.umov .x .x2 (keepLane k).1 (keepLane k).2, st .x2 (o + 8 * k)] : List Instr) := by
-  simp [restoreSlot, List.range_succ, List.flatMap_append]
-
-/-- The lane of word `i`. -/
-abbrev lane (s : State) (i : Nat) : BitVec 64 :=
-  (s.v (keepLane i).1).extractLsb' (64 * (keepLane i).2) 64
-
-/-- The `k ≤ 4` words at `o` into lanes of `v27` and `v28`, through `x2`. -/
-theorem keepSlot_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {o : Nat}
-    (ho8 : o % 8 = 0) : ∀ k, k ≤ 4 → o + 8 * k ≤ size →
-    WP isa (.block (keepSlot o k)) s fun s' => Keeps [.x2] s s' ∧
-      (∀ i < k, lane s' i = word s.mem base (o + 8 * i)) ∧
-      (∀ d, d ≠ .v27 → d ≠ .v28 → s'.v d = s.v d)
-  | 0, _, _ => WP.block_nil ⟨⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, fun _ h => absurd h (by omega),
-      fun _ _ _ => rfl⟩
-  | k + 1, hk, hko => by
-    rw [keepSlot_succ, WP.block_append_iff]
-    refine WP.mono (keepSlot_ok hs ho8 k (by omega) (by omega)) fun s₁ ⟨k₁, l₁, v₁⟩ => ?_
-    have hs₁ := hs.of_keeps k₁ (by decide)
-    apply WP.of_runBlock
-    simp only [runBlock_cons, exec_ld hs₁ (d := o + 8 * k) (by omega) (by omega), runStep_some,
-      Mont.exec_ins (keepLane_snd k), runBlock_nil, Option.some.injEq, exists_eq_left']
-    refine ⟨⟨fun r hr => ?_, by simp only [RegUpd.mem_setV, RegUpd.mem_write]; exact k₁.mem,
-      k₁.rd, k₁.wr, k₁.sp⟩, fun i hi => ?_, fun d h27 h28 => ?_⟩
-    · simp only [List.mem_singleton] at hr
-      simp only [RegUpd.gpr_setV, RegUpd.gpr_write, hr, ite_false]
-      exact k₁.gpr r (by simpa using hr)
-    · simp only [lane, RegUpd.v_setV, RegUpd.v_write, RegUpd.gpr_write_self, BitVec.setWidth_eq]
-      by_cases hik : i = k
-      · subst hik
-        simp only [ite_true]
-        rw [Mont.extract_setLane _ _ (keepLane_snd _) (keepLane_snd _)]
-        simp only [ite_true, k₁.mem]
-      · have hne := keepLane_ne i (by omega) k (by omega) hik
-        split
-        · rename_i e
-          rw [← e, Mont.extract_setLane _ _ (keepLane_snd _) (keepLane_snd _)]
-          simp only [show ¬ (keepLane k).2 = (keepLane i).2 from fun h => hne (Prod.ext e h.symm), ite_false]
-          exact l₁ i (by omega)
-        · exact l₁ i (by omega)
-    · simp only [RegUpd.v_setV, RegUpd.v_write]
-      simp only [show ¬ d = (keepLane k).1 from fun e => by
-        rcases keepLane_fst k with h | h <;> rw [h] at e <;> contradiction, ite_false]
-      exact v₁ d h27 h28
-
-/-- The `k ≤ 4` words at `o` back from their lanes, through `x2`. -/
-theorem restoreSlot_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {o : Nat}
-    (ho8 : o % 8 = 0) : ∀ k, k ≤ 4 → o + 8 * k ≤ size →
-    WP isa (.block (restoreSlot o k)) s fun s' => KeepRegs [.x2] s s' ∧ s'.v = s.v ∧
-      Outside base o (8 * k) s.mem s'.mem ∧ (∀ i < k, word s'.mem base (o + 8 * i) = lane s i)
-  | 0, _, _ => WP.block_nil ⟨⟨fun _ _ => rfl, rfl, rfl, rfl⟩, rfl, Outside.refl _ _ _ _,
-      fun _ h => absurd h (by omega)⟩
-  | k + 1, hk, hko => by
-    have hn := hs.nowrap
-    rw [restoreSlot_succ, WP.block_append_iff]
-    refine WP.mono (restoreSlot_ok hs ho8 k (by omega) (by omega)) fun s₁ ⟨k₁, v₁, O₁, w₁⟩ => ?_
-    have hs₁ := hs.of_keepRegs k₁ (by decide)
-    apply WP.of_runBlock
-    simp only [runBlock_cons, Mont.exec_umov (keepLane_snd k), runStep_some]
-    have hs₂ : Scr (s₁.write .x .x2 ((s₁.v (keepLane k).1).extractLsb' (64 * (keepLane k).2) 64)) base size :=
-      ⟨by simp only [RegUpd.gpr_write, reduceCtorEq, ite_false]; exact hs₁.x0, hs₁.wr, hs₁.nowrap, hs₁.enc⟩
-    simp only [exec_st hs₂ (d := o + 8 * k) (by omega) (by omega), runStep_some, runBlock_nil,
-      Option.some.injEq, exists_eq_left']
-    have O₂ := writeW_outside (s₁.write .x .x2 ((s₁.v (keepLane k).1).extractLsb' (64 * (keepLane k).2) 64)).mem
-      base (d := o + 8 * k) ((s₁.write .x .x2 ((s₁.v (keepLane k).1).extractLsb' (64 * (keepLane k).2) 64)).gpr .x2)
-      (by omega)
-    simp only [RegUpd.mem_write] at O₂
-    refine ⟨⟨fun r hr => ?_, k₁.rd, k₁.wr, k₁.sp⟩, v₁, fun x hx => ?_, fun i hi => ?_⟩
-    · simp only [List.mem_singleton] at hr
-      change (s₁.write .x .x2 _).gpr r = _
-      simp only [RegUpd.gpr_write, hr, ite_false]; exact k₁.gpr r (by simpa using hr)
-    · change (s₁.mem.writeW _ _) x = _
-      rw [O₂ x (by omega)]; exact O₁ x (by omega)
-    · change word (s₁.mem.writeW _ _) base _ = _
-      by_cases hik : i = k
-      · subst hik
-        rw [word_writeW_self, RegUpd.gpr_write_self, BitVec.setWidth_eq, lane, v₁]
-      · rw [O₂.word (by omega) (by omega)]
-        exact w₁ i (by omega)
-
-/-- Bytes in words that agree. -/
-theorem byte_of_words {m m' : Mem} {base : Addr} {o k : Nat}
-    (hw : ∀ i < k, word m' base (o + 8 * i) = word m base (o + 8 * i)) (hn : base.toNat + (o + 8 * k) ≤ 2 ^ 64)
-    {x : Addr} (hx : o ≤ ofs base x) (hx' : ofs base x < o + 8 * k) : m' x = m x := by
-  have hlt : ofs base x < 2 ^ 64 := (x - base).isLt
-  let i := (ofs base x - o) / 8
-  let j := (ofs base x - o) % 8
-  have hj : j < 8 := Nat.mod_lt _ (by decide)
-  have hi : i < k := by omega
-  have he := congrArg (fun v : BitVec 64 => v.extractLsb' (8 * j) 8) (hw i hi)
-  simp only [word, Mem.readW] at he
-  rw [show 64 / 8 = 8 from rfl, BitVec.setWidth_eq, BitVec.setWidth_eq, Mem.extractLsb'_read _ _ hj,
-    Mem.extractLsb'_read _ _ hj] at he
-  have ex : off base (o + 8 * i) + BitVec.ofNat 64 j = x := by
-    rw [off, BitVec.add_assoc, ← BitVec.ofNat_add, show o + 8 * i + j = ofs base x by omega]
-    change base + BitVec.ofNat 64 (x - base).toNat = x
-    rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
-  rw [ex] at he
-  exact he
-
-theorem wordsVal_eq_of_words {m m' : Mem} {base : Addr} : ∀ (o k : Nat),
-    (∀ i < k, word m' base (o + 8 * i) = word m base (o + 8 * i)) →
-    wordsVal m' base o k = wordsVal m base o k
-  | _, 0, _ => rfl
-  | o, k + 1, h => by
-    simp only [wordsVal]
-    have h0 := h 0 (by omega)
-    rw [Nat.mul_zero, Nat.add_zero] at h0
-    rw [h0, wordsVal_eq_of_words (m := m) (m' := m') (base := base) (o + 8) k fun i hi => ?_]
-    have := h (i + 1) (by omega)
-    rwa [show o + 8 * (i + 1) = o + 8 + 8 * i by omega] at this
-
 /-! ## The call -/
 
 /-- The modulus survives a change of memory apart from it. -/
@@ -239,9 +96,9 @@ theorem Inv.of_mem {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
 
 /-- What the call of the addition's function needs: `b`'s slot `bAt`
 aligned, apart from the slots `Sl` (`lay`, the slots with `bAt` laid out)
-and from the formula's, at most four words (kept in the lanes of `v27` and
-`v28`), and a callee that writes no vector register, keeps the callee-saved
-registers and has no frames. -/
+and from the formula's, at most four words (so that its products are
+inline), and a callee that writes no vector register, keeps the
+callee-saved registers and has no frames. -/
 structure AddCallOk (M : Mod) (size : Nat) (Sl : Nat → Prop) (S : RcbSlots) (p q o : Pt) (bAt : Nat) :
     Prop where
   lay : Lay M size fun x => Sl x ∨ x = bAt
@@ -252,11 +109,43 @@ structure AddCallOk (M : Mod) (size : Nat) (Sl : Nat → Prop) (S : RcbSlots) (p
   vec : ∀ i ∈ instrs (fprogB M (rcb3 { S with a := bAt, b3 := bAt } p q o)), vdstOf i = none
   nf : (fprogB M (rcb3 { S with a := bAt, b3 := bAt } p q o)).noFrames = true
 
+/-- What a call needs of the state: `b` (the number at `S.b3`) at `bAt`. -/
+def AddReady (base : Addr) (M : Mod) (mem : Mem) (S : RcbSlots) : Option (String × Nat) → Prop
+  | none => True
+  | some (_, bAt) => wordsVal mem base bAt M.n = wordsVal mem base S.b3 M.n
+
 /-- What `addP` needs: nothing inline, `AddCallOk` for a call. -/
 def AddOk (M : Mod) (size : Nat) (Sl : Nat → Prop) (S : RcbSlots) (p q o : Pt) :
     Option (String × Nat) → Prop
   | none => True
   | some (_, bAt) => AddCallOk M size Sl S p q o bAt
+
+/-- What a frame `W` must keep apart from for a call's `AddReady` to survive
+it: `bAt` and `S.b3`. -/
+def AddFar (M : Mod) (S : RcbSlots) (W : List (Nat × Nat)) : Option (String × Nat) → Prop
+  | none => True
+  | some (_, bAt) => ∀ w ∈ W, (bAt + 8 * M.n ≤ w.1 ∨ w.1 + w.2 ≤ bAt) ∧
+      (S.b3 + 8 * M.n ≤ w.1 ∨ w.1 + w.2 ≤ S.b3)
+
+theorem AddFar.mono {M : Mod} {S : RcbSlots} {W W' : List (Nat × Nat)} {pa : Option (String × Nat)}
+    (h : AddFar M S W pa) (hW : ∀ w ∈ W', w ∈ W) : AddFar M S W' pa :=
+  match pa, h with
+  | none, _ => trivial
+  | some _, h => fun w hw => h w (hW w hw)
+
+/-- `AddReady` survives a change of memory apart from `bAt` and `S.b3`. -/
+theorem AddReady.unch {M : Mod} {size : Nat} {Sl : Nat → Prop} {S : RcbSlots} {p q o : Pt}
+    {pa : Option (String × Nat)} (hpa : AddOk M size Sl S p q o pa) (hb3 : Sl S.b3) (hn : size ≤ 2 ^ 64)
+    {base : Addr} {mem mem' : Mem} (hr : AddReady base M mem S pa) {W : List (Nat × Nat)}
+    (hU : Unch base W mem mem') (hW : AddFar M S W pa) : AddReady base M mem' S pa := by
+  match pa, hpa, hr, hW with
+  | none, _, _, _ => trivial
+  | some (_, bAt), hc, hr, hW =>
+    show wordsVal mem' base bAt M.n = wordsVal mem' base S.b3 M.n
+    have h1 := hc.lay.le bAt (Or.inr rfl)
+    have h2 := hc.lay.le S.b3 (Or.inl hb3)
+    rw [hU.wordsVal (fun w hw => (hW w hw).1) (by omega), hU.wordsVal (fun w hw => (hW w hw).2) (by omega)]
+    exact hr
 
 theorem Inv.mono_sl {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl Sl' : Nat → Prop} {V : List Nat}
     {E : Nat → Fin m} {s : State} (h : Inv M base size m Sl V E s) (hS : ∀ x, Sl x → Sl' x) :
@@ -280,69 +169,49 @@ theorem addP_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
     (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) (hLow : Low M (rcbW S o ++ rcbR S p q))
     {pa : Option (String × Nat)} (hpa : AddOk M size Sl S p q o pa) {V : List Nat} {E : Nat → Fin m}
-    {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
+    {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V)
+    (hr : AddReady base M s.mem S pa) :
     WP isa (addP M S p q o pa) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
       Inv M base size m Sl ([o.x, o.y, o.z] ++ V) (runOps (rcb3 S p q o) E) s' ∧
       (runOps (rcb3 S p q o) E o.x, runOps (rcb3 S p q o) E o.y, runOps (rcb3 S p q o) E o.z) =
         VG.Proof.Weierstrass.rcbAdd3 (E S.b3) (E p.x) (E p.y) (E p.z) (E q.x) (E q.y) (E q.z) := by
-  match pa, hpa with
-  | none, _ => exact rcb3_ok hL hAl hm hA hSl hLow hI hV
-  | some (name, bAt), hc =>
+  match pa, hpa, hr with
+  | none, _, _ => exact rcb3_ok hL hAl hm hA hSl hLow hI hV
+  | some (name, bAt), hc, hr =>
   let Sl' := fun x => Sl x ∨ x = bAt
   have hL' : Lay M size Sl' := hc.lay
   have hAl' : Aligned M Sl' := ⟨fun x hx => hx.elim (hAl.sl x) (fun h => h ▸ hc.al), hAl.mod, hAl.call⟩
   have hbS : Sl' bAt := Or.inr rfl
   have hs := hI.scr
   have hn := hs.nowrap
-  have hn0 := hI.mod.n0
-  have hbl := hL'.le bAt hbS
-  have hb8 := hc.al
-  have hbn : base.toNat + (bAt + 8 * M.n) ≤ 2 ^ 64 := by omega
-  have hb3 : Sl S.b3 := hSl _ (List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
   have hb3V : S.b3 ∈ V := hV _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
-  have hne3 : bAt ≠ S.b3 := fun h => hc.apart (List.mem_append_right _
-    (h ▸ List.mem_cons_of_mem _ (List.mem_cons_self ..)))
-  have hap3 := hL'.apart _ _ hbS (Or.inl hb3) hne3
-  have apartB : ∀ x, Sl' x → x ≠ bAt → x + 8 * M.n ≤ bAt ∨ bAt + 8 * M.n ≤ x :=
-    fun x hx hne => hL'.apart _ _ hx hbS hne
   have outW : ∀ x ∈ rcbW S o, x ≠ bAt := fun x hx h => hc.apart (List.mem_append_left _ (h ▸ hx))
   have outR : ∀ x ∈ rcbR S p q, x ≠ bAt := fun x hx h => hc.apart (List.mem_append_right _ (h ▸ hx))
   let E₂ := Function.update E bAt (E S.b3)
   have hr3 : rcb3 { S with a := bAt, b3 := bAt } p q o = rcb3 { S with b3 := bAt } p q o := rfl
   rw [addP]
-  refine WP.seq ?_
-  rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (keepSlot_ok hs hb8 M.n hc.n4 hbl) fun s₁ ⟨k₁, l₁, v₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
-  refine WP.mono (WP.keepV (c := .block (copy M.n bAt S.b3)) (fun i hi => copy_novec _ _ _ i hi) (copy_ok M.n hs₁ hbl (hL.le _ hb3) hb8 (hAl.sl _ hb3)
-    (hap3.imp (fun _ => by omega) id))) fun s₂ ⟨⟨c₂, k₂, O₂⟩, v₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  rw [k₁.mem] at O₂ c₂
-  refine WP.mono (insLr_ok s₂) fun s₃ e₃ => ?_
-  have hs₃ : Scr s₃ base size := by
-    rw [e₃]; exact ⟨by rw [RegUpd.gpr_setV]; exact hs₂.x0, hs₂.wr, hs₂.nowrap, hs₂.enc⟩
-  have m₃ : s₃.mem = s₂.mem := by rw [e₃, RegUpd.mem_setV]
-  -- the memory before the call: `b` at `bAt`
-  have wv₃ : ∀ x, Sl' x → x ≠ bAt → wordsVal s₃.mem base x M.n = wordsVal s.mem base x M.n :=
-    fun x hx hne => by rw [m₃]; exact O₂.wordsVal (apartB x hx hne) (by have := hL'.le x hx; omega)
-  have hI₃ : Inv M base size m Sl' (bAt :: V) E₂ s₃ := by
-    refine ⟨hs₃, ?_, fun x hx => ?_, fun x hx => ?_, fun x hx => ?_⟩
-    · rw [m₃]
-      exact hI.mod.outside O₂ (hL'.mo bAt hbS) hn
+  refine WP.seq (WP.mono (insLr_ok s) fun s₁ e₁ => ?_)
+  have hs₁ : Scr s₁ base size := by
+    rw [e₁]; exact ⟨by rw [RegUpd.gpr_setV]; exact hs.x0, hs.wr, hs.nowrap, hs.enc⟩
+  have m₁ : s₁.mem = s.mem := by rw [e₁, RegUpd.mem_setV]
+  -- `b` at `bAt`
+  have hI₁ : Inv M base size m Sl' (bAt :: V) E₂ s₁ := by
+    refine ⟨hs₁, by rw [m₁]; exact hI.mod, fun x hx => ?_, fun x hx => ?_, fun x hx => ?_⟩
     · rcases List.mem_cons.mp hx with rfl | hx
       · exact hbS
       · exact Or.inl (hI.sl x hx)
-    · by_cases hxb : x = bAt
-      · rw [hxb, m₃, c₂]; exact hI.lt _ hb3V
-      · have hxV : x ∈ V := (List.mem_cons.mp hx).resolve_left hxb
-        rw [wv₃ x (Or.inl (hI.sl x hxV)) hxb]; exact hI.lt x hxV
-    · by_cases hxb : x = bAt
-      · rw [hxb, m₃, c₂, hI.val _ hb3V]; exact (Function.update_self bAt (E S.b3) E).symm
-      · have hxV : x ∈ V := (List.mem_cons.mp hx).resolve_left hxb
-        rw [wv₃ x (Or.inl (hI.sl x hxV)) hxb, hI.val x hxV]; exact (Function.update_of_ne hxb ..).symm
+    · rw [m₁]
+      by_cases hxb : x = bAt
+      · rw [hxb, hr]; exact hI.lt _ hb3V
+      · exact hI.lt x ((List.mem_cons.mp hx).resolve_left hxb)
+    · rw [m₁]
+      by_cases hxb : x = bAt
+      · rw [hxb, hr, hI.val _ hb3V]; exact (Function.update_self bAt (E S.b3) E).symm
+      · rw [hI.val x ((List.mem_cons.mp hx).resolve_left hxb)]; exact (Function.update_of_ne hxb ..).symm
   -- the call
-  have hcov : Covers [⟨base, size⟩] s₃.wr := Covers.one ⟨_, hs₃.wr, by
-    have := hs.contains (d := 0) (n := size) (by omega) (by omega)
+  have hcov : Covers [⟨base, size⟩] s₁.wr := Covers.one ⟨_, hs₁.wr, by
+    have := hs.contains (d := 0) (n := size) (by have := hL'.le bAt hbS; omega) (by
+      have := hL'.le bAt hbS; have := hI.mod.n0; omega)
     simpa [off] using this⟩
   have hp₂ : RcbApart { S with a := bAt, b3 := bAt } p q o :=
     ⟨hA.nodup, fun y hy => by
@@ -374,66 +243,41 @@ theorem addP_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
         exact List.all_eq_true.mpr fun i hi => by unfold keepsV; rw [hc.vec i hi])⟩, K, I', v',
         funext fun r => Exec.vec (fun i hi e => by rw [hc.vec i hi] at e; cases e) he⟩)
     (rd := []) (wr := [⟨base, size⟩])
-    (hI₃.of_mem ⟨by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), hs₃.x0], by simp,
+    (hI₁.of_mem ⟨by rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), hs₁.x0], by simp,
       hs.nowrap, hs.enc⟩ (by rw [State.withRegions_mem, State.callEntry_mem]))
     (Covers.right hcov) hcov ?_ hc.nf)
   intro s₄ r₄ w₄ p₄ _ _ _ _ ⟨K, I₄, vals₄, V₄⟩
-  have V₄' : s₄.v = s₃.v := V₄
-  have g₄ : ∀ r, r ∉ clob M.n → r ∉ linkRegs → s₄.gpr r = s₃.gpr r := fun r hr hl => by
+  have V₄' : s₄.v = s₁.v := V₄
+  have g₄ : ∀ r, r ∉ clob M.n → r ∉ linkRegs → s₄.gpr r = s₁.gpr r := fun r hr hl => by
     have := K.gpr r hr
     simp only [State.withRegions_gpr] at this
     rw [this, State.callEntry_gpr _ hl]
   have x0c : Reg.x0 ∉ clob M.n := x0_not_clob' _
   have hs₄ : Scr s₄ base size :=
-    ⟨by rw [g₄ _ x0c (by decide), hs₃.x0], by rw [w₄]; exact hs₃.wr, hs.nowrap, hs.enc⟩
+    ⟨by rw [g₄ _ x0c (by decide), hs₁.x0], by rw [w₄]; exact hs₁.wr, hs.nowrap, hs.enc⟩
   have I₄' := I₄.of_mem (t := s₄) hs₄ rfl
   have mK : ∀ x, (∀ w ∈ rcbW S o, ofs base x < w ∨ w + 8 * M.n ≤ ofs base x) →
-      (ofs base x < M.tmp ∨ M.tmp + 8 * M.n ≤ ofs base x) → s₄.mem x = s₃.mem x := K.mem
-  rw [← List.singleton_append, WP.block_append_iff]
-  refine WP.mono (WP.keepV (fun i hi => by rw [List.mem_singleton.mp hi]; rfl) (Mont.lr_ok s₄))
-    fun s₅ ⟨⟨l₅, k₅⟩, v₅⟩ => ?_
-  have hs₅ := hs₄.of_keeps k₅ (by decide)
-  refine WP.mono (restoreSlot_ok hs₅ hb8 M.n hc.n4 hbl) fun s₆ ⟨k₆, v₆, O₆, w₆⟩ => ?_
-  rw [k₅.mem] at O₆
-  -- the words at `bAt` restored
-  have hw₆ : ∀ i < M.n, word s₆.mem base (bAt + 8 * i) = word s.mem base (bAt + 8 * i) := by
-    intro i hi
-    have hne29 : (keepLane i).1 ≠ .v29 := by rcases keepLane_fst i with h | h <;> rw [h] <;> decide
-    rw [w₆ i hi, lane, v₅, V₄', e₃, RegUpd.v_setV_of_ne (h := hne29), v₂]
-    exact l₁ i hi
-  have m₆ : ∀ x, (∀ w ∈ rcbW S o, ofs base x < w ∨ w + 8 * M.n ≤ ofs base x) →
-      (ofs base x < M.tmp ∨ M.tmp + 8 * M.n ≤ ofs base x) → s₆.mem x = s.mem x := by
-    intro x hx ht
-    by_cases hxb : bAt ≤ ofs base x ∧ ofs base x < bAt + 8 * M.n
-    · exact byte_of_words hw₆ hbn hxb.1 hxb.2
-    · rw [O₆ x (by omega), mK x hx ht, m₃, O₂ x (by omega)]
-  have hx1 : Reg.x1 ∈ clob M.n := by simp [clob]
-  have hx2 : Reg.x2 ∈ clob M.n := by simp [clob]
+      (ofs base x < M.tmp ∨ M.tmp + 8 * M.n ≤ ofs base x) → s₄.mem x = s₁.mem x := K.mem
+  refine WP.mono (Mont.lr_ok s₄) fun s₅ ⟨l₅, k₅⟩ => ?_
   have hx16 : Reg.x16 ∈ clob M.n := by simp [clob]
   have hx17 : Reg.x17 ∈ clob M.n := by simp [clob]
-  have hK : ProgKeep M base (rcbW S o) s s₆ := by
-    refine ⟨fun r hr => ?_, by rw [k₆.rd, k₅.rd, r₄, e₃, RegUpd.rd_setV, k₂.rd, k₁.rd],
-      by rw [k₆.wr, k₅.wr, w₄, e₃, RegUpd.wr_setV, k₂.wr, k₁.wr],
-      by rw [k₆.sp, k₅.sp, p₄, e₃, RegUpd.sp_setV, k₂.sp, k₁.sp], m₆⟩
-    have r2 : r ≠ .x2 := fun h => hr (h ▸ hx2)
-    have r1 : r ≠ .x1 := fun h => hr (h ▸ hx1)
-    rw [k₆.gpr r (by simpa using r2)]
+  have hK : ProgKeep M base (rcbW S o) s s₅ := by
+    refine ⟨fun r hr => ?_, by rw [k₅.rd, r₄, e₁, RegUpd.rd_setV],
+      by rw [k₅.wr, w₄, e₁, RegUpd.wr_setV], by rw [k₅.sp, p₄, e₁, RegUpd.sp_setV],
+      fun x hx ht => by rw [k₅.mem, mK x hx ht, m₁]⟩
     by_cases h30 : r = .x30
     · subst h30
-      have := Mont.extract_setLane (s₂.v .v29) (s₂.gpr .x30) (i := 0) (j := 0) (by decide) (by decide)
+      have := Mont.extract_setLane (s.v .v29) (s.gpr .x30) (i := 0) (j := 0) (by decide) (by decide)
       simp only [Nat.mul_zero, ite_true] at this
-      rw [l₅, V₄', e₃, RegUpd.v_setV_self, this, k₂.gpr _ (by decide), k₁.gpr _ (by decide)]
+      rw [l₅, V₄', e₁, RegUpd.v_setV_self, this]
     · rw [k₅.gpr r (by simpa using h30), g₄ r hr (by
         simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]
-        exact ⟨fun h => hr (h ▸ hx16), fun h => hr (h ▸ hx17), h30⟩), e₃, RegUpd.gpr_setV,
-        k₂.gpr r (by simpa using r1), k₁.gpr r (by simpa using r2)]
+        exact ⟨fun h => hr (h ▸ hx16), fun h => hr (h ▸ hx17), h30⟩), e₁, RegUpd.gpr_setV]
   -- the values
-  have wv₆ : ∀ x, Sl' x → x ≠ bAt → wordsVal s₆.mem base x M.n = wordsVal s₄.mem base x M.n :=
-    fun x hx hne => O₆.wordsVal (apartB x hx hne) (by have := hL'.le x hx; omega)
-  have wb₆ : wordsVal s₆.mem base bAt M.n = wordsVal s.mem base bAt M.n := wordsVal_eq_of_words _ _ hw₆
+  have m₅ : s₅.mem = s₄.mem := k₅.mem
   have hrun : ∀ x, x ≠ bAt → runOps (rcb3 { S with a := bAt, b3 := bAt } p q o) E₂ x =
       runOps (rcb3 S p q o) E x := fun x hx => by rw [hr3]; exact runOps_rcb3_b3 hA hc.apart E hx
-  have hmem : ∀ x ∈ [o.x, o.y, o.z] ++ V, x ≠ bAt → x ∈ [o.x, o.y, o.z] ++ bAt :: V := fun x hx _ => by
+  have hmem : ∀ x ∈ [o.x, o.y, o.z] ++ V, x ∈ [o.x, o.y, o.z] ++ bAt :: V := fun x hx => by
     rcases List.mem_append.mp hx with hx | hx
     · exact List.mem_append_left _ hx
     · exact List.mem_append_right _ (List.mem_cons_of_mem _ hx)
@@ -445,19 +289,23 @@ theorem addP_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
     rcases List.mem_append.mp hx with hx | hx
     · exact absurd hb (outW x (hoW x hx))
     · exact hx
-  have Eb : runOps (rcb3 S p q o) E bAt = E bAt := runOps_of_not_out _ _ fun op hop h =>
-    outW _ ((rcb3_eq S p q o ▸ ofN_out rcb3N_ok) op hop) h
-  refine ⟨hK, ⟨hK.scr hs, ?_, fun x hx => ?_, fun x hx => ?_, fun x hx => ?_⟩, ?_⟩
-  · exact I₄'.mod.outside O₆ (hL'.mo bAt hbS) hn
+  have outs : ∀ (S' : RcbSlots), rcbW S' o = rcbW S o → ∀ op ∈ rcb3 S' p q o, op.out ≠ bAt :=
+    fun S' hS op hop h => outW _ (hS ▸ (rcb3_eq S' p q o ▸ ofN_out rcb3N_ok) op hop) h
+  have Eb : runOps (rcb3 S p q o) E bAt = E bAt := runOps_of_not_out _ _ (outs S rfl)
+  have Eb₂ : bAt ∈ V → runOps (rcb3 { S with a := bAt, b3 := bAt } p q o) E₂ bAt = E bAt := fun hbV' => by
+    rw [runOps_of_not_out _ _ (outs { S with a := bAt, b3 := bAt } rfl)]
+    show Function.update E bAt (E S.b3) bAt = _
+    rw [Function.update_self, ← hI.val _ hb3V, ← hr, hI.val _ hbV']
+  refine ⟨hK, ⟨hK.scr hs, by rw [m₅]; exact I₄'.mod, fun x hx => ?_, fun x hx => ?_,
+    fun x hx => ?_⟩, ?_⟩
   · rcases List.mem_append.mp hx with hx | hx
     · exact hSl x (List.mem_append_left _ (hoW x hx))
     · exact hI.sl x hx
-  · by_cases hxb : x = bAt
-    · subst hxb; rw [wb₆]; exact hI.lt _ (hbV _ hx rfl)
-    · rw [wv₆ x (I₄'.sl x (hmem x hx hxb)) hxb]; exact I₄'.lt x (hmem x hx hxb)
-  · by_cases hxb : x = bAt
-    · subst hxb; rw [wb₆, Eb]; exact hI.val _ (hbV _ hx rfl)
-    · rw [wv₆ x (I₄'.sl x (hmem x hx hxb)) hxb, I₄'.val x (hmem x hx hxb)]; exact hrun x hxb
+  · rw [m₅]; exact I₄'.lt x (hmem x hx)
+  · rw [m₅, I₄'.val x (hmem x hx)]
+    by_cases hxb : x = bAt
+    · subst hxb; rw [Eb₂ (hbV _ hx rfl), Eb]
+    · exact hrun x hxb
   · have hp : ∀ x ∈ [p.x, p.y, p.z, q.x, q.y, q.z], E₂ x = E x := fun x hx =>
       Function.update_of_ne (outR x (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hx))) ..
     rw [← hrun _ (outW _ (hoW _ (by simp))), ← hrun _ (outW _ (hoW _ (by simp))),
@@ -546,7 +394,8 @@ theorem copyAdd_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
     {s : State} (hI : Inv M base size m Sl V E s)
     (hrSl : ∀ x ∈ [r.x, r.y, r.z], Sl x) (hcV : ∀ x ∈ [c.x, c.y, c.z], x ∈ V)
     (hrV : ∀ x ∈ [r.x, r.y, r.z], x ∉ V) (hrd : r.x ≠ r.y ∧ r.x ≠ r.z ∧ r.y ≠ r.z)
-    (hV : ∀ x ∈ rcbR S p q, x ∈ [r.x, r.y, r.z] ++ V) :
+    (hV : ∀ x ∈ rcbR S p q, x ∈ [r.x, r.y, r.z] ++ V) (hr : AddReady base M s.mem S pa)
+    (hfar : AddFar M S [(r.x, 8 * M.n), (r.y, 8 * M.n), (r.z, 8 * M.n)] pa) :
     WP isa (.seq (.block (copyPt M.n r c)) (addP M S p q o pa)) s fun s' =>
       ProgKeep M base ([r.x, r.y, r.z] ++ rcbW S o) s s' ∧
       Inv M base size m Sl ([o.x, o.y, o.z] ++ ([r.x, r.y, r.z] ++ V))
@@ -603,7 +452,9 @@ theorem copyAdd_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
         · rw [e₂, er.2.1]; exact hI.val _ (hcV _ cy)
         · rw [e₃, er.2.2]; exact hI.val _ (hcV _ cz)
       · rw [wv x hx, rext_of (fun h => hrV x h hx)]; exact hI.val x hx
-  refine WP.mono (addP_ok hL hAl hm hA hSl hLow hpa hI₁ hV) fun s₂ ⟨k₂, I₂, v₂⟩ => ⟨?_, I₂, v₂⟩
+  have hr₁ := hr.unch hpa (hSl _ (List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))))
+    (by omega) U₁ hfar
+  refine WP.mono (addP_ok hL hAl hm hA hSl hLow hpa hI₁ hV hr₁) fun s₂ ⟨k₂, I₂, v₂⟩ => ⟨?_, I₂, v₂⟩
   have hx1 : Reg.x1 ∈ clob M.n := by simp [clob]
   refine ⟨fun r' hr' => (k₂.gpr r' hr').trans (k₁.gpr r' (by intro h; simp only [List.mem_singleton] at h; exact hr' (h ▸ hx1))),
     k₂.rd.trans k₁.rd, k₂.wr.trans k₁.wr, k₂.sp.trans k₁.sp, fun x hx ht => ?_⟩

@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! # Select the eligible window without branching on the reference lane
 
@@ -7,6 +9,8 @@ and cross-lane window lengths. `r8` receives the selected length. Subtracting
 one from the lanes' XOR borrows exactly when the lanes match, supplying the
 mask for the selection. The counts may be secret too.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.SelectWindow
 

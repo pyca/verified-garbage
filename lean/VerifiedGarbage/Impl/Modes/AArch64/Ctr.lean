@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.AArch64.Sbox
+module
+
+public import VerifiedGarbage.Impl.Aes.AArch64.Sbox
 
 /-!
 # CTR on AArch64, for any block cipher with 16-byte blocks
@@ -39,6 +41,8 @@ to be secret, so the public values stay in registers: the core keeps
 The mode's own registers are `x6`–`x10` and `x13`–`x17` (`modeRegs`), which
 a core may also use, but not to keep anything across the mode's code.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Modes.AArch64
 

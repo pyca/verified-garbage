@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The buffers of a function that calls others
@@ -23,6 +25,8 @@ All of this is generic in the registers `R` and in how a state gives their
 contents: each target instantiates it with its own state, adding what its
 calls need besides (see `Proof/MlDsa/AArch64/Call/Base.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.CallLay
 

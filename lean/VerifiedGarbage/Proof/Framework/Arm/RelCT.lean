@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Framework.Arm.Call
+module
+
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.Arm.Call
 
 /-!
 # Calls of code that makes calls, and constant time by relating two runs (ARMv7)
@@ -16,6 +18,8 @@ the actual run with fewer permissions (`Exec.widen` and determinism), and
 the callee is constant time. `bl` and `bx lr` leak no addresses of their
 own.
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.ChaCha20.X86
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.X86
 
 /-!
 # ChaCha20 keystream XOR: x86 (32-bit) implementation
@@ -59,6 +61,8 @@ The branches are on the length only, and every address is `esp`, a pointer
 plus a constant or a pointer plus a count, so only the pointers and the length can affect
 timing. On return `eax` holds `buf`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.X86.Xor
 

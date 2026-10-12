@@ -1,10 +1,12 @@
-import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
-import VerifiedGarbage.Impl.Aes.X86_64.AesNi
-import VerifiedGarbage.Impl.Aes.X86_64.Vaes
-import VerifiedGarbage.Impl.Aes.X86_64.ExpandKey
-import VerifiedGarbage.Impl.Aes.X86_64.Blocks
-import VerifiedGarbage.Impl.Aes.X86_64.AesNiBlocks
-import VerifiedGarbage.Impl.Aes.X86_64.VaesBlocks
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
+public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
+public import VerifiedGarbage.Impl.Aes.X86_64.Vaes
+public import VerifiedGarbage.Impl.Aes.X86_64.ExpandKey
+public import VerifiedGarbage.Impl.Aes.X86_64.Blocks
+public import VerifiedGarbage.Impl.Aes.X86_64.AesNiBlocks
+public import VerifiedGarbage.Impl.Aes.X86_64.VaesBlocks
 
 /-!
 # The implementations of `vg_aes_ctr32` on x86-64
@@ -17,6 +19,8 @@ A function that encrypts or decrypts whole blocks (AES-OCB's) calls an
 implementation of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`, a
 pair of `Blocks`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86_64
 

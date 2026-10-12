@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Ecdsa.Arm
-import VerifiedGarbage.Spec.P192
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Arm
+public import VerifiedGarbage.Spec.P192
 
 /-! # ECDSA over P-192 on 32-bit ARM: three-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Arm
 

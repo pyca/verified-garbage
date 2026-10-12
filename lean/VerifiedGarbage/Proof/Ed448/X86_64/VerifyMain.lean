@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Joint
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyBits
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
@@ -13,14 +13,16 @@ import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
 The correctness of `vg_ed448_verify_equation` against the contract the proof
 is written against (`verifyEquationLocal`, `VerifyLocal.lean`): `BAD` ends as the OR of
 the checks of `S`, of decoding `A` and `R`, and of the comparison of `[4]Q`
-with `[4]R`, for `Q` the reference ladder's `[S]B + [k](-A)` (`vladder`), which
-decides the equation when `A` and `R` decode (`VerifyEqOk`, as decoding
-`RecoverOk`, passed in by the registration files);
+with `[4]R`, for `Q` representing `[S]B + [k](-A)` through the joint
+four-bit window loop. Group representation is required only when both
+points decode; malformed inputs still execute safely and are rejected;
 every write is in the working space, so the inputs are read unchanged, the
 callee-saved registers are restored from it, and the return address is kept.
 -/
 
 namespace VG.Proof.Ed448.X86_64
+
+set_option exponentiation.threshold 1024
 
 open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64 VG.Proof.Ed448
 open VG.Proof.X448.X86_64 (Scr Index Env E F fe Keep FieldOk word off Outside Outside2 ofs Saved clob copyOut_ok
@@ -727,7 +729,7 @@ theorem wide {base : Addr} {m m' : Mem} (h : Outside2 base 64 1584 BAD 80 m m') 
   h.outside (by decide) (by decide) (by decide) (by decide)
 
 include hf hP in
-theorem verifyEquation_correct (hR : RecoverOk) (hE : VerifyEqOk) {rt : Prog isa} (hrt : RootOk rt)
+theorem verifyEquation_correct (hR : RecoverOk) (_hE : VerifyEqOk) {rt : Prog isa} (hrt : RootOk rt)
     {s : State} (hp : verifyEquationLocal.pre s) :
     WP isa (verifyEquationWith fld P rt) s fun t => gprPreserved s t ∧ verifyEquationLocal.post s t := by
   obtain ⟨hr, hw, hdk, hds, hdc, hret, hn⟩ := hp
@@ -797,39 +799,36 @@ theorem verifyEquation_correct (hR : RecoverOk) (hE : VerifyEqOk) {rt : Prog isa
     obtain ⟨vx, vy, vz⟩ := va4 a ha
     show (⟨E s4'.mem base 6, E s4'.mem base 7, E s4'.mem base 10⟩ : Spec.Ed448.Point) = ⟨0 - a.X, a.Y, a.Z⟩
     rw [n6, n7, n10, vx, vy, vz]
-  -- The loop.
+  -- The joint four-bit window multiplication.
   apply WP.seq
-  rw [vloop]
-  apply WP.seq
-  refine WP.mono (show WP isa (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 456))]) s4' _ from
-    Proof.X448.X86_64.setRbx_ok s4' 456 (by decide)) fun s5 ⟨rbx5, g5, m5, rd5, wr5⟩ => ?_
-  have hs5 : Scr s5 base := ⟨(g5 _ (by decide)).trans hs4'.rdi, wr5 ▸ hs4'.wr, hn⟩
-  have bits5 : ∀ o : Nat, o + 456 ≤ 8192 → 2048 ≤ o → ∀ t < 456,
-      s5.mem (off base (o + t)) = s2.mem (off base (o + t)) := fun o ho1 ho2 t ht => by
+  have bits4 : ∀ o : Nat, o + 456 ≤ 8192 → 2048 ≤ o → ∀ t < 456,
+      s4'.mem (off base (o + t)) = s2.mem (off base (o + t)) := fun o ho1 ho2 t ht => by
     have hofs := VG.Proof.X448.X86_64.ofs_off' base (d := o + t) (by omega)
-    rw [m5, o4 _ (Or.inr (by rw [hofs]; omega)), D4.wide _ (Or.inr (by rw [hofs]; omega)),
+    rw [o4 _ (Or.inr (by rw [hofs]; omega)), D4.wide _ (Or.inr (by rw [hofs]; omega)),
       o3 _ (Or.inr (by rw [hofs]; simp only [KC]; omega))]
-  have I5 : VInv base S K (pt (E s5.mem base) 6 7 10) s5 456 s5 := by
-    refine ⟨hs5, rbx5, fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _, ?_, rfl, ?_, ?_⟩
-    · rw [m5]; exact q4
-    · rw [m5]; exact d4
-    · rw [Nat.sub_self, m5, p4]; rfl
-  refine WP.mono (vloop_ok hP (fun t ht => by rw [bits5 BITS (by decide) (by decide) t ht]; exact bs2 t ht)
-    (fun t ht => by rw [bits5 KBITS (by decide) (by decide) t ht]; exact bk2 t ht)
-    456 s5 (by decide) (by decide) I5) fun s6 I6 => ?_
-  have M6 : Outside base 64 1584 s4'.mem s6.mem := by
-    have h6 := I6.mem
-    rw [m5] at h6
-    exact h6
+  have bs4 : Window.Bits base BITS S s4' := by
+    intro t ht
+    rw [bits4 BITS (by decide) (by decide) t ht, bs2 t ht]
+    simp only [Nat.shiftRight_eq_div_pow, Nat.and_one_is_mod]
+  have bk4 : Window.Bits base KBITS K s4' := by
+    intro t ht
+    rw [bits4 KBITS (by decide) (by decide) t ht, bk2 t ht]
+    simp only [Nat.shiftRight_eq_div_pow, Nat.and_one_is_mod]
+  have hSb : S < 2 ^ 456 := by
+    rw [← hS]; exact decodeLE_below (bytesAt57_len _ _)
+  have hKb : K < 2 ^ 456 := by
+    rw [← hK]; exact decodeLE_below (bytesAt57_len _ _)
+  refine WP.mono (Window.joint_ok hf hP hs4' (by decide) (by decide) bs4 bk4 hSb hKb d4
+    (congrArg Spec.Ed448.Point.Z q4) p4) fun s6 ⟨hs6, g6, rd6, wr6, M6, rep6⟩ => ?_
   have O7 : Outside base 0 8192 s.mem s6.mem :=
-    (O4.trans (o4.mono (by decide) (by decide))).trans (M6.mono (by decide) (by decide))
+    (O4.trans (o4.mono (by decide) (by decide))).trans (M6.wide.mono (by decide) (by decide))
   have sv7 : Saved base s.gpr s6.mem :=
     ((((sv1.outside o2 (by decide)).outside o3 (by decide)).outside D4.wide (by decide)).outside o4
-      (by decide)).outside M6 (by decide)
+      (by decide)).outside M6.wide (by decide)
   -- `[4]Q` and `[4]R` compared, and the result.
-  refine WP.mono (vfinish_ok hf hP I6.scr sv7) fun t ⟨at', rt, gt, rdt, wrt, ot⟩ => ?_
+  refine WP.mono (vfinish_ok hf hP hs6 sv7) fun t ⟨at', rt, gt, rdt, wrt, ot⟩ => ?_
   have hBAD : word s6.mem base BAD = c0 ||| cR ||| cA := by
-    rw [M6.word (Or.inr (by decide)) (by decide),
+    rw [M6.word (Or.inr (by decide)) (Or.inl (by decide)) (by decide),
       o4.word (Or.inr (by decide)) (by decide), b4, b3]
   have OT : Outside base 0 8192 s.mem t.mem := O7.trans ((wide ot).mono (by decide) (by decide))
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
@@ -837,7 +836,7 @@ theorem verifyEquation_correct (hR : RecoverOk) (hE : VerifyEqOk) {rt : Prog isa
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact rt (.rbx, 0) (by decide)
     · exact rt (.rbp, 8) (by decide)
-    · rw [gt _ (by decide), I6.gpr _ (by decide), g5 _ (by decide), g4' _ (by decide),
+    · rw [gt _ (by decide), g6 _ (by decide), g4' _ (by decide),
         g4 _ (by decide), g3 _ (by decide), g2 _ (by decide), g1 _ (by decide)]
     · exact rt (.r12, 16) (by decide)
     · exact rt (.r13, 24) (by decide)
@@ -863,24 +862,27 @@ theorem verifyEquation_correct (hR : RecoverOk) (hE : VerifyEqOk) {rt : Prog isa
       | some r =>
         have cA0 : cA = 0 := hcA.mpr (by rw [ha]; rfl)
         have cR0 : cR = 0 := hcR.mpr (by rw [hR]; rfl)
-        have hA : pt (E s5.mem base) 6 7 10 = negPoint a := by rw [m5]; exact na4 a ha
-        have hQ : pt (E s6.mem base) 0 1 2 = vladder (Spec.Ed448.decodeLE
-            ((Spec.Ed448.bytesAt s.mem (s.gpr .rsi) 114).drop 57))
-            (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem (s.gpr .rdx) 57)) (negPoint a) 456 := by
-          have := I6.rep
-          rw [Nat.sub_zero, hA] at this
+        have hQ : Rep (pt (E s6.mem base) 0 1 2) (Spec.Ed448.decodeLE
+            ((Spec.Ed448.bytesAt s.mem (s.gpr .rsi) 114).drop 57) • baseAff +
+            Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem (s.gpr .rdx) 57) • (-toAffine a)) := by
           rw [bytesAt_drop57, hS, hK]
-          exact this
+          apply rep6
+          rw [na4 a ha]
+          exact (rep_toAffine (decodePoint_valid ha)).neg
         have hRR : (⟨F s6.mem base RX, F s6.mem base RY, 1⟩ : Spec.Ed448.Point) = r := by
           obtain ⟨vx, vy, vz⟩ := vr4 r hR
           have fx : F s6.mem base RX = F s4.mem base RX := by
             show VG.Proof.X448.toFe (fe s6.mem base RX) = VG.Proof.X448.toFe (fe s4.mem base RX)
-            rw [M6.fe (Or.inr (by decide)) (by decide), o4.fe (Or.inr (by decide)) (by decide)]
+            rw [show fe s6.mem base RX = fe s4'.mem base RX from
+              M6.mv (Or.inr (by decide)) (Or.inl (by decide)) (by decide), o4.fe (Or.inr (by decide)) (by decide)]
           have fy : F s6.mem base RY = F s4.mem base RY := by
             show VG.Proof.X448.toFe (fe s6.mem base RY) = VG.Proof.X448.toFe (fe s4.mem base RY)
-            rw [M6.fe (Or.inr (by decide)) (by decide), o4.fe (Or.inr (by decide)) (by decide)]
+            rw [show fe s6.mem base RY = fe s4'.mem base RY from
+              M6.mv (Or.inr (by decide)) (Or.inl (by decide)) (by decide), o4.fe (Or.inr (by decide)) (by decide)]
           rw [fx, fy, vx, vy, ← vz]
-        rw [hE _ _ _ _ _ (bytesAt57_len _ _) (bytesAt114_len _ _) (bytesAt57_len _ _) ha hR, ← hQ, ← hRR,
+        have hRrep : Rep (⟨F s6.mem base RX, F s6.mem base RY, 1⟩ : Spec.Ed448.Point) (toAffine r) := by
+          rw [hRR]; exact rep_toAffine (decodePoint_valid hR)
+        rw [verifyEquation_some (bytesAt57_len _ _) (bytesAt114_len _ _) (bytesAt57_len _ _) ha hR hQ hRrep,
           Bool.and_eq_true, decide_eq_true_iff, bytesAt_drop57, hS, cA0, cR0, hc0]
         exact ⟨fun h => ⟨h.1.1.1, h.2⟩, fun h => ⟨⟨⟨h.1, rfl⟩, rfl⟩, h.2⟩⟩
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Rsa.AArch64.Keys
-import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
+module
+
+public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 
 /-!
 # An RSA key from its two primes on AArch64
@@ -65,6 +67,8 @@ Every branch is a `cbz`/`cbnz` on a register: on `e` (`dPart`) and on the
 mask of `d` too small (the status 2). No callee-saved register is written,
 and nothing is pushed.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaKeyGen.AArch64.Key
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 
 /-!
 # GHASH with VPCLMULQDQ on x86-64
@@ -45,6 +47,8 @@ more than the 256-bit loops save.
 is written. Every branch and every address depends only on the pointers and
 `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.X86_64.Vpclmul
 

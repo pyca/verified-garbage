@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.AesGcm.X86
-import VerifiedGarbage.Impl.CmacAes.Stream.X86
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86
+public import VerifiedGarbage.Impl.CmacAes.Stream.X86
 
 /-!
 # AES-CCM: x86 (32-bit) implementation
@@ -81,6 +83,8 @@ Only the pointers, `rounds`, the lengths and `tag_len` can affect timing:
 the branches are on those, and so are the numbers of calls, bytes copied
 and blocks chained.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesCcm.X86
 

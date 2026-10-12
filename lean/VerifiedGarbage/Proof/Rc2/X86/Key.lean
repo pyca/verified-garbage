@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
 import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Rc2.X86.KeyLit
 
 /-! # RC2 key expansion against the shared API contract -/
@@ -38,7 +39,7 @@ theorem keyTaint_agree {s₁ s₂ : State} (h₁ : keyContract.pre s₁) (h₂ :
     exact congrArg _ (args ((k - 4) / 4) (by omega))
 
 theorem expandKey_constantTime : ConstantTime isa keyContract.pre keyContract.pub expandKey := by
-  exact VG.Taint.constantTime (A := taint) keyTaint (fun _ _ h₁ h₂ hp => keyTaint_agree h₁ h₂ hp)
+  exact VG.Taint.constantTime (A := VG.X86.sseTaint) keyTaint (fun _ _ h₁ h₂ hp => keyTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
 def keySatState : State where

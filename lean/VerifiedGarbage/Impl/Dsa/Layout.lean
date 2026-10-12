@@ -1,3 +1,5 @@
+module
+
 /-!
 # DSA's internal working-space layout
 
@@ -10,6 +12,9 @@ the suffix, outside the active arithmetic prefix.
 The layout fits in 16384 bytes, the minimum scratch allocation permitted
 by the DSA contracts, including when the caller supplies padded parameters.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Dsa.Layout
 
 def outerWords : Nat := 48

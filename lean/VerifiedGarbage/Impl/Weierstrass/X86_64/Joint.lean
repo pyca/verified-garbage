@@ -1,12 +1,17 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.JointFixed
-import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
-import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
-import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
-import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
-import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
-import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.JointFixed
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
 
 /-! Interleaved public multiplication with cached peer and fixed-generator digits. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86_64.Joint
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass
 
@@ -19,6 +24,9 @@ structure Cfg where
   /-- The curve whose functions run the digits' additions
   (`Spec/Weierstrass/PointOps.lean`), if they are calls, else inline. -/
   pts : Option Spec.Weierstrass.PointOps.Curve := none
+  /-- Whether the cache of `Z²` and `Z³` is built unrolled rather than in a
+  loop: faster on some CPUs for some curves (P-521 on Zen 5). -/
+  cacheUnroll : Bool := false
 
 def prep (c : Cfg) (u v : Nat) : Prog isa :=
   .seq (FastNaf.prepN c.K.M.n u c.gBits 7) (FastNaf.prepN c.K.M.n v c.K.bits 5)
@@ -52,8 +60,13 @@ def step (c : Cfg) (double : Prog isa) : Prog isa :=
 def run (c : Cfg) (double : Prog isa) : Prog isa :=
   .seq (digits c) (.loop (step c double) .ne)
 
+/-- The cache of the eight entries' `Z²` and `Z³`. -/
+def cacheCode (c : Cfg) : Prog isa :=
+  if c.cacheUnroll then Naf.cacheUnrolled c.K.M c.K.tbl c.cache 8
+  else Naf.cacheTable c.K.M c.K.tbl c.cache c.K.E.x
+
 def window (c : Cfg) (double : Prog isa) : Prog isa :=
-  .seq (Naf.table c.K) <| .seq (Naf.cacheTable c.K.M c.K.tbl c.cache 8) <|
+  .seq (Naf.table c.K) <| .seq (cacheCode c) <|
     .seq (.block (Jacobian.infinity c.K c.K.R ++ [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*c.K.M.n)))])) (run c double)
 
 end VG.Impl.Weierstrass.X86_64.Joint

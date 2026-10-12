@@ -64,6 +64,7 @@ mod ecdsa_p521;
 mod ecdsa_secp256k1;
 mod ed25519;
 mod ed448;
+mod ffdh;
 mod hmac_md5;
 mod hmac_sha1;
 mod hmac_sha224;
@@ -414,6 +415,7 @@ const BENCHES: &[Bench] = &[
     (rc2_cbc::USES, rc2_cbc::bench),
     (rc4::USES, rc4::bench),
     (rsa::USES, rsa::bench),
+    (ffdh::USES, ffdh::bench),
     (rsa_keygen::USES, rsa_keygen::bench),
     (rsa_oaep::USES, rsa_oaep::bench),
     (rsa_pkcs1_enc::USES, rsa_pkcs1_enc::bench),

@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejParser
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSqueeze
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejParser
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSqueeze
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.ResidentRej.Two
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Sample
@@ -21,8 +25,7 @@ def squeezeSetup (off n : Nat) : List Instr :=
 def squeezeN (squeeze : Prog isa) (off n : Nat) : Prog isa :=
   .seq (.block (squeezeSetup off n)) (.loop squeeze (.nonzero .x .x28))
 
-def batch (v off n : Nat) : Prog isa :=
- .seq (segment v 0 off n) (segment v 1 off n)
+def batch (v off n : Nat) : Prog isa := segments v off n 2
 
 def zeroTail (k : Nat) : Prog isa :=
  .seq (.block [.ldr .x .x4 .x19 (counts+8*k)]) <|

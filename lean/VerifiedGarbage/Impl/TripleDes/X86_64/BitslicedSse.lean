@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.TripleDes.X86_64.Bitsliced
-import VerifiedGarbage.Impl.TripleDes.X86_64.BitsliceAllocX
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Bitsliced
+meta import VerifiedGarbage.Impl.TripleDes.X86_64.Bitsliced
+public import VerifiedGarbage.Impl.TripleDes.X86_64.BitsliceAllocX
+meta import VerifiedGarbage.Impl.TripleDes.X86_64.BitsliceAllocX
 
 /-!
 # Bitsliced Triple DES ECB on x86-64 with SSE2
@@ -26,6 +30,8 @@ least 128 blocks are left; the blocks left after that go through the
   and `r13`, the callee-saved registers used, are saved in the scratch
   buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86_64.BitsliceSse
 

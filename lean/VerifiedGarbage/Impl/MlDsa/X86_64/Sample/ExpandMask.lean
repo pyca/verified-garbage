@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Common
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_expand_mask_poly`
@@ -15,6 +17,8 @@ word of the last coefficient reads a byte past the output, which the mask
 drops. There is no branch on the data, and the addresses depend only on the
 pointers and `γ₁`: it is constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Sample
 

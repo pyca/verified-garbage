@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.X86.InputBits
-import VerifiedGarbage.Impl.Ed25519.X86.PointMul
-import VerifiedGarbage.Impl.Ed25519.X86.PointEncode
-import VerifiedGarbage.Impl.Ed25519.X86.Comb
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.InputBits
+public import VerifiedGarbage.Impl.Ed25519.X86.PointMul
+public import VerifiedGarbage.Impl.Ed25519.X86.PointEncode
+public import VerifiedGarbage.Impl.Ed25519.X86.Comb
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86
 open VG VG.X86

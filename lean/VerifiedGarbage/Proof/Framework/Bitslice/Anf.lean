@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # The ANF domain: XORs of ANDs of XORs of rotated words
@@ -26,6 +28,8 @@ are related to concrete words by `eval` alone.
 Rotations act on the keys; they keep the lists sorted as long as no
 linear form has two keys of the same atom.
 -/
+
+@[expose] public section
 
 namespace VG.Bitslice.Anf
 

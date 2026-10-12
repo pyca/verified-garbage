@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Frag
-import VerifiedGarbage.Spec.MlDsa.Contract
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Frag
+public import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa{44,65,87}_sign_message` and `_verify_message`
@@ -31,6 +33,8 @@ formatted message) or from `rax` (the position the previous sponge function
 returned). Every address and branch depends only on the pointers and the
 lengths, and the calls' own leakage.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Message
 

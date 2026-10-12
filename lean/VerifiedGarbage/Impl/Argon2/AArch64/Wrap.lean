@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! # Wrap a reference-column sum with one masked subtraction
 
@@ -7,6 +9,8 @@ import VerifiedGarbage.TCB.AArch64.Isa
 lane length needs at most one subtraction; the borrow mask selects the
 original sum when it is already in range. No secret controls a branch.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.AArch64.Wrap
 

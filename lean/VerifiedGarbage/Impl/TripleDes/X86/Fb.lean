@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.TripleDes.X86.Modes
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86.Modes
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 on x86 (32-bit)
@@ -7,6 +9,8 @@ The modes' OFB, CFB and CFB8 (`Impl/Modes/X86/Seq.lean`) over Triple DES's
 core in the encryption direction (`Modes.lean`), with the scratch buffer as
 the fifth argument.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86
 

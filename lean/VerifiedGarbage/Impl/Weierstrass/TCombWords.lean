@@ -1,3 +1,5 @@
+module
+
 /-!
 # The fixed-base comb's tables as words, on any target
 
@@ -6,6 +8,8 @@ target's comb reads them (`Impl/Weierstrass/<Target>/TComb.lean`): table
 after table, entry after entry, `x` then `y`, each in Montgomery form, `n`
 64-bit words little-endian (`tcombWords`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass
 

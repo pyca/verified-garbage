@@ -37,7 +37,8 @@ theorem joint_naf_layout : NafLay publicJoint.K 8192 :=
     by decide +kernel,by decide,rfl,rfl,rfl,rfl⟩
 
 theorem joint_init_layout : JointInitLayout publicJoint 8192 :=
-  ⟨joint_layout,joint_naf_layout,by decide,by decide,by decide,by decide,by decide,by decide +kernel⟩
+  ⟨joint_layout,joint_naf_layout,by decide,by decide,by decide,by decide,by decide,by decide +kernel,
+    by decide,by decide⟩
 
 theorem joint_prep_layout : JointPrepLayout publicJoint 8192
     (p224v.sl Impl.Ecdsa.Verify.X86_64.U)

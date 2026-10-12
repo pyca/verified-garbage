@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesCbc.X86
+module
+
+public import VerifiedGarbage.Impl.AesCbc.X86
 
 /-!
 # AES-OFB: x86 (32-bit) implementation
@@ -20,6 +22,8 @@ XORed into the data block a word at a time.
 Only the pointers, `rounds` and `n` can affect timing: the only branches are
 on `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesOfb.X86
 

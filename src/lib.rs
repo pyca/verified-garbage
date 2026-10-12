@@ -115,6 +115,7 @@ pub mod ecdh;
 pub mod ecdsa;
 pub mod ed25519;
 pub mod ed448;
+pub mod ffdh;
 pub mod hashes;
 pub mod hmac;
 pub mod idea_cbc;

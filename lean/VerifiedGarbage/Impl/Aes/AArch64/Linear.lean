@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.AArch64.Sbox
+module
+
+public import VerifiedGarbage.Impl.Aes.AArch64.Sbox
 
 /-!
 # The linear layers of bitsliced AES on AArch64
@@ -14,6 +16,8 @@ Every block here uses the state registers, the mask registers `m 1 … m 6`
 (built with `movz` and `movk`) and the temporaries `t0`, `t1`, `u7` and
 `t2`; AddRoundKey loads the round key from `kp`. None uses memory otherwise.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.AArch64
 

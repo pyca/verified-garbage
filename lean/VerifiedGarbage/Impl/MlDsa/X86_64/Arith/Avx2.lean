@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
-import VerifiedGarbage.Impl.MlKem.X86_64.Avx
-import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Avx2
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
+public import VerifiedGarbage.Impl.MlKem.X86_64.Avx
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Avx2
 
 /-!
 # ML-DSA on x86-64: the polynomial arithmetic with AVX2
@@ -38,6 +40,8 @@ stored after MXCSR is loaded back. Every function clears the upper halves of
 the vector registers before returning (`vzeroupper`). Every address and
 branch depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Arith
 

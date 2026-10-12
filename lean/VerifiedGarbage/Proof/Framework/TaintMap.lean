@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.TaintSum
+module
+
+public import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # The analysis of code with its instructions rewritten
@@ -12,6 +14,8 @@ differ only there (field arithmetic on different slots of a working space)
 become the same code, whose analysis from the same taint the kernel
 evaluates once.
 -/
+
+@[expose] public section
 
 namespace VG
 

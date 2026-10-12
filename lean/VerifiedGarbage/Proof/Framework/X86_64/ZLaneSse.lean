@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
-import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 
 /-!
 # x86-64: AVX-512 blocks as SSE blocks on each lane
@@ -12,6 +14,8 @@ instruction does on a register, and `vpternlogd` with the immediate `0x96`
 leaves in the SSE registers of `s.zproj l`, the state with lane `l` of each
 vector register as its SSE register (`WP.zlanes`).
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

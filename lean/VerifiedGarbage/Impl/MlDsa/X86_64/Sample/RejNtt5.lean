@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt4
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt4
 
 /-!
 # ML-DSA matrix sampling with five initial SHAKE128 blocks
@@ -10,6 +12,8 @@ The failure bound and sampled coefficients are those of the six-block code.
 Counts are saved between batches; checking them is allowed to leak the
 public matrix seeds, just like the rejection sampler itself.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Sample.Rej5
 

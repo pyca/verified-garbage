@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # RC4 on ARMv7
@@ -21,6 +23,8 @@ function the count of bytes done in `r0`, the data at `r1` and its length in
 `r2`. `scratch` stays in `r3`: our caller's `r4`–`r11` are saved in its first
 32 bytes and restored from there at the end. No stack is used.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rc4.Arm
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Spec.X25519.Field32
+module
+
+public import VerifiedGarbage.Impl.X25519.X86
+public import VerifiedGarbage.Spec.X25519.Field32
 
 /-!
 # Powers in curve25519's field on x86 (32-bit), as a function
@@ -18,6 +20,8 @@ may affect timing.
 The function's own working space is bytes 576 to 1023: `E2`, `E3`, `AC`,
 `T` and `SAVE`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X25519.X86.Field32
 

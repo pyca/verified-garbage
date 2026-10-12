@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sm3
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.Spec.Sm3
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # SM3 compression function: ARMv7 implementation
@@ -19,6 +21,8 @@ The same structure as the x86-64 implementation, with fewer registers:
 * `r0`–`r3` (the pointers and the block count) are public; no address and no
   branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm3.Arm
 

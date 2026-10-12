@@ -13,7 +13,7 @@ Feistel step and moves the subkeys' pointer in its slot (`feistel`).
 
 namespace VG.Proof.Cast5.X86
 
-open VG VG.X86 VG.X86.RegUpd VG.Impl.Cast5.X86
+open VG VG.X86 VG.X86.Lanes VG.X86.RegUpd VG.Impl.Cast5.X86
 open VG.Impl.Cast5 (s1234Sym)
 open VG.Proof.Cast5 (tableEnt)
 

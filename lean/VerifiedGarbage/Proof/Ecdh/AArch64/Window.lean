@@ -227,6 +227,8 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
     {rest : Prog isa} {R : State → Prop}
     (h : ∀ s', WinMulPost c base P (sv c base s ks) s s' → WP isa rest s' R) {pa : Option (String × Nat)}
     (hpa : AddOk (winQ c).M size (· ∈ winSlots (winQ c)) (winQ c).S (winQ c).R (winQ c).E (winQ c).D pa)
+    (hr : AddReady base (winQ c).M s.mem (winQ c).S pa)
+    (hfar : AddFar (winQ c).M (winQ c).S (winX c ++ winW (winQ c)) pa)
     (hksT : ks ≠ TMP := by decide) :
     WP isa (.seq (c.winPrep (c.sl ks)) (.seq (WinCfg.window (winQ c) pa) rest)) s R := by
   have h0 := hc.n0
@@ -300,7 +302,10 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
       exact b₂ t (by omega_arith)
   refine WP.seq (WP.mono (window_ok (winLayQ hc) (winAQ hc) hpR hC hc.am3 hP hc.p_lt (hmont 1)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hs₂ hM₂ hF
-    (by rw [hJ]; exact hrec) (Nat.le_add_left _ _) hpa) fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_)
+    (by rw [hJ]; exact hrec) (Nat.le_add_left _ _) hpa
+    (hr.unch hpa (by rw [winSlots_eq]; exact List.mem_map_of_mem (f := c.sl) (show BM ∈ roI ++ otherI ++ tblI by decide)) (by omega_arith) U₂
+      (hfar.mono fun w hw => List.mem_append_left _ hw))
+    (hfar.mono fun w hw => List.mem_append_right _ hw)) fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_)
   rw [winW_eq] at U₃
   rw [hJ, Nat.add_sub_cancel] at R₃
   have nc : ∀ {r}, r ∉ combClob c.n → r ∉ clob c.n := fun hr h => hr (clob_combClob _ h)
@@ -326,7 +331,7 @@ theorem winPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
     {g : Reg → BitVec 64} (F : Fixed c base g s.mem) {P : Point c.C} (hP : onCurve c.C P = true)
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
-      (tmv c.C c.n base s (c.sl ONEP)) P)
+      (tmv c.C c.n base s (c.sl ONEP)) P) (hbp : sv c base s EM = sv c base s BM)
     {rest : Prog isa} {R : State → Prop}
     (h : ∀ s', WinPost c base P (sv c base s K) s s' → WP isa rest s' R) :
     WP isa (.seq (c.winPrep (c.sl K)) (.seq (WinCfg.window (winQ c) c.padd) (.seq c.pPow rest))) s R := by
@@ -334,7 +339,25 @@ theorem winPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
   have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  refine winMul_ok hc hC hs F hP hpx hpy hrep (ks := K) (by decide) (hpa := winAddOk hc) fun s₃ W => ?_
+  have hr : AddReady base (winQ c).M s.mem (winQ c).S c.padd := by
+    cases h : c.padd with
+    | none => trivial
+    | some f =>
+      obtain ⟨name, bAt⟩ := f
+      obtain rfl := padd_bAt h
+      exact hbp
+  have hfar : AddFar (winQ c).M (winQ c).S (winX c ++ winW (winQ c)) c.padd := by
+    cases h : c.padd with
+    | none => trivial
+    | some f =>
+      obtain ⟨name, bAt⟩ := f
+      obtain rfl := padd_bAt h
+      intro w hw
+      rw [winW_eq] at hw
+      exact ⟨apart_append (apart_winX (i := EM) (by decide)) (apart_slW (i := EM) (by decide)) w hw,
+        apart_append (apart_winX (i := BM) (by decide)) (apart_slW (i := BM) (by decide)) w hw⟩
+  refine winMul_ok hc hC hs F hP hpx hpy hrep (ks := K) (by decide) (hpa := winAddOk hc) (hr := hr)
+    (hfar := hfar) fun s₃ W => ?_
   have F₃ := F.unch h7 hn (fixedOk_winX.append (fixedOk_slW (by decide))) W.unch
   have rz₃ : wordsVal s₃.mem base (c.sl RZ) c.n < c.C.p := W.lt _ (by simp)
   refine WP.seq (WP.mono (pPow_ok hc W.scr W.mod rz₃)

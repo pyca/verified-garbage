@@ -1,11 +1,13 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
-import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
-import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Spec.Ecdsa
-import VerifiedGarbage.Spec.Weierstrass.Inverse
-import VerifiedGarbage.Spec.Weierstrass.PointOps
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Spec.Ecdsa
+public import VerifiedGarbage.Spec.Weierstrass.Inverse
+public import VerifiedGarbage.Spec.Weierstrass.PointOps
 
 /-!
 # ECDSA signing on AArch64
@@ -33,6 +35,8 @@ scratch = x4) -> w0`, for a curve whose field elements and scalars are `n`
 `r = 0`, as the specification says. Everything is computed whatever the
 flag, and only the pointers may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.AArch64
 
@@ -185,7 +189,10 @@ def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 def rcbSlots : RcbSlots := ⟨c.sl AP, c.sl BM, c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5⟩
 
 /-- The complete additions' function, if any: its name and where it reads
-`b` (`EM`'s slot, `PointOps.Curve.bAt`, which no addition overlaps in time). -/
+`b` (`EM`'s slot, `PointOps.Curve.bAt`). The signature and the public key
+copy `b` there once, before the comb (`combP`): `EM` is free until the
+signature computes `e mod n` there, after the comb. ECDH's constant `b`
+(`BP`) is already there. -/
 def padd : Option (String × Nat) := c.pointOps.map fun C => (C.projAddApi.name, c.sl EM)
 
 /-- `vg_<curve>_proj_add`: `D = R + T` by Algorithm 4, `b` at `EM`'s slot. -/
@@ -214,6 +221,13 @@ def combCfg : TCombCfg where
   J := combJ c.n
   start := (c.mont c.start.1, c.mont c.start.2)
   one := c.mont 1
+
+/-- The signature's and the public key's comb: for calls of the complete
+additions' function, `b` copied to where it reads it first. -/
+def combP : Prog isa :=
+  match c.padd with
+  | none => TCombCfg.comb c.combCfg false none
+  | some (name, bAt) => .seq (.block (copy c.n bAt (c.sl BM))) (TCombCfg.comb c.combCfg false (some (name, bAt)))
 
 /-- The comb's tables, in memory (`Artifact.consts`). -/
 def combWords : List (BitVec 64) := tcombWords c.n c.R c.C.p c.tbl
@@ -404,7 +418,7 @@ def signWith (comb : Prog isa) : Prog isa :=
   .seq c.nPow c.scalar
 
 /-- Signing with the original complete-addition comb. -/
-def sign : Prog isa := c.signWith (TCombCfg.comb c.combCfg false c.padd)
+def sign : Prog isa := c.signWith c.combP
 
 end Cfg
 

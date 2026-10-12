@@ -1,7 +1,12 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Eight four-byte stores (32 bytes) at a time, then four-byte stores, then
 a byte tail. -/
+
+@[expose] public section
+
 namespace VG.Impl.Zeroize.Arm
 open VG.Arm
 

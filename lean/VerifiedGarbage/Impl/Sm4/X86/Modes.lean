@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sm4.X86.Ecb
-import VerifiedGarbage.Impl.Modes.X86.Seq
+module
+
+public import VerifiedGarbage.Impl.Sm4.X86.Ecb
+public import VerifiedGarbage.Impl.Modes.X86.Seq
 
 /-!
 # SM4's core for the modes on x86 (32-bit)
@@ -11,6 +13,8 @@ argument), and `crypt` runs the 32 rounds on the eight blocks of the tail
 buffer. The modes' slots follow the table, in place of ECB's saved
 registers and data pointer: 362 slots in all (`[u64; 181]`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.X86
 

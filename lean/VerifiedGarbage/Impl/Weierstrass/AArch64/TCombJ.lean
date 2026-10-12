@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
 
 /-!
 # Fixed-base Booth comb with Jacobian mixed additions
@@ -13,6 +15,8 @@ Every table entry is read in fixed order by the existing secret `select`.
 Sign, zero-digit and infinity corrections use masks, with no secret branch
 or secret address. Only the public window counter controls the loop.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.AArch64
 open VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass

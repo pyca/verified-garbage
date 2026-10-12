@@ -1,9 +1,13 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
-import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
-import VerifiedGarbage.Impl.Weierstrass.AArch64.JointMixed
-import VerifiedGarbage.Impl.Weierstrass.AArch64.CachedJac
-import VerifiedGarbage.Impl.Weierstrass.AArch64.ArithmeticTable
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
+public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.JointMixed
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.CachedJac
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.ArithmeticTable
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Verify.AArch64.P256Joint
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

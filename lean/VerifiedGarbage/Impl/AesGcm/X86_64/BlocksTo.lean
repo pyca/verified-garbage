@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesGcm.X86_64.Blocks
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86_64.Blocks
 
 /-!
 # AES-GCM on whole blocks, out of place: x86-64 implementation
@@ -20,6 +22,8 @@ The rest (all the blocks, without a `piece`) is copied from
 `src` to `dst` (`copyBlocks`), and encrypted and hashed there in place by a
 call of `vg_aes_gcm_encrypt_blocks`, given `scratch` for its working space.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcm.X86_64.BlocksTo
 

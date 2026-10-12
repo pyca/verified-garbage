@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Camellia.Arm.Cbc
+module
+
+public import VerifiedGarbage.Impl.Camellia.Arm.Cbc
 
 /-!
 # Camellia-OFB and Camellia-CFB128 on ARMv7
@@ -8,6 +10,8 @@ import VerifiedGarbage.Impl.Camellia.Arm.Cbc
 `vg_camellia_ecb_encrypt`, which they call once per block with the number of
 rounds (`ecbCore .encrypt`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.Arm
 

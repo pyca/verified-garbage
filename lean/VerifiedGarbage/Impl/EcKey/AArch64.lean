@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ecdsa.AArch64
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.AArch64
 
 /-!
 # Elliptic curve public keys on AArch64
@@ -23,6 +25,8 @@ curve of `n` 64-bit words, from the code of ECDSA's signature
 Everything is computed whatever the flag, and only the pointers may affect
 timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.EcKey.AArch64
 
@@ -51,7 +55,7 @@ def upToPowWith (comb : Prog isa) : Prog isa :=
   .seq comb <|
   .seq c.pPow (.block [])
 
-def upToPow : Prog isa := upToPowWith c (TCombCfg.comb c.combCfg false c.padd)
+def upToPow : Prog isa := upToPowWith c c.combP
 
 /-- `04 ‖ x ‖ y` (or zeros, `len` bytes each) to `out`, `x19`–`x25` restored, and the
 flag's low bit to `x0`. -/
@@ -75,7 +79,7 @@ def middle : Prog isa :=
 def publicKeyWith (comb : Prog isa) : Prog isa :=
   .seq (.block args) (.seq (upToPowWith c comb) (middle c))
 
-def publicKey : Prog isa := publicKeyWith c (TCombCfg.comb c.combCfg false c.padd)
+def publicKey : Prog isa := publicKeyWith c c.combP
 
 end Cfg
 

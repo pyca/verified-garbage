@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedAvx2
-import VerifiedGarbage.Impl.TripleDes.X86_64.BitsliceAllocZ
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedAvx2
+meta import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedAvx2
+public import VerifiedGarbage.Impl.TripleDes.X86_64.BitsliceAllocZ
+meta import VerifiedGarbage.Impl.TripleDes.X86_64.BitsliceAllocZ
 
 /-!
 # Bitsliced Triple DES ECB on x86-64 with AVX-512
@@ -22,6 +26,8 @@ SSE2 code).
   count is in registers, `rbx`, `r12` and `r13` saved in the scratch buffer,
   as in `BitslicedAvx2`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86_64.BitsliceAvx512
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sm3
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.Spec.Sm3
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # SM3 compression function: AArch64 implementation
@@ -17,6 +19,8 @@ The same structure as the x86-64 implementation:
 * `x0`–`x3` (the pointers and the block count) are public; no address and
   no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm3.AArch64
 

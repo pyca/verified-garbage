@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesOfb.AArch64
+module
+
+public import VerifiedGarbage.Impl.AesOfb.AArch64
 
 /-!
 # AES-CFB128: AArch64 implementation
@@ -22,6 +24,8 @@ the block at `iv` then becomes the ciphertext block:
 
 Only the pointers, `rounds` and `n` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesCfb.AArch64
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 
 /-!
 # A scratch buffer on the stack, for code that reads tables of constants (x86-64)
@@ -16,6 +18,8 @@ outside the frame, which is within the stack the contract reserves
 contract reserves the frame's stack and that the return address is outside
 the writable regions.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

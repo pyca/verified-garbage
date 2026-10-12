@@ -36,6 +36,41 @@ theorem flush_rel : RelCT isa (EnvAgree Ctx St W SP [.rbx]) (flush v.callees yo)
   have he : Env Ctx St W SP s := hs.elim id id
   exact ⟨he, by rw [he.r15], covers_left (he.perm.wC (by decide))⟩
 
+/-- `padTail yo`, with the same data pointer and number of bytes. -/
+theorem padTail_rel : RelCT isa (EnvAgree Ctx St W SP [.rbp, .r12]) (padTail v.callees yo) fun _ _ => True := by
+  refine RelCT.seq (rel_env (Ctx := Ctx) (St := St) (W := W) (SP := SP) (by decide) (fun _ _ h => ⟨h.1, h.2.1⟩)
+    (rel_regs ([.rbp, .r12] ++ [.r13, .r14, .r15, .rsp]) ([.rbp, .r12, .rcx] ++ [.r13, .r14, .r15, .rsp]) true
+      (fun _ _ h => h.regs) ⟨_, by taint_decide⟩)) ?_
+  refine rel_ite_e (fun _ _ h => (h.1.2 rfl).2.1) (RelCT.block_nil fun _ _ _ => trivial) ?_
+  refine rel_reassoc2 (RelCT.seq (rel_env (Ctx := Ctx) (St := St) (W := W) (SP := SP) (by decide)
+    (fun _ _ h => h.1.2) (rel_taint ([.rbp, .r12, .rcx] ++ [.r13, .r14, .r15, .rsp]) (fun _ _ h => h.1.1.1)
+      ⟨_, by taint_decide⟩)) ?_)
+  refine (ghash1_rel v L hyo .r15 96 (.inr rfl) (by decide) (P := W + BitVec.ofNat 64 96)
+    (L.st_w (by omega) (.inr ⟨by decide, by decide⟩)) (L.w_w (.inl (by decide)) (by decide) (by decide))
+    (L.stk_w (by decide)) (gh1Check_r15_96 hyo) (F₁ := Env Ctx St W SP) (F₂ := Env Ctx St W SP)
+    fun s hs => ?_).mono (fun _ _ h => h.2) fun _ _ h => h
+  have he : Env Ctx St W SP s := hs.elim id id
+  exact ⟨he, by rw [he.r15], covers_left (he.perm.wC (by decide))⟩
+
+/-- `absorbPad yo`, for data at the same address, of the same length, with
+nothing buffered. -/
+theorem absorbPad_rel {H₁ H₂ : Block} {x₁ x₂ : List Byte} {D : Addr} {n : Nat}
+    (hx₁ : x₁.length % 16 = 0) (hx₂ : x₂.length % 16 = 0) :
+    RelCT isa (fun s₁ s₂ => AbsIn Ctx St W SP yo H₁ x₁ D n s₁ ∧ AbsIn Ctx St W SP yo H₂ x₂ D n s₂)
+      (absorbPad v.callees yo) fun _ _ => True := by
+  suffices k : RelCT isa (fun s₁ s₂ => ∃ m₁ m₂ : Mem, AbsMid Ctx St W SP yo H₁ x₁ D n m₁ 0 s₁ ∧
+      AbsMid Ctx St W SP yo H₂ x₂ D n m₂ 0 s₂) (absorbPad v.callees yo) fun _ _ => True from
+    k.mono (fun s₁ s₂ h => ⟨s₁.mem, s₂.mem, h.1.mid hx₁, h.2.mid hx₂⟩) fun _ _ h => h
+  refine RelCT.exists_ fun m₁ => RelCT.exists_ fun m₂ => ?_
+  have hw := rel_wp (whole_rel v L hyo (H₁ := H₁) (H₂ := H₂) (x₁ := x₁) (x₂ := x₂) (D := D) (n := n) (m₁ := m₁)
+      (m₂ := m₂) (j := 0)) (fun _ _ h => h)
+    (fun s h => whole_ok v L hyo h (h.data_eq hyo)) (fun s h => whole_ok v L hyo h (h.data_eq hyo))
+  refine RelCT.seq hw ((padTail_rel v L hyo).mono (fun _ _ h => ⟨h.2.1.env, h.2.2.env, fun r hr => ?_⟩)
+    fun _ _ h => h)
+  exact AbsMid.agree h.2.1 h.2.2 r (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with rfl | rfl <;> simp)
+
 /-- `lens yo`, with the same lengths. -/
 theorem lens_rel : RelCT isa (EnvAgree Ctx St W SP [.rbx, .rbp]) (lens v.callees yo) fun _ _ => True := by
   refine RelCT.seq (rel_env (Ctx := Ctx) (St := St) (W := W) (SP := SP) (by decide) (fun _ _ h => ⟨h.1, h.2.1⟩)

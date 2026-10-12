@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.RsaOaep.AArch64.Mgf1
+module
+
+public import VerifiedGarbage.Impl.RsaOaep.AArch64.Mgf1
 
 /-!
 # RSAES-OAEP (RFC 8017 §7.1) on AArch64
@@ -55,6 +57,8 @@ and `acc = 0`, `out` receives the buffer's first `k` bytes ANDed with `ok`,
 The masks are computed from the borrow of a subtraction (`subs`, then `sbc`
 of a register from itself): `x - 1` borrows exactly when `x = 0`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaOaep.AArch64
 

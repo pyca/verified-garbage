@@ -1,6 +1,11 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! # DSA limb arithmetic on baseline x86-64 -/
+
+@[expose] public section
+
 namespace VG.Impl.Dsa.X86_64
 open VG.X86_64
 

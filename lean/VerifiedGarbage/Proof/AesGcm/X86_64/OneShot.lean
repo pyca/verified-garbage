@@ -518,30 +518,9 @@ theorem oneAad_ok {D Np A : Addr} {nl al n : Nat} {H : Block} {s : State} (he : 
     rw [hm₂]; exact bytesAt_frame jo.frame dAj (by have := hAd.lt; omega)
   have hai : AbsIn Ctx (W + BitVec.ofNat 64 16) W SP 16 H [] A al s₂ :=
     ⟨he₂, h12₂, hbp₂, hbx₂, hAd.of_eq (by rw [hrd₂, hrd₁]) (by rw [hwr₂, hwr₁]), by rw [hm₂]; exact jo.hH⟩
-  refine WP.seq (WP.mono (WP.with_rdwr (absorbAl_ok v L (yo := 16) (.inr rfl) hai rfl)) fun s₃ ⟨ho, hrd₃, hwr₃⟩ => ?_)
-  rw [List.nil_append, ha₂] at ho
-  have he₃ := ho.env
-  have f₃ := wFrame_one (D := D) (n := n) (o := 0) (.inl rfl) (wFrame_cons (absFrame_one ho.frame))
-  rw [hm₂] at f₃
-  have q₃ := he₃.perm.wR (show 184 + 8 ≤ 2560 by decide)
-  obtain ⟨s₄, run₄, hbx₄, hg₄, hm₄, hrd₄, hwr₄⟩ : ∃ s₄, runBlock isa [.mov .rbx (.mem (at_ .r15 alenO)),
-      .alu .and .rbx (imm 15)] s₃ = some s₄ ∧ s₄.gpr .rbx = BitVec.ofNat 64 ((bytesAt s.mem A al).length % 16) ∧
-      (∀ r, r ≠ .rbx → s₄.gpr r = s₃.gpr r) ∧ s₄.mem = s₃.mem ∧ s₄.rd = s₃.rd ∧ s₄.wr = s₃.wr := by
-    have hand := and15 (BitVec.ofNat 64 al)
-    rw [imm_eq (by decide), toNat_ofNat_of_lt (by have := hAd.lt; omega)] at hand
-    refine ⟨_, by xrun [he₃.r15, q₃], ?_, ?_, ?_⟩
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, kp f₃ 184 (.inl ⟨by decide, by decide⟩),
-        kp f₁ 184 (.inl ⟨by decide, by decide⟩), hal, hand, length_bytesAt]
-    · intro r a; simp [gpr_setReg, gpr_arithFlags, a]
-    all_goals simp [mem_arithFlags, mem_setReg, rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
-  refine WP.seq (WP.of_runBlock ⟨s₄, run₄, ?_⟩)
-  have he₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₄ := he₃.keep (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> exact hg₄ _ (by decide)) hrd₄ hwr₄
-  have hH₃ : blockAt s₃.mem (Ctx + BitVec.ofNat 64 240) = H := by
-    rw [blockAt_frame ho.frame (ctx_absFrame L (.inr rfl)), hm₂, jo.hH]
-  refine WP.mono (flush_ok v L (yo := 16) (.inr rfl) (H := H) ⟨he₄, by rw [hm₄, hH₃]⟩ hbx₄) fun s₅ hf => ?_
-  rw [hm₄] at hf
+  refine WP.mono (absorbPad_ok v L (yo := 16) (.inr rfl) hai rfl) fun s₅ hf => ?_
+  rw [List.nil_append, ha₂] at hf
+  obtain ⟨m₃, fa, ft⟩ := hf.frame
   have dS0 : ∀ r ∈ absFrame (W + BitVec.ofNat 64 16) W SP 16, (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 0, 16⟩ : Region).Disjoint r ∧
       (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint r := by
     intro r hr
@@ -561,18 +540,18 @@ theorem oneAad_ok {D Np A : Addr} {nl al n : Nat} {H : Block} {s : State} (he : 
     · exact ⟨L.st_w (by decide) (.inr ⟨by decide, by decide⟩), L.st_w (by decide) (.inr ⟨by decide, by decide⟩)⟩
     · exact ⟨(L.stk_st (by decide)).symm, (L.stk_st (by decide)).symm⟩
   have hj₅ : blockAt s₅.mem (W + BitVec.ofNat 64 16) = Spec.Gcm.j0 H (bytesAt s.mem Np nl) := by
-    have e₁ : blockAt s₅.mem (W + BitVec.ofNat 64 16) = blockAt s₃.mem (W + BitVec.ofNat 64 16) :=
-      blockAt_frame hf.frame fun r hr => by simpa using (dT0 r hr).1
-    have e₂ : blockAt s₃.mem (W + BitVec.ofNat 64 16) = blockAt s₁.mem (W + BitVec.ofNat 64 16) := by
-      rw [blockAt_frame ho.frame fun r hr => by simpa using (dS0 r hr).1, hm₂]
+    have e₁ : blockAt s₅.mem (W + BitVec.ofNat 64 16) = blockAt m₃ (W + BitVec.ofNat 64 16) :=
+      blockAt_frame ft fun r hr => by simpa using (dT0 r hr).1
+    have e₂ : blockAt m₃ (W + BitVec.ofNat 64 16) = blockAt s₁.mem (W + BitVec.ofNat 64 16) := by
+      rw [blockAt_frame fa fun r hr => by simpa using (dS0 r hr).1, hm₂]
     rw [e₁, e₂]; exact jo.j0
-  refine ⟨hf.env, hf.hH, hj₅, hf.abs (ho.abs (by rw [hm₂]; exact Proof.Gcm.absorbed_nil _ jo.y)), ?_, ?_⟩
-  · rw [blockAt_frame hf.frame (fun r hr => (dT0 r hr).2), blockAt_frame ho.frame (fun r hr => (dS0 r hr).2), hm₂]
+  refine ⟨hf.env, hf.hH, hj₅, hf.abs (by rw [hm₂]; exact Proof.Gcm.absorbed_nil _ jo.y), ?_, ?_⟩
+  · rw [blockAt_frame ft (fun r hr => (dT0 r hr).2), blockAt_frame fa (fun r hr => (dS0 r hr).2), hm₂]
     exact jo.cb
   · have g₁ := j0Frame_one jo.frame
-    have g₃ := absFrame_one ho.frame
+    have g₃ := absFrame_one fa
     rw [hm₂] at g₃
-    exact (g₁.trans g₃).trans (tFrame_one hf.frame)
+    exact (g₁.trans g₃).trans (tFrame_one ft)
 
 end
 
@@ -689,34 +668,14 @@ theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat}
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide)) hrd₁ hwr₁
   have hai : AbsIn Ctx (W + BitVec.ofNat 64 16) W SP 16 H x D n s₁ :=
     ⟨he₁, h12, hbp, hbx, hd.of_eq hrd₁ hwr₁, by rw [hm₁, hH]⟩
-  refine WP.seq (WP.mono (WP.with_rdwr (absorbAl_ok v L (yo := 16) (.inr rfl) hai hx16)) fun s₂ ⟨ho', hrd₂, hwr₂⟩ => ?_)
-  rw [hm₁] at ho'
-  have he₂ := ho'.env
-  have g₂ := absFrame_one ho'.frame
-  have f₂ := wFrame_one (D := D) (n := n) (o := 0) (.inl rfl) (wFrame_cons g₂)
-  have q₃ := he₂.perm.wR (show 208 + 8 ≤ 2560 by decide)
-  obtain ⟨s₃, run₃, hbx₃, hg₃, hm₃, hrd₃, hwr₃⟩ : ∃ s₃, runBlock isa [.mov .rbx (.mem (at_ .r15 lenO)),
-      .alu .and .rbx (imm 15)] s₂ = some s₃ ∧ s₃.gpr .rbx = BitVec.ofNat 64 ((x ++ bytesAt s.mem D n).length % 16) ∧
-      (∀ r, r ≠ .rbx → s₃.gpr r = s₂.gpr r) ∧ s₃.mem = s₂.mem ∧ s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr := by
-    have hand := and15 (BitVec.ofNat 64 n)
-    rw [imm_eq (by decide), toNat_ofNat_of_lt hlt] at hand
-    have e : (x ++ bytesAt s.mem D n).length % 16 = n % 16 := by
-      simp only [List.length_append, length_bytesAt]; omega
-    refine ⟨_, by xrun [he₂.r15, q₃], ?_, ?_, ?_⟩
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, kp f₂ 208 (.inl ⟨by decide, by decide⟩), hlen, hand, e]
-    · intro r a; simp [gpr_setReg, gpr_arithFlags, a]
-    all_goals simp [mem_arithFlags, mem_setReg, rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
-  refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
-  have he₃ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₃ := he₂.keep (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> exact hg₃ _ (by decide)) hrd₃ hwr₃
-  have hH₂ : blockAt s₂.mem (Ctx + BitVec.ofNat 64 240) = H := by
-    rw [blockAt_frame ho'.frame (ctx_absFrame L (.inr rfl)), hH]
-  refine WP.seq (WP.mono (WP.with_rdwr (flush_ok v L (yo := 16) (.inr rfl) (H := H) ⟨he₃, by rw [hm₃, hH₂]⟩ hbx₃))
+  refine WP.seq (WP.mono (WP.with_rdwr (absorbPad_ok v L (yo := 16) (.inr rfl) hai hx16))
     fun s₄ ⟨hf, hrd₄, hwr₄⟩ => ?_)
-  rw [hm₃] at hf
+  rw [hm₁] at hf
+  obtain ⟨m₂, fa, ft⟩ := hf.frame
   have he₄ := hf.env
-  have g₄ := tFrame_one hf.frame
+  have g₂ := absFrame_one fa
+  have f₂ := wFrame_one (D := D) (n := n) (o := 0) (.inl rfl) (wFrame_cons g₂)
+  have g₄ := tFrame_one ft
   have f₄ := wFrame_one (D := D) (n := n) (o := 0) (.inl rfl) (wFrame_cons g₄)
   have q₄ := he₄.perm.wR (show 184 + 8 ≤ 2560 by decide)
   have q₅ := he₄.perm.wR (show 192 + 8 ≤ 2560 by decide)
@@ -762,11 +721,11 @@ theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat}
     · simpa using L.st_w (a := 0) (n := 16) (d := 512) (k := 256) (by decide) (.inr ⟨by decide, by decide⟩)
     · simpa using (L.stk_st (a := 0) (n := 16) (by decide)).symm
   have hJ₅ : blockAt s₅.mem (W + BitVec.ofNat 64 16) = blockAt s.mem (W + BitVec.ofNat 64 16) := by
-    rw [hm₅, blockAt_frame hf.frame dT0, blockAt_frame ho'.frame dS0]
+    rw [hm₅, blockAt_frame ft dT0, blockAt_frame fa dS0]
   have hH₅ : blockAt s₅.mem (Ctx + BitVec.ofNat 64 240) = H := by rw [hm₅, hf.hH]
   refine WP.mono (WP.with_rdwr (tag_ok v L ho he₅ hH₅ hR₅ hJ₅)) fun s₆ ⟨ht, hrd₆, hwr₆⟩ =>
-    ⟨ht.env, (wFrame_cons g₅).trans (tagFrame_one ht.frame), by rw [hrd₆, hrd₅, hrd₄, hrd₃, hrd₂, hrd₁],
-      by rw [hwr₆, hwr₅, hwr₄, hwr₃, hwr₂, hwr₁], ?_, ht.j, fun hab => ?_⟩
+    ⟨ht.env, (wFrame_cons g₅).trans (tagFrame_one ht.frame), by rw [hrd₆, hrd₅, hrd₄, hrd₁],
+      by rw [hwr₆, hwr₅, hwr₄, hwr₁], ?_, ht.j, fun hab => ?_⟩
   · have d48 : ∀ r ∈ tagFrame (W + BitVec.ofNat 64 16) W SP o,
         (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint r := by
       intro r hr
@@ -795,8 +754,8 @@ theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat}
       · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
       · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
       · exact (L.stk_st (by decide)).symm
-    rw [blockAt_frame ht.frame d48, hm₅, blockAt_frame hf.frame d48t, blockAt_frame ho'.frame d48a]
-  have hw := (hf.abs (ho'.abs hab)).whole_eq (by
+    rw [blockAt_frame ht.frame d48, hm₅, blockAt_frame ft d48t, blockAt_frame fa d48a]
+  have hw := (hf.abs hab).whole_eq (by
     simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _)
   rw [ht.out, ciph_frame f₅ dC hR.2, hbx₅, hbp₅, toNat_ofNat_of_lt hN, BitVec.toNat_ofNat, lensBlock_mod_left,
     hm₅, hw]

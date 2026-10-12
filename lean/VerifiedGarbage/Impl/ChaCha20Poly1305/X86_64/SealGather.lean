@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.AesGcm.X86_64
-import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86_64
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices: x86-64 implementation
@@ -31,6 +33,8 @@ and fewer than 4 bytes one at a time. After a copy wider than 16 bytes,
 branches are on `src_count`, the slices' lengths and the addresses in `dst`
 they go to alone.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20Poly1305.X86_64.SealGather
 

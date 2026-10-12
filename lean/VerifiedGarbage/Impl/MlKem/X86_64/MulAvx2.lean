@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Mul
-import VerifiedGarbage.Impl.MlKem.X86_64.Avx
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Mul
+public import VerifiedGarbage.Impl.MlKem.X86_64.Avx
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_multiply_ntts_avx2`
@@ -22,6 +24,8 @@ and clears the upper halves of the vector registers (`vzeroupper`) before
 returning, for the SSE code its callers run next. Every address and branch
 depends only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86_64
 

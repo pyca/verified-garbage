@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.Arm.Top
+module
+
+public import VerifiedGarbage.Impl.MlKem.Arm.Top
 
 /-!
 # ML-DSA on 32-bit ARM, signing: the pieces of the top-level function
@@ -19,6 +21,8 @@ it may use it.
 The code is generic in the implementations of the primitives (`Prims`): the
 proofs hold for any code that meets their contracts.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.Sign
 

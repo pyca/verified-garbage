@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
-import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
-import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
 
 /-!
 # ChaCha20-Poly1305: x86-64 implementation
@@ -67,6 +69,8 @@ the callee restored from memory.
 Only the pointers and the lengths can affect timing: the branches are on the
 lengths, and the tags are compared without a branch.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20Poly1305.X86_64
 

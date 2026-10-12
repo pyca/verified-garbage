@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Verify.OptimizedSamples
 open VG VG.AArch64 VG.Spec.MlDsa

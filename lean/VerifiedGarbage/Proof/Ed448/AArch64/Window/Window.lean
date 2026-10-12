@@ -16,7 +16,7 @@ state `WCtx` (the table of `tabPts P` stored, 1 in slot 20, zero in slot 19): `Q
 namespace VG.Proof.Ed448.AArch64.Window
 
 open VG VG.AArch64 VG.Impl.Ed448.AArch64
-open VG.Impl.X448.AArch64 (ld st slot ACC)
+open VG.Impl.X448.AArch64 (ld st slot ACC BITS)
 open VG.Impl.X448.AArch64.Fast (ops codeOf)
 open VG.Proof.X448.AArch64 (Scr Keeps off word limbs Outside Outside2 ofs)
 open VG.Proof.X448.AArch64.Weak (Index Env)
@@ -193,25 +193,24 @@ theorem select_env {s t : State} {base : Addr} {P : Point} {n : Nat} (hn : n < 1
 
 /-! ## A window -/
 
-/-- **A window**, for byte `j` of the challenge's copy at `KB` (`x19 = j`), at shift `sh`. -/
-theorem window_ok {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base P s) {j : Nat} (hj : j < 57)
-    (hc : s.gpr .x19 = BitVec.ofNat 64 j) {sh : Nat} (hsh : sh = 0 ∨ sh = 4) :
-    WP isa (window sh) s fun t =>
+/-- **A window**, for nibble `i` of the challenge at `BITS` (`x19 = i`). -/
+theorem window_ok {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base P s) {i : Nat} (hi : i < 114)
+    (hc : s.gpr .x19 = BitVec.ofNat 64 i) (hn : (s₀.mem (off base (BITS + i))).toNat < 16) :
+    WP isa window s fun t =>
       WCtx s₀ base P t ∧
-      pt (EV t.mem base) 3 4 5 = wstep P (pt (EV s.mem base) 3 4 5) (nibOf (s₀.mem (off base (KB + j))) sh) ∧
+      pt (EV t.mem base) 3 4 5 = wstep P (pt (EV s.mem base) 3 4 5) (s₀.mem (off base (BITS + i))).toNat ∧
       pt (EV t.mem base) 0 1 2 = pt (EV s.mem base) 0 1 2 ∧ t.gpr .x19 = s.gpr .x19 := by
   unfold window
   refine WP.seq (WP.mono (dbl4_ok h) fun t1 ⟨h1, q1, k1, c1⟩ => ?_)
   rw [WP.seq_iff, WP.block_append_iff]
-  refine WP.mono (digitOf_ok h1.scr hj (c1.trans hc) hsh) fun t2 ⟨d2, k2, m2⟩ => ?_
+  refine WP.mono (digitOf_ok h1.scr hi (c1.trans hc)) fun t2 ⟨d2, k2, m2⟩ => ?_
   have hs2 : Scr t2 base := h1.scr.of_keeps k2 (by decide)
-  -- The byte read is the copy's at the windows' start.
-  have hbyte : t1.mem (off base (KB + j)) = s₀.mem (off base (KB + j)) := by
+  -- The nibble read is the one at the windows' start.
+  have hbyte : t1.mem (off base (BITS + i)) = s₀.mem (off base (BITS + i)) := by
     have hn := h1.scr.nowrap
-    have ho : ofs base (off base (KB + j)) = KB + j := ofs_off0' base (by simp only [KB]; omega)
-    exact h1.mem _ (Or.inr (by rw [ho]; simp only [KB]; omega)) (Or.inl (by rw [ho]; simp only [KB, ACC]; omega))
+    have ho : ofs base (off base (BITS + i)) = BITS + i := ofs_off0' base (by simp only [BITS]; omega)
+    exact h1.mem _ (Or.inr (by rw [ho]; simp only [BITS]; omega)) (Or.inl (by rw [ho]; simp only [BITS, ACC]; omega))
   rw [hbyte] at d2
-  have hn := nibOf_lt (s₀.mem (off base (KB + j))) sh
   refine WP.mono (selectEntry_ok hs2 hn d2) fun t3 ⟨w3, o3, k3⟩ => ?_
   have hs3 : Scr t3 base := hs2.of_keeps k3 (by decide)
   obtain ⟨b3, e3, kp3, kk3⟩ := select_env hn w3 o3 (by rw [m2]; exact h1.env) (by rw [m2]; exact h1.tab)

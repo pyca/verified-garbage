@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.CmacTripleDes.Index
-import VerifiedGarbage.Impl.CmacTripleDes.Sbox
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.Impl.CmacTripleDes.Index
+public import VerifiedGarbage.Impl.CmacTripleDes.Sbox
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # DES on x86-64, in constant time: the round, the block and the key schedule
@@ -25,6 +27,8 @@ bits are ignored), the round key at `[r14]`, the scratch buffer at `r15`
 counter in `r10` and the step from one round key to the next (8 or −8) in
 `rbx`. A round uses `rax`, `rcx`, `rdx`, `rsi`, `rdi`, `r8` and `r9`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacTripleDes.X86_64
 

@@ -395,51 +395,42 @@ private theorem layout_only {s t : State} {b p : Addr} {n : Nat} {rs : List Reg}
 
 /-- Segment timing needs equality only for the consumed candidate bytes, not
 for preexisting output bytes or the ignored fourth byte of scalar loads. -/
-theorem segment_relCT (v k off n : Nat) (hk : k<4) (ho : off<4096) (hn : n<65536)
-    {hintSetup hintStore : VG.Taint.Hint VG.AArch64.Taint.T}
-    (checkSetup : (taint.check (Taint.ofRegs [.x19,.x21]) (.block (setup k off n)) hintSetup).isSome=true)
-    (checkStore : (taint.check (Taint.ofRegs [.x19])
-      (.block [.str .x .x4 .x19 (counts+8*k)]) hintStore).isSome=true)
-    {σ τ : State} {L : List Zq} (hL : L.length≤256) (hmod : n%4=0)
-    (hsp : σ.sp=τ.sp) (h19 : σ.gpr .x19=τ.gpr .x19)
-    (h21 : σ.gpr .x21=τ.gpr .x21)
-    (hs : StreamLayout σ (segmentInput σ k off) (segmentOutput σ k) n)
-    (ht : StreamLayout τ (segmentInput τ k off) (segmentOutput τ k) n)
-    (hrs : InRegions (σ.rd++σ.wr) (countAddress σ k) 8)
-    (hrt : InRegions (τ.rd++τ.wr) (countAddress τ k) 8)
-    (hcs : (σ.mem.readW (countAddress σ k) 64).toNat=256-L.length)
-    (hct : (τ.mem.readW (countAddress τ k) 64).toNat=256-L.length)
-    (hss : Stored σ.mem (segmentOutput σ k) L)
-    (hst : Stored τ.mem (segmentOutput τ k) L)
-    (hm : InputEq σ τ (segmentInput σ k off) n) :
-    RelCT isa (fun s t => s=σ ∧ t=τ) (segment v k off n) (fun _ _ => True) := by
-  have hi : segmentInput τ k off=segmentInput σ k off := by simp only [segmentInput,h19]
-  have hp : segmentOutput τ k=segmentOutput σ k := by simp only [segmentOutput,h21]
+theorem segment_relCT (v n : Nat) (hn : n<65536)
+    {hintSetup hintNext : VG.Taint.Hint VG.AArch64.Taint.T}
+    (checkSetup : (taint.check (Taint.ofRegs [.x26]) (.block (setup n)) hintSetup).isSome=true)
+    (checkNext : (taint.check (Taint.ofRegs [.x26]) (.block segmentNext) hintNext).isSome=true)
+    {σ τ : State} {b p c : Addr} {L : List Zq} (hL : L.length≤256) (hmod : n%4=0)
+    (hsp : σ.sp=τ.sp)
+    (s24 : σ.gpr .x24=b) (s25 : σ.gpr .x25=p) (s26 : σ.gpr .x26=c)
+    (t24 : τ.gpr .x24=b) (t25 : τ.gpr .x25=p) (t26 : τ.gpr .x26=c)
+    (hs : StreamLayout σ b p n) (ht : StreamLayout τ b p n)
+    (hrs : InRegions (σ.rd++σ.wr) c 8) (hrt : InRegions (τ.rd++τ.wr) c 8)
+    (hcs : (σ.mem.readW c 64).toNat=256-L.length)
+    (hct : (τ.mem.readW c 64).toNat=256-L.length)
+    (hss : Stored σ.mem p L) (hst : Stored τ.mem p L)
+    (hm : InputEq σ τ b n) :
+    RelCT isa (fun s t => s=σ ∧ t=τ) (segment v n) (fun _ _ => True) := by
   let P (a : State) (s : State) :=
-    Only [.x2,.x3,.x4,.x5,.x6,.x9,.x10] a s ∧
-      Start s (segmentInput σ k off) (segmentOutput σ k) n L
-  have ws : WP isa (.block (setup k off n)) σ (P σ) := by
-    refine WP.mono (setup_ok k off n hk ho hn hL hrs hcs) fun s ⟨hh,h2,h3,h4,h5,h9⟩ => ?_
+    Only [.x2,.x3,.x4,.x5,.x6,.x9,.x10] a s ∧ Start s b p n L
+  have ws : WP isa (.block (setup n)) σ (P σ) := by
+    refine WP.mono (setup_ok n hn hL s24 s25 s26 hrs hcs) fun s ⟨hh,h2,h3,h4,h5,h9⟩ => ?_
     exact ⟨hh,h2,h3,h4,h5,h9,by rw [hh.mem]; exact hss⟩
-  have wt : WP isa (.block (setup k off n)) τ (P τ) := by
-    refine WP.mono (setup_ok k off n hk ho hn hL hrt hct) fun s ⟨hh,h2,h3,h4,h5,h9⟩ => ?_
-    rw [hi] at h2
-    rw [hp] at h3
-    exact ⟨hh,h2,h3,h4,h5,h9,by rw [hh.mem,←hp]; exact hst⟩
+  have wt : WP isa (.block (setup n)) τ (P τ) := by
+    refine WP.mono (setup_ok n hn hL t24 t25 t26 hrt hct) fun s ⟨hh,h2,h3,h4,h5,h9⟩ => ?_
+    exact ⟨hh,h2,h3,h4,h5,h9,by rw [hh.mem]; exact hst⟩
   unfold segment
   apply RelCT.seq (R := fun s t => P σ s ∧ P τ t)
-  · have hc : RelCT isa (fun s t => s=σ ∧ t=τ) (.block (setup k off n)) (fun _ _ => True) :=
-      RelCT.taint (A := taint) (Taint.ofRegs [.x19,.x21])
+  · have hc : RelCT isa (fun s t => s=σ ∧ t=τ) (.block (setup n)) (fun _ _ => True) :=
+      RelCT.taint (A := taint) (Taint.ofRegs [.x26])
         (fun s t h => by
           rcases h with ⟨rfl,rfl⟩
-          exact ⟨hsp,by simp [Taint.ofRegs,RegSet.mem_ofList,h19,h21]⟩) checkSetup
+          exact ⟨hsp,by simp [Taint.ofRegs,RegSet.mem_ofList,s26,t26]⟩) checkSetup
     exact (hc.wp (fun s t h => by rcases h with ⟨rfl,rfl⟩; exact ⟨ws,wt⟩)).mono
       (fun _ _ h => h) (fun _ _ h => h.2)
   · intro s t tr ur s' t' hh es et
     have ls := layout_only hs hh.1.1
     have lt := layout_only ht hh.2.1
-    rw [hi,hp] at lt
-    have im : InputEq s t (segmentInput σ k off) n := by
+    have im : InputEq s t b n := by
       intro i hb
       rw [hh.1.1.mem,hh.2.1.mem]
       exact hm i hb
@@ -451,13 +442,13 @@ theorem segment_relCT (v k off n : Nat) (hk : k<4) (ho : off<4096) (hn : n<65536
     have pc := (parse_relCT v ls lt hh.1.2 hh.2.2 im sp hmod).wp
       (fun a b h => by rcases h with ⟨rfl,rfl⟩; exact ⟨wpS,wpT⟩)
     apply RelCT.seq pc ?_ s t tr ur s' t' ⟨rfl,rfl⟩ es et
-    exact RelCT.taint (A := taint) (Taint.ofRegs [.x19])
+    exact RelCT.taint (A := taint) (Taint.ofRegs [.x26])
       (fun a b h => ⟨h.2.1.1.sp.trans (sp.trans h.2.2.1.sp.symm),by
         simp only [Taint.ofRegs,RegSet.mem_ofList,List.mem_singleton]
         intro r hr
         subst r
-        rw [h.2.1.1.get .x19,h.2.2.1.get .x19,hh.1.1.get .x19,hh.2.1.get .x19]
-        exact h19⟩) checkStore
+        rw [h.2.1.1.get .x26,h.2.2.1.get .x26,hh.1.1.get .x26,hh.2.1.get .x26,s26,t26]⟩)
+      checkNext
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 
@@ -481,46 +472,51 @@ open VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
     exact h.byte hk _
   exact congrArg (VG.Proof.MlDsa.Sample.rnFold L) hb
 
-theorem rowStep_relCT {v blocks k off n : Nat} {σ τ : State} {L : Nat → List Zq}
+theorem Pub.ptrs {v off k : Nat} {σ τ : State} (h : Pub v σ τ) :
+    bufP σ k+BitVec.ofNat 64 off=bufP τ k+BitVec.ofNat 64 off ∧ polyP σ k=polyP τ k ∧
+      countP σ k=countP τ k := by
+  refine ⟨by rw [h.buf k],h.poly k,?_⟩
+  change scr σ+BitVec.ofNat 64 (counts+8*k)=scr τ+BitVec.ofNat 64 (counts+8*k)
+  rw [h.2.2.1]
+
+/-- One stream's segment of the loop, in two runs. -/
+theorem segAt_relCT {v blocks off n k : Nat} {σ τ : State} {L : Nat → List Zq}
     (hp : Pre v σ) (hq : Pre v τ) (pub : Pub v σ τ) (hk : k<v)
     (hn : off+3*n≤168*blocks) (hmod : n%4=0) (variant : Nat)
-    {hintSetup hintStore : VG.Taint.Hint VG.AArch64.Taint.T}
-    (checkSetup : (taint.check (Taint.ofRegs [.x19,.x21]) (.block (setup k off n)) hintSetup).isSome=true)
-    (checkStore : (taint.check (Taint.ofRegs [.x19])
-      (.block [.str .x .x4 .x19 (counts+8*k)]) hintStore).isSome=true) :
-    RelCT isa (fun s t => Rows v blocks σ L s ∧ Rows v blocks τ L t)
-      (segment variant k off n)
-      (fun s t => Rows v blocks σ (updateRow L k (rowResult σ k off n (L k))) s ∧
-        Rows v blocks τ (updateRow L k (rowResult σ k off n (L k))) t) := by
-  have ct : RelCT isa (fun s t => Rows v blocks σ L s ∧ Rows v blocks τ L t)
-      (segment variant k off n) (fun _ _ => True) := by
+    {hintSetup hintNext : VG.Taint.Hint VG.AArch64.Taint.T}
+    (checkSetup : (taint.check (Taint.ofRegs [.x26]) (.block (setup n)) hintSetup).isSome=true)
+    (checkNext : (taint.check (Taint.ofRegs [.x26]) (.block segmentNext) hintNext).isSome=true) :
+    RelCT isa (fun s t => SegAt v blocks off n σ σ L k s ∧ SegAt v blocks off n τ σ L k t)
+      (segment variant n)
+      (fun s t => SegAt v blocks off n σ σ L (k+1) s ∧ SegAt v blocks off n τ σ L (k+1) t) := by
+  have ct : RelCT isa (fun s t => SegAt v blocks off n σ σ L k s ∧ SegAt v blocks off n τ σ L k t)
+      (segment variant n) (fun _ _ => True) := by
     intro s t tr ur s' t' h es et
-    have hb : off+3*n≤1008 := by have:=h.1.blockBound; omega
-    have crs : InRegions (s.rd++s.wr) (countAddress s k) 8 := by
-      rw [segment_count_eq h.1.env]
-      exact in_scr_rd hp h.1.env.wr (by unfold counts; have:=hp.streams; omega)
-    have crt : InRegions (t.rd++t.wr) (countAddress t k) 8 := by
-      rw [segment_count_eq h.2.env]
-      exact in_scr_rd hq h.2.env.wr (by unfold counts; have:=hq.streams; omega)
-    have hs19 : s.gpr .x19=t.gpr .x19 := by rw [h.1.env.x19,h.2.env.x19,pub.2.2.1]
-    have hs21 : s.gpr .x21=t.gpr .x21 := by rw [h.1.env.x21,h.2.env.x21,pub.2.1]
-    have hm : InputEq s t (segmentInput s k off) n := by
-      rw [segment_input_eq h.1.env]
-      exact rows_input_eq pub h.1 h.2 hk hn
-    exact segment_relCT variant k off n (by have:=hp.streams; omega) (by omega) (by omega)
-      checkSetup checkStore (h.1.length k hk) hmod
-      (h.1.env.sp.trans (pub.2.2.2.1.trans h.2.env.sp.symm)) hs19 hs21
-      (segment_layout hp h.1.env hk hb) (segment_layout hq h.2.env hk hb) crs crt
-      (by rw [segment_count_eq h.1.env]; exact h.1.counts k hk)
-      (by rw [segment_count_eq h.2.env]; exact h.2.counts k hk)
-      (by rw [segment_output_eq h.1.env]; exact h.1.stored k hk)
-      (by rw [segment_output_eq h.2.env]; exact h.2.stored k hk)
+    have hb : off+3*n≤1008 := by have:=h.1.1.blockBound; omega
+    have hs := h.1.1
+    have ht := h.2.1
+    have hks : (doneRows σ off n k L k).length≤256 := hs.length k hk
+    have ls := segment_layout hp hs.env hk hb
+    have lt := segment_layout hq ht.env hk hb
+    rw [segment_input_eq hs.env,segment_output_eq hs.env] at ls
+    rw [segment_input_eq ht.env,segment_output_eq ht.env] at lt
+    obtain ⟨pb,pp,pc⟩ := pub.ptrs (off := off) (k := k)
+    rw [←pb,←pp] at lt
+    have crs : InRegions (s.rd++s.wr) (countP σ k) 8 :=
+      in_scr_rd hp hs.env.wr (by unfold counts; have:=hp.streams; omega)
+    have crt : InRegions (t.rd++t.wr) (countP σ k) 8 := by
+      rw [pc]; exact in_scr_rd hq ht.env.wr (by unfold counts; have:=hq.streams; omega)
+    have hm : InputEq s t (bufP σ k+BitVec.ofNat 64 off) n := rows_input_eq pub hs ht hk hn
+    exact segment_relCT variant n (by omega) checkSetup checkNext hks hmod
+      (hs.env.sp.trans (pub.2.2.2.1.trans ht.env.sp.symm))
+      h.1.2.1.1 h.1.2.1.2.1 h.1.2.1.2.2
+      (h.2.2.1.1.trans pb.symm) (h.2.2.1.2.1.trans pp.symm) (h.2.2.1.2.2.trans pc.symm)
+      ls lt crs crt (hs.counts k hk) (by rw [pc]; exact ht.counts k hk)
+      (hs.stored k hk) (by rw [pp]; exact ht.stored k hk)
       hm _ _ _ _ _ _ ⟨rfl,rfl⟩ es et
-  refine (ct.wp (fun s t h => ⟨rowStep_ok hp h.1 hk hn hmod variant,
-    rowStep_ok hq h.2 hk hn hmod variant⟩)).mono (fun _ _ h => h) ?_
-  intro s t h
-  rw [←pub.rowResult hk (off := off) (n := n) (L k)] at h
-  exact h.2
+  refine (ct.wp (fun s t h => ⟨segAt_step hp (fun _ _ _ => rfl) hk hn hmod variant h.1,
+    segAt_step hq (fun j hj M => (pub.rowResult hj M).symm) hk hn hmod variant h.2⟩)).mono
+    (fun _ _ h => h) (fun _ _ h => h.2)
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 
@@ -535,60 +531,82 @@ open VG VG.AArch64
 open VG.Spec.MlDsa (Zq)
 open VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
 
-structure SegmentChecks (k off n : Nat) where
+structure SegmentChecks (n : Nat) where
   setupHint : VG.Taint.Hint VG.AArch64.Taint.T
-  storeHint : VG.Taint.Hint VG.AArch64.Taint.T
-  setup : (taint.check (Taint.ofRegs [.x19,.x21]) (.block (setup k off n)) setupHint).isSome=true
-  store : (taint.check (Taint.ofRegs [.x19])
-    (.block [.str .x .x4 .x19 (counts+8*k)]) storeHint).isSome=true
+  setup : (taint.check (Taint.ofRegs [.x26]) (.block (setup n)) setupHint).isSome=true
+
+structure InitCheck (off count : Nat) where
+  hint : VG.Taint.Hint VG.AArch64.Taint.T
+  init : (taint.check (Taint.ofRegs []) (.block (segmentsInit off count)) hint).isSome=true
+
+theorem segmentNext_check : ∃ h : VG.Taint.Hint VG.AArch64.Taint.T,
+    (taint.check (Taint.ofRegs [.x26]) (.block segmentNext) h).isSome=true :=
+  ⟨_,by taint_decide⟩
+
+theorem segments_relCT {v blocks off n count : Nat} {σ τ : State} {L : Nat → List Zq}
+    (hp : Pre v σ) (hq : Pre v τ) (pub : Pub v σ τ) (hv : count=v)
+    (hn : off+3*n≤168*blocks) (hmod : n%4=0) (variant : Nat)
+    (checks : SegmentChecks n) (init : InitCheck off count) :
+    RelCT isa (fun s t => Rows v blocks σ L s ∧ Rows v blocks τ L t)
+      (segments variant off n count)
+      (fun s t => Rows v blocks σ (fun k => rowResult σ k off n (L k)) s ∧
+        Rows v blocks τ (fun k => rowResult σ k off n (L k)) t) := by
+  have hv4 : v≤4 := by have:=hp.streams; omega
+  obtain ⟨_,checkNext⟩ := segmentNext_check
+  unfold segments
+  apply RelCT.seq (R := fun s t => SegAt v blocks off n σ σ L 0 s ∧ SegAt v blocks off n τ σ L 0 t)
+  · have hc : RelCT isa (fun s t => Rows v blocks σ L s ∧ Rows v blocks τ L t)
+        (.block (segmentsInit off count)) (fun _ _ => True) :=
+      RelCT.taint (A := taint) (Taint.ofRegs [])
+        (fun s t h => ⟨h.1.env.sp.trans (pub.2.2.2.1.trans h.2.env.sp.symm),
+          by simp [Taint.ofRegs,RegSet.mem_ofList]⟩) init.init
+    exact (hc.wp (fun s t h =>
+      ⟨segAt_init n hp h.1 hv (by have:=h.1.blockBound; omega),
+       segAt_init n hq h.2 hv (by have:=h.1.blockBound; omega)⟩)).mono
+      (fun _ _ h => h) (fun _ _ h => h.2)
+  · refine (RelCT.loop (M := isa) (fun m s t => ∃ k, k<v ∧ m=v-k ∧
+        SegAt v blocks off n σ σ L k s ∧ SegAt v blocks off n τ σ L k t)
+      (fun m => ?_) v).mono (fun s t h => ⟨0,by have:=hp.streams; omega,by omega,h⟩)
+      (fun _ _ h => h)
+    apply RelCT.exists_
+    intro k
+    refine RelCT.mono (P := fun s t => k<v ∧ m=v-k ∧
+        (SegAt v blocks off n σ σ L k s ∧ SegAt v blocks off n τ σ L k t)) ?_
+      (fun _ _ h => h) (fun _ _ h => h)
+    intro s t tr ur s' t' ⟨hk,hm,h⟩ es et
+    obtain ⟨htr,h1,h2⟩ := segAt_relCT hp hq pub hk hn hmod variant checks.setup checkNext
+      s t tr ur s' t' h es et
+    refine ⟨htr,?_,?_,?_⟩
+    · rw [segAt_eval h1 (by omega) hv4,segAt_eval h2 (by omega) hv4]
+    · intro he
+      rw [segAt_eval h1 (by omega) hv4] at he
+      have hl : k+1=v := by simp at he; omega
+      subst hl
+      exact ⟨h1.last,h2.last⟩
+    · intro he
+      rw [segAt_eval h1 (by omega) hv4] at he
+      have hl : k+1<v := by simp at he; omega
+      exact ⟨v-(k+1),by omega,k+1,hl,rfl,h1,h2⟩
 
 theorem batchFour_relCT {blocks off n : Nat} {σ τ : State} {L : Nat → List Zq}
     (hp : Pre 4 σ) (hq : Pre 4 τ) (pub : Pub 4 σ τ)
     (hn : off+3*n≤168*blocks) (hmod : n%4=0) (variant : Nat)
-    (checks : ∀k<4,SegmentChecks k off n) :
+    (checks : SegmentChecks n) (init : InitCheck off 4) :
     RelCT isa (fun s t => Rows 4 blocks σ L s ∧ Rows 4 blocks τ L t)
       (Four.batch variant off n)
       (fun s t => Rows 4 blocks σ (fun k => rowResult σ k off n (L k)) s ∧
-        Rows 4 blocks τ (fun k => rowResult σ k off n (L k)) t) := by
-  unfold Four.batch
-  refine RelCT.seq (rowStep_relCT hp hq pub (by decide : 0<4) hn hmod variant
-    (checks 0 (by decide)).setup (checks 0 (by decide)).store) ?_
-  refine RelCT.seq (rowStep_relCT hp hq pub (by decide : 1<4) hn hmod variant
-    (checks 1 (by decide)).setup (checks 1 (by decide)).store) ?_
-  refine RelCT.seq (rowStep_relCT hp hq pub (by decide : 2<4) hn hmod variant
-    (checks 2 (by decide)).setup (checks 2 (by decide)).store) ?_
-  refine (rowStep_relCT hp hq pub (by decide : 3<4) hn hmod variant
-    (checks 3 (by decide)).setup (checks 3 (by decide)).store).mono (fun _ _ h => h) ?_
-  intro s t h
-  constructor
-  · apply h.1.congr
-    intro k hk
-    rcases (show k=0 ∨ k=1 ∨ k=2 ∨ k=3 by omega) with rfl | rfl | rfl | rfl <;> rfl
-  · apply h.2.congr
-    intro k hk
-    rcases (show k=0 ∨ k=1 ∨ k=2 ∨ k=3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+        Rows 4 blocks τ (fun k => rowResult σ k off n (L k)) t) :=
+  segments_relCT hp hq pub rfl hn hmod variant checks init
 
 theorem batchTwo_relCT {blocks off n : Nat} {σ τ : State} {L : Nat → List Zq}
     (hp : Pre 2 σ) (hq : Pre 2 τ) (pub : Pub 2 σ τ)
     (hn : off+3*n≤168*blocks) (hmod : n%4=0) (variant : Nat)
-    (checks : ∀k<2,SegmentChecks k off n) :
+    (checks : SegmentChecks n) (init : InitCheck off 2) :
     RelCT isa (fun s t => Rows 2 blocks σ L s ∧ Rows 2 blocks τ L t)
       (Two.batch variant off n)
       (fun s t => Rows 2 blocks σ (fun k => rowResult σ k off n (L k)) s ∧
-        Rows 2 blocks τ (fun k => rowResult σ k off n (L k)) t) := by
-  unfold Two.batch
-  refine RelCT.seq (rowStep_relCT hp hq pub (by decide : 0<2) hn hmod variant
-    (checks 0 (by decide)).setup (checks 0 (by decide)).store) ?_
-  refine (rowStep_relCT hp hq pub (by decide : 1<2) hn hmod variant
-    (checks 1 (by decide)).setup (checks 1 (by decide)).store).mono (fun _ _ h => h) ?_
-  intro s t h
-  constructor
-  · apply h.1.congr
-    intro k hk
-    rcases (show k=0 ∨ k=1 by omega) with rfl | rfl <;> rfl
-  · apply h.2.congr
-    intro k hk
-    rcases (show k=0 ∨ k=1 by omega) with rfl | rfl <;> rfl
+        Rows 2 blocks τ (fun k => rowResult σ k off n (L k)) t) :=
+  segments_relCT hp hq pub rfl hn hmod variant checks init
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 

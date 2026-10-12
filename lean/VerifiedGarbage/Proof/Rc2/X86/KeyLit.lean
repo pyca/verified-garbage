@@ -6,16 +6,15 @@ namespace VG.Impl.Rc2.X86
 
 open VG.X86
 
-/-- `piStep`, reading PITABLE from its packed table (`Rc2.piTable_getD`). -/
-def piStepLit (i : Nat) : List Instr :=
-  selectMask i ++
-    ([.alu .and .edx (.imm ((BitVec.ofNat 8 (VG.Rc2.piNat i)).setWidth 32)),
-      .alu .or .ebx (.reg .edx)] : List Instr)
+/-- `piWord`, reading PITABLE from its packed table (`Rc2.piTable_getD`). -/
+def piWordLit (j : Nat) : BitVec 32 :=
+  (BitVec.ofNat 8 (VG.Rc2.piNat (4 * j))).setWidth 32 |||
+    (BitVec.ofNat 8 (VG.Rc2.piNat (4 * j + 1))).setWidth 32 <<< 8 |||
+    (BitVec.ofNat 8 (VG.Rc2.piNat (4 * j + 2))).setWidth 32 <<< 16 |||
+    (BitVec.ofNat 8 (VG.Rc2.piNat (4 * j + 3))).setWidth 32 <<< 24
 
 /-- `piLookup`, reading PITABLE from its packed table. -/
-def piLookupLit : List Instr :=
-  ([.alu .and .eax (.imm 255), imm .ebx 0] : List Instr) ++
-    (List.range 256).flatMap piStepLit ++ ([rr .eax .ebx] : List Instr)
+def piLookupLit : List Instr := piLookupWith piWordLit
 
 materialize_value piLookupLit
 
@@ -23,10 +22,10 @@ materialize_value piLookupLit
 noncomputable abbrev piLookup.lit : List Instr := piLookupLit.lit
 
 theorem piLookup.lit_eq : piLookup = piLookup.lit := by
-  have : piStep = piStepLit := by
-    funext i; simp only [piStep, piStepLit, VG.Rc2.piTable_getD]
+  have : piWord = piWordLit := by
+    funext j; simp only [piWord, piWordLit, VG.Rc2.piTable_getD]
   refine Eq.trans ?_ piLookupLit.lit_eq
-  simp only [piLookup, piLookupLit, this]
+  rw [piLookup, piLookupLit, this]
 
 materialize_flat_code expandKey
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Scrypt.AArch64.BlockMix
+module
+
+public import VerifiedGarbage.Impl.Scrypt.AArch64.BlockMix
 
 /-!
 # scryptROMix: AArch64 implementation
@@ -23,6 +25,8 @@ iterations left; `x24` is `V[i]` in step 2 and `N - 1` in step 3.
 Every branch and address depends only on the pointers, `r`, `N` and the
 indices `j`: the contract declares that the function leaks the `j`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.AArch64
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
 
 /-!
 # x86-64: SSE values as words
@@ -6,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Sse
 The SSE instructions on 16-bit words, stated on the words of their operands
 (`word`, `ofWords`), and 128-bit loads and stores as eight 16-bit words.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

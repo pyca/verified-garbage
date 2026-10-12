@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.ChaCha20.Arm
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.Arm
 
 /-!
 # ChaCha20 keystream XOR: 32-bit ARM implementation
@@ -26,6 +28,8 @@ down to zero, tested with `cmp`/`subs` and `eq`/`ne`. The branches are on the
 length only, and every address is a pointer plus a constant or a count, so
 only the pointers and the length can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.Arm.Xor
 

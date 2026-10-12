@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
+
+@[expose] public section
 
 namespace VG.Impl.Bignum.X86_64.AdxTiledSquare
 open VG.X86_64

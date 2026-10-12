@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
 
 /-!
 # ChaCha20 keystream XOR: x86-64 implementation
@@ -20,6 +22,8 @@ saved in `buf[256, 280)`, which is not passed to the block function.
 The branches are on the length only, and every address is a pointer plus a
 constant or a count, so only the pointers and the length can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.X86_64.Xor
 

@@ -173,8 +173,8 @@ theorem publicLoop_ct {K : TCombCfg} {C : Spec.Weierstrass.Curve} {base T : Addr
             ⟨⟨ia.scr, ia.x19, ia.tsym, ia.bits⟩, ⟨ib.scr, ib.x19, ib.tsym, ib.bits⟩,
               ia.keep.sp.trans (hsp.trans ib.keep.sp.symm)⟩) (fun _ _ h => h)
         have hw := h.wp (fun a b ⟨_, _, ia, ib⟩ =>
-          ⟨tstep_ok (publicLookup := true) hL hA hC hM3 hG hV hpn hFa hj hjn ia trivial,
-           tstep_ok (publicLookup := true) hL hA hC hM3 hG hV hpn hFb hj hjn ib trivial⟩)
+          ⟨tstep_ok (publicLookup := true) hL hA hC hM3 hG hV hpn hFa hj hjn ia (pa := none) trivial trivial trivial,
+           tstep_ok (publicLookup := true) hL hA hC hM3 hG hV hpn hFb hj hjn ib (pa := none) trivial trivial trivial⟩)
         refine hw.mono (fun _ _ h => h) fun a b ⟨_, ⟨ia, xa⟩, ⟨ib, xb⟩⟩ => ?_
         refine ⟨by simp only [eval, State.read, xa, xb], fun _ => trivial, fun ht => ?_⟩
         have hz : j - 1 ≠ 0 := by

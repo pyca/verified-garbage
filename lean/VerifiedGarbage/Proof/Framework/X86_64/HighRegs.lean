@@ -1,7 +1,11 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Avx512
-import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
 
 /-! # AVX-512 high registers: lanes and preservation -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

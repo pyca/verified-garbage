@@ -5,8 +5,13 @@ SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT-0
 Packed divstep schedule adapted from s2n-bignum bignum_montinv_p256.S.
 Only existing AArch64 ISA instructions are used.
 -/
-import VerifiedGarbage.Impl.Ecdh.P256.AArch64
-import VerifiedGarbage.Impl.P256.EcdhAllocatedCode
+module
+
+public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
+public import VerifiedGarbage.Impl.P256.EcdhAllocatedCode
+
+@[expose] public section
+
 namespace VG.Impl.P256.EcdhInverse
 open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Impl.Mont.AArch64
