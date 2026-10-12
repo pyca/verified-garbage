@@ -12,7 +12,12 @@
 //! (§6.4, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next output
 //! block, whose first bytes it XORs into the rest of the input.
 
-#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::arch::cast5_ofb::vg_cast5_ofb;
 use crate::cast5_ecb::Cast5Ecb;
