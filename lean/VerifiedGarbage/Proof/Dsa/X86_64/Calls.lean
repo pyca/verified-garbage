@@ -6,12 +6,13 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 /-!
 # DSA on x86-64, with Montgomery multiplication by calls
 
-`vg_dsa_sign` and `vg_dsa_verify` (and their variants) call
-`vg_rsa_mont_mul` or `vg_rsa_mont_mul_adx` (`CallMont`) where they would
-run its code inline: their code `c` has the inlined code proven before as
-`c.inline` (`hin`, which the registration evaluates), and
+`vg_dsa_sign_adx` and `vg_dsa_verify_adx` call `vg_rsa_mont_mul_adx`
+(`CallMont`) where they would run its code inline: their code `c` has the
+inlined code proven before as `c.inline` (`hin`, which the registration
+evaluates), and
 `Verified.of_inline` gives it the shared contract with 8 bytes of stack, for
-the calls' return address.
+the calls' return address. The baseline's code, without calls, is its own
+`c.inline`.
 -/
 
 namespace VG.Proof.Dsa.X86_64
@@ -54,18 +55,18 @@ theorem verify_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (_ : (Spec
   sig_post [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four] at hp ⊢
   exact hp
 
-theorem signing_call_verified (C : CallMont) (hc : (SignVerify.sign C.mm).InlineOk = true)
-    (hin : (SignVerify.sign C.mm).inline = SignVerify.sign C.mont.mm)
-    (hmx : (SignVerify.sign C.mont.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target (SignVerify.sign C.mm) (Spec.Dsa.signContract abi 8) :=
-  Verified.of_inline hc (hin ▸ signingCorrect C.mont hmx) (hin ▸ signingConstantTime C.mont) sign_implies8
+theorem signing_call_verified (mm : Nat → Nat → Nat → Prog isa) (M : Mont)
+    (hc : (SignVerify.sign mm).InlineOk = true) (hin : (SignVerify.sign mm).inline = SignVerify.sign M.mm)
+    (hmx : (SignVerify.sign M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified target (SignVerify.sign mm) (Spec.Dsa.signContract abi 8) :=
+  Verified.of_inline hc (hin ▸ signingCorrect M hmx) (hin ▸ signingConstantTime M) sign_implies8
     (fun _ h => Sig.clear_of_pre h) sign_patch (fun _ _ _ _ h => Sig.rsp_of_pub h)
 
-theorem verifying_call_verified (C : CallMont) (hc : (SignVerify.verify C.mm).InlineOk = true)
-    (hin : (SignVerify.verify C.mm).inline = SignVerify.verify C.mont.mm)
-    (hmx : (SignVerify.verify C.mont.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target (SignVerify.verify C.mm) (Spec.Dsa.verifyContract abi 8) :=
-  Verified.of_inline hc (hin ▸ verifyingCorrect C.mont hmx) (hin ▸ verifyingConstantTime C.mont) verify_implies8
+theorem verifying_call_verified (mm : Nat → Nat → Nat → Prog isa) (M : Mont)
+    (hc : (SignVerify.verify mm).InlineOk = true) (hin : (SignVerify.verify mm).inline = SignVerify.verify M.mm)
+    (hmx : (SignVerify.verify M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified target (SignVerify.verify mm) (Spec.Dsa.verifyContract abi 8) :=
+  Verified.of_inline hc (hin ▸ verifyingCorrect M hmx) (hin ▸ verifyingConstantTime M) verify_implies8
     (fun _ h => Sig.clear_of_pre h) verify_patch (fun _ _ _ _ h => Sig.rsp_of_pub h)
 
 end VG.Proof.Dsa.X86_64

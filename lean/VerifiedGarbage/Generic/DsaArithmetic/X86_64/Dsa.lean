@@ -9,24 +9,24 @@ def artifacts (v : Backend) : List Artifact := [
     target := X86_64.target
     name := Spec.Dsa.signApi.name ++ v.suffix
     doc := Spec.Dsa.signApi.doc (notes := ["Fixed-window exponentiation and streaming modular reduction \
-      multiply by calls of `" ++ v.call.name ++ "`. Leading-zero component padding is supported. \
+      use " ++ v.note ++ ". Leading-zero component padding is supported. \
       Scratch is initialized before use; every failure zeros the entire output."])
-    code := Impl.Dsa.X86_64.SignVerify.sign v.call.mm
+    code := Impl.Dsa.X86_64.SignVerify.sign v.mm
     contract := Spec.Dsa.signContract X86_64.abi 8
     stack := 8
-    verified := signing_call_verified v.call v.signIn v.signEq v.signMx
+    verified := signing_call_verified v.mm v.mont v.signIn v.signEq v.signMx
     spSafe := v.signSp
     features := v.features },
   { Spec.Dsa.verifyApi with
     target := X86_64.target
     name := Spec.Dsa.verifyApi.name ++ v.suffix
     doc := Spec.Dsa.verifyApi.doc (notes := ["Fixed-window exponentiation and streaming modular reduction \
-      multiply by calls of `" ++ v.call.name ++ "`. Leading-zero component padding is supported. \
+      use " ++ v.note ++ ". Leading-zero component padding is supported. \
       Signature scalars and the digest do not affect the leakage trace."])
-    code := Impl.Dsa.X86_64.SignVerify.verify v.call.mm
+    code := Impl.Dsa.X86_64.SignVerify.verify v.mm
     contract := Spec.Dsa.verifyContract X86_64.abi 8
     stack := 8
-    verified := verifying_call_verified v.call v.verifyIn v.verifyEq v.verifyMx
+    verified := verifying_call_verified v.mm v.mont v.verifyIn v.verifyEq v.verifyMx
     spSafe := v.verifySp
     features := v.features }]
 

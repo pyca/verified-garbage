@@ -5,7 +5,9 @@ namespace VG.Variants.DsaArithmetic.X86_64.Adx
 open VG VG.X86_64 VG.Proof.Dsa.X86_64 VG.Proof.Rsa.X86_64
 
 def variant : Backend where
-  call := CallMont.adx
+  mm := CallMont.adx.mm
+  mont := CallMont.adx.mont
+  note := "Montgomery multiplication by calls of `vg_rsa_mont_mul_adx`"
   suffix := "_adx"
   features := ["bmi2", "adx"]
   signIn := by decide +kernel
