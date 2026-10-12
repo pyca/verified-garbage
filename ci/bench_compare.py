@@ -2,10 +2,11 @@
 
     python3 ci/bench_compare.py BASE HEAD [--summary FILE] [--openssl]
 
-Both are built with HEAD's `bench/` crate (copied into BASE, so the two run
-the same benchmark code against different library code); if that doesn't
-build against BASE (it benchmarks an API BASE doesn't have yet), BASE uses
-its own `bench/` crate, and HEAD's other benchmarks show as new. Their benchmark
+Both are built with HEAD's `bench/` crate (so the two run the same
+benchmark code against different library code), each at the same path
+(`STAGE`); if that doesn't build against BASE (it benchmarks an API BASE
+doesn't have yet), BASE uses its own `bench/` crate, and HEAD's other
+benchmarks show as new. Their benchmark
 binaries are run on this machine one after the other, `--rounds` times each
 (alternately, keeping the fastest time of each benchmark on each side, if
 more than one): one round, with a short warm-up and measurement, is the
@@ -100,8 +101,34 @@ class Lacking(Exception):
     """A run stopped by `LACKING`, with the features the CPU lacks."""
 
 
-def build(bench):
-    """Builds the benchmark crate `bench`, returning the binary's path."""
+# Where each side is built, one after the other: the same path for both,
+# since Cargo derives the library's symbol hashes from its path, and with
+# them the order the linker lays out its code and tables in, so the same
+# code built in two checkouts put P-521's comb table at a different offset
+# in a page (0x700 and 0x740 on x86-64), and an A/A run measured P-521
+# signatures 5% slower on one side.
+STAGE = pathlib.Path("bench-src").resolve()
+
+
+def stage(checkout, bench=None):
+    """Copies what building `checkout`'s benchmarks reads to `STAGE`, with
+    the benchmark crate `bench` (`checkout`'s own by default), returning
+    the staged crate. Copies get new modification times, so Cargo rebuilds
+    the library, which the last side's build would otherwise seem to be."""
+    shutil.rmtree(STAGE, ignore_errors=True)
+    # (Run from a checkout, as `bench_compare.py main-checkout .`, STAGE,
+    # TARGET and the work directory are in it.)
+    top = {".git", "lean", "target", "bench", "bench-head", STAGE.name, TARGET.name, "bench-compare"}
+    skip = lambda d, names: top & set(names) if pathlib.Path(d) == pathlib.Path(checkout) else []
+    shutil.copytree(checkout, STAGE, ignore=skip, copy_function=shutil.copy)
+    shutil.copytree(bench or checkout / "bench", STAGE / "bench",
+                    ignore=shutil.ignore_patterns("target"), copy_function=shutil.copy)
+    return STAGE / "bench"
+
+
+def build(checkout, bench=None):
+    """Builds `checkout`'s library with the benchmark crate `bench`
+    (`checkout`'s own by default) at `STAGE`, returning the binary's path."""
     out = subprocess.run(
         [
             "cargo",
@@ -109,7 +136,7 @@ def build(bench):
             "--no-run",
             "--message-format=json-render-diagnostics",
         ],
-        cwd=bench,
+        cwd=stage(checkout, bench),
         env={**os.environ, "CARGO_TARGET_DIR": str(TARGET)},
         check=True,
         stdout=subprocess.PIPE,
@@ -123,7 +150,7 @@ def build(bench):
                 binary = TARGET / f"primitives-{len(list(TARGET.glob('primitives-*')))}"
                 shutil.copy2(msg["executable"], binary)
                 return str(binary)
-    raise RuntimeError(f"no benchmark binary built in {bench}")
+    raise RuntimeError(f"no benchmark binary built for {checkout}")
 
 
 def fresh_copy(binary, i):
@@ -140,18 +167,14 @@ def build_base(base, head):
     binary's path and a note on which benchmark code it runs, or no path
     if neither builds."""
     if base == head:
-        return build(head / "bench"), None, head
-    # A sibling of BASE's own `bench/`, so its `path = ".."` is BASE too.
-    copy = base / "bench-head"
-    shutil.rmtree(copy, ignore_errors=True)
-    shutil.copytree(head / "bench", copy, ignore=shutil.ignore_patterns("target"))
+        return build(head), None, head
     try:
-        return build(copy), None, head
+        return build(base, head / "bench"), None, head
     except subprocess.CalledProcessError:
         pass
     if (base / "bench").is_dir():
         try:
-            return build(base / "bench"), "Head's benchmarks don't build against base, so base ran its own.", base
+            return build(base), "Head's benchmarks don't build against base, so base ran its own.", base
         except subprocess.CalledProcessError:
             pass
     return None, "Base has no benchmarks that build, so head ran alone.", base
@@ -322,7 +345,7 @@ def main():
     modules = {"head": selected_modules(head, args.modules), "base": selected_modules(base, args.modules)}
     if modules["head"] is None or (args.modules and set(modules["head"].split()) != set(args.modules.split())):
         p.error("head's benchmark registry does not use the selected modules")
-    binaries = {"head": build(head / "bench"), "base": None}
+    binaries = {"head": build(head), "base": None}
     note = "Base has no selected benchmarks; head's and the references' results are new."
     if not base.is_dir():
         note = "No base to compare with, so head ran alone."

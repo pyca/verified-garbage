@@ -641,6 +641,27 @@ class FreshCopies(unittest.TestCase):
         for group in ['ec_p521_public_key', 'ecdsa_p521_{name}_sign', 'ecdsa_p521_{name}_verify']:
             self.assertIn(f'"{group}"', source)
 
+    def test_both_sides_are_built_at_one_path(self):
+        # The library's symbol hashes, and with them its layout, depend on
+        # its path: each side is staged at STAGE, with the benchmark crate
+        # asked for and without what the build does not read.
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = pathlib.Path(tmp)
+            for side in ['base', 'head']:
+                for f in ['Cargo.toml', 'src/lib.rs', 'bench/Cargo.toml', 'lean/big.olean',
+                          '.git/HEAD', 'bench-head/Cargo.toml', 'src/lean/x.rs']:
+                    (tmp / side / f).parent.mkdir(parents=True, exist_ok=True)
+                    (tmp / side / f).write_text(f'{side} {f}')
+            with mock.patch.object(bench_compare, 'STAGE', tmp / 'stage'):
+                crate = bench_compare.stage(tmp / 'base', tmp / 'head' / 'bench')
+                self.assertEqual(crate, tmp / 'stage' / 'bench')
+                files = sorted(str(p.relative_to(tmp / 'stage')) for p in (tmp / 'stage').rglob('*') if p.is_file())
+                self.assertEqual(files, ['Cargo.toml', 'bench/Cargo.toml', 'src/lean/x.rs', 'src/lib.rs'])
+                self.assertEqual((crate / 'Cargo.toml').read_text(), 'head bench/Cargo.toml')
+                bench_compare.stage(tmp / 'head')
+                self.assertEqual((tmp / 'stage' / 'src/lib.rs').read_text(), 'head src/lib.rs')
+                self.assertEqual((crate / 'Cargo.toml').read_text(), 'head bench/Cargo.toml')
+
     def test_a_copy_is_a_new_executable_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             target = pathlib.Path(tmp)
