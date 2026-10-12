@@ -18,6 +18,6 @@ def args : List Instr :=
 
 def finish : List Instr := [mov .x21 .x5, add .x21 .x21, add .x21 .x21].flatten
 
-def code : Prog isa := .seq (.block args) (.seq Divide.code (.block finish))
+def code : Prog isa := .seq (.block args) (.seq Divide.loopCode (.block finish))
 
 end VG.Impl.Argon2.AArch64.Parameters

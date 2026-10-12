@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.Memory
 public import VerifiedGarbage.Impl.Argon2.AArch64.Parameters
-public import VerifiedGarbage.Proof.Argon2.AArch64.Divide
-public import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
+public import VerifiedGarbage.Proof.Argon2.AArch64.DivideLoop
 public import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Proof.Argon2.Dimensions
 import all Init.Data.Array.Basic
@@ -101,7 +100,7 @@ theorem code_ok (s : State) (p : Params) (h : Ready p s) :
   have bound : 4 * p.lanes < 2 ^ 32 := by have lanesBound := h.lanesBound; omega
   have d : (a.gpr .x1).toNat = 4 * p.lanes := by
     rw [divisor, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (Nat.lt_trans bound (by decide))]
-  refine WP.seq ((Divide.code_ok a (by rw [n]; exact h.memoryBound)
+  refine WP.seq ((Divide.loopCode_ok a (by rw [n]; exact h.memoryBound)
     (by rw [d]; have positive := h.positive; omega) (by rw [d]; exact bound)).mono ?_)
   rintro b ⟨quotient, _, kb⟩
   rw [n, d] at quotient
@@ -111,10 +110,7 @@ theorem code_ok (s : State) (p : Params) (h : Ready p s) :
   refine (finish_ok b).mono ?_
   rintro t ⟨value, kt⟩
   refine ⟨?_, (ka.mono (by simp [changed])).trans
-    ((kb.mono (by
-      intro r hr
-      simp only [changed, List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
-      exact Or.inl (Or.inr hr))).trans (kt.mono (by simp [changed])))⟩
+    ((kb.mono (by simp only [changed, Divide.changed, Divide.loopChanged]; decide)).trans (kt.mono (by simp [changed])))⟩
   rw [value, word, show (4 : Addr) = BitVec.ofNat 64 4 from rfl, ← BitVec.ofNat_mul,
     Nat.mul_comm, ← Proof.Argon2.laneLen_eq p h.positive]
 

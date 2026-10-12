@@ -6,8 +6,6 @@ public import VerifiedGarbage.Impl.Argon2.AArch64.FinalReduction
 meta import VerifiedGarbage.Impl.Argon2.AArch64.FinalReduction
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-public import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlockLit
-meta import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlockLit
 public import VerifiedGarbage.Proof.Argon2.AArch64.ReduceLane
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReduceLane
 public import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlockLit
@@ -18,8 +16,8 @@ public import VerifiedGarbage.Impl.Argon2.AArch64.ReductionInit
 meta import VerifiedGarbage.Impl.Argon2.AArch64.ReductionInit
 public import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
-public import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
-meta import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
+public import VerifiedGarbage.Proof.Argon2.AArch64.ReductionClear
+meta import VerifiedGarbage.Proof.Argon2.AArch64.ReductionClear
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReduceLanes
 meta import VerifiedGarbage.Impl.Argon2.AArch64.ReduceLanes
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillLaneAdvance
@@ -123,9 +121,9 @@ structure Cleared (s t : State) (p : Params) (memory : Array Block) : Prop where
 theorem clear_ok (s : State) (p : Params) (h : Ready p s)
     (dest : s.gpr .x0 = matrix s) (memory : Array Block)
     (represented : Proof.Argon2.Represents s.mem (matrix s) p.blocks memory) :
-    WP isa Impl.Argon2.AArch64.ClearBlock.code s (Cleared s · p memory) := by
+    WP isa Impl.Argon2.AArch64.ReductionInit.clear s (Cleared s · p memory) := by
   have write : Covers [⟨s.gpr .x0, 1024⟩] s.wr := by rw [dest]; exact h.accumulator_cover
-  refine (ClearBlock.code_ok s write).mono ?_
+  refine (ReductionClear.code_ok s write).mono ?_
   rintro t ⟨zero, frame, keeps, mx⟩
   rw [dest] at frame zero
   have bp := keeps.1 .x19 (by decide) (by decide)
@@ -510,7 +508,7 @@ theorem setup_rel : RelCT isa (fun s t => s.gpr .x19 = t.gpr .x19 ∧ s.sp = t.s
     [] (by taint_decide)).mono (fun _ _ h => h) (fun _ _ h => h.1)
 
 theorem clear_rel : RelCT isa (fun s t => s.gpr .x0 = t.gpr .x0 ∧ s.sp = t.sp)
-    Impl.Argon2.AArch64.ClearBlock.code (fun s t => s.sp = t.sp) :=
+    Impl.Argon2.AArch64.ReductionInit.clear (fun s t => s.sp = t.sp) :=
   (RelCT.taintRegs (τ := Taint.ofRegs [.x0])
     (fun _ _ h => ⟨h.2, by
       intro r hr; simp only [Taint.mem_ofRegs, List.mem_singleton] at hr; subst r; exact h.1⟩)
