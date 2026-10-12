@@ -132,6 +132,16 @@ jobs:
       - name: Install Rust
         # ci.yml's `rust` job lints the benchmarks, once per architecture.
         run: rustup toolchain install stable --profile minimal
+      # The dependencies (aws-lc-sys, criterion, ...) are the same for every
+      # configuration and shard of an architecture, and about a third of the
+      # job; ci.yml's `rust` job saves them on main whenever the key changes.
+      - id: cache-key
+        run: echo "key=$(sh head/ci/bench_cache_key.sh head/bench)" >> "$GITHUB_OUTPUT"
+      - name: Restore the dependencies' build
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: bench-target
+          key: ${{ steps.cache-key.outputs.key }}
       - name: Benchmark base and head
         env:
           MODULES: ${{ matrix.modules }}
