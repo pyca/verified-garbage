@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
 public import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -312,5 +315,50 @@ theorem check_correct (hc : BaseCfgOk c) {C : Spec.Weierstrass.CheckPoint.Curve}
         (by rw [x, e]) y_lt (by rw [y, e]) (by rw [px]; simp only [e, hum]) (by rw [py]; simp only [e, hum])
   exact ⟨t, s', he, ⟨fun r hr => K.gpr r fun h => (List.mem_filter.mp h).elim fun h₁ h₂ =>
       (checkKept_pres hc r hr).elim (· h₁) (by simpa using h₂), K.sp, Exec.preservedV he hkv⟩, P⟩
+
+/-- The memory of `satState`: `p`, `R² mod p`, `a R mod p` and `b R mod p` at their
+offsets of `ws = 0x1000`, zeros elsewhere. -/
+@[irreducible] def satMem (C : Spec.Weierstrass.CheckPoint.Curve) : Mem := fun a =>
+  let o := a.toNat - 0x1000
+  let w (d v : Nat) (e : BitVec 8) : BitVec 8 :=
+    if 0x1000 ≤ a.toNat ∧ d ≤ o ∧ o < d + 8 * C.k then BitVec.ofNat 8 (v >>> (8 * (o - d))) else e
+  w C.pAt C.W.p <| w C.r2At (C.R * C.R % C.W.p) <| w C.aAt (C.W.a * C.R % C.W.p) <|
+    w C.bAt (C.W.b * C.R % C.W.p) 0
+
+/-- A state satisfying the precondition. -/
+def satState (C : Spec.Weierstrass.CheckPoint.Curve) : State where
+  gpr r := match r with
+    | .x0 => 0x1000 | _ => 0
+  sp := 0x10000
+  mem := satMem C
+  rd := []
+  wr := [⟨0x1000, 8192⟩]
+
+/-- The contract by name is the specification's, given a state satisfying it. -/
+theorem check_implies (C : Spec.Weierstrass.CheckPoint.Curve) (hsat : C.pre 0x1000 (satMem C)) :
+    (ptK C).Implies (C.checkContract AArch64.abi) where
+  pre s h := by
+    sig_pre [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
+      AArch64.abi, AArch64.argRegs, stackBelow] at h
+    exact h
+  post s s' _ h := by
+    sig_post [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
+      AArch64.abi, AArch64.argRegs]
+    exact h
+  pub s₁ s₂ _ _ h := by
+    sig_pub [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
+      AArch64.abi, AArch64.argRegs] at h
+    exact ⟨h.2, h.1⟩
+  sat := ⟨satState C, by
+    sig_pre [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
+      AArch64.abi, AArch64.argRegs, stackBelow]
+    exact ⟨by decide, hsat⟩⟩
+
+theorem agree (C : Spec.Weierstrass.CheckPoint.Curve) (s₁ s₂ : State) (_ : (ptK C).pre s₁)
+    (_ : (ptK C).pre s₂) (h : (ptK C).pub s₁ s₂) :
+    VG.AArch64.Taint.Agree (Taint.ofRegs [.x0]) s₁ s₂ :=
+  ⟨h.2, fun r hr => by
+    simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr; exact h.1⟩
 
 end VG.Proof.Ecdh.AArch64

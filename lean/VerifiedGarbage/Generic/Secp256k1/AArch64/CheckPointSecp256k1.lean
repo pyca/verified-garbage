@@ -1,0 +1,32 @@
+import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Ecdh.AArch64.Secp256k1.CheckVerified
+
+/-!
+# secp256k1's check of a public point on AArch64
+
+`vg_secp256k1_check_point` (`Spec/Weierstrass/CheckPoint.lean`), which secp256k1's ECDH and
+signature verification call to check the public point. A generic file (see
+`TCB/Emit.lean`) over secp256k1's group law and inversions `h`, the variant
+`Variants/Secp256k1/AArch64/Law.lean`, whose inversions' soundness the proof of the
+configuration takes.
+-/
+
+namespace VG.Generic.Secp256k1.AArch64.CheckPointSecp256k1
+
+open VG.Impl.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64.Secp256k1.Check
+
+def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.Secp256k1.curve) : List Artifact := [
+  { C.checkApi with
+    target := AArch64.target
+    doc := C.checkApi.doc (notes := ["The function compares `x` and `y` with `p` by chains of \
+      subtractions with borrow (`subs`, `sbcs`), multiplies them by `R² mod p` by word-by-word Montgomery multiplication (CIOS, with `mul` and `umulh`) inline, computes \
+      `y² - (x³ + a x + b)` by the same products and additions and subtractions modulo `p`, \
+      ANDs the masks of the comparisons and of that number being zero into the flag, and \
+      selects the point by masks; nothing depends on the numbers but through masks."])
+    code := Impl.Ecdh.AArch64.Cfg.checkFn secp256k1
+    contract := C.checkContract AArch64.abi
+    verified := verified h.inv
+    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+
+end VG.Generic.Secp256k1.AArch64.CheckPointSecp256k1
