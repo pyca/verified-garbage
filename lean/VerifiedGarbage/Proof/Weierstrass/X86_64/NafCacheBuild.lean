@@ -455,20 +455,17 @@ theorem nafCacheTable_fields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m
     · rw [show 7-(r-1)=7-r+1 from by omega]
       exact ⟨c,k,i⟩
 
-/-- Each cache pair in terms of the source `Z` still in the resulting state. -/
-theorem nafCacheTable_current_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstrass.Curve}
-    {Sl : Nat → Prop} (hL : Lay M size Sl) (hm : UnitMod C.p (2^(64*M.n)))
-    {ptbl tbl e : Nat} {V : List Nat} (hC : CacheLoopLay M size Sl ptbl tbl e V)
-    {E : Nat → Fin C.p} {s : State} (hI : Inv M base size C.p Sl V E s) :
-    WP isa (Naf.cacheTable M ptbl tbl e).inline s fun t =>
-      CacheLoopKeep M base tbl e s t ∧
-      Inv M base size C.p Sl (cacheTableSlots M.n tbl 8++V) (tmv C M.n base t) t ∧
+/-- The cache's values after the eight entries, in terms of the state's. -/
+theorem cacheTable_current {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstrass.Curve}
+    {Sl : Nat → Prop} {ptbl tbl e : Nat} {V : List Nat} (hC : CacheLoopLay M size Sl ptbl tbl e V)
+    {E : Nat → Fin C.p} {t : State}
+    (it : Inv M base size C.p Sl (cacheTableSlots M.n tbl 8++V) (cacheTableEnv M.n ptbl tbl E 8) t) :
+    Inv M base size C.p Sl (cacheTableSlots M.n tbl 8++V) (tmv C M.n base t) t ∧
       ∀ i<8,tmv C M.n base t (tbl+16*M.n*i)=
           tmv C M.n base t (ptbl+24*M.n*i+16*M.n)*tmv C M.n base t (ptbl+24*M.n*i+16*M.n) ∧
         tmv C M.n base t (tbl+16*M.n*i+8*M.n)=
           tmv C M.n base t (tbl+16*M.n*i)*tmv C M.n base t (ptbl+24*M.n*i+16*M.n) := by
-  refine WP.mono (nafCacheTable_fields_ok hL hm hC hI) fun t ⟨kt,it⟩ =>
-    ⟨kt,it.to_tmv,fun i hi => ?_⟩
+  refine ⟨it.to_tmv,fun i hi => ?_⟩
   have hn0 : 0<M.n := by have := hC.hn; omega
   have v (x : Nat) (hx : x∈cacheTableSlots M.n tbl 8++V) :
       tmv C M.n base t x=cacheTableEnv M.n ptbl tbl E 8 x := it.val x hx
@@ -485,170 +482,68 @@ theorem nafCacheTable_current_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.
   exact h
 
 
-/-! ## The cache unrolled -/
 
-theorem nafCachePair_fields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hL : Lay M size Sl)
-    (hm : UnitMod m (2^(64*M.n))) {ptbl tbl i : Nat}
-    {V : List Nat} {E : Nat → Fin m} {s : State}
-    (hI : Inv M base size m Sl V E s) (hZ : ptbl+24*M.n*i+16*M.n∈V)
-    (h2 : Sl (tbl+16*M.n*i)) (h3 : Sl (tbl+16*M.n*i+8*M.n)) :
-    WP isa (Naf.cachePair M ptbl tbl i).inline s fun t =>
-      ProgKeep M base ((Naf.cachePairOps M.n ptbl tbl i).map FOp.out) s t ∧
-      Inv M base size m Sl (validAfter (Naf.cachePairOps M.n ptbl tbl i) V)
-        (runOps (Naf.cachePairOps M.n ptbl tbl i) E) t := by
-  have hS : ∀ op∈Naf.cachePairOps M.n ptbl tbl i,∀ x∈op.out::op.ins,Sl x := by
-    intro op hop x hx
-    simp only [Naf.cachePairOps,List.mem_cons,List.not_mem_nil,or_false] at hop
-    rcases hop with rfl|rfl <;>
-      simp only [FOp.out,FOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-    · rcases hx with rfl|rfl|rfl
-      · exact h2
-      · exact hI.sl _ hZ
-      · exact hI.sl _ hZ
-    · rcases hx with rfl|rfl|rfl
-      · exact h3
-      · exact h2
-      · exact hI.sl _ hZ
-  have hR : readsOk (Naf.cachePairOps M.n ptbl tbl i) V=true := by
-    simp [Naf.cachePairOps,readsOk,FOp.ins,FOp.out,hZ]
-  rw [Naf.cachePair]
-  split
-  · rw [ForwardField.program_inline]
-    exact WP.mono (ForwardField.program_ok (by assumption : M.adx ∧ M.n=4).2 hL hm _ hI hS hR
-      (fun _ h => by cases h))
-      (fun _ h => ⟨h.1,h.2.1⟩)
-  · exact (fprogB_ok hL hm _ hI hS hR)
+/-- The loop's first `k` steps, one after the other. -/
+theorem nafCacheSteps_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
+    {Sl : Nat → Prop} (hL : Lay M size Sl) (hm : UnitMod m (2^(64*M.n)))
+    {ptbl tbl e : Nat} {V : List Nat} (hC : CacheLoopLay M size Sl ptbl tbl e V)
+    {E : Nat → Fin m} {s : State} :
+    ∀ k ≤ 8, ∀ {u : State}, u.gpr .rbx=BitVec.ofNat 64 0 → CacheLoopKeep M base tbl e s u →
+      Inv M base size m Sl (cacheTableSlots M.n tbl 0++V) (cacheTableEnv M.n ptbl tbl E 0) u →
+      WP isa (Naf.cacheSteps M ptbl tbl e k).inline u fun t =>
+        t.gpr .rbx=BitVec.ofNat 64 k ∧ CacheLoopKeep M base tbl e s t ∧
+        Inv M base size m Sl (cacheTableSlots M.n tbl k++V) (cacheTableEnv M.n ptbl tbl E k) t
+  | 0, _, _, cu, ku, iu => WP.block_nil ⟨cu,ku,iu⟩
+  | k+1, hk, u, cu, ku, iu => by
+    simp only [Naf.cacheSteps,Code.inline]
+    exact WP.seq (WP.mono (nafCacheSteps_ok hL hm hC k (by omega) cu ku iu) fun t ⟨ct,kt,it⟩ =>
+      WP.mono (nafCacheStep_ok hL hm hC (by omega) ct kt it) fun t' ⟨c',_,k',i'⟩ => ⟨c',k',i'⟩)
 
-theorem nafCachePair_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstrass.Curve}
-    {Sl : Nat → Prop} (hn : M.n=4 ∨ M.n=6 ∨ M.n=9) (hL : Lay M size Sl)
-    (hm : UnitMod C.p (2^(64*M.n))) {ptbl tbl i : Nat}
-    (hSep : tbl+16*M.n*(i+1)≤ptbl ∨ ptbl+24*M.n*(i+1)≤tbl)
-    {V : List Nat} {E : Nat → Fin C.p} {s : State}
-    (hI : Inv M base size C.p Sl V E s) (hZ : ptbl+24*M.n*i+16*M.n∈V)
-    (h2 : Sl (tbl+16*M.n*i)) (h3 : Sl (tbl+16*M.n*i+8*M.n)) :
-    WP isa (Naf.cachePair M ptbl tbl i).inline s fun t =>
-      ProgKeep M base [tbl+16*M.n*i,tbl+16*M.n*i+8*M.n] s t ∧
-      Inv M base size C.p Sl ([tbl+16*M.n*i,tbl+16*M.n*i+8*M.n]++V) (tmv C M.n base t) t ∧
-      tmv C M.n base t (tbl+16*M.n*i)=E (ptbl+24*M.n*i+16*M.n)*E (ptbl+24*M.n*i+16*M.n) ∧
-      tmv C M.n base t (tbl+16*M.n*i+8*M.n)=
-        tmv C M.n base t (tbl+16*M.n*i)*E (ptbl+24*M.n*i+16*M.n) := by
-  rw [Nat.mul_succ,Nat.mul_succ] at hSep
-  have hz2 : ptbl+24*M.n*i+16*M.n≠tbl+16*M.n*i := by omega
-  have h23 : tbl+16*M.n*i≠tbl+16*M.n*i+8*M.n := by omega
-  have hp := nafCachePair_fields_ok hL hm hI hZ h2 h3
-  refine WP.mono hp fun t ⟨kt,it⟩ => ?_
-  have iv : Inv M base size C.p Sl ([tbl+16*M.n*i,tbl+16*M.n*i+8*M.n]++V)
-      (runOps (Naf.cachePairOps M.n ptbl tbl i) E) t := it.sub (by
-    intro x hx
-    simp only [Naf.cachePairOps,validAfter,FOp.out,List.mem_append,List.mem_cons,
-      List.not_mem_nil,or_false] at hx ⊢
-    grind)
-  have v2 := iv.val (tbl+16*M.n*i) (by simp)
-  have v3 := iv.val (tbl+16*M.n*i+8*M.n) (by simp)
-  simp only [Naf.cachePairOps,runOps,List.foldl_cons,List.foldl_nil,FOp.run,
-    Function.update_self,Function.update_of_ne hz2,Function.update_of_ne h23] at v2 v3
-  refine ⟨kt,iv.to_tmv,v2,?_⟩
-  unfold tmv
-  rw [v2]
-  exact v3
+/-- The loop's eight steps unrolled (`Naf.cacheStaged`): as the loop. -/
+theorem nafCacheStaged_fields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
+    {Sl : Nat → Prop} (hL : Lay M size Sl) (hm : UnitMod m (2^(64*M.n)))
+    {ptbl tbl e : Nat} {V : List Nat} (hC : CacheLoopLay M size Sl ptbl tbl e V)
+    {E : Nat → Fin m} {s : State} (hI : Inv M base size m Sl V E s) :
+    WP isa (Naf.cacheStaged M ptbl tbl e).inline s fun t =>
+      CacheLoopKeep M base tbl e s t ∧
+      Inv M base size m Sl (cacheTableSlots M.n tbl 8++V) (cacheTableEnv M.n ptbl tbl E 8) t := by
+  simp only [Naf.cacheStaged,Code.inline]
+  apply WP.seq
+  refine WP.mono (mov32_rbx_zero_ok s) fun u ⟨cu,ku⟩ => ?_
+  have k0 : CacheLoopKeep M base tbl e s u :=
+    ⟨⟨fun r hr => ku.1 r (fun h => hr (List.mem_cons.mpr (Or.inl (List.mem_singleton.mp h)))),ku.2.2.1,ku.2.2.2⟩,
+      by rw [ku.2.1]; exact Unch.refl _ _ _⟩
+  have i0 : Inv M base size m Sl (cacheTableSlots M.n tbl 0++V) (cacheTableEnv M.n ptbl tbl E 0) u :=
+    ⟨hI.scr.of_keeps ku (by decide),by rw [ku.2.1]; exact hI.mod,hI.sl,
+      fun x hx => by rw [ku.2.1]; exact hI.lt x hx,fun x hx => by rw [ku.2.1]; exact hI.val x hx⟩
+  exact WP.mono (nafCacheSteps_ok hL hm hC 8 (Nat.le_refl 8) cu k0 i0) fun _ ⟨_,k,i⟩ => ⟨k,i⟩
 
-theorem nafCacheUnrolled_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstrass.Curve}
-    {Sl : Nat → Prop} (hn : M.n=4 ∨ M.n=6 ∨ M.n=9) (hL : Lay M size Sl)
-    (hm : UnitMod C.p (2^(64*M.n))) (k : Nat) {ptbl tbl : Nat}
-    (hSep : tbl+16*M.n*k≤ptbl ∨ ptbl+24*M.n*k≤tbl)
-    {V : List Nat} {E : Nat → Fin C.p} {s : State}
-    (hI : Inv M base size C.p Sl V E s) (hZ : ∀ i<k,ptbl+24*M.n*i+16*M.n∈V)
-    (hSl : ∀ i<k,Sl (tbl+16*M.n*i) ∧ Sl (tbl+16*M.n*i+8*M.n)) :
-    WP isa (Naf.cacheUnrolled M ptbl tbl k).inline s fun t =>
-      ProgKeep M base (cacheTableSlots M.n tbl k) s t ∧
-      Inv M base size C.p Sl (cacheTableSlots M.n tbl k++V) (tmv C M.n base t) t ∧
-      ∀ i<k,tmv C M.n base t (tbl+16*M.n*i)=E (ptbl+24*M.n*i+16*M.n)*E (ptbl+24*M.n*i+16*M.n) ∧
-        tmv C M.n base t (tbl+16*M.n*i+8*M.n)=tmv C M.n base t (tbl+16*M.n*i)*E (ptbl+24*M.n*i+16*M.n) := by
-  induction k with
-  | zero => exact WP.block_nil ⟨ProgKeep.refl _ _ _ s,hI.to_tmv,fun _ h => by omega⟩
-  | succ k ih =>
-    have hk := entry_le (16*M.n) (show k≤k+1 by omega)
-    have hk' := entry_le (24*M.n) (show k≤k+1 by omega)
-    rw [Naf.cacheUnrolled]
-    apply WP.seq
-    refine WP.mono (ih (by omega) (fun i hi => hZ i (by omega))
-      (fun i hi => hSl i (by omega))) fun u ⟨ku,iu,hu⟩ => ?_
-    have hW : ∀ x∈cacheTableSlots M.n tbl k,Sl x := by
-      intro x hx
-      obtain ⟨j,hj,rfl|rfl⟩ := mem_cacheTableSlots.mp hx
-      · exact (hSl j (by omega)).1
-      · exact (hSl j (by omega)).2
-    have zu : tmv C M.n base u (ptbl+24*M.n*k+16*M.n)=E (ptbl+24*M.n*k+16*M.n) := by
-      unfold tmv
-      rw [ku.slot hL hI.scr hW (hI.sl _ (hZ k (by omega))) ?_,hI.val _ (hZ k (by omega))]
-      intro hz
-      obtain ⟨j,hj,hj'⟩ := mem_cacheTableSlots.mp hz
-      have := entry_end_le (16*M.n) hj
-      rw [Nat.mul_succ,Nat.mul_succ] at hSep
-      omega
-    refine WP.mono (nafCachePair_ok hn hL hm hSep iu
-      (List.mem_append_right _ (hZ k (by omega)))
-      (hSl k (by omega)).1 (hSl k (by omega)).2) fun t ⟨kt,it,h2,h3⟩ => ?_
-    have hWp : ∀ x∈[tbl+16*M.n*k,tbl+16*M.n*k+8*M.n],Sl x := by
-      intro x hx
-      simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
-      rcases hx with rfl|rfl
-      · exact (hSl k (by omega)).1
-      · exact (hSl k (by omega)).2
-    have old (x : Nat) (hx : Sl x) (hnot : x∉[tbl+16*M.n*k,tbl+16*M.n*k+8*M.n]) :
-        tmv C M.n base t x=tmv C M.n base u x := by
-      unfold tmv
-      rw [kt.slot hL iu.scr hWp hx hnot]
-    refine ⟨(ku.mono (fun _ h => List.mem_append_right _ h)).trans
-      (kt.mono (fun _ h => List.mem_append_left _ h)),?_,fun i hi => ?_⟩
-    · simpa only [cacheTableSlots,List.append_assoc] using it
-    · by_cases he : i=k
-      · subst i
-        rw [zu] at h2 h3
-        exact ⟨h2,h3⟩
-      · have hik : i<k := by omega
-        have := entry_end_le (16*M.n) hik
-        have e2 := old (tbl+16*M.n*i) (hSl i hi).1 (by
-          simp only [List.mem_cons,List.not_mem_nil,or_false]; omega)
-        have e3 := old (tbl+16*M.n*i+8*M.n) (hSl i hi).2 (by
-          simp only [List.mem_cons,List.not_mem_nil,or_false]; omega)
-        rw [e2,e3]
-        exact hu i hik
-
-/-- Express each cache pair in terms of the source Z still in the resulting state. -/
-theorem nafCacheUnrolled_current_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstrass.Curve}
-    {Sl : Nat → Prop} (hn : M.n=4 ∨ M.n=6 ∨ M.n=9) (hL : Lay M size Sl)
-    (hm : UnitMod C.p (2^(64*M.n))) (k : Nat) {ptbl tbl : Nat}
-    (hSep : tbl+16*M.n*k≤ptbl ∨ ptbl+24*M.n*k≤tbl)
-    {V : List Nat} {E : Nat → Fin C.p} {s : State}
-    (hI : Inv M base size C.p Sl V E s) (hZ : ∀ i<k,ptbl+24*M.n*i+16*M.n∈V)
-    (hSl : ∀ i<k,Sl (tbl+16*M.n*i) ∧ Sl (tbl+16*M.n*i+8*M.n)) :
-    WP isa (Naf.cacheUnrolled M ptbl tbl k).inline s fun t =>
-      ProgKeep M base (cacheTableSlots M.n tbl k) s t ∧
-      Inv M base size C.p Sl (cacheTableSlots M.n tbl k++V) (tmv C M.n base t) t ∧
-      ∀ i<k,tmv C M.n base t (tbl+16*M.n*i)=
+/-- `nafCacheTable_current_ok`, for the steps unrolled. -/
+theorem nafCacheStaged_current_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstrass.Curve}
+    {Sl : Nat → Prop} (hL : Lay M size Sl) (hm : UnitMod C.p (2^(64*M.n)))
+    {ptbl tbl e : Nat} {V : List Nat} (hC : CacheLoopLay M size Sl ptbl tbl e V)
+    {E : Nat → Fin C.p} {s : State} (hI : Inv M base size C.p Sl V E s) :
+    WP isa (Naf.cacheStaged M ptbl tbl e).inline s fun t =>
+      CacheLoopKeep M base tbl e s t ∧
+      Inv M base size C.p Sl (cacheTableSlots M.n tbl 8++V) (tmv C M.n base t) t ∧
+      ∀ i<8,tmv C M.n base t (tbl+16*M.n*i)=
           tmv C M.n base t (ptbl+24*M.n*i+16*M.n)*tmv C M.n base t (ptbl+24*M.n*i+16*M.n) ∧
         tmv C M.n base t (tbl+16*M.n*i+8*M.n)=
-          tmv C M.n base t (tbl+16*M.n*i)*tmv C M.n base t (ptbl+24*M.n*i+16*M.n) := by
-  refine WP.mono (nafCacheUnrolled_ok hn hL hm k hSep hI hZ hSl) fun t ⟨kt,it,ht⟩ =>
-    ⟨kt,it,fun i hi => ?_⟩
-  have hW : ∀ x∈cacheTableSlots M.n tbl k,Sl x := by
-    intro x hx
-    obtain ⟨j,hj,rfl|rfl⟩ := mem_cacheTableSlots.mp hx
-    · exact (hSl j hj).1
-    · exact (hSl j hj).2
-  have ze : tmv C M.n base t (ptbl+24*M.n*i+16*M.n)=E (ptbl+24*M.n*i+16*M.n) := by
-    unfold tmv
-    rw [kt.slot hL hI.scr hW (hI.sl _ (hZ i hi)) ?_,hI.val _ (hZ i hi)]
-    intro hz
-    obtain ⟨j,hj,hj'⟩ := mem_cacheTableSlots.mp hz
-    have := entry_end_le (16*M.n) hj
-    have := entry_end_le (16*M.n) hi
-    have := entry_end_le (24*M.n) hi
-    have := entry_le (24*M.n) (Nat.zero_le i)
-    omega
-  rw [ze]
-  exact ht i hi
+          tmv C M.n base t (tbl+16*M.n*i)*tmv C M.n base t (ptbl+24*M.n*i+16*M.n) :=
+  WP.mono (nafCacheStaged_fields_ok hL hm hC hI) fun _ ⟨kt,it⟩ => ⟨kt,cacheTable_current hC it⟩
+
+/-- Each cache pair in terms of the source `Z` still in the resulting state. -/
+theorem nafCacheTable_current_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstrass.Curve}
+    {Sl : Nat → Prop} (hL : Lay M size Sl) (hm : UnitMod C.p (2^(64*M.n)))
+    {ptbl tbl e : Nat} {V : List Nat} (hC : CacheLoopLay M size Sl ptbl tbl e V)
+    {E : Nat → Fin C.p} {s : State} (hI : Inv M base size C.p Sl V E s) :
+    WP isa (Naf.cacheTable M ptbl tbl e).inline s fun t =>
+      CacheLoopKeep M base tbl e s t ∧
+      Inv M base size C.p Sl (cacheTableSlots M.n tbl 8++V) (tmv C M.n base t) t ∧
+      ∀ i<8,tmv C M.n base t (tbl+16*M.n*i)=
+          tmv C M.n base t (ptbl+24*M.n*i+16*M.n)*tmv C M.n base t (ptbl+24*M.n*i+16*M.n) ∧
+        tmv C M.n base t (tbl+16*M.n*i+8*M.n)=
+          tmv C M.n base t (tbl+16*M.n*i)*tmv C M.n base t (ptbl+24*M.n*i+16*M.n) :=
+  WP.mono (nafCacheTable_fields_ok hL hm hC hI) fun _ ⟨kt,it⟩ => ⟨kt,cacheTable_current hC it⟩
 
 end VG.Proof.Weierstrass.X86_64
