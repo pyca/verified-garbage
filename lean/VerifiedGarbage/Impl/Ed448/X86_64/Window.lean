@@ -44,9 +44,11 @@ def keyCoord (c : Nat) : List Instr :=
 
 def selectKey (o : Nat) : List Instr := loadDigit o ++ keyCoord 0 ++ keyCoord 1 ++ keyCoord 2
 
-/-- The full projective addition, using the existing field operations. -/
-def add (F : Field) : Prog isa :=
-  .block (fieldCode F (addOps.take 4) ++ Point64.mulD ++ fieldCode F (addOps.drop 5))
+/-- The projective formula differs from affine addition only in `A = Z₁Z₂`.
+Form that product in the accumulator's Z slot, then reuse the affine formula's code.
+The accumulator is replaced by the addition result immediately afterwards. -/
+def add (F : Field) (P : Point64.Ops) : Prog isa :=
+  .seq (.block (F.mul (slot 2) (slot 2) (slot 10))) P.add
 
 def dbl4 (P : Point64.Ops) : Prog isa := .seq P.dbl (.seq P.dbl (.seq P.dbl P.dbl))
 
@@ -54,7 +56,7 @@ def dbl4 (P : Point64.Ops) : Prog isa := .seq P.dbl (.seq P.dbl (.seq P.dbl P.db
 def round (F : Field) (P : Point64.Ops) (o : Nat) : Prog isa :=
   .seq (dbl4 P) <|
   .seq (.block selectBase) <| .seq P.add <| .seq (.block (accept ++ selectKey o)) <|
-  .seq (add F) (.block (accept ++ [.alu .test .rbx (.reg .rbx)]))
+  .seq (add F P) (.block (accept ++ [.alu .test .rbx (.reg .rbx)]))
 
 def step (F : Field) (P : Point64.Ops) (o : Nat) : Prog isa :=
   .seq (.block [.alu .sub .rbx (.imm 4)]) (round F P o)

@@ -64,7 +64,7 @@ theorem round_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F) {P : Point64.Ops}
     pt_congr (f5 0 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
       (f5 1 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
       (f5 2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
-  refine WP.seq (WP.mono (add_ok hf (k5.scr (k04.scr hs)) d5) fun s6 ⟨k6, e6⟩ => ?_)
+  refine WP.seq (WP.mono (add_ok hf hP (k5.scr (k04.scr hs)) d5) fun s6 ⟨k6, e6⟩ => ?_)
   rw [WP.block_append_iff]
   refine WP.mono (accept_ok (k6.scr (k5.scr (k04.scr hs)))) fun s7 ⟨k7, p7, f7⟩ => ?_
   have k07 := ((k04.trans k5).trans k6).trans k7
@@ -72,8 +72,8 @@ theorem round_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F) {P : Point64.Ops}
     fun u ⟨zu, gu, mu, ru, wu⟩ => ?_
   refine ⟨⟨fun r hr => (gu r).trans (k07.gpr r hr), ru.trans k07.rd, wu.trans k07.wr, ?_⟩, zu, ?_, ?_⟩
   · rw [mu]; exact k07.mem
-  · rw [mu, f7 11 (by decide), e6, addOps_keep _ _ (Or.inr (Or.inl (by decide))), d5]
-  · rw [mu, p7, e6, addOps_eval, d5, addWith_d, q5, q4, p5,
+  · rw [mu, f7 11 (by decide), e6, addEnv_d, d5]
+  · rw [mu, p7, e6, addEnv_eval, d5, addWith_d, q5, q4, p5,
       tablePoint_keep k04 (digit K t) (Proof.Ed448.Window.digit_lt K t)]
     rfl
 

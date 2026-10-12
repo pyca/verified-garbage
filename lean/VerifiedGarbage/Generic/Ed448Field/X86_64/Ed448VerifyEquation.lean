@@ -31,10 +31,9 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
       negates A; computes [S]B + [k](-A) in 114 four-bit windows sharing four \
       doublings. Each window scans sixteen affine multiples of B and sixteen projective \
       multiples of -A, adding one of each. The latter table is built with fifteen affine \
-      additions, without inversions, in scratch bytes 4096–7167. Doublings and affine \
-      additions call the existing point functions; projective addition uses the same \
-      field operations. Compares [4] of the result with [4]R projectively. Field elements \
-      are X448's seven 64-bit words, multiplied with `mul` by columns. Callee-saved \
+      additions, without inversions, in scratch bytes 4096–7167. Doublings and additions call the selected point functions; \
+      projective addition first forms Z1*Z2 and then reuses the affine formula. Compares [4] of the result with [4]R projectively. Field elements \
+      are X448's seven 64-bit words, multiplied by the selected backend. Callee-saved \
       registers are saved in the first 48 bytes of `scratch`."])
     code := Impl.Ed448.X86_64.verifyEquationFor v
     contract := Spec.Ed448.verifyEquationContract X86_64.abi 8
