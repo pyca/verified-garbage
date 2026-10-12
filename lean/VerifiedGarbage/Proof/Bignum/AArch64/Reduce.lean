@@ -46,7 +46,7 @@ theorem redHead_ok {s : State} {B : Addr} {Z w eA eN : Nat} (hs : Scr s B Z)
       (t.mem = s.mem ∧
       (t.gpr .x1).toNat = (word s.mem B eA).toNat * (s.gpr .x15).toNat % 2 ^ 64 ∧
       2 ^ 64 * (t.gpr .x2).toNat = (t.gpr .x1).toNat * (word s.mem B eN).toNat + (word s.mem B eA).toNat ∧
-      t.gpr .x16 = off B eA ∧ t.gpr .x17 = off B (eN + 8) ∧ t.gpr .x14 = BitVec.ofNat 64 (w - 1)) ∧
+      t.gpr .x16 = off B eA ∧ t.gpr .x17 = off B (eN + 8) ∧ t.gpr .x14 = BitVec.ofNat 64 (w - 1) ∧ t.c = false) ∧
       Keep [.x1, .x2, .x3, .x4, .x14, .x16, .x17] s t := by
   refine WP.keep [.x1, .x2, .x3, .x4, .x14, .x16, .x17] ?_ (by decide) (by decide) (by decide +kernel)
   unfold redHead
@@ -61,15 +61,16 @@ theorem redHead_ok {s : State} {B : Addr} {Z w eA eN : Nat} (hs : Scr s B Z)
 
 /-- After the steps up to `j - 1` of `reduceRow`'s loop from the state `s₁`
 (after `redHead`): words `0, …, j - 2` hold the low words of
-`(T + u m) / 2⁶⁴` so far, and `x2` the carry. -/
+`(T + u m) / 2⁶⁴` so far, and `x2 + C` the carry. -/
 structure RedInv (s₁ : State) (B : Addr) (Z eA eN : Nat) (j : Nat) (t : State) : Prop where
   scr : Scr t B Z
   keep : Keep [.x2, .x3, .x4, .x14, .x16, .x17] s₁ t
   x16 : t.gpr .x16 = off B (eA + 8 * (j - 1))
   x17 : t.gpr .x17 = off B (eN + 8 * j)
   out : Outside B eA (8 * (j - 1)) s₁.mem t.mem
-  val : 2 ^ 64 * (wv t.mem B eA (j - 1) + 2 ^ (64 * (j - 1)) * (t.gpr .x2).toNat) =
+  val : 2 ^ 64 * (wv t.mem B eA (j - 1) + 2 ^ (64 * (j - 1)) * carry t) =
     wv s₁.mem B eA j + (s₁.gpr .x1).toNat * wv s₁.mem B eN j
+  carry_lt : carry t < 2 ^ 64
 
 theorem redStep_ok {s₁ : State} {B : Addr} {Z w eA eN : Nat} (h7 : s₁.gpr .x7 = 0)
     (hA : eA + 8 * w ≤ Z) (hN : eN + 8 * w ≤ Z)
@@ -82,9 +83,12 @@ theorem redStep_ok {s₁ : State} {B : Addr} {Z w eA eN : Nat} (h7 : s₁.gpr .x
   have t1 : t.gpr .x1 = s₁.gpr .x1 := hI.keep.gpr .x1 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.x2, .x3, .x4, .x16, .x17] (mac_ok t true hI.scr hI.x16 hI.x17 t7
-    (by omega_arith) (by simp only [ite_true]; omega_arith) (by omega_arith))
-    (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨lo, hm, hv, h16, h17⟩, k₁⟩ => ?_
-  refine WP.mono (dec_ok t₁ .x14) fun t' ⟨⟨h14, hm', _⟩, k'⟩ => ⟨?_, by rw [h14, k₁.gpr .x14 (by decide)]⟩
+    (by omega_arith) (by simp only [ite_true]; omega_arith) (by omega_arith) hI.carry_lt)
+    (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨lo, hm, hv, h16, h17, hcarry⟩, k₁⟩ => ?_
+  refine WP.mono (dec_ok t₁ .x14) fun t' ⟨⟨h14, hm', hcf⟩, k'⟩ => ⟨?_, by rw [h14, k₁.gpr .x14 (by decide)]⟩
+  have hcar : carry t' = carry t₁ := by
+    unfold carry
+    rw [k'.gpr .x2 (by decide), hcf]
   simp only [ite_true] at hv
   have hmem : t'.mem = t.mem.writeW (off B (eA + 8 * (j - 1))) lo := hm'.trans hm
   have e8 : eA + 8 * (j - 1) + 8 = eA + 8 * j := by omega_arith
@@ -95,12 +99,12 @@ theorem redStep_ok {s₁ : State} {B : Addr} {Z w eA eN : Nat} (h7 : s₁.gpr .x
     hI.out.word (by omega_arith) (by omega_arith)
   refine ⟨hI.scr.congr (k'.wr.trans k₁.wr), (hI.keep.trans (k₁.trans k')).mono (by decide),
     by rw [k'.gpr .x16 (by decide), h16, e8, show j + 1 - 1 = j by omega_arith],
-    by rw [k'.gpr .x17 (by decide), h17, Nat.mul_succ, Nat.add_assoc], ?_, ?_⟩
+    by rw [k'.gpr .x17 (by decide), h17, Nat.mul_succ, Nat.add_assoc], ?_, ?_, ?_⟩
   · rw [hmem]
     refine fun x hx' => ?_
     rw [writeW_outside t.mem B lo (by omega_arith) x (by omega_arith)]
     exact hI.out x (by omega_arith)
-  · rw [hmem, show j + 1 - 1 = j - 1 + 1 by omega_arith, wv_writeW_top _ _ _ _ _ (by omega_arith), k'.gpr .x2 (by decide)]
+  · rw [hmem, show j + 1 - 1 = j - 1 + 1 by omega_arith, wv_writeW_top _ _ _ _ _ (by omega_arith), hcar]
     simp only [wv]
     rw [hx, hy, t1] at hv
     have hval := hI.val
@@ -108,6 +112,7 @@ theorem redStep_ok {s₁ : State} {B : Addr} {Z w eA eN : Nat} (h7 : s₁.gpr .x
       rw [← Nat.pow_add]; congr 1; omega_arith
     rw [show 64 * (j - 1 + 1) = 64 * j by omega_arith]
     grind
+  · rw [hcar]; exact hcarry
 
 /-! ## The top words -/
 
@@ -181,26 +186,32 @@ theorem reduceRow_ok {s : State} {B : Addr} {Z w eA eN : Nat} (hs : Scr s B Z)
   have hn := hs.nowrap
   unfold reduceRow
   refine WP.seq (WP.mono (redHead_ok hs h8 h10 h12 h7 (by omega_arith) (by omega_arith) (by omega_arith) hinv)
-    fun s₁ ⟨⟨hm₁, hu, hc₁, h16, h17, h14⟩, k₁⟩ => ?_)
+    fun s₁ ⟨⟨hm₁, hu, hc₁, h16, h17, h14, hcf⟩, k₁⟩ => ?_)
   have s₁7 : s₁.gpr .x7 = 0 := (k₁.gpr .x7 (by decide)).trans h7
   have h0 : RedInv s₁ B Z eA eN 1 s₁ := by
-    refine ⟨hs.congr k₁.wr, Keep.refl _ _, by rw [h16]; rfl, by rw [h17], Outside.refl _ _ _ _, ?_⟩
-    simp only [wv, Nat.sub_self, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero]
-    rw [hc₁, hm₁]
-    omega_arith
+    refine ⟨hs.congr k₁.wr, Keep.refl _ _, by rw [h16]; rfl, by rw [h17], Outside.refl _ _ _ _, ?_, ?_⟩
+    · simp only [wv, Nat.sub_self, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero]
+      simp only [carry, hcf, Bool.toNat_false, Nat.add_zero]
+      rw [hc₁, hm₁]
+      omega_arith
+    · simp only [carry, hcf, Bool.toNat_false, Nat.add_zero]
+      exact (s₁.gpr .x2).isLt
   refine WP.seq (WP.mono (wp_countdown (N := w - 1) (by omega_arith) (by omega_arith)
     (fun i => RedInv s₁ B Z eA eN (i + 1))
     (fun i hi t hI _ => redStep_ok s₁7 (by omega_arith) hN (by omega_arith) (by omega_arith) (by omega_arith) hI) h0 h14)
-    fun t hI => ?_)
+    fun u hI => ?_)
   rw [show w - 1 + 1 = w by omega_arith] at hI
-  have t7 : t.gpr .x7 = 0 := (hI.keep.gpr .x7 (by decide)).trans s₁7
-  refine WP.mono (redTop_ok hI.scr (by omega_arith) hI.x16 t7 (by omega_arith)) fun t' ⟨hm', k'⟩ => ?_
+  have u7 : u.gpr .x7 = 0 := (hI.keep.gpr .x7 (by decide)).trans s₁7
+  refine WP.seq (WP.mono (carryOut_ok u u7 hI.carry_lt) fun t ⟨⟨hm, hcarry⟩, kc⟩ => ?_)
+  have t7 : t.gpr .x7 = 0 := (kc.gpr .x7 (by decide)).trans u7
+  refine WP.mono (redTop_ok (hI.scr.congr kc.wr) (by omega_arith)
+    ((kc.gpr .x16 (by decide)).trans hI.x16) t7 (by omega_arith)) fun t' ⟨hm', k'⟩ => ?_
   have hX : word t.mem B (eA + 8 * w) = word s.mem B (eA + 8 * w) := by
-    rw [hI.out.word (Or.inr (by omega_arith)) (by omega_arith), hm₁]
+    rw [hm, hI.out.word (Or.inr (by omega_arith)) (by omega_arith), hm₁]
   have hY : word t.mem B (eA + 8 * w + 8) = word s.mem B (eA + 8 * w + 8) := by
-    rw [hI.out.word (Or.inr (by omega_arith)) (by omega_arith), hm₁]
+    rw [hm, hI.out.word (Or.inr (by omega_arith)) (by omega_arith), hm₁]
   have hval := hI.val
-  rw [hm₁] at hval
+  rw [hm₁, ← hcarry, ← hm] at hval
   have hb := hbound _ (s₁.gpr .x1).isLt
   have e2 := wv_top2 s.mem B eA w
   have hp : 2 ^ 64 * 2 ^ (64 * (w - 1)) = 2 ^ (64 * w) := by rw [← Nat.pow_add]; congr 1; omega_arith
@@ -215,7 +226,7 @@ theorem reduceRow_ok {s : State} {B : Addr} {Z w eA eN : Nat} (hs : Scr s B Z)
       rw [Nat.mul_add] at e2
       omega_using [hval, hb, e2]
     exact Nat.lt_of_mul_lt_mul_left hlt
-  refine ⟨?_, ?_, ((k₁.trans hI.keep).trans k').mono (by decide)⟩
+  refine ⟨?_, ?_, (((k₁.trans hI.keep).trans kc).trans k').mono (by decide)⟩
   · rw [hm', redTop_val t.mem B hn (by omega_arith) (show eA + 8 * w + 16 ≤ Z by omega_arith) _ hfit, hX, hY, e2, ← hu]
     grind
   · rw [hm']
@@ -223,6 +234,7 @@ theorem reduceRow_ok {s : State} {B : Addr} {Z w eA eN : Nat} (hs : Scr s B Z)
     unfold redTopMem
     rw [writeW_outside _ B _ (by omega_arith) x (by omega_arith), writeW_outside _ B _ (by omega_arith) x (by omega_arith),
       writeW_outside _ B _ (by omega_arith) x (by omega_arith)]
+    rw [hm]
     exact (hI.out x (by omega_arith)).trans (by rw [hm₁])
 
 end VG.Proof.Bignum.AArch64

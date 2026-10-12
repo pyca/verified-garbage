@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointCorrect
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 
 /-! The joint verifier restores registers and keeps the caller's return address. -/
 namespace VG.Proof.Ecdsa.Verify.X86_64
@@ -39,15 +40,17 @@ theorem verify_abi_of_wp {code : Prog isa} {s : State} (hs : verifyX86_64.pre s)
 theorem jointVerify_x86 (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
-    ∃ t s',Exec isa jointVerifyP256 s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
-  verify_abi_of_wp hs (wp_of_inline (by lit_decide) <| jointVerify_p256_ok hL hT hI (pre_of hs))
-    (by lit_decide) (by lit_decide) (by lit_decide)
+    ∃ t s',Exec isa jointVerifyP256.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
+  verify_abi_of_wp hs (jointVerify_p256_ok hL hT hI (pre_of hs))
+    (by rw [Code.allInstrs_inline]; lit_decide) (Code.noCalls_inline (by lit_decide))
+    (by rw [Code.allInstrs_inline]; lit_decide)
 
 theorem jointVerify_x86_adx (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
-    ∃ t s',Exec isa jointVerifyP256Adx s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
-  verify_abi_of_wp hs (wp_of_inline (by lit_decide) <| jointVerify_p256_adx_ok hL hT hI (show VPre p256x s from {pre_of hs with}))
-    (by lit_decide) (by lit_decide) (by lit_decide)
+    ∃ t s',Exec isa jointVerifyP256Adx.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
+  verify_abi_of_wp hs (jointVerify_p256_adx_ok hL hT hI (show VPre p256x s from {pre_of hs with}))
+    (by rw [Code.allInstrs_inline]; lit_decide) (Code.noCalls_inline (by lit_decide))
+    (by rw [Code.allInstrs_inline]; lit_decide)
 
 end VG.Proof.Ecdsa.Verify.X86_64

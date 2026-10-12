@@ -104,7 +104,7 @@ structure St₃ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
 /-- `x`, `r`, `k R mod n` and the checks, then `k^(n-2)`. -/
 theorem stage₃ (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c (some E) s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₃ c s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq c.middle (.seq c.nPow.inline rest)) s Q := by
+    WP isa (.seq c.middle.inline (.seq c.nPow.inline rest)) s Q := by
   have hSd : sv c base s D = dv c s₀ := by rw [hS.d, shAt_E_D, Nat.shiftRight_zero]
   have hSe : sv c base s E = ev c s₀ := by rw [hS.e, shAt_self]
   have h0 := hc.n0
@@ -174,7 +174,7 @@ def SignPost (c : Cfg) (s₀ s' : State) : Prop :=
 /-- `s`, its check, and the result. -/
 theorem stage₄ (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) {base : Addr} (hb : base = s₀.gpr .r8)
     {s : State} (hS : St₃ c s₀ base s) :
-    WP isa c.scalar s fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
+    WP isa c.scalar.inline s fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hS.scr.nowrap
@@ -244,7 +244,7 @@ theorem kBitsIf_inline (c : Cfg) (b : Bool) : (c.kBitsIf b).inline = c.kBitsIf b
 /-- The signature inlined: only `[k]G` and the inversions call functions. -/
 theorem sign_inline (c : Cfg) : c.sign.inline = .seq (.block c.setup) (.seq c.kBits
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-    (.seq c.gMulKC.inline (.seq c.pPow.inline (.seq c.middle (.seq c.nPow.inline c.scalar))))))) := by
+    (.seq c.gMulKC.inline (.seq c.pPow.inline (.seq c.middle.inline (.seq c.nPow.inline c.scalar.inline))))))) := by
   rw [sign_eq]
   show Code.seq _ (Code.seq c.kBits.inline (Code.seq _ (Code.seq _ (Code.seq _
     (Code.seq c.pPow.inline (Code.seq c.middle.inline (Code.seq c.nPow.inline c.scalar.inline))))))) = _

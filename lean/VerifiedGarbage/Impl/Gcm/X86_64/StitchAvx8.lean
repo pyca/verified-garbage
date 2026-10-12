@@ -262,39 +262,36 @@ def tailT (nr : Nat) (ix : Bool := false) : Prog isa :=
           (.seq (.loop (.block (StitchZH.remBody (if ix then .rbx else .rdx) ++ StitchZH.remNext)) .ne)
             (.block ((if ix then [.alu .sub .rbx (.reg .rdx)] else []) ++ tailEnd nr))))))
 
-/-- Encryption, after the setup `su`, of the data read from `srcAt ix`. -/
-def encForWith (su : List Instr) (nr : Nat) (ix : Bool := false) : Prog isa :=
-  .seq (.block su) (.seq (batchL regCounters nr 8 0 (fun _ => []) ix) (.seq (batch nr 8 8 (fun _ => []) ix)
+/-- Encryption, after the setup, of the data read from `srcAt ix`. -/
+def encRest (nr : Nat) (ix : Bool := false) : Prog isa :=
+  .seq (batchL regCounters nr 8 0 (fun _ => []) ix) (.seq (batch nr 8 8 (fun _ => []) ix)
     (.seq (.block ((List.range 8).flatMap prepare ++ ([.alu .cmp .r9 (.imm 24)] : List Instr)))
       (.seq (.ite .b (.block []) (.loop (encBody8 nr ix) .ae))
         (.seq (.block (hash8 ++ (List.range 8).flatMap (fun i => prepare (8+i)) ++ hash8))
-          (.seq (tailT nr ix) (.block finish)))))))
-
-def encFor (nr : Nat) : Prog isa := encForWith setup nr
+          (.seq (tailT nr ix) (.block finish))))))
 
 def decBody8 (nr : Nat) : Prog isa :=
   .seq (.block []) (.seq (batch nr 8 0 (q8 nr true))
     (.block [.alu .add .rdx (.imm 128), .alu .sub .r9 (.imm 8), .alu .cmp .r9 (.imm 16)]))
 
-/-- Decryption, after the setup `su`. -/
-def decForWith (su : List Instr) (nr : Nat) : Prog isa :=
-  .seq (.block (su ++ (List.range 8).flatMap prepare))
-    (.seq (.loop (decBody8 nr) .ae) (.seq (.block [])
-      (.seq (batch nr 8 0 (q8 nr false)) (.block finish))))
+/-- Decryption, after the setup. -/
+def decRest (nr : Nat) : Prog isa :=
+  .seq (.block ((List.range 8).flatMap prepare)) (.seq (.loop (decBody8 nr) .ae) (.seq (.block [])
+    (.seq (batch nr 8 0 (q8 nr false)) (.block finish))))
 
-def decFor (nr : Nat) : Prog isa := decForWith setup nr
+/-- The setup `su`, which does not depend on the key size, then the complete
+loop for the key size, chosen once from the public AES round count `nr`: the
+setup leaves the end of the key schedule, `rdi + 16 nr`, in `r10`. -/
+def dispatch (su : List Instr) (a b c : Prog isa) : Prog isa :=
+  .seq (.block (su ++ ([.mov .rax (.reg .rdi), .alu .add .rax (.imm 160), .alu .cmp .r10 (.reg .rax)] : List Instr)))
+    (.ite .e a (.seq (.block [.alu .add .rax (.imm 32), .alu .cmp .r10 (.reg .rax)]) (.ite .e b c)))
 
-/-- Choose the complete loop once, from the public AES round count. -/
-def dispatch (a b c : Prog isa) : Prog isa :=
-  .seq (.block [.alu .cmp .rsi (.imm 10)])
-    (.ite .e a (.seq (.block [.alu .cmp .rsi (.imm 12)]) (.ite .e b c)))
-
-def enc : Prog isa := dispatch (encFor 10) (encFor 12) (encFor 14)
+def enc : Prog isa := dispatch setup (encRest 10) (encRest 12) (encRest 14)
 /-- Encryption with a prepared key context: the powers loaded from it. -/
-def encR : Prog isa := dispatch (encForWith setupR 10) (encForWith setupR 12) (encForWith setupR 14)
-def dec : Prog isa := dispatch (decFor 10) (decFor 12) (decFor 14)
+def encR : Prog isa := dispatch setupR (encRest 10) (encRest 12) (encRest 14)
+def dec : Prog isa := dispatch setup (decRest 10) (decRest 12) (decRest 14)
 /-- Decryption with a prepared key context: the powers loaded from it. -/
-def decR : Prog isa := dispatch (decForWith setupR 10) (decForWith setupR 12) (decForWith setupR 14)
+def decR : Prog isa := dispatch setupR (decRest 10) (decRest 12) (decRest 14)
 
 /-! ## Out of place
 
@@ -315,7 +312,7 @@ def toExit : List Instr := [.mov .rbx (.mem (at_ .r11 816))]
 /-- Encryption out of place, after the setup `su`. -/
 def encToWith (su : List Instr) : Prog isa :=
   .seq (.block toEntry)
-    (.seq (dispatch (encForWith su 10 true) (encForWith su 12 true) (encForWith su 14 true)) (.block toExit))
+    (.seq (dispatch su (encRest 10 true) (encRest 12 true) (encRest 14 true)) (.block toExit))
 
 def encTo : Prog isa := encToWith setup
 /-- Encryption out of place with a prepared key context. -/

@@ -50,6 +50,7 @@ theorem secp256k1_ok (hI : InvSounds) : BaseCfgOk secp256k1 where
   p_lt_2n := by decide +kernel
   minv_p := by decide +kernel
   red_p := by decide +kernel
+  red_n := by decide +kernel
   minv_n := by decide +kernel
   len8 := by decide
   len_lo := by decide
@@ -69,7 +70,7 @@ theorem secp256k1_ok (hI : InvSounds) : BaseCfgOk secp256k1 where
   window_am3 := fun h => by cases h
   comb_am3 := fun _ h => by cases h
   even _ := by decide
-  inverse h := absurd h (by decide)
+  inverse _ := ⟨by decide, rfl⟩
 
 theorem secp256k1_tbls : CombTbls secp256k1 := fun _ h => by cases h
 

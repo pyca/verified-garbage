@@ -30,6 +30,7 @@ mod camellia_ecb;
 mod camellia_ofb;
 mod cmac_aes;
 mod cmac_triple_des;
+mod dsa;
 mod ecdh_p192;
 mod ecdh_p224;
 mod ecdh_p256;

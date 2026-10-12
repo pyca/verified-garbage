@@ -204,10 +204,33 @@ def mulQJ (dbl : Pt → Prog isa) : Prog isa :=
 `X` (`E.x`), its working area that of `invWin`. -/
 def invJA : InvCfg := .ofMod c.MP' (jwinCfg c).E.x (c.sl RZ) (bitsAt c.n 2) c.C.p
 
+/-- The words of the window's table of bits within the working area of
+`vg_<curve>_inv_mod_p` (`bitsAt c.n 3`, `64 n + 64` bytes), which the call
+keeps in the table of the bits of `n - 2`, which ECDH does not read. -/
+def invJAWords : Nat := (bitsAt c.n 3 + (64 * c.n + 64) - c.sl WB) / 8
+
+/-- Where the call keeps `PT`'s slot, which `vg_<curve>_inv_mod_p` writes:
+past those words. -/
+def invJAPt : Nat := bitsAt c.n 2 + 8 * invJAWords c
+
+/-- `invJA` by a call of `vg_<curve>_inv_mod_p` (`Cfg.pPow`, `[ACC] =
+[RZ]^(p-2)`), keeping the bytes of the window's slots and table of bits that
+the function's own working space covers, then `ACC` into `E.x`. -/
+def invJACall : Prog isa :=
+  .seq (.block (copy (invJAWords c) (bitsAt c.n 2) (c.sl WB) ++ copy c.n (invJAPt c) (c.sl PT))) <|
+  .seq c.pPow <|
+  .block (copy c.n (jwinCfg c).E.x (c.sl ACC) ++ copy c.n (c.sl PT) (invJAPt c) ++
+    copy (invJAWords c) (c.sl WB) (bitsAt c.n 2))
+
+/-- The inversion of `mulQJA`'s table: a call if the curve has six words and
+inversion functions (`Cfg.inverse`), else written out. -/
+def invJAProg : Prog isa :=
+  if c.n = 6 ∧ c.inverse.isSome then invJACall c else InvCfg.inv (invJA c)
+
 /-- `[d]P` into `R` by the Jacobian window method with the table made affine
 (`JacWinCfg.windowA`), `dbl` doubling a point in place. -/
 def mulQJA (dbl : Pt → Prog isa) : Prog isa :=
-  .seq (.block (maskK c)) (.seq (jwinPrep c) ((jwinCfg c).windowA (InvCfg.inv (invJA c)) dbl))
+  .seq (.block (maskK c)) (.seq (jwinPrep c) ((jwinCfg c).windowA (invJAProg c) dbl))
 
 /-! ## Windows of 4 bits in Jacobian coordinates, for a curve of prime order
 

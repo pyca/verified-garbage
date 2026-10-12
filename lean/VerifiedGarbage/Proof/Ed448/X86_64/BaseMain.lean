@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Ed448.X86_64.CombLoop
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseBits
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseEncode
 import VerifiedGarbage.Proof.X448.X86_64.Main
@@ -8,13 +9,14 @@ import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
 
 The correctness of `vg_ed448_scalar_base` against the contract the proof is
 written against (`scalarBaseLocal`, `BaseLocal.lean`): the scalar's bits, the
-loop (`R` ends as the reference ladder's point, which encodes `[k]B` by
-`BaseLadderOk`; the output's address kept in `rsi` across it and stored at
+comb loop (`R` represents `[k]B` in the Edwards group; the output's address kept in `rsi` across it and stored at
 `OUT` again after it), the inversion of `Z` and the encoding, every write in the
 working space but the result's, so the scalar is read unchanged, the
 callee-saved registers are restored from the working space, and the return
 address is kept.
 -/
+
+set_option exponentiation.threshold 1024
 
 namespace VG.Proof.Ed448.X86_64
 
@@ -77,7 +79,7 @@ variable {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld) {P : Point64.Ops} (hP
 include hf hP in
 /-- With any point operations `P` that run the field programs (`PointOk`), and any inversion
 `inv` that keeps and computes what `invert` does (`InvPost`). -/
-theorem scalarBase_correct_of (hL : BaseLadderOk) {inv : Prog isa}
+theorem scalarBase_correct_of (_hL : BaseLadderOk) {inv : Prog isa}
     (hinv : ∀ {s : State} {base : Addr}, Scr s base → WP isa inv s (InvPost base s))
     {s : State} (hp : scalarBaseLocal.pre s) :
     WP isa (scalarBaseWith fld P inv) s fun t => gprPreserved s t ∧ scalarBaseLocal.post s t := by
@@ -96,7 +98,7 @@ theorem scalarBase_correct_of (hL : BaseLadderOk) {inv : Prog isa}
   rw [g₁, hbase] at di₂
   rw [g₁] at r15₂
   have hs₂ : Scr s₂ base := ⟨di₂, by rw [wr₂, wr₁]; exact hws, by omega⟩
-  refine WP.mono (consts_ok hs₂) fun s₃ ⟨p₃, q₃, d₃, o₃, g₃, rd₃, wr₃, _⟩ => ?_
+  refine WP.mono (consts_ok hs₂) fun s₃ ⟨p₃, _q₃, d₃, o₃, g₃, rd₃, wr₃, _⟩ => ?_
   have hs₃ : Scr s₃ base := ⟨(g₃ _ (by decide)).trans di₂, wr₃ ▸ hs₂.wr, hs₂.nowrap⟩
   have rsi₃ : s₃.gpr .rsi = s.gpr .rsi := by
     rw [g₃ _ (by decide), g₂ _ (by decide), g₁]
@@ -145,23 +147,27 @@ theorem scalarBase_correct_of (hL : BaseLadderOk) {inv : Prog isa}
       (E_outside o₄' i (Or.inl (by simp only [BITS]; omega)))
   -- The loop.
   apply WP.seq
-  rw [mulLoop]
+  rw [combLoop]
   apply WP.seq
-  refine WP.mono (show WP isa (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 456))]) s₄ _ from
-    setRbx_ok s₄ 456 (by decide)) fun s₅ ⟨rbx₅, g₅, m₅, rd₅, wr₅⟩ => ?_
+  refine WP.mono (show WP isa (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 114))]) s₄ _ from
+    setRbx_ok s₄ 114 (by decide)) fun s₅ ⟨rbx₅, g₅, m₅, rd₅, wr₅⟩ => ?_
   have hs₅ : Scr s₅ base := ⟨(g₅ _ (by decide)).trans hs₄.rdi, wr₅ ▸ hs₄.wr, hs₄.nowrap⟩
   let K := decodeLE (bytesAt s.mem (s.gpr .rsi) 57)
   have hbits : ∀ t < 456, s₅.mem (off base (BITS + t)) = BitVec.ofNat 8 ((K >>> t) &&& 1) := by
     intro t ht
     rw [m₅, b₄' t ht, hmem₃ _ (by omega), scalar_bit s.mem _ ht]
   have e₅ : ∀ i : Index, E s₅.mem base i = E s₃.mem base i := fun i => by rw [m₅, e₄]
-  have I₅ : MInv base K s₅ 456 s₅ := by
-    refine ⟨hs₅, rbx₅, fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _, ?_, ?_, ?_⟩
-    · show Proof.Ed448.pt (E s₅.mem base) 8 9 10 = _
-      simp only [Proof.Ed448.pt, e₅]; exact q₃
+  have cbits : Comb.Bits base K s₅ := by
+    intro t ht
+    simpa only [Nat.shiftRight_eq_div_pow, Nat.and_one_is_mod] using hbits t ht
+  have I₅ : Comb.Inv base K s₅ 114 s₅ := by
+    refine ⟨hs₅, rbx₅, fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _, ?_, ?_⟩
     · rw [e₅]; exact d₃
-    · simp only [Proof.Ed448.pt, e₅, Nat.sub_self]; exact p₃
-  refine WP.mono (loop_ok hP hbits 456 s₅ (by decide) (by decide) I₅) fun s₆' I₆ => ?_
+    · rw [Proof.Ed448.Comb.accScalar_start, zero_smul]
+      have he : pt (E s₅.mem base) 0 1 2 = Spec.Ed448.identity := by
+        simp only [pt, e₅]; exact p₃
+      rw [he]; exact identity_rep
+  refine WP.mono (Comb.loop_ok hP cbits 114 s₅ (by decide) (by decide) I₅) fun s₆' I₆ => ?_
   -- The output's address at `OUT` again.
   apply WP.seq
   refine WP.mono (restashOut_ok I₆.scr.rdi I₆.scr.wr) fun s₆ ⟨m₆, g₆, rd₆, wr₆⟩ => ?_
@@ -211,9 +217,13 @@ theorem scalarBase_correct_of (hL : BaseLadderOk) {inv : Prog isa}
       · exact hro) (by decide)
   · show bytesAt t.mem (s.gpr .rdi) 57 = _
     have r₆ := I₆.rep
-    rw [Nat.sub_zero] at r₆
+    have hK : K < 2 ^ 456 := decodeLE_below (by rw [bytesAt_eq]; simp [Spec.X25519.bytesAt])
+    rw [Proof.Ed448.Comb.accScalar_total K hK] at r₆
     rw [bt, e₇, E_outside o₇ 0 (by decide), E_outside o₇ 1 (by decide), e₆]
-    exact encode_result hL r₆
+    rw [← encodePoint_code]
+    change Spec.Ed448.encodePoint (pt (E s₆'.mem base) 0 1 2) = _
+    rw [encodePoint_rep r₆]
+    exact (encodePoint_rep (pointMul_rep K basePoint_rep)).symm
 
 include hf hP in
 theorem scalarBase_correct (hL : BaseLadderOk) {s : State} (hp : scalarBaseLocal.pre s) :

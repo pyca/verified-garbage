@@ -36,9 +36,8 @@ theorem jointVerify_ct :
     ConstantTime isa
       (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pre
       (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pub
-      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p256 publicJoint (jointDouble publicJoint.K)) := by
+      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p256 publicJoint (jointDouble publicJoint.K)).inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
-  rw [← Code.inline_of_noCalls (c := (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p256 publicJoint (jointDouble publicJoint.K))) (by lit_decide)] at e₁ e₂
   exact jointVerify_p256_public_ct hL hT hI _ _ _ _ _ _ (pre_of (implies.pre _ pre₁))
     (pre_of (implies.pre _ pre₂)) (jointPublic_of_spec pub) e₁ e₂
 
@@ -46,9 +45,8 @@ theorem jointVerify_adx_ct :
     ConstantTime isa
       (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pre
       (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pub
-      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p256x publicJointAdx (jointDouble publicJointAdx.K)) := by
+      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p256x publicJointAdx (jointDouble publicJointAdx.K)).inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
-  rw [← Code.inline_of_noCalls (c := (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p256x publicJointAdx (jointDouble publicJointAdx.K))) (by lit_decide)] at e₁ e₂
   exact jointVerify_p256_adx_public_ct hL hT hI _ _ _ _ _ _
     (show VPre p256x s₁ from { pre_of (implies.pre _ pre₁) with })
     (show VPre p256x s₂ from { pre_of (implies.pre _ pre₂) with })

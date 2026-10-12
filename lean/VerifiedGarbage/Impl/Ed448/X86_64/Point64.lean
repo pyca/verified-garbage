@@ -12,7 +12,8 @@ seven 64-bit words (`Impl/X448/X86_64.lean`, the baseline's
 multiplications): RFC 8032's doubling (`doubleOps`) of slots 0–2, and the
 addition of `(x : y : 1)`, `x` and `y` in slots 8 and 9, to slots 0–2, into
 slots 3–5 (`addAffineOps`): `addOps` with `A = Z₁` for `Z₁ Z₂`, one product
-fewer. Each keeps the callee-saved registers the field arithmetic writes
+fewer. The product by `d = -39081` uses X448's seven-by-one-word
+multiplier after negation, instead of a full field multiplication. Each keeps the callee-saved registers the field arithmetic writes
 (`rbp`, `r12`–`r15`) in `xmm0`–`xmm4`, which are caller-saved, and restores
 them. It uses no stack and never writes `rdi`, every address is `rdi` plus a
 constant, and it has no branch: only the pointer may affect timing.
@@ -55,6 +56,18 @@ def saves : List Instr := kept.map fun (r, x) => .xop (.movq x r)
 
 def restores : List Instr := kept.map fun (r, x) => .movqR r x
 
+/-- Multiply slot 14 by Ed448's `d = -39081` into slot 16, using the
+seven-by-one-word multiplier shared with X448. Only slot 16 is changed. -/
+def mulD : List Instr :=
+  Impl.X448.X86_64.sub (slot 16) (slot 14) (slot 14) ++
+  Impl.X448.X86_64.sub (slot 16) (slot 16) (slot 14) ++
+  Impl.X448.X86_64.baseline.a24 (slot 16) (slot 16)
+
+/-- Affine addition with the multiplication by `d` specialized. -/
+def addCode : List Instr :=
+  fieldCode Impl.X448.X86_64.baseline (addAffineOps.take 3) ++ mulD ++
+  fieldCode Impl.X448.X86_64.baseline (addAffineOps.drop 4)
+
 /-- A function running the field program `ops`, with the baseline's multiplications. -/
 def fn (ops : List FOp) : Prog isa :=
   .block (saves ++ fieldCode Impl.X448.X86_64.baseline ops ++ restores)
@@ -63,7 +76,7 @@ def fn (ops : List FOp) : Prog isa :=
 def doubleFn : Prog isa := fn doubleOps
 
 /-- `vg_ed448_r64_point_add_affine`: slots 0–2 plus `(x : y : 1)` from slots 8–9, into 3–5. -/
-def addFn : Prog isa := fn addAffineOps
+def addFn : Prog isa := .block (saves ++ addCode ++ restores)
 
 def doubleCall : Prog isa := .call Spec.Ed448.Point64.doubleApi.name doubleFn
 def addCall : Prog isa := .call Spec.Ed448.Point64.addAffineApi.name addFn

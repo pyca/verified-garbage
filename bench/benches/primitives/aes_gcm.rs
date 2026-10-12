@@ -13,7 +13,8 @@ pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
 /// messages of protocols such as TLS and QUIC, where the fixed costs of a
 /// call (the hash subkey's powers, the tag) weigh the most. Encryption with
 /// a key used for many messages, as a TLS or QUIC connection's is, is also
-/// measured at `REUSED_SIZES`, which leave some blocks after the last 16:
+/// measured at `REUSED_SIZES`, which leave some blocks after the last 16
+/// (also out of place from two halves, whose second holds whole blocks):
 /// this library computes its keys' powers of the hash subkey once a key has
 /// been used for enough messages, which the benchmarks that set up a key for
 /// each message never reach.
@@ -388,6 +389,47 @@ pub fn bench(c: &mut Criterion) {
                         black_box(&data),
                         black_box(&mut aws_lc_out),
                         black_box(&ty),
+                        &mut aws_lc_extra,
+                    )
+                    .unwrap()
+            })
+        });
+        g.finish();
+
+        // Two halves, so that whole blocks follow the first piece.
+        let (h1, h2) = data.split_at(size / 2);
+        let mut out = vec![0u8; size];
+        let mut aws_lc_out = vec![0u8; h1.len()];
+        let mut aws_lc_extra = vec![0u8; h2.len() + 16];
+        let tag = vg_key.encrypt(&nonce, &aad, &[h1, h2], &mut out).unwrap();
+        let ossl_tag = ossl_seal(&[h1, h2], &mut ossl_out);
+        assert_eq!((&out[..], &tag[..]), (&ossl_out[..size], &ossl_tag[..]));
+        let mut g = c.benchmark_group("aes-128-gcm-encrypt-halves-reused-key");
+        g.throughput(Throughput::Bytes(size as u64));
+        g.bench_function(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                vg_key
+                    .encrypt(
+                        black_box(&nonce),
+                        black_box(&aad),
+                        &[black_box(h1), black_box(h2)],
+                        black_box(&mut out),
+                    )
+                    .unwrap()
+            })
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| ossl_seal(&[black_box(h1), black_box(h2)], &mut ossl_out))
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                aws_lc_reused
+                    .seal_out_of_place_scatter(
+                        Nonce::assume_unique_for_key(*black_box(&nonce)),
+                        Aad::from(black_box(&aad)),
+                        black_box(h1),
+                        black_box(&mut aws_lc_out),
+                        black_box(h2),
                         &mut aws_lc_extra,
                     )
                     .unwrap()

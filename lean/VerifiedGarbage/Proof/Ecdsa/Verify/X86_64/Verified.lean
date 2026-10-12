@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 
 /-!
 # ECDSA verification over P-256 on x86-64: `Verified`
@@ -37,24 +38,24 @@ theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre p256 s := by
 
 /-- The verification `code` of a curve `c` (P-256, with either multiplication)
 that the proof supports, whose precondition the contract's gives (`hpre`),
-never writing `rsp`, calling or loading MXCSR (which its literal decides). -/
+never writing `rsp`, or loading MXCSR, its calls inlined (which its literal decides). -/
 theorem verify_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Weierstrass.Law c.C) (hT : CombTbls c)
     (hmn : c.mul = none)
     (hpre : ∀ s, verifyX86_64.pre s → VPre c s) (hpost : ∀ s s', VPost c s s' → verifyX86_64.post s s')
     (hcode : Impl.Ecdsa.Verify.X86_64.Cfg.verify c = code)
     (hsp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
-    (hnc : code.noCalls = true) (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
+    (hnc : code.InlineOk = true) (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
     (hs : verifyX86_64.pre s) :
-    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
+    ∃ t s', Exec isa code.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
   subst hcode
-  obtain ⟨t, s', he, hsv, hpost'⟩ := wp_of_inline hnc <| verify_ok hc hL hT (hpre s hs) fun h => absurd h (by rw [hmn]; decide)
-  have hsp : ∀ i ∈ instrs (Impl.Ecdsa.Verify.X86_64.Cfg.verify c), Taint.clobbers i .rsp = false := by
-    rw [Code.allInstrs_eq, List.all_eq_true] at hsp
+  obtain ⟨t, s', he, hsv, hpost'⟩ := verify_ok hc hL hT (hpre s hs) fun h => absurd h (by rw [hmn]; decide)
+  have hsp : ∀ i ∈ instrs (Impl.Ecdsa.Verify.X86_64.Cfg.verify c).inline, Taint.clobbers i .rsp = false := by
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at hsp
     intro i hi
     simpa using hsp i hi
-  have F := (Exec.regions he hnc).2.2
+  have F := (Exec.regions he (Code.noCalls_inline hnc)).2.2
   obtain ⟨-, hwr, -, -, -, hrs, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec hmx he ⟨fun r hr => ?_, ?_⟩, hpost _ _ hpost'⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; exact hmx) he ⟨fun r hr => ?_, ?_⟩, hpost _ _ hpost'⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -74,7 +75,7 @@ theorem verify_x86 (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : verifyX86_64.pre s) :
-    ∃ t s', Exec isa verifyP256 s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
+    ∃ t s', Exec isa verifyP256.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
   verify_x86_of (p256_ok hI) hL (p256_tbls hL hT) rfl (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
     (by lit_decide) (by lit_decide) s hs
 
@@ -117,18 +118,42 @@ theorem verify_ct (hL : Weierstrass.Law Spec.P256.curve)
     (hI : Weierstrass.X86_64.InvSounds) :
     ConstantTime isa
       (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pre
-      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pub verifyP256 := by
+      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pub verifyP256.inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
   exact verify_public_ct (p256_ok hI) hL (p256_tbls hL hT) rfl (by decide) verify_checks rfl
     _ _ _ _ _ _ (pre_of (implies.pre _ pre₁)) (pre_of (implies.pre _ pre₂)) (verify_public_of_spec pub) e₁ e₂
+
+
+/-- The shared contract, but with `verifyX86_64`'s postcondition: what the
+proofs of the inlined code give. -/
+def verifyK₀ : Contract isa :=
+  { pre := (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pre
+    post := verifyX86_64.post
+    pub := (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pub }
+
+theorem sat_spec8 :
+    (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts) 8).pre satState := by
+  have held : ∀ i < p256W.length, satState.mem.readW (satState.syms "VG_P256_COMB" +
+      BitVec.ofNat 64 (8 * i)) 64 = p256W.getD i 0 := satMem_held
+  sig_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    Spec.P256.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p256_combConsts,
+    Abi.withConsts, p256_constRegions, Abi.constsHeld, stackBelow]
+  sig_and_intros
+  all_goals first | exact Region.disjoint_of_sep (by decide) | rfl | exact held | decide
+
+/-- The contract with 8 bytes of stack, for the calls' return address. -/
+theorem implies8 :
+    verifyK₀.Implies (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts) 8) :=
+  ⟨fun _ hs => Sig.pre_stack0 hs, fun s s' hs hp => implies.post s s' (Sig.pre_stack0 hs) hp,
+    fun _ _ _ _ hp => hp, ⟨satState, sat_spec8⟩⟩
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target verifyP256
-      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)) := by
-  refine ⟨fun s hs => ?_,verify_ct hL hT hI,implies.sat⟩
-  obtain ⟨t,s',he,ha,hp⟩ := verify_x86 hL hT hI s (implies.pre _ hs)
-  exact ⟨t,s',he,ha,implies.post s s' hs hp⟩
+      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts) 8) :=
+  Verified.of_inline (k₀ := verifyK₀) (by lit_decide) (fun s hs => verify_x86 hL hT hI s (implies.pre _ hs))
+    (verify_ct hL hT hI) implies8 (fun _ h => Sig.clear_of_pre_consts h) (fun _ _ _ _ _ hp => hp)
+    fun s₁ s₂ h₁ h₂ hp => (implies.pub s₁ s₂ (Sig.pre_stack0 h₁) (Sig.pre_stack0 h₂) hp).1
 
 end VG.Proof.Ecdsa.Verify.X86_64

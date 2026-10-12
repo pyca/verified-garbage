@@ -111,11 +111,16 @@ theorem invTbl_le (hc : BaseCfgOk c) : c.invTbl + 9 * (8 * c.n) ≤ size := by
   · rw [invTbl_none h]; exact ct_le c hc.n10
   · have := h.2.2.1; omega
 
-theorem invTbl_le8 (hc : BaseCfgOk c) : c.invTbl + (9 * (8 * c.n) + 8) ≤ size := by
+theorem invSaveLen_le (c : Cfg) : c.invSaveLen ≤ 48 := by
+  unfold Cfg.invSaveLen Cfg.invKept Cfg.invRegs
+  split <;> simp
+
+theorem invTbl_le8 (hc : BaseCfgOk c) : c.invTbl + (9 * (8 * c.n) + c.invSaveLen) ≤ size := by
   rcases hc.inv_at with h | h
   · rw [invTbl_none h, sl_eq c CT]
     have := hc.n10
-    show 64 + 8 * c.n * 69 + (9 * (8 * c.n) + 8) ≤ 8192
+    have := invSaveLen_le c
+    show 64 + 8 * c.n * 69 + (9 * (8 * c.n) + c.invSaveLen) ≤ 8192
     omega
   · have := h.2.2.1; omega
 
@@ -124,7 +129,9 @@ theorem invTmp_ge64 (hc : BaseCfgOk c) : 64 ≤ c.invTmp := by
   · rw [invTmp_none h]; exact sl_ge64 c _
   · rcases h.2.2.2 with h' | h'
     · rw [h'.1]; exact sl_ge64 c _
-    · have := sl_ge64 c CT; omega
+    · have := sl_ge64 c CT
+      have := sl_ge64 c nslots
+      omega
 
 theorem invTbl8 (hc : BaseCfgOk c) : c.invTbl % 8 = 0 := by
   rcases hc.inv_at with h | h
@@ -151,7 +158,9 @@ theorem invTbl_tmp (hc : BaseCfgOk c) :
   · rw [invTbl_none h, invTmp_none h]; exact ct_tmp c
   · rcases h.2.2.2 with h' | h'
     · exact Or.inr (by omega)
-    · exact Or.inl (by omega)
+    · rcases h'.1 with h'' | h''
+      · exact Or.inl (by omega)
+      · exact Or.inr (by omega)
 
 /-- A numbered slot below the tables is below the powers' working slots. -/
 theorem sl_invTbl (hc : BaseCfgOk c) {i : Nat} (hi : i < 45) (hT : i ≠ TMP) :
@@ -166,8 +175,11 @@ theorem sl_invTmp (hc : BaseCfgOk c) {i : Nat} (hi : i < 45) (hT : i ≠ TMP) :
   · rw [invTmp_none h]; exact sl_apart c hT
   · rcases h.2.2.2 with h' | h'
     · rw [h'.1]; exact sl_apart c hT
-    · have := sl_invTbl hc hi hT
-      exact Or.inl (by omega)
+    · rcases h'.1 with h'' | h''
+      · have := sl_invTbl hc hi hT
+        exact Or.inl (by omega)
+      · have := sl_lt c (j := nslots) (by unfold nslots; omega) hT (by decide)
+        exact Or.inl (by omega)
 
 theorem invMP_A (hc : BaseCfgOk c) : ModA { c.MP' with tmp := c.invTmp } := ⟨sl_mod8 c MP, invTmp8 hc⟩
 theorem invMN_A (hc : BaseCfgOk c) : ModA { c.MN' with tmp := c.invTmp } := ⟨sl_mod8 c MN, invTmp8 hc⟩

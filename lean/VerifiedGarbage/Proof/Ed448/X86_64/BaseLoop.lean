@@ -66,7 +66,7 @@ theorem loop_ok {s₀ : State} {base : Addr} {k : Nat}
     rw [hi.mem _ (Or.inr (by
       rw [Proof.X448.X86_64.ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS]; omega))]
     exact hbits t (by omega)
-  refine WP.mono (step_ok hP hi.scr (by omega) hi.rbx hb2 hbit)
+  refine WP.mono (step_ok hP hi.scr (by omega) hi.rbx hb2 hbit hi.d)
     fun s' ⟨b', z', g', rd', wr', o', e'⟩ => ?_
   have inv : MInv base k s₀ t s' := by
     refine ⟨⟨(g' _ (by decide)).trans hi.scr.rdi, wr' ▸ hi.scr.wr, hi.scr.nowrap⟩, b',

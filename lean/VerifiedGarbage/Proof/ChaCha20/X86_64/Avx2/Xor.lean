@@ -61,7 +61,6 @@ end
 theorem eL_lt (s₀ : State) : eL s₀ < 2 ^ 64 := (s₀.gpr .rdx).isLt
 
 structure APre (s₀ : State) : Prop where
-  rd : s₀.rd = []
   wr : s₀.wr = frR s₀
   st_d : (stR (est s₀)).Disjoint (edR s₀)
   st_b : (stR (est s₀)).Disjoint (bufR (ebp s₀))
@@ -75,8 +74,8 @@ structure APre (s₀ : State) : Prop where
   nowrap : (edp s₀).toNat + eL s₀ ≤ 2 ^ 64
 
 theorem APre.of (s₀ : State) (h : xorAvx2X86_64.pre s₀) : APre s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
+  obtain ⟨-, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := h
+  exact ⟨h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
 
 theorem APre.w_st {s₀ : State} (hp : APre s₀) : stR (est s₀) ∈ s₀.wr := by simp [hp.wr]
 theorem APre.w_b {s₀ : State} (hp : APre s₀) : bufR (ebp s₀) ∈ s₀.wr := by simp [hp.wr]
@@ -132,7 +131,7 @@ theorem next_ok {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 512 ≤ eL s₀
   have hL := eL_lt s₀
   have c₁ : (stR (est s₀)).Contains (Xor.off (est s₀) 48) 4 := contains_off (by lit_omega) (by lit_omega)
   have i₁ : InRegions (s.rd ++ s.wr) (Xor.off (est s₀) 48) 4 :=
-    ⟨stR (est s₀), by simp [hrd, hwr, hp.rd, hp.wr], c₁⟩
+    ⟨stR (est s₀), by simp [hrd, hwr, hp.wr], c₁⟩
   have o₁ : InRegions s.wr (Xor.off (est s₀) 48) 4 := ⟨stR (est s₀), by simp [hwr, hp.wr], c₁⟩
   simp only [Xor.off] at i₁ o₁
   apply WP.of_runBlock

@@ -18,6 +18,11 @@ materialize_template mulNT := mul p521.MN'
 materialize_template addNT := add p521.MN'
 materialize_template subNT := sub p521.MN'
 
+materialize_template mulPIT := mul { p521.MP' with tmp := p521.invTmp }
+materialize_template mulNIT := mul { p521.MN' with tmp := p521.invTmp }
+
+materialize_code invFnP := Cfg.invFn p521 (Cfg.pPowI p521)
+materialize_code invFnN := Cfg.invFn p521 (Cfg.nPowI p521)
 materialize_code pPow := Cfg.pPow p521
 materialize_code nPow := Cfg.nPow p521
 materialize_code validate := Impl.Ecdh.AArch64.Cfg.validate p521

@@ -49,6 +49,7 @@ def T.eval (D : Nat) (s₀ : State) : T → Word
   | .mem b i => s₀.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 32
   | .add a b => T.eval D s₀ a + T.eval D s₀ b
   | .xor a b => T.eval D s₀ a ^^^ T.eval D s₀ b
+  | .inp i => VG.Proof.ChaCha20.X86_64.Avx512.inpW s₀ i
 
 /-- The region and first doubleword of an access of `n` doublewords, within
 the first `lim b` doublewords of its region `b`. -/

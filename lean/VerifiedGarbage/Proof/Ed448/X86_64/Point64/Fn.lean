@@ -175,17 +175,13 @@ open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64 VG.Impl.Ed448.X86_64.Point6
 open VG.Proof.X448.X86_64 (Scr E Keep)
 
 /-- What the callers need of their point operations: each changes the slots as its field
-program does, and nothing else but the registers `clob` and the memory in `[64, 1648)`. -/
+program does, and nothing else but the registers `clob` and the memory in `[64, 1648)`.
+The addition requires slot 11 to hold `d`, as its public contract already does. -/
 structure PointOk (P : Ops) : Prop where
   dbl : ∀ {s : State} {base : Addr}, Scr s base →
     WP isa P.dbl s fun t => Keep base s t ∧ E t.mem base = evalOps doubleOps (E s.mem base)
-  add : ∀ {s : State} {base : Addr}, Scr s base →
+  add : ∀ {s : State} {base : Addr}, Scr s base → E s.mem base 11 = Spec.Ed448.d →
     WP isa P.add s fun t => Keep base s t ∧ E t.mem base = evalOps addAffineOps (E s.mem base)
-
-/-- The functions' code, as the calls run it. -/
-theorem bodies_ok : PointOk bodies where
-  dbl hs := WP.mono (fn_ok doubleOps doubleOps_valid hs) fun _ ⟨k, e, _⟩ => ⟨k, e⟩
-  add hs := WP.mono (fn_ok addAffineOps addAffineOps_valid hs) fun _ ⟨k, e, _⟩ => ⟨k, e⟩
 
 end VG.Proof.Ed448.X86_64.Point64
 

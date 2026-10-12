@@ -109,11 +109,11 @@ theorem slSub_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (h7 : c.n < 10) {base : A
 theorem final_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.final c =
     .seq (.block (Impl.Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
     (.seq (.block (Impl.Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
-    (.seq (.block (Impl.Mont.AArch64.mul c.MN' (c.sl XN) (c.sl X) (c.sl R2N)))
+    (.seq (c.mulNP (c.sl XN) (c.sl X) (c.sl R2N))
     (.seq (.block (Impl.Mont.AArch64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM')))
       (.block (c.checkNonzero (c.sl RZ) ++ (Impl.Ecdh.AArch64.Cfg.checkZero c (c.sl W) ++
         Impl.Ecdsa.Verify.AArch64.Cfg.finish c)))))) := by
-  simp only [Impl.Ecdsa.Verify.AArch64.Cfg.final, blocks, List.append_assoc]
+  simp only [Impl.Ecdsa.Verify.AArch64.Cfg.final, List.append_assoc]
 
 /-- `Z^(p-2)`, `x`, the last checks and the result. -/
 theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
@@ -170,8 +170,8 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
   have r2₃ : sv c base s₃ R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n :=
     (v₃ (by decide) (by decide) (by decide)).trans ((v₂ (by decide) (by decide) (by decide)).trans
       ((e₁ (by decide) (by decide)).trans F.r2n))
-  refine WP.seq (WP.mono (slMul_ok (MN'_n c) h7 hs₃ hMN₃ (MN'_A c) (o := XN) (a := X) (b := R2N) (by decide)
-    (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega))) fun s₄ ⟨k₄, lt₄, e₄⟩ => ?_)
+  refine WP.seq (WP.mono (slMulN_ok hc hs₃ hMN₃ (o := XN) (a := X) (b := R2N) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega))) fun s₄ ⟨k₄, lt₄, e₄⟩ => ?_)
   have hs₄ := k₄.scr hs₃
   have M₄ := hMN₃.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₄ (by decide) (by decide)
   have v₄ : ∀ {i}, i < 45 → i ≠ XN → i ≠ TMP → sv c base s₄ i = sv c base s₃ i := fun hi h₁ h₂ =>

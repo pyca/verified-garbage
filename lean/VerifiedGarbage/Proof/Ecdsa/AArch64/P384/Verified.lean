@@ -66,7 +66,10 @@ theorem p384_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p384 where
     have e : (Mont.callOf p384.MP').map Prod.snd = some p384.C.p := by decide +kernel
     obtain rfl : _ = _ := Option.some.inj (e.symm.trans (congrArg (Option.map Prod.snd) h))
     exact ⟨rfl, Mont.p384p_ok⟩
-  call_n := by decide +kernel
+  call_n := fun _ _ h => by
+    have e : (Mont.callOf p384.MN').map Prod.snd = some p384.C.n := by decide +kernel
+    obtain rfl : _ = _ := Option.some.inj (e.symm.trans (congrArg (Option.map Prod.snd) h))
+    exact ⟨rfl, Mont.p384n_ok⟩
   inv_at := .inr (by decide +kernel)
   inv_fn := fun _ => ⟨by decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
   padd := fun h => absurd rfl h
