@@ -31,6 +31,10 @@ imports, besides the axiom audit (`TCB/Axioms.lean`):
   not a directory: an implementation's own files could declare such a name.
   Theorems (e.g. the equation lemmas Lean generates for a `Spec/` definition
   in the module that first unfolds it) carry no data and are exempt.
+
+Both refuse to run in a module, which sees what it imports from other
+modules without their proofs, and without the values of definitions they
+do not expose: the emitter's driver is not a module.
 -/
 
 public meta section
@@ -94,6 +98,10 @@ def compilerOverrides (env : Environment) (roots : List Name) : List String :=
       | .global e | .scoped _ e => s!"{m}: @[csimp] {e.thmName}"
 
 elab "#assert_no_compiler_overrides " ids:ident* : command => do
+  -- In a module, a definition imported from another module may be opaque,
+  -- without its value: `dependencies` would not follow what it runs.
+  if (← getEnv).header.isModule then
+    throwError "#assert_no_compiler_overrides must run in a file that is not a module"
   let roots ← ids.toList.mapM fun id => liftCoreM <| realizeGlobalConstNoOverloadWithInfo id.raw
   let bad := compilerOverrides (← getEnv) roots
   unless bad.isEmpty do
@@ -114,6 +122,10 @@ def specOutsideSpec (env : Environment) : List (Name × Name) :=
       if (`VerifiedGarbage.Spec).isPrefixOf m then acc else (n, m) :: acc
 
 elab "#assert_spec_origin" : command => do
+  -- In a module, a theorem imported from another module is an axiom, which
+  -- the check would not exempt as one.
+  if (← getEnv).header.isModule then
+    throwError "#assert_spec_origin must run in a file that is not a module"
   let bad := specOutsideSpec (← getEnv)
   unless bad.isEmpty do
     throwError m!"these `VG.Spec` names are not declared in `Spec/`:\n\

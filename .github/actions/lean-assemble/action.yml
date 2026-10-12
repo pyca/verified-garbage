@@ -136,3 +136,8 @@ runs:
       shell: bash
       working-directory: lean
       run: lake env lean --run Emit.lean --check
+    # Last, after the build is saved: it edits two files of the self-test,
+    # restores them, and leaves their modules built from the edited files.
+    - name: Check that the axiom audit sees through modules
+      shell: bash
+      run: python3 ci/audit_negative.py
