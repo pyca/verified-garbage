@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Spec.Weierstrass.MulBase
 
 /-!
-# `vg_p256_mul_base` on x86-64: `Verified`
+# `vg_p256_mul_base_adx` on x86-64: `Verified`
 
 The facts of `Spec.Weierstrass.MulBase.p256.mulBaseContract` for x86-64,
 with the comb's tables (`Abi.withConsts p256.combConsts`), by name (`mbK`):
@@ -30,8 +30,9 @@ open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.P256
 /-- P-256's curve of `Spec/Weierstrass/MulBase.lean`. -/
 abbrev C : Spec.Weierstrass.MulBase.Curve := Spec.Weierstrass.MulBase.p256
 
-/-- The configuration of `vg_p256_mul_base` (`adx` false) or `_adx`. -/
-abbrev cfg (adx : Bool) : Cfg := if adx then p256x else p256
+/-- The configuration of `vg_p256_mul_base_adx`: the signature's with BMI2,
+ADX and AVX2. -/
+abbrev cfg : Cfg := p256x
 
 /-- The function's contract on x86-64. -/
 def mbK : Contract isa where
@@ -80,37 +81,30 @@ theorem result_of {M : Spec.Weierstrass.MulBase.Curve} (hFe : Point.Fermat M.toP
     rw [dq, dq, dq, coordAt_eq _ _ _ (by omega), coordAt_eq _ _ _ (by omega), coordAt_eq _ _ _ (by omega), hk]
     exact represents_of_rep hR
 
-theorem cfg_n (adx : Bool) : (cfg adx).n = 4 := by cases adx <;> rfl
-theorem cfg_C (adx : Bool) : (cfg adx).C = Spec.P256.curve := by cases adx <;> rfl
-theorem cfg_sl (adx : Bool) (i : Nat) : (cfg adx).sl i = p256.sl i := by cases adx <;> rfl
+theorem cfg_n : cfg.n = 4 := rfl
+theorem cfg_C : cfg.C = Spec.P256.curve := rfl
+theorem cfg_sl (i : Nat) : cfg.sl i = p256.sl i := rfl
 
-theorem cfg_ok (hI : InvSounds) (adx : Bool) : CfgOk (cfg adx) := by
-  cases adx
-  · exact p256_ok hI
-  · exact p256x_ok hI
+theorem cfg_ok (hI : InvSounds) : CfgOk cfg := p256x_ok hI
 
-theorem cfg_mulBase (adx : Bool) : MulBaseOk (cfg adx) := by
-  cases adx
-  · exact p256_mulBase
-  · exact p256x_mulBase
+theorem cfg_mulBase : MulBaseOk cfg := p256x_mulBase
 
 theorem cfg_tbls (hL : Law Spec.P256.curve)
-    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
-    (adx : Bool) : CombTbls (cfg adx) := by
-  cases adx <;> exact p256_tbls hL hT
+    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
+    CombTbls cfg :=
+  p256_tbls hL hT
 
-theorem cfg_combConsts (adx : Bool) : (cfg adx).combConsts = [("VG_P256_COMB", p256W)] := by
-  cases adx <;> rfl
+theorem cfg_combConsts : cfg.combConsts = [("VG_P256_COMB", p256W)] := rfl
 
-/-- What `vg_p256_mul_base` writes, as offsets: `R`'s slots (`P`'s) and the
+/-- What `vg_p256_mul_base_adx` writes, as offsets: `R`'s slots (`P`'s) and the
 own working space. -/
-theorem gWA_eq (adx : Bool) : gWA (cfg adx) = [(512, 32), (544, 32), (576, 32), (704, 32),
+theorem gWA_eq : gWA cfg = [(512, 32), (544, 32), (576, 32), (704, 32),
     (736, 32), (768, 32), (1024, 32), (800, 32), (832, 32), (864, 32), (896, 32), (928, 32),
     (960, 32), (608, 32), (640, 32), (672, 32), (128, 32), (1344, 32), (1504, 264), (992, 32),
     (1376, 32)] := by
-  cases adx <;> decide
+  decide
 
-theorem keeps_of_unch {ws : Addr} {m m' : Mem} (adx : Bool) (hu : Unch ws (gWA (cfg adx)) m m') :
+theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (gWA cfg) m m') :
     C.Keeps ws m m' := by
   intro i hi hown hp
   have h8 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
@@ -127,15 +121,15 @@ theorem keeps_of_unch {ws : Addr} {m m' : Mem} (adx : Bool) (hu : Unch ws (gWA (
     rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega
 
 /-- The sign's table facts, from the function's. -/
-theorem tbls_of {s : State} (adx : Bool) (hrd : s.rd = [⟨s.syms "VG_P256_COMB", 8 * p256W.length⟩])
+theorem tbls_of {s : State} (hrd : s.rd = [⟨s.syms "VG_P256_COMB", 8 * p256W.length⟩])
     (hwr : s.wr = [⟨s.gpr .rdi, 8192⟩]) (ht : TblHeld s [⟨s.gpr .rdi, 8192⟩, ⟨s.gpr .rsp, 8⟩]) :
-    TblMem s (s.syms "VG_P256_COMB") ((cfg adx).combWords ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start,
-      "VG_P256_COMB", true⟩) ∧ ∀ i < ((cfg adx).combWords ⟨7, Impl.P256.p256Comb7,
+    TblMem s (s.syms "VG_P256_COMB") (cfg.combWords ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start,
+      "VG_P256_COMB", true⟩) ∧ ∀ i < (cfg.combWords ⟨7, Impl.P256.p256Comb7,
       Impl.P256.p256Comb7Start, "VG_P256_COMB", true⟩).length, ∀ b < 8,
       size ≤ ofs (s.gpr .rdi) (s.syms "VG_P256_COMB" + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) := by
   obtain ⟨held, fit, hdw⟩ := ht
-  have hcd : (cfg adx).comb = some ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true⟩ := by
-    cases adx <;> rfl
+  have hcd : cfg.comb = some ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true⟩ := by
+    rfl
   refine tbl_of_held hcd (s₀ := s) ?_ (by rw [hwr]; simp) (fun r hr => ?_) (Unch.refl _ _ _)
   · rw [TblsHeld, cfg_combConsts, Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single]
     refine ⟨fun c hc => ?_, fit, fun r hr => hdw r ?_⟩
@@ -147,7 +141,7 @@ theorem tbls_of {s : State} (adx : Bool) (hrd : s.rd = [⟨s.syms "VG_P256_COMB"
 /-- The comb of P-256's configurations. -/
 abbrev comb7 : CombData := ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true⟩
 
-theorem cfg_comb (adx : Bool) : (cfg adx).comb = some comb7 := by cases adx <;> rfl
+theorem cfg_comb : cfg.comb = some comb7 := rfl
 
 /-- P-256's prime, as `C`'s points and the group law have it: equal without
 evaluating it, which unifying the two would. -/
@@ -158,28 +152,27 @@ theorem fermat_congr {p q : Nat} [NeZero p] [NeZero q] (h : p = q) (hf : Point.F
     Point.Fermat p := by
   subst h; exact hf
 
-theorem mxcsr_ok (adx : Bool) : (cfg adx).mulBaseFn.allInstrs (fun i => !loadsMxcsr i) = true := by
-  cases adx <;> lit_decide
+theorem mxcsr_ok : cfg.mulBaseFn.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide
 
 theorem mb_correct (hL : Law Spec.P256.curve)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (hI : InvSounds)
-    (adx : Bool) (s : State) (hs : mbK.pre s) :
-    ∃ t s', Exec isa (cfg adx).mulBaseFn s t s' ∧ abiPreserved s s' ∧ mbK.post s s' := by
+    (s : State) (hs : mbK.pre s) :
+    ∃ t s', Exec isa cfg.mulBaseFn s t s' ∧ abiPreserved s s' ∧ mbK.post s s' := by
   obtain ⟨hrd, hwr, hret, hfit, ht, hmp, hz⟩ := hs
-  have hc := cfg_ok hI adx
-  obtain ⟨d, hcd, h6, hnc⟩ := (cfg_mulBase adx).1 (by cases adx <;> rfl)
-  obtain rfl : d = comb7 := Option.some.inj (hcd.symm.trans (cfg_comb adx))
+  have hc := cfg_ok hI
+  obtain ⟨d, hcd, h6, hnc⟩ := cfg_mulBase.1 (by rfl)
+  obtain rfl : d = comb7 := Option.some.inj (hcd.symm.trans cfg_comb)
   have hS : Scr s (s.gpr .rdi) size := ⟨rfl, by rw [hwr]; simp, hfit⟩
-  have hn := cfg_n adx
-  have hmp' : wordsVal s.mem (s.gpr .rdi) ((cfg adx).sl MP) (cfg adx).n = (cfg adx).C.p := by
+  have hn := cfg_n
+  have hmp' : wordsVal s.mem (s.gpr .rdi) (cfg.sl MP) cfg.n = cfg.C.p := by
     rw [hn, cfg_sl, cfg_C]; rw [coordAt_eq _ _ _ (by decide)] at hmp; exact hmp
-  have hz' : wordsVal s.mem (s.gpr .rdi) ((cfg adx).sl ZERO) (cfg adx).n = 0 := by
+  have hz' : wordsVal s.mem (s.gpr .rdi) (cfg.sl ZERO) cfg.n = 0 := by
     rw [hn, cfg_sl]; rw [coordAt_eq _ _ _ (by decide)] at hz; exact hz
-  obtain ⟨hTM, hout⟩ := tbls_of adx hrd hwr ht
-  have W := mulBaseFn_ok hc.toBaseCfgOk h6 (cfg_C adx ▸ hL) (cfg_tbls hL hT adx) hcd hS hmp' hz' hTM hout
+  obtain ⟨hTM, hout⟩ := tbls_of hrd hwr ht
+  have W := mulBaseFn_ok hc.toBaseCfgOk h6 (cfg_C ▸ hL) (cfg_tbls hL hT) hcd hS hmp' hz' hTM hout
   rw [Code.inline_of_noCalls hnc] at W
   obtain ⟨t, s', he, g', sv', rd', wr', sy', U', M', L', R'⟩ := W
-  refine ⟨t, s', he, abiPreserved_of_exec (mxcsr_ok adx) he ⟨fun r hr => ?_, ?_⟩, ?_⟩
+  refine ⟨t, s', he, abiPreserved_of_exec mxcsr_ok he ⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact sv' _ (by decide)
@@ -202,35 +195,23 @@ theorem mb_correct (hL : Law Spec.P256.curve)
       coordAt_eq _ _ _ (by decide)
     show C.Result (mul (C.scalar (s.gpr .rdi) s.mem) (G C.W)) (s.gpr .rdi) s.mem s'.mem
     rw [hsc]
-    have hC : (cfg adx).C = C.W := by cases adx <;> rfl
+    have hC : cfg.C = C.W := rfl
     have L₁ := hC ▸ L'
     have R₁ := hC ▸ R'
-    cases adx
-    · exact result_of hFe h1 hu (by rfl) (by decide) (L₁ _ (by decide)) (L₁ _ (by decide)) (L₁ _ (by decide)) R₁
-        (keeps_of_unch false U')
-    · exact result_of hFe h1 hu (by rfl) (by decide) (L₁ _ (by decide)) (L₁ _ (by decide)) (L₁ _ (by decide)) R₁
-        (keeps_of_unch true U')
+    exact result_of hFe h1 hu (by rfl) (by decide) (L₁ _ (by decide)) (L₁ _ (by decide)) (L₁ _ (by decide)) R₁
+      (keeps_of_unch U')
 
 /-- Constant time by taint tracking, `rdi`, `rsp` and the static's address
 public. -/
-theorem mb_ct (adx : Bool) : ConstantTime isa mbK.pre mbK.pub (cfg adx).mulBaseFn := by
-  cases adx
-  · exact VG.Taint.constantTime_mapBlocks (c' := mulBaseErased) (taintSym_eraseInv ["VG_P256_COMB"])
-      (Taint.ofRegs [.rdi, .rsp]) rfl
-      (fun _ _ _ _ ⟨h0, h1, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · exact h1
-        · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
-      rfl (by taint_decide)
-  · exact VG.Taint.constantTime_mapBlocks (c' := mulBaseErasedAdx) (taintSym_eraseInv ["VG_P256_COMB"])
-      (Taint.ofRegs [.rdi, .rsp]) rfl
-      (fun _ _ _ _ ⟨h0, h1, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · exact h1
-        · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
-      rfl (by taint_decide)
+theorem mb_ct : ConstantTime isa mbK.pre mbK.pub cfg.mulBaseFn :=
+  VG.Taint.constantTime_mapBlocks (c' := mulBaseErasedAdx) (taintSym_eraseInv ["VG_P256_COMB"])
+    (Taint.ofRegs [.rdi, .rsp]) rfl
+    (fun _ _ _ _ ⟨h0, h1, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact h1
+      · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
+    rfl (by taint_decide)
 
 /-- The memory of `satState`: P-256's `p` at `ws + 64` for `ws = 0x1000`,
 zeros elsewhere below `0x100000`, and P-256's tables from there. -/
@@ -303,9 +284,8 @@ theorem implies : mbK.Implies (C.mulBaseContract (X86_64.abi.withConsts p256.com
   sat := ⟨satState, sat_pre⟩
 
 theorem mb_verified (hL : Law Spec.P256.curve)
-    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (hI : InvSounds)
-    (adx : Bool) :
-    Verified X86_64.target (cfg adx).mulBaseFn (C.mulBaseContract (X86_64.abi.withConsts p256.combConsts)) :=
-  Verified.of_correct (mb_correct hL hT hI adx) (mb_ct adx) implies
+    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (hI : InvSounds) :
+    Verified X86_64.target cfg.mulBaseFn (C.mulBaseContract (X86_64.abi.withConsts p256.combConsts)) :=
+  Verified.of_correct (mb_correct hL hT hI) (mb_ct) implies
 
 end VG.Proof.Ecdsa.X86_64.P256.MulBase
