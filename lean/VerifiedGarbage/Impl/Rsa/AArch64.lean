@@ -47,9 +47,15 @@ def pcLoad : List (Prog isa) := [
   loadBE,
   .block ([ld .x3 .x8] ++ minv ++ [sth .x15 sMinv])]
 
+/-- Array `aR2` squared six times, counted in slot `sCnt`. -/
+def sqs (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (.block [.movz .x .x13 (BitVec.ofNat 16 6) 0, sth .x13 sCnt])
+    (.loop (.seq (mul aR2 aR2 aR2) (.block [ldh .x13 sCnt, .subImm .x .x13 .x13 1, sth .x13 sCnt]))
+      (.nonzero .x .x13))
+
 /-- `R² mod m` into array `aR2`: `2^(b - 1)` for the bit length `b` of `m`,
 doubled `64 - (b - 1) mod 64 + w` times (`2^w R mod m`), then squared six
-times. -/
+times (`sqs`). -/
 def r2Steps (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   .block [ldh .x12 sW, ldh .x8 (sArr aN), .subImm .x .x4 .x12 1, .lsl .x .x4 .x4 3, .add .x .x4 .x8 .x4,
     ld .x3 .x4],
@@ -58,7 +64,7 @@ def r2Steps (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   setWord aR2,
   .block [ldh .x13 sCnt, ldh .x12 sW, .add .x .x13 .x13 .x12],
   doubles aN aAcc aTmp aR2 sCnt,
-  mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2]
+  sqs mul]
 
 /-! ## `vg_rsa_public_precompute`
 
