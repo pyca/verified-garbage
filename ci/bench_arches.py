@@ -174,10 +174,11 @@ CPU_FEATURES = {
 # job runs at most, or None for one job per configuration. A pass took about
 # 1 s per benchmark id (Criterion's analysis included) with a 0.2 s warm-up
 # and 0.5 s of measurement; with one round of 0.1 s and 0.3 s
-# (bench_compare.py), they should fit in one job on every runner, and each
-# shard would add a job per configuration (with its own builds), so none is
-# split for now.
-BENCHMARKS_PER_JOB = None
+# (bench_compare.py), a run of every benchmark (a change to code they share)
+# outgrew the 30-minute timeout in the x86-64 configurations with AES (20-30
+# minutes in #1970, three of them cancelled), so it is split in two; a run
+# of the benchmarks of a few modules stays one job per configuration.
+BENCHMARKS_PER_JOB = 55
 
 # Changes to this script choose benchmarks but are not measured by any:
 # `ci/test_check_benchmarks.py` tests it.

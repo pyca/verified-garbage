@@ -388,6 +388,11 @@ class Selection(unittest.TestCase):
         self.assertEqual(len(self.rows(['bench/benches/primitives/kem.rs'])), self.full_matrix())
 
     def test_manual_runs_select_architectures_and_configurations(self):
+        # One job per configuration (`test_shards_follow_the_number_of_benchmarks`
+        # tests the shards).
+        patch = mock.patch.object(planner, 'BENCHMARKS_PER_JOB', None)
+        patch.start()
+        self.addCleanup(patch.stop)
         rows = planner.manual()
         self.assertEqual(len(rows), self.full_matrix())
         self.assertTrue(all(r['modules'] == '' for r in rows))
