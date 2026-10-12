@@ -59,26 +59,27 @@ theorem add_ok {F : Impl.X448.X86_64.Field} (hf : FieldOk F) {P : Point64.Ops}
   rw [eu, ev]
   rfl
 
-def dbl4Pt (p : Spec.Ed448.Point) := double (double (double (double p)))
+def dbl5Pt (p : Spec.Ed448.Point) := double (double (double (double (double p))))
 
-theorem dbl4_ok {P : Point64.Ops} (hP : Point64.PointOk P) {s : State} {base : Addr} (hs : Scr s base) :
-    WP isa (dbl4 P) s fun u => Keep base s u ∧
-      pt (E u.mem base) 0 1 2 = dbl4Pt (pt (E s.mem base) 0 1 2) ∧
+theorem dbl5_ok {P : Point64.Ops} (hP : Point64.PointOk P) {s : State} {base : Addr} (hs : Scr s base) :
+    WP isa (dbl5 P) s fun u => Keep base s u ∧
+      pt (E u.mem base) 0 1 2 = dbl5Pt (pt (E s.mem base) 0 1 2) ∧
       ∀ j : Index, 3 ≤ j.val → j.val < 12 → E u.mem base j = E s.mem base j := by
-  rw [dbl4]
+  rw [dbl5]
   refine WP.seq (WP.mono (hP.dbl hs) fun s1 ⟨k1, e1⟩ => ?_)
   refine WP.seq (WP.mono (hP.dbl (k1.scr hs)) fun s2 ⟨k2, e2⟩ => ?_)
   refine WP.seq (WP.mono (hP.dbl (k2.scr (k1.scr hs))) fun s3 ⟨k3, e3⟩ => ?_)
-  refine WP.mono (hP.dbl (k3.scr (k2.scr (k1.scr hs)))) fun u ⟨ku, eu⟩ => ?_
-  refine ⟨((k1.trans k2).trans k3).trans ku, ?_, ?_⟩
-  · rw [eu, doubleOps_eval, e3, doubleOps_eval, e2, doubleOps_eval, e1, doubleOps_eval]; rfl
+  refine WP.seq (WP.mono (hP.dbl (k3.scr (k2.scr (k1.scr hs)))) fun s4 ⟨k4, e4⟩ => ?_)
+  refine WP.mono (hP.dbl (k4.scr (k3.scr (k2.scr (k1.scr hs))))) fun u ⟨ku, eu⟩ => ?_
+  refine ⟨(((k1.trans k2).trans k3).trans k4).trans ku, ?_, ?_⟩
+  · rw [eu, doubleOps_eval, e4, doubleOps_eval, e3, doubleOps_eval, e2, doubleOps_eval, e1, doubleOps_eval]; rfl
   · intro j hj hj'
-    rw [eu, doubleOps_keep _ _ (Or.inl ⟨hj, hj'⟩), e3, doubleOps_keep _ _ (Or.inl ⟨hj, hj'⟩),
+    rw [eu, doubleOps_keep _ _ (Or.inl ⟨hj, hj'⟩), e4, doubleOps_keep _ _ (Or.inl ⟨hj, hj'⟩), e3, doubleOps_keep _ _ (Or.inl ⟨hj, hj'⟩),
       e2, doubleOps_keep _ _ (Or.inl ⟨hj, hj'⟩), e1, doubleOps_keep _ _ (Or.inl ⟨hj, hj'⟩)]
 
-theorem dbl4Pt_rep {p : Spec.Ed448.Point} {a : EdwardsLaw.EPoint dZ} (h : Rep p a) :
-    Rep (dbl4Pt p) ((16 : Nat) • a) := by
-  have h4 := double_rep (double_rep (double_rep (double_rep h)))
-  simpa only [dbl4Pt, ← two_nsmul, smul_smul, Nat.reduceMul] using h4
+theorem dbl5Pt_rep {p : Spec.Ed448.Point} {a : EdwardsLaw.EPoint dZ} (h : Rep p a) :
+    Rep (dbl5Pt p) ((32 : Nat) • a) := by
+  have h4 := double_rep (double_rep (double_rep (double_rep (double_rep h))))
+  simpa only [dbl5Pt, ← two_nsmul, smul_smul, Nat.reduceMul] using h4
 
 end VG.Proof.Ed448.X86_64.Window

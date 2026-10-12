@@ -17,11 +17,11 @@ open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Impl.Ed448.X86_64.Window
 open VG.Proof.X448.X86_64
 open VG.Impl.X448.X86_64 (W sc slot stores)
 
-private theorem cmp_calc : ∀ d < 16, ∀ i < 16,
+private theorem cmp_calc : ∀ d < 17, ∀ i < 17,
     ((BitVec.ofNat 64 d - (BitVec.ofNat 32 i).signExtend 64) == 0) = decide (d = i) := by
   decide +kernel
 
-theorem compareDigit_ok {s : State} {d i : Nat} (hd : d < 16) (hi : i < 16)
+theorem compareDigit_ok {s : State} {d i : Nat} (hd : d < 17) (hi : i < 17)
     (hr : s.gpr .r15 = BitVec.ofNat 64 d) :
     WP isa (.block (compareDigit i)) s fun u =>
       u.zf = decide (d = i) ∧ Keeps [] s u := by

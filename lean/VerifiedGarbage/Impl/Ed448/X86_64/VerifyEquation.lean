@@ -184,6 +184,13 @@ def bitsBodyAt (o : Nat) : List Instr :=
 
 def bitsAt (o : Nat) : Prog isa := .seq (.block [.mov32 .rbx (.imm 0)]) (.loop (.block (bitsBodyAt o)) .ne)
 
+/-- Leading carry bit and four high zero bits for signed five-bit recoding. -/
+def bitPadding (o : Nat) : List Instr :=
+  [.mov32 .rdx (.imm 0)] ++
+    ([o - 1, o + 456, o + 457, o + 458, o + 459].map fun d => .store8 (sc d) .rdx)
+
+def bitsAtPadded (o : Nat) : Prog isa := .seq (bitsAt o) (.block (bitPadding o))
+
 /-- The callee-saved registers saved at the working space `rcx`, the
 pointers to `A` and the signature kept in `r8` and `r9`, the working space
 into `rdi`, and the challenge's into `rsi`. -/
@@ -193,7 +200,7 @@ def ventry : List Instr :=
 /-- The bits of `k` and `S`, before anything is stored that is read back as
 an address: their stores are at a counter's offset. -/
 def vbits : Prog isa :=
-  .seq (bitsAt KBITS) <| .seq (.block [.mov .rsi (.reg .r9), .alu .add .rsi (.imm 57)]) (bitsAt BITS)
+  .seq (bitsAtPadded KBITS) <| .seq (.block [.mov .rsi (.reg .r9), .alu .add .rsi (.imm 57)]) (bitsAtPadded BITS)
 
 /-- The pointers to `A` and the signature saved, `BAD = 0`, and the check of
 `S` (at `rsi`). -/

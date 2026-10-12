@@ -18,7 +18,7 @@ open VG.Proof.X448.X86_64 (Scr Index Env E F Keep mask cswapE opSwap)
 open VG.Impl.X448.X86_64 (slot)
 
 private theorem coord_keep {base : Addr} {s u : State} (h : Keep base s u) {i c : Nat}
-    (hi : i < 16) (hc : c < 3) : F u.mem base (tabOffset i c) = F s.mem base (tabOffset i c) := by
+    (hi : i < 17) (hc : c < 3) : F u.mem base (tabOffset i c) = F s.mem base (tabOffset i c) := by
   unfold F
   rw [h.mem.fe (by simp only [tabOffset, TAB]; omega) (by simp only [tabOffset, TAB]; omega)]
 
@@ -35,28 +35,28 @@ private theorem key_pick (c : Nat) (hc : c < 3) :
 
 /-- Every entry is read, with a mask deciding which one is retained. -/
 theorem selectKey_ok {s : State} {base : Addr} (hs : Scr s base) {o k t : Nat}
-    (_ho : 2048 ≤ o) (hbnd : o + 456 ≤ 8192) (ht : t + 4 ≤ 456)
+    (ho : 2048 ≤ o) (hbnd : o + 460 ≤ 8192) (ht : t + 5 ≤ 460)
     (hb : s.gpr .rbx = BitVec.ofNat 64 t) (bs : Bits base o k s) :
     WP isa (.block (selectKey o)) s fun u => Keep base s u ∧
-      pt (E u.mem base) 8 9 10 = tablePoint s.mem base (Proof.Ed448.Window.digit k t) ∧
+      pt (E u.mem base) 8 9 10 = tablePoint s.mem base (SignedWindow.magnitude k t) ∧
       KeyKeeps (E s.mem base) (E u.mem base) := by
   rw [selectKey, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (loadDigit_bits_ok hs hbnd ht hb bs) fun v ⟨dv, kv⟩ => ?_
+  refine WP.mono (loadDigit_bits_ok hs hbnd (by omega) ht hb bs) fun v ⟨dv, kv⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (scanCoord_ok (key_pick 0 (by decide)) (hs.of_keeps kv (by decide)) 8
-    (Proof.Ed448.Window.digit_lt k t) dv) fun w ⟨kw, dw, ew⟩ => ?_
+    (SignedWindow.magnitude_lt k t) dv) fun w ⟨kw, dw, ew⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (scanCoord_ok (key_pick 1 (by decide)) (kw.scr (hs.of_keeps kv (by decide))) 9
-    (Proof.Ed448.Window.digit_lt k t) (dw.trans dv)) fun x ⟨kx, dx, ex⟩ => ?_
+    (SignedWindow.magnitude_lt k t) (dw.trans dv)) fun x ⟨kx, dx, ex⟩ => ?_
   refine WP.mono (scanCoord_ok (key_pick 2 (by decide)) (kx.scr (kw.scr (hs.of_keeps kv (by decide)))) 10
-    (Proof.Ed448.Window.digit_lt k t) (dx.trans (dw.trans dv))) fun u ⟨ku, _, eu⟩ => ?_
+    (SignedWindow.magnitude_lt k t) (dx.trans (dw.trans dv))) fun u ⟨ku, _, eu⟩ => ?_
   have kv' : Keep base s v := ⟨fun r hr => kv.1 r (fun h => hr
     ((show ∀ r ∈ [Reg.rax, .rdx, .r15], r ∈ VG.Proof.X448.X86_64.clob from by decide) r h)),
     kv.2.2.1, kv.2.2.2, by rw [kv.2.1]; exact VG.Proof.X448.X86_64.Outside.refl _ _ _ _⟩
   refine ⟨((kv'.trans kw).trans kx).trans ku, ?_, ?_⟩
-  · rw [eu, ex, ew, coord_keep kx (Proof.Ed448.Window.digit_lt k t) (by decide),
-      coord_keep kw (Proof.Ed448.Window.digit_lt k t) (by decide),
-      coord_keep kw (Proof.Ed448.Window.digit_lt k t) (by decide), kv.2.1]
+  · rw [eu, ex, ew, coord_keep kx (SignedWindow.magnitude_lt k t) (by decide),
+      coord_keep kw (SignedWindow.magnitude_lt k t) (by decide),
+      coord_keep kw (SignedWindow.magnitude_lt k t) (by decide), kv.2.1]
     rfl
   · intro j _ _ _ h8 h9 h10
     rw [eu, ex, ew, kv.2.1]

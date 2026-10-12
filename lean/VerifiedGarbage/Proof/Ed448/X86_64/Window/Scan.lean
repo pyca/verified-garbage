@@ -21,7 +21,7 @@ abbrev ScanRegs : List Reg := .rax :: W
 
 /-- The per-entry selection's memory and register contract. -/
 def PickOk (pick : Nat → List Instr) (value : Mem → Addr → Nat → Spec.X448.Fe) : Prop :=
-  ∀ (i : Nat), i < 16 → ∀ {s : State} {base : Addr}, Scr s base → ∀ {sw : Bool}, s.zf = sw →
+  ∀ (i : Nat), i < 17 → ∀ {s : State} {base : Addr}, Scr s base → ∀ {sw : Bool}, s.zf = sw →
     WP isa (.block (pick i)) s fun u =>
       toFe (rv u W) = (if sw then value s.mem base i else toFe (rv s W)) ∧ Keeps ScanRegs s u
 
@@ -40,8 +40,8 @@ private theorem picked_eq (f : Nat → Spec.X448.Fe) (xs : List Nat) (d : Nat) (
     · by_cases hx : d ∈ xs <;> simp [hi, hx]
 
 private theorem entries_ok {pick : Nat → List Instr} {value : Mem → Addr → Nat → Spec.X448.Fe}
-    (hp : PickOk pick value) (xs : List Nat) (hx : ∀ i ∈ xs, i < 16)
-    {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d < 16)
+    (hp : PickOk pick value) (xs : List Nat) (hx : ∀ i ∈ xs, i < 17)
+    {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d < 17)
     (hr : s.gpr .r15 = BitVec.ofNat 64 d) :
     WP isa (.block (scanEntries pick xs)) s fun u =>
       toFe (rv u W) = picked (value s.mem base) xs d (toFe (rv s W)) ∧ Keeps ScanRegs s u := by
@@ -66,12 +66,12 @@ private theorem entries_ok {pick : Nat → List Instr} {value : Mem → Addr →
 /-- The selected coordinate is stored once; the digit and all other slots survive. -/
 theorem scanCoord_ok {pick : Nat → List Instr} {value : Mem → Addr → Nat → Spec.X448.Fe}
     (hp : PickOk pick value) {s : State} {base : Addr} (hs : Scr s base)
-    (i : Index) {d : Nat} (hd : d < 16) (hr : s.gpr .r15 = BitVec.ofNat 64 d) :
+    (i : Index) {d : Nat} (hd : d < 17) (hr : s.gpr .r15 = BitVec.ofNat 64 d) :
     WP isa (.block (scanCoord pick (slot i.val))) s fun u =>
       Keep base s u ∧ u.gpr .r15 = s.gpr .r15 ∧
       E u.mem base = Function.update (E s.mem base) i (value s.mem base d) := by
   rw [scanCoord, WP.block_append_iff]
-  refine WP.mono (entries_ok hp (List.range 16) (fun j hj => List.mem_range.mp hj) hs hd hr)
+  refine WP.mono (entries_ok hp (List.range 17) (fun j hj => List.mem_range.mp hj) hs hd hr)
     fun v ⟨ev, kv⟩ => ?_
   refine WP.mono (stores_E (hs.of_keeps kv (by decide)) i W rfl)
     fun u ⟨eu, ou, gu, ru, wu⟩ => ?_
