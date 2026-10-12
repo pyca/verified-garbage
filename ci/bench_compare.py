@@ -47,8 +47,10 @@ it: identical copies of one binary measured 104.5–110.4 µs for a P-521
 signature, each copy within 0.3% of itself from run to run. So one run of
 each side would compare two draws of that, not the code; these groups also
 run from `--copies - 1` fresh copies of each side's binary (each a new
-file, so new pages), and each of their times is the median over the
-copies, with the spread in the report.
+file, so new pages), and each of their times is the fastest of the copies
+(as of the rounds): the time with the table where it collides least, which
+the code decides, while the median of five draws still moved by 1–2%
+between two sides of the same code. The report shows the spread.
 
 `--modules` runs only the benchmarks of those library modules (see
 `bench_arches.py`), and `--shard i/n` only the i-th of n shares of them,
@@ -62,7 +64,6 @@ import os
 import pathlib
 import re
 import shutil
-import statistics
 import subprocess
 import sys
 
@@ -295,7 +296,7 @@ def main():
     p.add_argument("head", type=pathlib.Path)
     p.add_argument("--summary", type=pathlib.Path)
     p.add_argument("--rounds", type=int, default=1)
-    p.add_argument("--copies", type=int, default=5,
+    p.add_argument("--copies", type=int, default=8,
                    help="copies of each binary that run the groups of FRESH_COPIES (1: only the binary)")
     p.add_argument("--confirm", type=int, default=2,
                    help="runs of each side again for the benchmarks over the threshold")
@@ -355,8 +356,8 @@ def main():
         return 0
 
     # The groups that depend on where the kernel puts their table run again
-    # from fresh copies of each binary, alternately, and keep the median of
-    # the copies (the rounds above counting as the first copy).
+    # from fresh copies of each binary, alternately, and keep the fastest
+    # time of the copies (the rounds above counting as the first copy).
     copied = []
     if args.copies > 1:
         listed = groups if groups is not None else list_groups(binaries["head"], modules["head"])
@@ -381,7 +382,7 @@ def main():
                     spread[side].setdefault(bench_id, []).append(t)
         for side, times in spread.items():
             for bench_id, ts in times.items():
-                best[side][bench_id] = statistics.median(ts)
+                best[side][bench_id] = min(ts)
 
     def suspects():
         """The groups (`<primitive>`s) of the benchmarks over the threshold."""
@@ -390,8 +391,8 @@ def main():
 
     # A slowdown over the threshold is confirmed: its groups run again on
     # both sides, alternately, and keep their fastest times.
-    # (Not the groups that ran from copies, whose median a fastest time would
-    # replace.)
+    # (Not the groups that ran from copies, already the fastest of as many
+    # runs.)
     confirmed = [g for g in suspects() if g not in copied] if binaries["base"] is not None else []
     for r in range(args.confirm if confirmed else 0):
         for side in ("head", "base") if r % 2 == 0 else ("base", "head"):
@@ -434,7 +435,7 @@ def main():
             [
                 f"From {args.copies} copies of each binary (each a new file, so the kernel reads it into new"
                 " physical pages, on which these groups' tables of constants make them up to about 7% faster or"
-                f" slower), the median of the copies: {', '.join(f'`{g}`' for g in copied)}."
+                f" slower), the fastest of the copies: {', '.join(f'`{g}`' for g in copied)}."
                 " Their spread is below the table."
             ]
             if copied

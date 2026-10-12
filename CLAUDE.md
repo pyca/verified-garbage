@@ -602,7 +602,8 @@ pages the kernel gives the table when it first reads the binary, a draw
 fixed for each binary file: comparing one run of each side compares two
 draws, not the code. So `ci/bench_compare.py` runs those groups
 (`FRESH_COPIES`) from `--copies` fresh copies of each side's binary and
-compares the medians; add a group there when its code reads such a table.
+compares the fastest of each; add a group there when its code reads such a
+table.
 
 For another architecture, or features this CPU lacks, run the Benchmarks
 workflow by hand on a pushed branch (`workflow_dispatch` on `bench.yml`)
