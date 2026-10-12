@@ -35,13 +35,32 @@ def verifyEquationPoints : Prog isa :=
 
 def decodedThen (next : Prog isa) : Prog isa := .ite (.nonzero .x .x8) next recoverInvalid
 
-def verifyDecodeR : Prog isa :=
-  .seq (.block [ld .x2 7944]) (.seq pointDecode
-    (decodedThen (.seq (.block (pointTableWrite 7552)) verifyEquationPoints)))
+/-- The word of the working space counting `decodeBoth`'s passes down, 1 (`R`) then 0 (`A`). -/
+def DCOUNT : Nat := 7680
 
-def verifyDecodeA : Prog isa :=
-  .seq (.block [ld .x2 7936]) (.seq pointDecode
-    (decodedThen (.seq (.block (pointTableWrite 7424)) verifyDecodeR)))
+/-- The count into `x19` and the encoding's pointer, at byte `7936 + 8 x19`, into `x2`. -/
+def decodePtr : List Instr :=
+  [ld .x19 DCOUNT, .lsl .x .x2 .x19 3, .add .x .x2 .x2 .x0, .ldr .x .x2 .x2 7936]
+
+/-- The decoded point to byte `7424 + 128 x19` (`A`'s entry, then `R`'s), the count down, and
+the count before it into `x19`, which ends the loop after `A`. -/
+def decodeStore : List Instr :=
+  [ld .x19 DCOUNT] ++ tableAddr 7424 ++ pointToTable ++
+    [.subImm .x .x9 .x19 1, st .x9 DCOUNT, .movz .w .x8 1 0]
+
+/-- An encoding that is not a point: 0 in `x8`, and in `x19`, which ends the loop. -/
+def decodeFail : List Instr := [.movz .w .x8 0 0, .movz .w .x19 0 0]
+
+def decodeBody : Prog isa :=
+  .seq (.block decodePtr) (.seq pointDecode
+    (.ite (.nonzero .x .x8) (.block decodeStore) (.block decodeFail)))
+
+/-- `R`, then `A`, decoded by one copy of `pointDecode`, into the table at bytes 7552 and 7424;
+`x8` is 1 if both are points, else 0. -/
+def decodeBoth : Prog isa :=
+  .seq (.block [.movz .w .x19 1 0, st .x19 DCOUNT]) (.loop decodeBody (.nonzero .x .x19))
+
+def verifyDecode : Prog isa := .seq decodeBoth (decodedThen verifyEquationPoints)
 
 def verifyHeaders : List Instr :=
   [.str .x .x0 .x2 7936, .str .x .x1 .x2 7944, .str .x .x8 .x2 7952, mov .x0 .x2]
@@ -51,7 +70,7 @@ def verifySetup : List Instr := ([mov .x8 .x2, mov .x2 .x3] : List Instr) ++ sca
 /-- `(pk, sig, challenge, scratch) = (x0, x1, x2, x3)`; boolean result in x0. -/
 def verifyEquation : Prog isa :=
   .seq (.block verifySetup) (.seq
-    (.seq (.block verifyScalar) (.ite (.nonzero .x .x8) verifyDecodeA recoverInvalid))
+    (.seq (.block verifyScalar) (.ite (.nonzero .x .x8) verifyDecode recoverInvalid))
     (.block (([mov .x2 .x0, mov .x0 .x8] : List Instr) ++ scalarRestore)))
 
 end VG.Impl.Ed25519.AArch64

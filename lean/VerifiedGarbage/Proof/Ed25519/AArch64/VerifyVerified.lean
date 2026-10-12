@@ -16,8 +16,8 @@ public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
-public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTBody
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTBody
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyDecode
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyDecode
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 import all Init.Data.Array.Basic
@@ -45,120 +45,23 @@ section
 section
 /-! Merged from `Proof.Ed25519.AArch64.VerifyBody`. -/
 section
-/-! Merged from `Proof.Ed25519.AArch64.VerifyDecodeA`. -/
-section
-/-! Merged from `Proof.Ed25519.AArch64.VerifyDecodeR`. -/
-section
-/-! Reject an invalid R encoding or evaluate the complete equation. -/
+/-! `R` and `A` decoded by one loop, then the equation. -/
 
 namespace VG.Proof.Ed25519.AArch64
 
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64 VG.Proof.Ed25519 Edwards
 
-def equationWithR (r : Option Spec.Ed25519.Point) (a : Spec.Ed25519.Point) (scalar challenge : Nat) : Bool :=
-  match r with
-  | none => false
-  | some r => Spec.Ed25519.pointEqual (Spec.Ed25519.pointMul scalar Spec.Ed25519.basePoint)
-      (Spec.Ed25519.pointAdd r (Spec.Ed25519.pointMul challenge a))
-
-theorem verifyDecodeR_ok {s : State} {base pk sig challenge : Addr}
-    {Aa : EPoint dZ} (h : VerifyContext s base pk sig challenge)
-    (hA : Rep (tablePoint s.mem base 7424) Aa) :
-    WP isa verifyDecodeR s fun t => VerifyKeep base s t ∧
-      t.gpr .x8 = signWord (equationWithR
-        (Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem sig 32))
-        (tablePoint s.mem base 7424)
-        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sig 32) 32))
-        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem challenge 64))) := by
-  rw [verifyDecodeR]
-  refine WP.seq (WP.mono (loadPointer_ok h.scratch .x2 7944 (by decide) (by decide)) fun a ⟨ap, ka⟩ => ?_)
-  have kap : VerifyKeep base s a := PowersKeep.of_keeps ka (by decide)
-  have ha := h.of_keep kap
-  apply WP.seq
-  have hd := pointDecode_ok (base := base) (p := sig) ha.scratch (ap.trans h.sigHeader) ha.rRead
-  generalize hp : Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt a.mem sig 32) = decoded at hd
-  rw [ka.mem] at hp
-  with_reducible apply WP.mono hd
-  intro b hb
-  have kb := hb.1
-  have br := hb.2
-  have kbp : VerifyKeep base a b := PowersKeep.of_decode kb
-  have kab := kap.trans kbp
-  refine decodedThen_ok br (fun c kc hn => ?_) (fun c r kc hy cp => ?_)
-  · refine WP.mono (recoverInvalid_ok c base) fun t ⟨kt, tr⟩ => ?_
-    refine ⟨(kab.trans (PowersKeep.of_keeps kc (by decide))).trans (PowersKeep.of_keep kt), ?_⟩
-    simpa only [hp, hn, equationWithR, signWord, Bool.false_eq_true, ite_false, DecodeResult] using tr
-  · have kcp : VerifyKeep base b c := PowersKeep.of_keeps kc (by decide)
-    have kabc := kab.trans kcp
-    refine WP.seq (WP.mono (pointTableWrite_ok (kabc.scratch h.scratch) 7552 (by decide) (by decide))
-      fun d ⟨kd, dp, _⟩ => ?_)
-    have kabcd := kabc.trans (kd.mono (by decide) (by decide))
-    have hd := h.of_keep kabcd
-    have da : tablePoint d.mem base 7424 = tablePoint s.mem base 7424 := by
-      rw [kd.mem.point (by decide) (Or.inl (by decide)) (by decide), kc.mem,
-        workspace_tablePoint kb.mem (by decide) (by decide), ka.mem]
-    obtain ⟨Ra, hRa⟩ := decodePoint_rep (hp.trans hy)
-    refine WP.mono (verifyEquationPoints_ok hd.scratch hd.sigHeader hd.challengeHeader
-      hd.scalarQ hd.scalarFar hd.challengeQ hd.challengeFar (by rw [da]; exact hA)
-      (by rw [dp, cp]; exact hRa)) fun t ⟨kt, tv⟩ => ?_
-    refine ⟨kabcd.trans kt, ?_⟩
-    rw [tv, dp, cp, da, verifyKeep_bytes kabcd h.scalarFar, verifyKeep_bytes kabcd h.challengeFar,
-      hp, hy, equationWithR]
-
-end VG.Proof.Ed25519.AArch64
-end
-
-/-! Reject an invalid public key encoding before computing the equation. -/
-
-namespace VG.Proof.Ed25519.AArch64
-
-open VG VG.AArch64 VG.Impl.Ed25519.AArch64 VG.Proof.Ed25519 Edwards
-
-def decodedEquation (a r : Option Spec.Ed25519.Point) (scalar challenge : Nat) : Bool :=
-  match a with
-  | none => false
-  | some a => equationWithR r a scalar challenge
-
-theorem verifyDecodeA_ok {s : State} {base pk sig challenge : Addr}
+theorem verifyDecode_ok {s : State} {base pk sig challenge : Addr}
     (h : VerifyContext s base pk sig challenge) :
-    WP isa verifyDecodeA s fun t => VerifyKeep base s t ∧
+    WP isa verifyDecode s fun t => VerifyKeep base s t ∧
       t.gpr .x8 = signWord (decodedEquation
         (Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem pk 32))
         (Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem sig 32))
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sig 32) 32))
-        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem challenge 64))) := by
-  rw [verifyDecodeA]
-  refine WP.seq (WP.mono (loadPointer_ok h.scratch .x2 7936 (by decide) (by decide)) fun a ⟨ap, ka⟩ => ?_)
-  have kap : VerifyKeep base s a := PowersKeep.of_keeps ka (by decide)
-  have ha := h.of_keep kap
-  apply WP.seq
-  have hd := pointDecode_ok (base := base) (p := pk) ha.scratch (ap.trans h.pkHeader) ha.pkRead
-  generalize hp : Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt a.mem pk 32) = decoded at hd
-  rw [ka.mem] at hp
-  with_reducible apply WP.mono hd
-  intro b hb
-  have kb := hb.1
-  have br := hb.2
-  have kbp : VerifyKeep base a b := PowersKeep.of_decode kb
-  have kab := kap.trans kbp
-  refine decodedThen_ok br (fun c kc hn => ?_) (fun c p kc hy cp => ?_)
-  · refine WP.mono (recoverInvalid_ok c base) fun t ⟨kt, tr⟩ => ?_
-    refine ⟨(kab.trans (PowersKeep.of_keeps kc (by decide))).trans (PowersKeep.of_keep kt), ?_⟩
-    simpa only [hp, hn, decodedEquation, signWord, Bool.false_eq_true, ite_false, DecodeResult] using tr
-  · have kcp : VerifyKeep base b c := PowersKeep.of_keeps kc (by decide)
-    have kabc := kab.trans kcp
-    refine WP.seq (WP.mono (pointTableWrite_ok (kabc.scratch h.scratch) 7424 (by decide) (by decide))
-      fun d ⟨kd, dp, _⟩ => ?_)
-    have kabcd := kabc.trans (kd.mono (by decide) (by decide))
-    obtain ⟨Aa, hAa⟩ := decodePoint_rep (hp.trans hy)
-    refine WP.mono (verifyDecodeR_ok (h.of_keep kabcd) (by rw [dp, cp]; exact hAa))
-      fun t ⟨kt, tv⟩ => ?_
-    refine ⟨kabcd.trans kt, ?_⟩
-    rw [tv, dp, cp, verifyKeep_bytes kabcd h.rFar, verifyKeep_bytes kabcd h.scalarFar,
-      verifyKeep_bytes kabcd h.challengeFar, hp, hy, decodedEquation]
+        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem challenge 64))) :=
+  verifyDecode_wp ⟨h, rfl, rfl, rfl, rfl⟩
 
 end VG.Proof.Ed25519.AArch64
-end
 
 /-! The strict scalar check and decoding branches implement verifyEquation. -/
 
@@ -197,7 +100,7 @@ theorem verifyEquation_bytes (m : Mem) (pk sig challenge : Addr) :
 
 theorem verifyBody_ok {s : State} {base pk sig challenge : Addr}
     (h : VerifyContext s base pk sig challenge) :
-    WP isa (.seq (.block verifyScalar) (.ite (.nonzero .x .x8) verifyDecodeA recoverInvalid)) s fun t =>
+    WP isa (.seq (.block verifyScalar) (.ite (.nonzero .x .x8) verifyDecode recoverInvalid)) s fun t =>
       VerifyKeep base s t ∧ t.gpr .x8 = signWord
         (Spec.Ed25519.verifyEquation (Spec.Ed25519.bytesAt s.mem pk 32)
           (Spec.Ed25519.bytesAt s.mem sig 64) (Spec.Ed25519.bytesAt s.mem challenge 64)) := by
@@ -205,7 +108,7 @@ theorem verifyBody_ok {s : State} {base pk sig challenge : Addr}
   have kap : VerifyKeep base s a := PowersKeep.of_keep ka
   apply WP.ite _ (congrArg some ac)
   · intro ht
-    refine WP.mono (verifyDecodeA_ok (h.of_keep kap)) fun t ⟨kt, tv⟩ => ?_
+    refine WP.mono (verifyDecode_ok (h.of_keep kap)) fun t ⟨kt, tv⟩ => ?_
     refine ⟨kap.trans kt, ?_⟩
     rw [am] at tv
     rw [verifyEquation_bytes, ht, Bool.true_and]
@@ -445,10 +348,10 @@ theorem verifyFinish_ct (base : Addr) :
 theorem verifyBody_base_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List Byte) :
     CT (fun s t => VerifyPublic base pk sig challenge pkbs rbs sbs kbs s ∧
       VerifyPublic base pk sig challenge pkbs rbs sbs kbs t)
-      (.seq (.block verifyScalar) (.ite (.nonzero .x .x8) verifyDecodeA recoverInvalid))
+      (.seq (.block verifyScalar) (.ite (.nonzero .x .x8) verifyDecode recoverInvalid))
       (fun s t => s.gpr .x0 = base ∧ t.gpr .x0 = base) := by
   have hw (s : State) (h : VerifyPublic base pk sig challenge pkbs rbs sbs kbs s) :
-      WP isa (.seq (.block verifyScalar) (.ite (.nonzero .x .x8) verifyDecodeA recoverInvalid)) s
+      WP isa (.seq (.block verifyScalar) (.ite (.nonzero .x .x8) verifyDecode recoverInvalid)) s
         (fun t => t.gpr .x0 = base) :=
     WP.mono (verifyBody_ok h.context) fun _ kt => (kt.1.scratch h.context.scratch).x0
   exact (CT.wp (verifyBody_ct base pk sig challenge pkbs rbs sbs kbs)

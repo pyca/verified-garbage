@@ -57,23 +57,4 @@ theorem verifyKeep_bytes {base p : Addr} {len : Nat} {s t : State}
     Spec.Ed25519.bytesAt t.mem p len = Spec.Ed25519.bytesAt s.mem p len :=
   outside_bytes (tableFrame_work h.mem (by decide) (by decide)) (by decide) hf
 
-theorem decodedThen_ok {s : State} {base : Addr} {p : Option Spec.Ed25519.Point}
-    {next : Prog isa} {P : State → Prop} (hr : DecodeResult base p s)
-    (hn : ∀ t, Keeps [] s t → p = none → WP isa recoverInvalid t P)
-    (hy : ∀ t a, Keeps [] s t → p = some a → point (env t.mem base) 0 1 2 3 = a → WP isa next t P) :
-    WP isa (decodedThen next) s P := by
-  rw [decodedThen]
-  cases hp : p with
-  | none =>
-    rw [hp] at hr
-    change s.gpr .x8 = 0 at hr
-    apply WP.ite false (by simp only [eval, read_x, hr]; rfl)
-    · intro h; contradiction
-    · intro _; exact hn s ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩ hp
-  | some a =>
-    rw [hp] at hr
-    apply WP.ite true (by simp only [eval, read_x, hr.1]; rfl)
-    · intro _; exact hy s a ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩ hp hr.2
-    · intro h; contradiction
-
 end VG.Proof.Ed25519.AArch64
