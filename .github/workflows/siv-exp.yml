@@ -1,0 +1,26 @@
+name: siv-exp
+on:
+  push:
+    branches: [siv-exp1]
+permissions: {}
+jobs:
+  run:
+    strategy:
+      fail-fast: false
+      matrix:
+        i: [1, 2, 3, 4, 5, 6]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: siv-polyval-one
+          path: base
+      - run: grep -m1 "model name" /proc/cpuinfo
+      - run: |
+          mkdir -p base/exp/src/bin && cp exp/Cargo.toml base/exp/ && cp exp/src/bin/rt.rs base/exp/src/bin/
+          (cd exp && cargo build --release -q) && (cd base/exp && cargo build --release -q)
+      - run: for r in 1 2; do echo base; base/exp/target/release/rt | grep open; echo new; exp/target/release/rt | grep open; done

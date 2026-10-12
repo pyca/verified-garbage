@@ -1,0 +1,7 @@
+[package]
+name = "sivexp"
+version = "0.1.0"
+edition = "2021"
+[dependencies]
+verified-garbage = { path = "..", features = ["cpu-features-env"] }
+[workspace]
