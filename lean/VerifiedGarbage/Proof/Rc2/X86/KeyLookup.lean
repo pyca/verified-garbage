@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
+import VerifiedGarbage.Proof.Rc2.X86.PiLookup
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 import VerifiedGarbage.Proof.Framework.X86.SseLanes
 import VerifiedGarbage.Proof.Framework.CallLay
@@ -17,70 +18,17 @@ namespace VG.Proof.Rc2.X86
 
 open VG VG.X86 VG.X86.Lanes VG.X86.RegUpd VG.Impl.Rc2.X86
 
-theorem ea_memOp (s : State) (b : Reg) (d : Nat) : s.ea (memOp b d) = addr (s.gpr b) d := rfl
-
-/-- `lrun`: a block run by `simp`, one instruction at a time, the state a
-chain of register, flag and memory updates (as `crun`, `Proof/Cast5/X86/Run.lean`). -/
-syntax "lrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| lrun) => `(tactic| lrun [])
-  | `(tactic| lrun [$ls,*]) => `(tactic| (
-      apply WP.of_runBlock
-      refine ⟨?_, ?_, ?_⟩
-      rotate_left
-      · set_option linter.unusedSimpArgs false in
-        simp only [runBlock_cons, runStep_some, runBlock_nil, imm, rr,
-        exec, readSrc, ea_memOp, State.load32, State.store32, State.load128, State.store128, execAlu, execShift,
-        XOp.exec, Option.map_some, Option.bind_some,
-        gpr_setReg, mem_setReg, rd_setReg, wr_setReg, xmm_setReg,
-        gpr_setFlags, mem_setFlags, rd_setFlags, wr_setFlags, xmm_setFlags,
-        gpr_arithFlags, mem_arithFlags, rd_arithFlags, wr_arithFlags, xmm_arithFlags,
-        gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne,
-        Option.some.injEq, exists_eq_left',
-        ite_true, ite_false, reduceCtorEq, ↓reduceIte, Nat.reduceMul, Nat.reduceAdd, Nat.reduceLT,
-        Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceMod, Nat.reducePow, Nat.reduceEqDiff,
-        and_self, eq_self_iff_true, not_false_eq_true, true_and, and_true, List.cons_append,
-        List.nil_append, $ls,*]
-        first | done | rfl))
-
 /-! ## The values -/
-
-/-- `n` in every lane. -/
-def splat (n : Nat) : Nat → BitVec 32 := fun _ => BitVec.ofNat 32 n
 
 /-- Dword `j` of the schedule at `p`. -/
 def sdword (m : Mem) (p : BitVec 32) (j : Nat) : BitVec 32 :=
   m.readW (p.setWidth 64 + BitVec.ofNat 64 (4 * j)) 32
 
-/-- Lane `k` once chunks `0 … c - 1` are visited, for dword `d`. -/
-def found (m : Mem) (p : BitVec 32) (d c k : Nat) : BitVec 32 :=
-  if d < 4 * c ∧ d % 4 = k then sdword m p d else 0
-
-theorem found_succ (m : Mem) (p : BitVec 32) {d c k : Nat} (hd : d < 32) (hc : c < 8) (hk : k < 4) :
-    (found m p d c k ||| (sdword m p (4 * c + k) &&&
-        if BitVec.ofNat 32 d = BitVec.ofNat 32 (4 * c + k) then 0xFFFFFFFF else 0)) =
-      found m p d (c + 1) k := by
-  unfold found
-  by_cases h : d = 4 * c + k
-  · subst h
-    rw [ite_eq_right (by omega), ite_eq_left rfl, ite_eq_left (by omega)]
-    rw [show (0xFFFFFFFF : BitVec 32) = BitVec.allOnes 32 by decide, BitVec.and_allOnes]
-    exact BitVec.zero_or
-  · have hn : BitVec.ofNat 32 d ≠ BitVec.ofNat 32 (4 * c + k) := fun e => h (by
-      have := congrArg BitVec.toNat e
-      simp only [BitVec.toNat_ofNat] at this
-      omega)
-    rw [ite_eq_right hn, show ∀ y : BitVec 32, y &&& 0 = 0 from fun y => BitVec.eq_of_getLsbD_eq (by simp),
-      show ∀ y : BitVec 32, y ||| 0 = y from fun y => BitVec.eq_of_getLsbD_eq (by simp)]
-    by_cases h2 : d < 4 * c ∧ d % 4 = k
-    · rw [ite_eq_left h2, ite_eq_left (by omega)]
-    · rw [ite_eq_right h2, ite_eq_right (by omega)]
-
 /-- The state of the lookup with chunks `0 … c - 1` visited, from `s₀`, for
 dword `d`. -/
 structure ChunkAt (s₀ : State) (d c : Nat) (s : State) : Prop where
   x0 : s.xmm .xmm0 = L (splat d)
-  x1 : s.xmm .xmm1 = L (found s₀.mem (s₀.gpr .edi) d c)
+  x1 : s.xmm .xmm1 = L (found (sdword s₀.mem (s₀.gpr .edi)) d c)
   x2 : s.xmm .xmm2 = L fun k => BitVec.ofNat 32 (4 * c + k)
   x3 : s.xmm .xmm3 = L (splat 4)
   x6 : s.xmm .xmm6 = L (splat 0xFFFFFFFF)
@@ -109,7 +57,7 @@ theorem chunk_ok {s₀ s : State} {d c : Nat} (hd : d < 32) (hc : c < 8) (h : Ch
     rw [hm, ha, show splat d k = BitVec.ofNat 32 d from rfl,
       show splat 0xFFFFFFFF k = (0xFFFFFFFF : BitVec 32) from rfl,
       mask_eq (by simp only [BitVec.toNat_ofNat]; omega) (by omega)]
-    exact found_succ _ _ hd hc hk
+    exact found_succ _ (by omega) (by omega) hk
   · rw [h2, h3, paddd_L]
     refine L_congr fun k _ => ?_
     simp only [splat, ← BitVec.ofNat_add]
@@ -193,14 +141,6 @@ theorem idx_shr (x : BitVec 32) :
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
     Nat.mod_eq_of_lt (by omega), Nat.shiftRight_eq_div_pow]
 
-theorem lanes_0123 :
-    XBinOp.eval .paddd (shufDwords ((0 : BitVec 96) ++ (1#32)) 17) (shufDwords ((0 : BitVec 96) ++ (2#32)) 5) =
-      L fun k => BitVec.ofNat 32 (4 * 0 + k) := by decide
-
-theorem found_zero (m : Mem) (p : BitVec 32) (d : Nat) : L (found m p d 0) = 0 := by
-  rw [show (0 : BitVec 128) = L fun _ => 0 by decide]
-  exact L_congr fun k _ => by simp [found]
-
 theorem start_ok (s : State) :
     WP isa (.block lookStart) s fun t =>
       ChunkAt t (((s.gpr .eax).setWidth 6).toNat / 2) 0 t ∧
@@ -281,7 +221,8 @@ theorem end_ok (t : State) {f : Nat → BitVec 32} {D : BitVec 32} {i : Nat}
 /-! ## The lookup -/
 
 theorem found_or (m : Mem) (p : BitVec 32) {d : Nat} (hd : d < 32) :
-    (found m p d 8 0 ||| found m p d 8 1 ||| found m p d 8 2 ||| found m p d 8 3) = sdword m p d := by
+    (found (sdword m p) d 8 0 ||| found (sdword m p) d 8 1 ||| found (sdword m p) d 8 2 |||
+      found (sdword m p) d 8 3) = sdword m p d := by
   have h4 : d % 4 < 4 := Nat.mod_lt _ (by decide)
   have z : ∀ y : BitVec 32, y ||| 0 = y := fun y => BitVec.eq_of_getLsbD_eq (by simp)
   have z' : ∀ y : BitVec 32, 0 ||| y = y := fun y => BitVec.eq_of_getLsbD_eq (by simp)
