@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailUpperFinish
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailFirst
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailUpperFinish
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailFirst
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `CommitTailUpperInit.lean` -/
+
+@[expose] public section
 
 section
 

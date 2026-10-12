@@ -1,9 +1,13 @@
+module
+
 /-! A bounded `∀` the kernel checks in linear time. `decide +kernel` on
 `∀ i : Fin n, p i`, `∀ i < n, p i` or `Nat.all n f` reduces `Nat.brecOn` on a
 function of `i < n`, which the kernel takes quadratic time for: over a second
 for `n = 1024` even when `p` is trivial. `allBelow f n`, a `Nat.rec`, takes
 milliseconds; prove the bounded statement with
 `of_allBelow (by decide +kernel)`. -/
+
+@[expose] public section
 
 namespace VG
 

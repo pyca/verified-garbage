@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Weierstrass.JacMul
-import VerifiedGarbage.Proof.Weierstrass.Jac
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Jacobian doubling with a direct product for `2YZ`. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass
 open VG.Impl.Weierstrass
 

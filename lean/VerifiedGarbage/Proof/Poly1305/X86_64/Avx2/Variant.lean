@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_poly1305_blocks_avx2` as an implementation of `vg_poly1305_blocks`
@@ -7,6 +13,8 @@ The `BlocksImpl` of `vg_poly1305_blocks_avx2` (see
 `Proof/Poly1305/X86_64/Variant.lean`): its calls use 8 bytes of stack below
 its return address (the return address of its call of `vg_poly1305_blocks`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64
 

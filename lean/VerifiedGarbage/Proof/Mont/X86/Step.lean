@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86.Instr
+module
+
+public import VerifiedGarbage.Proof.Mont.X86.Instr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86 (32-bit): a multiply-accumulate step
@@ -8,6 +14,8 @@ accumulator at `[ebp + acc + 4j]`, and leaves the carry word in `ebx`
 (`mulStep_ok`): `x = c b_j + k + t` is below `2⁶⁴`, its low word is stored
 and its high word is the carry.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86
 

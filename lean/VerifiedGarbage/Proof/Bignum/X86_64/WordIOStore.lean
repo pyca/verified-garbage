@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.WordIOLoad
-import VerifiedGarbage.Proof.Bignum.X86_64.Store
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.WordIOLoad
+public import VerifiedGarbage.Proof.Bignum.X86_64.Store
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.WordIO
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.WordIO

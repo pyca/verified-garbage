@@ -1,7 +1,12 @@
-import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.Impl.Mont.Mod
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Impl.Mont.Mod
 
 /-! # In-place word chains for sparse x86 Montgomery reduction -/
+
+@[expose] public section
+
 namespace VG.Impl.Mont.X86
 open VG.X86
 

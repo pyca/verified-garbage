@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Reloc
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-import VerifiedGarbage.Proof.Mont.X86_64.MulF
-import VerifiedGarbage.Proof.Weierstrass.Unch
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Reloc
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+public import VerifiedGarbage.Proof.Mont.X86_64.MulF
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-521's product modulo `n` as a function, on x86-64
@@ -17,6 +23,8 @@ offsets `a`, `b` and `o` (`wp_unptr`, `mulF_reloc`), whose proof then applies
 so the function changes only `fnClob`, `[o]` and its temporary area, bytes
 `fnTmp` to 4095 (`mulFnN_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.Mont
 

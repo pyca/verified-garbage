@@ -1,9 +1,22 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Sha512.X86_64.Shared
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Shared
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.PublicKey.CT`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.X86_64.PublicKey.Correct`. -/
 section

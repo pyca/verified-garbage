@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.X25519
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519: the inversion `z^(p-2)` as an addition chain
@@ -10,6 +16,8 @@ multiplications, in the order implementations compute them), is the spec's
 Mathlib's ring structure on `Fin p`. An implementation of the chain is proven
 against `invert`, one multiplication or run of squarings (`sqn`) at a time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519
 

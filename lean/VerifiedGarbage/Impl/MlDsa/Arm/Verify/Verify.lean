@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.Frag
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.Frag
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
@@ -42,6 +44,8 @@ It returns `r11`. Every address and branch depends only on the pointers,
 the public key and the signature (which the function may leak) and not on
 the results of the samplers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.Verify
 

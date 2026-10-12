@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.RpFin
-import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpFin
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: the outputs
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
 `p` and `q`, masked, to their outputs and the mask's low bit returned
 (`rpStores_ok`); zeros and 0 if no candidate was tried (`rpFail_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

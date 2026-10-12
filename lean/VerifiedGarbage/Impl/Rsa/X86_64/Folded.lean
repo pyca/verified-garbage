@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Rsa.X86_64.Checked
-import VerifiedGarbage.Impl.Rsa.X86_64.WordIO
-import VerifiedGarbage.Impl.Rsa.X86_64.Compare8
+module
+
+public import VerifiedGarbage.Impl.Rsa.X86_64.Checked
+public import VerifiedGarbage.Impl.Rsa.X86_64.WordIO
+public import VerifiedGarbage.Impl.Rsa.X86_64.Compare8
 
 /-!
 # `vg_rsa_public_precomputed_checked` on x86-64
@@ -13,6 +15,8 @@ which adds the last bit of `e` and leaves Montgomery form at once
 for `e = 65537`, RSA's usual exponent (`exp65536`), and the scan of
 `Precomputed.expLoop` otherwise.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.X86_64.Folded
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public

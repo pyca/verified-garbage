@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignFrame
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignFrame
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on x86-64: the prologue
@@ -9,6 +15,8 @@ From the entry state, after the frame's push, `signPrologue` saves `rbx`,
 modulus' first byte (`signPro_ok`): the working space and the frame as
 `Rep` says, with nothing else written.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

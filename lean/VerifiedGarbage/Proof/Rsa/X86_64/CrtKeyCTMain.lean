@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTMain
-import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyMain
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTMain
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTMain
+public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyMain
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_crt_key` on x86-64: constant time of `main`
@@ -8,6 +16,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyMain
 rest from the registers they pin, which are public (`w'` and `c` from the
 lengths); then `main` as `vg_rsa_check_key`'s (`ckMain_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

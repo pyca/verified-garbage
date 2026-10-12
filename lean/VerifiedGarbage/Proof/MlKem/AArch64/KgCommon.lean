@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.TopArgs
-import VerifiedGarbage.Proof.MlKem.AArch64.Lay
-import VerifiedGarbage.Proof.MlKem.KPke
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.TopArgs
+public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+public import VerifiedGarbage.Proof.MlKem.KPke
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: what the proof of `keygen` shares
@@ -11,6 +17,8 @@ per-target contract, the arguments as buffers (`kA`, `kL`: 0 `seed`, 1 `ek`,
 (`KB`): the pointers in `x25`–`x28`, our caller's registers saved in
 `scratch`, the other callee-saved registers, and the seed.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

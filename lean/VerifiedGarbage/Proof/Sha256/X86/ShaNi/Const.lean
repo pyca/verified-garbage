@@ -1,4 +1,12 @@
-import VerifiedGarbage.Proof.Framework.X86.Sse
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Sse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.X86.ShaNi
 open VG.X86

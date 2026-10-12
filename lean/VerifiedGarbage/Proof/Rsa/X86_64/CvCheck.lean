@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_crt_values` on x86-64: the loads and the check of `p q = n`
@@ -7,6 +13,8 @@ The loads of `n`, `p`, `q` and `d` (`cvLoads_ok`), and the mask of
 `p q = n` (`cvCheck_ok`), as `n mod p = 0`, `n / p = q` and `p` odd
 (`pq_iff`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.Env
-import VerifiedGarbage.Impl.Weierstrass.X86_64
-import VerifiedGarbage.Proof.Mont.X86_64.Ops
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Impl.Weierstrass.X86_64
+public import VerifiedGarbage.Proof.Mont.X86_64.Ops
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Field programs on x86-64
@@ -18,6 +24,8 @@ area change (`ProgKeep`).
 The complete additions `rcb` and, for `a = -3`, `rcb3` are such programs,
 and compute `rcbAdd` and `rcbAdd3` (`rcb_ok`, `rcb3_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Contract
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Common
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Contract
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: `pbkdf2`'s parts
@@ -12,6 +18,8 @@ which nothing we run writes), `out`, `c - 1` and `out_len` in `scratch`, and
 that everything written is in `out`, `scratch` or the 16 bytes below the stack
 pointer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.AArch64.Pbk
 

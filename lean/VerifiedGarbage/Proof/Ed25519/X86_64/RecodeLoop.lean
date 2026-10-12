@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeStep
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The recoding's loop on x86-64
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeStep
 compares `rsi` with), then stores the last carry: the array `dst` then holds
 `Recode.digits w X (8 nb)` (`recode_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

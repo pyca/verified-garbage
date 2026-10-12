@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpackPoly
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpackPoly
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpackPoly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_hint_bit_unpack`
@@ -11,6 +18,8 @@ Constant time but for its input: once `h` is zeroed, the two runs agree on
 all the memory the function may access (the input `y`, which the contract
 lets it leak, and `h`), and `memTaint` proves the rest.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Pack
 

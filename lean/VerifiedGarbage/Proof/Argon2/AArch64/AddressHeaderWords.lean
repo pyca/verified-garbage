@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.AddressHeader
-import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
-import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.AddressHeader
+public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+public import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.BlockStore`. -/
+
+@[expose] public section
+
 section
 /-! A single matrix or scratch block word write as a vector update. -/
 

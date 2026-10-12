@@ -1,7 +1,9 @@
-import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.TCB.X86.Target
 
 /-!
 # x86 (32-bit): saving and restoring registers in memory
@@ -32,6 +34,8 @@ between them). Each lemma is proven once, by induction over the slots; for a
 literal list the side conditions (`∀ p ∈ l, …`, `Fits`) close by `decide` or
 reduce to one per slot.
 -/
+
+@[expose] public section
 
 namespace VG.X86.Spill
 

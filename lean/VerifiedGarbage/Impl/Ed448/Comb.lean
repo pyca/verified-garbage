@@ -1,7 +1,12 @@
-import VerifiedGarbage.Spec.X448
+module
+
+public import VerifiedGarbage.Spec.X448
 
 /-! A four-column comb for all 456 bits of an Ed448 scalar. The literals are
 checked against `pointMul` in `Proof/Ed448/Comb.lean`; no table value is trusted. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed448.Comb
 
 /-- The scalar represented by a four-bit table index, with columns 114 bits apart. -/

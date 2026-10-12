@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Main
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTIfma
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPost
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Main
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Main
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTIfma
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTIfma
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPost
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPost
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: `main` in constant time
@@ -15,6 +25,8 @@ between them satisfy (`prePre_of`, `ifPre_of`, `postPre_of`); the last
 `else` is `vg_rsa_private_crt`'s (`qS_ct`, `pS_ct`). So `main` is
 (`main_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

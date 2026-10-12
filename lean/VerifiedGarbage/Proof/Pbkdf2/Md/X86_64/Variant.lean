@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
-import VerifiedGarbage.Proof.Sha512.X86_64.Variant
-import VerifiedGarbage.Proof.Sha256.X86_64.Variant
-import VerifiedGarbage.TCB.Artifact
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
-import VerifiedGarbage.Proof.Pbkdf2.Scratch
-import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
+public import VerifiedGarbage.Proof.Sha512.X86_64.Variant
+public import VerifiedGarbage.Proof.Sha256.X86_64.Variant
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Pbkdf2.Scratch
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Merkle–Damgård hash functions on x86-64, as variants
@@ -24,6 +30,8 @@ it (`CoreOK`, once for each hash function) and of the functions they call
 (`Callees`, once for each implementation), and the satisfiability of the
 shared contracts, which the kernel checks for each instance.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86_64
 

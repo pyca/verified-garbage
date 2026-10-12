@@ -18,7 +18,9 @@ def artifacts : List Artifact := [
       (notes := ["Baseline AArch64: `e` is checked first, its bytes read into a register saturated at \
         `2^34 - 1` once they reach `2^33`; then Montgomery multiplication on 64-bit words (coarsely \
         integrated operand scanning with `mul` and `umulh`, the final subtraction selected with \
-        `csel`), with R² mod n by constant-time doublings and squarings, and the exponent scanned \
+        `csel`), and symmetric Montgomery squares using each cross-product once, with four-word \
+        MAC blocks and scalar tails, reusing the accumulator and temporary arrays; below eight \
+        limbs, squares retain the general kernel. R² mod n by constant-time doublings and squarings, and the exponent scanned \
         left to right from its first set bit, which starts the result as the input; a square per \
         later bit and a multiplication per later set bit."])
     code := Impl.Rsa.AArch64.Checked.publicChecked

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.RpProd
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpProd
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: whether `d e - 1` is even and positive
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
 M - 1` for an odd `M`); `orLoop` tests `m = 0`, and `skipTest` sets `x10` to
 zero iff neither (`skip_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

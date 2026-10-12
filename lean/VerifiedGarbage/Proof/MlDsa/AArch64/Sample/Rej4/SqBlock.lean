@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Env
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Call
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Env
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample.Rej4
 open VG VG.AArch64

@@ -1,12 +1,18 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Md5.X86.Compress
-import VerifiedGarbage.Proof.Md5.X86.Stream.Init
-import VerifiedGarbage.Proof.Md5.X86.Stream.Md
-import VerifiedGarbage.Spec.Md5.Contract
-import VerifiedGarbage.Proof.Md5.X86.Lit
-import VerifiedGarbage.Proof.Md5.Scratch
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Md5.X86.Compress
+public import VerifiedGarbage.Proof.Md5.X86.Stream.Init
+public import VerifiedGarbage.Proof.Md5.X86.Stream.Md
+public import VerifiedGarbage.Spec.Md5.Contract
+public import VerifiedGarbage.Proof.Md5.X86.Lit
+public import VerifiedGarbage.Proof.Md5.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # MD5 on x86: the shared contracts
@@ -26,6 +32,8 @@ they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's and PBKDF2's code calls) run
 in a frame that allocates it (`Verified.stackScratch`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Md5.X86.Shared
 

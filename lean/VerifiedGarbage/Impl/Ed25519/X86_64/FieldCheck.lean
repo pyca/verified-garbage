@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.Field
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Field
 
 /-! Equality tests used only on the public inputs of signature verification. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

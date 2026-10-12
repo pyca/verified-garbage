@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Word
-import VerifiedGarbage.Spec.Ed25519
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Word
+public import VerifiedGarbage.Spec.Ed25519
 
 /-! Scalar arithmetic modulo the Ed25519 subgroup order. All carries use
 16-bit limbs and baseline 32-bit instructions. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG VG.Arm
 

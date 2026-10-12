@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Seed.Contract
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Seed.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED key expansion and ECB with their working space as an argument
@@ -14,6 +20,8 @@ The frames zero the working space before returning, which needs the
 postconditions to read the memory on return only within the functions'
 buffers (`expandKeyPostOut_local`, `ecbPostOut_local`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed
 

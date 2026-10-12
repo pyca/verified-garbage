@@ -1,11 +1,19 @@
-import Mathlib.Tactic.FinCases
-import Mathlib.Data.Fintype.Fin
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstRoots
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalRoots
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
+module
+
+public import Mathlib.Tactic.FinCases
+public import Mathlib.Data.Fintype.Fin
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstRoots
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalRoots
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `PairedFinalRoots.lean` -/
+
+@[expose] public section
 
 section
 

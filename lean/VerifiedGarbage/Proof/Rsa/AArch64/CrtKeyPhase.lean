@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CkPhase
-import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyTop
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkPhase
+public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyTop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_crt_key` on AArch64: the phases
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyTop
 checks of `d`, and with `reduceTop` for `divmod`: modulo `X - 1`
 (`phModC_ok`) and `qInv` (`phQIC_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

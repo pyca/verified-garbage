@@ -1,11 +1,15 @@
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # ARMv7: instruction-level rewrite lemmas for symbolic execution
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivArgs
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivArgs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on AArch64: calls from the frames
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.PrivArgs
 regions within `out`, `scratch` or the inner frame above the slots: they
 hold again afterwards.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

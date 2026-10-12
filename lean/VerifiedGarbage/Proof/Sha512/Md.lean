@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Proof.Sha512.Stream
+module
+
+public import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Sha512.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SHA-512 family as a streaming Merkle–Damgård hash function
@@ -8,6 +14,8 @@ SHA-512 (for any initial hash value, so SHA-384, SHA-512/224 and SHA-512/256
 too) as an instance of `Proof.MdStream.Md`, for the generic streaming proofs:
 its `Repr` and `finalHash` are the generic ones, by unfolding.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512
 

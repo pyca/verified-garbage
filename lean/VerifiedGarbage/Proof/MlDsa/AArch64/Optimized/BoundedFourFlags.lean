@@ -1,4 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchGeometry
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchGeometry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.AArch64

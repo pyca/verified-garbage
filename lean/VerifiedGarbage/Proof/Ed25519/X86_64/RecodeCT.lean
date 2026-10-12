@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeAll
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeAll
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeAll
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The recoding: what its trace depends on
@@ -8,6 +16,8 @@ The recoding branches on the scalars' bits and the carry, and addresses the copi
 digits' array by the bit's position, so its trace depends on the recoding's state alone (`St`),
 the same in both runs of the same scalar: both runs are followed at the same state.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

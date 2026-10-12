@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseO
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseO
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Output packing depends on the signer layout, accepted response, challenge
 bytes, and hints. It does not require canonical secret-transform storage. -/
+
+@[expose] public section
+
 namespace VG.Proof.MlDsa.AArch64.Sign.Output
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Sign
 open VG.Impl.MlDsa.AArch64.Call (Ptr sc seqR)

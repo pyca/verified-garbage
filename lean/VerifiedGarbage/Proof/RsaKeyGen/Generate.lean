@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.RsaKeyGen
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.RsaKeyGen
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA key generation: what every generated key satisfies
@@ -20,6 +26,8 @@ For every key `RsaKeyGen.generate` returns, whatever the randomness
 None of this depends on the primality test: the bounds hold of every
 candidate accepted, and the checks are part of the generation.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen
 

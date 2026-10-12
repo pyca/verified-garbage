@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.Arith.Representation
-import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
-import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.KeyGen
-import VerifiedGarbage.Spec.MlDsa.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
+public import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
+public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.KeyGen
+public import VerifiedGarbage.Spec.MlDsa.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on x86-64: the primitives, and calling them
@@ -18,6 +24,8 @@ MXCSR's control bits (`MX`) are carried from its `abiPreserved`
 (`WP.callMx`, `glueCallMx_ok`), and from code that never loads MXCSR
 (`WP.mx`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.KeyGen
 

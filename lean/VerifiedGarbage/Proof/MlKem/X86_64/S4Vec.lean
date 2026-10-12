@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
-import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
+public import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+public import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, the vector sampling
@@ -15,6 +21,8 @@ The code computes the eight candidates in the doublewords of `ymm0`
 doublewords that the table's entry for the mask selects (`vput_ok`): those of
 the candidates less than `q`, in order (`setBits_bsum`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Mem
-import Mathlib.Tactic.SplitIfs
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
+public import Mathlib.Tactic.SplitIfs
 
 /-!
 # Byte reversal of a little-endian load is a big-endian load
@@ -8,6 +10,8 @@ Each ISA model defines its byte-reversal instructions (x86's `bswap`, Arm's
 `rev`) as `byteRev32` and `byteRev64` are defined here, so the lemmas about
 them are stated once, for every target.
 -/
+
+@[expose] public section
 
 namespace VG
 

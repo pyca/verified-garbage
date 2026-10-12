@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Public copies from a read-only table outside the scratch allocation. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont

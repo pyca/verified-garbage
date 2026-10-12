@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Taint tracking over memory both runs agree on (x86-64)
@@ -19,6 +25,8 @@ contents of such memory: `vg_mldsa_hint_bit_pack` and
 they read) once they have zeroed their output (the only memory they
 write).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Pack
 

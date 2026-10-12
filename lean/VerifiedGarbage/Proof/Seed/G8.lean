@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Seed.G16
-import VerifiedGarbage.Proof.Aes.Ct32.Bitsliced
-import VerifiedGarbage.Impl.Seed.W32
+module
+
+public import VerifiedGarbage.Proof.Seed.G16
+public import VerifiedGarbage.Proof.Aes.Ct32.Bitsliced
+public import VerifiedGarbage.Impl.Seed.W32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # G on eight words, bitsliced in 32-bit planes
@@ -20,6 +26,8 @@ and computes in three steps, which its proof states as below:
 `g8_words` then gives `G` of every input word. Nothing here depends on the
 target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed
 

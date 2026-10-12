@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Wp
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Loop
+module
+
+public import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Wp
+public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Keccak-f[1600] four times at once, in registers: one round
@@ -9,6 +15,8 @@ One round (`round`) of the four states held in the registers `lreg i`
 θ's columns (`columns_ok`) and `D` (`dcols_ok`), ρ and π along `piChain`
 (`rhoPi_ok`), χ plane by plane (`chis_ok`) and ι (`iota_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.X86_64.X4R
 

@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.X25519.X86.Field32
+module
+
+public import VerifiedGarbage.Impl.X25519.X86.Field32
 
 /-! The shared addition chain for inversion and square-root recovery. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86
 open VG.X86
 open VG.Impl.X25519.X86 (mul)

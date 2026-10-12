@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
-import VerifiedGarbage.Proof.Weierstrass.CombDigitW
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
+public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb from tables in memory on x86-64: digits
@@ -12,6 +18,8 @@ bits: `rcx = w j` (`winIndex_ok`), Horner's rule adds its bits
 window's top bit (`signMask_ok`), and the selection's masks compare the
 magnitude with each index (`eqMask_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

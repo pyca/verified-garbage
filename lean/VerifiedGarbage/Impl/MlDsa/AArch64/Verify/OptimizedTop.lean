@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
-import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedSamples
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedSamples
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Verify.Optimized
 open VG VG.AArch64 VG.Spec.MlDsa

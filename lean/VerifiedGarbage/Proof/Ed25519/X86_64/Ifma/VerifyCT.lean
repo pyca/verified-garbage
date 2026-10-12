@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyWin
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyLit
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyWin
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyWin
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyLit
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 verification with AVX512_IFMA: the windows' trace
@@ -11,6 +20,8 @@ scratch plus constants, the counter or a digit. The blocks between the
 branches are checked by the taint analysis, with the scratch's address public
 and, for an entry's addition, its digit.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Ifma
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86.Syms
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Syms
 
 /-!
 # Constant-time analysis of x86 static-table frames
@@ -7,6 +9,9 @@ A symbol address is public only when the contract lists it as public.
 The saved instruction pointer and the ADD flags are conservatively secret.
 The four-byte frame uses the existing checked push/pop analysis.
 -/
+
+@[expose] public section
+
 namespace VG.X86.Taint
 
 /-- Forget a register's region-base identity and flags; set its publicity. -/

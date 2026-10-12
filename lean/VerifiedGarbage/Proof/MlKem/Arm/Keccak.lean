@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Reduce
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
-import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Impl.MlKem.Arm.Sample
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Reduce
+public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Impl.MlKem.Arm.Sample
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: calling the SHA-3 sponge
@@ -18,6 +24,8 @@ leak the same trace (`absorb_ct`, …, by `RelCT.frame` and `RelCT.call`). The
 frame stores the stack arguments in the 8 bytes below the stack pointer, which
 the callers' contracts reserve (`below`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm
 

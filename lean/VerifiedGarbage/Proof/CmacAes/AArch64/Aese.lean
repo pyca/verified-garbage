@@ -1,9 +1,21 @@
-import VerifiedGarbage.Impl.CmacAes.AArch64.Aese
-import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
-import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
+module
+
+public import VerifiedGarbage.Impl.CmacAes.AArch64.Aese
+meta import VerifiedGarbage.Impl.CmacAes.AArch64.Aese
+public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
+meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
+public import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
+meta import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The register-resident CMAC loop, proven against the existing shared
 contract. Memory is unchanged until the final chaining value is stored. -/
+
+@[expose] public section
+
 namespace VG.Proof.CmacAes.AArch64.Aese
 open VG VG.AArch64 VG.AArch64.RegUpd
 open VG.Proof.Aes.AArch64.Aese

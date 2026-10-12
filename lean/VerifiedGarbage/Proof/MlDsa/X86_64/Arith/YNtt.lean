@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_ntt_avx2` and `vg_mldsa_inv_ntt_avx2`
@@ -12,6 +20,8 @@ constants in both lanes (`ypro_ok`); each layer is `nttLayer` or `nttInvLayer`
 coefficient by `8347681 = 256⁻¹ mod q` (`yscale_ok`), and `vzeroupper` keeps
 the memory (`LIY.epi`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Arith
 

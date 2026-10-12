@@ -15,8 +15,8 @@ def scalar : XorImpl where
   ct := Xor.xor_ct BlockImpl.scalar
   noFrames := BlockImpl.scalar.xorNoFrames
   stitched := false
-  sealTaint := ⟨_, by taint_decide⟩
-  openTaint := ⟨_, by taint_decide⟩
+  sealTaint := by exact ⟨_, by taint_decide⟩
+  openTaint := by exact ⟨_, by taint_decide⟩
 
 /-- Eight ChaCha20 blocks interleaved across AdvSIMD and integer registers. -/
 def neon : XorImpl where
@@ -27,8 +27,8 @@ def neon : XorImpl where
   ct := Mixed8.xor_ct
   noFrames := Mixed8.xor_noFrames
   stitched := true
-  sealTaint := ⟨_, by taint_decide⟩
-  openTaint := ⟨_, by taint_decide⟩
+  sealTaint := by exact ⟨_, by taint_decide⟩
+  openTaint := by exact ⟨_, by taint_decide⟩
 
 /-- The eight-block kernel with SVE2: each AdvSIMD XOR and rotation of the
 vector blocks is one XAR. -/
@@ -41,7 +41,7 @@ def sve2 : XorImpl where
   ct := Mixed8.xor_ct
   noFrames := Mixed8.xor_noFrames
   stitched := true
-  sealTaint := ⟨_, by taint_decide⟩
-  openTaint := ⟨_, by taint_decide⟩
+  sealTaint := by exact ⟨_, by taint_decide⟩
+  openTaint := by exact ⟨_, by taint_decide⟩
 
 end VG.Proof.ChaCha20.AArch64.XorImpl

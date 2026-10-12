@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Argon2.X86.Fill
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86.Fill
 
 /-!
 # Argon2 on x86 (32-bit): the derivation
@@ -14,6 +16,8 @@ memory, fills it, XORs the last block of every lane into the first block of
 the memory, and writes H′ of it to `out`. The lanes are evaluated serially,
 which every positive `threads` permits.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86.Derive
 

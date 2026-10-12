@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
-import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
-import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
+public import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
+public import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: the layers of the NTT and its inverse with `len ≥ 4` on AVX2 registers
@@ -17,6 +23,8 @@ upper ones into `ymm1` by `vperm2i128` (`ylay4_ok`). The zetas: `yzeta1_ok`
 and `yzetaS_ok`, and the layers' result coefficient by coefficient
 (`layF_get`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Arith
 

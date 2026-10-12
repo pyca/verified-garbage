@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Sha1.X86_64
-import VerifiedGarbage.Impl.Sha1.X86_64.ShaNi
-import VerifiedGarbage.Impl.MdStream.X86_64
+module
+
+public import VerifiedGarbage.Impl.Sha1.X86_64
+public import VerifiedGarbage.Impl.Sha1.X86_64.ShaNi
+public import VerifiedGarbage.Impl.MdStream.X86_64
 
 /-!
 # Streaming SHA-1: x86-64 implementation
@@ -25,6 +27,8 @@ emitted once for each implementation
 are saved in `scratch[112..160)`. The length field is big-endian, and so are
 the words of the digest.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha1.X86_64.Stream
 

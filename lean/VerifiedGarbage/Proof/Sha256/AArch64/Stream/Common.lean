@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.MdStream.AArch64.Common
-import VerifiedGarbage.Proof.Sha256.AArch64.Compress
-import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Impl.Sha256.AArch64.Stream
-import VerifiedGarbage.Proof.Sha256.AArch64.Lit
+module
+
+public import VerifiedGarbage.Proof.MdStream.AArch64.Common
+public import VerifiedGarbage.Proof.Sha256.AArch64.Compress
+public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
+public import VerifiedGarbage.Proof.Sha256.AArch64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-256 on AArch64: calling the compression function
@@ -11,6 +17,8 @@ The call of the compression function (`compressAt`), as HMAC-SHA-256 and
 PBKDF2-HMAC-SHA-256 use it. The weakest-precondition rules it is proved
 with are the generic ones (`VG.Proof.MdStream.AArch64`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.AArch64.Stream
 

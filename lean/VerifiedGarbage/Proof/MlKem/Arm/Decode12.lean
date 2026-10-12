@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Add
-import VerifiedGarbage.Proof.MlKem.Encode
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Add
+meta import VerifiedGarbage.Proof.MlKem.Arm.Add
+public import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Encode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_decode12`
@@ -9,6 +17,8 @@ loads bytes after storing a coefficient: `hsep` says the store does not change
 them. The invariant says which coefficients are written (`Inv`); their values
 are `decode12_even` and `decode12_odd`, reduced by `fixq_subq`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm.Decode12
 

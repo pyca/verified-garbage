@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.Group.Double
-import VerifiedGarbage.Spec.Ed25519.Point64
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Group.Double
+public import VerifiedGarbage.Spec.Ed25519.Point64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RFC 8032's doubling represents the double
@@ -9,6 +15,8 @@ import VerifiedGarbage.Spec.Ed25519.Point64
 point: it represents `a + a` for any `X : Y : Z` representing `a`
 (`pointDouble_rep`), whatever `T` is.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519
 

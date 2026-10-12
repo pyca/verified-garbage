@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
-import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+module
+
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: calling the Keccak functions
@@ -12,6 +18,8 @@ frame): what it needs of the state it is called from, and what holds when it
 returns (`Kept`: only the regions it may write and its frame's 16 bytes below
 the stack pointer change, and the callee-saved registers but `x30` are kept).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Sample.Ball
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sample.Ball
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: `BitUnpack` as arithmetic on the bytes
@@ -9,6 +15,8 @@ bits of coefficient `i` of `BitUnpack` are `⌊leNat v / 2^(ic)⌋ mod 2^c`
 (`bitUnpack_getElem`), which an implementation computes from the few bytes
 that hold them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sample
 

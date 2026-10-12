@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Qinv
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Crt
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.NFin
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Out
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Qinv
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Crt
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.NFin
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Out
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: the key
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
 `n`, the final mask, the stores and the status (`keyPart_k`); and the zeros
 and the status 2 otherwise (`zerosPart_k`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

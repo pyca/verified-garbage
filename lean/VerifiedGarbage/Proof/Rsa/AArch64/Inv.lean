@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Rsa.AArch64.Div
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rsa.AArch64.Div
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA private keys on AArch64: the binary extended Euclidean algorithm
@@ -11,6 +17,8 @@ swaps (`invSwap_ok`), the subtractions (`invSubU_ok`, `invSubX_ok`) and the
 halvings (`invHalfU_ok`, `invHalfX_ok`). `inverse` is `KeyMath.invIter` for
 `128 w` steps from `(a, m, 1, 0)` (`inverse_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

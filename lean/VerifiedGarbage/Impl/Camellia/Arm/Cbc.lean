@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Camellia.Arm.Ecb
-import VerifiedGarbage.Impl.StackScratch.Arm
-import VerifiedGarbage.Impl.Modes.Arm.Seq
-import VerifiedGarbage.Spec.Camellia.Contract
+module
+
+public import VerifiedGarbage.Impl.Camellia.Arm.Ecb
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Impl.Modes.Arm.Seq
+public import VerifiedGarbage.Spec.Camellia.Contract
 
 /-!
 # Camellia-CBC on ARMv7
@@ -11,6 +13,8 @@ modes one block at a time (`Impl/Modes/Arm/Seq.lean`) over Camellia's ECB
 functions, `vg_camellia_ecb_encrypt` and `vg_camellia_ecb_decrypt`, which
 they call once per block with the number of rounds (`ecbCore`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.Arm
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DBase
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: `d` too small
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DBase
 `smallMask`: `x15 := kOk & ` the mask of `d ≤ 2^(64 w)`, by `ltA` against
 `[aC] = 2^(64 w) + 1` (`smallMask_k`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

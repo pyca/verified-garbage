@@ -159,35 +159,16 @@ to optimize").
 ## Restoring the CI build cache
 
 After CI passes on `main`, it publishes the Linux x86-64 project build and
-Mathlib dependencies to `ghcr.io/pyca/vg-lean-cache:latest`. The image contains
-one file, `/lean-cache.tar.zst`, with `.lake/build` and `.lake/packages`
-relative to `lean/`. Only the latest image version is retained. CI compares
-the checked build's cache key with the image's `io.pyca.lean.cache-key` label
-and skips packaging and publishing when it matches, so Rust- or docs-only
-changes do not create a new cache version.
+Mathlib dependencies to `ghcr.io/pyca/vg-lean-cache:latest`, an OCI artifact
+whose one layer is `lean-cache.tar.zst`: `.lake/build` and `.lake/packages`
+relative to `lean/`. Only the latest version is retained. CI compares the
+checked build's cache key with the manifest's `io.pyca.lean.cache-key`
+annotation and skips packaging and publishing when it matches, so Rust- or
+docs-only changes do not create a new cache version.
 
-With Docker and zstd installed, restore it from the repository root:
-
-```sh
-docker pull ghcr.io/pyca/vg-lean-cache:latest
-container=$(docker create ghcr.io/pyca/vg-lean-cache:latest /unused)
-set -o pipefail
-docker cp "$container":/lean-cache.tar.zst - | tar -xOf - | zstd -dc | tar --no-same-owner -xf - -C lean
-docker rm "$container"
-```
-
-The container never runs. Install the toolchain in `lean/lean-toolchain`
-separately; the image's `io.pyca.lean.toolchain` and
-`org.opencontainers.image.revision` labels identify the cached build. Lake
-rebuilds outputs that differ from the checkout. The modules' `.trace` files
-carry the profile CI's build recorded, which `ci/lean_profile.py` reads.
-Private package access requires authenticating to GHCR before pulling.
-
-Docker is not needed: the image is a single uncompressed layer (a tar
-holding the archive), which `curl` can stream straight from the registry API
-with an anonymous pull token (useful in containers and sandboxes without
-Docker). With `curl`, `python3` and
-`zstd` installed, from the repository root:
+Restore it with `curl`, which streams the layer straight from the registry
+API with an anonymous pull token. With `curl`, `python3` and `zstd`
+installed, from the repository root:
 
 ```sh
 set -o pipefail
@@ -195,16 +176,19 @@ repo=pyca/vg-lean-cache
 token=$(curl -fsS "https://ghcr.io/token?scope=repository:$repo:pull" |
   python3 -c 'import json, sys; print(json.load(sys.stdin)["token"])')
 layer=$(curl -fsS -H "Authorization: Bearer $token" \
-  -H "Accept: application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json" \
+  -H "Accept: application/vnd.oci.image.manifest.v1+json" \
   "https://ghcr.io/v2/$repo/manifests/latest" |
   python3 -c 'import json, sys; [l] = json.load(sys.stdin)["layers"]; print(l["digest"])')
 curl -fsSL -H "Authorization: Bearer $token" "https://ghcr.io/v2/$repo/blobs/$layer" |
-  tar -xOf - lean-cache.tar.zst | zstd -dc | tar --no-same-owner -xf - -C lean
+  zstd -dc | tar --no-same-owner -xf - -C lean
 ```
 
-The download (a little over 2 GB) streams through the pipeline and is never
-stored. The labels are in the image config
-(`/v2/$repo/blobs/<config digest>`, under `config.Labels`).
+The download (about 3 GB) streams through the pipeline and is never
+stored. Install the toolchain in `lean/lean-toolchain` separately; the
+manifest's `io.pyca.lean.toolchain` and `org.opencontainers.image.revision`
+annotations identify the cached build. Lake rebuilds outputs that differ
+from the checkout. The modules' `.trace` files carry the profile CI's build
+recorded, which `ci/lean_profile.py` reads.
 
 Without the `zstd` command, `pip install zstandard` and replace `zstd -dc`
 with

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignTop
-import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignTop
+public import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on AArch64: constant time, the public data and the checks
@@ -11,6 +17,8 @@ related at each point of the code by what correctness says there (`At`).
 The checks of the modulus' first byte and of the lengths branch on public
 values only (`AtE`, `AtS`: the states after `emLen` and `saltFits`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Sgn
 

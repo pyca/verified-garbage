@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Keccak
-import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Proof.Sha512.Arm.Word64
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
+public import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Proof.Sha512.Arm.Word64
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_sample_ntt`, correctness
@@ -16,6 +22,8 @@ Algorithm 7 over the 280 chunks (`body_ok`, with the invariant `Inv`: the
 coefficients sampled from the first `t` chunks, `sampleAfter`), and the
 result. What every phase keeps is `SEnv`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm.Sample
 

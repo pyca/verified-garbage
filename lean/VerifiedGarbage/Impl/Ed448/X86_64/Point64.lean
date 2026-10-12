@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.X448.X86_64
-import VerifiedGarbage.Impl.Ed448.Formulas
-import VerifiedGarbage.Spec.Ed448.Point64
+module
+
+public import VerifiedGarbage.Impl.X448.X86_64
+public import VerifiedGarbage.Impl.Ed448.Formulas
+public import VerifiedGarbage.Spec.Ed448.Point64
 
 /-!
 # Ed448's point doubling and affine addition on x86-64, as functions
@@ -18,6 +20,8 @@ multiplier after negation, instead of a full field multiplication. Each keeps th
 them. It uses no stack and never writes `rdi`, every address is `rdi` plus a
 constant, and it has no branch: only the pointer may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86_64
 

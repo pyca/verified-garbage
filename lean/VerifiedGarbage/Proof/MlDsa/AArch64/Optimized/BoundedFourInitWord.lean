@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourState
-import VerifiedGarbage.Proof.Framework.AArch64.Tbl
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackConst
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourState
+public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackConst
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.AArch64

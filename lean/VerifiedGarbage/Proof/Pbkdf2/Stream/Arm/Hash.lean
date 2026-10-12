@@ -1,14 +1,20 @@
-import VerifiedGarbage.Spec.Pbkdf2.Generic
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.MdStream.Arm.Common
-import VerifiedGarbage.Impl.Pbkdf2.Stream.Arm
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.OffsetBelow
-import VerifiedGarbage.Proof.Framework.OmegaLit
+module
+
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
+public import VerifiedGarbage.Impl.Pbkdf2.Stream.Arm
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.OffsetBelow
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC and PBKDF2-HMAC over any streaming hash function: the 32-bit ARM contracts
@@ -28,6 +34,8 @@ The contracts the proofs are written against, as on x86-64 and AArch64
   `Spec/Hmac/Generic.lean` and `Spec/Pbkdf2/Generic.lean`, which imply them
   (`Contract.Implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Stream.Arm
 

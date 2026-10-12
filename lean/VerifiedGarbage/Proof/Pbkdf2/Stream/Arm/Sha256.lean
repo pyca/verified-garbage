@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hashes
-import VerifiedGarbage.Proof.Sha256.Arm.Shared
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hashes
+public import VerifiedGarbage.Proof.Sha256.Arm.Shared
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-256's streaming functions on 32-bit ARM
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Sha256.Arm.Shared
 (`vg_sha256_init`, `vg_sha256_update` and `vg_sha256_finalize`, whose
 contracts for `update` and `finalize` hold from any initial hash value).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Stream.Arm
 

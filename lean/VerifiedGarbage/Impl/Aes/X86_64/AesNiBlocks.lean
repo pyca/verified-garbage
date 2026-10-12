@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.X86_64.AesNi
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
 
 /-!
 # AES with AES-NI on x86-64: encryption and decryption of whole blocks
@@ -22,6 +24,8 @@ key `j` (`1 ≤ j < Nr`), before the blocks.
 No callee-saved register is written. Every branch and every address
 depends only on the pointers, `rounds` and `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86_64.AesNi
 

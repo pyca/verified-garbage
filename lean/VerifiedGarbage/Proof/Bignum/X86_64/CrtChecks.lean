@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
+public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_crt` on x86-64: small pieces of the checks
@@ -13,6 +19,8 @@ import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 (`eqCheck_ok`), and `qinvCheck`, in `p`'s workspace, that of `qInv < p`
 (`qinvCheck_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

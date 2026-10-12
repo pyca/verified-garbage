@@ -1,15 +1,31 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MdStream.X86.Common
-import VerifiedGarbage.Proof.Sha1.Stream
-import VerifiedGarbage.Proof.Sha1.StateMem
-import VerifiedGarbage.Proof.Sha1.X86.Contract
-import VerifiedGarbage.Impl.Sha1.X86.Stream
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Sha1.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MdStream.X86.Common
+meta import VerifiedGarbage.Proof.MdStream.X86.Common
+public import VerifiedGarbage.Proof.Sha1.Stream
+meta import VerifiedGarbage.Proof.Sha1.Stream
+public import VerifiedGarbage.Proof.Sha1.StateMem
+meta import VerifiedGarbage.Proof.Sha1.StateMem
+public import VerifiedGarbage.Proof.Sha1.X86.Contract
+meta import VerifiedGarbage.Proof.Sha1.X86.Contract
+public import VerifiedGarbage.Impl.Sha1.X86.Stream
+meta import VerifiedGarbage.Impl.Sha1.X86.Stream
+public import Mathlib.Tactic.Set
+meta import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Sha1.X86.Lit
+meta import VerifiedGarbage.Proof.Sha1.X86.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-1 on x86 (32-bit): `init`
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha1.X86.Stream
 

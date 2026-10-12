@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpSq
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpSq
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: a candidate
@@ -9,6 +15,8 @@ the candidates (`candBody_ok`): `recoverStep n t r g`, the mask of whether it
 found `y`, `y` in Montgomery form if so, and `ZF` set to stop if it did or
 if it was the last.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

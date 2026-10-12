@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignCorrect
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCorrect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on AArch64: the checks and the encoding
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.SignCorrect
 byte and of the lengths, and either zeros to `out` or the encoding and the
 private operation: `out` holds `signOut G s`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Sgn
 

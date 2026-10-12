@@ -1,12 +1,20 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackMemory
-import VerifiedGarbage.Proof.MlDsa.Pack.Arith
-import VerifiedGarbage.Proof.MlDsa.Pack.Mem
-import VerifiedGarbage.Proof.MlDsa.Pack.Bits
-import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed66
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackMemory
+public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+public import VerifiedGarbage.Proof.MlDsa.Pack.Bits
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed66
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResidentUnpackSpec.lean` -/
+
+@[expose] public section
 
 section
 

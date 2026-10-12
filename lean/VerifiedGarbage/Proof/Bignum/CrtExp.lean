@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.CrtFrame
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Bignum.CrtFrame
+public import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT: the exponentiation in a prime's workspace
@@ -12,6 +18,8 @@ In a prime's workspace (`X`, `w_X` words, `R = 2^(64 w_X)`), with
 that do not depend on the target, with what each part of it changes
 (`crtWinRanges`, `crtExpRanges`, `selRanges`, `buildRanges`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum
 

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedPre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsFrame
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedPre
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Message.Paired
 open VG VG.AArch64 VG.Spec.MlDsa

@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.Recover
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Recover
 
 /-! Check negative zero and select the decoded x-coordinate's public sign. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

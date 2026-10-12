@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.Group.Extended
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Group.Extended
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Montgomery ladder on the u-coordinates of twisted Edwards points
@@ -21,6 +27,8 @@ The ladder's two formulas (RFC 7748 §5, with `a24 = (A - 2) / 4`, that is
 Neither formula gives `(0 : 0)` there. Hence `URep.out`: `X / Z = (1 + y) / (1 - y)`,
 with `(1 + y) / 0 = 0` for the zero point, whose u is infinite.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.Edwards
 

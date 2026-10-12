@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
 
 /-!
 # Frames (ARMv7)
@@ -11,6 +13,8 @@ addresses computed from the stack pointer, so if it is the same in both
 runs, the frame leaks what its body does. (The taint analysis does not
 analyse frames.)
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 

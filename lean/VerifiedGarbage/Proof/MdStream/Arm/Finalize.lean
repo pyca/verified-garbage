@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MdStream.Arm.Common
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Merkle–Damgård hash functions on ARMv7: `finalize`
@@ -14,6 +20,8 @@ in `r3`, `out` in `r6`, `count` in `r4:r5` (low, high), the buffered bytes in
 for each hash function's code by the taint analysis, calls included, from the
 initial taint `τ₀`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MdStream.Arm.Finalize
 

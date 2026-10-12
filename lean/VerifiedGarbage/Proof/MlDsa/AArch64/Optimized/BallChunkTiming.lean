@@ -1,7 +1,19 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
-import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
-import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallLoop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+public import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
+public import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Ball
 open VG VG.AArch64

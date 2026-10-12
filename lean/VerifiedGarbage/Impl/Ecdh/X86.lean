@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ecdsa.X86
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.X86
 
 /-!
 # ECDH on x86 (32-bit)
@@ -26,6 +28,8 @@ space it uses, as on x86-64 and AArch64 (`Impl/Ecdh/AArch64.lean`):
 Everything is computed whatever the flag, and only the pointers may affect
 timing (the contract would let the peer's public key affect it too).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdh.X86
 

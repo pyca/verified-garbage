@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FprogJ
-import VerifiedGarbage.Proof.Weierstrass.CombFrame
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FprogJ
+public import VerifiedGarbage.Proof.Weierstrass.CombFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base comb with Booth's digits and Jacobian mixed additions on x86-64
@@ -18,6 +24,8 @@ and other than the entry, which `booth_ne` proves from the order of `G`;
 for a zero digit `A` is kept (`stepJ_ok`). After the `J` digits, `[k]G`
 (`bpart_top`), in projective coordinates (`InvJ.out`, `tcombJ_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

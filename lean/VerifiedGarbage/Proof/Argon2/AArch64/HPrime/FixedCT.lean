@@ -1,12 +1,28 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Fixed
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Finalize
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Init
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Update
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Fixed
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Fixed
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Finalize
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Finalize
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Init
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Init
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Update
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Update
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.HPrime.UpdateCT`. -/
+
+@[expose] public section
+
 section
 /-! # H′: constant time of a BLAKE2b update -/
 

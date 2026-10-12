@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.RpMont
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpMont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: the candidates' constants
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.RpMont
 of 1 and `-1`), `e`'s length, `r` and `t`. A piece that changes other arrays
 and slots keeps it (`Cst.congr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

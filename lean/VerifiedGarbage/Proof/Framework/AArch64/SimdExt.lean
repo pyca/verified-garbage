@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Simd
+
+@[expose] public section
 
 namespace VG.AArch64
 

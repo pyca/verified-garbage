@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # A scratch buffer on the stack (ARMv7)
@@ -18,6 +20,8 @@ function whose working space may hold secrets that its caller would
 otherwise wipe; `withStackScratchWiped bytes m words c` is the same for
 `withStackScratch` (`wipeAt`, from the buffer's offset).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.StackScratch.Arm
 

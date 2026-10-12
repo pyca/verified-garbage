@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Packed
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Packed
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64, inversion by divsteps: the 59 divsteps of a batch
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Packed
 matrix (`dsteps_ok`): `pkBatchV`'s words. A loop counted down by its body's
 last instruction is `cntLoop_ok`; the batches' loop uses it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

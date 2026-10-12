@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Aes.Ct32.Bitsliced
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+module
+
+public import VerifiedGarbage.Proof.Aes.Ct32.Bitsliced
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The linear layers of bitsliced AES on 32-bit words, as atoms
@@ -12,6 +18,8 @@ targets' proofs check their code against these by evaluation. Position
 `p = 8r + 2c + b` of a word of the bitsliced state is byte `r + 4c` of
 block `b`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.Ct32
 

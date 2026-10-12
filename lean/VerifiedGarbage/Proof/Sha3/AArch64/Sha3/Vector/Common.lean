@@ -1,7 +1,15 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Sha3.AArch64.Permute
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Sha3.AArch64.Permute
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Sha3.Vector
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: constant time of a prime's fixes
@@ -11,6 +19,8 @@ registers that correctness pins (the array's base and `w_X`). What each
 piece keeps and changes (`pf1_ok` to `pf4_ok`) gives `primeFix_frm`, what
 `primeFix` changes whatever the mask and the prime.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

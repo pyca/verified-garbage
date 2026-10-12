@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCall
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCall
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_recover` on AArch64: correctness
@@ -10,6 +16,8 @@ After the call (`AfterCall`): the encoding of the last `out_len` bytes of
 of those bytes to `out`, or zeros (`afterPub_ok`), which is BoringSSL's
 recovery (`recover_eq_recoverEnc`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64.Rec
 

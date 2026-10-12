@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Friendly
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.Friendly
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: the reduction for P-384's `p`
@@ -13,6 +19,8 @@ of `u c` is `t₀`, so `(T + u p) / 2⁶⁴` is the words above `t₀` less
 `2⁶⁴ T' = T + u p`. `roundM_ok` is a round by `mul`, with any of the
 reductions (general, friendly, or this one).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

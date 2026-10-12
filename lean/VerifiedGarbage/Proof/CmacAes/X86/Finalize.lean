@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
-import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+public import VerifiedGarbage.Proof.Cmac.Block
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CMAC on x86: `vg_cmac_aes_finalize`, the last block
@@ -12,6 +18,8 @@ after it, and the block XORed with `K2` (`partial_wp`). The arguments are
 those of `vg_cmac_aes_update` but `last` (`Dp`) and `last_len` (`N`), so its
 abbreviations serve.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.X86
 

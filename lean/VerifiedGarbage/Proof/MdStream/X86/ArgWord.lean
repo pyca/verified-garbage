@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MdStream.X86.Common
+module
+
+public import VerifiedGarbage.Proof.MdStream.X86.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86 (32-bit): argument words
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.MdStream.X86.Common
 Byte `k` of the arguments, as a byte of the argument word holding it: what
 the taint analyses of `update` and `finalize` read their arguments by.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MdStream.X86
 

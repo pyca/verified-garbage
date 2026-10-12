@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCfb8.Spec
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.AesCfb8.Spec
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CFB8: bytes in memory
@@ -10,6 +16,8 @@ words and a byte; `shiftMem32`: four 32-bit words and a byte; `shiftMemX`:
 two words, each the `extr` of two), and the data after one byte of it is
 replaced (`bytesAt_set`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCfb8
 

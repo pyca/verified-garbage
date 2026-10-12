@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Field
-import VerifiedGarbage.Spec.Ed25519.Point64
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
+public import VerifiedGarbage.Spec.Ed25519.Point64
 
 /-!
 # Ed25519's point doubling and affine addition on AArch64, as functions
@@ -17,6 +19,8 @@ keeps the return address in a lane of `v31`, which neither writes.
 Every address is `ws` plus a constant, and there are no branches: only the
 pointer, which is public, may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.AArch64
 

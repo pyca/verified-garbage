@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
-import VerifiedGarbage.Proof.Bignum.Rectangular
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
+public import VerifiedGarbage.Proof.Bignum.Rectangular
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## AdxRect8Embed -/
+
+@[expose] public section
+
 section
 
 /-! Embed a local tile update in the full raw product without subtraction. -/

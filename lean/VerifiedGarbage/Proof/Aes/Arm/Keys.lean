@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Aes.Arm.Encrypt
-import VerifiedGarbage.Proof.Framework.Bitslice.Sym
-import VerifiedGarbage.Proof.Framework.Arm.Bytes
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Aes.Arm.Encrypt
+public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
+public import VerifiedGarbage.Proof.Framework.Arm.Bytes
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bitslicing the round keys, on ARMv7
@@ -13,6 +19,8 @@ loads and stores are checked by evaluation over the naming domain
 the scratch buffer's base is not in a register: the round keys are stored
 through `kp`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.Arm
 

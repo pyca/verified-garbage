@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arith.Representation
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: what the proofs need of the primitives
@@ -10,6 +16,8 @@ shared contract with at most 16 bytes of stack (`CalleeOk`, from its
 never writes the stack pointer, calls at most three deep and never loads
 MXCSR. The proofs of `vg_mldsa*_verify` hold for any such `P`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

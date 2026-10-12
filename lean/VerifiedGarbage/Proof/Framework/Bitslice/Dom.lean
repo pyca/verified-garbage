@@ -1,3 +1,5 @@
+module
+
 /-!
 # Abstract domains for straight-line bitwise code
 
@@ -12,6 +14,8 @@ between abstract and concrete words. Each ISA's evaluator
 (`Framework/<ISA>/Straight.lean`) runs its instructions over any sound
 domain; `Framework/Bitslice/Table.lean` and `Lanes.lean` have the domains.
 -/
+
+@[expose] public section
 
 namespace VG.Bitslice
 

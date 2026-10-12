@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Dsa.Digest
+module
+
+public import VerifiedGarbage.Proof.Dsa.Digest
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The arithmetic schedule used by the DSA implementation
@@ -7,6 +13,9 @@ These equalities justify reducing the digest and every scalar intermediate,
 and using the shared RSA power routine. They retain all rejection conditions
 and require no primality assumption.
 -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa
 open VG.Spec.Dsa
 

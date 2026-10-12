@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
-import VerifiedGarbage.Proof.MlKem.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+public import VerifiedGarbage.Proof.MlKem.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sample
 open VG

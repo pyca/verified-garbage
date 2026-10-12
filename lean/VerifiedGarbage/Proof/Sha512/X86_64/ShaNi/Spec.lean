@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Schedule
-import VerifiedGarbage.TCB.X86_64.Avx
+module
+
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Schedule
+public import VerifiedGarbage.TCB.X86_64.Avx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512 with the SHA512 extension: the values in the AVX registers
@@ -9,6 +15,8 @@ lanes of the AVX registers, and that `vsha512rnds2` and
 `vsha512msg1`/`vsha512msg2` compute rounds and schedule words of
 `Spec/Sha512.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.X86_64.ShaNi
 

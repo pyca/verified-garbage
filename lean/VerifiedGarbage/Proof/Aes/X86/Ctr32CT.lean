@@ -1,7 +1,17 @@
-import VerifiedGarbage.Impl.Aes.X86.Ctr32
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Aes.X86.Common
-import VerifiedGarbage.Spec.Gcm
+module
+
+public import VerifiedGarbage.Impl.Aes.X86.Ctr32
+meta import VerifiedGarbage.Impl.Aes.X86.Ctr32
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Aes.X86.Common
+meta import VerifiedGarbage.Proof.Aes.X86.Common
+public import VerifiedGarbage.Spec.Gcm
+meta import VerifiedGarbage.Spec.Gcm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES counter mode on x86 (32-bit): the contract, and constant time
@@ -14,6 +24,8 @@ and the count round-trip through public slots of the scratch buffer; the
 stores of the keystream through the data pointer forget them, and the code
 stores them again from the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes
 

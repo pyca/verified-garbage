@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Camellia.Arm.Ecb
-import VerifiedGarbage.Impl.Camellia.KeyOrder
-import VerifiedGarbage.Impl.Camellia.Planes32
+module
+
+public import VerifiedGarbage.Impl.Camellia.Arm.Ecb
+public import VerifiedGarbage.Impl.Camellia.KeyOrder
+public import VerifiedGarbage.Impl.Camellia.Planes32
 
 /-!
 # The Camellia key schedule on ARMv7
@@ -27,6 +29,8 @@ Only `r0` (the key), `r1` (its length), `r2` (the schedule), `kp`, the
 slots holding them and the count, and the branches' tests hold public
 values; no address and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.Arm
 

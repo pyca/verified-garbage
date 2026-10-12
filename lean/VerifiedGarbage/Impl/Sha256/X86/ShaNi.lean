@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Sha256.X86
+module
+
+public import VerifiedGarbage.Impl.Sha256.X86
 
 /-!
 # SHA-256 compression on x86 with SHA extensions
@@ -8,6 +10,9 @@ and one temporary. The endian mask and saved hash vectors live in the existing
 112-byte scratch region; the cdecl stack and callee-saved GPRs are preserved.
 SHA-NI and SSSE3 are required.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Sha256.X86.ShaNi
 open VG.X86
 open VG.Spec.Sha256 (K)

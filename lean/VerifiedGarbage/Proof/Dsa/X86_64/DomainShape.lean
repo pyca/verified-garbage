@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizes
-import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTail
-import VerifiedGarbage.Proof.Dsa.DomainWidths
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizes
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTail
+public import VerifiedGarbage.Proof.Dsa.DomainWidths
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Functional correctness of the public DSA domain-shape check -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

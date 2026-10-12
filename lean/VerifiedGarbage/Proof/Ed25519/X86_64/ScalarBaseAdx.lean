@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
-import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelectY
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelectY
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelectY
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519's fixed-base multiplication with BMI2 and ADX: `Verified`
@@ -9,6 +17,8 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelectY
 taint tracking, the static's address public), and the rest as `scalarBase_precomputed_okI`, with
 `vg_gf25519_r64_invert` inlined.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
-import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddMemory
-import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
+public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddMemory
+public import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verification's static odd multiples of `B`
@@ -11,6 +17,8 @@ writes only the scratch keeps it (`BaseTbl.of_mem`). `baseAddr` computes an entr
 from the static's address, which verification keeps at byte 7960 of the scratch, and
 `pointFromTableQ` copies the entry there to slots 4–7 as it does from the scratch's tables.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

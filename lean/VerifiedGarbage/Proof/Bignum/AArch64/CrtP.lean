@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtFix
-import VerifiedGarbage.Proof.Bignum.CrtPRanges
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFix
+public import VerifiedGarbage.Proof.Bignum.CrtPRanges
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: `p`'s phase
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Bignum.CrtPRanges
 `m_q R_p mod p` (from `m_q G mod n`, `mqPart_ok`), and
 `h = (m_p - m_q) qInv mod p` into `p`'s `Y` (`hPart_ok`, `pPhase_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

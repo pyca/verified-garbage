@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemorySchedule
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalBank
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemorySchedule
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalBank
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `MemoryOuter.lean` -/
+
+@[expose] public section
 
 section
 

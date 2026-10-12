@@ -1,6 +1,12 @@
-import Mathlib.Tactic.Ring
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Load
-import VerifiedGarbage.Proof.Poly1305.Horner
+module
+
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Load
+public import VerifiedGarbage.Proof.Poly1305.Horner
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX2: the powers of `r`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Poly1305.Horner
 `powers` leaves `r⁴` in the low doubleword of every quadword of `Y` and
 `r^(4-k)` in the high doubleword of lane `k`, each as limbs below `2²⁷`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Avx2
 

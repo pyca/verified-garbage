@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sha512.Spec
+module
+
+public import VerifiedGarbage.Proof.Sha512.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512: `Σ`, `σ` and `Maj` as code without rotations computes them
@@ -10,6 +16,8 @@ another left (`chain5`), and for `Σ₀` and `Σ₁` the two chains are combined
 separately (`split6`). `Maj(a, b, c)` is `((a ⊕ b) ∧ (b ⊕ c)) ⊕ b`,
 which lets a round reuse the previous round's `a ⊕ b` as its `b ⊕ c`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512
 

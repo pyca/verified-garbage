@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageA
-import VerifiedGarbage.Proof.MlDsa.Verify.Final
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageA
+public import VerifiedGarbage.Proof.MlDsa.Verify.Final
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: `w′₁`, row by row
@@ -8,6 +14,8 @@ With the entries `A'` of `Â` and `ĉ = cH` as the samplers left them: `ẑ[i] =
 NTT(z[i])` (`nttZ_ok`), `ĉ` (`nttC_ok`), and each row `r` of `w′₁`, packed to
 `B + r · 32 bitlen b` (`row_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

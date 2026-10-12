@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Scrypt.X86.RoMix
-import VerifiedGarbage.Impl.Pbkdf2.Stream.X86
+module
+
+public import VerifiedGarbage.Impl.Scrypt.X86.RoMix
+public import VerifiedGarbage.Impl.Pbkdf2.Stream.X86
 
 /-!
 # scrypt: x86 (32-bit) implementation
@@ -31,6 +33,8 @@ Only the pointers and the lengths affect timing: the only branch is on the
 bytes of `b` left, and every address is in the frame or our arguments
 (`esp` plus a constant).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.X86
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # x86-64: code that does not touch the vector registers
@@ -11,6 +13,8 @@ stores and `bswap`):
 such code leaves `xmm` and `ymmHi` as they are (`WP.vecKeep`), which a proof
 about it need not state.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

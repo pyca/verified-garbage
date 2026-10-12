@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # A memory holding a table of constants
@@ -7,6 +9,8 @@ import VerifiedGarbage.Proof.Framework.Mem
 elsewhere (`constMem_held`): the memory of a witness that a contract with a
 table of constants (`Abi.withConsts`) is satisfiable.
 -/
+
+@[expose] public section
 
 namespace VG
 

@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterSlice
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterInit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Core
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveInit
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterSlice
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterInit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Core
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterFrame
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveInit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `OuterOutLoop.lean` -/
+
+@[expose] public section
 
 section
 

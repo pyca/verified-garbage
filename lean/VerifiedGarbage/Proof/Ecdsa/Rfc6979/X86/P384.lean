@@ -22,7 +22,7 @@ theorem p384_nBits : Spec.Ecdsa.nBits Spec.P384.curve = 384 := by
   have h₂ : Spec.P384.curve.n.log2 < 384 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
-private theorem core_pre_384 {s : State} (h : (coreK Impl.Ecdsa.X86.p384).pre s) :
+theorem core_pre_384 {s : State} (h : (coreK Impl.Ecdsa.X86.p384).pre s) :
     Proof.Ecdsa.X86.P384.signX86.pre s := by
   obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss, _⟩ := h
   exact ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss⟩
@@ -47,6 +47,6 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
       ⟨he, a0, a1, a2, a3, a4⟩
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
-  reduceT := Function.const _ ⟨_, by taint_decide⟩
+  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
 
 end VG.Proof.Ecdsa.Rfc6979.X86

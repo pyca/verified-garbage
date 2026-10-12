@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+meta import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64: constant time, before the vector code
@@ -14,6 +25,8 @@ hypotheses, and `pre` (`pre_ct`), for `pre_ok`'s. Before each piece, a
 predicate carries the piece's claim's hypotheses and what correctness gives
 after it (`prep_chain`, `pre_chain`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

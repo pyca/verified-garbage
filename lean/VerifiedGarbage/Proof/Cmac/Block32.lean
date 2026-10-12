@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Cmac.Mem32
-import VerifiedGarbage.Proof.Cmac.Block
+module
+
+public import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Proof.Cmac.Block
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CMAC: blocks formed a 32-bit word at a time
@@ -9,6 +15,8 @@ a time (`xor4Mem`; the block written may be one of those read, as long as no
 word written is read afterwards, `Sep4`), a zeroed block (`zero4`), and a
 counter block `C = P ⊕ Q` with `P` zeroed (`chainMem4`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cmac
 

@@ -1,0 +1,30 @@
+import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Bulk
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ResidentBackend
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.AbsorbBlock
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
+
+/-!
+# Axiom audits of individual theorems
+
+The audits refuse to run in a module, which sees the theorems it imports
+from other modules as axioms, without their proofs (`TCB/Axioms.lean`).
+These checks of theorems that are not artifacts run here, in a file that is
+not a module and so sees every proof. They were in the theorems' own
+files until those became modules.
+-/
+
+#assert_standard_axioms VG.Proof.Sha3.AArch64.Neon.X2.verified
+#assert_standard_axioms VG.Proof.Sha3.AArch64.Scalar.Resident.functional
+#assert_standard_axioms VG.Proof.Sha3.AArch64.Scalar.ResidentBackend.absorb_correct
+#assert_standard_axioms VG.Proof.Sha3.AArch64.Scalar.unrolled_permute_correct
+#assert_standard_axioms VG.Proof.Sha3.AArch64.Scalar.unrolled_permute_ct
+#assert_standard_axioms VG.Proof.Sha3.AArch64.Scalar.unrolled_permute_verified
+#assert_standard_axioms VG.Proof.Sha3.AArch64.Sha3.Vector.absorbBlock_ok
+#assert_standard_axioms VG.Proof.Sha3.AArch64.Sha3.Vector.permute_verified
+#assert_standard_axioms VG.Proof.Sha3.AArch64.Sha3.Vector.Resident.hardware_absorb_correct
+#assert_standard_axioms VG.Proof.Sha3.AArch64.Sha3.Vector.Resident.bulk_correct

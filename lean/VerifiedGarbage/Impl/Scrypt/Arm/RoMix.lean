@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Scrypt.Arm.BlockMix
+module
+
+public import VerifiedGarbage.Impl.Scrypt.Arm.BlockMix
 
 /-!
 # scryptROMix: 32-bit ARM implementation
@@ -28,6 +30,8 @@ calls, which preserve them, `r4` is `b`, `r5` is `v`, `r6` is `scratch`,
 Every branch and address depends only on the pointers, `r`, `N` and the
 indices `j`: the contract declares that the function leaks the `j`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.Arm
 

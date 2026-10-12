@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.Spec
-import VerifiedGarbage.Spec.Xts.Contract
+module
+
+public import VerifiedGarbage.Proof.AesCbc.Spec
+public import VerifiedGarbage.Spec.Xts.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # XTS: the mode one block at a time
@@ -12,6 +18,8 @@ tweak to continue from after them (`crypt_snoc`), whose product with `α` is
 the tweak to continue from after `k + 1` (`next_succ`). `xtsMode enc` is
 XTS in a direction as a `Mode`, for the loop the targets share with CBC.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Frag
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Frag
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
@@ -35,6 +37,8 @@ It returns `r15`. Every address and branch depends only on the pointers,
 the public key and the signature (which the function may leak) and not on
 the results of the samplers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Verify
 

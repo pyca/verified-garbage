@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.FillSlices
-import VerifiedGarbage.Proof.Argon2.AArch64.FillSlice
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.FillSlices
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillSlice
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.FillSliceAdvance`. -/
+
+@[expose] public section
+
 section
 /-! Slice advancement retains the public header and matrix allocation. -/
 

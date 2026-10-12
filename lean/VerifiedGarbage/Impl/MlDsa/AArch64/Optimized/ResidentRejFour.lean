@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejParser
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSqueeze
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejParser
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSqueeze
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Sample

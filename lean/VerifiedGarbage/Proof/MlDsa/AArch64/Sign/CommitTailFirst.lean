@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailWord
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.AbsorbBlock
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailWord
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.AbsorbBlock
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `CommitTailAbsorb.lean` -/
+
+@[expose] public section
 
 section
 

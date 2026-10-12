@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Squeeze
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Squeeze
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_expand_mask_poly4_avx2`, correctness
@@ -10,6 +16,8 @@ each seed in its buffer, the branch on `γ₁`, the four unpackings, each the
 loop of `vg_mldsa_expand_mask_poly` (`emBody_ok`) on the output of a seed
 (`unpack_ok`), and the epilogue.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Mask4
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Sign.Iter
-import VerifiedGarbage.Proof.MlDsa.Sign.Leak
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sign.Iter
+public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: signing's matrix and private key, polynomial by polynomial
@@ -11,6 +17,8 @@ its entries if each `RejNTTPoly` finishes (`expandA_some`), and fails if one
 does not (`expandA_none`). With them, `signMu` and `signLeakT` in terms of the
 loop (`signMu_some`, `signMu_none_A`, `signMu_none_L`, `signLeakT_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sign
 

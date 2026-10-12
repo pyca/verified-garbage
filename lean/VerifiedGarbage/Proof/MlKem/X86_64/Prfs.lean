@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
-import VerifiedGarbage.Proof.MlKem.X86_64.PrfBatch
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
+public import VerifiedGarbage.Proof.MlKem.X86_64.PrfBatch
+public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: several outputs of `PRF₂`
@@ -13,6 +19,8 @@ or four at a time with AVX2, but for the first `prfsLead n`, one at a time
 (`Callee4.prfs`). Both write within `prfsW` and need what `prfsChk` checks of
 the layout.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

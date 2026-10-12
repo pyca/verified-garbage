@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
-import VerifiedGarbage.Spec.Mgf1
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
+public import VerifiedGarbage.Spec.Mgf1
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: the hash function
@@ -16,6 +22,8 @@ PBKDF2's proofs call them with (`stream`, `Calls.lean`); its specification is `m
 hash value `iv`, with the digest the first `D` bytes of `md`'s; and its sizes
 fit.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.AArch64
 

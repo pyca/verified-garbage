@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PdMain
-import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PdMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precomputed` on x86-64: correctness
@@ -9,6 +15,8 @@ checks (`checks_true`), and values that pass them make the computation run
 (`checks_facts`), against `pdContract`, which states the shared contract's
 precondition on the registers and the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

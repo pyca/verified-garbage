@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.Scalar
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Scalar
 
 /-!
 # Ed25519 scalar multiply-add: wide multiplication
@@ -7,6 +9,8 @@ The product is kept at its full 512-bit width until subgroup reduction.
 It reuses the same integer multiply-accumulate rows as field arithmetic,
 without that arithmetic's reduction modulo the field prime.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

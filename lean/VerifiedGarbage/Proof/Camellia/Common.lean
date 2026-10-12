@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.KeySched
+module
+
+public import VerifiedGarbage.Proof.Camellia.KeySched
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's proofs: what every target uses
@@ -10,6 +16,8 @@ result (`blocksAt_of_dinv`), the planes of the key schedule's constants
 (`sigma_planes`), its values (`kaD_eq`) and its stores
 (`schedule_of_stores`). Nothing here depends on a target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 

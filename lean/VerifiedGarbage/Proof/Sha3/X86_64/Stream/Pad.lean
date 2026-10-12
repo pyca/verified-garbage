@@ -1,12 +1,25 @@
-import VerifiedGarbage.Proof.Sha3.X86_64.Permute
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Sha3.Contract
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Sha3.X86_64.Permute
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Permute
+public import Mathlib.Tactic.Set
+meta import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Sha3.Contract
+meta import VerifiedGarbage.Spec.Sha3.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-3 on x86-64: `pad`
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.X86_64.Stream.Pad
 

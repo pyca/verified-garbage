@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.Whole
-import VerifiedGarbage.Impl.Ed448.AArch64.Scalar
-import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.Whole
+public import VerifiedGarbage.Impl.Ed448.AArch64.Scalar
+public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
 
 /-!
 # Ed448 signing with a cached public key on AArch64
@@ -29,6 +31,8 @@ position the previous one returned (in `x0`), with the Keccak state at
 `scratch` and their working space at `scratch + 256`. Every address and
 branch depends only on the pointers and the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.AArch64.SignCached
 

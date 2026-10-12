@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Hash
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Hash
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC's `finalize` over a Merkle–Damgård hash function on ARMv7: correct
@@ -13,6 +19,8 @@ padding after the inner digest; compresses the block once
 that this is HMAC. The contract is `finG`
 (`Proof/Pbkdf2/Stream/Arm/Hash.lean`), the shared one's at 16 bytes of stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.Arm.Fin
 

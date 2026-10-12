@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PdExp
-import VerifiedGarbage.Spec.Rsa.Contract
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdExp
+public import VerifiedGarbage.Spec.Rsa.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA on AArch64: BoringSSL's limits on the public exponent
@@ -9,6 +15,8 @@ import VerifiedGarbage.Spec.Rsa.Contract
 but `x9`–`x17` and the flags (`expCheck_ok`); `failOut` writes zeros to
 `out` and returns 0 (`failOut_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

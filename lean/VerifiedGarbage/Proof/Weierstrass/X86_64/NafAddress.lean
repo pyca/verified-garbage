@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafDigitRead
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafDigitRead
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Bounds and addresses of the eight public odd-multiple table entries. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.X25519.X86_64

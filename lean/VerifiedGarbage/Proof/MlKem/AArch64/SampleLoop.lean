@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Impl.MlKem.AArch64.Sample
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Impl.MlKem.AArch64.Sample
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: the loop of `SampleNTT`
@@ -11,6 +17,8 @@ at `bP` compute `sampleAfter [] (xofByte B) N` (`Proof/MlKem/KPke.lean`) into
 returns whether it has 256 coefficients (`loop_ok`). The loop reads only the
 output, and writes only `a`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Sample
 

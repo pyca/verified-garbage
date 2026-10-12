@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Bignum.AArch64
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Impl.Bignum.AArch64
+public import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on AArch64: running blocks
@@ -22,6 +28,8 @@ wrapping around; a number of `n` words at byte offset `d` of it is
   (`Proof/MlKem/AArch64/Wp.lean`, about the ISA only).
 * `wp_countdown`: a loop on `cbnz` of a counter that its body decrements.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

@@ -1,4 +1,7 @@
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
+module
+
+public import VerifiedGarbage.Impl.Aes.Arm.Alloc
+meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
 
 /-!
 # The bitsliced AES S-box on ARMv7
@@ -11,6 +14,8 @@ allocates for it. It is written out (and `#guard` checks that it is what
 `compile` produces) so that the kernel, which evaluates the code in the
 proofs, does not have to run the allocator.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.Arm
 

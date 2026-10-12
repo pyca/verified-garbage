@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.RpOut
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpOut
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: `rest`
@@ -7,6 +13,8 @@ From `M = m = d e - 1`, even and positive, and `-n⁻¹` in the header: the
 halvings, Montgomery form, the candidates and the factors (`rpRest_ok`):
 `recoverPrimes.go`'s result and the factors written masked by it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

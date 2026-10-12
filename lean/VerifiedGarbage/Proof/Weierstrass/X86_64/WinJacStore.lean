@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Jacobian window method on x86-64: storing an entry
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
 (`entryAddr_ok`), and `storeEntry` copies `T`'s `5 n` words there, word by
 word through `rax` (`storeWords_ok`, `jstoreEntry_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

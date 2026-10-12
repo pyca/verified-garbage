@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public` on x86-64: an invalid modulus
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 `fail` writes `k` zeros to `out`, returns 0 and restores the saved
 registers (`fail_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

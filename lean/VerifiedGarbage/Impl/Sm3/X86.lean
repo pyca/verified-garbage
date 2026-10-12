@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sm3
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.Spec.Sm3
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # SM3 compression function: x86 (32-bit) implementation
@@ -21,6 +23,8 @@ With only seven usable registers, the registers `A … H` live in memory:
 * `eax`, `ebx`, `ecx`, `edx` are the temporaries. An iteration reads the
   window before it stores anything.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm3.X86
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Rc4.Contract
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Rc4.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RC4 with its working space as an argument
@@ -19,6 +25,8 @@ leak to read the memory (`applyLeak_local`), only within the function's
 buffers: the key, the data and the context, through `contextAt`, which reads
 only its 258 bytes (`contextAt_congr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4
 

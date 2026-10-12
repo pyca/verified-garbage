@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Proof.Framework.RegSetOrder
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
 
 /-!
 # The AArch64 taint analyses are monotone
@@ -10,6 +12,8 @@ With more registers public on entry, every step of `AArch64.taint` and
 (`Taint.Mono`), so their checks can use summaries of called functions
 (`taint_decide_sum`).
 -/
+
+@[expose] public section
 
 namespace VG
 

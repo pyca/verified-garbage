@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.Arith.Mont
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Integer bounds and residues for the private lazy ARM64 arithmetic. -/
+
+@[expose] public section
+
 namespace VG.Proof.MlDsa.AArch64.Optimized
 open VG.Spec.MlDsa
 open VG.Proof.MlDsa.Arith

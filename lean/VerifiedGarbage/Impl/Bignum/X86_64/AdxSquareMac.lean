@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.Adx
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.Adx
 
 /-!
 # Building blocks for an ADX square
@@ -8,6 +10,8 @@ keeps the scalar in `rdx`, so it does not overwrite words below the accumulator
 window as the integrated Montgomery multiplier does. That distinction matters
 when earlier words still hold the unreduced square.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Bignum.X86_64.AdxSquare
 

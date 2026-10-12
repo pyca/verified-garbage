@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Blake2
-import VerifiedGarbage.Impl.Sha512.Arm
+module
+
+public import VerifiedGarbage.Spec.Blake2
+public import VerifiedGarbage.Impl.Sha512.Arm
 
 /-!
 # BLAKE2b compression function: ARMv7 implementation
@@ -35,6 +37,8 @@ left, so `t` (stack arguments 0 and 1, low word first), `last` (2) and
   `blocks` (advanced by 128) or `sp` plus a constant, so only the pointers
   and `n` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blake2.Arm.B
 

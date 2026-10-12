@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallPack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
-import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallPack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: the blocks between calls
@@ -11,6 +17,8 @@ Besides those of `Proof/MlDsa/AArch64/Call/Blocks.lean`: the masking of a
 sampled polynomial by its sampler's result (`mask_ok`): kept if the sampler
 succeeded, zero if it failed.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen
 

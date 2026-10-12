@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Blake2
-import VerifiedGarbage.Impl.Sha512.X86
+module
+
+public import VerifiedGarbage.Spec.Blake2
+public import VerifiedGarbage.Impl.Sha512.X86
 
 /-!
 # BLAKE2b compression function: x86 (32-bit) implementation
@@ -33,6 +35,8 @@ arguments are at `[esp + 4]` (`state`), `[esp + 8]` (`blocks`), `[esp + 12]`
   block's address) plus a constant, and the only branches are on the count
   of blocks, so only the pointers, `n`, `t` and `last` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blake2.X86.CompressB
 

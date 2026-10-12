@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Mont.X86_64.CsubS
-import VerifiedGarbage.Proof.Mont.X86_64.SqrS
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.CsubS
+public import VerifiedGarbage.Proof.Mont.X86_64.SqrS
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: P-384's conditional subtraction in registers
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.PowLit
 ones) rather than read from memory: `p384Sub_ok` subtracts it, as
 `p384Add_ok` adds it, and `csubR_ok` is `csubS_ok`'s reduction.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.FillWrite
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillWrite
 
 /-! XOR a last-lane block at `rsi` into the accumulator at `rdi`. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.ReduceBlock
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CkPhase
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkPhase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on AArch64: `main`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.CkPhase
 The phases in sequence (`ckMain_ok`): the mask they leave is `keyValid`
 of the key (`ck_final`), for a valid modulus and exponent.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

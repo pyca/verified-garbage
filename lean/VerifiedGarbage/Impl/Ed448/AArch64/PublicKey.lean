@@ -1,9 +1,11 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
-import VerifiedGarbage.Impl.Sha3.AArch64.Stream
-import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
-import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Setup
-import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Wipe
-import VerifiedGarbage.Impl.Ed448.AArch64.Whole
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+public import VerifiedGarbage.Impl.Sha3.AArch64.Stream
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Setup
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Wipe
+public import VerifiedGarbage.Impl.Ed448.AArch64.Whole
 
 /-!
 # Ed448 public-key derivation on AArch64
@@ -24,6 +26,8 @@ last 0) at 0, which must lie outside `scratch` and `out`, which
 cleared before the frame is freed. In `scratch`: the Keccak state (200
 bytes) and the sponge functions' working space (640 bytes, at 256).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.AArch64.PublicKey
 

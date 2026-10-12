@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
-import VerifiedGarbage.Proof.RsaPss.AArch64.EmView
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+public import VerifiedGarbage.Proof.RsaPss.AArch64.EmView
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on AArch64: the encoding, verified
@@ -8,6 +14,8 @@ After the checks, `signEnc` leaves at `scratch + oEm` the `k` bytes
 `emT …` of the encoding of the digest with the salt (`signEnc_ok`), writing
 only our working space, the stack below the frame and two slots.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

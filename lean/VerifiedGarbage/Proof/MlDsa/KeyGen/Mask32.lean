@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-import VerifiedGarbage.Spec.MlDsa.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+public import VerifiedGarbage.Spec.MlDsa.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation: masked samples, and the leakage as bytes
@@ -11,6 +17,8 @@ failed. What key generation may leak (`keyGenLeak`) is a list of numbers
 less than 256 (`keyGenLeak_lt`), so as bytes it is the same exactly when it
 is the same (`map_ofNat_inj`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.KeyGen
 

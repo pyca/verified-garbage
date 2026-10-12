@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
-import VerifiedGarbage.Impl.Rsa.X86_64.PrivChecked
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
+public import VerifiedGarbage.Impl.Rsa.X86_64.PrivChecked
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the contract on the registers
@@ -12,6 +18,8 @@ import VerifiedGarbage.Impl.Rsa.X86_64.PrivChecked
 calls use, `stackBytes`) on the registers and the stack
 (`private_checked_implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

@@ -1,5 +1,11 @@
-import Mathlib.Data.Nat.ModEq
-import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Gpr
+module
+
+public import Mathlib.Data.Nat.ModEq
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Gpr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: the powers of `r`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Gpr
 the pad bit in the state, and squares `r` three times, every quadword alike:
 `r²` and `r⁴` are stored in the state, and `r⁸` is left in `Y` (with `S`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Ifma
 

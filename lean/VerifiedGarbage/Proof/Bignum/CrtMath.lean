@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Data.Int.ModEq
-import Mathlib.Data.Int.GCD
+module
+
+public import VerifiedGarbage.Proof.Bignum.Math
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Data.Int.GCD
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic: the mathematics of RSA with the CRT
@@ -9,6 +15,8 @@ import Mathlib.Data.Int.GCD
 `(A R⁻¹ + c R⁻¹) mod X ≡ (L + c R^k) R^(-(k + 1))`, each `R⁻¹` a
 Montgomery multiplication by 1.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum
 

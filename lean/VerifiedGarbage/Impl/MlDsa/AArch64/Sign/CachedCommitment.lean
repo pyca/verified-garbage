@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedCommitment
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedCommitment
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sign.Cached
 open VG VG.AArch64 VG.Spec.MlDsa

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Apply
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Apply
+meta import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Apply
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on ARMv7: `apply`, constant time
@@ -14,6 +21,8 @@ those public values; the calls of the block function and of
 arguments agreeing; and the branches on Z after the check and in `start`,
 `part2` and `part3` are on public values (`RelCT.ite`), as correctness shows.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.Arm.Stream
 

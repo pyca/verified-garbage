@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KMain
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: correctness
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KMain
 `code`, from a state `candContract` allows, ends as `candidateOp`
 (`code_correct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

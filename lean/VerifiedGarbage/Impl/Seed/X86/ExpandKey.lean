@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Seed.X86.Ecb
+module
+
+public import VerifiedGarbage.Impl.Seed.X86.Ecb
 
 /-!
 # SEED key expansion on x86 (32-bit)
@@ -19,6 +21,8 @@ right by eight bits and `m = 0xFF000000`, `a ⊕ ((a ⊕ b) & m)` and
 rotations by 24 bits and `m = 0x000000FF`. Nothing depends on the key but
 the data: the code is straight-line.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.X86
 

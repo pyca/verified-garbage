@@ -1,3 +1,5 @@
+module
+
 /-!
 # A modulus for Montgomery arithmetic, on any target
 
@@ -13,6 +15,8 @@ its low word zero, and divides by `2⁶⁴`. When `m ≡ -1 (mod 2⁶⁴)` (P-25
 for `m' = (m + 1) / 2⁶⁴`, whose words may be zero or powers of two, which
 need no multiplication (`Red.friendly`, with `m'`'s words as `MWord`s).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Mont
 

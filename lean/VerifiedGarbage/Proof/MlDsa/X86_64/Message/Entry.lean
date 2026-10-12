@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64, `sign_message` and `verify_message`: the frame
@@ -9,6 +15,8 @@ registers (`rs`) holding the key, `msg`, `msg_len`, `ctx`, `ctx_len`, `sig`,
 (`entry_ok`); a frame whose body keeps `Ctx` returns with the permissions,
 `rsp` and callee-saved registers of entry (`frame_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Message
 

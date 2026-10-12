@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-!
 # A taint state for code reading its stack arguments (x86, 32-bit)
@@ -9,6 +11,8 @@ registers `rs` and the `n - 4` bytes of arguments public, which two runs
 agree on as long as the arguments are the same and lie outside the writable
 regions (`agree_argTaint`).
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

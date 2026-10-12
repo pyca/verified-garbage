@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.Arith
-import VerifiedGarbage.Spec.MlKem.Poly
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arith
+public import VerifiedGarbage.Spec.MlKem.Poly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM: Compress and Decompress without division, for every target
@@ -16,6 +22,8 @@ computes them with a 32-bit multiply-low, an addition and shifts:
 
 The compress formula is checked for each of the `q` inputs by the kernel.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

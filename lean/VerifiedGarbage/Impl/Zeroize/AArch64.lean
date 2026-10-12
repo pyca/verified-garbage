@@ -1,6 +1,11 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Word stores followed by a byte tail. Normal-memory stores may be unaligned. -/
+
+@[expose] public section
+
 namespace VG.Impl.Zeroize.AArch64
 open VG.AArch64
 

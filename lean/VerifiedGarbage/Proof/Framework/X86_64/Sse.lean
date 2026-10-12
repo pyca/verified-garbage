@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # x86-64: SSE values as doublewords
@@ -7,6 +9,8 @@ import VerifiedGarbage.TCB.X86_64.Isa
 The SSE instructions of the model, stated on the doublewords of their operands
 (`dword`, `ofDwords`), and 128-bit loads and stores as four 32-bit words.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

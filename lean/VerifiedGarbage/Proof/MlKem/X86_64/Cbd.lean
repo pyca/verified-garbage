@@ -1,9 +1,21 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
+meta import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+public import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_cbd2`
@@ -13,6 +25,8 @@ bytes by the kernel (`cbd_vals`); the words of the registers after the nibbles
 are split (`front_ok`), and the doublewords stored from them (`grp_ok`), are
 proven lane by lane.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Bignum.CrtFrame
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.Bignum.CrtFrame
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: a prime's workspace
@@ -9,6 +15,8 @@ import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 (`Proof/Bignum/CrtFrame.lean`); `SubCtx` is a prime's, with its base in
 `rdi`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

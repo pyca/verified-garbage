@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Layout
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: the moves of a call's arguments
@@ -9,6 +15,8 @@ offset from `x28`, an immediate, or `x0`. The moves of a list of arguments
 into distinct registers but `x28`, with `x0` read only before it is written
 (`argsOk`), leave each its value and change nothing else (`setArgs_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Message
 

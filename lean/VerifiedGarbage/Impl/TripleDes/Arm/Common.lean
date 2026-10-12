@@ -1,5 +1,9 @@
-import VerifiedGarbage.Spec.TripleDes
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.TCB.Arm.Isa
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.Arm
 open VG.Arm

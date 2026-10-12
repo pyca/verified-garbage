@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+module
+
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation: the keys from the sampled polynomials
@@ -11,6 +17,8 @@ r` of `s₁ ‖ s₂`, row by row of `t` (`tK`), as the keys are computed: `t[i]
 private key `ρ ‖ K ‖ tr` followed by the packed `s₁ ‖ s₂` and `t₀[i]` (`skK`)
 (`kgRest_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.KeyGen
 

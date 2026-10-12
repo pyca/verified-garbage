@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlKem.AArch64.Top
-import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+module
+
+public import VerifiedGarbage.Impl.MlKem.AArch64.Top
+public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
 
 /-!
 # ML-KEM on AArch64: what a parameter set's top-level functions depend on
@@ -11,6 +13,8 @@ decode and decompress, at those widths. The buffers in `scratch`
 (`KG`, `KEM`) follow from `k` and the ciphertext's length, and the code
 unrolls its loops over `k` with `seqs`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.AArch64
 

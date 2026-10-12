@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Code
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Code
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Code
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: constant time, the front
@@ -10,6 +18,8 @@ the zeros to `out`, the length check and the end for too few octets depend
 on the arguments alone, and `kMain` on the schedule the leak fixes
 (`schedOf_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

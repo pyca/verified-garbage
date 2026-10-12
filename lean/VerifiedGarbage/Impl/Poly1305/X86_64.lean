@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # Poly1305: x86-64 implementation
@@ -34,6 +36,8 @@ The only branches are on the block count, the number of bytes buffered
 constant or a count, so only the pointers, `count` and the lengths can affect
 timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Poly1305.X86_64
 

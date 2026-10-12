@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Common
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
+module
+
+public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Common
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming BLAKE2 on AArch64: `init`
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 (`keyLoop_ok`). `init` is a leaf function writing only `x2`, `x3` and
 `x9`–`x12`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.AArch64.Stream.Init
 

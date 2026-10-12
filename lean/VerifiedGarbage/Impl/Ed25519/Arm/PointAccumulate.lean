@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.PointPowers
-import VerifiedGarbage.Impl.Ed25519.Arm.PointSelect
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointPowers
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointSelect
 
 /-! Descending scalar bits. Sixteen bits at workspace bytes 32–47 are
 expanded from two scalar bytes for each checkpoint batch. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 

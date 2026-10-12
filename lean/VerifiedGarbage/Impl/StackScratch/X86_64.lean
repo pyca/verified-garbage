@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # A scratch buffer on the stack (x86-64)
@@ -27,6 +29,8 @@ the frame. It passes them through `rax`, which no argument is in.
 `withStackArgScratchWipedX bytes m n c` zeroes its first `n` 16-byte words,
 with half as many stores (`wipeAtX`, SSE2's `pxor` and `movdqu`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.StackScratch.X86_64
 

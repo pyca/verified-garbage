@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PdLoad
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdLoad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precomputed` on AArch64: the exponentiation
@@ -8,6 +14,8 @@ used (`YSt`); at that bit `Y := X`, and after it each bit squares `Y` and
 multiplies it by `X` if set (`pExpBit_ok`, over the bits and bytes of `e` in
 `pExpLoop_ok`). `finish` leaves `x^e mod N` (`pFinish_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

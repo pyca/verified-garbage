@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.P256.EcdhJac.Base
-import VerifiedGarbage.Impl.P256.EcdhAllocatedCode
+module
+
+public import VerifiedGarbage.Impl.P256.EcdhJac.Base
+public import VerifiedGarbage.Impl.P256.EcdhAllocatedCode
 
 /-! Register allocation for the two co-Z table-construction kernels. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.EcdhTable
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64
 

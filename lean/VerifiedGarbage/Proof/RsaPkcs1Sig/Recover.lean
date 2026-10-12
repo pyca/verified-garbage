@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PKCS1-v1_5 recovery by encoding
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 `ossl_rsa_verify` with `rm` computes it: so an implementation can recover by
 encoding those octets and comparing, with the encoding verification uses.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig
 

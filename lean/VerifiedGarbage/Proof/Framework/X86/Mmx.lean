@@ -1,10 +1,14 @@
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # x86 MMX instructions: what they change
 
 An MMX instruction (`TCB/X86/Mmx.lean`) writes only an MMX or XMM register.
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

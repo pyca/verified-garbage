@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
+public import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_rsa_private_crt` on x86-64
@@ -19,6 +25,8 @@ independently verified `vg_rsa_public_precomputed_checked` operation that
 checks its result, which are proven the same way. Both need no more CPU
 features.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.TCB.Arm.Target
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.TCB.Arm.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: common lemmas
@@ -12,6 +18,8 @@ zero (`wp_loop_ne`), the symbolic execution of a block (`run_block`),
 addresses in the arrays, and the arithmetic of the reductions modulo `q`
 (`fixq`, the value `VG.Impl.MlKem.Arm.fixup` computes).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm
 

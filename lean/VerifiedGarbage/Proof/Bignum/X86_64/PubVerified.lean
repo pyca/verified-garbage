@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAEP on x86-64: helpers for the shared contracts
@@ -9,6 +15,8 @@ What the proofs of `pubContract`'s callers against their shared contracts
 (`vg_rsa_public_checked`'s, `PubChecked.lean`) share: the stack arguments,
 a state meeting `pubContract.pre`, and the leak of `n` and `e`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

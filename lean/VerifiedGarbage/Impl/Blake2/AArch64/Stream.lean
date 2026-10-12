@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Blake2.AArch64
+module
+
+public import VerifiedGarbage.Impl.Blake2.AArch64
 
 /-!
 # Streaming BLAKE2: AArch64 implementation
@@ -35,6 +37,8 @@ flags either: every comparison is a shift or a subtraction tested with
 `cbz`/`cbnz`. Every address and branch depends only on the pointers, `count`,
 `len`, `outlen` and `keylen`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blake2.AArch64.Stream
 

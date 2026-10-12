@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: the entry
@@ -8,6 +14,8 @@ import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 and lengths among them `main` reads, some from the stack) in the header of
 the working space, and leaves its base in `rdi` (`crtEntry_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86.Encrypt
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Encrypt
 
 /-!
 # ML-KEM on x86 (32-bit): decapsulation
@@ -19,6 +21,8 @@ import VerifiedGarbage.Impl.MlKem.X86.Encrypt
 
 `eACC` is returned. `vg_mlkem768_decaps` is `decaps` (`L768`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86
 

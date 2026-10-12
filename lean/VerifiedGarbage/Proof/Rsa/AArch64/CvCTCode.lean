@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_crt_values` on AArch64: constant time but for `n`
@@ -7,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
 and so do `entry`, the modulus' check and `fail` (`cvCode_ct`): the
 contract's `ConstantTime` (`cvCode_constantTime`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

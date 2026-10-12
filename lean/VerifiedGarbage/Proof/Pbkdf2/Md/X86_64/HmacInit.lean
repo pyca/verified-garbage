@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Common
-import VerifiedGarbage.Proof.Pbkdf2.MdKeys
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Common
+public import VerifiedGarbage.Proof.Pbkdf2.MdKeys
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC over any Merkle–Damgård hash function on x86-64: `init`
@@ -17,6 +23,8 @@ absorbed the block in its buffer represents that block
 between the calls (`Checks`); the calls are constant time by the callees'
 own proofs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86_64.HmacInit
 

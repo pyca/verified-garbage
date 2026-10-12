@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Argon2
-import VerifiedGarbage.Impl.Blake2.X86.CompressB
+module
+
+public import VerifiedGarbage.Spec.Argon2
+public import VerifiedGarbage.Impl.Blake2.X86.CompressB
 
 /-!
 # Argon2 compression G on x86 (32-bit)
@@ -19,6 +21,8 @@ import VerifiedGarbage.Impl.Blake2.X86.CompressB
 * Every address is `esp`, `esi`, `ecx` or `edx` plus a constant, and there
   are no branches.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86
 

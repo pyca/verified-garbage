@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Public scalar values held in vector registers
@@ -9,6 +11,8 @@ Memory remains secret. DUP can preserve a public GPR in a whole vector,
 and UMOV recovers a public scalar from a public vector. Other SIMD
 operations and vector loads conservatively erase all vector publicity.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64.VectorTaint
 

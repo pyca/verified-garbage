@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverPre
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverPre
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_recover` on AArch64: the call's arguments
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverPre
 `k` and `hash` in `x19`–`x22`, and sets up the call (`AtCall`), in
 `vg_rsa_pkcs1_verify`'s frame.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64.Rec
 

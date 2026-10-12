@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.RsaOaep
-import VerifiedGarbage.Proof.RsaPss.Encoding
+module
+
+public import VerifiedGarbage.Spec.RsaOaep
+public import VerifiedGarbage.Proof.RsaPss.Encoding
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # EME-OAEP: decoding inverts encoding, and decodes nothing else
@@ -10,6 +16,8 @@ EME-OAEP decoding gives the message back from its encoding with any seed
 only if it is the encoding of that message with some seed
 (`encode_of_decode`): `decode_iff`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep
 

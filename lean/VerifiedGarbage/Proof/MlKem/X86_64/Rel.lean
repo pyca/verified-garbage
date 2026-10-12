@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Semantics
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Semantics
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: constant time by relating two runs
@@ -14,6 +20,8 @@ runs (by the taint analysis from registers that `I` says hold the same public
 values, `taintRel`, or by a callee's proof, `RelCT.callEx`), and correctness
 gives the next invariant (`relInv`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

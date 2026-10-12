@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.DeriveFrame
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.DeriveFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.DeriveFrameState`. -/
+
+@[expose] public section
+
 section
 /-! Exact stack depth and memory modified by the entry-point prologue. -/
 namespace VG.Proof.Argon2.AArch64.Derive

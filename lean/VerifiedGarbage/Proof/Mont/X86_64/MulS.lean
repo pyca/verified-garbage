@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Mont.X86_64.SqrS
-import VerifiedGarbage.Proof.Mont.X86_64.Rounds
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.SqrS
+public import VerifiedGarbage.Proof.Mont.X86_64.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: the rounds of P-384's multiplication with BMI2 and ADX
@@ -11,6 +17,8 @@ rounds `1 … 5` of `roundX` (`roundsX_ok`); with the other moduli, the
 accumulator cleared and `rounds_ok`. Either way `mulRounds_ok` gives
 `rounds_ok`'s postcondition for all `n` rounds.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

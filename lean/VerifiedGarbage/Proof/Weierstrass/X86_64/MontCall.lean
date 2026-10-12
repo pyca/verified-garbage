@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6
-import VerifiedGarbage.Proof.Mont.X86_64.Ops
-import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6
+public import VerifiedGarbage.Proof.Mont.X86_64.Ops
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Products modulo P-521's and P-384's `p` by calls, on x86-64
@@ -16,6 +22,8 @@ the call keeps `rsi` in `r12`, which the functions restore. `mulCall6_ok` is
 the same for `vg_p384_mul_mod_p` and `vg_p384_mul_mod_p_adx`, for offsets
 apart from their temporary area (`lowArgs 6`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.Mont
 

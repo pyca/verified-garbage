@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Sm4.Arm.Cbc
+module
+
+public import VerifiedGarbage.Impl.Sm4.Arm.Cbc
 
 /-!
 # SM4-OFB and SM4-CFB128 on ARMv7
@@ -7,6 +9,8 @@ import VerifiedGarbage.Impl.Sm4.Arm.Cbc
 `Impl/Modes/Arm/Seq.lean` over SM4's ECB encryption (`ecbCore .encrypt`),
 which they call once per block.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.Arm
 

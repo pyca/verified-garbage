@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Blake2.X86.CompressS
+module
+
+public import VerifiedGarbage.Impl.Blake2.X86.CompressS
 
 /-!
 # Streaming BLAKE2: x86 (32-bit) implementation
@@ -35,6 +37,8 @@ pointer, the bytes of data left and the bytes compressed straight from
 `data` across the calls. Every address and branch depends only on `esp`,
 the pointers, `count` and `len`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blake2.X86.Stream
 

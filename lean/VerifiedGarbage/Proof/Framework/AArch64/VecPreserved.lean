@@ -1,6 +1,11 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-! Vector register preservation, including through calls and stack frames. -/
+
+@[expose] public section
+
 namespace VG.AArch64
 
 /-- Destination of an AdvSIMD instruction. -/

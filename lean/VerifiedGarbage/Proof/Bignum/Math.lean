@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.Rsa
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Rsa
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic: the mathematics
@@ -17,6 +23,8 @@ naturals:
 * The conditional subtraction that ends it: below `2m`, subtracting `m`
   when it does not borrow is reduction modulo `m` (`csub_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum
 

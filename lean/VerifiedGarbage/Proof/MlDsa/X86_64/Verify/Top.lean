@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Flag
-import VerifiedGarbage.Proof.MlDsa.Verify.Norm
-import VerifiedGarbage.Spec.MlDsa.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Flag
+public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
+public import VerifiedGarbage.Spec.MlDsa.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: the contract, the layout and the invariant
@@ -12,6 +18,8 @@ what holds throughout (`T`: the permissions and stack pointer of entry, the
 pointers, the caller's callee-saved registers saved in `scratch`, the return
 address and the inputs); the prologue and the epilogue.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

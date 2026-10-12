@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Aes
+module
+
+public import VerifiedGarbage.Spec.Aes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The key expansion, word by word
@@ -8,6 +14,8 @@ prefix that has it (`kw`), each word is 4 bytes when the key is `4 nk`
 bytes, and word `i ≥ nk` is `w[i − nk] ⊕ temp` byte by byte, with `temp`
 as §5.2 computes it from `w[i − 1]`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes
 

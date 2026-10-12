@@ -1,6 +1,17 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 open VG VG.AArch64

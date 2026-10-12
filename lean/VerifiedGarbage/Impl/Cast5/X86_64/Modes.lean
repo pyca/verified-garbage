@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Cast5.X86_64
-import VerifiedGarbage.Impl.Modes.X86_64.Cbc
-import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
-import VerifiedGarbage.Impl.Modes.X86_64.Fb
+module
+
+public import VerifiedGarbage.Impl.Cast5.X86_64
+public import VerifiedGarbage.Impl.Modes.X86_64.Cbc
+public import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
+public import VerifiedGarbage.Impl.Modes.X86_64.Fb
 
 /-!
 # CAST5-CBC, -OFB and -CFB64 on x86-64
@@ -29,6 +31,8 @@ which the block code does not write; but its scans load the table into
 `crypt` keeps its low half in `rcx`, which the block code only counts down
 by one (`store`), and puts it back from there after the block.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Cast5.X86_64
 

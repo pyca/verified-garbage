@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.Setup
-import VerifiedGarbage.Proof.Dsa.X86_64.Frame
-import VerifiedGarbage.Proof.Dsa.X86_64.Load
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.Setup
+public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
+public import VerifiedGarbage.Proof.Dsa.X86_64.Load
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Preparing DSA arithmetic in a linked child workspace -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64

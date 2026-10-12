@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPro
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbPair
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPro
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbPair
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResidentRejAbsorb.lean` -/
+
+@[expose] public section
 
 section
 

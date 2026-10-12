@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Idea.Arm
-import VerifiedGarbage.Impl.StackScratch.Arm
-import VerifiedGarbage.Impl.Modes.Arm.Seq
-import VerifiedGarbage.Spec.Idea.Contract
+module
+
+public import VerifiedGarbage.Impl.Idea.Arm
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Impl.Modes.Arm.Seq
+public import VerifiedGarbage.Spec.Idea.Contract
 
 /-!
 # IDEA-CBC, IDEA-OFB and IDEA-CFB64 on ARMv7
@@ -12,6 +14,8 @@ ECB function, `vg_idea_ecb`, which they call once per block (`ecbCore`):
 under the encryption subkeys, or for CBC decryption under the decryption
 subkeys, which its caller passes.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Idea.Arm
 

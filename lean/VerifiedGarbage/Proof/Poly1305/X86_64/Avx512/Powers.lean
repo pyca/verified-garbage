@@ -1,6 +1,12 @@
-import Mathlib.Tactic.Ring
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Load
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
+module
+
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Load
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX-512: the powers of `r`
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
 then `(r⁴, r³)` in each lane, then `(r^(4 - j), r^(4 - j))` in lane `j`
 multiplied by `(r⁴, 1)`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Avx512
 

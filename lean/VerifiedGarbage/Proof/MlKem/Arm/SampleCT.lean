@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Sample
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Sample
+meta import VerifiedGarbage.Proof.MlKem.Arm.Sample
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_sample_ntt`, constant time and `Verified`
@@ -13,6 +20,8 @@ branches are on the same values in both runs because the XOF output is the
 same, being that of the same seed (`body_ct`). What each run is at each point
 comes from the correctness proof (`RelCT.wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm.Sample
 

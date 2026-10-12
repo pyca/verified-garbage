@@ -1,18 +1,27 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.PublicKey
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Sha512.X86_64.Compress
-import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
-import VerifiedGarbage.Proof.Sha512.X86_64.Variant
-import VerifiedGarbage.Proof.Sha512.Stream
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha512
-import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PublicKey
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Sha512.X86_64.Compress
+public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
+public import VerifiedGarbage.Proof.Sha512.X86_64.Variant
+public import VerifiedGarbage.Proof.Sha512.Stream
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha512
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.PublicKey.Layout`. -/
+
+@[expose] public section
+
 section
 /-!
 # Ed25519 public-key derivation on x86-64: where everything is

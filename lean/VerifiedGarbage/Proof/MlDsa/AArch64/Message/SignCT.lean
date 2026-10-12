@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64, `sign_message`: constant time
@@ -11,6 +17,8 @@ hashing leaks only the layout (`muHash_tr`); and the call of the signing
 function on `μ` leaks only `signLeak` of the key, `μ` and `rnd`, which is
 `signMessageLeak` of the inputs (`signCall_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Message
 

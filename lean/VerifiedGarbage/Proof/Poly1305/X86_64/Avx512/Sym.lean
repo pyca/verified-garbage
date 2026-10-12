@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
-import VerifiedGarbage.Proof.Framework.X86_64.Avx512
-import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX-512: straight-line code, quadword by quadword
@@ -16,6 +22,8 @@ a term is evaluated at a quadword `k < 8`. The second source of `vpmuludq`,
 `vpandq` and `vporq` may be a quadword of the state at `rdi`, broadcast
 (`zbcst`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Avx512
 

@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
-import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
-import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointDecode
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
+public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointDecode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.VerifyTables`. -/
+
+@[expose] public section
+
 section
 /-! Store and reload verification points beyond the multiplication workspace. -/
 

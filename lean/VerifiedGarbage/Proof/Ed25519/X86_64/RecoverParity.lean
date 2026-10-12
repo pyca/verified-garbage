@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.FieldCheck
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
-import VerifiedGarbage.Impl.Ed25519.X86_64.RecoverSign
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.FieldCheck
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
+public import VerifiedGarbage.Impl.Ed25519.X86_64.RecoverSign
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.FieldCheck`. -/
+
+@[expose] public section
+
 section
 /-! Compare field elements through canonical representatives. -/
 

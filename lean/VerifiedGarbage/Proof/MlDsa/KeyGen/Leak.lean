@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+module
+
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation: what it may leak, piece by piece
@@ -8,6 +14,8 @@ have the same `ρ`, and each `RejBoundedPoly` of `ExpandS` leaks the same from
 both (`keyGenLeak_split`); and the seeds of the samplers as
 bytes (`integerToBytes_one`, `integerToBytes_two`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.KeyGen
 

@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrCtx
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
-import VerifiedGarbage.Proof.RsaKeyGen.CandMath
-import VerifiedGarbage.Proof.Bignum.AArch64.Copy
-import VerifiedGarbage.Proof.Bignum.AArch64.Csub
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrCtx
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
+public import VerifiedGarbage.Proof.RsaKeyGen.CandMath
+public import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+public import VerifiedGarbage.Proof.Bignum.AArch64.Csub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: Miller–Rabin's witness
@@ -12,6 +18,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.Csub
 `(x | 1) < c`; `witForce_ok`: the witness forced into range unless both
 hold.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

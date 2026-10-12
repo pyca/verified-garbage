@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.Arm.Isa
-import VerifiedGarbage.Impl.Idea.Key32
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Impl.Idea.Key32
 
 /-!
 # IDEA on ARMv7
@@ -51,6 +53,8 @@ left, and `r4`–`r11` are saved in the scratch buffer and restored.
 
 The only branches are on `n` and the loop counts.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Idea.Arm
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMaskLoop
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Ball
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMaskLoop
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Ball
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: the loops of `vg_mldsa_sample_in_ball`
@@ -9,6 +15,8 @@ coefficients modulo `q` (`CStored`); the first loop zeroes it (`bZero_ok`),
 and an iteration of the second does what `bStep` does to it and to `i` (in
 `rdi`), with the sign bits not yet used in `r9` (`bBody_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sample
 

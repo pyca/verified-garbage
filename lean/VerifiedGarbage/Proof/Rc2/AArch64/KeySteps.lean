@@ -1,9 +1,17 @@
-import VerifiedGarbage.Impl.Rc2.AArch64.ExpandKey
-import VerifiedGarbage.Proof.Rc2.AArch64.BlockIO
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import VerifiedGarbage.Proof.Rc2.Expansion
+module
+
+public import VerifiedGarbage.Impl.Rc2.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Rc2.AArch64.BlockIO
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+public import VerifiedGarbage.Proof.Rc2.Expansion
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Individual AArch64 RC2 key-expansion steps -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64
 

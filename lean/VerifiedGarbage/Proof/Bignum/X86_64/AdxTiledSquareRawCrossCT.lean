@@ -1,10 +1,24 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsChoiceCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsChoiceCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsChoiceCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## AdxTri8RowCT -/
+
+@[expose] public section
+
 section
 
 namespace VG.Proof.Bignum.X86_64.AdxTri8

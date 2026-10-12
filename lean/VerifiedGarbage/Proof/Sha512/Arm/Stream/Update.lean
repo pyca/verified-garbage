@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.MdStream.Arm.Update
-import VerifiedGarbage.Proof.Sha512.Md
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Sha512.Arm.Compress
-import VerifiedGarbage.Impl.Sha512.Arm.Stream
-import VerifiedGarbage.Proof.Sha512.Arm.Lit
+module
+
+public import VerifiedGarbage.Proof.MdStream.Arm.Update
+meta import VerifiedGarbage.Proof.MdStream.Arm.Update
+public import VerifiedGarbage.Proof.Sha512.Md
+meta import VerifiedGarbage.Proof.Sha512.Md
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha512.Arm.Compress
+meta import VerifiedGarbage.Proof.Sha512.Arm.Compress
+public import VerifiedGarbage.Impl.Sha512.Arm.Stream
+meta import VerifiedGarbage.Impl.Sha512.Arm.Stream
+public import VerifiedGarbage.Proof.Sha512.Arm.Lit
+meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-512 on ARMv7: `update`
@@ -13,6 +25,8 @@ verified by the generic proof (`Proof/MdStream/Arm/Update.lean`) for the
 SHA-512 family's instance (`Proof/Sha512/Md.lean`), given that its compression
 function is verified (`callee`) and that the taint analysis accepts its code.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.Arm.Stream
 

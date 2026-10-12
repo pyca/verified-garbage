@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.Initial
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.Initial
 
 /-!
 # Argon2 memory initialization on x86-64
@@ -10,6 +12,8 @@ H′ initializes columns zero and one of every lane. This establishes exactly
 `Spec.Argon2.initMemory` even when the allocation initially contains arbitrary
 bytes. Each H′ call uses the supplied BLAKE2b backend.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.MemoryInit
 

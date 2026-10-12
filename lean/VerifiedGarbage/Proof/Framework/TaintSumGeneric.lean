@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.TaintSum
+module
+
+public import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # Constant-time checks proved once for every callee
@@ -17,6 +19,8 @@ a representative `x := rep`. The kernel evaluates `checkSum` and `fill` with
 Each instance then needs only its summaries (`S x` for its `x`), which may
 end with more public than `S`'s: `SumOk.weaken` gives them `S`'s `post`.
 -/
+
+@[expose] public section
 
 namespace VG.Taint
 

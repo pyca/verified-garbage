@@ -1,12 +1,20 @@
-import VerifiedGarbage.Proof.MdStream.X86_64.Words
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Impl.Pbkdf2.X86_64
+module
+
+public import VerifiedGarbage.Proof.MdStream.X86_64.Words
+public import VerifiedGarbage.Proof.Hmac.Common
+public import VerifiedGarbage.Impl.Pbkdf2.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC's iteration on x86-64: copying words
 
 What `n` copies of a 32-bit word (`cp32`, `Impl/Pbkdf2/X86_64.lean`) write.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.X86_64
 

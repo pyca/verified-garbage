@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBlocks
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBlocks
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on x86-64: after the checks
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 call, which leaves RSAVP1's result (zeros if it fails, `vx`) at
 `scratch + oEm`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

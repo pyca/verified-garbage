@@ -1,13 +1,19 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.CombTable
-import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
-import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
-import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarStep
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.CallLay
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.CombTable
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+public import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarStep
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.CallLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb's constant-time selection, from the tables in the static
@@ -22,6 +28,8 @@ magnitude `a = m` (`combSelEntry_ok`), so that accumulator `c` ends with piece
 4–6; for `a = 0`, `combSelOne` sets the low words of `Y - X` and `Y + X` to 1,
 the identity's.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductSat
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductSat
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
 open VG VG.AArch64 VG.Spec.MlDsa

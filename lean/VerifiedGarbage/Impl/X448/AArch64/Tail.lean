@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.X448.AArch64.Symmetric
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Symmetric
 
 /-! Narrow carry passes after the first wide pass has cleared high words. -/
+
+@[expose] public section
+
 namespace VG.Impl.X448.AArch64.Tail
 
 open VG VG.AArch64

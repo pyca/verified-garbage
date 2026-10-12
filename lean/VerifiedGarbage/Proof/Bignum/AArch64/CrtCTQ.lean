@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: constant time of `q`'s phase
@@ -11,6 +19,8 @@ parts, each state predicate fixes the public data and keeps of the secrets
 only what the next part's claim and the correctness of the parts after it
 need.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

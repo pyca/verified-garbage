@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLanes
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Table
-import VerifiedGarbage.Proof.MlKem.X86_64.VMem
-import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLanes
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Table
+public import VerifiedGarbage.Proof.MlKem.X86_64.VMem
+public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: four coefficients at a time in memory
@@ -11,6 +17,8 @@ stores of them (`polyIs_write2`), and the table of the zetas in Montgomery
 form (`Tab zmTab`), from which `vzeta` loads the zetas of up to four blocks
 (`vzeta_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Arith
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Framework.X86.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-!
 # x86 (32-bit) code as literals
@@ -7,6 +9,8 @@ import VerifiedGarbage.Proof.Framework.X86.Taint
 The instances `materialize_code` needs to write x86 code as a literal
 (`Proof/Framework/Lit.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

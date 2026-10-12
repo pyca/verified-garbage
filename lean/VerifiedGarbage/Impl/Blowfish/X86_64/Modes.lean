@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Blowfish.X86_64
-import VerifiedGarbage.Impl.Modes.X86_64.Cbc
-import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
-import VerifiedGarbage.Impl.Modes.X86_64.Fb
+module
+
+public import VerifiedGarbage.Impl.Blowfish.X86_64
+public import VerifiedGarbage.Impl.Modes.X86_64.Cbc
+public import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
+public import VerifiedGarbage.Impl.Modes.X86_64.Fb
 
 /-!
 # Blowfish-CBC, -OFB and -CFB64 on x86-64
@@ -23,6 +25,8 @@ every `xmm` register, `xmm15` (where the feedback modes keep the IV's
 address, its upper half zero) among them: `crypt` keeps its low half in
 `r14`, which neither the block code nor the modes use, and puts it back.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blowfish.X86_64
 

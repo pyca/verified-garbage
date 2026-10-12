@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AArch64.Depth
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 
 /-!
 # Calls and frames (AArch64)
@@ -14,6 +16,8 @@ A frame (`str xr, [sp, #-16]!` … `ldr xr', [sp], #16`) runs its body from
 without frames that was proven on narrower permissions, such as the body of a
 frame proven without the frame's region.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

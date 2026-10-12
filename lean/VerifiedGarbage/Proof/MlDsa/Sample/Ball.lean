@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Sample.Hash
-import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: `SampleInBall` a byte at a time
@@ -11,6 +17,8 @@ h (c, i) out` (`bStep` is one iteration): the polynomial and `i`. It computes
 no shorter output (`sampleInBall_none`). The sign bits `h` are the bits of the
 first 8 bytes of output (`bytesToBits_getD`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sample
 

@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.Rc4.X86_64.Lit
-import VerifiedGarbage.Proof.Rc4.X86_64.Apply
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Rc4.Contract
+module
+
+public import VerifiedGarbage.Proof.Rc4.X86_64.Lit
+meta import VerifiedGarbage.Proof.Rc4.X86_64.Lit
+public import VerifiedGarbage.Proof.Rc4.X86_64.Apply
+meta import VerifiedGarbage.Proof.Rc4.X86_64.Apply
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Rc4.Contract
+meta import VerifiedGarbage.Spec.Rc4.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # RC4 on x86-64: verified against the shared contracts -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.X86_64
 open VG VG.X86_64 VG.Impl.Rc4.X86_64 VG.Spec.Rc4 VG.Proof.Rc4

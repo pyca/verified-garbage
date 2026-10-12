@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
-import VerifiedGarbage.Proof.MlKem.AArch64.KgA
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgA
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: entry and exit
@@ -11,6 +17,8 @@ callee-saved registers they never write, and their caller's `x24`–`x28` and
 keeps it (`Top.step`), and the epilogue restores the caller's registers from
 it (`epi_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen
 

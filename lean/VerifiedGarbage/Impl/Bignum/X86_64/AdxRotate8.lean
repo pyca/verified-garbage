@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxDualAdd
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxDualAdd
 
 /-! Eight register-resident columns of a multiply-add, shifted by one word. -/
+
+@[expose] public section
+
 namespace VG.Impl.Bignum.X86_64.AdxRotate8
 open VG.X86_64 VG.Impl.Bignum.X86_64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Env
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+public import VerifiedGarbage.Proof.X25519.X86_64.Env
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: multiplication with BMI2 and ADX
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X25519.X86_64.Env
 The product's rows (`mul4_ok`, `MulProd.lean`), the reduction (`reduceX`), and
 the multiplication `mulX o a b`, as `mul_ok` states `mul`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

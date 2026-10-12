@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Imc
-import VerifiedGarbage.Proof.Aes.X86.BlocksContract
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Imc
+public import VerifiedGarbage.Proof.Aes.X86.BlocksContract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-NI on x86 (32-bit): the loops over whole blocks
@@ -11,6 +17,8 @@ the loops keep): `aes` and `aesDec`. After `c` blocks, the first `c` data
 blocks hold `F` of the original ones (`Inv`); the six-block and one-block
 bodies are the same code for different lists of registers (`blocks_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86.AesNi
 

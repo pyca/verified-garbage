@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Stage
-import VerifiedGarbage.Proof.X25519.X86_64.Small
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Stage
+public import VerifiedGarbage.Proof.X25519.X86_64.Small
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: the blocks of an iteration
@@ -8,6 +14,8 @@ Each block of `vstep` as a fact about states: the limbs it leaves in registers
 and slots (`lanes`, `slotv`), as numbers, from those it starts with, and what
 it keeps.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64.Ifma
 

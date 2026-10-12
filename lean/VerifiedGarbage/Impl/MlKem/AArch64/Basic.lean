@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # ML-KEM on AArch64: helpers
@@ -15,6 +17,8 @@ count down to zero (`cbnz`).
 `vg_mlkem_add` and `vg_mlkem_sub` compute in vectors
 (`Impl/MlKem/AArch64/Ntt.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.AArch64
 

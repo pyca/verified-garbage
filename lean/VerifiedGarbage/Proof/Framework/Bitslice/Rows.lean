@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+module
+
+public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
 
 /-!
 # The row domain: bitwise circuits with constants that differ by position
@@ -14,6 +16,8 @@ value to bit `p` of a concrete word, on row `c`: a check of the values (one
 `decide`, on `Nat` bitwise operations that the kernel evaluates natively)
 proves what the code computes at each bit position, for every input.
 -/
+
+@[expose] public section
 
 namespace VG.Bitslice
 

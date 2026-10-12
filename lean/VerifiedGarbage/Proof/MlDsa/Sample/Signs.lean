@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Sample.Word
-import VerifiedGarbage.Proof.MlDsa.Sample.LeNat
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sample.Word
+public import VerifiedGarbage.Proof.MlDsa.Sample.LeNat
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: the sign bits of `SampleInBall` in two 32-bit words
@@ -13,6 +19,8 @@ bytes (`readW_lo`, `readW_hi`); the next sign is the low bit of the first
 right by one plus the low bit of the second rotated to the top
 (`signs_shift`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sample
 
