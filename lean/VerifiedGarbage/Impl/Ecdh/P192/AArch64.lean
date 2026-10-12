@@ -9,9 +9,6 @@ namespace VG.Impl.Ecdh.AArch64.P192
 
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 
-def ladderQ : LadderCfg :=
-  { Ecdsa.AArch64.P192.ladderCfg with G := p192.pt PX PY ONEP }
-
 /-- `R = [k]P`, for the `k` in `K`'s slot and the point `P` at `PX` and `PY`, by
 a call of `vg_p192_mul`, with `3 b R mod p` at `EXPP`'s slot for the complete
 addition that may follow. -/
