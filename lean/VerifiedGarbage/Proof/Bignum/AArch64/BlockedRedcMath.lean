@@ -9,6 +9,13 @@ register-blocked arithmetic, but the AArch64 implementation serializes them.
 namespace VG.Proof.Bignum.AArch64.BlockedRedc
 open VG.Proof.Bignum.Square
 
+theorem value_congr {r n : Nat} {f g : Nat → Nat} (h : ∀ i < n, f i = g i) :
+    value r f n = value r g n := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    rw [value, value, h n (by omega), ih (fun i hi => h i (by omega))]
+
 /-- Splitting every word product commutes with assembling the whole block. -/
 theorem product_halves (r q : Nat) (f : Nat → Nat) (n : Nat) :
     value r (fun i => q * f i % r) n +
