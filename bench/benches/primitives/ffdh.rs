@@ -1,9 +1,12 @@
-//! FFDH component operations against OpenSSL. aws-lc-rs has no FFDH API.
+//! FFDH component operations against OpenSSL and AWS-LC.
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[path = "../../support/ffdh.rs"]
+mod aws_lc;
 use criterion::Criterion;
 pub const USES: &[&str] = &["ffdh", "rsa_mont"];
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub fn bench(c: &mut Criterion) {
-    use crate::{OPENSSL, VG};
+    use crate::{AWS_LC, OPENSSL, VG};
     use criterion::BenchmarkId;
     use openssl::{bn::BigNum, derive::Deriver, dh::Dh, pkey::PKey};
     use std::hint::black_box;
@@ -51,6 +54,21 @@ pub fn bench(c: &mut Criterion) {
             .unwrap(),
         )
         .unwrap();
+        let aws_key = aws_lc::Dh::parameters(&p, &g, q.as_deref()).with_key(&y, &x);
+        let aws_peer = aws_lc::Dh::parameters(&p, &g, q.as_deref())
+            .with_key(peer.public_key().component(), peer.private_component());
+        assert_eq!(
+            aws_key.exchange(&aws_peer),
+            key.exchange(peer.public_key()).unwrap()
+        );
+        group.bench_function(
+            BenchmarkId::new(format!("{AWS_LC}/exchange"), size / 8),
+            |b| b.iter(|| black_box(&aws_key).exchange(black_box(&aws_peer))),
+        );
+        group.bench_function(
+            BenchmarkId::new(format!("{AWS_LC}/generate"), size / 8),
+            |b| b.iter(|| aws_lc::Dh::parameters(&p, &g, q.as_deref()).generate()),
+        );
         // OpenSSL's compute_key strips leading zero bytes; pad explicitly
         // to compare the complete operation cryptography needs.
         group.bench_function(BenchmarkId::new(format!("{VG}/exchange"), size / 8), |b| {
@@ -200,5 +218,5 @@ pub fn bench(c: &mut Criterion) {
     }
     group.finish();
 }
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 pub fn bench(_c: &mut Criterion) {}

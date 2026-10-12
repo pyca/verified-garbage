@@ -1,5 +1,8 @@
 //! OpenSSL interoperability across supported parameter widths and generators.
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[path = "../support/ffdh.rs"]
+mod aws_lc;
+
 use openssl::{
     bn::{BigNum, BigNumContext},
     dh::Dh,
@@ -72,6 +75,16 @@ fn openssl_interoperability() {
         )
         .unwrap();
         assert_eq!(imported.exchange(key.public_key()).unwrap(), vg_z);
+        let aws_key = aws_lc::Dh::parameters(&p, &[2], None).with_key(
+            &openssl_key.public_key().to_vec(),
+            &openssl_key.private_key().to_vec(),
+        );
+        let aws_peer = aws_lc::Dh::parameters(&p, &[2], None)
+            .with_key(key.public_key().component(), key.private_component());
+        assert_eq!(aws_key.exchange(&aws_peer), vg_z);
+        let aws_generated = aws_lc::Dh::parameters(&p, &[2], None).generate();
+        // Exercise generation and padded exchange on the same domain too.
+        assert_eq!(aws_generated.exchange(&aws_peer).len(), p.len());
     }
 }
 #[test]
@@ -109,16 +122,25 @@ fn partial_words_and_arbitrary_exponents_match_openssl() {
         let p_bytes = p.to_vec();
         let params = Parameters::from_components(&p_bytes, &[2], None).unwrap();
         let mut ctx = BigNumContext::new().unwrap();
-        for exponent in [1, 2, 255, 256, 65537] {
+        // Include every four-bit digit, in both halves of a byte.
+        for exponent in [1, 2, 255, 256, 65537, 0x7654_3210, 0xfedc_ba98] {
             let x = BigNum::from_u32(exponent).unwrap();
             let mut y = BigNum::new().unwrap();
             y.mod_exp(&BigNum::from_u32(2).unwrap(), &x, &p, &mut ctx)
                 .unwrap();
             let key = PrivateKey::from_components(&params, &y.to_vec(), &x.to_vec()).unwrap();
+            // Importing the same exponent at different public encoding widths
+            // must not change the result, including overlong zero padding.
+            let wide_x = x.to_vec_padded(p_bytes.len() as i32 + 1).unwrap();
+            let wide_key = PrivateKey::from_components(&params, &y.to_vec(), &wide_x).unwrap();
             let peer = PublicKey::from_components(&params, &[3]).unwrap();
             let mut z = BigNum::new().unwrap();
             z.mod_exp(&BigNum::from_u32(3).unwrap(), &x, &p, &mut ctx)
                 .unwrap();
+            assert_eq!(
+                key.exchange(&peer).unwrap(),
+                wide_key.exchange(&peer).unwrap()
+            );
             assert_eq!(
                 key.exchange(&peer).unwrap(),
                 z.to_vec_padded(p_bytes.len() as i32).unwrap()

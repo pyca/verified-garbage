@@ -1,6 +1,8 @@
 //! Public modulus setup and fixed-schedule secret exponentiation.
 use crate::arch::ffdh::vg_ffdh_choose;
-use crate::arch::rsa_mont::{vg_rsa_mont_mul, vg_rsa_mont_mul_adx};
+use crate::arch::rsa_mont::vg_rsa_mont_mul;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::rsa_mont::vg_rsa_mont_mul_adx;
 use crate::rsa::{Backend, Scratch};
 use alloc::{vec, vec::Vec};
 use core::cmp::Ordering;
@@ -89,7 +91,13 @@ impl Montgomery {
     }
     pub(super) fn power(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
         let w = self.modulus.len();
-        let mut ws = Scratch::new(32 + 8 * (w + 2));
+        let table_at = 32 + 8 * (w + 2);
+        let table_words = if cfg!(target_arch = "aarch64") {
+            16 * w
+        } else {
+            0
+        };
+        let mut ws = Scratch::new(table_at + table_words);
         ws[6] = w as u64;
         ws[7] = self.minv;
         for j in 0..8 {
@@ -103,8 +111,7 @@ impl Montgomery {
         ws[at(7)] = 1;
         self.mul(&mut ws, 4, 4, 1);
         self.mul(&mut ws, 5, 7, 1);
-        // Call count and addresses depend only on public lengths. A secret
-        // bit is never a branch condition, a loop bound or an array index.
+        #[cfg(target_arch = "x86_64")]
         for &byte in exponent {
             for bit in (0..8).rev() {
                 self.mul(&mut ws, 5, 5, 5);
@@ -114,6 +121,46 @@ impl Montgomery {
                     ws[at(5) + i] = unsafe {
                         vg_ffdh_choose(ws[at(5) + i], ws[at(6) + i], u64::from((byte >> bit) & 1))
                     };
+                }
+            }
+        }
+        #[cfg(target_arch = "aarch64")]
+        {
+            // All sixteen powers, including Montgomery one, in wiped storage.
+            // The verified multiplication preserves this extension of the workspace.
+            for i in 0..w {
+                ws[table_at + i] = ws[at(5) + i];
+                ws[table_at + w + i] = ws[at(4) + i];
+                ws[at(6) + i] = ws[at(4) + i];
+            }
+            for digit in 2..16 {
+                self.mul(&mut ws, 6, 6, 4);
+                for i in 0..w {
+                    ws[table_at + digit * w + i] = ws[at(6) + i];
+                }
+            }
+            // Fixed four-bit windows. Every table entry is read in the same order;
+            // the secret digit never controls a branch, loop bound, or address.
+            for &byte in exponent {
+                for shift in [4, 0] {
+                    for _ in 0..4 {
+                        self.mul(&mut ws, 5, 5, 5);
+                    }
+                    let digit = u64::from((byte >> shift) & 15);
+                    for i in 0..w {
+                        let mut selected = ws[table_at + i];
+                        for candidate in 1..16 {
+                            // Both values are in 0..16: the high bit of (x-1)
+                            // is set exactly when x is zero.
+                            let equal = (digit ^ candidate as u64).wrapping_sub(1) >> 63;
+                            // SAFETY: choose has no preconditions.
+                            selected = unsafe {
+                                vg_ffdh_choose(selected, ws[table_at + candidate * w + i], equal)
+                            };
+                        }
+                        ws[at(6) + i] = selected;
+                    }
+                    self.mul(&mut ws, 5, 5, 6);
                 }
             }
         }
@@ -128,9 +175,10 @@ impl Montgomery {
         let f = match self.backend {
             Backend::Baseline => vg_rsa_mont_mul,
             // IFMA is an RSA CRT optimization; its Montgomery backend is ADX.
+            #[cfg(target_arch = "x86_64")]
             Backend::Adx | Backend::Ifma => vg_rsa_mont_mul_adx,
         };
-        // SAFETY: ws has 32+8*(w+2) words, w>=2 and w<=128. The header
+        // SAFETY: ws has at least 32+8*(w+2) words, w>=2 and w<=128. The header
         // points into this allocation, stores the odd modulus' negative
         // inverse and w, and indices are among 1,4,5,6,7. Each b is below
         // the modulus: R², one, or a prior Montgomery result. Scratch owns
