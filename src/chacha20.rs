@@ -512,22 +512,16 @@ mod tests {
                 let mut dst = init;
                 let mut state = state0;
                 let mut buf = [0u32; 80];
+                let (s, d) = (src.as_ptr(), dst[16..].as_mut_ptr());
                 // SAFETY: `state` and `buf` are valid for reads and writes of
-                // 64 and 320 bytes, `src` for reads of `src_len` and `dst`
-                // from byte 16 for reads and writes of `len ≥ src_len`; they are
-                // distinct objects, so they do not overlap each other or the
-                // stack, and do not wrap around the end of the address space.
-                // The CPU has the features the function needs.
-                unsafe {
-                    vg_chacha20_xor_split_avx512(
-                        &mut state,
-                        src.as_ptr(),
-                        src_len,
-                        dst.as_mut_ptr().add(16),
-                        len,
-                        &mut buf,
-                    )
-                };
+                // 64 and 320 bytes, `s` for reads of `src_len` and `d` for
+                // reads and writes of `len ≥ src_len`; they are distinct
+                // objects, so they do not overlap each other or the stack, and
+                // do not wrap around the end of the address space. The CPU has
+                // the features the function needs. (One line: newer rustc
+                // counts the closing line of a call spread over several on its
+                // own, which only AVX-512 runners execute.)
+                unsafe { vg_chacha20_xor_split_avx512(&mut state, s, src_len, d, len, &mut buf) };
                 assert_eq!(dst, expected, "len {len}, src_len {src_len}");
             }
         }
