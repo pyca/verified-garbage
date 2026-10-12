@@ -197,7 +197,7 @@ theorem front_ok (hc : BaseCfgOk c) {s₀ : State} (hp : FrontPre c s₀) {rest 
   -- The key.
   have hq₃ : s₃.gpr .x6 = s₀.gpr .x0 := by rw [k₃.gpr _ (by decide), S₂.gpr _ (by decide), x6₁]
   have hrw₃ : s₃.rd ++ s₃.wr = s₀.rd ++ s₀.wr := by rw [k₃.rd, k₃.wr, hrw₂]
-  refine WP.seq (WP.mono_syms (peer_ok hc hs₃ hq₃ (by rw [hrw₃, hrd]; simp) hp.pk_sc F₃.mp)
+  refine WP.seq (WP.mono_syms (peer_ok hc hs₃ hq₃ (by rw [hrw₃, hrd]; simp) hp.pk_sc)
     fun s₄ ⟨hs₄, k₄, U₄, r2₄, bp₄, y₄, f₄⟩ sy₄ => ?_)
   have F₄ := F₃.unch h7 hn ((fixedOk_slW (l := [R2P, BP, QY]) (by decide)).append fixedOk_flag) U₄
   have e₄ : ∀ {i}, i < 45 → i ∉ [R2P, BP, QY] → i ≠ FLAG →
@@ -215,10 +215,8 @@ theorem front_ok (hc : BaseCfgOk c) {s₀ : State} (hp : FrontPre c s₀) {rest 
     rwa [BitVec.add_zero] at this
   have y₄' : sv c (s₀.gpr .x3) s₄ QY = keyY c s₀ := by
     rw [y₄, bytesAt_keep W₃ (hp.pk_sc.sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith) (by omega_arith)]
-  have hf₄ : word s₄.mem (s₀.gpr .x3) (c.sl FLAG) = mask (((s₀.mem (s₀.gpr .x0) = 4 ∧
-      sv c (s₀.gpr .x3) s₄ E < c.C.p) ∧ sv c (s₀.gpr .x3) s₄ QY < c.C.p)) := by
-    rw [f₄, flag_unch U₃ h7 h0 hn (by decide), S₂.flag, BitVec.allOnes_and, mask_and, mask_and, hq0,
-      e₄ (i := E) (by decide) (by decide) (by decide)]
+  have hf₄ : word s₄.mem (s₀.gpr .x3) (c.sl FLAG) = mask (s₀.mem (s₀.gpr .x0) = 4) := by
+    rw [f₄, flag_unch U₃ h7 h0 hn (by decide), S₂.flag, BitVec.allOnes_and, hq0]
   refine WP.seq (WP.mono_syms (validate_ok hc hs₄ F₄ r2₄ bp₄ hf₄)
     fun s₅ ⟨hs₅, g₅, rd₅, wr₅, U₅, f₅, px_lt, py_lt, px, py⟩ sy₅ => h s₁.gpr s₅
       (fun r hr => k₁.gpr r (by revert r; decide)) ?_)

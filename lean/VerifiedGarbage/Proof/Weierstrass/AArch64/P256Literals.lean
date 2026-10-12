@@ -21,6 +21,8 @@ open VG VG.Impl.Ecdsa.AArch64
 
 materialize_code pPow := Cfg.pPow p256
 materialize_code nPow := Cfg.nPow p256
+materialize_code checkBody := Impl.Ecdh.AArch64.Cfg.checkBody p256
+materialize_code checkFn := Impl.Ecdh.AArch64.Cfg.checkFn p256
 materialize_code validate := Impl.Ecdh.AArch64.Cfg.validate p256
 materialize_code comb := Impl.Weierstrass.AArch64.TCombCfg.comb p256.combCfg
 

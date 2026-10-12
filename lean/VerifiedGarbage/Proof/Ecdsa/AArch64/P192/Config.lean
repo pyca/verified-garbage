@@ -63,5 +63,6 @@ theorem p192_ok (hI : Weierstrass.AArch64.InvSounds) : BaseCfgOk p192 where
   inv_at := .inr (by decide +kernel)
   inv_fn := fun _ => ⟨by decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
   padd := fun h => absurd rfl h
+  check_fn := fun _ => ⟨by lit_decide, by lit_decide, by lit_decide⟩
 
 end VG.Proof.Ecdsa.AArch64.P192

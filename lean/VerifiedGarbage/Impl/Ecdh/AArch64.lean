@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.AArch64
+public import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 /-!
 # ECDH on AArch64
@@ -16,10 +17,10 @@ on x86-64 (`Impl/Ecdh/X86_64.lean`):
    slots of `k` and `d`, the peer's `x` into that of the hash (and `x5`,
    which ECDH does not use, into the slot of the comb's tables' address);
 2. `R² mod p` and `b R mod p` to slots of their own, the peer's `y` to
-   another, and into the flag the masks of the peer's first byte being
-   `04`, `x < p` and `y < p`;
-3. `x` and `y` into Montgomery's form, and the mask of `y² = x³ + a x + b`
-   into the flag;
+   another, and into the flag the mask of the peer's first byte being `04`;
+3. by a call of `vg_<curve>_check_point` (`validate`), the masks of
+   `x < p`, `y < p` and `y² = x³ + a x + b` into the flag, with `x` and `y`
+   into Montgomery's form;
 4. the peer's point, or `G` if the flag is clear (so the window method always runs
    on a point of the curve), to the slots the window method takes its point from;
 5. `d + 8 Σ_{j<J} 16^j` and its bits, `[d]P` by the window method (`WinCfg.window`, its
@@ -109,12 +110,11 @@ def checkZero (a : Nat) : List Instr := zero c a ++ c.andFlag
 def checkLead : List Instr :=
   [zero7, .ldrb .x1 .x6 0, .movz .x .x5 4 0, .logic .eor .x .x1 .x1 .x5] ++ isZero ++ c.andFlag
 
-/-- The constants, the peer's `y`, and the checks of its first byte, `x`
-and `y`. -/
+/-- The constants, the peer's `y`, and the check of its first byte. -/
 def peer : List Instr :=
   (consts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
   ([.addImm .x .x2 .x6 (1 + c.C.len)] : List Instr) ++
-  loadBytes c.C.len c.n (c.sl QY) .x2 ++ checkLead c ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
+  loadBytes c.C.len c.n (c.sl QY) .x2 ++ checkLead c
 
 /-- `y² - (x³ + a x + b)`, from `x R` and `y R`, to `W1`. -/
 def curveOps : List FOp :=
@@ -131,10 +131,43 @@ def select : List Instr :=
 
 /-- `x` and `y` into Montgomery's form, the check that the point is on the
 curve, and the point the window method multiplies. -/
-def validate : Prog isa :=
+def onCurve : Prog isa :=
   blocks ([Mont.AArch64.mul c.MP' (c.sl QXM) (c.sl E) (c.sl R2P),
     Mont.AArch64.mul c.MP' (c.sl QYM) (c.sl QY) (c.sl R2P)] ++
     (curveOps c).map (opCode c.MP') ++ [checkZero c (c.sl W1) ++ select c])
+
+/-- The checks of `x < p` and `y < p`, then `onCurve`: what
+`vg_<curve>_check_point` runs (`Spec/Weierstrass/CheckPoint.lean`). -/
+def checkBody : Prog isa :=
+  .seq (.block (checkLtP c (c.sl E) ++ checkLtP c (c.sl QY))) (onCurve c)
+
+/-- The callee-saved registers `checkBody` may change: those of operations
+on more than six words (`x21`–`x25`). -/
+def checkKept : List Reg := if 7 ≤ c.n then [.x21, .x22, .x23, .x24, .x25] else []
+
+/-- Where the function keeps register `i` of `checkKept`: lanes of `v24`–`v26`,
+which neither it nor the products it calls write. -/
+def checkLane (i : Nat) : VReg × Nat := ([VReg.v24, .v25, .v26].getD (i / 2) .v24, i % 2)
+
+/-- `vg_<curve>_check_point`: `checkBody` between keeping `checkKept` in
+lanes and restoring them. -/
+def checkFn : Prog isa :=
+  .seq (.block ((checkKept c).zipIdx.map fun (r, i) => .vop (.ins .d2 (checkLane i).1 (checkLane i).2 r))) <|
+  .seq (checkBody c) (.block ((checkKept c).zipIdx.map fun (r, i) => .umov .x r (checkLane i).1 (checkLane i).2))
+
+/-- The curve of `Spec/Weierstrass/CheckPoint.lean` with the code's prime. -/
+def checkCurve : Option Spec.Weierstrass.CheckPoint.Curve :=
+  Spec.Weierstrass.CheckPoint.curves.find? fun C => C.W.p == c.C.p && C.k == c.n
+
+/-- The checks of `x < p` and `y < p` and `onCurve`: a call of
+`vg_<curve>_check_point` (`checkFn`), keeping `x30` in `v28` (the products it
+calls keep theirs in `v29`), for a curve of `Spec/Weierstrass/CheckPoint.lean`,
+else inline. -/
+def validate : Prog isa :=
+  match checkCurve c with
+  | some C => .seq (.block [.vop (.ins .d2 .v28 0 .x30)]) <|
+      .seq (.call C.checkApi.name (checkFn c)) (.block [.umov .x .x30 .v28 0])
+  | none => checkBody c
 
 /-- `x` (or zeros, `len` bytes) to `out`, `x19`–`x25` restored, and the
 flag's low bit to `x0`. -/

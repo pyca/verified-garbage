@@ -36,6 +36,8 @@ materialize_code invFnP := Cfg.invFn p192 (Cfg.pPowI p192)
 materialize_code invFnN := Cfg.invFn p192 (Cfg.nPowI p192)
 materialize_code pPow := Cfg.pPow p192
 materialize_code nPow := Cfg.nPow p192
+materialize_code checkBody := Impl.Ecdh.AArch64.Cfg.checkBody p192
+materialize_code checkFn := Impl.Ecdh.AArch64.Cfg.checkFn p192
 materialize_code validate := Impl.Ecdh.AArch64.Cfg.validate p192
 
 end VG.Proof.Weierstrass.AArch64.P192Literals
