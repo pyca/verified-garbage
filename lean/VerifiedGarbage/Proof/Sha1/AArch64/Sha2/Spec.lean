@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Sha1.Spec
-import VerifiedGarbage.Impl.Sha1.AArch64.Sha2
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Simd
+public import VerifiedGarbage.Proof.Sha1.Spec
+public import VerifiedGarbage.Impl.Sha1.AArch64.Sha2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! SHA-1's specification as computed by the AArch64 SHA instructions. -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha1.AArch64.Sha2
 

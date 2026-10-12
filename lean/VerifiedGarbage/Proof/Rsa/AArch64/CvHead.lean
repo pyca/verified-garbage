@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.Inv
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.Inv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_crt_values` on AArch64: the arguments and the head
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.Inv
 (`CvArgs.congr`). `cvHead_ok`: `head` sets up the working space (`Ws`) for
 `w = ⌈k / 8⌉` and the mask all ones.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

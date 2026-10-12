@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareCount
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCount
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Four-word rows with exact scalar-tail handling. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.AArch64.Square
 open VG VG.AArch64 VG.Impl.Bignum.AArch64 VG.Proof.Bignum
 open VG.Proof.Bignum.AArch64

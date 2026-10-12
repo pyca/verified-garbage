@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.Words
+module
+
+public import VerifiedGarbage.Proof.Bignum.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic: a step of long division
@@ -16,6 +22,8 @@ TAOCP vol. 2, §4.3.1, Algorithm D), for `R² mod m` by word steps
 * `y - q̂ m`, in two's complement modulo `W > 4 m`, with `m` added twice
   while it is negative, is `y mod m` (`addBack_two`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.WordStep
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CkHead
-import VerifiedGarbage.Proof.Rsa.AArch64.CvCheck
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkHead
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvCheck
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on AArch64: the inputs and what the pieces keep
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.CvCheck
 (`CkArgs.congr`). `CkS`: what every piece of `main` keeps, from the memory on
 entry to `main`: the layout, the arguments, the inputs' bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

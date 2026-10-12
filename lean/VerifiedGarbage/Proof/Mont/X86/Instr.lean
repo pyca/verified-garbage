@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86.Words
+module
+
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86 (32-bit): instruction rules
@@ -9,6 +15,8 @@ the carry flag they read and write: `mov`, `add`, `adc`, `sub`, `sbb`, the
 logical operations, `cmp` and `mul` (`edx:eax`); and the loads and stores of
 the working space, through `edi` or `ebp`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86
 

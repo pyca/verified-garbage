@@ -1,5 +1,15 @@
-import VerifiedGarbage.Proof.Sha512.AArch64.Variant
-import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Compress
+module
+
+public import VerifiedGarbage.Proof.Sha512.AArch64.Variant
+meta import VerifiedGarbage.Proof.Sha512.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Compress
+meta import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Compress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.AArch64.Sha3
 

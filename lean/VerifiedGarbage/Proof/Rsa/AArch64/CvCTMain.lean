@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_crt_values` on AArch64: constant time, `main`
@@ -7,6 +14,8 @@ The pieces of `CvCT.lean` in sequence (`loads_ct`, `pqCheck_ct`,
 `invPart_ct`, `divisor_ct`), the stores (`stores_ct`, from `GS`), and
 `main` (`cvMain_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

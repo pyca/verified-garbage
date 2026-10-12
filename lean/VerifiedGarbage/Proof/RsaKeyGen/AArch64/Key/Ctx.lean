@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Contract
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: the precondition, as the code uses it
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Contract
 writable, outside the working space and apart; `KCtx s`: what the code uses
 of `keyPre` (`keyCtx_of`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

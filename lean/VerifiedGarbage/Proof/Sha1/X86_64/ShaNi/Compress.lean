@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Sha1.Spec
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Impl.Sha1.X86_64.ShaNi
-import VerifiedGarbage.Proof.Sha1.X86_64.Compress
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Sha1.Spec
+meta import VerifiedGarbage.Proof.Sha1.Spec
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Impl.Sha1.X86_64.ShaNi
+meta import VerifiedGarbage.Impl.Sha1.X86_64.ShaNi
+public import VerifiedGarbage.Proof.Sha1.X86_64.Compress
+meta import VerifiedGarbage.Proof.Sha1.X86_64.Compress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-1 with the SHA extensions: the values in the SSE registers
@@ -12,6 +24,8 @@ How the working variables, the message schedule and the constants are laid out
 in SSE registers, and that `sha1rnds4`, `sha1nexte` and `sha1msg1`/`sha1msg2`
 compute rounds and schedule words of `Spec/Sha1.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha1.X86_64.ShaNi
 

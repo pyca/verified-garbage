@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Constant time by two runs on AArch64
@@ -13,6 +19,8 @@ afterwards follows from correctness (`two_post`). Branches whose conditions
 come from public data the taint analysis cannot track (it is loaded from
 memory, or the result of a call) agree since `Φ a` fixes them (`two_ite`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64
 

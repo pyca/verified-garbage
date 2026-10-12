@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA on AArch64: the check of the modulus
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 (`Spec.Rsa.modulusValid`), and 0 if not, for `64 ≤ k ≤ 1024`
 (`invalid_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

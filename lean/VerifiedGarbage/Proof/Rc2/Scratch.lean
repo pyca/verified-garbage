@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Rc2.Contract
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RC2-CBC's streaming functions with their working space as an argument
@@ -17,6 +23,8 @@ entry (`*_local`) and on return (`*PostOut_local`) only within the
 function's buffers: the key, the IV, the data, the output and the context,
 through `contextAt`, which reads only its 144 bytes (`contextAt_congr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2
 

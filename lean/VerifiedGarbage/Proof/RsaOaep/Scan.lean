@@ -1,6 +1,12 @@
-import Batteries.Tactic.Init
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Mgf1.Bytes
+module
+
+public import Batteries.Tactic.Init
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Mgf1.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption: the masks and the scan, whatever the target
@@ -13,6 +19,8 @@ neither `0x00` nor `0x01` (`scanS_inv`); which is when the decoding's
 `dropWhile` finds `0x01` and the message after it (`scan_found`,
 `scan_fail`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep
 

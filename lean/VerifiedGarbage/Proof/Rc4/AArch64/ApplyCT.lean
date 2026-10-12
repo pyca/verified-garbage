@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.Lit
-import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.Lit
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Lit
+public import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
+meta import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The PRGA's constant time
@@ -9,6 +18,8 @@ Only the pointers, the length and `i` reach the trace: `applyLoad` computes
 from `i` the final `i`, the lanes to skip and the base `B`, which agree in
 two runs that agree on `i`, and the rest is checked by taint from those.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.Impl.Rc4.AArch64 VG.Spec.Rc4

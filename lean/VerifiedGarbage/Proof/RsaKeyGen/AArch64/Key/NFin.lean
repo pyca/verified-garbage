@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Shared
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Shared
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: `n` and the final mask
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
 `n = p q` (`nPart_k`), and `kOk &= ` the masks of `n`'s top bit, `p` and
 `q` odd, and `e` valid, and'ed in `x10` (`finalMask_k`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

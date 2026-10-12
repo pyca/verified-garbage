@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rsa.Octets
-import Mathlib.Data.Int.ModEq
-import Mathlib.FieldTheory.Finite.Basic
+module
+
+public import VerifiedGarbage.Proof.Rsa.Octets
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.FieldTheory.Finite.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA: what BoringSSL's checks protect against
@@ -20,6 +26,8 @@ its checks give:
 * `publicOpChecked_eq`: the public operation within BoringSSL's limits is
   `publicOp` for an exponent within them, and `none` otherwise.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa
 

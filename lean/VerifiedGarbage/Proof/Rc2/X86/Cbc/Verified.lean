@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.ConstantTime
+module
+
+public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
+public import VerifiedGarbage.Proof.Rc2.X86.Cbc.ConstantTime
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.X86.Cbc
 open VG VG.X86

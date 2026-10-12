@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Mix
-import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
-import VerifiedGarbage.Proof.Rc2.AArch64.Rounds
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Mix
+public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
+public import VerifiedGarbage.Proof.Rc2.AArch64.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Reverse mixing rounds on eight blocks
@@ -9,6 +15,8 @@ The schedule is in `v16`–`v23` (`SchedV`); `keyBcast_ok` broadcasts a key
 word from it, `rmix_ok` is a reverse mix on a set (`VWords`), and
 `rmixRound_ok` a reverse mixing round on both sets.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Vec
 

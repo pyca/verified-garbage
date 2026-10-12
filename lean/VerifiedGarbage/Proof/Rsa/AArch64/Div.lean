@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
-import VerifiedGarbage.Proof.Rsa.KeyMath
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+public import VerifiedGarbage.Proof.Rsa.KeyMath
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA private keys on AArch64: the division
@@ -12,6 +18,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 for `64 w` steps from `(0, Q)` (`divmod_ok`): the remainder and the
 quotient (`divIter_done`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

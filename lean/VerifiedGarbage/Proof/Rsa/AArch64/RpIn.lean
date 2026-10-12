@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.RpBase
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: the arguments
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.RpBase
 the inputs' bytes, and memory outside the working space), from a frame of
 arrays and slots of `rSlot` (`RpS.step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

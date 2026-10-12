@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-import VerifiedGarbage.Impl.Rc4.AArch64
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+public import VerifiedGarbage.Impl.Rc4.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The table registers
@@ -8,6 +14,8 @@ Byte `k` of the table registers (`tbyte`) is lane `k % 16` of
 `v(16 + k / 16)`. A four-register `tbl`/`tbx` from `v16`, `v20`, `v24` or
 `v28` reads the bytes of one quarter of it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.Impl.Rc4.AArch64

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtEntry
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtEntry
+public import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: correctness
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
 which states the shared contract's precondition on the registers and the
 stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

@@ -1,9 +1,19 @@
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Impl.Poly1305.Arm
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Impl.Poly1305.Arm
+meta import VerifiedGarbage.Impl.Poly1305.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on Arm: the code as literals
 -/
+
+@[expose] public section
 
 namespace VG
 

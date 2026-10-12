@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedcLoop
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedcLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! REDC's final pending carry and exact Montgomery relation. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.AArch64.Square
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public VG.Proof.Bignum
 open VG.Proof.Bignum.AArch64

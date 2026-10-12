@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
-import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
-import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
-import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Key
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Key
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: the state between the pieces
@@ -18,6 +24,8 @@ header slots 29 to 31 (`kEv`, `kOk`) and writes only registers of
 The facts between the stages: `KPrimes` after `p − 1` and `q − 1`
 (`Front.lean`), and `KFront` after `smallMask` (see `PLAN.md`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

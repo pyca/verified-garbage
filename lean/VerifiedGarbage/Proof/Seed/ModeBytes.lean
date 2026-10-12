@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Seed.Memory
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.Seed.Cbc
-import VerifiedGarbage.Spec.Aes
+module
+
+public import VerifiedGarbage.Proof.Seed.Memory
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Seed.Cbc
+public import VerifiedGarbage.Spec.Aes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED's blocks and schedule as the modes see them
@@ -12,6 +18,8 @@ block's bytes as the modes read them (`bytesAt_eq`), and the schedule at an
 address, which depends only on its 128 bytes (`scheduleAt_congr_at`,
 `scheduleAt_frame`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed
 

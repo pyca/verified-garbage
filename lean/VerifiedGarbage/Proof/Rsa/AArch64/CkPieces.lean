@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
-import VerifiedGarbage.Impl.Rsa.AArch64.CheckKey
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
+public import VerifiedGarbage.Impl.Rsa.AArch64.CheckKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on AArch64: the pieces
@@ -9,6 +15,8 @@ In the layout of `W = 2 w + 2` words: the mask of `[a] < [b]` (`ltA_ok`),
 and the products `[aX] e` (`mulE_ok`) and `[aX] [aR]` (`mulXR_ok`) of
 numbers below `2^(64 w)`, by rows of `w` words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

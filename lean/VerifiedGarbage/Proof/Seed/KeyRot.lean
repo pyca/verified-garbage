@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.KeySchedule
+module
+
+public import VerifiedGarbage.Proof.Seed.KeySchedule
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Rotations of 64-bit words, as two 32-bit words
@@ -7,6 +13,8 @@ The key schedule's rotations of `Key0 || Key1` and `Key2 || Key3` by eight
 bits (`keyStep`) are two shifts of each word, ORed (`rotr8_hi`, …), which
 the 32-bit targets compute.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed
 

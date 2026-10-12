@@ -1,5 +1,12 @@
-import VerifiedGarbage.Proof.Scrypt.RoMix
-import VerifiedGarbage.Proof.Scrypt.Memory
+module
+
+public import VerifiedGarbage.Proof.Scrypt.RoMix
+public import VerifiedGarbage.Proof.Scrypt.Memory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+import all Init.Data.Nat.Power2.Basic
 
 /-!
 # scrypt: facts about the specification of the whole function
@@ -9,6 +16,8 @@ admits, the blocks of step 1 in memory (`bytesAt_chunks`, `chunk_bytesAt`),
 the indices each scryptROMix leaks, recovered from the list the contract
 declares (`indices_eq`), and `scrypt` from its three steps (`scrypt_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt.Whole
 

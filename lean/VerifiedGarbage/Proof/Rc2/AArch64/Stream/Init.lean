@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Prep
-import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Contract
-import VerifiedGarbage.Proof.Rc2.AArch64.Key
-import VerifiedGarbage.Proof.Rc2.AArch64.Lit
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Prep
+public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Contract
+public import VerifiedGarbage.Proof.Rc2.AArch64.Key
+public import VerifiedGarbage.Proof.Rc2.AArch64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming RC2-CBC on AArch64: `init`
@@ -11,6 +17,8 @@ return 1, 2 or 3 (`init_post_error`); otherwise, inside the frame saving
 `x30`, the IV is copied to `ctx + 128` and the verified key expansion writes
 the schedule to `ctx` (`main_ok`, `init_post`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Stream
 

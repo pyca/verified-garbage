@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.Double
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.Double
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on AArch64: big-endian bytes into words
@@ -9,6 +15,8 @@ partial word in `x3` holds the bytes since the last word boundary
 (`pre bs i mod 256^r`), and the words `p / 8` and above are complete
 (`LInv`). A word is stored at `x8 + p` when `p % 8 = 0`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

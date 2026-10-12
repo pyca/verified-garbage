@@ -1,10 +1,21 @@
-import VerifiedGarbage.Proof.Sha256.Arm.Stream.Common
-import VerifiedGarbage.Proof.Sha256.StateMem
-import VerifiedGarbage.Proof.Sha256.Arm.Contract
+module
+
+public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Common
+meta import VerifiedGarbage.Proof.Sha256.Arm.Stream.Common
+public import VerifiedGarbage.Proof.Sha256.StateMem
+meta import VerifiedGarbage.Proof.Sha256.StateMem
+public import VerifiedGarbage.Proof.Sha256.Arm.Contract
+meta import VerifiedGarbage.Proof.Sha256.Arm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-256 on ARMv7: `init`
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.Arm.Stream
 

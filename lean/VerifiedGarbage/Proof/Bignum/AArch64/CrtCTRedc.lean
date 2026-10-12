@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: `redc` is constant time
@@ -10,6 +17,8 @@ on `w`, `w_X` and the iteration, which both runs share (`RInv`), and its
 multiplications are constant time for any modulus (`M.ct`). Its loads from
 the header are pinned by correctness.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

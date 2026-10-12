@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.RsaKeyGen
-import VerifiedGarbage.Impl.RsaKeyGen.Primes
+module
+
+public import VerifiedGarbage.Spec.RsaKeyGen
+public import VerifiedGarbage.Impl.RsaKeyGen.Primes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The sieve finds the specification's small primes
@@ -8,6 +14,8 @@ import VerifiedGarbage.Impl.RsaKeyGen.Primes
 number from 2 to 8161 has a bit set in `compMask` iff it is `d k` with
 `2 ≤ d ≤ 90` and `k ≥ 2`, iff it has a divisor from 2 to itself minus one.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen
 

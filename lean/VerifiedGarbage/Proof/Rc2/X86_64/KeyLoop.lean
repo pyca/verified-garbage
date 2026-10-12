@@ -1,8 +1,16 @@
-import VerifiedGarbage.Impl.Rc2.X86_64.ExpandKey
-import VerifiedGarbage.Proof.Rc2.X86_64.Save
-import VerifiedGarbage.Proof.Rc2.Expansion
-import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Finish
-import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
+module
+
+public import VerifiedGarbage.Impl.Rc2.X86_64.ExpandKey
+public import VerifiedGarbage.Proof.Rc2.X86_64.Save
+public import VerifiedGarbage.Proof.Rc2.Expansion
+public import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Finish
+public import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

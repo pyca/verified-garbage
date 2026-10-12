@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.Width
-import VerifiedGarbage.Proof.MlKem.Compress1024
-import VerifiedGarbage.Impl.MlKem1024.AArch64.Compress
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.Width
+public import VerifiedGarbage.Proof.MlKem.Compress1024
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.Compress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on AArch64: bits streaming through a register
@@ -15,6 +21,8 @@ for `d` = 5 and 11:
 * adding a digit above the bits a register holds (`add_shift_div`), and
   shifting a byte out of it (`div_div8`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.AArch64
 

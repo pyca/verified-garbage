@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.Generate
-import VerifiedGarbage.Proof.RsaKeyGen.MillerRabin
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.Generate
+public import VerifiedGarbage.Proof.RsaKeyGen.MillerRabin
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate, as the implementations compute it
@@ -10,6 +16,8 @@ the randomness at offsets (`seg r a n`, the `n` octets from `a`):
 offset (`mrLoop_step`, `mrLoop_done`), each witness's test by the flag of
 `MillerRabin.lean` (`mrIteration_cand`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen
 

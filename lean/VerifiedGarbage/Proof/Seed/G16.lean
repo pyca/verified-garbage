@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Seed.G
-import VerifiedGarbage.Proof.Aes.Bitsliced
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+module
+
+public import VerifiedGarbage.Proof.Seed.G
+public import VerifiedGarbage.Proof.Aes.Bitsliced
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # G on sixteen words, bitsliced
@@ -20,6 +26,8 @@ its proof states as below:
 
 `g16_words` then gives `G` of every input word.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed
 

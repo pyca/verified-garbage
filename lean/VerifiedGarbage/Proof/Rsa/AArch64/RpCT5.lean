@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.RpCT4
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT4
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT4
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: constant time, the exponentiation
@@ -7,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.RpCT4
 `sC1` and `sC3` are pinned by correctness, and so is the address of the
 word `wordHead` loads.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

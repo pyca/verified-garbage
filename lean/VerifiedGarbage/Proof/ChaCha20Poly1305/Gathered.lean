@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
-import VerifiedGarbage.Spec.Gcm.OutOfPlace
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 out of place: the slices
@@ -14,6 +20,8 @@ The bytes of the key, the nonce and the additional data are what they were
 through writes apart from them (`bytesAt_frame`), and the bytes gathered are
 at `dst` (`bytesAt_writeBytes_self`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305
 

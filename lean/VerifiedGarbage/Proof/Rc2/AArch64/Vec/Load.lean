@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Rounds
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Loading a group of eight blocks
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Rounds
 words gathered into the sets by `tbl` (`inIndex`): block `b` of the eight is
 `Spec.Rc2.decodeBlock` of the block at `x1 + 8 b`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Vec
 

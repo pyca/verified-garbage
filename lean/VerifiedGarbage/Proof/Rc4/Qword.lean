@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc4.Memory
+module
+
+public import VerifiedGarbage.Proof.Rc4.Memory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RC4: scanning the table a quadword at a time
@@ -7,6 +13,8 @@ Facts for implementations that visit the 256-byte table as 32 quadwords at
 fixed addresses: the masks `sub` and `sbb` make, the bytes of a quadword,
 and a quadword stored back XORed with a difference in one byte.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4
 open VG

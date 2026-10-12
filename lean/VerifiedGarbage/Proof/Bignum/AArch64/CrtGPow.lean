@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
-import VerifiedGarbage.Proof.Bignum.AArch64.Double
-import VerifiedGarbage.Proof.Bignum.AArch64.R2
-import VerifiedGarbage.Proof.Bignum.CrtGPow
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
+public import VerifiedGarbage.Proof.Bignum.AArch64.Double
+public import VerifiedGarbage.Proof.Bignum.AArch64.R2
+public import VerifiedGarbage.Proof.Bignum.CrtGPow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_crt` on AArch64: `G = 2^E mod n`
@@ -11,6 +17,8 @@ slot `sD` (`gHead_ok`), its top bit into `sCnt`, `Y := R mod n`, then a
 squaring and a doubling under each bit of `D` from the top (`gBit_ok`,
 `gBits_ok`): `Y ≡ 2^D R = 2^(64 w_X (K + 1))` (`gPow_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

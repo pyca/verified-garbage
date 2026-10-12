@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precomputed` on AArch64: the load and the checks
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
 The load of `m` and `R² mod m` from `pre`, and `x9` nonzero iff they pass
 the checks that refuse values no modulus has (`pdLoad_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

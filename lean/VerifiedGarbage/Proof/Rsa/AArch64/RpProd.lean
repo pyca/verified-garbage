@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.RpIn
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpIn
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: `M = d e`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
 `prod` zeroes `M`'s two arrays and adds `e_j d` at word `j` of `M` for each
 word `j` of `e`, by `mulRows` (`prod_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

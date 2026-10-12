@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Rsa.AArch64.Keys
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
-import VerifiedGarbage.Proof.Bignum.AArch64.Copy
-import VerifiedGarbage.Proof.Bignum.AArch64.Double
+module
+
+public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+public import VerifiedGarbage.Proof.Bignum.AArch64.Double
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA private keys on AArch64: bases and loops over the words
@@ -15,6 +21,8 @@ place or not (`subM_ok`), a shift right by a bit in place or not (`shr_ok`),
 a masked swap (`cswap_ok`) and the `OR` of the words of an `XOR`
 (`xor_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

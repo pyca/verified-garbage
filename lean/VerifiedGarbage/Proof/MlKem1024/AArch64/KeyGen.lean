@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
-import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
-import VerifiedGarbage.Spec.MlKem.Contract1024
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
+meta import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
+meta import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_keygen`
@@ -10,6 +19,8 @@ stated for any well-formed parameter set, for ML-KEM-1024's (`lay1024`):
 that it is well formed, and the taint analyses of its code, are decided on
 its literals.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.AArch64.KeyGen
 

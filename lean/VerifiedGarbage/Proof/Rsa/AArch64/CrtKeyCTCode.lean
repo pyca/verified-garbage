@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyCT
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyCT
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_crt_key` on AArch64: constant time but for `n` and `e`
@@ -7,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyCT
 the same in runs that agree on the public data (`ckcCode_ct`): the
 contract's `ConstantTime` (`ckcCode_constantTime`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

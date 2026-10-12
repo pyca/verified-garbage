@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.Layout
-import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Spec.Rsa.Contract
+module
+
+public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Spec.Rsa.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic: octets, words and the RSA specification
@@ -11,6 +17,8 @@ the octet strings and word lists of the specification (`Spec/Rsa.lean`):
 precomputed values (`publicPrecompute_some`, `pre_of_some`), and the
 results the public-key operation writes (`written_of`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum
 
