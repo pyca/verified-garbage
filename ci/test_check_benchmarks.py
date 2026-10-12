@@ -618,3 +618,24 @@ class Lacking(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class FreshCopies(unittest.TestCase):
+    def test_only_the_p521_comb_groups_run_from_copies(self):
+        # P-521's comb table (747 KB) moved its times by up to 7% between
+        # identical copies of one binary; P-384's and P-256's did not move.
+        for group in ['ecdsa_p521_sha512_sign', 'ecdsa_p521_sha512_verify', 'ec_p521_public_key']:
+            self.assertTrue(bench_compare.FRESH_COPIES.match(group), group)
+        for group in ['ecdh_p521', 'ecdsa_p384_sha384_sign', 'ec_p384_public_key', 'ec_p256_public_key']:
+            self.assertFalse(bench_compare.FRESH_COPIES.match(group), group)
+
+    def test_a_copy_is_a_new_executable_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = pathlib.Path(tmp)
+            binary = target / 'primitives-0'
+            binary.write_bytes(b'\x7fELF')
+            with mock.patch.object(bench_compare, 'TARGET', target):
+                copy = bench_compare.fresh_copy(str(binary), 1)
+            self.assertEqual(copy.read_bytes(), b'\x7fELF')
+            self.assertNotEqual(os.stat(copy).st_ino, os.stat(binary).st_ino)
+            self.assertTrue(os.access(copy, os.X_OK))
