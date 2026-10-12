@@ -57,7 +57,7 @@ theorem tailRow_ok {s : State} {B : Addr} {Z eQ eT eN i : Nat}
           blockValue (operand s (word s.mem B eN)) + (2 ^ 64) ^ 8 * s.c.toNat ∧
       t.mem = s.mem.writeW (off B eT) lo ∧ t.gpr .x16 = off B (eT + 8) ∧
       Keep (VG.Impl.Bignum.AArch64.BlockedRedc.aa ++
-        VG.Impl.Bignum.AArch64.BlockedRedc.tt ++ [.x1, .x27, .x16]) s t := by
+        VG.Impl.Bignum.AArch64.BlockedRedc.tt ++ ([.x1, .x27, .x16] : List Reg)) s t := by
   rewrite [tail_eq]
   rewrite [List.append_assoc, List.append_assoc]
   apply WP.block_append
