@@ -222,8 +222,7 @@ theorem ptr_ok (s : State) {k : Nat} (hk : k < 128) :
 theorem peer_eq (c : Cfg) : Impl.Ecdh.X86_64.Cfg.peer c =
     setConst c.n (c.sl R2P) (c.R * c.R % c.C.p) ++ (setConst c.n (c.sl BP) (c.mont c.C.b) ++
     (([.mov .rdx (.reg .r9), .alu .add .rdx (.imm (BitVec.ofNat 32 (1 + c.C.len)))] : List Instr) ++
-    (loadBytes c.C.len c.n (c.sl QY) .rdx ++ (Impl.Ecdh.X86_64.Cfg.checkLead c ++
-    (Impl.Ecdh.X86_64.Cfg.checkLtP c (c.sl E) ++ Impl.Ecdh.X86_64.Cfg.checkLtP c (c.sl QY)))))) := by
+    (loadBytes c.C.len c.n (c.sl QY) .rdx ++ Impl.Ecdh.X86_64.Cfg.checkLead c))) := by
   simp only [Impl.Ecdh.X86_64.Cfg.peer, Impl.Ecdh.X86_64.Cfg.consts, List.flatMap_cons, List.flatMap_nil,
     List.append_nil, List.append_assoc]
 
@@ -234,17 +233,16 @@ theorem sv_out {base : Addr} {m m' : Mem} {j : Nat} (h : Outside base (c.sl j) (
   have := sl_le c h7 hi
   exact h.wordsVal (sl_apart c hij) (by omega_arith)
 
-/-- The constants, the peer's `y` and the checks of its first byte, `x` and `y`. -/
+/-- The constants, the peer's `y` and the check of its first byte. -/
 theorem peer_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {q : Addr}
     (hq : s.gpr .r9 = q) (hin : (⟨q, 1 + 2 * c.C.len⟩ : Region) ∈ s.rd ++ s.wr)
-    (hd : Region.Disjoint ⟨q, 1 + 2 * c.C.len⟩ ⟨base, size⟩) (hmp : sv c base s MP = c.C.p) :
+    (hd : Region.Disjoint ⟨q, 1 + 2 * c.C.len⟩ ⟨base, size⟩) :
     WP isa (.block (Impl.Ecdh.X86_64.Cfg.peer c)) s fun s' =>
       Scr s' base size ∧ KeepRegs [.rax, .rdx] s s' ∧
       Unch base (slW c [R2P, BP, QY] ++ [(c.sl FLAG, 8)]) s.mem s'.mem ∧
       sv c base s' R2P = c.R * c.R % c.C.p ∧ sv c base s' BP = c.mont c.C.b ∧
       sv c base s' QY = ofBytes (Spec.Ecdsa.bytesAt s.mem (q + BitVec.ofNat 64 (1 + c.C.len)) c.C.len) ∧
-      word s'.mem base (c.sl FLAG) = word s.mem base (c.sl FLAG) &&& mask (s.mem q = 4) &&&
-        mask (sv c base s E < c.C.p) &&& mask (sv c base s' QY < c.C.p) := by
+      word s'.mem base (c.sl FLAG) = word s.mem base (c.sl FLAG) &&& mask (s.mem q = 4) := by
   have h0 := hc.n0
   have h7 := hc.n10
   have := hc.len8; have := hc.len_lo; have := hc.len_hi
@@ -294,62 +292,41 @@ theorem peer_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
     have := keep_of_disjoint' W₄ hd (by omega_arith) (i := 0) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
   -- the first byte
-  rw [WP.block_append_iff]
   refine WP.mono (checkLead_ok c hs₄ hq₄ ⟨_, by rw [hrw₄]; exact hin, by
       have := Offset.contains_base q (d := 0) (n := 1) (k := 1 + 2 * c.C.len) (by omega_arith) (by omega_arith)
       rwa [BitVec.add_zero] at this⟩ hF) fun s₅ ⟨f₅, k₅, O₅⟩ => ?_
-  have hs₅ := hs₄.of_keepRegs k₅ (by decide)
-  -- `x < p`
-  rw [WP.block_append_iff]
-  refine WP.mono (checkLtP_ok c hs₅ h0 hE hM hF) fun s₆ ⟨f₆, k₆, O₆⟩ => ?_
-  have hs₆ := hs₅.of_keepRegs k₆ (by decide)
-  -- `y < p`
-  refine WP.mono (checkLtP_ok c hs₆ h0 hY hM hF) fun s₇ ⟨f₇, k₇, O₇⟩ => ?_
   -- The slots.
   have v₄ : ∀ {i}, i < 45 → i ≠ R2P → i ≠ BP → i ≠ QY →
       wordsVal s₄.mem base (c.sl i) c.n = wordsVal s.mem base (c.sl i) c.n :=
     fun hi h₁ h₂ h₃ => by
       rw [sv_out O₄' h7 hn hi h₃, sv_out O₂ h7 hn hi h₂, sv_out O₁ h7 hn hi h₁]
   have v₇ : ∀ {i}, i < 45 → i ≠ FLAG →
-      wordsVal s₇.mem base (c.sl i) c.n = wordsVal s₄.mem base (c.sl i) c.n := fun hi hf =>
-    ((sv_flag O₇ h0 h7 hn hi hf).trans (sv_flag O₆ h0 h7 hn hi hf)).trans (sv_flag O₅ h0 h7 hn hi hf)
+      wordsVal s₅.mem base (c.sl i) c.n = wordsVal s₄.mem base (c.sl i) c.n := fun hi hf =>
+    sv_flag O₅ h0 h7 hn hi hf
   have flag₄ : word s₄.mem base (c.sl FLAG) = word s.mem base (c.sl FLAG) := by
     have hap : ∀ {j}, j < 45 → j ≠ FLAG → c.sl FLAG + 8 ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl FLAG :=
       fun hj hjf => by have := sl_apart c (Ne.symm hjf) (i := FLAG); omega_arith
     rw [O₄'.word (hap (j := QY) (by decide) (by decide)) (by omega_arith),
       O₂.word (hap (j := BP) (by decide) (by decide)) (by omega_arith),
       O₁.word (hap (j := R2P) (by decide) (by decide)) (by omega_arith)]
-  refine ⟨hs₆.of_keepRegs k₇ (by decide), ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨hs₄.of_keepRegs k₅ (by decide), ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact ((((k₁.trans k₂).mono (by sub_regs)).trans ((Keeps.regs k₃).mono (by sub_regs))).trans
-      ((k₄.mono (by sub_regs)).trans (k₅.trans (k₆.trans k₇))))
-  · have U := ((((O₁.unch.trans O₂.unch).trans O₄'.unch).trans O₅.unch).trans
-      O₆.unch).trans O₇.unch
+      (k₄.mono (by sub_regs) |>.trans k₅))
+  · have U := (((O₁.unch.trans O₂.unch).trans O₄'.unch).trans O₅.unch)
     refine U.mono fun w hw => ?_
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false,
       List.map_cons, List.map_nil, slW] at hw ⊢
     grind
-  · show wordsVal s₇.mem _ _ _ = _
+  · show wordsVal s₅.mem _ _ _ = _
     rw [v₇ (i := R2P) (by decide) (by decide), sv_out O₄' h7 hn (by decide) (by decide),
       sv_out O₂ h7 hn (by decide) (by decide), e₁]
-  · show wordsVal s₇.mem _ _ _ = _
+  · show wordsVal s₅.mem _ _ _ = _
     rw [v₇ (i := BP) (by decide) (by decide), sv_out O₄' h7 hn (by decide) (by decide), e₂]
-  · show wordsVal s₇.mem _ _ _ = _
+  · show wordsVal s₅.mem _ _ _ = _
     rw [v₇ (i := QY) (by decide) (by decide), e₄, e₃, k₃.2.1]
     congr 1
     exact bytesAt_keep (O₁.mono (Nat.zero_le _) (by omega_arith) |>.trans (O₂.mono (Nat.zero_le _) (by omega_arith)))
       (hd.sub_left (Offset.sub_base q (by omega_arith))) (by omega_arith) (by omega_arith)
-  · have mp₅ : wordsVal s₅.mem base (c.sl MP) c.n = c.C.p := by
-      rw [sv_flag O₅ h0 h7 hn (i := MP) (by decide) (by decide)]
-      exact (v₄ (i := MP) (by decide) (by decide) (by decide) (by decide)).trans hmp
-    have mp₆ : wordsVal s₆.mem base (c.sl MP) c.n = c.C.p := by
-      rw [sv_flag O₆ h0 h7 hn (i := MP) (by decide) (by decide)]; exact mp₅
-    have e₅ : wordsVal s₅.mem base (c.sl E) c.n = sv c base s E := by
-      rw [sv_flag O₅ h0 h7 hn (i := E) (by decide) (by decide)]
-      exact v₄ (by decide) (by decide) (by decide) (by decide)
-    have y₆ : wordsVal s₆.mem base (c.sl QY) c.n = wordsVal s₇.mem base (c.sl QY) c.n :=
-      (sv_flag O₇ h0 h7 hn (i := QY) (by decide) (by decide)).symm
-    show _ = _ &&& _ &&& mask (wordsVal s.mem base (c.sl E) c.n < c.C.p) &&&
-      mask (wordsVal s₇.mem base (c.sl QY) c.n < c.C.p)
-    rw [f₇, f₆, f₅, flag₄, hq0, e₅, mp₅, y₆, mp₆]
+  · rw [f₅, flag₄, hq0]
 
 end VG.Proof.Ecdh.X86_64

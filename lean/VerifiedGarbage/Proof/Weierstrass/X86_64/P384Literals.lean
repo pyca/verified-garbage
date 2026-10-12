@@ -22,9 +22,13 @@ materialize_code pPow := Cfg.pPow p384
 materialize_code nPow := Cfg.nPow p384
 materialize_code gMulK := Cfg.gMulK p384
 materialize_code validate := Impl.Ecdh.X86_64.Cfg.validate p384
+materialize_code checkFn := Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody p384)
+materialize_code check := Impl.Ecdh.X86_64.Cfg.check p384
 materialize_code pPowAdx := Cfg.pPow p384x
 materialize_code nPowAdx := Cfg.nPow p384x
 materialize_code gMulKAdx := Cfg.gMulK p384x
 materialize_code validateAdx := Impl.Ecdh.X86_64.Cfg.validate p384x
+materialize_code checkFnAdx := Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody p384x)
+materialize_code checkAdx := Impl.Ecdh.X86_64.Cfg.check p384x
 
 end VG.Proof.Weierstrass.X86_64.P384Literals

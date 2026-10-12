@@ -14,6 +14,7 @@ def p192 : Cfg where
   windows := false
   mul := some Spec.Weierstrass.Mul.p192
   inverse := some Spec.Weierstrass.Inverse.p192
+  checkPoint := some Spec.Weierstrass.CheckPoint.p192
 
 def signP192 : Prog isa := p192.sign
 

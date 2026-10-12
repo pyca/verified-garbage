@@ -22,5 +22,7 @@ materialize_code pPow := Cfg.pPow p224
 materialize_code nPow := Cfg.nPow p224
 materialize_code gMulK := Cfg.gMulK p224
 materialize_code validate := Impl.Ecdh.X86_64.Cfg.validate p224
+materialize_code checkFn := Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody p224)
+materialize_code check := Impl.Ecdh.X86_64.Cfg.check p224
 
 end VG.Proof.Weierstrass.X86_64.P224Literals

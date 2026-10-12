@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
+import VerifiedGarbage.Proof.Ecdh.X86_64.Check
 import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 
 /-!
@@ -6,7 +6,7 @@ import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 
 `front_ok`: `args`, the signature's setup and tables (`stage₁`, whose
 `SetupPre` the arguments meet), the load of `s` (`loadS_ok`) and ECDH's
-checks of the key (`peer_ok`, `validate_ok`) leave `r`, the hash and `s` in
+checks of the key (`peer_ok`, `check_ok`) leave `r`, the hash and `s` in
 their slots, `R = O`, the tables of `p - 2` and `n - 2`, the flag of the
 key's validity as the code checks it (`KeyOk`), and the key's point, or `G`
 if it is not valid, for ECDH's ladder (`Front`).
@@ -101,7 +101,7 @@ theorem verify_eq' (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.verify c =
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
     (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c))
-    (.seq (Impl.Ecdh.X86_64.Cfg.validate c) (Impl.Ecdsa.Verify.X86_64.Cfg.back c))))) := rfl
+    (.seq (Impl.Ecdh.X86_64.Cfg.check c) (Impl.Ecdsa.Verify.X86_64.Cfg.back c))))) := rfl
 
 /-- Ranges of the working space, as one. -/
 theorem unch_whole {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
@@ -127,7 +127,7 @@ theorem front_ok (hc : BaseCfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Pr
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
       (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c))
-      (.seq (Impl.Ecdh.X86_64.Cfg.validate c) rest))))) s₀ Q := by
+      (.seq (Impl.Ecdh.X86_64.Cfg.check c).inline rest))))) s₀ Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have := hc.len8; have := hc.len_lo; have := hc.len_hi
@@ -178,7 +178,7 @@ theorem front_ok (hc : BaseCfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Pr
   -- The key.
   have hq₃ : s₃.gpr .r9 = s₀.gpr .rdi := by rw [k₃.gpr _ (by decide), S₂.gpr _ (by decide), r9₁]
   have hrw₃ : s₃.rd ++ s₃.wr = s₀.rd ++ s₀.wr := by rw [k₃.rd, k₃.wr, hrw₂]
-  refine WP.seq (WP.mono_syms (peer_ok hc hs₃ hq₃ (by rw [hrw₃, hp.rd]; simp) hp.pk_sc F₃.mp)
+  refine WP.seq (WP.mono_syms (peer_ok hc hs₃ hq₃ (by rw [hrw₃, hp.rd]; simp) hp.pk_sc)
     fun s₄ ⟨hs₄, k₄, U₄, r2₄, bp₄, y₄, f₄⟩ sy₄ => ?_)
   have F₄ := F₃.unch h7 hn ((fixedOk_slW (l := [R2P, BP, QY]) (by decide)).append fixedOk_flag) U₄
   have e₄ : ∀ {i}, i < 45 → i ∉ [R2P, BP, QY] → i ≠ FLAG →
@@ -196,13 +196,16 @@ theorem front_ok (hc : BaseCfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Pr
     rwa [BitVec.add_zero] at this
   have y₄' : sv c (s₀.gpr .rcx) s₄ QY = keyY c s₀ := by
     rw [y₄, bytesAt_keep W₃ (hp.pk_sc.sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith) (by omega_arith)]
-  have hf₄ : word s₄.mem (s₀.gpr .rcx) (c.sl FLAG) = mask (((s₀.mem (s₀.gpr .rdi) = 4 ∧
-      sv c (s₀.gpr .rcx) s₄ E < c.C.p) ∧ sv c (s₀.gpr .rcx) s₄ QY < c.C.p)) := by
-    rw [f₄, flag_unch U₃ h7 h0 hn (by decide), S₂.flag, BitVec.allOnes_and, mask_and, mask_and, hq0,
-      e₄ (i := E) (by decide) (by decide) (by decide)]
-  refine WP.seq (WP.mono_syms (validate_ok hc hs₄ F₄ r2₄ bp₄ hf₄)
-    fun s₅ ⟨hs₅, g₅, rd₅, wr₅, U₅, f₅, px_lt, py_lt, px, py⟩ sy₅ => h s₁.gpr s₅
-      (fun r hr => k₁.1 r (by revert r; decide)) ?_)
+  have hf₄ : word s₄.mem (s₀.gpr .rcx) (c.sl FLAG) = mask (s₀.mem (s₀.gpr .rdi) = 4) := by
+    rw [f₄, flag_unch U₃ h7 h0 hn (by decide), S₂.flag, BitVec.allOnes_and, hq0]
+  refine WP.seq (WP.mono_syms (check_ok hc hs₄ F₄.mp F₄.ap r2₄ bp₄ hf₄)
+    fun s₅ C₅ sy₅ => h s₁.gpr s₅ (fun r hr => k₁.1 r (by revert r; decide)) ?_)
+  obtain ⟨px_lt, py_lt, px, py⟩ := C₅.point hc F₄
+  have hs₅ := C₅.scr
+  have rd₅ := C₅.rd
+  have wr₅ := C₅.wr
+  have U₅ := C₅.unch
+  have f₅ := C₅.flag
   have F₅ := F₄.unch h7 hn ((fixedOk_slW (l := [QXM, QYM, TMP, W0, W1, W2, W3, PY]) (by decide)).append
     fixedOk_flag) U₅
   have e₅ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, TMP, W0, W1, W2, W3, PY] → i ≠ FLAG →
@@ -222,7 +225,7 @@ theorem front_ok (hc : BaseCfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Pr
   have hok : PeerOk c (s₀.gpr .rcx) s₄ ((s₀.mem (s₀.gpr .rdi) = 4 ∧ sv c (s₀.gpr .rcx) s₄ E < c.C.p) ∧
       sv c (s₀.gpr .rcx) s₄ QY < c.C.p) = KeyOk c s₀ := by
     rw [PeerOk, e₄ (i := E) (by decide) (by decide) (by decide), x₄, y₄']
-  simp only [hok] at f₅ px py
+  simp only [CheckOk, hok] at f₅ px py
   rw [e₄ (i := E) (by decide) (by decide) (by decide), x₄] at px
   rw [y₄'] at py
   refine ⟨hs₅, by rw [wr₅, k₄.wr, k₃.wr, S₂.wr, k₁.2.2.2], by rw [rd₅, k₄.rd, k₃.rd, S₂.rd, k₁.2.2.1], F₅,

@@ -22,5 +22,7 @@ materialize_code pPow := Cfg.pPow secp256k1
 materialize_code nPow := Cfg.nPow secp256k1
 materialize_code gMulK := Cfg.gMulK secp256k1
 materialize_code validate := Impl.Ecdh.X86_64.Cfg.validate secp256k1
+materialize_code checkFn := Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody secp256k1)
+materialize_code check := Impl.Ecdh.X86_64.Cfg.check secp256k1
 
 end VG.Proof.Weierstrass.X86_64.Secp256k1Literals

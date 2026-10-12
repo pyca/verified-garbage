@@ -17,7 +17,7 @@ def jointTail (c : Impl.Ecdsa.X86_64.Cfg) : Prog isa :=
 
 def jointVerify (c : Impl.Ecdsa.X86_64.Cfg) (j : Joint.Cfg) (double : Prog isa) : Prog isa :=
   .seq (.block (args c)) <| .seq (Impl.Ecdh.X86_64.Cfg.prefix' c (some D)) <| .seq (.block (loadS c)) <|
-  .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <| .seq (Impl.Ecdh.X86_64.Cfg.validate c) <|
+  .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <| .seq (Impl.Ecdh.X86_64.Cfg.check c) <|
   .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (jointPoints c j double) (jointTail c)
 
 end Cfg

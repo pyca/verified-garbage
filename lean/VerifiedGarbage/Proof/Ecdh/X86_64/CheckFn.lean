@@ -1,0 +1,262 @@
+import VerifiedGarbage.Proof.Ecdh.X86_64.Check
+import VerifiedGarbage.Proof.Ecdh.Exchange
+import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
+import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+
+/-!
+# `vg_<curve>_check_point` on x86-64: correctness
+
+The facts of a curve's contract (`Spec/Weierstrass/CheckPoint.lean`) for
+x86-64, by name (`checkK`), for a configuration whose slots and numbers are
+the curve's (`Agree`): `checkFn_ok` gives the flag `&=` the mask of the
+point's validity, `x R` and `y R`, and the point for the scalar
+multiplication; `invFnX_gpr` gives the callee-saved registers back
+(`correct`).
+-/
+
+namespace VG.Proof.Ecdh.X86_64.CheckFn
+
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
+open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdh.X86_64
+open VG.Impl.Ecdh.X86_64 (QY R2P BP QXM QYM W0 W1 W2 W3 PX PY)
+
+/-- A curve of `Spec/Weierstrass/CheckPoint.lean`. -/
+abbrev CP := Spec.Weierstrass.CheckPoint.Curve
+
+/-- `vg_<curve>_check_point`'s contract on x86-64, by name. -/
+def checkK (C : CP) : Contract isa where
+  pre s :=
+    let ws : Region := ⟨s.gpr .rdi, 8192⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    s.rd = [] ∧ s.wr = [ws] ∧ ret.Disjoint ws ∧ (s.gpr .rdi).toNat + 8192 ≤ 2 ^ 64 ∧
+      C.pre (s.gpr .rdi) s.mem
+  post s s' := C.post (s.gpr .rdi) s.mem s'.mem
+  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi
+
+/-- The configuration `c` is the curve `C`'s: its curve, its words, its
+slots but the temporary area's, and what the code writes is in the
+function's own working space or its results. -/
+structure Agree (c : Cfg) (C : CP) : Prop where
+  W : c.C = C.W
+  k : c.n = C.k
+  sl : ∀ i < 45, i ≠ TMP → c.sl i = C.slot i
+  keeps : ∀ (ws : Addr) (m m' : Mem), ws.toNat + 8192 ≤ 2 ^ 64 →
+    Unch ws (slW c [QXM, QYM, TMP, W0, W1, W2, W3, PY] ++ [(c.sl FLAG, 8)]) m m' → C.Keeps ws m m'
+  rsp : Reg.rsp ∉ checkClob c.n
+
+/-- The number at an offset below `2³²` is the one `wordsVal` reads. -/
+theorem num_eq (C : CP) (m : Mem) (ws : Addr) {o : Nat} (ho : o < 2 ^ 32) :
+    C.num ws m o = wordsVal m ws o C.k := by
+  unfold Spec.Weierstrass.CheckPoint.Curve.num Spec.Weierstrass.Mont.numAt
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ho]
+  exact read_eq_wordsVal m ws C.k o
+
+instance (C : CP) (i : Nat) : Decidable (C.Own i) := by
+  unfold Spec.Weierstrass.CheckPoint.Curve.Own; infer_instance
+
+instance (C : CP) (i : Nat) : Decidable (C.Out i) := by
+  unfold Spec.Weierstrass.CheckPoint.Curve.Out; infer_instance
+
+/-- `Keeps` from the ranges the code writes, each byte of which is in the own
+working space or a result's. -/
+theorem keeps_of {C : CP} {W : List (Nat × Nat)}
+    (hW : ∀ w ∈ W, ∀ j < w.2, C.Own (w.1 + j) ∨ C.Out (w.1 + j)) (ws : Addr) (m m' : Mem)
+    (hfit : ws.toNat + 8192 ≤ 2 ^ 64) (hu : Unch ws W m m') : C.Keeps ws m m' := by
+  intro i hi hown hout
+  have h8 : Spec.Weierstrass.Mont.wsBytes = 8192 := rfl
+  refine hu _ fun w hw => ?_
+  show (ws + BitVec.ofNat 64 i - ws).toNat < _ ∨ _ ≤ (ws + BitVec.ofNat 64 i - ws).toNat
+  rw [Mem.sub_ofNat_toNat ws (by omega)]
+  by_contra hc
+  have := hW w hw (i - w.1) (by omega)
+  rw [show w.1 + (i - w.1) = i by omega] at this
+  exact this.elim hown hout
+
+variable {c : Cfg} {C : CP}
+
+theorem slot_lt (hc : BaseCfgOk c) (A : Agree c C) {i : Nat} (hi : i < 45) : C.slot i < 2 ^ 32 := by
+  have hk : C.k ≤ 9 := by have := hc.n10; rw [A.k] at this; omega
+  have : 8 * C.k * i ≤ 8 * 9 * 45 := Nat.mul_le_mul (Nat.mul_le_mul_left 8 hk) (Nat.le_of_lt hi)
+  unfold Spec.Weierstrass.CheckPoint.Curve.slot; omega
+
+/-- A slot's number is the curve's. -/
+theorem sv_eq (hc : BaseCfgOk c) (A : Agree c C) {i : Nat} (hi : i < 45) (ht : i ≠ TMP) (base : Addr)
+    (m : Mem) : wordsVal m base (c.sl i) c.n = C.num base m (C.slot i) := by
+  rw [A.sl i hi ht, A.k, num_eq C m base (slot_lt hc A hi)]
+
+theorem flag_eq (hc : BaseCfgOk c) (A : Agree c C) (base : Addr) (m : Mem) :
+    word m base (c.sl FLAG) = C.flag base m := by
+  rw [A.sl FLAG (by decide) (by decide)]
+  rfl
+
+theorem mask_eq_zero {P : Prop} [Decidable P] : mask P = 0 ↔ ¬ P := by
+  by_cases h : P <;> simp only [mask, h, ite_true, ite_false, not_true, not_false_eq_true, iff_true]
+  · decide
+
+/-- The code's check of the curve's equation is the specification's. -/
+theorem onCurve_iff' (C' : Spec.Weierstrass.Curve) (X Y : Fin C'.p) :
+    onCurve C' (.affine X Y) = true ↔
+      Y * Y - ((X * X * X + Fin.ofNat C'.p C'.a * X) + Fin.ofNat C'.p C'.b) = 0 := by
+  rw [onCurve, decide_eq_true_iff]
+  constructor <;> intro h <;> grind
+
+/-- `vg_<curve>_check_point`: the contract's postcondition and the ABI's
+registers, from its precondition. -/
+theorem correct (hc : BaseCfgOk c) (A : Agree c C)
+    (hv : (Impl.Ecdh.X86_64.Cfg.checkBody c).allInstrs (fun i => !KeepReg.writesVec i) = true)
+    (hn : (Impl.Ecdh.X86_64.Cfg.checkBody c).noCalls = true)
+    (hmx : (Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody c)).allInstrs (fun i => !loadsMxcsr i) = true)
+    (s : State) (hs : (checkK C).pre s) :
+    ∃ t s', Exec isa (Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody c)) s t s' ∧ abiPreserved s s' ∧
+      (checkK C).post s s' := by
+  obtain ⟨-, hwr, hret, hfit, hp, hr2, ha, hb, hfl⟩ := hs
+  have hS : Scr s (s.gpr .rdi) size := ⟨rfl, by rw [hwr]; simp, hfit⟩
+  have hR : c.R = C.R := by
+    unfold Cfg.R Spec.Weierstrass.CheckPoint.Curve.R; rw [A.k]
+  have hmp : sv c (s.gpr .rdi) s MP = c.C.p := by
+    rw [sv, sv_eq hc A (by decide) (by decide), A.W]; exact hp
+  have hap : sv c (s.gpr .rdi) s AP = c.mont c.C.a := by
+    rw [sv, sv_eq hc A (by decide) (by decide), Cfg.mont, hR, A.W]; exact ha
+  have hr2' : sv c (s.gpr .rdi) s R2P = c.R * c.R % c.C.p := by
+    rw [sv, sv_eq hc A (by decide) (by decide), hR, A.W]; exact hr2
+  have hbp : sv c (s.gpr .rdi) s BP = c.mont c.C.b := by
+    rw [sv, sv_eq hc A (by decide) (by decide), Cfg.mont, hR, A.W]; exact hb
+  have hf : word s.mem (s.gpr .rdi) (c.sl FLAG) =
+      mask (C.flag (s.gpr .rdi) s.mem = BitVec.allOnes 64) := by
+    rw [flag_eq hc A]
+    rcases hfl with h | h <;> rw [h] <;> decide
+  obtain ⟨t, s', he, P⟩ := checkFn_ok hc hS hmp hap hr2' hbp hf
+  have hnc : (Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody c)).noCalls = true := by
+    simp only [Cfg.invFnX, Code.noCalls, hn, Bool.and_true, Bool.true_and]
+  refine ⟨t, s', he, abiPreserved_of_exec hmx he ⟨fun r hr => ?_, ?_⟩, ?_⟩
+  · have sv := invFnX_gpr hv hn he
+    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact sv _ (by decide)
+    · exact sv _ (by decide)
+    · exact P.gpr _ A.rsp
+    · exact sv _ (by decide)
+    · exact sv _ (by decide)
+    · exact sv _ (by decide)
+    · exact sv _ (by decide)
+  · have F := (Exec.regions he hnc).2.2
+    rw [hwr] at F
+    exact F.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      rintro r rfl; exact hret) (by decide)
+  -- The postcondition.
+  have eX : sv c (s.gpr .rdi) s E = C.num (s.gpr .rdi) s.mem C.xAt := sv_eq hc A (by decide) (by decide) _ _
+  have eY : sv c (s.gpr .rdi) s QY = C.num (s.gpr .rdi) s.mem C.yAt := sv_eq hc A (by decide) (by decide) _ _
+  have hP : CheckOk c (s.gpr .rdi) s (C.flag (s.gpr .rdi) s.mem = BitVec.allOnes 64) ↔
+      C.flag (s.gpr .rdi) s.mem = BitVec.allOnes 64 ∧
+        C.Valid (C.num (s.gpr .rdi) s.mem C.xAt) (C.num (s.gpr .rdi) s.mem C.yAt) := by
+    simp only [CheckOk, PeerOk, OnCurve, Spec.Weierstrass.CheckPoint.Curve.Valid, eX, eY]
+    rw [A.W, onCurve_iff']
+    constructor
+    · rintro ⟨⟨⟨h₁, h₂⟩, h₃⟩, h₄⟩; exact ⟨h₁, h₂, h₃, h₄⟩
+    · rintro ⟨h₁, h₂, h₃, h₄⟩; exact ⟨⟨⟨h₁, h₂⟩, h₃⟩, h₄⟩
+  have hF : C.flag (s.gpr .rdi) s'.mem = C.flag (s.gpr .rdi) s.mem &&&
+      Spec.Weierstrass.CheckPoint.Curve.mask
+        (C.Valid (C.num (s.gpr .rdi) s.mem C.xAt) (C.num (s.gpr .rdi) s.mem C.yAt)) := by
+    rw [← flag_eq hc A, P.flag]
+    have hm : Spec.Weierstrass.CheckPoint.Curve.mask
+        (C.Valid (C.num (s.gpr .rdi) s.mem C.xAt) (C.num (s.gpr .rdi) s.mem C.yAt)) =
+        mask (C.Valid (C.num (s.gpr .rdi) s.mem C.xAt) (C.num (s.gpr .rdi) s.mem C.yAt)) := rfl
+    rw [hm]
+    have h0 : C.flag (s.gpr .rdi) s.mem = mask (C.flag (s.gpr .rdi) s.mem = BitVec.allOnes 64) := by
+      rcases hfl with h | h <;> rw [h] <;> decide
+    conv => rhs; rw [h0]
+    rw [mask_and]
+    simp only [mask, hP]
+  have hok : CheckOk c (s.gpr .rdi) s (C.flag (s.gpr .rdi) s.mem = BitVec.allOnes 64) ↔
+      ¬ (C.flag (s.gpr .rdi) s.mem &&& Spec.Weierstrass.CheckPoint.Curve.mask
+        (C.Valid (C.num (s.gpr .rdi) s.mem C.xAt) (C.num (s.gpr .rdi) s.mem C.yAt)) = 0) := by
+    rw [← hF, ← flag_eq hc A, P.flag, mask_eq_zero, not_not]
+  have hRp : 2 ^ (64 * c.n) = C.R := by rw [← hR]; rfl
+  refine ⟨hF, ?_, ?_, ?_, ?_, A.keeps _ _ _ hfit P.unch⟩
+  · show C.num _ _ (C.slot 34) = _
+    rw [← sv_eq hc A (i := QXM) (by decide) (by decide)]
+    show sv c _ s' QXM = _
+    rw [P.qxm, eX, hRp, A.W]
+  · show C.num _ _ (C.slot 35) = _
+    rw [← sv_eq hc A (i := QYM) (by decide) (by decide)]
+    show sv c _ s' QYM = _
+    rw [P.qym, eY, hRp, A.W]
+  · show C.num _ _ (C.slot 38) = _
+    rw [← sv_eq hc A (i := PX) (by decide) (by decide)]
+    show sv c _ s' PX = _
+    rw [P.px, eX, hRp, A.W, sv, sv_eq hc A (i := GX) (by decide) (by decide)]
+    by_cases h : CheckOk c (s.gpr .rdi) s (C.flag (s.gpr .rdi) s.mem = BitVec.allOnes 64)
+    · rw [if_pos h, if_neg (hok.mp h)]
+    · rw [if_neg h, if_pos (not_not.mp (mt hok.mpr h))]; rfl
+  · show C.num _ _ (C.slot 43) = _
+    rw [← sv_eq hc A (i := PY) (by decide) (by decide)]
+    show sv c _ s' PY = _
+    rw [P.py, eY, hRp, A.W, sv, sv_eq hc A (i := GY) (by decide) (by decide)]
+    by_cases h : CheckOk c (s.gpr .rdi) s (C.flag (s.gpr .rdi) s.mem = BitVec.allOnes 64)
+    · rw [if_pos h, if_neg (hok.mp h)]
+    · rw [if_neg h, if_pos (not_not.mp (mt hok.mpr h))]; rfl
+
+/-! ## Constant time, and the shared contract -/
+
+theorem agreeK (C : CP) (s₁ s₂ : State) (_ : (checkK C).pre s₁) (_ : (checkK C).pre s₂)
+    (h : (checkK C).pub s₁ s₂) : VG.X86_64.Taint.Agree (Taint.ofRegs [.rdi, .rsp]) s₁ s₂ :=
+  Taint.agree_ofRegs fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h.2
+    · exact h.1
+
+/-- A working space at `0x1000` holding `p`, `R² mod p`, `a R mod p` and
+`b R mod p` where the curve's contract says, and zeros elsewhere (the flag
+zero). -/
+def satMem (C : CP) : Mem := fun a =>
+  let i := (a - 0x1000).toNat
+  let at_ (o v : Nat) : Option Nat := if o ≤ i ∧ i < o + 8 * C.k then some (v >>> (8 * (i - o))) else none
+  match at_ C.pAt C.W.p with
+  | some v => BitVec.ofNat 8 v
+  | none => match at_ C.r2At (C.R * C.R % C.W.p) with
+    | some v => BitVec.ofNat 8 v
+    | none => match at_ C.aAt (C.W.a * C.R % C.W.p) with
+      | some v => BitVec.ofNat 8 v
+      | none => match at_ C.bAt (C.W.b * C.R % C.W.p) with
+        | some v => BitVec.ofNat 8 v
+        | none => 0
+
+/-- A state satisfying the preconditions, for a curve whose working space
+`satMem` satisfies them. -/
+def satState (C : CP) : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rsp => 0x20000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem := satMem C
+  rd := []
+  wr := [⟨0x1000, 8192⟩]
+
+theorem sat_of (C : CP) (h : C.pre 0x1000 (satMem C)) : (checkK C).pre (satState C) :=
+  ⟨rfl, rfl, Region.disjoint_of_sep (by decide), by decide, h⟩
+
+theorem implies (C : CP) (hsat : C.pre 0x1000 (satMem C)) : (checkK C).Implies (C.checkContract X86_64.abi) where
+  pre s h := by
+    sig_pre [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
+      X86_64.abi, X86_64.argRegs, stackBelow] at h
+    exact h
+  post s s' _ h := by
+    sig_post [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
+      X86_64.abi, X86_64.argRegs]
+    exact h
+  pub s₁ s₂ _ _ h := by
+    sig_pub [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
+      X86_64.abi, X86_64.argRegs] at h
+    exact h
+  sat := ⟨satState C, by
+    sig_pre [Spec.Weierstrass.CheckPoint.Curve.checkContract, Spec.Weierstrass.CheckPoint.sig,
+      X86_64.abi, X86_64.argRegs, stackBelow]
+    exact sat_of C hsat⟩
+
+end VG.Proof.Ecdh.X86_64.CheckFn
