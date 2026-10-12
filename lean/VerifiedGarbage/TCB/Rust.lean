@@ -288,7 +288,7 @@ def checkLayout (a : Artifact) : Except String Unit := do
 /-- The alignment directives before each loop of a target's functions:
 `.p2align 5` on x86-64 (see the module docs), none on the other targets. -/
 def loopAlign (t : Target) : List String :=
-  if t.name == "x86_64" then [".p2align 5"] else []
+  if t.name == "x86_64" then [".p2align 6"] else []
 
 /-- The label a line branches back to: `"22"` for `"jne 22b"`. -/
 def backTarget (s : String) : Option String :=

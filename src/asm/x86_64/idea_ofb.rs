@@ -62,7 +62,7 @@ pub(crate) unsafe extern "sysv64" fn vg_idea_ofb(schedule: *const [u8; 104], iv:
         "mov QWORD PTR [r9], rbp",
         "test r13, r13",
         "je 20f",
-        ".p2align 5",
+        ".p2align 6",
         "22:",
         "mov rcx, r9",
         "mov rdi, r9",
