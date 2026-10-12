@@ -106,7 +106,7 @@ theorem verifyEquation_correct (hR : RecoverOk) {s : State} (hp : verifyEquation
     fun s7 ⟨hs7, k7, o7, c7, b7⟩ => ?_
   have P7 := P6.outside2 o7
   refine WP.mono (wfinish_ok hs7 (fun i h1 h2 j hj => Nat.lt_trans (b7 i h1 h2 j hj) (by decide))
-    P7.saved P7.savedX P7.lrs P7.savedV) fun t ⟨t0, t19, t20, tx, tv, t30, _, _, _⟩ => ⟨?_, ?_, ?_⟩
+    P7.saved P7.savedX P7.lrs P7.savedV) fun t ⟨t0, t19, t20, tx, tv, t30, _, _⟩ => ⟨?_, ?_, ?_⟩
   · intro r hr
     simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

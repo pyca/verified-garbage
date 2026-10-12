@@ -154,11 +154,22 @@ def wcross : Prog isa :=
   .block (codeOf [.mul (slot 12) (slot 0) (slot 5), .mul (slot 13) (slot 3) (slot 2),
      .mul (slot 14) (slot 1) (slot 5), .mul (slot 15) (slot 4) (slot 2)])
 
-/-- The comparisons, the result `x0 = (x20 == 0)`, and the registers restored. -/
-def wfinish : List Instr :=
-  eqSlots 12 13 ++ eqSlots 14 15 ++ [.addImm .x .x5 .x20 0] ++ isZero ++
+/-- One comparison: slots 12 and 13 compared (`eqSlots`), then slots 14 and 15 copied into
+them, for the second pass, and `x19` counted down. -/
+def wcmp : List Instr :=
+  eqSlots 12 13 ++ Curve448.AArch64.copy (slot 12) (slot 14) ++ Curve448.AArch64.copy (slot 13) (slot 15) ++
+    [.subImm .x .x19 .x19 1]
+
+/-- The result `x0 = (x20 == 0)`, and the registers restored. -/
+def wresult : List Instr :=
+  [.addImm .x .x5 .x20 0] ++ isZero ++
   [.addImm .x .x0 .x5 0, ld .x19 0, ld .x20 8, ld .x30 LRS] ++ Impl.X448.AArch64.Fast.restore ++
   Impl.X448.AArch64.Fast.vrestore
+
+/-- The comparisons of slots 12 and 13, then 14 and 15: two passes of `wcmp`, counted by
+`x19`; then `wresult`. -/
+def wfinish : Prog isa :=
+  .seq (.seq (.block [.movz .x .x19 2 0]) (.loop (.block wcmp) (.nonzero .x .x19))) (.block wresult)
 
 /-- The entry, the bits of `S`, its check, and the decodings of `A` (negated, into slots 6–7) and
 `R` (into slots 8–9), by one copy of `decode` (`decodes`). -/
@@ -167,6 +178,6 @@ def wfront : Prog isa :=
   decodes
 
 def verifyEquation : Prog isa :=
-  .seq wfront <| .seq table <| .seq sBase <| .seq kWindows <| .seq wcross (.block wfinish)
+  .seq wfront <| .seq table <| .seq sBase <| .seq kWindows <| .seq wcross wfinish
 
 end VG.Impl.Ed448.AArch64
