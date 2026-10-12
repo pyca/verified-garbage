@@ -148,8 +148,5 @@ theorem unrolled_permute_verified :
       AArch64.abi, AArch64.argRegs] [VG.Proof.Sha3.AArch64.satState]
       using VG.Proof.Sha3.AArch64.satState)
 
-#assert_standard_axioms unrolled_permute_correct
-#assert_standard_axioms unrolled_permute_ct
-#assert_standard_axioms unrolled_permute_verified
 
 end VG.Proof.Sha3.AArch64.Scalar

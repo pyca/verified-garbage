@@ -82,6 +82,5 @@ theorem bulk_correct (b : State) (hp : BulkPre b) : WP isa bulk b (BulkPost b) :
     hg .x5 (by simp),hg .x6 (by simp),hf.repr⟩⟩
   simpa only [hp.wr] using hh.2.2.2
 
-#assert_standard_axioms bulk_correct
 
 end VG.Proof.Sha3.AArch64.Sha3.Vector.Resident

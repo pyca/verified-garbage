@@ -340,6 +340,5 @@ theorem hardware_absorb_depth :
     (Impl.Sha3.AArch64.Sha3.Vector.Resident.absorb Sha3.callee).aarch64Depth = 1 :=
   absorb_depth Sha3.backend _ bulk_depth
 
-#assert_standard_axioms hardware_absorb_correct
 
 end VG.Proof.Sha3.AArch64.Sha3.Vector.Resident

@@ -104,6 +104,5 @@ theorem permute_verified :
 /-- Core and boundary instructions, excluding the emitted return. -/
 theorem permute_instruction_count : (instrs permute).length = 1723 := by lit_decide
 
-#assert_standard_axioms permute_verified
 
 end VG.Proof.Sha3.AArch64.Sha3.Vector

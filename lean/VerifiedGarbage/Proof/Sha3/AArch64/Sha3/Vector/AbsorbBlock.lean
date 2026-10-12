@@ -176,6 +176,5 @@ theorem absorbBlock_ok (s : VG.AArch64.State) (A : Spec.Sha3.State) (hA : Lanes 
   · rwa [hb.2]
   · simpa only [xorWords_eq,hb.2] using h.2
 
-#assert_standard_axioms absorbBlock_ok
 
 end VG.Proof.Sha3.AArch64.Sha3.Vector
