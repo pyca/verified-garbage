@@ -140,42 +140,27 @@ impl VerifyingKey {
     ) -> Result<(), Error> {
         let signature: &[u8; 114] = signature.try_into().map_err(|_| Error::InvalidSignature)?;
         let mut scratch = [0u64; 1024];
+        let verify = match backend() {
+            Backend::Scalar => vg_ed448_verify,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Adx => vg_ed448_verify_adx,
+            #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+            Backend::Sha3 => vg_ed448_verify_sha3,
+        };
         // SAFETY: the input references are valid for their declared lengths,
         // and scratch is a distinct writable object. No object overlaps the
         // call's stack or wraps the address space. Backend selection checks
         // the generated CPU feature requirements.
         let valid = unsafe {
-            match backend() {
-                Backend::Scalar => vg_ed448_verify(
-                    &self.bytes,
-                    context.as_ptr(),
-                    context.len(),
-                    message.as_ptr(),
-                    message.len(),
-                    signature,
-                    &mut scratch,
-                ),
-                #[cfg(target_arch = "x86_64")]
-                Backend::Adx => vg_ed448_verify_adx(
-                    &self.bytes,
-                    context.as_ptr(),
-                    context.len(),
-                    message.as_ptr(),
-                    message.len(),
-                    signature,
-                    &mut scratch,
-                ),
-                #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
-                Backend::Sha3 => vg_ed448_verify_sha3(
-                    &self.bytes,
-                    context.as_ptr(),
-                    context.len(),
-                    message.as_ptr(),
-                    message.len(),
-                    signature,
-                    &mut scratch,
-                ),
-            }
+            verify(
+                &self.bytes,
+                context.as_ptr(),
+                context.len(),
+                message.as_ptr(),
+                message.len(),
+                signature,
+                &mut scratch,
+            )
         };
         zeroize(&mut scratch);
         if valid == 1 {
@@ -267,6 +252,13 @@ impl SigningKey {
 fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) -> [u8; 114] {
     let mut signature = [0u8; 114];
     let mut scratch = [0u64; 1024];
+    let sign = match backend() {
+        Backend::Scalar => vg_ed448_sign_cached,
+        #[cfg(target_arch = "x86_64")]
+        Backend::Adx => vg_ed448_sign_cached_adx,
+        #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+        Backend::Sha3 => vg_ed448_sign_cached_sha3,
+    };
     // SAFETY: the input references are valid for their declared lengths.
     // Signature and scratch are distinct writable objects, disjoint from the
     // inputs and the call's stack. None wraps the address space. pk is seed's
@@ -274,40 +266,16 @@ fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) 
     // the context is at most 255 bytes long (the callers check it). Backend
     // selection checks the generated CPU feature requirements.
     unsafe {
-        match backend() {
-            Backend::Scalar => vg_ed448_sign_cached(
-                &mut signature,
-                seed,
-                pk,
-                context.as_ptr(),
-                context.len(),
-                message.as_ptr(),
-                message.len(),
-                &mut scratch,
-            ),
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_ed448_sign_cached_adx(
-                &mut signature,
-                seed,
-                pk,
-                context.as_ptr(),
-                context.len(),
-                message.as_ptr(),
-                message.len(),
-                &mut scratch,
-            ),
-            #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
-            Backend::Sha3 => vg_ed448_sign_cached_sha3(
-                &mut signature,
-                seed,
-                pk,
-                context.as_ptr(),
-                context.len(),
-                message.as_ptr(),
-                message.len(),
-                &mut scratch,
-            ),
-        }
+        sign(
+            &mut signature,
+            seed,
+            pk,
+            context.as_ptr(),
+            context.len(),
+            message.as_ptr(),
+            message.len(),
+            &mut scratch,
+        )
     };
     zeroize(&mut scratch);
     signature
