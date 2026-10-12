@@ -625,7 +625,7 @@ private theorem base_fe :
         Spec.Ed448.basePoint.Y * Spec.Ed448.basePoint.Y := by
   decide +kernel
 
-private theorem base_on :
+theorem base_on :
     OnCurve dZ (toZ Spec.Ed448.basePoint.X) (toZ Spec.Ed448.basePoint.Y) := by
   have e := congrArg toZ base_fe
   simp only [toZ_add, toZ_mul, toZ_one] at e
