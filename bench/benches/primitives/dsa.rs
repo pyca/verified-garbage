@@ -73,13 +73,14 @@ pub fn bench(c: &mut Criterion) {
         ]
         .concat();
         assert!(key.public_key().verify(&digest, &fixed));
-        let size = format!("{}-{}", p_len * 8, q_len * 8);
+        // CI interprets the final benchmark ID component as a numeric size.
+        let size = p_len * 8;
 
-        let mut group = c.benchmark_group("dsa_sign");
-        group.bench_function(BenchmarkId::new(VG, &size), |b| {
+        let mut group = c.benchmark_group(format!("dsa_sign_q{}", q_len * 8));
+        group.bench_function(BenchmarkId::new(VG, size), |b| {
             b.iter(|| black_box(&key).sign(black_box(&digest)).unwrap())
         });
-        group.bench_function(BenchmarkId::new(OPENSSL, &size), |b| {
+        group.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut ctx = PkeyCtx::new(black_box(&ssl_key)).unwrap();
                 ctx.sign_init().unwrap();
@@ -89,11 +90,11 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         group.finish();
-        let mut group = c.benchmark_group("dsa_verify");
-        group.bench_function(BenchmarkId::new(VG, &size), |b| {
+        let mut group = c.benchmark_group(format!("dsa_verify_q{}", q_len * 8));
+        group.bench_function(BenchmarkId::new(VG, size), |b| {
             b.iter(|| black_box(key.public_key()).verify(black_box(&digest), black_box(&signature)))
         });
-        group.bench_function(BenchmarkId::new(OPENSSL, &size), |b| {
+        group.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut ctx = PkeyCtx::new(black_box(&ssl_key)).unwrap();
                 ctx.verify_init().unwrap();
@@ -101,8 +102,8 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         group.finish();
-        let mut group = c.benchmark_group("dsa_public_key");
-        group.bench_function(BenchmarkId::new(VG, &size), |b| {
+        let mut group = c.benchmark_group(format!("dsa_public_key_q{}", q_len * 8));
+        group.bench_function(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 PublicKey::from_components(
                     black_box(&p),
@@ -113,7 +114,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        group.bench_function(BenchmarkId::new(OPENSSL, &size), |b| {
+        group.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 Dsa::from_public_components(
                     BigNum::from_slice(black_box(&p)).unwrap(),
@@ -125,8 +126,8 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         group.finish();
-        let mut group = c.benchmark_group("dsa_private_key");
-        group.bench_function(BenchmarkId::new(VG, &size), |b| {
+        let mut group = c.benchmark_group(format!("dsa_private_key_q{}", q_len * 8));
+        group.bench_function(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
                 PrivateKey::from_components(
                     black_box(&p),
@@ -138,7 +139,7 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
-        group.bench_function(BenchmarkId::new(OPENSSL, &size), |b| {
+        group.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 Dsa::from_private_components(
                     BigNum::from_slice(black_box(&p)).unwrap(),

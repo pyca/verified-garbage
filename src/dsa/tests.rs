@@ -60,15 +60,13 @@ fn cavp_signatures() {
         let digest = digest(&v["Hash"], &hex(&v["Msg"], 0));
         let mut signature = vec![0xa5; 2 * q.len()];
         let mut scratch = Secret(vec![0xa5a5a5a5a5a5a5a5; 16 * p.len()]);
-        assert!(
-            key.sign_once(
-                &digest,
-                &hex(&v["K"], q.len()),
-                &mut signature,
-                &mut scratch.0
-            ),
-            "vector {i}"
+        let signed = key.sign_once(
+            &digest,
+            &hex(&v["K"], q.len()),
+            &mut signature,
+            &mut scratch.0,
         );
+        assert!(signed, "vector {i}");
         let expected = [hex(&v["R"], q.len()), hex(&v["S"], q.len())].concat();
         assert_eq!(signature, expected, "vector {i}");
         assert!(key.public_key().verify(&digest, &signature), "vector {i}");
