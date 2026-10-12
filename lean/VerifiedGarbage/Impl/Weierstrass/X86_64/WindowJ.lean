@@ -32,8 +32,9 @@ namespace WinCfg
 
 variable (K : WinCfg)
 
-/-- The prefix products of the table's `Z`, `c_m = Z_1 ⋯ Z_m`: `c_1` is
-`Z_1`, `c_2 … c_7` in the addition's temporaries, `c_8` in `R.z`. -/
+/-- The prefix products of the table's `Z`, `c_m = Z_1 ⋯ Z_m`: `c_1` a copy
+of `Z_1` in `D.z`, `c_2 … c_7` in the addition's temporaries, `c_8` in
+`R.z`. -/
 def prodSl : Nat → Nat
   | 2 => K.S.t0
   | 3 => K.S.t1
@@ -42,29 +43,45 @@ def prodSl : Nat → Nat
   | 6 => K.S.t4
   | 7 => K.S.t5
   | 8 => K.R.z
-  | _ => (K.tblPt 1).z
+  | _ => K.D.z
 
-/-- `c_2 … c_8`. -/
-def prodOps : List FOp :=
-  (List.range 7).map fun i => .mul (prodSl K (i + 2)) (prodSl K (i + 1)) (K.tblPt (i + 2)).z
+/-- Pieces `0 … N - 1` of code, in order. -/
+def seqRange (f : Nat → Prog isa) : Nat → Prog isa
+  | 0 => .block []
+  | i + 1 => .seq (seqRange f i) (f i)
+
+/-- `o = a [b]` for `b` a slot of the table, copied into `D.y` first: the
+operands of every product lie below the table, so that a product of nine
+words calls `vg_p521_mul_mod_p` (whose operands lie below its own working
+space) rather than being written out. -/
+def mulTb (o a b : Nat) : Prog isa :=
+  .seq (.block (copy K.M.n K.D.y b)) (fprogB K.M [.mul o a K.D.y])
+
+/-- `[x] = [x] d` for `x` a slot of the table, through `D.y`. -/
+def mulTx (x d : Nat) : Prog isa :=
+  .seq (.block (copy K.M.n K.D.y x)) <| .seq (fprogB K.M [.mul K.D.y K.D.y d]) (.block (copy K.M.n x K.D.y))
+
+/-- `c_{i+2} = c_{i+1} Z_{i+2}`. -/
+def prodStep (i : Nat) : Prog isa := mulTb K (prodSl K (i + 2)) (prodSl K (i + 1)) (K.tblPt (i + 2)).z
 
 /-- Entry `m ≥ 2` into affine coordinates, from `c_m^(p-2)` in `E.x`:
 `D.x = c_m^(p-2) c_{m-1} = Z_m^(p-2)`, `E.x = c_m^(p-2) Z_m = c_{m-1}^(p-2)`,
 and `X`, `Y` times `D.x`. -/
-def backOps (m : Nat) : List FOp :=
-  [.mul K.D.x K.E.x (prodSl K (m - 1)), .mul K.E.x K.E.x (K.tblPt m).z,
-    .mul (K.tblPt m).x (K.tblPt m).x K.D.x, .mul (K.tblPt m).y (K.tblPt m).y K.D.x]
+def backStep (m : Nat) : Prog isa :=
+  .seq (fprogB K.M [.mul K.D.x K.E.x (prodSl K (m - 1))]) <|
+  .seq (mulTb K K.E.x K.E.x (K.tblPt m).z) <|
+  .seq (mulTx K (K.tblPt m).x K.D.x) (mulTx K (K.tblPt m).y K.D.x)
 
-/-- Entries `8` down to `2`, then entry `1` (by `E.x = Z_1^(p-2)`). -/
-def normOps : List FOp :=
-  (List.range 7).flatMap (fun i => backOps K (8 - i)) ++
-    [.mul (K.tblPt 1).x (K.tblPt 1).x K.E.x, .mul (K.tblPt 1).y (K.tblPt 1).y K.E.x]
+/-- Entry `1`, by `E.x = Z_1^(p-2)`. -/
+def backOne : Prog isa := .seq (mulTx K (K.tblPt 1).x K.E.x) (mulTx K (K.tblPt 1).y K.E.x)
 
 /-- The table into affine coordinates, by one inversion (Montgomery's
-trick): the prefix products, `inv` (`E.x = R.z^(p-2)`), the entries' `X` and
-`Y` by their `Z^(p-2)`, and every `Z` one. -/
+trick): `Z_1` copied into `D.z`, the prefix products, `inv` (`E.x =
+R.z^(p-2)`), the entries' `X` and `Y` by their `Z^(p-2)` from entry `8`, and
+every `Z` one. -/
 def normTbl (inv : Prog isa) : Prog isa :=
-  .seq (fprogB K.M (prodOps K)) <| .seq inv <| .seq (fprogB K.M (normOps K)) <|
+  .seq (.block (copy K.M.n K.D.z (K.tblPt 1).z)) <| .seq (seqRange (prodStep K) 7) <| .seq inv <|
+  .seq (seqRange (fun i => backStep K (8 - i)) 7) <| .seq (backOne K) <|
   .block ((List.range 8).flatMap fun i => setConst K.M.n (K.tblPt (i + 1)).z K.one)
 
 /-- A pair of Jacobian doublings, `a` into `b` and back, with the public
