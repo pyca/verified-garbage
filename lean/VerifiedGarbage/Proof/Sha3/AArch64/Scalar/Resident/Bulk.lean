@@ -147,6 +147,5 @@ theorem functional (b : State) (hp : BulkPre b) : WP isa bulk b (BulkPost b) := 
   refine (loop_ok b hp _ s₀ h₀).mono fun s ⟨c, A, h⟩ => ?_
   exact finish_ok b hp c A s h
 
-#assert_standard_axioms functional
 
 end VG.Proof.Sha3.AArch64.Scalar.Resident
