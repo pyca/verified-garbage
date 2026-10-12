@@ -139,13 +139,13 @@ structure PolyPost (K W SP : Addr) (N A D : Addr) (al n : Nat) (t t' : State) : 
     Spec.GcmSiv.tagInput (bytesAt t.mem (W + BitVec.ofNat 64 16) 16) (bytesAt t.mem N 12) (bytesAt t.mem D n)
       (bytesAt t.mem A al)
 
-theorem polyval_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t) {R : Nat}
+theorem polyval_ok (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t) {R : Nat}
     {N A D : Addr} {al n : Nat} (S : Slots W R N A D al n t.mem) (hA : Buf K W SP t A al) (hD : Buf K W SP t D n)
     (hN : Buf K W SP t N 12)
     (hG : Spec.Gcm.blockAt t.mem (W + BitVec.ofNat 64 64) =
       GcmSiv.Polyval.mulXG (Spec.GcmSiv.ofBytes (bytesAt t.mem (W + BitVec.ofNat 64 16) 16)))
     (hY : Spec.Gcm.blockAt t.mem (W + BitVec.ofNat 64 80) = 0) :
-    WP isa (polyval v.callees) t (PolyPost K W SP N A D al n t) := by
+    WP isa (polyval v.callees wide) t (PolyPost K W SP N A D al n t) := by
   have h15 := E.r15
   have rA := E.perm.wR (show 216 + 8 ≤ 3816 by decide)
   have rL := E.perm.wR (show 224 + 8 ≤ 3816 by decide)
@@ -164,7 +164,7 @@ theorem polyval_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E
   have E₁ : Env K W SP t₁ := E.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide)) hrd₁ hwr₁
-  refine WP.mono (absorb_ok v L E₁ (hA.of_eq hrd₁ hwr₁) h12₁ hbp₁) fun t₂ P₂ => ?_
+  refine WP.mono (absorb_ok v wide L E₁ (hA.of_eq hrd₁ hwr₁) h12₁ hbp₁) fun t₂ P₂ => ?_
   have P₂' := P₂.of_eq hm₁ hrd₁ hwr₁
   rw [hm₁] at P₂'
   have S₂ := S.absR L P₂'.frame
@@ -187,7 +187,7 @@ theorem polyval_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact hg₃ _ (by decide) (by decide)) hrd₃ hwr₃
   have hD₃ : Buf K W SP t₃ D n := hD.of_eq (hrd₃.trans P₂'.rd) (hwr₃.trans P₂'.wr)
-  refine WP.mono (absorb_ok v L E₃ hD₃ h12₃ hbp₃) fun t₄ P₄ => ?_
+  refine WP.mono (absorb_ok v wide L E₃ hD₃ h12₃ hbp₃) fun t₄ P₄ => ?_
   have P₄' := P₄.of_eq hm₃ hrd₃ hwr₃
   rw [hm₃, Proof.AesGcm.X86_64.bytesAt_frame P₂'.frame (buf_absR hD) (Nat.le_of_lt hD.lt)] at P₄'
   have P₂₄ := P₂'.trans L P₄'

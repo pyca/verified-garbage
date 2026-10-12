@@ -36,48 +36,51 @@ def ecbOf (v : GcmImpl) : BlocksImpl :=
   if v.ctr.features = [] then .scalar else if v.ctr.features.contains "vaes" then .vaes else .aesni
 
 /-- The CPU features of `seal` and `open`: those of the four functions they
-call (here, to keep `List.dedup`'s imports out of the proofs). -/
+call, and AVX512F and AVX512BW with the instances calling the loops on
+512-bit registers (`GcmImpl.short`), whose copies and XORs use them too (here,
+to keep `List.dedup`'s imports out of the proofs). -/
 def features (v : GcmImpl) : List String :=
-  (v.ctr.features ++ v.key.features ++ v.gh.features ++ (ecbOf v).features).dedup
+  (v.ctr.features ++ v.key.features ++ v.gh.features ++ (ecbOf v).features ++
+    (if v.short then ["avx512f", "avx512bw"] else [])).dedup
 
 section
-variable (v : GcmImpl) (eb : BlocksImpl)
+variable (v : GcmImpl) (eb : BlocksImpl) (wide : Bool)
 
-theorem seal_mx : («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [«seal», «open», entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
-    tag, tagIn, tagOut, recv, crypt, cryptChunk, ctrGen, ecbArgs, ksXor, callEcb, cryptTail, mask, callCtr, callKey, callGh, GcmImpl.callees, Code.allInstrs, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, eb.encMxcsr, Bool.true_and, Bool.and_true]
+theorem seal_mx : («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide).allInstrs (fun i => !loadsMxcsr i) = true := by
+  cases wide <;> simp only [«seal», «open», revSel, revLoopZ, revMaskZ, revQuad, revOne, quadsThenOnes, ksLoop, ksQuad, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
+    tag, tagIn, tagOut, recv, crypt, cryptChunk, ctrGen, ecbArgs, ksXor, callEcb, cryptTail, mask, callCtr, callKey, callGh, GcmImpl.callees, Code.allInstrs, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, eb.encMxcsr, Bool.true_and, Bool.and_true] <;>
   decide +kernel
 
-theorem open_mx : («open» v.callees ⟨eb.enc.name, eb.enc.code⟩).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [«seal», «open», entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
-    tag, tagIn, tagOut, recv, crypt, cryptChunk, ctrGen, ecbArgs, ksXor, callEcb, cryptTail, mask, callCtr, callKey, callGh, GcmImpl.callees, Code.allInstrs, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, eb.encMxcsr, Bool.true_and, Bool.and_true]
+theorem open_mx : («open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide).allInstrs (fun i => !loadsMxcsr i) = true := by
+  cases wide <;> simp only [«seal», «open», revSel, revLoopZ, revMaskZ, revQuad, revOne, quadsThenOnes, ksLoop, ksQuad, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
+    tag, tagIn, tagOut, recv, crypt, cryptChunk, ctrGen, ecbArgs, ksXor, callEcb, cryptTail, mask, callCtr, callKey, callGh, GcmImpl.callees, Code.allInstrs, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, eb.encMxcsr, Bool.true_and, Bool.and_true] <;>
   decide +kernel
 
-theorem seal_spSafe : («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [«seal», «open», entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
-    tag, tagIn, tagOut, recv, crypt, cryptChunk, ctrGen, ecbArgs, ksXor, callEcb, cryptTail, mask, callCtr, callKey, callGh, GcmImpl.callees, Code.all, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, eb.encSpSafe, Bool.true_and, Bool.and_true]
+theorem seal_spSafe : («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide).all (fun i => !X86_64.isa.writesSp i) = true := by
+  cases wide <;> simp only [«seal», «open», revSel, revLoopZ, revMaskZ, revQuad, revOne, quadsThenOnes, ksLoop, ksQuad, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
+    tag, tagIn, tagOut, recv, crypt, cryptChunk, ctrGen, ecbArgs, ksXor, callEcb, cryptTail, mask, callCtr, callKey, callGh, GcmImpl.callees, Code.all, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, eb.encSpSafe, Bool.true_and, Bool.and_true] <;>
   decide +kernel
 
-theorem open_spSafe : («open» v.callees ⟨eb.enc.name, eb.enc.code⟩).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [«seal», «open», entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
-    tag, tagIn, tagOut, recv, crypt, cryptChunk, ctrGen, ecbArgs, ksXor, callEcb, cryptTail, mask, callCtr, callKey, callGh, GcmImpl.callees, Code.all, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, eb.encSpSafe, Bool.true_and, Bool.and_true]
+theorem open_spSafe : («open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide).all (fun i => !X86_64.isa.writesSp i) = true := by
+  cases wide <;> simp only [«seal», «open», revSel, revLoopZ, revMaskZ, revQuad, revOne, quadsThenOnes, ksLoop, ksQuad, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, entry, keys, derive, deriveBlock, expand, hkey, polyval, absorb, absorbChunk, revLoop, absorbTail, lens,
+    tag, tagIn, tagOut, recv, crypt, cryptChunk, ctrGen, ecbArgs, ksXor, callEcb, cryptTail, mask, callCtr, callKey, callGh, GcmImpl.callees, Code.all, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, eb.encSpSafe, Bool.true_and, Bool.and_true] <;>
   decide +kernel
 
 theorem seal_correct (s : State) (hs : sealX86_64.pre s) :
-    ∃ t s', Exec isa («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩) s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := seal_wp v eb GcmSiv.Polyval.polyvalFrom_eq hs
-  exact ⟨t, s', he, abiPreserved_of_exec (seal_mx v eb) he hg, hp⟩
+    ∃ t s', Exec isa («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := seal_wp v eb wide GcmSiv.Polyval.polyvalFrom_eq hs
+  exact ⟨t, s', he, abiPreserved_of_exec (seal_mx v eb wide) he hg, hp⟩
 
 theorem open_correct (s : State) (hs : openX86_64.pre s) :
-    ∃ t s', Exec isa («open» v.callees ⟨eb.enc.name, eb.enc.code⟩) s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := open_wp v eb GcmSiv.Polyval.polyvalFrom_eq hs
-  exact ⟨t, s', he, abiPreserved_of_exec (open_mx v eb) he hg, hp⟩
+    ∃ t s', Exec isa («open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := open_wp v eb wide GcmSiv.Polyval.polyvalFrom_eq hs
+  exact ⟨t, s', he, abiPreserved_of_exec (open_mx v eb wide) he hg, hp⟩
 
-theorem seal_ct : ConstantTime isa sealX86_64.pre sealX86_64.pub («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩) :=
-  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (seal_rel v eb h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+theorem seal_ct : ConstantTime isa sealX86_64.pre sealX86_64.pub («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (seal_rel v eb wide h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
-theorem open_ct : ConstantTime isa openX86_64.pre openX86_64.pub («open» v.callees ⟨eb.enc.name, eb.enc.code⟩) :=
-  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (open_rel v eb h₁ h₂ hq.1 _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+theorem open_ct : ConstantTime isa openX86_64.pre openX86_64.pub («open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (open_rel v eb wide h₁ h₂ hq.1 _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end
 
@@ -94,9 +97,9 @@ def sealSat : State where
   rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x2100, 0⟩, ⟨0x8008, 24⟩]
   wr := [⟨0, 0⟩, ⟨0x3000, 16⟩, ⟨0, 3816⟩]
 
-theorem seal_verified (v : GcmImpl) (eb : BlocksImpl) :
-    Verified X86_64.target («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩) (Proof.AesGcmSiv.sealScratchContract X86_64.abi 477 8) :=
-  Verified.of_correct (seal_correct v eb) (seal_ct v eb) (by
+theorem seal_verified (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) :
+    Verified X86_64.target («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (Proof.AesGcmSiv.sealScratchContract X86_64.abi 477 8) :=
+  Verified.of_correct (seal_correct v eb wide) (seal_ct v eb wide) (by
     sig_implies [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
       Spec.GcmSiv.sealPost, Proof.AesGcmSiv.sealX86_64, Proof.AesGcmSiv.sealPre, Proof.AesGcmSiv.oneLay,
       Proof.AesGcmSiv.onePub, X86_64.abi, Proof.AesGcmSiv.arg, Proof.AesGcmSiv.args, Proof.AesGcmSiv.stk8,
@@ -115,9 +118,9 @@ theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true t
 
 /-- `open`'s public data include its leak, from which `pub` has whether it
 succeeds. -/
-theorem open_verified (v : GcmImpl) (eb : BlocksImpl) :
-    Verified X86_64.target («open» v.callees ⟨eb.enc.name, eb.enc.code⟩) (Proof.AesGcmSiv.openScratchContract X86_64.abi 477 8) :=
-  Verified.of_correct (open_correct v eb) (open_ct v eb)
+theorem open_verified (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) :
+    Verified X86_64.target («open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) (Proof.AesGcmSiv.openScratchContract X86_64.abi 477 8) :=
+  Verified.of_correct (open_correct v eb wide) (open_ct v eb wide)
     { pre := by sig_implies_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
         Spec.GcmSiv.openPre, Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, Proof.AesGcmSiv.openX86_64,
         Proof.AesGcmSiv.openLeak, Proof.AesGcmSiv.openResult, Proof.AesGcmSiv.openPost, Proof.AesGcmSiv.openPre,
@@ -195,18 +198,18 @@ the return address of a call of `vg_aes_ctr32`, `vg_aes_expand_key`,
 buffers (`openLeak_local`).
 -/
 
-variable (v : GcmImpl) (eb : BlocksImpl)
+variable (v : GcmImpl) (eb : BlocksImpl) (wide : Bool)
 
-theorem seal_xdepth : («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩).x86_64Depth ≤ 8 := by
-  simp only [«seal», keys, derive, expand, polyval, absorb, absorbChunk, absorbTail, lens, tag, crypt, cryptChunk,
+theorem seal_xdepth : («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide).x86_64Depth ≤ 8 := by
+  cases wide <;> simp only [«seal», revSel, revLoopZ, revMaskZ, revQuad, revOne, quadsThenOnes, ksLoop, ksQuad, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, keys, derive, expand, polyval, absorb, absorbChunk, absorbTail, lens, tag, crypt, cryptChunk,
     ctrGen, ecbArgs, ksXor, callEcb, cryptTail, callCtr, callKey, callGh, Code.x86_64Depth, GcmImpl.callees,
-    v.ctr.noStack, v.key.noStack, v.gh.noStack, eb.encNoStack]
+    v.ctr.noStack, v.key.noStack, v.gh.noStack, eb.encNoStack] <;>
   decide +kernel
 
-theorem open_xdepth : («open» v.callees ⟨eb.enc.name, eb.enc.code⟩).x86_64Depth ≤ 8 := by
-  simp only [«open», keys, derive, expand, polyval, absorb, absorbChunk, absorbTail, lens, tag, crypt, cryptChunk,
+theorem open_xdepth : («open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide).x86_64Depth ≤ 8 := by
+  cases wide <;> simp only [«open», revSel, revLoopZ, revMaskZ, revQuad, revOne, quadsThenOnes, ksLoop, ksQuad, ksOne, Impl.Gcm.X86_64.Pclmul.const, ↓reduceIte, keys, derive, expand, polyval, absorb, absorbChunk, absorbTail, lens, tag, crypt, cryptChunk,
     ctrGen, ecbArgs, ksXor, callEcb, cryptTail, callCtr, callKey, callGh, Code.x86_64Depth, GcmImpl.callees,
-    v.ctr.noStack, v.key.noStack, v.gh.noStack, eb.encNoStack]
+    v.ctr.noStack, v.key.noStack, v.gh.noStack, eb.encNoStack] <;>
   decide +kernel
 
 /-- A state satisfying `vg_aes_gcm_siv_seal`'s precondition, without the
@@ -219,13 +222,13 @@ theorem sealFrameSat_pre : ∃ s, (Spec.GcmSiv.sealContract X86_64.abi 3856).pre
     X86_64.abi, X86_64.argRegs] [sealFrameSat, sealSat] using sealFrameSat
 
 theorem seal_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩))
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide))
       (Spec.GcmSiv.sealContract X86_64.abi 3856) :=
   X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 477) (pre := Spec.GcmSiv.sealPre X86_64.abi.ptrBits)
     (post := Spec.GcmSiv.sealPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
-    (bytes := 3848) (seal_verified v eb) (by decide) (by decide) (by decide)
-    (seal_spSafe v eb) (seal_xdepth v eb) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
+    (bytes := 3848) (seal_verified v eb wide) (by decide) (by decide) (by decide)
+    (seal_spSafe v eb wide) (seal_xdepth v eb wide) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_siv_open`'s precondition, without the
 working space. -/
@@ -237,14 +240,14 @@ theorem openFrameSat_pre : ∃ s, (Spec.GcmSiv.openContract X86_64.abi 3856).pre
     Spec.GcmSiv.openLeak, X86_64.abi, X86_64.argRegs] [openFrameSat, sealSat] using openFrameSat
 
 theorem open_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 («open» v.callees ⟨eb.enc.name, eb.enc.code⟩))
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 («open» v.callees ⟨eb.enc.name, eb.enc.code⟩ wide))
       (Spec.GcmSiv.openContract X86_64.abi 3856) :=
   X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 477) (pre := Spec.GcmSiv.openPre X86_64.abi.ptrBits)
     (post := Spec.GcmSiv.openPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (bytes := 3848)
-    (Proof.AesGcmSiv.Verified.of_openScratch (open_verified v eb))
-    (by decide) (by decide) (by decide) (open_spSafe v eb) (open_xdepth v eb) (openPre_local _)
+    (Proof.AesGcmSiv.Verified.of_openScratch (open_verified v eb wide))
+    (by decide) (by decide) (by decide) (open_spSafe v eb wide) (open_xdepth v eb wide) (openPre_local _)
     (openPost_local _) openFrameSat_pre (hleak := openLeak_local _)
 
 end VG.Proof.AesGcmSiv.X86_64

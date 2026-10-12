@@ -39,22 +39,22 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     name := Spec.GcmSiv.sealApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.GcmSiv.sealApi.doc (notes := [note v])
-    code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.«seal» v.callees (ecbFn v))
+    code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.«seal» v.callees (ecbFn v) v.short)
     contract := Spec.GcmSiv.sealContract X86_64.abi 3856
     stack := 3856
-    verified := seal_framed v (ecbOf v)
-    spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v (ecbOf v))
+    verified := seal_framed v (ecbOf v) v.short
+    spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v (ecbOf v) v.short)
     features := features v },
   { Spec.GcmSiv.openApi with
     name := Spec.GcmSiv.openApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.GcmSiv.openApi.doc (notes := [note v,
       "It compares the tags and overwrites the data with zeros without a branch on the result."])
-    code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.«open» v.callees (ecbFn v))
+    code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.«open» v.callees (ecbFn v) v.short)
     contract := Spec.GcmSiv.openContract X86_64.abi 3856
     stack := 3856
-    verified := open_framed v (ecbOf v)
-    spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v (ecbOf v))
+    verified := open_framed v (ecbOf v) v.short
+    spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v (ecbOf v) v.short)
     features := features v }]
 
 /-- The artifacts of a variant, from the implementations it names. -/

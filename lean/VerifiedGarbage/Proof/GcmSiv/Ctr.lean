@@ -113,6 +113,35 @@ theorem ctrPart_step (ciph : Spec.GcmSiv.Cipher) (icb x : List Byte) {m m' : Mem
     · rw [ite_eq_left h₂, ite_eq_left (by omega)]
     · rw [ite_eq_right h₂, ite_eq_right (by omega)]
 
+/-- The `k` whole blocks from block `i` in memory changed to their XOR with
+their keystream blocks, and no other byte of the data. -/
+theorem ctrPart_stepN (ciph : Spec.GcmSiv.Cipher) (icb x : List Byte) {m m' : Mem} (P : Addr) {i k : Nat}
+    (hk : ∀ l < k, (ksBlock ciph icb (i + l)).length = 16)
+    (hd : bytesAt m P x.length = ctrPart ciph icb x (16 * i))
+    (hf : ∀ p < x.length, (p < 16 * i ∨ 16 * (i + k) ≤ p) → m' (P + BitVec.ofNat 64 p) = m (P + BitVec.ofNat 64 p))
+    (hb : ∀ l < k, bytesAt m' (P + BitVec.ofNat 64 (16 * (i + l))) 16 =
+      Spec.Cmac.xor (bytesAt m (P + BitVec.ofNat 64 (16 * (i + l))) 16) (ksBlock ciph icb (i + l))) :
+    bytesAt m' P x.length = ctrPart ciph icb x (16 * (i + k)) := by
+  have hdk : ∀ p < x.length, m (P + BitVec.ofNat 64 p) = (ctrPart ciph icb x (16 * i)).getD p 0 := fun p hp => by
+    rw [← hd, Proof.Cmac.getD_bytesAt _ _ hp]
+  refine ext_getD (by rw [Proof.Cmac.bytesAt_length, length_ctrPart]) fun p hp => ?_
+  rw [Proof.Cmac.bytesAt_length] at hp
+  rw [Proof.Cmac.getD_bytesAt _ _ hp, getD_ctrPart _ _ _ _ hp]
+  by_cases h₁ : 16 * i ≤ p ∧ p < 16 * (i + k)
+  · have hl : p / 16 - i < k := by omega
+    have e : P + BitVec.ofNat 64 p = P + BitVec.ofNat 64 (16 * (i + (p / 16 - i))) + BitVec.ofNat 64 (p % 16) := by
+      rw [Offset.add_add, show 16 * (i + (p / 16 - i)) + p % 16 = p by omega]
+    have hb' := congrArg (fun l => l.getD (p % 16) 0) (hb _ hl)
+    rw [Proof.Cmac.getD_bytesAt _ _ (by omega),
+      getD_xor (by rw [Proof.Cmac.bytesAt_length]; omega) (by rw [hk _ hl]; omega),
+      Proof.Cmac.getD_bytesAt _ _ (by omega)] at hb'
+    rw [e, hb', ← e, hdk p hp, getD_ctrPart _ _ _ _ hp, ite_eq_right (by omega), ite_eq_left (by omega),
+      show i + (p / 16 - i) = p / 16 by omega]
+  · rw [hf p hp (by omega), hdk p hp, getD_ctrPart _ _ _ _ hp]
+    by_cases h₂ : p < 16 * i
+    · rw [ite_eq_left h₂, ite_eq_left (by omega)]
+    · rw [ite_eq_right h₂, ite_eq_right (by omega)]
+
 /-! ## The counter blocks -/
 
 /-- The initial counter block of a tag stored as two words. -/

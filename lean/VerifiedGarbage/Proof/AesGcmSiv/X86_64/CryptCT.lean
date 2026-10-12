@@ -291,9 +291,9 @@ theorem ecbCall_wp (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} 
   · exact ⟨_, by simp, fun _ h => h⟩
 
 /-- The XOR and the count, in a run: the run before block `j + c`. -/
-theorem xorEnd_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n b j c : Nat} (hb : 16 * b ≤ n)
+theorem xorEnd_wp (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n b j c : Nat} (hb : 16 * b ≤ n)
     (hc1 : 1 ≤ c) (hc : c ≤ 64) (hjc : j + c ≤ b) {t : State} (I : CMid K W SP R N A D al n b j c t) :
-    WP isa (.seq ksXor (.block [.alu .sub .rbx (.reg .r14)])) t fun t' =>
+    WP isa (.seq (ksXor wide) (.block [.alu .sub .rbx (.reg .r14)])) t fun t' =>
       CInv K W SP R N A D al n b (j + c) t' ∧ t'.zf = some (decide (b - (j + c) = 0)) := by
   have E := I.inv.one.env
   have h15 := E.r15
@@ -313,7 +313,7 @@ theorem xorEnd_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al 
     (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide)) rd₁ wr₁
   unfold ksXor
   refine WP.seq (WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩))
-  refine WP.mono (xorLoop_regs L E₁ (I.inv.buf.of_eq rd₁ wr₁) (by rw [wr₁]; exact hDw) (j := j) (c := c) hc1 hc
+  refine WP.mono (ksLoop_regs wide L E₁ (I.inv.buf.of_eq rd₁ wr₁) (by rw [wr₁]; exact hDw) (j := j) (c := c) hc1 hc
     (by omega)
     ⟨by rw [g₁ _ (by decide) (by decide), I.inv.r12, Nat.add_zero], by rw [rsi₁, Nat.mul_zero, Nat.add_zero],
       by rw [rcx₁, Nat.sub_zero], Frame.refl _ _, fun _ _ _ _ _ _ => rfl, rfl, rfl⟩) fun t₂ X => ?_
@@ -358,15 +358,18 @@ theorem chunkGen_check : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp])
 theorem ecbArgs_check : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp, .r14]) (.block ecbArgs) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem xorEnd_check : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp, .r14])
-    (.seq ksXor (.block [.alu .sub .rbx (.reg .r14)])) hc).isSome = true := ⟨_, by taint_decide⟩
+theorem xorEnd_check (wide : Bool) : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp, .r14])
+    (.seq (ksXor wide) (.block [.alu .sub .rbx (.reg .r14)])) hc).isSome = true := by
+  cases wide
+  · exact ⟨_, by taint_decide⟩
+  · exact ⟨_, by taint_decide⟩
 
 /-- A chunk of counter mode, in two runs before the same block. -/
-theorem ctrChunk_rel (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
+theorem ctrChunk_rel (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
     {N A D : Addr} {al n b : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64)
     (hb : 16 * b ≤ n) {j : Nat} (hj : j < b) :
     RelCT isa (fun t₁ t₂ => CInv K W SP R N A D al n b j t₁ ∧ CInv K W SP R N A D al n b j t₂)
-      (cryptChunk ⟨eb.enc.name, eb.enc.code⟩)
+      (cryptChunk ⟨eb.enc.name, eb.enc.code⟩ wide)
       fun t₁ t₂ => (CInv K W SP R N A D al n b (j + min 64 (b - j)) t₁ ∧
           t₁.zf = some (decide (b - (j + min 64 (b - j)) = 0))) ∧
         (CInv K W SP R N A D al n b (j + min 64 (b - j)) t₂ ∧
@@ -391,18 +394,18 @@ theorem ctrChunk_rel (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat
     (F₁ := CMid K W SP R N A D al n b j c) (F₂ := CMid K W SP R N A D al n b j c)
     fun t₁ t₂ h => ⟨ecbCall_wp eb L hc h.2.1, ecbCall_wp eb L hc h.2.2⟩
   have r₄ := (rel_taintC [.r12, .rbx, .rbp, .r14] (P := fun t₁ t₂ => True ∧ CMid K W SP R N A D al n b j c t₁ ∧
-      CMid K W SP R N A D al n b j c t₂) hDW hn (fun t₁ t₂ h => h.2.1.agree h.2.2) xorEnd_check).wp
+      CMid K W SP R N A D al n b j c t₂) hDW hn (fun t₁ t₂ h => h.2.1.agree h.2.2) (xorEnd_check wide)).wp
     (F₁ := fun (t : State) => CInv K W SP R N A D al n b (j + c) t ∧ t.zf = some (decide (b - (j + c) = 0)))
     (F₂ := fun (t : State) => CInv K W SP R N A D al n b (j + c) t ∧ t.zf = some (decide (b - (j + c) = 0)))
-    fun t₁ t₂ h => ⟨xorEnd_wp L hb hc1 hc hjc h.2.1, xorEnd_wp L hb hc1 hc hjc h.2.2⟩
+    fun t₁ t₂ h => ⟨xorEnd_wp wide L hb hc1 hc hjc h.2.1, xorEnd_wp wide L hb hc1 hc hjc h.2.2⟩
   exact (RelCT.seq r₁ (RelCT.seq r₂ (RelCT.seq r₃ r₄))).mono (fun _ _ h => h) fun _ _ h => ⟨h.2.1, h.2.2⟩
 
 /-- The whole blocks of counter mode, in two runs. -/
-theorem blks_rel (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
+theorem blks_rel (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
     {N A D : Addr} {al n b : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64)
     (hb : 16 * b ≤ n) (hb1 : 1 ≤ b) :
     RelCT isa (fun t₁ t₂ => CInv K W SP R N A D al n b 0 t₁ ∧ CInv K W SP R N A D al n b 0 t₂)
-      (.loop (cryptChunk ⟨eb.enc.name, eb.enc.code⟩) .ne)
+      (.loop (cryptChunk ⟨eb.enc.name, eb.enc.code⟩ wide) .ne)
       fun t₁ t₂ => CInv K W SP R N A D al n b b t₁ ∧ CInv K W SP R N A D al n b b t₂ := by
   refine (RelCT.loop (fun m t₁ t₂ => ∃ j, m = b - j ∧ j < b ∧ CInv K W SP R N A D al n b j t₁ ∧
       CInv K W SP R N A D al n b j t₂) (fun m => ?_) (b - 0)).mono (fun t₁ t₂ h => ⟨0, rfl, hb1, h⟩) fun _ _ h => h
@@ -410,7 +413,7 @@ theorem blks_rel (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (h
   by_cases hj : j < b
   · by_cases hm : m = b - j
     · subst hm
-      refine (ctrChunk_rel eb L hR hDW hn hb hj).mono (fun t₁ t₂ h => ⟨h.2.2.1, h.2.2.2⟩)
+      refine (ctrChunk_rel eb wide L hR hDW hn hb hj).mono (fun t₁ t₂ h => ⟨h.2.2.1, h.2.2.2⟩)
         fun t₁ t₂ ⟨⟨I₁, z₁⟩, ⟨I₂, z₂⟩⟩ => ⟨by rw [eval_ne z₁, eval_ne z₂], fun hc => ?_, fun hc => ?_⟩
       · rw [eval_ne z₁] at hc
         have he : j + min 64 (b - j) = b := by simp at hc; omega
@@ -496,11 +499,11 @@ theorem test_cinv {K W SP : Addr} {R : Nat} {N A D : Addr} {al n b j : Nat} {t :
     rw [Proof.AesGcm.X86_64.and_self_beq (by omega)]
 
 /-- `crypt`, in two runs with the same public arguments. -/
-theorem crypt_rel (v : GcmImpl) (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
+theorem crypt_rel (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
     {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → (One K W SP R N A D al n t₁ ∧ Buf K W SP t₁ D n) ∧
       (One K W SP R N A D al n t₂ ∧ Buf K W SP t₂ D n)) :
-    RelCT isa P (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩) fun _ _ => True := by
+    RelCT isa P (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩ wide) fun _ _ => True := by
   have r₁ := (rel_taintC [] hDW hn (fun t₁ t₂ h => ⟨(hP _ _ h).1.1, (hP _ _ h).2.1, fun _ h => nomatch h⟩)
     head_check).wp
     (F₁ := fun (t₁ : State) => CInv K W SP R N A D al n (n / 16) 0 t₁ ∧ t₁.zf = some (decide (n / 16 = 0)))
@@ -509,7 +512,7 @@ theorem crypt_rel (v : GcmImpl) (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W S
   have r₂ : RelCT isa (fun t₁ t₂ => True ∧ (CInv K W SP R N A D al n (n / 16) 0 t₁ ∧
         t₁.zf = some (decide (n / 16 = 0))) ∧ (CInv K W SP R N A D al n (n / 16) 0 t₂ ∧
         t₂.zf = some (decide (n / 16 = 0))))
-      (.ite .e (.block []) (.loop (cryptChunk ⟨eb.enc.name, eb.enc.code⟩) .ne))
+      (.ite .e (.block []) (.loop (cryptChunk ⟨eb.enc.name, eb.enc.code⟩ wide) .ne))
       fun t₁ t₂ => CInv K W SP R N A D al n (n / 16) (n / 16) t₁ ∧ CInv K W SP R N A D al n (n / 16) (n / 16) t₂ := by
     refine RelCT.ite (fun t₁ t₂ h => by rw [eval_e h.2.1.2, eval_e h.2.2.2]) ?_ ?_
     · refine RelCT.block_nil fun t₁ t₂ h => ?_
@@ -523,7 +526,7 @@ theorem crypt_rel (v : GcmImpl) (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W S
         have := h.2
         rw [eval_e h.1.2.1.2] at this
         simp [h0] at this
-      · exact (blks_rel eb L hR hDW hn (b := n / 16) (by omega) (by omega)).mono
+      · exact (blks_rel eb wide L hR hDW hn (b := n / 16) (by omega) (by omega)).mono
           (fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) fun _ _ h => h
   have r₃ := (rel_taintC [.r12, .rbx, .rbp] (P := fun t₁ t₂ => CInv K W SP R N A D al n (n / 16) (n / 16) t₁ ∧
       CInv K W SP R N A D al n (n / 16) (n / 16) t₂) hDW hn (fun t₁ t₂ h => h.1.agree h.2) test_check).wp
