@@ -2,7 +2,7 @@
 //! Verified `p521_inverse` functions for `x86_64`.
 #![allow(dead_code)]
 
-/// The power `A = Z^(p-2)` modulo P-521's prime `p` (the inverse of `Z` if it is nonzero), of the number `Z` at byte 1216 of `ws`. Numbers are 9 64-bit words (`72` bytes), little-endian, in Montgomery's form modulo P-521's prime `p`. The function reads `p` at byte 64 and the number to invert at byte 1216, and writes the result at bytes 2152 to 2223, below `p`. Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5695 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
+/// The power `A = Z^(p-2)` modulo P-521's prime `p` (the inverse of `Z` if it is nonzero), of the number `Z` at byte 1216 of `ws`. Numbers are 9 64-bit words (`72` bytes), little-endian, in Montgomery's form modulo P-521's prime `p`. The function reads `p` at byte 64 and the number to invert at byte 1216, and writes the result at bytes 2152 to 2223, below `p`. Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5767 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///
 /// Contract: `invPContract` of `VG.Spec.Weierstrass.Inverse.Curve`.
 ///
@@ -12,7 +12,7 @@
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
 /// * The 9 words at byte 64 of `ws` must be P-521's prime `p`, and the number at byte 1216 must be below it.
-/// * Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5695 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
+/// * Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5767 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p521_inv_mod_p(ws: *mut [u64; 1024]) {
@@ -3968,7 +3968,7 @@ pub(crate) unsafe extern "sysv64" fn vg_p521_inv_mod_p(ws: *mut [u64; 1024]) {
 /// The CPU features `vg_p521_inv_mod_p_adx` requires (`Artifact.features`).
 pub(crate) const VG_P521_INV_MOD_P_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
 
-/// The power `A = Z^(p-2)` modulo P-521's prime `p` (the inverse of `Z` if it is nonzero), of the number `Z` at byte 1216 of `ws`. Numbers are 9 64-bit words (`72` bytes), little-endian, in Montgomery's form modulo P-521's prime `p`. The function reads `p` at byte 64 and the number to invert at byte 1216, and writes the result at bytes 2152 to 2223, below `p`. Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5695 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
+/// The power `A = Z^(p-2)` modulo P-521's prime `p` (the inverse of `Z` if it is nonzero), of the number `Z` at byte 1216 of `ws`. Numbers are 9 64-bit words (`72` bytes), little-endian, in Montgomery's form modulo P-521's prime `p`. The function reads `p` at byte 64 and the number to invert at byte 1216, and writes the result at bytes 2152 to 2223, below `p`. Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5767 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///
 /// Contract: `invPContract` of `VG.Spec.Weierstrass.Inverse.Curve`.
 ///
@@ -3978,7 +3978,7 @@ pub(crate) const VG_P521_INV_MOD_P_ADX_FEATURES: crate::cpu::Features = crate::c
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
 /// * The 9 words at byte 64 of `ws` must be P-521's prime `p`, and the number at byte 1216 must be below it.
-/// * Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5695 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
+/// * Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5767 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
@@ -7612,7 +7612,7 @@ pub(crate) unsafe extern "sysv64" fn vg_p521_inv_mod_p_adx(ws: *mut [u64; 1024])
     )
 }
 
-/// The power `A = x^(n-2)` modulo P-521's order `n` (the inverse of `x` if it is nonzero), of the number `x` at byte 2728 of `ws`. Numbers are 9 64-bit words (`72` bytes), little-endian, in Montgomery's form modulo P-521's order `n`. The function reads `n` at byte 136 and the number to invert at byte 2728, and writes the result at bytes 2152 to 2223, below `n`. Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5695 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
+/// The power `A = x^(n-2)` modulo P-521's order `n` (the inverse of `x` if it is nonzero), of the number `x` at byte 2728 of `ws`. Numbers are 9 64-bit words (`72` bytes), little-endian, in Montgomery's form modulo P-521's order `n`. The function reads `n` at byte 136 and the number to invert at byte 2728, and writes the result at bytes 2152 to 2223, below `n`. Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5767 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///
 /// Contract: `invNContract` of `VG.Spec.Weierstrass.Inverse.Curve`.
 ///
@@ -7622,7 +7622,7 @@ pub(crate) unsafe extern "sysv64" fn vg_p521_inv_mod_p_adx(ws: *mut [u64; 1024])
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
 /// * The 9 words at byte 136 of `ws` must be P-521's order `n`, and the number at byte 2728 must be below it.
-/// * Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5695 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
+/// * Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5767 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p521_inv_mod_n(ws: *mut [u64; 1024]) {
