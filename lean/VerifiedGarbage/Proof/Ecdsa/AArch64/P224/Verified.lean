@@ -71,8 +71,8 @@ theorem p224_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p224 where
   am3 := by unfold AM3; decide +kernel
   call_p := fun _ _ h => nomatch (callOf_small (by decide)).symm.trans h
   call_n := callOf_small (by decide)
-  inv_at := .inl rfl
-  inv_fn := fun h => absurd rfl h
+  inv_at := .inr (by decide +kernel)
+  inv_fn := fun _ => ⟨by decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
   padd := fun _ => ⟨by decide, by decide, by rw [← Code.allInstrs_eq]; decide +kernel, by decide +kernel⟩
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p224 s := by

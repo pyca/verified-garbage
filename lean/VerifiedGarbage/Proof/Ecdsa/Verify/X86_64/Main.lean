@@ -47,17 +47,15 @@ theorem verify_inline (c : Cfg) : (Impl.Ecdsa.Verify.X86_64.Cfg.verify c).inline
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
       (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c))
-      (.seq (Impl.Ecdh.X86_64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c)
-      (.seq c.nPow.inline (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c)
+      (.seq (Impl.Ecdh.X86_64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline
+      (.seq c.nPow.inline (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline
       (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.points c).inline
         (Impl.Ecdsa.Verify.X86_64.Cfg.tail c).inline)))))))) := by
   rw [verify_eq'']
   show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.validate c).inline
     (Code.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline (Code.seq c.nPow.inline
     (Code.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline _))))))) = _
-  rw [show (Impl.Ecdh.X86_64.Cfg.validate c).inline = _ from blocks_inline _,
-    show (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline = _ from blocks_inline _,
-    show (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline = _ from blocks_inline _]
+  rw [show (Impl.Ecdh.X86_64.Cfg.validate c).inline = _ from blocks_inline _]
   rfl
 
 /-- What the slots of `a`, `3b` and `G` stand for. -/
@@ -77,7 +75,8 @@ theorem consts_tmv (hc : BaseCfgOk c) {base : Addr} {g : Reg → BitVec 64} {s :
 /-- `vg_ecdsa_<curve>_verify` returns whether the specification's
 verification holds, and restores the callee-saved registers. -/
 theorem verify_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
-    (hp : VPre c s₀) :
+    (hp : VPre c s₀)
+    (hm : c.mul.isSome = true → c.n = 4 ∧ c.mulFn.noCalls = true := by exact fun h => absurd h (by decide)) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.verify c).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
@@ -92,7 +91,7 @@ theorem verify_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : St
       (tmv c.C c.n (s₀.gpr .rcx) s₂ (c.sl ONEP)) P := by
     rw [h1]
     exact peerPt_rep hC _ _ _ hM.px hM.py
-  refine points_ok hc hC hT hM hp.tbls (by rw [hp.wr]; simp) (fun r hr => by rw [hp.rd]; simp [hr]) hPc hQ
+  refine points_ok hc hC hT hm hM hp.tbls (by rw [hp.wr]; simp) (fun r hr => by rw [hp.rd]; simp [hr]) hPc hQ
     fun s₃ hP => ?_
   refine WP.mono (tail_dispatch_ok hc hC hP) fun s' ⟨saved, xo, hxo, hx, rax⟩ =>
     ⟨fun r hr => (saved r hr).trans (hg r hr), ?_⟩

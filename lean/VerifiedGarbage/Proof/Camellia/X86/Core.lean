@@ -37,9 +37,10 @@ theorem d2Slot_eq : d2Slot = 56 := rfl
 /-- Word `j` of entry `i` of the table, in the scratch buffer at `b`. -/
 def entryW (m : Mem) (b : BitVec 32) (i j : Nat) : BitVec 32 := m.readW (wordAddr b (keySlot + 16 * i + j)) 32
 
-/-- The scratch buffer at `b`, in the regions `rs`. -/
+/-- The scratch buffer at `b`, of `slots` slots or more (a mode keeps its
+own after them), in the regions `rs`. -/
 structure ScrIn (rs : List Region) (b : BitVec 32) : Prop where
-  mem : (⟨b.setWidth 64, 4 * slots⟩ : Region) ∈ rs
+  mem : ∃ n, slots ≤ n ∧ b.toNat + 4 * n ≤ 2 ^ 32 ∧ (⟨b.setWidth 64, 4 * n⟩ : Region) ∈ rs
   fit : b.toNat + 4 * slots ≤ 2 ^ 32
 
 /-- What the rounds need: the scratch buffer, writable, and a table of `nk`
@@ -107,8 +108,14 @@ theorem slot_in {rs : List Region} {b : BitVec 32} {n k : Nat} (hr : (⟨b.setWi
     have := setWidth_toNat b
     exact VG.Offset.contains_base _ (by omega) (by omega)⟩
 
+/-- A scratch buffer of exactly `slots` slots. -/
+theorem ScrIn.exact {rs : List Region} {b : BitVec 32} (hr : (⟨b.setWidth 64, 4 * slots⟩ : Region) ∈ rs)
+    (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) : ScrIn rs b := ⟨⟨slots, Nat.le_refl _, hfit, hr⟩, hfit⟩
+
 theorem ScrIn.slot {rs : List Region} {b : BitVec 32} (h : ScrIn rs b) {k : Nat} (hk : k < slots) :
-    InRegions rs (wordAddr b k) 4 := slot_in h.mem h.fit hk
+    InRegions rs (wordAddr b k) 4 :=
+  let ⟨_, hn, hf, hr⟩ := h.mem
+  slot_in hr hf (Nat.lt_of_lt_of_le hk hn)
 
 theorem ScrIn.slot_rd {s : State} {b : BitVec 32} (h : ScrIn s.wr b) {k : Nat} (hk : k < slots) :
     InRegions (s.rd ++ s.wr) (wordAddr b k) 4 := by

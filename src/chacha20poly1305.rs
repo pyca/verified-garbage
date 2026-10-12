@@ -11,10 +11,13 @@
 //!
 //! They are emitted once for each implementation of `vg_chacha20_xor`
 //! (`crate::chacha20::Backend`), each calling it and the implementation of
-//! `vg_poly1305_blocks` for the same CPUs: on x86-64, CPUs with AVX-512F and
-//! AVX2 run `vg_chacha20_poly1305_seal_avx512` and
-//! `vg_chacha20_poly1305_open_avx512` (with `vg_chacha20_xor_avx512` and
-//! `vg_poly1305_blocks_avx512`), and other CPUs with AVX2
+//! `vg_poly1305_blocks` for the same CPUs: on x86-64, CPUs with AVX512_IFMA,
+//! AVX-512F and AVX2 run `vg_chacha20_poly1305_seal_ifma` and
+//! `vg_chacha20_poly1305_open_ifma` (with `vg_chacha20_xor_avx512` and
+//! `vg_poly1305_blocks_ifma`), other CPUs with AVX-512F and AVX2
+//! `vg_chacha20_poly1305_seal_avx512` and `vg_chacha20_poly1305_open_avx512`
+//! (with `vg_chacha20_xor_avx512` and `vg_poly1305_blocks_avx512`), and other
+//! CPUs with AVX2
 //! `vg_chacha20_poly1305_seal_avx2` and `vg_chacha20_poly1305_open_avx2`.
 //! On x86, CPUs with SSSE3 run `vg_chacha20_poly1305_seal_ssse3` and
 //! `vg_chacha20_poly1305_open_ssse3` (with `vg_chacha20_xor_ssse3`).
@@ -50,9 +53,11 @@ use core::mem::MaybeUninit;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::chacha20poly1305::{
     VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES,
-    vg_chacha20_poly1305_open_avx2, vg_chacha20_poly1305_open_avx512,
+    VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES, vg_chacha20_poly1305_open_avx2,
+    vg_chacha20_poly1305_open_avx512, vg_chacha20_poly1305_open_ifma,
     vg_chacha20_poly1305_seal_avx2, vg_chacha20_poly1305_seal_avx512,
     vg_chacha20_poly1305_seal_gather_avx2, vg_chacha20_poly1305_seal_gather_avx512,
+    vg_chacha20_poly1305_seal_gather_ifma, vg_chacha20_poly1305_seal_ifma,
 };
 use crate::arch::chacha20poly1305::{
     vg_chacha20_poly1305_open, vg_chacha20_poly1305_seal, vg_chacha20_poly1305_seal_gather,
@@ -78,6 +83,7 @@ use crate::zeroize::zeroize;
 fn select(f: Features) -> Backend {
     Backend::select_for(
         f,
+        VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES,
         VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES,
         VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES,
     )
@@ -174,6 +180,8 @@ impl ChaCha20Poly1305 {
             Backend::Avx2 => vg_chacha20_poly1305_seal_avx2,
             #[cfg(target_arch = "x86_64")]
             Backend::Avx512 => vg_chacha20_poly1305_seal_avx512,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Ifma => vg_chacha20_poly1305_seal_ifma,
             #[cfg(target_arch = "x86")]
             Backend::Ssse3 => vg_chacha20_poly1305_seal_ssse3,
         };
@@ -244,6 +252,8 @@ impl ChaCha20Poly1305 {
             Backend::Avx2 => vg_chacha20_poly1305_seal_gather_avx2,
             #[cfg(target_arch = "x86_64")]
             Backend::Avx512 => vg_chacha20_poly1305_seal_gather_avx512,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Ifma => vg_chacha20_poly1305_seal_gather_ifma,
             #[cfg(target_arch = "x86")]
             Backend::Ssse3 => vg_chacha20_poly1305_seal_gather_ssse3,
         };
@@ -292,6 +302,8 @@ impl ChaCha20Poly1305 {
             Backend::Avx2 => vg_chacha20_poly1305_open_avx2,
             #[cfg(target_arch = "x86_64")]
             Backend::Avx512 => vg_chacha20_poly1305_open_avx512,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Ifma => vg_chacha20_poly1305_open_ifma,
             #[cfg(target_arch = "x86")]
             Backend::Ssse3 => vg_chacha20_poly1305_open_ssse3,
         };
@@ -519,12 +531,16 @@ mod tests {
         };
         use crate::arch::chacha20poly1305::{
             VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES, VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES,
-            VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES,
+            VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES,
         };
         use crate::arch::poly1305::{
             VG_POLY1305_BLOCKS_AVX2_FEATURES, VG_POLY1305_BLOCKS_AVX512_FEATURES,
+            VG_POLY1305_BLOCKS_IFMA_FEATURES,
         };
         let avx2 = Features::all(&[
             VG_CHACHA20_XOR_AVX2_FEATURES,
@@ -540,8 +556,16 @@ mod tests {
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES, avx512);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES, avx512);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES, avx512);
+        let ifma = Features::all(&[
+            VG_CHACHA20_XOR_AVX512_FEATURES,
+            VG_POLY1305_BLOCKS_IFMA_FEATURES,
+        ]);
+        assert_eq!(VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES, ifma);
+        assert_eq!(VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES, ifma);
+        assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES, ifma);
         assert_eq!(select(avx2), Backend::Avx2);
         assert_eq!(select(avx512), Backend::Avx512);
+        assert_eq!(select(ifma), Backend::Ifma);
         // AVX-512F alone is not enough: the AVX-512 instances' Poly1305
         // calls its AVX2 implementation.
         assert_eq!(select(VG_CHACHA20_XOR_AVX512_FEATURES), Backend::Scalar);

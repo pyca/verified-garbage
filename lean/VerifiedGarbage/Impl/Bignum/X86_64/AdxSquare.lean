@@ -60,10 +60,13 @@ def diagonalChoice : Prog isa :=
         (.ite .e AdxSquareGrouped.diagonal diagonal)))
 
 /-- The unreduced square, at `aAcc + 16`, using the adjacent `aAcc` and
-`aTmp` storage. Each off-diagonal product is computed only once. -/
-def rawSquare (a : Nat) : Prog isa :=
+`aTmp` storage, with the diagonal `diag`. Each off-diagonal product is
+computed only once. -/
+def rawSquareWith (diag : Prog isa) (a : Nat) : Prog isa :=
   .seq (.block (Adx.setup a)) (.seq cross
-    (.seq (.block (Adx.setup a)) (.seq (.block [.mov .r10 (.reg .rbx)]) diagonalChoice)))
+    (.seq (.block (Adx.setup a)) (.seq (.block [.mov .r10 (.reg .rbx)]) diag)))
+
+def rawSquare (a : Nat) : Prog isa := rawSquareWith diagonalChoice a
 
 /-- Montgomery cancellation multiplier for the window's low word. -/
 def redcHead : List Instr :=
@@ -102,9 +105,17 @@ def redcTest : List Instr :=
 def redcChoice : Prog isa :=
   .seq (.block redcTest) (.ite .e AdxRotate8.redc redc)
 
-/-- Montgomery square using one copy of each off-diagonal product. -/
-def montSquare (o a : Nat) : Prog isa :=
-  .seq (rawSquare a) (.seq redcChoice (.seq (.block [.mov .r10 (.mem (hdr (sArr Public.aN)))]) (Adx.finish o)))
+/-- Montgomery square using one copy of each off-diagonal product, with the
+diagonal `diag` and the reduction `red`. -/
+def montSquareWith (diag red : Prog isa) (o a : Nat) : Prog isa :=
+  .seq (rawSquareWith diag a)
+    (.seq red (.seq (.block [.mov .r10 (.mem (hdr (sArr Public.aN)))]) (Adx.finish o)))
+
+def montSquare (o a : Nat) : Prog isa := montSquareWith diagonalChoice redcChoice o a
+
+/-- `montSquare` for `w` a multiple of 4 but not of 8, which takes the
+four-word diagonal and the general reduction. -/
+def montSquare4 (o a : Nat) : Prog isa := montSquareWith AdxSquareGrouped.diagonal redc o a
 
 /-- Equal input arrays use the square kernel; other products retain the
 fused ADX multiplication. The size guard preserves its small-size fallback. -/

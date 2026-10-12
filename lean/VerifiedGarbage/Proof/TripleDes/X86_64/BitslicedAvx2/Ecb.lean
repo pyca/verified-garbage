@@ -76,7 +76,7 @@ theorem ecb_post (d : Direction) {s : State} (E : WideEnv s)
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact w.rbx
-    all_goals exact g _ (by simp [WideRegs, PassRegs])
+    all_goals first | exact w.r12 | exact w.r13 | exact g _ (by simp [WideRegs, PassRegs])
   · rw [← hsp, t.gpr.2, hsp]
     refine w.frame.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) ?_ (by decide)
     intro r hr

@@ -15,8 +15,8 @@ the 128-byte slots of the working space, with `r0` the working space and
 `r6` the limb mask; multiplications, additions and subtractions are calls of
 the `vg_gf448_r16_*` functions, which change `r1`–`r3`, `r12` and `lr` (and
 so the link register is kept at `LR`) but keep `r8`, `r10` and `r11`. The
-pointer to the public key stays in `r8`; the one to the signature is in
-`r12`, which is read only before the first call.
+pointer to the public key stays in `r8` until the decoding loop; the one to the
+signature is in `r12`, which `decode` reads only before its first call.
 
 Everything is computed whatever the inputs, and the checks are accumulated
 in `r10` (`BAD`), which stays 0 exactly when every one passes: each check
@@ -251,14 +251,18 @@ def vdouble : Prog isa :=
     (.loop (.seq (ops (doubleAt 0 21 2 ++ doubleAt 8 9 10))
       (.block [.dp .sub .r11 .r11 (.imm 1), .cmp .r11 (.imm 0)])) .ne)
 
-/-- One decoding, of the point at `p` into slots 6–7, after slots 6–7 are kept at `RX` and
-`RY`. -/
-def vdecodeBody (p : Reg) : Prog isa :=
-  .seq (.block (copy RX (slot 6) ++ copy RY (slot 7))) (decode p 6 7)
+/-- One decoding, of the point at `r12` into slots 6–7 (which `decode` reads only before its first
+call), after slots 6–7 are kept at `RX` and `RY`; then `r12 := r8`, `r8 := r0`, and `Z` set
+exactly when `r8` was the working space. -/
+def vdecodeBody : Prog isa :=
+  .seq (.block (copy RX (slot 6) ++ copy RY (slot 7))) <| .seq (decode .r12 6 7) <|
+    .block [.mov .r12 (.reg .r8), .mov .r11 (.reg .r8), .mov .r8 (.reg .r0), .subs .r11 .r11 (.reg .r0)]
 
-/-- `R` (at `r12`) decoded, then `A` (at `r8`, which the field arithmetic preserves; `r12`
-is read only before the first call). `A` ends in slots 6–7 and `R` at `RX` and `RY`. -/
-def vdecode : Prog isa := .seq (vdecodeBody .r12) (vdecodeBody .r8)
+/-- `R` (at `r12`) decoded, then `A` (at `r8`, which the field arithmetic preserves): one copy of
+`decode`, in a loop whose first pass moves `A`'s pointer into `r12` and the working space's into
+`r8`, which is not the working space before it (`A` lies outside it) and is after: `Z` ends the
+loop after the second. `A` ends in slots 6–7 and `R` at `RX` and `RY`. -/
+def vdecode : Prog isa := .loop vdecodeBody .ne
 
 /-- `R` into slots 8–9 (`B` is no longer needed). -/
 def vR : List Instr := copy (slot 8) RX ++ copy (slot 9) RY

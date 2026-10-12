@@ -127,7 +127,7 @@ def BlockSpec.viaV (cs : BlockSpec c) {r : Reg} (v : VReg) (hsb : r ≠ sb) (hd 
   ready_frame := cs.ready_frame
   prepare_wp {s B rs k} hB hs hrs hk := by
     have hk₁ : cs.KeyArgs (s.setV v (ofVDwords (s.gpr r) (s.gpr r))) rs k :=
-      cs.keyArgs_congr hk (fun _ _ => rfl) rfl rfl (Frame.refl _ _)
+      cs.keyArgs_congr hk (fun _ _ => rfl) rfl rfl rfl (Frame.refl _ _)
     refine WP.mono (WP.wrap (cs.prepare_wp hB ⟨hs.wr, hs.fit⟩ hrs hk₁)) fun s' ⟨s₁, ⟨ready, b, dr, lr, f, rd, wr⟩, e⟩ => ?_
     subst e
     exact ⟨hready _ ready, by rw [(write_ok _ _ _).2.1 _ (Ne.symm hsb), b],
@@ -135,7 +135,7 @@ def BlockSpec.viaV (cs : BlockSpec c) {r : Reg} (v : VReg) (hsb : r ≠ sb) (hd 
       f, rd, wr⟩
   crypt_wp {s B k} hB hs hr := by
     have hr₁ : cs.Ready (s.setV v (ofVDwords (s.gpr r) (s.gpr r))) B k :=
-      cs.ready_frame hr (Frame.refl [] _) (fun _ h => by simp at h) fun _ _ => rfl
+      cs.ready_frame hr (Frame.refl [] _) (fun _ h => by simp at h) ⟨fun _ h => by simp at h, rfl, rfl, rfl⟩ fun _ _ => rfl
     refine WP.mono (WP.wrap (cs.crypt_wp hB ⟨hs.wr, hs.fit⟩ hr₁)) fun s' ⟨s₁, ⟨b, dr, lr, ready, f, e, rd, wr⟩, he⟩ => ?_
     subst he
     exact ⟨by rw [(write_ok _ _ _).2.1 _ (Ne.symm hsb), b], by rw [(write_ok _ _ _).2.1 _ (Ne.symm hd), dr]; rfl,

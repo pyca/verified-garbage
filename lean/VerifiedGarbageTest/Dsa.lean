@@ -1,5 +1,5 @@
 import Lean.Elab.Command
-import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Spec.Dsa.SignVerify
 import VerifiedGarbage.Spec.Sha512
 import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
@@ -131,6 +131,25 @@ def check (v : Vector) (signing : Bool) : Except String Unit := do
     unless (nonceCached key valid d v.k).val == some v.sig do throw "signature mismatch"
     unless (signCached key valid d [0, v.params.q, v.k]).val == some v.sig do throw "nonce rejection failed"
     unless generate v.params [0, v.params.q, v.x] == some key do throw "key generation mismatch"
+    let pLen := bitLength v.params.p / 8
+    let qLen := bitLength v.params.q / 8
+    let publicBytes := encodeBE pLen v.params.p ++ encodeBE qLen v.params.q ++
+      encodeBE pLen v.params.g ++ encodeBE pLen v.y
+    let privateBytes := publicBytes ++ encodeBE qLen v.x
+    let signature := encodeBE qLen v.sig.r ++ encodeBE qLen v.sig.s
+    unless signBytes pLen qLen privateBytes (encodeBE qLen v.k) d == some signature do
+      throw "packed signing mismatch"
+    unless verifyBytes pLen qLen publicBytes signature d do throw "packed verification mismatch"
+    unless signBytes pLen qLen privateBytes (encodeBE qLen 0) d == none do
+      throw "packed signing accepted zero nonce"
+    unless signBytes pLen qLen publicBytes (encodeBE qLen v.k) d == none do
+      throw "packed signing accepted public-only key"
+    if verifyBytes pLen qLen privateBytes signature d then throw "packed public key length accepted"
+    if verifyBytes pLen qLen publicBytes (signature ++ [0]) d then throw "oversized signature accepted"
+    if verifyBytes pLen qLen publicBytes (List.replicate (2 * qLen) 0) d then
+      throw "packed zero signature accepted"
+    unless fromComponents v.params.p v.params.q v.params.g v.y (some v.x) == some key do
+      throw "component import mismatch"
     unless toComponents key == (v.params.p, v.params.q, v.params.g, v.y, some v.x) do
       throw "component export mismatch"
     unless signWithNonce { key with x := none } d v.k == none do throw "signed with public key"
@@ -203,21 +222,70 @@ def checkEdges : Except String Unit := do
   unless sampleScalar a.q [0, a.q, a.q + 1] == none do throw "invalid scalar accepted"
   unless generate a [] == none do throw "empty randomness tape accepted"
   for bits in [0, 512, 1024, 2048, 3072, 4096] do
-    unless generateParameters bits [] [] == none do throw "empty seed tape accepted"
+    unless generateParameters bits [] [] [] == none do throw "empty seed tape accepted"
   for n in List.range 4 do
     for x in List.range 512 do
       unless decodeBE (encodeBE n x) == x % 2 ^ (8 * n) do throw "big-endian wrap failed"
 
+/-- Arithmetic regression inputs, not cryptographic known-answer vectors.
+Fixed tapes make consumption and rejection deterministic in these tests;
+production callers must supply independent random bytes. -/
+def checkPrimality : Except String Unit := do
+  let witness := encodeBE 8 2
+  let tape := (List.replicate 64 witness).flatten
+  let suffix : List Byte := [17, 23]
+  unless primeChecks 2048 == 64 && primeChecks 2049 == 128 do
+    throw "round policy boundary changed"
+  for n in [0, 1, 4, 9, 25, 561] do
+    unless probablePrime n suffix == some (false, suffix) do
+      throw "small composite was not rejected without witnesses"
+  for n in [2, 3] do
+    unless probablePrime n suffix == some (true, suffix) do
+      throw "small prime handling changed"
+  unless probablePrime 5 (tape ++ suffix) == some (true, suffix) do
+    throw "prime did not consume exactly 64 uniform witnesses"
+  unless probablePrime 5 (tape.take (tape.length - 1)) == none do
+    throw "short witness tape accepted"
+  -- An out-of-range draw is mapped to a witness but does not count as
+  -- uniform. It must not replace one of the 64 required uniform draws.
+  unless probablePrime 5 (encodeBE 8 0 ++ tape ++ suffix) == some (true, suffix) do
+    throw "nonuniform witness accounting changed"
+  unless probablePrime 5 (List.replicate 512 0) == none do
+    throw "nonuniform witnesses satisfied the round requirement"
+  -- Both factors exceed the trial-division table, so this exercises MR.
+  unless probablePrime (10007 * 10009) (witness ++ suffix) == some (false, suffix) do
+    throw "Miller-Rabin composite rejection failed"
+  -- Construct composite, supported-size parameters with an element of
+  -- order three. Import checks the algebraic relations, not primality.
+  let q := 3 * (2 ^ 158 + 1)
+  let some j := (List.range 7).find? (fun j => q * (2 ^ 352 + j) % 7 == 2)
+    | throw "composite-domain construction failed"
+  let g := q * (2 ^ 352 + j)
+  let p := g * g + g + 1
+  unless p % 7 == 0 && q % 3 == 0 && bitLength p == 1024 && bitLength q == 160 do
+    throw "composite-domain arithmetic changed"
+  unless fromComponents p q g g (some 1) == some ⟨⟨p, q, g⟩, g, some 1⟩ do
+    throw "import unexpectedly requires primality certification"
+  unless primeFromSeed 0 160 5 [] suffix == some (none, suffix) do
+    throw "empty parameter search consumed witnesses"
+
+#assert_standard_axioms Spec.Dsa.signContract
+#assert_standard_axioms Spec.Dsa.verifyContract
 #assert_standard_axioms Spec.Dsa.generateParameters
+#assert_standard_axioms Spec.Dsa.probablePrime
 #assert_standard_axioms Spec.Dsa.fromComponents
 #assert_standard_axioms Spec.Dsa.sign
 #assert_standard_axioms Spec.Dsa.verify
 #assert_no_compiler_overrides Spec.Dsa.generateParameters Spec.Dsa.fromComponents Spec.Dsa.sign Spec.Dsa.verify
+#assert_no_compiler_overrides Spec.Dsa.signApi Spec.Dsa.verifyApi
 #assert_spec_origin
 
 run_cmd do
   let file ← IO.FS.realPath (← getFileName)
   let some root := file.parent >>= (·.parent) >>= (·.parent) | throwError "no repository root"
+  match checkPrimality with
+  | .ok () => pure ()
+  | .error e => throwError "DSA primality: {e}"
   match checkEdges with
   | .ok () => pure ()
   | .error e => throwError "DSA edges: {e}"

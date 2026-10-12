@@ -49,7 +49,7 @@ theorem cbcDecrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
   -- The entry, and the IV to the chaining value.
   obtain ⟨sE, eE, bE, svE, fE, gE, rdE, wrE⟩ := entry_ok hsm hroom s₀ hB hs
   unfold Core.cbcDecrypt
-  refine WP.seq (WP.block_append (WP.block_append (WP.of_runBlock ⟨sE, eE, WP.mono (copyN_wp (k := c.bw) (P := H)
+  refine WP.seq (WP.block_append (WP.block_append (WP.of_runBlock ⟨sE, eE, WP.mono_syms (copyN_wp (k := c.bw) (P := H)
     (Q := P) ⟨by rw [bE], by rw [gE _ hr.ctr.1, hP]; simp, by decide, Ne.symm hr.ctr.2.1,
       fun w hw => ⟨_, by rw [wrE]; exact hs.wr, by
         rw [addr_add]
@@ -57,7 +57,7 @@ theorem cbcDecrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
           (by simp only [Core.hiSlot]; omega)⟩,
       fun w hw => ⟨_, List.mem_append_left _ (by rw [rdE]; exact hrP),
         VG.Offset.contains_base P (by omega) (by omega)⟩,
-      (dPm.sub_left (fun _ h => h)).symm.sub_left subH |>.symm.symm, by omega⟩) fun sC hC => ?_⟩)))
+      (dPm.sub_left (fun _ h => h)).symm.sub_left subH |>.symm.symm, by omega⟩) fun sC hC syC => ?_⟩)))
   obtain ⟨s₁, e₁b, dr₁, lr₁, g₁b, m₁b, rd₁b, wr₁b⟩ := ctrArgs_ok sC r hdn hdl
   refine WP.of_runBlock ⟨s₁, e₁b, ?_⟩
   have g₁a : ∀ x, x ≠ sb → x ≠ .rax → x ≠ .rbx → sC.gpr x = s₀.gpr x := fun x h1 h2 _ => by
@@ -92,7 +92,8 @@ theorem cbcDecrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
       simp only [List.mem_singleton] at hx; subst hx; exact ⟨_, List.mem_singleton_self _, subMode⟩
   have hk₁ : cs.KeyArgs s₁ [⟨B, 8 * c.ctrSlots⟩] k :=
     cs.keyArgs_congr hk (fun x hx => g₁ x (kr x hx).1 (kr x hx).2.1 (kr x hx).2.2 (fun e => dk (e ▸ hx))
-      (fun e => lk (e ▸ hx))) rd₁ wr₁ f₁'
+      (fun e => lk (e ▸ hx))) rd₁ wr₁
+      (by rw [runBlock_syms e₁b, syC, runBlock_syms eE]) f₁'
   -- The key.
   refine WP.seq (WP.mono (cs.prepare_wp b₁ ⟨by rw [wr₁]; exact hs.wr, hs.fit⟩ List.mem_cons_self hk₁)
     fun s₂ ⟨ready₂, b₂, rsp₂, dr₂, lr₂, f₂, rd₂, wr₂⟩ => ?_)
@@ -128,7 +129,7 @@ theorem cbcDecrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
     exact WP.block_nil ⟨b₃, rfl, fun _ _ => rfl, fun i hi' => by rw [hn0, Nat.mul_zero] at hi'; omega, Frame.refl _ _, rfl, rfl⟩
   · have hn0 : n ≠ 0 := by simpa using h0
     refine cbcDecLoop_wp cs hiv hp ⟨b₃, rfl, cs.ready_frame ready₂ (by rw [mem₃]; exact Frame.refl [] _)
-        (fun _ h => by simp at h) (fun r _ => by rw [g₃]), fun _ _ => rfl, ?_, ?_, by omega, fun u hu => ?_,
+        (fun _ h => by simp at h) ⟨fun _ h => by simp at h, rd₃, wr₃, runBlock_syms e₃⟩ (fun r _ => by rw [g₃]), fun _ _ => rfl, ?_, ?_, by omega, fun u hu => ?_,
       fun i _ => by rw [ite_eq_right (by omega)], Frame.refl _ _, rfl, rfl⟩
     · rw [g₃, dr₂, dr₁, g₁a _ hr.data.1 hr.data.2.1 hr.data.2.2, hD]; simp
     · rw [left₃, Nat.mul_zero, Nat.sub_zero, ← hn]; simp

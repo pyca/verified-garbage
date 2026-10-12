@@ -5,16 +5,22 @@
 //! `vg_triple_des_expand_key` (contract `VG.Spec.TripleDes.expandKeyContract`)
 //! writes the key schedule, and `vg_triple_des_cfb64_encrypt` and
 //! `vg_triple_des_cfb64_decrypt` (`VG.Spec.TripleDes.cfbEncryptContract`,
-//! `cfbDecryptContract`) replace whole blocks with `Pⱼ ⊕ CIPH_K(Cⱼ₋₁)` or
-//! `Cⱼ ⊕ CIPH_K(Cⱼ₋₁)` from the block at `iv`, which they replace with the
-//! last ciphertext block, in constant time: their timing depends on none of
-//! the key, the chaining value and the data. Both are the modes' generic CFB
-//! over the scalar block function. This module holds the key schedule and
-//! handles a partial last segment: CFB encryption of a zero block is
-//! `CIPH_K` of the block to continue from, whose first bytes it XORs into the
-//! rest of the input.
+//! `cfbDecryptContract`) replace whole blocks with `Pⱼ ⊕ CIPH_K(Cⱼ₋₁)` or `Cⱼ ⊕
+//! CIPH_K(Cⱼ₋₁)` from the block at `iv`, which they replace with the last
+//! ciphertext block, in constant time: their timing depends on none of the key,
+//! the chaining value and the data. Both are the modes' generic CFB over the
+//! scalar block function: on x86, x86-64 and AArch64 over the block code
+//! itself, on ARMv7 calling the verified `vg_triple_des_ecb_encrypt` for each
+//! block. This module holds the key schedule and handles a partial last
+//! segment: CFB encryption of a zero block is `CIPH_K` of the block to continue
+//! from, whose first bytes it XORs into the rest of the input.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::arch::triple_des::vg_triple_des_expand_key;
 use crate::arch::triple_des_cfb::{vg_triple_des_cfb64_decrypt, vg_triple_des_cfb64_encrypt};
@@ -34,7 +40,11 @@ pub struct TripleDesCfb64 {
 }
 
 /// The signature of `vg_triple_des_cfb64_encrypt` and `vg_triple_des_cfb64_decrypt`.
+#[cfg(target_arch = "x86_64")]
 type Cfb = unsafe extern "sysv64" fn(*const [u8; 384], *mut [u8; 8], *mut [u8; 8], usize);
+/// The signature of `vg_triple_des_cfb64_encrypt` and `vg_triple_des_cfb64_decrypt`.
+#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
+type Cfb = unsafe extern "C" fn(*const [u8; 384], *mut [u8; 8], *mut [u8; 8], usize);
 
 impl TripleDesCfb64 {
     /// Expands a 16- or 24-byte key for use in either direction.

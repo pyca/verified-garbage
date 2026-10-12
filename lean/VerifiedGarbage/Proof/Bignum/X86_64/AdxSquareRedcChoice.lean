@@ -55,4 +55,22 @@ theorem redcChoice_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     refine WP.mono (redc_ok sa da ha hZ hw1 hw inv) fun t ⟨vt, ot, kt⟩ => ?_
     rw [hm] at vt ot
     exact ⟨vt, ot.mono (by omega) (by omega), (ka.trans kt).mono (by decide)⟩
+
+/-- A reduction of the square at `aAcc + 16` into `aTmp`, for sizes `w` with `P w`. -/
+structure RedOk (red : Prog isa) (P : Nat → Prop) : Prop where
+  ok : ∀ {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}, Scr s B Z → s.gpr .rdi = B →
+    Hdr s.mem B w minv → slot w 8 ≤ Z → 2 ≤ w → w < 2 ^ 31 →
+    ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 → P w →
+    WP isa red s fun t =>
+      (∃ q < 2 ^ (64 * w), 2 ^ (64 * w) * wv t.mem B (slot w aTmp) (w + 2) =
+        wv s.mem B (slot w aAcc + 16) (2 * w) + q * wv s.mem B (slot w aN) w) ∧
+      Outside B (slot w aAcc) (16 * w + 32) s.mem t.mem ∧ Keep mmRegs s t
+
+theorem redcChoice_red (P : Nat → Prop) : RedOk AdxSquare.redcChoice P :=
+  ⟨fun hs hdi hH hZ hw1 hw hinv _ => redcChoice_ok hs hdi hH hZ hw1 hw hinv⟩
+
+theorem redc_red (P : Nat → Prop) : RedOk AdxSquare.redc P := ⟨fun hs hdi hH hZ hw1 hw hinv _ =>
+  WP.mono (redc_ok hs hdi hH hZ hw1 hw hinv) fun _ ⟨vt, ot, kt⟩ =>
+    ⟨vt, ot.mono (by omega) (by omega), kt.mono (by decide)⟩⟩
+
 end VG.Proof.Bignum.X86_64.AdxSquare

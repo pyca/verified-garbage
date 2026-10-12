@@ -9,7 +9,8 @@ Each is `vg_rsa_public`'s or `vg_rsa_public_precomputed`'s code guarded by
 the check of `e` (`guarded`), against the contracts on the registers of
 those functions with the checked postcondition (`pubChkContract`,
 `pdChkContract`), and from there against the shared contracts
-(`publicChecked_verified`, `precomputedChecked_verified`).
+(`publicChecked_verified`; `vg_rsa_public_precomputed_checked`'s in
+`Proof/Bignum/X86_64/FoldedCTChecked.lean`).
 -/
 
 namespace VG.Proof.Rsa.X86_64
@@ -90,7 +91,7 @@ theorem pdGeom {s : State} (h : pdContract.pre s) : Geom s := by
 
 theorem publicChecked_correct (s : State) (h : pubContract.pre s) :
     ∃ t s', Exec isa publicChecked s t s' ∧ abiPreserved s s' ∧ pubChkContract.post s s' := by
-  refine guarded_correct code_correct (fun _ h => pubGeom h) (fun s t hs h => (pubPre_same hs).symm ▸ h) ?_ ?_ s h
+  refine guarded_correct (fun s h _ => code_correct s h) (fun _ h => pubGeom h) (fun s t hs h => (pubPre_same hs).symm ▸ h) ?_ ?_ s h
   · intro s t s' _ hs hv hp
     simp only [pubContract, stackArg_same hs, hs.rdi, hs.rdx, hs.rcx, hs.r8, hs.r9, hs.mem] at hp
     simp only [pubChkContract, Spec.Rsa.publicOpChecked]
@@ -103,7 +104,7 @@ theorem publicChecked_correct (s : State) (h : pubContract.pre s) :
     exact ⟨rfl, by rw [← hsi]; exact hb⟩
 
 theorem publicChecked_constantTime : ConstantTime isa pubContract.pre pubContract.pub publicChecked :=
-  guarded_ct code_constantTime (fun _ h => pubGeom h) (fun s t hs h => (pubPre_same hs).symm ▸ h)
+  guarded_ct (fun _ _ _ _ _ _ p₁ p₂ => code_constantTime _ _ _ _ _ _ p₁.1 p₂.1) (fun _ h => pubGeom h) (fun s t hs h => (pubPre_same hs).symm ▸ h)
     (fun _ _ _ _ hp => ⟨fun r hr => hp.1 r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with rfl | rfl | rfl | rfl <;> simp), hp.2.2.2.2.2.2⟩)
@@ -137,29 +138,6 @@ theorem publicChecked_verified : Verified target publicChecked (Spec.Rsa.publicC
 
 /-! ## `vg_rsa_public_precomputed_checked` -/
 
-theorem precomputedChecked_correct (M : Mont)
-    (hmx : (Precomputed.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (h : pdContract.pre s) :
-    ∃ t s', Exec isa (precomputedChecked M.mm) s t s' ∧ abiPreserved s s' ∧ pdChkContract.post s s' := by
-  refine guarded_correct (pdCode_correct M hmx) (fun _ h => pdGeom h) (fun s t hs h => (pdPre_same hs).symm ▸ h)
-    ?_ ?_ s h
-  · intro s t s' _ hs hv hp nB hl hpre
-    simp only [pdContract, stackArg_same hs, hs.rdi, hs.rsi, hs.rdx, hs.rcx, hs.r8, hs.r9, hs.mem] at hp
-    simp only [eValid, eBytes] at hv
-    simp only [Spec.Rsa.publicOpChecked, hv, ↓reduceIte]
-    exact hp nB hl hpre
-  · intro s s' h hv hb hax nB _ _
-    simp only [eValid, eBytes] at hv
-    simp only [Spec.Rsa.publicOpChecked, hv, Bool.false_eq_true, ite_false, Spec.Rsa.written, hax]
-    exact ⟨rfl, hb⟩
-
-theorem precomputedChecked_constantTime (M : Mont) :
-    ConstantTime isa pdContract.pre pdContract.pub (precomputedChecked M.mm) :=
-  guarded_ct (pdCode_constantTime (M := M)) (fun _ h => pdGeom h) (fun s t hs h => (pdPre_same hs).symm ▸ h)
-    (fun _ _ _ _ hp => ⟨fun r hr => hp.1 r (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-      rcases hr with rfl | rfl | rfl | rfl <;> simp), hp.2.2.2.2.2.2⟩)
-    fun _ _ _ _ h₁ h₂ hp => pdPub_same h₁ h₂ hp
-
 theorem precomputedChecked_implies :
     pdChkContract.Implies (Spec.Rsa.publicPrecomputedCheckedContract abi) where
   pre := by
@@ -183,15 +161,5 @@ theorem precomputedChecked_implies :
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
   sat := by sig_implies_sat [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, pdChkContract, pdContract, stackArgs_four, List.append_eq] [pdSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using pdSatState
-
-/-- `vg_rsa_public_precomputed_checked` with Montgomery multiplication `M`,
-given that its code never loads MXCSR (which the registration file
-evaluates). -/
-theorem precomputedChecked_verified (M : Mont)
-    (hmx : (Precomputed.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target (precomputedChecked M.mm) (Spec.Rsa.publicPrecomputedCheckedContract abi) :=
-  have hct : ConstantTime isa pdChkContract.pre pdChkContract.pub (precomputedChecked M.mm) :=
-    precomputedChecked_constantTime M
-  Verified.of_correct (k := pdChkContract) (precomputedChecked_correct M hmx) hct precomputedChecked_implies
 
 end VG.Proof.Rsa.X86_64

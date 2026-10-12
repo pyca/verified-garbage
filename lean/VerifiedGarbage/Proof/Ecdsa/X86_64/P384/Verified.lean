@@ -53,6 +53,7 @@ theorem p384_ok (hI : InvSounds) : CfgOk p384 where
   p_lt_2n := by decide +kernel
   minv_p := by decide +kernel
   red_p := by decide +kernel
+  red_n := by decide +kernel
   minv_n := by decide +kernel
   len8 := by decide
   len_lo := by decide
@@ -75,7 +76,7 @@ theorem p384_ok (hI : InvSounds) : CfgOk p384 where
   comb_am3 := fun _ _ => by unfold AM3; decide +kernel
   am3 := by unfold AM3; decide +kernel
   even _ := by decide
-  inverse _ := ⟨by decide, by decide, rfl⟩
+  inverse _ := ⟨by decide, rfl⟩
 
 theorem p384_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     CombTbls p384 := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
@@ -92,7 +93,8 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p384 s := by
     rcases hr with h | h <;> simp [h]
 
 /-- `[k]G` is a call of `vg_p384_mul_base`, which calls no other function. -/
-theorem p384_mulBase : MulBaseOk p384 := fun _ => ⟨_, rfl, rfl, by decide, by lit_decide⟩
+theorem p384_mulBase : MulBaseOk p384 :=
+  ⟨fun _ => ⟨_, rfl, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
 
 theorem sign_x86 (hL : Law Spec.P384.curve)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)

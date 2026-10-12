@@ -52,8 +52,8 @@ theorem p192_ok (hI : Weierstrass.AArch64.InvSounds) : BaseCfgOk p192 where
   chain_n := fun h => absurd h (by decide)
   call_p := fun _ _ h => nomatch (callOf_small (by decide)).symm.trans h
   call_n := callOf_small (by decide)
-  inv_at := .inl rfl
-  inv_fn := fun h => absurd rfl h
+  inv_at := .inr (by decide +kernel)
+  inv_fn := fun _ => ⟨by decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
   padd := fun h => absurd rfl h
 
 end VG.Proof.Ecdsa.AArch64.P192

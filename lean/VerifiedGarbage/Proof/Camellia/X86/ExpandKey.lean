@@ -136,7 +136,7 @@ theorem ekHead_wp {s₀ : State} (hp : expandKeyX86.pre s₀) {c : Prog isa} {Q 
   let K := arg s₀ 0
   let len := (arg s₀ 1).toNat
   let b := arg s₀ 3
-  have hw : ScrIn s₀.wr b := ⟨by rw [hwr]; simp [b], fitB⟩
+  have hw : ScrIn s₀.wr b := .exact (by rw [hwr]; simp [b]) fitB
   have hrA : (⟨argAddr s₀ 0, 16⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
   have argIn : ∀ {s : State}, s.rd = s₀.rd → s.wr = s₀.wr → s.gpr .esp = s₀.gpr .esp → ∀ i < 4,
       InRegions (s.rd ++ s.wr) (s.ea (argOp i)) 4 := fun h1 h2 h3 i hi => by
@@ -260,7 +260,7 @@ theorem ekTail_wp {s₀ s : State} (hp : expandKeyX86.pre s₀)
   have hb₃ : s₃.gpr sb = b := by rw [o₃ _ (by decide), o₂ _ (by decide), hb₁]
   have hm₃ : s₃.mem = s₁.mem := by rw [m₃, m₂]
   have wr₃' : s₃.wr = s₀.wr := by rw [wr₃, wr₂, wr₁, h.wr]
-  have hw₃ : ScrIn s₃.wr b := ⟨by rw [wr₃', hwr]; simp [b], hfit⟩
+  have hw₃ : ScrIn s₃.wr b := .exact (by rw [wr₃', hwr]; simp [b]) hfit
   have hS₃ : SchedOut s₃ b S := ⟨by rw [o₃ _ (by decide), v₂, ea_arg esp₁, argR F₁ 2 (by decide)],
     by rw [wr₃', hwr]; simp [S], fitS, dSB⟩
   have hX₃ : ∀ v < 4, NumOf s₃ (valSlot v) (valNum key v) := fun v hv => (hX₁ v hv).congr fun j hj => by
@@ -289,7 +289,7 @@ theorem ekTail_wp {s₀ s : State} (hp : expandKeyX86.pre s₀)
       k₁ (savedSlot + i) (by rw [savedSlot_eq, slots_eq]; omega) (saved_not_rev i hi)]
     exact h.saved i hi
   obtain ⟨s₆, e₆, rg₆, o₆, m₆, -, -⟩ := restore_ok (s₀ := s₀) (b := b)
-    ⟨by rw [h₅.wr, wr₃', hwr]; simp [b], hfit⟩ hb₅ hsv
+    (.exact (by rw [h₅.wr, wr₃', hwr]; simp [b]) hfit) hb₅ hsv
   refine WP.of_runBlock ⟨s₆, e₆, ⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl

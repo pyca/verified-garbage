@@ -87,7 +87,8 @@ theorem execBlock_ivSafe : ∀ {is : List Instr}, is.all ivSafeI = true → ∀ 
       exact (execBlock_ivSafe hs.2 h).trans (exec_ivSafe hs.1 he)
 
 theorem keepsIv_of_ivSafe {c : Prog isa} (hc : ivSafe c = true) : KeepsIv c := by
-  intro s t s' h
+  intro s t s' h hz
+  clear hz
   revert hc
   induction h with
   | block e => exact fun hc => execBlock_ivSafe hc e

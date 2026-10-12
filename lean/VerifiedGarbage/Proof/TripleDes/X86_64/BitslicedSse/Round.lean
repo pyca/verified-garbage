@@ -12,7 +12,8 @@ namespace VG.Proof.TripleDes.X86_64.BitslicedSse
 
 open VG VG.X86_64 VG.X86_64.StraightX VG.X86_64.RegUpd VG.Impl.TripleDes.X86_64.BitsliceSse
 open VG.Impl.TripleDes.Bitslice
-open VG.Proof.TripleDes.Bitslice (step steps roundW steps_succ steps_congr)
+open VG.Proof.TripleDes.Bitslice (step steps roundW steps_succ steps_congr rdOff wrOff flipRole rdOff_flip
+  wrOff_flip)
 
 /-! ## The round key -/
 
@@ -53,10 +54,10 @@ theorem keyLoad_ok {s : State} (hkey : InRegions (s.rd ++ s.wr) (s.gpr .r8) 8) :
 
 /-! ## The S-boxes -/
 
-def stepsCode (ρ : Role) (n : Nat) : List Instr := (List.range n).flatMap (sboxStep ρ)
+def stepsCode (n : Nat) : List Instr := (List.range n).flatMap sboxStep
 
-theorem stepsCode_succ (ρ : Role) (n : Nat) :
-    stepsCode ρ (n + 1) = stepsCode ρ n ++ sboxStep ρ n := by
+theorem stepsCode_succ (n : Nat) :
+    stepsCode (n + 1) = stepsCode n ++ sboxStep n := by
   simp only [stepsCode, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
     List.append_nil]
 
@@ -73,8 +74,8 @@ theorem keyBits (K : BitVec 64) {j i : Nat} (hj : j < 8) (hi : i < 6) :
     Bool.true_and, show 58 + i < 64 by omega, show 58 + i - 6 * j < 64 by omega]
 
 theorem stepsCode_ok (ρ : Role) (K : BitVec 64) {n : Nat} (hn : n ≤ 8) {s : State} (h : Room s)
-    (hones : s.xmm ones = BitVec.allOnes 128) (hr : s.gpr .rax = K.rotateRight 48) :
-    ∃ s', runBlock isa (stepsCode ρ n) s = some s' ∧
+    (hp : Ptrs ρ s) (hones : s.xmm ones = BitVec.allOnes 128) (hr : s.gpr .rax = K.rotateRight 48) :
+    ∃ s', runBlock isa (stepsCode n) s = some s' ∧
       (∀ x < 64, words s' x = steps ρ (K.setWidth 48) n (words s) x) ∧
       s'.gpr .rax = K.rotateRight 48 <<< (6 * n) ∧
       (∀ r, r ≠ .rax → r ≠ .rbx → s'.gpr r = s.gpr r) ∧ s'.xmm ones = s.xmm ones ∧
@@ -87,8 +88,9 @@ theorem stepsCode_ok (ρ : Role) (K : BitVec 64) {n : Nat} (hn : n ≤ 8) {s : S
     have c₁ := g₁ .rcx (by decide) (by decide)
     have si₁ := g₁ .rsi (by decide) (by decide)
     have h₁ := h.congr c₁ si₁ wr₁
+    have hp₁ : Ptrs ρ s₁ := hp.congr (g₁ _ (by decide) (by decide)) (g₁ _ (by decide) (by decide)) si₁
     obtain ⟨s₂, run₂, w₂, r₂, g₂, o₂, rd₂, wr₂, f₂⟩ :=
-      sboxStep_ok ρ (by omega : n < 8) h₁ (by rw [o₁, hones]) (K.setWidth 48)
+      sboxStep_ok ρ (by omega : n < 8) h₁ hp₁ (by rw [o₁, hones]) (K.setWidth 48)
         (fun i hi => by rw [r₁]; exact keyBits K (by omega) hi)
     refine ⟨s₂, ?_, fun x hx => ?_, ?_, fun r h1 h2 => (g₂ r h1 h2).trans (g₁ r h1 h2),
       o₂.trans o₁, rd₂.trans rd₁, wr₂.trans wr₁, ?_⟩
@@ -100,34 +102,93 @@ theorem stepsCode_ok (ρ : Role) (K : BitVec 64) {n : Nat} (hn : n ≤ 8) {s : S
         show stateR s₁ = stateR s by simp only [stateR, si₁]] at f₂
       exact f₁.trans f₂
 
+/-! ## Counting down a register -/
+
+theorem sub1_run (s : State) (r : Reg) :
+    ∃ s', runBlock isa [.alu .sub r (.imm 1)] s = some s' ∧ s'.gpr r = s.gpr r - 1 ∧
+      s'.zf = some (s.gpr r - 1 == 0) ∧ (∀ r', r' ≠ r → s'.gpr r' = s.gpr r') ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ y, s'.xmm y = s.xmm y) := by
+  let v := s.gpr r
+  let t := v - (1 : BitVec 32).signExtend 64
+  refine ⟨(arithFlags s t (decide (v.toNat < ((1 : BitVec 32).signExtend 64).toNat))
+    (subOverflow v ((1 : BitVec 32).signExtend 64) t)).setReg r t, ?_, ?_, ?_, fun r' h => ?_,
+    ?_, ?_, ?_, fun y => rfl⟩
+  · rw [runBlock_cons]; rfl
+  · simp only [gpr_setReg_self]; rfl
+  · simp only [zf_setReg, zf_arithFlags]; rfl
+  · simp [gpr_setReg, h]
+  · simp [mem_setReg, mem_arithFlags]
+  · simp [rd_setReg, rd_arithFlags]
+  · simp [wr_setReg, wr_arithFlags]
+
+/-! ## The halves' pointers -/
+
+theorem swapPtrs_run (s : State) :
+    ∃ s', runBlock isa swapPtrs s = some s' ∧ s'.gpr .r12 = s.gpr .r13 ∧ s'.gpr .r13 = s.gpr .r12 ∧
+      (∀ r, r ≠ .rbx → r ≠ .r12 → r ≠ .r13 → s'.gpr r = s.gpr r) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ y, s'.xmm y = s.xmm y) := by
+  let s₁ := s.setReg .rbx (s.gpr .r12)
+  let s₂ := s₁.setReg .r12 (s₁.gpr .r13)
+  let s₃ := s₂.setReg .r13 (s₂.gpr .rbx)
+  refine ⟨s₃, ?_, ?_, ?_, fun r a b c => ?_, ?_, ?_, ?_, fun y => rfl⟩
+  · rw [swapPtrs, runBlock_cons, show exec (.mov .rbx (.reg .r12)) s = some s₁ from rfl, runStep_some,
+      runBlock_cons, show exec (.mov .r12 (.reg .r13)) s₁ = some s₂ from rfl, runStep_some,
+      runBlock_cons, show exec (.mov .r13 (.reg .rbx)) s₂ = some s₃ from rfl, runStep_some, runBlock_nil]
+  · simp [s₃, s₂, s₁, gpr_setReg]
+  · simp [s₃, s₂, s₁, gpr_setReg]
+  · simp [s₃, s₂, s₁, gpr_setReg, a, b, c]
+  · simp [s₃, s₂, s₁, mem_setReg]
+  · simp [s₃, s₂, s₁, rd_setReg]
+  · simp [s₃, s₂, s₁, wr_setReg]
+
 /-! ## A round -/
 
-theorem round_eq (ρ : Role) : round ρ = keyLoad ++ stepsCode ρ 8 := rfl
+theorem round_eq : round = keyLoad ++ stepsCode 8 ++ swapPtrs ++ ([.alu .sub .r10 (.imm 1)] : List Instr) :=
+  rfl
 
-theorem round_ok (ρ : Role) {s : State} (h : Room s) (hones : s.xmm ones = BitVec.allOnes 128)
+theorem round_ok (ρ : Role) {s : State} (h : Room s) (hp : Ptrs ρ s) (hones : s.xmm ones = BitVec.allOnes 128)
     (hkey : InRegions (s.rd ++ s.wr) (s.gpr .r8) 8) :
-    ∃ s', runBlock isa (round ρ) s = some s' ∧
+    ∃ s', runBlock isa round s = some s' ∧
       (∀ x < 64, words s' x = roundW ρ ((s.mem.readW (s.gpr .r8) 64).setWidth 48) (words s) x) ∧
       s'.gpr .r8 = s.gpr .r8 + s.gpr .r9 ∧
-      (∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .r8 → s'.gpr r = s.gpr r) ∧ s'.xmm ones = s.xmm ones ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [spillR s, stateR s] s.mem s'.mem := by
+      s'.gpr .r10 = s.gpr .r10 - 1 ∧ s'.zf = some (s.gpr .r10 - 1 == 0) ∧ Ptrs (flipRole ρ) s' ∧
+      (∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .r8 → r ≠ .r10 → r ≠ .r12 → r ≠ .r13 → s'.gpr r = s.gpr r) ∧
+      s'.xmm ones = s.xmm ones ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Frame [spillR s, stateR s] s.mem s'.mem := by
   obtain ⟨s₁, run₁, r₁, k₁, g₁, m₁, rd₁, wr₁, y₁⟩ := keyLoad_ok hkey
   have c₁ := g₁ .rcx (by decide) (by decide)
   have si₁ := g₁ .rsi (by decide) (by decide)
   have h₁ := h.congr c₁ si₁ wr₁
+  have hp₁ : Ptrs ρ s₁ := hp.congr (g₁ _ (by decide) (by decide)) (g₁ _ (by decide) (by decide)) si₁
   obtain ⟨s₂, run₂, w₂, -, g₂, o₂, rd₂, wr₂, f₂⟩ :=
-    stepsCode_ok ρ _ (Nat.le_refl 8) h₁ (by rw [y₁, hones]) r₁
-  refine ⟨s₂, ?_, fun x hx => ?_, ?_, fun r h1 h2 h3 => ?_, by rw [o₂, y₁], rd₂.trans rd₁,
-    wr₂.trans wr₁, ?_⟩
-  · rw [round_eq]; exact runBlock_cat_some run₁ run₂
-  · rw [w₂ x hx]
+    stepsCode_ok ρ _ (Nat.le_refl 8) h₁ hp₁ (by rw [y₁, hones]) r₁
+  obtain ⟨s₃, run₃, p12₃, p13₃, g₃, m₃, rd₃, wr₃, y₃⟩ := swapPtrs_run s₂
+  obtain ⟨s₄, run₄, cnt₄, zf₄, g₄, m₄, rd₄, wr₄, y₄⟩ := sub1_run s₃ .r10
+  have g₂₁ : ∀ r, r ≠ .rax → r ≠ .rbx → r ≠ .r8 → s₂.gpr r = s.gpr r := fun r h1 h2 h3 => by
+    rw [g₂ r h1 h2, g₁ r h1 h3]
+  have g₄₃ : ∀ r, r ≠ .rbx → r ≠ .r10 → r ≠ .r12 → r ≠ .r13 → s₄.gpr r = s₂.gpr r := fun r a b c d => by
+    rw [g₄ r b, g₃ r a c d]
+  have r10₃ : s₃.gpr .r10 = s.gpr .r10 := by
+    rw [g₃ _ (by decide) (by decide) (by decide), g₂₁ _ (by decide) (by decide) (by decide)]
+  have si₄ : s₄.gpr .rsi = s.gpr .rsi := by
+    rw [g₄₃ _ (by decide) (by decide) (by decide) (by decide), g₂₁ _ (by decide) (by decide) (by decide)]
+  have e₄ : ∀ y, words s₄ y = words s₂ y := fun y => by
+    simp only [words, m₄, m₃, si₄, g₂₁ .rsi (by decide) (by decide) (by decide)]
+  refine ⟨s₄, ?_, fun x hx => ?_, ?_, by rw [cnt₄, r10₃], by rw [zf₄, r10₃], ⟨?_, ?_⟩,
+    fun r h1 h2 h3 h4 h5 h6 => ?_, by rw [y₄, y₃, o₂, y₁], rd₄.trans (rd₃.trans (rd₂.trans rd₁)),
+    wr₄.trans (wr₃.trans (wr₂.trans wr₁)), ?_⟩
+  · rw [round_eq]
+    exact runBlock_cat_some (runBlock_cat_some (runBlock_cat_some run₁ run₂) run₃) run₄
+  · rw [e₄ x, w₂ x hx]
     have e : ∀ y, words s₁ y = words s y := fun y => by simp only [words, m₁, si₁]
     exact steps_congr ρ _ (Nat.le_refl 8) (fun y _ => e y) x hx
-  · rw [g₂ _ (by decide) (by decide), k₁]
-  · rw [g₂ r h1 h2, g₁ r h1 h3]
+  · rw [g₄₃ _ (by decide) (by decide) (by decide) (by decide), g₂ _ (by decide) (by decide), k₁]
+  · rw [g₄ _ (by decide), p12₃, si₄, g₂₁ _ (by decide) (by decide) (by decide), hp.wr, rdOff_flip]
+  · rw [g₄ _ (by decide), p13₃, si₄, g₂₁ _ (by decide) (by decide) (by decide), hp.rd, wrOff_flip]
+  · rw [g₄₃ r h2 h4 h5 h6, g₂₁ r h1 h2 h3]
   · rw [show spillR s₁ = spillR s by simp only [spillR, c₁],
       show stateR s₁ = stateR s by simp only [stateR, si₁]] at f₂
     rw [m₁] at f₂
+    rw [m₄, m₃]
     exact f₂
 
 end VG.Proof.TripleDes.X86_64.BitslicedSse

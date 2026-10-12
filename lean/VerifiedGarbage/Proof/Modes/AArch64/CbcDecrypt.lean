@@ -50,7 +50,7 @@ theorem cbcDecrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
   -- The entry, and the IV to the chaining value.
   obtain ⟨sE, eE, bE, svE, fE, gE, rdE, wrE⟩ := entry_ok hsm hroom s₀ hB hs
   unfold Core.cbcDecrypt
-  refine WP.seq (WP.block_append (WP.block_append (WP.of_runBlock ⟨sE, eE, WP.mono (copyN_wp (k := c.bw) (P := H)
+  refine WP.seq (WP.block_append (WP.block_append (WP.of_runBlock ⟨sE, eE, WP.mono_syms (copyN_wp (k := c.bw) (P := H)
     (Q := P) (u := .x6) ⟨by rw [bE], by rw [gE _ cs', hP]; simp, by decide, Ne.symm c6, by decide, Ne.symm c6,
       by omega, by decide, by simp only [Core.hiSlot]; omega, by omega,
       fun w hw => ⟨_, by rw [wrE]; exact hs.wr, by
@@ -58,7 +58,7 @@ theorem cbcDecrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
         exact VG.Offset.contains_base B (by simp only [Core.hiSlot]; omega) (by simp only [Core.hiSlot]; omega)⟩,
       fun w hw => ⟨_, List.mem_append_left _ (by rw [rdE]; exact hrP),
         VG.Offset.contains_base P (by omega) (by omega)⟩,
-      (dPm.sub_left (fun _ h => h)).symm.sub_left subH |>.symm.symm, by omega⟩) fun sC hC => ?_⟩)))
+      (dPm.sub_left (fun _ h => h)).symm.sub_left subH |>.symm.symm, by omega⟩) fun sC hC syC => ?_⟩)))
   obtain ⟨s₁, e₁b, dr₁, lr₁, g₁b, m₁b, rd₁b, wr₁b⟩ := ctrArgs_ok sC r hdn hdl
   refine WP.of_runBlock ⟨s₁, e₁b, ?_⟩
   have g₁a : ∀ x, x ∉ SetupRegs → sC.gpr x = s₀.gpr x := fun x hx => by
@@ -91,7 +91,8 @@ theorem cbcDecrypt_wp (cs : BlockSpec c) {r : CtrRegs} (hr : RegsOk r) (hdn : c.
     exact f₁.sub fun x hx => by
       simp only [List.mem_singleton] at hx; subst hx; exact ⟨_, List.mem_singleton_self _, subMode⟩
   have hk₁ : cs.KeyArgs s₁ [⟨B, 8 * c.total⟩] k :=
-    cs.keyArgs_congr hk (fun x hx => g₁ x (kr x hx) (fun e => dk (e ▸ hx)) (fun e => lk (e ▸ hx))) rd₁ wr₁ f₁'
+    cs.keyArgs_congr hk (fun x hx => g₁ x (kr x hx) (fun e => dk (e ▸ hx)) (fun e => lk (e ▸ hx))) rd₁ wr₁
+      (by rw [runBlock_syms e₁b, syC, runBlock_syms eE]) f₁'
   -- The key.
   refine WP.seq (WP.mono (cs.prepare_wp b₁ ⟨by rw [wr₁]; exact hs.wr, hs.fit⟩ List.mem_cons_self hk₁)
     fun s₂ ⟨ready₂, b₂, dr₂, lr₂, f₂, rd₂, wr₂⟩ => ?_)

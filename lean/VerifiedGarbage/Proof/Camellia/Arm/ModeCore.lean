@@ -69,14 +69,14 @@ def ecbSpec (dir : Dir) : CoreSpec (ecbCore dir) where
   correct := (ecb_framed dir).1
   ct := (ecb_framed dir).2.1
   depth := ecb_stack dir
-  pre_of s h := by
+  pre_of _ s h := by
     obtain ⟨stk, rd, wr, kd, bk, bd, fK, fD, rr⟩ := h
     have rr := rr rfl
     rw [dReg_eq, nReg_eq] at wr kd bd fD
     sig_pre [Spec.Camellia.ecbContract, Spec.Camellia.ecbSig, Spec.Camellia.ecbPre, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
     exact ⟨stk, by have := s.sp.isLt; omega, rd, wr, kd, bk, bd, fK, fD, rr⟩
-  post_of s s' hp h := by
+  post_of _ s s' hp h := by
     have rr := hp.rr rfl
     sig_post [Spec.Camellia.ecbContract, Spec.Camellia.ecbSig, Spec.Camellia.ecbPost, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val] at h
@@ -85,7 +85,7 @@ def ecbSpec (dir : Dir) : CoreSpec (ecbCore dir) where
     simp only [State.addr]
     rw [blocksOf_eq, blocksOf_eq, h rr, ecb_dir, List.map_map, List.map_map]
     exact List.map_congr_left fun v _ => (dirCipher_toList dir _ v).symm
-  pub_of s₁ s₂ h0 h1 h2 h3 h4 := by
+  pub_of _ s₁ s₂ h0 h1 h2 h3 h4 := by
     sig_pub [Spec.Camellia.ecbContract, Spec.Camellia.ecbSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
     exact ⟨h0, h1, h2, h3, h4 rfl⟩

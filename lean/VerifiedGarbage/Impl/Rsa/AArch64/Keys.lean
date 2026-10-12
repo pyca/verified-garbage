@@ -56,9 +56,30 @@ def sStride : Nat := sFn 12
 /-- `w` into `x12` and the stride into `x11`. -/
 def ws : List Instr := [ldh .x12 sW, ldh .x11 sStride]
 
-/-- The base of array `j` into `r`: `x0 + 256 + j · x11`. -/
-def base (j : Nat) (r : Reg) : List Instr :=
+/-- `x0 + 256 + j · x11` into `r` by `j` additions of `x11`. -/
+def baseRep (j : Nat) (r : Reg) : List Instr :=
   ([.addImm .x r .x0 hdrBytes] : List Instr) ++ List.replicate j (.add .x r r .x11)
+
+/-- `mulBits` with `f` bits of fuel (`j ≤ f` suffices), by structural
+recursion, which the kernel evaluates. -/
+def mulBitsF (r : Reg) : Nat → Nat → List Instr
+  | 0, _ => []
+  | f + 1, j => if j < 2 then [] else
+    mulBitsF r f (j / 2) ++ ([.add .x r r r] : List Instr) ++
+      (if j % 2 = 1 then ([.add .x r r .x11] : List Instr) else [])
+
+/-- `r := j · x11` for `j ≥ 1`, from `r = x11`, by the bits of `j` below its
+top one, most significant first: `r := 2 r`, then `r := r + x11` if the
+bit is set. -/
+def mulBits (r : Reg) (j : Nat) : List Instr := mulBitsF r j j
+
+/-- The base of array `j` into `r`: `x0 + 256 + j · x11`, with `j · x11` by
+`mulBits` (`r` only; `baseRep` for `j = 0`, or `r = x0`, which reads `x0`
+first). -/
+def base (j : Nat) (r : Reg) : List Instr :=
+  if j = 0 ∨ r = .x0 then baseRep j r
+  else ([.addImm .x r .x11 0] : List Instr) ++ mulBits r j ++
+    ([.add .x r r .x0, .addImm .x r r hdrBytes] : List Instr)
 
 /-- `[j] := 0` (`w + 2` words). -/
 def zeroA (j : Nat) : Prog isa := .seq (.block (ws ++ base j .x8 ++ [movi .x7 0])) zeroAcc

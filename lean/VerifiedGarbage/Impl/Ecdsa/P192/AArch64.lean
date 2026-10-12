@@ -8,7 +8,8 @@ namespace VG.Impl.Ecdsa.AArch64
 open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 
 /-- Four-word arithmetic without a precomputed comb table. -/
-def p192 : Cfg := ⟨4, Spec.P192.curve, [], (0, 0), "", true, none, none⟩
+def p192 : Cfg := ⟨4, Spec.P192.curve, [], (0, 0), "", true,
+  some Spec.Weierstrass.Inverse.p192, none⟩
 
 namespace P192
 

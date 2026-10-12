@@ -58,7 +58,7 @@ theorem word_disjoint {dir : Dir} {B : Addr} {d : Nat} (hd : d + 8 ≤ 8 * tailS
 theorem ready_frame {dir : Dir} {s s' : State} {B : Addr} {k : Nat × List (BitVec 64)} {rs : List Region}
     (h : Ready dir s B k) (hf : Frame rs s.mem s'.mem)
     (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore dir) B) r ∨ Region.Sub r (bufRegion (dirCore dir) B))
-    (hg : ∀ r, r ∉ modeRegs (dirCore dir) → s'.gpr r = s.gpr r) : Ready dir s' B k := by
+    (_ : Modes.AArch64.WrIn rs s s') (hg : ∀ r, r ∉ modeRegs (dirCore dir) → s'.gpr r = s.gpr r) : Ready dir s' B k := by
   obtain ⟨hR, hm, he, hx4⟩ := h
   have hR' : ∀ d, d + 8 ≤ 8 * tailSlot →
       s'.mem.readW (B + BitVec.ofNat 64 d) 64 = s.mem.readW (B + BitVec.ofNat 64 d) 64 := fun d h1 =>
@@ -225,7 +225,7 @@ def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
     by cases d <;> decide⟩
   keyRegs_ok := by cases d <;> decide
   regs_ok := by cases d <;> decide
-  keyArgs_congr := keyArgs_congr
+  keyArgs_congr h hr hrd hwr _ hf := keyArgs_congr h hr hrd hwr hf
   ready_frame := ready_frame
   prepare_wp := prepare_wp d
   crypt_wp := crypt_wp d
