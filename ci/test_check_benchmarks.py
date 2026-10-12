@@ -108,7 +108,9 @@ class Selection(unittest.TestCase):
             return planner.arches(paths, base='base')
 
     def configurations(self, rows, arch):
-        return [r['cpu-features'] for r in rows if r['arch'] == arch]
+        # Each configuration once, from its first shard.
+        return [r['cpu-features'] for r in rows
+                if r['arch'] == arch and r.get('shard', '') in ('', f"1/{r['shard'].split('/')[-1]}")]
 
     def full_matrix(self):
         """The number of rows of the full matrix: every platform, without and
@@ -389,13 +391,16 @@ class Selection(unittest.TestCase):
 
     def test_manual_runs_select_architectures_and_configurations(self):
         rows = planner.manual()
-        self.assertEqual(len(rows), self.full_matrix())
+        # Every configuration, split into shards of BENCHMARKS_PER_JOB.
+        self.assertEqual(len({(r['arch'], r['cpu-features']) for r in rows}), self.full_matrix())
+        shards = -(-planner.bench_count(planner.ALL) // planner.BENCHMARKS_PER_JOB)
+        self.assertEqual(len(rows), self.full_matrix() * shards)
         self.assertTrue(all(r['modules'] == '' for r in rows))
         self.assertEqual(self.configurations(planner.manual('aarch64'), 'aarch64'),
                          ['', *planner.CPU_FEATURES['aarch64']])
         # `-` is the configuration without a restriction, and others need
         # not be in `CPU_FEATURES`; the platforms keep their order.
-        rows = planner.manual('arm x86_64', '- avx2,avx')
+        rows = [r for r in planner.manual('arm x86_64', '- avx2,avx') if r['shard'] in ('', f'1/{shards}')]
         self.assertEqual([(r['arch'], r['cpu-features']) for r in rows],
                          [('x86_64', ''), ('x86_64', 'avx2,avx'), ('arm', ''), ('arm', 'avx2,avx')])
         with self.assertRaisesRegex(ValueError, 'unknown architecture'):
@@ -618,3 +623,71 @@ class Lacking(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class FreshCopies(unittest.TestCase):
+    def test_only_the_p521_comb_groups_run_from_copies(self):
+        # P-521's comb table (747 KB) moved its times by up to 7% between
+        # identical copies of one binary; P-384's and P-256's did not move.
+        for group in ['ecdsa_p521_sha512_sign', 'ecdsa_p521_sha512_verify', 'ec_p521_public_key']:
+            self.assertTrue(bench_compare.FRESH_COPIES.match(group), group)
+        for group in ['ecdh_p521', 'ecdsa_p384_sha384_sign', 'ec_p384_public_key', 'ec_p256_public_key']:
+            self.assertFalse(bench_compare.FRESH_COPIES.match(group), group)
+
+    def test_the_copies_select_only_the_module_with_those_groups(self):
+        # Every group of FRESH_COPIES is in the benchmarks that
+        # FRESH_COPIES_MODULES selects, and those alone run from the copies.
+        root = pathlib.Path(__file__).resolve().parent.parent
+        catalog = planner.bench_catalog(root=str(root))
+        selected = [name for name, uses in catalog.items()
+                    if bench_compare.FRESH_COPIES_MODULES in uses]
+        self.assertEqual(selected, ['ecdsa_p521'])
+        source = (root / 'bench/benches/primitives/ecdsa_p521.rs').read_text()
+        for group in ['ec_p521_public_key', 'ecdsa_p521_{name}_sign', 'ecdsa_p521_{name}_verify']:
+            self.assertIn(f'"{group}"', source)
+
+    def test_both_sides_are_built_at_one_path(self):
+        # The library's symbol hashes, and with them its layout, depend on
+        # its path: each side is staged at STAGE, with the benchmark crate
+        # asked for and without what the build does not read.
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = pathlib.Path(tmp)
+            for side in ['base', 'head']:
+                for f in ['Cargo.toml', 'src/lib.rs', 'bench/Cargo.toml', 'lean/big.olean',
+                          '.git/HEAD', 'bench-head/Cargo.toml', 'src/lean/x.rs']:
+                    (tmp / side / f).parent.mkdir(parents=True, exist_ok=True)
+                    (tmp / side / f).write_text(f'{side} {f}')
+            with mock.patch.object(bench_compare, 'STAGE', tmp / 'stage'):
+                crate = bench_compare.stage(tmp / 'base', tmp / 'head' / 'bench')
+                self.assertEqual(crate, tmp / 'stage' / 'bench')
+                files = sorted(str(p.relative_to(tmp / 'stage')) for p in (tmp / 'stage').rglob('*') if p.is_file())
+                self.assertEqual(files, ['Cargo.toml', 'bench/Cargo.toml', 'src/lean/x.rs', 'src/lib.rs'])
+                self.assertEqual((crate / 'Cargo.toml').read_text(), 'head bench/Cargo.toml')
+                bench_compare.stage(tmp / 'head')
+                self.assertEqual((tmp / 'stage' / 'src/lib.rs').read_text(), 'head src/lib.rs')
+                self.assertEqual((crate / 'Cargo.toml').read_text(), 'head bench/Cargo.toml')
+
+    def test_listing_ignores_the_cpu_feature_restriction(self):
+        # A shard lists the groups before any run; a CPU lacking a feature
+        # VG_CPU_FEATURES names would stop the library there instead.
+        seen = {}
+
+        def fake_run(cmd, env, **kwargs):
+            seen.update(env)
+            return subprocess.CompletedProcess(cmd, 0, stdout='a/verified-garbage/1: benchmark\n')
+        with mock.patch.dict(os.environ, {'VG_CPU_FEATURES': 'avx512f'}), \
+                mock.patch.object(bench_compare.subprocess, 'run', fake_run):
+            self.assertEqual(bench_compare.list_groups('bin', 'ec_p521'), {'a': 1})
+        self.assertNotIn('VG_CPU_FEATURES', seen)
+        self.assertEqual(seen['VG_BENCH_MODULES'], 'ec_p521')
+
+    def test_a_copy_is_a_new_executable_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = pathlib.Path(tmp)
+            binary = target / 'primitives-0'
+            binary.write_bytes(b'\x7fELF')
+            with mock.patch.object(bench_compare, 'TARGET', target):
+                copy = bench_compare.fresh_copy(str(binary), 1)
+            self.assertEqual(copy.read_bytes(), b'\x7fELF')
+            self.assertNotEqual(os.stat(copy).st_ino, os.stat(binary).st_ino)
+            self.assertTrue(os.access(copy, os.X_OK))
