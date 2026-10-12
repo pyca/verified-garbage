@@ -34,6 +34,6 @@ def finish : List Instr :=
   restore
 
 def x25519 : Prog isa :=
-  .seq (.block setup) <| .seq ladder <| .seq (.block lastSwap) <| .seq invert (.block finish)
+  .seq setup <| .seq ladder <| .seq (.block lastSwap) <| .seq invert (.block finish)
 
 end VG.Impl.X25519.X86
