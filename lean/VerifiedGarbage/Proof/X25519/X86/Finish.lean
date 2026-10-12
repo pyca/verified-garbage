@@ -11,7 +11,7 @@ import all Init.Data.Vector.Basic
 # X25519 on x86 (32-bit): the end of the ladder, and the result
 
 The swap after the loop, and `finish`: `x2 · z2^(p-2)` (with `z2^(p-2)` in
-`T1`), reduced fully, stored to `out`, and the saved registers restored.
+`E1`), reduced fully, stored to `out`, and the saved registers restored.
 -/
 
 @[expose] public section
@@ -49,19 +49,34 @@ theorem lastSwap_ok {x : BitVec 32} {k : Nat} {x1 : Fe} {s₀ s : State} (h : LI
   · rw [F_ite _ x₅, F_frame2 hfit f₄ (by decide) (by decide) (by decide) (by decide) (by decide),
       F_frame2 hfit f₄ (by decide) (by decide) (by decide) (by decide) (by decide), m₃, h.vz2, h.vz3, cswap_fst]
 
-theorem runI_X2 (V : Nat → Fe) : runI invSteps V X2 = V X2 := by
-  simp only [runI, invSteps, IStep.run, X86.run, opOut, opVal, Function.update_apply, T0, T1, T2, T3, X2]
-  simp only [↓reduceIte, Nat.reduceEqDiff]
-
-/-- The inversion. -/
-theorem invert_ok {x : BitVec 32} {k : Nat} {s₀ s : State} (h : Base x k s₀ s) :
-    WP isa Impl.X25519.X86.invert s fun s' => Base x k s₀ s' ∧
-      F s'.mem x T1 = VG.Proof.X25519.invert (F s.mem x Z2) ∧ F s'.mem x X2 = F s.mem x X2 := by
-  rw [invert_eq]
-  exact WP.mono (progOf_ok invSteps h invSteps_valid) fun s' ⟨b, e⟩ =>
-    ⟨b, by rw [e _ (by decide), runI_invert], by rw [e _ (by decide), runI_X2]⟩
-
 /-! ## The result -/
+
+namespace Pre
+variable {s₀ : State} (hp : Pre s₀)
+include hp
+
+/-- The 8 bytes of stack below `esp` the inversion's call uses. -/
+theorem callStk_eq : callStk s₀ = stkR s₀ := by
+  simp only [callStk, VG.X86.Taint.sub_setWidth hp.sp_room]
+
+theorem sc_callStk : (scR 4096 (arg s₀ 3)).Disjoint (callStk s₀) := by
+  rw [hp.callStk_eq]; exact hp.stk_sc.symm
+
+/-- An argument, in memory the code has written only in the working space and
+the stack below `esp`. -/
+theorem arg_same' {m : Mem} (hf : Frame [scR 4096 (arg s₀ 3), callStk s₀] s₀.mem m) {i : Nat} (hi : i < 4) :
+    m.readW (addr (s₀.gpr .esp) (4 + 4 * i)) 32 = arg s₀ i :=
+  hf.readW (arg_contains hp.sp_fit hi) (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · exact hp.args_sc
+    · rw [hp.callStk_eq]; exact hp.stk_args.symm) (by decide)
+
+/-- The return address, apart from the stack below `esp`. -/
+theorem ret_stk : (retR s₀).Disjoint (callStk s₀) := by
+  rw [hp.callStk_eq]; exact VG.Offset.base_disjoint_below _ (by decide)
+
+end Pre
 
 theorem num_shift (f : Nat → Nat) (n : Nat) : num f (n + 1) = f 0 + 2 ^ 32 * num (fun k => f (k + 1)) n := by
   induction n with

@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
-public import VerifiedGarbage.Impl.X25519.X86
-meta import VerifiedGarbage.Impl.X25519.X86
+public import VerifiedGarbage.Impl.X25519.X86.Fn
+meta import VerifiedGarbage.Impl.X25519.X86.Fn
+public import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
+meta import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
