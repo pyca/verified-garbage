@@ -275,6 +275,9 @@ pub(crate) mod p224_inverse;
 pub(crate) mod p256_inverse;
 
 #[rustfmt::skip]
+pub(crate) mod p256_mul_base;
+
+#[rustfmt::skip]
 pub(crate) mod p384_inverse;
 
 #[rustfmt::skip]
