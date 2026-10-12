@@ -15,12 +15,12 @@ def stitch : Proof.AesGcm.X86_64.StitchPart where
   name := .vaes
   suffix := ""
   features := []
-  encP := (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.Stitch.enc)
-  decP := (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.Stitch.dec)
+  encP := by exact ((⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.Stitch.enc))
+  decP := by exact ((⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.Stitch.dec))
   toPart := some
     { name := .vaes
-      piece := ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel,
-        ⟨_, by taint_decide⟩⟩ }
+      piece := by exact (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel,
+        ⟨_, by taint_decide⟩⟩) }
 
 def variant : Proof.AesGcm.X86_64.GcmVariant := ⟨.vaes, .aesni, .vpclmul, some stitch⟩
 

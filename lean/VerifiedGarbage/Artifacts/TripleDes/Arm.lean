@@ -40,7 +40,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withRegScratchWiped 1024 .r3 256 Impl.TripleDes.Arm.Ecb.encrypt
     contract := Spec.TripleDes.ecbEncryptContract Arm.abi 1024
     stack := 1024
-    ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbEncryptContract Spec.TripleDes.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.TripleDes.ecbEncryptContract Spec.TripleDes.ecbContract; rfl⟩)
     verified := Proof.TripleDes.Arm.ecb_framed Proof.TripleDes.Arm.Ecb.encrypt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.TripleDes.ecbDecryptApi with
@@ -50,7 +50,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withRegScratchWiped 1024 .r3 256 Impl.TripleDes.Arm.Ecb.decrypt
     contract := Spec.TripleDes.ecbDecryptContract Arm.abi 1024
     stack := 1024
-    ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbDecryptContract Spec.TripleDes.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.TripleDes.ecbDecryptContract Spec.TripleDes.ecbContract; rfl⟩)
     verified := Proof.TripleDes.Arm.ecb_framed Proof.TripleDes.Arm.Ecb.decrypt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 

@@ -12,7 +12,7 @@ def artifact (sha3 : Bool) (η : Nat) (hη : η=2∨η=4) : Artifact :=
    contract := Spec.MlDsa.rejBoundedFourContract AArch64.abi η
    verified := Proof.MlDsa.AArch64.Optimized.BoundedFour.sampler_verified sha3 hη
    spSafe := Code.all_of_forall (fun _=>rfl) _
-   ofSig := ⟨_,_,_,by unfold Spec.MlDsa.rejBoundedFourContract; rfl⟩ }
+   ofSig := by exact (⟨_,_,_,by unfold Spec.MlDsa.rejBoundedFourContract; rfl⟩) }
 
 def artifacts : List Artifact :=
  [artifact false 2 (Or.inl rfl),artifact true 2 (Or.inl rfl),

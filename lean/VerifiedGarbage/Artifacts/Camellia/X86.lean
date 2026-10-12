@@ -22,7 +22,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratchWiped 2712 4 672 (Impl.Camellia.X86.ecb .encrypt)
     contract := Spec.Camellia.ecbEncryptContract X86.abi 2712
     stack := 2712
-    ofSig := ⟨_, _, _, by unfold Spec.Camellia.ecbEncryptContract Spec.Camellia.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Camellia.ecbEncryptContract Spec.Camellia.ecbContract; rfl⟩)
     verified := Proof.Camellia.X86.ecb_framed .encrypt
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Camellia.ecbDecryptApi with
@@ -32,7 +32,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratchWiped 2712 4 672 (Impl.Camellia.X86.ecb .decrypt)
     contract := Spec.Camellia.ecbDecryptContract X86.abi 2712
     stack := 2712
-    ofSig := ⟨_, _, _, by unfold Spec.Camellia.ecbDecryptContract Spec.Camellia.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Camellia.ecbDecryptContract Spec.Camellia.ecbContract; rfl⟩)
     verified := Proof.Camellia.X86.ecb_framed .decrypt
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

@@ -32,7 +32,7 @@ def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.sha224I) 4
       v.M224.hmacInit
     contract := Spec.Hmac.sha224I.initContract X86.abi (48 + Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.sha224I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩)
     stack := 48 + Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.sha224I
     verified := Proof.Pbkdf2.Md.X86.initFramed v.hmacInit224 (by decide)
       (Proof.Pbkdf2.Md.X86.noEsp_of v.init224NoSp) v.init224Stack Proof.Pbkdf2.Md.X86.sha224_initFrameSat
@@ -45,7 +45,7 @@ def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha224I) 5
       v.M224.hmacFin
     contract := Spec.Hmac.sha224I.finalizeContract X86.abi (48 + Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha224I)
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩)
     stack := 48 + Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha224I
     verified := Proof.Pbkdf2.Md.X86.finFramed v.hmacFin224 (by decide) Proof.Hmac.sha224_local
       (by decide) (Proof.Pbkdf2.Md.X86.noEsp_of v.finalize224NoSp) v.finalize224Stack Proof.Pbkdf2.Md.X86.sha224_finFrameSat
@@ -57,7 +57,7 @@ def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
     doc := Spec.Hmac.sha224I.initScratchApi.doc
     code := v.M224.hmacInit
     contract := Spec.Hmac.sha224I.initScratchContract X86.abi 48
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩)
     stack := 48
     verified := v.hmacInit224
     spSafe := v.init224Sp
@@ -68,7 +68,7 @@ def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
     doc := Spec.Hmac.sha224I.finalizeScratchApi.doc
     code := v.M224.hmacFin
     contract := Spec.Hmac.sha224I.finalizeScratchContract X86.abi 48
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩)
     stack := 48
     verified := v.hmacFin224
     spSafe := v.fin224Sp

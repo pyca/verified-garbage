@@ -24,7 +24,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlDsa.nttContract X86_64.abi
     verified := Proof.MlDsa.X86_64.Arith.ntt_verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := ⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; rfl⟩) },
   { Spec.MlDsa.nttInvApi with
     target := X86_64.target
     doc := Spec.MlDsa.nttInvApi.doc
@@ -36,7 +36,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlDsa.nttInvContract X86_64.abi
     verified := Proof.MlDsa.X86_64.Arith.nttInv_verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := ⟨_, _, _, by unfold Spec.MlDsa.nttInvContract Spec.MlDsa.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttInvContract Spec.MlDsa.inPlaceContract; rfl⟩) },
   { Spec.MlDsa.mulApi with
     target := X86_64.target
     doc := Spec.MlDsa.mulApi.doc
@@ -88,7 +88,7 @@ def artifacts : List Artifact := [
     verified := Proof.MlDsa.X86_64.Arith.Lazy.verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"]
-    ofSig := ⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; rfl⟩) },
   { Spec.MlDsa.montgomeryNttInvApi with
     name := Spec.MlDsa.montgomeryNttInvApi.name ++ "_avx2"
     target := X86_64.target
@@ -102,7 +102,7 @@ def artifacts : List Artifact := [
     verified := Proof.MlDsa.X86_64.Arith.MontgomeryInv.verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"]
-    ofSig := ⟨_, _, _, by unfold Spec.MlDsa.montgomeryNttInvContract Spec.MlDsa.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.montgomeryNttInvContract Spec.MlDsa.inPlaceContract; rfl⟩) },
   { Spec.MlDsa.montgomeryMulApi with
     name := Spec.MlDsa.montgomeryMulApi.name ++ "_avx2"
     target := X86_64.target

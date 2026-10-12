@@ -21,7 +21,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratchWiped 3168 .x3 396 (Impl.Sm4.AArch64.ecb .encrypt)
     contract := Spec.Sm4.ecbEncryptContract AArch64.abi 3168
     stack := 3168
-    ofSig := ⟨_, _, _, by unfold Spec.Sm4.ecbEncryptContract Spec.Sm4.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Sm4.ecbEncryptContract Spec.Sm4.ecbContract; rfl⟩)
     verified := Proof.Sm4.AArch64.ecb_framed .encrypt
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Sm4.ecbDecryptApi with
@@ -31,7 +31,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratchWiped 3168 .x3 396 (Impl.Sm4.AArch64.ecb .decrypt)
     contract := Spec.Sm4.ecbDecryptContract AArch64.abi 3168
     stack := 3168
-    ofSig := ⟨_, _, _, by unfold Spec.Sm4.ecbDecryptContract Spec.Sm4.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Sm4.ecbDecryptContract Spec.Sm4.ecbContract; rfl⟩)
     verified := Proof.Sm4.AArch64.ecb_framed .decrypt
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 

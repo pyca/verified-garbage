@@ -17,7 +17,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlDsa.nttContract Arm.abi 28
     stack := 28
     verified := Proof.MlDsa.Arm.Arith.Ntt.verified
-    ofSig := ⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; exact rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; exact rfl⟩)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlDsa.nttInvApi with
     target := Arm.target
@@ -28,7 +28,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlDsa.nttInvContract Arm.abi 28
     stack := 28
     verified := Proof.MlDsa.Arm.Arith.NttInv.verified
-    ofSig := ⟨_, _, _, by unfold Spec.MlDsa.nttInvContract Spec.MlDsa.inPlaceContract; exact rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlDsa.nttInvContract Spec.MlDsa.inPlaceContract; exact rfl⟩)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlDsa.mulApi with
     target := Arm.target

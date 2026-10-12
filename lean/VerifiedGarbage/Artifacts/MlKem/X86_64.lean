@@ -81,7 +81,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlKem.nttContract X86_64.abi
     verified := Proof.MlKem.X86_64.ntt_verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩) },
   { Spec.MlKem.nttInvApi with
     target := X86_64.target
     doc := Spec.MlKem.nttInvApi.doc
@@ -92,7 +92,7 @@ def artifacts : List Artifact := [
     contract := Spec.MlKem.nttInvContract X86_64.abi
     verified := Proof.MlKem.X86_64.nttInv_verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩) },
   { Spec.MlKem.nttApi with
     name := Spec.MlKem.nttApi.name ++ "_avx2"
     target := X86_64.target
@@ -105,7 +105,7 @@ def artifacts : List Artifact := [
     verified := Proof.MlKem.X86_64.nttY_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"]
-    ofSig := ⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩ },
+    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩) },
   { Spec.MlKem.addApi with
     target := X86_64.target
     doc := Spec.MlKem.addApi.doc

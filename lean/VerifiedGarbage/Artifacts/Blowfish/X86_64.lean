@@ -25,7 +25,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratchWiped 264 .rcx 2 Impl.Blowfish.X86_64.encrypt
     contract := Spec.Blowfish.ecbEncryptContract X86_64.abi 264
     stack := 264
-    ofSig := ⟨_, _, _, by unfold Spec.Blowfish.ecbEncryptContract Spec.Blowfish.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Blowfish.ecbEncryptContract Spec.Blowfish.ecbContract; rfl⟩)
     verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.encrypt_verified
       (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
     spSafe := Code.all_of_allInstrs (by lit_decide) },
@@ -39,7 +39,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratchWiped 264 .rcx 2 Impl.Blowfish.X86_64.decrypt
     contract := Spec.Blowfish.ecbDecryptContract X86_64.abi 264
     stack := 264
-    ofSig := ⟨_, _, _, by unfold Spec.Blowfish.ecbDecryptContract Spec.Blowfish.ecbContract; rfl⟩
+    ofSig := by exact (⟨_, _, _, by unfold Spec.Blowfish.ecbDecryptContract Spec.Blowfish.ecbContract; rfl⟩)
     verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.decrypt_verified
       (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
