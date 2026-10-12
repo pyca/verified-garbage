@@ -1,0 +1,24 @@
+name: xts-exp
+on:
+  push:
+    branches: [xts-exp3]
+permissions: {}
+jobs:
+  run:
+    strategy:
+      fail-fast: false
+      matrix:
+        i: [1, 2, 3, 4, 5, 6, 7, 8]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: xts-exp2
+          path: old
+      - run: grep -m1 "model name" /proc/cpuinfo
+      - run: (cd exp && cargo build --release -q --bins) && (cd old/exp && cargo build --release -q --bins)
+      - run: for r in 1 2 3; do echo "new"; exp/target/release/real; echo "old"; old/exp/target/release/real; done

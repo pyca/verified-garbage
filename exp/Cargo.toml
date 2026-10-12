@@ -1,0 +1,9 @@
+[package]
+name = "xtsmodel"
+version = "0.1.0"
+edition = "2021"
+[dependencies]
+verified-garbage = { path = "..", features = ["cpu-features-env"] }
+[profile.release]
+debug = true
+[workspace]
