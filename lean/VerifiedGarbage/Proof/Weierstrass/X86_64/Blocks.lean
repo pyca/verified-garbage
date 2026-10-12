@@ -37,8 +37,8 @@ theorem bits_inline (src dst nbytes : Nat) : (bits src dst nbytes).inline = bits
 /-- Products of other than six or nine words are never calls. -/
 theorem callOf_of_ne {M : Mod} (h : M.n ≠ 9) (h6 : M.n ≠ 6) : Mont.callOf M = none := by
   unfold Mont.callOf
-  rw [ite_eq_right_iff.mpr fun h' => absurd h'.1 h]
-  exact ite_eq_right_iff.mpr fun h' => absurd h'.1 h6
+  rw [ite_eq_right_iff.mpr fun h' => absurd h'.1 h, ite_eq_right_iff.mpr fun h' => absurd h'.1 h6]
+  exact ite_eq_right_iff.mpr fun h' => absurd h'.1 h
 
 theorem opProg_of_none {M : Mod} (h : Mont.callOf M = none) (op : FOp) : opProg M op = .block (opCode M op) := by
   cases op <;> simp [opProg, opCall?, h]

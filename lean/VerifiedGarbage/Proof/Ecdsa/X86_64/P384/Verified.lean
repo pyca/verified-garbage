@@ -53,6 +53,7 @@ theorem p384_ok (hI : InvSounds) : CfgOk p384 where
   p_lt_2n := by decide +kernel
   minv_p := by decide +kernel
   red_p := by decide +kernel
+  red_n := by decide +kernel
   minv_n := by decide +kernel
   len8 := by decide
   len_lo := by decide
