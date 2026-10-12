@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.Env
-import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
-import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Env
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: the functions called
@@ -13,6 +19,8 @@ arguments from the environment: the key schedule, a block of `W` as the
 state or the counter block, the data or blocks of `W` as the data, and the
 working space at `W + 384`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: the loops
@@ -16,6 +22,8 @@ during its own rounds, before its blocks are overwritten. The setup is
 any powers whose products add up to `GHASH` (`FinOk`), without the field;
 `StitchZ/Loop48.lean` puts the loops of three groups in front of these.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZ
 

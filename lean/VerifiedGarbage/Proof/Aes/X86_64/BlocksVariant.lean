@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Aes.X86_64.Variant
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
-import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Blocks
+module
+
+public import VerifiedGarbage.Proof.Aes.X86_64.Variant
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` on x86-64
@@ -16,6 +22,8 @@ and make no calls. They come with the implementation of `vg_aes_expand_key`
 that goes with them (with the same suffix and CPU features), for the callers
 that also expand the key, proven against `Proof.Aes.expandKeyX86_64`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86_64
 

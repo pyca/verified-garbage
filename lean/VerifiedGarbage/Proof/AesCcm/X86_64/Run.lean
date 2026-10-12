@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: running straight-line blocks
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `crun [facts]` runs a block
 symbolically (`runBlock_cons`, `runStep_some`, the semantics of the
 instructions the code uses, and reads through the writes with `RegUpd`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

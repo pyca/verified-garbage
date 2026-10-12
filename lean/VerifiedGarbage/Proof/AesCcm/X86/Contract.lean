@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ccm.Contract
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Ccm.Contract
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: the contracts the proofs are written against
@@ -14,6 +20,8 @@ arguments and return addresses below `esp`: 56 bytes for a call of
 `vg_cmac_aes_update` (its own 28 and those of its calls of `vg_aes_ctr32`),
 which no buffer overlaps, nor the return address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm.X86
 

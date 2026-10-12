@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.Words
-import VerifiedGarbage.Proof.Ocb.State
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.Words
+public import VerifiedGarbage.Proof.Ocb.State
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: the calls
@@ -12,6 +18,8 @@ it, for the key schedule in the key context, and the registers `r4`–`r11`
 are kept (`CallPost`). `encOne d` enciphers the block at `W + d`
 (`encOne_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

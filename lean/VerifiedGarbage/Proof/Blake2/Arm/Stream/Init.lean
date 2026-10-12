@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
-import VerifiedGarbage.Proof.Rc2.PairMem
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
+public import VerifiedGarbage.Proof.Rc2.PairMem
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming BLAKE2 on ARMv7: `init`
@@ -10,6 +16,8 @@ word of BLAKE2b), the first with the parameter block XORed in; for a key,
 `keyBlock` zeroes the buffer and copies the key into it. `init` is a leaf
 function writing only `r1`–`r3` and `r12`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.Arm.Stream.Init
 

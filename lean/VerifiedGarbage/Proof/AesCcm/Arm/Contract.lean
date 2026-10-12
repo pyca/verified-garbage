@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ccm.Contract
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Ccm.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: the contracts the proofs are written against
@@ -14,6 +20,8 @@ pointer, and `vg_cmac_aes_update`'s own frame uses the 8 bytes below that:
 so the 16 bytes below the stack pointer (`bel16`) may not overlap any
 buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm.Arm
 

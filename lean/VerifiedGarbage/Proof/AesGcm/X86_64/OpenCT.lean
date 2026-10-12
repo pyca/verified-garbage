@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Open
-import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Open
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Open
+public import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_open` is constant time
@@ -13,6 +21,8 @@ comparison, which `open` may leak: correctness says it is whether
 both runs decrypt the rest (`oneCrypt`) or encrypt the whole blocks again
 (`oneUndo_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

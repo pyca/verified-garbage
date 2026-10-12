@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillPtr
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillPtr
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: writing the new block
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 `writeWords_ok`: the words of G's output (at `r1`) to the current block (at
 `r3`), XORed into the old ones after the first pass.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.Args
-import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Args
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: relating two runs
@@ -16,6 +22,8 @@ correctness proofs describe (`rel_seq`). The taint analysis takes memory as
 secret, so a block that loads a public value (an argument kept in `W`) and
 uses it as an address or a count is split after the load.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

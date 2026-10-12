@@ -131,6 +131,47 @@ mod x448;
 
 const SIZES: [usize; 3] = [64, 1024, 16384];
 
+/// A buffer of `len` bytes for an operation in place, into which each
+/// iteration first copies `source`.
+///
+/// Its first byte is 2 KiB past `source`'s modulo 4 KiB. Two `Vec`s of the
+/// same size allocated one after the other start a few bytes apart modulo
+/// 4 KiB. At 16 KiB, glibc copies with `rep movsb`, which on Zen 3 (EPYC
+/// 7763) is 20 to 40 times slower at that distance (5.4 µs where other CPUs
+/// take 0.1–0.3 µs). That made every such benchmark measure the copy rather
+/// than the library.
+pub(crate) struct InPlace {
+    storage: Vec<u8>,
+    start: usize,
+    len: usize,
+}
+
+impl InPlace {
+    pub(crate) fn new(len: usize, source: &[u8]) -> Self {
+        let storage = vec![0; len + 4096];
+        let start =
+            (source.as_ptr() as usize + 2048).wrapping_sub(storage.as_ptr() as usize) % 4096;
+        Self {
+            storage,
+            start,
+            len,
+        }
+    }
+}
+
+impl std::ops::Deref for InPlace {
+    type Target = [u8];
+    fn deref(&self) -> &[u8] {
+        &self.storage[self.start..self.start + self.len]
+    }
+}
+
+impl std::ops::DerefMut for InPlace {
+    fn deref_mut(&mut self) -> &mut [u8] {
+        &mut self.storage[self.start..self.start + self.len]
+    }
+}
+
 const VG: &str = "verified-garbage";
 const OPENSSL: &str = "openssl";
 const AWS_LC: &str = "aws-lc-rs";

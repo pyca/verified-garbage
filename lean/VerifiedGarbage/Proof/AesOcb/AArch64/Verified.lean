@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.OpenCT
-import VerifiedGarbage.Proof.AesOcb.AArch64.InitCT
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ocb.Contract
-import VerifiedGarbage.Proof.AesOcb.Scratch
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.OpenCT
+public import VerifiedGarbage.Proof.AesOcb.AArch64.InitCT
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ocb.Contract
+public import VerifiedGarbage.Proof.AesOcb.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: `Verified`
@@ -16,6 +22,8 @@ working space as a last argument (`Proof/AesOcb/Scratch.lean`), with no
 stack: the calls keep the return address in `x30`, which each function saves
 in its working space. `Frame.lean` allocates the working space.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

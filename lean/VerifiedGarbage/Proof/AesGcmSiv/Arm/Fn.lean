@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcmSiv.Arm.Crypt
-import VerifiedGarbage.Proof.AesGcm.Arm.Compare
-import VerifiedGarbage.Proof.AesGcm.Arm.Args
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Crypt
+public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+public import VerifiedGarbage.Proof.AesGcm.Arm.Args
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on ARMv7: comparing the tags, and `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`
@@ -11,6 +17,8 @@ AES-GCM's `cmpTail` does (`Proof.AesGcm.Arm.cmp_value`) (`cmp_ok`); `mask`
 ANDs every byte of the data with `0 − r0`: it keeps the data if `r0` is 1
 and zeroes it if `r0` is 0 (`mask_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

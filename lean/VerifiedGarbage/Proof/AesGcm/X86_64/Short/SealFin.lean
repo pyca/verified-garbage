@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
-import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
+public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `seal` ending without calls, with AES-NI
@@ -12,6 +18,8 @@ Short.finKsA`: it leaves what `sealRun_ok` does (`Short.sealRunF_ok`, with
 loads no `mxcsr`, never writes `rsp` and uses as much stack as the other
 instances, and so preserves what the ABI says (`sealFM_correct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

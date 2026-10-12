@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesXts.Arm.Steps
-import VerifiedGarbage.Proof.AesCbc.Arm.CT
+module
+
+public import VerifiedGarbage.Proof.AesXts.Arm.Steps
+meta import VerifiedGarbage.Proof.AesXts.Arm.Steps
+public import VerifiedGarbage.Proof.AesCbc.Arm.CT
+meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES on ARMv7: one block, and constant time
@@ -13,6 +21,8 @@ enciphered in place, the tweak is XORed in again, and the tweak is
 multiplied by `α` (`Steps.lean`). `body_ct'`: it is constant time, by the
 shared framework, with the call on the data block.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.Arm
 

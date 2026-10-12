@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: the variants
@@ -17,6 +23,8 @@ proofs that import the algebra of `Proof/Gcm/Poly.lean` (those of
 variants need not import that algebra. The generic file
 (`Generic/AesGcm/X86_64/AesGcm.lean`) resolves the names (`GcmVariant.impl`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

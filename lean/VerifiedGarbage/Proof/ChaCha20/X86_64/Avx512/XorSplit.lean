@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.FinishSel
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.FinishSel
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 keystream XOR with the data's first bytes from another buffer on x86-64 with AVX-512: the loop
@@ -16,6 +22,8 @@ too. The loop's invariant (`SInv`) holds the output for the chunks done,
 and for the rest the bytes of `dst` from `C` on, which are the input's;
 before `C`, the input is in `src`, which is never written.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20
 

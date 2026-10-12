@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Mix
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Mix
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: GB on the permuted block
@@ -10,6 +16,8 @@ permuted block in `scratch[1024, 2048)` as a vector of words (`working`), and
 `gbAt_ok`: one GB updates it as `Proof.Argon2.mixWords`, and writes nothing
 else.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm
 

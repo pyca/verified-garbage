@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Front
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Front
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: `seal`
@@ -10,6 +16,8 @@ is encrypted in place with the keystream and copied to `G`
 `shortStart_ok` and `front_ok`, `sealShort_ok` leaves what `sealRun_ok`
 does.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

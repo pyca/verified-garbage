@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Ends
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Lit
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Ends
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Ends
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Lit
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Lit
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verified Argon2 block compression on x86-64 with AVX-512
@@ -13,6 +22,8 @@ epilogue (those of the AVX2 code, and their proofs), which keep MXCSR's
 control bits (`ctlOk`). Constant time is checked by evaluation, as for the
 scalar code.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.Avx512
 

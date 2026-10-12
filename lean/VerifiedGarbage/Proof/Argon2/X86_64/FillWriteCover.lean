@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Argon2.X86_64.FillWritePrefix
-import VerifiedGarbage.Proof.Argon2.X86_64.CountCandidates
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillWritePrefix
+public import VerifiedGarbage.Proof.Argon2.X86_64.CountCandidates
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.X86_64.FillWrite`. -/
+
+@[expose] public section
+
 section
 /-! Whole-block first-pass copying and later-pass XOR, with a frame proof. -/
 

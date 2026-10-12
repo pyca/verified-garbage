@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.Callee
-import VerifiedGarbage.Proof.CmacAes.Arm.Words
-import VerifiedGarbage.Proof.Cmac.Dbl32
-import VerifiedGarbage.Proof.Cmac.Dbl
-import VerifiedGarbage.Proof.Ocb.Spec
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.Callee
+public import VerifiedGarbage.Proof.CmacAes.Arm.Words
+public import VerifiedGarbage.Proof.Cmac.Dbl32
+public import VerifiedGarbage.Proof.Cmac.Dbl
+public import VerifiedGarbage.Proof.Ocb.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: blocks a word at a time
@@ -14,6 +20,8 @@ registers (`Ran`): the XOR of two blocks into a third, a word at a time
 a block zeroed (`zero16`: `Cmac.zero4`), copied (`copy16`) and doubled
 (`dbl`: `dblMem`, `blockAtMem_dbl`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

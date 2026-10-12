@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitCall
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The final H′ call accepts a complete reduced block and a public tag length. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.FinalCall
 

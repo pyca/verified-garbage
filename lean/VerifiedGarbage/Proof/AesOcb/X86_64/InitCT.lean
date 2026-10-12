@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Init
-import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Init
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Init
+public import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: `vg_aes_ocb_init` is constant time
@@ -10,6 +18,8 @@ arguments, then the key context's address, the rounds and the scratch
 buffer's address); the calls have the same arguments in both runs, by
 correctness (`key_rel`, `blk_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

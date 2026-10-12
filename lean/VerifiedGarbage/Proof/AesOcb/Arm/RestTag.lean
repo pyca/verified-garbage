@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.Whole
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.Whole
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: the rest of the data and the tag (`rest`, `tag`)
@@ -12,6 +18,8 @@ checksum (`padCk`), before the XOR for `seal` and after it for `open`
 `W + d` (`tag_ok`), as on AArch64 (`Proof.AesOcb.AArch64.rest_ok`,
 `Proof.AesOcb.AArch64.tag_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

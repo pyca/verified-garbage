@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
-import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
+public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH: the powers and the field
@@ -17,6 +23,8 @@ The only module of `Proof/Gcm/X86_64/Stitch/` that computes in the field
   `GHASH` over its sixteen blocks (`FinOk`).
 * `stitch_ok`: both loops meet their contracts (`StitchOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Stitch
 

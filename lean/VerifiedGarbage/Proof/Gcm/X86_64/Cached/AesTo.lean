@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Aes
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
-import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Load
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Aes
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Load
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # A cached-key GCM batch from one buffer to another -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZHTo
 open VG VG.X86_64

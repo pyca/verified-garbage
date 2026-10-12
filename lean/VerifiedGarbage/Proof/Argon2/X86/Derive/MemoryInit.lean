@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Argon2.MemoryInit
-import VerifiedGarbage.Proof.Argon2.Matrix
-import VerifiedGarbage.Proof.Argon2.X86.Derive.HCall
+module
+
+public import VerifiedGarbage.Proof.Argon2.MemoryInit
+public import VerifiedGarbage.Proof.Argon2.Matrix
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.HCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

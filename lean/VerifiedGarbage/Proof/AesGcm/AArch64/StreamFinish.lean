@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
-import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCrypt
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
+public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCrypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_stream_finish`
@@ -10,6 +16,8 @@ in `x28` (`finishEntry_ok`); `finBody 0` writes the tag to `W`, for any
 message of those lengths (`WP.forall_det`), and `tagOut` copies it to
 `tag`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

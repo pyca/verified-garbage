@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
-import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
+public import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `crypt` in two runs
@@ -11,6 +19,8 @@ between the calls of `vg_aes_ctr32` is checked by the taint analysis, from
 the registers `CrIn` and `CrMid` fix, and each call has the same arguments
 in both runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

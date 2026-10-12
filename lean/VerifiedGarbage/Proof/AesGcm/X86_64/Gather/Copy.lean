@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
-import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
-import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+public import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: copying a slice
@@ -15,6 +21,8 @@ ChaCha20-Poly1305's `copyBytes` leaves (`Gather.CopyPost`); the buffers do
 not overlap. Each loop runs from one multiple of its step to another
 (`chunks_wp`), with the first `j` bytes copied (`CInv`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

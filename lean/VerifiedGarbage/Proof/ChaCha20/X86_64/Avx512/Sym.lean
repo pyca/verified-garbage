@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Rounds
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX-512: straight-line code, doubleword by doubleword
@@ -10,6 +16,8 @@ each doubleword after a block of such instructions as a term (`T`) in the
 doublewords before it, and `run_ok` proves the machine agrees; the terms
 themselves are then compared by the kernel.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx512
 

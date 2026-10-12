@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.FillLanesBody
-import VerifiedGarbage.Proof.Argon2.Lanes
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillLanesBody
+public import VerifiedGarbage.Proof.Argon2.Lanes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Termination and correctness of all remaining lanes in one slice. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.FillLanes
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Siv.Spec
-import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.Siv.Spec
+public import VerifiedGarbage.Proof.Cmac.Block
+public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV: masking the data
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 (all ones) or `0`, which leaves the plaintext or zeros: a word and a byte of
 it at a time (`mask_word`, `mask_succ`). Nothing here depends on a target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv
 

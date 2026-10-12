@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: the entry of `vg_aes_gcm_stream_encrypt` and `_decrypt`
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. The entry keeps the public
 arguments in `W` (`cryptEntry_ok`), and what the precondition gives
 (`CryptCtx`); `streamText` follows (`StreamText.lean`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

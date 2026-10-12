@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.Batch
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Batch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Vector block transfers and XOR, against the existing OCB block specification. -/
+
+@[expose] public section
+
 set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesOcb.AArch64

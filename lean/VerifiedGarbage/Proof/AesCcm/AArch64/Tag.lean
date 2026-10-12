@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.Mac
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Mac
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: the MAC encrypted (`tag y`)
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `tag y` copies `Ctr₀` to
 `W + 64` (`tagArgs_ok`) and calls `vg_aes_ctr32` on the MAC at `W + y`: it
 XORs in `CIPH_K(Ctr₀)`, CCM's keystream from `Ctr₀` (`tag_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: the powers of 48 blocks
@@ -9,6 +15,8 @@ of them (`H'³²`) into `scratch + 512` (each product reduced, `Pclmul.reduceB`
 of `Prod.zero.acc`, `powLoad_ok`), and saves the reduction constant at
 `scratch + 832`; what the products are in the field is in `StitchZ/Ok.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZ
 

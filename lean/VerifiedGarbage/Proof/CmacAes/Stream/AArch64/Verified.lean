@@ -1,9 +1,23 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Init
-import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Finish
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Cmac.Contract
-import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbCorrect
-import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Init
+meta import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Init
+public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Finish
+meta import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Finish
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Cmac.Contract
+meta import VerifiedGarbage.Spec.Cmac.Contract
+public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbCorrect
+meta import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbCorrect
+public import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
+meta import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

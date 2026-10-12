@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
-import VerifiedGarbage.Proof.AesGcm.AArch64.Save
-import VerifiedGarbage.Proof.AesGcm.AArch64.Crypt
-import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Save
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Crypt
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: what every function uses
@@ -13,6 +19,8 @@ them, so one run satisfies each instance of its proof (`WP.forall_det`). The
 pieces never write the saved registers (`saved_absFrame`, …), and `flush` of
 no bytes changes no accumulator (`flush0_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

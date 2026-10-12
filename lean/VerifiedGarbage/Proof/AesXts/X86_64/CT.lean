@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesXts.X86_64.Body
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+module
+
+public import VerifiedGarbage.Proof.AesXts.X86_64.Body
+meta import VerifiedGarbage.Proof.AesXts.X86_64.Body
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES on x86-64: constant time
@@ -10,6 +18,8 @@ analysis covers the code around the call, from the registers the correctness
 proof pins to the public arguments (`PInv`), and the call of the block
 function on all the blocks is constant time by its own proof (`blk_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86_64
 

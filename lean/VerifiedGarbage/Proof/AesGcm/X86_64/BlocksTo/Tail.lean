@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Mid
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Copy
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Mid
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Copy
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: the blocks left
@@ -12,6 +18,8 @@ Untrusted: everything here is checked by Lean. From `Mid s q q`, the
 (`tail_ok`). Counter mode and GHASH of the two parts make those of all the
 blocks (`ctr32_append`, `ghashFrom_append`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Sym
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512Tail
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Sym
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512Tail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX-512, the last bytes: the rounds
@@ -14,6 +20,8 @@ the rows that make the diagonals columns. A double round on the words is
 proven, once, to be `innerBlock` on each set, by comparing terms; then on
 the four lanes of the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx512Tail
 

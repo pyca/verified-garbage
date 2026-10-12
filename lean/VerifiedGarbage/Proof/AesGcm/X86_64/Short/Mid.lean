@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bytes
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
-import VerifiedGarbage.Proof.AesGcm.X86_64.J0
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bytes
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
+public import VerifiedGarbage.Proof.AesGcm.X86_64.J0
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: what the steps keep
@@ -13,6 +19,8 @@ entry (`W`, the data and the stack below `SP`). The steps write only `T`
 (`W`'s first 16 bytes, the tag) and `W + 512` … `W + 2048` (`G`, `K` and the
 powers), and the data (`SM.keep`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

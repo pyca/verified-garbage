@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Gb
-import VerifiedGarbage.Proof.Argon2.X86_64.Words
-import VerifiedGarbage.Proof.Argon2.Permutation
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Gb
+public import VerifiedGarbage.Proof.Argon2.X86_64.Words
+public import VerifiedGarbage.Proof.Argon2.Permutation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on x86-64 with AVX2: rows and columns in scratch
@@ -11,6 +17,8 @@ and stored back; a column with two 16-byte loads per register, joined by
 `vinserti128`, and two 16-byte stores. Either way the block becomes
 `Spec.Argon2.permuteAt` of the row or column (`row_ok`, `col_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.Avx2
 

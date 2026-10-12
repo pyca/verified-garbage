@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.StreamInit
-import VerifiedGarbage.Proof.AesGcm.Arm.Args
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.StreamInit
+public import VerifiedGarbage.Proof.AesGcm.Arm.Args
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_stream_aad`
@@ -9,6 +15,8 @@ caller's registers in `scratch` (`W`) and absorbs the additional data into
 GHASH with `absorb` (`streamAad_wp`), with `len(A) mod 16` from the low
 word of `aad_len`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

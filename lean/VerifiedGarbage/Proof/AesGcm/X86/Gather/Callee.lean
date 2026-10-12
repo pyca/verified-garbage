@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Impl.AesGcm.X86.SealGather
-import VerifiedGarbage.Spec.Gcm.Contract
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Impl.AesGcm.X86.SealGather
+public import VerifiedGarbage.Spec.Gcm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: the function called
@@ -14,6 +20,8 @@ shared contract (`Spec.Gcm.sealContract`, with 2632 bytes of stack): its
 precondition from the layout the call gives it (`callPre`, `sealSpec_pre`),
 its postcondition (`sealSpec_post`) and its public data (`sealSpec_pub`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

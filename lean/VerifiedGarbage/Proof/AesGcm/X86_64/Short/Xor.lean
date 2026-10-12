@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Copy
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: the text
@@ -8,6 +14,8 @@ bytes at `rsi` with those at `rdx` (the keystream), in place, and if `g` also
 writes the result at `rdi`: 16 bytes at a time through `xmm4`, then one at a
 time (`xorText_ok`); the three buffers do not overlap.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

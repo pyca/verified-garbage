@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
-import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+public import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: GHASH over one block of the state or of `T`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 Untrusted: everything here is checked by Lean. `ghash1 yo b o` continues
 the accumulator at `St + yo` over the block at `P = b + o` (`ghash1_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamText
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamText
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt`
@@ -8,6 +14,8 @@ the text (`streamText_ok`) and the exit, for any message the state
 represents (`streamText_run`): encrypting appends the ciphertext it writes
 (`streamEncrypt_wp`), decrypting the ciphertext it reads (`streamDecrypt_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

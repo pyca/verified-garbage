@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: counter mode over a piece (`crypt`)
@@ -10,6 +16,8 @@ from byte `P` of the text on, into the `rbp` bytes at `r12`, where `rbx` is
 whole blocks with `vg_aes_ctr32` (`cryptWhole`), then a new keystream block
 for the last bytes (`cryptTail`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

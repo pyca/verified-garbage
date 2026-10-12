@@ -1,10 +1,16 @@
-import VerifiedGarbage.Spec.GcmSiv.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.AesGcm.AArch64.Save
-import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
-import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
-import VerifiedGarbage.Impl.AesGcmSiv.AArch64
+module
+
+public import VerifiedGarbage.Spec.GcmSiv.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Save
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Impl.AesGcmSiv.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on AArch64: the contracts, and where everything is
@@ -15,6 +21,8 @@ Untrusted: everything here is checked by Lean. The shared contracts of
 argument but the working space is in a register, and a call (`bl`) stores
 nothing in memory, so no stack is used.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcmSiv.AArch64
 

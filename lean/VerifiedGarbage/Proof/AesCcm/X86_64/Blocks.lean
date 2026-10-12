@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Ctrs
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Ctrs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: counter blocks and chaining a block
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `ctrAt` makes `Ctrᵢ` at
 `W + 64` from `Ctr₀` (`ctrAt_ok`); `updBlock y` chains the block `B` at
 `W + 32` into the MAC state at `W + y` (`updBlock_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

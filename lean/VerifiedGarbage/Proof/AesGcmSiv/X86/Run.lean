@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Env
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Env
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86: running straight-line blocks
@@ -11,6 +17,8 @@ keeping the registers folded), as AES-GCM's `xrun` does, with the offsets
 of the AES-GCM-SIV code; `gregs` and `gmems` read registers, memory, flags
 and permissions through the writes of a block.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

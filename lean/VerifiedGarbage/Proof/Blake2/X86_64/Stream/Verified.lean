@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.Blake2.X86_64.Compress
-import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
-import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
-import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Update
-import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Finalize
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Blake2.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Blake2.X86_64.Compress
+public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
+public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
+public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Update
+public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Finalize
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming BLAKE2 on x86-64: `Verified`
@@ -14,6 +20,8 @@ Correctness (from `Init`, `Update` and `Finalize`, with the compression
 function of `Proof/Blake2/X86_64/Compress.lean`), constant time (from `CT`),
 and a state satisfying each precondition, for BLAKE2b and BLAKE2s.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.X86_64.Stream
 

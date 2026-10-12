@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Tag
-import VerifiedGarbage.Proof.GcmSiv.Ctr
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Tag
+public import VerifiedGarbage.Proof.GcmSiv.Ctr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on AArch64: counter mode (`crypt`)
@@ -12,6 +18,8 @@ incremented (`cryptBlock_ok`); the last bytes are XORed with the keystream
 block, computed at `W + 224` (`cryptTail_ok`). `crypt_ok`: the data becomes
 `ctr` of it (RFC 8452 §4).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

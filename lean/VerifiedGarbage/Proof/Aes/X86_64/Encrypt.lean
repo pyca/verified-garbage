@@ -1,12 +1,20 @@
-import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
-import VerifiedGarbage.Impl.Aes.X86_64.Linear
-import VerifiedGarbage.Proof.Framework.X86_64.Linear
-import VerifiedGarbage.Impl.Aes.X86_64.Sbox
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Aes.Bitsliced
-import VerifiedGarbage.Proof.Framework.X86_64.Straight
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
+public import VerifiedGarbage.Impl.Aes.X86_64.Linear
+public import VerifiedGarbage.Proof.Framework.X86_64.Linear
+public import VerifiedGarbage.Impl.Aes.X86_64.Sbox
+public import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.Aes.Bitsliced
+public import VerifiedGarbage.Proof.Framework.X86_64.Straight
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX2, the last bytes: the rounds of three sets
@@ -9,6 +15,8 @@ As `Rounds.lean`, for `last3`'s three sets: the third in `ymm8 … ymm11`
 third set) or `ymm13` (second). A double round on the words is `innerBlock`
 on each set, by comparing terms (`cols3_check`, `diags3_check`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx2Tail
 

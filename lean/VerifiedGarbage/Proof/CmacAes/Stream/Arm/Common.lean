@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on ARMv7: arithmetic and memory
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 bytes held back as the code computes it from the low word of `count`
 (`held_lo`), conditions, and bytes written.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.Arm
 

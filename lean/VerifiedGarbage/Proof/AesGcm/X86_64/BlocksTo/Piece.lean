@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
-import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
+public import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: what the interleaved loops need
@@ -10,6 +16,8 @@ needs of the out-of-place loops it runs (`PieceTo`, as `Piece` for
 `Blocks.stitchPart`), and the loops with their proof for a key context of
 kind `M` (`StitchToCode`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesCfb8.Arm.Body
-import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+module
+
+public import VerifiedGarbage.Proof.AesCfb8.Arm.Body
+meta import VerifiedGarbage.Proof.AesCfb8.Arm.Body
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB8 on ARMv7: constant time
@@ -12,6 +20,8 @@ proof pins to them (`LInv`) afterwards, and each call of a block function, in
 its frame, is constant time by its own proof (`Proof.AesOcb.Arm.blk_rel`).
 `whole_ct`: if one run of `body` is (`BodyCt`), `whole body` is.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCfb8.Arm
 

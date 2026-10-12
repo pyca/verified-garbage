@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Xor
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
-import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Xor
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: the keystream
@@ -11,6 +17,8 @@ counter blocks `J₀`, `inc₃₂(J₀)`, … four at a time in the lanes of `zm
 after `Stitch.setupC` (`Stitch.setupC_ok`) and the first half of
 `StitchZ.setupZ` (`ctrZ_ok`) put the counters in the lanes of `zmm14`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

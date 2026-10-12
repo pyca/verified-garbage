@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.AArch64.Ctr
-import VerifiedGarbage.Proof.Cmac.Dbl32
+module
+
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Ctr
+public import VerifiedGarbage.Proof.Cmac.Dbl32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64: the counter, and the end of `vg_aes_siv_encrypt`
@@ -13,6 +19,8 @@ CTR (`ctr_wp`), copies the IV to `siv`, whose address the save left at
 `W + 248` (`sivOut_ok`), and restores the registers: `siv` then holds the IV
 and the data is the ciphertext (`sealTail_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.AArch64
 

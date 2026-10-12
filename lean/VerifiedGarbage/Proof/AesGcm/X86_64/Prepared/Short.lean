@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Prepared contexts retain the existing short-message path -/
+
+@[expose] public section
+
 namespace VG.Proof.AesGcm.X86_64
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 open Gcm.X86_64.Stitch (CtxMode)

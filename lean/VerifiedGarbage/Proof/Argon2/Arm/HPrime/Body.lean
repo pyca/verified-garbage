@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 H′ on ARMv7: the state of the body
@@ -11,6 +17,8 @@ stack pointer, and the caller's registers and the length prefix are kept in
 `scratch`. `Out s₀ s xs`: the output so far, `xs`, its pointer (`r7`) and the
 bytes left (`r8`). `copy_ok`: copying digest bytes to the output.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.HPrime
 

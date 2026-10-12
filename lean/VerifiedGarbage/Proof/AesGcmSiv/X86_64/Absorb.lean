@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
-import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+public import VerifiedGarbage.Proof.Cmac.Block
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86-64: POLYVAL (`absorb`)
@@ -12,6 +18,8 @@ key `H · x` on the same bits (`Proof.GcmSiv.Polyval`): `revLoop` copies up to
 each copy as POLYVAL reads the original (`revLoop_ok`), and `vg_ghash`
 absorbs them; `absorb` absorbs the padded string so (`absorb_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

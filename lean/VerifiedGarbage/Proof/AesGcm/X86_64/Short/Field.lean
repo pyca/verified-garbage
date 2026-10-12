@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Pow
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.Proof.Gcm.Split
-import Mathlib.Tactic.LinearCombination
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Pow
+public import VerifiedGarbage.Proof.Gcm.Stream
+public import VerifiedGarbage.Proof.Gcm.Split
+public import Mathlib.Tactic.LinearCombination
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: GHASH of the buffer, in the field
@@ -14,6 +20,8 @@ with block `4 j + l` of `4 g`. With `Pow.lean`, this is all the short path
 needs from the field (`shortFacts`), which the other modules take as an
 argument so as not to import its algebra.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

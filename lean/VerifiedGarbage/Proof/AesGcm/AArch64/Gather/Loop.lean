@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Copy
-import VerifiedGarbage.Proof.Gcm.SealGather
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Copy
+public import VerifiedGarbage.Proof.Gcm.SealGather
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: gathering the slices
@@ -12,6 +18,8 @@ memory is the one on entry with their concatenation (`gathered`) written at
 `dst`. The descriptors and the slices are apart from `dst`, so they are
 what they were on entry.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

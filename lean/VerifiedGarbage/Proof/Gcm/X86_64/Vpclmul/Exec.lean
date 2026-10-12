@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-import VerifiedGarbage.Impl.Gcm.X86_64.Vpclmul
-import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
-import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+public import VerifiedGarbage.Impl.Gcm.X86_64.Vpclmul
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GHASH with VPCLMULQDQ: what the instruction groups compute, as bits
@@ -16,6 +22,8 @@ compute in the field is in `Vpclmul/Ghash.lean`, which needs the algebra of
 products go (such as the interleaved loops of `Proof/Gcm/X86_64/Stitch/`)
 import it alone.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Vpclmul
 

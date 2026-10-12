@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.FinishShort
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.FinishShort
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: finishing S2V with a string of a block or more
@@ -11,6 +17,8 @@ blocks before its last 1 to 16 bytes, `k = max(nb, 1) − 1` (`kOf`) and
 chains the `k` blocks of `P`, then the first `j` blocks of the tail, and
 finalizes the rest of the tail (`Siv.s2vFinish_long`, `Siv.cmacWith_split₂`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

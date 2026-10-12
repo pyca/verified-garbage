@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.KeysCT
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.KeysCT
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.KeysCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86: POLYVAL is constant time
@@ -10,6 +17,8 @@ and `vg_ghash` absorbs as many blocks as the number left says: all public
 (`absorb_ct`, `lens_ct`), and the tag input (`tagIn_ct`), from the public
 arguments (`polyval_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
-import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: `HASH` is constant time
@@ -14,6 +22,8 @@ the sum by code the taint analysis checks from those, with the call between
 on the same arguments (`chunk_rel`); both runs are at the same chunk at each
 iteration (`hashLoop_rel`); the rest, if any, likewise (`hashRest_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

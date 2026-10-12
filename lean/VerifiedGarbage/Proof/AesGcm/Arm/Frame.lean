@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Verified
-import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Verified
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7, with its working space on the stack
@@ -19,6 +25,8 @@ stack arguments (`aad_len`, `text_len`, `data` and `len`), and those of
 (six). The copies are read only where the pre- and postconditions read the
 buffers (`Proof/AesGcm/Scratch.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.Arm
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesSiv.AArch64.Ctr
-import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Ctr
+meta import VerifiedGarbage.Proof.AesSiv.AArch64.Ctr
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
+meta import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64: CTR is constant time
@@ -14,6 +23,8 @@ taint analysis, and the call's arguments are the same in both runs
 (`ctr_rel` of `CmacAes.AArch64`). Both runs leave the loop after the same
 block, the last one (`ctr_tail`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.AArch64
 

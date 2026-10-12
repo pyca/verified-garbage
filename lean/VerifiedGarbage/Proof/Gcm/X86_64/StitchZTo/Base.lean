@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The out-of-place AVX-512 loop: the setting, and the data
@@ -18,6 +24,8 @@ registers into the blocks loaded from `base + idx + 64 (j + i)` and stores
 them to `base + 64 (j + i)`, for a source and a destination in disjoint
 regions, as `VaesZ.xorDataZ_ok` does in place.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZTo
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH in AVX: decryption
@@ -8,6 +14,8 @@ blocks as they were: the ciphertext); `rdx` points to group `e`. `dbody_ok`:
 a body hashes group `e` while it decrypts it (`group_ok`), each batch
 reading its own four blocks during its rounds, before it overwrites them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchAvx
 

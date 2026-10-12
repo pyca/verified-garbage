@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.Ctr
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Spec.Ctr
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CTR: the increment, in words
@@ -19,6 +25,8 @@ splitting a number across two strings (`ofNat_add`, `toNat_append`), and
 adding to a number with a carry into the more significant string
 (`ofNat_toNat_append_add`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCtr
 

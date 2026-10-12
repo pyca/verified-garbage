@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
-import VerifiedGarbage.Proof.Cmac.Mem32
-import VerifiedGarbage.Proof.Cmac.Dbl32
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
+public import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Proof.Cmac.Dbl32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: the pre-counter block (`j0`)
@@ -13,6 +19,8 @@ accumulator at the state's first block (`j0hash_ok`). `initState` then
 zeroes the accumulator and writes the first counter block `inc₃₂(J₀)`
 (`initState_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

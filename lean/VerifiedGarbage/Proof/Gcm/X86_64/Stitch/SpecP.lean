@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
-import VerifiedGarbage.Spec.Gcm.Precomputed
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
+public import VerifiedGarbage.Spec.Gcm.Precomputed
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved loops with the powers of the hash subkey in the key context
@@ -19,6 +25,8 @@ writes elsewhere keep (`frame`). `SPreM` and `StitchOkM` are `SPre` and
 (`StitchOk.toM`), and those that read the powers for `powers`
 (`StitchOkP.toM`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Stitch
 

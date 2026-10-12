@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH: a batch of eight blocks
@@ -10,6 +16,8 @@ AES of both lanes of each (`Vaes.aesG_ok`), and the XOR into the data
 which neither the counter blocks, the rounds nor the XOR (which writes only
 those eight blocks) undo.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Stitch
 

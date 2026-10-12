@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Gather.CT
-import VerifiedGarbage.Proof.AesGcm.X86.Frame
-import VerifiedGarbage.Proof.Framework.X86.CallWith
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.CT
+public import VerifiedGarbage.Proof.AesGcm.X86.Frame
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: `Verified`
@@ -13,6 +19,8 @@ implies the one the proof is written against (`gatherX86`,
 `vg_aes_gcm_seal` by its shared contract (`sealFn`), is `Verified` against
 it (`sealGather_verified`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

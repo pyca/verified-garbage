@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.OpenCT
-import VerifiedGarbage.Proof.AesOcb.X86_64.InitCT
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ocb.Contract
-import VerifiedGarbage.Proof.AesOcb.Scratch
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.OpenCT
+public import VerifiedGarbage.Proof.AesOcb.X86_64.InitCT
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ocb.Contract
+public import VerifiedGarbage.Proof.AesOcb.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: `Verified`
@@ -16,6 +22,8 @@ a state satisfying each precondition, and the shared contracts of
 the calls, whose callees use no stack. `Frame.lean` allocates the working
 space.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

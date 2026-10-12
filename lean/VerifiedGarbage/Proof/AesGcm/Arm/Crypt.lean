@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Flush
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Flush
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: counter mode over a piece (`crypt`)
@@ -10,6 +16,8 @@ from byte `P` of the text on, into the `r5` bytes at `r4`, where `r6` is
 whole blocks with `vg_aes_ctr32` (`cryptWhole`), then a new keystream block
 for the last bytes (`cryptTail`). The number of rounds is in `r8`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

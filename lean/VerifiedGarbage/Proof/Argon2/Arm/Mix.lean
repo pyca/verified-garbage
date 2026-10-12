@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Blake2.Arm.BlockB
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Argon2.Spec
-import VerifiedGarbage.Impl.Argon2.Arm.Compress
+module
+
+public import VerifiedGarbage.Proof.Blake2.Arm.BlockB
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Argon2.Spec
+public import VerifiedGarbage.Impl.Argon2.Arm.Compress
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the products and GB
@@ -13,6 +19,8 @@ registers; and `wp_gb`: GB on four words of `scratch` (at `r3`), computed in
 registers as BLAKE2b's `G` is (`Proof/Blake2/Arm/BlockB.lean`), leaves the
 memory `gbMem`, with the words of `Proof.Argon2.mix` stored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm
 

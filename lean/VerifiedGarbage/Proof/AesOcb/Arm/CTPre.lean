@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.CTBase
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.Arm.CTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: `Offset_0` and `HASH` in two runs
@@ -11,6 +18,8 @@ data's pointer and its blocks, the count of a chunk), and each call of
 `vg_aes_encrypt_blocks` with the same arguments in both runs (`nonce_rel`,
 `hash_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

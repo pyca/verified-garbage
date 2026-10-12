@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.CryptCT
-import VerifiedGarbage.Proof.AesCcm.X86_64.Seal
-import VerifiedGarbage.Proof.Framework.X86_64.Narrow
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.CryptCT
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.CryptCT
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Seal
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Seal
+public import VerifiedGarbage.Proof.Framework.X86_64.Narrow
+meta import VerifiedGarbage.Proof.Framework.X86_64.Narrow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: `vg_aes_ccm_seal` is constant time
@@ -18,6 +27,8 @@ of the tag do not, and run the same from its states with `tag` only readable
 (`rel_narrow`). The copy of the tag and the exit are related by the taint
 analysis from the registers that correctness says agree (`sealTail_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

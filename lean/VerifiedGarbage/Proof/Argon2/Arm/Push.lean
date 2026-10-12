@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Arm.CallF
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: calls in frames of their stack arguments
@@ -11,6 +17,8 @@ around a call of verified code that may have frames of its own (`WP.callF`),
 which changes memory only in what the callee may write and the `k` bytes
 below the stack pointer (`After`); `frameCall_rel` relates two runs of one.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm
 

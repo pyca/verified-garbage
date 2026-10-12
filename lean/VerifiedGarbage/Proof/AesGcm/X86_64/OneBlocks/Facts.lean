@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Ok
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Ok
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: after `oneBlocks`
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. What `seal` and `open` know
 after `oneBlocks` (`ob_facts`): the whole blocks of the data in counter mode,
 the counter after them, the accumulator over them, and everything else kept.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

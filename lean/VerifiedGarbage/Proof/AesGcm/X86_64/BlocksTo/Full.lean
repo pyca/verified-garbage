@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Stitch
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Stitch
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: loops that take all the blocks
@@ -11,6 +17,8 @@ given to it, after `takeAllTo` makes the arguments kept those of no rest
 which `rest` keeps (`restFullTo_ok`). With fewer, `q = 0`, as without `full`
 (`stitchFullTo_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

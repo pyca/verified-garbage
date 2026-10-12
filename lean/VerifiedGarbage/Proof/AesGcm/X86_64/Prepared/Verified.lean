@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
-import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksVerified
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
+public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Prepared-context sealing and streaming contracts -/
+
+@[expose] public section
+
 set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm.X86_64
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Blake2
-import VerifiedGarbage.TCB.Arm.Target
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Blake2
+public import VerifiedGarbage.TCB.Arm.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2 compression function on ARMv7: the contract
@@ -9,6 +15,8 @@ The contract the compression functions' proofs are written against, and the
 streaming functions use for their calls of them; the artifacts' contract is
 the shared one of `Spec/Blake2/Contract.lean`, which implies it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2
 

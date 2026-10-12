@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ocb.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Ocb.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: the contracts the proofs are written against
@@ -12,6 +18,8 @@ last argument (`Proof/AesOcb/Scratch.lean`), which imply these
 used; `seal` and `open` read `tag`, `tag_len` and `work` from the stack,
 which they may only read.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesOcb.AArch64
 

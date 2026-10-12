@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.Pass
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Pass
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Cached increments for batches of eight payload blocks. -/
+
+@[expose] public section
+
 set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesOcb.AArch64

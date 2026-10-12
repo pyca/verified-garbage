@@ -1,11 +1,20 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
-import VerifiedGarbage.Proof.Blake2.X86_64.Backend
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
-import VerifiedGarbage.Spec.Blake2.Contract
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
+public import VerifiedGarbage.Proof.Blake2.X86_64.Backend
+public import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.X86_64.HPrime.Hash`. -/
+
+@[expose] public section
+
 section
 /-!
 # H′: the BLAKE2b streaming callee

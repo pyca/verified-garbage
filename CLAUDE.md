@@ -597,6 +597,15 @@ VG_CPU_FEATURES=avx,avx2 python3 ci/bench_compare.py --modules chacha20 path/to/
 (cd bench && VG_CPU_FEATURES=none VG_BENCH_MODULES=chacha20 cargo bench -- '^chacha20/verified-garbage/')
 ```
 
+A benchmark whose code reads a comb's table of hundreds of kilobytes
+(P-521's) is up to about 7% faster or slower depending on which physical
+pages the kernel gives the table when it first reads the binary, a draw
+fixed for each binary file: comparing one run of each side compares two
+draws, not the code. So `ci/bench_compare.py` runs those groups
+(`FRESH_COPIES`) from `--copies` fresh copies of each side's binary and
+compares the fastest of each; add a group there when its code reads such a
+table.
+
 For another architecture, or features this CPU lacks, run the Benchmarks
 workflow by hand on a pushed branch (`workflow_dispatch` on `bench.yml`)
 with `base_commit` (empty to run the branch alone, next to OpenSSL and

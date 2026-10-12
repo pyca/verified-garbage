@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+meta import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: whole blocks of the text (`cryptWhole`)
@@ -8,6 +15,8 @@ Untrusted: everything here is checked by Lean. From a block boundary,
 (`cryptWhole_pc`), by `Proof.Gcm.ctr_whole`. `ctrArgs_ok` sets up the
 arguments of the call, here and in `cryptTail`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

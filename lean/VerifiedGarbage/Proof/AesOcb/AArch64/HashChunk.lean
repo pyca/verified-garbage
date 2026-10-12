@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.HashFill
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.HashFill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: a chunk of `HASH` (`hashChunk`)
@@ -12,6 +18,8 @@ buffer with each block XORed with its offset (`fill_ok`), enciphers the
 buffer, adds it to the sum (`hashSum_ok`), and leaves `HInv` at `j + c`
 (`hashChunk_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

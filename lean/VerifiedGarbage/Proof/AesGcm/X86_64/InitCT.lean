@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Init
-import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Init
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Init
+public import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_init` is constant time
@@ -9,6 +17,8 @@ is checked by the taint analysis from the public arguments; the calls of
 `vg_aes_expand_key_scratch` and `vg_aes_ctr32` have the same arguments in both runs,
 which correctness gives (`initA_ok`, `initC_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

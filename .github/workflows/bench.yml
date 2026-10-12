@@ -100,8 +100,9 @@ jobs:
     # rounds; with 2, about 20-25, until the x86-64 configurations outgrew
     # the timeout. One round with a shorter warm-up and measurement, and no
     # OpenSSL or aws-lc-rs reference on pull requests (bench_compare.py), take
-    # about half. If it outgrows the timeout again, set BENCHMARKS_PER_JOB
-    # (ci/bench_arches.py) to split configurations into shards.
+    # about half, until running P-521's groups from fresh copies took some
+    # x86-64 configurations past it again: BENCHMARKS_PER_JOB
+    # (ci/bench_arches.py) splits a run of every benchmark into shards.
     timeout-minutes: 30
     # With an empty image the job runs directly on the runner.
     container:

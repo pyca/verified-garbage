@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Loop
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH: the setup
@@ -9,6 +15,8 @@ the counter pair, the increment and the last round key's address. The
 powers the setup computes before (`setupG_ok`) are in the field, in
 `Stitch/Ok.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Stitch
 
