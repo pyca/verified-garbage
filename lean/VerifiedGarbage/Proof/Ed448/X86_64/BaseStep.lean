@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
 import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
 import VerifiedGarbage.Proof.X448.X86_64.Iter
 
@@ -77,7 +77,8 @@ include hP in
 /-- An iteration, for the bit `t` (`b`). -/
 theorem step_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t < 456)
     (hb : s.gpr .rbx = BitVec.ofNat 64 (t + 1)) {b : Nat} (hb2 : b < 2)
-    (hbit : s.mem (off base (BITS + t)) = BitVec.ofNat 8 b) :
+    (hbit : s.mem (off base (BITS + t)) = BitVec.ofNat 8 b)
+    (hd : E s.mem base 11 = Spec.Ed448.d) :
     WP isa (step P) s fun s' =>
       s'.gpr .rbx = BitVec.ofNat 64 t ∧ s'.zf = some (decide (t = 0)) ∧
       (∀ r, r ∉ .rbx :: clob → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
@@ -87,7 +88,9 @@ theorem step_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t < 
   have hs1 : Scr s1 base := ⟨(g1 _ (by decide)).trans hs.rdi, wr1 ▸ hs.wr, hs.nowrap⟩
   refine WP.seq (WP.mono (hP.dbl hs1) fun s2 ⟨k2, e2⟩ => ?_)
   have hs2 := k2.scr hs1
-  refine WP.seq (WP.mono (hP.add hs2) fun s3 ⟨k3, e3⟩ => ?_)
+  have hd2 : E s2.mem base 11 = Spec.Ed448.d := by
+    rw [e2, doubleOps_keep _ _ (Or.inl (by decide)), m1]; exact hd
+  refine WP.seq (WP.mono (hP.add hs2 hd2) fun s3 ⟨k3, e3⟩ => ?_)
   have hs3 := k3.scr hs2
   have b3 : s3.gpr .rbx = BitVec.ofNat 64 t := by
     rw [k3.gpr _ (by decide), k2.gpr _ (by decide)]; exact b1

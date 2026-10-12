@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
 import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
 
@@ -71,14 +71,21 @@ abbrev OutsOk (r : Nat) (ops : List FOp) : Prop :=
 /-- A function running the field program `ops`, with its results in the three slots from `r`:
 the calling convention kept, the slots' values `evalOps ops` of theirs, and `Keeps`. -/
 theorem fn_correct (r : Nat) (ops : List FOp) (hv : ∀ op ∈ ops, fopValid op)
-    (hk : ∀ r ∈ keptRegs, KeepReg.keeps r (fn ops) = true)
-    (hmx : (fn ops).allInstrs (fun i => !loadsMxcsr i) = true) (hout : OutsOk r ops)
-    (s : State) (hs : fnPre s) :
-    ∃ t s', Exec isa (fn ops) s t s' ∧ abiPreserved s s' ∧
+    {p : Prog isa} (hk : ∀ r ∈ keptRegs, KeepReg.keeps r p = true)
+    (hmx : p.allInstrs (fun i => !loadsMxcsr i) = true) (hout : OutsOk r ops)
+    (s : State) (hs : fnPre s)
+    (hrun : Scr s (s.gpr .rdi) → WP isa p s fun t =>
+      Proof.X448.X86_64.Keep (s.gpr .rdi) s t ∧
+      E t.mem (s.gpr .rdi) = evalOps ops (E s.mem (s.gpr .rdi)) ∧
+      ∀ x, (∀ op ∈ ops, OutOf (s.gpr .rdi) x op) →
+        (ofs (s.gpr .rdi) x < ACC ∨ ACC + 112 ≤ ofs (s.gpr .rdi) x) → t.mem x = s.mem x) :
+    ∃ t s', Exec isa p s t s' ∧ abiPreserved s s' ∧
       E s'.mem (s.gpr .rdi) = evalOps ops (E s.mem (s.gpr .rdi)) ∧ Keeps r (s.gpr .rdi) s.mem s'.mem := by
   obtain ⟨hrd, hwr, hret, hnw⟩ := hs
   have hscr : Scr s (s.gpr .rdi) := ⟨rfl, by rw [hwr]; simp, hnw⟩
-  obtain ⟨t, s', he, hg, _, _, hv', hm⟩ := fn_regs ops hv hk hscr
+  obtain ⟨t, s', he, k, hv', hm⟩ := hrun hscr
+  have hg : ∀ r, (r ∉ clob ∨ r ∈ keptRegs) → s'.gpr r = s.gpr r :=
+    fun r hr => hr.elim (k.gpr r) fun h => Exec.gpr_keeps (hk r h) he
   refine ⟨t, s', he, abiPreserved_of_exec hmx he ⟨fun r hr => hg r ?_, ?_⟩, hv', ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
@@ -110,6 +117,7 @@ theorem double_correct (hk : ∀ r ∈ keptRegs, KeepReg.keeps r doubleFn = true
     (hmx : doubleFn.allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (hs : doubleK.pre s) :
     ∃ tr s', Exec isa doubleFn s tr s' ∧ abiPreserved s s' ∧ doubleK.post s s' := by
   obtain ⟨tr, s', he, ha, hv, hk'⟩ := fn_correct 0 doubleOps doubleOps_valid hk hmx doubleOps_outs s hs
+    (fun hs => fn_ok doubleOps doubleOps_valid hs)
   refine ⟨tr, s', he, ha, ?_, hk'⟩
   rw [pointAt_eq _ _ 0 (by decide), pointAt_eq _ _ 0 (by decide), hv]
   exact (doubleOps_eval _).trans (double_eq _)
@@ -118,10 +126,11 @@ theorem double_correct (hk : ∀ r ∈ keptRegs, KeepReg.keeps r doubleFn = true
 theorem add_correct (hk : ∀ r ∈ keptRegs, KeepReg.keeps r addFn = true)
     (hmx : addFn.allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (hs : addK.pre s) :
     ∃ tr s', Exec isa addFn s tr s' ∧ abiPreserved s s' ∧ addK.post s s' := by
-  obtain ⟨tr, s', he, ha, hv, hk'⟩ :=
-    fn_correct 3 addAffineOps addAffineOps_valid hk hmx addAffineOps_outs s hs.1
   have hd := hs.2
   rw [show Spec.X448.Field64.slotAt 11 = slot (11 : Index).val from rfl, elemAt_eq] at hd
+  obtain ⟨tr, s', he, ha, hv, hk'⟩ :=
+    fn_correct 3 addAffineOps addAffineOps_valid hk hmx addAffineOps_outs s hs.1
+      (fun hs => addFn_ok hs hd)
   refine ⟨tr, s', he, ha, ?_, hk'⟩
   rw [pointAt_eq _ _ 3 (by decide), pointAt_eq _ _ 0 (by decide), hv,
     show Spec.X448.Field64.slotAt 8 = slot (8 : Index).val from rfl,
