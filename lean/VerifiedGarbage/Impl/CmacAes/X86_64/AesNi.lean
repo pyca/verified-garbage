@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # AES-CMAC's chaining with AES-NI on x86-64
@@ -22,6 +24,8 @@ rounds selects one of three loops, once (a branch on the public `rounds`).
 written. Every branch and every address depends only on the pointers,
 `rounds` and `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacAes.X86_64.AesNi
 

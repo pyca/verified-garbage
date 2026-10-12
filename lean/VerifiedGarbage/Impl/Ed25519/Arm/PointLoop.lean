@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.FieldMemory
-import VerifiedGarbage.Impl.Ed25519.Arm.Point16
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.FieldMemory
+public import VerifiedGarbage.Impl.Ed25519.Arm.Point16
 
 /-! Sixteen exact doublings, with a public counter in r10. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 

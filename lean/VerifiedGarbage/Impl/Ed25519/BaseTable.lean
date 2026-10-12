@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.Ed25519
+module
+
+public import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # The Ed25519 base point's powers, cached for addition
@@ -8,6 +10,8 @@ the exact extended point that `i` doublings of the base point give (the
 specification's `pointAdd p p`, `i` times, from `basePoint`), for `i < 256`.
 The proof checks every entry against the specification.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519
 

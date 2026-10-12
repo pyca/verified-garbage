@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
-import VerifiedGarbage.Spec.MlDsa
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_ntt` and `vg_mldsa_inv_ntt`
@@ -30,6 +32,8 @@ A block ends with `r0` advanced past its upper half, so a layer ends with
 `r0` at `f + 1024`, and moves it back. Every address and branch depends
 only on the pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.Arith
 

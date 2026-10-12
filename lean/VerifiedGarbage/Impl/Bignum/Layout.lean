@@ -1,3 +1,5 @@
+module
+
 /-!
 # Multiword arithmetic: the working space's layout
 
@@ -9,6 +11,8 @@ registers a target saves there, `w` (slot `sW`), `-m⁻¹ mod 2⁶⁴` (`sMinv`)
 the bases of up to 8 arrays (`sArr`), and the functions' own values
 (`sFn`); the arrays follow, each `w + 2` words.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Bignum
 

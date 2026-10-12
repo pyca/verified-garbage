@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
-import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
 
 /-!
 # ChaCha20 keystream XOR with the data's first bytes from another buffer: x86-64 with AVX-512
@@ -33,6 +35,8 @@ payload but its last block's bytes.
 `len` only, and every address is a pointer plus a constant or a function
 of the lengths, so only the pointers and the lengths can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.X86_64.Avx512
 

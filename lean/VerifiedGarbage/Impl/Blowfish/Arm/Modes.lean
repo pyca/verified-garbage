@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Blowfish.Arm
-import VerifiedGarbage.Impl.StackScratch.Arm
-import VerifiedGarbage.Impl.Modes.Arm.Seq
-import VerifiedGarbage.Spec.Blowfish.Contract
+module
+
+public import VerifiedGarbage.Impl.Blowfish.Arm
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Impl.Modes.Arm.Seq
+public import VerifiedGarbage.Spec.Blowfish.Contract
 
 /-!
 # Blowfish-CBC, Blowfish-OFB and Blowfish-CFB64 on ARMv7
@@ -11,6 +13,8 @@ generic modes one block at a time (`Impl/Modes/Arm/Seq.lean`) over
 Blowfish's ECB functions, `vg_blowfish_ecb_encrypt` and
 `vg_blowfish_ecb_decrypt`, which they call once per block (`ecbCore`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blowfish.Arm
 

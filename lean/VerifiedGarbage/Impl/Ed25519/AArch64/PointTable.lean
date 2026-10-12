@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.PointLoop
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointLoop
 
 /-! Points in bounded tables; x8 is the current public entry pointer. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64
 

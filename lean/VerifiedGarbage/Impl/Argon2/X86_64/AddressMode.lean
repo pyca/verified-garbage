@@ -1,9 +1,13 @@
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Impl.Argon2.X86_64.Compress
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Impl.Argon2.X86_64.Compress
 
 /-! Determine the segment's address mode from public variant, pass and slice.
 The mask in `r10` is one for independent addressing and zero otherwise.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.AddressMode
 

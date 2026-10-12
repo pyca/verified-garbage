@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.KeygenPack
 open VG VG.AArch64

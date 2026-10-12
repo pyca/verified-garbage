@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
 
 /-! A doubling, counting down a public counter in x1. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64
 

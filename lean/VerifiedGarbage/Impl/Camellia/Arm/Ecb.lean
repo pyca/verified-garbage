@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Camellia.Arm.Layers
+module
+
+public import VerifiedGarbage.Impl.Camellia.Arm.Layers
 
 /-!
 # Camellia ECB, bitsliced, on ARMv7
@@ -26,6 +28,8 @@ Only the pointers, `rounds`, `n`, and what is computed from them (the
 copies' pointers and counts, `kp`, the loop tests, and the slots holding
 them) are public; no address and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.Arm
 

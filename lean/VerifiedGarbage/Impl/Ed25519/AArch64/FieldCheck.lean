@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Field
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
 
 /-! Public-input equality tests. x8 is zero exactly when the words are zero. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64
 

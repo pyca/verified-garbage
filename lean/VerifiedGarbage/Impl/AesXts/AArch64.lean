@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesCbc.AArch64
+module
+
+public import VerifiedGarbage.Impl.AesCbc.AArch64
 
 /-!
 # XTS-AES: AArch64 implementation
@@ -27,6 +29,8 @@ word's top bit was set, chosen by `csel` on the carry.
 
 Only the pointers, `rounds` and `n` can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesXts.AArch64
 

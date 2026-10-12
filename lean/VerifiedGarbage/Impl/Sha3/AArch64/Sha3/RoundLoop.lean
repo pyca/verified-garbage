@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector
 
 /-!
 # Keccak-f[1600] rounds in a loop, with their constants in memory
@@ -10,6 +12,8 @@ into lane 0, and advances `p` by 16. `x16` counts the rounds down, so the
 loop's branch depends on nothing but the count; after the loop `p` is
 restored, so only `x16` and the vector registers change.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.AArch64.Sha3.Vector
 

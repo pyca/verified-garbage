@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Aes.X86.Linear
-import VerifiedGarbage.Impl.Seed.W32
+module
+
+public import VerifiedGarbage.Impl.Aes.X86.Linear
+public import VerifiedGarbage.Impl.Seed.W32
 
 /-!
 # SEED's G on eight words at once, bitsliced, on x86 (32-bit)
@@ -26,6 +28,8 @@ data: no address and no branch depends on it. `g8` writes the S-box's
 registers `tmpRegs` (`eax`, `ebx`, `ecx`, `edx`, `ebp`) and nothing else;
 `esi` is kept.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.X86
 

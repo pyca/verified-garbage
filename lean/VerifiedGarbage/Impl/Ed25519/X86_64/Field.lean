@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.X25519.X86_64
-import VerifiedGarbage.Spec.Ed25519
+module
+
+public import VerifiedGarbage.Impl.X25519.X86_64
+public import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # Ed25519 field operations on x86-64
@@ -8,6 +10,8 @@ Field elements reuse X25519's four-word representation and arithmetic.
 Slots 2 through 23 occupy bytes [64, 768) of the scratch buffer; the
 first 64 bytes are reserved for saved registers and pointers.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

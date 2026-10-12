@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Seed.AArch64.G16
-import VerifiedGarbage.Spec.Seed
+module
+
+public import VerifiedGarbage.Impl.Seed.AArch64.G16
+public import VerifiedGarbage.Spec.Seed
 
 /-!
 # SEED ECB on AArch64
@@ -30,6 +32,8 @@ callee-saved registers `x19`–`x28`, which `g16` uses.
   Every address and branch depends only on them, the scratch base and the
   copy loops' cursors and counter (`x3`, `x4`, `x15`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.AArch64
 

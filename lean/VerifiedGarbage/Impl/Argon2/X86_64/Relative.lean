@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! # Argon2's squared mapping into an eligible reference window
 
@@ -6,6 +8,8 @@ import VerifiedGarbage.TCB.X86_64.Isa
 length. Both products fit in 64 bits for the RFC's 32-bit dimensions. The
 code has no branches or memory accesses, including for secret J₁ values.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.Relative
 

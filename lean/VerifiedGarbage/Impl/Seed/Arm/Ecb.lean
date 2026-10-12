@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Seed.Arm.G8
-import VerifiedGarbage.Spec.Seed
+module
+
+public import VerifiedGarbage.Impl.Seed.Arm.G8
+public import VerifiedGarbage.Spec.Seed
 
 /-!
 # SEED ECB on ARMv7
@@ -42,6 +44,8 @@ Only the pointers, `n`, and what is computed from them (the copies'
 pointers and counts, `kp`, the loop tests, and the slots holding them) are
 public; no address and no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.Arm
 

@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
+
+@[expose] public section
 
 namespace VG.Impl.P256.VerifyDouble
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.TripleDes.X86_64.Block
-import VerifiedGarbage.Impl.Modes.X86_64.Cbc
-import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Block
+public import VerifiedGarbage.Impl.Modes.X86_64.Cbc
+public import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
 
 /-!
 # Triple DES-CBC on x86-64
@@ -19,6 +21,8 @@ buffer's address (`sb`, which the block function uses) from `rdx`. The block
 function keeps `r12` and `r13`, which carry the data's address and the
 blocks left.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86_64
 

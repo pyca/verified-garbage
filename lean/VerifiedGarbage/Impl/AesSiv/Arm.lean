@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.AesCcm.Arm
+module
+
+public import VerifiedGarbage.Impl.AesCcm.Arm
 
 /-!
 # AES-SIV: 32-bit ARM implementation
@@ -78,6 +80,8 @@ numbers computed from them). Only the pointers, `rounds`, the key length,
 affect timing: the branches are on them, and so are the numbers of calls,
 bytes copied and blocks chained.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesSiv.Arm
 

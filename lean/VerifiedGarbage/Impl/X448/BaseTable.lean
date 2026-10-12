@@ -1,4 +1,6 @@
-import VerifiedGarbage.Spec.X448
+module
+
+public import VerifiedGarbage.Spec.X448
 
 /-!
 # X448: the fixed-base table of edwards448's base point
@@ -9,6 +11,8 @@ edwards448 (Ed448's curve, RFC 8032 §5.2), `B` its base point, and `baseG` and
 scalars) and `n = 57` (Ed448's 456-bit ones). All are literals, generated outside Lean;
 `Proof/X448/BaseTable.lean` checks them against the specification's `pointAdd`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.X448
 

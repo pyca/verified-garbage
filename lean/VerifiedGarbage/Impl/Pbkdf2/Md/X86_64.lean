@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Pbkdf2.X86_64
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.X86_64
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function: x86-64 implementation
@@ -45,6 +47,8 @@ working space of the functions it calls, and keeps its own variables in
 and branch depends only on the pointers, the lengths and the iteration
 counts.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Pbkdf2.Md.X86_64
 

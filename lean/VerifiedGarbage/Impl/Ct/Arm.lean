@@ -1,6 +1,11 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Bytewise comparison, saving the one callee-saved scratch register. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ct.Arm
 open VG.Arm
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Dsa.Layout
-import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
+module
+
+public import VerifiedGarbage.Impl.Dsa.Layout
+public import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
 
 /-!
 # DSA signing and verification arithmetic on x86-64
@@ -12,6 +14,9 @@ entry points; these internal programs are not separately exposed as APIs.
 Scalar buffers use the caller's q_len, including leading-zero padding.
 The digest operand uses the public min(digest_len, bitLength(q)/8).
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Dsa.X86_64.Core
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public

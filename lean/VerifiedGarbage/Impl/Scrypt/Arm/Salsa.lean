@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # The Salsa20/8 Core: 32-bit ARM implementation
@@ -20,6 +22,8 @@ The contract gives no room to save callee-saved registers (`scratch` is only
 Every address is `r0` or `r1` plus a constant, and there are no branches, so
 only the pointers can affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Scrypt.Arm
 

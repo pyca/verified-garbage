@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Word
-import VerifiedGarbage.Spec.X25519.Field64
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Word
+public import VerifiedGarbage.Spec.X25519.Field64
 
 /-!
 # The shared addition chain for inversion and square-root recovery
@@ -13,6 +15,9 @@ Inversion (`invert`, `z^(p-2)`) and decoding's square root (`rootPower`,
 `z^((p-5)/8)`) call it (`powCall`, with the return address kept in a lane of
 `v31`, which it does not write) and finish with a few squarings and a product.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64
 

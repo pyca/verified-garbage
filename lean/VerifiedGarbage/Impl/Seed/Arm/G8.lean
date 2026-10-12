@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Aes.Arm.Linear
-import VerifiedGarbage.Impl.Seed.W32
+module
+
+public import VerifiedGarbage.Impl.Aes.Arm.Linear
+public import VerifiedGarbage.Impl.Seed.W32
 
 /-!
 # SEED's G on eight words at once, bitsliced, on ARMv7
@@ -27,6 +29,8 @@ Only bitwise instructions and rotations and shifts by constants touch the
 data: no address and no branch depends on it. `g8` writes the S-box's
 registers (`q 0 … q 7`, `r10`–`r12`, `lr`) and nothing else; `r9` is kept.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.Arm
 

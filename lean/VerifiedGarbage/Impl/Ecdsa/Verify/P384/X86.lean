@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.X86
-import VerifiedGarbage.Impl.Ecdsa.P384.X86
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+public import VerifiedGarbage.Impl.Ecdsa.P384.X86
 
 /-! # ECDSA verification over P-384 on x86 (32-bit): six-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Verify.X86
 

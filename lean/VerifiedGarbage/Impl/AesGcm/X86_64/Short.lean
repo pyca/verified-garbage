@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.AesGcm.X86_64
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
+module
+
+public import VerifiedGarbage.Impl.AesGcm.X86_64
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
 
 /-!
 # AES-GCM on x86-64: short messages with AVX-512
@@ -42,6 +44,8 @@ nothing, the callees' working space too:
 Only the lengths, the pointers and `rounds` (and for `open`, whether the
 tag is right) affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesGcm.X86_64.Short
 

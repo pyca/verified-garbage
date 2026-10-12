@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # AES with AES-NI on x86-64: key expansion and GCM's counter mode
@@ -58,6 +60,8 @@ the remaining blocks go one at a time. Rounds 1–9 are straight-line, rounds
 10–13 are skipped for 10 or 12 rounds (a branch on the public `rounds`),
 and `r10` points at the last round key.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86_64.AesNi
 

@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.PointMul
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointMul
 
 /-! Multiply the working point by the scalar at r12, with a public byte count. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 

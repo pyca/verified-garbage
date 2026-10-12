@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
-import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
-import VerifiedGarbage.Spec.Weierstrass.PointOps
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
+public import VerifiedGarbage.Spec.Weierstrass.PointOps
 
 /-!
 # Short Weierstrass curves on x86-64: point operations as functions
@@ -15,6 +17,8 @@ back to `R` (`R = P`, `E = Q`, `D = O` of the specification), and restores
 them. It uses no stack and never writes `rdi`, and every address is `rdi`
 plus a constant.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.X86_64.PointOps
 

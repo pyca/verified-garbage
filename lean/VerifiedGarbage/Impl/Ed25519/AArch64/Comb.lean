@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Ed25519.CombTable
-import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
-import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
-import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
+module
+
+public import VerifiedGarbage.Impl.Ed25519.CombTable
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
+public import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
 
 /-!
 # Ed25519: base-point multiplication with a comb, two digits per table
@@ -31,6 +33,8 @@ sign (from its nibble's top bit), by exchanging `Y - X` and `Y + X` and
 choosing between `2dT` and its negation. The loops' counter `x19`, which is
 also the table index, is public.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.AArch64
 

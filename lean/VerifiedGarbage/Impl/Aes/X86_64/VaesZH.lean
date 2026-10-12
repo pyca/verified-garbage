@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.X86_64.VaesZ
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.VaesZ
 
 /-!
 # AVX-512 AES with round keys kept in the high vector registers
@@ -6,6 +8,8 @@ import VerifiedGarbage.Impl.Aes.X86_64.VaesZ
 The caller loads the schedule once before processing batches. The low
 registers remain available for counters, data, and interleaved GHASH.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86_64.VaesZH
 

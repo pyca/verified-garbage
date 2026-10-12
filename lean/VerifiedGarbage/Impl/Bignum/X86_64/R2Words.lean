@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Bignum.X86_64
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64
 
 /-!
 # `R² mod m` by word steps (x86-64)
@@ -26,6 +28,8 @@ Every branch and address depends only on `w`; the arithmetic on `m`'s words
 (which are public) is branch-free. Other moduli take `vg_rsa_public`'s
 computation (`old`); `choice` takes this one when it can.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Bignum.X86_64.R2Words
 

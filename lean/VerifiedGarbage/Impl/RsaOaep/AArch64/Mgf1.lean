@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
 
 /-!
 # MGF1 (RFC 8017 Appendix B.2.1) for RSAES-OAEP on AArch64
@@ -21,6 +23,8 @@ bytes (selected with `csel`) are XORed into `dst + done`.
 Only caller-saved registers are used, and nothing is kept in them across
 a call: the slots `sCtr` and `sDone` hold the counter and `done`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.RsaOaep.AArch64.Mgf1
 

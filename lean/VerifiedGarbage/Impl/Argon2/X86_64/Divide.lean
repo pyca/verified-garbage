@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # Fixed-time unsigned division for Argon2's block indices
@@ -9,6 +11,8 @@ input bits takes the same instruction sequence, including masked selection
 of the reduced remainder. This also handles secret address words without
 leaking anything through division latency or a conditional branch.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.Divide
 

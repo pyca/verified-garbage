@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
 
 /-!
 # Cached points
@@ -7,6 +9,8 @@ A cached point `[Y - X, Y + X, 2dT, 2Z]` of `q` is added to the accumulator
 with eight multiplications (`pointAddCached`); constant cached points are
 written to a table from immediates (`cachedPointStore`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

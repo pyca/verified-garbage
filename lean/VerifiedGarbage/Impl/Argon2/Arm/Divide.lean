@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Argon2.Arm.Layout
+module
+
+public import VerifiedGarbage.Impl.Argon2.Arm.Layout
 
 /-!
 # Fixed-time unsigned division on ARMv7
@@ -13,6 +15,8 @@ fit), masked with the divisor, adds it back. The quotient ends in `r1` and the r
 `r3` is a temporary. There are no branches and no memory accesses, so the
 numerator may be secret.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.Arm.Divide
 

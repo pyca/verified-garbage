@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
 
 /-! Word-sized operations on PSS's small buffers. -/
+
+@[expose] public section
+
 namespace VG.Impl.RsaPss.X86_64
 open VG VG.X86_64 VG.Impl.MdStream.X86_64
 

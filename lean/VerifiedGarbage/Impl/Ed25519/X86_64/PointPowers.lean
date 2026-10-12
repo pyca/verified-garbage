@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointTable
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointTable
 
 /-! Public loops generating exact powers of two of a point. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64
 

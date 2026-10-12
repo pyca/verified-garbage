@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed448.X86_64.Verify
-import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+module
+
+public import VerifiedGarbage.Impl.Ed448.X86_64.Verify
+public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
 
 /-!
 # Ed448 signing with a cached public key on x86-64
@@ -28,6 +30,8 @@ The hashes use the sponge functions as `vg_ed448_verify` does, with the
 Keccak state at `scratch` and their working space at `scratch + 256`. Every
 address and branch depends only on the pointers and the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed448.X86_64.SignCached
 

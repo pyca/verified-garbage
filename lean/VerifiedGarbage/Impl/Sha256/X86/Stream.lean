@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sha256.X86
-import VerifiedGarbage.Impl.MdStream.X86
+module
+
+public import VerifiedGarbage.Impl.Sha256.X86
+public import VerifiedGarbage.Impl.MdStream.X86
 
 /-!
 # Streaming SHA-256: x86 (32-bit) implementation
@@ -27,6 +29,8 @@ there across it, and our caller's values of those registers are saved in
 `scratch[112..128)`. Every address and branch depends only on `esp`, the
 pointers, `count` and `len`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha256.X86.Stream
 

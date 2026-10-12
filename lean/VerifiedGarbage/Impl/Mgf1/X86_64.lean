@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
 
 /-!
 # MGF1 (RFC 8017 Appendix B.2.1) on x86-64
@@ -22,6 +24,8 @@ The code keeps nothing in registers across its calls (only caller-saved
 registers are used); the slots `sCtr` and `sDone` hold the counter and
 `done`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Mgf1.X86_64
 

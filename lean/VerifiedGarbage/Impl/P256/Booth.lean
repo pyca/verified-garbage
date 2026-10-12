@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.P256.CombArithmetic
-import VerifiedGarbage.Impl.EcKey.P256.AArch64
+module
+
+public import VerifiedGarbage.Impl.P256.CombArithmetic
+public import VerifiedGarbage.Impl.EcKey.P256.AArch64
 
 /-! The shared secret-scalar Booth comb for P-256 signing and public keys. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.Booth
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64
 

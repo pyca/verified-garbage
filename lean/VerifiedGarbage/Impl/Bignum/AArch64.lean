@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Bignum.AArch64.Square
+module
+
+public import VerifiedGarbage.Impl.Bignum.AArch64.Square
 
 /-! Public Montgomery interface on AArch64: CIOS products and symmetric squares. -/
+
+@[expose] public section
+
 namespace VG.Impl.Bignum.AArch64.Public
 open VG VG.AArch64
 

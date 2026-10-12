@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Camellia.Arm.Sbox
-import VerifiedGarbage.Impl.Aes.Arm.Linear
+module
+
+public import VerifiedGarbage.Impl.Camellia.Arm.Sbox
+public import VerifiedGarbage.Impl.Aes.Arm.Linear
 
 /-!
 # The layers of bitsliced Camellia on ARMv7
@@ -33,6 +35,8 @@ the tail buffer (632–663, eight blocks), through which every group is
 copied. The modes keep their own state after it. The round key's entry is
 at `kp` (`r9`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.Arm
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sm4.X86_64.Ecb
-import VerifiedGarbage.Impl.Modes.X86_64.Ctr
+module
+
+public import VerifiedGarbage.Impl.Sm4.X86_64.Ecb
+public import VerifiedGarbage.Impl.Modes.X86_64.Ctr
 
 /-!
 # SM4-CTR, bitsliced, on x86-64
@@ -15,6 +17,8 @@ sixteen blocks of the tail buffer in place. Only the schedule's address
 (`rdi`) is a key argument; both keep `rdx` and `r8`, where ECB keeps the
 data's address and the blocks left too.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm4.X86_64
 
