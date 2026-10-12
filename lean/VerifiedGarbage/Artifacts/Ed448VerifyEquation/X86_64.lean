@@ -22,11 +22,12 @@ def artifacts : List Artifact := [
       all pass. Decodes R, then A, by one loop running the decoding twice, with RFC 8032's \
       square root (X448's addition chain up to z^(2^223 - 1), by a call of \
       `vg_gf448_r64_pow223`, then 223 squarings), and \
-      negates A; computes [S]B + [k](-A) with one \
-      chain of doublings, adding B and -A for every bit of S and k and swapping each sum in \
-      with a mask of the bit, by calls of `vg_ed448_r64_point_double` and \
-      `vg_ed448_r64_point_add_affine` (both points have Z = 1); then compares [4] of it with \
-      [4]R projectively, each doubled by the same calls. Field elements \
+      negates A; computes [S]B + [k](-A) in 114 four-bit windows sharing four \
+      doublings. Each window scans sixteen affine multiples of B and sixteen projective \
+      multiples of -A, adding one of each. The latter table is built with fifteen affine \
+      additions, without inversions, in scratch bytes 4096–7167. Doublings and affine \
+      additions call the existing point functions; projective addition uses the same \
+      field operations. Compares [4] of the result with [4]R projectively. Field elements \
       are X448's seven 64-bit words, multiplied with `mul` by columns. Callee-saved \
       registers are saved in the first 48 bytes of `scratch`."])
     code := Impl.Ed448.X86_64.verifyEquation

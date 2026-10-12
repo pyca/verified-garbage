@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+import VerifiedGarbage.Impl.Ed448.X86_64.Window
 
 /-!
 # Ed448 verification's equation on x86-64
@@ -22,12 +22,12 @@ passes: each check ORs into it a word that is 0 if and only if it passes.
   negated (swapped with `-x` by a mask) if its low bit is not the sign bit.
 * `R` and then `A` are decoded into slots 6–7 by one loop (`vdecode`), `R`
   kept at `RX` and `RY` (`Z = 1` in slot 10). `A` is negated, and
-  `Q = [S]B + [k](-A)` computed from the top bit down, as `[s]B` is: `Q`
-  doubled, `B` added and swapped into `Q` by bit `t` of `S`, then `-A` added
-  and swapped in by bit `t` of `k`. The doublings and additions are calls of
-  `vg_ed448_r64_point_double` and `vg_ed448_r64_point_add_affine`
-  (`Point64.lean`), which add the point in slots 8–9 with `Z = 1`: `-A` is
-  copied there for its addition, and `B` written back after it.
+  `Q = [S]B + [k](-A)` uses 114 four-bit windows sharing four doublings.
+  Each window adds an affine multiple of `B` and a projective multiple of
+  `-A`, selected by full scans of sixteen entries. The public-key table is
+  built with fifteen affine additions, without inversions, at scratch
+  offsets 4096–7167. Doublings and affine additions call the existing
+  point functions; projective addition uses the same field operations.
 * `Q` is doubled twice and copied into slots 3–5, `R` into slots 0–2 (with
   `Z = 1`) and doubled twice, and they are compared: `X_Q Z_R = X_R Z_Q` and
   `Y_Q Z_R = Y_R Z_Q`, fully reduced.
@@ -236,7 +236,7 @@ def vfinish (F : Field) (P : Point64.Ops) : Prog isa :=
 and the square root's power `rt`. -/
 def verifyEquationWith (F : Field) (P : Point64.Ops) (rt : Prog isa := root F 12) : Prog isa :=
   .seq (.block ventry) <| .seq vbits <| .seq (.block vstart) <| .seq (vdecode F rt) <|
-    .seq (.block (vnegA F)) <| .seq (vloop P) (vfinish F P)
+    .seq (.block (vnegA F)) <| .seq (Window.joint F P KBITS) (vfinish F P)
 
 def verifyEquation : Prog isa :=
   verifyEquationWith Impl.X448.X86_64.baseline Point64.calls (rootCall Impl.X448.X86_64.baseline)
