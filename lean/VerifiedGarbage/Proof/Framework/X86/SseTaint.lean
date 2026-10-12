@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.Mmx
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.Mmx
 
 /-!
 # x86 SIMD: constant-time analysis
@@ -11,6 +13,9 @@ public addresses; stores use the existing checked secret-store rule for sixteen
 bytes (eight for `movq`). MMX values are secret too, as are the MMX
 instructions' memory sources' contents: their addresses must be public.
 -/
+
+@[expose] public section
+
 namespace VG.X86.SseTaint
 open VG.X86.Taint
 

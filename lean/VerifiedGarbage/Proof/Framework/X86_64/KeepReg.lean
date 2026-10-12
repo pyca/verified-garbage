@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 
 /-!
 # Registers kept through SSE registers
@@ -12,6 +14,8 @@ registers hold it in their low quadword (`Abs.xs`); `Exec.gpr_keeps` shows
 that `r` ends with its value if `keeps r c`. Any write to the vector
 registers but `movq xmm, r64` forgets the SSE registers.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64.KeepReg
 

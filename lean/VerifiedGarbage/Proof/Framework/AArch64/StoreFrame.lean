@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Code that stores only at given offsets of a base register (AArch64)
@@ -11,6 +13,8 @@ bytes at `x3 + d`, for offsets `d` that `ok` accepts (sixteen bytes at
 every byte that no such store covers (`Unstored`), whatever its loops and
 calls.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

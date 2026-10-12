@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Depth
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 /-!
 # Calling verified code with frames (x86-64)
@@ -9,6 +11,8 @@ changes memory below `rsp` within its depth in bytes (`Code.x86_64Depth`,
 `Exec.stackFrame`), which its frames' buffers and its calls' return
 addresses take.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

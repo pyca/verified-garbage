@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Proof.Framework.RegSetOrder
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
 
 /-!
 # Summaries for the ARMv7 taint analysis
@@ -23,6 +25,8 @@ be below any other, so that there is a least taint, `bot`.
 A frame of a summary (what the summarized code does not write, `keeps`) is a
 set of registers.
 -/
+
+@[expose] public section
 
 namespace VG.Arm.Taint
 

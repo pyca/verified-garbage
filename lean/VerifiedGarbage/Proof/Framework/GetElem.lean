@@ -1,5 +1,10 @@
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.InstancePriority
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+public meta import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.InstancePriority
+public meta import VerifiedGarbage.Proof.Framework.InstancePriority
+
 /-!
 # Index bounds by `decide`
 
@@ -13,5 +18,7 @@ every `v[1]` of a hash value, which is most of the time of some proofs. A
 literal index is in bounds by `decide`, tried first here; for any other
 index `decide` fails at once and the other rules run as before.
 -/
+
+public meta section
 
 macro_rules | `(tactic| get_elem_tactic_extensible) => `(tactic| decide)

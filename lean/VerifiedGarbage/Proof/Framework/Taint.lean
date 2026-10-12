@@ -1,9 +1,13 @@
-import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Framework.KernelList
-import Mathlib.Util.CompileInductive
-import Lean.Elab.Tactic.Basic
-import Lean.Meta.Eval
-import VerifiedGarbage.Proof.Framework.Lit
+module
+
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.KernelList
+public import Mathlib.Util.CompileInductive
+public import Lean.Elab.Tactic.Basic
+public meta import Lean.Elab.Tactic.Basic
+public import Lean.Meta.Eval
+public meta import Lean.Meta.Eval
+public import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Constant time by taint tracking
@@ -24,6 +28,8 @@ checks that they are sound (`le`). `Taint.hint` computes such a hint by
 running the search in compiled code, and `taint_decide` has the kernel check
 the analysis with it. A wrong hint can only make the check fail.
 -/
+
+@[expose] public section
 
 namespace VG
 

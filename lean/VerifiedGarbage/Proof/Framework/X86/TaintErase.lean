@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-!
 # Taint tracking for x86 (32-bit): code without its displacements
@@ -13,6 +15,8 @@ itself (`check_erase`). Code that does the same on different memory (field
 arithmetic on different slots of a working space) is then the same code,
 which the kernel analyses once from the same taint.
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

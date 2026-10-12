@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+
+@[expose] public section
 
 namespace VG.X86.RegUpd
 variable (s : State)

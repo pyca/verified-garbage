@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Framework.X86.SseDword
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Sse
+public import VerifiedGarbage.Proof.Framework.X86.SseDword
 
 /-!
 # SSE2 values as their four dword lanes
@@ -10,6 +12,8 @@ operations on it lane by lane; and the mask of a lane by equality without
 is `0x00FFFFFF` if `x = j` and `0` otherwise, and ORed with itself shifted
 left by 8 it is all ones or nothing.
 -/
+
+@[expose] public section
 
 namespace VG.X86.Lanes
 

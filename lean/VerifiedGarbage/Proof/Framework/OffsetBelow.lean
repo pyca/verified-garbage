@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Byte ranges below a stack pointer
@@ -8,6 +10,8 @@ stack pointer, below which calls push their return addresses): proven once for
 any offsets, so that a proof about a particular range needs `omega` on the
 offsets rather than `bv_omega` on the addresses.
 -/
+
+@[expose] public section
 
 namespace VG.Offset
 

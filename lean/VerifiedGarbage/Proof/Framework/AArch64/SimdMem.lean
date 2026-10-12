@@ -1,7 +1,11 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Simd
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! AArch64 vector loads, stores, and byte reversal. -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

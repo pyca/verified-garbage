@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86.Call
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-!
 # Calls in a frame of their arguments (x86, 32-bit)
@@ -9,6 +11,8 @@ combining `WP.frame` and `WP.call`, from what the callee's contract needs of
 the state the frame is pushed from (`CallPre`). The callee sees the
 registers pushed as its arguments, the last one first (`callEntry_arg`).
 -/
+
+@[expose] public section
 
 namespace VG.X86
 
