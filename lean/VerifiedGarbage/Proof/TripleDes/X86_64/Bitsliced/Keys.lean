@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Pass
-import VerifiedGarbage.Proof.TripleDes.Schedule
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Pass
+public import VerifiedGarbage.Proof.TripleDes.Schedule
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The keys of the three passes
@@ -8,6 +14,8 @@ Pass `p` (counted down from 3) reads the round keys at `passA d p S + r δ`:
 these are the round keys, in DES's order for the pass's direction, of the
 component of the schedule `S` that TDEA uses in that pass (`passComp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.Bitsliced
 

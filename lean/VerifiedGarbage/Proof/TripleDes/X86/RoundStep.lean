@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.TripleDes.X86.Round
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.TripleDes.Round
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86.Round
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.TripleDes.Round
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `Box` -/
+
+@[expose] public section
 
 section
 

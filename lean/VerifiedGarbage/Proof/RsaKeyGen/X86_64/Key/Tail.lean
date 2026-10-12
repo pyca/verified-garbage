@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Main
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Contract
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Main
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on x86-64: the key
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Contract
 `n`, the final mask, the stores and the exit (`keyPart_k`); and the zeros
 and the status 2 otherwise (`zerosPart_k`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 

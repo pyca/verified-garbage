@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sm4.AArch64.Copy
-import VerifiedGarbage.Proof.Sm4.AArch64.Imm
+module
+
+public import VerifiedGarbage.Proof.Sm4.AArch64.Copy
+public import VerifiedGarbage.Proof.Sm4.AArch64.Imm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4's prologue and epilogue on AArch64
@@ -10,6 +16,8 @@ as Camellia's), and storing constants to slots (`setSlotsN_ok`, through
 `imm_ok`): the masks of the round keys' planes, and the key schedule's
 table of `CK`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.AArch64
 

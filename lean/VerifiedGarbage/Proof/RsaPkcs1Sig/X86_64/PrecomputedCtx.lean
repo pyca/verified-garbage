@@ -1,6 +1,14 @@
-import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
-import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Precomputed
+module
+
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Precomputed
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Pc
 

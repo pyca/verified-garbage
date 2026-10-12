@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Sm3
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Spec.Sm3
+public import VerifiedGarbage.TCB.AArch64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM3: the AArch64 contracts
@@ -13,6 +19,8 @@ The return address is in the link register `x30`, which the target's
 calling convention requires to be preserved (`VG.AArch64.abiPreserved`), not
 on the stack, so unlike on x86-64 no region needs to be kept disjoint from it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm3
 

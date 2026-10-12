@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Passes
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Batch
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Passes
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Batch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An SSE2 batch
@@ -10,6 +16,8 @@ the words is IP of block `2 i + q`; the three passes run; the lanes are
 transposed back, and each block becomes its TDEA encryption or decryption
 (`batch_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.BitslicedSse
 

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.TripleDes.X86.Sbox
-import VerifiedGarbage.Proof.TripleDes.X86.Spills
-import VerifiedGarbage.Proof.TripleDes.Permutation
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86.Sbox
+public import VerifiedGarbage.Proof.TripleDes.X86.Spills
+public import VerifiedGarbage.Proof.TripleDes.Permutation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86
 open VG VG.X86 VG.X86.Straight VG.Bitslice VG.Impl.TripleDes.X86

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCall
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: the mask
@@ -7,6 +13,8 @@ After the call, `out` and the result are masked by the zero test of `PS`
 (`maskArgs_run`, `maskLoop_ok`), and `EM` is overwritten with zeros: `out`
 then holds `encrypt`'s result, whatever `PS` held (`tail_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 

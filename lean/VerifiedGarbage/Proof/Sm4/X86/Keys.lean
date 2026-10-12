@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sm4.X86.Crypt8
-import VerifiedGarbage.Proof.Aes.Bitsliced
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86.Crypt8
+public import VerifiedGarbage.Proof.Aes.Bitsliced
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The table of bitsliced round keys on x86 (32-bit)
@@ -9,6 +15,8 @@ key at `ecx` (through slot 0) into the table's entry at `kp`, every block's
 copy of it alike, and `keys_wp` builds the table in the order the rounds use
 the round keys: `rk₀ … rk₃₁` for encryption, `rk₃₁ … rk₀` for decryption.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.X86
 

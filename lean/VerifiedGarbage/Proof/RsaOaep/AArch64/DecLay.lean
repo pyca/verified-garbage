@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecMain
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCallee
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecMain
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCallee
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on AArch64: where everything is
@@ -17,6 +23,8 @@ frame's words are followed by the pieces' own `Rep`, and every piece's
 `Step` keeps `Ctx` (`Ctx.step`). From `Ctx` and the slots, the pieces'
 `Lay`, `LabAt` and `OutAt` (`Ctx.lay`, `Ctx.labAt`, `Ctx.outAt`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64.Dec
 

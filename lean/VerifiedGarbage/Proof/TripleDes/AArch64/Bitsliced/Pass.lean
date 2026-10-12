@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Round
-import VerifiedGarbage.Proof.TripleDes.Schedule
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Round
+public import VerifiedGarbage.Proof.TripleDes.Schedule
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An AdvSIMD DES pass on the machine
@@ -11,6 +17,8 @@ the pointer by 8 in its direction, and exchanges the halves. `pass_ok`: it
 does to the state words what `passW` does with that component of the
 schedule at `x0`, which is readable and apart from the state words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64.BitslicedNeon
 

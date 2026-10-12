@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.Permutation
-import VerifiedGarbage.Proof.TripleDes.Core
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Arm.Permutation
+public import VerifiedGarbage.Proof.TripleDes.Core
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.Arm
 open VG VG.Arm VG.Impl.TripleDes.Arm

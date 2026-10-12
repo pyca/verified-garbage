@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on x86-64: zeros to `out`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 frame, the working space and the stack below the frame, which it leaves as
 `Rep` says (`Rep.apart`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

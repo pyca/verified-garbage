@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Keys
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Keys
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The three passes
@@ -7,6 +13,8 @@ The loop of passes, counted down from 3 in `passSlot`, does to the state
 words what three DES passes (`passW`) do, with the components and
 directions of TDEA (`passComp`), in every lane.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.Bitsliced
 

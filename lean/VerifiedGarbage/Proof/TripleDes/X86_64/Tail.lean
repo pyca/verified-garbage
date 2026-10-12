@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.Store
-import VerifiedGarbage.Proof.TripleDes.X86_64.Save
-import VerifiedGarbage.Proof.TripleDes.X86_64.WordState
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Store
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Save
+public import VerifiedGarbage.Proof.TripleDes.X86_64.WordState
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64
 

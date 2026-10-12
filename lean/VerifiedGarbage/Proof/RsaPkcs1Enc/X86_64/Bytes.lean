@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Words
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 on x86-64: bytes at offsets of a base
@@ -9,6 +15,8 @@ and words through writes of bytes and words at other offsets (`byte_wb`,
 `byte_ww`, `word_wb`), for offsets that do not wrap around, and turn a
 store of a byte into `Outside` (`writeB_outside`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 

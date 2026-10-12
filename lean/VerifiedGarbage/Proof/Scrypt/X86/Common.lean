@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Scrypt.X86.Salsa
-import VerifiedGarbage.Proof.Scrypt.BlockMix
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Impl.Scrypt.X86.BlockMix
+module
+
+public import VerifiedGarbage.Proof.Scrypt.X86.Salsa
+public import VerifiedGarbage.Proof.Scrypt.BlockMix
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Impl.Scrypt.X86.BlockMix
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # scrypt on x86 (32-bit): common lemmas
@@ -11,6 +17,8 @@ The target-independent lemmas about addresses and bytes are in
 `Proof/Scrypt/Memory.lean`; here are 32-bit pointers as addresses, `mul`, the
 64-byte exclusive-or, and saving and restoring registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt.X86
 

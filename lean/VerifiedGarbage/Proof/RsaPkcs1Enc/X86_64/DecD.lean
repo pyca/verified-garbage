@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCtx
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncLoops
-import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCtx
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncLoops
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: `D = I2OSP(d, k)`
@@ -10,6 +16,8 @@ The private-key operation's result to its slot (`p1_step`, which starts
 (`copyLoop_ok`): `D`, `d` after `k - d_len` zeros, is `I2OSP(d, k)`
 (`dBuild_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

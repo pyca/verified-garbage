@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Seed.X86_64.Setup
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+module
+
+public import VerifiedGarbage.Proof.Seed.X86_64.Setup
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The function on x86-64
@@ -8,6 +14,8 @@ After saving the callee-saved registers and writing the masks to the
 scratch buffer, the function runs batches of up to 16 blocks until none are
 left (`loop_ok`), then restores the registers (`ecb_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86_64
 

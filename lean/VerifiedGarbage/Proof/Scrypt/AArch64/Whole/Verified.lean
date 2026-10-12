@@ -1,8 +1,21 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Correct
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Correct
+meta import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Correct
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

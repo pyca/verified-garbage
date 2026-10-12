@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on x86-64: the label's hash
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 caller's memory), and `finalize`. The working space changes only within the
 hash function's ranges and the digest's 64 bytes at `o`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

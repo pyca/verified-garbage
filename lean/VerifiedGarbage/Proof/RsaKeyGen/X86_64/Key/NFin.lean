@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Crt
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Crt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on x86-64: `n` and the final mask
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Crt
 `n = p q` (`nPart_k`), and `kOk &= ` the masks of `n`'s top bit, `p` and
 `q` odd, and `e` valid (`finalMask_k`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 

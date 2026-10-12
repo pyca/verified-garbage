@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
-import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
-import VerifiedGarbage.Proof.TripleDes.Scratch
-import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
+public import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
+public import VerifiedGarbage.Proof.TripleDes.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES key expansion and ECB on ARMv7, with their working space on the stack
@@ -12,6 +18,8 @@ working space and which they zero after the code, since it may hold the key
 schedule and the data (`Verified.regScratchWiped`): 512 bytes for key
 expansion and 1024 for ECB.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.Arm
 

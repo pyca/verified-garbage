@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Verified
-import VerifiedGarbage.Proof.TripleDes.Scratch
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Verified
+public import VerifiedGarbage.Proof.TripleDes.Scratch
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES key expansion and ECB on AArch64, with their working space on the stack
@@ -11,6 +17,8 @@ argument, in a frame that allocates it and zeroes it after the code
 data: 512 bytes for key expansion and 1024 for ECB. The code uses no other
 stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64
 

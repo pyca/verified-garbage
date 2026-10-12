@@ -1,13 +1,29 @@
-import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
-import VerifiedGarbage.Proof.Modes.AArch64.Fb
-import VerifiedGarbage.Proof.Modes.AArch64.ViaV
-import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-import VerifiedGarbage.Proof.Seed.FbScratch
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
+meta import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Modes.AArch64.Fb
+meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
+public import VerifiedGarbage.Proof.Modes.AArch64.ViaV
+meta import VerifiedGarbage.Proof.Modes.AArch64.ViaV
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+public import VerifiedGarbage.Proof.Seed.FbScratch
+meta import VerifiedGarbage.Proof.Seed.FbScratch
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
+meta import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED-OFB and SEED-CFB128 on AArch64 meet their contracts
@@ -26,6 +42,8 @@ the IV is secret. `ofb_framed`, …
 run them with their working space on the stack, zeroed on return: 1456
 bytes, the 182 words of the scratch buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

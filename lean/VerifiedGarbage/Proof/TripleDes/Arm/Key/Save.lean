@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Rc2.Arm.Save
-import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
+module
+
+public import VerifiedGarbage.Proof.Rc2.Arm.Save
+public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.Arm.Key
 

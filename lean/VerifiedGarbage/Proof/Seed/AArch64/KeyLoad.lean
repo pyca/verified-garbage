@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Seed.AArch64.KeyRounds
-import VerifiedGarbage.Proof.Seed.Memory
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.KeyRounds
+public import VerifiedGarbage.Proof.Seed.Memory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Loading the key on AArch64
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Seed.Memory
 `keyLoad2_ok`: `keyLoad2 d k` puts the key's big-endian words `k` and
 `k + 4` in `d = Key_k || Key_k+1`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

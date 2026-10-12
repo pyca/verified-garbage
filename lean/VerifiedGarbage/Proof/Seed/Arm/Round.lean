@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.Arm.Steps
+module
+
+public import VerifiedGarbage.Proof.Seed.Arm.Steps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A round on ARMv7
@@ -10,6 +16,8 @@ exchanges the halves) to `(L0, L1, R0, R1)`, with the round key in the
 slots `k` and `k + 1`, at `kp`: the new `L` is the old `R`, at `r`, and the
 new `R` is at `l` (`quadAt`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.Arm
 

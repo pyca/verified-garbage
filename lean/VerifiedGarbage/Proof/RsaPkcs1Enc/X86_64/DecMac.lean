@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecHash
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecHash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: one HMAC
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecHash
 (`mac_front`), then HMAC's `finalize` (`mac_fin`). They change `scratch`
 only below `sMsg` (HMAC's states and working space) and at `d` (`KeepHi`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

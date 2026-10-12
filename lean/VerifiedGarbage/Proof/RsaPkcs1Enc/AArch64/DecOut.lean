@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecSel
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecSel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: writing the output
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecSel
 `*msg_len` (`outInit_ok`) and the output, byte by byte (`selBody_ok`,
 `selLoop_ok`): byte `i` of `out` is `outByte v ok kl i EM[i] AM[i]`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

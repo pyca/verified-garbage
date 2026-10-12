@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: one byte of each loop
@@ -8,6 +14,8 @@ accesses are permitted, as facts about the state it ends in (`PsStep`,
 `MsgStep`, `MaskStep`): the byte it stores, the registers it advances, and
 that nothing else changes. The zero test of `PS` is `zmask`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Enc
 

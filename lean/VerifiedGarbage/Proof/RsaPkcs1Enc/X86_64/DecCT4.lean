@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT3
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecSel
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT3
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT3
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecSel
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecSel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: constant time, from `KDK` on
@@ -9,6 +17,8 @@ loop's addresses and branches are functions of the pointers and `k`, from
 the registers its first block sets; `AL`, the scan's results, the validity
 mask and the selected length are never among them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

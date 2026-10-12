@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyFrame
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_verify` on x86-64: the call of `vg_rsa_public_checked`
@@ -12,6 +18,8 @@ The callee is any code meeting `pubChk`, the contract of
 `vg_rsa_public_checked` on the registers: `vg_rsa_public`'s, with BoringSSL's
 limits on `e` (`Spec.Rsa.publicOpChecked`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64
 

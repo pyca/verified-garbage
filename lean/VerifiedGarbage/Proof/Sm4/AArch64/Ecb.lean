@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sm4.AArch64.Group
-import VerifiedGarbage.Proof.Sm4.Common
+module
+
+public import VerifiedGarbage.Proof.Sm4.AArch64.Group
+public import VerifiedGarbage.Proof.Sm4.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4 ECB on AArch64: the whole function
@@ -9,6 +15,8 @@ saves the callee-saved registers, sets the masks, builds the table of round
 keys in the order `dir` uses them, transforms the blocks a group at a time
 (`dataGroup_wp`) and restores the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 

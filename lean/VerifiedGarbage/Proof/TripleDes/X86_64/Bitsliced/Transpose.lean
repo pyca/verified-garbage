@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Machine
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Machine
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The transposition of the state, by evaluation
@@ -11,6 +17,8 @@ words of atoms (bit `t` of word `i` is atom `64 i + t`), and the check
 that bit `p` of word `j` is then atom `64 p + j` proves that it transposes
 any 64 words (`transpose_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.Bitsliced
 

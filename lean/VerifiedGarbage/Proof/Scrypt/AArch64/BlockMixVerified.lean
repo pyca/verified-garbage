@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Scrypt.BlockMix
-import VerifiedGarbage.Proof.Scrypt.AArch64.Common
-import VerifiedGarbage.Proof.Scrypt.AArch64.Salsa
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Scrypt.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
+module
+
+public import VerifiedGarbage.Proof.Scrypt.BlockMix
+meta import VerifiedGarbage.Proof.Scrypt.BlockMix
+public import VerifiedGarbage.Proof.Scrypt.AArch64.Common
+meta import VerifiedGarbage.Proof.Scrypt.AArch64.Common
+public import VerifiedGarbage.Proof.Scrypt.AArch64.Salsa
+meta import VerifiedGarbage.Proof.Scrypt.AArch64.Salsa
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Scrypt.Contract
+meta import VerifiedGarbage.Spec.Scrypt.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # scryptBlockMix on AArch64: correctness of the loop
@@ -16,6 +28,8 @@ The function's body runs inside a frame saving `x30`; the state `s₀` here is
 the one the body starts in, and the frame is handled in
 this file.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Scrypt.AArch64.BlockMix
 

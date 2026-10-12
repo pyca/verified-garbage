@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Seed.Arm.Group
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Seed.Arm.Group
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED ECB on ARMv7: the whole function
@@ -9,6 +15,8 @@ the callee-saved registers, copies the round keys to the table in the order
 the rounds of `d` use them (`keyTable_ok`), transforms the blocks a group at
 a time (`dataGroup_wp`) and restores the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed
 

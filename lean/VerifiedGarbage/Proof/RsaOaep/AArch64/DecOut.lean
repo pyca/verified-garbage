@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLoops
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLoops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on AArch64: the outputs
@@ -8,6 +14,8 @@ As on x86-64 (`Proof/RsaOaep/X86_64/DecOut.lean`): the mask `ok`
 and the result (`decRet_ok`), and zeros to `out` (`zeroOut_ok`, which
 encryption's failure uses too).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64
 

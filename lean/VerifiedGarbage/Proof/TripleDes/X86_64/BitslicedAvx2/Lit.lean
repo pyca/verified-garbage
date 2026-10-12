@@ -1,5 +1,15 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Lit
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Lit
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG
 

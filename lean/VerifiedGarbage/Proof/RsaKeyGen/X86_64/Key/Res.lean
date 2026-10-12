@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Tail
-import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
-import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Tail
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+public import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## Ctx -/
+
+@[expose] public section
+
 section
 
 /-!

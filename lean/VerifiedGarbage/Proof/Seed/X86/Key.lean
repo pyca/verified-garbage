@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.X86.KeyRound
+module
+
+public import VerifiedGarbage.Proof.Seed.X86.KeyRound
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED key expansion on x86 (32-bit): the whole function
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Seed.X86.KeyRound
 eight at a time to the schedule, at `esi` (`keyChunk_ok`); RFC 4269 §2.3's
 schedule is `G` of these inputs (`expandKey_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed
 

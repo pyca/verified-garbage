@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.Head
-import VerifiedGarbage.Proof.TripleDes.X86_64.Tail
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Head
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Tail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64
 

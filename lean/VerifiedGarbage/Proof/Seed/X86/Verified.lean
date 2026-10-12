@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Seed.X86.Ecb
-import VerifiedGarbage.Proof.Seed.X86.Lit
-import VerifiedGarbage.Proof.Seed.Scratch
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.Inline
+module
+
+public import VerifiedGarbage.Proof.Seed.X86.Ecb
+meta import VerifiedGarbage.Proof.Seed.X86.Ecb
+public import VerifiedGarbage.Proof.Seed.X86.Lit
+meta import VerifiedGarbage.Proof.Seed.X86.Lit
+public import VerifiedGarbage.Proof.Seed.Scratch
+meta import VerifiedGarbage.Proof.Seed.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED ECB on x86 (32-bit) meets its contracts
@@ -19,6 +32,8 @@ on the stack, zeroed on return: 844 bytes, the 824 of the scratch buffer,
 the copies of the three argument slots, the buffer's address and the return
 address of the call of the code, which uses no other stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86
 

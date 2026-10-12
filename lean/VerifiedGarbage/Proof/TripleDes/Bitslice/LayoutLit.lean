@@ -1,5 +1,13 @@
-import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
-import VerifiedGarbage.Proof.Framework.Lit
+module
+
+public import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
+meta import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
+public import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The bitsliced layout's tables, as literals
@@ -10,6 +18,8 @@ literals of the code that reads them (`SboxLit`, `Lit`) and the kernel's
 checks of facts about them (`lit_decide`) read one number rather than walk
 the permutations again.
 -/
+
+@[expose] public section
 
 namespace VG
 
