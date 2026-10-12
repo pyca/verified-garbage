@@ -17,7 +17,12 @@
 //! block to continue from, whose first bytes it XORs into the rest of the
 //! input.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::arch::blowfish::vg_blowfish_expand_key;
 use crate::arch::blowfish_cfb::{vg_blowfish_cfb64_decrypt, vg_blowfish_cfb64_encrypt};
@@ -39,7 +44,7 @@ pub struct BlowfishCfb64 {
 #[cfg(target_arch = "x86_64")]
 type Cfb = unsafe extern "sysv64" fn(*const [u8; 4168], *mut [u8; 8], *mut [u8; 8], usize);
 
-#[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
 type Cfb = unsafe extern "C" fn(*const [u8; 4168], *mut [u8; 8], *mut [u8; 8], usize);
 
 impl BlowfishCfb64 {
