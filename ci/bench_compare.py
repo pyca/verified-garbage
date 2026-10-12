@@ -265,7 +265,33 @@ def fmt_time(ns):
     return f"{ns:.0f} ns"
 
 
+def prepare_openssl4():
+    import tempfile
+    root = pathlib.Path(tempfile.mkdtemp(prefix="vg-openssl4-"))
+    source, prefix = root / "source", root / "install"
+    rev = "af1775b60dfa141a4ad762585052cabeb9f37e9e"
+    subprocess.run(["git", "clone", "--depth", "1", "--branch", "openssl-4.0.3",
+                    "https://github.com/openssl/openssl.git", str(source)], check=True)
+    actual = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=source, text=True).strip()
+    if actual != rev:
+        raise RuntimeError("OpenSSL tag no longer matches pinned source revision")
+    with (root / "build.log").open("w") as log:
+        for command in [["./Configure", "linux-aarch64", "--prefix=" + str(prefix), "--libdir=lib", "no-shared", "no-tests", "no-docs"],
+                        ["make", "-j4"], ["make", "install_sw"]]:
+            result = subprocess.run(command, cwd=source, stdout=log, stderr=subprocess.STDOUT)
+            if result.returncode:
+                log.flush()
+                print((root / "build.log").read_text()[-20000:], flush=True)
+                result.check_returncode()
+    os.environ["OPENSSL_DIR"] = str(prefix)
+    os.environ["OPENSSL_STATIC"] = "1"
+    os.environ["PATH"] = str(prefix / "bin") + os.pathsep + os.environ["PATH"]
+    print("RSA_GAP_OPENSSL_SOURCE " + rev, flush=True)
+    subprocess.run([str(prefix / "bin/openssl"), "version", "-a"], check=True)
+
+
 def main():
+    prepare_openssl4()
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("base", type=pathlib.Path)
     p.add_argument("head", type=pathlib.Path)
@@ -304,7 +330,7 @@ def main():
     if shards > 1:
         groups = shard_groups(list_groups(binaries["head"], modules["head"]), shard, shards)
 
-    groups = ["rsa_public", "rsa_private"]
+    groups = ["rsa_public", "rsa_private", "rsa_pss_sha256_mgf1_sha256_sign", "rsa_pss_sha256_mgf1_sha256_verify", "rsa_oaep_sha256_mgf1_sha256_encrypt", "rsa_oaep_sha256_mgf1_sha256_decrypt"]
     shutil.rmtree(args.work_dir, ignore_errors=True)
     best = {"base": {}, "head": {}}
     try:

@@ -34,6 +34,8 @@ fn widen(x: &[u8], len: usize) -> Option<Vec<u8>> {
 /// of RFC 8017 §3.2, with its public key `(n, e)` and its private exponent
 /// `d`. Its private values are wiped when it is dropped.
 pub struct PrivateKey {
+    #[cfg(target_arch = "aarch64")]
+    pub(crate) verify_pre: super::Precomputed,
     pub(crate) n: Vec<u8>,
     pub(crate) e: Vec<u8>,
     pub(crate) d: Vec<u8>,
@@ -66,6 +68,8 @@ impl Drop for PrivateKey {
 }
 
 impl PrivateKey {
+    #[cfg(target_arch = "aarch64")]
+    pub(crate) fn empty_verify_pre() -> super::Precomputed { super::Precomputed::new() }
     /// The key with the modulus `n`, the public exponent `e`, the private
     /// exponent `d` and the values `p`, `q`, `dP`, `dQ` and `qInv`, all
     /// big-endian (with any number of leading zero bytes but `n`). `n` must
@@ -108,6 +112,8 @@ impl PrivateKey {
             return Err(Error::InvalidPrivateKey);
         };
         let key = PrivateKey {
+            #[cfg(target_arch = "aarch64")]
+            verify_pre: super::Precomputed::new(),
             n: n.to_vec(),
             e: e.to_vec(),
             d: d.to_vec(),
@@ -375,6 +381,8 @@ impl PrivateKey {
             return Err(Error::InvalidLength);
         }
         let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
+        #[cfg(target_arch = "aarch64")]
+        let pre = self.verify_pre.get(&self.n, &mut scratch);
         let f = match Backend::select(detected()) {
             Backend::Baseline => vg_rsa_private_checked,
             // `select` chose them because the CPU has the features they need.
@@ -391,6 +399,38 @@ impl PrivateKey {
         // `dp_len = qinv_len = p_len`, `dq_len = q_len`, and
         // `scratch_len = 16 n_len`; and the CPU has the features of the
         // function `select` chose.
+        #[cfg(target_arch = "aarch64")]
+        let _ = f;
+        // UNPROVED cached-context experiment: the final exponentiation and
+        // comparison remain; only its modulus setup is supplied by the key.
+        #[cfg(target_arch = "aarch64")]
+        let r = unsafe {
+            crate::arch::rsa::vg_rsa_private_checked_cached(
+                out.as_mut_ptr(),
+                k,
+                self.n.as_ptr(),
+                k,
+                self.e.as_ptr(),
+                self.e.len(),
+                input.as_ptr(),
+                k,
+                self.p.as_ptr(),
+                self.p.len(),
+                self.q.as_ptr(),
+                self.q.len(),
+                self.dp.as_ptr(),
+                self.dp.len(),
+                self.dq.as_ptr(),
+                self.dq.len(),
+                self.qinv.as_ptr(),
+                self.qinv.len(),
+                scratch.as_mut_ptr(),
+                scratch.len(),
+                pre.as_ptr(),
+                pre.len(),
+            )
+        };
+        #[cfg(not(target_arch = "aarch64"))]
         let r = unsafe {
             f(
                 out.as_mut_ptr(),

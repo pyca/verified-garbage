@@ -217,12 +217,22 @@ pub fn encrypt(
     mgf1_hash: Hash,
     label: &[u8],
 ) -> Result<Vec<u8>, Error> {
+    // UNPROVED experiment: a separate cached-context SHA-256 OAEP entry point.
+    #[cfg(target_arch = "aarch64")]
+    if hash == Hash::Sha256 && mgf1_hash == Hash::Sha256 {
+        use crate::arch::rsa_oaep_sha256_mgf1_sha256::*;
+        let f: EncryptFn<32> = match Sha256Backend::select(detected()) {
+            Sha256Backend::Scalar => vg_rsa_oaep_sha256_mgf1_sha256_encrypt_cached,
+            Sha256Backend::Sha2 => vg_rsa_oaep_sha256_mgf1_sha256_encrypt_sha256_sha2_cached,
+        };
+        return encrypt_with(key, plaintext, label, f, true);
+    }
     match encrypt_impl(hash, mgf1_hash, detected()).ok_or(Error::UnsupportedHash)? {
-        Encrypt::L20(f) => encrypt_with(key, plaintext, label, f),
-        Encrypt::L28(f) => encrypt_with(key, plaintext, label, f),
-        Encrypt::L32(f) => encrypt_with(key, plaintext, label, f),
-        Encrypt::L48(f) => encrypt_with(key, plaintext, label, f),
-        Encrypt::L64(f) => encrypt_with(key, plaintext, label, f),
+        Encrypt::L20(f) => encrypt_with(key, plaintext, label, f, false),
+        Encrypt::L28(f) => encrypt_with(key, plaintext, label, f, false),
+        Encrypt::L32(f) => encrypt_with(key, plaintext, label, f, false),
+        Encrypt::L48(f) => encrypt_with(key, plaintext, label, f, false),
+        Encrypt::L64(f) => encrypt_with(key, plaintext, label, f, false),
     }
 }
 
@@ -232,6 +242,7 @@ fn encrypt_with<const L: usize>(
     plaintext: &[u8],
     label: &[u8],
     f: EncryptFn<L>,
+    cached: bool,
 ) -> Result<Vec<u8>, Error> {
     let k = key.modulus_len();
     if plaintext.len() + 2 * L + 2 > k {
@@ -241,6 +252,9 @@ fn encrypt_with<const L: usize>(
     os_random(&mut seed)?;
     let mut out = vec![0u8; k];
     let mut scratch = vec![0u64; oaep_scratch_words(k)];
+    // UNPROVED cached entry points receive the validated key-owned context;
+    // original entry points continue to receive the modulus bytes.
+    let n_or_pre = if cached { key.pre(&mut scratch).as_ptr().cast::<u8>() } else { key.n.as_ptr() };
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes, `seed` for `L` bytes, the hash function's length), and none
     // overlaps another or wraps around, as they are distinct Rust
@@ -253,7 +267,7 @@ fn encrypt_with<const L: usize>(
         f(
             out.as_mut_ptr(),
             k,
-            key.n.as_ptr(),
+            n_or_pre,
             k,
             key.e.as_ptr(),
             key.e.len(),
