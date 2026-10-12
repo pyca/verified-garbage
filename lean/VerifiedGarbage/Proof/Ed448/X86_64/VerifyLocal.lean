@@ -22,6 +22,11 @@ namespace VG.Proof.Ed448.X86_64
 
 open VG VG.X86_64
 
+def signatureScalar (s : State) : Nat :=
+  Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem (s.gpr .rsi + BitVec.ofNat 64 57) 57)
+def challengeScalar (s : State) : Nat :=
+  Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem (s.gpr .rdx) 57)
+
 /-- `vg_ed448_verify_equation(pk = rdi, signature = rsi, challenge = rdx, scratch = rcx) -> eax`. -/
 def verifyEquationLocal : Contract isa where
   pre s := s.rd = [⟨s.gpr .rdi, 57⟩, ⟨s.gpr .rsi, 114⟩, ⟨s.gpr .rdx, 57⟩] ∧
@@ -34,6 +39,15 @@ def verifyEquationLocal : Contract isa where
   post s t := t.gpr .rax = if Spec.Ed448.verifyEquation (Spec.Ed448.bytesAt s.mem (s.gpr .rdi) 57)
     (Spec.Ed448.bytesAt s.mem (s.gpr .rsi) 114) (Spec.Ed448.bytesAt s.mem (s.gpr .rdx) 57) then 1 else 0
   pub s t := s.gpr .rsp = t.gpr .rsp ∧ s.gpr .rdi = t.gpr .rdi ∧ s.gpr .rsi = t.gpr .rsi ∧
-    s.gpr .rdx = t.gpr .rdx ∧ s.gpr .rcx = t.gpr .rcx
+    s.gpr .rdx = t.gpr .rdx ∧ s.gpr .rcx = t.gpr .rcx ∧
+    signatureScalar s = signatureScalar t ∧ challengeScalar s = challengeScalar t
+
+
+/-- The contract's byte-to-natural encoding is injective. -/
+theorem byteMap_inj : ∀ {xs ys : List Byte}, xs.map (·.toNat) = ys.map (·.toNat) → xs = ys
+  | [], [], _ => rfl
+  | a :: xs, b :: ys, h => by
+    simp only [List.map_cons, List.cons.injEq] at h
+    rw [BitVec.eq_of_toNat_eq h.1, byteMap_inj h.2]
 
 end VG.Proof.Ed448.X86_64

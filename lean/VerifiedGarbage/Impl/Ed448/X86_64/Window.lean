@@ -3,8 +3,9 @@ module
 public import VerifiedGarbage.Impl.Ed448.X86_64.WindowRegister
 public import VerifiedGarbage.Impl.Ed448.SignedWindow
 
-/-! Constant-time signed five-bit double-scalar multiplication for Ed448 verification.
-The table of public-key multiples is projective, avoiding table inversions. -/
+/-! Signed five-bit double-scalar multiplication for Ed448 verification.
+The table of public-key multiples is projective, avoiding table inversions.
+Verification digits are public and index that table directly. -/
 
 @[expose] public section
 
@@ -39,10 +40,18 @@ def baseCoord (c : Nat) : List Instr :=
 
 def selectBase : List Instr := loadDigit BITS ++ baseCoord 0 ++ baseCoord 1
 
-def keyCoord (c : Nat) : List Instr :=
-  scanCoord (fun i => chooseMem (tabOffset i c)) (slot (8 + c))
+/-- Public verification digit scaled to its 192-byte table entry. -/
+def keyAddress : List Instr :=
+  [.mov .rax (.reg .r15), .mov32 .rdx (.imm 192), .mul .rdx, .mov .r15 (.reg .rax)]
 
-def selectKey (o : Nat) : List Instr := loadDigit o ++ keyCoord 0 ++ keyCoord 1 ++ keyCoord 2
+/-- Read only the selected public-key coordinate. -/
+def directKeyCoord (c : Nat) : List Instr :=
+  ((VG.Impl.X448.X86_64.W.zip (List.range 7)).map fun (r, i) =>
+    .mov r (.mem { base := .rdi, index := some .r15, disp := ((TAB + 64 * c + 8 * i : Nat) : Int) })) ++
+  VG.Impl.X448.X86_64.stores (slot (8 + c)) VG.Impl.X448.X86_64.W
+
+def selectKey (o : Nat) : List Instr :=
+  loadDigit o ++ keyAddress ++ directKeyCoord 0 ++ directKeyCoord 1 ++ directKeyCoord 2
 
 /-- Apply a signed digit by conditionally replacing X with -X. -/
 def signFlag (o : Nat) : List Instr :=
@@ -67,7 +76,7 @@ def add (F : Field) (P : Point64.Ops) : Prog isa :=
 
 def dbl5 (P : Point64.Ops) : Prog isa := .seq P.dbl (.seq P.dbl (.seq P.dbl (.seq P.dbl P.dbl)))
 
-/-- Two scalar digits share the five doublings; both selections scan every table entry. -/
+/-- Two scalar digits share the five doublings; the public-key selection is indexed. -/
 def round (F : Field) (P : Point64.Ops) (o : Nat) : Prog isa :=
   .seq (dbl5 P) <|
   .seq selectSignedBase <| .seq P.add <| .seq (.block accept) <| .seq (selectSignedKey o) <|

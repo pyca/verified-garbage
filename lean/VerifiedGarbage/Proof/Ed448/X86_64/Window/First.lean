@@ -18,7 +18,7 @@ open VG.Proof.X448.X86_64 (Scr E Keep FieldOk Index)
 open VG.Impl.X448.X86_64 (BITS slot copyOut)
 open VG.Proof.Ed448.SignedWindow (magnitude negative signedPoint signedEntry)
 
-private theorem takeBase_ok {s : State} {base : Addr} (hs : Scr s base) :
+theorem takeBase_ok {s : State} {base : Addr} (hs : Scr s base) :
     WP isa (.block (copyOut (slot 0) (slot 8) ++ copyOut (slot 1) (slot 9) ++ constSlot 2 1)) s fun u =>
       Keep base s u ∧ pt (E u.mem base) 0 1 2 = Proof.X448.basePt (E s.mem base 8, E s.mem base 9) ∧
       ∀ j : Index, 3 ≤ j.val → E u.mem base j = E s.mem base j := by

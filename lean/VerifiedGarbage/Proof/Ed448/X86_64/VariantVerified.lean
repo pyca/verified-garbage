@@ -74,31 +74,18 @@ theorem verifyEquationFor_ok (v : Impl.Ed448.X86_64.FieldVariant)
       ∃ t s', Exec isa (verifyEquationFor v) s t s' ∧ abiPreserved s s' ∧ verifyEquationLocal.post s s' :=
   ok_of_inline (verifyEquationFor_inlineOk v) (verifyEquationFor_okI v hR hE) verifyEquation_patch
 
-taint_summary verifyRootAdxSum : taintS (verifySumτ []) (rootCallFor .adx)
-taint_summary verifyDecodeAdxSum : taintS (verifySumτ [.rsi])
-    (decode Impl.X448.X86_64.adx 6 7 (rootCallFor .adx)) using verifyRootAdxSum
-taint_summary verifyLoopAdxSum : taintS (verifySumτ [])
-    (Window.joint Impl.X448.X86_64.adx (Impl.Ed448.X86_64.FieldVariant.calls .adx) KBITS)
-
-theorem verifyEquationFor_ct0 (v : Impl.Ed448.X86_64.FieldVariant) :
-    ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub (verifyEquationFor v) := by
-  cases v
-  · exact verifyEquation_ct0
-  · change ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub verifyEquationAdx
-    obtain ⟨_, hc⟩ : ∃ h, (taintS.check verifyEquationτ verifyEquationAdx h).isSome = true := by
-      taint_decide_sum [verifyDecodeAdxSum, verifyLoopAdxSum]
-    exact VG.Taint.constantTime (A := taintS) verifyEquationτ
-      (fun _ _ h₁ h₂ hp => verifyEquation_agree h₁ h₂ hp) hc
-
-theorem verifyEquationFor_ct (v : Impl.Ed448.X86_64.FieldVariant) :
+theorem verifyEquationFor_ct (v : Impl.Ed448.X86_64.FieldVariant)
+    (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) :
     ConstantTime isa verifyEquationLocal.clear.pre verifyEquationLocal.pub (verifyEquationFor v) :=
-  fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ =>
-    verifyEquationFor_ct0 v s₁ s₂ t₁ t₂ s₁' s₂' h₁.1 h₂.1 hp e₁ e₂
+  ct_of_inline (verifyEquationFor_inlineOk v)
+    (fun s hs => let ⟨t, u, he, _⟩ := verifyEquationFor_okI v hR hE s hs; ⟨t, u, he⟩)
+    (fun _ _ h => h.1) (verifyEquationFor_ctI v hR)
 
 theorem verifyEquationFor_verified (v : Impl.Ed448.X86_64.FieldVariant)
     (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) :
     Verified X86_64.target (verifyEquationFor v) (Spec.Ed448.verifyEquationContract X86_64.abi 8) :=
-  Verified.of_inline_ct (verifyEquationFor_inlineOk v) (verifyEquationFor_okI v hR hE)
-    (verifyEquationFor_ct0 v) verifyEquation_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ _ hp => hp)
+  Verified.of_inline (verifyEquationFor_inlineOk v) (verifyEquationFor_okI v hR hE)
+    (verifyEquationFor_ctI v hR) verifyEquation_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ _ hp => hp)
+    (fun s t hs ht hp => (verifyEquation_implies8.pub s t hs ht hp).1)
 
 end VG.Proof.Ed448.X86_64
