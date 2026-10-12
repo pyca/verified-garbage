@@ -66,10 +66,11 @@ def artifacts : List Artifact := [
     target := X86_64.target
     doc := Spec.Rsa.publicPrecomputedCheckedApi.doc
       (notes := ["Baseline x86-64: `e` is checked as `vg_rsa_public_checked` checks it; then Montgomery \
-        multiplication as `vg_rsa_public_checked`'s, with the exponent less one (`e` is odd) scanned left \
-        to right from its first set bit, which starts the result as the input; a square per later bit \
-        and a multiplication per later set bit; then one multiplication by the input itself, which adds \
-        the last bit and leaves Montgomery form at once. `pre` is checked (`n` odd, its top word not \
+        multiplication as `vg_rsa_public_checked`'s. The result is the input raised to `e - 1` (`e` is \
+        odd): for `e = 65537` by sixteen squares, otherwise with the exponent less one scanned left to \
+        right from its first set bit, which starts the result as the input, a square per later bit and a \
+        multiplication per later set bit; then one multiplication by the input itself adds the last bit \
+        and leaves Montgomery form at once. `pre` is checked (`n` odd, its top word not \
         zero, `R² mod n` below it) before any arithmetic, so that values of no modulus are safe."])
     code := Impl.Rsa.X86_64.Folded.checked Proof.Bignum.X86_64.Mont.base.mm
     contract := Spec.Rsa.publicPrecomputedCheckedContract X86_64.abi

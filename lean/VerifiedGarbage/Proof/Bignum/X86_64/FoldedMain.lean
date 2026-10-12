@@ -9,7 +9,7 @@ open VG.Impl.Rsa.X86_64
 open VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
-def phases (M : Mont) : List (Prog isa) := [M.mm aXm aX aR2, Precomputed.expLoop M.mm, M.mm aY aX aY]
+def phases (M : Mont) : List (Prog isa) := [M.mm aXm aX aR2, Folded.exp M.mm, M.mm aY aX aY]
 
 theorem rest_eq (M : Mont) :
     Folded.rest M.mm = seqs ((wordIn ++ restStepsWith VG.Impl.Rsa.X86_64.Compare8.code) ++ (phases M ++ wordOutStepsArr aY)) := rfl
@@ -34,8 +34,6 @@ theorem rest_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr}
   have hR := VG.Proof.Bignum.coprime_pow2 h.odd (64*((k+7)/8))
   have hle : ∀ r ∈ pdAll ((k+7)/8), r.1+r.2 ≤ Z :=
     fun r hr => (pdAll_le _ r hr).trans hZ
-  have hE : Spec.Rsa.os2ip (evenLast eb) ≠ 0 := by
-    have := os2ip_evenLast h.eodd; have := h.e3; omega
   rw [rest_eq]
   refine wp_seqs_append (by simp [wordIn]) (by simp [phases])
     (WP.mono (wordSetup_ok h) fun a ⟨mi,so,fa,ka,rra⟩ => ?_)
@@ -56,19 +54,16 @@ theorem rest_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr}
   have inputB : wv b.mem B (slot ((k+7)/8) aX) ((k+7)/8) = Spec.Rsa.os2ip xb := by
     rw [ab.wv_of_not_mem (by decide) (by decide) hb]; exact so.x
   -- The exponentiation, by `e - 1`.
-  refine WP.seq (WP.mono (pExpLoop_ok (M := M) (x := x) ⟨gb,nb,ib,rfl⟩ hZ hw (by omega) hR lb hx
-    (by rw [xab sE (by decide)]; exact h.hE) (by rw [xab sElen (by decide)]; exact h.hL) h.el h.L1 (by omega)
-    (fun i hi => heb.rd i (by rw [h.el]; exact hi)) (fun i hi => heb.val i (by rw [h.el]; exact hi))
-    (fun i hi => heb.out i (by rw [h.el]; exact hi)))
-    fun c ⟨cc,yc,fc,kc⟩ => ?_)
-  rcases yc with ⟨h0,-⟩ | ⟨-,-,Y,hY,hYN,hYc⟩
-  · exact absurd h0 hE
+  refine WP.seq (WP.mono (exp_ok M (x := x) ⟨gb,nb,ib,rfl⟩ hZ hw (by omega) hR lb hx
+    (by rw [xab sE (by decide)]; exact h.hE) (by rw [xab sElen (by decide)]; exact h.hL) heb h.el h.L1 (by omega)
+    h.eodd h.e3)
+    fun c ⟨cc,hYN,hYc,fc,kc⟩ => ?_)
   have inputC : wv c.mem B (slot ((k+7)/8) aX) ((k+7)/8) = Spec.Rsa.os2ip xb :=
     (input_preserved fc hb).trans inputB
   -- The last multiplication, by the input.
   rw [seqs_one]
   refine WP.mono (final_factor_ok M (x := x) (e := Spec.Rsa.os2ip (evenLast eb)) cc.good hZ hw (by omega)
-    cc.n cc.inv hR inputC (by rw [hY]; exact hYN) (by rw [hY]; exact hYc))
+    cc.n cc.inv hR inputC hYN hYc)
     fun d ⟨gd,yd,ad,kd⟩ => ?_
   have fd : Frm B (pdAll ((k+7)/8)) c.mem d.mem :=
     Frm.of_arrays ad (by simp [pdAll,pExpRanges,pBitRanges,bitRanges])

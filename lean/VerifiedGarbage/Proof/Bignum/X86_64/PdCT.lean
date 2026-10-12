@@ -122,7 +122,9 @@ theorem db_pre {q : DPub × BitVec 64} {t : State} (h : DB q t) : PExpPre (DPub.
 /-- After the exponentiation, by `e - 1`. -/
 def DC (q : DPub × BitVec 64) (t : State) : Prop :=
   ∃ xb σ X x, DG q.1 xb σ t ∧ ExpCtx t q.1.B q.1.Z ((q.1.k + 7) / 8) q.2 q.1.N X ∧
-    YSt t.mem q.1.B ((q.1.k + 7) / 8) q.1.N x (Spec.Rsa.os2ip (evenLast q.1.eb))
+    wv t.mem q.1.B (slot ((q.1.k + 7) / 8) aY) ((q.1.k + 7) / 8) < q.1.N ∧
+    wv t.mem q.1.B (slot ((q.1.k + 7) / 8) aY) ((q.1.k + 7) / 8) % q.1.N =
+      x ^ Spec.Rsa.os2ip (evenLast q.1.eb) * 2 ^ (64 * ((q.1.k + 7) / 8)) % q.1.N
 
 theorem pExpRanges_pdAll (w : Nat) : ∀ r ∈ pExpRanges w, r ∈ pdAll w :=
   fun _ hr => List.mem_append_right _ hr
@@ -137,9 +139,13 @@ theorem pdExp_ct : RelCT isa (Two DB) (Precomputed.expLoop M.mm) (Two DC) := by
   refine WP.mono (pExpLoop_ok hc hf.1 hf.2.1 hf.2.2.1 hf.2.2.2.1 hf.2.2.2.2.1 hf.2.2.2.2.2 he hlen hsrc.1 hL1
     hsrc.2.1 hsrc.2.2.1 hsrc.bytes hsrc.2.2.2.2) fun t' ⟨hc', hy, f₀, k⟩ => ?_
   have f : Frm q.1.B (pExpRanges ((q.1.k + 7) / 8)) t.mem t'.mem := f₀
+  have hE : Spec.Rsa.os2ip (evenLast q.1.eb) ≠ 0 := by
+    have := os2ip_evenLast g.1.eodd; have := g.1.e3; omega_arith
+  rcases hy with ⟨h0, -⟩ | ⟨-, -, Y, hY, hYN, hYc⟩
+  · exact absurd h0 hE
   exact ⟨xb, σ, X, x, g.step (f.mono (pExpRanges_pdAll _)) k
       (f.word_eq (pExpRanges_hdr _ (by decide) (by decide) (by decide) (by decide) (by decide))
-        (by unfold sMask sFn; omega_arith)), hc', hy⟩
+        (by unfold sMask sFn; omega_arith)), hc', by rw [← hY] at hYN; exact hYN, by rw [← hY] at hYc; exact hYc⟩
 
 /-- After the last multiplication. -/
 def DD (q : DPub × BitVec 64) (t : State) : Prop :=
@@ -150,16 +156,12 @@ same public data (`hfinal`, which `MmUse` does not list). -/
 theorem pdFinal_ct (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) fun _ _ => True) :
     RelCT isa (Two DC) (M.mm aY aX aY) (Two DD) := by
   refine two_post (two_map DPub.L (fun _ _ ⟨_, _, _, _, g, hc, _⟩ => ⟨hc.good, g.1.z⟩) hfinal) ?_
-  rintro q t ⟨xb, σ, X, x, g, hc, hy⟩
+  rintro q t ⟨xb, σ, X, x, g, hc, hYN, hYc⟩
   have hk1 := g.1.k1
   have hk2 := g.1.k2
   have hR := VG.Proof.Bignum.coprime_pow2 g.1.odd (64 * ((q.1.k + 7) / 8))
-  have hE : Spec.Rsa.os2ip (evenLast q.1.eb) ≠ 0 := by
-    have := os2ip_evenLast g.1.eodd; have := g.1.e3; omega_arith
-  rcases hy with ⟨h0, -⟩ | ⟨-, -, Y, hY, hYN, hYc⟩
-  · exact absurd h0 hE
   refine WP.mono (FoldedPublic.final_factor_ok M (x := x) (e := Spec.Rsa.os2ip (evenLast q.1.eb)) hc.good g.1.z (by omega_arith) (by omega_arith) hc.n hc.inv hR rfl
-    (by rw [hY]; exact hYN) (by rw [hY]; exact hYc)) fun t' ⟨hg, _, ha, k⟩ => ?_
+    hYN hYc) fun t' ⟨hg, _, ha, k⟩ => ?_
   have f : Frm q.1.B (finRanges ((q.1.k + 7) / 8)) t.mem t'.mem := Frm.of_arrays ha (by simp [finRanges])
   exact ⟨xb, σ, g.step (f.mono (by simp [finRanges, pdAll, pExpRanges, pBitRanges, bitRanges])) k
       (f.word_eq (fun r hr => by
