@@ -97,12 +97,6 @@ jobs:
           mkdir -p "$RUNNER_TEMP/lean-cache-image"
           tar -C lean -cf - .lake/build .lake/packages \
             | zstd -T0 -5 -o "$RUNNER_TEMP/lean-cache-image/lean-cache.tar.zst"
-      # `docker build` with the default driver cannot choose a layer's
-      # compression.
-      - uses: docker/setup-buildx-action@594f3bf4285d9ea8dc53c9a0c9c4092420091003 # v4.4.0
-        if: ${{ steps.publish.outputs.needed == 'true' }}
-        with:
-          cache-binary: false
       - name: Upload the cache image
         id: upload
         if: ${{ steps.publish.outputs.needed == 'true' }}
@@ -116,20 +110,16 @@ jobs:
             echo "Main has advanced: its newer run will publish the cache."
             exit 0
           fi
-          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
-          trap 'docker logout ghcr.io' EXIT
-          # One plain manifest: with attestations, the push would be an index
-          # whose untagged children the cleanup below would delete. The layer
-          # holds the zstd archive uncompressed: gzip cannot shrink it, and
-          # gzipping it again doubled the time to publish and cost every
-          # restore a pass over 2.5 GB.
-          docker buildx build -f ci/lean-cache.Dockerfile --provenance=false --sbom=false \
-            --label "org.opencontainers.image.source=https://github.com/$GH_REPO" \
-            --label "org.opencontainers.image.revision=$HEAD_SHA" \
-            --label "io.pyca.lean.toolchain=$(cat lean/lean-toolchain)" \
-            --label "io.pyca.lean.cache-key=$CACHE_KEY" \
-            --output "type=image,name=$IMAGE,push=true,compression=uncompressed,force-compression=true" \
-            "$RUNNER_TEMP/lean-cache-image"
+          # One plain manifest, whose one layer holds the zstd archive
+          # uncompressed: gzip cannot shrink it, and gzipping it again doubled
+          # the time to publish and cost every restore a pass over 2.5 GB.
+          # Pushed through the registry API, not `docker buildx build`, which
+          # copied the archive three times before pushing it.
+          python3 ci/push_lean_cache.py "$RUNNER_TEMP/lean-cache-image/lean-cache.tar.zst" "$IMAGE" \
+            "org.opencontainers.image.source=https://github.com/$GH_REPO" \
+            "org.opencontainers.image.revision=$HEAD_SHA" \
+            "io.pyca.lean.toolchain=$(cat lean/lean-toolchain)" \
+            "io.pyca.lean.cache-key=$CACHE_KEY"
           echo "published=true" >> "$GITHUB_OUTPUT"
       # Only `latest` is published, so replacing it leaves old images untagged.
       - name: Delete old cache versions

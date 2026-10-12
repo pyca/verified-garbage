@@ -202,7 +202,7 @@ curl -fsSL -H "Authorization: Bearer $token" "https://ghcr.io/v2/$repo/blobs/$la
   tar -xOf - lean-cache.tar.zst | zstd -dc | tar --no-same-owner -xf - -C lean
 ```
 
-The download (a little over 2 GB) streams through the pipeline and is never
+The download (about 3 GB) streams through the pipeline and is never
 stored. The labels are in the image config
 (`/v2/$repo/blobs/<config digest>`, under `config.Labels`).
 
