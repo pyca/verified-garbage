@@ -21,4 +21,12 @@ theorem parent_ct : RelCT isa (Two BasePublic) (.block SignVerify.parent) (fun _
 theorem result_ct : RelCT isa (Two BasePublic) (.block SignVerify.result) (fun _ _ => True) :=
   two_taint [.rdi] pins_base (by taint_decide)
 
+theorem save_ct : RelCT isa (Two (fun (B : Addr) (s : State) => s.gpr .r11 = B))
+    (.block SignVerify.save) (fun _ _ => True) :=
+  two_taint [.r11] (pins_of (fun B _ => B) (by
+    intro B s h r hr
+    simp only [List.mem_singleton] at hr
+    subst r
+    exact h)) (by taint_decide)
+
 end VG.Proof.Dsa.X86_64
