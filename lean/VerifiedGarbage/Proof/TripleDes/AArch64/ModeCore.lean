@@ -190,28 +190,43 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.TripleDes.Sche
     rw [o₃ _ (by decide), r₂, o₁ _ (by decide), hB]; rfl
   have x2₃ : s₃.gpr .x2 = B := by
     rw [r₃, o₂ _ (by decide), o₁ _ (by decide), hB]; exact BitVec.add_zero _
-  have mem₃ : s₃.mem = s.mem := by rw [m₃, m₂, m₁]
-  have rd₃' : s₃.rd = s.rd := by rw [rd₃, rd₂, rd₁]
-  have wr₃' : s₃.wr = s.wr := by rw [wr₃, wr₂, wr₁]
+  -- `x26` keeps the return address across the call.
+  obtain ⟨s₃', e₃', -, o₃', m₃', rd₃'', wr₃''⟩ := addImm_ok s₃ .x26 .x30 (v := 0) (by decide)
+  have g₃' : ∀ x, x ≠ .x0 → x ≠ .x1 → x ≠ .x2 → x ≠ .x26 → s₃'.gpr x = s.gpr x := fun x h1 h2 h3 h4 => by
+    rw [o₃' x h4, g₃ x h1 h2 h3]
+  replace x0₃ : s₃'.gpr .x0 = schedAddr B := by rw [o₃' _ (by decide), x0₃]
+  replace x1₃ : s₃'.gpr .x1 = B + BitVec.ofNat 64 512 := by rw [o₃' _ (by decide), x1₃]
+  replace x2₃ : s₃'.gpr .x2 = B := by rw [o₃' _ (by decide), x2₃]
+  have mem₃ : s₃'.mem = s.mem := by rw [m₃', m₃, m₂, m₁]
+  have rd₃' : s₃'.rd = s.rd := by rw [rd₃'', rd₃, rd₂, rd₁]
+  have wr₃' : s₃'.wr = s.wr := by rw [wr₃'', wr₃, wr₂, wr₁]
   rw [show (dirCore d).crypt = .seq (.block ([.addImm .x .x0 sb (8 * schedSlot)] ++
-      ([.addImm .x .x1 sb (8 * cbcBuf)] ++ ([.addImm .x .x2 sb 0] : List Instr))))
-      (.seq (blockCall d) (.block [.addImm .x sb .x2 0])) by cases d <;> rfl]
-  refine WP.seq (WP.of_runBlock ⟨s₃, by
-    rw [runBlock_app, e₁, Option.bind_some, runBlock_app, e₂, Option.bind_some, e₃], ?_⟩)
+      ([.addImm .x .x1 sb (8 * cbcBuf)] ++ ([.addImm .x .x2 sb 0] ++ ([.addImm .x .x26 .x30 0] : List Instr)))))
+      (.seq (blockCall d) (.block ([.addImm .x sb .x2 0] ++ ([.addImm .x .x30 .x26 0] : List Instr)))) by
+    cases d <;> rfl]
+  refine WP.seq (WP.of_runBlock ⟨s₃', by
+    rw [runBlock_app, e₁, Option.bind_some, runBlock_app, e₂, Option.bind_some, runBlock_app, e₃,
+      Option.bind_some, e₃'], ?_⟩)
   -- The block.
   refine WP.seq (WP.mono (blockCall_ok d x0₃ x1₃ x2₃ (by rw [wr₃']; exact hw) hfB) fun s₄ h₄ => ?_)
   obtain ⟨rd₄, wr₄, f₄, x2₄', x23₄, x24₄, res₄⟩ := h₄
-  obtain ⟨s₅, e₅, r₅, o₅, m₅, rd₅, wr₅⟩ := addImm_ok s₄ sb .x2 (v := 0) (by decide)
-  refine WP.of_runBlock ⟨s₅, e₅, ?_⟩
+  obtain ⟨s₅', e₅', r₅, o₅', m₅', rd₅', wr₅'⟩ := addImm_ok s₄ sb .x2 (v := 0) (by decide)
+  obtain ⟨s₅, e₅, -, o₅'', m₅'', rd₅'', wr₅''⟩ := addImm_ok s₅' .x30 .x26 (v := 0) (by decide)
+  have o₅ : ∀ x, x ≠ sb → x ≠ .x30 → s₅.gpr x = s₄.gpr x := fun x h1 h2 => by rw [o₅'' x h2, o₅' x h1]
+  replace r₅ : s₅.gpr sb = s₄.gpr .x2 + BitVec.ofNat 64 0 := by rw [o₅'' _ (by decide), r₅]
+  have m₅ : s₅.mem = s₄.mem := by rw [m₅'', m₅']
+  have rd₅ : s₅.rd = s₄.rd := by rw [rd₅'', rd₅']
+  have wr₅ : s₅.wr = s₄.wr := by rw [wr₅'', wr₅']
+  refine WP.of_runBlock ⟨s₅, by rw [runBlock_app, e₅', Option.bind_some, e₅], ?_⟩
   have x2₄ : s₄.gpr .x2 = B := by rw [x2₄', x2₃]
-  have fB : Frame [⟨B, 904⟩] s₃.mem s₄.mem := f₄.sub fun r hr => by
+  have fB : Frame [⟨B, 904⟩] s₃'.mem s₄.mem := f₄.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_singleton_self _, Offset.sub_base B (by decide)⟩
     · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
   refine ⟨by rw [r₅, x2₄]; exact BitVec.add_zero _,
-    by rw [o₅ _ (by decide), x23₄, g₃ _ (by decide) (by decide) (by decide)],
-    by rw [o₅ _ (by decide), x24₄, g₃ _ (by decide) (by decide) (by decide)], ?_,
+    by rw [o₅ _ (by decide) (by decide), x23₄, g₃' _ (by decide) (by decide) (by decide) (by decide)],
+    by rw [o₅ _ (by decide) (by decide), x24₄, g₃' _ (by decide) (by decide) (by decide) (by decide)], ?_,
     by rw [m₅, core_eq, ← mem₃]; exact fB, fun j hj => ?_, by rw [rd₅, rd₄, rd₃'], by rw [wr₅, wr₄, wr₃']⟩
   · rw [ReadyAt, m₅, scheduleAt_eq_of_frame _ f₄ fun r hr => ?_, mem₃, hr]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -221,7 +236,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.TripleDes.Sche
   · have hG : (dirCore d).G = 1 := by cases d <;> rfl
     have hj0 : j = 0 := by omega
     subst hj0
-    have ea : blkAddr (dirCore d) B 0 = s₃.gpr .x1 := by rw [x1₃]; rfl
+    have ea : blkAddr (dirCore d) B 0 = s₃'.gpr .x1 := by rw [x1₃]; rfl
     rw [dirCore_bw, ea, dirCipher_bytes, bytesAt_eq, m₅, res₄, x0₃, mem₃, hr]
 
 /-- Triple DES's core for the direction `d` meets what the modes need. -/

@@ -19,8 +19,10 @@ and a copy of the 384-byte schedule, which `prepare` makes so that nothing
 the modes write can reach it. `crypt` points `x0`, `x1` and `x2` at the
 copy, the buffer and the block function's slots, and restores the scratch
 buffer's address (`sb`, which the block function overwrites) from `x2`,
-which no instruction of the block function writes. The call keeps `x23` and
-`x24` (callee-saved), which carry the data's address and the blocks left.
+which no instruction of the block function writes, and the return address
+(`x30`, which the call overwrites) from `x26`. The call keeps `x23`, `x24`
+and `x26` (callee-saved, and saved by the modes for their caller), which
+carry the data's address, the blocks left and the return address.
 -/
 
 @[expose] public section
@@ -52,8 +54,8 @@ def blockCall : Direction → Prog isa
 /-- Triple DES's core for the modes, in the direction `d`. -/
 def dirCore (d : Direction) : Impl.Modes.AArch64.Core where
   prepare := .block ((List.range 48).flatMap (copyW .x6 sb .x0 (8 * schedSlot) 0))
-  crypt := .seq (.block [.addImm .x .x0 sb (8 * schedSlot), .addImm .x .x1 sb (8 * cbcBuf), rr .x2 sb])
-    (.seq (blockCall d) (.block [rr sb .x2]))
+  crypt := .seq (.block [.addImm .x .x0 sb (8 * schedSlot), .addImm .x .x1 sb (8 * cbcBuf), rr .x2 sb, rr .x26 .x30])
+    (.seq (blockCall d) (.block [rr sb .x2, rr .x30 .x26]))
   slots := schedSlot + 48
   total := schedSlot + 60
   buf := cbcBuf
