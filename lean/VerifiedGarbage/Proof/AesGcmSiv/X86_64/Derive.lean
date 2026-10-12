@@ -176,7 +176,7 @@ theorem blkStep_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al
       simp only [List.append_assoc]
 
 /-- The blocks of `derive`. -/
-theorem blocks_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
+theorem deriveBlocks_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
     {N A D : Addr} {al n : Nat} {σ : State} (E : Env K W SP σ) (S : Slots W R N A D al n σ.mem)
     (hN : Buf K W SP σ N 12) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) :
     WP isa deriveBlocks σ (BInv K W SP σ N (R / 2 - 1) (R / 2 - 1)) := by
@@ -270,33 +270,40 @@ abbrev keepBody : List Instr :=
   [.mov .rax (.mem (at_ .rsi 0)), .store (at_ .rdi 0) .rax, .alu .add .rsi (imm 16), .alu .add .rdi (imm 8),
     .alu .sub .rcx (imm 1)]
 
+/-- A run of the body of the loop of `deriveKeep`. -/
+theorem keepStep_run {K W SP : Addr} (L : Lay K W SP) {cnt j : Nat} (hc : cnt ≤ 6) (hj : j < cnt) {t : State}
+    (E : Env K W SP t) (hsi : t.gpr .rsi = W + BitVec.ofNat 64 (488 + 16 * j))
+    (hdi : t.gpr .rdi = W + BitVec.ofNat 64 (16 + 8 * j)) (hcx : t.gpr .rcx = BitVec.ofNat 64 (cnt - j)) :
+    ∃ t' : State, runBlock isa keepBody t = some t' ∧
+      t'.mem = t.mem.writeW (t.gpr .rdi) (t.mem.readW (t.gpr .rsi) 64) ∧
+      t'.gpr .rsi = W + BitVec.ofNat 64 (488 + 16 * (j + 1)) ∧ t'.gpr .rdi = W + BitVec.ofNat 64 (16 + 8 * (j + 1)) ∧
+      t'.gpr .rcx = BitVec.ofNat 64 (cnt - (j + 1)) ∧ t'.zf = some (decide (cnt - j = 1)) ∧
+      (∀ r ∈ [Reg.r13, .r15, .rsp], t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
+  have hw := L.ww
+  have rr := E.perm.wR (d := 488 + 16 * j) (n := 8) (by omega)
+  have ww := E.perm.wW (d := 16 + 8 * j) (n := 8) (by omega)
+  rw [← hsi] at rr
+  rw [← hdi] at ww
+  refine ⟨_, by srun [keepBody, rr, ww], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [mem_setReg, mem_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
+  · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hsi, add_ofNat_assoc]
+    rw [show 488 + 16 * j + 16 = 488 + 16 * (j + 1) by omega]
+  · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hdi, add_ofNat_assoc]
+    rw [show 16 + 8 * j + 8 = 16 + 8 * (j + 1) by omega]
+  · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hcx]
+    rw [Proof.AesGcm.X86_64.ofNat_sub (by omega) (by omega), Nat.sub_sub]
+  · simp only [zf_setReg, zf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hcx,
+      Proof.AesGcm.X86_64.sub_beq (show cnt - j < 2 ^ 64 by omega) (show 1 < 2 ^ 64 by decide)]
+  · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
+  all_goals rfl
+
 theorem keepStep_ok {K W SP : Addr} (L : Lay K W SP) {σ : State} {ciph : Spec.GcmSiv.Cipher} {N : Addr} {cnt j : Nat} (hc : cnt ≤ 6) (hj : j < cnt) {t : State}
     (I : KInv K W SP σ ciph N cnt j t) :
     WP isa (.block keepBody) t fun t' => KInv K W SP σ ciph N cnt (j + 1) t' ∧ t'.zf = some (decide (cnt - j = 1)) := by
   have E := I.env
   have hw := L.ww
-  have rr := E.perm.wR (d := 488 + 16 * j) (n := 8) (by omega)
-  have ww := E.perm.wW (d := 16 + 8 * j) (n := 8) (by omega)
-  rw [← I.rsi] at rr
-  rw [← I.rdi] at ww
-  obtain ⟨t', run', hm', si', di', cx', zf', hg', hrd', hwr'⟩ : ∃ t' : State, runBlock isa keepBody t = some t' ∧
-      t'.mem = t.mem.writeW (t.gpr .rdi) (t.mem.readW (t.gpr .rsi) 64) ∧
-      t'.gpr .rsi = W + BitVec.ofNat 64 (488 + 16 * (j + 1)) ∧ t'.gpr .rdi = W + BitVec.ofNat 64 (16 + 8 * (j + 1)) ∧
-      t'.gpr .rcx = BitVec.ofNat 64 (cnt - (j + 1)) ∧ t'.zf = some (decide (cnt - j = 1)) ∧
-      (∀ r ∈ [Reg.r13, .r15, .rsp], t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-    refine ⟨_, by srun [keepBody, rr, ww], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · simp only [mem_setReg, mem_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, I.rsi, add_ofNat_assoc]
-      rw [show 488 + 16 * j + 16 = 488 + 16 * (j + 1) by omega]
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, I.rdi, add_ofNat_assoc]
-      rw [show 16 + 8 * j + 8 = 16 + 8 * (j + 1) by omega]
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, I.rcx]
-      rw [Proof.AesGcm.X86_64.ofNat_sub (by omega) (by omega), Nat.sub_sub]
-    · simp only [zf_setReg, zf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, I.rcx,
-        Proof.AesGcm.X86_64.sub_beq (show cnt - j < 2 ^ 64 by omega) (show 1 < 2 ^ 64 by decide)]
-    · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
-    all_goals rfl
+  obtain ⟨t', run', hm', si', di', cx', zf', hg', hrd', hwr'⟩ := keepStep_run L hc hj E I.rsi I.rdi I.rcx
   have fr : Frame [⟨W + BitVec.ofNat 64 (16 + 8 * j), 8⟩] t.mem t'.mem := by
     rw [hm', I.rdi]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine WP.of_runBlock ⟨t', run', ⟨E.keep hg' hrd' hwr', by rw [hrd', I.rd], by rw [hwr', I.wr], si', di', cx',
@@ -317,6 +324,21 @@ theorem keepStep_ok {K W SP : Addr} (L : Lay K W SP) {σ : State} {ciph : Spec.G
     rw [show 8 * (j + 1) = 8 * j + 8 by omega, Proof.Cmac.bytesAt_add, GcmSiv.halves_succ, ← I.out, keep,
       add_ofNat_assoc, last]
 
+/-- The start of `deriveKeep`. -/
+theorem keepInit_run {K W SP : Addr} {t : State} (E : Env K W SP t) {cnt : Nat}
+    (hbp : t.gpr .rbp = BitVec.ofNat 64 cnt) :
+    ∃ t₄ : State, runBlock isa
+      (ptr .rsi .r15 revO ++ ptr .rdi .r15 akO ++ ([.mov .rcx (.reg .rbp)] : List Instr)) t = some t₄ ∧
+      t₄.gpr .rsi = W + BitVec.ofNat 64 488 ∧ t₄.gpr .rdi = W + BitVec.ofNat 64 16 ∧
+      t₄.gpr .rcx = BitVec.ofNat 64 cnt ∧ (∀ r ∈ [Reg.r13, .r15, .rsp], t₄.gpr r = t.gpr r) ∧
+      t₄.mem = t.mem ∧ t₄.rd = t.rd ∧ t₄.wr = t.wr := by
+  have h15 := E.r15
+  refine ⟨_, by srun [h15, hbp], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  all_goals try (simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15, hbp]; done)
+  · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
+  all_goals rfl
+
 /-- What `derive` leaves, from `σ`: the halves of the `cnt` blocks at
 `W + 16`. -/
 structure DInv (K W SP : Addr) (σ : State) (R : Nat) (N : Addr) (cnt : Nat) (t : State) : Prop where
@@ -336,7 +358,7 @@ theorem derive_ok (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (
   have hc1 : 1 ≤ R / 2 - 1 := by omega
   have hw := L.ww
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h <;> subst h <;> decide
-  refine WP.seq (WP.mono (blocks_ok L hR E S hN hDW) fun t₁ B => ?_)
+  refine WP.seq (WP.mono (deriveBlocks_ok L hR E S hN hDW) fun t₁ B => ?_)
   have St := slots_mut L hDW (B.frame.sub (derR_mut W SP D n)) S
   obtain ⟨t₂, run₂, rdi, rsi, rdx, rcx, r8, sv₂, m₂, rd₂, wr₂⟩ := deriveArgs_ok B.env St B.rbp
   have E₂ : Env K W SP t₂ := B.env.of_saved sv₂ rd₂ wr₂
@@ -363,18 +385,8 @@ theorem derive_ok (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (
     rw [this, m₂, B.blk k hk, ← eK, m₂]
     rfl
   -- The halves.
-  have h15 := E₃.r15
   have rbp₃ : t₃.gpr .rbp = BitVec.ofNat 64 (R / 2 - 1) := by rw [P.saved _ (by decide), sv₂ _ (by decide), B.rbp]
-  obtain ⟨t₄, run₄, si₄, di₄, cx₄, g₄, m₄, rd₄, wr₄⟩ : ∃ t₄ : State, runBlock isa
-      (ptr .rsi .r15 revO ++ ptr .rdi .r15 akO ++ ([.mov .rcx (.reg .rbp)] : List Instr)) t₃ = some t₄ ∧
-      t₄.gpr .rsi = W + BitVec.ofNat 64 488 ∧ t₄.gpr .rdi = W + BitVec.ofNat 64 16 ∧
-      t₄.gpr .rcx = BitVec.ofNat 64 (R / 2 - 1) ∧ (∀ r ∈ [Reg.r13, .r15, .rsp], t₄.gpr r = t₃.gpr r) ∧
-      t₄.mem = t₃.mem ∧ t₄.rd = t₃.rd ∧ t₄.wr = t₃.wr := by
-    refine ⟨_, by srun [h15, rbp₃], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    all_goals try (simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15, rbp₃]; done)
-    · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
-    all_goals rfl
+  obtain ⟨t₄, run₄, si₄, di₄, cx₄, g₄, m₄, rd₄, wr₄⟩ := keepInit_run E₃ rbp₃
   have K₀ : KInv K W SP σ (Spec.GcmSiv.ctxCiph σ.mem K R) N (R / 2 - 1) 0 t₄ :=
     ⟨E₃.keep g₄ rd₄ wr₄, by rw [rd₄, P.rd, rd₂, B.rd], by rw [wr₄, P.wr, wr₂, B.wr], by rw [si₄], by rw [di₄],
       by rw [cx₄, Nat.sub_zero], Nat.zero_le _, by rw [m₄]; exact f₃, fun k hk => by rw [m₄]; exact enc k hk,
