@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Stream
-import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
-import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Stream
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: streaming fields through `r10`
@@ -17,6 +23,8 @@ value (`LdOk`) or `fin` that stores a coefficient from it (`FinOk`):
 
 The accumulator is a slice of the number throughout (`Pack/Stream.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Pack
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Powers
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.VKeep
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Powers
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.VKeep
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX-512: the integer instructions
@@ -10,6 +16,8 @@ from `vg_poly1305_blocks_avx2`'s, or after which the upper halves of the `zmm`
 registers matter: they leave the whole vector registers as they were (`VKeep`,
 unlike `Avx2.VKeep`, includes bits 511:256).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Avx512
 

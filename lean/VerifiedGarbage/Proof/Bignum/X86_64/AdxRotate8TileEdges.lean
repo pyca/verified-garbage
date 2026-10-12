@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Accumulate
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Frame
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Head
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Accumulate
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Frame
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Head
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## AdxRotate8Product -/
+
+@[expose] public section
+
 section
 
 /-! The full register-resident product of two eight-word blocks. -/

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Ordinary Jacobian addition retains equal public field environments in every branch. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64

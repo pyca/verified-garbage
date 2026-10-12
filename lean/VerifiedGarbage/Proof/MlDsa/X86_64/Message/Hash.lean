@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Args
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Keccak
-import VerifiedGarbage.Proof.MlKem.KPke
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Args
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Keccak
+public import VerifiedGarbage.Proof.MlKem.KPke
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64, `sign_message` and `verify_message`: SHAKE256 through the sponge functions
@@ -12,6 +18,8 @@ their working space at `X + 200` (`kabs_ok`, `kpad_ok`, `ksqz_ok`); then
 `muHash`, which leaves `μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)` at `X + 840`
 (`muHash_ok`), and `trHash`, which leaves `H(pk, 64)` there (`trHash_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Message
 

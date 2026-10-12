@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.Ed25519
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Ed25519
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 scalar arithmetic: binary reduction
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.PowLit
 A remainder below L becomes a value below 2L after consuming one bit, so one
 conditional subtraction is sufficient.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCommon
-import VerifiedGarbage.Proof.Pbkdf2.AArch64.Iterate
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCommon
+public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Iterate
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: `pbkdf2`'s calls
@@ -9,6 +15,8 @@ The calls of HMAC's `init` and `finalize` and of `iterate`, whose contracts
 with `WP.callFV` (the callee may use the 16 bytes below the stack pointer, a
 frame deep), and shown constant time in two runs with `RelCT.call`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.AArch64.Pbk
 

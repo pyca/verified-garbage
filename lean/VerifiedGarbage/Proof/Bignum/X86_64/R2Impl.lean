@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
-import VerifiedGarbage.Proof.Bignum.X86_64.R2aCT
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2aCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Computations of `R² mod m` on x86-64
@@ -9,6 +15,8 @@ What the functions that compute `R² mod m` use of the code that does
 leaks only `m` (`R2w.choice_ct`). `R2Words.choice` (`R2Impl.words`) and, with
 ADX, `R2Adx.choice` (`R2Impl.adx`) do.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

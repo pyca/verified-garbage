@@ -1,9 +1,15 @@
-import VerifiedGarbage.Spec.Hmac.Generic
-import VerifiedGarbage.Proof.Md5.Stream
-import VerifiedGarbage.Proof.Sha1.Stream
-import VerifiedGarbage.Proof.Sha256.Scratch
-import VerifiedGarbage.Proof.Sha512.Stream
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Hmac.Generic
+public import VerifiedGarbage.Proof.Md5.Stream
+public import VerifiedGarbage.Proof.Sha1.Stream
+public import VerifiedGarbage.Proof.Sha256.Scratch
+public import VerifiedGarbage.Proof.Sha512.Stream
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC's postconditions read memory only within the buffers
@@ -17,6 +23,8 @@ the hash function's `Repr` (`finalizePost_local`, for a hash function whose
 `Repr` depends only on its state's bytes: `ReprLocal`, which each instance's
 hash function has).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Hmac
 

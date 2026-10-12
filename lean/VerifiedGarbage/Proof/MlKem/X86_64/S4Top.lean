@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, correctness
@@ -8,6 +14,8 @@ The pieces, in order: the prologue, the round constants and the padded seeds
 the four polynomials (`S4Loop.lean`), and the epilogue, which returns whether
 every seed sampled its polynomial.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64.S4
 

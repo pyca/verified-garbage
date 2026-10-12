@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64: constant time, lemmas
@@ -11,6 +21,8 @@ checked by the taint analysis after loads whose results correctness gives
 (`ct_split`), pins from equations (`pins_eqs`), `doubles` in a prime's
 workspace (`doublesW_ct`), and the moves between the workspaces (`swap_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

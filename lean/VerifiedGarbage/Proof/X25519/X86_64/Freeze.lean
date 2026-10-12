@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Inv
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Inv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: the full reduction
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X25519.X86_64.Inv
 in as 19 gives `x < 2²⁵⁵ + 19`, then `x + 19 - 2²⁵⁵` (which is `x - p`) is
 selected if it is not negative.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

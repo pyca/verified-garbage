@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.EntryFieldsFrame
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.EntryFieldsFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Loading caller scratch and preserving stack and saved registers -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

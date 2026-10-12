@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.Arm.RowSum
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.RowSum
+meta import VerifiedGarbage.Proof.MlKem.Arm.RowSum
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on 32-bit ARM: the hash routine in constant time
@@ -10,6 +17,8 @@ state is zeroed through `r7` (the taint analysis), and the calls of the sponge
 functions are on the same arguments in both runs (`absorb_ct`, …), the
 positions being those of the same lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm
 

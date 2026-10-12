@@ -1,8 +1,20 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxCarry8CT
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxCarry8CT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxCarry8CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The carry-tail branch depends only on the public row number and width. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.X86_64.AdxTiledProduct
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.Bignum.X86_64

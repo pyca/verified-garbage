@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384's product modulo `p` as a function, on x86-64: verified
@@ -11,6 +19,8 @@ bytes 4048 to 4095), constant time by taint tracking (only the stack pointer,
 `ws` and the offsets' low halves are public, `o` kept in `xmm6`
 meanwhile, for a product), and a state satisfying it (`mul_implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.Mont
 

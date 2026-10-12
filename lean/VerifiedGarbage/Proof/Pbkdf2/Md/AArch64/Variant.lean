@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
-import VerifiedGarbage.TCB.Artifact
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-import VerifiedGarbage.Proof.Sha512.AArch64.Variant
-import VerifiedGarbage.Proof.Sha256.AArch64.Variant
-import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Proof.Sha512.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha256.AArch64.Variant
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Merkle–Damgård hash functions on AArch64, as variants
@@ -21,6 +27,8 @@ code (`HashOK`), what the kernel checks of the code HMAC and PBKDF2 add to
 it (`CoreOK`, once for each hash function), and the satisfiability of the
 shared contracts, which the kernel checks for each instance.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.AArch64
 

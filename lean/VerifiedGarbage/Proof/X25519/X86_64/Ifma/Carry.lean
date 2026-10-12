@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Arith
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Arith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: carries
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Arith
 below (of the top limb, times 19, for the lowest): the same number modulo `p`
 (`carryNat_mod`), in limbs below `2⁵²` if they were below `2⁶³`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64.Ifma
 

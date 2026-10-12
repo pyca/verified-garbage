@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384 field subtraction on x86-64
@@ -8,6 +14,8 @@ the mask's words in `rcx`, `rdx`, `rbp` and `rax` (`p384Mask_ok`,
 `p384Add_ok`): no temporary memory is written. The inputs may alias the
 output.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont

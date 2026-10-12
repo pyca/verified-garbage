@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: the shared contract
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 `crtContract` states the shared contract on the registers and the stack
 (`crt_implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

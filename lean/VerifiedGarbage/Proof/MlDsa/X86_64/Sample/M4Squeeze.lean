@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Absorb
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Absorb
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_expand_mask_poly4_avx2`, squeezing
@@ -14,6 +20,8 @@ each to block `n` of its output, at `rbp`, which then holds the first
 runs the five in a loop (`sqs_ok`), as for `vg_mlkem_sample_ntt4_avx2`
 (`Proof/MlKem/X86_64/S4Squeeze.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Mask4
 

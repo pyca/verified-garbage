@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
-import VerifiedGarbage.Proof.Weierstrass.Joint
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+public import VerifiedGarbage.Proof.Weierstrass.Joint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The carry digit followed by `64 n` shared doubles computes the two-scalar sum. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass

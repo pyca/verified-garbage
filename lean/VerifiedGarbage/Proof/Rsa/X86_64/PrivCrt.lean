@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the call of the CRT
@@ -8,6 +14,8 @@ The CRT runs with the stack arguments the frame holds at `rsp`, writing
 `M` at `oM` (`crt_pre`), and returns with `M` written and the frame's
 slots kept (`crt_call`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

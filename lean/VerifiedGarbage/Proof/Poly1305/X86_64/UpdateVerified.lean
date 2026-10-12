@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateCall
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Poly1305.Scratch
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateCall
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateCall
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Poly1305.Scratch
+meta import VerifiedGarbage.Proof.Poly1305.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64: `update`, constant time and `Verified`
@@ -15,6 +25,8 @@ taint analysis; the call is constant time by the implementation's own proof
 given; and after it, the registers the code after it needs are public again,
 since the callee keeps them (`calleeSaved`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64
 

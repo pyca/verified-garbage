@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Long carry chains and exact tails for cross-product rows. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.X86_64.AdxSquareWide
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.Bignum.X86_64

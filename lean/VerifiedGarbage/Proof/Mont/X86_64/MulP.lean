@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86_64.WideOps
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.WideOps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: P-521's product by columns
@@ -11,6 +17,8 @@ temporary area and `r9`, for the reduction's `U < 2⁵⁷⁶`: the low words of 
 first nine columns, each of which column `k + 8` adds 512 times. Then
 `csubW` (`mulP_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

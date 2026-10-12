@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Proof.MlKem.X86_64.Lay
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+public import VerifiedGarbage.Proof.MlKem.X86_64.Lay
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Lay
+public import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: four instances of `PRF₂` at once
@@ -16,6 +28,8 @@ as `vg_mlkem_sample_ntt4_avx2` does (`S4Absorb.lean`); the permutation is
 `permute4` (`permute4_ok`), and the output the first 128 bytes of each
 permuted state (`prf_byte`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64.Prf4
 

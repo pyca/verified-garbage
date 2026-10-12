@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
-import VerifiedGarbage.Proof.Pbkdf2.MdKeys
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
+public import VerifiedGarbage.Proof.Pbkdf2.MdKeys
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC over a Merkle–Damgård hash function on x86 (32-bit): `init`, correct
@@ -13,6 +19,8 @@ inner state's buffer (`fill_ok`) and the key XORed into its start
 value (`cmpI_ok`, `cmpO_ok`): each state then represents its block
 (`Md.repr_block`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86
 

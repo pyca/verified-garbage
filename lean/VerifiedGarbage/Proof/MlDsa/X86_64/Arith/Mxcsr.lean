@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: MXCSR through the end of a polynomial
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
 last 8 bytes `mxH` of a writable polynomial at `r` (`withMxcsrH_ok`), as
 ML-KEM's `withMxcsr_ok` through `scratch + 768`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Arith
 

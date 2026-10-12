@@ -1,8 +1,20 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.ReduceSetupCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInitCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReduceLoopCT
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceSetupCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceSetupCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInitCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInitCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceLoopCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceLoopCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant time of complete DSA streaming reduction, including empty inputs -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Dsa.X86_64 VG.Impl.Dsa.Layout

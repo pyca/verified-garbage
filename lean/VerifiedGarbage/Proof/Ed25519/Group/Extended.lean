@@ -1,14 +1,23 @@
-import VerifiedGarbage.Proof.Framework.Pratt
-import Mathlib.Tactic.NormNum.Prime
-import VerifiedGarbage.Spec.X25519
-import VerifiedGarbage.Proof.Edwards.Group
-import Mathlib.Algebra.Group.Defs
-import Mathlib.Algebra.Group.Basic
-import VerifiedGarbage.Spec.Ed25519
-import Mathlib.FieldTheory.Finite.Basic
-import Mathlib.Algebra.Group.Nat.Even
+module
+
+public import VerifiedGarbage.Proof.Framework.Pratt
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Edwards.Group
+public import Mathlib.Algebra.Group.Defs
+public import Mathlib.Algebra.Group.Basic
+public import VerifiedGarbage.Spec.Ed25519
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Algebra.Group.Nat.Even
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Group.Field`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.Group.Prime`. -/
 section

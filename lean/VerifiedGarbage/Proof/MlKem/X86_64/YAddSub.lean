@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
-import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+public import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+meta import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_add_avx2` and `vg_mlkem_sub_avx2`
@@ -10,6 +18,8 @@ each lane, does what an iteration of `vg_mlkem_add` (`vg_mlkem_sub`) does
 proof holds of each lane (`ylanes`); it stores the eight results to `f`
 (`YAddSub.step`), and the loop leaves `f` with all 256 (`YAddSub.fn_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

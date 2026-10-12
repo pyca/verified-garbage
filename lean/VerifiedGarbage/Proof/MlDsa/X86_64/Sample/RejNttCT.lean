@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly`, constant time but for the seed
@@ -10,6 +17,8 @@ by relating the two runs iteration by iteration (`body_ct`): both are at the
 same iteration with the same coefficients sampled and the same bytes to read,
 so each branch goes the same way and each store goes to the same address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sample
 

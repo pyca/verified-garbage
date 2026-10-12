@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Pbkdf2.MdHmac
-import VerifiedGarbage.Proof.Pbkdf2.Memory
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
-import VerifiedGarbage.Impl.Pbkdf2.Md.X86
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.MdHmac
+meta import VerifiedGarbage.Proof.Pbkdf2.MdHmac
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
+meta import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
+meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
+meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
+public import VerifiedGarbage.Impl.Pbkdf2.Md.X86
+meta import VerifiedGarbage.Impl.Pbkdf2.Md.X86
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC and PBKDF2-HMAC over a Merkle–Damgård hash function on x86 (32-bit): the block
@@ -17,6 +29,8 @@ into (`digest_ok`, from the hash function's own `out`, `OutOk`); and the
 copies of words (`copyW_ok`) and stores of constant words (`storeW_ok`) they
 are made of.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Md.X86
 

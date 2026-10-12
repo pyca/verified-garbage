@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Main
-import VerifiedGarbage.Proof.X25519.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Main
+meta import VerifiedGarbage.Proof.X25519.X86_64.Main
+public import VerifiedGarbage.Proof.X25519.X86_64.Lit
+meta import VerifiedGarbage.Proof.X25519.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: `Verified`
@@ -13,6 +24,8 @@ counters, and every address is an argument plus a constant or a counter),
 satisfiability, and the shared contract of `Spec/` with 8 bytes of stack, for
 the call's return address (`Verified.of_inline_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4CT
-import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
-import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4CT
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_expand_mask_poly4`
@@ -12,6 +18,8 @@ epilogue of the one for AVX2: after the call on seed `K`, polynomial `K` is
 `ExpandMask`'s for the seed (`PC`), as in `vg_mldsa_rej_ntt_poly4`
 (`Rej4Scalar.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Mask4
 

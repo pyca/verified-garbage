@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyPre
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyPre
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64, `verify_message`: the call of the verification function on `μ`
@@ -11,6 +17,8 @@ never writes `rsp` and whose calls nest at most three deep (`VerifyFn`): its
 call from the frame, on `pk`, `μ` at `X + 840`, `sig` and the first
 `scratchWords p` words of `scratch` (`verifyCall_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Message
 

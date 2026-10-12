@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.R2
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: the exponentiation of `vg_rsa_public`
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 and multiplies it by `X` if the bit is set (`expBit_ok`); `expLoop` does it
 for every bit of `e`, most significant first (`expLoop_ok`): `Y ≡ x^e R`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

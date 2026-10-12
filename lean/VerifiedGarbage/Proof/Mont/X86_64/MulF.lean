@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86_64.MulP
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.MulP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: nine words by columns, for any modulus
@@ -11,6 +17,8 @@ reduction's `u_k m_j` (`pTerms_ok`, `MulP.lean`), and for `c < 9` computes
 `(a b + U m) / 2⁵⁷⁶ < 2m` in the temporary area and `r9`, for the `u`s'
 `U < 2⁵⁷⁶`. Then `csubW` (`mulF_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

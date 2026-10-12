@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Direct lookup addresses are determined by the public scalar and table. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass

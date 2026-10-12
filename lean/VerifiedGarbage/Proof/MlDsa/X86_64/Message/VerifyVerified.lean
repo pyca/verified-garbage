@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCT
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64, `verify_message`: verified
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `verifyMessage n c p`, for
 any verification function on `μ` `c` that `verify_message` can call
 (`VerifyFn`), is verified against `verifyMessageContract p X86_64.abi 112`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Message
 

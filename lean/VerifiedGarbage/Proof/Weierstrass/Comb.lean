@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.Law
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Law
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The fixed-base comb, on any target
@@ -15,6 +21,8 @@ table `j` or its reflection, takes `[combE k J (j+1)]G` to
 `[(m + 1) 16^j]G`, and the start is `[8 Σ_{i<J} 16^i]G`, affine; a curve's
 own facts prove it (`Proof/P256/Comb.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

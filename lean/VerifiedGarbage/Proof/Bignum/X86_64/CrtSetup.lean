@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.Ranges
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+module
+
+public import VerifiedGarbage.Proof.Rsa.Ranges
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: setting up the primes
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 after it, `p` and `qInv` into `p`'s, and `q` into `q`'s
 (`primesSetup_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

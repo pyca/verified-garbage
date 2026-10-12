@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Terms
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-import VerifiedGarbage.Proof.Bignum.Amm52N
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Terms
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+public import VerifiedGarbage.Proof.Bignum.Amm52N
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the lanes of a step
@@ -10,6 +16,8 @@ roles hold the limbs `L p`, below `2⁶²`; the operands' limbs, `k₀` and the
 limb `b p` in memory, below `2⁵²`; the zero register zero), role `k`'s lane
 `t` after the step holds limb `k + R t` of `Amm52N.step (4 R)` (`hT_eval`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.Ifma
 

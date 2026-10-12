@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `R² mod m` by word steps with ADX: Knuth's test with the second words
@@ -12,6 +18,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
 `q ≤ q̂ ≤ q + 2` (`d3_bounds`); `wordStep_valG` is `WordStep.wordStep_val`
 for any such estimate. `refine_ok` is the code's test.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.R2ax
 

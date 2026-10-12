@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsWrap
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
-import VerifiedGarbage.Proof.Weierstrass.JacMul
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsWrap
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Point operations as functions on x86-64: what their bodies compute
@@ -10,6 +16,8 @@ The values the bodies of `Impl/Weierstrass/X86_64/PointOps.lean` leave in
 read, for any values: these are not the group law's facts (`InvJ`), which
 the joint verifier's proofs use, but the field operations' results.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.PointOps
 

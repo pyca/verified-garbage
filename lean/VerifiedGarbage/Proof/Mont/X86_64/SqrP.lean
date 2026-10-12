@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86_64.MulP
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.MulP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on x86-64: P-521's square by columns
@@ -10,6 +16,8 @@ column its terms (`sCol_ok`), whose sums over the eighteen columns are
 `a²` and the reduction's `2⁵²¹ U` (`sColSum_total`), so that `prodCols_ok`
 gives `sqrP_ok`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 

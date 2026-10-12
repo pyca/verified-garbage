@@ -1,10 +1,19 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareWide
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareWide
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## AdxSquareWideWord -/
+
+@[expose] public section
+
 section
 
 /-! Word-level equations retain both carry flags across stores. -/

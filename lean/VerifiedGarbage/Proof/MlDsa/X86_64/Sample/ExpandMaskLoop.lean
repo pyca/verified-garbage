@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedLoop
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.ExpandMask
-import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedLoop
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: the loop of `vg_mldsa_expand_mask_poly`
@@ -12,6 +18,8 @@ group, whose bits from `ck mod 8` on are those of the output from bit `ci` on
 `c` bits modulo `q` (`etaF_eq`) to `a[i]` (`emCoef_run`, `emCoef_val`). A
 group stores 4 coefficients (`emBody_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sample
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: a row of the BMI2/ADX multiplication
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 The blocks of a row (`blocks_ok`) add `a_i b + u m` to the window's `w` low
 words and the carries, four words at a time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

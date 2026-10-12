@@ -1,5 +1,13 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.AdxDualAdd
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxDualAdd
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AdxDualAdd
 open VG VG.X86_64 VG.Impl.Bignum.X86_64

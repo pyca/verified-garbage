@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsMixed
-import VerifiedGarbage.Proof.Weierstrass.PointFacts
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Mont.Read
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsMixed
+public import VerifiedGarbage.Proof.Weierstrass.PointFacts
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Mont.Read
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Point operations as functions on x86-64: from the contracts to the bodies
@@ -18,6 +24,8 @@ below `p` and standing for `r`, and every byte of `ws` kept but those of
 `W` and the products' temporary area, which the curve's facts (`FnCfg`)
 place in the function's own working space or `P`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64.PointOps
 

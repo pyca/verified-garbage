@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.FragS
-import VerifiedGarbage.Proof.MlKem.KPke
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+public import VerifiedGarbage.Proof.MlKem.KPke
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the input of `PRF`, and sequences in a layout
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlKem.KPke
 In a layout: the input of `PRF₂(σ, N)` (`prf_pieces`, for `Prfs.lean`), and
 two pieces of code in sequence, for constant time (`RelCT.seqL`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

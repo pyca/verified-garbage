@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTCompute
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTCompute
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86-64: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
@@ -7,6 +13,8 @@ For primitives `P` that meet their contracts (`PrimsOk`), `verify P p` meets
 `verifyContract p` (`verify_verified`): it is correct (`verify_correct`) and
 leaks only its inputs, which the contract makes public (`verify_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 

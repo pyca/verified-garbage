@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Mont.Words128
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombLay
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.CallLay
+module
+
+public import VerifiedGarbage.Proof.Mont.Words128
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombLay
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.CallLay
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb from tables in memory on x86-64: the selection's pass
@@ -15,6 +21,8 @@ accumulator `c` holds piece `c` of entry `a` if `1 ≤ a ≤ m`, else zero
 (`accVal`, `selEntry_ok`); they are stored to `E`'s `x` and `y`, which are
 adjacent. `TCombSelectY.lean` does the same 32 bytes at a time, with AVX2.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

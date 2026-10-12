@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.VLay
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.VLay
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the layers of the NTT and its inverse with `len` = 4 and 2
@@ -10,6 +16,8 @@ halves of their coefficients gathered into `xmm0` and the upper ones into
 runs four blocks at a time (`vstep2`): their pairs gathered by `pshufd` and
 `punpck{l,h}qdq`, and interleaved back by `punpck{l,h}dq`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

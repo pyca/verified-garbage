@@ -1,21 +1,30 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
-import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
-import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
-import VerifiedGarbage.Proof.Ed25519.WindowConstants
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
-import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
-import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
-import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarStep
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.Group.Double
-import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
+public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
+public import VerifiedGarbage.Proof.Ed25519.WindowConstants
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
+public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+public import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarStep
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Proof.Ed25519.Group.Double
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Ed25519.Recode
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.WindowTables`. -/
+
+@[expose] public section
+
 section
 /-!
 # Verification's table: `[1]A … [15]A`

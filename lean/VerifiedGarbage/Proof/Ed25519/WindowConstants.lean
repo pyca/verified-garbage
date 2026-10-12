@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Ed25519.BaseMultiples
-import VerifiedGarbage.Proof.Ed25519.BaseTable
-import VerifiedGarbage.Proof.Ed25519.Group.Decode
+module
+
+public import VerifiedGarbage.Impl.Ed25519.BaseMultiples
+public import VerifiedGarbage.Proof.Ed25519.BaseTable
+public import VerifiedGarbage.Proof.Ed25519.Group.Decode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The small multiples of the base point represent `[i + 1]B`
@@ -10,6 +16,8 @@ point with the specification's formula as it goes and comparing projectively,
 so the kernel evaluates fourteen additions. The cached negations are checked
 entry by entry.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519
 

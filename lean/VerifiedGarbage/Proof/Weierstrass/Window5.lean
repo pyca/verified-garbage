@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.Window
-import VerifiedGarbage.Proof.Weierstrass.CombW
-import VerifiedGarbage.Proof.Weierstrass.CombDigitW
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Window
+public import VerifiedGarbage.Proof.Weierstrass.CombW
+public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Signed five-bit windows for public P-256 verification scalars. -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Window5
 

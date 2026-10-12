@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Weierstrass.Layout
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
-import VerifiedGarbage.Proof.Weierstrass.Pow
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Layout
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
+public import VerifiedGarbage.Proof.Weierstrass.Pow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on x86-64: powers
@@ -13,6 +19,8 @@ exponent `e` whose bits are the table at `P.bits` (`pow_ok`): an iteration
 squares the accumulator, multiplies it by the base into `[tmp]` and keeps
 that product if the exponent's bit is set (`powBody_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

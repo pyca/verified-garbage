@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Accumulating the ADX square's multiply-add blocks into a row. -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.AdxSquare
 

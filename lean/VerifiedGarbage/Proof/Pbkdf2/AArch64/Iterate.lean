@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.Pbkdf2.MdStep
-import VerifiedGarbage.Proof.Pbkdf2.Memory
-import VerifiedGarbage.Proof.MdStream.AArch64.Words
-import VerifiedGarbage.Proof.Pbkdf2.AArch64.Compress
-import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Impl.Pbkdf2.AArch64
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.MdStep
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.MdStream.AArch64.Words
+public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Compress
+public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Impl.Pbkdf2.AArch64
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on AArch64
@@ -21,6 +27,8 @@ The first instruction zero-extends `n`; the rest (`main`) runs from that
 state, `zext s₀`, and the lemmas describe it in terms of the entry state
 `s₀`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.AArch64
 

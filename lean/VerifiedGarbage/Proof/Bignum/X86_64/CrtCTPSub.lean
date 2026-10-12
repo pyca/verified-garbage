@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: constant time, the steps of `p`'s phase
@@ -9,6 +16,8 @@ its hypotheses and what correctness gives after it (`ct_step`), and
 header: the second block's header loads are checked from `rdi`, which the
 first loop keeps (`subModArr_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

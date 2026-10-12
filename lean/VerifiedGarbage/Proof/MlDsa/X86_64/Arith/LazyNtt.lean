@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNormalize
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNormalize
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNormalize
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Lazy forward NTT: range/congruence through eight layers, followed by
 canonical reduction, under the existing public NTT contract. -/
+
+@[expose] public section
+
 namespace VG.Proof.MlDsa.X86_64.Arith.Lazy
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith

@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import VerifiedGarbage.Proof.Bignum.CrtMath
-import VerifiedGarbage.Proof.Bignum.CrtRedc
-import VerifiedGarbage.Proof.Bignum.X86_64.Exp
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
+public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.Bignum.CrtMath
+public import VerifiedGarbage.Proof.Bignum.CrtRedc
+public import VerifiedGarbage.Proof.Bignum.X86_64.Exp
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: `x R_X^(-K) mod X`
@@ -16,6 +22,8 @@ words, `x = Σ x_k R^k`, is reduced as `A := (A R⁻¹ + x_k R⁻¹) mod X` for
 each chunk from the lowest: `A R^K ≡ x (mod X)` for `K = ⌈w / w_X⌉`
 (`redc_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

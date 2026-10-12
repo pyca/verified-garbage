@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.Naf5
-import VerifiedGarbage.Proof.Weierstrass.FastNaf7
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Naf5
+public import VerifiedGarbage.Proof.Weierstrass.FastNaf7
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Shared interface for the two public verification NAF widths. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.FastNaf
 open Spec.Weierstrass
 

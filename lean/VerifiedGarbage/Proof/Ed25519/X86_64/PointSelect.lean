@@ -1,7 +1,15 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointSelect
-import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointSelect
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Point selection reuses the verified constant-time field swaps. -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

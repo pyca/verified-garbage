@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.X25519.Field
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Divstep.PackedDef
-import VerifiedGarbage.Impl.X25519.X86_64
+module
+
+public import VerifiedGarbage.Proof.X25519.Field
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Divstep.PackedDef
+public import VerifiedGarbage.Impl.X25519.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64, inversion by divsteps: what the code computes
@@ -19,6 +25,8 @@ That `byAlg x` is `x^(p-2)` is the theory of divsteps (bounds on the matrix,
 code's callers take it as `DivstepInv`, an instance of which only the
 registration files import (`Divstep/Sound.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

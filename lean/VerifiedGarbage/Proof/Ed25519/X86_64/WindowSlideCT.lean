@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verification's windows: what their traces depend on
@@ -8,6 +15,8 @@ their traces depend on the digits alone, which both runs share (`fA`, `fB`): the
 counter are read from the scratch, the same in both runs by correctness; everything else is
 public by the taint analysis.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

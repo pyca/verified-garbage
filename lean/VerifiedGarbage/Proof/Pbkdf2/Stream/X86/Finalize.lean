@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Framework.OmegaLit
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC on x86 (32-bit): the start of `finalize`
@@ -13,6 +19,8 @@ state with the hash function's streaming `finalize`, called with the code of
 (`fin1Args_ok`, `finCall_ok`). What the rest keeps is `KR`;
 `Proof/Pbkdf2/Md/X86/HmacFin.lean` continues from there.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Stream.X86.Finalize
 

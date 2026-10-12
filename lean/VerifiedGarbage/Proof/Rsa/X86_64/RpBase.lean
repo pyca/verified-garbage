@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-import VerifiedGarbage.Impl.Rsa.X86_64.Recover
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: the working space
@@ -9,6 +15,8 @@ the mask, the candidates' counters and masks, `t` and `sMo`), which keep the
 working space (`Ws.congrR`); and the value of a number's low words
 (`wv_mod`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

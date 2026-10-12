@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyChecks
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyChecks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on x86-64: the checks' common context
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.KeyChecks
 `aOne`. Each piece keeps it (`loadK`, `ltK`, …), changing only the arrays
 it writes or `sMask`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

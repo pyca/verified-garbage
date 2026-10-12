@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Mul
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
-import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Mul
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Mul
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519's fixed-base multiplication with AVX512_IFMA: `Verified`
@@ -12,6 +22,8 @@ static's address public): correctness from the engine's (`scalarBaseEngineOf_ok`
 MXCSR's control bits kept, as the comb loads MXCSR only between saving it in
 `r11` and loading it back (`ctlOk`), and the shared contract.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Ifma
 

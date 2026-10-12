@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Loops
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Loops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: sampling with `PRF` and `SamplePolyCBD`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlKem.Arm.Loops
 `withNtt`) to polynomial `k + N` for `N₀ ≤ N < N₁` (`prfLoop_ok`), with `σ` at
 offset 920 of `scratch`, and changes only the regions of `prfW`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Exp
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Exp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: `vg_rsa_public`'s check of the modulus
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Exp
 `invalid` sets ZF iff the `k` bytes of `m` make a valid modulus
 (`Spec.Rsa.modulusValid`), for `64 ≤ k ≤ 1024` (`invalid_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

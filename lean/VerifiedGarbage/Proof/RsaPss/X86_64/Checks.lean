@@ -1,5 +1,13 @@
-import VerifiedGarbage.Impl.RsaPss.X86_64
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+module
+
+public import VerifiedGarbage.Impl.RsaPss.X86_64
+meta import VerifiedGarbage.Impl.RsaPss.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on x86-64: the taint checks of each hash function
@@ -13,6 +21,8 @@ of its streaming code and its digest size `D`. The code of a hash function
 `pT`, is defined here too, with no proofs, so that the hash functions' files
 import this file without the proofs of RSA's code (`CtBase.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

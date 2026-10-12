@@ -1,8 +1,20 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.SignRelease
-import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalarCT
-import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.SignRelease
+meta import VerifiedGarbage.Proof.Dsa.X86_64.SignRelease
+public import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalarCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalarCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant time of masked signature release and register restoration -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64

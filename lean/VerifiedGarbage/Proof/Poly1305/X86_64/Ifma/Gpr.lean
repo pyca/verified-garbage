@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Vec
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.VKeep
-import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Vec
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.VKeep
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: the integer instructions
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
 The blocks of integer instructions between the vector ones: they leave the
 vector registers, MXCSR and the regions as they were (`VKeep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Ifma
 

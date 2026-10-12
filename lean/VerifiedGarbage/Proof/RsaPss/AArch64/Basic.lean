@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.RsaPss.AArch64
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+module
+
+public import VerifiedGarbage.Impl.RsaPss.AArch64
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on AArch64: the working space and masks
@@ -13,6 +19,8 @@ it (`Rep.frame`). `Lay t F S`: the frame `F` and the working space `S` of a
 state `t`, where the code runs, with `x20 = S`. The masks the code computes
 without branches (`eq1_val`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

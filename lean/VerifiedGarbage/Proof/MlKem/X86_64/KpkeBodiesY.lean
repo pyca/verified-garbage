@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
-import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodies
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodies
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the AVX2 arithmetic without its MXCSR region
@@ -11,6 +17,8 @@ through `r10` (`nttOBY`), `vg_mlkem_inv_ntt_avx2`'s (`nttInvBY`) and
 contracts of the functions; the proofs are those of `NttAvx2.lean` and
 `MulAvx2.lean` without `withMxcsr_ok`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

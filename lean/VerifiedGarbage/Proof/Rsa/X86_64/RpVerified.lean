@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCT8
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT8
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: verified against the shared contract
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 (`rpCode_constantTime`), `Recover.code` is verified for any Montgomery
 multiplication (`rp_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

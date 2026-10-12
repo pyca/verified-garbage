@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Pbkdf2.Hmac
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Hmac.Common
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Hmac
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Hmac.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC-SHA-256's iteration: memory lemmas
@@ -9,6 +15,8 @@ Facts about bytes of memory, regions, the exclusive-or of words and the
 iteration itself that the proofs of every target share, so that none imports
 another target's proof.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Memory
 

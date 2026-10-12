@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyShift
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyShift
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: the checks on `EM`
@@ -11,6 +17,8 @@ is none) and the salt's length `⊕` the expected one (`posCheck_ok`);
 `copyDb` copies `DB` to `Y` (`copyDb_ok`), `verifyNb` sets `nbm`
 (`verifyNb_ok`), and `expLen` the expected salt length (`expLen_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.Recover
-import VerifiedGarbage.Proof.Ed25519.RootPower
-import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
-import VerifiedGarbage.Proof.X25519.X86_64.Inv
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Recover
+public import VerifiedGarbage.Proof.Ed25519.RootPower
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+public import VerifiedGarbage.Proof.X25519.X86_64.Inv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519 on x86-64: two square roots' powers at once
@@ -13,6 +19,8 @@ slot 19), each step beside its copy. Its parts that change the slots by a functi
 `rsi` (`stepsFrom`), whose value slot 14 keeps meanwhile; `ChainInv` is what the loop keeps,
 and `chainVals` the values of `W` and of the value saved, `S`, after `j` steps.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

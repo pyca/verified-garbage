@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTCode
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyImplies
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTCode
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyImplies
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_crt_key` on x86-64: verified against the shared contract
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.KeyImplies
 (`ck_implies`); the code is correct (`ckCode_correct`) and constant time
 (`ckCode_constantTime`) against it (`ck_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

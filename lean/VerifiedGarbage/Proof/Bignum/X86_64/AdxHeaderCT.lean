@@ -1,7 +1,18 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Saving and restoring header words uses only the public scratch layout. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.X86_64.AdxHeader
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.Bignum.X86_64

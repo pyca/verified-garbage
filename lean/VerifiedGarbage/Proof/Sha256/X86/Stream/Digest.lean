@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
-import VerifiedGarbage.Proof.Sha256.Digest
+module
+
+public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
+public import VerifiedGarbage.Proof.Sha256.Digest
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-224 on x86 (32-bit): `finalize224`
@@ -13,6 +19,8 @@ given what writing that prefix does (`ShapeD`) and that it is constant time
 and with its working space in a frame of its own, it is
 `Spec.Sha256.finalize224Contract`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.X86.Stream
 

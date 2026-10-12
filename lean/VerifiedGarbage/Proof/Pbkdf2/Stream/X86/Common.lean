@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Framework.OffsetBelow
-import VerifiedGarbage.Proof.Framework.OmegaLit
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Proof.Framework.OffsetBelow
+public import VerifiedGarbage.Proof.Framework.OmegaLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Calls of a streaming hash function on x86 (32-bit): byte loops, registers, stack
@@ -11,6 +17,8 @@ The byte loops, our caller's registers and the stack, which HMAC's `init` and
 `finalize`, PBKDF2's `iterate` (`Proof/Pbkdf2/Md/X86/`) and the whole of
 PBKDF2 (`Proof/Pbkdf2/Whole/X86/`) share.
 -/
+
+@[expose] public section
 
 /-!
 ## The byte loops

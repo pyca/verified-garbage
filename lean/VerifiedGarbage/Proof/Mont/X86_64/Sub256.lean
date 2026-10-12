@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+module
+
+public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-256 field subtraction on x86-64
@@ -8,6 +14,8 @@ Construct their borrow masks in registers, then add them directly to the
 four-limb difference. The inputs may alias the output. No temporary memory
 is written; the existing field-operation frame is preserved.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.X86_64
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont

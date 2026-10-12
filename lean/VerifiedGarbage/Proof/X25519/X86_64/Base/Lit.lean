@@ -1,7 +1,18 @@
-import VerifiedGarbage.Impl.X25519.X86_64.Base
-import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+module
+
+public import VerifiedGarbage.Impl.X25519.X86_64.Base
+meta import VerifiedGarbage.Impl.X25519.X86_64.Base
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Checked literals for fixed-base X25519. -/
+
+@[expose] public section
+
 namespace VG.Proof.X25519.X86_64.Base
 open VG VG.Impl.X25519.X86_64
 materialize_code baseLit := (Base.x25519Base baseline)

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
-import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX2: the integer instructions
@@ -9,6 +15,8 @@ The short blocks of integer instructions between the vector ones: constants,
 the MXCSR prologue and epilogue, loading `r` and the accumulator's words, and
 the counters.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Avx2
 

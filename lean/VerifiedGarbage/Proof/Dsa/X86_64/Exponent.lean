@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Dsa.Arithmetic
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+module
+
+public import VerifiedGarbage.Proof.Dsa.Arithmetic
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The shared fixed-window exponentiation against DSA's arithmetic
@@ -9,6 +15,8 @@ table entry when selecting a power. Its arithmetic proof only needs an odd
 modulus, not a prime modulus. This bridge states its result in DSA's terms;
 it retains the memory-frame and register-preservation facts for callers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Dsa.X86_64
 

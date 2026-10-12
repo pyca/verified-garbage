@@ -1,13 +1,22 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
-import VerifiedGarbage.Proof.Bignum.X86_64.Csub
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
-import VerifiedGarbage.Proof.Bignum.CrtExp
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
+public import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Proof.Bignum.CrtExp
 
 -- Reduce vector updates before comparing unchanged fields of whole states.
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
+
 attribute [local instance_reducible] VG.X86_64.State.setXmm
 
 
