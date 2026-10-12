@@ -117,4 +117,50 @@ def ecbDecryptApi : Api where
     amounts."
   safety := ecbSafety
 
+/-! ## Either direction
+
+An implementation may share one body between the two directions: the ECB
+functions above then call `vg_cast5_ecb`, which takes the direction as a
+public argument. It is not part of the library's Rust API. -/
+
+/-- `vg_cast5_ecb(schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8],
+n: usize, scratch: *mut [u64; 32], decrypt: usize)`: the ECB functions' arguments,
+then the direction (0 to encrypt, 1 to decrypt), which is public. -/
+def ecbDirSig : Sig where
+  params := ecbSig.params ++ [("decrypt", .int .usize true)]
+
+/-- The direction `decrypt` selects. -/
+def directionOf (decrypt : Nat) : Direction := if decrypt = 0 then .encrypt else .decrypt
+
+def ecbDirPre (pb : Nat) : Curry (ecbDirSig.words pb) (Mem → Prop) :=
+  fun _schedule rounds _data _n _scratch decrypt _ =>
+    (rounds.toNat = 12 ∨ rounds.toNat = 16) ∧ decrypt.toNat ≤ 1
+
+def ecbDirPost (pb : Nat) : ecbDirSig.Post pb :=
+  fun schedule rounds data n _scratch decrypt m m' _ =>
+    blocksAt m' data n.toNat =
+      ecb (scheduleAt m schedule) rounds.toNat (directionOf decrypt.toNat) (blocksAt m data n.toNat)
+
+/-- For `rounds` of 12 or 16 and `decrypt` of 0 or 1: replaces the `n` blocks
+at `data` with their encryption (`decrypt = 0`) or decryption (`decrypt = 1`)
+under the subkeys at `schedule`. -/
+def ecbDirContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  ecbDirSig.contract A (pre := ecbDirPre A.ptrBits) (post := ecbDirPost A.ptrBits) (stack := stack)
+
+def ecbDirApi : Api where
+  module := "cast5"
+  name := "vg_cast5_ecb"
+  sig := ecbDirSig
+  contracts := some fun A stack => ecbDirContract A stack
+  summary := "CAST-128 (CAST5) ECB encryption (`decrypt = 0`) or decryption (`decrypt = 1`) \
+    (RFC 2144 §2, SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, with \
+    `rounds` rounds under the subkeys written by `vg_cast5_expand_key`: what \
+    `vg_cast5_ecb_encrypt` and `vg_cast5_ecb_decrypt` do, for implementations that share one \
+    body between them. Only the least significant 5 bits of each rotate subkey are used. For \
+    `n = 0`, no data is transformed.\n\n\
+    Contract: `VG.Spec.Cast5.ecbDirContract`. Constant time: only pointers, `rounds`, `n` and \
+    `decrypt` may affect timing, not the subkeys or data, including S-box indices and rotation \
+    amounts."
+  safety := ecbSafety ++ ["`decrypt` must be 0 or 1."]
+
 end VG.Spec.Cast5
