@@ -37,6 +37,7 @@ mod ecdh_p256;
 mod ecdh_p384;
 mod ecdh_p521;
 mod ecdsa_p256;
+mod ffdh;
 mod idea_cbc;
 mod idea_cfb;
 mod idea_ofb;
