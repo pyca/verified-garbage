@@ -113,6 +113,16 @@ def WT : Nat := 87
 /-- The powers' tables (nine slots). -/
 def CT : Nat := 69
 
+/-- Store the registers `rs` in consecutive words from `d`. -/
+def stAll : List Reg → Nat → List Instr
+  | [], _ => []
+  | r :: rs, d => st r d :: stAll rs (d + 8)
+
+/-- Load the registers `rs` from consecutive words from `d`. -/
+def ldAll : List Reg → Nat → List Instr
+  | [], _ => []
+  | r :: rs, d => ld r d :: ldAll rs (d + 8)
+
 /-- A curve as the code has it: `n` words, its parameters, the fixed-base
 comb's tables for `G` (`tbl[j][k - 1]` is `[k 2^(7j)]G`, affine, for
 `j < combJ n` and `k = 1 … 64`) and starting point `[64 Σ_j 2^(7j)]G`, and
@@ -175,7 +185,10 @@ def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 def rcbSlots : RcbSlots := ⟨c.sl AP, c.sl BM, c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5⟩
 
 /-- The complete additions' function, if any: its name and where it reads
-`b` (`EM`'s slot, `PointOps.Curve.bAt`, which no addition overlaps in time). -/
+`b` (`EM`'s slot, `PointOps.Curve.bAt`). The signature and the public key
+copy `b` there once, before the comb (`combP`): `EM` is free until the
+signature computes `e mod n` there, after the comb. ECDH's constant `b`
+(`BP`) is already there. -/
 def padd : Option (String × Nat) := c.pointOps.map fun C => (C.projAddApi.name, c.sl EM)
 
 /-- `vg_<curve>_proj_add`: `D = R + T` by Algorithm 4, `b` at `EM`'s slot. -/
@@ -204,6 +217,13 @@ def combCfg : TCombCfg where
   J := combJ c.n
   start := (c.mont c.start.1, c.mont c.start.2)
   one := c.mont 1
+
+/-- The signature's and the public key's comb: for calls of the complete
+additions' function, `b` copied to where it reads it first. -/
+def combP : Prog isa :=
+  match c.padd with
+  | none => TCombCfg.comb c.combCfg false none
+  | some (name, bAt) => .seq (.block (copy c.n bAt (c.sl BM))) (TCombCfg.comb c.combCfg false (some (name, bAt)))
 
 /-- The comb's tables, in memory (`Artifact.consts`). -/
 def combWords : List (BitVec 64) := tcombWords c.n c.R c.C.p c.tbl
@@ -255,14 +275,25 @@ def powN : Weierstrass.ChainCfg :=
 def pPowI : Prog isa := InvCfg.inv c.invP
 def nPowI : Prog isa := if c.fastN then InvCfg.inv c.invN else ChainCfg.pow c.powN
 
-/-- Where `vg_<curve>_inv_mod_p` and `_n` keep `x19`, which the powers
-change: past the powers' working slots, in the functions' working area. -/
+/-- Where `vg_<curve>_inv_mod_p` and `_n` keep `x19` and `invRegs`, which
+the powers change: past the powers' working slots, in the functions' working
+area. -/
 def invSave : Nat := c.invTbl + 9 * (8 * c.n)
 
-/-- `vg_<curve>_inv_mod_p` or `_n`: the power `body` between saving `x19` and
-restoring it. -/
+/-- The callee-saved registers but `x19` that the powers change: those of
+nine-word products (`x21`–`x25`). -/
+def invRegs : List Reg := if c.n = 9 then [.x21, .x22, .x23, .x24, .x25] else []
+
+/-- `x19` and `invRegs`, kept in consecutive words from `invSave`. -/
+def invKept : List Reg := .x19 :: c.invRegs
+
+/-- The bytes where the functions keep the registers. -/
+def invSaveLen : Nat := 8 * c.invKept.length
+
+/-- `vg_<curve>_inv_mod_p` or `_n`: the power `body` between saving `x19`
+and `invRegs` and restoring them. -/
 def invFn (body : Prog isa) : Prog isa :=
-  .seq (.block [st .x19 c.invSave]) (.seq body (.block [ld .x19 c.invSave]))
+  .seq (.block (stAll c.invKept c.invSave)) (.seq body (.block (ldAll c.invKept c.invSave)))
 
 /-- A call of the function `name`, whose code is `fn`: `x30`, which the call
 changes, kept in `v29`, which the function does not write. -/
@@ -383,7 +414,7 @@ def signWith (comb : Prog isa) : Prog isa :=
   .seq c.nPow c.scalar
 
 /-- Signing with the original complete-addition comb. -/
-def sign : Prog isa := c.signWith (TCombCfg.comb c.combCfg false c.padd)
+def sign : Prog isa := c.signWith c.combP
 
 end Cfg
 

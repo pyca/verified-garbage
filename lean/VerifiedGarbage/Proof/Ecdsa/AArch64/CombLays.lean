@@ -212,6 +212,35 @@ theorem sv_unch_tcomb {base : Addr} {m m' : Mem} (hu : Unch base (tcombW c.combC
   rw [tcombW_eq] at hu
   exact sv_unch hu h7 hn hi (apart_append (apart_slW hl) (apart_zw hi))
 
+/-- What the signature's comb (`Cfg.combP`) writes: the comb's ranges, and
+`EM`'s slot, where it may copy `b`. -/
+def combPW (c : Cfg) : List (Nat × Nat) := tcombW c.combCfg ++ slW c [EM]
+
+theorem fixedOk_combPW : FixedOk c (combPW c) := fixedOk_tcombW.append (fixedOk_slW (by decide))
+
+/-- The flag word apart from what the signature's comb writes. -/
+theorem flag_unch_combP {base : Addr} {m m' : Mem} (hu : Unch base (combPW c) m m')
+    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) :
+    word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
+  have hF := sl_le c h7 (i := FLAG) (by decide)
+  rw [combPW, tcombW_eq] at hu
+  refine hu.word (fun w hw => ?_) (by omega_arith)
+  rcases apart_append (apart_append (apart_slW (c := c) (i := FLAG) (by decide))
+    (apart_zw (c := c) (i := FLAG) (by decide))) (apart_slW (c := c) (i := FLAG) (l := [EM]) (by decide))
+    w hw with h | h
+  · exact Or.inl (by omega_arith)
+  · exact Or.inr h
+
+/-- A slot apart from what the signature's comb writes. -/
+theorem sv_unch_combP {base : Addr} {m m' : Mem} (hu : Unch base (combPW c) m m')
+    (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45)
+    (hl : i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM]) :
+    wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n := by
+  rw [combPW, tcombW_eq] at hu
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hl
+  exact sv_unch hu h7 hn hi (apart_append (apart_append (apart_slW (by simp [hl]))
+    (apart_zw hi)) (apart_slW (l := [EM]) (by simp [hl])))
+
 theorem combClob_regs : ∀ n < 10, Reg.x0 ∉ combClob n ∧ Reg.x20 ∉ combClob n := by
   unfold combClob maskRegs clob acc; decide
 

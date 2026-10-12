@@ -56,7 +56,7 @@ theorem jointMulWindow_relCT {c : Joint.Cfg} {C : Curve} {double : Prog isa} {ba
     (hOne : c.K.one<C.p) (hOneVal : toM C.p (2^(64*c.K.M.n)) c.K.one=1)
     (hG : onCurve C G=true) (hQ : onCurve C Q=true)
     (hc : JointCachedChecks c) (hf : JointFixedChecks c)
-    (ht : NafTableChecks c.K) (hcache : ScratchCT (Naf.cacheTable c.K.M c.K.tbl c.cache 8).inline)
+    (ht : NafTableChecks c.K) (hcache : ScratchCT (Joint.cacheCode c).inline)
     (hseed : ScratchCT (.block (Jacobian.infinity c.K c.K.R)))
     (hctr : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top c)))]))
     (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) :
@@ -137,7 +137,7 @@ theorem jointMul_relCT {C : Curve} {c : Joint.Cfg} {double : Prog isa} {base T :
     (hp : InvJ C (E c.K.P.x) (E c.K.P.y) (E c.K.P.z) Q) (hz : E c.K.zero=0)
     (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n))
     (hc : JointCachedChecks c) (hf : JointFixedChecks c)
-    (ht : NafTableChecks c.K) (hcache : ScratchCT (Naf.cacheTable c.K.M c.K.tbl c.cache 8).inline)
+    (ht : NafTableChecks c.K) (hcache : ScratchCT (Joint.cacheCode c).inline)
     (hseed : ScratchCT (.block (Jacobian.infinity c.K c.K.R)))
     (hctr : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (Joint.top c)))]))
     (hcG : FastPrepChecks c.K.M.n srcU c.gBits 7) (hcQ : FastPrepChecks c.K.M.n srcV c.K.bits 5) :

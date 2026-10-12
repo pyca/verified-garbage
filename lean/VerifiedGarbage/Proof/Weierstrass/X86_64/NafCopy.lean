@@ -139,6 +139,16 @@ theorem nafCopyPiecesAt_ok {base : Addr} {size a o L : Nat} {p : Nat → Nat} {s
         · exact Or.inr (by have := Nat.not_lt.mp (fun h' => hc ⟨h,h'⟩); omega_arith)
       rw [ot.word ho' (by omega_arith),eu k ⟨i,hi',hk⟩]
 
+/-- `w` words from word `d` on, each of them covered by a copied piece. -/
+theorem nafCopyAt_wordsAt {mem mem' : Mem} {base : Addr} {m a o d w : Nat} {p : Nat → Nat}
+    (h : ∀ k,(∃ i<m,p i≤8*k ∧ 8*k<p i+16) → word mem' base (o+8*k)=word mem base (a+8*k))
+    (hc : ∀ k,d≤k → k<d+w → ∃ i<m,p i≤8*k ∧ 8*k<p i+16) :
+    wordsVal mem' base (o+8*d) w=wordsVal mem base (a+8*d) w := by
+  apply words_eq_of_words
+  intro i hi
+  rw [show o+8*d+8*i=o+8*(d+i) from by omega_arith,show a+8*d+8*i=a+8*(d+i) from by omega_arith]
+  exact h _ (hc _ (by omega_arith) (by omega_arith))
+
 /-- The pieces of a Jacobian entry of `n` words (`Naf.pieceOff`) are words
 of the entry. -/
 theorem pieceOff_ok {n : Nat} (hn : 0<n) (i : Nat) :

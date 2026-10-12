@@ -101,6 +101,9 @@ pub(crate) mod consts;
 pub(crate) mod ct;
 
 #[rustfmt::skip]
+pub(crate) mod dsa;
+
+#[rustfmt::skip]
 pub(crate) mod ec_p192;
 
 #[rustfmt::skip]
@@ -186,6 +189,9 @@ pub(crate) mod ed448;
 
 #[rustfmt::skip]
 pub(crate) mod ed448_r64;
+
+#[rustfmt::skip]
+pub(crate) mod ffdh;
 
 #[rustfmt::skip]
 pub(crate) mod gcm;

@@ -162,7 +162,7 @@ theorem adv_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hge : 512 ≤ eL s₀ 
   have hL := eL_lt s₀
   have c₁ : (Avx2.stR (est s₀)).Contains (Xor.off (est s₀) 48) 4 := contains_off (by omega_arith) (by omega_arith)
   have i₁ : InRegions (s.rd ++ s.wr) (Xor.off (est s₀) 48) 4 :=
-    ⟨Avx2.stR (est s₀), by simp [hrd, hwr, hp.rd, hp.wr], c₁⟩
+    ⟨Avx2.stR (est s₀), by simp [hrd, hwr, hp.wr], c₁⟩
   have o₁ : InRegions s.wr (Xor.off (est s₀) 48) 4 := ⟨Avx2.stR (est s₀), by simp [hwr, hp.wr], c₁⟩
   simp only [Xor.off] at i₁ o₁
   apply WP.of_runBlock
@@ -325,7 +325,7 @@ theorem fromBuf_ok {s₀ : State} (hp : APre s₀) {p n : Nat} (hn : p + n = eL 
   have hdb : (win s₀ p n).Disjoint ⟨ebp s₀, n⟩ := (hp.d_b.sub_left (win_sub (by omega_arith))).sub_right sb
   refine WP.mono (XorBuf.xorBuf_ok (by decide) (by decide) hrsi hr9 hrdx (by omega_arith) hdb
     ⟨edR s₀, by simp [hwr, hp.wr], Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-    ⟨Avx2.bufR (ebp s₀), by simp [hrd, hwr, hp.rd, hp.wr], by
+    ⟨Avx2.bufR (ebp s₀), by simp [hrd, hwr, hp.wr], by
       simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; omega_arith⟩)
     fun s' hq => ⟨?_, fun r hr => ?_, hq.rd.trans hrd, hq.wr.trans hwr, fun k hk => ?_, ?_⟩
   · rw [hq.keep _ (by decide) (by decide) (by decide), hr9]
@@ -571,7 +571,6 @@ theorem scalarT_ok {s₀ : State} (hp : APre s₀) {p : Nat} {s : State} (h : SI
   have hne : ∀ r : Reg, r ≠ .rsp → s₁.callEntry.gpr r = s₁.gpr r := fun r h => State.callEntry_gpr _ h
   have hn : (BitVec.ofNat 64 (eL s₀ - p)).toNat = eL s₀ - p := toNat_ofNat_lt (by omega_arith)
   have hwr : s₁.wr = frR s₀ := by rw [wr₁, h.wr, hp.wr]
-  have hrd : s₁.rd = [] := by rw [rd₁, h.rd, hp.rd]
   have ts := pR_sub (s₀ := s₀) hle
   refine WP.seq (WP.mono (Q := fun (s₂ : State) => s₂.gpr .rsi = ebp s₀ ∧ (∀ r ∈ calleeSaved, s₂.gpr r = s₀.gpr r) ∧
       s₂.rd = s₀.rd ∧ s₂.wr = s₀.wr ∧
@@ -590,7 +589,7 @@ theorem scalarT_ok {s₀ : State} (hp : APre s₀) {p : Nat} {s : State} (h : SI
         hp.stk_b.sub_left (Avx2.stk_ret s₀), hp.stk_st.sub_left (Avx2.stk_stk s₀),
         (hp.stk_d.sub_left (Avx2.stk_stk s₀)).sub_right ts, hp.stk_b.sub_left (Avx2.stk_stk s₀),
         by have := hp.nowrap; bv_omega⟩
-    · rw [hrd, hwr]
+    · rw [hwr]
       refine Covers.of_sub fun r hr => ?_
       simp only [List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl

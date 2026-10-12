@@ -83,9 +83,12 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
     intro i hi
     rw [wr₂, ptr₂, hwr]
     exact ⟨⟨addr32 (arg s 3), 128⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+  have lanes₂ : InRegions s₂.wr (addr32 (s₂.gpr .edi)) 16 := by
+    rw [wr₂, ptr₂, hwr]
+    exact ⟨⟨addr32 (arg s 3), 128⟩, by simp, by simp [Region.Contains]⟩
   apply WP.seq
   apply WP.mono (expandCopyFill_ok s₂ (arg s 1).toNat ht ht' (by rw [key₂]; exact keyFit) (by rw [ptr₂]; exact outFit)
-    (by simpa using len₂) zero₂ read₂ write₂ (by rw [key₂, ptr₂]; exact keyOut))
+    (by simpa using len₂) zero₂ read₂ write₂ lanes₂ (by rw [key₂, ptr₂]; exact keyOut))
   intro s₃ h₃
   apply WP.seq
   have write₃ : ∀ i < 128, InRegions s₃.wr (addr32 (s₃.gpr .edi) + BitVec.ofNat 64 i) 1 := by
@@ -100,7 +103,7 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
     (by rw [h₃.1.reg .edi (by decide), ptr₂]; exact outFit)
     (argRead s₃ (h₃.1.rd.trans rd₂) (h₃.1.wr.trans wr₂) sp₃ 2 (by decide))
     (by simpa only [arg, argAddr, Nat.reduceMul, Nat.reduceAdd, BitVec.ofNat_toNat, BitVec.setWidth_eq, addr32, BitVec.ofNat_eq_ofNat] using args₃ 2 (by decide))
-    write₃ (by rw [h₃.1.reg .edi (by decide)]; exact h₃.2))
+    write₃ (by rw [h₃.1.wr, h₃.1.reg .edi (by decide)]; exact lanes₂) (by rw [h₃.1.reg .edi (by decide)]; exact h₃.2))
   intro s₄ h₄
   have core := (CoreFrame.of_key h₃.1).trans h₄.1
   have outFrame : Frame [⟨addr32 (arg s 3), 128⟩] s₂.mem s₄.mem := by

@@ -115,7 +115,7 @@ theorem omB_rel (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
   · refine rel_seq (rel_taint [.x19] (by rw [mo₁.env.sp, mo₂.env.sp]) (by agree_tac [mo₁.env.x19, mo₂.env.x19])
       ⟨_, by taint_decide⟩) (ocLdr_ok mo₁.env mo₁.sD mo₁.sN) (ocLdr_ok mo₂.env mo₂.sD mo₂.sN)
       fun c₁ c₂ h₁ h₂ => ?_
-    exact crypt_rel L v (oc_in hR mo₁ h₁) (oc_in hR mo₂ h₂)
+    exact cryptAl_rel L v (oc_in hR mo₁ h₁) (oc_in hR mo₂ h₂) rfl
 
 theorem open_ct (v : GcmImpl) : ConstantTime isa openAArch64.pre openAArch64.pub («open» v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_

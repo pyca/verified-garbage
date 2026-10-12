@@ -126,6 +126,10 @@ GROUPS = {
         "lib": ["cpu"],
         "tests": [],
     },
+    "dsa": {
+        "lib": ["dsa"],
+        "tests": ["cavp::dsa", "wycheproof::dsa"],
+    },
     "ecdsa": {
         "lib": ["ecdsa"],
         "tests": [
@@ -221,6 +225,10 @@ GROUPS = {
     "rfc9106": {
         "lib": [],
         "tests": ["rfc9106::rfc9106_vectors", "rfc9106::rfc9106_verify_keyed"],
+    },
+    "ffdh": {
+        "lib": ["ffdh"],
+        "tests": ["cavp::ffdh"],
     },
     "rsa": {
         "lib": ["rsa", "rsa_keygen", "rsa_oaep", "rsa_pkcs1_enc", "rsa_pkcs1_sig", "rsa_pss"],

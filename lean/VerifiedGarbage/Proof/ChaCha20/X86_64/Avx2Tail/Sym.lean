@@ -28,6 +28,7 @@ def T.eval (D : Nat) (s₀ : State) : T → Word
   | .mem b i => s₀.mem.readW ((regn D s₀ b).base + BitVec.ofNat 64 (4 * i)) 32
   | .add a b => T.eval D s₀ a + T.eval D s₀ b
   | .xor a b => T.eval D s₀ a ^^^ T.eval D s₀ b
+  | .inp _ => 0
 
 /-- Lane `j` of `vperm2i128 a, b, n`, without zeroing: lane `k % 2` of `a`
 or of `b`, `k` the two bits of `n` for `j`. -/

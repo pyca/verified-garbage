@@ -49,6 +49,7 @@ mod chacha20;
 mod chacha20poly1305;
 mod cmac_aes;
 mod cmac_triple_des;
+mod dsa;
 mod ecdh_p192;
 mod ecdh_p224;
 mod ecdh_p256;
@@ -63,6 +64,7 @@ mod ecdsa_p521;
 mod ecdsa_secp256k1;
 mod ed25519;
 mod ed448;
+mod ffdh;
 mod hmac_md5;
 mod hmac_sha1;
 mod hmac_sha224;
@@ -413,6 +415,7 @@ const BENCHES: &[Bench] = &[
     (rc2_cbc::USES, rc2_cbc::bench),
     (rc4::USES, rc4::bench),
     (rsa::USES, rsa::bench),
+    (ffdh::USES, ffdh::bench),
     (rsa_keygen::USES, rsa_keygen::bench),
     (rsa_oaep::USES, rsa_oaep::bench),
     (rsa_pkcs1_enc::USES, rsa_pkcs1_enc::bench),
@@ -451,6 +454,7 @@ const BENCHES: &[Bench] = &[
     (ecdsa_p192::USES, ecdsa_p192::bench),
     (ecdsa_p224::USES, ecdsa_p224::bench),
     (ecdsa_secp256k1::USES, ecdsa_secp256k1::bench),
+    (dsa::USES, dsa::bench),
     (ecdsa_p256::USES, ecdsa_p256::bench),
     (ecdsa_p384::USES, ecdsa_p384::bench),
     (ecdsa_p521::USES, ecdsa_p521::bench),
