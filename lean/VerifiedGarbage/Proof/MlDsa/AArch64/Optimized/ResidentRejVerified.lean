@@ -151,16 +151,16 @@ section
 namespace VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 open VG VG.AArch64
 
-def firstChecks : SegmentChecks 168 := ⟨_,by taint_decide⟩
-def secondChecks : SegmentChecks 112 := ⟨_,by taint_decide⟩
-def lastChecks : SegmentChecks 56 := ⟨_,by taint_decide⟩
+def firstChecks : SegmentChecks 168 := by apply SegmentChecks.mk; taint_decide
+def secondChecks : SegmentChecks 112 := by apply SegmentChecks.mk; taint_decide
+def lastChecks : SegmentChecks 56 := by apply SegmentChecks.mk; taint_decide
 
-def firstInit4 : InitCheck 0 4 := ⟨_,by taint_decide⟩
-def secondInit4 : InitCheck 504 4 := ⟨_,by taint_decide⟩
-def lastInit4 : InitCheck 840 4 := ⟨_,by taint_decide⟩
-def firstInit2 : InitCheck 0 2 := ⟨_,by taint_decide⟩
-def secondInit2 : InitCheck 504 2 := ⟨_,by taint_decide⟩
-def lastInit2 : InitCheck 840 2 := ⟨_,by taint_decide⟩
+def firstInit4 : InitCheck 0 4 := by apply InitCheck.mk; taint_decide
+def secondInit4 : InitCheck 504 4 := by apply InitCheck.mk; taint_decide
+def lastInit4 : InitCheck 840 4 := by apply InitCheck.mk; taint_decide
+def firstInit2 : InitCheck 0 2 := by apply InitCheck.mk; taint_decide
+def secondInit2 : InitCheck 504 2 := by apply InitCheck.mk; taint_decide
+def lastInit2 : InitCheck 840 2 := by apply InitCheck.mk; taint_decide
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 
