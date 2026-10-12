@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Tail
-import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Tail
+public import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: the results, against `keyOp`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
 What the zeros (`outsRes_zeros`) and `keyPart` (`outsRes_tail`) leave is
 `keyOp`'s status and outputs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Poly1305.Arm.Steps
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Spec.Poly1305.Contract
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Poly1305.Scratch
+module
+
+public import VerifiedGarbage.Proof.Poly1305.Arm.Steps
+meta import VerifiedGarbage.Proof.Poly1305.Arm.Steps
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Spec.Poly1305.Contract
+meta import VerifiedGarbage.Spec.Poly1305.Contract
+public import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Poly1305.Scratch
+meta import VerifiedGarbage.Proof.Poly1305.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on 32-bit ARM: `update`
@@ -18,6 +31,8 @@ absorbed (`buf_ok`), then the whole blocks of the rest of the data
 data are copied into the buffer (`rest_ok`). Throughout (`UC`), only the
 state's working space, the buffer, the accumulator and `scratch` change.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.Arm.Update
 

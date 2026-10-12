@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.Inv
-import VerifiedGarbage.Impl.Rsa.AArch64.Recover
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.Inv
+public import VerifiedGarbage.Impl.Rsa.AArch64.Recover
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: the working space
@@ -9,6 +15,8 @@ the mask, the candidate's number, `R² mod n`'s counter, `t`, and the loops'
 counters and masks), which keep the working space (`Ws.congrR`,
 `Ws.congrG`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

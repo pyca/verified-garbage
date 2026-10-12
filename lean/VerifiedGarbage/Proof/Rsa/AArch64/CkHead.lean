@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CvHead
-import VerifiedGarbage.Proof.Rsa.AArch64.CkPieces
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvHead
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkPieces
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on AArch64: the header
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.CkPieces
 `w = ⌈k / 8⌉`: `W`, the arrays' bases, the stride and the mask all ones
 (`ckHead_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

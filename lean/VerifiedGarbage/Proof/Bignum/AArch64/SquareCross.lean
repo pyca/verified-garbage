@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareCrossRow
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareZero
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCrossRow
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareZero
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Triangular rows form the exact off-diagonal part of the square. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.AArch64.Square
 open VG VG.AArch64 VG.Impl.Bignum.AArch64 VG.Proof.Bignum
 open VG.Proof.Bignum.AArch64

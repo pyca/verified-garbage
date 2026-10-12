@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MdStream.Arm.Finalize
-import VerifiedGarbage.Proof.MdStream.Arm.Words
-import VerifiedGarbage.Proof.Sha512.Arm.Stream.Update
+module
+
+public import VerifiedGarbage.Proof.MdStream.Arm.Finalize
+meta import VerifiedGarbage.Proof.MdStream.Arm.Finalize
+public import VerifiedGarbage.Proof.MdStream.Arm.Words
+meta import VerifiedGarbage.Proof.MdStream.Arm.Words
+public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Update
+meta import VerifiedGarbage.Proof.Sha512.Arm.Stream.Update
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-512 on ARMv7: `finalize`
@@ -11,6 +20,8 @@ SHA-512 family's instance (`Proof/Sha512/Md.lean`), given what the family's
 own pieces do: its length field and digest (`shape`), that its compression
 function is verified (`callee`), and that the taint analysis accepts its code.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.Arm.Stream.Finalize
 

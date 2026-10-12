@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTR2c
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
-import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTR2c
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTR2c
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
+public import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: constant time of `montSetup`
@@ -12,6 +21,8 @@ for runs that agree on the working space (`montSetup_ct`). Between the
 pieces each run keeps `Ws`, `c` (with its top bit set), `-c⁻¹` and the
 number 1 (`MSb`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

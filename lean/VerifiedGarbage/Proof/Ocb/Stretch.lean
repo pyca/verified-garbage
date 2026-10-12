@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ocb.Spec
+module
+
+public import VerifiedGarbage.Proof.Ocb.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # OCB: `Offset_0` in 64-bit words
@@ -11,6 +17,8 @@ each kept or not by a mask from a bit of `bottom` (`sel_mask`), on three
 words (`shl3`, with `ror_mask`), so that `Offset_0` is the top 128 bits
 (`offset_shl`, `shl_stages`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ocb
 

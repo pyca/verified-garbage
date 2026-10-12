@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivCall
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the call of the CRT
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.PrivCall
 From `CrtArgs`, the CRT reads `n`, the input, the private key and its stack
 arguments at `B`, and writes `M` and `scratch` (`crt_call`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MdStream.Spec
+module
+
+public import VerifiedGarbage.Proof.MdStream.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Padding a message of secret length
@@ -11,6 +17,8 @@ block `⌊(ℓ + L) / B⌋`. `padded` is what the buffer then holds, and it is
 the padded message `Md.pad` over its first `⌊(ℓ + L) / B⌋ + 1` blocks
 (`pad_length`, `pad_getD`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss
 

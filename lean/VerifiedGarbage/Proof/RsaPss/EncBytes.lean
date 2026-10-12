@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaPss.Encoding
-import VerifiedGarbage.Proof.RsaPss.Params
-import VerifiedGarbage.Proof.RsaPss.CtPad
+module
+
+public import VerifiedGarbage.Proof.RsaPss.Encoding
+public import VerifiedGarbage.Proof.RsaPss.Params
+public import VerifiedGarbage.Proof.RsaPss.CtPad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # EMSA-PSS: the encoding, a byte at a time
@@ -10,6 +16,8 @@ For a modulus `n₀ ‖ rest` (`n₀ ≠ 0`, so `k - emLen` is `lo = [n₀ = 1]`
 `maskedDB` (`DB ⊕ mask`, its first byte ANDed with `0xFF >>> z`), `H` and
 `0xbc`, byte by byte as the implementations write them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss
 

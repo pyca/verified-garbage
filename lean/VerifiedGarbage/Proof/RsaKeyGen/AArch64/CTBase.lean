@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KMain
-import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
-import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KMain
+public import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
+public import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: constant time, the public data and the stages
@@ -13,6 +19,8 @@ public data `q : FPub` (the layout, the arguments, `e`'s octets, `p`'s and
 `loadC`; `KSt q`: between the stages, with the candidate in `aN`; `TS q`:
 before `montSetup`, when the schedule goes on to Miller–Rabin.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

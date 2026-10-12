@@ -1,9 +1,23 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Rc2.Contract
-import VerifiedGarbage.Proof.Rc2.X86_64.KeyLoop
-import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Steps
-import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Lit
-import VerifiedGarbage.Proof.Rc2.X86_64.ConstantTime
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Rc2.Contract
+meta import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.X86_64.KeyLoop
+meta import VerifiedGarbage.Proof.Rc2.X86_64.KeyLoop
+public import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Steps
+meta import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Steps
+public import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Lit
+meta import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Lit
+public import VerifiedGarbage.Proof.Rc2.X86_64.ConstantTime
+meta import VerifiedGarbage.Proof.Rc2.X86_64.ConstantTime
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

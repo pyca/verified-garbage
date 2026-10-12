@@ -1,6 +1,16 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareCT
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The size dispatch reads only the public width and preserves the header. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.AArch64.Square
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public VG.Proof.Bignum
 open VG.Proof.Bignum.AArch64

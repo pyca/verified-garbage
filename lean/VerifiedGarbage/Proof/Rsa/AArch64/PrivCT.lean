@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivCorrect
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCorrect
+meta import VerifiedGarbage.Proof.Rsa.AArch64.PrivCorrect
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on AArch64: constant time
@@ -14,6 +23,8 @@ each call is of constant-time code whose public data agree (`RelCT.call`):
 `n` and `e`, and `n`'s values, which are a function of `n`. The frames leak
 only `sp`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

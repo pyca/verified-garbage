@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PdChecked
-import VerifiedGarbage.Proof.Bignum.AArch64.PubCT
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PdChecked
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_checked` on AArch64
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PubCT
 on the registers with the checked postcondition (`pubChkContract`), and from
 there against the shared contract (`publicChecked_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Loop
-import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Loop
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Loop
+public import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Decryption's groups of eight blocks
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Loop
 blocks, leaves the chaining value updated and `x24` the blocks left.
 `phaseLoop_ok`: it and the loop over the blocks left, as the loop alone.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Cbc
 

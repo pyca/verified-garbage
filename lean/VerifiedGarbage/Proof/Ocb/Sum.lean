@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ocb.Spec
+module
+
+public import VerifiedGarbage.Proof.Ocb.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # OCB: the sum of `HASH` a chunk at a time
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `Sum_{j+c}` is `Sum_j` with
 the `c` enciphered blocks after block `j` added (`hsum_add`); a checksum of
 blocks is the spec's when the blocks are (`ckOf_eq`, `ckOf_dck`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ocb
 

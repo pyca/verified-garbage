@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
-import VerifiedGarbage.Proof.Rsa.AArch64.CkPieces
-import VerifiedGarbage.Proof.Rsa.AArch64.Inv
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkPieces
+public import VerifiedGarbage.Proof.Rsa.AArch64.Inv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: the pieces
@@ -9,6 +15,8 @@ The routines the code is made of, from `KS`: what each leaves in the arrays
 (`av`, the low `W` words of one) and in the registers, and the parts it
 changes (`KF`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

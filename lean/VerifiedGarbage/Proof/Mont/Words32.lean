@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Mont.Words
-import VerifiedGarbage.Proof.Rc2.PairMem
+module
+
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.Rc2.PairMem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Numbers as 32-bit words, on any target
@@ -10,6 +16,8 @@ and the same number, as `k / 2` 64-bit words (`wordsVal_eq_val32`), in which
 the other targets and the target-independent proofs state them. Their
 stores, and memory that changed only in some ranges (`Outs`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Rsa
+module
+
+public import VerifiedGarbage.Spec.Rsa
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # OS2IP and I2OSP are inverse
@@ -7,6 +13,8 @@ For the octet strings of a fixed length `k` and the integers below
 `256^k`: `i2osp_os2ip` and `os2ip_i2osp`, so `i2osp x k = em` exactly when
 `x = os2ip em` (`i2osp_eq_iff`). And `powMod` is below its modulus.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig
 

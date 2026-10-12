@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: the ends after Miller–Rabin
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
 `finPrime_ok`: `kUsed` to `used`, `c` to `out`, status 1. `mrResult_ok`:
 the end from `kStat`, as `TestEnd` of the primality test's result.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

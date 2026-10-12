@@ -1,7 +1,18 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareGuard
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
+meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareGuard
+meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareGuard
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The optimized implementation satisfies the unchanged Montgomery interface. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.AArch64.Square
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public VG.Proof.Bignum
 open VG.Proof.Bignum.AArch64

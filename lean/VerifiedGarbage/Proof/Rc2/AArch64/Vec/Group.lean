@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Store
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Store
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One group of eight blocks
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Store
 ciphertext block before it (the chaining value in `x11` before the first),
 in place; the last ciphertext block into `x11`, and `x1` and `x10` advanced.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Vec
 

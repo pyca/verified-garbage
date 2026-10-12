@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precomputed` on AArch64: correctness
@@ -7,6 +13,8 @@ The entry (`pdEntry_ok`), and the whole function without the check of `e`
 (`pdCode_correct`), against `pdContract`, which states the shared contract's
 precondition on the registers and the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

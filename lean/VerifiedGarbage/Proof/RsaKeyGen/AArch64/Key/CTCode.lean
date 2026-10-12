@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTSmall
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTTail
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTFront
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTSmall
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTTail
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTFront
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_keygen_key` on AArch64: constant time
@@ -11,6 +17,8 @@ small `d`, and the branch on it (`branch_ct`: status 2, the leak's), to the
 zeros or to the key and its outputs (`keyCode_ct`); hence the contract's
 `ConstantTime` (`keyCode_constantTime`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

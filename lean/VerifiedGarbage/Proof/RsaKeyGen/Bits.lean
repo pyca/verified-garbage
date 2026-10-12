@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.Words
-import VerifiedGarbage.Spec.RsaKeyGen
+module
+
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Spec.RsaKeyGen
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bits of multiword numbers
@@ -8,6 +14,8 @@ import VerifiedGarbage.Spec.RsaKeyGen
 `i / 64`. So setting the low bit of the low word and the two top bits of the
 top word makes the number `RsaKeyGen.candidate` (`wv_candidate`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen
 

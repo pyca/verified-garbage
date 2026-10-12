@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
-import VerifiedGarbage.Proof.Rc2.X86.KeyLit
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Rc2.X86.Stream.Contract
-import VerifiedGarbage.Proof.Rc2.PairMem
-import VerifiedGarbage.Proof.Rc2.CbcMemory
+module
+
+public import VerifiedGarbage.Proof.Rc2.X86.KeyCorrect
+public import VerifiedGarbage.Proof.Rc2.X86.KeyLit
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Rc2.X86.Stream.Contract
+public import VerifiedGarbage.Proof.Rc2.PairMem
+public import VerifiedGarbage.Proof.Rc2.CbcMemory
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

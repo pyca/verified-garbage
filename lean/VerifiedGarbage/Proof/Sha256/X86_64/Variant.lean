@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
-import VerifiedGarbage.Proof.Framework.X86_64.Depth
+module
+
+public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of the SHA-256 compression function on x86-64
@@ -11,6 +17,8 @@ SHA-256 a variant of the interface `MdHash` on x86-64
 and each function built on it (in `Generic/MdHash/X86_64/`) is emitted once
 for each of them (see `TCB/Emit.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.X86_64
 

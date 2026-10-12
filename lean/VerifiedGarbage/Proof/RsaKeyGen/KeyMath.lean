@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Rsa.KeyMath
-import VerifiedGarbage.Proof.Rsa.Octets
-import VerifiedGarbage.Spec.RsaKeyGen
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Rsa.KeyMath
+public import VerifiedGarbage.Proof.Rsa.Octets
+public import VerifiedGarbage.Spec.RsaKeyGen
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes: the arithmetic
@@ -18,6 +24,8 @@ What `vg_rsa_keygen_key`'s steps compute:
   an even one (`inverse_zero`, `inverse_one`, `inverse_odd`,
   `inverse_even`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen
 
@@ -198,8 +206,8 @@ theorem inverse_mod_zero (a : Nat) : Spec.Rsa.inverse a 0 = if a = 1 then some 1
   · subst h
     unfold Spec.Rsa.inverse
     rw [Spec.Rsa.xgcd]
-    simp only [Nat.mod_zero, Nat.one_ne_zero, ↓reduceIte, Nat.zero_mod, Nat.zero_div, Nat.cast_zero, zero_mul,
-      sub_zero]
+    simp only [Nat.mod_zero, Nat.one_ne_zero, ↓reduceIte, Nat.zero_mod, Nat.zero_div, Int.natCast_zero, Int.zero_mul,
+      Int.sub_zero]
     rw [Spec.Rsa.xgcd]
     simp
   · rw [ite_eq_right h]
@@ -250,7 +258,7 @@ theorem inverse_odd {e L Q R x einv : Nat} (he3 : 3 ≤ e) (he64 : e < 2 ^ 64) (
   -- `1 + R t ≡ 0 (mod e)`.
   have hdv : e ∣ 1 + R * t := by
     have : ((1 + R * t : Nat) : Int) = (e : Int) * R - ((x : Int) * R - 1) := by
-      rw [← ht]; push_cast [Nat.cast_sub (show x ≤ e by omega_arith)]; grind
+      rw [← ht]; push_cast [Int.ofNat_sub (show x ≤ e by omega_arith)]; grind
     have h' : (e : Int) ∣ ((1 + R * t : Nat) : Int) := by
       rw [this]; exact Int.dvd_sub (Int.dvd_mul_right _ _) hx
     exact Int.natCast_dvd_natCast.mp h'

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_sign` on AArch64: the block before `encode`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
 `encArgs_ok`: the registers saved, `k` kept in `x19` and `out` in `x17`,
 and `encode`'s arguments set up (`AtEnc`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64.Sgn
 

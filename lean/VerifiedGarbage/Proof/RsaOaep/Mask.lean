@@ -1,7 +1,13 @@
-import Batteries.Tactic.Init
-import VerifiedGarbage.Proof.Mgf1.Bytes
-import VerifiedGarbage.Spec.RsaOaep
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import Batteries.Tactic.Init
+public import VerifiedGarbage.Proof.Mgf1.Bytes
+public import VerifiedGarbage.Spec.RsaOaep
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP: masking and unmasking `EM`, whatever the target
@@ -14,6 +20,8 @@ of the masked `DB`) is EME-OAEP's encoding (`em_mask`), and `EM` unmasked in
 place (the seed with MGF1 of `maskedDB`, then `maskedDB` with MGF1 of the
 seed) gives the seed and `DB` that `decode` computes (`unmask`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep
 

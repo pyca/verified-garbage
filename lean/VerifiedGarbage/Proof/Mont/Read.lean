@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.Words
+module
+
+public import VerifiedGarbage.Proof.Mont.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Numbers in memory as `Mem.read` reads them
@@ -8,6 +14,8 @@ that of the first `p` bytes plus `2^(8p)` times that of the rest
 (`read_toNat_add`), so the `k` 64-bit words at `base + d` are the `8k` bytes
 there (`read_eq_wordsVal`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont
 

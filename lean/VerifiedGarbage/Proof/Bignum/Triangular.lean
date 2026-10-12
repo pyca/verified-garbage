@@ -1,4 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.Square
+module
+
+public import VerifiedGarbage.Proof.Bignum.Square
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.Triangular
 open VG.Proof.Bignum.Square
