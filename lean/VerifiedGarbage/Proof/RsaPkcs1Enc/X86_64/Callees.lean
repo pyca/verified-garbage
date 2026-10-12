@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
-import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncContract
-import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
+public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncContract
+public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The callees of encryption and decryption
@@ -14,6 +20,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 (`privOf`): `privK` is its contract, and it uses its frame and two return
 addresses of stack, since its callees' callees use none.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 

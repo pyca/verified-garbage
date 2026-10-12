@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Sm4.AArch64.Sbox
-import VerifiedGarbage.Proof.Sm4.SboxTable
-import VerifiedGarbage.Proof.Framework.AArch64.Straight
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Aes.Bitsliced
+module
+
+public import VerifiedGarbage.Impl.Sm4.AArch64.Sbox
+public import VerifiedGarbage.Proof.Sm4.SboxTable
+public import VerifiedGarbage.Proof.Framework.AArch64.Straight
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Aes.Bitsliced
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The bitsliced SM4 S-box on AArch64
@@ -14,6 +20,8 @@ with the specification's S-box on the same inputs. `sbox_ok` then gives,
 at every bit position `p`, the S-box of the byte formed by bit `p` of the
 eight words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.AArch64
 

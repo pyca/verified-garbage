@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Seed.X86.Ecb
-import VerifiedGarbage.Proof.Seed.X86.G8
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Impl.Seed.X86.Ecb
+public import VerifiedGarbage.Proof.Seed.X86.G8
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The arrays of 32-bit words in the scratch buffer
@@ -13,6 +19,8 @@ slot `k + b` (`lv`). This file has the slots' loads and stores, and
 `lanes_ok`, which runs a step written for one lane (`lanes8 f`, `f b`
 touching only lane `b` of each array) on all eight.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86
 

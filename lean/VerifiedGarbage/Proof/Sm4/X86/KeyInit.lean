@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sm4.X86.Ecb
-import VerifiedGarbage.Proof.Sm4.Planes
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86.Ecb
+public import VerifiedGarbage.Proof.Sm4.Planes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The start of the SM4 key schedule on x86 (32-bit)
@@ -9,6 +15,8 @@ constants (`constStores_ok`), and `MK ⊕ FK` stored to the eight blocks of
 the tail buffer (`loadKeyWord_ok`), whose words, bitsliced, are the key
 schedule's initial state `keyInit` (`keyInit_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.X86
 

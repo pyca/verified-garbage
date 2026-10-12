@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
-import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: the entry
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
 `kEntry` saves the callee-saved registers and the arguments in the header of
 the scratch space, and leaves its base in `rdi` (`kEntry_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

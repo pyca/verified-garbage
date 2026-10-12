@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Sm4.X86_64.Copy
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.Bitslice.Sym
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86_64.Copy
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4's prologue and epilogue on x86-64
@@ -9,6 +15,8 @@ Saving and restoring the callee-saved registers in their slots
 (`save_ok`, `restore_ok`, by evaluation over names, as AES's), and setting
 the masks of the round keys' planes (`setMasks_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.X86_64
 

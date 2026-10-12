@@ -1,9 +1,15 @@
-import VerifiedGarbage.Impl.TripleDes.X86_64.Bitsliced
-import VerifiedGarbage.Proof.Framework.X86_64.Straight
-import VerifiedGarbage.Proof.Framework.Bitslice.Vars
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Sbox
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Bitsliced
+public import VerifiedGarbage.Proof.Framework.X86_64.Straight
+public import VerifiedGarbage.Proof.Framework.Bitslice.Vars
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Sbox
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The machine state of the bitsliced ECB code
@@ -15,6 +21,8 @@ and scratch slots are checked by evaluation over the variable domain
 (`Bitslice.vars`): `varsRun` runs one, its variables being the scratch
 slots (variable `k < 128`) and some registers (variable `128 + i`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64.Bitsliced
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.Arm.Prologue
+module
+
+public import VerifiedGarbage.Proof.Seed.Arm.Prologue
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A group of blocks of SEED ECB on ARMv7
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Seed.Arm.Prologue
 pointer and the blocks left live in their slots (`ptrSlot`, `cntSlot`) between
 the steps, which use every other register.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.Arm
 

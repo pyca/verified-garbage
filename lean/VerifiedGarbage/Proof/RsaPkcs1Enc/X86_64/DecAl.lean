@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecLoops
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecLoops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the alternative length
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecLoops
 The mask of the candidates, `2^bitLength(k - 11) - 1`, by doublings
 (`maskPart_step`), and `AL` from `CL` without branches (`alPart_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 

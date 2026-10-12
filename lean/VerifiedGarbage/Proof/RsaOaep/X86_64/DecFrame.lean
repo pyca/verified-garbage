@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCtx
-import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
+module
+
+public import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCtx
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on x86-64: the frame and the prologue
@@ -10,6 +16,8 @@ uses (`stkD`), the caller's regions it writes (`out`, `*msg_len`, the
 working space), and the prologue (`decPro_ok`): the argument slots, as
 `decW` says.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

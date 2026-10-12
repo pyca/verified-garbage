@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.X86.Lanes
+module
+
+public import VerifiedGarbage.Proof.Seed.X86.Lanes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The steps of a round, lane by lane
@@ -8,6 +14,8 @@ As on ARMv7 (`Proof/Seed/Arm/Steps.lean`): each step of the round
 then gives it on all eight. The halves `L` and `R` are at `l` and `r`, the
 arrays of `L0`/`R0`, whose second words are 8 slots on.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86
 

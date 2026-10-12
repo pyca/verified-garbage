@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.ModeCore
-import VerifiedGarbage.Proof.TripleDes.CbcScratch
-import VerifiedGarbage.Proof.Modes.Arm.Cbc
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Arm.ModeCore
+meta import VerifiedGarbage.Proof.TripleDes.Arm.ModeCore
+public import VerifiedGarbage.Proof.TripleDes.CbcScratch
+meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
+public import VerifiedGarbage.Proof.Modes.Arm.Cbc
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES-CBC on ARMv7 meets its contracts
@@ -14,6 +24,8 @@ contracts with a scratch buffer of 7 words
 ECB functions use. `cbcEncrypt_framed` and `cbcDecrypt_framed` keep the
 buffer on the stack, zeroed on return: 64 bytes more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.Arm
 

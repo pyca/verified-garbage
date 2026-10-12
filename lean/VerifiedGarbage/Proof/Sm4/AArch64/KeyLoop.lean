@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.AArch64.KeyInit
+module
+
+public import VerifiedGarbage.Proof.Sm4.AArch64.KeyInit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The loop of the SM4 key schedule on AArch64
@@ -8,6 +14,8 @@ puts the state's words in the tail buffer as a block (`fromBs_step`), and
 stores them to the schedule as little-endian words (`extract_ok`): the
 first block's 64-bit words, byte-reversed (`rev`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.AArch64
 

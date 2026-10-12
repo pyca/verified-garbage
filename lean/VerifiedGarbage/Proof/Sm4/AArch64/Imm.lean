@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Aes.AArch64.Linear
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+module
+
+public import VerifiedGarbage.Impl.Aes.AArch64.Linear
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # 64-bit constants on AArch64
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 other halfword that is not zero) leaves `v` in `d` and changes nothing
 else.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.AArch64
 

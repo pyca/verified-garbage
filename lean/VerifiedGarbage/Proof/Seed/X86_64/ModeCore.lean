@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.Seed.X86_64.Ecb
-import VerifiedGarbage.Proof.Modes.X86_64.Core
-import VerifiedGarbage.Proof.Modes.X86_64.Words
-import VerifiedGarbage.Proof.Modes.X86_64.Fb
-import VerifiedGarbage.Proof.Seed.X86_64.Lit
-import VerifiedGarbage.Impl.Seed.X86_64.Modes
-import VerifiedGarbage.Spec.Seed.Cbc
-import VerifiedGarbage.Proof.Seed.ModeBytes
+module
+
+public import VerifiedGarbage.Proof.Seed.X86_64.Ecb
+public import VerifiedGarbage.Proof.Modes.X86_64.Core
+public import VerifiedGarbage.Proof.Modes.X86_64.Words
+public import VerifiedGarbage.Proof.Modes.X86_64.Fb
+public import VerifiedGarbage.Proof.Seed.X86_64.Lit
+public import VerifiedGarbage.Impl.Seed.X86_64.Modes
+public import VerifiedGarbage.Spec.Seed.Cbc
+public import VerifiedGarbage.Proof.Seed.ModeBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SEED's core for the modes on x86-64
@@ -18,6 +24,8 @@ a schedule, its cipher `Spec.Seed.cipher` for encryption and
 core's slots is the schedule and the batch's masks are in their slots.
 `crypt` is a batch (`batch_ok`) on the buffer's sixteen blocks.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.X86_64
 

@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCallee
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
-import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Decrypt
-import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCallee
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
+public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Decrypt
+public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: where everything is
@@ -18,6 +24,8 @@ says of them (`Lay.Ok`). `Ctx` is what holds between the frames' pushes and
 pops once the slots are written, and `Kept` the words in the frames that
 no step changes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Enc.AArch64.Dec
 

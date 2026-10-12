@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Sm3
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Sm3
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM3: the 32-bit ARM contracts
@@ -14,6 +20,8 @@ are those of x86-64 and AArch64 (`Proof/Sm3/X86_64/Contract.lean`,
 `Proof/Sm3/AArch64/Contract.lean`), with the arguments where AAPCS passes
 them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm3
 

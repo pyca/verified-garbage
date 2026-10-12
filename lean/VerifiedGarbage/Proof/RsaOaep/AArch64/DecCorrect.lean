@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecPriv
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecPriv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP decryption on AArch64: correctness
@@ -10,6 +16,8 @@ of `k` (`resK_ok`): zeros to `out` and `*msg_len` if `k` is too small
 `dec_ok`, for every implementation of the hash functions and of
 `vg_rsa_private_checked`, against the shared contract.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64.Dec
 

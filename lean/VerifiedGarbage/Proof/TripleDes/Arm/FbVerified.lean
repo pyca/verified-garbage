@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.TripleDes.Arm.ModeCore
-import VerifiedGarbage.Proof.TripleDes.FbScratch
-import VerifiedGarbage.Proof.Modes.Arm.Cfb8
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-import VerifiedGarbage.Impl.TripleDes.Arm.Fb
-import VerifiedGarbage.Spec.TripleDes.Ofb
-import VerifiedGarbage.Spec.TripleDes.Cfb
-import VerifiedGarbage.Spec.TripleDes.Cfb8
+module
+
+public import VerifiedGarbage.Proof.TripleDes.Arm.ModeCore
+meta import VerifiedGarbage.Proof.TripleDes.Arm.ModeCore
+public import VerifiedGarbage.Proof.TripleDes.FbScratch
+meta import VerifiedGarbage.Proof.TripleDes.FbScratch
+public import VerifiedGarbage.Proof.Modes.Arm.Cfb8
+meta import VerifiedGarbage.Proof.Modes.Arm.Cfb8
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+public import VerifiedGarbage.Impl.TripleDes.Arm.Fb
+meta import VerifiedGarbage.Impl.TripleDes.Arm.Fb
+public import VerifiedGarbage.Spec.TripleDes.Ofb
+meta import VerifiedGarbage.Spec.TripleDes.Ofb
+public import VerifiedGarbage.Spec.TripleDes.Cfb
+meta import VerifiedGarbage.Spec.TripleDes.Cfb
+public import VerifiedGarbage.Spec.TripleDes.Cfb8
+meta import VerifiedGarbage.Spec.TripleDes.Cfb8
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 on ARMv7 meet their contracts
@@ -17,6 +31,8 @@ contracts with a scratch buffer of 7 words (`Proof.TripleDes.fbScratchContract`,
 the `_framed` theorems keep the buffer on the stack, zeroed on return: 64
 bytes more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.Arm
 

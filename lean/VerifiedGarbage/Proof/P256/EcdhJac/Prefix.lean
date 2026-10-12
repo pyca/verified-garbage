@@ -1,9 +1,17 @@
-import VerifiedGarbage.Impl.P256.EcdhJac.Frontend
-import VerifiedGarbage.Proof.P256.EcdhJac.Setup
-import VerifiedGarbage.Proof.Ecdh.AArch64.Prefix
-import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
+module
+
+public import VerifiedGarbage.Impl.P256.EcdhJac.Frontend
+public import VerifiedGarbage.Proof.P256.EcdhJac.Setup
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Prefix
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+public import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.EcdhJac.Frontend
 open VG.Proof.Ecdh.AArch64

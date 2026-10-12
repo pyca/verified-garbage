@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.P256.EcdhInverse.Loop
-import VerifiedGarbage.Proof.P256.EcdhInverse.Finish
-import VerifiedGarbage.Proof.P256.EcdhInverse.Extra
+module
+
+public import VerifiedGarbage.Proof.P256.EcdhInverse.Loop
+public import VerifiedGarbage.Proof.P256.EcdhInverse.Finish
+public import VerifiedGarbage.Proof.P256.EcdhInverse.Extra
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.EcdhInverse
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Ecdsa.AArch64

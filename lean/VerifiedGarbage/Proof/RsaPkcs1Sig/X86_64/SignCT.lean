@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: constant time
@@ -16,6 +24,8 @@ data (its registers and stack arguments, `n` and `e`) it fixes. The zeros to
 their loads are pieces of their own, and the loops after them are checked
 from the registers correctness fixes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Sgn
 

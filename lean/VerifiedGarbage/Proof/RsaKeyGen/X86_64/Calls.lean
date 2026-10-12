@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Verified
-import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Verified
+public import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_keygen_candidate` on x86-64, with Montgomery multiplication by calls
@@ -8,6 +14,8 @@ As the RSA functions (`Proof/Rsa/X86_64/Calls.lean`): the candidate test's
 code with calls of `vg_rsa_mont_mul` runs as its inlined form, but for the
 return address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

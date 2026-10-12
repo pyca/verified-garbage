@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfCT
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfCT
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.MgfCT
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP on x86-64: the label's hash in constant time
@@ -9,6 +17,8 @@ and label's address and length (`LQ`), whatever the label (`hashLabel_ct`):
 the blocks between the calls are checked by the taint analysis, and the
 calls' arguments are the same in both runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.X86_64
 

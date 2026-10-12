@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
-import VerifiedGarbage.Proof.RsaKeyGen.MrMont
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
+public import VerifiedGarbage.Proof.RsaKeyGen.MrMont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: one bit of Miller–Rabin's exponentiation
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 form in `aB`, and `R mod c`, `c − R mod c` in `aR1`, `aRm1`. `mrExpBit_ok`:
 `y := y² b^bit`, and the flag, from the top bit of `kV`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

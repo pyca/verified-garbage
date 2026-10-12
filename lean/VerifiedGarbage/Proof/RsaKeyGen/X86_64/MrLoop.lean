@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrBitAll
-import VerifiedGarbage.Proof.RsaKeyGen.Bits
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrBitAll
+public import VerifiedGarbage.Proof.RsaKeyGen.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: Miller–Rabin's exponentiation loops
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.Bits
 (`mrPow`, `mrPre`), the word shifted left by `t` in `kV`. `mrBits_ok`: the
 inner loop over the word's bits, 64 but 63 of the last.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

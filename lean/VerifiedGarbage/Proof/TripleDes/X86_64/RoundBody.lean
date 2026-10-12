@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.Box
-import VerifiedGarbage.Proof.TripleDes.X86_64.RoundFunction
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Box
+public import VerifiedGarbage.Proof.TripleDes.X86_64.RoundFunction
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86_64
 

@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Loop
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.ConstantTime
-import VerifiedGarbage.Proof.TripleDes.AArch64.Ecb.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.TripleDes.Scratch
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Loop
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.ConstantTime
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Ecb.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.TripleDes.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The AdvSIMD bitsliced ECB functions meet their contracts -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64.BitslicedNeon
 

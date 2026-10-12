@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
-import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One S-box of an AdvSIMD round, and the exchange of the halves
@@ -10,6 +16,8 @@ circuit; XORing its outputs into their words) does to the state words what
 `step` does with the round key's low 48 bits. `swapHalves_ok`: the
 exchange of the halves does what `swapW` does.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.AArch64.BitslicedNeon
 

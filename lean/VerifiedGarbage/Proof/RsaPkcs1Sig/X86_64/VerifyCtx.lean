@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
-import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_verify` on x86-64: the contract on the registers
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 `verContract` states the shared contract (with the stack the frame and the
 call use, `verStack`) on the registers and the stack (`verify_implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64
 

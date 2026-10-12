@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWitAll
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWitAll
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on x86-64: one round of Miller–Rabin
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWitAll
 `roundPre_ok`: the witness `b`, `b R mod c` into `aXm` and `aB`, and
 `y := 1` (`R mod c` into `aY`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.X86_64
 

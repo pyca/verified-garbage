@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Seed.AArch64.Rounds
-import VerifiedGarbage.Proof.Seed.G
+module
+
+public import VerifiedGarbage.Proof.Seed.AArch64.Rounds
+public import VerifiedGarbage.Proof.Seed.G
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Copying blocks into the arrays and back
@@ -9,6 +15,8 @@ As on x86-64: `copyIn_loop`: the loop of `copyInBody` copies `m` blocks from
 block's big-endian word). `copyOut_loop`: the loop of `copyOutBody` copies
 them back, `R` first.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed.AArch64
 

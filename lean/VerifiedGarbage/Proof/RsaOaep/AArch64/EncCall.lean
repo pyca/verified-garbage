@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
+module
+
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSAES-OAEP encryption on AArch64: the public-key operation
@@ -9,6 +15,8 @@ words 0 and 1 and `vg_rsa_public_checked`'s registers: `out`, `n`, `e` and
 `EM` (at the start of our working space) as the input. `pub_call` runs it:
 `Ctx` holds again, and `out` holds the result for `EM` as it was.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaOaep.AArch64.Enc
 

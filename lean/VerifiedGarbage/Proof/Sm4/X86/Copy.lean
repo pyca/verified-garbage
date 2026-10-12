@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sm4.X86.Keys
-import VerifiedGarbage.Proof.Sm4.Common
+module
+
+public import VerifiedGarbage.Proof.Sm4.X86.Keys
+public import VerifiedGarbage.Proof.Sm4.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Copying blocks on x86 (32-bit)
@@ -8,6 +14,8 @@ As on ARMv7: `copyBlocks_wp`: the loop `copyBlocks` copies `c ≥ 1` blocks
 of 16 bytes from `edx` to `ebx` (areas that do not overlap), a word at a
 time through `eax`, counting down `ecx`, and changes nothing else in memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.X86
 

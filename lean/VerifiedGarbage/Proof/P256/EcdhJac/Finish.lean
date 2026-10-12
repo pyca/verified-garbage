@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.P256.EcdhJac.Frame
-import VerifiedGarbage.Proof.P256.EcdhJac.Extra
-import VerifiedGarbage.Proof.P256.EcdhJac.OutCertificate
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJOut
+module
+
+public import VerifiedGarbage.Proof.P256.EcdhJac.Frame
+public import VerifiedGarbage.Proof.P256.EcdhJac.Extra
+public import VerifiedGarbage.Proof.P256.EcdhJac.OutCertificate
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJOut
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `WindowPost` -/
+
+@[expose] public section
 
 section
 

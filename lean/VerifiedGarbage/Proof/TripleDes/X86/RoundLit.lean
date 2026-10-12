@@ -1,8 +1,19 @@
-import VerifiedGarbage.Impl.TripleDes.X86.Sbox
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Impl.TripleDes.X86.Block
+module
+
+public import VerifiedGarbage.Impl.TripleDes.X86.Sbox
+meta import VerifiedGarbage.Impl.TripleDes.X86.Sbox
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Impl.TripleDes.X86.Block
+meta import VerifiedGarbage.Impl.TripleDes.X86.Block
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `SboxTable` -/
+
+@[expose] public section
 
 section
 

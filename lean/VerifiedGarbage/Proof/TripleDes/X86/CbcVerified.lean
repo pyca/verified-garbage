@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.TripleDes.X86.ModeCore
-import VerifiedGarbage.Proof.Modes.X86.Modes
-import VerifiedGarbage.Proof.TripleDes.CbcScratch
-import VerifiedGarbage.Proof.TripleDes.X86.CbcLit
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.TaintMono
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.TripleDes.X86.ModeCore
+meta import VerifiedGarbage.Proof.TripleDes.X86.ModeCore
+public import VerifiedGarbage.Proof.Modes.X86.Modes
+meta import VerifiedGarbage.Proof.Modes.X86.Modes
+public import VerifiedGarbage.Proof.TripleDes.CbcScratch
+meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
+public import VerifiedGarbage.Proof.TripleDes.X86.CbcLit
+meta import VerifiedGarbage.Proof.TripleDes.X86.CbcLit
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Triple DES-CBC on x86 (32-bit) meets its contracts
@@ -19,6 +33,8 @@ of the data and the scratch buffer, and has room for the block function's
 call below `esp`. `cbcEncrypt_framed` and `cbcDecrypt_framed` run them with
 their working space on the stack, zeroed on return.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes.X86.Cbc
 
