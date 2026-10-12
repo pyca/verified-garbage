@@ -277,8 +277,24 @@ theorem dec_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) :
 theorem stitch_ok : StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZH.enc Impl.Gcm.X86_64.StitchZH.dec :=
   ⟨fun _ hp hm => enc_ok hp.toPrepared hm, fun _ hp hm => dec_ok hp.toPrepared hm⟩
 
+/-- What lane `laneOf r n` gets of block `n`, added up over the four lanes. -/
+theorem laneAcc_sum_succ (X : Nat → Block) (T : Nat → BitVec 128) (y : Block) (r n : Nat) :
+    (laneAcc X T y r 0 (n + 1)).val + (laneAcc X T y r 1 (n + 1)).val + (laneAcc X T y r 2 (n + 1)).val +
+        (laneAcc X T y r 3 (n + 1)).val =
+      (laneAcc X T y r 0 n).val + (laneAcc X T y r 1 n).val + (laneAcc X T y r 2 n).val +
+        (laneAcc X T y r 3 n).val + x * φ ((if n = 0 then y else 0) ^^^ X n) * φ (T n) := by
+  have hl : laneOf r n < 4 := by unfold laneOf; split <;> omega
+  simp only [laneAcc]
+  rcases (by omega : laneOf r n = 0 ∨ laneOf r n = 1 ∨ laneOf r n = 2 ∨ laneOf r n = 3) with h | h | h | h <;>
+  simp only [h, ite_true, ite_false, show ¬ ((0 : Nat) = 1) by decide, show ¬ ((0 : Nat) = 2) by decide,
+    show ¬ ((0 : Nat) = 3) by decide, show ¬ ((1 : Nat) = 0) by decide, show ¬ ((1 : Nat) = 2) by decide,
+    show ¬ ((1 : Nat) = 3) by decide, show ¬ ((2 : Nat) = 0) by decide, show ¬ ((2 : Nat) = 1) by decide,
+    show ¬ ((2 : Nat) = 3) by decide, show ¬ ((3 : Nat) = 0) by decide, show ¬ ((3 : Nat) = 1) by decide,
+    show ¬ ((3 : Nat) = 2) by decide, Prod.val_acc] <;> ring
+
 /-- The products of the `r` blocks after the last group with the powers
-`H'ʳ` … `H'` of a group's table, added and reduced: `GHASH` over them. -/
+`H'ʳ` … `H'` of a group's table, in their lanes, each lane's reduced, added:
+`GHASH` over them. -/
 theorem remZ {H : Block} {P : Nat → Nat → Block}
     (hP : ∀ k < 4, ∀ l < 4, x * φ (P k l) = φ H ^ (16 - 4 * k - l)) : RemOk H P := by
   intro r hr1 hr15 X y
@@ -287,27 +303,35 @@ theorem remZ {H : Block} {P : Nat → Nat → Block}
     have := hP ((16 - r + j) / 4) (by omega) ((16 - r + j) % 4) (by omega)
     rwa [show 16 - 4 * ((16 - r + j) / 4) - (16 - r + j) % 4 = r - j by omega] at this
   have key : ∀ n, 1 ≤ n → n ≤ r →
-      (accR X T y n).val = φ H ^ (r - n) * φ (ghashFrom H y ((List.range n).map X)) := by
+      (laneAcc X T y r 0 n).val + (laneAcc X T y r 1 n).val + (laneAcc X T y r 2 n).val +
+          (laneAcc X T y r 3 n).val = φ H ^ (r - n) * φ (ghashFrom H y ((List.range n).map X)) := by
     intro n
     induction n with
     | zero => intro h; omega
     | succ n ih =>
       intro _ hn
+      rw [laneAcc_sum_succ]
       rcases Nat.eq_zero_or_pos n with rfl | hpos
       · have h0 := hT 0 (by omega)
-        simp only [accR, ↓reduceIte, Prod.val_acc, Prod.val_zero, zero_add, List.range_one, List.map_cons,
-          List.map_nil, ghashFrom, List.foldl_cons, List.foldl_nil, φ_mul, Nat.sub_zero] at h0 ⊢
-        rw [show r = (r - (0 + 1)) + 1 by omega, pow_succ] at h0
+        have hg : ghashFrom H y ((List.range (0 + 1)).map X) = Spec.Gcm.mul (y ^^^ X 0) H := rfl
+        rw [hg, φ_mul]
+        simp only [laneAcc, ↓reduceIte, Prod.val_zero]
+        rw [show r - 0 = (r - (0 + 1)) + 1 by omega, pow_succ] at h0
         linear_combination φ (y ^^^ X 0) * h0
       · have hn' := hT n (by omega)
         rw [show r - n = (r - (n + 1)) + 1 by omega, pow_succ] at hn'
-        simp only [accR, show n ≠ 0 by omega, ↓reduceIte, Prod.val_acc, ih hpos (by omega), List.range_succ,
-          List.map_append, List.map_cons, List.map_nil, ghashFrom, List.foldl_append, List.foldl_cons,
-          List.foldl_nil, φ_mul, φ_xor, φ_zero, zero_add]
+        rw [ih hpos (by omega)]
+        simp only [show n ≠ 0 by omega, ↓reduceIte, List.range_succ, List.map_append, List.map_cons,
+          List.map_nil, ghashFrom, List.foldl_append, List.foldl_cons, List.foldl_nil, φ_mul, φ_xor, φ_zero,
+          zero_add]
         rw [show r - n = (r - (n + 1)) + 1 by omega, pow_succ]
         linear_combination φ (X n) * hn'
   apply φ_inj
-  rw [φ_reduceB, key r hr1 (Nat.le_refl _), Nat.sub_self, pow_zero, one_mul]
+  rw [φ_xor, φ_xor, φ_xor, φ_reduceB, φ_reduceB, φ_reduceB, φ_reduceB]
+  have := key r hr1 (Nat.le_refl _)
+  rw [Nat.sub_self, pow_zero, one_mul] at this
+  rw [← this]
+  ring
 
 /-- `encR`, for any number of blocks from 16 on. -/
 theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀) :
