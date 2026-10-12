@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.X448.AArch64.Mem
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: initializing coefficient arrays
 
 Zeroing a bounded range of words preserves all other memory and the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

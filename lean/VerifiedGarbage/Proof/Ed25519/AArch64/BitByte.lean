@@ -1,7 +1,16 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Bits
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Bits
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Byte stores and expansion of one scalar byte into eight bits. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.AArch64
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64
 

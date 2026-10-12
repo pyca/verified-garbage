@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.X86.Run
-import VerifiedGarbage.Proof.Blowfish.Scan32
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86.Run
+public import VerifiedGarbage.Proof.Blowfish.Scan32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on x86 (32-bit): an S-box lookup
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Blowfish.Scan32
 (xL at `ebp + 16`) in `edi`, changing only the lookup's registers and the
 flags.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86
 

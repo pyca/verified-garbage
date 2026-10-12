@@ -1,9 +1,15 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Ops
-import VerifiedGarbage.Proof.Ed448.Formulas
-import VerifiedGarbage.Proof.X448.AArch64.Base.Const
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
-import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ops
+public import VerifiedGarbage.Proof.Ed448.Formulas
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on AArch64: the entry and the constants
@@ -13,6 +19,8 @@ first 16 bytes and the return address at `LRS` (`LrSaved`), `x20 = 0` (no check 
 in slots 8–10 and `d` in slot 11, each from immediates (`constSlot`). A
 constant slot keeps every slot's limbs bounded (`constE_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

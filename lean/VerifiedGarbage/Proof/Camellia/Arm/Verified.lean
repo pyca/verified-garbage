@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.Camellia.Arm.Ecb
-import VerifiedGarbage.Proof.Camellia.Scratch
-import VerifiedGarbage.Proof.Framework.Arm.Inline
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Camellia.Arm.Lit
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.Ecb
+meta import VerifiedGarbage.Proof.Camellia.Arm.Ecb
+public import VerifiedGarbage.Proof.Camellia.Scratch
+meta import VerifiedGarbage.Proof.Camellia.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+meta import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Camellia.Arm.Lit
+meta import VerifiedGarbage.Proof.Camellia.Arm.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia ECB on ARMv7 meets its contracts
@@ -17,6 +30,8 @@ base, loaded from the stack argument). `ecb_framed` runs it with its
 working space on the stack, zeroed on return: 2816 bytes, of which the
 scratch buffer is the 680 words after the copy of the arguments.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

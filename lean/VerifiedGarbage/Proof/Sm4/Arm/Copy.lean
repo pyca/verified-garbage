@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sm4.Arm.Keys
-import VerifiedGarbage.Proof.Sm4.Common
+module
+
+public import VerifiedGarbage.Proof.Sm4.Arm.Keys
+public import VerifiedGarbage.Proof.Sm4.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Copying blocks on ARMv7
@@ -8,6 +14,8 @@ As on AArch64: `copyBlocks_wp`: the loop `copyBlocks` copies `c ≥ 1` blocks
 of 16 bytes from `r0` to `r12` (areas that do not overlap), a word at a time
 through `t0`, counting down `r3`, and changes nothing else in memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.Arm
 

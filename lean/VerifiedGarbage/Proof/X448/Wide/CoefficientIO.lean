@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.X448.Wide.AddCoefficient
+module
+
+public import VerifiedGarbage.Proof.X448.Wide.AddCoefficient
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Untrusted: coefficient reads and writes inside the X448 scratch buffer. -/
+
+@[expose] public section
+
 namespace VG.Proof.X448.Wide
 
 open VG VG.AArch64

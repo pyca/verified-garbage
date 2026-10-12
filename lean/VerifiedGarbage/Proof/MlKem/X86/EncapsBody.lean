@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86.EncV
-import VerifiedGarbage.Impl.MlKem.X86.Encaps
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.EncV
+meta import VerifiedGarbage.Proof.MlKem.X86.EncV
+public import VerifiedGarbage.Impl.MlKem.X86.Encaps
+meta import VerifiedGarbage.Impl.MlKem.X86.Encaps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the body of encapsulation
@@ -14,6 +22,8 @@ within `minIterations`, it fails with that bound (`KPke.kpkeEncrypt_none`)
 (`post`). Each parameter set's contract implies `TPre (Y L)` and its public
 data `TPub (Y L) (lk L)` (`Proof/MlKem/X86/Encaps.lean` for ML-KEM-768).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Encaps
 

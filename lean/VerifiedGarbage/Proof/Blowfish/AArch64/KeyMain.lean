@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.KeySetup
-import VerifiedGarbage.Proof.Blowfish.AArch64.KeyLoop
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.KeySetup
+public import VerifiedGarbage.Proof.Blowfish.AArch64.KeyLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The key expansion function
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Blowfish.AArch64.KeyLoop
 S-boxes copied from the table, the P-array keyed, the 521 encryptions run
 and `q8`–`q15` restored (`expandKey_correct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

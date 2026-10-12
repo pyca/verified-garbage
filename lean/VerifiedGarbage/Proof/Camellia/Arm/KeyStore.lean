@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Camellia.Arm.KaKb
-import VerifiedGarbage.Proof.Camellia.KeySched
-import VerifiedGarbage.Proof.Framework.Arm.Bytes
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.KaKb
+public import VerifiedGarbage.Proof.Camellia.KeySched
+public import VerifiedGarbage.Proof.Framework.Arm.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's key schedule on ARMv7: the subkeys' stores
@@ -12,6 +18,8 @@ words. `storeSubkeys_ok`: each subkey, the high or low half of a rotated
 value, byte-swapped and stored, so that its bytes are those of
 `rotHalf` (as `schedule_of_stores` takes them).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

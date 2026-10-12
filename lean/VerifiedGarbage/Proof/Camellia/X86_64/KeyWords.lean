@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.X86_64.Keys
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86_64.Keys
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Halves as little-endian words
@@ -8,6 +14,8 @@ loads them: little-endian words of their big-endian bytes (`WordOf`,
 `Proof/Camellia/Common.lean`). `bswap` turns such a word into the half as a
 number (`bswap_of_wordOf`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86_64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.Schedule
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Schedule
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blocks and their halves, byte by byte
@@ -8,6 +14,8 @@ word at offset `o` of a block is the block's byte `o + 3 - b`;
 `encodeBlock_byte`: byte `i` of `encodeBlock xL xR` is byte `3 - i` of xL,
 or `7 - i` of xR.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish
 

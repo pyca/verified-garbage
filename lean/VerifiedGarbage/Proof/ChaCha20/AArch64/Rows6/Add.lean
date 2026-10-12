@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Setup
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Feed the original input into the six row-oriented round results. -/
+
+@[expose] public section
+
 namespace VG.Proof.ChaCha20.AArch64.Rows6
 open VG VG.AArch64 VG.Impl.ChaCha20.AArch64.Rows6
 open VG.Spec.ChaCha20 (Word)

@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Impl.ChaCha20Poly1305.X86.SealGather
-import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86.SealGather
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86: the function called
@@ -15,6 +21,8 @@ of stack): its precondition from the layout the call gives it (`callPre`,
 `sealSpec_pre`), its postcondition (`sealSpec_post`) and its public data
 (`sealSpec_pub`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

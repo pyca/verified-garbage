@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Hash
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Prune
-import VerifiedGarbage.Proof.Ed448.Signing
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Hash
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Prune
+public import VerifiedGarbage.Proof.Ed448.Signing
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on AArch64: the frame's body
@@ -11,6 +17,8 @@ Pruning (`prune_step`), the calls of the Ed448 primitives (`reduceR_step`,
 locals cleared (`wipe_step`), and the body (`body_ok`): the signature in
 `out`, for the inputs as on entry (`Proof.Ed448.sign_pipeline`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.SignCached
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Cast5.X86.Key
-import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86.Key
+meta import VerifiedGarbage.Proof.Cast5.X86.Key
+public import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
+meta import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 key expansion on 32-bit x86: verified against the shared contract
@@ -8,6 +16,8 @@ Constant time by the taint analysis: `esp`, the arguments on the stack (the
 working space's address among them) and the table's address are public; the
 key's length decides the number of bytes copied.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86
 

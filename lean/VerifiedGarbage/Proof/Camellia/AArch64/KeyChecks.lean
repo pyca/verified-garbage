@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.AArch64.Linear
-import VerifiedGarbage.Impl.Camellia.AArch64.Ecb
+module
+
+public import VerifiedGarbage.Proof.Camellia.AArch64.Linear
+public import VerifiedGarbage.Impl.Camellia.AArch64.Ecb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bitslicing a subkey on AArch64, by evaluation
@@ -10,6 +16,8 @@ state registers, bitslices them as `toBs` does eight blocks' halves
 are checked over the lane domain: the subkey is input word `d / 8` (words of
 `x0`), and the planes are input words `0 … 7` of the stores.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.AArch64
 

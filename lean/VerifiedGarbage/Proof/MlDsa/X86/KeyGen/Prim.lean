@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Call
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-import VerifiedGarbage.Spec.MlDsa.Poly
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Call
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+public import VerifiedGarbage.Spec.MlDsa.Poly
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): calls of the polynomial primitives
@@ -15,6 +21,8 @@ The facts about regions and the stack of the callee's precondition are
 those `Ent.buf` gives for each buffer, `Ent.self` for the callee's own
 regions, and `Buf.disj` for pairs of buffers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.KeyGen
 

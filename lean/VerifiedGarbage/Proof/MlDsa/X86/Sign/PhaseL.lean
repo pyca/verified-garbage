@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseK
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseK
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): the rejection sampling loop
@@ -9,6 +15,8 @@ iterations (`loop_piece`): after `t < NI` of them, iteration `t` is next
 (`IT`); after all of them, the last one's outcome is in `OK`, with `c̃`, `z`
 and the hint if it succeeded (`Fin`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 

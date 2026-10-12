@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.X86.KeyStore
-import VerifiedGarbage.Proof.Camellia.Scratch
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.KeyStore
+public import VerifiedGarbage.Proof.Camellia.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's key schedule on x86 (32-bit): the whole function
@@ -12,6 +18,8 @@ the working space as the fourth argument. As on ARMv7
 `stores_ok` stores the subkeys, which are the specification's
 (`scheduleWords_expandKey`, `schedule_of_stores`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

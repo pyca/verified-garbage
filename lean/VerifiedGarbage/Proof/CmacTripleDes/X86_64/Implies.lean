@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.CmacTripleDes.Scratch
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on x86-64: the shared contracts imply ours
@@ -9,6 +15,8 @@ The shared contracts with the working space as an argument
 (`Proof/CmacTripleDes/Scratch.lean`), which `Frame.lean` moves to the
 shared contracts of `Spec/Cmac/TripleDesContract.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86_64
 

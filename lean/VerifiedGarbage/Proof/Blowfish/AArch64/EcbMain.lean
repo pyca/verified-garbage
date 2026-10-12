@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.Tail
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Tail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The ECB function
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Blowfish.AArch64.Tail
 set, the batches and the blocks left run, and `q8`–`q15` restored
 (`ecb_correct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

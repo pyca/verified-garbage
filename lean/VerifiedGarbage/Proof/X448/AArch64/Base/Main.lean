@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.X448.AArch64.Base.Finish
-import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
-import VerifiedGarbage.Impl.X448.AArch64.BaseFn
-import VerifiedGarbage.Proof.X448.Edwards.Ladder
-import VerifiedGarbage.Spec.X448.Contract
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Finish
+public import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
+public import VerifiedGarbage.Impl.X448.AArch64.BaseFn
+public import VerifiedGarbage.Proof.X448.Edwards.Ladder
+public import VerifiedGarbage.Spec.X448.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point on AArch64: the whole function
@@ -14,6 +20,8 @@ written against (the facts of `Spec.X448.x448BaseContract` it uses, stated for
 AArch64), and `vg_x448_base`'s correctness against it: the comb leaves `[k] B`
 on edwards448, whose `y² / x²` is `X448(k, 5)` (`x448_basePoint`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A register kept in a vector register around a core's code, on AArch64
@@ -12,6 +18,8 @@ keeps `r` (`keepsReg_viaV`), whatever it does to `r` in between; and
 none of the registers the core keeps for the modes and its key being ready
 does not depend on `r`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.AArch64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+module
+
+public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CBC as a mode one block at a time on ARMv7
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Modes.Arm.SeqCT
 `Spec/Cbc.lean`): from the IV in the chaining block, whatever the spare
 block holds, `runSeq` gives `Spec.Cbc.encrypt` and `Spec.Cbc.decrypt`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.Arm
 

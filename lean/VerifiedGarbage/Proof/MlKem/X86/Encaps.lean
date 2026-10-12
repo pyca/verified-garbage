@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86.EncapsBody
-import VerifiedGarbage.Proof.MlKem.X86.EncInst
-import VerifiedGarbage.Spec.MlKem.Contract
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.EncapsBody
+public import VerifiedGarbage.Proof.MlKem.X86.EncInst
+public import VerifiedGarbage.Spec.MlKem.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on x86 (32-bit): `vg_mlkem768_encaps`
@@ -9,6 +15,8 @@ Encapsulation (`EncapsBody.lean`) for ML-KEM-768 (`L768`): the facts of its
 layout (`EncapsOK`), computed from its offsets; the contract's precondition
 implies `TPre (Y L768)` (`pre_of`) and its public data `TPub` (`pub_of`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Encaps
 

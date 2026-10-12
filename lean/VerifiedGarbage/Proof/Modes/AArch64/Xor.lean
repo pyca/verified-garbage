@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.AArch64.Core
+module
+
+public import VerifiedGarbage.Proof.Modes.AArch64.Core
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # XORing blocks on AArch64
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Modes.AArch64.Core
 `x14` into those at `x15` (areas that do not overlap), through `x8` and
 `x9`, counting down `x17`, and changes nothing else in memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.AArch64
 

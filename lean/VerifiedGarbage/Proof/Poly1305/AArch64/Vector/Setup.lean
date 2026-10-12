@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Step
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Absorb
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Step
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Absorb
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: the setup
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 Untrusted: everything here is checked by Lean. The 26-bit limbs of a number in
 `x4:x5:x6` (`limbs`), and their insertion into vectors.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.AArch64.Vector
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Poly
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Steps
-import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
+module
+
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Poly
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Steps
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 in nine registers (AArch64): one block
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
 `Impl/ChaCha20Poly1305/AArch64/Poly.lean`, a part at a time: each part's
 result as numbers, and the registers it writes (`Keeps`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64.Poly
 

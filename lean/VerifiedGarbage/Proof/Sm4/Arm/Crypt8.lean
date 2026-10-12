@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sm4.Arm.Core
-import VerifiedGarbage.Proof.Framework.Arm.Bytes
+module
+
+public import VerifiedGarbage.Proof.Sm4.Arm.Core
+public import VerifiedGarbage.Proof.Framework.Arm.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The transposes, and eight blocks of bitsliced SM4 on ARMv7
@@ -10,6 +16,8 @@ blocks (the words in reverse order); `crypt8_wp` composes them with the
 32 rounds (`rounds_wp`): each block of the tail buffer becomes the output
 of SM4's rounds with the table's round keys.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.Arm
 

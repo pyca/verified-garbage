@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Sm4.Contract
-import VerifiedGarbage.Spec.Sm4.Ctr
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Sm4.Contract
+public import VerifiedGarbage.Spec.Sm4.Ctr
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4 key expansion and ECB with their working space as an argument
@@ -16,6 +22,8 @@ The frames zero the working space before returning, which needs the
 postconditions to read the memory on return only within the functions'
 buffers (`expandKeyPostOut_local`, `ecbPostOut_local`, `ctrPostOut_local`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4
 

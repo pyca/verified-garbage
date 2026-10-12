@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Cast5.X86.Block
-import VerifiedGarbage.Proof.Framework.X86.Spill
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86.Block
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 on 32-bit x86: ECB
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.X86.Spill
 registers in it, keeps its arguments in their slots, runs `crypt` on each
 block in turn (`ecbLoop_ok`) and restores the registers (`ecb_correct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86
 

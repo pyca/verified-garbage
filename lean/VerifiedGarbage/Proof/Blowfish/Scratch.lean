@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Blowfish.Contract
-import VerifiedGarbage.Proof.Blowfish.Schedule
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Blowfish.Contract
+public import VerifiedGarbage.Proof.Blowfish.Schedule
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish with its working space as an argument
@@ -19,6 +25,8 @@ also holds a copy of the arguments passed on the stack, to read the memory
 on entry only within them too (`ecbPost_local`, `expandKeyPost_local`), and
 the precondition likewise (`expandKeyPre_local`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish
 

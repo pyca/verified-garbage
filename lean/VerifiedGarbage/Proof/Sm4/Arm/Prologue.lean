@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sm4.Arm.Copy
+module
+
+public import VerifiedGarbage.Proof.Sm4.Arm.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Slots, and saving and restoring registers, on ARMv7
@@ -8,6 +14,8 @@ Loads and stores of the scratch buffer's slots through a base register
 saving and restoring of the callee-saved registers (`save_ok`,
 `restore_ok`) in the slots from `savedSlot`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.Arm
 

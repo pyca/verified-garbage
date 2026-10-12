@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Cast5
+module
+
+public import VerifiedGarbage.Spec.Cast5
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5: the round function by its type, and the rounds in order
@@ -7,6 +13,8 @@ import VerifiedGarbage.Spec.Cast5
 `I = (mix t Kmᵢ D) <<< Krᵢ`, for the type `t = i % 3` (`f_eq`). Encryption
 and decryption run the rounds one after the other (`encFold`, `decFold`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5
 

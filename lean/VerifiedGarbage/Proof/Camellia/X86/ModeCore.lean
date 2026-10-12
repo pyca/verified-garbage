@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Camellia.X86.Ecb
-import VerifiedGarbage.Proof.Camellia.X86.Crypt8
-import VerifiedGarbage.Proof.Camellia.CtrCipher
-import VerifiedGarbage.Spec.Camellia.Cbc
-import VerifiedGarbage.Proof.Modes.X86.Core
-import VerifiedGarbage.Impl.Camellia.X86.Modes
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.Ecb
+public import VerifiedGarbage.Proof.Camellia.X86.Crypt8
+public import VerifiedGarbage.Proof.Camellia.CtrCipher
+public import VerifiedGarbage.Spec.Camellia.Cbc
+public import VerifiedGarbage.Proof.Modes.X86.Core
+public import VerifiedGarbage.Impl.Camellia.X86.Modes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's core for the modes on x86 (32-bit)
@@ -18,6 +24,8 @@ order for that many rounds is in the scratch buffer (`ReadyAt`) and the
 number of rounds is still in its stack argument, apart from every writable
 region (`RArg`), where `crypt` reads it again.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

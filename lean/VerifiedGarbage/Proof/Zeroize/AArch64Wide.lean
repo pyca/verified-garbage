@@ -1,5 +1,15 @@
-import VerifiedGarbage.Impl.Zeroize.AArch64Wide
-import VerifiedGarbage.Proof.Zeroize.AArch64
+module
+
+public import VerifiedGarbage.Impl.Zeroize.AArch64Wide
+meta import VerifiedGarbage.Impl.Zeroize.AArch64Wide
+public import VerifiedGarbage.Proof.Zeroize.AArch64
+meta import VerifiedGarbage.Proof.Zeroize.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Zeroize.AArch64
 open VG VG.AArch64 VG.Impl.Zeroize.AArch64 RegUpd

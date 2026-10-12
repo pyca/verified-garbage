@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.Arm.SeqBody
+module
+
+public import VerifiedGarbage.Proof.Modes.Arm.SeqBody
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The modes one block at a time on ARMv7: the loop and the whole function
@@ -10,6 +16,8 @@ the epilogue returns the chaining block if the mode does (`finish`) and
 restores our caller's registers from the scratch buffer, whose slots
 nothing after the prologue writes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.Arm
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86.TopSeq2
-import VerifiedGarbage.Proof.MlKem.X86.TopKeep
-import VerifiedGarbage.Impl.MlKem.X86.Kem
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.TopSeq2
+public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
+public import VerifiedGarbage.Impl.MlKem.X86.Kem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the code of a parameter set
@@ -12,6 +18,8 @@ to `d_u` and `d_v` bits and decompress from them (`KemLay.ceCode`,
 `vg_mlkem_decode_decompress` for widths that include `d_u` and `d_v` (`CeOK`),
 so their calls are pieces (`ceK_piece`, `ddK_piece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Top
 

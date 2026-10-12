@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
-import VerifiedGarbage.Proof.TripleDes.SboxTables
-import VerifiedGarbage.Proof.CmacTripleDes.Des
-import VerifiedGarbage.Proof.CmacTripleDes.Rows
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Rows
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+public import VerifiedGarbage.Proof.CmacTripleDes.Des
+public import VerifiedGarbage.Proof.CmacTripleDes.Rows
+public import VerifiedGarbage.Proof.Framework.Arm.Linear
+public import VerifiedGarbage.Proof.Framework.Bitslice.Rows
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A DES round on 32-bit ARM
@@ -20,6 +26,8 @@ input, so each half is checked on its own. `round_ok` composes them: `R` and
 `L ⊕ f(R, K)`, with `K` the round key's low word and the low 16 bits of its
 high word.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.Arm
 

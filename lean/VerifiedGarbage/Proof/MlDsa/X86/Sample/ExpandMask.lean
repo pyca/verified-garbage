@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
-import VerifiedGarbage.Proof.MlDsa.Sample.Word
-import VerifiedGarbage.Impl.MlDsa.X86.Sample.ExpandMask
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.Sample.Word
+meta import VerifiedGarbage.Proof.MlDsa.Sample.Word
+public import VerifiedGarbage.Impl.MlDsa.X86.Sample.ExpandMask
+meta import VerifiedGarbage.Impl.MlDsa.X86.Sample.ExpandMask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_expand_mask_poly`
@@ -14,6 +23,8 @@ output, whose bits from `ci mod 8` on are those of the output from bit `ci` on
 `c` bits modulo `q` (`subMask_eq`). Every address and branch depends only on
 the pointers and `γ₁`: the taint analysis proves it constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sample.ExpandMask
 

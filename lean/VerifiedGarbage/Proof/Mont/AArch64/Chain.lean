@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.AArch64.Csub
+module
+
+public import VerifiedGarbage.Proof.Mont.AArch64.Csub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on AArch64: loads, stores and carry chains
@@ -9,6 +15,8 @@ the chains of additions and subtractions of a number in the working space
 flag between words (for subtraction, the complement of the borrow).
 `addMasked_ok` adds the modulus under a mask.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.AArch64
 

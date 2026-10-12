@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.X86.Linear
-import VerifiedGarbage.Impl.Camellia.X86.ExpandKey
+module
+
+public import VerifiedGarbage.Proof.Camellia.X86.Linear
+public import VerifiedGarbage.Impl.Camellia.X86.ExpandKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's key schedule on x86 (32-bit): the transposes of one value
@@ -12,6 +18,8 @@ The values live in the tail buffer (input words `0 … 31` of `bcast`, `32 …
 63` of `unbcast`, after the planes), which both keep but for what they
 write.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

@@ -1,11 +1,17 @@
-import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
-import VerifiedGarbage.Proof.X448.AArch64.Base.Const
-import VerifiedGarbage.Proof.X448.AArch64.Init
-import VerifiedGarbage.Proof.X448.Wide.Limbs
-import VerifiedGarbage.Proof.Framework.AArch64.Tbl
-import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+public import VerifiedGarbage.Proof.X448.AArch64.Init
+public import VerifiedGarbage.Proof.X448.Wide.Limbs
+public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point on AArch64: the constant-time selection
@@ -19,6 +25,8 @@ each digit's candidate survives, and stores them. The tables are at `T`
 (`TblAt`): readable, beyond the working space, word `i` the static's
 `combWord i`. Nothing here unfolds a table: each lemma holds for any words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Base
 

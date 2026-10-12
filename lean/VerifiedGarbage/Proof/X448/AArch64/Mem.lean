@@ -1,9 +1,15 @@
-import VerifiedGarbage.Impl.X448.AArch64
-import VerifiedGarbage.Proof.X448.Limbs
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64
+public import VerifiedGarbage.Proof.X448.Limbs
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: the working space
@@ -12,6 +18,8 @@ Field elements occupy sixteen words of the 8 KiB working space. `Outside`
 tracks the bytes a block changes; `Keeps` tracks its registers and memory
 permissions independently.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

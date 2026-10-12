@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.SealGather
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.SealGather
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, AArch64: the function called
@@ -14,6 +20,8 @@ with 768 bytes of stack): its precondition from the layout the call gives it
 (`callPre`, `sealSpec_pre`), its postcondition (`sealSpec_post`) and its
 public data (`sealSpec_pub`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64.Gather
 

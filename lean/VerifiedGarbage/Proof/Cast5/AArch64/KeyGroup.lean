@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Cast5.AArch64.KeyLine
+module
+
+public import VerifiedGarbage.Proof.Cast5.AArch64.KeyLine
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 key expansion on AArch64: groups of four lines
@@ -7,6 +13,8 @@ A group (`lines4`) makes its four extra lookups into `v6` (`extras_ok`),
 then runs its lines, each storing its value into `x` or `z` (`groupQ_ok`) or
 as the next subkey (`groupK_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.AArch64
 

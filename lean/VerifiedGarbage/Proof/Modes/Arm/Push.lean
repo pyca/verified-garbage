@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Arm.CallF
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A call with its working space pushed, on ARMv7
@@ -12,6 +18,8 @@ entry to the callee), as the streaming RC2 functions call theirs
 (`view`), its stack argument (`arg0`), and the regions it is given, which
 the frame's push covers (`cov`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.Arm.Push
 

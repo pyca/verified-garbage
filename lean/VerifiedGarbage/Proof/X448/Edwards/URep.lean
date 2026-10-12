@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Edwards.Group
+module
+
+public import VerifiedGarbage.Proof.Edwards.Group
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The Montgomery ladder on the u-coordinates of Edwards points
@@ -21,6 +27,8 @@ Neither formula ever gives `(0 : 0)`: `X + Z` and `X - Z` are `y² + x²` and
 since `d` and `1 - d` are not squares. Hence `URep.out`: `X / Z = y² / x²`,
 with `y² / 0 = 0` for the points with `x = 0`, whose u is infinite.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Edwards
 

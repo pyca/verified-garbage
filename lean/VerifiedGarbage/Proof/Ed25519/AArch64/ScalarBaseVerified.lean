@@ -1,9 +1,22 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
-import VerifiedGarbage.Proof.Framework.ConstMem
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.ScalarBaseCT`. -/
+
+@[expose] public section
+
 section
 /-! Public argument pointers survive the secret point arithmetic. -/
 

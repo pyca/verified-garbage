@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Zero
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Zero
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448's complete operations on AArch64: the sponge's calls
@@ -13,6 +19,8 @@ absorbed (`kabs_ok`: its bytes appended to the represented message, and the
 new position in `x0`), the padding absorbed (`kpad_ok`) and 114 bytes
 squeezed (`ksqz_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Whole
 

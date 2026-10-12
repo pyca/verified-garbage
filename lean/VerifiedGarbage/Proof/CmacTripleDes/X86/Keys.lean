@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86.Block
-import VerifiedGarbage.Proof.CmacTripleDes.KeySchedule
-import VerifiedGarbage.Proof.CmacTripleDes.X86.KeysLit
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Block
+public import VerifiedGarbage.Proof.CmacTripleDes.KeySchedule
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.KeysLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # DES's key schedule on x86 (32-bit)
@@ -12,6 +18,8 @@ low word) to the round keys' words it stores at `[edi]`: the kernel checks it
 over the lane domain (`roundKeys_check`, `linear_ok`), and
 `getLsbD_expandDesKey` says the bits are the specification's.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86
 

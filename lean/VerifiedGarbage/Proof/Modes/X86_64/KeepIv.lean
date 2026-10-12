@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Code that keeps the IV's address in `ivX`
@@ -11,6 +17,8 @@ m128`) keeps `ivX` (`KeepsIv`), as the feedback modes need of a core
 other `xmm` registers, or that keeps values in them when it runs out of
 general-purpose ones.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

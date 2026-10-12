@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.X448.AArch64.Tail
-import VerifiedGarbage.Proof.X448.Wide.TailBounds
-import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
+module
+
+public import VerifiedGarbage.Impl.X448.AArch64.Tail
+public import VerifiedGarbage.Proof.X448.Wide.TailBounds
+public import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Untrusted: a one-word carry step after wide reduction. -/
+
+@[expose] public section
+
 namespace VG.Proof.X448.Wide
 
 open VG VG.AArch64 VG.Proof.X448.AArch64

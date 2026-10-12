@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Modes.X86_64.Core
-import VerifiedGarbage.Proof.Modes.Counter
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.Core
+public import VerifiedGarbage.Proof.Modes.Counter
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CTR on x86-64: the counter blocks
@@ -10,6 +16,8 @@ integers, `hiOf V` and `loOf V`. `incr_ok`: `add`, `adc` step it by one.
 big-endian bytes each, to the core's buffer, and `V + G` to the running
 counter's slots.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

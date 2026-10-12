@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.DecodeSteps
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
-import VerifiedGarbage.Proof.Ed448.Recover
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.DecodeSteps
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+public import VerifiedGarbage.Proof.Ed448.Recover
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on AArch64: decoding a point
@@ -11,6 +17,8 @@ register-resident arithmetic: `x20 |= c`, `c = 0` exactly when they decode,
 given that `recoverX` is `recoverRef` (`RecoverOk`), and then the slots hold
 the point; every slot stays below the products' operand bound.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

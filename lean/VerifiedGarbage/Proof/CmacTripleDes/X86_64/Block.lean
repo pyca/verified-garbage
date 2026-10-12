@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Round
-import VerifiedGarbage.Proof.CmacTripleDes.Block
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Round
+public import VerifiedGarbage.Proof.CmacTripleDes.Block
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA on x86-64: the passes and the block
@@ -12,6 +18,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 each pass), and `IP⁻¹`. During the block, `r14` points to slot
 `kpos p j` of the key schedule before round `j` of pass `p`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86_64
 

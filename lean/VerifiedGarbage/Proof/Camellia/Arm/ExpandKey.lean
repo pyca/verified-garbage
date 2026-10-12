@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Camellia.Arm.KeyStore
-import VerifiedGarbage.Proof.Camellia.Arm.Prologue
-import VerifiedGarbage.Proof.Camellia.Scratch
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.KeyStore
+public import VerifiedGarbage.Proof.Camellia.Arm.Prologue
+public import VerifiedGarbage.Proof.Camellia.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's key schedule on ARMv7: the whole function
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.Camellia.Scratch
 `stores_ok` stores the subkeys, which are the specification's
 (`scheduleWords_expandKey`, `schedule_of_stores`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

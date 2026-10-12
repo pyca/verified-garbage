@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.SigEval
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Blowfish.Scratch
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.SigEval
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Blowfish.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on x86 (32-bit): the contracts the proofs use
@@ -13,6 +19,8 @@ while nothing that may alias them is written), and `keyC`. `wideEcb` lets
 the code write the arguments, as the shared contract does, and implies it;
 `Verified.lean` narrows it back.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86
 open VG VG.X86 VG.Spec.Blowfish VG.Proof.Blowfish

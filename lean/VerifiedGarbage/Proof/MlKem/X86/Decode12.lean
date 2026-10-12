@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.MlKem.X86.Common
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Impl.MlKem.X86.Encode
-import VerifiedGarbage.Spec.MlKem.Poly
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Common
+meta import VerifiedGarbage.Proof.MlKem.X86.Common
+public import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Impl.MlKem.X86.Encode
+meta import VerifiedGarbage.Impl.MlKem.X86.Encode
+public import VerifiedGarbage.Spec.MlKem.Poly
+meta import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): `vg_mlkem_decode12`
@@ -13,6 +26,8 @@ Bytes `3k … 3k+2` are the 12-bit fields of coefficients `2k` and `2k+1`
 (`decode12_even`, `decode12_odd`), each reduced with one conditional
 subtraction.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Decode12
 

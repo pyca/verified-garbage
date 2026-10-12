@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.Arm.KeyLoad
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.KeyLoad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's key schedule on ARMv7: `KA` and `KB`
@@ -8,6 +14,8 @@ loop of three pairs of rounds on the running value (`pairPlain_step`), with
 the XORs and copies between them (`wordsOp_ok`), leaves `KA` and `KB`
 (`kaD2`, `kaD3`) in their slots.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

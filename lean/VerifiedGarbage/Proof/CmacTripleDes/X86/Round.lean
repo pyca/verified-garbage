@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
-import VerifiedGarbage.Proof.TripleDes.SboxTables
-import VerifiedGarbage.Proof.CmacTripleDes.Des
-import VerifiedGarbage.Proof.CmacTripleDes.Rows
-import VerifiedGarbage.Proof.Framework.X86.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Rows
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+public import VerifiedGarbage.Proof.CmacTripleDes.Des
+public import VerifiedGarbage.Proof.CmacTripleDes.Rows
+public import VerifiedGarbage.Proof.Framework.X86.Linear
+public import VerifiedGarbage.Proof.Framework.Bitslice.Rows
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A DES round on x86 (32-bit)
@@ -19,6 +25,8 @@ their words in slots), and each half's S-boxes (`tree`) over the row domain
 composes them: slot `L` becomes `R`, and slot `R` becomes `L ⊕ f(R, K)`,
 with `K` the round key's low word and the low 16 bits of its high word.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86
 

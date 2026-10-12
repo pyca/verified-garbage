@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Block
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Block
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on x86-64: saving and restoring the registers
@@ -11,6 +17,8 @@ Each function saves our caller's callee-saved registers to bytes `[48, 96)` of
 the scratch buffer (`save`), and restores them from there, through `r15`
 (`restore`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.X86_64
 

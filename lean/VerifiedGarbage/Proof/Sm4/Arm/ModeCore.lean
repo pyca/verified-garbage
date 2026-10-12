@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Sm4.Arm.Verified
-import VerifiedGarbage.Proof.Modes.Arm.Core
-import VerifiedGarbage.Impl.Sm4.Arm.Cbc
-import VerifiedGarbage.Proof.Sm4.CbcScratch
+module
+
+public import VerifiedGarbage.Proof.Sm4.Arm.Verified
+public import VerifiedGarbage.Proof.Modes.Arm.Core
+public import VerifiedGarbage.Impl.Sm4.Arm.Cbc
+public import VerifiedGarbage.Proof.Sm4.CbcScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SM4's ECB functions on ARMv7 as the modes' core
@@ -12,6 +18,8 @@ contract (`Spec.Sm4.ecbContract`, with 1456 bytes of stack) and its proof
 (`ecb_framed`): the schedule is SM4's 128-byte schedule, and the cipher on
 a block is `Spec.Sm4.cipher` or `Spec.Sm4.invCipher` of it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sm4.Arm
 

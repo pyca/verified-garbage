@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Field
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
-import VerifiedGarbage.Proof.Curve448.AArch64.Copy
-import VerifiedGarbage.Proof.Curve448.AArch64.Swap
-import VerifiedGarbage.Impl.X448.AArch64.Fast
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Field
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
+public import VerifiedGarbage.Proof.Curve448.AArch64.Copy
+public import VerifiedGarbage.Proof.Curve448.AArch64.Swap
+public import VerifiedGarbage.Impl.X448.AArch64.Fast
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: the working space as field-element slots
@@ -12,6 +18,8 @@ the slots it writes. Every slot's limbs stay below `Ib`; products leave
 reduced limbs (below `Mb`), which sums and differences need of their
 operands.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Fast
 

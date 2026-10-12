@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.AArch64.Bits
-import VerifiedGarbage.Proof.X448.Encoding
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Bits
+public import VerifiedGarbage.Proof.X448.Encoding
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: writing seven-byte chunks
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X448.Encoding
 Each pair of bounded limbs is combined in a register and written with seven
 byte stores.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

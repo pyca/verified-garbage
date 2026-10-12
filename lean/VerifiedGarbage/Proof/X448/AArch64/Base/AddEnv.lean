@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.AArch64.Base.Add
-import VerifiedGarbage.Proof.X448.BaseAdd
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Add
+public import VerifiedGarbage.Proof.X448.BaseAdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 of the base point on AArch64: the addition's environment is `addPt`
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. For the two accumulators' slots,
 `affEnv` puts `addPt` of the accumulator and the entry (with `Z = 1`) in the
 accumulator's slots, and keeps every slot but the temporaries.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64.Base
 

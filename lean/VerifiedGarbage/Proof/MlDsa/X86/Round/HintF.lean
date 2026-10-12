@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Round.Hint
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.Hint
+meta import VerifiedGarbage.Proof.MlDsa.X86.Round.Hint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_make_hint` and `vg_mldsa_use_hint`
@@ -6,6 +13,8 @@ import VerifiedGarbage.Proof.MlDsa.X86.Round.Hint
 Both functions are the prologue and the loops of `Hint.lean`; `makeHint` then
 returns the count in `ecx`, which is the number of 1s (`sumV_ones`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Round
 

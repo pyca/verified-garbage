@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypt
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypt
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: `cryptStitched`
@@ -11,6 +17,8 @@ than 512 bytes), the data's first `512 T` bytes encrypted from counter 1, the
 counter advanced past them, the stream's arguments set to the rest, and the
 bytes absorbed (`pre`) and the rest's pointer and length in `x22`, `x23`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64
 

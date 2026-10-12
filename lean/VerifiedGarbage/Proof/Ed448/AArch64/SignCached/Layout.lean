@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Ed448.AArch64.SignCached
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Sponge
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Entry
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.SignCached
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Sponge
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Entry
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on AArch64: where everything is
@@ -13,6 +19,8 @@ and the layout of a call (`Lay`): the buffers, the frame's base `E`, and the
 `Env` of the frame's body, which keeps `len`, `scratch` and the header of
 `dom4` in its locals.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.SignCached
 

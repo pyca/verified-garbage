@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.AArch64.Mem
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: arithmetic steps
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 Each short instruction block is executed once symbolically. Bounds exclude
 overflow before interpreting machine words as natural numbers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Top
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inst
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Top
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inst
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): verified
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inst
 `vg_mldsa{44,65,87}_sign` (`sign prims p`) with the x86 primitives, verified
 against `signContract` (`verified`, with `prims_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 
