@@ -32,7 +32,7 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSou
   coreCT := Proof.Ecdsa.AArch64.P224.sign_ct
   coreNoFrames := by lit_decide
   coreKeepsV := by lit_decide
-  reduceT := Function.const _ ⟨_, by taint_decide⟩
+  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
   reduceKeepsV := Function.const _ (by decide +kernel)
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

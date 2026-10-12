@@ -13,7 +13,7 @@ def jointCombRow {c : Cfg} {j : Joint.Cfg} {d : CombData} (hc : CfgOk c) (hC : L
     (hT : CombTbls c) (hcd : c.comb=some d) (hw : d.w=7) :
     JointGeneratorRow j.K.M.n c.C (G c.C) :=
   combGeneratorRow j.K.M.n (unitMod_pow_two hc.p_odd (64*j.K.M.n)) hC
-    (by simpa only [hw] using (hT d hcd).1)
+    (hw ▸ (hT d hcd).1)
     (by rw [Cfg.combJ]; have := hc.n0; omega)
 
 theorem jointMid_generator {c : Cfg} {j : Joint.Cfg} {d : CombData}

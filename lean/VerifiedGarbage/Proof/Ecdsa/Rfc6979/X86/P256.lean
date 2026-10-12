@@ -75,6 +75,6 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
       s t tr₁ tr₂ s' t' (core_pre_256 hs) (core_pre_256 ht) (core_pub_256 hp)
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
-  reduceT := Function.const _ ⟨_, by taint_decide⟩
+  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
 
 end VG.Proof.Ecdsa.Rfc6979.X86

@@ -20,7 +20,7 @@ open VG.Impl.Ecdsa.Verify.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 Spec.Weierstrass
 open VG.Proof.Ed25519.AArch64 (Keeps)
 
-private abbrev cfg := P256Joint.cfg
+abbrev cfg := P256Joint.cfg
 
 /-- The public generator table is outside the scratch region. -/
 theorem jointExternal_frame {C : Curve} {base T : Addr} {G : Point C} :

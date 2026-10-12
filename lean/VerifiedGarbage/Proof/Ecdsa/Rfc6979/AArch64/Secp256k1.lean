@@ -45,7 +45,7 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.AArc
   coreCT := by rw [coreK_secp256k1]; exact Proof.Ecdsa.AArch64.Secp256k1.sign_ct
   coreNoFrames := by lit_decide
   coreKeepsV := by lit_decide
-  reduceT := Function.const _ ⟨_, by taint_decide⟩
+  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
   reduceKeepsV := Function.const _ (by decide +kernel)
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64
