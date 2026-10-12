@@ -65,6 +65,10 @@ def code(body, first_line):
         label = LABEL.match(line)
         if label:
             labels.setdefault(label.group(1), []).append(len(instrs))
+        elif line.startswith("."):
+            # An assembler directive (`.p2align` before a loop): the no-ops
+            # it inserts are not instructions on Intel's MCDT list.
+            continue
         else:
             instrs.append(line)
             # Count each newline once, rather than rescanning the growing
