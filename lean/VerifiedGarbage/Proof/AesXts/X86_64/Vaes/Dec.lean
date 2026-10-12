@@ -24,7 +24,7 @@ open VG VG.X86_64
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.AesCbc.X86_64 (W R Iv Dp N S schR ivR dataR scrR stkR UPre blk wK iv0 modeX86_64)
 open VG.Proof.Aes.X86_64.AesNi (Keys DKeys ImcInv imcKeys_ok dKeys_of_imc ofInt_natCast)
-open VG.Impl.Aes.X86_64.Vaes (regs8)
+open VG.Impl.AesXts.X86_64Vaes (regs4)
 open VG.Impl.AesXts.X86_64Vaes (bufOff)
 
 /-- What decryption's rounds need: the key schedule, the round keys through
@@ -61,12 +61,11 @@ theorem decrypt_wp {s₀ : State} (h0 : (modeX86_64 (AesXts.xtsMode false)).pre 
   refine crypt_wp (KP := KPd) h0 (fun s₁ hp₁ => kpd_stable hp₁) (fun s₁ hp₁ => ?_) (fun s₁ hp₁ => ?_)
     (fun s₁ hp₁ s h => ?_)
   · intro s ⟨hK, hrdi, hrsi, hr8, hr10⟩
-    exact Aes.X86_64.VaesBlocks.aesDec_ok regs8 (by decide) (by decide) hp₁.rounds s hK
+    exact Aes.X86_64.VaesBlocks.aesDec_ok regs4 (by decide) (by decide) hp₁.rounds s hK
       (by rw [hrsi, rsi_ofNat]) hr10
-  · intro rs hrs s ⟨hK, hrdi, hrsi, hr8, hr10⟩
-    have ⟨hnd, _⟩ := regs_cases rs hrs
-    exact Aes.X86_64.AesNi.aesDec_ok rs hnd (by rcases hrs with rfl | rfl <;> decide) hp₁.rounds s hK
-      (by rw [hrsi, rsi_ofNat]) hr10
+  · intro s ⟨hK, hrdi, hrsi, hr8, hr10⟩
+    exact WP.mono (Aes.X86_64.AesNi.aesDec_ok [.xmm0] (by decide) (by decide) hp₁.rounds s hK
+      (by rw [hrsi, rsi_ofNat]) hr10) fun s' ⟨e, f⟩ => ⟨e _ List.mem_cons_self, f⟩
   · have hsw := hp₁.scr_wrap
     have hR : 16 * (R s₁ + 1) ≤ 240 := by rcases hp₁.rounds with h | h | h <;> omega
     have hrdi : s.gpr .rdi = W s₁ := h.1.keep _ (by decide) (by decide) (by decide) (by decide) (by decide)
