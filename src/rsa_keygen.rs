@@ -326,6 +326,8 @@ pub fn key_from_primes(public_exponent: &[u8], p: &[u8], q: &[u8]) -> Result<Pri
     // (`VG.Spec.Rsa.exponentValid`), so that this is the key `PrivateKey`
     // holds.
     let key = PrivateKey {
+        #[cfg(target_arch = "aarch64")]
+        verify_pre: PrivateKey::empty_verify_pre(),
         n,
         e: crate::rsa::trim(public_exponent).to_vec(),
         d,
