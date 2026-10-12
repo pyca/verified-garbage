@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: the functions with `γ₂`
@@ -9,6 +15,8 @@ registers (`consts g`), then runs the loop of its body. `gamma_ok` proves this
 once, from what the constants are (`cv g`) and a body proven for the loop
 (`loop_ok`), for the state once `γ₂` is zero-extended.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Round
 

@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductCore
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductFullTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
-import VerifiedGarbage.Spec.MlDsa.RawInverse
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductCore
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductFullTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
+public import VerifiedGarbage.Spec.MlDsa.RawInverse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ProductStatic.lean` -/
+
+@[expose] public section
 
 section
 

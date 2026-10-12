@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_simple_bit_pack`
@@ -7,6 +15,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 The loop is proven once for every width (`packLoop_ok`), and the function by
 its three cases, which the length chooses.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Pack
 

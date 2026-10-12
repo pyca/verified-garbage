@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFields
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWritten
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackField
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFields
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWritten
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `KeygenPackStream.lean` -/
+
+@[expose] public section
 
 section
 

@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Registers
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Table
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Registers
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Table
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `Hoisted.lean` -/
+
+@[expose] public section
 
 section
 

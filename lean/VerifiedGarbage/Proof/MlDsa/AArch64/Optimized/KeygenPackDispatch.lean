@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWidth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWidth
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `KeygenPackWidthContracts.lean` -/
+
+@[expose] public section
 
 section
 

@@ -1,7 +1,15 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedTop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesDepth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallee
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSingleCall
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedTop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesDepth
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallee
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSingleCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Verify.Optimized
 open VG VG.AArch64 VG.Spec.MlDsa

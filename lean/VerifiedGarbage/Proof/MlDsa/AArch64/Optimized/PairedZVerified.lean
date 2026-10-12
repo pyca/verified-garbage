@@ -1,18 +1,26 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZStoredField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskSemantic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckCoverage
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSatMemory
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskInvariant
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedAbi
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecFrame
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZStoredField
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskSemantic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntry
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckCoverage
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSatMemory
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskInvariant
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedAbi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `PairedZContractTiming.lean` -/
+
+@[expose] public section
 
 section
 

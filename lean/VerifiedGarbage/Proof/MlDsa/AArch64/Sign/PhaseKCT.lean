@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseK
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCT
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCT
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseK
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseK
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on AArch64: the checks leak only the pointers and whether they passed
@@ -9,6 +17,8 @@ Each check leaks only its pointers, given that its inputs are reduced
 iteration passed, which two runs agree on when they agree on what the
 iteration leaks (`checks_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 

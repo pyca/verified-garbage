@@ -1,5 +1,13 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedTable
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedTable
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.PairedTable
 open VG.Impl.MlDsa.AArch64.Optimized.Paired

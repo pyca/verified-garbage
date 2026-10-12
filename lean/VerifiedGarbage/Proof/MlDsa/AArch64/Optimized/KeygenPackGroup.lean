@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackInput
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackTail
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackInput
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackTail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.KeygenPack
 open VG VG.AArch64

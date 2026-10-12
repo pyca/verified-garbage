@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailModel
-import VerifiedGarbage.Proof.Sha3.Stream
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailFirst
-import VerifiedGarbage.Proof.MlKem.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailModel
+public import VerifiedGarbage.Proof.Sha3.Stream
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailFirst
+public import VerifiedGarbage.Proof.MlKem.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `CommitTailHashPadding.lean` -/
+
+@[expose] public section
 
 section
 

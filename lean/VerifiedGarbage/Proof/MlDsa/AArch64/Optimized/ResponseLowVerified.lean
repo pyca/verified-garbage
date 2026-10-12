@@ -1,12 +1,27 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCore
-import VerifiedGarbage.Spec.MlDsa.ResponseLow
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCore
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCore
+public import VerifiedGarbage.Spec.MlDsa.ResponseLow
+meta import VerifiedGarbage.Spec.MlDsa.ResponseLow
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResponseLowCorrect.lean` -/
+
+@[expose] public section
 
 section
 

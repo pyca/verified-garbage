@@ -128,7 +128,8 @@ CONVERTED = ["VerifiedGarbage/TCB", "VerifiedGarbage/Spec", "VerifiedGarbage/Imp
              "VerifiedGarbage/Proof/Sha256/*",
              "VerifiedGarbage/Proof/Sha3/*",
              "VerifiedGarbage/Proof/Sha3/AArch64",
-             "VerifiedGarbage/Proof/Sha3/X86_64"]
+             "VerifiedGarbage/Proof/Sha3/X86_64",
+             "VerifiedGarbage/Proof/MlDsa/AArch64"]
 
 IMPORT = re.compile(r"^import\s+(\S+)\s*$")
 META_DECL = re.compile(r"^(elab|syntax|macro|macro_rules|simproc|dsimproc|elab_rules)\b", re.M)

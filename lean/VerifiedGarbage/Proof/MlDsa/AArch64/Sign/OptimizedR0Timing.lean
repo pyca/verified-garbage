@@ -1,5 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 open VG VG.AArch64 VG.Spec.MlDsa

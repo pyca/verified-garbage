@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: the values the rounding code computes
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 and the conditional steps on the sign bit, as natural numbers, from the
 target-independent lemmas of `Proof/MlDsa/Round/Decompose.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Round
 
