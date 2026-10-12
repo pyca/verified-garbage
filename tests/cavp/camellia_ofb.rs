@@ -3,7 +3,12 @@
 //! 3713's and NTT's vectors) on every length up to a few blocks, partial last
 //! blocks included, for each key length.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use verified_garbage::camellia_ecb::CamelliaEcb;
 use verified_garbage::camellia_ofb::{CamelliaOfb, InvalidKeyLength};

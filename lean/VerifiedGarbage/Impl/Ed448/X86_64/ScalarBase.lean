@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Ed448.X86_64.Point64
 import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
 import VerifiedGarbage.Spec.Ed448
+import VerifiedGarbage.Impl.Ed448.Comb
 
 /-!
 # Ed448 base-point multiplication on x86-64
@@ -15,11 +16,12 @@ subtractions, the constant-time swap, the inversion and the full reduction.
 Points are the specification's projective coordinates `(X : Y : Z)`.
 
 The scalar's bits are expanded into bytes at `BITS` (byte `t` is bit `t`),
-as X448 expands its scalar. Then, from the top bit down, the point `R`
-(slots 0–2, from the neutral point) is doubled (RFC 8032 §5.2.4's doubling
-formulas), `T = R + B` computed (§5.2.4's addition, `B` in slots 8–9 with `Z = 1`
-and `d` in slot 11), and `T` swapped into `R` with the mask of the bit: the
-same operations for every bit, whatever its value. The doubling and the
+as X448 expands its scalar. A four-column comb groups bits separated by 114
+positions, processing 114 rows from high to low. Each row doubles `R`
+(slots 0–2), selects one of 16 precomputed affine points with a full masked
+table scan, and adds it to `R`. The table covers all 456 input bits,
+including the eight bits that signing's reduced scalars leave clear.
+The doubling and the
 addition are calls of `vg_ed448_r64_point_double` and
 `vg_ed448_r64_point_add_affine` (`Point64.lean`), which keep `rsi` and
 `rbx`: the output's address is kept in `rsi` across the loop, and stored
@@ -86,6 +88,44 @@ def step (P : Point64.Ops) : Prog isa :=
 def mulLoop (P : Point64.Ops) : Prog isa :=
   .seq (.block [.mov32 .rbx (.imm 456)]) (.loop (step P) .ne)
 
+/-! ## Four-column fixed-base comb -/
+
+/-- The mask of `i` matching bits `rbx + {0,114,228,342}` of the scalar.
+All four addresses depend only on the public loop counter. -/
+def combMask (i : Nat) : List Instr :=
+  [.movzx8 .rax { base := .rdi, index := some .rbx, disp := ((BITS + 342 : Nat) : Int) },
+   .movzx8 .rdx { base := .rdi, index := some .rbx, disp := ((BITS + 228 : Nat) : Int) },
+   .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rdx),
+   .movzx8 .rdx { base := .rdi, index := some .rbx, disp := ((BITS + 114 : Nat) : Int) },
+   .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rdx),
+   .movzx8 .rdx { base := .rdi, index := some .rbx, disp := BITS },
+   .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rdx),
+   .alu .xor .rax (.imm (BitVec.ofNat 32 i)), .alu .cmp .rax (.imm 1),
+   .mov32 .rcx (.imm 0), .alu .sbb .rcx (.reg .rcx)]
+
+/-- Read one literal table entry and conditionally select it into slots 8–9.
+The entry is materialized regardless of the secret index. -/
+def combEntry (i : Nat) : List Instr :=
+  constSlot 3 (Comb.entry i).1 ++ constSlot 4 (Comb.entry i).2 ++ combMask i ++
+    cswap (slot 8) (slot 3) ++ cswap (slot 9) (slot 4)
+
+/-- Select an affine comb point by scanning every entry, including the identity. -/
+def combSelect : List Instr := (List.range 16).flatMap combEntry
+
+/-- Replace the accumulator by the sum in slots 3–5. -/
+def combAccept : List Instr :=
+  Impl.X448.X86_64.copyOut (slot 0) (slot 3) ++
+  Impl.X448.X86_64.copyOut (slot 1) (slot 4) ++
+  Impl.X448.X86_64.copyOut (slot 2) (slot 5) ++ [.alu .test .rbx (.reg .rbx)]
+
+def combStep (P : Point64.Ops) : Prog isa :=
+  .seq (.block [.alu .sub .rbx (.imm 1)]) <| .seq P.dbl <|
+  .seq (.block combSelect) <| .seq P.add (.block combAccept)
+
+/-- 114 iterations, processing all 456 bits with four columns. -/
+def combLoop (P : Point64.Ops) : Prog isa :=
+  .seq (.block [.mov32 .rbx (.imm 114)]) (.loop (combStep P) .ne)
+
 /-! ## Entry and exit -/
 
 /-- The callee-saved registers saved at the working space `rdx`, the output's
@@ -121,7 +161,7 @@ def encode (F : Field) : List Instr :=
 /-- `vg_ed448_scalar_base` with the field multiplications `F`, the point operations `P` and
 the inversion `inv` (`invert F`, or `invertCall F`, which calls `vg_gf448_r64_pow223`). -/
 def scalarBaseWith (F : Field) (P : Point64.Ops) (inv : Prog isa := invert F) : Prog isa :=
-  .seq (.block entry) <| .seq bits <| .seq (.block stashOut) <| .seq (mulLoop P) <|
+  .seq (.block entry) <| .seq bits <| .seq (.block stashOut) <| .seq (combLoop P) <|
     .seq (.block restashOut) <| .seq inv (.block (encode F))
 
 /-- The point operations call `vg_ed448_r64_point_double` and `vg_ed448_r64_point_add_affine`,

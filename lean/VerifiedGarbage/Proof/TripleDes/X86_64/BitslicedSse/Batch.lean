@@ -114,7 +114,7 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
   apply WP.mono (passes_ok d hS₂ 3 s₂ inv)
   intro s₃ q₃
   have g₃ : ∀ r, PassRegs r → s₃.gpr r = s.gpr r := by
-    intro r hr; rw [q₃.gpr r hr, g₂ r hr.2.1 hr.2.2.2.2.2]
+    intro r hr; rw [q₃.gpr r hr, g₂ r hr.2.1 hr.2.2.2.2.2.1]
   have si₃ := g₃ .rsi (by simp [PassRegs])
   have c₃ := g₃ .rcx (by simp [PassRegs])
   have rdx₃ := g₃ .rdx (by simp [PassRegs])
@@ -175,7 +175,7 @@ theorem batch_ok (d : Direction) {s : State} (h : BatchPre s) : WP isa (batch d)
       simp [u₂, u₁, gpr_setReg, v, rdx₄]
     simp only [s₅, cmpState, cf_arithFlags, u₂d,
       show ((128 : BitVec 32).signExtend 64).toNat = 128 by decide]
-  · rw [g₅ r a c, g₄ r hr.2.1 hr.2.2.2.2.2, g₃ r hr]
+  · rw [g₅ r a c, g₄ r hr.2.1 hr.2.2.2.2.2.1, g₃ r hr]
   · simp [s₅, cmpState, u₂, u₁, rd_setReg, rd_arithFlags, rd₄, q₃.rd, rd₂]
   · simp [s₅, cmpState, u₂, u₁, wr_setReg, wr_arithFlags, wr₄, q₃.wr, wr₂]
   · have a := q₃.frame

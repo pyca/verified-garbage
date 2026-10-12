@@ -7,10 +7,7 @@ import VerifiedGarbage.Proof.P521.X86_64.JointLayout
 import VerifiedGarbage.Proof.P521.X86_64.JointFrame
 import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
 
-/-! Concrete timing checks and the doubler of P-521's baseline and ADX joint verification.
-
-The prefix's products modulo `n` are checked without their displacements, as
-one template (`p521NMul`), analysed once. -/
+/-! Concrete timing checks and the doubler of P-521's baseline and ADX joint verification. -/
 namespace VG.Proof.Ecdsa.Verify.X86_64.P521
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.P521.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.P521.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Ecdsa.X86_64 VG.Proof.Mont
@@ -39,8 +36,7 @@ theorem joint_before_ct : ConstantTime isa (fun _ => True)
   refine VG.Taint.constantTime_mapBlocks taint_eraseInv (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx]) rfl
     (fun _ _ _ _ h => h) rfl (hc := ?hc) ?h
   case h =>
-    simp only [jointPrefix, Cfg.uv, Cfg.scalars, Impl.Weierstrass.X86_64.blocks, Code.mapBlocks,
-      p521NMul_ok]
+    simp only [jointPrefix, Cfg.uv, Cfg.scalars, Code.mapBlocks]
     taint_decide
 
 open Impl.Ecdsa.Verify.X86_64 in
@@ -49,8 +45,7 @@ theorem joint_adx_before_ct : ConstantTime isa (fun _ => True)
   refine VG.Taint.constantTime_mapBlocks taint_eraseInv (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx]) rfl
     (fun _ _ _ _ h => h) rfl (hc := ?hc) ?h
   case h =>
-    simp only [jointPrefix, Cfg.uv, Cfg.scalars, Impl.Weierstrass.X86_64.blocks, Code.mapBlocks,
-      p521XNMul_ok]
+    simp only [jointPrefix, Cfg.uv, Cfg.scalars, Code.mapBlocks]
     taint_decide
 
 theorem joint_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p521).inline :=

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
 import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 

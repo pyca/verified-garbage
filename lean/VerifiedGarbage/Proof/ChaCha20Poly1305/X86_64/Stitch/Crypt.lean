@@ -574,9 +574,10 @@ theorem Inv.step' {s₀ s s' : State} (h : Inv s₀ s)
 `vg_poly1305_blocks`, the only one `sealFor` stitches. -/
 theorem avx2_of (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
     v.callee.fold = 448 ∧ v.callee.pass = 0 ∧ v.callee.wide = 5 := by
-  rcases v.fold_poly with ⟨-, -, -, h⟩ | ⟨hf, hp, hw, -⟩ | ⟨-, -, -, h⟩
+  rcases v.fold_poly with ⟨-, -, -, h⟩ | ⟨hf, hp, hw, -⟩ | ⟨-, -, -, h | h⟩
   · rw [hv] at h; cases h
   · exact ⟨hf, hp, hw⟩
+  · rw [hv] at h; cases h
   · rw [hv] at h; cases h
 
 theorem cryptS_mx (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :

@@ -58,8 +58,4 @@ def guarded (c : Prog isa) : Prog isa := .seq expCheck (.ite .ne failOut c)
 /-- `vg_rsa_public_checked`. -/
 def publicChecked : Prog isa := guarded Public.code
 
-/-- `vg_rsa_public_precomputed_checked`, with Montgomery multiplication `mul`. -/
-def precomputedChecked (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  guarded (Precomputed.code mul)
-
 end VG.Impl.Rsa.X86_64.Checked

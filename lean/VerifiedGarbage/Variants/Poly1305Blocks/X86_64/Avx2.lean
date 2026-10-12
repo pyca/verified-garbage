@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Variant
 
 /-!
 # `vg_poly1305_blocks` on x86-64: with AVX2

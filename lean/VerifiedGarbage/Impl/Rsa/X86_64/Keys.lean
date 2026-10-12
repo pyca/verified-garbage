@@ -50,9 +50,30 @@ def sMo : Nat := sFn 13
 /-- `w` into `r12` and the stride into `r9`. -/
 def ws : List Instr := [.mov .r12 (.mem (hdr sW)), .mov .r9 (.mem (hdr sStride))]
 
-/-- The base of array `j` into `r`: `rdi + 256 + j · r9`. -/
-def base (j : Nat) (r : Reg) : List Instr :=
+/-- `mulBits` with `f` bits of fuel (`j ≤ f` suffices), by structural
+recursion, which the kernel evaluates. -/
+def mulBitsF (r : Reg) : Nat → Nat → List Instr
+  | 0, _ => []
+  | f + 1, j => if j < 2 then [] else
+    mulBitsF r f (j / 2) ++ ([.alu .add r (.reg r)] : List Instr) ++
+      (if j % 2 = 1 then ([.alu .add r (.reg .r9)] : List Instr) else [])
+
+/-- `r := j · r9` for `j ≥ 1`, from `r = r9`, by the bits of `j` below its
+top one, most significant first: `r := 2 r`, then `r := r + r9` if the bit
+is set. -/
+def mulBits (r : Reg) (j : Nat) : List Instr := mulBitsF r j j
+
+/-- `rdi + 256 + j · r9` into `r` by `j` additions of `r9`. -/
+def baseRep (j : Nat) (r : Reg) : List Instr :=
   ([.mov r (.reg .rdi), .alu .add r (.imm (BitVec.ofNat 32 hdrBytes))] : List Instr) ++ List.replicate j (.alu .add r (.reg .r9))
+
+/-- The base of array `j` into `r`: `rdi + 256 + j · r9`, with `j · r9` by
+`mulBits` (`r` and the flags only; `baseRep` for `j = 0`, or `r = rdi`,
+which reads `rdi` first). -/
+def base (j : Nat) (r : Reg) : List Instr :=
+  if j = 0 ∨ r = .rdi then baseRep j r
+  else ([.mov r (.reg .r9)] : List Instr) ++ mulBits r j ++
+    ([.alu .add r (.reg .rdi), .alu .add r (.imm (BitVec.ofNat 32 hdrBytes))] : List Instr)
 
 /-- `[j] := 0` (`w + 2` words). -/
 def zeroA (j : Nat) : Prog isa := .seq (.block (ws ++ base j .r8)) zeroAccLoop

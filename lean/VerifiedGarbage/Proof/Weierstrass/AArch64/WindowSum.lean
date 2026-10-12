@@ -135,7 +135,7 @@ theorem winAdd_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinL
     (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {s : State} (hs : Scr s base size)
     (hM : ModOkA K.M size C.p s.mem base)
     (hlt : ∀ x ∈ rcbR K.S K.R K.E, wordsVal s.mem base x K.M.n < C.p) {pa : Option (String × Nat)}
-    (hpa : AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa) :
+    (hpa : AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa) (hr : AddReady base K.M s.mem K.S pa) :
     WP isa (.seq (addP K.M K.S K.R K.E K.D pa) (.block (copyPt K.M.n K.R K.D))) s
       (SumPostW K C base size (VG.Proof.Weierstrass.rcbAdd3 (tmv C K.M.n base s K.S.b3)
         (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
@@ -151,7 +151,7 @@ theorem winAdd_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinL
   have hI : Inv K.M base size C.p (· ∈ winSlots K) (rcbR K.S K.R K.E) (tmv C K.M.n base s) s :=
     ⟨hs, hM, fun x hx => hO x (List.mem_append_right _ hx), hlt, fun _ _ => rfl⟩
   exact winCopy_ok hL hA hs
-    (addP_ok hL.lay hA.al hp (hL.rcbApart_D (Or.inr rfl)) hO (hA.low hLo) hpa hI (fun x hx => hx))
+    (addP_ok hL.lay hA.al hp (hL.rcbApart_D (Or.inr rfl)) hO (hA.low hLo) hpa hI (fun x hx => hx) hr)
 
 /-- `R = R + E`, for `R` representing `PR` and `E` `PQ`. -/
 theorem sumStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)
@@ -162,7 +162,8 @@ theorem sumStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     (hltq : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal s.mem base x K.M.n < C.p)
     (hR : Rep C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z) PR)
     (hQ : Rep C (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) (tmv C K.M.n base s K.E.z) PQ)
-    {pa : Option (String × Nat)} (hpa : AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa) :
+    {pa : Option (String × Nat)} (hpa : AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa)
+    (hr : AddReady base K.M s₀.mem K.S pa) (hfar : AddFar K.M K.S (winW K) pa) :
     WP isa (.seq (addP K.M K.S K.R K.E K.D pa) (.block (copyPt K.M.n K.R K.D))) s fun s' =>
       WinSt K C base size P s₀ s' ∧ s'.gpr .x19 = s.gpr .x19 ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
@@ -181,7 +182,8 @@ theorem sumStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     · exact hltq _ (by simp)
     · exact hltq _ (by simp)
     · exact hltq _ (by simp)
-  refine WP.mono (winAdd_ok hL hA hp hS.scr hS.mod hlt hpa) fun s' S => ?_
+  refine WP.mono (winAdd_ok hL hA hp hS.scr hS.mod hlt hpa (hr.unch hpa (by simp [winSlots, winRo])
+    (by have := hS.scr.nowrap; omega_using [this]) hS.unch hfar)) fun s' S => ?_
   have hV := S.val
   rw [tb] at hV
   exact ⟨hS.next hL S.scr (S.keep.mono clob_combClob) S.unch, S.keep.gpr _ (x19_not_clob _), S.lt,

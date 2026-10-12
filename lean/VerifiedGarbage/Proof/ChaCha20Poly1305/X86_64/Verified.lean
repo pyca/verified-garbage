@@ -51,12 +51,12 @@ def openSat : State where
 /-- `seal` and `open` never write the stack pointer. -/
 theorem seal_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     («seal» v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases v.fold_poly with ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ <;>
+  rcases v.fold_poly with ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb | hb⟩ <;>
     (simp only [«seal», prologue, crypt, cryptBig, Code.all, v.spSafe, hf, hpass, hw, hb]; lit_decide)
 
 theorem open_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     («open» v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases v.fold_poly with ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ <;>
+  rcases v.fold_poly with ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb | hb⟩ <;>
     (simp only [«open», prologue, crypt, cryptBig, Code.all, v.spSafe, hf, hpass, hw, hb]; lit_decide)
 
 theorem seal_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : sealX86_64.pre s) :

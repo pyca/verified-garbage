@@ -2,6 +2,7 @@ import VerifiedGarbage.Spec.TripleDes.Ofb
 import VerifiedGarbage.Spec.TripleDes.Cfb
 import VerifiedGarbage.Spec.TripleDes.Cfb8
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.TripleDes.CbcBlocks
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 with their working space as an argument
@@ -12,7 +13,8 @@ with a `scratch` buffer of `n` words appended, whatever it holds (each
 target lays out its own), for the frame that keeps it on the stack
 (`Verified.stackScratchWiped`), which needs each postcondition to read the
 memory on return only within the function's buffers (`ofbPostOut_local`,
-…).
+…), and, where the frame copies stack arguments (ARMv7), on entry too
+(`ofbPost_local`, …).
 -/
 
 namespace VG.Proof.TripleDes
@@ -180,6 +182,91 @@ theorem cfb8DecPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cfb8Sig.words 
     have := Nat.mod_le n.toNat (2 ^ pb)
     rw [bytesAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
       rw [BitVec.toNat_setWidth] at hi; omega), bytesAt_congr hv]
+    exact h
+
+theorem ofbPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ofbSig.words pb).length →
+    (∀ b ∈ Sig.bufs ofbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ofbSig.words pb) (ofbPost pb) vs m₁ m' r → Curry.apply (ofbSig.words pb) (ofbPost pb) vs m₂ m' r
+  | [_, _, data, n], m₁, m₂, m', r, _, hb, h => by
+    simp only [ofbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.1
+    have hv := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ofbPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ofbPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, ofbPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    rw [scheduleAt_copy hs, bytesAt_congr hv, cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
+      rw [BitVec.toNat_setWidth] at hi; omega)]
+    exact h
+
+theorem cfbEncPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ofbSig.words pb).length →
+    (∀ b ∈ Sig.bufs ofbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ofbSig.words pb) (cfbEncPost pb) vs m₁ m' r → Curry.apply (ofbSig.words pb) (cfbEncPost pb) vs m₂ m' r
+  | [_, _, data, n], m₁, m₂, m', r, _, hb, h => by
+    simp only [ofbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.1
+    have hv := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (cfbEncPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (cfbEncPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, cfbEncPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    rw [scheduleAt_copy hs, bytesAt_congr hv, cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
+      rw [BitVec.toNat_setWidth] at hi; omega)]
+    exact h
+
+theorem cfbDecPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ofbSig.words pb).length →
+    (∀ b ∈ Sig.bufs ofbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (ofbSig.words pb) (cfbDecPost pb) vs m₁ m' r → Curry.apply (ofbSig.words pb) (cfbDecPost pb) vs m₂ m' r
+  | [_, _, data, n], m₁, m₂, m', r, _, hb, h => by
+    simp only [ofbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.1
+    have hv := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (cfbDecPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (cfbDecPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, cfbDecPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    rw [scheduleAt_copy hs, bytesAt_congr hv, cbcBlocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
+      rw [BitVec.toNat_setWidth] at hi; omega)]
+    exact h
+
+theorem cfb8EncPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cfb8Sig.words pb).length →
+    (∀ b ∈ Sig.bufs cfb8Sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (cfb8Sig.words pb) (cfb8EncPost pb) vs m₁ m' r → Curry.apply (cfb8Sig.words pb) (cfb8EncPost pb) vs m₂ m' r
+  | [_, _, data, n], m₁, m₂, m', r, _, hb, h => by
+    simp only [cfb8Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.1
+    have hv := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (cfb8EncPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (cfb8EncPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, cfb8EncPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    rw [scheduleAt_copy hs, bytesAt_congr hv, bytesAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
+      rw [BitVec.toNat_setWidth] at hi; omega)]
+    exact h
+
+theorem cfb8DecPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cfb8Sig.words pb).length →
+    (∀ b ∈ Sig.bufs cfb8Sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (cfb8Sig.words pb) (cfb8DecPost pb) vs m₁ m' r → Curry.apply (cfb8Sig.words pb) (cfb8DecPost pb) vs m₂ m' r
+  | [_, _, data, n], m₁, m₂, m', r, _, hb, h => by
+    simp only [cfb8Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.1
+    have hv := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (cfb8DecPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (cfb8DecPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, cfb8DecPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le n.toNat (2 ^ pb)
+    rw [scheduleAt_copy hs, bytesAt_congr hv, bytesAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
+      rw [BitVec.toNat_setWidth] at hi; omega)]
     exact h
 
 end VG.Proof.TripleDes

@@ -402,10 +402,10 @@ def powStep : Prog isa :=
       .mov32 .rcx (imm 1)] : List Instr) ++ ptr .r8 .r15 scrO))
   (.seq (.call c.gh.name c.gh.code) (.block [.alu .add .rbp (imm 16)]))
 
-/-- `n` powers, one after the other. -/
-def powSteps : Nat → Prog isa
-  | 0 => .block []
-  | n + 1 => .seq (powSteps n) (powStep c)
+/-- The 47 powers `H²`–`H⁴⁸`, one per iteration, until `rbp` reaches the end
+of the table at `r13 + 1024`. -/
+def powLoop : Prog isa :=
+  .loop (.seq (powStep c) (.block (ptr .rax .r13 1024 ++ ([.alu .cmp .rbp (.reg .rax)] : List Instr)))) .ne
 
 /-- `vg_aes_gcm_init_precomputed(key = rdi, key_len = rsi, ctx = rdx, scratch = rcx)`:
 `init`, then the hash subkey `H` copied to `ctx + 256`, and its powers
@@ -413,7 +413,7 @@ def powSteps : Nat → Prog isa
 def initPrecomputed : Prog isa :=
   initWith c (.seq (.block (([.mov .rax (.mem (at_ .r13 240)), .store (at_ .r13 256) .rax,
       .mov .rax (.mem (at_ .r13 248)), .store (at_ .r13 264) .rax] : List Instr) ++ ptr .rbp .r13 272))
-    (.seq (powSteps c 47) (.block restore)))
+    (.seq (powLoop c) (.block restore)))
 
 /-- `vg_aes_gcm_stream_init(ctx = rdi, nonce = rsi, nonce_len = rdx, state = rcx, scratch = r8)`. -/
 def streamInit : Prog isa :=

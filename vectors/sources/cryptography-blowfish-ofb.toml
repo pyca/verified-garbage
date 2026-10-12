@@ -1,0 +1,5 @@
+name = "pyca/cryptography Blowfish-OFB vectors (reformatted from Schneier's Blowfish test vectors, vectors-2.txt; bf-ofb.txt)"
+directories = ["cryptography-blowfish-ofb"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/dd22989f9594704bfef2ea3a8b08b40774a06a23/vectors/cryptography_vectors/ciphers/Blowfish/bf-ofb.txt"
+sha256 = "9be2ba61d90320d114898e004c62b3d1fbb469b28e673a9db7f0052255434571"
+retrieved = 2026-10-11

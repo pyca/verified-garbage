@@ -448,28 +448,10 @@ theorem streamDecryptP_framed :
 /-! ### `vg_aes_gcm_init_precomputed` -/
 
 omit B in
-theorem powSteps_allInstrs {p : Instr → Bool} (h : (powStep v.callees).allInstrs p = true) :
-    ∀ n, (powSteps v.callees n).allInstrs p = true
-  | 0 => rfl
-  | n + 1 => by simp only [powSteps, Code.allInstrs, powSteps_allInstrs h n, h, Bool.and_self]
-
-omit B in
-theorem powSteps_all {p : Instr → Bool} (h : (powStep v.callees).all p = true) :
-    ∀ n, (powSteps v.callees n).all p = true
-  | 0 => rfl
-  | n + 1 => by simp only [powSteps, Code.all, powSteps_all h n, h, Bool.and_self]
-
-omit B in
-theorem powSteps_xdepth (h : (powStep v.callees).x86_64Depth ≤ 8) :
-    ∀ n, (powSteps v.callees n).x86_64Depth ≤ 8
-  | 0 => by show (Code.block ([] : List Instr)).x86_64Depth ≤ 8; decide
-  | n + 1 => by simp only [powSteps, Code.x86_64Depth, Nat.max_le]; exact ⟨powSteps_xdepth h n, h⟩
-
-omit B in
 theorem initP_mx : (initPrecomputed v.callees).allInstrs (fun i => !loadsMxcsr i) = true := by
-  have hs : (powSteps v.callees 47).allInstrs (fun i => !loadsMxcsr i) = true := powSteps_allInstrs v (by
-    simp only [powStep, Code.allInstrs, GcmImpl.callees, v.gh.mxcsr, Bool.true_and, Bool.and_true]
-    decide +kernel) 47
+  have hs : (powLoop v.callees).allInstrs (fun i => !loadsMxcsr i) = true := by
+    simp only [powLoop, powStep, Code.allInstrs, GcmImpl.callees, v.gh.mxcsr, Bool.true_and, Bool.and_true]
+    decide +kernel
   simp only [initPrecomputed, initWith, Code.allInstrs]
   rw [hs]
   simp only [GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, Bool.true_and, Bool.and_true]
@@ -477,9 +459,9 @@ theorem initP_mx : (initPrecomputed v.callees).allInstrs (fun i => !loadsMxcsr i
 
 omit B in
 theorem initP_spSafe : (initPrecomputed v.callees).all (fun i => !X86_64.isa.writesSp i) = true := by
-  have hs : (powSteps v.callees 47).all (fun i => !X86_64.isa.writesSp i) = true := powSteps_all v (by
-    simp only [powStep, Code.all, GcmImpl.callees, v.gh.spSafe, Bool.true_and, Bool.and_true]
-    decide +kernel) 47
+  have hs : (powLoop v.callees).all (fun i => !X86_64.isa.writesSp i) = true := by
+    simp only [powLoop, powStep, Code.all, GcmImpl.callees, v.gh.spSafe, Bool.true_and, Bool.and_true]
+    decide +kernel
   simp only [initPrecomputed, initWith, Code.all]
   rw [hs]
   simp only [GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, Bool.true_and, Bool.and_true]
@@ -487,9 +469,9 @@ theorem initP_spSafe : (initPrecomputed v.callees).all (fun i => !X86_64.isa.wri
 
 omit B in
 theorem initP_xdepth : (initPrecomputed v.callees).x86_64Depth ≤ 8 := by
-  have hs : (powSteps v.callees 47).x86_64Depth ≤ 8 := powSteps_xdepth v (by
-    simp only [powStep, Code.x86_64Depth, GcmImpl.callees, v.gh.noStack, Nat.max_le]
-    decide +kernel) 47
+  have hs : (powLoop v.callees).x86_64Depth ≤ 8 := by
+    simp only [powLoop, powStep, Code.x86_64Depth, GcmImpl.callees, v.gh.noStack, Nat.max_le]
+    decide +kernel
   simp only [initPrecomputed, initWith, Code.x86_64Depth, Nat.max_le]
   refine ⟨?_, ?_, ?_, ?_, ?_, hs, ?_⟩
   all_goals first | decide +kernel | (simp only [GcmImpl.callees, v.ctr.noStack, v.key.noStack]; decide +kernel)

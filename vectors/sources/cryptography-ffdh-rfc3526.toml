@@ -1,0 +1,5 @@
+name = "pyca/cryptography FFDH vectors (rfc3526.txt)"
+directories = ["cryptography-ffdh/rfc3526"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/874145c30c2143546ce30c38eccd88f3bae3425c/vectors/cryptography_vectors/asymmetric/DH/rfc3526.txt"
+sha256 = "60ee889a79aab72c2e228bf83510c0d76abf824e3d2a9597d2cc5db010151c8d"
+retrieved = 2026-10-12

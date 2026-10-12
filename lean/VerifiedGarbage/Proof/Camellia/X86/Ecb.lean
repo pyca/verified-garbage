@@ -119,7 +119,7 @@ theorem body_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) {g : Nat
   let b := arg s₀ 4
   let E : Nat → BitVec 64 := fun i => (schedWords s₀.mem (sched.setWidth 64) R).getD (permOf dir g i) 0
   have hfit' : b.toNat + 4 * slots ≤ 2 ^ 32 := fitB
-  have hwS : ScrIn s₀.wr b := ⟨by rw [hwr]; simp [b], fitB⟩
+  have hwS : ScrIn s₀.wr b := .exact (by rw [hwr]; simp [b]) fitB
   have hwD : (⟨D.setWidth 64, 16 * n⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [D, n]
   have hrK : (⟨sched.setWidth 64, 272⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp [sched]
   have hrA : (⟨argAddr s₀ 0, 20⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
@@ -236,7 +236,7 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) :
   let D := arg s₀ 2
   let n := (arg s₀ 3).toNat
   let b := arg s₀ 4
-  have hwS : ScrIn s₀.wr b := ⟨by rw [hwr]; simp [b], fitB⟩
+  have hwS : ScrIn s₀.wr b := .exact (by rw [hwr]; simp [b]) fitB
   have hrA : (⟨argAddr s₀ 0, 20⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
   have argIn : ∀ {s : State}, s.rd = s₀.rd → s.wr = s₀.wr → s.gpr .esp = s₀.gpr .esp → ∀ i < 5,
       InRegions (s.rd ++ s.wr) (s.ea (argOp i)) 4 := fun h1 h2 h3 i hi => by

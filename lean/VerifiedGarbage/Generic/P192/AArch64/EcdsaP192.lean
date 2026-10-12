@@ -13,7 +13,8 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P192.curve) : List A
     doc := Spec.Ecdsa.P192.signApi.doc (notes := ["Field elements are four 64-bit words in Montgomery form. \
       Scalar multiplication uses a fixed 256-iteration ladder with the general complete addition \
       formulas of Renes, Costello and Batina (Algorithm 1). \
-      Inversions use divsteps. Branches and memory addresses depend only on pointers and loop counters."])
+      Inversions are calls of `vg_p192_inv_mod_p` and `vg_p192_inv_mod_n`, by divsteps. \
+      Branches and memory addresses depend only on pointers and loop counters."])
     code := Impl.Ecdsa.AArch64.signP192
     contract := Spec.Ecdsa.P192.inst.signContract AArch64.abi
     verified := Proof.Ecdsa.AArch64.P192.sign_verified h.law h.inv
@@ -23,7 +24,8 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P192.curve) : List A
     doc := Spec.Ecdsa.P192.verifyApi.doc (notes := ["Field elements are four 64-bit words in Montgomery form. \
       Scalar multiplication uses a fixed 256-iteration ladder with the general complete addition \
       formulas of Renes, Costello and Batina (Algorithm 1). \
-      Inversions use divsteps. Branches and memory addresses depend only on pointers and loop counters."])
+      Inversions are calls of `vg_p192_inv_mod_p` and `vg_p192_inv_mod_n`, by divsteps. \
+      Branches and memory addresses depend only on pointers and loop counters."])
     code := Impl.Ecdsa.Verify.AArch64.P192.verify
     contract := Spec.Ecdsa.P192.inst.verifyContract AArch64.abi
     verified := Proof.Ecdsa.Verify.AArch64.P192.verify_verified h.law h.inv

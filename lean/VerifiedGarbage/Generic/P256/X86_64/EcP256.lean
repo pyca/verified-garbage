@@ -24,7 +24,7 @@ namespace VG.Generic.P256.X86_64.EcP256
 `rsp` (`hsp`). -/
 def publicKey (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
-      (Spec.EcKey.P256.inst.publicKeyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)))
+      (Spec.EcKey.P256.inst.publicKeyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
   { Spec.EcKey.P256.publicKeyApi with
     name := Spec.EcKey.P256.publicKeyApi.name ++ (if adx then "_adx" else "")
@@ -38,7 +38,8 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
     consts := Impl.Ecdsa.X86_64.p256.combConsts
     code
     contract := Spec.EcKey.P256.inst.publicKeyContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)
+      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8
+    stack := 8
     verified := hv
     spSafe := hsp
     features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }

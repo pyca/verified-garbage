@@ -66,12 +66,12 @@ theorem streamVerify_keepsV (v : GcmImpl) : (streamVerify v.callees).allInstrs k
     v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem seal_keepsV (v : GcmImpl) : («seal» v.callees).allInstrs keepsV = true := by
-  simp only [«seal», j0, j0hash, oneAad, encBody, fo, textAbs, finBody, tag, crypt, crSeg1, crSeg2, crTail,
+  simp only [«seal», j0, j0hash, oneAad, absorbAl, encBody, fo, textAbs, finBody, tag, crypt, crSeg1, crSeg2, crTail,
     ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees,
     Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem open_keepsV (v : GcmImpl) : («open» v.callees).allInstrs keepsV = true := by
-  simp only [«open», openMain, oneCrypt, tagLenOk, tlTest, tagIn, cmpSeg, j0, j0hash, oneAad, decAbs, fo, textAbs,
+  simp only [«open», openMain, oneCrypt, cryptAl, crArgs, tagLenOk, tlTest, tagIn, cmpSeg, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs,
     finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor,
     padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]
   decide +kernel

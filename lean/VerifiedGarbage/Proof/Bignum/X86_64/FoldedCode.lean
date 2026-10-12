@@ -7,9 +7,10 @@ open VG.Impl.Rsa.X86_64
 open VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
+/-- The code after the check of `e`, for a valid `e`. -/
 theorem code_correct (M : Mont)
     (hmx : (Folded.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (h : pdContract.pre s)
-    (he : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat) = 65537) :
+    (hev : Spec.Rsa.exponentValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)) = true) :
     ∃ t s', Exec isa (Folded.code M.mm) s t s' ∧ abiPreserved s s' ∧ pdContract.post s s' := by
   have c := pdCtx_of h
   have hZ' := c.hZ
@@ -88,12 +89,12 @@ theorem code_correct (M : Mont)
   · have hct : cb = true := by simpa using hb
     rw [hct] at hcb
     obtain ⟨hodd, hN1, hRN⟩ := checks_facts (by omega) hcb
-    have hpre := pdPre_of c hdi hO hK hE hL hIn ho₁ k₁ hW₂ hb₂ f₂ k₂ hodd hN1 hRN
+    have hpre := pdPre_of c hdi hO hK hE hL hIn ho₁ k₁ hW₂ hb₂ f₂ k₂ hodd hN1 hRN hev
     refine WP.mono (rest_ok M hpre) fun t ⟨y, hy, hp⟩ => fin t _ _ hp fun nB hl hv hNv hRv => ?_
     rw [hN₂.trans hNv] at hy hp ⊢
     have hyX := hy (by
       rw [hR₂, hRv, Nat.mod_mod, ← Nat.pow_add, show 128 * (((s.gpr .rsi).toNat + 7) / 8) =
         64 * (((s.gpr .rsi).toNat + 7) / 8) + 64 * (((s.gpr .rsi).toNat + 7) / 8) by omega])
-    exact ⟨rfl,by rw [hyX,he]⟩
+    exact ⟨rfl, by rw [hyX]⟩
 
 end VG.Proof.Bignum.X86_64.FoldedPublic

@@ -50,11 +50,21 @@ inductive T
   | mem (b i : Nat)
   | add (a b : T)
   | xor (a b : T)
+  /-- Doubleword `i` of the input of `vg_chacha20_xor_split`'s pass
+  (`Avx512Split.lean`): of `src` (at `r8`) if its block ends within the
+  first `r10` bytes, else of the data (at `rsi`). -/
+  | inp (i : Nat)
   deriving DecidableEq
+
+/-- Doubleword `i` of the input of a pass of `vg_chacha20_xor_split`. -/
+def inpW (s₀ : State) (i : Nat) : Word :=
+  if 64 * (i / 16) + 64 ≤ (s₀.gpr .r10).toNat then s₀.mem.readW (s₀.gpr .r8 + BitVec.ofNat 64 (4 * i)) 32
+  else s₀.mem.readW (s₀.gpr .rsi + BitVec.ofNat 64 (4 * i)) 32
 
 def T.eval (s₀ : State) : T → Word
   | .reg r p => zw s₀ (zreg r) p
   | .mem b i => s₀.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 32
+  | .inp i => inpW s₀ i
   | .add a b => a.eval s₀ + b.eval s₀
   | .xor a b => a.eval s₀ ^^^ b.eval s₀
 

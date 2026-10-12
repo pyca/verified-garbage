@@ -30,6 +30,13 @@ theorem lay_map_em (hc : BaseCfgOk c) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M
   (lay_map hc hmo htmp hMn hl).congr fun x => by
     simp only [List.map_append, List.map_cons, List.map_nil, List.mem_append, List.mem_singleton]
 
+/-- The complete additions' function reads `b` at `EM`'s slot. -/
+theorem padd_bAt {name : String} {bAt : Nat} (h : c.padd = some (name, bAt)) : bAt = c.sl EM := by
+  unfold Cfg.padd at h
+  cases hp : c.pointOps with
+  | none => rw [hp] at h; cases h
+  | some C => rw [hp] at h; cases h; rfl
+
 /-- The complete additions' calls, on slots `Sl` laid out with `EM`'s. -/
 theorem addOk_of (hc : BaseCfgOk c) {Sl : Nat → Prop}
     (hL : Lay c.MP' size fun x => Sl x ∨ x = c.sl EM) :

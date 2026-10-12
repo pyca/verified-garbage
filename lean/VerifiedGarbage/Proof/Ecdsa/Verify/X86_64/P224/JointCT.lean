@@ -24,9 +24,8 @@ theorem jointVerify_ct :
     ConstantTime isa
       (Spec.Ecdsa.P224.inst.verifyContract (X86_64.abi.withConsts p224.combConsts)).pre
       (Spec.Ecdsa.P224.inst.verifyContract (X86_64.abi.withConsts p224.combConsts)).pub
-      Impl.Ecdsa.Verify.X86_64.jointVerifyP224 := by
+      Impl.Ecdsa.Verify.X86_64.jointVerifyP224.inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
-  rw [← Code.inline_of_noCalls (c := Impl.Ecdsa.Verify.X86_64.jointVerifyP224) (by lit_decide)] at e₁ e₂
   exact jointVerify_p224_public_ct hL hT hI _ _ _ _ _ _ (pre_of (implies.pre _ pre₁))
     (pre_of (implies.pre _ pre₂)) (jointPublic_of_spec pub) e₁ e₂
 

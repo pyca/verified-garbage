@@ -52,7 +52,7 @@ theorem word_disjoint {dir : Dir} {B : Addr} {d : Nat} (hd : d + 8 ≤ 8 * tailS
 theorem ready_frame {d : Dir} {s s' : State} {B : Addr} {k : Nat × List (BitVec 64)} {rs : List Region}
     (h : Ready d s B k) (hf : Frame rs s.mem s'.mem)
     (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (dirCore d) B) r ∨ Region.Sub r (bufRegion (dirCore d) B))
-    (hg : ∀ r, r ∉ modeRegs (dirCore d) → s'.gpr r = s.gpr r) : Ready d s' B k := by
+    (_ : Modes.X86_64.WrIn rs s s') (hg : ∀ r, r ∉ modeRegs (dirCore d) → s'.gpr r = s.gpr r) : Ready d s' B k := by
   obtain ⟨hR, hm, he, hrdi⟩ := h
   have hR' : ∀ d, d + 8 ≤ 8 * tailSlot →
       s'.mem.readW (B + BitVec.ofNat 64 d) 64 = s.mem.readW (B + BitVec.ofNat 64 d) 64 := fun d h1 =>
@@ -355,7 +355,7 @@ def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
     by simp only [dirCore]; decide⟩
   keyRegs_ok := by simp only [dirCore]; decide
   regs_ok := by simp only [dirCore, Modes.X86_64.regsOk]; decide
-  keyArgs_congr := keyArgs_congr
+  keyArgs_congr h hr hrd hwr _ hf := keyArgs_congr h hr hrd hwr hf
   ready_frame := ready_frame
   prepare_wp := prepare_wp d
   crypt_wp := crypt_wp d

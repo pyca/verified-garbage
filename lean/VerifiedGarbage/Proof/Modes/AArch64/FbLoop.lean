@@ -218,9 +218,9 @@ theorem fbBlock_wp (cs : BlockSpec c) (mo : FbMode) {ivR : Reg} (hivR : ivR ∉ 
       simp only [List.mem_singleton] at hx; subst hx; exact dDS subCore) hn64 (hqr hq hr)
   -- The step after `crypt`.
   have data₂ : s₂.gpr c.dataReg = A := by rw [dr₂, hi.dataR]
-  refine WP.block_append (WP.mono (fbOp_wp mo (by omega) (by omega) data₂ (by rw [base₂]) d6 d7
+  refine WP.block_append (WP.mono_syms (fbOp_wp mo (by omega) (by omega) data₂ (by rw [base₂]) d6 d7
     (fun w hw' => by rw [wr₂]; exact inA w hw') (fun w hw' => by rw [wr₂]; exact inT w hw') dAT (by omega))
-    fun s₃a ⟨g₃a, rd₃a, wr₃a, mA₃, mT₃, f₃a⟩ => ?_)
+    fun s₃a ⟨g₃a, rd₃a, wr₃a, mA₃, mT₃, f₃a⟩ sy₃a => ?_)
   obtain ⟨s₃b, e₃b, a₃b, o₃b, m₃b, rd₃b, wr₃b⟩ := addImm_ok s₃a c.dataReg c.dataReg (v := 8 * c.bw) (by omega)
   obtain ⟨s₃, e₃, l₃, o₃, m₃, rd₃, wr₃⟩ := subImm_ok s₃b c.leftReg c.leftReg (v := 1) (by decide)
   refine WP.of_runBlock ⟨s₃, by
@@ -277,7 +277,14 @@ theorem fbBlock_wp (cs : BlockSpec c) (mo : FbMode) {ivR : Reg} (hivR : ivR ∉ 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact .inl ((dDS subCore).sub_left subA).symm
-    · exact .inr subTbuf) fun r hr => by
+    · exact .inr subTbuf)
+    ⟨fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨_, by rw [wr₂]; exact hwD, subA⟩
+      · exact ⟨_, by rw [wr₂]; exact hwS, subT⟩,
+      by rw [rd₃, rd₃b, rd₃a], by rw [wr₃, wr₃b, wr₃a],
+      by rw [runBlock_syms e₃, runBlock_syms e₃b, sy₃a]⟩ fun r hr => by
     obtain ⟨h1, h2, h3⟩ := of_not_modeRegs hr
     exact keep₃ r (not_own h1).1 (not_own h1).2.1 h2 h3
   -- The buffer and the data.

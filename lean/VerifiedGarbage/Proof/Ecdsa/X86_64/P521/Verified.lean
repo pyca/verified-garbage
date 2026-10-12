@@ -56,6 +56,7 @@ theorem p521_ok (hI : InvSounds) : CfgOk p521 where
   p_lt_2n := by decide +kernel
   minv_p := by decide +kernel
   red_p := by decide +kernel
+  red_n := by decide +kernel
   minv_n := by decide +kernel
   len8 := by decide
   len_lo := by decide
@@ -78,7 +79,7 @@ theorem p521_ok (hI : InvSounds) : CfgOk p521 where
   comb_am3 := fun _ _ => by unfold AM3; decide +kernel
   am3 := by unfold AM3; decide +kernel
   even h := absurd h (by decide)
-  inverse h := absurd h (by decide)
+  inverse _ := ⟨by decide, rfl⟩
 
 theorem p521_tbls (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
     CombTbls p521 := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩

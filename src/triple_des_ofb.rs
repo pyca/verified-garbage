@@ -5,15 +5,21 @@
 //! `vg_triple_des_expand_key` (contract `VG.Spec.TripleDes.expandKeyContract`)
 //! writes the key schedule, and `vg_triple_des_ofb`
 //! (`VG.Spec.TripleDes.ofbContract`) XORs whole blocks with the output blocks
-//! `Oⱼ = CIPH_K(Oⱼ₋₁)` from the block at `iv`, which it replaces with the
-//! last output block, in constant time: its timing depends on none of the
-//! key, the chaining value and the data. It is the modes' generic OFB over
-//! the scalar block function. This module holds the key schedule and handles
-//! a partial last block (§6.4, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block
-//! is the next output block, whose first bytes it XORs into the rest of the
-//! input.
+//! `Oⱼ = CIPH_K(Oⱼ₋₁)` from the block at `iv`, which it replaces with the last
+//! output block, in constant time: its timing depends on none of the key, the
+//! chaining value and the data. It is the modes' generic OFB over the scalar
+//! block function: on x86, x86-64 and AArch64 over the block code itself, on
+//! ARMv7 calling the verified `vg_triple_des_ecb_encrypt` for each block. This
+//! module holds the key schedule and handles a partial last block (§6.4, `Cₙ* =
+//! Pₙ* ⊕ MSB_u(Oₙ)`): OFB of a zero block is the next output block, whose first
+//! bytes it XORs into the rest of the input.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::arch::triple_des::vg_triple_des_expand_key;
 use crate::arch::triple_des_ofb::vg_triple_des_ofb;

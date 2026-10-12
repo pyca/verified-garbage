@@ -39,7 +39,7 @@ structure BatchFields (m : Mem) (b p : Addr) (L : Nat→List Zq) : Prop where
  count : ∀i<4,m.readW (countAt b i) 64=BitVec.ofNat 64 (256-(L i).length)
 
 structure BatchInv (σ s : State) (b p : Addr) (L : Nat→List Zq) : Prop where
- keep : Keep (.x0::parserRegs) σ s
+ keep : Keep batchRegs σ s
  frame : Frame (batchWrites b p) σ.mem s.mem
  base : s.gpr .x19=b
  output : s.gpr .x21=p

@@ -81,7 +81,8 @@ theorem cfb8_wp (cs : BlockSpec c) (enc : Bool) {r : CtrRegs} (hr : RegsOk r) (h
   have kr := keyRegs_ne cs.keyRegs_ok
   have hkA : cs.KeyArgs sA [S] k :=
     cs.keyArgs_congr hk (fun x hx => gA' x (not_setupRegs (kr x hx)).1 (fun e => hiv.key (e ▸ hx))
-      (fun e => dk (e ▸ hx)) (fun e => lk (e ▸ hx))) rdA' wrA' fA
+      (fun e => dk (e ▸ hx)) (fun e => lk (e ▸ hx))) rdA' wrA'
+      (by rw [runBlock_syms eA, runBlock_syms eS, runBlock_syms eE]) fA
   -- The key.
   refine WP.seq (WP.mono (WP.keepReg hsc.1 (cs.prepare_wp bA ⟨by rw [wrA']; exact hs.wr, hs.fit⟩
     List.mem_cons_self hkA)) fun s₄ ⟨⟨ready₄, b₄, dr₄, lr₄, f₄, rd₄, wr₄⟩, iv₄⟩ => ?_)

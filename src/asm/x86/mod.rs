@@ -47,7 +47,25 @@ pub(crate) mod blake2s;
 pub(crate) mod blowfish;
 
 #[rustfmt::skip]
+pub(crate) mod blowfish_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod blowfish_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod blowfish_ofb;
+
+#[rustfmt::skip]
 pub(crate) mod camellia;
+
+#[rustfmt::skip]
+pub(crate) mod camellia_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod camellia_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod camellia_ofb;
 
 #[rustfmt::skip]
 pub(crate) mod cast5;
@@ -185,6 +203,15 @@ pub(crate) mod hmac_sha512_256;
 pub(crate) mod idea;
 
 #[rustfmt::skip]
+pub(crate) mod idea_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod idea_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod idea_ofb;
+
+#[rustfmt::skip]
 pub(crate) mod md5;
 
 #[rustfmt::skip]
@@ -315,6 +342,15 @@ pub(crate) mod triple_des;
 
 #[rustfmt::skip]
 pub(crate) mod triple_des_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_cfb8;
+
+#[rustfmt::skip]
+pub(crate) mod triple_des_ofb;
 
 #[rustfmt::skip]
 pub(crate) mod x25519;

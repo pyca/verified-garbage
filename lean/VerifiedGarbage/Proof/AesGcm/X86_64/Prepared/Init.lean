@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.InitP
-import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Convert
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.ConvertLoop
 
 /-! # Key setup with a prepared GHASH power table -/
 
@@ -30,7 +30,7 @@ theorem initPrepared_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.initPrepare
   have pC₅ : Covers [⟨s.gpr .rdx, 1024⟩] s₅.wr := by rw [D.wr]; exact pC
   have pW₅ : Covers [⟨s.gpr .rcx, 2560⟩] s₅.wr := by rw [D.wr]; exact pW
   refine WP.seq (WP.mono (powStart_ok L pC₅ D.r13 D.r15 D.rsp) fun t I => ?_)
-  refine WP.seq (WP.mono (powSteps_ok v L pC₅ pW₅ 47 (Nat.le_refl _) I) fun t' I' => ?_)
+  refine WP.seq (WP.mono (powLoop_ok v L pC₅ pW₅ I) fun t' I' => ?_)
   have dS : ∀ r ∈ [(⟨s.gpr .rdx + BitVec.ofNat 64 256, 768⟩ : Region), ⟨s.gpr .rcx + BitVec.ofNat 64 512, 256⟩,
       below (s.gpr .rsp) 8], (savedR (s.gpr .rcx)).Disjoint r := by
     intro r hr
@@ -67,11 +67,9 @@ theorem initPrepared_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.initPrepare
       · exact (L.kc.sub_right (Region.sub_prefix (by decide))).symm
     · rw [hH]; exact I'.pows k (by omega)
 
-  simp only [List.cons_append, List.nil_append]
-  rw [WP.block_cons_iff]
   let u := t'.setReg .rdi (t'.gpr .r13)
-  refine ⟨u, rfl, ?_⟩
-  rw [WP.block_append_iff]
+  refine WP.seq (WP.block_cons_iff.mpr ⟨u, rfl, WP.block_nil ?_⟩)
+  refine WP.seq ?_
   have udi : u.gpr .rdi = s.gpr .rdx := by simp only [u, gpr_setReg_self, I'.r13]
   have u15 : u.gpr .r15 = s.gpr .rcx := by simp [u, gpr_setReg, I'.r15]
   have usp : u.gpr .rsp = s.gpr .rsp := by simp [u, gpr_setReg, I'.rsp]
@@ -93,7 +91,7 @@ theorem initPrepared_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.initPrepare
     rw [ret_kept frame (fun r hr => by
       obtain rfl := List.mem_singleton.mp hr
       exact L.rc.sub_right (Offset.sub_base _ (by decide))), hret]
-  refine WP.mono (exit_ok (by rw [g _ (by decide), u15]) (by rw [g _ (by decide), usp])
+  refine WP.mono (exit_ok (by rw [g _ (by decide) (by decide), u15]) (by rw [g _ (by decide) (by decide), usp])
     (covers_left (by rw [wr, show u.wr = t'.wr from rfl, I'.wr]; exact pW₅))
     ((D.saved.frame I'.frame dS).frame frame ds) hret') fun s' ⟨hg, hm, _⟩ => ⟨hg, ?_⟩
   change Spec.Gcm.KeyRepr s'.mem (s.gpr .rdx) _ ∧ Spec.Gcm.PreparedPowersRepr s'.mem (s.gpr .rdx)
