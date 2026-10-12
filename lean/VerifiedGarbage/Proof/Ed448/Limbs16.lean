@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.ScalarWords
-import VerifiedGarbage.Proof.X448.Radix16Bytes
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Ed448.ScalarWords
+public import VerifiedGarbage.Proof.X448.Radix16Bytes
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on 16-bit limbs: the numbers
@@ -18,6 +24,8 @@ at a time from the top (`decode_drop2`), the product's limbs one at a time
 (`accFrom_step`), and the result is written as twenty-eight limbs and a zero
 byte (`encode_57`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Limbs16
 

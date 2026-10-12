@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Cast5.X86.Round
-import VerifiedGarbage.Proof.Cast5.KeyMem
-import VerifiedGarbage.Proof.Cast5.KeyLines
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86.Round
+public import VerifiedGarbage.Proof.Cast5.KeyMem
+public import VerifiedGarbage.Proof.Cast5.KeyLines
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 key expansion on 32-bit x86: a line
@@ -13,6 +19,8 @@ write also allowed to change.
 lanes of `xmm0` (`gather_ok`), scans `VG_CAST5_S5678`, and XORs the four
 values, the group's extra lookup and the quadruple, if any (`line_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.Modes.X86.Seq
-import VerifiedGarbage.Proof.Modes.Ops
-import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Impl.Modes.X86.Seq
+public import VerifiedGarbage.Proof.Modes.Ops
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The modes' operations on x86 (32-bit)
@@ -14,6 +20,8 @@ memory, and no register but `eax` and `ecx`. It needs each area's address
 address `A l` plus the offset, without wrapping around), writable bytes,
 and areas apart from each other.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86
 

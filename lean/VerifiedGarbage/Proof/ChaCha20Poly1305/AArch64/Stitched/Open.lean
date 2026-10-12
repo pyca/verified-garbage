@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: `open`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
 The chunks decrypt the data's whole chunks and absorb them as they were;
 the rest is absorbed, then decrypted by `vg_chacha20_xor`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64
 

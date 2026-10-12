@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.AArch64.Round
+module
+
+public import VerifiedGarbage.Proof.Mont.AArch64.Round
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on AArch64: the rounds of the multiplication
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Mont.AArch64.Round
 The accumulator cleared (`zeros_ok`), then `k` rounds (`rounds_ok`):
 `2^(64 k) T = [a]_k B + U m` for some `U`, with `T < 2m`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.AArch64
 

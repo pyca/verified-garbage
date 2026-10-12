@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Parts
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Parts
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: the chunks in the context
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Parts
 and the working space, as `vg_chacha20_xor`'s contract gives them), which the
 context and the data contain (`WP.narrow`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64
 

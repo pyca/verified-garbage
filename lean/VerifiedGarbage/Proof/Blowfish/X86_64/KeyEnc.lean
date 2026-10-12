@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.X86_64.KeyStore
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86_64.KeyStore
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Key expansion: the 521 encryptions
@@ -7,6 +13,8 @@ Each encryption runs ECB's rounds under the schedule as written so far,
 and its output replaces the next two entries: the P-array's, as words
 (`encryptP_run`), then the S-boxes', a byte per plane (`encryptS_run`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86_64
 

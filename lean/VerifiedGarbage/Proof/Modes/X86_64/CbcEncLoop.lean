@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
-import VerifiedGarbage.Proof.Modes.CbcEnc
-import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
+public import VerifiedGarbage.Proof.Modes.CbcEnc
+public import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CBC encryption on x86-64, for any core: the data loop
@@ -10,6 +16,8 @@ import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
 back (`encOut`) and, unless it was the last, XORs it into block `j + 1`
 (`encChain`). Each is `copyN_wp` or `xorN_wp`; blocks are `8 bw` bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

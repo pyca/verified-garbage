@@ -1,12 +1,21 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mul
-import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
-import VerifiedGarbage.Impl.Ed25519.AArch64.Field
-import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
-import VerifiedGarbage.Spec.Ed25519
-import Mathlib.Logic.Function.Basic
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mul
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
+public import VerifiedGarbage.Spec.Ed25519
+public import Mathlib.Logic.Function.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.Sqr`. -/
+
+@[expose] public section
+
 section
 /-! Four-word field squaring. -/
 namespace VG.Proof.Ed25519.AArch64

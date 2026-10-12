@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Base.Main
-import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
-import VerifiedGarbage.Proof.Framework.ConstMem
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Base.Main
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Base.Main
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+meta import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on AArch64: `Verified`
@@ -13,6 +24,8 @@ address plus a constant or a counter, and the digits' masks only select); and
 a concrete state satisfying the signature's contract, under the calling
 convention with the comb's tables (`Abi.withConsts combConsts`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

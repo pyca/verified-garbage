@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Cast5
+module
+
+public import VerifiedGarbage.Spec.Cast5
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5: rotation by a secret amount, in five masked steps
@@ -9,6 +15,8 @@ keep the rotated value only if bit `b` of `Kr` is set, under a mask
 (`step`). Whatever the order of the steps, the result is the rotation by
 the sum of the kept amounts, `Kr mod 32` (`steps_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.BaseBits
-import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.BaseBits
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on AArch64: the setup
@@ -9,6 +15,8 @@ registers saved, every slot zeroed), the bits of all 57 bytes of the scalar
 (`bits_ok`), and both accumulators at `[G] B` for `G = 8 Σ_{j < 57} 256^j`
 (`baseG57`): `StepInv` of the comb of 57 tables, for step 0.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Base
 

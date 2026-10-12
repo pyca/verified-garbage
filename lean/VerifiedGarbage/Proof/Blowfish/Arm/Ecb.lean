@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.Cipher
-import VerifiedGarbage.Proof.Blowfish.Blocks
-import VerifiedGarbage.Proof.Framework.Arm.Spill
-import VerifiedGarbage.Proof.Framework.Arm.Bytes
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.Cipher
+public import VerifiedGarbage.Proof.Blowfish.Blocks
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+public import VerifiedGarbage.Proof.Framework.Arm.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on ARMv7: ECB
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Framework.Arm.Bytes
 `ecb_correct`: every block becomes its encryption or decryption, one at a
 time; our caller's registers are saved in the working space and restored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.Arm
 

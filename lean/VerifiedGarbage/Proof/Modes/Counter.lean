@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCtr.Inc
-import VerifiedGarbage.Proof.Modes.Addr
+module
+
+public import VerifiedGarbage.Proof.AesCtr.Inc
+public import VerifiedGarbage.Proof.Modes.Addr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The running counter, for the modes on any 64-bit target
@@ -12,6 +18,8 @@ block in memory is read as the byte-reversed words at `P` and `P + 8`
 two byte-reversed halves written back are `V`'s 16 big-endian bytes
 (`bytes_pair`, `bytes_pair2`). Nothing here depends on a target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes
 

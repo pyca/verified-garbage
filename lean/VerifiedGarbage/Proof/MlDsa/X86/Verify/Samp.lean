@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Verify.Hint
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Samp
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Hint
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Samp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on x86 (32-bit): the samplers
@@ -12,6 +18,8 @@ polynomial masked with it, as in key generation; then `c` from `c̃`
 standard for some bounds, and 0 if verification is not true within the least
 bounds (`GA`, `GC`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Verify
 

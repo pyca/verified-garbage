@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Fn
-import VerifiedGarbage.Proof.AesGcm.X86.Gather.LoopCT
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Fn
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.LoopCT
+meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.LoopCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86: constant time
@@ -13,6 +21,8 @@ from `esp`); the gathering is constant time by `gather_rel`; and the call is
 constant time by its callee's contract, whose public arguments agree
 (`sealGather_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

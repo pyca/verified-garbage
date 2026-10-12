@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyMain
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Front
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Windows
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.ConstMem
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyMain
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Front
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Windows
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.ConstMem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on AArch64: `Verified`
@@ -16,6 +22,8 @@ concrete state satisfying the signature's contract, under the calling
 convention with the comb's tables (`Abi.withConsts combConsts`). The contract lets timing depend on the inputs; the
 code's depends on the pointers alone.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

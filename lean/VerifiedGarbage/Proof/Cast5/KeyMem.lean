@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Cast5.KeyLines
-import VerifiedGarbage.Proof.Cast5.Memory
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Cast5.Table
+module
+
+public import VerifiedGarbage.Proof.Cast5.KeyLines
+public import VerifiedGarbage.Proof.Cast5.Memory
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Cast5.Table
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5 key expansion: the working space and the subkeys
@@ -12,6 +18,8 @@ expansion keeps what it does not overwrite (`KMem`). A group of lines stores
 into `x` or `z` (`runQ`) or appends subkeys (`keys4`), and the halves of §2.4
 make the schedule (`halves`, `scheduleAt_keys`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5
 

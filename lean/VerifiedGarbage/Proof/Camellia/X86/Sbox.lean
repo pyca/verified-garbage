@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Camellia.X86.Sbox
-import VerifiedGarbage.Proof.Camellia.SboxTable
-import VerifiedGarbage.Proof.Framework.X86.Straight
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Camellia.Bitsliced32
+module
+
+public import VerifiedGarbage.Impl.Camellia.X86.Sbox
+public import VerifiedGarbage.Proof.Camellia.SboxTable
+public import VerifiedGarbage.Proof.Framework.X86.Straight
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Camellia.Bitsliced32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The bitsliced Camellia S-box on x86 (32-bit)
@@ -13,6 +19,8 @@ kernel evaluates `sboxCode` once on truth tables of the 256 inputs
 `SBOX1`. `sbox_ok` then gives, at every bit position `p`, `SBOX1` of the
 byte formed by bit `p` of the planes in slots `0 … 7`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.X86
 

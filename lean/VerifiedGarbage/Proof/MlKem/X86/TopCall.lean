@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86.Top
-import VerifiedGarbage.Proof.MlKem.X86.CallRet
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Top
+public import VerifiedGarbage.Proof.MlKem.X86.CallRet
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): calls in the top-level functions
@@ -16,6 +22,8 @@ as `Buf`s.
 The callee sees the stack below `esp = E` as its arguments (`below E (4k)`),
 its return address, and its own stack below that (`entry_regions`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Top
 

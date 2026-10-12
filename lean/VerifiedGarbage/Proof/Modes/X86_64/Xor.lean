@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.X86_64.Core
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.Core
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # XORing blocks on x86-64
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Modes.X86_64.Core
 `rax` into those at `rbx` (areas that do not overlap), through `rbp`,
 counting down `rcx`, and changes nothing else in memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

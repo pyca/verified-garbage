@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Carry
+module
+
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Carry
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bounds of a product's coefficients and carries
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. Operand limbs below `Ib`
 (sums and differences of reduced elements) give coefficients below `2¹²⁰`,
 carries of one word, and limbs of the result below `Mb`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Fast
 

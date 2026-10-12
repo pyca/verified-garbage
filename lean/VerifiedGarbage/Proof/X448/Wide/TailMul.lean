@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.X448.Wide.TailSquare
+module
+
+public import VerifiedGarbage.Proof.X448.Wide.TailSquare
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Untrusted: choose cached squaring from public, static field-slot indices. -/
+
+@[expose] public section
+
 namespace VG.Proof.X448.Wide
 
 open VG VG.AArch64 VG.Proof.X448.AArch64

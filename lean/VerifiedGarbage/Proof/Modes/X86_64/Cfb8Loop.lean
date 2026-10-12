@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Steps
-import VerifiedGarbage.Proof.Modes.X86_64.Fb
+module
+
+public import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Steps
+public import VerifiedGarbage.Proof.Modes.X86_64.Fb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CFB8 on x86-64, for any core: the data loop
@@ -10,6 +16,8 @@ the output's first byte into byte `j` of the data (`cfb8Xor_wp`), making it
 `cfb8Out`, and shifts the input block at the IV to `Iⱼ₊₁` (`cfb8Shift_wp`,
 `cfb8In`). Blocks are `8 bw` bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86_64
 

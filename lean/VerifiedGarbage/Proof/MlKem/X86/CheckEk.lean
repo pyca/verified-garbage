@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
-import VerifiedGarbage.Spec.MlKem.Contract
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
+public import VerifiedGarbage.Spec.MlKem.Contract
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on x86 (32-bit): `vg_mlkem768_check_ek`
@@ -8,6 +14,8 @@ import VerifiedGarbage.TCB.X86.Target
 The key check (`CheckEkBody.lean`) of ML-KEM-768: its 384 groups of
 `ek[0 : 1152]`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.CheckEk
 

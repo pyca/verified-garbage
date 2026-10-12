@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.AArch64.Copy
+module
+
+public import VerifiedGarbage.Proof.Camellia.AArch64.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's prologue and epilogue on AArch64
@@ -8,6 +14,8 @@ Saving and restoring the callee-saved registers `x19`–`x28` in their slots
 and setting the masks of the layers (`setSlots_ok`, by evaluation: the
 masks are constants of the lane domain).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.AArch64
 

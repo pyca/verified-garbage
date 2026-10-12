@@ -1,7 +1,16 @@
-import VerifiedGarbage.Spec.Ct
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Spec.Ct
+public import VerifiedGarbage.Proof.Framework.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Target-independent facts relating bytewise comparison to the complete spec. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ct
 open VG
 

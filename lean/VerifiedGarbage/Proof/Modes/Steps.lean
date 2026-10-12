@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Modes.Ops
-import VerifiedGarbage.Spec.Ofb
-import VerifiedGarbage.Spec.Cfb
-import VerifiedGarbage.Spec.Cfb8
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Modes.Ops
+public import VerifiedGarbage.Spec.Ofb
+public import VerifiedGarbage.Spec.Cfb
+public import VerifiedGarbage.Spec.Cfb8
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The modes, one step at a time, for any target
@@ -20,6 +26,8 @@ block cipher `ciph` on blocks of `L` bytes in `buf` between `pre` and
 `Impl/Modes/Ops.lean` computes its step function (`cbcEnc_computes`, …).
 Nothing here depends on a target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes
 

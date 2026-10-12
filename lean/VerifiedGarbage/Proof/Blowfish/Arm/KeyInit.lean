@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.Arm.Ecb
-import VerifiedGarbage.Proof.Blowfish.KeyTable
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Arm.Ecb
+public import VerifiedGarbage.Proof.Blowfish.KeyTable
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on ARMv7: the initial schedule
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Blowfish.KeyTable
 `initSchedule_run`: the 1042 words of the initial schedule's image, from
 immediates, into the schedule at `r2`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.Arm
 

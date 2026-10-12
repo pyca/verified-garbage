@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Loop
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Callee
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
-import VerifiedGarbage.Proof.AesGcm.ScratchGather
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Loop
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Callee
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
+public import VerifiedGarbage.Proof.AesGcm.ScratchGather
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, ARMv7: the function
@@ -14,6 +20,8 @@ the slices to `dst` (`gathered_wp`, AES-GCM's gathering), reloads `r0`–`r3`
 (`called_wp`, by its shared contract); the call keeps our frame, so the
 return address comes back from it (`ret_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

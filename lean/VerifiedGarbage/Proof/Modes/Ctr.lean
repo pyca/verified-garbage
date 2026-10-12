@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCtr.Ctr32
-import VerifiedGarbage.Spec.Cbc.Contract
+module
+
+public import VerifiedGarbage.Proof.AesCtr.Ctr32
+public import VerifiedGarbage.Spec.Cbc.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CTR's result, for any block cipher and target
@@ -9,6 +15,8 @@ XOR with the encryption of the counter block `T₁ + j` (`ctrOut`), the
 blocks are `Spec.Ctr.crypt`'s. Nothing here depends on a cipher or a
 target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes
 

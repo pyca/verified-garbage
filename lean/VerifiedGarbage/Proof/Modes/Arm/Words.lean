@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Modes.Words
-import VerifiedGarbage.Proof.CmacAes.Arm.Words
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Impl.Modes.Arm.Seq
+module
+
+public import VerifiedGarbage.Proof.Modes.Words
+public import VerifiedGarbage.Proof.CmacAes.Arm.Words
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Impl.Modes.Arm.Seq
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Copying and XORing blocks a word at a time, on ARMv7
@@ -13,6 +19,8 @@ copy the block at `Q` (`rs + os`) to `P` (`rd + od`); `xorN_wp`: `k` words
 `4 k` bytes at `P` (`Proof/Modes/Words.lean`, with 4-byte words here:
 `over_step4`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.Arm
 

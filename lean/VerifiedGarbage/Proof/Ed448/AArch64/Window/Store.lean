@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.AArch64.Init
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
-import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Init
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: storing a table entry
@@ -9,6 +15,8 @@ Untrusted: everything here is checked by Lean. `tabStore`, for `x19 = e < 16`,
 points `x8` at `base + 192 e` and copies the 24 words of slots 3–5 to entry
 `e` of the table at `TAB` (`tabStore_ok`): only those 192 bytes change.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 

@@ -1,12 +1,29 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Stages
-import VerifiedGarbage.Proof.Framework.ContractPost
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Stages
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Stages
+public import VerifiedGarbage.Proof.Framework.ContractPost
+meta import VerifiedGarbage.Proof.Framework.ContractPost
+public import VerifiedGarbage.Proof.Framework.PowLit
+meta import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+meta import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Spec.TripleDes
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
-import VerifiedGarbage.Proof.Framework.Lit
+module
+
+public import VerifiedGarbage.Spec.TripleDes
+meta import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Table
+public import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The S-boxes' inputs and outputs, as truth tables
@@ -11,6 +20,8 @@ inputs at once, against these (`Proof/TripleDes/<target>/Sbox.lean`,
 here (`materialize_table`), rather than evaluate the specification's S-boxes
 on every input again for every target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.TripleDes
 

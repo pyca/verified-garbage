@@ -1,11 +1,20 @@
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Impl.Ed25519.AArch64.PublicKey
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PublicKey
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.PublicKey.PruneArithmetic`. -/
+
+@[expose] public section
+
 section
 namespace VG.Proof.Ed25519.AArch64.PublicKey
 open VG

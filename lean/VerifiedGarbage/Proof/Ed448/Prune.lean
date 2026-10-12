@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
 /-!
 # Ed448: pruning a scalar, on 64-bit words
 
@@ -10,6 +17,8 @@ This module imports only Lean core: with Mathlib's algebra imported, `2 ^ 448`
 can elaborate to a power that unification evaluates, past Lean's threshold
 for evaluating exponents.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448
 

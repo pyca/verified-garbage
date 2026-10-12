@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
+module
+
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Words to byte planes and back
@@ -8,6 +14,8 @@ of the result byte `o₁ + 2 o₂` of word `n` of four vectors (`o₁`, `o₂` 0
 `uzp1` and 1 for `uzp2`). `zip_zip`: two levels of `zip1`/`zip2` (as in
 `words`) turn four byte planes back into sixteen words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.AArch64
 

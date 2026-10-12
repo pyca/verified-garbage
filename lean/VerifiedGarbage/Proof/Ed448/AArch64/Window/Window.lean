@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Digit
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Digit
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: one window of the challenge
@@ -12,6 +18,8 @@ state `WCtx` (the table of `tabPts P` stored, 1 in slot 20, zero in slot 19): `Q
 (calls of `vg_ed448_r56_point_double`), the entry of the challenge's digit selected into slots 6–8, and added
 (a call of `vg_ed448_r56_point_add`, `window_ok`): `Q` becomes `wstep P Q n`, and slots 0–2 are kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Proof.X448.Field
+module
+
+public import VerifiedGarbage.Proof.Ed448.Scalar
+public import VerifiedGarbage.Proof.X448.Field
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448: decoding a point, from its bytes
@@ -10,6 +16,8 @@ the first 56 bytes and the last byte `b`. The encoding's `y` (its bits
 sign is bit 7 of `b`. Stated here, without Mathlib, where `2 ^ 455` is the
 specification's term.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.RestRow
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.RestRow
+meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.RestRow
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
+meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on x86 (32-bit): `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`
@@ -11,6 +19,8 @@ bounds), and 0 if key generation fails within the least bounds (`post`); it
 leaks only the pointers, `ρ` and what `RejBoundedPoly` leaks; so the function
 meets the shared contract (`keyGen_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.KeyGen
 

@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.X448.Wide.Fold
-import VerifiedGarbage.Proof.X448.Wide.TailPass
-import VerifiedGarbage.Proof.Curve448.AArch64.Collect
+module
+
+public import VerifiedGarbage.Proof.X448.Wide.Fold
+public import VerifiedGarbage.Proof.X448.Wide.TailPass
+public import VerifiedGarbage.Proof.Curve448.AArch64.Collect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Untrusted: reduce wide coefficients to eight limbs with explicit headroom. -/
+
+@[expose] public section
+
 namespace VG.Proof.Curve448.AArch64
 
 open VG VG.AArch64 VG.Proof.X448.Wide VG.Proof.X448.Wide.Representation

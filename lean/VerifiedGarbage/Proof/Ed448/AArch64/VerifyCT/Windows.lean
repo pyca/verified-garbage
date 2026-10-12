@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
+meta import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on AArch64: constant time of the windows and the comparison
@@ -9,6 +16,8 @@ the result. The field operations of the functions called, erased
 (`Proof/X448/AArch64/Fast/Erase.lean`), are each a block of their own: the
 kernel analyses each once, not once for every slot they work on.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

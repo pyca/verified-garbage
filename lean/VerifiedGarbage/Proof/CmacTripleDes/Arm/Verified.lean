@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.FinalizeCorrect
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.CT
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Implies
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.FinalizeCorrect
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.CT
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Implies
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on ARMv7: `Verified`
@@ -12,6 +18,8 @@ contracts with the working space as an argument
 stack: the functions call nothing, and save our caller's registers in the
 scratch buffer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.Arm
 

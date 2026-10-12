@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.Scalar
+module
+
+public import VerifiedGarbage.Proof.Ed448.Scalar
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic: little-endian bytes as words
@@ -7,6 +13,8 @@ Untrusted and target-independent. A buffer of `len` bytes read from word `k`
 up is that word and `2^64` times the bytes above it (`words_step`), which is
 how the reductions consume their input from the top.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448
 

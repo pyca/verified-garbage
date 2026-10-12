@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ed448.Contract
-import VerifiedGarbage.Proof.X25519.Bytes
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic: the numbers
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 subtraction (`csub_nat`) then leaves the remainder. The bytes of the
 specification are X25519's little-endian numbers (`decodeLE_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448
 

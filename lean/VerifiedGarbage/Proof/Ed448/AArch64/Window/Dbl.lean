@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
-import VerifiedGarbage.Proof.Ed448.Ref
-import VerifiedGarbage.Impl.Ed448.AArch64.Point56
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: doubling with the register-resident arithmetic
@@ -11,6 +17,8 @@ slot's limbs below `Ib` and `Z`'s below `Mb` (`dblOps_ok`): the environment
 afterwards is `dblEnv` of the one before, which for the point's slots is
 `double` of the point when slot 20 holds 1 (`dblPt_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Window
 

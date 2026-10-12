@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpack
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpack
+meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_hint_bit_unpack`, the coefficients of a polynomial
@@ -9,6 +16,8 @@ from the spec's state `cur s₀ i` before the polynomial: after `t` of them the
 spec's state is `G s₀ i t`, and `eax` its index (or 256 once a check fails,
 which ends the loop).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Pack.Hint
 

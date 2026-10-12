@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.AArch64.Normalize
-import VerifiedGarbage.Proof.X448.Product
+module
+
+public import VerifiedGarbage.Proof.X448.AArch64.Normalize
+public import VerifiedGarbage.Proof.X448.Product
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on AArch64: reducing product coefficients
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X448.Product
 Coefficients 16–31 fold into the lower sixteen according to the relation 2⁴⁴⁸ =
 2²²⁴ + 1 modulo p.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.AArch64
 

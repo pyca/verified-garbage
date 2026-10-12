@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Camellia.Arm.Prologue
+module
+
+public import VerifiedGarbage.Proof.Camellia.Arm.Prologue
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A group of blocks of Camellia ECB on ARMv7
@@ -9,6 +15,8 @@ the tail buffer, transforms it (`crypt8_ok`), copies the blocks back and
 steps to the next group. The data pointer and the blocks left live in their
 slots (`dSlot`, `nSlot`) between the steps, which use every other register.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.Arm
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.X86.F
-import VerifiedGarbage.Proof.Blowfish.Feistel
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86.F
+public import VerifiedGarbage.Proof.Blowfish.Feistel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Blowfish on x86 (32-bit): the block function
@@ -9,6 +15,8 @@ to their encryption (`up`) or decryption under the schedule whose address is
 at `esp + sch`, changing only `eax`–`edi` but `ebp`, the flags and the
 working space's bytes 16–31.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86
 

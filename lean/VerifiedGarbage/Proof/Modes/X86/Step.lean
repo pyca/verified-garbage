@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.X86.Core
+module
+
+public import VerifiedGarbage.Proof.Modes.X86.Core
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One step of a mode on x86 (32-bit)
@@ -13,6 +19,8 @@ data's step `j`, the chaining value's slots and the core's first block;
 `pre` and `post` are `opsCode_wp`, the block cipher `crypt_wp`, and
 `Computes M L ciph F` relates them to `F`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.X86
 

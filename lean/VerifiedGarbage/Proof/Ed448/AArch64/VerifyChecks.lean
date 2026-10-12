@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChunks
-import VerifiedGarbage.Proof.Ed448.AArch64.BaseEncode
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChunks
+public import VerifiedGarbage.Proof.Ed448.AArch64.BaseEncode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on AArch64: the checks
@@ -11,6 +17,8 @@ first in `CAN`, and ORs the XORs of the limbs (`diffCan`): fully reduced
 elements are equal exactly when their limbs are. Checks write only `X2`,
 `CAN` and the products' coefficients (`CFrame`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64
 

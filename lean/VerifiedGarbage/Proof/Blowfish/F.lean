@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Blowfish.Schedule
+module
+
+public import VerifiedGarbage.Proof.Blowfish.Schedule
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # F, one S-box at a time
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Blowfish.Schedule
 XOR S₃[c], + S₄[d]); `fAcc K x 3 = f K x`. `quarter x j` is the byte of `x`
 that indexes S-box `j`: byte `3 - j`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish
 

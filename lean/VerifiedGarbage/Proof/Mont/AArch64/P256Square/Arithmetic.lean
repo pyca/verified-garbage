@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.P256
+module
+
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.P256
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Arithmetic identities for the P-256 squaring reduction schedule. -/
+
+@[expose] public section
+
 namespace VG.Proof.Mont.AArch64.P256Square
 
 abbrev B : Nat := 2 ^ 64

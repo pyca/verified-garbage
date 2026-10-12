@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+module
+
+public import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on AArch64: the conditional subtraction
@@ -9,6 +15,8 @@ of `subs` and `sbcs`, in which the carry flag is the complement of the
 borrow), the top word's subtraction leaves the carry set exactly if it does not
 borrow (`flagR_ok`), and a `csel` on it selects each word (`selectsR_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.AArch64
 

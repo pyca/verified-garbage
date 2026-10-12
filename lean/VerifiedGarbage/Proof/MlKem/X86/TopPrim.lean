@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.MlKem.X86.TopCall
-import VerifiedGarbage.Proof.MlKem.X86.Ntt
-import VerifiedGarbage.Proof.MlKem.X86.NttInv
-import VerifiedGarbage.Proof.MlKem.X86.Mul
-import VerifiedGarbage.Proof.MlKem.X86.AddSub
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.TopCall
+public import VerifiedGarbage.Proof.MlKem.X86.Ntt
+public import VerifiedGarbage.Proof.MlKem.X86.NttInv
+public import VerifiedGarbage.Proof.MlKem.X86.Mul
+public import VerifiedGarbage.Proof.MlKem.X86.AddSub
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): calls of the primitives in the top-level functions
@@ -12,6 +18,8 @@ registers holding their addresses; its contract's precondition
 (`Sig.contract`) at the callee's entry comes from `Ctx` and the buffers'
 layout, and its postcondition is restated on the caller's memory.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Top
 

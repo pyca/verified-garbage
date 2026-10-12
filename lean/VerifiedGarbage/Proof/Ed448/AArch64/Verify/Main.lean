@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on AArch64: the whole function
@@ -10,6 +16,8 @@ a context of 256 bytes or more returns 0; otherwise the frame
 (`Proof.Ed25519.AArch64.Whole.wrap_ok`) runs the body, whose result is
 RFC 8032's verification of the inputs as on entry.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Verify
 

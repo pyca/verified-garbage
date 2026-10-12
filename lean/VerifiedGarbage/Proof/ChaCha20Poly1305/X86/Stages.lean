@@ -1,21 +1,29 @@
-import VerifiedGarbage.Spec.ChaCha20Poly1305
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
-import VerifiedGarbage.Proof.ChaCha20.X86.Block
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Impl.ChaCha20Poly1305.X86
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Poly1305.X86.Init
-import VerifiedGarbage.Proof.Poly1305.X86.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86.Finalize
-import VerifiedGarbage.Proof.Poly1305.Stream
-import VerifiedGarbage.Proof.ChaCha20.X86.Variant
-import VerifiedGarbage.Proof.ChaCha20.X86.Lit
-import VerifiedGarbage.Proof.Poly1305.X86.Lit
-import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Spec.ChaCha20Poly1305
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+public import VerifiedGarbage.Proof.ChaCha20.X86.Block
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Poly1305.X86.Init
+public import VerifiedGarbage.Proof.Poly1305.X86.Blocks
+public import VerifiedGarbage.Proof.Poly1305.X86.Finalize
+public import VerifiedGarbage.Proof.Poly1305.Stream
+public import VerifiedGarbage.Proof.ChaCha20.X86.Variant
+public import VerifiedGarbage.Proof.ChaCha20.X86.Lit
+public import VerifiedGarbage.Proof.Poly1305.X86.Lit
+public import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

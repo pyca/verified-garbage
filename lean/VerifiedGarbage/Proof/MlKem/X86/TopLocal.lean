@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86.TopHash
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.TopHash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the code of the top-level functions between calls
@@ -7,6 +13,8 @@ Storing a byte in `scratch` (`st8_piece`), copying words (`copyW_piece`), and,
 after a call of `vg_mlkem_sample_ntt`, keeping the AND of the values it
 returned and masking the polynomial it sampled (`maskA_piece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86.Top
 

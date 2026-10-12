@@ -1,9 +1,22 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.WindowCT
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
-import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointDecode
+module
+
+public import VerifiedGarbage.Proof.Ed25519.AArch64.WindowCT
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.WindowCT
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
+public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointDecode
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointDecode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyCTPublic`. -/
+
+@[expose] public section
+
 section
 /-! The verification inputs are public, and the equation's trace depends on them alone. -/
 

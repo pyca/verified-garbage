@@ -1,7 +1,13 @@
-import VerifiedGarbage.Impl.CmacTripleDes.Arm
-import VerifiedGarbage.Spec.Cmac.TripleDesContract
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Impl.CmacTripleDes.Arm
+public import VerifiedGarbage.Spec.Cmac.TripleDesContract
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC on ARMv7: the contracts the proofs are written against
@@ -11,6 +17,8 @@ the shared ones of `Spec/Cmac/TripleDesContract.lean`, which imply these
 (`Implies.lean`). The functions call nothing and use no stack; `update` and
 `finalize` take `scratch` on the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes.Arm
 

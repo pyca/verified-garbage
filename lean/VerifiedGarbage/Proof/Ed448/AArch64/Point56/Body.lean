@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn
-import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Conv
-import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyRoot
+module
+
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Conv
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyRoot
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on AArch64: what the functions compute
@@ -15,6 +21,8 @@ to them (`addFn_ok`, by `addOps_ok`), and `vg_gf448_r56_pow_p34` writes
 coefficients (`dblOk`, `powOk`, by `Exec.storeFrame`), and leaves `ws` in `x3`
 and the mask in `x12`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.AArch64.Point56
 

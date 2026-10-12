@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Modes.AArch64.Group
+module
+
+public import VerifiedGarbage.Proof.Modes.AArch64.Group
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CTR on AArch64, for any core: the whole function
@@ -11,6 +17,8 @@ it keeps the callee-saved registers `x19`–`x28`, and writes nothing but
 the scratch buffer, the counter block and the data. Each cipher's contract follows
 from it (with the constant-time check of its own code).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Modes.AArch64
 

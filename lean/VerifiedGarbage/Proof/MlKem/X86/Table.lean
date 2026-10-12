@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86.Unpack
-import VerifiedGarbage.Impl.MlKem.X86.Ntt
-import VerifiedGarbage.Proof.MlKem.Ntt
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Unpack
+public import VerifiedGarbage.Impl.MlKem.X86.Ntt
+public import VerifiedGarbage.Proof.MlKem.Ntt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): writing a table of constants
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.MlKem.Ntt
 symbolic execution. The table is read like the first half of a polynomial
 (`coeffAt`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86
 

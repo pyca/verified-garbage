@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.Root
-import VerifiedGarbage.Proof.Ed448.Scalar
+module
+
+public import VerifiedGarbage.Proof.Ed448.Root
+public import VerifiedGarbage.Proof.Ed448.Scalar
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448: what code computes, and its agreement with the specification
@@ -24,6 +30,8 @@ That they agree with the specification (`BaseLadderOk`, `VerifyEqOk`,
 them as hypotheses, and only its registration files import `Facts` and
 pass them in.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448
 

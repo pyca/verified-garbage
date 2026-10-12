@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.Sponge
-import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
-import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejNtt
-import VerifiedGarbage.Proof.MlKem.X86.Sample
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.Sponge
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.Sponge
+public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
+meta import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
+public import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejNtt
+meta import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlKem.X86.Sample
+meta import VerifiedGarbage.Proof.MlKem.X86.Sample
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_rej_ntt_poly`
@@ -16,6 +26,8 @@ fewer than 256 coefficients, stores it if it is less than `q` (`try_piece`); its
 branches depend on the XOF output, a function of the seed, and so agree in two
 runs from the same seed (`Pub`), which the contract lets the function leak.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sample.RejNtt
 

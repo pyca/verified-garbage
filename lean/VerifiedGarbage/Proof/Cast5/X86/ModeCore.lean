@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Cast5.X86.Ecb
-import VerifiedGarbage.Proof.Modes.X86.Core
-import VerifiedGarbage.Impl.Cast5.X86.Modes
-import VerifiedGarbage.Proof.Cast5.ModeCipher
+module
+
+public import VerifiedGarbage.Proof.Cast5.X86.Ecb
+public import VerifiedGarbage.Proof.Modes.X86.Core
+public import VerifiedGarbage.Impl.Cast5.X86.Modes
+public import VerifiedGarbage.Proof.Cast5.ModeCipher
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CAST5's core for the modes on x86 (32-bit)
@@ -16,6 +22,8 @@ are where they were, apart from every writable region and the word below
 `decryptBlock_ok`) between its own setup and store (`setup_ok`,
 `store_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Cast5.X86.Mode
 

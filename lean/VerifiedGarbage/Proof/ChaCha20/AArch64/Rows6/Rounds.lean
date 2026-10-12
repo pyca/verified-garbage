@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Ops
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Ops
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The row permutations and six-block schedule implement ChaCha's double round. -/
+
+@[expose] public section
+
 namespace VG.Proof.ChaCha20.AArch64.Rows6
 open VG VG.AArch64 VG.Impl.ChaCha20.AArch64.Rows6
 open VG.Spec.ChaCha20 (Word innerBlock qround)

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
-import VerifiedGarbage.Proof.MlDsa.Sample.Hash
-import VerifiedGarbage.Proof.MlDsa.Sample.Mem
-import VerifiedGarbage.Impl.MlDsa.X86.Sample.Common
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
+public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+public import VerifiedGarbage.Impl.MlDsa.X86.Sample.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86 (32-bit): the layout of the sampling functions
@@ -20,6 +26,8 @@ the 40 bytes of stack below the frame the calls use, and the arguments on the
 stack (which `sampleInBall` overwrites; `Ctx` says they are intact, with
 `esi = scratch`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sample
 

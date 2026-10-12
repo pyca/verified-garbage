@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blowfish.X86_64.Round
-import VerifiedGarbage.Proof.Blowfish.Blocks
+module
+
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Round
+public import VerifiedGarbage.Proof.Blowfish.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A block in and out of the halves
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Blowfish.Blocks
 `storeBlock_run`: the output block, xL (in `xR`) and xR (in `xL`), back to
 `rsi`, through the working space at `rcx`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blowfish.X86_64
 

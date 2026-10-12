@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.Wide.Word
+module
+
+public import VerifiedGarbage.Proof.X448.Wide.Word
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Two-word accumulators modulo 2¹²⁸
@@ -9,6 +15,8 @@ modulo `2 ^ 128`. A product's coefficient can be accumulated with
 subtractions as well as additions this way: it is exact once the true value
 is known to be in `[0, 2 ^ 128)`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Curve448.AArch64.Fast
 

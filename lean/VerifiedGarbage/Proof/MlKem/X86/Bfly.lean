@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86.Red
-import VerifiedGarbage.Proof.MlKem.Ntt
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.Red
+public import VerifiedGarbage.Proof.MlKem.Ntt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86 (32-bit): the butterflies
@@ -9,6 +15,8 @@ polynomial `G` stored at `p` and `ebp` at a zeta `z` (`BIn`), `bflyBody`
 leaves `bfly G j len z` there and `ibflyBody` leaves `bflyInv G j len z`
 (`BOut`), both advancing `esi` and `edi` by 4 and counting `ecx` down.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86
 

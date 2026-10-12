@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Pre
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Pre
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86 (32-bit): `vg_mldsa{44,65,87}_sign`
@@ -7,6 +13,8 @@ The body in the leaf's frame (`piece`), and `Verified` against `signContract`
 (`verified`), for any implementations of the primitives that `PrimsOk` says
 are verified, and any of the three parameter sets.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86.Sign
 
