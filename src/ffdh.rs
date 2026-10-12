@@ -206,7 +206,7 @@ impl Drop for PrivateKey {
     }
 }
 impl PrivateKey {
-    /// Import y and x, checking y=g^x mod p as well as scalar range.
+    /// Import y and x with variable-time parsing; check range and y=g^x mod p.
     pub fn from_components(params: &Parameters, y: &[u8], x: &[u8]) -> Result<Self, Error> {
         let key = Self::from_private_component(params, x)?;
         if !crate::ct::eq(&key.public.y, canonical(y)) {

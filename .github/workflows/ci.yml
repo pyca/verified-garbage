@@ -578,7 +578,7 @@ jobs:
           - chip: p4p
             arch: x86_64
             runs: |
-              - | dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Arrow Lake: the SHA512 extension, which no runner has (and
           # RSASSA-PSS and RSAES-OAEP with SHA-384's and SHA-512's code using
           # it, and P-256's and P-384's signatures with SHA-384 and P-521's

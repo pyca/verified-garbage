@@ -1,6 +1,6 @@
 //! FFDH component operations against OpenSSL. aws-lc-rs has no FFDH API.
 use criterion::Criterion;
-pub const USES: &[&str] = &["ffdh"];
+pub const USES: &[&str] = &["ffdh", "rsa_mont"];
 #[cfg(target_arch = "x86_64")]
 pub fn bench(c: &mut Criterion) {
     use crate::{OPENSSL, VG};
