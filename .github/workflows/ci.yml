@@ -521,7 +521,8 @@ jobs:
             # AES-OCB and of the modes over whole blocks, ECB to XTS), which a
             # runner with VAES and VPCLMULQDQ never chooses; and VAES's and
             # VPCLMULQDQ's 256-bit ones, which a runner with AVX512BW too
-            # never chooses; and RSAES-PKCS1-v1_5 and RSAES-OAEP decryption and
+            # never chooses; and XTS's VAES instances calling the block
+            # functions, which a runner with VPCLMULQDQ never chooses; and RSAES-PKCS1-v1_5 and RSAES-OAEP decryption and
             # RSASSA-PSS with the hash functions' SHA extensions and RSA's
             # baseline code; and `vg_zeroize_avx`, and `vg_zeroize` without
             # AVX.
@@ -533,6 +534,7 @@ jobs:
               aes,avx,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
+              aes,avx,avx2,ssse3,vaes | aes_xts cpu
               sha,ssse3 | rsa_pkcs1 rsa_pss rsa_oaep cpu
           # x86 feature dispatch, natively in a 32-bit userspace, with the
           # runner's features (ChaCha20's and ChaCha20-Poly1305's SSSE3
