@@ -12,8 +12,8 @@ open VG.X86_64
 -- below and the functions' literals (`Lit`) read.
 materialize_table sboxCode 8
 
--- A pair of rounds and the exchange of the halves, once for both directions.
-materialize_value roundPair
+-- A round and the exchange of the halves, once for both directions.
+materialize_value round
 materialize_value swapHalves
 
 def sbox0 : Prog isa := .block (sboxCode 0)

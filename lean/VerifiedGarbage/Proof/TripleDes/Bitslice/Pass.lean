@@ -94,4 +94,58 @@ theorem pass_lane (keys : DesSchedule) (d : Direction) (W : Nat → BitVec w) {b
   rw [← pairs_halves keys d 8 W hb]
   simp only [ipLane, passW, swapW_half_l, swapW_half_r]
 
+/-! ## One round's code for both halves
+
+A half's word of bit `q` is `lWord q` plus an offset (`rWord q = lWord q + 1`),
+so code that reads the words `lWord q` above one pointer and writes those
+above another does a round of either role, by the pointers. -/
+
+/-- How far above `lWord` the half a round reads is. -/
+def rdOff : Role → Nat
+  | .ba => 1
+  | .ab => 0
+
+/-- How far above `lWord` the half a round XORs into is. -/
+def wrOff : Role → Nat
+  | .ba => 0
+  | .ab => 1
+
+/-- The other role. -/
+def flipRole : Role → Role
+  | .ba => .ab
+  | .ab => .ba
+
+theorem rdOff_flip (ρ : Role) : rdOff (flipRole ρ) = wrOff ρ := by cases ρ <;> rfl
+theorem wrOff_flip (ρ : Role) : wrOff (flipRole ρ) = rdOff ρ := by cases ρ <;> rfl
+
+theorem readWord_off : ∀ ρ : Role, ∀ q < 32, readWord ρ q = lWord q + rdOff ρ := by
+  intro ρ; cases ρ <;> lit_decide
+
+theorem writeWord_off : ∀ ρ : Role, ∀ q < 32, writeWord ρ q = lWord q + wrOff ρ := by
+  intro ρ; cases ρ <;> lit_decide
+
+/-- The role of round `r` of a pass. -/
+def roleAt (r : Nat) : Role := if r % 2 = 0 then .ba else .ab
+
+theorem roleAt_succ (r : Nat) : roleAt (r + 1) = flipRole (roleAt r) := by
+  unfold roleAt
+  rcases Nat.mod_two_eq_zero_or_one r with h | h <;>
+    simp [h, Nat.add_mod, flipRole]
+
+/-- The first `n` rounds, with the key of round `r` (from 0) `key r`. -/
+def rounds (key : Nat → BitVec 48) : Nat → (Nat → BitVec w) → Nat → BitVec w
+  | 0, W => W
+  | n + 1, W => roundW (roleAt n) (key n) (rounds key n W)
+
+theorem rounds_two_mul (key : Nat → BitVec 48) (n : Nat) (W : Nat → BitVec w) :
+    rounds key (2 * n) W = pairs key n W := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    rw [show 2 * (n + 1) = 2 * n + 1 + 1 by omega]
+    simp only [rounds, pairs, ih]
+    have h0 : roleAt (2 * n) = .ba := by simp [roleAt]
+    have h1 : roleAt (2 * n + 1) = .ab := by simp [roleAt, Nat.add_mod]
+    rw [h0, h1]
+
 end VG.Proof.TripleDes.Bitslice
