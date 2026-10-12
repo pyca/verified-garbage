@@ -1682,6 +1682,22 @@ yours to keep:
 
 <tr>
 
+<td>Finite-field Diffie–Hellman (FFDH)</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>X25519</td>
 
 <td>✅</td>
