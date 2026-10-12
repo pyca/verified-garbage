@@ -38,6 +38,24 @@ code uses, and both are generated from the same signature, calling
 convention, `writeArgs` and `stack` as the contract (`Artifact.ofSig`), so
 the `doc` must not state them itself (`checkLayout`).
 
+On x86-64, each loop starts on a 32-byte boundary (`loopAlign`,
+`alignLoops`): an assembler directive, `.p2align 5`, comes before the label of
+the loop's first instruction, the label of `Printer.lower`'s `loop` and the
+only kind its backward branches (`<n>b`) target. A 32-byte block is a window
+of Intel's decoded ICache and legacy decoders, whose "Code Alignment"
+guidance in the Intel 64 and IA-32 Architectures Optimization Reference
+Manual (248966) is to align branch targets such as loop heads, and half a
+64-byte line of AMD's op cache (Zen 4 Software Optimization Guide, 57647,
+§2.9.1). With functions aligned to 64 bytes (`Printer.funcAlign`), where a
+loop lies relative to them then depends only on the code before it back to
+the previous aligned loop or the function's start, so a change elsewhere
+cannot move it, and its performance with it. The assembler fills the gap
+with no-operation instructions. They run only when the code before the loop
+falls into it, once on entry, since the branch that closes the loop targets
+the label after them, and they change no register but the instruction
+pointer, no flag and no memory: the code that runs is the verified code with
+no-ops before some of its loops' first instructions.
+
 An artifact that reads tables of constants (`Artifact.consts`) names each
 by the name of a `static` holding it, which `files` writes once per target,
 in the module `consts` (`src/asm/<target>/consts.rs`), after checking that
@@ -267,12 +285,34 @@ def checkLayout (a : Artifact) : Except String Unit := do
     throw s!"{a.target.name}: {a.name} has buffers but its doc does not end with its \
       `# Safety` section"
 
+/-- The alignment directives before each loop of a target's functions:
+`.p2align 5` on x86-64 (see the module docs), none on the other targets. -/
+def loopAlign (t : Target) : List String :=
+  if t.name == "x86_64" then [".p2align 5"] else []
+
+/-- The label a line branches back to: `"22"` for `"jne 22b"`. -/
+def backTarget (s : String) : Option String :=
+  match (s.splitOn " ").getLast? with
+  | some tok =>
+    let n := (tok.dropEnd 1).toString
+    if s.startsWith "j" && tok.endsWith "b" && !n.isEmpty && n.all Char.isDigit then some n else none
+  | none => none
+
+/-- `ls` with the directives `dirs` before each label that a branch in `ls`
+targets backward: in code lowered by `Printer.lower`, the first instruction
+of a loop. -/
+def alignLoops (dirs : List String) (ls : List Line) : List Line :=
+  let back := ls.filterMap fun | .text s => backTarget s | _ => none
+  ls.flatMap fun
+    | .text s => if s.endsWith ":" && back.contains (s.dropEnd 1).toString then dirs.map .text ++ [.text s] else [.text s]
+    | l => [l]
+
 /-- One artifact as a Rust naked function; `moduleOf` gives the module of
 each function it calls. The printer's `funcAlign` comes last, after the
 return (`Printer.function`) and any directives that follow it. -/
 def function (a : Artifact) (moduleOf : String → String) : String :=
   let P := a.target.printer
-  let body := (a.features.flatMap P.enableFeature).map .text ++ P.function a.code ++
+  let body := (a.features.flatMap P.enableFeature).map .text ++ alignLoops (loopAlign a.target) (P.function a.code) ++
     (a.features.flatMap P.disableFeature).map .text ++ P.funcAlign.map .text
   let callees := dedup (body.filterMap fun | .call n => some n | _ => none)
   let syms := dedup (body.filterMap fun | .sym _ _ n => some n | _ => none)
