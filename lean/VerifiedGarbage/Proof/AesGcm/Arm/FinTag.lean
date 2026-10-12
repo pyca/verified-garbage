@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.TextAbsorb
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.TextAbsorb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: the tag of a streaming state (`finTag o`)
@@ -8,6 +14,8 @@ bytes (of the additional data if there is no text, of the text otherwise)
 and absorbs them, then the lengths block, and writes the tag to `W + o`
 (`finTag_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

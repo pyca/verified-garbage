@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
-import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
-import VerifiedGarbage.Proof.AesOcb.X86_64.TagCT
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
+public import VerifiedGarbage.Proof.AesOcb.X86_64.TagCT
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.TagCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: `HASH` is constant time
@@ -12,6 +21,8 @@ in the associated data (`rbx`, `rbp`); the call between has the same
 arguments in both runs (`callBlocks_rel`), and so does the rest's. Both runs
 are at the same chunk at each iteration (`chunk_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

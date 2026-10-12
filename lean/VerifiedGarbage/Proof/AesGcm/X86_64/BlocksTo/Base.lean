@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Base
-import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Base
+public import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: the setting
@@ -10,6 +16,8 @@ state `s` (`K`, `C`, `Y`, `Src`, `n`, `Dst`, `S`), their regions, and the
 facts of `blocksToPreM` by name (`BT`); the entry, which keeps the arguments
 in `scratch` (`entry_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

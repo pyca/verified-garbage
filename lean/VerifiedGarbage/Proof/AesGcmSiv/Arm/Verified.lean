@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.AesGcmSiv.Arm.FnCT
-import VerifiedGarbage.Proof.GcmSiv.Polyval
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Spec.GcmSiv.Contract
-import VerifiedGarbage.Proof.AesGcmSiv.Scratch
-import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.Arm.FnCT
+public import VerifiedGarbage.Proof.GcmSiv.Polyval
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Spec.GcmSiv.Contract
+public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on ARMv7: `Verified`
@@ -18,6 +24,8 @@ the working space as a last argument (`Proof/AesGcmSiv/Scratch.lean`, 470
 words), with 8 bytes of stack: each call of `vg_aes_ctr32` or `vg_ghash`
 pushes two words. The last section allocates the working space.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

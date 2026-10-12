@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
+meta import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: the arguments and the entry in two runs
@@ -11,6 +18,8 @@ secret (it reads memory): the block is split after the loads
 `x10` and `x11`, which hold `work`, the tag length and `tag`, public, in both
 runs (`entry_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

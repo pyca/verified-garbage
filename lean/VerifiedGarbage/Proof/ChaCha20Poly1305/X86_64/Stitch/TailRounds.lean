@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Chunk
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
+module
+
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Chunk
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the tail's rounds
@@ -13,6 +19,8 @@ Poly1305's registers (`absorbRegs`) and no vector register or memory, and
 the parts write only vector registers, so they compose under an invariant
 of both (`TB`), as in `Chunk.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 

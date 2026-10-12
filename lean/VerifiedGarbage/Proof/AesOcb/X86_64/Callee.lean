@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Words
-import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
-import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Words
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
+public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: the functions called
@@ -13,6 +19,8 @@ calls with the same arguments leak the same (`blk_rel`, `key_rel`). A block
 the call transforms is `ENCIPHER` (or `DECIPHER`) of the key schedule
 (`BPost.enc`, `BPost.dec`), as OCB's blocks in memory (`blockAtMem`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

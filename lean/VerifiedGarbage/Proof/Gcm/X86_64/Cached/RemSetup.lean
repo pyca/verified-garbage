@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoop
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.ZFrameBlock
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoop
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.X86_64.ZFrameBlock
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The setup of the blocks after the last group
@@ -11,6 +17,8 @@ after the `r` blocks (`r` added to the first counter, `paddd_rep`), and
 points `rax` at the powers of the `r` blocks, `16 (16 - r)` bytes into the
 working space, with `r10 = 16 r`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZH
 

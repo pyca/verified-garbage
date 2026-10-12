@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.GcmSiv.Contract
-import VerifiedGarbage.Proof.AesGcm.Scratch
-import VerifiedGarbage.Proof.Framework.Scratch
+module
+
+public import VerifiedGarbage.Spec.GcmSiv.Contract
+public import VerifiedGarbage.Proof.AesGcm.Scratch
+public import VerifiedGarbage.Proof.Framework.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV with its working space as an argument
@@ -18,6 +24,8 @@ entry only within the function's buffers (`sealPost_local`,
 data, the tag and, for `rounds` of 10 or 14, the round keys in the key
 schedule's 240 bytes (`ctxCiph_congr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcmSiv
 

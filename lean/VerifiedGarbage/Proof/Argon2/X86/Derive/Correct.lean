@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Argon2.X86.Derive.FillLoops
-import VerifiedGarbage.Proof.Argon2.FinalReduction
-import VerifiedGarbage.Proof.Argon2.Serialization
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillLoops
+public import VerifiedGarbage.Proof.Argon2.FinalReduction
+public import VerifiedGarbage.Proof.Argon2.Serialization
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

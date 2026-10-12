@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+meta import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: the rest of the keystream block (`cryptHead`)
@@ -7,6 +14,8 @@ Untrusted: everything here is checked by Lean. With `P mod 16 ≠ 0` bytes of
 the keystream block used, `cryptHead` XORs the next `min (16 - P mod 16, n)`
 into the data (`cryptHead_pc`), by `Proof.Gcm.ctr_head`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

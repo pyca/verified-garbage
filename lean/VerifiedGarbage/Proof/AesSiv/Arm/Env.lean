@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesSiv.Arm.Call
-import VerifiedGarbage.Proof.AesCcm.Arm.Callee
-import VerifiedGarbage.Proof.AesSiv.Ctr32
-import VerifiedGarbage.Proof.Siv.Spec
+module
+
+public import VerifiedGarbage.Proof.AesSiv.Arm.Call
+public import VerifiedGarbage.Proof.AesCcm.Arm.Callee
+public import VerifiedGarbage.Proof.AesSiv.Ctr32
+public import VerifiedGarbage.Proof.Siv.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: where everything is
@@ -13,6 +19,8 @@ access (`Perm`); and the registers holding the rounds, `c` and `w`, and the
 stack pointer (`Env`). The strings S2V absorbs are buffers the code may read
 (`Buf`), and the data one it may also write (`Dat`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

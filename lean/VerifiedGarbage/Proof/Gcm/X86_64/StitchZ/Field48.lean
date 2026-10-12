@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: 48 blocks in the field
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 added and reduced as `body48` does are `GHASH` over them (`FinOk48`); and
 `φ_lanemul`: the products `pow48` stores are the powers it says.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZ
 open VG VG.X86_64 VG.Proof.Gcm.Poly

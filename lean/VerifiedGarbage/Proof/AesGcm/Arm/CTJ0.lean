@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.CTCrypt
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTCrypt
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTCrypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `j0` is constant time
@@ -7,6 +14,8 @@ Untrusted: everything here is checked by Lean. The invariant fixes the
 context, the state, `W`, the stack pointer and the nonce's address and
 length.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

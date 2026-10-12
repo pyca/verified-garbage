@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Verified
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Verified
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on AArch64, with its working space on the stack
@@ -9,6 +15,8 @@ argument (`Verified.lean`), in a frame of 2304 bytes that allocates it
 (`Verified.stackScratch`). Their code uses no other stack: their calls keep
 the return address in `x30`, which they save in the working space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.AArch64
 

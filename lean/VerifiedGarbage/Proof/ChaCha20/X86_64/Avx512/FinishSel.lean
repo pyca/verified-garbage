@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.SymSel
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.SymSel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX-512: the sixteen blocks, from either buffer
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.SymSel
 each doubleword of the output is the input's (`T.inp`) XORed with the
 keystream's (`finishSel_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx512
 

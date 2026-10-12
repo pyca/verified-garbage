@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
-import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: constant time
@@ -12,6 +20,8 @@ written through `r12` at the stack pointer, the same in both runs
 constant time by its callee's contract, whose public arguments agree
 (`sealGather_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

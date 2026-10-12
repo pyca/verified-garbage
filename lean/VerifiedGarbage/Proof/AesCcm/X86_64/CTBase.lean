@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Run
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: relating two runs
@@ -11,6 +17,8 @@ arguments, kept in the slots of `W` (`Slots`), so the taint analysis starts
 from the registers that agree and those slots, public (`ccmT`, `both_agree`);
 what correctness says about each run is added with `RelCT.wp`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm.X86_64
 

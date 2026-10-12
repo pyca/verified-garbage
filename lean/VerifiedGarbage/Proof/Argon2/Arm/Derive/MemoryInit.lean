@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.Clear
-import VerifiedGarbage.Proof.Argon2.MemoryInit
-import VerifiedGarbage.Proof.Argon2.Matrix
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Clear
+public import VerifiedGarbage.Proof.Argon2.MemoryInit
+public import VerifiedGarbage.Proof.Argon2.Matrix
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the memory's initialization
@@ -11,6 +17,8 @@ lane's first two blocks are H′ of the 72 bytes at the start of the locals
 (`initBlock_ok`), H₀ followed by the column and the lane, written there just
 before the call. `LI s₀ h0 l` is the state after `l` lanes (`initCell`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

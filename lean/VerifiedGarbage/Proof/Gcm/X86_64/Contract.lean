@@ -1,5 +1,11 @@
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Spec.Gcm
+module
+
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Spec.Gcm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GHASH on x86-64: the contract of `vg_ghash`
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. The contract alone, apart from
 its proof (`Proof/Gcm/X86_64/Ghash.lean`), so that the callers of `vg_ghash`
 need not import the algebra the proof uses.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm
 

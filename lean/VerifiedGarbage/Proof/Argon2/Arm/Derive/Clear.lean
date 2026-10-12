@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.HCall
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.HCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: clearing the memory matrix
@@ -8,6 +14,8 @@ one word per iteration, and writes nothing else. Its loop counts the words
 left in `r6` (`blocks · 256`), with `r5` the next word's address and `r7`
 zero.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

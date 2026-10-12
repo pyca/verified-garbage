@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming BLAKE2 on ARMv7: `update`
@@ -11,6 +17,8 @@ first call (`pro_ok`), the first call (`call₁_ok`), the code between the calls
 postcondition gives the registers the next one starts from as functions of the
 arguments, which the constant-time proof (`CT.lean`) uses too.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.Arm.Stream.Update
 

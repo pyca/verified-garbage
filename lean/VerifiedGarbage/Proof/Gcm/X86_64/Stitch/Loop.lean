@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Group
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Group
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Interleaved counter mode and GHASH: the encryption loop
@@ -11,6 +17,8 @@ between their rounds (`gq_ok`), which they do not write (`QG.data`). It is
 proven for any powers whose products add up to `GHASH` (`FinOk`), without
 the field, which only `Stitch/Ok.lean` imports.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Stitch
 

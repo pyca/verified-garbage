@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.CmacOf
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.CmacOf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: a step of S2V over the associated data
@@ -8,6 +14,8 @@ doubles `D` in place and XORs the CMAC into it, so `D` is then
 `dbl(D) ⊕ CMAC(S)` (`Spec.Siv.s2vStep`); then it moves to the next
 descriptor and counts one fewer left (`adStep_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

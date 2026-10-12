@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.SetupP
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
-import VerifiedGarbage.Impl.AesGcm.X86_64.Prepared
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.SetupP
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
+public import VerifiedGarbage.Impl.AesGcm.X86_64.Prepared
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Converting the cached powers in place at key setup -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.Prepared
 open VG VG.X86_64

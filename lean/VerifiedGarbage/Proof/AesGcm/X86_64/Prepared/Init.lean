@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.InitP
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.ConvertLoop
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.InitP
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.ConvertLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Key setup with a prepared GHASH power table -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm
 open VG VG.X86_64

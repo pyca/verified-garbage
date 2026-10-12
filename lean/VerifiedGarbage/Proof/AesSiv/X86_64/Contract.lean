@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
-import VerifiedGarbage.Impl.AesSiv.X86_64
-import VerifiedGarbage.Spec.Siv
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
+public import VerifiedGarbage.Impl.AesSiv.X86_64
+public import VerifiedGarbage.Spec.Siv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: `vg_aes_siv_init`'s contract for its proof
@@ -11,6 +17,8 @@ implies this (`Verified.lean`). The function calls functions that call
 pointer, which may not overlap any buffer. `encrypt`'s and `decrypt`'s proofs
 are against `EPre` instead (`Enc.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

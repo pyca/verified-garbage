@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.NonceBlock
-import VerifiedGarbage.Proof.Ocb.Stretch32
-import VerifiedGarbage.Proof.Ocb.State
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.NonceBlock
+public import VerifiedGarbage.Proof.Ocb.Stretch32
+public import VerifiedGarbage.Proof.Ocb.State
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: `Offset_0` (`offset0`)
@@ -12,6 +18,8 @@ masked stages (`stage_ok`, `stage32_ok`, `Proof.Ocb.shl_stages`), and stores
 the top four, byte-reversed, to `W + ofsO` and `W + o0O` (`offset0_ok`), as
 on AArch64 (`Proof.AesOcb.AArch64.offset0_ok`) with 32-bit words.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86.StreamCrypt
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.StreamCrypt
+meta import VerifiedGarbage.Proof.AesGcm.X86.StreamCrypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_stream_encrypt`
@@ -8,6 +15,8 @@ encrypted (`crypt`), the ciphertext absorbed (`textAbsorb`) and the exit,
 as one `Pc` (`streamEncrypt_pc`): correct (`streamEncrypt_correct`) and
 constant time (`streamEncrypt_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

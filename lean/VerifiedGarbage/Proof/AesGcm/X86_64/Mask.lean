@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
-import VerifiedGarbage.Proof.Cmac.Stream
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+public import VerifiedGarbage.Proof.Cmac.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AEADs on x86-64: masking the data (`maskTail`)
@@ -13,6 +19,8 @@ whole blocks go 16 bytes at a time, with the mask in both halves of `xmm0`
 the first `j` bytes masked (`MInv`).
 AES-CCM and AES-GCM-SIV share it.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

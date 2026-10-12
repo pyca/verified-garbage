@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.Common
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Common
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: `vg_aes_siv_init`
@@ -9,6 +16,8 @@ after them and restores the registers: the context is then that of the key
 (`Spec.Siv.KeyRepr`). The code between the calls is constant time by the
 taint analysis, and the calls by their own proofs (`ek_rel`, `sub_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

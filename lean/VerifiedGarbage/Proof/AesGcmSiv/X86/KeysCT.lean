@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Open
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Open
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Open
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86: the keys are constant time
@@ -12,6 +19,8 @@ each call by its callee's proof (`callCtr_ct`, `callKey_ct`); and a loop
 with calls by its iterations, each from the public number of iterations
 left (`CT.loopN`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

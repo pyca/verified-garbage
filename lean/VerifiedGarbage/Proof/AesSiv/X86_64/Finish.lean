@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.FinishLong
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.FinishLong
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.FinishLong
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: finishing S2V (`finish`)
@@ -8,6 +15,8 @@ long one (`finishLong_wp`), which leave S2V's end at `W + out`. Every
 branch and loop in it is on `L`, and the arguments of its calls are the same
 in two runs with the same pointers and lengths (`finish_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

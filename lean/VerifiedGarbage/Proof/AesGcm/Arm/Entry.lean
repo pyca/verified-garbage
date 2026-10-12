@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Contract
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: the stack arguments, and the entry of the functions
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. The functions other than
 registers there (`entry_ok`); they read their other stack arguments when they
 need them, which no write changes (`arg_frame`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

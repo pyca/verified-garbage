@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.AArch64.FinishShort
-import VerifiedGarbage.Proof.AesSiv.Long
+module
+
+public import VerifiedGarbage.Proof.AesSiv.AArch64.FinishShort
+public import VerifiedGarbage.Proof.AesSiv.Long
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64: finishing S2V with a string of a block or more
@@ -11,6 +17,8 @@ tail is `P[16k..] xorend D` (`xorend_mem`); `longMac` chains the `k` blocks
 of `P`, computes `j` into `x25`, chains the first `j` blocks of the tail,
 and finalizes the rest of the tail (`long_spec`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.AArch64
 

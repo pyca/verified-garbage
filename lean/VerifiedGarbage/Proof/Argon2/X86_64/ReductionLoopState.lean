@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.ReduceLane
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.ReduceLane
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Public loop metadata survives accumulator writes and register-only advancement. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.ReductionState
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.CTPre
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.CTPre
+meta import VerifiedGarbage.Proof.AesOcb.Arm.CTPre
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: the data and the tag in two runs
@@ -10,6 +17,8 @@ pointer, its blocks and the block index, the same in both runs; the calls of
 `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` with the same arguments
 in both runs (`body_rel`, `tag_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

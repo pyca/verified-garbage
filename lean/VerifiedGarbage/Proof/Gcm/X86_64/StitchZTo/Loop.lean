@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Aes
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Aes
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The out-of-place AVX-512 loop: the setup, the loop of one group, the stores
@@ -19,6 +25,8 @@ rounds (`StitchZ.gq_ok`), which it does not write (`StitchZ.QG.data`, for
 the in-place view `dst s₀`). `finalTo_ok`: the stores after the loops, and
 the contract (`EPostTo`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZTo
 

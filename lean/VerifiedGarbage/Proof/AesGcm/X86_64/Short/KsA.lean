@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
-import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
+public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The keystream of the end of `seal` with AES-NI
@@ -9,6 +17,8 @@ loads `J₀` and the counter block into `xmm5` and `xmm7`, encrypts them with
 `AesNi.aes` and stores them at `K`: it meets what `finishWith` needs of its
 keystream (`finKsA_ksOk`), in two runs too (`finKsA_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

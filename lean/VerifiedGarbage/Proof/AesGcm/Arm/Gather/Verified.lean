@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Gather.CT
-import VerifiedGarbage.Proof.AesGcm.Arm.Frame
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.CT
+public import VerifiedGarbage.Proof.AesGcm.Arm.Frame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: `Verified`
@@ -11,6 +17,8 @@ implies the one the proof is written against (`gatherArm`,
 `gather_implies`), and so the code, calling `vg_aes_gcm_seal` by its shared
 contract (`sealFn`), is `Verified` against it (`sealGather_verified`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.LNtz
-import VerifiedGarbage.Proof.Ocb.Bytes
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.LNtz
+public import VerifiedGarbage.Proof.Ocb.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: padding a string (`padTo`)
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `padTo d` writes `pad(S)`
 (§4.1) of the `n < 16` bytes `S` at `x23` to `W + d`: zeros, the bytes
 (AES-GCM's `copyLoop`), and `0x80` after them (`padTo_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

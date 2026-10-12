@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.X86.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: constant time, piece by piece
@@ -18,6 +24,8 @@ determines); straight-line code and loops without calls are proven by the
 taint analysis, from the registers `I` pins (`CT.taint`), and each call in a
 frame of its arguments by the callee's own proof (`CT.callWith`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86
 

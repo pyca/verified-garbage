@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Chunk
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Chunk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86-64: counter mode (`crypt`)
@@ -10,6 +16,8 @@ of the data is encrypted in place by `vg_aes_ctr32` from a copy of it at
 last bytes are XORed with the keystream block, computed at `W + 128`
 (`cryptTail_ok`). `crypt_ok`: the data becomes `ctr` of it (RFC 8452 §4).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

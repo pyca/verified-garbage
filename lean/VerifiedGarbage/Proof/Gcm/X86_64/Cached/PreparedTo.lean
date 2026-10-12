@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
-import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Prepared tables and the cached-key loop setup -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZHTo
 open VG VG.X86_64

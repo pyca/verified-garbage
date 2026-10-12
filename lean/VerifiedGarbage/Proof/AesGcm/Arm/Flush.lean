@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Absorb
-import VerifiedGarbage.Proof.AesGcm.Arm.Words
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Absorb
+public import VerifiedGarbage.Proof.AesGcm.Arm.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: padding the buffer (`flush`) and the lengths block (`lens`)
@@ -9,6 +15,8 @@ buffered bytes with zeros in `T` and absorbs them (`flush_ok`); `lens yo`
 stores the lengths block of `r5:r4` and `r7:r6` bytes in `T` and absorbs it
 (`lens_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

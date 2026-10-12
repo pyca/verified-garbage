@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.InitP
-import VerifiedGarbage.Proof.AesGcm.X86_64.InitCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.InitP
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.InitP
+public import VerifiedGarbage.Proof.AesGcm.X86_64.InitCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.InitCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_init_precomputed` is constant time
@@ -9,6 +17,8 @@ Untrusted: everything here is checked by Lean. `init`'s code is
 times with the same arguments, which depend only on the pointers
 (`PowRegs`, `powStep_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

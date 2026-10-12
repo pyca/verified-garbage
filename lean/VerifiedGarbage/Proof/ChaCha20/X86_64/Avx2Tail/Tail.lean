@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86-64 with AVX2, the last bytes
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
 512 left), to the end of the function. What does not depend on the code
 (`Done`, the last bytes from `buf`, the end) is `Avx512Tail.Tail`'s.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx2Tail
 

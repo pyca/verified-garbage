@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
-import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
+public import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: the pieces of `seal` and `open` in two runs
@@ -11,6 +20,8 @@ the data's address and length) is the same in both runs, so each piece
 (`oneAad`, `oneCrypt`, `oneTag`) leaks the same, by the fragments'
 relations.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCount
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCount
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the reference block's column and the block pointers
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCount
 column, from the window's start, modulo the lane length; `refPointer_ok` and
 `curPointer_ok`: the reference and current blocks' addresses, to the locals.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Init
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Update
-import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
+module
+
+public import VerifiedGarbage.Proof.Blake2.X86.Stream.Init
+public import VerifiedGarbage.Proof.Blake2.X86.Stream.Update
+public import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming BLAKE2 on x86 (32-bit): `Verified`, for any compression function
@@ -13,6 +19,8 @@ function) is constant time, which each instance proves by the taint analysis
 `τFinalize`) and the facts that the public inputs give it (`init_agree`,
 `update_agree`, `finalize_agree`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.X86.Stream
 

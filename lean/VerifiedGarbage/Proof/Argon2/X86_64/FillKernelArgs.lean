@@ -1,21 +1,30 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.FillCompress
-import VerifiedGarbage.Impl.Argon2.X86_64.FillKernel
-import VerifiedGarbage.Proof.Argon2.X86_64.Memory
-import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapState
-import VerifiedGarbage.Proof.Argon2.FillPositions
-import VerifiedGarbage.Proof.Argon2.X86_64.BlockAddress
-import VerifiedGarbage.Impl.Argon2.X86_64.FillColumn
-import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
-import VerifiedGarbage.Proof.Argon2.Dimensions
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Impl.Argon2.X86_64.FillPointers
-import VerifiedGarbage.Proof.Argon2.X86_64.Wrap
-import VerifiedGarbage.Proof.Argon2.X86_64.Relative
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapLane
-import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompress
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillKernel
+public import VerifiedGarbage.Proof.Argon2.X86_64.Memory
+public import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapState
+public import VerifiedGarbage.Proof.Argon2.FillPositions
+public import VerifiedGarbage.Proof.Argon2.X86_64.BlockAddress
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillColumn
+public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+public import VerifiedGarbage.Proof.Argon2.Dimensions
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillPointers
+public import VerifiedGarbage.Proof.Argon2.X86_64.Wrap
+public import VerifiedGarbage.Proof.Argon2.X86_64.Relative
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapLane
+public import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.X86_64.ReferenceMapWindow`. -/
+
+@[expose] public section
+
 section
 /-! The selected eligible window and its chronological starting column. -/
 

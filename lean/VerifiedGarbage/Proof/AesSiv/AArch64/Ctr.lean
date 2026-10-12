@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
-import VerifiedGarbage.Proof.AesSiv.Ctr32
-import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+module
+
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
+public import VerifiedGarbage.Proof.AesSiv.Ctr32
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64: CTR (`ctr`)
@@ -22,6 +28,8 @@ XORed into the data a byte at a time (`xorBytes_wp`), and the counter is
 incremented as a 128-bit integer (`inc_words`). After block `i` the data is
 CTR's output on its first `16 (i + 1)` bytes (`ctrPart_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.AArch64
 

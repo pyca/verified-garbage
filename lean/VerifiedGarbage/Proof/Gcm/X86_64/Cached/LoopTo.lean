@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.AesTo
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.AesTo
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Cached-key GCM groups with distinct input and output buffers -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZHTo
 open VG VG.X86_64

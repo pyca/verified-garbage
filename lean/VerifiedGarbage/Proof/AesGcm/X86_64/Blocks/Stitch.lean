@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.AlignedScratch
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Mid
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.AlignedScratch
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Mid
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on whole blocks, x86-64: the first `16 ⌊n / 16⌋` blocks in one pass
@@ -11,6 +17,8 @@ other arguments still in their registers meets what the interleaved loops
 need (`spre_of`); their result is `Mid` with `q = 16 ⌊n / 16⌋`
 (`mid_of_post`). With fewer, `q = 0` (`stitchE_ok`, `stitchD_ok`); then `rest`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

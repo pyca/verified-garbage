@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesSiv.X86.Contract
-import VerifiedGarbage.Proof.AesGcm.X86.Common
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.AesSiv.X86
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86.Common
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.AesSiv.X86
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: where everything is
@@ -14,6 +20,8 @@ the entry keeps in `W` (`Slots`). The pieces write the parts of `W` in
 `mutR` (and the data, and the stack below `SP`), so the slots and our
 caller's registers saved in `W` stay as the entry left them.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

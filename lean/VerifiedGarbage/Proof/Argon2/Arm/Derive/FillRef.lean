@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCache
-import VerifiedGarbage.Proof.Argon2.Reference
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCache
+public import VerifiedGarbage.Proof.Argon2.Reference
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 on ARMv7: the reference block's lane, start and base
@@ -9,6 +15,8 @@ reference lane (RFC 9106 §3.4.2); `refStart_ok`: where the window of
 eligible blocks starts; `countBase_ok`: the blocks before the current
 segment that a reference may use.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Derive
 

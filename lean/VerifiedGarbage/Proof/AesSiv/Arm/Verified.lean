@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.AesSiv.Arm.CTEnc
-import VerifiedGarbage.Proof.AesSiv.Arm.CTInit
-import VerifiedGarbage.Proof.AesSiv.Scratch
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+module
+
+public import VerifiedGarbage.Proof.AesSiv.Arm.CTEnc
+public import VerifiedGarbage.Proof.AesSiv.Arm.CTInit
+public import VerifiedGarbage.Proof.AesSiv.Scratch
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: `Verified`
@@ -20,6 +26,8 @@ their own calls. On ARMv7 the arguments on the stack are read-only, apart
 from every region the code may write (`E0`): the data, `work` and, for
 `encrypt`, `siv`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.Arm
 

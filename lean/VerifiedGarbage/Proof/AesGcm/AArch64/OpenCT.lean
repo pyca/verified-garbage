@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.SealCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.SealCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.SealCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_open` leaks only whether the tag is right
@@ -9,6 +16,8 @@ with the received tag copied in and compared, and the text decrypted, by
 the tag length is an argument, and whether the tag is right is what
 `openAArch64.pub` leaks.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

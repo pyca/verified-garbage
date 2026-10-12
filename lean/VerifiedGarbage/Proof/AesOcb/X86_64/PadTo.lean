@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Args
-import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Args
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: copying bytes (`copyLoop`, `padTo`)
@@ -9,6 +15,8 @@ bytes at `rbx` to `rsi`, a byte at a time, counting up in `rcx`
 (`copyLoop_ok`); `padTo d` writes `pad(S)` (§4.1) of the `n < 16` bytes `S`
 at `rbx` to `W + d`: zeros, the bytes, and `0x80` after them (`padTo_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

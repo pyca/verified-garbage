@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Fn
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Fn
+meta import VerifiedGarbage.Proof.AesGcm.X86.Fn
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: the tag (`tag`)
@@ -8,6 +15,8 @@ lengths block (`lens 16`), copies the accumulator to `W + o` and encrypts
 it there with `vg_aes_ctr32` from the counter block `J₀` (at the state's
 first block): `GHASH ⊕ CIPH_K(J₀)` (`tag_pc`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

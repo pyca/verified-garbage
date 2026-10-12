@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's key setup and streaming functions on AArch64, with their working space on the stack
@@ -12,6 +18,8 @@ and `open`, whose working space is their second and third stack argument,
 2576 and 2592 bytes that also hold copies of the stack arguments before it
 (`Verified.stackArgScratch`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.AArch64
 

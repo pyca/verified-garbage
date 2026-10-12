@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.Words
-import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
-import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
-import VerifiedGarbage.Proof.Ocb.State
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Words
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
+public import VerifiedGarbage.Proof.Ocb.State
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: the functions called
@@ -15,6 +21,8 @@ of the key schedule (`BPost.enc`, `BPost.dec`), as OCB's blocks in memory
 (`blockAtMem`). `vg_aes_expand_key_scratch` is called as AES-GCM calls it
 (`keyImpl`, with `Proof.AesGcm.AArch64.key_call`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

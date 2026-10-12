@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Run
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: the byte loops
@@ -8,6 +14,8 @@ from `r1` to `r2`, and `xorLoop` XORs `r3` bytes at `r1` into those at `r2`,
 a byte at a time through advancing pointers, counting `r3` down to zero
 (`copyLoop_ok`, `xorLoop_ok`); the buffers do not overlap.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

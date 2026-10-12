@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Ghash1
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Ghash1
+meta import VerifiedGarbage.Proof.AesGcm.X86.Ghash1
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: pieces shared by GHASH and counter mode
@@ -10,6 +17,8 @@ b, n)`) and `splitWhole` (the whole blocks and the rest), with their
 constant-time proofs; and `CT.seqEx`, which strings pieces together whose
 pre- and postconditions are indexed by what they started from.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

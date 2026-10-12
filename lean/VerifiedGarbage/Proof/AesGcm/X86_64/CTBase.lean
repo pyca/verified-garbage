@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Env
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: relating two runs
@@ -13,6 +22,8 @@ a branch or a loop (`rel_regs`); what correctness says about each run is
 added with `rel_wp`, and the environment's registers, which no instruction
 writes, keep their values (`rel_env`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

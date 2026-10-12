@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Contract
-import VerifiedGarbage.Spec.GcmSiv.Contract
-import VerifiedGarbage.Proof.AesGcm.Arm.Run
-import VerifiedGarbage.Proof.AesGcm.Arm.Loops
-import VerifiedGarbage.Proof.AesGcm.Arm.Callee
-import VerifiedGarbage.Impl.AesGcmSiv.Arm
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Contract
+public import VerifiedGarbage.Spec.GcmSiv.Contract
+public import VerifiedGarbage.Proof.AesGcm.Arm.Run
+public import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+public import VerifiedGarbage.Impl.AesGcmSiv.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on ARMv7: the contracts, and where everything is
@@ -15,6 +21,8 @@ functions take `aad_len`, `data`, `len`, `tag` and `work` on the stack, and
 call others in frames that push their stack arguments in the 8 bytes below
 the stack pointer (`bel`), which no buffer overlaps.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcmSiv.Arm
 

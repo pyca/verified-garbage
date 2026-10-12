@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
-import VerifiedGarbage.Proof.AesOcb.X86_64.LNtz
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
+public import VerifiedGarbage.Proof.AesOcb.X86_64.LNtz
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: filling the buffer of `HASH` (`hashFill`)
@@ -9,6 +15,8 @@ offset of `HASH`, `Offset_{i+1} = Offset_i ⊕ L_{ntz(i+1)}` (`lAddr_ok`, the
 table, `xor16_ok`), and writes the next block of the associated data XORed with it
 to the next slot of the buffer at `W + bufO` (`hashFill_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

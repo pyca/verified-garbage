@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.Env
-import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.Env
+public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: checking a received tag (`recv`, `cmp o`)
@@ -11,6 +17,8 @@ the `r6` bytes of the received tag at `tag` with zeros at `W + 256`
 `W + 240` and leaves 1 in `r0` if they are the received ones, 0 if not
 (`cmp_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

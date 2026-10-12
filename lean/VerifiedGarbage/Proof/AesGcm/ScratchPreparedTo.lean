@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
-import VerifiedGarbage.Proof.AesGcm.ScratchTo
-import VerifiedGarbage.Proof.AesGcm.ScratchGather
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Contract
+module
+
+public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
+public import VerifiedGarbage.Proof.AesGcm.ScratchTo
+public import VerifiedGarbage.Proof.AesGcm.ScratchGather
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Prepared-context out-of-place scratch contracts -/
+
+@[expose] public section
+
 set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm
 open VG.Spec.Gcm

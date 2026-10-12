@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesOcb.X86.Setup
-import VerifiedGarbage.Proof.AesCcm.Bytes
-import VerifiedGarbage.Proof.AesGcm.X86.Loops
-import VerifiedGarbage.Proof.Ocb.Bytes
-import VerifiedGarbage.Proof.Ocb.Nonce
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.Setup
+public import VerifiedGarbage.Proof.AesCcm.Bytes
+public import VerifiedGarbage.Proof.AesGcm.X86.Loops
+public import VerifiedGarbage.Proof.Ocb.Bytes
+public import VerifiedGarbage.Proof.Ocb.Nonce
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: the block `Nonce` (`nonceBlock`)
@@ -15,6 +21,8 @@ and the last byte split into `bottom` and the rest. The 16 bytes are
 followed as a list through the writes, and compared with `nb`
 (`Proof.Ocb.nonceN_masked_byte`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

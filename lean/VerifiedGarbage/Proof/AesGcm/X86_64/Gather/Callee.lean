@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Contract
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the functions called
@@ -14,6 +20,8 @@ precondition is the layout the call gives it (`initK`, `aadK`, `toK`,
 `finK`), which implies the shared one's, and whose postcondition is the
 shared one's (`CallFn.ofSpec`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Argon2.Arm.Words
-import VerifiedGarbage.Proof.Framework.Arm.Spill
-import VerifiedGarbage.TCB.Arm.Target
+module
+
+public import VerifiedGarbage.Proof.Argon2.Arm.Words
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+public import VerifiedGarbage.TCB.Arm.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 compression on ARMv7: the contract of the proof
@@ -10,6 +16,8 @@ uses for its calls); `Spec.Argon2.compressContract` implies it
 (`Proof/Argon2/Arm/CompressVerified.lean`). `Pre` names the facts of its
 precondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm
 

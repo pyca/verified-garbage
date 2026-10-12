@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesSiv.X86.FinishLong
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86.FinishLong
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: finishing S2V
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `finish out` takes the short
 case (`finishShort_ok`) for a last string of fewer than 16 bytes and the long
 case (`finishLong_ok`) otherwise (`finish_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86
 

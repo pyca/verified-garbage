@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.Contract
-import VerifiedGarbage.Proof.AesCcm.Words
-import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
-import VerifiedGarbage.Proof.AesGcm.AArch64.Save
-import VerifiedGarbage.Impl.AesCcm.AArch64
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Contract
+public import VerifiedGarbage.Proof.AesCcm.Words
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Save
+public import VerifiedGarbage.Impl.AesCcm.AArch64
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: where everything is
@@ -20,6 +26,8 @@ the slots, our caller's registers saved in `W`, the key schedule and the
 associated data stay as the entry left them. `carun` runs a block
 symbolically.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

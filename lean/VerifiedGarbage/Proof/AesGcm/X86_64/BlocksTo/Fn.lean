@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Full
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Tail
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Full
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Tail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: correctness
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. The entry, the first
 `16 ⌊n / 16⌋` blocks in one pass (with out-of-place interleaved loops, if
 any), and the rest, copied and encrypted in place by a call (`encrypt_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64.BlocksTo
 

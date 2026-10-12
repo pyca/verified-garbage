@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Copy
-import VerifiedGarbage.Proof.Framework.X86_64.StraightY
-import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
-import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Copy
+public import VerifiedGarbage.Proof.Framework.X86_64.StraightY
+public import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: copying a slice
@@ -25,6 +31,8 @@ shares). Otherwise `big w` copies the first `c`, then `2 c` at a time from
 an offset below `c`, while at least `2 c` remain, then the last `2 c`
 (`big_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

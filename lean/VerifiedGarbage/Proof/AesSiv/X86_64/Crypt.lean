@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesSiv.X86_64.S2vAd
-import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
-import VerifiedGarbage.Proof.AesSiv.X86_64.CtrCT
-import VerifiedGarbage.Proof.Cmac.Dbl32
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86_64.S2vAd
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
+public import VerifiedGarbage.Proof.AesSiv.X86_64.CtrCT
+public import VerifiedGarbage.Proof.Cmac.Dbl32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86-64: the counter
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Cmac.Dbl32
 (`counter_ok`): the IV's second word with bit 7 of its bytes 0 and 4 cleared
 (`counter_words`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.X86_64
 

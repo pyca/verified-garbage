@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesSiv.X86.Callee
-import VerifiedGarbage.Proof.AesGcm.X86.Cmp
-import VerifiedGarbage.Proof.AesSiv.Ctr32
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+public import VerifiedGarbage.Proof.AesSiv.Ctr32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: CTR (`ctr`)
@@ -17,6 +23,8 @@ keystream block of that counter, which `vg_aes_ctr32` computes on a zero
 block at `W + 80` (`ctrTail_ok`). Together, CTR's output on the data
 (`ctr_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

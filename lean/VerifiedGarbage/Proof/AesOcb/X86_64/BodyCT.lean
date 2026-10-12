@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.WholeCT
-import VerifiedGarbage.Proof.AesOcb.X86_64.RestCT
-import VerifiedGarbage.Proof.AesOcb.X86_64.Body
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.WholeCT
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.WholeCT
+public import VerifiedGarbage.Proof.AesOcb.X86_64.RestCT
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.RestCT
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Body
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Body
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: the data is constant time
@@ -10,6 +19,8 @@ and the length of the rest come from the public slots, so the branches agree
 in both runs (`rel_flagsC`); the whole blocks and the rest are related by
 `whole_rel` and `rest_rel`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 
