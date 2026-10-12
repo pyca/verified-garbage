@@ -60,7 +60,7 @@ from bench_arches import bench_catalog
 # `<primitive>/<library>/<bytes>`, see bench/benches/primitives/main.rs).
 VG = "verified-garbage"
 # The libraries benchmarked for reference, with their names in the report.
-REFERENCES = {"openssl": "OpenSSL", "aws-lc-rs": "aws-lc-rs"}
+REFERENCES = {"openssl": "OpenSSL"}
 
 
 # Every build shares one target directory, so the dependencies (criterion,
@@ -389,7 +389,7 @@ def main():
         f"## Benchmarks ({title})" if title else "## Benchmarks",
         "",
         f"{runs} on this runner; a slowdown of more than {args.threshold:.0%} fails."
-        + (" OpenSSL (through rust-openssl) and aws-lc-rs ran three times, for reference (individual estimates logged)." if with_references
+        + (" OpenSSL 4.0.3 (through rust-openssl) ran three times, for reference (individual estimates logged)." if with_references
            else " OpenSSL and aws-lc-rs ran only in the configuration without VG_CPU_FEATURES." if cpu_features
            else " OpenSSL and aws-lc-rs did not run (they do with `--openssl`, as in the workflow's manual runs)."),
         *(

@@ -322,7 +322,43 @@ pub fn decrypt(
     // `scratch_len = 16 n_len + 1024`; and the CPU has the features of the
     // implementations of the hash functions and of the private-key
     // operation that `decrypt_impl` chose, which are those of `f`.
-    let r = unsafe {
+    let r = {
+        #[cfg(target_arch="aarch64")]
+        { if hash == Hash::Sha256 && mgf1_hash == Hash::Sha256 {
+            use crate::arch::rsa_oaep_sha256_mgf1_sha256::*;
+            let pre = key.verify_pre.get(&key.n, &mut scratch);
+            let f = match Sha256Backend::select(detected()) {
+                Sha256Backend::Scalar => vg_rsa_oaep_sha256_mgf1_sha256_decrypt_cached,
+                Sha256Backend::Sha2 => vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_sha2_cached,
+            };
+            // UNPROVED experiment: retain the original private check and OAEP decoding.
+            unsafe { f(
+            out.as_mut_ptr(),
+            k,
+            &mut len,
+            key.n.as_ptr(),
+            k,
+            key.e.as_ptr(),
+            key.e.len(),
+            key.p.as_ptr(),
+            key.p.len(),
+            key.q.as_ptr(),
+            key.q.len(),
+            key.dp.as_ptr(),
+            key.dp.len(),
+            key.dq.as_ptr(),
+            key.dq.len(),
+            key.qinv.as_ptr(),
+            key.qinv.len(),
+            label.as_ptr(),
+            label.len(),
+            ciphertext.as_ptr(),
+            k,
+            scratch.as_mut_ptr(),
+            scratch.len(),
+                pre.as_ptr(), pre.len(),
+            ) }
+          } else { unsafe {
         f(
             out.as_mut_ptr(),
             k,
@@ -348,6 +384,35 @@ pub fn decrypt(
             scratch.as_mut_ptr(),
             scratch.len(),
         )
+    } } }
+        #[cfg(not(target_arch="aarch64"))]
+        { unsafe {
+        f(
+            out.as_mut_ptr(),
+            k,
+            &mut len,
+            key.n.as_ptr(),
+            k,
+            key.e.as_ptr(),
+            key.e.len(),
+            key.p.as_ptr(),
+            key.p.len(),
+            key.q.as_ptr(),
+            key.q.len(),
+            key.dp.as_ptr(),
+            key.dp.len(),
+            key.dq.as_ptr(),
+            key.dq.len(),
+            key.qinv.as_ptr(),
+            key.qinv.len(),
+            label.as_ptr(),
+            label.len(),
+            ciphertext.as_ptr(),
+            k,
+            scratch.as_mut_ptr(),
+            scratch.len(),
+        )
+    } }
     };
     // The working space holds the private key and the encoded message.
     zeroize(&mut scratch);

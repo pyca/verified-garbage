@@ -293,14 +293,27 @@ fn sign_with(key: &PrivateKey, digest: &[u8], hash: Hash, salt: &[u8]) -> Result
     let k = key.n.len();
     let mut out = vec![0; k];
     let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
-    let r = with_functions!(hash, |fns| call_sign(
+    let r = {
+        #[cfg(target_arch="aarch64")]
+        { if hash == Hash::Sha256 { cached_sign32(&mut out, key, digest, salt, &mut scratch) }
+          else { with_functions!(hash, |fns| call_sign(
         fns.0,
         &mut out,
         key,
         digest,
         salt,
         &mut scratch
-    ));
+    )) } }
+        #[cfg(not(target_arch="aarch64"))]
+        { with_functions!(hash, |fns| call_sign(
+        fns.0,
+        &mut out,
+        key,
+        digest,
+        salt,
+        &mut scratch
+    )) }
+    };
     // The working space holds the private key, the encoding and its powers.
     zeroize(&mut scratch);
     // `PrivateKey::from_crt` checked the key, so a refusal means the encoding
@@ -349,6 +362,43 @@ pub fn verify(
 /// `f`, a `vg_rsa_pss_<H>_mgf1_<H>_sign` that this CPU can run, on the
 /// key, the hash value (as long as `H`'s values), the salt, the
 /// modulus-long `out` and the working space.
+#[cfg(target_arch="aarch64")]
+fn cached_sign32(out: &mut [u8], key: &PrivateKey, digest: &[u8], salt: &[u8], scratch: &mut [u64]) -> u32 {
+    use crate::arch::rsa_pss_sha256_mgf1_sha256::*;
+    use crate::hashes::sha256::Sha256Backend;
+    let digest: &[u8;32] = digest.try_into().unwrap();
+    let pre = key.verify_pre.get(&key.n, scratch);
+    let f = match Sha256Backend::select(detected()) {
+        Sha256Backend::Scalar => vg_rsa_pss_sha256_mgf1_sha256_sign_cached,
+        Sha256Backend::Sha2 => vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_sha2_cached,
+    };
+    // UNPROVED experiment: the additional read-only public context belongs to this key.
+    unsafe { f(
+            out.as_mut_ptr(),
+            out.len(),
+            key.n.as_ptr(),
+            key.n.len(),
+            key.e.as_ptr(),
+            key.e.len(),
+            key.p.as_ptr(),
+            key.p.len(),
+            key.q.as_ptr(),
+            key.q.len(),
+            key.dp.as_ptr(),
+            key.dp.len(),
+            key.dq.as_ptr(),
+            key.dq.len(),
+            key.qinv.as_ptr(),
+            key.qinv.len(),
+            digest,
+            salt.as_ptr(),
+            salt.len(),
+            scratch.as_mut_ptr(),
+            scratch.len(),
+            pre.as_ptr(), pre.len(),
+        ) }
+}
+
 fn call_sign<const N: usize>(
     f: SignFn<N>,
     out: &mut [u8],
