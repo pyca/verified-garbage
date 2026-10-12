@@ -37,6 +37,7 @@ theorem lowChain_ok {s : State} {B : Addr} {Z eN : Nat}
   brun [h4, h7, List.flatMap_cons, List.flatMap_nil, List.append_nil,
     List.cons_append, List.nil_append,
     VG.Impl.Bignum.AArch64.BlockedRedcFast.lowChain,
+    VG.Impl.Bignum.AArch64.BlockedRedc.cancelLowChain,
     VG.Impl.Bignum.AArch64.BlockedRedc.product,
     VG.Impl.Bignum.AArch64.BlockedRedc.aa,
     VG.Impl.Bignum.AArch64.BlockedRedc.nn,

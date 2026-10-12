@@ -73,7 +73,8 @@ theorem cancelChains_ok {s : State} {B : Addr} {Z eN : Nat}
 theorem cancel_eq (i : Nat) : VG.Impl.Bignum.AArch64.BlockedRedcFast.cancel i =
     cancelHead i ++ VG.Impl.Bignum.AArch64.BlockedRedcFast.lowChain ++
       cancelMid ++ VG.Impl.Bignum.AArch64.BlockedRedc.highChain := by
-  simp only [VG.Impl.Bignum.AArch64.BlockedRedcFast.cancel, cancelHead, cancelMid,
+  simp only [VG.Impl.Bignum.AArch64.BlockedRedcFast.cancel, VG.Impl.Bignum.AArch64.BlockedRedc.cancel,
+    VG.Impl.Bignum.AArch64.BlockedRedcFast.lowChain, cancelHead, cancelMid,
     List.append_assoc]
 
 theorem cancelRow_ok {s : State} {B : Addr} {Z eQ eN i : Nat}
