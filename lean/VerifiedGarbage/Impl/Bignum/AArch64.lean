@@ -29,7 +29,8 @@ loads, stores and `cbnz` leave it alone.
 
 The registers: `x0` the working space; `x8` the accumulator, `x9` `b`, `x10`
 `m`, `x11` (advancing over) `a`; `x12` `w`; `x13`, `x14` counters; `x15`
-`-m⁻¹`; `x1` a word of `a` or the multiple `u` of `m`; `x2` a carry; `x7`
+`-m⁻¹`; `x1` a word of `a` or the multiple `u` of `m`; `x2` plus the carry
+flag the row carry; `x7`
 zero; `x3`–`x6`, `x16`, `x17` temporaries and pointers. No callee-saved
 register is written.
 -/
@@ -78,14 +79,19 @@ def zeroAcc : Prog isa :=
   .seq (.block [mov .x16 .x8, .addImm .x .x14 .x12 2])
     (countLoop .x14 [st .x7 .x16, next .x16])
 
-/-- A multiply-accumulate step: `x1 · [x17]` plus the carry `x2` plus the
-accumulator's word, its low word stored at `x16` and its high word the new
-carry; then both pointers advanced. The accumulator's word is at `x16`, or
-at `x16 + 8` for the reduction (`down`), which stores one word down. -/
+/-- A multiply-accumulate step with carry represented by `x2 + C`.
+`ADCS` consumes the preceding accumulator-add carry; the final `ADDS`
+leaves this limb's carry for the next step. Only the row boundary folds
+that last bit into `x2`. The accumulator word is at `x16`, or `x16 + 8`
+for reduction, which stores one word down. -/
 def mac (down : Bool) : List Instr :=
-  [ld .x3 .x17, .mul .x .x4 .x1 .x3, .umulh .x3 .x1 .x3, .adds .x .x4 .x4 .x2, .adc .x .x3 .x3 .x7,
-    ld .x2 .x16 (if down then 8 else 0), .adds .x .x4 .x4 .x2, .adc .x .x2 .x3 .x7, st .x4 .x16,
+  [ld .x3 .x17, .mul .x .x4 .x1 .x3, .umulh .x3 .x1 .x3,
+    .adcs .x .x4 .x4 .x2, .adc .x .x2 .x3 .x7,
+    ld .x3 .x16 (if down then 8 else 0), .adds .x .x4 .x4 .x3, st .x4 .x16,
     next .x16, next .x17]
+
+/-- Fold the row's last carry bit into its carry word. -/
+def carryOut : List Instr := [.adc .x .x2 .x2 .x7]
 
 /-- Words `w` and `w + 1` of the accumulator (at `x16`) `+= x2`. -/
 def rowTop : List Instr :=
@@ -94,16 +100,16 @@ def rowTop : List Instr :=
 /-- `acc += x1 · [b]`: `w` steps over `b`, then the last carry into words `w`
 and `w + 1`. -/
 def mulAddRow : Prog isa :=
-  .seq (.block [mov .x16 .x8, mov .x17 .x9, mov .x14 .x12, movi .x2 0])
-    (.seq (countLoop .x14 (mac false)) (.block rowTop))
+  .seq (.block [mov .x16 .x8, mov .x17 .x9, mov .x14 .x12, .adds .x .x2 .x7 .x7])
+    (.seq (countLoop .x14 (mac false)) (.seq (.block carryOut) (.block rowTop)))
 
 /-- `u = acc₀ · (-m⁻¹) mod 2⁶⁴` into `x1`, and the carry of `acc₀ + u m₀`
 (whose low word is zero) into `x2`; `x16` at the accumulator, `x17` at
-`m₁` and `x14 := w - 1`. -/
+`m₁` and `x14 := w - 1`; clear C before the deferred-carry loop. -/
 def redHead : List Instr :=
   [ld .x3 .x8, .mul .x .x1 .x3 .x15, ld .x4 .x10, .mul .x .x2 .x1 .x4, .umulh .x4 .x1 .x4,
     .adds .x .x2 .x2 .x3, .adc .x .x2 .x4 .x7, mov .x16 .x8, .addImm .x .x17 .x10 8,
-    .subImm .x .x14 .x12 1]
+    .subImm .x .x14 .x12 1, .adds .x .x3 .x7 .x7]
 
 /-- Words `w` and `w + 1` of the accumulator plus the carry, stored one word
 down, and word `w + 1` zeroed (`x16` at word `w - 1`). -/
@@ -115,7 +121,8 @@ def redTop : List Instr :=
 low word zero: word 0, then words 1 to `w - 1` each stored one word down,
 then the top words. -/
 def reduceRow : Prog isa :=
-  .seq (.block redHead) (.seq (countLoop .x14 (mac true)) (.block redTop))
+  .seq (.block redHead) (.seq (countLoop .x14 (mac true))
+    (.seq (.block carryOut) (.block redTop)))
 
 /-- One round: `x1 := a_i` (`x11` advanced), the row of `a_i b`, the
 reduction. -/
