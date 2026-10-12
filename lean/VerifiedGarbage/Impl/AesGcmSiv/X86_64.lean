@@ -34,8 +34,8 @@ implementations as AES-GCM is (`Impl.AesGcm.X86_64.Callees`: only `ctr`,
   `vg_aes_ctr32` (`crypt`).
 * With `wide` (the instances whose callees need AVX2), the copies are
   reversed and the keystream XORed four blocks at a time, two in each of two
-  256-bit loads (`revLoopY`, `ksLoop`, `quadsThenOnes`), and the blocks left
-  one at a time as without it.
+  256-bit loads (`revLoopY`, `ksLoop`, `quadsThenOnes`) when a chunk has
+  eight or more, and the blocks left one at a time as without it.
 * `seal` copies the tag from `W` to `tag` at the end (`tagOut`); `open`
   copies the received tag from `tag` to `W` first (`recv`), computes the tag of the plaintext at `W + 128` and compares the two
   without a branch (`cmp`), then masks the data with `0 − ok`, 16 bytes at
@@ -193,13 +193,14 @@ def revOne : List Instr :=
     .store (at_ .rdi 0) .rdx, .store (at_ .rdi 8) .rax, .alu .add .rsi (imm 16), .alu .add .rdi (imm 16),
     .alu .sub .rcx (imm 1)]
 
-/-- The `rcx` (at least 1) blocks: four at a time with `quad` while there are
-four (after `pre`), then one at a time with `one`. Only with four or more do
-the 256-bit registers get used, and `vzeroupper` after the quads keeps the
+/-- The `rcx` (at least 1) blocks: if there are eight or more, four at a time
+with `quad` while there are four (after `pre`); then one at a time with
+`one`. Below eight, the setup and `vzeroupper` cost more than the quads save,
+and no 256-bit register gets used; `vzeroupper` after the quads keeps the
 SSE instructions after them (and in the functions called later) from paying
 for their dirty upper halves. -/
 def quadsThenOnes (pre quad one : List Instr) : Prog isa :=
-  .seq (.block [.alu .cmp .rcx (imm 4)])
+  .seq (.block [.alu .cmp .rcx (imm 8)])
   (.seq (.ite .b (.block []) (.seq (.block pre) (.seq (.loop (.block quad) .ae) (.block [.vop .vzeroupper]))))
   (.seq (.block [.alu .test .rcx (.reg .rcx)])
     (.ite .e (.block []) (.loop (.block one) .ne))))

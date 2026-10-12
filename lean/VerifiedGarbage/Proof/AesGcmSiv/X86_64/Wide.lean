@@ -29,12 +29,12 @@ def UpperStable (P : State → Prop) : Prop :=
   ∀ u : State, P u → P { u with ymmHi := fun _ => 0, zmmHi := fun _ => 0 }
 
 /-- `cmp rcx, 4` with `k` in `rcx`: CF says whether `k < 4`. -/
-theorem cmp4_run (u : State) {k : Nat} (hk : k < 2 ^ 64) (h : u.gpr .rcx = BitVec.ofNat 64 k) :
-    ∃ (x : BitVec 64) (o : Bool), runBlock isa [.alu .cmp .rcx (imm 4)] u =
-      some (arithFlags u x (decide (k < 4)) o) := by
-  have e4 : BitVec.signExtend 64 (BitVec.ofNat 32 4) = BitVec.ofNat 64 4 := by decide
-  refine ⟨BitVec.ofNat 64 k - BitVec.ofNat 64 4,
-    subOverflow (BitVec.ofNat 64 k) (BitVec.ofNat 64 4) (BitVec.ofNat 64 k - BitVec.ofNat 64 4), ?_⟩
+theorem cmp8_run (u : State) {k : Nat} (hk : k < 2 ^ 64) (h : u.gpr .rcx = BitVec.ofNat 64 k) :
+    ∃ (x : BitVec 64) (o : Bool), runBlock isa [.alu .cmp .rcx (imm 8)] u =
+      some (arithFlags u x (decide (k < 8)) o) := by
+  have e4 : BitVec.signExtend 64 (BitVec.ofNat 32 8) = BitVec.ofNat 64 8 := by decide
+  refine ⟨BitVec.ofNat 64 k - BitVec.ofNat 64 8,
+    subOverflow (BitVec.ofNat 64 k) (BitVec.ofNat 64 8) (BitVec.ofNat 64 k - BitVec.ofNat 64 8), ?_⟩
   simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, execAlu, readSrc, imm, h, Option.bind_some]
   rw [e4]
   simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk]
@@ -69,13 +69,13 @@ theorem quadsThenOnes_ok {pre quad one : List Instr} {c : Nat} (hc : c < 2 ^ 63)
     WP isa (quadsThenOnes pre quad one) u (P c) := by
   unfold quadsThenOnes
   -- The quads, from block 0: after them, `k` blocks done with `c - k < 4`.
-  have quads : ∀ u, P 0 u → u.cf = some (decide (c < 4)) →
+  have quads : ∀ u, P 0 u → u.cf = some (decide (c < 8)) →
       WP isa (.ite .b (.block []) (.seq (.block pre) (.seq (.loop (.block quad) .ae) (.block [.vop .vzeroupper]))))
-        u fun u' => ∃ k, k ≤ c ∧ c - k < 4 ∧ P k u' := by
+        u fun u' => ∃ k, k ≤ c ∧ c - k < 8 ∧ P k u' := by
     intro u hu hcf
-    refine WP.ite (decide (c < 4)) hcf
+    refine WP.ite (decide (c < 8)) hcf
       (fun h4 => WP.block_nil ⟨0, Nat.zero_le _, by simpa using h4, hu⟩) (fun h4 => ?_)
-    have h4' : ¬ c < 4 := by simpa using h4
+    have h4' : ¬ c < 8 := by simpa using h4
     refine WP.seq (WP.mono (hpre u hu) fun u₁ ⟨hq₁, _⟩ => ?_)
     have lp : WP isa (.loop (.block quad) .ae) u₁ fun v => ∃ k, k ≤ c ∧ c - k < 4 ∧ Q k v := by
       refine WP.loop (M := isa) (body := .block quad) (c := .ae)
@@ -90,8 +90,8 @@ theorem quadsThenOnes_ok {pre quad one : List Instr} {c : Nat} (hc : c < 2 ^ 63)
         exact ⟨by rw [ev, decide_eq_true hlt]; rfl, k + 4, hk, hlt, hv'⟩
       · right
         exact ⟨by rw [ev, decide_eq_false hlt]; rfl, c - (k + 4), by omega, k + 4, rfl, by omega, hv'⟩
-    exact WP.seq (WP.mono lp fun v ⟨k, hk, hlt, hv⟩ => WP.of_runBlock ⟨_, rfl, k, hk, hlt, hPz k _ (hQP k v hv)⟩)
-  obtain ⟨x, o, run₁⟩ := cmp4_run u (k := c) (by omega) (by rw [hrcx 0 u h₀, Nat.sub_zero])
+    exact WP.seq (WP.mono lp fun v ⟨k, hk, hlt, hv⟩ => WP.of_runBlock ⟨_, rfl, k, hk, by omega, hPz k _ (hQP k v hv)⟩)
+  obtain ⟨x, o, run₁⟩ := cmp8_run u (k := c) (by omega) (by rw [hrcx 0 u h₀, Nat.sub_zero])
   refine WP.seq (WP.of_runBlock ⟨_, run₁, ?_⟩)
   refine WP.seq (WP.mono (quads _ (hP 0 _ x _ o h₀) rfl) fun u₂ ⟨k, hkc, hk4, hP₂⟩ => ?_)
   obtain ⟨run₂, hy⟩ := test0_run u₂ (k := c - k) (by omega) (hrcx k u₂ hP₂)
