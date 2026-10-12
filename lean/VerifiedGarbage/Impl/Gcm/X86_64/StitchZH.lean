@@ -16,10 +16,12 @@ and `rax` pointed at the powers of the last `r` blocks, `H'ʳ` … `H'`, at
 `scratch + 256 - 16 r` (`remSetup`). Then the keystream of the `r` blocks,
 `4 ⌈r / 4⌉` counters encrypted in the lanes of `zmm3` … (`ksBatch`), is
 computed while the last group is hashed between its rounds, as in a body,
-and stored to `scratch + 768`. Each of the `r` blocks is then encrypted
-with its keystream and its product with its power added to the lane 0
-products (`remBody`, with `Y` added to the first block, then cleared), which
-are reduced once (`StitchAvx.reduceHash`).
+and stored to `scratch + 768`. The first `r mod 4` blocks are then encrypted
+one at a time with their keystream, each block's product with its power
+added to the lane 0 products (`remBody`, with `Y` added to the first block,
+then cleared), and the rest four at a time in the lanes of `zmm7`, each
+lane's product added to that lane's (`remQuad`). The four lanes are reduced
+once and added (`StitchZ.fin`).
 -/
 
 @[expose] public section
@@ -29,7 +31,7 @@ open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
 open VG.Impl.Aes.X86_64.VaesZ (ctrsZ xorDataZ)
-open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv)
+open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv fin)
 open VG.Impl.Gcm.X86_64.StitchZR (setupP powP48)
 open VG.Impl.Gcm.X86_64.StitchZTo (atIx)
 
@@ -115,6 +117,33 @@ def remBody (src : Reg) : List Instr :=
 /-- The next block, and whether it is the last. -/
 def remNext : List Instr := [.alu .add .r10 (.imm 16), .alu .sub .r9 (.imm 1), .alu .cmp .r9 (.imm 16)]
 
+/-- The next block, and whether the blocks left are a multiple of four. -/
+def remNext1 : List Instr := [.alu .add .r10 (.imm 16), .alu .sub .r9 (.imm 1), .alu .test .r9 (.imm 3)]
+
+/-- Blocks `r10 / 16` … `r10 / 16 + 3` of the last `r`, read at `src + r10`,
+in the lanes of `zmm7`: their keystream from `scratch + 768`, the ciphertext
+written to `rdx + r10`, and each lane's product with its power (at
+`rax + r10`) added to that lane's (as the loads of a group, `StitchZ.ghLoad`),
+with `Y` (in lane 0 of `zmm2`, its other lanes clear) added to the first;
+then `Y` cleared. -/
+def remQuad (src : Reg) : List Instr :=
+  ([.vmovdqu32Load .xmm7 (atIx src .r10 0), .vmovdqu32Load .xmm12 (atIx .r11 .r10 768),
+   .zop (.zbin .vpxord .xmm7 .xmm7 .xmm12), .vmovdqu32Store (atIx .rdx .r10 0) .xmm7,
+   .vmovdqu32Load .xmm12 (atIx .rax .r10 0),
+   .zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0), .zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] : List Instr) ++
+  StitchZ.acc .xmm7 .xmm12 ++ ([.zop (.zbin .vpxord .xmm2 .xmm2 .xmm2)] : List Instr)
+
+/-- The next four blocks, and whether they were the last. -/
+def remNext4 : List Instr := [.alu .add .r10 (.imm 64), .alu .sub .r9 (.imm 4), .alu .cmp .r9 (.imm 16)]
+
+/-- The `r9 - 16` blocks at `src + r10`: the first `r mod 4` one at a time,
+the rest four at a time, and the four lanes' products reduced into `Y`. -/
+def remLoops (src : Reg) : Prog isa :=
+  .seq (.block [.alu .test .r9 (.imm 3)])
+    (.seq (.ite .e (.block []) (.loop (.block (remBody src ++ remNext1)) .ne))
+      (.seq (.block [.alu .cmp .r9 (.imm 16)])
+        (.seq (.ite .e (.block []) (.loop (.block (remQuad src ++ remNext4)) .ne)) (.block fin))))
+
 /-- The `r9 - 16` blocks after the last group, the last group hashed, and
 `Y` stored; the blocks are read at `src` (`pre` points it at them once `rdx`
 does). -/
@@ -122,7 +151,7 @@ def remWith (pre : List Instr) (src : Reg) : Prog isa :=
   .seq (.block remSetup)
     (.seq ksSel
       (.seq (.block (([.alu .add .rdx (.imm 256), .mov32 .r10 (.imm 0)] : List Instr) ++ pre ++ StitchAvx.zero))
-        (.seq (.loop (.block (remBody src ++ remNext)) .ne) (.block (StitchAvx.reduceHash ++ storeY)))))
+        (.seq (remLoops src) (.block storeY))))
 
 def rem : Prog isa := remWith [] .rdx
 
