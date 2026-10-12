@@ -63,11 +63,11 @@ def finish : List Instr :=
 /-- `x = X Z⁻¹` and `y = Y Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery
 form, the checks of `d` and `Z`, and the result. -/
 def middle : Prog isa :=
-  blocks [Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC),
-    Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE),
-    Mont.X86_64.mul c.MP' (c.sl YM) (c.sl RY) (c.sl ACC),
-    Mont.X86_64.mul c.MP' (c.sl Y) (c.sl YM) (c.sl ONE),
-    c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c]
+  progs [opProg c.MP' (.mul (c.sl XM) (c.sl RX) (c.sl ACC)),
+    opProg c.MP' (.mul (c.sl X) (c.sl XM) (c.sl ONE)),
+    opProg c.MP' (.mul (c.sl YM) (c.sl RY) (c.sl ACC)),
+    opProg c.MP' (.mul (c.sl Y) (c.sl YM) (c.sl ONE)),
+    .block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c)]
 
 /-- `vg_ec_<curve>_public_key`. -/
 def publicKey : Prog isa :=

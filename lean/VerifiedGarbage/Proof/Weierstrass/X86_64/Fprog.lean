@@ -285,6 +285,43 @@ theorem opMulN_ok {M : Mod} {base : Addr} {Z m : Nat} {s : State} (hs : Scr s ba
       · cases hcall
     · exact hin
 
+/-- A product modulo P-521's or P-384's `p` (`opProg`), a call of its function
+or inline: as the inline product. -/
+theorem opMulP_ok {M : Mod} {base : Addr} {Z m : Nat} {s : State} (hs : Scr s base Z)
+    (hM : ModOkW M Z m s.mem base) (hfn : M.fnN = false) {o a b : Nat} (hoZ : o + 8 * M.n ≤ Z)
+    (haZ : a + 8 * M.n ≤ Z) (hbZ : b + 8 * M.n ≤ Z) (hB : wordsVal s.mem base b M.n < m)
+    (hin : WP isa (.block (VG.Impl.Mont.X86_64.mul M o a b)) s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m = wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m) :
+    WP isa (opProg M (.mul o a b)).inline s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m = wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
+  simp only [opProg, opCall?]
+  cases hcall : Mont.callOf M with
+  | none => exact hin
+  | some p =>
+    obtain ⟨f, body⟩ := p
+    simp only
+    split
+    · rename_i hlow
+      unfold Mont.callOf at hcall
+      split at hcall
+      · rename_i h
+        obtain ⟨hn9, hred, ht⟩ := h
+        have hbody : body = Mont.mulFn ∨ body = Mont.mulFnX := by
+          split at hcall <;> (cases hcall; simp)
+        exact Mont.mulCall_ok hbody hs hM hred ht (hn9 ▸ hlow) hB
+      split at hcall
+      · rename_i h
+        obtain ⟨hn6, hsp, ht, -⟩ := h
+        have hbody : body = Mont.mulFn6 false ∨ body = Mont.mulFn6 true := by
+          split at hcall <;> (cases hcall; simp)
+        exact Mont.mulCall6_ok hbody hs hM hsp ht (hn6 ▸ hlow) hoZ haZ hbZ hB
+      split at hcall
+      · rename_i h; rw [hfn] at h; exact absurd h.2.1 (by simp)
+      · cases hcall
+    · exact hin
+
 /-- A field program, its products calls where `opProg` makes them, inlined. -/
 theorem fprogB_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hm : UnitMod m (2 ^ (64 * M.n))) :

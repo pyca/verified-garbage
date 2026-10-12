@@ -433,8 +433,8 @@ def checkNonzero (a : Nat) : List Instr := c.nonzero a ++ c.andFlag
 
 /-- `x = X Z⁻¹`, `r = x mod n`, `k R mod n`, and the checks of `d`, `k`, `r`. -/
 def middle : Prog isa :=
-  progs [.block (Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)),
-    .block (Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)),
+  progs [opProg c.MP' (.mul (c.sl XM) (c.sl RX) (c.sl ACC)),
+    opProg c.MP' (.mul (c.sl X) (c.sl XM) (c.sl ONE)),
     .block (Mont.X86_64.add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO)),
     opProg c.MN' (.mul (c.sl KM) (c.sl K) (c.sl R2N)),
     .block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR))]

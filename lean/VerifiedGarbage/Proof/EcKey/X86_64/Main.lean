@@ -199,11 +199,11 @@ open VG.Impl.EcKey.X86_64 (YM Y)
 
 variable {c : Cfg}
 
-theorem middle_eq (c : Cfg) : Impl.EcKey.X86_64.Cfg.middle c =
-    .seq (.block (mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
-    (.seq (.block (mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
-    (.seq (.block (mul c.MP' (c.sl YM) (c.sl RY) (c.sl ACC)))
-    (.seq (.block (mul c.MP' (c.sl Y) (c.sl YM) (c.sl ONE)))
+theorem middle_eq (c : Cfg) : (Impl.EcKey.X86_64.Cfg.middle c).inline =
+    .seq ((opProg c.MP' (.mul (c.sl XM) (c.sl RX) (c.sl ACC))).inline)
+    (.seq ((opProg c.MP' (.mul (c.sl X) (c.sl XM) (c.sl ONE))).inline)
+    (.seq ((opProg c.MP' (.mul (c.sl YM) (c.sl RY) (c.sl ACC))).inline)
+    (.seq ((opProg c.MP' (.mul (c.sl Y) (c.sl YM) (c.sl ONE))).inline)
     (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.EcKey.X86_64.Cfg.finish c))))) := rfl
 
 /-- What `middle`'s field operations leave. -/
@@ -223,23 +223,23 @@ structure OpsPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
 theorem pkOps_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hMP : ModOkW c.MP' size c.C.p s.mem base) (hacc : sv c base s ACC < c.C.p) (hone : sv c base s ONE = 1)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', OpsPost c base s s' → WP isa rest s' Q) :
-    WP isa (.seq (.block (mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
-      (.seq (.block (mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
-      (.seq (.block (mul c.MP' (c.sl YM) (c.sl RY) (c.sl ACC)))
-      (.seq (.block (mul c.MP' (c.sl Y) (c.sl YM) (c.sl ONE))) rest)))) s Q := by
+    WP isa (.seq ((opProg c.MP' (.mul (c.sl XM) (c.sl RX) (c.sl ACC))).inline)
+      (.seq ((opProg c.MP' (.mul (c.sl X) (c.sl XM) (c.sl ONE))).inline)
+      (.seq ((opProg c.MP' (.mul (c.sl YM) (c.sl RY) (c.sl ACC))).inline)
+      (.seq ((opProg c.MP' (.mul (c.sl Y) (c.sl YM) (c.sl ONE))).inline) rest)))) s Q := by
   have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   -- `XM = X · ACC`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (MP'_tmp c) (MP'_mo c) h7 hs hMP (o := XM) (a := RX) (b := ACC) (by decide)
+  refine WP.seq (WP.mono (slMulP_ok h7 hs hMP (o := XM) (a := RX) (b := ACC) (by decide)
     (by decide) (by decide) (by decide) hacc) fun s₁ ⟨k₁, _, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
   have kP₁ := hMP.keep (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have v₁ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₁ i = sv c base s i := fun hi h₁ h₂ =>
     sv_keep (MP'_n c) rfl h7 hn k₁ hi h₁ h₂
   -- `X = XM · 1`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (MP'_tmp c) (MP'_mo c) h7 hs₁ kP₁ (o := X) (a := XM) (b := ONE) (by decide)
+  refine WP.seq (WP.mono (slMulP_ok h7 hs₁ kP₁ (o := X) (a := XM) (b := ONE) (by decide)
     (by decide) (by decide) (by decide) (by rw [v₁ (by decide) (by decide) (by decide), hone]; omega_arith))
     fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
@@ -251,7 +251,7 @@ theorem pkOps_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base s
     rw [toM_one_mul hpR (by rw [e₂, v₁ (i := ONE) (by decide) (by decide) (by decide), hone]),
       toM_mul hpR e₁]
   -- `YM = Y · ACC`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (MP'_tmp c) (MP'_mo c) h7 hs₂ kP₂ (o := YM) (a := RY) (b := ACC) (by decide)
+  refine WP.seq (WP.mono (slMulP_ok h7 hs₂ kP₂ (o := YM) (a := RY) (b := ACC) (by decide)
     (by decide) (by decide) (by decide) (by rw [v₂ (by decide) (by decide) (by decide) (by decide)]; exact hacc))
     fun s₃ ⟨k₃, _, e₃⟩ => ?_)
   have hs₃ := k₃.scr hs₂
@@ -259,7 +259,7 @@ theorem pkOps_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base s
   have v₃ : ∀ {i}, i < 45 → i ≠ XM → i ≠ X → i ≠ YM → i ≠ TMP → sv c base s₃ i = sv c base s i :=
     fun hi h₁ h₂ h₃ h₄ => (sv_keep (MP'_n c) rfl h7 hn k₃ hi h₃ h₄).trans (v₂ hi h₁ h₂ h₄)
   -- `Y = YM · 1`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (MP'_tmp c) (MP'_mo c) h7 hs₃ kP₃ (o := Y) (a := YM) (b := ONE) (by decide)
+  refine WP.seq (WP.mono (slMulP_ok h7 hs₃ kP₃ (o := Y) (a := YM) (b := ONE) (by decide)
     (by decide) (by decide) (by decide) (by rw [v₃ (by decide) (by decide) (by decide) (by decide) (by decide), hone]; omega_arith))
     fun s₄ ⟨k₄, lt₄, e₄⟩ => h s₄ ?_)
   have X₄ : sv c base s₄ X = sv c base s₂ X := by
@@ -292,7 +292,7 @@ theorem middle_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
     (hflag : word s.mem base (c.sl FLAG) = BitVec.allOnes 64) {out : Addr}
     (hrsi : s.gpr .rsi = out) (hw : (⟨out, 1 + 2 * c.C.len⟩ : Region) ∈ s.wr)
     (hd : Region.Disjoint ⟨out, 1 + 2 * c.C.len⟩ ⟨base, size⟩) (hfit : out.toNat + (1 + 2 * c.C.len) ≤ 2 ^ 64) :
-    WP isa (Impl.EcKey.X86_64.Cfg.middle c) s fun s' => ∃ xv yv, xv < c.C.p ∧
+    WP isa (Impl.EcKey.X86_64.Cfg.middle c).inline s fun s' => ∃ xv yv, xv < c.C.p ∧
       Fin.ofNat c.C.p xv =
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s RX) * toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) ∧
       yv < c.C.p ∧ Fin.ofNat c.C.p yv =
@@ -402,11 +402,10 @@ theorem publicKey_inline (c : Cfg) : (Impl.EcKey.X86_64.Cfg.publicKey c).inline 
     .seq (.block Impl.EcKey.X86_64.Cfg.args) (.seq (.seq (.block (c.setupWith none))
       (.seq c.kBits (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.seq c.gMulKC.inline (.seq c.pPow.inline (.block [])))))))
-      (Impl.EcKey.X86_64.Cfg.middle c)) := by
+      (Impl.EcKey.X86_64.Cfg.middle c).inline) := by
   show Code.seq _ (Code.seq (Code.seq _ (Code.seq c.kBits.inline (Code.seq _ (Code.seq _ (Code.seq _
     (Code.seq c.pPow.inline _)))))) (Impl.EcKey.X86_64.Cfg.middle c).inline) = _
-  rw [show (Impl.EcKey.X86_64.Cfg.middle c).inline = _ from blocks_inline _, Cfg.kBits,
-    kBitsIf_inline]
+  rw [Cfg.kBits, kBitsIf_inline]
   rfl
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
