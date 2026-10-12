@@ -105,7 +105,7 @@ open VG.Impl.AesGcm.AArch64 in
 /-- The frames of `vg_aes_gcm_seal`, in its frame of 2576 bytes, use at most those. -/
 theorem seal_depth (v : GcmImpl) :
     16 * (Impl.StackScratch.AArch64.withStackArgScratch 2576 1 («seal» v.callees)).aarch64Depth ≤ 2576 := by
-  simp only [Impl.StackScratch.AArch64.withStackArgScratch, «seal», j0, j0hash, oneAad, encBody, fo, textAbs,
+  simp only [Impl.StackScratch.AArch64.withStackArgScratch, «seal», j0, j0hash, oneAad, absorbAl, encBody, fo, textAbs,
     finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy,
     Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.aarch64Depth, Instr.frameUnits,
     depth_of_noFrames v.ctr.noFrames, depth_of_noFrames v.key.noFrames, depth_of_noFrames v.gh.noFrames]
