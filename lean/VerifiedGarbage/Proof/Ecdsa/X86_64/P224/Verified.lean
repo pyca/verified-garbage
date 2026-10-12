@@ -95,16 +95,12 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p224 s := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp [h]
 
-/-- `[k]G` is a call of `vg_p224_mul_base`, which calls no other function. -/
-theorem p224_mulBase : MulBaseOk p224 :=
-  ⟨fun _ => ⟨_, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
-
 theorem sign_x86 (hL : Law Spec.P224.curve)
     (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP224.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p224_ok hI) hL (p224_tbls hT) (pre_of hs) p224_mulBase
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p224_ok hI) hL (p224_tbls hT) (pre_of hs)
   have hsp : ∀ i ∈ instrs signP224.inline, Taint.clobbers i .rsp = false := by
     have h : signP224.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
