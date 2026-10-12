@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Dsa.X86_64.DomainShape
 import VerifiedGarbage.Proof.Dsa.X86_64.ModulusMinus
 import VerifiedGarbage.Proof.Dsa.X86_64.IsOne
 import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
@@ -133,3 +134,27 @@ The whole-operation contracts must be proved before artifacts are registered.
 #assert_standard_axioms VG.Proof.Dsa.X86_64.minus_ok
 #assert_standard_axioms VG.Proof.Dsa.X86_64.resultCall_ok
 #assert_standard_axioms VG.Proof.Dsa.X86_64.modulusMinus_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.widthChoice_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.scanField_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.shapeP_context
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.shapeQ_context
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.shapeSizes_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.oddCheck_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.shapeFinish_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.shapeTail_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.shapeValid_spec
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.domainShape_ok
+
+#assert_standard_axioms VG.Proof.Dsa.supported_scans
+#assert_standard_axioms VG.Proof.Dsa.subgroup_scan_width
+#assert_standard_axioms VG.Proof.Dsa.decodeBE_last_mod_two
