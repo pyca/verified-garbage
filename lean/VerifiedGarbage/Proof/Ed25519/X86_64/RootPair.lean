@@ -170,7 +170,7 @@ theorem step_env (e : Env) (n : Nat) (u v : Bool) :
     (e₄ 15, e₄ 17) = stepVals (n, u, v) (e 15, e 17) ∧
       (e₄ 19, e₄ 21) = stepVals (n, u, v) (e 19, e 21) ∧ e₄ 2 = e 2 ∧ e₄ 3 = e 3 := by
   cases u <;> cases v <;>
-    simp (config := { decide := true }) only [evalOps, List.foldl_cons, List.foldl_nil, evalOp, upd2,
+    simp only [Fin.isValue, Fin.reduceEq, evalOps, List.foldl_cons, List.foldl_nil, evalOp, upd2,
       Function.update_apply, stepVals, Bool.false_eq_true, ↓reduceIte, and_self]
 
 theorem chainVals_succ (p : Spec.X25519.Fe × Spec.X25519.Fe) {j : Nat} (hj : j < 7) :
@@ -334,7 +334,7 @@ theorem chain_rootPower (e : Env) (b b' : Spec.X25519.Fe) :
         (evalOps [.sqr 14 2, .sqr 18 3] e))
     sqn (chainVals (e₃ 15, b) 7).1 2 * e₃ 2 = VG.Proof.Ed25519.rootPower (e 2) ∧
       sqn (chainVals (e₃ 19, b') 7).1 2 * e₃ 3 = VG.Proof.Ed25519.rootPower (e 3) := by
-  simp (config := { decide := true }) only [evalOps, List.foldl_cons, evalOp,
+  simp only [Fin.isValue, Fin.reduceEq, evalOps, List.foldl_cons, evalOp,
     Function.update_apply, ↓reduceIte, chainVals, rootSteps, List.take, List.foldl, stepVals]
   exact ⟨rfl, rfl⟩
 
@@ -420,13 +420,13 @@ theorem rootPower2_ok {s : State} {base : Addr} (hs : Scratch s base) :
       congrArg Prod.fst I₅.lane
     rw [← VG.Proof.Ed25519.rootPower_eq, ← (chain_rootPower (env s.mem base) (env s₃.mem base 17)
       (env s₃.mem base 21)).1, ← e₁, ← e₂, ← e₃, ← hl, ← I₅.x2, ← m₆, e₈, e₇]
-    simp (config := { decide := true }) only [evalOps, List.foldl_cons, List.foldl_nil, evalOp, upd2,
+    simp only [Fin.isValue, Fin.reduceEq, evalOps, List.foldl_cons, List.foldl_nil, evalOp, upd2,
       Function.update_apply, ↓reduceIte]
   · have hl : env s₅.mem base 19 = (chainVals (env s₃.mem base 19, env s₃.mem base 21) 7).1 :=
       congrArg Prod.fst I₅.lane'
     rw [← VG.Proof.Ed25519.rootPower_eq, ← (chain_rootPower (env s.mem base) (env s₃.mem base 17)
       (env s₃.mem base 21)).2, ← e₁, ← e₂, ← e₃, ← hl, ← I₅.x3, ← m₆, e₈, e₇]
-    simp (config := { decide := true }) only [evalOps, List.foldl_cons, List.foldl_nil, evalOp, upd2,
+    simp only [Fin.isValue, Fin.reduceEq, evalOps, List.foldl_cons, List.foldl_nil, evalOp, upd2,
       Function.update_apply, ↓reduceIte]
 
 end VG.Proof.Ed25519.X86_64
