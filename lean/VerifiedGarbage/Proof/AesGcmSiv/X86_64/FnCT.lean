@@ -76,9 +76,9 @@ def StK (K W SP : Addr) (R : Nat) (N A D : Addr) (al n : Nat) (T : Addr) (t : St
       GcmSiv.Polyval.mulXG (Spec.GcmSiv.ofBytes (bytesAt t.mem (W + BitVec.ofNat 64 16) 16)) ∧
     Spec.Gcm.blockAt t.mem (W + BitVec.ofNat 64 80) = 0
 
-theorem keys_st (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D T : Addr}
-    {al n : Nat} {t : State} (h : St K W SP R N A D al n T t) : WP isa (keys v.callees) t (StK K W SP R N A D al n T) :=
-  WP.mono (keys_ok v L hR h.bufs.one.env h.bufs.one.sl h.nonce h.bufs.data.w) fun _ Ky =>
+theorem keys_st (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D T : Addr}
+    {al n : Nat} {t : State} (h : St K W SP R N A D al n T t) : WP isa (keys v.callees ⟨eb.enc.name, eb.enc.code⟩) t (StK K W SP R N A D al n T) :=
+  WP.mono (keys_ok v eb L hR h.bufs.one.env h.bufs.one.sl h.nonce h.bufs.data.w) fun _ Ky =>
     ⟨h.frame Ky.env Ky.frame (fun q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl
@@ -326,12 +326,12 @@ theorem entry_seal_pub {s₀ s₀' : State} (hp' : sealPre s₀') (hq : onePub s
 
 /-- `seal` after its entry, up to the copy of the tag. -/
 abbrev sealFront (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) : Prog isa :=
-  .seq (.seq (.seq (keys v.callees) (polyval v.callees)) (tag v.callees tagO)) (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩)
+  .seq (.seq (.seq (keys v.callees ⟨eb.enc.name, eb.enc.code⟩) (polyval v.callees)) (tag v.callees tagO)) (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩)
 
 theorem sealFront_st (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
     {N A D T : Addr} {al n : Nat} {t : State} (h : St K W SP R N A D al n T t) :
     WP isa (sealFront v eb) t (St K W SP R N A D al n T) :=
-  WP.seq (WP.mono (WP.seq (WP.mono (WP.seq (WP.mono (keys_st v L hR h) fun _ h => polyval_st v L h))
+  WP.seq (WP.mono (WP.seq (WP.mono (WP.seq (WP.mono (keys_st v eb L hR h) fun _ h => polyval_st v L h))
     fun _ h => tag_st v L hR (by decide) h)) fun _ h => crypt_st0 v eb L hR h)
 
 /-- `sealFront`, in two runs. -/
@@ -340,10 +340,10 @@ theorem sealFront_rel (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) {K W SP :
     (hn' : n < 2 ^ 64) {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂) :
     RelCT isa P (sealFront v eb) fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂ := by
-  have r₁ := (keys_rel v L hR hDW hn fun t₁ t₂ h => ⟨⟨(hP _ _ h).1.bufs.one, (hP _ _ h).1.nonce⟩,
+  have r₁ := (keys_rel v eb L hR hDW hn fun t₁ t₂ h => ⟨⟨(hP _ _ h).1.bufs.one, (hP _ _ h).1.nonce⟩,
       ⟨(hP _ _ h).2.bufs.one, (hP _ _ h).2.nonce⟩⟩).wp
     (F₁ := StK K W SP R N A D al n T) (F₂ := StK K W SP R N A D al n T)
-    fun t₁ t₂ h => ⟨keys_st v L hR (hP _ _ h).1, keys_st v L hR (hP _ _ h).2⟩
+    fun t₁ t₂ h => ⟨keys_st v eb L hR (hP _ _ h).1, keys_st v eb L hR (hP _ _ h).2⟩
   have r₂ := (polyval_rel v L hDW hn hal hn' (P := fun t₁ t₂ => True ∧ StK K W SP R N A D al n T t₁ ∧
       StK K W SP R N A D al n T t₂) fun t₁ t₂ h => ⟨h.2.1.1.bufs, h.2.2.1.bufs⟩).wp
     (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
@@ -483,7 +483,7 @@ theorem openBody_rel (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) {K W SP : 
     {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) (hal : al < 2 ^ 64) (hn' : n < 2 ^ 64)
     {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂) :
-    RelCT isa P (.seq (.block recv) (.seq (keys v.callees) (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩) (.seq (polyval v.callees)
+    RelCT isa P (.seq (.block recv) (.seq (keys v.callees ⟨eb.enc.name, eb.enc.code⟩) (.seq (crypt v.callees ⟨eb.enc.name, eb.enc.code⟩) (.seq (polyval v.callees)
       (.seq (tag v.callees bO) (.seq (.block Impl.AesGcmSiv.X86_64.cmp) (.seq mask
         (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)))))))))
       fun _ _ => True := by
@@ -491,10 +491,10 @@ theorem openBody_rel (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) {K W SP : 
       ⟨(hP _ _ h).1.tagIn rfl rfl (Covers.refl _), (hP _ _ h).2.tagIn rfl rfl (Covers.refl _)⟩) recv_check).wp
     (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
     fun t₁ t₂ h => ⟨by rw [← recv_split]; exact recv_st L (hP _ _ h).1, by rw [← recv_split]; exact recv_st L (hP _ _ h).2⟩
-  have r₁ := (keys_rel v L hR hDW hn (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧
+  have r₁ := (keys_rel v eb L hR hDW hn (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧
       St K W SP R N A D al n T t₂) fun t₁ t₂ h => ⟨⟨h.2.1.bufs.one, h.2.1.nonce⟩, ⟨h.2.2.bufs.one, h.2.2.nonce⟩⟩).wp
     (F₁ := StK K W SP R N A D al n T) (F₂ := StK K W SP R N A D al n T)
-    fun t₁ t₂ h => ⟨keys_st v L hR h.2.1, keys_st v L hR h.2.2⟩
+    fun t₁ t₂ h => ⟨keys_st v eb L hR h.2.1, keys_st v eb L hR h.2.2⟩
   have r₂ := (crypt_rel v eb L hR hDW hn (P := fun t₁ t₂ => True ∧ StK K W SP R N A D al n T t₁ ∧
       StK K W SP R N A D al n T t₂) fun t₁ t₂ h =>
       ⟨⟨h.2.1.1.bufs.one, h.2.1.1.bufs.data⟩, ⟨h.2.2.1.bufs.one, h.2.2.1.bufs.data⟩⟩).wp
