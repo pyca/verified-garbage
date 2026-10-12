@@ -16,17 +16,21 @@ The layout of `scratch` (in bytes): the Keccak state at 0 and the sponge
 functions' working space at 200, the saved registers at 840; `k` and `ℓ`
 at 896 (`oKL`); `(ρ, ρ′, K)` at 1024 (`oHX`, 128 bytes); the seed of
 `RejNTTPoly` at 1152 (`oSA`, 34 bytes) and of `RejBoundedPoly` at 1216
-(`oSB`, 66 bytes); the working space of the primitives at 2048 (2048 bytes);
-and polynomials of 1024 bytes from 4096 (`oP j`): `Â[r, s]` is polynomial
+(`oSB`, 66 bytes); the seeds of a four-way sampler at 1408 (`oSA4`, 34 or
+66 bytes each); the working space of the primitives at 2048 (2048 bytes);
+polynomials of 1024 bytes from 4096 (`oP j`): `Â[r, s]` is polynomial
 `rℓ + s`, `s₁[j]` (then `ŝ₁[j]`) polynomial `kℓ + j`, `s₂[i]` polynomial
-`kℓ + ℓ + i`, and `t`, `t₁` and `t₀` the three after them.
+`kℓ + ℓ + i`, and `t`, `t₁` and `t₀` the three after them; and the four-way
+samplers' working space after those (`oR4`, 8 KiB).
 
 1. `(ρ, ρ′, K) = H(ξ ‖ k ‖ ℓ, 128)`, and `ρ` and `ρ′` to the seeds.
 2. `Â[r, s] = RejNTTPoly(ρ ‖ s ‖ r)` and `s₁ ‖ s₂ = RejBoundedPoly(ρ′ ‖ r ‖ 0)`
-   (`ExpandA`, `ExpandS`). After each, `x24 ← x24 ∧ result`, and the
-   polynomial is ANDed with `-result` (`mask`): it is zero if the sampler
-   failed, so that every polynomial is reduced, and small, whatever the
-   samplers return, without a branch.
+   (`ExpandA`, `ExpandS`), four polynomials per call of the four-way
+   samplers where they can (`s₁ ‖ s₂` as `Optimized.secretsWith`, the same
+   code as the SHA3 key generation's). After each call, `x24 ← x24 ∧ result`,
+   and a failed sampler's polynomial is zeroed (`mask`, or by the masked
+   four-way sampler), so that every polynomial is reduced, and small,
+   whatever the samplers return, without a branch.
 3. `ρ` and `K` to `sk`; `s₁` and `s₂`, `BitPack`ed, to `sk`; `ŝ₁ = NTT(s₁)`.
 4. For each row `i`: `t = NTT⁻¹(Σⱼ Â[i, j] ŝ₁[j]) + s₂[i]`, `Power2Round`, and
    `t₁` `SimpleBitPack`ed to `pk`, `t₀` `BitPack`ed to `sk`; `ρ` to `pk`.
@@ -107,11 +111,6 @@ def expAll (P : Prims) (p : Params) : Prog isa :=
   .seq (seqR (expA4 P p) 0 (p.k*p.ℓ/4))
     (seqR (expA P p) (4*(p.k*p.ℓ/4)) (p.k*p.ℓ%4))
 
-/-- Entry `r` of `s₁ ‖ s₂`: `RejBoundedPoly(ρ′ ‖ r ‖ 0)`. -/
-def expS (P : Prims) (p : Params) (r : Nat) : Prog isa :=
-  .seq (.block (setB (sc (oSB + 64)) r))
-    (sampled (rejBoundedAt P (sc oSS) (sc oSB) p.η (sP p r)) (sP p r))
-
 /-- `ρ` to `pk` and `sk`, and `K` to `sk`. -/
 def copies : List Instr :=
   copy32 .x28 oHX .x26 0 ++ copy32 .x28 oHX .x27 0 ++ copy32 .x28 (oHX + 96) .x27 32
@@ -140,14 +139,8 @@ def restWith (P : Prims) (p : Params) : Prog isa :=
   .seq (.block copies) (.seq (seqR (packS P p) 0 (p.ℓ + p.k)) (.seq (seqR (nttS P p) 0 p.ℓ)
     (.seq (seqR (row P p) 0 p.k) ((trHashWith c) p))))
 
-/-- `vg_mldsa*_keygen` for the parameter set `p`, calling the primitives `P`. -/
-def keyGenWith (P : Prims) (p : Params) : Prog isa :=
-  .seq (.block pro) (.seq ((seedsWith c) p) (.seq (expAll P p)
-    (.seq (seqR (expS P p) 0 (p.ℓ + p.k)) (.seq ((restWith c) P p) (.block epi)))))
-
 def seeds := seedsWith .scalar
 def trHash := trHashWith .scalar
 def rest := restWith .scalar
-def keyGen := keyGenWith .scalar
 
 end VG.Impl.MlDsa.AArch64.KeyGen

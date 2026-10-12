@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
 
 @[expose] public section

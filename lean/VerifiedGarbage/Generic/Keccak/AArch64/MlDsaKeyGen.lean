@@ -47,7 +47,9 @@ def legacyArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 /-- SHA3 key generation uses hoisted matrix seeds, grouped secret sampling, and
-positive transform arithmetic. The scalar fallback keeps its original code. -/
+positive transform arithmetic. The scalar fallback shares its grouped secret
+sampling (`Optimized.secretsWith`), with the four-way samplers of its own
+permutation. -/
 def optimizedArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   { Spec.MlDsa.keyGen44Api with
     name := Spec.MlDsa.keyGen44Api.name ++ v.callee.suffix
