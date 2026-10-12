@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Bignum.AArch64.Square
+module
+
+public import VerifiedGarbage.Impl.Bignum.AArch64.Square
 
 /-!
 Eight-limb blocked Montgomery reduction. The eight cancellation coefficients
@@ -8,6 +10,9 @@ saved in the output only after the complete product has consumed the inputs.
 Output aliasing the modulus and unsupported widths use the existing kernel.
 The public width guard retains the existing implementation for other sizes.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Bignum.AArch64.BlockedRedc
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
 

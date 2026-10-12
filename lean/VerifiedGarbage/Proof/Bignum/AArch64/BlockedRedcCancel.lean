@@ -48,7 +48,7 @@ theorem cancelChains_ok {s : State} {B : Addr} {Z eN : Nat}
           blockValue (operand s (word s.mem B eN)) ∧
       t.mem = s.mem ∧
       Keep (VG.Impl.Bignum.AArch64.BlockedRedc.aa ++
-        VG.Impl.Bignum.AArch64.BlockedRedc.tt ++ [.x1]) s t := by
+        VG.Impl.Bignum.AArch64.BlockedRedc.tt ++ ([.x1] : List Reg)) s t := by
   rewrite [List.append_assoc]
   apply WP.block_append
   refine WP.mono (lowChain_ok hs h17 hN) fun b ⟨⟨hbC, hbV, hbH, hbM⟩, kb⟩ => ?_
@@ -95,7 +95,7 @@ theorem cancelRow_ok {s : State} {B : Addr} {Z eQ eN i : Nat}
       t.c = false ∧
       t.mem = s.mem.writeW (off B (eQ + 8 * i)) (s.gpr .x19 * s.gpr .x15) ∧
       Keep (VG.Impl.Bignum.AArch64.BlockedRedc.aa ++
-        VG.Impl.Bignum.AArch64.BlockedRedc.tt ++ [.x1, .x27]) s t := by
+        VG.Impl.Bignum.AArch64.BlockedRedc.tt ++ ([.x1, .x27] : List Reg)) s t := by
   rewrite [cancel_eq, List.append_assoc, List.append_assoc]
   apply WP.block_append
   refine WP.mono (cancelHead_ok hs h8 hQ hi) fun a ⟨⟨ha1, haQ, haM⟩, ka⟩ => ?_
@@ -138,7 +138,7 @@ theorem cancelRow_exact {s : State} {B : Addr} {Z eQ eN i : Nat}
       t.c = false ∧
       t.mem = s.mem.writeW (off B (eQ + 8 * i)) (s.gpr .x19 * s.gpr .x15) ∧
       Keep (VG.Impl.Bignum.AArch64.BlockedRedc.aa ++
-        VG.Impl.Bignum.AArch64.BlockedRedc.tt ++ [.x1, .x27]) s t := by
+        VG.Impl.Bignum.AArch64.BlockedRedc.tt ++ ([.x1, .x27] : List Reg)) s t := by
   refine WP.mono (cancelRow_ok hs h8 h17 h7 hQ hN hi hsep) fun t ⟨lo, hv, hc, hm, kt⟩ => ?_
   have hz : lo.toNat = 0 := congrArg BitVec.toNat (cancel_low hinv hv)
   refine ⟨?_, hc, hm, kt⟩

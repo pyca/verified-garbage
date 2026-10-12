@@ -23,7 +23,7 @@ theorem finishBlock_ok {s : State} {B : Addr} {Z eT : Nat} {p : Bool}
       wv t.mem B eT 8 + (2 ^ 64) ^ 8 * (t.gpr .x10).toNat =
         blockValue (accumulator s) + wv s.mem B eT 8 + p.toNat ∧
       (t.gpr .x10).toNat ≤ 1 ∧ Outside B eT 64 s.mem t.mem ∧
-      Keep (VG.Impl.Bignum.AArch64.BlockedRedc.aa ++ [.x1, .x10, .x13]) s t := by
+      Keep (VG.Impl.Bignum.AArch64.BlockedRedc.aa ++ ([.x1, .x10, .x13] : List Reg)) s t := by
   rewrite [List.append_assoc]
   apply WP.block_append
   refine WP.mono (addMemory_pending_value hs h16 hT h10) fun a ⟨⟨ha, ham⟩, ka⟩ => ?_
