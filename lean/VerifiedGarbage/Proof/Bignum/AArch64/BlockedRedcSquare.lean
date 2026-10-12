@@ -48,7 +48,7 @@ theorem square_ok {s : State} {B : Addr} {Z w : Nat} {minv : Word}
     (by have := slot_le (w := w) (show aTmp < 8 by decide); unfold slot aAcc aTmp at *; omega)).trans huRaw
   refine WP.seq (WP.mono (redc_layout_ok (hs.congr kuv.wr) ((kuv.gpr .x0 (by decide)).trans h0)
     hHV hZ ((kv.gpr .x8 (by decide)).trans hu8) ((kv.gpr .x12 (by decide)).trans hu12)
-    ((kv.gpr .x7 (by decide)).trans hu7) hw16 hw hmod)
+    ((kv.gpr .x7 (by decide)).trans hu7) hw16 (by omega) hmod)
     fun r ⟨hrValue, hrOut, hr8, hr10, hr12, hr7, kr⟩ => ?_)
   have kuvr := kuv.trans kr
   have invV : ((word v.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by

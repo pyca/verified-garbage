@@ -27,7 +27,7 @@ theorem redc_layout_ok {s : State} {B : Addr} {Z w : Nat} {minv : Word}
     (hs : Scr s B Z) (h0 : s.gpr .x0 = B) (hH : Hdr s.mem B w minv)
     (hZ : slot w 8 ≤ Z) (h8 : s.gpr .x8 = off B (slot w aAcc + 16))
     (h12 : s.gpr .x12 = BitVec.ofNat 64 w) (h7 : s.gpr .x7 = 0)
-    (hw16 : 16 ≤ w) (hw : w < 2 ^ 31) (hmod : w % 8 = 0) :
+    (hw16 : 16 ≤ w) (hw : w < 2 ^ 64) (hmod : w % 8 = 0) :
     WP isa VG.Impl.Bignum.AArch64.BlockedRedc.redc s fun t =>
       (((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 →
         ∃ q < 2 ^ (64 * w), 2 ^ (64 * w) * wv t.mem B (slot w aTmp) (w + 2) =

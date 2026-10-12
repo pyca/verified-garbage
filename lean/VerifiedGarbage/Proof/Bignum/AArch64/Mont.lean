@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMont
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -12,6 +12,6 @@ import all Init.Data.Vector.Basic
 
 namespace VG.Proof.Bignum.AArch64
 
-def Mont.base : Mont := Mont.square
+def Mont.base : Mont := Mont.blocked
 
 end VG.Proof.Bignum.AArch64
