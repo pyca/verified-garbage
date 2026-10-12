@@ -623,7 +623,7 @@ theorem rep_cross_y {p q : Point} {a b : EPoint dZ} (hp : Rep p a) (hq : Rep q b
   · intro h
     exact toZ_inj.mp (by rw [toZ_mul, toZ_mul, hp.y, hq.y, h]; ring)
 
-private theorem base_on : OnCurve dZ (toZ Spec.Ed25519.basePoint.X) (toZ Spec.Ed25519.basePoint.Y) := by
+theorem base_on : OnCurve dZ (toZ Spec.Ed25519.basePoint.X) (toZ Spec.Ed25519.basePoint.Y) := by
   unfold OnCurve dZ
   decide +kernel
 
