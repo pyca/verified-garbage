@@ -16,7 +16,7 @@ open VG.Impl.Ecdsa.AArch64 (p256)
 open VG.Proof.Ecdsa.AArch64 (CfgOk sv)
 open Spec.Weierstrass
 
-private abbrev c := VG.Impl.Ecdsa.AArch64.p256
+abbrev c := VG.Impl.Ecdsa.AArch64.p256
 
 def prepWrites : List (Nat×Nat) := [(c.winK,40),(c.winBits,320)]
 
