@@ -31,9 +31,8 @@ def ladderCfg : LadderCfg where
   bits := bitsAt secp256k1.n 0
   nbits := 256
 
-def gMul : Prog isa :=
-  .seq (.block (setConst 4 (secp256k1.sl EXPP) (secp256k1.mont (3 * secp256k1.C.b))))
-    (ladder ladderCfg)
+/-- `R = [k]G`, for the `k` in `K`'s slot, by a call of `vg_secp256k1_mul`. -/
+def gMul : Prog isa := secp256k1.mulAt Spec.Weierstrass.Mul.secp256k1.mulApi.name GX GY
 
 end Secp256k1
 

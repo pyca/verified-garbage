@@ -17,11 +17,13 @@ def sum (c : Ecdsa.AArch64.Cfg) : Prog isa :=
     (.block (copy c.n (c.sl RX) (c.sl DX) ++
       (copy c.n (c.sl RY) (c.sl DY) ++ copy c.n (c.sl RZ) (c.sl DZ))))
 
+/-- `[u]G + [v]Q`: `u`, then `v`, to `K`'s slot (`r`, which is no longer
+needed), for the calls of `vg_p192_mul`. -/
 def points : Prog isa :=
-  .seq (bits (p192.sl U) (bitsAt p192.n 0) (8 * p192.n)) <|
+  .seq (.block (copy p192.n (p192.sl K) (p192.sl U))) <|
   .seq Ecdsa.AArch64.P192.gMul <|
   .seq (.block (Cfg.save p192)) <|
-  .seq (bits (p192.sl V) (bitsAt p192.n 0) (8 * p192.n)) <|
+  .seq (.block (copy p192.n (p192.sl K) (p192.sl V))) <|
   .seq Ecdh.AArch64.P192.qMul (sum p192)
 
 def verifyWithPoints (c : Ecdsa.AArch64.Cfg) (pointCode : Prog isa) : Prog isa :=

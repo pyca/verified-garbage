@@ -31,9 +31,8 @@ def ladderCfg : LadderCfg where
   bits := bitsAt p192.n 0
   nbits := 256
 
-def gMul : Prog isa :=
-  .seq (.block (setConst 4 (p192.sl EXPP) (p192.mont (3 * p192.C.b))))
-    (ladder ladderCfg)
+/-- `R = [k]G`, for the `k` in `K`'s slot, by a call of `vg_p192_mul`. -/
+def gMul : Prog isa := p192.mulAt Spec.Weierstrass.Mul.p192.mulApi.name GX GY
 
 end P192
 

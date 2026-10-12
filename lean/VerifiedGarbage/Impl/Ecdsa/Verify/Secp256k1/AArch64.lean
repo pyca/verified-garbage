@@ -17,11 +17,13 @@ def sum (c : Ecdsa.AArch64.Cfg) : Prog isa :=
     (.block (copy c.n (c.sl RX) (c.sl DX) ++
       (copy c.n (c.sl RY) (c.sl DY) ++ copy c.n (c.sl RZ) (c.sl DZ))))
 
+/-- `[u]G + [v]Q`: `u`, then `v`, to `K`'s slot (`r`, which is no longer
+needed), for the calls of `vg_secp256k1_mul`. -/
 def points : Prog isa :=
-  .seq (bits (secp256k1.sl U) (bitsAt secp256k1.n 0) (8 * secp256k1.n)) <|
+  .seq (.block (copy secp256k1.n (secp256k1.sl K) (secp256k1.sl U))) <|
   .seq Ecdsa.AArch64.Secp256k1.gMul <|
   .seq (.block (Cfg.save secp256k1)) <|
-  .seq (bits (secp256k1.sl V) (bitsAt secp256k1.n 0) (8 * secp256k1.n)) <|
+  .seq (.block (copy secp256k1.n (secp256k1.sl K) (secp256k1.sl V))) <|
   .seq Ecdh.AArch64.Secp256k1.qMul (sum secp256k1)
 
 def verifyWithPoints (c : Ecdsa.AArch64.Cfg) (pointCode : Prog isa) : Prog isa :=
