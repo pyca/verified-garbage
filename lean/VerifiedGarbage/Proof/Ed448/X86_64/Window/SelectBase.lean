@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Direct
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -34,27 +34,19 @@ theorem base_entry_ok {s : State} {base : Addr} (hs : Scr s base) {k t i : Nat}
         (if Proof.Ed448.Window.digit k t = i then Impl.Ed448.Window.entry i
           else (E s.mem base 8, E s.mem base 9)) ∧
       SelKeeps (E s.mem base) (E u.mem base) := by
-  rw [baseEntry, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (constE_ok hs 3 _ (entry_words i hi).1) fun s1 ⟨k1, e1⟩ => ?_
+  rw [baseEntry, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (mask_bits_ok hs (by decide) ht hi hb bs) fun s1 ⟨c1, k1, m1⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (constE_ok (k1.scr hs) 4 _ (entry_words i hi).2) fun s2 ⟨k2, e2⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (mask_bits_ok (k2.scr (k1.scr hs)) (by decide) ht hi
-    (by rw [k2.gpr _ (by decide), k1.gpr _ (by decide), hb]) ((bs.keep (by decide) (by decide) k1).keep (by decide) (by decide) k2))
-    fun s3 ⟨c3, k3, m3⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (cswapE (k3.scr (k2.scr (k1.scr hs))) 8 3 (by decide) c3)
-    fun s4 ⟨k4, c4, e4⟩ => ?_
-  refine WP.mono (cswapE (k4.scr (k3.scr (k2.scr (k1.scr hs)))) 9 4 (by decide) (c4.trans c3))
+  refine WP.mono (selectConst_ok (k1.scr hs) 8 _ (entry_words i hi).1 c1)
+    fun s2 ⟨k2, c2, e2⟩ => ?_
+  refine WP.mono (selectConst_ok (k2.scr (k1.scr hs)) 9 _ (entry_words i hi).2 (c2.trans c1))
     fun u ⟨ku, _, eu⟩ => ?_
-  refine ⟨(((k1.trans k2).trans k3).trans k4).trans ku, ?_, ?_⟩
-  · rw [eu, e4, m3, e2, e1]
-    by_cases he : Proof.Ed448.Window.digit k t = i <;>
-      simp [opSwap, he]
-  · intro j h3 h4 h8 h9
-    rw [eu, e4, m3, e2, e1]
-    simp only [opSwap, Function.update_of_ne h3, Function.update_of_ne h4,
-      Function.update_of_ne h8, Function.update_of_ne h9]
+  refine ⟨(k1.trans k2).trans ku, ?_, ?_⟩
+  · rw [eu, e2, m1]
+    by_cases he : Proof.Ed448.Window.digit k t = i <;> simp [he]
+  · intro j _ _ h8 h9
+    rw [eu, e2, m1]
+    simp only [Function.update_of_ne h8, Function.update_of_ne h9]
 
 private def picked (xs : List Nat) (d : Nat) (q : Spec.X448.Fe × Spec.X448.Fe) :=
   xs.foldl (fun q i => if d = i then Impl.Ed448.Window.entry i else q) q

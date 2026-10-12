@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+public import VerifiedGarbage.Impl.Ed448.X86_64.WindowSelect
 public import VerifiedGarbage.Impl.Ed448.Window
 
 /-! Constant-time four-bit double-scalar multiplication for Ed448 verification.
@@ -46,16 +46,14 @@ def digitMask (o i : Nat) : List Instr :=
    .mov32 .rcx (.imm 0), .alu .sbb .rcx (.reg .rcx)]
 
 def baseEntry (i : Nat) : List Instr :=
-  constSlot 3 (Impl.Ed448.Window.entry i).1 ++ constSlot 4 (Impl.Ed448.Window.entry i).2 ++
-  digitMask BITS i ++ cswap (slot 8) (slot 3) ++ cswap (slot 9) (slot 4)
+  digitMask BITS i ++ selectConst (slot 8) (Impl.Ed448.Window.entry i).1 ++
+    selectConst (slot 9) (Impl.Ed448.Window.entry i).2
 
 def selectBase : List Instr := (List.range 16).flatMap baseEntry
 
-def loadEntry (i : Nat) : List Instr :=
-  copyOut (slot 3) (tabOffset i 0) ++ copyOut (slot 4) (tabOffset i 1) ++ copyOut (slot 5) (tabOffset i 2)
-
 def keyEntry (o i : Nat) : List Instr :=
-  loadEntry i ++ digitMask o i ++ cswap (slot 8) (slot 3) ++ cswap (slot 9) (slot 4) ++ cswap (slot 10) (slot 5)
+  digitMask o i ++ selectMem (slot 8) (tabOffset i 0) ++
+    selectMem (slot 9) (tabOffset i 1) ++ selectMem (slot 10) (tabOffset i 2)
 
 def selectKey (o : Nat) : List Instr := (List.range 16).flatMap (keyEntry o)
 

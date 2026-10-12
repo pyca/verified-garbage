@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Direct
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -22,48 +22,33 @@ private theorem coord_keep {base : Addr} {s u : State} (h : Keep base s u) {i c 
   unfold F
   rw [h.mem.fe (by simp only [tabOffset, TAB]; omega) (by simp only [tabOffset, TAB]; omega)]
 
-private theorem loadEntry_ok {s : State} {base : Addr} (hs : Scr s base) (i : Nat) (hi : i < 16) :
-    WP isa (.block (loadEntry i)) s fun u => Keep base s u ∧
-      E u.mem base = Function.update (Function.update (Function.update (E s.mem base)
-        3 (tablePoint s.mem base i).X) 4 (tablePoint s.mem base i).Y) 5 (tablePoint s.mem base i).Z := by
-  rw [loadEntry, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (load_ok hs 3 (a := tabOffset i 0) (by simp only [tabOffset, TAB]; omega)) fun s1 ⟨k1, e1⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (load_ok (k1.scr hs) 4 (a := tabOffset i 1) (by simp only [tabOffset, TAB]; omega))
-    fun s2 ⟨k2, e2⟩ => ?_
-  refine WP.mono (load_ok (k2.scr (k1.scr hs)) 5 (a := tabOffset i 2) (by simp only [tabOffset, TAB]; omega))
-    fun u ⟨ku, eu⟩ => ?_
-  refine ⟨(k1.trans k2).trans ku, ?_⟩
-  rw [eu, e2, e1, coord_keep k2 hi (by decide), coord_keep k1 hi (by decide), coord_keep k1 hi (by decide)]
-  rfl
-
 def KeyKeeps (e e' : Env) : Prop :=
   ∀ j : Index, j ≠ 3 → j ≠ 4 → j ≠ 5 → j ≠ 8 → j ≠ 9 → j ≠ 10 → e' j = e j
 
 private theorem keyEntry_ok {s : State} {base : Addr} (hs : Scr s base) {o k t i : Nat}
-    (ho : 2048 ≤ o) (hbnd : o + 456 ≤ 8192) (ht : t + 4 ≤ 456) (hi : i < 16)
+    (_ho : 2048 ≤ o) (hbnd : o + 456 ≤ 8192) (ht : t + 4 ≤ 456) (hi : i < 16)
     (hb : s.gpr .rbx = BitVec.ofNat 64 t) (bs : Bits base o k s) :
     WP isa (.block (keyEntry o i)) s fun u => Keep base s u ∧
       pt (E u.mem base) 8 9 10 = (if Proof.Ed448.Window.digit k t = i then tablePoint s.mem base i
         else pt (E s.mem base) 8 9 10) ∧ KeyKeeps (E s.mem base) (E u.mem base) := by
-  rw [keyEntry, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (loadEntry_ok hs i hi) fun s1 ⟨k1, e1⟩ => ?_
+  rw [keyEntry, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (mask_bits_ok hs hbnd ht hi hb bs) fun s1 ⟨c1, k1, m1⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (mask_bits_ok (k1.scr hs) hbnd ht hi (by rw [k1.gpr _ (by decide), hb])
-    (bs.keep ho hbnd k1)) fun s2 ⟨c2, k2, m2⟩ => ?_
+  refine WP.mono (selectMem_ok (k1.scr hs) 8
+    (by simp only [tabOffset, TAB]; omega) c1) fun s2 ⟨k2, c2, e2⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (cswapE (k2.scr (k1.scr hs)) 8 3 (by decide) c2) fun s3 ⟨k3, c3, e3⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (cswapE (k3.scr (k2.scr (k1.scr hs))) 9 4 (by decide) (c3.trans c2)) fun s4 ⟨k4, c4, e4⟩ => ?_
-  refine WP.mono (cswapE (k4.scr (k3.scr (k2.scr (k1.scr hs)))) 10 5 (by decide) (c4.trans (c3.trans c2)))
-    fun u ⟨ku, _, eu⟩ => ?_
-  refine ⟨(((k1.trans k2).trans k3).trans k4).trans ku, ?_, ?_⟩
-  · rw [eu, e4, e3, m2, e1]
-    by_cases he : Proof.Ed448.Window.digit k t = i <;> simp [pt, opSwap, he]
-  · intro j h3 h4 h5 h8 h9 h10
-    rw [eu, e4, e3, m2, e1]
-    simp only [opSwap, Function.update_of_ne h3, Function.update_of_ne h4,
-      Function.update_of_ne h5, Function.update_of_ne h8, Function.update_of_ne h9, Function.update_of_ne h10]
+  refine WP.mono (selectMem_ok (k2.scr (k1.scr hs)) 9
+    (by simp only [tabOffset, TAB]; omega) (c2.trans c1)) fun s3 ⟨k3, c3, e3⟩ => ?_
+  refine WP.mono (selectMem_ok (k3.scr (k2.scr (k1.scr hs))) 10
+    (by simp only [tabOffset, TAB]; omega) (c3.trans (c2.trans c1))) fun u ⟨ku, _, eu⟩ => ?_
+  refine ⟨((k1.trans k2).trans k3).trans ku, ?_, ?_⟩
+  · rw [eu, e3, e2, coord_keep k3 hi (by decide), coord_keep k2 hi (by decide),
+      coord_keep k2 hi (by decide), m1]
+    by_cases he : Proof.Ed448.Window.digit k t = i <;>
+      simp [pt, tablePoint, pointAt, tabOffset, he]
+  · intro j _ _ _ h8 h9 h10
+    rw [eu, e3, e2, m1]
+    simp only [Function.update_of_ne h8, Function.update_of_ne h9, Function.update_of_ne h10]
 
 private def picked (f : Nat → Spec.Ed448.Point) (xs : List Nat) (d : Nat) (q : Spec.Ed448.Point) :=
   xs.foldl (fun q i => if d = i then f i else q) q
