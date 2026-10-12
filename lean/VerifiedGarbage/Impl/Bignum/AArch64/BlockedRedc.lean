@@ -6,8 +6,7 @@ are retained in the eliminated low words; each subsequent eight-word modulus
 block is loaded once and accumulated in registers. Callee-saved registers are
 saved in the output only after the complete product has consumed the inputs.
 Output aliasing the modulus and unsupported widths use the existing kernel.
-This module is not registered until its correctness and constant-time proofs
-are complete.
+The public width guard retains the existing implementation for other sizes.
 -/
 namespace VG.Impl.Bignum.AArch64.BlockedRedc
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
