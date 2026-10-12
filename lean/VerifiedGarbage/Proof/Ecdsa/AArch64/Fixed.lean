@@ -257,7 +257,7 @@ theorem modN_of (hc : BaseCfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base 
     ModOkA c.MN' size c.C.n m base :=
   ⟨hc.n0, hc.n10, sl_le c hc.n10 (i := MN) (by decide), sl_le c hc.n10 (i := TMP) (by decide),
     sl_apart c (show MN ≠ TMP by decide), h,
-    hc.minv_n, hc.red_n, fun _ _ h' => nomatch hc.call_n.symm.trans h'⟩
+    hc.minv_n, hc.red_n, fun f m' h' => (hc.call_n f m' h').1⟩
 
 /-- The powers' modulus, with their temporary area. -/
 theorem modOkA_inv {M : Mod} (hc : BaseCfgOk c) {m : Nat} {base : Addr} {mem : Mem}

@@ -51,7 +51,7 @@ theorem secp256k1_ok (hI : Weierstrass.AArch64.InvSounds) : BaseCfgOk secp256k1 
   inv_n := fun _ => ⟨hI Proof.Secp256k1.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
   chain_n := fun h => absurd h (by decide)
   call_p := fun _ _ h => nomatch (callOf_small (by decide)).symm.trans h
-  call_n := callOf_small (by decide)
+  call_n := fun _ _ h => nomatch (callOf_small (by decide)).symm.trans h
   inv_at := .inr (by decide +kernel)
   inv_fn := fun _ => ⟨by decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
   padd := fun h => absurd rfl h

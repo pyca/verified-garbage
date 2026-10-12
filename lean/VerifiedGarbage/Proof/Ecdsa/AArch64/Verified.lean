@@ -58,7 +58,7 @@ theorem p256_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p256 where
   chain_n := fun h => absurd h (by decide)
   am3 := by unfold AM3; decide +kernel
   call_p := fun _ _ h => nomatch (callOf_small (by decide)).symm.trans h
-  call_n := callOf_small (by decide)
+  call_n := fun _ _ h => nomatch (callOf_small (by decide)).symm.trans h
   inv_at := .inl rfl
   inv_fn := fun h => absurd rfl h
   padd := fun h => absurd rfl h

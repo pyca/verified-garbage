@@ -1,16 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
 
 /-!
 # Montgomery products as functions on AArch64: the moduli
 
-The prime `p` of P-384 and of P-521 is one the functions support (`ModOk`).
+The prime `p` of P-384 and of P-521, and P-521's order `n`, are moduli the
+functions support (`ModOk`).
 -/
 
 namespace VG.Proof.Weierstrass.AArch64.Mont
 
-open Spec.Weierstrass.Mont
+open Spec.Weierstrass.Mont VG.Impl.Weierstrass.AArch64.Mont
 
-theorem p384p_ok : ModOk p384p.k p384p.m where
+theorem p384p_okS : ModOkS p384p.k p384p.m where
   hn := by decide
   m_lt := by decide +kernel
   inv := by decide +kernel
@@ -21,7 +22,7 @@ theorem p384p_ok : ModOk p384p.k p384p.m where
   lnd := by decide +kernel
   novec := by decide +kernel
 
-theorem p521p_ok : ModOk p521p.k p521p.m where
+theorem p521p_okS : ModOkS p521p.k p521p.m where
   hn := by decide
   m_lt := by decide +kernel
   inv := by decide +kernel
@@ -31,5 +32,26 @@ theorem p521p_ok : ModOk p521p.k p521p.m where
   loads := by decide +kernel
   lnd := by decide +kernel
   novec := by decide +kernel
+
+theorem p384p_fn : mulFn p384p.k p384p.m = mulFnS p384p.k p384p.m := by
+  simp only [mulFn, p384p_okS.general, Bool.false_eq_true, ↓reduceIte]
+theorem p521p_fn : mulFn p521p.k p521p.m = mulFnS p521p.k p521p.m := by
+  simp only [mulFn, p521p_okS.general, Bool.false_eq_true, ↓reduceIte]
+
+theorem p384p_ok : ModOk p384p.k p384p.m := .inl p384p_okS
+theorem p521p_ok : ModOk p521p.k p521p.m := .inl p521p_okS
+
+theorem p521n_ok : ModOk p521n.k p521n.m := .inr {
+  hn := by decide
+  m_lt := by decide +kernel
+  inv := by decide +kernel
+  red := by decide +kernel
+  g := by decide +kernel
+  novec := by decide +kernel }
+
+theorem p521n_fn : mulFn p521n.k p521n.m = mulFnG p521n.k p521n.m := by
+  rcases p521n_ok with h | h
+  · exact absurd h.general (by decide +kernel)
+  · simp only [mulFn, h.g, ↓reduceIte]
 
 end VG.Proof.Weierstrass.AArch64.Mont

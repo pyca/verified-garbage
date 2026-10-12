@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Impl.Weierstrass.AArch64
 
@@ -88,6 +88,9 @@ def callK (n m W : Nat) (base : Addr) (o a b : Nat) (mem : Mem) : Contract isa w
 theorem arg_of {v : BitVec 64} {x : Nat} (h : v.toNat = x) : (v.setWidth 32).toNat = x % 2 ^ 32 := by
   rw [BitVec.toNat_setWidth, h]
 
+theorem mulFn_noFrames (n m : Nat) : (mulFn n m).noFrames = true := by
+  unfold mulFn; split <;> rfl
+
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`, as the
 inline product (`mul_ok`). -/
 theorem mulCall_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
@@ -125,7 +128,7 @@ theorem mulCall_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       obtain ⟨tr, t', he, A, K, V, R0, -, -, Vv⟩ := mulFn_ok hH hp (by rw [e0, e3, em]; exact hb')
       refine ⟨tr, t', he, A, A, by rw [← e0, ← e1]; exact K, by rw [← e0, ← e1, ← e2, ← e3]; exact V,
         R0, Vv⟩)
-    (rd := []) (wr := [⟨base, moAt M.n + 8 * M.n⟩]) ?_ (Covers.right hcov) hcov ?_ rfl)
+    (rd := []) (wr := [⟨base, moAt M.n + 8 * M.n⟩]) ?_ (Covers.right hcov) hcov ?_ (mulFn_noFrames M.n m))
   · have c0 := ce .x0 (by simp)
     have c1 := ce .x1 (by simp)
     have c2 := ce .x2 (by simp)
