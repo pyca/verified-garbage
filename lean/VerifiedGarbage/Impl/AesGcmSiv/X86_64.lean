@@ -17,9 +17,10 @@ implementations as AES-GCM is (`Impl.AesGcm.X86_64.Callees`: only `ctr`,
 * The message keys (RFC 8452 §4): `CIPH_K(little_endian_uint32(i) ‖ nonce)`
   for `i` from 0 to `rounds / 2 - 2` (3 for 10 rounds, 5 for 14), all by one
   call of `vg_aes_encrypt_blocks` on those blocks at `W + 488`, of which the
-  first 8 bytes are kept, one after the other from `W + 16` (`derive`): the authentication key at
-  `W + 16`, the encryption key at `W + 32`; the encryption key is expanded
-  by `vg_aes_expand_key`, for the same number of rounds (`expand`).
+  first 8 bytes are kept, one after the other from `W + 16` (`derive`): the
+  authentication key at `W + 16`, the encryption key at `W + 32`; the
+  encryption key is expanded by `vg_aes_expand_key`, for the same number of
+  rounds (`expand`).
 * POLYVAL (§3) is GHASH on the same bits (`Proof.GcmSiv.Polyval`) with the
   key `H · x` (`hkey`), on blocks in the other byte order: each block is
   copied to `W + 488` with its bytes reversed before `vg_ghash` absorbs it
