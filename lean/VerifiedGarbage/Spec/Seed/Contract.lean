@@ -160,7 +160,7 @@ def ecbDirApi : Api where
   writeArgs := true
   contracts := some fun A stack => ecbDirContract A stack
   summary := "SEED ECB encryption (`decrypt = 0`) or decryption (`decrypt = 1`) \
-    (RFC 4269, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the round keys written \
+    (RFC 4269 §2, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the round keys written \
     by `vg_seed_expand_key`: what `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt` do, for \
     implementations that share one body between them. For `n = 0`, no data is transformed.\n\n\
     Contract: `VG.Spec.Seed.ecbDirContract`. Constant time: only pointers, `n` and `decrypt` \
