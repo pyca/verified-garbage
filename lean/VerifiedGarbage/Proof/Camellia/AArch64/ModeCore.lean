@@ -106,18 +106,11 @@ theorem prepare_wp (d : Dir) {s : State} {B : Addr} {rs : List Region} {k : Nat 
   have mk₂ : MasksOk s₂ := fun kv hkv => by
     show s₂.mem.readW (wordAddr (s₂.gpr sb) kv.1) 64 = kv.2
     rw [m₂, o₂ _ (by decide)]; exact mk₁ kv hkv
-  show WP isa (.seq (.block (setSlots layerMasks ++ ([.subImm .x t0 .x1 18] : List Instr)))
-    (.ite (.zero .x t0) (keys d 3) (keys d 4))) s _
+  show WP isa (.seq (.block (setSlots layerMasks ++ ([.subImm .x t0 .x1 18] : List Instr))) (keys d)) s _
   refine WP.seq (WP.of_runBlock ⟨s₂, by rw [runBlock_append', e₁, Option.bind_some, e₂], ?_⟩)
   obtain ⟨g, hgR⟩ : ∃ g, R / 6 = g := ⟨_, rfl⟩
   have hg : g = 3 ∨ g = 4 := by omega
-  refine WP.mono (M := isa) (Q := fun s' => KeysPost s₂ B p g (permOf d g) s' ∧
-      s'.gpr .x4 = B + BitVec.ofNat 64 (8 * keySlot + 512 * g))
-    (WP.ite (decide (R = 18)) hz (fun h => ?_) (fun h => ?_)) fun s₃ ⟨k₃, x4₃⟩ => ?_
-  · obtain rfl : g = 3 := by simp at h; omega
-    exact keys_wp d (Or.inl rfl) hpre x0₂ mk₂
-  · obtain rfl : g = 4 := by simp at h; omega
-    exact keys_wp d (Or.inr rfl) hpre x0₂ mk₂
+  refine WP.mono (keys_wp d hg (hz.trans (congrArg some (decide_eq_decide.mpr ⟨fun h => by omega, fun h => by omega⟩))) hpre x0₂ mk₂) fun s₃ ⟨k₃, x4₃⟩ => ?_
   have b₃ : s₃.gpr sb = B := k₃.pre.base
   have keep : ∀ r, r ∉ layerWrites → r ≠ kp → r ≠ .x0 → r ≠ .x4 → r ≠ t0 → s₃.gpr r = s.gpr r :=
     fun r h1 h2 h3 h4 h5 => by rw [k₃.regs r h1 h2 h3 h4, o₂ r h5, g₁ r h5]
