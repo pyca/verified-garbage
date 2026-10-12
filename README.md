@@ -1740,7 +1740,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ BMI2, ADX</td>
 
 <td>❌</td>
 

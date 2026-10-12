@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
+import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningCT
 import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingCT
 import VerifiedGarbage.Proof.Dsa.X86_64.InitializedFields
@@ -535,3 +537,6 @@ The whole-operation contracts must be proved before artifacts are registered.
 #assert_standard_axioms VG.Proof.Dsa.X86_64.signBody_ct
 
 #assert_standard_axioms VG.Proof.Dsa.X86_64.verifyBody_ct
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.signing_verified
+#assert_standard_axioms VG.Proof.Dsa.X86_64.verifying_verified

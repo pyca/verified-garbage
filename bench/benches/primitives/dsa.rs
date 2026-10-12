@@ -1,0 +1,158 @@
+//! Prehashed DSA at every supported width, beside OpenSSL's equivalent.
+//! aws-lc-rs does not expose a DSA signing/verification API.
+use criterion::Criterion;
+
+pub const USES: &[&str] = &["dsa"];
+
+#[cfg(target_arch = "x86_64")]
+#[path = "../../../tests/cavp/dsa_vectors.rs"]
+mod vectors;
+
+#[cfg(target_arch = "x86_64")]
+pub fn bench(c: &mut Criterion) {
+    use crate::{OPENSSL, VG};
+    use criterion::BenchmarkId;
+    use openssl::{
+        bn::BigNum,
+        dsa::{Dsa, DsaSig},
+        pkey::PKey,
+        pkey_ctx::PkeyCtx,
+    };
+    use std::hint::black_box;
+    use vectors::{hex, vectors};
+    use verified_garbage::dsa::{PrivateKey, PublicKey};
+
+    let cases = vectors(
+        include_str!("../../../vectors/nist-cavp-dsa/SigGen.txt"),
+        true,
+    );
+    for (p_len, q_len) in [(128, 20), (256, 28), (256, 32), (384, 32)] {
+        let v = cases
+            .iter()
+            .find(|v| hex(&v["P"], 0).len() == p_len && hex(&v["Q"], 0).len() == q_len)
+            .unwrap();
+        let (p, q, g, y, x) = (
+            hex(&v["P"], p_len),
+            hex(&v["Q"], q_len),
+            hex(&v["G"], p_len),
+            hex(&v["Y"], p_len),
+            hex(&v["X"], q_len),
+        );
+        let key = PrivateKey::from_components(&p, &q, &g, &y, &x).unwrap();
+        let ssl_key = PKey::from_dsa(
+            Dsa::from_private_components(
+                BigNum::from_slice(&p).unwrap(),
+                BigNum::from_slice(&q).unwrap(),
+                BigNum::from_slice(&g).unwrap(),
+                BigNum::from_slice(&x).unwrap(),
+                BigNum::from_slice(&y).unwrap(),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        let digest = [0x42; 32];
+        let signature = key.sign(&digest).unwrap();
+        let der = DsaSig::from_private_components(
+            BigNum::from_slice(&signature[..q_len]).unwrap(),
+            BigNum::from_slice(&signature[q_len..]).unwrap(),
+        )
+        .unwrap()
+        .to_der()
+        .unwrap();
+        let mut verify = PkeyCtx::new(&ssl_key).unwrap();
+        verify.verify_init().unwrap();
+        assert!(verify.verify(&digest, &der).unwrap());
+        let mut sign = PkeyCtx::new(&ssl_key).unwrap();
+        sign.sign_init().unwrap();
+        let mut ssl_sig = Vec::new();
+        sign.sign_to_vec(&digest, &mut ssl_sig).unwrap();
+        let ssl_sig = DsaSig::from_der(&ssl_sig).unwrap();
+        let fixed = [
+            ssl_sig.r().to_vec_padded(q_len as i32).unwrap(),
+            ssl_sig.s().to_vec_padded(q_len as i32).unwrap(),
+        ]
+        .concat();
+        assert!(key.public_key().verify(&digest, &fixed));
+        let size = format!("{}-{}", p_len * 8, q_len * 8);
+
+        let mut group = c.benchmark_group("dsa_sign");
+        group.bench_function(BenchmarkId::new(VG, &size), |b| {
+            b.iter(|| black_box(&key).sign(black_box(&digest)).unwrap())
+        });
+        group.bench_function(BenchmarkId::new(OPENSSL, &size), |b| {
+            b.iter(|| {
+                let mut ctx = PkeyCtx::new(black_box(&ssl_key)).unwrap();
+                ctx.sign_init().unwrap();
+                let mut signature = Vec::new();
+                ctx.sign_to_vec(black_box(&digest), &mut signature).unwrap();
+                black_box(signature)
+            })
+        });
+        group.finish();
+        let mut group = c.benchmark_group("dsa_verify");
+        group.bench_function(BenchmarkId::new(VG, &size), |b| {
+            b.iter(|| black_box(key.public_key()).verify(black_box(&digest), black_box(&signature)))
+        });
+        group.bench_function(BenchmarkId::new(OPENSSL, &size), |b| {
+            b.iter(|| {
+                let mut ctx = PkeyCtx::new(black_box(&ssl_key)).unwrap();
+                ctx.verify_init().unwrap();
+                ctx.verify(black_box(&digest), black_box(&der)).unwrap()
+            })
+        });
+        group.finish();
+        let mut group = c.benchmark_group("dsa_public_key");
+        group.bench_function(BenchmarkId::new(VG, &size), |b| {
+            b.iter(|| {
+                PublicKey::from_components(
+                    black_box(&p),
+                    black_box(&q),
+                    black_box(&g),
+                    black_box(&y),
+                )
+                .unwrap()
+            })
+        });
+        group.bench_function(BenchmarkId::new(OPENSSL, &size), |b| {
+            b.iter(|| {
+                Dsa::from_public_components(
+                    BigNum::from_slice(black_box(&p)).unwrap(),
+                    BigNum::from_slice(black_box(&q)).unwrap(),
+                    BigNum::from_slice(black_box(&g)).unwrap(),
+                    BigNum::from_slice(black_box(&y)).unwrap(),
+                )
+                .unwrap()
+            })
+        });
+        group.finish();
+        let mut group = c.benchmark_group("dsa_private_key");
+        group.bench_function(BenchmarkId::new(VG, &size), |b| {
+            b.iter(|| {
+                PrivateKey::from_components(
+                    black_box(&p),
+                    black_box(&q),
+                    black_box(&g),
+                    black_box(&y),
+                    black_box(&x),
+                )
+                .unwrap()
+            })
+        });
+        group.bench_function(BenchmarkId::new(OPENSSL, &size), |b| {
+            b.iter(|| {
+                Dsa::from_private_components(
+                    BigNum::from_slice(black_box(&p)).unwrap(),
+                    BigNum::from_slice(black_box(&q)).unwrap(),
+                    BigNum::from_slice(black_box(&g)).unwrap(),
+                    BigNum::from_slice(black_box(&x)).unwrap(),
+                    BigNum::from_slice(black_box(&y)).unwrap(),
+                )
+                .unwrap()
+            })
+        });
+        group.finish();
+    }
+}
+
+#[cfg(not(target_arch = "x86_64"))]
+pub fn bench(_: &mut Criterion) {}
