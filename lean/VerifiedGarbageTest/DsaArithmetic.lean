@@ -1,3 +1,8 @@
+import VerifiedGarbage.Proof.Dsa.X86_64.CoreSign
+import VerifiedGarbage.Proof.Dsa.X86_64.CoreVerify
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicKey
+import VerifiedGarbage.Proof.Dsa.X86_64.PrivateKey
+import VerifiedGarbage.Proof.Dsa.X86_64.SignificantCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ChildBases
 import VerifiedGarbage.Proof.Dsa.X86_64.ChildCount
 import VerifiedGarbage.Proof.Dsa.X86_64.KeyPointers
@@ -208,3 +213,45 @@ The whole-operation contracts must be proved before artifacts are registered.
 #assert_standard_axioms VG.Proof.Dsa.X86_64.childBases_ok
 
 #assert_standard_axioms VG.Proof.Dsa.X86_64.childCount_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.newChild_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.sealChild_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.child_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.workspaces_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.significantChoose_ct
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.significantByte_ct
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.significantLoop_ct
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.significant_ct
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.readyPow_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.readyProduct_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.readyReduce_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.readyAdd_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.coreSign_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.coreVerify_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.readyRange_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.readyIsOne_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.readyZero_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.readyEqual_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.readyMinus_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.publicKey_ok
+
+#assert_standard_axioms VG.Proof.Dsa.X86_64.privateKey_ok
