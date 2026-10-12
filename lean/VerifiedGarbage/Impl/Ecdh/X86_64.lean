@@ -222,12 +222,10 @@ def invJACall : Prog isa :=
   .block (copy c.n (jwinCfg c).E.x (c.sl ACC) ++ copy c.n (c.sl PT) (invJAPt c) ++
     copy (invJAWords c) (c.sl WB) (bitsAt c.n 2))
 
-/-- The inversion of `mulQJA`'s table: a call if the curve has inversion
-functions (`Cfg.inverse`), else written out. -/
+/-- The inversion of `mulQJA`'s table: a call if the curve has six words and
+inversion functions (`Cfg.inverse`), else written out. -/
 def invJAProg : Prog isa :=
-  match c.inverse with
-  | some _ => invJACall c
-  | none => InvCfg.inv (invJA c)
+  if c.n = 6 ∧ c.inverse.isSome then invJACall c else InvCfg.inv (invJA c)
 
 /-- `[d]P` into `R` by the Jacobian window method with the table made affine
 (`JacWinCfg.windowA`), `dbl` doubling a point in place. -/

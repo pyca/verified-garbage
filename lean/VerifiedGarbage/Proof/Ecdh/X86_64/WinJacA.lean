@@ -237,8 +237,8 @@ theorem invSpecJACall (hc : CfgOk c) (h6 : c.n = 6) (hi : c.inverse ≠ none) {b
       cases hi' : c.inverse with
       | none => exact absurd hi' hi
       | some C =>
-        obtain ⟨h6', h9, -⟩ := hc.inverse (by rw [hi']; rfl)
-        exact WP.mono (invPFn_ok hc h6' h9 ht₂ hM₂ (by rw [z₂]; exact hz)) fun _ h => h.2)
+        obtain ⟨h9, -⟩ := hc.inverse (by rw [hi']; rfl)
+        exact WP.mono (invPFn_ok hc (by omega) h9 ht₂ hM₂ (by rw [z₂]; exact hz)) fun _ h => h.2)
       fun t₃ ⟨K₃, U₃, lt₃, v₃⟩ => ?_)
     have ht₃ := ht₂.of_keepRegs K₃ (rdi_not_invClob _)
     have p₃ : ∀ x, (ofs base x < 1456 ∨ 1552 ≤ ofs base x) → (ofs base x < 3400 ∨ 3848 ≤ ofs base x) →
@@ -315,18 +315,14 @@ theorem invSpecJACall (hc : CfgOk c) (h6 : c.n = 6) (hi : c.inverse ≠ none) {b
 
 /-- What the inversion of `mulQJA`'s table writes, a call or written out. -/
 def invJAW (c : Cfg) : List (Nat × Nat) :=
-  match c.inverse with
-  | some _ => invJACallW c
-  | none => invW (Impl.Ecdh.X86_64.Cfg.invJA c)
+  if c.n = 6 ∧ c.inverse.isSome then invJACallW c else invW (Impl.Ecdh.X86_64.Cfg.invJA c)
 
 theorem invSpecJAP (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) {base : Addr} :
     InvSpecJ (jwQ c) c.C base size (Impl.Ecdh.X86_64.Cfg.invJAProg c) (invJAW c) := by
   unfold Impl.Ecdh.X86_64.Cfg.invJAProg invJAW
-  cases hi : c.inverse with
-  | none => exact invSpecJA hc h46
-  | some C =>
-    obtain ⟨h6, -, -⟩ := hc.inverse (by rw [hi]; rfl)
-    exact invSpecJACall hc (by omega_arith) (by rw [hi]; exact Option.some_ne_none _)
+  split
+  · next h => exact invSpecJACall hc h.1 (fun e => by simp [e] at h)
+  · exact invSpecJA hc h46
 
 /-- What the window method with an affine table writes, inversion included,
 within what `mulQJ`, its inversion and the power may write. -/
