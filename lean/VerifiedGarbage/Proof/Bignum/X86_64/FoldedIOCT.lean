@@ -276,7 +276,7 @@ theorem ce2_wordLoad {p : CPubD} {t : State} (h : CE2 p t) : WP isa (seqs (Preco
   have hs' := hs
   have he' := he
   obtain ⟨hdi, -, -, -, -, -, -, -, hN, hK, -, -, -, ho₁, k₁⟩ := he'
-  obtain ⟨hpre, -, hB, hZ, hk, -, hpp, -, -, -, -, hNv, hRv⟩ := hs
+  obtain ⟨hpre, -, hB, hZ, hk, -, hpp, -, -, -, -, hNv, hRv, -⟩ := hs
   have c := pdCtx_of hpre
   have := c.hZ
   have := c.hk1

@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
 Besides the bits of `e` (as in `CTExp.lean`), the exponentiation branches on
 whether it has started, which is whether the prefix of `e` so far is
 nonzero: the runs agree on it because they agree on `e` (`pExpBit_ct`,
-`pExpLoop_ct`, `finish_ct`).
+`pExpLoop_ct`).
 -/
 
 namespace VG.Proof.Bignum.X86_64
@@ -140,8 +140,13 @@ theorem pBits_ct : RelCT isa (Two fun p s => 0 < 8 ∧ PBitsInv p 0 s) (.loop (P
 
 /-- After `i` bytes of `e`. -/
 def PBytesInv (a : EPub) (i : Nat) (s : State) : Prop :=
-  ∃ (t₀ : State) (X x : Nat), PByteInv t₀ a.L.B a.L.Z a.L.w a.L.minv a.N X x a.ep a.len a.eb i s ∧
+  ∃ (t₀ : State) (X x : Nat), PByteInv t₀ a.L.B a.L.Z a.L.w a.L.minv a.N X x a.ep a.len (evenLast a.eb) i s ∧
     EFacts a X x ∧ ESrc a t₀
+
+/-- A byte's public data: the prefix and the byte, of `e` with bit 0 of its
+last byte cleared. -/
+def pBitsPub (q : EPub × Nat) : BitsPub :=
+  ⟨q.1.L, q.1.N, pre (evenLast q.1.eb) q.2, ((evenLast q.1.eb).getD q.2 0).toNat⟩
 
 /-- After `byteHead`'s loads. -/
 def PHeadMid (q : EPub × Nat) (s : State) : Prop :=
@@ -163,34 +168,39 @@ theorem pins_pHeadMid : Pins PHeadMid [.rdi, .rax, .rcx] := by
 
 /-- One byte of `e` leaks the same in runs that agree on `e`. -/
 theorem pByteBody_ct : RelCT isa (Two fun (q : EPub × Nat) s => q.2 < q.1.len ∧ PBytesInv q.1 q.2 s)
-    (.seq (.block byteHead) (.seq (.loop (Precomputed.expBit M.mm) .ne) (.block byteNext))) fun _ _ => True := by
-  rw [byteHead_eq]
+    (.seq (.block byteHeadEven) (.seq (.loop (Precomputed.expBit M.mm) .ne) (.block byteNext))) fun _ _ => True := by
+  rw [byteHeadEven_eq]
   have w₁ : ∀ (q : EPub × Nat) s, q.2 < q.1.len ∧ PBytesInv q.1 q.2 s →
       WP isa (.block [.mov .rax (.mem (hdr sE)), .mov .rcx (.mem (hdr sI))]) s (PHeadMid q) := by
     rintro q s ⟨hi, t₀, X, x, hI, hf, hsrc⟩
     exact WP.mono (pByteHead1_ok hf.1 hI) fun t ⟨h1, h2, h3⟩ => ⟨hi, ⟨t₀, X, x, h3, hf, hsrc⟩, h1, h2⟩
   have w₂ : ∀ (q : EPub × Nat) s, PHeadMid q s →
-      WP isa (.block [.movzx8 .rax { base := .rax, index := some .rcx }, .store (hdr sV) .rax,
-        .mov32 .rax (.imm 8), .store (hdr sBit) .rax]) s fun t => 0 < 8 ∧ PBitsInv (bitsPub q) 0 t := by
+      WP isa (.block [.movzx8 .rax { base := .rax, index := some .rcx }, .alu .add .rcx (.imm 1),
+        .alu .sub .rcx (.mem (hdr sElen)), .alu .cmp .rcx (.imm 1), .alu .sbb .rcx (.reg .rcx),
+        .alu .sub .rcx (.imm 1), .alu .and .rax (.reg .rcx), .store (hdr sV) .rax, .mov32 .rax (.imm 8),
+        .store (hdr sBit) .rax]) s fun t => 0 < 8 ∧ PBitsInv (pBitsPub q) 0 t := by
     rintro q s ⟨hi, ⟨t₀, X, x, hI, hf, hsrc⟩, hax, hcx⟩
-    refine WP.mono (pByteHead2_ok hf.1 hsrc.1 hi hsrc.2.2.1 hsrc.bytes hsrc.2.2.2.2 hI hax hcx)
+    refine WP.mono (pByteHead2_ok hf.1 hsrc.1 hsrc.2.1 hi hsrc.2.2.1 hsrc.bytes hsrc.2.2.2.2 hI hax hcx)
       fun t ⟨_, _, hB⟩ => ⟨by decide, t, X, x, ?_, hf, ?_⟩
-    · simp only [bitsPub, List.getD_eq_getElem?_getD,
-        List.getElem?_eq_getElem (show q.2 < q.1.eb.length by have := hsrc.1; omega), Option.getD_some]
+    · simp only [pBitsPub, List.getD_eq_getElem?_getD,
+        List.getElem?_eq_getElem (show q.2 < (evenLast q.1.eb).length by
+          rw [evenLast_length]; have := hsrc.1; omega), Option.getD_some]
       exact hB
-    · simp only [bitsPub]; exact (List.getD q.1.eb q.2 0).isLt
+    · simp only [pBitsPub]; exact (List.getD (evenLast q.1.eb) q.2 0).isLt
   have h₁ : RelCT isa (Two fun (q : EPub × Nat) s => q.2 < q.1.len ∧ PBytesInv q.1 q.2 s)
       (.block [.mov .rax (.mem (hdr sE)), .mov .rcx (.mem (hdr sI))]) (Two PHeadMid) :=
     two_piece _ pins_pBytes (by taint_decide) w₁
   have h₂ : RelCT isa (Two PHeadMid) (.block [.movzx8 .rax { base := .rax, index := some .rcx },
-      .store (hdr sV) .rax, .mov32 .rax (.imm 8), .store (hdr sBit) .rax])
-      (Two fun q s => 0 < 8 ∧ PBitsInv (bitsPub q) 0 s) :=
+      .alu .add .rcx (.imm 1), .alu .sub .rcx (.mem (hdr sElen)), .alu .cmp .rcx (.imm 1),
+      .alu .sbb .rcx (.reg .rcx), .alu .sub .rcx (.imm 1), .alu .and .rax (.reg .rcx), .store (hdr sV) .rax,
+      .mov32 .rax (.imm 8), .store (hdr sBit) .rax])
+      (Two fun q s => 0 < 8 ∧ PBitsInv (pBitsPub q) 0 s) :=
     two_piece _ pins_pHeadMid (by taint_decide) w₂
   have h₃ : RelCT isa (Two fun (p : BitsPub) s => PBitsInv p 8 s) (.block byteNext) fun _ _ => True :=
     two_taint [.rdi] (fun (_ : BitsPub) s₁ s₂ ⟨_, _, _, h₁, _⟩ ⟨_, _, _, h₂, _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.ctx.good.rdi, h₂.ctx.good.rdi]) (by taint_decide)
   exact RelCT.seq (RelCT.block_append (RelCT.seq h₁ h₂))
-    (RelCT.seq (two_map bitsPub (fun _ _ h => h) pBits_ct) h₃)
+    (RelCT.seq (two_map pBitsPub (fun _ _ h => h) pBits_ct) h₃)
 
 /-- Before `expLoop`. -/
 def PExpPre (a : EPub) (s : State) : Prop :=
@@ -205,66 +215,11 @@ theorem pExpLoop_ct : RelCT isa (Two PExpPre) (Precomputed.expLoop M.mm) (Two fu
     (fun _ _ _ ⟨_, _, h₁, _⟩ ⟨_, _, h₂, _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.good.rdi, h₂.good.rdi]) (by taint_decide) ?_) ?_
   · rintro a s ⟨X, x, hc, hf, he, hlen, hL1, hsrc⟩
-    exact WP.mono (pExpInit_ok (x := x) (eb := a.eb) hc hf.1 he hlen) fun t h => ⟨hL1, s, X, x, h, hf, hsrc⟩
+    exact WP.mono (pExpInit_ok (x := x) (eb := evenLast a.eb) hc hf.1 he hlen) fun t h => ⟨hL1, s, X, x, h, hf, hsrc⟩
   · refine two_loop (Φ := PBytesInv) (fun a => a.len) pByteBody_ct ?_
     rintro a i s hi ⟨t₀, X, x, hI, hf, hsrc⟩
     exact WP.mono (pByte_ok hf.1 hf.2.1 hf.2.2.1 hf.2.2.2.1 hf.2.2.2.2.1 hf.2.2.2.2.2 hsrc.1 hsrc.2.1 hi
       hsrc.2.2.1 hsrc.bytes hsrc.2.2.2.2 hI) fun s' ⟨hz, hI'⟩ =>
         ⟨eval_ne_count hi hz, fun _ => ⟨t₀, X, x, hI', hf, hsrc⟩, fun h => h ▸ ⟨t₀, X, x, hI', hf, hsrc⟩⟩
-
-/-! ## The result -/
-
-/-- The public data of `finish`: the working space, `m` and `e`. -/
-structure FPub where
-  L : Lay
-  N : Nat
-  E : Nat
-
-/-- Before `finish`. -/
-def FPre (p : FPub) (s : State) : Prop :=
-  ∃ X x, ExpCtx s p.L.B p.L.Z p.L.w p.L.minv p.N X ∧ YSt s.mem p.L.B p.L.w p.N x p.E ∧
-    slot p.L.w 8 ≤ p.L.Z ∧ 2 ≤ p.L.w ∧ p.L.w < 2 ^ 31
-
-theorem pins_FPre : Pins FPre [.rdi] := fun _ _ _ ⟨_, _, h₁, _⟩ ⟨_, _, h₂, _⟩ r hr => by
-  simp only [List.mem_singleton] at hr; subst hr; rw [h₁.good.rdi, h₂.good.rdi]
-
-/-- `finish` leaks the same in runs that agree on `e`. -/
-theorem finish_ct : RelCT isa (Two FPre) (Precomputed.finish M.mm) fun _ _ => True := by
-  unfold Precomputed.finish
-  refine RelCT.seq (two_piece (Ψ := fun p t => FPre p t ∧ t.zf = some (decide (p.E = 0))) _ pins_FPre
-    (by taint_decide) ?_) ?_
-  · rintro p t ⟨X, x, hc, hy, hZ, hw, hw'⟩
-    exact WP.mono (startedTest_ok hc.good hZ hy) fun t' ⟨hz, hm, k⟩ =>
-      ⟨⟨X, x, hc.mem hm k (by decide), by rw [hm]; exact hy, hZ, hw, hw'⟩, hz⟩
-  refine two_ite (fun p s₁ s₂ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_
-  · exact two_map (fun (p : FPub) => p.L) (fun _ _ ⟨⟨⟨_, _, hc, _, hZ, _⟩, _⟩, _⟩ => ⟨hc.good, hZ⟩)
-      (M.ctL (by unfold MmUse; decide))
-  -- `Y := 1`.
-  unfold setWord
-  refine RelCT.seq (two_piece (Ψ := fun (p : FPub) t => GoodL p.L t ∧ t.gpr .r12 = BitVec.ofNat 64 p.L.w ∧
-      t.gpr .rcx = BitVec.ofNat 64 0) [.rdi] (fun p s₁ s₂ h₁ h₂ => pins_FPre p s₁ s₂ h₁.1.1 h₂.1.1)
-    (by taint_decide) ?_) ?_
-  · rintro p t ⟨⟨⟨X, x, hc, hy, hZ, hw, hw'⟩, _⟩, _⟩
-    have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off p.L.B (8 * i)) 8 := fun i hi =>
-      hc.good.scr.ld (by have := hdr_lt_slot p.L.w 8 hi; have := hc.good.scr.nowrap; omega)
-    refine WP.mono (WP.keep [.r12, .rdx, .rcx] (Q := fun t₂ => t₂.gpr .r12 = BitVec.ofNat 64 p.L.w ∧
-        t₂.gpr .rcx = BitVec.ofNat 64 0 ∧ t₂.mem = t.mem) (by
-      xrun [State.ea, hdr, hc.good.rdi, hdrOff, hl sW (by decide), hc.good.hdr.hw]) rfl)
-      fun t₂ ⟨⟨h12, hcx, hm⟩, k⟩ => ⟨⟨(hc.mem hm k (by decide)).good, hZ⟩, h12, hcx⟩
-  refine RelCT.seq (two_piece (Ψ := fun (p : FPub) t => t.gpr .r8 = off p.L.B (slot p.L.w aY) ∧
-      t.gpr .r12 = BitVec.ofNat 64 p.L.w ∧ t.gpr .rcx = BitVec.ofNat 64 0) [.rdi]
-    (fun p s₁ s₂ h₁ h₂ => pins_good p.L s₁ s₂ h₁.1 h₂.1) (by taint_decide) ?_)
-    (two_taint [.r8, .r12, .rcx] (fun p s₁ s₂ h₁ h₂ r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · rw [h₁.1, h₂.1]
-      · rw [h₁.2.1, h₂.2.1]
-      · rw [h₁.2.2, h₂.2.2]) (by taint_decide))
-  rintro p t ⟨⟨hg, hZ⟩, h12, hcx⟩
-  have hl : InRegions (t.rd ++ t.wr) (off p.L.B (8 * sArr aY)) 8 :=
-    hg.scr.ld (by have := hdr_lt_slot p.L.w 8 (show sArr aY < 32 by decide); have := hg.scr.nowrap; omega)
-  refine WP.mono (WP.keep [.r8] (Q := fun t' => t'.gpr .r8 = off p.L.B (slot p.L.w aY)) (by
-    xrun [State.ea, hdr, hg.rdi, hdrOff, hl, hg.hdr.harr aY (by decide)]) rfl)
-    fun t' ⟨h8, k⟩ => ⟨h8, (k.gpr (by decide)).trans h12, (k.gpr (by decide)).trans hcx⟩
 
 end VG.Proof.Bignum.X86_64
