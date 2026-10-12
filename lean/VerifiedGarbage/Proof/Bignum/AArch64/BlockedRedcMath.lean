@@ -209,4 +209,51 @@ theorem cancel_step {b p state next initial qsum q n : Nat}
   have hs := congrArg (p * ·) hr
   grind
 
+theorem zero_carry_value {r out acc c rhs : Nat} (hc : c = 0)
+    (hv : out + r * (acc + r * c) = rhs) : out + r * acc = rhs := by
+  subst c
+  simpa only [Nat.mul_zero, Nat.add_zero] using hv
+
+theorem columns_step {r p out acc next initial input modulus q lo x n : Nat}
+    (hp : out + p * acc = initial + input + q * modulus)
+    (hr : lo + r * next = acc + x + q * n) :
+    (out + p * lo) + (p * r) * next =
+      initial + (input + p * x) + q * (modulus + p * n) := by
+  have hs := congrArg (p * ·) hr
+  grind
+
+theorem columns_initial (a q : Nat) : 0 + 1 * a = a + 0 + q * 0 := by
+  simp only [Nat.one_mul, Nat.zero_add, Nat.add_zero, Nat.mul_zero]
+
+/-- Combine cancellation, the middle columns, and the pending-carry column
+into one complete blocked Montgomery row. -/
+theorem block_row_value {r p q a0 ac mid af last inputMid inputLast n0 nMid oldCarry carry : Nat}
+    (hC : r * ac = a0 + q * n0)
+    (hM : mid + p * af = ac + inputMid + q * nMid)
+    (hF : last + r * carry = af + inputLast + oldCarry) :
+    r * ((mid + p * last) + (r * p) * carry) =
+      (a0 + r * (inputMid + p * inputLast)) + q * (n0 + r * nMid) +
+        (r * p) * oldCarry := by
+  have hm := congrArg (r * ·) hM
+  have hf := congrArg ((r * p) * ·) hF
+  grind
+
+theorem row_extend {r w lo hi q n p p' tail : Nat}
+    (h : r * (lo + w * p') = hi + q * n + w * p) :
+    r * ((lo + w * tail) + w * p') = (hi + (w * r) * tail) + q * n + w * p := by
+  grind
+
+theorem append_digit_bound {r p q d : Nat} (hq : q < p) (hd : d < r) :
+    q + p * d < p * r := by
+  have hr : r = (r - 1) + 1 := by omega
+  have hh := Nat.mul_le_mul_left p (show d ≤ r - 1 by omega)
+  have hp : p * r = p * (r - 1) + p :=
+    (congrArg (p * ·) hr).trans (by rw [Nat.mul_add, Nat.mul_one])
+  omega
+
+theorem outer_initial {v raw w c n : Nat} (hv : v = raw) (hc : c = 0) :
+    1 * (v + w * c) = raw + 0 * n := by
+  rw [hv, hc]
+  simp only [Nat.mul_zero, Nat.add_zero, Nat.one_mul, Nat.zero_mul]
+
 end VG.Proof.Bignum.AArch64.BlockedRedc
