@@ -28,7 +28,7 @@ def cmpRounds : List Instr := [.mov .eax (.mem (argOp 1)), .alu .cmp .eax (.imm 
 /-- Camellia's core for the direction `d`. -/
 def dirCore (d : Dir) : Modes.X86.Core where
   prepare := .seq (.block cmpRounds) (.ite .e (keys d 3) (keys d 4))
-  crypt := .seq (.block cmpRounds) (.ite .e (crypt8 3) (crypt8 4))
+  crypt := crypt8R
   slots := slots
   total := slots + 10
   buf := tailSlot

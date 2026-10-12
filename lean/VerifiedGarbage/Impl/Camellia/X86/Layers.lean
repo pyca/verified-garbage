@@ -57,9 +57,11 @@ def savedSlot : Nat := keySlot + 16 * 34
 def dSlot : Nat := savedSlot + 4
 def nSlot : Nat := dSlot + 1
 def grpSlot : Nat := nSlot + 1
+/-- The postwhitening's entry, where the modes' groups of rounds end. -/
+def endSlot : Nat := grpSlot + 1
 
-/-- The number of slots: the group's end's, then the modes' 16 and one
-more, a whole number of 8-byte words. -/
+/-- The number of slots: the group's end's and the rounds' (the modes'),
+then 16 and one more, a whole number of 8-byte words. -/
 def slots : Nat := grpSlot + 18
 
 /-- The callee-saved registers, and their slots. -/

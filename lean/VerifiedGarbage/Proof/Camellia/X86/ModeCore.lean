@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Camellia.X86.Ecb
 import VerifiedGarbage.Proof.Camellia.X86.Crypt8
+import VerifiedGarbage.Proof.Camellia.X86.CryptR
 import VerifiedGarbage.Proof.Camellia.CtrCipher
 import VerifiedGarbage.Spec.Camellia.Cbc
 import VerifiedGarbage.Proof.Modes.X86.Core
@@ -42,22 +43,6 @@ def KeyArgs (s : State) (rs : List Region) (k : Nat × List (BitVec 64)) : Prop 
 buffer at `B`. -/
 def ReadyAt (d : Dir) (m : Mem) (B : BitVec 32) (k : Nat × List (BitVec 64)) : Prop :=
   (k.1 = 18 ∨ k.1 = 24) ∧ ∀ i < 8 * (k.1 / 6) + 2, EntryOk m B i (k.2.getD (permOf d (k.1 / 6) i) 0)
-
-/-- The number of rounds `R` in the second stack argument, readable and apart
-from every writable region. -/
-def RArg (s : State) (R : Nat) : Prop :=
-  InRegions (s.rd ++ s.wr) (s.ea (argOp 1)) 4 ∧ s.mem.readW (s.ea (argOp 1)) 32 = BitVec.ofNat 32 R ∧
-    ∀ r ∈ s.wr, Region.Disjoint ⟨s.ea (argOp 1), 4⟩ r
-
-theorem RArg.frame {s s' : State} {R : Nat} {rs : List Region} (h : RArg s R) (hesp : s'.gpr .esp = s.gpr .esp)
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hf : Frame rs s.mem s'.mem)
-    (hsub : ∀ r ∈ rs, ∃ r' ∈ s.wr, Region.Sub r r') : RArg s' R := by
-  obtain ⟨hin, hv, hd⟩ := h
-  have hea : s'.ea (argOp 1) = s.ea (argOp 1) := by
-    show (s'.gpr .esp + _).setWidth 64 = (s.gpr .esp + _).setWidth 64; rw [hesp]
-  refine ⟨by rw [hrd, hwr, hea]; exact hin, ?_, by rw [hwr, hea]; exact hd⟩
-  rw [hea, hf.readW (Region.contains_self _ _) (fun r hr => by
-    obtain ⟨r', hr', hs⟩ := hsub r hr; exact (hd r' hr').sub_right hs) (by decide), hv]
 
 theorem dirCore_slots (d : Dir) : (dirCore d).slots = 672 := rfl
 theorem dirCore_total (d : Dir) : (dirCore d).total = 682 := rfl
@@ -215,36 +200,56 @@ theorem crypt_wp (d : Dir) {s : State} {B : BitVec 32} {k : Nat × List (BitVec 
   rw [dirCore_total] at hfB
   have hfit' : B.toNat + 4 * slots ≤ 2 ^ 32 := by rw [slots_eq]; omega
   have hw : ScrIn s.wr B := scrIn_of hs
-  -- The number of rounds.
-  obtain ⟨s₂, e₂, hz, g₂, mem₂, rd₂, wr₂⟩ := cmpRounds_z hRv ha.1 ha.2.1
-  have b₂ : s₂.gpr sb = B := by rw [g₂ _ (by decide)]; exact hB'
-  show WP isa (.seq (.block cmpRounds) (.ite .e (crypt8 3) (crypt8 4))) s _
-  refine WP.seq (WP.of_runBlock ⟨s₂, e₂, ?_⟩)
+  -- The postwhitening's entry, to its slot.
   obtain ⟨g, hgR⟩ : ∃ g, R / 6 = g := ⟨_, rfl⟩
   have hg : g = 3 ∨ g = 4 := by omega
+  have ha6 : RArg s (6 * g) := by rw [show 6 * g = R by omega]; exact ha
+  obtain ⟨s₂, e₂, g₂, mem₂, rd₂, wr₂⟩ := setEnd_ok hg (by rw [hB']; exact hw) ha6
+  rw [hB'] at mem₂
+  have b₂ : s₂.gpr sb = B := by rw [g₂ _ (by decide)]; exact hB'
+  show WP isa crypt8R s _
+  refine WP.seq (WP.of_runBlock ⟨s₂, e₂, ?_⟩)
   rw [hgR] at he
+  let endR : Region := ⟨wordAddr B endSlot, 4⟩
+  have f₂ : Frame [endR] s.mem s₂.mem := by
+    rw [mem₂]; exact (Frame.refl _ _).writeW List.mem_cons_self _ (Region.contains_self _ _)
+  have dE : (slotsRegion B keySlot grpSlot).Disjoint endR := by
+    have hf := hfit'
+    rw [slots_eq] at hf
+    show (slotsRegion B keySlot grpSlot).Disjoint ⟨wordAddr B endSlot, 4⟩
+    rw [slot_addr (by rw [endSlot_eq]; omega)]
+    exact VG.Offset.disjoint _ (by rw [keySlot_eq, grpSlot_eq, endSlot_eq]; omega)
+      (by rw [keySlot_eq, grpSlot_eq]; omega) (by rw [endSlot_eq]; omega)
+  have keep₂ : ∀ k, keySlot ≤ k → k < grpSlot → s₂.mem.readW (wordAddr B k) 32 = s.mem.readW (wordAddr B k) 32 :=
+    fun k h1 h2 => slot_keep hfit' (by decide) f₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact dE) h1 h2
   let E : Nat → BitVec 64 := fun i => ws.getD (permOf d g i) 0
   have hcore : CorePre s₂ g E :=
     { scr := by rw [b₂, wr₂]; exact hw
       nk34 := by omega
-      keys := fun i hi => by rw [b₂, mem₂]; exact he i hi
+      keys := fun i hi => by
+        rw [b₂]
+        exact (he i (by omega)).congr fun j hj => keep₂ _ (by omega) (by rw [keySlot_eq, grpSlot_eq]; omega)
       hg := hg }
-  refine WP.mono (M := isa) (Q := fun s' => Ctx s₂ s' ∧ ∀ b < 8, blk s' b =
-      Spec.Camellia.encodeBlock (cryptWords g E (Spec.Camellia.decodeBlock (blk s₂ b))))
-    (WP.ite (decide (R = 18)) ((eval_e s₂).trans hz) (fun h => ?_) (fun h => ?_)) fun s₃ ⟨c₃, b₃⟩ => ?_
-  · obtain rfl : g = 3 := by simp at h; omega
-    exact crypt8_ok hcore
-  · obtain rfl : g = 4 := by simp at h; omega
-    exact crypt8_ok hcore
+  have hend : slotW s₂ endSlot = endV (s₂.gpr sb) g := by
+    simp only [slotW, b₂, mem₂]
+    exact Mem.readW_writeW_self32 _ _ _
+  refine WP.mono (cryptR_ok hcore hend) fun s₃ ⟨c₃, b₃⟩ => ?_
   have base₃ : s₃.gpr sb = B := by rw [c₃.base, b₂]
   have esp₃ : s₃.gpr .esp = s.gpr .esp := by rw [c₃.keep _ (by decide) (by decide), g₂ _ (by decide)]
-  have f₃ : Frame (ctxRegions B) s.mem s₃.mem := by have := c₃.frame; rw [b₂, mem₂] at this; exact this
-  have ctxSub : ∀ r ∈ ctxRegions B, Region.Sub r ⟨B.setWidth 64, 4 * slots⟩ := fun r hr => by
+  have f₃ : Frame (endR :: ctxRegions B) s.mem s₃.mem := by
+    have := c₃.frame; rw [b₂] at this
+    exact (f₂.mono (by simp)).trans (this.mono (fun r hr => List.mem_cons_of_mem _ hr))
+  have ctxSub : ∀ r ∈ endR :: ctxRegions B, Region.Sub r ⟨B.setWidth 64, 4 * slots⟩ := fun r hr => by
     simp only [ctxRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
+    rcases hr with rfl | rfl | rfl
+    · exact slot_sub hfit' (by rw [endSlot_eq, slots_eq]; decide)
     · exact Region.sub_prefix (by rw [keySlot_eq, slots_eq]; decide)
     · exact slot_sub hfit' (by rw [grpSlot_eq, slots_eq]; decide)
-  have dT := ctx_disj hfit'
+  have dT : ∀ r ∈ endR :: ctxRegions B, (slotsRegion B keySlot grpSlot).Disjoint r := fun r hr => by
+    rcases List.mem_cons.mp hr with rfl | h
+    · exact dE
+    · exact ctx_disj hfit' r h
   have keep : ∀ k, keySlot ≤ k → k < grpSlot → s₃.mem.readW (wordAddr B k) 32 = s.mem.readW (wordAddr B k) 32 :=
     fun k h1 h2 => slot_keep hfit' (by decide) f₃ dT h1 h2
   refine ⟨base₃, esp₃, ⟨⟨hRv, fun i hi => ?_⟩,
@@ -258,7 +263,19 @@ theorem crypt_wp (d : Dir) {s : State} {B : BitVec 32} {k : Nat × List (BitVec 
     have ha' : blkAddr (dirCore d) B j = B.setWidth 64 + BitVec.ofNat 64 (4 * tailSlot + 16 * j) := by
       simp only [blkAddr, slotA, dirCore, VG.Offset.add_add]
     have e5 := b₃ j hj8
-    simp only [blk, base₃, b₂, mem₂] at e5
+    have hblk : Spec.Camellia.blockAt s₂.mem (B.setWidth 64 + BitVec.ofNat 64 (4 * tailSlot + 16 * j)) =
+        Spec.Camellia.blockAt s.mem (B.setWidth 64 + BitVec.ofNat 64 (4 * tailSlot + 16 * j)) := by
+      unfold Spec.Camellia.blockAt
+      congr 1; funext i
+      have hf := hfit'
+      rw [slots_eq] at hf
+      refine f₂.bytes (R := ⟨_, 16⟩) (fun r hr => ?_) (show 16 ≤ 2 ^ 64 by decide) i.isLt
+      simp only [List.mem_singleton] at hr; subst hr
+      show Region.Disjoint _ ⟨wordAddr B endSlot, 4⟩
+      rw [slot_addr (by rw [endSlot_eq]; omega)]
+      exact VG.Offset.disjoint _ (by rw [tailSlot_eq, endSlot_eq]; omega) (by rw [tailSlot_eq]; omega)
+        (by rw [endSlot_eq]; omega)
+    simp only [blk, base₃, b₂, hblk] at e5
     rw [dirCore_bw, ha', dirCipher_bytes d hRv, bytesAt_eq_blockAt, e5, hgR]
 
 /-- Camellia's core for the direction `d` meets what the modes need. -/

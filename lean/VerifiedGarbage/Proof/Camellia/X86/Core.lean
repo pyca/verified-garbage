@@ -28,6 +28,7 @@ theorem slots_eq : slots = 672 := rfl
 theorem tailSlot_eq : tailSlot = 72 := rfl
 theorem keySlot_eq : keySlot = 104 := rfl
 theorem grpSlot_eq : grpSlot = 654 := rfl
+theorem endSlot_eq : endSlot = 655 := rfl
 theorem savedSlot_eq : savedSlot = 648 := rfl
 theorem dSlot_eq : dSlot = 652 := rfl
 theorem nSlot_eq : nSlot = 653 := rfl
@@ -457,11 +458,19 @@ theorem atEnd_ok {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePr
     VG.Offset.add_sub_cancel_left, ofNat32_sub_beq (by rw [keySlot_eq]; omega) (by rw [keySlot_eq]; omega)]
   simp only [Option.some.injEq, decide_eq_decide]; omega
 
-/-- A group of six rounds, then FL and FLINV unless it is the last. -/
-theorem group_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s)
+/-- What the end test of the groups does: Z when `kp` is at the
+postwhitening's entry, keeping the context and every slot. -/
+def AtEndOk (s₀ : State) (g : Nat) (e : List Instr) : Prop :=
+  ∀ {s : State} {m : Nat}, Ctx s₀ s → AtEntry s (s₀.gpr sb) m → m ≤ 8 * g + 2 →
+    ∃ s', runBlock isa e s = some s' ∧ Ctx s₀ s' ∧ AtEntry s' (s₀.gpr sb) m ∧
+      s'.zf = some (decide (m = 8 * g)) ∧ (∀ k, slotW s' k = slotW s k)
+
+/-- A group of six rounds, then FL and FLINV unless it is the last, with the end test `e`. -/
+theorem group_wpW {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s)
+    {e : List Instr} (he : AtEndOk s₀ g e)
     {i : Nat} (hi : i < g) (hk : AtEntry s (s₀.gpr sb) (2 + 8 * i)) {S : Nat → BitVec 64 × BitVec 64}
     (hS : Halves s S) :
-    WP isa (groupBody g) s fun s' => Ctx s₀ s' ∧ Halves s' (fun b => group g E (S b) i) ∧
+    WP isa (groupBodyWith e) s fun s' => Ctx s₀ s' ∧ Halves s' (fun b => group g E (S b) i) ∧
       AtEntry s' (s₀.gpr sb) (if i + 1 < g then 2 + 8 * (i + 1) else 8 * g) ∧
       s'.zf = some (decide (i + 1 = g)) := by
   have hg4 : g ≤ 4 := by rcases hp.hg with h | h <;> omega
@@ -473,7 +482,7 @@ theorem group_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePr
     rw [v₁, show s.gpr kp = _ from hk, VG.Offset.add_add]; congr 2; omega
   have hS₁ : Halves s₁ S := hS.congr fun k h1 h2 =>
     o₁ k (by rw [slots_eq]; rw [tailSlot_eq] at h2; omega) (by rw [grpSlot_eq]; rw [tailSlot_eq] at h2; omega)
-  unfold groupBody
+  unfold groupBodyWith
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
   -- The pairs.
   let Inv : Nat → State → Prop := fun n s' => ∃ p, n = 3 - p ∧ p < 3 ∧ Ctx s₀ s' ∧
@@ -499,7 +508,7 @@ theorem group_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePr
         by rw [AtEntry, show s''.gpr kp = _ from k'', show 2 + 8 * i + 2 * p + 2 = 2 + 8 * i + 2 * (p + 1) by omega],
         by rw [a'' _ (by rw [grpSlot_eq, tailSlot_eq]; decide) (by rw [grpSlot_eq, slots_eq]; decide), hg'], hS''⟩
   · obtain ⟨hc₂, hk₂, hS₂⟩ := h₂
-    obtain ⟨s₃, e₃, hc₃, hk₃, hz₃, sl₃⟩ := atEnd_ok hp hc₂ hk₂ (by omega)
+    obtain ⟨s₃, e₃, hc₃, hk₃, hz₃, sl₃⟩ := he hc₂ hk₂ (by omega)
     have hS₃ : Halves s₃ (fun b => pairsN E i 3 (S b)) := hS₂.congr fun k _ _ => sl₃ k
     refine WP.seq (WP.of_runBlock ⟨s₃, e₃, ?_⟩)
     refine WP.seq (WP.ite (!decide (8 + 8 * i = 8 * g)) ((eval_ne s₃).trans (by rw [hz₃]; rfl)) (fun ht => ?_)
@@ -510,7 +519,7 @@ theorem group_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePr
       refine WP.of_runBlock ⟨s₄, e₄, ?_⟩
       have hk₄ : AtEntry s₄ b (2 + 8 * (i + 1)) := by
         rw [AtEntry, show s₄.gpr kp = _ from k₄, show 8 + 8 * i + 2 = 2 + 8 * (i + 1) by omega]
-      obtain ⟨s₅, e₅, c₅, k₅, z₅, sl₅⟩ := atEnd_ok hp c₄ hk₄ (by omega)
+      obtain ⟨s₅, e₅, c₅, k₅, z₅, sl₅⟩ := he c₄ hk₄ (by omega)
       refine WP.of_runBlock ⟨s₅, e₅, c₅, ?_, ?_, ?_⟩
       · have hG : (fun b => group g E (S b) i) = fun b =>
             (Spec.Camellia.fl (pairsN E i 3 (S b)).1 (E (8 + 8 * i)),
@@ -524,7 +533,7 @@ theorem group_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePr
     · have heq : i + 1 = g := by
         simp only [Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq] at hf; omega
       refine WP.of_runBlock ⟨s₃, rfl, ?_⟩
-      obtain ⟨s₅, e₅, c₅, k₅, z₅, sl₅⟩ := atEnd_ok hp hc₃ hk₃ (by omega)
+      obtain ⟨s₅, e₅, c₅, k₅, z₅, sl₅⟩ := he hc₃ hk₃ (by omega)
       refine WP.of_runBlock ⟨s₅, e₅, c₅, ?_, ?_, ?_⟩
       · have hG : (fun b => group g E (S b) i) = fun b => pairsN E i 3 (S b) :=
           funext fun b => by rw [group_eq]; simp only [show ¬ i + 1 < g by omega, ↓reduceIte]
@@ -533,5 +542,15 @@ theorem group_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePr
       · simp only [show ¬ i + 1 < g by omega, ↓reduceIte]
         rw [show 8 * g = 8 + 8 * i by omega]; exact k₅
       · rw [z₅]; simp only [Option.some.injEq, decide_eq_decide]; omega
+
+
+/-- A group of six rounds, then FL and FLINV unless it is the last. -/
+theorem group_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s)
+    {i : Nat} (hi : i < g) (hk : AtEntry s (s₀.gpr sb) (2 + 8 * i)) {S : Nat → BitVec 64 × BitVec 64}
+    (hS : Halves s S) :
+    WP isa (groupBody g) s fun s' => Ctx s₀ s' ∧ Halves s' (fun b => group g E (S b) i) ∧
+      AtEntry s' (s₀.gpr sb) (if i + 1 < g then 2 + 8 * (i + 1) else 8 * g) ∧
+      s'.zf = some (decide (i + 1 = g)) :=
+  group_wpW hp hc (fun hc hk hm => atEnd_ok hp hc hk hm) hi hk hS
 
 end VG.Proof.Camellia.X86

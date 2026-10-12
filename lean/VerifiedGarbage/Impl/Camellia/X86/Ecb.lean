@@ -105,11 +105,14 @@ def atEnd (g : Nat) : List Instr :=
   [movR .eax kp, subR .eax .edi, .alu .cmp .eax (.imm (BitVec.ofNat 32 (4 * keySlot + 512 * g)))]
 
 /-- Six rounds, then FL and FLINV unless they were the last; Z when `kp` is
-at the postwhitening's entry. -/
-def groupBody (g : Nat) : Prog isa :=
+at the postwhitening's entry, as the test `e` finds it. -/
+def groupBodyWith (e : List Instr) : Prog isa :=
   .seq (.block [movR .eax kp, addI .eax 384, st grpSlot .eax])
     (.seq (.loop (.block pairBody) .ne)
-      (.seq (.block (atEnd g)) (.seq (.ite .ne (.block flLayer) (.block [])) (.block (atEnd g)))))
+      (.seq (.block e) (.seq (.ite .ne (.block flLayer) (.block [])) (.block e))))
+
+/-- The groups for `g` groups, the end's offset an immediate. -/
+def groupBody (g : Nat) : Prog isa := groupBodyWith (atEnd g)
 
 /-- Output word `w` of the eight blocks (to the tail buffer), from the
 planes of `D2` (words 0 and 1) or `D1` (words 2 and 3). -/
@@ -123,6 +126,23 @@ def tail : List Instr := whiten true ++ (List.range 4).flatMap fromBsWord
 
 /-- The eight blocks of the tail buffer, in place, for `g` groups. -/
 def crypt8 (g : Nat) : Prog isa := .seq (.block head) (.seq (.loop (groupBody g) .ne) (.block tail))
+
+/-- The postwhitening's entry, `8 g` entries into the table, for the `6 g`
+rounds of argument 1 (public), to its slot: its offset is `4 keySlot + 1536`
+plus `(rounds - 18) & 4` rotated left by 7, which is 0 for 18 rounds and 512
+for 24. -/
+def setEnd : List Instr :=
+  [.mov .edx (.mem (argOp 1)), subI .edx 18, andI .edx 4, rorI .edx 25,
+    addI .edx (BitVec.ofNat 32 (4 * keySlot + 1536)), addR .edx .edi, st endSlot .edx]
+
+/-- Z when `kp` is at the postwhitening's entry, from its slot. -/
+def atEndS : List Instr := [movS .eax endSlot, .alu .cmp .eax (.reg kp)]
+
+/-- The eight blocks of the tail buffer, in place, for 18 rounds or 24 (in
+argument 1) with one copy of the rounds: the modes' (ECB keeps a copy for
+each, which measured faster on some CPUs). -/
+def crypt8R : Prog isa :=
+  .seq (.block setEnd) (.seq (.block head) (.seq (.loop (groupBodyWith atEndS) .ne) (.block tail)))
 
 /-! ## The groups -/
 

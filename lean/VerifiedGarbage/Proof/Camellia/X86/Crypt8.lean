@@ -252,16 +252,17 @@ theorem tail_ok {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre
 
 /-! ## The groups -/
 
-theorem groups_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s)
+theorem groups_wpW {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s)
+    {e : List Instr} (he : AtEndOk s₀ g e)
     (hk : AtEntry s (s₀.gpr sb) 2) {S : Nat → BitVec 64 × BitVec 64} (hS : Halves s S) :
-    WP isa (.loop (groupBody g) .ne) s fun s' => Ctx s₀ s' ∧ AtEntry s' (s₀.gpr sb) (8 * g) ∧
+    WP isa (.loop (groupBodyWith e) .ne) s fun s' => Ctx s₀ s' ∧ AtEntry s' (s₀.gpr sb) (8 * g) ∧
       Halves s' (fun b => groups g E (S b)) := by
   have hg0 : 0 < g := by rcases hp.hg with h | h <;> omega
   let Inv : Nat → State → Prop := fun n s' => ∃ i, n = g - i ∧ i < g ∧ Ctx s₀ s' ∧
     AtEntry s' (s₀.gpr sb) (2 + 8 * i) ∧ Halves s' (fun b => groupsN g E i (S b))
   refine WP.loop (M := isa) Inv (fun n s' hs' => ?_) g s ⟨0, by omega, hg0, hc, hk, by simpa [groupsN] using hS⟩
   obtain ⟨i, rfl, hi, hc', hk', hS'⟩ := hs'
-  refine WP.mono (group_wp hp hc' hi hk' hS') fun s'' ⟨c'', S'', k'', z''⟩ => ?_
+  refine WP.mono (group_wpW hp hc' he hi hk' hS') fun s'' ⟨c'', S'', k'', z''⟩ => ?_
   simp only [← groupsN_succ] at S''
   by_cases he : i + 1 = g
   · refine .inl ⟨(eval_ne s'').trans (by rw [z'']; simp [he]), c'', ?_, ?_⟩
@@ -271,6 +272,12 @@ theorem groups_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CoreP
   · refine .inr ⟨(eval_ne s'').trans (by rw [z'']; simp [he]), g - (i + 1), by omega, i + 1, rfl,
       by omega, c'', ?_, S''⟩
     simpa only [show i + 1 < g by omega, ↓reduceIte] using k''
+
+theorem groups_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s)
+    (hk : AtEntry s (s₀.gpr sb) 2) {S : Nat → BitVec 64 × BitVec 64} (hS : Halves s S) :
+    WP isa (.loop (groupBody g) .ne) s fun s' => Ctx s₀ s' ∧ AtEntry s' (s₀.gpr sb) (8 * g) ∧
+      Halves s' (fun b => groups g E (S b)) :=
+  groups_wpW hp hc (fun hc hk hm => atEnd_ok hp hc hk hm) hk hS
 
 /-! ## Eight blocks -/
 
