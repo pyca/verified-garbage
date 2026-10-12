@@ -7,12 +7,13 @@ namespace VG.Impl.P384.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
 
 /-- P-384 for verification: `p384` with `pubVerify` (`n < p ≤ 2n`), whose
-final check compares `x mod n` with `r` in projective coordinates. Signing
-and ECDH, which never read `pubVerify`, keep `p384`. -/
-def p384v : Cfg := { p384 with pubVerify := true }
+final check compares `x mod n` with `r` in projective coordinates, and its
+products modulo `n` calls of `vg_p384_mul_mod_n` (`nCalls`). Signing and
+ECDH, which never read `pubVerify`, keep `p384`. -/
+def p384v : Cfg := { p384 with pubVerify := true, nCalls := true }
 
 /-- `p384v` multiplying with BMI2 and ADX. -/
-def p384vx : Cfg := { p384x with pubVerify := true }
+def p384vx : Cfg := { p384x with pubVerify := true, nCalls := true }
 
 /-- The joint loop's working space, past the window method's table (from
 `5392`): the cached `Z²`, `Z³` of its eight entries at `5392`, the selected
