@@ -19,8 +19,8 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.W
 
 variable {c : Cfg}
 
-theorem middle_eq (c : Cfg) : c.middle = .seq (.block (mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
-    (.seq (.block (mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
+theorem middle_eq (c : Cfg) : c.middle = .seq (c.mulPP (c.sl XM) (c.sl RX) (c.sl ACC))
+    (.seq (c.mulPP (c.sl X) (c.sl XM) (c.sl ONE))
     (.seq (.block (add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO)))
     (.seq (c.mulNP (c.sl KM) (c.sl K) (c.sl R2N))
     (.block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR)))))) := rfl
@@ -56,8 +56,8 @@ theorem midOps_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
     (hacc : sv c base s ACC < c.C.p) (hone : sv c base s ONE = 1) (hzero : sv c base s ZERO = 0)
     (hr2 : sv c base s R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n) {rest : Prog isa}
     {Q : State → Prop} (h : ∀ s', MidPost c base s s' → WP isa rest s' Q) :
-    WP isa (.seq (.block (mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
-      (.seq (.block (mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
+    WP isa (.seq (c.mulPP (c.sl XM) (c.sl RX) (c.sl ACC))
+      (.seq (c.mulPP (c.sl X) (c.sl XM) (c.sl ONE))
       (.seq (.block (add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO)))
       (.seq (c.mulNP (c.sl KM) (c.sl K) (c.sl R2N)) rest)))) s Q := by
   have h7 := hc.n10
@@ -67,16 +67,16 @@ theorem midOps_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
   have hp3 := hc.p_ge
   have hpn := hc.p_lt_2n
   -- `XM = X · ACC`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) h7 hs hMP (MP'_A c) (o := XM) (a := RX) (b := ACC) (by decide)
-    (by decide) (by decide) hacc) fun s₁ ⟨k₁, _, e₁⟩ => ?_)
+  refine WP.seq (WP.mono (slMulP_ok hc hs hMP (o := XM) (a := RX) (b := ACC) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) hacc) fun s₁ ⟨k₁, _, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
   have kP₁ := hMP.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have kN₁ := hMN.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have one₁ : sv c base s₁ ONE = 1 :=
     (sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)).trans hone
   -- `X = XM · 1`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) h7 hs₁ kP₁ (MP'_A c) (o := X) (a := XM) (b := ONE) (by decide)
-    (by decide) (by decide) (by omega)) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
+  refine WP.seq (WP.mono (slMulP_ok hc hs₁ kP₁ (o := X) (a := XM) (b := ONE) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by omega)) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have kP₂ := kP₁.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
   have kN₂ := kN₁.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)

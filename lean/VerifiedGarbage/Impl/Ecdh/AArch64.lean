@@ -142,9 +142,8 @@ def finish : List Instr :=
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, the checks
 of `d` and `Z`, and the result. -/
 def middle : Prog isa :=
-  blocks [Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC),
-    Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE),
-    c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c]
+  .seq (c.mulPP (c.sl XM) (c.sl RX) (c.sl ACC)) <| .seq (c.mulPP (c.sl X) (c.sl XM) (c.sl ONE)) <|
+    .block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c)
 
 /-- `vg_ecdh_<curve>`. -/
 def exchange : Prog isa :=

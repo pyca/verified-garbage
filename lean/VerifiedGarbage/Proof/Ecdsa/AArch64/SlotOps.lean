@@ -103,4 +103,25 @@ theorem slMulN_ok (hc : BaseCfgOk c) {base : Addr} {s : State}
       (sl_own_fn c h7 ho hoT) (sl_own_fn c h7 ha haT) (sl_own_fn c h7 hb hbT) hB
   · exact slMul_ok (MN'_n c) h7 hs hM (MN'_A c) ho ha hb hB
 
+/-- `[o] = [a] [b] R⁻¹ mod p`, on slots, by a call or inline (`Cfg.mulPP`). -/
+theorem slMulP_ok (hc : BaseCfgOk c) {base : Addr} {s : State}
+    (hs : Scr s base size) (hM : ModOkA c.MP' size c.C.p s.mem base) {o a b : Nat} (ho : o < 45)
+    (ha : a < 45) (hb : b < 45) (hoT : o ≠ TMP) (haT : a ≠ TMP) (hbT : b ≠ TMP)
+    (hB : sv c base s b < c.C.p) :
+    WP isa (c.mulPP (c.sl o) (c.sl a) (c.sl b)) s fun s' => OpKeep c.MP' base (c.sl o) s s' ∧
+      sv c base s' o < c.C.p ∧ sv c base s' o * 2 ^ (64 * c.n) % c.C.p = sv c base s a * sv c base s b % c.C.p := by
+  have h7 := hc.n10
+  unfold Cfg.mulPP
+  split
+  · next f m h =>
+    obtain ⟨rfl, hH⟩ := hc.call_p f m h
+    have htmp : c.MP'.tmp = VG.Impl.Weierstrass.AArch64.Mont.moAt c.MP'.n := by
+      unfold VG.Impl.Weierstrass.AArch64.Mont.callOf at h
+      split at h
+      · assumption
+      · cases h
+    exact VG.Proof.Weierstrass.AArch64.Mont.mulCall_ok (M := c.MP') hs hM hH htmp
+      (sl_own_fn c h7 ho hoT) (sl_own_fn c h7 ha haT) (sl_own_fn c h7 hb hbT) hB
+  · exact slMul_ok (MP'_n c) h7 hs hM (MP'_A c) ho ha hb hB
+
 end VG.Proof.Ecdsa.AArch64

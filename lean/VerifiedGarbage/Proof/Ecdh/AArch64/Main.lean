@@ -83,8 +83,8 @@ theorem ecFinish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s bas
     exact R₃.gpr p hp
 
 theorem middle_eq (c : Cfg) : Impl.Ecdh.AArch64.Cfg.middle c =
-    .seq (.block (Impl.Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
-    (.seq (.block (Impl.Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
+    .seq (c.mulPP (c.sl XM) (c.sl RX) (c.sl ACC))
+    (.seq (c.mulPP (c.sl X) (c.sl XM) (c.sl ONE))
     (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.AArch64.Cfg.finish c))) := rfl
 
 /-- Whether the result is a shared secret: the peer's key (`V`), `d` in
@@ -115,15 +115,15 @@ theorem middle_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
   have hM := modP_of hc F.mp
   have hone : sv c base s ONE = 1 := F.one
   -- `XM = X · ACC`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) h7 hs hM (MP'_A c) (o := XM) (a := RX) (b := ACC) (by decide)
-    (by decide) (by decide) hacc) fun s₁ ⟨k₁, _, e₁⟩ => ?_)
+  refine WP.seq (WP.mono (slMulP_ok hc hs hM (o := XM) (a := RX) (b := ACC) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) hacc) fun s₁ ⟨k₁, _, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
   have kP₁ := hM.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have v₁ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₁ i = sv c base s i := fun hi h₁ h₂ =>
     sv_keep (MP'_n c) rfl h7 hn k₁ hi h₁ h₂
   -- `X = XM · 1`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) h7 hs₁ kP₁ (MP'_A c) (o := X) (a := XM) (b := ONE) (by decide)
-    (by decide) (by decide) (by rw [v₁ (by decide) (by decide) (by decide), hone]; omega))
+  refine WP.seq (WP.mono (slMulP_ok hc hs₁ kP₁ (o := X) (a := XM) (b := ONE) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [v₁ (by decide) (by decide) (by decide), hone]; omega))
     fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ X → i ≠ TMP → sv c base s₂ i = sv c base s i := fun hi h₁ h₂ h₃ =>
