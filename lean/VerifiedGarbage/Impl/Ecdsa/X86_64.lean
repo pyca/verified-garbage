@@ -170,11 +170,6 @@ structure Cfg where
   and `k^(n-2)` (`invFn`), which every function calls (`pPow`, `nPow`);
   else they run them inline. -/
   inverse : Option Spec.Weierstrass.Inverse.Curve := none
-  /-- For six words (P-384), whether the products modulo `n` are calls of
-  `vg_p384_mul_mod_n` (`MN'`'s `fnN`), as in verification, rather than
-  written out, as in the signature, which the calls slowed down. Nine words
-  (P-521) always call `vg_p521_mul_mod_n`. -/
-  nCalls : Bool := false
   /-- The bits the window method's scalars have: `8 len`, but for a curve
   whose `n` has fewer bits than its `len` bytes (P-521's `n < 2⁵²¹`, in 66
   bytes), as many as `n` has. ECDH reduces its `d` below `2^nbits` before
@@ -220,7 +215,7 @@ def MP' : Mod :=
 def MH : Mod := { c.MP' with inl := c.hot }
 def MN' : Mod :=
   { n := c.n, mo := c.sl MN, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.n), adx := c.adx,
-    fnN := c.n == 9 || c.n == 6 && c.nCalls }
+    fnN := c.n == 9 || c.n == 6 }
 
 def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 
