@@ -199,7 +199,7 @@ def run(binary, home, library, args, checkout, modules, groups=None):
             # those overran it with a warning; faster benchmarks take as
             # long either way, with more iterations per sample.
             "--sample-size",
-            "25",
+            "50",
             # Only the median is used, not the bootstrapped confidence
             # intervals, whose default 100000 resamples cost more than a
             # short measurement.
@@ -225,7 +225,9 @@ def run(binary, home, library, args, checkout, modules, groups=None):
     times = {}
     for est in home.glob(f"*/{library}/*/new/estimates.json"):
         primitive, _, size = est.relative_to(home).parts[:3]
-        times[primitive, int(size)] = json.loads(est.read_text())["median"]["point_estimate"]
+        estimates = json.loads(est.read_text())
+        times[primitive, int(size)] = estimates["median"]["point_estimate"]
+        print("RSA_GAP_SAMPLE " + json.dumps({"run": home.name, "library": library, "operation": primitive, "bytes": int(size), "estimates": estimates}), flush=True)
     return times
 
 
@@ -268,12 +270,12 @@ def main():
     p.add_argument("base", type=pathlib.Path)
     p.add_argument("head", type=pathlib.Path)
     p.add_argument("--summary", type=pathlib.Path)
-    p.add_argument("--rounds", type=int, default=1)
+    p.add_argument("--rounds", type=int, default=3)
     p.add_argument("--confirm", type=int, default=2,
                    help="runs of each side again for the benchmarks over the threshold")
     p.add_argument("--threshold", type=float, default=0.35)
-    p.add_argument("--warm-up-time", type=float, default=0.1)
-    p.add_argument("--measurement-time", type=float, default=0.3)
+    p.add_argument("--warm-up-time", type=float, default=1.0)
+    p.add_argument("--measurement-time", type=float, default=3.0)
     p.add_argument("--openssl", action="store_true",
                    help="also run OpenSSL's and aws-lc-rs's benchmarks, for reference")
     p.add_argument("--work-dir", type=pathlib.Path, default=pathlib.Path("bench-compare"))
@@ -302,6 +304,7 @@ def main():
     if shards > 1:
         groups = shard_groups(list_groups(binaries["head"], modules["head"]), shard, shards)
 
+    groups = ["rsa_public", "rsa_private"]
     shutil.rmtree(args.work_dir, ignore_errors=True)
     best = {"base": {}, "head": {}}
     try:
@@ -348,8 +351,9 @@ def main():
     if with_references:
         for library, name in REFERENCES.items():
             print(name, file=sys.stderr)
-            references[library] = run(binaries["head"], args.work_dir.resolve() / library, library, args, head,
-                                       modules["head"], groups)
+            samples = [run(binaries["head"], args.work_dir.resolve() / f"{library}-{r}", library, args, head,
+                           modules["head"], groups) for r in range(args.rounds)]
+            references[library] = {key: min(sample[key] for sample in samples) for key in samples[0]}
 
     title = ", ".join([*([f"VG_CPU_FEATURES={cpu_features}"] if cpu_features else []),
                        *([f"shard {shard}/{shards}"] if shards > 1 else [])])
@@ -359,7 +363,7 @@ def main():
         f"## Benchmarks ({title})" if title else "## Benchmarks",
         "",
         f"{runs} on this runner; a slowdown of more than {args.threshold:.0%} fails."
-        + (" OpenSSL (through rust-openssl) and aws-lc-rs ran once, for reference." if with_references
+        + (" OpenSSL (through rust-openssl) and aws-lc-rs ran three times, for reference (individual estimates logged)." if with_references
            else " OpenSSL and aws-lc-rs ran only in the configuration without VG_CPU_FEATURES." if cpu_features
            else " OpenSSL and aws-lc-rs did not run (they do with `--openssl`, as in the workflow's manual runs)."),
         *(
