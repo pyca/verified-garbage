@@ -58,26 +58,35 @@ def keyOne (d : Nat) : List Instr :=
 /-- `kp := ` the table. -/
 def tableSetup : List Instr := [slotAddr kp keySlot]
 
-/-- The address of the postwhitening's entry, `8 g` entries into the table
-(`g` the number of groups of six rounds), to `lr`. -/
-def endAddr (g : Nat) : List Instr :=
-  [slotAddr .lr keySlot, .dp .add .lr .lr (.imm (BitVec.ofNat 32 (512 * g)))]
+/-- What depends on the number of groups `g`: the subkeys the loop
+bitslices in `lr`, and for decryption `r12` at `kw3`. -/
+def groupConsts : Dir → Nat → List Instr
+  | .encrypt, g => [.mov .lr (.imm (BitVec.ofNat 32 (8 * g + 2)))]
+  | .decrypt, g => [.dp .add .r12 .r12 (.imm (BitVec.ofNat 32 (64 * g))), .mov .lr (.imm (BitVec.ofNat 32 (8 * g - 2)))]
 
-/-- Encryption's table, for `g` groups: the `8 g + 2` subkeys in order. -/
-def encKeys (g : Nat) : Prog isa :=
-  .seq (.block (tableSetup ++ [.mov .lr (.imm (BitVec.ofNat 32 (8 * g + 2)))]))
+/-- Encryption's table: the `lr` subkeys from `r12`, in order. -/
+def encKeys : Prog isa :=
+  .seq (.block tableSetup)
     (.loop (.block (keyOne 0 ++ [.dp .add .r12 .r12 (.imm 8), .subs .lr .lr (.imm 1)])) .ne)
 
-/-- Decryption's table, for `g` groups: `kw3, kw4` (words `8 g`, `8 g + 1`),
-words `8 g - 1` down to 2, then `kw1, kw2`. -/
-def decKeys (g : Nat) : Prog isa :=
-  .seq (.block (tableSetup ++ [.dp .add .r12 .r12 (.imm (BitVec.ofNat 32 (64 * g)))] ++ keyOne 0 ++ keyOne 8 ++
-      [.dp .sub .r12 .r12 (.imm 8), .mov .lr (.imm (BitVec.ofNat 32 (8 * g - 2)))]))
+/-- Decryption's table, for `g` groups, `r12` at word `8 g` and `lr = 8 g - 2`:
+`kw3, kw4` (words `8 g`, `8 g + 1`), words `8 g - 1` down to 2, then
+`kw1, kw2`. -/
+def decKeys : Prog isa :=
+  .seq (.block (tableSetup ++ keyOne 0 ++ keyOne 8 ++ [.dp .sub .r12 .r12 (.imm 8)]))
     (.seq (.loop (.block (keyOne 0 ++ [.dp .sub .r12 .r12 (.imm 8), .subs .lr .lr (.imm 1)])) .ne)
       (.block ([.dp .sub .r12 .r12 (.imm 8)] ++ keyOne 0 ++ keyOne 8)))
 
-def keys (dir : Dir) (g : Nat) : Prog isa :=
-  .seq (match dir with | .encrypt => encKeys g | .decrypt => decKeys g) (.block (endAddr g))
+/-- The address of the postwhitening's entry, to `lr`: the table's last two
+entries, `kw3` and `kw4` in the order the rounds use them, are before `kp`. -/
+def endAddr : List Instr := [.dp .sub .lr kp (.imm 128)]
+
+/-- The table for 18 rounds (Z set) or 24, and the postwhitening's address
+in `lr`: the branches set only `groupConsts`, and one copy of the loops
+builds either table. -/
+def keys (dir : Dir) : Prog isa :=
+  .seq (.ite .eq (.block (groupConsts dir 3)) (.block (groupConsts dir 4)))
+    (.seq (match dir with | .encrypt => encKeys | .decrypt => decKeys) (.block endAddr))
 
 /-! ## Eight blocks, in the tail buffer -/
 
@@ -168,7 +177,7 @@ def group : Prog isa := .seq copyIn (.seq cryptSaved (.seq copyOut advance))
 def ecb (dir : Dir) : Prog isa :=
   .seq (.block ([.ldrSp .r12 0] ++ saveRegs .r12 ++
       [movR sb .r12, movR .r12 .r0, .cmp .r1 (.imm 18), movR .r1 .r2, movR .r2 .r3]))
-    (.seq (.ite .eq (keys dir 3) (keys dir 4))
+    (.seq (keys dir)
       (.seq (.block [.cmp .r2 (.imm 0)])
         (.seq (.ite .eq (.block []) (.loop group .ne)) (.block ([movR .r12 sb] ++ restoreRegs .r12)))))
 
