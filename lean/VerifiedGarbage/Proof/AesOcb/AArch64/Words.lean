@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.Env
-import VerifiedGarbage.Proof.CmacAes.AArch64.Subkeys
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Env
+public import VerifiedGarbage.Proof.CmacAes.AArch64.Subkeys
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: blocks of `W`, two words at a time
@@ -9,6 +15,8 @@ and `dbl` write a block of `W` (`BlkStep`): zeros, a copy, the XOR with a
 block and `double` of a block (`zero16_ok`, `copy16_ok`, `xor16_ok`,
 `dbl_ok`), as blocks of memory (`blockAtMem`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

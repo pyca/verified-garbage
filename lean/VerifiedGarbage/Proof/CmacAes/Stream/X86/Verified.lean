@@ -1,10 +1,25 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Init
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.AbsorbCorrect
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Finish
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Cmac.Contract
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
-import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Init
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Init
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.AbsorbCorrect
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.AbsorbCorrect
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Finish
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Finish
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Cmac.Contract
+meta import VerifiedGarbage.Spec.Cmac.Contract
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
+public import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
+meta import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

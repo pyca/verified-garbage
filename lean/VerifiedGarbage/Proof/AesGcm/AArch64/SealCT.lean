@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.OneCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.OneCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.OneCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_seal` is constant time
@@ -8,6 +15,8 @@ Untrusted: everything here is checked by Lean. The entry by `entry_rel`,
 the tag by `finBody_rel`; the blocks between them by the taint analysis, with
 `tag`, which the code loads from memory, public in both runs.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

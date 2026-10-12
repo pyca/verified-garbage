@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on x86-64: arithmetic and memory
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 The number of bytes held back, as the code computes it from `count`
 (`held_bv`); immediates; the copy of a block a word at a time (`copyMem`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.X86_64
 

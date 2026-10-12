@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.Header
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Header
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: the MAC (`aadHead y`, `mac y`)
@@ -11,6 +17,8 @@ any (`aadPart_ok`): the blocks `Proof.AesCcm.adataBlocks`. `mac y` chains
 `B₀`, the associated data and the payload padded (`mac_ok`): the blocks of
 `Spec.Ccm.format`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

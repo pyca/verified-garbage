@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_seal` is constant time
@@ -9,6 +16,8 @@ same public data (`oneAad_rel`, `oneBlocksE_rel`, `oneCrypt_rel`, `oneTag_rel`),
 and copy the tag to the same address, `tag`, which correctness says is still
 on the stack (`sealRun_ok`, `tagOut_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

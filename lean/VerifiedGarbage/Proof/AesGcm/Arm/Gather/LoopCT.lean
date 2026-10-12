@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Loop
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Scratch
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Loop
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Loop
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Scratch
+meta import VerifiedGarbage.Proof.Framework.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Gathering a list of slices, ARMv7: constant time
@@ -17,6 +27,8 @@ the addresses they give, with branches on the number of slices and their
 lengths (`copySlice_rel`, by the taint analysis from the registers the
 correctness proof pins to the same values in both runs).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

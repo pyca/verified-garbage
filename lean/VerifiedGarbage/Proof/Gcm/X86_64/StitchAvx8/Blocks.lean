@@ -1,11 +1,20 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Pipeline
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
-import Mathlib.Tactic.IntervalCases
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Data
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
+module
+
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Pipeline
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
+public import Mathlib.Tactic.IntervalCases
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Data
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## Schedule -/
+
+@[expose] public section
+
 section
 
 /-! # Connecting the hash and counter work to the fixed AES schedules -/

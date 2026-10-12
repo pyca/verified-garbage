@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Body
-import VerifiedGarbage.Proof.AesOcb.X86_64.Entry
-import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
-import VerifiedGarbage.Proof.AesOcb.X86_64.Contract
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Body
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Entry
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86-64: `vg_aes_ocb_seal`
@@ -14,6 +20,8 @@ and the tag at `W` (`tag`)
 (`sealFront_wp`); then the copy of the tag to `tag` (`tagOut`) and
 `restore` (`seal_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

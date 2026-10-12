@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Top
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Top
+meta import VerifiedGarbage.Proof.AesGcm.X86.Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: the ciphertext into GHASH (`textAbsorb`)
@@ -7,6 +14,8 @@ Untrusted: everything here is checked by Lean. `textAbsorb` absorbs the
 `len` bytes at `data` (the ciphertext) into GHASH, after padding the
 additional data if they are the first text (`textAbsorb_pc`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+module
+
+public import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CBC on x86-64: the loop, for any mode on whole blocks
@@ -16,6 +22,8 @@ arguments reuse the loop.
 blocks and sets ZF when none are left (`BodyOk`), `whole body` meets the
 contract.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCbc.X86_64
 

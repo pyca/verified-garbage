@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.Arm.Env
-import VerifiedGarbage.Proof.Aes.Arm.Blocks
+module
+
+public import VerifiedGarbage.Proof.AesOcb.Arm.Env
+public import VerifiedGarbage.Proof.Aes.Arm.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on ARMv7: the functions called
@@ -12,6 +18,8 @@ time (`blk_rel`). They are called in a frame that pushes their stack argument
 (`push {r12, lr}`) in the 8 bytes below the stack pointer, as `vg_ghash` is
 (`Proof.AesGcm.Arm.gh_call`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

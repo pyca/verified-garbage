@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Tag
-import VerifiedGarbage.Proof.AesGcm.X86.Top
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Tag
+meta import VerifiedGarbage.Proof.AesGcm.X86.Tag
+public import VerifiedGarbage.Proof.AesGcm.X86.Top
+meta import VerifiedGarbage.Proof.AesGcm.X86.Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: the tag of a streaming state (`finTag`)
@@ -9,6 +17,8 @@ buffered (`text_len mod 16` bytes, or `aad_len mod 16` if there is no text)
 and absorbs it (`flush 16`), then writes the tag to `W + o` (`tag`): the
 full tag of the message the state represents (`finTag_pc`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

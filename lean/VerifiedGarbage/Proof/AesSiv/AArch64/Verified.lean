@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.AesSiv.AArch64.Init
-import VerifiedGarbage.Proof.AesSiv.AArch64.EncCT
-import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Siv.Contract
-import VerifiedGarbage.Proof.AesSiv.Scratch
+module
+
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Init
+public import VerifiedGarbage.Proof.AesSiv.AArch64.EncCT
+public import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Siv.Contract
+public import VerifiedGarbage.Proof.AesSiv.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64: `Verified`
@@ -15,6 +21,8 @@ satisfying each precondition, and the shared contracts of
 `Spec/Siv/Contract.lean`, with no stack: the calls keep their return address
 in `x30`, which the functions save in the working space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.AArch64
 

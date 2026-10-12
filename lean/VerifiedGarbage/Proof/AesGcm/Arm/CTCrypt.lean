@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.CTAbsorb
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTAbsorb
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTAbsorb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `crypt` and `tag` are constant time
@@ -7,6 +14,8 @@ Untrusted: everything here is checked by Lean. The invariants fix the
 context, the state, `W`, the stack pointer, the number of rounds (in `r8`),
 the data's address and length, and the length of the text so far modulo 16.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.CTFn
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.AesCcm.Scratch
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.CTFn
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.AesCcm.Scratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: `Verified`
@@ -13,6 +19,8 @@ time, states satisfying the preconditions, and the shared contracts of
 words, and `vg_cmac_aes_update` pushes two more for its own call of
 `vg_aes_ctr32`. `Frame.lean` allocates the working space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCcm.Arm
 

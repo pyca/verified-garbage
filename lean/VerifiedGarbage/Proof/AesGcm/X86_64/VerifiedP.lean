@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
-import VerifiedGarbage.Proof.AesGcm.ScratchP
-import VerifiedGarbage.Proof.AesGcm.X86_64.InitPCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
+public import VerifiedGarbage.Proof.AesGcm.ScratchP
+public import VerifiedGarbage.Proof.AesGcm.X86_64.InitPCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64, for a key context of either kind
@@ -13,6 +19,8 @@ for a key context of kind `M` (`GcmImpl.withBlk`): their code loads no
 `vg_aes_gcm_init`'s (`Verified.lean`, `Frame.lean`), and so they preserve
 what the ABI says (`sealM_correct`, …).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

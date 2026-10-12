@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesCtr.X86.Steps
-import VerifiedGarbage.Proof.AesCbc.X86.CT
+module
+
+public import VerifiedGarbage.Proof.AesCtr.X86.Steps
+meta import VerifiedGarbage.Proof.AesCtr.X86.Steps
+public import VerifiedGarbage.Proof.AesCbc.X86.CT
+meta import VerifiedGarbage.Proof.AesCbc.X86.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CTR on x86: one block, and constant time
@@ -12,6 +20,8 @@ output block is XORed into the data block, and the counter block is
 incremented (`Steps.lean`). `body_ct`: it is constant time, by the shared
 framework, with the call on the copy.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCtr.X86
 

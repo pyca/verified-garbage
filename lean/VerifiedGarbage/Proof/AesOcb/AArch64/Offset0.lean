@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.NonceBlock
-import VerifiedGarbage.Proof.Ocb.Stretch
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.NonceBlock
+public import VerifiedGarbage.Proof.Ocb.Stretch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: `Offset_0` (`offset0`)
@@ -10,6 +16,8 @@ two byte-reversed words, computes the third word of `Stretch`
 masked stages (`stage_ok`, `Proof.Ocb.shl_stages`), and stores the top two,
 byte-reversed, to `W + ofsO` and `W + o0O` (`offset0_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

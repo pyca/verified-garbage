@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Verified
-import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Verified
+public import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on x86, with its working space on the stack
@@ -13,6 +19,8 @@ the copied argument slots (three for `init`, six for `absorb`, five for
 where the pre- and postconditions read the buffers
 (`Proof/CmacAes/Stream/Scratch.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.X86
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Absorb
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Absorb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming AES-CMAC on ARMv7: `vg_cmac_aes_absorb` is correct
@@ -9,6 +15,8 @@ bytes (`nb`), and the last copy holds those back. If no data is left (`len ≤
 16 - h`), the calls chain nothing and the copy copies nothing, and the data is
 appended to the bytes held back (`repr_fill`); otherwise `repr_chain`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Stream.Arm
 

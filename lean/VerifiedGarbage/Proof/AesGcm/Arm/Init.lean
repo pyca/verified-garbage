@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Contract
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_init`
@@ -10,6 +16,8 @@ bytes 240–255 with `vg_aes_ctr32` on a zero block, from a zero counter block
 at `W + 96` (`init_wp`). The layout lemmas of `Lay` apply with the state
 taken to be `W + 16` (which `init` never touches).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

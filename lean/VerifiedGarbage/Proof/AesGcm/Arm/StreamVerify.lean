@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.StreamFinish
-import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.StreamFinish
+public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_stream_verify`
@@ -10,6 +16,8 @@ allowed, copies the received tag (at `tag`) to `W + 256`, writes the tag to
 `W` and compares the first `tag_len` bytes of each; if the length is not
 allowed the result is 0 (`streamVerify_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

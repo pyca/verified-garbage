@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.X86.Verified
-import VerifiedGarbage.Proof.AesXts.X86.CT
+module
+
+public import VerifiedGarbage.Proof.AesCbc.X86.Verified
+public import VerifiedGarbage.Proof.AesXts.X86.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # XTS-AES on x86: `Verified`
@@ -10,6 +16,8 @@ precondition, and the shared contracts of `Spec/Xts/Contract.lean`, with 24
 bytes of stack: the call of the block function pushes its five arguments and
 the return address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesXts.X86
 

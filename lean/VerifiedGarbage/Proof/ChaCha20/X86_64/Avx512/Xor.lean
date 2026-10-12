@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 keystream XOR on x86-64 with AVX-512
@@ -13,6 +23,8 @@ contract is that of `vg_chacha20_xor_avx2` (`Avx2.xorAvx2X86_64`), with 16
 bytes of stack below the return address, which this implementation does not
 use.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86_64.Avx512
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Mid
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Mid
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the blocks between the calls
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. What each block of
 instructions between the calls does (`aadArgs_ok` … `finArgs_ok`), from the
 arguments and the progress kept in `work`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

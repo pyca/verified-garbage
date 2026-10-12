@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Fn
-import VerifiedGarbage.Proof.AesGcm.X86.Contract
-import VerifiedGarbage.Proof.Gcm.Compose
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86.Contract
+public import VerifiedGarbage.Proof.Gcm.Compose
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: from the contracts to the pieces
@@ -10,6 +16,8 @@ share: the public data of a run (`pubOf`: the stack pointer and the stack
 arguments), a `Pc` with no state satisfying it (`Pc.vacuous`), and facts
 about the regions of the contracts.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

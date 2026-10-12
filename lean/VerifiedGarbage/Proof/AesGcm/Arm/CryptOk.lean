@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.Crypt
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.Crypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `crypt`
 
 Untrusted: everything here is checked by Lean (see `Crypt.lean`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

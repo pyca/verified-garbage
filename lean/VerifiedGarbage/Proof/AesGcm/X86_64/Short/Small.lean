@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: the counts, the buffers' setup and the tag
@@ -8,6 +14,8 @@ blocks kept in `W`; `zeroG_ok`: `G` zeroed; `copyAArgs_ok`, `textArgs_ok`:
 the arguments of `copyBytes` and `xorText`; `lens_ok`: the lengths block at
 the end of `G`; `tagK_ok`: the tag, `GHASH ⊕ K[0]`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

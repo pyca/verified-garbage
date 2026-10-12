@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
-import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
-import VerifiedGarbage.Proof.Framework.X86_64.Lane0
-import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
+public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
+public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One of the blocks after the last group
@@ -13,6 +19,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 and with `Y` (`xmm2`) added, multiplied by the power at `rax + r10` and added
 to the products in `xmm8` … `xmm10` (`Pclmul.acc_ok`); `Y` cleared.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86_64.StitchZH
 

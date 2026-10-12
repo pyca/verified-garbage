@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Crypt
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Crypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86: comparing the tags and masking the data
@@ -9,6 +15,8 @@ AES-GCM's `cmpTail` does (`cmp_ok`); `mask` ANDs every byte of the data with
 `0 − eax`: it keeps the data if `eax` is 1 and zeroes it if `eax` is 0
 (`mask_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

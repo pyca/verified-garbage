@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
-import VerifiedGarbage.Impl.Argon2.X86_64.AddressCache
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsPrepare
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
+public import VerifiedGarbage.Impl.Argon2.X86_64.AddressCache
+public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsPrepare
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Public cache counters and indexed-word arguments. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86_64.AddressCache
 

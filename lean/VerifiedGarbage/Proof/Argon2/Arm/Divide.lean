@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
-import VerifiedGarbage.Proof.Argon2.Divide
-import VerifiedGarbage.Impl.Argon2.Arm.Divide
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
+public import VerifiedGarbage.Proof.Argon2.Divide
+public import VerifiedGarbage.Impl.Argon2.Arm.Divide
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Fixed-time division on ARMv7
@@ -13,6 +19,8 @@ not yet consumed above the quotient of the `k` consumed ones, and `r0` their
 remainder: each bit is one step of binary long division
 (`Proof.Argon2.divide_step`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.Arm.Divide
 

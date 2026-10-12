@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinishCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinishCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinishCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_verify` is constant time
@@ -9,6 +17,8 @@ tag length (`tagLenOk`, checked by the taint analysis); the received tag is
 read from the same address (`r9`), the tag is computed from the same lengths
 and number of rounds (`finTag_rel`), and the comparison has no branch.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64
 

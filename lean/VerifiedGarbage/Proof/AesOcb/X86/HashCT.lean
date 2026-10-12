@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.X86.FrontCT
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.FrontCT
+meta import VerifiedGarbage.Proof.AesOcb.X86.FrontCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: `HASH` in constant time
@@ -10,6 +17,8 @@ the number of chunks and of their blocks is public (`hashLoop_ct`). The
 counts and the buffer's address are loaded from their slots. Then the rest
 (`hashRest_ct`) if there is one (`hashTail_ct`): `hash_ct`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

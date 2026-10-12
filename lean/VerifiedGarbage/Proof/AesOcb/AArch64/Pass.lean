@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: a scalar pass over whole blocks (`passScalar`)
@@ -10,6 +16,8 @@ replaces it with `fB` of it and the offset, and the checksum with `fC` of
 them (`BodyOk`: `xorOfs`, `addCk ++ xorOfs`, `xorOfs ++ addCk`); `passScalar_ok`
 gives the blocks and the checksum after all `m`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

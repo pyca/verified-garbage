@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.Ctrs
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.Ctrs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: a counter block `Ctrᵢ` (`ctrAt`)
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. `ctrAt` copies `Ctr₀` from
 `r0`): `Ctrᵢ`, for `i < 2^(8 min(q, 4))` (`ctrAt_ok`,
 `Proof.AesCcm.ctrBlock_split`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

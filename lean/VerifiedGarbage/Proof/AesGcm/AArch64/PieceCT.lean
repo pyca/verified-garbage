@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: the pieces are constant time
@@ -9,6 +16,8 @@ addresses, lengths and offsets) leaks the same: its code between calls by the
 taint analysis, from the registers those proofs pin, and its calls by their
 callees' proofs.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

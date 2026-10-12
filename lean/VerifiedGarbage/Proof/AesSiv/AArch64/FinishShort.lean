@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd
+module
+
+public import VerifiedGarbage.Proof.AesSiv.AArch64.S2vAd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64: finishing S2V with a string shorter than a block
@@ -10,6 +16,8 @@ the block. `shortMac` finalizes that one complete block from a zero state at
 `W + out`, which is then the CMAC of `dbl(D) xor pad(P)`
 (`Siv.s2vFinish_short`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.AArch64
 

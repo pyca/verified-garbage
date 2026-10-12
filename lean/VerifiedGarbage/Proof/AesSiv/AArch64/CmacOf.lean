@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesSiv.AArch64.Call
-import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbBlocks
-import VerifiedGarbage.Proof.AesSiv.CtrPart
+module
+
+public import VerifiedGarbage.Proof.AesSiv.AArch64.Call
+meta import VerifiedGarbage.Proof.AesSiv.AArch64.Call
+public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbBlocks
+meta import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbBlocks
+public import VerifiedGarbage.Proof.AesSiv.CtrPart
+meta import VerifiedGarbage.Proof.AesSiv.CtrPart
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64: the CMAC of a string (`cmacOf`)
@@ -11,6 +20,8 @@ the whole blocks before the last 1 to 16 (`Spec.Cmac.chainedLen`), into
 `x28`, chains the `nb` blocks with `vg_cmac_aes_update` and finalizes the
 rest with `vg_cmac_aes_finalize` (`Siv.cmacWith_chained`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.AArch64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.AArch64.Chunk
-import VerifiedGarbage.Proof.AesCcm.AArch64.Cmp
+module
+
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Chunk
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Cmp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on AArch64: counter mode (`ctr`)
@@ -10,6 +16,8 @@ blocks of the data in chunks (`ctrHead_ok`, by `chunk_ok`), then its last
 zero block (`tail_ok`): the data XORed with CCM's keystream from `Ctr₁`
 (`ctr_ok`), which is its encryption (`Proof.AesCcm.crypt_eq`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

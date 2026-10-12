@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesSiv.Arm.S2vAd
-import VerifiedGarbage.Spec.Siv.Contract
+module
+
+public import VerifiedGarbage.Proof.AesSiv.Arm.S2vAd
+public import VerifiedGarbage.Spec.Siv.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on ARMv7: S2V over the components of associated data
@@ -14,6 +20,8 @@ of them after the loop (`s2vAds_ok`). The code writes only within `W` but its
 first 16 bytes (the synthetic IV) and our caller's saved registers, and the
 stack below `sp` (`wR`); S2V's end also writes its result (`oR`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

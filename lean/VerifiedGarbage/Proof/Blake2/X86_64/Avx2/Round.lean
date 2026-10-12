@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
-import VerifiedGarbage.Proof.Framework.X86_64.YFrame
-import VerifiedGarbage.Proof.Blake2.Lanes
-import VerifiedGarbage.Impl.Blake2.X86_64.Avx2
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
+public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+public import VerifiedGarbage.Proof.Blake2.Lanes
+public import VerifiedGarbage.Impl.Blake2.X86_64.Avx2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2b on x86-64 with AVX2: a round
@@ -12,6 +18,8 @@ The rows of the work vector are in `ymm0`–`ymm3` (`words`, as for Argon2's
 diagonals are rotated into columns and back (`diag_words`, `undiag_words`);
 `round_ok` composes them into `Spec.Blake2.round` through `round_lanes`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.X86_64.Avx2
 

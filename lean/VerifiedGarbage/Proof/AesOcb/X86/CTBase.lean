@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.X86.Seal
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.Seal
+meta import VerifiedGarbage.Proof.AesOcb.X86.Seal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: constant time, the shared pieces
@@ -12,6 +19,8 @@ number of iterations (`CT.loopN`). Here: pinned registers (`pin1` …),
 `lNtz` (`lNtz_ct`), the calls of `vg_aes_*_blocks` (`callBlocks_ct`) and
 `padTo` (`padTo_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

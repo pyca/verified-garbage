@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
-import VerifiedGarbage.Proof.AesGcm.ScratchGather
-import VerifiedGarbage.Proof.AesGcm.CtxFrame
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
+public import VerifiedGarbage.Proof.AesGcm.ScratchGather
+public import VerifiedGarbage.Proof.AesGcm.CtxFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: the function
@@ -13,6 +19,8 @@ caller's `ebx`, `esi` and `edi` in it and lays out the call's nine arguments
 which keeps our frame above its arguments, and restores the registers
 (`ret_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

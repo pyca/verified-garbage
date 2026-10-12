@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Blocks
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Head
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Blocks
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Head
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: correctness
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. The entry, the bytes that end
 the block the text so far ends inside (if any), the whole blocks (if any),
 and the bytes left (`encrypt_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.X86_64.StreamTo
 

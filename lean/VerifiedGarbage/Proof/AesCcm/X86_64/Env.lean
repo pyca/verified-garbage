@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Contract
-import VerifiedGarbage.Proof.AesCcm.Ctr
-import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.AesCcm.X86_64
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Contract
+public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.AesCcm.X86_64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: where everything is
@@ -16,6 +22,8 @@ in `mutR` (and the data, and the stack below `SP`), so the slots, our
 caller's registers saved in `W` and the arguments stay as the entry left
 them.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

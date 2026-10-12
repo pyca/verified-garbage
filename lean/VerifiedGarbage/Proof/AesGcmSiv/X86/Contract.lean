@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.GcmSiv.Contract
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.GcmSiv.Contract
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86: the contracts the proofs are written against
@@ -14,6 +20,8 @@ the calls of `vg_aes_ctr32`, `vg_aes_expand_key` and `vg_ghash`, which make
 no calls, push their arguments and return addresses in the 28 bytes below
 `esp`, which no buffer overlaps, nor the return address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcmSiv.X86
 

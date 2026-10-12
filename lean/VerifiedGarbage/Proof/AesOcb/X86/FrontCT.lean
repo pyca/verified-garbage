@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.X86.CTBase
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.X86.CTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: the entry, the setup and `Offset_0` in constant time
@@ -10,6 +17,8 @@ nonce to an address computed from its length, loaded from its slot
 (`nonceBlock_ct`); then a call and `Offset_0`, which addresses only `W`
 (`nonce_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

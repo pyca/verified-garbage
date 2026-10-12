@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Env
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: saving and restoring our caller's registers
@@ -8,6 +14,8 @@ Untrusted: everything here is checked by Lean. Each function saves `x19`–`x28`
 and `x30` at `W + 128` (`save_ok`) and restores them (`restore_ok`,
 `exit_ok`); the pieces it runs in between never write there (`SavedAt.frame`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

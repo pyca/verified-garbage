@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesCcm.X86.TopCT
-import VerifiedGarbage.Proof.AesCcm.X86.Mask
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.TopCT
+meta import VerifiedGarbage.Proof.AesCcm.X86.TopCT
+public import VerifiedGarbage.Proof.AesCcm.X86.Mask
+meta import VerifiedGarbage.Proof.AesCcm.X86.Mask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: `vg_aes_ccm_seal` is constant time
@@ -9,6 +17,8 @@ arguments and `esp`), the start, the MAC, the tag, counter mode, the tag
 copied out and the exit are each constant time (`seal_top_ct`); so is `seal`
 (`seal_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

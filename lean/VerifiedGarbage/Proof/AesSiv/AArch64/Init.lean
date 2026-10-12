@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import VerifiedGarbage.Proof.AesSiv.Key
-import VerifiedGarbage.Impl.AesSiv.AArch64
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
+meta import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
+public import VerifiedGarbage.Proof.AesSiv.Key
+meta import VerifiedGarbage.Proof.AesSiv.Key
+public import VerifiedGarbage.Impl.AesSiv.AArch64
+meta import VerifiedGarbage.Impl.AesSiv.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on AArch64: `vg_aes_siv_init`
@@ -13,6 +23,8 @@ and restores the registers: the context is then that of the key
 time by the taint analysis, and the calls by their own proofs (`ek_rel`,
 `sub_rel`). A call (`bl`) stores nothing in memory, so no stack is used.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv.AArch64
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.PolyvalCT
-import VerifiedGarbage.Proof.Framework.X86_64.Narrow
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.PolyvalCT
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.PolyvalCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Narrow
+meta import VerifiedGarbage.Proof.Framework.X86_64.Narrow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86-64: `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open` are constant time
@@ -19,6 +27,8 @@ The taint analysis knows `W` as the second writable region, as it is for
 of the tag do not, and run the same from its states with `tag` only readable
 (`rel_narrow`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

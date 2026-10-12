@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.X86.OneEntry
-import VerifiedGarbage.Proof.AesGcm.X86.J0
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.OneEntry
+meta import VerifiedGarbage.Proof.AesGcm.X86.OneEntry
+public import VerifiedGarbage.Proof.AesGcm.X86.J0
+meta import VerifiedGarbage.Proof.AesGcm.X86.J0
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: `J₀` and the additional data of `seal` and `open`
@@ -8,6 +16,8 @@ Untrusted: everything here is checked by Lean. `oneAad` (`oneAad_pc`):
 `J₀` and the first counter block (`j0`), then the additional data absorbed
 (`absorb 16`) and padded (`flush 16`), all within `oF p`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

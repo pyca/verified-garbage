@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesSiv.X86.Enc
+module
+
+public import VerifiedGarbage.Proof.AesSiv.X86.Enc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV on x86: `vg_aes_siv_decrypt`
@@ -9,6 +15,8 @@ the data with CTR from it, finishes S2V with the plaintext into `W + 112`,
 compares the IVs without a branch and masks the data with the result
 (`decrypt_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Keep
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
-import VerifiedGarbage.Proof.AesGcm.X86_64.OpenCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Keep
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Keep
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OpenCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM's short path on x86-64: constant time
@@ -13,6 +22,8 @@ analysis checks the rest from those registers (`rel_piece`). `cond`'s
 branches are on the same public lengths in both runs (`cond_rel`); `open`'s
 last branch is on the comparison, which `open` may leak (`openShort_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

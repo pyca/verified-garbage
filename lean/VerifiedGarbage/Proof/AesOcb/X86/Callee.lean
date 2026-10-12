@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesOcb.X86.Entry
-import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
-import VerifiedGarbage.Proof.AesGcm.X86.Callee
-import VerifiedGarbage.Proof.Ocb.State
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.Entry
+public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+public import VerifiedGarbage.Proof.AesGcm.X86.Callee
+public import VerifiedGarbage.Proof.Ocb.State
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: the calls
@@ -15,6 +21,8 @@ and of the regions it is given (`BCall`, AES-GCM's `KeyCall`), and what it leave
 constant time (`blk_ct`, `key_ct`) by the callee's own proof, when the
 arguments are the same in both runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesOcb.X86
 

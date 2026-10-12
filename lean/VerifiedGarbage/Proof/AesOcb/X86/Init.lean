@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.AesOcb.X86.Calls
+module
+
+public import VerifiedGarbage.Proof.AesOcb.X86.Calls
+meta import VerifiedGarbage.Proof.AesOcb.X86.Calls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on x86: `vg_aes_ocb_init`
@@ -10,6 +17,8 @@ schedule (`vg_aes_expand_key_scratch`), then `L_* = ENCIPHER(K, zeros(128))`
 as one `Pc` (`init_pc`): correct (`init_correct`) and constant time
 (`init_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

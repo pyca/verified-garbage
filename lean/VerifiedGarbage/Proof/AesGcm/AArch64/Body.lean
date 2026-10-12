@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Text
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Text
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: the bodies of `encrypt` and `decrypt`
@@ -10,6 +16,8 @@ additional data padded if this is the first text (`fo`, `flush`), then the
 data encrypted and the ciphertext absorbed (`encBody_ok`), or the data
 absorbed and decrypted (`decBody_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

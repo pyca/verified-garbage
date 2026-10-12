@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Aad
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Aad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: `B₀`, the CBC-MAC and the tag (`b0 y`, `mac y`, `tag y`)
@@ -9,6 +15,8 @@ into it (`b0_ok`); `mac y` chains the formatted associated data and payload
 after it (`mac_ok`): the CBC-MAC of the formatted input (§6.1 steps 1–4);
 `tag y` XORs `CIPH_K(Ctr₀)` into it (`tag_ok`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86_64.Header
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Header
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86-64: the associated data (`aadHead y`, `aad y`)
@@ -9,6 +15,8 @@ encoding of the length `a` of the associated data to `B`, copies its first
 does that and chains the rest of the associated data, padded, if there is
 any associated data (`aad_ok`): the blocks `Proof.AesCcm.adataBlocks`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcm.Arm.CTOne
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTOne
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTOne
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_seal` and `vg_aes_gcm_open` are constant time
@@ -9,6 +17,8 @@ tags are equal, which its contract makes public: the comparison, done
 without a branch, is related across the runs by what each run computes
 (`rel_ghost`, `open_head`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

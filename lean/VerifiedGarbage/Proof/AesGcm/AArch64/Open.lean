@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_open`
@@ -12,6 +18,8 @@ state and absorbs the additional data,
 decrypted only if they are equal (`open_wp`), which is the one secret the
 code branches on, as the contract allows.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

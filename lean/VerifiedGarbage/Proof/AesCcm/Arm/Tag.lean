@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCcm.Arm.CtrAt
-import VerifiedGarbage.Proof.AesCcm.Arm.Callee
+module
+
+public import VerifiedGarbage.Proof.AesCcm.Arm.CtrAt
+public import VerifiedGarbage.Proof.AesCcm.Arm.Callee
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on ARMv7: the tag (`tag y`)
@@ -12,6 +18,8 @@ take the key schedule, the counter block at `W + 64` and the working space at
 from `Ctr₀` (`tag_ok`), whose first `t` bytes are the MAC encrypted
 (`Proof.AesCcm.take_xorFrom_zero`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

@@ -1,12 +1,18 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-import VerifiedGarbage.Impl.AesGcm.X86_64.Blocks
-import VerifiedGarbage.Spec.Gcm.Contract
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
-import VerifiedGarbage.Proof.Aes.X86_64.Variant
-import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-import VerifiedGarbage.Proof.Gcm.X86_64.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+public import VerifiedGarbage.Impl.AesGcm.X86_64.Blocks
+public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
+public import VerifiedGarbage.Proof.Aes.X86_64.Variant
+public import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+public import VerifiedGarbage.Proof.Gcm.X86_64.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: the functions called
@@ -19,6 +25,8 @@ the regions it is given: what it needs (`GhCall`, `CtrCall`, `KeyCall`) and
 what it leaves (`GhPost`, `CtrPost`, `KeyPost`); and that it is constant time
 (`gh_rel`, `ctr_rel`, `key_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

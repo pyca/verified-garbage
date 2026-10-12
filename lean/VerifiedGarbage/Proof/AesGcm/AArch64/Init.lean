@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+module
+
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_init`
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. The key schedule from
 `vg_aes_expand_key_scratch`, then the hash subkey `CIPH_K(0¹²⁸)` at byte 240 from
 `vg_aes_ctr32` over a zero block with a zero counter block (`init_wp`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

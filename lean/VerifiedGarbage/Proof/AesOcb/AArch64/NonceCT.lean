@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
-import VerifiedGarbage.Proof.AesOcb.AArch64.Nonce
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Nonce
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.Nonce
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: `Offset_0` is constant time
@@ -9,6 +17,8 @@ nonce's address and length from `W`: its first block is split there, and the
 rest runs from them (`nonceBlock_rel`); then the call (`callBlocks_rel`) and
 `offset0`, whose shifts by `bottom` are masks, not branches (`nonce_rel`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

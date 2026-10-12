@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Framework.X86.SseDword
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.SseDword
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2s on x86 (32-bit): what the doubleword lemmas leave out
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.X86.SseDword
 two shifts, and the rotation by 16 in both directions (the framework's
 `dword_rot16` rotates to the left; BLAKE2s rotates to the right).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.X86.CompressS
 

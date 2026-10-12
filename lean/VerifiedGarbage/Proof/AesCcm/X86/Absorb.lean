@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCcm.X86.Blocks
+module
+
+public import VerifiedGarbage.Proof.AesCcm.X86.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CCM on x86: a buffer padded, chained (`absorbPad y`)
@@ -10,6 +16,8 @@ of `vg_cmac_aes_update` (`absorbWhole_ok`), then its last `len mod 16` bytes
 copied into the zeroed block `B` (`absorbTail_ok`); together, the blocks of
 the padded string (`absorbPad_ok`, `Proof.AesCcm.blocks_pad16`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

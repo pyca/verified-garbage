@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Siv.Contract
-import VerifiedGarbage.Proof.Framework.Scratch
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Siv.Contract
+public import VerifiedGarbage.Proof.Framework.Scratch
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-SIV with its working space as an argument
@@ -25,6 +31,8 @@ lengths and the number of components cut to the width of a pointer, at most
 the ones the buffers and the list are made of, so this holds for any width
 (`components_congr_le`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesSiv
 

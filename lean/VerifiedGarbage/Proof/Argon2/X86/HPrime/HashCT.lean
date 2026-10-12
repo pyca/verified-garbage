@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Argon2.X86.HPrime.Next
-import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
+module
+
+public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Next
+meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.Next
+public import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
+meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Argon2 H′ on x86 (32-bit): the hash macros, in two runs
@@ -8,6 +16,8 @@ import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
 the digest, leak the same trace in two runs with the same `scratch` and
 stack pointer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.X86.HPrime
 

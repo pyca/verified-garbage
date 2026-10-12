@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.Blake2.X86_64.Avx512
-import VerifiedGarbage.Impl.Blake2.X86_64.Stream
-import VerifiedGarbage.Spec.Blake2.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.Blake2.X86_64.Avx512
+meta import VerifiedGarbage.Impl.Blake2.X86_64.Avx512
+public import VerifiedGarbage.Impl.Blake2.X86_64.Stream
+meta import VerifiedGarbage.Impl.Blake2.X86_64.Stream
+public import VerifiedGarbage.Spec.Blake2.Contract
+meta import VerifiedGarbage.Spec.Blake2.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # BLAKE2b on x86-64 with AVX-512: the code as literals
@@ -10,6 +20,8 @@ The compression function, and the streaming `update` and `finalize` calling
 it (`avx512`, the callee they are emitted with), as literals
 (`materialize_code`, `Proof/Framework/Lit.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.X86_64.Avx512
 

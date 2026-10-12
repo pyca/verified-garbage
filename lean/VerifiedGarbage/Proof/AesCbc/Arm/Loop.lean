@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.AesCbc.Mem32
-import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
-import VerifiedGarbage.Impl.AesCbc.Arm
+module
+
+public import VerifiedGarbage.Proof.AesCbc.Mem32
+public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
+public import VerifiedGarbage.Impl.AesCbc.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CBC on ARMv7: the contracts, and the loop for any mode on whole blocks
@@ -28,6 +34,8 @@ other modes' functions with the same arguments reuse the loop.
 blocks and sets Z when none are left (`BodyOk`), `whole body` meets the
 contract.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCbc.Arm
 

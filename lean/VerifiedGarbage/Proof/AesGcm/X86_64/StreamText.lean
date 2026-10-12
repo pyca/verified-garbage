@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCrypt
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCrypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86-64: the text of `stream_encrypt` and `stream_decrypt`
@@ -10,6 +16,8 @@ rest are as they were. The pieces: the additional data padded if there is
 no text yet (`start_ok`), the head (`sHead_ok`, then `part_ok`), the whole
 blocks in one call (`blocks_ok`), and the rest (`part_ok`): `streamText_ok`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

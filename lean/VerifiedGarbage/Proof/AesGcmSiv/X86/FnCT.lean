@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Open
-import VerifiedGarbage.Proof.AesGcmSiv.X86.CryptCT
+module
+
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Open
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Open
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.CryptCT
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.CryptCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM-SIV on x86: `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open` are constant time
@@ -12,6 +20,8 @@ a branch, and `mask` loops over the data's length alone (`mask_ct`); the
 other pieces are constant time from `Env` (`keys_ct`, `polyval_ct`,
 `tag_ct`, `crypt_ct`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

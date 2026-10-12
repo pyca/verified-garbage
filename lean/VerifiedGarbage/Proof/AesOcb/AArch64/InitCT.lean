@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
-import VerifiedGarbage.Proof.AesOcb.AArch64.Init
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Init
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.Init
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: `vg_aes_ocb_init` is constant time
@@ -8,6 +16,8 @@ Untrusted: everything here is checked by Lean. The blocks between the calls
 run from public registers (the arguments, then the scratch buffer, the key
 context and the rounds), and the calls have the same arguments in both runs.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

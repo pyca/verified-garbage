@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Tail
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Tail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on whole blocks, x86-64: the end
@@ -8,6 +14,8 @@ calls `vg_aes_ctr32` and `vg_ghash` on the blocks left (if any), and
 the counter mode and GHASH of the two parts make those of all the blocks
 (`ctr32_append`, `ghashFrom_append`): `encTail_ok`, `decTail_ok`.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

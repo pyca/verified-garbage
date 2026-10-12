@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesGcm.X86.Top
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86.Top
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM on x86: the entry of `seal` and `open`
@@ -10,6 +16,8 @@ the pieces keep as they write only within `D :: oF p`), and the entry
 (`oneEntry_pc`). The state is at `W + 16`. `W` is the last argument, which
 the pieces find at 8 in the public data (`pubSw`).
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

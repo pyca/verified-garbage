@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCallee
-import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
+module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCallee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: `vg_aes_gcm_seal_prepared` called
@@ -9,6 +15,8 @@ copies a short text to the output and encrypts it there by a call of
 `vg_aes_gcm_seal_prepared`, by its shared contract, as
 `Gather/SealCallee.lean` does for the other key contexts.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

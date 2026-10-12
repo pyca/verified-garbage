@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Gcm.OutOfPlace
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: the contract
@@ -12,6 +18,8 @@ pointer that its frame and its call use) implies (`Gather/Verified.lean`):
 `(ctx = x0, rounds = x1, nonce = x2, nonce_len = x3, aad = x4, aad_len = x5,
 src = x6, src_count = x7, dst = [sp], len = [sp + 8], tag = [sp + 16])`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesGcm.AArch64.Gather
 

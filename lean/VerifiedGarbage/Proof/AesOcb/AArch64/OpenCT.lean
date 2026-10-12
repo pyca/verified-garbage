@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.SealCT
-import VerifiedGarbage.Proof.AesOcb.AArch64.Open
+module
+
+public import VerifiedGarbage.Proof.AesOcb.AArch64.SealCT
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.SealCT
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Open
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.Open
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-OCB on AArch64: `vg_aes_ocb_open` is constant time
@@ -11,6 +19,8 @@ the tag's address from the stack and is split there (`recv_rel`); then
 and the comparison runs from it (`cmp_rel`); `mask` and the result read the
 comparison's result only as data.
 -/
+
+@[expose] public section
 
 set_option linter.unusedSimpArgs false
 

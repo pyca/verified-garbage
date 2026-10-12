@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.AesGcm.ScratchP
-import VerifiedGarbage.Spec.Gcm.Prepared
+module
+
+public import VerifiedGarbage.Proof.AesGcm.ScratchP
+public import VerifiedGarbage.Spec.Gcm.Prepared
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Prepared-context scratch contracts and locality -/
+
+@[expose] public section
+
 namespace VG.Proof.AesGcm
 open VG.Spec.Gcm
 

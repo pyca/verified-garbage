@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Common
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Common
+public import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming BLAKE2 on x86-64: `init`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.Range
 `keyBlock` zeroes the buffer (`zero_ok`) and copies the key into it
 (`keyLoop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2.X86_64.Stream.Init
 
