@@ -414,7 +414,7 @@ impl Drop for AesXts {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesXts, Impl, select};
+    use super::{AesXts, select};
     use crate::cpu::detected;
 
     /// A new key uses the implementation chosen for the CPU's features.
@@ -430,6 +430,7 @@ mod tests {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
     #[test]
     fn select_features() {
+        use super::Impl;
         use crate::aes::Backend;
         use crate::cpu::Features;
         assert_eq!(select(Features(0)), Impl::Blocks(Backend::Scalar));
