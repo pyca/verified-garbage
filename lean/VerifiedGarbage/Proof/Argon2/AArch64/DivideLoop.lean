@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.Divide
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.Divide
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Fixed-time division as a loop
 
 `Divide.loopCode` runs `bit 31` thirty-two times, doubling x0 after each step
 so that step `k` takes bit `31 - k` of the numerator, and counts x15 down. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.AArch64.Divide
 

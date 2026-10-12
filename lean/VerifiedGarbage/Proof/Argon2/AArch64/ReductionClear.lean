@@ -1,10 +1,18 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.ReductionInit
-import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.ReductionInit
+public import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Clearing the reduction accumulator in a loop of sixteen-word passes
 
 Each pass stores the zero in `x8` to sixteen words at the advancing pointer
 `x0` and counts `x9` down from eight; `x0` is restored after the last pass. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.AArch64.ReductionClear
 

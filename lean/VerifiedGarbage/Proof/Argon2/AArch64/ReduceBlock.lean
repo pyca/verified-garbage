@@ -1,12 +1,20 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.ReduceBlock
-import VerifiedGarbage.Proof.Argon2.AArch64.FillWritePrefix
-import VerifiedGarbage.Proof.Argon2.FinalReduction
-import VerifiedGarbage.Proof.Framework.Covers
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.ReduceBlock
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillWritePrefix
+public import VerifiedGarbage.Proof.Argon2.FinalReduction
+public import VerifiedGarbage.Proof.Framework.Covers
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The final block XOR as a loop of eight-word passes
 
 Each pass XORs eight words at the advancing pointers `x0` and `x1` and counts
 `x14` down from sixteen; the pointers are restored after the last pass. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.AArch64.ReduceBlock
 
