@@ -18,6 +18,7 @@ structure VerifyEntryPost (original : State) (B digest digestLen : Addr) (t : St
   g : word t.mem B Field.g.offset = original.gpr .rdi + original.gpr .rdx + original.gpr .rcx
   y : word t.mem B Field.y.offset = original.gpr .rdi + original.gpr .rdx + original.gpr .rcx + original.gpr .rdx
   x : word t.mem B Field.x.offset = original.gpr .rdi + original.gpr .rdx + original.gpr .rcx + original.gpr .rdx + original.gpr .rdx
+  unused : word t.mem B Field.out.offset = 0 ∧ word t.mem B Field.nonce.offset = 0
   saved : ∀ i < 6, word t.mem B (8 * i) = original.gpr (saved.getD i .rax)
   frame : Outside B 0 pWorkspace original.mem t.mem
   keep : Keep [.rax, .rdi, .r11] original t
@@ -50,6 +51,8 @@ theorem verifyEntry_ok {s0 : State} {B sp digest digestLen : Addr} {Z : Nat}
   rw [hreg .rdi (by decide), hreg .rdx (by decide), hreg .rcx (by decide), hreg .r8 (by decide)] at hmem3
   have hfields := verifyFieldMem_fields s2.mem B (s0.gpr .rdi) (s0.gpr .rdx) (s0.gpr .rcx) (s0.gpr .r8) digest digestLen
   rw [← hmem3] at hfields
+  have hunused := verifyFieldMem_unused s2.mem B (s0.gpr .rdi) (s0.gpr .rdx) (s0.gpr .rcx) (s0.gpr .r8) digest digestLen
+  rw [← hmem3] at hunused
   have hf3 : Outside B 256 (pWorkspace - 256) s2.mem s3.mem := by rw [hmem3]; exact verifyFieldMem_frame _ _ _ _ _ _ _ _
   have hk123 := hk12.trans hk3
   have h113 : s3.gpr .r11 = B := (hk3.gpr (by decide)).trans ((hk2.gpr (by decide)).trans h11)
@@ -64,7 +67,8 @@ theorem verifyEntry_ok {s0 : State} {B sp digest digestLen : Addr} {Z : Nat}
   refine ⟨hdi4, (hsame .p (by decide)).trans hfields.1, (hsame .pLen (by decide)).trans hfields.2.1,
     (hsame .qLen (by decide)).trans hfields.2.2.1, (hsame .signature (by decide)).trans hfields.2.2.2.1,
     (hsame .digest (by decide)).trans hfields.2.2.2.2.1, (hsame .digestLen (by decide)).trans hfields.2.2.2.2.2,
-    hptr.1, hptr.2.1, hptr.2.2.1, hptr.2.2.2, ?_, ?_, (hk123.trans hk4).mono (by decide)⟩
+    hptr.1, hptr.2.1, hptr.2.2.1, hptr.2.2.2, ?_, ?_, ?_, (hk123.trans hk4).mono (by decide)⟩
+  · exact ⟨(hsame .out (by decide)).trans hunused.1, (hsame .nonce (by decide)).trans hunused.2⟩
   · intro i hi
     exact ((hf4.word (Or.inl (by omega)) (by omega)).trans (entry_saved_frame hf3 hi)).trans
       ((hsaved i hi).trans (hk1.gpr (by simpa using saved_ne_r11 hi)))

@@ -31,7 +31,8 @@ def keyPointers : List Instr :=
 /-- Signing has five arguments on the stack, beginning with q_len. -/
 def signEntry : List Instr :=
   ([.mov .r11 (.mem (Crt.stk 4))] : List Instr) ++ save ++
-  ([.store (initial .out) .rdi, .store (initial .p) .rdx, .store (initial .pLen) .r8,
+  ([.mov32 .rax (.imm 0), .store (initial .signature) .rax,
+    .store (initial .out) .rdi, .store (initial .p) .rdx, .store (initial .pLen) .r8,
     .store (initial .nonce) .r9,
     .mov .rax (.mem (Crt.stk 1)), .store (initial .qLen) .rax,
     .mov .rax (.mem (Crt.stk 2)), .store (initial .digest) .rax,
@@ -40,7 +41,8 @@ def signEntry : List Instr :=
 /-- Verification has four arguments on the stack, beginning with digest. -/
 def verifyEntry : List Instr :=
   ([.mov .r11 (.mem (Crt.stk 3))] : List Instr) ++ save ++
-  ([.store (initial .p) .rdi, .store (initial .pLen) .rdx, .store (initial .qLen) .rcx,
+  ([.mov32 .rax (.imm 0), .store (initial .out) .rax, .store (initial .nonce) .rax,
+    .store (initial .p) .rdi, .store (initial .pLen) .rdx, .store (initial .qLen) .rcx,
     .store (initial .signature) .r8,
     .mov .rax (.mem (Crt.stk 1)), .store (initial .digest) .rax,
     .mov .rax (.mem (Crt.stk 2)), .store (initial .digestLen) .rax] : List Instr) ++ keyPointers

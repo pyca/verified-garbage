@@ -41,4 +41,13 @@ theorem verifyFieldMem_frame (mem : Mem) (B key plen qlen signature digest diges
   intro x hx
   simp only [verifyFieldMem, field_write_frame _ B _ _ x hx]
 
+theorem signFieldMem_unused (mem : Mem) (B out key plen nonce qlen digest digestLen : Addr) :
+    word (signFieldMem mem B out key plen nonce qlen digest digestLen) B Field.signature.offset = (0#64) := by
+  simp (disch := decide) only [signFieldMem, field_write_other, word_writeW_self]
+
+theorem verifyFieldMem_unused (mem : Mem) (B key plen qlen signature digest digestLen : Addr) :
+    word (verifyFieldMem mem B key plen qlen signature digest digestLen) B Field.out.offset = (0#64) ∧
+    word (verifyFieldMem mem B key plen qlen signature digest digestLen) B Field.nonce.offset = (0#64) := by
+  simp (disch := decide) only [verifyFieldMem, field_write_other, word_writeW_self, and_self]
+
 end VG.Proof.Dsa.X86_64

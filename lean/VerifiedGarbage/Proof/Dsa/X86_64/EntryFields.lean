@@ -7,26 +7,28 @@ open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
 def signFields : List Instr :=
-  [.store (SignVerify.initial .out) .rdi, .store (SignVerify.initial .p) .rdx,
+  [.mov32 .rax (.imm 0), .store (SignVerify.initial .signature) .rax,
+    .store (SignVerify.initial .out) .rdi, .store (SignVerify.initial .p) .rdx,
     .store (SignVerify.initial .pLen) .r8, .store (SignVerify.initial .nonce) .r9,
     .mov .rax (.mem (Crt.stk 1)), .store (SignVerify.initial .qLen) .rax,
     .mov .rax (.mem (Crt.stk 2)), .store (SignVerify.initial .digest) .rax,
     .mov .rax (.mem (Crt.stk 3)), .store (SignVerify.initial .digestLen) .rax]
 
 def verifyFields : List Instr :=
-  [.store (SignVerify.initial .p) .rdi, .store (SignVerify.initial .pLen) .rdx,
+  [.mov32 .rax (.imm 0), .store (SignVerify.initial .out) .rax, .store (SignVerify.initial .nonce) .rax,
+    .store (SignVerify.initial .p) .rdi, .store (SignVerify.initial .pLen) .rdx,
     .store (SignVerify.initial .qLen) .rcx, .store (SignVerify.initial .signature) .r8,
     .mov .rax (.mem (Crt.stk 1)), .store (SignVerify.initial .digest) .rax,
     .mov .rax (.mem (Crt.stk 2)), .store (SignVerify.initial .digestLen) .rax]
 
 def signFieldMem (mem : Mem) (B out key plen nonce qlen digest digestLen : Addr) : Mem :=
-  ((((((mem.writeW (off B Field.out.offset) out).writeW (off B Field.p.offset) key).writeW
+  (((((((mem.writeW (off B Field.signature.offset) (0#64)).writeW (off B Field.out.offset) out).writeW (off B Field.p.offset) key).writeW
     (off B Field.pLen.offset) plen).writeW (off B Field.nonce.offset) nonce).writeW
     (off B Field.qLen.offset) qlen).writeW (off B Field.digest.offset) digest).writeW
     (off B Field.digestLen.offset) digestLen
 
 def verifyFieldMem (mem : Mem) (B key plen qlen signature digest digestLen : Addr) : Mem :=
-  (((((mem.writeW (off B Field.p.offset) key).writeW (off B Field.pLen.offset) plen).writeW
+  (((((((mem.writeW (off B Field.out.offset) (0#64)).writeW (off B Field.nonce.offset) (0#64)).writeW (off B Field.p.offset) key).writeW (off B Field.pLen.offset) plen).writeW
     (off B Field.qLen.offset) qlen).writeW (off B Field.signature.offset) signature).writeW
     (off B Field.digest.offset) digest).writeW (off B Field.digestLen.offset) digestLen
 
@@ -58,7 +60,7 @@ theorem signFields_ok {s : State} {B sp qlen digest digestLen : Addr} {Z : Nat}
     show sp + BitVec.ofInt 64 8 = off sp 8 from rfl,
     show sp + BitVec.ofInt 64 16 = off sp 16 from rfl,
     show sp + BitVec.ofInt 64 24 = off sp 24 from rfl,
-    hw .out, hw .p, hw .pLen, hw .nonce, hw .qLen, hw .digest, hw .digestLen,
+    hw .signature, hw .out, hw .p, hw .pLen, hw .nonce, hw .qLen, hw .digest, hw .digestLen,
     hr 1 (by decide) (by decide), hr 2 (by decide) (by decide), hr 3 (by decide) (by decide),
     hstack _ _ _ 1 (by decide), hstack _ _ _ 2 (by decide), hstack _ _ _ 3 (by decide), hq, hd, hdl]
   rfl
@@ -81,7 +83,7 @@ theorem verifyFields_ok {s : State} {B sp digest digestLen : Addr} {Z : Nat}
   xrun [State.ea, SignVerify.initial, h11, hsp, fieldAddress,
     show sp + BitVec.ofInt 64 8 = off sp 8 from rfl,
     show sp + BitVec.ofInt 64 16 = off sp 16 from rfl,
-    hw .p, hw .pLen, hw .qLen, hw .signature, hw .digest, hw .digestLen,
+    hw .out, hw .nonce, hw .p, hw .pLen, hw .qLen, hw .signature, hw .digest, hw .digestLen,
     hr 1 (by decide) (by decide), hr 2 (by decide) (by decide),
     hstack _ _ _ 1 (by decide), hstack _ _ _ 2 (by decide), hd, hdl]
   rfl

@@ -33,10 +33,11 @@ def callHead (a b output : Operand) (o : Nat) : List Instr :=
     Core.operand result resultLen output ++ Core.enter o
 
 /-- The head can use any workspace offset shared by the two executions. -/
-theorem callHead_ok {p : Call3Public} {s : State} {a b output : Operand}
+theorem callHead_run {p : Call3Public} {s : State} {a b output : Operand}
     (ha : pointerFits a.pointer) (hb : pointerFits b.pointer) (ho : pointerFits output.pointer)
     (h : Call3Pre a b output p s) :
-    WP isa (.block (callHead a b output p.x.o)) s (PowerFinishPre p.toPowerFinishPublic) := by
+    WP isa (.block (callHead a b output p.x.o)) s fun t =>
+      PowerFinishPre p.toPowerFinishPublic t ∧ Frm p.x.B argumentRanges s.mem t.mem ∧ Keep coreRegs s t := by
   obtain ⟨hg, child, ⟨ba, bb, has, hbs, hbl, hel⟩, hp, hep, hop, hol, hout, hprefix⟩ := h
   have h256 : 256 ≤ slot p.x.w 8 := by unfold slot hdrBytes; omega
   have hlo : slot p.x.w 8 ≤ p.x.o := p.childLow
@@ -51,11 +52,11 @@ theorem callHead_ok {p : Call3Public} {s : State} {a b output : Operand}
   have hkt' : Keep coreRegs s t := (hk.trans hkt).mono (by decide)
   have hargs' : Arguments t.mem s.mem p.x.B a b output := hmem ▸ hargs
   have childt : ChildReady t.mem p.x.B p.x.o p.x.wx p.modulus p.minv := hmem ▸ hcu
-  refine ⟨⟨hct, ⟨hct.good, childt.modulus, childt.inverse⟩,
+  refine ⟨⟨⟨hct, ⟨hct.good, childt.modulus, childt.inverse⟩,
     ba, bb, hargs'.1.trans hp, hargs'.2.1.trans has.length,
     hargs'.2.2.1.trans hep, hargs'.2.2.2.1.trans hbs.length, hbl, hel, ?_, ?_⟩,
     ⟨⟨p.minv, hct, hargs'.2.2.2.2.1.trans hop, hargs'.2.2.2.2.2.trans hol⟩,
-      p.outputPositive, p.outputBound, p.outputWidth, ?_, hprefix⟩⟩
+      p.outputPositive, p.outputBound, p.outputWidth, ?_, hprefix⟩⟩, hft, hkt'⟩
   · rw [← hp]
     exact arguments_source hft hkt' (Nat.le_trans (by decide) p.extent) has.source
   · rw [← hep]
@@ -63,6 +64,12 @@ theorem callHead_ok {p : Call3Public} {s : State} {a b output : Operand}
   · intro j hj
     rw [hkt'.2.2]
     exact hout j hj
+
+theorem callHead_ok {p : Call3Public} {s : State} {a b output : Operand}
+    (ha : pointerFits a.pointer) (hb : pointerFits b.pointer) (ho : pointerFits output.pointer)
+    (h : Call3Pre a b output p s) :
+    WP isa (.block (callHead a b output p.x.o)) s (PowerFinishPre p.toPowerFinishPublic) :=
+  WP.mono (callHead_run ha hb ho h) (fun _ h => h.1)
 
 /-- The pointer-binding block addresses only saved fields and header slots;
 operand bytes are not inspected until the arithmetic call. -/

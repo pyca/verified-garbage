@@ -19,6 +19,7 @@ structure SignEntryPost (original : State) (B qlen digest digestLen : Addr) (t :
   g : word t.mem B Field.g.offset = original.gpr .rdx + original.gpr .r8 + qlen
   y : word t.mem B Field.y.offset = original.gpr .rdx + original.gpr .r8 + qlen + original.gpr .r8
   x : word t.mem B Field.x.offset = original.gpr .rdx + original.gpr .r8 + qlen + original.gpr .r8 + original.gpr .r8
+  unused : word t.mem B Field.signature.offset = 0
   saved : ∀ i < 6, word t.mem B (8 * i) = original.gpr (saved.getD i .rax)
   frame : Outside B 0 pWorkspace original.mem t.mem
   keep : Keep [.rax, .rdi, .r11] original t
@@ -52,6 +53,8 @@ theorem signEntry_ok {s0 : State} {B sp qlen digest digestLen : Addr} {Z : Nat}
   rw [hreg .rdi (by decide), hreg .rdx (by decide), hreg .r8 (by decide), hreg .r9 (by decide)] at hmem3
   have hfields := signFieldMem_fields s2.mem B (s0.gpr .rdi) (s0.gpr .rdx) (s0.gpr .r8) (s0.gpr .r9) qlen digest digestLen
   rw [← hmem3] at hfields
+  have hunused := signFieldMem_unused s2.mem B (s0.gpr .rdi) (s0.gpr .rdx) (s0.gpr .r8) (s0.gpr .r9) qlen digest digestLen
+  rw [← hmem3] at hunused
   have hf3 : Outside B 256 (pWorkspace - 256) s2.mem s3.mem := by rw [hmem3]; exact signFieldMem_frame _ _ _ _ _ _ _ _ _
   have hk123 := hk12.trans hk3
   have h113 : s3.gpr .r11 = B := (hk3.gpr (by decide)).trans ((hk2.gpr (by decide)).trans h11)
@@ -67,7 +70,8 @@ theorem signEntry_ok {s0 : State} {B sp qlen digest digestLen : Addr} {Z : Nat}
     (hsame .pLen (by decide)).trans hfields.2.2.1, (hsame .nonce (by decide)).trans hfields.2.2.2.1,
     (hsame .qLen (by decide)).trans hfields.2.2.2.2.1, (hsame .digest (by decide)).trans hfields.2.2.2.2.2.1,
     (hsame .digestLen (by decide)).trans hfields.2.2.2.2.2.2, hptr.1, hptr.2.1, hptr.2.2.1, hptr.2.2.2,
-    ?_, ?_, (hk123.trans hk4).mono (by decide)⟩
+    ?_, ?_, ?_, (hk123.trans hk4).mono (by decide)⟩
+  · exact (hsame .signature (by decide)).trans hunused
   · intro i hi
     exact ((hf4.word (Or.inl (by omega)) (by omega)).trans (entry_saved_frame hf3 hi)).trans
       ((hsaved i hi).trans (hk1.gpr (by simpa using saved_ne_r11 hi)))
