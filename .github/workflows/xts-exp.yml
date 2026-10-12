@@ -1,7 +1,7 @@
 name: xts-exp
 on:
   push:
-    branches: [xts-exp]
+    branches: [xts-exp4]
 permissions: {}
 jobs:
   run:
@@ -15,4 +15,4 @@ jobs:
         with:
           persist-credentials: false
       - run: grep -m1 "model name" /proc/cpuinfo
-      - run: cd exp && cargo run --release -q --bin zen3 && cargo run --release -q --bin zen3
+      - run: cd exp && cargo build --release -q --bins && ./target/release/aesni && ./target/release/aesni
