@@ -1,0 +1,20 @@
+name: xts-exp
+on:
+  push:
+    branches: [xts-exp2]
+permissions: {}
+jobs:
+  run:
+    strategy:
+      fail-fast: false
+      matrix:
+        i: [1, 2, 3, 4, 5, 6]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: grep -m1 "model name" /proc/cpuinfo
+      - run: cd exp && cargo build --release -q --bins
+      - run: cd exp && for c in "" "aes,avx,avx2,ssse3,vaes" "aes,ssse3"; do echo "VG_CPU_FEATURES=$c"; VG_CPU_FEATURES=$c ./target/release/real; done
+      - run: cd exp && ./target/release/zen3
