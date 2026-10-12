@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_bit_unpack` and `vg_mldsa_unpack_t1`
@@ -9,6 +16,8 @@ is proven once for every width (`unpackLoop_ok`); `unpackLoop_buFin_ok` states
 what the loop of `buFin B` does for any state, which `vg_mldsa_bit_unpack` (by
 its five cases, in its frame) and ExpandMask use.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Pack
 

@@ -1,7 +1,15 @@
-import VerifiedGarbage.Impl.Ecdsa.Verify.P192.AArch64
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.AArch64
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # General complete addition for p192 verification -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64.P192
 

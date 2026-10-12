@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.Arm.Env
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Env
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: sequences of field operations
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.Arm.Env
 Slot-indexed operations interpret the implementation's field-operation lists
 as environment updates.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

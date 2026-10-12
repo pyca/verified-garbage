@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Blocks
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Blocks
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86-64: the messages of steps d, f and h.3
@@ -10,6 +16,8 @@ private key and `h` copied (`tail_ok`), or, if `wide`, the private key, a
 zero word and the digest, which leaves `h` as `Q - D` zero bytes then the
 digest (`tailW_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86.EncapsBody
-import VerifiedGarbage.Proof.MlKem1024.X86.Kem
-import VerifiedGarbage.Spec.MlKem.Contract1024
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86.EncapsBody
+public import VerifiedGarbage.Proof.MlKem1024.X86.Kem
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): `vg_mlkem1024_encaps`
@@ -10,6 +16,8 @@ the facts of its layout, computed from its offsets; the contract's
 precondition implies `TPre (Y L1024)` (`pre_of`) and its public data `TPub`
 (`pub_of`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.X86.Encaps
 

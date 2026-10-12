@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Hash
-import VerifiedGarbage.Proof.Ed448.X86_64.Words57
-import VerifiedGarbage.Proof.Ed448.Prune
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Hash
+public import VerifiedGarbage.Proof.Ed448.X86_64.Words57
+public import VerifiedGarbage.Proof.Ed448.Prune
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on x86-64: `s`
@@ -9,6 +15,8 @@ The first 57 bytes of the hash in the frame, loaded into registers
 (`loads_ok`), pruned (`mods_ok`) and stored at `s` (`stores_ok`): the number
 of the 57 bytes at `s` is `Spec.Ed448.prune` of the hash (`prune_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.SignCached
 

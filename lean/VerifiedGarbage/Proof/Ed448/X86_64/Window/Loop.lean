@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Round
-import VerifiedGarbage.Proof.Ed448.VerifyEq
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Round
+public import VerifiedGarbage.Proof.Ed448.VerifyEq
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The joint window loop represents `[S]B + [k](-A)` for valid decoded points. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed448.X86_64.Window
 
 open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64 VG.Impl.Ed448.X86_64.Window

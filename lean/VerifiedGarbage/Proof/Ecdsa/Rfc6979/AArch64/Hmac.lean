@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: one HMAC
@@ -11,6 +17,8 @@ above HMAC's working space (`DataOk`), written to the frame at `dst`: HMAC's
 They change only HMAC's states and working space (the first 2256 bytes of
 `scratch`), the 16 bytes below the frame, and `dst` (`hmac_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

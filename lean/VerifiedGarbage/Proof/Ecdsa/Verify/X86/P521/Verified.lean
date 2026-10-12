@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Contract
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsP
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsN
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
+public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsP
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsP
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsN
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsN
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over P-521 on x86 (32-bit): `Verified`
@@ -20,6 +34,8 @@ the signature affect it too). The proof is against `verifyX86`, whose
 arguments' slots are readable, and moves to the shared contract, which makes
 them writable, by `Verified.narrowTo`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86.P521
 

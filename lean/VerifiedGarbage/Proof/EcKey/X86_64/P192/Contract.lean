@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.EcKey.P192
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Spec.EcKey.P192
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # p192 public keys on x86-64: the contract the proof is written against
@@ -9,6 +15,8 @@ The facts of `Spec.EcKey.P192.inst.publicKeyContract` for x86-64, by name:
 `vg_ec_p192_public_key(out = rdi, d = rsi, scratch = rdx)`, the result in
 `eax`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.X86_64.P192
 

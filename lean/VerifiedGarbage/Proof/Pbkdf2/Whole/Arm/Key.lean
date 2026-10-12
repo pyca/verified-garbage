@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Common
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Common
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: the prologue and the key
@@ -10,6 +16,8 @@ amount of working space before the save area that an immediate offset reaches)
 and keeps the arguments in registers; then the key is the password, or its
 digest if it is longer than a block (`key_ok`): either gives the same `K₀`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.Arm
 

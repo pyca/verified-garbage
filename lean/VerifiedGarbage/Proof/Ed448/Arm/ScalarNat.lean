@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Proof.X25519.Arm.Limbs
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Impl.Ed448.Arm.Scalar
+module
+
+public import VerifiedGarbage.Proof.Ed448.Scalar
+public import VerifiedGarbage.Proof.X25519.Arm.Limbs
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Impl.Ed448.Arm.Scalar
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar arithmetic on ARMv7: the numbers
@@ -13,6 +19,8 @@ of `c = 2^446 - L` (`cLimb`), each sum below `2^32 - 2^16`; their number is
 below `2L` and congruent to `w + 2^16 r` (`fold_facts`). The limbs of
 `K = 2^448 - L` (`kLimb`) for the conditional subtraction.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

@@ -1,8 +1,19 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Common
-import VerifiedGarbage.Proof.MlKem.Arm.Sample
-import VerifiedGarbage.Proof.MlDsa.Sample.Hash
-import VerifiedGarbage.Proof.MlDsa.Sample.Mem
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Common
+meta import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Common
+public import VerifiedGarbage.Proof.MlKem.Arm.Sample
+meta import VerifiedGarbage.Proof.MlKem.Arm.Sample
+public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+meta import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+meta import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: the sampling functions' SHAKE
@@ -18,6 +29,8 @@ stack pointer. `sponge` then leaves `outlen` bytes of SHAKE of the message at
 `scratch + 840` (`sponge_ok`, from `J0` to `J6`), and two runs of it from
 calls that agree leak the same (`sponge_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sample
 

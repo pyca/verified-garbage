@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Ops
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Ops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Build all sixteen projective multiples without inversions. Invalid decoded points
 still execute safely; group membership is needed only when interpreting the final equation. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed448.X86_64.Window
 
 open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64 VG.Impl.Ed448.X86_64.Window

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ecdh.X86.WindowPow
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86.WindowPow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # ECDH correctness with the x86 P-256 signed-window multiplier -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdh.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
 open VG.Impl.Ecdsa.X86

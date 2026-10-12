@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The shared RFC 6979 contract with the x86 P-256 comb table -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86
 open VG.Proof.Ecdsa.X86 (p256W p256W_length p256Comb_consts combSatState combSat_arg combSatMem_held)

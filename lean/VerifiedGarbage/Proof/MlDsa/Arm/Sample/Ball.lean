@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallLoop
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_sample_in_ball`, correctness
@@ -10,6 +16,8 @@ the first 8 bytes of output as a little-endian number), and the 264 iterations
 of the loop (`BAt`, `body_ok`), after which `c` and `i` are what `ballFold`
 computes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sample.Ball
 

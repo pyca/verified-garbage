@@ -1,12 +1,21 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.PointDecode
-import VerifiedGarbage.Proof.Ed25519.Arm.DecodeKeep
-import VerifiedGarbage.Impl.Ed25519.Arm.FieldCheck
-import VerifiedGarbage.Proof.Ed25519.Arm.Field
-import VerifiedGarbage.Proof.Ed25519.Arm.Freeze
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.Decode
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointDecode
+public import VerifiedGarbage.Proof.Ed25519.Arm.DecodeKeep
+public import VerifiedGarbage.Impl.Ed25519.Arm.FieldCheck
+public import VerifiedGarbage.Proof.Ed25519.Arm.Field
+public import VerifiedGarbage.Proof.Ed25519.Arm.Freeze
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Proof.Ed25519.Decode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.SplitYSign`. -/
+
+@[expose] public section
+
 section
 /-! Separate bit 255 while retaining all bounded field limbs. -/
 namespace VG.Proof.Ed25519.Arm

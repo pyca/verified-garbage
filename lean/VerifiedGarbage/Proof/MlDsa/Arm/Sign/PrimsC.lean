@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Prims
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Prims
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: calls of the rounding functions, the norm check and `SimpleBitPack`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Prims
 As `Prims.lean`, for `vg_mldsa_high_bits`, `vg_mldsa_low_bits`,
 `vg_mldsa_norm_lt`, `vg_mldsa_make_hint` and `vg_mldsa_simple_bit_pack`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

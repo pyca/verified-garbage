@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! One joint window: four doublings followed by two selected additions. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed448.X86_64.Window
 
 open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64 VG.Impl.Ed448.X86_64.Window

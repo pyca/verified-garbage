@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.Arm.Field
-import VerifiedGarbage.Proof.X25519.Arm.Pass
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Field
+public import VerifiedGarbage.Proof.X25519.Arm.Pass
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: multiplication-row carry propagation
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X25519.Arm.Pass
 The instruction rules and carry-chain arithmetic are shared with X25519. This
 pass handles the 28 limbs of X448.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

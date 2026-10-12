@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Hash
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Hash
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: the scalar calls
@@ -15,6 +21,8 @@ one of its inputs); `wipe_step`: the locals cleared. Each through
 `Whole.call_ok` with the callee's contract on this target, and stating what
 it may write.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.SignCached
 

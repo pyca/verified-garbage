@@ -1,11 +1,20 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
-import VerifiedGarbage.Proof.Sha512.Arm.Stream.Init
-import VerifiedGarbage.Proof.Sha512.Arm.Stream.Update
-import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
-import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.Spec.Sha512.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
+public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Init
+public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Update
+public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
+public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Spec.Sha512.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.Whole.Hash`. -/
+
+@[expose] public section
+
 section
 namespace VG.Proof.Ed25519.Arm.Whole
 open VG VG.Arm VG.Impl.Sha512.Arm.Stream

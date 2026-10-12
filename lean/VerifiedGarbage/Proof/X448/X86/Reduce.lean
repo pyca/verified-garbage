@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.X448.X86.Columns
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Columns
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): reducing product limbs
 
 The upper half folds using `2^448 = 2^224 + 1` modulo the field prime.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

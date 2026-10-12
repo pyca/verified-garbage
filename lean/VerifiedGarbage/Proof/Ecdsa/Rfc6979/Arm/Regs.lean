@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: addresses and registers
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 The code that sets one register to an address in `scratch` or the frame
 (`scrAt_ok`, `fpAdd_ok`), and the addresses those registers hold.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
 

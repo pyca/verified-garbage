@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Hash
-import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Hash
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Hash
+public import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
+meta import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on 32-bit ARM: `c̃′ = c̃`
@@ -8,6 +16,8 @@ import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
 `cmp_step`), and ANDs `r11` with 1 exactly when that is 0 (`cmpAnd_ok`),
 without a branch.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Verify
 

@@ -1,12 +1,18 @@
-import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86
-import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Proof.Framework.X86.Syms
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Covers
-import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Contract
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Framework.X86.Syms
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): where everything is
@@ -27,6 +33,8 @@ memory changed only in `out`, `scratch` and the stack.
 Code that writes only regions apart from the saved registers (`Safe`) keeps
 it (`Ctx.keep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 

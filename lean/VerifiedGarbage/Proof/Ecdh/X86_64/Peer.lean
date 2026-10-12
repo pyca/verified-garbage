@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
-import VerifiedGarbage.Impl.Ecdh.X86_64
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
+public import VerifiedGarbage.Impl.Ecdh.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on x86-64: reading and checking the peer's key
@@ -13,6 +19,8 @@ Each check ands a mask into the flag, as the signature's checks do
 (`checkLead_ok`), a number is below `p` (`checkLtP_ok`) and a number is
 zero (`checkZero_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64
 

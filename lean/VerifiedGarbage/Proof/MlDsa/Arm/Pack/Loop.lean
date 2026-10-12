@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Stream
-import VerifiedGarbage.Proof.MlDsa.Pack.Bits
-import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Stream
+public import VerifiedGarbage.Proof.MlDsa.Pack.Bits
+public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: the loops over the groups
@@ -12,6 +18,8 @@ and any `ld` or `fin`, from the group lemmas of `Stream.lean`, and for any
 state that permits the accesses: they change only the output, the registers of
 `packRegs` or `unpackRegs` and the flags.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Pack
 

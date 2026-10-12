@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointInput
-import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGeneratorTable
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointInput
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGeneratorTable
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Reuse the verifier contract's existing width-seven comb table and certificate. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64

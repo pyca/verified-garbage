@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.X86.SignCached.Hash
-import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
-import VerifiedGarbage.Proof.Ed448.X86.Callee
-import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
-import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Hash
+public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
+public import VerifiedGarbage.Proof.Ed448.X86.Callee
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached key on x86 (32-bit): the scalar calls
@@ -13,6 +19,8 @@ leaves (`…_call`), for `r` (`vg_ed448_scalar_reduce` into the second half of
 `out`), `R` (`base`, into the first half), `k` (`vg_ed448_scalar_reduce`
 into the frame at `K`) and `S` (`vg_ed448_scalar_mul_add` over `r`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86.SignCached
 

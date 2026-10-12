@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.SampC
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.SampC
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on 32-bit ARM: after the samplers
@@ -9,6 +15,8 @@ are (`KC5`): the first `nz` of `z` in the NTT domain, `c` in it or not, and
 the first `nr` rows of `w′₁` packed to `B`. Here: `ẑ[j] = NTT(z[j])` and `ĉ =
 NTT(c)` (`nttZ_piece`, `nttC_piece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Verify
 

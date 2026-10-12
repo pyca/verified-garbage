@@ -1,11 +1,24 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Impl.Ed25519.Arm.Field
-import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
+meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
+public import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Impl.Ed25519.Arm.Field
+meta import VerifiedGarbage.Impl.Ed25519.Arm.Field
+public import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
+meta import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The calls of the point arithmetic and the inversion chain as literals
 (`materialize_value`, `materialize_code`), which the literals of the code
 that contains them read rather than build each field multiplication again. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.Arm
 
 materialize_code Point16.addCall

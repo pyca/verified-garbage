@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.X448.Arm.Restore
-import VerifiedGarbage.Proof.X448.Arm.Setup
-import VerifiedGarbage.Proof.X448.Arm.Output
-import VerifiedGarbage.Proof.X448.Arm.Freeze
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Restore
+public import VerifiedGarbage.Proof.X448.Arm.Setup
+public import VerifiedGarbage.Proof.X448.Arm.Output
+public import VerifiedGarbage.Proof.X448.Arm.Freeze
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: the result and restored registers
@@ -10,6 +16,8 @@ The final multiplication, canonical reduction and encoding produce the affine
 coordinate. The eight callee-saved registers are then restored from the
 disjoint working space.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

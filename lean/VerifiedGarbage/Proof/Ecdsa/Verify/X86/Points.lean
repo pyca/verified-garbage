@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Scalars
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Scalars
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on x86 (32-bit): `[u]G + [v]Q`
@@ -12,6 +18,8 @@ complete addition of `U` and `R`, into `R`), for any invariants of the two
 ladders: `R` holds `rcbAdd` of what the two ladders end with. `Main.lean`
 gives the invariants of the group law.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86
 

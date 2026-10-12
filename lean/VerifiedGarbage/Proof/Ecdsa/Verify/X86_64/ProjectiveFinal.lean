@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveArithmetic
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFlags
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveArithmetic
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFlags
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86_64
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass

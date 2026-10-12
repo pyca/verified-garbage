@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import VerifiedGarbage.Proof.Weierstrass.Words32
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.Words32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA: numbers of 32-bit words
@@ -11,6 +17,8 @@ another by a mask, word by word (`sel_mask32`, `wsum_sel`), and the number
 that `4 k` bytes are, big-endian, from the byte reversals of their words
 (`ofBytes_words`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979
 

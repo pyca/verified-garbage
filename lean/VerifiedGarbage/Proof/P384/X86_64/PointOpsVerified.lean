@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.P384.X86_64.PointOpsLay
-import VerifiedGarbage.Proof.P384.X86_64.PointOpsLit
-import VerifiedGarbage.Proof.P384.X86_64.JointTiming
-import VerifiedGarbage.Proof.P384.X86_64.JacTiming
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.P384.X86_64.PointOpsLay
+public import VerifiedGarbage.Proof.P384.X86_64.PointOpsLit
+public import VerifiedGarbage.Proof.P384.X86_64.JointTiming
+public import VerifiedGarbage.Proof.P384.X86_64.JacTiming
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-384's point functions on x86-64: their `Verified`
@@ -15,6 +21,8 @@ given Fermat's little theorem in `Fin p`, from the curve's group law).
 The additions, whose branches depend on the points, are constant time by
 relating two runs from states whose points agree (`FieldPair`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P384.X86_64.PointOps
 

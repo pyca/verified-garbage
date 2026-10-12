@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.X86.Field
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Field
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): the field functions' context
@@ -8,6 +14,8 @@ working space (`FnCtx`): their arguments (`ArgArea`) and the offsets of the
 result and the first operand, which fit below their own working space.
 `argPtr_ok` points a register at an element from its offset.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

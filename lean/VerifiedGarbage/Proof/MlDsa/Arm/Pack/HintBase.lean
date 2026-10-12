@@ -1,10 +1,16 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Hint
-import VerifiedGarbage.Proof.MlKem.Arm.Common
-import VerifiedGarbage.Proof.MlKem.Arm.CallF
-import VerifiedGarbage.Proof.MlDsa.Pack.Hint
-import VerifiedGarbage.Proof.MlDsa.Pack.Mem
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Hint
+public import VerifiedGarbage.Proof.MlKem.Arm.Common
+public import VerifiedGarbage.Proof.MlKem.Arm.CallF
+public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
+public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: what the proofs of `HintBitPack` and `HintBitUnpack` share
@@ -13,6 +19,8 @@ The comparisons of small numbers (`ltBit`), pointers that do not wrap around,
 the parameters, and the frames: the words a push stores, which the body and
 the pop reload.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Pack.Hint
 

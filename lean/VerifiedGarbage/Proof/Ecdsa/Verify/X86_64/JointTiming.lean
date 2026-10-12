@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Split the public joint verifier at the scalar and point-operation boundaries. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.X86_64
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.Ecdsa.X86_64 VG.Proof.Weierstrass.X86_64

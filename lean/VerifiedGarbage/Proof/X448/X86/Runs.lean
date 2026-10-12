@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.X448.X86.CallCT
-import VerifiedGarbage.Proof.X448.X86.Square
+module
+
+public import VerifiedGarbage.Proof.X448.X86.CallCT
+meta import VerifiedGarbage.Proof.X448.X86.CallCT
+public import VerifiedGarbage.Proof.X448.X86.Square
+meta import VerifiedGarbage.Proof.X448.X86.Square
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Field arithmetic on x86 (32-bit): two runs, piece by piece
@@ -18,6 +26,8 @@ and the memory but the writable regions and the 20 bytes of stack below the
 return address, where the calls of the field functions put their arguments.
 Field operations (`ops_tr`) leak the same in two runs in it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

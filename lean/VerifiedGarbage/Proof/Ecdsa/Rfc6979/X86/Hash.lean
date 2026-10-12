@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Common
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Common
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the hash function
@@ -18,6 +24,8 @@ sizes of SHA-256, SHA-384 or SHA-512, no shorter than the curve's scalars
 than SHA-512's. Each hash function's file builds one for each implementation
 of its compression function.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 

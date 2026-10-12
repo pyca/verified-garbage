@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.Message
-import VerifiedGarbage.Proof.MlKem.Arm.Keccak
-import VerifiedGarbage.Proof.MlKem.Arm.Common
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlDsa.Message.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.Message
+public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
+public import VerifiedGarbage.Proof.MlKem.Arm.Common
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MlDsa.Message.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: where everything is
@@ -18,6 +24,8 @@ the stack pointer, `r7` pointing at `X`, the callee-saved registers, the
 saves, and that memory changed only in `scratch` and `STK`. `Ctx.keep`
 carries it over code that writes only within `W` and `STK`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Message
 

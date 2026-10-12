@@ -1,11 +1,21 @@
-import VerifiedGarbage.Proof.Idea.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.Taint
+module
+
+public import VerifiedGarbage.Proof.Idea.Arm.Lit
+meta import VerifiedGarbage.Proof.Idea.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Constant-time IDEA programs on ARMv7
 
 Only the stack pointer, the argument pointers and `n` are public; the key,
 the subkeys and the data may differ between runs.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.Arm
 

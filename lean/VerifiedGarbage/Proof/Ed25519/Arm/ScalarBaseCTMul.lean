@@ -1,8 +1,20 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
-import VerifiedGarbage.Proof.Ed25519.Arm.PointMulLoop
-import VerifiedGarbage.Proof.Ed25519.Arm.PointMul
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointMulLoop
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointMulLoop
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointMul
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointMul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarBaseCTInit`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.Arm.ScalarBaseCTLoop`. -/
 section

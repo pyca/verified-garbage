@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Idea.X86_64.Block
-import VerifiedGarbage.Proof.Idea.X86_64.ConstantTime
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Idea.Contract
+module
+
+public import VerifiedGarbage.Proof.Idea.X86_64.Block
+public import VerifiedGarbage.Proof.Idea.X86_64.ConstantTime
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Idea.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA ECB on x86-64
@@ -14,6 +20,8 @@ says how many remain, that the ones before are transformed and the ones
 after not yet; each iteration is `cryptBlock_run`. `ecb_verified` relates
 it to the shared contract with the scratch buffer as an argument.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.X86_64
 

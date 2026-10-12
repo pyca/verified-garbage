@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
+module
+
+public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
+meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P-521 on x86-64 with BMI2 and ADX: summaries of the shared loops
@@ -7,6 +14,8 @@ As `TaintSums.lean`, for `p521x` (P-521 multiplying modulo `p` with BMI2 and
 ADX), whose loops are the same but for their multiplications; ECDH's are in
 `TaintSumsWinAdx`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P521.X86_64
 

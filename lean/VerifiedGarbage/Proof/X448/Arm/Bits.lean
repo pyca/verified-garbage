@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.X448.Arm.BitBody
-import VerifiedGarbage.Proof.X448.Arm.Clamp
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.BitBody
+public import VerifiedGarbage.Proof.X448.Arm.Clamp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: the scalar's decoded bits
 
 The loop expands all 56 bytes before applying the RFC 7748 scalar clamp.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

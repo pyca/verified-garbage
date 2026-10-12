@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.X86.Shake.Layout
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.OffsetBelow
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Layout
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.OffsetBelow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on x86 (32-bit): a complete operation's frame, from its caller
@@ -14,6 +20,8 @@ layout facts the calls need (`Kit`), from its precondition's;
 `pop_abi`: after the pop, the callee-saved registers and the return address
 are as they were.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86.Shake
 

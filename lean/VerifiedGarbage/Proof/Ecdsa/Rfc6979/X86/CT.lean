@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Correct
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Correct
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Correct
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): constant time, up to the number of candidates
@@ -19,6 +29,8 @@ constant-time code whose public data agree (`hi_rel`, `upd_rel`, `hf_rel`,
 after candidate `i` iff `i` is before the candidate it stops at (`go_iff`).
 The frame's allocation and release access no memory (`alloc_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 

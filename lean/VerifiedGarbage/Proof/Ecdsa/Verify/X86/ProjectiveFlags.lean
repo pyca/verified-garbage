@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Final
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Final
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Masks for the inversion-free x86 ECDSA comparison -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.Verify.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Ecdsa.X86
 open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass

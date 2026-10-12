@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Rel
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Rel
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Rel
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on x86-64: the hash leaks only the layout
@@ -10,6 +18,8 @@ the layout), leak the same (`zeroSt_tr`, `kabs_tr`, `kpad_tr`, `ksqz_tr`);
 and so does `hash` (`hash_tr`), each absorption starting at the position the
 previous one returned, a function of the lengths.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.Verify
 

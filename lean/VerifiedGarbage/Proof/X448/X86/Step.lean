@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.X86.Instr
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Instr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): carry steps
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X448.X86.Instr
 A bounded sum splits into a 16-bit digit and a carry before the next
 coefficient is added.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

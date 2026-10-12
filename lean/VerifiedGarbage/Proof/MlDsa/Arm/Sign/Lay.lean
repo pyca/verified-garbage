@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
-import VerifiedGarbage.Proof.MlKem.Arm.CallF
-import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Proof.MlDsa.Sign.Mem
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
+public import VerifiedGarbage.Proof.MlKem.Arm.CallF
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: the buffers of the function
@@ -19,6 +25,8 @@ each region is readable or writable (`Lay.disj`, `Lay.stkD`, `Lay.cR`,
 `Lay.cW`). A call leaves the layout as it was (`Lay.post`), and the bytes of a
 region apart from those it writes (`Lay.keepBytes`, `Lay.keepPoly`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

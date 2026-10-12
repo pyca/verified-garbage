@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: P-224
@@ -10,6 +18,8 @@ proven correct (given the group law, the inversions' soundness and the comb's
 tables) and constant time against its contract (`coreK` at P-224's sizes,
 which is `Proof.Ecdsa.AArch64.P224.signAArch64`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

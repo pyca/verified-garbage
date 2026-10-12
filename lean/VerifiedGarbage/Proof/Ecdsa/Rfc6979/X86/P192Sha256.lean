@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Verified
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P192
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P192Sha256
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P192
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
+public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P192Sha256
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA over P-192 with HMAC-SHA-256 on x86 (32-bit)
@@ -12,6 +18,8 @@ SHA-256's compression function: the functions that PBKDF2's code calls
 with P-192's group law (`hL`, which the registration file supplies). The
 shared contract implies `rfcWide` (`implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86.P192Sha256
 

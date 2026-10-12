@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Ecdsa.Verify.P224
-import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P224
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over P-224 on x86 (32-bit): the contract the proof is written against
@@ -12,6 +18,8 @@ here; the shared contract makes them writable (`Verified.narrowTo`). Only
 the pointers are public here: the proof shows that nothing else affects
 timing, although the contract would let the contents of the three buffers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86.P224
 

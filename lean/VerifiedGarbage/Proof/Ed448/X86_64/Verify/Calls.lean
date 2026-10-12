@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
-import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on x86-64: the challenge and the equation
@@ -15,6 +21,8 @@ public key, the signature and `k`, which leaves its result in `rax`
 whole function's `Verified` imports that proof, and the group theory it
 imports.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.Verify
 

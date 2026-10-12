@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Final
-import VerifiedGarbage.Proof.Ecdsa.Verify
-import VerifiedGarbage.Proof.Ecdh.Arm.Main
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Final
+public import VerifiedGarbage.Proof.Ecdsa.Verify
+public import VerifiedGarbage.Proof.Ecdh.Arm.Main
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification on 32-bit ARM: the whole function
@@ -15,6 +21,8 @@ callee-saved registers and `lr`, keeps `sp` and writes only the working space.
 the two ladders, `step_rep`) and `vtail_ok` compute what
 `Proof.Ecdsa.verify_eq` connects to the specification.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.Arm
 

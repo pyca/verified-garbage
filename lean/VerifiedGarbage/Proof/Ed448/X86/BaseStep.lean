@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.Formulas
-import VerifiedGarbage.Proof.X448.X86.Counters
-import VerifiedGarbage.Proof.X448.X86.Ops
-import VerifiedGarbage.Proof.X448.X86.Iter
-import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+module
+
+public import VerifiedGarbage.Proof.Ed448.Formulas
+public import VerifiedGarbage.Proof.X448.X86.Counters
+public import VerifiedGarbage.Proof.X448.X86.Ops
+public import VerifiedGarbage.Proof.X448.X86.Iter
+public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): the loop over the bits
@@ -15,6 +21,8 @@ and the specification's `pointAdd` (`baseEnv_r`): `Proof/Ed448/Ref.lean`'s
 of the bit; the loop (`baseLoop_ok`) leaves `R` as the ladder over all 456
 bits, `ladder k 456`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

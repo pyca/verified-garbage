@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.Arm.SignCached.CT
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
-import VerifiedGarbage.Proof.Framework.Arm.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.CT
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: the whole function
@@ -13,6 +19,8 @@ frame (`Whole.wrap_ok`) around the body; `signCached_ct`, constant time
 agreement with the specification (`BaseLadderOk`), which only the
 registration file supplies.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.SignCached
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Blocks
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Bytes
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Blocks
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86-64: signing with a candidate
@@ -10,6 +16,8 @@ pointers (`core_ok`): it returns 1 and writes the signature, or returns 0
 and writes zeros, as `Spec.Ecdsa.signWith` gives for `d`, the digest and
 `k`, and changes only `out`, `scratch` and its return address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 

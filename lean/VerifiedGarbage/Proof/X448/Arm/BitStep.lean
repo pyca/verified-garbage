@@ -1,11 +1,19 @@
-import VerifiedGarbage.Proof.X448.Arm.Ops
-import VerifiedGarbage.Proof.X448.Ladder
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Ops
+public import VerifiedGarbage.Proof.X448.Ladder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: reading a scalar bit
 
 Only the public loop counter selects an address; the bit affects an XOR mask.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

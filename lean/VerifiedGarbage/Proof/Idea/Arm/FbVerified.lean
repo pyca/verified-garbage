@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Idea.Arm.ModeCore
-import VerifiedGarbage.Proof.Idea.FbScratch
-import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-import VerifiedGarbage.Impl.Idea.Arm.Modes
+module
+
+public import VerifiedGarbage.Proof.Idea.Arm.ModeCore
+meta import VerifiedGarbage.Proof.Idea.Arm.ModeCore
+public import VerifiedGarbage.Proof.Idea.FbScratch
+meta import VerifiedGarbage.Proof.Idea.FbScratch
+public import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+public import VerifiedGarbage.Impl.Idea.Arm.Modes
+meta import VerifiedGarbage.Impl.Idea.Arm.Modes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA-OFB and IDEA-CFB64 on ARMv7 meet their contracts
@@ -13,6 +24,8 @@ with a scratch buffer of 7 words (`Proof.Idea.fbScratchContract`), with the
 32 bytes of stack the ECB function uses; the `_framed` theorems keep the
 buffer on the stack, zeroed on return: 64 bytes more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.Arm
 

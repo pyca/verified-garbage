@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
-import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Ball
-import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Ball
+public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: the loops of `vg_mldsa_sample_in_ball`
@@ -16,6 +22,8 @@ first 8 bytes shifted right once per coefficient set (`Sg`). The pieces of an
 iteration are `pieceA` (`i ≥ 256`?), `tryA` (the byte `j`, and `j ≤ i`?),
 `setOk` (`c[i] ← c[j]`, `c[j] ← ±1`) and `pieceC` (the step).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sample.Ball
 
