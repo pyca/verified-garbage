@@ -4,11 +4,12 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the exponentiations
 
-`expLoop` builds the table, then for each of the
+`expLoop` puts `Y` and `X` into Montgomery form and builds the table
+(`convTab_ok`), then for each of the
 `E = 8 W` bytes of the exponents (at `oE` of each region, most significant
 first) puts the byte in the top 8 bits of `V` (`ldV_ok`) and does two
 windows (`wins_ok`): `Y ≡ x^E R` becomes `x^(256 E + b) R`. After all of
-them `Y ≡ x^e R`, `e` the exponent (`ev`), from `Y ≡ R` (`expLoop_ok`).
+them `Y ≡ x^e R`, `e` the exponent (`ev`) (`expLoop_ok`).
 -/
 
 namespace VG.Proof.Bignum.X86_64.Ifma
@@ -286,9 +287,9 @@ theorem ev_congr {m m' : Mem} {B : Addr} {p : Nat} :
   | n + 1, h => by
     simp only [ev]; rw [ev_congr n fun i hi => h i (by omega_using [hi]), h n (by omega_using [])]
 
-/-- `m'` agrees with `m` but on `Y`, `S`, `V` and the table of each region. -/
+/-- `m'` agrees with `m` but on `Y`, `X`, `S`, `V` and the table of each region. -/
 def OutE (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (B : Addr) (m m' : Mem) : Prop :=
-  ∀ a, (∀ p < 2, (ofs B a < l.D * p + l.oY ∨ l.D * p + l.oY + l.NB ≤ ofs B a) ∧
+  ∀ a, (∀ p < 2, (ofs B a < l.D * p + l.oY ∨ l.D * p + l.oY + 2 * l.NB ≤ ofs B a) ∧
     (ofs B a < l.D * p + l.oS ∨ l.D * p + l.oS + l.NB ≤ ofs B a) ∧
     (ofs B a < l.D * p + l.oV ∨ l.D * p + l.oV + 8 ≤ ofs B a) ∧
     (ofs B a < l.D * p + l.oTab ∨ l.D * p + l.oTab + 16 * l.NB ≤ ofs B a)) → m' a = m a
@@ -297,28 +298,31 @@ theorem OutE.trans {B : Addr} {m₁ m₂ m₃ : Mem} (h₁ : OutE l B m₁ m₂)
   fun a ha => (h₂ a ha).trans (h₁ a ha)
 
 theorem OutE.ofW {B : Addr} {m m' : Mem} (h : OutW l B m m') : OutE l B m m' :=
-  fun a ha => h a fun p hp => ⟨(ha p hp).1, (ha p hp).2.1, (ha p hp).2.2.1⟩
+  fun a ha => h a fun p hp => ⟨(ha p hp).1.imp_right fun h => by omega, (ha p hp).2.1, (ha p hp).2.2.1⟩
 
-theorem OutE.ofT {B : Addr} {m m' : Mem} (h : Out2 l B l.oTab (16 * l.NB) m m') : OutE l B m m' :=
-  fun a ha => h a fun p hp => (ha p hp).2.2.2
+/-- What `convTab` writes: `Y`, `X`, `S` and the table, which are contiguous. -/
+theorem OutE.ofConv {B : Addr} {m m' : Mem} (h : Out2 l B l.oY (l.oTab + 16 * l.NB - l.oY) m m') : OutE l B m m' :=
+  fun a ha => h a fun p hp => by
+    obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
+    obtain ⟨h1, h2, -, h4⟩ := ha p hp
+    omega_using [h1, h2, h4, o2, o4, o5]
 
 theorem E_pos (hl : LayOk l) : 1 ≤ l.E := by rcases hl with rfl | rfl | rfl <;> decide
 
 /-- The exponentiations: `Y ≡ x^e R` for the exponents `e`, from `Y ≡ R` and `X ≡ x R`. -/
-theorem expLoop_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} (hB : s.gpr .rbx = B)
-    (hs : Scr s B (2 * l.D)) (ar : Ar l s.mem B M k) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p))
-    (gy : ∀ p < 2, Good l s.mem B M l.oY p) (gx : ∀ p < 2, Good l s.mem B M l.oX p)
-    (vy : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oY) % M p = x p ^ 0 * 2 ^ (52 * l.L) % M p)
-    (vx : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oX) % M p = x p ^ 1 * 2 ^ (52 * l.L) % M p) :
+theorem expLoop_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
+    (hc : ConvPre l s B M k x Q) :
     WP isa (VG.Impl.Bignum.X86_64.seqs (expLoop l)) s fun s' =>
       ExpSt l s'.mem B M k x Q (fun p => ev l s.mem B p l.E) ∧ OutE l B s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
         r ≠ .r13 → r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  have hs := hc.scr
+  have hR := hc.hR
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   have hD := hl.D_bounds
-  refine wp_seqs_app (by simp [tabBuild]) (by simp)
-    (WP.mono (tabBuild_ok hl hB hs ar hR gy gx vy vx) fun s₁ t₁ => ?_)
+  refine wp_seqs_app (by simp [convTab]) (by simp)
+    (WP.mono (convTab_ok hl hc) fun s₁ t₁ => ?_)
   refine WP.seq ?_
   rw [WP.block_cons_iff]
   refine ⟨s₁.setReg32 .r13 0, rfl, WP.block_nil ?_⟩
@@ -333,11 +337,7 @@ theorem expLoop_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {
   have hsu : Scr u B (2 * l.D) := hs.congr (by rw [wru, t₁.wr])
   have st₀ : ExpSt l u.mem B M k x Q (fun p => ev l u.mem B p (l.E - l.E)) := by
     rw [mu, Nat.sub_self]
-    refine ⟨t₁.ar, t₁.tab, fun p hp => (gy p hp).of_out2 hl hp t₁.frame (.inl (by omega_using [o2, o5]))
-        (by omega_using [o2, o10]) (by omega_using [o5, o10]),
-      fun hq p hp => ?_⟩
-    rw [t₁.frame.val hl hp (.inl (by omega_using [o2, o5])) (by omega_using [o2, o10]) (by omega_using [o5, o10])]
-    exact vy hq p hp
+    exact ⟨t₁.ar, t₁.tab, t₁.yg, t₁.yv⟩
   refine WP.mono (byteLoop_ok hl hBu hsu hR l.E u (E_pos hl) (Nat.le_refl _)
     ⟨by rw [Nat.sub_self]; exact r13u, st₀, OutW.refl _ _, fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl, rfl, rfl, rfl⟩) fun s' b' => ?_
   have hev : ∀ p < 2, ev l u.mem B p l.E = ev l s.mem B p l.E := fun p hp => by
@@ -345,9 +345,9 @@ theorem expLoop_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {
     refine ev_congr l.E fun i hi => t₁.frame _ fun p' hp' => ?_
     have hDp : l.D * p ≤ l.D := by rcases D_mul (l := l) hp with h | h <;> omega_using [h]
     rw [ofs_off0 B (by have := hs.nowrap; omega_using [o6, o10, hi, hDp, this])]
-    rcases D_mul (l := l) hp with h1 | h1 <;> rcases D_mul (l := l) hp' with h2 | h2 <;> omega_using [o5, o6, h2, o10, hi, h1]
+    rcases D_mul (l := l) hp with h1 | h1 <;> rcases D_mul (l := l) hp' with h2 | h2 <;> omega_using [o2, o5, o6, h2, o10, hi, h1]
   refine ⟨b'.st.congrE hev, ?_, fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 => ?_, ?_, ?_, ?_⟩
-  · exact (OutE.ofT t₁.frame).trans (mu ▸ OutE.ofW b'.frame)
+  · exact (OutE.ofConv t₁.frame).trans (mu ▸ OutE.ofW b'.frame)
   · rw [b'.gpr r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12, gu r r10]
     exact t₁.gpr r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10
   · rw [b'.rd, rdu, t₁.rd]
