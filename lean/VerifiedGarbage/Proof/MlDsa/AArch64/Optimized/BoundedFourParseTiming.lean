@@ -15,19 +15,19 @@ namespace VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.AArch64
 open VG.Impl.MlDsa.AArch64.Optimized.BoundedFour (vectorBody)
 
-def parseModel (η k off : Nat) : Prog isa :=
- .seq (.block (parseAddress k off))
-   (.seq (parseCore η) (.block [.str .x .x4 .x19 (7904+8*k)]))
+def parseModel (η : Nat) : Prog isa :=
+ .seq (.block parseAddress)
+   (.seq (parseCore η) (.block VG.Impl.MlDsa.AArch64.Optimized.BoundedFour.parseNext))
 
 /-- Reassociation and splitting a straight-line prefix preserve the exact trace. -/
-theorem parse_exec_model {η k off : Nat} {s t : State} {tr : List Leak}
-    (h : Exec isa (VG.Impl.MlDsa.AArch64.Optimized.BoundedFour.parse true η k off) s tr t) :
-    Exec isa (parseModel η k off) s tr t := by
-  change Exec isa (.seq (.block (parseAddress k off++parseSetup η))
+theorem parse_exec_model {η : Nat} {s t : State} {tr : List Leak}
+    (h : Exec isa (VG.Impl.MlDsa.AArch64.Optimized.BoundedFour.parse true η) s tr t) :
+    Exec isa (parseModel η) s tr t := by
+  change Exec isa (.seq (.block (parseAddress++parseSetup η))
     (.seq (.ite (.zero .x .x8) (.block []) (.loop (.block (vectorBody true η)) (.nonzero .x .x8)))
       (.seq (.block fallbackSetup)
         (.seq (.ite (.zero .x .x8) (.block []) (.loop (scalarLoopBody η) (.nonzero .x .x8)))
-          (.block [.str .x .x4 .x19 (7904+8*k)]))))) s tr t at h
+          (.block VG.Impl.MlDsa.AArch64.Optimized.BoundedFour.parseNext))))) s tr t at h
   cases h with | seq hp hr =>
     cases hr with | seq hv hr =>
       cases hr with | seq hf hr =>
@@ -37,7 +37,7 @@ theorem parse_exec_model {η k off : Nat} {s t : State} {tr : List Leak}
           obtain ⟨⟨b,tb⟩,hc,he⟩:=Option.map_eq_some_iff.mp hb
           simp only [Prod.mk.injEq] at he
           obtain ⟨rfl,rfl⟩:=he
-          have hx : Exec isa (parseModel η k off) s _ t :=
+          have hx : Exec isa (parseModel η) s _ t :=
             .seq (.block ha) (.seq (.seq (.block hc) (.seq hv (.seq hf hs))) ht)
           simpa only [List.append_assoc] using hx
 
@@ -440,26 +440,26 @@ section
 namespace VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Sample
 
-structure ParseReady (k off : Nat) (table p q a : Addr) (L : List Zq) (X : List Byte) (s : State) : Prop where
+structure ParseReady (table p q a : Addr) (L : List Zq) (X : List Byte) (s : State) : Prop where
  bound : L.length≤256
  bytes : X.length=272
  vectorLayout : Layout s table p q X
  scalarLayout : ScalarLayout s p q X
  tableMem : TableAt s.mem table
  stored : Stored s.mem p L
- input : s.gpr .x19+BitVec.ofNat 64 (840+544*k+off)=q
- output : s.gpr .x21+BitVec.ofNat 64 (1024*k)=p
- countAddr : s.gpr .x19+BitVec.ofNat 64 (7904+8*k)=a
+ input : s.gpr .x24=q
+ output : s.gpr .x25=p
+ countAddr : s.gpr .x26=a
  tableAddr : s.gpr .x19+6000=table
  count : s.mem.readW a 64=BitVec.ofNat 64 (256-L.length)
  read : InRegions (s.rd++s.wr) a 8
 
-theorem parseAddress_ready {η k off : Nat} (hk : k<4) (ho : off≤272)
+theorem parseAddress_ready {η : Nat}
     {table p q a : Addr} {L : List Zq} {X : List Byte} {s : State}
-    (h : ParseReady k off table p q a L X s) :
-    WP isa (.block (parseAddress k off)) s fun t=>
+    (h : ParseReady table p q a L X s) :
+    WP isa (.block parseAddress) s fun t=>
       VG.Proof.MlKem.AArch64.Only [.x2,.x3,.x4] s t ∧ CoreReady η table p q L X t := by
-  refine WP.mono (parseAddress_ok hk ho (by rw [h.countAddr]; exact h.read)) fun t ⟨ht,h2,h3,h4⟩=>?_
+  refine WP.mono (parseAddress_ok (by rw [h.countAddr]; exact h.read)) fun t ⟨ht,h2,h3,h4⟩=>?_
   refine ⟨ht,h.bound,h.bytes,h.vectorLayout.keep ht.keep ht.mem,
     h.scalarLayout.keep ht.keep ht.mem,?_,?_,?_,?_,?_,?_⟩
   · rw [ht.mem]; exact h.tableMem
@@ -469,32 +469,29 @@ theorem parseAddress_ready {η k off : Nat} (hk : k<4) (ho : off≤272)
   · rw [h4,h.countAddr,h.count]
   · rw [ht.get .x19]; exact h.tableAddr
 
-theorem parseAddress_taint {k off : Nat} (hk : k<4) (ho : off=0∨off=272) : ∃h,
-    (taint.check (Taint.ofRegs [.x19,.x21]) (.block (parseAddress k off)) h).isSome=true := by
-  rcases (show k=0∨k=1∨k=2∨k=3 by omega) with rfl|rfl|rfl|rfl <;>
-    rcases ho with rfl|rfl <;> exact ⟨_,by taint_decide⟩
+theorem parseAddress_taint : ∃h,
+    (taint.check (Taint.ofRegs [.x26]) (.block parseAddress) h).isSome=true :=
+  ⟨_,by taint_decide⟩
 
-theorem parseStore_taint {k : Nat} (hk : k<4) : ∃h,
-    (taint.check (Taint.ofRegs [.x19]) (.block [.str .x .x4 .x19 (7904+8*k)]) h).isSome=true := by
-  rcases (show k=0∨k=1∨k=2∨k=3 by omega) with rfl|rfl|rfl|rfl <;> exact ⟨_,by taint_decide⟩
+theorem parseNext_taint : ∃h,
+    (taint.check (Taint.ofRegs [.x26])
+      (.block VG.Impl.MlDsa.AArch64.Optimized.BoundedFour.parseNext) h).isSome=true :=
+  ⟨_,by taint_decide⟩
 
-theorem parseModel_relCT {η k off : Nat} (hη : η=2∨η=4) (hk : k<4) (ho : off=0∨off=272)
+theorem parseModel_relCT {η : Nat} (hη : η=2∨η=4)
     {table p q a : Addr} {L M : List Zq} {X Y : List Byte}
     (hl : L.length=M.length) (hx : X.map (hbOks η)=Y.map (hbOks η)) :
-    RelCT isa (fun s t=>ParseReady k off table p q a L X s ∧ ParseReady k off table p q a M Y t ∧
-      s.sp=t.sp ∧ s.gpr .x19=t.gpr .x19 ∧ s.gpr .x21=t.gpr .x21)
-      (parseModel η k off) (fun _ _=>True) := by
-  obtain ⟨_,ha⟩:=parseAddress_taint hk ho
-  obtain ⟨_,hz⟩:=parseStore_taint hk
-  have ca : RelCT isa (fun (s t : State)=>s.sp=t.sp ∧ s.gpr .x19=t.gpr .x19 ∧ s.gpr .x21=t.gpr .x21)
-      (.block (parseAddress k off)) (fun _ _=>True) :=
+    RelCT isa (fun s t=>ParseReady table p q a L X s ∧ ParseReady table p q a M Y t ∧
+      s.sp=t.sp)
+      (parseModel η) (fun _ _=>True) := by
+  obtain ⟨_,ha⟩:=parseAddress_taint
+  obtain ⟨_,hz⟩:=parseNext_taint
+  have ca : RelCT isa (fun (s t : State)=>s.sp=t.sp ∧ s.gpr .x26=t.gpr .x26)
+      (.block parseAddress) (fun _ _=>True) :=
     RelCT.taint (A := taint) _ (fun _ _ h=>VG.Proof.MlKem.AArch64.agree_of h.1 (fun r hr=>by
-      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl|rfl
-      · exact h.2.1
-      · exact h.2.2)) ha
-  have cz : RelCT isa (fun (s t : State)=>s.sp=t.sp ∧ s.gpr .x19=t.gpr .x19)
-      (.block [.str .x .x4 .x19 (7904+8*k)]) (fun _ _=>True) :=
+      rw [List.mem_singleton.mp hr]; exact h.2)) ha
+  have cz : RelCT isa (fun (s t : State)=>s.sp=t.sp ∧ s.gpr .x26=t.gpr .x26)
+      (.block VG.Impl.MlDsa.AArch64.Optimized.BoundedFour.parseNext) (fun _ _=>True) :=
     RelCT.taint (A := taint) _ (fun _ _ h=>VG.Proof.MlKem.AArch64.agree_of h.1 (fun r hr=>by
       rw [List.mem_singleton.mp hr]; exact h.2)) hz
   intro s t tr ur u v h es et
@@ -502,14 +499,15 @@ theorem parseModel_relCT {η k off : Nat} (hη : η=2∨η=4) (hk : k<4) (ho : o
     cases es1 with | seq es1 es2 =>
       cases et with | seq et0 et1 =>
         cases et1 with | seq et1 et2 =>
-          have e0:=(ca _ _ _ _ _ _ h.2.2 es0 et0).1
-          obtain ⟨_,_,ex,sa⟩:=parseAddress_ready (η := η) hk (by omega) h.1
-          obtain ⟨_,_,ey,ta⟩:=parseAddress_ready (η := η) hk (by omega) h.2.1
+          have h26 : s.gpr .x26=t.gpr .x26 := by rw [h.1.countAddr,h.2.1.countAddr]
+          have e0:=(ca _ _ _ _ _ _ ⟨h.2.2,h26⟩ es0 et0).1
+          obtain ⟨_,_,ex,sa⟩:=parseAddress_ready (η := η) h.1
+          obtain ⟨_,_,ey,ta⟩:=parseAddress_ready (η := η) h.2.1
           obtain ⟨_,rfl⟩:=Exec.det es0 ex
           obtain ⟨_,rfl⟩:=Exec.det et0 ey
           have hs : _ := sa.2
           have ht : _ := ta.2
-          have hsp : _ := sa.1.sp.trans (h.2.2.1.trans ta.1.sp.symm)
+          have hsp : _ := sa.1.sp.trans (h.2.2.trans ta.1.sp.symm)
           have e1:=(parseCore_relCT hη hl hx _ _ _ _ _ _ ⟨hs,ht,hsp⟩ es1 et1).1
           obtain ⟨_,_,ex,hb⟩:=parseCore_ok hη hs.bound hs.bytes hs.vectorLayout hs.scalarLayout
             hs.tableMem hs.stored hs.input hs.output hs.count hs.tableAddr
@@ -518,17 +516,18 @@ theorem parseModel_relCT {η k off : Nat} (hη : η=2∨η=4) (hk : k<4) (ho : o
           obtain ⟨_,rfl⟩:=Exec.det es1 ex
           obtain ⟨_,rfl⟩:=Exec.det et1 ey
           have e2:=(cz _ _ _ _ _ _ ⟨by rw [hb.1.sp,hc.1.sp]; exact hsp,
-            by rw [hb.1.gpr .x19 (by decide),hc.1.gpr .x19 (by decide),sa.1.get .x19,ta.1.get .x19]; exact h.2.2.2.1⟩ es2 et2).1
+            by rw [hb.1.gpr .x26 (by decide),hc.1.gpr .x26 (by decide),sa.1.get .x26,ta.1.get .x26]
+               exact h26⟩ es2 et2).1
           exact ⟨by rw [e0,e1,e2],trivial⟩
 
-theorem parse_relCT {η k off : Nat} (hη : η=2∨η=4) (hk : k<4) (ho : off=0∨off=272)
+theorem parse_relCT {η : Nat} (hη : η=2∨η=4)
     {table p q a : Addr} {L M : List Zq} {X Y : List Byte}
     (hl : L.length=M.length) (hx : X.map (hbOks η)=Y.map (hbOks η)) :
-    RelCT isa (fun s t=>ParseReady k off table p q a L X s ∧ ParseReady k off table p q a M Y t ∧
-      s.sp=t.sp ∧ s.gpr .x19=t.gpr .x19 ∧ s.gpr .x21=t.gpr .x21)
-      (VG.Impl.MlDsa.AArch64.Optimized.BoundedFour.parse true η k off) (fun _ _=>True) := by
+    RelCT isa (fun s t=>ParseReady table p q a L X s ∧ ParseReady table p q a M Y t ∧
+      s.sp=t.sp)
+      (VG.Impl.MlDsa.AArch64.Optimized.BoundedFour.parse true η) (fun _ _=>True) := by
   intro _ _ _ _ _ _ h es et
-  exact parseModel_relCT hη hk ho hl hx _ _ _ _ _ _ h (parse_exec_model es) (parse_exec_model et)
+  exact parseModel_relCT hη hl hx _ _ _ _ _ _ h (parse_exec_model es) (parse_exec_model et)
 
 end VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 

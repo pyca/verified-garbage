@@ -44,16 +44,23 @@ theorem Inv.of_progKeep {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
 
 def jacCoords (p : Pt) : List Nat := [p.x,p.y,p.z]
 
-theorem ProgKeep.slot {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
+/-- A slot apart from the slots `W` written and the temporary area. -/
+theorem _root_.VG.Proof.Weierstrass.Unch.slot {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
     {s t : State} {W : List Nat} (hL : Lay M size Sl) (hs : Scr s base size)
-    (hk : ProgKeep M base W s t) (hW : ∀ x∈W, Sl x) {x : Nat}
+    (hk : Unch base (W.map (·,8*M.n)++[(M.tmp,8*M.n)]) s.mem t.mem) (hW : ∀ x∈W, Sl x) {x : Nat}
     (hx : Sl x) (hn : x∉W) : wordsVal t.mem base x M.n=wordsVal s.mem base x M.n := by
-  apply hk.unch.wordsVal _ (by have := hL.le x hx; have := hs.nowrap; omega)
+  apply hk.wordsVal _ (by have := hL.le x hx; have := hs.nowrap; omega)
   intro w hw
   simp only [List.mem_append,List.mem_map,List.mem_singleton] at hw
   rcases hw with ⟨y,hy,rfl⟩ | rfl
   · exact hL.apart x y hx (hW y hy) (fun he => hn (he ▸ hy))
   · exact hL.tmp x hx
+
+theorem ProgKeep.slot {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
+    {s t : State} {W : List Nat} (hL : Lay M size Sl) (hs : Scr s base size)
+    (hk : ProgKeep M base W s t) (hW : ∀ x∈W, Sl x) {x : Nat}
+    (hx : Sl x) (hn : x∉W) : wordsVal t.mem base x M.n=wordsVal s.mem base x M.n :=
+  hk.unch.slot hL hs hW hx hn
 
 
 /-- An initialized environment can always be represented by the current
@@ -111,9 +118,9 @@ theorem copyPointFields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
       Function.update_of_ne (hqa q.z (by simp [jacCoords]) o.x (by simp [jacCoords])),
       Function.update_of_ne (hqa q.z (by simp [jacCoords]) o.y (by simp [jacCoords]))]
 
-theorem ProgKeep.invJ {M : Mod} {base : Addr} {size : Nat} {C : Curve}
+theorem _root_.VG.Proof.Weierstrass.Unch.invJ {M : Mod} {base : Addr} {size : Nat} {C : Curve}
     {Sl : Nat → Prop} {s t : State} {W : List Nat} (hL : Lay M size Sl) (hs : Scr s base size)
-    (hk : ProgKeep M base W s t) (hW : ∀ x∈W, Sl x) {p : Pt}
+    (hk : Unch base (W.map (·,8*M.n)++[(M.tmp,8*M.n)]) s.mem t.mem) (hW : ∀ x∈W, Sl x) {p : Pt}
     (hp : ∀ x∈jacCoords p, Sl x) (hDisj : ∀ x∈jacCoords p, x∉W) {P : Point C}
     (hJ : InvJ C (tmv C M.n base s p.x) (tmv C M.n base s p.y) (tmv C M.n base s p.z) P) :
     InvJ C (tmv C M.n base t p.x) (tmv C M.n base t p.y) (tmv C M.n base t p.z) P := by
@@ -121,5 +128,13 @@ theorem ProgKeep.invJ {M : Mod} {base : Addr} {size : Nat} {C : Curve}
     unfold tmv; rw [hk.slot hL hs hW (hp x hx) (hDisj x hx)]
   rw [eqv _ (by simp [jacCoords]),eqv _ (by simp [jacCoords]),eqv _ (by simp [jacCoords])]
   exact hJ
+
+theorem ProgKeep.invJ {M : Mod} {base : Addr} {size : Nat} {C : Curve}
+    {Sl : Nat → Prop} {s t : State} {W : List Nat} (hL : Lay M size Sl) (hs : Scr s base size)
+    (hk : ProgKeep M base W s t) (hW : ∀ x∈W, Sl x) {p : Pt}
+    (hp : ∀ x∈jacCoords p, Sl x) (hDisj : ∀ x∈jacCoords p, x∉W) {P : Point C}
+    (hJ : InvJ C (tmv C M.n base s p.x) (tmv C M.n base s p.y) (tmv C M.n base s p.z) P) :
+    InvJ C (tmv C M.n base t p.x) (tmv C M.n base t p.y) (tmv C M.n base t p.z) P :=
+  hk.unch.invJ hL hs hW hp hDisj hJ
 
 end VG.Proof.Weierstrass.X86_64

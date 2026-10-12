@@ -40,6 +40,9 @@ def squeezeTwo (sha3 : Bool) (off : Nat) : Prog isa :=
  .addImm .x .x24 .x19 (840+off),.addImm .x .x25 .x19 (1384+off),
  .addImm .x .x26 .x19 (1928+off),.addImm .x .x27 .x19 (2472+off),
  .movz .x .x28 2 0])) (.loop (squeezeStep sha3) (.nonzero .x .x28))
+def parseNext : List Instr :=
+ [.str .x .x4 .x26 0,.addImm .x .x24 .x24 544,.addImm .x .x25 .x25 1024,
+  .addImm .x .x26 .x26 8,.subImm .x .x27 .x27 1]
 def imm64 (r : Reg) (n : Nat) : List Instr :=
  ([.movz .x r (BitVec.ofNat 16 n) 0] : List Instr) ++ (List.range 3).map
  (fun i => .movk .x r (BitVec.ofNat 16 (n / 2^(16*(i+1)))) (i+1))
@@ -99,9 +102,10 @@ def vectorBody (fast : Bool) (eta : Nat) : List Instr :=
  ([.lsl .x .x7 .x6 2,.add .x .x3 .x3 .x7,.sub .x .x4 .x4 .x6,
  .addImm .x .x2 .x2 2,.subImm .x .x5 .x5 2,
  .subs .x .x8 .x4 .x16,.cselc .x .x8 .x5 .x0 .hs] : List Instr)
-def parse (fast : Bool) (eta k off : Nat) : Prog isa :=
- .seq (.block (([.addImm .x .x2 .x19 (840+544*k+off),
- .addImm .x .x3 .x21 (1024*k),.ldr .x .x4 .x19 (counts+8*k),
+-- A stream's input, output and count slot are in x24, x25 and x26, which
+-- `batch` advances from one stream to the next.
+def parse (fast : Bool) (eta : Nat) : Prog isa :=
+ .seq (.block (([mov .x2 .x24,mov .x3 .x25,.ldr .x .x4 .x26 0,
  .movz .x .x6 256 0,.sub .x .x6 .x6 .x4,.lsl .x .x6 .x6 2,.add .x .x3 .x3 .x6,
  .movz .x .x5 272 0] : List Instr)++movQ .x9++([.movz .x .x10 (BitVec.ofNat 16 eta) 0,
  .movz .x .x11 15 0,.movz .x .x15 (BitVec.ofNat 16 (rbBound eta)) 0] : List Instr)++vectorSetup eta++
@@ -110,10 +114,14 @@ def parse (fast : Bool) (eta k off : Nat) : Prog isa :=
  .seq (.block [.movz .x .x16 10 0,.movz .x .x17 5 0,.mul .x .x8 .x4 .x5]) <|
  .seq (.ite (.zero .x .x8) (.block [])
  (.loop (.seq (rbBody eta) (.block [.mul .x .x8 .x4 .x5])) (.nonzero .x .x8))) <|
- .block [.str .x .x4 .x19 (counts+8*k)]
+ .block parseNext
+def batchInit (off : Nat) : List Instr :=
+ [.addImm .x .x24 .x19 (840+off),mov .x25 .x21,
+  .addImm .x .x26 .x19 (counts/2),.addImm .x .x26 .x26 (counts/2),.movz .x .x27 4 0]
+/-- Parses the 272 bytes at offset `off` of each stream's buffer, one stream
+per iteration. -/
 def batch (fast : Bool) (eta off : Nat) : Prog isa :=
- .seq (parse fast eta 0 off) <| .seq (parse fast eta 1 off) <|
- .seq (parse fast eta 2 off) (parse fast eta 3 off)
+ .seq (.block (batchInit off)) (.loop (parse fast eta) (.nonzero .x .x27))
 def flags : List Instr := ([.ldr .x .x27 .x19 counts] : List Instr) ++
  (List.range 3).flatMap (fun k => [.ldr .x .x6 .x19 (counts+8*(k+1)),
  .logic .orr .x .x27 .x27 .x6])

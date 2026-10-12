@@ -172,7 +172,8 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
     (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) {s₀ : State} (hF : WinFixed K C base s₀ P k) {m : Nat} (h1 : 1 ≤ m)
     (h7 : m ≤ 7) {s : State} (hI : BuildInvE K C base size P s₀ m s) {pa : Option (String × Nat)}
-    (hpa : AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa) :
+    (hpa : AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa)
+    (hr : AddReady base K.M s₀.mem K.S pa) (hfar : AddFar K.M K.S (winW K) pa) :
     WP isa (WinCfg.buildStep K pa) s fun s' =>
       BuildInvE K C base size P s₀ (m + 1) s' ∧ s'.gpr .x19 = BitVec.ofNat 64 (8 - (m + 1)) := by
   have hn := hI.inv.scr.nowrap
@@ -220,15 +221,17 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
           (tmv C K.M.n base s₁ K.P.x) (tmv C K.M.n base s₁ K.P.y) (tmv C K.M.n base s₁ K.P.z) := by
     have hD : ∀ (V : List Nat), ∀ x ∈ [K.D.x, K.D.y, K.D.z], x ∈ [K.D.x, K.D.y, K.D.z] ++ V :=
       fun _ x hx => List.mem_append_left _ hx
-    match pa, hpa with
-    | none, _ =>
+    have hr₁ : AddReady base K.M s₁.mem K.S pa := by
+      rw [m₁]; exact hr.unch hpa (by simp [winSlots, winRo]) (by omega_using [hn]) hI.inv.unch hfar
+    match pa, hpa, hr₁, hfar with
+    | none, _, _, _ =>
       refine WP.mono (rcb3_ok hL.lay hA.al hp hL.rcbApart_EP hO (hA.low hLo) hI₁ (fun x hx => hx))
         fun s₂ ⟨k₂, I₂, v₂⟩ => ⟨k₂.mono fun w hw => List.mem_append_right _ hw,
           fun x hx => I₂.lt x (hD _ x hx), ?_⟩
       rw [← v₂]
       show (toM _ _ _, toM _ _ _, toM _ _ _) = _
       rw [I₂.val _ (hD _ _ (by simp)), I₂.val _ (hD _ _ (by simp)), I₂.val _ (hD _ _ (by simp))]
-    | some f, hc =>
+    | some f, hc, hr₁, hfar =>
       obtain ⟨rxy, rxz, ryz, hR, -⟩ := hL.other_ne
       have hRo : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winOther K := by
         intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -259,7 +262,10 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
           rcases hx with rfl | rfl | rfl <;> simp [rcbR])
         hrV ⟨rxy, rxz, ryz⟩ (fun x hx => by
           simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
-          rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [rcbR]))
+          rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [rcbR]) hr₁
+        (AddFar.mono (pa := some f) hfar fun w hw => loopW_sub K w (List.mem_append_left _ (by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+          rcases hw with rfl | rfl | rfl <;> exact List.mem_map_of_mem (hRo _ (by simp))))))
         fun s₂ ⟨k₂, I₂, v₂⟩ => ⟨k₂, fun x hx => I₂.lt x (hD _ x hx), ?_⟩
       have er := rext_r (tmv C K.M.n base s₁) K.P ⟨rxy, rxz, ryz⟩
       have eo : ∀ x ∈ rcbR K.S K.E K.P, rext (tmv C K.M.n base s₁) K.R K.P x = tmv C K.M.n base s₁ x :=
@@ -449,7 +455,8 @@ theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
     (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) {s : State} (hs : Scr s base size) (hM : ModOkA K.M size C.p s.mem base)
     (hF : WinFixed K C base s P k) {pa : Option (String × Nat)}
-    (hpa : AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa) :
+    (hpa : AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa)
+    (hr : AddReady base K.M s.mem K.S pa) (hfar : AddFar K.M K.S (winW K) pa) :
     WP isa (WinCfg.build K pa) s (BuildInv K C base size P s 8) := by
   have hn := hs.nowrap
   have s1 := tblPt_slots K (m := 1) (Nat.le_refl _) (by omega_using [])
@@ -566,7 +573,7 @@ theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
       rw [m₃, c1, c2, c3, kP _ (by simp), kP _ (by simp), kP _ (by simp), mul_one_pt]
       exact hF.pt
   exact countLoop_ok (Inv := fun j t => BuildInvE K C base size P s (8 - j) t) (n := 7) (by decide)
-    (fun j t h1 h2 hi => WP.mono (buildStep_ok hL hA hp hC hM3 hP hF (m := 8 - j) (by omega_using [h2]) (by omega_using [h1]) hi hpa)
+    (fun j t h1 h2 hi => WP.mono (buildStep_ok hL hA hp hC hM3 hP hF (m := 8 - j) (by omega_using [h2]) (by omega_using [h1]) hi hpa hr hfar)
       fun u ⟨I, x⟩ => ⟨by rw [show 8 - (j - 1) = 8 - j + 1 by omega_using [h1, h2]]; exact I,
         by rw [x]; congr 1; omega_using [h2]⟩)
     (fun t hi => hi.inv) (by decide) I₁

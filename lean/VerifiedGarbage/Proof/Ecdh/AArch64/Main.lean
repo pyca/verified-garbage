@@ -338,6 +338,9 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
         (toM c.C.p (2 ^ (64 * c.n)) (sv c (s₀.gpr .x3) s₄ PY))
         (toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem (s₀.gpr .x3) (c.sl ONEP) c.n)) _
       rw [F₄.onep, toM_one hpR]; exact h)
+    (by
+      show sv c (s₀.gpr .x3) s₄ BP = wordsVal s₄.mem (s₀.gpr .x3) (c.sl BM) c.n
+      rw [e₄ (by decide) (by decide) (by decide), bp₃, F₄.bm])
     fun s₅ L => ?_
   have hs₅ := L.scr
   have F₅ := F₄.unch h7 hn (fixedOk_winX.append ((fixedOk_slW (by decide)).append (fixedOk_chainWc hc)))
