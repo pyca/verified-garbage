@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.EcKey.X86_64.LitAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 
 /-!
 # P-256 public keys on x86-64 with BMI2 and ADX: `Verified`
@@ -20,7 +21,7 @@ theorem pk_x86_adx (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : pkX86_64.pre s) :
-    ∃ t s', Exec isa publicKeyP256Adx s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' :=
+    ∃ t s', Exec isa publicKeyP256Adx.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' :=
   pk_x86_of (p256x_ok hI) hL (p256_tbls hL hT) ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩ (fun _ h => { pre_of h with }) (fun _ _ => post_of rfl) rfl
     (by lit_decide) (by lit_decide) (by lit_decide) s hs
 
@@ -33,20 +34,22 @@ materialize_shared publicKeyP256AdxErased
 
 theorem pk_ct_adx : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyP256Adx :=
   VG.Taint.constantTime_mapBlocks (c' := publicKeyP256AdxErased) (taintSym_eraseInv ["VG_P256_COMB"])
-    (Taint.ofRegs [.rdi, .rsi, .rdx]) rfl
-    (fun _ _ _ _ ⟨_, h1, h2, h3, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) rfl
+    (fun _ _ _ _ ⟨h0, h1, h2, h3, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl
       · exact h1
       · exact h2
-      · exact h3, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
+      · exact h3
+      · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
     rfl (by taint_decide)
 
 theorem pk_verified_adx (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target publicKeyP256Adx
-      (Spec.EcKey.P256.inst.publicKeyContract (X86_64.abi.withConsts p256.combConsts)) :=
-  Verified.of_correct (pk_x86_adx hL hT hI) pk_ct_adx implies
+      (Spec.EcKey.P256.inst.publicKeyContract (X86_64.abi.withConsts p256.combConsts) 8) :=
+  Verified.of_inline_ct (by lit_decide) (pk_x86_adx hL hT hI) pk_ct_adx implies8
+    (fun _ h => Sig.clear_of_pre_consts h) pk_patch
 
 end VG.Proof.EcKey.X86_64

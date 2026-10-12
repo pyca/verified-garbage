@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.P256.Prime
 import VerifiedGarbage.Proof.P256.Order
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 
 /-!
 # ECDSA over P-256 on x86-64: `Verified`
@@ -71,7 +72,7 @@ theorem p256_ok (hI : InvSounds) : CfgOk p256 where
   comb_am3 := fun _ _ => by unfold AM3; decide +kernel
   am3 := by unfold AM3; decide +kernel
   even _ := by decide
-  inverse h := absurd h (by decide)
+  inverse _ := ⟨by decide, rfl⟩
 
 theorem p256_tbls (hL : Law Spec.P256.curve)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
@@ -90,22 +91,22 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p256 s := by
 
 /-- The signature `code` of a curve `c` (P-256, with either multiplication) that
 the proof supports, whose precondition the contract's gives (`hpre`), never
-writing `rsp`, calling or loading MXCSR (which its literal decides). -/
+writing `rsp` or loading MXCSR, its calls inlined (which its literal decides). -/
 theorem sign_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Law c.C) (hT : CombTbls c) (hmb : MulBaseOk c)
     (hpre : ∀ s, signX86_64.pre s → Pre c s) (hpost : ∀ s s', SignPost c s s' → signX86_64.post s s')
     (hcode : c.sign = code) (hsp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
-    (hnc : code.noCalls = true) (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
+    (hnc : code.InlineOk = true) (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
     (hs : signX86_64.pre s) :
-    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
+    ∃ t s', Exec isa code.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   subst hcode
-  obtain ⟨t, s', he, hsv, hpost'⟩ := wp_of_inline hnc <| sign_ok hc hL hT (hpre s hs) hmb
-  have hsp : ∀ i ∈ instrs c.sign, Taint.clobbers i .rsp = false := by
-    rw [Code.allInstrs_eq, List.all_eq_true] at hsp
+  obtain ⟨t, s', he, hsv, hpost'⟩ := sign_ok hc hL hT (hpre s hs) hmb
+  have hsp : ∀ i ∈ instrs c.sign.inline, Taint.clobbers i .rsp = false := by
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at hsp
     intro i hi
     simpa using hsp i hi
-  have F := (Exec.regions he hnc).2.2
+  have F := (Exec.regions he (Code.noCalls_inline hnc)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec hmx he ⟨fun r hr => ?_, ?_⟩, hpost _ _ hpost'⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; exact hmx) he ⟨fun r hr => ?_, ?_⟩, hpost _ _ hpost'⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -126,7 +127,7 @@ theorem sign_x86 (hL : Law Spec.P256.curve)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
-    ∃ t s', Exec isa signP256 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
+    ∃ t s', Exec isa signP256.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
   sign_x86_of (p256_ok hI) hL (p256_tbls hL hT) ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩ (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
     (by lit_decide) (by lit_decide) s hs
 
@@ -139,22 +140,60 @@ materialize_shared signP256Erased
 
 theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP256 :=
   VG.Taint.constantTime_mapBlocks (c' := signP256Erased) (taintSym_eraseInv ["VG_P256_COMB"])
-    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) rfl
-    (fun _ _ _ _ ⟨_, h1, h2, h3, h4, h5, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .rsp]) rfl
+    (fun _ _ _ _ ⟨h0, h1, h2, h3, h4, h5, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
       · exact h1
       · exact h2
       · exact h3
       · exact h4
-      · exact h5, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
+      · exact h5
+      · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
     rfl (by taint_decide)
+
+theorem sat_spec8 :
+    (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts p256.combConsts) 8).pre satState := by
+  have held : ∀ i < p256W.length, satState.mem.readW (satState.syms "VG_P256_COMB" +
+      BitVec.ofNat 64 (8 * i)) 64 = p256W.getD i 0 := satMem_held
+  sig_pre [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+    Spec.P256.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p256_combConsts,
+    Abi.withConsts, p256_constRegions, Abi.constsHeld, stackBelow]
+  sig_and_intros
+  all_goals first | exact Region.disjoint_of_sep (by decide) | exact held | (rw [p256W_length]; rfl) | rfl | decide
+
+/-- The contract with 8 bytes of stack, for the calls' return address. -/
+theorem implies8 :
+    signX86_64.Implies (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts p256.combConsts) 8) :=
+  implies.stack8 ⟨satState, sat_spec8⟩
+
+/-- The output is apart from the calls' return address. -/
+theorem post_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : signX86_64.pre s)
+    (hc : Clear (hole (s.gpr .rsp)) s) (hp : signX86_64.post s b) :
+    signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  have hb := Clear.wr_bytes hc (p := s.gpr .rdi) (n := 64) (by rw [hs.2.1]; simp) (by decide)
+  simpa only [signX86_64, State.patch_gpr, bytesAt_patch hb] using hp
+
+theorem sign_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
+    (hs : (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts p256.combConsts) 8).pre s)
+    (hp : signX86_64.post s b) : signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) :=
+  post_patch s b hv u (implies8.pre s hs) (Sig.clear_of_pre_consts hs) hp
+
+/-- The function with its calls, for a caller (RFC 6979's) that keeps its
+buffers off the 8 bytes below `rsp`. -/
+theorem sign_call_x86 (hL : Law Spec.P256.curve)
+    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
+    (hI : InvSounds) (s : State) (hs : signX86_64.pre s) (hc : Clear (hole (s.gpr .rsp)) s) :
+    ∃ t s', Exec isa signP256 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
+  ok_of_inline (k := signX86_64) (by lit_decide) (sign_x86 hL hT hI)
+    (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
 theorem sign_verified (hL : Law Spec.P256.curve)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : InvSounds) :
     Verified X86_64.target signP256
-      (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts p256.combConsts)) :=
-  Verified.of_correct (sign_x86 hL hT hI) sign_ct implies
+      (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts p256.combConsts) 8) :=
+  Verified.of_inline_ct (by lit_decide) (sign_x86 hL hT hI) sign_ct implies8
+    (fun _ h => Sig.clear_of_pre_consts h) sign_patch
 
 end VG.Proof.Ecdsa.X86_64

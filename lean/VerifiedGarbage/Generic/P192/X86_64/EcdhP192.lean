@@ -12,7 +12,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P192.curve) : List Ar
     doc := Spec.Ecdh.P192.exchangeApi.doc (notes := ["Field elements are four 64-bit words in Montgomery form. \
       Scalar multiplication calls `vg_p192_mul`, a fixed 256-iteration ladder with the general complete addition \
       formulas of Renes, Costello and Batina (Algorithm 1). \
-      Inversions use divsteps. Branches and memory addresses depend only on pointers and loop counters."])
+      Inversions use divsteps, by a call of `vg_p192_inv_mod_p`. \
+      Branches and memory addresses depend only on pointers and loop counters."])
     code := Impl.Ecdh.X86_64.exchangeP192
     contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst X86_64.abi 8
     stack := 8

@@ -257,7 +257,16 @@ pub(crate) mod mlkem1024;
 pub(crate) mod mlkem768;
 
 #[rustfmt::skip]
+pub(crate) mod p192_inverse;
+
+#[rustfmt::skip]
 pub(crate) mod p192_mul;
+
+#[rustfmt::skip]
+pub(crate) mod p224_inverse;
+
+#[rustfmt::skip]
+pub(crate) mod p256_inverse;
 
 #[rustfmt::skip]
 pub(crate) mod p384_inverse;
@@ -387,6 +396,9 @@ pub(crate) mod rsa_pss_sha512_mgf1_sha512;
 
 #[rustfmt::skip]
 pub(crate) mod scrypt;
+
+#[rustfmt::skip]
+pub(crate) mod secp256k1_inverse;
 
 #[rustfmt::skip]
 pub(crate) mod secp256k1_mul;
