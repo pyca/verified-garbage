@@ -226,4 +226,30 @@ theorem cancel_low {s : State} {n0 lo : Word} {rest : Nat}
     exact h.trans hm
   exact BitVec.eq_of_toNat_eq hrem
 
+theorem value_words (m : Mem) (B : Addr) (e k : Nat) :
+    VG.Proof.Bignum.Square.value (2 ^ 64) (fun i => (word m B (e + 8 * i)).toNat) k =
+      wv m B e k := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    change VG.Proof.Bignum.Square.value (2 ^ 64) (fun i => (word m B (e + 8 * i)).toNat) k +
+      (word m B (e + 8 * k)).toNat * (2 ^ 64) ^ k =
+      wv m B e k + 2 ^ (64 * k) * (word m B (e + 8 * k)).toNat
+    exact (congrArg (· + (word m B (e + 8 * k)).toNat * (2 ^ 64) ^ k) ih).trans
+      (congrArg (wv m B e k + ·) ((Nat.mul_comm _ _).trans
+        (congrArg (· * (word m B (e + 8 * k)).toNat) (Nat.pow_mul 2 64 k).symm)))
+
+theorem blockValue_words (m : Mem) (B : Addr) (e : Nat) :
+    blockValue (fun i => word m B (e + 8 * i)) = wv m B e 8 := value_words m B e 8
+
+theorem wv_radix_add (m : Mem) (B : Addr) (e n k : Nat) :
+    wv m B e (n + k) = wv m B e n + (2 ^ 64) ^ n * wv m B (e + 8 * n) k :=
+  (wv_add m B e n k).trans
+    (congrArg (fun r => wv m B e n + r * wv m B (e + 8 * n) k) (Nat.pow_mul 2 64 n))
+
+theorem word_flag (v : Word) (hv : v.toNat ≤ 1) : ∃ p : Bool, v = BitVec.ofNat 64 p.toNat := by
+  rcases (by omega : v.toNat = 0 ∨ v.toNat = 1) with h | h
+  · exact ⟨false, BitVec.eq_of_toNat_eq h⟩
+  · exact ⟨true, BitVec.eq_of_toNat_eq h⟩
+
 end VG.Proof.Bignum.AArch64.BlockedRedc
