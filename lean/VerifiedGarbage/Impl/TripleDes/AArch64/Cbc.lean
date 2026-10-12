@@ -9,17 +9,18 @@ public import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
 
 `cbcEncrypt` and `cbcDecrypt` (schedule = x0, iv = x1, data = x2, n = x3,
 scratch = x4): the modes' generic CBC (`Impl/Modes/AArch64/Cbc.lean`,
-`CbcEnc.lean`) over the scalar block function (`block`), one 8-byte block at
-a time, with the working space in the scratch buffer, which the artifact
-allocates on the stack.
+`CbcEnc.lean`) over calls of the scalar block function
+(`vg_triple_des_encrypt_block` or `vg_triple_des_decrypt_block`), one 8-byte
+block at a time, with the working space in the scratch buffer, which the
+artifact allocates on the stack.
 
 The core's slots: the block function's 64 (`x2`), the buffer's one block,
 and a copy of the 384-byte schedule, which `prepare` makes so that nothing
 the modes write can reach it. `crypt` points `x0`, `x1` and `x2` at the
 copy, the buffer and the block function's slots, and restores the scratch
-buffer's address (`sb`, which the block function overwrites) from `x2`.
-The block function keeps `x23` and `x24`, which carry the data's address
-and the blocks left.
+buffer's address (`sb`, which the block function overwrites) from `x2`,
+which no instruction of the block function writes. The call keeps `x23` and
+`x24` (callee-saved), which carry the data's address and the blocks left.
 -/
 
 @[expose] public section
@@ -42,11 +43,17 @@ def dirBlock : Direction → Prog isa
   | .encrypt => encryptBlock
   | .decrypt => decryptBlock
 
+/-- A call of the block function of the direction `d`
+(`vg_triple_des_encrypt_block` or `vg_triple_des_decrypt_block`). -/
+def blockCall : Direction → Prog isa
+  | .encrypt => .call "vg_triple_des_encrypt_block" encryptBlock
+  | .decrypt => .call "vg_triple_des_decrypt_block" decryptBlock
+
 /-- Triple DES's core for the modes, in the direction `d`. -/
 def dirCore (d : Direction) : Impl.Modes.AArch64.Core where
   prepare := .block ((List.range 48).flatMap (copyW .x6 sb .x0 (8 * schedSlot) 0))
   crypt := .seq (.block [.addImm .x .x0 sb (8 * schedSlot), .addImm .x .x1 sb (8 * cbcBuf), rr .x2 sb])
-    (.seq (dirBlock d) (.block [rr sb .x2]))
+    (.seq (blockCall d) (.block [rr sb .x2]))
   slots := schedSlot + 48
   total := schedSlot + 60
   buf := cbcBuf
