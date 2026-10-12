@@ -126,6 +126,10 @@ GROUPS = {
         "lib": ["cpu"],
         "tests": [],
     },
+    "dsa": {
+        "lib": ["dsa"],
+        "tests": ["cavp::dsa", "wycheproof::dsa"],
+    },
     "ecdsa": {
         "lib": ["ecdsa"],
         "tests": [
