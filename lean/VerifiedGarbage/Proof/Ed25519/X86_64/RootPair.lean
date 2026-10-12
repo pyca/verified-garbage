@@ -338,14 +338,14 @@ theorem chain_rootPower (e : Env) (b b' : Spec.X25519.Fe) :
     Function.update_apply, ↓reduceIte, chainVals, rootSteps, List.take, List.foldl, stepVals]
   exact ⟨rfl, rfl⟩
 
-/-- `rootPower2` in the scratch: A's power (of slot 2) into slot 15 and R's (of slot 3) into
-slot 19. -/
-theorem rootPower2_ok {s : State} {base : Addr} (hs : Scratch s base) :
-    WP isa (rootPower2 fld) s fun t => RbxKeep base s t ∧
+/-- `rootPowerLoop2` in the scratch: A's power (of slot 2) into slot 15 and R's (of slot 3)
+into slot 19. -/
+theorem rootPowerLoop2_ok {s : State} {base : Addr} (hs : Scratch s base) :
+    WP isa (rootPowerLoop2 fld) s fun t => RbxKeep base s t ∧
       env t.mem base 15 = Spec.X25519.pow (env s.mem base 2) ((Spec.X25519.P - 5) / 8) ∧
       env t.mem base 19 = Spec.X25519.pow (env s.mem base 3) ((Spec.X25519.P - 5) / 8) := by
   have hn := hs.nowrap
-  unfold rootPower2
+  unfold rootPowerLoop2
   -- `2^5 - 1`.
   refine WP.seq (WP.mono (fieldCodeWide_ok hs _) fun s₁ ⟨k₁, e₁⟩ => ?_)
   have hs₁ := hs.of_keep k₁
@@ -428,5 +428,45 @@ theorem rootPower2_ok {s : State} {base : Addr} (hs : Scratch s base) :
       (env s₃.mem base 21)).2, ← e₁, ← e₂, ← e₃, ← hl, ← I₅.x3, ← m₆, e₈, e₇]
     simp only [Fin.isValue, Fin.reduceEq, evalOps, List.foldl_cons, List.foldl_nil, evalOp, upd2,
       Function.update_apply, ↓reduceIte]
+
+theorem rootPowerUnrolled2_spec (base : Addr) :
+    ∃ f, RSpec base (rootPowerUnrolled2 fld) f ∧ ∀ e, f e 15 = VG.Proof.Ed25519.rootPower (e 2) ∧
+      f e 19 = VG.Proof.Ed25519.rootPower (e 3) := by
+  refine ⟨_, (RSpec.ops base _).seq <| (RSpec.ops base _).seq <| (RSpec.ops base _).seq <|
+    (sqn2_spec base (by decide) (by decide) 5 (by decide) (by decide)).seq <| (RSpec.ops base _).seq <|
+    (sqn2_spec base (by decide) (by decide) 10 (by decide) (by decide)).seq <| (RSpec.ops base _).seq <|
+    (sqn2_spec base (by decide) (by decide) 20 (by decide) (by decide)).seq <| (RSpec.ops base _).seq <|
+    (sqn2_spec base (by decide) (by decide) 10 (by decide) (by decide)).seq <| (RSpec.ops base _).seq <|
+    (sqn2_spec base (by decide) (by decide) 50 (by decide) (by decide)).seq <| (RSpec.ops base _).seq <|
+    (sqn2_spec base (by decide) (by decide) 100 (by decide) (by decide)).seq <| (RSpec.ops base _).seq <|
+    (sqn2_spec base (by decide) (by decide) 50 (by decide) (by decide)).seq <| (RSpec.ops base _).seq <|
+    (sqn2_spec base (by decide) (by decide) 2 (by decide) (by decide)).seq (RSpec.ops base _),
+    fun e => ⟨?_, ?_⟩⟩
+  all_goals
+    simp only [↓reduceIte, upd2, evalOps, List.foldl_cons, List.foldl_nil, evalOp,
+      Function.update_apply]
+    rfl
+
+/-- `rootPowerUnrolled2` in the scratch: A's power (of slot 2) into slot 15 and R's (of slot 3) into
+slot 19. -/
+theorem rootPowerUnrolled2_ok {s : State} {base : Addr} (hs : Scratch s base) :
+    WP isa (rootPowerUnrolled2 fld) s fun t => RbxKeep base s t ∧
+      env t.mem base 15 = Spec.X25519.pow (env s.mem base 2) ((Spec.X25519.P - 5) / 8) ∧
+      env t.mem base 19 = Spec.X25519.pow (env s.mem base 3) ((Spec.X25519.P - 5) / 8) := by
+  obtain ⟨f, hf, hv⟩ := rootPowerUnrolled2_spec (fld := fld) base
+  refine WP.mono (hf s hs) fun t ⟨k, e⟩ => ⟨k, ?_, ?_⟩
+  · rw [e, (hv _).1, VG.Proof.Ed25519.rootPower_eq]
+  · rw [e, (hv _).2, VG.Proof.Ed25519.rootPower_eq]
+
+/-- `rootPower2` in the scratch: A's power (of slot 2) into slot 15 and R's (of slot 3) into
+slot 19. -/
+theorem rootPower2_ok {s : State} {base : Addr} (hs : Scratch s base) :
+    WP isa (rootPower2 fld) s fun t => RbxKeep base s t ∧
+      env t.mem base 15 = Spec.X25519.pow (env s.mem base 2) ((Spec.X25519.P - 5) / 8) ∧
+      env t.mem base 19 = Spec.X25519.pow (env s.mem base 3) ((Spec.X25519.P - 5) / 8) := by
+  unfold rootPower2
+  split
+  · exact rootPowerLoop2_ok hs
+  · exact rootPowerUnrolled2_ok hs
 
 end VG.Proof.Ed25519.X86_64
