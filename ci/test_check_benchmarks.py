@@ -108,7 +108,9 @@ class Selection(unittest.TestCase):
             return planner.arches(paths, base='base')
 
     def configurations(self, rows, arch):
-        return [r['cpu-features'] for r in rows if r['arch'] == arch]
+        # Each configuration once, from its first shard.
+        return [r['cpu-features'] for r in rows
+                if r['arch'] == arch and r.get('shard', '') in ('', f"1/{r['shard'].split('/')[-1]}")]
 
     def full_matrix(self):
         """The number of rows of the full matrix: every platform, without and
@@ -389,13 +391,16 @@ class Selection(unittest.TestCase):
 
     def test_manual_runs_select_architectures_and_configurations(self):
         rows = planner.manual()
-        self.assertEqual(len(rows), self.full_matrix())
+        # Every configuration, split into shards of BENCHMARKS_PER_JOB.
+        self.assertEqual(len({(r['arch'], r['cpu-features']) for r in rows}), self.full_matrix())
+        shards = -(-planner.bench_count(planner.ALL) // planner.BENCHMARKS_PER_JOB)
+        self.assertEqual(len(rows), self.full_matrix() * shards)
         self.assertTrue(all(r['modules'] == '' for r in rows))
         self.assertEqual(self.configurations(planner.manual('aarch64'), 'aarch64'),
                          ['', *planner.CPU_FEATURES['aarch64']])
         # `-` is the configuration without a restriction, and others need
         # not be in `CPU_FEATURES`; the platforms keep their order.
-        rows = planner.manual('arm x86_64', '- avx2,avx')
+        rows = [r for r in planner.manual('arm x86_64', '- avx2,avx') if r['shard'] in ('', f'1/{shards}')]
         self.assertEqual([(r['arch'], r['cpu-features']) for r in rows],
                          [('x86_64', ''), ('x86_64', 'avx2,avx'), ('arm', ''), ('arm', 'avx2,avx')])
         with self.assertRaisesRegex(ValueError, 'unknown architecture'):
