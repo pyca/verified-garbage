@@ -667,6 +667,20 @@ class FreshCopies(unittest.TestCase):
                 self.assertEqual((tmp / 'stage' / 'src/lib.rs').read_text(), 'head src/lib.rs')
                 self.assertEqual((crate / 'Cargo.toml').read_text(), 'head bench/Cargo.toml')
 
+    def test_listing_ignores_the_cpu_feature_restriction(self):
+        # A shard lists the groups before any run; a CPU lacking a feature
+        # VG_CPU_FEATURES names would stop the library there instead.
+        seen = {}
+
+        def fake_run(cmd, env, **kwargs):
+            seen.update(env)
+            return subprocess.CompletedProcess(cmd, 0, stdout='a/verified-garbage/1: benchmark\n')
+        with mock.patch.dict(os.environ, {'VG_CPU_FEATURES': 'avx512f'}), \
+                mock.patch.object(bench_compare.subprocess, 'run', fake_run):
+            self.assertEqual(bench_compare.list_groups('bin', 'ec_p521'), {'a': 1})
+        self.assertNotIn('VG_CPU_FEATURES', seen)
+        self.assertEqual(seen['VG_BENCH_MODULES'], 'ec_p521')
+
     def test_a_copy_is_a_new_executable_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             target = pathlib.Path(tmp)

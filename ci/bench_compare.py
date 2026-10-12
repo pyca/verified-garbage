@@ -205,9 +205,13 @@ def selected_modules(checkout, requested):
 def list_groups(binary, modules):
     """The benchmark groups (`<primitive>`s) of verified-garbage that
     `binary` runs for `modules`, with how many benchmarks each has."""
+    # Without `VG_CPU_FEATURES`: listing runs no benchmark, and the library
+    # stops at its start if this CPU lacks a feature it names, which the
+    # runs report.
+    env = {k: v for k, v in os.environ.items() if k != "VG_CPU_FEATURES"}
     out = subprocess.run(
         [binary, "--bench", "--list", f"/{VG}/"],
-        env={**os.environ, "VG_BENCH_MODULES": modules},
+        env={**env, "VG_BENCH_MODULES": modules},
         check=True,
         stdout=subprocess.PIPE,
         text=True,
