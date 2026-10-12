@@ -1,7 +1,15 @@
-import VerifiedGarbage.Impl.P256.Linear
-import VerifiedGarbage.Proof.Mont.AArch64.Ops
-import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
+module
+
+public import VerifiedGarbage.Impl.P256.Linear
+public import VerifiedGarbage.Proof.Mont.AArch64.Ops
+public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.P256.Linear
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64

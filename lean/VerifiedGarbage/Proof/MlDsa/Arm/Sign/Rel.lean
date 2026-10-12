@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseA
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseA
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: two runs
@@ -12,6 +18,8 @@ invariant, and the piece's own proof the next relation (`relInvE`). The runs
 are in the same layout (`RR.lrel`) and agree on `ρ` (`RR.rho`), which the
 leakage begins with.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

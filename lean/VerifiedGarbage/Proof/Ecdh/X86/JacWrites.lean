@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ecdh.X86.JacLayout
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowLayout
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86.JacLayout
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowLayout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Memory written by the Jacobian ECDH multiplier. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdh.X86
 open VG VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Ecdsa.X86
 open VG.Proof.Mont VG.Proof.Weierstrass.X86 VG.Proof.Ecdsa.X86

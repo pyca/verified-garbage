@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86-64: the setup
@@ -11,6 +17,8 @@ their slots (`setupLoad_ok`, once each), stores the constants
 keeps `out` in `rsi` (`setupOut_ok`): `setup_ok`, the state `SetupPost`
 describes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 

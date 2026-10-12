@@ -1,10 +1,16 @@
-import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Covers
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Contract
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: where everything is
@@ -23,6 +29,8 @@ frames, and that memory changed only in `out`, `scratch` and the stack. Code
 that writes only regions apart from the pointers and the return address
 (`Safe`) keeps it (`Ctx.keep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

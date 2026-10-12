@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.CombLoop
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseBits
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseEncode
-import VerifiedGarbage.Proof.X448.X86_64.Main
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.CombLoop
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseBits
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseEncode
+public import VerifiedGarbage.Proof.X448.X86_64.Main
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86-64: the whole function
@@ -15,6 +21,8 @@ working space but the result's, so the scalar is read unchanged, the
 callee-saved registers are restored from the working space, and the return
 address is kept.
 -/
+
+@[expose] public section
 
 set_option exponentiation.threshold 1024
 

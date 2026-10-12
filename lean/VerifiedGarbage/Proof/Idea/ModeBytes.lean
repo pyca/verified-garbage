@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Idea.Memory
-import VerifiedGarbage.Proof.Modes.Ctr
-import VerifiedGarbage.Spec.Idea.Cbc
-import VerifiedGarbage.Spec.Aes
+module
+
+public import VerifiedGarbage.Proof.Idea.Memory
+public import VerifiedGarbage.Proof.Modes.Ctr
+public import VerifiedGarbage.Spec.Idea.Cbc
+public import VerifiedGarbage.Spec.Aes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA's blocks and schedule as the modes see them
@@ -12,6 +18,8 @@ needs: a block's bytes as the modes read them (`bytesAt_eq`,
 schedule at an address, which depends only on its 104 bytes
 (`scheduleAt_congr_at`, `scheduleAt_frame`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea
 

@@ -1,10 +1,19 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Recover
-import VerifiedGarbage.Proof.Ed25519.Arm.Power
-import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
-import VerifiedGarbage.Proof.Ed25519.Recover
-import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Recover
+public import VerifiedGarbage.Proof.Ed25519.Arm.Power
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
+public import VerifiedGarbage.Proof.Ed25519.Recover
+public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.RecoverCandidate`. -/
+
+@[expose] public section
+
 section
 /-! Candidate root and its square check agree with the decoding specification. -/
 namespace VG.Proof.Ed25519.Arm

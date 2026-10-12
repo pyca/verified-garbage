@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Verified
-import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
-import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
+module
+
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Verified
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Verified
+public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
+meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
+public import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over P-521 on x86-64 with BMI2 and ADX: `Verified`
@@ -9,6 +19,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 As `Verified.lean`, for `p521x` (`p521` multiplying modulo `p` with BMI2 and
 ADX): the same curve, so the same precondition and postcondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86_64.P521
 

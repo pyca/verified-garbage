@@ -1,6 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPointChecks
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
-import VerifiedGarbage.Proof.Weierstrass.X86.NafWindowTiming
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPointChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPointChecks
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafWindowTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86.NafWindowTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86

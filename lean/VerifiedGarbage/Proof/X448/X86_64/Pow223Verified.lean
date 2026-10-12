@@ -1,10 +1,23 @@
-import VerifiedGarbage.Proof.X448.X86_64.Pow223
-import VerifiedGarbage.Proof.X448.X86_64.Lit
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.X448.Field64
+module
+
+public import VerifiedGarbage.Proof.X448.X86_64.Pow223
+meta import VerifiedGarbage.Proof.X448.X86_64.Pow223
+public import VerifiedGarbage.Proof.X448.X86_64.Lit
+meta import VerifiedGarbage.Proof.X448.X86_64.Lit
+public import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.X448.Field64
+meta import VerifiedGarbage.Spec.X448.Field64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: `vg_gf448_r64_pow223`, verified
@@ -17,6 +30,8 @@ return address is apart from; the slots' values are `c222` and `c223` of slot
 Constant time by taint tracking (only `rsp` and `ws` are public), and a state
 satisfying the precondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86_64
 

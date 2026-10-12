@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.Ecdh.X86.WinJac
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildState
-import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+module
+
+public import VerifiedGarbage.Impl.Ecdh.X86.WinJac
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildState
+public import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The five-bit ECDH window fits the existing P-256 scratch layout. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdh.X86
 open VG VG.Impl.Weierstrass VG.Impl.Weierstrass.X86 VG.Impl.Mont
 open VG.Proof.Mont VG.Proof.Weierstrass.X86 VG.Proof.Ecdsa.X86

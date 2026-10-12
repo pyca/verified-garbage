@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
-import VerifiedGarbage.Proof.Hmac.Common
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
+public import VerifiedGarbage.Proof.Hmac.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: copying words
@@ -11,6 +17,8 @@ read (`copyN_ok`, by induction on the words). `copyBytes` copies `Q` bytes,
 `Q` at least 8: its words, then the last eight bytes again through `x13` and
 `x14` (`copyAt_ok`) if `Q` is not a multiple of 8 (`copyBytes_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

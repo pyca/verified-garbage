@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.OffsetBelow
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.OffsetBelow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Shared frame and call invariants for complete Arm Ed25519. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.Arm.Whole
 open VG VG.Arm
 

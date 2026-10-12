@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Idea.Arm.Verified
-import VerifiedGarbage.Proof.Modes.Arm.Core
-import VerifiedGarbage.Impl.Idea.Arm.Modes
-import VerifiedGarbage.Proof.Idea.Arith
-import VerifiedGarbage.Spec.Idea.Cbc
+module
+
+public import VerifiedGarbage.Proof.Idea.Arm.Verified
+public import VerifiedGarbage.Proof.Modes.Arm.Core
+public import VerifiedGarbage.Impl.Idea.Arm.Modes
+public import VerifiedGarbage.Proof.Idea.Arith
+public import VerifiedGarbage.Spec.Idea.Cbc
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA's ECB function on ARMv7 as the modes' core
@@ -13,6 +19,8 @@ proof (`ecb_framed`): the schedule is IDEA's 104-byte table of subkeys, and
 the cipher on a block is `Spec.Idea.cipher` of it (encryption under the
 encryption subkeys, decryption under the decryption subkeys).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.Arm
 

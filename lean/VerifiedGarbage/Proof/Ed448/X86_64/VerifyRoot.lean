@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X448.X86_64.Pow223
-import VerifiedGarbage.Proof.Ed448.Root
-import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+module
+
+public import VerifiedGarbage.Proof.X448.X86_64.Pow223
+public import VerifiedGarbage.Proof.Ed448.Root
+public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86-64: the square root's power
@@ -12,6 +18,8 @@ with that effect on the slots that writes no more than `[960, 1648)`
 (`RootOk`): `root` (`root_ok`), or its chain by a call of
 `vg_gf448_r64_pow223`, inlined (`rootCall_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 

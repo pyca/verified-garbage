@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCall
-import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCorrect
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCall
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCorrect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on ARMv7, `verify_message`: correctness
@@ -11,6 +17,8 @@ the context string is longer than 255 bytes; otherwise it computes
 verification function on `μ` `c`, which gives the result of
 `ML-DSA.Verify_internal` on the formatted message (`verifyMessage_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Message
 

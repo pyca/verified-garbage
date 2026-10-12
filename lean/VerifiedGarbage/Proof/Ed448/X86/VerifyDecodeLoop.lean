@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86.VerifyDecode
-import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyDecode
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): `R` and `A` decoded by one loop
@@ -10,6 +16,8 @@ the working space (`PCUR`, `CNT`), and each iteration first copies slots 6–7 t
 so that `R`, decoded into slots 6–7 by the first iteration, is kept there while `A` is decoded
 into them by the second. `DecInv` is the state after `2 - m` decodings, `m` the count.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

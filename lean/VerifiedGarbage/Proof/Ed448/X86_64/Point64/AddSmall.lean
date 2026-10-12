@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
-import Mathlib.Data.ZMod.Defs
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+public import Mathlib.Data.ZMod.Defs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Specializing the affine addition's fixed curve constant, without changing its contract. -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.Point64
 

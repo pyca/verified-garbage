@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.X86_64.Pow223
-import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+module
+
+public import VerifiedGarbage.Proof.X448.X86_64.Pow223
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86-64: the inversion by a call
@@ -10,6 +16,8 @@ It keeps the registers but `clob` and `rbx` and the memory outside
 `[832, 1648)` (slot 12 and the function's bytes), and slot 21 ends as
 `invert` of slot 2, as the inline inversion's does (`invert_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86_64
 

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Layout
-import VerifiedGarbage.Proof.Ed25519.Arm.ScalarVerified
-import VerifiedGarbage.Proof.Ed25519.Arm.VerifyVerified
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Layout
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarVerified
+public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.Arm.VerifyMessage
 open VG VG.Arm

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Correct
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Correct
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on x86-64: constant time
@@ -11,6 +17,8 @@ on the pointers and the lengths; the hashing leaks only the layout
 `vg_ed448_verify_equation` leak only their pointers (`red_tr`, `eq_tr`).
 The contract makes the inputs public too, but no leak depends on them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.Verify
 

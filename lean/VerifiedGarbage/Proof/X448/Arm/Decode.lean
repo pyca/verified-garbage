@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.Arm.Swap
-import VerifiedGarbage.Proof.X448.Radix16Bytes
+module
+
+public import VerifiedGarbage.Proof.X448.Arm.Swap
+public import VerifiedGarbage.Proof.X448.Radix16Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on ARMv7: decoding a coordinate limb
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X448.Radix16Bytes
 Two byte loads construct a 16-bit limb, which is written to both initial
 coordinate slots.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.Arm
 

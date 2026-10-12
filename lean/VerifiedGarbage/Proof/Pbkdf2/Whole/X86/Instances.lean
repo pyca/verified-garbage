@@ -1,12 +1,27 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Md5
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha384
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_224
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_256
-import VerifiedGarbage.Proof.Framework.TaintBatch
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Md5
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Md5
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha384
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha384
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_224
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_224
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_256
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_256
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the instances
@@ -16,6 +31,8 @@ The generic proof (`CT.lean`) at each hash function of
 their own registration files, the taint checks are evaluated by the kernel,
 and a state satisfies the shared contract (`pbkSat`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Whole.X86
 

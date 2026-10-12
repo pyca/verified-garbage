@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_use_hint`
@@ -13,6 +24,8 @@ The loop body is symbolically executed once for each value of `γ₂`
 and the hint word `h` is not 0 exactly when bit 31 of `(0 - h) | h` is set
 (`nz_eq`). `γ₂` selects one of two loops, in the frames that save `r4`–`r6`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Round.UseHint
 

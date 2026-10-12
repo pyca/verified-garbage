@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
-import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
-import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+public import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448's point functions on x86-64: their `Verified`
@@ -14,6 +20,8 @@ the spec's coordinates are the slots' field elements (`elemAt_eq`).
 Constant time by taint tracking (only `rsp` and `ws` are public, and every
 address is `ws` plus a constant), and a state satisfying the precondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.Point64
 

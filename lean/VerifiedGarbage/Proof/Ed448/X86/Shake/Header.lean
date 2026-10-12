@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.X86.Shake.Layout
-import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Proof.X25519.Bytes
-import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Impl.Ed448.X86.Shake
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.Shake.Layout
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Proof.Ed448.Scalar
+public import VerifiedGarbage.Impl.Ed448.X86.Shake
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on x86 (32-bit): the header of `dom4`
@@ -12,6 +18,8 @@ first ten bytes of `dom4(0, context)`, in the frame at `off`, `ctxlen` the
 caller's argument `j` (below 256): three little-endian words, the last
 `ctxlen · 2^8`, by eight doublings (`hdr_bytes`). It writes nothing else.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86.Shake
 

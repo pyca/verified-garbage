@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on x86-64: the result
@@ -8,6 +14,8 @@ returns the flag's low bit, and restores the callee-saved registers
 (`finish_ok`). The stores are outside the working space, so it keeps its
 numbers and the saved registers (`Outside.unch_far`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 

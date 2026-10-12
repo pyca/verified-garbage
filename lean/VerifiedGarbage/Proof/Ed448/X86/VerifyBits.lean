@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.X86.VerifyField
-import VerifiedGarbage.Proof.Ed448.Scalar
-import VerifiedGarbage.Proof.X448.X86.ByteMem
-import VerifiedGarbage.Proof.X448.X86.Iter
-import VerifiedGarbage.Proof.X448.X86.Bits
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyField
+public import VerifiedGarbage.Proof.Ed448.Scalar
+public import VerifiedGarbage.Proof.X448.X86.ByteMem
+public import VerifiedGarbage.Proof.X448.X86.Iter
+public import VerifiedGarbage.Proof.X448.X86.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): the bits of `S` and `k`
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.X448.X86.Bits
 bytes), and byte `t` at `KBITS` bit `t` of `k` (the challenge), for `t < 456`
 (`VBits`), by X448's `bitsLoop`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

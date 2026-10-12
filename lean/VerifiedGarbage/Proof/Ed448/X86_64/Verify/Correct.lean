@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Calls
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Pre
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Calls
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Pre
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on x86-64: correctness
@@ -12,6 +18,8 @@ if the context is longer than 255 bytes and otherwise that result, which is
 `Spec.Ed448.verify`'s (`verify_wp`), for any proof of `vg_ed448_verify_equation`
 (`EqOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.Verify
 

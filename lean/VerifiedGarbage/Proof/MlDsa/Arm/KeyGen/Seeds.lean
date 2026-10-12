@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Inv
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Inv
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on 32-bit ARM: the seeds
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 `(ρ, ρ′, K) = H(ξ ‖ k ‖ ℓ, 128)` to `HX`, `ρ` to the seed of `RejNTTPoly` and
 `ρ′ ‖ 0` to that of `RejBoundedPoly` (`seeds_piece`, `K1`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.KeyGen
 

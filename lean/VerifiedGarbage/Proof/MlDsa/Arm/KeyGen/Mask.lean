@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.StepsCT
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Lay
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.StepsCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Lay
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on 32-bit ARM: masking a sampled polynomial
@@ -10,6 +16,8 @@ coefficient of the polynomial it wrote with `-r0`: the polynomial is kept if
 the sampler succeeded, and zeroed if it failed (`mask_ok`), without a branch
 (`mask_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.KeyGen
 

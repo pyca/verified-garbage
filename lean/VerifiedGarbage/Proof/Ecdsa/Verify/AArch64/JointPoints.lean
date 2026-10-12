@@ -1,21 +1,29 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPrep
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.ProjectiveFlags
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
-import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTable
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointGenerator
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyExtra
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPrep
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.ProjectiveFlags
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTable
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointGenerator
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyExtra
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `JointPrep` -/
+
+@[expose] public section
 
 section
 

@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Base
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Base
+meta import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Base
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 public-key derivation on x86-64: `Verified`
@@ -18,6 +28,8 @@ whatever their secrets. The blocks address only the stack and `scratch`, from
 registers that agree (the taint analysis); each call is of constant-time code
 whose public data, its pointers and lengths, agree (`RelCT.callEx`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.PublicKey
 

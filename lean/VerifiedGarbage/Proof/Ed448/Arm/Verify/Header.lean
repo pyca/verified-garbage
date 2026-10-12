@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.Arm.Verify.Layout
-import VerifiedGarbage.Proof.Ed448.Arm.Shake.Header
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Layout
+public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Header
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification on ARMv7: the header of `dom4`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Ed448.Arm.Shake.Header
 `hdr_ok`: the block `hdr` leaves `"SigEd448" ‖ 0 ‖ ctxlen`, the first ten
 bytes of `dom4(0, context)`, in the frame at `HDR` (`Shake.Kit.hdr_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.Verify
 

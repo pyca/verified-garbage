@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Msg
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Msg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the steps on `K` and `V`
@@ -9,6 +15,8 @@ As on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Steps.lean`): `V = HMAC_K(V)`
 `V = HMAC_K(V)` (`rekey_ok`, step h.3). Each changes only `scratch`, the
 stack below the frame, and `K` and `V`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 

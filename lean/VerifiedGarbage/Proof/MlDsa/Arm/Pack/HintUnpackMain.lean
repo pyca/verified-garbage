@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackLoops
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackLoops
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_hint_bit_unpack`, correct
@@ -8,6 +14,8 @@ loops (`HintUnpackLoops.lean`), the return value and the reloads of the saved
 registers; the result is `HintBitUnpack` (Algorithm 21) through its fold form
 (`hintBitUnpack_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Pack.Hint.Unpack
 

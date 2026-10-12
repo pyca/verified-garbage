@@ -1,13 +1,19 @@
-import VerifiedGarbage.Impl.Ecdsa.AArch64
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64
-import VerifiedGarbage.Impl.Sha256.AArch64.Stream
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Contract
-import VerifiedGarbage.Impl.Pbkdf2.AArch64
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.AArch64
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64
+public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Contract
+public import VerifiedGarbage.Impl.Pbkdf2.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on AArch64: the curve
@@ -27,6 +33,8 @@ register, and, unless `wide`, the taint check of the block computing
 `bits2octets`, which holds `n`'s words as immediates. Each curve's file builds one, so that the heavy algebra of its
 proof stays out of the modules generic over the curve and the hash function.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 

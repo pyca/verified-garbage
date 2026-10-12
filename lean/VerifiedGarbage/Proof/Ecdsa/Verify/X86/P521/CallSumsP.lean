@@ -1,11 +1,21 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over P-521 on x86 (32-bit): summaries of the field functions modulo `p`
 
 See `CallTaint`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.X86.P521
 

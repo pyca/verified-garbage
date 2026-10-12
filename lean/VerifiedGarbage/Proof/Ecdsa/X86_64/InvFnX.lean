@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
-import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsWrap
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsWrap
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The functions of four words: the callee-saved registers come back
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsWrap
 nothing, each comes back with its value (`invFnX_gpr`), as for the point
 functions (`PointOps.wrap_gpr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64
 

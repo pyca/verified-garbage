@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsC
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsC
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on ARMv7: calls of the encodings with a stack argument
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsC
 As `Prims.lean`, for `vg_mldsa_bit_pack`, `vg_mldsa_bit_unpack` and
 `vg_mldsa_hint_bit_pack`, whose fifth argument is on the stack (`callS`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Sign
 

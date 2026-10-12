@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Idea.X86.CbcVerified
-import VerifiedGarbage.Proof.Idea.FbScratch
+module
+
+public import VerifiedGarbage.Proof.Idea.X86.CbcVerified
+meta import VerifiedGarbage.Proof.Idea.X86.CbcVerified
+public import VerifiedGarbage.Proof.Idea.FbScratch
+meta import VerifiedGarbage.Proof.Idea.FbScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA-OFB and IDEA-CFB64 on x86 (32-bit) meet their contracts
@@ -13,6 +21,8 @@ addresses of the data, the chaining value and the scratch buffer as the base
 addresses of the writable regions. The `_framed` theorems run them with
 their working space on the stack, zeroed on return.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.X86.Fb
 

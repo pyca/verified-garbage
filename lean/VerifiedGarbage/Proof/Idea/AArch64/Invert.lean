@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Idea.AArch64.Key
-import VerifiedGarbage.Proof.Idea.Inverse
+module
+
+public import VerifiedGarbage.Proof.Idea.AArch64.Key
+public import VerifiedGarbage.Proof.Idea.Inverse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA decryption subkeys on AArch64
@@ -10,6 +16,8 @@ encryption subkey (`invertKey_getD`, `Impl.Idea.invOp`), computed into
 `t := (t ⊙ t) ⊙ a`, `invLoop_ok`), placed in its 16 bits of `x9`
 (`invPlace`), and stored a quadword at a time (`invQuad_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.AArch64
 

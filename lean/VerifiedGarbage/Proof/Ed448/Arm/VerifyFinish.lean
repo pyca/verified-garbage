@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed448.Arm.VerifyChecks
-import VerifiedGarbage.Proof.Ed448.Arm.VerifySign
-import VerifiedGarbage.Proof.X448.Arm.Restore
-import VerifiedGarbage.Proof.X448.Arm.Counters
-import VerifiedGarbage.Proof.Ed448.Arm.BaseStep
+module
+
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyChecks
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifySign
+public import VerifiedGarbage.Proof.X448.Arm.Restore
+public import VerifiedGarbage.Proof.X448.Arm.Counters
+public import VerifiedGarbage.Proof.Ed448.Arm.BaseStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on ARMv7: the comparison and the result
@@ -12,6 +18,8 @@ compared projectively, `BAD |= 0` exactly when they represent the same point;
 `r0 = 1` exactly when `BAD` is then 0, and the callee-saved registers
 restored.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm
 

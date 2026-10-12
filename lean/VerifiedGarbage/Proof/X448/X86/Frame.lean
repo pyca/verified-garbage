@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X448.X86.Contract
-import VerifiedGarbage.Proof.X448.X86.Env
+module
+
+public import VerifiedGarbage.Proof.X448.X86.Contract
+public import VerifiedGarbage.Proof.X448.X86.Env
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): memory frames
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.X448.X86.Env
 Scratch-only writes preserve the cdecl arguments, which remain on the
 unchanged stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

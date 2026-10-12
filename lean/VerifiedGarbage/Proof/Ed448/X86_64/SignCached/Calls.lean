@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Prune
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Calls
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Prune
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Calls
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on x86-64: the scalar calls
@@ -14,6 +20,8 @@ imports that proof, and the group theory it imports), and of
 `vg_ed448_scalar_mul_add` into the second half (`mulAdd_ok`); and the
 clearing of `s` and `r` (`wipe_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.SignCached
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Idea.X86.Mul
-import VerifiedGarbage.Proof.Idea.Memory32
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Idea.X86.Mul
+public import VerifiedGarbage.Proof.Idea.Memory32
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # IDEA on x86 (32-bit): a round
@@ -12,6 +18,8 @@ subkeys `6j … 6j + 5`, read from the copy of the schedule at `esi`
 `b`. It writes `eax`, `edx` and `t₀`'s slot, which follows the subkeys
 (`KeepT`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Idea.X86
 

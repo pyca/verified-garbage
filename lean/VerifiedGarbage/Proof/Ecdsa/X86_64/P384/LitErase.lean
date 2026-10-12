@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-import VerifiedGarbage.Proof.Framework.LitShare
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-384 on x86-64: the code without its displacements, as a literal
@@ -11,6 +20,8 @@ the constant-time check analyses the code with them erased. Its field
 arithmetic is then the same few blocks again and again: with each a constant
 (`materialize_shared`), the kernel analyses each once from the same taint.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86_64.P384
 

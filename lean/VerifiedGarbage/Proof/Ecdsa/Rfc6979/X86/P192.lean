@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
-import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86.P192.Lit
-import VerifiedGarbage.Proof.Framework.X86.Lit
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): P-192
@@ -11,6 +21,8 @@ P-192 as the proof's curve (`p192`): scalars of 3 64-bit words, the order
 correct (given the group law) and constant time against its contract
 (`coreK` at P-192's sizes, which is `Proof.Ecdsa.X86.P192.signX86`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
 

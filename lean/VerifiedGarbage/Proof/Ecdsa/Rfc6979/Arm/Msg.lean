@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hmac
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hmac
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the messages of steps d, f and h.3
@@ -10,6 +16,8 @@ key (`r5`) and `h` copied (`head_ok`, `tail_ok`), each to `scratch` (`r11`),
 or, if `wide`, the private key, a zero word and the digest (`r6`), which
 leaves `h` as `Q - D` zero bytes then the digest (`tailW_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
 

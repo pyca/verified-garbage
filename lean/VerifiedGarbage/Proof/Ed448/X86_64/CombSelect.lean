@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
-import VerifiedGarbage.Proof.Ed448.Comb
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
+public import VerifiedGarbage.Proof.Ed448.Comb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Constant-time selection of the compact four-column comb's affine point. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed448.X86_64.Comb
 
 open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448.X86_64

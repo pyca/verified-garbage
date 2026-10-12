@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Calls
-import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Pre
-import VerifiedGarbage.Proof.Ed448.Signing
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Calls
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Pre
+public import VerifiedGarbage.Proof.Ed448.Signing
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on x86-64: correctness
@@ -13,6 +19,8 @@ satisfying `signCachedContract X86_64.abi 464`, `signCached` meets the
 contract and the ABI (`signCached_wp`), for any proof of
 `vg_ed448_scalar_base` (`BaseOk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.SignCached
 

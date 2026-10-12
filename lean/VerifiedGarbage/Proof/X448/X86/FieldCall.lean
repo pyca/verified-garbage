@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X448.X86.FnVerified
+module
+
+public import VerifiedGarbage.Proof.X448.X86.FnVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): calls of the field functions
@@ -11,6 +17,8 @@ bytes of stack below `esp` that the call uses (`CallCtx`), a call changes
 only `eax`, `ecx` and `edx`, the result at `o`, the functions' own working
 space and that stack (`COp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

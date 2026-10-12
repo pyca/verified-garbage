@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseStep
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseStep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 base-point multiplication on x86-64: the loop over the bits
@@ -9,6 +15,8 @@ iteration doubles it and adds `B` when the next bit is set (`B` with `Z = 1`,
 which the affine addition takes for granted). `Q` (slots
 8–10) stays the base point and slot 11 `d`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 

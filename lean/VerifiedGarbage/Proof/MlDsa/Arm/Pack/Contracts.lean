@@ -1,9 +1,15 @@
-import VerifiedGarbage.Spec.MlDsa.Poly
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Loop
-import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Loop
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: the contracts of the encodings, for the proofs
@@ -15,6 +21,8 @@ For each function of this group, what its shared contract
 the 4 bytes below the stack pointer that their contracts reserve
 (`pushed4_mem`, `popped4`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.Pack
 

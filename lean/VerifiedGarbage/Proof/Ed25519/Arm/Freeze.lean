@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Freeze
-import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
-import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Freeze
+public import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.Arm.FreezeSteps`. -/
+
+@[expose] public section
+
 section
 /-! Canonical reduction of the two temporary field elements. -/
 namespace VG.Proof.Ed25519.Arm

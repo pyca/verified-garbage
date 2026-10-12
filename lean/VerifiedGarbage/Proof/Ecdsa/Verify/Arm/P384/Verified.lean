@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
-import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P384.Contract
-import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P384.Lit
-import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
-import VerifiedGarbage.Impl.Ecdsa.Verify.P384.Arm
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P384.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P384.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P384.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.P384.Lit
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.Arm
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.P384.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over P-384 on 32-bit ARM: `Verified`
@@ -15,6 +26,8 @@ by taint tracking from the arguments' registers, as for ECDH
 and every address is `r12` (`scratch`) or a pointer argument plus a
 constant or a counter.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.Arm.P384
 

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.Inv
-import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
-import VerifiedGarbage.Proof.Ecdh.X86.Peer
-import VerifiedGarbage.Proof.Ecdsa.X86.Lays
-import VerifiedGarbage.Proof.Ecdsa.X86.Middle
-import VerifiedGarbage.Proof.Ecdsa.X86.Main
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.Inv
+public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
+public import VerifiedGarbage.Proof.Ecdh.X86.Peer
+public import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+public import VerifiedGarbage.Proof.Ecdsa.X86.Middle
+public import VerifiedGarbage.Proof.Ecdsa.X86.Main
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH on x86 (32-bit): the peer's point, `[d]P` and `Z^(p-2)`
@@ -18,6 +24,8 @@ As on AArch64 (`Proof/Ecdh/AArch64/Validate.lean`).
 its being zero into the flag, and selects for the ladder the peer's point if
 the flag is set, else `G` (`select_ok`): `validate_ok`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.X86
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
-import VerifiedGarbage.Proof.X448.X86.MulLoop
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
+public import VerifiedGarbage.Proof.X448.X86.MulLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 scalar multiply-add on x86 (32-bit): the steps
@@ -8,6 +14,8 @@ The inputs reduced (`reduceArg_ok`), the product of two with X448's rows
 (`product_ok`), its limbs reduced (`reduceProduct_ok`), and the sum with the
 third (`addPass_ok`), which `reduceT` reduces once more.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86
 

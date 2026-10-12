@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.HashCT
-import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Correct
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.CT
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.HashCT
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Correct
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.CT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 signing with a cached public key on x86-64: constant time
@@ -14,6 +20,8 @@ and the clearing address only the stack; the hashes leak only the layout
 `vg_ed448_scalar_mul_add` leak only their pointers (`red_tr`, `base_tr`,
 `mulAdd_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64.SignCached
 

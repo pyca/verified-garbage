@@ -1,10 +1,19 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
-import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFn
-import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Covers
-import Mathlib.Logic.Function.Basic
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFn
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.Covers
+public import Mathlib.Logic.Function.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Compositional field programs and the extended Edwards formulas. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 

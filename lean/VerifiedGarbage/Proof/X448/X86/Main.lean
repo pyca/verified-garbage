@@ -1,10 +1,16 @@
-import VerifiedGarbage.Proof.X448.X86.BitsInput
-import VerifiedGarbage.Proof.X448.X86.Finish
-import VerifiedGarbage.Proof.X448.X86.Ladder
-import VerifiedGarbage.Proof.X448.X86.FinalSwap
-import VerifiedGarbage.Proof.X448.X86.Inv
-import VerifiedGarbage.Spec.X448.Contract
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.X448.X86.BitsInput
+public import VerifiedGarbage.Proof.X448.X86.Finish
+public import VerifiedGarbage.Proof.X448.X86.Ladder
+public import VerifiedGarbage.Proof.X448.X86.FinalSwap
+public import VerifiedGarbage.Proof.X448.X86.Inv
+public import VerifiedGarbage.Spec.X448.Contract
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X448 on x86 (32-bit): the whole function
@@ -15,6 +21,8 @@ every write is in the working space but the result's, so the arguments are read
 unchanged, the callee-saved registers restored from the working space, and the
 return address kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X448.X86
 

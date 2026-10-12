@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Contract
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Lit
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Lit
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA verification over P-224 on AArch64: `Verified`
@@ -15,6 +25,8 @@ loop counters, and every address is an argument plus a constant or a counter,
 so only the pointers affect timing (the contract would let the key, the hash
 and the signature affect it too).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Verify.AArch64.P224
 

@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Ed448.Arm.Shake
-import VerifiedGarbage.Proof.Ed448.Arm.Shake.Layout
-import VerifiedGarbage.Proof.X25519.Arm.Instr
-import VerifiedGarbage.Proof.X25519.Bytes
-import VerifiedGarbage.Proof.Ed448.Scalar
+module
+
+public import VerifiedGarbage.Impl.Ed448.Arm.Shake
+public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Layout
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Proof.Ed448.Scalar
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 on ARMv7: the header of `dom4`
@@ -12,6 +18,8 @@ first ten bytes of `dom4(0, context)`, in the frame at `off`, `ctxlen` the
 saved word `j` (`hdr_bytes`: three little-endian words, the last
 `ctxlen · 2^8`), and writes nothing else.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.Arm.Shake
 

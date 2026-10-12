@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Site
-import VerifiedGarbage.Spec.MlDsa.Contract
-import VerifiedGarbage.Proof.Framework.Sig
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Site
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Proof.Framework.Sig
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on 32-bit ARM: the contracts of the primitives, evaluated
@@ -13,6 +19,8 @@ what its postcondition says (`…_post`); and its public data, from the
 equalities of two such states (`…_pub`). Each is proven once, by evaluating
 the contract (`sig_pre`, `sig_post`, `sig_pub`) on a state that is a variable.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arm.KeyGen
 

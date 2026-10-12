@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Common
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Common
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the hash function
@@ -18,6 +24,8 @@ SHA-384 or SHA-512, no shorter than the curve's scalars (so that one `V`
 makes a candidate), or SHA-512's for a `wide` curve, and states and working
 space no larger than SHA-512's.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
 

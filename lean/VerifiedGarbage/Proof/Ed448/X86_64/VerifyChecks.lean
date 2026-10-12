@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyRoot
-import VerifiedGarbage.Proof.Ed448.X86_64.ScalarWord
-import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
-import VerifiedGarbage.Proof.X448.X86_64.Main
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyRoot
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarWord
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
+public import VerifiedGarbage.Proof.X448.X86_64.Main
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed448 verification's equation on x86-64: the checks
@@ -12,6 +18,8 @@ comparing their full reductions word by word), and `S < L` (`sCheck_ok`, by
 the carry of `S + 2^448 - L` and its byte 56). `erun` runs a block
 symbolically, keeping the register writes folded.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed448.X86_64
 open VG VG.X86_64 VG.Impl.Ed448.X86_64
