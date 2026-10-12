@@ -14,7 +14,7 @@ structure JointMulChecks (c : Cfg) (j : Joint.Cfg) : Prop where
   cached : JointCachedChecks j
   fixed : JointFixedChecks j
   table : NafTableChecks j.K
-  cache : ScratchCT (Naf.cacheTable j.K.M j.K.tbl j.cache 8).inline
+  cache : ScratchCT (Joint.cacheCode j).inline
   seed : ScratchCT (.block (Jacobian.infinity j.K j.K.R))
   counter : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*j.K.M.n)))])
   prepG : FastPrepChecks j.K.M.n (c.sl U) j.gBits 7
