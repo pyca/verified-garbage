@@ -74,7 +74,10 @@ theorem p521_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p521 where
     have e : (Mont.callOf p521.MP').map Prod.snd = some p521.C.p := by decide +kernel
     obtain rfl : _ = _ := Option.some.inj (e.symm.trans (congrArg (Option.map Prod.snd) h))
     exact ⟨rfl, Mont.p521p_ok⟩
-  call_n := by decide +kernel
+  call_n := fun _ _ h => by
+    have e : (Mont.callOf p521.MN').map Prod.snd = some p521.C.n := by decide +kernel
+    obtain rfl : _ = _ := Option.some.inj (e.symm.trans (congrArg (Option.map Prod.snd) h))
+    exact ⟨rfl, Mont.p521n_ok⟩
   inv_at := .inl rfl
   inv_fn := fun h => absurd rfl h
   padd := fun h => absurd rfl h

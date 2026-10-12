@@ -1,4 +1,9 @@
-#![cfg(any(target_arch = "x86", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use verified_garbage::cast5_cfb::{Cast5Cfb64, Error};
 

@@ -80,17 +80,17 @@ def loadS : List Instr := loadBytes c.C.len c.n (c.sl PT) .r10
 
 /-- The checks of `r` and `s`, and `s R mod n`. -/
 def scalars : Prog isa :=
-  blocks [c.checkRange (c.sl K) ++ c.checkRange (c.sl PT),
-    Mont.X86_64.mul c.MN' (c.sl SM') (c.sl PT) (c.sl R2N)]
+  progs [.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT)),
+    opProg c.MN' (.mul (c.sl SM') (c.sl PT) (c.sl R2N))]
 
 /-- `u` and `v`, from `w R mod n` in `ACC`. -/
 def uv : Prog isa :=
-  blocks [Mont.X86_64.mul c.MN' (c.sl EM') (c.sl D) (c.sl R2N),
-    Mont.X86_64.mul c.MN' (c.sl RM') (c.sl K) (c.sl R2N),
-    Mont.X86_64.mul c.MN' (c.sl UM) (c.sl EM') (c.sl ACC),
-    Mont.X86_64.mul c.MN' (c.sl VM) (c.sl RM') (c.sl ACC),
-    Mont.X86_64.mul c.MN' (c.sl U) (c.sl UM) (c.sl ONE),
-    Mont.X86_64.mul c.MN' (c.sl V) (c.sl VM) (c.sl ONE)]
+  progs [opProg c.MN' (.mul (c.sl EM') (c.sl D) (c.sl R2N)),
+    opProg c.MN' (.mul (c.sl RM') (c.sl K) (c.sl R2N)),
+    opProg c.MN' (.mul (c.sl UM) (c.sl EM') (c.sl ACC)),
+    opProg c.MN' (.mul (c.sl VM) (c.sl RM') (c.sl ACC)),
+    opProg c.MN' (.mul (c.sl U) (c.sl UM) (c.sl ONE)),
+    opProg c.MN' (.mul (c.sl V) (c.sl VM) (c.sl ONE))]
 
 /-- `U = R`, then `R = O = (0 : 1 : 0)`. -/
 def save : List Instr :=
@@ -111,11 +111,11 @@ def finish : List Instr :=
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, `x R mod n`
 and `x R - r R mod n`, the checks of `Z` and of `x ≡ r`, and the result. -/
 def final : Prog isa :=
-  blocks [Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC),
-    Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE),
-    Mont.X86_64.mul c.MN' (c.sl XN) (c.sl X) (c.sl R2N),
-    Mont.X86_64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM'),
-    c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86_64.Cfg.checkZero c (c.sl W) ++ finish c]
+  progs [.block (Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)),
+    .block (Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)),
+    opProg c.MN' (.mul (c.sl XN) (c.sl X) (c.sl R2N)),
+    .block (Mont.X86_64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM')),
+    .block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86_64.Cfg.checkZero c (c.sl W) ++ finish c)]
 
 /-- Constants for comparison in projective coordinates. `MN` is no longer
 needed for arithmetic modulo the group order. -/

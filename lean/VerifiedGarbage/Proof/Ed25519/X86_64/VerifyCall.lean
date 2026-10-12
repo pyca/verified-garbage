@@ -54,7 +54,15 @@ omit [EdArith fld] [EdWindows win] in
 /-- The registered code, its calls inlined. -/
 theorem verifyEquation_inline {win' : Prog isa} (h : win'.inline = win) :
     (verifyEquation fld win').inline = verifyEquationWith fld (Point64.bodies fld) win := by
-  subst h; rfl
+  subst h
+  have hr : (rootPower2 fld).inline = rootPower2 fld := by unfold rootPower2; split <;> rfl
+  have hd : (decodePowers fld).inline = decodePowers fld := by
+    change Code.seq _ (.seq _ (.seq _ (.seq _ (.seq (rootPower2 fld).inline _)))) = _
+    rw [hr]; rfl
+  change Code.seq (.block verifySetup) (Code.seq (Code.seq (.block verifyScalar)
+    (Code.ite .b (Code.seq (decodePowers fld).inline (decodeAThen fld (Point64.calls fld) win').inline)
+      recoverInvalid.inline)) (.block _)) = _
+  rw [hd]; rfl
 
 /-- `verifyLocal`, with the 8 bytes below `rsp` apart from every region: room for a call's return
 address. -/

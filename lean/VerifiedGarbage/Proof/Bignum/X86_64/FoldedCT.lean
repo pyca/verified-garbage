@@ -34,12 +34,11 @@ theorem init_fw (p : PublicData) (s : State) (h : Ready p s) :
   exact ⟨t,X,x,⟨ct,by rw [yt]; exact hlt,by simpa only [yt,Nat.pow_zero,Nat.pow_one] using hx,
     by rw [mt,word_writeW_self]; rfl,Frm.refl _ _ _,Keep.refl _ _⟩,hf⟩
 
-/-- The caller supplies the final multiplication's leakage proof separately;
-this extends no existing Montgomery contract or permitted-use list. -/
-theorem exp65537_ct (M : Mont)
-    (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) (fun _ _ => True)) :
-    RelCT isa (Two Pre) (Folded.exp65537 M.mm) (fun _ _ => True) := by
-  unfold Folded.exp65537
+/-- `Y := X` and sixteen squares leak the same in runs with the same public
+data. -/
+theorem exp65536_ct (M : Mont) :
+    RelCT isa (Two Pre) (Folded.exp65536 M.mm) (fun _ _ => True) := by
+  unfold Folded.exp65536
   simp only [seqs]
   refine RelCT.seq (two_post (two_map (fun p : PublicData => p.L)
     (fun _ _ ⟨_,_,hc,hf,_⟩ => ⟨hc.good,hf.1⟩) VG.Proof.Bignum.X86_64.start_ct) start_fw) ?_
@@ -47,7 +46,6 @@ theorem exp65537_ct (M : Mont)
     (fun p s t ⟨_,_,hs,_⟩ ⟨_,_,ht,_⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst r; rw [hs.good.rdi,ht.good.rdi])
     (by taint_decide) init_fw) ?_
-  refine RelCT.seq (two_map id (fun _ _ h => ⟨by decide,h⟩) (squares_ct M)) ?_
-  exact two_map (fun p : PublicData => p.L) (fun _ _ ⟨_,_,_,h,hf⟩ => ⟨h.ctx.good,hf.1⟩) hfinal
+  exact (two_map id (fun _ _ h => ⟨by decide,h⟩) (squares_ct M)).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 end VG.Proof.Bignum.X86_64.FoldedPublic

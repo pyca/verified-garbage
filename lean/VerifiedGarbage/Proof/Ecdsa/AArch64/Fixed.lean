@@ -208,9 +208,11 @@ theorem fixedOk_chainWc (hc : BaseCfgOk c) : FixedOk c (chainWc c) := by
   · exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_invTbl hc (show 12 < 45 by decide) (by decide)))
   · rcases hc.inv_at with h | h
     · exact Or.inl ⟨invTmp_none h, rfl⟩
-    · exact Or.inr (by
-        have := sl_invTbl hc (show 12 < 45 by decide) (by decide)
-        dsimp only; omega)
+    · rcases h.2.2.2 with h' | h'
+      · exact Or.inl ⟨h'.1, rfl⟩
+      · exact Or.inr (by
+          have := sl_invTbl hc (show 12 < 45 by decide) (by decide)
+          dsimp only; omega)
 
 /-- A slot but `ACC` and `TMP` is apart from what a power writes. -/
 theorem apart_chainWc (hc : BaseCfgOk c) {i : Nat} (hi : i < 45) (hl : i ∉ [ACC, TMP]) :
@@ -255,7 +257,7 @@ theorem modN_of (hc : BaseCfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base 
     ModOkA c.MN' size c.C.n m base :=
   ⟨hc.n0, hc.n10, sl_le c hc.n10 (i := MN) (by decide), sl_le c hc.n10 (i := TMP) (by decide),
     sl_apart c (show MN ≠ TMP by decide), h,
-    hc.minv_n, hc.red_n, fun _ _ h' => nomatch hc.call_n.symm.trans h'⟩
+    hc.minv_n, hc.red_n, fun f m' h' => (hc.call_n f m' h').1⟩
 
 /-- The powers' modulus, with their temporary area. -/
 theorem modOkA_inv {M : Mod} (hc : BaseCfgOk c) {m : Nat} {base : Addr} {mem : Mem}
@@ -267,11 +269,14 @@ theorem modOkA_inv {M : Mod} (hc : BaseCfgOk c) {m : Nat} {base : Addr} {mem : M
     rcases hmo with e | e <;> rw [e]
     · exact sl_invTmp hc (by decide) (by decide)
     · exact sl_invTmp hc (by decide) (by decide)
-  · rcases hc.inv_at with h | h
-    · refine hM.call f m' ?_
-      simp only [Mont.callOf, invTmp_none h] at e ⊢
+  · have hT : c.invTmp = c.sl TMP → Mont.callOf M = some (f, m') := fun ht => by
+      simp only [Mont.callOf, ht] at e ⊢
       rw [htmp]; exact e
-    · simp only [Mont.callOf, hn, h.2.2.2.2.2, ite_false, reduceCtorEq] at e
+    rcases hc.inv_at with h | h
+    · exact hM.call f m' (hT (invTmp_none h))
+    · rcases h.2.2.2 with h' | h'
+      · exact hM.call f m' (hT h'.1)
+      · simp only [Mont.callOf, hn, h'.2.2.2, ite_false, reduceCtorEq] at e
 
 /-- `ACC = RZ^(p - 2)` (in Montgomery form), by divsteps, inline. -/
 theorem pPowI_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
@@ -306,11 +311,17 @@ theorem nPowI_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base s
 /-! ## The functions `vg_<curve>_inv_mod_p` and `_n` -/
 
 theorem invSave_facts (hc : BaseCfgOk c) (hI : c.inverse ≠ none) :
-    c.invSave + 8 ≤ c.invTmp ∧ c.invSave % 8 = 0 ∧ c.invSave = c.invTbl + 9 * (8 * c.n) := by
+    (c.invSave + 8 ≤ c.invTmp ∨ c.invTmp + 8 * c.n ≤ c.invSave) ∧ c.invSave % 8 = 0 ∧
+      c.invSave = c.invTbl + 9 * (8 * c.n) ∧ c.invSave + 8 ≤ size := by
   rcases hc.inv_at with h | h
   · exact absurd h hI
   · have := h.2.1
-    refine ⟨by unfold Cfg.invSave; omega, by unfold Cfg.invSave; omega, rfl⟩
+    have := h.1
+    have := h.2.2.1
+    refine ⟨?_, by unfold Cfg.invSave; omega, rfl, by unfold Cfg.invSave; omega⟩
+    rcases h.2.2.2 with h' | h'
+    · exact Or.inr (by unfold Cfg.invSave; omega)
+    · exact Or.inl (by unfold Cfg.invSave; omega)
 
 /-- A power `body` between saving `x19` past its working slots and restoring
 it: the function keeps `x19`, and writes no more than `chainWc`. -/
@@ -321,8 +332,7 @@ theorem invFn_ok (hc : BaseCfgOk c) (hI : c.inverse ≠ none) {body : Prog isa} 
       word t'.mem base c.invSave = word t.mem base c.invSave ∧ R s.mem t'.mem) :
     WP isa (c.invFn body) s fun s' => KeepRegs (clob c.n) s s' ∧
       Unch base (chainWc c) s.mem s'.mem ∧ R s.mem s'.mem := by
-  obtain ⟨hsv, hsv8, -⟩ := invSave_facts hc hI
-  have htl := invTmp_le hc
+  obtain ⟨-, hsv8, -, hsv⟩ := invSave_facts hc hI
   have hn := hs.nowrap
   rw [Cfg.invFn]
   refine WP.seq (WP.mono (st_out hs (o := c.invSave) (by omega) hsv8 .x19) fun s₁ ⟨m₁, k₁, g₁⟩ => ?_)
@@ -421,19 +431,19 @@ theorem invCall_ok {name : String} {body : Prog isa} {s : State} {base : Addr}
 theorem invSave_apart (hc : BaseCfgOk c) (hI : c.inverse ≠ none) {P : InvCfg} (ha : P.acc = c.sl ACC)
     (ht : P.tbl = c.invTbl) (hn : P.M.n = c.n) (hm : P.M.tmp = c.invTmp) :
     ∀ w ∈ invW P, c.invSave + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.invSave := by
-  obtain ⟨h1, -, h3⟩ := invSave_facts hc hI
+  obtain ⟨h1, -, h3, -⟩ := invSave_facts hc hI
   have := sl_invTbl hc (i := ACC) (by decide) (by decide)
   intro w hw
   simp only [invW, ha, ht, hn, hm, List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl
   · exact Or.inr (by dsimp only; omega)
   · exact Or.inr (by dsimp only; omega)
-  · exact Or.inl (by dsimp only; omega)
+  · dsimp only; omega
 
 /-- A slot below the tables, but `TMP`, is apart from where a function keeps `x19`. -/
 theorem sl_invSave (hc : BaseCfgOk c) (hI : c.inverse ≠ none) {i : Nat} (hi : i < 45) (hT : i ≠ TMP) :
     ∀ w ∈ [(c.invSave, 8)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
-  obtain ⟨-, -, h3⟩ := invSave_facts hc hI
+  obtain ⟨-, -, h3, -⟩ := invSave_facts hc hI
   have := sl_invTbl hc hi hT
   intro w hw
   rw [List.mem_singleton.mp hw]
@@ -467,7 +477,7 @@ theorem invBody_ok (hc : BaseCfgOk c) (hI : c.inverse ≠ none) {P : InvCfg} {m 
   rw [hn, ha] at lt
   rw [hn, ha, eB] at v
   refine ⟨K, U.cover (invW_cover ha ht hn htmp), U.word (invSave_apart hc hI ha ht hn htmp)
-    (by obtain ⟨h1, -, -⟩ := invSave_facts hc hI; have := invTmp_le hc; omega), lt, v⟩
+    (by obtain ⟨-, -, -, h4⟩ := invSave_facts hc hI; omega), lt, v⟩
 
 /-- `ACC = RZ^(p - 2)` (in Montgomery form), by divsteps: inline, or a call
 of `vg_<curve>_inv_mod_p`. -/
@@ -535,7 +545,7 @@ theorem nPow_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base si
         (show wordsVal u.mem base (c.sl KM) c.n < c.C.n by rw [eB]; exact hB)
         (chainOkN hc (by simpa using h))) fun t' ⟨K, U, lt, v⟩ => ⟨K, U.cover (chainWN_cover c),
           U.word (by
-            obtain ⟨h1, -, h3⟩ := invSave_facts hc hI
+            obtain ⟨h1, -, h3, -⟩ := invSave_facts hc hI
             have := sl_invTbl hc (i := ACC) (by decide) (by decide)
             intro w hw
             simp only [chainW, Cfg.powN, ChainCfg.ofExp, List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -543,8 +553,8 @@ theorem nPow_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base si
             rcases hw with rfl | rfl | rfl
             · exact Or.inr (by dsimp only; omega)
             · exact Or.inr (by dsimp only; omega)
-            · exact Or.inl (by dsimp only; omega))
-            (by obtain ⟨h1, -, -⟩ := invSave_facts hc hI; have := invTmp_le hc; omega),
+            · dsimp only; omega)
+            (by obtain ⟨-, -, -, h4⟩ := invSave_facts hc hI; omega),
           lt, by
             have v' : toM c.C.n (2 ^ (64 * c.n)) (wordsVal t'.mem base (c.sl ACC) c.n) =
                 toM c.C.n (2 ^ (64 * c.n)) (wordsVal u.mem base (c.sl KM) c.n) ^ (c.C.n - 2) := v

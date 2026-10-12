@@ -340,13 +340,20 @@ def checkRange (a : Nat) : List Instr :=
 /-- `[a] ≠ 0`: the flag `&=` its mask. -/
 def checkNonzero (a : Nat) : List Instr := c.nonzero a ++ c.andFlag
 
+/-- `[o] = [a] [b] R⁻¹ mod n`: a call of `vg_<curve>_mul_mod_n` for a curve
+whose products modulo `n` are a function (`Mont.callOf`), else inline. -/
+def mulNP (o a b : Nat) : Prog isa :=
+  match Mont.callOf c.MN' with
+  | some (f, m) => mulCall f c.n m o a b
+  | none => .block (Mont.AArch64.mul c.MN' o a b)
+
 /-- `x = X Z⁻¹`, `r = x mod n`, `k R mod n`, and the checks of `d`, `k`, `r`. -/
 def middle : Prog isa :=
-  blocks [Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC),
-    Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE),
-    Mont.AArch64.add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO),
-    Mont.AArch64.mul c.MN' (c.sl KM) (c.sl K) (c.sl R2N),
-    c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR)]
+  .seq (.block (Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC))) <|
+  .seq (.block (Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE))) <|
+  .seq (.block (Mont.AArch64.add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO))) <|
+  .seq (c.mulNP (c.sl KM) (c.sl K) (c.sl R2N))
+    (.block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR)))
 
 /-- `r ‖ s` (or zeros) to `out`, the callee-saved registers restored, and
 the flag's low bit to `x0`. -/
@@ -358,14 +365,13 @@ def finish : List Instr :=
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/
 def scalar : Prog isa :=
-  blocks [Mont.AArch64.mul c.MN' (c.sl RM) (c.sl RR) (c.sl R2N),
-    Mont.AArch64.mul c.MN' (c.sl DM) (c.sl D) (c.sl R2N),
-    Mont.AArch64.mul c.MN' (c.sl EM) (c.sl E) (c.sl R2N),
-    Mont.AArch64.mul c.MN' (c.sl TT) (c.sl RM) (c.sl DM),
-    Mont.AArch64.add c.MN' (c.sl TT) (c.sl TT) (c.sl EM),
-    Mont.AArch64.mul c.MN' (c.sl SM) (c.sl ACC) (c.sl TT),
-    Mont.AArch64.mul c.MN' (c.sl SS) (c.sl SM) (c.sl ONE),
-    c.checkNonzero (c.sl SS) ++ c.finish]
+  .seq (c.mulNP (c.sl RM) (c.sl RR) (c.sl R2N)) <|
+  .seq (c.mulNP (c.sl DM) (c.sl D) (c.sl R2N)) <|
+  .seq (c.mulNP (c.sl EM) (c.sl E) (c.sl R2N)) <|
+  .seq (c.mulNP (c.sl TT) (c.sl RM) (c.sl DM)) <|
+  .seq (.block (Mont.AArch64.add c.MN' (c.sl TT) (c.sl TT) (c.sl EM))) <|
+  .seq (c.mulNP (c.sl SM) (c.sl ACC) (c.sl TT)) <|
+  .seq (c.mulNP (c.sl SS) (c.sl SM) (c.sl ONE)) (.block (c.checkNonzero (c.sl SS) ++ c.finish))
 
 /-- `vg_ecdsa_<curve>_sign`. -/
 def signWith (comb : Prog isa) : Prog isa :=

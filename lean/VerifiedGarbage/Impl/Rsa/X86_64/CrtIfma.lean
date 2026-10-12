@@ -226,11 +226,33 @@ def to64 : List Instr :=
 def k1 : List (Prog isa) :=
   copyArr aT aY ++ [.block [.mov32 .rcx (.imm (BitVec.ofNat 32 l.dbls))], doubles aN aAcc aTmp aT sCtr]
 
+/-- `to52`'s arguments for array `j` and the limbs at offset `o` of region
+`p`: the array, the limbs, and `2⁵² - 1`. -/
+def arrPtrs (p j o : Nat) : List Instr :=
+  [.mov .rsi (.mem (hdr (sArr j))), .mov .r11 (.mem (hdr sIfma)),
+    .alu .add .r11 (.imm (BitVec.ofNat 32 (l.D * p + o))), .movImm64 .r12 mask52]
+
 /-- Array `j` into the limbs at offset `o` of the region at `r11`'s base
 `rbx + p D`. -/
-def arr52 (p j o : Nat) : List Instr :=
-  ([.mov .rsi (.mem (hdr (sArr j))), .mov .r11 (.mem (hdr sIfma)),
-    .alu .add .r11 (.imm (BitVec.ofNat 32 (l.D * p + o))), .movImm64 .r12 mask52] : List Instr) ++ to52 l
+def arr52 (p j o : Nat) : List Instr := arrPtrs l p j o ++ to52 l
+
+/-- The arrays every region takes, with their offsets: the modulus,
+`2^dbls R_X mod X`, `x R_X`, `R_X`, and `R_X` again as the last multiplier
+(`q`'s then 1, `finOne`). -/
+def arrs : List (Nat × Nat) := [(aN, oM), (aT, l.oK1), (aXc, l.oX), (aY, l.oY), (aY, l.oFin)]
+
+/-- `to52`'s arguments for the entry of `ps` that `r8` counts down to
+(`ps.length` for the first). -/
+def arrSel (p : Nat) : List (Nat × Nat) → Prog isa
+  | [] => .block []
+  | [(j, o)] => .block (arrPtrs l p j o)
+  | (j, o) :: ps => .seq (.block [.alu .cmp .r8 (.imm (BitVec.ofNat 32 (ps.length + 1)))])
+      (.ite .e (.block (arrPtrs l p j o)) (arrSel p ps))
+
+/-- `arrs` into region `p`, by one `to52` in a loop. -/
+def arrLoop (p : Nat) : Prog isa :=
+  .seq (.block [.mov32 .r8 (.imm 5)])
+    (.loop (.seq (arrSel l p (arrs l)) (.block (to52 l ++ ([.alu .sub .r8 (.imm 1)] : List Instr)))) .ne)
 
 /-- `k₀` (the low 52 bits of the inverse) in each quadword of `oK0`, `r11`
 the region (`r12` holds `2⁵² - 1`). -/
@@ -260,9 +282,8 @@ def eCopy (slotPtr slotLen : Nat) : List (Prog isa) :=
 `x R_X` as `X`, `R_X` as `Y`, the last multiplier, `k₀`, the padded
 exponent. -/
 def region (p slotPtr slotLen : Nat) : List (Prog isa) :=
-  k1 l ++ [.block (arr52 l p aN oM), .block (arr52 l p aT l.oK1), .block (arr52 l p aXc l.oX),
-      .block (arr52 l p aY l.oY)] ++
-    (if p = 0 then [.block (arr52 l p aY l.oFin)] else []) ++ [.block (k0St l p), .block (eZero l)] ++
+  k1 l ++ [arrLoop l p] ++
+    [.block (k0St l p), .block (eZero l)] ++
     (if p = 0 then [] else [.block (finOne l)]) ++ eCopy l slotPtr slotLen
 
 /-! ## The vector code (`rbx` the area) -/
@@ -287,16 +308,35 @@ def copyN (o a : Nat) : List Instr :=
   (List.range 2).flatMap fun p => (List.range l.R).flatMap fun k =>
     [.evLoad (vreg 0) (at_ .rbx (l.D * p + a + 32 * k)), .evStore (at_ .rbx (l.D * p + o + 32 * k)) (vreg 0)]
 
-/-- The table: `T_0 = Y`, `T_1 = X`, `T_i = T_(i-1) X 2^(-208 R)` (`r13` the
-offset of `T_i`). -/
-def tabBuild : List (Prog isa) :=
-  [.block (copyN l l.oTab l.oY ++ copyN l (l.oTab + l.NB) l.oX ++
-      ([.mov32 .r13 (.imm (BitVec.ofNat 32 (l.oTab + 2 * l.NB)))] : List Instr)),
-    .loop (.seq (.block [.mov .r8 (.reg .rbx), .alu .add .r8 (.reg .r13), .alu .sub .r8 (.imm (BitVec.ofNat 32 l.NB)),
-        .mov .r9 (.reg .rbx), .alu .add .r9 (.imm (BitVec.ofNat 32 l.oX)), .mov .r11 (.reg .rbx),
-        .alu .add .r11 (.reg .r13)])
-      (.seq (ammCore l) (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 l.NB)),
-        .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + 16 * l.NB)))]))) .ne]
+/-- The operands of entry `i < 2` (`r13 = oTab + NB i`) of `convTab`: `Y`
+or `X` (`oY + NB i`), in place, times `[oK1]`. -/
+def convSetup : List Instr :=
+  [.mov .r8 (.reg .rbx), .alu .add .r8 (.reg .r13), .alu .sub .r8 (.imm (BitVec.ofNat 32 (l.oTab - l.oY))),
+   .mov .r9 (.reg .rbx), .alu .add .r9 (.imm (BitVec.ofNat 32 l.oK1)), .mov .r11 (.reg .r8)]
+
+/-- The operands of entry `i ≥ 2` (`r13 = oTab + NB i`): `T_(i-1)`, `X`, `T_i`. -/
+def tabSetup : List Instr :=
+  [.mov .r8 (.reg .rbx), .alu .add .r8 (.reg .r13), .alu .sub .r8 (.imm (BitVec.ofNat 32 l.NB)),
+   .mov .r9 (.reg .rbx), .alu .add .r9 (.imm (BitVec.ofNat 32 l.oX)), .mov .r11 (.reg .rbx),
+   .alu .add .r11 (.reg .r13)]
+
+/-- Entry `i` of `convTab` (`r13 = oTab + NB i`), one multiplication: below
+2, `Y` or `X` into Montgomery form; after `X`, the table's first entries
+`T_0 = Y` and `T_1 = X`; from 2, `T_i = T_(i-1) X 2^(-208 R)`. Then `r13`
+to the next entry, `ZF` after the last. -/
+def convTabBody : Prog isa :=
+  .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + 2 * l.NB)))])
+    (.seq (.ite .b (.block (convSetup l)) (.block (tabSetup l)))
+      (.seq (ammCore l)
+        (.seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + l.NB)))])
+          (.seq (.ite .e (.block (copyN l l.oTab l.oY ++ copyN l (l.oTab + l.NB) l.oX)) (.block []))
+            (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 l.NB)),
+              .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + 16 * l.NB)))])))))
+
+/-- `Y` and `X` into Montgomery form (times `[oK1] 2^(-208 R)`), and the
+table `T_0 = Y`, `T_1 = X`, `T_i = T_(i-1) X 2^(-208 R)`, in one loop. -/
+def convTab : List (Prog isa) :=
+  [.block [.mov32 .r13 (.imm (BitVec.ofNat 32 l.oTab))], .loop (convTabBody l) .ne]
 
 /-- The operands of a window's multiplication: `[oY] := [oY] [b]`. -/
 def winSetup (b : Nat) : List Instr :=
@@ -307,23 +347,27 @@ def winSetup (b : Nat) : List Instr :=
 /-- A window: `Y := Y¹⁶ T_v 2^(-208 R)` for each prime, `v` the top 4 bits
 of its byte at `oV`, which moves up 4 bits. `S := T_v` first, then one loop
 of five multiplications (`r15` counting them down): four squarings of `Y`,
-then `Y S`. -/
+then `Y S`. After the last byte (`r13 = E`), instead `S := Fin` and the one
+multiplication `Y S`, the last window (`r14 := 1`). -/
 def window : List (Prog isa) :=
-  select l 0 ++ select l 1 ++
-  [.block (((List.range 2).flatMap fun p => [.mov .rax (.mem (at_ .rbx (l.D * p + l.oV))),
-      .shift .ror .rax 60, .store (at_ .rbx (l.D * p + l.oV)) .rax]) ++ [.mov32 .r15 (.imm 5)]),
+  [.seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 l.E))])
+      (.ite .e (.block (copyN l l.oS l.oFin ++ [.mov32 .r15 (.imm 1), .mov32 .r14 (.imm 1)]))
+        (seqs (select l 0 ++ select l 1 ++
+          [.block (((List.range 2).flatMap fun p => [.mov .rax (.mem (at_ .rbx (l.D * p + l.oV))),
+            .shift .ror .rax 60, .store (at_ .rbx (l.D * p + l.oV)) .rax]) ++ [.mov32 .r15 (.imm 5)])]))),
     .loop (.seq (.block [.alu .cmp .r15 (.imm 1)])
       (.seq (.ite .e (.block (winSetup l l.oS)) (.block (winSetup l l.oY)))
         (.seq (ammCore l) (.block [.alu .sub .r15 (.imm 1)])))) .ne]
 
-/-- The exponentiations, a byte of each exponent (`r13`) at a time. -/
+/-- The exponentiations, a byte of each exponent (`r13`) at a time, and
+after the last, `Y := Y Fin 2^(-208 R)` (`window`). -/
 def expLoop : List (Prog isa) :=
-  tabBuild l ++ [.block [.mov32 .r13 (.imm 0)],
+  convTab l ++ [.block [.mov32 .r13 (.imm 0)],
     .loop (seqs ([.block ((List.range 2).flatMap fun p =>
         [.movzx8 .rax { base := .rbx, index := some .r13, disp := ((l.D * p + l.oE : Nat) : Int) },
           .shift .ror .rax 8, .store (at_ .rbx (l.D * p + l.oV)) .rax]), .block [.mov32 .r14 (.imm 2)],
       .loop (seqs (window l ++ [.block [.alu .sub .r14 (.imm 1)]])) .ne,
-      .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm (BitVec.ofNat 32 l.E))]])) .ne]
+      .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.E + 1)))]])) .ne]
 
 /-- Intel's MXCSR prologue and epilogue around `c` (see "MCDT" in
 `TCB/X86_64/Isa.lean`), the slots at `oMx`. -/
@@ -334,19 +378,10 @@ def withMxcsr (c : Prog isa) : Prog isa :=
         .ldmxcsr (at_ .rbx (l.oMx + 4)), .lfence]) (.seq c (.block [.lfence])))
       (.block [.ldmxcsr (at_ .rbx l.oMx), .vop .vzeroupper]))
 
-/-- `[r13] := [r13] [oK1] 2^(-208 R)`, then `r13` to the next number, `ZF`
-after `X`. -/
-def k1Body : Prog isa :=
-  .seq (.block [.mov .r8 (.reg .rbx), .alu .add .r8 (.reg .r13), .mov .r9 (.reg .rbx),
-      .alu .add .r9 (.imm (BitVec.ofNat 32 l.oK1)), .mov .r11 (.reg .rbx), .alu .add .r11 (.reg .r13)])
-    (.seq (ammCore l) (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 l.NB)),
-      .alu .cmp .r13 (.imm (BitVec.ofNat 32 l.oS))]))
-
-/-- The vector code: `Y` and then `X` (the next number) into Montgomery form,
-in a loop, the exponentiations, and the results multiplied by `oFin`. -/
+/-- The vector code: the exponentiations (`Y` and `X` into Montgomery form
+with the table), the results multiplied by `oFin`. -/
 def vec : Prog isa :=
-  withMxcsr l (seqs ([.block [.mov32 .r13 (.imm (BitVec.ofNat 32 l.oY))], .loop (k1Body l) .ne] ++
-    expLoop l ++ [amm l l.oY l.oY l.oFin]))
+  withMxcsr l (seqs (expLoop l))
 
 /-- In a prime's workspace: the result into `aY`, reduced below `X`. -/
 def result (p : Nat) : List (Prog isa) :=

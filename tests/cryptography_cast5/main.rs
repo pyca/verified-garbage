@@ -7,11 +7,21 @@ mod cast5_cfb;
 mod cast5_ofb;
 
 /// A record's key, chaining value, plaintext and ciphertext.
-#[cfg(any(target_arch = "x86", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 type Record = (Vec<u8>, [u8; 8], Vec<u8>, Vec<u8>);
 
 /// The records of a pyca/cryptography vector file.
-#[cfg(any(target_arch = "x86", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 fn records(text: &str) -> Vec<Record> {
     let unhex = |text: &str| -> Vec<u8> {
         (0..text.len())

@@ -58,24 +58,23 @@ structure Mid (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (s 
   em_lt : sv c base s EM' < c.C.n
   em : toM c.C.n (2 ^ (64 * c.n)) (sv c base s EM') = Fin.ofNat c.C.n (dig c s₀)
 
-theorem scalars_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.scalars c =
-    .seq (.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT)))
-      (.block (Impl.Mont.X86_64.mul c.MN' (c.sl SM') (c.sl PT) (c.sl R2N))) := rfl
+/-- A product modulo `n` on numbered slots: a call of P-521's `n`'s function
+or inline (`opProg`). -/
+abbrev mulN (c : Cfg) (o a b : Nat) : Prog isa := (opProg c.MN' (.mul (c.sl o) (c.sl a) (c.sl b))).inline
 
-theorem uv_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.uv c =
-    .seq (.block (Impl.Mont.X86_64.mul c.MN' (c.sl EM') (c.sl D) (c.sl R2N)))
-    (.seq (.block (Impl.Mont.X86_64.mul c.MN' (c.sl RM') (c.sl K) (c.sl R2N)))
-    (.seq (.block (Impl.Mont.X86_64.mul c.MN' (c.sl UM) (c.sl EM') (c.sl ACC)))
-    (.seq (.block (Impl.Mont.X86_64.mul c.MN' (c.sl VM) (c.sl RM') (c.sl ACC)))
-    (.seq (.block (Impl.Mont.X86_64.mul c.MN' (c.sl U) (c.sl UM) (c.sl ONE)))
-      (.block (Impl.Mont.X86_64.mul c.MN' (c.sl V) (c.sl VM) (c.sl ONE))))))) := rfl
+theorem scalars_eq (c : Cfg) : (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline =
+    .seq (.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT))) (mulN c SM' PT R2N) := rfl
+
+theorem uv_eq (c : Cfg) : (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline =
+    .seq (mulN c EM' D R2N) (.seq (mulN c RM' K R2N) (.seq (mulN c UM EM' ACC)
+    (.seq (mulN c VM RM' ACC) (.seq (mulN c U UM ONE) (mulN c V VM ONE))))) := rfl
 
 /-- One multiplication modulo `n`, on numbered slots: it keeps the modulus and
 every other slot but the temporary area's. -/
 theorem mulN_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hMN : ModOkW c.MN' size c.C.n s.mem base) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
     (hS : SlotsOk o a b MN) (hB : sv c base s b < c.C.n) (hoN : o ≠ MN) :
-    WP isa (.block (Impl.Mont.X86_64.mul c.MN' (c.sl o) (c.sl a) (c.sl b))) s fun s' =>
+    WP isa (mulN c o a b) s fun s' =>
       Scr s' base size ∧ ModOkW c.MN' size c.C.n s'.mem base ∧
       (∀ r, r ∉ clob c.n → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Unch base (slW c [o, TMP]) s.mem s'.mem ∧
@@ -84,7 +83,8 @@ theorem mulN_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
       sv c base s' o * 2 ^ (64 * c.n) % c.C.n = sv c base s a * sv c base s b % c.C.n := by
   have h7 := hc.n10
   have hn := hs.nowrap
-  exact WP.mono (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs hMN ho ha hb hS hB) fun s' ⟨k, lt, e⟩ =>
+  exact WP.mono (opMulN_ok hs hMN rfl rfl hB (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs hMN ho ha hb hS hB))
+    fun s' ⟨k, lt, e⟩ =>
     ⟨k.scr hs, hMN.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k (Ne.symm hoN) (by decide),
       k.gpr, k.rd, k.wr, unch_slots (MN'_n c) rfl k.unch (l := [o, TMP]) (by simp) (by simp),
       fun hi h₁ h₂ => sv_keep (MN'_n c) rfl h7 hn k hi h₁ h₂, lt, e⟩
@@ -93,8 +93,8 @@ theorem mulN_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
 theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
     (hF : Front c s₀ base g s) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Mid c s₀ base g s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c) (.seq c.nPow.inline
-      (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c) rest))) s Q := by
+    WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline (.seq c.nPow.inline
+      (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline rest))) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hF.scr.nowrap

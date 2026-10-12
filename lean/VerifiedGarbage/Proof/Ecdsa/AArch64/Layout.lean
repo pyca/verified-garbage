@@ -79,18 +79,22 @@ structure BaseCfgOk (c : Cfg) : Prop where
   inv_p : InvOk c.invP c.C.p
   inv_n : c.fastN = true → InvSound c.C.n ∧ InvOk c.invN c.C.n
   chain_n : c.fastN = false → chainCheck (slide (c.C.n - 2)).1 (slide (c.C.n - 2)).2 (c.C.n - 2) = true
-  /-- If the products modulo `p` are calls of a function (`Mont.callOf`), it
-  computes them modulo `p`; those modulo `n` are inline. -/
+  /-- If the products modulo `p` or `n` are calls of a function
+  (`Mont.callOf`), it computes them modulo `p` or `n`. -/
   call_p : ∀ f m', Mont.callOf c.MP' = some (f, m') → m' = c.C.p ∧
     VG.Proof.Weierstrass.AArch64.Mont.ModOk c.n m'
-  call_n : Mont.callOf c.MN' = none
+  call_n : ∀ f m', Mont.callOf c.MN' = some (f, m') → m' = c.C.n ∧
+    VG.Proof.Weierstrass.AArch64.Mont.ModOk c.n m'
   /-- The powers' working slots and temporary area (`invTbl`, `invTmp`):
   `CT`'s and `TMP`'s, or, for inversions as functions (`inverse`), past
-  `CT`, with room for `x19` after the slots, then the temporary area, in the
-  working space and not the products' (`moAt`). -/
+  `CT`, with room for `x19` after the slots, in the working space, and the
+  temporary area either `TMP`'s, below `CT`, or past `x19`, in the working
+  space and not the products' (`moAt`). -/
   inv_at : c.inverse = none ∨ (c.sl CT ≤ c.invTbl ∧ c.invTbl % 8 = 0 ∧
-    c.invTbl + 9 * (8 * c.n) + 8 ≤ c.invTmp ∧ c.invTmp + 8 * c.n ≤ size ∧ c.invTmp % 8 = 0 ∧
-    c.invTmp ≠ Mont.moAt c.n)
+    c.invTbl + 9 * (8 * c.n) + 8 ≤ size ∧
+    ((c.invTmp = c.sl TMP ∧ c.invTmp + 8 * c.n ≤ c.sl CT) ∨
+      (c.invTbl + 9 * (8 * c.n) + 8 ≤ c.invTmp ∧ c.invTmp + 8 * c.n ≤ size ∧ c.invTmp % 8 = 0 ∧
+        c.invTmp ≠ Mont.moAt c.n)))
   /-- The functions keep the callee-saved registers but `x19` (which they
   save) and `x30`, and their code writes no vector register and opens no
   frame. -/

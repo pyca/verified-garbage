@@ -152,64 +152,110 @@ namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch
 
-private theorem cmpRound_ok (s : State) (n : Nat) (hn : n = 10 ∨ n = 12) :
-    WP isa (.block [.alu .cmp .rsi (.imm (BitVec.ofNat 32 n))]) s fun t =>
-      t.zf = some (decide (nr s = n)) ∧ YFrame [] s t := by
+open VG.X86_64.RegUpd
+open VG.Impl.Aes.X86_64.AesNi (at_)
+open VG.Proof.Aes.X86_64.AesNi (ea_at)
+
+/-- `t` is `s` but for `rax` and the flags. -/
+structure RaxStep (s t : State) : Prop where
+  gpr : ∀ r, r ≠ .rax → t.gpr r = s.gpr r
+  mem : t.mem = s.mem
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  lane : ∀ r, ∀ l < 2, t.lane r l = s.lane r l
+
+theorem key_zf (p : Addr) {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
+    ((p + BitVec.ofNat 64 a) - (p + BitVec.ofNat 64 b) == 0) = decide (a = b) := by
+  by_cases h : a = b
+  · subst h; simp
+  · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
+    intro e
+    have e2 := congrArg (· + (p + BitVec.ofNat 64 b)) e
+    simp only [BitVec.sub_add_cancel] at e2
+    have e3 : BitVec.ofNat 64 a = BitVec.ofNat 64 b := (BitVec.add_right_inj p).mp (by simpa using e2)
+    have := congrArg BitVec.toNat e3
+    simp only [BitVec.toNat_ofNat, Nat.reducePow] at this ha hb
+    omega
+
+/-- The first test of the key size: `r10` against `rdi + 160`. -/
+private theorem keyCmp10_ok (s : State) {n : Nat} (hn : n < 2 ^ 32)
+    (h10 : s.gpr .r10 = s.gpr .rdi + BitVec.ofNat 64 (16 * n)) :
+    WP isa (.block [.mov .rax (.reg .rdi), .alu .add .rax (.imm 160), .alu .cmp .r10 (.reg .rax)]) s
+      fun t => t.zf = some (decide (n = 10)) ∧ t.gpr .rax = s.gpr .rdi + BitVec.ofNat 64 160 ∧
+        RaxStep s t := by
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
-    Option.bind_some, isa, Option.some.injEq, exists_eq_left']
-  refine ⟨?_, rfl, rfl, rfl, rfl, fun _ _ _ _ => rfl⟩
-  change some ((s.gpr .rsi - (BitVec.ofNat 32 n).signExtend 64) == 0) = _
-  congr 1
-  unfold nr
-  rw [Bool.eq_iff_iff]
-  simp only [beq_iff_eq, decide_eq_true_eq]
-  rcases hn with rfl | rfl
-  · change s.gpr .rsi - (10 : BitVec 64) = 0 ↔ _
-    bv_omega
-  · change s.gpr .rsi - (12 : BitVec 64) = 0 ↔ _
-    bv_omega
+    Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
+  have e : BitVec.signExtend 64 (160 : BitVec 32) = BitVec.ofNat 64 160 := by decide
+  refine ⟨?_, ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, fun _ _ _ => rfl⟩⟩
+  · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, reduceCtorEq, ite_false, h10, e]
+    rw [key_zf _ (by simp only [Nat.reducePow]; omega) (by decide)]
+    simp only [Option.some.injEq]
+    exact decide_eq_decide.mpr (by omega)
+  · simp [gpr_setReg]
+  · simp [gpr_setReg, hr]
 
-theorem pre_same {s t : State} (h : SPre s) (hf : YFrame [] s t) : SPre t := by
-  rcases hf with ⟨hg, hm, hr, hw, _⟩
-  cases s; cases t
-  dsimp at hg hm hr hw
-  cases hg; cases hm; cases hr; cases hw
-  cases h
-  constructor <;> with_reducible assumption
+/-- The second: `r10` against `rdi + 192`. -/
+private theorem keyCmp12_ok (t : State) {p : Addr} {n : Nat} (hn : n < 2 ^ 32)
+    (h10 : t.gpr .r10 = p + BitVec.ofNat 64 (16 * n)) (hax : t.gpr .rax = p + BitVec.ofNat 64 160) :
+    WP isa (.block [.alu .add .rax (.imm 32), .alu .cmp .r10 (.reg .rax)]) t
+      fun u => u.zf = some (decide (n = 12)) ∧ RaxStep t u := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+    Option.bind_some, Option.some.injEq, exists_eq_left']
+  have e : BitVec.signExtend 64 (32 : BitVec 32) = BitVec.ofNat 64 32 := by decide
+  refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, fun _ _ _ => rfl⟩⟩
+  · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, reduceCtorEq, ite_false, h10,
+      hax, e, Offset.add_add]
+    rw [key_zf _ (by simp only [Nat.reducePow]; omega) (by decide)]
+    simp only [Option.some.injEq]
+    exact decide_eq_decide.mpr (by omega)
+  · simp [gpr_setReg, hr]
 
-theorem epost_same {s t u : State} (hf : YFrame [] s t) (h : EPost t u) : EPost s u := by
-  rcases hf with ⟨hg, hm, hr, hw, _⟩
-  cases s; cases t
-  dsimp at hg hm hr hw
-  cases hg; cases hm; cases hr; cases hw
-  cases h
-  constructor <;> with_reducible assumption
+/-- The setup, then the loop for the key size, read back from where the
+setup saved it. -/
+theorem dispatch_ok {s₀ : State} (hp : SPre s₀) {su : List Instr} {a b c : Prog isa}
+    {R Q : State → Prop} (hsu : WP isa (.block su) s₀ R)
+    (hR : ∀ s, R s → s.gpr .r10 = s.gpr .rdi + BitVec.ofNat 64 (16 * nr s₀))
+    (ha : ∀ s t, R s → RaxStep s t → nr s₀ = 10 → WP isa a t Q)
+    (hb : ∀ s t, R s → RaxStep s t → nr s₀ = 12 → WP isa b t Q)
+    (hc : ∀ s t, R s → RaxStep s t → nr s₀ = 14 → WP isa c t Q) :
+    WP isa (Impl.Gcm.X86_64.StitchAvx8.dispatch su a b c) s₀ Q := by
+  have hn : nr s₀ < 2 ^ 32 := by rcases hp.rounds with h | h | h <;> omega
+  unfold Impl.Gcm.X86_64.StitchAvx8.dispatch
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono hsu fun s hs => ?_
+  refine WP.mono (keyCmp10_ok s hn (hR s hs)) fun t ⟨hz, hax, ht⟩ => ?_
+  refine WP.ite (decide (nr s₀ = 10)) (by simp only [eval, hz]) (fun he => ha s t hs ht (by simpa using he))
+    (fun he => ?_)
+  have h10 : nr s₀ ≠ 10 := by simpa using he
+  have hr10 : t.gpr .r10 = s.gpr .rdi + BitVec.ofNat 64 (16 * nr s₀) := by
+    rw [ht.gpr _ (by decide)]; exact hR s hs
+  refine WP.seq (WP.mono (keyCmp12_ok t hn hr10 hax) fun u ⟨hz', hu⟩ => ?_)
+  have ht' : RaxStep s u := ⟨fun r hr => by rw [hu.gpr r hr, ht.gpr r hr], by rw [hu.mem, ht.mem],
+    by rw [hu.rd, ht.rd], by rw [hu.wr, ht.wr], fun r l hl => by rw [hu.lane r l hl, ht.lane r l hl]⟩
+  refine WP.ite (decide (nr s₀ = 12)) (by simp only [eval, hz'])
+    (fun he => hb s u hs ht' (by simpa using he)) (fun he => ?_)
+  have h12 : nr s₀ ≠ 12 := by simpa using he
+  exact hc s u hs ht' (by rcases hp.rounds with he | he | he <;> omega)
 
-theorem dpost_same {s t u : State} (hf : YFrame [] s t) (h : DPost t u) : DPost s u := by
-  rcases hf with ⟨hg, hm, hr, hw, _⟩
-  cases s; cases t
-  dsimp at hg hm hr hw
-  cases hg; cases hm; cases hr; cases hw
-  cases h
-  constructor <;> with_reducible assumption
-
-theorem dispatch_ok {s : State} {a b c : Prog isa} {Q : State → Prop} (hp : SPre s)
-    (ha : ∀ t, YFrame [] s t → nr s = 10 → WP isa a t Q)
-    (hb : ∀ t, YFrame [] s t → nr s = 12 → WP isa b t Q)
-    (hc : ∀ t, YFrame [] s t → nr s = 14 → WP isa c t Q) :
-    WP isa (Impl.Gcm.X86_64.StitchAvx8.dispatch a b c) s Q := by
-  refine WP.seq (WP.mono (cmpRound_ok s 10 (by decide)) fun t ⟨hz, hf⟩ => ?_)
-  refine WP.ite (decide (nr s = 10)) (by simp only [eval, hz])
-    (fun he => ha t hf (by simpa using he)) (fun he => ?_)
-  have h10 : nr s ≠ 10 := by simpa using he
-  refine WP.seq (WP.mono (cmpRound_ok t 12 (by decide)) fun u ⟨hz', hf'⟩ => ?_)
-  have ht : nr t = nr s := by simp only [nr, hf.gpr]
-  rw [ht] at hz'
-  refine WP.ite (decide (nr s = 12)) (by simp only [eval, hz'])
-    (fun he => hb u (hf.trans hf') (by simpa using he)) (fun he => ?_)
-  have h12 : nr s ≠ 12 := by simpa using he
-  exact hc u (hf.trans hf') (by rcases hp.rounds with he | he | he <;> omega)
+/-- What the setup leaves holds after reading the key size back. -/
+theorem Ready.rax {s₀ s t : State} {P : Nat → VG.Spec.Gcm.Block} (h : Ready s₀ P s) (ht : RaxStep s t) :
+    Ready s₀ P t := by
+  have he := h.env
+  have hm := ht.mem
+  refine ⟨⟨by rw [ht.gpr _ (by decide)]; exact he.rdi, by rw [ht.gpr _ (by decide)]; exact he.rsi,
+    by rw [ht.gpr _ (by decide)]; exact he.rcx, by rw [ht.gpr _ (by decide)]; exact he.r11,
+    by rw [ht.gpr _ (by decide)]; exact he.r10,
+    fun r h1 h2 h3 h4 h5 h6 => by rw [ht.gpr r h1]; exact he.other r h1 h2 h3 h4 h5 h6,
+    by rw [hm]; exact he.frame, by rw [hm]; exact he.powers, by rw [hm]; exact he.mask,
+    by rw [hm]; exact he.poly, by rw [hm]; exact he.rounds, by rw [hm]; exact he.data,
+    by rw [hm]; exact he.saved, by rw [ht.rd]; exact he.rd, by rw [ht.wr]; exact he.wr⟩,
+    by rw [hm]; exact h.templates, by rw [ht.gpr _ (by decide)]; exact h.counter,
+    by rw [ht.gpr _ (by decide)]; exact h.cursor, by rw [ht.gpr _ (by decide)]; exact h.remaining,
+    by rw [ht.lane _ _ (by decide)]; exact h.hash, by rw [hm]; exact h.frame,
+    by rw [ht.lane _ _ (by decide)]; exact h.mask, by rw [ht.lane _ _ (by decide)]; exact h.base⟩
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 

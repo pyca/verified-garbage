@@ -17,8 +17,10 @@ SSE2 code).
   place. Word `j`'s bit `64 q + i` is then bit `j` of block `8i + q`.
 * The S-box circuits are fused into functions of up to three words
   (`BitsliceAllocZ`), most of them one `vpternlogd`.
-* Everything the loops count is in registers, and `rbx` is saved in the
-  scratch buffer, as in `BitslicedAvx2`.
+* One round's code serves both halves, through the pointers `r12` and
+  `r13` (`rsi + 64` and `rsi`, then exchanged), and everything the loops
+  count is in registers, `rbx`, `r12` and `r13` saved in the scratch buffer,
+  as in `BitslicedAvx2`.
 -/
 
 namespace VG.Impl.TripleDes.X86_64.BitsliceAvx512
@@ -35,6 +37,14 @@ def zstore (m : MemOp) (r : XReg) : Instr := .vmovdqu32Store m r
 
 /-- Where `rbx` is saved: the last 8 bytes of the scratch buffer. -/
 def rbxSave : MemOp := { base := .rcx, disp := 1016 }
+/-- Where `r12` and `r13` are saved, before it. -/
+def r12Save : MemOp := { base := .rcx, disp := 1008 }
+def r13Save : MemOp := { base := .rcx, disp := 1000 }
+
+/-- Word `lWord q + 1` (or `lWord q`) of the half a round reads, `w = lWord q`. -/
+def rdWord (w : Nat) : MemOp := { base := .r12, disp := ((64 * w : Nat) : Int) }
+/-- Word `lWord q` (or `lWord q + 1`) of the half a round XORs into. -/
+def wrWord (w : Nat) : MemOp := { base := .r13, disp := ((64 * w : Nat) : Int) }
 
 /-- The spill slots the circuits may use. -/
 def spills : Nat := 8
@@ -251,29 +261,30 @@ def sboxCode : Nat → List Instr
     ((List.range 4).map fun i => ((outputs j).getD i 0, outReg i)) freeRegs (List.range spills)
 
 /-- S-box `j`'s input `i`: the next key bit, as a mask, ⊕ the word of `E`. -/
-def inputStep (ρ : Role) (j i : Nat) : List Instr :=
+def inputStep (j i : Nat) : List Instr :=
   [.alu .add .rax (.reg .rax), .alu .sbb .rbx (.reg .rbx), .vop (.vmovq maskReg .rbx),
-   .zop (.vpbroadcastq maskReg maskReg), zload (inReg i) (word (readWord ρ (eBit (inBit j i)))),
+   .zop (.vpbroadcastq maskReg maskReg), zload (inReg i) (rdWord (lWord (eBit (inBit j i)))),
    zbin .vpxord (inReg i) (inReg i) maskReg]
 
-def inputCode (ρ : Role) (j : Nat) : List Instr :=
-  (List.range 6).reverse.flatMap (inputStep ρ j)
+def inputCode (j : Nat) : List Instr :=
+  (List.range 6).reverse.flatMap (inputStep j)
 
-def outputCode (ρ : Role) (j : Nat) : List Instr :=
+def outputCode (j : Nat) : List Instr :=
   (List.range 4).flatMap fun i =>
-    [zload maskReg (word (writeWord ρ (outBit j i))), zbin .vpxord (outReg i) (outReg i) maskReg,
-     zstore (word (writeWord ρ (outBit j i))) (outReg i)]
+    [zload maskReg (wrWord (lWord (outBit j i))), zbin .vpxord (outReg i) (outReg i) maskReg,
+     zstore (wrWord (lWord (outBit j i))) (outReg i)]
 
-def sboxStep (ρ : Role) (j : Nat) : List Instr := inputCode ρ j ++ sboxCode j ++ outputCode ρ j
+def sboxStep (j : Nat) : List Instr := inputCode j ++ sboxCode j ++ outputCode j
 
 /-! ## Rounds -/
 
 def keyLoad : List Instr :=
   [.mov .rax (.mem { base := .r8, disp := 0 }), .alu .add .r8 (.reg .r9), .shift .ror .rax 48]
 
-def round (ρ : Role) : List Instr := keyLoad ++ (List.range 8).flatMap (sboxStep ρ)
+def swapPtrs : List Instr := [.mov .rbx (.reg .r12), .mov .r12 (.reg .r13), .mov .r13 (.reg .rbx)]
 
-def roundPair : List Instr := round .ba ++ round .ab ++ ([.alu .sub .r10 (.imm 1)] : List Instr)
+def round : List Instr :=
+  keyLoad ++ (List.range 8).flatMap sboxStep ++ swapPtrs ++ ([.alu .sub .r10 (.imm 1)] : List Instr)
 
 def swapHalves : List Instr :=
   (List.range 32).flatMap fun q =>
@@ -289,10 +300,10 @@ def passStart (d : Direction) : Prog isa :=
     (.seq (.ite .e (.block (passKeyCode d 3))
       (.seq (.block [.alu .cmp .r11 (.imm 2)])
         (.ite .e (.block (passKeyCode d 2)) (.block (passKeyCode d 1)))))
-    (.block [.mov .r10 (.imm 8)]))
+    (.block [.mov .r10 (.imm 16), .mov .r12 (.reg .rsi), .alu .add .r12 (.imm 64), .mov .r13 (.reg .rsi)]))
 
 def pass (d : Direction) : Prog isa :=
-  .seq (passStart d) (.seq (.loop (.block roundPair) .ne)
+  .seq (passStart d) (.seq (.loop (.block round) .ne)
     (.block (swapHalves ++ ([.alu .sub .r11 (.imm 1)] : List Instr))))
 
 /-! ## Transposition -/
@@ -348,9 +359,10 @@ def batch (d : Direction) : Prog isa :=
 def wide (d : Direction) : Prog isa :=
   .seq (.block [.alu .cmp .rdx (.imm 512)])
     (.ite .b (.block [])
-      (.seq (.block [.store rbxSave .rbx])
+      (.seq (.block [.store rbxSave .rbx, .store r12Save .r12, .store r13Save .r13])
         (.seq (.loop (batch d) .ae)
-          (.block [.mov .rbx (.mem rbxSave), .vop .vzeroupper]))))
+          (.block [.mov .rbx (.mem rbxSave), .mov .r12 (.mem r12Save), .mov .r13 (.mem r13Save),
+            .vop .vzeroupper]))))
 
 def ecb (d : Direction) : Prog isa := .seq (wide d) (BitsliceAvx2.ecb d)
 

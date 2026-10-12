@@ -28,7 +28,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
     consts := Impl.Ecdsa.X86_64.p224.combConsts
     code := Impl.EcKey.X86_64.publicKeyP224
     contract := Spec.EcKey.P224.inst.publicKeyContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p224.combConsts)
+      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p224.combConsts) 8
+    stack := 8
     verified := Proof.EcKey.X86_64.P224.pk_verified h.law (Proof.P224.combOk7 h.law) h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
