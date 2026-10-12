@@ -1,9 +1,11 @@
-import VerifiedGarbage.Impl.MlKem.X86.Sample
-import VerifiedGarbage.Impl.MlKem.X86.CheckEk
-import VerifiedGarbage.Impl.MlKem.X86.Compress
-import VerifiedGarbage.Impl.MlKem.X86.Encode
-import VerifiedGarbage.Impl.MlKem.X86.Cbd
-import VerifiedGarbage.Impl.MlKem.X86.Ntt
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86.Sample
+public import VerifiedGarbage.Impl.MlKem.X86.CheckEk
+public import VerifiedGarbage.Impl.MlKem.X86.Compress
+public import VerifiedGarbage.Impl.MlKem.X86.Encode
+public import VerifiedGarbage.Impl.MlKem.X86.Cbd
+public import VerifiedGarbage.Impl.MlKem.X86.Ntt
 
 /-!
 # ML-KEM on x86 (32-bit): building blocks of the top-level functions
@@ -24,6 +26,8 @@ call of `vg_mlkem_sample_ntt`, keeps the AND of the values it returned in a
 word of `scratch` and sets the sampled polynomial to zero if it returned 0,
 so that it is reduced in any case.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem.X86
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCst
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCst
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: `y = g^r`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Rsa.X86_64.RpCst
 top, `Y := Y² · (bit ? G : O)` in Montgomery form, the multiplicand chosen
 by a mask: `Y ≡ g^r R` (`expLoop_ok`), for `G ≡ g R` and `Y ≡ R` on entry.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

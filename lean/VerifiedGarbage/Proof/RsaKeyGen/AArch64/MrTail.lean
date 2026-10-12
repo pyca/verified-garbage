@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrCtx
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrCtx
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate on AArch64: the end of a round of Miller–Rabin
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
 clear); otherwise the witness counts (`kI`, `kUni`), and `kStat := 4` to go
 on (fewer than 16 witnesses, or fewer uniform ones than needed) or 1.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

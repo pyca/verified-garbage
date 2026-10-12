@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+module
+
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # Constant time of calls, by relating two runs (AArch64)
@@ -11,6 +13,8 @@ agrees, since the callee's run from the narrowed state is the actual run
 with fewer permissions (`Exec.widen` and determinism), and the callee is
 constant time. `bl` and `ret` leak no addresses of their own.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

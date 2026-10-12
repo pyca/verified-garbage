@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourStep
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFrame
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPhase
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourStep
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFrame
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPhase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResidentRejInit.lean` -/
+
+@[expose] public section
 
 section
 

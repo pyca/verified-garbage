@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.X86.Linear
+module
+
+public import VerifiedGarbage.Impl.Aes.X86.Linear
 
 /-!
 # The inverse round transformations of bitsliced AES on x86 (32-bit)
@@ -21,6 +23,8 @@ computes them for decryption:
 Each uses the registers `tmpRegs` only, the state's slots and slots
 `8 … 15`, which are the S-box's spill slots.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
-import Mathlib.Tactic.SplitIfs
+module
+
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+public import Mathlib.Tactic.SplitIfs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bitsliced AES on 32-bit words: the layout and the round transformations
@@ -14,6 +20,8 @@ computes on the states. Nothing here depends on the target: it is the
 32-bit counterpart of `Proof/Aes/Bitsliced.lean` (BearSSL's `aes_ct64`
 layout, four states in 64-bit words), for any 32-bit target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.Ct32
 

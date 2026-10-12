@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Group
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Group
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86-64 with AVX-512: the multipliers into the state
@@ -13,6 +19,8 @@ register stored there, which is all that the loop's `vpmuludq`s read (`MemM`).
 Everything it writes is working space of the state (`wR`), below MXCSR's slot
 at byte 120.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86_64.Avx512
 

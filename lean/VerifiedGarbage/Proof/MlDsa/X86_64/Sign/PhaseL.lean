@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseK
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseK
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: the rejection sampling loop
@@ -11,6 +17,8 @@ rejected; with `r15 = 0` when `signLoop` returns nothing within `minBounds`
 (its `SampleInBall` did not finish, or it was the 814th rejected). So the loop
 (`signLoop_ok`) ends in `XS`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

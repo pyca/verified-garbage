@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on x86-64: the call of `vg_rsa_public_checked`
@@ -9,6 +15,8 @@ the rest of `scratch`), `vg_rsa_public_checked` runs under its contract
 (`pub_pre`) and returns with `EM`'s place (`scratch + oEm`) written as it
 says, the frame and the rest of our working space kept (`pub_call`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.X86_64
 

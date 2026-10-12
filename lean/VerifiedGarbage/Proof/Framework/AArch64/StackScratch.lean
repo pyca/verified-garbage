@@ -1,9 +1,11 @@
-import VerifiedGarbage.Impl.StackScratch.AArch64
-import VerifiedGarbage.Proof.Framework.Scratch
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.AArch64.Target
+module
+
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Proof.Framework.Scratch
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # A scratch buffer on the stack (AArch64)
@@ -19,6 +21,8 @@ is in `x30`, which the code keeps, so the buffer can start at the stack
 pointer. The frame keeps the memory as it is, so the function may take lists
 of slices (`Sig.lists`): the code reads the same descriptors and slices.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

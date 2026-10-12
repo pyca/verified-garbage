@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.BaseTable
-import VerifiedGarbage.Proof.Ed25519.ScalarMul
+module
+
+public import VerifiedGarbage.Impl.Ed25519.BaseTable
+public import VerifiedGarbage.Proof.Ed25519.ScalarMul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The cached base-point powers match the specification
@@ -9,6 +15,8 @@ specification's formula as it goes, so the kernel evaluates 256 doublings and
 compares 256 entries. `d` is replaced by its value first, so that the kernel
 computes its inversion once.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519
 

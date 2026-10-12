@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_cbd2`
@@ -9,6 +18,8 @@ Two coefficients per byte (`samplePolyCBD2_val`): the sums of the pairs of
 bits of a byte `v`, `s = (v & 0x55) + ((v >> 1) & 0x55)`, are `x` and `y` of
 both nibbles (`sums`, checked for every byte by the kernel).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Aes.X86.Keys
-import VerifiedGarbage.Proof.Aes.Blocks
-import Mathlib.Tactic.SplitIfs
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.Keys
+public import VerifiedGarbage.Proof.Aes.Blocks
+public import Mathlib.Tactic.SplitIfs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One group of counter-mode blocks on x86 (32-bit)
@@ -10,6 +16,8 @@ counter block in the scratch buffer (`ctrBlocks_wp`, then `ctr_inRel` for
 `InRel`), `encrypt2` encrypts them (`Encrypt.lean`), and `xorGroup` XORs the
 keystream into the data, a word at a time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86
 

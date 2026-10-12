@@ -1,14 +1,32 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Preserve
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Args
-import VerifiedGarbage.Spec.Ed25519.CachedSign
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Sha512.X86_64.Shared
-import VerifiedGarbage.Proof.Framework.ConstMem
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Preserve
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Preserve
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Args
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Args
+public import VerifiedGarbage.Spec.Ed25519.CachedSign
+meta import VerifiedGarbage.Spec.Ed25519.CachedSign
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Shared
+public import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.SignCached.Body`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.X86_64.SignCached.Finish`. -/
 section

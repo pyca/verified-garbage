@@ -1,11 +1,25 @@
-import VerifiedGarbage.Proof.ChaCha20.Arm.Block
-import VerifiedGarbage.Proof.ChaCha20.Keystream
-import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.MdStream.Arm.Common
-import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.Arm.Block
+meta import VerifiedGarbage.Proof.ChaCha20.Arm.Block
+public import VerifiedGarbage.Proof.ChaCha20.Keystream
+meta import VerifiedGarbage.Proof.ChaCha20.Keystream
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
+meta import VerifiedGarbage.Proof.MdStream.Arm.Common
+public import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
+meta import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
+meta import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 keystream XOR on ARMv7
@@ -24,6 +38,8 @@ code too: its saves and restores of `r4`–`r6` (our public pointers and
 length) are public slots of `buf`, which needs lower bounds on the lengths
 of all three writable regions, `0` for the data (`τ₀`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20
 

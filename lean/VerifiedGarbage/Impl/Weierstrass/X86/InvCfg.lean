@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
 
 /-! # Batched inversion for 256-bit moduli on 32-bit x86
 
@@ -6,6 +8,9 @@ Twenty batches of thirty divsteps update nine-word signed `f,g` and
 eight-word reduced coefficients `a,b`. Each coefficient reduction divides
 by `2^32`, so the final Montgomery factor includes `2^(2*20)`.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86
 open VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86.Inv
 

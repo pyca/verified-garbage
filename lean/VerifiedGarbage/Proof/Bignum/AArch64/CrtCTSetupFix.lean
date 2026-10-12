@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: constant time of a prime's fixes
@@ -10,6 +17,8 @@ the array's base, and `-X⁻¹` and the number 1 from `x0`. What each piece
 keeps and changes (`pf1_ok` to `pf4_ok`) gives `primeFix_frm`, what
 `primeFix` changes whatever the mask and the prime.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

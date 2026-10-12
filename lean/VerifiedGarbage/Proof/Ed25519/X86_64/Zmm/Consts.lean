@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Loop
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The `zmm` comb: the rows of the `zmm` code
@@ -8,6 +14,8 @@ of the `zmm` code (`zrow`, `ZK2`), builds the blends' masks (`vpblendd` of
 zero and all ones, the masks themselves), and copies the lanes of the point
 to both halves.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Zmm
 

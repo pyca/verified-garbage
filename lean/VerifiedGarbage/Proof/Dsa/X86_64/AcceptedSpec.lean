@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.SignCompute
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyCompute
-import VerifiedGarbage.Proof.Dsa.SizeBounds
-import VerifiedGarbage.Proof.Dsa.SignVerify
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.SignCompute
+public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyCompute
+public import VerifiedGarbage.Proof.Dsa.SizeBounds
+public import VerifiedGarbage.Proof.Dsa.SignVerify
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Connecting implementation acceptance masks with DSA's operational checks -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.Impl.Dsa.Layout
 

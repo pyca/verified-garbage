@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Encrypt
-import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Encrypt
+public import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: decapsulation, correctness
@@ -14,6 +20,8 @@ into `scratch`, with a layout of its own (`layC`). What every phase keeps
 (`Enc.encrypt_ok`), the comparison of `c` and `c'`, and the selection of `K'`
 or `K̄` into `key`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm.Decaps
 

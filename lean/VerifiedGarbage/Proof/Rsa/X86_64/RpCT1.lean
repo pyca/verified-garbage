@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpMain
-import VerifiedGarbage.Proof.Rsa.X86_64.CvCTCode
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpMain
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpMain
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvCTCode
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: constant time, the prefix
@@ -11,6 +19,8 @@ data `p`. The head, the loads, `-n⁻¹`, `M = d e` and the check of `M` leak
 the same in two runs from `GM p` (`prefix_ct`), and leave the check's
 result, which the public number of tries fixes (`prefixP_ct`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

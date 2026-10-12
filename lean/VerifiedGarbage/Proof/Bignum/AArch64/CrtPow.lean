@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: `c^d mod X`
@@ -7,6 +13,8 @@ In a prime's phase, from `c G mod n` in the modulus' `Y` and `R_X mod X` in
 the prime's: `c R_X mod X` by `redc`, then `Y := Y^d` (`powPhase_ok`):
 `c^d R_X mod X` if `X` divides `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

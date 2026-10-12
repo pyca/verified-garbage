@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseC
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseC
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: the checks of an iteration
@@ -12,6 +18,8 @@ each hint `h[i]` and the number of its 1s summed at `ONES` (`hR_ok`), and that
 sum against `ω` (`onesOk_ok`); so `r15` is 1 exactly when the iteration passes
 (`checks_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

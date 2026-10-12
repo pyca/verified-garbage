@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Aes.Bitsliced
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import Mathlib.Tactic.SplitIfs
+module
+
+public import VerifiedGarbage.Proof.Aes.Bitsliced
+public import VerifiedGarbage.Proof.Framework.Arm.Linear
+public import Mathlib.Tactic.SplitIfs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bitsliced AES in 32-bit words: the layout and the round transformations
@@ -18,6 +24,8 @@ The last section gives each linear layer as atoms (as the last section of
 (`Framework/Arm/Linear.lean`): bit `t`
 of input word `i` is atom `32 i + t`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.Arm
 

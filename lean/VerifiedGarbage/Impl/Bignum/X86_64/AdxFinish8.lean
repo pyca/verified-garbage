@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.Adx
+module
+
+public import VerifiedGarbage.Impl.Bignum.X86_64.Adx
 
 /-!
 # Clearing the window and the final subtraction, eight words at a time
@@ -10,6 +12,8 @@ subtraction and the mask of the selection moved between `rbp` and the
 carry flag once per eight words rather than once per word, and the
 selection by `cmovb`, which reads the carry flag set from the mask.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Bignum.X86_64.Adx
 

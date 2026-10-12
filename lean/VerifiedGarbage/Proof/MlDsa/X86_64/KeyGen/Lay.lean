@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on x86-64: its contract, parameters and buffers
@@ -10,6 +16,8 @@ its buffers (`seed` in `rbp`; `scratch`, `pk` and `sk` in `rbx`, `r12` and
 `r13`: `kgR`, `kgW p`), and the checks of pointers into them, for any
 parameter set, which `lay` proves from the offsets by `omega`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.KeyGen
 

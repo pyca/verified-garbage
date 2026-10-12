@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: calls of the samplers
@@ -9,6 +15,8 @@ needs of the layout (`…Chk`), what it does (`…_ok`), and that two runs whose
 layout registers agree, and whose sampler leaks the same, leak the same
 (`…_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Camellia.Bitsliced
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Camellia.Bitsliced
+public import VerifiedGarbage.Proof.Framework.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bitsliced Camellia: words, bytes and blocks
@@ -13,6 +19,8 @@ says the words `W` hold the halves `d` that way; `half_of_words` and
 and 8–15 of its big-endian number (`byteOf_hi`, `byteOf_lo`), and a block
 is encoded back the same way (`encodeBlock_getElem`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 

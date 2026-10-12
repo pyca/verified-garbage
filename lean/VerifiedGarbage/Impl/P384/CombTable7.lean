@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.NatPairs
+module
+
+public import VerifiedGarbage.Impl.NatPairs
 
 /-!
 # P-384: the 7-bit fixed-base comb's constant tables
@@ -10,6 +12,8 @@ with Python's integers (affine addition, with inverses by Fermat); the proof
 (`Proof/P384/Comb7.lean`) checks every entry against the specification's
 group law.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.P384
 

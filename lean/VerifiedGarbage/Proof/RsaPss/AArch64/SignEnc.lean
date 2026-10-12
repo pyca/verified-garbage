@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on AArch64: the pieces of the encoding
@@ -10,6 +16,8 @@ salt into `Y` (`copyDigest_ok`, `copySaltY_ok`), the length of `M'`
 (`putSalt_ok`), `H` and `0xbc` (`putH_ok`), and the top bits of `DB`
 cleared (`clearTop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCallTwo
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedMatrix
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCallTwo
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedMatrix
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign.CachedMatrix
 open VG VG.AArch64 VG.Spec.MlDsa

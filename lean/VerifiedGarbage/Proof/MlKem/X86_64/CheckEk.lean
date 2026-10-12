@@ -1,7 +1,17 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.CheckEk
-import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
-import VerifiedGarbage.Proof.MlKem.EkCheck
-import VerifiedGarbage.Spec.MlKem.Contract
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.CheckEk
+meta import VerifiedGarbage.Impl.MlKem.X86_64.CheckEk
+public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
+public import VerifiedGarbage.Proof.MlKem.EkCheck
+meta import VerifiedGarbage.Proof.MlKem.EkCheck
+public import VerifiedGarbage.Spec.MlKem.Contract
+meta import VerifiedGarbage.Spec.MlKem.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: the key check (`vg_mlkem768_check_ek`, `vg_mlkem1024_check_ek`)
@@ -10,6 +20,8 @@ For a parameter set `p` of rank `k`: the code counts the fields less than `q`
 (`cnt`); all `256k` are exactly when the key passes the check (`cnt_eq_iff`,
 `ekCheck_iff`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

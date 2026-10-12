@@ -1,9 +1,17 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointDecode
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverParity
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.X25519.X86_64.Setup
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointDecode
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverParity
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Proof.X25519.X86_64.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Load the encoded y-coordinate and its separate sign bit. -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

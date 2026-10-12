@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Poly1305.AArch64.Radix64
+module
+
+public import VerifiedGarbage.Impl.Poly1305.AArch64.Radix64
 
 /-!
 # Poly1305 on AArch64: whole blocks four at a time, in AdvSIMD
@@ -36,6 +38,8 @@ the mask, `x9`–`x15` temporaries and `x9` the count of groups.
 The only branch is on the number of groups, and every address is the data
 pointer plus a constant, or the state pointer plus a constant.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Poly1305.AArch64.Vector
 

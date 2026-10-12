@@ -1,8 +1,16 @@
-import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Bignum.X86_64.R2
+module
+
+public import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Montgomery setup for DSA, including leading-zero modulus limbs -/
+
+@[expose] public section
 
 namespace VG.Proof.Dsa.X86_64
 

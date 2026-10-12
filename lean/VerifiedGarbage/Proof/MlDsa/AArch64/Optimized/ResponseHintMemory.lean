@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZInit
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZInit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResponseHintGroup.lean` -/
+
+@[expose] public section
 
 section
 

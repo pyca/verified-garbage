@@ -1,8 +1,20 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## AdxTiledSquareRowCT -/
+
+@[expose] public section
+
 section
 
 namespace VG.Proof.Bignum.X86_64.AdxTiledSquare

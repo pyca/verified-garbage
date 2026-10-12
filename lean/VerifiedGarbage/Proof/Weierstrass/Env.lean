@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Weierstrass.Slots
-import VerifiedGarbage.Proof.Weierstrass.Rcb
-import Mathlib.Logic.Function.Basic
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.Slots
+public import VerifiedGarbage.Proof.Weierstrass.Rcb
+public import Mathlib.Logic.Function.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Field programs on slots, as functions on environments
@@ -20,6 +26,8 @@ Everything here is over `Fin m` and Lean's core rings
 need none of it, and only the proofs of the group law
 (`Proof/Weierstrass/Complete.lean`) import it.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass
 

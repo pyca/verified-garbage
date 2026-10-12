@@ -1,8 +1,19 @@
-import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
-import VerifiedGarbage.Proof.Aes.Arm.Ctr32
-import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Spec.Aes.Contract
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
+meta import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
+public import VerifiedGarbage.Proof.Aes.Arm.Ctr32
+meta import VerifiedGarbage.Proof.Aes.Arm.Ctr32
+public import VerifiedGarbage.Proof.Aes.KeyExp
+meta import VerifiedGarbage.Proof.Aes.KeyExp
+public import VerifiedGarbage.Spec.Aes.Contract
+meta import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AES key expansion on ARMv7
@@ -14,6 +25,8 @@ schedule is then a few scalar instructions around it (`word_ok`), and the
 loop over the words keeps the schedule's bytes so far equal to the
 specification's (`WInv`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes
 

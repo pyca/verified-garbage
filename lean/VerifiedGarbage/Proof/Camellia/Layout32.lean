@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Camellia.Layout
-import VerifiedGarbage.Proof.Camellia.Bitsliced32
+module
+
+public import VerifiedGarbage.Proof.Camellia.Layout
+public import VerifiedGarbage.Proof.Camellia.Bitsliced32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bitsliced Camellia on 32-bit planes: words, bytes and blocks
@@ -11,6 +17,8 @@ of a half's word (`toBs`) and back (`fromBs`). `halves_of_words` and
 `block_of_planes` turn what the transposes do to the bits into the halves
 `D1` and `D2` of the blocks, and back. Nothing here depends on the target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia.W32
 

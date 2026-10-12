@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.Pack.Hint
-import VerifiedGarbage.Proof.MlDsa.Pack.Mem
-import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
+public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+public import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: `HintBitPack` and `HintBitUnpack` in memory, for every target
@@ -13,6 +19,8 @@ two memories give the same hint (`hintAt_congr`, from equal leaks:
 polynomials and `j` more coefficients (`hpS`, `hpT`), and the words of a hint
 that `HintBitUnpack` fills in (`HArr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Pack
 

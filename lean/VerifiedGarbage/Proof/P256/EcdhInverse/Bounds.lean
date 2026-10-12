@@ -14,7 +14,7 @@ theorem rowBounds_step {t : MSt} (h : rowBounds t) : rowBounds (mstep t) := by
   · simp only
     omega
   · rcases Int.emod_two_eq_zero_or_one t.g with hz|ho
-    · simp only [hz,zero_mul,add_zero]
+    · simp only [hz,Int.zero_mul,Int.add_zero]
       omega
     · simp only [ho,one_mul]
       omega
@@ -39,7 +39,7 @@ theorem row_numerator_bound {t : MSt} (h : rowBounds t) :
   split
   · omega
   · rcases Int.emod_two_eq_zero_or_one t.g with hz|ho
-    · simp only [hz,zero_mul,add_zero]
+    · simp only [hz,Int.zero_mul,Int.add_zero]
       omega
     · simp only [ho,one_mul]
       omega

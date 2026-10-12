@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldStage
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRun
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldStage
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRun
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.Inverse
 open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith

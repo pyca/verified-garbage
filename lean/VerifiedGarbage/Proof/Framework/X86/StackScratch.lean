@@ -1,10 +1,12 @@
-import VerifiedGarbage.Impl.StackScratch.X86
-import VerifiedGarbage.Proof.Framework.Scratch
-import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Framework.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.X86.Target
 
 /-!
 # A scratch buffer on the stack (x86)
@@ -32,6 +34,8 @@ signature that may have lists of slices. `Verified.stackScratchL` is the
 frame's theorem; `Verified.stackScratch` is it for a contract that reads only
 the buffers.
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Aes.Bitsliced
-import VerifiedGarbage.Proof.Aes.InvRounds
+module
+
+public import VerifiedGarbage.Proof.Aes.Bitsliced
+public import VerifiedGarbage.Proof.Aes.InvRounds
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bitsliced AES: the inverse round transformations
@@ -10,6 +16,8 @@ of FIPS 197 §5.3 it computes on the states, and what the layers compute
 on input words given as atoms, which the targets' proofs check their code
 against. Nothing here depends on the target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes
 

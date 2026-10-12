@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Sha512.Spec
-import VerifiedGarbage.Impl.Sha512.X86_64.Avx2
-import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Sha512.Spec
+public import VerifiedGarbage.Impl.Sha512.X86_64.Avx2
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512 with AVX2 on x86-64: one round
@@ -11,6 +17,8 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
 `round j t` computes `roundKW`, with `Σ₀` and `Σ₁` as three `rorx`, `Ch` as a
 sum of two disjoint masks and `Maj` from the previous round's `a ⊕ b`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.X86_64.Avx2
 

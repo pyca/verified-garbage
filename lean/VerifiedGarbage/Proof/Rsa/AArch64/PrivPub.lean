@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the calls of the public operation
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
 keeps `r₃` and sets those of `vg_rsa_public_precomputed_checked`
 (`pdArgs_ok`), which writes `M^e mod n` to `out` (`pd_call`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

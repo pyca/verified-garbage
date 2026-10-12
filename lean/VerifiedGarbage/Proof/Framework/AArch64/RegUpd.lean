@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # AArch64: reading a state after a write, for symbolic execution
@@ -8,6 +10,8 @@ The registers of a state after a write, read one write at a time, with
 `gpr_write` for registers that are literals, `gpr_write_self` and
 `gpr_write_of_ne` for variables.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64.RegUpd
 

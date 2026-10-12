@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, the round constants and the padded seeds
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 After the prologue, the table of the round constants (`rc_ok`), and the four
 states holding the padded seeds, byte by byte (`absorb_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64.S4
 

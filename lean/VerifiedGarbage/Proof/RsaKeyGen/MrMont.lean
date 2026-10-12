@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
-import VerifiedGarbage.Proof.Bignum.Math
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
+public import VerifiedGarbage.Proof.Bignum.Math
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Miller–Rabin in Montgomery form
@@ -12,6 +18,8 @@ multiplication of `x R mod c` and `z R mod c` is `(x z mod c) R mod c`
 after `T − 1` of them is `mrRun` (`mrRun_pre`), and `y` after `j` bits is
 `mrPow c b T j` (`mrPow_succ`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen
 

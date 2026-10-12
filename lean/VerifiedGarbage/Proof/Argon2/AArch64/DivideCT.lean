@@ -1,8 +1,20 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Impl.Argon2.AArch64.Divide
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Impl.Argon2.AArch64.Divide
+meta import VerifiedGarbage.Impl.Argon2.AArch64.Divide
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.DivideLit`. -/
+
+@[expose] public section
+
 section
 /-! Checked literal for unrolled ARM64 reference-index division. -/
 namespace VG

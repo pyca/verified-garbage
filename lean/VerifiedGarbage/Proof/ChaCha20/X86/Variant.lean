@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.ChaCha20.X86.Xor
-import VerifiedGarbage.Impl.ChaCha20.X86.Callee
-import VerifiedGarbage.Proof.Framework.X86.CallWith
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86.Xor
+public import VerifiedGarbage.Impl.ChaCha20.X86.Callee
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_chacha20_xor` on x86 (32-bit)
@@ -12,6 +18,8 @@ interface `ChaCha20Xor` on x86 (`Variants/ChaCha20Xor/X86/`), and each caller
 `TCB/Emit.lean`). Every implementation has the contract `xorX86`, with the
 12 bytes of stack below its return address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86
 

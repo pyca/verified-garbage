@@ -1,11 +1,20 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafLayout
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
-import VerifiedGarbage.Proof.Weierstrass.FastNaf
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafLayout
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
+public import VerifiedGarbage.Proof.Weierstrass.FastNaf
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Stable tables and public digits around the shared Jacobian accumulator. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass

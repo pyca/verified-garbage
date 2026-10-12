@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTPSub
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtP
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTPSub
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTPSub
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtP
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtP
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: constant time, `m_q G mod n`
@@ -9,6 +17,8 @@ that carries, before each piece, its claim's hypotheses and what
 correctness gives after it; `mq_chain` proves it from `mqPart_ok`'s
 hypotheses, as `mqPart_ok` runs the pieces.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

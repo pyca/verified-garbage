@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # AArch64 taint tracking with the addresses of statics
@@ -9,6 +11,8 @@ contract with those tables of constants says: `Abi.withConsts`), so the
 register `adrSym` puts one in is public, and the code may address the table
 from it (`taintS L`). No instruction changes the addresses (`exec_syms`).
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

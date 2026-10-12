@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hashes
-import VerifiedGarbage.Proof.Sha256.Arm.Shared
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hashes
+public import VerifiedGarbage.Proof.Sha256.Arm.Shared
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-224's streaming functions on 32-bit ARM
@@ -9,6 +15,8 @@ SHA-224's initial hash value (`vg_sha224_init`, then `vg_sha256_update` and
 `vg_sha256_finalize`, whose contracts hold from any initial hash value), with
 the digest the first 28 bytes of the final hash value.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.Stream.Arm
 

@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
-import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4`
@@ -10,6 +18,8 @@ after the call on seed `K`, polynomial `K` is the seed's `RejNTTPoly` if it
 has 256 coefficients, and `r14` records whether the first `K + 1` do (`PC`),
 as in `vg_mlkem_sample_ntt4` (`MlKem/X86_64/S4Scalar.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Rej4
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Prep
-import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Contract
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Prep
+public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Contract
+public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming RC2-CBC on AArch64: the update functions
@@ -11,6 +17,8 @@ are followed by the call of the verified CBC function (`call_ok`).
 `update_post_short` and `update_post_long` (`Proof/Rc2/Stream.lean`) turn the
 memory each leaves into the contract's postcondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Stream
 

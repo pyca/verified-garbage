@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.AesCbc.Spec
-import VerifiedGarbage.Proof.CmacAes.X86.Save
-import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
-import VerifiedGarbage.Impl.AesCbc.X86
+module
+
+public import VerifiedGarbage.Proof.AesCbc.Spec
+public import VerifiedGarbage.Proof.CmacAes.X86.Save
+public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+public import VerifiedGarbage.Impl.AesCbc.X86
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CBC on x86: the contracts, and a call of a block function
@@ -21,6 +27,8 @@ working space `S`): `D` then holds `f` of it, and only `D`, `S` and the 24
 bytes below `esp` change in memory. `blk_rel`: such calls are constant time,
 by the block function's own proof.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCbc.X86
 

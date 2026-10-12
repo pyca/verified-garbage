@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sha3.Seed34
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Absorb
+module
+
+public import VerifiedGarbage.Proof.Sha3.Seed34
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Absorb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, squeezing
@@ -11,6 +17,8 @@ first 168 bytes of each to block `n` of its output, at `rbp`, which then
 holds the first `168 (n + 1)` bytes of the seed's XOF output (`sq_ok`);
 `squeezes` runs them in a loop (`blocks_ok`, `sqs_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64.S4
 

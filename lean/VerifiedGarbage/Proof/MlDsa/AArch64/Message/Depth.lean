@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Verified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Inst
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Verified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Inst
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: how deep the frames of signing and verification nest
@@ -11,6 +17,8 @@ and those of the functions they call nest at most once (`DLe`, from the
 structure of the code, `dle_tac`). So their calls use the 16 bytes of stack
 below the stack pointer.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Message
 

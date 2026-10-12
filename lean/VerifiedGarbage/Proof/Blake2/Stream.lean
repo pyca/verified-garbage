@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blake2.Spec
-import VerifiedGarbage.Proof.Framework.Mem
+module
+
+public import VerifiedGarbage.Proof.Blake2.Spec
+public import VerifiedGarbage.Proof.Framework.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming BLAKE2: target-independent lemmas
@@ -11,6 +17,8 @@ one lemma here: copying bytes into the buffer (`reprR_append`), compressing
 the full buffer (`reprR_flush`), compressing blocks straight from the data
 (`reprR_blocks`), and the final compression (`finalHash_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2
 

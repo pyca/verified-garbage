@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.AArch64.Isa
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # RSA's private-key operation checked against `e`, on AArch64
@@ -32,6 +34,8 @@ at `oPre` `n`'s values. Our own stack arguments are above both frames, from
 `sp + frameBytes + 16`. Only registers the callees may change are used, so
 the frame holds everything kept across a call.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.AArch64.PrivChecked
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Inline
-import VerifiedGarbage.Proof.Framework.Arm.Taint
+module
+
+public import VerifiedGarbage.Proof.Framework.Inline
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 /-!
 # Inlining verified code (ARMv7)
@@ -11,6 +13,8 @@ state permits (`Exec.regions`) and never changes the stack pointer
 (`Exec.sp`), and `WP.inline` combines these with the correctness part of the
 inlined function's `Verified` proof.
 -/
+
+@[expose] public section
 
 namespace VG.Arm
 

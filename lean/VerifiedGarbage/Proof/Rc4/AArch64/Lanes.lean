@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.Rotate
-import VerifiedGarbage.Proof.Rc4.Iterate
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.Rotate
+public import VerifiedGarbage.Proof.Rc4.Iterate
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A group of sixteen bytes
@@ -10,6 +16,8 @@ once the data has ended, and otherwise produces the next byte of the stream
 (`lane_ok`). `p` bytes of the `N` at `D` are done after lane `n`:
 `p = min N (p₀ + (n - sk))` (`LaneInv`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64 VG.Spec.Rc4 VG.Proof.Rc4

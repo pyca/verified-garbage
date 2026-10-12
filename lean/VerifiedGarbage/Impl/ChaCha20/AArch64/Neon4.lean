@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
+module
+
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
 
 /-!
 # Four-block ChaCha20 with ARM64 NEON
@@ -8,6 +10,8 @@ quarter rounds are scheduled together, as are the four diagonal quarter
 rounds. Only caller-saved vector registers are used. The bulk stream keeps
 the keystream in registers through the input XOR.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.ChaCha20.AArch64.Neon4
 

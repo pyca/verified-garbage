@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: the shared contract
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
 `crtA` (`Proof/Rsa/AArch64/PrivCallees.lean`) states the shared contract of
 `vg_rsa_private_crt` on the registers and the stack (`crt_implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

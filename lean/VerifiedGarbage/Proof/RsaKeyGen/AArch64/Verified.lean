@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTCode
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTTail
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Implies
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTCode
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTTail
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Implies
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A candidate for an RSA prime on AArch64: verified against the shared contract
@@ -12,6 +18,8 @@ With correctness (`code_correct`), constant time (`code_constantTime`, from
 (`cand_implies`), `code` is verified for any Montgomery multiplication
 (`candidate_verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64
 

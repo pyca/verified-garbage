@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
-import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Set
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
+meta import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Tactic.Set
+meta import Mathlib.Tactic.Set
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_multiply_ntts`
@@ -9,6 +18,8 @@ Four pairs of coefficients per iteration (`multiplyNTTs_even`,
 `multiplyNTTs_odd`), in the lanes of vectors (`vpair_ok`), with the `γᵢ` read
 from the table in `scratch`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

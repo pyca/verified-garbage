@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpBase
-import VerifiedGarbage.Proof.Rsa.RecoverMath
-import VerifiedGarbage.Proof.Bignum.X86_64.Row
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpBase
+public import VerifiedGarbage.Proof.Rsa.RecoverMath
+public import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: `M = d e`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Row
 `prod` zeroes `M`'s two arrays and adds `e_j d` at word `j` of `M`, by
 `mulAddRow`, for each word `j` of `e` (`prod_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The point operations a caller runs
@@ -11,6 +17,8 @@ point operations `pt` that change what the field programs `dblOps` and
 functions' bodies, which calls of them run as (`Code.inline`), are such
 operations (`bodies_ok`, from `fn_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MatrixMask
-import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedSamples
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MatrixMask
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedSamples
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
 open VG.Impl.MlDsa.AArch64.Call

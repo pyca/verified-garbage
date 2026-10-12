@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Seed.Arm.Ecb
+module
+
+public import VerifiedGarbage.Impl.Seed.Arm.Ecb
 
 /-!
 # SEED key expansion on ARMv7
@@ -20,6 +22,8 @@ of each word, ORed. The schedule's pointer is kept in `r9`, which `g8` does
 not write. Nothing depends on the key but the data: the code is
 straight-line.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.Arm
 

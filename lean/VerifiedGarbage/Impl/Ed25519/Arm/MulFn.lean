@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Ed25519.Arm.Word
-import VerifiedGarbage.Spec.X25519.Field16
+module
+
+public import VerifiedGarbage.Impl.Ed25519.Arm.Word
+public import VerifiedGarbage.Spec.X25519.Field16
 
 /-!
 # `vg_gf25519_r16_mul` on ARMv7
@@ -19,6 +21,8 @@ Every address is `ws` plus a constant or a public offset, and the only
 branch is the rows' loop: only the pointer and the offsets, which are
 public, may affect timing.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.Arm
 

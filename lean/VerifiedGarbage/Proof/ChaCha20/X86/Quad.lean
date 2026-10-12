@@ -1,15 +1,21 @@
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.Proof.Framework.X86.SseDword
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.ChaCha20.Spec
-import VerifiedGarbage.Proof.ChaCha20.Keystream
-import VerifiedGarbage.Impl.ChaCha20.X86.Xor
-import VerifiedGarbage.Proof.ChaCha20.X86.Vqr
-import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+public import VerifiedGarbage.Proof.Framework.X86.SseDword
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.ChaCha20.Spec
+public import VerifiedGarbage.Proof.ChaCha20.Keystream
+public import VerifiedGarbage.Impl.ChaCha20.X86.Xor
+public import VerifiedGarbage.Proof.ChaCha20.X86.Vqr
+public import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86 (32-bit): four blocks at once with SSE2
@@ -23,6 +29,8 @@ evaluation (`stepOk`). The output XORs each 16 bytes of keystream into the
 data if they lie within it, and stores the 16 bytes that run past its end in
 `buf[0, 16)` (`chunk_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86.Quad
 

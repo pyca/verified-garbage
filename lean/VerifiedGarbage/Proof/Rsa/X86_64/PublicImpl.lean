@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # A precomputed public operation for verified RSA callers -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Sha512.Contract
-import VerifiedGarbage.Proof.Sha512.Stream
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.Sha512.Contract
+public import VerifiedGarbage.Proof.Sha512.Stream
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512's streaming postconditions read memory only within the buffers
@@ -11,6 +17,8 @@ copy of the arguments passed on the stack, that needs their postconditions to
 read the memory on entry only within the function's buffers: the streaming
 state (`Stream.repr_congr`) and the data (`Stream.bytesAt_congr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512
 

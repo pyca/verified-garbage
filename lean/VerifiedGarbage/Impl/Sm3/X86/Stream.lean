@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sm3.X86
-import VerifiedGarbage.Impl.MdStream.X86
+module
+
+public import VerifiedGarbage.Impl.Sm3.X86
+public import VerifiedGarbage.Impl.MdStream.X86
 
 /-!
 # Streaming SM3: x86 (32-bit) implementation
@@ -17,6 +19,8 @@ The streaming state (96 bytes at `state`) is the hash value followed by a
   `count` and `out` after them. The length field is big-endian, and so are
   the words of the hash value.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sm3.X86.Stream
 

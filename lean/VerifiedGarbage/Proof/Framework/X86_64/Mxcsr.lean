@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 
 /-!
 # x86-64: code that restores MXCSR
@@ -10,6 +12,8 @@ Code that loads MXCSR (for Intel's MCDT prologue: see "MCDT" in
 by the functions it calls, is between such a pair, and `abiPreserved_of_ctl`
 extends `abiPreserved_of_exec` to such code, whatever MXCSR held on entry.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: a block of the BMI2/ADX multiplication
@@ -11,6 +17,8 @@ half (`halfA_ok`) and its second (`halfB_ok`) each end their two chains in
 their carry register, which their sums' bounds (`halfA_arith`,
 `halfB_arith`) keep from overflowing, so the flags are clear after each.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

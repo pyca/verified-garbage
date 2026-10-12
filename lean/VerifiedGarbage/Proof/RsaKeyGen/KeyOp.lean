@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.KeyCheck
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.KeyCheck
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes: `keyFromPrimes` as `vg_rsa_keygen_key` computes it
@@ -10,6 +16,8 @@ With `p ≥ q` (swapped), `L = lcm(p − 1, q − 1)` and `d = e⁻¹ mod L`, an
 `n`'s top bit, `gcd(q, M) = 1`, `p` and `q` odd and `e` valid
 (`keyFromPrimes_code`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen
 

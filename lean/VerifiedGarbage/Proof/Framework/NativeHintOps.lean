@@ -1,6 +1,10 @@
-import Lean.Util.ReplaceExpr
-import VerifiedGarbage.TCB.Code
-import Lean.ToExpr
+module
+
+public import Lean.Util.ReplaceExpr
+public import VerifiedGarbage.TCB.Code
+public import Lean.ToExpr
+
+@[expose] public section
 
 namespace VG
 namespace NativeHints

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.Encode
+module
+
+public import VerifiedGarbage.Proof.MlKem.Encode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM: the encapsulation key check, for every target
@@ -9,6 +15,8 @@ The modulus check of §7.2, `ByteEncode₁₂(ByteDecode₁₂(ek[0 : 384k])) = 
 and `ekCheck768`, `ekCheck1024`): what a constant-time implementation checks,
 without encoding anything.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

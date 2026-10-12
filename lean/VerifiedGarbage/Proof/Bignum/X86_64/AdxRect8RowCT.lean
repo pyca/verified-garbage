@@ -1,7 +1,18 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Public layout and indices determine all row addresses and loop decisions. -/
+
+@[expose] public section
+
 namespace VG.Proof.Bignum.X86_64.AdxRect8
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.Bignum.X86_64

@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfForward
+module
+
+public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfForward
 
 /-! The measured verifier forwards registers on ADX and uses separate field blocks on baseline. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.CmacAes.Arm
-import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
+module
+
+public import VerifiedGarbage.Impl.CmacAes.Arm
+public import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
 
 /-!
 # Streaming AES-CMAC: 32-bit ARM implementation
@@ -49,6 +51,8 @@ computed with shifts tested by `cmp`. Only the pointers, the key length,
 `count` and `len` can affect timing: the branches are on them, and so are
 the number of bytes copied and of blocks chained.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacAes.Stream.Arm
 

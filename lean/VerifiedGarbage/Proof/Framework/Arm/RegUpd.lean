@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # ARMv7: reading a state after a write, for symbolic execution
@@ -8,6 +10,8 @@ The registers of a state after a write, read one write at a time, with
 `gpr_setReg` for registers that are literals, `gpr_setReg_self` and
 `gpr_setReg_of_ne` for variables.
 -/
+
+@[expose] public section
 
 namespace VG.Arm.RegUpd
 

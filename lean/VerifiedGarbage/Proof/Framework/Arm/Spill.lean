@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ARMv7: saving registers to memory and restoring them
@@ -19,6 +21,8 @@ only `Nat` and `Bool` arithmetic.
 * `Saved`: memory holding the registers in their slots, as long as a frame
   leaves the slots alone (`Saved.frame`).
 -/
+
+@[expose] public section
 
 namespace VG.Arm.Spill
 

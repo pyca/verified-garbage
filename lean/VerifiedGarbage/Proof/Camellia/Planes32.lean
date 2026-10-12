@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.Camellia.Planes32
-import VerifiedGarbage.Proof.Camellia.Bitsliced32
+module
+
+public import VerifiedGarbage.Impl.Camellia.Planes32
+public import VerifiedGarbage.Proof.Camellia.Bitsliced32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Planes of Camellia's 64-bit constants, on 32-bit targets
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Camellia.Bitsliced32
 `sigma_rel`: the planes `keyPlane32` of a constant hold it in every lane,
 as the bitsliced rounds read a table entry (`W32.HalfRel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 

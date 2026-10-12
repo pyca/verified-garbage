@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.RpCand
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCand
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: the candidates
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.RpCand
 tried: `recoverPrimes.go`'s result and the number of tries
 (`candLoop_ok`), `ok` in `sC3` and `y` in Montgomery form.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

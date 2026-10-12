@@ -1,12 +1,20 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLowCheck
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedLow
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLowCheck
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedLow
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `OptimizedPairedLowLayout.lean` -/
+
+@[expose] public section
 
 section
 

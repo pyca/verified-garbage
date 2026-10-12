@@ -1,13 +1,19 @@
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Inline
-import VerifiedGarbage.Proof.Sha512.Arm.Compress
-import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
-import VerifiedGarbage.Proof.Sha512.Arm.Stream.Digest
-import VerifiedGarbage.Proof.Sha512.Arm.Stream.Init
-import VerifiedGarbage.Proof.Sha512.Arm.Stream.Update
-import VerifiedGarbage.Spec.Sha512.Contract
-import VerifiedGarbage.Proof.Sha512.Scratch
-import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Sha512.Arm.Compress
+public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
+public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Digest
+public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Init
+public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Update
+public import VerifiedGarbage.Spec.Sha512.Contract
+public import VerifiedGarbage.Proof.Sha512.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Sha512 on Arm: the shared contracts
@@ -28,6 +34,8 @@ they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's, PBKDF2's and Ed25519's code
 calls) run in a frame that allocates it (`Verified.stackScratch`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.Arm.Shared
 

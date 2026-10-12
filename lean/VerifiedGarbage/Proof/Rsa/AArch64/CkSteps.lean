@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CkState
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkState
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on AArch64: the pieces on `CkS`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.CkState
 Each piece of `main` keeps `CkS`; what it does to the arrays' values
 (`CkIn.av`, over `W` words) and to the mask, and which arrays it leaves.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

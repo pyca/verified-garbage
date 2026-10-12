@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.Power
-import VerifiedGarbage.Impl.Ed25519.AArch64.FieldCheck
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Power
+public import VerifiedGarbage.Impl.Ed25519.AArch64.FieldCheck
 
 /-! Recover a candidate x-coordinate from y, before checking its square and sign. -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.AArch64
 

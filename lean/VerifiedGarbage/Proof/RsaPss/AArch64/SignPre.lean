@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.RsaPss.Contract
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
+module
+
+public import VerifiedGarbage.Spec.RsaPss.Contract
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on AArch64: the precondition and the frame
@@ -10,6 +16,8 @@ stack `stk K` of the frame and a callee using `K` bytes), by name
 (`preS_of`). The frame of `frameBytes` bytes is at `fb s`, below which the
 callee uses `K` bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Sgn
 

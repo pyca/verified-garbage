@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Aes.AArch64.Ecb
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+module
+
+public import VerifiedGarbage.Proof.Aes.AArch64.Ecb
+meta import VerifiedGarbage.Proof.Aes.AArch64.Ecb
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES on whole blocks on AArch64: the whole functions
@@ -11,6 +19,8 @@ four blocks with `CryptOk`: the prologue moves the arguments where
 round keys as `vg_aes_ctr32`'s does (`Ctr32.lean`, `Group.lean`); the
 groups (`Ecb.lean`) do the rest; the epilogue restores the registers.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes
 

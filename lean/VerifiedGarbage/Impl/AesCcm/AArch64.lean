@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.AesGcm.AArch64
-import VerifiedGarbage.Impl.CmacAes.AArch64.Callee
-import VerifiedGarbage.Impl.Aes.AArch64.Callee
+module
+
+public import VerifiedGarbage.Impl.AesGcm.AArch64
+public import VerifiedGarbage.Impl.CmacAes.AArch64.Callee
+public import VerifiedGarbage.Impl.Aes.AArch64.Callee
 
 /-!
 # AES-CCM: AArch64 implementation
@@ -78,6 +80,8 @@ pointers, `rounds`, the lengths and `tag_len` can affect timing: the
 branches are on those, and so are the numbers of calls, bytes copied and
 blocks chained.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesCcm.AArch64
 

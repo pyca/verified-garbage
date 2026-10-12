@@ -1,11 +1,26 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
-import VerifiedGarbage.Impl.Argon2.AArch64.FirstLane
-import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
-import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceLane
-import VerifiedGarbage.Proof.Argon2.AArch64.Divide
-import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
+meta import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
+public import VerifiedGarbage.Impl.Argon2.AArch64.FirstLane
+meta import VerifiedGarbage.Impl.Argon2.AArch64.FirstLane
+public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+meta import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+public import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceLane
+meta import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceLane
+public import VerifiedGarbage.Proof.Argon2.AArch64.Divide
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Divide
+public import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
+meta import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.ReferenceLane`. -/
+
+@[expose] public section
+
 section
 /-! # Secret J₂ does not affect the lane-selection trace -/
 

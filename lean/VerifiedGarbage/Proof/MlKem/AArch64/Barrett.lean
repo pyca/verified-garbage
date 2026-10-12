@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.Ntt
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.Ntt
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: the tables
@@ -9,6 +15,8 @@ import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 `table` stores a table of 128 `u32`s; the tables of the code are those of the
 standard (`zetaTable_eq`, `gammaTable_eq`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64
 

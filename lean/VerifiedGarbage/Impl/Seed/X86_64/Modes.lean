@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Seed.X86_64.Ecb
-import VerifiedGarbage.Impl.Modes.X86_64.Cbc
-import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
-import VerifiedGarbage.Impl.Modes.X86_64.Fb
+module
+
+public import VerifiedGarbage.Impl.Seed.X86_64.Ecb
+public import VerifiedGarbage.Impl.Modes.X86_64.Cbc
+public import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
+public import VerifiedGarbage.Impl.Modes.X86_64.Fb
 
 /-!
 # SEED-CBC, -OFB and -CFB128 on x86-64
@@ -25,6 +27,8 @@ taint analysis keeps public across its stores), points `rsi`, `rdx` and
 `rdi` at the buffer, its sixteen blocks and the copy's first round key, and
 runs the batch.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Seed.X86_64
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsB
-import VerifiedGarbage.Proof.MlDsa.Sign.Setup
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsB
+public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: `ExpandA`
@@ -10,6 +16,8 @@ the seed `ρ ‖ j ‖ i`, with `r15` the AND of the results (`IA`): if it is 1,
 every entry so far is `RejNTTPoly`'s within `maxBounds`; if it is 0, one
 entry's `RejNTTPoly` does not finish within `minBounds` (`sampleE_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

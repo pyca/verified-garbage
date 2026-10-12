@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Lazy
+module
+
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Lazy
 
 /-! # Montgomery-scaled AVX2 products for ML-DSA -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Arith
 

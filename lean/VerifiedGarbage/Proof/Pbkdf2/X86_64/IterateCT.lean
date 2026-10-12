@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Pbkdf2.X86_64.Iterate
-import VerifiedGarbage.Proof.Hmac.Generic.Implies
+module
+
+public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Iterate
+public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on x86-64: constant time
@@ -15,6 +21,8 @@ block constant time from that (`Checks`, evaluated for each hash function,
 since the code depends on its sizes); and the calls are constant time by
 the compression function's own proof (`compressAt_rel`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Pbkdf2.X86_64
 

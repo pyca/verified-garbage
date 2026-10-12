@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Idea.X86
-import VerifiedGarbage.Impl.Modes.X86.Seq
+module
+
+public import VerifiedGarbage.Impl.Idea.X86
+public import VerifiedGarbage.Impl.Modes.X86.Seq
 
 /-!
 # IDEA's core for the modes on x86 (32-bit)
@@ -23,6 +25,8 @@ what it knows of the rest of it (the modes' data pointer and steps left);
 IDEA decrypts with the same block function under the inverse schedule
 (`vg_idea_invert_key`), so one core serves every mode in both directions.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Idea.X86
 

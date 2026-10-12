@@ -1,6 +1,9 @@
-import VerifiedGarbage.Impl.P256.VerifyArithmetic
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
+module
 
+public import VerifiedGarbage.Impl.P256.VerifyArithmetic
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
+
+@[expose] public section
 
 namespace VG.Impl.Weierstrass.AArch64.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass

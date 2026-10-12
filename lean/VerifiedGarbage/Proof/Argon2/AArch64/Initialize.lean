@@ -1,7 +1,16 @@
-import VerifiedGarbage.Spec.Argon2.Contract
-import VerifiedGarbage.Proof.Argon2.AArch64.Words
+module
+
+public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Proof.Argon2.AArch64.Words
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.Copy`. -/
+
+@[expose] public section
+
 section
 /-! # Initial XOR and final XOR, one word at a time -/
 

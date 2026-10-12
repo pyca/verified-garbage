@@ -1,11 +1,20 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointDecode
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverParity
-import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
-import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
-import VerifiedGarbage.Proof.Ed25519.Decode
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverPoint
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointDecode
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverParity
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+public import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
+public import VerifiedGarbage.Proof.Ed25519.Decode
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverPoint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86_64.DecodeLoad`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Ed25519.X86_64.CanonicalY`. -/
 section

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.WriteJ
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.WriteJ
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # One swap
@@ -9,6 +15,8 @@ base), `j` (from the base) broadcast in `v0` and `S[i] = R l` broadcast in
 next `S[i]` (the new `R (l + 1)`) in `v4` and, in the PRGA, the output index
 `R l + R j - B` in `v6`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64

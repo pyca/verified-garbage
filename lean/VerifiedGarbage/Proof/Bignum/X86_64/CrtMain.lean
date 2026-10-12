@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: the computation for a valid modulus
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
 result (zeros if it is `none`) to `out` and whether it is `some` returned
 (`crtMain_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

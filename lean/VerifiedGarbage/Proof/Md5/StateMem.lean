@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.Md5
+module
+
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Md5
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # MD5: the hash value in memory
@@ -7,6 +13,8 @@ import VerifiedGarbage.Spec.Md5
 The hash value as consecutive 32-bit words at an address (`stateAt`,
 `writeState`), and offsets into a region, independently of any target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Md5.StateMem
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on x86-64: the hash functions of the top-level functions
@@ -9,6 +15,8 @@ the padded state of their concatenation (`hash_ok`, which
 `Proof/MlKem/KPke.lean` relates to `G`, `H`, `J` and `PRF`), leaking only the
 addresses (`hash_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

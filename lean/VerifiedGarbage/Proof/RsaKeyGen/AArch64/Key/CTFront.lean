@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTUnits
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Entry
-import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTUnits
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTUnits
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Entry
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Entry
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: constant time, the entry, the loads, the order and `p − 1`, `q − 1`
@@ -19,6 +29,8 @@ it from the correctness of the whole stage: `loads_k`, `order_k`,
 (`kpubOf_eq`), so the contract's `ConstantTime` follows from the code's
 constant time in `Two KRel`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

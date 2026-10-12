@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Aes.X86.Group
-import VerifiedGarbage.Proof.Aes.X86.Ctr32CT
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Spec.Gcm.Contract
-import VerifiedGarbage.Proof.Gcm.Spec
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.Group
+public import VerifiedGarbage.Proof.Aes.X86.Ctr32CT
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Gcm.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES counter mode on x86 (32-bit): the whole function
@@ -13,6 +19,8 @@ the counter block's words to it and writes back the final counter; the key
 loop (`Keys.lean`) and the group loop (`Group.lean`) do the rest, and the
 epilogue restores the registers. Constant time is `Ctr32CT.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.X86
 

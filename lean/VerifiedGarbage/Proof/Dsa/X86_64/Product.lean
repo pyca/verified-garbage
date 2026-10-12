@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.Arithmetic
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.Arithmetic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Ordinary modular products through the selected Montgomery backend -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64

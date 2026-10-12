@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: the primes
@@ -8,6 +14,8 @@ The loads of `p`, `q` and `e` (`loads_k`), `p` and `q` ordered (`order_k`),
 and `p − 1` and `q − 1` (`decTo_k`); together, from `KS` to `KPrimes`
 (`front_k`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

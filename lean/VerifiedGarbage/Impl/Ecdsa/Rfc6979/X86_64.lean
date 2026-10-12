@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
-import VerifiedGarbage.Impl.Weierstrass.X86_64
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
+public import VerifiedGarbage.Impl.Weierstrass.X86_64
 
 /-!
 # Deterministic ECDSA (RFC 6979) on x86-64
@@ -68,6 +70,8 @@ function depend only on `D` and its block size `B` (`hmacArgs₁`,
 `hmacArgs₂`, `hmacArgs₃`, `msg`), so that the taint analysis checks them
 for each size.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Rfc6979.X86_64
 

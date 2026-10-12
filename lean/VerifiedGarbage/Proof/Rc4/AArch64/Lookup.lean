@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.Regs
+module
+
+public import VerifiedGarbage.Proof.Rc4.AArch64.Regs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A table lookup
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Rc4.AArch64.Regs
 `X ^ 192` in `a`, `b`, `c` (`quarters_run` computes them), the lookup
 leaves `S[X]` (`tbyte`) broadcast in `d`, through the temporary `t`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc4.AArch64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc4.AArch64

@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Aes.Arm.Ctr32
-import VerifiedGarbage.Impl.Aes.Arm.Inv
+module
+
+public import VerifiedGarbage.Impl.Aes.Arm.Ctr32
+public import VerifiedGarbage.Impl.Aes.Arm.Inv
 
 /-!
 # AES encryption and decryption of whole blocks, bitsliced, on ARMv7
@@ -31,6 +33,8 @@ counters, the round key and data pointers, in registers or stored in the
 scratch buffer) are public; no address and no branch depends on anything
 else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.Arm
 

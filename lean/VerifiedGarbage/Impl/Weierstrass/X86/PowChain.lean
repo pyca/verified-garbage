@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Weierstrass.X86
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86
 
 /-! # Fixed addition chains using the existing exponentiation slots -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.X86
 open VG.X86 VG.Impl.Mont.X86 VG.Impl.Weierstrass
 

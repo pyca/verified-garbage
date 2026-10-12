@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacTripleDes.Bytes
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Block
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.Bytes
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Cmac.Block
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC: the specification with 8-byte blocks
@@ -10,6 +16,8 @@ MAC of whole blocks and the last bytes (`macFull_split8`), the padded last
 block in memory (`padded_bytes8`), and TDEA's subkeys as 64-bit integers
 (`subkeys_tdes`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes
 

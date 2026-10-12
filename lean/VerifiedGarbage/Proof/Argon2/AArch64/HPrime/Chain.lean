@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Compare
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Output
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Absorb
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Compare
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Output
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Absorb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.HPrime.Next`. -/
+
+@[expose] public section
+
 section
 /-! # H′: hashing the previous 64-byte digest -/
 

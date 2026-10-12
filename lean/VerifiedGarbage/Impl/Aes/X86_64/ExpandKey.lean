@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
+module
+
+public import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
 
 /-!
 # The AES key expansion on x86-64
@@ -20,6 +22,8 @@ licence).
   the words left. Every branch is on these, which depend only on `key_len`;
   the key's bytes only ever reach `rax`, the S-box's registers and memory.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86_64
 

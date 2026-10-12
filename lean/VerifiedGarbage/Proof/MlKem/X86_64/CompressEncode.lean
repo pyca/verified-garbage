@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.Groups
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.Groups
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Groups
+public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+public import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: compression (`vg_mlkem_compress_encode`, `vg_mlkem1024_compress_encode`)
@@ -15,6 +26,8 @@ a group whose code accumulates its `c` values and stores its `b` bytes
 segments (`vg_mlkem1024_compress_encode`). `vg_mlkem_compress_encode` is
 proven by its three cases.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

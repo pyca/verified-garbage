@@ -1,9 +1,17 @@
-import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
-import VerifiedGarbage.Proof.Dsa.Arithmetic
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
+module
+
+public import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
+public import VerifiedGarbage.Proof.Dsa.Arithmetic
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Correctness of DSA's x86-64 byte-reduction arithmetic -/
+
+@[expose] public section
 
 namespace VG.Proof.Dsa.X86_64
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBounded
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBounded
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBounded
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_rej_bounded_poly`, constant time but for which half-bytes it accepts
@@ -14,6 +21,8 @@ same address. Each piece between the branches is proved constant time by the
 taint analysis from `x2` or `x3`, and correctness then describes where both
 runs are (`relTaintStep`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample
 

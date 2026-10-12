@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.X86.Sbox
+module
+
+public import VerifiedGarbage.Impl.Aes.X86.Sbox
 
 /-!
 # The linear layers of bitsliced AES on x86 (32-bit)
@@ -15,6 +17,8 @@ cleared at the top is a rotation.
 Every block here uses the registers `tmpRegs` only, and slots `0 … 7`;
 AddRoundKey also reads the round key at `esi`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86
 

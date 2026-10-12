@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTMain
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTMain
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: constant time
@@ -8,6 +15,8 @@ public data leak the same trace. The checks branch on public values only
 (`chk1_ok`, `chk2_ok`), the precomputed public operation is related by its
 callee's contract (`call_ct`), and the checks of `EM` are `check_ct`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Vfy
 

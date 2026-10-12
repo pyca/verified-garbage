@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseO
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseO
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on AArch64: correctness
@@ -9,6 +15,8 @@ in `sig`, or 0 when `Sign_internal` returns nothing within `minBounds`
 (`sign_correct`): its `ExpandA` or its loop does not finish (`signMu_min_A`,
 `signMu_min_L`), or an iteration passes (`signMu_max`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sign
 

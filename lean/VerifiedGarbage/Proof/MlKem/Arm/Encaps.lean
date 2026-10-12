@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Encrypt
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Encrypt
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: encapsulation, correctness
@@ -12,6 +18,8 @@ own (`layM`). What every phase keeps (`EnEnv`), and the phases: the setup, `m`
 copied, `H(ek)`, `G(m ‖ H(ek))` into `K ‖ r`, `K` copied into `key`, and
 K-PKE.Encrypt (`Enc.encrypt_ok`) into `ct`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm.Encaps
 

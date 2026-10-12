@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttSpec
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttSpec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized
 open VG.Spec.MlDsa VG.Proof.MlDsa.Arith

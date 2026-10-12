@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Blake2.AArch64
+module
+
+public import VerifiedGarbage.Impl.Blake2.AArch64
 
 /-! # Scalar operations for the ARM64 Argon2 driver
 
@@ -7,6 +9,9 @@ result for CBZ/CBNZ. Comparisons use SUBS and x14 retains its borrow mask;
 SBCS can consume carry directly. The compared counters fit in 32 bits,
 so the high bit of their 64-bit difference is the unsigned-borrow marker. These are all caller-saved registers.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Argon2.AArch64.Instructions
 open VG.AArch64
 

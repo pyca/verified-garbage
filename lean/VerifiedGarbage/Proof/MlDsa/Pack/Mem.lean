@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.MlDsa.Poly
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: polynomials in memory, for the encodings, on every target
@@ -10,6 +16,8 @@ The coefficients of the stored representations of `Spec/MlDsa/Poly.lean`
 them: the words of a polynomial, their frame, and `PolyIs` from what each word
 holds.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Pack
 

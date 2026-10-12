@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.TCB.X86.Isa
+module
+
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 32-bit AES-NI implementation, verified against the merged x86 SIMD model.
@@ -8,6 +10,9 @@ The counter prefix is cached in scratch; each lane inserts its incremented low
 word with MOVD/PSLLDQ/POR. The final low word is stored once. Only the low 32
 bits wrap, as GCM requires; partial-store forwarding stalls are avoided.
 -/
+
+@[expose] public section
+
 namespace VG.Impl.Aes.X86.AesNi
 open VG.X86
 

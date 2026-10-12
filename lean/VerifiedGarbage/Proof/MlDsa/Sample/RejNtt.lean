@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Sample.Hash
-import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: `RejNTTPoly` three bytes at a time
@@ -11,6 +17,8 @@ coefficients, samples `rnFold [] out` (`rnStep` is one iteration). It computes
 does no shorter output, the least bound of Appendix C included
 (`rejNTT_none`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Sample
 

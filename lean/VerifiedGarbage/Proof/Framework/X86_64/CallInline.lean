@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Calls as inlined code (x86-64)
@@ -23,6 +25,8 @@ none and uses only instructions that neither read nor write `rsp`
 (`Instr.rspFree`): inside a call, `rsp` is 8 lower than in the inlined
 run, and nothing else differs.
 -/
+
+@[expose] public section
 
 namespace VG
 

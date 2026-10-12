@@ -1,10 +1,16 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Call
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Call
+public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: moves, layouts and what code leaves
@@ -27,6 +33,8 @@ The framework of the proofs of `vg_mldsa*_keygen`, `vg_mldsa*_sign` and
   within the regions it writes and the stack.
 * Two runs whose registers `B` (the function's `bases`) agree (`SameIn B`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64
 

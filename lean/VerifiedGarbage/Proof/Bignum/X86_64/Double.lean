@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: doubling modulo `m`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 double into the accumulator (`w + 1` words, the carry chain's carry kept in
 `rbp` as in `subMod`), then `subMod` and `selectAcc`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

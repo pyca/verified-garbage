@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Ecdh.AArch64
+module
+
+public import VerifiedGarbage.Impl.Ecdh.AArch64
 
 /-!
 # ECDSA signature verification on AArch64
@@ -32,6 +34,8 @@ All validity checks run regardless of earlier failures. P-256's comb
 addresses depend on its public scalar; the remaining memory accesses and
 branches depend only on pointers and fixed loop counters.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdsa.Verify.AArch64
 

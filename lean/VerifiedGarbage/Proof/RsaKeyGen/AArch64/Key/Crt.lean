@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Shared
+module
+
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Shared
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # An RSA key from its primes on AArch64: `dP` and `dQ`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Shared
 `crtPart`: `dP = d mod (p − 1)` into `aX₁` and `dQ = d mod (q − 1)` into
 `aV`, each divisor 1 for 0 (`divisorOf_k`; `crtPart_k`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaKeyGen.AArch64.Key
 

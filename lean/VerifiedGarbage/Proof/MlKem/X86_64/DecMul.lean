@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
-import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Spec.MlKem.KpkeMul
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
+public import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Spec.MlKem.KpkeMul
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem*_decrypt_mul`
@@ -16,6 +22,8 @@ first `j` terms of the sum (`dotP`, `DInv`), each `NTT(u'[j])`, its product
 with `ŝ[j]`, added to `w` (`term_ok`); then `NTT⁻¹(w)`, and the epilogue
 loads the registers back.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

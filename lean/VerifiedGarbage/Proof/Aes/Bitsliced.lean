@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+module
+
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Bitsliced AES: the layout and the round transformations
@@ -12,6 +18,8 @@ hold the states `S`. The lemmas here turn what each layer of the code does
 to the bits (as its proof states it) into the transformation of FIPS 197
 it computes on the states. Nothing here depends on the target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519's comb with AVX512_IFMA: the multiplication
@@ -8,6 +14,8 @@ constants (`combConstOps`, then `vload`'s, which puts `[G]B` into the lanes),
 the 64 steps (`vstep_ok`) with MXCSR `0x1FBF`, and the lanes back into slots
 0–3 (`vstore`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Ifma
 

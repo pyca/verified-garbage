@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA verification on AArch64, with this library's primitives
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 Verification with the AArch64 implementations of the primitives (`prims_ok`)
 is verified with 16 bytes of stack (`verify44_verified`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Verify
 

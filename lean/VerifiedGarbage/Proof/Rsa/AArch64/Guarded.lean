@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.ExpCheck
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.ExpCheck
+meta import VerifiedGarbage.Proof.Rsa.AArch64.ExpCheck
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA on AArch64: a function guarded by the check of its public exponent
@@ -10,6 +17,8 @@ arguments, memory and permissions (`Same`): for a contract `k` of `c` that
 depends only on those, `guarded c` is correct (`guarded_correct`) and
 constant time (`guarded_ct`) whenever `c` is.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

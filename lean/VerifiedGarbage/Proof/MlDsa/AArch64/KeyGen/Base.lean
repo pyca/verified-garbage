@@ -1,5 +1,11 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Arith
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Arith
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation and verification on AArch64: the layout registers
@@ -8,6 +14,8 @@ The proofs of `vg_mldsa*_keygen` and `vg_mldsa*_verify` use the framework of
 `Proof/MlDsa/AArch64/Call/`: these functions keep the addresses of their
 buffers in `bases`, which two runs agree on (`SameB`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen
 

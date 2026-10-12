@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
 
 /-! Four canonical ML-DSA coefficients per NEON vector. Widening products
 and Montgomery reduction use only the existing AdvSIMD instruction model. -/
+
+@[expose] public section
+
 namespace VG.Impl.MlDsa.AArch64.Arith.Neon
 open VG.AArch64
 open VG.Impl.MlDsa.AArch64.Arith (movW)

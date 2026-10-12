@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+module
+
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 
 /-!
 # DSA multiword arithmetic on x86-64
@@ -14,6 +16,8 @@ bytes are read sequentially; the only conditional branches are on public
 lengths and loop counters. These are implementation definitions, not
 registered artifacts: registration requires the complete sign/verify proofs.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Dsa.X86_64.Arithmetic
 

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.CkMain
-import VerifiedGarbage.Proof.Rsa.AArch64.CvCode
-import VerifiedGarbage.Proof.Rsa.AArch64.Guarded
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkMain
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvCode
+public import VerifiedGarbage.Proof.Rsa.AArch64.Guarded
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on AArch64: correctness
@@ -9,6 +15,8 @@ import VerifiedGarbage.Proof.Rsa.AArch64.Guarded
 `checkKey` accepts its inputs (`ckCode_correct`), against `ckA`, which
 states the shared contract's precondition on the registers and the stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

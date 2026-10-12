@@ -1,7 +1,11 @@
-import VerifiedGarbage.Impl.Ecdh.Arm
-import VerifiedGarbage.Impl.Ecdsa.P384.Arm
+module
+
+public import VerifiedGarbage.Impl.Ecdh.Arm
+public import VerifiedGarbage.Impl.Ecdsa.P384.Arm
 
 /-! # ECDH over P-384 on 32-bit ARM: six-word field elements and scalars -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdh.Arm
 

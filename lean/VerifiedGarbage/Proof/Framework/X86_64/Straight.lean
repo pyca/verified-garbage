@@ -1,6 +1,8 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 
 /-!
 # x86-64: straight-line bitwise code, by evaluation
@@ -20,6 +22,8 @@ The evaluator rejects (`none`) any other instruction, any other memory
 operand, any write of the two base registers and any use of an unknown
 value.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64.Straight
 

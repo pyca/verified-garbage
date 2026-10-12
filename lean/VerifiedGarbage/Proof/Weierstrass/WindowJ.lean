@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.Window
-import VerifiedGarbage.Proof.Weierstrass.Booth
-import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Window
+public import VerifiedGarbage.Proof.Weierstrass.Booth
+public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Signed windows in Jacobian coordinates, on any target
@@ -17,6 +23,8 @@ operands are neither equal nor opposite unless `[16 e]P = O` (`win_sep`); the
 multiples `winE` only shrink as `j` grows (`winE_le_of_le`), so one bound
 for `j = 1` serves every iteration but the last.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass
 

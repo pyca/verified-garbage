@@ -1,5 +1,7 @@
-import Lean.Meta.Closure
-import Lean.Elab.Tactic.Basic
+module
+
+public meta import Lean.Meta.Closure
+public meta import Lean.Elab.Tactic.Basic
 
 /-!
 # `rfl`, checked by the kernel alone
@@ -14,6 +16,8 @@ analysis of code whose immediates are variables, which it never looks at).
 only the kernel checks, as `decide +kernel` does for decidable propositions,
 and also works when the goal has free variables.
 -/
+
+public meta section
 
 namespace VG
 

@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.Impl.Idea.Key
+module
+
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Impl.Idea.Key
 
 /-!
 # IDEA on AArch64
@@ -40,6 +42,8 @@ A round's subkeys are loaded two at a time by 32-bit loads.
 
 The only branches are on `n` and the loop counts.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Idea.AArch64
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Modes.AArch64.Ctr
+module
+
+public import VerifiedGarbage.Impl.Modes.AArch64.Ctr
 
 /-!
 # CBC decryption on AArch64, for any block cipher with blocks of 8 or 16 bytes
@@ -25,6 +27,8 @@ chaining value `Cⱼ₋₁` (`hiSlot`, and `loSlot` for a second word).
 Only the pointers and `n` (and what is computed from them) are public; no
 address or branch depends on the key, the IV or the data.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Modes.AArch64
 

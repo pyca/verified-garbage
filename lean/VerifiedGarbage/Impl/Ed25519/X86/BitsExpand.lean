@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.X25519.X86
+module
+
+public import VerifiedGarbage.Impl.X25519.X86
 
 /-! Expand an unsigned scalar at esi into one byte per bit, at edi+7168.
 Only fixed addresses are used; bytes is32 for scalarbase and64 forchallenge. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.X86
 open VG.X86 VG.Impl.X25519.X86
 

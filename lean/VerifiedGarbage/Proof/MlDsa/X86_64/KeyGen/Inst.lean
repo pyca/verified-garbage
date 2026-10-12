@@ -1,16 +1,22 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Top
-import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Inst
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Power2Round
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.BitPack
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Top
+public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Inst
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Power2Round
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.BitPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on x86-64, with this library's primitives
@@ -22,6 +28,8 @@ most 16 bytes of stack (24 for `vg_mldsa_rej_ntt_poly4`), and never write
 arithmetic (`prims_okWith`), so key generation with them is verified
 (`keyGen_verifiedWith`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.KeyGen
 

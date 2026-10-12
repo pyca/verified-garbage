@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCT
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCT
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS verification on AArch64: `Verified`
@@ -9,6 +15,8 @@ of the frame and the callee, `stk`) from correctness (`code_ok`), constant
 time (`code_ct`) and a state meeting the precondition (`verify_sat`, for the
 stack of the precomputed public operation).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Vfy
 

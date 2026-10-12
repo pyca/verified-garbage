@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Pbkdf2.AArch64
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.AArch64
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function: AArch64 implementation
@@ -45,6 +47,8 @@ and keeps its own variables in `x19`–`x24`, which the functions it calls
 preserve. Every address and branch depends only on the pointers, the lengths
 and the iteration counts.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Pbkdf2.Md.AArch64
 

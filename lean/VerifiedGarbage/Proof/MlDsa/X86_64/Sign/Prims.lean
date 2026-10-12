@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Arith.Representation
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: the primitives it calls
@@ -15,6 +21,8 @@ stated for.
 For each call of an arithmetic primitive: what it does (`…At_ok`), and that
 two runs in the same layout leak the same (`…At_tr`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

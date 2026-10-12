@@ -1,4 +1,10 @@
-import VerifiedGarbage.Spec.Camellia
+module
+
+public import VerifiedGarbage.Spec.Camellia
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Camellia's functions, byte by byte and bit by bit
@@ -8,6 +14,8 @@ import VerifiedGarbage.Spec.Camellia
 the S-boxes of the bytes in row `i` of the P-function (`byteOf_f`); `FL`
 and `FLINV` are stated bit by bit (`getLsbD_fl`, `getLsbD_flinv`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 

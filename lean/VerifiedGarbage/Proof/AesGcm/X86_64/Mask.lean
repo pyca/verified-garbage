@@ -157,6 +157,10 @@ theorem MInv.readW {s t : State} {D : Addr} {c : Bool} {j : Nat} (h : MInv s t D
   simp only [Offset.add_add]
   exact h.at (by omega) (by omega)
 
+/-- `jne` after a flag result `b` is taken exactly if `b` is false. -/
+theorem maskBlocks_wp.eval_ne {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .ne s = some !b := by
+  show s.zf.map _ = _; rw [h]; rfl
+
 /-- The blocks: from `j = 16 i`, with `⌊n / 16⌋ − i` blocks left in `rcx`
 and the mask in `xmm0`, to `16 ⌊n / 16⌋`. -/
 theorem maskBlocks_wp {s t : State} {D : Addr} {n : Nat} {c : Bool} {i : Nat} (hn : n < 2 ^ 64)
@@ -197,13 +201,10 @@ theorem maskBlocks_wp {s t : State} {D : Addr} {n : Nat} {c : Bool} {i : Nat} (h
       fun r h₁ h₂ h₃ => by rw [g' r h₁ h₂ h₃, ht.keep r h₁ h₂ h₃], by rw [rd', ht.rd], by rw [wr', ht.wr]⟩
   by_cases he : i + 1 = n / 16
   · left
-    exact ⟨(eval_ne hz).trans (by simp [he]), by rw [← he]; exact ht'⟩
+    exact ⟨(maskBlocks_wp.eval_ne hz).trans (by simp [he]), by rw [← he]; exact ht'⟩
   · right
-    exact ⟨(eval_ne hz).trans (by simp [he]), n / 16 - (i + 1), by omega, i + 1, rfl, by omega, ht', hcx',
+    exact ⟨(maskBlocks_wp.eval_ne hz).trans (by simp [he]), n / 16 - (i + 1), by omega, i + 1, rfl, by omega, ht', hcx',
       by rw [x0', hx0]⟩
-where
-  eval_ne {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .ne s = some !b := by
-    show s.zf.map _ = _; rw [h]; rfl
 
 /-- The last bytes: from `j < n` to `n`. -/
 theorem maskBytes_wp {s t : State} {D : Addr} {n : Nat} {c : Bool} {j : Nat} (hn : n < 2 ^ 64)

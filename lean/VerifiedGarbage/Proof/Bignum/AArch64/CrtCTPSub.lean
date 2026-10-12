@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: constant time, the steps of `p`'s phase
@@ -9,6 +16,8 @@ its hypotheses and what correctness gives after it (`ct_step`), and
 header: the loads before the second loop are checked from `x0` and `x12`,
 which the first loop keeps (`smMid_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

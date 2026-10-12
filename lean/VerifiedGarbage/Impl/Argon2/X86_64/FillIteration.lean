@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.FillSlices
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillSlices
 
 /-! Reset the slice coordinate before each filling pass. -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.FillIteration
 

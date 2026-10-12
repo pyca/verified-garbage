@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Pbkdf2.Stream.X86
+module
+
+public import VerifiedGarbage.Impl.Pbkdf2.Stream.X86
 
 /-!
 # PBKDF2-HMAC over any streaming hash function: x86 (32-bit) implementation of the whole derivation
@@ -32,6 +34,8 @@ incremented in place. The functions we call preserve `ebx`, `esi`, `edi`
 and `ebp`; `esi` and `edi` pass arguments. Every address and branch depends
 only on the pointers, the lengths and `c`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Pbkdf2.Whole.X86
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: `R² mod m`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Setup
   (`topBit_ok`).
 * `doubles`: `[o] := 2^c [o] mod m` for the count `c` in `rcx` (`doubles_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

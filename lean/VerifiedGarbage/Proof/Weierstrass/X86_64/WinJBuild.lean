@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-import VerifiedGarbage.Proof.Weierstrass.WindowJ
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
+public import VerifiedGarbage.Proof.Weierstrass.WindowJ
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Windows in Jacobian coordinates on x86-64: the slots
@@ -9,6 +15,8 @@ The field programs of the Jacobian window method are on slots that are apart
 (`WinLay.rcbApart_winJ`), and the table is apart from what the loop writes
 (`tbl_apart_loopW`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

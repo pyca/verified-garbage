@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Modes.X86_64.Ctr
-import VerifiedGarbage.Impl.Modes.FbMode
+module
+
+public import VerifiedGarbage.Impl.Modes.X86_64.Ctr
+public import VerifiedGarbage.Impl.Modes.FbMode
 
 /-!
 # OFB and CFB on x86-64, for any block cipher with blocks of 8 or 16 bytes
@@ -39,6 +41,8 @@ loop of the core's), and the address must be public.
 Only the pointers and `n` (and what is computed from them) are public; no
 address or branch depends on the key, the IV or the data.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Modes.X86_64
 

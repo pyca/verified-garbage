@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Aes.X86.VariantProof
-import VerifiedGarbage.Proof.Aes.X86.BlocksCT
-import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksMain
+module
+
+public import VerifiedGarbage.Proof.Aes.X86.VariantProof
+meta import VerifiedGarbage.Proof.Aes.X86.VariantProof
+public import VerifiedGarbage.Proof.Aes.X86.BlocksCT
+meta import VerifiedGarbage.Proof.Aes.X86.BlocksCT
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksMain
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Implementations of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` on x86
@@ -16,6 +25,8 @@ with the implementation of `vg_aes_expand_key` that goes with them (with
 the same suffix and CPU features), for the callers that also expand the
 key, proven against `Proof.Aes.expandKeyX86`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.X86
 materialize_code encryptBlocks

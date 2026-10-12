@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignCall
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCall
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS signing on AArch64: after the checks
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.SignCall
 (`signEnc_ok`), the call's arguments and the call: `out` holds the private
 operation on the encoding.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64.Sgn
 

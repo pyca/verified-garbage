@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourExtract
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMask
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSelect
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourExtract
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMask
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSelect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `BoundedFourExtractMachine.lean` -/
+
+@[expose] public section
 
 section
 

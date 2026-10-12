@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyVerified
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignFn
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Prims
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyVerified
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignFn
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Prims
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64, `verify_message`: the verification functions on `μ` it calls
@@ -12,6 +18,8 @@ never writes `rsp`, and its calls nest at most four deep, which, as whether
 it writes `rsp`, is checked on the code with its primitives empty
 (`verify_same`), given that theirs nest at most three deep.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Message
 

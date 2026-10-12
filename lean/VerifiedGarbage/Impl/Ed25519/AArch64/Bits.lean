@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ed25519.AArch64.PointPowers
+module
+
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointPowers
 
 /-! Expand 32 or 64 scalar bytes into bit bytes, without pruning. -/
+
+@[expose] public section
+
 namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64
 

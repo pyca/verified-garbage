@@ -1,7 +1,9 @@
-import VerifiedGarbage.Proof.Framework.Arm.Straight
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
-import VerifiedGarbage.Proof.Framework.Bitslice.Diag
+module
+
+public import VerifiedGarbage.Proof.Framework.Arm.Straight
+public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+public import VerifiedGarbage.Proof.Framework.Bitslice.Diag
 
 /-!
 # ARMv7: linear layers of bitsliced code, by evaluation
@@ -16,6 +18,8 @@ register with the XOR of the atoms `g p` at each bit position `p`, and
 `linear_ok` turns a successful check into a statement about the machine:
 bit `p` of the output register is the XOR of the input bits `g p`.
 -/
+
+@[expose] public section
 
 namespace VG.Arm.Straight
 

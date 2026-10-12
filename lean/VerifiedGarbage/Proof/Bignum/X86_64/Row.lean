@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Multiword arithmetic on x86-64: `acc += a_i B`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
 `w` words of `B`, then the last carry into words `w` and `w + 1`
 (`mulAddRow_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

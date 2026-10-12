@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Poly1305.X86.Blocks
-import VerifiedGarbage.Proof.Poly1305.Stream
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Poly1305.X86.Blocks
+public import VerifiedGarbage.Proof.Poly1305.Stream
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Poly1305 on x86 (32-bit): the buffer
@@ -10,6 +16,8 @@ The buffer (bytes 56–71 of the state, words 14 to 17), bytes copied into it,
 absorbing it as a block, and what `update` and `finalize` share: the number of
 bytes buffered, from `count`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Poly1305.X86
 

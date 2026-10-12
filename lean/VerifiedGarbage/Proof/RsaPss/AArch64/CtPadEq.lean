@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
-import VerifiedGarbage.Proof.RsaPss.CtPad
+module
+
+public import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
+public import VerifiedGarbage.Proof.RsaPss.CtPad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSASSA-PSS on AArch64: the padded message in `Y`
@@ -9,6 +15,8 @@ field ORed into the last block (`LenLoop.vLen`), the first `fb + 1` blocks
 of `Y` are the padded message `padded` (`ypad`), so the hash value of those
 blocks is that of `md.pad msg` (`compressList_ypad`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPss.AArch64
 

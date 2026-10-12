@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Camellia.AArch64.Layers
+module
+
+public import VerifiedGarbage.Impl.Camellia.AArch64.Layers
 
 /-!
 # Camellia ECB, bitsliced, on AArch64
@@ -27,6 +29,8 @@ tests (`t0`, `t1`) hold public values; no address and no branch depends on
 anything else. The rounds use only the state, the temporaries and the
 scratch buffer, so the public values stay in `x0`–`x4` throughout.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.AArch64
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Base
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Absorb
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Base
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Absorb
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_expand_mask_poly4_avx2`, the round constants and the padded seeds
@@ -10,6 +16,8 @@ padded 66-byte seeds, byte by byte (`absorb_ok`), as for
 `vg_mlkem_sample_ntt4_avx2` (`Proof/MlKem/X86_64/S4Absorb.lean`, whose
 lemmas on the bytes of the states it uses).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Mask4
 

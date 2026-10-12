@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
-import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverPoint
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverPoint
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverPoint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Fixed-trace arithmetic blocks used in point recovery. -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64
 

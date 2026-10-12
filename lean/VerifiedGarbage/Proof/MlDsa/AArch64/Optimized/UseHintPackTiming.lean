@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackProg
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackProg
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackProg
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `UseHintPackContract.lean` -/
+
+@[expose] public section
 
 section
 

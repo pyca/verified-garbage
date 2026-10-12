@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # `bswap` of a little-endian load is a big-endian load
@@ -7,6 +9,8 @@ import VerifiedGarbage.TCB.X86_64.Isa
 `bswap32` and `bswap64` are `byteRev32` and `byteRev64`, whose lemmas are in
 `Proof/Framework/Bswap.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

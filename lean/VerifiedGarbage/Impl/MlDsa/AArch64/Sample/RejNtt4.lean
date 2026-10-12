@@ -1,8 +1,13 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-import VerifiedGarbage.Impl.Sha3.AArch64.Neon.X2
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
+public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.X2
 
 /-! Four independent SHAKE128 samplers, computed as two pairs of NEON lanes.
 The 1008 bytes per stream and rejection loop match the single-stream sampler. -/
+
+@[expose] public section
+
 namespace VG.Impl.MlDsa.AArch64.Sample.Rej4
 open VG VG.AArch64
 open VG.Impl.MlKem.AArch64 (mov)

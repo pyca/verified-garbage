@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivTail
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on x86-64: what follows the CRT
@@ -10,6 +16,8 @@ modulus and the public operation of `M` with `e`, within BoringSSL's
 limits, is the input; otherwise `out` is zeros. This is the fault tolerance
 of the check: a faulted exponentiation releases nothing that fails it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64
 

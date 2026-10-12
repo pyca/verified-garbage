@@ -1,5 +1,9 @@
-import VerifiedGarbage.Impl.TripleDes.Circuit
-import VerifiedGarbage.Impl.Aes.X86_64.Alloc
+module
+
+public import VerifiedGarbage.Impl.TripleDes.Circuit
+meta import VerifiedGarbage.Impl.TripleDes.Circuit
+public import VerifiedGarbage.Impl.Aes.X86_64.Alloc
+meta import VerifiedGarbage.Impl.Aes.X86_64.Alloc
 
 /-!
 # Constant-time scalar DES S-boxes on x86-64
@@ -11,6 +15,8 @@ slots 8–55 are fixed spill locations; slots 0–7 are reserved for the block
 function's saved registers and intermediate state. Left and right Feistel
 halves (`r12`, `r13`) and argument pointers are preserved.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.TripleDes.X86_64
 

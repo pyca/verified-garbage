@@ -1,6 +1,14 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSqueeze
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentStream
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSqueeze
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentStream
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 open VG.Proof.MlDsa.AArch64.Optimized.Resident

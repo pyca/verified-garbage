@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: the result in constant time
@@ -8,6 +16,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
 parts keep the header and the primes' workspaces (`FA`), and stores it masked
 (`outArr_ct`): `crtFinish_ct`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

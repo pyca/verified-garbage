@@ -1,7 +1,9 @@
-import VerifiedGarbage.Impl.Blowfish.AArch64
-import VerifiedGarbage.Impl.Modes.AArch64.Cbc
-import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
-import VerifiedGarbage.Impl.Modes.AArch64.Fb
+module
+
+public import VerifiedGarbage.Impl.Blowfish.AArch64
+public import VerifiedGarbage.Impl.Modes.AArch64.Cbc
+public import VerifiedGarbage.Impl.Modes.AArch64.CbcEnc
+public import VerifiedGarbage.Impl.Modes.AArch64.Fb
 
 /-!
 # Blowfish-CBC, -OFB and -CFB64 on AArch64
@@ -26,6 +28,8 @@ and puts them back (`dup`), so that every run of `crypt` keeps them. It
 keeps `x23` and `x24`, which carry the data's address and the blocks left,
 and `x25`, where the feedback modes keep the IV's address.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blowfish.AArch64
 

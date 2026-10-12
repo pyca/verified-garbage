@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Bound
-import VerifiedGarbage.Impl.X25519.X86_64.Ifma
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Bound
+public import VerifiedGarbage.Impl.X25519.X86_64.Ifma
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64.Ifma
 

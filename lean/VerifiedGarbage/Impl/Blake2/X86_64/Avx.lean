@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Blake2.X86_64
+module
+
+public import VerifiedGarbage.Impl.Blake2.X86_64
 
 /-!
 # BLAKE2s compression function on x86-64 with AVX
@@ -36,6 +38,8 @@ on `last` and on the count of blocks, so only the pointers, `n`, `t` and
 `last` can affect timing. Of the general-purpose registers, only `rax`,
 `rcx`, `rdx`, `rsi` and `r8` are written.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Blake2.X86_64.Avx
 

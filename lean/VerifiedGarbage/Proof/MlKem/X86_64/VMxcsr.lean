@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: code with MXCSR `0x1FBF`
@@ -10,6 +16,8 @@ that differs from its own only in `rax`, `r11` and the eight bytes `mxR` of
 That it keeps MXCSR's control bits is `ctlOk`
 (`Proof/Framework/X86_64/Mxcsr.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

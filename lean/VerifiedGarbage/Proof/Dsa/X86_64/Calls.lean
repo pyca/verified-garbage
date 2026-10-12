@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
-import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
+public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
+public import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # DSA on x86-64, with Montgomery multiplication by calls
@@ -14,6 +20,8 @@ evaluates), and
 the calls' return address. The baseline's code, without calls, is its own
 `c.inline`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Dsa.X86_64
 

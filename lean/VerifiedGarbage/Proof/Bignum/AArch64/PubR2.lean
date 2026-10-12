@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.Copy
-import VerifiedGarbage.Impl.Rsa.AArch64
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+public import VerifiedGarbage.Impl.Rsa.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA on AArch64: `R² mod m`
@@ -8,6 +14,8 @@ import VerifiedGarbage.Impl.Rsa.AArch64
 doubled `64 - (b - 1) mod 64 + w` times to `2^w R mod m`, then squared six
 times (`r2_ok`): `R² mod m`, for any Montgomery multiplication `M`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

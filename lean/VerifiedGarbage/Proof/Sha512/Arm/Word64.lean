@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Impl.Sha512.Arm
+module
+
+public import VerifiedGarbage.Proof.Sha512.Word64
+public import VerifiedGarbage.Impl.Sha512.Arm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # 64-bit words as pairs of 32-bit halves, on ARMv7
@@ -8,6 +14,8 @@ The lemmas of `Proof/Sha512/Word64.lean` about the halves (`lo`, `hi`) of
 64-bit words, stated for the ARMv7 implementation's `lo` and `hi` (the same
 functions), and the terms of `Σ`/`σ` as the implementation lists them (`Op`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.Arm
 

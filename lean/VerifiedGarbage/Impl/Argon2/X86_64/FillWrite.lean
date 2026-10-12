@@ -1,10 +1,14 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.Compress
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.Compress
 
 /-! Write the compression result into the current matrix block. `rsi` points
 to the temporary result and `rdi` to the matrix destination; `r9` is the public
 pass number. Pass zero copies the result, and later passes XOR the old cell.
 Both paths visit every word in ascending order.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.FillWrite
 

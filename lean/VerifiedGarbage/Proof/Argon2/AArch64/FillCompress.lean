@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
-import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressLit
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! The complete compression/update sequence from allocation and frame invariants. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2.AArch64.FillCompress
 

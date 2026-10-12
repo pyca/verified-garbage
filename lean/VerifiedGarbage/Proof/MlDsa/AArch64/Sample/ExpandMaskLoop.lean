@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
-import VerifiedGarbage.Proof.MlDsa.Sample.LeNat
-import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
-import VerifiedGarbage.Proof.MlDsa.Pack.Arith
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
+public import VerifiedGarbage.Proof.MlDsa.Sample.LeNat
+public import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
+public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: the loop of `vg_mldsa_expand_mask_poly`
@@ -15,6 +21,8 @@ minus field `i` of the output, `⌊leNat X / 2^(ic)⌋ mod 2^c`
 group's first 8 bytes (`field_low`), and the last one those above them and the
 group's last bytes (`split_div`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample.ExpandMask
 

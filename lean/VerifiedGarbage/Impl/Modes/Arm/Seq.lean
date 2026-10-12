@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Arm.Isa
+module
+
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # Block cipher modes on ARMv7, one block at a time, for any block cipher
@@ -42,6 +44,8 @@ needs in `r4`–`r8` and `r11`, which the callee preserves.
 Only the pointers and `n` can affect timing: the only branches are on `n`,
 and the callee is constant time with the same public data.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Modes.Arm
 

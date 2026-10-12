@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.BufferCopy
+module
+
+public import VerifiedGarbage.Proof.RsaPss.X86_64.BufferCopy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Fixed word-sized XORs have the same byte-level effect as MGF1's byte loop. -/
+
+@[expose] public section
+
 namespace VG.Proof.RsaPss.X86_64
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep ifp ifn)

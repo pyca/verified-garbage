@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.CmacTripleDes.Block
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Framework.Bswap
+module
+
+public import VerifiedGarbage.Proof.CmacTripleDes.Block
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Framework.Bswap
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # TDEA-CMAC: blocks as bytes and as 64-bit integers
@@ -11,6 +17,8 @@ little-endian words (`le8`), and reverse their bytes (`byteRev64`). So the
 cipher of the bytes of a word is the bytes of a word (`tdesWith_le8`), and
 so is the doubling of §6.1 (`dbl_le8`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes
 

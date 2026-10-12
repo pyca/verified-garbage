@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
-import VerifiedGarbage.Proof.MlDsa.Sample.HalfByte
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
+public import VerifiedGarbage.Proof.MlDsa.Sample.HalfByte
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64: the loop of `vg_mldsa_rej_bounded_poly`
@@ -12,6 +18,8 @@ a coefficient either way and counting it only if it is accepted, and an
 iteration what `rbStep` does (`step_ok`). The loop reads only the output, and
 writes only `a`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Sample.RejBounded
 

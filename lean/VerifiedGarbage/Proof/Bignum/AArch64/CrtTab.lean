@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtUnit
-import VerifiedGarbage.Proof.Bignum.CrtExp
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtUnit
+public import VerifiedGarbage.Proof.Bignum.CrtExp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on AArch64: the window's table
@@ -10,6 +16,8 @@ In a prime's workspace at `P` (`X`, `w_X` words, `R = 2^(64 w_X)`), with
 the arrays (`tabBuild_ok`), and `tabSelect` reads entry `v` into `[aT]` by a
 masked selection from every entry (`tabSel_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

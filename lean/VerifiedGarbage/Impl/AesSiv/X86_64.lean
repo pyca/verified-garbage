@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
+module
+
+public import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
 
 /-!
 # AES-SIV: x86-64 implementation
@@ -71,6 +73,8 @@ encrypted. In particular, how CTR splits the data between `ctrWhole` and the
 blocks after it depends on `len` alone, not on `Q`, which the IV, a secret
 before `encrypt` returns it, determines.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.AesSiv.X86_64
 

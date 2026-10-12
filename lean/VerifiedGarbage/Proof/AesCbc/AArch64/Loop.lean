@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCbc.AArch64.Block
+module
+
+public import VerifiedGarbage.Proof.AesCbc.AArch64.Block
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CBC on AArch64: the loop, for any mode on whole blocks
@@ -15,6 +21,8 @@ modes' functions with the same arguments reuse the loop.
 `whole_wp`: if one run of `body` takes the invariant from `k` to `k + 1`
 blocks (`BodyOk`), `whole body` meets the contract.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCbc.AArch64
 

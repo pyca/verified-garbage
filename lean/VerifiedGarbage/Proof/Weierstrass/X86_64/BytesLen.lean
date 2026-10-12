@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Bytes
-import VerifiedGarbage.Proof.Weierstrass.BytesLen
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on x86-64: numbers of `len` bytes
@@ -12,6 +18,8 @@ right; `shrWords n o sh` shifts `[o]` right by `sh` bits in place
 `rcx` to the `len` bytes at `dst + d` (`storeBytes_ok`), its top word a byte
 at a time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

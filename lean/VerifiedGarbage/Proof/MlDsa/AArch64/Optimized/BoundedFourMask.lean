@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourTable
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourTable
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `BoundedFourAccept.lean` -/
+
+@[expose] public section
 
 section
 

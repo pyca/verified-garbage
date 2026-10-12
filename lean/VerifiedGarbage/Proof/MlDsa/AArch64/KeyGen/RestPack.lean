@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestBase
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA key generation on AArch64: `s₁ ‖ s₂` to `sk`, and `ŝ₁`
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestBase
 Each entry of `s₁ ‖ s₂`, `BitPack`ed to `sk` (`packS_piece`), then `ŝ₁[j] =
 NTT(s₁[j])` in place (`nttS_piece`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen
 

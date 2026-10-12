@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.Spec.EcKey.Generic
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.EcKey.Generic
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Verified elliptic-curve functions that call the field products
@@ -13,6 +19,8 @@ stack, for the calls' return address, which no buffer overlaps
 (`Sig.clear_of_pre_consts`), and its postcondition reads memory only in its
 output buffers (`bytesAt_patch`).
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

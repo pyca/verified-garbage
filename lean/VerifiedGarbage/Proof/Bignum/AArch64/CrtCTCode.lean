@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTFin
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTP
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTQ
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetup
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCode
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTFin
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTFin
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTP
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTP
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTQ
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTQ
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetup
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetup
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCode
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_crt` on AArch64: constant time
@@ -14,6 +26,8 @@ and so do `fail` and `main` (`crtMain_ct`): `crtCode_ct`, and the contract's
 `ConstantTime` (`crtCode_constantTime_of`), given that `n`'s setup is
 constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

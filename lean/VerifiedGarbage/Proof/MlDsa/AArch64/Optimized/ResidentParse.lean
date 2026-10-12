@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackMemory
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackMemory
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `ResidentUnpackLoop.lean` -/
+
+@[expose] public section
 
 section
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA on AArch64: refusals
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
 `Precompute.fail` writes `2 w` zero words to `pre` (`pcFail_ok`), and
 `Precomputed.fail` `k` zero bytes to `out` (`pdFail_ok`); both return 0.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

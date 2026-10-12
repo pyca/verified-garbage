@@ -1,8 +1,17 @@
-import VerifiedGarbage.Impl.RsaPss.X86_64.Buffers
-import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
-import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
+module
+
+public import VerifiedGarbage.Impl.RsaPss.X86_64.Buffers
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
+public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Word copies preserve exactly the same byte-level buffer contents. -/
+
+@[expose] public section
+
 namespace VG.Proof.RsaPss.X86_64
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep)

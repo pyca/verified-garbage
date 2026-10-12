@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Divstep.State
-import VerifiedGarbage.Proof.Divstep.Batch
-import VerifiedGarbage.Proof.Divstep.Word
+module
+
+public import VerifiedGarbage.Proof.Divstep.State
+public import VerifiedGarbage.Proof.Divstep.Batch
+public import VerifiedGarbage.Proof.Divstep.Word
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Inversion by batches of divsteps
@@ -15,6 +21,8 @@ With `f ≡ x a 2^(c i)` and `g ≡ x b 2^(c i)` modulo `p`, `c = 64 - N`
 (`invRun_inv`), once `g = 0`, `f = ±gcd(p, x) = ±1`, and
 `x (± a) 2^(c i) ≡ 1` (`invRun_spec`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Divstep
 

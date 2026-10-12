@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTable
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAddTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableStoreTiming
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTable
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAddTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableStoreTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Fixed controls and equal field values through odd-table initialization. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass
 open VG.Impl.Weierstrass.X86_64 VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass

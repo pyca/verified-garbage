@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Blake2.X86.Stream
-import VerifiedGarbage.Impl.Blake2.X86.CompressB
+module
+
+public import VerifiedGarbage.Impl.Blake2.X86.Stream
+public import VerifiedGarbage.Impl.Blake2.X86.CompressB
 
 /-!
 # Argon2 H′ on x86 (32-bit)
@@ -23,6 +25,8 @@ written: a caller may keep a frame pointer in it across H′'s macros
 The rest of `scratch` is not used. Only `esp`, the pointers and the lengths
 affect branches and addresses.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86.HPrime
 

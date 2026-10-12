@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Calls
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Calls
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on 32-bit ARM: copying bytes and zeroing a polynomial
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlKem.Arm.Calls
 source's bytes, and nothing else changes), and `zeroPoly` stores zero to every
 coefficient (`zeroPoly_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm
 

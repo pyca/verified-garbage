@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `R² mod m` by word steps on x86-64: a step
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 `step`: `x := x 2^64 mod m` for `x < m` in `aR2` and `m` in `aN`, whose top
 word is at least `2^63`, with the accumulator as `t` (`step_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64.R2w
 

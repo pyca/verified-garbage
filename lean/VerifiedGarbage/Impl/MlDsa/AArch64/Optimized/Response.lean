@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Optimized.Response
 open VG VG.AArch64

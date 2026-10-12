@@ -1,9 +1,23 @@
-import VerifiedGarbage.Proof.Rc2.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Rc2.Contract
+module
+
+public import VerifiedGarbage.Proof.Rc2.X86.Lit
+meta import VerifiedGarbage.Proof.Rc2.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
+meta import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Rc2.Contract
+meta import VerifiedGarbage.Spec.Rc2.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

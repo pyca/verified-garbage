@@ -1,7 +1,12 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64
-import VerifiedGarbage.Impl.Weierstrass.JacMul
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
 
 /-! Register forwarding within a complete public P-256 point doubling. -/
+
+@[expose] public section
+
 namespace VG.Impl.Weierstrass.AArch64.Forward
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass
 

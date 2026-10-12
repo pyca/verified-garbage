@@ -1,14 +1,20 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.AddSub
-import VerifiedGarbage.Proof.MlKem.AArch64.Cbd2
-import VerifiedGarbage.Proof.MlKem.AArch64.Encode12
-import VerifiedGarbage.Proof.MlKem.AArch64.Decode12
-import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
-import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
-import VerifiedGarbage.Proof.MlKem.AArch64.Mul
-import VerifiedGarbage.Proof.MlKem.AArch64.NttInv
-import VerifiedGarbage.Proof.MlKem.AArch64.Sample
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.AddSub
+public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd2
+public import VerifiedGarbage.Proof.MlKem.AArch64.Encode12
+public import VerifiedGarbage.Proof.MlKem.AArch64.Decode12
+public import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.AArch64.Mul
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttInv
+public import VerifiedGarbage.Proof.MlKem.AArch64.Sample
+public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on AArch64: calling the primitives
@@ -17,6 +23,8 @@ Each call of a verified polynomial primitive, from its proof (with `WP.call`;
 `sample_ntt` with `WP.callF`, as its Keccak calls have frames): what it needs
 of the state it is called from, and what holds when it returns (`Kept`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64
 

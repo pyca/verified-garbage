@@ -1,6 +1,11 @@
-import VerifiedGarbage.Impl.Ecdh.AArch64.WithMul
+module
+
+public import VerifiedGarbage.Impl.Ecdh.AArch64.WithMul
 
 /-! Windowed ECDH builds its own signed digits, so its setup needs no scalar bit table. -/
+
+@[expose] public section
+
 namespace VG.Impl.P256.EcdhJac.Frontend
 open VG VG.AArch64
 open VG.Impl.Ecdh.AArch64.Cfg

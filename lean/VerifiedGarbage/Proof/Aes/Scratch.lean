@@ -1,7 +1,13 @@
-import VerifiedGarbage.Spec.Aes.Contract
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Scratch
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Scratch
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AES key expansion with its working space as an argument
@@ -21,6 +27,8 @@ copy of the arguments passed on the stack, which needs the pre- and
 postcondition to read the memory on entry only within the buffers too
 (`expandKeyPre_local`, `expandKeyPost_local`): the key.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes
 

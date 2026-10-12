@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Blocks
+module
+
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA signing on x86-64: blocks that leak only their pointers
@@ -10,6 +16,8 @@ evaluates the code, this holds for code with immediates and displacements that
 are variables, such as the pieces of the function indexed by a polynomial or
 an entry of `Â`; `blockOk` is checked by `rfl`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 

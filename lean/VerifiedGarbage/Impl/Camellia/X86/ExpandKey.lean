@@ -1,6 +1,8 @@
-import VerifiedGarbage.Impl.Camellia.X86.Ecb
-import VerifiedGarbage.Impl.Camellia.KeyOrder
-import VerifiedGarbage.Impl.Camellia.Planes32
+module
+
+public import VerifiedGarbage.Impl.Camellia.X86.Ecb
+public import VerifiedGarbage.Impl.Camellia.KeyOrder
+public import VerifiedGarbage.Impl.Camellia.Planes32
 
 /-!
 # The Camellia key schedule on x86 (32-bit)
@@ -28,6 +30,8 @@ Only the pointers, the key's length, `kp`, the count and its slot, and the
 branches' tests hold public values; no address and no branch depends on
 anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Camellia.X86
 

@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.MlKem.X86_64.Compress
+module
+
+public import VerifiedGarbage.Impl.MlKem.X86_64.Compress
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_compress_encode` and `vg_mlkem1024_decode_decompress`
@@ -31,6 +33,8 @@ The pieces of a group are those of ML-KEM-768's (`ceAcc`, `ceSt`, `ddLd`,
 
 Every address and branch depends only on the pointers and `d`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlKem1024.X86_64
 

@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: products in constant time
@@ -10,6 +17,8 @@ and then its header through it: the taint analysis, to which memory is
 secret, checks it in three parts, each from the registers that correctness
 pins after the one before.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

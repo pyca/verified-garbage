@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareChoice
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRaw
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareChoice
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRaw
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## AdxTiledSquareCross -/
+
+@[expose] public section
+
 section
 
 namespace VG.Proof.Bignum.X86_64.AdxTiledSquare

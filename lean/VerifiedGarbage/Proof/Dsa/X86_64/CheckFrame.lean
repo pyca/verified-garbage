@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Memory changed by a DSA validation call -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Dsa.Layout
 open VG.Proof.Bignum

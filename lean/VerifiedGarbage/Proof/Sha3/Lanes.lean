@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Sha3.Spec
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.Sha3.Spec
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Keccak-f[1600]: states in memory, for every target
@@ -9,6 +15,8 @@ The lanes of a state stored as `[u64; 25]`, where a round of the
 implementations reads and writes (`Env`), the state a round computes
 (`outState`), and offsets from a pointer, none of which depend on the target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3
 

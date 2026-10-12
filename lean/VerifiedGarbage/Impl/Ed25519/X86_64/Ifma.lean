@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.X25519.X86_64.Ifma
+module
+
+public import VerifiedGarbage.Impl.X25519.X86_64.Ifma
 
 /-!
 # Ed25519: points in the lanes, with AVX512_IFMA
@@ -31,6 +33,8 @@ between Intel's MXCSR prologue and epilogue (`withMx`, see "MCDT" in
 `ci/check_mcdt.py` checks every such product. Every address is the scratch
 plus a constant.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86_64.Ifma
 

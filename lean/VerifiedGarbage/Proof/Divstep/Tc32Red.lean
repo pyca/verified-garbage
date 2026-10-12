@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Divstep.Mred32
+module
+
+public import VerifiedGarbage.Proof.Divstep.Mred32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Signed Montgomery reduction on multiword values -/
+
+@[expose] public section
+
 namespace VG.Proof.Divstep.W32
 
 /-- `-p < mredRaw t < 2p` for `|t| ≤ 2^31 p`. -/

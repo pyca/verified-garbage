@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+module
+
+public import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 
 /-!
 # Argon2 H₀ initialization on x86-64
@@ -12,6 +14,8 @@ its shared contract.
 
 Every hash operation calls the supplied BLAKE2b streaming backend.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Argon2.X86_64.Initial
 

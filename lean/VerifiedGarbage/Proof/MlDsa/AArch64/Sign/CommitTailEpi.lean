@@ -1,6 +1,14 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailPro
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailPro
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `CommitTailRestoreV.lean` -/
+
+@[expose] public section
 
 section
 

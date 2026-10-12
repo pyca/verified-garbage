@@ -1,11 +1,13 @@
-import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.KeyGen
-import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Ntt
-import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Mul
-import VerifiedGarbage.Impl.MlDsa.Arm.Arith.AddSub
-import VerifiedGarbage.Impl.MlDsa.Arm.Sample.RejNtt
-import VerifiedGarbage.Impl.MlDsa.Arm.Sample.RejBounded
-import VerifiedGarbage.Impl.MlDsa.Arm.Round.Round
-import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Encode
+module
+
+public import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.KeyGen
+public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Ntt
+public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Mul
+public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.AddSub
+public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.RejNtt
+public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.RejBounded
+public import VerifiedGarbage.Impl.MlDsa.Arm.Round.Round
+public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Encode
 
 /-!
 # ML-DSA key generation on 32-bit ARM, with this library's primitives
@@ -13,6 +15,8 @@ import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Encode
 `keyGen` (`KeyGen.lean`) called with the ARM implementations of the
 primitives it calls (`Arith/`, `Sample/`, `Round/`, `Pack/`).
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.Arm.KeyGen
 

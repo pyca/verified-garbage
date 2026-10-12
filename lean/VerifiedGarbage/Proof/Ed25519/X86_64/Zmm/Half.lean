@@ -1,8 +1,14 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.CombZmm
-import VerifiedGarbage.Proof.Framework.X86_64.Avx512
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
-import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86_64.CombZmm
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The `zmm` comb: each half of the `zmm` code is the `ymm` code
@@ -21,6 +27,8 @@ in `Q h`, the `zmm` block ends in a state whose halves are related to states
 satisfying `Q h`. The check `junk` (by `decide`) says the block reads no
 register of `J`, and what `J` is after it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Zmm
 

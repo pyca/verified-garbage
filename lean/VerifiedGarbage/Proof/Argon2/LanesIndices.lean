@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Argon2.Lanes
-import VerifiedGarbage.Proof.Argon2.SegmentIndices
-import VerifiedGarbage.Proof.Argon2.SegmentStart
+module
+
+public import VerifiedGarbage.Proof.Argon2.Lanes
+public import VerifiedGarbage.Proof.Argon2.SegmentIndices
+public import VerifiedGarbage.Proof.Argon2.SegmentStart
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Recover each segment's reference log from the complete lane fold. -/
+
+@[expose] public section
 
 namespace VG.Proof.Argon2
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Round
+module
+
+public import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Round
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Reverse mashing on eight blocks
@@ -8,6 +14,8 @@ low six bits of the word before it, made into the bytes `2 j`, `2 j + 1`
 (`514 j + 256`), which `select false` looks up in the schedule; the lane's
 low 16 bits are then the schedule word `j`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64.Vec
 

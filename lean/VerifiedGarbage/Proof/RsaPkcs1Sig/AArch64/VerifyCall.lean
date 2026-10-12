@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
+module
+
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_pkcs1_verify` on AArch64: the call of `vg_rsa_public_checked`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
 `EM₁`, and keeps the values in `x19`–`x22`, the saved slots and every
 buffer of the caller but the working space (`AfterCall`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.RsaPkcs1Sig.AArch64.Ver
 

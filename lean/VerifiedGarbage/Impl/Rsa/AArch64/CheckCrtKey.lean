@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Rsa.AArch64.CheckKey
+module
+
+public import VerifiedGarbage.Impl.Rsa.AArch64.CheckKey
 
 /-!
 # `RSA_check_key`'s checks of the CRT form on AArch64
@@ -22,6 +24,8 @@ divisor, puts its low `c` words at the top of the quotient's register, and
 runs only `64 c` of `divmod`'s steps. When the comparison fails, the mask is
 already clear and the remainder is not used.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Rsa.AArch64.CheckCrtKey
 

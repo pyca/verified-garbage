@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.ChaCha20.X86.Quad
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86.Quad
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 on x86 (32-bit): the quarter rounds of the four-block code
@@ -8,6 +14,8 @@ round (`Quad.KernelOk`): `vqr` needs nothing; `vqr3` needs its `pshufb`
 controls in `buf[288, 320)`, which `masks` stores there and the four-block
 code never writes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86.Kernels
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The divstep
@@ -11,6 +17,8 @@ iterate it: from `(d, f, g)` with `f` odd,
 (`divsteps_odd`) and `gcd(f, g)` (`divsteps_gcd`); `Iter.lean` bounds the
 steps until `g` is zero.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Divstep
 

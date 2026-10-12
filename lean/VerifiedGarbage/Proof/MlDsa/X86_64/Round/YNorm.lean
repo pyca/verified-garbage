@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_norm_lt_avx2`
@@ -12,6 +22,8 @@ seen is good (`Good b a`: `a < b` or `q - a < b`, `nlL_msb`); at the end the
 top bits of the 32 bytes are all set exactly when every coefficient is good
 (`bsum_allOnes`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.X86_64.Round
 

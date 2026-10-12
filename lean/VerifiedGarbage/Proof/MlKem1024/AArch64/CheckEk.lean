@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
-import VerifiedGarbage.Impl.MlKem1024.AArch64.CheckEk
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
+meta import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.CheckEk
+meta import VerifiedGarbage.Impl.MlKem1024.AArch64.CheckEk
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_check_ek`
@@ -7,6 +15,8 @@ import VerifiedGarbage.Impl.MlKem1024.AArch64.CheckEk
 ML-KEM-768's proof (`Proof/MlKem/AArch64/CheckEk.lean`), which is stated for
 `k ≤ 4`, for ML-KEM-1024 (the 512 groups of `ek[0 : 1536]`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem1024.AArch64.CheckEk
 

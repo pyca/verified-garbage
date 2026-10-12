@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
+module
+
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
 
 /-!
 # The scalar sponge absorbing whole blocks with the state in registers
@@ -14,6 +16,8 @@ the pointers are kept in AdvSIMD registers, as by the permutation's
 boundary (`Boundary.save`), and the data pointer, the length left and the
 rate in v19–v21; nothing is written to memory but the state at the end.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha3.AArch64.Scalar.Resident
 

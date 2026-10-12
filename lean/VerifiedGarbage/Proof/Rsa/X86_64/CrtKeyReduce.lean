@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyReduce
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-import VerifiedGarbage.Impl.Rsa.X86_64.CheckCrtKey
-import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyReduce
+public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckCrtKey
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_crt_key` on x86-64: remainders with a small quotient
@@ -12,6 +18,8 @@ loop divides `x`'s low `c` words (`reduceLoopFrom_ok`), over numbers of
 `w'` words. When `⌊x / 2^(64 c)⌋ < m`, `r` is then `x mod m`
 (`reduceTop_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

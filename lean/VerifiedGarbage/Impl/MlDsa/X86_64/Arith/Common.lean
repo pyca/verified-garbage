@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # ML-DSA on x86-64: arithmetic modulo `q`
@@ -18,6 +20,8 @@ Pieces of code that the ML-DSA arithmetic functions share, for
   the model, and its timing does not depend on its operands (it is on
   Intel's DOIT list). It uses `rax`, `rdx` and `r11`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.X86_64.Arith
 

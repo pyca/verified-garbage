@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.AesCbc.Spec
+module
+
+public import VerifiedGarbage.Proof.AesCbc.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CBC: blocks moved as 64-bit words
@@ -7,6 +13,8 @@ The memories the functions leave when they XOR a block into another
 (`xorMem`) or copy one (`copyMem`), as two 64-bit words, and what they leave
 there, on every target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCbc
 

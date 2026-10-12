@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
-import VerifiedGarbage.Proof.Aes.Scratch
-import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
+public import VerifiedGarbage.Proof.Aes.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AES key expansion on ARMv7, with its working space on the stack
@@ -11,6 +17,8 @@ frame of 512 bytes that is the working space and which it zeroes after the
 code, since it may hold the key and its schedule
 (`Verified.regScratchWiped`). The code uses no other stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.Arm
 

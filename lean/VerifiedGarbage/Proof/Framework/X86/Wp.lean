@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86.Exec
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.Exec
 
 /-!
 # x86 (32-bit): weakest-precondition rules for single instructions
@@ -8,6 +10,8 @@ expose only what changes: the rule for `i` proves `WP (i :: rest)` from a
 proof of `WP rest` for every state `i` can end in (`Upd`: one register
 written, `Mupd`: memory written, `Fupd`: only the flags).
 -/
+
+@[expose] public section
 
 namespace VG.X86.Wp
 

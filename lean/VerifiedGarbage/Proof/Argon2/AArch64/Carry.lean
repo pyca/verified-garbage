@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Arithmetic facts for ARM64's subtraction carry -/
+
+@[expose] public section
+
 namespace VG.Proof.Argon2.AArch64
 
 theorem sub_value (a b : BitVec 64) : a + ~~~b + 1#64 = a - b := by

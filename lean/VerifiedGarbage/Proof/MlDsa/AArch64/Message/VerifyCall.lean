@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA on AArch64, `verify_message`: the call of the verification function on `μ`
@@ -9,6 +15,8 @@ Untrusted: everything here is checked by Lean. Any code verified against
 `scratchWords p` words of `scratch` (`verifyCall_ok`), after which the saves
 are intact (`Fin`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Message
 

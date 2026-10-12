@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJBuild
-import VerifiedGarbage.Proof.Weierstrass.WindowJA
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJBuild
+public import VerifiedGarbage.Proof.Weierstrass.WindowJA
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Windows in Jacobian coordinates on x86-64: the table into affine coordinates
@@ -13,6 +19,8 @@ then back from entry `8` (`back_ok`): `Z_m^(p-2) = c_m^(p-2) c_{m-1}` and
 `Z^(p-2)`, and every `Z` set to one: a table of `RepA` (`normTbl_ok`), for
 entries other than `O`. Each product is `slotMul_ok`, on the window's slots.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

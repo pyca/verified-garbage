@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Pow
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Pow
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on x86-64: the ladder
@@ -12,6 +18,8 @@ holds, and that an iteration keeps it (`Step`): the callers' invariant is
 that `R` represents `[k >>> j]P` (`step_rep`, in `Rep.lean`), and only they
 need the group law and the algebra it is proven with.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86_64
 

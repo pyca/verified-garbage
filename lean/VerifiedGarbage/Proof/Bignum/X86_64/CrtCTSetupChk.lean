@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupFix
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupFix
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupFix
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA with the CRT on x86-64: constant time of the checks' pieces
@@ -10,6 +19,8 @@ modulus' header, the primes' workspaces' bases, links, sizes and arrays, and
 a mask in `sMask`) is kept by their frames. Each piece is constant time from
 `CK` and `rdi` (`pq_ct`, `eq_ct`, `qinv_ct`, `fixP_ct`, …).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.X86_64
 

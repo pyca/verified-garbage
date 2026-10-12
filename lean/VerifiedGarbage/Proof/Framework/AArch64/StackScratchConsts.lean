@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 
 /-!
 # A scratch buffer on the stack, for code that reads tables of constants (AArch64)
@@ -16,6 +18,8 @@ outside the frame, which is within the stack the contract reserves
 `withStackScratch_run`'s, which needs of the entry state only that the
 contract reserves the frame's stack.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

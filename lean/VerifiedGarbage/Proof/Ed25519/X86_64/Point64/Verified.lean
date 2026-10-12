@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
-import VerifiedGarbage.Proof.Mont.Read
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+public import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519's point functions on x86-64: their `Verified`
@@ -16,6 +22,8 @@ slots' field elements (`elemAt_eq`). Constant time by taint tracking (only
 `rsp` and `ws` are public, and every address is `ws` plus a constant), and a
 state satisfying the precondition.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Point64
 

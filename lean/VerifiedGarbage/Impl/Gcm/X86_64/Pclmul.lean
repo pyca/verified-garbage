@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.TCB.X86_64.Isa
+module
+
+public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # GHASH with PCLMULQDQ on x86-64
@@ -35,6 +37,8 @@ the field element. In this bit-reflected representation:
 is written. Every branch and every address depends only on the pointers and
 `n`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Gcm.X86_64.Pclmul
 

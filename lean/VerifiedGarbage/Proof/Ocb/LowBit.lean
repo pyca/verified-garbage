@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ocb.Spec
+module
+
+public import VerifiedGarbage.Proof.Ocb.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `ntz` as the lowest set bit
@@ -8,6 +14,8 @@ A positive `n` is `2^ntz(n)` times an odd number (`ntz_spec`), so
 64 bits, is `2^ntz(n)` (`lowbit`): an implementation finds `L_{ntz(i)}`
 without a branch on `i`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ocb
 

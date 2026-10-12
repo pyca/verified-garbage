@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.X86.Syms
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.X86.Syms
 
 /-!
 # A scratch buffer on the stack, for code that reads tables of constants (x86)
@@ -14,6 +16,8 @@ state satisfying the contract under `abi.withConsts K` satisfies it under
 tables lie outside the frame, which is within the stack the contract
 reserves, so `narrowC` holds them as the entry state does.
 -/
+
+@[expose] public section
 
 namespace VG.X86
 

@@ -1,8 +1,10 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 
 /-!
 # AArch64: straight-line bitwise AdvSIMD code, doubleword lane by doubleword lane
@@ -17,6 +19,8 @@ doubleword of its operands. `eval` runs it once over an abstract domain on
 `movz` and `movk` into a general-purpose register (whose value the
 evaluator tracks) and `dup v.2d`; `movi v.2d, #0` is the constant 0.
 -/
+
+@[expose] public section
 
 namespace VG.AArch64.StraightV
 

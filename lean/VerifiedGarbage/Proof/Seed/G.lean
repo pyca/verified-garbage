@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Seed.Sbox
+module
+
+public import VerifiedGarbage.Proof.Seed.Sbox
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # G, bit by bit
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Seed.Sbox
 of `x`, of bit `tb` of `S(x_a)` (`S0` for even `a`, `S1` for odd) where the
 mask `m_{(a + a') mod 4}` has it (RFC 4269 §2.2).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Seed
 

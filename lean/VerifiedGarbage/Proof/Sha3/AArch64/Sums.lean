@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
-import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
-import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
-import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
-import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
-import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
+meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
+meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
+public import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
+public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
+public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
+meta import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Summaries for the constant-time checks of the sponge's callers
@@ -17,6 +29,8 @@ calls are summarized once (`taint_summary`), and the checks use the summaries
 Each summary applies to a call from its arguments public, and keeps public
 the callee-saved registers the function does not write (`keeping`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.MlKemSums
 

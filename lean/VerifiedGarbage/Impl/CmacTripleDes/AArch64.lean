@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.CmacTripleDes.AArch64.Round
+module
+
+public import VerifiedGarbage.Impl.CmacTripleDes.AArch64.Round
 
 /-!
 # TDEA-CMAC (3DES-CMAC): AArch64 implementation
@@ -35,6 +37,8 @@ Only the pointers, `key_len`, `n` and `last_len` can affect timing: the
 branches (`cbz`, `cbnz`) are on them and on counters, and the doubling is
 masked.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.CmacTripleDes.AArch64
 

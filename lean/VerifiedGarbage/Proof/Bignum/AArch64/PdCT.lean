@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
+module
+
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_public_precomputed` on AArch64: constant time but for `pre` and `e`
@@ -7,6 +14,8 @@ Every piece's addresses and branches depend only on the pointers, the
 lengths, `pre` and `e`: the load and the checks of `pre` (`pdLoad_ct`),
 `rest` (`pdRest_ct`), and the whole function (`pdCode_constantTime`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Bignum.AArch64
 

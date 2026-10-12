@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.MlKem.Arm.Add
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.Add
+meta import VerifiedGarbage.Proof.MlKem.Arm.Add
+public import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Proof.MlKem.Compress
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_compress_encode`
@@ -13,6 +23,8 @@ is symbolically executed once for any pointers (`body4_ok`, `body10_ok`; for
 `compress_eq`, with the product in 32 bits (`cmpV_toNat`), and the bytes
 `compressEncode1`, `compressEncode4` and `compressEncode10_0`–`_4`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm.CompressEncode
 

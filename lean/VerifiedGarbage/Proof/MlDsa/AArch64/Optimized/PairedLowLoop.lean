@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowRun
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedConstants
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRestoreLoop
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowRun
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedConstants
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRestoreLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `PairedLowPassFlags` -/
+
+@[expose] public section
 
 section
 

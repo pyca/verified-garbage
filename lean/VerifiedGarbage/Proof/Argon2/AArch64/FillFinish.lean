@@ -1,11 +1,20 @@
-import VerifiedGarbage.Impl.Argon2.AArch64.FillFinish
-import VerifiedGarbage.Proof.Argon2.AArch64.FillIterations
-import VerifiedGarbage.Proof.Argon2.AArch64.FinishReady
-import VerifiedGarbage.Impl.Argon2.AArch64.Finish
-import VerifiedGarbage.Proof.Argon2.AArch64.FinalOutputReady
-import VerifiedGarbage.Proof.Argon2.Serialization
+module
+
+public import VerifiedGarbage.Impl.Argon2.AArch64.FillFinish
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillIterations
+public import VerifiedGarbage.Proof.Argon2.AArch64.FinishReady
+public import VerifiedGarbage.Impl.Argon2.AArch64.Finish
+public import VerifiedGarbage.Proof.Argon2.AArch64.FinalOutputReady
+public import VerifiedGarbage.Proof.Argon2.Serialization
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.FinishStage`. -/
+
+@[expose] public section
+
 section
 /-! Merged from `Proof.Argon2.AArch64.FinalOutput`. -/
 section

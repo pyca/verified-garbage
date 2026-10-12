@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Loop
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64, inversion by divsteps: a batch
@@ -7,6 +13,8 @@ A batch (`dbatch`) takes the state of the working area (`DMem`) to the next
 `dbatchV` and counts down the batches (`dbatch_ok`), changing only the area
 `[512, 768)`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

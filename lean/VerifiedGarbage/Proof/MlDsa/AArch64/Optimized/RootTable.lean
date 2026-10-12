@@ -1,9 +1,17 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveCore
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Slice
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
-import VerifiedGarbage.Proof.Framework.Offset
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveCore
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Slice
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
+public import VerifiedGarbage.Proof.Framework.Offset
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `FiveSlice.lean` -/
+
+@[expose] public section
 
 section
 

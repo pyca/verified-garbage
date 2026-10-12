@@ -1,6 +1,10 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedMatrix
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedSecrets
-import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRest
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedMatrix
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedSecrets
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRest
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.KeyGen.Optimized
 open VG VG.AArch64

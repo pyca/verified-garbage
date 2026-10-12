@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedDecode
+module
+
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedDecode
+
+@[expose] public section
 
 namespace VG.Impl.MlDsa.AArch64.Sign
 open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Call

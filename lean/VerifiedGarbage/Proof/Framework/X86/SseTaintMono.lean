@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Framework.X86.TaintMono
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 
 /-!
 # Summaries for the x86 SIMD taint analysis
@@ -9,6 +11,8 @@ monotone along the same order (`LeR`) with the same frames of registers:
 its SIMD steps write no general-purpose register or flag, and check only
 that a base register is public (`memPub`), which more public registers keep.
 -/
+
+@[expose] public section
 
 namespace VG.X86.SseTaint
 

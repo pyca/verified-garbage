@@ -1,4 +1,8 @@
-import VerifiedGarbage.Impl.X25519.X86
+module
+
+public import VerifiedGarbage.Impl.X25519.X86
+
+@[expose] public section
 
 namespace VG.Impl.Ed25519.X86
 open VG.X86 VG.Impl.X25519.X86

@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.X25519.X86_64.Freeze
-import VerifiedGarbage.Proof.X25519.Bytes
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+module
+
+public import VerifiedGarbage.Proof.X25519.X86_64.Freeze
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86-64: reading the arguments
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Spill
 `setup` reads the u-coordinate, saves the callee-saved registers at the start
 of the working space, and sets the ladder's variables to their initial values.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86_64
 

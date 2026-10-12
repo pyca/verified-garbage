@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.AArch64.PrivFrame
+module
+
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivFrame
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the arguments of the CRT
@@ -8,6 +14,8 @@ copies our last ten stack arguments to the bottom of the inner frame as the
 CRT's (`copyArgs_ok`, one word at a time), and `crtRegs` sets its arguments
 in registers (`crtRegs_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.AArch64
 

@@ -1,10 +1,18 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedOutput
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CanonicalizeCallTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputPack
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedOutput
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CanonicalizeCallTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputPack
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `OptimizedCanonicalize.lean` -/
+
+@[expose] public section
 
 section
 

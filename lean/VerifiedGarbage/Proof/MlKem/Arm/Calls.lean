@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+module
+
+public import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on 32-bit ARM: calling the primitives on buffers
@@ -10,6 +16,8 @@ the call of it with its arguments at offsets in the buffers of a layout
 and permitted), what it changes (`Kept`, with the regions as triples) and what
 it computes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.Arm
 

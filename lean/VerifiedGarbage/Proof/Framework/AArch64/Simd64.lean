@@ -1,6 +1,10 @@
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 /-! Identities for pairs of 64-bit SIMD lanes. -/
+
+@[expose] public section
 
 namespace VG.AArch64
 

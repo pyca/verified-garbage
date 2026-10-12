@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ocb.Stretch
+module
+
+public import VerifiedGarbage.Proof.Ocb.Stretch
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # OCB: `Offset_0` in 32-bit words
@@ -10,6 +16,8 @@ mask from a bit of `bottom` (`sel_mask32`, `bit32`, `bit32_0`); the stages of
 1 to 16 bits shift a word at a time (`shl6`), the stage of 32 bits moves the
 words (`shl6_32`), and `Offset_0` is the top four words (`top4`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ocb
 

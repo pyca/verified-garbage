@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Dsa.X86_64.EntryFields
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.EntryFields
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # Saved arguments and the memory footprint of DSA entry stores -/
+
+@[expose] public section
+
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Dsa.Layout
 open VG.Proof.Bignum

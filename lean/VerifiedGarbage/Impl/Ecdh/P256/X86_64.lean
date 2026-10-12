@@ -1,10 +1,14 @@
-import VerifiedGarbage.Impl.Ecdh.X86_64
-import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
-import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
+module
+
+public import VerifiedGarbage.Impl.Ecdh.X86_64
+public import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
+public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
 
 /-! # ECDH over P-256 on x86-64: four-word field elements and scalars, by the
 Jacobian window method (`Cfg.exchangeJ`, P-256 having prime order) with the
 doubling by halving (`Impl/P256/X86_64/DoubleHalfPublic.lean`) -/
+
+@[expose] public section
 
 namespace VG.Impl.Ecdh.X86_64
 

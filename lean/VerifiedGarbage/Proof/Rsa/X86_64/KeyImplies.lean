@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.KeyCode
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
-import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCode
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_rsa_check_key` on x86-64: the shared contract
@@ -10,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 `keyContract` states the shared contract on the registers and the stack
 (`key_implies`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa.X86_64.Key
 

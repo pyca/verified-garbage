@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Aes.Arm.Linear
+module
+
+public import VerifiedGarbage.Impl.Aes.Arm.Linear
 
 /-!
 # AES counter mode (GCM's `inc₃₂`), bitsliced, on ARMv7
@@ -31,6 +33,8 @@ licence): two blocks at a time, bitsliced in eight 32-bit registers
   stored in the scratch buffer) are public; no address and no branch
   depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Aes.Arm
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Rsa.Octets
+module
+
+public import VerifiedGarbage.Proof.Rsa.Octets
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # RSA: `keyValid` from its parts
@@ -10,6 +16,8 @@ others) known only when its modulus is positive: when `p` or `q` is 0 or
 1, `p q = n` fails anyway, as the other factor would have to be `n`, which
 is longer. `p < n` and `q < n` need no check: `n ≥ 256^(k - 1)`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Rsa
 

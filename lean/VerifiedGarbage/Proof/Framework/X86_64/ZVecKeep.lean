@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 
 /-!
 # x86-64: scalar code keeps the `zmm` registers
@@ -6,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 `VecKeep.lean`'s lemmas with bits 511:256 of `zmm0`–`zmm15` too: scalar code
 (`scalCode`) leaves `xmm`, `ymmHi` and `zmmHi` as they are (`WP.zvecKeep`).
 -/
+
+@[expose] public section
 
 namespace VG.X86_64
 

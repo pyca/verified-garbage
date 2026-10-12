@@ -43,5 +43,16 @@ class NotConverted(unittest.TestCase):
             self.assertEqual(modularize.not_converted(lean, ["L"]), [("L", lean / "L/S/B.lean")])
 
 
+    def test_a_module_importing_a_file_that_is_not_one(self):
+        with tempfile.TemporaryDirectory() as d:
+            lean = pathlib.Path(d)
+            (lean / "VerifiedGarbage/L").mkdir(parents=True)
+            (lean / "VerifiedGarbage/L/A.lean").write_text(
+                "module\n\npublic import VerifiedGarbage.L.B\nmeta import VerifiedGarbage.L.C\nimport Lean\n")
+            (lean / "VerifiedGarbage/L/B.lean").write_text("import VerifiedGarbage.L.C\n")
+            (lean / "VerifiedGarbage/L/C.lean").write_text("module\n")
+            self.assertEqual(modularize.non_module_imports(lean),
+                             [(lean / "VerifiedGarbage/L/A.lean", "VerifiedGarbage.L.B")])
+
 if __name__ == "__main__":
     unittest.main()

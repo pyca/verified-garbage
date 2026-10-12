@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Idea.Key
+module
+
+public import VerifiedGarbage.Impl.Idea.Key
 
 /-!
 # IDEA key expansion on 32-bit words
@@ -9,6 +11,8 @@ little-endian 32-bit words. `keyLoc32 i` is where key bit `i` is in memory,
 and `expandGroups32 w` the groups of bits of schedule word `w` with the same
 source word and rotation.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Idea
 

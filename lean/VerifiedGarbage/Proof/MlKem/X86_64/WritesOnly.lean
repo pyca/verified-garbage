@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on x86-64: `writesOnly` in the form of `writesIn`
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 instruction only whether the registers it writes are in `rs`; `writesOnly_of`
 states it for the proofs that ask for that form.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

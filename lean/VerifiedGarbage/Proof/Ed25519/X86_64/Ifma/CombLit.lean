@@ -1,7 +1,18 @@
-import VerifiedGarbage.Impl.X25519.X86_64.Base
-import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+module
+
+public import VerifiedGarbage.Impl.X25519.X86_64.Base
+meta import VerifiedGarbage.Impl.X25519.X86_64.Base
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Checked literals for the comb with AVX512_IFMA, and the functions running it. -/
+
+@[expose] public section
+
 namespace VG.Proof.Ed25519.X86_64.Zmm
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 materialize_code combMultiplyLit := (Impl.Ed25519.X86_64.Zmm.combMultiply Impl.X25519.X86_64.adx)

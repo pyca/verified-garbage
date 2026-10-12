@@ -1,8 +1,16 @@
-import VerifiedGarbage.Impl.Rc2.AArch64.Block
-import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
-import VerifiedGarbage.Proof.Rc2.Word
+module
+
+public import VerifiedGarbage.Impl.Rc2.AArch64.Block
+public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
+public import VerifiedGarbage.Proof.Rc2.Word
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # RC2 mixing and mashing in AArch64 registers -/
+
+@[expose] public section
 
 namespace VG.Proof.Rc2.AArch64
 

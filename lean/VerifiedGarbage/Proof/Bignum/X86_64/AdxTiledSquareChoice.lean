@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
+module
+
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## AdxTri8FullBlock -/
+
+@[expose] public section
+
 section
 
 namespace VG.Proof.Bignum.X86_64.AdxTri8

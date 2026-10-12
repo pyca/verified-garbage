@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.FragL
-import VerifiedGarbage.Proof.MlKem.KPke
+module
+
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragL
+public import VerifiedGarbage.Proof.MlKem.KPke
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-768 on x86-64: byte stores, copies, and the calls of `SampleNTT`
@@ -9,6 +15,8 @@ In a layout: a byte store (`setB_okL`), a copy (`copy_okL`), and the entry
 (`sampleIJ_ok`, `sampleIJ_tr`), which changes `r15` (so what it leaves is
 `PostB`, not `Post`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.X86_64
 

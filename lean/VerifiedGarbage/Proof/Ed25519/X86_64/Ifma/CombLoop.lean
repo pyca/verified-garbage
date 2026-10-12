@@ -1,8 +1,14 @@
-import VerifiedGarbage.Proof.Ed25519.Group.Double
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombAdd
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombSelect
-import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
-import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+module
+
+public import VerifiedGarbage.Proof.Ed25519.Group.Double
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombAdd
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombSelect
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
+public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Ed25519's comb with AVX512_IFMA: a step
@@ -12,6 +18,8 @@ four doublings and `[G]B` before the even digits (`vdbl4`, `gEntry`), then the
 digit's table entry, selected (`vselect`), negated for a negative digit and
 added to the point in the lanes (`ventry`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86_64.Ifma
 

@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseScale
+module
+
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseScale
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## From `PairedScale.lean` -/
+
+@[expose] public section
 
 section
 
