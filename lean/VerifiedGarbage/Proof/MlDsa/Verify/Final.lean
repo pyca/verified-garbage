@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Verify.Norm
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: when verification fails
@@ -9,6 +15,8 @@ does not finish within its bound (`verifyMu_rej_none`, `verifyMu_ball_none`);
 and bounds for each entry of `Â` give one bound for all of them
 (`common_bound`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Verify
 

@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.Blake2.Stream
-import VerifiedGarbage.Proof.Blake2.AArch64.Contract
-import VerifiedGarbage.Proof.MdStream.AArch64.Common
-import VerifiedGarbage.Impl.Blake2.AArch64.Stream
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
+module
+
+public import VerifiedGarbage.Proof.Blake2.Stream
+public import VerifiedGarbage.Proof.Blake2.AArch64.Contract
+public import VerifiedGarbage.Proof.MdStream.AArch64.Common
+public import VerifiedGarbage.Impl.Blake2.AArch64.Stream
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming BLAKE2 on AArch64: common lemmas
@@ -13,6 +19,8 @@ against, what they need of the compression function they call (`CalleeOk`),
 the call (`compressWith_ok`), and the loops copying bytes into the buffer and
 zeroing it.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2
 

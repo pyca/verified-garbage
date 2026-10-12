@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: products modulo `q` with 32-bit multiplications, for every target
@@ -16,6 +22,8 @@ Horner's rule on the pieces `z₂ = ⌊z / 2¹⁴⌋ < 2⁹`, `z₁ = ⌊z / 2�
 is congruent to `b · z` (`mulzN_mod`), and every value on the way is less
 than `2³²` (`mulzN_bounds`), and the result less than `2q`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Arith
 

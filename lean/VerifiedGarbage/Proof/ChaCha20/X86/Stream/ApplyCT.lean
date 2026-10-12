@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Apply
-import VerifiedGarbage.Proof.Framework.X86.RelCT
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Apply
+meta import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Apply
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on x86 (32-bit): `apply`, constant time
@@ -17,6 +25,8 @@ their arguments agreeing; and the branches are on public values
 not take the arguments from them: the state pointer is loaded in a piece of
 its own, whose result correctness determines.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.X86.Stream
 

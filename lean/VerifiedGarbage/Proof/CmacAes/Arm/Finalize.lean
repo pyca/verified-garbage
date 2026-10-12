@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.CmacAes.Arm.Subkeys
-import VerifiedGarbage.Proof.Framework.WriteBytes
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Arm.Subkeys
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CMAC on ARMv7: `vg_cmac_aes_finalize`, the last block
@@ -9,6 +15,8 @@ before the chaining value is XORed in: `Mₙ* ⊕ K1` for a complete block
 (`full_wp`), else `Mₙ*` copied a byte at a time onto zeros (`copy_wp`), `0x80`
 after it, and the block XORed with `K2` (`partial_wp`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Arm
 

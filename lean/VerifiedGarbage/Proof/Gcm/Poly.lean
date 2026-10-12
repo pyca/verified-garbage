@@ -1,11 +1,17 @@
-import Mathlib.Algebra.Field.ZMod
-import Mathlib.RingTheory.AdjoinRoot
-import Mathlib.Tactic.ComputeDegree
-import VerifiedGarbage.Proof.Gcm.Spec
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Ring.RingNF
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import Mathlib.Algebra.Field.ZMod
+public import Mathlib.RingTheory.AdjoinRoot
+public import Mathlib.Tactic.ComputeDegree
+public import VerifiedGarbage.Proof.Gcm.Spec
+public import Mathlib.Tactic.LinearCombination
+public import Mathlib.Tactic.Ring.RingNF
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GCM: the field GF(2¹²⁸) as polynomials
@@ -18,6 +24,8 @@ whose coefficient of `xⁱ` is bit `i` of `v` from the left (`getMsbD i`), and
 where `φ v` is the class of `gp v`. Blocks are determined by their classes
 (`φ_inj`), so implementations are proven correct by computing in `Q`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.Poly
 

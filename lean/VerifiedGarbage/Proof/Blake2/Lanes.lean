@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Blake2.Spec
-import VerifiedGarbage.Proof.Argon2.PermuteRows
+module
+
+public import VerifiedGarbage.Proof.Blake2.Spec
+public import VerifiedGarbage.Proof.Argon2.PermuteRows
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # A BLAKE2b round on four columns at once
@@ -13,6 +19,8 @@ one and two places (`rotIn`; row 1 stays), so that column `q` holds diagonal
 each row in one vector register (of four 64-bit lanes) computes a round
 (`round_lanes`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Blake2
 

@@ -1,12 +1,27 @@
-import VerifiedGarbage.Proof.Gcm.Arm.Step
-import VerifiedGarbage.Proof.Framework.Arm.Bytes
-import VerifiedGarbage.Proof.Framework.Bitslice.Sym
-import VerifiedGarbage.Proof.Aes.Blocks
-import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Spec.Gcm.Contract
+module
+
+public import VerifiedGarbage.Proof.Gcm.Arm.Step
+meta import VerifiedGarbage.Proof.Gcm.Arm.Step
+public import VerifiedGarbage.Proof.Framework.Arm.Bytes
+meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
+public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Sym
+public import VerifiedGarbage.Proof.Aes.Blocks
+meta import VerifiedGarbage.Proof.Aes.Blocks
+public import VerifiedGarbage.Spec.Gcm
+meta import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Spec.Gcm.Contract
+meta import VerifiedGarbage.Spec.Gcm.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GHASH on ARMv7: the whole function
@@ -16,6 +31,8 @@ evaluation in the naming domain (`Bitslice.names`); a block is `load`
 (`Y ⊕ X` over `Y`, and `V := H`), the 16 bytes of steps (`Step.lean`) and
 `store`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm
 

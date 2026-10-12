@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlKem.Compress
-import VerifiedGarbage.Spec.MlKem.Contract1024
+module
+
+public import VerifiedGarbage.Proof.MlKem.Compress
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM-1024: Compress and Decompress without division, for every target
@@ -21,6 +27,8 @@ formula (`decompress_val_of_le`).
 
 The compress formula is checked for each of the `q` inputs by the kernel.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

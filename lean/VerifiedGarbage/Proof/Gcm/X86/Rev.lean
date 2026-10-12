@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Gcm.Spec
-import VerifiedGarbage.Proof.Framework.X86.Sse
+module
+
+public import VerifiedGarbage.Proof.Gcm.Spec
+public import VerifiedGarbage.Proof.Framework.X86.Sse
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GCM blocks in SSE registers
@@ -10,6 +16,8 @@ first byte in the least significant byte of the register (`byte_readW`);
 value as SP 800-38D reads it, the first byte the most significant
 (`blockAt_eq`), and back (`blockAt_store`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm.X86
 

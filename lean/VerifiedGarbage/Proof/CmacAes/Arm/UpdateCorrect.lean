@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.CmacAes.Arm.UpdateLoop
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateLoop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CMAC on ARMv7: `vg_cmac_aes_update` is correct
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacAes.Arm
 

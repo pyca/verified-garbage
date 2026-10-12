@@ -1,8 +1,19 @@
-import VerifiedGarbage.Proof.ChaCha20.StreamBytes
-import VerifiedGarbage.Proof.ChaCha20.Arm.Block
-import VerifiedGarbage.Proof.MdStream.Arm.Common
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Impl.ChaCha20.Arm.Stream
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.StreamBytes
+meta import VerifiedGarbage.Proof.ChaCha20.StreamBytes
+public import VerifiedGarbage.Proof.ChaCha20.Arm.Block
+meta import VerifiedGarbage.Proof.ChaCha20.Arm.Block
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
+meta import VerifiedGarbage.Proof.MdStream.Arm.Common
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Impl.ChaCha20.Arm.Stream
+meta import VerifiedGarbage.Impl.ChaCha20.Arm.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on ARMv7: `init` and `set_nonce`
@@ -12,6 +23,8 @@ first and then stores everything (`setNonce_exec`; `nonceMem` is the memory
 it leaves); `init` first copies the key a word at a time (`copy_ok`, which
 `apply` uses too for the copy of the state).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20
 

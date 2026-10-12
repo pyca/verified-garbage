@@ -1,11 +1,20 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.Memory
-import VerifiedGarbage.Impl.Argon2.AArch64.Parameters
-import VerifiedGarbage.Proof.Argon2.AArch64.Divide
-import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
-import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
-import VerifiedGarbage.Proof.Argon2.Dimensions
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.Memory
+public import VerifiedGarbage.Impl.Argon2.AArch64.Parameters
+public import VerifiedGarbage.Proof.Argon2.AArch64.Divide
+public import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
+public import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
+public import VerifiedGarbage.Proof.Argon2.Dimensions
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.ParametersSteps`. -/
+
+@[expose] public section
+
 section
 /-! Public frame loads and fixed arithmetic for the RFC's rounded memory dimensions. -/
 

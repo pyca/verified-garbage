@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Impl.Sha3.X86_64.X4Reg
+module
+
+public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+public import VerifiedGarbage.Impl.Sha3.X86_64.X4Reg
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Keccak-f[1600] four times at once, in registers: one instruction at a time
@@ -8,6 +14,8 @@ Weakest-precondition rules for the EVEX-encoded instructions of `permute4R`
 (`Impl/Sha3/X86_64/X4Reg.lean`) on the thirty-two `ymm` registers, in terms
 of the four 64-bit elements of each (`qy`), one per state.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.X86_64.X4R
 

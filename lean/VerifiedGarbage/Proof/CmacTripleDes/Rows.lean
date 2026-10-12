@@ -1,3 +1,9 @@
+module
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
 /-!
 # Words that are constant on each row
 
@@ -6,6 +12,8 @@ input slot the value that is, on row `c`, all ones if bit `t` of `c` is set
 and zero otherwise. Built a row at a time (`rowsOf`), the kernel evaluates
 it in one step per row, rather than one per bit (`tableOf`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.CmacTripleDes
 

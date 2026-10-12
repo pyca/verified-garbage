@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
-import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
-import VerifiedGarbage.Proof.Aes.Scratch
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+module
+
+public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
+public import VerifiedGarbage.Proof.Aes.Scratch
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The AES key expansion on AArch64, with its working space on the stack
@@ -13,6 +19,8 @@ working space and which they zero after the code
 (`Verified.stackScratchWiped`), since it may hold the key and its schedule.
 The code uses no other stack.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.AArch64
 

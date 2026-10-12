@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Bytes
-import VerifiedGarbage.Proof.ChaCha20.Stream
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Bytes
+public import VerifiedGarbage.Proof.ChaCha20.Stream
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on ARMv7: the entry state and the calls
@@ -12,6 +18,8 @@ its precondition gives, and the calls of `vg_chacha20_block` and
 nothing in memory, so the callee changes memory only within the regions it
 may write.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20
 

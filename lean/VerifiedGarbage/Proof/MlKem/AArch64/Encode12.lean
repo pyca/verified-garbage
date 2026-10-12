@@ -1,12 +1,23 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_encode12`
 
 Three bytes per pair of coefficients (`encode12_byte0`–`encode12_byte2`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem
 

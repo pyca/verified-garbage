@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Gcm.Compose
-import VerifiedGarbage.Proof.Gcm.Ctr
-import VerifiedGarbage.Spec.Gcm.OutOfPlace
+module
+
+public import VerifiedGarbage.Proof.Gcm.Compose
+public import VerifiedGarbage.Proof.Gcm.Ctr
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GCM: one-shot encryption out of place, from a list of slices
@@ -16,6 +22,8 @@ after the other from where they are to the output, and writes the tag.
 * `gathered_succ`: the slices listed, one more at a time.
 * `encryptWith_eq`: GCM-AE is the ciphertext and the full tag.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm
 

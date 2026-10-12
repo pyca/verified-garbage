@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Divstep.Steps
+module
+
+public import VerifiedGarbage.Proof.Divstep.Bound
+public import VerifiedGarbage.Proof.Divstep.Steps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The divstep's bound
@@ -9,6 +15,8 @@ The divstep's (`Steps.lean`) runs are runs of the relaxed iteration for
 after 590 steps (`divsteps_590`; 885 up to `2^384`, `divsteps_words`), and
 `f` is then `± gcd(f, g)`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Divstep
 

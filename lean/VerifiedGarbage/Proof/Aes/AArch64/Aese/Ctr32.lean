@@ -1,9 +1,21 @@
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
-import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Gcm.Spec
+module
+
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
+meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
+public import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
+meta import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Gcm.Spec
+meta import VerifiedGarbage.Proof.Gcm.Spec
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES counter mode with the Armv8 Cryptographic Extension
@@ -18,6 +30,8 @@ into the data blocks; both for any list of registers, by induction. The
 loops keep, after `c` blocks, the counter `c₀ + c` in `w10` and the first `c`
 data blocks encrypted (`DataInv`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Aes.AArch64.Aese
 

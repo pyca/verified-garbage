@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+module
+
+public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Keccak-f[1600] four times at once on x86-64: one round
@@ -8,6 +14,8 @@ lane by lane (`Proof.Sha3.out`) in each of the four elements, and the swap of
 `rdi` and `rsi` after it. The proof follows the scalar one
 (`Proof/Sha3/X86_64/Permute.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.X86_64.X4
 

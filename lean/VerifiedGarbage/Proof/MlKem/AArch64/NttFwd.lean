@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
-import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Set
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
+meta import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import Mathlib.Tactic.Set
+meta import Mathlib.Tactic.Set
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_ntt`
@@ -10,6 +19,8 @@ block (`block_step`), the blocks of a layer with `len ≥ 4` (`layer_step`), the
 layer with `len = 2` two blocks at a time (`pair_step`), and the seven layers
 (`ntt_eq_layers`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Ntt
 

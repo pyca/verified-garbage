@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.Spec
-import VerifiedGarbage.Spec.Cfb.Contract
+module
+
+public import VerifiedGarbage.Proof.AesCbc.Spec
+public import VerifiedGarbage.Spec.Cfb.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # CFB128: the mode one block at a time
@@ -13,6 +19,8 @@ XORed with `CIPH_K` of the last ciphertext block of those (`encrypt_snoc`,
 the loop the targets share with CBC, whose chaining value (`Cbc.next` of
 the ciphertext blocks) it is.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCfb
 

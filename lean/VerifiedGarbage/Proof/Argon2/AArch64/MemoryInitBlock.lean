@@ -1,9 +1,18 @@
-import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitCall
-import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
-import VerifiedGarbage.Proof.Blake2.Stream
+module
+
+public import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitCall
+public import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
+public import VerifiedGarbage.Proof.Blake2.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Argon2.AArch64.MemoryInitArgs`. -/
+
+@[expose] public section
+
 section
 /-! # The 72-byte H₀, column and lane input to memory initialization -/
 

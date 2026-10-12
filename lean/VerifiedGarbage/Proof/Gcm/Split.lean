@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Gcm.Ctr
+module
+
+public import VerifiedGarbage.Proof.Gcm.Ctr
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GCM: counter mode and GHASH of whole blocks, split
@@ -8,6 +14,8 @@ blocks is counter mode over the first, then over the second from the counter
 block after the first (`ctr32_append`); the blocks at an address split the
 same way (`blocksAt_add`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm
 

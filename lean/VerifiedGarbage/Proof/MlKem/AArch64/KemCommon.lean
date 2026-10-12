@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: what the proofs of `encaps` and `decaps` share
@@ -13,6 +19,8 @@ other callee-saved registers, and the buffers the function only reads. Then
 the region facts the calls need, reduced to arithmetic on offsets, and the
 prologue and epilogue.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem
 

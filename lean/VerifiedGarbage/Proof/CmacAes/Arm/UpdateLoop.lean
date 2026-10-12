@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.CmacAes.Arm.Words
-import VerifiedGarbage.Proof.CmacAes.Arm.Call
+module
+
+public import VerifiedGarbage.Proof.CmacAes.Arm.Words
+public import VerifiedGarbage.Proof.CmacAes.Arm.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 section
 

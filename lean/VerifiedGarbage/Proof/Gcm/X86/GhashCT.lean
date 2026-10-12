@@ -1,7 +1,17 @@
-import VerifiedGarbage.Impl.Gcm.X86
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Aes.X86.Common
-import VerifiedGarbage.Spec.Gcm
+module
+
+public import VerifiedGarbage.Impl.Gcm.X86
+meta import VerifiedGarbage.Impl.Gcm.X86
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Aes.X86.Common
+meta import VerifiedGarbage.Proof.Aes.X86.Common
+public import VerifiedGarbage.Spec.Gcm
+meta import VerifiedGarbage.Spec.Gcm
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # GHASH on x86 (32-bit): the contract, and constant time
@@ -13,6 +23,8 @@ of `y` and the scratch buffer. The data pointer and the counters live in
 public slots of the scratch buffer, and every other store goes through
 `edi` (the scratch buffer) or the `y` pointer, which keeps them.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Gcm
 

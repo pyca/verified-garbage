@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.KgCommon
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgCommon
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-KEM on AArch64: `keygen`, the prologue and `G(d ‖ k)`
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.KeyGen
 

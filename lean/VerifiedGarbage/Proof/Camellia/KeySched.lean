@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Camellia.Layout
-import VerifiedGarbage.Proof.Camellia.Words
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Camellia.KeyOrder
+module
+
+public import VerifiedGarbage.Proof.Camellia.Layout
+public import VerifiedGarbage.Proof.Camellia.Words
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Camellia.KeyOrder
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The key schedule on 64-bit halves
@@ -12,6 +18,8 @@ bytes, `kakb_halves` `KA` and `KB`'s from theirs through the same pairs of
 rounds as encryption (`pair`), and `hi_eq` and `lo_eq` a half of a 128-bit
 rotation from the two halves (`rotHalf`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Camellia
 

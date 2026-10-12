@@ -1,15 +1,33 @@
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Md5.Spec
-import VerifiedGarbage.Impl.Md5.X86
-import VerifiedGarbage.Proof.Md5.X86.Lit
-import VerifiedGarbage.Proof.Md5.X86.Contract
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
+module
+
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+meta import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+meta import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Md5.Spec
+meta import VerifiedGarbage.Proof.Md5.Spec
+public import VerifiedGarbage.Impl.Md5.X86
+meta import VerifiedGarbage.Impl.Md5.X86
+public import VerifiedGarbage.Proof.Md5.X86.Lit
+meta import VerifiedGarbage.Proof.Md5.X86.Lit
+public import VerifiedGarbage.Proof.Md5.X86.Contract
+meta import VerifiedGarbage.Proof.Md5.X86.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # MD5 compression function on x86 (32-bit): the 64 operations
@@ -18,6 +36,8 @@ Each operation is the auxiliary function of its round, symbolically executed
 once per round (`fn_ok`), followed by the additions and the rotation,
 symbolically executed once for all operations (`tail_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Md5.X86
 

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.MlDsa.Pack.Hint
-import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
+public import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: hints in memory, for every target
@@ -8,6 +14,8 @@ The parameters `(ω, k)` of the hint encodings, the coefficients of a hint
 stored as words (`hintAt`), and facts the proofs of `HintBitPack` and
 `HintBitUnpack` share on every target.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Pack
 

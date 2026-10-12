@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+module
+
+public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ML-DSA: coefficients written in order, for every target
@@ -8,6 +14,8 @@ the other: after `t` of them, coefficient `i` is `G i` for `i < t` and what it
 was before otherwise (`CoeffsUpTo`), until all 256 are written; and the bytes
 of the words of a polynomial, from the words.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.MlDsa.Pack
 

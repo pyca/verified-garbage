@@ -1,9 +1,15 @@
-import VerifiedGarbage.Proof.AesCbc.Mem
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
-import VerifiedGarbage.Impl.AesCbc.AArch64
+module
+
+public import VerifiedGarbage.Proof.AesCbc.Mem
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
+public import VerifiedGarbage.Impl.AesCbc.AArch64
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CBC on AArch64: the contracts, and a call of a block function
@@ -20,6 +26,8 @@ from its contract (with `WP.call`): `D` then holds `f` of it, and only `D`
 and `S` change in memory. `blk_rel`: such calls, with the same arguments in
 both runs, are constant time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCbc.AArch64
 

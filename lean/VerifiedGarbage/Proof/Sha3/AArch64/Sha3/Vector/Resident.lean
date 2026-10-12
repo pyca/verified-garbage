@@ -1,11 +1,27 @@
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
-import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBoundary
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
+module
+
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBoundary
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBoundary
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Sha3.AArch64.Sha3.Vector.Resident
 

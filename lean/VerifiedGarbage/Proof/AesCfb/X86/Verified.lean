@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.AesCbc.X86.Verified
-import VerifiedGarbage.Proof.AesCfb.X86.Body
+module
+
+public import VerifiedGarbage.Proof.AesCbc.X86.Verified
+public import VerifiedGarbage.Proof.AesCfb.X86.Body
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # AES-CFB128 on x86: `Verified`
@@ -10,6 +16,8 @@ precondition, and the shared contracts of `Spec/Cfb/Contract.lean`, with 24
 bytes of stack: each call of a block function pushes its five arguments and
 the return address.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.AesCfb.X86
 

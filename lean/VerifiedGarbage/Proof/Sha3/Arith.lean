@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Spec.Sha3.Contract
-import Mathlib.Tactic.Conv
+module
+
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Sha3.Contract
+public import Mathlib.Tactic.Conv
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The SHA-3 sponge: arithmetic and bytes, for every target
@@ -8,6 +14,8 @@ import Mathlib.Tactic.Conv
 Facts about counters, byte stores and the rates that the streaming proofs of
 every target use.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha3
 
