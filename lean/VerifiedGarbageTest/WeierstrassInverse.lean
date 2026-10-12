@@ -60,7 +60,7 @@ def checkApart (C : Inverse.Curve) : Bool :=
 
 #guard p384.ownDoc = "Bytes 1504 to 1551, 4048 to 4095 and 3400 to 3847 of `ws`"
 #guard p384.zAt = 832 ∧ p384.xAt = 1840 ∧ p384.outAt = 1456 ∧ p384.pAt = 64 ∧ p384.nAt = 112
-#guard p521.ownDoc = "Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5695 of `ws`"
+#guard p521.ownDoc = "Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5767 of `ws`"
 #guard [p192, p224, p256, secp256k1].all fun C =>
   C.ownDoc = "Bytes 1024 to 1055, 128 to 159 and 2296 to 2615 of `ws`" &&
     C.zAt == 576 && C.xAt == 1248 && C.outAt == 992 && C.pAt == 64 && C.nAt == 96
