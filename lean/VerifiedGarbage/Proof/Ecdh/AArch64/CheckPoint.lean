@@ -1,4 +1,10 @@
 module
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
 public import VerifiedGarbage.Proof.Mont.Read
@@ -23,14 +29,12 @@ contract does: `x R mod p` from `toM`, the flag's mask from `PeerOk`, and
 every byte kept but those of the own working space and of the results.
 -/
 
-@[expose] public section
-
-namespace VG.Proof.Ecdh.AArch64
+namespace VG.Proof.Ecdh.AArch64.CheckPoint
 
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
 open VG.Impl.Ecdsa.AArch64
 open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.Weierstrass Spec.Weierstrass
-open VG.Proof.Ecdsa.AArch64
+open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64
 open VG.Impl.Ecdh.AArch64 (QY R2P BP QXM QYM W0 W1 W2 W3 PX PY)
 
 variable {c : Cfg}
@@ -361,4 +365,4 @@ theorem agree (C : Spec.Weierstrass.CheckPoint.Curve) (s₁ s₂ : State) (_ : (
     simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact h.1⟩
 
-end VG.Proof.Ecdh.AArch64
+end VG.Proof.Ecdh.AArch64.CheckPoint

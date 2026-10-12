@@ -22,7 +22,7 @@ time by taint tracking (`x0` and `sp` public), and a state satisfying the contra
 
 namespace VG.Proof.Ecdh.AArch64.P384.Check
 
-open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64
+open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64 VG.Proof.Ecdh.AArch64.CheckPoint
 open VG.Proof.Ecdsa.AArch64.P384
 
 /-- P-384's curve of `Spec/Weierstrass/CheckPoint.lean`. -/
