@@ -42,6 +42,13 @@ def artifacts : List Artifact := [
     contract := p521p.mulContract AArch64.abi
     verified := p521p_mul_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { p384n.mulApi with
+    target := AArch64.target
+    doc := p384n.mulApi.doc (notes := notesG)
+    code := mulFn p384n.k p384n.m
+    contract := p384n.mulContract AArch64.abi
+    verified := p384n_mul_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { p521n.mulApi with
     target := AArch64.target
     doc := p521n.mulApi.doc (notes := notesG)

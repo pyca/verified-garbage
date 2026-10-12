@@ -235,9 +235,9 @@ def mulFn (n m : Nat) : Prog isa := if general n m then mulFnG n m else mulFnS n
 
 open Spec.Weierstrass.Mont in
 /-- The moduli whose products are functions on AArch64: P-384's and P-521's
-`p`, and P-521's `n`, whose inline product is long. A product of four words
-is short enough inline that calls do not pay. -/
-def fns : List Modulus := [p384p, p521p, p521n]
+`p` and `n`, whose inline products are long. A product of four words is
+short enough inline that calls do not pay. -/
+def fns : List Modulus := [p384p, p521p, p384n, p521n]
 
 /-- The function computing the products of the modulus `M` (its name and its
 modulus), if any: one of `fns` of `M.n` words and `M.minv`, if `M`'s
