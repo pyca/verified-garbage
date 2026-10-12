@@ -43,9 +43,11 @@ theorem p384vx_combConsts : p384vx.combConsts = [("VG_P384_COMB", p384W)] := by
   rw [p384vx_comb, p384vx_C, p384vx_n]
   rfl
 
-theorem p384v_ok (hI : InvSounds) : CfgOk p384v := cfgOk_pubVerify (p384_ok hI) true
+theorem p384v_ok (hI : InvSounds) : CfgOk p384v :=
+  cfgOk_nCalls (cfgOk_pubVerify (p384_ok hI) true) true (by decide +kernel)
 
-theorem p384vx_ok (hI : InvSounds) : CfgOk p384vx := cfgOk_pubVerify (p384x_ok hI) true
+theorem p384vx_ok (hI : InvSounds) : CfgOk p384vx :=
+  cfgOk_nCalls (cfgOk_pubVerify (p384x_ok hI) true) true (by decide +kernel)
 
 theorem p384v_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     CombTbls p384v := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
