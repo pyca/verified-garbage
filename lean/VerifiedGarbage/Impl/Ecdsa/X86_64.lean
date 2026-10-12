@@ -215,7 +215,7 @@ def MP' : Mod :=
 def MH : Mod := { c.MP' with inl := c.hot }
 def MN' : Mod :=
   { n := c.n, mo := c.sl MN, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.n), adx := c.adx,
-    fnN := c.n == 9 }
+    fnN := c.n == 9 || c.n == 6 }
 
 def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 

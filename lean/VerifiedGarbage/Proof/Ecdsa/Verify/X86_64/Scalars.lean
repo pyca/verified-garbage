@@ -83,7 +83,7 @@ theorem mulN_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
       sv c base s' o * 2 ^ (64 * c.n) % c.C.n = sv c base s a * sv c base s b % c.C.n := by
   have h7 := hc.n10
   have hn := hs.nowrap
-  exact WP.mono (opMulN_ok hs hMN rfl rfl hB (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs hMN ho ha hb hS hB))
+  exact WP.mono (opMulN_ok hs hMN rfl rfl (sl_le c h7 ho) (sl_le c h7 ha) (sl_le c h7 hb) hB (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs hMN ho ha hb hS hB))
     fun s' ⟨k, lt, e⟩ =>
     ⟨k.scr hs, hMN.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k (Ne.symm hoN) (by decide),
       k.gpr, k.rd, k.wr, unch_slots (MN'_n c) rfl k.unch (l := [o, TMP]) (by simp) (by simp),

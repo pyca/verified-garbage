@@ -3,8 +3,9 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6Verified
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnNVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6Verified
 
-/-! # Montgomery products modulo P-384's and P-521's `p` and P-521's `n` on x86-64 -/
+/-! # Montgomery products modulo P-384's and P-521's `p` and `n` on x86-64 -/
 
 namespace VG.Artifacts.WeierstrassMont.X86_64
 
@@ -94,6 +95,22 @@ def artifacts : List Artifact := artifacts6 ++ [
     code := mulFnN
     contract := p521n.mulContract X86_64.abi
     verified := p521n_mul_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { p384n.mulApi with
+    target := X86_64.target
+    doc := p384n.mulApi.doc (notes := ["The function zero-extends the offsets and saves the \
+      callee-saved registers it writes in `xmm0`–`xmm5` (`movq`), `o` in `xmm6`, and the forty-eight \
+      bytes of `ws` from byte 4000 in `xmm7`–`xmm12`, over which it stores `n`; it writes only `[o]` \
+      and its temporary area, the last six words below byte 4096 of `ws`, and restores those bytes. \
+      It runs the inline product of the other P-384 functions modulo `n` with its operands read \
+      through registers: `[a]` through `rbx = ws + a` and `[b]` through `rsi = ws + b`. Montgomery \
+      multiplication by rows (operand scanning, `mul`): row `i` adds `a_i b`, computes \
+      `u = t₀ (-n⁻¹) mod 2⁶⁴` and adds `u n`, which clears the low word, the accumulator in \
+      registers; the result, below `2n`, is reduced by subtracting `n` and selecting the difference \
+      unless it borrowed, then stored through `rsi = ws + o`."])
+    code := mulFnN6
+    contract := p384n.mulContract X86_64.abi
+    verified := p384n_mul_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) }
 ]
 
