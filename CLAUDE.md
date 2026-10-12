@@ -5,9 +5,9 @@ trustworthy. Read `lean/README.md` first.
 
 For a fast Lean bootstrap on Linux x86-64, restore the prebuilt GHCR cache
 before compiling proofs; see [Restoring the CI build cache](lean/README.md#restoring-the-ci-build-cache).
-Docker is not required: the README shows how to stream it straight from the
-registry API with `curl`. Either way needs `zstd` to decompress it; without
-the command, `pip install zstandard` and use the README's Python one-liner.
+The README streams it straight from the registry API with `curl`, and needs
+`zstd` to decompress it; without the command, `pip install zstandard` and use
+the README's Python one-liner.
 Restoring takes the whole cache (about 10.5 GB unpacked), since optimizing a
 proof means rebuilding it.
 
