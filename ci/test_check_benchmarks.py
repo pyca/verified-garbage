@@ -629,6 +629,18 @@ class FreshCopies(unittest.TestCase):
         for group in ['ecdh_p521', 'ecdsa_p384_sha384_sign', 'ec_p384_public_key', 'ec_p256_public_key']:
             self.assertFalse(bench_compare.FRESH_COPIES.match(group), group)
 
+    def test_the_copies_select_only_the_module_with_those_groups(self):
+        # Every group of FRESH_COPIES is in the benchmarks that
+        # FRESH_COPIES_MODULES selects, and those alone run from the copies.
+        root = pathlib.Path(__file__).resolve().parent.parent
+        catalog = planner.bench_catalog(root=str(root))
+        selected = [name for name, uses in catalog.items()
+                    if bench_compare.FRESH_COPIES_MODULES in uses]
+        self.assertEqual(selected, ['ecdsa_p521'])
+        source = (root / 'bench/benches/primitives/ecdsa_p521.rs').read_text()
+        for group in ['ec_p521_public_key', 'ecdsa_p521_{name}_sign', 'ecdsa_p521_{name}_verify']:
+            self.assertIn(f'"{group}"', source)
+
     def test_a_copy_is_a_new_executable_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             target = pathlib.Path(tmp)

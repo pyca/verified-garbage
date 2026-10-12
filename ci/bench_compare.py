@@ -85,6 +85,11 @@ TARGET = pathlib.Path("bench-target").resolve()
 # of kilobytes, whose time depends on the physical pages that hold it (see
 # the module docstring), so they run from `--copies` copies of each binary.
 FRESH_COPIES = re.compile(r"^(?:ec_p521_public_key|ecdsa_p521_)")
+# The `VG_BENCH_MODULES` of the copies' runs: the module whose benchmarks
+# hold those groups. The binary sets up every selected benchmark before
+# criterion's filter applies (RSA keys of up to 4096 bits among them),
+# which took about 110 s of each copy's run with every module.
+FRESH_COPIES_MODULES = "ecdsa_p521"
 
 # How src/cpu.rs stops a run whose `VG_CPU_FEATURES` names features this CPU
 # does not have.
@@ -375,7 +380,7 @@ def main():
                 copy = fresh_copy(binaries[side], c)
                 try:
                     times = run(str(copy), args.work_dir.resolve() / f"{side}-copy-{c}", VG, args, checkout,
-                                modules[side], copied)
+                                FRESH_COPIES_MODULES, copied)
                 finally:
                     copy.unlink()
                 for bench_id, t in times.items():
