@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.PointFprog
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointFprog
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Complete point addition and doubling as functions, on x86 (32-bit): correctness
@@ -12,6 +18,8 @@ changed only at `O` and in the own working space, and `O`'s coordinates
 below the prime, standing for `rcbAdd` of what the constants and the
 operands stand for (`fn_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86.Point
 

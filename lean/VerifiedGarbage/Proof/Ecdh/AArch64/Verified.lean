@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-import VerifiedGarbage.Proof.Ecdh.AArch64.Contract
-import VerifiedGarbage.Proof.Ecdh.AArch64.Lit
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
+module
+
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Contract
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.Contract
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Lit
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.Lit
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDH over P-256 on AArch64: `Verified`
@@ -14,6 +24,8 @@ instruction writes the other callee-saved registers, `sp` or a SIMD register
 loop counters, and every address is an argument plus a constant or a counter,
 so not even the peer's key (which the contract would let leak) affects timing.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdh.AArch64
 

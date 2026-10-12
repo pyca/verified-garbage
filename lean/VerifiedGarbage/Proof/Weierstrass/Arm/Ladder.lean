@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: the ladder
@@ -13,6 +19,8 @@ need the group law and the algebra it is proven with. The field arithmetic
 is calls of the functions of `S` (`FnOk`), whose own working space at `wk`
 is above the ladder's slots and below its table (`LadWk`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm
 

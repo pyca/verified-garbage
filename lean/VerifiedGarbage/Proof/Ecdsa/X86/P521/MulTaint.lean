@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.X86.TaintMono
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA over P-521 on x86 (32-bit): what the multiplications' summaries start from
@@ -9,6 +15,8 @@ The summaries of the multiplications modulo `p` (`MulSumP`) and `n`
 (`MulSumN`), each checked in a module of its own, in parallel, for the
 signature's constant-time check (`Verified`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.X86.P521
 

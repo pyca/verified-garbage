@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on 32-bit ARM: field operations on numbered slots
@@ -9,6 +15,8 @@ space, modulo `p` (`c.SP`) or `n` (`c.SN`), whose own working space is at
 `c.wk`: an operation writing slot `o` keeps every other slot but the
 temporary area's (`sv_keep`) and the moduli (`ModOkW.keepArm`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Arm
 

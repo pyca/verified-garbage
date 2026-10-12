@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on 32-bit ARM: where the ladder's and the powers' slots are
@@ -10,6 +16,8 @@ which `decide` checks. The accumulator `c.wk` is above them all and below
 the tables (`ladWk`, `powWkP`, `powWkN`), which are in `scratch`'s `8192`
 bytes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Arm
 

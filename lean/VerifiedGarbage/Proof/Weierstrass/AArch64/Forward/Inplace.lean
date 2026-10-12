@@ -1,5 +1,13 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Arithmetic
-import VerifiedGarbage.Proof.Weierstrass.JacInplace
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Arithmetic
+public import VerifiedGarbage.Proof.Weierstrass.JacInplace
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Forward.Arithmetic
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on AArch64: the setup
@@ -12,6 +18,8 @@ big-endian into their slots (`setupLoad_ok`, once each), shifts the slot
 (`setupConsts_ok`, by induction on the list) and sets the flag to all ones:
 `setup_ok`, the state `SetupPost` describes.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.AArch64
 

@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # The complete a = -3 addition on x86 (32-bit) -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
   VG.Proof.Mont.X86 VG.Proof.Mont

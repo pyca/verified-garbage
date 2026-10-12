@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.MontBase
-import VerifiedGarbage.Proof.Mont.X86.Row
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontBase
+public import VerifiedGarbage.Proof.Mont.X86.Row
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): a row
@@ -11,6 +17,8 @@ the `N` words `y_j` of `Y` at `ys j` (`[esi + 4j]`, or immediates): its steps
 word `N` with word `N + 1` its carry out, unread (`carryUp1_ok`): `rowG_ok`,
 `rowG1_ok`. Row 0 writes the window (`rowZ_ok`), not yet written.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86.Mont
 

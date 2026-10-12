@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Ed25519.X86.CombDigit
-import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
-import VerifiedGarbage.Proof.Framework.ReadHalves
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.CombDigit
+public import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
+public import VerifiedGarbage.Proof.Framework.ReadHalves
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb's constant-time selection, for two digits at once
@@ -13,6 +19,8 @@ The tables are at `P` (`TblAt`: readable, apart from the workspace, and their
 words); 32-bit word `w` of coordinate `c` of entry `m + 1` of table `j` is
 half of a 64-bit word of the static (`tbl_word`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ed25519.X86
 

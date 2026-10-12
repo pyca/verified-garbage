@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
-import VerifiedGarbage.Proof.Framework.Arm.Call
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Calls of the Montgomery arithmetic's functions, on 32-bit ARM
@@ -12,6 +18,8 @@ the registers `clob` and `r10`, the number at `o` and the functions' own
 working space (`CallKeep`), and does what `body` does. `mulCall_ok`, `addCall_ok` and
 `subCall_ok` are the calls of `mulFn`, `addFn` and `subFn` (`MontFn.lean`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm.Mont
 

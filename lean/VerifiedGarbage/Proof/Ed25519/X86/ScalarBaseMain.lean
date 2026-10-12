@@ -1,13 +1,22 @@
-import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
-import VerifiedGarbage.Proof.Ed25519.X86.CommonFinish
-import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
-import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
-import VerifiedGarbage.Proof.Ed25519.X86.InputBits
-import VerifiedGarbage.Proof.Ed25519.X86.PointMul
-import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
-import VerifiedGarbage.Proof.Framework.X86.Call
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
+public import VerifiedGarbage.Proof.Ed25519.X86.CommonFinish
+public import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
+public import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
+public import VerifiedGarbage.Proof.Ed25519.X86.InputBits
+public import VerifiedGarbage.Proof.Ed25519.X86.PointMul
+public import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
+public import VerifiedGarbage.Proof.Framework.X86.Call
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86.ScalarBaseContract`. -/
+
+@[expose] public section
+
 section
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.X25519.X86

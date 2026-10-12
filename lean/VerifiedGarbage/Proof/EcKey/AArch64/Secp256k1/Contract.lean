@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.EcKey.Secp256k1
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Spec.EcKey.Secp256k1
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # secp256k1 public keys on AArch64: the contract the proof is written against
@@ -8,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 The facts of `Spec.EcKey.Secp256k1.inst.publicKeyContract` for AArch64, by name:
 `vg_ec_secp256k1_public_key(out = x0, d = x1, scratch = x2)`, the result in `w0`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.AArch64.Secp256k1
 

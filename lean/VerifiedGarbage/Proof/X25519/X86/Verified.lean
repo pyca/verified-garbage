@@ -1,7 +1,17 @@
-import VerifiedGarbage.Proof.X25519.X86.Main
-import VerifiedGarbage.Proof.X25519.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.Contract
+module
+
+public import VerifiedGarbage.Proof.X25519.X86.Main
+meta import VerifiedGarbage.Proof.X25519.X86.Main
+public import VerifiedGarbage.Proof.X25519.X86.Lit
+meta import VerifiedGarbage.Proof.X25519.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on x86 (32-bit): `Verified`
@@ -10,6 +20,8 @@ Constant time (by taint tracking: the only branches are on the loop counters,
 and every address is a pointer plus a constant or the counter),
 satisfiability, and the shared contract of `Spec/`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86
 

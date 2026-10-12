@@ -1,6 +1,12 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
-import VerifiedGarbage.Proof.Weierstrass.Comb
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
+public import VerifiedGarbage.Proof.Weierstrass.Comb
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # The comb on AArch64: digits and masks
@@ -10,6 +16,8 @@ Horner's rule (`nibble_ok`), turns it into the magnitude `|k_j - 8|`
 (`magnitude_ok`), and sets `maskReg m` to all ones exactly for `m` that
 magnitude, for `m = 0 … 8` (`masks_ok`); `digit_ok` is all three.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ECDSA on 32-bit ARM: what every phase keeps
@@ -10,6 +16,8 @@ the tables and the multiplications' accumulator (`FixedOk`), so it keeps them (`
 table byte apart from what a phase writes keeps its value too (`sv_unch`,
 `tbl_unch`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ecdsa.Arm
 

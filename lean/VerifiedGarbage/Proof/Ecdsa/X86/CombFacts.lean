@@ -1,12 +1,21 @@
-import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
-import VerifiedGarbage.Proof.Ecdsa.X86.Verified
-import VerifiedGarbage.Proof.P256.Comb7
-import VerifiedGarbage.Proof.P256.Order
-import VerifiedGarbage.Proof.P256.Comb7Shape
-import VerifiedGarbage.Proof.Framework.ConstMem
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
+public import VerifiedGarbage.Proof.Ecdsa.X86.Verified
+public import VerifiedGarbage.Proof.P256.Comb7
+public import VerifiedGarbage.Proof.P256.Order
+public import VerifiedGarbage.Proof.P256.Comb7Shape
+public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # P-256 comb configuration and immutable table size -/
+
+@[expose] public section
+
 namespace VG.Proof.Ecdsa.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Weierstrass Spec.Weierstrass
 

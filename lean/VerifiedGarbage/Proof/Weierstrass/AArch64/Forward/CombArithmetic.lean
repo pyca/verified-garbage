@@ -1,6 +1,14 @@
-import VerifiedGarbage.Impl.P256.CombArithmetic
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
+module
+
+public import VerifiedGarbage.Impl.P256.CombArithmetic
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeOk
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Forward.CombArithmetic
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

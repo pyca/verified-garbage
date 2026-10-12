@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Concrete
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Concrete
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! `forward` keeps every word a block leaves in memory, for every block the
 interpreter runs: a load whose word a register already holds becomes a copy of
@@ -7,6 +13,8 @@ that register (or nothing), and a `movz` of zero into a register holding zero
 is dropped. The pass numbers the values it tracks; a valuation `ρ` of the
 numbers describes the original block's environment, and the scheduled block's
 environment holds the same words. -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64.Forward
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.Forward

@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-import VerifiedGarbage.Proof.Mont.X86.Loop
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
+public import VerifiedGarbage.Proof.Mont.X86.Loop
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): the rows of the product
@@ -11,6 +17,8 @@ low word zero (`redDigit`, `redRowI`), so that the accumulator's words from
 `i + 1` hold `(T + a_i B + q m) / 2³²`, below `2m` again (`rowF_ok`). After
 the `N` rows, the words from `N` hold `T < 2m` with `R T ≡ A B` (`rowsF_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.X86.Mont
 

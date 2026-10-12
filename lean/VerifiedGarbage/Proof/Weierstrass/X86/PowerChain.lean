@@ -1,7 +1,15 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.Pow
-import VerifiedGarbage.Impl.Weierstrass.X86.PowChain
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.Pow
+public import VerifiedGarbage.Impl.Weierstrass.X86.PowChain
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `PowerState` -/
+
+@[expose] public section
 
 section
 

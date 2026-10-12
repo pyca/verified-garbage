@@ -1,9 +1,18 @@
-import VerifiedGarbage.Impl.Ed25519.X86.VerifyMessage
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
-import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
+module
+
+public import VerifiedGarbage.Impl.Ed25519.X86.VerifyMessage
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
+public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86.VerifyMessage.Layout`. -/
+
+@[expose] public section
+
 section
 /-! Buffer geometry of complete Ed25519 verification on x86. -/
 namespace VG.Proof.Ed25519.X86.VerifyMessage

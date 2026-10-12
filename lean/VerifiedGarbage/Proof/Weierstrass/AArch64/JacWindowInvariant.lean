@@ -1,8 +1,17 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLayout
-import VerifiedGarbage.Proof.Weierstrass.Window5
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLayout
+public import VerifiedGarbage.Proof.Weierstrass.Window5
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Invariants retained by the public five-bit Jacobian loop. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
 open VG.Proof.Mont.AArch64 VG.Proof.Mont Spec.Weierstrass

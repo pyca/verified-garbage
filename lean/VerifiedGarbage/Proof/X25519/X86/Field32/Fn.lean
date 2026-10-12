@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.X25519.X86.Field32.Chain
-import VerifiedGarbage.TCB.X86.Target
+module
+
+public import VerifiedGarbage.Proof.X25519.X86.Field32.Chain
+public import VerifiedGarbage.TCB.X86.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # `vg_gf25519_r32_pow250` on x86 (32-bit): what it computes
@@ -12,6 +18,8 @@ the registers (`exit_ok`). `pow250Fn_ok`: the function keeps the
 callee-saved registers, changes memory only in bytes 512 to 1023, and
 leaves the two powers at bytes 544 and 512.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.X86.Field32
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.Mont.Arm.Step
+module
+
+public import VerifiedGarbage.Proof.Mont.Arm.Step
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Montgomery arithmetic on 32-bit ARM: a row of the multiplication
@@ -9,6 +15,8 @@ which holds digits: the `D` steps leave the carry in `r3` (`steps_ok`), which
 `carryUp` adds to digits `D` and `D + 1` (`carryUp_ok`), so that the window's
 `D + 2` digits hold the sum when it fits them (`mulRow_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Mont.Arm
 

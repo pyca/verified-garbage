@@ -1,4 +1,10 @@
-import VerifiedGarbage.Impl.P256.CombTable7
+module
+
+public import VerifiedGarbage.Impl.P256.CombTable7
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # P256: the shape of the 7-bit comb's tables
@@ -8,6 +14,8 @@ the words of the tables in memory, on every target. Proven once here, with no
 target: the kernel walks every table (a second for P-521's), which each
 target's proof would otherwise repeat.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.P256
 

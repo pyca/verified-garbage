@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.NafPoint
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafPoint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! An exact field environment for point transfers through public addresses. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass
 open VG.Proof.Mont VG.Proof.Mont.X86

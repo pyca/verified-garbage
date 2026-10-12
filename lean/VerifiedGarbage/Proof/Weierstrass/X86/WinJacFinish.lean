@@ -1,7 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacEntryState
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacEntryState
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! One final conversion from Jacobian to homogeneous coordinates. -/
+
+@[expose] public section
+
 namespace VG.Proof.Weierstrass.X86.JWin
 open VG VG.X86 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86
   VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass

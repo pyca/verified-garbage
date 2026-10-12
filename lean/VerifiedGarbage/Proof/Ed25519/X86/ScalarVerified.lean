@@ -1,11 +1,26 @@
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarContract
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarEngine
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
-import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.Inline
+module
+
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarContract
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarContract
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarEngine
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarEngine
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
+public import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! Merged from `Proof.Ed25519.X86.ScalarMain`. -/
+
+@[expose] public section
+
 section
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.X25519.X86 VG.Impl.Ed25519.X86

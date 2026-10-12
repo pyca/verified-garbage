@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
-import VerifiedGarbage.Proof.Weierstrass.Words32
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+public import VerifiedGarbage.Proof.Weierstrass.Words32
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: big-endian words
@@ -7,6 +13,8 @@ import VerifiedGarbage.Proof.Weierstrass.Words32
 What the loads and stores of big-endian numbers (`BytesLen.lean`) share:
 `rev` is `byteRev32`, and the 32-bit words of a range whose bytes are kept.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.Arm
 

@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.X25519.Arm.Setup
+module
+
+public import VerifiedGarbage.Proof.X25519.Arm.Setup
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # X25519 on 32-bit ARM: the bits of the scalar
@@ -6,6 +12,8 @@ import VerifiedGarbage.Proof.X25519.Arm.Setup
 `bits` stores bit `t` of the decoded (clamped) scalar at byte `BITS + t` of
 the working space, for `t < 255` (`bits_ok`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.X25519.Arm
 

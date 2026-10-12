@@ -1,5 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-import VerifiedGarbage.Proof.Weierstrass.BytesLen
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Short Weierstrass curves on AArch64: numbers of `len` bytes
@@ -13,6 +19,8 @@ in place (`shrWords_ok`), a word at a time by `extr`; and
 `storeBytes len n dst d a` writes `[a]` masked with `x3` to the `len` bytes
 at `dst + d` (`storeBytes_ok`), its top word a byte at a time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 

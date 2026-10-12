@@ -1,8 +1,16 @@
-import VerifiedGarbage.Impl.EcKey.Secp256k1.AArch64
-import VerifiedGarbage.Proof.EcKey.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Main
+module
+
+public import VerifiedGarbage.Impl.EcKey.Secp256k1.AArch64
+public import VerifiedGarbage.Proof.EcKey.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Main
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! # secp256k1 public-key derivation without constant tables -/
+
+@[expose] public section
 
 namespace VG.Proof.EcKey.AArch64.Secp256k1
 

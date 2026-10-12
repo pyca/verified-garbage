@@ -1,8 +1,16 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.NafSum
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafSum
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-! ## `NafDigit` -/
+
+@[expose] public section
 
 section
 
